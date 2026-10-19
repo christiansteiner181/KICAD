@@ -1,343 +1,105 @@
 {
-    "$kommentar":  "Belastungswerte LU (Kalt-/Warmwasser) und Abwasser-Anschlusswerte DU der Sanitärapparate. Quelle ist allein Christians Zusammenstellung – Werte dort nachführen, nie herleiten oder ergänzen (CLAUDE.md: Normwerte nie aus dem Gedächtnis). Übertragen vom Hauptlauf am 20.10.2026 per Skript aus Tabelle1 A7:D40; «zeile» = Excel-Zeile. null = Apparat hat diesen Anschluss nicht.",
-    "quelle":  {
-                   "dokument":  "LU_DU Zusammenstellung_.xlsx",
-                   "pfad":  "W:\\02_Projektdateien Objekte\\Worb_BES_Bernstrasse\\f_Berechnungen\\02_Sanitär\\LU_DU Zusammenstellung_.xlsx",
-                   "objekt":  "Walkringen Überbauung Vielmattstrasse",
-                   "stand":  "14.03.2024",
-                   "verfasser":  "Christian Steiner, H+K Planungs AG",
-                   "bereich":  "Tabelle1 A7:D40"
-               },
-    "rechnung":  {
-                     "$kommentar":  "Formeln wie im Excel (Zellen in Klammern); Gesamtwerte je Anlage, nicht je Teilstrecke.",
-                     "totalLu":  "ΣLU KW + ΣLU WW (B55 = M43+N43)",
-                     "volumenstrom":  "Total LU × 0.1 l/s (B56 = B55*0.1)",
-                     "spitzeKurve3":  {
-                                          "faktor":  0.459,
-                                          "exponent":  0.353,
-                                          "zelle":  "C57 = B56^0.353*0.459",
-                                          "text":  "Spitzenvolumenstrom bei 0.3 bis 300 l/s, grösster LU 3 (Diagramm 1 W3)"
-                                      },
-                     "spitzeKurve5":  {
-                                          "faktor":  0.598,
-                                          "exponent":  0.257,
-                                          "zelle":  "I57 = B56^0.257*0.598",
-                                          "text":  "Spitzenvolumenstrom bei 0.5 bis 15 l/s, grösster LU 5 (Diagramm 1 W3)"
-                                      },
-                     "spitzeGesamt":  "plus Spezialinstallationen Versorgung (C59 = C57+I51 bzw. I59 = I57+I51)",
-                     "schmutzwasser":  {
-                                           "zelle":  "M66 = M65*((M64)^(1/2))",
-                                           "text":  "Q_WW = K × √ΣDU"
-                                       },
-                     "abflusskennzahlBeispiel":  {
-                                                     "wert":  0.5,
-                                                     "zelle":  "M65",
-                                                     "text":  "Wert im Objekt Walkringen (Gebäudeart Wohnen); weitere Werte nur aus der Norm (fehlt)"
-                                                 },
-                     "gesamtabfluss":  "Q_tot = Q_WW + Spezialinstallationen Entsorgung (M67 = M66+N51)"
-                 },
-    "referenz":  {
-                     "$kommentar":  "Walkringen, Excel-Ergebnis als Testfall",
-                     "anzahl":  {
-                                    "waschtisch":  10,
-                                    "dusche":  7,
-                                    "badewanne":  4,
-                                    "spuelbecken":  8,
-                                    "gwa_spueltisch":  8,
-                                    "wc_75":  10,
-                                    "entnahme_garten":  2
-                                },
-                     "summeLuKw":  80,
-                     "summeLuWw":  52,
-                     "summeDu":  38.8,
-                     "totalLu":  132,
-                     "volumenstrom":  13.2,
-                     "spitzeKurve3":  1.1412355278976094,
-                     "spitzeKurve5":  1.1606163499508511,
-                     "schmutzwasser":  3.1144823004794873
-                 },
-    "vorgabeJeKlasse":  {
-                            "$kommentar":  "Vorbelegte Apparateart je Klasse (wie HKAP SanitaerKatalog.Standard); umstellbar je Apparat bzw. Familientyp. Bodenablauf ohne Vorgabe (DN 50/56/70/100 → Befund «Art wählen»). Entscheid Hauptlauf 20.10.2026, von Christian zu bestätigen.",
-                            "WC":  "wc_75",
-                            "Waschtisch":  "waschtisch",
-                            "Dusche":  "dusche",
-                            "Badewanne":  "badewanne",
-                            "Spueltisch":  "spuelbecken",
-                            "Waschmaschine":  "waschmaschine_6",
-                            "Ausgussbecken":  "waschtrog"
-                        },
-    "arten":  [
-                  {
-                      "key":  "urinal_wasserlos",
-                      "name":  "Urinal wasserlos",
-                      "luKw":  null,
-                      "luWw":  null,
-                      "du":  0.1,
-                      "zeile":  7
-                  },
-                  {
-                      "key":  "waschtisch",
-                      "name":  "Waschtisch / Wandbecken",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.5,
-                      "zeile":  8
-                  },
-                  {
-                      "key":  "bidet",
-                      "name":  "Bidet",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.5,
-                      "zeile":  9
-                  },
-                  {
-                      "key":  "urinal_druck",
-                      "name":  "Urinal mit Druckspüler",
-                      "luKw":  3,
-                      "luWw":  null,
-                      "du":  0.5,
-                      "zeile":  10
-                  },
-                  {
-                      "key":  "schulwandbrunnen",
-                      "name":  "Schulwandbrunnen",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.5,
-                      "zeile":  11
-                  },
-                  {
-                      "key":  "waschrinne_3",
-                      "name":  "Waschrinne mit -3 Entnahmestellen",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.5,
-                      "zeile":  12
-                  },
-                  {
-                      "key":  "dusche",
-                      "name":  "Dusche nicht staubar",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  0.6,
-                      "zeile":  13
-                  },
-                  {
-                      "key":  "bodenablauf_50",
-                      "name":  "Bodenablauf DN 50",
-                      "luKw":  null,
-                      "luWw":  null,
-                      "du":  0.8,
-                      "zeile":  14
-                  },
-                  {
-                      "key":  "dusche_staubar",
-                      "name":  "Dusche staubar",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  0.8,
-                      "zeile":  15
-                  },
-                  {
-                      "key":  "urinal_spuelkasten",
-                      "name":  "Urinal mit Spülkasten",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.8,
-                      "zeile":  16
-                  },
-                  {
-                      "key":  "badewanne",
-                      "name":  "Badewanne",
-                      "luKw":  3,
-                      "luWw":  3,
-                      "du":  0.8,
-                      "zeile":  17
-                  },
-                  {
-                      "key":  "spuelbecken",
-                      "name":  "Spülbecken 1- und 2-teilig",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  0.8,
-                      "zeile":  18
-                  },
-                  {
-                      "key":  "wandausgussbecken",
-                      "name":  "Wandausgussbecken",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  0.8,
-                      "zeile":  19
-                  },
-                  {
-                      "key":  "waschrinne_4",
-                      "name":  "Waschrinne über 4 Entnahmestellen",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  0.8,
-                      "zeile":  20
-                  },
-                  {
-                      "key":  "waschtrog_kw",
-                      "name":  "Waschtrog KW",
-                      "luKw":  2,
-                      "luWw":  null,
-                      "du":  0.8,
-                      "zeile":  21
-                  },
-                  {
-                      "key":  "waschtrog",
-                      "name":  "Waschtrog",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  0.8,
-                      "zeile":  22
-                  },
-                  {
-                      "key":  "waschtrog_ba",
-                      "name":  "Waschtrog über BA",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  null,
-                      "zeile":  23
-                  },
-                  {
-                      "key":  "gwa_spueltisch",
-                      "name":  "Haushalt-GWA über Spültisch",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  null,
-                      "zeile":  24
-                  },
-                  {
-                      "key":  "gwa_direkt",
-                      "name":  "Haushalt-GWA (Direktanschluss)",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  0.8,
-                      "zeile":  25
-                  },
-                  {
-                      "key":  "waschmaschine_6",
-                      "name":  "Waschmaschine bis 6 kg",
-                      "luKw":  2,
-                      "luWw":  null,
-                      "du":  0.8,
-                      "zeile":  26
-                  },
-                  {
-                      "key":  "bodenablauf_56",
-                      "name":  "Bodenablauf DN 56",
-                      "luKw":  null,
-                      "luWw":  null,
-                      "du":  1,
-                      "zeile":  27
-                  },
-                  {
-                      "key":  "waschmaschine_12",
-                      "name":  "Waschmaschine 7 – 12 kg",
-                      "luKw":  2,
-                      "luWw":  null,
-                      "du":  1.5,
-                      "zeile":  28
-                  },
-                  {
-                      "key":  "gwa_gewerbe",
-                      "name":  "Gewerbe-GWA",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  1.5,
-                      "zeile":  29
-                  },
-                  {
-                      "key":  "bodenablauf_70",
-                      "name":  "Bodenablauf DN 70",
-                      "luKw":  null,
-                      "luWw":  null,
-                      "du":  1.5,
-                      "zeile":  30
-                  },
-                  {
-                      "key":  "wc_75",
-                      "name":  "Klosettanlage bis 7.5 Liter Spülwassermenge",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  2,
-                      "zeile":  31
-                  },
-                  {
-                      "key":  "bodenablauf_100",
-                      "name":  "Bodenablauf DN 100",
-                      "luKw":  null,
-                      "luWw":  null,
-                      "du":  2,
-                      "zeile":  32
-                  },
-                  {
-                      "key":  "wc_90",
-                      "name":  "Klosettanlage bis 9.0 Liter Spülwassermenge",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  2.5,
-                      "zeile":  33
-                  },
-                  {
-                      "key":  "ausguss_faekalien",
-                      "name":  "Stand- / Wandausguss für Fäkalien / Putzwasser",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  2.5,
-                      "zeile":  34
-                  },
-                  {
-                      "key":  "waschmaschine_40",
-                      "name":  "Waschmaschine 13 – 40 kg",
-                      "luKw":  1,
-                      "luWw":  1,
-                      "du":  2.5,
-                      "zeile":  35
-                  },
-                  {
-                      "key":  "steckbeckenapparat",
-                      "name":  "Steckbeckenapparat",
-                      "luKw":  2,
-                      "luWw":  2,
-                      "du":  2.5,
-                      "zeile":  36
-                  },
-                  {
-                      "key":  "grosswanne",
-                      "name":  "Grosswanne / Saunatauchbecken",
-                      "luKw":  3,
-                      "luWw":  3,
-                      "du":  2.5,
-                      "zeile":  37
-                  },
-                  {
-                      "key":  "getraenkeautomat",
-                      "name":  "Getränkeautomat",
-                      "luKw":  1,
-                      "luWw":  null,
-                      "du":  0.5,
-                      "zeile":  38
-                  },
-                  {
-                      "key":  "entnahme_balkon",
-                      "name":  "Entnahmearmatur Balkon",
-                      "luKw":  2,
-                      "luWw":  null,
-                      "du":  null,
-                      "zeile":  39
-                  },
-                  {
-                      "key":  "entnahme_garten",
-                      "name":  "Entnahmearmatur Garten/Garage",
-                      "luKw":  5,
-                      "luWw":  null,
-                      "du":  null,
-                      "zeile":  40
-                  }
-              ]
+  "$kommentar": "Belastungswerte LU (Kalt-/Warmwasser) und Abwasser-Anschlusswerte DU der Sanitärapparate. Quelle ist allein Christians Zusammenstellung – Werte dort nachführen, nie herleiten oder ergänzen (CLAUDE.md: Normwerte nie aus dem Gedächtnis). Übertragen vom Hauptlauf am 20.10.2026 per Skript aus Tabelle1 A7:D40; «zeile» = Excel-Zeile. null = Apparat hat diesen Anschluss nicht.",
+  "quelle": {
+    "dokument": "LU_DU Zusammenstellung_.xlsx",
+    "pfad": "W:\\02_Projektdateien Objekte\\Worb_BES_Bernstrasse\\f_Berechnungen\\02_Sanitär\\LU_DU Zusammenstellung_.xlsx",
+    "objekt": "Walkringen Überbauung Vielmattstrasse",
+    "stand": "14.03.2024",
+    "verfasser": "Christian Steiner, H+K Planungs AG",
+    "bereich": "Tabelle1 A7:D40"
+  },
+  "rechnung": {
+    "$kommentar": "Formeln wie im Excel (Zellen in Klammern); Gesamtwerte je Anlage, nicht je Teilstrecke.",
+    "totalLu": "ΣLU KW + ΣLU WW (B55 = M43+N43)",
+    "volumenstrom": "Total LU × 0.1 l/s (B56 = B55*0.1)",
+    "spitzeKurve3": {
+      "faktor": 0.459,
+      "exponent": 0.353,
+      "zelle": "C57 = B56^0.353*0.459",
+      "text": "Spitzenvolumenstrom bei 0.3 bis 300 l/s, grösster LU 3 (Diagramm 1 W3)"
+    },
+    "spitzeKurve5": {
+      "faktor": 0.598,
+      "exponent": 0.257,
+      "zelle": "I57 = B56^0.257*0.598",
+      "text": "Spitzenvolumenstrom bei 0.5 bis 15 l/s, grösster LU 5 (Diagramm 1 W3)"
+    },
+    "spitzeGesamt": "plus Spezialinstallationen Versorgung (C59 = C57+I51 bzw. I59 = I57+I51)",
+    "schmutzwasser": {
+      "zelle": "M66 = M65*((M64)^(1/2))",
+      "text": "Q_WW = K × √ΣDU"
+    },
+    "abflusskennzahlBeispiel": {
+      "wert": 0.5,
+      "zelle": "M65",
+      "text": "Wert im Objekt Walkringen (Gebäudeart Wohnen); weitere Werte nur aus der Norm (fehlt)"
+    },
+    "gesamtabfluss": "Q_tot = Q_WW + Spezialinstallationen Entsorgung (M67 = M66+N51)"
+  },
+  "referenz": {
+    "$kommentar": "Walkringen, Excel-Ergebnis als Testfall",
+    "anzahl": {
+      "waschtisch": 10,
+      "dusche": 7,
+      "badewanne": 4,
+      "spuelbecken": 8,
+      "gwa_spueltisch": 8,
+      "wc_75": 10,
+      "entnahme_garten": 2
+    },
+    "summeLuKw": 80,
+    "summeLuWw": 52,
+    "summeDu": 38.8,
+    "totalLu": 132,
+    "volumenstrom": 13.2,
+    "spitzeKurve3": 1.1412355278976094,
+    "spitzeKurve5": 1.160616349950851,
+    "schmutzwasser": 3.1144823004794873
+  },
+  "vorgabeJeKlasse": {
+    "$kommentar": "Vorbelegte Apparateart je Klasse (wie HKAP SanitaerKatalog.Standard); umstellbar je Apparat bzw. Familientyp. Bodenablauf ohne Vorgabe (DN 50/56/70/100 → Befund «Art wählen»). Entscheid Hauptlauf 20.10.2026, von Christian zu bestätigen.",
+    "WC": "wc_75",
+    "Waschtisch": "waschtisch",
+    "Dusche": "dusche",
+    "Badewanne": "badewanne",
+    "Spueltisch": "spuelbecken",
+    "Waschmaschine": "waschmaschine_6",
+    "Ausgussbecken": "waschtrog"
+  },
+  "arten": [
+    { "key": "urinal_wasserlos", "name": "Urinal wasserlos", "luKw": null, "luWw": null, "du": 0.1, "zeile": 7 },
+    { "key": "waschtisch", "name": "Waschtisch / Wandbecken", "luKw": 1, "luWw": 1, "du": 0.5, "zeile": 8 },
+    { "key": "bidet", "name": "Bidet", "luKw": 1, "luWw": 1, "du": 0.5, "zeile": 9 },
+    { "key": "urinal_druck", "name": "Urinal mit Druckspüler", "luKw": 3, "luWw": null, "du": 0.5, "zeile": 10 },
+    { "key": "schulwandbrunnen", "name": "Schulwandbrunnen", "luKw": 1, "luWw": 1, "du": 0.5, "zeile": 11 },
+    { "key": "waschrinne_3", "name": "Waschrinne mit -3 Entnahmestellen", "luKw": 1, "luWw": 1, "du": 0.5, "zeile": 12 },
+    { "key": "dusche", "name": "Dusche nicht staubar", "luKw": 2, "luWw": 2, "du": 0.6, "zeile": 13 },
+    { "key": "bodenablauf_50", "name": "Bodenablauf DN 50", "luKw": null, "luWw": null, "du": 0.8, "zeile": 14 },
+    { "key": "dusche_staubar", "name": "Dusche staubar", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 15 },
+    { "key": "urinal_spuelkasten", "name": "Urinal mit Spülkasten", "luKw": 1, "luWw": 1, "du": 0.8, "zeile": 16 },
+    { "key": "badewanne", "name": "Badewanne", "luKw": 3, "luWw": 3, "du": 0.8, "zeile": 17 },
+    { "key": "spuelbecken", "name": "Spülbecken 1- und 2-teilig", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 18 },
+    { "key": "wandausgussbecken", "name": "Wandausgussbecken", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 19 },
+    { "key": "waschrinne_4", "name": "Waschrinne über 4 Entnahmestellen", "luKw": 1, "luWw": 1, "du": 0.8, "zeile": 20 },
+    { "key": "waschtrog_kw", "name": "Waschtrog KW", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 21 },
+    { "key": "waschtrog", "name": "Waschtrog", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 22 },
+    { "key": "waschtrog_ba", "name": "Waschtrog über BA", "luKw": 2, "luWw": 2, "du": null, "zeile": 23 },
+    { "key": "gwa_spueltisch", "name": "Haushalt-GWA über Spültisch", "luKw": 1, "luWw": null, "du": null, "zeile": 24 },
+    { "key": "gwa_direkt", "name": "Haushalt-GWA (Direktanschluss)", "luKw": 1, "luWw": null, "du": 0.8, "zeile": 25 },
+    { "key": "waschmaschine_6", "name": "Waschmaschine bis 6 kg", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 26 },
+    { "key": "bodenablauf_56", "name": "Bodenablauf DN 56", "luKw": null, "luWw": null, "du": 1, "zeile": 27 },
+    { "key": "waschmaschine_12", "name": "Waschmaschine 7 – 12 kg", "luKw": 2, "luWw": null, "du": 1.5, "zeile": 28 },
+    { "key": "gwa_gewerbe", "name": "Gewerbe-GWA", "luKw": 1, "luWw": null, "du": 1.5, "zeile": 29 },
+    { "key": "bodenablauf_70", "name": "Bodenablauf DN 70", "luKw": null, "luWw": null, "du": 1.5, "zeile": 30 },
+    { "key": "wc_75", "name": "Klosettanlage bis 7.5 Liter Spülwassermenge", "luKw": 1, "luWw": null, "du": 2, "zeile": 31 },
+    { "key": "bodenablauf_100", "name": "Bodenablauf DN 100", "luKw": null, "luWw": null, "du": 2, "zeile": 32 },
+    { "key": "wc_90", "name": "Klosettanlage bis 9.0 Liter Spülwassermenge", "luKw": 1, "luWw": null, "du": 2.5, "zeile": 33 },
+    { "key": "ausguss_faekalien", "name": "Stand- / Wandausguss für Fäkalien / Putzwasser", "luKw": 2, "luWw": 2, "du": 2.5, "zeile": 34 },
+    { "key": "waschmaschine_40", "name": "Waschmaschine 13 – 40 kg", "luKw": 1, "luWw": 1, "du": 2.5, "zeile": 35 },
+    { "key": "steckbeckenapparat", "name": "Steckbeckenapparat", "luKw": 2, "luWw": 2, "du": 2.5, "zeile": 36 },
+    { "key": "grosswanne", "name": "Grosswanne / Saunatauchbecken", "luKw": 3, "luWw": 3, "du": 2.5, "zeile": 37 },
+    { "key": "getraenkeautomat", "name": "Getränkeautomat", "luKw": 1, "luWw": null, "du": 0.5, "zeile": 38 },
+    { "key": "entnahme_balkon", "name": "Entnahmearmatur Balkon", "luKw": 2, "luWw": null, "du": null, "zeile": 39 },
+    { "key": "entnahme_garten", "name": "Entnahmearmatur Garten/Garage", "luKw": 5, "luWw": null, "du": null, "zeile": 40 }
+  ]
 }
