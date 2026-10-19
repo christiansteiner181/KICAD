@@ -356,7 +356,8 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
   const suchIndex = new Map();
   function indexiere() {
     for (const k of DATEN.kapitel) for (const f of k.funktionen) {
-      suchIndex.set(f.id, [k.titel, f.titel, Object.values(f.wo || {}).join(' '), (f.schritte || []).join(' '), f.erwartung, f.hinweis, (f.pruefpunkte || []).join(' ')].join(' ').toLowerCase());
+      const roh = [k.titel, f.titel, Object.values(f.wo || {}).join(' '), (f.schritte || []).join(' '), f.erwartung, f.hinweis, (f.pruefpunkte || []).join(' ')].join(' ').toLowerCase();
+      suchIndex.set(f.id, roh + ' ' + hilfeSchluessel(roh).replace(/-/g, ' '));   // auch umschrieben (ä → ae …) für #s-… aus KICAD
     }
   }
   function filtern() {
@@ -442,6 +443,15 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
   function springe() {
     const h = decodeURIComponent(location.hash.slice(1));
     if (!h) return;
+    if (h.startsWith('s-')) {   // Suche, z. B. Titel des offenen Dialogs
+      const woerter = h.slice(2).split('-').filter(Boolean);
+      for (let n = woerter.length; n > 0; n--) {   // keine Treffer mit allen Wörtern: hinten kürzen
+        suchtext = woerter.slice(0, n).join(' '); $('#suchfeld').value = suchtext; filtern();
+        if (document.querySelector('article.funktion:not([hidden])')) break;
+      }
+      const erste = document.querySelector('article.funktion:not([hidden])'); if (erste) erste.scrollIntoView({ block: 'start' });
+      return;
+    }
     if (!h.startsWith('k-')) { const ziel = document.getElementById(h); if (ziel) ziel.scrollIntoView(); return; }
     const [reg, knopf] = h.slice(2).includes('~') ? h.slice(2).split('~') : ['', h.slice(2)];
     const passt = f => String(f.wo?.knopf || '').split(/\s+\/\s+|,\s*/).some(t => hilfeSchluessel(t) === knopf);
