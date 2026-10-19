@@ -402,7 +402,7 @@ await register('Ansicht');
 await mb('ansicht.liste');
 await warteBis(async () => (await dialoge()) === 1, 'Dialog Liste anlegen');
 const listen = await ausw(`return [...document.querySelectorAll('${dlg} .f-liste option')].map(o => o.value);`);
-pruef(listen.includes('materialliste') && listen.join() === 'raumliste,strangliste,mengen,materialliste', 'Auswahl enthält materialliste', listen.join());
+pruef(listen.includes('materialliste') && listen.slice(0, 4).join() === 'raumliste,strangliste,mengen,materialliste', 'Auswahl enthält materialliste (danach weitere Listen aus N3/Modul 4)', listen.join());
 await dlgWahl('.f-liste', 'materialliste');
 pruef((await wert(`${dlg} .f-kz`)) === 'AN-LI-MATERIALLISTE' && (await wert(`${dlg} .f-name`)) === 'Materialliste', 'Vorschlag Kennzeichen AN-LI-MATERIALLISTE, Name Materialliste', `${await wert(`${dlg} .f-kz`)}`);
 await dialogKnopf('Anlegen');

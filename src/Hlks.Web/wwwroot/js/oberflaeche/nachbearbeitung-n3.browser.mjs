@@ -20,7 +20,7 @@ import { fileURLToPath } from 'node:url';
 const PORT = Number(process.env.HLKS_N3_PORT ?? 5183);
 const SERVER = `http://localhost:${PORT}`;
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9503);
-if ([5013, 5098, 5130, 5131, 5149, 5150, 5151].includes(PORT) || (PORT >= 5190 && PORT <= 5209)) { console.error('Dieser Port ist gesperrt.'); process.exit(2); }
+if ([5013, 5098, 5130, 5131, 5149, 5150, 5151].includes(PORT)) { console.error('Dieser Port ist gesperrt (HKAP, Desktop, Abnahmeserver).'); process.exit(2); }
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = 'C:\\Program Files\\dotnet\\dotnet.exe';
 const BUILD = process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE, 'HLKS_CAD_build');
