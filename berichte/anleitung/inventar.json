@@ -5,7 +5,7 @@
       "id": "start",
       "titel": "Start und Oberfläche",
       "modul": "–",
-      "einleitung": "KICAD starten, den Startbildschirm benutzen und sich in der Oberfläche zurechtfinden: Menüband mit Stufen, Ansichtsreiter, Projektbrowser mit Gliederungen und Gewerkfarben, Eigenschaften, frei angeordnete Ansichten (W2) und Tastaturkürzel. Die Dialoge und Paletten verschiebbar zu machen (W1) wird gerade gebaut und ist hier nicht beschrieben.",
+      "einleitung": "KICAD starten, den Startbildschirm benutzen und sich in der Oberfläche zurechtfinden: Menüband mit Stufen, Ansichtsreiter, Projektbrowser mit Gliederungen und Gewerkfarben, Eigenschaften, frei angeordnete Ansichten (W2), verschiebbare Dialoge und andockbare Paletten (W1) und Tastaturkürzel.",
       "funktionen": [
         {
           "id": "start-icon",
@@ -323,7 +323,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/startbildschirm.js:313",
             "entwurf/startbildschirm.md:30 (Aufbau)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "start-oeffnen",
@@ -357,7 +357,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/ordner-browser.js:27",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:20"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "start-neu-beispiel",
@@ -386,10 +386,10 @@
             "zustand": "Dialog mit eingetragenem Zielordner unter %TEMP%\\HLKS_CAD\\beispiel\\e_KICAD"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:221",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:235",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:28"
           ],
-          "hinweis": "Nicht auf W: anlegen, ausser Christian will es."
+          "hinweis": "Nicht auf W: anlegen, ausser Christian will es. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "start-haus-strgd",
@@ -448,7 +448,7 @@
             "zustand": "Kachel MFH Musterweg mit 3D-Vorschaubild (Isometrie von Südwesten)"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:774 (Startbildschirm)",
+            "src/Hlks.Web/OBERFLAECHE.md:775 (Startbildschirm)",
             "src/Hlks.Web/wwwroot/js/oberflaeche/vorschau.js:1"
           ],
           "hinweis": "Im Testlauf des Servers wird nur unter %TEMP% geschrieben."
@@ -480,7 +480,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:22",
-            "src/Hlks.Web/OBERFLAECHE.md:117 (Menüband)"
+            "src/Hlks.Web/OBERFLAECHE.md:118 (Menüband)"
           ],
           "hinweis": ""
         },
@@ -542,7 +542,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/menueband-stufen.js:16",
-            "src/Hlks.Web/OBERFLAECHE.md:787 (Menüband passt sich der Breite an)",
+            "src/Hlks.Web/OBERFLAECHE.md:788 (Menüband passt sich der Breite an)",
             "entwurf/menueband-revit.md:22 (Teil R)"
           ],
           "hinweis": "Die Wand-, Rohr-, Kanal-Knöpfe und «Ändern» bleiben gross, bis ihre Gruppe zum Flyout wird."
@@ -573,7 +573,7 @@
           "bild": {
             "projekt": "beispiel",
             "ansicht": "Menüband mit offenem Flyout",
-            "zustand": "Fenster 800 px breit, Register Ansicht, Flyout einer zusammengeklappten Gruppe offen"
+            "zustand": "Fenster nur etwa 280–300 px breit (Fensterbreite, bei der im Register Architektur die erste Gruppe zum Knopf mit ▾ wird), Flyout dieser Gruppe offen"
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:366",
@@ -610,7 +610,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:201",
-            "src/Hlks.Web/OBERFLAECHE.md:824 (Menüband passt sich der Breite an)"
+            "src/Hlks.Web/OBERFLAECHE.md:825 (Menüband passt sich der Breite an)"
           ],
           "hinweis": ""
         },
@@ -642,8 +642,8 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:153",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:158",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:195"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:150",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:187"
           ],
           "hinweis": "Die Gruppen «Leitung» (Aufteilen mit Serie) und «Schema» (Im Schema zeigen) erscheinen bei jeder Auswahl, sind aber oft gesperrt."
         },
@@ -739,7 +739,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/statusleiste.js:89",
-            "src/Hlks.Web/OBERFLAECHE.md:304 (Statusleiste)"
+            "src/Hlks.Web/OBERFLAECHE.md:305 (Statusleiste)"
           ],
           "hinweis": ""
         },
@@ -772,7 +772,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/ansichtsreiter.js:56",
-            "src/Hlks.Web/OBERFLAECHE.md:832 (Menüband passt sich der Breite an)"
+            "src/Hlks.Web/OBERFLAECHE.md:833 (Menüband passt sich der Breite an)"
           ],
           "hinweis": ""
         },
@@ -784,7 +784,7 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Palette links unten"
+            "sonst": "Palette «Projektbrowser» (Vorgabe links unten, unter den Eigenschaften)"
           },
           "schritte": [
             "Den Projektbrowser ansehen (Gliederung «Gebäude»).",
@@ -792,12 +792,13 @@
             "Die Ansicht «Grundriss EG Sanitär» doppelklicken.",
             "Rechtsklick auf eine Ansicht."
           ],
-          "erwartung": "Der Baum zeigt in «Gebäude»: Ansichten (nach Art), Ansichtsvorlagen, Pläne, Gebäude (Geschosse, Räume), Hülle, Systeme, Unterlagen, Familien (mit Katalog). Doppelklick öffnet die Ansicht, Klick wählt ein Element, Rechtsklick öffnet ein Kontextmenü (Öffnen, Umbenennen, Duplizieren, Löschen, Als Vorlage speichern, Vorlage anwenden …).",
+          "erwartung": "Der Baum zeigt in «Gebäude»: Ansichten (nach Art), Ansichtsvorlagen, Pläne, Gebäude (Geschosse, Räume), Hülle, Systeme, Unterlagen, Familien (mit Katalog). Doppelklick öffnet die Ansicht, Klick wählt ein Element, Rechtsklick öffnet ein Kontextmenü (Öffnen, Umbenennen, Duplizieren, Löschen, Als Vorlage speichern, Vorlage anwenden …). Der Projektbrowser ist seit W1 eine Palette der Palettenverwaltung: Kopf mit Titel «Projektbrowser» und ✕, andockbar, schwebend und als Reiter möglich.",
           "pruefpunkte": [
             "Äste in der genannten Reihenfolge.",
             "Zahl hinter den Ästen in Klammern.",
             "Doppelklick öffnet die Ansicht als Reiter.",
-            "Das aktive Fenster ist im Baum hervorgehoben."
+            "Das aktive Fenster ist im Baum hervorgehoben.",
+            "Der Kopf «Projektbrowser» trägt ✕ und lässt sich ziehen (siehe «palette-andocken»)."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -806,7 +807,8 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:8",
-            "src/Hlks.Web/OBERFLAECHE.md:142 (Projektbrowser)"
+            "src/Hlks.Web/OBERFLAECHE.md:143 (Projektbrowser)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:457"
           ],
           "hinweis": ""
         },
@@ -836,7 +838,7 @@
             "zustand": "Suchfeld «WT-E» mit den zwei Waschtischen E.02 und E.03 als Treffer"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:60"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:61"
           ],
           "hinweis": ""
         },
@@ -978,7 +980,7 @@
             "gruppe": "Paletten",
             "knopf": "Eigenschaften",
             "kuerzel": "PP",
-            "sonst": "Palette links oben"
+            "sonst": "Palette links oben (Vorgabe; verschiebbar); Kontextregister «Ändern | <Klasse>» › Eigenschaften"
           },
           "schritte": [
             "Im Grundriss EG den Waschtisch WT-E.02 anklicken.",
@@ -986,12 +988,14 @@
             "Neben einem Wert auf das «?» klicken.",
             "PP tippen, nochmals PP tippen."
           ],
-          "erwartung": "Die Palette zeigt oben die Klasse, darunter Gruppen wie in Revit. Das «?» öffnet «Warum – Herkunft des Werts». PP blendet die Palette aus und wieder ein.",
+          "erwartung": "Die Palette zeigt oben die Klasse, darunter Gruppen wie in Revit. Das «?» öffnet «Warum – Herkunft des Werts». PP blendet die Palette aus und wieder ein (sie kommt an ihren letzten Ort zurück); das ✕ am Palettenkopf tut dasselbe. Die Palette ist seit W1 eine Palette der Palettenverwaltung (Kopf mit Titel «Eigenschaften», andockbar, schwebend, als Reiter).",
           "pruefpunkte": [
             "Gruppen sind auf- und zuklappbar.",
             "«?» öffnet den Herkunftsdialog.",
             "PP schaltet die Palette um (Knopf «Eigenschaften» gedrückt/nicht).",
-            "Ohne Auswahl zeigt die Palette die Eigenschaften der aktiven Ansicht."
+            "Ohne Auswahl zeigt die Palette die Eigenschaften der aktiven Ansicht.",
+            "Das ✕ am Palettenkopf blendet die Palette aus; Ansicht › Fenster › «Paletten» blendet sie wieder ein.",
+            "Andocken, schweben und Reiter: siehe «palette-andocken»."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -999,8 +1003,10 @@
             "zustand": "WT-E.02 gewählt, Palette mit allen Gruppen offen"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:113",
-            "src/Hlks.Web/OBERFLAECHE.md:294 (Eigenschaftenpalette)"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:105",
+            "src/Hlks.Web/OBERFLAECHE.md:295 (Eigenschaftenpalette)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:399",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-paletten.js:26"
           ],
           "hinweis": ""
         },
@@ -1012,7 +1018,7 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Palette links oben, nichts gewählt"
+            "sonst": "Palette (Vorgabe links oben), nichts gewählt"
           },
           "schritte": [
             "Esc drücken (Auswahl aufheben).",
@@ -1031,9 +1037,530 @@
             "zustand": "Grundriss EG aktiv, nichts gewählt, Palette zeigt AN-GR-EG"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:7"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:7",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:399"
           ],
           "hinweis": ""
+        },
+        {
+          "id": "dialog-verschieben",
+          "titel": "Dialog verschieben",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Titelleiste jedes Dialogs"
+          },
+          "schritte": [
+            "Einen Dialog öffnen, der gross genug ist (z. B. Register Koordination › Gruppe Typenliste › «Typenliste»).",
+            "Die Titelleiste mit gedrückter linker Maustaste packen und ziehen, z. B. neben den Plan.",
+            "Versuchen, den Dialog über den Rand des Fensters hinaus zu ziehen.",
+            "Den Plan hinter dem Dialog ansehen."
+          ],
+          "erwartung": "Der Dialog folgt der Maus (die Grösse bleibt) und bleibt immer ganz im sichtbaren Bereich des Fensters; am Rand hält er an. Hinter dem Dialog bleibt der Plan sichtbar, der Hintergrund ist nicht abgedunkelt. Ohne gemerkte Lage steht ein Dialog in der Mitte; erst nach dem Ziehen gilt die freie Lage.",
+          "pruefpunkte": [
+            "Der Dialog lässt sich an der Titelleiste verschieben.",
+            "Über den Fensterrand gezogen bleibt er ganz sichtbar (er legt sich an den Rand).",
+            "Ein Klick auf Einklappen oder ✕ in der Titelleiste verschiebt nichts.",
+            "Der Plan hinter dem Dialog ist sichtbar und nicht abgedunkelt.",
+            "Christian-Probe (fenster-revit.md «Fertig, wenn»): Typenliste neben den Plan schieben."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit Dialog «Typenliste»",
+            "zustand": "Typenliste auf etwa 700 × 460 verkleinert und an der Titelleiste neben den Plan geschoben (Plan dahinter sichtbar)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:91",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:54",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Gilt für alle Dialoge, die über «zeigen» geöffnet werden; kein Dialog baut sein eigenes Fenster. Es geht nur um das Fenster, nicht um den Inhalt der Typenliste."
+        },
+        {
+          "id": "dialog-groesse",
+          "titel": "Dialog in der Grösse ändern",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Rand und Ecken jedes Dialogs (acht Griffe)"
+          },
+          "schritte": [
+            "Einen grossen Dialog öffnen (z. B. «Typenliste»).",
+            "Mit der Maus an die Ecke unten rechts fahren und mit gedrückter Taste ziehen.",
+            "Am linken und am oberen Rand ziehen.",
+            "Den Dialog sehr klein ziehen.",
+            "Den Dialog sehr gross ziehen."
+          ],
+          "erwartung": "Die Grösse folgt der Maus; am linken und am oberen Rand bleibt die gegenüberliegende Kante stehen, an der Ecke unten rechts die linke obere Ecke. Der Dialog wird nicht kleiner als die Mindestgrösse (Titel mit Knöpfen, Knopfleiste und Fehlerzeile bleiben lesbar) und nicht grösser als das Fenster. Passt der Inhalt nicht mehr hinein, rollt er.",
+          "pruefpunkte": [
+            "Ecke unten rechts: der Dialog wird kleiner, die linke obere Ecke bleibt.",
+            "Linker und oberer Rand verändern die Grösse nach links bzw. oben.",
+            "Sehr klein: die Knöpfe der Knopfleiste bleiben im Dialog, die Titelleiste mit ✕ bleibt ganz sichtbar.",
+            "Sehr gross: der Dialog bleibt im sichtbaren Bereich."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit Dialog «Typenliste»",
+            "zustand": "Typenliste, Ecke unten rechts gezogen: der Dialog ist auf etwa 700 × 460 verkleinert, der Plan dahinter bleibt sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:102",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:34",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Die Griffe sind unsichtbar; der Zeiger wird am Rand zum Doppelpfeil. Eingeklappt (siehe «dialog-einklappen») gibt es keine Griffe."
+        },
+        {
+          "id": "dialog-einklappen",
+          "titel": "Dialog einklappen und ausklappen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Knopf ▴ links von ✕ in der Titelleiste (Tooltip «Einklappen»)"
+          },
+          "schritte": [
+            "Einen Dialog öffnen (z. B. «Typenliste») und neben den Plan schieben.",
+            "In der Titelleiste auf ▴ klicken.",
+            "Die eingeklappte Titelleiste über den Plan ziehen.",
+            "Auf ▾ klicken (Tooltip «Ausklappen»)."
+          ],
+          "erwartung": "Der Dialog schrumpft auf die Titelleiste (Stelle und Breite bleiben), der Plan ist frei sichtbar; die Titelleiste lässt sich weiter verschieben. Ausklappen stellt die vorherige Grösse wieder her. Eingeklappt gibt es keine Griffe für die Grösse. Der eingeklappte Zustand wird nicht gemerkt: beim nächsten Öffnen ist der Dialog ausgeklappt.",
+          "pruefpunkte": [
+            "Eingeklappt bleibt nur die Titelleiste; Inhalt und Knopfleiste sind weg.",
+            "Der Knopf zeigt ▾ und heisst «Ausklappen».",
+            "Die Titelleiste lässt sich eingeklappt verschieben.",
+            "Ausgeklappt ist der Dialog wieder so gross wie vorher, die Knopfleiste ist wieder da.",
+            "Christian-Probe (fenster-revit.md «Fertig, wenn»): Typenliste einklappen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit eingeklapptem Dialog",
+            "zustand": "Typenliste eingeklappt und über den Plan geschoben: nur die Titelleiste, der Plan darunter frei sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:125",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:17",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "dialog-mitte",
+          "titel": "Doppelklick auf die Titelleiste: zurück zur Mitte",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Titelleiste jedes Dialogs (nicht auf einen Knopf)"
+          },
+          "schritte": [
+            "Einen Dialog öffnen und aus der Mitte wegschieben.",
+            "Auf die Titelleiste doppelklicken (nicht auf ▴ oder ✕)."
+          ],
+          "erwartung": "Der Dialog steht wieder in der Mitte des Fensters; die Grösse bleibt. Gemerkt wird danach nur noch die Grösse, keine Lage mehr.",
+          "pruefpunkte": [
+            "Nach dem Doppelklick steht der Dialog mittig.",
+            "Seine Grösse ist unverändert.",
+            "Schliessen und wieder Öffnen: der Dialog steht in der Mitte (Grösse gemerkt)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit Dialog «Typenliste»",
+            "zustand": "Typenliste nach dem Doppelklick auf die Titelleiste wieder in der Mitte des Fensters"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:115",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "dialog-merken",
+          "titel": "Lage und Grösse je Dialogart gemerkt",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "jeder Dialog (gemerkt je Rechner im Browser)"
+          },
+          "schritte": [
+            "Die Typenliste öffnen, verkleinern und verschieben.",
+            "Mit Esc schliessen und wieder öffnen.",
+            "Die Seite neu laden (F5) und die Typenliste nochmals öffnen.",
+            "Einen anderen Dialog öffnen (z. B. Verwalten › Modell › «Katalog anzeigen»).",
+            "Das Browserfenster verkleinern, solange ein Dialog offen ist."
+          ],
+          "erwartung": "Die Typenliste öffnet dort und in der Grösse, in der sie verlassen wurde, auch nach dem Neuladen. Ein anderer Dialog hat seine eigene Lage (ohne gemerkte Lage: die Mitte). Wird das Browserfenster kleiner, holt KICAD den Dialog zurück in den sichtbaren Bereich.",
+          "pruefpunkte": [
+            "Wiederöffnen: gleiche Lage und Grösse.",
+            "Nach dem Neuladen: gleiche Lage und Grösse.",
+            "Eine andere Dialogart steht unabhängig davon in der Mitte.",
+            "Fenster verkleinern: der Dialog bleibt ganz sichtbar."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit Dialog «Typenliste»",
+            "zustand": "Typenliste verkleinert und verschoben, geschlossen und wieder geöffnet (gleiche Lage); zweites Bild nach dem Neuladen der Seite"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:73",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialog-merken.js:14",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Gemerkt wird je «Dialogart» (Titel ohne Namen in «…» und ohne Ziffern; Schlüssel «dialoge» im Browserspeicher, je Rechner und Adresse/Port). Ungültig Gemerktes wird verworfen. Wer KICAD über eine andere Adresse (anderen Port) öffnet, hat andere gemerkte Werte."
+        },
+        {
+          "id": "dialog-modal",
+          "titel": "Hintergrund nicht abgedunkelt, Dialoge bleiben modal",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "jeder Dialog"
+          },
+          "schritte": [
+            "Einen Dialog öffnen (z. B. Verwalten › Modell › «Katalog anzeigen»).",
+            "Den Plan hinter dem Dialog ansehen und dort anklicken.",
+            "Aus einem Dialog einen zweiten öffnen, wo es einen Knopf dazu gibt (z. B. Koordination › «Kollisionen prüfen» › Knopf «Projektvorgaben …» im Dialog).",
+            "Im unteren Dialog auf einen Knopf klicken."
+          ],
+          "erwartung": "Der Plan hinter dem Dialog bleibt unverändert sichtbar (nicht mehr abgedunkelt wie vor W1). Klicks hinter dem Dialog werden abgefangen: Auswahl und Werkzeuge ändern sich nicht. Liegen mehrere Dialoge übereinander, ist nur der oberste bedienbar; der untere ist leicht abgeblendet und reagiert nicht.",
+          "pruefpunkte": [
+            "Kein abgedunkelter Hintergrund.",
+            "Ein Klick auf den Plan hinter dem Dialog bewirkt nichts.",
+            "Bei zwei Dialogen reagiert nur der oberste.",
+            "Nach dem Schliessen des oberen ist der untere wieder bedienbar."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit zwei Dialogen",
+            "zustand": "Dialog «Kollisionen prüfen» und darüber «Projektvorgaben» (nur der obere bedienbar), Plan dahinter hell sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:21",
+            "src/Hlks.Web/wwwroot/css/fensterrahmen.css:6",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge-fenster.js:24",
+            "src/Hlks.Web/OBERFLAECHE.md:926 (Fenster: Dialoge und Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "palette-andocken",
+          "titel": "Palette am Kopf ziehen und andocken",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Kopf einer Palette (Titel «Eigenschaften», «Projektbrowser», «Koordination»)"
+          },
+          "schritte": [
+            "Den Kopf des Projektbrowsers (Titel) mit gedrückter linker Maustaste packen und mehr als 5 px ziehen.",
+            "Die Andockziele ansehen: bei jeder Palette «Darüber andocken», «Als Reiter», «Darunter andocken», bei jedem leeren Bereich «Links/Rechts/Unten andocken».",
+            "Auf «Rechts andocken» zeigen und loslassen.",
+            "Den Kopf nochmals ziehen und beim Ziehen Esc drücken.",
+            "Auf den Kopf doppelklicken."
+          ],
+          "erwartung": "Beim Ziehen folgt ein Kopf der Maus, das Ziel unter der Maus ist hervorgehoben (ein Umriss zeigt, wo die Palette sonst schwebt). Auf «Rechts andocken» losgelassen steht der Projektbrowser rechts (Bereich 280 px breit), die Eigenschaften füllen links die ganze Seitenleiste, die Ansichtsfläche reicht bis an den rechten Bereich. Esc bricht ab, nichts ändert sich; wenige Pixel Bewegung gelten als Klick. Doppelklick auf den Kopf löst die Palette (schwebend) bzw. dockt sie in ihrem Vorgabebereich wieder an.",
+          "pruefpunkte": [
+            "Beim Ziehen erscheinen die Andockziele; das Ziel unter der Maus ist hervorgehoben.",
+            "Loslassen auf «Rechts andocken»: Projektbrowser rechts, Eigenschaften links über die ganze Höhe.",
+            "Esc beim Ziehen: nichts hat sich geändert, die Ziele verschwinden.",
+            "Zwei bis drei Pixel Bewegung ändern nichts.",
+            "Der Projektbrowser zeigt seinen Baum und rollt weiter selbst.",
+            "Christian-Probe (fenster-revit.md «Fertig, wenn»): Projektbrowser nach rechts andocken."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Palette wird gezogen",
+            "zustand": "Kopf des Projektbrowsers wird zum rechten Rand gezogen: Ziel «Rechts andocken» hervorgehoben; zweites Bild: nach dem Loslassen, Projektbrowser rechts"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:415",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten-ziele.js:32",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:303",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Anordnung und Grössen sind Darstellung und werden je Rechner im Browser gemerkt, nicht im Projekt."
+        },
+        {
+          "id": "palette-schweben",
+          "titel": "Palette schweben lassen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Kopf einer Palette; Loslassen ausserhalb jedes Andockziels"
+          },
+          "schritte": [
+            "Den Kopf der Eigenschaften ziehen und mitten über dem Plan loslassen (auf keinem Ziel).",
+            "Die schwebende Palette am Kopf verschieben.",
+            "An Rand oder Ecke ihre Grösse ändern.",
+            "Über den Fensterrand hinaus ziehen.",
+            "Ein Element anklicken und die Palette ansehen."
+          ],
+          "erwartung": "Die Palette schwebt über der Zeichenfläche (unter den Dialogen), frei verschiebbar, in der Grösse änderbar (nicht unter die Mindestgrösse) und immer ganz im Fenster; ein Klick holt sie nach vorn. Die linke Seitenleiste ist leer und nimmt keinen Platz, die Ansichtsfläche reicht bis an den linken Rand. Der Inhalt lebt: die Eigenschaften zeigen das gewählte Element.",
+          "pruefpunkte": [
+            "Nach dem Loslassen schwebt die Palette dort, wo losgelassen wurde.",
+            "Verschieben am Kopf und Grösse an Ecke und Rand gehen; die Mindestgrösse bleibt.",
+            "Über den Rand gezogen bleibt sie ganz im Fenster.",
+            "Sie zeigt die Eigenschaften des gewählten Elements.",
+            "Christian-Probe (fenster-revit.md «Fertig, wenn»): die Eigenschaften schweben lassen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit schwebender Palette",
+            "zustand": "Eigenschaften schweben über dem Plan, die Seitenleiste links enthält nur den Projektbrowser"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:342",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:415",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "palette-reiter",
+          "titel": "Paletten als Reiter zusammenlegen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Kopf einer Palette; Ziel «Als Reiter» (Mitte einer anderen Palette)"
+          },
+          "schritte": [
+            "Den Kopf der Eigenschaften über die Mitte der Projektbrowser-Palette ziehen (Ziel «Als Reiter») und loslassen.",
+            "Auf den Reiter «Projektbrowser» im Kopf klicken.",
+            "Einen Reiter aus dem Kopf herausziehen und links andocken lassen.",
+            "Den Kopf einer Reitergruppe (nicht den Reiter) ziehen."
+          ],
+          "erwartung": "Die zwei Paletten bilden eine Gruppe mit zwei Reitern im Kopf («Eigenschaften», «Projektbrowser»); die abgelegte ist aktiv, nur sie ist sichtbar. Ein Klick auf den anderen Reiter wechselt. Ein Reiter lässt sich einzeln herausziehen und wird zur eigenen Gruppe; ein Zug am Kopf einer Reitergruppe nimmt alle Reiter mit. Das ✕ blendet die aktive Palette aus.",
+          "pruefpunkte": [
+            "Beim Ziehen über die Mitte steht das Ziel «Als Reiter» hervorgehoben.",
+            "Zwei Reiter im Kopf, die abgelegte Palette ist aktiv.",
+            "Reiterwechsel zeigt jeweils den vollständigen Inhalt (Projektbaum bzw. Eigenschaften).",
+            "Der herausgezogene Reiter wird zur eigenen Gruppe."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Paletten als Reiter",
+            "zustand": "Eigenschaften und Projektbrowser als Reiter in einer Gruppe links, «Eigenschaften» aktiv"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:163",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:415",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "palette-griffe",
+          "titel": "Trenner und Griffe: Teilung, Breite und Höhe der Bereiche",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Balken zwischen zwei Paletten (Trenner); Griff am Rand der Bereiche links, rechts und unten"
+          },
+          "schritte": [
+            "Den Trenner zwischen Eigenschaften und Projektbrowser nach unten ziehen.",
+            "Den Griff am rechten Rand der linken Seitenleiste ziehen (Breite).",
+            "Den Projektbrowser rechts andocken und den Griff an seinem Bereich ziehen.",
+            "Register Koordination › «Kollisionsliste» öffnen und den Griff am oberen Rand des unteren Bereichs ziehen (Höhe)."
+          ],
+          "erwartung": "Der Trenner verschiebt die Teilung der übereinanderliegenden Paletten; der Griff ändert die Breite bzw. die Höhe des Bereichs. Beides wird gemerkt. Die Ansichtsfläche behält mindestens 260 px; zu grosse Werte werden dem Fenster angepasst. Leere Bereiche und ihre Griffe nehmen keinen Platz.",
+          "pruefpunkte": [
+            "Der Trenner verschiebt die Teilung; Eigenschaften und Projektbrowser bleiben bedienbar.",
+            "Der Griff ändert die Breite der Seitenleiste; die Ansichtsfläche folgt.",
+            "Die Höhe des unteren Bereichs lässt sich am Griff ziehen.",
+            "Nach dem Neuladen gelten die Grössen weiter."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Seitenleiste",
+            "zustand": "Trenner zwischen Eigenschaften und Projektbrowser markiert; zweites Bild: Seitenleiste nach dem Ziehen des Griffs breiter"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:373",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:353",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Der Bereich unten gehört der Palette «Koordination» (siehe «m3b-kollisionsliste»)."
+        },
+        {
+          "id": "palette-ausblenden",
+          "titel": "✕ am Palettenkopf: Palette ausblenden",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "✕ rechts im Kopf jeder Palette (Tooltip «Palette ausblenden»)"
+          },
+          "schritte": [
+            "Auf ✕ am Kopf der Eigenschaften klicken.",
+            "Den Projektbrowser ansehen.",
+            "PP tippen (oder Ansicht › Fenster › «Paletten» › «Eigenschaften»)."
+          ],
+          "erwartung": "Die Palette verschwindet, der Platz geht an die übrigen (der Projektbrowser füllt die Seitenleiste). Wieder eingeblendet kommt sie an ihren letzten Ort zurück. Bei der Koordination baut ✕ die Palette ab; erneut geöffnet erscheint sie an der zuletzt gewählten Stelle.",
+          "pruefpunkte": [
+            "Das ✕ blendet die Palette aus.",
+            "Der Projektbrowser füllt die Seitenleiste.",
+            "Wieder eingeblendet steht die Palette an ihrem letzten Ort (links)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Seitenleiste",
+            "zustand": "Kopf der Eigenschaften mit ✕ markiert; zweites Bild: Eigenschaften ausgeblendet, Projektbrowser füllt die Seitenleiste"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:181",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:291",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "palette-liste",
+          "titel": "Knopf «Paletten»: Liste mit Häkchen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Fenster › «Paletten» klicken.",
+            "Die Liste ansehen: Eigenschaften, Projektbrowser, Koordination, Trennstrich, «Paletten zurücksetzen».",
+            "Auf «Projektbrowser» klicken.",
+            "Die Liste nochmals öffnen und «Projektbrowser» wieder wählen.",
+            "Die Liste öffnen und mit Esc schliessen."
+          ],
+          "erwartung": "Die Liste zeigt jede angemeldete Palette; vor den sichtbaren steht ✓. Ein Klick blendet die Palette ein bzw. aus und schliesst die Liste. Alle Einträge sind bedienbar, solange ein Projekt offen ist (ohne Projekt ist die Koordination gesperrt, Hinweis «Zuerst ein Projekt öffnen.»). Eine ausgeblendete Palette kommt an ihren letzten Ort zurück.",
+          "pruefpunkte": [
+            "Die Liste nennt die drei Paletten in der Reihenfolge Eigenschaften, Projektbrowser, Koordination und «Paletten zurücksetzen».",
+            "Häkchen nur bei den sichtbaren Paletten.",
+            "Ein Klick auf «Projektbrowser» blendet ihn aus, ein zweiter wieder ein; das Häkchen folgt.",
+            "Esc schliesst die Liste."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband › Ansicht",
+            "zustand": "Register Ansicht, Liste des Knopfs «Paletten» offen: Häkchen bei Eigenschaften und Projektbrowser, «Paletten zurücksetzen» am Ende"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-paletten.js:26",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-paletten.js:15",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Ein einziger Knopf in der bestehenden Gruppe «Fenster» (kein eigener Gruppenkasten, damit das Register Ansicht nicht noch breiter wird). Die Eigenschaften lassen sich auch mit PP umschalten."
+        },
+        {
+          "id": "palette-zuruecksetzen",
+          "titel": "Paletten zurücksetzen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "",
+            "sonst": "Eintrag «Paletten zurücksetzen» am Ende der Liste"
+          },
+          "schritte": [
+            "Die Paletten umordnen: Projektbrowser rechts andocken, Eigenschaften schweben lassen.",
+            "Register Ansicht › Fenster › «Paletten» › «Paletten zurücksetzen» wählen."
+          ],
+          "erwartung": "Die Vorgabe ist wieder hergestellt: Eigenschaften oben, Projektbrowser unten, beide links, Breite und Höhen wie ursprünglich, nichts schwebt. Eine geöffnete Koordination bleibt offen und steht wieder unten.",
+          "pruefpunkte": [
+            "Eigenschaften oben, Projektbrowser darunter, links, etwa gleich hoch.",
+            "Nichts schwebt, rechts und unten ist nichts angedockt.",
+            "Eine offene Koordination bleibt offen (unten angedockt)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband › Ansicht",
+            "zustand": "Umgeordnete Paletten (Projektbrowser rechts, Eigenschaften schweben), Liste des Knopfs «Paletten» offen; zweites Bild: nach «Paletten zurücksetzen»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:154",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-paletten.js:2",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": ""
+        },
+        {
+          "id": "palette-merken",
+          "titel": "Anordnung der Paletten nach dem Neuladen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "alle Paletten (gemerkt je Rechner im Browser)"
+          },
+          "schritte": [
+            "Die Anordnung ändern: Projektbrowser rechts andocken, Eigenschaften schweben lassen und in der Grösse ändern.",
+            "Die Seite neu laden (F5).",
+            "Ansehen, wo die Paletten stehen."
+          ],
+          "erwartung": "Nach dem Neuladen ist die Anordnung unverändert: Projektbrowser rechts in gleicher Breite, Eigenschaften schwebend an gleicher Stelle in gleicher Grösse, beide mit Inhalt. Die Koordination bleibt nach dem Neuladen zu (sie braucht die Daten des offenen Projekts). Ist die gemerkte Anordnung unbrauchbar, gilt die Vorgabe.",
+          "pruefpunkte": [
+            "Anordnung nach dem Neuladen unverändert.",
+            "Die schwebende Palette steht an derselben Stelle in gleicher Grösse.",
+            "Beide Paletten haben ihren Inhalt (Projektbaum, Eigenschaften).",
+            "Fenster verkleinern: die schwebende Palette bleibt sichtbar.",
+            "Christian-Probe (fenster-revit.md «Fertig, wenn»): nach Neuladen ist alles wieder so."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG nach dem Neuladen",
+            "zustand": "Projektbrowser rechts angedockt, Eigenschaften schweben: Anordnung nach dem Neuladen der Seite wieder da"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:103",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten-daten.js:82",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/paletten.js:43",
+            "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
+            "entwurf/fenster-revit.md:15 (Teil W1)"
+          ],
+          "hinweis": "Gemerkt wird im Browserspeicher (Schlüssel «paletten»): je Rechner und Adresse (Port), nicht je Projekt. Wer KICAD mit einem anderen Port startet, sieht die Vorgabe."
         },
         {
           "id": "anordnung-reiter-ziehen",
@@ -1066,10 +1593,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/anordnung-ziehen.js:1",
-            "src/Hlks.Web/OBERFLAECHE.md:860 (Ansichten frei anordnen (W2))",
+            "src/Hlks.Web/OBERFLAECHE.md:861 (Ansichten frei anordnen (W2))",
             "entwurf/fenster-revit.md:35 (Teil W2)"
           ],
-          "hinweis": "Nur Teil W2 (Ansichten). Dialoge und Paletten verschieben ist W1 und noch nicht beschrieben."
+          "hinweis": "Nur Teil W2 (Ansichten). Dialoge und Paletten verschieben (W1) steht unter «dialog-verschieben» und «palette-andocken»."
         },
         {
           "id": "anordnung-trenner",
@@ -1098,7 +1625,7 @@
             "zustand": "Zwei Gruppen, Trenner nach links verschoben"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:862 (Ansichten frei anordnen (W2))",
+            "src/Hlks.Web/OBERFLAECHE.md:863 (Ansichten frei anordnen (W2))",
             "src/Hlks.Web/wwwroot/js/oberflaeche/anordnung.js:267"
           ],
           "hinweis": ""
@@ -1133,7 +1660,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:223",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:229"
           ],
-          "hinweis": ""
+          "hinweis": "Die Gruppe «Fenster» im Register Ansicht hat vier Knöpfe: «Fenster nebeneinander» (WT), «Fenster als Reiter» (WC), «In eigenem Fenster öffnen» und seit W1 «Paletten» (siehe «palette-liste»)."
         },
         {
           "id": "anordnung-reitermenue",
@@ -1266,7 +1793,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:175",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:155"
           ],
-          "hinweis": "Befund: Die Registernamen im Dialog kennen «Beschriften», «Einfügen», «Hülle», «Koordination» und «Familie» nicht; deren Kürzel (z. B. DI, TX, CM) stehen als «Allgemein»."
+          "hinweis": "Befund: Die Registernamen im Dialog kennen «Beschriften», «Einfügen», «Hülle», «Koordination» und «Familie» nicht; deren Kürzel (z. B. DI, TX, CM) stehen als «Allgemein». Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "kuerzel-esc",
@@ -1295,7 +1822,7 @@
             "zustand": "Vor und nach Esc: WT-E.02 gewählt, danach nichts gewählt"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:23",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:24",
             "src/Hlks.Web/wwwroot/js/oberflaeche/kuerzel.js:2"
           ],
           "hinweis": ""
@@ -1371,7 +1898,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:150",
             "berichte/modul-0a-testbericht.md:16 (Was gebaut ist)"
           ],
-          "hinweis": "Die Zahlen im Testbericht 0a (50 Klassen, 15 Medien, 15 Systemtypen) sind überholt, der Katalog ist seither gewachsen. Die Klassen stehen auch im Projektbrowser unter «Familien › Katalog»."
+          "hinweis": "Die Zahlen im Testbericht 0a (50 Klassen, 15 Medien, 15 Systemtypen) sind überholt, der Katalog ist seither gewachsen. Die Klassen stehen auch im Projektbrowser unter «Familien › Katalog». Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0a-pruefbefunde",
@@ -1403,7 +1930,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:146",
             "berichte/modul-0a-testbericht.md:21 (Was gebaut ist)"
           ],
-          "hinweis": "Seit Modul 0a sind die Prüfungen bis P20 gewachsen (P12 Hülle, P13–P18 Leitungen/Schema, P19/P20 Koordination)."
+          "hinweis": "Seit Modul 0a sind die Prüfungen bis P20 gewachsen (P12 Hülle, P13–P18 Leitungen/Schema, P19/P20 Koordination). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0a-netz-folgen",
@@ -1434,10 +1961,10 @@
             "zustand": "WC-E.02 gewählt, Dialog mit der Liste der Elemente stromab"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:158",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:150",
             "berichte/modul-0a-testbericht.md:40 (KI-Verständnistest)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0a-warum",
@@ -1466,11 +1993,11 @@
             "zustand": "Raum E.02 gewählt, Warum-Dialog zur Fläche"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:195",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:279",
-            "src/Hlks.Web/OBERFLAECHE.md:300 (Eigenschaftenpalette)"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:187",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:293",
+            "src/Hlks.Web/OBERFLAECHE.md:301 (Eigenschaftenpalette)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0a-loeschen-vorschau",
@@ -1502,10 +2029,10 @@
             "zustand": "WT-E.03 gewählt, Vorschau-Dialog mit Tabelle der Änderungen und Befunde"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:62",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:63",
             "berichte/modul-0a-testbericht.md:43 (KI-Verständnistest)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0a-rueckgaengig",
@@ -1535,8 +2062,8 @@
             "zustand": "Raum E.04 mit geändertem Namen «Zimmer Süd» im Stempel, Meldung «Rückgängig: …» eingeblendet"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:81",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:90"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:82",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:91"
           ],
           "hinweis": ""
         }
@@ -1578,7 +2105,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:20",
             "berichte/modul-0b-testbericht.md:68 (Befunde)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-projekt-anlegen",
@@ -1610,7 +2137,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:24",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:28"
           ],
-          "hinweis": "Auf W: legt das Beispielprojekt 175 Pakete einzeln ab und dauert dort rund eine Minute (Testbericht 0b: 51 s)."
+          "hinweis": "Auf W: legt das Beispielprojekt 175 Pakete einzeln ab und dauert dort rund eine Minute (Testbericht 0b: 51 s). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-projekt-schliessen",
@@ -1699,7 +2226,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:85"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-synchronisieren",
@@ -1761,7 +2288,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:109",
             "src/Hlks.Web/wwwroot/js/oberflaeche/statusleiste.js:131"
           ],
-          "hinweis": "Zwei echte Arbeitsplätze wurden nur als zweiter Prozess auf demselben Rechner geprüft (Testbericht 0b)."
+          "hinweis": "Zwei echte Arbeitsplätze wurden nur als zweiter Prozess auf demselben Rechner geprüft (Testbericht 0b). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-live",
@@ -1824,7 +2351,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:115"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-ansicht-3d",
@@ -1855,7 +2382,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:116",
-            "src/Hlks.Web/OBERFLAECHE.md:341 (Ansichten)"
+            "src/Hlks.Web/OBERFLAECHE.md:342 (Ansichten)"
           ],
           "hinweis": "Das Beispielprojekt enthält schon «3D Gesamt» (AN-3D)."
         },
@@ -1985,7 +2512,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:216",
             "berichte/modul-0b-testbericht.md:15 (Ergebnis)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m0b-zoom",
@@ -2079,7 +2606,7 @@
             "zustand": "Ausschnitt Bad E.02 mit gewähltem Waschtisch und Hover-Tipp"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:326 (Ansichten – Plan-Ansicht)"
+            "src/Hlks.Web/OBERFLAECHE.md:327 (Ansichten – Plan-Ansicht)"
           ],
           "hinweis": ""
         },
@@ -2138,8 +2665,8 @@
             "zustand": "Kontextmenü auf einer Ansicht mit Eintrag «Umbenennen» hervorgehoben"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:68",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:442"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-bearbeiten.js:69",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:443"
           ],
           "hinweis": ""
         }
@@ -2218,7 +2745,7 @@
             "zustand": "Wandwerkzeug aktiv, Fangsymbol (Quadrat) an einer Ecke, temporäre Bemassung «3000 mm»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:137 (Werkzeuge)",
+            "src/Hlks.Web/OBERFLAECHE.md:138 (Werkzeuge)",
             "entwurf/modul-1a.md:163 (Oberfläche)"
           ],
           "hinweis": ""
@@ -2907,10 +3434,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:423",
-            "src/Hlks.Web/OBERFLAECHE.md:160 (Register Einfügen)",
+            "src/Hlks.Web/OBERFLAECHE.md:161 (Register Einfügen)",
             "berichte/modul-1b-testbericht.md:66 (Abnahmelauf)"
           ],
-          "hinweis": "Die Datei ist 106 MB gross; Lesen und Übernehmen dauerten im Abnahmelauf 48 s. Archicad-IFC mit doppelten Geschossnamen sperren die Geschoss-Häkchen."
+          "hinweis": "Die Datei ist 106 MB gross; Lesen und Übernehmen dauerten im Abnahmelauf 48 s. Archicad-IFC mit doppelten Geschossnamen sperren die Geschoss-Häkchen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-ifc-lage",
@@ -2941,10 +3468,10 @@
             "zustand": "Dialog mit hlks_hk_2026-02-10.ifc, roter Kasten, Optionen der Ausrichtung ohne Wahl"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:163 (Register Einfügen)",
+            "src/Hlks.Web/OBERFLAECHE.md:164 (Register Einfügen)",
             "berichte/modul-1b-testbericht.md:21 (Befund)"
           ],
-          "hinweis": "Für Bernstrasse fehlt ein gemeinsamer Bezug (Koordinationskörper); das Ausrichten über Punktpaare steht auf der Nachbearbeitungsliste (N1, nicht gebaut). Mit Wahl «projekt» lässt sich die Datei trotzdem zum Prüfen übernehmen."
+          "hinweis": "Für Bernstrasse fehlt ein gemeinsamer Bezug (Koordinationskörper); das Ausrichten über Punktpaare steht auf der Nachbearbeitungsliste (N1, nicht gebaut). Mit Wahl «projekt» lässt sich die Datei trotzdem zum Prüfen übernehmen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-ifc-uebernehmen",
@@ -2976,10 +3503,10 @@
             "zustand": "Ergebnisdialog mit Tabellen je Klasse nach Übernahme von architekt_3d.ifc"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:173 (Register Einfügen)",
+            "src/Hlks.Web/OBERFLAECHE.md:174 (Register Einfügen)",
             "berichte/modul-1b-testbericht.md:13 (Ergebnis)"
           ],
-          "hinweis": "Zahlen der Abnahme: 718 Elemente, 389 Wände, 49 Räume aus Wänden."
+          "hinweis": "Zahlen der Abnahme: 718 Elemente, 389 Wände, 49 Räume aus Wänden. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-ifc-fassung",
@@ -3011,7 +3538,7 @@
             "berichte/modul-1b-testbericht.md:17 (Ergebnis)",
             "entwurf/modul-1b.md:35 (Fertig, wenn)"
           ],
-          "hinweis": "Dauer rund eine Minute (115 MB)."
+          "hinweis": "Dauer rund eine Minute (115 MB). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-cad",
@@ -3075,7 +3602,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:431",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:435",
-            "src/Hlks.Web/OBERFLAECHE.md:178 (Register Einfügen)"
+            "src/Hlks.Web/OBERFLAECHE.md:179 (Register Einfügen)"
           ],
           "hinweis": ""
         },
@@ -3140,7 +3667,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:446"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-unterlage-menue",
@@ -3203,7 +3730,7 @@
             "zustand": "3D mit grau durchscheinendem IFC-Hintergrund von Bernstrasse und den übernommenen Wänden"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:347 (Ansichten)",
+            "src/Hlks.Web/OBERFLAECHE.md:348 (Ansichten)",
             "berichte/modul-1b-testbericht.md:57 (Annahmen)"
           ],
           "hinweis": "Grosse Modelle (BKW) drehen im 3D langsam (Testbericht 1b)."
@@ -3235,9 +3762,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:452",
-            "src/Hlks.Web/OBERFLAECHE.md:192 (Register Einfügen)"
+            "src/Hlks.Web/OBERFLAECHE.md:193 (Register Einfügen)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1b-raeume-aus-waenden",
@@ -3311,7 +3838,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/huelle-text.js:96",
             "berichte/modul-1c-testbericht.md:16 (Ergebnis)"
           ],
-          "hinweis": "Die Dicke ist ein Testwert. Nur flache Dächer (Testbericht 1c). Die Buttons heissen «Decke», «Boden» und «Dach»."
+          "hinweis": "Die Dicke ist ein Testwert. Nur flache Dächer (Testbericht 1c). Die Buttons heissen «Decke», «Boden» und «Dach». Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-material",
@@ -3342,9 +3869,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:654",
-            "src/Hlks.Web/OBERFLAECHE.md:268 (Gebäudehülle)"
+            "src/Hlks.Web/OBERFLAECHE.md:269 (Gebäudehülle)"
           ],
-          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. Die Bürobibliothek `kataloge/materialien.json` ist leer; Christian muss Quellen (SIA-Ausgaben) beschaffen (Testbericht 1c)."
+          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. Die Bürobibliothek `kataloge/materialien.json` ist leer; Christian muss Quellen (SIA-Ausgaben) beschaffen (Testbericht 1c). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-aufbau",
@@ -3377,9 +3904,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:649",
-            "src/Hlks.Web/OBERFLAECHE.md:261 (Gebäudehülle)"
+            "src/Hlks.Web/OBERFLAECHE.md:262 (Gebäudehülle)"
           ],
-          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. U-Werte siehe auch «Übergang …»."
+          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. U-Werte siehe auch «Übergang …». Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-zuweisen",
@@ -3411,7 +3938,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:651"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-fenster-kennwerte",
@@ -3443,7 +3970,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:657"
           ],
-          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. Das Beispielprojekt hat keine Fenster; zuerst eines zeichnen (WN)."
+          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. Das Beispielprojekt hat keine Fenster; zuerst eines zeichnen (WN). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-uebergang",
@@ -3474,7 +4001,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:660"
           ],
-          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen."
+          "hinweis": "Testwerte frei gewählt, keine Norm- oder Materialwerte; als Quelle «Testwert» eintragen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-huelle-pruefen",
@@ -3505,7 +4032,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:661"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-waermebruecken",
@@ -3538,7 +4065,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:662",
             "berichte/modul-1c-testbericht.md:74 (Abnahmelauf)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1c-raumgrenzen",
@@ -3567,7 +4094,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-huelle.js:663",
-            "src/Hlks.Web/OBERFLAECHE.md:283 (Gebäudehülle)"
+            "src/Hlks.Web/OBERFLAECHE.md:284 (Gebäudehülle)"
           ],
           "hinweis": "Ohne erzeugten Boden/Decken/Dach sind die Zahlen kleiner. Fehlende Kennwerte erscheinen als Hinweise, U bleibt leer."
         },
@@ -3631,7 +4158,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:260",
-            "src/Hlks.Web/OBERFLAECHE.md:355 (Ansichten)"
+            "src/Hlks.Web/OBERFLAECHE.md:356 (Ansichten)"
           ],
           "hinweis": "Die Farben sind frei gewählt (Annahme, kein Normwert); ob sie auf den Plan sollen, ist Prüfliste 14."
         },
@@ -3664,7 +4191,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:260",
-            "src/Hlks.Web/OBERFLAECHE.md:365 (Ansichten)"
+            "src/Hlks.Web/OBERFLAECHE.md:366 (Ansichten)"
           ],
           "hinweis": ""
         },
@@ -3695,8 +4222,8 @@
             "zustand": "Ast Hülle aufgeklappt mit Materialien, Aufbauten, Wärmebrücken"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:336",
-            "src/Hlks.Web/OBERFLAECHE.md:147 (Projektbrowser)"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:337",
+            "src/Hlks.Web/OBERFLAECHE.md:148 (Projektbrowser)"
           ],
           "hinweis": ""
         },
@@ -3727,7 +4254,7 @@
             "zustand": "Material mit Kennwert λ und der Marke «ohne Quelle»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:285 (Gebäudehülle)",
+            "src/Hlks.Web/OBERFLAECHE.md:286 (Gebäudehülle)",
             "berichte/modul-1c-testbericht.md:54 (Was gebaut ist)"
           ],
           "hinweis": "Die Marke liest die Quelle aus dem Herkunftstext von element_lesen (Befund 1c, Format-abhängig)."
@@ -3802,10 +4329,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-hkap.js:447",
-            "src/Hlks.Web/OBERFLAECHE.md:209 (Verwalten › HKAP)",
+            "src/Hlks.Web/OBERFLAECHE.md:210 (Verwalten › HKAP)",
             "berichte/modul-1d-testbericht.md:13 (Ergebnis)"
           ],
-          "hinweis": "Die Vorgabe-Adresse im Dialog ist http://localhost:5013 (HKAP im Betrieb); die HKAP-Änderungen sind noch nicht ausgeliefert, nur die Testkopie kennt die Austauschstelle."
+          "hinweis": "Die Vorgabe-Adresse im Dialog ist http://localhost:5013 (HKAP im Betrieb); die HKAP-Änderungen sind noch nicht ausgeliefert, nur die Testkopie kennt die Austauschstelle. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-abgleich",
@@ -3836,9 +4363,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-hkap.js:451",
-            "src/Hlks.Web/OBERFLAECHE.md:219 (Verwalten › HKAP)"
+            "src/Hlks.Web/OBERFLAECHE.md:220 (Verwalten › HKAP)"
           ],
-          "hinweis": "Nur mit laufender HKAP-Testkopie prüfbar."
+          "hinweis": "Nur mit laufender HKAP-Testkopie prüfbar. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-konflikte",
@@ -3867,10 +4394,10 @@
             "zustand": "Konflikt-Tabelle mit zwei Zeilen, bei einer «KICAD» gewählt"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:223 (Verwalten › HKAP)",
+            "src/Hlks.Web/OBERFLAECHE.md:224 (Verwalten › HKAP)",
             "berichte/modul-1d-testbericht.md:18 (Ergebnis)"
           ],
-          "hinweis": "Ein Konflikt entsteht nur, wenn derselbe Wert beidseitig geändert wurde; der Browsertest erzeugt ihn mit einer eingespielten Antwort."
+          "hinweis": "Ein Konflikt entsteht nur, wenn derselbe Wert beidseitig geändert wurde; der Browsertest erzeugt ihn mit einer eingespielten Antwort. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-uebernehmen",
@@ -3900,10 +4427,10 @@
             "zustand": "Ergebniskasten nach der Übernahme mit Tabelle der Änderungen"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:232 (Verwalten › HKAP)",
+            "src/Hlks.Web/OBERFLAECHE.md:233 (Verwalten › HKAP)",
             "berichte/modul-1d-testbericht.md:15 (Ergebnis)"
           ],
-          "hinweis": "Testkopie: 6 Geschosse und 121 Räume. Neue Geschosse bekommen eine Platzhalter-Höhe von 3000 mm mit Hinweis (HKAP kennt keine Höhe)."
+          "hinweis": "Testkopie: 6 Geschosse und 121 Räume. Neue Geschosse bekommen eine Platzhalter-Höhe von 3000 mm mit Hinweis (HKAP kennt keine Höhe). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-senden",
@@ -3933,10 +4460,10 @@
             "zustand": "Ergebniskasten mit «Vorschau (Trockenlauf – nichts wurde geändert)» und Knopf «Jetzt senden»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:232 (Verwalten › HKAP)",
+            "src/Hlks.Web/OBERFLAECHE.md:233 (Verwalten › HKAP)",
             "berichte/modul-1d-testbericht.md:16 (Ergebnis)"
           ],
-          "hinweis": "Nur gegen die HKAP-Testkopie; HKAP führt Anforderungen, KICAD führt Lage, Fläche und Höhe."
+          "hinweis": "Nur gegen die HKAP-Testkopie; HKAP führt Anforderungen, KICAD führt Lage, Fläche und Höhe. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-befunde",
@@ -3969,7 +4496,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-hkap.js:455",
             "berichte/modul-1d-testbericht.md:17 (Ergebnis)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-nicht-platziert",
@@ -3998,8 +4525,8 @@
             "zustand": "Ast «Nicht platzierte Räume (n)» aufgeklappt mit Kontextmenü"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:241 (Verwalten › HKAP)",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:401"
+            "src/Hlks.Web/OBERFLAECHE.md:242 (Verwalten › HKAP)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:402"
           ],
           "hinweis": ""
         },
@@ -4062,7 +4589,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-hkap.js:461"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m1d-plankopf",
@@ -4128,8 +4655,8 @@
             "zustand": "Ast Familien mit einer geladenen Testfamilie (Marke Entwurf) und dem Knoten Katalog"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:360",
-            "src/Hlks.Web/OBERFLAECHE.md:444 (Familien (Modul 2, C1))"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:361",
+            "src/Hlks.Web/OBERFLAECHE.md:445 (Familien (Modul 2, C1))"
           ],
           "hinweis": "Das Beispielprojekt hat anfangs keine Familie; die mitgelieferte Bibliothek kataloge/familien existiert im Stand bd513c0 nicht."
         },
@@ -4161,9 +4688,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:112",
-            "src/Hlks.Web/OBERFLAECHE.md:445 (Familien (Modul 2, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:446 (Familien (Modul 2, C1))"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m2-familie-laden",
@@ -4195,7 +4722,7 @@
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:160",
             "src/Hlks.Web/wwwroot/js/familien/bibliothek-dialoge.js:248"
           ],
-          "hinweis": "fiktive Testfamilie, alle Werte erfunden (keine Herstellerwerte). Eine mitgelieferte Bibliothek kataloge/familien gibt es nicht; die Testfamilien liegen unter tests/daten/familien."
+          "hinweis": "fiktive Testfamilie, alle Werte erfunden (keine Herstellerwerte). Eine mitgelieferte Bibliothek kataloge/familien gibt es nicht; die Testfamilien liegen unter tests/daten/familien. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m2-editor-oeffnen",
@@ -4289,7 +4816,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:33",
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:34",
-            "src/Hlks.Web/OBERFLAECHE.md:430 (Familien (Modul 2, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:431 (Familien (Modul 2, C1))"
           ],
           "hinweis": "fiktive Testfamilie, alle Werte erfunden (keine Herstellerwerte)."
         },
@@ -4355,7 +4882,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:44",
-            "src/Hlks.Web/OBERFLAECHE.md:433 (Familien (Modul 2, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:434 (Familien (Modul 2, C1))"
           ],
           "hinweis": "Platzhaltermasse sind keine Herstellerwerte; echte Masse kommen aus der Unterlage."
         },
@@ -4517,7 +5044,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:87",
-            "src/Hlks.Web/OBERFLAECHE.md:448 (Familien (Modul 2, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:449 (Familien (Modul 2, C1))",
             "berichte/modul-2-testbericht.md:14 (Ergebnis)"
           ],
           "hinweis": "fiktive Testfamilie, alle Werte erfunden (keine Herstellerwerte). Die Anschlusslagen stammen aus dem Browsertest; der Typname ist der der Testfamilie, bitte in der Liste nachsehen."
@@ -4551,8 +5078,8 @@
             "zustand": "Platziertes Element mit Gruppe Familie und Gruppe Anschlüsse"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:51",
-            "src/Hlks.Web/OBERFLAECHE.md:452 (Familien (Modul 2, C1))"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:52",
+            "src/Hlks.Web/OBERFLAECHE.md:453 (Familien (Modul 2, C1))"
           ],
           "hinweis": ""
         },
@@ -4586,9 +5113,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-unterlagen.js:36",
-            "src/Hlks.Web/OBERFLAECHE.md:483 (Familie aus Unterlagen (Modul 2, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:484 (Familie aus Unterlagen (Modul 2, C2))"
           ],
-          "hinweis": "Echte Datenblätter von Christian liegen lokal unter %USERPROFILE%\\HLKS_CAD_testdaten\\familien\\. Der KI-Lauf läuft über Christians Claude-Abo und dauert 4–9 Minuten."
+          "hinweis": "Echte Datenblätter von Christian liegen lokal unter %USERPROFILE%\\HLKS_CAD_testdaten\\familien\\. Der KI-Lauf läuft über Christians Claude-Abo und dauert 4–9 Minuten. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m2-ki-lauf",
@@ -4618,10 +5145,10 @@
             "zustand": "Schritt 2 während des Laufs (Attrappe des Browsertests) mit Protokollzeilen und Knopf «KI-Lauf abbrechen»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:484 (Familie aus Unterlagen (Modul 2, C2))",
+            "src/Hlks.Web/OBERFLAECHE.md:485 (Familie aus Unterlagen (Modul 2, C2))",
             "berichte/modul-2-testbericht.md:32 (Abnahmeläufe)"
           ],
-          "hinweis": "Nicht im Alltag wiederholen (Abo-Fenster, mehrere Minuten); das Bild lässt sich mit der Attrappe des Browsertests familie-unterlagen herstellen."
+          "hinweis": "Nicht im Alltag wiederholen (Abo-Fenster, mehrere Minuten); das Bild lässt sich mit der Attrappe des Browsertests familie-unterlagen herstellen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m2-pruefansicht",
@@ -4651,7 +5178,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-unterlagen.js:46",
-            "src/Hlks.Web/OBERFLAECHE.md:486 (Familie aus Unterlagen (Modul 2, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:487 (Familie aus Unterlagen (Modul 2, C2))"
           ],
           "hinweis": ""
         },
@@ -4683,7 +5210,7 @@
             "zustand": "Konfliktliste mit zwei Fundstellen (PDF Seite 3, CSV) und hervorgehobenem Vorschlag"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:486 (Prüfansicht)",
+            "src/Hlks.Web/OBERFLAECHE.md:487 (Prüfansicht)",
             "berichte/modul-2-testbericht.md:16 (Ergebnis)"
           ],
           "hinweis": ""
@@ -4714,7 +5241,7 @@
             "zustand": "Abdeckungstabelle mit gelber Zelle und Knopf «Wert bestätigen»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:486 (Prüfansicht)"
+            "src/Hlks.Web/OBERFLAECHE.md:487 (Prüfansicht)"
           ],
           "hinweis": ""
         },
@@ -4745,7 +5272,7 @@
             "zustand": "Abschnitt Massvergleich mit Zählung und ein Kontrollbild"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:486 (Prüfansicht)",
+            "src/Hlks.Web/OBERFLAECHE.md:487 (Prüfansicht)",
             "berichte/modul-2-testbericht.md:17 (Ergebnis)"
           ],
           "hinweis": ""
@@ -4776,8 +5303,8 @@
             "zustand": "Freigabebereich mit aktivem Knopf «Freigeben» und Feld «In Bibliothek speichern»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:486 (Prüfansicht)",
-            "src/Hlks.Web/OBERFLAECHE.md:522 (Familienbibliothek)"
+            "src/Hlks.Web/OBERFLAECHE.md:487 (Prüfansicht)",
+            "src/Hlks.Web/OBERFLAECHE.md:523 (Familienbibliothek)"
           ],
           "hinweis": "Schreibt auf W: (Familienbibliothek) – nur mit Bedacht ausprobieren."
         },
@@ -4810,7 +5337,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-unterlagen.js:51",
-            "src/Hlks.Web/OBERFLAECHE.md:488 (Familie aus Unterlagen (Modul 2, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:489 (Familie aus Unterlagen (Modul 2, C2))"
           ],
           "hinweis": ""
         },
@@ -4840,9 +5367,9 @@
             "zustand": "Ausschnitt einer PDF-Tabellenzelle mit rot markierter Box"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:487 (Familie aus Unterlagen (Modul 2, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:488 (Familie aus Unterlagen (Modul 2, C2))"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         }
       ]
     },
@@ -4921,7 +5448,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:24",
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung.js:4",
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung.browser.mjs:255",
-            "src/Hlks.Web/OBERFLAECHE.md:613 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:614 (Leitungen zeichnen (Modul 3, C1))"
           ],
           "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Esc verwirft zuerst die laufende Leitung (wie Revit), erst ein zweites Esc beendet das Werkzeug; Rückschritt nimmt den letzten Punkt zurück; Rechtsklick beendet. Nur im Grundriss."
         },
@@ -4957,7 +5484,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:24",
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung.browser.mjs:297",
-            "src/Hlks.Web/OBERFLAECHE.md:609 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:610 (Leitungen zeichnen (Modul 3, C1))"
           ],
           "hinweis": ""
         },
@@ -4990,7 +5517,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:24",
-            "src/Hlks.Web/OBERFLAECHE.md:611 (Leitungen zeichnen (Modul 3, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:612 (Leitungen zeichnen (Modul 3, C1))",
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung.browser.mjs:348"
           ],
           "hinweis": "Die Höhenwerte sind frei gewählte Testwerte."
@@ -5025,7 +5552,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:24",
-            "src/Hlks.Web/OBERFLAECHE.md:620 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:621 (Leitungen zeichnen (Modul 3, C1))"
           ],
           "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Waagrechte Anschlussachse: die erste Gerade rastet darauf; zeigt sie senkrecht (Heizkörper nach unten), zuerst die Höhe ändern (H)."
         },
@@ -5058,7 +5585,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:24",
-            "src/Hlks.Web/OBERFLAECHE.md:629 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:630 (Leitungen zeichnen (Modul 3, C1))"
           ],
           "hinweis": "Altbestand (Leitung ohne Serie) lässt sich nicht abzweigen; zuerst «Aufteilen mit Serie …»."
         },
@@ -5156,7 +5683,7 @@
             "zustand": "Gewähltes Rohr mit Griffen an den Enden und am Knick"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:633 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:634 (Leitungen zeichnen (Modul 3, C1))"
           ],
           "hinweis": "Formteile folgen einer verschobenen Leitung nicht (Hinweis «Ende folgt», Prüfliste 21)."
         },
@@ -5188,7 +5715,7 @@
             "zustand": "Palette mit Gruppe «Leitung» und Rückfrage «Ganzer Leitungszug»"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:636 (Leitungen zeichnen (Modul 3, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:637 (Leitungen zeichnen (Modul 3, C1))",
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung-palette.js:1"
           ],
           "hinweis": ""
@@ -5222,9 +5749,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-leitung.js:52",
-            "src/Hlks.Web/OBERFLAECHE.md:638 (Leitungen zeichnen (Modul 3, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:639 (Leitungen zeichnen (Modul 3, C1))"
           ],
-          "hinweis": "Das Kontextregister zeigt die Gruppe «Leitung» bei jeder Auswahl, ausgegraut mit Hinweis (Befund 5 in OBERFLAECHE.md)."
+          "hinweis": "Das Kontextregister zeigt die Gruppe «Leitung» bei jeder Auswahl, ausgegraut mit Hinweis (Befund 5 in OBERFLAECHE.md). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3-materialliste",
@@ -5286,7 +5813,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/editor-leitung.js:61",
-            "src/Hlks.Web/OBERFLAECHE.md:663 (Leitungsserie im Familieneditor (Modul 3, C3))"
+            "src/Hlks.Web/OBERFLAECHE.md:664 (Leitungsserie im Familieneditor (Modul 3, C3))"
           ],
           "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Die Werte (Grössen, Aussendurchmesser) trägt der Mensch aus der Herstellerunterlage ein; die Vorlage hat keine Zahlen."
         },
@@ -5318,9 +5845,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js:112",
-            "src/Hlks.Web/OBERFLAECHE.md:660 (Leitungsserie im Familieneditor)"
+            "src/Hlks.Web/OBERFLAECHE.md:661 (Leitungsserie im Familieneditor)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3-schema-anlegen",
@@ -5350,9 +5877,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:78",
-            "src/Hlks.Web/OBERFLAECHE.md:574 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:575 (Schema (Modul 3, C2))"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3-schema-ansehen",
@@ -5383,7 +5910,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/ansichten/schema.js:10",
-            "src/Hlks.Web/OBERFLAECHE.md:542 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:543 (Schema (Modul 3, C2))"
           ],
           "hinweis": "Das Banner nennt auch Hinweise, die zum Beispielprojekt gehören (z. B. Leitungen ohne Serie, P18)."
         },
@@ -5415,7 +5942,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:134",
-            "src/Hlks.Web/OBERFLAECHE.md:551 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:552 (Schema (Modul 3, C2))"
           ],
           "hinweis": ""
         },
@@ -5482,7 +6009,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:102",
-            "src/Hlks.Web/OBERFLAECHE.md:560 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:561 (Schema (Modul 3, C2))"
           ],
           "hinweis": ""
         },
@@ -5546,7 +6073,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:122",
-            "src/Hlks.Web/OBERFLAECHE.md:553 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:554 (Schema (Modul 3, C2))"
           ],
           "hinweis": ""
         },
@@ -5579,7 +6106,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:174",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-schema.js:209",
-            "src/Hlks.Web/OBERFLAECHE.md:567 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:568 (Schema (Modul 3, C2))"
           ],
           "hinweis": ""
         },
@@ -5641,7 +6168,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:89",
-            "src/Hlks.Web/OBERFLAECHE.md:576 (Schema (Modul 3, C2))"
+            "src/Hlks.Web/OBERFLAECHE.md:577 (Schema (Modul 3, C2))"
           ],
           "hinweis": "Auf A2 sind Titel und Geschossnamen links abgeschnitten (offener Befund im Testbericht 3)."
         },
@@ -5674,7 +6201,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:146",
             "berichte/modul-3-testbericht.md:22 (Ergebnis)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3-hkap-straenge",
@@ -5702,10 +6229,10 @@
             "zustand": "Abschnitt Stränge mit gebündeltem Heizungsstrang"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:226 (Verwalten › HKAP)",
+            "src/Hlks.Web/OBERFLAECHE.md:227 (Verwalten › HKAP)",
             "berichte/modul-3-testbericht.md:20 (Ergebnis)"
           ],
-          "hinweis": "Nur gegen die Testkopie; die HKAP-Änderung ist nicht ausgeliefert. Ein Strang von Hand zuordnen kennt nur MCP."
+          "hinweis": "Nur gegen die Testkopie; die HKAP-Änderung ist nicht ausgeliefert. Ein Strang von Hand zuordnen kennt nur MCP. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         }
       ]
     },
@@ -5713,7 +6240,7 @@
       "id": "m3b",
       "titel": "Kollision und Aussparungen",
       "modul": "3b",
-      "einleitung": "Kollisionen zwischen Leitungen, Architektur und Tragwerk prüfen (mit Status über mehrere Prüfläufe), Aussparungen und Kernbohrungen vorschlagen, zusammenfassen, nummerieren und als Plan, Liste, IFC und BCF ausgeben. Alles im eigenen Register «Koordination» mit angedockter Palette. Alle Projektvorgaben sind ohne eingebaute Werte; Bernstrasse 42 wird mit dem Abnahmeskript lokal aufgebaut (%USERPROFILE%\\HLKS_CAD_build\\abnahme3b).",
+      "einleitung": "Kollisionen zwischen Leitungen, Architektur und Tragwerk prüfen (mit Status über mehrere Prüfläufe), Aussparungen und Kernbohrungen vorschlagen, zusammenfassen, nummerieren und als Plan, Liste, IFC und BCF ausgeben. Alles im eigenen Register «Koordination» mit der Palette «Koordination» (Vorgabe unten angedockt, seit W1 lösbar und verschiebbar). Alle Projektvorgaben sind ohne eingebaute Werte; Bernstrasse 42 wird mit dem Abnahmeskript lokal aufgebaut (%USERPROFILE%\\HLKS_CAD_build\\abnahme3b).",
       "funktionen": [
         {
           "id": "m3b-register",
@@ -5779,10 +6306,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:41",
-            "src/Hlks.Web/OBERFLAECHE.md:703 (Koordination (Modul 3b, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:704 (Koordination (Modul 3b, C1))",
             "berichte/modul-3b-testbericht.md:145 (Prüfliste)"
           ],
-          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Widerspruch: Spezifikation und Testbericht 3b Prüfliste 3 nennen «Grenze Kernbohrung»; sie entfiel mit Entscheid 19.10.2026 (Kernbohrungen wählt nur ein Mensch)."
+          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Widerspruch: Spezifikation und Testbericht 3b Prüfliste 3 nennen «Grenze Kernbohrung»; sie entfiel mit Entscheid 19.10.2026 (Kernbohrungen wählt nur ein Mensch). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-typenliste",
@@ -5813,9 +6340,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:48",
-            "src/Hlks.Web/OBERFLAECHE.md:746 (Koordination, Nachtrag C1c)"
+            "src/Hlks.Web/OBERFLAECHE.md:747 (Koordination, Nachtrag C1c)"
           ],
-          "hinweis": "Im Beispielprojekt gibt es kaum unbekannte Typen; sinnvoll nur mit dem IFC von Bernstrasse (Material oft im Typnamen). Die Zuordnung ist eine fachliche Entscheidung Christians."
+          "hinweis": "Im Beispielprojekt gibt es kaum unbekannte Typen; sinnvoll nur mit dem IFC von Bernstrasse (Material oft im Typnamen). Die Zuordnung ist eine fachliche Entscheidung Christians. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-kollisionen-pruefen",
@@ -5848,10 +6375,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:55",
-            "src/Hlks.Web/OBERFLAECHE.md:708 (Koordination (Modul 3b, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:709 (Koordination (Modul 3b, C1))",
             "src/Hlks.Web/wwwroot/js/oberflaeche/koordination.browser.mjs:348"
           ],
-          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Bernstrasse (Abnahme, Vorgaben FIKTIV): 2964 harte Kollisionen in rund 32 s."
+          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Bernstrasse (Abnahme, Vorgaben FIKTIV): 2964 harte Kollisionen in rund 32 s. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-kollisionsliste",
@@ -5870,12 +6397,14 @@
             "«In 3D zeigen» klicken.",
             "In den Einzelheiten auf einen Beteiligten klicken."
           ],
-          "erwartung": "Die Palette «Koordination» liegt angedockt unter der Ansichtsfläche (nicht modal, Höhe am oberen Rand ziehbar, ✕ schliesst). Reiter «Kollisionen» mit Filtern Status (alle vorgewählt), Art, Typ, Geschoss, Element; Kopfzeile mit Zahlen und letztem Prüflauf; Tabelle Kollision, Art, Typ, Status, Mass, Geschoss, Beteiligte, Kommentar. Ein Klick springt in den Grundriss des Geschosses, zoomt auf die Lage (±1.5 m) und wählt die Kollision.",
+          "erwartung": "Die Palette «Koordination» ist eine Palette der Palettenverwaltung: Vorgabe unten angedockt unter der Ansichtsfläche (nicht modal, Höhe am oberen Rand ziehbar, ✕ am Palettenkopf schliesst); sie lässt sich auch lösen (schwebend), links oder rechts andocken oder mit anderen Paletten als Reiter legen. Reiter «Kollisionen» mit Filtern Status (alle vorgewählt), Art, Typ, Geschoss, Element; Kopfzeile mit Zahlen und letztem Prüflauf; Tabelle Kollision, Art, Typ, Status, Mass, Geschoss, Beteiligte, Kommentar. Ein Klick springt in den Grundriss des Geschosses, zoomt auf die Lage (±1.5 m) und wählt die Kollision.",
           "pruefpunkte": [
             "Palette schiebt die Ansichten nach oben, überdeckt nichts.",
             "Filter schränken die Zeilen ein.",
             "Klick zoomt im Grundriss.",
-            "In 3D zeigen öffnet 3D und wählt die Kollision."
+            "In 3D zeigen öffnet 3D und wählt die Kollision.",
+            "Das ✕ am Palettenkopf schliesst die Palette; erneut geöffnet steht sie an der zuletzt gewählten Stelle.",
+            "Am Kopf ziehen löst die Palette (schwebend), unten ist der Platz wieder frei."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -5885,7 +6414,8 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:59",
             "src/Hlks.Web/wwwroot/js/oberflaeche/koordination-panel.js:1",
-            "src/Hlks.Web/OBERFLAECHE.md:711 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:712 (Koordination (Modul 3b, C1))",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/koordination-panel.js:104"
           ],
           "hinweis": "Die 3D-Ansicht hat keine Funktion «auf Element zoomen»; «In 3D zeigen» wählt nur. Auch Doppelklick auf eine Kollision im Projektbrowser (Gliederung Koordination) springt."
         },
@@ -5918,7 +6448,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/koordination-panel.js:3",
-            "src/Hlks.Web/OBERFLAECHE.md:713 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:714 (Koordination (Modul 3b, C1))"
           ],
           "hinweis": ""
         },
@@ -5951,9 +6481,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:66",
-            "src/Hlks.Web/OBERFLAECHE.md:720 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:721 (Koordination (Modul 3b, C1))"
           ],
-          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Kernbohrungen entstehen nie automatisch (siehe Form). Eine Wand ohne Material kann «Material unbekannt» ergeben."
+          "hinweis": "Alle Vorgabewerte der Testläufe sind FIKTIV (Quelle «FIKTIV»); echte Werte mit Quelle liefert nur Christian (Prüfliste 3b, Teil A). Kernbohrungen entstehen nie automatisch (siehe Form). Eine Wand ohne Material kann «Material unbekannt» ergeben. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-aus-nummerieren",
@@ -5984,7 +6514,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:70"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-aus-liste",
@@ -5994,7 +6524,7 @@
             "gruppe": "Aussparungen",
             "knopf": "Aussparungsliste",
             "kuerzel": "",
-            "sonst": ""
+            "sonst": "dieselbe Palette «Koordination», Reiter «Aussparungen»"
           },
           "schritte": [
             "Register Koordination › Aussparungen › «Aussparungsliste» klicken (Reiter «Aussparungen»).",
@@ -6014,7 +6544,8 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:75",
-            "src/Hlks.Web/OBERFLAECHE.md:714 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:715 (Koordination (Modul 3b, C1))",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/koordination-panel.js:104"
           ],
           "hinweis": ""
         },
@@ -6046,7 +6577,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/koordination-panel.js:3",
-            "src/Hlks.Web/OBERFLAECHE.md:714 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:715 (Koordination (Modul 3b, C1))"
           ],
           "hinweis": ""
         },
@@ -6080,7 +6611,7 @@
             "zustand": "Beispielprojekt, Testrohrserie (fiktiv, DN 50) geladen, drei Rohre T-1 (x 3000), T-2 (x 6000), T-3 (x 3120) von y −1000 bis y +1000 auf Höhe 1000 quer durch die Südwand W-EG-S gezeichnet (Rohr-Werkzeug PI), Projektvorgaben gesetzt; Vorschau «rechteckig → rund Ø …» mit den Knöpfen Ausführen/Abbrechen"
           },
           "quelle": [
-            "src/Hlks.Web/OBERFLAECHE.md:716 (Koordination (Modul 3b, C1))",
+            "src/Hlks.Web/OBERFLAECHE.md:717 (Koordination (Modul 3b, C1))",
             "berichte/modul-3b-testbericht.md:162 (Prüfliste)"
           ],
           "hinweis": "Mit dem Testrohr Ø 55: die Ø-Werte der Vorschau sind gerechnet; eine Bohrkronenreihe gibt es noch nicht (Prüfliste 11)."
@@ -6114,7 +6645,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:79",
             "berichte/modul-3b-testbericht.md:36 (Ergebnis)"
           ],
-          "hinweis": "Nur durch Tests belegt: keine zweite Architekten-Fassung mit Durchbrüchen vorhanden (Testbericht 3b, offener Punkt 3)."
+          "hinweis": "Nur durch Tests belegt: keine zweite Architekten-Fassung mit Durchbrüchen vorhanden (Testbericht 3b, offener Punkt 3). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-aus-plan",
@@ -6145,7 +6676,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:84",
-            "src/Hlks.Web/OBERFLAECHE.md:723 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:724 (Koordination (Modul 3b, C1))"
           ],
           "hinweis": "Die Plannummer gibt der Mensch ein bzw. bestätigt sie. Darstellung der Symbole: Annahme (Prüfliste 7, 8)."
         },
@@ -6180,7 +6711,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:89",
             "berichte/modul-3b-testbericht.md:35 (Ergebnis)"
           ],
-          "hinweis": "Der Dateipfad wird eingetippt (ein Datei-Dialog des Browsers kennt den Pfad nicht). Das Standard-Pset Pset_ProvisionForVoid ist noch nicht ergänzt; ausgegeben wird das Pset «KICAD_Aussparung» (Prüfliste 20)."
+          "hinweis": "Der Dateipfad wird eingetippt (ein Datei-Dialog des Browsers kennt den Pfad nicht). Das Standard-Pset Pset_ProvisionForVoid ist noch nicht ergänzt; ausgegeben wird das Pset «KICAD_Aussparung» (Prüfliste 20). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-bcf-export",
@@ -6211,9 +6742,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:98",
-            "src/Hlks.Web/OBERFLAECHE.md:728 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:729 (Koordination (Modul 3b, C1))"
           ],
-          "hinweis": "Bernstrasse: 2964 Topics. BCF 2.1 lesen ist offen (Prüfliste 19)."
+          "hinweis": "Bernstrasse: 2964 Topics. BCF 2.1 lesen ist offen (Prüfliste 19). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-bcf-import",
@@ -6244,9 +6775,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:103",
-            "src/Hlks.Web/OBERFLAECHE.md:730 (Koordination (Modul 3b, C1))"
+            "src/Hlks.Web/OBERFLAECHE.md:731 (Koordination (Modul 3b, C1))"
           ],
-          "hinweis": "Eine Rückmeldung des Architekten baut der Browsertest von Hand aus dem Export (Zip)."
+          "hinweis": "Eine Rückmeldung des Architekten baut der Browsertest von Hand aus dem Export (Zip). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "m3b-gliederung",
@@ -6276,7 +6807,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser-gliederung.js:51",
-            "src/Hlks.Web/OBERFLAECHE.md:901 (Projektbrowser: umschaltbare Gliederung)"
+            "src/Hlks.Web/OBERFLAECHE.md:902 (Projektbrowser: umschaltbare Gliederung)"
           ],
           "hinweis": "Widerspruch: Die Spezifikation nennt unter Koordination «Unterlagen (IFC, BCF)»; der Code zeigt nur IFC-Unterlagen (art ifc)."
         },
@@ -6481,10 +7012,10 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-bibliothek.js:26",
-            "src/Hlks.Web/OBERFLAECHE.md:514 (Familienbibliothek (Modul 2, C3))",
+            "src/Hlks.Web/OBERFLAECHE.md:515 (Familienbibliothek (Modul 2, C3))",
             "entwurf/modul-2-bibliothek.md:19 (Entscheide)"
           ],
-          "hinweis": "Die Bibliothek liegt unter W:\\03_CAD Bibliotheken\\d_KICAD Familien (kataloge/buero.json); die Auswahl gilt je Projekt für alle, die daran arbeiten. Ohne NAS bleibt alles im Projekt möglich. Menüband und Dialog schreiben «Familien im Explorer» ohne «…», Kontextmenüs mit."
+          "hinweis": "Die Bibliothek liegt unter W:\\03_CAD Bibliotheken\\d_KICAD Familien (kataloge/buero.json); die Auswahl gilt je Projekt für alle, die daran arbeiten. Ohne NAS bleibt alles im Projekt möglich. Menüband und Dialog schreiben «Familien im Explorer» ohne «…», Kontextmenüs mit. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-bib-marken",
@@ -6514,7 +7045,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/browser-knoten.js:1",
-            "src/Hlks.Web/OBERFLAECHE.md:512 (Familienbibliothek (Modul 2, C3))"
+            "src/Hlks.Web/OBERFLAECHE.md:513 (Familienbibliothek (Modul 2, C3))"
           ],
           "hinweis": ""
         },
@@ -6579,9 +7110,9 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/aktionen-bibliothek.js:35",
-            "src/Hlks.Web/OBERFLAECHE.md:516 (Familienbibliothek (Modul 2, C3))"
+            "src/Hlks.Web/OBERFLAECHE.md:517 (Familienbibliothek (Modul 2, C3))"
           ],
-          "hinweis": "Nur prüfbar, wenn dieselbe Familie in zwei Projekten geändert wurde (Browsertest bibliothek.browser.mjs baut das mit einem zweiten Projekt auf)."
+          "hinweis": "Nur prüfbar, wenn dieselbe Familie in zwei Projekten geändert wurde (Browsertest bibliothek.browser.mjs baut das mit einem zweiten Projekt auf). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-bib-status",
@@ -6611,7 +7142,7 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/familien/bibliothek-dialoge.js:274",
-            "src/Hlks.Web/OBERFLAECHE.md:520 (Familienbibliothek (Modul 2, C3))"
+            "src/Hlks.Web/OBERFLAECHE.md:521 (Familienbibliothek (Modul 2, C3))"
           ],
           "hinweis": ""
         },
@@ -6643,7 +7174,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-serienpdf.js:17",
             "entwurf/serien-pdf.md:41 (Oberfläche)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-plansaetze",
@@ -6674,7 +7205,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:64",
             "entwurf/serien-pdf.md:16 (Entscheide)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-abwaehlen",
@@ -6706,7 +7237,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:79",
             "entwurf/serien-pdf.md:17 (Entscheide)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-gewerk",
@@ -6738,7 +7269,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-serienpdf.js:24",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-serienpdf.js:42"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-ausgabe",
@@ -6772,7 +7303,7 @@
             "entwurf/serien-pdf.md:35 (Befehle und Abfragen)",
             "entwurf/serien-pdf.md:14 (Entscheide)"
           ],
-          "hinweis": "Zum Ausprobieren den Ordner unter %TEMP% lassen; auf W: nur nach Absprache schreiben."
+          "hinweis": "Zum Ausprobieren den Ordner unter %TEMP% lassen; auf W: nur nach Absprache schreiben. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-exportieren",
@@ -6805,7 +7336,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:343",
             "entwurf/serien-pdf.md:57 (Fertig, wenn)"
           ],
-          "hinweis": "Blätter ohne Ansicht nennt das Ergebnis in den Hinweisen (Spezifikation)."
+          "hinweis": "Blätter ohne Ansicht nennt das Ergebnis in den Hinweisen (Spezifikation). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-eigener-satz",
@@ -6836,7 +7367,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:290"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-spdf-browser",
@@ -6864,8 +7395,8 @@
             "zustand": "Ast Pläne mit drei Gewerkgruppen und Kontextmenü auf einem Planblatt"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:293",
-            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:363"
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:294",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:364"
           ],
           "hinweis": ""
         },
@@ -6897,7 +7428,7 @@
             "entwurf/serien-pdf.md:23 (Datenmodell)",
             "entwurf/serien-pdf.md:57 (Fertig, wenn)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "zb-rohr-abwasser",
