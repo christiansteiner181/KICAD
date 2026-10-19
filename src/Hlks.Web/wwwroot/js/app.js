@@ -17,6 +17,7 @@ import * as startbildschirm from './oberflaeche/startbildschirm.js';
 import * as vorschau from './oberflaeche/vorschau.js';
 import * as paletten from './oberflaeche/paletten.js';
 import { designEinrichten } from './oberflaeche/design.js';
+import { symbolstilEinrichten } from './oberflaeche/symbolstil-umschalten.js';
 
 async function start() {
   if (zweitfenster.istZweitfenster()) zweitfensterKopf();   // vor allem anderen: Modus «nur Ansicht» (W2)
@@ -25,6 +26,7 @@ async function start() {
   fenster.einrichten();
   menueband.einrichten(document.getElementById('menueband'), document.getElementById('optionsleiste'), document.getElementById('schnellzugriff'));
   hilfe.einrichten();   // Hilfe-Symbol «?» in der Kopfleiste und F1 (Bedienungsanleitung); nach dem Kopf des Zweitfensters
+  symbolstilEinrichten();   // Symbolsatz (Teil S): Benutzereinstellung «oberflaeche.symbole» lesen, bei «revit» die Symbole tauschen (nicht warten)
   statusleiste.einrichten(document.getElementById('statusleiste'));
   kuerzel.einrichten();
   verbinden();

@@ -1,0 +1,98 @@
+/* Symbole im Revit-Stil (Teil S, entwurf/menueband-revit.md): Farben der mehrfarbigen Symbole aus js/oberflaeche/symbole-revit.js.
+   Die Symbole tragen keine festen Farben, nur Klassen; hier stehen die Werte, getrennt für hell (:root) und dunkel (:root[data-design="dunkel"]).
+   Eigene Zeichnungen, keine Grafiken aus Revit. Medienfarben wie in kataloge/medien.json (Heizung Vorlauf rot, Rücklauf blau, Sanitär grün,
+   Abwasser braun, Luft: Zuluft rot, Abluft gelb, Aussenluft grün); im dunklen Design etwas heller.
+   Klassen (Füllung f…, Linie s…):  f1 f2 f3 hellste/mittlere/dunkle Fläche eines Bauteils · fp Papier · fb fl Blau voll/hell · fr Rot (Löschen) · fy fo Gelb/Orange
+   fk Kontur gefüllt · fW Weiss · fvl frl Heizung Vorlauf/Rücklauf · fsa Sanitär · fab Abwasser · fzu fal fau Zuluft/Abluft/Aussenluft;
+   Linie: sb sr sy so sW sk s1 s2 s3 sowie svl srl ssa sab szu sal sau.  Formen: n (ohne Kontur) · t (Schriftzeichen) · w15 w2 w3 w4 w6 Linienstärke · dd dt dp gestrichelt/Strich-Punkt · op halbtransparent · eo evenodd. */
+
+:root {
+  --sy-kontur: #444d5a;
+  --sy-g1: #f1f3f6;
+  --sy-g2: #d3d9e0;
+  --sy-g3: #aeb6c1;
+  --sy-papier: #ffffff;
+  --sy-blau: #2a6fc4;
+  --sy-blau-hell: #bcd7f4;
+  --sy-rot: #d13438;
+  --sy-gelb: #f7c948;
+  --sy-orange: #ec8419;
+  --sy-heiz-vl: #d0312d;
+  --sy-heiz-rl: #1f5fbf;
+  --sy-sanitaer: #2e8b3a;
+  --sy-abwasser: #8b5a2b;
+  --sy-luft-zu: #d0312d;
+  --sy-luft-ab: #c9a400;
+  --sy-luft-aussen: #2e8b3a;
+  --sy-weiss: #ffffff;
+}
+:root[data-design="dunkel"] {
+  --sy-kontur: #dbe1ea;
+  --sy-g1: #a9b3c1;
+  --sy-g2: #85919f;
+  --sy-g3: #626e7d;
+  --sy-papier: #66738a;
+  --sy-blau: #5aa9ff;
+  --sy-blau-hell: #3a6794;
+  --sy-rot: #ff6b66;
+  --sy-gelb: #f5c84c;
+  --sy-orange: #ff9a3d;
+  --sy-heiz-vl: #ff5a52;
+  --sy-heiz-rl: #5b9dff;
+  --sy-sanitaer: #49c463;
+  --sy-abwasser: #c98f56;
+  --sy-luft-zu: #ff5a52;
+  --sy-luft-ab: #e8c43a;
+  --sy-luft-aussen: #49c463;
+  --sy-weiss: #ffffff;
+}
+
+svg.sym-rv { fill: none; stroke: var(--sy-kontur); stroke-width: 1; stroke-linecap: round; stroke-linejoin: round; }
+svg.sym-rv .n { stroke: none; }
+svg.sym-rv .t { fill: var(--sy-kontur); stroke: none; }
+svg.sym-rv .eo { fill-rule: evenodd; }
+svg.sym-rv .w15 { stroke-width: 1.5; }
+svg.sym-rv .w2 { stroke-width: 2; }
+svg.sym-rv .w3 { stroke-width: 3; }
+svg.sym-rv .w4 { stroke-width: 4; }
+svg.sym-rv .w6 { stroke-width: 6; }
+svg.sym-rv .dp { stroke-dasharray: 4 1.5 1 1.5; }
+svg.sym-rv .dd { stroke-dasharray: 3 2; }
+svg.sym-rv .dt { stroke-dasharray: 1.5 1.5; }
+svg.sym-rv .op { opacity: .55; }
+
+svg.sym-rv .f1 { fill: var(--sy-g1); }
+svg.sym-rv .f2 { fill: var(--sy-g2); }
+svg.sym-rv .f3 { fill: var(--sy-g3); }
+svg.sym-rv .fp { fill: var(--sy-papier); }
+svg.sym-rv .fk { fill: var(--sy-kontur); }
+svg.sym-rv .fb { fill: var(--sy-blau); }
+svg.sym-rv .fl { fill: var(--sy-blau-hell); }
+svg.sym-rv .fr { fill: var(--sy-rot); }
+svg.sym-rv .fy { fill: var(--sy-gelb); }
+svg.sym-rv .fo { fill: var(--sy-orange); }
+svg.sym-rv .fW { fill: var(--sy-weiss); }
+svg.sym-rv .fvl { fill: var(--sy-heiz-vl); }
+svg.sym-rv .frl { fill: var(--sy-heiz-rl); }
+svg.sym-rv .fsa { fill: var(--sy-sanitaer); }
+svg.sym-rv .fab { fill: var(--sy-abwasser); }
+svg.sym-rv .fzu { fill: var(--sy-luft-zu); }
+svg.sym-rv .fal { fill: var(--sy-luft-ab); }
+svg.sym-rv .fau { fill: var(--sy-luft-aussen); }
+
+svg.sym-rv .sk { stroke: var(--sy-kontur); }
+svg.sym-rv .s1 { stroke: var(--sy-g1); }
+svg.sym-rv .s2 { stroke: var(--sy-g2); }
+svg.sym-rv .s3 { stroke: var(--sy-g3); }
+svg.sym-rv .sb { stroke: var(--sy-blau); }
+svg.sym-rv .sr { stroke: var(--sy-rot); }
+svg.sym-rv .sy { stroke: var(--sy-gelb); }
+svg.sym-rv .so { stroke: var(--sy-orange); }
+svg.sym-rv .sW { stroke: var(--sy-weiss); }
+svg.sym-rv .svl { stroke: var(--sy-heiz-vl); }
+svg.sym-rv .srl { stroke: var(--sy-heiz-rl); }
+svg.sym-rv .ssa { stroke: var(--sy-sanitaer); }
+svg.sym-rv .sab { stroke: var(--sy-abwasser); }
+svg.sym-rv .szu { stroke: var(--sy-luft-zu); }
+svg.sym-rv .sal { stroke: var(--sy-luft-ab); }
+svg.sym-rv .sau { stroke: var(--sy-luft-aussen); }
