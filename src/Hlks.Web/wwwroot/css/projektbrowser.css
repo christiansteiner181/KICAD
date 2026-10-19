@@ -23,7 +23,20 @@
 .pb-gl-eintrag .pb-sym { color: var(--text); display: grid; flex: none; }
 .pb-gl-eintrag:hover { background: var(--ob-hover-tief); }
 .pb-gl-eintrag.aktiv .pb-gl-name { font-weight: 600; }
-.pb-gl-eintrag.aktiv::after { content: '✓'; margin-left: auto; padding-left: 12px; color: var(--akzent); }
+.pb-gl-eintrag:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--akzent); }
+/* Häkchenfeld vor jedem Eintrag (G2: mehrere Gliederungen zugleich wählbar) */
+.pb-gl-haken { flex: none; display: grid; place-items: center; width: 14px; height: 14px; box-sizing: border-box; border: 1px solid var(--text-leise); border-radius: 2px; background: var(--eingabe, var(--flaeche-hell)); color: transparent; font-size: 11px; line-height: 1; }
+.pb-gl-haken::after { content: '✓'; }
+.pb-gl-eintrag.aktiv .pb-gl-haken { border-color: var(--akzent); background: var(--akzent); color: #fff; }
+.pb-gl-eintrag:hover .pb-gl-haken { border-color: var(--text); }
+
+/* Auswahlfeld mit mehreren Gliederungen: neutral, links ein Streifen mit einem Abschnitt je Koordinationsfarbe der gewählten Gewerke */
+.pb-gl-knopf.pb-mehrere { position: relative; padding-left: 10px; }
+.pb-gl-knopf.pb-mehrere::before { content: ''; position: absolute; left: 0; top: 0; bottom: 0; width: 4px; background: var(--gw-streifen, var(--akzent)); }
+
+/* Kopf eines Blocks (mehrere Gliederungen zugleich): fett, damit die Blöcke untereinander klar getrennt sind */
+.pb-zeile[data-quelle="block"] { font-weight: 600; }
+.pb-zeile[data-quelle="block"] .pb-zahl { font-weight: 400; }
 
 /* Hinterlegung des Gewerks */
 .pb-gewerk { background: var(--gw-pastell); box-shadow: inset 4px 0 0 var(--gw-kord); color: var(--text); }

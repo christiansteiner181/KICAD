@@ -8,7 +8,7 @@ import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import { readFileSync } from 'node:fs';
 import * as G from './projektbrowser-gliederung.js';
-import { baumBauen } from './projektbrowser-aeste.js';
+import { baumBauen, baumBauenListe } from './projektbrowser-aeste.js';
 
 const datei = (n) => new URL(n, import.meta.url);
 const lies = (n) => readFileSync(datei(n), 'utf8');
@@ -640,4 +640,245 @@ test('Verdrahtung: Projektbrowser nutzt Tabelle, Äste, Benutzereinstellungen un
 test('Server und Oberfläche: gleicher Schlüssel, gleiche Kennungen wie im Server-Test', () => {
   assert.equal(G.EINSTELLUNG_GLIEDERUNG, 'projektbrowser.gliederung');
   for (const id of ['gebaeude', 'sanitaer', 'heizung', 'lueftung', 'koordination', 'energie']) assert.ok(G.gliederungGueltig(id), id);
+});
+
+// ================================================================================================ G2: mehrere Gliederungen zugleich
+
+const FACH = ['sanitaer', 'heizung', 'lueftung', 'koordination', 'energie'];
+/** Alle Teilmengen der Fachgliederungen mit mindestens zwei Einträgen (in Listenreihenfolge). */
+const kombinationen = () => { const l = []; for (let m = 1; m < 1 << FACH.length; m++) { const k = FACH.filter((_, i) => m & (1 << i)); if (k.length > 1) l.push(k); } return l; };
+const mehrere = (ids, c = ctxMitDaten()) => baumBauenListe(G.gliederungenNormieren(ids).map((i) => def(i)), c);
+
+test('G2 Wert: ein alter Einzelwert gilt als Liste mit einem Eintrag; Listen werden in Reihenfolge der Tabelle gebracht', () => {
+  assert.deepEqual(G.gliederungenNormieren('sanitaer'), ['sanitaer'], 'alter Einzelwert');
+  assert.deepEqual(G.gliederungenNormieren(['sanitaer']), ['sanitaer']);
+  assert.deepEqual(G.gliederungenNormieren(['heizung', 'sanitaer']), ['sanitaer', 'heizung'], 'Reihenfolge der Liste, nicht der Wahl');
+  assert.deepEqual(G.gliederungenNormieren(['energie', 'lueftung', 'heizung', 'sanitaer', 'koordination']), FACH);
+  assert.deepEqual(G.gliederungenNormieren(['sanitaer', 'sanitaer', 'gibtsnicht']), ['sanitaer'], 'Doppelte und Unbekannte entfallen');
+  for (const leer of [undefined, null, '', [], ['gibtsnicht'], 'gibtsnicht', 42]) assert.deepEqual(G.gliederungenNormieren(leer), ['gebaeude'], 'Vorgabe bei ' + JSON.stringify(leer));
+  assert.deepEqual(G.gliederungenNormieren('gebaeude'), ['gebaeude']);
+});
+
+test('G2 Wert: «Gebäude» ist exklusiv – neben anderen entfällt es; mindestens eine bleibt gewählt', () => {
+  assert.deepEqual(G.gliederungenNormieren(['gebaeude', 'sanitaer']), ['sanitaer']);
+  assert.deepEqual(G.gliederungenNormieren(['gebaeude', 'sanitaer', 'heizung']), ['sanitaer', 'heizung']);
+  assert.equal(def('gebaeude').exklusiv, true);
+  assert.ok(G.GLIEDERUNGEN.filter((g) => g.id !== 'gebaeude').every((g) => !g.exklusiv));
+});
+
+test('G2 Umschalten: Häkchen setzen und entfernen; Gebäude ersetzt alles; Fachgliederung hebt Gebäude auf; das letzte Häkchen bleibt', () => {
+  let w = ['gebaeude'];
+  w = G.gliederungUmschalten(w, 'sanitaer'); assert.deepEqual(w, ['sanitaer'], 'Sanitär hebt Gebäude auf');
+  w = G.gliederungUmschalten(w, 'heizung'); assert.deepEqual(w, ['sanitaer', 'heizung']);
+  w = G.gliederungUmschalten(w, 'lueftung'); assert.deepEqual(w, ['sanitaer', 'heizung', 'lueftung']);
+  w = G.gliederungUmschalten(w, 'heizung'); assert.deepEqual(w, ['sanitaer', 'lueftung'], 'Häkchen entfernen');
+  w = G.gliederungUmschalten(w, 'koordination'); assert.deepEqual(w, ['sanitaer', 'lueftung', 'koordination'], 'in Listenreihenfolge, nicht in der Reihenfolge des Klickens');
+  w = G.gliederungUmschalten(w, 'gebaeude'); assert.deepEqual(w, ['gebaeude'], 'Gebäude hebt die übrigen auf');
+  w = G.gliederungUmschalten(w, 'gebaeude'); assert.deepEqual(w, ['gebaeude'], 'Gebäude lässt sich nicht abwählen');
+  w = G.gliederungUmschalten(['sanitaer'], 'sanitaer'); assert.deepEqual(w, ['sanitaer'], 'das letzte Häkchen bleibt');
+  assert.deepEqual(G.gliederungUmschalten(['sanitaer'], 'gibtsnicht'), ['sanitaer'], 'unbekannte Kennung ignoriert');
+  assert.deepEqual(G.gliederungUmschalten('heizung', 'sanitaer'), ['sanitaer', 'heizung'], 'auch ein alter Einzelwert als Ausgang');
+  assert.deepEqual(G.gliederungUmschalten(['sanitaer', 'heizung'], 'sanitaer'), ['heizung']);
+});
+
+test('G2 Anzeige im Feld: «Sanitär», «Sanitär + Heizung», bei mehr als zwei «Sanitär + 2»', () => {
+  assert.equal(G.gliederungAnzeige(['gebaeude']), 'Gebäude');
+  assert.equal(G.gliederungAnzeige(['sanitaer']), 'Sanitär');
+  assert.equal(G.gliederungAnzeige(['sanitaer', 'heizung']), 'Sanitär + Heizung');
+  assert.equal(G.gliederungAnzeige(['sanitaer', 'heizung', 'lueftung']), 'Sanitär + 2');
+  assert.equal(G.gliederungAnzeige(FACH), 'Sanitär + 4');
+  assert.equal(G.gliederungAnzeige(['heizung', 'energie']), 'Heizung + Energie und Umwelt');
+});
+
+test('G2 Aufklappzustand: eine Gliederung unter ihrer Kennung, mehrere unter «mehrere»; Gleichheit von Listen', () => {
+  assert.equal(G.offenKennung(['sanitaer']), 'sanitaer');
+  assert.equal(G.offenKennung(['sanitaer', 'heizung']), 'mehrere');
+  assert.equal(G.offenSchluessel(G.offenKennung(['sanitaer', 'heizung'])), 'browserOffen.mehrere');
+  assert.ok(G.gleicheListe(['a', 'b'], ['a', 'b']) && !G.gleicheListe(['a'], ['a', 'b']) && !G.gleicheListe(['a', 'b'], ['b', 'a']));
+});
+
+test('G2 Blöcke: Sanitär + Heizung als zwei Blöcke untereinander, dann Gemeinsames einmal, dann «Weitere»', () => {
+  const w = mehrere(['heizung', 'sanitaer']);
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Heizung', 'Räume', 'Weitere'], 'Listenreihenfolge, «Räume» einmal nach den Blöcken');
+  assert.deepEqual(w.map((k) => k.key), ['b:sanitaer', 'b:heizung', 'w:gebaeude', 'x:weitere']);
+  assert.deepEqual(w.slice(0, 2).map((k) => k.gewerk), ['sanitaer', 'heizung'], 'Kopf in der Gewerkfarbe');
+  assert.ok(w.slice(0, 2).every((k) => k.art === 'ast' && k.quelle === 'block' && k.anfangsOffen));
+  assert.deepEqual(w[0].kinder.map((k) => k.label), ['Ansichten', 'Pläne', 'Anlagen', 'Familien'], 'darunter die Fachäste wie bei einer einzelnen Gliederung');
+  assert.deepEqual(w[1].kinder.map((k) => k.label), ['Ansichten', 'Pläne', 'Anlagen', 'Familien']);
+  assert.equal(w[2].gewerk, undefined, '«Räume» ist ungefärbt');
+  assert.equal(w[3].gewerk, undefined);
+});
+
+test('G2 Blöcke: je Block dieselben Elemente wie in der einzelnen Gliederung', () => {
+  const c = ctxMitDaten();
+  const w = mehrere(['sanitaer', 'heizung'], c);
+  for (const id of ['sanitaer', 'heizung']) {
+    const einzeln = baum(id, c);
+    const block = suche(w, 'b:' + id);
+    for (const ast of ['w:ansichten', 'w:plaene', 'w:systeme', 'w:familien']) {
+      const e = suche(einzeln, ast), b = suche(block.kinder, `b:${id}:${ast}`);
+      assert.ok(b, `${id} ${ast}`);
+      assert.deepEqual(kzs(b), kzs(e), `${id} ${ast}`);
+      assert.equal(b.zahl, e.zahl, `${id} ${ast}: Zahl`);
+      assert.equal(b.gewerk, id, `${id} ${ast}: Farbe`);
+    }
+    assert.ok(block.kinder.every((k) => k.key.startsWith(`b:${id}:`)), 'Schlüssel mit der Kennung des Blocks');
+    assert.equal(block.zahl, block.kinder.reduce((s, k) => s + G.blattZahl(k), 0), 'Zahl am Kopf = Summe der Blätter');
+  }
+});
+
+test('G2 Blöcke: eine Ansicht mit Sanitär und Heizung steht in beiden Blöcken, sonst steht kein Element doppelt', () => {
+  const w = mehrere(['sanitaer', 'heizung']);
+  const inBlock = (id) => kzs(suche(w, 'b:' + id));
+  assert.ok(inBlock('sanitaer').includes('AN-MULTI') && inBlock('heizung').includes('AN-MULTI'), 'AN-MULTI gehört zu beiden Gewerken');
+  const doppelt = inBlock('sanitaer').filter((k) => inBlock('heizung').includes(k));
+  assert.deepEqual(doppelt, ['AN-MULTI'], 'als Blatt steht nur die Ansicht mit beiden Gewerken in beiden Blöcken (die gemischte Anlage unten)');
+  const amix = (id) => suche(w, 'b:' + id).kinder.find((k) => k.key.endsWith('w:systeme')).kinder.find((k) => k.kz === 'A-MIX').kinder.map((s) => s.kz);
+  assert.deepEqual(amix('sanitaer'), ['MIX-WW'], 'von der gemischten Anlage in jedem Block nur das eigene System');
+  assert.deepEqual(amix('heizung'), ['MIX-HZ']);
+});
+
+test('G2 Blöcke: doppelte Elemente in allen Kombinationen nur bei echter Mehrfachzugehörigkeit zu den Gewerken beider Blöcke', () => {
+  const c = ctxMitDaten();
+  for (const ids of kombinationen()) {
+    const w = mehrere(ids, c);
+    const wo = new Map();   // Kennzeichen → Blöcke, in denen das Element steht
+    for (const b of w.filter((k) => k.quelle === 'block')) for (const k of G.blaetter(b)) { if (!k.kz || k.art === 'ansichtsfenster') continue; wo.set(k.kz, [...(wo.get(k.kz) ?? []), b.key.slice(2)]); }
+    for (const [kz, bloecke] of wo) {
+      if (bloecke.length < 2) continue;
+      const e = c.element(kz);
+      assert.ok(e, `${ids}: ${kz}`);
+      assert.ok(['Ansicht', 'Planblatt'].includes(e.klasse), `${ids}: ${kz} (${e.klasse}) steht in ${bloecke} – nur Ansichten und Pläne dürfen zu mehreren Gewerken gehören`);
+      const m = e.klasse === 'Ansicht' ? G.MERKMALE.ansichten(c, e) : G.MERKMALE.plaene(c, e);
+      for (const id of bloecke) {
+        const ast = def(id).aeste.find((a) => a.quelle === (e.klasse === 'Ansicht' ? 'ansichten' : 'plaene'));
+        assert.ok(G.passt(ast.auswahl, m, def(id)), `${ids}: ${kz} passt nicht zur Auswahl von ${id}`);
+      }
+    }
+  }
+});
+
+test('G2 Summe: in jeder Kombination ist die Summe aller Elemente die von «Gebäude» – nichts geht verloren, nichts kommt dazu', () => {
+  const c = ctxMitDaten();
+  const gebaeude = G.elementMenge(baumBauenListe([def('gebaeude')], c));
+  for (const ids of kombinationen()) {
+    const m = elementeOhneZusatz(mehrere(ids, c));
+    assert.deepEqual([...gebaeude].filter((x) => !m.has(x)), [], `${ids}: fehlt gegenüber «Gebäude»`);
+    assert.deepEqual([...m].filter((x) => !gebaeude.has(x)), [], `${ids}: zusätzlich gegenüber «Gebäude»`);
+  }
+  // auch ohne Daten
+  const leer = ctxVon([], { plansaetze: null, familien: [], bibliothek: [] });
+  const g0 = G.elementMenge(baumBauenListe([def('gebaeude')], leer));
+  for (const ids of kombinationen()) assert.deepEqual([...elementeOhneZusatz(mehrere(ids, leer))].sort(), [...g0].sort(), 'ohne Daten ' + ids);
+});
+
+test('G2 «Weitere» enthält nur, was in keinem gewählten Block vorkommt', () => {
+  const c = ctxMitDaten();
+  for (const ids of kombinationen()) {
+    const w = mehrere(ids, c);
+    const weitere = w.find((k) => k.key === 'x:weitere');
+    const oben = new Set(G.blaetter({ kinder: w.filter((k) => k.key !== 'x:weitere'), art: 'ast' }).map(G.identitaet));   // Blätter: eine Anlage mit Systemen mehrerer Gewerke darf geteilt stehen, ihre Systeme nicht
+    for (const x of G.blaetter(weitere ?? { art: 'ast' }).map(G.identitaet)) assert.ok(!oben.has(x), `${ids}: ${x} steht oben und unter «Weitere»`);
+    // die Gewerke der gewählten Gliederungen haben unter «Weitere» keine Gruppe mehr
+    const gruppen = (weitere?.kinder ?? []).filter((k) => k.key.startsWith('x:gw:')).map((k) => k.gewerk);
+    for (const id of ids) assert.ok(!gruppen.includes(def(id).gewerk), `${ids}: Gruppe ${id} unter «Weitere»`);
+  }
+  // Sanitär + Heizung: die Lüftung steht unter «Weitere», die gemischte Anlage ist mit beiden Systemen oben und nicht noch einmal unten
+  const w = mehrere(['sanitaer', 'heizung'], c);
+  const weitere = suche(w, 'x:weitere');
+  assert.deepEqual(weitere.kinder.filter((k) => k.key.startsWith('x:gw:')).map((k) => k.label), ['Lüftung', 'Architektur', 'Koordination', 'Ohne Gewerk']);
+  assert.ok(!kzs(weitere).includes('MIX-HZ') && !kzs(weitere).includes('MIX-WW') && !kzs(weitere).includes('AN-MULTI'));
+  assert.equal(weitere.zahl, G.blattZahl(weitere));
+});
+
+test('G2 «Weitere» im leeren Projekt: nur der Katalog bleibt übrig', () => {
+  const w = mehrere(['sanitaer', 'heizung'], ctxVon([], { plansaetze: null, familien: [], bibliothek: [] }));
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Heizung', 'Räume', 'Weitere']);
+  assert.deepEqual(suche(w, 'x:weitere').kinder.map((k) => k.label), ['Katalog']);
+});
+
+test('G2 Gemeinsames: «Räume» einmal nach den Blöcken, wenn mehrere Blöcke es haben; Energie und Umwelt teilt sich seine Gebäude-Zeile mit ihnen', () => {
+  for (const ids of [['sanitaer', 'heizung'], ['sanitaer', 'heizung', 'lueftung'], ['heizung', 'energie'], ['sanitaer', 'energie'], ['lueftung', 'koordination']]) {
+    const w = mehrere(ids);
+    assert.equal(w.filter((k) => k.key === 'w:gebaeude').length, 1, ids + ': ein gemeinsamer Ast «Räume»');
+    assert.equal(w.find((k) => k.key === 'w:gebaeude').label, 'Räume');
+    assert.equal(w.find((k) => k.key === 'w:gebaeude').gewerk, undefined);
+    const alle = []; const lauf = (k) => { alle.push(k.key); (k.kinder ?? []).forEach(lauf); }; w.forEach(lauf);
+    assert.deepEqual(alle.filter((k, i) => alle.indexOf(k) !== i), [], ids + ': kein Schlüssel doppelt');
+    assert.equal(w.findIndex((k) => k.key === 'w:gebaeude'), ids.length, ids + ': gleich nach den Blöcken');
+    for (const b of w.filter((k) => k.quelle === 'block')) assert.ok(!b.kinder.some((k) => k.key.endsWith('w:gebaeude')), `${ids}: ${b.key} hat «Räume» nicht noch einmal`);
+  }
+  // Energie und Umwelt allein mit Koordination: hier hat nur Energie einen Gebäude-Ast (in Farbe) – er bleibt im Block
+  const ke = mehrere(['koordination', 'energie']);
+  assert.deepEqual(ke.map((k) => k.label), ['Koordination', 'Energie und Umwelt', 'Weitere']);
+  assert.deepEqual(suche(ke, 'b:energie').kinder.map((k) => k.label), ['Hülle', 'Gebäude', 'Ansichten']);
+});
+
+test('G2 Koordination als Block: Kollisionen, Aussparungen und Typenliste stehen im Block, die Fachäste der anderen Blöcke daneben', () => {
+  const w = mehrere(['sanitaer', 'koordination']);
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Koordination', 'Räume', 'Weitere']);
+  const ko = suche(w, 'b:koordination');
+  assert.deepEqual(ko.kinder.map((k) => k.label), ['Kollisionen', 'Aussparungen', 'Typenliste', 'Unterlagen', 'Pläne', 'Ansichten']);
+  assert.equal(suche(ko.kinder, 'b:koordination:w:kollisionen').kontext, 'kollisionen', 'Kontext bleibt für das Kontextmenü');
+  assert.equal(suche(ko.kinder, 'b:koordination:w:kollisionen').zahl, 3);
+  assert.deepEqual(kzs(suche(ko.kinder, 'b:koordination:w:unterlagen')), ['UL-IFC']);
+  // die Pläne: PB-AUS (Aussparungsansicht) und PB-K nur bei Koordination, PB-S nur bei Sanitär
+  assert.deepEqual(plaene(suche(w, 'b:koordination:w:plaene')), ['PB-AUS', 'PB-K']);
+  assert.deepEqual(plaene(suche(w, 'b:sanitaer:w:plaene')), ['PB-S']);
+});
+
+test('G2 Schlüssel sind in jeder Kombination eindeutig; Elemente behalten ihren Ursprungsschlüssel für die Auswahl', () => {
+  for (const ids of kombinationen()) {
+    const alle = [];
+    const lauf = (k) => { alle.push(k.key); (k.kinder ?? []).forEach(lauf); };
+    mehrere(ids).forEach(lauf);
+    assert.deepEqual(alle.filter((k, i) => alle.indexOf(k) !== i), [], ids.join('+'));
+  }
+  const an = G.blaetter(suche(mehrere(['sanitaer', 'heizung']), 'b:heizung:w:ansichten')).find((k) => k.kz === 'AN-MULTI');
+  assert.match(an.key, /^b:heizung:e:/);
+  assert.match(G.identitaet(an), /^e:/, 'identitaet ohne Block-Präfix: so erkennt man dasselbe Element in zwei Blöcken');
+});
+
+test('G2 Eine Gliederung in der Liste ergibt denselben Baum wie bisher; «Gebäude» exklusiv ergibt die acht Äste', () => {
+  const c = ctxMitDaten();
+  for (const g of G.GLIEDERUNGEN) assert.deepEqual(baumBauenListe([g], c), baumBauen(g, c), g.id);
+  assert.deepEqual(mehrere(['gebaeude', 'sanitaer'], c).map((k) => k.key), baum('sanitaer', c).map((k) => k.key), 'Gebäude neben Sanitär entfällt');
+  assert.deepEqual(mehrere(['gebaeude'], c).map((k) => k.key), baum('gebaeude', c).map((k) => k.key));
+  assert.equal(mehrere(['gebaeude'], c).length, 8);
+});
+
+test('G2 Alle fünf Fachgliederungen: fünf Blöcke in Listenreihenfolge, danach Räume und Weitere', () => {
+  const w = mehrere(FACH);
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Heizung', 'Lüftung', 'Koordination', 'Energie und Umwelt', 'Räume', 'Weitere']);
+  assert.deepEqual(w.slice(0, 5).map((k) => k.gewerk), ['sanitaer', 'heizung', 'lueftung', 'koordination', 'energie']);
+  const weitere = suche(w, 'x:weitere');
+  assert.ok(!weitere.kinder.some((k) => k.key.startsWith('x:gw:heizung')), 'die gewählten Gewerke haben keine Gruppe unter «Weitere»');
+});
+
+test('G2 Suche durchsucht alle Blöcke und «Weitere» und behält Treffer mit ihren Vorfahren', () => {
+  const w = mehrere(['sanitaer', 'heizung']);
+  const t = w.map((k) => G.filtern(k, 'an-multi')).filter(Boolean);
+  assert.deepEqual(t.map((k) => k.key), ['b:sanitaer', 'b:heizung'], 'AN-MULTI steht in beiden Blöcken');
+  assert.deepEqual(kzs(t[0]), ['AN-MULTI']);
+  const l = w.map((k) => G.filtern(k, 'an-l')).filter(Boolean);   // AN-L (Lüftung) liegt unter «Weitere»
+  assert.ok(l.some((k) => k.key === 'x:weitere'));
+  assert.ok(G.astSchluessel(t).has('b:sanitaer') && G.astSchluessel(t).has('b:heizung'), 'die Köpfe der Blöcke klappen für die Treffer auf');
+});
+
+test('G2 Erweiterbar: eine weitere Fachgliederung (Kälte) lässt sich mit den anderen zu Blöcken kombinieren', () => {
+  const kaelte = { id: 'kaelte', titel: 'Kälte', sym: 'rohr', gewerk: 'kaelte', aeste: [
+    { quelle: 'ansichten', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'systeme', titel: 'Anlagen', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'gebaeude', titel: 'Räume' }] };
+  const tabelle = [...G.GLIEDERUNGEN, kaelte];
+  assert.deepEqual(G.gliederungenNormieren(['kaelte', 'sanitaer'], tabelle), ['sanitaer', 'kaelte']);
+  assert.deepEqual(G.gliederungUmschalten(['sanitaer'], 'kaelte', tabelle), ['sanitaer', 'kaelte']);
+  const w = baumBauenListe([def('sanitaer'), kaelte], ctxMitDaten());
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Kälte', 'Räume', 'Weitere']);
+});
+
+test('G2 Verdrahtung: Wert als Liste im Browser, Server nimmt Listen an', () => {
+  const pb = lies('projektbrowser.js');
+  for (const s of ['gliederungUmschalten', 'gliederungenNormieren', 'gliederungAnzeige', 'baumBauenListe', 'aria-multiselectable']) assert.ok(pb.includes(s), s);
+  assert.match(pb, /benutzerSetzen\(EINSTELLUNG_GLIEDERUNG, \[\.\.\.ids\]\)/, 'gespeichert wird die Liste');
+  const cs = lies('../../../BenutzerEinstellungen.cs');
+  assert.ok(cs.includes('JsonArray'), 'der Server prüft Listen');
 });

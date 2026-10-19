@@ -21,7 +21,7 @@ import { familienAst as familienAstBauen } from '../familien/browser-knoten.js';
 import { statusText, paarText, KOLLISION_STATUS, AUSSPARUNG_STATUS } from './koordination-text.js';
 import {
   MERKMALE, QUELLEN_NACH_GEWERK, QUELLEN_REIHE, astPasst, restPasst, weitereQuellen, klassenGewerk, systemGewerk, gewerkGruppen, blattGewerk,
-  gewerkTitel, gewerkeSortiert, praefix, blattZahl,
+  gewerkTitel, gewerkeSortiert, praefix, blattZahl, blaetter, aufteilen,
 } from './projektbrowser-gliederung.js';
 
 const lc = (t) => String(t ?? '').toLowerCase();
@@ -344,4 +344,29 @@ export function baumBauen(def, ctx) {
   const haupt = def.aeste.map((a) => hauptAst(def, a, ctx));
   const w = weitere(def, ctx);
   return w ? [...haupt, w] : haupt;
+}
+
+// ---------------------------------------------------------------------------------------------- Mehrere Gliederungen zugleich (G2)
+
+const blattZahlOhneHinweis = (k) => blaetter(k).filter((x) => x.art !== 'hinweis').length;
+
+/** Der Kopf eines Blocks: Name und Farbe des Gewerks, darunter seine Fachäste (Schlüssel mit der Kennung des Blocks, damit gleichnamige Äste zweier Blöcke nicht kollidieren).
+ *  anfangsOffen: Kopf und Äste sind aufgeklappt, bis der Benutzer etwas anderes entscheidet. */
+function blockKnoten(def, aeste, ctx) {
+  const p = `b:${def.id}:`;
+  const kinder = aeste.map((a) => ({ ...praefix(hauptAst(def, a, ctx), p), anfangsOffen: true }));
+  return { key: `b:${def.id}`, label: def.titel, kinder, zahl: kinder.reduce((s, k) => s + blattZahlOhneHinweis(k), 0), sym: def.sym, art: 'ast', gewerk: def.gewerk ?? undefined, quelle: 'block',
+    anfangsOffen: true, tipp: `${def.titel}: Fachinhalt dieser Gliederung` };
+}
+
+/** Die Wurzelknoten für die gewählten Gliederungen (Liste von Tabelleneinträgen in Listenreihenfolge): eine Gliederung wie `baumBauen`; mehrere als Blöcke untereinander
+ *  (Kopf in der Gewerkfarbe, darunter die Fachäste), danach das Gemeinsame einmal (z. B. «Räume»), zuletzt «Weitere» mit dem, was in keinem Block vorkommt.
+ *  Ein Element steht nur dann in mehreren Blöcken, wenn es zu beiden Gewerken gehört (seine Merkmale passen zur Auswahl beider Blöcke). */
+export function baumBauenListe(defs, ctx) {
+  if (defs.length <= 1) return baumBauen(defs[0], ctx);
+  const t = aufteilen(defs);
+  const bloecke = t.bloecke.filter((b) => b.aeste.length > 0).map((b) => blockKnoten(b.def, b.aeste, ctx));
+  const gemeinsam = t.gemeinsam.map((a) => ({ ...hauptAst(defs[0], a, ctx), anfangsOffen: true }));
+  const w = weitere(t.gesamt, ctx);
+  return w ? [...bloecke, ...gemeinsam, w] : [...bloecke, ...gemeinsam];
 }
