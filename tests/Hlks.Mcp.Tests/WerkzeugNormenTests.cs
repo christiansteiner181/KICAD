@@ -115,6 +115,16 @@ public sealed class KontextBildTests : IDisposable
     }
 
     [Fact]
+    public void OhneProjektkontext_MitInternet_NieEinBild()
+    {
+        // Modul 3c, Entscheid Hauptlauf 20.10.2026: mit Internet kein Projektkontext (MCP-Server mit --ohne-projektkontext)
+        var r = new SitzungWerkzeuge(new KontextBild(Datei("a.png", Png), OhneProjektkontext: true)).KontextBildZeigen();
+        Assert.NotEqual(true, r.IsError);
+        Assert.Empty(r.Content.OfType<ImageContentBlock>());
+        Assert.StartsWith("Kein Bild – mit Internet ohne Projektkontext", r.Content.OfType<TextContentBlock>().Single().Text);
+    }
+
+    [Fact]
     public void KeinBildformat_Fehler()
     {
         var r = new SitzungWerkzeuge(new KontextBild(Datei("a.png", "kein Bild"u8.ToArray()))).KontextBildZeigen();

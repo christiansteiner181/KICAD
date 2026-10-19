@@ -985,7 +985,8 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
   `laeuft: true`, `frage` die Id der laufenden Frage und die letzte Nachricht die Antwort im Entstehen (`status: "laeuft"`, Text bis jetzt) – so
   holt ein neu geladenes Fenster den Stand nach und folgt dann den Ereignissen.
 - **Nachricht** Mensch: `{ rolle: "mensch", frage, text, zeit, akteur, kontext: { ansicht?: { kennzeichen, name, art, massstab } | { kennzeichen,
-  gefunden: false }, geschoss?: { kennzeichen, name }, auswahl?: [kz…], bild: bool }, modell, internet, internetHinweis? }`.
+  gefunden: false }, geschoss?: { kennzeichen, name }, auswahl?: [kz…], bild: bool }, modell, internet, internetHinweis?, kontextVerworfen? }`.
+  Mit Internet ist `kontext` immer leer (`{}`) und `kontextVerworfen: true`: der Server hat Ansicht, Geschoss, Auswahl und Bild verworfen.
   Claude: `{ rolle: "claude", frage, status: "laeuft" | "fertig" | "fehler" | "abgebrochen", text, zeit, dauerSekunden, modell, internet, internetHinweis?,
   werkzeuge: [{ id, name, kurz, ok: null | true | false, meldung? }], aenderungen: [Aenderung], fehler?, fehlerart?, sitzungNeu?, abrufe?, runden?, kostenUsd? }`.
   `name` ohne Präfix (z. B. `element_aendern`, `WebSearch`), `kurz` = Eingabe einzeilig (≤ 140 Zeichen), `ok: null` = läuft noch.
@@ -1000,7 +1001,8 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
 - `POST /api/ki/gespraeche/{id}/frage` `{ text, kontext: { ansicht?, geschoss?, auswahl?: [kz…], bild?: "data:image/png;base64,…" }, modell?, internet? }`
   → **202** `{ gespraech, frage, laeuft: true, nachricht: <Mensch> }`. Kennzeichen oder Id gehen; ohne `geschoss` gilt das Geschoss der Ansicht.
   Grenzen (sonst 400): Text 1–8000 Zeichen, `auswahl` ≤ 200 Texte, Bild PNG/JPEG ≤ 4 MB als data-URL, `modell` aus der Liste, `internet` bool
-  (Vorgabe aus; mit `true` arbeitet Claude **ohne Projektzugriff**, siehe unten – Projektfragen ohne Internet stellen). 409 «Claude arbeitet gerade an einer Frage im Gespräch «…»» bzw. «… an dem KI-Auftrag … (Familie aus Unterlagen)», wenn im
+  (Vorgabe aus; mit `true` arbeitet Claude **ohne Projektzugriff und ohne Projektkontext**, siehe unten – Projektfragen ohne Internet stellen;
+  die Palette kann die Kontext-Chips dann ausgrauen, der Server verwirft den Kontext ohnehin). 409 «Claude arbeitet gerade an einer Frage im Gespräch «…»» bzw. «… an dem KI-Auftrag … (Familie aus Unterlagen)», wenn im
   Projekt schon ein KI-Lauf läuft (Gespräch oder Auftrag; `vorschlag` nennt den Abbrechen-Endpunkt). Das Bild liegt nur im Arbeitsordner der KI
   und wird nach der Frage gelöscht; Claude sieht es über das Werkzeug `kontext_bild`.
 - `POST /api/ki/gespraeche/{id}/abbrechen` → 200 mit dem Gespräch (nach dem Ende, höchstens 20 s Wartezeit); 409, wenn nichts läuft.
@@ -1038,7 +1040,14 @@ IFC-Ausgaben, `unterlage_aus_url`). **Mit Internet: ohne Projektzugriff** (Entsc
 erlaubt sind nur WebSearch, `unterlage_aus_url`, `normen_suchen`, `norm_lesen`, `kontext_bild` und die Familien- und Unterlagenwerkzeuge der
 Aufträge (`GespraechDienst.InternetWerkzeuge`); alle anderen Werkzeuge – Projektabfragen und ändernde Projektbefehle – stehen in
 `--disallowedTools`. Claude weiss das (Systemteil) und verweist Projektfragen auf eine Frage ohne Internet. Grund: eingeschleuste Webinhalte sollen
-keine Projektdaten über Suchanfragen oder Abrufe nach aussen tragen können. Neue Werkzeuge: `normen_suchen`, `norm_lesen`, `kontext_bild`. Zeitlimit je Frage 10 min (`HLKS_KI_FRAGE_ZEITLIMIT_MIN`). Ablage `<Projekt>\ki\gespraeche\<id>.json` und `<id>.log`;
+keine Projektdaten über Suchanfragen oder Abrufe nach aussen tragen können. Ebenso geht mit Internet **kein Projektkontext** an Claude (Entscheid
+Hauptlauf 20.10.2026): kein Projektname, kein Ordner, keine Ansicht, kein Geschoss, keine Auswahl, kein Bild – der Server verwirft den Kontext der
+Anfrage selbst (`kontextVerworfen: true`), das Bild wird nicht abgelegt und `kontext_bild` antwortet «Kein Bild – mit Internet ohne
+Projektkontext»; der Systemteil nennt nur «Gespräch in KICAD, ohne Projektzugriff». Eine Frage mit Internet läuft zudem in einer **eigenen
+Claude-Sitzung ohne Verlauf** (die Sitzung des Gesprächs enthält Projektdaten früherer Fragen); die nächste Frage ohne Internet setzt die Sitzung
+des Gesprächs fort, und der Verlauf für eine neue Sitzung lässt Fragen mit Internet aus. In der Palette stehen beide Arten Fragen im selben
+Gespräch; Claude erinnert sich bei einer Frage mit Internet aber nicht an das bisherige Gespräch. Neue Werkzeuge: `normen_suchen`, `norm_lesen`,
+`kontext_bild`. Zeitlimit je Frage 10 min (`HLKS_KI_FRAGE_ZEITLIMIT_MIN`). Ablage `<Projekt>\ki\gespraeche\<id>.json` und `<id>.log`;
 Arbeitsordner von Claude stabil je Projekt unter `%LOCALAPPDATA%\HLKS_CAD\ki\<Kennung>` (Testlauf `%TEMP%\HLKS_CAD\ki_test`), damit `--resume`
 die Sitzung nach einem Neustart findet.
 

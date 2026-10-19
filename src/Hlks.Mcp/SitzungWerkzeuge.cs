@@ -11,8 +11,9 @@ using ModelContextProtocol.Server;
 
 namespace Hlks.Mcp;
 
-/// <summary>Bild der Ansicht zur aktuellen Frage (Pfad aus --kontext-bild; null = kein Bild).</summary>
-public sealed record KontextBild(string? Datei);
+/// <summary>Bild der Ansicht zur aktuellen Frage (Pfad aus --kontext-bild; null = kein Bild). OhneProjektkontext (--ohne-projektkontext):
+/// Frage mit Internet – nie ein Bild (Entscheid Hauptlauf 20.10.2026: mit Internet kein Projektkontext).</summary>
+public sealed record KontextBild(string? Datei, bool OhneProjektkontext = false);
 
 [McpServerToolType]
 public sealed class SitzungWerkzeuge(KontextBild bild)
@@ -26,6 +27,8 @@ public sealed class SitzungWerkzeuge(KontextBild bild)
     public CallToolResult KontextBildZeigen()
     {
         static CallToolResult Text(string t, bool fehler = false) => new() { IsError = fehler, Content = [new TextContentBlock { Text = t }] };
+        if (bild.OhneProjektkontext)
+            return Text("Kein Bild – mit Internet ohne Projektkontext. Fragen zum Plan bzw. zum Projekt ohne Internet stellen.");
         if (string.IsNullOrWhiteSpace(bild.Datei) || !File.Exists(bild.Datei))
             return Text("Kein Bild zur Frage – der Mensch hat kein Bild der Ansicht mitgeschickt. Mit den Abfragen (z. B. projekt_ueberblick, element_lesen) arbeiten.");
         try

@@ -179,6 +179,20 @@ public sealed class GespraechServer : IDisposable
     /// <summary>KI-Ereignisse einer Frage in der Reihenfolge des Eingangs.</summary>
     public List<JsonObject> KiEreignisse(string frage) => Ereignisse.Where(e => Z(e["art"]) == "ki" && Z(e["frage"]) == frage).ToList();
 
+    /// <summary>KI-Ereignisse einer Frage, sobald das abschliessende (fertig, fehler, abgebrochen) angekommen ist – der Strom wird nebenher
+    /// gelesen und kann der Antwort des Servers knapp hinterherlaufen.</summary>
+    public async Task<List<JsonObject>> KiEreignisseBisEnde(string frage, TimeSpan? frist = null)
+    {
+        var uhr = Stopwatch.StartNew();
+        while (uhr.Elapsed < (frist ?? TimeSpan.FromSeconds(15)))
+        {
+            var l = KiEreignisse(frage);
+            if (l.Count > 0 && Z(l[^1]["typ"]) is "fertig" or "fehler" or "abgebrochen") return l;
+            await Task.Delay(50);
+        }
+        return KiEreignisse(frage);
+    }
+
     /// <summary>Wert eines Elements im Modell des Servers (nach dem Abgleich).</summary>
     public async Task<string?> ElementName(string kz) => await Dienst.Mit(p => p.Modell.Finde(kz)?.Name);
 

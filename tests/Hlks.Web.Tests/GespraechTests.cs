@@ -435,7 +435,7 @@ public class GespraechTests
         Assert.Equal("fehler", Z(antwort["status"]));
         Assert.Equal("anmeldung", Z(antwort["fehlerart"]));
         Assert.Contains("nicht angemeldet", Z(antwort["fehler"]));
-        var letztes = s.KiEreignisse(Z(start!["frage"]))[^1];
+        var letztes = (await s.KiEreignisseBisEnde(Z(start!["frage"])))[^1];
         Assert.Equal("fehler", Z(letztes["typ"]));
         Assert.Equal("anmeldung", Z(letztes["fehlerart"]));
         Assert.Equal("fehler", Z(letztes["nachricht"]!["status"]));

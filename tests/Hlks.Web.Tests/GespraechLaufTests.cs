@@ -110,7 +110,7 @@ public class GespraechLaufTests
         Assert.Equal("abgebrochen", Z(antwort["status"]));
         Assert.Equal("abgebrochen", Z(antwort["fehlerart"]));
         foreach (var pid in pids) Assert.True(await TotWarten(pid, TimeSpan.FromSeconds(10)), $"Prozess {pid} läuft noch");
-        var ereignisse = s.KiEreignisse(frage);
+        var ereignisse = await s.KiEreignisseBisEnde(frage);
         Assert.Equal("frage", Z(ereignisse[0]["typ"]));
         Assert.Equal("abgebrochen", Z(ereignisse[^1]["typ"]));
         Assert.Equal("abgebrochen", Z(ereignisse[^1]["nachricht"]!["status"]));
@@ -137,7 +137,7 @@ public class GespraechLaufTests
         Assert.Equal("zeitlimit", Z(antwort["fehlerart"]));
         Assert.Contains("Zeitlimit", Z(antwort["fehler"]));
         Assert.True(await TotWarten(p["mcpPid"]!.GetValue<int>(), TimeSpan.FromSeconds(10)));
-        var letztes = s.KiEreignisse(Z(j!["frage"]))[^1];
+        var letztes = (await s.KiEreignisseBisEnde(Z(j!["frage"])))[^1];
         Assert.Equal("fehler", Z(letztes["typ"]));
         Assert.Equal("zeitlimit", Z(letztes["fehlerart"]));
     }
@@ -152,7 +152,7 @@ public class GespraechLaufTests
         var frage = Z(j!["frage"]);
         var antwort = await s.Warten(id, Lang);
         await Task.Delay(300);
-        var e = s.KiEreignisse(frage);
+        var e = await s.KiEreignisseBisEnde(frage);
         var typen = e.Select(x => Z(x["typ"])).ToList();
 
         Assert.Equal("frage", typen[0]);
@@ -185,7 +185,7 @@ public class GespraechLaufTests
         var id = await s.GespraechAnlegen();
         var (_, j) = await s.Fragen(id, "Zähle [attrappe:langsam]");
         var antwort = await s.Warten(id, Lang);
-        var teile = s.KiEreignisse(Z(j!["frage"])).Where(x => Z(x["typ"]) == "text").Select(x => Z(x["teil"])).ToList();
+        var teile = (await s.KiEreignisseBisEnde(Z(j!["frage"]))).Where(x => Z(x["typ"]) == "text").Select(x => Z(x["teil"])).ToList();
         Assert.True(teile.Count >= 2, $"nur {teile.Count} Teil(e): Text kam nicht gestreamt");   // fünf Teile mit 400 ms Abstand
         Assert.Equal("Eins. Zwei. Drei. Vier. Fünf.", string.Concat(teile));
         Assert.Equal("Eins. Zwei. Drei. Vier. Fünf.", Z(antwort["text"]));
@@ -263,16 +263,78 @@ public class GespraechLaufTests
             Assert.Equal(pakete, new Hlks.Kern.OrdnerSpeicher(s.Ordner).PaketListe().Count);
             Assert.Equal(vorher, await s.ElementName("WT-E.02"));
 
-            // erlaubt bleiben Normen und das Bild der Ansicht
+            // erlaubt bleiben die Normen; kontext_bild ist erlaubt, liefert mit Internet aber nie ein Bild (kein Projektkontext)
             var norm = await s.FragenUndWarten(id, "Gefälle? [attrappe:normen]", internet: true);
             Assert.StartsWith("Treffer: SIA 9999:2026, Seite 3, Ziffer 4.2.1", Z(norm["text"]));
             var bild = await s.FragenUndWarten(id, "Bild? [attrappe:bild]", new JsonObject { ["bild"] = PngUrl }, internet: true);
-            Assert.StartsWith("Bild erhalten: image/png", Z(bild["text"]));
+            Assert.StartsWith("Kein Bild erhalten: Kein Bild – mit Internet ohne Projektkontext", Z(bild["text"]));
 
             // dieselbe Frage ohne Internet liest das Projekt
             var ohne = await s.FragenUndWarten(id, "Wie viele Geschosse? [attrappe:ueberblick]");
             Assert.Equal("Das Projekt hat 3 Geschosse.", Z(ohne["text"]));
         }
         finally { Loeschen(normen); }
+    }
+
+    /// <summary>Entscheid Hauptlauf 20.10.2026: mit Internet geht KEIN Projektkontext an Claude – der Server verwirft Ansicht, Geschoss, Auswahl und
+    /// Bild selbst; der Auftragstext nennt weder Projektname noch Ordner noch Kennzeichen; die Frage läuft in einer eigenen Sitzung ohne Verlauf.</summary>
+    [Fact]
+    public async Task Internet_KeinProjektkontext_ServerVerwirftKontextUndBild_EigeneSitzung()
+    {
+        using var s = new GespraechServer();
+        await s.ProjektOeffnen();
+        var (projektName, ansicht) = await s.Dienst.Mit(p => (p.Kopf.Name, p.Modell.DerKlasse("Ansicht").First(x => x.Text("art") == "grundriss" && x.Geschoss is not null).Kennzeichen));
+        var id = await s.GespraechAnlegen();
+        await s.FragenUndWarten(id, "Erste Frage mit Projekt");                       // Sitzung des Gesprächs (mit Projektzugriff)
+        var sitzung = Z(JsonNode.Parse(File.ReadAllText(s.GespraechDatei(id)))!["sitzung"]);
+        var arbeit = Z(s.AttrappeInfos(id)[0]["arbeitsordner"]);
+
+        var antwort = await s.FragenUndWarten(id, "Datenblatt suchen [attrappe:bild]",
+            new JsonObject { ["ansicht"] = ansicht, ["geschoss"] = "EG", ["auswahl"] = new JsonArray("WT-E.02", "WC-E.02"), ["bild"] = PngUrl }, internet: true);
+
+        var info = s.AttrappeInfos(id)[^1];
+        var prompt = Z(info["prompt"]);
+        Assert.Contains("Kein Projektkontext: Frage mit Internet, ohne Projektzugriff.", prompt);
+        Assert.Contains("in einem Gespräch in KICAD,\nohne Projektzugriff.", prompt);
+        Assert.DoesNotContain("an diesem Projekt", prompt);
+        Assert.DoesNotContain(projektName, prompt);
+        Assert.DoesNotContain(s.Ordner, prompt);
+        Assert.DoesNotContain("e_KICAD", prompt);
+        Assert.DoesNotContain("WT-E.02", prompt);
+        Assert.DoesNotContain(ansicht, prompt);
+        Assert.DoesNotContain("Aktive Ansicht", prompt);
+        Assert.DoesNotContain("Auswahl", prompt);
+        Assert.DoesNotContain("# Bisheriges Gespräch", prompt);
+        Assert.DoesNotContain("Erste Frage mit Projekt", prompt);
+        // eigene Sitzung ohne Verlauf, die Sitzung des Gesprächs bleibt
+        Assert.Null(Schalter(info, "--resume"));
+        Assert.NotEqual(sitzung, Schalter(info, "--session-id"));
+        Assert.Equal(sitzung, Z(JsonNode.Parse(File.ReadAllText(s.GespraechDatei(id)))!["sitzung"]));
+        // Bild verworfen: nicht abgelegt, nicht an den MCP-Server; kontext_bild meldet es
+        var margs = info["mcpKonfiguration"]!["mcpServers"]!["hlks"]!["args"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.DoesNotContain("--kontext-bild", margs);
+        Assert.Contains("--ohne-projektkontext", margs);
+        var bildOrdner = Path.Combine(arbeit, "bild");
+        Assert.True(!Directory.Exists(bildOrdner) || Directory.GetFiles(bildOrdner).Length == 0);
+        Assert.StartsWith("Kein Bild erhalten: Kein Bild – mit Internet ohne Projektkontext", Z(antwort["text"]));
+        // Vermerk in der Mensch-Nachricht, Kontext leer
+        var mensch = (await s.Gespraech(id))["nachrichten"]![2]!;
+        Assert.True(mensch["kontextVerworfen"]!.GetValue<bool>());
+        Assert.Empty(mensch["kontext"]!.AsObject());
+        Assert.Equal("Internet: ohne Projektzugriff", Z(mensch["internetHinweis"]));
+        Assert.Null((await s.Gespraech(id))["nachrichten"]![0]!["kontextVerworfen"]);   // ohne Internet kein Vermerk
+
+        // die nächste Frage ohne Internet setzt die Sitzung des Gesprächs fort
+        await s.FragenUndWarten(id, "Zweite Frage mit Projekt");
+        Assert.Equal(sitzung, Schalter(s.AttrappeInfos(id)[^1], "--resume"));
+        // Verlauf für eine neue Sitzung: ohne die Frage mit Internet und ihre Antwort
+        Directory.Delete(Path.Combine(arbeit, ".attrappe"), true);
+        await s.FragenUndWarten(id, "Dritte Frage mit Projekt");
+        var p3 = Z(s.AttrappeInfos(id)[^1]["prompt"]);
+        Assert.Contains("# Bisheriges Gespräch", p3);
+        Assert.Contains("Erste Frage mit Projekt", p3);
+        Assert.Contains("Zweite Frage mit Projekt", p3);
+        Assert.DoesNotContain("Datenblatt suchen", p3);
+        Assert.DoesNotContain("Kein Bild erhalten", p3);
     }
 }
