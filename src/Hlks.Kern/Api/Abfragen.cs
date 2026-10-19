@@ -60,6 +60,7 @@ public sealed class Abfragen(Projekt p)
         .. KollisionAbfragen.Definitionen,   // Modul 3b: Kollisionen
         .. AussparungAbfragen.Definitionen,   // Modul 3b: Aussparungen
         .. PlansatzAbfragen.Definitionen,   // Serien-PDF: plansaetze, plansatz_pdf
+        .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
     ];
 
     string Kz(string? id) => M.Finde(id)?.Kennzeichen ?? (id is null ? "" : $"?{id}");
@@ -178,6 +179,7 @@ public sealed class Abfragen(Projekt p)
             }
             if (abg.Count > 0) o["abgeleitet"] = abg;
         }
+        SanitaerAbfragen.ElementErgaenzen(p, e, o);   // Modul 4 Teil A: Apparateart mit LU/DU bzw. Belastungssummen der Leitung (abgeleitet)
         if (e.Bezuege.Count > 0) o["bezuege"] = new JsonObject(e.Bezuege.Select(b => KeyValuePair.Create(b.Key, (JsonNode?)Kz(b.Value))));
         if (Netz.IstEndgeraet(K, e)) o["angeschlossenAn"] = Arr(Netz.SystemeVon(M, e).Select(s => s.Kennzeichen));
         var dp = M.DerKlasse("Datenpunkt").Where(d => d.Bezuege.GetValueOrDefault("an") == e.Id).Select(d => d.Kennzeichen).ToList();
@@ -361,6 +363,7 @@ public sealed class Abfragen(Projekt p)
     public JsonObject Warum(string element, string eigenschaft)
     {
         var e = M.Hole(element);
+        if (SanitaerAbfragen.Warum(p, e, eigenschaft) is { } sanitaer) return sanitaer;   // Modul 4 Teil A: luKw, luWw, du, sanitaerArt (Vorgabe), Belastungssummen
         var o = new JsonObject { ["element"] = e.Kennzeichen, ["eigenschaft"] = eigenschaft };
         switch (eigenschaft.ToLowerInvariant())
         {

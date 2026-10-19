@@ -46,6 +46,7 @@ public static class Tuer
                  ?? LeitungenAbfragen.Tuer(p, name, par) ?? SchemaAbfragen.Tuer(p, name, par)   // Modul 3
                  ?? KollisionAbfragen.Tuer(p, name, par) ?? AussparungAbfragen.Tuer(p, name, par)   // Modul 3b
                  ?? PlansatzAbfragen.Tuer(p, name, par)   // Serien-PDF
+                 ?? SanitaerAbfragen.Tuer(p, name, par)   // Modul 4 Teil A
                  ?? throw new HlksFehler($"Abfrage «{name}» gibt es nicht.", "Abfragen: " + string.Join(", ", Abfragen.Liste.Select(x => x.Name))),
         };
     }

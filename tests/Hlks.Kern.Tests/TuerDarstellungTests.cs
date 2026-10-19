@@ -67,6 +67,9 @@ public class TuerDarstellungTests
         ["aussparungen_ifc"] = "{\"datei\":\"" + AussparungIfcDatei() + "\"}",   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt der Test vorher an
         ["plansaetze"] = "{}",                                          // Serien-PDF
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
+        ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
+        ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
+        ["sanitaer_katalog"] = "{}",
     };
 
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');

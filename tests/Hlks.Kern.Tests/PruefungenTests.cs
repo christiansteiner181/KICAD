@@ -160,9 +160,9 @@ public class PruefungenTests
     }
 
     [Fact]
-    public void Codes_EnthaltenGenauP01BisP20()
+    public void Codes_EnthaltenGenauP01BisP25()
     {
-        var erwartet = Enumerable.Range(1, 20).Select(i => $"P{i:D2}").ToList();   // P12 seit Modul 1c, P13–P18 seit Modul 3, P19/P20 seit 3b
+        var erwartet = Enumerable.Range(1, 25).Select(i => $"P{i:D2}").ToList();   // P12 seit Modul 1c, P13–P18 seit Modul 3, P19/P20 seit 3b, P21–P25 seit Modul 4 Teil A
         Assert.Equal(erwartet, Pruefungen.Codes.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList());
         Assert.All(Pruefungen.Codes.Values, t => Assert.False(string.IsNullOrWhiteSpace(t)));
     }
@@ -171,7 +171,8 @@ public class PruefungenTests
     public void Grundmodell_IstSauber()
     {
         var p = Grund();
-        var befunde = Alle(p.Modell).Where(b => b.Code != "P18").ToList();   // P18 (Modul 3): Rohre ohne Serie, nur Hinweis
+        var befunde = Alle(p.Modell).Where(b => b.Code is not ("P18" or "P23")).ToList();   // P18 (Modul 3): Rohre ohne Serie, nur Hinweis; P23 (Modul 4): das Grundmodell hat keine Anlage, nur Hinweis
+        Assert.Contains(Alle(p.Modell), b => b.Code == "P23" && b.Element == "WC-1" && b.Schwere == "hinweis");
         Assert.True(befunde.Count == 0, "Befunde im Grundmodell: " + string.Join("; ", befunde.Select(b => $"{b.Code} {b.Element}: {b.Text}")));
         Assert.Equal(["KW-S1", "SW-S1"], Mit(p.Modell, "P18").Select(b => b.Element).Order());   // je Strang zusammengefasst (Christian 19.10.2026)
         Assert.Equal(4, p.Modell.Verbindungen.Count); // HA-1 – RO-KW – WC-1 – RO-SW – KS-1

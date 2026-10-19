@@ -996,3 +996,49 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 - **Tastaturkürzel nach Register:** `kuerzel-liste.js › REGISTER_NAMEN` enthält alle Register des Menübands (Datei, Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten) sowie Auswahl und Familie; unter «Allgemein» steht nur noch, was zu keinem Register gehört (Esc, Strg+D).
 
 **Prüfen:** Node `nachbearbeitung-n3.test.mjs` (CSV, Kürzel, Felder der Projektinformation aus dem echten Katalog, Planzeilen und Parameter, Knoten im Projektbrowser, Verdrahtung); Browser `node nachbearbeitung-n3.browser.mjs` (Port 5183, CDP 9503; alle vier Punkte mit echten Klicks, CSV-Datei im Download-Ordner nachgelesen; Bilder hell/dunkel `n3_*.png` in `%TEMP%\HLKS_CAD`); `menueband.browser.mjs` bleibt grün (bei 1920 px keine Gruppe zusammengeklappt).
+
+## Sanitär-Belastungswerte (Modul 4 Teil A-K)
+
+Kern fertig (`entwurf/modul-4.md`, Teil A-K); die Oberfläche baut Teil A-O. Einzige fachliche Quelle ist `kataloge/sanitaer_belastungswerte.json`
+(Christians Excel «LU_DU Zusammenstellung_.xlsx», Walkringen 14.03.2024): die Oberfläche kennt **keine** LU-/DU-Werte, Formeln oder Vorgaben, sie
+zeigt nur, was der Kern liefert. Keine Dimensionierung (Spitzendurchfluss, DN, Q_WW je Teilstrecke) – das ist Teil B.
+
+**Eigenschaften (Katalog):**
+- Apparat (alle Unterklassen): `sanitaerArt` (auswahl). `abfrage('katalog', { klasse })` liefert dazu `auswahl` (Schlüssel in Katalogreihenfolge) und
+  **`auswahlNamen`** (Schlüssel → Name, z. B. `wc_75` → «Klosettanlage bis 7.5 Liter Spülwassermenge»): die Auswahl zeigt den Namen, gesendet wird der
+  Schlüssel (`element_aendern { eigenschaften: { sanitaerArt } }`, `null` = zurück zur Vorgabe der Klasse). Ohne gesetzte Eigenschaft gilt die Vorgabe der
+  Klasse – die Palette zeigt das Feld dann leer; die wirksame Art steht in `element_lesen.sanitaer` (unten).
+- Anlage: `abflusskennzahl` (zahl, Wert mit Quelle), `spezialinstallationen` (liste von `{ bezeichnung, versorgung, entsorgung }` in l/s; ungültige
+  Einträge lehnt der Kern ab). **Befund für A-O:** die Palette zeigt `liste` als Kommaliste – Objekte erscheinen dort als «[object Object]»; A-O braucht
+  eine kleine Tabelle (Bezeichnung, Versorgung l/s, Entsorgung l/s) wie das Excel Zeilen 46–51.
+- Projektinformation: `abflusskennzahl` (Vorgabe für Anlagen ohne eigenen Wert; erscheint im Dialog Projektinformationen unter «Weitere»).
+
+**element_lesen** (Palette, Gruppe «Abgeleitet»):
+- Apparat: `abgeleitet.luKw`, `abgeleitet.luWw`, `abgeleitet.du` – nur die Werte, die die Art hat (WC: kein `luWw`, nicht 0). Dazu Block
+  `sanitaer: { art, name, woher (eigenschaft | familie | vorgabe | keine | unbekannt), herkunft, luKw, luWw, du (null = Anschluss fehlt), zeile, quelle, anlagen[] }`.
+- Leitung des Trinkwassernetzes (KW, WW): `abgeleitet.summeLuKw`, `summeLuWw`, `groessterLu`; des Schmutzwassernetzes (SW): `abgeleitet.summeDu`. Dazu
+  `sanitaer: { netz (trinkwasser | abwasser), medium, richtung, summe…, apparate, ohneWert[]?, masche?, quelle }`. Zirkulation, Regenwasser, Heizung: kein Block.
+- «?» (`warum`) kennt `luKw`, `luWw`, `du`, `sanitaerArt` (Vorgabe/Familie mit `begruendung`) am Apparat und `summeLuKw`, `summeLuWw`, `groessterLu`,
+  `summeDu` an der Leitung: `{ wert, einheit (LU | DU), rechenweg, quelle (Katalog, Dokument, Excel-Zeile), beitraege[]? }`. Die Schlüssel haben kein «_»,
+  die Palette zeigt sie ohne Einheit (Einheit steht in `warum`).
+
+**Abfragen** (`abfrage(name, par)`, gleich in MCP):
+- `sanitaer_belastung { anlage? | strang? | leitung? }` – ohne Parameter `{ anlagen[], systemeOhneAnlage[]?, maschen[]?, quelle, hinweis }`; je Anlage
+  `{ anlage, name, trinkwasser { summeLuKw, summeLuWw, groessterLu, apparate }, abwasser { summeDu, apparate }, systeme[] }`; je System
+  `{ system, name, systemtyp, medium, netz, richtung, summen…, straenge[], leitungen[] }`; je Strang `{ strang, name, art, system, medium, leitungen (Anzahl), summen… }`;
+  je Leitung `{ leitung, strang, medium, summeLuKw, summeLuWw, groessterLu | summeDu, apparate, ohneWert[]?, masche? }`. Mit `strang`: der Strang mit
+  `leitungen[]`. Mit `leitung`: `{ leitung, klasse, medium, netz, richtung, system, strang, anlage, summen…, masche, beitraege[] { apparat, klasse, anschluss,
+  medium, spalte, wert, art, artName, artWoher, zeile, quelle }, rechenweg, quelle, hinweis }`; ausgenommene Leitung: `{ leitung, medium, ausgenommen }`.
+  → Strangschema-Beschriftung «ΣLU 12 / 8» bzw. «ΣDU 4.6» aus den Leitungen einer Abfrage je Anlage.
+- `sanitaer_zusammenstellung { anlage? }` (leer = die einzige Anlage mit Apparaten) – `{ anlage, name, quelle, geschosse[] { kennzeichen (null = ohne
+  Geschoss), name, kote }, zeilen[] { art, name, zeile (Excel), luKw, luWw, du, jeGeschoss[], anzahl, summeLuKw, summeLuWw, summeDu (null = Spalte leer),
+  apparate[], quelle }, apparate, summeLuKw, summeLuWw, summeDu, totalLu, volumenstrom, spitzeKurve3, spitzeKurve5, groessterLu, massgebendeKurve (3 | 5),
+  spitzendurchfluss, spezialinstallationen[], spezialVersorgung, spezialEntsorgung, spitzeGesamtKurve3, spitzeGesamtKurve5, spitzeGesamt, abflusskennzahl,
+  abflusskennzahlHerkunft, schmutzwasser, gesamtabfluss (beide null ohne K), einheiten, formeln { totalLu, volumenstrom, spitzeKurve3, spitzeKurve5,
+  massgebendeKurve, spitzeGesamt, schmutzwasser, gesamtabfluss } (Text mit Excel-Zelle), ohneArt[], hinweise[], hinweis }`. Zahlen ungerundet – runden
+  nur in der Anzeige. Die nicht massgebende Kurve klein daneben (Spezifikation A-O).
+- `sanitaer_katalog {}` – `{ quelle, arten[] { schluessel, name, luKw, luWw, du, zeile }, vorgabeJeKlasse, ohneVorgabe[], formeln, hinweis }`.
+
+**Befunde** (Prüfsystem, wie P01–P20 in Befund-Browser und Koordination): P21 Apparat ohne Apparateart (warnung), P22 Apparateart passt nicht zu den
+Anschlüssen (warnung), P23 Apparat in keiner Anlage (hinweis), P24 Netz mit Masche – Summe nicht eindeutig (warnung, am Element, wo sich die Wege
+treffen), P25 Abflusskennzahl fehlt (warnung, an der Anlage).

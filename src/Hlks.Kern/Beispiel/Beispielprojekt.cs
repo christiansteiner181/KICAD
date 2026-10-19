@@ -83,7 +83,16 @@ public static class Beispielprojekt
         }
 
         // Anlage, Systeme, Stränge
-        Neu("Anlage", "A-SAN", "Sanitäranlage", new JsonObject { ["beschreibung"] = "Schmutzwasser und Trinkwasser kalt (Warmwasser folgt)" });
+        // Modul 4 Teil A: Abflusskennzahl K für die Sanitär-Zusammenstellung – fiktiv; derselbe Wert wie im Excel für Walkringen (Wohnen), aus
+        // dem Katalog gelesen, nicht festgeschrieben (sonst Befund P25)
+        var anlage = new JsonObject { ["beschreibung"] = "Schmutzwasser und Trinkwasser kalt (Warmwasser folgt)" };
+        if (katalog.Sanitaer?.AbflusskennzahlBeispiel is double kBeispiel)
+            anlage["abflusskennzahl"] = new JsonObject
+            {
+                ["wert"] = kBeispiel,
+                ["quelle"] = $"Beispielprojekt, Werte fiktiv – Wert wie {katalog.Sanitaer.Dokument} {katalog.Sanitaer.AbflusskennzahlBeispielZelle} ({katalog.Sanitaer.Objekt}), Katalog {SanitaerKatalog.Datei}",
+            };
+        Neu("Anlage", "A-SAN", "Sanitäranlage", anlage);
         Neu("System", "SW", "Schmutzwasser", new JsonObject { ["systemtyp"] = "Schmutzwasser" }, teilVon: "A-SAN");
         Neu("System", "KW", "Trinkwasser kalt", new JsonObject { ["systemtyp"] = "Trinkwasser kalt" }, teilVon: "A-SAN");
         void Strang(string kz, string name, string art, string system) => Neu("Strang", kz, name, new JsonObject { ["art"] = art }, teilVon: system);
@@ -96,8 +105,8 @@ public static class Beispielprojekt
         Strang("KW-S2", "Steigstrang Dusche/WC", "steigstrang", "KW");
 
         // Apparate
-        void Apparat(string klasse, string kz, double x, double y, double z) =>
-            Neu(klasse, kz, null, null, new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(P(x, y, z)) });
+        void Apparat(string klasse, string kz, double x, double y, double z, JsonObject? eig = null) =>
+            Neu(klasse, kz, null, eig, new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(P(x, y, z)) });
         foreach (var (k, kote) in new[] { ("E", 0.0), ("1", 2900.0) })
         {
             Apparat("WC", $"WC-{k}.02", 7500, 9500, kote);
@@ -109,7 +118,8 @@ public static class Beispielprojekt
             Apparat("Dusche", $"DU-{k}.03", 11300, 6800, kote);
         }
         Apparat("Waschmaschine", "WM-U.02", 8000, 1000, -2700);
-        Apparat("Bodenablauf", "BA-U.02", 9000, 2500, -2700);
+        // Bodenablauf hat keine Vorgabe der Apparateart (Modul 4): fiktiv DN 70 zur Anschlussleitung DN 75
+        Apparat("Bodenablauf", "BA-U.02", 9000, 2500, -2700, katalog.Sanitaer is null ? null : new JsonObject { ["sanitaerArt"] = "bodenablauf_70" });
 
         // ---------- Schmutzwasser ----------
         // Gefälle (Korrektur 19.10.2026, Prüfliste 27): jedes waagrechte Stück einer Leitung mit gefaelle fällt in Fliessrichtung um diesen

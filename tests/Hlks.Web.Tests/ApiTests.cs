@@ -447,6 +447,9 @@ public class ApiTests
         ["aussparungen_ifc"] = "{\"datei\":\"" + AussparungIfcDatei() + "\"}",   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt der Test vorher an
         ["plansaetze"] = "{}",                                          // Serien-PDF
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
+        ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
+        ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
+        ["sanitaer_katalog"] = "{}",
     };
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
     static string BcfDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}.bcf").Replace('\\', '/');
@@ -459,6 +462,33 @@ public class ApiTests
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive", "Claude_Code", "HLKS_CAD", "tests", "daten", name).Replace('\\', '/');
     }
     static readonly string[] Textabfragen = ["system_lesen", "strang_text"];
+
+    /// <summary>Modul 4 Teil A: Sanitär-Zusammenstellung, Belastungssummen und Apparateart über REST (dieselbe Tür wie Kern und MCP);
+    /// Beispielprojekt «MFH Musterweg» (fiktiv), Werte aus dem Katalog sanitaer_belastungswerte.json.</summary>
+    [Fact]
+    public async Task Sanitaer_ZusammenstellungBelastungUndApparateartUeberRest()
+    {
+        using var s = new Server();
+        await s.Anlegen();
+        var (code, z) = await s.Post("/api/abfrage/sanitaer_zusammenstellung", """{"anlage":"A-SAN"}""");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal(16, z!["apparate"]!.GetValue<int>());
+        Assert.Equal(42, z["totalLu"]!.GetValue<double>(), 9);
+        Assert.Equal(16.7, z["summeDu"]!.GetValue<double>(), 9);
+        var (_, l) = await s.Post("/api/abfrage/sanitaer_belastung", """{"leitung":"KW-V1-0"}""");
+        Assert.Equal(24, l!["summeLuKw"]!.GetValue<double>());
+        var (_, e) = await s.Post("/api/abfrage/element_lesen", """{"element":"WC-E.02"}""");
+        Assert.Equal("wc_75", e!["sanitaer"]!["art"]!.GetValue<string>());
+        Assert.Equal(2, e["abgeleitet"]!["du"]!.GetValue<double>());
+        var (bc, b) = await s.Post("/api/befehl/element_aendern", """{"element":"WC-E.02","eigenschaften":{"sanitaerArt":"wc_90"}}""");
+        Assert.Equal(HttpStatusCode.OK, bc);
+        Assert.True(b!["angenommen"]!.GetValue<bool>(), b.ToJsonString());
+        var (_, z2) = await s.Post("/api/abfrage/sanitaer_zusammenstellung", """{"anlage":"A-SAN"}""");
+        Assert.Equal(16.7 + 0.5, z2!["summeDu"]!.GetValue<double>(), 9);   // ein WC 7.5 l (DU 2) → 9 l (DU 2.5)
+        var (fc, f) = await s.Post("/api/abfrage/sanitaer_zusammenstellung", """{"anlage":"WC-E.02"}""");
+        Assert.True((int)fc is >= 400 and < 500, $"Status {(int)fc}");
+        Assert.Contains("keine Anlage", f!["fehler"]!.GetValue<string>());
+    }
 
     [Fact]
     public void Abfragen_ParameterTabelleDecktGenauDieListeAb()

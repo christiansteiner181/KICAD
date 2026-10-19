@@ -14,6 +14,9 @@ public sealed class EigenschaftDef
     public string? Einheit { get; set; }
     public string Beschreibung { get; set; } = "";
     public List<string>? Auswahl { get; set; }
+    /// <summary>Anzeigenamen der Auswahlwerte (Wert → Name), z. B. Apparateart wc_75 → «Klosettanlage bis 7.5 Liter Spülwassermenge»
+    /// (Modul 4, aus kataloge/sanitaer_belastungswerte.json); null = der Wert ist zugleich der Name.</summary>
+    public Dictionary<string, string>? AuswahlNamen { get; set; }
     public bool Pflicht { get; set; }
 }
 
@@ -92,6 +95,8 @@ public sealed class Katalog
     public Dictionary<string, SystemtypDef> Systemtypen { get; } = new(StringComparer.OrdinalIgnoreCase);
     /// <summary>openBIM-Abgleich: Abbildung auf IFC4/IFC2x3 (ifc.json, Modul 1b); null, wenn die Datei fehlt.</summary>
     public IfcAbbildung? Ifc { get; private set; }
+    /// <summary>Belastungswerte der Sanitärapparate (sanitaer_belastungswerte.json, Modul 4 Teil A); null, wenn die Datei fehlt.</summary>
+    public SanitaerKatalog? Sanitaer { get; private set; }
     public string Ordner { get; private set; } = "";
 
     /// <summary>Lädt klassen.json, medien.json, systemtypen.json (und ifc.json) aus dem Ordner und löst die Basisklassen auf.</summary>
@@ -105,8 +110,30 @@ public sealed class Katalog
         if (File.Exists(ifc)) k.Ifc = IfcAbbildung.Laden(ifc);
         k.GewerkeLaden(Path.Combine(ordner, "gewerke.json"));
         k.BasisAufloesen();
+        var san = Path.Combine(ordner, SanitaerKatalog.Datei);
+        if (File.Exists(san)) k.Sanitaer = SanitaerKatalog.Laden(san);
+        k.SanitaerAuswahlSetzen();
         k.Pruefen();
         return k;
+    }
+
+    /// <summary>Modul 4: Die Auswahl der Eigenschaft «sanitaerArt» (Klasse Apparat) sind die Schlüssel der Apparatearten im Katalog
+    /// sanitaer_belastungswerte.json, in Katalogreihenfolge, mit Namen (AuswahlNamen) – die Liste steht nur dort. Ohne die Datei bleibt
+    /// die Auswahl leer (jeder Wert wird abgelehnt).</summary>
+    void SanitaerAuswahlSetzen()
+    {
+        var arten = Sanitaer?.Arten ?? [];
+        foreach (var d in Klassen.Values)
+            foreach (var e in d.Eigenschaften.Where(e => e.Name == "sanitaerArt" && e.Typ == "auswahl"))
+            {
+                e.Auswahl = arten.Select(a => a.Schluessel).ToList();
+                e.AuswahlNamen = arten.ToDictionary(a => a.Schluessel, a => a.Name);
+            }
+        if (Sanitaer is null) return;
+        foreach (var klasse in Sanitaer.VorgabeJeKlasse.Keys)
+            if (!Klassen.TryGetValue(klasse, out var kd) || !kd.IstArt("Apparat"))
+                throw new HlksFehler($"Katalog {SanitaerKatalog.Datei}, vorgabeJeKlasse: «{klasse}» ist keine Klasse der Apparate in klassen.json.",
+                    "Klassennamen wie in klassen.json schreiben (z. B. WC, Waschtisch).");
     }
 
     /// <summary>Sucht den Katalogordner: HLKS_KATALOG, sonst neben der Programmdatei, sonst aufwärts nach «kataloge».</summary>
