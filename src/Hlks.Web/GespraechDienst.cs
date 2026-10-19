@@ -872,7 +872,8 @@ public sealed class GespraechDienst
     {
         var o = new JsonObject
         {
-            ["rolle"] = "claude", ["frage"] = l.Frage, ["status"] = l.Status, ["text"] = l.Text.ToString().Trim(), ["zeit"] = l.Start.ToString("o"),
+            // laufende Antwort ungekürzt (die «ab»-Zähler der Text-Ereignisse zählen Zeichen des ganzen Textes); die fertige Nachricht ist wie bisher getrimmt
+            ["rolle"] = "claude", ["frage"] = l.Frage, ["status"] = l.Status, ["text"] = l.Status == "laeuft" ? l.Text.ToString() : l.Text.ToString().Trim(), ["zeit"] = l.Start.ToString("o"),
             ["dauerSekunden"] = Math.Round((DateTimeOffset.Now - l.Start).TotalSeconds, 1),
             ["modell"] = l.Modell, ["internet"] = l.Internet,
             ["werkzeuge"] = new JsonArray(l.Werkzeuge.Select(w => (JsonNode)w.DeepClone()).ToArray()),
@@ -985,7 +986,8 @@ public sealed class GespraechDienst
             var teil = l.OffenerText.ToString();
             l.OffenerText.Clear();
             l.LetzterText = DateTimeOffset.Now;
-            Melden(Ereignis(l, "text", new JsonObject { ["teil"] = teil }));   // unter der Sperre: Reihenfolge bleibt
+            // «ab» = Zeichen vor diesem Teil: damit erkennt die Palette Teile, die ein nachgeladener Stand der Antwort (GET, Antwort im Entstehen) schon enthält
+            Melden(Ereignis(l, "text", new JsonObject { ["teil"] = teil, ["ab"] = l.Text.Length - teil.Length }));   // unter der Sperre: Reihenfolge bleibt
         }
     }
 

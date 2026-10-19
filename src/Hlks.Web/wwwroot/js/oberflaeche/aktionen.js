@@ -23,6 +23,7 @@ import './aktionen-leitung.js';   // Rohr und Kanal zeichnen, Aufteilen mit Seri
 import './aktionen-koordination.js';   // Register Koordination: Projektvorgaben, Kollisionen, Aussparungen, BCF (Modul 3b, C1)
 import './aktionen-serienpdf.js';   // Serien-PDF: Plansätze je Gewerk, Gewerk eines Planblatts (entwurf/serien-pdf.md)
 import './aktionen-paletten.js';   // Register Ansicht › Paletten: je angemeldeter Palette ein Eintrag, Paletten zurücksetzen (W1)
+import './aktionen-ki.js';   // Palette «Claude» (KI-Gespräch, Änderungen zurücknehmen, Normensuche) und Kürzel KI (Modul 3c, Teil O)
 
 export { aktionen, ausfuehren, registrieren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen, hinweis, hinweisSetzen, beiHinweis, familie, familieSetzen, beiFamilie } from './register.js';
 

@@ -143,6 +143,10 @@ palette | Palette | Paletten | Fenster mit blauer Titelleiste
 projektbrowser | Projektbrowser | Projektbrowser | Baumstruktur
 koordination | Koordination (Palette) | eigenes | Liste unten im Fenster
 palettenZurueck | Paletten zurücksetzen | Benutzeroberfläche | Fenster mit Rückpfeil
+claude | Claude (Palette) | eigenes | Sprechblase in Hellblau mit gelbem Funken
+einlageplan | Einlageplan | eigenes | Grundriss mit schraffierter Platte und Sanitärrohr mit Bogen nach oben
+grundleitungsplan | Grundleitungsplan | eigenes | Grundriss mit Erdreich, gestrichelter Geländelinie und Abwasserleitung
+listeCsv | Liste als CSV | eigenes | Blatt mit Zellen und blauem Exportpfeil
 achse | Achse | Raster | Rasterkreis mit Strich-Punkt-Linie
 bemassung | Bemassung | Bemaßung | Masslinie mit Pfeilen
 text | Text | Text | Buchstabe A
@@ -556,6 +560,20 @@ s('koordination',
 s('palettenZurueck',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 9.5h8v18h-8z"/><circle class="fo n" cx="23" cy="22.5" r="6.5"/><path class="sW w2" d="M20 22.5a3 3 0 1 0 1.2-2.4M20.5 18.5v2.2h2.2"/>',
   '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 5h4v8.5h-4z"/><circle class="fo n" cx="11.5" cy="10.5" r="4"/><path class="sW w15" d="M9.8 10.5a1.7 1.7 0 1 0 .7-1.4"/>');
+
+// Nachbearbeitung N3 (Einlageplan, Grundleitungsplan, Liste als CSV): bisher nur im Strichsatz; hier nachgeliefert, damit im Revit-Stil kein Strichsymbol im Menüband steht (symbole.browser.mjs)
+s('einlageplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="f2" d="M3.5 21.5h25v7h-25z"/><path class="op" d="M6.5 28.5l3-7M11.5 28.5l3-7M16.5 28.5l3-7M21.5 28.5l3-7"/><path class="ssa w2" d="M7.5 17.5h9l4-8"/><circle class="fsa n" cx="21" cy="9.5" r="2.4"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="f2" d="M1.5 10.5h13v4h-13z"/><path class="ssa w15" d="M3.5 8.5h4.5l2-4"/><circle class="fsa n" cx="10.5" cy="4.5" r="1.4"/>');
+s('grundleitungsplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="f3" d="M3.5 12.5h25v16h-25z"/><path class="sb dd w15" d="M3.5 12.5h25"/><path class="sab w2" d="M7.5 19.5h10l3 5h4"/><circle class="fab n" cx="7.5" cy="19.5" r="2"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="f3" d="M1.5 7.5h13v7h-13z"/><path class="sab w15" d="M3.5 10.5h5l1.5 2.5h2.5"/>');
+s('listeCsv',
+  DOC32 + '<path class="op" d="M10.5 11.5h12M10.5 15h12M10.5 18.5h12M16 11.5v7"/><path class="fb" d="M10.5 22h7v-3.5l6 5-6 5V25h-7z"/>',
+  DOC16 + '<path class="op" d="M4.5 6.5h6M4.5 8.5h6M7.5 5v4"/><path class="fb" d="M4.5 10.5h3.2V9l3.3 3L7.7 15v-1.5H4.5z"/>');
+s('claude',
+  '<path class="fl" d="M4.5 4.5h23v18H14l-6 5v-5H4.5z"/><path class="fy" d="M16 8.5l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/>',
+  '<path class="fl" d="M1.5 1.5h13v9.5H8l-3.5 3.5V11h-3z"/><path class="fy" d="M8 3.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/>');
 
 // ---------------------------------------------------------------------------------------------- Zeichenwerkzeuge (werkzeuge/symbole.js)
 

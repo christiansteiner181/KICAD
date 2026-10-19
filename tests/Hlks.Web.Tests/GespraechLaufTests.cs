@@ -185,9 +185,17 @@ public class GespraechLaufTests
         var id = await s.GespraechAnlegen();
         var (_, j) = await s.Fragen(id, "Zähle [attrappe:langsam]");
         var antwort = await s.Warten(id, Lang);
-        var teile = (await s.KiEreignisseBisEnde(Z(j!["frage"]))).Where(x => Z(x["typ"]) == "text").Select(x => Z(x["teil"])).ToList();
+        var textEreignisse = (await s.KiEreignisseBisEnde(Z(j!["frage"]))).Where(x => Z(x["typ"]) == "text").ToList();
+        var teile = textEreignisse.Select(x => Z(x["teil"])).ToList();
         Assert.True(teile.Count >= 2, $"nur {teile.Count} Teil(e): Text kam nicht gestreamt");   // fünf Teile mit 400 ms Abstand
         Assert.Equal("Eins. Zwei. Drei. Vier. Fünf.", string.Concat(teile));
+        // «ab» = Zeichen vor dem Teil (die Palette erkennt damit Teile, die ein nachgeladener Stand schon enthält)
+        var davor = 0;
+        foreach (var ev in textEreignisse)
+        {
+            Assert.Equal(davor, ev["ab"]!.GetValue<int>());
+            davor += Z(ev["teil"]).Length;
+        }
         Assert.Equal("Eins. Zwei. Drei. Vier. Fünf.", Z(antwort["text"]));
     }
 

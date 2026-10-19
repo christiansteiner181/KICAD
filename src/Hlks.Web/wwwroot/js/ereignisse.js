@@ -47,6 +47,9 @@ async function behandeln(d) {
     case 'auftrag':   // KI-Lauf «Familie aus Unterlagen» (Modul 2): {auftrag: {id, status, schritte, …}} – familien/auftrag.js führt den Stand nach
       melden('auftrag', d);
       break;
+    case 'ki':        // Gespräch mit Claude (Modul 3c): {gespraech, frage, typ: frage|text|werkzeug|aenderung|fertig|fehler|abgebrochen|gespraeche|zurueckgenommen, …} – oberflaeche/ki-palette.js
+      melden('ki', d);
+      break;
   }
 }
 
