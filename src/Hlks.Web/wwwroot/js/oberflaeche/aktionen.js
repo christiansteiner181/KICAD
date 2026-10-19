@@ -22,9 +22,9 @@ import './aktionen-schema.js';   // Schema-Ansicht (Modul 3, C2)
 import './aktionen-leitung.js';   // Rohr und Kanal zeichnen, Aufteilen mit Serie, Materialliste (Modul 3, C1)
 import './aktionen-koordination.js';   // Register Koordination: Projektvorgaben, Kollisionen, Aussparungen, BCF (Modul 3b, C1)
 import './aktionen-serienpdf.js';   // Serien-PDF: Plansätze je Gewerk, Gewerk eines Planblatts (entwurf/serien-pdf.md)
+import './aktionen-paletten.js';   // Register Ansicht › Paletten: je angemeldeter Palette ein Eintrag, Paletten zurücksetzen (W1)
 
 export { aktionen, ausfuehren, registrieren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen, hinweis, hinweisSetzen, beiHinweis, familie, familieSetzen, beiFamilie } from './register.js';
-export { paletteAnwenden } from './aktionen-bearbeiten.js';
 
 // Aktionen, die im Menüband gross bleiben, bis ihre Gruppe zu einem Flyout zusammenklappt (Stufen M und K ändern sie nicht;
 // Menüband-Teil R, entwurf/menueband-revit.md): die Hauptwerkzeuge, die man ständig anklickt.

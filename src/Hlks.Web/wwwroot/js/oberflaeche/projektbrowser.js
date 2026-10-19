@@ -34,6 +34,7 @@ import {
   offenKennung, offenSchluessel, offenVorgabe, gewerkFarben, filtern,
 } from './projektbrowser-gliederung.js';
 import { baumBauenListe } from './projektbrowser-aeste.js';
+import { anmelden } from './paletten.js';
 
 let wurzel, baum, suchfeld, knopf, liste;
 let suche = '';
@@ -451,3 +452,6 @@ function kontext(e) {
   }
   kontextmenue(e.clientX, e.clientY, eintraege);
 }
+
+// Als Palette der Palettenverwaltung (W1): Vorgabe links unter den Eigenschaften; dort wird einrichten() mit dem Inhaltsknoten aufgerufen.
+anmelden({ id: 'projektbrowser', titel: 'Projektbrowser', ort: 'links', reihenfolge: 20, elementId: 'palette-browser', inhaltId: 'projektbrowser', symbol: 'projektbrowser', bauen: einrichten });

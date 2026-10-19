@@ -111,7 +111,7 @@ public class ApiTests
 
         foreach (Match m in HtmlVerweis.Matches(index)) Merke("/" + m.Groups[1].Value);
         foreach (Match m in Verweis.Matches(index)) Merke("/" + m.Groups[1].Value.TrimStart('.', '/'));
-        foreach (var vertrag in new[] { "/js/ansichten/filter.js", "/js/oberflaeche/aktionen.js", "/js/oberflaeche/layout.js" })
+        foreach (var vertrag in new[] { "/js/ansichten/filter.js", "/js/oberflaeche/aktionen.js", "/js/oberflaeche/paletten.js" })   // W1: paletten.js ersetzt layout.js
             Merke(vertrag);                                         // Dateien aus OBERFLAECHE.md, auch wenn noch nichts sie importiert
         Merke("/lib/three/three.module.js");
         Merke("/lib/three/addons/controls/OrbitControls.js");

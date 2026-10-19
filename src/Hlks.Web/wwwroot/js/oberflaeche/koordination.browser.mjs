@@ -909,7 +909,7 @@ await alleSchliessen();
 // ================================================================== Design und Abschluss
 abschnitt('Design hell und dunkel, Palette schliessen');
 await shot('13_dunkel');
-await klick('#koord-panel .kp-zu');
+await klick('.pal-gruppe[data-aktiv="koordination"] .pal-zu');   // W1: das ✕ sitzt am Palettenkopf der Palettenverwaltung
 await warteBis(async () => !(await gibt('#koord-panel')), 'Palette zu');
 pruef(true, 'Die Palette schliesst mit ✕');
 await register('Ansicht');

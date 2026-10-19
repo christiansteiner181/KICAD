@@ -1,0 +1,95 @@
+/* Fensterrahmen (Auftrag W1, entwurf/fenster-revit.md): Dialoge verschiebbar, in der Grösse änderbar und einklappbar; Paletten andockbar, lösbar und als Reiter.
+   Nur Variablen aus hlks.css. Das Raster von #arbeitsbereich (Andockbereiche links, unten, rechts um die Ansichtsfläche) steht hier, damit hlks.css schlank bleibt. */
+
+/* ------------------------------------------------------------------ Dialoge (js/oberflaeche/dialoge.js, dialoge-fenster.js) */
+/* Ohne Abdunkeln: der Plan bleibt sichtbar; die Schicht fängt weiter alle Klicks ab (modal). Ein Dialog ohne gemerkte Lage steht wie bisher in der Mitte (Raster). */
+#dialogschicht { background: transparent; }
+.dlg { position: relative; }
+#dialogschicht > .dlg.verschoben { position: absolute; grid-area: auto; margin: 0; }   /* grid-area: auto → left/top gelten von der Schicht aus, nicht von der Rasterzelle der Mitte */
+.dlg-kopf { user-select: none; -webkit-user-select: none; cursor: grab; touch-action: none; }
+.dlg-titel { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.dlg-knoepfe { flex: none; display: inline-flex; align-items: center; gap: 2px; }
+.dlg-ein, .dlg-x { width: 20px; height: 18px; padding: 0; border: none; background: none; cursor: pointer; color: var(--text-leise); line-height: 1; font-size: 11px; font-family: "Segoe UI Symbol", var(--schrift); }
+.dlg-ein:hover { color: var(--akzent); }
+.dlg-x { font-size: 12px; }
+.dlg.gesperrt { filter: saturate(.7) brightness(.97); }
+/* eingeklappt: nur die Titelleiste */
+.dlg.eingeklappt { height: auto !important; min-height: 0 !important; max-height: none !important; }
+.dlg.eingeklappt > .dlg-inhalt, .dlg.eingeklappt > .dlg-fehler, .dlg.eingeklappt > .dlg-fuss, .dlg.eingeklappt > .dlg-griff { display: none !important; }
+.dlg.eingeklappt .dlg-kopf { border-bottom: none; border-radius: var(--radius); }
+/* Griffe zum Ändern der Grösse: schmale Streifen am Rand, Ecken etwas grösser */
+.dlg-griff, .pal-griff { position: absolute; z-index: 6; }
+.dlg-griff-n, .pal-griff-n { top: -3px; left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.dlg-griff-s, .pal-griff-s { bottom: -3px; left: 10px; right: 10px; height: 6px; cursor: ns-resize; }
+.dlg-griff-e, .pal-griff-e { right: -3px; top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.dlg-griff-w, .pal-griff-w { left: -3px; top: 10px; bottom: 10px; width: 6px; cursor: ew-resize; }
+.dlg-griff-ne, .pal-griff-ne { top: -3px; right: -3px; width: 12px; height: 12px; cursor: nesw-resize; }
+.dlg-griff-sw, .pal-griff-sw { bottom: -3px; left: -3px; width: 12px; height: 12px; cursor: nesw-resize; }
+.dlg-griff-nw, .pal-griff-nw { top: -3px; left: -3px; width: 12px; height: 12px; cursor: nwse-resize; }
+.dlg-griff-se, .pal-griff-se { bottom: -3px; right: -3px; width: 12px; height: 12px; cursor: nwse-resize; }
+
+/* ------------------------------------------------------------------ Raster: Andockbereiche um die Ansichtsfläche */
+/* links (#seitenleiste) und rechts als Spalten, unten unter der Ansichtsfläche; leere Bereiche und ihre Griffe haben Breite bzw. Höhe 0.
+   Breite und Höhe setzt paletten.js über --dock-* und --griff-* (px oder var(--breite-seitenleiste)). */
+#arbeitsbereich {
+  display: grid; min-height: 0;
+  grid-template-columns: var(--dock-links, var(--breite-seitenleiste)) var(--griff-links, 4px) minmax(0, 1fr) var(--griff-rechts, 0px) var(--dock-rechts, 0px);
+  grid-template-rows: minmax(0, 1fr) var(--griff-unten, 0px) var(--dock-unten, 0px);
+}
+#seitenleiste { grid-column: 1; grid-row: 1 / -1; border-right: 1px solid var(--trenner); }
+#seitenleiste-griff { grid-column: 2; grid-row: 1 / -1; }
+#ansichtsbereich { grid-column: 3; grid-row: 1; }
+#dock-unten-griff { grid-column: 3; grid-row: 2; }
+#dock-unten { grid-column: 3; grid-row: 3; border-top: 1px solid var(--trenner); }
+#dock-rechts-griff { grid-column: 4; grid-row: 1 / -1; }
+#dock-rechts { grid-column: 5; grid-row: 1 / -1; border-left: 1px solid var(--trenner); }
+
+.dock { display: flex; min-width: 0; min-height: 0; overflow: hidden; background: var(--palette); }
+.dock[data-bereich="links"], .dock[data-bereich="rechts"] { flex-direction: column; }
+.dock[data-bereich="unten"] { flex-direction: row; }
+.dock.leer { display: none; }
+.dock-griff { background: var(--trenner); }
+.dock-griff[data-bereich="links"], .dock-griff[data-bereich="rechts"] { cursor: col-resize; }
+.dock-griff[data-bereich="unten"] { cursor: row-resize; }
+.dock-griff.leer { display: none; }
+.dock-trenner { flex: none; background: var(--trenner); }
+.dock[data-bereich="links"] > .dock-trenner, .dock[data-bereich="rechts"] > .dock-trenner { height: 4px; cursor: row-resize; }
+.dock[data-bereich="unten"] > .dock-trenner { width: 4px; cursor: col-resize; }
+.dock[data-bereich="links"] > .pal-gruppe, .dock[data-bereich="rechts"] > .pal-gruppe { min-height: 48px; }
+.dock[data-bereich="unten"] > .pal-gruppe { min-width: 160px; }
+
+/* ------------------------------------------------------------------ Gruppen (Palette oder Paletten als Reiter) */
+.pal-gruppe { display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow: hidden; background: var(--palette); }
+.pal-kopf { flex: none; display: flex; align-items: stretch; height: var(--hoehe-palettenkopf); background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); user-select: none; -webkit-user-select: none; cursor: grab; touch-action: none; }
+.pal-titel { flex: 1 1 auto; min-width: 0; padding: 0 6px; line-height: calc(var(--hoehe-palettenkopf) - 1px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pal-reiter-zeile { flex: 1 1 auto; min-width: 0; display: flex; align-items: stretch; overflow: hidden; }
+.pal-reiter { flex: none; max-width: 60%; padding: 0 8px; border: none; border-right: 1px solid var(--trenner); background: none; color: var(--text-leise); cursor: pointer; line-height: calc(var(--hoehe-palettenkopf) - 1px); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pal-reiter:hover { color: var(--text); }
+.pal-reiter.aktiv { background: var(--palette); color: var(--text); font-weight: 600; box-shadow: inset 0 -2px 0 var(--akzent); }
+.pal-zu { flex: none; width: 20px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; font-size: 11px; }
+.pal-zu:hover { color: var(--fehler); }
+.pal-inhalt { flex: 1 1 auto; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.palette { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.palette[hidden] { display: none; }
+.pal-slot { flex: 1; min-height: 0; min-width: 0; display: flex; flex-direction: column; }
+.pal-slot.pal-scroll { display: block; overflow: auto; }
+#palette-eigenschaften { background: var(--palette); }
+#palette-browser { background: var(--browser); }
+/* Altes Verhalten für die Tests und Bilder des Projektbrowsers: ohne Eigenschaften füllt der Projektbrowser die Seitenleiste */
+#seitenleiste.ohne-eigenschaften > .pal-gruppe:has(#palette-eigenschaften), #seitenleiste.ohne-eigenschaften > .dock-trenner { display: none; }
+
+/* ------------------------------------------------------------------ Schwebende Paletten */
+#palettenschicht { position: fixed; inset: 0; z-index: 40; pointer-events: none; }
+#palettenschicht:empty { display: none; }
+.pal-schwebend { position: absolute; pointer-events: auto; overflow: visible; border: 1px solid var(--rand); box-shadow: var(--schatten); }
+.pal-schwebend > .pal-inhalt { overflow: hidden; }
+.pal-schwebend .pal-kopf { border-bottom: 1px solid var(--trenner); }
+
+/* ------------------------------------------------------------------ Andockziele beim Ziehen */
+#palettenziele { position: fixed; inset: 0; z-index: 42; pointer-events: none; }
+.pal-ziel { position: fixed; box-sizing: border-box; display: flex; align-items: center; justify-content: center; overflow: hidden; border: 1px dashed var(--akzent); background: color-mix(in srgb, var(--akzent) 8%, transparent); color: var(--text); font-size: 11px; text-align: center; white-space: nowrap; }
+.pal-ziel.aktiv { border: 2px solid var(--akzent); background: color-mix(in srgb, var(--akzent) 34%, transparent); color: var(--text); font-weight: 600; }
+.pal-ziel-text { padding: 1px 6px; border-radius: var(--radius); background: color-mix(in srgb, var(--flaeche-hell) 92%, transparent); }
+.pal-umriss { position: fixed; box-sizing: border-box; border: 2px dashed var(--akzent); background: color-mix(in srgb, var(--akzent) 6%, transparent); }
+.pal-geist { position: fixed; z-index: 43; pointer-events: none; height: var(--hoehe-palettenkopf); line-height: calc(var(--hoehe-palettenkopf) - 2px); padding: 0 10px; border: 1px solid var(--akzent); background: var(--palettenkopf); color: var(--text); box-shadow: var(--schatten); white-space: nowrap; }
+body.palette-zieht, body.palette-zieht * { cursor: grabbing !important; user-select: none !important; -webkit-user-select: none !important; }

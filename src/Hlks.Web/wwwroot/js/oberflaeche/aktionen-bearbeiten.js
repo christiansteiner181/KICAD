@@ -2,12 +2,13 @@
 // Eigenschaften ein/aus, Umbenennen, im Netz folgen, Warum. Jede Änderung geht als Befehl an den Kern; der Zustand
 // ändert sich erst, wenn das Ereignis zurückkommt.
 
-import { zustand, element, auswaehlen, merken } from '../zustand.js';
+import { zustand, element, auswaehlen } from '../zustand.js';
 import { abfrage } from '../api.js';
 import { registrieren, modusSetzen, optionen } from './register.js';
 import { zeigen, meldung, eingabe, warumDialog } from './dialoge.js';
 import { sende, ergebnisMelden, aenderungenHtml, befundeHtml } from './befehle.js';
 import { esc, knoten, elementText, vergleichen } from './werkzeug.js';
+import { umschalten, sichtbar } from './paletten.js';
 
 const gewaehlt = () => element(zustand.auswahl);
 const ZIEL = (p) => element(p?.element ?? zustand.auswahl);
@@ -97,21 +98,12 @@ registrieren({
 
 // ---------------------------------------------------------------------------------------------- Eigenschaften ein/aus
 
-/** Zeigt oder versteckt die Eigenschaftenpalette (Klasse am Seitenleisten-Element, siehe oberflaeche.css). */
-export function paletteAnwenden() {
-  const sichtbar = merken.lesen('paletteSichtbar', true);
-  document.getElementById('seitenleiste')?.classList.toggle('ohne-eigenschaften', !sichtbar);
-  window.dispatchEvent(new Event('resize'));
-}
-
-function paletteUmschalten() {
-  merken.schreiben('paletteSichtbar', !merken.lesen('paletteSichtbar', true));
-  paletteAnwenden();
-}
+/** Blendet die Eigenschaftenpalette ein oder aus (Palettenverwaltung paletten.js, W1; alle Paletten: Register Ansicht › Paletten, aktionen-paletten.js). */
+const paletteUmschalten = () => umschalten('eigenschaften');
 
 registrieren({
   id: 'aendern.eigenschaften', titel: 'Eigenschaften', symbol: 'eigenschaften', kuerzel: 'PP', register: 'aendern', gruppe: 'Paletten',
-  gedrueckt: () => merken.lesen('paletteSichtbar', true),
+  gedrueckt: () => sichtbar('eigenschaften'),
   ausfuehren: paletteUmschalten,
 });
 
@@ -179,7 +171,7 @@ registrieren({
 });
 registrieren({
   id: 'kontext.eigenschaften', titel: 'Eigenschaften', symbol: 'eigenschaften', kuerzel: null, register: 'kontext', gruppe: 'Eigenschaften',
-  gedrueckt: () => merken.lesen('paletteSichtbar', true),
+  gedrueckt: () => sichtbar('eigenschaften'),
   ausfuehren: paletteUmschalten,
 });
 
