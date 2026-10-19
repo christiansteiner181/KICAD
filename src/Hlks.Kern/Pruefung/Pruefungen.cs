@@ -34,6 +34,12 @@ public static class Pruefungen
         // Modul 3b (entwurf/modul-3b.md): gemeldet von AussparungPruefung
         ["P19"] = "Aussparung veraltet oder fehlt in der Architekten-Fassung",
         ["P20"] = "Leitung durchdringt Bauteil ohne Aussparung",
+        // Modul 4 Teil A (entwurf/modul-4.md): gemeldet von SanitaerPruefung (Rechnen/SanitaerPruefung.cs)
+        ["P21"] = SanitaerPruefung.Codes["P21"],
+        ["P22"] = SanitaerPruefung.Codes["P22"],
+        ["P23"] = SanitaerPruefung.Codes["P23"],
+        ["P24"] = SanitaerPruefung.Codes["P24"],
+        ["P25"] = SanitaerPruefung.Codes["P25"],
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete
@@ -124,6 +130,7 @@ public static class Pruefungen
         LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18
         SchemaPruefung.Pruefen(m, k, b);      // Modul 3: P17
         AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
+        SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P25
 
         return b.OrderBy(x => x.Schwere switch { "fehler" => 0, "warnung" => 1, _ => 2 }).ThenBy(x => x.Code).ThenBy(x => x.Element).ToList();
     }

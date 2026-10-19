@@ -198,8 +198,11 @@ const feld = (name) => P.alleFelder(plan()).find((f) => f.name === name);
 test('Projektinformation: der Plan nimmt alle Felder der Katalogklasse auf, bearbeitbare und nur lesbare', () => {
   const namen = klasse('Projektinformation').eigenschaften.map((e) => e.name).sort();
   assert.deepEqual(P.alleFelder(plan()).map((f) => f.name).sort(), namen, 'kein Feld des Katalogs fehlt, keins ist dazuerfunden');
-  assert.deepEqual(plan().map((g) => g.titel), ['Projekt', 'Beschriftung und Bemassung', 'Lage', 'Von anderen Funktionen gesetzt']);
+  // Modul 4 Teil A: die Abflusskennzahl (Vorgabe für die Sanitär-Zusammenstellung) ist neu im Katalog und steht von selbst unter «Weitere»
+  assert.deepEqual(plan().map((g) => g.titel), ['Projekt', 'Beschriftung und Bemassung', 'Lage', 'Weitere', 'Von anderen Funktionen gesetzt']);
+  assert.deepEqual(plan().find((g) => g.titel === 'Weitere').felder.map((f) => f.name), ['abflusskennzahl']);
   const art = (n) => feld(n).art;
+  assert.equal(art('abflusskennzahl'), 'zahl');
   assert.deepEqual(['zeile1', 'zeile2', 'projektnummer', 'phase'].map(art), ['text', 'text', 'text', 'text']);
   assert.equal(art('rohrbezeichnung'), 'auswahl');
   assert.equal(art('bemassungEinheiten'), 'einheiten');

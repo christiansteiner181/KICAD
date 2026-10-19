@@ -198,7 +198,9 @@
 
   { "name": "Anlage", "kuerzel": "A", "schicht": "system", "gewerk": "allgemein", "ifc": "IfcSystem",
     "beschreibung": "Oberste Ebene des Systemgraphen, z. B. Sanitäranlage. Systeme sind teilVon einer Anlage.",
-    "eigenschaften": [ { "name": "beschreibung", "typ": "text", "beschreibung": "Kurzbeschrieb" } ] },
+    "eigenschaften": [ { "name": "beschreibung", "typ": "text", "beschreibung": "Kurzbeschrieb" },
+      { "name": "abflusskennzahl", "typ": "zahl", "beschreibung": "Abflusskennzahl K der Sanitär-Zusammenstellung (Modul 4): Schmutzwasserabfluss Q_WW = K × √ΣDU. Wert mit Quelle setzen (SN 592000, Gebäudeart); ohne Wert gilt die Vorgabe der Projektinformation, fehlt auch sie: Befund P25, kein Q_WW" },
+      { "name": "spezialinstallationen", "typ": "liste", "beschreibung": "Spezialinstallationen der Sanitär-Zusammenstellung (Modul 4, wie Excel Zeilen 46–51), von Hand: [{ \"bezeichnung\": Text, \"versorgung\": l/s, \"entsorgung\": l/s }]. Σ Versorgung kommt zum Spitzendurchfluss (Excel C59/I59), Σ Entsorgung zum Gesamtabfluss Q_tot (Excel M67)" } ] },
   { "name": "System", "kuerzel": "S", "schicht": "system", "gewerk": "allgemein", "ifc": "IfcDistributionSystem",
     "beschreibung": "Ein Leitungssystem mit genau einem Medium, z. B. Schmutzwasser. Leitungen und Formteile gehören über «system» dazu, Stränge über teilVon.",
     "eigenschaften": [
@@ -290,7 +292,8 @@
     "eigenschaften": [
       { "name": "hersteller", "typ": "text", "beschreibung": "Hersteller" },
       { "name": "typ", "typ": "text", "beschreibung": "Typenbezeichnung" },
-      { "name": "montage", "typ": "auswahl", "auswahl": [ "wand", "boden", "vorwand", "einbau" ], "beschreibung": "Montageart" } ] },
+      { "name": "montage", "typ": "auswahl", "auswahl": [ "wand", "boden", "vorwand", "einbau" ], "beschreibung": "Montageart" },
+      { "name": "sanitaerArt", "typ": "auswahl", "auswahl": [], "beschreibung": "Apparateart für die Belastungswerte LU KW, LU WW und DU (Modul 4): Schlüssel aus kataloge/sanitaer_belastungswerte.json (Christians Excel «LU_DU Zusammenstellung_.xlsx»); Auswahl und Namen füllt der Kern beim Laden aus diesem Katalog. Leer = Vorgabe der Klasse (vorgabeJeKlasse; Bodenablauf ohne Vorgabe → Befund P21). Eine Familie gibt die Art im Typ vor (Parameter mit ziel sanitaerArt oder Parameter namens sanitaerArt)" } ] },
   { "name": "WC", "kuerzel": "WC", "basis": "Apparat", "ifc": "IfcSanitaryTerminal", "darstellung": { "b": 400, "t": 700, "h": 400 },
     "beschreibung": "WC mit Spülkasten.",
     "anschluesse": [ { "name": "sw", "medium": "SW", "fluss": "raus" }, { "name": "kw", "medium": "KW", "fluss": "rein" } ] },
@@ -447,6 +450,7 @@
     "beschreibung": "Angaben zum Projekt für Plankopf und Listen; je Projekt eine.",
     "eigenschaften": [
       { "name": "phase", "typ": "text", "beschreibung": "Projektphase, z. B. Bauprojekt" },
+      { "name": "abflusskennzahl", "typ": "zahl", "beschreibung": "Vorgabe der Abflusskennzahl K für alle Anlagen ohne eigenen Wert (Modul 4, Sanitär-Zusammenstellung: Q_WW = K × √ΣDU); Wert mit Quelle setzen (SN 592000, Gebäudeart)" },
       { "name": "kollisionslauf", "typ": "text", "beschreibung": "Letzter Kollisionsprüflauf «JJJJ-MM-TT hh:mm · Lauf n · Paare» (Modul 3b; Zähler der Lauf-Nummern)" },
       { "name": "zeile1", "typ": "text", "beschreibung": "Projekt, erste Zeile (Objekt)" },
       { "name": "zeile2", "typ": "text", "beschreibung": "Projekt, zweite Zeile (Adresse, Bauherrschaft)" },

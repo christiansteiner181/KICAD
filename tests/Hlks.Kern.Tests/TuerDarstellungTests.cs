@@ -69,6 +69,9 @@ public class TuerDarstellungTests
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
         ["normen_suchen"] = """{"frage":"Mindestgefälle Prüfleitung"}""",   // Modul 3c: Test-PDF (erfunden), HLKS_NORMEN setzt der Test kurz
         ["norm_lesen"] = """{"datei":"SIA 9999:2026","seite":3}""",
+        ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
+        ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
+        ["sanitaer_katalog"] = "{}",
     };
 
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
