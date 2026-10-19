@@ -335,6 +335,7 @@ function doppelklick(e) {
   else if (z.dataset.art === 'ansichtsfenster' && z.dataset.ansicht) ausfuehren('ansicht.oeffnen', { ansicht: z.dataset.ansicht });
   else if (z.dataset.art === 'huelle-material') ausfuehren('huelle.material', { material: z.dataset.kz });
   else if (z.dataset.art === 'huelle-aufbau') ausfuehren('huelle.aufbau', { aufbau: z.dataset.kz });
+  else if (z.dataset.art === 'projektinfo') ausfuehren('verwalten.projektinfo');   // N3: Projektinformationen bearbeiten
   else if (z.dataset.art === 'element-ast') umschalten(z.dataset.key);
   else if (z.dataset.art === 'fam') ausfuehren('familie.bearbeiten', { familie: z.dataset.kz });                                     // Modul 2: Editor
   else if (z.dataset.art === 'fam-typ') ausfuehren('familie.platzieren-aus-browser', { familie: z.dataset.kz, typ: z.dataset.typ });   // Modul 2: Platzieren
@@ -364,7 +365,7 @@ function kontext(e) {
   const plaeneAstZeile = kontextArt === 'plaene';   // Serien-PDF
   const koAst = kontextArt === 'kollisionen' || kontextArt === 'aussparungen' || kontextArt === 'typenliste';   // G1
   const koZeile = art === 'kollision' || art === 'aussparung' || art === 'typ';   // G1
-  if (!famAst && !bibFam && !listenAst && !plaeneAstZeile && !koAst && !koZeile && art !== 'fam' && art !== 'fam-typ' && art !== 'ansicht' && art !== 'element' && art !== 'element-ast' && art !== 'planblatt' && art !== 'ansichtsfenster' && art !== 'unterlage' && art !== 'raum-offen' && art !== 'huelle-material' && art !== 'huelle-aufbau') return;
+  if (!famAst && !bibFam && !listenAst && !plaeneAstZeile && !koAst && !koZeile && art !== 'fam' && art !== 'fam-typ' && art !== 'ansicht' && art !== 'element' && art !== 'element-ast' && art !== 'planblatt' && art !== 'ansichtsfenster' && art !== 'unterlage' && art !== 'raum-offen' && art !== 'huelle-material' && art !== 'huelle-aufbau' && art !== 'projektinfo') return;
   e.preventDefault();
   const k = z.dataset.kz;
   const eintraege = [];
@@ -406,6 +407,8 @@ function kontext(e) {
       { trenner: true },
       eintrag('Platzieren …', 'hkap.raum-platzieren', p),
       eintrag('Einem gezeichneten Raum zuordnen …', 'hkap.raum-zuordnen', p));
+  } else if (art === 'projektinfo') {
+    eintraege.push(eintrag('Bearbeiten …', 'verwalten.projektinfo'), { titel: 'Auswählen', aktion: () => { familieSetzen(null); auswaehlen(z.dataset.id); } });
   } else if (art === 'huelle-aufbau') {
     // Aufbau (Modul 1c): im Editor öffnen oder den gewählten Bauteilen zuweisen
     const p = { element: k, aufbau: k };
@@ -440,7 +443,9 @@ function kontext(e) {
         eintrag('Umbenennen', 'aendern.umbenennen', p), eintrag('Löschen', 'aendern.loeschen', p));
     } else {
       eintraege.push(
-        eintrag('Öffnen', 'ansicht.oeffnen', p), eintrag('Umbenennen', 'aendern.umbenennen', p),
+        eintrag('Öffnen', 'ansicht.oeffnen', p),
+        ...(element(k)?.werte?.art === 'liste' ? [eintrag('CSV …', 'liste.csv', p)] : []),   // N3: Liste als CSV-Datei
+        eintrag('Umbenennen', 'aendern.umbenennen', p),
         eintrag('Duplizieren', 'ansicht.duplizieren', p), eintrag('Löschen', 'aendern.loeschen', p),
         { trenner: true },
         eintrag('Als Vorlage speichern', 'ansicht.vorlage-speichern', p), eintrag('Vorlage anwenden …', 'ansicht.vorlage-anwenden', p));

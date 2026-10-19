@@ -131,6 +131,9 @@ function gebaeudeAst(ctx, passt, opt = {}) {
       art: 'raum-offen', sym: 'raumOffen', label: raumTitel(r), sub: r.geschoss ?? '', tipp: `${r.kennzeichen} · nicht platziert (aus HKAP, noch ohne Geometrie)\nRechtsklick: Platzieren … oder einem gezeichneten Raum zuordnen …`,
     })), { sym: 'raumOffen' }));
   }
+  // N3: das Element Projektinformation (Doppelklick öffnet den bearbeitbaren Dialog «Projektinformationen»); nur im Ast «Gebäude» (nicht in «Räume» der Fachgliederungen)
+  const info = passt || opt.titel ? null : ctx.derKlasse('Projektinformation').sort(nachKz)[0];
+  if (info) knoten.push({ ...elementKnoten(info), art: 'projektinfo', label: 'Projektinformationen', sub: info.kennzeichen, sym: 'info', tipp: `${info.kennzeichen} · Doppelklick: Projektinformationen bearbeiten` });
   return astKnoten('w:gebaeude', opt.titel ?? 'Gebäude', knoten, { quelle: 'gebaeude' });
 }
 

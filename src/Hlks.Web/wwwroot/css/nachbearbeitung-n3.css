@@ -1,0 +1,45 @@
+/* Nachbearbeitung N3 – fehlende Bedienorte: Einlage-/Grundleitungsplan anlegen, Projektinformationen bearbeiten, CSV der Listenansicht.
+   Farben und Grössen nur über die Variablen aus hlks.css. */
+
+/* ---------- Listenansicht: Knopf «CSV …» in der Kopfzeile ---------- */
+.li-kopf { position: relative; }
+.li-csv { position: absolute; top: 3px; right: 8px; display: inline-flex; align-items: center; gap: 4px; height: 20px; padding: 0 8px;
+  border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+.li-csv:hover { background: var(--akzent-hell); border-color: var(--akzent); }
+.li-csv:focus-visible { outline: 1px solid var(--akzent); outline-offset: 1px; }
+.li-csv .sym { flex: none; }
+.csv-dlg .fz { grid-template-columns: 90px 1fr; }
+
+/* ---------- Einlageplan / Grundleitungsplan anlegen ---------- */
+.epl { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.epl-wahl { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0 12px; }
+.epl-wahl .fz { grid-template-columns: 78px 1fr; }
+.epl-plaene { min-height: 40px; max-height: 240px; overflow: auto; border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.epl-tabelle th { position: sticky; top: 0; background: var(--flaeche-tief); text-align: left; padding: 2px 8px; font-weight: 600; }
+.epl-tabelle td { padding: 1px 8px; border-bottom: 1px solid var(--rand-leise); }
+.epl-leer { margin: 0; padding: 8px; }
+.epl-vorschau { max-height: 170px; overflow: auto; border: 1px solid var(--rand-leise); border-radius: var(--radius); padding: 4px 8px; background: var(--flaeche); }
+.epl-vorschau-kopf { font-weight: 600; margin-bottom: 2px; }
+.epl-hinweise { margin: 3px 0 0; padding-left: 16px; }
+.epl-hinweise li { margin: 1px 0; }
+
+/* ---------- Projektinformationen bearbeiten ---------- */
+.pi .fz { grid-template-columns: 170px 1fr; }
+.pi-kopf { margin: 0 0 4px; }
+.pi-gruppe { margin: 6px 0; }
+.pi-zahl { display: flex; align-items: center; gap: 6px; }
+.pi-zahl input { width: 110px; }
+.pi-einheit-text { color: var(--text-leise); }
+.pi-lesen-text { min-width: 0; overflow-wrap: anywhere; }
+.pi-hinweis { margin: 2px 0 0; }
+.pi-lesen .fz, .pi-lesen { align-items: start; }
+.pi-einheiten { margin: 4px 0; }
+.pi-einheiten-kopf { color: var(--text-leise); margin-bottom: 2px; }
+.pi-einheiten-raster { display: grid; grid-template-columns: repeat(4, 1fr); gap: 2px 12px; }
+.pi-einheit { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 4px; }
+.pi-einheit > span { color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pi-einheit select { height: 22px; min-width: 0; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.pi input[type=text], .pi select { font: inherit; }
+.pi-ueberblick { margin: 6px 0; }
+.pi-ueberblick summary { cursor: pointer; color: var(--text-leise); }
+.pi-ueberblick-inhalt { padding: 4px 0 0; }
