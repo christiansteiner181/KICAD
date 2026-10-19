@@ -4,8 +4,10 @@
 // Gruppe würde das ohnehin volle Register Ansicht verbreitern. Keine Logik hier: die Verwaltung entscheidet, wo eine Palette sitzt.
 
 import { registrieren } from './register.js';
-import { kontextmenue } from './dialoge.js';
+import { kontextmenue, meldung } from './dialoge.js';
 import { liste, umschalten, sichtbar, zuruecksetzen } from './paletten.js';
+import { revitAktiv } from './symbolstil.js';
+import { symbolstilUmschalten } from './symbolstil-umschalten.js';
 
 const KEIN_PROJEKT = 'Zuerst ein Projekt öffnen.';
 let zeiger = { x: 0, y: 0 };
@@ -19,7 +21,14 @@ export function paletteneintraege() {
     return { titel: `${an ? '✓' : ' '}  ${d.titel}`, aktiv: erlaubt, hinweis: KEIN_PROJEKT, aktion: () => umschalten(d.id) };
   });
   eintraege.push({ trenner: true }, { titel: 'Paletten zurücksetzen', aktion: () => zuruecksetzen() });
+  // Symbolsatz (Teil S): Häkchen «Symbole im Revit-Stil (Probe)»; der unauffälligste Ort, kein neues Register und keine neue Gruppe
+  eintraege.push({ trenner: true }, { titel: `${revitAktiv() ? '✓' : ' '}  Symbole im Revit-Stil (Probe)`, aktion: () => umschaltenMitMeldung() });
   return eintraege;
+}
+
+async function umschaltenMitMeldung() {
+  try { await symbolstilUmschalten(); }
+  catch (e) { meldung(`Die Wahl des Symbolsatzes konnte nicht gespeichert werden: ${e.message ?? e}`, 'warnung', { vorschlag: e.vorschlag }); }
 }
 
 registrieren({

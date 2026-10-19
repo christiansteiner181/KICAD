@@ -6,7 +6,7 @@
 // Quellordner (OneDrive, Editor, andere Agenten) Dateien umbenannt werden – die Kopie ist davor sicher.
 // Der Server läuft mit HLKS_TEST=1, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE und HLKS_ZULETZT unter %TEMP%: nie auf W:.
 // Aufruf:  node menueband.browser.mjs        (Port 5171; HLKS_BUILD wie beim Bauen, Vorgabe %USERPROFILE%\HLKS_CAD_build)
-// Umgebung: SHOTS=<Ordner für Bilder> (Vorgabe %TEMP%\HLKS_CAD), HLKS_CDP_PORT (9471), HLKS_EDGE
+// Umgebung: SHOTS=<Ordner für Bilder> (Vorgabe %TEMP%\HLKS_CAD), HLKS_CDP_PORT (9471), HLKS_EDGE, HLKS_SYMBOLE=revit (ganze Reihe mit dem Symbolsatz im Revit-Stil, Teil S; Vorgabe strich)
 // Prüft: bei 1920, 1366, 1024, 800, 600 und 420 px in allen Registern (auch Kontextregister und «Familie») kein Rollbalken und nichts abgeschnitten;
 // Stufen G/M/K/Z von rechts nach links; kein Neuzeichnen ohne Stufenwechsel; Flyout (öffnen, ausführen, Esc, Klick ausserhalb, gesperrte Knöpfe, gedrückte
 // Knöpfe); «» weitere»; Tastenkürzel und Tooltips in allen Stufen; Minimieren (Doppelklick, ⌃, Überlagerung, gemerkt); Ansichtsreiter schmaler und
@@ -20,6 +20,7 @@ import { fileURLToPath } from 'node:url';
 const PORT = Number(process.env.HLKS_R_PORT ?? 5171);   // HLKS_R_PORT: anderer Port, wenn 5171 belegt ist (der Test beendet den Prozess, der den Port hält)
 const SERVER = `http://localhost:${PORT}`;
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9471);
+const SYMBOLE = process.env.HLKS_SYMBOLE === 'revit' ? 'revit' : 'strich';   // Symbolsatz der Reihe (Teil S): strich (Vorgabe) | revit
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = 'C:\\Program Files\\dotnet\\dotnet.exe';
 const BUILD = process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE, 'HLKS_CAD_build');
@@ -94,6 +95,8 @@ const gehe = async (design = 'dunkel') => {
   await send('Page.navigate', { url: `${SERVER}/` });
   await warteBis(() => ausw(`const z = await import('/js/zustand.js'); return document.readyState === 'complete' && z.zustand.elemente.size > 50 && !!document.querySelector('.mb-tab');`), 'App gestartet', 30000);
   await warte(700);
+  // Symbolsatz (Teil S): HLKS_SYMBOLE=revit lässt die ganze Reihe mit den mehrfarbigen Symbolen laufen (Vorgabe: strich); gleiche Masse, also dieselben Prüfungen
+  if (SYMBOLE === 'revit') { await ausw(`const m = await import('/js/oberflaeche/symbolstil-umschalten.js'); await m.symbolstilWaehlen('revit', false); return 1;`); await warte(250); }
 };
 const taste = async (key, code, vk, modifiers = 0) => {
   await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key, code, windowsVirtualKeyCode: vk, modifiers });

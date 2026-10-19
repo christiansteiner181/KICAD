@@ -1,6 +1,8 @@
 // Symbole der Zeichenwerkzeuge (Inline-SVG, 32×32, Linien in currentColor) – eigene Zeichnungen, ergänzen oberflaeche/symbole.js,
 // ohne diese Datei zu ändern. symbolWz(name, grösse) liefert den SVG-Text oder null, wenn der Name hier nicht vorkommt.
 
+import { ersatzSymbol } from '../oberflaeche/symbolstil.js';
+
 const S = {
   achse: '<path d="M16 8.5v15" stroke-dasharray="5 2 1 2"/><circle cx="16" cy="5" r="3.5"/><circle cx="16" cy="27" r="3.5"/>',
   bemassung: '<path d="M4 20h24M4 8v16M28 8v16M2 23l4-6M26 23l4-6"/><path d="M11 14h10" stroke-width="1"/>',
@@ -32,7 +34,9 @@ const S = {
 export function symbolWz(name, groesse = 28) {
   const inhalt = S[name];
   if (!inhalt) return null;
-  return `<svg class="sym" viewBox="0 0 32 32" width="${groesse}" height="${groesse}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>`;
+  const revit = ersatzSymbol(name, groesse);   // Symbolsatz «revit» (Teil S), falls gewählt und vorhanden
+  if (revit) return revit;
+  return `<svg class="sym" data-sym="${name}" viewBox="0 0 32 32" width="${groesse}" height="${groesse}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>`;
 }
 
 export const SYMBOLNAMEN = Object.keys(S);

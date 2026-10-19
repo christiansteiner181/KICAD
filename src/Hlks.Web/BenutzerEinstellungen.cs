@@ -56,7 +56,12 @@ public sealed class BenutzerEinstellungen
         // Welche Kennungen es gibt und welche sich ausschliessen («Gebäude»), steht in der Tabelle der Oberfläche (projektbrowser-gliederung.js);
         // hier nur die Form – eine unbekannte Kennung ignoriert die Oberfläche.
         ["projektbrowser.gliederung"] = GliederungPruefen,
+        // Symbolsatz der Oberfläche (Teil S, entwurf/menueband-revit.md): «strich» (Vorgabe, einfarbige Strichsymbole) oder «revit» (mehrfarbiger Satz im Stil von Revit, Probe).
+        ["oberflaeche.symbole"] = SymbolsatzPruefen,
     };
+
+    static string? SymbolsatzPruefen(JsonNode w) =>
+        w is JsonValue v && v.TryGetValue<string>(out var s) && (s == "strich" || s == "revit") ? null : "Erlaubt sind «strich» (Vorgabe) und «revit».";
 
     const int GliederungenMax = 16;
     const string GliederungHinweis = "Der Wert muss eine Liste von Kennungen der Gliederungen sein (Kleinbuchstaben, z. B. [\"sanitaer\",\"heizung\"]); ein einzelner Text wie «gebaeude» gilt als Liste mit einem Eintrag.";

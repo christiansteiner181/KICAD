@@ -548,7 +548,7 @@ abschnitt('15. ✕ am Palettenkopf und Register Ansicht › Paletten');
   pruef(pb.h > 600, 'der Projektbrowser füllt die Seitenleiste', JSON.stringify(pb));
   await paletteMenue();
   const t = await menueTexte();
-  pruef(t.length === 4 && t[0].includes('Eigenschaften') && t[1].includes('Projektbrowser') && t[2].includes('Koordination') && t[3] === 'Paletten zurücksetzen', 'Register Ansicht › Paletten: Liste aller Paletten und «Paletten zurücksetzen»', JSON.stringify(t));
+  pruef(t.length === 5 && t[0].includes('Eigenschaften') && t[1].includes('Projektbrowser') && t[2].includes('Koordination') && t[3] === 'Paletten zurücksetzen' && t[4].includes('Symbole im Revit-Stil (Probe)') && !t[4].startsWith('✓'), 'Register Ansicht › Paletten: Liste aller Paletten, «Paletten zurücksetzen» und der Schalter «Symbole im Revit-Stil (Probe)» (Teil S, aus)', JSON.stringify(t));
   pruef(!mitHaken(t, 'Eigenschaften') && mitHaken(t, 'Projektbrowser') && !mitHaken(t, 'Koordination'), 'Häkchen nur bei der sichtbaren Palette', JSON.stringify(t));
   const ein = await ausw(`return [...document.querySelectorAll('.kmenu button')].map((b) => b.classList.contains('gesperrt'));`);
   pruef(ein.every((g) => g === false), 'alle Einträge sind bedienbar (Projekt offen)');

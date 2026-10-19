@@ -149,6 +149,26 @@ public class BenutzerEinstellungenTests : IDisposable
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", null);
     }
 
+    [Theory]
+    [InlineData("strich", true)]
+    [InlineData("revit", true)]
+    [InlineData("Revit", false)]
+    [InlineData("", false)]
+    [InlineData("bunt", false)]
+    public void Pruefen_Symbolsatz_kennt_strich_und_revit(string wert, bool gut)
+    {
+        if (gut) BenutzerEinstellungen.Pruefen("oberflaeche.symbole", S(wert));
+        else Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("oberflaeche.symbole", S(wert)));
+    }
+
+    [Fact]
+    public void Pruefen_Symbolsatz_lehnt_Zahl_und_Liste_ab_null_setzt_zurueck()
+    {
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("oberflaeche.symbole", JsonValue.Create(1)));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("oberflaeche.symbole", new JsonArray("revit")));
+        BenutzerEinstellungen.Pruefen("oberflaeche.symbole", null);
+    }
+
     // ---------------------------------------------------------------- G2: mehrere Gliederungen zugleich (Wert ist eine Liste)
 
     [Fact]

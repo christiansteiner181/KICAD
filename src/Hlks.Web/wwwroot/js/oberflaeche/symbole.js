@@ -1,5 +1,8 @@
 // Eigene Symbole als Inline-SVG (Linien in currentColor, 32×32). Keine fremden Grafiken.
 // symbol('name') liefert den SVG-Text; unbekannte Namen ergeben ein neutrales Quadrat.
+// Zuschaltbar: bei Benutzereinstellung «oberflaeche.symbole» = «revit» kommt zu jedem Namen mit Fassung in symbole-revit.js das mehrfarbige Symbol (Teil S).
+
+import { ersatzSymbol } from './symbolstil.js';
 
 const S = {
   ordner: '<path d="M4 9h8l2 3h14v14H4z"/>',
@@ -142,11 +145,18 @@ const S = {
   palettenZurueck: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/><path d="M20 20a4 4 0 104-4M24 13v3h-3"/>',
 };
 
-/** Liefert ein Inline-SVG; groesse in px. */
+/** Liefert ein Inline-SVG; groesse in px. Ist der Symbolsatz «revit» gewählt (symbolstil.js, Teil S) und gibt es zum Namen eine Revit-Fassung, kommt diese; sonst der Strich.
+ *  Bekannte Symbole tragen data-sym (Name), damit der Satz ohne Neuladen getauscht werden kann (symbolstil-umschalten.js). */
 export function symbol(name, groesse = 28) {
-  const inhalt = S[name] ?? '<rect x="6" y="6" width="20" height="20" stroke-dasharray="3 3"/>';
-  return `<svg class="sym" viewBox="0 0 32 32" width="${groesse}" height="${groesse}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>`;
+  const revit = ersatzSymbol(name, groesse);
+  if (revit) return revit;
+  const inhalt = S[name];
+  if (inhalt === undefined) return `<svg class="sym" viewBox="0 0 32 32" width="${groesse}" height="${groesse}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="6" y="6" width="20" height="20" stroke-dasharray="3 3"/></svg>`;
+  return `<svg class="sym" data-sym="${name}" viewBox="0 0 32 32" width="${groesse}" height="${groesse}" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${inhalt}</svg>`;
 }
+
+/** Die Namen aller Strichsymbole (für Kontaktbogen und Tests). */
+export const SYMBOLNAMEN_STRICH = Object.keys(S);
 
 /** Symbolname passend zu einer Katalogklasse (für Baum und Eigenschaften). */
 export function symbolFuerKlasse(klasse, basis) {
