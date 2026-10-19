@@ -1,0 +1,17 @@
+[
+  { "kennung": "KW", "name": "Trinkwasser kalt", "gewerk": "sanitaer", "farbe": "grün", "farbeHex": "#2e8b3a", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3 (Farbe), übernommen aus KI-Planungsbüro" },
+  { "kennung": "WW", "name": "Trinkwasser warm", "gewerk": "sanitaer", "farbe": "rot", "farbeHex": "#d0312d", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3 (Farbe), übernommen aus KI-Planungsbüro" },
+  { "kennung": "ZIR", "name": "Warmwasser-Zirkulation", "gewerk": "sanitaer", "farbe": "rot", "farbeHex": "#d0312d", "linie": "gestrichelt", "quelle": "SIA 410/1 Ziff. 3 (Farbe), übernommen aus KI-Planungsbüro" },
+  { "kennung": "SW", "name": "Schmutzwasser", "gewerk": "sanitaer", "farbe": "braun", "farbeHex": "#8b5a2b", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3 (Farbe), übernommen aus KI-Planungsbüro" },
+  { "kennung": "RW", "name": "Regenwasser", "gewerk": "sanitaer", "farbe": "braun", "farbeHex": "#8b5a2b", "linie": "gestrichelt", "quelle": "Farbe SIA 410/1 Ziff. 3; Strichart Annahme" },
+  { "kennung": "HZ-VL", "name": "Heizung Vorlauf", "gewerk": "heizung", "farbe": "rot", "farbeHex": "#d0312d", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3, SIA 410 Ziff. 2.5, übernommen aus KI-Planungsbüro" },
+  { "kennung": "HZ-RL", "name": "Heizung Rücklauf", "gewerk": "heizung", "farbe": "blau", "farbeHex": "#1f5fbf", "linie": "gestrichelt", "quelle": "SIA 410/1 Ziff. 3, SIA 410 Ziff. 2.5 (Rücklauf gestrichelt), übernommen aus KI-Planungsbüro" },
+  { "kennung": "KUE-VL", "name": "Kühlwasser Vorlauf", "gewerk": "kaelte", "farbe": "grün", "farbeHex": "#2e8b3a", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3, übernommen aus KI-Planungsbüro" },
+  { "kennung": "KUE-RL", "name": "Kühlwasser Rücklauf", "gewerk": "kaelte", "farbe": "violett", "farbeHex": "#7b3fa0", "linie": "gestrichelt", "quelle": "SIA 410/1 Ziff. 3, übernommen aus KI-Planungsbüro" },
+  { "kennung": "SOLE-VL", "name": "Sole Vorlauf", "gewerk": "heizung", "farbe": "grün", "farbeHex": "#2e8b3a", "linie": "voll", "quelle": "Annahme (Sole fehlt in SIA 410/1), wie Kühlwasser" },
+  { "kennung": "SOLE-RL", "name": "Sole Rücklauf", "gewerk": "heizung", "farbe": "violett", "farbeHex": "#7b3fa0", "linie": "gestrichelt", "quelle": "Annahme (Sole fehlt in SIA 410/1), wie Kühlwasser" },
+  { "kennung": "AUL", "name": "Aussenluft", "gewerk": "lueftung", "farbe": "grün", "farbeHex": "#2e8b3a", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3, übernommen aus KI-Planungsbüro" },
+  { "kennung": "ZUL", "name": "Zuluft", "gewerk": "lueftung", "farbe": "rot", "farbeHex": "#d0312d", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3, übernommen aus KI-Planungsbüro" },
+  { "kennung": "ABL", "name": "Abluft", "gewerk": "lueftung", "farbe": "gelb", "farbeHex": "#c9a400", "linie": "voll", "quelle": "SIA 410/1 Ziff. 3, übernommen aus KI-Planungsbüro" },
+  { "kennung": "FOL", "name": "Fortluft", "gewerk": "lueftung", "farbe": "gelb", "farbeHex": "#c9a400", "linie": "gestrichelt", "quelle": "Farbe SIA 410/1 Ziff. 3; Strichart Annahme" }
+]

@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "id": "fam-test-bogen",
+  "name": "Testbogen (fiktiv)",
+  "kategorie": "Bogen",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Bogen der Testrohrserie (Modul 3, Hauptlauf, 18.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: Ursprung = Schnittpunkt der Achsen; Anschluss a bei (−la, 0, 0) Richtung (−1, 0, 0); b bei lb·(cos w, sin w, 0) Richtung (cos w, sin w, 0), w = Umlenkwinkel. Einbaulänge la = lb = r·tan(w/2) mit Biegeradius r = 2·da (Handrechnung: DN 20, 90° → 50 mm).",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (FIKTIV)" },
+    { "name": "r", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "2 * da", "beschreibung": "Biegeradius der Achse (FIKTIV)" },
+    { "name": "winkel", "art": "exemplar", "datentyp": "winkel", "gruppe": "abmessung", "wert": 90, "ziel": "winkel", "beschreibung": "Umlenkwinkel" },
+    { "name": "la", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "r * tan(winkel / 2)", "beschreibung": "Einbaulänge Anschluss a (Achsschnittpunkt bis Anschluss)" },
+    { "name": "lb", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "r * tan(winkel / 2)", "beschreibung": "Einbaulänge Anschluss b" }
+  ],
+  "typen": [
+    { "name": "DN 15", "werte": { "dn": 15, "da": 20 } },
+    { "name": "DN 20", "werte": { "dn": 20, "da": 25 } },
+    { "name": "DN 25", "werte": { "dn": 25, "da": 30 } },
+    { "name": "DN 32", "werte": { "dn": 32, "da": 37 } },
+    { "name": "DN 40", "werte": { "dn": 40, "da": 45 } },
+    { "name": "DN 50", "werte": { "dn": 50, "da": 55 } }
+  ],
+  "koerper": [
+    { "id": "bogen", "name": "Bogen", "art": "sweep", "material": "rohr",
+      "profil": { "kreis": "da / 2" }, "pfad": [["-la", 0, 0], [0, 0, 0], ["lb * cos(winkel)", "lb * sin(winkel)", 0]], "biegeradius": "r" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["-la", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["lb * cos(winkel)", "lb * sin(winkel)", 0], "richtung": ["cos(winkel)", "sin(winkel)", 0], "beschreibung": "Ausgang (um winkel umgelenkt)" }
+  ]
+}

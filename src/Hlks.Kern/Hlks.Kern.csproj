@@ -1,0 +1,38 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <RootNamespace>Hlks.Kern</RootNamespace>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <!-- Polygon-Vereinigung, -Differenz und -Versatz (Wandanschlüsse, Öffnungen, Raumgrenzen). Boost Software License. -->
+    <PackageReference Include="Clipper2" Version="1.5.4" />
+    <!-- PDF-Ausgabe der Planblätter (Vektor). Bewusst 6.2.4: letzte Fassung unter MIT (ab 6.5 AGPL-3.0-only mit
+         Lizenzerklärung im Code – geprüft 17.10.2026). Nicht PdfSharpCore wie im HKAP: das zieht SixLabors.ImageSharp
+         1.0.4 mit bekannten schweren Sicherheitslücken nach (NU1903). Vor einem Update auf ≥ 6.5 die Lizenz klären. -->
+    <PackageReference Include="PDFsharp" Version="6.2.4" />
+    <!-- PDFsharp bringt Pkcs 8.0.1 mit bekannten Lücken (NU1902/NU1903) mit: auf die gepflegte .NET-10-Fassung heben. -->
+    <PackageReference Include="System.Security.Cryptography.Pkcs" Version="10.0.13" />
+    <!-- Modul 1b, Grundlagen (Lizenzen und Sicherheitsmeldungen geprüft 17.10.2026, keine bekannten Lücken):
+         IFC4 und IFC2x3 lesen (Schemaklassen aus den buildingSMART-EXPRESS-Schemas). CDDL-1.0: Nutzung unverändert
+         erlaubt; nur geänderte Dateien der Bibliothek müssten bei Weitergabe offengelegt werden. -->
+    <PackageReference Include="Xbim.Essentials" Version="6.1.605" />
+    <!-- DWG (AC1014–AC1032) und DXF direkt lesen, ohne ODA File Converter. MIT. -->
+    <PackageReference Include="ACadSharp" Version="3.8.0" />
+    <!-- PDF-Seiten als Bild rendern (PDFium, BSD). MIT. -->
+    <PackageReference Include="Docnet.Core" Version="2.6.0" />
+    <!-- Modul 2, Herstellerunterlagen lesen (Lizenzen vom Hauptlauf geprüft 18.10.2026, Fassungen festgeschrieben):
+         PDF-Text mit Lage und Vektorpfade. Apache-2.0. Paket-Id ist «PdfPig» (Namensraum UglyToad.PdfPig); die Id «UglyToad.PdfPig» auf nuget.org ist ein fremdes Paket (1.7.0-custom-5) und hat keine 0.1.16. -->
+    <PackageReference Include="PdfPig" Version="0.1.16" />
+    <!-- XLSX lesen (Typentabellen der Hersteller). MIT. -->
+    <PackageReference Include="ExcelDataReader" Version="3.9.0" />
+    <!-- HTML-Leser für Herstellerseiten (Internet-Recherche, Lizenz vom Hauptlauf geprüft 30.09.2026), genau diese Fassung. MIT. -->
+    <PackageReference Include="AngleSharp" Version="1.8.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <!-- Logo H+K für den Plankopf (Kopie aus AufgabenProtokolle.Web/Assets/hk-logo.png) -->
+    <EmbeddedResource Include="Plan\hk-logo.png" LogicalName="Hlks.Kern.Plan.hk-logo.png" />
+  </ItemGroup>
+
+</Project>

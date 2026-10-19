@@ -1,0 +1,17 @@
+[
+  { "name": "Trinkwasser kalt", "medium": "KW", "gewerk": "sanitaer", "fliessart": "druck", "verbraucherRichtung": "stromab", "beschreibung": "Kaltwasserversorgung vom Hausanschluss zu den Entnahmestellen." },
+  { "name": "Trinkwasser warm", "medium": "WW", "gewerk": "sanitaer", "fliessart": "druck", "verbraucherRichtung": "stromab", "beschreibung": "Warmwasserversorgung vom Wassererwärmer zu den Entnahmestellen." },
+  { "name": "Zirkulation", "medium": "ZIR", "gewerk": "sanitaer", "fliessart": "druck", "verbraucherRichtung": "stromauf", "beschreibung": "Rückführung des Warmwassers zum Wassererwärmer." },
+  { "name": "Schmutzwasser", "medium": "SW", "gewerk": "sanitaer", "fliessart": "schwerkraft", "verbraucherRichtung": "stromauf", "beschreibung": "Entwässerung der Apparate über Anschluss-, Fall-, Sammel- und Grundleitungen." },
+  { "name": "Regenwasser", "medium": "RW", "gewerk": "sanitaer", "fliessart": "schwerkraft", "verbraucherRichtung": "stromauf", "beschreibung": "Dach- und Platzentwässerung." },
+  { "name": "Heizung Vorlauf", "medium": "HZ-VL", "gewerk": "heizung", "fliessart": "druck", "verbraucherRichtung": "stromab", "beschreibung": "Vom Wärmeerzeuger zu den Wärmeabgabern." },
+  { "name": "Heizung Rücklauf", "medium": "HZ-RL", "gewerk": "heizung", "fliessart": "druck", "verbraucherRichtung": "stromauf", "beschreibung": "Von den Wärmeabgabern zurück zum Wärmeerzeuger." },
+  { "name": "Kühlwasser Vorlauf", "medium": "KUE-VL", "gewerk": "kaelte", "fliessart": "druck", "verbraucherRichtung": "stromab", "beschreibung": "Vom Kälteerzeuger zu den Kühlstellen." },
+  { "name": "Kühlwasser Rücklauf", "medium": "KUE-RL", "gewerk": "kaelte", "fliessart": "druck", "verbraucherRichtung": "stromauf", "beschreibung": "Von den Kühlstellen zurück zum Kälteerzeuger." },
+  { "name": "Sole Vorlauf", "medium": "SOLE-VL", "gewerk": "heizung", "fliessart": "druck", "verbraucherRichtung": "stromab", "beschreibung": "Sole von der Wärmepumpe zum Erdsondenfeld." },
+  { "name": "Sole Rücklauf", "medium": "SOLE-RL", "gewerk": "heizung", "fliessart": "druck", "verbraucherRichtung": "stromauf", "beschreibung": "Sole vom Erdsondenfeld zur Wärmepumpe." },
+  { "name": "Aussenluft", "medium": "AUL", "gewerk": "lueftung", "fliessart": "luft", "verbraucherRichtung": "stromab", "beschreibung": "Von der Ansaugung zum Lüftungsgerät." },
+  { "name": "Zuluft", "medium": "ZUL", "gewerk": "lueftung", "fliessart": "luft", "verbraucherRichtung": "stromab", "beschreibung": "Vom Lüftungsgerät zu den Zuluftdurchlässen." },
+  { "name": "Abluft", "medium": "ABL", "gewerk": "lueftung", "fliessart": "luft", "verbraucherRichtung": "stromauf", "beschreibung": "Von den Abluftdurchlässen zum Lüftungsgerät." },
+  { "name": "Fortluft", "medium": "FOL", "gewerk": "lueftung", "fliessart": "luft", "verbraucherRichtung": "stromauf", "beschreibung": "Vom Lüftungsgerät zum Fortluftauslass." }
+]

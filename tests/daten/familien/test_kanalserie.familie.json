@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalserie",
+  "name": "Testkanalserie rechteckig (fiktiv)",
+  "kategorie": "Kanal",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Rechteckige Kanalserie für die Tests von Modul 3, B2 (18.10.2026). Alle Werte sind FIKTIV – weder Herstellerdaten noch Normmasse, nur für Tests und Handrechnungen. Grösse b × h in mm; Lage um die Achse (Annahme B2): b waagrecht, h senkrecht. Formteile aus den Testfamilien fam-test-kanalbogen, fam-test-kanal-t, fam-test-kanalreduktion.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Breite (FIKTIV)" },
+    { "name": "h", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Höhe (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "500x300", "werte": { "b": 500, "h": 300 } },
+    { "name": "400x200", "werte": { "b": 400, "h": 200 } },
+    { "name": "300x200", "werte": { "b": 300, "h": 200 } },
+    { "name": "200x200", "werte": { "b": 200, "h": 200 } }
+  ],
+  "koerper": [],
+  "anschluesse": [],
+  "leitung": {
+    "querschnitt": "rechteck",
+    "groesse": { "b": "b", "h": "h" },
+    "aussen": "b",
+    "formteile": {
+      "bogen": { "familie": "fam-test-kanalbogen" },
+      "tstueck": { "familie": "fam-test-kanal-t" },
+      "reduktion": { "familie": "fam-test-kanalreduktion" }
+    },
+    "regeln": { "winkel": [45, 90], "abzweig": "tstueck" }
+  }
+}

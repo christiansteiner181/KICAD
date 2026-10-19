@@ -1,0 +1,316 @@
+{
+    "zusammenfassung":  {
+                            "zeit":  "2026-10-17T17:44:56",
+                            "modell":  "claude-haiku-5-5",
+                            "richtig":  10,
+                            "fragen":  10,
+                            "bestanden":  true,
+                            "dauer_s":  30,
+                            "runden":  15,
+                            "kosten_usd":  0.01271008,
+                            "arbeitsordner":  "C:\\Users\\chris\\HLKS_CAD_build\\kitest\\lauf_20261017_174424"
+                        },
+    "bewertung":  {
+                      "richtig":  10,
+                      "fragen":  10,
+                      "bestanden":  true,
+                      "modellStand":  "4a24cd311b0e",
+                      "ergebnisse":  [
+                                         {
+                                             "frage":  "f1",
+                                             "text":  "Welche Endgeräte entwässern über den Fallstrang SW-F2?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  [
+                                                              "DU-1.03",
+                                                              "DU-E.03",
+                                                              "WC-1.03",
+                                                              "WC-E.03",
+                                                              "WT-1.03",
+                                                              "WT-E.03"
+                                                          ],
+                                             "erhalten":  [
+                                                              "DU-1.03",
+                                                              "WC-1.03",
+                                                              "WT-1.03",
+                                                              "DU-E.03",
+                                                              "WC-E.03",
+                                                              "WT-E.03"
+                                                          ]
+                                         },
+                                         {
+                                             "frage":  "f2",
+                                             "text":  "In welchem Raum steht WT-E.02, und an welche Systeme ist er angeschlossen?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  {
+                                                              "raum":  "E.02",
+                                                              "systeme":  [
+                                                                              "KW",
+                                                                              "SW"
+                                                                          ]
+                                                          },
+                                             "erhalten":  {
+                                                              "raum":  "E.02",
+                                                              "systeme":  [
+                                                                              "KW",
+                                                                              "SW"
+                                                                          ]
+                                                          }
+                                         },
+                                         {
+                                             "frage":  "f3",
+                                             "text":  "Welche Endgeräte haben kein Kaltwasser mehr, wenn das Magnetventil MV-1 schliesst?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  [
+                                                              "BW-1.02",
+                                                              "BW-E.02",
+                                                              "DU-1.03",
+                                                              "DU-E.03",
+                                                              "SP-1.01",
+                                                              "SP-E.01",
+                                                              "WC-1.02",
+                                                              "WC-1.03",
+                                                              "WC-E.02",
+                                                              "WC-E.03",
+                                                              "WM-U.02",
+                                                              "WT-1.02",
+                                                              "WT-1.03",
+                                                              "WT-E.02",
+                                                              "WT-E.03"
+                                                          ],
+                                             "erhalten":  [
+                                                              "WM-U.02",
+                                                              "SP-E.01",
+                                                              "SP-1.01",
+                                                              "BW-E.02",
+                                                              "BW-1.02",
+                                                              "WC-E.02",
+                                                              "WC-1.02",
+                                                              "WT-E.02",
+                                                              "WT-1.02",
+                                                              "DU-E.03",
+                                                              "DU-1.03",
+                                                              "WC-E.03",
+                                                              "WC-1.03",
+                                                              "WT-E.03",
+                                                              "WT-1.03"
+                                                          ]
+                                         },
+                                         {
+                                             "frage":  "f4",
+                                             "text":  "Über welche Stränge fliesst das Abwasser von WC-1.02 bis zum Kontrollschacht (in Fliessrichtung), und welches Kennzeichen hat der Kontrollschacht?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  {
+                                                              "straenge":  [
+                                                                               "SW-F1",
+                                                                               "SW-S1",
+                                                                               "SW-G1"
+                                                                           ],
+                                                              "ende":  "KS-1"
+                                                          },
+                                             "erhalten":  {
+                                                              "straenge":  [
+                                                                               "SW-F1",
+                                                                               "SW-S1",
+                                                                               "SW-G1"
+                                                                           ],
+                                                              "ende":  "KS-1"
+                                                          }
+                                         },
+                                         {
+                                             "frage":  "f5",
+                                             "text":  "Wie viele Meter Schmutzwasserleitung DN 100 enthält das Modell (auf 0.1 m genau)?",
+                                             "richtig":  true,
+                                             "hinweis":  "Toleranz ±0.1 m",
+                                             "erwartet":  27.13,
+                                             "erhalten":  27.1
+                                         },
+                                         {
+                                             "frage":  "f6",
+                                             "text":  "Welcher Datenpunkt löst die Absperrung der Kaltwasser-Hauptleitung aus, und in welchem Raum wird dafür gemessen?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  {
+                                                              "datenpunkt":  "DP-LECK-U.02",
+                                                              "raum":  "U.02"
+                                                          },
+                                             "erhalten":  {
+                                                              "datenpunkt":  "DP-LECK-U.02",
+                                                              "raum":  "U.02"
+                                                          }
+                                         },
+                                         {
+                                             "frage":  "f7",
+                                             "text":  "Nur prüfen, nichts ändern: Welche Leitungen hätten einen offenen Anschluss, wenn der Waschtisch WT-1.03 gelöscht würde?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  [
+                                                              "KW-1.03-WT",
+                                                              "SW-1.03-WT"
+                                                          ],
+                                             "erhalten":  [
+                                                              "KW-1.03-WT",
+                                                              "SW-1.03-WT"
+                                                          ]
+                                         },
+                                         {
+                                             "frage":  "f8",
+                                             "text":  "Erstelle die Raumliste des 1.OG: je Raum Kennzeichen, Fläche in m² und Anzahl Endgeräte.",
+                                             "richtig":  true,
+                                             "hinweis":  "Fläche ±0.05 m²",
+                                             "erwartet":  [
+                                                              {
+                                                                  "raum":  "1.01",
+                                                                  "flaeche_m2":  42,
+                                                                  "endgeraete":  1
+                                                              },
+                                                              {
+                                                                  "raum":  "1.02",
+                                                                  "flaeche_m2":  12,
+                                                                  "endgeraete":  3
+                                                              },
+                                                              {
+                                                                  "raum":  "1.03",
+                                                                  "flaeche_m2":  8,
+                                                                  "endgeraete":  3
+                                                              },
+                                                              {
+                                                                  "raum":  "1.04",
+                                                                  "flaeche_m2":  28,
+                                                                  "endgeraete":  0
+                                                              },
+                                                              {
+                                                                  "raum":  "1.05",
+                                                                  "flaeche_m2":  30,
+                                                                  "endgeraete":  0
+                                                              }
+                                                          ],
+                                             "erhalten":  [
+                                                              {
+                                                                  "raum":  "1.01",
+                                                                  "flaeche_m2":  42,
+                                                                  "endgeraete":  1
+                                                              },
+                                                              {
+                                                                  "raum":  "1.02",
+                                                                  "flaeche_m2":  12,
+                                                                  "endgeraete":  3
+                                                              },
+                                                              {
+                                                                  "raum":  "1.03",
+                                                                  "flaeche_m2":  8,
+                                                                  "endgeraete":  3
+                                                              },
+                                                              {
+                                                                  "raum":  "1.04",
+                                                                  "flaeche_m2":  28,
+                                                                  "endgeraete":  0
+                                                              },
+                                                              {
+                                                                  "raum":  "1.05",
+                                                                  "flaeche_m2":  30,
+                                                                  "endgeraete":  0
+                                                              }
+                                                          ]
+                                         },
+                                         {
+                                             "frage":  "f9",
+                                             "text":  "Erstelle die Strangliste: je Strang Kennzeichen, System und Anzahl direkt angeschlossener Endgeräte.",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  [
+                                                              {
+                                                                  "strang":  "KW-S1",
+                                                                  "system":  "KW",
+                                                                  "direkt":  8
+                                                              },
+                                                              {
+                                                                  "strang":  "KW-S2",
+                                                                  "system":  "KW",
+                                                                  "direkt":  6
+                                                              },
+                                                              {
+                                                                  "strang":  "KW-V1",
+                                                                  "system":  "KW",
+                                                                  "direkt":  1
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-F1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  8
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-F2",
+                                                                  "system":  "SW",
+                                                                  "direkt":  6
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-G1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  2
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-S1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  0
+                                                              }
+                                                          ],
+                                             "erhalten":  [
+                                                              {
+                                                                  "strang":  "KW-S1",
+                                                                  "system":  "KW",
+                                                                  "direkt":  8
+                                                              },
+                                                              {
+                                                                  "strang":  "KW-S2",
+                                                                  "system":  "KW",
+                                                                  "direkt":  6
+                                                              },
+                                                              {
+                                                                  "strang":  "KW-V1",
+                                                                  "system":  "KW",
+                                                                  "direkt":  1
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-F1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  8
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-F2",
+                                                                  "system":  "SW",
+                                                                  "direkt":  6
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-G1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  2
+                                                              },
+                                                              {
+                                                                  "strang":  "SW-S1",
+                                                                  "system":  "SW",
+                                                                  "direkt":  0
+                                                              }
+                                                          ]
+                                         },
+                                         {
+                                             "frage":  "f10",
+                                             "text":  "Welche Räume im EG haben keinen Sanitäranschluss (kein Endgerät)?",
+                                             "richtig":  true,
+                                             "hinweis":  null,
+                                             "erwartet":  [
+                                                              "E.04",
+                                                              "E.05"
+                                                          ],
+                                             "erhalten":  [
+                                                              "E.04",
+                                                              "E.05"
+                                                          ]
+                                         }
+                                     ]
+                  },
+    "antworttext":  "Alle Antworten stammen aus den Abfragen des Modells. Geändert wurde nichts; die Löschprüfung für f7 war ein Trockenlauf.\n\n- **f3:** MV-1 liegt am Anfang von KW-V1, vor allen Kaltwasser-Abnehmern. Schliesst er, verlieren alle 15 KW-Endgeräte das Kaltwasser.\n- **f6:** Der auslösende Datenpunkt ist der Leckagemelder DP-LECK-U.02. Die Messung dafür steht im Raum U.02. DP-MV1 ist die Stellung des Ventils, nicht der Auslöser.\n- **f7:** Löschen von WT-1.03 trennt die zwei Anschlüsse. Dadurch bleiben KW-1.03-WT und SW-1.03-WT offen (Trockenlauf-Befund P01). Der Trockenlauf hat nichts gespeichert.\n- **f5:** Das Modell liefert 27.13 m DN 100 im System SW (18 Stück, Klasse Rohr).\n\n```json\n{\n  \"f1\": [\"DU-1.03\", \"WC-1.03\", \"WT-1.03\", \"DU-E.03\", \"WC-E.03\", \"WT-E.03\"],\n  \"f2\": { \"raum\": \"E.02\", \"systeme\": [\"KW\", \"SW\"] },\n  \"f3\": [\"WM-U.02\", \"SP-E.01\", \"SP-1.01\", \"BW-E.02\", \"BW-1.02\", \"WC-E.02\", \"WC-1.02\", \"WT-E.02\", \"WT-1.02\", \"DU-E.03\", \"DU-1.03\", \"WC-E.03\", \"WC-1.03\", \"WT-E.03\", \"WT-1.03\"],\n  \"f4\": { \"straenge\": [\"SW-F1\", \"SW-S1\", \"SW-G1\"], \"ende\": \"KS-1\" },\n  \"f5\": 27.1,\n  \"f6\": { \"datenpunkt\": \"DP-LECK-U.02\", \"raum\": \"U.02\" },\n  \"f7\": [\"KW-1.03-WT\", \"SW-1.03-WT\"],\n  \"f8\": [\n    { \"raum\": \"1.01\", \"flaeche_m2\": 42, \"endgeraete\": 1 },\n    { \"raum\": \"1.02\", \"flaeche_m2\": 12, \"endgeraete\": 3 },\n    { \"raum\": \"1.03\", \"flaeche_m2\": 8, \"endgeraete\": 3 },\n    { \"raum\": \"1.04\", \"flaeche_m2\": 28, \"endgeraete\": 0 },\n    { \"raum\": \"1.05\", \"flaeche_m2\": 30, \"endgeraete\": 0 }\n  ],\n  \"f9\": [\n    { \"strang\": \"KW-S1\", \"system\": \"KW\", \"direkt\": 8 },\n    { \"strang\": \"KW-S2\", \"system\": \"KW\", \"direkt\": 6 },\n    { \"strang\": \"KW-V1\", \"system\": \"KW\", \"direkt\": 1 },\n    { \"strang\": \"SW-F1\", \"system\": \"SW\", \"direkt\": 8 },\n    { \"strang\": \"SW-F2\", \"system\": \"SW\", \"direkt\": 6 },\n    { \"strang\": \"SW-G1\", \"system\": \"SW\", \"direkt\": 2 },\n    { \"strang\": \"SW-S1\", \"system\": \"SW\", \"direkt\": 0 }\n  ],\n  \"f10\": [\"E.04\", \"E.05\"]\n}\n```"
+}

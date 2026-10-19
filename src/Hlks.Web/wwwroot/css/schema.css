@@ -1,0 +1,48 @@
+/* Schema-Ansicht (Modul 3, Teil C2; js/ansichten/schema.js): Leiste, Banner, Werkzeug-Überlagerung und die Listen der Dialoge.
+   Die Zeichnung selbst folgt den Klassen der Plan-Ansicht (ansichten.css: .gr-svg, .pl, .pf, .sd …). Farben und Masse nur über die
+   Variablen aus hlks.css (hell und dunkel). */
+
+.sc-svg.treffer-knoten { cursor: grab; }
+.sc-svg.zieht { cursor: grabbing; }
+.sc-svg[data-modus="verbinden"], .sc-svg[data-modus="trennen"], .sc-svg[data-modus="einfuegen"] { cursor: crosshair; }
+.sc-svg[data-modus="trennen"] { cursor: cell; }
+.sc-svg.schiebt { cursor: grabbing; }
+
+/* Leiste oben links: Werkzeuge der Schema-Ansicht (dieselben Aktionen wie im Register Ansicht › Schema) */
+.sc-leiste { position: absolute; z-index: 4; left: 8px; top: 6px; display: flex; align-items: center; gap: 2px; padding: 2px;
+  background: color-mix(in srgb, var(--flaeche) 92%, transparent); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten); }
+.sc-knopf { height: 20px; padding: 0 8px; border: 1px solid transparent; background: none; color: var(--text); border-radius: var(--radius); cursor: pointer; white-space: nowrap; }
+.sc-knopf:hover { background: var(--akzent-hell); }
+.sc-knopf.gedrueckt { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.sc-trenner { align-self: stretch; width: 1px; margin: 2px 3px; background: var(--rand); }
+.sc-status { margin: 0 6px 0 8px; color: var(--text-leise); white-space: nowrap; }
+.sc-status:empty { display: none; }
+
+/* Banner: Hinweise des Kerns (nicht platziert, ohne Strang, ohne Geschoss …) */
+.sc-banner { position: absolute; z-index: 3; left: 8px; right: 8px; top: 34px; max-width: 900px; padding: 0; color: var(--text);
+  background: color-mix(in srgb, var(--flaeche-hell) 94%, transparent); border: 1px solid var(--warnung); border-left-width: 3px; border-radius: var(--radius); box-shadow: var(--schatten); }
+.sc-banner[hidden] { display: none; }
+.sc-banner-kopf { display: flex; align-items: center; gap: 8px; width: 100%; height: 20px; padding: 0 6px; border: none; background: none; color: inherit; text-align: left; cursor: pointer; }
+.sc-banner-zahl { flex: none; font-weight: 600; color: var(--warnung); }
+.sc-banner-text { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.sc-banner-pfeil { flex: none; margin-left: auto; color: var(--text-leise); }
+.sc-banner-liste { margin: 0; padding: 2px 8px 4px 22px; max-height: 220px; overflow: auto; }
+.sc-banner-liste li { margin: 1px 0; }
+
+/* Überlagerungen im Schema (Papier-mm; Strichbreiten in Bildschirmpixeln, damit sie beim Zoomen gleich bleiben) */
+.sc-hand { fill: var(--akzent); stroke: var(--zeichenflaeche); stroke-width: 1px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.sc-markiert { fill: var(--auswahl); fill-opacity: .12; stroke: var(--auswahl); stroke-width: 1.5px; vector-effect: non-scaling-stroke; pointer-events: none; }
+.sc-gummi { stroke: var(--auswahl); stroke-width: 1.5px; stroke-dasharray: 5 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+.sc-zelle { fill: var(--auswahl); fill-opacity: .08; stroke: var(--auswahl); stroke-opacity: .5; stroke-width: 1px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+.sc-geist { fill: none; stroke: var(--auswahl); stroke-width: 1.5px; stroke-dasharray: 3 2; vector-effect: non-scaling-stroke; pointer-events: none; }
+.sc-fang { stroke: var(--auswahl); stroke-opacity: .7; stroke-width: 1px; stroke-dasharray: 4 3; vector-effect: non-scaling-stroke; pointer-events: none; }
+
+/* Dialoge: Element einfügen, Anschlüsse wählen */
+.sc-einfuegen .sc-suche { width: 100%; height: 22px; margin-bottom: 4px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.sc-liste { height: 260px; overflow: auto; margin-bottom: 6px; padding: 2px 4px; border: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.sc-gruppentitel { margin: 4px 0 1px; font-weight: 600; color: var(--text-leise); }
+.sc-wahl { display: flex; align-items: center; gap: 6px; height: 20px; padding: 0 4px; border-radius: var(--radius); cursor: pointer; }
+.sc-wahl:hover { background: var(--akzent-hell); }
+.sc-wahl-sub { margin-left: auto; font-size: 11px; }
+.sc-anschluss .sc-wahl { height: 22px; }
+.sc-anlegen fieldset { margin: 6px 0; border: 1px solid var(--rand-leise); }

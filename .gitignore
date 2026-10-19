@@ -1,0 +1,20 @@
+# Build-Ausgaben (die Builds liegen ohnehin unter %USERPROFILE%\HLKS_CAD_build)
+bin/
+obj/
+node_modules/
+.vs/
+*.user
+
+# Worktrees der Agenten (isolation: worktree)
+.claude/worktrees/
+
+# Windows / OneDrive / Office
+desktop.ini
+Thumbs.db
+~$*
+*.tmp
+
+# Echte Projektdaten gehören nie ins Repository (nur lokal unter %USERPROFILE%\HLKS_CAD_testdaten)
+*.rvt
+*.rfa
+*.ifczip

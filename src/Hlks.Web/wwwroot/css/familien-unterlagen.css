@@ -1,0 +1,246 @@
+/* Familie aus Unterlagen (Modul 2, C2): Dialog, Prüfansicht (Register «Entwurf prüfen»), Befund-Browser (Register «Unterlagen»), Bildbetrachter.
+   Dicht wie Revit (Schrift 12 px, 11 px nur für Nebentexte); Farben nur über die Variablen aus hlks.css, eigene Variablen beginnen mit --fu-.
+   Die Farben des Status der Abdeckung (geprüft, ungeprüft-bild, fehlt, konflikt, mensch) stehen unten in :root – hell und dunkel. */
+
+:root {
+  --fu-st-geprueft: color-mix(in srgb, var(--ok) 34%, var(--flaeche-hell));
+  --fu-st-bild: color-mix(in srgb, var(--warnung) 40%, var(--flaeche-hell));
+  --fu-st-fehlt: color-mix(in srgb, var(--fehler) 36%, var(--flaeche-hell));
+  --fu-st-konflikt: color-mix(in srgb, #b3367a 38%, var(--flaeche-hell));
+  --fu-st-mensch: color-mix(in srgb, var(--akzent) 34%, var(--flaeche-hell));
+  --fu-st-unbekannt: var(--flaeche-tief);
+  --fu-marke: #e0482f;
+}
+:root[data-design="dunkel"] {
+  --fu-st-geprueft: color-mix(in srgb, var(--ok) 42%, var(--flaeche));
+  --fu-st-bild: color-mix(in srgb, var(--warnung) 46%, var(--flaeche));
+  --fu-st-fehlt: color-mix(in srgb, var(--fehler) 50%, var(--flaeche));
+  --fu-st-konflikt: color-mix(in srgb, #e58bbd 40%, var(--flaeche));
+  --fu-st-mensch: color-mix(in srgb, var(--akzent) 46%, var(--flaeche));
+  --fu-marke: #ff7a5c;
+}
+
+/* ------------------------------------------------------------------ Status der Abdeckung (Farben) */
+.fu-st-geprueft { background: var(--fu-st-geprueft); }
+.fu-st-bild { background: var(--fu-st-bild); }
+.fu-st-fehlt { background: var(--fu-st-fehlt); }
+.fu-st-konflikt { background: var(--fu-st-konflikt); }
+.fu-st-mensch { background: var(--fu-st-mensch); }
+.fu-st-unbekannt { background: var(--fu-st-unbekannt); }
+.fu-chip { display: inline-block; padding: 0 7px; margin-right: 4px; border: 1px solid var(--rand); border-radius: 8px; line-height: 16px; color: var(--text); white-space: nowrap; }
+
+/* ------------------------------------------------------------------ Dialog «Familie aus Unterlagen» */
+.fu-dialog { display: flex; flex-direction: column; gap: 8px; min-height: 280px; }
+.fu-dialog .fz { grid-template-columns: 150px 1fr; align-items: start; }
+.fu-drop { padding: 12px; border: 2px dashed var(--rand); border-radius: var(--radius); text-align: center; background: var(--flaeche-hell); }
+.fu-drop.ueber { border-color: var(--akzent); background: var(--akzent-hell); }
+.fu-drop:focus-visible { outline: 1px solid var(--akzent); }
+.fu-drop-text { margin-bottom: 3px; }
+.fu-dateien { display: flex; flex-direction: column; gap: 1px; max-height: 240px; overflow: auto; border: 1px solid var(--rand-leise); }
+.fu-leer { margin: 6px; }
+.fu-datei-zeile { display: grid; grid-template-columns: minmax(140px, 1.2fr) 52px 48px minmax(150px, 2fr) 24px; gap: 6px; align-items: center; padding: 2px 6px; background: var(--flaeche-hell); }
+.fu-datei-zeile:nth-child(odd) { background: var(--flaeche); }
+.fu-datei-zeile.fehler .fu-datei-name { color: var(--fehler); }
+.fu-datei-name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600; }
+.fu-datei-befunde { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; color: var(--text-leise); }
+.fu-datei-fehler, .fu-datei-hinweise { grid-column: 1 / -1; }
+.fu-datei-fehler { white-space: normal; }
+.fu-datei-hinweise { font-size: 11px; }
+.fu-felder { display: flex; flex-direction: column; gap: 4px; }
+.fu-hinweis { width: 100%; resize: vertical; font: inherit; padding: 2px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.fu-ersetzen-feld { display: flex; align-items: center; gap: 8px; }
+.fu-kosten { margin: 0; }
+.fu-fuss { display: flex; align-items: center; gap: 6px; padding-top: 6px; border-top: 1px solid var(--trenner); }
+.fu-fuss-abstand { flex: 1; }
+.fu-lauf-kopf { display: flex; align-items: center; gap: 10px; margin-bottom: 4px; }
+.fu-badge { padding: 0 8px; border-radius: 9px; border: 1px solid var(--rand); line-height: 17px; font-weight: 600; }
+.fu-badge.laeuft { border-color: var(--akzent); color: var(--akzent); }
+.fu-badge.fertig { border-color: var(--ok); color: var(--ok); }
+.fu-badge.fehler { border-color: var(--fehler); color: var(--fehler); }
+.fu-badge.abgebrochen { color: var(--text-leise); }
+.fu-schritte-kopf, .fu-bericht-kopf, .fu-familien-kopf { margin: 8px 0 2px; font-weight: 600; }
+.fu-schritte { margin: 0; padding: 4px 6px 4px 6px; list-style: none; max-height: 190px; overflow: auto; background: var(--flaeche-hell); border: 1px solid var(--rand-leise); }
+.fu-schritte li { padding: 1px 0; font-size: 11px; font-family: var(--schrift-mono); overflow-wrap: anywhere; }
+.fu-schritte time { color: var(--text-leise); margin-right: 6px; }
+.fu-bericht { margin: 0; padding: 4px 6px; max-height: 190px; overflow: auto; white-space: pre-wrap; font: inherit; background: var(--flaeche-hell); border: 1px solid var(--rand-leise); }
+.fu-lauf-fehler { margin: 6px 0; padding: 4px 6px; border: 1px solid var(--fehler); background: var(--ob-fehler-flaeche); }
+.fu-lauf-warnung { margin: 6px 0; padding: 4px 6px; border: 1px solid var(--warnung); background: var(--ob-warnung-flaeche); }
+.fu-familien { width: 100%; }
+.dlg.fu-dlg .dlg-inhalt { max-height: 76vh; overflow: auto; }
+
+/* ------------------------------------------------------------------ Prüfansicht */
+.fu-pa { display: flex; flex-direction: column; gap: 2px; }
+.fu-sek { padding: 4px 2px 8px; border-bottom: 1px solid var(--rand-leise); }
+.fu-sek h3 { margin: 4px 0 4px; font-size: 12px; font-weight: 600; }
+.fu-msg { position: sticky; top: 0; z-index: 3; display: flex; align-items: flex-start; gap: 8px; padding: 3px 8px; border: 1px solid var(--rand); background: var(--flaeche); }
+.fu-msg-text { flex: 1; }
+.fu-msg-zu { flex: none; }
+.fu-msg[hidden] { display: none; }
+.fu-msg.ok { border-color: var(--ok); }
+.fu-msg.fehler { border-color: var(--fehler); background: var(--ob-fehler-flaeche); }
+.fu-msg.hinweis { border-color: var(--warnung); background: var(--ob-warnung-flaeche); }
+.fu-kopf-zeile { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fu-summen { margin: 4px 0; }
+.fu-freigabe { margin-top: 4px; padding: 4px 6px; border: 1px solid var(--rand); border-radius: var(--radius); }
+.fu-freigabe.gesperrt { border-color: var(--fehler); }
+.fu-freigabe.bereit { border-color: var(--ok); }
+.fu-freigabe.freigegeben { border-color: var(--ok); background: var(--ob-hover); }
+.fu-freigabe-zeile { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fu-datei-in { flex: 1; min-width: 160px; width: auto !important; }
+.fe-knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.fe-knopf.primaer:hover:not(:disabled) { background: var(--akzent); filter: brightness(1.1); }
+.fu-gruende-kopf { margin: 6px 0 2px; font-weight: 600; color: var(--fehler); }
+.fu-gruende { margin: 0; padding: 0; list-style: none; }
+.fu-grund { padding: 2px 6px; margin: 1px 0; border-left: 3px solid var(--fehler); background: var(--ob-fehler-flaeche); cursor: pointer; }
+.fu-grund:hover, .fu-grund:focus-visible { outline: 1px solid var(--akzent); }
+.fu-grund-mass { border-left-color: var(--fu-st-konflikt); }
+.fu-grund-konflikt { border-left-color: var(--fu-st-konflikt); }
+.fu-sprung { margin-left: 6px; color: var(--text-leise); }
+.fu-bereit { margin: 6px 0 0; color: var(--ok); }
+.fu-frei-info, .fu-bib { margin: 6px 0 0; }
+.fu-bildhinweis { margin: 2px 0; }
+.fu-bericht-kopf { margin-top: 6px; }
+.fu-ul-kopf { margin-top: 6px; font-weight: 600; }
+.fu-ul { margin: 2px 0 0 14px; padding: 0; }
+.springziel { outline: 2px solid var(--auswahl); outline-offset: 1px; }
+
+/* Konflikte */
+.fu-konflikt { margin: 6px 0; padding: 4px 6px; border: 1px solid var(--rand); border-left: 4px solid var(--fu-st-konflikt); border-radius: var(--radius); background: var(--flaeche); }
+.fu-konflikt.entschieden { border-left-color: var(--fu-st-mensch); }
+.fu-k-kopf { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; }
+.fu-k-stand { margin-left: auto; padding: 0 6px; border: 1px solid; border-radius: 8px; }
+.fu-k-stand.ok { color: var(--ok); }
+.fu-k-stand.fehler { color: var(--fehler); }
+.fu-k-werte { list-style: none; margin: 4px 0; padding: 0; }
+.fu-k-wert { padding: 2px 4px; margin: 2px 0; border: 1px solid transparent; border-radius: var(--radius); }
+.fu-k-wert.vorschlag { border-color: var(--akzent); background: var(--akzent-hell); }
+.fu-k-wahl { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.fu-k-zahl { font-size: 12px; }
+.fu-vorschlag-marke { padding: 0 5px; border: 1px solid var(--akzent); border-radius: 8px; color: var(--akzent); font-size: 11px; }
+.fu-k-vorrang { margin-left: 8px; }
+.fu-k-quellen { list-style: none; margin: 1px 0 0 20px; padding: 0; }
+.fu-k-quellen li { display: flex; align-items: center; gap: 6px; }
+.fu-k-stelle { overflow-wrap: anywhere; }
+.fu-k-fuss { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.fu-k-fuss .fe-in.breit { flex: 1; }
+.fu-k-entscheid { margin: 4px 0 0; color: var(--text-leise); }
+.fu-k-anders { width: 90px; }
+
+/* Abdeckung */
+.fu-legende { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-bottom: 4px; }
+.fu-legende .leise { margin-left: 8px; }
+.fu-abd-rahmen { overflow: auto; }
+table.fu-abd, table.fu-masse { width: auto; min-width: 0; }
+table.fu-abd th, table.fu-masse th { white-space: nowrap; }
+.fu-abd-p { text-align: left; background: var(--flaeche-tief); }
+.fu-st { text-align: center; cursor: pointer; min-width: 44px; color: var(--text); border: 1px solid var(--rand-leise); }
+.fu-st:hover, .fu-st:focus-visible { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.fu-st.gewaehlt { outline: 2px solid var(--auswahl); outline-offset: -2px; font-weight: 600; }
+.fu-st sup { margin-left: 2px; color: var(--text-leise); font-size: 9px; }
+.fu-st-leer { text-align: center; color: var(--text-leise); }
+.fu-abd-detail { margin-top: 6px; padding: 4px 6px; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--flaeche); }
+.fu-abd-detail p { margin: 2px 0; }
+.fu-quellen-kopf { margin-top: 4px; font-weight: 600; }
+.fu-quellen { list-style: none; margin: 2px 0; padding: 0; }
+.fu-quellen li { display: flex; align-items: center; gap: 6px; padding: 1px 0; }
+.fu-quelle-text { overflow-wrap: anywhere; }
+.fu-best { display: flex; align-items: center; gap: 6px; margin-top: 4px; }
+.fu-best .fe-in { flex: 1; }
+.fu-best-info { color: var(--text-leise); }
+
+/* Massvergleich */
+table.fu-masse td.num { text-align: right; font-family: var(--schrift-mono); font-size: 11px; }
+tr.fu-masse-schlecht td { background: var(--ob-fehler-flaeche); }
+tr.fu-masse-schlecht .fu-masse-ergebnis { color: var(--fehler); font-weight: 600; }
+tr.fu-masse-ok .fu-masse-ergebnis { color: var(--ok); }
+tr.fu-masse-offen td { color: var(--text-leise); }
+
+/* Kontrollbild */
+.fu-vg-zeile { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; margin: 4px 0; }
+.fu-vg-zeile label { display: inline-flex; align-items: center; gap: 3px; }
+.fu-vg-zeile select.fe-in { height: 20px; }
+.fu-passpunkte { margin: 4px 0; padding: 2px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.fu-passpunkte summary { cursor: pointer; }
+.fu-pp { margin: 4px 0; border-collapse: collapse; }
+.fu-pp th { text-align: left; padding-right: 8px; font-weight: 600; }
+.fu-pp td { padding: 1px 12px 1px 0; white-space: nowrap; }
+.fu-pp-feld { display: inline-flex; align-items: center; gap: 2px; margin-right: 4px; }
+.fu-pick-zeile { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; margin: 4px 0; }
+.fu-pick-hinweis.aktiv { color: var(--akzent); font-weight: 600; }
+.fu-vg-start { display: flex; align-items: center; gap: 8px; margin: 6px 0; }
+.fu-vg-viewer { margin: 6px 0; max-width: 100%; }
+.fu-vg-fig { margin: 6px 0; padding: 0; }
+.fu-vg-img { display: block; max-width: 100%; height: auto; border: 1px solid var(--rand); background: var(--zeichenflaeche); }
+.fu-vg-fig figcaption { margin-top: 2px; }
+.fu-schematisch { margin-left: 6px; padding: 0 7px; border: 1px solid var(--warnung); border-radius: 8px; background: var(--ob-warnung-flaeche); font-weight: 600; }
+.fu-massstaeblich { margin-left: 6px; padding: 0 7px; border: 1px solid var(--ok); border-radius: 8px; color: var(--ok); }
+.fu-veraltet { margin-left: 6px; color: var(--warnung); }
+.fu-schem-hinweis { margin: 2px 0; color: var(--text-leise); }
+.fu-geo { margin: 4px 0 4px 16px; padding: 0; }
+.fu-vg-hinweise { margin: 2px 0 2px 16px; padding: 0; }
+.fu-vg-fehler { margin: 4px 0; }
+
+/* ------------------------------------------------------------------ Bildbetrachter */
+.fu-bild { max-width: 100%; }
+.fu-bild-info { margin-bottom: 2px; }
+.fu-bild-rahmen { position: relative; display: inline-block; max-width: 100%; border: 1px solid var(--rand); background: var(--zeichenflaeche); line-height: 0; }
+.fu-bild-rahmen[hidden] { display: none; }
+.fu-bild-rahmen.klickbar { cursor: crosshair; }
+.fu-bild-img { display: block; max-width: 100%; height: auto; }
+.fu-bild-ueber { position: absolute; inset: 0; pointer-events: none; }
+.fu-marke { position: absolute; box-sizing: border-box; border: 2px solid var(--fu-marke); background: color-mix(in srgb, var(--fu-marke) 14%, transparent); }
+.fu-marke.befund { border: 1px solid var(--akzent); background: color-mix(in srgb, var(--akzent) 8%, transparent); }
+.fu-marke.gewaehlt { border: 2px solid var(--fu-marke); background: color-mix(in srgb, var(--fu-marke) 18%, transparent); }
+.fu-marke.pass { border: 2px solid var(--akzent); background: color-mix(in srgb, var(--akzent) 35%, transparent); border-radius: 50%; }
+.fu-quelle-tab { margin-bottom: 6px; }
+.fu-url { color: var(--akzent); word-break: break-all; }
+.fu-inet-kopf { margin: 8px 0 2px; font-weight: 600; }
+.fu-inet { width: 100%; }
+.fu-inet-url { overflow-wrap: anywhere; }
+.fu-internet-feld { display: flex; flex-direction: column; gap: 2px; }
+.fu-internet-text { font-size: 11px; }
+.fu-bb-url { padding: 1px 2px; }
+.fu-bb-url[hidden], .fu-bb-htmltext[hidden] { display: none; }
+.fu-bb-htmltext { margin-top: 4px; }
+.fu-quelle-ganz { display: inline-flex; align-items: center; gap: 4px; margin: 2px 0 6px; }
+.fu-quelle-bild { overflow: auto; max-height: 56vh; }
+.gr-svg.picken { cursor: crosshair; }
+.gr-svg .fu-pickpunkt circle, .gr-svg .fu-pickpunkt path { fill: none; stroke: var(--fu-marke); stroke-width: 2px; vector-effect: non-scaling-stroke; }
+.gr-svg .fu-pickname { fill: var(--fu-marke); stroke: none; font-weight: 600; }
+
+/* ------------------------------------------------------------------ Befund-Browser */
+.fu-bb { display: flex; flex-direction: column; gap: 4px; }
+.fu-bb-ul { display: flex; align-items: flex-start; gap: 8px; flex-wrap: wrap; }
+.fu-bb-ul-liste { flex: 1; display: flex; flex-wrap: wrap; gap: 3px; min-width: 0; }
+.fu-bb-ul-eintrag { height: 20px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; color: var(--text); white-space: nowrap; }
+.fu-bb-ul-eintrag:hover { background: var(--ob-hover-tief); }
+.fu-bb-ul-weitere { align-self: center; margin-left: 6px; }
+.fu-bb-ul-eintrag.weitere { border-style: dashed; }
+.fu-bb-ul-eintrag.gewaehlt { border-color: var(--akzent); background: var(--akzent-hell); font-weight: 600; }
+.fu-bb-msg { padding: 2px 8px; border: 1px solid var(--rand); }
+.fu-bb-msg[hidden] { display: none; }
+.fu-bb-msg.fehler { border-color: var(--fehler); background: var(--ob-fehler-flaeche); }
+.fu-bb-msg.ok { border-color: var(--ok); }
+.fu-bb-msg.hinweis { border-color: var(--warnung); background: var(--ob-warnung-flaeche); }
+.fu-bb-filter { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; }
+.fu-bb-filter label { display: inline-flex; align-items: center; gap: 3px; }
+.fu-bb-filter select.fe-in { height: 20px; }
+.fu-bb-blaettern { margin-left: auto; display: inline-flex; gap: 2px; }
+.fu-bb-zelle { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.fu-bb-haupt { display: grid; grid-template-columns: minmax(220px, 42%) minmax(0, 1fr); gap: 8px; align-items: start; }
+.fu-bb-liste { min-width: 0; max-height: 60vh; overflow: auto; }
+.fu-bb-tab { width: 100%; }
+.fu-bb-zeile { cursor: pointer; }
+.fu-bb-zeile:hover td { background: var(--ob-hover); }
+.fu-bb-zeile.gewaehlt td { background: var(--akzent-hell); font-weight: 600; }
+.fu-bb-wert { max-width: 180px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fu-bb-bildspalte { min-width: 0; }
+.fu-bb-zoom { display: flex; align-items: center; gap: 3px; margin-bottom: 2px; }
+.fu-bb-bild { min-width: 0; overflow: auto; max-height: 64vh; }
+
+/* ------------------------------------------------------------------ Projektbrowser und Editor-Reiter */
+.pb-knopf { flex: none; margin-left: 6px; height: 16px; padding: 0 6px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; color: var(--text); font-size: 11px; line-height: 13px; }
+.pb-knopf:hover { background: var(--ob-hover-tief); }
+.fe-tabs { overflow-x: auto; scrollbar-width: none; }
+.fe-tab-knopf { flex: none; }
+.fu-host { min-width: 0; }

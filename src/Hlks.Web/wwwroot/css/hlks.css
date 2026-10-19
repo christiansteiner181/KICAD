@@ -1,0 +1,237 @@
+/* HLKS-CAD – Grundgestaltung im Stil von Revit 2026: dicht (Segoe UI 12 px, Zeilen 20–24 px), ein blauer Akzent.
+   Zwei Designs: hell (`:root`) und dunkel (`:root[data-design="dunkel"]`, Vorgabe) mit denselben Variablennamen.
+   Farben und Masse nur über diese Variablen; Schriftgrösse überall 12 px (Revit: Segoe UI 9 pt).
+   Kein CSS `zoom`: es verschiebt die Koordinaten der Mausklicks im SVG-Grundriss. */
+:root {
+  --schrift: "Segoe UI", system-ui, -apple-system, sans-serif;
+  --schrift-mono: Consolas, "Cascadia Mono", monospace;
+  --schriftgroesse: 12px;
+  color-scheme: light;
+
+  /* Grundfarben */
+  --text: #1f1f1f;
+  --text-leise: #5f6368;
+  --hintergrund: #e9ebee;        /* Fensterhintergrund, Griffe */
+  --flaeche: #f7f7f7;            /* Paletten, Dialogfüsse */
+  --flaeche-hell: #ffffff;       /* Eingabefelder, Dialoge, Tooltips */
+  --flaeche-tief: #dfe2e6;       /* Köpfe, Kachelköpfe */
+  --rand: #c5c9ce;               /* Umrisse von Eingabefeldern, Dialogen */
+  --rand-leise: #dcdfe3;
+  --trenner: #c5c9ce;            /* Trennlinien zwischen Bereichen */
+  --akzent: #2b6cb0;             /* Auswahl, aktiver Reiter */
+  --akzent-hell: #dbe8f6;
+  --akzent-text: #ffffff;
+  --auswahl: #1e90ff;
+  --warnung: #b7791f;
+  --fehler: #c53030;
+  --ok: #2f855a;
+  --fremd: #d69e2e;              /* Änderung eines anderen Bearbeiters, kurz aufleuchtend */
+  --schatten: 0 2px 10px rgba(0, 0, 0, .18);
+  --radius: 2px;
+
+  /* Bereiche der Oberfläche */
+  --kopf: var(--flaeche-tief);                 /* Titelleiste mit Schnellzugriff */
+  --reiterzeile: var(--flaeche-tief);          /* Registerreiter des Menübands */
+  --menueband: #f7f7f7;                        /* Menüband-Fläche */
+  --gruppentitel: #eceef1;                     /* Titel der Menüband-Gruppen */
+  --optionsleiste: #f7f7f7;
+  --statusleiste: var(--flaeche-tief);
+  --palette: var(--flaeche);                   /* Eigenschaftenpalette */
+  --palettenkopf: var(--flaeche-tief);
+  --browser: var(--flaeche);                   /* Projektbrowser */
+  --suchfeld: var(--flaeche-hell);
+  --eingabe: var(--flaeche-hell);              /* Eingabefelder und Auswahllisten */
+  --eingabe-rand: var(--rand);
+  --steuerleiste: var(--flaeche);              /* Ansichtssteuerleiste unten in jeder Ansicht */
+  --ansichtsreiter-zeile: var(--flaeche-tief); /* Zeile der Ansichtsreiter */
+  --ansichtsreiter: var(--flaeche);            /* inaktiver Ansichtsreiter */
+  --ansichtsreiter-aktiv: var(--flaeche-hell);
+  --zeichenflaeche: var(--flaeche-hell);       /* Grundriss, Liste */
+
+  /* Grundriss (SVG, siehe ansichten.css) */
+  --gr-wand: #4d525a;
+  --gr-raumrand: #8d939b;
+  --gr-raum-deckung: 1;          /* Raumfüllungen (Farbe je Nutzung aus den Daten) */
+  --gr-linie: #555555;           /* Linien ohne Mediumfarbe, Sinnbilder */
+  --gr-fuell: #ffffff;           /* Füllung von Apparaten, Armaturen, Ringen */
+  --gr-fuell-sonst: #e6e6e6;
+  --gr-text: var(--text);
+  --gr-text-rand: var(--flaeche-hell);
+
+  /* 3D (cssVar in ansicht3d.js und bauteile3d.js) */
+  --d3-hintergrund: #eef1f5;
+  --d3-wand: #cfd3d8;
+  --d3-wand-deckung: 0.28;
+  --d3-raum-deckung: 0.55;
+  --d3-kante: #6b7280;
+  --d3-apparat: #f4f5f7;
+  /* 3D-Materialfarben (Körper aus dem Kern, Material des Teils; Teil.farbe geht vor) */
+  --d3-decke: #b9bec6;
+  --d3-raum: #9db8d4;
+  --d3-glas: #a9d4ee;
+  --d3-tuer: #b08d62;
+  --d3-rohr: #777777;
+  --d3-geraet: #7b8a99;
+  --d3-armatur: #666666;
+  --d3-sonst: #888888;
+
+  /* Masse (Revit 2026 bei 100 %, CSS-Pixel) */
+  --hoehe-kopf: 32px;            /* Titelleiste mit Schnellzugriff */
+  --hoehe-reiterzeile: 22px;     /* Registerreiter des Menübands */
+  --hoehe-gruppe: 70px;          /* Inhalt einer Menüband-Gruppe */
+  --hoehe-gruppentitel: 18px;
+  --hoehe-menueband: calc(var(--hoehe-reiterzeile) + var(--hoehe-gruppe) + var(--hoehe-gruppentitel) + 1px);
+  --hoehe-menueband-titel: calc(var(--hoehe-reiterzeile) + var(--hoehe-gruppentitel) + 1px);   /* minimiert: Register und Gruppentitel */
+  --hoehe-menueband-register: calc(var(--hoehe-reiterzeile) + 1px);                            /* minimiert: nur Register */
+  --hoehe-optionsleiste: 24px;
+  --hoehe-status: 22px;
+  --hoehe-ansichtsreiter: 22px;
+  --hoehe-steuerleiste: 20px;    /* Ansichtssteuerleiste (Massstab, Detailgrad) */
+  --hoehe-palettenkopf: 18px;
+  --hoehe-zeile: 20px;           /* Zeilen in Projektbrowser und Palette, Gruppenköpfe */
+  --hoehe-feld: 18px;            /* Eingabefelder in der Palette */
+  --hoehe-suchfeld: 22px;
+  --breite-seitenleiste: 280px;
+}
+
+:root[data-design="dunkel"] {
+  color-scheme: dark;
+  --text: #f5f5f5;
+  --text-leise: #aab1bb;
+  --hintergrund: #222933;
+  --flaeche: #2e3440;
+  --flaeche-hell: #3b4453;
+  --flaeche-tief: #222933;
+  --rand: #566074;
+  --rand-leise: #465063;
+  --trenner: #222933;
+  --akzent: #2b7bb3;
+  --akzent-hell: #2c5577;
+  --akzent-text: #ffffff;
+  --auswahl: #4aa8ff;
+  --warnung: #e3a93f;
+  --fehler: #f2706f;
+  --ok: #5cc28a;
+  --fremd: #e0b04a;
+  --schatten: 0 2px 12px rgba(0, 0, 0, .55);
+
+  --kopf: #222933;
+  --reiterzeile: #222933;
+  --menueband: #3b4453;
+  --gruppentitel: #3b4453;
+  --optionsleiste: #3b4453;
+  --statusleiste: #3b4453;
+  --palette: #2e3440;
+  --palettenkopf: #222933;
+  --browser: #3e4452;
+  --suchfeld: #2e343f;
+  --eingabe: #3b4453;
+  --eingabe-rand: #4b5568;
+  --steuerleiste: #313945;
+  --ansichtsreiter-zeile: #141618;
+  --ansichtsreiter: #313945;
+  --ansichtsreiter-aktiv: #222933;
+  --zeichenflaeche: #222933;
+
+  --gr-wand: #c4cad3;
+  --gr-raumrand: #6d7787;
+  --gr-raum-deckung: 0.28;
+  --gr-linie: #cfd5de;
+  --gr-fuell: #2d3541;
+  --gr-fuell-sonst: #323a47;
+  --gr-text: #f5f5f5;
+  --gr-text-rand: #222933;
+
+  --d3-hintergrund: #222933;
+  --d3-wand: #aab1bb;
+  --d3-wand-deckung: 0.22;
+  --d3-raum-deckung: 0.3;
+  --d3-kante: #7c8697;
+  --d3-apparat: #aeb6c2;
+  --d3-decke: #7c8697;
+  --d3-raum: #6d8aa8;
+  --d3-glas: #8bbbd8;
+  --d3-tuer: #a9825a;
+  --d3-rohr: #9aa3ae;
+  --d3-geraet: #7b8a99;
+  --d3-armatur: #8a929e;
+  --d3-sonst: #8a929e;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  font: var(--schriftgroesse)/1.3 var(--schrift);
+  color: var(--text);
+  background: var(--hintergrund);
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: var(--hoehe-kopf) var(--hoehe-menueband-ist, var(--hoehe-menueband)) minmax(var(--hoehe-optionsleiste), auto) minmax(0, 1fr) var(--hoehe-status);
+  overflow: hidden;
+}
+button, input, select, textarea { font: inherit; color: inherit; }
+b, strong { font-weight: 600; }
+
+#kopf { display: flex; align-items: center; gap: 8px; padding: 0 6px; background: var(--kopf); border-bottom: 1px solid var(--trenner); }
+#titel { flex: 1; text-align: center; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#menueband { background: var(--menueband); border-bottom: 1px solid var(--trenner); }
+#optionsleiste { background: var(--optionsleiste); border-bottom: 1px solid var(--trenner); display: flex; align-items: center; gap: 8px; padding: 0 6px; color: var(--text-leise); }
+
+#arbeitsbereich { display: grid; grid-template-columns: var(--breite-seitenleiste) 4px 1fr; min-height: 0; }
+#seitenleiste { display: grid; grid-template-rows: 1fr 4px 1fr; min-height: 0; background: var(--palette); border-right: 1px solid var(--trenner); }
+.palette { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
+.palettenkopf { flex: none; height: var(--hoehe-palettenkopf); line-height: calc(var(--hoehe-palettenkopf) - 1px); padding: 0 6px; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+#palette-eigenschaften { background: var(--palette); }
+#palette-browser { background: var(--browser); }
+#eigenschaften, #projektbrowser { flex: 1; min-height: 0; overflow: auto; }
+#seitenleiste-trenner { cursor: row-resize; background: var(--trenner); }
+#seitenleiste-griff { cursor: col-resize; background: var(--trenner); }
+#ansichtsbereich { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
+body[data-menueband="titel"] { --hoehe-menueband-ist: var(--hoehe-menueband-titel); }
+body[data-menueband="register"] { --hoehe-menueband-ist: var(--hoehe-menueband-register); }
+/* Ansichtsreiter rollen nie: ansichtsreiter.js macht sie schmaler und fasst übrige unter «▾ n weitere» zusammen */
+#ansichtsreiter { position: relative; z-index: 20; display: flex; gap: 1px; align-items: flex-end; background: var(--ansichtsreiter-zeile); min-height: var(--hoehe-ansichtsreiter); min-width: 0; }
+#ansichtsflaeche { position: relative; min-height: 0; background: var(--hintergrund); display: grid; gap: 4px; padding: 0; }
+#ansichtsflaeche.nebeneinander { padding: 4px; }
+
+/* Kacheln der Ansichten (je offene Ansicht eine) */
+.kachel { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--zeichenflaeche); border: 1px solid var(--trenner); }
+.kachel > .kachel-inhalt { flex: 1; }
+.kachel.versteckt { display: none; }
+.kachel.aktiv { outline: 2px solid var(--akzent); outline-offset: -2px; }
+.kachel-kopf { display: none; align-items: center; gap: 4px; height: 20px; padding: 0 6px; background: var(--flaeche-tief); border-bottom: 1px solid var(--trenner); font-weight: 600; }
+#ansichtsflaeche.nebeneinander .kachel-kopf { display: flex; }
+.kachel-kopf .zu { margin-left: auto; }
+.kachel-inhalt { position: relative; min-height: 0; overflow: hidden; }
+/* Ansichtssteuerleiste (Massstab, Detailgrad): 20 px, kompakte Auswahlfelder */
+.kachel-steuerung { flex: none; display: flex; align-items: center; gap: 8px; height: var(--hoehe-steuerleiste); padding: 0 6px; border-top: 1px solid var(--trenner); background: var(--steuerleiste); color: var(--text-leise); white-space: nowrap; overflow: hidden; }
+.kachel-steuerung label { display: flex; align-items: center; gap: 3px; }
+.kachel-steuerung select { height: 18px; padding: 0 2px; line-height: 1; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); background: var(--eingabe); color: var(--text); }
+
+/* Ansichtsreiter: 22 px hoch */
+.reiter { flex: none; display: flex; align-items: center; gap: 6px; height: var(--hoehe-ansichtsreiter); padding: 0 8px; background: var(--ansichtsreiter); color: var(--text-leise); border: none; cursor: pointer; white-space: nowrap; }
+.reiter.weg { display: none; }
+.reiter .titel { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.reiter-weitere { order: 9999; flex: none; margin-left: auto; height: var(--hoehe-ansichtsreiter); padding: 0 8px; border: none; background: var(--ansichtsreiter); color: var(--text); cursor: pointer; white-space: nowrap; }
+.reiter-weitere[hidden], .reiter-liste[hidden] { display: none; }
+.reiter-weitere:hover, .reiter-weitere[aria-expanded="true"] { background: var(--ansichtsreiter-aktiv); }
+.reiter-liste { position: absolute; top: 100%; z-index: 40; max-width: 100%; max-height: 60vh; overflow-y: auto; display: flex; flex-direction: column; background: var(--flaeche-hell); border: 1px solid var(--rand); box-shadow: var(--schatten); }
+.rl-eintrag { text-align: left; padding: 3px 12px; border: none; background: none; color: var(--text); cursor: pointer; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.rl-eintrag:hover { background: var(--ob-hover-tief, var(--flaeche-tief)); }
+.rl-eintrag.aktiv { font-weight: 600; box-shadow: inset 3px 0 0 var(--akzent); }
+.rl-eintrag.verdeckt { color: var(--text); }
+.reiter:hover { color: var(--text); }
+.reiter.aktiv { background: var(--ansichtsreiter-aktiv); color: var(--text); font-weight: 600; box-shadow: inset 0 2px 0 var(--akzent); }
+.reiter .zu, .kachel-kopf .zu { border: none; background: none; cursor: pointer; padding: 0 2px; line-height: 1; color: var(--text-leise); }
+.reiter .zu:hover, .kachel-kopf .zu:hover { color: var(--fehler); }
+
+#statusleiste { display: flex; align-items: center; gap: 12px; padding: 0 6px; background: var(--statusleiste); border-top: 1px solid var(--trenner); white-space: nowrap; overflow: hidden; }
+
+/* Dialoge und Meldungen */
+#dialogschicht:empty { display: none; }
+#dialogschicht { position: fixed; inset: 0; background: rgba(0, 0, 0, .3); display: grid; place-items: center; z-index: 100; }
+#meldungen { position: fixed; right: 12px; bottom: calc(var(--hoehe-status) + 10px); display: grid; gap: 6px; z-index: 110; }
+
+.leer-hinweis { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-leise); text-align: center; padding: 20px; }
+.fremd-blinken { animation: fremd 1.6s ease-out; }
+@keyframes fremd { 0% { background: var(--fremd); } 100% { background: transparent; } }

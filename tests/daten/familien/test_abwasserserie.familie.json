@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasserserie",
+  "name": "Testabwasserserie (fiktiv)",
+  "kategorie": "Rohr",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Abwasser-Leitungsserie für die Tests von Modul 3, Nachtrag B7 (19.10.2026). Alle Werte sind FIKTIV und weder Herstellerdaten noch Normmasse (bewusst da = DN + 10, Wandstärke 3 mm) – nur für Tests und Handrechnungen. Bogenwinkel FIKTIV 15, 30, 45 und 88.5 (88.5 für Übergänge Fallstrang ↔ Gefälle), Abzweigwinkel FIKTIV 45 und 88.5. Formteile aus fam-test-abwasserbogen, fam-test-abwasser-t, fam-test-abwasserreduktion.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "abmessung", "ziel": "dn", "beschreibung": "Nennweite (Grösse)" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (FIKTIV, da = DN + 10)" },
+    { "name": "s", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Wandstärke (FIKTIV)" },
+    { "name": "di", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "da - 2 * s", "beschreibung": "Innendurchmesser (Formel)" }
+  ],
+  "typen": [
+    { "name": "DN 50", "werte": { "dn": 50, "da": 60, "s": 3 } },
+    { "name": "DN 75", "werte": { "dn": 75, "da": 85, "s": 3 } },
+    { "name": "DN 100", "werte": { "dn": 100, "da": 110, "s": 3 } },
+    { "name": "DN 125", "werte": { "dn": 125, "da": 135, "s": 3 } }
+  ],
+  "koerper": [],
+  "anschluesse": [],
+  "leitung": {
+    "querschnitt": "rund",
+    "groesse": { "dn": "dn" },
+    "aussen": "da",
+    "innen": "di",
+    "wand": "s",
+    "formteile": {
+      "bogen": { "familie": "fam-test-abwasserbogen" },
+      "tstueck": { "familie": "fam-test-abwasser-t" },
+      "reduktion": { "familie": "fam-test-abwasserreduktion" }
+    },
+    "regeln": { "winkel": [15, 30, 45, 88.5], "abzweig": "tstueck", "abzweigwinkel": [45, 88.5] }
+  }
+}

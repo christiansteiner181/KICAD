@@ -1,0 +1,172 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hkplanung.ch/hlks-cad/hlks-modell.schema.json",
+  "title": "HLKS-CAD Datenmodell",
+  "description": "Datenmodell des HLKS-CAD. Das Modell denkt vom System her: Elemente mit Anschlüssen, Verbindungen zwischen Anschlüssen (Topologie), Zuordnung zu Geschoss, Raum und System, Geometrie am Element. Geändert wird nur über Pakete (Änderungspakete), die nie überschrieben werden. Längen in mm, Koordinaten x Ost, y Nord, z über ±0.00. Was eine Klasse bedeutet, welche Eigenschaften und Anschlüsse sie hat, steht in kataloge/klassen.json.",
+  "oneOf": [
+    { "$ref": "#/$defs/paket" },
+    { "$ref": "#/$defs/standAbbild" },
+    { "$ref": "#/$defs/projektKopf" }
+  ],
+  "$defs": {
+    "herkunft": {
+      "type": "object",
+      "description": "Woher ein Wert oder eine Änderung stammt.",
+      "required": ["art", "akteur", "zeit"],
+      "properties": {
+        "art": { "enum": ["mensch", "ki", "ifc", "import", "berechnung", "katalog", "norm", "beispiel", "hkap", "familie", "unterlage"], "description": "Weg, auf dem der Wert entstand (hkap: aus HKAP übernommen, Modul 1d; familie: aus der Familie des Elements, unterlage: aus einer Herstellerunterlage, Modul 2)" },
+        "akteur": { "type": "string", "description": "Person oder Programm, z. B. «CS» oder «KI (für CS)»" },
+        "zeit": { "type": "string", "format": "date-time", "description": "Zeitpunkt" },
+        "quelle": { "type": "string", "description": "Fundstelle, z. B. Norm mit Ausgabe, Ziffer und Seite" },
+        "befehl": { "type": "string", "description": "Befehl, mit dem der Wert gesetzt wurde" }
+      },
+      "additionalProperties": false
+    },
+    "wert": {
+      "type": "object",
+      "description": "Eigenschaftswert mit Einheit und Herkunft.",
+      "required": ["herkunft"],
+      "properties": {
+        "wert": { "description": "Der Wert: Zahl, Text, Wahrheitswert, Liste oder Objekt (je nach Eigenschaftsdefinition im Katalog)" },
+        "einheit": { "type": "string", "description": "Einheit laut Katalog, z. B. mm, DN, %, m3/h" },
+        "herkunft": { "$ref": "#/$defs/herkunft" }
+      },
+      "additionalProperties": false
+    },
+    "anschluss": {
+      "type": "object",
+      "description": "Anschluss eines Elements. Die Fliessrichtung steht hier: rein, raus oder beide (Formteile).",
+      "required": ["name", "medium", "fluss"],
+      "properties": {
+        "name": { "type": "string", "description": "Name des Anschlusses, z. B. sw, kw, anfang, ende, a, b, c" },
+        "medium": { "type": "string", "description": "Medium-Kennung aus medien.json, «*» = Medium des Systems" },
+        "fluss": { "enum": ["rein", "raus", "beide"], "description": "Richtung des Mediums am Anschluss" },
+        "dn": { "type": "integer", "description": "Rohr: Nennweite am Anschluss" },
+        "d": { "type": "integer", "description": "Kanal rund: Durchmesser in mm (Nennmass wie Kanal.durchmesser; Modul 2)" },
+        "b": { "type": "integer", "description": "Kanal rechteckig: Breite in mm (Modul 2)" },
+        "h": { "type": "integer", "description": "Kanal rechteckig: Höhe in mm (Modul 2)" },
+        "gewinde": { "type": "string", "description": "Gewinde wie in der Unterlage, z. B. Rp 3/4, G 1/2 (Modul 2, aus der Familie)" }
+      },
+      "additionalProperties": false
+    },
+    "punkt": {
+      "type": "array", "items": { "type": "number" }, "minItems": 2, "maxItems": 3,
+      "description": "Koordinaten [x, y, z] in mm"
+    },
+    "geometrie": {
+      "type": "object",
+      "description": "Geometrie in mm. punkt = Lage, linie/polylinie = Verlauf (bei Leitungen in Fliessrichtung), polygon = Grundfläche.",
+      "required": ["art", "punkte"],
+      "properties": {
+        "art": { "enum": ["punkt", "linie", "polylinie", "polygon"] },
+        "punkte": { "type": "array", "items": { "$ref": "#/$defs/punkt" } },
+        "hoehe": { "type": "number", "description": "Höhe in mm (Wand, Raumprisma)" },
+        "dicke": { "type": "number", "description": "Dicke in mm (Wand, Decke)" }
+      },
+      "additionalProperties": false
+    },
+    "element": {
+      "type": "object",
+      "description": "Ein Element. Klasse aus kataloge/klassen.json; Schicht: raum (Gebäude, Geschoss, Raum), huelle (Wand, Fenster …), system (Systemgraph: Anlage, System, Strang, Leitungen, Formteile, Geräte), funktion (MSRL: Datenpunkt, Regelkreis, Station), ansicht (Ansicht, Planblatt).",
+      "required": ["id", "kennzeichen", "klasse", "version"],
+      "properties": {
+        "id": { "type": "string", "description": "Feste, eindeutige Id (GUID)" },
+        "kennzeichen": { "type": "string", "description": "Lesbares, eindeutiges Kennzeichen, z. B. WC-1.02, SW-F1" },
+        "klasse": { "type": "string", "description": "Klasse aus dem Katalog" },
+        "name": { "type": "string", "description": "Bezeichnung" },
+        "teilVon": { "type": "string", "description": "Übergeordnetes Element (Id): Strang → System → Anlage, Geschoss → Gebäude, Leitungsbauteil → Strang" },
+        "geschoss": { "type": "string", "description": "Id des Geschosses" },
+        "raum": { "type": "string", "description": "Id des Raums" },
+        "system": { "type": "string", "description": "Id des Systems (bei Leitungsbauteilen und Strängen)" },
+        "eigenschaften": { "type": "object", "additionalProperties": { "$ref": "#/$defs/wert" }, "description": "Eigenschaften laut Katalog, je mit Herkunft" },
+        "anschluesse": { "type": "array", "items": { "$ref": "#/$defs/anschluss" } },
+        "geometrie": { "$ref": "#/$defs/geometrie" },
+        "bezuege": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Weitere Bezüge mit Rolle → Id, z. B. Datenpunkt an, station; Regelkreis messung, stellung, ausloeser, fuehrung" },
+        "kennungen": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Kennungen in fremden Systemen bzw. Herkunftsschlüssel: ifc = GlobalId oder abgeleitete Kennung (raum:…, material:…, aufbau:…), quelle = Id der Unterlage, aus der das Element übernommen ist (Modul 1b/1c); hkap = Datensatz in HKAP, z. B. PJ-2026-003/E1-S3 (Modul 1d); wb = Art:Bauteil-Id eines Wärmebrücken-Vorschlags (Modul 1c)" },
+        "version": { "type": "integer", "minimum": 0, "description": "Wird bei jeder Änderung um 1 erhöht (im Paket ohne Bedeutung, der Kern setzt sie beim Anwenden)" },
+        "paket": { "type": "string", "description": "Paket, aus dem der aktuelle Stand stammt; bei Konflikten gewinnt die grössere Paket-Id" },
+        "angelegt": { "$ref": "#/$defs/herkunft" },
+        "geaendert": { "$ref": "#/$defs/herkunft" }
+      },
+      "additionalProperties": false
+    },
+    "anschlusspunkt": {
+      "type": "object", "required": ["element", "anschluss"],
+      "properties": { "element": { "type": "string", "description": "Id des Elements" }, "anschluss": { "type": "string", "description": "Name des Anschlusses" } },
+      "additionalProperties": false
+    },
+    "verbindung": {
+      "type": "object",
+      "description": "Verbindung zweier Anschlüsse. Ein Anschluss hat höchstens eine Verbindung.",
+      "required": ["id", "von", "nach", "version"],
+      "properties": {
+        "id": { "type": "string" },
+        "von": { "$ref": "#/$defs/anschlusspunkt" },
+        "nach": { "$ref": "#/$defs/anschlusspunkt" },
+        "version": { "type": "integer", "minimum": 0 },
+        "paket": { "type": "string", "description": "Paket, aus dem der aktuelle Stand stammt" },
+        "angelegt": { "$ref": "#/$defs/herkunft" }
+      },
+      "additionalProperties": false
+    },
+    "operation": {
+      "type": "object",
+      "description": "Eine Änderung mit Vorher- und Nachher-Zustand. basis = Version vor der Änderung (0 = neu); weicht sie ab, liegt ein Konflikt vor.",
+      "required": ["art", "id", "basis"],
+      "properties": {
+        "art": { "enum": ["element.setzen", "element.loeschen", "verbindung.setzen", "verbindung.loeschen"] },
+        "id": { "type": "string" },
+        "basis": { "type": "integer", "minimum": 0 },
+        "element": { "$ref": "#/$defs/element" },
+        "elementVorher": { "$ref": "#/$defs/element" },
+        "verbindung": { "$ref": "#/$defs/verbindung" },
+        "verbindungVorher": { "$ref": "#/$defs/verbindung" }
+      },
+      "additionalProperties": false
+    },
+    "paket": {
+      "type": "object",
+      "description": "Änderungspaket: alle Operationen eines Befehls. Datei aenderungen/<id>.json, wird nie überschrieben. Id = Zeit UTC _ Gerät _ Akteur _ laufende Nummer.",
+      "required": ["id", "akteur", "akteurArt", "geraet", "zeit", "befehl", "operationen"],
+      "properties": {
+        "id": { "type": "string" },
+        "akteur": { "type": "string" },
+        "akteurArt": { "enum": ["mensch", "ki", "beispiel", "import"] },
+        "geraet": { "type": "string" },
+        "zeit": { "type": "string", "format": "date-time" },
+        "befehl": { "type": "string", "description": "Name des Befehls, z. B. element_anlegen, leitung_ziehen, rueckgaengig" },
+        "parameter": { "type": "object", "description": "Parameter des Befehls, wie übergeben" },
+        "rueckgaengigVon": { "type": "string", "description": "Id des Pakets, das dieses Paket rückgängig macht" },
+        "operationen": { "type": "array", "items": { "$ref": "#/$defs/operation" }, "minItems": 1 }
+      },
+      "additionalProperties": false
+    },
+    "standAbbild": {
+      "type": "object",
+      "description": "Abbild des Modells nach den genannten Paketen (stand/stand-<zeit>.json); beschleunigt das Öffnen.",
+      "required": ["zeit", "enthaltenePakete", "elemente", "verbindungen"],
+      "properties": {
+        "zeit": { "type": "string", "format": "date-time" },
+        "enthaltenePakete": { "type": "array", "items": { "type": "string" } },
+        "elemente": { "type": "array", "items": { "$ref": "#/$defs/element" } },
+        "verbindungen": { "type": "array", "items": { "$ref": "#/$defs/verbindung" } },
+        "geloeschteElemente": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Gelöschte Elemente: Id → Paket, das gelöscht hat" },
+        "geloeschteVerbindungen": { "type": "object", "additionalProperties": { "type": "string" }, "description": "Getrennte Verbindungen: Id → Paket" }
+      },
+      "additionalProperties": false
+    },
+    "projektKopf": {
+      "type": "object",
+      "description": "Kopf des Projekts (projekt.json).",
+      "required": ["id", "name", "schemaVersion", "angelegt"],
+      "properties": {
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "schemaVersion": { "type": "integer" },
+        "angelegt": { "type": "string", "format": "date-time" },
+        "notiz": { "type": "string" }
+      },
+      "additionalProperties": false
+    }
+  }
+}

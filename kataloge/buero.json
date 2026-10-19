@@ -1,0 +1,16 @@
+{
+  "beschreibung": "Bürogemeinsame Einstellungen von KICAD (H+K Planungs AG). Gilt für alle Projekte und Rechner; synchronisiert mit der Software. Überschreibbar je Rechner bzw. Test mit Umgebungsvariablen (siehe je Eintrag).",
+  "familienbibliothek": {
+    "pfad": "W:\\03_CAD Bibliotheken\\d_KICAD Familien",
+    "quelle": "Entscheid Christian Steiner, 19.10.2026 (Fragefenster): projektübergreifende Familienbibliothek auf dem NAS neben den Revit-Familien",
+    "umgebungsvariable": "HLKS_FAMILIENBIBLIOTHEK",
+    "hinweis": "Tests und Agenten setzen HLKS_FAMILIENBIBLIOTHEK immer auf einen Ordner unter %TEMP%; nie auf W: schreiben."
+  },
+  "projektablage": {
+    "pfad": "W:\\02_Projektdateien Objekte",
+    "kicadOrdner": "c_Pläne und Modelle\\e_KICAD",
+    "quelle": "Entscheid Christian Steiner, 19.10.2026 (Fragefenster Startbildschirm): alle KICAD-Projekte unter W:\\02_Projektdateien Objekte\\<Objekt>\\c_Pläne und Modelle\\e_KICAD zeigen",
+    "umgebungsvariable": "HLKS_PROJEKTABLAGE",
+    "hinweis": "Nur lesen (Suche nach projekt.json). Tests setzen HLKS_PROJEKTABLAGE auf einen Ordner unter %TEMP%."
+  }
+}

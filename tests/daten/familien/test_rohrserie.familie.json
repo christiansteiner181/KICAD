@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "id": "fam-test-rohrserie",
+  "name": "Testrohrserie (fiktiv)",
+  "kategorie": "Rohr",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Leitungsserie für die Tests von Modul 3 (Hauptlauf, 18.10.2026). Alle Werte sind FIKTIV und weder Herstellerdaten noch Normmasse (bewusst da = DN + 5) – nur für Tests und Handrechnungen. Formteile aus den Testfamilien fam-test-bogen, fam-test-tstueck, fam-test-reduktion.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "abmessung", "ziel": "dn", "beschreibung": "Nennweite (Grösse)" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (FIKTIV)" },
+    { "name": "s", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Wandstärke (FIKTIV)" },
+    { "name": "di", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "da - 2 * s", "beschreibung": "Innendurchmesser (Formel)" }
+  ],
+  "typen": [
+    { "name": "DN 15", "werte": { "dn": 15, "da": 20, "s": 2 } },
+    { "name": "DN 20", "werte": { "dn": 20, "da": 25, "s": 2 } },
+    { "name": "DN 25", "werte": { "dn": 25, "da": 30, "s": 2 } },
+    { "name": "DN 32", "werte": { "dn": 32, "da": 37, "s": 3 } },
+    { "name": "DN 40", "werte": { "dn": 40, "da": 45, "s": 3 } },
+    { "name": "DN 50", "werte": { "dn": 50, "da": 55, "s": 3 } }
+  ],
+  "koerper": [],
+  "anschluesse": [],
+  "leitung": {
+    "querschnitt": "rund",
+    "groesse": { "dn": "dn" },
+    "aussen": "da",
+    "innen": "di",
+    "wand": "s",
+    "formteile": {
+      "bogen": { "familie": "fam-test-bogen" },
+      "tstueck": { "familie": "fam-test-tstueck" },
+      "reduktion": { "familie": "fam-test-reduktion" }
+    },
+    "regeln": { "winkel": [15, 30, 45, 90], "abzweig": "tstueck" }
+  }
+}

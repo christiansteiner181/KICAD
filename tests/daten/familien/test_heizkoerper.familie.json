@@ -1,0 +1,44 @@
+{
+  "format": 1,
+  "id": "fam-test-heizkoerper",
+  "name": "Testheizkörper Typ 22 (fiktiv)",
+  "kategorie": "Heizkoerper",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Testfamilie für Modul 2 (Hauptlauf, 18.10.2026). Alle Werte sind FIKTIV und keine Herstellerdaten – nur für Tests und Handrechnungen. Ursprung vorne links unten auf dem Boden, Vorderseite −y, Rückseite (Wand) bei y = tiefe; Anschlüsse unten rechts.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "hoehe", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Bauhöhe" },
+    { "name": "laenge", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Baulänge" },
+    { "name": "tiefe", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 100, "beschreibung": "Bautiefe" },
+    { "name": "bodenabstand", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "wert": 150, "beschreibung": "Unterkante über Boden" },
+    { "name": "anschlussabstand", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "wert": 50, "beschreibung": "Abstand der beiden Anschlüsse" },
+    { "name": "randabstand", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "wert": 50, "beschreibung": "Abstand des Vorlaufs vom rechten Rand" },
+    { "name": "stutzen", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "wert": 30, "beschreibung": "Länge der Anschlussstutzen nach unten" },
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "wert": 15, "beschreibung": "Nennweite der Anschlüsse" },
+    { "name": "oberkante", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "bodenabstand + hoehe", "beschreibung": "Oberkante über Boden (Formel)" },
+    { "name": "mit_abdeckung", "art": "typ", "datentyp": "ja_nein", "gruppe": "sonstiges", "wert": true, "beschreibung": "Abdeckung oben zeigen" },
+    { "name": "leistung", "art": "typ", "datentyp": "zahl", "einheit": "W", "gruppe": "kennwert", "ziel": "leistung", "beschreibung": "FIKTIVER Testwert, keine Normleistung" }
+  ],
+  "typen": [
+    { "name": "22-600-1000", "werte": { "hoehe": 600, "laenge": 1000, "leistung": 1000 } },
+    { "name": "22-600-1400", "werte": { "hoehe": 600, "laenge": 1400, "leistung": 1400 } },
+    { "name": "22-900-800", "werte": { "hoehe": 900, "laenge": 800, "leistung": 1100, "mit_abdeckung": false } }
+  ],
+  "koerper": [
+    { "id": "platten", "name": "Heizplatten", "art": "quader", "material": "geraet",
+      "von": [0, 0, "bodenabstand"], "bis": ["laenge", "tiefe", "oberkante"] },
+    { "id": "abdeckung", "name": "Abdeckung", "art": "quader", "material": "geraet", "detailgrad": ["mittel", "fein"], "sichtbar": "mit_abdeckung",
+      "von": [-5, -5, "oberkante"], "bis": ["laenge + 5", "tiefe + 5", "oberkante + 10"] },
+    { "id": "stutzen_vl", "name": "Stutzen Vorlauf", "art": "zylinder", "material": "rohr", "detailgrad": ["fein"],
+      "von": ["laenge - randabstand", "tiefe / 2", "bodenabstand"], "nach": ["laenge - randabstand", "tiefe / 2", "bodenabstand - stutzen"], "r": 10 },
+    { "id": "stutzen_rl", "name": "Stutzen Rücklauf", "art": "zylinder", "material": "rohr", "detailgrad": ["fein"],
+      "von": ["laenge - randabstand - anschlussabstand", "tiefe / 2", "bodenabstand"], "nach": ["laenge - randabstand - anschlussabstand", "tiefe / 2", "bodenabstand - stutzen"], "r": 10 }
+  ],
+  "anschluesse": [
+    { "name": "vl", "medium": "HZ-VL", "fluss": "rein", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["laenge - randabstand", "tiefe / 2", "bodenabstand - stutzen"], "richtung": [0, 0, -1], "beschreibung": "Vorlauf unten rechts" },
+    { "name": "rl", "medium": "HZ-RL", "fluss": "raus", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["laenge - randabstand - anschlussabstand", "tiefe / 2", "bodenabstand - stutzen"], "richtung": [0, 0, -1], "beschreibung": "Rücklauf unten rechts" }
+  ]
+}

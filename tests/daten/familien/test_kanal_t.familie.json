@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "id": "fam-test-kanal-t",
+  "name": "Test-Kanal-T rechteckig (fiktiv)",
+  "kategorie": "TStueck",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "T-Stück der Testkanalserie (Modul 3, B2, 18.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: Ursprung = Schnittpunkt der Achsen; a (−l, 0, 0)/(−1, 0, 0), b (l, 0, 0)/(1, 0, 0), Abzweig c (0, lc, 0)/(0, 1, 0). Einbaulängen fest l = 300 mm, lc = 250 mm (FIKTIV). Typen mit gleichem und mit kleinerem Abzweig (b2 × h2).",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b1", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Breite Durchgang (FIKTIV)" },
+    { "name": "h1", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Höhe Durchgang (FIKTIV)" },
+    { "name": "b2", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Breite Abzweig (FIKTIV)" },
+    { "name": "h2", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Höhe Abzweig (FIKTIV)" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 300, "beschreibung": "Einbaulänge Durchgang je Seite (FIKTIV)" },
+    { "name": "lc", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 250, "beschreibung": "Einbaulänge Abzweig (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "500x300", "werte": { "b1": 500, "h1": 300, "b2": 500, "h2": 300 } },
+    { "name": "400x200", "werte": { "b1": 400, "h1": 200, "b2": 400, "h2": 200 } },
+    { "name": "400x200/300x200", "werte": { "b1": 400, "h1": 200, "b2": 300, "h2": 200 } },
+    { "name": "300x200", "werte": { "b1": 300, "h1": 200, "b2": 300, "h2": 200 } }
+  ],
+  "koerper": [
+    { "id": "durchgang", "name": "Durchgang", "art": "quader", "material": "rohr", "von": ["-l", "-b1 / 2", "-h1 / 2"], "bis": ["l", "b1 / 2", "h1 / 2"] },
+    { "id": "abzweig", "name": "Abzweig", "art": "quader", "material": "rohr", "von": ["-b2 / 2", 0, "-h2 / 2"], "bis": ["b2 / 2", "lc", "h2 / 2"] }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b1", "h": "h1", "lage": ["-l", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Durchgang Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b1", "h": "h1", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Durchgang Ausgang" },
+    { "name": "c", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b2", "h": "h2", "lage": [0, "lc", 0], "richtung": [0, 1, 0], "beschreibung": "Abzweig" }
+  ]
+}

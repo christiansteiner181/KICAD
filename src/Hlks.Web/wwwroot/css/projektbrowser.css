@@ -1,0 +1,48 @@
+/* Projektbrowser, Teil G1 (entwurf/projektbrowser-gliederung.md): Auswahlfeld der Gliederung und Hinterlegung der Gewerke.
+   Die Farben kommen nicht aus dieser Datei, sondern aus dem Katalog (kataloge/gewerke.json): projektbrowser.js setzt je Zeile --gw-pastell und --gw-kord
+   und am Browser --gw-dunkel (dunkelDeckkraft). Hell: Pastellton als Hintergrund der Zeile, schmaler Streifen links in der Koordinationsfarbe.
+   Dunkel: der Pastellton als Tönung mit dunkelDeckkraft über dem Grund des Browsers, Streifen gleich. Unter einem gefärbten Ast werden einzelne
+   Elemente nicht gefärbt; nur ein ganz schmaler Streifen links zieht sich durch den Ast (.pb-streifen). */
+
+/* Kopf: Auswahlfeld der Gliederung über dem Suchfeld, beides bleibt beim Rollen stehen (scroll-padding: scrollIntoView schiebt nichts unter den Kopf) */
+#projektbrowser { scroll-padding-top: calc(var(--hoehe-suchfeld) * 2 + 4px); }
+.pb-kopf { position: sticky; top: 0; z-index: 3; background: var(--suchfeld); }
+.pb-kopf .pb-suche { position: static; }
+.pb-gliederung { border-bottom: 1px solid var(--trenner); }
+.pb-gl-knopf { display: flex; align-items: center; gap: 5px; width: 100%; height: var(--hoehe-suchfeld); padding: 0 6px 0 4px; border: none; border-radius: 0; background: var(--browser); color: var(--text); font: inherit; font-weight: 600; text-align: left; cursor: pointer; }
+.pb-gl-knopf .pb-sym { color: var(--text); }
+.pb-gl-knopf .pb-gl-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pb-gl-knopf .pb-pfeil { width: auto; }
+.pb-gl-knopf:hover { filter: brightness(.97); }
+:root[data-design="dunkel"] .pb-gl-knopf:hover { filter: brightness(1.12); }
+.pb-gl-knopf:focus-visible { outline: none; box-shadow: inset 0 0 0 1px var(--akzent); }
+
+/* Auswahlliste (fest positioniert unter dem Knopf, damit der rollende Browser sie nicht abschneidet) */
+.pb-gl-liste { position: fixed; z-index: 60; background: var(--flaeche-hell); border: 1px solid var(--rand); box-shadow: var(--schatten); padding: 2px 0; }
+.pb-gl-eintrag { display: flex; align-items: center; gap: 6px; height: calc(var(--hoehe-zeile) + 4px); padding: 0 10px 0 6px; color: var(--text); cursor: pointer; white-space: nowrap; }
+.pb-gl-eintrag .pb-sym { color: var(--text); display: grid; flex: none; }
+.pb-gl-eintrag:hover { background: var(--ob-hover-tief); }
+.pb-gl-eintrag.aktiv .pb-gl-name { font-weight: 600; }
+.pb-gl-eintrag.aktiv::after { content: '✓'; margin-left: auto; padding-left: 12px; color: var(--akzent); }
+
+/* Hinterlegung des Gewerks */
+.pb-gewerk { background: var(--gw-pastell); box-shadow: inset 4px 0 0 var(--gw-kord); color: var(--text); }
+.pb-zeile.pb-gewerk:hover { background: var(--gw-pastell); filter: brightness(.96); }
+:root[data-design="dunkel"] .pb-gewerk { background: color-mix(in srgb, var(--gw-pastell) var(--gw-dunkel, 22%), var(--browser)); }
+:root[data-design="dunkel"] .pb-zeile.pb-gewerk:hover { background: color-mix(in srgb, var(--gw-pastell) var(--gw-dunkel, 22%), var(--browser)); filter: brightness(1.15); }
+.pb-gl-eintrag.pb-gewerk { background: var(--gw-pastell); }
+:root[data-design="dunkel"] .pb-gl-eintrag.pb-gewerk { background: color-mix(in srgb, var(--gw-pastell) var(--gw-dunkel, 22%), var(--flaeche-hell)); }
+.pb-gl-eintrag.pb-gewerk:hover { filter: brightness(.95); }
+:root[data-design="dunkel"] .pb-gl-eintrag.pb-gewerk:hover { filter: brightness(1.15); }
+.pb-gl-knopf.pb-gewerk { background: var(--gw-pastell); }
+:root[data-design="dunkel"] .pb-gl-knopf.pb-gewerk { background: color-mix(in srgb, var(--gw-pastell) var(--gw-dunkel, 22%), var(--browser)); }
+/* Zusatztexte auf dem Pastellton: etwas dunkler als das leise Grau, damit der Kontrast reicht */
+.pb-zeile.pb-gewerk .pb-zahl, .pb-zeile.pb-gewerk .pb-sub, .pb-zeile.pb-gewerk .pb-pfeil, .pb-zeile.pb-gewerk .pb-sym { color: var(--gw-leise, var(--text-leise)); }
+:root { --gw-leise: #46494d; }
+:root[data-design="dunkel"] { --gw-leise: #eceff3; }
+
+/* Streifen durch den Ast: nur ein schmaler Strich links, die Zeilen bleiben ungefärbt */
+.pb-zeile.pb-streifen:not(.gewaehlt):not(.familie-gewaehlt) { box-shadow: inset 2px 0 0 var(--gw-kord); }
+
+/* Äste der Koordination: Hinweiszeilen (Laden, Fehler) */
+.pb-zeile[data-art="hinweis"] { color: var(--text-leise); font-style: italic; }

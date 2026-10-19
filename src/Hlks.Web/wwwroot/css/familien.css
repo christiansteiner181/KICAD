@@ -1,0 +1,165 @@
+/* Familien (Modul 2, C1): Familieneditor, Projektbrowser «Familien», Platzieren, Eigenschaften platzierter Elemente.
+   Dicht wie Revit (Schrift 12 px, Zeilen 18–20 px); Farben nur über die Variablen aus hlks.css, eigene Variablen beginnen mit --fe-. */
+
+:root {
+  --fe-achse-x: #d9483b;
+  --fe-achse-y: #2f9e5b;
+  --fe-achse-z: #2b7bd1;
+  --fe-anschluss: #c98a14;
+  --fe-fehlt: color-mix(in srgb, var(--warnung) 22%, var(--flaeche-hell));
+}
+:root[data-design="dunkel"] {
+  --fe-achse-x: #f2706f;
+  --fe-achse-y: #5cc28a;
+  --fe-achse-z: #4aa8ff;
+  --fe-anschluss: #e3a93f;
+}
+
+/* ------------------------------------------------------------------ Editor: Gerüst */
+.fe-wurzel { position: absolute; inset: 0; display: flex; background: var(--flaeche); min-width: 0; }
+.fe-links { flex: none; flex-basis: 56%; min-width: 0; display: flex; flex-direction: column; border-right: 1px solid var(--trenner); }
+.fe-griff { flex: none; width: 4px; cursor: col-resize; background: var(--trenner); }
+.fe-rechts { flex: 1; min-width: 0; display: flex; flex-direction: column; background: var(--hintergrund); }
+.fe-tabs { flex: none; display: flex; gap: 1px; height: 22px; padding: 0 2px; background: var(--ansichtsreiter-zeile); }
+.fe-tab-knopf { height: 22px; padding: 0 12px; border: none; background: var(--ansichtsreiter); color: var(--text-leise); cursor: pointer; white-space: nowrap; }
+.fe-tab-knopf:hover { color: var(--text); }
+.fe-tab-knopf.aktiv { background: var(--ansichtsreiter-aktiv); color: var(--text); font-weight: 600; box-shadow: inset 0 2px 0 var(--akzent); }
+.fe-tab-knopf.mit-fehlern:not(.aktiv) { color: var(--fehler); }
+.fe-meldung { flex: none; padding: 2px 8px; border-bottom: 1px solid var(--trenner); }
+.fe-meldung[hidden] { display: none; }
+.fe-meldung.fehler { background: var(--ob-fehler-flaeche); color: var(--fehler); border-bottom-color: var(--fehler); }
+.fe-meldung.hinweis { background: var(--ob-warnung-flaeche); color: var(--text); }
+.fe-vorschlag { color: var(--text-leise); }
+.fe-meldung-hinweis { color: var(--warnung); }
+.fe-seite { flex: 1; min-height: 0; overflow: auto; padding: 4px 6px 10px; background: var(--flaeche-hell); }
+.fe-fuss { flex: none; display: flex; align-items: center; gap: 12px; height: 20px; padding: 0 8px; border-top: 1px solid var(--trenner); background: var(--steuerleiste); white-space: nowrap; overflow: hidden; }
+.fe-status { padding: 0 6px; border-radius: var(--radius); border: 1px solid var(--rand); }
+.fe-status.entwurf { color: var(--text-leise); }
+.fe-status.frei { color: var(--ok); border-color: var(--ok); }
+.fe-leer { margin: 8px 2px; }
+
+/* ------------------------------------------------------------------ Editor: Bedienelemente */
+.fe-werkzeuge { display: flex; flex-wrap: wrap; align-items: center; gap: 4px; margin: 2px 0 6px; }
+.fe-trenner { width: 1px; height: 16px; background: var(--rand); margin: 0 4px; }
+.fe-knopf { height: 20px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; color: var(--text); white-space: nowrap; }
+.fe-knopf:hover:not(:disabled) { background: var(--ob-hover-tief); }
+.fe-knopf:disabled { opacity: .45; cursor: default; }
+.fe-knopf.klein { height: 18px; padding: 0 5px; }
+.fe-in { height: 18px; min-width: 0; padding: 0 3px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+input.fe-in { width: 100%; }
+.fe-in:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.fe-in:disabled { opacity: .5; }
+.fe-in.fehlerhaft { border-color: var(--fehler); background: var(--ob-fehler-flaeche); color: var(--text); }
+.fe-in.springziel { outline: 2px solid var(--auswahl); outline-offset: -1px; }
+.fe-in.formel { font-family: var(--schrift-mono); font-size: 11px; }
+.fe-in.schmal { width: 74px; }
+.fe-in.zelle { min-width: 52px; text-align: right; }
+.fe-in.breit { min-width: 150px; }
+.fe-in.xyz { width: 92px; min-width: 40px; text-align: right; }
+.fe-in.typname { min-width: 110px; font-weight: 600; }
+table.fe-tab td input[data-feld="name"], table.fe-tab td input[data-feld="typname"] { min-width: 112px; }
+table.fe-tab td input[data-feld="ziel"], table.fe-tab td input[data-feld="gewinde"] { min-width: 84px; }
+table.fe-tab td input[data-feld="beschreibung"] { min-width: 160px; }
+.fe-haken { margin: 0; }
+.fe-hk { display: inline-flex; align-items: center; gap: 3px; margin-right: 10px; }
+
+table.fe-tab { width: auto; min-width: 100%; }
+table.fe-tab th { white-space: nowrap; z-index: 1; }
+table.fe-tab td { vertical-align: middle; padding: 1px 3px; }
+table.fe-tab td.fe-k { white-space: nowrap; width: 1%; }
+.fe-wertzelle { white-space: nowrap; min-width: 190px; }
+.fe-aufgeloest { margin-left: 4px; color: var(--text-leise); }
+td.fehlt { background: var(--fe-fehlt); }
+table.fe-tab tr.gewaehlt td { background: var(--akzent-hell); }
+table.fe-tab tr.gewaehlt td.fehlt { background: var(--fe-fehlt); }
+.fe-mini { display: inline-flex; align-items: center; gap: 2px; margin-right: 4px; color: var(--text-leise); }
+.fe-xyz { white-space: nowrap; }
+.fe-pruefzeile.klickbar { cursor: pointer; }
+.fe-pruefzeile.klickbar:hover td { background: var(--ob-hover); }
+.fe-verw { margin: 2px 0 6px 16px; padding: 0; }
+
+/* Körper und Sinnbild: links die Liste, rechts das Formular */
+.fe-zweispaltig { display: grid; grid-template-columns: minmax(150px, 30%) 1fr; gap: 10px; align-items: start; }
+.fe-liste { min-width: 0; }
+.fe-liste-zeile { cursor: pointer; }
+.fe-liste-zeile:hover td { background: var(--ob-hover); }
+.fe-detail { min-width: 0; }
+.fe-fz { display: grid; grid-template-columns: 150px 1fr; gap: 6px; align-items: center; margin: 2px 0; }
+.fe-fz.oben { align-items: start; }
+.fe-fz-l { color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; }
+.fe-fz-f { min-width: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 3px; }
+.fe-feld { display: flex; flex-wrap: wrap; align-items: center; gap: 3px; min-width: 0; }
+.fe-hr { border: none; border-top: 1px solid var(--rand-leise); margin: 6px 0; }
+.fe-hinweis-zeile { margin: 0 0 6px; }
+.fe-loch { margin: 4px 0; padding: 2px 4px; border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.fe-loch-kopf { display: flex; align-items: center; gap: 8px; color: var(--text-leise); }
+.fe-sinnbild-svg { width: 100%; height: 140px; margin-top: 6px; border: 1px solid var(--rand-leise); background: var(--zeichenflaeche); }
+
+/* Dialoge */
+.fe-dlg .fz { grid-template-columns: 150px 1fr; }
+.fe-dlg-pruefung { min-height: 18px; margin-top: 6px; }
+.fe-dlg-pruefung.ok { color: var(--ok); }
+.dlg.familie .dlg-inhalt { font-size: 12px; }
+
+/* ------------------------------------------------------------------ Editor: Ansichten (Familie allein) */
+.fe-avleiste { flex: none; display: flex; align-items: center; gap: 10px; height: 24px; padding: 0 6px; border-bottom: 1px solid var(--trenner); background: var(--optionsleiste); white-space: nowrap; overflow: hidden; }
+.fe-avleiste label { display: flex; align-items: center; gap: 3px; }
+.fe-avleiste label[hidden] { display: none; }
+.fe-avleiste select { height: 18px; padding: 0 2px; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); background: var(--eingabe); }
+.fe-av-info { overflow: hidden; text-overflow: ellipsis; }
+.fe-avflaeche { flex: 1; min-height: 0; display: grid; gap: 2px; padding: 2px; }
+.fe-avflaeche.vier { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); grid-template-rows: minmax(0, 1fr) minmax(0, 1fr); }
+.fe-avflaeche.eins { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 1fr); }
+.fe-fenster { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; border: 1px solid var(--trenner); background: var(--zeichenflaeche); }
+.fe-fenster-kopf { flex: none; height: 18px; line-height: 17px; padding: 0 6px; background: var(--flaeche-tief); border-bottom: 1px solid var(--trenner); font-weight: 600; }
+.fe-fenster-inhalt { position: relative; flex: 1; min-height: 0; overflow: hidden; }
+.fe-fenster-inhalt .gr-svg { position: absolute; inset: 0; }
+.fe-fehlertext { position: absolute; inset: 0; display: grid; place-items: center; padding: 12px; text-align: center; color: var(--fehler); pointer-events: none; background: color-mix(in srgb, var(--zeichenflaeche) 85%, transparent); }
+.gr-svg .fe-rahmen { fill: var(--auswahl); fill-opacity: .12; stroke: var(--auswahl); stroke-width: 2px; stroke-dasharray: 6 3; vector-effect: non-scaling-stroke; }
+.gr-svg .fe-achse-x, .gr-svg .fe-achse-y, .gr-svg .fe-achse-z { fill: none; stroke-width: 1.6px; vector-effect: non-scaling-stroke; }
+.gr-svg .fe-achse-x *, .gr-svg .fe-achse-y *, .gr-svg .fe-achse-z * { vector-effect: non-scaling-stroke; fill: none; stroke: inherit; stroke-width: 1.6px; }
+.gr-svg .fe-achse-x { stroke: var(--fe-achse-x); }
+.gr-svg .fe-achse-y { stroke: var(--fe-achse-y); }
+.gr-svg .fe-achse-z { stroke: var(--fe-achse-z); }
+.gr-svg .fe-achse-x text, .gr-svg .fe-achse-y text, .gr-svg .fe-achse-z text { fill: currentColor; stroke: none; }
+.gr-svg .fe-achse-x text { fill: var(--fe-achse-x); }
+.gr-svg .fe-achse-y text { fill: var(--fe-achse-y); }
+.gr-svg .fe-achse-z text { fill: var(--fe-achse-z); }
+.gr-svg .fe-ursprung circle, .gr-svg .fe-ursprung path { fill: none; stroke: var(--text); stroke-width: 1.4px; vector-effect: non-scaling-stroke; }
+.gr-svg .fe-achstext { fill: var(--text-leise); stroke: none; font-family: var(--schrift); }
+.fe-labels { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+.fe-labels span { position: absolute; transform: translate(-50%, -50%); font-size: 11px; white-space: nowrap; text-shadow: 0 0 3px var(--d3-hintergrund), 0 0 3px var(--d3-hintergrund); }
+.fe-label-achse { color: var(--text); font-weight: 600; }
+.fe-label-ursprung { color: var(--text-leise); }
+.fe-label-anschluss { color: var(--fe-anschluss); font-weight: 600; }
+
+/* ------------------------------------------------------------------ Projektbrowser */
+.pb-zeile.entwurf .pb-label { color: var(--text-leise); }
+.pb-zeile.fehlerhaft .pb-label { color: var(--fehler); }
+.pb-marke { margin-left: 4px; padding: 0 5px; border: 1px solid var(--rand); border-radius: 8px; color: var(--text-leise); font-size: 11px; line-height: 14px; }
+.pb-zeile.fehlerhaft .pb-marke { border-color: var(--fehler); color: var(--fehler); }
+
+/* ------------------------------------------------------------------ Eigenschaftenpalette */
+.ep-fam-knopf { flex: none; height: 16px; padding: 0 6px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; }
+.ep-fam-knopf:hover { background: var(--ob-hover-tief); }
+.ep-fam-marke { flex: none; padding: 0 4px; border: 1px solid var(--akzent); border-radius: 8px; color: var(--akzent); font-size: 11px; line-height: 13px; }
+.ep-feld input[type=text].vorgabe { color: var(--text-leise); }
+
+/* Leitungsserie (Modul 3, C3): Seite «Leitungsserie» im Familieneditor mit Kontrolltabelle; eine Serie hat keine Körper, die Ansichten rechts entfallen */
+.fe-wurzel.fe-serie .fe-rechts, .fe-wurzel.fe-serie .fe-griff { display: none; }
+.fe-wurzel.fe-serie .fe-links { flex-basis: 100% !important; border-right: none; }
+.fe-dlg .fz[hidden] { display: none; }
+.fe-abschnitt { margin: 10px 0 3px; font-size: 12px; font-weight: 600; color: var(--text); border-bottom: 1px solid var(--rand-leise); }
+.fe-leitung-formular { max-width: 640px; }
+.fe-feldhinweis { margin-left: 4px; }
+table.fe-kontrolle { width: auto; min-width: 520px; }
+.fe-kontrolle th.fe-zahl, .fe-kontrolle td.fe-zahl { text-align: right; padding-left: 14px; }
+.fe-kontrolle th.fe-kz { text-align: center; }
+.fe-kontrolle td.fe-kz { text-align: center; font-weight: 600; cursor: help; }
+.fe-kontrolle td.fe-ja { color: var(--ok); }
+.fe-kontrolle td.fe-nein { color: var(--fehler); }
+.fe-kontrolle td.fe-teils { color: var(--warnung); }
+.fe-kontrolle td.fe-keine { color: var(--text-leise); font-weight: 400; }
+.fe-kontrolle-kopf { margin: 2px 0 4px; }
+.fe-gruende { margin: 2px 0 6px 16px; padding: 0; }
+.fe-gruende li { margin: 2px 0; }

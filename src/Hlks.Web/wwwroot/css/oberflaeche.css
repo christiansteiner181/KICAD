@@ -1,0 +1,611 @@
+/* Bedienoberfläche: Menüband, Optionsleiste, Schnellzugriff, Projektbrowser, Eigenschaften, Statusleiste, Dialoge, Meldungen.
+   Dicht wie Revit 2026 (Schrift 12 px, Zeilen 20–24 px, Abstände 2–4 px), hell und dunkel über die Variablen aus hlks.css;
+   eigene Variablen beginnen mit --ob-. Schriftgrösse überall 12 px (nur Festbreitenschrift 11 px). */
+
+:root {
+  --ob-hover: color-mix(in srgb, var(--akzent) 12%, var(--menueband));
+  --ob-hover-tief: color-mix(in srgb, var(--akzent) 14%, var(--flaeche-hell));
+  --ob-kontext: color-mix(in srgb, var(--fremd) 30%, var(--flaeche-hell));
+  --ob-warnung-flaeche: color-mix(in srgb, var(--warnung) 14%, var(--flaeche-hell));
+  --ob-fehler-flaeche: color-mix(in srgb, var(--fehler) 12%, var(--flaeche-hell));
+  --ob-zeile: var(--hoehe-zeile);
+}
+:root[data-design="dunkel"] {
+  --ob-hover: rgba(255, 255, 255, .09);
+  --ob-hover-tief: rgba(255, 255, 255, .09);
+  --ob-kontext: #5a4a26;
+  --ob-warnung-flaeche: #4a3b1f;
+  --ob-fehler-flaeche: #4d2b2f;
+}
+
+svg.sym { display: block; flex: none; }
+
+/* ------------------------------------------------------------------ Schnellzugriff (in der Titelleiste, 32 px) */
+#schnellzugriff { display: flex; gap: 1px; align-items: center; }
+.mb-knopf.sz { width: 24px; height: 24px; padding: 0; border: 1px solid transparent; background: none; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.mb-knopf.sz:hover { background: var(--ob-hover); border-color: var(--rand); }
+
+/* ------------------------------------------------------------------ Menüband: Reiter 22 px, Gruppen 70 px + Titel 18 px
+   Das Feld rollt nie: menueband-stufen.js wählt je Gruppe die Stufe (G gross, M mittel, K klein, Z zusammengeklappt) und lagert
+   notfalls Gruppen in «» weitere» aus. Flyouts und die Überlagerung des minimierten Bands liegen über der Arbeitsfläche. */
+#menueband { position: relative; z-index: 30; display: flex; flex-direction: column; min-width: 0; overflow: visible; }
+.mb-reiter { display: flex; align-items: flex-end; gap: 1px; height: var(--hoehe-reiterzeile); padding: 0 4px; background: var(--reiterzeile); border-bottom: 1px solid var(--trenner); flex: none; overflow: hidden; container: mbreiter / inline-size; }
+.mb-tab { flex: 0 1 auto; min-width: 0; height: calc(var(--hoehe-reiterzeile) - 1px); padding: 0 10px; background: transparent; border: none; border-radius: 0; cursor: pointer; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.mb-tab:hover { background: var(--ob-hover); }
+.mb-tab.aktiv { background: var(--menueband); height: var(--hoehe-reiterzeile); margin-bottom: -1px; box-shadow: inset 0 2px 0 var(--akzent); font-weight: 600; }
+.mb-tab.datei { background: var(--akzent); color: var(--akzent-text); margin-right: 3px; }
+.mb-tab.datei:hover { filter: brightness(1.12); }
+.mb-tab.datei.aktiv { box-shadow: inset 0 -2px 0 var(--akzent-hell); }
+.mb-tab.kontext { background: var(--ob-kontext); margin-left: 6px; flex-shrink: 8; min-width: 56px; }   /* die Kontextreiter geben bei Platzmangel zuerst nach */
+@container mbreiter (max-width: 1000px) { .mb-tab { padding: 0 7px; } }
+@container mbreiter (max-width: 840px) { .mb-tab { padding: 0 5px; } }
+.mb-tab.kontext.aktiv { background: var(--ob-kontext); }
+/* ⌃ rechts in der Reiterzeile: Band minimieren (voll → Gruppentitel → Register); gedreht, wenn minimiert */
+.mb-min { flex: none; margin: 0 0 1px auto; width: 22px; height: 18px; padding: 0; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text-leise); cursor: pointer; }
+.mb-min:hover { background: var(--ob-hover); border-color: var(--rand); color: var(--text); }
+.mb-min .sym { transition: transform .12s; }
+#menueband.min-titel .mb-min .sym, #menueband.min-register .mb-min .sym { transform: rotate(180deg); }
+
+.mb-feld { flex: 1; min-height: 0; display: flex; align-items: stretch; padding: 0; overflow: hidden; background: var(--menueband); }
+.mb-gruppe { display: flex; flex-direction: column; padding: 0; border-right: 1px solid var(--rand-leise); flex: none; }
+.mb-knoepfe { height: var(--hoehe-gruppe); flex: none; display: flex; gap: 1px; align-items: stretch; padding: 0 3px; }
+.mb-gruppenname { flex: none; height: var(--hoehe-gruppentitel); line-height: var(--hoehe-gruppentitel); padding: 0 6px; text-align: center; color: var(--text-leise); background: var(--gruppentitel); white-space: nowrap; }
+.mb-leer { align-self: center; color: var(--text-leise); padding: 0 8px; }
+/* unsichtbare Messfläche für die Breiten der Gruppen (je Stufe); belegt keinen Platz */
+.mb-messung { position: absolute; left: 0; top: 0; visibility: hidden; pointer-events: none; display: flex; align-items: stretch; width: max-content; height: calc(var(--hoehe-gruppe) + var(--hoehe-gruppentitel)); }
+
+.mb-knopf { font: inherit; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; }
+.mb-knopf:hover:not(.gesperrt) { background: var(--ob-hover); border-color: var(--rand); }
+.mb-knopf.gedrueckt { background: var(--akzent-hell); border-color: var(--akzent); }
+.mb-knopf.gesperrt { color: var(--text-leise); opacity: .55; cursor: default; }
+.mb-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: -1px; }
+
+/* G/gross: Symbol 32 px, Beschriftung darunter (bis zu zwei Zeilen) */
+.mb-knopf.gross { display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; min-width: 48px; padding: 3px 4px 0; line-height: 14px; text-align: center; }
+.mb-knopf.gross .sym { width: 32px; height: 32px; }
+.mb-knopf.gross .mb-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; hyphens: manual; overflow-wrap: normal; }
+/* M/mittel: Symbol 16 px, Beschriftung rechts, drei Zeilen übereinander */
+.mb-spalte { display: flex; flex-direction: column; justify-content: center; gap: 0; }
+.mb-spalte.breit { max-width: 330px; }
+.mb-knopf.mittel { display: flex; align-items: center; gap: 5px; height: 23px; padding: 0 6px 0 3px; white-space: nowrap; text-align: left; }
+.mb-knopf.mittel .sym { width: 16px; height: 16px; }
+.mb-knopf.mittel.breit .mb-text { overflow: hidden; text-overflow: ellipsis; }
+/* K/klein: nur das Symbol (16 px), drei übereinander; der Text steht im Tooltip */
+.mb-knopf.klein { display: flex; align-items: center; justify-content: center; width: 24px; height: 23px; padding: 0; }
+.mb-knopf.klein .sym { width: 16px; height: 16px; }
+
+/* Z/zusammengeklappt: Symbol der Gruppe, Name, ▾ – ein Klick öffnet die Gruppe als Flyout */
+.mb-gruppe.zu { padding: 0 3px; }
+.mb-zu { flex: 1; font: inherit; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; gap: 2px; min-width: 56px; max-width: 104px; padding: 4px 6px 0; line-height: 14px; text-align: center; }
+.mb-zu:hover, .mb-zu.offen, .mb-weitere:hover, .mb-weitere.offen, .mb-titel-knopf:hover, .mb-titel-knopf.offen { background: var(--ob-hover); border-color: var(--rand); }
+.mb-zu:focus-visible, .mb-weitere:focus-visible, .mb-titel-knopf:focus-visible, .mb-min:focus-visible { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.mb-zu .sym { width: 32px; height: 32px; }
+.mb-zu .mb-text { display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; hyphens: manual; overflow-wrap: normal; }
+.mb-zu .mb-pfeil { color: var(--text-leise); line-height: 10px; font-size: 9px; }
+/* Notfall: Knopf «» weitere» am Ende */
+.mb-gruppe.weitere-zelle { justify-content: center; padding: 0 4px; border-right: none; }
+.mb-weitere { font: inherit; color: var(--text); background: transparent; border: 1px solid transparent; border-radius: var(--radius); cursor: pointer; padding: 3px 8px; white-space: nowrap; }
+
+/* Flyout (Gruppe in Stufe G unter ihrem Knopf, oder die ausgelagerten Gruppen bei «» weitere») */
+.mb-flyout { position: absolute; z-index: 60; display: flex; flex-wrap: wrap; align-items: flex-start; background: var(--menueband); border: 1px solid var(--rand); border-top-color: var(--trenner); box-shadow: var(--schatten); }
+.mb-flyout .mb-gruppe { flex: 0 1 auto; min-width: 0; max-width: 100%; }
+.mb-flyout .mb-gruppe:last-child { border-right: none; }
+.mb-flyout .mb-knoepfe { height: auto; min-height: var(--hoehe-gruppe); flex-wrap: wrap; align-content: flex-start; }
+
+/* minimiertes Band: nur Gruppentitel bzw. nur Register; ein Klick auf ein Register öffnet das Band als Überlagerung */
+.mb-titelzeile { display: none; flex: none; height: var(--hoehe-gruppentitel); background: var(--gruppentitel); overflow: hidden; }
+#menueband.min-titel .mb-titelzeile { display: flex; }
+.mb-titel-knopf { flex: none; height: 100%; padding: 0 10px; border: none; border-right: 1px solid var(--rand-leise); border-radius: 0; background: transparent; color: var(--text-leise); cursor: pointer; white-space: nowrap; line-height: 1; }
+.mb-titel-knopf > span { font-size: 9px; }
+#menueband.min-titel .mb-feld, #menueband.min-register .mb-feld { display: none; }
+#menueband.min-titel.ueberlagerung .mb-feld, #menueband.min-register.ueberlagerung .mb-feld { display: flex; position: absolute; left: 0; right: 0; top: 100%; z-index: 50; height: calc(var(--hoehe-gruppe) + var(--hoehe-gruppentitel) + 1px); border-bottom: 1px solid var(--trenner); box-shadow: var(--schatten); }
+
+/* ------------------------------------------------------------------ Optionsleiste (24 px) */
+/* bricht bei Platzmangel um (die Zeile wird höher), statt zu rollen oder abzuschneiden */
+#optionsleiste { flex-wrap: wrap; align-content: center; row-gap: 2px; padding-top: 2px; padding-bottom: 2px; overflow: hidden; }
+#optionsleiste > * { max-width: 100%; }
+#optionsleiste .ol-titel { font-weight: 600; color: var(--text); white-space: nowrap; }
+#optionsleiste .ol-leise { color: var(--text-leise); }
+#optionsleiste label { display: flex; align-items: center; gap: 3px; white-space: nowrap; }
+#optionsleiste select { height: 18px; padding: 0 2px; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); background: var(--eingabe); }
+.ol-knopf { height: 18px; padding: 0 8px; border: 1px solid var(--akzent); background: var(--akzent); color: var(--akzent-text); border-radius: var(--radius); cursor: pointer; }
+
+/* ------------------------------------------------------------------ Seitenleiste */
+#seitenleiste.ohne-eigenschaften { grid-template-rows: 1fr !important; }
+#seitenleiste.ohne-eigenschaften #palette-eigenschaften,
+#seitenleiste.ohne-eigenschaften #seitenleiste-trenner { display: none; }
+
+/* ------------------------------------------------------------------ Projektbrowser (Zeilen 20 px, Einrückung 16 px, Suchfeld 22 px) */
+.pb-suche { position: sticky; top: 0; z-index: 2; padding: 0; background: var(--suchfeld); border-bottom: 1px solid var(--trenner); }
+.pb-suche input { display: block; width: 100%; height: var(--hoehe-suchfeld); padding: 0 6px; border: none; outline: none; background: var(--suchfeld); border-radius: 0; color: var(--text); }
+.pb-suche input:focus { box-shadow: inset 0 0 0 1px var(--akzent); }
+.pb-baum { padding: 2px 0 6px; user-select: none; }
+.pb-zeile { display: flex; align-items: center; gap: 3px; height: var(--ob-zeile); padding: 0 4px 0 calc(2px + var(--t, 0) * 16px); white-space: nowrap; cursor: default; }
+.pb-zeile:hover { background: var(--ob-hover); }
+.pb-zeile.gewaehlt, .pb-zeile.familie-gewaehlt { background: var(--akzent-hell); box-shadow: inset 2px 0 0 var(--akzent); }
+.pb-zeile.leer { color: var(--text-leise); font-style: italic; }
+.pb-zeile.leer:hover { background: none; }
+.pb-pfeil { width: 12px; text-align: center; font-size: 9px; color: var(--text-leise); flex: none; }
+.pb-sym { color: var(--text-leise); display: grid; flex: none; }
+.pb-label { overflow: hidden; text-overflow: ellipsis; }
+.pb-zahl { color: var(--text-leise); }
+.pb-sub { color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; }
+.pb-zeile.ansicht-aktiv .pb-label { font-weight: 600; }   /* fett nur für das Aktive, nicht für Ordner */
+.pb-zeile.ansicht-offen::after { content: ''; margin-left: auto; width: 6px; height: 6px; border-radius: 50%; background: var(--akzent); flex: none; }
+
+/* ------------------------------------------------------------------ Eigenschaftenpalette (Zeilen 20 px, Felder 18 px) */
+.ep { }
+.ep-leer { padding: 12px 8px; color: var(--text-leise); text-align: center; }
+.ep-kopf { padding: 2px 4px; border-bottom: 1px solid var(--trenner); display: grid; gap: 2px; }
+.ep-typ { display: flex; align-items: center; gap: 4px; }
+.ep-typ select { flex: 1; height: var(--hoehe-zeile); padding: 0 2px; background: var(--eingabe); border: 1px solid var(--eingabe-rand); border-radius: var(--radius); }
+.ep-hinweis { color: var(--text-leise); font-style: italic; }
+.ep-reserviert { padding: 1px 4px; border-radius: var(--radius); }
+.ep-reserviert.fremde { background: var(--ob-warnung-flaeche); color: var(--warnung); border: 1px solid var(--warnung); }
+.ep-reserviert.eigene { background: var(--akzent-hell); color: var(--text); }
+.ep-gruppenkopf { margin: 0; height: var(--hoehe-zeile); padding: 0 4px; display: flex; align-items: center; gap: 4px; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); font-weight: 400; cursor: pointer; user-select: none; }
+.ep-pfeil::before { content: '▾'; font-size: 9px; color: var(--text-leise); }
+.ep-gruppe.zu .ep-pfeil::before { content: '▸'; }
+.ep-gruppe.zu .ep-gruppeninhalt { display: none; }
+.ep-gruppeninhalt { padding: 0; }
+.ep-zeile { display: grid; grid-template-columns: 42% 1fr; gap: 2px; align-items: center; padding: 0 4px; min-height: var(--hoehe-zeile); border-bottom: 1px solid var(--rand-leise); }
+.ep-zeile.klein { min-height: var(--hoehe-zeile); }
+.ep-label { color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep-feld { display: flex; align-items: center; gap: 3px; min-width: 0; }
+.ep-feld input[type=text], .ep-feld select { flex: 1; min-width: 0; height: var(--hoehe-feld); padding: 0 3px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.ep-feld input:focus, .ep-feld select:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.ep-einheit { color: var(--text-leise); flex: none; }
+.ep-text { overflow: hidden; text-overflow: ellipsis; }
+.ep-text.mono, .mono { font-family: var(--schrift-mono); font-size: 11px; }
+.ep-objekt { font-family: var(--schrift-mono); font-size: 11px; color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ep-haken { display: flex; flex-wrap: wrap; gap: 0 8px; }
+.ep-haken label { display: flex; align-items: center; gap: 3px; }
+.ep-warum { flex: none; width: 14px; height: 14px; padding: 0; border: 1px solid var(--eingabe-rand); border-radius: 50%; background: var(--eingabe); color: var(--text-leise); font-size: 9px; line-height: 1; cursor: pointer; }
+.ep-warum:hover { color: var(--akzent-text); background: var(--akzent); border-color: var(--akzent); }
+.ep-fehler { grid-column: 1 / -1; color: var(--fehler); padding-bottom: 1px; }
+.ep-zeile.fehlerhaft input, .ep-zeile.fehlerhaft select { border-color: var(--fehler); background: var(--ob-fehler-flaeche); }
+.ep-familie { padding: 4px 6px; }
+
+/* ------------------------------------------------------------------ Statusleiste (22 px) */
+.sl-links { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.sl-links.hinweis { color: var(--text); font-weight: 600; }
+.sl-mitte, .sl-rechts { display: flex; align-items: center; gap: 12px; flex: none; }
+.sl-gruen { color: var(--ok); }
+.sl-rot { color: var(--fehler); font-weight: 600; }
+.sl-leise { color: var(--text-leise); }
+.sl-res { border: none; background: none; padding: 0 4px; color: var(--text); cursor: pointer; border-radius: var(--radius); }
+.sl-res:hover { background: var(--ob-hover); }
+.sl-res.fremde { color: var(--warnung); }
+.sl-res[hidden] { display: none; }
+.sl-rechts { color: var(--text-leise); }
+
+/* ------------------------------------------------------------------ Dialoge */
+#dialogschicht > .dlg { grid-area: 1 / 1; }
+.dlg { width: min(560px, 94vw); max-height: 88vh; display: flex; flex-direction: column; background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten); }
+.dlg.dlg-hoch { height: min(640px, 86vh); }
+.dlg-kopf { display: flex; align-items: center; justify-content: space-between; gap: 8px; padding: 4px 10px; background: var(--flaeche-tief); border-bottom: 1px solid var(--trenner); font-weight: 600; border-radius: var(--radius) var(--radius) 0 0; }
+.dlg-x { border: none; background: none; cursor: pointer; color: var(--text-leise); padding: 0 4px; }
+.dlg-x:hover { color: var(--fehler); }
+.dlg-inhalt { flex: 1; min-height: 0; overflow: auto; padding: 8px 12px; }
+.dlg-fehler { padding: 4px 12px; background: var(--ob-fehler-flaeche); color: var(--fehler); border-top: 1px solid var(--fehler); }
+.dlg-fehler[hidden] { display: none; }
+.dlg-fuss { display: flex; justify-content: flex-end; gap: 6px; padding: 6px 12px; border-top: 1px solid var(--rand-leise); background: var(--flaeche); border-radius: 0 0 var(--radius) var(--radius); }
+.dlg-knopf { min-width: 80px; height: 22px; padding: 0 12px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; }
+.dlg-knopf:hover { background: var(--ob-hover-tief); }
+.dlg-knopf.primaer { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.dlg-knopf.primaer:hover { filter: brightness(1.1); }
+.dlg-knopf.primaer.gefahr { background: var(--fehler); border-color: var(--fehler); }
+.dlg-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+.dlg.beschaeftigt { cursor: progress; }
+.dlg.beschaeftigt .dlg-knopf, .dlg.beschaeftigt .start-eintrag { pointer-events: none; opacity: .6; }
+.dlg-text { margin: 0 0 6px; }
+.dlg h3 { margin: 10px 0 4px; font-size: 12px; font-weight: 600; }
+.dlg h3:first-child { margin-top: 0; }
+.dlg h4 { margin: 8px 0 3px; font-size: 12px; font-weight: 600; }
+.leise { color: var(--text-leise); }
+.klein { font-size: 12px; }
+.warnung { color: var(--warnung); }
+.fehlertext { color: var(--fehler); }
+.dlg kbd { font-family: var(--schrift-mono); font-size: 11px; padding: 0 4px; background: var(--flaeche); border: 1px solid var(--rand); border-radius: var(--radius); }
+
+.fz { display: grid; grid-template-columns: 140px 1fr; gap: 6px; align-items: center; margin: 4px 0; }
+.fz > span { color: var(--text-leise); }
+.fz input[type=text], .fz select, .fz input[type=search], .start-zeile input, .k-suche { height: 22px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); min-width: 0; }
+.fz input:focus, .fz select:focus, .start-zeile input:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.haken { display: flex; align-items: center; gap: 4px; margin: 0; }
+fieldset { margin: 6px 0; border: 1px solid var(--rand-leise); border-radius: var(--radius); padding: 2px 8px 6px; }
+legend { padding: 0 4px; color: var(--text-leise); }
+.spalten { display: grid; grid-template-columns: repeat(2, 1fr); gap: 0 12px; }
+.spalten.gross { grid-template-columns: repeat(3, 1fr); }
+.v-unter { margin: 4px 0 2px; font-weight: 600; }
+
+table.tab, table.wtab { width: 100%; border-collapse: collapse; }
+table.tab th { position: sticky; top: 0; text-align: left; background: var(--flaeche-tief); border-bottom: 1px solid var(--rand); padding: 2px 6px; font-weight: 600; }
+table.tab td { padding: 1px 6px; border-bottom: 1px solid var(--rand-leise); vertical-align: top; }
+table.klickbar tbody tr { cursor: pointer; }
+table.klickbar tbody tr:hover { background: var(--ob-hover); }
+table.tab tr.gewaehlt, .chip.gewaehlt { background: var(--akzent-hell); }
+table.wtab th { text-align: left; width: 28%; padding: 2px 8px 2px 0; color: var(--text-leise); font-weight: 400; vertical-align: top; }
+table.wtab td { padding: 2px 0; }
+tr.art-geloescht td:first-child { color: var(--fehler); }
+tr.art-angelegt td:first-child { color: var(--ok); }
+.schwere-fehler { color: var(--fehler); font-weight: 600; }
+.schwere-warnung { color: var(--warnung); font-weight: 600; }
+.schwere-hinweis { color: var(--text-leise); }
+.chips { display: flex; flex-wrap: wrap; gap: 3px; }
+.chip { padding: 0 8px; border: 1px solid var(--rand); border-radius: 10px; background: var(--flaeche); cursor: pointer; }
+.chip:hover { background: var(--ob-hover); }
+.befunde-kopf { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+
+/* Startdialog */
+.start-liste { display: grid; gap: 3px; max-height: 270px; overflow-y: auto; }
+.start-eintrag { display: grid; grid-template-columns: 1fr auto; gap: 0 12px; text-align: left; padding: 3px 8px; border: 1px solid var(--rand); background: var(--flaeche); border-radius: var(--radius); cursor: pointer; }
+.start-eintrag:hover { background: var(--ob-hover-tief); border-color: var(--akzent); }
+.start-eintrag span { grid-column: 1; color: var(--text-leise); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.start-eintrag em { grid-row: 1; grid-column: 2; font-style: normal; color: var(--text-leise); }
+.start-zeile { display: flex; gap: 6px; }
+.start-zeile input { flex: 1; }
+
+/* Katalog, Warum, Tastaturkürzel */
+.katalog { display: grid; grid-template-columns: 220px 1fr; gap: 10px; height: 100%; min-height: 0; }
+.katalog-liste { display: flex; flex-direction: column; gap: 4px; min-height: 0; }
+.k-baum { overflow: auto; border: 1px solid var(--rand-leise); }
+.k-schicht { position: sticky; top: 0; background: var(--flaeche-tief); padding: 0 8px; font-weight: 600; }
+.k-klasse { display: block; width: 100%; padding: 1px 14px; border: none; background: none; text-align: left; cursor: pointer; }
+.k-klasse:hover { background: var(--ob-hover); }
+.k-klasse.gewaehlt { background: var(--akzent-hell); }
+.k-klasse[hidden] { display: none; }
+.katalog-detail { overflow: auto; min-height: 0; }
+.katalog-detail h3 { margin-top: 0; }
+.beschreibung { margin-top: 0; }
+.warum-kopf { display: flex; align-items: center; gap: 12px; margin-bottom: 6px; }
+.k-tab { max-height: 52vh; overflow: auto; margin-top: 6px; }
+
+/* ------------------------------------------------------------------ Meldungen und Kontextmenü */
+.meldung { max-width: 440px; padding: 4px 10px; background: var(--flaeche-hell); border: 1px solid var(--rand); border-left: 4px solid var(--akzent); border-radius: var(--radius); box-shadow: var(--schatten); cursor: pointer; }
+.meldung.ok { border-left-color: var(--ok); }
+.meldung.warnung { border-left-color: var(--warnung); }
+.meldung.fehler { border-left-color: var(--fehler); }
+.m-vorschlag { margin-top: 1px; color: var(--text-leise); }
+
+.kmenu { position: fixed; z-index: 120; min-width: 180px; padding: 2px 0; background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten); }
+.kmenu button { display: block; width: 100%; height: 22px; padding: 0 14px; border: none; background: none; text-align: left; cursor: pointer; }
+.kmenu button:hover:not(.gesperrt) { background: var(--akzent-hell); }
+.kmenu button.gesperrt { color: var(--text-leise); opacity: .6; cursor: default; }
+.kmenu-trenner { height: 1px; margin: 2px 0; background: var(--rand-leise); }
+
+/* ------------------------------------------------------------------ Werkzeuge (Zeichnen, Fangen, Griffe; js/werkzeuge/) */
+/* Optionsleiste der Werkzeuge */
+#optionsleiste input.ol-feld { height: 18px; padding: 0 3px; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); background: var(--eingabe); color: var(--text); }
+#optionsleiste input.ol-feld.pflicht-leer { border-color: var(--warnung); box-shadow: inset 0 0 0 1px var(--warnung); }
+#optionsleiste input.ol-feld:focus, #optionsleiste select:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+#optionsleiste .ol-einheit { color: var(--text-leise); }
+#optionsleiste .ol-bool { cursor: pointer; }
+#optionsleiste .ol-trenner { width: 1px; align-self: stretch; margin: 3px 2px; background: var(--rand-leise); }
+
+/* Werkzeugschicht in der Ansicht: Linienbreiten bleiben in Bildschirmpixeln (die Schicht liegt in Modellkoordinaten) */
+.wz-schicht * { vector-effect: non-scaling-stroke; pointer-events: none; }
+.wz-schicht line, .wz-schicht polyline, .wz-schicht polygon, .wz-schicht path, .wz-schicht circle, .wz-schicht rect { fill: none; stroke: var(--akzent); stroke-width: 1.4px; }
+.wz-schicht .wz-gummi { stroke-dasharray: 5 3; }
+.wz-schicht .wz-band { fill: var(--akzent); fill-opacity: .18; stroke: var(--akzent); }
+.wz-schicht .wz-flaeche { fill: var(--akzent); fill-opacity: .15; stroke: none; }
+.wz-schicht .wz-vorschau { stroke: var(--akzent); stroke-width: 1.4px; fill: var(--akzent); fill-opacity: .12; }
+.wz-schicht .wz-oeffnung { stroke: var(--akzent); fill: var(--akzent); fill-opacity: .15; stroke-width: 1.6px; }
+.wz-schicht line.wz-oeffnung, .wz-schicht path.wz-oeffnung { fill: none; }
+.wz-schicht .wz-duenn { stroke-width: 1px; }
+.wz-schicht .wz-achse { stroke-dasharray: 10 3 2 3; }
+.wz-schicht .wz-schnitt { stroke-width: 2px; stroke-dasharray: 10 3 2 3; }
+.wz-schicht .wz-hilf { stroke: var(--text-leise); stroke-width: 1px; }
+.wz-schicht .wz-mass { stroke: var(--akzent); stroke-width: 1px; }
+.wz-schicht .wz-auswahl { stroke: var(--auswahl); stroke-width: 1.6px; stroke-dasharray: 6 3; fill: none; }
+.wz-schicht .wz-fang { stroke: var(--warnung); stroke-width: 2px; fill: none; }
+.wz-schicht .wz-fang-leise { stroke-width: 1px; opacity: .7; }
+.wz-schicht .wz-offen { fill: none; }
+.wz-schicht .wz-griff { fill: var(--flaeche-hell); stroke: var(--auswahl); stroke-width: 1.6px; }
+.wz-schicht .wz-griff-zieht { fill: var(--auswahl); }
+.wz-schicht .wz-pfeil { stroke: var(--auswahl); stroke-width: 1.6px; fill: none; }
+.wz-schicht .wz-pfeil-flaeche { fill: var(--auswahl); fill-opacity: .12; stroke: none; }
+.wz-schicht text { fill: var(--text); stroke: none; font-family: var(--schrift); pointer-events: none; }
+.wz-schicht .wz-masstext { fill: var(--akzent); }
+.wz-schicht .wz-fangtext { fill: var(--warnung); }
+.wz-schicht .wz-eingabe { fill: var(--text); font-weight: 600; }
+/* Eingabefeld für Texte im Plan */
+.wz-texteingabe { position: fixed; z-index: 90; min-width: 180px; padding: 3px 5px; font: inherit; color: var(--text); background: var(--flaeche-hell); border: 1px solid var(--akzent); border-radius: var(--radius); box-shadow: var(--schatten); resize: both; }
+
+/* ------------------------------------------------------------------ Register Einfügen: IFC übernehmen, Lagebericht, Unterlagen (Modul 1b, C1) */
+.dlg.ifc { height: min(780px, 92vh); }
+.dlg.ifc .dlg-inhalt, .ul-dlg, .koord-dlg, .lage-dlg { font-size: 12px; }
+.ifc-dlg h3 { margin: 12px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rand-leise); }
+.ifc-dlg h3:first-child { margin-top: 0; }
+.ifc-spalten { display: grid; grid-template-columns: 1fr 1fr; gap: 0 18px; align-items: start; }
+.ifc-status:empty { display: none; }
+.lauf { display: flex; align-items: center; gap: 8px; padding: 6px 0; color: var(--text-leise); }
+.spinner { flex: none; width: 14px; height: 14px; border: 2px solid var(--rand); border-top-color: var(--akzent); border-radius: 50%; animation: drehen 0.8s linear infinite; }
+@keyframes drehen { to { transform: rotate(360deg); } }
+.fehlerkasten { padding: 6px 8px; border: 1px solid var(--fehler); border-radius: var(--radius); background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.fehlerkasten > div { margin-top: 2px; color: var(--text); }
+/* Abweichung der Lage: gross und rot, nie übersehbar */
+.lage-abweichung { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 8px; padding: 10px 12px; border: 3px solid var(--fehler); border-radius: var(--radius); background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.lage-abw-sym { flex: none; width: 28px; height: 28px; margin-top: 1px; }
+.lage-abw-inhalt { min-width: 0; }
+.lage-abw-titel { font-size: 12px; font-weight: 700; color: var(--fehler); text-transform: uppercase; letter-spacing: .02em; }
+.lage-abw-text { margin-top: 3px; color: var(--text); }
+.lage-abw-zahlen { margin-top: 3px; font-family: var(--schrift-mono); font-size: 11px; font-weight: 700; color: var(--fehler); }
+.lage-tab th { width: 22%; white-space: nowrap; }
+.lage-tab td { overflow-wrap: anywhere; }
+.lage-text { margin: 6px 0 2px; }
+.lage-hinweis { margin: 4px 0; }
+fieldset.ausrichtung { margin: 8px 0; }
+fieldset.ausrichtung:disabled { opacity: .75; }
+label.wahl, label.bereich { display: grid; grid-template-columns: 18px 1fr; gap: 4px; align-items: start; padding: 3px 4px; border-radius: var(--radius); cursor: pointer; }
+label.wahl:hover:not(.aus), label.bereich:hover { background: var(--ob-hover); }
+label.wahl.aus { opacity: .55; cursor: default; }
+label.wahl input, label.bereich input { margin: 2px 0 0; }
+.empfohlen { margin-left: 4px; padding: 0 5px; border: 1px solid var(--akzent); border-radius: var(--radius); font-size: 11px; color: var(--akzent-text); }
+.ifc-weitere { margin: 8px 0 0; }
+.ifc-weitere summary { cursor: pointer; color: var(--text-leise); }
+table.kompakt td, table.kompakt th { padding-top: 0; padding-bottom: 0; }
+table.tab th.zahl, table.tab td.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+.vorschau-tab td.zahl.null { color: var(--text-leise); }
+.vorschau-tab td.art-neu { color: var(--ok); font-weight: 600; }
+.vorschau-tab td.art-geaendert { color: var(--warnung); font-weight: 600; }
+.vorschau-tab td.art-geloescht { color: var(--fehler); font-weight: 600; }
+.vorschau-tab tfoot th { border-top: 1px solid var(--rand); background: none; position: static; }
+.hinweisliste { margin: 6px 0; padding-left: 18px; max-height: 220px; overflow: auto; }
+.hinweisliste li { margin: 1px 0; }
+.ul-dlg td.u-knoepfe { white-space: nowrap; }
+.ul-dlg .dlg-knopf { min-width: 0; margin-right: 4px; padding: 0 8px; }
+.ul-dlg input.u-deck { height: 18px; padding: 0 3px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); text-align: right; }
+
+/* ------------------------------------------------------------------ Verwalten › HKAP: Verknüpfen, Abgleich, Prüfbefunde senden (Modul 1d, C) */
+.dlg.hkap { height: min(780px, 92vh); }
+.dlg.hkap .dlg-inhalt { font-size: 12px; }
+.dlg-knopf[hidden] { display: none; }
+.hkap-dlg h3 { margin: 12px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rand-leise); }
+.hkap-dlg h3:first-child { margin-top: 0; }
+.hkap-dlg h3.hkap-abschnitt { margin-top: 14px; }
+.hkap-adresse { display: flex; align-items: center; gap: 6px; margin: 4px 0; }
+.hkap-adresse input { flex: 1; min-width: 0; height: 22px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.hkap-adresse input:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.hkap-adresse .dlg-knopf { min-width: 0; }
+.hkap-kasten { margin: 6px 0; padding: 6px 8px; border: 1px solid var(--warnung); border-left-width: 4px; border-radius: var(--radius); background: var(--ob-warnung-flaeche); }
+.hkap-kasten > div { margin-top: 2px; }
+.hkap-ok { margin: 6px 0; color: var(--ok); }
+.hkap-listen { display: grid; grid-template-columns: 3fr 2fr; gap: 0 14px; align-items: start; }
+.hkap-listen[hidden] { display: none; }
+.hkap-liste tbody tr { cursor: pointer; }
+.hkap-liste td:first-child { white-space: nowrap; }
+.hkap-summe { margin: 4px 0; }
+table.hkap-kopftab th { width: 12%; white-space: nowrap; }
+.hkap-zusammen { margin: 6px 0 2px; }
+.hkap-steuer { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; margin: 4px 0; }
+.hkap-steuer .chip { height: 20px; font: inherit; color: var(--text); }
+.hkap-trenner { flex: 1; }
+.hkap-legende { margin: 2px 0 0; }
+.hkap-aenderungen td, .hkap-konflikte td { overflow-wrap: anywhere; }
+.hkap-richtung, .hkap-feld, .hkap-aenderungen td[class*="art-"] { white-space: nowrap; }
+.dlg.hkap.kurz { height: auto; }
+.hkap-aenderungen tr.r-nachKicad .hkap-richtung { color: var(--akzent); }
+.hkap-wert { font-family: var(--schrift-mono); font-size: 11px; }
+.hkap-konflikt.entschieden td { background: var(--akzent-hell); }
+.hkap-konflikte select, .hkap-konflikte .k-wahl { height: 20px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.hkap-details { margin: 6px 0; }
+.hkap-details summary { cursor: pointer; color: var(--text-leise); }
+.hkap-platz { margin: 6px 0; }
+.h-ergebnis { margin: 6px 0; padding: 4px 8px; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--flaeche); }
+.hkap-ergebnis-inhalt h4 { margin-top: 2px; }
+.hkap-hinweise li.konflikt, .hkap-hinweise li.abgelehnt { color: var(--warnung); font-weight: 600; }
+.hkap-hinweise li.vorschlag { color: var(--text-leise); }
+.hkap-dlg .dlg-knopf.h-zuordnen { min-width: 0; padding: 0 8px; }
+.h-projekte, .h-pj { max-height: 300px; overflow: auto; border: 1px solid var(--rand-leise); }
+.h-suche { display: block; width: 100%; box-sizing: border-box; height: 22px; margin-bottom: 3px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.h-suche:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+
+/* ---- Gebäudehülle (Modul 1c, Auftrag C1a): Decke erzeugen, Aufbau-Editor, Material, Fensterkennwerte, Übergang, Prüfen ---- */
+.dlg.huelle .dlg-inhalt { font-size: 12px; }
+.dlg.huelle.dlg-hoch { height: min(780px, 92vh); }
+.huelle-dlg h3 { margin: 12px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rand-leise); }
+.huelle-dlg h3:first-child { margin-top: 0; }
+.huelle-zwei { display: grid; grid-template-columns: 5fr 6fr; gap: 0 16px; align-items: start; }
+.huelle-links, .huelle-rechts { min-width: 0; }
+.huelle-liste td.zahl, .huelle-kennwerte td, .huelle-schichten td { vertical-align: middle; }
+.huelle-kennwerte input[type=text], .huelle-schichten input[type=text], .huelle-schichten select, .huelle-leiste input[type=search], .huelle-dlg .fz input[type=text] {
+  height: 20px; box-sizing: border-box; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); min-width: 0; }
+.huelle-kennwerte input.k-quelle, .huelle-kennwerte input.u-quelle { width: 100%; }
+.huelle-kennwerte input.zahl, .huelle-schichten input.zahl { width: 72px; text-align: right; }
+.huelle-schichten select { width: 100%; }
+.huelle-schichten td.s-knoepfe { white-space: nowrap; }
+.huelle-schichten .chip { height: 18px; padding: 0 5px; font: inherit; color: var(--text); }
+.huelle-schichten .chip:disabled { opacity: .35; cursor: default; }
+.huelle-leiste { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin: 4px 0; }
+.huelle-leiste .chip, .huelle-regel .chip { height: 20px; font: inherit; color: var(--text); }
+.huelle-regel { margin: 6px 0; padding: 4px 8px; border-left: 3px solid var(--akzent); background: var(--flaeche); }
+.huelle-summen { display: flex; align-items: baseline; gap: 6px 14px; flex-wrap: wrap; margin: 2px 0; }
+.huelle-wert b { font-size: 12px; }
+.rot, .huelle-fehlt, td.rot { color: var(--fehler); }
+.huelle-fehlt { margin: 4px 0; padding: 4px 8px 4px 22px; border: 1px solid var(--fehler); border-left-width: 4px; border-radius: var(--radius); background: var(--ob-fehler-flaeche); }
+.huelle-fehlt li { margin: 1px 0; }
+.huelle-ok { color: var(--ok); }
+.huelle-summe { margin: 4px 0; }
+.huelle-neu li { color: var(--ok); }
+.huelle-scroll { max-height: 420px; overflow: auto; border: 1px solid var(--rand-leise); }
+.huelle-dlg.aufbau-dlg .a-u { margin: 8px 0 4px; }
+.huelle-dlg .a-u summary { cursor: pointer; color: var(--text-leise); }
+.huelle-herleitung summary { cursor: pointer; color: var(--text-leise); }
+.huelle-details td { overflow-wrap: anywhere; }
+.huelle-details td:first-child { white-space: nowrap; }
+.huelle-bib .dlg-knopf.klein { min-width: 0; height: 18px; padding: 0 6px; }
+table.huelle-ableitung th, table.huelle-ableitung td { white-space: nowrap; }
+.hinweisliste.warnung li { color: var(--warnung); }
+
+/* ---- Listenansicht: Fusszeilen (Summen je Angrenzung, Raumgrenzen und Hüllbauteile; Modul 1c) ---- */
+.li-tabelle tfoot td { font-weight: 600; background: var(--flaeche-tief); border-top: 1px solid var(--rand); border-bottom: none; }
+.li-tabelle tfoot tr:first-child td { border-top-width: 2px; }
+
+/* ---- Eigenschaftenpalette: Hinweise des Kerns und Marke «ohne Quelle» (Modul 1c) ---- */
+.ep-hinweise { position: relative; margin: 2px 0; padding: 2px 22px 2px 4px; border-radius: var(--radius); background: var(--ob-warnung-flaeche); border: 1px solid var(--warnung); color: var(--text); }
+.ep-hinweise b { color: var(--warnung); }
+.ep-hinweise ul { margin: 1px 0 1px 14px; padding: 0; }
+.ep-hinweise li { margin: 1px 0; overflow-wrap: anywhere; }
+.ep-hinweise-zu { position: absolute; top: 1px; right: 2px; width: 16px; height: 16px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; }
+.ep-hinweise-zu:hover { color: var(--fehler); }
+.ep-ohnequelle { flex: none; padding: 0 4px; border: 1px solid var(--warnung); border-radius: var(--radius); background: var(--ob-warnung-flaeche); color: var(--warnung); font-size: 11px; line-height: 14px; white-space: nowrap; cursor: help; }
+.ep-marke { grid-column: 1 / -1; padding: 0 0 2px; }
+.ep-zeile.ohne-quelle .ep-feld input { border-color: var(--warnung); }
+
+/* Leitungen zeichnen (Modul 3, C1): Rohr und Kanal – Hinweis in der Optionsleiste, Anschlussmarken, Ringe, Vorschau-Zeile, Palette */
+#optionsleiste .ol-hinweis { color: var(--warnung); white-space: nowrap; }
+.wz-schicht .wz-anschluss { stroke: var(--akzent); stroke-width: 1.6px; fill: var(--flaeche-hell); fill-opacity: .85; }
+.wz-schicht .wz-anschluss-belegt { stroke: var(--text-leise); fill: var(--flaeche-tief); stroke-dasharray: 2 2; }
+.wz-schicht .wz-ring { stroke: var(--akzent); stroke-width: 1.6px; fill: var(--akzent); fill-opacity: .2; }
+.lt-leiste { position: absolute; z-index: 6; top: 8px; left: 50%; transform: translateX(-50%); max-width: 82%; min-width: 360px; padding: 3px 6px;
+  color: var(--text); background: var(--flaeche-hell); border: 1px solid var(--akzent); border-radius: var(--radius); box-shadow: var(--schatten); }
+.lt-leiste[hidden] { display: none; }
+.lt-kopf { display: flex; align-items: center; gap: 8px; min-height: 20px; }
+.lt-titel { font-weight: 600; color: var(--akzent); white-space: nowrap; }
+.lt-titel.lt-fehler { color: var(--fehler); }
+.lt-abgelehnt { color: var(--text); }
+.lt-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.lt-vorschlag { padding: 1px 0 2px; color: var(--text-leise); }
+.lt-liste { margin: 3px 0 1px; padding: 0 0 0 16px; max-height: 160px; overflow: auto; color: var(--text-leise); font-size: 11px; }
+.lt-liste[hidden] { display: none; }
+.lt-knopf { flex: none; height: 18px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+.lt-knopf:hover { background: var(--ob-hover-tief); }
+.lt-knopf.lt-primaer { border-color: var(--akzent); background: var(--akzent); color: var(--akzent-text); }
+.ep-lt-knopf { flex: none; height: 16px; padding: 0 6px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; }
+.ep-lt-knopf:hover { background: var(--ob-hover-tief); }
+.lt-dlg .lt-vorschau { margin-top: 6px; min-height: 40px; }
+.lt-dlg .lt-liste { max-height: 200px; overflow: auto; margin: 3px 0 0; padding-left: 18px; }
+
+/* ---- Koordination (Modul 3b, C1): Palette «Koordination» (Kollisionsliste, Aussparungsliste) und Dialoge. Nur Variablen aus hlks.css. ---- */
+.koord-panel { position: relative; z-index: 8; height: min(320px, 42vh); min-height: 0; display: flex; flex-direction: column; background: var(--palette); color: var(--text);
+  border-top: 2px solid var(--akzent); box-shadow: var(--schatten); }
+.kp-griff { flex: none; height: 6px; margin-top: -4px; cursor: ns-resize; }
+.kp-kopf { flex: none; display: flex; align-items: center; gap: 4px; min-height: 22px; padding: 0 6px; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); }
+.kp-reiter { height: 22px; padding: 0 10px; border: none; background: none; color: var(--text); cursor: pointer; font: inherit; }
+.kp-reiter:hover { background: var(--ob-hover); }
+.kp-reiter.aktiv { font-weight: 600; background: var(--flaeche-hell); box-shadow: inset 0 -2px 0 var(--akzent); }
+.kp-info { flex: 1 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; padding-left: 8px; color: var(--text-leise); }
+.kp-zu { flex: none; width: 20px; height: 20px; border: none; background: none; color: var(--text-leise); cursor: pointer; }
+.kp-zu:hover { color: var(--fehler); }
+.kp-filter, .kp-aktionen { flex: none; display: flex; flex-wrap: wrap; align-items: center; gap: 3px 12px; padding: 3px 8px; }
+.kp-filter { border-bottom: 1px solid var(--rand-leise); }
+.kp-aktionen { border-top: 1px solid var(--rand-leise); }
+.kp-filter label, .kp-aktionen label { display: inline-flex; align-items: center; gap: 4px; }
+.kp-filter label.haken, .kp-aktionen label.haken { gap: 3px; }
+.kp-gruppe { display: inline-flex; align-items: center; gap: 8px; }
+.kp-filter select, .kp-aktionen select, .kp-filter input[type=search], .kp-aktionen input[type=text] { height: 20px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.kp-aktionen input[type=text] { width: 190px; }
+.kp-filter input[type=search] { width: 130px; }
+.kp-trenner { width: 1px; align-self: stretch; margin: 0 2px; background: var(--rand-leise); }
+.kp-knopf { height: 20px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; font: inherit; }
+.kp-knopf:hover { background: var(--ob-hover-tief); }
+.kp-knopf.kp-primaer { border-color: var(--akzent); background: var(--akzent); color: var(--akzent-text); }
+.kp-liste { flex: 1 1 auto; min-height: 0; overflow: auto; background: var(--flaeche-hell); }
+.kp-liste .lauf, .kp-liste .fehlerkasten { margin: 6px; }
+.kp-leer { margin: 8px; }
+.kp-tab tbody tr.kp-zeile { cursor: pointer; }
+.kp-tab tbody tr.kp-zeile:hover { background: var(--ob-hover-tief); }
+.kp-tab tbody tr.kp-zeile.aktiv { background: var(--akzent-hell); }
+.kp-tab td { white-space: nowrap; max-width: 420px; overflow: hidden; text-overflow: ellipsis; }
+.kp-art-hart { color: var(--fehler); }
+.kp-art-weich { color: var(--warnung); }
+.kp-st-neu { font-weight: 600; }
+.kp-st-akzeptiert { color: var(--text-leise); }
+.kp-st-erledigt, .kp-st-behoben, .kp-sa-angekommen, .kp-sa-ausgefuehrt { color: var(--ok); }
+.kp-sa-veraltet, .kp-sa-fehlt { color: var(--fehler); }
+.kp-detail { flex: none; min-height: 22px; padding: 2px 8px; border-top: 1px solid var(--rand-leise); background: var(--flaeche); overflow: auto; max-height: 70px; }
+.kp-detail .chip { height: 18px; font: inherit; color: var(--text); }
+.kp-kommentar { white-space: pre-wrap; color: var(--text); }
+.kp-meldung { flex: none; position: relative; padding: 3px 24px 3px 8px; border-top: 1px solid var(--rand-leise); max-height: 90px; overflow: auto; }
+.kp-meldung.ok { background: var(--ob-hover-tief); }
+.kp-meldung.fehler { background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.kp-meldung .hinweisliste { margin: 2px 0; max-height: 60px; }
+.kp-meldung-zu { position: absolute; top: 2px; right: 4px; width: 16px; height: 16px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; }
+.kp-meldung-zu:hover { color: var(--fehler); }
+.kp-meldung .kp-formknoepfe { display: inline-flex; gap: 6px; margin-left: 8px; vertical-align: middle; }
+.kp-meldung .kp-formknoepfe .kp-knopf:disabled { opacity: .5; cursor: default; }
+.kp-meldung .kp-uebersprungen { margin-top: 2px; }
+.kp-meldung li.kp-warn, .kp-warn { color: var(--warnung); }
+/* Form der Aussparung (aussparung_form, Entscheid Christian 19.10.2026): Schalter rechteckig | rund in der Zeile, «von Hand» als Marke */
+.kp-formzelle { overflow: visible; }
+.kp-formschalter { display: inline-flex; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); overflow: hidden; vertical-align: middle; }
+.kp-formwahl { height: 16px; padding: 0 6px; border: none; background: var(--eingabe); color: var(--text); cursor: pointer; font: inherit; font-size: 11px; line-height: 14px; }
+.kp-formwahl + .kp-formwahl { border-left: 1px solid var(--eingabe-rand); }
+.kp-formwahl:hover:not(:disabled) { background: var(--ob-hover-tief); }
+.kp-formwahl.aktiv { background: var(--akzent); color: var(--akzent-text); cursor: default; }
+.kp-formwahl:disabled:not(.aktiv) { color: var(--text-leise); cursor: not-allowed; }
+.kp-formschalter.gesperrt { opacity: .65; }
+.kp-vonhand { padding: 0 4px; border: 1px solid var(--warnung); border-radius: var(--radius); color: var(--warnung); font-size: 11px; }
+.kp-formsperre { margin-top: 1px; }
+.kp-matunbekannt { font-weight: 600; }
+
+.dlg.koord .dlg-inhalt { font-size: 12px; }
+.dlg.koord.dlg-hoch { height: min(780px, 92vh); }
+.kp-dlg h3 { margin: 10px 0 4px; padding-bottom: 2px; border-bottom: 1px solid var(--rand-leise); }
+.kp-dlg h3:first-child { margin-top: 0; }
+.kp-dlg .kp-paar { display: flex; align-items: baseline; gap: 6px; margin: 3px 0; }
+.kp-dlg .kp-name { font-family: var(--schrift-mono); font-size: 11px; }
+.kp-dlg .kp-fehlt { color: var(--warnung); font-weight: 600; }
+.kp-dlg .kp-weichquelle { flex: 1 1 320px; margin: 0; }
+.kp-dlg .kp-vorgaben input.v-quelle, .kp-dlg input.v-weich-quelle { width: 100%; box-sizing: border-box; }
+.kp-dlg input.zahl { width: 72px; text-align: right; }
+.kp-dlg .kp-weich select { height: 20px; min-width: 190px; }
+.kp-dlg .kp-lesen-feld { display: flex; gap: 6px; }
+.kp-dlg .kp-lesen-feld input { flex: 1 1 auto; height: 22px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); min-width: 0; }
+.kp-dlg .kp-lesen-feld .dlg-knopf { min-width: 0; padding: 0 12px; }
+.kp-dlg .kp-roh { max-height: 220px; overflow: auto; font-family: var(--schrift-mono); font-size: 11px; white-space: pre-wrap; }
+.kp-dlg .kp-vorschau, .kp-dlg .kp-ergebnis { margin: 8px 0 2px; color: var(--akzent); }
+.kp-hinweise { max-height: 360px; }
+.kp-hinweise li.kp-ein { margin-left: 16px; list-style: circle; }
+.kp-hinweise li.kp-warn { color: var(--warnung); }
+.kp-hinweise li.kp-kopf-zeile { font-weight: 600; }
+.kp-dlg .kp-unbekannt td { color: var(--text-leise); }
+.kp-dlg .a-u { margin: 8px 0 4px; }
+.kp-dlg .a-u summary { cursor: pointer; color: var(--text-leise); }
+.kp-dlg .kp-abstand { margin: 10px 0 4px; padding: 2px 8px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.kp-dlg .kp-abstand summary { cursor: pointer; color: var(--text-leise); font-weight: 600; }
+.kp-dlg .kp-abstand[open] summary { margin-bottom: 4px; }
+.kp-dlg .kp-nichtmehr { margin: 6px 0; }
+.kp-dlg .kp-wird-entfernt { color: var(--warnung); font-weight: 600; }
+.kp-dlg .kp-pflicht { font-size: 11px; }
+.kp-dlg .p-weich-hinweis { margin: 4px 0; }
+.kp-dlg .b-zahl { min-height: 16px; margin: 6px 0; }
+
+/* Typenliste (Modul 3b, C1c): Dialog «Typenliste» mit Reitern, Tabellen und Vorschau; Paar-Spalte und Schalter in der Kollisionsliste. Nur Variablen. */
+.dlg.koord.typen { height: min(900px, 95vh); max-height: 95vh; }
+.kp-dlg .t-zahlen { margin: 0 0 6px; }
+.kp-dlg .t-leise { margin: 4px 0; font-size: 11px; }
+.kp-dlg .kp-typen-warn .hinweisliste { max-height: 96px; margin: 3px 0 0; }
+.kp-dlg .kp-nachher { margin: 6px 0; border-color: var(--akzent); background: var(--akzent-hell); }
+.kp-dlg .kp-nachher .kp-knopf { margin-left: 4px; }
+.kp-dlg .t-reiterleiste { display: flex; align-items: center; margin-top: 8px; border-bottom: 1px solid var(--trenner); }
+.kp-dlg .t-reiterleiste .kp-reiter { height: 26px; padding: 0 14px; }
+.kp-dlg .t-betroffen-feld { margin-left: auto; display: inline-flex; align-items: center; gap: 4px; }
+.kp-dlg .t-erklaerung { margin: 6px 0; }
+.dlg.koord.typen .dlg-inhalt { display: flex; flex-direction: column; }
+.dlg.koord.typen .t-dlg { flex: 1 1 auto; min-height: 0; display: flex; flex-direction: column; }
+.dlg.koord.typen .t-dlg > * { flex: none; }
+.dlg.koord.typen .t-dlg > .t-inhalt { flex: 1 1 auto; min-height: 160px; display: flex; flex-direction: column; }
+.kp-dlg .t-scroll { flex: 0 1 auto; min-height: 120px; max-height: 62vh; overflow: auto; border: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.kp-dlg .t-tab td { vertical-align: top; }
+.kp-dlg .t-tab td.t-name { white-space: normal; overflow-wrap: anywhere; min-width: 250px; max-width: none; }
+.kp-dlg .t-sub { font-size: 11px; }
+.kp-dlg .t-tab select { height: 20px; max-width: 200px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.kp-dlg .t-tab td.t-wirkung { white-space: normal; min-width: 190px; max-width: 300px; font-size: 11px; }
+.kp-dlg .t-tab input[type=text] { height: 20px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.kp-dlg .t-viel { font-weight: 600; }
+.kp-dlg .t-tab tr.gewaehlt > td { background: var(--akzent-hell); }
+.kp-dlg .t-tab tr.t-weg { opacity: .55; }
+.kp-dlg .t-tab tr.t-weg .t-name b { text-decoration: line-through; }
+.kp-dlg .t-tab tr.t-ohne > td { background: var(--ob-warnung-flaeche); }
+.kp-dlg input.t-zq { width: 100%; min-width: 170px; box-sizing: border-box; }
+.kp-dlg .t-aktion { display: flex; align-items: center; gap: 12px; margin: 8px 0 2px; }
+.kp-dlg .t-quelle-feld { flex: 1 1 auto; grid-template-columns: 70px 1fr; margin: 0; }
+.kp-dlg .t-quelle-feld input { width: 100%; box-sizing: border-box; }
+.kp-dlg .t-aktion .kp-knopf { flex: none; height: 24px; min-width: 170px; }
+.kp-dlg .t-vorschau { max-height: 190px; overflow: auto; }
+.kp-dlg .t-vorschau .kp-hinweise { max-height: none; }
+.kp-dlg .t-vorschau .t-nochmal { margin: 2px 0 4px; }
+.kp-tab td.kp-paar-aus { color: var(--text-leise); font-style: italic; }
+.kp-filter .kf-ungeprueft-feld { color: var(--text-leise); }

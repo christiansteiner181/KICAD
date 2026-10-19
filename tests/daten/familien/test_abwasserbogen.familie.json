@@ -1,0 +1,37 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasserbogen",
+  "name": "Testabwasserbogen (fiktiv)",
+  "kategorie": "Bogen",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Bogen der Testabwasserserie (Modul 3, Nachtrag B7, 19.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: Ursprung = Schnittpunkt der Achsen; a bei (−la, 0, 0) Richtung (−1, 0, 0); b bei lb·(cos w, sin w, 0) Richtung (cos w, sin w, 0), w = Umlenkwinkel. Ein Typ je Grösse mit Einbaulänge je Winkel als Typparameter z15, z30, z45, z88 (z88 für 88.5°) und Formel wie in ki/familie_aus_unterlagen.md (Handrechnung: DN 100, 88.5° → la = lb = z88 = 90 mm).",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (FIKTIV)" },
+    { "name": "z15", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Einbaulänge bei 15° (FIKTIV)" },
+    { "name": "z30", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Einbaulänge bei 30° (FIKTIV)" },
+    { "name": "z45", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Einbaulänge bei 45° (FIKTIV)" },
+    { "name": "z88", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Einbaulänge bei 88.5° (FIKTIV)" },
+    { "name": "winkel", "art": "exemplar", "datentyp": "winkel", "gruppe": "abmessung", "wert": 45, "ziel": "winkel", "beschreibung": "Umlenkwinkel" },
+    { "name": "la", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "if(winkel = 88.5, z88, if(winkel = 45, z45, if(winkel = 30, z30, z15)))", "beschreibung": "Einbaulänge Anschluss a (Achsschnittpunkt bis Anschluss)" },
+    { "name": "lb", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "if(winkel = 88.5, z88, if(winkel = 45, z45, if(winkel = 30, z30, z15)))", "beschreibung": "Einbaulänge Anschluss b" }
+  ],
+  "typen": [
+    { "name": "DN 50", "werte": { "dn": 50, "da": 60, "z15": 10, "z30": 15, "z45": 25, "z88": 50 } },
+    { "name": "DN 75", "werte": { "dn": 75, "da": 85, "z15": 12, "z30": 20, "z45": 35, "z88": 70 } },
+    { "name": "DN 100", "werte": { "dn": 100, "da": 110, "z15": 15, "z30": 25, "z45": 45, "z88": 90 } },
+    { "name": "DN 125", "werte": { "dn": 125, "da": 135, "z15": 18, "z30": 30, "z45": 55, "z88": 110 } }
+  ],
+  "koerper": [
+    { "id": "schenkel_a", "name": "Schenkel a", "art": "zylinder", "material": "rohr", "von": ["-la", 0, 0], "nach": [0, 0, 0], "r": "da / 2" },
+    { "id": "schenkel_b", "name": "Schenkel b", "art": "zylinder", "material": "rohr", "von": [0, 0, 0], "nach": ["lb * cos(winkel)", "lb * sin(winkel)", 0], "r": "da / 2" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["-la", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn",
+      "lage": ["lb * cos(winkel)", "lb * sin(winkel)", 0], "richtung": ["cos(winkel)", "sin(winkel)", 0], "beschreibung": "Ausgang (um winkel umgelenkt)" }
+  ]
+}

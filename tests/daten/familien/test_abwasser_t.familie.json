@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasser-t",
+  "name": "Test-Abwasser-Abzweig (fiktiv)",
+  "kategorie": "TStueck",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Abzweig (T-Stück) der Testabwasserserie mit Abzweigwinkel (Modul 3, Nachtrag B7, 19.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md «Lücke Abzweigwinkel»: Ursprung = Schnittpunkt der Achsen; a (−l, 0, 0)/(−1, 0, 0), b (l, 0, 0)/(1, 0, 0), Abzweig c bei lc·(−cos w, sin w, 0) Richtung (−cos w, sin w, 0), w = Exemplarparameter winkel (Abzweigwinkel; bei w < 90 zeigt c gegen a→b, der Zulauf mündet in Fliessrichtung). Einbaulängen FIKTIV: unter 60° l = 1.5·da1 und lc = 2·da1, sonst l = lc = da1 (Handrechnung: DN 100, 45° → l = 165, lc = 220; 88.5° → l = lc = 110). Typen mit gleichem und mit reduziertem Abzweig (DN 100/50, DN 100/75).",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn1", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite Durchgang (a, b)" },
+    { "name": "dn2", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "beschreibung": "Nennweite Abzweig (c)" },
+    { "name": "da1", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "dn1 + 10", "beschreibung": "Aussendurchmesser Durchgang (FIKTIV, wie Testabwasserserie)" },
+    { "name": "da2", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "dn2 + 10", "beschreibung": "Aussendurchmesser Abzweig (FIKTIV, wie Testabwasserserie)" },
+    { "name": "winkel", "art": "exemplar", "datentyp": "winkel", "gruppe": "abmessung", "wert": 88.5, "beschreibung": "Abzweigwinkel (Winkel zwischen Durchgang und Abzweig)" },
+    { "name": "l", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "if(winkel < 60, 1.5 * da1, da1)", "beschreibung": "Einbaulänge Durchgang je Seite (FIKTIV)" },
+    { "name": "lc", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "if(winkel < 60, 2 * da1, da1)", "beschreibung": "Einbaulänge Abzweig (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "DN 50", "werte": { "dn1": 50, "dn2": 50 } },
+    { "name": "DN 75", "werte": { "dn1": 75, "dn2": 75 } },
+    { "name": "DN 100", "werte": { "dn1": 100, "dn2": 100 } },
+    { "name": "DN 125", "werte": { "dn1": 125, "dn2": 125 } },
+    { "name": "DN 100/50", "werte": { "dn1": 100, "dn2": 50 } },
+    { "name": "DN 100/75", "werte": { "dn1": 100, "dn2": 75 } }
+  ],
+  "koerper": [
+    { "id": "durchgang", "name": "Durchgang", "art": "zylinder", "material": "rohr", "von": ["-l", 0, 0], "nach": ["l", 0, 0], "r": "da1 / 2" },
+    { "id": "abzweig", "name": "Abzweig", "art": "zylinder", "material": "rohr", "von": [0, 0, 0], "nach": ["-lc * cos(winkel)", "lc * sin(winkel)", 0], "r": "da2 / 2" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn1", "lage": ["-l", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Durchgang Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn1", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Durchgang Ausgang" },
+    { "name": "c", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn2", "lage": ["-lc * cos(winkel)", "lc * sin(winkel)", 0], "richtung": ["-cos(winkel)", "sin(winkel)", 0], "beschreibung": "Abzweig unter winkel (zeigt gegen a→b)" }
+  ]
+}

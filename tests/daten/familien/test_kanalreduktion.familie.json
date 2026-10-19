@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalreduktion",
+  "name": "Testkanalreduktion rechteckig (fiktiv)",
+  "kategorie": "Reduktion",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Reduktion der Testkanalserie (Modul 3, B2, 18.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: a (gross) im Ursprung Richtung (−1, 0, 0), b (klein) bei (l, 0, 0) Richtung (1, 0, 0); Einbaulänge l = 200 mm fest (FIKTIV). Körper vereinfacht als Quader des grossen Querschnitts. Nur die Typen der Liste – fehlt ein Paar, meldet das Routing es.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b1", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Breite gross (Anschluss a, FIKTIV)" },
+    { "name": "h1", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Höhe gross (FIKTIV)" },
+    { "name": "b2", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Breite klein (Anschluss b, FIKTIV)" },
+    { "name": "h2", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Höhe klein (FIKTIV)" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 200, "beschreibung": "Einbaulänge (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "500x300/400x200", "werte": { "b1": 500, "h1": 300, "b2": 400, "h2": 200 } },
+    { "name": "400x200/300x200", "werte": { "b1": 400, "h1": 200, "b2": 300, "h2": 200 } },
+    { "name": "300x200/200x200", "werte": { "b1": 300, "h1": 200, "b2": 200, "h2": 200 } }
+  ],
+  "koerper": [
+    { "id": "reduktion", "name": "Reduktion", "art": "quader", "material": "rohr", "von": [0, "-b1 / 2", "-h1 / 2"], "bis": ["l", "b1 / 2", "h1 / 2"] }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b1", "h": "h1", "lage": [0, 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Gross" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b2", "h": "h2", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Klein" }
+  ]
+}

@@ -1,0 +1,250 @@
+{
+    "ordner":  "W:\\02_Projektdateien Objekte\\_Test HLKS-CAD\\c_Pläne und Modelle\\e_KICAD",
+    "rechner":  "DESKTOP-5JDTDQ8",
+    "start":  "2026-10-17T18:55:30",
+    "oeffnenMitStandMs":  [
+                              110,
+                              126
+                          ],
+    "oeffnenOhneStandMs":  [
+                               4219,
+                               520
+                           ],
+    "aenderungen":  [
+                        {
+                            "durchgang":  1,
+                            "paket":  "20261017T165631692Z_nas-b_NAS-B_607601",
+                            "cliMs":  704,
+                            "abPaketMs":  356,
+                            "abCliEndeMs":  17
+                        },
+                        {
+                            "durchgang":  2,
+                            "paket":  "20261017T165633472Z_nas-b_NAS-B_341901",
+                            "cliMs":  550,
+                            "abPaketMs":  315,
+                            "abCliEndeMs":  4
+                        },
+                        {
+                            "durchgang":  3,
+                            "paket":  "20261017T165634531Z_nas-b_NAS-B_447701",
+                            "cliMs":  568,
+                            "abPaketMs":  310,
+                            "abCliEndeMs":  0
+                        },
+                        {
+                            "durchgang":  4,
+                            "paket":  "20261017T165635783Z_nas-b_NAS-B_537701",
+                            "cliMs":  556,
+                            "abPaketMs":  316,
+                            "abCliEndeMs":  4
+                        },
+                        {
+                            "durchgang":  5,
+                            "paket":  "20261017T165636749Z_nas-b_NAS-B_189801",
+                            "cliMs":  568,
+                            "abPaketMs":  323,
+                            "abCliEndeMs":  1
+                        },
+                        {
+                            "durchgang":  6,
+                            "paket":  "20261017T165638138Z_nas-b_NAS-B_367101",
+                            "cliMs":  546,
+                            "abPaketMs":  316,
+                            "abCliEndeMs":  4
+                        },
+                        {
+                            "durchgang":  7,
+                            "paket":  "20261017T165638952Z_nas-b_NAS-B_392701",
+                            "cliMs":  551,
+                            "abPaketMs":  310,
+                            "abCliEndeMs":  7
+                        },
+                        {
+                            "durchgang":  8,
+                            "paket":  "20261017T165640713Z_nas-b_NAS-B_719401",
+                            "cliMs":  564,
+                            "abPaketMs":  301,
+                            "abCliEndeMs":  2
+                        }
+                    ],
+    "fremdeAenderungAbPaketMs":  {
+                                     "min":  301,
+                                     "median":  316,
+                                     "max":  356,
+                                     "werte":  [
+                                                   356,
+                                                   315,
+                                                   310,
+                                                   316,
+                                                   323,
+                                                   316,
+                                                   310,
+                                                   301
+                                               ]
+                                 },
+    "fremdeAenderungAbCliEndeMs":  {
+                                       "min":  0,
+                                       "median":  4,
+                                       "max":  17,
+                                       "werte":  [
+                                                     17,
+                                                     4,
+                                                     0,
+                                                     4,
+                                                     1,
+                                                     4,
+                                                     7,
+                                                     2
+                                                 ]
+                                   },
+    "cliAenderungMs":  {
+                           "min":  546,
+                           "median":  560,
+                           "max":  704,
+                           "werte":  [
+                                         704,
+                                         550,
+                                         568,
+                                         556,
+                                         568,
+                                         546,
+                                         551,
+                                         564
+                                     ]
+                       },
+    "waechter":  {
+                     "ordner":  "W:\\02_Projektdateien Objekte\\_Test HLKS-CAD\\c_Pläne und Modelle\\e_KICAD\\aenderungen",
+                     "meldungen":  8,
+                     "taktSekunden":  2
+                 },
+    "letzteAbgleichDauerMs":  97,
+    "abnahme3s":  true,
+    "reservierung":  {
+                         "aAendert":  true,
+                         "sperrdateienA":  1,
+                         "bAbgelehnt":  true,
+                         "meldungB":  "WC-E.03: NAS-A@nas-a bis 20:56",
+                         "freigegeben":  true,
+                         "sperrdateienANachFreigabe":  0,
+                         "bNachFreigabeAngenommen":  true,
+                         "aSiehtB":  true
+                     },
+    "schliessen":  {
+                       "ms":  98,
+                       "offen":  false,
+                       "reservierungenFrei":  true
+                   },
+    "fehler":  null,
+    "ende":  "2026-10-17T18:56:43",
+    "tabelle":  [
+                    {
+                        "Messung":  "Kommandozeile Start ohne Projekt",
+                        "Wert":  61,
+                        "Einheit":  "ms",
+                        "Bemerkung":  "dotnet-Start, Vergleichswert"
+                    },
+                    {
+                        "Messung":  "Anlegen Beispielprojekt (Kommandozeile)",
+                        "Wert":  51086,
+                        "Einheit":  "ms",
+                        "Bemerkung":  "inkl. dotnet-Start"
+                    },
+                    {
+                        "Messung":  "Pakete in der Ablage",
+                        "Wert":  175,
+                        "Einheit":  "",
+                        "Bemerkung":  ""
+                    },
+                    {
+                        "Messung":  "Start A bis Projekt offen",
+                        "Wert":  687,
+                        "Einheit":  "ms",
+                        "Bemerkung":  "inkl. dotnet-Start und Oeffnen mit Standabbild"
+                    },
+                    {
+                        "Messung":  "Oeffnen mit Standabbild",
+                        "Wert":  "110, 126",
+                        "Einheit":  "ms",
+                        "Bemerkung":  "A, REST, zwei Mal"
+                    },
+                    {
+                        "Messung":  "Oeffnen ohne Standabbild",
+                        "Wert":  "4219, 520",
+                        "Einheit":  "ms",
+                        "Bemerkung":  "A, REST, alle 175 Pakete anwenden"
+                    },
+                    {
+                        "Messung":  "B aendert (Kommandozeile, gesamt)",
+                        "Wert":  "546 / 560 / 704",
+                        "Einheit":  "ms",
+                        "Bemerkung":  "min/median/max, inkl. dotnet-Start und Oeffnen"
+                    },
+                    {
+                        "Messung":  "Fremde Aenderung bis A (ab Paket)",
+                        "Wert":  "301 / 316 / 356",
+                        "Einheit":  "ms",
+                        "Bemerkung":  "min/median/max, 8 Durchgaenge, Abnahme \u003c 3000"
+                    },
+                    {
+                        "Messung":  "Fremde Aenderung bis A (ab Ende B)",
+                        "Wert":  "0 / 4 / 17",
+                        "Einheit":  "ms",
+                        "Bemerkung":  "min/median/max"
+                    },
+                    {
+                        "Messung":  "Nicht angekommen (30 s)",
+                        "Wert":  0,
+                        "Einheit":  "",
+                        "Bemerkung":  ""
+                    },
+                    {
+                        "Messung":  "Dateiwaechter",
+                        "Wert":  "aktiv",
+                        "Einheit":  "",
+                        "Bemerkung":  "8 Meldungen waehrend der Durchgaenge (0 = nur Takt)"
+                    },
+                    {
+                        "Messung":  "Dauer letzter Abgleich",
+                        "Wert":  97,
+                        "Einheit":  "ms",
+                        "Bemerkung":  "Paketliste + neue Pakete lesen und anwenden"
+                    },
+                    {
+                        "Messung":  "Abgleich-Fehler",
+                        "Wert":  "keiner",
+                        "Einheit":  "",
+                        "Bemerkung":  ""
+                    },
+                    {
+                        "Messung":  "Reservierung: A aendert WC-E.03",
+                        "Wert":  "ja",
+                        "Einheit":  "",
+                        "Bemerkung":  "1 Sperrdatei(en) von nas-a"
+                    },
+                    {
+                        "Messung":  "Reservierung: B abgelehnt",
+                        "Wert":  "ja",
+                        "Einheit":  "",
+                        "Bemerkung":  "WC-E.03: NAS-A@nas-a bis 20:56"
+                    },
+                    {
+                        "Messung":  "Reservierung: A gibt frei",
+                        "Wert":  "ja",
+                        "Einheit":  "",
+                        "Bemerkung":  "0 Sperrdatei(en) danach"
+                    },
+                    {
+                        "Messung":  "Reservierung: B danach angenommen",
+                        "Wert":  "ja",
+                        "Einheit":  "",
+                        "Bemerkung":  "A zeigt die Aenderung"
+                    },
+                    {
+                        "Messung":  "Schliessen",
+                        "Wert":  98,
+                        "Einheit":  "ms",
+                        "Bemerkung":  "Reservierungen von nas-a frei"
+                    }
+                ]
+}

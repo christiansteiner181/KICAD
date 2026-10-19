@@ -1,0 +1,15 @@
+{
+  "beschreibung": "Gewerke von KICAD mit Koordinationsfarbe (Koordinationsplan, Gewerkefarben statt Medienfarben) und Pastellton (Hinterlegung im Projektbrowser, Entscheid Christian 19.10.2026: «Die Gewerke sollen im Explorer mit der Koordinationsfarbe hinterlegt sein (pastel)»). Quelle der Koordinationsfarben Heizung/Lüftung/Sanitär: H+K-Koordinationspläne Bernstrasse K01–K06 (Revisionspläne 21.01.2026, entwurf/planmuster.md); Kälte, Elektro, MSRL, Energie vom Hauptlauf vorgeschlagen und von Christian am 19.10.2026 bestätigt. Dunkles Design: Pastellton als Tönung (Deckkraft) über dem Grund, siehe dunkelDeckkraft.",
+  "dunkelDeckkraft": 0.22,
+  "gewerke": [
+    { "id": "heizung",      "titel": "Heizung",      "koordination": "#FF0000", "pastell": "#FAD4D4", "quelle": "Koordinationspläne H+K" },
+    { "id": "lueftung",     "titel": "Lüftung",      "koordination": "#0000FF", "pastell": "#D4DCFA", "quelle": "Koordinationspläne H+K" },
+    { "id": "sanitaer",     "titel": "Sanitär",      "koordination": "#00B000", "pastell": "#D4F2D4", "quelle": "Koordinationspläne H+K (Grün; dunkleres Grün für Lesbarkeit auf Weiss)" },
+    { "id": "kaelte",       "titel": "Kälte",        "koordination": "#00B0C8", "pastell": "#D2F1F5", "quelle": "Vorschlag Hauptlauf, bestätigt Christian 19.10.2026 («passt so»)" },
+    { "id": "elektro",      "titel": "Elektro",      "koordination": "#E0A000", "pastell": "#FAEDCC", "quelle": "Vorschlag Hauptlauf, bestätigt Christian 19.10.2026 («passt so»)" },
+    { "id": "msrl",         "titel": "MSRL",         "koordination": "#9040C0", "pastell": "#EADAF5", "quelle": "Vorschlag Hauptlauf, bestätigt Christian 19.10.2026 («passt so»)" },
+    { "id": "architektur",  "titel": "Architektur",  "koordination": "#808080", "pastell": "#E6E6E6", "quelle": "Koordinationspläne H+K (Architektur grau)" },
+    { "id": "koordination", "titel": "Koordination", "koordination": "#FF00FF", "pastell": "#F8D6F8", "quelle": "H+K-Hinweisfarbe Magenta (Planmuster)" },
+    { "id": "energie",      "titel": "Energie und Umwelt", "koordination": "#E07000", "pastell": "#FBE3CC", "quelle": "Vorschlag Hauptlauf, bestätigt Christian 19.10.2026 («passt so»)" }
+  ]
+}

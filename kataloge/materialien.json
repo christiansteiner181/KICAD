@@ -1,0 +1,8 @@
+{
+  "beschreibung": "Bürobibliothek der Materialien für die Gebäudehülle (Modul 1c). Nur Vorlage: material_uebernehmen kopiert einen Eintrag samt Quelle ins Projekt. Jeder Kennwert braucht eine Quelle (Norm mit Ausgabe und Tabelle, Herstellerdatenblatt mit Datum); Werte ohne Quelle sind nicht zulässig. Stand 18.10.2026: leer – im Bestand fehlt eine gültige Quelle für Baustoffe (Bestandsaufnahme in entwurf/modul-1c.md); Christian entscheidet, welche Tabellen gelten.",
+  "format": {
+    "materialien": "[{ \"name\", \"kategorie\", \"werte\": { \"lambda\" | \"rohdichte\" | \"waermekapazitaet\" | \"emission\" | \"absorption\" | \"mu\": { \"wert\": Zahl, \"quelle\": Text } } }]",
+    "einheiten": { "lambda": "W/(m·K)", "rohdichte": "kg/m³", "waermekapazitaet": "J/(kg·K)", "emission": "-", "absorption": "-", "mu": "-" }
+  },
+  "materialien": []
+}

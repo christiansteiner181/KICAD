@@ -1,0 +1,79 @@
+/* Dialog «Serien-PDF» (Plansätze, entwurf/serien-pdf.md). Farben und Masse nur über die Variablen aus hlks.css (hell und dunkel). */
+/* Gestapelte Dialoge (Rückfrage über dem Serien-PDF): positionierte Teile im unteren Dialog (sticky Tabellenköpfe) würden sonst über dem oberen liegen. */
+#dialogschicht > .dlg { position: relative; }
+.dlg.serienpdf { width: min(1120px, 96vw); height: min(700px, 90vh); }
+.dlg.serienpdf .dlg-inhalt { padding: 0; overflow: hidden; display: flex; }
+.sp { display: grid; grid-template-columns: 230px 1fr; width: 100%; min-height: 0; }
+.sp-links { display: flex; flex-direction: column; gap: 2px; padding: 8px; border-right: 1px solid var(--rand-leise); background: var(--flaeche); overflow: auto; }
+.sp-gruppe { margin: 6px 0 2px; font-weight: 600; color: var(--text-leise); }
+.sp-gruppe:first-child { margin-top: 0; }
+.sp-leer { padding: 0 6px; }
+.sp-satz { display: flex; justify-content: space-between; gap: 8px; align-items: baseline; text-align: left; padding: 3px 8px; border: 1px solid transparent; background: none; border-radius: var(--radius); cursor: pointer; color: var(--text); }
+.sp-satz:hover { background: var(--ob-hover-tief); }
+.sp-satz.aktiv { background: var(--akzent-hell); border-color: var(--akzent); font-weight: 600; }
+.sp-satz.angeboten .sp-satz-name { font-style: italic; }
+.sp-satz-zahl { color: var(--text-leise); font-weight: 400; white-space: nowrap; }
+.sp-neu { margin-top: 8px; align-self: flex-start; }
+.sp-rechts { position: relative; display: flex; flex-direction: column; min-width: 0; min-height: 0; }
+.sp-bearbeiten { display: flex; flex-direction: column; min-height: 0; flex: 1; padding: 8px 12px; gap: 6px; }
+.sp-bearbeiten[hidden], .sp-lauf[hidden] { display: none; }
+.sp-kopf { display: flex; align-items: center; gap: 12px; }
+.sp-kopf b { flex: none; }
+.sp-kopf-knoepfe { margin-left: auto; display: flex; gap: 4px; }
+.dlg-knopf.klein { min-width: 0; height: 20px; padding: 0 8px; }
+.sp-tabelle { flex: 1; min-height: 80px; overflow: auto; border: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.sp-tab td, .sp-tab th { white-space: nowrap; vertical-align: middle; }
+.sp-tab td.sp-ti { white-space: normal; width: 100%; }
+.sp-tab tr.sp-zeile { cursor: grab; }
+.sp-tab tr.sp-zeile.aus td:not(.sp-c):not(.sp-an):not(.sp-gw) { color: var(--text-leise); text-decoration: line-through; text-decoration-color: color-mix(in srgb, var(--text-leise) 50%, transparent); }
+.sp-tab tr.sp-zeile.zieht { opacity: .45; }
+.sp-tab tr.sp-zeile.ueber td { border-top: 2px solid var(--akzent); }
+.sp-griff { width: 14px; padding: 0 2px; color: var(--text-leise); cursor: grab; text-align: center; user-select: none; }
+.sp-c { width: 20px; text-align: center; }
+.sp-nr { font-variant-numeric: tabular-nums; }
+.sp-ohne { margin-left: 6px; padding: 0 5px; border: 1px solid var(--warnung); border-radius: 8px; color: var(--warnung); font-size: 11px; }
+.sp-gw select { height: 20px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.sp-gw.vorschlag select { color: var(--text-leise); font-style: italic; border-style: dashed; background: transparent; }
+.sp-bestaetigen { margin-left: 4px; height: 20px; padding: 0 6px; border: 1px solid var(--akzent); background: transparent; color: var(--akzent); border-radius: var(--radius); cursor: pointer; }
+.sp-bestaetigen:hover { background: var(--akzent-hell); }
+.sp-an { white-space: nowrap; text-align: right; }
+.sp-an button { width: 22px; height: 20px; padding: 0; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; margin-left: 2px; }
+.sp-an button:hover:not(:disabled) { background: var(--ob-hover-tief); }
+.sp-an button:disabled { opacity: .35; cursor: default; }
+.sp-hinzu-zeile { padding: 4px 6px; border-top: 1px solid var(--rand-leise); background: var(--flaeche); }
+.sp-hinzu-zeile select { max-width: 520px; height: 22px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.sp-hinweise .hinweisliste { margin: 0; max-height: 54px; color: var(--warnung); }
+.sp-ausgabe { display: grid; grid-template-columns: 1fr 2fr; gap: 4px 12px; align-items: end; }
+.sp-f { display: grid; gap: 2px; margin: 0; }
+.sp-f > span { color: var(--text-leise); }
+.sp-f input[type=text] { height: 22px; padding: 0 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); min-width: 0; }
+.sp-f input:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.sp-f-zeile { display: flex; gap: 4px; }
+.sp-f-zeile input { flex: 1; }
+.sp-einzeln-zeile, .sp-sammel { grid-column: 1 / -1; }
+.sp-sammel-name { color: var(--text); }
+.sp-umfang { font-weight: 600; }
+
+/* Fortschritt und Ergebnis */
+.sp-lauf { flex: 1; min-height: 0; overflow: auto; padding: 12px 16px; }
+.sp-lauf-kopf { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.sp-lauf-titel.ok { color: var(--ok); }
+.sp-lauf-titel.fehler { color: var(--fehler); }
+.sp-zeit { margin-left: auto; }
+.sp-fortschritt { list-style: none; margin: 0 0 10px; padding: 0; border: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.sp-fortschritt li { display: flex; align-items: baseline; gap: 8px; padding: 2px 8px; border-bottom: 1px solid var(--rand-leise); }
+.sp-fortschritt li:last-child { border-bottom: none; }
+.sp-fortschritt li.wartet { color: var(--text-leise); }
+.sp-fortschritt li.fertig .sp-marke { color: var(--ok); font-weight: 700; }
+.sp-fortschritt li.abgebrochen { color: var(--text-leise); }
+.sp-marke { width: 14px; text-align: center; }
+.sp-f-nr { font-weight: 600; min-width: 36px; }
+.sp-f-info { margin-left: auto; }
+.sp-ergebnis { margin: 6px 0; font-weight: 600; }
+.sp-ordnerpfad { margin: 2px 0 8px; }
+.sp-ordnerpfad code { font-family: var(--schrift-mono); user-select: all; }
+.sp-dateien { margin-bottom: 8px; }
+.sp-lauf-knoepfe { display: flex; gap: 6px; margin: 10px 0 0; }
+
+/* Projektbrowser «Pläne» nach Gewerk: Blätter mit Gewerk-Vorschlag (noch nicht bestätigt) grau und kursiv */
+.pb-zeile.pb-vorschlag .pb-sub { color: var(--text-leise); font-style: italic; }

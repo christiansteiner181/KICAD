@@ -1,0 +1,16 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Attrappe statt claude.exe für die Tests der KI-Aufträge (Modul 2, B5): prüft die Argumente wie Claude Code, liest den
+       Auftrag von der Standardeingabe, schreibt stream-json und ruft den MCP-Server «hlks» aus der MCP-Konfiguration auf.
+       Kein Teil der Software, nur Testwerkzeug. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Hlks.ClaudeAttrappe</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Include="..\daten\familien\test_heizkoerper.familie.json" Link="test_heizkoerper.familie.json" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
+</Project>

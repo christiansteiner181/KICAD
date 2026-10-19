@@ -1,0 +1,252 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://hkplanung.ch/hlks-cad/schema/hlks-familie.schema.json",
+  "title": "HLKS-CAD Familie",
+  "description": "Familie wie in Revit (Modul 2, entwurf/modul-2.md): Parameter mit Formeln, Typen, Körper, Anschlüsse mit Lage und Richtung, Sinnbild. Koordinaten in mm: Ursprung = Einfügepunkt, x nach rechts (Breite, von vorn gesehen), y nach hinten (Vorderseite zeigt nach −y), z nach oben. Jede Zahl darf eine Formel (Text) sein. Werte aus Herstellerunterlagen nennen ihre Befunde (quellen).",
+  "type": "object",
+  "required": ["format", "name", "kategorie", "parameter", "typen", "koerper", "anschluesse"],
+  "additionalProperties": false,
+  "$defs": {
+    "zahl": {
+      "description": "Zahl oder Formel (Text), z. B. 600 oder \"hoehe - 2 * 30\". Funktionen wie Revit: if, and, or, not, min, max, abs, sqrt, round, roundup, rounddown, sin, cos, tan, asin, acos, atan (Grad), pi(). Längen mm, Winkel Grad.",
+      "oneOf": [{ "type": "number" }, { "type": "string", "minLength": 1 }]
+    },
+    "punkt3": { "type": "array", "items": { "$ref": "#/$defs/zahl" }, "minItems": 3, "maxItems": 3, "description": "[x, y, z] in Familienkoordinaten" },
+    "punkt2": {
+      "type": "array", "items": { "$ref": "#/$defs/zahl" }, "minItems": 2, "maxItems": 3,
+      "description": "[u, v] in der Ebene des Körpers, optional [u, v, wölbung]: Wölbung = DXF-Bulge des Bogens zum nächsten Punkt (tan(Öffnungswinkel/4))"
+    },
+    "quellen": { "type": "array", "items": { "type": "string", "pattern": "^[0-9a-f]{12}#[0-9]+$" }, "description": "Befund-Ids «<Prüfsumme 12>#<n>» aus unterlagen_lesen" },
+    "koerperGemeinsam": {
+      "type": "object",
+      "properties": {
+        "id": { "type": "string", "description": "Eindeutig in der Familie" },
+        "name": { "type": "string" },
+        "detailgrad": { "type": "array", "items": { "enum": ["grob", "mittel", "fein"] }, "minItems": 1, "uniqueItems": true, "description": "In welchen Detailgraden der Körper erscheint (Vorgabe alle)" },
+        "sichtbar": { "$ref": "#/$defs/zahl", "description": "Formel (ja_nein); Vorgabe wahr" },
+        "material": { "enum": ["geraet", "apparat", "armatur", "rohr", "sonst"], "description": "Darstellungsmaterial des Kerns (Farbe in 3D)" },
+        "quellen": { "$ref": "#/$defs/quellen" }
+      },
+      "required": ["id", "art"]
+    },
+    "formteilWahl": {
+      "type": "object", "required": ["familie"], "additionalProperties": false,
+      "properties": {
+        "familie": { "type": "string", "description": "id der Formteil-Familie (Kategorie Bogen, TStueck, Reduktion bzw. Reinigungsoeffnung)" },
+        "typ": { "type": "string", "description": "Regel für den Typ als Formel, die den Typnamen als Text ergibt (z. B. if(dn = 20, \"DN 20\", \"DN 25\"); Texte lassen sich nicht verketten). Namen: die Grössenparameter der Serie (dn bzw. d bzw. b, h), mit Endung _2 die Abzweiggrösse (T-Stück) bzw. die kleine Grösse (Reduktion). Leer = der Typ, dessen ausgewertete Anschlussgrössen passen (Bogen a = b, T-Stück a = b = Durchgang und c = Abzweig, Reduktion a = gross, b = klein)" }
+      }
+    },
+    "stil": {
+      "type": "object", "additionalProperties": false,
+      "properties": {
+        "stift": { "enum": ["duenn", "mittel", "dick", null] },
+        "linie": { "enum": ["voll", "strich", "strichpunkt", "punkt"] },
+        "fuellung": { "type": ["string", "null"], "description": "null, schnitt, papier oder #rrggbb" }
+      }
+    },
+    "zeichnung": {
+      "type": "array",
+      "description": "2D-Primitive in Familienkoordinaten (Sinnbild: xy von oben; Schemasymbol: eigene Ebene)",
+      "items": {
+        "type": "object",
+        "required": ["art"],
+        "properties": {
+          "art": { "enum": ["linie", "polylinie", "polygon", "kreis", "bogen", "text"] },
+          "punkte": { "type": "array", "items": { "$ref": "#/$defs/punkt2" } },
+          "radius": { "$ref": "#/$defs/zahl" },
+          "von": { "$ref": "#/$defs/zahl" },
+          "bis": { "$ref": "#/$defs/zahl" },
+          "text": { "type": "string" },
+          "groesse": { "type": "number", "description": "Schrifthöhe in Papier-mm" },
+          "detailgrad": { "type": "array", "items": { "enum": ["grob", "mittel", "fein"] } },
+          "sichtbar": { "$ref": "#/$defs/zahl" },
+          "stil": { "$ref": "#/$defs/stil" }
+        }
+      }
+    }
+  },
+  "properties": {
+    "format": { "const": 1 },
+    "id": { "type": "string", "description": "Feste Kennung der Familie (Bibliothek), z. B. fam-<guid>" },
+    "name": { "type": "string", "minLength": 1 },
+    "kategorie": { "type": "string", "description": "KICAD-Klasse der Elemente (familienfähig im Katalog), z. B. Heizkoerper, Pumpe, Waschtisch" },
+    "hersteller": { "type": "string" },
+    "produkt": { "type": "string" },
+    "beschreibung": { "type": "string" },
+    "version": { "type": "integer", "minimum": 1 },
+    "status": { "enum": ["entwurf", "freigegeben"] },
+    "parameter": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "art", "datentyp"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "pattern": "^[A-Za-zÄÖÜäöü_][A-Za-zÄÖÜäöü0-9_]*$" },
+          "art": { "enum": ["typ", "exemplar"], "description": "typ: je Typ fest (Typenliste); exemplar: je platziertes Element änderbar" },
+          "datentyp": { "enum": ["laenge", "winkel", "zahl", "text", "ja_nein", "medium", "dn"] },
+          "einheit": { "type": "string", "description": "Für zahl: Einheit des Werts (z. B. W, kPa, l/h); laenge immer mm, winkel immer Grad" },
+          "gruppe": { "enum": ["abmessung", "anschluss", "kennwert", "sonstiges"] },
+          "wert": { "description": "Vorgabewert (Zahl, Text oder ja_nein als true/false)" },
+          "formel": { "type": "string", "description": "Formel statt Wert; dann nicht pro Typ einstellbar" },
+          "ziel": { "type": "string", "description": "Eigenschaft der KICAD-Klasse, die der Wert am platzierten Element setzt (Herkunft familie), z. B. leistung" },
+          "beschreibung": { "type": "string" },
+          "quellen": { "$ref": "#/$defs/quellen" }
+        }
+      }
+    },
+    "typen": {
+      "type": "array",
+      "description": "Typenliste wie der Revit-Typkatalog",
+      "items": {
+        "type": "object",
+        "required": ["name", "werte"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "werte": { "type": "object", "description": "{ Parametername: Wert } für Typparameter" },
+          "quellen": { "type": "object", "additionalProperties": { "$ref": "#/$defs/quellen" }, "description": "{ Parametername: [Befund-Id …] }" }
+        }
+      }
+    },
+    "koerper": {
+      "type": "array",
+      "items": {
+        "allOf": [{ "$ref": "#/$defs/koerperGemeinsam" }],
+        "oneOf": [
+          { "properties": { "art": { "const": "quader" }, "von": { "$ref": "#/$defs/punkt3" }, "bis": { "$ref": "#/$defs/punkt3" } }, "required": ["von", "bis"] },
+          { "properties": { "art": { "const": "zylinder" }, "von": { "$ref": "#/$defs/punkt3" }, "nach": { "$ref": "#/$defs/punkt3" }, "r": { "$ref": "#/$defs/zahl" } }, "required": ["von", "nach", "r"] },
+          { "properties": { "art": { "const": "kegel" }, "von": { "$ref": "#/$defs/punkt3" }, "nach": { "$ref": "#/$defs/punkt3" }, "r1": { "$ref": "#/$defs/zahl" }, "r2": { "$ref": "#/$defs/zahl" } }, "required": ["von", "nach", "r1", "r2"] },
+          { "properties": { "art": { "const": "kugel" }, "mitte": { "$ref": "#/$defs/punkt3" }, "r": { "$ref": "#/$defs/zahl" } }, "required": ["mitte", "r"] },
+          { "properties": {
+              "art": { "const": "extrusion" },
+              "ebene": { "enum": ["xy", "xz", "yz"], "description": "Ebene der Kontur; gezogen entlang der dritten Achse" },
+              "kontur": { "type": "array", "items": { "$ref": "#/$defs/punkt2" }, "minItems": 2, "description": "Geschlossene Kontur; mit Wölbungen genügen 2 Punkte (Kreis)" },
+              "loecher": { "type": "array", "items": { "type": "array", "items": { "$ref": "#/$defs/punkt2" }, "minItems": 2 } },
+              "von": { "$ref": "#/$defs/zahl" }, "bis": { "$ref": "#/$defs/zahl" } },
+            "required": ["ebene", "kontur", "von", "bis"] },
+          { "properties": {
+              "art": { "const": "rotation" },
+              "ebene": { "enum": ["xy", "xz", "yz"] },
+              "kontur": { "type": "array", "items": { "$ref": "#/$defs/punkt2" }, "minItems": 2, "description": "Geschlossene Kontur; mit Wölbungen genügen 2 Punkte (Kreis)" },
+              "achse": { "type": "object", "required": ["punkt", "richtung"], "properties": { "punkt": { "$ref": "#/$defs/punkt2" }, "richtung": { "enum": ["u", "v"] } } },
+              "winkel": { "$ref": "#/$defs/zahl" } },
+            "required": ["ebene", "kontur", "achse"] },
+          { "properties": {
+              "art": { "const": "sweep" },
+              "profil": { "type": "object", "oneOf": [{ "required": ["kreis"] }, { "required": ["rechteck"] }],
+                "properties": { "kreis": { "$ref": "#/$defs/zahl", "description": "Radius" }, "rechteck": { "type": "array", "items": { "$ref": "#/$defs/zahl" }, "minItems": 2, "maxItems": 2, "description": "[b, h]" } } },
+              "pfad": { "type": "array", "items": { "$ref": "#/$defs/punkt3" }, "minItems": 2 },
+              "biegeradius": { "$ref": "#/$defs/zahl" } },
+            "required": ["profil", "pfad"] }
+        ]
+      }
+    },
+    "anschluesse": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["name", "medium", "fluss", "lage", "richtung"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "minLength": 1 },
+          "medium": { "type": "string", "description": "Kennung aus medien.json oder «*» (Medium des Systems)" },
+          "fluss": { "enum": ["rein", "raus", "beide"] },
+          "art": { "enum": ["rohr", "kanal", "elektro"] },
+          "form": { "enum": ["rund", "rechteck"] },
+          "dn": { "$ref": "#/$defs/zahl", "description": "Rohr: Nennweite DN – nur aus der Unterlage, nie aus dem Aussendurchmesser geraten" },
+          "gewinde": { "type": "string", "description": "z. B. G 1/2, Rp 3/4 – wie in der Unterlage" },
+          "d": { "$ref": "#/$defs/zahl", "description": "Kanal rund: Anschlussdurchmesser in mm (Nennmass des Kanals, z. B. 125), wie Kanal.durchmesser" },
+          "b": { "$ref": "#/$defs/zahl", "description": "Kanal rechteckig: Breite in mm (Nennmass des Kanals)" },
+          "h": { "$ref": "#/$defs/zahl", "description": "Kanal rechteckig: Höhe in mm" },
+          "lage": { "$ref": "#/$defs/punkt3" },
+          "richtung": { "$ref": "#/$defs/punkt3", "description": "Aus dem Gerät heraus; wird normiert" },
+          "beschreibung": { "type": "string" },
+          "sichtbar": { "$ref": "#/$defs/zahl" },
+          "quellen": { "$ref": "#/$defs/quellen" }
+        }
+      }
+    },
+    "leitung": {
+      "type": "object",
+      "description": "Nur Kategorie Rohr bzw. Kanal (Modul 3): die Familie ist eine Leitungsserie («Rohrtyp» in Revit). Die Typen sind die Grössen; Geometrie und Anschlüsse ergeben sich aus dem Verlauf, deshalb bleiben koerper und anschluesse leer.",
+      "required": ["querschnitt", "groesse", "aussen"],
+      "additionalProperties": false,
+      "properties": {
+        "querschnitt": { "enum": ["rund", "rechteck"] },
+        "groesse": { "type": "object", "description": "Parameternamen der Grösse (Typparameter mit Zahl): Rohr { dn } (Rohrserien sind immer rund), Kanal rund { d }, Kanal rechteckig { b, h }", "properties": { "dn": { "type": "string" }, "d": { "type": "string" }, "b": { "type": "string" }, "h": { "type": "string" } } },
+        "aussen": { "$ref": "#/$defs/zahl", "description": "Aussendurchmesser bzw. bei rechteckig nicht genutzt (Formel aus Parametern, z. B. «da»)" },
+        "innen": { "$ref": "#/$defs/zahl", "description": "Innendurchmesser (z. B. «da - 2 * s»)" },
+        "wand": { "$ref": "#/$defs/zahl" },
+        "kuerzel": { "type": "string", "minLength": 1, "maxLength": 12, "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$", "description": "Optional, nur Rohre: Werkstoff-Kürzel für die Beschriftung der Rohre dieser Serie, z. B. «CNS» (nichtrostender Stahl), «PE-S» (Polyethylen-Schallschutz-Abwasserrohr), «PEX». Die Beschriftung lautet «<kuerzel> NW|DN <Nennweite>» (z. B. «CNS NW 20», NW oder DN nach Projekteinstellung), bei Abwasser «<kuerzel> <Aussendurchmesser>» (z. B. «PE-S 110»); ohne kuerzel nur die Grösse (Entscheid Christian 19.10.2026). Nur setzen, wenn die Unterlage den Werkstoff bzw. das Kürzel nennt – nie ein Kürzel erfinden. Eine Zeile, höchstens 12 Zeichen, ohne Zeilenumbruch" },
+        "formteile": {
+          "type": "object",
+          "description": "Formteil-Familie je Art: { familie: id der Formteil-Familie, typ: Regel für den Typ (siehe formteilWahl) }",
+          "properties": {
+            "bogen": { "$ref": "#/$defs/formteilWahl" }, "tstueck": { "$ref": "#/$defs/formteilWahl" },
+            "reduktion": { "$ref": "#/$defs/formteilWahl" }, "reinigungsoeffnung": { "$ref": "#/$defs/formteilWahl" }
+          }
+        },
+        "regeln": {
+          "type": "object",
+          "properties": {
+            "winkel": { "description": "Erlaubte Bogenwinkel in Grad (Liste) oder «frei»", "oneOf": [{ "type": "array", "items": { "type": "number" } }, { "const": "frei" }] },
+            "biegeradius": { "$ref": "#/$defs/zahl" },
+            "abzweig": { "enum": ["tstueck"] },
+            "abzweigwinkel": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 90 }, "description": "Erlaubte Abzweigwinkel der T-Stücke in Grad (Winkel zwischen Durchgang und Abzweig, 90 = rechtwinklig; z. B. 45 bei Abwasser-Abzweigen); fehlt = [90]. Die T-Stück-Familie trägt dann einen Parameter winkel; Abzweig c bei Lc·(−cos w, sin w, 0)" }
+          }
+        },
+        "quellen": { "$ref": "#/$defs/quellen" }
+      }
+    },
+    "masse": {
+      "type": "array",
+      "description": "Massbezüge: welches Mass der Unterlage (Buchstabe im Massbild bzw. Spalte der Tabelle) wo an der Familie gemessen wird – Grundlage der Abweichungsliste je Typ (Massbilder in Datenblättern sind schematisch, verglichen wird über die Werte)",
+      "items": {
+        "type": "object", "required": ["name"],
+        "additionalProperties": false,
+        "properties": {
+          "name": { "type": "string", "description": "z. B. L, H, ØD – wie in der Unterlage" },
+          "ansicht": { "enum": ["vorne", "hinten", "links", "rechts", "oben", "unten"] },
+          "von": { "$ref": "#/$defs/punkt3" },
+          "bis": { "$ref": "#/$defs/punkt3" },
+          "richtung": { "enum": ["x", "y", "z", "abstand"], "description": "Gemessen entlang einer Achse oder als Abstand der Punkte (Vorgabe abstand)" },
+          "parameter": { "type": "string", "description": "Alternativ: der Parameter, der dieses Mass ist" },
+          "quellen": { "$ref": "#/$defs/quellen" }
+        }
+      }
+    },
+    "sinnbild": { "$ref": "#/$defs/zeichnung", "description": "Grundriss-Darstellung (von oben); ohne: Umriss der Körper von oben" },
+    "schemasymbol": { "$ref": "#/$defs/zeichnung", "description": "Darstellung im Schema (Modul 3)" },
+    "unterlagen": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["datei", "pruefsumme", "art"],
+        "properties": {
+          "unterlage": { "type": "string", "description": "Element-Id der Unterlage im Projekt" },
+          "datei": { "type": "string" },
+          "pruefsumme": { "type": "string" },
+          "art": { "type": "string" },
+          "rolle": { "type": "string", "description": "z. B. datenblatt, massbild, typentabelle, 3d-modell" }
+        }
+      }
+    },
+    "konflikte": {
+      "type": "array",
+      "items": {
+        "type": "object", "required": ["id", "parameter", "werte"],
+        "properties": {
+          "id": { "type": "string" },
+          "parameter": { "type": "string", "description": "Parametername oder anschluss:<name>.<feld>" },
+          "typ": { "type": "string" },
+          "werte": { "type": "array", "minItems": 2, "items": { "type": "object", "required": ["wert", "quellen"], "properties": { "wert": {}, "quellen": { "$ref": "#/$defs/quellen" } } } },
+          "vorschlag": { "description": "Wert nach Vorrang (steht im Entwurf, bis entschieden ist)" },
+          "toleranz": { "type": "string" },
+          "entscheid": { "type": "object", "required": ["wert", "akteur", "zeit"], "properties": { "wert": {}, "akteur": { "type": "string" }, "zeit": { "type": "string" }, "begruendung": { "type": "string" } } }
+        }
+      }
+    },
+    "abdeckung": { "type": "object", "description": "Vom Kern gerechnet: { Parameter oder Typ/Parameter: { quellen, fehlt } }" },
+    "bericht": { "type": "string", "description": "Bericht des Erstellers (KI oder Mensch): gelesene Werte, Annahmen, offene Felder" }
+  }
+}

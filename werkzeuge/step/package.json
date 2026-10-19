@@ -1,0 +1,10 @@
+{
+  "name": "hlks-step",
+  "version": "1.0.0",
+  "private": true,
+  "description": "HLKS-CAD: STEP/IGES lesen ueber occt-import-js (LGPL-2.1), unveraendert als eigener Node-Prozess",
+  "license": "UNLICENSED",
+  "dependencies": {
+    "occt-import-js": "0.0.23"
+  }
+}

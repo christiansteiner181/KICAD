@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>HLKS-CAD</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b6cb0'/%3E%3Cpath d='M7 22V10h3v5h5v-5h3v12h-3v-4h-5v4z' fill='white'/%3E%3Cpath d='M20 22l4-12h2l-4 12z' fill='%23f6ad55'/%3E%3C/svg%3E">
+  <!-- Design (hell/dunkel) vor dem ersten Zeichnen setzen, damit nichts flackert -->
+  <script src="js/oberflaeche/design-start.js"></script>
+  <link rel="stylesheet" href="css/hlks.css">
+  <link rel="stylesheet" href="css/oberflaeche.css">
+  <link rel="stylesheet" href="css/ansichten.css">
+  <link rel="stylesheet" href="css/familien.css">
+  <link rel="stylesheet" href="css/familien-unterlagen.css">
+  <link rel="stylesheet" href="css/familien-bibliothek.css">
+  <link rel="stylesheet" href="css/schema.css">
+  <link rel="stylesheet" href="css/start.css">
+  <link rel="stylesheet" href="css/serienpdf.css">
+  <link rel="stylesheet" href="css/projektbrowser.css">
+  <script type="importmap">
+    { "imports": { "three": "./lib/three/three.module.js", "three/addons/": "./lib/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Aufbau wie Revit: Kopf mit Schnellzugriff, Menüband, Optionsleiste, links Eigenschaften und Projektbrowser,
+       Mitte die Ansichten (Reiter oder nebeneinander), unten die Statusleiste. -->
+  <header id="kopf">
+    <div id="schnellzugriff"></div>
+    <div id="titel">HLKS-CAD</div>
+    <div id="kopf-rechts"></div>
+  </header>
+  <nav id="menueband" aria-label="Menüband"></nav>
+  <div id="optionsleiste"></div>
+  <main id="arbeitsbereich">
+    <aside id="seitenleiste">
+      <div class="palette" id="palette-eigenschaften">
+        <div class="palettenkopf">Eigenschaften</div>
+        <section id="eigenschaften" aria-label="Eigenschaften"></section>
+      </div>
+      <div id="seitenleiste-trenner" title="Ziehen zum Verstellen"></div>
+      <div class="palette" id="palette-browser">
+        <div class="palettenkopf">Projektbrowser</div>
+        <section id="projektbrowser" aria-label="Projektbrowser"></section>
+      </div>
+    </aside>
+    <div id="seitenleiste-griff" title="Ziehen zum Verstellen"></div>
+    <section id="ansichtsbereich">
+      <div id="ansichtsreiter" role="tablist"></div>
+      <div id="ansichtsflaeche"></div>
+    </section>
+  </main>
+  <footer id="statusleiste"></footer>
+  <div id="dialogschicht"></div>
+  <div id="meldungen" aria-live="polite"></div>
+  <script type="module" src="js/app.js"></script>
+</body>
+</html>

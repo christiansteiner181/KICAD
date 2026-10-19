@@ -1,0 +1,34 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalbogen",
+  "name": "Testkanalbogen rechteckig (fiktiv)",
+  "kategorie": "Bogen",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Bogen der Testkanalserie (Modul 3, B2, 18.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: Ursprung = Schnittpunkt der Achsen; a bei (−la, 0, 0) Richtung (−1, 0, 0); b bei lb·(cos w, sin w, 0) Richtung (cos w, sin w, 0), w = Umlenkwinkel. Einbaulänge la = lb = r·tan(w/2) mit Biegeradius der Achse r = b (Handrechnung: 400x200, 90° → 400 mm; 45° → 165.685 mm). Querschnitt (Annahme B2): b in der Biegeebene (lokal xy), h in lokaler z-Richtung.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Breite (FIKTIV)" },
+    { "name": "h", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Höhe (FIKTIV)" },
+    { "name": "r", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "b", "beschreibung": "Biegeradius der Achse (FIKTIV)" },
+    { "name": "winkel", "art": "exemplar", "datentyp": "winkel", "gruppe": "abmessung", "wert": 90, "ziel": "winkel", "beschreibung": "Umlenkwinkel" },
+    { "name": "la", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "r * tan(winkel / 2)", "beschreibung": "Einbaulänge Anschluss a" },
+    { "name": "lb", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "r * tan(winkel / 2)", "beschreibung": "Einbaulänge Anschluss b" }
+  ],
+  "typen": [
+    { "name": "500x300", "werte": { "b": 500, "h": 300 } },
+    { "name": "400x200", "werte": { "b": 400, "h": 200 } },
+    { "name": "300x200", "werte": { "b": 300, "h": 200 } },
+    { "name": "200x200", "werte": { "b": 200, "h": 200 } }
+  ],
+  "koerper": [
+    { "id": "bogen", "name": "Kanalbogen", "art": "sweep", "material": "rohr",
+      "profil": { "rechteck": ["b", "h"] }, "pfad": [["-la", 0, 0], [0, 0, 0], ["lb * cos(winkel)", "lb * sin(winkel)", 0]], "biegeradius": "r" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b", "h": "h",
+      "lage": ["-la", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b", "h": "h",
+      "lage": ["lb * cos(winkel)", "lb * sin(winkel)", 0], "richtung": ["cos(winkel)", "sin(winkel)", 0], "beschreibung": "Ausgang (um winkel umgelenkt)" }
+  ]
+}

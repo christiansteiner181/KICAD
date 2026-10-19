@@ -1,0 +1,30 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasserreduktion",
+  "name": "Testabwasserreduktion (fiktiv)",
+  "kategorie": "Reduktion",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Reduktion der Testabwasserserie (Modul 3, Nachtrag B7, 19.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: a (gross) im Ursprung Richtung (−1, 0, 0), b (klein) bei (l, 0, 0) Richtung (1, 0, 0). Einbaulänge l = 60 mm fest (FIKTIV). Nur die Typen der Liste.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn1", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite gross (Anschluss a)" },
+    { "name": "dn2", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "beschreibung": "Nennweite klein (Anschluss b)" },
+    { "name": "da1", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "dn1 + 10", "beschreibung": "Aussendurchmesser gross (FIKTIV, wie Testabwasserserie)" },
+    { "name": "da2", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "dn2 + 10", "beschreibung": "Aussendurchmesser klein (FIKTIV, wie Testabwasserserie)" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 60, "beschreibung": "Einbaulänge (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "DN 75/50", "werte": { "dn1": 75, "dn2": 50 } },
+    { "name": "DN 100/50", "werte": { "dn1": 100, "dn2": 50 } },
+    { "name": "DN 100/75", "werte": { "dn1": 100, "dn2": 75 } },
+    { "name": "DN 125/100", "werte": { "dn1": 125, "dn2": 100 } }
+  ],
+  "koerper": [
+    { "id": "kegel", "name": "Reduktion", "art": "kegel", "material": "rohr", "von": [0, 0, 0], "nach": ["l", 0, 0], "r1": "da1 / 2", "r2": "da2 / 2" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn1", "lage": [0, 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Gross" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn2", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Klein" }
+  ]
+}

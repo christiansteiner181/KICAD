@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Erzeugt die synthetischen Unterlagen des Browser-Tests «Familie aus Unterlagen» (Modul 2, C2):
+       tests/daten/unterlagen/datenblatt_testventil.pdf und massbild_testventil.dxf. Alle Werte sind FIKTIV (keine Herstellerdaten).
+       Kein Teil der Software und nicht in HLKS_CAD.slnx. Aufruf: dotnet run mit diesem Projekt und dem Zielordner als erstem Argument. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\..\src\Hlks.Kern\Hlks.Kern.csproj" />
+  </ItemGroup>
+
+</Project>

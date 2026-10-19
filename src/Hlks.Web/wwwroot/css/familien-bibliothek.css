@@ -1,0 +1,98 @@
+/* Familienbibliothek (Modul 2, C3): Marken im Projektbrowser, Dialoge «Familien im Explorer …», «Aktualisieren …», «Familie laden», Statusleiste.
+   Dicht wie Revit (Schrift 12 px, 11 px für Nebentexte); Farben nur über die Variablen aus hlks.css, eigene Variablen beginnen mit --bib- (hell und dunkel in :root). */
+
+:root {
+  --bib-neu: color-mix(in srgb, var(--akzent) 70%, var(--flaeche-hell));
+  --bib-neu-grund: color-mix(in srgb, var(--akzent) 14%, var(--flaeche-hell));
+  --bib-par: var(--warnung);
+  --bib-par-grund: color-mix(in srgb, var(--warnung) 16%, var(--flaeche-hell));
+  --bib-stark: color-mix(in srgb, var(--fehler) 12%, var(--flaeche-hell));
+}
+:root[data-design="dunkel"] {
+  --bib-neu: color-mix(in srgb, var(--akzent) 60%, var(--text));
+  --bib-neu-grund: color-mix(in srgb, var(--akzent) 22%, var(--flaeche));
+  --bib-par-grund: color-mix(in srgb, var(--warnung) 22%, var(--flaeche));
+  --bib-stark: color-mix(in srgb, var(--fehler) 22%, var(--flaeche));
+}
+
+/* ------------------------------------------------------------------ Projektbrowser: Bibliotheksfamilien und Marken */
+.pb-zeile.bibliothek .pb-label { color: var(--text-leise); font-style: italic; }
+.pb-zeile.bibliothek .pb-sym { opacity: .55; }
+.pb-marke.m-bib { border-style: dashed; }
+.pb-marke.m-neu { border-color: var(--bib-neu); color: var(--bib-neu); background: var(--bib-neu-grund); }
+.pb-marke.m-par { border-color: var(--bib-par); color: var(--bib-par); background: var(--bib-par-grund); }
+.pb-marke.m-wart { border-style: dashed; color: var(--text); }
+.pb-marke.m-doppel { border-color: var(--bib-par); color: var(--bib-par); }
+/* Marken und Knöpfe stehen im Rahmen .pb-zusatz: reicht die Breite des Browsers nicht, rutscht er unter den Namen (zweite Zeile), statt den Namen zu kürzen */
+.pb-zeile.mit-zusatz { flex-wrap: wrap; height: auto; min-height: var(--ob-zeile); row-gap: 1px; padding-top: 1px; padding-bottom: 1px; }
+.pb-zeile.mit-zusatz > .pb-label { min-width: 0; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+.pb-zusatz { display: flex; align-items: center; gap: 3px; flex: none; margin-left: 4px; }
+.pb-zusatz .pb-marke, .pb-zusatz .pb-knopf { margin-left: 0; flex: none; white-space: nowrap; }
+.pb-zeile.bib-stand .pb-sub { display: none; }   /* das Kennzeichen steht im Tooltip; Platz für Marke und Knopf */
+.pb-baum { overflow-x: hidden; }
+
+/* ------------------------------------------------------------------ Statusleiste */
+.sl-bib { border: none; background: none; padding: 0 4px; cursor: pointer; border-radius: var(--radius); color: var(--text-leise); white-space: nowrap; }
+.sl-bib:hover { background: var(--ob-hover); }
+.sl-bib[hidden] { display: none; }
+.sl-bib.gruen { color: var(--ok); }
+.sl-bib.rot { color: var(--fehler); font-weight: 600; }
+.sl-bib.warn { color: var(--warnung); }
+.sl-bib.leise { color: var(--text-leise); }
+
+/* ------------------------------------------------------------------ Dialoge */
+.dlg.bib .dlg-inhalt { font-size: 12px; }
+.bib-dlg { display: flex; flex-direction: column; gap: 6px; }
+.bib-dlg [hidden] { display: none !important; }
+.bib-dlg p { margin: 0; }
+.bib-erkl { font-size: 11px; }
+.bib-an { display: flex; align-items: center; gap: 6px; }
+.bib-filter { display: flex; align-items: flex-start; gap: 8px; padding: 2px 0; }
+.bib-filter-titel { flex: none; width: 70px; color: var(--text-leise); line-height: 20px; }
+.bib-chips { display: flex; flex-wrap: wrap; gap: 4px; }
+.bib-chip { height: 20px; padding: 0 9px; border: 1px solid var(--eingabe-rand); border-radius: 10px; background: var(--eingabe); color: var(--text); cursor: pointer; font-size: 12px; }
+.bib-chip:hover:not(:disabled) { background: var(--ob-hover-tief); }
+.bib-chip.an { background: var(--akzent); border-color: var(--akzent); color: var(--akzent-text); }
+.bib-chip:disabled { opacity: .5; cursor: default; }
+.bib-suche input { width: 100%; box-sizing: border-box; }
+.bib-liste { max-height: 270px; min-height: 90px; overflow: auto; border: 1px solid var(--rand-leise); }
+.bib-tab { width: 100%; border-collapse: collapse; }
+.bib-tab td, .bib-tab th { white-space: nowrap; }
+.bib-tab td:first-child, .bib-tab th:first-child { width: 22px; }
+.bib-zeile.entwurf td:not(.bib-haken), .bib-lade.entwurf td { color: var(--text-leise); }
+.bib-zeile.an td:not(.bib-haken) { color: var(--text); }
+.bib-zeile.im-projekt td { background: var(--bib-neu-grund); }
+.bib-hinweis { color: var(--text-leise); font-size: 11px; }
+.bib-lade.gewaehlt td { background: var(--akzent-hell); }
+.bib-fuss { display: flex; flex-direction: column; gap: 4px; }
+.bib-zahl { font-weight: 600; }
+.bib-zahl .leise { font-weight: 400; margin-left: 6px; }
+.bib-kern { font-size: 11px; }
+.bib-kernfehler, .bib-abgelehnt { padding: 4px 8px; border: 1px solid var(--fehler); background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.bib-abgelehnt p { margin: 2px 0 0; }
+.bib-vorschlag { color: var(--text); }
+.bib-doppel { padding: 4px 8px; border: 1px solid var(--bib-par); background: var(--bib-par-grund); font-size: 11px; }
+.bib-doppel ul { margin: 2px 0 0 16px; padding: 0; }
+
+.bib-kopf { display: flex; gap: 8px; align-items: baseline; }
+.bib-stand { padding: 4px 8px; border-left: 3px solid var(--rand); background: var(--flaeche); }
+.bib-stand.neuere_version { border-left-color: var(--bib-neu); background: var(--bib-neu-grund); }
+.bib-stand.parallel_geaendert { border-left-color: var(--bib-par); background: var(--bib-par-grund); }
+.bib-wege { display: flex; flex-direction: column; gap: 3px; border: 1px solid var(--rand-leise); padding: 4px 8px; margin: 0; }
+.bib-wege legend { padding: 0 4px; color: var(--text-leise); }
+.bib-weg { display: flex; align-items: center; gap: 6px; }
+.bib-weg.warnung { color: var(--text); }
+.bib-vorschau { min-height: 40px; max-height: 340px; overflow: auto; }
+.bib-zus { font-weight: 600; margin: 0 0 4px; }
+.bib-h { margin: 6px 0 2px; }
+.bib-zeilen { margin: 0 0 0 16px; padding: 0; }
+.bib-warn { margin-top: 6px; padding: 4px 8px; border: 1px solid var(--bib-par); background: var(--bib-par-grund); }
+.bib-warn p { margin: 2px 0; }
+.bib-notizen { margin-top: 6px; padding: 4px 8px; border: 1px solid var(--rand-leise); background: var(--flaeche); font-size: 11px; color: var(--text-leise); }
+.bib-notizen p { margin: 2px 0; }
+.bib-warn.bib-stark { border-color: var(--fehler); background: var(--bib-stark); }
+.bib-entfaellt { border-color: var(--fehler); background: var(--bib-stark); }
+.bib-info { width: 100%; }
+.bib-info th { width: 140px; text-align: left; color: var(--text-leise); font-weight: 400; background: none; position: static; border-bottom: 1px solid var(--rand-leise); }
+.bib-hinweistext { padding: 4px 8px; background: var(--flaeche); border-left: 3px solid var(--rand); }
+.bib-info-dlg { gap: 8px; }

@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "id": "fam-test-tstueck",
+  "name": "Test-T-Stück egal (fiktiv)",
+  "kategorie": "TStueck",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "T-Stück der Testrohrserie, nur gleiche Grössen (Modul 3, Hauptlauf, 18.10.2026). Alle Werte sind FIKTIV. Lokale Lage nach entwurf/modul-3.md: Ursprung = Schnittpunkt der Achsen; a (−l, 0, 0)/(−1, 0, 0), b (l, 0, 0)/(1, 0, 0), Abzweig c (0, lc, 0)/(0, 1, 0). Einbaulängen l = lc = da (Handrechnung: DN 20 → 25 mm). Abzweig kleiner: T-Stück der Hauptgrösse plus Reduktion.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite (Durchgang und Abzweig)" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (FIKTIV)" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "da", "beschreibung": "Einbaulänge Durchgang je Seite (FIKTIV)" },
+    { "name": "lc", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "da", "beschreibung": "Einbaulänge Abzweig (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "DN 15", "werte": { "dn": 15, "da": 20 } },
+    { "name": "DN 20", "werte": { "dn": 20, "da": 25 } },
+    { "name": "DN 25", "werte": { "dn": 25, "da": 30 } },
+    { "name": "DN 32", "werte": { "dn": 32, "da": 37 } },
+    { "name": "DN 40", "werte": { "dn": 40, "da": 45 } },
+    { "name": "DN 50", "werte": { "dn": 50, "da": 55 } }
+  ],
+  "koerper": [
+    { "id": "durchgang", "name": "Durchgang", "art": "zylinder", "material": "rohr", "von": ["-l", 0, 0], "nach": ["l", 0, 0], "r": "da / 2" },
+    { "id": "abzweig", "name": "Abzweig", "art": "zylinder", "material": "rohr", "von": [0, 0, 0], "nach": [0, "lc", 0], "r": "da / 2" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn", "lage": ["-l", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Durchgang Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Durchgang Ausgang" },
+    { "name": "c", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn", "lage": [0, "lc", 0], "richtung": [0, 1, 0], "beschreibung": "Abzweig" }
+  ]
+}

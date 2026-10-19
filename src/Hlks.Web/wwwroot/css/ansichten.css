@@ -1,0 +1,108 @@
+/* Ansichten: Plan-Ansicht (SVG), 3D (three.js), Planblatt (PDF) und Liste. Farben nur über die Variablen aus hlks.css (hell und dunkel);
+   Zeichnungsfarben des Modells (Medien, Raumnutzung) stehen als Attribute im SVG. */
+
+/* ---------- Plan-Ansicht (Grundriss, Schnitt, Ansicht) ---------- */
+.gr-wurzel { position: absolute; inset: 0; background: var(--zeichenflaeche); overflow: hidden; user-select: none; }
+.gr-svg { display: block; width: 100%; height: 100%; cursor: default; touch-action: none; outline: none; }
+.gr-svg.schiebt { cursor: grabbing; }
+.gr-svg.leertaste { cursor: grab; }
+.gr-svg.werkzeug-aktiv { cursor: crosshair; }
+.gr-werkzeug { pointer-events: none; }
+
+/* Die Plangrafik des Kerns (plangrafik.js) setzt nur Klassen; Farben und Bildschirmmindestbreite kommen von hier.
+   pl = Planfarbe als Linie, pf = Planfarbe als Füllung, pp = Papier (Hintergrund der Zeichenfläche), im dunklen Design hell.
+   --m = Massstabsnenner, --minpx = ein Bildschirmpixel in Modell-mm (setzt grundriss.js beim Zoomen). */
+.gr-svg { --plan: var(--gr-text); --papier: var(--zeichenflaeche); --m: 50; --minpx: 1px; }
+.gr-svg .pl { stroke: var(--plan); }
+.gr-svg .pf { fill: var(--plan); }
+.gr-svg .pp { fill: var(--papier); }
+/* Stiftbreiten nach SIA 400 B.3.1 in Papier-mm × Massstab, nie dünner als ein Pixel */
+.gr-svg .sd { stroke-width: max(calc(var(--m) * 0.18px), var(--minpx)); }
+.gr-svg .sm { stroke-width: max(calc(var(--m) * 0.35px), var(--minpx)); }
+.gr-svg .sk { stroke-width: max(calc(var(--m) * 0.70px), var(--minpx)); }
+.gr-svg .pk circle { r: max(calc(var(--m) * 0.1px), calc(var(--minpx) / 2)); }
+.gr-svg .pt { font-family: Arial, Helvetica, sans-serif; stroke: var(--papier); stroke-opacity: .7; stroke-width: 2px; vector-effect: non-scaling-stroke;
+  paint-order: stroke; stroke-linejoin: round; pointer-events: none; }
+.gr-svg .ph, .gr-svg .e-ohne { pointer-events: none; }
+/* Bildschirmfüllungen (Raumfarben, nurBildschirm) im dunklen Design dämpfen wie bisher */
+.gr-svg .bf { opacity: var(--gr-raum-deckung); }
+
+/* Hervorhebung und Treffer: pro Kontur ein unsichtbarer, bildschirmfester Strich (.th); sichtbar bei Hover, Auswahl, «fremd» */
+.gr-svg .th { fill: none; stroke: transparent; stroke-width: 8px; vector-effect: non-scaling-stroke; pointer-events: stroke; stroke-linejoin: round; stroke-linecap: round; }
+.gr-svg .th.fl { pointer-events: all; }
+.gr-svg:not(.werkzeug-aktiv) .el:hover .th { stroke: var(--auswahl); stroke-opacity: .28; }
+.gr-svg .el.fremd .th { stroke: var(--fremd); stroke-opacity: .7; }
+.gr-svg .el.gewaehlt .th { stroke: var(--auswahl); stroke-opacity: .55; }
+.gr-svg .el.gewaehlt .th.fl { fill: var(--auswahl); fill-opacity: .12; }
+
+.gr-tip, .d3-tip {
+  position: absolute; z-index: 5; pointer-events: none; white-space: nowrap;
+  padding: 1px 6px; border: 1px solid var(--rand); border-radius: var(--radius);
+  background: var(--flaeche-hell); color: var(--text); box-shadow: var(--schatten);
+}
+.gr-tip[hidden], .d3-tip[hidden] { display: none; }
+.gr-leer, .d3-hinweis { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; color: var(--text-leise); pointer-events: none; }
+.gr-leer[hidden], .d3-hinweis[hidden] { display: none; }
+
+/* Überlagerungen (HTML, nicht im Modell) */
+.gr-nord { position: absolute; top: 10px; right: 12px; display: flex; flex-direction: column; align-items: center; gap: 0; color: var(--text); font-weight: 600; pointer-events: none; }
+.gr-nord[hidden] { display: none; }
+.gr-masstab { position: absolute; left: 12px; bottom: 10px; display: flex; flex-direction: column; gap: 2px; color: var(--text); pointer-events: none;
+  padding: 2px 6px; background: color-mix(in srgb, var(--zeichenflaeche) 80%, transparent); border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.gr-massstab-text { font-weight: 600; }
+.gr-balken-zeile { display: flex; align-items: center; gap: 6px; }
+.gr-balken { display: inline-block; height: 6px; min-width: 4px; border: 1.5px solid var(--text); border-top: none; }
+.gr-balken-text { color: var(--text-leise); }
+
+/* ---------- 3D ---------- */
+.d3-wurzel { position: absolute; inset: 0; overflow: hidden; background: var(--d3-hintergrund); }
+.d3-leinwand { position: absolute; inset: 0; width: 100%; height: 100%; display: block; outline: none; touch-action: none; }
+.d3-bedienung { position: absolute; left: 12px; bottom: 8px; color: var(--text-leise); pointer-events: none; opacity: .8; }
+
+/* ---------- Planblatt (PDF) ---------- */
+/* Papier bleibt in jedem Design hell: color-scheme light macht die Systemfarben Canvas/CanvasText hell */
+.bl-wurzel { position: absolute; inset: 0; color-scheme: light; background: Canvas; color: CanvasText; }
+.bl-rahmen { display: block; width: 100%; height: 100%; border: 0; background: Canvas; }
+.bl-hinweis { position: absolute; inset: 0; display: grid; place-items: center; text-align: center; padding: 20px; background: Canvas; color: CanvasText; }
+.bl-hinweis[hidden] { display: none; }
+
+/* ---------- Liste ---------- */
+.li-wurzel { position: absolute; inset: 0; display: flex; flex-direction: column; background: var(--zeichenflaeche); }
+.li-kopf { flex: none; padding: 4px 8px; border-bottom: 1px solid var(--trenner); background: var(--flaeche); }
+.li-titel { font-weight: 600; }
+.li-stand { color: var(--text-leise); font-size: 11px; font-family: var(--schrift-mono); }
+.li-summe { margin-top: 1px; }
+.li-inhalt { flex: 1; min-height: 0; overflow: auto; padding: 0 0 12px; }
+.li-laden, .li-leer { padding: 10px 8px; color: var(--text-leise); }
+.li-fehler { margin: 8px; padding: 4px 8px; border: 1px solid var(--fehler); border-radius: var(--radius); color: var(--fehler); background: var(--flaeche); }
+.li-vorschlag { margin-top: 3px; color: var(--text); }
+.li-tabellentitel { margin: 8px 8px 3px; font-weight: 600; }
+.li-tabelle { border-collapse: collapse; width: 100%; }
+.li-tabelle th { position: sticky; top: 0; z-index: 1; text-align: left; font-weight: 600; white-space: nowrap; cursor: pointer; user-select: none;
+  padding: 2px 8px; background: var(--flaeche-tief); border-bottom: 1px solid var(--rand); }
+.li-tabelle th:hover { background: var(--akzent-hell); }
+.li-tabelle td { padding: 1px 8px; border-bottom: 1px solid var(--rand-leise); vertical-align: top; }
+.li-tabelle th.zahl, .li-tabelle td.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+.li-tabelle tbody tr:nth-child(even) { background: var(--flaeche); }
+.li-tabelle tr.klickbar { cursor: pointer; }
+.li-tabelle tr.klickbar:hover { background: var(--akzent-hell); }
+.li-tabelle tr.gewaehlt, .li-tabelle tr.gewaehlt:hover { background: var(--auswahl); color: var(--akzent-text); }
+.li-pfeil { color: var(--text-leise); font-size: 9px; }
+
+/* ---------- Darstellung «Hülle» (Modul 1c): Legende im Grundriss und im 3D, Infofeld im 3D ---------- */
+/* Die Farbfelder stehen als style-Attribut im Markup (Farben der Hülle sind Daten wie die Raumfarben, huelle-darstellung.js). */
+.hl-feldbox { position: absolute; z-index: 4; pointer-events: none; padding: 3px 8px; color: var(--text);
+  background: color-mix(in srgb, var(--zeichenflaeche) 85%, transparent); border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.hl-feldbox[hidden] { display: none; }
+.d3-legende, .d3-info { background: color-mix(in srgb, var(--d3-hintergrund) 85%, transparent); }
+.gr-legende { left: 12px; bottom: 58px; min-width: 250px; }
+.d3-legende { left: 12px; bottom: 32px; min-width: 250px; }
+.d3-info { right: 12px; bottom: 44px; min-width: 210px; max-width: 320px; }
+.hl-titel { display: flex; align-items: center; gap: 6px; font-weight: 600; margin-bottom: 2px; }
+.hl-zeile, .hl-info { display: flex; align-items: center; gap: 8px; }
+.hl-feld { display: inline-block; flex: none; width: 14px; height: 8px; border-radius: 1px; }
+.hl-name { flex: none; min-width: 74px; color: var(--text-leise); }
+.hl-zeile .hl-name { flex: 1; color: var(--text); }
+.hl-flaeche { margin-left: auto; font-variant-numeric: tabular-nums; }
+.hl-fuss { margin-top: 2px; font-size: 11px; color: var(--text-leise); }
+.hl-fehler { color: var(--text-leise); max-width: 280px; white-space: normal; }

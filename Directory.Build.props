@@ -1,0 +1,20 @@
+<Project>
+  <!-- Build-Ausgabe ausserhalb von OneDrive. HLKS_BUILD erlaubt getrennte Ausgabeordner, wenn mehrere
+       Bauläufe gleichzeitig arbeiten (z. B. parallele Agenten); sonst %USERPROFILE%\HLKS_CAD_build. -->
+  <PropertyGroup>
+    <HlksBuildBasis Condition="'$(HLKS_BUILD)' != ''">$(HLKS_BUILD)</HlksBuildBasis>
+    <HlksBuildBasis Condition="'$(HLKS_BUILD)' == ''">$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))\HLKS_CAD_build</HlksBuildBasis>
+    <HlksBuildRoot>$(HlksBuildBasis)\$(MSBuildProjectName)\</HlksBuildRoot>
+    <BaseIntermediateOutputPath>$(HlksBuildRoot)obj\</BaseIntermediateOutputPath>
+    <BaseOutputPath>$(HlksBuildRoot)bin\</BaseOutputPath>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <!-- Versionsangaben: Smart App Control sperrt sonst unsignierte Builds ohne Herstellerangaben (HKAP 01.10.2026) -->
+    <Company>H+K Planungs AG</Company>
+    <Product>HLKS-CAD</Product>
+    <Copyright>H+K Planungs AG 2026</Copyright>
+    <Version>0.1.0</Version>
+  </PropertyGroup>
+</Project>
