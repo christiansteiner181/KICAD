@@ -1,5 +1,5 @@
 {
-  "stand": "bd513c0",
+  "stand": "7c36986",
   "kapitel": [
     {
       "id": "start",
@@ -4658,7 +4658,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:361",
             "src/Hlks.Web/OBERFLAECHE.md:445 (Familien (Modul 2, C1))"
           ],
-          "hinweis": "Das Beispielprojekt hat anfangs keine Familie; die mitgelieferte Bibliothek kataloge/familien existiert im Stand bd513c0 nicht."
+          "hinweis": "Das Beispielprojekt hat anfangs keine Familie; die mitgelieferte Bibliothek kataloge/familien existiert im Stand 7c36986 nicht."
         },
         {
           "id": "m2-neue-familie",

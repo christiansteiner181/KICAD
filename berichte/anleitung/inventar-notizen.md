@@ -40,7 +40,7 @@ Kapitel: 11. Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript d
 6. **Prinzipschema** (`schemaart = prinzipschema`, `entwurf/modul-3.md`): «Schema anlegen» legt nur Strangschemas an; das Prinzipschema folgt mit Modul 5/6.
 7. **Strang von Hand mit HKAP zuordnen:** kein Dialog (`OBERFLAECHE.md`, Abschnitt HKAP: «kennt nur MCP»).
 8. **Zonen** in der Projektbrowser-Gliederung «Energie und Umwelt» (`entwurf/projektbrowser-gliederung.md`: «Räume bzw. Zonen (mit Angrenzung)»): der Code hat keinen Zonen-Ast.
-9. **Mitgelieferte Familienbibliothek `kataloge/familien/`** («Familie laden», `OBERFLAECHE.md`, `modul-2.md`): der Ordner existiert in `bd513c0` nicht. Das Inventar benutzt stattdessen die Testfamilien unter `tests/daten/familien` per Pfad.
+9. **Mitgelieferte Familienbibliothek `kataloge/familien/`** («Familie laden», `OBERFLAECHE.md`, `modul-2.md`): der Ordner existiert in `7c36986` nicht. Das Inventar benutzt stattdessen die Testfamilien unter `tests/daten/familien` per Pfad.
 10. **Symbolsatz im Revit-Stil (Teil S, `entwurf/menueband-revit.md`)** samt Kontaktbogen: nicht untersucht, nicht Funktion der Bedienung (Stand unklar).
 11. **Verknüpfungen auf dem Desktop:** «KICAD» und «KICAD aktualisieren» liegen vor (`C:\Users\chris\Desktop`), das Skript `werkzeuge/kicad_starten.ps1` steht im Repository; ein Skript, das die .lnk-Dateien erzeugt, wurde nicht gefunden (nur das Protokoll `zuteilung.md`).
 12. **Zweitrechner-Fälle** (angeheftetes Projekt erscheint auf dem zweiten Rechner, Gliederung gilt auf allen Rechnern des Benutzers): Code vorhanden (Ablage je Rechner), mit einem Rechner nicht prüfbar.
@@ -296,7 +296,7 @@ Ein Bild je Funktion; «id» = Id der Funktion in `inventar.json`. Projekt `beis
 | zb-rohr-abwasser | beispiel | Grundriss EG Sanitär | Abwasserrohr im System SW mit Beschriftung «PE-S 110» |
 | zb-rohr-nwdn | beispiel | Grundriss EG Sanitär | Zwei Rohre: KW-Rohr «CNS NW 20» und nach Umstellung der Ansicht «CNS DN 20» |
 
-Die Tabelle gilt für den Stand `bd513c0`; die Bilder der W1-Funktionen (Ids `dialog-…`, `palette-…`) stehen in `inventar.json` (Feld «bild») und in `bilder.json`.
+Die Tabelle gilt für den Stand `7c36986`; die Bilder der W1-Funktionen (Ids `dialog-…`, `palette-…`) stehen in `inventar.json` (Feld «bild») und in `bilder.json`.
 
 ## 7. Bildskript `werkzeuge/anleitung_bilder.mjs`
 
