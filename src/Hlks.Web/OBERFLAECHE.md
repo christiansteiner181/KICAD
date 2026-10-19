@@ -66,7 +66,7 @@ akteur, akteurArt, paket}; quelle `lokal|fremd|rueckgaengig|wiederholen`), `ausw
 `abgleich` ({fehler}), `konflikt`, `verbindung` ({ok}).
 
 **`js/fenster.js`**: `ansichtOeffnen(kz)` (auch Planblätter), `aktivePlanansicht()` (Instanz der aktiven Plan-Ansicht mit Werkzeug-Schnittstelle oder null), `schliessen(id)`, `aktivieren(id)`, `nebeneinander()` (WT), `alsReiter()`,
-`fenstermodus()`, `aktive()`, `alle()`, `zoomAlles()` (aktive), `zoomAlleAnsichten()`. Jede offene Ansicht hat unten
+`fenstermodus()`, `aktive()`, `alle()`, `zoomAlles()` (aktive), `zoomAlleAnsichten()`; seit W2 frei anordenbar in Gruppen und im eigenen Fenster (Abschnitt «Ansichten frei anordnen» am Ende). Jede offene Ansicht hat unten
 eine Steuerleiste (Massstab, Detailgrad) – die ändert das Ansicht-Element per Befehl.
 
 **Ansichtsmodul** (`js/ansichten/*.js`), Standardexport `{ erstellen(behaelter, ansicht) → instanz }`;
@@ -837,6 +837,46 @@ immer sichtbar (er tritt an die Stelle des letzten sichtbaren). Die Reiter legt 
 
 **Optionsleiste:** `flex-wrap: wrap`, Zeilenhöhe mindestens 24 px (Gitterzeile `minmax(24px, auto)`); Texte brechen um, Felder und
 Beschriftungen bleiben zusammen. Der Hinweis in der Registerzeile kürzt nicht mehr mit «…».
+
+## Ansichten frei anordnen und eigenes Fenster (Teil W2, `entwurf/fenster-revit.md`)
+
+Dateien: `js/oberflaeche/anordnung.js` (reine Daten und Rechnung, in Node getestet), `anordnung-ziehen.js` (Zeigerbedienung: Reiter und Trenner ziehen, Andockziele),
+`zweitfenster.js` (eigenes Fenster, `BroadcastChannel`), `js/fenster.js` (zeichnet, merkt, stellt wieder her), `css/anordnung.css`, Tests `anordnung.test.mjs` (Node) und
+`anordnung.browser.mjs` (Edge über CDP). `ansichtsreiter.js` läuft je Gruppe; `fenster.js` behält seine Schnittstelle (`ansichtOeffnen`, `aktive`, `alle`, `aktivePlanansicht`, `schliessen`,
+`aktivieren`, `nebeneinander`, `alsReiter`, `fenstermodus`, `zoomAlles`, `zoomAlleAnsichten`); neu: `wiederherstellen()` (ersetzt `gemerkteOeffnen`), `eigenesFensterOeffnen(kz)`, `andocken(id, ort)`,
+`zurueckInsHauptfenster()`, `imZweitfenster()`, `anordnungDaten()`, `rechtecke()`.
+
+- **Datenformat** (Baum aus Gruppen und Teilungen): `Gruppe { art: 'gruppe', id: 'g1', ansichten: [name …], aktiv: name }` (eigene Reiterleiste, eine Ansicht davon sichtbar), `Teilung { art: 'teilung',
+  richtung: 'nebeneinander' | 'untereinander', kinder: [Knoten …], anteile: [0.5, 0.5] }` (Anteile > 0, Summe 1, je mindestens 0.05), `Anordnung { version: 1, wurzel: Knoten | null, aktiveGruppe: id | null,
+  ausgelagert: [name …] }` (`ausgelagert` = Ansichten, die in einem eigenen Fenster offen sind). Im Speicher heissen die Namen Ids der Ansichten, **gemerkt werden Kennzeichen** (`umbenennen`). Jede Funktion ist rein
+  und liefert eine saubere Anordnung (keine leere Gruppe, keine Teilung mit einem Kind, keine gleichrichtige Teilung in einer Teilung, jede Ansicht einmal): `hinzufuegen`, `entfernen`, `auslagern`,
+  `aktivieren`, `gruppeAktivieren`, `verschieben` (Ziel `{ gruppe, ort: 'mitte'|'links'|'rechts'|'oben'|'unten', index? }` oder `{ rand }`), `trennerSetzen`, `kacheln`, `zusammenlegen`,
+  `normalisieren` (macht aus Müll, unbekannten Ansichten, falschen Anteilen, zu tiefer Verschachtelung wieder eine gültige Anordnung), `layoutBerechnen` (Rechtecke in ganzen px, lückenlos), `dropZiel`
+  (was passiert beim Loslassen bei x, y) und `zielAnwenden`.
+- **Aufbau im DOM:** `#ansichtsflaeche` ist die Wurzel; **alle** Kacheln, Reiterleisten (`.reiterleiste`, 22 px) und Trenner (`.ag-trenner`, 4 px) liegen flach darin und werden absolut gesetzt, beim Umordnen wird
+  nichts umgehängt (ein PDF im Rahmen lädt nicht neu). Die Leiste der **ersten Gruppe trägt die Id `ansichtsreiter`** (bestehende Tests); ohne offene Ansicht steht eine leere Leiste mit dieser Id da. Aktiv ist genau
+  eine Ansicht: Klasse `aktiv` an Kachel und Reiter (die Plan-Ansichten und `aktivePlanansicht()` fragen sie ab), `gruppen-aktiv` am sichtbaren Reiter jeder Gruppe, `aktive-gruppe` an der Leiste. Ein Klick in eine Kachel
+  macht ihre Gruppe aktiv. Werkzeuge (Zeichnen, Fangen, Leitung) arbeiten in der aktiven Ansicht der aktiven Gruppe.
+- **Bedienung:** Reiter ziehen (ab 6 px): auf der Fläche erscheinen die Andockziele der Gruppe unter dem Zeiger (Kreuz: Mitte, links, rechts, oben, unten), drei Streifen am Rand der ganzen Fläche (links, rechts, unten,
+  14 px) und eine Vorschau; über einer Reiterleiste ein Strich an der Einfügestelle. Die Randzonen einer Gruppe (äusserstes Viertel) wirken wie die Ziele. Loslassen setzt um, **Esc bricht ab**. Die einzige Ansicht einer
+  Gruppe lässt sich nicht an die eigene Gruppe andocken. Trenner ziehen: live, mindestens 90 px je Gruppe; gemerkt beim Loslassen. Kontextmenü am Reiter: «In eigenem Fenster öffnen», «Nach rechts/unten teilen», «Schliessen».
+  Register Ansicht › Fenster: **«Fenster nebeneinander» (WT) = Kacheln** (⌈√n⌉ Spalten, gleich gross), **«Fenster als Reiter» (WC)** legt alles in eine Gruppe, **«In eigenem Fenster öffnen»**. Öffnet man eine Ansicht,
+  kommt sie als Reiter in die aktive Gruppe. «▾ n weitere» (Teil R) gilt je Gruppe (`ansichtsreiter.einrichten` je Leiste, der sichtbare Reiter der Gruppe bleibt immer sichtbar).
+- **Merken:** `localStorage`-Schlüssel `hlks.anordnung.<ort des Projekts, klein>` (je Projekt und Rechner), verzögert 250 ms und sofort bei `pagehide`; nie eine leere Anordnung (der Projektwechsel schliesst erst alle
+  Ansichten). Beim Start: gemerkte Anordnung normalisieren, unbekannte Kennzeichen entfallen, sonst Rückfall auf die frühere Liste `hlks.offeneAnsichten` (eine Gruppe), sonst der erste Grundriss.
+- **Eigenes Fenster** (`zweitfenster.js`): `window.open('/?ansicht=<kz>&fenster=<n>', 'hlks-fenster-<n>', 'popup=yes,…')` an der Stelle des Loslassens (n = 2 … 9). Das zweite Fenster ist dieselbe Oberfläche im Modus
+  «nur Ansicht» (`body[data-fenster]`): Kopf mit «↩ Zurück ins Hauptfenster», Optionsleiste, Ansichtsfläche, Statusleiste; **Menüband und Seitenleiste ausgeblendet** (Kürzel und Werkzeuge der Ansicht gehen weiter; ein
+  Reiter lässt sich dort nicht auslagern). **Live-Abgleich:** Änderungen, Rückgängig und alles Modellseitige über den Ereignisstrom des Servers (`/api/ereignisse`, je Browserfenster ein Strom; der Server brauchte keine Änderung:
+  gleicher Akteur und Rechner, Reservierungen gelten für beide Fenster), **Auswahl** und die Frage «wer hält welche Ansicht» über `BroadcastChannel('hlks-fenster')`. Nachrichten: `auswahl`, `wer`/`da` (Hauptfenster fragt beim
+  Start, welche Zweitfenster leben; deren Ansichten bleiben dort und werden nicht doppelt geöffnet), `weg`/`zurueck` (**Schliessen oder Neuladen des Zweitfensters gibt die Ansicht zurück**: das Hauptfenster wartet 1.2 s, ob sie
+  mit `da` wieder auftaucht (Neuladen), sonst öffnet es sie als Reiter; der Knopf «Zurück ins Hauptfenster» tut es sofort), `fokus`. Schliesst man im Zweitfenster die letzte Ansicht (✕) oder wechselt das Projekt, schliesst
+  das Fenster. Ist ein Pop-up blockiert, meldet das Hauptfenster es und behält die Ansicht. Auch das Ziehen eines Reiters **aus dem Browserfenster heraus** öffnet ein eigenes Fenster (Schatten «Loslassen: eigenes Fenster»).
+- **Prüfen:** `node --test js/oberflaeche/anordnung.test.mjs` (55 Tests: Baum, Ziele, Rechtecke, Merken/Laden mit ungültigen Werten, Adresse des Zweitfensters, CSS-Einbindung); Browser (Edge headless über CDP, eigener
+  Server, Port 5178, CDP 9510): `node js/oberflaeche/anordnung.browser.mjs` (87 Prüfungen: Ziehen mit der Maus, Andockziele, Trenner, drei Gruppen, Werkzeug-Ansicht je Gruppe, Neuladen, kaputter Eintrag, Kacheln,
+  «weitere» je Gruppe, Zweitfenster mit Live-Abgleich von Auswahl und Änderung in beide Richtungen, Rückgängig, Rückgabe, Neuladen von Haupt- und Zweitfenster, Wand zeichnen im Zweitfenster; Bilder `%TEMP%\HLKS_CAD\w2_*.png`).
+- **Grenzen und Annahmen:** Im Raster (`hlks.css`) ist nur die Ansichtsfläche geändert (`#ansichtsflaeche` ohne Raster, `#ansichtsbereich` Zeilen `minmax(0, 1fr) auto`); die Seitenbereiche und Paletten gehören W1.
+  Im Zweitfenster blendet `css/anordnung.css` Menüband, `#seitenleiste` und `#seitenleiste-griff` aus und setzt die Spalten von `#arbeitsbereich` auf `0 0 1fr` – kommen im Raster weitere Seitenbereiche dazu, dort mit
+  eintragen. Ein Reiter lässt sich nicht zwischen zwei Browserfenstern ziehen (nur auslagern und zurückgeben).
 
 **Prüfen:** `node --test js/oberflaeche/menueband.test.mjs`; Browser `node js/oberflaeche/menueband.browser.mjs` (frisches Beispielprojekt, Server auf
 5171 mit `HLKS_TEST=1` und Ablagen unter `%TEMP%`; Bilder `r_*.png` unter `%TEMP%\HLKS_CAD`). Der Test liefert die Oberfläche aus einer Kopie (`HLKS_WEBROOT`) aus: der Dateiwächter des Servers

@@ -1,5 +1,5 @@
 // Aktionen des Registers «Ansicht»: Ansichten anlegen (Grundriss, 3D, Liste), duplizieren, Sichtbarkeit/Grafiken (VV),
-// Ansichtsvorlagen speichern und anwenden, Fensteranordnung (WT, WC), Zoom (ZF, ZA), Design hell/dunkel.
+// Ansichtsvorlagen speichern und anwenden, Fensteranordnung (WT, WC, eigenes Fenster), Zoom (ZF, ZA), Design hell/dunkel.
 // Eine Ansicht ist ein Element der Klasse Ansicht; alles läuft über element_anlegen / element_aendern.
 
 import { zustand, element, derKlasse } from '../zustand.js';
@@ -229,6 +229,11 @@ registrieren({
   id: 'ansicht.reiter', titel: 'Fenster als Reiter', symbol: 'reiter', kuerzel: 'WC', register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
   gedrueckt: () => fenster.fenstermodus() === 'reiter',
   ausfuehren: () => fenster.alsReiter(),
+});
+registrieren({
+  id: 'ansicht.eigenes-fenster', titel: 'In eigenem Fenster öffnen', symbol: 'eigenesFenster', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  aktiv: () => !!fenster.aktive() && !fenster.imZweitfenster(), hinweis: (p) => (fenster.imZweitfenster() ? 'Diese Ansicht ist schon in einem eigenen Fenster.' : 'Zuerst eine Ansicht öffnen.'),
+  ausfuehren: () => { const o = fenster.aktive(); if (o) fenster.eigenesFensterOeffnen(o.id); },
 });
 registrieren({
   id: 'ansicht.zoom-alles', titel: 'Zoom alles', symbol: 'zoomAlle', kuerzel: 'ZF', kuerzelAlt: ['ZE'], register: 'ansicht', gruppe: 'Zoom', groesse: 'klein',

@@ -1,0 +1,52 @@
+/* Anordnung der Ansichten (Teil W2): Reiterleisten der Gruppen, Trenner, Andockziele beim Ziehen, Zweitfenster («nur Ansicht»).
+   Die Kacheln der Ansichten liegen flach und absolut in #ansichtsflaeche (fenster.js setzt Lage und Grösse); Farben und Masse nur über die
+   Variablen aus hlks.css, damit hell und dunkel stimmen. */
+
+/* Reiterleiste einer Gruppe (die der ersten Gruppe trägt die Id ansichtsreiter). Sie rollt nie: ansichtsreiter.js macht die Reiter schmaler
+   und fasst übrige unter «▾ n weitere» zusammen – je Gruppe. */
+.reiterleiste { position: absolute; z-index: 20; display: flex; gap: 1px; align-items: flex-end; height: var(--hoehe-ansichtsreiter); min-width: 0; background: var(--ansichtsreiter-zeile); }
+.reiterleiste[hidden] { display: none; }
+.reiterleiste > .reiter { touch-action: none; user-select: none; }
+/* sichtbarer Reiter einer Gruppe, die gerade nicht aktiv ist: gewählt, aber ohne Akzent */
+.reiter.gruppen-aktiv:not(.aktiv) { background: var(--ansichtsreiter-aktiv); color: var(--text); box-shadow: inset 0 2px 0 var(--rand); }
+.reiter.gezogen { opacity: .45; }
+
+/* Trenner zwischen den Gruppen */
+.ag-trenner { position: absolute; z-index: 15; background: var(--rand-leise); touch-action: none; }
+.ag-trenner.senkrecht { cursor: col-resize; }
+.ag-trenner.waagrecht { cursor: row-resize; }
+.ag-trenner:hover, .ag-trenner.zieht { background: var(--akzent); }
+body.ag-zieht, body.ag-zieht * { cursor: grabbing !important; user-select: none; }
+
+/* Andockziele beim Ziehen eines Reiters */
+.ag-ueberlagerung { position: absolute; inset: 0; z-index: 60; pointer-events: none; overflow: hidden; }
+.ag-ueberlagerung [hidden] { display: none; }
+.ag-vorschau { position: absolute; box-sizing: border-box; border: 2px solid var(--akzent); background: color-mix(in srgb, var(--akzent) 26%, transparent); }
+.ag-marke { position: absolute; background: var(--akzent); }
+.ag-kreuz { position: absolute; inset: 0; }
+.ag-lp { position: absolute; box-sizing: border-box; border: 1px solid var(--rand); border-radius: 3px; background: var(--flaeche-hell); box-shadow: var(--schatten); }
+.ag-lp::after { content: ''; position: absolute; inset: 5px; border: 1px solid var(--text-leise); }
+.ag-lp-links::after { background: linear-gradient(to right, var(--akzent) 50%, transparent 50%); }
+.ag-lp-rechts::after { background: linear-gradient(to left, var(--akzent) 50%, transparent 50%); }
+.ag-lp-oben::after { background: linear-gradient(to bottom, var(--akzent) 50%, transparent 50%); }
+.ag-lp-unten::after { background: linear-gradient(to top, var(--akzent) 50%, transparent 50%); }
+.ag-lp-mitte::after { background: color-mix(in srgb, var(--akzent) 70%, transparent); inset: 8px; }
+.ag-lp.ziel { background: var(--akzent); border-color: var(--akzent); }
+.ag-lp.ziel::after { border-color: #fff; }
+.ag-rand { position: absolute; box-sizing: border-box; border: 1px dashed var(--akzent); background: color-mix(in srgb, var(--akzent) 14%, transparent); }
+.ag-rand.ziel { border-style: solid; background: color-mix(in srgb, var(--akzent) 40%, transparent); }
+.ag-rand-links { left: 0; top: 0; bottom: 0; width: 14px; }
+.ag-rand-rechts { right: 0; top: 0; bottom: 0; width: 14px; }
+.ag-rand-unten { left: 0; right: 0; bottom: 0; height: 14px; }
+.ag-schatten { position: fixed; z-index: 200; pointer-events: none; padding: 2px 8px; max-width: 280px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-weight: 600;
+  background: var(--flaeche-hell); color: var(--text); border: 1px solid var(--akzent); box-shadow: var(--schatten); }
+.ag-schatten.draussen { background: var(--akzent); color: var(--akzent-text); }
+
+/* Zweitfenster «nur Ansicht»: Kopf, Optionsleiste, Ansichtsfläche und Statusleiste; Menüband und Seitenleiste bleiben dem Hauptfenster.
+   Werden im Raster weitere Seitenbereiche angedockt (W1), hier mit ausblenden. */
+body[data-fenster] { grid-template-rows: var(--hoehe-kopf) 0 minmax(var(--hoehe-optionsleiste), auto) minmax(0, 1fr) var(--hoehe-status); }
+body[data-fenster] #menueband { visibility: hidden; overflow: hidden; border: 0; }
+body[data-fenster] #arbeitsbereich { grid-template-columns: 0 0 minmax(0, 1fr) !important; }
+body[data-fenster] #seitenleiste, body[data-fenster] #seitenleiste-griff { visibility: hidden; overflow: hidden; min-width: 0; }
+.ag-zurueck { padding: 1px 10px; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--flaeche-hell); color: var(--text); cursor: pointer; white-space: nowrap; }
+.ag-zurueck:hover { border-color: var(--akzent); }

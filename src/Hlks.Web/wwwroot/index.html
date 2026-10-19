@@ -10,6 +10,7 @@
   <link rel="stylesheet" href="css/hlks.css">
   <link rel="stylesheet" href="css/oberflaeche.css">
   <link rel="stylesheet" href="css/ansichten.css">
+  <link rel="stylesheet" href="css/anordnung.css">
   <link rel="stylesheet" href="css/familien.css">
   <link rel="stylesheet" href="css/familien-unterlagen.css">
   <link rel="stylesheet" href="css/familien-bibliothek.css">
@@ -23,7 +24,7 @@
 </head>
 <body>
   <!-- Aufbau wie Revit: Kopf mit Schnellzugriff, Menüband, Optionsleiste, links Eigenschaften und Projektbrowser,
-       Mitte die Ansichten (Reiter oder nebeneinander), unten die Statusleiste. -->
+       Mitte die Ansichten (Gruppen mit Reitern, frei anordenbar), unten die Statusleiste. -->
   <header id="kopf">
     <div id="schnellzugriff"></div>
     <div id="titel">HLKS-CAD</div>
@@ -45,7 +46,7 @@
     </aside>
     <div id="seitenleiste-griff" title="Ziehen zum Verstellen"></div>
     <section id="ansichtsbereich">
-      <div id="ansichtsreiter" role="tablist"></div>
+      <!-- Die Reiterleisten der Gruppen entstehen in fenster.js innerhalb der Fläche (W2); die erste trägt die Id ansichtsreiter -->
       <div id="ansichtsflaeche"></div>
     </section>
   </main>

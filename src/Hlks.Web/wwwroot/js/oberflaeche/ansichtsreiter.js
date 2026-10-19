@@ -1,7 +1,8 @@
 // Ansichtsreiter ohne Rollbalken (Teil R, entwurf/menueband-revit.md, Punkt 6): Passen nicht alle Reiter in die Zeile, werden sie
 // schmaler (bis zu einer Mindestbreite, der Titel kürzt mit «…»); reicht auch das nicht, steht rechts «▾ n weitere» mit der Liste
 // aller offenen Ansichten (wie Revit «Fenster wechseln»). Der aktive Reiter bleibt immer sichtbar.
-// Die Reiter selbst legt fenster.js an; dieses Modul beobachtet nur die Zeile #ansichtsreiter (kein Eingriff in fenster.js).
+// Die Reiter selbst legt fenster.js an; dieses Modul beobachtet nur eine Reiterleiste (kein Eingriff in fenster.js). Seit W2 hat jede Gruppe
+// ihre eigene Leiste und ruft einrichten() für sich auf; als «aktiv» (bleibt immer sichtbar) gilt der aktive Reiter und der sichtbare Reiter der Gruppe.
 // Die Berechnung (reiterPlan) ist eine reine Funktion und in Node testbar.
 
 export const MINDESTBREITE = 96;   // px; kürzere Reiter (von Natur aus) bleiben, wie sie sind
@@ -57,8 +58,8 @@ export const weitereText = (n) => `▾ ${n} weitere`;
 // ---------------------------------------------------------------------------------------------- DOM
 
 /**
- * Richtet die Zeile #ansichtsreiter ein: beobachtet Grösse und Inhalt, verteilt die Reiter und pflegt «▾ n weitere».
- * Rückgabe: { anpassen, schliessen } (für Tests).
+ * Richtet eine Reiterzeile ein: beobachtet Grösse und Inhalt, verteilt die Reiter und pflegt «▾ n weitere».
+ * Rückgabe: { anpassen, schliessen, abbauen } (anpassen/schliessen für Tests; abbauen meldet alle Beobachter ab, wenn die Leiste entfällt).
  */
 export function einrichten(leiste) {
   const knopf = document.createElement('button');
@@ -75,6 +76,7 @@ export function einrichten(leiste) {
 
   let signatur = '';
   const reiter = () => [...leiste.querySelectorAll(':scope > .reiter')];
+  const istAktiv = (r) => r.classList.contains('aktiv') || r.classList.contains('gruppen-aktiv');
   const titelVon = (r) => r.querySelector('.titel')?.textContent ?? '';
 
   function listeFuellen(alle, versteckt) {
@@ -82,7 +84,7 @@ export function einrichten(leiste) {
     alle.forEach((r, i) => {
       const b = document.createElement('button');
       b.type = 'button';
-      b.className = 'rl-eintrag' + (r.classList.contains('aktiv') ? ' aktiv' : '') + (versteckt.includes(i) ? ' verdeckt' : '');
+      b.className = 'rl-eintrag' + (istAktiv(r) ? ' aktiv' : '') + (versteckt.includes(i) ? ' verdeckt' : '');
       b.setAttribute('role', 'option');
       b.textContent = titelVon(r);
       b.title = r.title || '';
@@ -93,7 +95,7 @@ export function einrichten(leiste) {
 
   function anpassen(erzwingen = false) {
     const alle = reiter();
-    const sig = `${leiste.clientWidth}|${alle.map((r) => titelVon(r) + (r.classList.contains('aktiv') ? '*' : '')).join('\u0001')}`;
+    const sig = `${leiste.clientWidth}|${alle.map((r) => titelVon(r) + (istAktiv(r) ? '*' : '')).join('\u0001')}`;
     if (!erzwingen && sig === signatur) return;
     signatur = sig;
     // natürliche Breiten messen
@@ -102,7 +104,7 @@ export function einrichten(leiste) {
     const weitereBreite = knopf.offsetWidth;
     knopf.hidden = true;
     const breiten = alle.map((r) => r.getBoundingClientRect().width);
-    const plan = reiterPlan({ breiten, aktiv: alle.findIndex((r) => r.classList.contains('aktiv')), verfuegbar: leiste.clientWidth, weitereBreite });
+    const plan = reiterPlan({ breiten, aktiv: alle.findIndex(istAktiv), verfuegbar: leiste.clientWidth, weitereBreite });
     alle.forEach((r, i) => {
       const sichtbar = plan.sichtbar.includes(i);
       r.classList.toggle('weg', !sichtbar);
@@ -127,11 +129,21 @@ export function einrichten(leiste) {
     liste.style.right = `${Math.max(0, Math.round(l.right - k.right))}px`;
   }
   knopf.addEventListener('click', () => (liste.hidden ? oeffnen() : schliessen()));
-  document.addEventListener('pointerdown', (e) => { if (!liste.hidden && !e.target.closest?.('.reiter-liste, .reiter-weitere')) schliessen(); }, true);
-  window.addEventListener('keydown', (e) => { if (e.key === 'Escape' && !liste.hidden) { schliessen(); e.stopPropagation(); } }, true);
+  const beiZeiger = (e) => { if (!liste.hidden && !e.target.closest?.('.reiter-liste, .reiter-weitere')) schliessen(); };
+  const beiTaste = (e) => { if (e.key === 'Escape' && !liste.hidden) { schliessen(); e.stopPropagation(); } };
+  document.addEventListener('pointerdown', beiZeiger, true);
+  window.addEventListener('keydown', beiTaste, true);
 
-  if (typeof ResizeObserver === 'function') new ResizeObserver(() => anpassen()).observe(leiste);
-  if (typeof MutationObserver === 'function') new MutationObserver(() => anpassen()).observe(leiste, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  const groesse = typeof ResizeObserver === 'function' ? new ResizeObserver(() => anpassen()) : null;
+  groesse?.observe(leiste);
+  const inhalt = typeof MutationObserver === 'function' ? new MutationObserver(() => anpassen()) : null;
+  inhalt?.observe(leiste, { childList: true, subtree: true, characterData: true, attributes: true, attributeFilter: ['class'] });
+  function abbauen() {
+    document.removeEventListener('pointerdown', beiZeiger, true);
+    window.removeEventListener('keydown', beiTaste, true);
+    groesse?.disconnect();
+    inhalt?.disconnect();
+  }
   anpassen(true);
-  return { anpassen, schliessen };
+  return { anpassen, schliessen, abbauen };
 }

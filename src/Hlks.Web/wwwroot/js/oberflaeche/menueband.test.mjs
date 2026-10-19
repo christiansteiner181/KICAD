@@ -281,6 +281,9 @@ test('CSS: Menüband-Feld und Ansichtsreiter haben keinen Rollbalken mehr', () =
   assert.doesNotMatch(regel(ob, '.mb-feld'), /overflow-x\s*:\s*(auto|scroll)/);
   assert.match(regel(ob, '.mb-feld'), /overflow\s*:\s*hidden/);
   assert.doesNotMatch(regel(hl, '#ansichtsreiter'), /overflow(-x)?\s*:\s*(auto|scroll)/);
+  const an = css('anordnung.css');   // seit W2 hat jede Gruppe ihre Reiterleiste
+  assert.match(regel(an, '.reiterleiste'), /position\s*:\s*absolute/);
+  assert.doesNotMatch(regel(an, '.reiterleiste'), /overflow(-x)?\s*:\s*(auto|scroll)/);
   assert.doesNotMatch(regel(ob, '#optionsleiste'), /nowrap/);
   assert.match(regel(ob, '#optionsleiste'), /flex-wrap\s*:\s*wrap/);
 });
