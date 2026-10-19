@@ -85,7 +85,8 @@ try {
   # Node-Tests
   if (-not $OhneNode) {
     $dateien = @(Get-ChildItem "$wt\src\Hlks.Web\wwwroot\js" -Recurse -Filter *.test.mjs | ForEach-Object { $_.FullName })
-    $aus = & node --test @dateien 2>&1 | Out-String
+    $env:HLKS_TEST_SERVER = ''; $env:HLKS_TESTSERVER = ''   # nie einen fremden Server (z. B. den Desktop) abfragen
+    $aus = & node --test --test-reporter=tap @dateien 2>&1 | Out-String
     $f = if ($aus -match '(?m)^# fail (\d+)') { [int]$Matches[1] } else { -1 }
     $t = if ($aus -match '(?m)^# tests (\d+)') { [int]$Matches[1] } else { 0 }
     Log ("Node: {0} Tests, {1} rot" -f $t, $f)

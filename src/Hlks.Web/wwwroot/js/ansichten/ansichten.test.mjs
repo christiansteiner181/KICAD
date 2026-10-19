@@ -2,7 +2,7 @@
 //   plangrafik.js (Primitive des Kerns → SVG), koerper3d.js (Körper des Kerns → three-Objekte), Listenaufbereitung,
 //   Planblatt-Aktionen, Zuordnung der Ansichtsarten in fenster.js, Design (CSS-Variablen, Umschalten).
 // Aufruf:  node --test src/Hlks.Web/wwwroot/js/ansichten/ansichten.test.mjs
-// Läuft ein Testserver (http://localhost:5134, 5131 oder 5130, oder HLKS_TESTSERVER=<url>) mit dem Beispielprojekt,
+// Ist ein Testserver genannt (HLKS_TESTSERVER bzw. HLKS_TEST_SERVER=<url>, Server mit dem Beispielprojekt),
 // laufen zusätzlich die echten Grafikdaten des Kerns durch beide Renderer.
 
 import { test } from 'node:test';
@@ -672,7 +672,9 @@ test('Leere oder fehlerhafte Antwort wirft nicht', () => {
 
 // ---------- Echte Daten des Kerns (nur wenn ein Testserver mit dem Beispielprojekt läuft) ----------
 async function findeServer() {
-  const kandidaten = [process.env.HLKS_TESTSERVER, 'http://localhost:5134', 'http://localhost:5131', 'http://localhost:5130'].filter(Boolean);
+  // Nur ein ausdrücklich genannter Testserver (19.10.2026): früher wurden 5134/5131/5130 von selbst abgefragt – darunter
+  // der Desktop-Server mit einem echten Projekt; das Ergebnis hing dann vom Rechner ab (Befund G1/R, stand_pruefen.ps1)
+  const kandidaten = [process.env.HLKS_TESTSERVER, process.env.HLKS_TEST_SERVER].filter(Boolean);
   for (const basis of kandidaten) {
     try {
       const r = await fetch(basis + '/api/koerper', { signal: AbortSignal.timeout(2500) });
