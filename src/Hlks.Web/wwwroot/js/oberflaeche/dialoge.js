@@ -23,6 +23,9 @@ function stapelAktualisieren() {
 
 // ------------------------------------------------------------------------------------------------ Dialog
 
+/** Titel des obersten offenen Dialogs (für die Hilfe mit F1, hilfe-oberflaeche.js) oder null, wenn keiner offen ist. */
+export function obersterDialogTitel() { const o = stapel.at(-1); return o ? (o.ctrl.fenster.querySelector('.dlg-titel')?.textContent || o.titel || null) : null; }
+
 /**
  * Zeigt einen Dialog. inhalt: HTML-Text, Knoten oder Funktion(ctrl) → Text/Knoten.
  * knoepfe: [{ text, wert, primaer, gefahr, schliesst=true, pruefen(), klick(ctrl) }]; pruefen liefert true/undefined (weiter),
@@ -91,7 +94,7 @@ export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null,
     }
     if (liste.length === 0) fuss.remove();
 
-    const eintrag = { ctrl, schliessbar };
+    const eintrag = { ctrl, schliessbar, titel };
     fenster.querySelector('.dlg-x')?.addEventListener('click', () => ctrl.schliessen(null));
 
     let teil = typeof inhalt === 'function' ? inhalt(ctrl) : inhalt;

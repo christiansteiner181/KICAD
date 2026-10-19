@@ -6,6 +6,7 @@ import { zustand, melden, modellLaden, derKlasse } from './zustand.js';
 import { verbinden } from './ereignisse.js';
 import * as fenster from './fenster.js';
 import * as menueband from './oberflaeche/menueband.js';
+import * as hilfe from './oberflaeche/hilfe-oberflaeche.js';
 import * as zweitfenster from './oberflaeche/zweitfenster.js';
 import * as projektbrowser from './oberflaeche/projektbrowser.js';
 import * as eigenschaften from './oberflaeche/eigenschaften.js';
@@ -23,6 +24,7 @@ async function start() {
   paletten.einrichten();   // Eigenschaften, Projektbrowser (und bei Bedarf Koordination) in ihre Bereiche setzen (W1); die Paletten richten sich dabei selbst ein
   fenster.einrichten();
   menueband.einrichten(document.getElementById('menueband'), document.getElementById('optionsleiste'), document.getElementById('schnellzugriff'));
+  hilfe.einrichten();   // Hilfe-Symbol «?» in der Kopfleiste und F1 (Bedienungsanleitung); nach dem Kopf des Zweitfensters
   statusleiste.einrichten(document.getElementById('statusleiste'));
   kuerzel.einrichten();
   verbinden();

@@ -14,6 +14,7 @@ import { zustand, element, abonnieren, merken } from '../zustand.js';
 import { aktionen, ausfuehren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen } from './aktionen.js';
 import { symbol } from './symbole.js';
 import { esc, entprellen, elementText } from './werkzeug.js';
+import { HILFE_ZEILE } from './hilfe.js';
 import { symbolWz } from '../werkzeuge/symbole.js';
 import { werkzeugOptionen } from '../werkzeuge/optionsleiste.js';
 import { familieAktiv } from '../familien/aktiv.js';
@@ -345,6 +346,20 @@ function titelZeichnen() {
   titelZeile.innerHTML = aktuelleGruppen.map((g) => `<button type="button" class="mb-titel-knopf" data-gruppe="${esc(g.name)}" aria-haspopup="true" aria-expanded="false">${esc(g.name)} <span aria-hidden="true">▾</span></button>`).join('');
 }
 
+/**
+ * Hilfe (F1): Titel von Register und Knopf, wie angezeigt, für einen Knopf des Menübands (auch im Flyout, im Kontextregister und im Schnellzugriff).
+ * Ergebnis { register, knopf } oder null (kein Knopf einer Aktion, z. B. ein Eintrag der Liste «Zuletzt geöffnet»).
+ */
+export function knopfHilfe(k) {
+  if (!k || k.dataset.ordner) return null;
+  const a = aktionen.get(k.dataset.id);
+  if (!a) return null;
+  // Im Band gehört der Knopf zum gewählten Register (dessen Reiter trägt den angezeigten Namen, auch «Ändern | Klasse»); im Schnellzugriff zu dem der Aktion
+  const reiter = k.closest('#menueband') ? reiterLeiste?.querySelector('.mb-tab.aktiv') : null;
+  const register = reiter ? reiter.textContent : (REGISTER.find(([id]) => id === a.register)?.[1] ?? '');
+  return { register: ohneWeich(register).trim(), knopf: ohneWeich(a.titel).trim() };
+}
+
 /** Für Tests und Bilder: aktuelle Stufen der Gruppen und Zustand des Bands. */
 export function bandInfo() {
   return {
@@ -414,6 +429,7 @@ function zustandAnwenden() {
     const kz = [a.kuerzel, ...a.kuerzelAlt].filter(Boolean).join(' / ');
     let tip = k.dataset.ordner ? k.title : ohneWeich(a.titel) + (kz ? ` (${kz})` : '');
     if (!aktiv) { const h = hinweisText(a); if (h) tip += '\n' + h; }
+    if (!k.dataset.ordner) tip += '\n' + HILFE_ZEILE;   // letzte Zeile: F1 öffnet die Anleitung zu diesem Befehl (hilfe-oberflaeche.js)
     k.title = tip;
     k.classList.toggle('gesperrt', !aktiv);
     k.setAttribute('aria-disabled', String(!aktiv));

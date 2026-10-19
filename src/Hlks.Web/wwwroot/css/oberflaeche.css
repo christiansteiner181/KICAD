@@ -25,6 +25,12 @@ svg.sym { display: block; flex: none; }
 .mb-knopf.sz { width: 24px; height: 24px; padding: 0; border: 1px solid transparent; background: none; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; color: var(--text); }
 .mb-knopf.sz:hover { background: var(--ob-hover); border-color: var(--rand); }
 
+/* Hilfe-Symbol «?» rechts in der Kopfleiste (wie Revits InfoCenter; hilfe-oberflaeche.js): öffnet die Bedienungsanleitung, F1 ebenso */
+#kopf-rechts { display: flex; align-items: center; gap: 6px; flex: none; }
+.hilfe-knopf { width: 26px; height: 24px; padding: 0; border: 1px solid transparent; background: none; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.hilfe-knopf:hover { background: var(--ob-hover); border-color: var(--rand); color: var(--akzent); }
+.hilfe-knopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: -1px; }
+
 /* ------------------------------------------------------------------ Menüband: Reiter 22 px, Gruppen 70 px + Titel 18 px
    Das Feld rollt nie: menueband-stufen.js wählt je Gruppe die Stufe (G gross, M mittel, K klein, Z zusammengeklappt) und lagert
    notfalls Gruppen in «» weitere» aus. Flyouts und die Überlagerung des minimierten Bands liegen über der Arbeitsfläche. */
