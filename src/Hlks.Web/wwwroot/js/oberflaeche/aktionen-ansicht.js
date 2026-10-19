@@ -8,12 +8,17 @@ import { registrieren } from './register.js';
 import { zeigen, meldung, eingabe } from './dialoge.js';
 import { sende, ergebnisMelden } from './befehle.js';
 import { design, designUmschalten } from './design.js';
+import { einlageplanDialog } from './einlageplaene-dialog.js';
 import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, freierName, anzeigeName } from './werkzeug.js';
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
 const DETAILGRADE = ['grob', 'mittel', 'fein'];
 // Modul 3 (C3): Materialliste (Kennzeichen AN-LI-MATERIALLISTE wie die Aktion «Materialliste» in aktionen-leitung.js)
-const LISTEN = { raumliste: ['Raumliste', 'RAUM'], strangliste: ['Strangliste', 'STRANG'], mengen: ['Mengen', 'MENGEN'], materialliste: ['Materialliste', 'MATERIALLISTE'] };
+// N3 (Punkt 3): Kollisionsliste (Abfrage kollisionen) und Aussparungsliste (Abfrage aussparungsliste), Modul 3b – die Listenansicht zeichnet sie seit B4a
+const LISTEN = {
+  raumliste: ['Raumliste', 'RAUM'], strangliste: ['Strangliste', 'STRANG'], mengen: ['Mengen', 'MENGEN'], materialliste: ['Materialliste', 'MATERIALLISTE'],
+  kollisionen: ['Kollisionsliste', 'KOLLISIONEN'], aussparungsliste: ['Aussparungsliste', 'AUSSPARUNGEN'],
+};
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
 const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden'];
 const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden'];
@@ -113,6 +118,12 @@ async function ansichtAnlegen(art) {
 }
 
 registrieren({ id: 'ansicht.grundriss', titel: 'Grundriss', symbol: 'grundriss', kuerzel: null, register: 'ansicht', gruppe: 'Erstellen', ausfuehren: () => ansichtAnlegen('grundriss') });
+// N3 (Punkt 1): Einlageplan und Grundleitungsplan legen Ansicht und Planblatt über den Kernbefehl einlageplaene_anlegen an (Dialog: einlageplaene-dialog.js);
+// als kleine Knöpfe nur mit Symbol (nurSymbol, Name im Tooltip) in einer Spalte neben «Grundriss»: die Gruppe «Erstellen» bleibt so schmal genug für das Menüband.
+const planAktiv = () => !!zustand.status?.offen && geschosse().length > 0;
+const planHinweis = () => (zustand.status?.offen ? 'Im Modell gibt es noch kein Geschoss.' : 'Zuerst ein Projekt öffnen.');
+registrieren({ id: 'ansicht.einlageplan', titel: 'Einlageplan', symbol: 'einlageplan', kuerzel: null, register: 'ansicht', gruppe: 'Erstellen', groesse: 'klein', nurSymbol: true, aktiv: planAktiv, hinweis: planHinweis, ausfuehren: () => einlageplanDialog('einlage') });
+registrieren({ id: 'ansicht.grundleitungsplan', titel: 'Grundleitungsplan', symbol: 'grundleitungsplan', kuerzel: null, register: 'ansicht', gruppe: 'Erstellen', groesse: 'klein', nurSymbol: true, aktiv: planAktiv, hinweis: planHinweis, ausfuehren: () => einlageplanDialog('erdreich') });
 registrieren({ id: 'ansicht.3d', titel: '3D-Ansicht', symbol: 'ansicht3d', kuerzel: '3D', register: 'ansicht', gruppe: 'Erstellen', ausfuehren: () => ansichtAnlegen('3d') });
 registrieren({ id: 'ansicht.liste', titel: 'Liste', symbol: 'liste', kuerzel: null, register: 'ansicht', gruppe: 'Erstellen', ausfuehren: () => ansichtAnlegen('liste') });
 
@@ -266,6 +277,19 @@ registrieren({
     const an = a.werte?.darstellung !== 'huelle';
     ergebnisMelden(await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { darstellung: an ? 'huelle' : null } }),
       an ? `Darstellung Hülle eingeschaltet (${anzeigeName(a)}).` : `Darstellung Hülle ausgeschaltet (${anzeigeName(a)}).`);
+  },
+});
+
+// N3 (Punkt 3): CSV jeder Listenansicht – Knopf «CSV …» in der Kopfzeile der Liste (ansichten/liste.js) und Eintrag im Kontextmenü der Liste im Projektbrowser.
+// Die Aktion öffnet die Liste, wenn sie noch nicht offen ist, und zeigt dann deren Dialog (ansichten/liste-csv-dialog.js).
+registrieren({
+  id: 'liste.csv', titel: 'CSV …', symbol: 'listeCsv', kuerzel: null,
+  aktiv: (p) => ansichtVon(p)?.werte?.art === 'liste', hinweis: 'Zuerst eine Listenansicht öffnen oder im Projektbrowser wählen.',
+  async ausfuehren(p) {
+    const a = ansichtVon(p);
+    let o = fenster.alle().find((x) => x.id === a.id);
+    if (!o) { await fenster.ansichtOeffnen(a.kennzeichen); o = fenster.alle().find((x) => x.id === a.id); }
+    await o?.instanz?.csv?.();
   },
 });
 

@@ -135,6 +135,11 @@ const S = {
   koBcfExport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M11 20h9M17 16l4 4-4 4"/>',
   koBcfImport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M22 20h-9M16 16l-4 4 4 4"/>',
   famFamilie: '<path d="M16 3l11 6v14l-11 6-11-6V9z"/><path d="M5 9l11 6 11-6M16 15v14"/><circle cx="16" cy="15" r="2.4" fill="currentColor"/>',
+  // Nachbearbeitung N3: Einlageplan (Grundriss mit schraffierter Platte und Rohr mit Bogen nach oben), Grundleitungsplan (Grundriss mit Erdreichlinie und Rohr mit Sohle),
+  // Liste als CSV (Blatt mit Zellen und Pfeil)
+  einlageplan: '<rect x="4" y="4" width="24" height="24"/><path d="M4 21h24"/><path d="M4 25l3-4M9 25l3-4M14 25l3-4M19 25l3-4M24 25l3-4"/><path d="M8 17h9l4-8"/><circle cx="21" cy="9" r="2"/>',
+  grundleitungsplan: '<rect x="4" y="4" width="24" height="24"/><path d="M4 13h24" stroke-dasharray="3 2"/><path d="M8 19h10l3 5"/><path d="M8 17v4M18 17v4" /><path d="M21 24h3"/>',
+  listeCsv: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M10 14h12M10 19h12M10 24h12M16 14v10"/><path d="M26 22v8M23 27l3 3 3-3"/>',
   // Paletten (W1): Palette allgemein, Projektbrowser (Baum), Koordination (Liste unten), zurücksetzen
   palette: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/>',
   projektbrowser: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M9 10h6M12 15h8M12 20h8M9 15v8"/>',

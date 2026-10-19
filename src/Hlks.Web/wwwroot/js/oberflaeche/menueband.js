@@ -221,6 +221,7 @@ const ohneWeich = (t) => String(t ?? '').replace(/[\u200b\u00ad]/g, '');
 
 /** Knopf einer Aktion (oder eines Eintrags der Liste «Zuletzt») in Stil gross | mittel | klein. */
 function knopfHtml(a, stil) {
+  if (a.nurSymbol && stil === 'mittel') stil = 'klein';   // nurSymbol: auch in den Stufen G und M nur das 16-px-Symbol (Text im Tooltip), spart Breite im Band (N3)
   const px = stil === 'gross' ? 32 : 16;
   const sym = symbolWz(a.symbol, px) ?? symbol(a.symbol, px);
   const ordner = a.ordner ? ` data-ordner="${esc(a.ordner)}" title="${esc(a.tooltip ?? a.ordner)}"` : '';
@@ -293,7 +294,7 @@ function messKontext() {
 }
 
 function gruppenSignatur(g) {
-  return `${g.name}\u0001${g.symbol}\u0001${g.items.map((i) => [i.id, i.titel, i.symbol, i.groesse, i.immerGross ? 1 : 0, i.ordner ?? ''].join('|')).join('\u0002')}`;
+  return `${g.name}\u0001${g.symbol}\u0001${g.items.map((i) => [i.id, i.titel, i.symbol, i.groesse, i.immerGross ? 1 : 0, i.nurSymbol ? 1 : 0, i.ordner ?? ''].join('|')).join('\u0002')}`;
 }
 
 /** Breiten aller Gruppen in allen Stufen; Fehlendes wird in einem Rutsch unsichtbar gemessen (eine Layoutberechnung). */

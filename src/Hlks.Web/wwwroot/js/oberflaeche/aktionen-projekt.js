@@ -10,6 +10,8 @@ import { sende } from './befehle.js';
 import { katalogDialog } from './katalogansicht.js';
 import { esc, knoten } from './werkzeug.js';
 import { istSichtbar as startSichtbar } from './startbildschirm.js';
+import { kuerzelZeilen } from './kuerzel-liste.js';
+import { projektInfoDialog } from './projektinfo-dialog.js';   // N3: Projektinformationen bearbeiten
 
 const projektOffen = () => !!zustand.status?.offen;
 const KEIN_PROJEKT = 'Zuerst ein Projekt öffnen.';
@@ -61,29 +63,9 @@ registrieren({
 
 // ---------------------------------------------------------------------------------------------- Verwalten
 
-async function projektInfo() {
-  let u = null;
-  try { u = await abfrage('projekt_ueberblick'); } catch (e) { console.error(e); }
-  const s = zustand.status ?? {};
-  const zeile = (k, w) => `<tr><th>${esc(k)}</th><td>${esc(w ?? '–')}</td></tr>`;
-  const stand = u?.modellStand ?? s.stand ?? {};
-  const gebaeude = (u?.gebaeude ?? []).map((g) => `<b>${esc(g.kennzeichen)}</b> ${esc(g.name ?? '')}: ${(g.geschosse ?? []).map((x) => `${esc(x.kennzeichen)} (${esc(x.raeume)} Räume)`).join(', ')}`).join('<br>');
-  const systeme = (u?.systeme ?? []).map((x) => `<b>${esc(x.kennzeichen)}</b> ${esc(x.name ?? '')}: ${esc((x.straenge ?? []).length)} Stränge, ${esc(x.bauteile)} Bauteile`).join('<br>');
-  const befunde = u?.befunde ? `${u.befunde.fehler} Fehler, ${u.befunde.warnung} Warnungen, ${u.befunde.hinweis} Hinweise` : '–';
-  const klassen = u?.elementeJeKlasse ? Object.entries(u.elementeJeKlasse).map(([k, n]) => `${esc(k)} ${esc(n)}`).join(' · ') : '–';
-  const w = knoten(`<div><table class="wtab">
-    ${zeile('Projekt', s.projekt ?? u?.projekt)}${zeile('Ablage', s.ort)}${zeile('Akteur', s.akteur ? `${s.akteur}@${s.geraet}` : null)}
-    ${zeile('Stand', `${stand.pakete ?? '?'} Pakete · ${stand.elemente ?? '?'} Elemente · ${stand.verbindungen ?? '?'} Verbindungen`)}
-    ${zeile('Prüfsumme', stand.pruefsumme)}${zeile('Prüfbefunde', befunde)}
-    <tr><th>Gebäude</th><td>${gebaeude || '–'}</td></tr><tr><th>Systeme</th><td>${systeme || '–'}</td></tr>
-    ${zeile('Ansichten', (u?.ansichten ?? []).join(', '))}
-    <tr><th>Elemente je Klasse</th><td class="klein">${klassen}</td></tr></table></div>`);
-  await zeigen({ titel: 'Projektinformationen', inhalt: w, breite: 680, knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }] });
-}
-
 registrieren({
   id: 'verwalten.projektinfo', titel: 'Projekt\u00adinformationen', symbol: 'info', kuerzel: null, register: 'verwalten', gruppe: 'Projekt',
-  aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: projektInfo,
+  aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: () => projektInfoDialog(),
 });
 
 registrieren({
@@ -151,15 +133,9 @@ registrieren({
   aktiv: () => !!zustand.katalog, hinweis: KEIN_PROJEKT, ausfuehren: katalogDialog,
 });
 
-/** Dialog der Tastaturkürzel (KS): alle Aktionen mit Kürzel, nach Register geordnet. */
-const REGISTER_NAMEN = { datei: 'Datei', architektur: 'Architektur', gebaeudetechnik: 'Gebäudetechnik', aendern: 'Ändern', ansicht: 'Ansicht', verwalten: 'Verwalten', kontext: 'Auswahl' };
+/** Dialog der Tastaturkürzel (KS): alle Aktionen mit Kürzel, nach Register geordnet (kuerzel-liste.js; seit N3 mit allen Registern des Menübands). */
 async function kuerzelDialog() {
-  const zeilen = [...aktionen.values()].filter((a) => a.kuerzel).map((a) => ({
-    titel: a.titel.replace(/[\u200b\u00ad]/g, ''), kuerzel: [a.kuerzel, ...a.kuerzelAlt].join(' / '), register: REGISTER_NAMEN[a.register] ?? 'Allgemein', hinweis: !a.aktiv?.() ? hinweisText(a) : '',
-  }));
-  const reihenfolge = Object.values(REGISTER_NAMEN);
-  const rang = (r) => { const i = reihenfolge.indexOf(r); return i < 0 ? 99 : i; };
-  zeilen.sort((x, y) => rang(x.register) - rang(y.register));
+  const zeilen = kuerzelZeilen([...aktionen.values()], hinweisText);
   const w = knoten(`<div><input type="search" class="k-suche" placeholder="Suchen …" data-kein-enter="1"><div class="k-tab"><table class="tab"><thead><tr><th>Befehl</th><th>Kürzel</th><th>Register</th><th></th></tr></thead><tbody>${zeilen.map((z) =>
     `<tr><td>${esc(z.titel)}</td><td><kbd>${esc(z.kuerzel)}</kbd></td><td>${esc(z.register)}</td><td class="leise">${esc(z.hinweis)}</td></tr>`).join('')}</tbody></table></div>
     <p class="leise">Wie in Revit: zwei Zeichen nacheinander tippen (ohne Eingabefeld im Fokus). Esc bricht ab und hebt die Auswahl auf. Eigene Kürzel folgen später.</p></div>`);
