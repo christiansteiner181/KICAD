@@ -240,6 +240,7 @@ api.MapGet("/ereignisse", async (HttpContext ctx) =>
 app.Lifetime.ApplicationStopping.Register(() => dienst.Schliessen().GetAwaiter().GetResult());
 app.MapStart(dienst);   // Startbildschirm (S1): StartEndpunkte.cs
 app.MapBenutzer(dienst);   // Benutzereinstellungen (G1): BenutzerEndpunkte.cs (z. B. primäre Gliederung des Projektbrowsers)
+app.MapAnleitung(dienst);   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hilfe/ und Prüfstand /api/hilfe/pruefung
 app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; hinter dem Schliessen angemeldet, damit beim Beenden zuerst die Läufe enden
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");

@@ -1,6 +1,7 @@
 // Tests der Hilfe (F1) ohne Browser: Schlüssel der Sprungziele (identisch mit der Anleitungsseite), Wahl des Kontexts und Bau der Adresse.
 // Aufruf:  node --test src/Hlks.Web/wwwroot/js/oberflaeche/hilfe.test.mjs
-// Die Anbindung an Oberfläche, F1 und window.open prüft hilfe.browser.mjs; die Adresse selbst kommt aus kataloge/buero.json (AnleitungApiTests.cs).
+// Die Anbindung an Oberfläche, F1 und window.open prüft hilfe.browser.mjs; Auslieferung unter /hilfe/ und Prüfstand prüfen AnleitungAuslieferungTests.cs,
+// PruefstandTests.cs und AnleitungApiTests.cs (Ordner aus kataloge/buero.json).
 
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
@@ -9,7 +10,7 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 
 const H = await import('./hilfe.js');
-const BASIS = 'https://claude.ai/artifact/5NEkGw76J5tk5sxFrbfbkq';
+const BASIS = '/hilfe/';   // KICAD liefert die Anleitung selbst aus (AnleitungEndpunkte.cs)
 
 test('Schlüssel: die vorgegebenen Werte', () => {
   assert.equal(H.hilfeSchluessel('Serien-PDF …'), 'serien-pdf');
@@ -78,6 +79,16 @@ test('Adresse: Fragment der Basisadresse fällt weg, Leerraum wird getrimmt', ()
   assert.equal(H.hilfeAdresse(`${BASIS}#alt`, { art: 'keiner' }), BASIS);
 });
 
+test('Adresse: Standardadresse /hilfe/ ist ein Pfad auf demselben Server (kein Schema, keine Fremdadresse)', () => {
+  for (const k of [{ art: 'keiner' }, { art: 'knopf', register: 'Ansicht', knopf: 'Serien-PDF …' }, { art: 'dialog', titel: 'Serien-PDF' }]) {
+    const a = H.hilfeAdresse(H.HILFE_URL, k);
+    assert.ok(a.startsWith('/hilfe/'), a);
+    assert.ok(!/^[a-z]+:/i.test(a) && !a.startsWith('//'), a);
+  }
+  assert.equal(H.hilfeAdresse(H.HILFE_URL, { art: 'knopf', register: 'Ansicht', knopf: 'Serien-PDF …' }), '/hilfe/#k-ansicht~serien-pdf');
+  assert.equal(H.hilfeAdresse(H.HILFE_URL, { art: 'dialog', titel: 'Serien-PDF' }), '/hilfe/#s-serien-pdf');
+});
+
 test('Adresse: fehlt die Basisadresse, ist das Ergebnis null (Meldung «nicht eingerichtet»)', () => {
   for (const b of [null, undefined, '', '   ', '#nur-fragment'])
     for (const k of [{ art: 'keiner' }, { art: 'knopf', register: 'Ansicht', knopf: 'Serien-PDF …' }, { art: 'dialog', titel: 'Serien-PDF' }])
@@ -87,7 +98,8 @@ test('Adresse: fehlt die Basisadresse, ist das Ergebnis null (Meldung «nicht ei
 test('Texte: Tooltip, letzte Zeile, Meldungen, Fenstername', () => {
   assert.equal(H.HILFE_TOOLTIP, 'Hilfe – Bedienungsanleitung (F1)');
   assert.equal(H.HILFE_ZEILE, 'F1: Hilfe zu diesem Befehl');
-  assert.equal(H.HILFE_NICHT_EINGERICHTET, 'Die Bedienungsanleitung ist noch nicht eingerichtet.');
+  assert.equal(H.HILFE_NICHT_EINGERICHTET, 'Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.');
+  assert.equal(H.HILFE_URL, '/hilfe/');
   assert.equal(H.hilfeBlockiert(BASIS), `Das Hilfefenster wurde blockiert – Adresse: ${BASIS}`);
   assert.equal(H.HILFE_FENSTER, 'kicad-hilfe');
 });

@@ -13,7 +13,7 @@ public sealed class TestUmgebung : IDisposable
 {
     /// <summary>Alle Variablen, von denen Bibliotheks-, Ablage- und Zuletzt-Verhalten abhängen.</summary>
     public static readonly string[] Alle =
-        ["HLKS_FAMILIENBIBLIOTHEK", "HLKS_BIBLIOTHEK_AUSSTEHEND", "HLKS_PROJEKTABLAGE", "HLKS_ZULETZT", "HLKS_BENUTZER", "HLKS_TEST"];
+        ["HLKS_FAMILIENBIBLIOTHEK", "HLKS_BIBLIOTHEK_AUSSTEHEND", "HLKS_PROJEKTABLAGE", "HLKS_ZULETZT", "HLKS_BENUTZER", "HLKS_ANLEITUNG", "HLKS_ANLEITUNG_PRUEFUNG", "HLKS_TEST"];
 
     readonly List<(string Name, string? Alt)> alt = [];
     bool fertig;
@@ -34,7 +34,7 @@ public sealed class TestUmgebung : IDisposable
 
     /// <summary>Löscht die vier Ablage-/Bibliotheksvariablen (HLKS_TEST bleibt gesetzt, wie der Kern es im Testrunner verlangt).</summary>
     public static TestUmgebung Ohne() =>
-        Setzen(("HLKS_FAMILIENBIBLIOTHEK", null), ("HLKS_BIBLIOTHEK_AUSSTEHEND", null), ("HLKS_PROJEKTABLAGE", null), ("HLKS_ZULETZT", null), ("HLKS_BENUTZER", null));
+        Setzen(("HLKS_FAMILIENBIBLIOTHEK", null), ("HLKS_BIBLIOTHEK_AUSSTEHEND", null), ("HLKS_PROJEKTABLAGE", null), ("HLKS_ZULETZT", null), ("HLKS_BENUTZER", null), ("HLKS_ANLEITUNG", null), ("HLKS_ANLEITUNG_PRUEFUNG", null));
 
     public void Dispose()
     {

@@ -1,8 +1,11 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>KICAD Bedienungsanleitung</title>
-<meta name="claude:viewport-fit-sides" content="cover">
-<link rel="preconnect" href="https://fonts.googleapis.com">
-<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<!-- Die Seite wird von KICAD unter /hilfe/ ausgeliefert (ohne Anmeldung, ohne Internet): keine Webschriften, keine fremden Adressen.
+     Die Schriftlisten unten fallen auf Segoe UI / Arial Narrow / Consolas zurück. -->
 <style>
 /* Aufbau: links das Inhaltsverzeichnis wie ein Planverzeichnis, rechts die Kapitel; jedes Kapitel öffnet mit einem
    Plankopf (Modul, Funktionen, geprüft, Mängel), darunter je Funktion eine Karte: Ort im Menüband, Schritte, Bild, Prüfpunkte. */
@@ -26,7 +29,7 @@
 
 * { box-sizing: border-box; }
 html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
-body { background: var(--papier); color: var(--tinte); font: 16px/1.55 var(--schrift-text); }
+body { margin: 0; background: var(--papier); color: var(--tinte); font: 16px/1.55 var(--schrift-text); }
 a { color: var(--akzent); }
 :focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 h1, h2, h3 { font-family: var(--schrift-titel); text-wrap: balance; margin: 0; line-height: 1.15; }
@@ -148,6 +151,8 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
 }
 @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
 </style>
+</head>
+<body>
 
 <header class="kopf">
   <div class="kopf-innen">
@@ -185,8 +190,9 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
   'use strict';
   const DATEN = JSON.parse(document.getElementById('daten').textContent);
   const LOKAL = 'kicad-anleitung-pruefung-v1';
-  const zustand = {};        // funktionId -> { punkte: { "0": "ok" | "mangel" }, notiz: "" }
-  let speicher = null;       // db-Namespace, sonst null (dann nur dieser Browser)
+  const zustand = {};        // funktionId -> { punkte: { "0": "ok" | "mangel" }, notiz: "", geaendert: ISO-Zeit der letzten Änderung hier }
+  const PRUEFUNG = '/api/hilfe/pruefung';   // Prüfstand in KICAD: GET alle, PUT je Funktion (Häkchen und Notizen je Benutzer, über OneDrive)
+  let serverBereit = false;  // Prüfstand von KICAD gelesen? Nur dann wird dorthin geschrieben, sonst nur in diesem Browser
   let filter = 'alle';
   let suchtext = '';
   const warteschlange = {};  // funktionId -> Promise (eine Schreibung je Dokument zugleich)
@@ -246,7 +252,7 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
         el('li', { text: 'KICAD über das Desktop-Symbol «KICAD» starten. Es startet genau diesen Stand.' }),
         el('li', { text: 'Je Funktion: Ort im Menüband suchen (Register › Gruppe › Knopf, Kürzel), Schritte ausführen, Ergebnis mit «Erwartung» und Bild vergleichen.' }),
         el('li', {}, 'Jeden Prüfpunkt mit ', el('kbd', { text: '✓' }), ' (stimmt) oder ', el('kbd', { text: '✗' }), ' (Mangel) markieren. Bei einem Mangel kurz in die Notiz schreiben, was anders war.'),
-        el('li', { text: 'Ihre Markierungen bleiben gespeichert. Claude liest sie und behebt die Mängel vor dem nächsten Modul.' })));
+        el('li', { text: 'Ihre Markierungen speichert KICAD je Benutzer; Claude liest sie und behebt die Mängel vor dem nächsten Modul.' })));
   }
 
   function baueKapitel(k, ki) {
@@ -302,7 +308,7 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
         ul.append(li);
       });
       const ta = el('textarea', { id: 'notiz-' + docId(f.id), rows: '1', placeholder: 'Was war anders? (optional)' });
-      ta.addEventListener('input', () => { (zustand[f.id] ||= { punkte: {} }).notiz = ta.value; plane(f.id); });
+      ta.addEventListener('input', () => { const st = (zustand[f.id] ||= { punkte: {} }); st.notiz = ta.value; st.geaendert = new Date().toISOString(); plane(f.id); });
       art.append(el('div', { class: 'pruef' }, el('h4', { text: 'Prüfpunkte' }), ul,
         el('div', { class: 'notiz' }, el('label', { for: 'notiz-' + docId(f.id), text: 'Notiz' }), ta)));
     }
@@ -388,29 +394,42 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
     const st = (zustand[f.id] ||= { punkte: {} });
     st.punkte = { ...(st.punkte || {}) };
     if (st.punkte[i] === wert) delete st.punkte[i]; else st.punkte[i] = wert;
+    st.geaendert = new Date().toISOString();
     zeigeFunktion(f); zeigeZahlen();
     plane(f.id);
   }
   function plane(id) {
+    lokalSchreiben();   // der Browserspeicher ist sofort aktuell; zum Server geht es nach 700 ms Ruhe
     clearTimeout(zeitgeber[id]);
-    zeitgeber[id] = setTimeout(() => schreibe(id), 700);
+    zeitgeber[id] = setTimeout(() => { delete zeitgeber[id]; schreibe(id); }, 700);
   }
   function lokalSchreiben() {
     try { localStorage.setItem(LOKAL, JSON.stringify(zustand)); } catch { /* ohne Browserspeicher */ }
   }
+  // Je Funktion eine Schreibung zugleich (Warteschlange); Fehler heissen «nur in diesem Browser», die nächste Änderung versucht es erneut.
   function schreibe(id) {
     lokalSchreiben();
-    if (!speicher) return;
+    if (!serverBereit) { setzeSpeicherText('Nur in diesem Browser gespeichert', true); return; }
     const st = zustand[id] || { punkte: {} };
     const f = funktionNach.get(id);
-    const koerper = { id, titel: f?.titel || id, punkte: st.punkte || {}, notiz: st.notiz || '', stand: DATEN.stand?.commit || '', geaendert: new Date().toISOString() };
+    const koerper = { titel: f?.titel || id, punkte: st.punkte || {}, notiz: st.notiz || '', stand: DATEN.stand?.commit || '' };
     if (f) koerper.texte = Object.fromEntries(Object.keys(koerper.punkte).map(i => [i, f.pruefpunkte[i]]));
     const vorher = warteschlange[id] || Promise.resolve();
-    warteschlange[id] = vorher.then(() => speicher.doc('pruefung/' + docId(id)).set(koerper)).then(
-      () => setzeSpeicherText('Gespeichert', false),
-      e => { setzeSpeicherText(e?.code === 'quota_exceeded' ? 'Speicher voll – nur in diesem Browser' : 'Nicht gespeichert – nur in diesem Browser', true); });
+    warteschlange[id] = vorher.then(() => fetch(PRUEFUNG + '/' + encodeURIComponent(docId(id)), {
+      method: 'PUT', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(koerper), keepalive: true,
+    })).then(
+      async r => {
+        if (r.ok) { setzeSpeicherText('Gespeichert in KICAD', false); return; }
+        let m = ''; try { m = (await r.json()).fehler || ''; } catch { /* ohne Text */ }
+        setzeSpeicherText('Nicht gespeichert – nur in diesem Browser' + (m ? ' (' + m + ')' : ''), true);
+      },
+      () => setzeSpeicherText('Nicht gespeichert – nur in diesem Browser', true));
   }
   function setzeSpeicherText(t, warnung) { const s = $('#speicher'); s.textContent = t; s.classList.toggle('warnung', !!warnung); }
+  // Seite wird verlassen oder versteckt: Eingaben, die noch auf die 700 ms warten, sofort senden
+  function sendeAusstehende() { for (const id of Object.keys(zeitgeber)) { clearTimeout(zeitgeber[id]); delete zeitgeber[id]; schreibe(id); } }
+  window.addEventListener('pagehide', sendeAusstehende);
+  document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden') sendeAusstehende(); });
 
   const funktionNach = new Map();
   for (const k of DATEN.kapitel) for (const f of k.funktionen) funktionNach.set(f.id, f);
@@ -464,7 +483,10 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
     } else {
       suchtext = (treffer.length ? String(treffer[0].wo.knopf).split(/\s+\/\s+|,\s*/).find(t => hilfeSchluessel(t) === knopf) : knopf.replace(/-/g, ' ')).replace(/\s*…\s*/g, ' ').trim();
       $('#suchfeld').value = suchtext; filtern();
-      const erste = document.querySelector('article.funktion:not([hidden])'); if (erste) erste.scrollIntoView({ block: 'start' });
+      // Mehrere Funktionen zum selben Knopf: alle als Ziel markieren, zur ersten springen (sonst zur ersten sichtbaren)
+      for (const f of treffer) document.getElementById('f-' + f.id)?.classList.add('ziel');
+      const erste = (treffer.length && document.getElementById('f-' + treffer[0].id)) || document.querySelector('article.funktion:not([hidden])');
+      if (erste) erste.scrollIntoView({ block: 'start' });
     }
   }
   window.addEventListener('hashchange', springe);
@@ -474,23 +496,33 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
   baueSeite(); indexiere(); alleZeigen();
   springe();
 
+  // Prüfstand von KICAD laden (nur wenn die Seite von KICAD kommt; als Datei geöffnet bleibt es beim Browserspeicher).
+  // Je Funktion gilt der jüngere Stand: der des Servers (alle Rechner des Benutzers zusammengeführt) oder der lokale in diesem Browser;
+  // was nur lokal vorhanden ist (oder jünger), geht einmal an den Server.
   (async () => {
-    const db = window.claude?.use ? await window.claude.use('db').catch(() => null) : null;
-    if (!db) { setzeSpeicherText('Nur in diesem Browser gespeichert', true); return; }
-    speicher = db;
-    setzeSpeicherText('Gespeichert im Artifact', false);
-    let erstes = true;
-    db.collection('pruefung').onSnapshot(snap => {
-      for (const d of snap.docs) {
-        const id = idNachDoc.get(d.id); if (!id) continue;
-        const body = d.data() || {};
-        if (zeitgeber[id] && !erstes) continue;   // eigene Eingabe läuft noch
-        zustand[id] = { punkte: { ...(body.punkte || {}) }, notiz: body.notiz || '' };
-      }
-      if (erstes && snap.empty) for (const id of Object.keys(zustand)) if (funktionNach.has(id)) schreibe(id);   // Lokales einmal übernehmen
-      erstes = false;
-      lokalSchreiben(); alleZeigen();
-    }, e => setzeSpeicherText(e?.code === 'revoked' ? 'Speicher getrennt – nur in diesem Browser' : 'Speicher nicht erreichbar – nur in diesem Browser', true));
+    if (!/^https?:$/.test(location.protocol)) { setzeSpeicherText('Nur in diesem Browser gespeichert', true); return; }
+    let antwort;
+    try {
+      const r = await fetch(PRUEFUNG, { cache: 'no-store' });
+      if (!r.ok) throw new Error('HTTP ' + r.status);
+      antwort = await r.json();
+    } catch { setzeSpeicherText('Nur in diesem Browser gespeichert', true); return; }
+    serverBereit = !antwort?.hinweis;   // «hinweis» = der Server liest/schreibt den Prüfstand gerade nicht (Testlauf)
+    const eintraege = antwort?.eintraege || {};
+    const zeit = s => { const t = Date.parse(s || ''); return Number.isNaN(t) ? 0 : t; };
+    const hochladen = [];
+    for (const [docKey, e] of Object.entries(eintraege)) {
+      const id = idNachDoc.get(docKey); if (!id) continue;
+      const lokal = zustand[id];
+      if (lokal && zeit(lokal.geaendert) > zeit(e.geaendert)) { hochladen.push(id); continue; }   // lokal jünger
+      zustand[id] = { punkte: { ...(e.punkte || {}) }, notiz: e.notiz || '', geaendert: e.geaendert || '' };
+    }
+    for (const id of Object.keys(zustand)) if (funktionNach.has(id) && !(docId(id) in eintraege) && (Object.keys(zustand[id].punkte || {}).length || zustand[id].notiz)) hochladen.push(id);
+    lokalSchreiben(); alleZeigen();
+    setzeSpeicherText(serverBereit ? 'Gespeichert in KICAD' : 'Nur in diesem Browser gespeichert', !serverBereit);
+    for (const id of hochladen) schreibe(id);
   })();
 })();
 </script>
+</body>
+</html>

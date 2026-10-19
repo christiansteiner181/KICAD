@@ -64,7 +64,7 @@ if (EIGENER_SERVER) {
       HLKS_CLAUDE_EXE: path.join(BAU, 'Hlks.ClaudeAttrappe', 'bin', 'Debug', 'net10.0', 'Hlks.ClaudeAttrappe.exe'),
       HLKS_MCP_DLL: path.join(BAU, 'Hlks.Mcp', 'bin', 'Debug', 'net10.0', 'Hlks.Mcp.dll'),
       HLKS_ATTRAPPE_DEFINITION: DEFPFAD,
-      HLKS_FAMILIENBIBLIOTHEK: FAMBIB, HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(arbeit, 'ausstehend'), HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage'),   // nie auf W: oder nach kataloge/familien schreiben
+      HLKS_FAMILIENBIBLIOTHEK: FAMBIB, HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(arbeit, 'ausstehend'), HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ANLEITUNG: path.join(arbeit, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(arbeit, 'anleitung_pruefung'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage'),   // nie auf W: oder nach kataloge/familien schreiben
     },
     stdio: 'ignore',
   });

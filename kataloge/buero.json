@@ -14,7 +14,7 @@
     "hinweis": "Nur lesen (Suche nach projekt.json). Tests setzen HLKS_PROJEKTABLAGE auf einen Ordner unter %TEMP%."
   },
   "anleitung": {
-    "url": "https://claude.ai/artifact/5NEkGw76J5tk5sxFrbfbkq",
-    "hinweis": "Bedienungsanleitung (privates Artifact); Sprungziele #k-<register>~<knopf>, #s-<suchwörter>"
+    "ordner": "%USERPROFILE%\\HLKS_CAD_anleitung",
+    "hinweis": "Bedienungsanleitung, von KICAD unter /hilfe/ ausgeliefert; erzeugt mit werkzeuge/anleitung_bauen.mjs (Desktop-Start baut sie mit); lokal, nie OneDrive (Bilder echter Projekte). Sprungziele #k-<register>~<knopf>, #s-<suchwörter>. Umgebungsvariable HLKS_ANLEITUNG übersteuert den Ordner (Tests)."
   }
 }

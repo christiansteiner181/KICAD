@@ -34,7 +34,7 @@ const arbeit = mkdtempSync(path.join(tmpdir(), 'hlks_g1_'));
 const PROJEKT = path.join(arbeit, 'Worb_Testobjekt', 'c_Plaene und Modelle', 'e_KICAD');
 const BENUTZER_A = path.join(arbeit, 'benutzer_anna');
 const BENUTZER_B = path.join(arbeit, 'benutzer_beat');
-const ENV = { HLKS_TEST: '1', HLKS_BENUTZER: BENUTZER_A, HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_FAMILIENBIBLIOTHEK: path.join(arbeit, 'familienbibliothek'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage') };
+const ENV = { HLKS_TEST: '1', HLKS_BENUTZER: BENUTZER_A, HLKS_ANLEITUNG: path.join(arbeit, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(arbeit, 'anleitung_pruefung'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_FAMILIENBIBLIOTHEK: path.join(arbeit, 'familienbibliothek'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage') };
 const FIKTIV = 'FIKTIV – Testwert G1, keine Projektvorgabe';
 
 let ok = 0, schlecht = 0;

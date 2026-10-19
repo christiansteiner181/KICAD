@@ -1,21 +1,29 @@
 // Browser-Integrationstest der Hilfe (F1 und Symbol «?»): Edge headless über CDP, echte Maus- und Tastaturereignisse.
-// Nicht Teil von «node --test». Der Test baut seine Umgebung selbst auf (Beispielprojekt, Server) und räumt nicht weg:
+// Nicht Teil von «node --test». Der Test baut seine Umgebung selbst auf (Beispielprojekt, Server, Anleitung) und räumt nicht weg:
 //   %TEMP%\HLKS_CAD\hilfe_test\ablage\Test_Hilfe 1\c_Pläne und Modelle\e_KICAD   Beispielprojekt (Mcp --beispiel)
-//   %TEMP%\HLKS_CAD\hilfe_test\bib, \aus, \zuletzt, \katalog2                    Familienbibliothek, ausstehende Familien, Liste «zuletzt», Kataloge ohne Anleitung
+//   %TEMP%\HLKS_CAD\hilfe_test\bib, \aus, \zuletzt, \katalog2                    Familienbibliothek, ausstehende Familien, Liste «zuletzt», Kataloge für Server 2
+//   %TEMP%\HLKS_CAD\hilfe_test\anleitung                                         die Anleitung, gebaut mit werkzeuge/anleitung_bauen.mjs aus berichte/anleitung/inventar.json
+//                                                                                (HLKS_ANLEITUNG; Bild: ein erzeugtes PNG, keine Bilder echter Projekte)
+//   %TEMP%\HLKS_CAD\hilfe_test\pruefung                                          Prüfstand der Anleitung (Häkchen, Notizen; HLKS_ANLEITUNG_PRUEFUNG)
 // Die Oberfläche wird aus einer Kopie ausgeliefert (HLKS_WEBROOT = …\hilfe_test\wwwroot, Dateiwächter des Servers, siehe menueband.browser.mjs).
-// Der Server läuft mit HLKS_TEST=1, HLKS_BENUTZER, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE und HLKS_ZULETZT unter %TEMP%: nie auf W:.
-// Die Anleitung selbst (claude.ai) wird nie aufgerufen: window.open ist durch einen Stub ersetzt, der die Aufrufe sammelt.
+// Der Server läuft mit HLKS_TEST=1, HLKS_BENUTZER, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE, HLKS_ZULETZT, HLKS_ANLEITUNG und
+// HLKS_ANLEITUNG_PRUEFUNG unter %TEMP%: nie auf W:, nie in %OneDrive%\HLKS-CAD oder %USERPROFILE%\HLKS_CAD_anleitung.
+// Für die Abläufe von F1 und «?» ist window.open durch einen Stub ersetzt, der die Aufrufe sammelt; der Abschnitt «Echte Hilfeseite» öffnet das Fenster
+// wirklich (Stub weg) und prüft die ausgelieferte Seite im neuen Fenster per CDP.
 // Aufruf:  node hilfe.browser.mjs        (Port 5196, zweiter Server 5197; HLKS_BUILD/HLKS_BAU wie beim Bauen, Vorgabe %USERPROFILE%\HLKS_CAD_build)
 // Umgebung: SHOTS=<Ordner für Bilder> (Vorgabe %TEMP%\HLKS_CAD), HLKS_CDP_PORT (9540), HLKS_EDGE, HLKS_KATALOG (Vorgabe: kataloge/ dieses Quellbaums)
-// Prüft: Adresse kommt mit /api/start/info; Klick auf «?» → Basisadresse (ohne Sprungziel, immer dasselbe Fenster «kicad-hilfe»); Maus über «Serien-PDF …»
-// (Register Ansicht) + F1 → #k-ansicht~serien-pdf; Knopf in zusammengeklappter Gruppe (Flyout); Tastaturfokus auf einem Knopf (Schnellzugriff); Kontextregister
+// Prüft: Adresse/Vorhandensein kommt mit /api/start/info; Klick auf «?» → /hilfe/ (ohne Sprungziel, immer dasselbe Fenster «kicad-hilfe»); Maus über «Serien-PDF …»
+// (Register Ansicht) + F1 → /hilfe/#k-ansicht~serien-pdf; Knopf in zusammengeklappter Gruppe (Flyout); Tastaturfokus auf einem Knopf (Schnellzugriff); Kontextregister
 // «Ändern | <Klasse>»; offener Dialog + F1 → #s-<Titel> (Dialog geht vor dem Knopf unter dem Zeiger); F1 ohne Kontext; preventDefault; Pop-up gesperrt → Meldung
-// mit Adresse; Adresse fehlt (Katalog ohne «anleitung», Startbildschirm ohne Projekt) → Meldung «noch nicht eingerichtet»; «?» auf dem Startbildschirm über dem
-// offenen Projekt und im Zweitfenster; Tooltips «F1: Hilfe zu diesem Befehl» (Band, Flyout, Schnellzugriff; nicht bei «Zuletzt geöffnet»); Bilder hilfe_*.png.
+// mit Adresse; Anleitung nicht erstellt (Server 2, Startbildschirm ohne Projekt) → Meldung «auf diesem Rechner noch nicht erstellt», /hilfe/ zeigt die kleine Seite;
+// «?» auf dem Startbildschirm über dem offenen Projekt und im Zweitfenster; Tooltips «F1: Hilfe zu diesem Befehl» (Band, Flyout, Schnellzugriff; nicht bei «Zuletzt
+// geöffnet»); Echte Hilfeseite: «?» öffnet /hilfe/ wirklich, F1 über «Serien-PDF …» markiert die Funktion (article.funktion.ziel), ein Prüfpunkt ✓ und eine Notiz
+// bleiben nach Neuladen (auch ohne Browserspeicher) und stehen per GET /api/hilfe/pruefung in der Ablage; Bilder hilfe_*.png und hilfe_lokal_*.png.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, cpSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, cpSync, existsSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
+import zlib from 'node:zlib';
 import { fileURLToPath } from 'node:url';
 import { hilfeSchluessel } from './hilfe.js';
 
@@ -51,17 +59,35 @@ const MCP = path.join(BUILD, 'Hlks.Mcp', 'bin', 'Debug', 'net10.0', 'Hlks.Mcp.dl
   const r = spawnSync(dotnet, [MCP, '--beispiel', projektOrdner], { encoding: 'utf8' });
   if (r.status !== 0) { console.error('Beispielprojekt nicht angelegt', r.stdout, r.stderr); process.exit(2); }
 }
-// Zweiter Katalogordner ohne «anleitung» (Adresse fehlt)
+// Zweiter Katalogordner (Server 2): die Anleitung ist dort nicht erstellt (HLKS_ANLEITUNG zeigt auf einen Ordner, den es nicht gibt)
 cpSync(KATALOG, KAT2, { recursive: true });
-writeFileSync(path.join(KAT2, 'buero.json'), '{ "beschreibung": "Test ohne Anleitung" }');
 const buero = JSON.parse(readFileSync(path.join(KATALOG, 'buero.json'), 'utf8'));
-const BASIS = buero.anleitung?.url;
-if (!BASIS) { console.error('kataloge/buero.json hat keine anleitung.url'); process.exit(2); }
+if (!buero.anleitung?.ordner || buero.anleitung.url) { console.error('kataloge/buero.json: anleitung.ordner fehlt oder anleitung.url ist noch da'); process.exit(2); }
+const BASIS = '/hilfe/';   // KICAD liefert die Anleitung selbst aus
 cpSync(path.resolve(hier, '../..'), path.join(WURZEL, 'wwwroot'), { recursive: true });
-const envBasis = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_BENUTZER: path.join(WURZEL, 'benutzer'), HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS };
+
+// Die Anleitung bauen wie der Desktop-Start: anleitung_bauen.mjs aus inventar.json, mit einem erzeugten PNG als Bild (keine echten Projekte)
+const ANLEITUNG = path.join(WURZEL, 'anleitung'), ANLEITUNG_FEHLT = path.join(WURZEL, 'anleitung_fehlt'), PRUEFUNG = path.join(WURZEL, 'pruefung');
+const BILDER = path.join(WURZEL, 'bilder_quelle');
+const REPO = path.resolve(hier, '../../../../..');
+const FUNKTION = 'zb-spdf-oeffnen';   // «Serien-PDF öffnen» (Register Ansicht, Knopf «Serien-PDF …»)
+{
+  mkdirSync(BILDER, { recursive: true });
+  // PNG 320 x 200 mit Verlauf (ohne Bibliothek: zlib + crc32 von Node)
+  const B = 320, H = 200, roh = Buffer.alloc((B * 3 + 1) * H);
+  for (let y = 0; y < H; y++) { roh[y * (B * 3 + 1)] = 0; for (let x = 0; x < B; x++) { const o = y * (B * 3 + 1) + 1 + x * 3; roh[o] = 40 + (x * 150 / B) | 0; roh[o + 1] = 90 + (y * 120 / H) | 0; roh[o + 2] = 180; } }
+  const teil = (typ, daten) => { const l = Buffer.alloc(4); l.writeUInt32BE(daten.length); const t = Buffer.concat([Buffer.from(typ), daten]); const c = Buffer.alloc(4); c.writeUInt32BE(zlib.crc32(t) >>> 0); return Buffer.concat([l, t, c]); };
+  const kopf = Buffer.alloc(13); kopf.writeUInt32BE(B, 0); kopf.writeUInt32BE(H, 4); kopf[8] = 8; kopf[9] = 2;
+  writeFileSync(path.join(BILDER, 'testbild.png'), Buffer.concat([Buffer.from([0x89, 0x50, 0x4e, 0x47, 0x0d, 0x0a, 0x1a, 0x0a]), teil('IHDR', kopf), teil('IDAT', zlib.deflateSync(roh)), teil('IEND', Buffer.alloc(0))]));
+  writeFileSync(path.join(BILDER, 'bilder.json'), JSON.stringify({ bilder: [{ datei: 'testbild.png', ids: [FUNKTION], breite: B, hoehe: H, projekt: 'beispiel', markierung: false, titel: 'Testbild (erzeugt)' }] }));
+  const r = spawnSync(process.execPath, [path.join(REPO, 'werkzeuge', 'anleitung_bauen.mjs'), '--repo', REPO, '--aus', ANLEITUNG, '--bilder', BILDER, '--commit', 'hilfetest', '--datum', '19.10.2026'], { encoding: 'utf8' });
+  if (r.status !== 0) { console.error('Anleitung nicht gebaut', r.stdout, r.stderr); process.exit(2); }
+  console.log('  ', r.stdout.trim());
+}
+const envBasis = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_BENUTZER: path.join(WURZEL, 'benutzer'), HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS, HLKS_ANLEITUNG_PRUEFUNG: PRUEFUNG };
 const WEB = path.join(BUILD, 'Hlks.Web', 'bin', 'Debug', 'net10.0', 'Hlks.Web.dll');
-const server = spawn(dotnet, [WEB, '--port', String(PORT), '--projekt', projektOrdner, '--akteur', 'H', '--geraet', 'h-test'], { env: { ...envBasis, HLKS_KATALOG: KATALOG, HLKS_ZULETZT: ZULETZT }, stdio: 'ignore' });
-const server2 = spawn(dotnet, [WEB, '--port', String(PORT2), '--akteur', 'H', '--geraet', 'h-test2'], { env: { ...envBasis, HLKS_KATALOG: KAT2, HLKS_ZULETZT: ZULETZT2 }, stdio: 'ignore' });
+const server = spawn(dotnet, [WEB, '--port', String(PORT), '--projekt', projektOrdner, '--akteur', 'H', '--geraet', 'h-test'], { env: { ...envBasis, HLKS_KATALOG: KATALOG, HLKS_ZULETZT: ZULETZT, HLKS_ANLEITUNG: ANLEITUNG }, stdio: 'ignore' });
+const server2 = spawn(dotnet, [WEB, '--port', String(PORT2), '--akteur', 'H', '--geraet', 'h-test2'], { env: { ...envBasis, HLKS_KATALOG: KAT2, HLKS_ZULETZT: ZULETZT2, HLKS_ANLEITUNG: ANLEITUNG_FEHLT }, stdio: 'ignore' });
 for (const s of [SERVER, SERVER2]) for (let i = 0; i < 80; i++) { try { if ((await fetch(`${s}/api/status`)).ok) break; } catch { /* warten */ } await warte(250); }
 // Zwei Planblätter (FIKTIV), damit «Serien-PDF …» verfügbar ist und seinen Dialog öffnet
 for (const [nummer, titel] of [['1-0001 H01', 'Heizung Erdgeschoss'], ['1-0001 S01', 'Sanitär Erdgeschoss']]) {
@@ -158,14 +184,54 @@ const meldungen = () => ausw(`return [...document.querySelectorAll('#meldungen .
 const meldungenLeeren = () => ausw(`document.querySelectorAll('#meldungen .meldung').forEach((m) => m.remove()); return 1;`);
 const REGISTERNAME = { datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', gebaeudetechnik: 'Gebäudetechnik', einfuegen: 'Einfügen', beschriften: 'Beschriften', aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', verwalten: 'Verwalten' };
 
+/** Verbindung zu einem weiteren Fenster (Ziel) des Browsers, hier dem Hilfefenster; sammelt Ausnahmen der Seite. */
+async function verbinde(wsUrl) {
+  const w = new WebSocket(wsUrl);
+  await new Promise((r) => (w.onopen = r));
+  let n = 0; const wartend = new Map(); const ausnahmen = [];
+  w.onmessage = (m) => {
+    const d = JSON.parse(m.data);
+    if (d.id && wartend.has(d.id)) { wartend.get(d.id)(d); wartend.delete(d.id); return; }
+    if (d.method === 'Runtime.exceptionThrown') ausnahmen.push(d.params.exceptionDetails.exception?.description ?? d.params.exceptionDetails.text);
+  };
+  const s = (method, params = {}) => new Promise((res, rej) => { const id = ++n; wartend.set(id, (d) => (d.error ? rej(new Error(JSON.stringify(d.error))) : res(d.result))); w.send(JSON.stringify({ id, method, params })); });
+  const e = async (expr) => {
+    const r = await s('Runtime.evaluate', { expression: `(async()=>{${expr}})()`, awaitPromise: true, returnByValue: true });
+    if (r.exceptionDetails) throw new Error(r.exceptionDetails.exception?.description ?? r.exceptionDetails.text);
+    return r.result.value;
+  };
+  await s('Runtime.enable'); await s('Page.enable');
+  return { send: s, ausw: e, ausnahmen, zu: () => w.close() };
+}
+const seiten = async () => (await (await fetch(`http://127.0.0.1:${CDPPORT}/json/list`)).json()).filter((t) => t.type === 'page');
+const INVENTAR = JSON.parse(readFileSync(path.join(REPO, 'berichte', 'anleitung', 'inventar.json'), 'utf8').replace(/^﻿/, ''));
+const INVENTAR_FUNKTIONEN = INVENTAR.kapitel.flatMap((k) => k.funktionen);
+const F_INV = INVENTAR_FUNKTIONEN.find((f) => f.id === FUNKTION);
+
 try {
   // ================================================================== Adresse vom Server
-  abschnitt('Adresse der Anleitung kommt vom Server');
+  abschnitt('Anleitung wird von KICAD selbst ausgeliefert');
   const infoServer = await (await fetch(`${SERVER}/api/start/info`)).json();
-  pruef(infoServer.anleitung?.url === BASIS && /^https:\/\/claude\.ai\/artifact\//.test(BASIS), '/api/start/info liefert anleitung.url aus kataloge/buero.json', JSON.stringify(infoServer.anleitung));
-  pruef(/#k-<register>~<knopf>/.test(infoServer.anleitung?.hinweis ?? ''), '…und den Hinweis mit den Sprungzielen');
+  pruef(infoServer.anleitung?.url === BASIS && infoServer.anleitung?.vorhanden === true, '/api/start/info: anleitung { url: "/hilfe/", vorhanden: true }', JSON.stringify(infoServer.anleitung));
+  pruef(/#k-<register>~<knopf>/.test(infoServer.anleitung?.hinweis ?? ''), '…und der Hinweis mit den Sprungzielen aus kataloge/buero.json');
+  pruef(path.resolve(infoServer.anleitung?.ordner ?? '') === path.resolve(ANLEITUNG), '…der Ordner ist der über HLKS_ANLEITUNG gesetzte (nicht der echte)', infoServer.anleitung?.ordner);
   const info2 = await (await fetch(`${SERVER2}/api/start/info`)).json();
-  pruef(info2.anleitung == null, 'Katalog ohne «anleitung»: anleitung ist null', JSON.stringify(info2.anleitung));
+  pruef(info2.anleitung?.url === BASIS && info2.anleitung?.vorhanden === false, 'Server 2 (Anleitung nicht erstellt): vorhanden ist false', JSON.stringify(info2.anleitung));
+  const seite = await fetch(`${SERVER}${BASIS}`);
+  const seiteText = await seite.text();
+  pruef(seite.status === 200 && /^text\/html/.test(seite.headers.get('content-type') ?? '') && seiteText.includes('KICAD Bedienungsanleitung') && !/fonts\.googleapis|claude\.ai/.test(seiteText), 'GET /hilfe/ liefert die Anleitungsseite (HTML, ohne Webschriften und ohne claude.ai)', String(seite.status));
+  pruef((seite.headers.get('cache-control') ?? '').includes('no-cache'), '…mit Cache-Control: no-cache');
+  const bild = await fetch(`${SERVER}${BASIS}bilder/testbild.png`);
+  pruef(bild.status === 200 && bild.headers.get('content-type') === 'image/png' && (await bild.arrayBuffer()).byteLength > 100, 'GET /hilfe/bilder/testbild.png liefert das Bild');
+  const weiter = await fetch(`${SERVER}/hilfe`, { redirect: 'manual' });
+  pruef(weiter.status === 302 && weiter.headers.get('location') === '/hilfe/', 'GET /hilfe leitet auf /hilfe/ weiter', `${weiter.status} ${weiter.headers.get('location')}`);
+  const aus = await fetch(`${SERVER}/hilfe/..%5c..%5cindex.html`);   // (../ in der Adresse wertet schon der Client aus; die Rückwärts-Schrägstriche kommen beim Server an)
+  pruef([400, 404].includes(aus.status), 'Pfad-Ausbruch aus /hilfe/ (..\\..\\) wird abgelehnt', String(aus.status));
+  const fehlt = await fetch(`${SERVER2}${BASIS}`);
+  const fehltText = await fehlt.text();
+  pruef(fehlt.status === 404 && fehltText.includes('noch nicht erstellt') && fehltText.includes('anleitung_bauen.mjs'), 'Server 2: GET /hilfe/ zeigt «noch nicht erstellt» mit dem Befehl zum Erzeugen', String(fehlt.status));
+  const pr0 = await (await fetch(`${SERVER}/api/hilfe/pruefung`)).json();
+  pruef(pr0.quelle === 'Umleitung' && path.resolve(pr0.ort) === path.resolve(PRUEFUNG) && Object.keys(pr0.eintraege).length === 0, 'Prüfstand: Umleitung nach %TEMP%, zu Beginn leer', JSON.stringify(pr0).slice(0, 200));
 
   // ================================================================== Symbol «?»
   abschnitt('Symbol «?» in der Kopfleiste');
@@ -398,8 +464,8 @@ try {
   pruef(a.length === 1 && a[0][0] === BASIS, 'F1 auf dem Startbildschirm öffnet die Anleitung', JSON.stringify(a));
   await shot('hilfe_start_dunkel', { x: 0, y: 0, width: aktuelleBreite, height: 200 });
 
-  // ================================================================== Adresse fehlt: Server ohne Projekt, Katalog ohne Anleitung
-  abschnitt('Adresse fehlt (Startbildschirm ohne Projekt)');
+  // ================================================================== Anleitung nicht erstellt: Server 2 (Startbildschirm ohne Projekt)
+  abschnitt('Anleitung auf diesem Rechner nicht erstellt (Server 2, Startbildschirm ohne Projekt)');
   await gehe(`${SERVER2}/`, { bandErwartet: false });
   await stub();
   await warteBis(() => ausw(`const s = document.getElementById('startbildschirm'); return !!s && !s.hidden;`), 'Startbildschirm ohne Projekt', 15000);
@@ -407,14 +473,14 @@ try {
   await klick('#hilfe-knopf');
   a = await aufrufe();
   m = await meldungen();
-  pruef(a.length === 0 && m.length === 1 && m[0].includes('Die Bedienungsanleitung ist noch nicht eingerichtet'), 'Ohne Adresse: «?» öffnet kein Fenster, Meldung «Die Bedienungsanleitung ist noch nicht eingerichtet»', JSON.stringify([a, m]));
+  pruef(a.length === 0 && m.length === 1 && m[0].includes('Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.'), 'Nicht erstellt: «?» öffnet kein Fenster, Meldung «Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.»', JSON.stringify([a, m]));
   await meldungenLeeren();
   await wegBewegen();
   await f1();
   a = await aufrufe();
   m = await meldungen();
-  pruef(a.length === 0 && m.length === 1 && m[0].includes('noch nicht eingerichtet'), 'Ohne Adresse: auch F1 meldet es und öffnet nichts', JSON.stringify([a, m]));
-  await shot('hilfe_meldung_nicht_eingerichtet', { x: aktuelleBreite - 520, y: 600, width: 520, height: 400 });
+  pruef(a.length === 0 && m.length === 1 && m[0].includes('noch nicht erstellt'), 'Nicht erstellt: auch F1 meldet es und öffnet nichts', JSON.stringify([a, m]));
+  await shot('hilfe_meldung_nicht_erstellt', { x: aktuelleBreite - 520, y: 600, width: 520, height: 400 });
 
   // ================================================================== Zweitfenster
   abschnitt('Zweitfenster (?ansicht=…&fenster=2)');
@@ -441,6 +507,152 @@ try {
   a = await aufrufe();
   pruef(a.length === 1 && a[0][0] === `${BASIS}#s-test-im-zweitfenster`, 'Zweitfenster: Dialog offen + F1 → #s-…', JSON.stringify(a));
   await alleDialogeZu();
+
+  // ================================================================== Echte Hilfeseite: Fenster wirklich öffnen (kein Stub)
+  abschnitt('Echte Hilfeseite: «?» öffnet /hilfe/ in einem neuen Fenster');
+  await gehe();   // frische Seite: window.open ist wieder das echte
+  await meldungenLeeren();
+  const vorher = new Set((await seiten()).map((t) => t.id));
+  await klick('#hilfe-knopf');
+  let hz = null;
+  await warteBis(async () => { hz = (await seiten()).find((t) => !vorher.has(t.id) && t.url.startsWith(`${SERVER}/hilfe/`)); return !!hz; }, 'Hilfefenster offen', 20000);
+  pruef(!!hz && hz.url === `${SERVER}/hilfe/`, '«?» öffnet wirklich ein Fenster auf http://localhost:<port>/hilfe/ (ohne Sprungziel)', hz?.url);
+  pruef((await meldungen()).length === 0, '…ohne Meldung «blockiert»', JSON.stringify(await meldungen()));
+  const H = await verbinde(hz.webSocketDebuggerUrl);
+  await H.send('Emulation.setDeviceMetricsOverride', { width: 1400, height: 900, deviceScaleFactor: 1, mobile: false });
+  const bereitH = () => H.ausw(`return document.readyState === 'complete' && document.querySelectorAll('article.funktion').length > 0 && !/verbunden/.test(document.getElementById('speicher').textContent);`);
+  await warteBis(bereitH, 'Hilfeseite aufgebaut', 20000);
+  // Bilder laden erst, wenn sie ins Blickfeld kommen (loading="lazy"): die Karte der Funktion zeigen und warten
+  await H.ausw(`document.getElementById('f-${FUNKTION}').scrollIntoView({ block: 'center', behavior: 'instant' }); return 1;`);
+  await warteBis(() => H.ausw(`const i = document.querySelector('#f-${FUNKTION} img'); return !!i && i.complete && i.naturalWidth > 0;`), 'Bild geladen', 10000).catch(() => {});
+  const hs = await H.ausw(`const f = document.getElementById('f-${FUNKTION}'); const img = f?.querySelector('img');
+    return { url: location.href, name: window.name, titel: document.title, funktionen: document.querySelectorAll('article.funktion').length, kapitel: document.querySelectorAll('section.kapitel').length,
+      speicher: document.getElementById('speicher').textContent, bildGeladen: !!img && img.complete && img.naturalWidth === 320, stand: document.getElementById('kopf-stand').textContent,
+      claude: typeof window.claude, fremd: [...document.querySelectorAll('link[href^="http"], script[src^="http"], img[src^="http"]')].length };`);
+  console.log('   Hilfeseite:', JSON.stringify(hs));
+  pruef(hs.titel === 'KICAD Bedienungsanleitung' && hs.name === 'kicad-hilfe', 'Die Seite ist die ausgelieferte Anleitung, im benannten Fenster «kicad-hilfe»', JSON.stringify([hs.titel, hs.name]));
+  pruef(hs.funktionen === INVENTAR_FUNKTIONEN.length && hs.funktionen > 100, `Alle ${INVENTAR_FUNKTIONEN.length} Funktionen aus inventar.json stehen auf der Seite`, String(hs.funktionen));
+  pruef(hs.bildGeladen, 'Das Bild der Funktion wird von /hilfe/bilder/… geladen (320 × 200)');
+  pruef(hs.speicher === 'Gespeichert in KICAD', 'Anzeige «Gespeichert in KICAD» (Prüfstand verbunden)', hs.speicher);
+  pruef(hs.claude === 'undefined' && hs.fremd === 0, 'Kein window.claude, keine fremden Adressen (ohne Internet lauffähig)', JSON.stringify([hs.claude, hs.fremd]));
+  pruef(/hilfetest/.test(hs.stand), 'Kopfzeile nennt den Stand (--commit)', hs.stand);
+  await H.send('Page.bringToFront').catch(() => {});
+  await H.ausw(`window.scrollTo({ top: 0, behavior: 'instant' }); return 1;`);
+  await warte(200);
+  const shotH = async (name) => { const r = await H.send('Page.captureScreenshot', { format: 'png' }); const f = path.join(SHOTS, name + '.png'); writeFileSync(f, Buffer.from(r.data, 'base64')); console.log('   Bild:', f); return f; };
+  await H.ausw(`document.documentElement.dataset.theme = 'light'; return 1;`);
+  await warte(300);
+  await shotH('hilfe_lokal_anfang_hell');
+
+  // ---------------------------------------------------------------- F1 über «Serien-PDF …» → Funktion markiert, gleiches Fenster
+  abschnitt('Echte Hilfeseite: F1 über «Serien-PDF …» markiert die Funktion');
+  await meldungenLeeren();
+  await registerWahl('Ansicht');
+  await ueber('.mb-feld .mb-knopf[data-id="plan.serienpdf"]');
+  await f1();
+  await warteBis(() => H.ausw(`return location.hash === '#k-ansicht~serien-pdf' && !!document.querySelector('article.funktion.ziel');`), 'F1: Sprungziel in der Hilfeseite', 15000);
+  await warte(900);   // die Seite scrollt sanft
+  const ziel = await H.ausw(`const z = [...document.querySelectorAll('article.funktion.ziel')].map((a) => a.id); const s = document.getElementById('f-${FUNKTION}'); const r = s.getBoundingClientRect();
+    return { hash: location.hash, ziele: z, sichtbar: r.top >= 0 && r.top < 400, verborgen: s.hidden, suche: document.getElementById('suchfeld').value };`);
+  console.log('   Ziel:', JSON.stringify(ziel));
+  // Im Inventar tragen zwei Funktionen genau den Knopf «Serien-PDF …» (Öffnen, Satz merken): die Seite markiert beide und springt zur ersten
+  pruef(ziel.hash === '#k-ansicht~serien-pdf' && ziel.ziele.length >= 1 && ziel.ziele[0] === `f-${FUNKTION}`, 'F1 über «Serien-PDF …» (Ansicht): article.funktion.ziel markiert «Serien-PDF öffnen» (als erste)', JSON.stringify(ziel));
+  pruef(ziel.sichtbar && !ziel.verborgen, '…und die Karte steht im sichtbaren Bereich', JSON.stringify(ziel));
+  pruef((await seiten()).filter((t) => t.url.startsWith(`${SERVER}/hilfe/`)).length === 1, 'Es blieb bei einem Hilfefenster (kein zweites geöffnet)');
+  await meldungenLeeren();
+  await wegBewegen();
+  await alleDialogeZu();
+  // und die Suche aus einem Dialog (#s-…): kein Treffer-Ziel, aber die Funktion «Serien-PDF öffnen» bleibt unter den Treffern
+  await ausw(`const d = await import('/js/oberflaeche/dialoge.js'); d.zeigen({ titel: 'Serien-PDF', inhalt: '<p>x</p>' }); await new Promise((r) => setTimeout(r, 200)); return 1;`);
+  await f1();
+  await warteBis(() => H.ausw(`return location.hash === '#s-serien-pdf';`), 'F1 im Dialog: Suche', 15000);
+  const such = await H.ausw(`return { suche: document.getElementById('suchfeld').value, sichtbar: [...document.querySelectorAll('article.funktion:not([hidden])')].map((a) => a.id) };`);
+  pruef(such.suche === 'serien pdf' && such.sichtbar.includes(`f-${FUNKTION}`), 'Dialog «Serien-PDF» offen + F1 → die Seite sucht «serien pdf» und zeigt die Funktion', JSON.stringify(such).slice(0, 200));
+  await alleDialogeZu();
+  await H.ausw(`location.hash = '#k-ansicht~serien-pdf'; return 1;`);
+  await warteBis(() => H.ausw(`return location.hash === '#k-ansicht~serien-pdf' && !!document.querySelector('article.funktion.ziel');`), 'Sprungziel wieder', 10000);
+
+  // ---------------------------------------------------------------- Prüfpunkte und Notiz bleiben
+  abschnitt('Echte Hilfeseite: Häkchen und Notiz bleiben (Prüfstand in KICAD)');
+  const mausH = async (pos) => {
+    await H.send('Input.dispatchMouseEvent', { type: 'mouseMoved', x: pos.x, y: pos.y });
+    await H.send('Input.dispatchMouseEvent', { type: 'mousePressed', x: pos.x, y: pos.y, button: 'left', buttons: 1, clickCount: 1 });
+    await H.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: pos.x, y: pos.y, button: 'left', buttons: 0, clickCount: 1 });
+    await warte(200);
+  };
+  const mitteH = (sel) => H.ausw(`const e = document.querySelector(${JSON.stringify(sel)}); e.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };`);
+  const punktStatus = (i) => H.ausw(`const li = document.querySelector('#f-${FUNKTION} .pruef li[data-punkt="${i}"]'); return { ok: li.querySelector('.ok').getAttribute('aria-pressed'), mangel: li.querySelector('.mangel').getAttribute('aria-pressed') };`);
+  const pruefstand = async () => (await (await fetch(`${SERVER}/api/hilfe/pruefung`)).json());
+  pruef(F_INV.pruefpunkte.length >= 2, 'Die Funktion hat mindestens zwei Prüfpunkte', String(F_INV.pruefpunkte.length));
+
+  await mausH(await mitteH(`#f-${FUNKTION} .pruef li[data-punkt="0"] .ok`));
+  let ps = await punktStatus(0);
+  pruef(ps.ok === 'true', 'Klick auf ✓ bei Prüfpunkt 1 setzt das Häkchen auf der Seite', JSON.stringify(ps));
+  await mausH(await mitteH(`#f-${FUNKTION} .pruef li[data-punkt="1"] .mangel`));
+  await H.ausw(`const ta = document.getElementById('notiz-${FUNKTION}'); ta.scrollIntoView({ block: 'center', behavior: 'instant' }); ta.focus(); return 1;`);
+  await H.send('Input.insertText', { text: 'Dialog war «zu klein» – Größe prüfen' });
+  await warte(1800);   // 700 ms Ruhe, dann PUT
+  let pr = await pruefstand();
+  let e1 = pr.eintraege[FUNKTION];
+  console.log('   Prüfstand:', JSON.stringify(e1));
+  pruef(e1?.punkte?.['0'] === 'ok' && e1?.punkte?.['1'] === 'mangel', 'GET /api/hilfe/pruefung zeigt ✓ (Punkt 0) und ✗ (Punkt 1)', JSON.stringify(e1?.punkte));
+  pruef(e1?.notiz === 'Dialog war «zu klein» – Größe prüfen', '…und die Notiz mit Umlauten und Anführungszeichen', e1?.notiz);
+  pruef(e1?.texte?.['0'] === F_INV.pruefpunkte[0] && e1?.titel === F_INV.titel && e1?.stand === 'hilfetest' && e1?.rechner === 'h-test', '…mit Wortlaut des Punkts, Titel, Stand und Rechner', JSON.stringify([e1?.titel, e1?.stand, e1?.rechner]));
+  const dateiH = path.join(PRUEFUNG, 'h-test.json');
+  pruef(existsSync(dateiH) && JSON.parse(readFileSync(dateiH, 'utf8')).eintraege?.[FUNKTION]?.punkte?.['0'] === 'ok', 'Die Datei dieses Rechners liegt in der Umleitung (…\\pruefung\\h-test.json)');
+  pruef((await H.ausw(`return document.getElementById('speicher').textContent;`)) === 'Gespeichert in KICAD', 'Anzeige «Gespeichert in KICAD»');
+
+  // Neu laden: der Stand kommt zurück
+  await H.send('Page.reload');
+  await warte(500);
+  await warteBis(bereitH, 'Hilfeseite nach Neuladen', 20000);
+  ps = await punktStatus(0); const ps1 = await punktStatus(1);
+  const nach = await H.ausw(`return { notiz: document.getElementById('notiz-${FUNKTION}').value, kopf: document.querySelector('[data-kopf-geprueft]') && document.querySelector('[data-kopf-mangel]').textContent };`);
+  pruef(ps.ok === 'true' && ps1.mangel === 'true' && nach.notiz === 'Dialog war «zu klein» – Größe prüfen', 'Nach Neuladen sind ✓, ✗ und Notiz noch gesetzt', JSON.stringify([ps, ps1, nach]));
+  // ohne Browserspeicher: der Prüfstand von KICAD ist die Quelle
+  await H.ausw(`localStorage.clear(); return 1;`);
+  await H.send('Page.reload');
+  await warte(500);
+  await warteBis(bereitH, 'Hilfeseite nach Neuladen ohne Browserspeicher', 20000);
+  ps = await punktStatus(0);
+  const nach2 = await H.ausw(`return { notiz: document.getElementById('notiz-${FUNKTION}').value, lokal: localStorage.getItem('kicad-anleitung-pruefung-v1') !== null };`);
+  pruef(ps.ok === 'true' && nach2.notiz.startsWith('Dialog war'), 'Auch mit gelöschtem Browserspeicher kommen die Markierungen aus KICAD zurück', JSON.stringify([ps, nach2]));
+  // Häkchen wieder wegnehmen (zweiter Klick) → Punkt fehlt in der Ablage
+  await mausH(await mitteH(`#f-${FUNKTION} .pruef li[data-punkt="0"] .ok`));
+  await warte(1800);
+  pr = await pruefstand(); e1 = pr.eintraege[FUNKTION];
+  pruef(e1?.punkte?.['0'] === undefined && e1?.punkte?.['1'] === 'mangel', 'Zweiter Klick auf ✓ nimmt das Häkchen weg; ✗ bleibt (in der Ablage)', JSON.stringify(e1?.punkte));
+  await mausH(await mitteH(`#f-${FUNKTION} .pruef li[data-punkt="0"] .ok`));   // wieder setzen für die Bilder
+  await warte(1800);
+
+  // Bilder: gleiche Seite hell und dunkel, mit markierter Funktion
+  await H.ausw(`location.hash = ''; location.hash = '#k-ansicht~serien-pdf'; return 1;`);
+  await warte(500);
+  await H.ausw(`document.documentElement.dataset.theme = 'light'; document.getElementById('f-${FUNKTION}').scrollIntoView({ block: 'start', behavior: 'instant' }); return 1;`);
+  await warte(500);
+  const bildHell = await shotH('hilfe_lokal_hell');
+  await H.ausw(`document.documentElement.dataset.theme = 'dark'; return 1;`);
+  await warte(400);
+  const bildDunkel = await shotH('hilfe_lokal_dunkel');
+  pruef(existsSync(bildHell) && existsSync(bildDunkel), 'Bilder hilfe_lokal_hell.png und hilfe_lokal_dunkel.png geschrieben');
+
+  // Als Datei geöffnet (ohne KICAD): Rückfall auf den Browserspeicher
+  abschnitt('Echte Hilfeseite: als Datei geöffnet bleibt es beim Browserspeicher');
+  const dateiUrl = 'file:///' + path.join(ANLEITUNG, 'index.html').replace(/\\/g, '/');
+  await H.send('Page.navigate', { url: dateiUrl });
+  await warte(500);
+  await warteBis(() => H.ausw(`return document.readyState === 'complete' && document.querySelectorAll('article.funktion').length > 0;`), 'Datei geöffnet', 20000);
+  const vorDatei = JSON.stringify((await pruefstand()).eintraege);
+  const fd = await H.ausw(`return { proto: location.protocol, speicher: document.getElementById('speicher').textContent, warnung: document.getElementById('speicher').classList.contains('warnung') };`);
+  pruef(fd.proto === 'file:' && fd.speicher === 'Nur in diesem Browser gespeichert' && fd.warnung, 'Als Datei: Anzeige «Nur in diesem Browser gespeichert»', JSON.stringify(fd));
+  await mausH(await mitteH(`#f-${FUNKTION} .pruef li[data-punkt="2"] .ok`).catch(() => mitteH(`#f-${FUNKTION} .pruef li[data-punkt="0"] .mangel`)));
+  await warte(1500);
+  pruef(JSON.stringify((await pruefstand()).eintraege) === vorDatei, 'Als Datei geöffnet verändert die Markierung den Prüfstand in KICAD nicht');
+  pruef(H.ausnahmen.length === 0, 'Keine Ausnahmen in der Hilfeseite', H.ausnahmen.slice(0, 3).join(' | '));
+  H.zu();
+  await fetch(`http://127.0.0.1:${CDPPORT}/json/close/${hz.id}`).catch(() => {});
+  await warte(300);
+  await gehe();   // zurück zum Hauptfenster-Test
 
   // ================================================================== Tooltips im Band
   abschnitt('Tooltips der Menüband-Knöpfe');
@@ -477,6 +689,7 @@ try {
 } catch (e) {
   schlecht++;
   console.log('  FEHL  Ausnahme im Test:', e.message);
+  try { console.log('   Fenster:', JSON.stringify((await seiten()).map((t) => t.url))); } catch { /* egal */ }
   try { await shot('hilfe_99_fehler', { x: 0, y: 0, width: aktuelleBreite, height: 700 }); } catch { /* egal */ }
 }
 console.log(`\n${ok} bestanden, ${schlecht} fehlgeschlagen`);

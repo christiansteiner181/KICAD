@@ -16,7 +16,8 @@
 //   POST /api/projekt/vorschau?stand=&ort= Body: PNG (image/png) → speichert vorschau.png im Ordner des offenen Projekts
 //   GET  /api/projekt/vorschau?ordner=     das Vorschaubild eines Projektordners (404 ohne Bild; nur Ordner mit projekt.json)
 //   GET  /api/start/info                   Programmstand (Version, Build-Datum), Rechner, Ablage der Liste «zuletzt»,
-//                                          anleitung { url, hinweis } (kataloge/buero.json › anleitung; null, wenn nicht eingetragen) für das Hilfe-Symbol
+//                                          anleitung { url: "/hilfe/", vorhanden, hinweis, ordner } (Bedienungsanleitung, von KICAD selbst ausgeliefert:
+//                                          AnleitungEndpunkte.cs; vorhanden = auf diesem Rechner gebaut) für das Hilfe-Symbol
 
 using Hlks.Kern;
 using static Hlks.Web.EndpunktHilfe;   // Antwort, KoerperLesen, Gesichert (gemeinsam mit BenutzerEndpunkte)
