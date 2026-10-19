@@ -69,7 +69,7 @@ public class ProtokollTests
                 cursor = liste["result"]!["nextCursor"]?.GetValue<string>();
             } while (cursor is not null);
             var erwartet = Abfragen.Liste.Select(a => a.Name).Concat(Projekt.Anlegen(Kat, null, "x", "x", "x").Befehle.Alle.Select(b => b.Name))
-                .Concat(["rueckgaengig", "wiederholen", "synchronisieren"]).Order().ToList();
+                .Concat(["rueckgaengig", "wiederholen", "synchronisieren", "kontext_bild"]).Order().ToList();   // kontext_bild: Sitzungswerkzeug (Modul 3c)
             Assert.Equal(erwartet, namen.Order().ToList());
 
             var aufruf = g.Anfrage("tools/call", new JsonObject { ["name"] = "projekt_ueberblick", ["arguments"] = new JsonObject() });

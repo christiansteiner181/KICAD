@@ -1,6 +1,8 @@
 // HLKS-CAD: MCP-Server (stdio) und Kommandozeile über dem Kern.
 //
 // Server:     Hlks.Mcp --projekt <e_KICAD-Ordner> [--katalog <ordner>] [--akteur <name>] [--geraet <name>] [--art mensch|ki]
+//             [--normen <Normenordner>] [--kontext-bild <png|jpg>] [--ohne-projektkontext]
+//             (Modul 3c: Wurzel der Normensuche statt HLKS_NORMEN; Bild zur Frage für kontext_bild; Frage mit Internet: nie ein Bild)
 // Einmalig:   --beispiel <ordner> | --ki-auftrag | --ki-erwartung | --ki-bewerten <antwort.json>
 //             | --abfrage <name> [json] | --befehl <name> <json> [--trockenlauf]      (alle ausser --beispiel/--ki-auftrag mit --projekt)
 // Exit-Codes: 0 ok, 1 Fehler/abgelehnt, 2 KI-Test nicht bestanden.
@@ -28,6 +30,9 @@ if (!argumente.Hat("--projekt"))
     return 1;
 }
 
+// Modul 3c: Normenordner für normen_suchen/norm_lesen (gilt nur für diesen Prozess)
+if (argumente.Wert("--normen") is { Length: > 0 } normen) Environment.SetEnvironmentVariable(Normenverzeichnis.Umgebungsvariable, normen);
+
 Projekt projekt;
 try { projekt = Kommandozeile.Oeffnen(argumente); }
 catch (Exception ex)
@@ -43,6 +48,7 @@ try
     builder.Logging.AddConsole(o => o.LogToStandardErrorThreshold = LogLevel.Trace); // stdout gehört dem MCP-Protokoll
     builder.Logging.SetMinimumLevel(LogLevel.Warning);
     builder.Services.AddSingleton(projekt);
+    builder.Services.AddSingleton(new KontextBild(argumente.Wert("--kontext-bild"), argumente.Hat("--ohne-projektkontext")));
     builder.Services
         .AddMcpServer(o =>
         {
@@ -50,7 +56,8 @@ try
             o.ServerInstructions = Werkzeuge.Anleitung;
         })
         .WithStdioServerTransport()
-        .WithTools<Werkzeuge>();
+        .WithTools<Werkzeuge>()
+        .WithTools<SitzungWerkzeuge>();   // Modul 3c: kontext_bild
     await builder.Build().RunAsync();
     return 0;
 }

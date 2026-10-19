@@ -16,6 +16,24 @@
 //   leer           keine Ausgabe, Code 0
 // Die Zeile {"type":"system","subtype":"attrappe",…} meldet, was Claude Code bekommen hätte (Argumente, MCP-Konfiguration,
 // Umgebung, Arbeitsordner, Auftragstext), damit die Tests es im Protokoll des Auftrags prüfen können.
+//
+// GESPRÄCHSMODUS (KI-Palette, Modul 3c): mit --session-id oder --resume. Sitzungen liegen wie bei Claude Code je Arbeitsordner
+// (<Arbeitsordner>\.attrappe\sitzungen\<id>.json mit den bisherigen Fragen): --resume einer unbekannten Sitzung endet ohne Ausgabe mit
+// «No conversation found with session ID: …» (Code 1), --session-id einer vorhandenen mit «already in use». Mit --include-partial-messages
+// kommt der Text als stream_event-Teilstücke (text_delta), sonst als ganze assistant-Nachricht. Werkzeuge prüft die Attrappe wie Claude Code
+// mit dontAsk gegen --allowedTools/--disallowedTools/--tools: ein nicht erlaubtes wird abgelehnt («Werkzeug verweigert: …», kein MCP-Aufruf).
+// Der Modus steht in der FRAGE (Teil nach
+// «# Frage») als [attrappe:<modus>]:
+//   antwort (Vorgabe)  Text in drei Teilen: «Antwort der Attrappe (Frage n der Sitzung): <Frage>»
+//   aendern=KZ         element_aendern über den MCP-Server: Name von KZ auf «Von der Attrappe geändert» (ein Paket), dann Text
+//   zweimal=KZ         zwei element_aendern an KZ (zwei Pakete)
+//   ueberblick         projekt_ueberblick über den MCP-Server, Antwort nennt die Zahl der Geschosse
+//   bild               kontext_bild über den MCP-Server; der Text nennt, was zurückkam (Bildart und Grösse bzw. den Hinweis)
+//   normen             normen_suchen {frage: «Mindestgefälle Prüfleitung»}; der Text nennt Norm, Seite und Ziffer des ersten Treffers
+//   werkzeugfehler     element_lesen auf ein unbekanntes Element (Werkzeug meldet Fehler), dann Text
+//   internet           WebSearch und ein unterlage_aus_url mit Fehler (ohne MCP), dann Text
+//   langsam            fünf Textteile mit Pausen von 400 ms
+//   haengt, fehler, anmeldung  wie bei den Aufträgen
 
 using System.Diagnostics;
 using System.Text;
@@ -30,8 +48,9 @@ var aus = new StreamWriter(Console.OpenStandardOutput(), utf8) { AutoFlush = tru
 void Zeile(JsonNode n) { lock (aus) aus.WriteLine(n.ToJsonString(new JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping })); }
 
 // ---------- Schalter wie in «claude --help» (Fassung 2.1.299), soweit die Aufträge sie brauchen
-var ohneWert = new HashSet<string> { "-p", "--print", "--verbose", "--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands" };
-var mitWert = new HashSet<string> { "--output-format", "--mcp-config", "--tools", "--allowedTools", "--allowed-tools", "--permission-mode", "--model", "--effort", "--setting-sources" };
+var ohneWert = new HashSet<string> { "-p", "--print", "--verbose", "--strict-mcp-config", "--no-session-persistence", "--disable-slash-commands", "--include-partial-messages" };
+var mitWert = new HashSet<string> { "--output-format", "--mcp-config", "--tools", "--allowedTools", "--allowed-tools", "--permission-mode", "--model", "--effort", "--setting-sources",
+    "--disallowedTools", "--disallowed-tools", "--resume", "--session-id" };
 var optionen = new Dictionary<string, List<string>>();
 List<string>? aktuell = null;
 foreach (var a in args)
@@ -53,6 +72,8 @@ var modus = Regex.Match(prompt, @"\[attrappe:(\w+)\]") is { Success: true } mm ?
 JsonObject? konfig = null;
 if (optionen.TryGetValue("--mcp-config", out var cfgListe) && cfgListe.Count > 0 && File.Exists(cfgListe[0]))
     konfig = JsonNode.Parse(File.ReadAllText(cfgListe[0], Encoding.UTF8)) as JsonObject;
+
+if (optionen.ContainsKey("--session-id") || optionen.ContainsKey("--resume")) return await Gespraech();
 
 Zeile(new JsonObject
 {
@@ -249,6 +270,211 @@ async Task<int> Haengt()
     return 0;
 }
 
+/// <summary>Gesprächsmodus (KI-Palette, Modul 3c): Sitzungen je Arbeitsordner, Text in Teilstücken, Werkzeuge über den echten MCP-Server.</summary>
+async Task<int> Gespraech()
+{
+    var sitzungen = Path.Combine(Directory.GetCurrentDirectory(), ".attrappe", "sitzungen");
+    string sitzung;
+    List<string> bisher;
+    if (optionen.TryGetValue("--resume", out var res) && res.Count > 0)
+    {
+        sitzung = res[0];
+        var d = Path.Combine(sitzungen, sitzung + ".json");
+        if (!File.Exists(d))
+        {
+            // wie Claude Code 2.1.299 (geprüft 20.10.2026): Abschlusszeile mit errors, keine init-Zeile, Meldung auf stderr, Code 1, kein Modellaufruf
+            Zeile(new JsonObject { ["type"] = "result", ["subtype"] = "error_during_execution", ["is_error"] = true, ["num_turns"] = 0, ["session_id"] = sitzung,
+                ["total_cost_usd"] = 0, ["errors"] = new JsonArray($"No conversation found with session ID: {sitzung}") });
+            Console.Error.WriteLine($"No conversation found with session ID: {sitzung}");
+            return 1;
+        }
+        bisher = JsonNode.Parse(File.ReadAllText(d, Encoding.UTF8))!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+    }
+    else
+    {
+        sitzung = optionen["--session-id"].FirstOrDefault() ?? "";
+        if (!Guid.TryParse(sitzung, out _)) { Console.Error.WriteLine("Error: Invalid session ID. Must be a valid UUID."); return 1; }
+        if (File.Exists(Path.Combine(sitzungen, sitzung + ".json"))) { Console.Error.WriteLine($"Error: Session ID {sitzung} is already in use."); return 1; }
+        bisher = [];
+    }
+    var stelle = prompt.LastIndexOf("# Frage", StringComparison.Ordinal);
+    var frage = (stelle >= 0 ? prompt[(stelle + "# Frage".Length)..] : prompt).Trim();
+    var m = Regex.Match(frage, @"\[attrappe:(\w+)(?:=([^\]]+))?\]");
+    var gmodus = m.Success ? m.Groups[1].Value : "antwort";
+    var wert = m.Success && m.Groups[2].Success ? m.Groups[2].Value.Trim() : null;
+    if (gmodus == "anmeldung") { Console.Error.WriteLine("Invalid API key · Please run /login"); return 1; }
+
+    Directory.CreateDirectory(sitzungen);
+    bisher.Add(frage);
+    File.WriteAllText(Path.Combine(sitzungen, sitzung + ".json"), new JsonArray(bisher.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()).ToJsonString(), utf8);
+
+    var teile = optionen.ContainsKey("--include-partial-messages");
+    Zeile(new JsonObject
+    {
+        ["type"] = "system", ["subtype"] = "init", ["session_id"] = sitzung,
+        ["mcp_servers"] = new JsonArray(new JsonObject { ["name"] = "hlks", ["status"] = "connected" }),
+    });
+    Zeile(new JsonObject
+    {
+        ["type"] = "system", ["subtype"] = "attrappe", ["pid"] = Environment.ProcessId, ["modus"] = gmodus, ["wert"] = wert,
+        ["sitzung"] = sitzung, ["fortgesetzt"] = optionen.ContainsKey("--resume"), ["fruehereFragen"] = bisher.Count - 1,
+        ["argumente"] = new JsonArray(args.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()),
+        ["optionen"] = new JsonObject(optionen.Select(o => KeyValuePair.Create(o.Key, (JsonNode?)new JsonArray(o.Value.Select(x => (JsonNode)JsonValue.Create(x)).ToArray())))),
+        ["apiKeyGesetzt"] = Environment.GetEnvironmentVariable("ANTHROPIC_API_KEY") is not null,
+        ["authTokenGesetzt"] = Environment.GetEnvironmentVariable("ANTHROPIC_AUTH_TOKEN") is not null,
+        ["claudecodeGesetzt"] = Environment.GetEnvironmentVariable("CLAUDECODE") is not null,
+        ["arbeitsordner"] = Directory.GetCurrentDirectory(),
+        ["mcpKonfiguration"] = konfig?.DeepClone(),
+        ["prompt"] = prompt, ["frage"] = frage,
+    });
+
+    var letzter = "";
+    async Task Sprechen(string text, int stuecke = 3, int pause = 0)
+    {
+        letzter = text;
+        if (teile)
+        {
+            Zeile(new JsonObject { ["type"] = "stream_event", ["session_id"] = sitzung, ["event"] = new JsonObject { ["type"] = "message_start", ["message"] = new JsonObject { ["role"] = "assistant" } } });
+            Zeile(new JsonObject { ["type"] = "stream_event", ["session_id"] = sitzung, ["event"] = new JsonObject { ["type"] = "content_block_start", ["index"] = 0, ["content_block"] = new JsonObject { ["type"] = "text", ["text"] = "" } } });
+            var laenge = (int)Math.Ceiling(text.Length / (double)Math.Max(1, stuecke));
+            for (int i = 0; i < text.Length; i += laenge)
+            {
+                Zeile(new JsonObject { ["type"] = "stream_event", ["session_id"] = sitzung, ["event"] = new JsonObject
+                    { ["type"] = "content_block_delta", ["index"] = 0, ["delta"] = new JsonObject { ["type"] = "text_delta", ["text"] = text.Substring(i, Math.Min(laenge, text.Length - i)) } } });
+                if (pause > 0) await Task.Delay(pause);
+            }
+            Zeile(new JsonObject { ["type"] = "stream_event", ["session_id"] = sitzung, ["event"] = new JsonObject { ["type"] = "content_block_stop", ["index"] = 0 } });
+        }
+        Antwort(text);
+        if (teile) Zeile(new JsonObject { ["type"] = "stream_event", ["session_id"] = sitzung, ["event"] = new JsonObject { ["type"] = "message_stop" } });
+    }
+    int Ende(int runden = 1)
+    {
+        Zeile(new JsonObject { ["type"] = "result", ["subtype"] = "success", ["is_error"] = false, ["result"] = letzter, ["session_id"] = sitzung,
+            ["num_turns"] = runden, ["total_cost_usd"] = 0.0, ["duration_ms"] = 500 });
+        return 0;
+    }
+    McpSitzung Mcp() => McpSitzung.Starten(konfig ?? throw new InvalidOperationException("Keine MCP-Konfiguration"));
+    static bool IstFehler(string s) { try { return JsonNode.Parse(s) is JsonObject o && (o["fehler"] is not null || o["angenommen"]?.GetValue<bool>() == false); } catch (JsonException) { return false; } }
+
+    // Berechtigungen wie Claude Code mit --permission-mode dontAsk: verboten (--disallowedTools) schlägt alles; MCP-Werkzeuge nur, wenn sie
+    // (oder ihr Server «mcp__hlks») in --allowedTools stehen; eingebaute nur, wenn sie in --tools und --allowedTools stehen. Sonst verweigert.
+    static IEnumerable<string> Werte(List<string>? l) => (l ?? []).SelectMany(x => x.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries));
+    var erlaubtListe = Werte(optionen.GetValueOrDefault("--allowedTools") ?? optionen.GetValueOrDefault("--allowed-tools")).ToHashSet();
+    var verbotenListe = Werte(optionen.GetValueOrDefault("--disallowedTools") ?? optionen.GetValueOrDefault("--disallowed-tools")).ToHashSet();
+    var eingebautListe = Werte(optionen.GetValueOrDefault("--tools")).ToHashSet();
+    bool Erlaubt(string w) =>
+        !verbotenListe.Contains(w) && (w.StartsWith("mcp__", StringComparison.Ordinal)
+            ? erlaubtListe.Contains(w) || erlaubtListe.Any(e => w.StartsWith(e + "__", StringComparison.Ordinal))
+            : eingebautListe.Contains(w) && erlaubtListe.Contains(w));
+    // Werkzeug nicht erlaubt: Aufruf und Ablehnung wie bei Claude Code, kurze Antwort, Ende (Rückgabe = Exit-Code); erlaubt: null
+    async Task<int?> Verweigert(string id, string werkzeug, JsonObject eingabe)
+    {
+        if (Erlaubt(werkzeug)) return null;
+        Aufruf(id, werkzeug, eingabe);
+        Antwort2(id, $"Permission to use {werkzeug} has been denied.", true);
+        await Sprechen($"Werkzeug verweigert: {werkzeug}");
+        return Ende(2);
+    }
+
+    switch (gmodus)
+    {
+        case "fehler":
+            Console.Error.WriteLine("Attrappe: simulierter Fehler");
+            Zeile(new JsonObject { ["type"] = "result", ["subtype"] = "error_during_execution", ["is_error"] = true, ["result"] = "Attrappe: simulierter Fehler", ["session_id"] = sitzung });
+            return 1;
+        case "haengt":
+            return await Haengt();
+        case "langsam":
+            await Sprechen("Eins. Zwei. Drei. Vier. Fünf.", 5, 400);
+            return Ende();
+        case "aendern":
+        case "zweimal":
+        {
+            var kz = wert ?? throw new InvalidOperationException("aendern braucht ein Element: [attrappe:aendern=KZ]");
+            await Sprechen("Ich ändere " + kz + ".");
+            if (await Verweigert("a1", "mcp__hlks__element_aendern", new JsonObject { ["element"] = kz }) is int nein) return nein;
+            using var mcp = Mcp();
+            await mcp.Werkzeuge();
+            for (int i = 1; i <= (gmodus == "zweimal" ? 2 : 1); i++)
+            {
+                var eingabe = new JsonObject { ["element"] = kz, ["name"] = gmodus == "zweimal" ? $"Von der Attrappe geändert {i}" : "Von der Attrappe geändert" };
+                Aufruf("a" + i, "mcp__hlks__element_aendern", eingabe);
+                var erg = await mcp.Aufrufen("element_aendern", eingabe);
+                Antwort2("a" + i, erg, IstFehler(erg));
+            }
+            await Sprechen($"Ich habe {kz} umbenannt.");
+            return Ende(3);
+        }
+        case "ueberblick":
+        {
+            if (await Verweigert("u1", "mcp__hlks__projekt_ueberblick", new JsonObject()) is int nein) return nein;
+            using var mcp = Mcp();
+            await mcp.Werkzeuge();
+            Aufruf("u1", "mcp__hlks__projekt_ueberblick", new JsonObject());
+            var erg = await mcp.Aufrufen("projekt_ueberblick", new JsonObject());
+            Antwort2("u1", Kuerzen(erg));
+            var n = JsonNode.Parse(erg)?["gebaeude"]?.AsArray().Sum(g => g?["geschosse"]?.AsArray().Count ?? 0) ?? 0;
+            await Sprechen($"Das Projekt hat {n} Geschosse.");
+            return Ende(2);
+        }
+        case "bild":
+        {
+            if (await Verweigert("b1", "mcp__hlks__kontext_bild", new JsonObject()) is int nein) return nein;
+            using var mcp = Mcp();
+            var liste = await mcp.Werkzeuge();
+            if (!liste.Contains("kontext_bild")) throw new InvalidOperationException("Der MCP-Server kennt kontext_bild nicht: " + string.Join(", ", liste));
+            Aufruf("b1", "mcp__hlks__kontext_bild", new JsonObject());
+            var roh = await mcp.AufrufenRoh("kontext_bild", new JsonObject());
+            var bild = roh["content"]!.AsArray().OfType<JsonObject>().FirstOrDefault(c => c["type"]?.GetValue<string>() == "image");
+            var text = string.Concat(roh["content"]!.AsArray().OfType<JsonObject>().Select(c => c["text"]?.GetValue<string>() ?? ""));
+            Antwort2("b1", text);
+            await Sprechen(bild is null ? "Kein Bild erhalten: " + text
+                : $"Bild erhalten: {bild["mimeType"]?.GetValue<string>()}, {Convert.FromBase64String(bild["data"]!.GetValue<string>()).Length} Bytes.");
+            return Ende(2);
+        }
+        case "normen":
+        {
+            var eingabe = new JsonObject { ["frage"] = wert ?? "Mindestgefälle Prüfleitung" };
+            if (await Verweigert("n1", "mcp__hlks__normen_suchen", eingabe) is int nein) return nein;
+            using var mcp = Mcp();
+            await mcp.Werkzeuge();
+            Aufruf("n1", "mcp__hlks__normen_suchen", eingabe);
+            var erg = await mcp.Aufrufen("normen_suchen", eingabe);
+            Antwort2("n1", erg, IstFehler(erg));
+            var t = JsonNode.Parse(erg)?["treffer"]?.AsArray().FirstOrDefault();
+            await Sprechen(t is null ? "Keine Treffer: " + JsonNode.Parse(erg)?["hinweis"]
+                : $"Treffer: {t["norm"]}, Seite {t["seite"]}, Ziffer {t["ziffer"]}: {t["auszug"]}");
+            return Ende(2);
+        }
+        case "werkzeugfehler":
+        {
+            var eingabe = new JsonObject { ["element"] = "GIBT-ES-NICHT" };
+            if (await Verweigert("w1", "mcp__hlks__element_lesen", eingabe) is int nein) return nein;
+            using var mcp = Mcp();
+            await mcp.Werkzeuge();
+            Aufruf("w1", "mcp__hlks__element_lesen", eingabe);
+            Antwort2("w1", await mcp.Aufrufen("element_lesen", eingabe));
+            await Sprechen("Das Element gibt es nicht.");
+            return Ende(2);
+        }
+        case "internet":
+            if (await Verweigert("s1", "WebSearch", new JsonObject { ["query"] = "Prüfleitung Datenblatt" }) is int neinSuche) return neinSuche;
+            if (await Verweigert("u1", "mcp__hlks__unterlage_aus_url", new JsonObject { ["url"] = "https://www.hersteller.example/gesperrt.pdf" }) is int neinAbruf) return neinAbruf;
+            Aufruf("s1", "WebSearch", new JsonObject { ["query"] = "Prüfleitung Datenblatt" });
+            Antwort2("s1", "Web search results for query: \"Prüfleitung Datenblatt\"");
+            Aufruf("u1", "mcp__hlks__unterlage_aus_url", new JsonObject { ["url"] = "https://www.hersteller.example/gesperrt.pdf" });
+            Antwort2("u1", "{\"fehler\":\"nur mit Anmeldung erhältlich\"}");
+            await Sprechen("Ich habe im Internet gesucht.");
+            return Ende(3);
+        default:
+            await Sprechen($"Antwort der Attrappe (Frage {bisher.Count} der Sitzung): {frage}");
+            return Ende();
+    }
+}
+
+static string Kuerzen(string s) => s.Length <= 2000 ? s : s[..2000];
+
 /// <summary>Minimaler MCP-Client über die Standardein-/ausgabe des Servers (Zeilen mit JSON-RPC).</summary>
 sealed class McpSitzung : IDisposable
 {
@@ -314,6 +540,13 @@ sealed class McpSitzung : IDisposable
         await Bereit();
         var r = await Anfrage("tools/call", new JsonObject { ["name"] = werkzeug, ["arguments"] = argumente.DeepClone() });
         return string.Concat(r["content"]!.AsArray().Select(c => c?["text"]?.GetValue<string>() ?? ""));
+    }
+
+    /// <summary>Ergebnis von tools/call unverändert (mit Bildinhalten).</summary>
+    public async Task<JsonObject> AufrufenRoh(string werkzeug, JsonObject argumente)
+    {
+        await Bereit();
+        return await Anfrage("tools/call", new JsonObject { ["name"] = werkzeug, ["arguments"] = argumente.DeepClone() });
     }
 
     public void Dispose()

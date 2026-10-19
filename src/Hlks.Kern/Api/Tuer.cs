@@ -46,16 +46,19 @@ public static class Tuer
                  ?? LeitungenAbfragen.Tuer(p, name, par) ?? SchemaAbfragen.Tuer(p, name, par)   // Modul 3
                  ?? KollisionAbfragen.Tuer(p, name, par) ?? AussparungAbfragen.Tuer(p, name, par)   // Modul 3b
                  ?? PlansatzAbfragen.Tuer(p, name, par)   // Serien-PDF
+                 ?? NormenAbfragen.Tuer(p, name, par)   // Modul 3c: Normensuche
                  ?? throw new HlksFehler($"Abfrage «{name}» gibt es nicht.", "Abfragen: " + string.Join(", ", Abfragen.Liste.Select(x => x.Name))),
         };
     }
 
-    /// <summary>Führt einen Befehl aus (inkl. rueckgaengig, wiederholen, synchronisieren).</summary>
+    /// <summary>Führt einen Befehl aus (inkl. rueckgaengig, wiederholen, synchronisieren und paket_zuruecknehmen {paket, akteurArt?}).</summary>
     public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false) => name switch
     {
         "rueckgaengig" => p.Rueckgaengig(trockenlauf),
         "wiederholen" => p.Wiederholen(trockenlauf),
         "synchronisieren" => p.Synchronisieren(),
+        // Modul 3c: ein bestimmtes Paket zurücknehmen (KI-Palette «Zurücknehmen»); nicht als MCP-Werkzeug – die KI nimmt eigene Änderungen mit rueckgaengig zurück
+        "paket_zuruecknehmen" => p.PaketZuruecknehmen(Param.Text(par ?? new JsonObject(), "paket", true)!, trockenlauf, Param.Text(par ?? new JsonObject(), "akteurArt")),
         _ => p.Ausfuehren(name, par, trockenlauf),
     };
 }

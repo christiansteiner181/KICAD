@@ -184,17 +184,21 @@ public sealed class AuftragDienst
         public readonly StringBuilder StderrEnde = new();
         public string[] Vorher = [];                            // Pakete vor dem Lauf
         public bool McpFehlgeschlagen;
+        public IDisposable? Beleg;                              // Modul 3c: Projekt für diesen KI-Lauf belegt (KiLaeufe)
     }
 
     readonly ProjektDienst projekt;
     readonly AuftragEinstellungen einstellungen;
+    readonly KiLaeufe? laeufe;
     readonly object sperre = new();
     readonly List<Auftrag> auftraege = [];
 
-    public AuftragDienst(ProjektDienst projekt, AuftragEinstellungen einstellungen)
+    /// <param name="laeufe">Modul 3c: gemeinsame Belegung «ein KI-Lauf je Projekt» mit den Gesprächen der KI-Palette (null = nur Aufträge unter sich).</param>
+    public AuftragDienst(ProjektDienst projekt, AuftragEinstellungen einstellungen, KiLaeufe? laeufe = null)
     {
         this.projekt = projekt;
         this.einstellungen = einstellungen;
+        this.laeufe = laeufe;
     }
 
     // ---------------------------------------------------------------- Zugriff
@@ -238,6 +242,8 @@ public sealed class AuftragDienst
             if (laeuft is not null)
                 throw new AuftragHttpFehler(409, $"Für dieses Projekt läuft schon ein KI-Auftrag ({laeuft.Id}).",
                     "Warten, bis er fertig ist, oder ihn abbrechen (POST /api/auftraege/" + laeuft.Id + "/abbrechen).");
+            // Modul 3c: auch kein Auftrag, solange im Projekt eine Frage der KI-Palette läuft (409 «Claude arbeitet gerade an …»)
+            a.Beleg = laeufe?.Belegen(ort, "auftrag", id, $"dem KI-Auftrag {id} (Familie aus Unterlagen)");
             auftraege.Add(a);
         }
         try
@@ -313,6 +319,7 @@ public sealed class AuftragDienst
         catch
         {
             lock (sperre) auftraege.Remove(a);
+            a.Beleg?.Dispose();
             a.Log?.Dispose();
             AufraeumenOrdner(a);
             throw;
@@ -545,6 +552,7 @@ public sealed class AuftragDienst
         }
         Eigene(a, $"Auftrag beendet: {status}" + (fehler is null ? "" : " – " + fehler));
         lock (a.LogSperre) { try { a.Log?.Dispose(); } catch (IOException) { } a.Log = null; }
+        a.Beleg?.Dispose();   // Modul 3c: Projekt wieder frei für Gespräche der KI-Palette
         AufraeumenOrdner(a);
         Melden(a, true);
         a.Fertig.TrySetResult();

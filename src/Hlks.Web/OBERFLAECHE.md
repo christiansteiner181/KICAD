@@ -996,3 +996,97 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 - **Tastaturkürzel nach Register:** `kuerzel-liste.js › REGISTER_NAMEN` enthält alle Register des Menübands (Datei, Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten) sowie Auswahl und Familie; unter «Allgemein» steht nur noch, was zu keinem Register gehört (Esc, Strg+D).
 
 **Prüfen:** Node `nachbearbeitung-n3.test.mjs` (CSV, Kürzel, Felder der Projektinformation aus dem echten Katalog, Planzeilen und Parameter, Knoten im Projektbrowser, Verdrahtung); Browser `node nachbearbeitung-n3.browser.mjs` (Port 5183, CDP 9503; alle vier Punkte mit echten Klicks, CSV-Datei im Download-Ordner nachgelesen; Bilder hell/dunkel `n3_*.png` in `%TEMP%\HLKS_CAD`); `menueband.browser.mjs` bleibt grün (bei 1920 px keine Gruppe zusammengeklappt).
+
+## KI-Palette: Schnittstelle (3c, Teil K)
+
+Server und Kern der Palette «Claude» (Spezifikation `entwurf/modul-3c.md`, Teil K). Die Palette (Teil O) baut **nur** auf diesen Endpunkten und
+Ereignissen auf; die Logik (Kontext auflösen, Auftragstext, Werkzeuge, Zurücknehmen, Normensuche) steckt im Server (`GespraechDienst.cs`,
+`GespraechEndpunkte.cs`, `KiLaeufe.cs`) bzw. im Kern (`Projekt.PaketZuruecknehmen`, `Normen/Normenverzeichnis.cs`). Texte deutsch, Zeiten ISO 8601.
+Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (kein Projekt offen · Lauf belegt · schon beendet · spätere
+Änderungen), 503 (Ablage nicht erreichbar).
+
+**Endpunkte**
+- `GET /api/ki/einstellungen` → `{ modelle: [{ id: "sonnet", name: "Sonnet" }, { id: "opus", … }, { id: "haiku", … }], vorgabeModell: "sonnet",
+  internetVorgabe: false, internetHinweis: "Internet: ohne Projektzugriff", internetWerkzeuge: ["WebSearch", …], verfuegbar, grund?, zeitlimitMinuten: 10,
+  grenzen: { textZeichen: 8000, auswahl: 200, bildBytes: 4194304, titelZeichen: 200 } }`. `internetHinweis` gehört an den Schalter «Internet»
+  (Entscheid Hauptlauf 20.10.2026, siehe unten). `verfuegbar: false` mit `grund` (z. B. «Claude Code wurde nicht gefunden …»), wenn claude.exe oder der MCP-Server fehlt; ein Abo- bzw.
+  Anmeldeproblem zeigt sich erst bei der Frage (`fehlerart: "anmeldung"`).
+- `GET /api/ki/gespraeche` → `{ gespraeche: [{ id, titel, erstellt, geaendert, fragen, laeuft }] }`, neueste (`geaendert`) zuerst; 409 ohne Projekt.
+- `POST /api/ki/gespraeche` `{ titel? }` → **201** mit dem Gespräch (Form wie GET unten). Ohne Titel heisst es «Neues Gespräch» und bekommt mit
+  der ersten Frage deren Anfang (höchstens 60 Zeichen) als Titel.
+- `GET /api/ki/gespraeche/{id}` → `{ id, titel, erstellt, geaendert, modell, laeuft, frage, nachrichten: [Nachricht] }`. Während einer Frage ist
+  `laeuft: true`, `frage` die Id der laufenden Frage und die letzte Nachricht die Antwort im Entstehen (`status: "laeuft"`, Text bis jetzt) – so
+  holt ein neu geladenes Fenster den Stand nach und folgt dann den Ereignissen.
+- **Nachricht** Mensch: `{ rolle: "mensch", frage, text, zeit, akteur, kontext: { ansicht?: { kennzeichen, name, art, massstab } | { kennzeichen,
+  gefunden: false }, geschoss?: { kennzeichen, name }, auswahl?: [kz…], bild: bool }, modell, internet, internetHinweis?, kontextVerworfen? }`.
+  Mit Internet ist `kontext` immer leer (`{}`) und `kontextVerworfen: true`: der Server hat Ansicht, Geschoss, Auswahl und Bild verworfen.
+  Claude: `{ rolle: "claude", frage, status: "laeuft" | "fertig" | "fehler" | "abgebrochen", text, zeit, dauerSekunden, modell, internet, internetHinweis?,
+  werkzeuge: [{ id, name, kurz, ok: null | true | false, meldung? }], aenderungen: [Aenderung], fehler?, fehlerart?, sitzungNeu?, abrufe?, runden?, kostenUsd? }`.
+  `name` ohne Präfix (z. B. `element_aendern`, `WebSearch`), `kurz` = Eingabe einzeilig (≤ 140 Zeichen), `ok: null` = läuft noch.
+  `fehlerart`: `anmeldung` (Claude nicht angemeldet → Hinweis «unter Heute mit Claude anmelden»), `start`, `mcp`, `claude`, `zeitlimit`,
+  `abgebrochen`, `intern`. `sitzungNeu: true` = die frühere Claude-Sitzung war nicht verfügbar (anderer Rechner, gelöscht); Claude bekam die
+  letzten Nachrichten als Verlauf (Hinweis in der Palette sinnvoll). `abrufe` (mit Internet): `[{ zeit, art: "suche" | "abruf", text | url, erfolg }]`.
+  `internetHinweis: "Internet: ohne Projektzugriff"` steht in beiden Nachrichten einer Frage mit Internet (zum Anzeigen bei der Frage).
+- **Aenderung**: `{ paket, befehl, beschreibung, zeit, elemente: [kz…], ids: [id…], zurueckgenommen, zurueckgenommenPaket?, zurueckgenommenZeit?,
+  zurueckgenommenVon? }` – je Paket des Akteurs KI, in der Reihenfolge der Pakete. `beschreibung` z. B. «element_aendern: WT-E.02 geändert»,
+  «leitung_ziehen: R-12, R-13 angelegt; 2 Verbindungen gesetzt». `elemente` (Kennzeichen) und `ids` stehen in derselben Reihenfolge; zum Wählen
+  im Modell die Id nehmen (gelöschte Elemente gibt es nicht mehr). `zurueckgenommen` gilt auch, wenn das Paket anderswo zurückgenommen wurde.
+- `POST /api/ki/gespraeche/{id}/frage` `{ text, kontext: { ansicht?, geschoss?, auswahl?: [kz…], bild?: "data:image/png;base64,…" }, modell?, internet? }`
+  → **202** `{ gespraech, frage, laeuft: true, nachricht: <Mensch> }`. Kennzeichen oder Id gehen; ohne `geschoss` gilt das Geschoss der Ansicht.
+  Grenzen (sonst 400): Text 1–8000 Zeichen, `auswahl` ≤ 200 Texte, Bild PNG/JPEG ≤ 4 MB als data-URL, `modell` aus der Liste, `internet` bool
+  (Vorgabe aus; mit `true` arbeitet Claude **ohne Projektzugriff und ohne Projektkontext**, siehe unten – Projektfragen ohne Internet stellen;
+  die Palette kann die Kontext-Chips dann ausgrauen, der Server verwirft den Kontext ohnehin). 409 «Claude arbeitet gerade an einer Frage im Gespräch «…»» bzw. «… an dem KI-Auftrag … (Familie aus Unterlagen)», wenn im
+  Projekt schon ein KI-Lauf läuft (Gespräch oder Auftrag; `vorschlag` nennt den Abbrechen-Endpunkt). Das Bild liegt nur im Arbeitsordner der KI
+  und wird nach der Frage gelöscht; Claude sieht es über das Werkzeug `kontext_bild`.
+- `POST /api/ki/gespraeche/{id}/abbrechen` → 200 mit dem Gespräch (nach dem Ende, höchstens 20 s Wartezeit); 409, wenn nichts läuft.
+- `DELETE /api/ki/gespraeche/{id}` → `{ geloescht: true, id, ablage }`; die Dateien wandern nach `ki\geloescht\`. 409 während einer Frage.
+- `POST /api/ki/aenderungen/{paket}/zuruecknehmen` → 200 `{ zurueckgenommen: true, paket, rueckgaengig: <neues Paket>, gespraech, ergebnis }`.
+  Abgelehnt mit `{ fehler, vorschlag, ablehnung, spaeter?, gesperrt? }`: **409** `spaeter_geaendert` (ein späteres Paket hat dieselben Elemente
+  oder Verbindungen berührt; `spaeter: [{ paket, akteur, akteurArt, zeit, befehl, elemente }]`; nichts geändert), `schon_zurueckgenommen`,
+  `verwendet` (ein von der KI angelegtes Element wird inzwischen verwendet), `gesperrt` (reserviert), 409 auch während eines KI-Laufs im Projekt;
+  **404** `unbekannt`; **400** `fremd` (kein Paket der KI); **503** `ablage`. Mehrere Änderungen lassen sich von hinten nach vorn zurücknehmen
+  (ein zurückgenommenes späteres Paket hindert nicht mehr). Das Zurücknehmen ist selbst ein neues Paket (Akteur = der Mensch).
+- `GET /api/normen/suche?q=…&reihe=…` → `{ suche, begriffe, quelle, stand, vollstaendig, ohneVolltext, treffer: [{ id, reihe, norm, titel, ausgabe,
+  datei, seite, ziffer, auszug }], hinweis }` – dieselben Treffer wie `normen_suchen` (Auszug ≤ 600 Zeichen, kein Volltext; `seite: 0` = nur der
+  Titel passt). `q` leer → 400. `reihe`: SIA, SWKI, VKF, Vorlage, suissetec, Sprinkler, Merkblatt. Im Testlauf ohne `HLKS_NORMEN` unter %TEMP%
+  keine Treffer, `hinweis` nennt den Grund. `GET /api/normen` → `{ quelle, verfuegbar, gesperrt?, zustand, normen, mitVolltext, aufbau: { laeuft,
+  fertig, gesamt } }`; `POST /api/normen/aufbauen` startet den Volltext-Aufbau (202). Sonst startet er von selbst bei der ersten Suche bzw. Frage
+  (einmal; Zwischenspeicher `%LOCALAPPDATA%\HLKS_CAD\normen`, nie OneDrive – lizenzierte Texte).
+
+**Ereignisse** über `/api/ereignisse` (bisher übergeht `ereignisse.js` die Art «ki»; Teil O ergänzt z. B. `case 'ki': melden('ki', d)`):
+`{ art: "ki", gespraech, frage, typ, … }` mit
+- `typ: "frage"`, `nachricht` (Mensch) – zu Beginn, auch für andere Fenster;
+- `typ: "text"`, `teil` – Teilstück der Antwort (gebündelt, höchstens etwa alle 120 ms); die Teile ergeben aneinandergereiht genau `text` der
+  fertigen Nachricht (Absätze zwischen Textblöcken als `"\n\n"` im Teil);
+- `typ: "werkzeug"`, `werkzeug: { id, name, kurz, ok, meldung? }` – einmal beim Aufruf (`ok: null`), einmal mit dem Ergebnis (gleiche `id`);
+- `typ: "aenderung"`, `aenderung` (wie oben) – sobald das Paket gespeichert ist, spätestens vor dem Ende;
+- zuletzt genau eines von `typ: "fertig" | "fehler" | "abgebrochen"` mit `nachricht` (vollständige Claude-Nachricht); bei `fehler` zusätzlich
+  `fehler` und `fehlerart`.
+- Ohne Frage: `{ art: "ki", typ: "gespraeche" }` (Liste geändert: angelegt, gelöscht, Titel, Beginn und Ende einer Frage) und
+  `{ art: "ki", gespraech, typ: "zurueckgenommen", paket, rueckgaengig }`.
+Die Modelländerungen der KI kommen zusätzlich wie immer als `art: "aenderung"` mit `akteurArt: "ki"` (Abgleich).
+
+**Hinter den Kulissen (für Hinweise in der Palette):** Claude Code läuft über Christians Abo (kein API-Schlüssel) mit nur dem MCP-Server «hlks»
+(Akteur KI, Art ki). **Ohne Internet** (Vorgabe) sind alle Werkzeuge erlaubt ausser der Verbotsliste `GespraechDienst.Verbote` (Freigaben,
+Konfliktentscheide, Werte bestätigen, Bürobibliothek schreiben bzw. übernehmen, alles `hkap_*`, Aussparungs- und Kollisionsstatus, BCF, Plan- und
+IFC-Ausgaben, `unterlage_aus_url`). **Mit Internet: ohne Projektzugriff** (Entscheid Hauptlauf 20.10.2026, dieselbe enge Linie wie die Aufträge):
+erlaubt sind nur WebSearch, `unterlage_aus_url`, `normen_suchen`, `norm_lesen`, `kontext_bild` und die Familien- und Unterlagenwerkzeuge der
+Aufträge (`GespraechDienst.InternetWerkzeuge`); alle anderen Werkzeuge – Projektabfragen und ändernde Projektbefehle – stehen in
+`--disallowedTools`. Claude weiss das (Systemteil) und verweist Projektfragen auf eine Frage ohne Internet. Grund: eingeschleuste Webinhalte sollen
+keine Projektdaten über Suchanfragen oder Abrufe nach aussen tragen können. Ebenso geht mit Internet **kein Projektkontext** an Claude (Entscheid
+Hauptlauf 20.10.2026): kein Projektname, kein Ordner, keine Ansicht, kein Geschoss, keine Auswahl, kein Bild – der Server verwirft den Kontext der
+Anfrage selbst (`kontextVerworfen: true`), das Bild wird nicht abgelegt und `kontext_bild` antwortet «Kein Bild – mit Internet ohne
+Projektkontext»; der Systemteil nennt nur «Gespräch in KICAD, ohne Projektzugriff». Eine Frage mit Internet läuft zudem in einer **eigenen
+Claude-Sitzung ohne Verlauf** (die Sitzung des Gesprächs enthält Projektdaten früherer Fragen); die nächste Frage ohne Internet setzt die Sitzung
+des Gesprächs fort, und der Verlauf für eine neue Sitzung lässt Fragen mit Internet aus. In der Palette stehen beide Arten Fragen im selben
+Gespräch; Claude erinnert sich bei einer Frage mit Internet aber nicht an das bisherige Gespräch. Neue Werkzeuge: `normen_suchen`, `norm_lesen`,
+`kontext_bild`. Zeitlimit je Frage 10 min (`HLKS_KI_FRAGE_ZEITLIMIT_MIN`). Ablage `<Projekt>\ki\gespraeche\<id>.json` und `<id>.log`;
+Arbeitsordner von Claude stabil je Projekt unter `%LOCALAPPDATA%\HLKS_CAD\ki\<Kennung>` (Testlauf `%TEMP%\HLKS_CAD\ki_test`), damit `--resume`
+die Sitzung nach einem Neustart findet.
+
+**Testen (Teil O):** Server mit `HLKS_TEST=1`, `HLKS_CLAUDE_EXE` = `Hlks.ClaudeAttrappe.exe` (Gesprächsmodus mit `--session-id`/`--resume`; Modus in
+der Frage als `[attrappe:antwort | aendern=KZ | zweimal=KZ | ueberblick | bild | normen | werkzeugfehler | internet | langsam | haengt | fehler | anmeldung]`,
+siehe Kopf von `tests/Hlks.ClaudeAttrappe/Program.cs`; die Attrappe prüft die Werkzeuge wie Claude Code gegen `--allowedTools`/`--disallowedTools`
+und antwortet sonst «Werkzeug verweigert: …»), `HLKS_MCP_DLL`, `HLKS_NORMEN` auf eine Kopie von `tests/daten/normen` unter %TEMP% (Test-PDF
+mit erfundenem Text: «Mindestgefälle Prüfleitung» → SIA 9999:2026, Seite 3, Ziffer 4.2.1). Web-Tests: `GespraechTests`, `GespraechLaufTests`,
+`GespraechZuruecknehmenTests` (mit `GespraechVerbotslisteTests`).

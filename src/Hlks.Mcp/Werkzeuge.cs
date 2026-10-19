@@ -25,6 +25,7 @@ public sealed partial class Werkzeuge(Projekt projekt)
         trockenlauf=true geprüft werden: er zeigt Änderungen und neue Prüfbefunde, ohne etwas zu speichern. Mit rueckgaengig und
         wiederholen nimmst du eigene Änderungen zurück bzw. stellst sie wieder her.
         «warum» verfolgt einen Wert bis zur Quelle (Herkunft, Rechenweg). Normwerte nie erfinden: fehlt ein Wert, melde das.
+        Normen suchst du mit «normen_suchen» und liest die Stelle mit «norm_lesen»; zitiere Norm, Ausgabe, Ziffer und Seite.
         Fehler kommen als JSON mit «fehler» und «vorschlag»; der Vorschlag nennt den Weg zur Lösung.
         """;
 

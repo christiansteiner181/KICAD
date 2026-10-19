@@ -22,7 +22,15 @@ public sealed class BefehlsErgebnis
     public List<string> Hinweise { get; init; } = [];
     public List<Konflikt> Konflikte { get; init; } = [];
     public List<Reservierung> Gesperrt { get; init; } = [];
+    /// <summary>Nur bei paket_zuruecknehmen und nur, wenn abgelehnt: unbekannt | fremd | schon_zurueckgenommen | spaeter_geaendert |
+    /// verwendet | gesperrt | ablage (sonst null, wird dann nicht ausgegeben).</summary>
+    public string? Ablehnung { get; init; }
+    /// <summary>Nur bei paket_zuruecknehmen: spätere Pakete, die dieselben Elemente oder Verbindungen berührt haben (sonst null).</summary>
+    public List<SpaeteresPaket>? SpaeterePakete { get; init; }
 }
+
+/// <summary>Ein späteres Paket, das ein gezieltes Zurücknehmen verhindert (paket_zuruecknehmen).</summary>
+public sealed record SpaeteresPaket(string Paket, string Akteur, string AkteurArt, DateTimeOffset Zeit, string Befehl, List<string> Elemente);
 
 /// <param name="Quelle">lokal | fremd | rueckgaengig | wiederholen</param>
 public sealed record ModellAenderung(string PaketId, string Akteur, string AkteurArt, string Quelle, IReadOnlyList<string> ElementIds);
@@ -287,6 +295,135 @@ public sealed class Projekt
         if (e.Angenommen && !trockenlauf) { wiederholenStapel.Pop(); rueckgaengigStapel.Push(ziel); }
         return e;
     }
+
+    /// <summary>Nimmt ein bestimmtes Paket zurück – als neues Paket (Befehl «rueckgaengig», RueckgaengigVon = Ziel, Quelle «rueckgaengig»;
+    /// nichts wird gelöscht). Anders als Rueckgaengig nicht nur das letzte eigene Paket der Sitzung, sondern jedes bekannte Paket, z. B. eine
+    /// Änderung der KI (Modul 3c: «Zurücknehmen» in der KI-Palette). Regel: Rückgängig überschreibt nie eine spätere Änderung.
+    /// Ablauf: (1) neue Pakete aus der Ablage anwenden, damit «später» alles umfasst; (2) Ziel suchen (Verlauf, sonst Ablage, wenn es im
+    /// Standabbild steckt); (3) abgelehnt, wenn es schon zurückgenommen ist oder ein späteres Paket dieselben Elemente oder Verbindungen
+    /// berührt hat – ausser Paaren «Paket + dessen wirksames Zurücknehmen», die sich aufheben (so lassen sich mehrere Änderungen von hinten
+    /// nach vorn zurücknehmen); (4) Umkehren mit Inhaltsprüfung wie Rueckgaengig (zweite Sicherung); (5) abgelehnt, wenn ein Element, das das
+    /// Zurücknehmen löscht (es wurde im Ziel angelegt), inzwischen verwendet wird (teilVon, Geschoss, Raum, System, Bezug, Verbindung).
+    /// nurAkteurArt: nur Pakete dieser Akteur-Art (z. B. «ki»), sonst abgelehnt («fremd»).</summary>
+    public BefehlsErgebnis PaketZuruecknehmen(string paketId, bool trockenlauf = false, string? nurAkteurArt = null)
+    {
+        const string Name = "paket_zuruecknehmen";
+        BefehlsErgebnis Nein(string art, string fehler, string? vorschlag = null, List<SpaeteresPaket>? spaeter = null, List<Reservierung>? gesperrt = null) => new()
+        {
+            Angenommen = false, Befehl = Name, Trockenlauf = trockenlauf, Meldung = "Abgelehnt: " + fehler, Fehler = fehler, Vorschlag = vorschlag,
+            Ablehnung = art, SpaeterePakete = spaeter, Gesperrt = gesperrt ?? [],
+        };
+        if (string.IsNullOrWhiteSpace(paketId)) return Nein("unbekannt", "Parameter «paket» fehlt.", "Die Paket-Id angeben (Abfrage aenderungen nennt sie).");
+        paketId = paketId.Trim();
+
+        // (1) Alles, was es in der Ablage schon gibt, muss bekannt sein – sonst sähe die Prüfung spätere Änderungen anderer nicht
+        if (Speicher is not null)
+        {
+            var s = Synchronisieren();
+            if (s.Fehler.FirstOrDefault(f => f.StartsWith("Projektablage", StringComparison.Ordinal)) is { } ablageFehler)
+                return Nein("ablage", ablageFehler, "Netzwerk/VPN prüfen und erneut versuchen.");
+        }
+
+        // (2) Ziel und die Pakete danach
+        Paket ziel;
+        List<Paket> spaeter;
+        int index = verlauf.FindIndex(x => x.Id == paketId);
+        if (index >= 0)
+        {
+            ziel = verlauf[index];
+            spaeter = verlauf.Skip(index + 1).ToList();
+        }
+        else if (Speicher is not null && bekannt.Contains(paketId))
+        {
+            // Im Standabbild enthalten: spätere = alle neueren der Ablage (nach Id), die nicht im Verlauf stehen, und der ganze Verlauf
+            // (er kam nach dem Standabbild). Zu viele ist nur vorsichtig; die Inhaltsprüfung bleibt die zweite Sicherung.
+            try
+            {
+                ziel = Speicher.PaketLesen(paketId);
+                var imVerlauf = verlauf.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+                spaeter = Speicher.PaketListe().Where(id => string.CompareOrdinal(id, paketId) > 0 && !imVerlauf.Contains(id))
+                    .Select(Speicher.PaketLesen).Concat(verlauf).ToList();
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or ArgumentException)
+            { return Nein("ablage", $"Pakete in der Ablage nicht lesbar: {ex.Message}", "Netzwerk/VPN prüfen und erneut versuchen."); }
+        }
+        else return Nein("unbekannt", $"Das Paket «{paketId}» gibt es in diesem Projekt nicht.", "Abfrage aenderungen nennt die Pakete (Feld paket).");
+
+        if (nurAkteurArt is not null && !string.Equals(ziel.AkteurArt, nurAkteurArt, StringComparison.OrdinalIgnoreCase))
+            return Nein("fremd", $"Das Paket «{paketId}» stammt von {ziel.Akteur} ({ziel.AkteurArt}), nicht von einem Akteur der Art «{nurAkteurArt}».",
+                "Eigene Änderungen mit Rückgängig zurücknehmen.");
+
+        // (3) Schon zurückgenommen? Spätere Pakete an denselben Elementen?
+        var wirksam = new Dictionary<string, bool>(StringComparer.Ordinal);
+        for (int i = spaeter.Count - 1; i >= 0; i--)
+        {
+            var id = spaeter[i].Id;
+            wirksam[id] = !spaeter.Skip(i + 1).Any(q => q.RueckgaengigVon == id && wirksam.GetValueOrDefault(q.Id, true));
+        }
+        if (spaeter.FirstOrDefault(q => q.RueckgaengigVon == ziel.Id && wirksam.GetValueOrDefault(q.Id, true)) is { } schon)
+            return Nein("schon_zurueckgenommen", $"Das Paket «{paketId}» ist schon zurückgenommen (Paket {schon.Id}, {schon.Akteur}, {schon.Zeit.ToLocalTime():dd.MM.yyyy HH:mm}).");
+        // Paare, die sich aufheben: ein unwirksames Paket und sein wirksames Zurücknehmen
+        var aufgehoben = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var q in spaeter)
+        {
+            if (!wirksam[q.Id]) aufgehoben.Add(q.Id);
+            else if (q.RueckgaengigVon is { } r && wirksam.TryGetValue(r, out var w) && !w) aufgehoben.Add(q.Id);
+        }
+        var beruehrt = Beruehrt(ziel);
+        var hindernisse = spaeter.Where(q => !aufgehoben.Contains(q.Id) && Beruehrt(q).Overlaps(beruehrt)).ToList();
+        if (hindernisse.Count > 0)
+        {
+            var liste = hindernisse.Select(q => new SpaeteresPaket(q.Id, q.Akteur, q.AkteurArt, q.Zeit, q.Befehl,
+                q.Operationen.Where(o => o.Art.StartsWith("element", StringComparison.Ordinal) && beruehrt.Contains("e:" + o.Id))
+                    .Select(o => (o.Element ?? o.ElementVorher)?.Kennzeichen ?? o.Id).Distinct().ToList())).ToList();
+            var erstes = liste[0];
+            var was = erstes.Elemente.Count > 0 ? string.Join(", ", erstes.Elemente.Take(5)) : "dieselben Verbindungen";
+            return Nein("spaeter_geaendert",
+                $"Später hat {erstes.Akteur} ({erstes.AkteurArt}) mit {erstes.Befehl} {was} geändert" + (liste.Count > 1 ? $" (und {liste.Count - 1} weitere Paket(e))" : "") + " – nichts zurückgenommen.",
+                "Zuerst die späteren Änderungen zurücknehmen oder gezielt mit element_aendern korrigieren.", liste);
+        }
+
+        // (4) Umkehren (Inhaltsprüfung wie Rueckgaengig)
+        var arbeit = Modell.Kopie();
+        var inverse = new List<Operation>();
+        foreach (var op in Enumerable.Reverse(ziel.Operationen))
+        {
+            var inv = Umkehren(op, arbeit, out var fehler);
+            if (fehler is not null)
+                return Nein("spaeter_geaendert", fehler + " – nichts zurückgenommen.", "Die Änderung wurde seither überarbeitet; gezielt mit element_aendern korrigieren.", []);
+            arbeit.Anwenden([inv]);
+            inverse.Add(inv);
+        }
+
+        // (5) Was das Zurücknehmen löscht, darf nicht mehr verwendet werden
+        var geloescht = inverse.Where(o => o.Art == "element.loeschen").Select(o => o.Id).ToHashSet(StringComparer.Ordinal);
+        if (geloescht.Count > 0)
+        {
+            bool Verweist(Element x) => (x.TeilVon is { } t && geloescht.Contains(t)) || (x.Geschoss is { } g && geloescht.Contains(g))
+                || (x.Raum is { } r && geloescht.Contains(r)) || (x.System is { } sy && geloescht.Contains(sy)) || x.Bezuege.Values.Any(geloescht.Contains);
+            var nutzer = arbeit.Elemente.Where(x => !geloescht.Contains(x.Id) && Verweist(x)).Select(x => x.Kennzeichen).Order(StringComparer.Ordinal).ToList();
+            var verbunden = arbeit.Verbindungen.Where(v => geloescht.Contains(v.Von.Element) || geloescht.Contains(v.Nach.Element)).ToList();
+            if (nutzer.Count > 0 || verbunden.Count > 0)
+            {
+                string Kz(string id) => Modell.Finde(id)?.Kennzeichen ?? id;
+                var text = nutzer.Count > 0 ? $"wird inzwischen von {string.Join(", ", nutzer.Take(10))}{(nutzer.Count > 10 ? " …" : "")} verwendet"
+                    : $"ist inzwischen verbunden ({string.Join(", ", verbunden.Take(5).Select(v => $"{Kz(v.Von.Element)}.{v.Von.Anschluss} – {Kz(v.Nach.Element)}.{v.Nach.Anschluss}"))})";
+                return Nein("verwendet", $"{string.Join(", ", geloescht.Select(Kz).Take(5))} {text} – nichts zurückgenommen.",
+                    "Zuerst diese Elemente umhängen oder trennen, dann zurücknehmen.");
+            }
+        }
+
+        var e = Uebernehmen("rueckgaengig", new JsonObject { ["paket"] = ziel.Id, ["befehl"] = ziel.Befehl, ["gezielt"] = true },
+            inverse, arbeit, [], trockenlauf, ziel.Id, "rueckgaengig");
+        if (!e.Angenommen && e.Gesperrt.Count > 0)
+            return Nein("gesperrt", e.Fehler ?? "Elemente werden gerade von jemand anderem bearbeitet.", e.Vorschlag, gesperrt: e.Gesperrt);
+        if (!e.Angenommen) return Nein("ablage", e.Fehler ?? e.Meldung, e.Vorschlag);
+        return e;
+    }
+
+    /// <summary>Was ein Paket berührt: Ids seiner Elemente und Verbindungen (je mit Präfix, damit sie sich nicht vermischen).</summary>
+    static HashSet<string> Beruehrt(Paket p) =>
+        p.Operationen.Select(o => (o.Art.StartsWith("element", StringComparison.Ordinal) ? "e:" : "v:") + o.Id).ToHashSet(StringComparer.Ordinal);
 
     /// <summary>Gleicher fachlicher Inhalt: alles ausser Version und Änderungsvermerk.</summary>
     static bool GleicherInhalt(Element a, Element b)

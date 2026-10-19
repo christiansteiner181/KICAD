@@ -67,6 +67,8 @@ public class TuerDarstellungTests
         ["aussparungen_ifc"] = "{\"datei\":\"" + AussparungIfcDatei() + "\"}",   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt der Test vorher an
         ["plansaetze"] = "{}",                                          // Serien-PDF
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
+        ["normen_suchen"] = """{"frage":"Mindestgefälle Prüfleitung"}""",   // Modul 3c: Test-PDF (erfunden), HLKS_NORMEN setzt der Test kurz
+        ["norm_lesen"] = """{"datei":"SIA 9999:2026","seite":3}""",
     };
 
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
@@ -100,8 +102,12 @@ public class TuerDarstellungTests
         {
             var par = Par(AbfrageParameter[a.Name]);
             object ergebnis;
+            // Modul 3c: die Normensuche liest HLKS_NORMEN – nur während des Aufrufs auf eine Kopie der Test-PDF (nie W:; nur die Normensuche liest die Variable)
+            var normen = a.Name is "normen_suchen" or "norm_lesen" ? NormenTestdaten.Kopie() : null;
+            using var umgebung = normen is null ? null : Hlks.Tests.Gemeinsam.TestUmgebung.Setzen(("HLKS_NORMEN", normen));
             try { ergebnis = Tuer.Abfrage(p, a.Name, par); }
             catch (HlksFehler f) when (f.Message.Contains("gibt es nicht")) { throw new Xunit.Sdk.XunitException($"{a.Name} fehlt im switch der Tür: {f.Message}"); }
+            finally { if (normen is not null) NormenTestdaten.Loeschen(normen); }
             Assert.NotNull(ergebnis);
             if (ergebnis is string text) Assert.False(string.IsNullOrWhiteSpace(text), $"{a.Name}: leerer Text");
             else Assert.False(string.IsNullOrWhiteSpace(Hlks.Kern.Json.Text(ergebnis)), $"{a.Name}: leeres Ergebnis");

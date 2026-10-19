@@ -27,6 +27,7 @@ builder.WebHost.UseUrls($"http://localhost:{port}");
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services.AddSingleton(einstellungen);
 builder.Services.AddSingleton<ProjektDienst>();
+builder.Services.AddSingleton<KiLaeufe>();   // Modul 3c: höchstens ein KI-Lauf je Projekt (Gespräch der KI-Palette oder Auftrag)
 builder.Services.AddHostedService<AbgleichDienst>();
 // Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB):
 // gzip, wenn der Browser es annimmt und nicht auf demselben Rechner läuft (siehe UseWhen unten). Alles andere (JSON,
@@ -242,6 +243,7 @@ app.MapStart(dienst);   // Startbildschirm (S1): StartEndpunkte.cs
 app.MapBenutzer(dienst);   // Benutzereinstellungen (G1): BenutzerEndpunkte.cs (z. B. primäre Gliederung des Projektbrowsers)
 app.MapAnleitung(dienst);   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hilfe/ und Prüfstand /api/hilfe/pruefung
 app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; hinter dem Schliessen angemeldet, damit beim Beenden zuerst die Läufe enden
+app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
 await app.RunAsync();

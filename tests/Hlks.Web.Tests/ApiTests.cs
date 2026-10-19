@@ -447,6 +447,8 @@ public class ApiTests
         ["aussparungen_ifc"] = "{\"datei\":\"" + AussparungIfcDatei() + "\"}",   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt der Test vorher an
         ["plansaetze"] = "{}",                                          // Serien-PDF
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
+        ["normen_suchen"] = """{"frage":"Mindestgefälle Prüfleitung"}""",   // Modul 3c: Test-PDF (erfunden), HLKS_NORMEN setzt der Test kurz
+        ["norm_lesen"] = """{"datei":"SIA 9999:2026","seite":3}""",
     };
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
     static string BcfDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}.bcf").Replace('\\', '/');
@@ -458,7 +460,7 @@ public class ApiTests
                 if (File.Exists(p)) return p.Replace('\\', '/');
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive", "Claude_Code", "HLKS_CAD", "tests", "daten", name).Replace('\\', '/');
     }
-    static readonly string[] Textabfragen = ["system_lesen", "strang_text"];
+    static readonly string[] Textabfragen = ["system_lesen", "strang_text", "norm_lesen"];
 
     [Fact]
     public void Abfragen_ParameterTabelleDecktGenauDieListeAb()
@@ -483,7 +485,11 @@ public class ApiTests
         try {
         foreach (var a in Abfragen.Liste)
         {
+            // Modul 3c: die Normensuche liest HLKS_NORMEN – nur während des Aufrufs auf eine Kopie der Test-PDF (nie W:; nur die Normensuche liest die Variable)
+            var normen = a.Name is "normen_suchen" or "norm_lesen" ? GespraechServer.NormenKopie() : null;
+            using var umgebung = normen is null ? null : Hlks.Tests.Gemeinsam.TestUmgebung.Setzen(("HLKS_NORMEN", normen));
             var (code, text, antwort) = await s.Roh(HttpMethod.Post, "/api/abfrage/" + a.Name, AbfrageParameter[a.Name]);
+            if (normen is not null) GespraechServer.Loeschen(normen);
             Assert.True(code == HttpStatusCode.OK, $"{a.Name}: {(int)code} {text}");
             Assert.False(string.IsNullOrWhiteSpace(text), $"{a.Name}: leer");
             var typ = antwort.Content.Headers.ContentType!.MediaType;
