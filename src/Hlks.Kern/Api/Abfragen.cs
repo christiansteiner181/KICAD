@@ -60,6 +60,7 @@ public sealed class Abfragen(Projekt p)
         .. KollisionAbfragen.Definitionen,   // Modul 3b: Kollisionen
         .. AussparungAbfragen.Definitionen,   // Modul 3b: Aussparungen
         .. PlansatzAbfragen.Definitionen,   // Serien-PDF: plansaetze, plansatz_pdf
+        .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
     ];
 
     string Kz(string? id) => M.Finde(id)?.Kennzeichen ?? (id is null ? "" : $"?{id}");

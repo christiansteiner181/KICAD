@@ -29,4 +29,9 @@
     <ProjectReference Include="..\Hlks.ClaudeAttrappe\Hlks.ClaudeAttrappe.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <!-- Modul 3c: Test-PDF der Normensuche (selbst erzeugt, erfundener Text; tests/daten/normen/erzeugen.mjs) -->
+    <None Include="..\daten\normen\**\*.pdf" Link="normen\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

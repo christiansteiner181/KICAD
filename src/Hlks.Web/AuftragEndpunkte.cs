@@ -20,7 +20,7 @@ public static class AuftragEndpunkte
     public static WebApplication MapAuftraege(this WebApplication app, ProjektDienst dienst)
     {
         var einstellungen = app.Services.GetService<AuftragEinstellungen>() ?? AuftragEinstellungen.Vorgabe();
-        var auftraege = new AuftragDienst(dienst, einstellungen);
+        var auftraege = new AuftragDienst(dienst, einstellungen, app.Services.GetService<KiLaeufe>());   // Modul 3c: ein KI-Lauf je Projekt, gemeinsam mit den Gesprächen
         app.Lifetime.ApplicationStopping.Register(auftraege.BeendenAlle);
 
         static IResult Antwort(object o, int code = 200) =>
