@@ -71,13 +71,19 @@ export function abstandZurStrecke(px, py, ax, ay, bx, by) {
   return { abstand: Math.hypot(px - x, py - y), t, x, y };
 }
 
-/** Knoten, dessen Symbolfläche (±KNOTEN_HALB_X/Y, mindestens «toleranz») den Punkt enthält; bei mehreren der nächste. */
-export function knotenBei(knoten, x, y, toleranz = 0) {
+/**
+ * Knoten, dessen Symbolfläche (±KNOTEN_HALB_X/Y, mindestens «toleranz») den Punkt enthält; bei mehreren der nächste.
+ * bevorzugt: Id eines Knotens (das angeklickte Teil). Liegt er in Reichweite, gewinnt er – auch wenn ein anderer gleich nah oder
+ * näher liegt. Das braucht der Kern: Knoten verschiedener Systeme können genau aufeinander liegen (z. B. die Etagen-T-Stücke von
+ * Schmutz- und Kaltwasser am selben Endgerät, beide auf der Etagenleitung unter dem Gerät); der Zeiger meint dann den obenliegenden.
+ */
+export function knotenBei(knoten, x, y, toleranz = 0, bevorzugt = null) {
   let beste = null, bestD = Infinity;
   for (const k of knoten ?? []) {
     const hx = Math.max(KNOTEN_HALB_X, toleranz), hy = Math.max(KNOTEN_HALB_Y, toleranz);
     const dx = Math.abs(x - k.x), dy = Math.abs(y - k.y);
     if (dx > hx || dy > hy) continue;
+    if (bevorzugt && k.element === bevorzugt) return k;
     const d = Math.hypot(dx, dy);
     if (d < bestD) { bestD = d; beste = k; }
   }
@@ -104,7 +110,7 @@ export function naechsteLinie(daten, x, y, toleranz) {
  * Ergebnis: { art: 'knoten', knoten, id } | { art: 'linie', linie, id, element, nurGeometrie? } | { art: 'sonst', id } | { art: 'leer' }.
  */
 export function treffer(daten, p, toleranz, domId = null) {
-  const k = knotenBei(daten?.knoten, p.x, p.y, toleranz);
+  const k = knotenBei(daten?.knoten, p.x, p.y, toleranz, domId);
   if (k) return { art: 'knoten', knoten: k, id: k.element };
   if (domId) {
     const kd = (daten?.knoten ?? []).find((x) => x.element === domId);

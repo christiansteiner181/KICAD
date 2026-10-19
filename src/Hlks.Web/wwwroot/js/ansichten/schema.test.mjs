@@ -110,6 +110,21 @@ test('Treffer auf Knoten: Symbolfläche ±4.5 × ±3.5 mm, bei mehreren der näc
   assert.equal(L.knotenBei([], 1, 1), null);
 });
 
+test('Knoten genau aufeinander (Kern: Etagen-T-Stücke zweier Systeme am selben Endgerät): das angeklickte Teil gewinnt', () => {
+  const kn = [
+    { element: 'e-sw', kennzeichen: 'TS-SW-1.02-2', x: 138, y: 120 },
+    { element: 'e-kw', kennzeichen: 'TS-KW-1.02-2', x: 138, y: 120 },
+  ];
+  const d = { knoten: kn, linien: [], spalten: [], zeilen: [] };
+  assert.equal(L.knotenBei(kn, 138, 120)?.kennzeichen, 'TS-SW-1.02-2');            // ohne Hinweis der erste
+  assert.equal(L.knotenBei(kn, 138, 120, 0, 'e-kw')?.kennzeichen, 'TS-KW-1.02-2');   // das angeklickte Teil
+  assert.equal(L.knotenBei(kn, 138, 120, 0, 'e-sw')?.kennzeichen, 'TS-SW-1.02-2');
+  assert.equal(L.knotenBei(kn, 138, 120, 0, 'e-anders')?.kennzeichen, 'TS-SW-1.02-2');   // Teil ohne Knoten in Reichweite: wie bisher
+  assert.equal(L.knotenBei(kn, 160, 120, 0, 'e-kw'), null);                           // ausser Reichweite zählt auch das Teil nicht
+  assert.equal(L.treffer(d, { x: 138, y: 120 }, 0, 'e-kw').knoten.kennzeichen, 'TS-KW-1.02-2');
+  assert.equal(L.treffer(d, { x: 138, y: 120 }, 0, 'e-sw').id, 'e-sw');
+});
+
 test('Abstand zur Strecke und nächste Linie', () => {
   assert.deepEqual(Object.fromEntries(Object.entries(L.abstandZurStrecke(5, 3, 0, 0, 10, 0)).map(([k, v]) => [k, Math.round(v * 100) / 100])), { abstand: 3, t: 0.5, x: 5, y: 0 });
   assert.equal(L.abstandZurStrecke(-4, 3, 0, 0, 10, 0).abstand, 5);          // vor dem Anfang: Abstand zum Endpunkt
@@ -534,7 +549,12 @@ test('Echter Kern: Abfrage schema und Plangrafik passen zur Logik', { skip: !SER
   const ids = new Set(plan.teile.map((t) => t.id).filter(Boolean));
   for (const k of d.knoten) {
     assert.ok(ids.has(k.element), `Teil für ${k.kennzeichen}`);
-    assert.equal(L.treffer(d, { x: k.x, y: k.y }, 0, null).knoten?.element, k.element, `Treffer auf ${k.kennzeichen}`);
+    // Der Kern setzt Knoten verschiedener Systeme auch genau aufeinander (Etagen-T-Stücke von Schmutz- und Kaltwasser am selben
+    // Endgerät, beide auf der Etagenleitung unter dem Gerät): der Zeiger trifft dann das angeklickte Teil (domId = Id des Knotens);
+    // ohne Teil trifft er irgendeinen Knoten an genau dieser Stelle.
+    assert.equal(L.treffer(d, { x: k.x, y: k.y }, 0, k.element).knoten?.element, k.element, `Treffer auf ${k.kennzeichen}`);
+    const ohneTeil = L.treffer(d, { x: k.x, y: k.y }, 0, null).knoten;
+    assert.ok(ohneTeil && ohneTeil.x === k.x && ohneTeil.y === k.y, `Treffer an der Lage von ${k.kennzeichen}`);
     assert.ok(L.zelleBei(d, k.x, k.y) || k.y < -10 || true);
   }
   // jedes Linienelement ist ein Teil; die Verbindungen einer Linie gibt es im Modell
@@ -548,8 +568,23 @@ test('Echter Kern: Abfrage schema und Plangrafik passen zur Logik', { skip: !SER
     for (const x of o) { assert.ok(verb.has(x.id), `Verbindung ${x.id} im Modell`); anzahl++; }
   }
   assert.ok(anzahl > 50);
-  // Raster: jeder Knoten liegt in einer Zelle seiner Spalte und Zeile (ausser Zonen mit negativen Lagen)
-  for (const k of d.knoten) { const z = L.zelleBei(d, k.x, k.y); assert.ok(z, `Zelle für ${k.kennzeichen}`); }
+  // Raster: jeder Knoten liegt in einer Zelle seiner Spalte und Zeile (ausser Zonen mit negativen Lagen). Seit Nachtrag B8d liegen die
+  // Grundleitungen (Verlegung erdreich) und die Schächte im Untergrund unter dem untersten Deckenband: ausserhalb des Rasters der
+  // Geschosszeilen, aber im Streifen d.untergrund (y = Oberkante, hoehe nach unten; y nach oben) – die Schächte reichen bis zur Sohle.
+  const untergrund = d.untergrund ?? null;
+  let imUntergrund = 0;
+  for (const k of d.knoten) {
+    if (k.untergrund || k.schacht) {
+      assert.ok(untergrund, `Untergrundstreifen für ${k.kennzeichen}`);
+      const oben = untergrund.y + (k.schacht ? k.schacht.oben - untergrund.y : 0), unten = untergrund.y - untergrund.hoehe;
+      assert.ok(k.y <= oben + 1e-6 && k.y >= unten - 1e-6, `${k.kennzeichen} (y ${k.y}) liegt im Untergrundstreifen ${unten}…${oben}`);
+      assert.equal(L.zelleBei(d, k.x, k.y), null, `${k.kennzeichen} liegt ausserhalb des Rasters der Geschosse`);
+      imUntergrund++;
+      continue;
+    }
+    const z = L.zelleBei(d, k.x, k.y); assert.ok(z, `Zelle für ${k.kennzeichen}`);
+  }
+  assert.ok(imUntergrund >= 1, 'das Beispielprojekt hat Grundleitung und Kontrollschacht im Untergrund');
   // Hinweise und Banner
   assert.ok(L.hinweisBanner(d).anzahl >= 1);
   // Umrandung und Wo-zeigt-es für jedes Element der Linien

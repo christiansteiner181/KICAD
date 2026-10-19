@@ -1,7 +1,7 @@
 // Browser-Integrationstest der Seite «Leitungsserie» im Familieneditor (Modul 3, Auftrag C3): Edge headless über CDP, echte Mausklicks und Tastatur,
 // frisches Beispielprojekt «MFH Musterweg» und die fiktiven Testfamilien (tests/daten/familien/test_rohrserie, test_bogen, test_tstueck, test_reduktion,
 // test_kanalbogen – alle Werte FIKTIV). Nicht Teil von «node --test». Der Test startet seinen eigenen Server (Port 5164, Build-Ordner
-// %USERPROFILE%\HLKS_CAD_build\m3c3; HLKS_BAU ändert ihn):
+// %USERPROFILE%\HLKS_CAD_build (HLKS_BUILD); HLKS_BAU ändert ihn):
 //   SHOTS=<Ordner> node familien-leitung.browser.mjs
 // oder gegen einen eigenen Server mit frischem Beispielprojekt: HLKS_TEST_SERVER=http://localhost:5164 node familien-leitung.browser.mjs
 //
@@ -22,7 +22,8 @@ if (/:(5013|5098|5130|5131|5149|5150)\b/.test(SERVER)) { console.error('Dieser T
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9364);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'm3c3');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'hlks_m3c3');
 mkdirSync(SHOTS, { recursive: true });
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));

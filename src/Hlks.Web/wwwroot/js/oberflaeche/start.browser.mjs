@@ -17,14 +17,14 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PORT = 5168;
+const PORT = Number(process.env.HLKS_S1_PORT ?? 5168);   // HLKS_S1_PORT: anderer Port, wenn 5168 belegt ist (der Test beendet den Prozess, der den Port hält)
 const SERVER = `http://localhost:${PORT}`;
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9468);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = 'C:\\Program Files\\dotnet\\dotnet.exe';
 const BUILD = process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE, 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD');
-const WURZEL = path.join(tmpdir(), 'HLKS_CAD', 's1_test');
+const WURZEL = path.join(tmpdir(), 'HLKS_CAD', PORT === 5168 ? 's1_test' : `s1_test_${PORT}`);
 const hier = path.dirname(fileURLToPath(import.meta.url));
 const TESTFAMILIE = path.resolve(hier, '../../../../../tests/daten/familien/test_heizkoerper.familie.json');
 const KICAD = 'c_Pläne und Modelle\\e_KICAD';
