@@ -5,7 +5,7 @@
 //                                             die Einstellungen des Benutzers, vereinigt über alle seine Rechner (der neueste Wert je Schlüssel gilt)
 //   POST /api/benutzer/einstellungen          { schluessel, wert }  → { schluessel, wert, zeit, rechner }; wert null setzt den Schlüssel zurück
 //
-// Schlüssel heute: projektbrowser.gliederung (gebaeude | sanitaer | heizung | lueftung | koordination | energie). Weitere Schlüssel
+// Schlüssel heute: projektbrowser.gliederung (Liste der Kennungen aus gebaeude, sanitaer, heizung, lueftung, koordination, energie; ein alter Einzeltext gilt auch). Weitere Schlüssel
 // brauchen keinen neuen Code (siehe BenutzerEinstellungen.cs).
 
 using System.Text.Json.Nodes;

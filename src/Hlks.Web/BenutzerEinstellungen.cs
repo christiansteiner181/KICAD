@@ -14,7 +14,7 @@
 //   sieht der Test leere Einstellungen (Vorgabe «Gebäude» im Projektbrowser) und das Schreiben wird abgelehnt – die echten Dateien des
 //   Benutzers werden nie berührt (auch nicht lesend: ein Test hängt nicht von der Wahl des Entwicklers ab).
 //
-// Schlüssel: Kleinbuchstaben, Ziffern, Punkt, Unterstrich, Bindestrich. Bekannt (mit Prüfung des Werts): projektbrowser.gliederung.
+// Schlüssel: Kleinbuchstaben, Ziffern, Punkt, Unterstrich, Bindestrich. Bekannt (mit Prüfung des Werts): projektbrowser.gliederung (seit G2 eine Liste von Kennungen; Einzeltext bleibt gültig).
 // Weitere Schlüssel (z. B. Design hell/dunkel, Menüband minimiert) sind ohne Änderung hier möglich: jeder Schlüssel nimmt Text, Zahl,
 // Ja/Nein sowie kleine Objekte und Listen (bis 4000 Zeichen) auf.
 
@@ -52,11 +52,26 @@ public sealed class BenutzerEinstellungen
     /// <summary>Schlüssel mit eigener Prüfung des Werts (Meldung bei Fehler, sonst null). Weitere Schlüssel gelten ohne Eintrag hier.</summary>
     public static readonly IReadOnlyDictionary<string, Func<JsonNode, string?>> Bekannt = new Dictionary<string, Func<JsonNode, string?>>(StringComparer.Ordinal)
     {
-        // Kennung der Gliederung (gebaeude, sanitaer, …). Welche es gibt, steht in der Tabelle der Oberfläche (projektbrowser-gliederung.js);
-        // hier nur die Form – eine unbekannte Kennung nimmt die Oberfläche als «gebaeude».
-        ["projektbrowser.gliederung"] = w => w is JsonValue v && v.TryGetValue<string>(out var s) && KennungMuster.IsMatch(s)
-            ? null : "Der Wert muss die Kennung einer Gliederung sein (Kleinbuchstaben, z. B. «gebaeude», «sanitaer», «heizung», «lueftung», «koordination», «energie»).",
+        // Die gewählten Gliederungen (G2): eine Liste von Kennungen (gebaeude, sanitaer, …), z. B. ["sanitaer","heizung"]; ein alter Einzelwert (Text) gilt als Liste mit einem Eintrag.
+        // Welche Kennungen es gibt und welche sich ausschliessen («Gebäude»), steht in der Tabelle der Oberfläche (projektbrowser-gliederung.js);
+        // hier nur die Form – eine unbekannte Kennung ignoriert die Oberfläche.
+        ["projektbrowser.gliederung"] = GliederungPruefen,
     };
+
+    const int GliederungenMax = 16;
+    const string GliederungHinweis = "Der Wert muss eine Liste von Kennungen der Gliederungen sein (Kleinbuchstaben, z. B. [\"sanitaer\",\"heizung\"]); ein einzelner Text wie «gebaeude» gilt als Liste mit einem Eintrag.";
+
+    static string? GliederungPruefen(JsonNode w)
+    {
+        static bool Kennung(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && KennungMuster.IsMatch(s);
+        if (w is JsonValue) return Kennung(w) ? null : GliederungHinweis;
+        if (w is not JsonArray liste) return GliederungHinweis;
+        if (liste.Count == 0) return "Die Liste darf nicht leer sein: mindestens eine Gliederung bleibt gewählt.";
+        if (liste.Count > GliederungenMax) return $"Die Liste darf höchstens {GliederungenMax} Gliederungen enthalten.";
+        if (!liste.All(Kennung)) return GliederungHinweis;
+        if (liste.Select(n => n!.GetValue<string>()).Distinct(StringComparer.Ordinal).Count() != liste.Count) return "Jede Gliederung darf nur einmal in der Liste stehen.";
+        return null;
+    }
 
     readonly RechnerAblage ablage;
     readonly object sperre = new();

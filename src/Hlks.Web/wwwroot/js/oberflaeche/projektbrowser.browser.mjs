@@ -1,13 +1,15 @@
 // Browser-Integrationstest der Gliederungen des Projektbrowsers (G1, entwurf/projektbrowser-gliederung.md): Edge headless über CDP, echte Mausklicks, frisches Beispielprojekt
 // «MFH Musterweg» mit Heizung, Lüftung, Kollisionen und Aussparungen (alles FIKTIV). Nicht Teil von «node --test». Der Test startet seinen eigenen Server
-// (Port 5173, Build-Ordner %USERPROFILE%\HLKS_CAD_build\g1; HLKS_BAU ändert ihn, HLKS_G1_PORT den Port):
-//   SHOTS=<Ordner> node projektbrowser.browser.mjs        (Bilder g1_*.png, Vorgabe %TEMP%\HLKS_CAD)
+// (Port 5176, Build-Ordner %USERPROFILE%\HLKS_CAD_build\g2; HLKS_BAU ändert ihn, HLKS_G1_PORT den Port, HLKS_CDP_PORT den Debug-Port von Edge, Vorgabe 9490;
+//  HLKS_WEBROOT und HLKS_KATALOG zeigen auf die Arbeitskopie, wenn man nicht den Quellordner des Builds meint):
+//   SHOTS=<Ordner> node projektbrowser.browser.mjs        (Bilder g1_*.png und – G2, mehrere Gliederungen zugleich – g2_*.png, Vorgabe %TEMP%\HLKS_CAD)
 // Er setzt HLKS_TEST=1, HLKS_BENUTZER, HLKS_ZULETZT, HLKS_FAMILIENBIBLIOTHEK und HLKS_PROJEKTABLAGE auf Ordner unter %TEMP% und schreibt nie in die echten Benutzerdateien
 // (%OneDrive%\HLKS-CAD\…, %APPDATA%\HLKS-CAD\…) und nie auf W:.
 //
 // Ablauf: Vorgabe «Gebäude» ohne Einstellung (Pläne nach Gewerk gefärbt) › Auswahlfeld (sechs Einträge, gefärbt) › Sanitär wählen (Fachäste oben, «Weitere» zu, Farben, Server-Einstellung) ›
 // «Weitere» aufklappen › Suche mit Treffer unter «Weitere» › Aufklappzustand je Gliederung gemerkt › Neuladen › zweiter Rechner › anderer Benutzer › Heizung, Lüftung, Energie ›
-// Koordination (Kollisionen nach Status/Paar, Aussparungen nach Geschoss/Status, Typenliste, live) › Doppelklick und Kontextmenü › Kontrast der Farben im Browser (hell und dunkel) › Bilder.
+// Koordination (Kollisionen nach Status/Paar, Aussparungen nach Geschoss/Status, Typenliste, live) › Doppelklick und Kontextmenü › G2: mehrere Gliederungen zugleich (Häkchen, Blöcke,
+// «Gebäude» exklusiv, letztes Häkchen bleibt, Anzeige «Sanitär + Heizung» / «Sanitär + 2», Liste als Einstellung, alter Einzelwert, Tastatur, Aufklappzustand) › Kontrast der Farben im Browser (hell und dunkel) › Bilder.
 // Rückgabewert 1, wenn eine Prüfung fehlschlägt.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, readFileSync, readdirSync, mkdirSync, rmSync, existsSync } from 'node:fs';
@@ -15,13 +17,13 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const PORT = Number(process.env.HLKS_G1_PORT ?? 5173);
+const PORT = Number(process.env.HLKS_G1_PORT ?? 5176);
 const SERVER = `http://localhost:${PORT}`;
-if (/:(5013|5098|5130|5131|5149|5150|5151|516[4-9]|517[0-2])\b/.test(SERVER)) { console.error('Dieser Test läuft nie gegen einen der gesperrten Ports.'); process.exit(2); }
-const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9473);
+if (/:(5013|5098|5130|5131|5149|5150|5151|516[4-9]|517[0-5])\b/.test(SERVER)) { console.error('Dieser Test läuft nie gegen einen der gesperrten Ports.'); process.exit(2); }
+const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9490);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'g1');
+const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'g2');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD');
 mkdirSync(SHOTS, { recursive: true });
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -158,7 +160,9 @@ async function ausw(expr) {
 await send('Runtime.enable'); await send('Page.enable'); await send('DOM.enable');
 await send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 950, deviceScaleFactor: 1, mobile: false });
 
-const shot = async (name) => { const r = await send('Page.captureScreenshot', { format: 'png' }); const f = path.join(SHOTS, 'g1_' + name + '.png'); writeFileSync(f, Buffer.from(r.data, 'base64')); console.log('   Bild:', f); };
+const shotMit = async (vorsilbe, name) => { const r = await send('Page.captureScreenshot', { format: 'png' }); const f = path.join(SHOTS, vorsilbe + name + '.png'); writeFileSync(f, Buffer.from(r.data, 'base64')); console.log('   Bild:', f); };
+const shot = (name) => shotMit('g1_', name);
+const shot2 = (name) => shotMit('g2_', name);
 const warteBis = async (fn, t, ms = 20000) => { const t0 = Date.now(); while (Date.now() - t0 < ms) { try { if (await fn()) return true; } catch { /* weiter */ } await warte(120); } throw new Error('Zeitüberschreitung: ' + t); };
 const zustandDaten = (ausdruck) => ausw(`const z = await import('/js/zustand.js'); return (${ausdruck});`);
 
@@ -181,7 +185,7 @@ async function klick(sel, opt = {}) {
   if (!oben) throw new Error('Element ist verdeckt: ' + sel + ' – dort: ' + await ausw(`const t = document.elementFromPoint(${p.x}, ${p.y}); return t ? t.tagName + '.' + t.className : 'nichts';`));
   await klickAn(p.x, p.y, opt);
 }
-const CODES = { Enter: ['Enter', 13], Escape: ['Escape', 27] };
+const CODES = { Enter: ['Enter', 13], Escape: ['Escape', 27], ArrowDown: ['ArrowDown', 40], ArrowUp: ['ArrowUp', 38], ' ': ['Space', 32] };
 async function taste(key) {
   const [code, vk] = CODES[key] ?? [`Key${key.toUpperCase()}`, key.toUpperCase().charCodeAt(0)];
   await send('Input.dispatchKeyEvent', { type: 'rawKeyDown', key, code, windowsVirtualKeyCode: vk });
@@ -218,14 +222,28 @@ const oberste = () => ausw(`return [...document.querySelectorAll('.pb-baum .pb-z
 const wartePb = (fn, t) => warteBis(fn, t, 25000);
 const gliederungAktiv = () => ausw(`return document.querySelector('.pb-gl-knopf')?.dataset.gliederung ?? null;`);
 const neuLaden = async () => { await send('Page.reload'); await warteBis(async () => (await zustandDaten(`z.zustand.elemente.size > 50`)), 'App neu geladen', 40000); await warte(800); await design('hell'); await browserGross(); };
-/** Gliederung über das Auswahlfeld wählen (echte Mausklicks). */
+/** Nur diese eine Gliederung über das Auswahlfeld wählen (echte Mausklicks): erst «Gebäude» (hebt alle übrigen auf), dann die gewünschte; die Liste bleibt dabei offen und wird mit Escape geschlossen. */
 async function waehleGliederung(id) {
   await klick('.pb-gl-knopf');
   await warteBis(() => gibt('.pb-gl-liste'), 'Auswahlliste');
-  await klick(`.pb-gl-eintrag[data-id="${id}"]`);
+  await klick('.pb-gl-eintrag[data-id="gebaeude"]');
+  if (id !== 'gebaeude') await klick(`.pb-gl-eintrag[data-id="${id}"]`);
   await warteBis(async () => (await gliederungAktiv()) === id, 'Gliederung ' + id);
+  await taste('Escape');
+  await warteBis(async () => !(await gibt('.pb-gl-liste')), 'Liste zu');
   await warte(300);
 }
+/** Die gespeicherte Einstellung des Benutzers beim Server als Text (JSON) – seit G2 eine Liste. */
+const gespeichert = async () => JSON.stringify((await einstellungen()).werte['projektbrowser.gliederung']);
+/** Liste öffnen, falls sie zu ist, und die Einträge anklicken (Häkchen setzen bzw. entfernen); die Liste bleibt offen. */
+async function haken(...ids) {
+  if (!(await gibt('.pb-gl-liste'))) { await klick('.pb-gl-knopf'); await warteBis(() => gibt('.pb-gl-liste'), 'Auswahlliste'); }
+  for (const id of ids) await klick(`.pb-gl-eintrag[data-id="${id}"]`);
+  await warte(250);
+}
+const listeZu = async () => { if (await gibt('.pb-gl-liste')) { await taste('Escape'); await warteBis(async () => !(await gibt('.pb-gl-liste')), 'Liste zu'); } };
+const gewaehlt = () => ausw(`return [...document.querySelectorAll('.pb-gl-eintrag.aktiv')].map((e) => e.dataset.id);`);
+const knopfText = () => ausw(`return document.querySelector('.pb-gl-knopf .pb-gl-name').innerText;`);
 /** Für die Bilder: die Eigenschaftenpalette weg, der Projektbrowser füllt die Seitenleiste (die Klasse gibt es im Programm, wenn niemand etwas wählt). */
 const browserGross = () => ausw(`document.getElementById('seitenleiste').classList.add('ohne-eigenschaften'); return 1;`);
 const farbeRgb = (hex) => [1, 3, 5].map((i) => parseInt(hex.slice(i, i + 2), 16));
@@ -278,9 +296,9 @@ pruef(!(await gibt('.pb-gl-liste')), 'Escape schliesst die Liste');
 abschnitt('Sanitär: Fachinhalt oben, Rest unter «Weitere»');
 await waehleGliederung('sanitaer');
 pruef((await oberste()).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Ansichten|Pläne|Anlagen|Familien|Räume|Weitere', 'Ansichten, Pläne, Anlagen, Familien, Räume, Weitere', (await oberste()).join('|'));
-await warteBis(async () => (await einstellungen()).werte['projektbrowser.gliederung'] === 'sanitaer', 'Einstellung beim Server');
+await warteBis(async () => (await gespeichert()) === '["sanitaer"]', 'Einstellung beim Server');
 const ein = await einstellungen();
-pruef(ein.werte['projektbrowser.gliederung'] === 'sanitaer' && ein.quelle === 'Umleitung' && ein.ort === BENUTZER_A, 'Die Wahl steht beim Server (Umleitung HLKS_BENUTZER, nie in den echten Dateien)', JSON.stringify(ein));
+pruef(JSON.stringify(ein.werte['projektbrowser.gliederung']) === '["sanitaer"]' && ein.quelle === 'Umleitung' && ein.ort === BENUTZER_A, 'Die Wahl steht beim Server als Liste (Umleitung HLKS_BENUTZER, nie in den echten Dateien)', JSON.stringify(ein));
 pruef(existsSync(path.join(BENUTZER_A, 'g1-eins.json')), 'Eine Datei je Rechner: g1-eins.json');
 pruef((await ausw(`return document.querySelector('.pb-zeile[data-key="x:weitere"] .pb-pfeil').textContent;`)) === '▸', '«Weitere» ist eingeklappt');
 // Ansichten des Gewerks: genau die Ansichten, deren Gewerke Sanitär enthalten
@@ -357,7 +375,7 @@ await neuLaden();
 await warteBis(async () => (await gliederungAktiv()) === 'sanitaer', 'zweiter Rechner', 15000);
 pruef((await gliederungAktiv()) === 'sanitaer', 'Zweiter Rechner des Benutzers: Sanitär gilt auch dort');
 await waehleGliederung('heizung');
-await warteBis(async () => (await einstellungen()).werte['projektbrowser.gliederung'] === 'heizung', 'Heizung gespeichert');
+await warteBis(async () => (await gespeichert()) === '["heizung"]', 'Heizung gespeichert');
 pruef(existsSync(path.join(BENUTZER_A, 'g1-zwei.json')) && existsSync(path.join(BENUTZER_A, 'g1-eins.json')), 'Je Rechner eine Datei (g1-eins, g1-zwei)');
 await serverStoppen(); await serverStarten('g1-eins', BENUTZER_A);
 await neuLaden();
@@ -368,7 +386,7 @@ await serverStoppen(); await serverStarten('g1-eins', BENUTZER_B);
 await neuLaden();
 pruef((await gliederungAktiv()) === 'gebaeude' && (await einstellungen()).werte['projektbrowser.gliederung'] === undefined, 'Ein anderer Benutzer startet mit «Gebäude»: er sieht die Wahl des ersten nicht');
 await waehleGliederung('lueftung');
-await warteBis(async () => (await einstellungen()).werte['projektbrowser.gliederung'] === 'lueftung', 'Lüftung gespeichert');
+await warteBis(async () => (await gespeichert()) === '["lueftung"]', 'Lüftung gespeichert');
 await serverStoppen(); await serverStarten('g1-eins', BENUTZER_A);
 await neuLaden();
 await warteBis(async () => (await gliederungAktiv()) === 'heizung', 'erster Benutzer wieder', 15000);
@@ -462,6 +480,187 @@ pruef((await astTexte('.pb-zeile[data-key^="x:gw:"]')).length >= 3, '«Weitere»
 await ausw(`document.getElementById('koord-panel')?.querySelector('.kp-zu')?.click(); return 1;`);
 await ausw(`document.getElementById('projektbrowser').scrollTop = 0; return 1;`);
 await shot('10_koordination_weitere_hell');
+
+// ================================================================== G2: mehrere Gliederungen zugleich
+abschnitt('G2: Auswahlfeld mit Häkchen – Sanitär + Heizung');
+await ansicht('AN-SAN-HZG', 'Grundriss EG Sanitär und Heizung', 'EG', { gewerke: ['sanitaer', 'heizung', 'architektur'] });   // gehört wirklich zu beiden Gewerken
+await waehleGliederung('sanitaer');
+await klick('.pb-gl-knopf');
+await warteBis(() => gibt('.pb-gl-liste'), 'Auswahlliste');
+pruef(await ausw(`return document.querySelector('.pb-gl-liste').getAttribute('aria-multiselectable') === 'true' && document.querySelectorAll('.pb-gl-eintrag .pb-gl-haken').length === 6;`), 'Die Auswahlliste hat ein Häkchenfeld vor jedem der sechs Einträge (aria-multiselectable)');
+pruef((await gewaehlt()).join() === 'sanitaer', 'Nur Sanitär ist angehakt', (await gewaehlt()).join());
+await klick('.pb-gl-eintrag[data-id="heizung"]');
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung', 'Sanitär + Heizung');
+pruef(await gibt('.pb-gl-liste'), 'Die Liste bleibt nach dem Klick offen (weitere Häkchen möglich)');
+pruef((await gewaehlt()).join() === 'sanitaer,heizung', 'Sanitär und Heizung sind angehakt', (await gewaehlt()).join());
+pruef((await knopfText()) === 'Sanitär + Heizung', 'Das Feld zeigt «Sanitär + Heizung»', await knopfText());
+pruef(await ausw(`return getComputedStyle(document.querySelector('.pb-gl-eintrag[data-id="sanitaer"] .pb-gl-haken'), '::after').color !== getComputedStyle(document.querySelector('.pb-gl-eintrag[data-id="lueftung"] .pb-gl-haken'), '::after').color;`), 'Das Häkchen ist nur bei den gewählten sichtbar');
+await warteBis(async () => (await gespeichert()) === '["sanitaer","heizung"]', 'Liste beim Server');
+pruef((await gespeichert()) === '["sanitaer","heizung"]', 'Der Server hat die Liste ["sanitaer","heizung"]', await gespeichert());
+await shot2('01_auswahlfeld_offen_hell');
+await listeZu();
+
+abschnitt('G2: Blöcke untereinander');
+await warteBis(async () => (await oberste()).length >= 4, 'Blöcke');
+const bl = (await oberste()).map((t) => t.replace(/ \(\d+\)$/, ''));
+pruef(bl.join('|') === 'Sanitär|Heizung|Räume|Weitere', 'Oben stehen die Blöcke Sanitär und Heizung, danach «Räume» einmal und «Weitere»', (await oberste()).join('|'));
+pruef(await ausw(`const k = (id) => document.querySelector('.pb-zeile[data-key="b:' + id + '"]'); return k('sanitaer')?.dataset.gewerk === 'sanitaer' && k('heizung')?.dataset.gewerk === 'heizung' && k('sanitaer').classList.contains('pb-gewerk') && k('heizung').classList.contains('pb-gewerk');`), 'Jeder Block hat einen Kopf in der Farbe seines Gewerks');
+pruef((await stil(Z('b:sanitaer'), 'backgroundColor')) === rgbText(farbeRgb(farbe('sanitaer').pastell)) && (await stil(Z('b:heizung'), 'backgroundColor')) === rgbText(farbeRgb(farbe('heizung').pastell)), 'Kopf Sanitär im Pastellgrün, Kopf Heizung im Pastellrot (aus dem Katalog)');
+pruef((await stil(Z('b:sanitaer'), 'boxShadow')).includes(rgbText(farbeRgb(farbe('sanitaer').koordination))), 'Streifen links in der Koordinationsfarbe');
+pruef(await ausw(`const z = [...document.querySelectorAll('.pb-baum .pb-zeile')]; const i = (k) => z.findIndex((e) => e.dataset.key === k); return i('b:sanitaer') < i('b:sanitaer:w:ansichten') && i('b:sanitaer:w:ansichten') < i('b:heizung') && i('b:heizung') < i('b:heizung:w:ansichten') && i('b:heizung:w:ansichten') < i('w:gebaeude') && i('w:gebaeude') < i('x:weitere');`), 'Reihenfolge: Kopf Sanitär › seine Äste › Kopf Heizung › seine Äste › Räume › Weitere');
+const astDe = async (b) => astTexte(`.pb-zeile[data-key^="b:${b}:w:"]`);
+pruef((await astDe('sanitaer')).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Ansichten|Pläne|Anlagen|Familien', 'Unter «Sanitär»: Ansichten, Pläne, Anlagen, Familien', (await astDe('sanitaer')).join('|'));
+pruef((await astDe('heizung')).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Ansichten|Pläne|Anlagen|Familien', 'Unter «Heizung»: dieselben Fachäste');
+pruef(await ausw(`return ['sanitaer', 'heizung'].every((b) => [...document.querySelectorAll('.pb-zeile[data-key^="b:' + b + ':w:"]')].every((z) => z.classList.contains('pb-streifen') && !z.classList.contains('pb-gewerk')));`), 'Die Äste unter dem Kopf sind nicht noch einmal gefärbt, nur der schmale Streifen zieht sich durch den Block');
+// Elemente: je Block die Fachansichten, die gemeinsame Ansicht in beiden
+const ansichtenIn = (b) => ausw(`const w = document.querySelector('.pb-zeile[data-key="b:${b}:w:ansichten"]'); const l = []; for (let e = w.nextElementSibling; e && Number(e.style.getPropertyValue('--t')) > 1; e = e.nextElementSibling) if (e.dataset.art === 'ansicht') l.push(e.dataset.kz); return l.sort();`);
+await klappeAuf('^b:(sanitaer|heizung):g:');
+const anSan = await ansichtenIn('sanitaer'), anHzg = await ansichtenIn('heizung');
+pruef(anSan.includes('AN-SAN-HZG') && anHzg.includes('AN-SAN-HZG'), 'Die Ansicht «Sanitär und Heizung» steht in beiden Blöcken', JSON.stringify([anSan, anHzg]));
+pruef(!anSan.some((k) => /HZG-(EG|OG)|LUE/.test(k)) && anHzg.includes('AN-HZG-EG') && anHzg.includes('AN-HZG-OG') && !anHzg.some((k) => /LUE/.test(k)), 'Sonst nur die eigenen Ansichten: Heizungsansichten nur unter Heizung, keine Lüftung', JSON.stringify([anSan, anHzg]));
+const alleAnsichten = await ausw(`return [...document.querySelectorAll('.pb-zeile[data-art="ansicht"]')].filter((z) => z.dataset.key.startsWith('b:')).map((z) => z.dataset.kz);`);
+const doppeltA = alleAnsichten.filter((k, i) => alleAnsichten.indexOf(k) !== i);
+pruef(JSON.stringify(doppeltA) === '["AN-SAN-HZG"]', 'Keine andere Ansicht steht doppelt', JSON.stringify(doppeltA));
+await klick(Z('x:weitere') + ' .pb-label');
+await warteBis(() => gibt('.pb-zeile[data-key^="x:gw:"]'), 'Gruppen unter Weitere');
+const gr2 = await astTexte('.pb-zeile[data-key^="x:gw:"]');
+pruef(/^Lüftung/.test(gr2[0]) && !gr2.some((t) => /^(Sanitär|Heizung)/.test(t)) && /^Ohne Gewerk/.test(gr2.at(-1)), '«Weitere» enthält nur noch das, was in keinem Block vorkommt: Lüftung, Architektur …, ohne Sanitär und Heizung', gr2.join(' | '));
+await tippe('.pb-suche input', 'AN-HZG-EG');   // die Suche durchsucht Blöcke und «Weitere»: die Heizungsansicht steht genau einmal, im Block
+await warteBis(async () => (await anzahl('.pb-zeile[data-kz="AN-HZG-EG"]')) >= 1, 'Treffer AN-HZG-EG');
+pruef((await anzahl('.pb-zeile[data-kz="AN-HZG-EG"]')) === 1 && (await ausw(`return document.querySelector('.pb-zeile[data-kz="AN-HZG-EG"]').dataset.key.startsWith('b:heizung:');`)), 'Heizungsansichten stehen nicht noch einmal unter «Weitere»: die Suche findet AN-HZG-EG nur im Block Heizung');
+await tippe('.pb-suche input', '');
+await ausw(`const i = document.querySelector('.pb-suche input'); i.value = ''; i.dispatchEvent(new Event('input', { bubbles: true })); return 1;`);
+await warteBis(async () => (await oberste()).length >= 4, 'Suche leer');
+await ausw(`document.getElementById('projektbrowser').scrollTop = 0; return 1;`);
+await shot2('02_sanitaer_heizung_hell');
+await klick(Z('x:weitere') + ' .pb-label');
+
+abschnitt('G2: Gebäude schliesst die anderen aus, das letzte Häkchen bleibt, Anzeige «Sanitär + 2»');
+await haken('lueftung');
+pruef((await knopfText()) === 'Sanitär + 2' && (await gliederungAktiv()) === 'sanitaer+heizung+lueftung', 'Bei drei Gliederungen zeigt das Feld «Sanitär + 2»', await knopfText());
+await haken('gebaeude');
+pruef((await gewaehlt()).join() === 'gebaeude' && (await knopfText()) === 'Gebäude', '«Gebäude» hebt die übrigen auf', (await gewaehlt()).join());
+pruef((await oberste()).length === 8 && !(await gibt(Z('x:weitere'))), 'Gebäude zeigt wieder die acht Äste ohne «Weitere»');
+await haken('gebaeude');
+pruef((await gewaehlt()).join() === 'gebaeude', 'Das Häkchen bei «Gebäude» lässt sich nicht entfernen (mindestens eine bleibt)');
+await haken('heizung');
+pruef((await gewaehlt()).join() === 'heizung', 'Eine Fachgliederung hebt «Gebäude» auf', (await gewaehlt()).join());
+await haken('heizung');
+pruef((await gewaehlt()).join() === 'heizung' && (await knopfText()) === 'Heizung', 'Auch das letzte Fach-Häkchen bleibt', (await gewaehlt()).join());
+await haken('sanitaer');
+pruef((await gliederungAktiv()) === 'sanitaer+heizung', 'In Listenreihenfolge, nicht in der Reihenfolge des Anklickens: Sanitär + Heizung', await gliederungAktiv());
+await haken('heizung');
+pruef((await gliederungAktiv()) === 'sanitaer' && (await gewaehlt()).join() === 'sanitaer', 'Das Häkchen bei Heizung entfernen: nur Sanitär');
+await warteBis(async () => (await gespeichert()) === '["sanitaer"]', 'Einzelliste beim Server');
+await listeZu();
+
+abschnitt('G2: Tastatur im Auswahlfeld');
+await ausw(`document.querySelector('.pb-gl-knopf').focus(); return 1;`);
+await taste('ArrowDown');
+await warteBis(() => gibt('.pb-gl-liste'), 'Liste per Pfeiltaste');
+pruef(await ausw(`return document.activeElement?.classList.contains('pb-gl-eintrag') && document.activeElement.dataset.id === 'sanitaer';`), 'Pfeil nach unten öffnet die Liste, der Fokus steht auf dem gewählten Eintrag');
+await taste('ArrowDown'); await taste(' ');
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung', 'Leertaste setzt das Häkchen');
+pruef((await gliederungAktiv()) === 'sanitaer+heizung', 'Pfeil nach unten + Leertaste hakt «Heizung» an');
+await taste('ArrowDown'); await taste('Enter');
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung+lueftung', 'Enter setzt das Häkchen');
+pruef((await gliederungAktiv()) === 'sanitaer+heizung+lueftung', 'Enter hakt «Lüftung» an');
+await taste('Escape');
+await warteBis(async () => !(await gibt('.pb-gl-liste')), 'Liste zu');
+pruef(await ausw(`return document.activeElement === document.querySelector('.pb-gl-knopf');`), 'Escape schliesst die Liste, der Fokus kehrt zum Feld zurück');
+await haken('lueftung'); await listeZu();
+
+abschnitt('G2: Sanitär + Heizung + Koordination – Kollisionen im Block live');
+await haken('koordination'); await listeZu();
+pruef((await gliederungAktiv()) === 'sanitaer+heizung+koordination' && (await knopfText()) === 'Sanitär + 2', 'Sanitär, Heizung und Koordination gewählt');
+await warteBis(async () => /^Sanitär/.test((await oberste())[0] ?? '') && (await oberste()).some((t) => /^Koordination/.test(t)), 'Blöcke', 20000);
+pruef((await oberste()).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Sanitär|Heizung|Koordination|Räume|Weitere', 'Drei Blöcke, dann Räume und Weitere', (await oberste()).join('|'));
+await warteBis(async () => /^Kollisionen \(\d+\)/.test((await astTexte('.pb-zeile[data-key="b:koordination:w:kollisionen"]'))[0] ?? ''), 'Kollisionen im Block geladen', 25000);
+const kern1 = await kollisionenKern();
+const sichtbar1 = kern1.zeilen.filter((z) => ['hlks-architektur', 'hlks-hlks'].includes(z.paar)).length;
+pruef(new RegExp(`^Kollisionen \\(${sichtbar1}\\)`).test((await astTexte('.pb-zeile[data-key="b:koordination:w:kollisionen"]'))[0]), `Der Block «Koordination» zeigt dieselben Kollisionen wie die Palette (${sichtbar1})`);
+pruef((await astTexte('.pb-zeile[data-key^="b:koordination:w:"]')).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Kollisionen|Aussparungen|Typenliste|Unterlagen|Pläne|Ansichten', 'Der Block «Koordination» hat seine sechs Äste');
+await klick(Z('b:koordination:w:kollisionen'), { taste: 'right' });
+await warteBis(() => gibt('.kmenu'), 'Kontextmenü Kollisionen');
+pruef((await zeilenText('.kmenu button')).join('|').startsWith('Kollisionsliste|Kollisionen prüfen'), 'Das Kontextmenü des Asts «Kollisionen» funktioniert im Block', (await zeilenText('.kmenu button')).join('|'));
+await ausw(`document.querySelector('.kmenu')?.remove(); return 1;`);
+const kz2 = (await kollisionenKern()).zeilen.find((z) => z.status === 'neu' && ['hlks-architektur', 'hlks-hlks'].includes(z.paar));
+if (kz2) {
+  const neuZahl = async () => Number(((await astTexte('.pb-zeile[data-key="b:koordination:ko:neu"]'))[0] ?? '').match(/\((\d+)\)/)?.[1] ?? 0);
+  const vorher2 = await neuZahl();
+  await kern('befehl', 'kollision_status', { kollisionen: [kz2.kollision], status: 'bestaetigt', kommentar: 'FIKTIV G2 live' });
+  await warteBis(async () => (await neuZahl()) === vorher2 - 1, 'Zahl «neu» im Block sinkt live', 10000);
+  pruef(vorher2 >= 1, `Änderung von aussen erscheint im Block live: «neu» zählt ${vorher2 - 1} statt ${vorher2}`);
+}
+await ausw(`document.getElementById('projektbrowser').scrollTop = 0; return 1;`);
+await shot2('03_sanitaer_heizung_koordination_hell');
+
+abschnitt('G2: Aufklappzustand und Neuladen');
+await klick(Z('b:heizung') + ' .pb-label');   // Kopf Heizung zuklappen
+await warteBis(async () => !(await gibt(Z('b:heizung:w:ansichten'))), 'Block Heizung zu');
+const offenM = await ausw(`return JSON.parse(localStorage.getItem('hlks.browserOffen.mehrere') ?? 'null');`);
+pruef(Array.isArray(offenM) && offenM.includes('b:sanitaer') && !offenM.includes('b:heizung'), 'Der Aufklappzustand mehrerer Gliederungen liegt unter «browserOffen.mehrere»; der zugeklappte Block fehlt', JSON.stringify(offenM));
+const offenSan2 = await ausw(`return JSON.parse(localStorage.getItem('hlks.browserOffen.sanitaer') ?? 'null');`);
+pruef(offenSan2 === null || (Array.isArray(offenSan2) && !offenSan2.some((k) => k.startsWith('b:'))), 'Der Zustand der einzelnen Gliederung Sanitär enthält keine Schlüssel der Blöcke (getrennt gemerkt)', JSON.stringify(offenSan2));
+await neuLaden();
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung+koordination', 'Liste nach dem Neuladen', 15000);
+pruef((await gliederungAktiv()) === 'sanitaer+heizung+koordination' && (await knopfText()) === 'Sanitär + 2', 'Nach dem Neuladen gelten wieder alle drei (vom Server gelesen)');
+await warteBis(async () => (await oberste()).some((t) => /^Heizung/.test(t)), 'Blöcke nach dem Neuladen', 20000);
+pruef(!(await gibt(Z('b:heizung:w:ansichten'))) && (await gibt(Z('b:sanitaer:w:ansichten'))), 'Der zugeklappte Block Heizung bleibt zu, Sanitär bleibt offen');
+await klick(Z('b:heizung') + ' .pb-label');   // wieder aufklappen
+await warteBis(() => gibt(Z('b:heizung:w:ansichten')), 'Block Heizung offen');
+// Lüftung dazu: der neue Block ist anfangs offen
+await haken('lueftung'); await listeZu();
+await warteBis(() => gibt(Z('b:lueftung:w:ansichten')), 'neuer Block Lüftung ist anfangs offen');
+pruef(true, 'Ein dazugewählter Block (Lüftung) ist anfangs aufgeklappt');
+await haken('lueftung'); await listeZu();
+
+abschnitt('G2: alter Einzelwert gilt als Liste mit einem Eintrag');
+const alt = await kernPost('/api/benutzer/einstellungen', { schluessel: 'projektbrowser.gliederung', wert: 'heizung' });   // Text, wie ihn die Oberfläche vor G2 geschrieben hat
+pruef(alt.wert === 'heizung', 'Der Server nimmt den alten Einzelwert weiter an', JSON.stringify(alt));
+await neuLaden();
+await warteBis(async () => (await gliederungAktiv()) === 'heizung', 'alter Einzelwert', 15000);
+pruef((await gliederungAktiv()) === 'heizung' && (await knopfText()) === 'Heizung', 'Ein alter Einzelwert «heizung» zeigt die Gliederung Heizung (Liste mit einem Eintrag)');
+const leerListe = await kernPost('/api/benutzer/einstellungen', { schluessel: 'projektbrowser.gliederung', wert: [] });
+pruef(!!leerListe.fehler, 'Eine leere Liste lehnt der Server ab (mindestens eine bleibt gewählt)', JSON.stringify(leerListe));
+await haken('sanitaer'); await listeZu();
+await warteBis(async () => (await gespeichert()) === '["sanitaer","heizung"]', 'alter Wert durch Liste ersetzt');
+pruef((await gespeichert()) === '["sanitaer","heizung"]', 'Der nächste Klick speichert wieder eine Liste');
+pruef(await ausw(`return document.querySelector('.pb-gl-knopf').title.includes('Sanitär') && document.querySelector('.pb-gl-knopf').title.includes('Heizung');`), 'Der Hinweistext des Felds nennt alle gewählten Gliederungen');
+
+abschnitt('G2: zweiter Rechner und anderer Benutzer');
+await serverStoppen(); await serverStarten('g1-zwei', BENUTZER_A);
+await neuLaden();
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung', 'zweiter Rechner', 15000);
+pruef((await gliederungAktiv()) === 'sanitaer+heizung', 'Zweiter Rechner desselben Benutzers: Sanitär + Heizung gilt auch dort');
+await serverStoppen(); await serverStarten('g1-eins', BENUTZER_B);
+await neuLaden();
+pruef((await gliederungAktiv()) === 'lueftung', 'Ein anderer Benutzer behält seine eigene Wahl (Lüftung)', await gliederungAktiv());
+await serverStoppen(); await serverStarten('g1-eins', BENUTZER_A);
+await neuLaden();
+await warteBis(async () => (await gliederungAktiv()) === 'sanitaer+heizung', 'erster Benutzer wieder', 15000);
+
+abschnitt('G2: Bilder – Sanitär + Heizung und Sanitär + Heizung + Koordination, hell und dunkel');
+for (const [name, ids] of [['sanitaer_heizung', ['sanitaer', 'heizung']], ['sanitaer_heizung_koordination', ['sanitaer', 'heizung', 'koordination']]]) {
+  await waehleGliederung('sanitaer');
+  await haken(...ids.slice(1)); await listeZu();
+  await warteBis(async () => (await gliederungAktiv()) === ids.join('+'), name);
+  if (ids.includes('koordination')) await warteBis(async () => /^Kollisionen \(\d+\)/.test((await astTexte('.pb-zeile[data-key="b:koordination:w:kollisionen"]'))[0] ?? ''), 'Kollisionen', 25000);
+  await klappeAuf('^b:[a-z]+:g:|^b:koordination:(ko|au):');
+  await ausw(`document.getElementById('projektbrowser').scrollTop = 0; return 1;`);
+  await design('hell'); await warte(300);
+  await shot2(name + '_hell');
+  await design('dunkel'); await warte(300);
+  pruef(rgbVon(await stil(Z('b:sanitaer'), 'backgroundColor')).every((c) => c < 140),`Dunkel: Kopf Sanitär ist eine Tönung (${name})`, await stil(Z('b:sanitaer'), 'backgroundColor'));
+  await shot2(name + '_dunkel');
+  if (name === 'sanitaer_heizung') {
+    await klick('.pb-gl-knopf'); await warteBis(() => gibt('.pb-gl-liste'), 'Liste dunkel');
+    await shot2('auswahlfeld_offen_dunkel');
+    await listeZu();
+  }
+  await design('hell'); await warte(300);
+}
+await waehleGliederung('gebaeude');
 
 // ================================================================== Dunkel
 abschnitt('Dunkles Design: Tönung mit Deckkraft, lesbar');

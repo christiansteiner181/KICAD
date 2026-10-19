@@ -41,7 +41,7 @@ const fachAeste = [
 ];
 
 export const GLIEDERUNGEN = [
-  { id: 'gebaeude', titel: 'Gebäude', sym: 'gebaeude', gewerk: null, aeste: [
+  { id: 'gebaeude', titel: 'Gebäude', sym: 'gebaeude', gewerk: null, exklusiv: true, aeste: [
     { quelle: 'ansichten' }, { quelle: 'vorlagen' }, { quelle: 'plaene' }, { quelle: 'gebaeude' }, { quelle: 'huelle' },
     { quelle: 'systeme' }, { quelle: 'unterlagen' }, { quelle: 'familien', mitKatalog: true },
   ] },
@@ -68,6 +68,73 @@ export function gliederung(id, tabelle = GLIEDERUNGEN) {
   return tabelle.find((g) => g.id === id) ?? tabelle.find((g) => g.id === GLIEDERUNG_VORGABE) ?? tabelle[0];
 }
 export const gliederungGueltig = (id, tabelle = GLIEDERUNGEN) => tabelle.some((g) => g.id === id);
+
+// ---------------------------------------------------------------------------------------------- Mehrere Gliederungen zugleich (G2)
+
+/** Kennung für den gemerkten Aufklappzustand, wenn mehrere Gliederungen zugleich gewählt sind (die Schlüssel der Blöcke tragen die Kennung des Blocks, ein Satz genügt). */
+export const GLIEDERUNG_MEHRERE = 'mehrere';
+
+/** Eine Gliederung gilt als «exklusiv», wenn sie ohnehin alles zeigt («Gebäude»): sie lässt sich nicht mit anderen zusammen wählen. */
+const exklusiv = (id, tabelle) => !!tabelle.find((g) => g.id === id)?.exklusiv;
+
+/** Macht aus dem gespeicherten Wert die Liste der gewählten Kennungen: Einzelwert (alte Einstellung) → Liste mit einem Eintrag; unbekannte Kennungen und Doppelte entfallen,
+ *  die Reihenfolge ist die der Tabelle (= der Auswahlliste); eine exklusive Gliederung neben anderen entfällt; nichts Gültiges → die Vorgabe («Gebäude»). */
+export function gliederungenNormieren(wert, tabelle = GLIEDERUNGEN) {
+  const roh = Array.isArray(wert) ? wert : (wert === undefined || wert === null || wert === '' ? [] : [wert]);
+  const ids = tabelle.map((g) => g.id).filter((id) => roh.includes(id));
+  if (ids.length === 0) return [GLIEDERUNG_VORGABE];
+  if (ids.length > 1) return ids.filter((id) => !exklusiv(id, tabelle));
+  return ids;
+}
+
+/** Schaltet eine Gliederung in der Auswahl um (Häkchen setzen oder entfernen) und liefert die neue Liste: «Gebäude» ersetzt alles, eine Fachgliederung hebt «Gebäude» auf,
+ *  und mindestens eine bleibt gewählt (das letzte Häkchen lässt sich nicht entfernen). */
+export function gliederungUmschalten(aktuell, id, tabelle = GLIEDERUNGEN) {
+  const jetzt = gliederungenNormieren(aktuell, tabelle);
+  if (!gliederungGueltig(id, tabelle)) return jetzt;
+  if (exklusiv(id, tabelle)) return [id];
+  const fach = jetzt.filter((x) => !exklusiv(x, tabelle));
+  const neu = fach.includes(id) ? fach.filter((x) => x !== id) : [...fach, id];
+  return neu.length === 0 ? jetzt : gliederungenNormieren(neu, tabelle);
+}
+
+/** Text im Auswahlfeld: «Sanitär», «Sanitär + Heizung», bei mehr als zwei «Sanitär + 2». */
+export function gliederungAnzeige(ids, tabelle = GLIEDERUNGEN) {
+  const t = ids.map((id) => gliederung(id, tabelle).titel);
+  return t.length <= 2 ? t.join(' + ') : `${t[0]} + ${t.length - 1}`;
+}
+
+export const gleicheListe = (a, b) => a.length === b.length && a.every((x, i) => x === b[i]);
+
+/** Schlüssel für den Aufklappzustand: bei einer Gliederung ihre Kennung, bei mehreren «mehrere». */
+export const offenKennung = (ids) => (ids.length === 1 ? ids[0] : GLIEDERUNG_MEHRERE);
+
+const loesen = (auswahl, gewerk) => (Array.isArray(auswahl) ? auswahl.map((a) => loesen(a, gewerk))
+  : Object.fromEntries(Object.entries(auswahl).map(([k, v]) => [k, k === 'gewerk' && v === '$' ? gewerk : v])));
+
+/** Zerlegt mehrere Fachgliederungen (in Listenreihenfolge) in Blöcke und Gemeinsames:
+ *  - bloecke: je Gliederung ihre Äste ohne das Gemeinsame;
+ *  - gemeinsam: Äste ohne Auswahl (sie zeigen die ganze Quelle, z. B. «Räume»), die nicht an ein Gewerk gebunden sind – entweder haben mehrere Blöcke einen solchen Ast derselben
+ *    Quelle, oder der Ast trägt keine Gewerkfarbe. Sie stehen einmal nach den Blöcken, ohne Farbe (ein Ast je Quelle, bevorzugt der ohne Farbe);
+ *  - gesamt: eine Gliederung mit allen Ästen (Auswahl `$` aufgelöst) – daraus leitet «Weitere» ab, was in keinem Block vorkommt. */
+export function aufteilen(defs) {
+  const ohneAuswahl = (a) => a.auswahl === undefined;
+  const zaehler = new Map();
+  for (const d of defs) for (const q of new Set(d.aeste.filter(ohneAuswahl).map((a) => a.quelle))) zaehler.set(q, (zaehler.get(q) ?? 0) + 1);
+  const gemeinsamQuelle = (a) => ohneAuswahl(a) && (zaehler.get(a.quelle) > 1 || !a.farbe);
+  const gemeinsam = [];
+  for (const d of defs) {
+    for (const a of d.aeste.filter(gemeinsamQuelle)) {
+      const i = gemeinsam.findIndex((x) => x.quelle === a.quelle);
+      if (i < 0) gemeinsam.push(a);
+      else if (gemeinsam[i].farbe && !a.farbe) gemeinsam[i] = a;
+    }
+  }
+  const bloecke = defs.map((d) => ({ def: d, aeste: d.aeste.filter((a) => !gemeinsamQuelle(a)) }));
+  const gesamt = { id: GLIEDERUNG_MEHRERE, titel: defs.map((d) => d.titel).join(' + '), sym: defs[0]?.sym, gewerk: null,
+    aeste: defs.flatMap((d) => d.aeste.map((a) => (a.auswahl === undefined ? a : { ...a, auswahl: loesen(a.auswahl, d.gewerk) }))) };
+  return { bloecke, gemeinsam: gemeinsam.map((a) => ({ ...a, farbe: false })), gesamt };
+}
 
 /** Schlüssel im Browser-Speicher für die aufgeklappten Äste: «Gebäude» wie bisher (browserOffen), die übrigen je Gliederung. */
 export const offenSchluessel = (id) => (id === GLIEDERUNG_VORGABE ? 'browserOffen' : `browserOffen.${id}`);

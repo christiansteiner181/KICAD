@@ -1,5 +1,7 @@
 // Projektbrowser (links unten): Baum mit Auswahlfeld der Gliederung und Suchfeld. G1 (entwurf/projektbrowser-gliederung.md): die Gliederung ist umschaltbar – Gebäude (wie bisher),
 // Sanitär, Heizung, Lüftung, Koordination, Energie und Umwelt; jeder Benutzer stellt seine primäre Gliederung ein (gilt überall, auf allen seinen Rechnern: /api/benutzer/einstellungen).
+// G2: das Auswahlfeld ist eine Liste mit Häkchen – mehrere Fachgliederungen stehen als Blöcke untereinander (Kopf in der Gewerkfarbe), «Gebäude» schliesst die anderen aus, mindestens eine bleibt gewählt;
+// die Einstellung ist eine Liste (ein alter Einzelwert gilt als Liste mit einem Eintrag). Regeln und Blockbildung: projektbrowser-gliederung.js bzw. baumBauenListe in projektbrowser-aeste.js.
 // Die Gliederungen und ihre Äste stehen in EINER Tabelle (projektbrowser-gliederung.js), die Knoten der Äste in projektbrowser-aeste.js (rein, in Node getestet); hier steht nur
 // das Zeichnen und Bedienen. Fachinhalt steht oben, alles andere eingeklappt unter «Weitere»; die Gewerke sind in ihrer Pastellfarbe hinterlegt (Katalog gewerke.json).
 //
@@ -28,22 +30,24 @@ import { koordinationSicht, koordinationAktiv, beiKoordinationsdaten } from './k
 import { imGrundrissZeigen, in3dZeigen } from './koordination-panel.js';
 import { benutzerLaden, benutzerWert, benutzerSetzen } from './benutzer.js';
 import {
-  GLIEDERUNGEN, GLIEDERUNG_VORGABE, EINSTELLUNG_GLIEDERUNG, gliederung, gliederungGueltig, offenSchluessel, offenVorgabe, gewerkFarben, filtern,
+  GLIEDERUNGEN, GLIEDERUNG_VORGABE, GLIEDERUNG_MEHRERE, EINSTELLUNG_GLIEDERUNG, gliederung, gliederungenNormieren, gliederungUmschalten, gliederungAnzeige, gleicheListe,
+  offenKennung, offenSchluessel, offenVorgabe, gewerkFarben, filtern,
 } from './projektbrowser-gliederung.js';
-import { baumBauen } from './projektbrowser-aeste.js';
+import { baumBauenListe } from './projektbrowser-aeste.js';
 
 let wurzel, baum, suchfeld, knopf, liste;
 let suche = '';
-let aktivId = GLIEDERUNG_VORGABE;      // Kennung der gewählten Gliederung (Vorgabe «Gebäude», auch für Tests ohne Einstellung)
+let aktivIds = [GLIEDERUNG_VORGABE];   // Kennungen der gewählten Gliederungen in Listenreihenfolge (G2: mehrere zugleich; Vorgabe «Gebäude», auch für Tests ohne Einstellung)
 let vomBenutzerGewaehlt = false;       // der Benutzer hat in dieser Sitzung selbst gewählt: eine späte Antwort des Servers überstimmt ihn nicht
-const offenJe = new Map();             // Kennung → Menge der aufgeklappten Äste (je Gliederung gemerkt, Browser-Speicher)
+const offenJe = new Map();             // Kennung → Menge der aufgeklappten Äste (je Gliederung gemerkt, bei mehreren Gliederungen unter «mehrere»; Browser-Speicher)
 const gesehen = new Set();             // Gruppen, die einmal anfangs offen waren (danach entscheidet der Benutzer)
+let gesehenMehrere = null;             // dasselbe für mehrere Gliederungen zugleich, aber gespeichert: ein neuer Block (z. B. Lüftung dazu) ist anfangs offen, ein zugeklappter bleibt zu
 
-const offenFuer = (id) => {
-  if (!offenJe.has(id)) offenJe.set(id, new Set(merken.lesen(offenSchluessel(id), offenVorgabe(gliederung(id)))));
-  return offenJe.get(id);
+const offenFuer = (kennung) => {
+  if (!offenJe.has(kennung)) offenJe.set(kennung, new Set(merken.lesen(offenSchluessel(kennung), kennung === GLIEDERUNG_MEHRERE ? [] : offenVorgabe(gliederung(kennung)))));
+  return offenJe.get(kennung);
 };
-const offen = () => offenFuer(aktivId);
+const offen = () => offenFuer(offenKennung(aktivIds));
 
 export function einrichten(element_) {
   wurzel = element_;
@@ -74,35 +78,37 @@ export function einrichten(element_) {
   familienLaden();
   bibliothekLaden();
 
-  // Benutzereinstellung: die primäre Gliederung des Benutzers – beim Start und nach jedem Laden eines Projekts vom Server gelesen
+  // Benutzereinstellung: die primären Gliederungen des Benutzers (G2: eine Liste; ein alter Einzelwert gilt als Liste mit einem Eintrag) – beim Start und nach jedem Laden eines Projekts vom Server gelesen
   const uebernehmen = async () => {
     await benutzerLaden();
     if (vomBenutzerGewaehlt) return;
-    const id = benutzerWert(EINSTELLUNG_GLIEDERUNG, GLIEDERUNG_VORGABE);
-    const neu = gliederungGueltig(id) ? id : GLIEDERUNG_VORGABE;
-    if (neu !== aktivId) setzen(neu);
+    const neu = gliederungenNormieren(benutzerWert(EINSTELLUNG_GLIEDERUNG, GLIEDERUNG_VORGABE));
+    if (!gleicheListe(neu, aktivIds)) setzen(neu);
   };
   uebernehmen();
   abonnieren('modell', (d) => { if (d?.alles && zustand.status?.offen) uebernehmen(); });
-  setzen(aktivId);
+  setzen(aktivIds);
 }
 
 // ---------------------------------------------------------------------------------------------- Gliederung wählen
 
-/** Macht eine Gliederung zur aktiven (Zeichnen, Mitführen der Koordination, Knopf), ohne sie zu speichern. */
-function setzen(id) {
-  aktivId = gliederung(id).id;
-  koordinationAktiv(aktivId === 'koordination');
+/** Macht die Gliederungen zu den aktiven (Zeichnen, Mitführen der Koordination, Knopf, Häkchen der Liste), ohne sie zu speichern. */
+function setzen(ids) {
+  aktivIds = gliederungenNormieren(ids);
+  koordinationAktiv(aktivIds.includes('koordination'));
   knopfZeichnen();
+  listeAktualisieren();
   zeichnen();
 }
 
-/** Vom Benutzer gewählt: aktiv setzen und als primäre Gliederung beim Server merken (gilt in allen Projekten und auf allen seinen Rechnern). */
+/** Vom Benutzer ein Häkchen gesetzt oder entfernt: «Gebäude» ersetzt alles, eine Fachgliederung hebt «Gebäude» auf, mindestens eine bleibt. Die Wahl wird als Liste beim Server
+ *  gemerkt (gilt in allen Projekten und auf allen seinen Rechnern). */
 async function waehlen(id) {
-  if (!gliederungGueltig(id)) return;
+  const ids = gliederungUmschalten(aktivIds, id);
+  if (gleicheListe(ids, aktivIds)) return;
   vomBenutzerGewaehlt = true;
-  setzen(id);
-  try { await benutzerSetzen(EINSTELLUNG_GLIEDERUNG, id); }
+  setzen(ids);
+  try { await benutzerSetzen(EINSTELLUNG_GLIEDERUNG, [...ids]); }
   catch (e) { meldung(`Die Gliederung konnte nicht gespeichert werden: ${e.message ?? e}`, 'warnung', { vorschlag: e.vorschlag }); }
 }
 
@@ -112,34 +118,73 @@ function gewerkStil(id) {
   return f ? `--gw-pastell:${f.pastell};--gw-kord:${f.koordination}` : '';
 }
 
+/** Streifen links am Auswahlfeld bei mehreren Gliederungen: ein Abschnitt je Gewerk in dessen Koordinationsfarbe (aus dem Katalog), von oben nach unten in Listenreihenfolge. */
+function streifenStil(defs) {
+  const farben = defs.map((g) => (g.gewerk ? gewerkFarben({ gewerke: zustand.katalog?.gewerke }, g.gewerk)?.koordination : null)).filter(Boolean);
+  if (farben.length === 0) return '';
+  const n = farben.length;
+  return `--gw-streifen:linear-gradient(to bottom,${farben.map((f, i) => `${f} ${Math.round((100 * i) / n)}% ${Math.round((100 * (i + 1)) / n)}%`).join(',')})`;
+}
+
 let knopfSig = '';
 function knopfZeichnen() {
-  const g = gliederung(aktivId);
-  const stil = g.gewerk ? gewerkStil(g.gewerk) : '';
-  if (knopfSig === g.id + '|' + stil) return;   // unverändert: nicht neu schreiben (der Knopf behält den Fokus)
-  knopfSig = g.id + '|' + stil;
-  knopf.dataset.gliederung = g.id;
-  knopf.innerHTML = `<span class="pb-sym">${symbol(g.sym, 16)}</span><span class="pb-gl-name">${esc(g.titel)}</span><span class="pb-pfeil">▾</span>`;
-  knopf.classList.toggle('pb-gewerk', !!stil);
+  const defs = aktivIds.map((id) => gliederung(id));
+  const einzeln = defs.length === 1;
+  const stil = einzeln && defs[0].gewerk ? gewerkStil(defs[0].gewerk) : einzeln ? '' : streifenStil(defs);
+  const sig = aktivIds.join('+') + '|' + stil;
+  if (knopfSig === sig) return;   // unverändert: nicht neu schreiben (der Knopf behält den Fokus)
+  knopfSig = sig;
+  knopf.dataset.gliederung = aktivIds.join('+');   // eine Gliederung: ihre Kennung; mehrere: «sanitaer+heizung»
+  knopf.title = einzeln ? 'Gliederung des Projektbrowsers' : `Gliederungen des Projektbrowsers: ${defs.map((g) => g.titel).join(', ')}`;
+  knopf.innerHTML = `<span class="pb-sym">${symbol(defs[0].sym, 16)}</span><span class="pb-gl-name">${esc(gliederungAnzeige(aktivIds))}</span><span class="pb-pfeil">▾</span>`;
+  knopf.classList.toggle('pb-gewerk', einzeln && !!stil);
+  knopf.classList.toggle('pb-mehrere', !einzeln);
   knopf.style.cssText = stil;
 }
 
-function listeOeffnen() {
+function listeOeffnen(fokus = false) {
   listeSchliessen();
   const r = knopf.getBoundingClientRect();
   liste = document.createElement('div');
   liste.className = 'pb-gl-liste';
   liste.setAttribute('role', 'listbox');
+  liste.setAttribute('aria-multiselectable', 'true');
+  liste.setAttribute('aria-label', 'Gliederungen des Projektbrowsers');
   liste.style.cssText = `left:${Math.round(r.left)}px;top:${Math.round(r.bottom)}px;min-width:${Math.round(r.width)}px`;
   liste.innerHTML = GLIEDERUNGEN.map((g) => {
     const stil = g.gewerk ? gewerkStil(g.gewerk) : '';
-    return `<div class="pb-gl-eintrag${stil ? ' pb-gewerk' : ''}${g.id === aktivId ? ' aktiv' : ''}" role="option" aria-selected="${g.id === aktivId}" data-id="${esc(g.id)}"${stil ? ` style="${esc(stil)}"` : ''}>`
-      + `<span class="pb-sym">${symbol(g.sym, 16)}</span><span class="pb-gl-name">${esc(g.titel)}</span></div>`;
+    return `<div class="pb-gl-eintrag${stil ? ' pb-gewerk' : ''}" role="option" tabindex="-1" data-id="${esc(g.id)}"${stil ? ` style="${esc(stil)}"` : ''}>`
+      + `<span class="pb-gl-haken" aria-hidden="true"></span><span class="pb-sym">${symbol(g.sym, 16)}</span><span class="pb-gl-name">${esc(g.titel)}</span></div>`;
   }).join('');
   document.body.appendChild(liste);
   knopf.setAttribute('aria-expanded', 'true');
-  liste.addEventListener('click', (e) => { const z = e.target.closest('.pb-gl-eintrag'); if (z) { const id = z.dataset.id; listeSchliessen(); knopf.focus(); waehlen(id); } });
+  listeAktualisieren();
+  // Die Liste bleibt offen: ein Klick setzt oder entfernt ein Häkchen (so lassen sich mehrere Gliederungen nacheinander wählen); zu geht sie mit Escape oder einem Klick daneben.
+  liste.addEventListener('click', (e) => { const z = e.target.closest('.pb-gl-eintrag'); if (z) { z.focus(); waehlen(z.dataset.id); } });
+  liste.addEventListener('keydown', listeTaste);
   setTimeout(() => document.addEventListener('pointerdown', ausserhalb, true), 0);
+  if (fokus) (liste.querySelector('.pb-gl-eintrag.aktiv') ?? liste.querySelector('.pb-gl-eintrag')).focus();
+}
+
+/** Häkchen und Auszeichnung der geöffneten Liste an die gewählten Gliederungen anpassen (ohne die Liste neu zu bauen: Fokus und Maus bleiben). */
+function listeAktualisieren() {
+  if (!liste) return;
+  for (const z of liste.querySelectorAll('.pb-gl-eintrag')) {
+    const an = aktivIds.includes(z.dataset.id);
+    z.classList.toggle('aktiv', an);
+    z.setAttribute('aria-selected', String(an));
+    z.setAttribute('aria-checked', String(an));
+  }
+}
+
+function listeTaste(e) {
+  const eintraege = [...liste.querySelectorAll('.pb-gl-eintrag')];
+  const i = eintraege.indexOf(document.activeElement);
+  if (e.key === 'Escape') { listeSchliessen(); knopf.focus(); e.stopPropagation(); return; }
+  if (e.key === 'ArrowDown' || e.key === 'ArrowUp') { e.preventDefault(); eintraege[(i + (e.key === 'ArrowDown' ? 1 : -1) + eintraege.length) % eintraege.length].focus(); return; }
+  if (e.key === 'Home' || e.key === 'End') { e.preventDefault(); eintraege[e.key === 'Home' ? 0 : eintraege.length - 1].focus(); return; }
+  if ((e.key === 'Enter' || e.key === ' ') && i >= 0) { e.preventDefault(); waehlen(eintraege[i].dataset.id); return; }
+  if (e.key === 'Tab') listeSchliessen();
 }
 
 function listeSchliessen() {
@@ -156,9 +201,8 @@ function gliederungVerdrahten() {
     if (e.key === 'Escape' && liste) { listeSchliessen(); e.stopPropagation(); return; }
     if (e.key !== 'ArrowDown' && e.key !== 'ArrowUp') return;
     e.preventDefault();
-    const i = GLIEDERUNGEN.findIndex((g) => g.id === aktivId);
-    const n = GLIEDERUNGEN[(i + (e.key === 'ArrowDown' ? 1 : -1) + GLIEDERUNGEN.length) % GLIEDERUNGEN.length];
-    waehlen(n.id);
+    if (!liste) listeOeffnen(true);   // Pfeiltaste öffnet die Liste und springt zur gewählten Gliederung
+    else (liste.querySelector('.pb-gl-eintrag.aktiv') ?? liste.querySelector('.pb-gl-eintrag')).focus();
   });
 }
 
@@ -175,8 +219,18 @@ function datenBauen() {
 }
 
 function baumBauenAktiv() {
-  const k = baumBauen(gliederung(aktivId), datenBauen());
-  const lauf = (n) => { if (n.anfangsOffen && !gesehen.has(aktivId + '|' + n.key)) { gesehen.add(aktivId + '|' + n.key); offen().add(n.key); } (n.kinder ?? []).forEach(lauf); };
+  const k = baumBauenListe(aktivIds.map((id) => gliederung(id)), datenBauen());
+  const kennung = offenKennung(aktivIds);
+  if (kennung === GLIEDERUNG_MEHRERE) {
+    // mehrere Gliederungen: Blöcke und ihre Äste sind anfangs offen; was der Benutzer zugeklappt hat, bleibt zu (beides gespeichert)
+    gesehenMehrere ??= new Set(merken.lesen('browserGesehen.mehrere', []));
+    let neu = false;
+    const lauf = (n) => { if (n.anfangsOffen && !gesehenMehrere.has(n.key)) { gesehenMehrere.add(n.key); offen().add(n.key); neu = true; } (n.kinder ?? []).forEach(lauf); };
+    k.forEach(lauf);
+    if (neu) { merken.schreiben('browserGesehen.mehrere', [...gesehenMehrere]); merken.schreiben(offenSchluessel(kennung), [...offen()]); }
+    return k;
+  }
+  const lauf = (n) => { if (n.anfangsOffen && !gesehen.has(kennung + '|' + n.key)) { gesehen.add(kennung + '|' + n.key); offen().add(n.key); } (n.kinder ?? []).forEach(lauf); };
   k.forEach(lauf);
   return k;
 }
@@ -251,7 +305,7 @@ function zeileVon(e) { return e.target.closest('.pb-zeile'); }
 function umschalten(key) {
   const o = offen();
   if (o.has(key)) o.delete(key); else o.add(key);
-  merken.schreiben(offenSchluessel(aktivId), [...o]);   // je Gliederung gemerkt
+  merken.schreiben(offenSchluessel(offenKennung(aktivIds)), [...o]);   // je Gliederung gemerkt
   zeichnen();
 }
 

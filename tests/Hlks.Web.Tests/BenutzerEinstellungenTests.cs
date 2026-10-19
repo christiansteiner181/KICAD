@@ -142,12 +142,102 @@ public class BenutzerEinstellungenTests : IDisposable
     }
 
     [Fact]
-    public void Pruefen_Gliederung_lehnt_Zahl_Liste_und_Objekt_ab_null_setzt_zurueck()
+    public void Pruefen_Gliederung_lehnt_Zahl_und_Objekt_ab_null_setzt_zurueck()
     {
         Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", JsonValue.Create(3)));
-        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer")));
         Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonObject()));
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", null);
+    }
+
+    // ---------------------------------------------------------------- G2: mehrere Gliederungen zugleich (Wert ist eine Liste)
+
+    [Fact]
+    public void Pruefen_Gliederung_nimmt_Listen_von_Kennungen_an_auch_ein_alter_Einzelwert_bleibt_gueltig()
+    {
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer"));
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung"));
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung", "lueftung", "koordination", "energie"));
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("kaelte", "sanitaer"));   // künftige Gliederung: keine Änderung am Server nötig
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", S("sanitaer"));                          // alter Einzelwert
+    }
+
+    [Fact]
+    public void Pruefen_Gliederung_lehnt_leere_Listen_Doppelte_falsche_Kennungen_und_zu_lange_Listen_ab()
+    {
+        var f = Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray()));
+        Assert.Contains("mindestens eine", f.Message);
+        Assert.False(string.IsNullOrWhiteSpace(f.Vorschlag));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", "sanitaer")));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("Sanitär")));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray(JsonValue.Create(3))));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", null)));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray(Enumerable.Range(0, 17).Select(i => (JsonNode?)JsonValue.Create("g" + i)).ToArray())));
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray(Enumerable.Range(0, 16).Select(i => (JsonNode?)JsonValue.Create("g" + i)).ToArray()));
+    }
+
+    [Fact]
+    public void Liste_wird_als_Liste_gespeichert_und_gelesen_zwei_Rechner_der_neueste_Wert_gilt_ganz()
+    {
+        var a = Rechner("PC-A", zeit: T(1));
+        var b = Rechner("PC-B", zeit: T(2));
+        a.Setzen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung"));
+        Assert.Equal(["sanitaer", "heizung"], b.Hole("projektbrowser.gliederung")!.AsArray().Select(n => n!.GetValue<string>()).ToArray());
+        Assert.Equal(["sanitaer", "heizung"], JsonNode.Parse(File.ReadAllText(Path.Combine(Ordner(), "PC-A.json")))!["werte"]!["projektbrowser.gliederung"]!["wert"]!.AsArray().Select(n => n!.GetValue<string>()).ToArray());
+        b.Setzen("projektbrowser.gliederung", new JsonArray("lueftung"));   // T(2) ist neuer: die ganze Liste ersetzt die alte, es wird nicht gemischt
+        Assert.Equal(["lueftung"], a.Hole("projektbrowser.gliederung")!.AsArray().Select(n => n!.GetValue<string>()).ToArray());
+    }
+
+    [Fact]
+    public void Ein_alter_Einzelwert_und_eine_Liste_vereinigen_sich_nach_der_Zeit()
+    {
+        var a = Rechner("PC-A", zeit: T(1));
+        var b = Rechner("PC-B", zeit: T(2));
+        a.Setzen("projektbrowser.gliederung", S("sanitaer"));                        // alter Stand eines Rechners mit der früheren Version
+        Assert.Equal("sanitaer", b.Hole("projektbrowser.gliederung")!.GetValue<string>());   // bleibt als Text lesbar: die Oberfläche macht eine Liste daraus
+        b.Setzen("projektbrowser.gliederung", new JsonArray("sanitaer", "koordination"));
+        Assert.Equal(2, a.Hole("projektbrowser.gliederung")!.AsArray().Count);
+    }
+
+    [Fact]
+    public void Der_Wert_einer_Liste_wird_beim_Zuruecksetzen_wie_jeder_andere_aufgehoben()
+    {
+        var a = Rechner("PC-A", zeit: T(1));
+        var b = Rechner("PC-B", zeit: T(2));
+        a.Setzen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung"));
+        b.Setzen("projektbrowser.gliederung", null);
+        Assert.Null(a.Hole("projektbrowser.gliederung"));
+    }
+
+    [Fact]
+    public async Task Endpunkt_Liste_als_Wert_wird_gespeichert_und_unveraendert_geliefert()
+    {
+        var s = Starten(Ordner());
+        var (code, p) = await s.Post(new { schluessel = "projektbrowser.gliederung", wert = new[] { "sanitaer", "heizung" } });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal(["sanitaer", "heizung"], p!["wert"]!.AsArray().Select(n => n!.GetValue<string>()).ToArray());
+        var (_, g) = await s.Get();
+        Assert.Equal(["sanitaer", "heizung"], g!["werte"]!["projektbrowser.gliederung"]!.AsArray().Select(n => n!.GetValue<string>()).ToArray());
+        Assert.Equal("testpc", g["zeiten"]!["projektbrowser.gliederung"]!["rechner"]!.GetValue<string>());
+        // ein einzelner Text (alte Oberfläche) geht weiter, und ersetzt die Liste
+        var (c2, _) = await s.Post(new { schluessel = "projektbrowser.gliederung", wert = "gebaeude" });
+        Assert.Equal(HttpStatusCode.OK, c2);
+        Assert.Equal("gebaeude", (await s.Get()).Json!["werte"]!["projektbrowser.gliederung"]!.GetValue<string>());
+        // eine leere Liste wird abgelehnt und ändert nichts
+        var (c3, j) = await s.Post(new { schluessel = "projektbrowser.gliederung", wert = Array.Empty<string>() });
+        Assert.Equal(HttpStatusCode.BadRequest, c3);
+        Assert.False(string.IsNullOrWhiteSpace(j!["vorschlag"]?.GetValue<string>()));
+        Assert.Equal("gebaeude", (await s.Get()).Json!["werte"]!["projektbrowser.gliederung"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Endpunkt_zwei_Benutzer_behalten_je_ihre_Liste()
+    {
+        var anna = Starten(Ordner("anna"));
+        var beat = Starten(Ordner("beat"));
+        await anna.Post(new { schluessel = "projektbrowser.gliederung", wert = new[] { "sanitaer", "heizung" } });
+        await beat.Post(new { schluessel = "projektbrowser.gliederung", wert = new[] { "koordination" } });
+        Assert.Equal(2, (await anna.Get()).Json!["werte"]!["projektbrowser.gliederung"]!.AsArray().Count);
+        Assert.Equal("koordination", (await beat.Get()).Json!["werte"]!["projektbrowser.gliederung"]![0]!.GetValue<string>());
     }
 
     [Fact]
@@ -463,7 +553,11 @@ public class BenutzerEinstellungenTests : IDisposable
     [InlineData("{\"schluessel\":5,\"wert\":\"x\"}")]                                    // Schlüssel kein Text
     [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":\"Sanitär\"}")]
     [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":3}")]
-    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":[\"sanitaer\"]}")]
+    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":[]}")]                    // G2: die Liste darf nicht leer sein
+    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":[3]}")]
+    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":[\"sanitaer\",\"sanitaer\"]}")]
+    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":[\"Sanitär\"]}")]
+    [InlineData("{\"schluessel\":\"projektbrowser.gliederung\",\"wert\":{\"a\":1}}")]
     [InlineData("kein json")]
     [InlineData("[1,2]")]                                                               // Körper kein Objekt
     public async Task Endpunkt_Fehlerfaelle_geben_400_mit_Fehler_und_Vorschlag_und_aendern_nichts(string koerper)
