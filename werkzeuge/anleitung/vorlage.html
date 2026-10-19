@@ -86,6 +86,7 @@ section.kapitel { display: grid; gap: 14px; max-width: 900px; }
 /* Funktionskarte */
 article.funktion { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; box-shadow: var(--schatten); overflow: hidden; }
 article.funktion[hidden] { display: none; }
+article.funktion.ziel { border-color: var(--akzent); box-shadow: 0 0 0 3px var(--akzent-zart), var(--schatten); }
 .f-kopf { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 14px 18px 10px; }
 .f-kopf h3 { font-size: 1.22rem; font-weight: 600; }
 .status { flex: none; font: 600 .76rem var(--schrift-text); padding: 3px 9px; border-radius: 999px; background: var(--flaeche-2); color: var(--leise); white-space: nowrap; font-variant-numeric: tabular-nums; }
@@ -433,10 +434,35 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
     document.querySelectorAll('section.kapitel').forEach(s => beob.observe(s));
   }
 
+  // ---------------------------------------------------------------- Sprung aus KICAD (Hilfe-Symbol, F1 über einem Knopf)
+  // KICAD öffnet die Seite mit #k-<knopf> bzw. #k-<register>~<knopf>; Schlüssel wie hilfeSchluessel() in KICAD
+  // (js/oberflaeche/hilfe.js): klein, ä→ae ö→oe ü→ue ß→ss, Akzente weg, alles andere zu «-».
+  const hilfeSchluessel = t => String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+  function springe() {
+    const h = decodeURIComponent(location.hash.slice(1));
+    if (!h) return;
+    if (!h.startsWith('k-')) { const ziel = document.getElementById(h); if (ziel) ziel.scrollIntoView(); return; }
+    const [reg, knopf] = h.slice(2).includes('~') ? h.slice(2).split('~') : ['', h.slice(2)];
+    const passt = f => String(f.wo?.knopf || '').split(/\s+\/\s+|,\s*/).some(t => hilfeSchluessel(t) === knopf);
+    let treffer = [...funktionNach.values()].filter(f => passt(f) && (!reg || hilfeSchluessel(f.wo?.register) === reg));
+    if (!treffer.length) treffer = [...funktionNach.values()].filter(passt);
+    document.querySelectorAll('article.funktion.ziel').forEach(a => a.classList.remove('ziel'));
+    if (treffer.length === 1) {
+      suchtext = ''; $('#suchfeld').value = ''; filtern();
+      const art = document.getElementById('f-' + treffer[0].id); art.classList.add('ziel'); art.scrollIntoView({ block: 'start' });
+    } else {
+      suchtext = (treffer.length ? String(treffer[0].wo.knopf).split(/\s+\/\s+|,\s*/).find(t => hilfeSchluessel(t) === knopf) : knopf.replace(/-/g, ' ')).replace(/\s*…\s*/g, ' ').trim();
+      $('#suchfeld').value = suchtext; filtern();
+      const erste = document.querySelector('article.funktion:not([hidden])'); if (erste) erste.scrollIntoView({ block: 'start' });
+    }
+  }
+  window.addEventListener('hashchange', springe);
+
   // ---------------------------------------------------------------- Start
   try { Object.assign(zustand, JSON.parse(localStorage.getItem(LOKAL) || '{}')); } catch { /* ohne Browserspeicher */ }
   baueSeite(); indexiere(); alleZeigen();
-  if (location.hash) { const ziel = document.getElementById(location.hash.slice(1)); if (ziel) ziel.scrollIntoView(); }
+  springe();
 
   (async () => {
     const db = window.claude?.use ? await window.claude.use('db').catch(() => null) : null;
