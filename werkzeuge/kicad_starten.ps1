@@ -158,9 +158,9 @@ if (-not $bereit -and $vorher -and $vorher -ne $sha -and (Test-Path $dll)) {
 }
 
 if ($bereit) {
-  $neu = Laufender
+  $srvJetzt = Laufender
   $gilt = if ($zurueck) { $vorher } else { $sha }
-  if ($neu) { ZustandMerken $gilt $neu.Pid }
+  if ($srvJetzt) { ZustandMerken $gilt $srvJetzt.Pid }
   Log "Server bereit (Stand $($gilt.Substring(0,8)))"
   Fenster
   if ($zurueck) { Hinweis "Der neue gepruefte Stand $kurz liess sich nicht starten. KICAD laeuft mit dem vorigen Stand $($vorher.Substring(0,8)).`r`nProtokoll: $log" }
