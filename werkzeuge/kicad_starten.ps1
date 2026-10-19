@@ -101,6 +101,17 @@ if ($srv -and $st) {
   Log ("Klick: Server {0}, gemerkt {1}/{2}, geprueft {3}, Arbeitskopie {4}, Neu={5}, beschaeftigt={6} -> aktuell={7}" -f $srv.Pid, $(if ($zu) { $zu.pid } else { "-" }), $(if ($zu) { $zu.sha.Substring(0,8) } else { "-" }), $kurz, $(if ($wtSha) { $wtSha.Substring(0,8) } else { "-" }), [bool]$Neu, $st.beschaeftigt, [bool]$aktuell)
   if (-not $Projekt -and $st.ort) { $Projekt = [string]$st.ort }
   if ($aktuell -and -not $Neu) { Log "Desktop auf geprueftem Stand $kurz - Startbildschirm"; Fenster -Start; exit 0 }
+  if ($aktuell -and $Neu) {
+    # "KICAD aktualisieren" ohne neueren geprueften Stand: kein Neustart (brachte nichts Neues, Befund 19.10.2026), sondern
+    # sagen, was laeuft und was noch ungeprueft in Arbeit ist
+    $offen = 0; try { $offen = [int](GitAufruf @('-C', $repo, 'rev-list', '--count', "$sha..main")) } catch { }
+    $zeit = try { GitAufruf @('-C', $repo, 'log', '-1', '--format=%cd', '--date=format:%d.%m.%Y %H:%M', $sha) } catch { '' }
+    Log "aktualisieren: schon auf neuestem geprueften Stand $kurz, $offen ungepruefte Arbeitsstaende"
+    Fenster -Start
+    $mehr = if ($offen -gt 0) { "`r`nNoch nicht geprueft: $offen neuere Arbeitsstaende. Sie kommen, sobald die Pruefung gruen ist (dann reicht ein Klick auf KICAD)." } else { '' }
+    Hinweis "KICAD laeuft bereits mit dem neuesten geprueften Stand ($kurz vom $zeit).$mehr"
+    exit 0
+  }
   if ($st.beschaeftigt) {
     Log "neuer Stand $kurz, Server beschaeftigt - kein Neustart"
     Fenster -Start
