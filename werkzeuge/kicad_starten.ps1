@@ -31,8 +31,8 @@ $dll = "$bau\Hlks.Web\bin\Debug\net10.0\Hlks.Web.dll"
 $mcp = "$bau\Hlks.Mcp\bin\Debug\net10.0\Hlks.Mcp.dll"
 $zustandDatei = "$bau\desktop.json"
 $url = "http://localhost:$Port"
-$log = "$env:LOCALAPPDATA\HLKS_CAD\start.log"
-New-Item -ItemType Directory -Force (Split-Path $log), $bau | Out-Null
+$log = "$bau\start.log"   # im Build-Ordner (sichtbar fuer Pruefungen; %LOCALAPPDATA% war fuer den Hauptlauf nicht einsehbar)
+New-Item -ItemType Directory -Force $bau | Out-Null
 function Log([string]$t) { Add-Content -Path $log -Value ("{0:yyyy-MM-dd HH:mm:ss} {1}" -f (Get-Date), $t) -Encoding UTF8 }
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
@@ -98,6 +98,7 @@ $st = Status
 
 if ($srv -and $st) {
   $aktuell = $zu -and ([int]$zu.pid -eq $srv.Pid) -and ($zu.sha -eq $sha) -and ($wtSha -eq $sha)
+  Log ("Klick: Server {0}, gemerkt {1}/{2}, geprueft {3}, Arbeitskopie {4}, Neu={5}, beschaeftigt={6} -> aktuell={7}" -f $srv.Pid, $(if ($zu) { $zu.pid } else { "-" }), $(if ($zu) { $zu.sha.Substring(0,8) } else { "-" }), $kurz, $(if ($wtSha) { $wtSha.Substring(0,8) } else { "-" }), [bool]$Neu, $st.beschaeftigt, [bool]$aktuell)
   if (-not $Projekt -and $st.ort) { $Projekt = [string]$st.ort }
   if ($aktuell -and -not $Neu) { Log "Desktop auf geprueftem Stand $kurz - Startbildschirm"; Fenster -Start; exit 0 }
   if ($st.beschaeftigt) {
