@@ -1,6 +1,7 @@
 // Hilfe (F1) in der Oberfläche: das Symbol «?» rechts in der Kopfleiste (wie Revits InfoCenter) und die Taste F1 öffnen die
-// Bedienungsanleitung – eine Webseite, die KICAD nur öffnet. Keine Fachlogik: die Adresse kommt vom Server (GET /api/start/info ›
-// anleitung.url, Bürowert in kataloge/buero.json), Schlüssel und Adressbau stehen in hilfe.js (reine Funktionen, mit Node getestet).
+// Bedienungsanleitung – eine Webseite, die KICAD selbst unter /hilfe/ ausliefert (ohne Anmeldung, ohne Internet); die Oberfläche öffnet sie nur.
+// Keine Fachlogik: ob es sie auf diesem Rechner gibt, sagt der Server (GET /api/start/info › anleitung { url, vorhanden }), Schlüssel und
+// Adressbau stehen in hilfe.js (reine Funktionen, mit Node getestet). Fehlt sie (noch nicht gebaut), sagt eine Meldung es – es öffnet sich nichts.
 //
 // Kontext von F1 (hilfe.js › hilfeKontext): offener Dialog (zeigen in dialoge.js) → #s-<Dialogtitel>; Zeiger über einem Knopf des Menübands
 // (auch Flyout, Kontextregister, Schnellzugriff) oder Tastaturfokus darauf → #k-<Register>~<Knopf>; sonst die Anleitung ohne Sprungziel.
@@ -16,11 +17,11 @@ import { hilfeAdresse, hilfeKontext, HILFE_TOOLTIP, HILFE_FENSTER, HILFE_NICHT_E
 let basis = null;        // Adresse der Anleitung; nur eine gefundene wird gemerkt (ein später eingetragener Wert gilt sofort)
 let laufend = null;      // laufende Abfrage
 
-/** Adresse der Anleitung vom Server (null, wenn nicht eingerichtet oder der Server nicht antwortet). */
+/** Adresse der Anleitung vom Server (null, wenn sie auf diesem Rechner nicht erstellt ist oder der Server nicht antwortet). */
 export async function anleitungAdresse() {
   if (basis) return basis;
   laufend ??= holen('/api/start/info')
-    .then((i) => { basis = typeof i?.anleitung?.url === 'string' && i.anleitung.url.trim() ? i.anleitung.url.trim() : null; return basis; })
+    .then((i) => { basis = i?.anleitung?.vorhanden === true && typeof i.anleitung.url === 'string' && i.anleitung.url.trim() ? i.anleitung.url.trim() : null; return basis; })
     .catch((e) => { console.error('Adresse der Bedienungsanleitung', e); return null; })
     .finally(() => { laufend = null; });
   return laufend;

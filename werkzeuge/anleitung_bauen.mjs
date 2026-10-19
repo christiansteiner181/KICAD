@@ -1,27 +1,45 @@
 // Bedienungsanleitung bauen (CLAUDE.md «Bedienungsanleitung nach jedem Modul», seit 19.10.2026): setzt aus dem
 // Funktionsverzeichnis berichte/anleitung/inventar.json, den Lücken berichte/anleitung/luecken.json und den Bildern des
-// Bildskripts (werkzeuge/anleitung_bilder.mjs → bilder.json) eine Seite zusammen, die der Hauptlauf als privates
-// Artifact veröffentlicht. Vorlage: werkzeuge/anleitung/vorlage.html (Platzhalter __DATEN__).
+// Bildskripts (werkzeuge/anleitung_bilder.mjs → bilder.json) eine Seite zusammen, die KICAD selbst unter http://localhost:<port>/hilfe/
+// ausliefert (Entscheid Christian Steiner 19.10.2026; AnleitungEndpunkte.cs). Vorlage: werkzeuge/anleitung/vorlage.html (Platzhalter __DATEN__).
 //
-// Aufruf: node werkzeuge/anleitung_bauen.mjs --aus <Ordner> --commit <sha> --datum <TT.MM.JJJJ> [--bilder <Ordner mit bilder.json>] [--text "…"]
+// Aufruf: node werkzeuge/anleitung_bauen.mjs [--aus <Ordner>] [--repo <Ordner>] [--commit <sha>] [--datum <TT.MM.JJJJ>] [--bilder <Ordner mit bilder.json>] [--text "…"]
+//   --aus     Zielordner (index.html + bilder/ + stand.txt). Vorgabe: HLKS_ANLEITUNG, sonst kataloge/buero.json › anleitung.ordner
+//             (%…%-Variablen werden aufgelöst; heute %USERPROFILE%\HLKS_CAD_anleitung). NIE im Repo oder auf OneDrive – die Bilder
+//             enthalten echte Projekte (Bernstrasse).
+//   --repo    Arbeitskopie, aus der Inventar, Lücken, Vorlage und buero.json kommen (Vorgabe: der Ordner über diesem Skript). Der Desktop-Start
+//             baut so aus seiner Arbeitskopie %USERPROFILE%\HLKS_CAD_desktop.
 //   --bilder  Vorgabe %USERPROFILE%\HLKS_CAD_testdaten\anleitung\bilder
-//   --aus     Zielordner (index.html + bilder/); NIE im Repo oder auf OneDrive – die Bilder enthalten echte Projekte
-//             (Bernstrasse). Der Hauptlauf nimmt sein Scratchpad.
-import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync } from 'node:fs';
+//   --commit  geprüfter Stand, den die Seite beschreibt; wird auch in <Zielordner>\stand.txt gemerkt (der Desktop-Start baut neu, wenn er abweicht)
+// Die Seite wird erst nach dem Bau der Bilder ersetzt (temporäre Datei, dann umbenennen): ein laufendes KICAD liefert nie eine halbe Seite.
+import { readFileSync, writeFileSync, mkdirSync, copyFileSync, existsSync, renameSync } from 'node:fs';
 import { join, basename, dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const repo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
+const skriptRepo = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const arg = name => { const i = process.argv.indexOf('--' + name); return i > 0 ? process.argv[i + 1] : undefined; };
-const aus = arg('aus');
-if (!aus) { console.error('--aus <Ordner> fehlt'); process.exit(2); }
+const repo = resolve(arg('repo') || skriptRepo);
+const lies = p => JSON.parse(readFileSync(p, 'utf8').replace(/^﻿/, ''));
+/** %NAME% durch die Umgebungsvariable ersetzen (Gross/Klein egal wie unter Windows); unbekannte Variablen bleiben stehen. */
+const umgebung = t => String(t).replace(/%([^%]+)%/g, (m, n) => {
+  const k = Object.keys(process.env).find(x => x.toLowerCase() === n.toLowerCase());
+  return k ? process.env[k] : m;
+});
+
+// Zielordner: --aus › HLKS_ANLEITUNG › buero.json
+let aus = arg('aus') || process.env.HLKS_ANLEITUNG;
+if (!aus) {
+  try { aus = lies(join(repo, 'kataloge', 'buero.json'))?.anleitung?.ordner; } catch { /* unten gemeldet */ }
+}
+if (!aus) { console.error('Zielordner fehlt: --aus <Ordner>, HLKS_ANLEITUNG oder kataloge/buero.json › anleitung.ordner angeben.'); process.exit(2); }
+aus = umgebung(aus);
+if (aus.includes('%')) { console.error(`Im Zielordner ${aus} ist eine Umgebungsvariable nicht gesetzt.`); process.exit(2); }
 const ausVoll = resolve(aus);
-const gesperrt = [repo, process.env.OneDrive, process.env.OneDriveCommercial, process.env.OneDriveConsumer].filter(Boolean).map(p => resolve(p).toLowerCase() + '\\');
+const gesperrt = [repo, skriptRepo, process.env.OneDrive, process.env.OneDriveCommercial, process.env.OneDriveConsumer].filter(Boolean).map(p => resolve(p).toLowerCase() + '\\');
 if (gesperrt.some(p => (ausVoll.toLowerCase() + '\\').startsWith(p))) {
   console.error(`Zielordner ${ausVoll} liegt im Repo bzw. auf OneDrive – Bilder echter Projekte gehören nicht dorthin.`); process.exit(2);
 }
 const bilderOrdner = arg('bilder') || join(process.env.USERPROFILE || '', 'HLKS_CAD_testdaten', 'anleitung', 'bilder');
-const lies = p => JSON.parse(readFileSync(p, 'utf8').replace(/^﻿/, ''));
 
 const inventar = lies(join(repo, 'berichte', 'anleitung', 'inventar.json'));
 const lueckenDatei = join(repo, 'berichte', 'anleitung', 'luecken.json');
@@ -56,5 +74,9 @@ const daten = {
 const json = JSON.stringify(daten).replace(/</g, '\\u003c');
 const vorlage = readFileSync(join(repo, 'werkzeuge', 'anleitung', 'vorlage.html'), 'utf8');
 if (!vorlage.includes('__DATEN__')) { console.error('Platzhalter __DATEN__ fehlt in der Vorlage'); process.exit(2); }
-writeFileSync(join(ausVoll, 'index.html'), vorlage.replace('__DATEN__', () => json), 'utf8');
-console.log(`Seite ${join(ausVoll, 'index.html')}: ${kapitel.length} Kapitel, ${funktionen} Funktionen, ${mitBild} mit Bild, ${kopiert} Bilddateien, ${luecken.length} Lücken`);
+const index = join(ausVoll, 'index.html');
+const seite = vorlage.replace('__DATEN__', () => json);
+writeFileSync(index + '.tmp', seite, 'utf8');
+try { renameSync(index + '.tmp', index); } catch { writeFileSync(index, seite, 'utf8'); }   // Rückfall, falls Windows das Ersetzen einer gerade gelesenen Datei verweigert
+if (arg('commit')) writeFileSync(join(ausVoll, 'stand.txt'), arg('commit') + '\n', 'utf8');
+console.log(`Seite ${index}: ${kapitel.length} Kapitel, ${funktionen} Funktionen, ${mitBild} mit Bild, ${kopiert} Bilddateien, ${luecken.length} Lücken`);

@@ -1,11 +1,12 @@
 // Hilfe (F1) – reine Teile, ohne DOM: Schlüssel der Sprungziele und Bau der Adresse der Bedienungsanleitung.
-// Die Bedienungsanleitung ist eine Webseite (Artifact, Adresse in kataloge/buero.json › anleitung); KICAD öffnet sie nur.
+// Die Bedienungsanleitung ist eine Webseite, die KICAD selbst unter /hilfe/ ausliefert (Server: AnleitungEndpunkte.cs; gebaut mit
+// werkzeuge/anleitung_bauen.mjs, Ordner in kataloge/buero.json › anleitung.ordner); die Oberfläche öffnet sie nur.
 // Den Rest (Symbol «?», F1, Fenster öffnen, Meldungen) macht hilfe-oberflaeche.js.
 //
 // Sprungziele der Seite (sie rechnet den Schlüssel identisch, Abweichung = Sprung ins Leere):
-//   <url>                                    Anfang der Anleitung
-//   <url>#k-<register>~<knopf>               Funktion zu einem Knopf des Menübands (Register und Knopftitel wie angezeigt)
-//   <url>#s-<suchwörter>                     Suche, z. B. nach dem Titel des offenen Dialogs
+//   /hilfe/                                  Anfang der Anleitung
+//   /hilfe/#k-<register>~<knopf>             Funktion zu einem Knopf des Menübands (Register und Knopftitel wie angezeigt)
+//   /hilfe/#s-<suchwörter>                   Suche, z. B. nach dem Titel des offenen Dialogs
 
 /** Schlüssel eines Titels: klein, ä→ae ö→oe ü→ue ß→ss, Akzente weg, alles andere zu «-». IDENTISCH mit der Anleitungsseite (werkzeuge/anleitung/vorlage.html). */
 export const hilfeSchluessel = t => String(t || '').toLowerCase().replace(/ä/g, 'ae').replace(/ö/g, 'oe').replace(/ü/g, 'ue').replace(/ß/g, 'ss')
@@ -16,7 +17,9 @@ export const HILFE_ZEILE = 'F1: Hilfe zu diesem Befehl';
 /** Tooltip des Symbols «?» in der Kopfleiste. */
 export const HILFE_TOOLTIP = 'Hilfe – Bedienungsanleitung (F1)';
 /** Meldungen, wenn die Anleitung nicht geöffnet werden kann. */
-export const HILFE_NICHT_EINGERICHTET = 'Die Bedienungsanleitung ist noch nicht eingerichtet.';
+export const HILFE_NICHT_EINGERICHTET = 'Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.';
+/** Adresse der Anleitung auf dem Server der Oberfläche (gleicher Ursprung wie die Oberfläche selbst). */
+export const HILFE_URL = '/hilfe/';
 export const hilfeBlockiert = (adresse) => `Das Hilfefenster wurde blockiert – Adresse: ${adresse}`;
 
 /** Name des Fensters der Anleitung: immer dasselbe (window.open öffnet nie ein zweites). */
@@ -35,7 +38,8 @@ export function hilfeKontext({ dialogTitel = null, knopf = null } = {}) {
 }
 
 /**
- * Adresse der Anleitung für einen Kontext (siehe hilfeKontext). Fehlt die Basisadresse, ergibt das null (→ Meldung «nicht eingerichtet»).
+ * Adresse der Anleitung für einen Kontext (siehe hilfeKontext), z. B. '/hilfe/#k-ansicht~serien-pdf'. Fehlt die Basisadresse (Anleitung auf diesem Rechner
+ * nicht erstellt), ergibt das null (→ Meldung «noch nicht erstellt»).
  * Ein Fragment der Basisadresse wird verworfen. Ergibt der Titel keinen Schlüssel (nur Sonderzeichen), bleibt es bei der Basisadresse.
  */
 export function hilfeAdresse(basis, kontext = { art: 'keiner' }) {

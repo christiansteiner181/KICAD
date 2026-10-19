@@ -63,6 +63,10 @@ public sealed record Einstellungen(string Akteur, string Geraet, string KatalogO
     public string? ProjektAblage { get; init; }
     /// <summary>Familienbibliothek für den Startbildschirm (Tests; sonst HLKS_FAMILIENBIBLIOTHEK › kataloge/buero.json).</summary>
     public string? Familienbibliothek { get; init; }
+    /// <summary>Ordner der Bedienungsanleitung (index.html + bilder/; Tests, sonst HLKS_ANLEITUNG › kataloge/buero.json › anleitung.ordner).</summary>
+    public string? AnleitungOrdner { get; init; }
+    /// <summary>Ordner mit den Rechnerdateien des Prüfstands der Anleitung (Häkchen, Notizen; Tests, sonst HLKS_ANLEITUNG_PRUEFUNG › OneDrive › %APPDATA%).</summary>
+    public string? AnleitungPruefung { get; init; }
     /// <summary>So lange gilt das Ergebnis der Projektsuche (Vorgabe 10 min).</summary>
     public TimeSpan AblageZwischenspeicher { get; init; } = TimeSpan.FromMinutes(10);
     /// <summary>So lange wartet der Startbildschirm höchstens auf die Suche bzw. auf einen Ordner.</summary>
@@ -116,6 +120,8 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
     public ZuletztListe Zuletzt { get; } = ZuletztListe.Aus(einstellungen);
     /// <summary>Einstellungen dieses Benutzers, gleich auf allen seinen Rechnern (G1; siehe BenutzerEinstellungen.cs).</summary>
     public BenutzerEinstellungen Benutzer { get; } = BenutzerEinstellungen.Aus(einstellungen);
+    /// <summary>Bedienungsanleitung: Ordner, Auslieferung unter /hilfe/ und Prüfstand (Häkchen, Notizen je Benutzer; siehe AnleitungDienst.cs).</summary>
+    public AnleitungDienst Anleitung { get; } = new(einstellungen);
     /// <summary>Letzter erfolgreicher Abgleich (Ablage erreichbar).</summary>
     public DateTimeOffset? LetzterAbgleich { get; private set; }
     /// <summary>Ablage nicht erreichbar bzw. unlesbare Pakete; null = alles in Ordnung.</summary>

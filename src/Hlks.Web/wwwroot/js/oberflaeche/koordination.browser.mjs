@@ -34,7 +34,7 @@ const REPO = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '../../.
 const FAMILIEN = path.join(REPO, 'tests', 'daten', 'familien').replace(/\\/g, '/');
 const arbeit = mkdtempSync(path.join(tmpdir(), 'hlks_m3bc1b_'));
 // Alle Orte, die der Server sonst beim Benutzer sucht (Einstellungen, «zuletzt», Familienbibliothek, Projektablage), liegen unter %TEMP%: der Test liest und schreibt nie echte Benutzerdateien
-const ENV = { HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_FAMILIENBIBLIOTHEK: path.join(arbeit, 'familienbibliothek'), HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(arbeit, 'ausstehend'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage') };
+const ENV = { HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ANLEITUNG: path.join(arbeit, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(arbeit, 'anleitung_pruefung'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_FAMILIENBIBLIOTHEK: path.join(arbeit, 'familienbibliothek'), HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(arbeit, 'ausstehend'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage') };
 // bsdtar von Windows (kann Zip lesen und schreiben); ein anderes tar im PATH (Git Bash: GNU tar) kann kein Zip
 const TAR = process.env.HLKS_TAR ?? (existsSync('C:/Windows/System32/tar.exe') ? 'C:/Windows/System32/tar.exe' : 'tar');
 const FIKTIV = 'FIKTIV – Testwert C1, keine Projektvorgabe';

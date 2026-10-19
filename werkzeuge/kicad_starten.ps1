@@ -13,6 +13,8 @@
 # - Schlaegt der Build fehl: zurueck auf den vorigen Stand und dessen Build.
 # - -Neu: in jedem Fall neu starten (Verknuepfung "KICAD aktualisieren").
 # Gibt es noch keinen Zweig "geprueft", gilt main (mit Hinweis).
+# - Bedienungsanleitung: nach erfolgreichem Start eines neuen geprueften Stands (und wenn sie fehlt oder ihr Stand nicht passt) baut
+#   werkzeuge\anleitung_bauen.mjs sie in %USERPROFILE%\HLKS_CAD_anleitung; KICAD liefert sie unter /hilfe/ aus. Fehler nur protokolliert.
 # Protokoll: %LOCALAPPDATA%\HLKS_CAD\start.log. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
@@ -86,6 +88,40 @@ function Auschecken([string]$sha) {
   }
 }
 
+# Bedienungsanleitung (Entscheid Christian Steiner 19.10.2026: KICAD liefert sie selbst unter /hilfe/ aus): sie liegt lokal im Ordner
+# %USERPROFILE%\HLKS_CAD_anleitung (kataloge\buero.json, HLKS_ANLEITUNG uebersteuert; nie OneDrive, die Bilder zeigen echte Projekte) und wird
+# hier zum geprueften Stand gebaut - beim ersten Start und nach jedem neuen geprueften Stand (stand.txt im Ordner merkt den Stand).
+# Fehler werden nur protokolliert: der Start wird nie blockiert.
+function AnleitungSichern([string]$sha) {
+  try {
+    $kurz8 = $sha.Substring(0, 8)
+    $ordner = if ($env:HLKS_ANLEITUNG) { $env:HLKS_ANLEITUNG } else { "$env:USERPROFILE\HLKS_CAD_anleitung" }
+    $standDatei = Join-Path $ordner 'stand.txt'
+    $stand = if (Test-Path $standDatei) { (Get-Content -Raw $standDatei).Trim() } else { '' }
+    if ((Test-Path (Join-Path $ordner 'index.html')) -and $stand -eq $kurz8) { return }
+    $skript = "$wt\werkzeuge\anleitung_bauen.mjs"
+    if (-not (Test-Path $skript)) { Log "Anleitung: $skript fehlt - nicht gebaut"; return }
+    $node = $null
+    $cmd = Get-Command node.exe -ErrorAction SilentlyContinue | Select-Object -First 1
+    if ($cmd) { $node = $cmd.Source }
+    if (-not $node) {
+      foreach ($k in @("$env:ProgramFiles\nodejs\node.exe", "${env:ProgramFiles(x86)}\nodejs\node.exe", "$env:LOCALAPPDATA\Programs\nodejs\node.exe", "$env:APPDATA\npm\node.exe")) {
+        if ($k -and (Test-Path $k)) { $node = $k; break }
+      }
+    }
+    if (-not $node) { Log 'Anleitung: node.exe nicht gefunden - nicht gebaut'; return }
+    $datum = try { GitAufruf @('-C', $repo, 'log', '-1', '--format=%cd', '--date=format:%d.%m.%Y', $sha) } catch { (Get-Date).ToString('dd.MM.yyyy') }
+    $aus = Join-Path $bau 'anleitung.out.txt'; $fehl = Join-Path $bau 'anleitung.err.txt'
+    Log "Anleitung: baue Stand $kurz8 ($datum) nach $ordner"
+    $arg = @("`"$skript`"", '--repo', "`"$wt`"", '--commit', $kurz8, '--datum', $datum)
+    $p = Start-Process -FilePath $node -ArgumentList $arg -WindowStyle Hidden -PassThru -RedirectStandardOutput $aus -RedirectStandardError $fehl
+    $null = $p.Handle
+    if (-not $p.WaitForExit(120000)) { try { $p.Kill() } catch { }; Log 'Anleitung: Zeitueberschreitung (120 s) - abgebrochen'; return }
+    foreach ($d in @($aus, $fehl)) { if (Test-Path $d) { Get-Content $d -Encoding UTF8 -ErrorAction SilentlyContinue | Where-Object { $_ } | ForEach-Object { Log "Anleitung: $_" } } }
+    if ($p.ExitCode -ne 0) { Log "Anleitung: Bau fehlgeschlagen (Exit $($p.ExitCode))" } else { Log "Anleitung: gebaut (Stand $kurz8)" }
+  } catch { Log "Anleitung: Fehler - $($_.Exception.Message)" }
+}
+
 # ------------------------------------------------------------------ Stand bestimmen
 $ohneGeprueft = $false
 try { $sha = GitAufruf @('-C', $repo, 'rev-parse', '--verify', 'geprueft^{commit}') }
@@ -100,13 +136,14 @@ if ($srv -and $st) {
   $aktuell = $zu -and ([int]$zu.pid -eq $srv.Pid) -and ($zu.sha -eq $sha) -and ($wtSha -eq $sha)
   Log ("Klick: Server {0}, gemerkt {1}/{2}, geprueft {3}, Arbeitskopie {4}, Neu={5}, beschaeftigt={6} -> aktuell={7}" -f $srv.Pid, $(if ($zu) { $zu.pid } else { "-" }), $(if ($zu) { $zu.sha.Substring(0,8) } else { "-" }), $kurz, $(if ($wtSha) { $wtSha.Substring(0,8) } else { "-" }), [bool]$Neu, $st.beschaeftigt, [bool]$aktuell)
   if (-not $Projekt -and $st.ort) { $Projekt = [string]$st.ort }
-  if ($aktuell -and -not $Neu) { Log "Desktop auf geprueftem Stand $kurz - Startbildschirm"; Fenster -Start; exit 0 }
+  if ($aktuell -and -not $Neu) { Log "Desktop auf geprueftem Stand $kurz - Startbildschirm"; AnleitungSichern $sha; Fenster -Start; exit 0 }
   if ($aktuell -and $Neu) {
     # "KICAD aktualisieren" ohne neueren geprueften Stand: kein Neustart (brachte nichts Neues, Befund 19.10.2026), sondern
     # sagen, was laeuft und was noch ungeprueft in Arbeit ist
     $offen = 0; try { $offen = [int](GitAufruf @('-C', $repo, 'rev-list', '--count', "$sha..main")) } catch { }
     $zeit = try { GitAufruf @('-C', $repo, 'log', '-1', '--format=%cd', '--date=format:%d.%m.%Y %H:%M', $sha) } catch { '' }
     Log "aktualisieren: schon auf neuestem geprueften Stand $kurz, $offen ungepruefte Arbeitsstaende"
+    AnleitungSichern $sha
     Fenster -Start
     $mehr = if ($offen -gt 0) { "`r`nNoch nicht geprueft: $offen neuere Arbeitsstaende. Sie kommen, sobald die Pruefung gruen ist (dann reicht ein Klick auf KICAD)." } else { '' }
     Hinweis "KICAD laeuft bereits mit dem neuesten geprueften Stand ($kurz vom $zeit).$mehr"
@@ -174,6 +211,7 @@ if ($bereit) {
   $gilt = if ($zurueck) { $vorher } else { $sha }
   if ($srvJetzt) { ZustandMerken $gilt $srvJetzt.Pid }
   Log "Server bereit (Stand $($gilt.Substring(0,8)))"
+  AnleitungSichern $gilt
   Fenster
   if ($zurueck) { Hinweis "Der neue gepruefte Stand $kurz liess sich nicht starten. KICAD laeuft mit dem vorigen Stand $($vorher.Substring(0,8)).`r`nProtokoll: $log" }
   elseif ($ohneGeprueft) { Hinweis "Es gibt noch keinen geprueften Stand (Zweig geprueft). KICAD laeuft mit dem Arbeitsstand $kurz (main)." }

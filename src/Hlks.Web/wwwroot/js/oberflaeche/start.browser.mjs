@@ -66,7 +66,7 @@ function projektAnlegen(p) {
 PROJEKTE.forEach(projektAnlegen);
 const [A, B, C] = PROJEKTE;   // A: wird geöffnet (Bild), B: angeheftet (Bild), C: ohne Bild
 
-const env = { ...process.env, HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_ZULETZT: ZULETZT, HLKS_BENUTZER: path.join(WURZEL, 'benutzer') };
+const env = { ...process.env, HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_ZULETZT: ZULETZT, HLKS_BENUTZER: path.join(WURZEL, 'benutzer'), HLKS_ANLEITUNG: path.join(WURZEL, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(WURZEL, 'anleitung_pruefung') };
 const serverLog = [];
 const server = spawn(dotnet, [path.join(RUN, 'Hlks.Web.dll'), '--port', String(PORT), '--akteur', 'CS', '--geraet', 'pc-eins'], { env, stdio: ['ignore', 'pipe', 'pipe'] });
 server.stdout.on('data', (d) => serverLog.push(String(d))); server.stderr.on('data', (d) => serverLog.push(String(d)));

@@ -52,7 +52,7 @@ try {
   $env:HLKS_KATALOG = "$wt\kataloge"
   $env:HLKS_KI = "$wt\ki"
   $env:HLKS_WEBROOT = "$wt\src\Hlks.Web\wwwroot"
-  foreach ($v in 'HLKS_FAMILIENBIBLIOTHEK', 'HLKS_BIBLIOTHEK_AUSSTEHEND', 'HLKS_PROJEKTABLAGE', 'HLKS_ZULETZT', 'HLKS_BENUTZER', 'HLKS_MCP_DLL') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+  foreach ($v in 'HLKS_FAMILIENBIBLIOTHEK', 'HLKS_BIBLIOTHEK_AUSSTEHEND', 'HLKS_PROJEKTABLAGE', 'HLKS_ZULETZT', 'HLKS_BENUTZER', 'HLKS_ANLEITUNG', 'HLKS_ANLEITUNG_PRUEFUNG', 'HLKS_MCP_DLL') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
   $env:HLKS_TEST = '1'
 
   # 2./3. .NET-Tests
