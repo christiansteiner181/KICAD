@@ -186,21 +186,19 @@ b, strong { font-weight: 600; }
 #eigenschaften, #projektbrowser { flex: 1; min-height: 0; overflow: auto; }
 #seitenleiste-trenner { cursor: row-resize; background: var(--trenner); }
 #seitenleiste-griff { cursor: col-resize; background: var(--trenner); }
-#ansichtsbereich { display: grid; grid-template-rows: auto 1fr; min-width: 0; min-height: 0; }
+#ansichtsbereich { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; }   /* Ansichtsfläche; darunter ggf. die Koordination-Palette */
 body[data-menueband="titel"] { --hoehe-menueband-ist: var(--hoehe-menueband-titel); }
 body[data-menueband="register"] { --hoehe-menueband-ist: var(--hoehe-menueband-register); }
-/* Ansichtsreiter rollen nie: ansichtsreiter.js macht sie schmaler und fasst übrige unter «▾ n weitere» zusammen */
-#ansichtsreiter { position: relative; z-index: 20; display: flex; gap: 1px; align-items: flex-end; background: var(--ansichtsreiter-zeile); min-height: var(--hoehe-ansichtsreiter); min-width: 0; }
-#ansichtsflaeche { position: relative; min-height: 0; background: var(--hintergrund); display: grid; gap: 4px; padding: 0; }
-#ansichtsflaeche.nebeneinander { padding: 4px; }
+/* Ansichtsreiter rollen nie: ansichtsreiter.js macht sie schmaler und fasst übrige unter «▾ n weitere» zusammen.
+   Seit W2 hat jede Gruppe ihre Leiste (.reiterleiste, anordnung.css); die der ersten Gruppe trägt die Id ansichtsreiter. */
+#ansichtsflaeche { position: relative; min-height: 0; min-width: 0; overflow: hidden; background: var(--hintergrund); }
 
 /* Kacheln der Ansichten (je offene Ansicht eine) */
-.kachel { display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--zeichenflaeche); border: 1px solid var(--trenner); }
+.kachel { position: absolute; display: flex; flex-direction: column; min-width: 0; min-height: 0; background: var(--zeichenflaeche); border: 1px solid var(--trenner); }
 .kachel > .kachel-inhalt { flex: 1; }
 .kachel.versteckt { display: none; }
 .kachel.aktiv { outline: 2px solid var(--akzent); outline-offset: -2px; }
 .kachel-kopf { display: none; align-items: center; gap: 4px; height: 20px; padding: 0 6px; background: var(--flaeche-tief); border-bottom: 1px solid var(--trenner); font-weight: 600; }
-#ansichtsflaeche.nebeneinander .kachel-kopf { display: flex; }
 .kachel-kopf .zu { margin-left: auto; }
 .kachel-inhalt { position: relative; min-height: 0; overflow: hidden; }
 /* Ansichtssteuerleiste (Massstab, Detailgrad): 20 px, kompakte Auswahlfelder */

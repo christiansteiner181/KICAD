@@ -32,6 +32,7 @@ const S = {
   vorlageAnwenden: '<path d="M7 4h13l5 5v19H7z"/><path d="M11 18l4 4 7-8"/>',
   nebeneinander: '<rect x="3" y="6" width="11" height="20"/><rect x="18" y="6" width="11" height="20"/>',
   reiter: '<path d="M3 26V11h26v15zM3 11V6h10v5"/>',
+  eigenesFenster: '<rect x="3" y="12" width="16" height="16"/><path d="M13 5h14v14M27 5L14 18"/>',   // Ansicht in eigenem Fenster (W2)
   zoom: '<circle cx="14" cy="14" r="8"/><path d="M20 20l8 8"/>',
   zoomAlle: '<path d="M4 11V4h7M21 4h7v7M28 21v7h-7M11 28H4v-7"/><rect x="11" y="11" width="10" height="10"/>',
   zoomAlleAnsichten: '<path d="M3 9V3h6M23 3h6v6M29 23v6h-6M9 29H3v-6"/><rect x="8" y="8" width="7" height="7"/><rect x="17" y="17" width="7" height="7"/>',

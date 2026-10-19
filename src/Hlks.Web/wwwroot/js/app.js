@@ -6,7 +6,7 @@ import { zustand, melden, modellLaden, derKlasse } from './zustand.js';
 import { verbinden } from './ereignisse.js';
 import * as fenster from './fenster.js';
 import * as menueband from './oberflaeche/menueband.js';
-import * as ansichtsreiter from './oberflaeche/ansichtsreiter.js';
+import * as zweitfenster from './oberflaeche/zweitfenster.js';
 import * as projektbrowser from './oberflaeche/projektbrowser.js';
 import * as eigenschaften from './oberflaeche/eigenschaften.js';
 import * as statusleiste from './oberflaeche/statusleiste.js';
@@ -18,10 +18,10 @@ import { seitenleisteVerstellbar } from './oberflaeche/layout.js';
 import { designEinrichten } from './oberflaeche/design.js';
 
 async function start() {
+  if (zweitfenster.istZweitfenster()) zweitfensterKopf();   // vor allem anderen: Modus «nur Ansicht» (W2)
   designEinrichten();   // Design (hell/dunkel) steht schon durch design-start.js; hier nur absichern
   seitenleisteVerstellbar();
   fenster.einrichten();
-  ansichtsreiter.einrichten(document.getElementById('ansichtsreiter'));   // Reiter ohne Rollbalken: schmaler, dann «▾ n weitere»
   menueband.einrichten(document.getElementById('menueband'), document.getElementById('optionsleiste'), document.getElementById('schnellzugriff'));
   projektbrowser.einrichten(document.getElementById('projektbrowser'));
   eigenschaften.einrichten(document.getElementById('eigenschaften'));
@@ -32,12 +32,13 @@ async function start() {
   // Startbildschirm (S1): ohne offenes Projekt der Start; mit ?start=1 (Desktop-Icon) liegt er über dem offenen Projekt
   startbildschirm.einrichten();
   vorschau.einrichten();
-  const startVerlangt = new URLSearchParams(location.search).get('start') === '1';
+  const zweit = zweitfenster.istZweitfenster();   // eigenes Fenster einer Ansicht (W2): ?ansicht=…&fenster=2, Modus «nur Ansicht»
+  const startVerlangt = !zweit && new URLSearchParams(location.search).get('start') === '1';
   if (startVerlangt) { try { history.replaceState(null, '', location.pathname); } catch { /* egal */ } }   // ein Neuladen zeigt ihn nicht erneut
 
   zustand.status = await holen('/api/status');
   melden('status', zustand.status);
-  if (!zustand.status.offen) { await startbildschirm.zeigen(); return; }
+  if (!zustand.status.offen) { if (zweit) { try { window.close(); } catch { /* egal */ } return; } await startbildschirm.zeigen(); return; }
   if (startVerlangt) startbildschirm.zeigen().catch((e) => console.error('Startbildschirm', e));   // nicht warten: das Projekt lädt dahinter
   await projektLaden();
 }
@@ -48,15 +49,25 @@ export async function projektLaden() {
   zustand.katalog = await abfrage('katalog');
   await modellLaden();
   document.getElementById('titel').textContent = `HLKS-CAD – ${zustand.status.projekt ?? ''}`;
-  const gemerkt = fenster.gemerkteOeffnen();
-  let geoeffnet = 0;
-  for (const kz of gemerkt) if (await fenster.ansichtOeffnen(kz)) geoeffnet++;
-  if (geoeffnet === 0) {
+  const geoeffnet = await fenster.wiederherstellen();   // gemerkte Anordnung des Projekts (W2); im eigenen Fenster die Ansicht aus der Adresse
+  if (geoeffnet === 0 && !zweitfenster.istZweitfenster()) {
     const erste = derKlasse('Ansicht').filter(a => a.werte?.art === 'grundriss' && !a.werte?.vorlage)
       .sort((a, b) => a.kennzeichen.localeCompare(b.kennzeichen))[0];
     if (erste) await fenster.ansichtOeffnen(erste.kennzeichen);
   }
-  vorschau.nachLaden();   // 3D-Vorschaubild für den Startbildschirm (höchstens alle 10 min, nur bei geändertem Stand)
+  if (!zweitfenster.istZweitfenster()) vorschau.nachLaden();   // 3D-Vorschaubild für den Startbildschirm (höchstens alle 10 min, nur bei geändertem Stand)
+}
+
+/** Eigenes Fenster: Knopf «Zurück ins Hauptfenster» im Kopf. */
+function zweitfensterKopf() {
+  document.body.dataset.fenster = String(zweitfenster.fensterNummer());   // blendet Menüband und Seitenleiste aus (css/anordnung.css)
+  const ort = document.getElementById('kopf-rechts');
+  if (!ort) return;
+  const b = document.createElement('button');
+  b.type = 'button'; b.className = 'ag-zurueck'; b.textContent = '↩ Zurück ins Hauptfenster';
+  b.title = 'Die Ansicht wieder im Hauptfenster öffnen und dieses Fenster schliessen';
+  b.onclick = () => fenster.zurueckInsHauptfenster();
+  ort.appendChild(b);
 }
 
 window.addEventListener('error', (e) => console.error(e.error ?? e.message));
