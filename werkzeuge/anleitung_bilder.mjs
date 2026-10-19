@@ -501,7 +501,7 @@ bild('start-anheften', 'beispiel', async () => {
 bild('start-bibliothek', 'beispiel', async () => { await klick('.sb-aktion[data-aktion="bibliothek"]'); await warteBis(async () => /Familienbibliothek/.test((await dialogTitel()) ?? ''), 'Dialog Bibliothek'); await warte(600); },
   { welt: 'start', markiere: '.sb-aktion[data-aktion="bibliothek"]' });
 bild('start-neu-beispiel', 'beispiel', async () => {
-  await warteBis(async () => (await anzahl('.sb-kachel')) >= 1, 'Startbildschirm geladen', 30000); await warte(1500);
+  await warteBis(async () => (await anzahl('.sb-kachel')) >= 1, 'Startbildschirm geladen', 120000); await warte(1500);
   await klick('.sb-aktion[data-aktion="beispiel"]'); await dialogDa(/Beispielprojekt/);
   await eingeben(dlg('input'), path.join(tmpdir(), 'HLKS_CAD', 'beispiel', 'c_Pläne und Modelle', 'e_KICAD')); await warte(300);
 }, { welt: 'start', markiere: '.sb-aktion[data-aktion="beispiel"]' });
@@ -1837,11 +1837,11 @@ async function weltBernstrasse(name) {
   w.projektOrdner = bernKopie(name === 'bernstrasse' ? 'bernstrasse' : 'bernstrasse_leitungen');
   kopieren(name === 'bernstrasse' ? QUELLE_3B : QUELLE_3, w.projektOrdner);
   // Projektablage für den Startbildschirm: je Projekt ein Objektordner mit dem Kopf (projekt.json) – nur Namen, keine Daten
-  const stub = path.join(w.env.HLKS_PROJEKTABLAGE, name === 'bernstrasse' ? 'Worb_BES_Bernstrasse' : 'Worb_BES_Bernstrasse_Sanitaer', KICAD);
+  const stub = path.join(w.env.HLKS_PROJEKTABLAGE, name === 'bernstrasse' ? 'Worb_BES_Bernstrasse' : 'Muster_MFH', KICAD);
   mkdir(stub); cpSync(path.join(w.projektOrdner, 'projekt.json'), path.join(stub, 'projekt.json'));
-  if (name === 'bernstrasse') {
-    const zweit = path.join(w.env.HLKS_PROJEKTABLAGE, 'Worb_BES_Bernstrasse_Sanitaer', KICAD); mkdir(zweit);
-    if (existsSync(path.join(QUELLE_3, 'projekt.json'))) cpSync(path.join(QUELLE_3, 'projekt.json'), path.join(zweit, 'projekt.json'));
+  if (name === 'bernstrasse' && existsSync(path.join(QUELLE_3, 'projekt.json'))) {   // das Abnahmeprojekt 3 ist das fiktive Beispielprojekt (nicht die Bernstrasse): als zweite Zeile der Liste
+    const zweit = path.join(w.env.HLKS_PROJEKTABLAGE, 'Muster_MFH', KICAD); mkdir(zweit);
+    cpSync(path.join(QUELLE_3, 'projekt.json'), path.join(zweit, 'projekt.json'));
   }
   w.schmutzig = false;
   await w.starten(w.projektOrdner);
