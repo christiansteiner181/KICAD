@@ -1,0 +1,460 @@
+<title>KICAD Bedienungsanleitung</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@500;600;700&family=Source+Sans+3:ital,wght@0,400;0,600;1,400&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Aufbau: links das Inhaltsverzeichnis wie ein Planverzeichnis, rechts die Kapitel; jedes Kapitel öffnet mit einem
+   Plankopf (Modul, Funktionen, geprüft, Mängel), darunter je Funktion eine Karte: Ort im Menüband, Schritte, Bild, Prüfpunkte. */
+:root {
+  --papier: #f4f6f9; --flaeche: #ffffff; --flaeche-2: #eef2f7; --tinte: #1b2330; --leise: #586374; --linie: #d6dce5;
+  --akzent: #1d5bb8; --akzent-zart: #e3ecfa; --ok: #1b7a3c; --ok-zart: #e1f3e7; --mangel: #b42318; --mangel-zart: #fbe4e1;
+  --kbd: #ffffff; --schatten: 0 1px 2px rgba(20, 32, 52, .08), 0 4px 14px rgba(20, 32, 52, .06);
+  --schrift-titel: "Barlow Semi Condensed", "Arial Narrow", "Segoe UI", sans-serif;
+  --schrift-text: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --schrift-mono: "IBM Plex Mono", Consolas, "Courier New", monospace;
+  --nav-breite: 290px;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --papier: #11151b; --flaeche: #19202a; --flaeche-2: #212a36; --tinte: #e4e9f0; --leise: #9aa5b5; --linie: #2e3846;
+  --akzent: #78a6ff; --akzent-zart: #1f2d47; --ok: #5cc985; --ok-zart: #173324; --mangel: #ff7b6e; --mangel-zart: #3d1d1a;
+  --kbd: #26303d; --schatten: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark; } }
+:root[data-theme="dark"] {
+  --papier: #11151b; --flaeche: #19202a; --flaeche-2: #212a36; --tinte: #e4e9f0; --leise: #9aa5b5; --linie: #2e3846;
+  --akzent: #78a6ff; --akzent-zart: #1f2d47; --ok: #5cc985; --ok-zart: #173324; --mangel: #ff7b6e; --mangel-zart: #3d1d1a;
+  --kbd: #26303d; --schatten: 0 1px 2px rgba(0, 0, 0, .4); color-scheme: dark; }
+
+* { box-sizing: border-box; }
+html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
+body { background: var(--papier); color: var(--tinte); font: 16px/1.55 var(--schrift-text); }
+a { color: var(--akzent); }
+:focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
+h1, h2, h3 { font-family: var(--schrift-titel); text-wrap: balance; margin: 0; line-height: 1.15; }
+kbd { font: 500 .82em var(--schrift-mono); padding: 1px 6px; border: 1px solid var(--linie); border-bottom-width: 2px; border-radius: 4px; background: var(--kbd); white-space: nowrap; }
+
+/* Kopfleiste */
+.kopf { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 30; background: var(--flaeche); border-bottom: 1px solid var(--linie);
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+.kopf-innen { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 18px; padding-block: 10px; max-width: 1400px; margin: 0 auto; }
+.marke { display: flex; align-items: baseline; gap: 10px; min-width: 0; }
+.marke h1 { font-size: 1.45rem; font-weight: 700; letter-spacing: .01em; }
+.marke span { color: var(--leise); font-size: .9rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.suche { flex: 1 1 260px; display: flex; gap: 8px; align-items: center; min-width: 0; }
+.suche input { flex: 1; min-width: 0; font: inherit; padding: 7px 12px; border: 1px solid var(--linie); border-radius: 6px; background: var(--papier); color: var(--tinte); }
+.filter { display: flex; gap: 4px; flex-wrap: wrap; }
+.filter button { font: 600 .82rem var(--schrift-text); padding: 5px 10px; border: 1px solid var(--linie); border-radius: 999px; background: transparent; color: var(--leise); cursor: pointer; }
+.filter button[aria-pressed="true"] { background: var(--akzent); border-color: var(--akzent); color: #fff; }
+.speicher { font-size: .8rem; color: var(--leise); }
+.speicher.warnung { color: var(--mangel); }
+
+/* Gesamtlayout */
+.rahmen { display: grid; grid-template-columns: var(--nav-breite) minmax(0, 1fr); gap: 28px; max-width: 1400px; margin: 0 auto;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 22px 60px; }
+nav.inhalt { position: sticky; top: calc(env(safe-area-inset-top, 0px) + 70px); align-self: start; max-height: calc(100vh - 90px); overflow: auto; }
+.inhalt h2 { font-size: .78rem; text-transform: uppercase; letter-spacing: .09em; color: var(--leise); font-family: var(--schrift-text); font-weight: 600; margin: 0 0 8px; }
+.inhalt ol { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
+.inhalt a { display: grid; grid-template-columns: 2.6em minmax(0, 1fr) auto; gap: 8px; align-items: baseline; padding: 6px 8px; border-radius: 6px; color: var(--tinte); text-decoration: none; }
+.inhalt a:hover { background: var(--flaeche-2); }
+.inhalt a.aktiv { background: var(--akzent-zart); }
+.inhalt .nr { font: 500 .78rem var(--schrift-mono); color: var(--leise); }
+.inhalt .zahl { font: 500 .74rem var(--schrift-mono); color: var(--leise); font-variant-numeric: tabular-nums; }
+.inhalt .zahl.fertig { color: var(--ok); }
+.inhalt .zahl.maengel { color: var(--mangel); }
+.balken { height: 4px; border-radius: 2px; background: var(--flaeche-2); overflow: hidden; margin-top: 4px; grid-column: 2 / 4; }
+.balken i { display: block; height: 100%; background: var(--ok); }
+.gesamt { margin-top: 16px; padding: 12px; border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); font-size: .88rem; display: grid; gap: 6px; }
+.gesamt strong { font: 600 1.6rem var(--schrift-titel); font-variant-numeric: tabular-nums; }
+
+main { min-width: 0; display: grid; gap: 36px; }
+.einfuehrung { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; padding: 18px 22px; display: grid; gap: 10px; max-width: 900px; }
+.einfuehrung h2 { font-size: 1.5rem; }
+.einfuehrung p, .einfuehrung ul { margin: 0; max-width: 70ch; }
+.einfuehrung ul { padding-left: 1.2em; display: grid; gap: 3px; }
+.stand { font: 500 .85rem var(--schrift-mono); color: var(--leise); }
+
+/* Kapitel mit Plankopf */
+section.kapitel { display: grid; gap: 14px; max-width: 900px; }
+.plankopf { display: grid; grid-template-columns: minmax(0, 1fr) repeat(3, auto); border: 1.5px solid var(--tinte); border-radius: 2px; background: var(--flaeche); }
+.plankopf > div { padding: 8px 14px; border-left: 1px solid var(--linie); display: grid; align-content: center; gap: 2px; }
+.plankopf > div:first-child { border-left: 0; }
+.plankopf .feld { font-size: .68rem; text-transform: uppercase; letter-spacing: .1em; color: var(--leise); }
+.plankopf h2 { font-size: 1.55rem; font-weight: 700; }
+.plankopf .wert { font: 600 1.15rem var(--schrift-titel); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.plankopf .wert.maengel { color: var(--mangel); }
+.kapitel > p.einleitung { margin: 0; color: var(--leise); max-width: 70ch; }
+
+/* Funktionskarte */
+article.funktion { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; box-shadow: var(--schatten); overflow: hidden; }
+article.funktion[hidden] { display: none; }
+.f-kopf { display: flex; gap: 12px; align-items: flex-start; justify-content: space-between; padding: 14px 18px 10px; }
+.f-kopf h3 { font-size: 1.22rem; font-weight: 600; }
+.status { flex: none; font: 600 .76rem var(--schrift-text); padding: 3px 9px; border-radius: 999px; background: var(--flaeche-2); color: var(--leise); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.status.fertig { background: var(--ok-zart); color: var(--ok); }
+.status.mangel { background: var(--mangel-zart); color: var(--mangel); }
+.wo { display: flex; flex-wrap: wrap; gap: 6px; align-items: center; padding: 0 18px 12px; font-size: .88rem; }
+.wo .stufe { padding: 2px 8px; border-radius: 4px; background: var(--akzent-zart); color: var(--tinte); }
+.wo .stufe.knopf { font-weight: 600; }
+.wo .pfeil { color: var(--leise); }
+.wo .sonst { color: var(--leise); font-style: italic; }
+.f-rumpf { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 300px); gap: 18px; padding: 0 18px 14px; }
+.f-rumpf.ohne-bild { grid-template-columns: minmax(0, 1fr); }
+.f-text { min-width: 0; display: grid; gap: 10px; align-content: start; }
+.f-text h4 { margin: 0; font: 600 .74rem var(--schrift-text); text-transform: uppercase; letter-spacing: .09em; color: var(--leise); }
+.f-text ol { margin: 0; padding-left: 1.4em; display: grid; gap: 4px; }
+.f-text p { margin: 0; }
+.hinweis { font-size: .9rem; color: var(--leise); border-left: 3px solid var(--linie); padding-left: 10px; }
+figure.bild { margin: 0; min-width: 0; }
+figure.bild button { display: block; width: 100%; padding: 0; border: 1px solid var(--linie); border-radius: 6px; overflow: hidden; background: var(--flaeche-2); cursor: zoom-in; }
+figure.bild img { display: block; width: 100%; height: auto; }
+figure.bild figcaption { font-size: .78rem; color: var(--leise); margin-top: 4px; }
+.pruef { border-top: 1px solid var(--linie); background: var(--flaeche-2); padding: 12px 18px 14px; display: grid; gap: 8px; }
+.pruef h4 { margin: 0; font: 600 .74rem var(--schrift-text); text-transform: uppercase; letter-spacing: .09em; color: var(--leise); }
+.pruef ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; }
+.pruef li { display: grid; grid-template-columns: auto minmax(0, 1fr); gap: 10px; align-items: start; }
+.knoepfe { display: flex; gap: 4px; }
+.knoepfe button { width: 30px; height: 28px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); color: var(--leise); cursor: pointer; font: 700 .95rem var(--schrift-text); line-height: 1; }
+.knoepfe button.ok[aria-pressed="true"] { background: var(--ok); border-color: var(--ok); color: #fff; }
+.knoepfe button.mangel[aria-pressed="true"] { background: var(--mangel); border-color: var(--mangel); color: #fff; }
+.pruef li span { padding-top: 3px; }
+.pruef li.ist-ok span { color: var(--leise); text-decoration: line-through; text-decoration-color: var(--ok); }
+.pruef li.ist-mangel span { color: var(--mangel); }
+.notiz { display: grid; gap: 4px; }
+.notiz label { font-size: .8rem; color: var(--leise); }
+.notiz textarea { font: inherit; font-size: .92rem; min-height: 2.6em; resize: vertical; padding: 6px 10px; border: 1px solid var(--linie); border-radius: 6px; background: var(--flaeche); color: var(--tinte); }
+
+.luecken { background: var(--flaeche); border: 1px dashed var(--linie); border-radius: 10px; padding: 16px 20px; max-width: 900px; display: grid; gap: 8px; }
+.luecken ul { margin: 0; padding-left: 1.2em; display: grid; gap: 4px; max-width: 75ch; }
+.leer { color: var(--leise); font-style: italic; }
+
+/* Bild gross */
+dialog.gross { border: 0; padding: 0; background: transparent; max-width: 96vw; max-height: 94vh; }
+dialog.gross::backdrop { background: rgba(8, 12, 18, .82); }
+dialog.gross img { display: block; max-width: 96vw; max-height: 86vh; width: auto; height: auto; border-radius: 6px; }
+dialog.gross p { color: #e8edf3; margin: 8px 0 0; font-size: .9rem; display: flex; justify-content: space-between; gap: 12px; }
+dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; color: #111; border: 0; border-radius: 6px; padding: 4px 12px; cursor: pointer; }
+
+@media (max-width: 960px) {
+  .rahmen { grid-template-columns: minmax(0, 1fr); }
+  nav.inhalt { position: static; max-height: none; }
+  .f-rumpf { grid-template-columns: minmax(0, 1fr); }
+  figure.bild { max-width: 560px; }
+}
+@media (max-width: 560px) {
+  .plankopf { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .plankopf > div:first-child { grid-column: 1 / -1; border-bottom: 1px solid var(--linie); }
+  .plankopf > div:nth-child(2) { border-left: 0; }
+  .marke span { display: none; }
+}
+@media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+</style>
+
+<header class="kopf">
+  <div class="kopf-innen">
+    <div class="marke"><h1>KICAD Bedienungsanleitung</h1><span id="kopf-stand"></span></div>
+    <div class="suche">
+      <input id="suchfeld" type="search" placeholder="Suchen: Knopf, Kürzel, Begriff …" aria-label="Anleitung durchsuchen" autocomplete="off">
+    </div>
+    <div class="filter" role="group" aria-label="Funktionen filtern">
+      <button type="button" data-filter="alle" aria-pressed="true">Alle</button>
+      <button type="button" data-filter="offen" aria-pressed="false">Offen</button>
+      <button type="button" data-filter="mangel" aria-pressed="false">Mängel</button>
+      <button type="button" data-filter="fertig" aria-pressed="false">Erledigt</button>
+    </div>
+    <span class="speicher" id="speicher">Speicher wird verbunden …</span>
+  </div>
+</header>
+
+<div class="rahmen">
+  <nav class="inhalt" aria-label="Inhalt">
+    <h2>Inhalt</h2>
+    <ol id="inhaltsliste"></ol>
+    <div class="gesamt" id="gesamt"></div>
+  </nav>
+  <main id="inhalt"></main>
+</div>
+
+<dialog class="gross" id="gross" aria-label="Bild vergrössert">
+  <img id="gross-bild" alt="">
+  <p><span id="gross-text"></span><button type="button" id="gross-zu">Schliessen</button></p>
+</dialog>
+
+<script id="daten" type="application/json">__DATEN__</script>
+<script>
+(() => {
+  'use strict';
+  const DATEN = JSON.parse(document.getElementById('daten').textContent);
+  const LOKAL = 'kicad-anleitung-pruefung-v1';
+  const zustand = {};        // funktionId -> { punkte: { "0": "ok" | "mangel" }, notiz: "" }
+  let speicher = null;       // db-Namespace, sonst null (dann nur dieser Browser)
+  let filter = 'alle';
+  let suchtext = '';
+  const warteschlange = {};  // funktionId -> Promise (eine Schreibung je Dokument zugleich)
+  const zeitgeber = {};
+
+  const $ = (sel, el = document) => el.querySelector(sel);
+  const el = (tag, attrs = {}, ...kinder) => {
+    const e = document.createElement(tag);
+    for (const [k, v] of Object.entries(attrs)) {
+      if (v == null || v === false) continue;
+      if (k === 'class') e.className = v; else if (k === 'text') e.textContent = v; else e.setAttribute(k, v === true ? '' : v);
+    }
+    for (const k of kinder.flat()) if (k != null) e.append(k.nodeType ? k : document.createTextNode(String(k)));
+    return e;
+  };
+  const docId = id => String(id).replace(/[^A-Za-z0-9_\-.~:@+]/g, '_');
+
+  // ---------------------------------------------------------------- Zählen
+  function zaehle(f) {
+    const z = zustand[f.id] || { punkte: {} };
+    const n = f.pruefpunkte.length;
+    let ok = 0, mangel = 0;
+    for (let i = 0; i < n; i++) { const s = z.punkte?.[i]; if (s === 'ok') ok++; else if (s === 'mangel') mangel++; }
+    return { n, ok, mangel, erledigt: ok + mangel, fertig: n > 0 && ok === n, offen: ok + mangel < n };
+  }
+  function zaehleKapitel(k) {
+    let n = 0, erledigt = 0, mangel = 0, ok = 0;
+    for (const f of k.funktionen) { const z = zaehle(f); n += z.n; erledigt += z.erledigt; mangel += z.mangel; ok += z.ok; }
+    return { n, erledigt, mangel, ok };
+  }
+
+  // ---------------------------------------------------------------- Aufbau
+  function baueSeite() {
+    const s = DATEN.stand || {};
+    $('#kopf-stand').textContent = `Stand ${s.commit || '–'} · ${s.datum || ''}`;
+    const main = $('#inhalt');
+    main.append(baueEinfuehrung(s));
+    DATEN.kapitel.forEach((k, ki) => main.append(baueKapitel(k, ki)));
+    if (DATEN.luecken?.length) main.append(baueLuecken());
+    const liste = $('#inhaltsliste');
+    DATEN.kapitel.forEach((k, ki) => {
+      const a = el('a', { href: '#kap-' + k.id, 'data-kapitel': k.id },
+        el('span', { class: 'nr', text: k.modul && k.modul !== '–' ? k.modul : '–' }),
+        el('span', { text: k.titel }),
+        el('span', { class: 'zahl', 'data-zahl': k.id }),
+        el('span', { class: 'balken' }, el('i', { 'data-balken': k.id })));
+      liste.append(el('li', {}, a));
+    });
+    if (DATEN.luecken?.length) liste.append(el('li', {}, el('a', { href: '#luecken' }, el('span', { class: 'nr', text: '!' }), el('span', { text: 'Noch ohne Bedienort' }), el('span'))));
+  }
+
+  function baueEinfuehrung(s) {
+    return el('section', { class: 'einfuehrung', 'aria-labelledby': 'einf-titel' },
+      el('h2', { id: 'einf-titel', text: 'So prüfen Sie' }),
+      el('p', { class: 'stand', text: `Beschreibt den geprüften Stand ${s.commit || '–'} vom ${s.datum || '–'}. ${s.text || ''}` }),
+      el('ul', {},
+        el('li', { text: 'KICAD über das Desktop-Symbol «KICAD» starten. Es startet genau diesen Stand.' }),
+        el('li', { text: 'Je Funktion: Ort im Menüband suchen (Register › Gruppe › Knopf, Kürzel), Schritte ausführen, Ergebnis mit «Erwartung» und Bild vergleichen.' }),
+        el('li', {}, 'Jeden Prüfpunkt mit ', el('kbd', { text: '✓' }), ' (stimmt) oder ', el('kbd', { text: '✗' }), ' (Mangel) markieren. Bei einem Mangel kurz in die Notiz schreiben, was anders war.'),
+        el('li', { text: 'Ihre Markierungen bleiben gespeichert. Claude liest sie und behebt die Mängel vor dem nächsten Modul.' })));
+  }
+
+  function baueKapitel(k, ki) {
+    const z = zaehleKapitel(k);
+    const sec = el('section', { class: 'kapitel', id: 'kap-' + k.id, 'aria-labelledby': 'kt-' + k.id },
+      el('div', { class: 'plankopf' },
+        el('div', {}, el('span', { class: 'feld', text: k.modul && k.modul !== '–' ? 'Modul ' + k.modul : 'Übergreifend' }), el('h2', { id: 'kt-' + k.id, text: k.titel })),
+        el('div', {}, el('span', { class: 'feld', text: 'Funktionen' }), el('span', { class: 'wert', text: String(k.funktionen.length) })),
+        el('div', {}, el('span', { class: 'feld', text: 'Geprüft' }), el('span', { class: 'wert', 'data-kopf-geprueft': k.id, text: `${z.erledigt}/${z.n}` })),
+        el('div', {}, el('span', { class: 'feld', text: 'Mängel' }), el('span', { class: 'wert', 'data-kopf-mangel': k.id, text: String(z.mangel) }))),
+      k.einleitung ? el('p', { class: 'einleitung', text: k.einleitung }) : null);
+    for (const f of k.funktionen) sec.append(baueFunktion(f, k));
+    return sec;
+  }
+
+  function baueWo(wo = {}) {
+    const teile = [];
+    for (const [schl, kl] of [['register', ''], ['gruppe', ''], ['knopf', 'knopf']]) {
+      if (wo[schl]) { if (teile.length) teile.push(el('span', { class: 'pfeil', 'aria-hidden': 'true', text: '›' })); teile.push(el('span', { class: 'stufe ' + kl, text: wo[schl] })); }
+    }
+    if (wo.kuerzel) teile.push(el('span', {}, 'Kürzel ', ...String(wo.kuerzel).split(/\s*\/\s*|\s+oder\s+/).flatMap((t, i) => i ? [' / ', el('kbd', { text: t })] : [el('kbd', { text: t })])));
+    if (wo.sonst) teile.push(el('span', { class: 'sonst', text: wo.sonst }));
+    return teile.length ? el('div', { class: 'wo', 'aria-label': 'Ort' }, teile) : null;
+  }
+
+  function baueFunktion(f, k) {
+    const z = zaehle(f);
+    const art = el('article', { class: 'funktion', id: 'f-' + f.id, 'data-id': f.id, 'data-kapitel': k.id });
+    art.append(el('div', { class: 'f-kopf' }, el('h3', { text: f.titel }), el('span', { class: 'status', 'data-status': f.id })));
+    const wo = baueWo(f.wo); if (wo) art.append(wo);
+    const text = el('div', { class: 'f-text' });
+    if (f.schritte?.length) text.append(el('h4', { text: 'Schritte' }), el('ol', {}, f.schritte.map(s => el('li', { text: s }))));
+    if (f.erwartung) text.append(el('h4', { text: 'Erwartung' }), el('p', { text: f.erwartung }));
+    if (f.hinweis) text.append(el('p', { class: 'hinweis', text: f.hinweis }));
+    const rumpf = el('div', { class: 'f-rumpf' + (f.bild ? '' : ' ohne-bild') }, text);
+    if (f.bild) {
+      const btn = el('button', { type: 'button', 'aria-label': 'Bild vergrössern: ' + f.titel },
+        el('img', { src: f.bild.datei, alt: f.bild.text || f.titel, loading: 'lazy', width: f.bild.b || null, height: f.bild.h || null }));
+      btn.addEventListener('click', () => zeigeGross(f));
+      rumpf.append(el('figure', { class: 'bild' }, btn, el('figcaption', { text: (f.bild.projekt === 'bernstrasse' ? 'Bernstrasse 42, Worb' : 'Beispielprojekt MFH Musterweg') + (f.bild.markierung ? ' · rot = Ort' : '') })));
+    }
+    art.append(rumpf);
+    if (f.pruefpunkte?.length) {
+      const ul = el('ul');
+      f.pruefpunkte.forEach((p, i) => {
+        const li = el('li', { 'data-punkt': i },
+          el('span', { class: 'knoepfe' },
+            el('button', { type: 'button', class: 'ok', 'aria-pressed': 'false', 'aria-label': 'Stimmt: ' + p, title: 'Stimmt', text: '✓' }),
+            el('button', { type: 'button', class: 'mangel', 'aria-pressed': 'false', 'aria-label': 'Mangel: ' + p, title: 'Mangel', text: '✗' })),
+          el('span', { text: p }));
+        li.querySelector('.ok').addEventListener('click', () => setzePunkt(f, i, 'ok'));
+        li.querySelector('.mangel').addEventListener('click', () => setzePunkt(f, i, 'mangel'));
+        ul.append(li);
+      });
+      const ta = el('textarea', { id: 'notiz-' + docId(f.id), rows: '1', placeholder: 'Was war anders? (optional)' });
+      ta.addEventListener('input', () => { (zustand[f.id] ||= { punkte: {} }).notiz = ta.value; plane(f.id); });
+      art.append(el('div', { class: 'pruef' }, el('h4', { text: 'Prüfpunkte' }), ul,
+        el('div', { class: 'notiz' }, el('label', { for: 'notiz-' + docId(f.id), text: 'Notiz' }), ta)));
+    }
+    return art;
+  }
+
+  function baueLuecken() {
+    return el('section', { class: 'luecken', id: 'luecken', 'aria-labelledby': 'lu-titel' },
+      el('h2', { id: 'lu-titel', text: 'Noch ohne Bedienort' }),
+      el('p', { class: 'leer', text: 'Diese Funktionen sind im Kern gebaut, aber noch nicht in der Oberfläche erreichbar oder bewusst zurückgestellt. Sie stehen auf der Nachbearbeitungsliste.' }),
+      el('ul', {}, DATEN.luecken.map(t => el('li', { text: t }))));
+  }
+
+  // ---------------------------------------------------------------- Zustand zeigen
+  function zeigeFunktion(f) {
+    const art = document.getElementById('f-' + f.id); if (!art) return;
+    const z = zaehle(f), st = zustand[f.id] || { punkte: {} };
+    const pill = art.querySelector('[data-status]');
+    pill.textContent = z.mangel ? `${z.mangel === 1 ? '1 Mangel' : z.mangel + ' Mängel'} · ${z.erledigt}/${z.n}` : (z.fertig ? 'Erledigt' : `${z.erledigt}/${z.n}`);
+    pill.className = 'status' + (z.mangel ? ' mangel' : z.fertig ? ' fertig' : '');
+    art.querySelectorAll('.pruef li').forEach(li => {
+      const s = st.punkte?.[li.dataset.punkt];
+      li.className = s === 'ok' ? 'ist-ok' : s === 'mangel' ? 'ist-mangel' : '';
+      li.querySelector('.ok').setAttribute('aria-pressed', String(s === 'ok'));
+      li.querySelector('.mangel').setAttribute('aria-pressed', String(s === 'mangel'));
+    });
+    const ta = art.querySelector('textarea');
+    if (ta && document.activeElement !== ta && ta.value !== (st.notiz || '')) ta.value = st.notiz || '';
+  }
+  function zeigeZahlen() {
+    let n = 0, erledigt = 0, mangel = 0, fkt = 0, fktFertig = 0;
+    for (const k of DATEN.kapitel) {
+      const z = zaehleKapitel(k); n += z.n; erledigt += z.erledigt; mangel += z.mangel;
+      for (const f of k.funktionen) { fkt++; if (zaehle(f).fertig) fktFertig++; }
+      const zahl = document.querySelector(`[data-zahl="${k.id}"]`);
+      zahl.textContent = z.mangel ? `${z.mangel} ✗` : `${z.erledigt}/${z.n}`;
+      zahl.className = 'zahl' + (z.mangel ? ' maengel' : z.n && z.ok === z.n ? ' fertig' : '');
+      document.querySelector(`[data-balken="${k.id}"]`).style.width = (z.n ? Math.round(100 * z.erledigt / z.n) : 0) + '%';
+      document.querySelector(`[data-kopf-geprueft="${k.id}"]`).textContent = `${z.erledigt}/${z.n}`;
+      const km = document.querySelector(`[data-kopf-mangel="${k.id}"]`); km.textContent = String(z.mangel); km.className = 'wert' + (z.mangel ? ' maengel' : '');
+    }
+    $('#gesamt').replaceChildren(
+      el('span', { class: 'feld', text: 'Gesamt geprüft' }),
+      el('strong', { text: `${n ? Math.round(100 * erledigt / n) : 0} %` }),
+      el('span', { text: `${erledigt} von ${n} Prüfpunkten · ${fktFertig} von ${fkt} Funktionen ohne Befund` }),
+      mangel ? el('span', { style: 'color: var(--mangel)', text: `${mangel} Mängel gemeldet` }) : el('span', { class: 'leer', text: 'Noch keine Mängel gemeldet' }));
+  }
+  function alleZeigen() { for (const k of DATEN.kapitel) for (const f of k.funktionen) zeigeFunktion(f); zeigeZahlen(); filtern(); }
+
+  // ---------------------------------------------------------------- Suchen und Filtern
+  const suchIndex = new Map();
+  function indexiere() {
+    for (const k of DATEN.kapitel) for (const f of k.funktionen) {
+      suchIndex.set(f.id, [k.titel, f.titel, Object.values(f.wo || {}).join(' '), (f.schritte || []).join(' '), f.erwartung, f.hinweis, (f.pruefpunkte || []).join(' ')].join(' ').toLowerCase());
+    }
+  }
+  function filtern() {
+    const woerter = suchtext.toLowerCase().split(/\s+/).filter(Boolean);
+    for (const k of DATEN.kapitel) {
+      let sichtbar = 0;
+      for (const f of k.funktionen) {
+        const z = zaehle(f);
+        let zeigen = woerter.every(w => suchIndex.get(f.id).includes(w));
+        if (zeigen && filter === 'offen') zeigen = z.offen;
+        if (zeigen && filter === 'mangel') zeigen = z.mangel > 0;
+        if (zeigen && filter === 'fertig') zeigen = z.fertig;
+        document.getElementById('f-' + f.id).hidden = !zeigen;
+        if (zeigen) sichtbar++;
+      }
+      document.getElementById('kap-' + k.id).hidden = sichtbar === 0;
+    }
+  }
+  $('#suchfeld').addEventListener('input', e => { suchtext = e.target.value; filtern(); });
+  document.querySelectorAll('.filter button').forEach(b => b.addEventListener('click', () => {
+    filter = b.dataset.filter;
+    document.querySelectorAll('.filter button').forEach(x => x.setAttribute('aria-pressed', String(x === b)));
+    filtern();
+  }));
+
+  // ---------------------------------------------------------------- Ändern und Speichern
+  function setzePunkt(f, i, wert) {
+    const st = (zustand[f.id] ||= { punkte: {} });
+    st.punkte = { ...(st.punkte || {}) };
+    if (st.punkte[i] === wert) delete st.punkte[i]; else st.punkte[i] = wert;
+    zeigeFunktion(f); zeigeZahlen();
+    plane(f.id);
+  }
+  function plane(id) {
+    clearTimeout(zeitgeber[id]);
+    zeitgeber[id] = setTimeout(() => schreibe(id), 700);
+  }
+  function lokalSchreiben() {
+    try { localStorage.setItem(LOKAL, JSON.stringify(zustand)); } catch { /* ohne Browserspeicher */ }
+  }
+  function schreibe(id) {
+    lokalSchreiben();
+    if (!speicher) return;
+    const st = zustand[id] || { punkte: {} };
+    const f = funktionNach.get(id);
+    const koerper = { id, titel: f?.titel || id, punkte: st.punkte || {}, notiz: st.notiz || '', stand: DATEN.stand?.commit || '', geaendert: new Date().toISOString() };
+    if (f) koerper.texte = Object.fromEntries(Object.keys(koerper.punkte).map(i => [i, f.pruefpunkte[i]]));
+    const vorher = warteschlange[id] || Promise.resolve();
+    warteschlange[id] = vorher.then(() => speicher.doc('pruefung/' + docId(id)).set(koerper)).then(
+      () => setzeSpeicherText('Gespeichert', false),
+      e => { setzeSpeicherText(e?.code === 'quota_exceeded' ? 'Speicher voll – nur in diesem Browser' : 'Nicht gespeichert – nur in diesem Browser', true); });
+  }
+  function setzeSpeicherText(t, warnung) { const s = $('#speicher'); s.textContent = t; s.classList.toggle('warnung', !!warnung); }
+
+  const funktionNach = new Map();
+  for (const k of DATEN.kapitel) for (const f of k.funktionen) funktionNach.set(f.id, f);
+  const idNachDoc = new Map([...funktionNach.keys()].map(id => [docId(id), id]));
+
+  // ---------------------------------------------------------------- Bild gross
+  const dlg = $('#gross');
+  function zeigeGross(f) {
+    $('#gross-bild').src = f.bild.datei; $('#gross-bild').alt = f.bild.text || f.titel; $('#gross-text').textContent = f.titel;
+    if (typeof dlg.showModal === 'function') dlg.showModal(); else window.open(f.bild.datei, '_blank');
+  }
+  $('#gross-zu').addEventListener('click', () => dlg.close());
+  dlg.addEventListener('click', e => { if (e.target === dlg) dlg.close(); });
+
+  // ---------------------------------------------------------------- Inhaltsverzeichnis: aktives Kapitel
+  if ('IntersectionObserver' in window) {
+    const beob = new IntersectionObserver(eintraege => {
+      for (const e of eintraege) if (e.isIntersecting) {
+        document.querySelectorAll('.inhalt a').forEach(a => a.classList.toggle('aktiv', a.dataset.kapitel === e.target.id.slice(4)));
+      }
+    }, { rootMargin: '-20% 0px -70% 0px' });
+    document.querySelectorAll('section.kapitel').forEach(s => beob.observe(s));
+  }
+
+  // ---------------------------------------------------------------- Start
+  try { Object.assign(zustand, JSON.parse(localStorage.getItem(LOKAL) || '{}')); } catch { /* ohne Browserspeicher */ }
+  baueSeite(); indexiere(); alleZeigen();
+  if (location.hash) { const ziel = document.getElementById(location.hash.slice(1)); if (ziel) ziel.scrollIntoView(); }
+
+  (async () => {
+    const db = window.claude?.use ? await window.claude.use('db').catch(() => null) : null;
+    if (!db) { setzeSpeicherText('Nur in diesem Browser gespeichert', true); return; }
+    speicher = db;
+    setzeSpeicherText('Gespeichert im Artifact', false);
+    let erstes = true;
+    db.collection('pruefung').onSnapshot(snap => {
+      for (const d of snap.docs) {
+        const id = idNachDoc.get(d.id); if (!id) continue;
+        const body = d.data() || {};
+        if (zeitgeber[id] && !erstes) continue;   // eigene Eingabe läuft noch
+        zustand[id] = { punkte: { ...(body.punkte || {}) }, notiz: body.notiz || '' };
+      }
+      if (erstes && snap.empty) for (const id of Object.keys(zustand)) if (funktionNach.has(id)) schreibe(id);   // Lokales einmal übernehmen
+      erstes = false;
+      lokalSchreiben(); alleZeigen();
+    }, e => setzeSpeicherText(e?.code === 'revoked' ? 'Speicher getrennt – nur in diesem Browser' : 'Speicher nicht erreichbar – nur in diesem Browser', true));
+  })();
+})();
+</script>

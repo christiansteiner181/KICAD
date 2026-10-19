@@ -1,0 +1,16 @@
+{
+  "stand": "19.10.2026, aus inventar-notizen.md Abschnitt 3",
+  "luecken": [
+    "Einlage- und Grundleitungspläne anlegen: kein Knopf, heute nur über die KI (MCP). Umweg: Grundriss anlegen und in den Eigenschaften «darstellung» auf einlagen bzw. grundleitungen stellen.",
+    "Projektweite Einstellungen Rohrbezeichnung (NW/DN) und Masseinheit je Gewerk: kein Bedienort; die Projektinformationen sind nur lesbar. Die Rohrbezeichnung lässt sich je Ansicht einstellen.",
+    "Kollisionsliste und Aussparungsliste als Listenansicht: der Dialog «Liste anlegen» bietet sie nicht an, ebenso fehlt der Ort für die CSV-Ausgabe.",
+    "Aussparungen zusammenfassen: kein eigener Knopf; geschieht in «Aussparungen vorschlagen».",
+    "IFC über zwei Punktpaare ausrichten (N1): zurückgestellt, nicht gebaut.",
+    "Prinzipschema: «Schema anlegen» legt nur Strangschemas an; das Prinzipschema folgt mit den Modulen 5 und 6.",
+    "Strang von Hand einem HKAP-Strang zuordnen: kein Dialog, heute nur über die KI.",
+    "Zonen in der Projektbrowser-Gliederung «Energie und Umwelt»: noch nicht vorhanden.",
+    "Mitgelieferte Familienbibliothek im Programm: leer; Familien kommen aus der Bürobibliothek auf W: bzw. werden selbst erstellt.",
+    "Symbole im Revit-Stil (Teil S): geplant, Kontaktbogen folgt.",
+    "Tastenkürzel-Liste (KS): Kürzel der Register Beschriften, Einfügen, Hülle, Koordination und Familie stehen unter «Allgemein» statt beim Register."
+  ]
+}
