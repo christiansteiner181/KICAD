@@ -16,7 +16,8 @@
 //   - entfernt         = die neueste EntferntZeit; der Eintrag ist verborgen, solange nichts Neueres (erneutes Öffnen oder
 //                        späteres Anheften) vorliegt – der neuere Vermerk gewinnt.
 //   Zeiten sind UTC der jeweiligen Rechner; gehen Uhren nach, gewinnt der Rechner mit der späteren Uhr (Annahme, im Bericht genannt).
-// Schutz: Im Testlauf (HLKS_TEST oder Testrunner) wird nur unter %TEMP% geschrieben – nie in die echte Liste des Benutzers.
+// Schutz: Im Testlauf (HLKS_TEST oder Testrunner) wird nur unter %TEMP% gelesen und geschrieben – nie die echte Liste des Benutzers
+//   (ein Test hängt nicht von den zuletzt geöffneten Projekten des Entwicklers ab; ohne Umleitung nach %TEMP% ist die Liste leer).
 
 using System.Text.Json;
 using System.Text.Json.Serialization;
@@ -207,6 +208,7 @@ public sealed class ZuletztListe
     /// <summary>Alle sichtbaren Einträge (angeheftete zuerst, dann nach Zeit).</summary>
     public List<ZuletztZeile> Alle()
     {
+        if (!SchreibenErlaubt) return [];   // Testlauf ohne Umleitung nach %TEMP%: die echte Liste des Benutzers bleibt unsichtbar (auch lesend)
         try
         {
             lock (sperre)

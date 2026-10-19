@@ -32,7 +32,7 @@ const FAMBIB = path.join(NETZ, 'familienbibliothek');
 const AUSSTEHEND = path.join(arbeit, 'ausstehend');
 const PROJEKT_A = path.join(arbeit, 'A', 'e_KICAD');
 const PROJEKT_B = path.join(arbeit, 'B', 'e_KICAD');
-const umgebung = { ...process.env, HLKS_FAMILIENBIBLIOTHEK: FAMBIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUSSTEHEND, HLKS_TEST: '1', DOTNET_ROOT: path.dirname(dotnet) };
+const umgebung = { ...process.env, HLKS_FAMILIENBIBLIOTHEK: FAMBIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUSSTEHEND, HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage'), DOTNET_ROOT: path.dirname(dotnet) };
 mkdirSync(NETZ, { recursive: true });                         // das «Laufwerk» ist da; der Bibliotheksordner darin entsteht beim ersten Schreiben
 const wVorher = existsSync(WARTE_ORDNER);
 

@@ -401,6 +401,41 @@ public class BenutzerEinstellungenTests : IDisposable
         finally { Directory.Delete(ausserhalb, true); }
     }
 
+    [Fact]
+    public void Im_Testlauf_ohne_HLKS_BENUTZER_sind_die_echten_OneDrive_Dateien_unsichtbar()
+    {
+        // Der Fall der Browser-Testreihen: Server mit HLKS_TEST=1, aber ohne HLKS_BENUTZER/HLKS_ZULETZT; OneDrive des Entwicklers liegt ausserhalb von %TEMP%
+        var od = Path.Combine(AppContext.BaseDirectory, "nicht_temp_od_" + Guid.NewGuid().ToString("N")[..8]);
+        var einst = Path.Combine(od, "HLKS-CAD", "einstellungen");
+        var zuletzt = Path.Combine(od, "HLKS-CAD", "zuletzt");
+        Directory.CreateDirectory(einst); Directory.CreateDirectory(zuletzt);
+        try
+        {
+            using var u = TestUmgebung.Setzen(("HLKS_TEST", "1"), ("HLKS_BENUTZER", null), ("HLKS_ZULETZT", null), ("OneDrive", od), ("OneDriveCommercial", null), ("OneDriveConsumer", null));
+            var wert = new JsonArray(S("heizung"), S("sanitaer"), S("lueftung"));
+            File.WriteAllText(Path.Combine(einst, "pc-eins.json"), Json.Text(new EinstellungsDatei
+            {
+                Rechner = "pc-eins",
+                Werte = { ["projektbrowser.gliederung"] = new EinstellungsWert { Wert = wert, Zeit = T(1) } },
+            }));
+            File.WriteAllText(Path.Combine(zuletzt, "pc-eins.json"), Json.Text(new ZuletztDatei
+            {
+                Rechner = "pc-eins",
+                Eintraege = [new ZuletztEintrag { Ordner = @"W:\02_Projektdateien Objekte\Worb_BES_Bernstrasse\c_Pläne und Modelle\e_KICAD", Name = "Bernstrasse", Zeit = T(1) }],
+            }));
+
+            var e = new Einstellungen("T", "pc-eins", Katalog.StandardOrdner(), null);
+            var b = BenutzerEinstellungen.Aus(e);
+            Assert.Equal("OneDrive", b.Quelle);               // die Wahl der Ablage ändert sich nicht ...
+            Assert.Empty(b.Alle());                            // ... gelesen wird im Testlauf trotzdem nichts
+            Assert.Null(b.Hole("projektbrowser.gliederung"));
+            var z = ZuletztListe.Aus(e);
+            Assert.Equal("OneDrive", z.Quelle);
+            Assert.Empty(z.Alle());
+        }
+        finally { Directory.Delete(od, true); }
+    }
+
     // ---------------------------------------------------------------- Wahl der Ablage (Umleitung HLKS_BENUTZER)
 
     [Fact]

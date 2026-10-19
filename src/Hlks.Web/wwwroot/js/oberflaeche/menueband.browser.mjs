@@ -47,7 +47,7 @@ const MCP = path.join(BUILD, 'Hlks.Mcp', 'bin', 'Debug', 'net10.0', 'Hlks.Mcp.dl
   if (r.status !== 0) { console.error('Beispielprojekt nicht angelegt', r.stdout, r.stderr); process.exit(2); }
 }
 cpSync(path.resolve(hier, '../..'), path.join(WURZEL, 'wwwroot'), { recursive: true });
-const env = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS, HLKS_ZULETZT: ZULETZT };
+const env = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS, HLKS_ZULETZT: ZULETZT, HLKS_BENUTZER: path.join(WURZEL, 'benutzer') };
 const server = spawn(dotnet, [path.join(BUILD, 'Hlks.Web', 'bin', 'Debug', 'net10.0', 'Hlks.Web.dll'), '--port', String(PORT), '--projekt', projektOrdner, '--akteur', 'R', '--geraet', 'r-test'], { env, stdio: 'ignore' });
 for (let i = 0; i < 80; i++) { try { if ((await fetch(`${SERVER}/api/status`)).ok) break; } catch { /* warten */ } await warte(250); }
 const kern = async (art, name, body) => {
@@ -205,7 +205,12 @@ try {
   // Reihenfolge: die erste Gruppe bleibt am längsten gross, die rechten werden zuerst kleiner
   const rang = (s) => [...s].map((c) => 'GMKZW'.indexOf(c));
   pruef(BREITEN.every((w) => rang(matrix[`Ansicht@${w}`])[0] <= rang(matrix[`Ansicht@${w}`]).at(-1)), 'Ansicht: die erste Gruppe ist nie kleiner als die letzte (die rechten werden zuerst verkleinert)', BREITEN.map((w) => matrix[`Ansicht@${w}`]).join(' '));
-  pruef(rang(matrix['Ansicht@1920']).at(-1) > 0 && rang(matrix['Ansicht@1920']).slice(0, -1).every((r) => r === 0), 'Ansicht bei 1920 px: nur die rechteste Gruppe (Schema) ist verkleinert', matrix['Ansicht@1920']);
+  // Die Revit-Regel (entwurf/menueband-revit.md): von rechts verkleinern sich die Gruppen Stufe um Stufe (gross › mittel › klein › zusammengeklappt).
+  // Wie viele Gruppen bei 1920 px verkleinert sind, hängt von der Zahl der Knöpfe ab (W1/W2 haben «Fenster» erweitert) – geprüft wird die Regel, nicht die Anzahl.
+  {
+    const r = rang(matrix['Ansicht@1920']);
+    pruef(r.every((x) => x <= 1) && r.every((x, k) => k === 0 || x >= r[k - 1]), 'Ansicht bei 1920 px: keine Gruppe zusammengeklappt oder kleiner als «M», die Stufen nehmen von links nach rechts nie zu', matrix['Ansicht@1920']);
+  }
   // Monoton: bei weniger Platz nie eine grössere Stufe
   let monoton = true;
   for (const reg of REGISTER) for (let i = 1; i < BREITEN.length; i++) {
