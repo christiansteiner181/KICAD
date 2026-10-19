@@ -1,6 +1,6 @@
 // Browser-Integrationstest der Schema-Ansicht (Modul 3, Teil C2): Edge headless über CDP, echte Mausklicks und Tastatur, frisches Beispielprojekt
 // «MFH Musterweg» (dort gibt es die Schema-Ansicht AN-SCHEMA-SAN). Nicht Teil von «node --test». Der Test startet seinen eigenen Server
-// (Port 5162, Build-Ordner %USERPROFILE%\HLKS_CAD_build\m3c2; HLKS_BAU ändert ihn):
+// (Port 5162, Build-Ordner %USERPROFILE%\HLKS_CAD_build bzw. HLKS_BUILD; HLKS_BAU ändert ihn):
 //   SHOTS=<Ordner> node schema.browser.mjs
 // oder gegen einen eigenen Server mit frischem Beispielprojekt: HLKS_TEST_SERVER=http://localhost:5162 node schema.browser.mjs
 //
@@ -22,7 +22,8 @@ if (/:(5013|5098|5130|5131|5149)\b/.test(SERVER)) { console.error('Dieser Test l
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9362);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'm3c2');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'hlks_m3c2');
 mkdirSync(SHOTS, { recursive: true });
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
@@ -161,7 +162,7 @@ function frei(dd, box, belegt = [], abstand = 12) {
   throw new Error('Keine freie Stelle im Rechteck ' + JSON.stringify(box));
 }
 /** Punkt auf einer Linie, der weit von allen anderen Linien und von Knoten liegt (damit der Klick eindeutig ist). */
-function freiAufLinie(dd, linie, abstand = 3.5) {
+function freiAufLinie(dd, linie, abstand = 3.5, leise = false) {
   const segs = (l) => l.punkte.slice(1).map((q, i) => [l.punkte[i], q]);
   const dist = (px, py, a, b) => { const dx = b[0] - a[0], dy = b[1] - a[1], l2 = dx * dx + dy * dy; const t = l2 ? Math.max(0, Math.min(1, ((px - a[0]) * dx + (py - a[1]) * dy) / l2)) : 0; return Math.hypot(px - a[0] - t * dx, py - a[1] - t * dy); };
   let beste = null, bestD = -1;
@@ -175,7 +176,8 @@ function freiAufLinie(dd, linie, abstand = 3.5) {
       if (d > bestD) { bestD = d; beste = [x, y]; }
     }
   }
-  if (bestD < abstand) console.log('   Hinweis: der gewählte Punkt liegt nur ' + bestD.toFixed(1) + ' mm von einer anderen Linie');
+  if (bestD < abstand && !leise) console.log('   Hinweis: der gewählte Punkt liegt nur ' + bestD.toFixed(1) + ' mm von einer anderen Linie');
+  if (beste) beste.abstand = bestD;   // Abstand zur nächsten anderen Linie bzw. zum nächsten Symbol (ohne 2 mm Rand)
   return beste;
 }
 const warteSchema = (fn, t) => warteBis(async () => fn(await daten()), t);
@@ -223,9 +225,13 @@ pruef(d0.knoten.every((k) => ids.includes(k.element)), 'Jeder Knoten ist ein Tei
 pruef(d0.linien.filter((l) => l.elemente.length).every((l) => l.elemente.every((e) => ids.includes(e))), 'Jedes Linienelement ist ein Teil mit seiner Id');
 pruef(!(await gibt('.sc-wurzel .gr-masstab')) && !(await gibt('.sc-wurzel .gr-balken')), 'Kein Massstab und kein Massstabsbalken');
 pruef(/ohne Massstab/.test(await text('.kachel.aktiv .kachel-steuerung')) && (await gibt('.kachel.aktiv .kachel-steuerung .detailgrad')), 'Steuerleiste: «Schema, ohne Massstab» mit Detailgrad');
-pruef(await gibt('.sc-banner:not([hidden])') && /Ohne Geschoss/.test(await text('.sc-banner')), 'Banner zeigt die Hinweise des Kerns («Ohne Geschoss …»)', await text('.sc-banner'));
+// Welche Hinweise der Kern gibt, hängt vom Stand seiner Regeln ab (früher «Ohne Geschoss …» für den Schacht; seit die Schächte im Untergrund als Schnitt stehen:
+// «Unter dem untersten Band …», «Abwasserleitungen ohne Aussendurchmesser …»): der Banner zeigt genau die Hinweise der Abfrage.
+const hinweiseKern = d0.hinweise ?? [];
+pruef(hinweiseKern.length >= 1 && await gibt('.sc-banner:not([hidden])') && new RegExp(`${hinweiseKern.length} Hinweis`).test(await text('.sc-banner')), `Banner zeigt die Hinweise des Kerns (${hinweiseKern.length})`, await text('.sc-banner'));
 await klick('.sc-banner-kopf');
-pruef(/KS-1/.test(await text('.sc-banner-liste')), 'Aufgeklappt steht die ganze Liste im Banner');
+const listeText = (await text('.sc-banner-liste')).replace(/\s+/g, ' ');
+pruef(hinweiseKern.every((h) => listeText.includes(h.replace(/\s+/g, ' ').slice(0, 30))) && /KS-1/.test(listeText), 'Aufgeklappt steht die ganze Liste im Banner', listeText.slice(0, 300));
 await klick('.sc-banner-kopf');
 await ausw(`const z = document.querySelector('.pb-zeile[data-key="g:schema"]'); if (z && z.querySelector('.pb-pfeil')?.textContent === '▸') z.click(); return 1;`);
 await warte(250);
@@ -240,9 +246,13 @@ pruef((await auswahlKz()) === 'WT-E.02', 'Klick auf ein Symbol wählt das Elemen
 await warteBis(() => ausw(`return [...document.querySelectorAll('#eigenschaften input')].some((i) => i.value === 'WT-E.02');`), 'Palette zeigt das Element');
 pruef(true, 'Die Eigenschaftenpalette zeigt das gewählte Element');
 pruef(await gibt('.sc-svg g[data-id].gewaehlt'), 'Das Symbol ist hervorgehoben');
-const einzel = (await daten()).linien.find((l) => l.elemente.length === 1 && l.punkte.some((q, i) => i > 0 && Math.hypot(q[0] - l.punkte[i - 1][0], q[1] - l.punkte[i - 1][1]) >= 10));
-let i1 = 1; while (Math.hypot(einzel.punkte[i1][0] - einzel.punkte[i1 - 1][0], einzel.punkte[i1][1] - einzel.punkte[i1 - 1][1]) < 10) i1++;
-const lm = [(einzel.punkte[i1][0] + einzel.punkte[i1 - 1][0]) / 2, (einzel.punkte[i1][1] + einzel.punkte[i1 - 1][1]) / 2];
+const dd1 = await daten();
+const einzelKandidaten = dd1.linien.filter((l) => l.elemente.length === 1 && l.punkte.some((q, i) => i > 0 && Math.hypot(q[0] - l.punkte[i - 1][0], q[1] - l.punkte[i - 1][1]) >= 10))
+  .map((l) => ({ l, pt: freiAufLinie(dd1, l, 0, true) })).filter((x) => x.pt).sort((a, b) => b.pt.abstand - a.pt.abstand);   // die Linie mit dem eindeutigsten Klickpunkt
+const einzel = einzelKandidaten[0].l;
+// Der Klickpunkt liegt auf der Linie, aber weit von anderen Linien und von Symbolen: die Mitte eines Stücks kann unter einem Symbol liegen (der Kern setzt Knoten
+// verschiedener Systeme auch aufeinander) und träfe dann den Knoten statt der Linie.
+const lm = einzelKandidaten[0].pt;
 p = await papierPos(lm[0], lm[1]);
 await klickAn(p.x, p.y);
 pruef((await zustandDaten(`z.zustand.auswahl`)) === einzel.elemente[0], `Klick auf eine Linie wählt das Teilelement (${einzel.kennzeichen[0]})`, await auswahlKz());
@@ -296,14 +306,16 @@ pruef(m.find((x) => x.text === 'Automatische Lage').gesperrt && /automatische An
 await taste('Escape');
 
 abschnitt('Element einfügen: nicht platziert, Marke, P17');
-// freie Stelle in der Zelle EG × KW-S2 (x 100–170, y 50–100)
+// freie Stelle in der Zelle EG × <Spalte bei x 112–168> (y 50–100). Welcher Strang dort steht, bestimmt der Kern (Spaltenfolge und -breiten ändern sich mit seinen Anordnungsregeln;
+// früher stand hier KW-S2, inzwischen SW-F1): der Test liest ihn aus den Spalten der Abfrage "schema" statt ihn festzuschreiben.
+const spalteZelle = (await daten()).spalten.find((c) => c.x <= 112 && c.x + c.breite >= 168);
 const spotN = frei(await daten(), [112, 52, 168, 96]);
 await einfuegen('Waschtisch', 'k:Waschtisch', 'WT-NEU', spotN);
 const neu = await eltLesen('WT-NEU');
 pruef(neu.klasse === 'Waschtisch' && !neu.geometrie && neu.geschoss === 'EG', 'Das Element ist angelegt: Geschoss EG, ohne Geometrie', JSON.stringify([neu.geschoss, neu.geometrie]));
 const kn = await knotenDaten('WT-NEU');
 pruef(kn && kn.platziert === false && kn.manuell === true && Math.abs(kn.x - spotN[0]) <= 4 && Math.abs(kn.y - spotN[1]) <= 4, 'Es steht im Schema an der Klickstelle (Hand-Lage), nicht platziert', JSON.stringify(kn));
-pruef(neu.system === 'KW' && neu.teilVon === 'KW-S2', 'Strang und System kommen aus der Spalte (KW-S2, KW)', JSON.stringify([neu.system, neu.teilVon]));
+pruef(!!spalteZelle && neu.system === spalteZelle.system && neu.teilVon === spalteZelle.kennzeichen, `Strang und System kommen aus der Spalte (${spalteZelle?.kennzeichen}, ${spalteZelle?.system})`, JSON.stringify([neu.system, neu.teilVon, spalteZelle?.kennzeichen]));
 pruef((await daten()).spalten.every((c) => c.art !== 'ohneStrang'), 'Das Raster bleibt gleich: keine Zone «ohne Strang» entsteht');
 pruef(await ausw(`return !![...document.querySelectorAll('.sc-svg g[data-id="${kn.element}"] path')].find((e) => e.getAttribute('stroke-dasharray'));`), 'Marke: gestrichelter Rahmen des nicht platzierten Elements (vom Kern gezeichnet)');
 const bf = await befunde();
@@ -388,7 +400,7 @@ await einfuegen('T-St', `f:${famListe.kennzeichen}|${famListe.typen[0]}`, 'TS-FA
 const tf = await eltLesen('TS-FAM');
 pruef(tf.klasse === 'TStueck' && !tf.geometrie && tf.bezuege?.familie === famListe.kennzeichen, 'Familienelement ohne Geometrie: Kategorie der Familie, Bezug zur Familie', JSON.stringify([tf.klasse, tf.bezuege]));
 pruef(tf.eigenschaften.familientyp?.wert === famListe.typen[0] && tf.anschluesse.length === 3 && tf.anschluesse.every((a) => a.dn), 'Typ gesetzt, Anschlüsse mit Grösse vom Kern nachgeführt', JSON.stringify(tf.anschluesse));
-pruef(tf.teilVon === 'KW-S2' && (await knotenDaten('TS-FAM'))?.platziert === false, 'Es steht in der Spalte KW-S2, nicht platziert');
+pruef(!!spalteZelle && tf.teilVon === spalteZelle.kennzeichen && (await knotenDaten('TS-FAM'))?.platziert === false, `Es steht in der Spalte ${spalteZelle?.kennzeichen}, nicht platziert`, JSON.stringify([tf.teilVon, spalteZelle?.kennzeichen]));
 
 abschnitt('Schema → Grundriss: «Im Grundriss zeigen»');
 await schemaOeffnen();

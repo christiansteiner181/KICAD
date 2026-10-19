@@ -1,6 +1,6 @@
 // Browser-Integrationstest «Familie aus Unterlagen» (Modul 2, Auftrag C2): Edge headless über CDP, echte Mausklicks und Tastatur, frisches Beispielprojekt,
 // der Server mit der ATTRAPPE statt claude.exe (tests/Hlks.ClaudeAttrappe) – es läuft nie ein echter Claude.
-// Nicht Teil von «node --test». Der Test startet den Server selbst (Port 5148, Build-Ordner %USERPROFILE%\HLKS_CAD_build\c2m2; HLKS_BAU ändert ihn):
+// Nicht Teil von «node --test». Der Test startet den Server selbst (Port 5148, Build-Ordner %USERPROFILE%\HLKS_CAD_build bzw. HLKS_BUILD; HLKS_BAU ändert ihn):
 //   node familie-unterlagen.browser.mjs                          (SHOTS=<Ordner> für die Bildschirmfotos)
 // oder gegen einen eigenen Server (HLKS_TEST_SERVER=http://localhost:5148): dann muss er mit HLKS_CLAUDE_EXE (Attrappe), HLKS_MCP_DLL, DOTNET_ROOT
 // und HLKS_ATTRAPPE_DEFINITION=<Datei> laufen; HLKS_ATTRAPPE_DEFINITION muss auch hier gesetzt sein (der Test schreibt die Datei).
@@ -25,7 +25,8 @@ if (/:(5130|5131|5098)\b/.test(SERVER)) { console.error('Dieser Test läuft nie 
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9348);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'c2m2');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'hlks_c2m2');
 mkdirSync(SHOTS, { recursive: true });
 const hier = path.dirname(fileURLToPath(import.meta.url));

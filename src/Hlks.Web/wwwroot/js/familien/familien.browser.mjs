@@ -110,6 +110,9 @@ const meldungen = () => ausw(`return [...document.querySelectorAll('#meldungen .
 
 /** Klappt einen Knoten des Projektbrowsers auf (wenn er zu ist). */
 const oeffne = async (key) => {
+  // Der Projektbrowser holt die Familienliste nach einer Änderung entprellt neu (Ereignis «modell» → Abfrage «familien» → Zeichnen): die Zeile kann einige
+  // hundert Millisekunden nach dem Befehl noch fehlen. Erst auf die Zeile warten, sonst bliebe der Ast zu und die Folgeprüfungen sähen ihn nicht.
+  await warteBis(() => gibt(`.pb-zeile[data-key="${key}"]`), `Zeile ${key} im Projektbrowser`, 5000).catch(() => { /* fehlt sie, meldet die Prüfung danach den Befund */ });
   const zu = await ausw(`const z = document.querySelector('.pb-zeile[data-key="${key}"]'); return !!z && z.querySelector('.pb-pfeil')?.textContent === '▸';`);
   if (zu) { await klick(`.pb-zeile[data-key="${key}"]`); await warte(200); }
 };
@@ -184,6 +187,7 @@ const gruppen = await ausw(`return [...document.querySelectorAll('.mb-gruppennam
 pruef(gruppen.join('|') === 'Parameter|Typen|Körper|Anschlüsse|Sinnbild|Ansicht|Prüfen|Unterlagen|Bibliothek', 'Gruppen: Parameter, Typen, Körper, Anschlüsse, Sinnbild, Ansicht, Prüfen, Unterlagen (seit C2), Bibliothek (seit C3)', gruppen.join('|'));
 const symbolLos = await ausw(`return [...document.querySelectorAll('#menueband .mb-knopf')].filter(k => !k.querySelector('svg path, svg rect, svg circle, svg ellipse')).map(k => k.dataset.id);`);
 pruef(symbolLos.length === 0, 'alle Knöpfe des Registers haben ein Symbol', symbolLos.join());
+await warteBis(() => gibt('[data-ziel="famkopf:name"]'), 'Palette zeigt die Angaben der Familie', 5000).catch(() => { /* die Prüfung meldet den Befund */ });   // die Palette holt die Familie erst ab («Familie wird geladen …»)
 pruef((await ausw(`return document.querySelector('#palette-eigenschaften').innerText;`)).includes('Familie') && (await gibt('[data-ziel="famkopf:name"]')), 'Eigenschaftenpalette zeigt die Angaben der Familie (Name, Hersteller …)');
 await oeffne('w:familien'); await oeffne('fk:Heizkoerper');
 z = await zeilen();

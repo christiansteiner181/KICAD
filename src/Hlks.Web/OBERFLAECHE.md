@@ -412,6 +412,15 @@ Der Testserver läuft auf http://localhost:5131 (Beispielprojekt «MFH Musterweg
 Quellordner ausgeliefert (Änderungen ohne Neubau sichtbar). Daten ansehen: `Invoke-RestMethod http://localhost:5131/api/modell`.
 Syntax prüfen: `node --check <datei.js>`. Die Sichtprüfung im Browser macht der Hauptlauf.
 
+**Browser-Tests (`*.browser.mjs`), Stand Q2 (19.10.2026):** Sie starten ihren Server aus dem **gemeinsamen Build** (`HLKS_BAU`, sonst `HLKS_BUILD`, sonst
+`%USERPROFILE%\HLKS_CAD_build`, wie `Directory.Build.props`); die früheren Standardordner je Auftrag (`m3c3`, `c2m2`, `g1` …) sind überholt, wo sie in diesem Dokument
+noch stehen. Ein alter Ordner liess den Test gegen einen veralteten Kern laufen (Befund Q2: «42 von 43» in `familien-leitung`, «128 von 129» in `familie-unterlagen`).
+`familie-unterlagen` braucht zusätzlich die gebaute Attrappe (`dotnet build tests/Hlks.ClaudeAttrappe`, im selben Build-Ordner). Die Ports sind je Test über Umgebungsvariablen
+wählbar (`HLKS_M3C3_PORT`, `HLKS_C2_PORT`, `HLKS_M3BC1B_PORT`, `HLKS_C3_PORT`, `HLKS_P1_PORT`, `HLKS_G1_PORT`, `HLKS_M3C1_PORT`, `HLKS_M3C2_PORT`; `start.browser.mjs`: `HLKS_S1_PORT`,
+`menueband.browser.mjs`: `HLKS_R_PORT`; Edge-Port `HLKS_CDP_PORT`). Beide beenden vor dem Start den Prozess, der ihren Port hält. `familien.browser.mjs` läuft gegen einen vorbereiteten Server
+mit frischem Beispielprojekt (`HLKS_TEST_SERVER`). Tests, die nach einem Befehl auf die Oberfläche warten (Projektbrowser: entprellt neu geholte Familienliste; Palette der Familie
+holt die Definition nach), warten auf die Zeile bzw. das Feld, statt sofort zu prüfen.
+
 ## Familien (Modul 2, C1)
 
 Oberfläche für Familien auf dem Familien-Kern (`entwurf/modul-2.md`, Abschnitte «Familienformat», «Befehle und Abfragen», «Oberfläche»). **Der Editor rechnet nichts:** er macht aus Eingaben Zahl, Formel-Text oder Wert und aus Tabellenzeilen die `ops` für `familie_aendern`; ob eine Formel gilt, sagt der Kern (Trockenlauf bei jeder Eingabe, Fehler rot mit seiner Meldung).

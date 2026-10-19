@@ -1,7 +1,7 @@
 // Browser-Integrationstest der Familienbibliothek in der Oberfläche (Modul 2, Auftrag C3): Edge headless über CDP, echte Mausklicks und Tastatur, ZWEI Projekte
 // mit gemeinsamer Test-Bibliothek. Projekt A (Kommandozeile Hlks.Mcp, Akteur Anna) legt Familien an und ändert sie; Projekt B (Web-Server, Port 5166, Browser) zeigt sie
 // im Explorer, lädt, platziert, meldet «neuere Version» / «parallel geändert», aktualisiert mit Vorschau, entscheidet bei Parallelen und arbeitet ohne Bibliothek weiter.
-// Nicht Teil von «node --test». Der Test startet den Server selbst (Build-Ordner %USERPROFILE%\HLKS_CAD_build\c3; HLKS_BAU ändert ihn):
+// Nicht Teil von «node --test». Der Test startet den Server selbst (Build-Ordner %USERPROFILE%\HLKS_CAD_build bzw. HLKS_BUILD; HLKS_BAU ändert ihn):
 //   node bibliothek.browser.mjs                         (SHOTS=<Ordner> für die Bildschirmfotos, Vorgabe %TEMP%\HLKS_CAD, Dateien c3_*.png)
 // SICHERHEIT: alle Prozesse laufen mit HLKS_FAMILIENBIBLIOTHEK und HLKS_BIBLIOTHEK_AUSSTEHEND unter %TEMP% und HLKS_TEST=1 – der Test schreibt nie nach W: oder kataloge/familien;
 // am Ende prüft er, dass unter W:\03_CAD Bibliotheken kein Ordner «d_KICAD Familien» entstanden ist. Alle Werte der Familien sind fiktiv. Rückgabewert 1 bei einem Fehler.
@@ -17,7 +17,8 @@ if (/:(5013|5098|5130|5131|5149|5150|5151|5164|5167)\b/.test(SERVER)) { console.
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9366);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'c3');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD');
 mkdirSync(SHOTS, { recursive: true });
 const hier = path.dirname(fileURLToPath(import.meta.url));

@@ -1,6 +1,6 @@
 // Browser-Integrationstest des Serien-PDF (Plansätze, entwurf/serien-pdf.md): Edge headless über CDP, echte Mausklicks, frisches Beispielprojekt «MFH Musterweg»
 // in einer Ablage unter %TEMP% im Aufbau …\Worb_Testobjekt\c_Pläne und Modelle\e_KICAD (damit der Ordner-Vorschlag …\d_Ausgang\b_Pläne\… geprüft wird). Nicht Teil von «node --test».
-// Der Test startet seinen eigenen Server (Port 5169, Build-Ordner %USERPROFILE%\HLKS_CAD_build\p1; HLKS_BAU ändert ihn):
+// Der Test startet seinen eigenen Server (Port 5169, Build-Ordner %USERPROFILE%\HLKS_CAD_build bzw. HLKS_BUILD; HLKS_BAU ändert ihn):
 //   SHOTS=<Ordner> node serienpdf.browser.mjs        (Bilder p1_*.png, Vorgabe %TEMP%\HLKS_CAD)
 // Er setzt HLKS_TEST=1, HLKS_FAMILIENBIBLIOTHEK und HLKS_PROJEKTABLAGE auf Ordner unter %TEMP% und schreibt nie auf W:.
 //
@@ -22,7 +22,8 @@ if (/:(5013|5098|5130|5131|5149|5150|5151|5164|5166|5167|5168)\b/.test(SERVER)) 
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9369);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'p1');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD');
 mkdirSync(SHOTS, { recursive: true });
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));

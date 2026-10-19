@@ -1,7 +1,7 @@
 // Browser-Integrationstest der Gliederungen des Projektbrowsers (G1, entwurf/projektbrowser-gliederung.md): Edge headless über CDP, echte Mausklicks, frisches Beispielprojekt
 // «MFH Musterweg» mit Heizung, Lüftung, Kollisionen und Aussparungen (alles FIKTIV). Nicht Teil von «node --test». Der Test startet seinen eigenen Server
-// (Port 5176, Build-Ordner %USERPROFILE%\HLKS_CAD_build\g2; HLKS_BAU ändert ihn, HLKS_G1_PORT den Port, HLKS_CDP_PORT den Debug-Port von Edge, Vorgabe 9490;
-//  HLKS_WEBROOT und HLKS_KATALOG zeigen auf die Arbeitskopie, wenn man nicht den Quellordner des Builds meint):
+// (Port 5176, Build-Ordner %USERPROFILE%\HLKS_CAD_build bzw. HLKS_BUILD; HLKS_BAU ändert ihn, HLKS_G1_PORT den Port, HLKS_CDP_PORT den Debug-Port von Edge,
+//  Vorgabe 9490; HLKS_WEBROOT und HLKS_KATALOG zeigen auf die Arbeitskopie, wenn man nicht den Quellordner des Builds meint):
 //   SHOTS=<Ordner> node projektbrowser.browser.mjs        (Bilder g1_*.png und – G2, mehrere Gliederungen zugleich – g2_*.png, Vorgabe %TEMP%\HLKS_CAD)
 // Er setzt HLKS_TEST=1, HLKS_BENUTZER, HLKS_ZULETZT, HLKS_FAMILIENBIBLIOTHEK und HLKS_PROJEKTABLAGE auf Ordner unter %TEMP% und schreibt nie in die echten Benutzerdateien
 // (%OneDrive%\HLKS-CAD\…, %APPDATA%\HLKS-CAD\…) und nie auf W:.
@@ -23,7 +23,8 @@ if (/:(5013|5098|5130|5131|5149|5150|5151|516[4-9]|517[0-5])\b/.test(SERVER)) { 
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9490);
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
-const BAU = process.env.HLKS_BAU ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build', 'g2');
+// Standard: der gemeinsame Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build, wie Directory.Build.props), nie ein alter Ordner eines früheren Auftrags (veralteter Kern: Befund Q2)
+const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD');
 mkdirSync(SHOTS, { recursive: true });
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
