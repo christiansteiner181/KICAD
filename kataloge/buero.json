@@ -12,5 +12,9 @@
     "quelle": "Entscheid Christian Steiner, 19.10.2026 (Fragefenster Startbildschirm): alle KICAD-Projekte unter W:\\02_Projektdateien Objekte\\<Objekt>\\c_Pläne und Modelle\\e_KICAD zeigen",
     "umgebungsvariable": "HLKS_PROJEKTABLAGE",
     "hinweis": "Nur lesen (Suche nach projekt.json). Tests setzen HLKS_PROJEKTABLAGE auf einen Ordner unter %TEMP%."
+  },
+  "anleitung": {
+    "url": "https://claude.ai/artifact/5NEkGw76J5tk5sxFrbfbkq",
+    "hinweis": "Bedienungsanleitung (privates Artifact); Sprungziele #k-<register>~<knopf>, #s-<suchwörter>"
   }
 }

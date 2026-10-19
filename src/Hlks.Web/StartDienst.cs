@@ -71,6 +71,23 @@ public sealed class StartDienst(ProjektDienst dienst)
         return (pfad, kicad);
     }
 
+    /// <summary>Adresse der Bedienungsanleitung (kataloge/buero.json › anleitung.url) und ihr Hinweis; null, wenn nichts eingetragen ist.
+    /// Nur http(s)-Adressen gelten (die Oberfläche öffnet sie mit window.open).</summary>
+    public (string Url, string? Hinweis)? Anleitung()
+    {
+        try
+        {
+            var datei = Path.Combine(dienst.Katalog.Ordner, "buero.json");
+            if (!File.Exists(datei) || JsonNode.Parse(File.ReadAllText(datei))?["anleitung"] is not JsonObject o) return null;
+            if (o["url"] is not JsonValue u || !u.TryGetValue<string>(out var url) || string.IsNullOrWhiteSpace(url)) return null;
+            url = url.Trim();
+            if (!Uri.TryCreate(url, UriKind.Absolute, out var uri) || (uri.Scheme != Uri.UriSchemeHttps && uri.Scheme != Uri.UriSchemeHttp)) return null;
+            var hinweis = o["hinweis"] is JsonValue h && h.TryGetValue<string>(out var hs) && !string.IsNullOrWhiteSpace(hs) ? hs.Trim() : null;
+            return (url, hinweis);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or HlksFehler) { return null; }
+    }
+
     static string? AblageSperre(string pfad)
     {
         try
@@ -454,8 +471,10 @@ public sealed class StartDienst(ProjektDienst dienst)
         try { stand = File.GetLastWriteTime(asm.Location); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
         var version = asm.GetName().Version?.ToString(3) ?? "0.1.0";
         var (ablage, kicad) = Konfiguration();
+        var anleitung = Anleitung();
         return new
         {
+            anleitung = anleitung is null ? null : new { url = anleitung.Value.Url, hinweis = anleitung.Value.Hinweis },
             programm = "KICAD", name = "HLKS-CAD", version, stand = stand?.ToString("yyyy-MM-dd HH:mm"),
             rechner = E.Geraet, akteur = E.Akteur, zuletztQuelle = dienst.Zuletzt.Quelle, zuletztOrt = dienst.Zuletzt.Verzeichnis,
             projektablage = ablage, kicadOrdner = kicad,

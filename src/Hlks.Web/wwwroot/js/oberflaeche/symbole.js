@@ -60,6 +60,8 @@ const S = {
   oeffnen: '<path d="M4 9h8l2 3h14v14H4z"/><path d="M12 20h10M18 16l4 4-4 4"/>',
   design: '<circle cx="16" cy="16" r="11"/><path d="M16 5a11 11 0 000 22z" fill="currentColor"/>',
   hilfe: '<circle cx="16" cy="16" r="12"/><path d="M12 13a4 4 0 118 1c0 3-4 3-4 6M16 23v1"/>',
+  // Hilfe-Symbol «?» in der Kopfleiste (Bedienungsanleitung, F1): Sprechblase mit Fragezeichen; eigene Zeichnung
+  anleitung: '<path d="M16 4a12 11 0 110 22h-.6L9 29.5V24A12 11 0 0116 4z"/><path d="M12.2 12.6a3.9 3.6 0 117.4 1.4c-.6 1.8-3.6 2.2-3.6 4.6" stroke-width="2"/><path d="M16 21.9v.4" stroke-width="2.4"/>',
   // Darstellung Hülle (Modul 1c, C1b): Grundriss mit kräftigem Streifen innen an der Aussenwand
   huelleAnsicht: '<rect x="4" y="4" width="24" height="24"/><path d="M8 8h16v16H8z" stroke-width="3.5"/><path d="M16 4v4M16 24v4"/>',
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
