@@ -165,6 +165,9 @@ schemaTrennen | Schema: Trennen | eigenes | zwei Kästchen, Verbindung durchtren
 schemaEinfuegen | Schema: Element einfügen | eigenes | gestrichelter Kasten mit Plus
 schemaAnordnen | Schema: Neu anordnen | eigenes | Baum aus Kästchen
 koordinaten | Koordinaten | Koordinaten | Achsenkreuz mit Ursprung
+einlageplan | Einlageplan | eigenes | Plan mit grauer Betonplatte, Abwasserleitung (braun) darin eingelegt
+grundleitungsplan | Grundleitungsplan | eigenes | Plan mit Bodenplatte über Erdreich, Abwasser-Grundleitung (braun) mit Gefällepfeil
+listeCsv | Liste als CSV | eigenes | Tabelle mit Blatt davor, blaue Kommas
 `;
 
 export const ZUORDNUNG = TABELLE.trim().split('\n').map((z) => z.split('|').map((t) => t.trim()));
@@ -625,6 +628,18 @@ s('schemaAnordnen',
 s('koordinaten',
   '<path class="sb w2" d="M7.5 25.5V6M7.5 25.5H26"/><path class="fb n" d="M7.5 3l-3.2 5.5h6.4zM29.5 25.5l-5.5-3.2v6.4z"/><path class="sb dt" d="M20 25.5V12M7.5 12H20"/><circle class="fp" cx="7.5" cy="25.5" r="2.4"/><path class="so w2" d="M17.5 12h5M20 9.5v5"/>',
   '<path class="sb w15" d="M3.5 12.5V3.5M3.5 12.5H12"/><path class="fb n" d="M3.5 1.5L1.6 4.5h3.8zM14.5 12.5L11.5 10.6v3.8z"/><circle class="fp" cx="3.5" cy="12.5" r="1.4"/><path class="so" d="M8.5 6.5h3M10 5v3"/>');
+
+// ---------------------------------------------------------------------------------------------- Nachbearbeitung N3: Einlageplan, Grundleitungsplan, Liste als CSV
+
+s('einlageplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="fb" d="M3.5 3.5h25v4h-25z"/><path class="f2" d="M6.5 10.5h19v13h-19z"/><path class="s3 op" d="M6.5 15.5l5-5M6.5 21.5l11-11M9.5 23.5l13-13M15.5 23.5l10-10M21.5 23.5l4-4"/><path class="sk w4" d="M8.5 20.5h6l3-6h5"/><path class="sab w2" d="M8.5 20.5h6l3-6h5"/><circle class="fp sab w15" cx="22.5" cy="14.5" r="2.2"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v2.5h-13z"/><path class="f2" d="M3 5.5h10v7H3z"/><path class="sk w3" d="M4.5 10.5h2.5l1.5-3h2"/><path class="sab w15" d="M4.5 10.5h2.5l1.5-3h2"/><circle class="fp sab" cx="11" cy="7.5" r="1.3"/>');
+s('grundleitungsplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="fb" d="M3.5 3.5h25v4h-25z"/><path class="fy op" d="M6.5 14.5h19v11h-19z"/><path class="f3" d="M6.5 10.5h19v4h-19z"/><path class="sk w4" d="M9 18.5h4.5l5 4.5h2.5"/><path class="sab w2" d="M9 18.5h4.5l5 4.5h2.5"/><circle class="fp sab w15" cx="9" cy="18.5" r="2.2"/><path class="fb" d="M21 20.5l4.5 2.5-4.5 2.5z"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v2.5h-13z"/><path class="fy op" d="M3 7.5h10v5H3z"/><path class="f3" d="M3 5.5h10v2H3z"/><path class="sk w3" d="M4.5 9.5h2.5l2 1.5h1"/><path class="sab w15" d="M4.5 9.5h2.5l2 1.5h1"/><circle class="fp sab" cx="4.5" cy="9.5" r="1.2"/><path class="fb n" d="M10.5 9.5l2.5 1.5-2.5 1.5z"/>');
+s('listeCsv',
+  '<rect class="fp" x="3.5" y="4.5" width="21" height="18"/><path class="fb" d="M3.5 4.5h21v5h-21z"/><path d="M3.5 14h21M10.5 9.5v13"/><path class="fp" d="M15.5 14.5h9l4 4v11h-13z"/><path class="f2" d="M24.5 14.5v4h4z"/><path class="op" d="M17.5 21.5h2.5M25 21.5h1.5M17.5 26h2.5M25 26h1.5"/><circle class="fb n" cx="22.6" cy="21.8" r="1.1"/><path class="sb w15" d="M22.4 22.5l-.7 1.6"/><circle class="fb n" cx="22.6" cy="26.3" r="1.1"/><path class="sb w15" d="M22.4 27l-.7 1.6"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="10" height="9"/><path class="fb" d="M1.5 1.5h10v2.5h-10z"/><path d="M1.5 7h10M5.5 4v6.5"/><path class="fp" d="M8.5 6.5h3.5l2.5 2.5v5.5h-6z"/><path class="f2" d="M12 6.5v2.5h2.5z"/><circle class="fb n" cx="11.5" cy="11.6" r="1.1"/><path class="sb w15" d="M11.4 12.3l-.6 1.5"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 

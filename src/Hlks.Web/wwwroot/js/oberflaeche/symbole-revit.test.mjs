@@ -248,3 +248,22 @@ test('OBERFLAECHE.md: Abschnitt «Symbole im Revit-Stil (Teil S)» mit Schalter,
   assert.match(t, /oberflaeche\.symbole/);
   assert.match(t, /symbole_kontaktbogen\.mjs/);
 });
+
+// ------------------------------------------------------------------------------------------------ Nachbearbeitung N3
+
+test('N3: Einlageplan, Grundleitungsplan und Liste als CSV haben eigene Fassungen in 32 und 16; die Pläne tragen Abwasserbraun (Leitung), Betongrau und Blau', () => {
+  for (const n of ['einlageplan', 'grundleitungsplan', 'listeCsv']) {
+    assert.ok(rv.hatRevitFassung(n), `${n}: keine Revit-Fassung`);
+    assert.ok(rv.revitInhalt(n, false) && rv.revitInhalt(n, true), `${n}: Grösse fehlt`);
+    assert.notEqual(rv.revitInhalt(n, false), rv.revitInhalt(n, true), `${n}: 16 ist nur die 32-er Zeichnung`);
+    assert.ok(rv.ZUORDNUNG.some((z) => z[0] === n && z[2] === 'eigenes'), `${n}: Zuordnung «eigenes» fehlt`);
+  }
+  for (const n of ['einlageplan', 'grundleitungsplan']) {
+    for (const k of [false, true]) {
+      const inh = rv.revitInhalt(n, k);
+      assert.match(inh, /class="[^"]*\bsab\b/, `${n}: Leitung nicht in Abwasserbraun`);
+      assert.match(inh, /class="[^"]*\bf[23]\b/, `${n}: kein Betongrau`);
+      assert.match(inh, /class="[^"]*\bfb\b/, `${n}: kein Blau`);
+    }
+  }
+});
