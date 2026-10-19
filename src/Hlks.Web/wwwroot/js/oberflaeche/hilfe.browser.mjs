@@ -3,7 +3,7 @@
 //   %TEMP%\HLKS_CAD\hilfe_test\ablage\Test_Hilfe 1\c_Pläne und Modelle\e_KICAD   Beispielprojekt (Mcp --beispiel)
 //   %TEMP%\HLKS_CAD\hilfe_test\bib, \aus, \zuletzt, \katalog2                    Familienbibliothek, ausstehende Familien, Liste «zuletzt», Kataloge ohne Anleitung
 // Die Oberfläche wird aus einer Kopie ausgeliefert (HLKS_WEBROOT = …\hilfe_test\wwwroot, Dateiwächter des Servers, siehe menueband.browser.mjs).
-// Der Server läuft mit HLKS_TEST=1, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE und HLKS_ZULETZT unter %TEMP%: nie auf W:.
+// Der Server läuft mit HLKS_TEST=1, HLKS_BENUTZER, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE und HLKS_ZULETZT unter %TEMP%: nie auf W:.
 // Die Anleitung selbst (claude.ai) wird nie aufgerufen: window.open ist durch einen Stub ersetzt, der die Aufrufe sammelt.
 // Aufruf:  node hilfe.browser.mjs        (Port 5196, zweiter Server 5197; HLKS_BUILD/HLKS_BAU wie beim Bauen, Vorgabe %USERPROFILE%\HLKS_CAD_build)
 // Umgebung: SHOTS=<Ordner für Bilder> (Vorgabe %TEMP%\HLKS_CAD), HLKS_CDP_PORT (9540), HLKS_EDGE, HLKS_KATALOG (Vorgabe: kataloge/ dieses Quellbaums)
@@ -58,7 +58,7 @@ const buero = JSON.parse(readFileSync(path.join(KATALOG, 'buero.json'), 'utf8'))
 const BASIS = buero.anleitung?.url;
 if (!BASIS) { console.error('kataloge/buero.json hat keine anleitung.url'); process.exit(2); }
 cpSync(path.resolve(hier, '../..'), path.join(WURZEL, 'wwwroot'), { recursive: true });
-const envBasis = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS };
+const envBasis = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_BENUTZER: path.join(WURZEL, 'benutzer'), HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS };
 const WEB = path.join(BUILD, 'Hlks.Web', 'bin', 'Debug', 'net10.0', 'Hlks.Web.dll');
 const server = spawn(dotnet, [WEB, '--port', String(PORT), '--projekt', projektOrdner, '--akteur', 'H', '--geraet', 'h-test'], { env: { ...envBasis, HLKS_KATALOG: KATALOG, HLKS_ZULETZT: ZULETZT }, stdio: 'ignore' });
 const server2 = spawn(dotnet, [WEB, '--port', String(PORT2), '--akteur', 'H', '--geraet', 'h-test2'], { env: { ...envBasis, HLKS_KATALOG: KAT2, HLKS_ZULETZT: ZULETZT2 }, stdio: 'ignore' });
