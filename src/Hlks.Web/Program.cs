@@ -18,7 +18,11 @@ var einstellungen = new Einstellungen(
     KatalogOrdner: Arg("--katalog") ?? Katalog.StandardOrdner(),
     StartProjekt: Arg("--projekt"));
 
-var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, WebRootPath = WebRoot() });
+// Keine Dateiwächter auf Quell- bzw. OneDrive-Ordnern (Befund R 19.10.2026: PhysicalFilesWatcher.OnRenamed beendete den
+// Server, wenn dort Dateien umbenannt wurden – Agenten und OneDrive tun das ständig): Konfiguration ohne Neuladen bei
+// Änderung, Inhaltswurzel im Programmordner statt im Arbeitsverzeichnis. Die Oberfläche (WebRootPath) wird nur gelesen.
+Environment.SetEnvironmentVariable("DOTNET_hostBuilder__reloadConfigOnChange", "false");
+var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, WebRootPath = WebRoot(), ContentRootPath = AppContext.BaseDirectory });
 builder.WebHost.UseUrls($"http://localhost:{port}");
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services.AddSingleton(einstellungen);

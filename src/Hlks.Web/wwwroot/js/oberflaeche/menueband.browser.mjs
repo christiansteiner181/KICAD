@@ -2,6 +2,8 @@
 // Nicht Teil von «node --test». Der Test baut seine Umgebung selbst auf (Beispielprojekt, Server) und räumt nicht weg:
 //   %TEMP%\HLKS_CAD\r_test\ablage\Test_R_Weg 1\c_Pläne und Modelle\e_KICAD   Beispielprojekt (Mcp --beispiel)
 //   %TEMP%\HLKS_CAD\r_test\bib, \aus, \zuletzt                              Familienbibliothek, ausstehende Familien, Liste «zuletzt»
+// Die Oberfläche wird aus einer Kopie ausgeliefert (HLKS_WEBROOT = %TEMP%\HLKS_CAD\r_test\wwwroot): der Dateiwächter des Servers stürzt ab, wenn im
+// Quellordner (OneDrive, Editor, andere Agenten) Dateien umbenannt werden – die Kopie ist davor sicher.
 // Der Server läuft mit HLKS_TEST=1, HLKS_FAMILIENBIBLIOTHEK, HLKS_BIBLIOTHEK_AUSSTEHEND, HLKS_PROJEKTABLAGE und HLKS_ZULETZT unter %TEMP%: nie auf W:.
 // Aufruf:  node menueband.browser.mjs        (Port 5171; HLKS_BUILD wie beim Bauen, Vorgabe %USERPROFILE%\HLKS_CAD_build)
 // Umgebung: SHOTS=<Ordner für Bilder> (Vorgabe %TEMP%\HLKS_CAD), HLKS_CDP_PORT (9471), HLKS_EDGE
@@ -10,7 +12,7 @@
 // Knöpfe); «» weitere»; Tastenkürzel und Tooltips in allen Stufen; Minimieren (Doppelklick, ⌃, Überlagerung, gemerkt); Ansichtsreiter schmaler und
 // «▾ n weitere»; Optionsleiste bricht um. Bilder: r_*.png.
 import { spawn, spawnSync } from 'node:child_process';
-import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync } from 'node:fs';
+import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, cpSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
@@ -44,7 +46,8 @@ const MCP = path.join(BUILD, 'Hlks.Mcp', 'bin', 'Debug', 'net10.0', 'Hlks.Mcp.dl
   const r = spawnSync(dotnet, [MCP, '--beispiel', projektOrdner], { encoding: 'utf8' });
   if (r.status !== 0) { console.error('Beispielprojekt nicht angelegt', r.stdout, r.stderr); process.exit(2); }
 }
-const env = { ...process.env, HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS, HLKS_ZULETZT: ZULETZT };
+cpSync(path.resolve(hier, '../..'), path.join(WURZEL, 'wwwroot'), { recursive: true });
+const env = { ...process.env, HLKS_WEBROOT: path.join(WURZEL, 'wwwroot'), HLKS_TEST: '1', HLKS_PROJEKTABLAGE: ABLAGE, HLKS_FAMILIENBIBLIOTHEK: BIB, HLKS_BIBLIOTHEK_AUSSTEHEND: AUS, HLKS_ZULETZT: ZULETZT };
 const server = spawn(dotnet, [path.join(BUILD, 'Hlks.Web', 'bin', 'Debug', 'net10.0', 'Hlks.Web.dll'), '--port', String(PORT), '--projekt', projektOrdner, '--akteur', 'R', '--geraet', 'r-test'], { env, stdio: 'ignore' });
 for (let i = 0; i < 80; i++) { try { if ((await fetch(`${SERVER}/api/status`)).ok) break; } catch { /* warten */ } await warte(250); }
 const kern = async (art, name, body) => {

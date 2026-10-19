@@ -830,7 +830,33 @@ immer sichtbar (er tritt an die Stelle des letzten sichtbaren). Die Reiter legt 
 Beschriftungen bleiben zusammen. Der Hinweis in der Registerzeile kürzt nicht mehr mit «…».
 
 **Prüfen:** `node --test js/oberflaeche/menueband.test.mjs`; Browser `node js/oberflaeche/menueband.browser.mjs` (frisches Beispielprojekt, Server auf
-5171 mit `HLKS_TEST=1` und Ablagen unter `%TEMP%`; Bilder `r_*.png` unter `%TEMP%\HLKS_CAD`). **Annahmen:** (1) Drei Durchgänge statt «eine Gruppe
+5171 mit `HLKS_TEST=1` und Ablagen unter `%TEMP%`; Bilder `r_*.png` unter `%TEMP%\HLKS_CAD`). Der Test liefert die Oberfläche aus einer Kopie (`HLKS_WEBROOT`) aus: der Dateiwächter des Servers
+stürzt ab (`PhysicalFilesWatcher.OnRenamed`), wenn im Quellordner Dateien umbenannt werden – das beendet gelegentlich auch andere Browser-Reihen mitten im Lauf. **Annahmen:** (1) Drei Durchgänge statt «eine Gruppe
 bis Z, dann die nächste» (Office-Empfehlung: erst alle Gruppen mittel, dann klein, zuletzt zusammenklappen). (2) Mindestbreite eines Reiters 96 px,
 Mindestbreite einer Stufe 1 px Gewinn. (3) Doppelklick auf ein Register merkt sich den letzten minimierten Zustand. (4) Reichen die Registerreiter selbst nicht
 (unter etwa 700 px), werden ihre Namen mit «…» gekürzt (kein Umbruch, kein Rollbalken).
+
+
+## Projektbrowser: umschaltbare Gliederung (Teil G1, `entwurf/projektbrowser-gliederung.md`)
+
+Der Projektbrowser hat oben ein **Auswahlfeld** (Symbol + Name): Gebäude (wie bisher), Sanitär, Heizung, Lüftung, Koordination, Energie und Umwelt. Die gewählte ist die **primäre Gliederung des Benutzers**
+und gilt in allen Projekten und auf allen seinen Rechnern; gewechselt wird nur von Hand. Vorgabe ohne Einstellung ist «Gebäude» (auch für Tests).
+
+- **Eine Tabelle** (`js/oberflaeche/projektbrowser-gliederung.js`, `GLIEDERUNGEN`): je Gliederung die Äste in ihrer Reihenfolge (Quelle, Auswahl, Titel, Farbe). Eine weitere Gliederung (Kälte, Elektro/MSRL) ist ein Eintrag
+  dort, ohne neuen Code (Test «Erweiterbar ohne neuen Code»). **«Weitere»** wird nicht beschrieben, sondern abgeleitet: alles, was kein Ast der Gliederung aufnimmt, steht eingeklappt darunter – die Summe der Elemente
+  ist in jeder Gliederung die von «Gebäude» (Node-Test «Weitere ist vollständig»). Unter «Weitere» stehen zuerst die Äste der anderen Gewerke (je Gewerk eine Gruppe in dessen Farbe, «Ohne Gewerk» zuletzt), dann Vorlagen, Gebäude/Räume, Hülle, Unterlagen, Katalog.
+- **Zuordnung zum Gewerk:** Klasse → `gewerk` aus dem Katalog; System → Systemtyp, sonst Medium; Strang → sein System; Anlage → die Gewerke ihrer Systeme (eine gemischte Anlage steht in jedem ihrer Gewerke, jedes System einmal);
+  Ansicht → `gewerke` und die Systeme der Ansicht; Planblatt → Gewerk des Plansatzes (Abfrage `plansaetze`), sonst `gewerk`; Familie → Gewerk ihrer Kategorie. Ohne Gewerk → «Weitere».
+- **Äste** (`projektbrowser-aeste.js`, rein, in Node getestet): die Knoten der Quellen wie bisher (`projektbrowser.js` zeichnet und bedient nur). Zahlen hinter den Ästen; die **Suche** durchsucht die ganze Gliederung samt «Weitere» und klappt Treffer auf;
+  der **Aufklappzustand** wird je Gliederung gemerkt (Browser-Speicher `browserOffen` für Gebäude wie bisher, sonst `browserOffen.<gliederung>`).
+- **Koordination:** Kollisionen nach Status, darunter das Paar; Aussparungen nach Geschoss (oben zuerst), darunter der Status; Typenliste; Unterlagen (IFC); Pläne und Ansichten der Koordination. Die Daten kommen über **dieselben Abfragen** wie die
+  Palette (`kollisionen` mit derselben Sicht ohne nicht geprüfte Paare, `aussparungsliste`, `typmaterial`; `koordination-daten.js`) und werden live nachgeführt (Ereignis `modell`, entprellt), solange die Gliederung gewählt ist.
+  Klick wählt, **Doppelklick** zeigt Kollision/Aussparung im Grundriss (wie ein Klick in der Palette), Doppelklick auf einen Ast öffnet Liste bzw. Typenliste; Kontextmenü: Im Grundriss zeigen, In 3D zeigen, Auswählen, Liste.
+- **Farben der Gewerke** (`kataloge/gewerke.json`, über die Abfrage `katalog` in `gewerke` und `gewerkeDunkelDeckkraft`; keine Farbe im Code): Ast bzw. Gruppenkopf eines Gewerks in seinem Pastellton, schmaler Streifen links in der Koordinationsfarbe; dunkel: Pastellton
+  mit `dunkelDeckkraft` über dem Grund. Einzelne Elemente unter einem Gewerk-Ast werden nicht gefärbt, nur ein 2-px-Streifen zieht sich durch den Ast (`.pb-streifen`). Die Gruppen «Pläne» (Gebäude), die Kategorien der Familien und Anlagen mit nur einem Gewerk tragen die Farbe ebenfalls. CSS: `css/projektbrowser.css`.
+- **Benutzereinstellungen:** `GET /api/benutzer/einstellungen` → `{ werte, zeiten, rechner, quelle, ort }`, `POST /api/benutzer/einstellungen { schluessel, wert }` (wert `null` setzt zurück). Schlüssel heute `projektbrowser.gliederung`.
+  Ablage wie «zuletzt» (gemeinsamer Unterbau `RechnerAblage.cs`): `%OneDrive%\HLKS-CAD\einstellungen\<Rechner>.json` je Rechner eine Datei, Vereinigung nach Zeit je Schlüssel (der neueste Wert gilt), ohne OneDrive `%APPDATA%\HLKS-CAD\einstellungen.json`;
+  Umleitung für Tests `HLKS_BENUTZER` (Ordner). **Im Testlauf (`HLKS_TEST`) ohne Umleitung nach `%TEMP%` wird weder gelesen noch geschrieben** (leere Einstellungen, Schreiben mit 400 abgelehnt). Die Oberfläche liest beim Start und nach jedem Laden eines Projekts, schreibt beim Wechsel (`benutzer.js`).
+
+**Prüfen:** `node --test js/oberflaeche/projektbrowser.test.mjs` (37 Tests: Tabelle, Gewerk-Zuordnung, Vollständigkeit, Suche, Koordination, Farben, Kontrast); Server: `BenutzerEinstellungenTests.cs` (Vereinigung zweier Rechner, Umleitung, Fehlerfälle, Endpunkte);
+Browser (Edge headless über CDP, eigener Server, Port 5173, Build-Ordner `%USERPROFILE%\HLKS_CAD_build\g1`): `node js/oberflaeche/projektbrowser.browser.mjs` – Umschalten, gemerkt nach Neuladen, zweiter Rechner, anderer Benutzer, Suche, Doppelklick, Kontextmenü, live, hell und dunkel; Bilder `%TEMP%\HLKS_CAD\g1_*.png`.
