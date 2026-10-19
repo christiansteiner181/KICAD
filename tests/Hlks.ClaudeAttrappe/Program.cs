@@ -20,7 +20,9 @@
 // GESPRÄCHSMODUS (KI-Palette, Modul 3c): mit --session-id oder --resume. Sitzungen liegen wie bei Claude Code je Arbeitsordner
 // (<Arbeitsordner>\.attrappe\sitzungen\<id>.json mit den bisherigen Fragen): --resume einer unbekannten Sitzung endet ohne Ausgabe mit
 // «No conversation found with session ID: …» (Code 1), --session-id einer vorhandenen mit «already in use». Mit --include-partial-messages
-// kommt der Text als stream_event-Teilstücke (text_delta), sonst als ganze assistant-Nachricht. Der Modus steht in der FRAGE (Teil nach
+// kommt der Text als stream_event-Teilstücke (text_delta), sonst als ganze assistant-Nachricht. Werkzeuge prüft die Attrappe wie Claude Code
+// mit dontAsk gegen --allowedTools/--disallowedTools/--tools: ein nicht erlaubtes wird abgelehnt («Werkzeug verweigert: …», kein MCP-Aufruf).
+// Der Modus steht in der FRAGE (Teil nach
 // «# Frage») als [attrappe:<modus>]:
 //   antwort (Vorgabe)  Text in drei Teilen: «Antwort der Attrappe (Frage n der Sitzung): <Frage>»
 //   aendern=KZ         element_aendern über den MCP-Server: Name von KZ auf «Von der Attrappe geändert» (ein Paket), dann Text
@@ -355,6 +357,26 @@ async Task<int> Gespraech()
     McpSitzung Mcp() => McpSitzung.Starten(konfig ?? throw new InvalidOperationException("Keine MCP-Konfiguration"));
     static bool IstFehler(string s) { try { return JsonNode.Parse(s) is JsonObject o && (o["fehler"] is not null || o["angenommen"]?.GetValue<bool>() == false); } catch (JsonException) { return false; } }
 
+    // Berechtigungen wie Claude Code mit --permission-mode dontAsk: verboten (--disallowedTools) schlägt alles; MCP-Werkzeuge nur, wenn sie
+    // (oder ihr Server «mcp__hlks») in --allowedTools stehen; eingebaute nur, wenn sie in --tools und --allowedTools stehen. Sonst verweigert.
+    static IEnumerable<string> Werte(List<string>? l) => (l ?? []).SelectMany(x => x.Split([',', ' '], StringSplitOptions.RemoveEmptyEntries));
+    var erlaubtListe = Werte(optionen.GetValueOrDefault("--allowedTools") ?? optionen.GetValueOrDefault("--allowed-tools")).ToHashSet();
+    var verbotenListe = Werte(optionen.GetValueOrDefault("--disallowedTools") ?? optionen.GetValueOrDefault("--disallowed-tools")).ToHashSet();
+    var eingebautListe = Werte(optionen.GetValueOrDefault("--tools")).ToHashSet();
+    bool Erlaubt(string w) =>
+        !verbotenListe.Contains(w) && (w.StartsWith("mcp__", StringComparison.Ordinal)
+            ? erlaubtListe.Contains(w) || erlaubtListe.Any(e => w.StartsWith(e + "__", StringComparison.Ordinal))
+            : eingebautListe.Contains(w) && erlaubtListe.Contains(w));
+    // Werkzeug nicht erlaubt: Aufruf und Ablehnung wie bei Claude Code, kurze Antwort, Ende (Rückgabe = Exit-Code); erlaubt: null
+    async Task<int?> Verweigert(string id, string werkzeug, JsonObject eingabe)
+    {
+        if (Erlaubt(werkzeug)) return null;
+        Aufruf(id, werkzeug, eingabe);
+        Antwort2(id, $"Permission to use {werkzeug} has been denied.", true);
+        await Sprechen($"Werkzeug verweigert: {werkzeug}");
+        return Ende(2);
+    }
+
     switch (gmodus)
     {
         case "fehler":
@@ -371,6 +393,7 @@ async Task<int> Gespraech()
         {
             var kz = wert ?? throw new InvalidOperationException("aendern braucht ein Element: [attrappe:aendern=KZ]");
             await Sprechen("Ich ändere " + kz + ".");
+            if (await Verweigert("a1", "mcp__hlks__element_aendern", new JsonObject { ["element"] = kz }) is int nein) return nein;
             using var mcp = Mcp();
             await mcp.Werkzeuge();
             for (int i = 1; i <= (gmodus == "zweimal" ? 2 : 1); i++)
@@ -385,6 +408,7 @@ async Task<int> Gespraech()
         }
         case "ueberblick":
         {
+            if (await Verweigert("u1", "mcp__hlks__projekt_ueberblick", new JsonObject()) is int nein) return nein;
             using var mcp = Mcp();
             await mcp.Werkzeuge();
             Aufruf("u1", "mcp__hlks__projekt_ueberblick", new JsonObject());
@@ -396,6 +420,7 @@ async Task<int> Gespraech()
         }
         case "bild":
         {
+            if (await Verweigert("b1", "mcp__hlks__kontext_bild", new JsonObject()) is int nein) return nein;
             using var mcp = Mcp();
             var liste = await mcp.Werkzeuge();
             if (!liste.Contains("kontext_bild")) throw new InvalidOperationException("Der MCP-Server kennt kontext_bild nicht: " + string.Join(", ", liste));
@@ -410,9 +435,10 @@ async Task<int> Gespraech()
         }
         case "normen":
         {
+            var eingabe = new JsonObject { ["frage"] = wert ?? "Mindestgefälle Prüfleitung" };
+            if (await Verweigert("n1", "mcp__hlks__normen_suchen", eingabe) is int nein) return nein;
             using var mcp = Mcp();
             await mcp.Werkzeuge();
-            var eingabe = new JsonObject { ["frage"] = wert ?? "Mindestgefälle Prüfleitung" };
             Aufruf("n1", "mcp__hlks__normen_suchen", eingabe);
             var erg = await mcp.Aufrufen("normen_suchen", eingabe);
             Antwort2("n1", erg, IstFehler(erg));
@@ -423,15 +449,18 @@ async Task<int> Gespraech()
         }
         case "werkzeugfehler":
         {
+            var eingabe = new JsonObject { ["element"] = "GIBT-ES-NICHT" };
+            if (await Verweigert("w1", "mcp__hlks__element_lesen", eingabe) is int nein) return nein;
             using var mcp = Mcp();
             await mcp.Werkzeuge();
-            var eingabe = new JsonObject { ["element"] = "GIBT-ES-NICHT" };
             Aufruf("w1", "mcp__hlks__element_lesen", eingabe);
             Antwort2("w1", await mcp.Aufrufen("element_lesen", eingabe));
             await Sprechen("Das Element gibt es nicht.");
             return Ende(2);
         }
         case "internet":
+            if (await Verweigert("s1", "WebSearch", new JsonObject { ["query"] = "Prüfleitung Datenblatt" }) is int neinSuche) return neinSuche;
+            if (await Verweigert("u1", "mcp__hlks__unterlage_aus_url", new JsonObject { ["url"] = "https://www.hersteller.example/gesperrt.pdf" }) is int neinAbruf) return neinAbruf;
             Aufruf("s1", "WebSearch", new JsonObject { ["query"] = "Prüfleitung Datenblatt" });
             Antwort2("s1", "Web search results for query: \"Prüfleitung Datenblatt\"");
             Aufruf("u1", "mcp__hlks__unterlage_aus_url", new JsonObject { ["url"] = "https://www.hersteller.example/gesperrt.pdf" });

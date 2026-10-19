@@ -22,6 +22,13 @@ public class GespraechTests
         Assert.Equal(["sonnet", "opus", "haiku"], j!["modelle"]!.AsArray().Select(m => Z(m!["id"])));
         Assert.Equal(["Sonnet", "Opus", "Haiku"], j["modelle"]!.AsArray().Select(m => Z(m!["name"])));
         Assert.Equal("sonnet", Z(j["vorgabeModell"]));
+        Assert.Equal("Internet: ohne Projektzugriff", Z(j["internetHinweis"]));   // Entscheid Hauptlauf 20.10.2026
+        var iw = j["internetWerkzeuge"]!.AsArray().Select(x => Z(x)).ToList();
+        Assert.Contains("WebSearch", iw);
+        Assert.Contains("normen_suchen", iw);
+        Assert.Contains("kontext_bild", iw);
+        Assert.DoesNotContain("projekt_ueberblick", iw);
+        Assert.DoesNotContain("element_aendern", iw);
         Assert.False(j["internetVorgabe"]!.GetValue<bool>());
         Assert.True(j["verfuegbar"]!.GetValue<bool>(), j.ToJsonString());
         Assert.Null(j["grund"]);

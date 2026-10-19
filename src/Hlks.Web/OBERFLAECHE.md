@@ -974,8 +974,9 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
 
 **Endpunkte**
 - `GET /api/ki/einstellungen` → `{ modelle: [{ id: "sonnet", name: "Sonnet" }, { id: "opus", … }, { id: "haiku", … }], vorgabeModell: "sonnet",
-  internetVorgabe: false, verfuegbar, grund?, zeitlimitMinuten: 10, grenzen: { textZeichen: 8000, auswahl: 200, bildBytes: 4194304, titelZeichen: 200 } }`.
-  `verfuegbar: false` mit `grund` (z. B. «Claude Code wurde nicht gefunden …»), wenn claude.exe oder der MCP-Server fehlt; ein Abo- bzw.
+  internetVorgabe: false, internetHinweis: "Internet: ohne Projektzugriff", internetWerkzeuge: ["WebSearch", …], verfuegbar, grund?, zeitlimitMinuten: 10,
+  grenzen: { textZeichen: 8000, auswahl: 200, bildBytes: 4194304, titelZeichen: 200 } }`. `internetHinweis` gehört an den Schalter «Internet»
+  (Entscheid Hauptlauf 20.10.2026, siehe unten). `verfuegbar: false` mit `grund` (z. B. «Claude Code wurde nicht gefunden …»), wenn claude.exe oder der MCP-Server fehlt; ein Abo- bzw.
   Anmeldeproblem zeigt sich erst bei der Frage (`fehlerart: "anmeldung"`).
 - `GET /api/ki/gespraeche` → `{ gespraeche: [{ id, titel, erstellt, geaendert, fragen, laeuft }] }`, neueste (`geaendert`) zuerst; 409 ohne Projekt.
 - `POST /api/ki/gespraeche` `{ titel? }` → **201** mit dem Gespräch (Form wie GET unten). Ohne Titel heisst es «Neues Gespräch» und bekommt mit
@@ -984,13 +985,14 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
   `laeuft: true`, `frage` die Id der laufenden Frage und die letzte Nachricht die Antwort im Entstehen (`status: "laeuft"`, Text bis jetzt) – so
   holt ein neu geladenes Fenster den Stand nach und folgt dann den Ereignissen.
 - **Nachricht** Mensch: `{ rolle: "mensch", frage, text, zeit, akteur, kontext: { ansicht?: { kennzeichen, name, art, massstab } | { kennzeichen,
-  gefunden: false }, geschoss?: { kennzeichen, name }, auswahl?: [kz…], bild: bool }, modell, internet }`.
-  Claude: `{ rolle: "claude", frage, status: "laeuft" | "fertig" | "fehler" | "abgebrochen", text, zeit, dauerSekunden, modell, internet,
+  gefunden: false }, geschoss?: { kennzeichen, name }, auswahl?: [kz…], bild: bool }, modell, internet, internetHinweis? }`.
+  Claude: `{ rolle: "claude", frage, status: "laeuft" | "fertig" | "fehler" | "abgebrochen", text, zeit, dauerSekunden, modell, internet, internetHinweis?,
   werkzeuge: [{ id, name, kurz, ok: null | true | false, meldung? }], aenderungen: [Aenderung], fehler?, fehlerart?, sitzungNeu?, abrufe?, runden?, kostenUsd? }`.
   `name` ohne Präfix (z. B. `element_aendern`, `WebSearch`), `kurz` = Eingabe einzeilig (≤ 140 Zeichen), `ok: null` = läuft noch.
   `fehlerart`: `anmeldung` (Claude nicht angemeldet → Hinweis «unter Heute mit Claude anmelden»), `start`, `mcp`, `claude`, `zeitlimit`,
   `abgebrochen`, `intern`. `sitzungNeu: true` = die frühere Claude-Sitzung war nicht verfügbar (anderer Rechner, gelöscht); Claude bekam die
   letzten Nachrichten als Verlauf (Hinweis in der Palette sinnvoll). `abrufe` (mit Internet): `[{ zeit, art: "suche" | "abruf", text | url, erfolg }]`.
+  `internetHinweis: "Internet: ohne Projektzugriff"` steht in beiden Nachrichten einer Frage mit Internet (zum Anzeigen bei der Frage).
 - **Aenderung**: `{ paket, befehl, beschreibung, zeit, elemente: [kz…], ids: [id…], zurueckgenommen, zurueckgenommenPaket?, zurueckgenommenZeit?,
   zurueckgenommenVon? }` – je Paket des Akteurs KI, in der Reihenfolge der Pakete. `beschreibung` z. B. «element_aendern: WT-E.02 geändert»,
   «leitung_ziehen: R-12, R-13 angelegt; 2 Verbindungen gesetzt». `elemente` (Kennzeichen) und `ids` stehen in derselben Reihenfolge; zum Wählen
@@ -998,7 +1000,7 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
 - `POST /api/ki/gespraeche/{id}/frage` `{ text, kontext: { ansicht?, geschoss?, auswahl?: [kz…], bild?: "data:image/png;base64,…" }, modell?, internet? }`
   → **202** `{ gespraech, frage, laeuft: true, nachricht: <Mensch> }`. Kennzeichen oder Id gehen; ohne `geschoss` gilt das Geschoss der Ansicht.
   Grenzen (sonst 400): Text 1–8000 Zeichen, `auswahl` ≤ 200 Texte, Bild PNG/JPEG ≤ 4 MB als data-URL, `modell` aus der Liste, `internet` bool
-  (Vorgabe aus). 409 «Claude arbeitet gerade an einer Frage im Gespräch «…»» bzw. «… an dem KI-Auftrag … (Familie aus Unterlagen)», wenn im
+  (Vorgabe aus; mit `true` arbeitet Claude **ohne Projektzugriff**, siehe unten – Projektfragen ohne Internet stellen). 409 «Claude arbeitet gerade an einer Frage im Gespräch «…»» bzw. «… an dem KI-Auftrag … (Familie aus Unterlagen)», wenn im
   Projekt schon ein KI-Lauf läuft (Gespräch oder Auftrag; `vorschlag` nennt den Abbrechen-Endpunkt). Das Bild liegt nur im Arbeitsordner der KI
   und wird nach der Frage gelöscht; Claude sieht es über das Werkzeug `kontext_bild`.
 - `POST /api/ki/gespraeche/{id}/abbrechen` → 200 mit dem Gespräch (nach dem Ende, höchstens 20 s Wartezeit); 409, wenn nichts läuft.
@@ -1030,15 +1032,19 @@ Fehler immer `{ fehler, vorschlag }` mit 400 (Eingabe), 404 (unbekannt), 409 (ke
 Die Modelländerungen der KI kommen zusätzlich wie immer als `art: "aenderung"` mit `akteurArt: "ki"` (Abgleich).
 
 **Hinter den Kulissen (für Hinweise in der Palette):** Claude Code läuft über Christians Abo (kein API-Schlüssel) mit nur dem MCP-Server «hlks»
-(Akteur KI, Art ki); erlaubt sind alle Werkzeuge ausser der Verbotsliste `GespraechDienst.Verbote` (Freigaben, Konfliktentscheide, Werte
-bestätigen, Bürobibliothek schreiben bzw. übernehmen, alles `hkap_*`, Aussparungs- und Kollisionsstatus, BCF, Plan- und IFC-Ausgaben,
-`unterlage_aus_url` ohne Internet). Mit Internet zusätzlich WebSearch und `unterlage_aus_url`. Neue Werkzeuge: `normen_suchen`, `norm_lesen`,
-`kontext_bild`. Zeitlimit je Frage 10 min (`HLKS_KI_FRAGE_ZEITLIMIT_MIN`). Ablage `<Projekt>\ki\gespraeche\<id>.json` und `<id>.log`;
+(Akteur KI, Art ki). **Ohne Internet** (Vorgabe) sind alle Werkzeuge erlaubt ausser der Verbotsliste `GespraechDienst.Verbote` (Freigaben,
+Konfliktentscheide, Werte bestätigen, Bürobibliothek schreiben bzw. übernehmen, alles `hkap_*`, Aussparungs- und Kollisionsstatus, BCF, Plan- und
+IFC-Ausgaben, `unterlage_aus_url`). **Mit Internet: ohne Projektzugriff** (Entscheid Hauptlauf 20.10.2026, dieselbe enge Linie wie die Aufträge):
+erlaubt sind nur WebSearch, `unterlage_aus_url`, `normen_suchen`, `norm_lesen`, `kontext_bild` und die Familien- und Unterlagenwerkzeuge der
+Aufträge (`GespraechDienst.InternetWerkzeuge`); alle anderen Werkzeuge – Projektabfragen und ändernde Projektbefehle – stehen in
+`--disallowedTools`. Claude weiss das (Systemteil) und verweist Projektfragen auf eine Frage ohne Internet. Grund: eingeschleuste Webinhalte sollen
+keine Projektdaten über Suchanfragen oder Abrufe nach aussen tragen können. Neue Werkzeuge: `normen_suchen`, `norm_lesen`, `kontext_bild`. Zeitlimit je Frage 10 min (`HLKS_KI_FRAGE_ZEITLIMIT_MIN`). Ablage `<Projekt>\ki\gespraeche\<id>.json` und `<id>.log`;
 Arbeitsordner von Claude stabil je Projekt unter `%LOCALAPPDATA%\HLKS_CAD\ki\<Kennung>` (Testlauf `%TEMP%\HLKS_CAD\ki_test`), damit `--resume`
 die Sitzung nach einem Neustart findet.
 
 **Testen (Teil O):** Server mit `HLKS_TEST=1`, `HLKS_CLAUDE_EXE` = `Hlks.ClaudeAttrappe.exe` (Gesprächsmodus mit `--session-id`/`--resume`; Modus in
 der Frage als `[attrappe:antwort | aendern=KZ | zweimal=KZ | ueberblick | bild | normen | werkzeugfehler | internet | langsam | haengt | fehler | anmeldung]`,
-siehe Kopf von `tests/Hlks.ClaudeAttrappe/Program.cs`), `HLKS_MCP_DLL`, `HLKS_NORMEN` auf eine Kopie von `tests/daten/normen` unter %TEMP% (Test-PDF
+siehe Kopf von `tests/Hlks.ClaudeAttrappe/Program.cs`; die Attrappe prüft die Werkzeuge wie Claude Code gegen `--allowedTools`/`--disallowedTools`
+und antwortet sonst «Werkzeug verweigert: …»), `HLKS_MCP_DLL`, `HLKS_NORMEN` auf eine Kopie von `tests/daten/normen` unter %TEMP% (Test-PDF
 mit erfundenem Text: «Mindestgefälle Prüfleitung» → SIA 9999:2026, Seite 3, Ziffer 4.2.1). Web-Tests: `GespraechTests`, `GespraechLaufTests`,
 `GespraechZuruecknehmenTests` (mit `GespraechVerbotslisteTests`).

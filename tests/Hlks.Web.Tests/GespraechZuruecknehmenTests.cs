@@ -224,12 +224,44 @@ public class GespraechVerbotslisteTests
 
         var mit = GespraechDienst.ClaudeArgumente(e with { Aufwand = "high" }, "m.json", "haiku", true, "abc", true);
         Assert.Equal("WebSearch", W(mit, "--tools"));
-        Assert.Equal("mcp__hlks,WebSearch", W(mit, "--allowedTools"));
-        Assert.DoesNotContain("mcp__hlks__unterlage_aus_url", W(mit, "--disallowedTools")!.Split(','));
         Assert.Equal("abc", W(mit, "--resume"));
         Assert.DoesNotContain("--session-id", mit);
         Assert.Equal("haiku", W(mit, "--model"));
         Assert.Equal("high", W(mit, "--effort"));
+    }
+
+    /// <summary>Entscheid Hauptlauf 20.10.2026: mit Internet ohne Projektzugriff – erlaubt sind nur WebSearch, unterlage_aus_url, die Normenwerkzeuge,
+    /// kontext_bild und die Familien-/Unterlagen-Werkzeuge der Internetliste der Aufträge; jedes andere Werkzeug des Servers steht in --disallowedTools.</summary>
+    [Fact]
+    public void Internet_OhneProjektzugriff_NurDieEngeListe_AllesAndereVerboten()
+    {
+        Assert.Equal(AuftragDienst.InternetWerkzeuge.Concat(["normen_suchen", "norm_lesen", "kontext_bild"]).Order(), GespraechDienst.InternetWerkzeuge.Order());
+        var server = McpWerkzeuge();
+        Assert.All(GespraechDienst.InternetWerkzeuge, w => Assert.Contains(w, server));
+        // keine Projektabfragen und keine ändernden Projektbefehle in der Liste
+        foreach (var w in new[] { "projekt_ueberblick", "element_lesen", "elemente_suchen", "system_lesen", "strang_text", "raum_inhalt", "aenderungen", "warum",
+                     "pruefen", "mengen", "datenpunkte", "zeitreihe", "element_anlegen", "element_aendern", "element_loeschen", "leitung_ziehen", "verbinden",
+                     "rueckgaengig", "wiederholen", "ifc_uebernehmen", "unterlage_einfuegen", "familie_platzieren" })
+            Assert.DoesNotContain(w, GespraechDienst.InternetWerkzeuge);
+
+        var a = GespraechDienst.ClaudeArgumente(new GespraechEinstellungen(), "m.json", "sonnet", true, "abc", false);
+        string W(string s) => a[a.IndexOf(s) + 1];
+        var erlaubt = W("--allowedTools").Split(',');
+        Assert.Equal(GespraechDienst.InternetWerkzeuge.Select(w => "mcp__hlks__" + w).Prepend("WebSearch").Order(), erlaubt.Order());
+        Assert.DoesNotContain("mcp__hlks", erlaubt);                       // nicht mehr der ganze Server
+        var verboten = W("--disallowedTools").Split(',').ToHashSet();
+        foreach (var w in server)
+            Assert.True(GespraechDienst.InternetWerkzeuge.Contains(w) ? !verboten.Contains("mcp__hlks__" + w) : verboten.Contains("mcp__hlks__" + w),
+                $"{w}: mit Internet falsch eingeordnet");
+        Assert.Contains("OHNE Projektzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(true));
+        Assert.DoesNotContain("OHNE Projektzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(false));
+    }
+
+    [Fact]
+    public void AlleWerkzeuge_AusDemKern_SindGenauDieDesMcpServers()
+    {
+        // Die Liste für --disallowedTools mit Internet stammt aus dem Kern (Abfragen, Befehle, Verlauf, kontext_bild) – sie muss vollständig sein
+        Assert.Equal(McpWerkzeuge().Order(StringComparer.Ordinal), GespraechDienst.AlleWerkzeuge());
     }
 
     [Fact]

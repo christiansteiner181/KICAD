@@ -201,11 +201,19 @@ public class GespraechLaufTests
 
         var info = s.AttrappeInfos(id)[^1];
         Assert.Equal("WebSearch", Schalter(info, "--tools"));
-        Assert.Equal("mcp__hlks,WebSearch", Schalter(info, "--allowedTools"));
-        Assert.DoesNotContain("mcp__hlks__unterlage_aus_url", Schalter(info, "--disallowedTools")!.Split(','));
-        Assert.Contains("mcp__hlks__familie_freigeben", Schalter(info, "--disallowedTools")!.Split(','));
-        Assert.Contains("Internet ist bei dieser Frage erlaubt", Z(info["prompt"]));
+        // Entscheid Hauptlauf 20.10.2026: mit Internet ohne Projektzugriff – nur die enge Liste ist erlaubt, alles andere verboten
+        var erlaubt = Schalter(info, "--allowedTools")!.Split(',');
+        Assert.Equal(GespraechDienst.InternetWerkzeuge.Select(w => "mcp__hlks__" + w).Prepend("WebSearch").Order(), erlaubt.Order());
+        Assert.DoesNotContain("mcp__hlks", erlaubt);
+        var verboten = Schalter(info, "--disallowedTools")!.Split(',');
+        Assert.DoesNotContain("mcp__hlks__unterlage_aus_url", verboten);
+        foreach (var w in new[] { "familie_freigeben", "projekt_ueberblick", "element_lesen", "element_aendern", "leitung_ziehen", "rueckgaengig", "elemente_suchen", "aenderungen" })
+            Assert.Contains("mcp__hlks__" + w, verboten);
+        Assert.Contains("Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Projektzugriff", Z(info["prompt"]));
+        Assert.Contains("müssen ohne Internet gestellt werden", Z(info["prompt"]));
         Assert.True(antwort["internet"]!.GetValue<bool>());
+        Assert.Equal("Internet: ohne Projektzugriff", Z(antwort["internetHinweis"]));
+        Assert.Equal("Internet: ohne Projektzugriff", Z((await s.Gespraech(id))["nachrichten"]![0]!["internetHinweis"]));
         var abrufe = antwort["abrufe"]!.AsArray();
         Assert.Contains(abrufe, a => Z(a!["art"]) == "suche" && Z(a["text"]) == "Prüfleitung Datenblatt" && a["erfolg"]!.GetValue<bool>());
         Assert.Contains(abrufe, a => Z(a!["art"]) == "abruf" && Z(a["url"]) == "https://www.hersteller.example/gesperrt.pdf" && !a["erfolg"]!.GetValue<bool>());
@@ -215,10 +223,56 @@ public class GespraechLaufTests
         Assert.True((await s.Gespraech(id))["nachrichten"]![0]!["internet"]!.GetValue<bool>());
 
         // Vorgabe ohne Internet
-        await s.FragenUndWarten(id, "Ohne Netz");
+        var ohneAntwort = await s.FragenUndWarten(id, "Ohne Netz");
         var ohne = s.AttrappeInfos(id)[^1];
         Assert.Equal("", Schalter(ohne, "--tools"));
         Assert.Equal("mcp__hlks", Schalter(ohne, "--allowedTools"));
         Assert.Contains("mcp__hlks__unterlage_aus_url", Schalter(ohne, "--disallowedTools")!.Split(','));
+        Assert.Null(ohneAntwort["internetHinweis"]);
+        // ohne Internet verweigert die Attrappe (wie Claude Code mit dontAsk) Websuche und Abruf
+        var netzOhneSchalter = await s.FragenUndWarten(id, "Suche [attrappe:internet]");
+        Assert.Equal("Werkzeug verweigert: WebSearch", Z(netzOhneSchalter["text"]));
+        Assert.All(netzOhneSchalter["abrufe"]?.AsArray() ?? [], a => Assert.False(a!["erfolg"]!.GetValue<bool>()));   // versucht, abgelehnt
+    }
+
+    [Fact]
+    public async Task Internet_OhneProjektzugriff_AttrappeVerweigertProjektwerkzeuge()
+    {
+        var normen = NormenKopie();
+        try
+        {
+            using var s = new GespraechServer(e => e with { NormenOrdner = normen });
+            await s.ProjektOeffnen();
+            var vorher = await s.ElementName("WT-E.02");
+            var id = await s.GespraechAnlegen();
+
+            // Projekt lesen: verweigert
+            var lesen = await s.FragenUndWarten(id, "Wie viele Geschosse? [attrappe:ueberblick]", internet: true);
+            Assert.Equal("fertig", Z(lesen["status"]));
+            Assert.Equal("Werkzeug verweigert: mcp__hlks__projekt_ueberblick", Z(lesen["text"]));
+            var w = Assert.Single(lesen["werkzeuge"]!.AsArray())!;
+            Assert.Equal("projekt_ueberblick", Z(w["name"]));
+            Assert.False(w["ok"]!.GetValue<bool>());
+            Assert.Contains("denied", Z(w["meldung"]));
+
+            // Projekt ändern: verweigert, kein Paket, nichts geändert
+            var pakete = new Hlks.Kern.OrdnerSpeicher(s.Ordner).PaketListe().Count;
+            var aendern = await s.FragenUndWarten(id, "Umbenennen [attrappe:aendern=WT-E.02]", internet: true);
+            Assert.EndsWith("Werkzeug verweigert: mcp__hlks__element_aendern", Z(aendern["text"]));
+            Assert.Empty(aendern["aenderungen"]!.AsArray());
+            Assert.Equal(pakete, new Hlks.Kern.OrdnerSpeicher(s.Ordner).PaketListe().Count);
+            Assert.Equal(vorher, await s.ElementName("WT-E.02"));
+
+            // erlaubt bleiben Normen und das Bild der Ansicht
+            var norm = await s.FragenUndWarten(id, "Gefälle? [attrappe:normen]", internet: true);
+            Assert.StartsWith("Treffer: SIA 9999:2026, Seite 3, Ziffer 4.2.1", Z(norm["text"]));
+            var bild = await s.FragenUndWarten(id, "Bild? [attrappe:bild]", new JsonObject { ["bild"] = PngUrl }, internet: true);
+            Assert.StartsWith("Bild erhalten: image/png", Z(bild["text"]));
+
+            // dieselbe Frage ohne Internet liest das Projekt
+            var ohne = await s.FragenUndWarten(id, "Wie viele Geschosse? [attrappe:ueberblick]");
+            Assert.Equal("Das Projekt hat 3 Geschosse.", Z(ohne["text"]));
+        }
+        finally { Loeschen(normen); }
     }
 }

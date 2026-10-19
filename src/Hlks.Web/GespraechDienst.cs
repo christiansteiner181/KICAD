@@ -21,8 +21,12 @@
 // Höchstens ein KI-Lauf je Projekt (Gespräch oder Auftrag, KiLaeufe) – sonst 409 «Claude arbeitet gerade an …». Zeitlimit je Frage 10 min.
 //
 // ANNAHMEN (Prüfliste, im Bericht genannt):
-// - Werkzeuge: alle des MCP-Servers «hlks» (--allowedTools mcp__hlks) ausser der Verbotsliste (--disallowedTools; Begründung je Eintrag
-//   bei Verbote). Mit internet = true zusätzlich WebSearch und unterlage_aus_url, sonst keine eingebauten Werkzeuge (--tools "").
+// - Werkzeuge ohne Internet: alle des MCP-Servers «hlks» (--allowedTools mcp__hlks) ausser der Verbotsliste (--disallowedTools; Begründung je
+//   Eintrag bei Verbote), keine eingebauten Werkzeuge (--tools "").
+// - Mit internet = true (Entscheid Hauptlauf 20.10.2026, dieselbe enge Linie wie die Aufträge, Entscheid 18.10.2026): OHNE Projektzugriff –
+//   erlaubt sind nur WebSearch, unterlage_aus_url, normen_suchen, norm_lesen, kontext_bild und die Familien-/Unterlagen-Werkzeuge der
+//   Internetliste der Aufträge (InternetWerkzeuge); alle anderen Werkzeuge des Servers stehen in --disallowedTools (Claude sieht sie nicht).
+//   Schutz gegen Abfluss von Projektdaten über Suchanfragen und Abrufe bei eingeschleusten Webinhalten. Vermerk «Internet: ohne Projektzugriff».
 // - Streaming mit --include-partial-messages (Textteile «text_delta»); ohne Teilstücke gilt der ganze Textblock als ein Teil.
 // - Nach dem Lauf gibt der Server die Reservierungen des Akteurs KI auf diesem Gerät frei (ein abgebrochener MCP-Server kann es nicht
 //   mehr selbst), damit «Zurücknehmen» nicht an der eigenen KI hängen bleibt.
@@ -67,6 +71,8 @@ public sealed record GespraechEinstellungen
     public bool InternetVorgabe { get; init; }
     /// <summary>Verbotene MCP-Werkzeuge (Namen ohne Präfix); Vorgabe die begründete Liste GespraechDienst.Verbote.</summary>
     public IReadOnlyList<string> Verboten { get; init; } = GespraechDienst.Verbotsliste;
+    /// <summary>Erlaubte MCP-Werkzeuge bei internet = true (ohne Projektzugriff); Vorgabe GespraechDienst.InternetWerkzeuge.</summary>
+    public IReadOnlyList<string> WerkzeugeInternet { get; init; } = GespraechDienst.InternetWerkzeuge;
     /// <summary>Normenordner für die Normensuche (MCP --normen und /api/normen). null = HLKS_NORMEN bzw. W:\05_Normen und Merkblätter.</summary>
     public string? NormenOrdner { get; init; }
     /// <summary>Volltext der Normen beim ersten Suchen im Hintergrund aufbauen.</summary>
@@ -141,6 +147,22 @@ public sealed class GespraechDienst
     /// <summary>Namen der Verbotsliste (ohne Präfix mcp__hlks__).</summary>
     public static readonly IReadOnlyList<string> Verbotsliste = Verbote.Select(v => v.Werkzeug).ToList();
 
+    /// <summary>Werkzeuge bei internet = true – OHNE Projektzugriff (Entscheid Hauptlauf 20.10.2026: dieselbe enge Linie wie die Aufträge,
+    /// AuftragDienst.InternetWerkzeuge, Entscheid 18.10.2026): die Familien- und Unterlagen-Werkzeuge der Aufträge mit unterlage_aus_url, dazu
+    /// die Normensuche und das Bild der Ansicht. Keine Projektabfragen, keine ändernden Projektbefehle: eingeschleuste Webinhalte sollen keine
+    /// Projektdaten über Suchanfragen oder Abrufe nach aussen tragen können. Eingebaut kommt nur WebSearch dazu.</summary>
+    public static readonly IReadOnlyList<string> InternetWerkzeuge =
+        [.. AuftragDienst.InternetWerkzeuge.Concat(["normen_suchen", "norm_lesen", "kontext_bild"]).Distinct()];
+
+    /// <summary>Vermerk in Einstellungen und Nachrichten, wenn das Internet an ist.</summary>
+    public const string InternetHinweis = "Internet: ohne Projektzugriff";
+
+    /// <summary>Alle Werkzeuge des MCP-Servers «hlks», abgeleitet aus dem Kern genau wie Hlks.Mcp sie abbildet: Abfragen, Befehle, Verlauf
+    /// (rueckgaengig, wiederholen, synchronisieren) und das Sitzungswerkzeug kontext_bild. Ein Test vergleicht die Liste mit dem Server.</summary>
+    public static IReadOnlyList<string> AlleWerkzeuge() =>
+        [.. Abfragen.Liste.Select(a => a.Name).Concat(Befehlsregister.Standard().Alle.Select(b => b.Name))
+            .Concat(["rueckgaengig", "wiederholen", "synchronisieren", "kontext_bild"]).Distinct().Order(StringComparer.Ordinal)];
+
     sealed class Abruf(DateTimeOffset zeit, string art, string text) { public DateTimeOffset Zeit { get; } = zeit; public string Art { get; } = art; public string Text { get; } = text; public bool? Erfolg; }
 
     /// <summary>Eine laufende Frage.</summary>
@@ -212,6 +234,8 @@ public sealed class GespraechDienst
             ["modelle"] = new JsonArray(einstellungen.Modelle.Select(m => (JsonNode)new JsonObject { ["id"] = m.Id, ["name"] = m.Name }).ToArray()),
             ["vorgabeModell"] = einstellungen.VorgabeModell,
             ["internetVorgabe"] = einstellungen.InternetVorgabe,
+            ["internetHinweis"] = InternetHinweis,   // Entscheid Hauptlauf 20.10.2026: mit Internet ohne Projektzugriff
+            ["internetWerkzeuge"] = new JsonArray(einstellungen.WerkzeugeInternet.Prepend("WebSearch").Select(w => (JsonNode)JsonValue.Create(w)).ToArray()),
             ["verfuegbar"] = grund is null,
             ["grund"] = grund,
             ["zeitlimitMinuten"] = Math.Round(einstellungen.Zeitlimit.TotalMinutes, 2),
@@ -455,6 +479,7 @@ public sealed class GespraechDienst
                 ["rolle"] = "mensch", ["frage"] = frage, ["text"] = text, ["zeit"] = Jetzt(), ["akteur"] = projekt.Einstellungen.Akteur,
                 ["kontext"] = kontextJson, ["modell"] = modell, ["internet"] = internet,
             };
+            if (internet) l.Mensch["internetHinweis"] = InternetHinweis;
             var nachrichten = g["nachrichten"] as JsonArray ?? new JsonArray();
             nachrichten.Add(l.Mensch.DeepClone());
             nachrichten.Add(Antwort(l));
@@ -584,10 +609,15 @@ public sealed class GespraechDienst
         4. Gib keine Familien frei, entscheide keine Konflikte, bestätige keine Werte und setze keinen Freigabe- oder Versandstatus – das tut der
            Mensch. HKAP fasst du nicht an; die Gebäudeautomation (Datenpunkte, Messwerte) liest du nur.
         5. Antworte auf Deutsch (Schweiz, ss statt ß), kurz und sachlich. Nenne geänderte Elemente mit ihrem Kennzeichen.
-        6. {(internet
-            ? "Internet ist bei dieser Frage erlaubt: suchen mit WebSearch, Dateien und Seiten holen nur mit unterlage_aus_url. Gib nie Projektdaten in eine Websuche."
-            : "Internet ist bei dieser Frage nicht erlaubt.")}
+        6. {(internet ? InternetRegel : "Internet ist bei dieser Frage nicht erlaubt.")}
         """;
+
+    /// <summary>Regel 6 mit Internet: ohne Projektzugriff (Entscheid Hauptlauf 20.10.2026).</summary>
+    const string InternetRegel =
+        "Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Projektzugriff: du kannst das Modell weder lesen noch ändern. Erlaubt sind\n" +
+        "   nur WebSearch, unterlage_aus_url (Dateien und Seiten holen), normen_suchen, norm_lesen, kontext_bild und die Familien- und\n" +
+        "   Unterlagenwerkzeuge. Fragen zum Projekt (Modell lesen oder ändern) müssen ohne Internet gestellt werden – sag das dem Menschen, wenn\n" +
+        "   er danach fragt. Gib nie Projektdaten in eine Websuche.";
 
     static string Auftrag(string systemteil, string kontextText, string projektName, string ort, string? verlauf, string frage)
     {
@@ -813,6 +843,7 @@ public sealed class GespraechDienst
         };
         if (l.Fehler is not null) { o["fehler"] = l.Fehler; o["fehlerart"] = l.FehlerArt; }
         if (l.SitzungNeu) o["sitzungNeu"] = true;
+        if (l.Internet) o["internetHinweis"] = InternetHinweis;
         if (l.Internet || l.Abrufe.Count > 0)
             o["abrufe"] = new JsonArray(l.Abrufe.Select(x => (JsonNode)new JsonObject
             {
@@ -1211,19 +1242,26 @@ public sealed class GespraechDienst
 
     /// <summary>Schalter von Claude Code (alle in «claude --help» der Fassung 2.1.299): -p (Auftrag über die Standardeingabe), --output-format
     /// stream-json mit --verbose und --include-partial-messages (Textteile), --mcp-config + --strict-mcp-config (nur der Server hlks), --tools
-    /// (eingebaut: keine bzw. WebSearch), --allowedTools mcp__hlks (alle Werkzeuge des Servers) [+ WebSearch], --disallowedTools (Verbotsliste),
+    /// (eingebaut: keine bzw. WebSearch), --allowedTools mcp__hlks (alle Werkzeuge des Servers) bzw. mit Internet nur WebSearch und die
+    /// Internetliste, --disallowedTools (Verbotsliste bzw. mit Internet alle Werkzeuge des Servers ausser der Internetliste),
     /// --permission-mode dontAsk (nicht Erlaubtes wird abgelehnt statt gefragt), --disable-slash-commands, --setting-sources local (keine
     /// Benutzereinstellungen; die Anmeldung bleibt), --model, --session-id (neue Sitzung mit fester Id) bzw. --resume (fortsetzen), optional --effort.
     /// Bewusst NICHT --no-session-persistence (sonst liesse sich das Gespräch nicht fortsetzen).</summary>
     public static List<string> ClaudeArgumente(GespraechEinstellungen e, string mcpDatei, string modell, bool internet, string sitzung, bool fortsetzen)
     {
-        var verboten = e.Verboten.Where(w => !(internet && w == "unterlage_aus_url")).Distinct().Select(w => "mcp__hlks__" + w).ToList();
+        // Ohne Internet: der ganze Server ausser der Verbotsliste. Mit Internet (ohne Projektzugriff): nur die Internetliste ist erlaubt, alles
+        // andere des Servers steht in --disallowedTools (Claude sieht es gar nicht); die Verbotsliste gilt weiter (ausser unterlage_aus_url).
+        var erlaubtInternet = e.WerkzeugeInternet.Where(w => w == "unterlage_aus_url" || !e.Verboten.Contains(w)).Distinct().ToList();
+        var verboten = (internet
+                ? AlleWerkzeuge().Where(w => !erlaubtInternet.Contains(w)).Concat(e.Verboten.Where(w => !erlaubtInternet.Contains(w)))
+                : e.Verboten)
+            .Distinct().Select(w => "mcp__hlks__" + w).ToList();
         var a = new List<string>
         {
             "-p", "--output-format", "stream-json", "--verbose", "--include-partial-messages",
             "--mcp-config", mcpDatei, "--strict-mcp-config",
             "--tools", internet ? "WebSearch" : "",
-            "--allowedTools", internet ? "mcp__hlks,WebSearch" : "mcp__hlks",
+            "--allowedTools", internet ? string.Join(",", erlaubtInternet.Select(w => "mcp__hlks__" + w).Prepend("WebSearch")) : "mcp__hlks",
         };
         if (verboten.Count > 0) { a.Add("--disallowedTools"); a.Add(string.Join(",", verboten)); }
         a.AddRange(["--permission-mode", "dontAsk", "--disable-slash-commands", "--setting-sources", "local", "--model", modell]);
