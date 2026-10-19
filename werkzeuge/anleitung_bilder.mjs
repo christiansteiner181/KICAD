@@ -287,6 +287,8 @@ let initId = null;
 /** Lädt die Oberfläche der Welt frisch (leerer Browserspeicher, helles Design). warten = 'projekt' | 'start' | 'nichts' */
 async function seiteLaden(welt, { warten = 'projekt', design = 'hell', anhang = '' } = {}) {
   aktuelleWelt = welt;
+  // Einstellungen des Benutzers liegen auf dem Server (nicht im Browser): die Gliederung des Projektbrowsers bleibt sonst von Bild zu Bild stehen
+  await welt.post('/api/benutzer/einstellungen', { schluessel: 'projektbrowser.gliederung', wert: ['gebaeude'] }).catch(() => {});
   await send('Page.navigate', { url: 'about:blank' }); await warte(150);
   await send('Storage.clearDataForOrigin', { origin: welt.url, storageTypes: 'local_storage,session_storage,cache_storage,indexeddb' }).catch(() => {});
   if (initId) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: initId }).catch(() => {});
@@ -305,6 +307,8 @@ async function projektOeffnen(welt, ordner) {
 // ------------------------------------------------------------------ Aufnahme mit Markierung
 /** Rechteck eines SVG-Textes im Plan (z. B. die Beschriftung einer Leitung). */
 const svgText = (teil) => ausw(`const t = [...document.querySelectorAll('.kachel.aktiv svg text')].find((x) => x.textContent.includes(${J(teil)})); if (!t) return null; const r = t.getBoundingClientRect(); return { x: r.left, y: r.top, b: r.width, h: r.height };`);
+/** Gemeinsames Rechteck aller SVG-Texte im Plan, die den Teil enthalten. */
+const svgTexte = (teil) => ausw(`const c = document.querySelector('.kachel.aktiv .kachel-inhalt').getBoundingClientRect(); const l = [...document.querySelectorAll('.kachel.aktiv svg text')].filter((x) => x.textContent.includes(${J(teil)})).map((t) => t.getBoundingClientRect()).filter((r) => r.width > 0 && r.left >= c.left && r.right <= c.right && r.top >= c.top && r.bottom <= c.bottom); if (!l.length) return null; const x0 = Math.min(...l.map((r) => r.left)), y0 = Math.min(...l.map((r) => r.top)), x1 = Math.max(...l.map((r) => r.right)), y1 = Math.max(...l.map((r) => r.bottom)); return { x: x0, y: y0, b: x1 - x0, h: y1 - y0 };`);
 /** Rechteck der Elemente (Vereinigung) nach Selektor; nur sichtbare. */
 const rechteckeVon = (selektoren) => ausw(`
   const sels = ${J(selektoren)};
@@ -414,8 +418,8 @@ function szene(def) { KATALOG.push({ welt: 'projekt', schreibt: false, ...def })
 function ohneBild(ids, grund) { for (const id of [].concat(ids)) OHNE_BILD.push({ id, grund }); }
 /** Kurzform: eine Szene mit einer Aufnahme. */
 function bild(ids, projekt, aufbau, opt = {}) {
-  const { markiere, titel, schreibt, welt, vor, abstand, warten, datei } = opt;
-  szene({ projekt, aufbau, schreibt, welt, titel, aufnahmen: [{ ids: [].concat(ids), markiere, titel, vor, abstand, warten, datei }] });
+  const { markiere, titel, schreibt, welt, vor, abstand, warten, datei, bibliothek } = opt;
+  szene({ projekt, aufbau, schreibt, welt, titel, bibliothek, aufnahmen: [{ ids: [].concat(ids), markiere, titel, vor, abstand, warten, datei }] });
 }
 
 // ------------------------------------------------------------------ Hilfen für Szenen
@@ -497,7 +501,7 @@ bild('start-anheften', 'beispiel', async () => {
 bild('start-bibliothek', 'beispiel', async () => { await klick('.sb-aktion[data-aktion="bibliothek"]'); await warteBis(async () => /Familienbibliothek/.test((await dialogTitel()) ?? ''), 'Dialog Bibliothek'); await warte(600); },
   { welt: 'start', markiere: '.sb-aktion[data-aktion="bibliothek"]' });
 bild('start-neu-beispiel', 'beispiel', async () => {
-  await warteBis(async () => (await anzahl('.sb-kachel')) >= 2 && (await anzahl('.sb-zeile')) >= 2, 'Startbildschirm geladen', 20000);
+  await warteBis(async () => (await anzahl('.sb-kachel')) >= 1, 'Startbildschirm geladen', 30000); await warte(1500);
   await klick('.sb-aktion[data-aktion="beispiel"]'); await dialogDa(/Beispielprojekt/);
   await eingeben(dlg('input'), path.join(tmpdir(), 'HLKS_CAD', 'beispiel', 'c_Pläne und Modelle', 'e_KICAD')); await warte(300);
 }, { welt: 'start', markiere: '.sb-aktion[data-aktion="beispiel"]' });
@@ -539,7 +543,7 @@ bild('optionsleiste', 'beispiel', async () => { await grundrissEG(); await tippe
 bild('statusleiste', 'beispiel', async () => { await grundrissEG(); await auswaehlen('WT-E.02'); await warte(700); }, { markiere: '#statusleiste' });
 bild('ansichtsreiter', 'beispiel', async () => {
   await ansichtenOeffnen(['AN-GR-UG', 'AN-GR-EG', 'AN-3D', 'AN-SCHEMA-SAN']);
-  for (let b = 1200; b >= 560; b -= 40) { await fenster(b, FH); await warte(600); if (/[2-9] weitere/.test((await text('.reiter-weitere')) ?? '')) break; }
+  for (let b = 1200; b >= 560; b -= 40) { await fenster(b, FH); await warte(700); if (await sichtbar('.reiter-weitere')) break; }
   await klick('.reiter-weitere'); await warteBis(() => gibt('.reiter-liste'), 'Liste weitere');
 }, { markiere: '#ansichtsreiter' });
 
@@ -906,7 +910,7 @@ szene({
       vor: async () => { await klickM([18000, 4000]); await klickM([14000, 4000], { mod: 2 }); await tippeKuerzel('mv'); await warte(400); await klickM([18000, 4000]); await bewege([20000, 4000]); await warte(500); } },
     { ids: ['m1a-kopieren'], titel: 'Original- und Kopiewand im Abstand von 2000 mm', markiere: undefined,
       vor: async () => { await esc(); await esc(); await abwaehlen(); await klickM([16000, 6000]); await tippeKuerzel('co'); await warte(400); await klickM([16000, 6000]); await klickM([16000, 8000]); await warte(700); await werkzeugEnde(); await zoomAlles(); } },
-    { ids: ['m1a-griffe'], titel: 'Gewählte Wand mit Griffen an beiden Enden', markiere: undefined,
+    { ids: ['m1a-griffe'], titel: 'Gewählte Wand mit Griffen an beiden Enden', markiere: '.kachel.aktiv .wz-griff', abstand: 8,
       vor: async () => { await abwaehlen(); await klickM([16000, 2000]); await warte(700); } },
     { ids: ['m1a-drehen'], titel: 'Wand nach der Drehung um 90° um ihr Ende', markiere: undefined,
       vor: async () => { await klickM([14000, 4000]); await tippeKuerzel('ro'); await warte(400); await klickM([14000, 6000]); await tippeKuerzel('90'); await taste('Enter'); await warte(900); await werkzeugEnde(); await zoomAlles(); } },
@@ -1319,7 +1323,7 @@ szene({
   },
   aufnahmen: [
     { ids: ['m3-rohr-zeichnen'], titel: 'L-Zug mit Vorschau-Zeile «2 Geraden … 1 Bogen 90°» (vor dem Ausführen)' },
-    { ids: ['m3-griffe-leitung'], titel: 'Gewähltes Rohr mit Griffen an den Enden und am Knick',
+    { ids: ['m3-griffe-leitung'], titel: 'Gewähltes Rohr mit Griffen an den Enden und am Knick', markiere: '.kachel.aktiv .wz-griff', abstand: 8,
       vor: async () => { await taste('Enter'); await warte(1500); await werkzeugEnde(); await klickM([15000, 3000]); await warte(900); } },
     { ids: ['m3-palette-leitung'], titel: 'Palette «Leitung»: Rückfrage «Ganzer Leitungszug» nach dem Ändern der Grösse', markiere: () => rechteck(DLG),
       vor: async () => { await setze('#eigenschaften [data-ziel="lt:groesse"]', 'DN 25'); await warteBis(async () => (await anzahl('#dialogschicht .dlg')) >= 1, 'Rückfrage', 8000).catch(() => {}); await warte(700); } },
@@ -1545,7 +1549,7 @@ szene({
         await setze('#koord-panel .kf-typ', 'durchdringung'); await warte(800); const z = await panelZeilen(); await kpHaken(z[0]); await kpHaken(z[1]);
         await setze('#koord-panel .ka-status', 'akzeptiert'); await eingeben('#koord-panel .ka-kommentar', 'FIKTIV: mit Architekt besprochen'); await warte(500);
       } },
-    { ids: ['m3b-kollisionsmarken'], titel: 'Grundriss EG: Kollisionsmarken an den drei Rohren in der Südwand', markiere: undefined,
+    { ids: ['m3b-kollisionsmarken'], titel: 'Grundriss EG: Kollisionsmarken an den drei Rohren in der Südwand', markiere: () => svgTexte('KOL-'), abstand: 14,
       vor: async () => { await klick('.pal-gruppe[data-aktiv="koordination"] .pal-zu'); await warte(500); await nurAnsicht('AN-GR-EG'); await planAuf(1500, -1800, 7800, 1800); await warte(500); } },
   ],
 });
@@ -1735,9 +1739,9 @@ szene({
 bild('zb-bib-explorer', 'beispiel', async () => {
   await grundrissEG(); await registerWahl('Gebäudetechnik'); await knopf('familie.explorer'); await dialogDa(/Familien im Explorer/); await warte(800);
   await ausw(`const c = document.querySelector(${J(dlg('.bib-an-box'))}); if (c && !c.checked) c.click(); return 1;`); await warte(1500);
-}, { schreibt: true, titel: 'Familien im Explorer: Schalter eingeschaltet, Filter, Liste mit Häkchen, Fusszeile' });
+}, { schreibt: true, bibliothek: true, titel: 'Familien im Explorer: Schalter eingeschaltet, Filter, Liste mit Häkchen, Fusszeile' });
 szene({
-  projekt: 'beispiel', schreibt: true,
+  projekt: 'beispiel', schreibt: true, bibliothek: true,
   aufbau: async () => {
     await grundrissEG(); await registerWahl('Gebäudetechnik'); await knopf('familie.explorer'); await dialogDa(/Familien im Explorer/); await warte(800);
     await ausw(`const c = document.querySelector(${J(dlg('.bib-an-box'))}); if (c && !c.checked) c.click(); return 1;`); await warte(1500);
@@ -1760,10 +1764,10 @@ bild('zb-bib-aktualisieren', 'beispiel', async (c) => {
   const w = c.welt;
   const bib = await w.abfrage('familien_bibliothek', {});
   const liste = bib.familien ?? bib.liste ?? [];
-  const fam = liste.find((f) => /Heizk/i.test(`${f.name} ${f.kategorie}`));
+  const fam = liste.find((f) => /Testheizk/i.test(`${f.name}`));
   if (!fam) throw new Error('Heizkörperfamilie nicht in der Bibliothek: ' + JSON.stringify(bib).slice(0, 300));
   await kern(w, 'familie_laden', { id: fam.id });
-  const kz = (await w.modell()).filter((e) => e.klasse === 'Familie' && /Heizk/i.test(e.name ?? '')).at(-1)?.kennzeichen;
+  const kz = (await w.modell()).filter((e) => e.klasse === 'Familie' && /Testheizk/i.test(e.name ?? '')).at(-1)?.kennzeichen;
   await kern(w, 'familie_platzieren', { familie: kz, typ: '22-600-1000', punkt: [5000, 3000], drehung: 0 });
   await kern(w, 'familie_platzieren', { familie: kz, typ: '22-600-1400', punkt: [7000, 3000], drehung: 0 });
   const basis = JSON.parse(readFileSync(path.join(FAMILIEN, 'test_heizkoerper.familie.json'), 'utf8'));
@@ -1773,12 +1777,12 @@ bild('zb-bib-aktualisieren', 'beispiel', async (c) => {
   if (/"angenommen"\s*:\s*false/.test(aus) || !/Version/.test(aus)) throw new Error('familie_aendern im zweiten Projekt: ' + aus.replace(/\s+/g, ' ').slice(0, 400));
   await seiteLaden(w); await grundrissEG(); await eigenschaftenAus(); await pbAuf('Familien'); await pbAuf('Heizkoerper').catch(() => pbAuf('Heizkörper')); await warte(500);
   await ausw(`const m = await import('/js/familien/bibliothek-daten.js'); await m.bibliothekAktualisieren(); return 1;`);
-  await warteBis(() => gibt('.pb-zeile .pb-marke.m-neu'), 'Marke «neuere Version»', 40000);
+  await warteBis(() => gibt('.pb-zeile .pb-marke.m-neu'), 'Marke «neuere Version»', 60000);
   const zeile = await ausw(`const z = document.querySelector('.pb-zeile .pb-marke.m-neu')?.closest('.pb-zeile'); if (!z) return null; z.setAttribute('data-anl-a', '1'); return 1;`);
   if (!zeile) throw new Error('Zeile mit Marke «neuere Version» fehlt');
   await klick('#projektbrowser .pb-zeile[data-anl-a="1"] .pb-knopf[data-aktion="familie.aktualisieren"]');
   await warteBis(async () => (await gibt('.dlg.bib .bib-aktualisieren')) && /Vorschau/.test((await text('.bib-vorschau')) ?? ''), 'Vorschau im Dialog', 30000); await warte(800);
-}, { schreibt: true, markiere: () => rechteck(DLG), titel: 'Aktualisieren …: Vorschau einer neueren Version aus der Bibliothek, betroffene Elemente' });
+}, { schreibt: true, bibliothek: true, markiere: () => rechteck(DLG), titel: 'Aktualisieren …: Vorschau einer neueren Version aus der Bibliothek, betroffene Elemente' });
 bild('zb-bib-status', 'beispiel', async () => { await grundrissEG(); await klick('#statusleiste .sl-bib'); await warteBis(async () => (await anzahl('#dialogschicht .dlg')) >= 1, 'Dialog Bibliothek'); await warte(800); }, { markiere: '#statusleiste .sl-bib' });
 
 // @@KATALOG-ENDE
@@ -1817,6 +1821,7 @@ async function weltBeispiel() {
     if (r?.angenommen === false) console.log('   Hinweis: Familie ' + f + ': ' + r.fehler);
   }
   await vorschauDa(w.ostring);
+  cpSync(w.env.HLKS_FAMILIENBIBLIOTHEK, path.join(w.dir, 'bibliothek_basis'), { recursive: true });   // Ausgangszustand der Bibliothek (die Szenen mit Familien schreiben hinein)
   await w.post('/api/zuletzt/anheften', { ordner: w.ostring, an: true });
   await w.post('/api/projekt/schliessen');
   await projektOeffnen(w, w.mfh);
@@ -1842,6 +1847,15 @@ async function weltBernstrasse(name) {
   await w.starten(w.projektOrdner);
   WELTEN[name] = w;
   return w;
+}
+
+/** Die Test-Bibliothek (unter %TEMP%) auf den Ausgangszustand zurück: nur die zwei Testfamilien des zweiten Projekts (Szenen mit Familien schreiben sonst hinein). */
+function bibliothekZurueck(w) {
+  const bib = w.env.HLKS_FAMILIENBIBLIOTHEK, basis = path.join(w.dir, 'bibliothek_basis');
+  if (!existsSync(basis)) return;
+  for (const n of readdirSync(bib)) rm(path.join(bib, n));
+  cpSync(basis, bib, { recursive: true });
+  rm(path.join(bib, 'index.json')); rm(path.join(bib, 'index.veraltet'));
 }
 
 /** Stellt den Ausgangszustand des Projekts wieder her, wenn eine Szene es verändert hat. */
@@ -1879,6 +1893,7 @@ async function szeneAusfuehren(s, nr, gesamt) {
   console.log(`\n[${nr}/${gesamt}] ${s.projekt} · ${ids.join(', ')}`);
   const w = await weltFuer(s.projekt);
   if (GR.b !== FB || GR.h !== FH) await fenster(FB, FH);
+  if (s.bibliothek && w.name === 'beispiel') { bibliothekZurueck(w); await warte(500); }
   if (s.welt === 'start') {
     await w.post('/api/projekt/schliessen');
     await seiteLaden(w, { warten: 'start' });

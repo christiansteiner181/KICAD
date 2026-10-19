@@ -1,13 +1,13 @@
-# Notizen zum Funktionsinventar (Stand bd513c0)
+# Notizen zum Funktionsinventar (Stand: siehe «stand» in inventar.json; W1 nachgeführt)
 
 Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiven Bedienungs- bzw. Testanleitung für das HLKS-CAD «KICAD».
 
 ## 1. Herkunft und Methode
 
-- **Stand:** Commit `bd513c0` (Zweig main, W2 zusammengeführt). Während der Arbeit ist main auf `f4738e1` weitergerückt (W1 «Dialoge und Paletten verschiebbar» zusammengeführt). Das Inventar beschreibt weiter `bd513c0`; alle Zeilenangaben unter «quelle» sind Zeilen der Dateien **in `bd513c0`** (mit `git show bd513c0:<Datei>` ermittelt) und stimmen in der Arbeitskopie nicht mehr überall: `OBERFLAECHE.md`, `aktionen-bearbeiten.js`, `aktionen.js`, `projektbrowser.js`, `dialoge.js`, `eigenschaften.js`, `koordination-panel.js`, `symbole.js`, `app.js`, `index.html` und mehrere CSS-Dateien haben sich verschoben; `layout.js` ist gelöscht.
-- **W1 ist nicht beschrieben**, aber im Stand `f4738e1` sehen folgende Funktionen anders aus (vor dem Bildskript klären, welchen Stand Christian prüft): jeder Dialog (verschiebbar, Hintergrund nicht mehr abgedunkelt, Einklappen), `eigenschaften-palette` (PP läuft über die Palettenverwaltung; neuer Knopf Ansicht › Fenster › «Paletten»), `m3b-kollisionsliste` und `m3b-aus-liste` (Palette «Koordination» ist jetzt eine Palette der Verwaltung), `projektbrowser-aufbau` (Projektbrowser ist angemeldete Palette), `anordnung-kacheln-reiter` (Gruppe «Fenster» hat einen Knopf mehr).
+- **Stand:** das Inventar beschreibt den Stand des Commits in «stand» (Zweig main mit W1 «Dialoge und Paletten verschiebbar» und W2 «Ansichten frei anordnen»; die erste Fassung beschrieb `bd513c0`, vor W1). Alle Zeilenangaben unter «quelle» sind Zeilen der Dateien in diesem Stand; beim Nachführen auf W1 wurden sie maschinell umgerechnet (jede Zeile wurde im alten Stand gelesen und im neuen Stand wiedergefunden, zur Gegenprobe über die Diff-Hunks abgebildet). `layout.js` ist gelöscht (die Paletten laufen über `paletten.js`).
+- **W1 ist beschrieben** (14 neue Funktionen im Kapitel «start», Ids `dialog-…` und `palette-…`, Prüfpunkte aus «Fertig, wenn» in `entwurf/fenster-revit.md`). Angepasst wurden `eigenschaften-palette`, `eigenschaften-ansicht`, `projektbrowser-aufbau`, `anordnung-kacheln-reiter` (Gruppe «Fenster» hat vier Knöpfe), `m3b-kollisionsliste`, `m3b-aus-liste` (Palette «Koordination» ist eine Palette der Verwaltung) und `anordnung-reiter-ziehen` (Verweis); jede Funktion, die einen Dialog öffnet, trägt im «hinweis» den Satz, dass der Dialog verschiebbar, in der Grösse änderbar und einklappbar ist und der Plan dahinter nicht mehr abgedunkelt wird.
 - **Quellen für Orte und Kürzel:** der Code. Die Aktionen stehen in `src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-*.js` und `js/familien/aktionen-*.js`; Register, Gruppen und Gruppenreihenfolge in `menueband.js` (`REGISTER`, `GRUPPENFOLGE`). Die Namen der Knöpfe sind die `titel` der Aktionen (ohne die unsichtbaren Trennstriche). Spezifikationen, Testberichte und `OBERFLAECHE.md` lieferten Ablauf, Erwartung und Prüfpunkte; was dort steht, aber im Code keinen Ort hat, steht unten bei «Nicht gefunden».
-- **Zeilenangaben** wurden maschinell aufgelöst (jede Quelle ist eine wirklich gefundene Zeile in `bd513c0`); der Generator liegt nur im Arbeitsordner der Sitzung, nicht im Repository.
+- **Zeilenangaben** wurden maschinell aufgelöst (jede Quelle ist eine wirklich gefundene Zeile im Stand); der Generator liegt nur im Arbeitsordner der Sitzung, nicht im Repository.
 - **Nichts erfunden / Testwerte:** Alle Eingaben stammen aus den Browsertests oder den Spezifikationen: Wand 200 mm, Tür 900 × 2100, Fenster 1200 × 1350 mit Brüstung 900 (`werkzeuge.browser.mjs`); Boden 300, Decke 250, Dach 200 (`huelle.browser.mjs`); Rohr DN 20 auf Höhe 300 im System KW, Strang KW-V1 (`leitung.browser.mjs`); drei Testrohre DN 50 durch die Südwand (`koordination.browser.mjs`). Die Testserien (tests/daten/familien) sind fiktiv. Von mir frei gewählt, ohne Quelle, nur als Platzhalter zum Ausprobieren und im Text als Testwert gekennzeichnet: Gefälle 2 %, Schichtdicke 200 mm im Aufbau-Beispiel, Kürzel «PE-S» und «CNS», Namen und Plannummern (E.10, 2317-101 aus dem Platzhalter des Dialogs, 1-0768-H01/S01/L01 nach dem Muster der Spezifikation Serien-PDF). Keine Normwerte, keine Herstellerwerte, keine Durchmesser ausser den fiktiven der Testserien.
 - **Hintergrund (nur kurz):** MCP-Server «hlks», Kommandozeile und KI-Verständnistest (Modul 0a) sind nur im Kapitel 0a erwähnt. Die Gruppe «Gebäudetechnik › Leitungen/Apparate» zeigt gesperrte Platzhalterknöpfe Formteil (PF), Sanitärapparat (PX) und Armatur (PA) («folgt in Modul 2/3»); sie sind keine Funktionen und nicht aufgenommen.
 
@@ -15,7 +15,7 @@ Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiv
 
 | Kapitel | Modul | Titel | Funktionen |
 | --- | --- | --- | --- |
-| start | – | Start und Oberfläche | 40 |
+| start | – | Start und Oberfläche | 54 |
 | m0a | 0a | Datenmodell und Kern-API | 7 |
 | m0b | 0b | Arbeitsplatz, Projektexplorer, Ansichten, Live-Abgleich | 19 |
 | m1a | 1a | Grundriss und 2D | 22 |
@@ -26,9 +26,9 @@ Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiv
 | m3 | 3 | Leitungen und Schema | 26 |
 | m3b | 3b | Kollision und Aussparungen | 18 |
 | zusatz | – | Zusatzbausteine ausserhalb der Module | 20 |
-| | | **Summe** | **212** |
+| | | **Summe** | **226** |
 
-Kapitel: 11. Bilder: 212 (eines je Funktion, siehe Abschnitt 6).
+Kapitel: 11. Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript den Zustand herstellen kann).
 
 ## 3. Nicht gefunden (in Spezifikation oder Testbericht versprochen, im Code kein Ort gefunden)
 
@@ -49,7 +49,7 @@ Kapitel: 11. Bilder: 212 (eines je Funktion, siehe Abschnitt 6).
 
 1. **Anzahl Knöpfe im Register Koordination:** `OBERFLAECHE.md` Zeile 699 («elf Knöpfe in vier Gruppen»), Testbericht 3b Prüfliste 22 («11 Knöpfe») und Kopfkommentar von `aktionen-koordination.js` Zeile 2 («zehn Knöpfe in vier Gruppen») gegen den Code: **zwölf Aktionen in fünf Gruppen** (Vorgaben, Typenliste, Kollisionen, Aussparungen, BCF; die Typenliste kam mit C1c).
 2. **«Grenze Kernbohrung»:** Testbericht 3b Prüfliste 3 (Zeile 151) und `entwurf/modul-3b.md` (Zeilen 7, 267) kennen die Vorgabe; im Code und in `OBERFLAECHE.md` (Nachtrag C1b) ist sie entfallen (Entscheid 19.10.2026: Kernbohrungen wählt nur ein Mensch), ein alter Wert erscheint nur mit «nicht mehr verwendet».
-3. **Beschriftung der Rohre:** `OBERFLAECHE.md` Zeile 666 («… lautet die Beschriftung «Kürzel Ø Aussendurchmesser» (z. B. «CNS Ø22»)») und Testbericht 3 Zeile 186 («CNS Ø22», «PEX Ø16») gegen den Code (`Leitungsbezeichnung.cs`, `Rohrgroesse.cs`, `familien-text.js` Zeile 750): Nicht-Abwasser «CNS NW 20» bzw. «CNS DN 20», Abwasser «PE-S 110» (B9b ersetzt B9).
+3. **Beschriftung der Rohre:** **`OBERFLAECHE.md` ist berichtigt** (19.10.2026, Entscheid Christian, B9b: Abwasser mit Aussendurchmesser «PE-S 110», alle anderen Rohre mit NW/DN nach Projekteinstellung, z. B. «CNS NW 20»; die Zeile steht im Abschnitt «Seite Leitungsserie»). Offen ist nur noch der Testbericht 3 Zeile 186 («CNS Ø22», «PEX Ø16»); der Code (`Leitungsbezeichnung.cs`, `Rohrgroesse.cs`, `familien-text.js`) beschriftet Nicht-Abwasser «CNS NW 20» bzw. «CNS DN 20», Abwasser «PE-S 110».
 4. **Kalibrieren:** Testbericht 1b Zeile 171 («wählt … über den Projektbrowser, nicht per Klick auf das Bild») gegen `kalibrieren.js` Zeilen 2–3 und 104 («Unterlage in der Optionsleiste wählen oder anklicken»). Im Inventar als Hinweis bei `m1b-kalibrieren`.
 5. **Projektbrowser «Koordination»:** `entwurf/projektbrowser-gliederung.md` Zeile 28 («Unterlagen (IFC, BCF)») gegen `projektbrowser-gliederung.js`: nur Unterlagen der Art ifc.
 6. **Serien-PDF:** `entwurf/serien-pdf.md` Zeile 43 («Register Ansicht bzw. Datei») gegen den Code: der Knopf steht nur im Register Ansicht, Gruppe «Planblätter» (dazu Kontextmenüs im Projektbrowser).
@@ -295,3 +295,19 @@ Ein Bild je Funktion; «id» = Id der Funktion in `inventar.json`. Projekt `beis
 | zb-spdf-merken | beispiel | Dialog «Serien-PDF» | Dialog nach erneutem Öffnen mit der gespeicherten Auswahl |
 | zb-rohr-abwasser | beispiel | Grundriss EG Sanitär | Abwasserrohr im System SW mit Beschriftung «PE-S 110» |
 | zb-rohr-nwdn | beispiel | Grundriss EG Sanitär | Zwei Rohre: KW-Rohr «CNS NW 20» und nach Umstellung der Ansicht «CNS DN 20» |
+
+Die Tabelle gilt für den Stand `bd513c0`; die Bilder der W1-Funktionen (Ids `dialog-…`, `palette-…`) stehen in `inventar.json` (Feld «bild») und in `bilder.json`.
+
+## 7. Bildskript `werkzeuge/anleitung_bilder.mjs`
+
+Das Skript erzeugt die Bilder zu den Funktionen des Inventars (Fenster 1600 × 950, helles Farbschema, WebP Qualität 85) und legt sie **nur lokal** unter `%USERPROFILE%\HLKS_CAD_testdaten\anleitung\bilder\` ab (zusammen mit `bilder.json`); nie ins Repository und nie nach OneDrive, weil die Bilder der Bernstrasse echte Projektdaten zeigen. Aufruf und Ports stehen im Kopfkommentar der Datei:
+
+```
+node werkzeuge/anleitung_bilder.mjs [--nur <id,id,…>] [--projekt beispiel|bernstrasse] [--liste]
+```
+
+- **`bilder.json`** (`stand`, `erzeugt`, `bilder`, `ohneBild`): je Bild die Funktions-Ids, die Datei, das Projekt, die Grösse, der rote Rahmen der Markierung als `{x,y,b,h}` (Pixel im Bild; `null`, wenn nichts zu markieren war, mit `markierungGrund`) und ein Titel, der den hergestellten Zustand nennt. Mehrere Bilder einer Funktion heissen `<id>.webp`, `<id>_2.webp` usw. («vorher/nachher», hell/dunkel, mehrere Fensterbreiten). Teilläufe führen die Datei nach.
+- **Markierung «wo»:** der Rahmen (3 px, abgerundet, leicht abgesetzt) ist ein eingespritztes Element, das nach der Aufnahme wieder verschwindet. Bei Funktionen mit Register und Knopf sucht das Skript den Knopf im Menüband (und wählt dafür das Register), sonst steht die Markierung ausdrücklich im Katalog des Skripts (Palette, Feld, Dialog, Zeile …).
+- **Zustände** entstehen über die Befehle des Kerns und über echte Maus- und Tastenereignisse (wie die `*.browser.mjs`-Tests); die Testwerte sind dieselben wie dort (alle fiktiv). Das Beispielprojekt «MFH Musterweg» und ein zweites fiktives Projekt («Schulhaus Ostring», für die angeheftete Kachel und die Bibliotheksbilder) liegen unter `%TEMP%`; die Bernstrasse ist eine **Kopie** der Abnahmeprojekte `abnahme3b` (Koordination) und `abnahme3` (Leitungen).
+- **Bilder, die ein Skript nicht herstellen kann** (in `bilder.json` unter `ohneBild` mit Grund): Desktop-Verknüpfung und Hinweisfenster (`start-icon`, `start-aktualisieren`), Windows-Explorer (`start-ordner-explorer`), KI-Lauf über das Abo (`m2-ki-lauf`), alles mit einer echten HKAP-Gegenstelle (`m1d-abgleich`, `m1d-konflikte`, `m1d-uebernehmen`, `m1d-senden`, `m1d-befunde`, `m1d-nicht-platziert`, `m1d-raum-platzieren`, `m1d-raum-zuordnen`, `m1d-plankopf`, `m3-hkap-straenge`). Gegen HKAP verbindet sich das Skript nie: Anfragen an `hkap_…` fängt der Browser ab (Antwort 503), `m1d-verbinden` zeigt den Dialog leer. Das Zweitfenster (`anordnung-eigenes-fenster`) ist als Bild des zweiten Browserfensters allein erfasst.
+- **Abweichungen vom Plan in Abschnitt 6** (der Plan blieb unverändert, die Titel in `bilder.json` nennen, was wirklich zu sehen ist): Tooltips sind in Edge headless nicht aufnehmbar, das Skript bildet sie nach (`menueband-schnellzugriff`, `menueband-gesperrt`); der Windows-Dateidialog fehlt, die Datei wird dem Dateifeld der Seite direkt übergeben; die Prüfansicht der Familie (`m2-pruefansicht` usw.) zeigt dieselbe fiktive Testfamilie, die sonst die Attrappe des Browsertests anlegt, angelegt mit dem Akteur «KI» über die Kommandozeile des Kerns; das PDF des Planblatts (`m1a-pdf`) wird mit `werkzeuge/pdf_bild.ps1` gerendert und in einer schlichten Seite gezeigt, weil sich der PDF-Betrachter des Browsers nicht aufnehmen lässt; das Menüband-Flyout (`menueband-flyout`) entsteht bei etwa 280–300 px Fensterbreite im Register Architektur, weil im Register Ansicht keine Gruppe zum Flyout wird.

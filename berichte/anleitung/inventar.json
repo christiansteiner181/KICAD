@@ -4325,7 +4325,7 @@
           "bild": {
             "projekt": "beispiel",
             "ansicht": "Dialog «Mit HKAP verknüpfen»",
-            "zustand": "Dialog mit Adresse http://localhost:5098, Projekt P-005 gewählt, Trockenlauf-Zusammenfassung sichtbar"
+            "zustand": "Dialog leer, ohne Verbindung (das Bildskript verbindet sich nie mit HKAP; Adresse, Projektliste und Trockenlauf-Zusammenfassung zeigt nur ein Bildschirmfoto von Hand gegen die Testkopie auf Port 5098)"
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-hkap.js:447",
@@ -7497,7 +7497,7 @@
             "kataloge/klassen.json:422",
             "entwurf/modul-3.md:358 (Modul 3, B9b)"
           ],
-          "hinweis": "Widerspruch: OBERFLAECHE.md (Abschnitt Leitungsserie im Familieneditor, Beschriftung) und der Testbericht 3 nennen noch «CNS Ø22»; der Code (Leitungsbezeichnung.cs, familien-text.js) beschriftet «CNS NW 20» (B9b ersetzt B9). Die Einstellung der Ansicht gilt nur für diese Ansicht; die Projekteinstellung (Projektinformation.rohrbezeichnung) hat keinen Bedienort in der Oberfläche."
+          "hinweis": "Widerspruch (nur noch der Testbericht 3; OBERFLAECHE.md ist seit dem 19.10.2026 berichtigt): der Testbericht 3 nennt noch «CNS Ø22»; der Code (Leitungsbezeichnung.cs, familien-text.js) beschriftet «CNS NW 20» (B9b ersetzt B9). Die Einstellung der Ansicht gilt nur für diese Ansicht; die Projekteinstellung (Projektinformation.rohrbezeichnung) hat keinen Bedienort in der Oberfläche."
         }
       ]
     }
