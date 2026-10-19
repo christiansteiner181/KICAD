@@ -177,14 +177,7 @@ b, strong { font-weight: 600; }
 #menueband { background: var(--menueband); border-bottom: 1px solid var(--trenner); }
 #optionsleiste { background: var(--optionsleiste); border-bottom: 1px solid var(--trenner); display: flex; align-items: center; gap: 8px; padding: 0 6px; color: var(--text-leise); }
 
-#arbeitsbereich { display: grid; grid-template-columns: var(--breite-seitenleiste) 4px 1fr; min-height: 0; }
-#seitenleiste { display: grid; grid-template-rows: 1fr 4px 1fr; min-height: 0; background: var(--palette); border-right: 1px solid var(--trenner); }
-.palette { display: flex; flex-direction: column; min-height: 0; min-width: 0; }
-.palettenkopf { flex: none; height: var(--hoehe-palettenkopf); line-height: calc(var(--hoehe-palettenkopf) - 1px); padding: 0 6px; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-#palette-eigenschaften { background: var(--palette); }
-#palette-browser { background: var(--browser); }
-#eigenschaften, #projektbrowser { flex: 1; min-height: 0; overflow: auto; }
-#seitenleiste-trenner { cursor: row-resize; background: var(--trenner); }
+/* Raster von #arbeitsbereich, Andockbereiche und Paletten: css/fensterrahmen.css (W1) */
 #seitenleiste-griff { cursor: col-resize; background: var(--trenner); }
 #ansichtsbereich { display: grid; grid-template-rows: minmax(0, 1fr) auto; min-width: 0; min-height: 0; }   /* Ansichtsfläche; darunter ggf. die Koordination-Palette */
 body[data-menueband="titel"] { --hoehe-menueband-ist: var(--hoehe-menueband-titel); }
@@ -227,7 +220,7 @@ body[data-menueband="register"] { --hoehe-menueband-ist: var(--hoehe-menueband-r
 
 /* Dialoge und Meldungen */
 #dialogschicht:empty { display: none; }
-#dialogschicht { position: fixed; inset: 0; background: rgba(0, 0, 0, .3); display: grid; place-items: center; z-index: 100; }
+#dialogschicht { position: fixed; inset: 0; display: grid; place-items: center; z-index: 100; }   /* nicht abgedunkelt (W1, fensterrahmen.css), aber modal */
 #meldungen { position: fixed; right: 12px; bottom: calc(var(--hoehe-status) + 10px); display: grid; gap: 6px; z-index: 110; }
 
 .leer-hinweis { position: absolute; inset: 0; display: grid; place-items: center; color: var(--text-leise); text-align: center; padding: 20px; }

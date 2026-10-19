@@ -133,6 +133,11 @@ const S = {
   koBcfExport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M11 20h9M17 16l4 4-4 4"/>',
   koBcfImport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M22 20h-9M16 16l-4 4 4 4"/>',
   famFamilie: '<path d="M16 3l11 6v14l-11 6-11-6V9z"/><path d="M5 9l11 6 11-6M16 15v14"/><circle cx="16" cy="15" r="2.4" fill="currentColor"/>',
+  // Paletten (W1): Palette allgemein, Projektbrowser (Baum), Koordination (Liste unten), zurücksetzen
+  palette: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/>',
+  projektbrowser: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M9 10h6M12 15h8M12 20h8M9 15v8"/>',
+  koordination: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 17h24M4 22h24M12 17v10"/>',
+  palettenZurueck: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/><path d="M20 20a4 4 0 104-4M24 13v3h-3"/>',
 };
 
 /** Liefert ein Inline-SVG; groesse in px. */

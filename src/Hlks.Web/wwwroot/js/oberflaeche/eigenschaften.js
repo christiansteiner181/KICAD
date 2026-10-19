@@ -22,6 +22,7 @@ import { leitungGruppe, altbestandGruppe, formteilGruppe, leitungsArt, LEITUNG_E
 import { leitungAenderung } from '../werkzeuge/leitung-bearbeiten.js';
 import { serieLaden, serienListe } from '../werkzeuge/leitung-daten.js';
 import { kategorieVon } from '../werkzeuge/leitung-logik.js';
+import { anmelden } from './paletten.js';
 
 const lc = (t) => String(t ?? '').toLowerCase();
 const GRUPPEN_ZU = 'palette.gruppenZu';
@@ -393,3 +394,6 @@ async function beiAenderung(e) {
   // Bei «Keine Änderung» kommt kein Ereignis; Anzeige trotzdem auf den Stand bringen (z. B. «5,0» → «5»); mit Hinweisen sicherheitshalber ebenfalls
   if ((r.aenderungen ?? []).length === 0 || texte.length > 0) zeichnen();
 }
+
+// Als Palette der Palettenverwaltung (W1): Vorgabe links oben; dort wird einrichten() mit dem Inhaltsknoten aufgerufen. Andocken, Reiter, Schweben: paletten.js.
+anmelden({ id: 'eigenschaften', titel: 'Eigenschaften', ort: 'links', reihenfolge: 10, elementId: 'palette-eigenschaften', inhaltId: 'eigenschaften', symbol: 'eigenschaften', bauen: einrichten });   // Kürzel PP: Aktion aendern.eigenschaften

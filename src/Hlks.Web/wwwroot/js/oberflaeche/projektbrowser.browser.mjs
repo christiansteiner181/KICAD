@@ -478,7 +478,7 @@ pruef(true, 'Doppelklick auf «Kollisionen» öffnet die Kollisionsliste der Pal
 // Weitere der Koordination
 await klick(Z('x:weitere') + ' .pb-label').catch(() => {});
 pruef((await astTexte('.pb-zeile[data-key^="x:gw:"]')).length >= 3, '«Weitere» der Koordination enthält die Fachäste der anderen Gewerke');
-await ausw(`document.getElementById('koord-panel')?.querySelector('.kp-zu')?.click(); return 1;`);
+await ausw(`document.querySelector('.pal-gruppe[data-aktiv="koordination"] .pal-zu')?.click(); return 1;`);   // W1: ✕ am Palettenkopf
 await ausw(`document.getElementById('projektbrowser').scrollTop = 0; return 1;`);
 await shot('10_koordination_weitere_hell');
 

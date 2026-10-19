@@ -14,6 +14,7 @@ import { meldung } from './dialoge.js';
 import { sende } from './befehle.js';
 import { knoten, entprellen, esc } from './werkzeug.js';
 import * as T from './koordination-text.js';
+import { anmelden, zeigen as paletteZeigen, verbergen as paletteVerbergen } from './paletten.js';
 
 const ART_KLASSEN = new Set(['Kollision', 'Aussparung']);
 const st = {
@@ -53,17 +54,15 @@ export const gewaehlteKollisionen = () => (panel && st.k.daten ? T.ausgewaehlte(
 
 // ---------------------------------------------------------------------------------------------- Aufbau
 
-function bauen() {
-  const bereich = document.getElementById('ansichtsbereich');
-  if (!bereich) return false;
+/** Baut den Inhalt der Palette in die Hülle (slot), die die Palettenverwaltung stellt (W1: Höhe, Lage und ✕ gehören ihr). */
+function bauen(slot) {
+  if (!slot) return false;
   panel = knoten(`<div id="koord-panel" class="koord-panel" role="region" aria-label="Koordination">
-    <div class="kp-griff" title="Ziehen zum Verstellen der Höhe"></div>
     <div class="kp-kopf">
       <button type="button" class="kp-reiter" data-tab="kollisionen">Kollisionen</button>
       <button type="button" class="kp-reiter" data-tab="aussparungen">Aussparungen</button>
       <span class="kp-info"></span>
       <button type="button" class="kp-knopf kp-neu" title="Neu laden">Neu laden</button>
-      <button type="button" class="kp-zu" title="Schliessen">✕</button>
     </div>
     <div class="kp-filter"></div>
     <div class="kp-liste"></div>
@@ -71,9 +70,7 @@ function bauen() {
     <div class="kp-detail"></div>
     <div class="kp-aktionen"></div>
   </div>`);
-  const h = Number(merken.lesen('koordPanelHoehe', 0));
-  if (h >= 160) panel.style.height = h + 'px';
-  bereich.appendChild(panel);   // dritte Zeile des Rasters von #ansichtsbereich: die Ansichtsfläche darüber schrumpft
+  slot.appendChild(panel);
   verdrahten();
   abo = abonnieren('modell', (ev) => {
     if (!panel) return;
@@ -84,19 +81,31 @@ function bauen() {
   return true;
 }
 
+/** Blendet die Palette ein (Vorgabe: unten angedockt; die Verwaltung merkt, wohin der Benutzer sie gelegt hat) und lädt die Liste. */
 export function panelOeffnen(tab = st.tab) {
   if (!zustand.status?.offen) return;
-  if (!panel && !bauen()) return;
+  paletteZeigen('koordination');
+  if (!panel) return;
   st.tab = tab;
   rahmenZeichnen();
   laden();
 }
 
-export function panelSchliessen() {
+/** Blendet die Palette aus (✕ am Palettenkopf, Projekt geschlossen); den Aufräumschritt macht abbauen() über die Verwaltung. */
+export function panelSchliessen() { paletteVerbergen('koordination'); }
+
+function abbauen() {
   abo?.(); abo = null;
   panel?.remove();
   panel = null;
 }
+
+// Als Palette der Palettenverwaltung (W1): Vorgabe unten angedockt, nur auf Verlangen sichtbar, nach dem Neuladen nicht wiederhergestellt (braucht ein offenes Projekt)
+anmelden({
+  id: 'koordination', titel: 'Koordination', ort: 'unten', reihenfolge: 30, vorgabeSichtbar: false, fluechtig: true, lazy: true, scroll: false,
+  elementId: 'palette-koordination', symbol: 'koordination', anteil: 1,
+  bauen, abbauen, oeffnen: () => panelOeffnen(), aktiv: () => !!zustand.status?.offen,
+});
 
 const planLaden = entprellen(() => { if (panel) laden(); }, 400);
 export const panelNeuLaden = () => { if (panel) laden(); };
@@ -256,7 +265,6 @@ export async function in3dZeigen(ref) {
 function verdrahten() {
   panel.addEventListener('click', async (e) => {
     const t = e.target;
-    if (t.closest('.kp-zu')) { panelSchliessen(); return; }
     if (t.closest('.kp-neu')) { laden(); return; }
     if (t.closest('.kp-meldung-zu')) { panelMeldung(''); return; }
     const reiter = t.closest('.kp-reiter');
@@ -299,17 +307,6 @@ function verdrahten() {
     if (t.matches('.kf-ungeprueft')) { st.k.filter.auchNichtGeprueft = t.checked; listeZeichnen(); return; }
     if (t.matches('.af-status')) { st.a.status = [...panel.querySelectorAll('.af-status:checked')].map((c) => c.value); listeZeichnen(); return; }
     if (t.matches('.af-geschoss')) { st.a.geschoss = t.value; laden(); }
-  });
-  const kopf = panel.querySelector('.kp-griff');
-  kopf.addEventListener('pointerdown', (e) => {
-    e.preventDefault();
-    kopf.setPointerCapture(e.pointerId);
-    const hoehe0 = panel.getBoundingClientRect().height, y0 = e.clientY;
-    const max = (document.getElementById('ansichtsbereich')?.getBoundingClientRect().height ?? 600) - 140;
-    const bewegt = (m) => { panel.style.height = Math.max(160, Math.min(max, hoehe0 + y0 - m.clientY)) + 'px'; };
-    const fertig = () => { kopf.removeEventListener('pointermove', bewegt); kopf.removeEventListener('pointerup', fertig); merken.schreiben('koordPanelHoehe', Math.round(panel.getBoundingClientRect().height)); };
-    kopf.addEventListener('pointermove', bewegt);
-    kopf.addEventListener('pointerup', fertig);
   });
 }
 const liste = () => q('.kp-liste');

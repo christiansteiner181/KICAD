@@ -10,9 +10,16 @@
 import { zustand, melden as zustandMelden, auswaehlen, merken } from '../zustand.js';
 import { holen, senden, abfrage } from '../api.js';
 import { esc, knoten, fehlerText } from './werkzeug.js';
+import { fensterAnbinden, kopfKnoepfeHtml } from './dialoge-fenster.js';
+import { dialogArt } from './dialog-merken.js';
 
 const schicht = () => document.getElementById('dialogschicht');
 const stapel = [];   // offene Dialoge, der letzte ist oben
+
+/** Nur der oberste Dialog ist bedienbar (er kann ja verschoben sein, sodass die darunter sichtbar werden). */
+function stapelAktualisieren() {
+  stapel.forEach((e, i) => { e.ctrl.fenster.inert = i < stapel.length - 1; e.ctrl.fenster.classList.toggle('gesperrt', i < stapel.length - 1); });
+}
 
 // ------------------------------------------------------------------------------------------------ Dialog
 
@@ -20,8 +27,10 @@ const stapel = [];   // offene Dialoge, der letzte ist oben
  * Zeigt einen Dialog. inhalt: HTML-Text, Knoten oder Funktion(ctrl) → Text/Knoten.
  * knoepfe: [{ text, wert, primaer, gefahr, schliesst=true, pruefen(), klick(ctrl) }]; pruefen liefert true/undefined (weiter),
  * false (bleiben) oder einen Fehlertext (bleiben, Text anzeigen). klick darf async sein und Fehler werfen.
+ * Der Dialog ist an der Titelleiste verschiebbar, am Rand in der Grösse änderbar und einklappbar (dialoge-fenster.js, W1); Lage und Grösse werden je Dialogart gemerkt.
+ * art: Schlüssel der Dialogart für das Merken (Vorgabe: der Titel ohne Namen in «…» und ohne Ziffern).
  */
-export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null, schliessbar = true, klasse = '', beiOeffnen = null } = {}) {
+export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null, schliessbar = true, klasse = '', beiOeffnen = null, art = null } = {}) {
   return new Promise((fertig) => {
     const vorherFokus = document.activeElement;
     const fenster = document.createElement('div');
@@ -29,8 +38,9 @@ export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null,
     fenster.setAttribute('role', 'dialog');
     fenster.setAttribute('aria-modal', 'true');
     if (breite) fenster.style.width = typeof breite === 'number' ? breite + 'px' : breite;
-    fenster.innerHTML = `<div class="dlg-kopf"><span class="dlg-titel"></span>${schliessbar ? '<button class="dlg-x" title="Schliessen (Esc)">✕</button>' : ''}</div>
+    fenster.innerHTML = `<div class="dlg-kopf"><span class="dlg-titel"></span>${kopfKnoepfeHtml(schliessbar)}</div>
       <div class="dlg-inhalt"></div><div class="dlg-fehler" hidden></div><div class="dlg-fuss"></div>`;
+    let rahmen = null;
     fenster.querySelector('.dlg-titel').textContent = titel;
     const koerper = fenster.querySelector('.dlg-inhalt');
     const fuss = fenster.querySelector('.dlg-fuss');
@@ -44,7 +54,9 @@ export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null,
         offen = false;
         const i = stapel.indexOf(eintrag);
         if (i >= 0) stapel.splice(i, 1);
+        rahmen?.abbauen();
         fenster.remove();
+        stapelAktualisieren();
         try { vorherFokus?.focus?.(); } catch { /* egal */ }
         fertig(wert);
       },
@@ -87,6 +99,8 @@ export function zeigen({ titel = '', inhalt = '', knoepfe = null, breite = null,
 
     stapel.push(eintrag);
     schicht().appendChild(fenster);
+    stapelAktualisieren();
+    try { rahmen = fensterAnbinden(fenster, { art: dialogArt({ art, titel, klasse }) }); } catch (e) { console.error(e); }
     try { beiOeffnen?.(ctrl); } catch (e) { console.error(e); }
     const fokus = fenster.querySelector('[autofocus], input:not([type=checkbox]):not([type=radio]), select, textarea') ?? fenster.querySelector('.dlg-knopf.primaer') ?? fenster.querySelector('.dlg-knopf');
     fokus?.focus?.();

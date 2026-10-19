@@ -14,17 +14,15 @@ import * as kuerzel from './oberflaeche/kuerzel.js';
 import * as dialoge from './oberflaeche/dialoge.js';
 import * as startbildschirm from './oberflaeche/startbildschirm.js';
 import * as vorschau from './oberflaeche/vorschau.js';
-import { seitenleisteVerstellbar } from './oberflaeche/layout.js';
+import * as paletten from './oberflaeche/paletten.js';
 import { designEinrichten } from './oberflaeche/design.js';
 
 async function start() {
   if (zweitfenster.istZweitfenster()) zweitfensterKopf();   // vor allem anderen: Modus «nur Ansicht» (W2)
   designEinrichten();   // Design (hell/dunkel) steht schon durch design-start.js; hier nur absichern
-  seitenleisteVerstellbar();
+  paletten.einrichten();   // Eigenschaften, Projektbrowser (und bei Bedarf Koordination) in ihre Bereiche setzen (W1); die Paletten richten sich dabei selbst ein
   fenster.einrichten();
   menueband.einrichten(document.getElementById('menueband'), document.getElementById('optionsleiste'), document.getElementById('schnellzugriff'));
-  projektbrowser.einrichten(document.getElementById('projektbrowser'));
-  eigenschaften.einrichten(document.getElementById('eigenschaften'));
   statusleiste.einrichten(document.getElementById('statusleiste'));
   kuerzel.einrichten();
   verbinden();

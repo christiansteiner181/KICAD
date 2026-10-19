@@ -110,10 +110,7 @@ svg.sym { display: block; flex: none; }
 #optionsleiste select { height: 18px; padding: 0 2px; border: 1px solid var(--eingabe-rand); border-radius: var(--radius); background: var(--eingabe); }
 .ol-knopf { height: 18px; padding: 0 8px; border: 1px solid var(--akzent); background: var(--akzent); color: var(--akzent-text); border-radius: var(--radius); cursor: pointer; }
 
-/* ------------------------------------------------------------------ Seitenleiste */
-#seitenleiste.ohne-eigenschaften { grid-template-rows: 1fr !important; }
-#seitenleiste.ohne-eigenschaften #palette-eigenschaften,
-#seitenleiste.ohne-eigenschaften #seitenleiste-trenner { display: none; }
+/* Seitenleiste und Paletten (Andocken, Reiter, Schweben): css/fensterrahmen.css */
 
 /* ------------------------------------------------------------------ Projektbrowser (Zeilen 20 px, Einrückung 16 px, Suchfeld 22 px) */
 .pb-suche { position: sticky; top: 0; z-index: 2; padding: 0; background: var(--suchfeld); border-bottom: 1px solid var(--trenner); }
@@ -478,9 +475,8 @@ table.huelle-ableitung th, table.huelle-ableitung td { white-space: nowrap; }
 .lt-dlg .lt-liste { max-height: 200px; overflow: auto; margin: 3px 0 0; padding-left: 18px; }
 
 /* ---- Koordination (Modul 3b, C1): Palette «Koordination» (Kollisionsliste, Aussparungsliste) und Dialoge. Nur Variablen aus hlks.css. ---- */
-.koord-panel { position: relative; z-index: 8; height: min(320px, 42vh); min-height: 0; display: flex; flex-direction: column; background: var(--palette); color: var(--text);
-  border-top: 2px solid var(--akzent); box-shadow: var(--schatten); }
-.kp-griff { flex: none; height: 6px; margin-top: -4px; cursor: ns-resize; }
+/* Seit W1 ist die Koordination eine Palette der Palettenverwaltung (Vorgabe: unten angedockt); Höhe und Lage bestimmt die Verwaltung, der Inhalt füllt sie. */
+.koord-panel { flex: 1 1 auto; position: relative; min-height: 0; min-width: 0; display: flex; flex-direction: column; background: var(--palette); color: var(--text); }
 .kp-kopf { flex: none; display: flex; align-items: center; gap: 4px; min-height: 22px; padding: 0 6px; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); }
 .kp-reiter { height: 22px; padding: 0 10px; border: none; background: none; color: var(--text); cursor: pointer; font: inherit; }
 .kp-reiter:hover { background: var(--ob-hover); }

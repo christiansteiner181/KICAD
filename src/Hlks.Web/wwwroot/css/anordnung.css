@@ -42,11 +42,12 @@ body.ag-zieht, body.ag-zieht * { cursor: grabbing !important; user-select: none;
   background: var(--flaeche-hell); color: var(--text); border: 1px solid var(--akzent); box-shadow: var(--schatten); }
 .ag-schatten.draussen { background: var(--akzent); color: var(--akzent-text); }
 
-/* Zweitfenster «nur Ansicht»: Kopf, Optionsleiste, Ansichtsfläche und Statusleiste; Menüband und Seitenleiste bleiben dem Hauptfenster.
-   Werden im Raster weitere Seitenbereiche angedockt (W1), hier mit ausblenden. */
+/* Zweitfenster «nur Ansicht»: Kopf, Optionsleiste, Ansichtsfläche und Statusleiste; Menüband und alle Paletten (Andockbereiche links,
+   unten, rechts und schwebende – W1, css/fensterrahmen.css) bleiben dem Hauptfenster. */
 body[data-fenster] { grid-template-rows: var(--hoehe-kopf) 0 minmax(var(--hoehe-optionsleiste), auto) minmax(0, 1fr) var(--hoehe-status); }
 body[data-fenster] #menueband { visibility: hidden; overflow: hidden; border: 0; }
-body[data-fenster] #arbeitsbereich { grid-template-columns: 0 0 minmax(0, 1fr) !important; }
-body[data-fenster] #seitenleiste, body[data-fenster] #seitenleiste-griff { visibility: hidden; overflow: hidden; min-width: 0; }
+body[data-fenster] #arbeitsbereich { grid-template-columns: 0 0 minmax(0, 1fr) 0 0 !important; grid-template-rows: minmax(0, 1fr) 0 0 !important; }
+body[data-fenster] :is(#seitenleiste, #seitenleiste-griff, #dock-unten, #dock-unten-griff, #dock-rechts, #dock-rechts-griff) { visibility: hidden; overflow: hidden; min-width: 0; min-height: 0; }
+body[data-fenster] :is(#palettenschicht, #palettenziele) { display: none; }
 .ag-zurueck { padding: 1px 10px; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--flaeche-hell); color: var(--text); cursor: pointer; white-space: nowrap; }
 .ag-zurueck:hover { border-color: var(--akzent); }
