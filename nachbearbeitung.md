@@ -9,7 +9,7 @@ Protokoll in `zuteilung.md`. Erledigte Einträge mit Datum und Ort (Modul, Testb
 | --- | --- | --- | --- | --- |
 | N1 | 18.10.2026 | IFC über zwei Punktpaare ausrichten | Abnahme 1b, Befund Bernstrasse | zurückgestellt |
 | N2 | 18.10.2026 | Eigenschaftenpalette und Projektbrowser verschiebbar | Wunsch Christian | **erledigt 19.10.2026** mit W1/W2 (`entwurf/fenster-revit.md`, geprüfter Stand 72b16dc) |
-| N3 | 19.10.2026 | Fehlende Bedienorte aus dem Funktionsverzeichnis | Bedienungsanleitung, `berichte/anleitung/inventar-notizen.md` Abschnitt 3 | in Arbeit (Nacht 19./20.10.2026) |
+| N3 | 19.10.2026 | Fehlende Bedienorte aus dem Funktionsverzeichnis | Bedienungsanleitung, `berichte/anleitung/inventar-notizen.md` Abschnitt 3 | **erledigt 20.10.2026** (Merge N3, Bericht in `zuteilung.md`) |
 
 ## N1 – IFC über zwei Punktpaare ausrichten
 
