@@ -35,6 +35,21 @@ samt «Weitere» und klappt Treffer auf. Öffnen/Auswählen/Kontextmenü wie heu
   ohne neuen Code dazukommen.
 - Der Aufklapp-Zustand wird je Gliederung gemerkt (wie heute `browserOffen`).
 
+## Mehrere Gliederungen zugleich (Christian 19.10.2026, Nachtrag G2)
+
+«In der Explorerliste sollen mehrere Auswahlen gewählt werden können» – Fragefenster: **mehrere Gliederungen** (nicht
+Mehrfachmarkierung im Baum). Festlegung Hauptlauf:
+- Das Auswahlfeld wird eine Liste mit Häkchen. **Gebäude** schliesst die anderen aus (zeigt ohnehin alles): wer Gebäude
+  wählt, hebt die übrigen auf, und wer eine Fachgliederung wählt, hebt Gebäude auf. Mindestens eine bleibt gewählt.
+- Mehrere Fachgliederungen erscheinen **als Blöcke untereinander** in der Reihenfolge der Liste (Sanitär, Heizung,
+  Lüftung, Koordination, Energie und Umwelt), je Block der Kopf in der Gewerkfarbe und darunter seine Fachäste wie bei
+  einer einzelnen Gliederung. Was mehrere gewählte Blöcke gemeinsam haben (z. B. «Räume»), steht **einmal** nach den
+  Blöcken. «Weitere» enthält nur, was in keinem gewählten Block vorkommt. Ein Element steht nie doppelt in den Blöcken,
+  ausser es gehört wirklich zu beiden Gewerken (z. B. eine Ansicht mit Sanitär und Heizung) – dann in beiden.
+- Anzeige im Feld: «Sanitär + Heizung» (bei mehr als zwei: «Sanitär + 2»).
+- Speicherung je Benutzer wie bisher, Wert jetzt eine Liste (`["sanitaer","heizung"]`); ein alter Einzelwert gilt als
+  Liste mit einem Eintrag.
+
 ## Farben der Gewerke (Christian 19.10.2026)
 
 «Die Gewerke sollen im Explorer mit der Koordinationsfarbe hinterlegt sein (pastel).» → `kataloge/gewerke.json` (Hauptlauf):

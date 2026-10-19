@@ -87,7 +87,7 @@ NAS – Pfad nennst du» war offen.
 | A | Spezifikation, Katalog (`Familie.bibliothek`, `Projektinformation.familienAuswahl`), `kataloge/buero.json` | Hauptlauf (erledigt 19.10.2026) |
 | B7 | Bibliotheksdienst (Pfad, Index, Versionen, Abzweige, Sperre, Warteschlange, Unterlagen), automatisches Schreiben, Befehle und Abfragen oben, MCP, Tests mit Bibliothek unter %TEMP% | hlks-kern (Synchronisation) |
 | C3 | Explorer: Knoten Familien mit Bibliotheksfamilien und Marken, Dialog «Familien im Explorer …», Aktualisieren mit Vorschau, Hinweis NAS/Warteschlange | hlks-modul (nach B7) |
-| D | Erstbefüllung: Familien der Abnahme- und Testprojekte mit `familie_in_bibliothek` (nur Hauptlauf bzw. Christian, echter NAS-Pfad) | Hauptlauf |
+| D | ~~Erstbefüllung aus bestehenden Projekten~~ – **entfällt** (Christian 19.10.2026: «Die Familien in der Bibliothek sind nur Sonderfälle; diese müssen nicht übernommen werden.»). Die Bibliothek füllt sich mit neu erstellten Familien. | – |
 
 **Fertig, wenn …** eine in Projekt A erstellte Familie ohne weiteres Zutun in der Bibliothek auf dem NAS liegt; Projekt B
 sie im Explorer zeigt, sobald die Auswahl des Projekts sie umfasst, und sie platzieren kann; eine Änderung in A in B als
