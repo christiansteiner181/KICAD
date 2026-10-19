@@ -356,6 +356,36 @@ public class ZuletztListeTests : IDisposable
     }
 
     [Fact]
+    public void Testlauf_LiestKeineVorhandeneListeAusserhalbVonTemp()
+    {
+        // Eine «echte» Liste ausserhalb von %TEMP% (im Build-Ordner): im Testlauf bleibt sie unsichtbar, auch die alte Liste daneben
+        var aussen = Path.Combine(AppContext.BaseDirectory, "nicht_temp_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(aussen);
+        try
+        {
+            var datei = Datei("PC-A", E(P1, "Bernstrasse", T(10)));
+            File.WriteAllText(Path.Combine(aussen, "PC-A.json"), JsonSerializer.Serialize(datei, Json.Optionen));
+            File.WriteAllText(Path.Combine(aussen, "PC-B.json"), JsonSerializer.Serialize(Datei("PC-B", E(P2, "Murtenstrasse", T(20))), Json.Optionen));
+            var alt = Path.Combine(aussen, "alt", "zuletzt.json");
+            Directory.CreateDirectory(Path.GetDirectoryName(alt)!);
+            File.WriteAllText(alt, JsonSerializer.Serialize(new[] { E(P3, "Ostring", T(30)) }, Json.Optionen));
+            Assert.False(RechnerAblage.Temporaer(aussen));
+
+            var z = new ZuletztListe(aussen, "PC-A", true, alt, true, "OneDrive") { Zwischenspeicher = TimeSpan.Zero };
+            Assert.Empty(z.Alle());
+            Assert.Empty(z.Liste());
+            Assert.Empty(z.ListeNachZeit());
+
+            // Gegenprobe: dieselben Dateien unter %TEMP% (Umleitung) werden gelesen
+            var drin = Path.Combine(wurzel, "gleich");
+            Directory.CreateDirectory(drin);
+            foreach (var f in Directory.GetFiles(aussen, "*.json")) File.Copy(f, Path.Combine(drin, Path.GetFileName(f)));
+            Assert.Equal(2, new ZuletztListe(drin, "PC-A", true, null, false, "Umleitung") { Zwischenspeicher = TimeSpan.Zero }.Alle().Count);
+        }
+        finally { Directory.Delete(aussen, true); }
+    }
+
+    [Fact]
     public void Anheften_OhneOrdnerIstEinFehlerMitVorschlag()
     {
         var f = Assert.Throws<HlksFehler>(() => Rechner("PC-A").Anheften(" ", true));
