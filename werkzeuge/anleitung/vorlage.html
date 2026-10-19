@@ -30,6 +30,8 @@
 * { box-sizing: border-box; }
 html { scroll-padding-top: calc(env(safe-area-inset-top, 0px) + 72px); }
 body { margin: 0; background: var(--papier); color: var(--tinte); font: 16px/1.55 var(--schrift-text); }
+[hidden] { display: none !important; }   /* sonst schlägt «display: grid» der Kapitel das hidden-Attribut (gefilterte Kapitel blieben als leere Köpfe stehen) */
+img { max-width: 100%; }
 a { color: var(--akzent); }
 :focus-visible { outline: 2px solid var(--akzent); outline-offset: 2px; }
 h1, h2, h3 { font-family: var(--schrift-titel); text-wrap: balance; margin: 0; line-height: 1.15; }
