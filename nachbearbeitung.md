@@ -8,7 +8,8 @@ Protokoll in `zuteilung.md`. Erledigte Einträge mit Datum und Ort (Modul, Testb
 | Nr. | Eingetragen | Thema | Herkunft | Stand |
 | --- | --- | --- | --- | --- |
 | N1 | 18.10.2026 | IFC über zwei Punktpaare ausrichten | Abnahme 1b, Befund Bernstrasse | zurückgestellt |
-| N2 | 18.10.2026 | Eigenschaftenpalette und Projektbrowser verschiebbar | Wunsch Christian | zurückgestellt |
+| N2 | 18.10.2026 | Eigenschaftenpalette und Projektbrowser verschiebbar | Wunsch Christian | **erledigt 19.10.2026** mit W1/W2 (`entwurf/fenster-revit.md`, geprüfter Stand 72b16dc) |
+| N3 | 19.10.2026 | Fehlende Bedienorte aus dem Funktionsverzeichnis | Bedienungsanleitung, `berichte/anleitung/inventar-notizen.md` Abschnitt 3 | in Arbeit (Nacht 19./20.10.2026) |
 
 ## N1 – IFC über zwei Punktpaare ausrichten
 
@@ -73,3 +74,23 @@ schwebend benutzt werden können, ihre Grösse ziehbar ist, die Anordnung ein Ne
 lässt.
 
 **Aufwand (Schätzung):** 1–2 Arbeitstage.
+## N3 – Fehlende Bedienorte (aus dem Funktionsverzeichnis)
+
+**Eingetragen** vom Hauptlauf am 19.10.2026: Beim Funktionsverzeichnis für die Bedienungsanleitung fanden sich Funktionen,
+die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (erichte/anleitung/inventar-notizen.md, Abschnitt 3;
+erichte/anleitung/luecken.json). Gebaut in der Nacht 19./20.10.2026 auf Christians Auftrag «arbeite bis 08:00 durch».
+
+1. **Einlage- und Grundleitungspläne anlegen:** Knöpfe «Einlageplan» und «Grundleitungsplan» im Register Ansicht, Gruppe
+   Erstellen (bzw. Flyout «Grundriss ▾»), rufen den Kernbefehl einlageplaene_anlegen (Dialog: Geschoss bzw. Bauteil
+   Decke/Bodenplatte/Wand, Name; Vorschlag nach Planschlüssel «Einlagen D.ü.2.UG»).
+2. **Projektinformationen bearbeitbar:** Der Dialog «Projektinformationen» wird bearbeitbar (heute nur lesend): alle
+   Felder der Klasse Projektinformation aus dem Katalog, darunter Rohrbezeichnung (NW/DN), Masseinheiten je Gewerk,
+   Projektnummer, Objektzeilen, Phase; Änderung über die Kernbefehle (Rückgängig, Herkunft). Das Element Projektinformation
+   erscheint im Projektbrowser (Gebäude › Projektinformationen) bzw. wird über Verwalten › Projektinformationen erreicht.
+3. **Kollisionsliste und Aussparungsliste** im Dialog «Liste anlegen» (die Listenansicht kann sie schon zeichnen) und
+   **CSV-Ausgabe** jeder Listenansicht (Knopf «CSV …» in der Listenansicht bzw. Kontextmenü), UTF-8 mit BOM, Semikolon.
+4. **Tastenkürzel-Liste (KS)** nach Register: «Beschriften», «Einfügen», «Hülle», «Koordination», «Familie» in
+   REGISTER_NAMEN aufnehmen, sodass kein Kürzel unter «Allgemein» landet, das einem Register gehört.
+
+**Fertig, wenn** alle vier Orte in der Oberfläche erreichbar sind, Tests (Node, Web, Browser) grün sind und das
+Funktionsverzeichnis die Lücken nicht mehr führt.
