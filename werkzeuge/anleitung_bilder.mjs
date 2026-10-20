@@ -1988,7 +1988,7 @@ szene({
       } },
     { ids: ['m3c-normfrage'], titel: 'Normfrage [attrappe:normen]: die Antwort der Attrappe nennt Norm, Seite und Ziffer der Test-Norm (kein echter Claude-Lauf)', markiere: KIPAL + ' .ki-claude:last-child', abstand: 3,
       vor: async () => { await klick(KIPAL + ' .ki-tab[data-tab="gespraech"]'); await warte(300); await kiFrage('Mindestgefälle der Prüfleitung? [attrappe:normen]'); await warte(300); } },
-    { ids: ['m3c-internet'], titel: 'Schalter «Internet» an: Hinweisband, ausgegraute Chips, Frage und Antwort mit der Marke «Internet · ohne Projektzugriff»', markiere: KIPAL + ' .ki-internet', abstand: 5,
+    { ids: ['m3c-internet'], titel: 'Schalter «Internet» an: Hinweisband, ausgegraute Chips, Frage und Antwort mit der Marke «Internet · ohne Modellzugriff; Unterlagen und Familien lesbar»', markiere: KIPAL + ' .ki-internet', abstand: 5,
       vor: async () => { await auswaehlen('KW-S1'); await warte(300); await klick(KIPAL + ' .ki-internet'); await warte(400); await kiFrage('Suche im Netz [attrappe:internet]'); await warte(300); } },
     { ids: ['m3c-meldungen'], datei: 'm3c-meldungen_2', titel: 'Meldung «Claude arbeitet gerade …», wenn schon ein Lauf im Projekt läuft; die Frage bleibt im Eingabefeld', markiere: KIPAL + ' .ki-meldung', abstand: 4,
       vor: async (c) => {

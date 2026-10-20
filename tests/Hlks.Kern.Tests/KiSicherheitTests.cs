@@ -20,7 +20,6 @@ public class KiSicherheitTests
             new("Projektordner", @"C:\T\Objekt\c_Pläne und Modelle\e_KICAD"),
             new("Projektablage", @"W:\02_Projektdateien Objekte"),
             new("Familienbibliothek", @"W:\03_CAD Bibliotheken\d_KICAD Familien"),
-            new("Normen", @"W:\05_Normen und Merkblätter"),
         ],
         Server = ["HK-NAS02"],
         Laufwerke = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase) { ["W:"] = @"\\HK-NAS02\WorkShare_NAS" },
@@ -33,7 +32,6 @@ public class KiSicherheitTests
     [InlineData(@"""C:\T\Objekt\c_Pläne und Modelle\e_KICAD\a b.pdf""")]
     [InlineData(@"W:\02_Projektdateien Objekte\Worb_Test\c_Pläne und Modelle\a_Eingang\Arch.ifc")]
     [InlineData(@"\\HK-NAS02\WorkShare_NAS\02_Projektdateien Objekte\Worb_Test\Arch.ifc")]
-    [InlineData(@"\\hk-nas02\workshare_nas\05_Normen und Merkblätter\SIA\x.pdf")]
     [InlineData(@"W:\03_CAD Bibliotheken\d_KICAD Familien\Heizkoerper\HK__1\familie.json")]
     public void Grund_Erlaubt_UnterDenWurzeln_UndUncZumNas(string pfad) =>
         Assert.Null(KiPfade.Grund(Regeln, pfad, out _));
@@ -43,6 +41,7 @@ public class KiSicherheitTests
     [InlineData(@"C:\T\Objekt\c_Pläne und Modelle\e_KICAD2\x.pdf", "nicht unter dem Projektordner")]        // Präfix, kein Unterordner
     [InlineData(@"C:\T\Objekt\c_Pläne und Modelle\e_KICAD\..\..\geheim.xlsx", "nicht unter dem Projektordner")]   // Aufstieg
     [InlineData(@"W:\04_Buchhaltung\Lohn.xlsx", "nicht unter dem Projektordner")]
+    [InlineData(@"\\hk-nas02\workshare_nas\05_Normen und Merkblätter\SIA\x.pdf", "nicht unter dem Projektordner")]   // Normen nie als Unterlage (lizenziert)
     [InlineData(@"\\HK-NAS02\WorkShare_NAS\04_Buchhaltung\Lohn.xlsx", "nicht unter dem Projektordner")]
     [InlineData(@"\\HK-NAS02\Privat\x.pdf", "nicht unter dem Projektordner")]
     [InlineData(@"\\203.0.113.5\daten\Projekt.ifc", @"UNC-Pfade nur zum Server \\HK-NAS02")]
@@ -87,15 +86,15 @@ public class KiSicherheitTests
         Assert.Contains("HK-NAS02", r.Server);
         Assert.Equal(@"\\HK-NAS02\WorkShare_NAS", r.Laufwerke["W:"]);
         Assert.Contains(r.Wurzeln, w => w.Name == "Projektablage" && w.Pfad == @"W:\02_Projektdateien Objekte");
-        Assert.Contains(r.Wurzeln, w => w.Name == "Normen" && w.Pfad == @"W:\05_Normen und Merkblätter");
+        Assert.DoesNotContain(r.Wurzeln, w => w.Name.Contains("Normen"));   // Normtexte nie ins Projekt (norm_lesen prüft selbst)
         Assert.Contains(r.Wurzeln, w => w.Name == "Projektordner");
         // Umgebung geht vor (Tests, andere Rechner)
         var u = KiPfade.AusBuero(Kat.Ordner, [], n => n switch { "HLKS_PROJEKTABLAGE" => @"D:\Ablage", "HLKS_NORMEN" => @"D:\Normen", _ => null });
         Assert.Contains(u.Wurzeln, w => w.Name == "Projektablage" && w.Pfad == @"D:\Ablage");
-        Assert.Contains(u.Wurzeln, w => w.Name == "Normen" && w.Pfad == @"D:\Normen");
+        Assert.DoesNotContain(u.Wurzeln, w => w.Pfad == @"D:\Normen");
         // die Pfadprüfung mit den Regeln aus der Datei: W: und \\HK-NAS02 gleich behandelt
         Assert.Null(KiPfade.Grund(r, @"\\HK-NAS02\WorkShare_NAS\02_Projektdateien Objekte\X\a.ifc", out _));
-        Assert.Null(KiPfade.Grund(r, @"W:\05_Normen und Merkblätter\SIA\x.pdf", out _));
+        Assert.NotNull(KiPfade.Grund(r, @"W:\05_Normen und Merkblätter\SIA\x.pdf", out _));
         Assert.NotNull(KiPfade.Grund(r, @"\\HK-NAS03\WorkShare_NAS\02_Projektdateien Objekte\X\a.ifc", out _));
     }
 

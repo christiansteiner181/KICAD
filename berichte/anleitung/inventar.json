@@ -7042,7 +7042,7 @@
       "id": "m3c",
       "titel": "KI-Palette Claude",
       "modul": "3c",
-      "einleitung": "Claude im Seitenfenster von KICAD: Fragen zum Projekt stellen, Claude ändern lassen (über die Befehle des Kerns, jede Änderung mit «Zurücknehmen»), Normfragen mit Zitat, ein Gespräch je Projekt, das nach einem Neustart weiterläuft. Claude läuft über Christians Abo (kein API-Schlüssel). Mit dem Schalter «Internet» arbeitet Claude ohne Projektzugriff. Die Bilder dieses Kapitels entstehen mit einer Attrappe, nie mit einem echten Claude-Lauf.",
+      "einleitung": "Claude im Seitenfenster von KICAD: Fragen zum Projekt stellen, Claude ändern lassen (über die Befehle des Kerns, jede Änderung mit «Zurücknehmen»), Normfragen mit Zitat, ein Gespräch je Projekt, das nach einem Neustart weiterläuft. Claude läuft über Christians Abo (kein API-Schlüssel). Mit dem Schalter «Internet» arbeitet Claude ohne Modellzugriff (Herstellerunterlagen und Familien bleiben lesbar); der Schalter ist bis zum Abnahmelauf der Sicherheitsauflagen gesperrt. Die Bilder dieses Kapitels entstehen mit einer Attrappe, nie mit einem echten Claude-Lauf.",
       "funktionen": [
         {
           "id": "m3c-ein-aus",
@@ -7344,33 +7344,33 @@
         },
         {
           "id": "m3c-internet",
-          "titel": "Internet-Schalter: Claude ohne Projektzugriff",
+          "titel": "Internet-Schalter: Claude ohne Modellzugriff",
           "wo": {
             "register": "Ansicht",
             "gruppe": "Fenster",
             "knopf": "Paletten",
             "kuerzel": "KI",
-            "sonst": "Palette «Claude», Kopf (Schalter «Internet» mit «ohne Projektzugriff»)"
+            "sonst": "Palette «Claude», Kopf (Schalter «Internet» mit «ohne Modellzugriff; Unterlagen und Familien lesbar»)"
           },
           "schritte": [
             "In der Palette «Claude» auf «Internet» klicken (Vorgabe aus).",
             "Das orange Hinweisband und die ausgegrauten Kontext-Chips ansehen.",
             "Eine allgemeine Frage stellen (z. B. zu einem Herstellerprodukt).",
-            "An Frage und Antwort die Marke «Internet · ohne Projektzugriff» sehen.",
+            "An Frage und Antwort die Marke «Internet · ohne Modellzugriff; Unterlagen und Familien lesbar» sehen.",
             "«Internet» wieder ausschalten und eine Projektfrage stellen."
           ],
-          "erwartung": "Mit Internet arbeitet Claude ohne Projektzugriff und ohne Projektkontext (Entscheid Hauptlauf 20.10.2026): Schalter mit «ohne Projektzugriff», Hinweisband, alle Chips ausgegraut (es geht weder Ansicht noch Geschoss, Auswahl oder Bild mit), Nachrichten tragen die orange Marke. Claude hat dann nur Web-Suche, Normen und die Werkzeuge für Unterlagen/Familien, kann das Modell weder lesen noch ändern, und erinnert sich nicht an frühere Fragen (eigene Sitzung). Abrufe werden protokolliert und sind in den Werkzeugaufrufen sichtbar. Frühere Fragen ohne Internet bleiben im selben Gespräch.",
+          "erwartung": "Mit Internet arbeitet Claude ohne Modellzugriff und ohne Projektkontext (Herstellerunterlagen und Familien bleiben lesbar; Sicherheitsprüfung 3c, B3d) (Entscheid Hauptlauf 20.10.2026): Schalter mit «ohne Modellzugriff; Unterlagen und Familien lesbar», Hinweisband, alle Chips ausgegraut (es geht weder Ansicht noch Geschoss, Auswahl oder Bild mit), Nachrichten tragen die orange Marke. Claude hat dann nur Web-Suche, Normen und die Werkzeuge für Unterlagen/Familien, kann das Modell weder lesen noch ändern, und erinnert sich nicht an frühere Fragen (eigene Sitzung). Abrufe werden protokolliert und sind in den Werkzeugaufrufen sichtbar. Frühere Fragen ohne Internet bleiben im selben Gespräch.",
           "pruefpunkte": [
             "Der Schalter ist standardmässig aus.",
             "Eingeschaltet erscheint das Hinweisband und die Chips sind ausgegraut (Tooltip erklärt es).",
-            "Frage und Antwort tragen die Marke «Internet · ohne Projektzugriff»; die Frage zusätzlich «ohne Projektkontext».",
+            "Frage und Antwort tragen die Marke «Internet · ohne Modellzugriff; Unterlagen und Familien lesbar»; die Frage zusätzlich «ohne Projektkontext».",
             "Abrufe im Internet stehen in der Zusammenfassung der Werkzeuge.",
             "Ausgeschaltet geht der Kontext wieder mit."
           ],
           "bild": {
             "projekt": "beispiel",
             "ansicht": "Palette «Claude»",
-            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Schalter «Internet» an, Hinweisband und ausgegraute Chips, eine Frage mit Marke «Internet · ohne Projektzugriff»"
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Schalter «Internet» an, Hinweisband und ausgegraute Chips, eine Frage mit Marke «Internet · ohne Modellzugriff; Unterlagen und Familien lesbar»"
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:188",
@@ -7379,7 +7379,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:615",
             "src/Hlks.Web/OBERFLAECHE.md:1159"
           ],
-          "hinweis": "Die Internet-Regel («ohne Projektzugriff») ist eine Entscheidung des Hauptlaufs nach einem Befund der Teil-K-Prüfung (Schalter gab alle Projektwerkzeuge frei); zur Bestätigung im Testbericht 3c. Annahme A4: Internet aus als Vorgabe."
+          "hinweis": "Die Internet-Regel («ohne Modellzugriff», bis 20.10.2026 «ohne Projektzugriff») ist eine Entscheidung des Hauptlaufs nach einem Befund der Teil-K-Prüfung (Schalter gab alle Projektwerkzeuge frei); zur Bestätigung im Testbericht 3c. Annahme A4: Internet aus als Vorgabe."
         },
         {
           "id": "m3c-bild",

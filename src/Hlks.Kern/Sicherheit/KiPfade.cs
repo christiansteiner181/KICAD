@@ -8,7 +8,8 @@
 //   - Projektablage:  HLKS_PROJEKTABLAGE › kataloge/buero.json projektablage.pfad
 //   - Familienbibliothek: HLKS_FAMILIENBIBLIOTHEK › buero.json familienbibliothek.pfad (nur, wenn die Bibliothek aktiv ist) und die
 //     mitgelieferten Familien kataloge/familien (Rückfall der Bibliothek, nur lesbar)
-//   - Normen: HLKS_NORMEN › buero.json normen.pfad › W:\05_Normen und Merkblätter (Vorgabe der Normensuche)
+//   - NICHT die Normen (Entscheid Hauptlauf 20.10.2026): lizenzierte Normtexte dürfen nie als Unterlage ins Projekt kopiert werden; norm_lesen und
+//     normen_suchen prüfen selbst gegen die Normenwurzel (Normenverzeichnis) und geben nur Auszüge
 // UNC-Pfade nur zu den Servern aus buero.json netz.server (\\HK-NAS02); ein Laufwerk aus netz.laufwerke (W:) gilt gleich wie seine UNC-Form.
 // Geprüft wird VOR jedem Dateizugriff: schon File.Exists auf \\fremder-server\… baut eine SMB- bzw. WebDAV-Verbindung nach aussen auf (B4).
 // Gerätepfade (\\?\, \\.\) und nicht vollständige Pfade (relativ, «C:datei») sind für die KI nie erlaubt; ein blosser Dateiname meint – je nach
@@ -88,10 +89,10 @@ public static class KiPfade
             catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException) { continue; }
             if (Unter(kanon, wurzel)) return null;
         }
-        return "nicht unter dem Projektordner oder einer Wurzel aus kataloge/buero.json (Projektablage, Familienbibliothek, Normen)";
+        return "nicht unter dem Projektordner oder einer Wurzel aus kataloge/buero.json (Projektablage, Familienbibliothek)";
     }
 
-    /// <summary>Regeln für ein Projekt: Projektordner, Familienbibliothek (wenn aktiv), mitgelieferte Familien, dazu Projektablage, Normen und Netz
+    /// <summary>Regeln für ein Projekt: Projektordner, Familienbibliothek (wenn aktiv), mitgelieferte Familien, dazu Projektablage und Netz
     /// aus Umgebung und kataloge/buero.json.</summary>
     public static KiPfadRegeln Regeln(Projekt p)
     {
@@ -104,7 +105,7 @@ public static class KiPfade
         return AusBuero(p.Katalog.Ordner, w, Environment.GetEnvironmentVariable);
     }
 
-    /// <summary>Regeln aus kataloge/buero.json und der Umgebung (öffentlich für Tests): weitere Wurzeln plus Projektablage und Normen; Server und Laufwerke
+    /// <summary>Regeln aus kataloge/buero.json und der Umgebung (öffentlich für Tests): weitere Wurzeln plus Projektablage (nie Normen); Server und Laufwerke
     /// aus netz.</summary>
     public static KiPfadRegeln AusBuero(string katalogOrdner, IEnumerable<KiWurzel> weitere, Func<string, string?> umgebung)
     {
@@ -113,7 +114,6 @@ public static class KiPfade
         static string? Leer(string? s) => string.IsNullOrWhiteSpace(s) ? null : s.Trim();
         static string? T(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s) ? s.Trim() : null;
         if ((Leer(umgebung("HLKS_PROJEKTABLAGE")) ?? T(b?["projektablage"]?["pfad"])) is { } ablage) w.Add(new("Projektablage", ablage));
-        w.Add(new("Normen", Leer(umgebung(Normenverzeichnis.Umgebungsvariable)) ?? T(b?["normen"]?["pfad"]) ?? Normenverzeichnis.VorgabeWurzel));
         var server = (b?["netz"]?["server"] as JsonArray ?? []).Select(T).Where(x => x is not null).Select(x => x!.TrimStart('\\')).ToList();
         var laufwerke = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase);
         if (b?["netz"]?["laufwerke"] is JsonObject lw)
