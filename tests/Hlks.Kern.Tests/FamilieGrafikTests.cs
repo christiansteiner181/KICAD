@@ -57,6 +57,47 @@ public class FamilieGrafikTests
     }
 
     [Fact]
+    public void Grundriss_FormteilOhneAnschlussmarkenUndEtikett()
+    {
+        // Christian 21.10.2026: «Die Endpunkte bei Rohren sollen nicht angezeigt werden – diese Kreise, auch die Beschriftung nicht.»
+        // L-Zug DN 20 mit der Testrohrserie: Bogen BO-1 im Knick (2000, 0), Anschlüsse a (1950, 0) und b (2000, 50).
+        var p = Modul3Hilfe.MitSerie();
+        Ok(RoutingHilfe.Zeichnen(p, "DN 20", [[0, 0, 1000], [2000, 0, 1000], [2000, 1500, 1000]]));
+        var g = Grafik.Plan(p, "AN-EG");
+        Assert.IsType<FamilienGrafik>(Grafik.QuelleFuer(p.Katalog, Hole(p, "BO-1")));
+        var bo = Teil(g, p, "BO-1");
+        Assert.DoesNotContain(bo.Primitive, x => x.Art == "kreis");
+        Assert.DoesNotContain(bo.Primitive, x => x.Art == "text");
+        Assert.DoesNotContain(bo.Primitive, x => x.Art == "linie" && x.Stil.NurBildschirm);
+        // die Anschlüsse bleiben Fangpunkte (Leitungen rasten weiter ein)
+        foreach (var f in new double[][] { [1950, 0], [2000, 50] })
+            Assert.Contains(bo.Fangpunkte!, q => Math.Abs(q[0] - f[0]) < 1e-6 && Math.Abs(q[1] - f[1]) < 1e-6);
+        // Apparate behalten Marken und Etikett (Grundriss_UmrissVonObenGedrehtMitEtikettUndAnschluessen)
+    }
+
+    [Fact]
+    public void Grundriss_TStueckUndReduktionOhneAnschlussmarkenUndEtikett()
+    {
+        // Christian 21.10.2026: «gleiches auch bei T-Stücken» – Abzweig DN 25 auf DN 32: T-Stück TS-1 und Reduktion RD-1 an c
+        var p = Modul3Hilfe.MitSerie();
+        Ok(RoutingHilfe.Zeichnen(p, "DN 32", [[0, 0, 1000], [5000, 0, 1000]]));
+        Ok(p.Ausfuehren("leitung_abzweigen", new JsonObject
+        {
+            ["leitung"] = "RO-1", ["punkt"] = new JsonArray(2200, 0, 1000), ["richtung"] = new JsonArray(0, 1, 0), ["laenge"] = 1500, ["groesse"] = "DN 25",
+        }));
+        var g = Grafik.Plan(p, "AN-EG");
+        foreach (var kz in new[] { "TS-1", "RD-1" })
+        {
+            var t = Teil(g, p, kz);
+            Assert.DoesNotContain(t.Primitive, x => x.Art == "kreis");
+            Assert.DoesNotContain(t.Primitive, x => x.Art == "text");
+            Assert.DoesNotContain(t.Primitive, x => x.Art == "linie" && x.Stil.NurBildschirm);
+        }
+        // Anschluss c des T-Stücks bleibt Fangpunkt
+        Assert.Contains(Teil(g, p, "TS-1").Fangpunkte!, q => Math.Abs(q[0] - 2200) < 1e-3 && Math.Abs(q[1] - 37) < 1e-3);
+    }
+
+    [Fact]
     public void Grundriss_DetailgradGrobOhneAbdeckung()
     {
         // grob: nur Platten [0, 1000] × [0, 100] → gedreht x' ∈ [−100, 0], y' ∈ [0, 1000] → Welt 4900 … 5000 × 3000 … 4000

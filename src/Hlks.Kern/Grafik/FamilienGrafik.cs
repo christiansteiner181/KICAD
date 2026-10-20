@@ -13,6 +13,9 @@
 //   HlksGrafik; Sinnbildlinien in derselben Farbe, Texte des Sinnbilds lesbar gedreht; Anschlussmarke Kreis Ø 1.2 mm Papier
 //   mit Richtungsstrich 2.5 mm Papier in der Farbe des Mediums; 3D ohne Ansicht (Grafik.Koerper) im Detailgrad fein,
 //   Schnitt und Ansicht im Detailgrad der Ansicht; Hinweis auf eine ungültige Familie in Rot (#d0312d) nur am Bildschirm.
+// Formteile der Leitungen (Bogen, T-Stück, Reduktion, Reinigungsöffnung): im Grundriss ohne Anschlussmarken und ohne
+//   Kennzeichen-Etikett (Christian 21.10.2026: «Die Endpunkte bei Rohren sollen nicht angezeigt werden – diese Kreise, auch die
+//   Beschriftung nicht»); die Anschlüsse bleiben Fangpunkte. Apparate, Armaturen und die Familienansicht behalten beides.
 
 namespace Hlks.Kern;
 
@@ -84,7 +87,8 @@ public sealed class FamilienGrafik : IGrafikquelle
             if (!Zustaendig(ctx.Katalog, e) || !Grafik.Sichtbar(ctx, e)) continue;
             if (Familien.Aufloesung(ctx.Modell, ctx.Katalog, e, out _) is not { } a) continue;
             var box = Box(a, e, ctx.Detailgrad);
-            liste.Add([box[0] - 80, box[1] - 80, box[2] + 0.6 * M + e.Kennzeichen.Length * Schrift * M * 0.6 + 80, box[3] + 80]);
+            var etikett = IstFormteil(ctx.Katalog, e) ? 0 : 0.6 * M + e.Kennzeichen.Length * Schrift * M * 0.6;
+            liste.Add([box[0] - 80, box[1] - 80, box[2] + etikett + 80, box[3] + 80]);
         }
         return [];
     }
@@ -107,8 +111,13 @@ public sealed class FamilienGrafik : IGrafikquelle
         var a = Familien.Aufloesung(ctx.Modell, ctx.Katalog, e, out var grund);
         if (a is null) return MitHinweis(ctx, e, grund);
         var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
-        return [Grundriss(a, Familien.Einbaulage(e)!, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.SystemMedium(ctx.Modell, e.System), e.Id, Ebene(ctx.Katalog, e), e.Kennzeichen)];
+        var formteil = IstFormteil(ctx.Katalog, e);
+        return [Grundriss(a, Familien.Einbaulage(e)!, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.SystemMedium(ctx.Modell, e.System), e.Id, Ebene(ctx.Katalog, e),
+            formteil ? null : e.Kennzeichen, anschlussMarken: !formteil)];
     }
+
+    /// <summary>Formteil einer Leitung (Klasse Formteil und Unterklassen): ohne Anschlussmarken und Etikett im Grundriss.</summary>
+    static bool IstFormteil(Katalog k, Element e) => k.Klassen.TryGetValue(e.Klasse, out var d) && d.IstArt("Formteil");
 
     /// <summary>Wie bisher: Einfügepunkt und Drehung um z (familie_ansicht «grundriss» am Ursprung).</summary>
     internal static Grafikteil Grundriss(FamAufloesung a, double[] ein, double dreh, string detail, double M, string? farbe, Katalog kat,
@@ -118,9 +127,10 @@ public sealed class FamilienGrafik : IGrafikquelle
     /// <summary>Grundriss einer ausgewerteten Familie (auch für familie_ansicht «grundriss» am Ursprung): Sinnbild für den Detailgrad,
     /// sonst Umriss der Körper von oben, Anschlussmarken (nur Bildschirm), Fangpunkte; mit Etikett, wenn eines angegeben ist.
     /// Volle Ausrichtung (Modul 3): das Sinnbild gilt nur, wenn die lokale z-Achse senkrecht nach oben zeigt – sonst der Umriss der
-    /// gedrehten Körper von oben (ein Sinnbild ist für die Ansicht von oben gezeichnet).</summary>
+    /// gedrehten Körper von oben (ein Sinnbild ist für die Ansicht von oben gezeichnet).
+    /// anschlussMarken = false (Formteile): Anschlüsse nur als Fangpunkte, ohne Kreis und Richtungsstrich.</summary>
     internal static Grafikteil Grundriss(FamAufloesung a, Einbaulage lage, string detail, double M, string? farbe, Katalog kat,
-        string? systemMedium, string? id, string ebene, string? etikett)
+        string? systemMedium, string? id, string ebene, string? etikett, bool anschlussMarken = true)
     {
         var ein = lage.Ursprung;
         var teil = new Grafikteil { Id = id, Ebene = ebene, Fangpunkte = [[ein[0], ein[1]]] };
@@ -146,6 +156,7 @@ public sealed class FamilienGrafik : IGrafikquelle
             var r = lage.Richtung(an.Richtung);
             var mf = kat.Medien.TryGetValue(an.Medium == "*" ? systemMedium ?? "" : an.Medium, out var md) ? HlksEinordnung.Farbe(md) : farbe;
             teil.Fangpunkte!.Add([l[0], l[1]]);
+            if (!anschlussMarken) continue;
             var stil = new Stil { Stift = Stifte.Duenn, Farbe = mf, NurBildschirm = true };
             teil.Primitive.Add(new Primitiv { Art = "kreis", Punkte = [[l[0], l[1]]], Radius = MarkeRadius * M, Stil = stil });
             double rxy = Math.Sqrt(r[0] * r[0] + r[1] * r[1]);
