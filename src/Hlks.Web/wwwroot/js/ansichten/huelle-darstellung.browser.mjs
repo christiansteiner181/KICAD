@@ -214,7 +214,7 @@ if (process.env.BKW) {
     let t0 = Date.now();
     let a = await (await fetch(`${SERVER}/api/projekt/anlegen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ ordner, name: 'BKW Test C1b', beispiel: false }) })).json();
     console.log('   Projekt angelegt:', JSON.stringify(a).slice(0, 120));
-    const up = await (await fetch(`${SERVER}/api/unterlagen?name=BKW-HS_1_ARCH_ARC.ifc`, { method: 'POST', body: readFileSync(ifc) })).json();
+    const up = await (await fetch(`${SERVER}/api/unterlagen?name=BKW-HS_1_ARCH_ARC.ifc`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: readFileSync(ifc) })).json();
     console.log(`   Hochgeladen (${(statSync(ifc).size / 1e6).toFixed(0)} MB, ${((Date.now() - t0) / 1000).toFixed(1)} s):`, JSON.stringify(up));
     t0 = Date.now();
     const u = await kern('befehl', 'ifc_uebernehmen', { datei: up.name });
