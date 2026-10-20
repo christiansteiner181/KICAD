@@ -379,10 +379,10 @@ node werkzeuge/anleitung_bilder.mjs [--nur <id,id,…>] [--projekt beispiel|bern
 
 ### Nachtrag 20.10.2026: Bilder der 36 neuen Funktionen
 
-**Es wurden keine Bilder erzeugt.** Gründe:
-
-1. `node werkzeuge/anleitung_bilder.mjs --liste` meldet für alle 36 neuen Ids «noch ohne Eintrag» (kein Katalogeintrag, keine Szene, kein `ohneBild`). Szenen im Skript zu ergänzen war nicht erlaubt; das Skript stellt Zustände nicht generisch aus «bild.zustand» her.
-2. Das Skript lässt nur Server auf 5190–5195 und CDP auf 9530–9539 zu (`portPruefen`, fest im Code; `HLKS_CDP_PORT` darf nur darin liegen). Für diesen Auftrag waren nur 5210–5219 und CDP 9560–9569 erlaubt, und 5190–5199 gehörte dem gleichzeitig laufenden Endprüflauf. Ein Lauf war deshalb ohne Änderung des Skripts nicht möglich.
-3. `bilder.json` im Bilderordner wurde nicht verändert: die 36 Ids stehen dort noch nicht; beim nächsten Gesamtlauf trägt das Skript sie unter «ohneBild» mit dem Grund «noch kein Eintrag im Bildskript» ein.
-
-Vorschlag für den Bauauftrag der Szenen (hlks-modul, Ports 5190–5195): `start-hilfe-symbol`, `start-claude-knopf`, `start-symbole-revit`, `m4-*` (Beispielprojekt, Zustände aus `sanitaer-belastung.browser.mjs`: Anlage A-SAN, WT-E.02, BA-U.02, KW-V1-0, SW-G1-1, AN-SCHEMA-SAN), `zb-n3-*` (aus `nachbearbeitung-n3.browser.mjs`, Einlagepläne mit der Bernstrasse-Kopie), `m3c-*` (Server mit Attrappe wie `ki-palette.browser.mjs`: Ports, `HLKS_CLAUDE_EXE`, `DOTNET_ROOT`, `HLKS_MCP_DLL`, `HLKS_NORMEN`). Nicht herstellbar bleiben voraussichtlich die Hilfefenster-Bilder von `start-hilfe-symbol`, `start-f1-knopf` und `start-f1-dialog` (zweites Fenster, Tooltip) – dort genügt das erste Bild.
+Erledigt mit Commit 8cecea1 (Bildskript): Szenen für alle 36 neuen Funktionen (Hilfe/F1, Knopf «Claude», Symbole-Probe, N3,
+Kapitel m3c mit der Attrappe statt echtem Claude, Kapitel m4), 48 Bilddateien; die Anleitung baut mit 262 Funktionen, davon
+248 mit Bild (14 ohne Bild wie oben begründet). Portwächter des Skripts sperrt nur noch die festen Ports (5013, 5098, 5130,
+5131, 5149–5152); Ports über --port/HLKS_ANLEITUNG_PORT und --cdp/HLKS_CDP_PORT. Nachgebildet (Edge headless zeichnet
+sie nicht): Auswahllisten (Apparateart, Modell, Gespräche) und der F1-Tooltip – die Bildtitel sagen das. Gesprächsbilder
+zeigen die Marker [attrappe:…] der Attrappe bewusst. zb-n3-grundleitungsplan-knopf stammt aus der Kopie von bnahme3
+(fiktives MFH Musterweg), steht in ilder.json aber unter ernstrasse_leitungen.
