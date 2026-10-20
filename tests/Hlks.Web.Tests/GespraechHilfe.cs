@@ -43,6 +43,7 @@ public sealed class GespraechServer : IDisposable
         {
             ClaudeExe = dotnet, ClaudeVorArgumente = [attrappe], McpDll = mcp, DotnetPfad = dotnet, ArbeitsWurzel = ArbeitsWurzel,
             NormenAutomatischAufbauen = false,
+            InternetErlaubt = true,   // die Internet-Tests laufen weiter; die Sperre selbst prüft GespraechSicherheitTests
         };
         Einst = anpassen?.Invoke(g) ?? g;
         Auftrag = new AuftragEinstellungen

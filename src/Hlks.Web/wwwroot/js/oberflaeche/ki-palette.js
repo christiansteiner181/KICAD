@@ -185,7 +185,7 @@ function verdrahten() {
   ui.neuK.onclick = () => neuesGespraech();
   ui.loeschK.onclick = () => gespraechEntfernen();
   ui.wahlM.onchange = () => { wahl.modell = ui.wahlM.value; wahlSpeichern(); };
-  ui.internet.onclick = () => { wahl.internet = !wahl.internet; wahlSpeichern(); uiAktualisieren(); };
+  ui.internet.onclick = () => { if (T.internetGesperrt(einst)) return; wahl.internet = !wahl.internet; wahlSpeichern(); uiAktualisieren(); };
   ui.senden.onclick = () => fragen();
   ui.abbrechen.onclick = () => abbrechenKlick();
   ui.feld.addEventListener('keydown', (e) => {
@@ -491,9 +491,13 @@ function kopfZeichnen() {
   ui.wahlM.replaceChildren();
   for (const m of modelle) { const o = el('option', null, m.name || m.id); o.value = m.id; ui.wahlM.appendChild(o); }
   ui.wahlM.value = wahl.modell;
+  const gesperrt = T.internetGesperrt(einst);   // Sicherheitsprüfung 3c: Schalter ausgegraut, Grund im Tooltip
+  if (gesperrt) wahl.internet = false;
   ui.internet.setAttribute('aria-pressed', String(wahl.internet));
+  ui.internet.setAttribute('aria-disabled', String(!!gesperrt));
+  ui.internet.classList.toggle('gesperrt', !!gesperrt);
   ui.internet.classList.toggle('an', wahl.internet);
-  ui.internet.title = wahl.internet ? `Internet ist an: ${T.INTERNET_TIPP}` : 'Internet für die nächste Frage zuschalten (dann ohne Projektzugriff)';
+  ui.internet.title = gesperrt || (wahl.internet ? `Internet ist an: ${T.INTERNET_TIPP}` : 'Internet für die nächste Frage zuschalten (dann ohne Projektzugriff)');
   ui.internetNote.hidden = !wahl.internet;
   ui.internetNote.textContent = einst?.internetHinweis?.replace(/^Internet:\s*/i, '') || T.INTERNET_HINWEIS;
 }

@@ -38,6 +38,7 @@
 .ki-internet::before { content: ''; position: absolute; left: 6px; top: 5px; width: 10px; height: 10px; border: 1px solid var(--text-leise); border-radius: 2px; background: var(--flaeche-hell); }
 .ki-internet.an { border-color: var(--warnung); color: var(--text); background: color-mix(in srgb, var(--warnung) 18%, var(--eingabe)); font-weight: 600; }
 .ki-internet.an::before { background: var(--warnung); border-color: var(--warnung); }
+.ki-internet.gesperrt { opacity: .5; cursor: not-allowed; }   /* Sicherheitsprüfung 3c: Internet vorläufig gesperrt, Grund im Tooltip */
 .ki-internet-note { color: var(--warnung); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 
 /* Band: Hinweise (nicht verfügbar, Internet) */

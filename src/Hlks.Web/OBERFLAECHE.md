@@ -1283,3 +1283,25 @@ Projektnummer, wie die Vorlage «Heizung Steigzone 2 / H21»); bei waagrechtem B
 **Offen:** Menüband-Knöpfe «Koordination» und «Aussparungsboxen» (Register Ansicht › Darstellung) – zwei zusätzliche Knöpfe in dieser Gruppe brachten die Stufenprüfung `menueband.browser.mjs` («Ansicht bei 1920 px: Stufen nehmen nie zu») und `serienpdf.browser.mjs` (Knopf «Serien-PDF …») zum Fehlschlagen und wurden deshalb zurückgenommen; sie brauchen eine Anpassung der Gruppenbreiten und eigene Symbole.
 
 **Prüfen:** `node --test js/oberflaeche/plandarstellung-b1.test.mjs`; Kern: `PlanDarstellungB1Tests.cs` (Abnahmebild mit `HLKS_M7B_BILD=%TEMP%\HLKS_CAD`, dann `werkzeuge\pdf_bild.ps1`).
+
+## Schutz gegen Fremdaufrufe (Sicherheitsprüfung 3c, B1, 20.10.2026)
+
+Der Server bindet nur `localhost`, aber der Browser des Benutzers ist localhost: ohne Prüfung könnte jede fremde Webseite «einfache»
+Anfragen (`text/plain`, ohne CORS) an `/api` schicken – z. B. eine KI-Frage starten – oder per DNS-Rebinding Antworten lesen.
+`Herkunftsschutz.cs` steht als Middleware vor allen Endpunkten unter `/api` und `/hilfe` (statische Oberfläche unberührt):
+
+- **Host** muss `localhost`, `127.0.0.1` oder `[::1]` sein (beliebiger Port), sonst 403 – auch beim Lesen.
+- **Ändernde Methoden** (POST, PUT, PATCH, DELETE): `Sec-Fetch-Site`, falls vorhanden, nur `same-origin`/`none`; `Origin`, falls vorhanden,
+  nur `http://localhost|127.0.0.1|[::1]:<Port dieses Servers>` – sonst 403 `{ fehler: "Anfrage von fremder Seite abgelehnt", vorschlag }`.
+  Werkzeuge (PowerShell, Node, MCP, Tests) senden beides nicht und bleiben erlaubt.
+- **Körper** nur als `application/json`; Ausnahmen: `POST /api/unterlagen` (`application/octet-stream`, `multipart/form-data`) und
+  `POST /api/projekt/vorschau` (`image/png`). Sonst 415. Ohne Körper (z. B. `…/abbrechen`) ist kein Inhaltstyp nötig.
+- Keine CORS-Kopfzeilen (kein `Access-Control-Allow-Origin`).
+
+Eigene Aufrufe senden immer `Content-Type: application/json` (`api.js`, `ki-palette.js` `anfrage()`, Anleitung `vorlage.html`, alle
+`*.browser.mjs`, `anleitung_bilder.mjs`, `werkzeuge/*.ps1`); Uploads `application/octet-stream` (`unterlagen-dialog.js`,
+`aktionen-einfuegen.js`), Vorschau `image/png` (`vorschau.js`). Neue Endpunkte mit anderem Inhaltstyp gehören in `Herkunftsschutz.Uploads`.
+Dazu: Internet-Schalter der KI-Palette vorläufig gesperrt (`GespraechEinstellungen.InternetErlaubt`, Vorgabe aus; Schalter ausgegraut,
+Grund im Tooltip; `POST …/frage` mit `internet: true` → 409), bis B3/B4/B6 behoben sind.
+
+**Prüfen:** `dotnet test tests/Hlks.Web.Tests --filter FullyQualifiedName~GespraechSicherheit`.

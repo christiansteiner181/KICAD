@@ -446,6 +446,7 @@ public class PruefstandTests : IDisposable
         // ohne Content-Length (gestückelt) ebenso
         var gestueckelt = new HttpRequestMessage(HttpMethod.Put, "/api/hilfe/pruefung/f1") { Content = new StreamContent(new MemoryStream(Encoding.UTF8.GetBytes(gross))) };
         gestueckelt.Headers.TransferEncodingChunked = true;
+        gestueckelt.Content.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
         Assert.Equal(HttpStatusCode.BadRequest, (await u.Http.SendAsync(gestueckelt)).StatusCode);
         Assert.False(Directory.Exists(u.Pruefung) && Directory.GetFiles(u.Pruefung).Length > 0);
     }

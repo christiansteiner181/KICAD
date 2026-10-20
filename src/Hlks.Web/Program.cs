@@ -39,6 +39,8 @@ builder.Services.AddResponseCompression(o =>
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 var app = builder.Build();
+// Schutz gegen Fremdaufrufe (Befund B1 der Sicherheitsprüfung 3c): vor allen Endpunkten unter /api und /hilfe.
+app.UseHerkunftsschutz();
 // Nur für Anfragen von einem anderen Rechner: lokal kostet gzip mehr Zeit, als es spart (Befund C2 vom 17.10.2026: 0.5–3 s
 // Server-Rechenzeit je Netzdatei statt 0.12 s roh); der KICAD-Server läuft im Normalfall auf demselben PC.
 app.UseWhen(c => c.Connection.RemoteIpAddress is not { } ip || !System.Net.IPAddress.IsLoopback(ip), a => a.UseResponseCompression());

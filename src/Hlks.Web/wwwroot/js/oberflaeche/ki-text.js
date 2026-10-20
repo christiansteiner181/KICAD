@@ -471,5 +471,11 @@ export function modellWaehlen(einst, gemerkt) {
 }
 
 export function internetWaehlen(einst, gemerkt) {
+  if (internetGesperrt(einst)) return false;
   return typeof gemerkt === 'boolean' ? gemerkt : !!einst?.internetVorgabe;
+}
+
+/** Grund, wenn der Server den Internet-Schalter sperrt (Sicherheitsprüfung 3c: internetErlaubt false), sonst null. */
+export function internetGesperrt(einst) {
+  return einst?.internetErlaubt === false ? (einst.internetGrund || 'Internet in der Palette vorläufig gesperrt') : null;
 }
