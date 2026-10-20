@@ -33,12 +33,18 @@ public class SanitaerBeispielTests
         var wc = z["zeilen"]!.AsArray().Single(r => r!["art"]!.GetValue<string>() == "wc_75")!;
         Assert.Equal(new[] { 0, 2, 2 }, wc["jeGeschoss"]!.AsArray().Select(x => x!.GetValue<int>()));
         // Hinweise: ΣLU WW zählt die Warmwasser-Apparate (Stückzahl × Wert wie das Excel), das Beispiel hat aber kein Warmwassernetz (Prüfbericht 4A B7);
-        // die Kurvenwahl ist nicht im Excel und nicht bestätigt (B3). 4.2 l/s liegt in beiden Kurvenbereichen.
+        // die Kurvenwahl ist seit 20.10.2026 im Katalog bestätigt (Christian) – kein Hinweis dazu (B3). 4.2 l/s liegt in beiden Kurvenbereichen.
         var h = z["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
-        Assert.Equal(2, h.Count);
-        Assert.StartsWith("ΣLU WW enthält 10 Apparate ohne WW-Verbindung: ", h[0]);
-        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", h[1]);
+        Assert.StartsWith("ΣLU WW enthält 10 Apparate ohne WW-Verbindung: ", Assert.Single(h));
         Assert.Empty(z["ohneArt"]!.AsArray());
+        // mit unbestätigter Kurvenwahl (Testkopie des Katalogs unter %TEMP%): dazu der Hinweis «Kurvenwahl nicht im Excel …» als zweiter
+        var u = Abfrage(Beispielprojekt.Erzeugen(KatalogUnbestaetigt, null), "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-SAN" });
+        var hu = u["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.Equal(2, hu.Count);
+        Assert.Equal(h[0], hu[0]);
+        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", hu[1]);
+        Assert.Contains("Kurve «grösster LU 3»", hu[1]);
+        Etwa(Zahl(z["spitzendurchfluss"]), Zahl(u["spitzendurchfluss"]), "Spitze unabhängig von der Bestätigung");
     }
 
     [Theory]

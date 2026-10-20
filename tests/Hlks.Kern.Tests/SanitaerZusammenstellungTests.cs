@@ -62,10 +62,11 @@ public class SanitaerZusammenstellungTests
 
     /// <summary>Walkringen als Projekt: die Stückzahlen des Excel als Apparate (Klassen passend, Art ausdrücklich), verteilt auf EG und OG,
     /// je Medium ein Verteiler: KW vom Hausanschluss (auch zum Wassererwärmer), WW vom Wassererwärmer, SW zum Kontrollschacht.
-    /// Klassen: Haushalt-GWA über Spültisch als Waschmaschine, Entnahmearmatur Garten als Ausgussbecken (nur KW angeschlossen) – FIKTIV.</summary>
-    internal static Projekt WalkringenProjekt(double? k = 0.5)
+    /// Klassen: Haushalt-GWA über Spültisch als Waschmaschine, Entnahmearmatur Garten als Ausgussbecken (nur KW angeschlossen) – FIKTIV.
+    /// katalog: abgewandelte Katalogkopie (z. B. KatalogUnbestaetigt), Vorgabe der Katalog der Arbeitskopie.</summary>
+    internal static Projekt WalkringenProjekt(double? k = 0.5, Katalog? katalog = null)
     {
-        var p = Netzprojekt(k);
+        var p = NetzprojektMit(katalog ?? Kat, k);
         var klasse = new Dictionary<string, string>
         {
             ["waschtisch"] = "Waschtisch", ["dusche"] = "Dusche", ["badewanne"] = "Badewanne", ["spuelbecken"] = "Spueltisch",
@@ -107,10 +108,9 @@ public class SanitaerZusammenstellungTests
         Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 8", wt["quelle"]!.GetValue<string>());
         Assert.Equal("MFHA", z["quelle"]!["blatt"]!.GetValue<string>());
         Assert.Contains("Testwert", z["abflusskennzahlHerkunft"]!.GetValue<string>());
-        // einziger Hinweis: die Kurvenwahl ist nicht im Excel und nicht bestätigt (13.2 l/s liegt in beiden Bereichen, alle Apparate verbunden)
-        var hinweis = Assert.Single(z["hinweise"]!.AsArray())!.GetValue<string>();
-        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", hinweis);
-        Assert.Contains("Kurve «grösster LU 5»", hinweis);
+        // keine Hinweise: 13.2 l/s liegt in beiden Bereichen, alle Apparate sind verbunden, und die Kurvenwahl ist im Katalog bestätigt
+        // (Christian 20.10.2026). Der Fall «nicht bestätigt» (dann einziger Hinweis) steht in Kurvenwahl_HerkunftInFormelnUndHinweisen_BestaetigtOhneHinweis.
+        Assert.Empty(z["hinweise"]!.AsArray());
 
         // Netz: die Anlage trägt dieselben Summen; die Leitung vom Hausanschluss alles (KW direkt, WW über den Wassererwärmer)
         var an = Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!;
@@ -240,6 +240,8 @@ public class SanitaerZusammenstellungTests
         Assert.Equal(0, leer.SpitzeKurve3);
         Assert.Equal(0, leer.Schmutzwasser);
         Assert.Empty(leer.Hinweise);   // ohne LU keine Kurvenhinweise
+        // auch nicht mit unbestätigter Kurvenwahl (Testkopie des Katalogs): ohne LU kein Hinweis zur Kurvenwahl
+        Assert.Empty(SanitaerZusammenstellung.Auswerten(KatalogUnbestaetigt.Sanitaer!, [], [], 0.5, "Testwert").Hinweise);
     }
 
     static SanitaerZeile Zeile(SanitaerKatalog kat, string art, int n) => new() { Art = kat.Art(art)!, JeGeschoss = [n], Anzahl = n };
@@ -251,6 +253,7 @@ public class SanitaerZusammenstellungTests
         var roh = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Katalog.StandardOrdner(), SanitaerKatalog.Datei)))!;
         roh["rechnung"]!["spitzeKurve3"]!["grosserLu"] = 4;
         roh["rechnung"]!["spitzeKurve5"]!["grosserLu"] = 6;
+        roh["rechnung"]!["kurvenwahl"]!["bestaetigt"] = false;   // unbestätigt: der Hinweis zur Kurvenwahl nennt die massgebende Kurve mit ihrem Namen
         var kat = SanitaerKatalog.Lesen(roh);
         var bis4 = SanitaerZusammenstellung.Auswerten(kat, [Zeile(kat, "badewanne", 2)], [], null, null);   // grösster Einzel-LU 3 ≤ 4
         Assert.Equal(4, bis4.MassgebendeKurve);
@@ -272,27 +275,50 @@ public class SanitaerZusammenstellungTests
     [Fact]
     public void Kurvenwahl_HerkunftInFormelnUndHinweisen_BestaetigtOhneHinweis()
     {
+        // echter Katalog: Kurvenwahl von Christian bestätigt (20.10.2026) – die Herkunft steht weiter in formeln, ein Hinweis entfällt
         var p = WalkringenProjekt();
         var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
         var formel = z["formeln"]!["massgebendeKurve"]!.GetValue<string>();
         Assert.StartsWith(SKat.Kurvenwahl.Regel, formel);
         Assert.Contains("NICHT im Excel", formel);
         Assert.Contains("HKAP", formel);
-        Assert.EndsWith("Nicht bestätigt.", formel);
+        Assert.EndsWith("Von Christian bestätigt.", formel);
         var kw = z["kurvenwahl"]!;
-        Assert.False(kw["bestaetigt"]!.GetValue<bool>());
+        Assert.True(kw["bestaetigt"]!.GetValue<bool>());
         Assert.Equal(SKat.Kurvenwahl.Quelle, kw["quelle"]!.GetValue<string>());
         Assert.Equal(new[] { 3, 5 }, kw["kurven"]!.AsArray().Select(k => k!["grosserLu"]!.GetValue<int>()));
         Assert.Equal(new[] { 0.5, 15 }, kw["kurven"]![1]!["bereichLs"]!.AsArray().Select(x => x!.GetValue<double>()));
-        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt"));
+        Assert.DoesNotContain(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Kurvenwahl"));
         Assert.Equal(kw.ToJsonString(), Abfrage(p, "sanitaer_katalog")["kurvenwahl"]!.ToJsonString());
-        // bestätigt (abgewandelter Katalog): kein Hinweis mehr, die Formel sagt es
-        var roh = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Katalog.StandardOrdner(), SanitaerKatalog.Datei)))!;
-        roh["rechnung"]!["kurvenwahl"]!["bestaetigt"] = true;
-        var kat = SanitaerKatalog.Lesen(roh);
-        var a = SanitaerZusammenstellung.Auswerten(kat, [Zeile(kat, "wc_75", 10), Zeile(kat, "badewanne", 4)], [], null, null);
+        var a = SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "wc_75", 10), Zeile(SKat, "badewanne", 4)], [], null, null);
         Assert.DoesNotContain(a.Hinweise, h => h.StartsWith("Kurvenwahl"));
-        Assert.EndsWith("Von Christian bestätigt.", SanitaerAbfragen.ZusammenstellungJson(kat, a)["formeln"]!["massgebendeKurve"]!.GetValue<string>());
+        Assert.EndsWith("Von Christian bestätigt.", SanitaerAbfragen.ZusammenstellungJson(SKat, a)["formeln"]!["massgebendeKurve"]!.GetValue<string>());
+
+        // nicht bestätigt (Testkopie des Katalogs unter %TEMP%, bestaetigt false): Herkunft in formeln und als einziger Hinweis
+        // (13.2 l/s in beiden Bereichen, alle Apparate verbunden), massgebend die Kurve «grösster LU 5»
+        var u = KatalogUnbestaetigt;
+        var pu = WalkringenProjekt(katalog: u);
+        var zu = Abfrage(pu, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        var formelU = zu["formeln"]!["massgebendeKurve"]!.GetValue<string>();
+        Assert.StartsWith(SKat.Kurvenwahl.Regel, formelU);
+        Assert.Contains("NICHT im Excel", formelU);
+        Assert.Contains("HKAP", formelU);
+        Assert.EndsWith("Nicht bestätigt.", formelU);
+        var kwU = zu["kurvenwahl"]!;
+        Assert.False(kwU["bestaetigt"]!.GetValue<bool>());
+        Assert.Equal(SKat.Kurvenwahl.Quelle, kwU["quelle"]!.GetValue<string>());
+        var hinweis = Assert.Single(zu["hinweise"]!.AsArray())!.GetValue<string>();
+        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", hinweis);
+        Assert.Contains("Kurve «grösster LU 5»", hinweis);
+        Assert.Contains($"«{SKat.Kurvenwahl.Regel}»", hinweis);
+        Assert.Equal(kwU.ToJsonString(), Abfrage(pu, "sanitaer_katalog")["kurvenwahl"]!.ToJsonString());
+        // die Zahlen hängen nicht an der Bestätigung
+        Assert.Equal(z["massgebendeKurve"]!.GetValue<int>(), zu["massgebendeKurve"]!.GetValue<int>());
+        foreach (var f in new[] { "totalLu", "volumenstrom", "spitzeKurve3", "spitzeKurve5", "spitzendurchfluss", "schmutzwasser" })
+            Assert.Equal(Zahl(z[f]), Zahl(zu[f]));
+        var au = SanitaerZusammenstellung.Auswerten(u.Sanitaer!, [Zeile(u.Sanitaer!, "wc_75", 10), Zeile(u.Sanitaer!, "badewanne", 4)], [], null, null);
+        Assert.Single(au.Hinweise, h => h.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt"));
+        Assert.EndsWith("Nicht bestätigt.", SanitaerAbfragen.ZusammenstellungJson(u.Sanitaer!, au)["formeln"]!["massgebendeKurve"]!.GetValue<string>());
     }
 
     [Fact]
@@ -324,14 +350,19 @@ public class SanitaerZusammenstellungTests
     public void StueckzahlSummen_MitAnschluessenOhneNetzverbindung_Hinweis()
     {
         // WT-1: KW und SW verbunden, WW offen (Projekt mit WW-System); WT-2 nur KW; die Zusammenstellung zählt beide voll (wie das Excel)
-        var p = Netzprojekt(0.5, "KW", "WW", "SW");
-        Apparat(p, "Waschtisch", "WT-1"); Apparat(p, "Waschtisch", "WT-2");
-        Hausanschluss(p); Kontrollschacht(p);
-        Verteiler(p, "VT", "KW-1", 2);
-        Rohr(p, "K0", "KW-1", "HA-1.aus", "VT.a");
-        Rohr(p, "K1", "KW-1", "VT.v1", "WT-1.kw");
-        Rohr(p, "K2", "KW-1", "VT.v2", "WT-2.kw");
-        Rohr(p, "S1", "SW-1", "WT-1.sw", "KS-1.ein");
+        static Projekt Aufbauen(Katalog kat)
+        {
+            var p = NetzprojektMit(kat, 0.5, "KW", "WW", "SW");
+            Apparat(p, "Waschtisch", "WT-1"); Apparat(p, "Waschtisch", "WT-2");
+            Hausanschluss(p); Kontrollschacht(p);
+            Verteiler(p, "VT", "KW-1", 2);
+            Rohr(p, "K0", "KW-1", "HA-1.aus", "VT.a");
+            Rohr(p, "K1", "KW-1", "VT.v1", "WT-1.kw");
+            Rohr(p, "K2", "KW-1", "VT.v2", "WT-2.kw");
+            Rohr(p, "S1", "SW-1", "WT-1.sw", "KS-1.ein");
+            return p;
+        }
+        var p = Aufbauen(Kat);
         var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
         Etwa(2, Zahl(z["summeLuWw"]), "ΣLU WW der Zusammenstellung (Stückzahl × Wert)");
         var h = z["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
@@ -340,8 +371,16 @@ public class SanitaerZusammenstellungTests
         Assert.DoesNotContain(h, x => x.StartsWith("ΣLU KW"));
         var an = Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!;
         Etwa(0, Zahl(an["trinkwasser"]!["summeLuWw"]), "Netz ΣLU WW");
-        // Hinweise vor dem Hinweis zur Kurvenwahl
-        Assert.StartsWith("Kurvenwahl", h[^1]);
+        // Hinweise zu den Netzverbindungen vor den Kurvenhinweisen: zuletzt 0.4 l/s unter dem Bereich der Kurve «grösster LU 5»;
+        // die Kurvenwahl ist im Katalog bestätigt (Christian 20.10.2026) – kein Hinweis dazu
+        Assert.StartsWith("Volumenstrom 0.4 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»", h[^1]);
+        Assert.DoesNotContain(h, x => x.StartsWith("Kurvenwahl"));
+        // nicht bestätigt (Testkopie des Katalogs unter %TEMP%): dieselben Hinweise in derselben Reihenfolge, der zur Kurvenwahl zuletzt
+        var hu = Abfrage(Aufbauen(KatalogUnbestaetigt), "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" })["hinweise"]!.AsArray()
+            .Select(x => x!.GetValue<string>()).ToList();
+        Assert.Equal(h.Count + 1, hu.Count);
+        Assert.Equal(h, hu.Take(h.Count));
+        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", hu[^1]);
     }
 
     [Fact]

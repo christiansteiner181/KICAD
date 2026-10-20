@@ -72,8 +72,12 @@ public class SanitaerKatalogTests
         Assert.Contains("I56", SKat.Kurve5.BereichZelle);
         Assert.Equal(r["kurvenwahl"]!["regel"]!.GetValue<string>(), SKat.Kurvenwahl.Regel);
         Assert.Equal(r["kurvenwahl"]!["quelle"]!.GetValue<string>(), SKat.Kurvenwahl.Quelle);
-        Assert.False(SKat.Kurvenwahl.Bestaetigt);
+        // von Christian am 20.10.2026 bestätigt (Fragefenster «Alle bestätigen»); die Herkunft (nicht im Excel, aus HKAP) bleibt in der Quelle
+        Assert.True(SKat.Kurvenwahl.Bestaetigt);
+        Assert.True(r["kurvenwahl"]!["bestaetigt"]!.GetValue<bool>());
+        Assert.Contains("Christian Steiner, 20.10.2026", r["kurvenwahl"]!["bestaetigung"]!.GetValue<string>());
         Assert.Contains("HKAP", SKat.Kurvenwahl.Quelle);
+        Assert.Contains("NICHT im Excel", SKat.Kurvenwahl.Quelle);
         Assert.Equal(0.5, SKat.AbflusskennzahlBeispiel);
         Assert.Equal("M65", SKat.AbflusskennzahlBeispielZelle);
         Assert.Contains("M66", SKat.SchmutzwasserZelle);
@@ -166,6 +170,11 @@ public class SanitaerKatalogTests
         Assert.Contains("bestaetigt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(wahlText)).Message);
         var bestaetigt = Roh(); bestaetigt["rechnung"]!["kurvenwahl"]!["bestaetigt"] = true;
         Assert.True(SanitaerKatalog.Lesen(bestaetigt).Kurvenwahl.Bestaetigt);
+        // seit der echte Katalog bestätigt ist (20.10.2026): auch false und fehlende Angabe (= nicht bestätigt) ausdrücklich prüfen
+        var unbestaetigt = Roh(); unbestaetigt["rechnung"]!["kurvenwahl"]!["bestaetigt"] = false;
+        Assert.False(SanitaerKatalog.Lesen(unbestaetigt).Kurvenwahl.Bestaetigt);
+        var ohneAngabe = Roh(); ((JsonObject)ohneAngabe["rechnung"]!["kurvenwahl"]!).Remove("bestaetigt");
+        Assert.False(SanitaerKatalog.Lesen(ohneAngabe).Kurvenwahl.Bestaetigt);
     }
 
     [Fact]
