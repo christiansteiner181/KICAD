@@ -54,7 +54,8 @@
     "kurvenwahl": {
       "regel": "grösster Einzel-LU > 3 → Kurve «grösster LU 5», sonst Kurve «grösster LU 3»",
       "quelle": "NICHT im Excel (dort stehen beide Kurven nebeneinander, der Bearbeiter liest ab). Übernommen aus HKAP Projektieren-Modul (SanitaerKatalog.cs, 28.08.2026, von Christian abgenommen). Beide Werte werden immer mit ausgewiesen.",
-      "bestaetigt": false
+      "bestaetigt": true,
+      "bestaetigung": "Christian Steiner, 20.10.2026 (Fragefenster: «Alle bestätigen»)"
     }
   },
   "referenz": {
@@ -78,7 +79,7 @@
     "schmutzwasser": 3.1144823004794873
   },
   "vorgabeJeKlasse": {
-    "$kommentar": "Vorbelegte Apparateart je Klasse (wie HKAP SanitaerKatalog.Standard); umstellbar je Apparat bzw. Familientyp. Bodenablauf ohne Vorgabe (DN 50/56/70/100 → Befund «Art wählen»). Entscheid Hauptlauf 20.10.2026, von Christian zu bestätigen.",
+    "$kommentar": "Vorbelegte Apparateart je Klasse (wie HKAP SanitaerKatalog.Standard); umstellbar je Apparat bzw. Familientyp. Bodenablauf ohne Vorgabe (DN 50/56/70/100 → Befund «Art wählen»). Entscheid Hauptlauf 20.10.2026, von Christian am 20.10.2026 bestätigt.",
     "WC": "wc_75",
     "Waschtisch": "waschtisch",
     "Dusche": "dusche",

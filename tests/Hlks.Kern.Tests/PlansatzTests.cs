@@ -64,7 +64,7 @@ public class PlansatzTests
         BlattGewerk G(string nr) => Plaene.GewerkVon(m, Planausgabe.Blatt(m, nr), "1-0768");
         Assert.Equal(new BlattGewerk("heizung", false, "Fachbuchstabe H der Plannummer"), G("1-0768 H05"));
         Assert.Equal("sanitaer", G("1-0768-S06").Gewerk);
-        Assert.Equal("kaelte", G("K07").Gewerk);
+        Assert.Equal("koordination", G("K07").Gewerk);   // Fach K = Koordination (Entscheid Christian 20.10.2026)
         Assert.Equal("lueftung", G("A-100").Gewerk);
         Assert.Contains("Ansichten", G("A-100").Quelle);
         Assert.Equal("koordination", G("A-101").Gewerk);

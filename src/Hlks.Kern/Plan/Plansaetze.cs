@@ -26,8 +26,9 @@ public static class PlanGewerk
     /// <summary>In der Reihenfolge des Katalogs. Der Name dient auch als Ordnername im Ausgang (wie «Sanitär», «Lüftung»).</summary>
     public static readonly IReadOnlyList<Eintrag> Alle =
     [
-        new("heizung", "Heizung", 'H'), new("lueftung", "Lüftung", 'L'), new("sanitaer", "Sanitär", 'S'), new("kaelte", "Kälte", 'K'),
-        new("elektro", "Elektro", null), new("koordination", "Koordination", null), new("allgemein", "Allgemein", null),
+        // Fach K = Koordination wie in den H+K-Plänen (K01–K06), Entscheid Christian 20.10.2026; Kälte vorerst ohne Fachbuchstaben.
+        new("heizung", "Heizung", 'H'), new("lueftung", "Lüftung", 'L'), new("sanitaer", "Sanitär", 'S'), new("kaelte", "Kälte", null),
+        new("elektro", "Elektro", null), new("koordination", "Koordination", 'K'), new("allgemein", "Allgemein", null),
     ];
 
     public static Eintrag? Finde(string? schluessel) =>
