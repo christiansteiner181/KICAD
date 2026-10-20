@@ -12,7 +12,7 @@
 //  5. Liste «Sanitär-Zusammenstellung (W3)»: Dialog «Liste anlegen», Aufbau wie das Excel mit den Zahlen des Beispielprojekts, Tooltips mit Formel und Excel-Zelle, CSV mit beiden Blöcken,
 //     Spezialinstallation ändert die Spitze gesamt, K leer → «K fehlt» (kein Q_WW, kein Q_tot) und Befund P25 im Dialog Prüfbefunde.
 //  6. Knopf «Sanitär-Zusammenstellung» (Gebäudetechnik › Apparate und Armaturen) öffnet die vorhandene Liste; Listen sind (wie alle) nicht auf Planblätter platzierbar.
-//  7. Prüfbericht 4A: Hinweise des Kerns als Tabelle «Hinweise» unter den Blöcken (Kurvenwahl nicht bestätigt, ΣLU WW ohne WW-Verbindung); Befund P26 «Apparat ohne Weg
+//  7. Prüfbericht 4A: Hinweise des Kerns als Tabelle «Hinweise» unter den Blöcken (ΣLU WW ohne WW-Verbindung; Kurvenwahl seit 20.10.2026 bestätigt, ohne Hinweis); Befund P26 «Apparat ohne Weg
 //     im Netz» (verkehrt gezogene Leitung an einem T-Stück) im Dialog Prüfbefunde und als Hinweis in der Liste; Leitung gelöscht → P26 weg.
 // Ports: 5200–5219 (HLKS_M4_PORT), CDP über HLKS_CDP_PORT.
 // Bilder (hell und dunkel): %TEMP%\HLKS_CAD\m4_*.png (SHOTS ändert den Ordner). Rückgabewert 1, wenn eine Prüfung fehlschlägt.
@@ -403,9 +403,9 @@ try {
   pruef(tb.length === 4 && tb[0].titel.startsWith('Apparate') && tb[1].titel === 'Trinkwasser' && tb[2].titel === 'Entwässerung' && tb[3].titel === 'Hinweise',
     'vier Tabellen: Apparate, Trinkwasser, Entwässerung und darunter die Hinweise des Kerns', tb.map((t) => t.titel).join(' | '));
   const hw = (tb[3]?.zeilen ?? []).map((z) => z[0]);
-  pruef(hw.length === 2 && /^ΣLU WW enthält 10 Apparate ohne WW-Verbindung: /.test(hw[0]) && /^Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt/.test(hw[1]),
-    'Hinweise: ΣLU WW ohne WW-Verbindung (10 Apparate) und «Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt»', JSON.stringify(hw));
-  pruef(kopfTexte.includes('2 Hinweise des Kerns unter den Tabellen'), 'der Kopf verweist auf die 2 Hinweise unter den Tabellen', kopfTexte.join(' | '));
+  pruef(hw.length === 1 && /^ΣLU WW enthält 10 Apparate ohne WW-Verbindung: /.test(hw[0]) && !hw.some((t) => /^Kurvenwahl/.test(t)),
+    'Hinweis: ΣLU WW ohne WW-Verbindung (10 Apparate); keiner zur Kurvenwahl (im Katalog bestätigt, Christian 20.10.2026)', JSON.stringify(hw));
+  pruef(kopfTexte.includes('1 Hinweis des Kerns unter den Tabellen'), 'der Kopf verweist auf den 1 Hinweis unter den Tabellen', kopfTexte.join(' | '));
   const t0 = tb[0];
   pruef(JSON.stringify(t0.kopf) === JSON.stringify(['Apparateart', 'LU KW', 'LU WW', 'DU', 'UG', 'EG', '1.OG', 'Anzahl', 'ΣLU KW', 'ΣLU WW', 'ΣDU']), 'Spalten wie das Excel: Apparateart, LU KW, LU WW, DU, ein Geschoss je Spalte, Anzahl, ΣLU KW, ΣLU WW, ΣDU', JSON.stringify(t0.kopf));
   const wt = t0.zeilen.find((z) => z[0] === 'Waschtisch / Wandbecken');

@@ -12,13 +12,44 @@ static class SanitaerHilfe
 
     public static SanitaerKatalog SKat => Kat.Sanitaer ?? throw new Xunit.Sdk.XunitException("Katalog sanitaer_belastungswerte.json fehlt");
 
+    /// <summary>Testkopie des Katalogordners unter %TEMP%\HLKS_CAD mit rechnung.kurvenwahl.bestaetigt = false (ohne «bestaetigung») – der Stand vor
+    /// Christians Bestätigung vom 20.10.2026. Damit bleibt der Fall «Kurvenwahl nicht bestätigt → Hinweis» (Prüfbericht 4A B3) geprüft, obwohl der
+    /// echte Katalog jetzt bestätigt ist. Sonst unverändert; einmal je Testlauf angelegt und am Ende gelöscht.</summary>
+    public static Katalog KatalogUnbestaetigt => unbestaetigt.Value;
+
+    static readonly Lazy<Katalog> unbestaetigt = new(() =>
+    {
+        var ziel = Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"kat_kurvenwahl_unbestaetigt_{Environment.ProcessId}");
+        if (Directory.Exists(ziel)) Directory.Delete(ziel, true);
+        var quelle = Katalog.StandardOrdner();
+        foreach (var d in Directory.GetFiles(quelle, "*", SearchOption.AllDirectories))
+        {
+            var neu = Path.Combine(ziel, Path.GetRelativePath(quelle, d));
+            Directory.CreateDirectory(Path.GetDirectoryName(neu)!);
+            File.Copy(d, neu);
+        }
+        var datei = Path.Combine(ziel, SanitaerKatalog.Datei);
+        var roh = (JsonObject)JsonNode.Parse(File.ReadAllText(datei))!;
+        var kw = (JsonObject)roh["rechnung"]!["kurvenwahl"]!;
+        kw["bestaetigt"] = false;
+        kw.Remove("bestaetigung");
+        File.WriteAllText(datei, roh.ToJsonString(new System.Text.Json.JsonSerializerOptions { WriteIndented = true }));
+        AppDomain.CurrentDomain.ProcessExit += (_, _) => { try { Directory.Delete(ziel, true); } catch (IOException) { } catch (UnauthorizedAccessException) { } };
+        var kat = Katalog.Laden(ziel);
+        Assert.False(kat.Sanitaer!.Kurvenwahl.Bestaetigt);
+        return kat;
+    });
+
     static int lauf;
 
     /// <summary>Projekt mit GEB, EG (Kote 0) und OG (Kote 3000), Anlage A-1 mit den Systemen der Medien (KW, WW, SW, ZIR, RW möglich) und je
     /// einem Strang «<Medium>-1». k = Abflusskennzahl der Anlage (Quelle Testwert) oder null.</summary>
-    public static Projekt Netzprojekt(double? k = null, params string[] medien)
+    public static Projekt Netzprojekt(double? k = null, params string[] medien) => NetzprojektMit(Kat, k, medien);
+
+    /// <summary>Wie Netzprojekt, aber mit dem angegebenen Katalog (z. B. KatalogUnbestaetigt).</summary>
+    public static Projekt NetzprojektMit(Katalog katalog, double? k = null, params string[] medien)
     {
-        var p = Neu();
+        var p = Neu(katalog: katalog);
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
             ["klasse"] = "Geschoss", ["kennzeichen"] = "OG", ["teilVon"] = "GEB", ["eigenschaften"] = new JsonObject { ["kote"] = 3000, ["hoehe"] = 3000 },

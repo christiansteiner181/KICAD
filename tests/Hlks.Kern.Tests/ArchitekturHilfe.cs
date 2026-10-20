@@ -29,9 +29,10 @@ static class ArchitekturHilfe
 
     public static Element Hole(Projekt p, string kz) => p.Modell.Finde(kz) ?? throw new Xunit.Sdk.XunitException($"{kz} fehlt im Modell");
 
-    public static Projekt Neu(double schnitthoehe = 1000)
+    /// <summary>katalog: abgewandelte Katalogkopie (z. B. SanitaerHilfe.KatalogUnbestaetigt); Vorgabe der Katalog der Arbeitskopie.</summary>
+    public static Projekt Neu(double schnitthoehe = 1000, Katalog? katalog = null)
     {
-        var p = Projekt.Anlegen(Kat, null, "Test Architektur", "T", "pc");
+        var p = Projekt.Anlegen(katalog ?? Kat, null, "Test Architektur", "T", "pc");
         Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["kennzeichen"] = "GEB" }));
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
