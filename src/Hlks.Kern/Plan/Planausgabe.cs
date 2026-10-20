@@ -186,19 +186,34 @@ public static class Planausgabe
     }
 
     /// <summary>Grösse des Fensters einer Ansicht in Papier-mm für die Platzsuche; ohne berechenbare Grafik eine Ersatzgrösse.</summary>
-    static (double W, double H) GroesseFuerPlatz(Projekt p, Element ansicht)
+    static (double W, double H) GroesseFuerPlatz(Projekt p, Element ansicht, Element? blatt = null, Listentabelle.Platzierung? platz = null)
     {
         try
         {
-            var (_, _, w, h) = Gebiet(ansicht, Grafik.Plan(p, ansicht.Kennzeichen));
+            // Eine Liste, die es auf diesem Blatt noch nicht gibt, wird so gemessen, wie sie dort stehen wird (Bereich, Umbruch, Schrift)
+            var g = ansicht.Text("art") == "liste" && platz is not null ? Listentabelle.Plan(p, ansicht, blatt, platz) : Grafik.Plan(p, ansicht.Kennzeichen);
+            var (_, _, w, h) = Gebiet(ansicht, g);
             return (w, h);
         }
         catch (HlksFehler) { return (ErsatzBreite, ErsatzHoehe); }
     }
 
+    /// <summary>Freier Bereich einer Liste auf dem Blatt (Modul 7 Teil B3) für den Umbruch: die ganze Breite im Zeichenrahmen und die Höhe vom Rahmen oben bis über den
+    /// Plankopf und den Ansichtstitel – derselbe Bereich, in dessen Mitte die Platzsuche (<see cref="FreieLage"/>) eine neue Ansicht zuerst versucht. Das Ergebnis ist der
+    /// Platz für die Tabelle selbst (Papier-mm, ohne die Zugabe des Ansichtsfensters).</summary>
+    public static ListeBereich ListenBereich(Projekt p, Element blatt, double schrift = Listentabelle.SchriftVorgabe)
+    {
+        var format = blatt.Text("format") ?? Blattformate.Vorgabe;
+        var (bw, bh) = Blattformate.Groesse(format, Hoch(blatt));
+        double r = Blattformate.Rand;
+        var km = KopfMasse(p, blatt);
+        double kh = Blattformate.KopfHoehe(format, km.Art, km.Zeilen, km.Titelband);
+        return Listentabelle.BereichImFenster(bw - 2 * r, (bh - r) - (r + kh) - Blattformate.TitelHoehe, schrift);
+    }
+
     /// <summary>Mitte des Ansichtsfensters für eine neue Ansicht: Mitte des freien Bereichs über dem Plankopf; ist dort schon
     /// etwas, die nächstgelegene freie Stelle (Raster 5 mm). Ergebnis in Papier-mm.</summary>
-    public static double[] FreieLage(Projekt p, Modell m, Element blatt, Element ansicht, List<string> hinweise)
+    public static double[] FreieLage(Projekt p, Modell m, Element blatt, Element ansicht, List<string> hinweise, Listentabelle.Platzierung? platz = null)
     {
         var format = blatt.Text("format") ?? Blattformate.Vorgabe;
         var (bw, bh) = Blattformate.Groesse(format, Hoch(blatt));
@@ -206,7 +221,7 @@ public static class Planausgabe
         var km = KopfMasse(p, blatt);
         double kb = Blattformate.KopfBreite(format, km.Art), kh = Blattformate.KopfHoehe(format, km.Art, km.Zeilen, km.Titelband);
         var kopf = km.Art == HkPlankopf.Art.Schema ? (X0: r, Y0: r, X1: r + kb, Y1: r + kh) : (X0: bw - r - kb, Y0: r, X1: bw - r, Y1: r + kh);
-        var (w, h) = GroesseFuerPlatz(p, ansicht);
+        var (w, h) = GroesseFuerPlatz(p, ansicht, blatt, platz);
 
         var belegt = new List<(double X0, double Y0, double X1, double Y1)> { kopf };
         foreach (var af in m.Kinder(blatt.Id).Where(e => e.Klasse == "Ansichtsfenster" && e.Geometrie is { Punkte.Count: > 0 }))

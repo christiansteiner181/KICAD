@@ -107,14 +107,18 @@ public sealed class PlanblattAnlegen : IBefehl
 public sealed class AnsichtPlatzieren : IBefehl
 {
     public string Name => "ansicht_platzieren";
-    public const string Text = "Setzt eine Ansicht (Grundriss, Schnitt, Ansicht, Schema oder Liste) als Ansichtsfenster auf ein Planblatt. Eine Ansicht steht nur auf einem Blatt. Massstab und Ausschnitt kommen von der Ansicht; ein Schema hat keinen Massstab (Papier-mm, 1:1) und zeigt darum im Titel und im Plankopf keinen. Eine Liste (Raumliste, Strangliste, Mengen, Materialliste, Kollisionen, Aussparungen, Sanitär-Zusammenstellung …) wird im PDF als Tabelle gezeichnet (Papier-mm, ohne Massstab; höchstens 45 Zeilen, der Umbruch auf weitere Blattbereiche folgt).";
+    public const string Text = "Setzt eine Ansicht (Grundriss, Schnitt, Ansicht, Schema oder Liste) als Ansichtsfenster auf ein Planblatt. Eine Ansicht steht nur auf einem Blatt. Massstab und Ausschnitt kommen von der Ansicht; ein Schema hat keinen Massstab (Papier-mm, 1:1) und zeigt darum im Titel und im Plankopf keinen. Eine Liste (Raumliste, Strangliste, Mengen, Materialliste, Kollisionen, Aussparungen, Sanitär-Zusammenstellung …) wird im PDF als Tabelle gezeichnet (Papier-mm, ohne Massstab). Passt sie nicht in die Höhe des freien Bereichs, geht sie in Blöcken rechts daneben weiter (umbruch = spalten, Vorgabe; Kopfzeile in jedem Block, Summen nur am Ende); reicht auch die Blattbreite nicht, meldet der Befund P28 «Liste passt nicht aufs Blatt» mit Vorschlag. umbruch = aus: eine Spalte mit höchstens 45 Zeilen (Befund P28, wenn sie nicht passt).";
     public string Beschreibung => Text;
     public const string ParAnsicht = "Ansicht (Kennzeichen oder Id): Grundriss, Schnitt, Ansicht, Schema oder Liste";
+    public const string ParUmbruch = "Nur für Listen: spalten (Vorgabe) = passt die Liste nicht in die Höhe, geht sie in Blöcken rechts daneben weiter | aus = eine Spalte mit höchstens 45 Zeilen. Eigenschaft umbruch des Ansichtsfensters";
+    public const string ParSchrift = "Nur für Listen: Schriftgrösse der Tabelle in Papier-mm (Vorgabe 2.2; 1.5 bis 4). Eigenschaft schrift des Ansichtsfensters";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("planblatt", "text", true, "Planblatt (Kennzeichen, Id oder Plannummer)"),
         new("ansicht", "text", true, ParAnsicht),
         new("lage", "liste", false, "[x, y] Mitte des Fensters auf dem Blatt in Papier-mm, Ursprung unten links; fehlt sie, kommt die Ansicht in die Mitte des freien Bereichs"),
+        new("umbruch", "text", false, ParUmbruch),
+        new("schrift", "zahl", false, ParSchrift),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -134,9 +138,20 @@ public sealed class AnsichtPlatzieren : IBefehl
                 $"Das Fenster verschieben (element_aendern {vorhanden.Kennzeichen} mit geometrie), mit element_loeschen entfernen und neu setzen, oder eine zweite Ansicht anlegen (element_anlegen, Klasse Ansicht, mit ansichtsvorlage {ansicht.Kennzeichen}).");
         }
 
+        // Optionen der Liste (Modul 7 Teil B3): gelten nur für Listen
+        var umbruch = Param.Text(p, "umbruch")?.Trim();
+        var schrift = Param.Zahl(p, "schrift");
+        if ((umbruch is { Length: > 0 } || schrift is not null) && art != "liste")
+            throw new HlksFehler($"umbruch und schrift gelten nur für Listen; {ansicht.Kennzeichen} ist eine {art}-Ansicht.", "umbruch und schrift weglassen.");
+        if (umbruch is { Length: > 0 } && !umbruch.Equals(Listentabelle.UmbruchSpalten, StringComparison.OrdinalIgnoreCase) && !umbruch.Equals(Listentabelle.UmbruchAus, StringComparison.OrdinalIgnoreCase))
+            throw new HlksFehler($"Umbruch «{umbruch}» gibt es nicht.", "Erlaubt: spalten (Vorgabe), aus.");
+        if (schrift is { } sg && (!double.IsFinite(sg) || sg < Listentabelle.SchriftMin || sg > Listentabelle.SchriftMax))
+            throw new HlksFehler($"Die Schriftgrösse {sg:0.##} mm ist nicht möglich.", $"Zwischen {Listentabelle.SchriftMin:0.#} und {Listentabelle.SchriftMax:0.#} mm wählen (Vorgabe {Listentabelle.SchriftVorgabe:0.#}).");
+        var platz = art == "liste" ? new Listentabelle.Platzierung(blatt, Listentabelle.Umbruchwert(umbruch), Listentabelle.SchriftWert(schrift)) : null;
+
         var (bw, bh) = Blattformate.Groesse(blatt.Text("format"), Planausgabe.Hoch(blatt));
         double[] lage;
-        if (p["lage"] is null) lage = Planausgabe.FreieLage(k.Projekt, k.Arbeit, blatt, ansicht, k.Hinweise);
+        if (p["lage"] is null) lage = Planausgabe.FreieLage(k.Projekt, k.Arbeit, blatt, ansicht, k.Hinweise, platz);
         else
         {
             if (p["lage"] is not JsonArray a || a.Count != 2 || Json.Zahl(a[0]) is not double x || Json.Zahl(a[1]) is not double y)
@@ -147,13 +162,18 @@ public sealed class AnsichtPlatzieren : IBefehl
             lage = [x, y];
         }
 
-        new ElementAnlegen().Ausfuehren(k, new JsonObject
+        var fensterPar = new JsonObject
         {
             ["klasse"] = "Ansichtsfenster",
             ["teilVon"] = blatt.Id,
             ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(lage[0], lage[1])) },
             ["bezuege"] = new JsonObject { ["ansicht"] = ansicht.Id },
-        });
+        };
+        var eig = new JsonObject();
+        if (umbruch is { Length: > 0 }) eig["umbruch"] = Listentabelle.Umbruchwert(umbruch);
+        if (schrift is not null) eig["schrift"] = schrift;
+        if (eig.Count > 0) fensterPar["eigenschaften"] = eig;
+        new ElementAnlegen().Ausfuehren(k, fensterPar);
         var fenster = k.Arbeit.Finde(k.Operationen[^1].Id)!;
         k.Hinweise.Add($"Ansichtsfenster {fenster.Kennzeichen}: {ansicht.Kennzeichen} auf {blatt.Kennzeichen} bei [{lage[0]:0.#}, {lage[1]:0.#}] mm.");
     }

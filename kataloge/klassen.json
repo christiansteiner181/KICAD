@@ -453,7 +453,10 @@
       { "name": "ausgabe", "typ": "objekt", "beschreibung": "Letzte Ausgabe-Einstellung { anlass (z. B. «Revisionspläne»), ordner (voller Pfad, sonst Vorschlag <Objekt>\\c_Pläne und Modelle\\d_Ausgang\\b_Pläne\\<TT.MM.JJJJ>_<Anlass>\\<Gewerk>), einzeln (bool: zusätzlich je Plan ein PDF), zeit }" } ] },
   { "name": "Ansichtsfenster", "kuerzel": "AF", "schicht": "ansicht", "gewerk": "allgemein", "geometrie": "punkt",
     "beschreibung": "Eine Ansicht auf einem Planblatt (teilVon = Planblatt, bezuege.ansicht = Ansicht). Lage = Mitte des Fensters auf dem Blatt in Papier-mm, Ursprung unten links. Massstab und Ausschnitt kommen von der Ansicht.",
-    "eigenschaften": [ { "name": "titelZeigen", "typ": "bool", "beschreibung": "Ansichtstitel mit Massstab unter dem Fenster zeigen (Vorgabe ja)" } ] },
+    "eigenschaften": [
+      { "name": "titelZeigen", "typ": "bool", "beschreibung": "Ansichtstitel mit Massstab unter dem Fenster zeigen (Vorgabe ja)" },
+      { "name": "umbruch", "typ": "auswahl", "auswahl": [ "spalten", "aus" ], "beschreibung": "Nur für Listen (Modul 7 Teil B3): spalten (Vorgabe) = passt die Liste nicht in die Höhe des freien Bereichs auf dem Blatt, geht sie in Blöcken rechts daneben weiter (Kopfzeile in jedem Block wiederholt, Summenzeile nur am Ende); aus = eine Spalte mit höchstens 45 Zeilen. Passt die Liste nicht aufs Blatt, meldet der Befund P28 «Liste passt nicht aufs Blatt» mit Vorschlag" },
+      { "name": "schrift", "typ": "zahl", "einheit": "mm", "beschreibung": "Nur für Listen: Schriftgrösse der Tabelle in Papier-mm (Vorgabe 2.2; zulässig 1.5 bis 4, Zeilenhöhe und Abstände folgen im gleichen Verhältnis); eine kleinere Schrift hilft, wenn die Liste nicht aufs Blatt passt (Befund P28)" } ] },
   { "name": "Projektinformation", "kuerzel": "PI", "schicht": "ansicht", "gewerk": "allgemein",
     "beschreibung": "Angaben zum Projekt für Plankopf und Listen; je Projekt eine.",
     "eigenschaften": [

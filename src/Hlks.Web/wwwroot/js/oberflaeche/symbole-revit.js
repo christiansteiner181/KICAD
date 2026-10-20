@@ -138,6 +138,8 @@ koAusPlan | Aussparungsplan anlegen | eigenes | Planblatt mit Öffnung
 koAusIfc | IFC für Architekt | IFC exportieren | Würfel mit gestrichelter Öffnung
 koBcfExport | BCF exportieren | eigenes | Blatt mit Pfeil heraus
 koBcfImport | BCF importieren | eigenes | Blatt mit Pfeil hinein
+koPlan | Koordinationsplan | eigenes | Grundriss mit drei farbigen Leitungen und einer grauen Box
+koBoxen | Aussparungsboxen | eigenes | graue Box mit drei Zeilen und Führungslinie zum Kreis
 sanZusammenstellung | Sanitär-Zusammenstellung | eigenes | Tabelle mit blauem Σ-Kopf und grünem Wassertropfen
 famFamilie | In das Projekt laden | In Projekt laden | Würfel mit blauem Punkt
 palette | Palette | Paletten | Fenster mit blauer Titelleiste
@@ -548,6 +550,12 @@ s('koBcfExport',
 s('koBcfImport',
   DOC32 + '<path class="op" d="M10.5 11.5h12M10.5 15h12"/><path class="fb" d="M23 22h-7v-3.5l-6 5 6 5V25h7z"/>',
   DOC16 + '<path class="fb" d="M11 9.5H7.8V8L4.5 11l3.3 3v-1.5H11z"/>');
+s('koPlan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="w15" d="M3.5 18.5h11v10M14.5 18.5h14"/><path class="svl w2" d="M7 8h13"/><path class="szu w2" d="M7 12.5h18"/><path class="ssa w2" d="M22 8v7"/><path class="f3" d="M20.5 21.5h6v5h-6z"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path d="M1.5 9.5h6v5M7.5 9.5h7"/><path class="svl" d="M3.5 4h6"/><path class="szu" d="M3.5 6.5h9"/><path class="f3" d="M10 10.5h3v3h-3z"/>');
+s('koBoxen',
+  '<rect class="f2" x="12.5" y="4.5" width="15" height="12"/><path d="M15.5 8.5h9M15.5 11h9M15.5 13.5h5"/><circle class="fp so w15" cx="8" cy="23" r="4.5"/><path class="w15" d="M11 19.8l3-3.3"/>',
+  '<rect class="f2" x="6.5" y="1.5" width="8" height="6"/><path d="M8 3.5h5M8 5.5h5"/><circle class="fp so" cx="4" cy="11.5" r="2.5"/><path d="M5.8 9.7l2.2-2.2"/>');
 s('famFamilie', QUADER32 + '<circle class="fb" cx="16" cy="16.5" r="3.2"/>', QUADER16 + '<circle class="fb n" cx="8" cy="8.3" r="1.8"/>');
 s('palette',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 9.5h8v18h-8z"/>',

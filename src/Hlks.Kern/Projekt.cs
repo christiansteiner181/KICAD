@@ -42,7 +42,7 @@ public sealed record StandInfo(int Pakete, string? LetztesPaket, string Pruefsum
 public sealed class Projekt
 {
     public Katalog Katalog { get; }
-    public Modell Modell { get; } = new();
+    public Modell Modell { get; }
     public IProjektSpeicher? Speicher { get; }
     public ProjektKopf Kopf { get; private set; }
     public string Akteur { get; }
@@ -64,10 +64,15 @@ public sealed class Projekt
     public IReadOnlyList<Paket> Verlauf => verlauf;
     public IReadOnlyCollection<string> BekanntePakete => bekannt;
 
-    Projekt(Katalog katalog, IProjektSpeicher? speicher, ProjektKopf kopf, string akteur, string akteurArt, string geraet)
+    Projekt(Katalog katalog, IProjektSpeicher? speicher, ProjektKopf kopf, string akteur, string akteurArt, string geraet, Modell? modell = null)
     {
-        Katalog = katalog; Speicher = speicher; Kopf = kopf; Akteur = akteur; AkteurArt = akteurArt; Geraet = geraet;
+        Katalog = katalog; Speicher = speicher; Kopf = kopf; Akteur = akteur; AkteurArt = akteurArt; Geraet = geraet; Modell = modell ?? new Modell();
     }
+
+    /// <summary>Nur lesende Hülle um ein vorhandenes Modell (kein Speicher, keine Pakete), damit Prüfungen, die nur ein Modell und den Katalog bekommen
+    /// (Pruefungen.Alle), die Abfragen des Kerns benutzen können (z. B. PlanPruefung für die Listen auf Planblättern). Das Modell wird nicht kopiert.</summary>
+    internal static Projekt Lesend(Katalog katalog, Modell modell) =>
+        new(katalog, null, new ProjektKopf { Id = "lesend", Name = "lesend", Angelegt = DateTimeOffset.Now }, "pruefung", "mensch", "intern", modell);
 
     /// <summary>Neues, leeres Projekt. Mit Speicher wird projekt.json angelegt.</summary>
     public static Projekt Anlegen(Katalog katalog, IProjektSpeicher? speicher, string name, string akteur, string geraet, string akteurArt = "mensch")

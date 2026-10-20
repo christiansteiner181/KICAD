@@ -7942,7 +7942,7 @@
       "id": "m7",
       "titel": "Planblatt wie H+K",
       "modul": "7A",
-      "einleitung": "Teil A des Moduls 7: Das Planblatt des HLKS-CAD sieht im PDF aus wie die Revisionspläne von H+K. Der Plankopf trägt beide Standorte und das Logo, das Projekt zweizeilig (Objekt und Plantitel), die Plannummer, Rev. Index mit Rev. Datum, den Massstab und die Tabelle «Planänderungen»; Strangschemas haben einen schmalen Kopf unten links. Die Plannummer schlägt der Kern beim Anlegen nach dem H+K-Schema vor, Revisionen setzt der Kern (nächster Buchstabe, Datum), ein roter Revisionsstempel ist zuschaltbar, Listen lassen sich auf ein Planblatt setzen, und eine doppelte Plannummer meldet der Befund P27. Fachlogik gibt es nur im Kern; die Oberfläche sammelt Eingaben und zeigt Ergebnisse. Das Beispielprojekt hat fiktive Daten. Teil B (Schnitt- und Ansichtsmarken, Aussparungsboxen, Koordinationsplan, DWG-Unterlage, IFC-Export) fehlt noch.",
+      "einleitung": "Teil A des Moduls 7: Das Planblatt des HLKS-CAD sieht im PDF aus wie die Revisionspläne von H+K. Der Plankopf trägt beide Standorte und das Logo, das Projekt zweizeilig (Objekt und Plantitel), die Plannummer, Rev. Index mit Rev. Datum, den Massstab und die Tabelle «Planänderungen»; Strangschemas haben einen schmalen Kopf unten links. Die Plannummer schlägt der Kern beim Anlegen nach dem H+K-Schema vor, Revisionen setzt der Kern (nächster Buchstabe, Datum), ein roter Revisionsstempel ist zuschaltbar, Listen lassen sich auf ein Planblatt setzen, und eine doppelte Plannummer meldet der Befund P27. Fachlogik gibt es nur im Kern; die Oberfläche sammelt Eingaben und zeigt Ergebnisse. Das Beispielprojekt hat fiktive Daten. Aus Teil B stehen hier der Umbruch langer Listen in Blöcken mit dem Befund P28 («Liste passt nicht aufs Blatt») und die Menüband-Knöpfe «Koordinationsplan» und «Aussparungsboxen» im Register Koordination (Teil B3); die übrigen Funktionen von Teil B (Schnitt- und Ansichtsmarken mit Blattverweis, DWG-Unterlage, IFC-Export) fehlen noch.",
       "funktionen": [
         {
           "id": "m7-planblatt-anlegen",
@@ -8304,12 +8304,12 @@
             "Bei «Ansicht» die Liste wählen (Name und Kennzeichen, z. B. «Raumliste (AN-L-R)»), bei «Planblatt» das Blatt.",
             "«Platzieren» klicken und das Blatt als PDF öffnen."
           ],
-          "erwartung": "Die Auswahl «Ansicht» im Dialog enthält jetzt auch Listenansichten (Raumliste, Strangliste, Mengen, Materialliste, Kollisionen, Aussparungen, Sanitär-Zusammenstellung W3 u. a.). Das PDF zeigt die Liste als Tabelle (fette Kopfzeile, Spalten wie am Bildschirm, darüber eine Zusammenfassung wie «13 Räume · Gesamtfläche 380,00 m²», Fusszeilen mit Summen, der Titel steht unter der Tabelle wie bei jeder Ansicht) ohne Massstab; der Massstab im Plankopf erscheint als «-». Die Zahlen kommen aus denselben Abfragen wie die Bildschirmliste. Grenzen in Teil A: Schrift Arial 2.2 mm, höchstens 45 Zeilen («… n weitere Zeilen»), höchstens 380 mm Breite, Spalten höchstens 60 mm (längere Texte mit «…»); ein Umbruch auf weitere Blattbereiche fehlt noch.",
+          "erwartung": "Die Auswahl «Ansicht» im Dialog enthält jetzt auch Listenansichten (Raumliste, Strangliste, Mengen, Materialliste, Kollisionen, Aussparungen, Sanitär-Zusammenstellung W3 u. a.). Das PDF zeigt die Liste als Tabelle (fette Kopfzeile, Spalten wie am Bildschirm, darüber eine Zusammenfassung wie «13 Räume · Gesamtfläche 380,00 m²», Fusszeilen mit Summen, der Titel steht unter der Tabelle wie bei jeder Ansicht) ohne Massstab; der Massstab im Plankopf erscheint als «-». Die Zahlen kommen aus denselben Abfragen wie die Bildschirmliste. Schrift Arial 2.2 mm (am Ansichtsfenster mit «schrift» einstellbar), Spalten höchstens 60 mm (längere Texte mit «…»). Passt die Liste nicht in die Höhe des freien Bereichs, geht sie in Blöcken rechts daneben weiter (Teil B3, siehe «Lange Liste: Umbruch in Blöcken»); ohne Umbruch zeigt sie höchstens 45 Zeilen («… n weitere Zeilen»).",
           "pruefpunkte": [
             "Die Auswahl «Ansicht» führt Listenansichten auf.",
             "Das PDF zeigt Titel, Spaltenköpfe und Zeilen der Liste, z. B. Raum «Technik» mit Fläche 25,00.",
             "Die Liste hat keinen Massstab im Titel; im Plankopf steht «Massstab: -».",
-            "Bei mehr als 45 Zeilen steht am Ende «… n weitere Zeilen».",
+            "Eine lange Liste (mehr Zeilen, als in die Höhe passen) geht in einem zweiten Block rechts daneben weiter, die Kopfzeile steht in jedem Block.",
             "Dieselbe Liste lässt sich nicht auf einem zweiten Blatt platzieren (eine Ansicht steht nur auf einem Blatt)."
           ],
           "bild": {
@@ -8320,9 +8320,50 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:100 (Dialog Ansicht platzieren)",
             "src/Hlks.Kern/Plan/PlanBefehle.cs:109 (ansicht_platzieren, Art liste)",
-            "src/Hlks.Kern/Plan/Listentabelle.cs:122 (Plan) und :391 (Zeichnen)"
+            "src/Hlks.Kern/Plan/Listentabelle.cs:171 (Plan) und :512 (Anordnen)"
           ],
-          "hinweis": "Damit entfällt die offene Grenze aus dem Testbericht 4A (Sanitär-Zusammenstellung nicht auf Planblättern platzierbar). Annahmen des Bauagenten: Arial 2.2 mm, höchstens 45 Zeilen, Umbruch folgt in Teil B."
+          "hinweis": "Damit entfällt die offene Grenze aus dem Testbericht 4A (Sanitär-Zusammenstellung nicht auf Planblättern platzierbar). Annahmen des Bauagenten: Arial 2.2 mm; der Umbruch in Blöcken kam mit Teil B3."
+        },
+        {
+          "id": "m7-liste-umbruch",
+          "titel": "Lange Liste: Umbruch in Blöcken, Option «umbruch» und «schrift»",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Pläne › Planblatt › Ansichtsfenster anklicken, Eigenschaftenpalette: Zeilen «umbruch» und «schrift»"
+          },
+          "schritte": [
+            "Im Beispielprojekt über «Raumliste» eine Listenansicht anlegen und auf ein A3-Planblatt platzieren (Ansicht › Planblätter › «Ansicht platzieren»); bei einer langen Raumliste (z. B. 90 Räume) ansehen, wie das Blatt als PDF aussieht.",
+            "Im Projektbrowser das Planblatt aufklappen und das Ansichtsfenster der Raumliste anklicken.",
+            "In der Eigenschaftenpalette die Zeile «umbruch» auf «aus» stellen und das PDF ansehen.",
+            "«umbruch» wieder auf «spalten» stellen.",
+            "Die Zeile «schrift» auf einen kleineren Wert stellen (z. B. 1.8) und beobachten, wie die Liste enger wird."
+          ],
+          "erwartung": "Mit «umbruch» = «spalten» (Vorgabe) steht eine Liste, die nicht in die Höhe des freien Bereichs auf dem Blatt passt (ganze Blattbreite im Zeichenrahmen, Höhe bis über den Plankopf und den Ansichtstitel), in Blöcken rechts nebeneinander: die Raumliste mit 93 Zeilen auf A3 in zwei Blöcken. Die Kopfzeile jeder Tabelle steht in jedem Block wieder, Summen- und Totalzeilen nur am Ende ihrer Tabelle (zusammen mit der letzten Zeile); mehrere Tabellen (Mengen, Sanitär-Zusammenstellung) laufen durch die Blöcke, ihr Titel wiederholt sich mit «(Fortsetzung)». Die Zusammenfassung («93 Räume · Gesamtfläche …») steht einmal über allen Blöcken. Mit «aus» bleibt es eine Spalte mit höchstens 45 Zeilen (Markierung «… n weitere Zeilen (Umbruch aus)») und der Befund P28 meldet es. Die Schrift ist die Vorgabe 2.2 mm; «schrift» (1.5 bis 4 mm) verkleinert oder vergrössert Schrift, Zeilenhöhe und Abstände im gleichen Verhältnis. Beide Optionen gehören zur Platzierung (Ansichtsfenster) und lassen sich auch beim Platzieren mit ansicht_platzieren setzen.",
+          "pruefpunkte": [
+            "Die lange Raumliste steht auf dem A3-Blatt in zwei Blöcken nebeneinander, jeder Block mit eigener Kopfzeile (Raum, Name, Geschoss, Nutzung …).",
+            "Jede Zeile kommt genau einmal vor; nichts ist abgeschnitten, keine Markierung «weitere Zeilen».",
+            "Mit «umbruch» = «aus» ist es eine Spalte mit der Markierung «… 48 weitere Zeilen (Umbruch aus)»; die Prüfbefunde führen P28.",
+            "Mit «spalten» sind es wieder zwei Blöcke und P28 ist weg.",
+            "Die Auswahl der Zeile «umbruch» kennt genau «spalten» und «aus».",
+            "Eine kleinere «schrift» macht die Tabelle kleiner; Werte ausserhalb 1.5 bis 4 mm werden auf diese Grenzen gesetzt.",
+            "Strg+Z macht die Änderung von «umbruch» rückgängig."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Planblatt-PDF und Eigenschaftenpalette des Ansichtsfensters",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768): 80 Testräume T.01–T.80 im EG zusätzlich (fiktiv), Raumliste AN-L-R auf Planblatt PB-1 «1-0768 L99 Listen» (A3 quer); Ansichtsfenster im Projektbrowser gewählt, Zeile «umbruch» sichtbar; PDF mit zwei Blöcken"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/Listentabelle.cs:512 (Anordnen)",
+            "src/Hlks.Kern/Plan/Planausgabe.cs:204 (ListenBereich)",
+            "src/Hlks.Kern/Plan/PlanBefehle.cs:142 (ansicht_platzieren: umbruch, schrift)",
+            "kataloge/klassen.json:458 (Ansichtsfenster.umbruch, schrift)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Listenumbruch und Koordinationsplan-Knöpfe»)"
+          ],
+          "hinweis": "Annahmen: Bereich = ganze Blattbreite im Zeichenrahmen, Höhe über Plankopf und Ansichtstitel (wie die Platzsuche); Schriftgrenzen 1.5 bis 4 mm. Die Mitte des Fensters folgt dem Umbruch nicht von selbst: wächst eine schon platzierte Liste um einen Block, bleibt ihre Mitte, wo sie war."
         },
         {
           "id": "m7-befund-p27",
@@ -8360,6 +8401,120 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:128 (Knopf Prüfbefunde)"
           ],
           "hinweis": "Vorschlag der nächsten freien Nummer rechnet nur im Fach der Nummer (H, L, S, K)."
+        },
+        {
+          "id": "m7-befund-p28",
+          "titel": "Befund P28: Liste passt nicht aufs Blatt",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Modell",
+            "knopf": "Prüfbefunde",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Im Beispielprojekt 90 Testräume ergänzen und die Raumliste auf ein A3-Planblatt platzieren (Ansicht › Planblätter › «Ansicht platzieren»).",
+            "Register Verwalten › Gruppe Modell › «Prüfbefunde» klicken.",
+            "Den Befund P28 ansehen: Element, Text, Vorschlag.",
+            "Den Vorschlag befolgen: im Projektbrowser das Ansichtsfenster anklicken und «schrift» auf den genannten Wert setzen.",
+            "Prüfbefunde erneut öffnen: P28 ist weg."
+          ],
+          "erwartung": "Der Dialog «Prüfbefunde» führt P28 als Warnung am Ansichtsfenster: «Liste «Raumliste» (AN-L-R) passt nicht aufs Blatt PB-1: sie braucht 3 Blöcke mit zusammen … mm Breite, frei sind … mm; … Zeilen sind nicht gezeichnet». Im PDF steht unter dem letzten Block die Markierung «… n weitere Zeilen (Liste passt nicht aufs Blatt)»: nichts wird ohne Befund abgeschnitten. Der Vorschlag nennt, was hilft: bei «umbruch» = «aus» zuerst den Umbruch einschalten, sonst die grösste kleinere Schrift (2.0, 1.8, 1.6 oder 1.5 mm), mit der die Liste passt, sonst ein Folgeblatt (zweite Listenansicht auf einem weiteren Planblatt) oder ein grösseres Format. Auch mit «umbruch» = «aus» meldet P28 eine Liste, die höher ist als ihr Bereich oder auf 45 Zeilen gekürzt wurde. Ein Klick auf die Zeile wählt das Ansichtsfenster.",
+          "pruefpunkte": [
+            "P28 erscheint als Warnung am Ansichtsfenster (Element AF-…).",
+            "Der Text nennt die Liste, das Blatt, die Zahl der Blöcke und die Breite.",
+            "Der Vorschlag nennt eine Schrift in mm; mit ihr verschwindet der Befund.",
+            "Das PDF trägt die Markierung «Liste passt nicht aufs Blatt».",
+            "Die Platzierung selbst meldet P28 schon im Ergebnis (neue Befunde), wenn die Liste von Anfang an nicht passt.",
+            "Eine Liste, die passt, hat keinen P28; eine Liste ohne Blatt ebenfalls nicht."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Prüfbefunde»",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768): 90 Testräume T.01–T.90 im EG zusätzlich (fiktiv), Raumliste AN-L-R auf Planblatt PB-1 (A3 quer); Befund P28 am Ansichtsfenster mit Vorschlag «Schrift auf 2 mm verkleinern»"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/PlanPruefung.cs:30 (ListenPruefen)",
+            "src/Hlks.Kern/Plan/PlanPruefung.cs:67 (ListenVorschlag)",
+            "src/Hlks.Kern/Pruefung/Pruefungen.cs:46 (Code P28)"
+          ],
+          "hinweis": "Die Untergrenze 1.5 mm der Schrift ist eine Annahme (Lesbarkeit im Druck), keine Norm. Die Prüfung rechnet die Liste bei jeder Prüfung neu, solange Listen auf Planblättern stehen."
+        },
+        {
+          "id": "m7-koordinationsplan",
+          "titel": "Koordinationsplan per Knopf anlegen oder öffnen",
+          "wo": {
+            "register": "Koordination",
+            "gruppe": "Koordinationsplan",
+            "knopf": "Koordinationsplan",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Einen Grundriss öffnen, z. B. «Grundriss EG Sanitär» (das Geschoss der aktiven Ansicht gilt).",
+            "Register Koordination › Gruppe Koordinationsplan › «Koordinationsplan» klicken.",
+            "Den neuen Reiter «Koordination EG» ansehen: Gewerke in Koordinationsfarben, graue Architektur, Boxen an den Aussparungen.",
+            "Zurück in den Grundriss wechseln und den Knopf nochmals klicken.",
+            "Einen Grundriss eines anderen Geschosses öffnen und den Knopf klicken."
+          ],
+          "erwartung": "Der Knopf legt für das Geschoss der aktiven Ansicht einen Grundriss «AN-KO-<Geschoss>» («Koordination <Geschoss>», z. B. AN-KO-EG) an – Eigenschaften art = grundriss, darstellung = koordination, aussparungsboxen = ein, Massstab wie der aktive Grundriss (sonst 1:50), alle Gewerke sichtbar – und öffnet ihn. Der Kern zeichnet jedes Gewerk in seiner Koordinationsfarbe aus gewerke.json (Heizung rot, Lüftung blau, Sanitär grün) und die Architektur grau. Der zweite Klick legt keine zweite Ansicht an, er öffnet die vorhandene; jedes Geschoss hat seinen eigenen Plan. Der Knopf ist gesperrt, solange keine Ansicht mit Geschoss aktiv ist (Tooltip: «Zuerst einen Grundriss öffnen …»), und in 3D, Liste oder Schema. Der Plan lässt sich wie jede Ansicht auf ein Planblatt setzen; der Plannummern-Vorschlag nimmt dafür den Fachbuchstaben K.",
+          "pruefpunkte": [
+            "Nach dem ersten Klick gibt es AN-KO-EG («Koordination EG») im Projektbrowser und als Reiter; sie steht bei den Grundrissen.",
+            "Die Eigenschaften der Ansicht zeigen darstellung = koordination und aussparungsboxen = ein.",
+            "Heizung, Lüftung und Sanitär erscheinen in den Gewerkefarben, nicht in den Medienfarben.",
+            "Der zweite Klick öffnet AN-KO-EG wieder, es entsteht keine zweite Ansicht.",
+            "Ein anderes Geschoss ergibt einen eigenen Plan («Koordination 1.OG»).",
+            "Ohne geöffnete Ansicht ist der Knopf gesperrt; der Tooltip nennt den Grund.",
+            "Strg+Z macht das Anlegen rückgängig."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Register Koordination und Reiter «Koordination EG»",
+            "zustand": "Beispielprojekt MFH Musterweg mit geladener Testrohrserie (fiktiv, DN 50) und einigen Leitungen in den Gewerken Heizung, Lüftung und Sanitär im EG; Grundriss EG Sanitär aktiv, danach «Koordination EG» geöffnet"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:109 (Knopf koordination.plan)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/koordinationsplan.js:59 (anlegenParameter)",
+            "src/Hlks.Kern/Grafik/KoordinationGrafik.cs (Darstellung koordination)"
+          ],
+          "hinweis": "Kennzeichen- und Namensvorschlag wie bei den anderen Ansichten; ist AN-KO-EG vergeben (z. B. von Hand angelegt), wird das nächste freie Kennzeichen genommen. Die Farben stehen nur in kataloge/gewerke.json."
+        },
+        {
+          "id": "m7-aussparungsboxen",
+          "titel": "Aussparungsboxen im Grundriss ein- und ausschalten",
+          "wo": {
+            "register": "Koordination",
+            "gruppe": "Koordinationsplan",
+            "knopf": "Aussparungsboxen",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette der Ansicht › aussparungsboxen"
+          },
+          "schritte": [
+            "Einen Grundriss mit Aussparungen öffnen (z. B. «Grundriss EG Sanitär» nach «Aussparungen vorschlagen»).",
+            "Register Koordination › Gruppe Koordinationsplan › «Aussparungsboxen» klicken: der Knopf ist gedrückt.",
+            "Die Boxen an den Aussparungen ansehen (Gewerk, «WD 35 x35», «BR …» bzw. «Achse …»).",
+            "Den Knopf nochmals klicken: die Boxen verschwinden.",
+            "Den Koordinationsplan öffnen und den Knopf ansehen."
+          ],
+          "erwartung": "Der Schalter setzt die Ansichtseigenschaft «aussparungsboxen» der aktiven Grundrissansicht (Befehl element_aendern: ein = true, aus = Eigenschaft entfernt, Vorgabe aus). Der Kern zeichnet an jeder Aussparung eine graue Box mit drei Zeilen (Gewerk, Art und Mass in cm, bei Wanddurchbrüchen die Höhe) mit Führungslinie. Der Knopf ist gedrückt, wo der Kern die Boxen zeichnet. Gesperrt (mit Grund im Tooltip) ist er in 3D-, Listen- und Schemaansichten und bei Vorlagen, im Aussparungsplan (dort stehen Massketten statt Boxen) und im Koordinationsplan (Boxen immer ein, Knopf gedrückt).",
+          "pruefpunkte": [
+            "Im Grundriss ohne Boxen ist der Knopf nicht gedrückt; nach dem Klick steht aussparungsboxen = ein in den Eigenschaften und der Knopf ist gedrückt.",
+            "Nach dem zweiten Klick ist die Eigenschaft entfernt und der Knopf nicht mehr gedrückt.",
+            "Im Koordinationsplan ist der Knopf gedrückt und gesperrt (Tooltip: «… immer eingeschaltet»).",
+            "In der 3D-Ansicht ist der Knopf gesperrt (Tooltip: «… nur im Grundriss»).",
+            "Strg+Z macht das Umschalten rückgängig."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG mit Aussparungsboxen, Register Koordination",
+            "zustand": "Beispielprojekt MFH Musterweg mit geladener Testrohrserie (fiktiv, DN 50), drei Rohre T-1, T-2, T-3 quer durch die Südwand W-EG-S, Aussparungen vorgeschlagen; Grundriss EG Sanitär mit eingeschaltetem Schalter «Aussparungsboxen»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-koordination.js:128 (Knopf koordination.boxen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/koordinationsplan.js:88 (boxenParameter)",
+            "src/Hlks.Kern/Grafik/AussparungGrafik.cs (Boxen)"
+          ],
+          "hinweis": "Gleiche Eigenschaft wie in der Eigenschaftenpalette der Ansicht; der Knopf ersetzt dort das Anklicken."
         }
       ]
     },
