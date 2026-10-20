@@ -199,7 +199,7 @@ Modul 3 gebaut am 18./19.10.2026, Abnahme durch Christian offen (Auftrag: ohne A
 | 20.10.2026 | – | Stand 6e4e75b (Entscheide + Kälte): alle Browser-Reihen + `stand_pruefen -NurPruefen` | hlks-test (Ports 5190–5219) | ok (23/24; sanitaer-belastung → Fix 043e22a) |
 | 20.10.2026 | – | Spezifikation Grundausstattung Rohr- und Kanalserien (Christian: «generell integrieren»; 7 Rohr-, 3 Kanalserien, Quellen Hersteller/Debrunner/Schmidlin, Ablage Bürobibliothek nach Freigabe) | Hauptlauf | ok |
 | 20.10.2026 | – | IFC-Import: Kältesysteme in eigene Anlage A-KAE (Entscheid «Eigene Anlage unter Heizung»), Glykol-Farben bestätigt – Commit e158930; Gesamtprüfung neu auf e158930 (Lauf 6e4e75b um 10:01 abgebrochen: alle dotnet-Prozesse beendet, Ursache in Klärung) | Hauptlauf | ok |
-| 20.10.2026 | – | Grundausstattung: lokales Arbeitsprojekt `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` (Server 5153 aus Arbeitskopie 6e4e75b, Bibliothek lokal), 10 KI-Aufträge «Familie aus Unterlagen» nacheinander (Abo, mit Internet) | KI im Produkt (Hauptlauf steuert) | läuft |
+| 20.10.2026 | – | Grundausstattung: lokales Arbeitsprojekt `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` (Server 5153 aus Arbeitskopie 6e4e75b, Bibliothek lokal), 10 KI-Aufträge «Familie aus Unterlagen» nacheinander (Abo, mit Internet) | KI im Produkt (Hauptlauf steuert) | ok – alle 10 Serien 16:09 fertig, Stichproben bestanden; Übersicht berichte/grundausstattung-serien.md |
 | 20.10.2026 | – | Sanitär-Zusammenstellung schlägt Sanitäranlage vor (nicht A-KAE) – Befund Browser-Reihe sanitaer-belastung auf 6e4e75b; Commit 043e22a | Hauptlauf | ok |
 | 20.10.2026 | 7 | Spezifikation Teil B2 (IFC-Export mit IDS) und B3 (Listenumbruch, Menüband); Entscheide A1–A4 | Hauptlauf | ok |
 | 20.10.2026 | 7 | B2 Kern: IFC-Export IFC4/IFC2x3, IfcCovering, IDS-Prüfer, Exportbericht | hlks-kern (worktree, Ports 5230–5239) | ok – 510c495/ecf9791, Rundreise 131 Elemente/142 Verbindungen, eigener IDS-Prüfer (Xbim.IDS.Validator ist AGPL) |
@@ -308,6 +308,6 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | 3c | Abnahmelauf B6 mit echtem Claude (5 Prüfpunkte bestanden) → Internet-Schalter frei, Notschalter HLKS_KI_INTERNET=0; Befund N5 | Hauptlauf | ok |
 | 20.10.2026 | – | Grössenregeln Christian (DN aus di, Lüftung Aussendurchmesser, bis DN 300): KI-Anleitung Grundsatz 2, Spezifikation; R4 nachgeführt (12 Grössen DN 25–300, Formteile) | Hauptlauf | ok |
 | 20.10.2026 | – | Hersteller-DN hat Vorrang (bestätigt Christian), KI-Anleitung/Spezifikation | Hauptlauf | ok |
-| 20.10.2026 | 7 | B2 Oberfläche: Dialog «IFC exportieren», Anleitung, Browser-Reihe ifc-export | hlks-modul (worktree, Ports 5300–5309) | läuft |
+| 20.10.2026 | 7 | B2 Oberfläche: Dialog «IFC exportieren», Anleitung, Browser-Reihe ifc-export | hlks-modul (worktree, Ports 5300–5309) | ok – 3cc5fb9, Merge c882376 |
 | 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | läuft |
 | 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |

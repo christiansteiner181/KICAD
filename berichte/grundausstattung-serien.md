@@ -1,6 +1,6 @@
 # Grundausstattung Rohr- und Kanalserien – Übersicht zur Freigabe
 
-Stand 20.10.2026 · Hauptlauf · Spezifikation `entwurf/grundausstattung-leitungsserien.md`
+Stand 20.10.2026, 16:30 · Hauptlauf · Spezifikation `entwurf/grundausstattung-leitungsserien.md` · **alle zehn Serien gebaut und stichprobengeprüft**
 
 Arbeitsprojekt (lokal, nicht auf W:): `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` – in KICAD über «Öffnen»
 laden; Server der Läufe: Port 5153. Alle Familien sind **Entwürfe**. Konflikte entscheiden, freigeben und in die
@@ -23,7 +23,7 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 | R4 | Stahlrohr geschweisst | Serie, Bogen (14), T-Stück (43), Reduktion (46) | 12 (33,7 × 2,3 DN 25 … 323,9 × 5,6 DN 300) | keine | bestanden | Kürzel; DN aus di (nachgeführt) |
 | K1 | Wickelfalzrohr rund | Serie, Bogen (7, Masse Lindab), T-Stück (325), Reduktion (300) | 25 (Ø 80 … 1250) | keine | bestanden | Bogen nur Ø 80–200; Lindab-Masse; aussen = d (Nachtrag) |
 | K3 | Flexrohr | 8 Serien (AR, ARH, ARHP, ARHI 25/50, ARHS 25/50, KSR), ohne Bogen | je 2–19 (Ø 80 … 400) | AR: v_max 25/30 m/s | bestanden | v_max, p_max; Biegeradius fehlt |
-| K2 | Rechteckkanal | offen | | | | |
+| K2 | Rechteckkanal | Serie, Bogen (400), T-Stück (400, nur gleich gross), Reduktion (1 Platzhalter) | 400 (Normkanal a × b 145 … 2500) | keine | bestanden | **freie Grösse b × h?** Reduktionen, reduzierte T-Stücke |
 
 ## R1 Geberit Mapress C-Stahl
 
@@ -125,3 +125,28 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 - **Stichprobe Hauptlauf:** Ø-Reihe 80 … 315 wie Preisbuch Rohre S. 21; 355/400 aus der Schmidlin-Broschüre Zubehör 2025.09 (von schmidlinag.ch).
 - **Zur Entscheidung:** AR: v_max 25 m/s (Preisbuch) gegen 30 m/s (Broschüre) als Konflikt; p_max 10 000 Pa gegen 3000 Pa (Entwurf 3000).
   Biegeradius nennt Schmidlin nicht.
+
+## K2 Rechteckkanal
+
+- **Ergebnis:** Serie mit dem Normkanal-Raster aus Schmidlin-Preisbuch Kanäle S. 19 (a und b je 145, 200, 300 … 1600, 1800, 2000, 2250, 2500 →
+  400 Typen), Bogen 90° (Normbogen 209 BN) und 10–60° (Bogen schräg 210.1 BS) mit L = (115 + a/2) · tan(w/2) + 35, T-Stück gleich gross
+  (L = 150 + a/2), Reduktion (Konus 214 KO) nur als ein Typ mit Exemplar-Grössen.
+- **Stichprobe Hauptlauf** gegen das Preisbuch: Raster S. 19 und «innerer Radius von 115 mm und 35 mm verlängert» (S. 26) – stimmen.
+  Abfrage der Serie: 400 Grössen gültig, jede findet ihren Bogen.
+- **Zur Entscheidung:**
+  1. **Rechteckkanäle werden nach Mass gefertigt** – heute nur die 400 Normgrössen zeichenbar. Vorschlag: KICAD-Erweiterung «Serie mit
+     freier Grösse b × h» (Formteile rechnen ihre Masse aus der Formel, die die KI schon angelegt hat).
+  2. Reduktionen je Grössenpaar und reduzierte T-Stücke fehlen (bei 400 Grössen über 3800 Paare) – mit Punkt 1 lösbar.
+  3. Winkelraster 10–60° ganzzahlig ist eine Annahme; Unstimmigkeit Schmidlin S. 19 (145 × 145 unter der «minimalen Abwicklung 600 mm»).
+
+## Zusammenfassung für die Freigabe
+
+| Thema | Serien | Vorschlag |
+| --- | --- | --- |
+| Kürzel fehlt | R1 C-Stahl, R3/R4 Stahl, R5 Sanipex, R7 PE | Christian legt Kürzel fest (z. B. «ST», «PEX», «PE»?) |
+| Neue Herstellermasse (Konflikte) | R1 Bogen 12 Werte, R2 Bogen 6 Werte | neue Masse übernehmen (Vorschlag des Kerns) |
+| Schwache Quellen | R6 (DIBt 2019), R7 (Katalog AU 2020), Formteile R2 (Katalog PL), K1-Bogen (Lindab) | freigeben mit Vermerk oder Schweizer Unterlagen nachliefern |
+| DN | R4 nachgeführt (DN aus di); übrige Hersteller-DN | erledigt |
+| Grösse 66,7 | R1 | streichen, falls in der Schweiz nicht geführt |
+| Rechteckkanal nach Mass | K2 | KICAD-Erweiterung freie Grösse |
+| Übernahme in die Bürobibliothek | alle | nach Freigabe durch Christian (Arbeitsprojekt im Desktop öffnen, Familien prüfen, freigeben, in die Bürobibliothek übernehmen) |
