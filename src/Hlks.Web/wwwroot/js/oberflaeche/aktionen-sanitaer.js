@@ -10,10 +10,16 @@ import { ansichtOeffnen } from '../fenster.js';
 import { meldung, zeigen } from './dialoge.js';
 import { sende } from './befehle.js';
 import { aufElement, freiesKennzeichen, esc, knoten, vergleichen } from './werkzeug.js';
-import { aktiveAnlage, listeFuerAnlage, listenKennzeichen, listenName } from './sanitaer-anlage.js';
+import { aktiveAnlage, listeFuerAnlage, listenKennzeichen, listenName, anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
+import { systemGewerk } from './projektbrowser-gliederung.js';
 
 const projektOffen = () => !!zustand.status?.offen;
 const anlagen = () => derKlasse('Anlage').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
+/** Anlage mit einem Sanitärsystem (Systemtyp bzw. Medium des Katalogs). */
+const istSanitaer = (a) => {
+  const ctx = { systemtypen: zustand.katalog?.systemtypen ?? [], medien: zustand.katalog?.medien ?? [] };
+  return anlageMitGewerk(a, derKlasse('System'), (s) => systemGewerk(ctx, s), element, 'sanitaer');
+};
 const hatAnlage = () => projektOffen() && anlagen().length > 0;
 const hinweis = () => (projektOffen() ? 'Das Projekt hat noch keine Anlage (Sanitäranlage).' : 'Zuerst ein Projekt öffnen.');
 
@@ -45,8 +51,8 @@ registrieren({
   aktiv: hatAnlage, hinweis,
   async ausfuehren(p) {
     const alle = anlagen();
-    let anlage = p?.anlage ? element(p.anlage) : aktiveAnlage({ auswahl: element(zustand.auswahl), aktiveAnsicht: element(zustand.aktiveAnsicht), anlagen: alle, element });
-    if (!anlage && alle.length > 1) anlage = await anlageFragen(alle);
+    let anlage = p?.anlage ? element(p.anlage) : aktiveAnlage({ auswahl: element(zustand.auswahl), aktiveAnsicht: element(zustand.aktiveAnsicht), anlagen: alle, element, istSanitaer });
+    if (!anlage && alle.length > 1) anlage = await anlageFragen(anlagenVorne(alle, istSanitaer));
     if (anlage) await sanitaerListeOeffnen(anlage.kennzeichen);
   },
 });

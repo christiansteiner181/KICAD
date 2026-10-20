@@ -10,6 +10,8 @@ import { sende, ergebnisMelden } from './befehle.js';
 import { design, designUmschalten } from './design.js';
 import { einlageplanDialog } from './einlageplaene-dialog.js';
 import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, freierName, anzeigeName } from './werkzeug.js';
+import { systemGewerk } from './projektbrowser-gliederung.js';
+import { anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
 const DETAILGRADE = ['grob', 'mittel', 'fein'];
@@ -22,6 +24,13 @@ const LISTEN = {
   sanitaer_zusammenstellung: ['Sanitär-Zusammenstellung (W3)', 'SANITAER'],
 };
 const anlagen = () => derKlasse('Anlage').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
+/** Anlagen mit einem System des Gewerks zuerst, die übrigen danach – die Sanitär-Zusammenstellung schlägt so eine
+ *  Sanitäranlage vor und nicht die alphabetisch erste (A-KAE, seit Kälte eine eigene Anlage im Gewerk Heizung ist). */
+const anlagenFuer = (gewerk) => {
+  const ctx = { systemtypen: zustand.katalog?.systemtypen ?? [], medien: zustand.katalog?.medien ?? [] };
+  const systeme = derKlasse('System');
+  return anlagenVorne(anlagen(), (a) => anlageMitGewerk(a, systeme, (s) => systemGewerk(ctx, s), element, gewerk));
+};
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
 const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden'];
 const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden'];
@@ -54,7 +63,7 @@ function ansichtFormular(art) {
     <label class="fz"><span>Kennzeichen</span><input type="text" class="f-kz"></label>
     ${art === 'grundriss' ? `<label class="fz"><span>Geschoss</span><select class="f-geschoss">${gs.map((g) => `<option value="${esc(g.kennzeichen)}" ${g.kennzeichen === geschossVorgabe ? 'selected' : ''}>${esc(g.kennzeichen)}${g.name ? ' – ' + esc(g.name) : ''}</option>`).join('')}</select></label>` : ''}
     ${art === 'liste' ? `<label class="fz"><span>Liste</span><select class="f-liste">${Object.entries(LISTEN).map(([k, [n]]) => `<option value="${k}">${esc(n)}</option>`).join('')}</select></label>` : ''}
-    ${art === 'liste' ? `<label class="fz f-anlage-zeile" hidden><span>Anlage</span><select class="f-anlage">${anlagen().map((a) => `<option value="${esc(a.kennzeichen)}">${esc(a.kennzeichen)}${a.name ? ' – ' + esc(a.name) : ''}</option>`).join('')}</select></label>` : ''}
+    ${art === 'liste' ? `<label class="fz f-anlage-zeile" hidden><span>Anlage</span><select class="f-anlage">${anlagenFuer('sanitaer').map((a) => `<option value="${esc(a.kennzeichen)}">${esc(a.kennzeichen)}${a.name ? ' – ' + esc(a.name) : ''}</option>`).join('')}</select></label>` : ''}
     ${art !== 'liste' ? `<label class="fz"><span>Detailgrad</span><select class="f-detail">${DETAILGRADE.map((d) => `<option ${d === 'mittel' ? 'selected' : ''}>${d}</option>`).join('')}</select></label>` : ''}
     ${art === 'grundriss' ? `<label class="fz"><span>Massstab 1:</span><select class="f-massstab">${MASSSTAEBE.map((m) => `<option ${m === 50 ? 'selected' : ''}>${m}</option>`).join('')}</select></label>` : ''}
     ${art !== 'liste' ? `<fieldset class="f-gewerke"><legend>Gewerke</legend><div class="spalten">${gewerkeListe().map(([k, n]) => `<label class="haken"><input type="checkbox" value="${esc(k)}" ${gewerkeVorgabe.includes(k) ? 'checked' : ''}> ${esc(n)}</label>`).join('')}</div></fieldset>` : ''}

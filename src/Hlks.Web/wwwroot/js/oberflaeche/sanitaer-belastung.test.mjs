@@ -230,6 +230,26 @@ test('aktive Anlage: Auswahl, offene Liste, einzige Anlage, sonst null (dann fra
   assert.equal(A.aktiveAnlage({ auswahl: null, aktiveAnsicht: null, anlagen: [], element: el }), null);
 });
 
+test('aktive Anlage: mehrere Anlagen, aber nur eine mit Sanitärsystemen (Kälte als eigene Anlage A-KAE) → diese', () => {
+  const anlageKae = { id: 'a0', kennzeichen: 'A-KAE', klasse: 'Anlage' };
+  const sysKae = { id: 's0', kennzeichen: 'KAE-VL', klasse: 'System', teilVon: 'A-KAE' };
+  const alle2 = [anlageKae, anlageB, sysKae, sysKW, lose];
+  const el2 = (kz) => alle2.find((e) => e.kennzeichen === kz || e.id === kz) ?? null;
+  const gewerk = (s) => (s.kennzeichen.startsWith('KAE') ? 'heizung' : 'sanitaer');
+  const istSanitaer = (a) => A.anlageMitGewerk(a, [sysKae, sysKW], gewerk, el2, 'sanitaer');
+  assert.equal(istSanitaer(anlageB), true);
+  assert.equal(istSanitaer(anlageKae), false);
+  assert.equal(A.anlageMitGewerk(anlageKae, [sysKae, sysKW], gewerk, el2, 'heizung'), true);
+  // ein Apparat ohne System (z. B. WT nur im Raum) und keine Liste offen: die einzige Sanitäranlage
+  assert.equal(A.aktiveAnlage({ auswahl: lose, aktiveAnsicht: null, anlagen: [anlageKae, anlageB], element: el2, istSanitaer }), anlageB);
+  // zwei Sanitäranlagen: nicht bestimmbar → null (der Dialog fragt, Sanitäranlagen zuerst)
+  const anlageS2 = { id: 'a3', kennzeichen: 'A-SAN2', klasse: 'Anlage' };
+  assert.equal(A.aktiveAnlage({ auswahl: lose, aktiveAnsicht: null, anlagen: [anlageKae, anlageB, anlageS2], element: el2, istSanitaer: (a) => a !== anlageKae }), null);
+  assert.deepEqual(A.anlagenVorne([anlageKae, anlageB, anlageS2], (a) => a !== anlageKae), [anlageB, anlageS2, anlageKae]);
+  // ohne istSanitaer wie bisher
+  assert.equal(A.aktiveAnlage({ auswahl: lose, aktiveAnsicht: null, anlagen: [anlageKae, anlageB], element: el2 }), null);
+});
+
 test('Liste der Anlage finden; Kennzeichen- und Namensvorschlag wie im Dialog', () => {
   const l1 = { kennzeichen: 'AN-LI-SANITAER-A-1', werte: { art: 'liste', liste: 'sanitaer_zusammenstellung', anlage: 'A-1' } };
   const l2 = { kennzeichen: 'AN-LI-RAUM', werte: { art: 'liste', liste: 'raumliste' } };
