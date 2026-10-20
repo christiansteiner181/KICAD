@@ -92,7 +92,7 @@ test('Parameter von plansatz_pdf: Reihenfolge, Abgewählte, Ordner nur von Hand'
   const s = antwort().plansaetze[1];
   const z = T.zeilen(s);
   const f = T.formularAus(s);
-  assert.deepEqual(f, { anlass: 'Revisionspläne', ordner: 'W:\\x\\Sanitär', ordnerVonHand: false, einzeln: true });
+  assert.deepEqual(f, { anlass: 'Revisionspläne', ordner: 'W:\\x\\Sanitär', ordnerVonHand: false, einzeln: true, stempelAn: false, stempel: T.stempelVorschlag() });   // Modul 7 Teil A: Stempel aus, Vorschlag «Revisionsplan <Datum>»
   const p = T.exportParameter(s, z, f);
   assert.deepEqual(p, { plansatz: 'PS-1', blaetter: ['PB-4', 'PB-1', 'PB-6'], abgewaehlt: ['PB-1'], anlass: 'Revisionspläne', ordner: '', einzeln: true });
   const von = T.exportParameter(s, T.hoch(z, 2), { ...f, anlass: '  Eingabe ', ordner: ' D:\\Aus ', ordnerVonHand: true, einzeln: false }, { pruefen: true });
@@ -101,7 +101,7 @@ test('Parameter von plansatz_pdf: Reihenfolge, Abgewählte, Ordner nur von Hand'
   const hand = T.formularAus(antwort().plansaetze[2]);
   assert.equal(hand.ordnerVonHand, true);
   assert.equal(hand.ordner, 'D:\\frei');
-  assert.deepEqual(T.formularAus(null), { anlass: '', ordner: '', ordnerVonHand: false, einzeln: false });
+  assert.deepEqual(T.formularAus(null), { anlass: '', ordner: '', ordnerVonHand: false, einzeln: false, stempelAn: false, stempel: T.stempelVorschlag() });
 });
 
 test('Prüfung vor dem Export', () => {

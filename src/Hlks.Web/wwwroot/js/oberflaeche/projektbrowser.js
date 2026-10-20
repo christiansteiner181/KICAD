@@ -432,7 +432,7 @@ function kontext(e) {
   } else if (art === 'planblatt') {
     const p = { planblatt: k, element: k };
     const gw = blattGewerk(plansaetzeDaten(), k);
-    eintraege.push(eintrag('Öffnen', 'plan.oeffnen', p), eintrag('PDF öffnen', 'plan.pdf', p), eintrag('Serien-PDF …', 'plan.serienpdf', gw ? { plansatz: 'auto:' + gw.gewerk } : undefined), { trenner: true },
+    eintraege.push(eintrag('Öffnen', 'plan.oeffnen', p), eintrag('PDF öffnen', 'plan.pdf', p), eintrag('Revision …', 'plan.revision', p), eintrag('Serien-PDF …', 'plan.serienpdf', gw ? { plansatz: 'auto:' + gw.gewerk } : undefined), { trenner: true },
       eintrag('Gewerk …', 'plan.gewerk', p), eintrag('Gewerk bestätigen', 'plan.gewerk-bestaetigen', p), { trenner: true },
       eintrag('Umbenennen', 'aendern.umbenennen', p), eintrag('Löschen', 'aendern.loeschen', p));
   } else if (art === 'ansicht') {

@@ -32,12 +32,17 @@ public static class Blattformate
         return hochformat ? (g.B, g.H) : (g.H, g.B);
     }
 
-    /// <summary>Breite des H+K-Plankopfs in mm: 180 mm (Vorlage), auf A4 verkleinert, damit die Zeichnung Platz behält (Annahme).</summary>
-    public static double KopfBreite(string? format) => string.Equals(format, "A4", StringComparison.OrdinalIgnoreCase) ? 150 : 180;
+    /// <summary>Breite des H+K-Plankopfs in mm: Grundriss-Kopf 180 mm (Vorlage), Schema-Kopf 150 mm (schmal); auf A4 verkleinert, damit die
+    /// Zeichnung Platz behält (Annahme).</summary>
+    public static double KopfBreite(string? format, HkPlankopf.Art art = HkPlankopf.Art.Grundriss)
+    {
+        bool a4 = string.Equals(format, "A4", StringComparison.OrdinalIgnoreCase);
+        return art == HkPlankopf.Art.Schema ? (a4 ? 125 : 150) : (a4 ? 150 : 180);
+    }
 
-    /// <summary>Gesamthöhe des Plankopfs in mm inklusive Titelband «Planinhalt» (Vorlage 52 mm + 10 mm Band bei 180 mm Breite).</summary>
-    public static double KopfHoehe(string? format) => KopfBreite(format) / HkPlankopf.Verhaeltnis;
-
+    /// <summary>Gesamthöhe des Plankopfs in mm: wächst mit der Zahl der Planänderungen (Zeilen) nach oben, mit Titelband +10 mm bei 180 mm Breite.</summary>
+    public static double KopfHoehe(string? format, HkPlankopf.Art art = HkPlankopf.Art.Grundriss, int zeilen = 1, bool titelband = false) =>
+        HkPlankopf.Hoehe(art, KopfBreite(format, art), zeilen, titelband);
     /// <summary>Unterhalb jedes Ansichtsfensters reservierte Höhe für Titel, grafischen Massstab und Nordpfeil in mm (Annahme).</summary>
     public const double TitelHoehe = 16;
 }

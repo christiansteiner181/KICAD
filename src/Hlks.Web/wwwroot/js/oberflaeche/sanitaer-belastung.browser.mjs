@@ -554,10 +554,12 @@ try {
   await warteBis(async () => (await ausw(`const f = await import('/js/fenster.js'); const z = await import('/js/zustand.js'); return z.element(f.aktive()?.id)?.kennzeichen ?? null;`)) === 'AN-LI-SANITAER-A-SAN', 'Knopf legt die Liste an und öffnet sie', 15000);
   await listeWarten('Liste geladen');
   pruef((await tabellen()).length === 4, 'die angelegte Liste zeigt die drei Tabellen und die Hinweise');
-  // Planblätter: Listen sind (wie die anderen Listen auch) nicht platzierbar
+  // Planblätter: seit Modul 7 Teil A sind Listen platzierbar; das PDF zeigt die Sanitär-Zusammenstellung als Tabelle
   await befehl('planblatt_anlegen', { nummer: 'S01', titel: 'Test M4' });
   const platz = await kern('befehl', 'ansicht_platzieren', { planblatt: 'S01', ansicht: 'AN-LI-SANITAER-A-SAN' });
-  pruef(platz.angenommen === false && /liste-Ansicht|Listen|liste/.test(platz.fehler ?? platz.meldung ?? ''), 'Planblatt: die Sanitär-Zusammenstellung ist – wie jede Liste – nicht platzierbar (nur CSV)', JSON.stringify(platz).slice(0, 240));
+  pruef(platz.angenommen === true, 'Planblatt: die Sanitär-Zusammenstellung ist – wie jede Liste – platzierbar (Modul 7 Teil A)', JSON.stringify(platz).slice(0, 240));
+  const planPdf = new Uint8Array(await (await fetch(`${SERVER}/api/plan/S01.pdf`)).arrayBuffer());
+  pruef(Buffer.from(planPdf.subarray(0, 4)).toString('latin1') === '%PDF' && planPdf.length > 5000, 'Planblatt S01 als PDF mit der Tabelle der Zusammenstellung', String(planPdf.length));
 
   // ================================================================== 7. Befund P26 und Hinweise (Prüfbericht 4A)
   abschnitt('7. Befund P26 «Apparat ohne Weg im Netz» und Hinweis in der Liste');

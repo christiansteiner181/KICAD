@@ -1219,8 +1219,7 @@ Q_WW und Q_tot. Die Hinweise des Kerns (`hinweise[]`, z. B. K fehlt, Kurvenwahl 
 seit dem Prüfbericht 4A als vierte Tabelle **Hinweise** unter den Blöcken (nur wenn es welche gibt; Klasse `li-hinweise`, auch in der CSV), der Kopf nennt nur ihre Zahl. Tooltip je Zeile: Formel mit Excel-Zelle (aus `formeln` des Kerns) und genauer Wert; Tooltip der Apparateart: Quelle mit Excel-Zeile und Kennzeichen der Apparate. Zeilen-/Zellklassen
 `li-massgebend`, `li-nebenwert`, `li-fehlt`. Erweiterungen der Listenaufbereitung (für alle Listen nutzbar): Spalte `format` (Funktion), `nurCsv`, `tooltip`; Zeile `klasse`, `zellklassen`, `titel`; Tabelle `klasse`, `ohneSortieren`;
 gemeinsame Zellenfunktion `zelle()` in `listenformat.js` für Ansicht und CSV. **CSV** (Knopf «CSV …», N3): alle drei Tabellen untereinander mit Titelzeilen, die Blöcke mit zusätzlicher Spalte «Formel (Excel-Zelle)», Zahlen gerundet wie in
-der Ansicht. **Planblätter:** Listen sind im Kern nicht platzierbar (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema) – das gilt für alle Listen; Ausgabe der Sanitär-Zusammenstellung ist die CSV-Datei. (Listen im Plan wären eine
-Kern-Erweiterung für alle Listenarten.)
+der Ansicht. **Planblätter:** seit Modul 7 Teil A platziert `ansicht_platzieren` auch Listen (Abschnitt «Planblatt wie H+K (Modul 7 Teil A)» am Ende); die CSV-Datei bleibt der zweite Weg.
 
 **Knopf:** Register Gebäudetechnik › Gruppe «Apparate und Armaturen» › «Sanitär-Zusammenstellung» (`sanitaer.zusammenstellung`, kein Kürzel; Symbol `sanZusammenstellung`, Strich und Revit-Stil). Öffnet die Liste der aktiven Anlage
 (Anlage des gewählten Elements über `system`/`teilVon`, sonst Anlage der offenen Sanitärliste, sonst die einzige Anlage; bei mehreren fragt ein Dialog) und legt sie beim ersten Mal an. Bei 1920 px bleibt in allen Registern jede Gruppe in Stufe G
@@ -1230,3 +1229,32 @@ Kern-Erweiterung für alle Listenarten.)
 
 **Prüfen:** `node --test js/oberflaeche/sanitaer-belastung.test.mjs` (Rundung, Palette, Tabelle, aktive Anlage, Liste mit Referenzfall Walkringen, CSV, Verdrahtung); Kern: `SchemaBelastungTests.cs`; Browser:
 `HLKS_M4_PORT=5211 HLKS_CDP_PORT=9560 node js/oberflaeche/sanitaer-belastung.browser.mjs` (Ports 5200–5219) (Bilder hell/dunkel nach `%TEMP%\HLKS_CAD\m4_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
+
+## Planblatt wie H+K (Modul 7 Teil A)
+
+Spezifikation: `entwurf/modul-7.md` (Teil A, Punkte 1–7); Muster: `entwurf/planmuster.md`, echte H+K-Revisionspläne Bernstrasse 21.01.2026. Alles läuft über die Kern-Tür; die Oberfläche setzt weder Buchstaben noch Datum noch Plannummern selbst.
+
+**Kern (Überblick):** `kataloge/buero.json › standorte` (Absender, mit Quelle) · `Plan/Plankopf.cs` (Grundriss-Kopf mit beiden Standorten, Logo, `Projekt:` Objekt + Plantitel, `Rev. Index`/`Rev. Datum`, `Massstab: 1 : 50`, Tabelle
+Planänderungen mit beliebig vielen Zeilen – der Kopf wächst nach oben, höchstens zwölf Zeilen sichtbar; Schema-Kopf schmal unten links, nur Bolligen mit Web, ohne Massstab; Revisionsstempel rot, 12°) · `Plan/Revisionen.cs`
+(Befehle `revision_hinzufuegen`, `plansatz_revision_hinzufuegen`) · `Plan/Plannummernvorschlag.cs` (Abfrage `plannummer_vorschlag`; `planblatt_anlegen` ohne Nummer/Titel) · `Plan/PlanPruefung.cs` (Befund **P27**, Plannummer doppelt) ·
+`Plan/Listentabelle.cs` (Listen als Tabelle im PDF; Ansicht `art liste` auf dem Blatt). Das Titelband «Planinhalt» ist abschaltbar (Eigenschaft `titelband` am Planblatt bzw. in der Projektinformation, Vorgabe **aus**).
+
+**Orte in der Oberfläche**
+
+| Funktion | Ort | Kern |
+| --- | --- | --- |
+| Planblatt anlegen mit Plannummern-Vorschlag | Register **Ansicht › Planblätter › Planblatt**; Dialog: Gewerk, Geschoss, Art (Geschossplan, FBH, Steigzonen, Grundleitungen, Einlagen, Kanalisation) → Nummer, Titel und Begründung des Kerns; von Hand eingegebene Werte werden nicht überschrieben | Abfrage `plannummer_vorschlag`, Befehl `planblatt_anlegen` (setzt `gewerk`) |
+| Revision hinzufügen | Register **Ansicht › Planblätter › Revision …**; Kontextmenü des Planblatts im Projektbrowser **Revision …**; Eigenschaften › `revisionen` › **+ Revision hinzufügen**; Dialog: Planblatt, Beschreibung (Pflicht), Datum (leer = heute) | Befehl `revision_hinzufuegen` (Index = nächster Buchstabe, Datum heute) |
+| Revisionsliste | Eigenschaftenpalette des Planblatts: Tabelle Index · Datum · Beschreibung, Zeilen bearbeiten (Enter/Fokuswechsel) und löschen (×) – Muster: Spezialinstallationen (`sanitaer-palette.js`); Bausteine in `planblatt-hk.js` | `element_aendern` (`revisionen`) |
+| Revision für alle Pläne eines Satzes | Serien-PDF-Dialog › Kopf des Satzes › **Revision …** (gilt für die gewählten Pläne, gleiche Beschreibung, Index je Plan) | Befehl `plansatz_revision_hinzufuegen` (mit `blaetter`) |
+| Revisionsstempel | Serien-PDF-Dialog › **Revisionsstempel auf alle Pläne** (Häkchen, Text «Revisionsplan TT.MM.JJJJ» vorbelegt); sonst Eigenschaft `stempel` am Planblatt bzw. am Plansatz | Parameter `stempel` von `plansatz_pdf`; Vorrang: Ausgabe › Blatt › Plansatz |
+| Liste auf dem Planblatt | Register **Ansicht › Planblätter › Ansicht platzieren** (Listenansichten stehen jetzt in der Auswahl); das Planblatt zeigt die Tabelle im PDF-Betrachter | `ansicht_platzieren`, PDF `Plan/Listentabelle.cs` |
+| Befund doppelte Plannummer | Verwalten › Modell › Prüfbefunde, **P27** (Warnung am späteren Blatt, Vorschlag: nächste freie Nummer) | `Pruefungen` (`PlanPruefung`) |
+| Titelband, Kopfart | Eigenschaften des Planblatts: `titelband` (bool), `kopfart` (grundriss oder schema); Projektinformation: `titelband` | Katalog `Planblatt`, `Projektinformation` |
+
+**Annahmen:** Plannummern-Reihenfolge nach der Kote der Geschosse des Gebäudes (S ab 00, sonst ab 01); FBH ab EG aufwärts (H13 ff.), Steigzonen H21, Sanitär-Sonderblätter = Zahl der Geschosse (Grundleitungen), +1 … +3 (Einlagen, erste freie), +4
+(Kanalisation) – nach den Bernstrasse-Plänen; Kälte und Elektro haben keinen Fachbuchstaben (kein Vorschlag). Koordination trägt K (wie die echten Pläne); das bestehende Gewerk-Raster der Plansätze (`PlanGewerk`) kennt K als Kälte – nicht geändert.
+Listen im PDF: Arial 2.2 mm, höchstens 45 Zeilen und 380 mm Breite je Liste, Spalten ≤ 60 mm (längere Texte mit «…»); der Umbruch auf weitere Blattbereiche folgt in Teil B.
+
+**Prüfen:** `node --test js/oberflaeche/planblatt-hk.test.mjs`; Kern: `PlanblattHkTests.cs`; Browser: `HLKS_PH_PORT=5179 HLKS_CDP_PORT=9500 node js/oberflaeche/planblatt-hk.browser.mjs` (Bilder `%TEMP%\HLKS_CAD\ph_*.png`; `HLKS_KATALOG` auf die Kataloge
+der Arbeitskopie setzen).

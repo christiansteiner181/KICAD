@@ -581,6 +581,7 @@ public sealed class EinlageplanTests
         var p = MitEinlagen();
         Ok(p.Ausfuehren("einlageplaene_anlegen", new JsonObject()));
         var b = p.Modell.DerKlasse("Planblatt").Single(x => x.Text("titel") == "Sanitär Einlagen D.ü.UG");
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = b.Kennzeichen, ["eigenschaften"] = new JsonObject { ["titelband"] = true } }));   // Modul 7 Teil A: «Masse in cm» steht im abschaltbaren Titelband
         var pdf = Planausgabe.Pdf(p, b.Kennzeichen, unkomprimiert: true);
         Assert.True(pdf.Length > 1000);
         Assert.Contains("Masse in cm", System.Text.Encoding.Latin1.GetString(pdf));

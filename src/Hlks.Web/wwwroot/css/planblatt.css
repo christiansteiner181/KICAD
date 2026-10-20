@@ -1,0 +1,24 @@
+/* Planblatt wie H+K (Modul 7 Teil A): Revisionsliste in der Eigenschaftenpalette (Muster: .ep-spez in sanitaer.css), Dialog «Planblatt anlegen», Stempel im Serien-PDF */
+.ep-zeile.ep-breit .ep-revisionen { flex: 1; min-width: 0; }
+.ep-rev { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ep-rev th { font-weight: 400; font-size: 11px; color: var(--text-leise); text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-rev th:nth-child(1) { width: 14%; }
+.ep-rev th:nth-child(2) { width: 30%; }
+.ep-rev th:nth-child(4) { width: 18px; }
+.ep-rev td { padding: 1px 2px; }
+.ep-rev input { width: 100%; box-sizing: border-box; min-width: 0; height: var(--hoehe-feld); padding: 0 3px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.ep-rev input:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.ep-rev-weg { width: 16px; height: 16px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; line-height: 1; }
+.ep-rev-weg:hover { color: var(--fehler); }
+.ep-rev-fuss { display: flex; align-items: center; gap: 8px; padding: 2px 2px 0; flex-wrap: wrap; }
+.ep-rev-neu { height: var(--hoehe-feld); padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; }
+.ep-rev-neu:hover { background: var(--ob-hover-tief); }
+.ep-rev-hinweis { font-size: 11px; }
+
+.plan-anlegen .fz-zeile { display: flex; gap: 8px; }
+.plan-anlegen .fz-zeile .fz { flex: 1; min-width: 0; grid-template-columns: 1fr; gap: 2px; }
+.plan-anlegen .fz-zeile .fz select { width: 100%; }
+.plan-anlegen .f-vorschlag { min-height: 1.2em; margin: 2px 0 6px; }
+
+.sp-stempel-zeile { display: flex; align-items: center; gap: 8px; }
+.sp-stempel-zeile .sp-stempel { flex: 1; min-width: 0; }

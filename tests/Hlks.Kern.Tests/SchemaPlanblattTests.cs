@@ -90,6 +90,8 @@ public class SchemaPlanblattTests
         var p = Beispielprojekt.Erzeugen(Kat, null);
         Ok(Blatt(p, "S-1", "Prinzipschema Sanitär", "A1"));
         Ok(Platzieren(p, "PB-1", "AN-SCHEMA-SAN", 380, 330));
+        // Grundriss-Kopf mit Titelband erzwingen (Modul 7 Teil A: ein Blatt nur mit Schemas hat sonst den schmalen Schema-Kopf ohne Massstab und ohne Band)
+        Ok(p.Ausfuehren("element_aendern", Par(("element", "PB-1"), ("eigenschaften", new JsonObject { ["kopfart"] = "grundriss", ["titelband"] = true }))));
         var s = Pdf(p);
         var t = Texte(s);
         Assert.Contains(t, x => x.StartsWith("Prinzipschema Sanit"));                  // Titel unter dem Fenster (Name der Ansicht) und Planinhalt
@@ -109,6 +111,7 @@ public class SchemaPlanblattTests
         Ok(Blatt(p, "S-2", "Grundriss und Schema", "A1"));
         Ok(Platzieren(p, "PB-1", "AN-GR-EG", 200, 330));
         Ok(Platzieren(p, "PB-1", "AN-SCHEMA-SAN", 600, 330));
+        Ok(p.Ausfuehren("element_aendern", Par(("element", "PB-1"), ("eigenschaften", new JsonObject { ["titelband"] = true }))));
         // das Schema auf eine andere Einheit gestellt: ändert nichts, es zählt nicht (kein «gemischt»)
         Ok(p.Ausfuehren("element_aendern", Par(("element", "AN-SCHEMA-SAN"), ("eigenschaften", new JsonObject { ["bemassungEinheit"] = "mm" }))));
         var t = Texte(Pdf(p));
@@ -116,8 +119,9 @@ public class SchemaPlanblattTests
         Assert.DoesNotContain("div.", t);                                              // ein Massstab im Plankopf: der des Grundrisses
         Assert.Contains("Masse in cm", t);
         Assert.Contains(t, x => x.StartsWith("Prinzipschema Sanit"));
-        // Titel des Schemas ohne Massstab: genau ein «1:50» (Titel des Grundrisses) und der Plankopf
-        Assert.Equal(2, t.Count(x => x == "1:50"));
+        // Titel des Schemas ohne Massstab: genau ein «1:50» (Titel des Grundrisses); der Plankopf schreibt «1 : 50» wie die H+K-Pläne
+        Assert.Equal(1, t.Count(x => x == "1:50"));
+        Assert.Contains("1 : 50", t);
         Assert.DoesNotContain(t, x => x.Contains("1:1"));
     }
 
@@ -143,8 +147,10 @@ public class SchemaPlanblattTests
         var p = Beispielprojekt.Erzeugen(Kat, null);
         Ok(Blatt(p, "G-1", "Grundriss EG"));
         Ok(Platzieren(p, "PB-1", "AN-GR-EG", 200, 160));
+        Ok(p.Ausfuehren("element_aendern", Par(("element", "PB-1"), ("eigenschaften", new JsonObject { ["titelband"] = true }))));
         var t = Texte(Pdf(p));
-        Assert.Equal(2, t.Count(x => x == "1:50"));
+        Assert.Equal(1, t.Count(x => x == "1:50"));
+        Assert.Contains("1 : 50", t);
         Assert.Contains("Masse in cm", t);
         Assert.Contains(t, x => Regex.IsMatch(x, @"^\d+(\.\d+)? m$"));                 // grafischer Massstab
         Assert.DoesNotContain(Planausgabe.SchemaOhneMassstab, t);
