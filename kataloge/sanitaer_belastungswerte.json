@@ -1,12 +1,12 @@
 {
-  "$kommentar": "Belastungswerte LU (Kalt-/Warmwasser) und Abwasser-Anschlusswerte DU der Sanitärapparate. Quelle ist allein Christians Zusammenstellung – Werte dort nachführen, nie herleiten oder ergänzen (CLAUDE.md: Normwerte nie aus dem Gedächtnis). Übertragen vom Hauptlauf am 20.10.2026 per Skript aus Tabelle1 A7:D40; «zeile» = Excel-Zeile. null = Apparat hat diesen Anschluss nicht.",
+  "$kommentar": "Belastungswerte LU (Kalt-/Warmwasser) und Abwasser-Anschlusswerte DU der Sanitärapparate. Quelle ist allein Christians Zusammenstellung – Werte dort nachführen, nie herleiten oder ergänzen (CLAUDE.md: Normwerte nie aus dem Gedächtnis). Übertragen vom Hauptlauf am 20.10.2026 per Skript aus Blatt «MFHA» A7:D40; «zeile» = Excel-Zeile. null = Apparat hat diesen Anschluss nicht.",
   "quelle": {
     "dokument": "LU_DU Zusammenstellung_.xlsx",
     "pfad": "W:\\02_Projektdateien Objekte\\Worb_BES_Bernstrasse\\f_Berechnungen\\02_Sanitär\\LU_DU Zusammenstellung_.xlsx",
     "objekt": "Walkringen Überbauung Vielmattstrasse",
     "stand": "14.03.2024",
-    "verfasser": "Christian Steiner, H+K Planungs AG",
-    "bereich": "Tabelle1 A7:D40"
+    "verfasser": "H+K Planungs AG; von Christian Steiner als Quelle genannt (HKAP Projektieren-Modul, 28.08.2026). Datei-Eigenschaften: erstellt «Hauptbenutzer», zuletzt geändert «daniele gulizia»; Kürzel in Zelle O2 «ek».",
+    "bereich": "Blatt «MFHA» A7:D40 (Formeln B55–O67)"
   },
   "rechnung": {
     "$kommentar": "Formeln wie im Excel (Zellen in Klammern); Gesamtwerte je Anlage, nicht je Teilstrecke.",
@@ -16,13 +16,25 @@
       "faktor": 0.459,
       "exponent": 0.353,
       "zelle": "C57 = B56^0.353*0.459",
-      "text": "Spitzenvolumenstrom bei 0.3 bis 300 l/s, grösster LU 3 (Diagramm 1 W3)"
+      "text": "Spitzenvolumenstrom bei 0.3 bis 300 l/s, grösster LU 3 (Diagramm 1 W3)",
+      "grosserLu": 3,
+      "bereichLs": [
+        0.3,
+        300
+      ],
+      "bereichZelle": "C55 «Spitzenvolumenstrom bei 0.3 bis 300 l/s», C56 «Grösster LU: 3»"
     },
     "spitzeKurve5": {
       "faktor": 0.598,
       "exponent": 0.257,
       "zelle": "I57 = B56^0.257*0.598",
-      "text": "Spitzenvolumenstrom bei 0.5 bis 15 l/s, grösster LU 5 (Diagramm 1 W3)"
+      "text": "Spitzenvolumenstrom bei 0.5 bis 15 l/s, grösster LU 5 (Diagramm 1 W3)",
+      "grosserLu": 5,
+      "bereichLs": [
+        0.5,
+        15
+      ],
+      "bereichZelle": "I55 «Spitzenvolumenstrom bei 0.5 bis 15 l/s», I56 «Grösster LU: 5»"
     },
     "spitzeGesamt": "plus Spezialinstallationen Versorgung (C59 = C57+I51 bzw. I59 = I57+I51)",
     "schmutzwasser": {
@@ -34,7 +46,12 @@
       "zelle": "M65",
       "text": "Wert im Objekt Walkringen (Gebäudeart Wohnen); weitere Werte nur aus der Norm (fehlt)"
     },
-    "gesamtabfluss": "Q_tot = Q_WW + Spezialinstallationen Entsorgung (M67 = M66+N51)"
+    "gesamtabfluss": "Q_tot = Q_WW + Spezialinstallationen Entsorgung (M67 = M66+N51)",
+    "kurvenwahl": {
+      "regel": "grösster Einzel-LU > 3 → Kurve «grösster LU 5», sonst Kurve «grösster LU 3»",
+      "quelle": "NICHT im Excel (dort stehen beide Kurven nebeneinander, der Bearbeiter liest ab). Übernommen aus HKAP Projektieren-Modul (SanitaerKatalog.cs, 28.08.2026, von Christian abgenommen). Beide Werte werden immer mit ausgewiesen.",
+      "bestaetigt": false
+    }
   },
   "referenz": {
     "$kommentar": "Walkringen, Excel-Ergebnis als Testfall",
@@ -81,21 +98,21 @@
     { "key": "spuelbecken", "name": "Spülbecken 1- und 2-teilig", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 18 },
     { "key": "wandausgussbecken", "name": "Wandausgussbecken", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 19 },
     { "key": "waschrinne_4", "name": "Waschrinne über 4 Entnahmestellen", "luKw": 1, "luWw": 1, "du": 0.8, "zeile": 20 },
-    { "key": "waschtrog_kw", "name": "Waschtrog KW", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 21 },
+    { "key": "waschtrog_kw", "name": "Waschtrog KW", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 21, "nameExcel": "Waschrog KW" },
     { "key": "waschtrog", "name": "Waschtrog", "luKw": 2, "luWw": 2, "du": 0.8, "zeile": 22 },
     { "key": "waschtrog_ba", "name": "Waschtrog über BA", "luKw": 2, "luWw": 2, "du": null, "zeile": 23 },
     { "key": "gwa_spueltisch", "name": "Haushalt-GWA über Spültisch", "luKw": 1, "luWw": null, "du": null, "zeile": 24 },
     { "key": "gwa_direkt", "name": "Haushalt-GWA (Direktanschluss)", "luKw": 1, "luWw": null, "du": 0.8, "zeile": 25 },
-    { "key": "waschmaschine_6", "name": "Waschmaschine bis 6 kg", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 26 },
+    { "key": "waschmaschine_6", "name": "Waschmaschine bis 6 kg", "luKw": 2, "luWw": null, "du": 0.8, "zeile": 26, "nameExcel": "Waschmaschine bis 6kg" },
     { "key": "bodenablauf_56", "name": "Bodenablauf DN 56", "luKw": null, "luWw": null, "du": 1, "zeile": 27 },
-    { "key": "waschmaschine_12", "name": "Waschmaschine 7 – 12 kg", "luKw": 2, "luWw": null, "du": 1.5, "zeile": 28 },
+    { "key": "waschmaschine_12", "name": "Waschmaschine 7 – 12 kg", "luKw": 2, "luWw": null, "du": 1.5, "zeile": 28, "nameExcel": "Waschmaschine 7 - 12kg" },
     { "key": "gwa_gewerbe", "name": "Gewerbe-GWA", "luKw": 1, "luWw": null, "du": 1.5, "zeile": 29 },
     { "key": "bodenablauf_70", "name": "Bodenablauf DN 70", "luKw": null, "luWw": null, "du": 1.5, "zeile": 30 },
     { "key": "wc_75", "name": "Klosettanlage bis 7.5 Liter Spülwassermenge", "luKw": 1, "luWw": null, "du": 2, "zeile": 31 },
     { "key": "bodenablauf_100", "name": "Bodenablauf DN 100", "luKw": null, "luWw": null, "du": 2, "zeile": 32 },
     { "key": "wc_90", "name": "Klosettanlage bis 9.0 Liter Spülwassermenge", "luKw": 1, "luWw": null, "du": 2.5, "zeile": 33 },
     { "key": "ausguss_faekalien", "name": "Stand- / Wandausguss für Fäkalien / Putzwasser", "luKw": 2, "luWw": 2, "du": 2.5, "zeile": 34 },
-    { "key": "waschmaschine_40", "name": "Waschmaschine 13 – 40 kg", "luKw": 1, "luWw": 1, "du": 2.5, "zeile": 35 },
+    { "key": "waschmaschine_40", "name": "Waschmaschine 13 – 40 kg", "luKw": 1, "luWw": 1, "du": 2.5, "zeile": 35, "nameExcel": "Waschmaschine 13 - 40kg" },
     { "key": "steckbeckenapparat", "name": "Steckbeckenapparat", "luKw": 2, "luWw": 2, "du": 2.5, "zeile": 36 },
     { "key": "grosswanne", "name": "Grosswanne / Saunatauchbecken", "luKw": 3, "luWw": 3, "du": 2.5, "zeile": 37 },
     { "key": "getraenkeautomat", "name": "Getränkeautomat", "luKw": 1, "luWw": null, "du": 0.5, "zeile": 38 },
