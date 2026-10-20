@@ -71,3 +71,5 @@ fehlende oder widersprüchliche Angaben als Befund erscheinen.
 DN je Teilstrecke Trinkwasser (Belastungswerttabellen W3), Abwasser (SN 592000/SN EN 12056: Q_WW je Teilstrecke, Füllung,
 Gefälle, Lüftung), Hausanschluss (Tabelle 5 W3). Erst mit den Normtexten im Normenverzeichnis; Werte nur mit Zitat
 (Norm, Ausgabe, Ziffer, Seite), Normtabellen als versionierte JSON, Christian prüft die Übertragung gegen.
+
+**Bestätigt:** Christian, 20.10.2026 (Fragefenster): Kurvenwahl «grösster LU > 3 → Kurve 5» (aus HKAP), KW vor dem Wassererwärmer trägt ΣLU WW, Vorgabe-Apparateart je Klasse, Beispielprojekt K = 0.5 fiktiv. **Teil B** startet, sobald Christian den Ablageort der Normen nennt.

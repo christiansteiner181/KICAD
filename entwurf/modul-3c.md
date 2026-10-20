@@ -77,3 +77,5 @@ Muster: `AuftragDienst.cs` (Claude Code über Christians Abo, ohne API-Schlüsse
 
 Testbericht `berichte/modul-3c-testbericht.md` (hlks-test), Kapitel 3c im Funktionsverzeichnis der Bedienungsanleitung, Abnahmelauf
 mit echtem Claude (Abo) auf dem Beispielprojekt durch den Hauptlauf: Strang ändern + zurücknehmen, Normfrage mit Zitat, Neustart.
+
+**Bestätigt:** Christian, 20.10.2026 (Fragefenster): Annahmen A1–A4, strengere Verbotsliste, Internet ohne Projektzugriff/-kontext, Freigabe der Auswahl – «Alle bestätigen». Internet-Schalter bleibt bis zur Erledigung der Sicherheitsauflagen B3/B4/B6 gesperrt (`berichte/modul-3c-sicherheitspruefung.md`).

@@ -82,3 +82,5 @@ Fertig, wenn … im Beispielprojekt ein Koordinationsplan des EG in Gewerkefarbe
 | Spezifikation | Hauptlauf |
 | A1–A7 | hlks-modul (worktree) |
 | Abnahme-Bilder, Testbericht | hlks-test |
+
+**Entscheid:** Christian, 20.10.2026 (Fragefenster): Fachbuchstabe **K = Koordination** (Kälte vorerst ohne Buchstaben). Nächster Schritt bis zur Normenlieferung: Teil B (IFC-Export mit IDS, Listenumbruch, Menüband-Knöpfe Koordinationsplan/Boxen).

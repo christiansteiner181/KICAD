@@ -60,3 +60,10 @@ Projektdateien über Pfade lesbar, UNC-Pfade, Nachweis mit echtem Claude) erledi
 - Das Excel «LU_DU Zusammenstellung_.xlsx» heisst im Blatt «MFHA» (nicht «Tabelle1»); Datei-Eigenschaften: erstellt
   «Hauptbenutzer», zuletzt geändert «daniele gulizia».
 - Normenverzeichnis: 315 deutsche Normen gefunden, Volltext beim ersten Lauf erst für 62 (füllt sich im Hintergrund).
+
+## Entscheide Christian, 20.10.2026 (Fragefenster nach dem Bericht)
+
+1. **Fach K = Koordination** (wie die H+K-Pläne); Kälte vorerst ohne Fachbuchstaben – umgesetzt (c7fa3e2).
+2. **3c-Annahmen alle bestätigt** (A1–A4, Verbotsliste, Internet ohne Projektzugriff, Freigabe der Auswahl).
+3. **4A-Annahmen alle bestätigt** (Kurvenwahl, KW vor Wassererwärmer mit ΣLU WW, Vorgabe-Apparateart, Beispiel K 0.5) – Katalog `kurvenwahl.bestaetigt = true`.
+4. **Weiter:** Christian nennt den Ablageort der Normen SN 592000, SN EN 12056, SVGW W3 → dann Modul 4 Teil B; bis dahin Modul 7 Teil B.
