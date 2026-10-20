@@ -516,7 +516,10 @@ public class StartApiTests
         await u.Oeffnen(p1);
         string Ziel(string ort = "") => "/api/projekt/vorschau?stand=x" + (ort == "" ? "" : "&ort=" + Uri.EscapeDataString(ort));
         // kein PNG
-        var (c1, j1) = await u.PostPng(Ziel(), Encoding.UTF8.GetBytes("das ist kein Bild, nur Text mit genug Zeichen für den Kopf."), "text/plain");
+        // als text/plain weist schon der Herkunftsschutz ab (415, Sicherheitsprüfung 3c B1); als image/png prüft der Endpunkt den Inhalt (400)
+        var (c415, _) = await u.PostPng(Ziel(), Encoding.UTF8.GetBytes("das ist kein Bild, nur Text mit genug Zeichen für den Kopf."), "text/plain");
+        Assert.Equal(HttpStatusCode.UnsupportedMediaType, c415);
+        var (c1, j1) = await u.PostPng(Ziel(), Encoding.UTF8.GetBytes("das ist kein Bild, nur Text mit genug Zeichen für den Kopf."), "image/png");
         Assert.Equal(HttpStatusCode.BadRequest, c1);
         Assert.Contains("PNG", Z(j1!["fehler"]));
         Assert.Equal(HttpStatusCode.BadRequest, (await u.PostPng(Ziel(), [])).Code);                      // leer
