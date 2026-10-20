@@ -581,7 +581,12 @@ try {
     await H.send('Input.dispatchMouseEvent', { type: 'mouseReleased', x: pos.x, y: pos.y, button: 'left', buttons: 0, clickCount: 1 });
     await warte(200);
   };
-  const mitteH = (sel) => H.ausw(`const e = document.querySelector(${JSON.stringify(sel)}); e.scrollIntoView({ block: 'center', behavior: 'instant' }); const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };`);
+  // Nach einem Sprung (#k-…) scrollt die Seite weich nach (scroll-behavior: smooth); erst klicken, wenn die Lage zweimal hintereinander gleich ist,
+  // sonst geht der Klick daneben (Befund Testlauf 20.10.2026: erster ✓ verloren).
+  const mitteH = (sel) => H.ausw(`const e = document.querySelector(${JSON.stringify(sel)}); e.scrollIntoView({ block: 'center', behavior: 'instant' });
+    let vorher = null; for (let i = 0; i < 40; i++) { await new Promise((r) => setTimeout(r, 50)); const r = e.getBoundingClientRect(); const jetzt = Math.round(r.top) + ':' + Math.round(r.left);
+      if (jetzt === vorher) break; vorher = jetzt; e.scrollIntoView({ block: 'center', behavior: 'instant' }); }
+    const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 };`);
   const punktStatus = (i) => H.ausw(`const li = document.querySelector('#f-${FUNKTION} .pruef li[data-punkt="${i}"]'); return { ok: li.querySelector('.ok').getAttribute('aria-pressed'), mangel: li.querySelector('.mangel').getAttribute('aria-pressed') };`);
   const pruefstand = async () => (await (await fetch(`${SERVER}/api/hilfe/pruefung`)).json());
   pruef(F_INV.pruefpunkte.length >= 2, 'Die Funktion hat mindestens zwei Prüfpunkte', String(F_INV.pruefpunkte.length));
