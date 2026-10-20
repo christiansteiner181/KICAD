@@ -1,5 +1,5 @@
 {
-  "stand": "20.10.2026, nach N3 (Einlagepläne, Projektinformationen, Listen-CSV und KS-Liste haben jetzt einen Bedienort)",
+  "stand": "20.10.2026, nach Modul 7 Teil A (Planblatt wie H+K)",
   "luecken": [
     "Aussparungen zusammenfassen: kein eigener Knopf; geschieht in «Aussparungen vorschlagen».",
     "Einlageplan anlegen: Name und Bauteil (Decke, Bodenplatte, Wand) setzt der Kern nach dem Planschlüssel; im Dialog nicht wählbar.",
@@ -8,6 +8,9 @@
     "Strang von Hand einem HKAP-Strang zuordnen: kein Dialog, heute nur über die KI.",
     "Zonen in der Projektbrowser-Gliederung «Energie und Umwelt»: noch nicht vorhanden.",
     "Mitgelieferte Familienbibliothek im Programm: leer; Familien kommen aus der Bürobibliothek auf W: bzw. werden selbst erstellt.",
-    "Symbole im Revit-Stil (Teil S): zuschaltbar zur Probe (Ansicht › Fenster › Paletten); die alten werden erst nach Freigabe des Kontaktbogens ersetzt."
+    "Symbole im Revit-Stil (Teil S): zuschaltbar zur Probe (Ansicht › Fenster › Paletten); die alten werden erst nach Freigabe des Kontaktbogens ersetzt.",
+    "Planblatt wie H+K (Modul 7 Teil A): Schnitt- und Ansichtsmarken mit Blattverweis, Aussparungsboxen in Fachplänen, Koordinationsplan in Gewerkefarben, Architektur-Unterlage DWG/PDF und IFC-Export mit IDS folgen mit Teil B.",
+    "Listen auf Planblättern: höchstens 45 Zeilen, kein Umbruch auf weitere Blattbereiche (Teil B); breitere Tabellen werden auf 380 mm gesetzt, Spalten auf 60 mm gekürzt.",
+    "Absender im Plankopf (Standorte Bolligen und Thun): nur in kataloge/buero.json, keine Bedienung in der Oberfläche; die Plannummer des Fachs K (Koordination oder Kälte) ist noch zu entscheiden."
   ]
 }
