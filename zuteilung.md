@@ -311,3 +311,5 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | 7 | B2 Oberfläche: Dialog «IFC exportieren», Anleitung, Browser-Reihe ifc-export | hlks-modul (worktree, Ports 5300–5309) | ok – 3cc5fb9, Merge c882376 |
 | 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | läuft |
 | 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |
+| 20.10.2026 | 3 | Spezifikation «Freie Grösse für Kanalserien» (Entscheid Christian: Rechteckkanal b × h frei, Raster als Vorschlag) | Hauptlauf | ok |
+| 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | läuft |
