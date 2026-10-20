@@ -12,6 +12,10 @@
     "$kommentar": "Formeln wie im Excel (Zellen in Klammern); Gesamtwerte je Anlage, nicht je Teilstrecke.",
     "totalLu": "ΣLU KW + ΣLU WW (B55 = M43+N43)",
     "volumenstrom": "Total LU × 0.1 l/s (B56 = B55*0.1)",
+    "volumenstromFaktor": {
+      "wert": 0.1,
+      "zelle": "B56 = B55*0.1"
+    },
     "spitzeKurve3": {
       "faktor": 0.459,
       "exponent": 0.353,

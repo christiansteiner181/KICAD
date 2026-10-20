@@ -378,4 +378,64 @@ public class SanitaerZusammenstellungTests
         var leer = Netzprojekt(null, "SW");
         Assert.Contains("Keine Anlage", Assert.Throws<HlksFehler>(() => Abfrage(leer, "sanitaer_zusammenstellung")).Message);
     }
+
+    [Fact]
+    public void ApparatAnSystemenZweierAnlagen_HinweisZaehltDortEbenfalls()
+    {
+        // Prüfbericht 4A, Abschnitt 7, fehlender Test 3 (SanitaerZusammenstellung.Rechnen, Hinweis «… zählen dort ebenfalls»).
+        // A-1: KW (HA-1 → K0 → VT; VT.v1 → K1 → WC-1.kw; VT.v2 → K2 → WT-1.kw) und SW (WT-1.sw → S1 → KS-1).
+        // A-2 (fiktiv): System SW-B mit Strang SW-B-1 – WC-1.sw → S2 → KS-2. WC-1 hängt damit an Systemen beider Anlagen, WT-1 nur an A-1.
+        var p = Netzprojekt(0.5, "KW", "SW");
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Anlage", ["kennzeichen"] = "A-2", ["name"] = "Zweite Anlage (fiktiv)" }));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "System", ["kennzeichen"] = "SW-B", ["teilVon"] = "A-2", ["eigenschaften"] = new JsonObject { ["systemtyp"] = Systemtyp["SW"] },
+        }));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Strang", ["kennzeichen"] = "SW-B-1", ["teilVon"] = "SW-B" }));
+        Apparat(p, "WC", "WC-1"); Apparat(p, "Waschtisch", "WT-1");
+        Hausanschluss(p); Kontrollschacht(p);
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Kontrollschacht", ["kennzeichen"] = "KS-2", ["system"] = "SW-B", ["geschoss"] = "EG" }));
+        Verteiler(p, "VT", "KW-1", 2);
+        Rohr(p, "K0", "KW-1", "HA-1.aus", "VT.a");
+        Rohr(p, "K1", "KW-1", "VT.v1", "WC-1.kw");
+        Rohr(p, "K2", "KW-1", "VT.v2", "WT-1.kw");
+        Rohr(p, "S1", "SW-1", "WT-1.sw", "KS-1.ein");
+        Rohr(p, "S2", "SW-B-1", "WC-1.sw", "KS-2.ein");
+
+        var netz = SanitaerBelastung.Ergebnis(p.Modell, p.Katalog);
+        Assert.Equal(new[] { "A-1", "A-2" }, netz.AnlagenJeApparat[Hole(p, "WC-1").Id].Select(id => p.Modell.Finde(id)!.Kennzeichen).Order());
+        Assert.Equal(new[] { "A-1" }, netz.AnlagenJeApparat[Hole(p, "WT-1").Id].Select(id => p.Modell.Finde(id)!.Kennzeichen));
+
+        const string hinweis = "1 Apparat(e) hängen auch an Systemen einer anderen Anlage und zählen dort ebenfalls: WC-1.";
+        static List<string> Hinweise(JsonObject z) => z["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        var wc = SKat.Art("wc_75")!; var wt = SKat.Art("waschtisch")!;
+
+        // A-1: WC-1 und WT-1, der Hinweis nennt nur WC-1; Stückzahl × Wert zählt das ganze WC (auch seine DU, obwohl es in SW-B entwässert)
+        var z1 = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Assert.Equal(2, z1["apparate"]!.GetValue<int>());
+        Assert.Single(Hinweise(z1), h => h == hinweis);
+        Etwa(wc.Du!.Value + wt.Du!.Value, Zahl(z1["summeDu"]), "A-1 ΣDU der Zusammenstellung (WC ganz)");
+        // A-2: nur WC-1, derselbe Hinweis; das WC zählt auch hier ganz (auch LU KW, obwohl es aus A-1 versorgt wird)
+        var z2 = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-2" });
+        Assert.Equal(1, z2["apparate"]!.GetValue<int>());
+        Assert.Equal("wc_75", Assert.Single(z2["zeilen"]!.AsArray())!["art"]!.GetValue<string>());
+        Assert.Single(Hinweise(z2), h => h == hinweis);
+        Etwa(wc.LuKw!.Value, Zahl(z2["summeLuKw"]), "A-2 ΣLU KW der Zusammenstellung");
+        Etwa(wc.Du.Value, Zahl(z2["summeDu"]), "A-2 ΣDU der Zusammenstellung");
+        // die Netzsummen teilen nach Systemen: ΣDU von WC-1 nur in A-2, von WT-1 nur in A-1
+        var anlagen = Abfrage(p, "sanitaer_belastung")["anlagen"]!.AsArray().ToDictionary(a => a!["anlage"]!.GetValue<string>());
+        Etwa(wt.Du.Value, Zahl(anlagen["A-1"]!["abwasser"]!["summeDu"]), "Netz A-1 ΣDU");
+        Etwa(wc.Du.Value, Zahl(anlagen["A-2"]!["abwasser"]!["summeDu"]), "Netz A-2 ΣDU");
+        // ohne Parameter anlage: mehrere Anlagen haben Apparate → verständlicher Fehler
+        var f = Assert.Throws<HlksFehler>(() => Abfrage(p, "sanitaer_zusammenstellung"));
+        Assert.Contains("Mehrere Anlagen haben Sanitärapparate: A-1, A-2", f.Message);
+        Assert.Contains("Parameter anlage", f.Vorschlag ?? "");
+
+        // Verbindung zu A-2 weg (S2 gelöscht): WC-1 gehört nur noch zu A-1, der Hinweis entfällt
+        Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "S2" }));
+        var z1b = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Assert.DoesNotContain(Hinweise(z1b), h => h.Contains("zählen dort ebenfalls"));
+        Assert.Equal(2, z1b["apparate"]!.GetValue<int>());
+        Assert.Equal(0, Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-2" })["apparate"]!.GetValue<int>());
+    }
 }

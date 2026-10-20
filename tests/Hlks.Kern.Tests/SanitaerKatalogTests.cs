@@ -43,10 +43,15 @@ public class SanitaerKatalogTests
     }
 
     [Fact]
-    public void Katalog_FormelnAusDerDatei_FaktorAusDerZellformel()
+    public void Katalog_FormelnAusDerDatei_FaktorAusDemKatalogfeld()
     {
         var r = (JsonObject)Roh()["rechnung"]!;
-        Assert.Equal(0.1, SKat.VolumenstromFaktor);   // aus «B56 = B55*0.1»
+        // Prüfbericht 4A B5.4: Faktor aus rechnung.volumenstromFaktor { wert, zelle }, nicht mehr per regulärem Ausdruck aus dem Formeltext
+        Assert.Equal(N(r["volumenstromFaktor"]!["wert"]), SKat.VolumenstromFaktor);
+        Assert.Equal(0.1, SKat.VolumenstromFaktor);   // fest, damit eine Änderung des Katalogs auffällt (Excel B56 = B55*0.1)
+        Assert.Equal(r["volumenstromFaktor"]!["zelle"]!.GetValue<string>(), SKat.VolumenstromFaktorZelle);
+        Assert.Equal("B56 = B55*0.1", SKat.VolumenstromFaktorZelle);
+        Assert.Contains(SKat.VolumenstromFaktorZelle, SKat.VolumenstromText);   // Formeltext und Feld nennen dieselbe Excel-Zelle
         Assert.Contains("B55*0.1", SKat.VolumenstromText);
         Assert.Equal(N(r["spitzeKurve3"]!["faktor"]), SKat.Kurve3.Faktor);
         Assert.Equal(N(r["spitzeKurve3"]!["exponent"]), SKat.Kurve3.Exponent);
@@ -100,6 +105,50 @@ public class SanitaerKatalogTests
         var ohne = Roh(); ohne["quelle"]!["bereich"] = "Tabelle1 A7:D40";                      // kein «Blatt «…»» und kein Feld blatt: nicht raten
         var f = Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(ohne));
         Assert.Contains("Tabellenblatt", f.Message);
+    }
+
+    [Fact]
+    public void VolumenstromFaktor_AusDemFeld_FehltOderUngueltig_LadenAbgelehnt()
+    {
+        // fehlt das Feld: Laden abgelehnt mit Stelle und Anleitung – kein Rückgriff auf den Formeltext
+        var ohne = Roh(); ((JsonObject)ohne["rechnung"]!).Remove("volumenstromFaktor");
+        var f = Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(ohne));
+        Assert.Contains("rechnung.volumenstromFaktor: fehlt", f.Message);
+        Assert.Contains("{ wert, zelle }", f.Message);
+        Assert.Contains("LU_DU Zusammenstellung_.xlsx", f.Vorschlag ?? "");
+        Assert.Contains("rechnung.volumenstromFaktor: fehlt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => o["volumenstromFaktor"] = 0.1))).Message);   // Zahl statt { wert, zelle }
+        // wert: Pflicht, Zahl > 0
+        Assert.Contains("volumenstromFaktor.wert: Zahl fehlt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => ((JsonObject)o["volumenstromFaktor"]!).Remove("wert")))).Message);
+        Assert.Contains("volumenstromFaktor.wert: Zahl fehlt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => o["volumenstromFaktor"]!["wert"] = "Faktor"))).Message);
+        foreach (var w in new[] { 0.0, -0.1 })
+            Assert.Contains("volumenstromFaktor.wert: muss eine Zahl > 0 sein", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => o["volumenstromFaktor"]!["wert"] = w))).Message);
+        // zelle: Pflicht und dieselbe Excel-Zelle wie im Formeltext rechnung.volumenstrom
+        Assert.Contains("volumenstromFaktor.zelle: Text fehlt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => ((JsonObject)o["volumenstromFaktor"]!).Remove("zelle")))).Message);
+        Assert.Contains("steht nicht in rechnung.volumenstrom", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(Mit(o => o["volumenstromFaktor"]!["zelle"] = "B57 = B55*0.1"))).Message);
+    }
+
+    [Fact]
+    public void VolumenstromFaktor_RechnungNimmtDenWertDesFelds_NichtDieZahlImFormeltext()
+    {
+        // abgewandelter Katalog (FIKTIV, nur für den Test): wert 0.2, Formeltext und Zelle unverändert mit «0.1» – gerechnet wird mit dem Feld
+        var kat = SanitaerKatalog.Lesen(Mit(o => o["volumenstromFaktor"]!["wert"] = 0.2));
+        Assert.Equal(0.2, kat.VolumenstromFaktor);
+        Assert.Contains("B55*0.1", kat.VolumenstromText);
+        var wc = kat.Art("wc_75")!;
+        var a = SanitaerZusammenstellung.Auswerten(kat, [new SanitaerZeile { Art = wc, JeGeschoss = [10], Anzahl = 10 }], [], null, null);
+        Etwa(10 * wc.LuKw!.Value, a.TotalLu, "Total LU");
+        Etwa(a.TotalLu * 0.2, a.Volumenstrom, "Volumenstrom = Total LU × wert");
+        // mit dem echten Katalog: Faktor des Felds
+        var echt = SanitaerZusammenstellung.Auswerten(SKat, [new SanitaerZeile { Art = SKat.Art("wc_75")!, JeGeschoss = [10], Anzahl = 10 }], [], null, null);
+        Etwa(echt.TotalLu * SKat.VolumenstromFaktor, echt.Volumenstrom, "Volumenstrom mit dem Katalogfeld");
+    }
+
+    /// <summary>Katalog aus der Datei mit einer Änderung unter rechnung (für Ablehnungstests).</summary>
+    static JsonObject Mit(Action<JsonObject> aendern)
+    {
+        var roh = Roh();
+        aendern((JsonObject)roh["rechnung"]!);
+        return roh;
     }
 
     [Fact]
@@ -188,8 +237,8 @@ public class SanitaerKatalogTests
         Assert.Contains("doppelt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(doppelt)).Message);
         var vorgabe = Roh(); vorgabe["vorgabeJeKlasse"]!["WC"] = "wc_99";
         Assert.Contains("wc_99", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(vorgabe)).Message);
-        var faktor = Roh(); faktor["rechnung"]!["volumenstrom"] = "Total LU mal etwas";
-        Assert.Contains("Faktor", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(faktor)).Message);
+        var faktor = Roh(); faktor["rechnung"]!["volumenstrom"] = "Total LU mal etwas";   // Formeltext nennt die Zelle des Faktors nicht mehr
+        Assert.Contains("volumenstromFaktor.zelle", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(faktor)).Message);
         var zeile = Roh(); ((JsonArray)zeile["arten"]!)[0]!["zeile"] = 0;
         Assert.Contains("Excel-Zeile", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(zeile)).Message);
         var wert = Roh(); ((JsonArray)wert["arten"]!)[0]!["du"] = "viel";
