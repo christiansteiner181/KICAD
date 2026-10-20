@@ -137,7 +137,7 @@ static class PdfRoh
         var liste = new List<PWort>();
         foreach (var w in DefaultWordExtractor.Instance.GetWords(waagrecht))
         {
-            var text = w.Text.Trim();
+            var text = (w.Letters.Any(l => MitLeerraum(l.Value)) ? string.Concat(w.Letters.Select(l => Zeichen(l.Value))) : w.Text).Trim();
             if (text.Length == 0 || w.Letters.Count == 0) continue;
             var l0 = w.Letters[0];
             liste.Add(new PWort
@@ -146,9 +146,77 @@ static class PdfRoh
                 Grund = l0.StartBaseLine.Y - oy, Groesse = Groesse(l0), Dreh = 0, Ebene = w.Letters.Select(ebene).FirstOrDefault(e => e != 0),
             });
         }
+        liste = Dezimalen(liste);
         liste.AddRange(DrehteWoerter(rest, ox, oy, ebene));
         return liste;
     }
+
+    // ---------- Dezimalzahlen (Nachbearbeitung N4, 20.10.2026) ----------
+
+    /// <summary>Zeichen, dessen Text Leerraum UND ein sichtbares Zeichen enthält. Manche Schriften bilden eine Glyphe so ab (Geberit-HDPE-Katalog
+    /// 2020: der Punkt ist « .»); im Wort entstand daraus «101 .4» bzw. «Art . no .».</summary>
+    static bool MitLeerraum(string v) => v.Length > 1 && v.Any(char.IsWhiteSpace) && !string.IsNullOrWhiteSpace(v);
+
+    /// <summary>Text eines Zeichens im Wort: bei <see cref="MitLeerraum"/> ohne den Leerraum (eine Glyphe ist nie Leerraum plus Zeichen).</summary>
+    static string Zeichen(string v) => MitLeerraum(v) ? string.Concat(v.Where(c => !char.IsWhiteSpace(c))) : v;
+
+    static readonly System.Text.RegularExpressions.Regex GanzzahlAmEnde = new(@"(?:^|[^\d.,])\d+$", System.Text.RegularExpressions.RegexOptions.Compiled);
+    static readonly System.Text.RegularExpressions.Regex NachkommaAmAnfang = new(@"^[.,]\d", System.Text.RegularExpressions.RegexOptions.Compiled);
+
+    /// <summary>Dezimalzahlen, deren Ganzzahl und Nachkommastellen in getrennten Zeichenläufen stehen («4» «.5», «101» «.» «4»), zu einem Wort
+    /// zusammenführen. Bedingungen: gleiche Grundlinie und Ebene, fast gleiche Schriftgrösse; das linke Wort endet auf eine Ganzzahl (ohne eigenes
+    /// Dezimalzeichen), das rechte beginnt mit Punkt bzw. Komma und Ziffer (oder ist nur «.» bzw. «,», gefolgt von einem Wort mit Ziffer); jeder
+    /// Abstand ist kleiner als eine Zeichenbreite (die grössere von halber Schriftgrösse und mittlerer Zeichenbreite des linken Worts). Echte
+    /// Spalten liegen weiter auseinander – Zellen trennt erst eine Lücke ab max(6 pt, Schriftgrösse) – und beginnen nicht mit «.5».
+    /// ANNAHME: «4.» «5» (Dezimalzeichen am Ende des linken Laufs) wird nicht zusammengeführt – im Fliesstext ist das «4. 5».</summary>
+    static List<PWort> Dezimalen(List<PWort> woerter)
+    {
+        if (woerter.Count < 2 || !woerter.Any(w => w.Text.Length > 0 && w.Text[0] is '.' or ',')) return woerter;
+        var aus = new List<PWort>(woerter.Count);
+        var zeilen = new List<List<PWort>>();
+        foreach (var w in woerter.OrderByDescending(w => w.Grund).ThenBy(w => w.L))
+        {
+            var z = zeilen.LastOrDefault();
+            if (z is not null && Math.Abs(z[0].Grund - w.Grund) <= Math.Max(0.3, 0.1 * Math.Min(z[0].Groesse, w.Groesse))) z.Add(w);
+            else zeilen.Add([w]);
+        }
+        foreach (var z in zeilen)
+        {
+            var reihe = z.OrderBy(w => w.L).ToList();
+            for (int i = 0; i < reihe.Count; i++)
+            {
+                var a = reihe[i];
+                while (i + 1 < reihe.Count)
+                {
+                    var b = reihe[i + 1];
+                    if (!GanzzahlAmEnde.IsMatch(a.Text) || a.Ebene != b.Ebene) break;
+                    if (NachkommaAmAnfang.IsMatch(b.Text) && Nah(a, b)) { a = Verbinden(a, b); i++; continue; }
+                    if (b.Text is "." or "," && i + 2 < reihe.Count && reihe[i + 2] is var c && c.Ebene == a.Ebene && c.Text.Length > 0 && char.IsDigit(c.Text[0])
+                        && Nah(a, b) && Nah(b, c))
+                    { a = Verbinden(Verbinden(a, b), c); i += 2; continue; }
+                    break;
+                }
+                aus.Add(a);
+            }
+        }
+        return aus;
+    }
+
+    /// <summary>Abstand zweier Wörter derselben Zeile kleiner als eine Zeichenbreite (und kaum Überlappung), Schriftgrösse fast gleich?</summary>
+    static bool Nah(PWort a, PWort b)
+    {
+        double gr = Math.Max(a.Groesse, b.Groesse);
+        if (Math.Abs(a.Groesse - b.Groesse) > 0.2 * gr) return false;
+        double zeichen = Math.Max(0.5 * gr, a.Text.Length > 0 ? a.Breite / a.Text.Length : 0);
+        double luecke = b.L - a.R;
+        return luecke < zeichen && luecke > -0.5 * zeichen;
+    }
+
+    static PWort Verbinden(PWort a, PWort b) => new()
+    {
+        Text = a.Text + b.Text, L = Math.Min(a.L, b.L), B = Math.Min(a.B, b.B), R = Math.Max(a.R, b.R), T = Math.Max(a.T, b.T),
+        Grund = a.Grund, Groesse = Math.Max(a.Groesse, b.Groesse), Dreh = a.Dreh, Ebene = a.Ebene,
+    };
 
     /// <summary>Übereinanderliegender Text (zwei Sprachen am selben Ort, eine davon im Druck verdeckt): PdfPig liefert beide;
     /// beim Wortbilden mischen sich ihre Buchstaben («CGaeshiänugs»). Erkennung: Zeichen verschiedener Textobjekte, die sich
@@ -273,7 +341,7 @@ static class PdfRoh
                     var l0 = wort[0].L;
                     ergebnis.Add(new PWort
                     {
-                        Text = string.Concat(wort.Select(m => m.L.Value)), L = l - ox, B = b - oy, R = r - ox, T = t - oy,
+                        Text = string.Concat(wort.Select(m => Zeichen(m.L.Value))), L = l - ox, B = b - oy, R = r - ox, T = t - oy,
                         Grund = dreh is 90 or 270 ? l0.StartBaseLine.X - ox : l0.StartBaseLine.Y - oy, Groesse = Groesse(l0), Dreh = dreh, Ebene = wort.Select(m => ebene(m.L)).FirstOrDefault(e => e != 0),
                     });
                     wort.Clear();

@@ -36,6 +36,8 @@ public sealed record IfcHlksSpec
     public bool MitVerteiler { get; init; }
     public bool MitAbgas { get; init; }
     public bool MitVentil { get; init; }
+    /// <summary>Property-Set-Werte am Ventil (je ein Pset): Name des Psets, Eigenschaft, Wert, Längenmass (sonst IfcReal wie Nova).</summary>
+    public (string Pset, string Name, double Wert, bool Laenge)[] VentilPsets { get; init; } = [];
     /// <summary>x des freien Endes von Rohr 1.</summary>
     public double Rohr1Ende { get; init; }
     /// <summary>WC ohne Ports und ohne PredefinedType (Revit-Architekturobjekt) und mit neutralem Namen.</summary>
@@ -130,6 +132,7 @@ public static class IfcHlksTestdatei
             b.Port(ve, "CP1", [2950, 0, 500], [1, 0, 0], fluss("SINK"));
             b.Port(ve, "CP2", [3050, 0, 500], [1, 0, 0], fluss("SOURCE"));
             b.System(s.SwSysteme[0], "WASTEWATER", [ve]);
+            foreach (var (pset, name, wert, laenge) in s.VentilPsets) b.Pset(ve, pset, name, wert, laenge);
         }
         b.Speichern(datei);
         return datei;

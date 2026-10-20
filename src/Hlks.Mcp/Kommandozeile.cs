@@ -185,11 +185,9 @@ public static class Kommandozeile
         _ => ergebnis?.ToString() ?? "",
     };
 
-    static bool FehlerInAntwort(string text)
-    {
-        try { return JsonNode.Parse(text) is JsonObject o && o.ContainsKey("fehler"); }
-        catch (JsonException) { return false; }   // Textansicht
-    }
+    /// <summary>Ablehnung nach derselben Regel wie MCP (isError), Palette und Auftragsprotokoll (Werkzeugergebnis, Nachbearbeitung N5);
+    /// eine Textansicht ist nie eine Ablehnung.</summary>
+    static bool FehlerInAntwort(string text) => Werkzeugergebnis.MeldetFehler(text);
 
     static int Befehl(Argumente a, Projekt projekt, TextWriter aus)
     {
@@ -197,7 +195,6 @@ public static class Kommandozeile
         var parameter = ParameterLesen(a.Wert("--befehl", 1), name);
         var text = new Werkzeuge(projekt).Befehl(name, parameter, a.Hat("--trockenlauf"));
         aus.WriteLine(JsonNode.Parse(text)!.ToJsonString(Json.Eingerueckt));
-        var o = JsonNode.Parse(text) as JsonObject;
-        return o?.ContainsKey("fehler") == true || o?["angenommen"]?.GetValue<bool>() == false ? 1 : 0;
+        return FehlerInAntwort(text) ? 1 : 0;
     }
 }

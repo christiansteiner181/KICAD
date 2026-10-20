@@ -219,8 +219,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         // Nennweite: nur aus Psets des Produkts oder seiner Ports – nie aus dem Aussendurchmesser
         if (def.Eigenschaften.Any(p => p.Name == "dn"))
         {
-            if (psets.TryGetValue("dn", out var kand) && Pset(eig, kand) is { } fund && DnAus(fund.Wert) is double dn)
-                lauf.Wert(e, "dn", dn, fund.Name);
+            if (psets.TryGetValue("dn", out var kand) && DnPset(eig, kand) is { } fund)
+                lauf.Wert(e, "dn", fund.Dn, fund.Name);
             else if (px.Count > 0 && px.Select(PortDn).ToList() is var pdn && pdn.All(v => v is not null) && pdn.Distinct().Count() == 1)
                 lauf.Wert(e, "dn", pdn[0]!.Value, $"Port {px[0].Name}, {PortDnFundstelle(px[0])}");
             else if (def.IstArt("Leitung") && def.Name != "Kanal")
@@ -307,6 +307,16 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
     static (string Name, IfcWert Wert)? Pset(Dictionary<string, IfcWert> eig, IEnumerable<string> kandidaten)
     {
         foreach (var k in kandidaten) if (eig.TryGetValue(k, out var w) && w.Inhalt is not null) return (k, w);
+        return null;
+    }
+
+    /// <summary>Nennweite aus dem ersten Kandidaten, dessen Wert eine Nennweite ist (Nachbearbeitung Ventil-Pset 20.10.2026): ein Wert, der keine
+    /// ist (z. B. Text «15 mm-15 mm»), blockiert die weiteren Kandidaten nicht mehr – so verdrängt Pset_ValveTypeCommon.Size an erster Stelle
+    /// (Exportziel) Pset MEP.Geom-DN bzw. Tech-DN nur, wenn Size eine Zahl ist.</summary>
+    (string Name, double Dn)? DnPset(Dictionary<string, IfcWert> eig, IEnumerable<string> kandidaten)
+    {
+        foreach (var k in kandidaten)
+            if (eig.TryGetValue(k, out var w) && w.Inhalt is not null && DnAus(w) is double dn) return (k, dn);
         return null;
     }
 

@@ -43,7 +43,7 @@ public class UnterlagenAbfragenTests
         Assert.Equal("pdf", u.Art);
         var erst = UnterlagenService.Lesen(p, u);
         Assert.False(erst.AusAblage);
-        var datei = Path.Combine(Unterlagen.Ordner(p), "befunde", $"{u.Pruefsumme}.pdf-1.json");
+        var datei = Path.Combine(Unterlagen.Ordner(p), "befunde", $"{u.Pruefsumme}.pdf-2.json");
         Assert.Equal(datei, erst.AblageDatei);
         Assert.True(File.Exists(datei));
         var zweit = UnterlagenService.Lesen(p, u);
@@ -213,7 +213,7 @@ public class UnterlagenAbfragenTests
         var u = (JsonObject)a["unterlagen"]![0]!;
         Assert.Equal("pdf", u["art"]!.GetValue<string>());
         Assert.Equal(2, u["seiten"]!.GetValue<int>());
-        Assert.Equal("pdf 1", u["leser"]!.GetValue<string>());
+        Assert.Equal("pdf 2", u["leser"]!.GetValue<string>());
         Assert.False(u["ausAblage"]!.GetValue<bool>());
         Assert.True(u["jeArt"]!["wort"]!.GetValue<int>() > 20);
         Assert.Equal(2, u["jeArt"]!["tabelle"]!.GetValue<int>());
@@ -251,6 +251,25 @@ public class UnterlagenAbfragenTests
         Assert.NotNull(us[4]["fehler"]);      // gibt es nicht
         Assert.NotNull(us[4]["vorschlag"]);
         Assert.NotNull(us[5]["fehler"]);      // TIFF: keine Art
+        // N5: der Aufruf meldet die nicht gelesenen oben (Palette, Auftragsprotokoll und MCP zeigen ihn als abgelehnt), die gelesenen bleiben
+        Assert.StartsWith("2 von 6 Unterlagen nicht gelesen: «gibtsnicht.pdf»: ", a["fehler"]!.GetValue<string>());
+        Assert.Equal(us[4]["vorschlag"]!.GetValue<string>(), a["vorschlag"]!.GetValue<string>());
+        Assert.Equal(4, a["gelesen"]!.GetValue<int>());
+        Assert.True(Werkzeugergebnis.MeldetFehler(a.ToJsonString()));
+    }
+
+    [Fact]
+    public void Unterlagen_lesen_N5_eine_abgelehnte_Unterlage_Fehler_oben_ohne_Zaehlung_gelesene_ohne_Fehler()
+    {
+        using var o = new Ordner();
+        var p = Leer();
+        var nein = Lesen(p, "gibtsnicht.pdf");
+        Assert.Equal(nein["unterlagen"]![0]!["fehler"]!.GetValue<string>(), nein["fehler"]!.GetValue<string>());
+        Assert.Null(nein["gelesen"]);
+        Assert.True(Werkzeugergebnis.MeldetFehler(nein.ToJsonString()));
+        var ja = Lesen(p, Datei(o, "t.csv", CsvText));
+        Assert.Null(ja["fehler"]);
+        Assert.False(Werkzeugergebnis.MeldetFehler(ja.ToJsonString()));
     }
 
     // ---------- befunde ----------

@@ -38,11 +38,22 @@ public static class UnterlagenAbfrage
                 aus.Add(new JsonObject { ["unterlage"] = bezug, ["fehler"] = "Die Datei liess sich nicht lesen: " + ex.Message, ["vorschlag"] = "Datei prüfen oder in einem anderen Format ablegen." });
             }
         }
-        return new JsonObject
+        // Nachbearbeitung N5 (20.10.2026): wird eine Unterlage nicht gelesen (Pfadprüfung KiPfade, Lesegrenze KiUnterlagen, Lesefehler), steht der
+        // Fehler auch oben und zuerst – sonst gilt der Aufruf in Palette, Auftragsprotokoll und MCP (isError) als «ok» (Werkzeugergebnis.MeldetFehler),
+        // und gekürzte Meldungen (300 Zeichen) enthielten nur die Zusammenfassung der gelesenen
+        var ergebnis = new JsonObject();
+        var fehler = aus.OfType<JsonObject>().Where(u => u["fehler"] is not null).ToList();
+        if (fehler.Count > 0)
         {
-            ["unterlagen"] = aus,
-            ["hinweis"] = "Zusammenfassung, nie alle Wörter. Einzelne Befunde: befunde {unterlage, seite?, art?, text?, box?}; Seitenbild oder Ausschnitt: unterlage_bild {unterlage, seite?, ausschnitt?}. Befund-Ids («<Prüfsumme>#<n>») gehören zu den Quellen jedes Familienwerts.",
-        };
+            static string? T(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
+            ergebnis["fehler"] = liste.Count == 1 ? T(fehler[0]["fehler"])
+                : $"{fehler.Count} von {liste.Count} Unterlagen nicht gelesen: " + string.Join("; ", fehler.Select(u => $"«{T(u["unterlage"])}»: {T(u["fehler"])}"));
+            ergebnis["vorschlag"] = T(fehler[0]["vorschlag"]);
+            if (fehler.Count < liste.Count) ergebnis["gelesen"] = liste.Count - fehler.Count;
+        }
+        ergebnis["unterlagen"] = aus;
+        ergebnis["hinweis"] = "Zusammenfassung, nie alle Wörter. Einzelne Befunde: befunde {unterlage, seite?, art?, text?, box?}; Seitenbild oder Ausschnitt: unterlage_bild {unterlage, seite?, ausschnitt?}. Befund-Ids («<Prüfsumme>#<n>») gehören zu den Quellen jedes Familienwerts.";
+        return ergebnis;
     }
 
     // ---------- Zusammenfassung aus der Ablage ----------

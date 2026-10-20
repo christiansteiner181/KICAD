@@ -13,7 +13,9 @@ namespace Hlks.Kern;
 public sealed class PdfLeser : IUnterlagenLeser
 {
     public string Name => "pdf";
-    public int Version => 1;
+    /// <summary>2 (Nachbearbeitung N4, 20.10.2026): Dezimalzahlen aus getrennten Zeichenläufen und Glyphen « .» als eine Zahl; Fliesstext über bzw.
+    /// unter einer Zahlentabelle trennt den Block. Andere Wörter, Zeilen und Tabellen – und damit die Befund-Ids – können sich gegenüber 1 ändern.</summary>
+    public int Version => 2;
     public IReadOnlyCollection<string> Arten { get; } = ["pdf"];
 
     public UnterlagenBefunde Lesen(string pfad, string datei, string pruefsumme, string art)
