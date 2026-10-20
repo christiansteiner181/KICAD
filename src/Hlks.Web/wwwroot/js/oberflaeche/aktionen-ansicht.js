@@ -18,7 +18,10 @@ const DETAILGRADE = ['grob', 'mittel', 'fein'];
 const LISTEN = {
   raumliste: ['Raumliste', 'RAUM'], strangliste: ['Strangliste', 'STRANG'], mengen: ['Mengen', 'MENGEN'], materialliste: ['Materialliste', 'MATERIALLISTE'],
   kollisionen: ['Kollisionsliste', 'KOLLISIONEN'], aussparungsliste: ['Aussparungsliste', 'AUSSPARUNGEN'],
+  // Modul 4 Teil A-O: Sanitär-Zusammenstellung (W3) je Anlage (Abfrage sanitaer_zusammenstellung); der Dialog fragt zusätzlich die Anlage
+  sanitaer_zusammenstellung: ['Sanitär-Zusammenstellung (W3)', 'SANITAER'],
 };
+const anlagen = () => derKlasse('Anlage').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
 const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden'];
 const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden'];
@@ -51,6 +54,7 @@ function ansichtFormular(art) {
     <label class="fz"><span>Kennzeichen</span><input type="text" class="f-kz"></label>
     ${art === 'grundriss' ? `<label class="fz"><span>Geschoss</span><select class="f-geschoss">${gs.map((g) => `<option value="${esc(g.kennzeichen)}" ${g.kennzeichen === geschossVorgabe ? 'selected' : ''}>${esc(g.kennzeichen)}${g.name ? ' – ' + esc(g.name) : ''}</option>`).join('')}</select></label>` : ''}
     ${art === 'liste' ? `<label class="fz"><span>Liste</span><select class="f-liste">${Object.entries(LISTEN).map(([k, [n]]) => `<option value="${k}">${esc(n)}</option>`).join('')}</select></label>` : ''}
+    ${art === 'liste' ? `<label class="fz f-anlage-zeile" hidden><span>Anlage</span><select class="f-anlage">${anlagen().map((a) => `<option value="${esc(a.kennzeichen)}">${esc(a.kennzeichen)}${a.name ? ' – ' + esc(a.name) : ''}</option>`).join('')}</select></label>` : ''}
     ${art !== 'liste' ? `<label class="fz"><span>Detailgrad</span><select class="f-detail">${DETAILGRADE.map((d) => `<option ${d === 'mittel' ? 'selected' : ''}>${d}</option>`).join('')}</select></label>` : ''}
     ${art === 'grundriss' ? `<label class="fz"><span>Massstab 1:</span><select class="f-massstab">${MASSSTAEBE.map((m) => `<option ${m === 50 ? 'selected' : ''}>${m}</option>`).join('')}</select></label>` : ''}
     ${art !== 'liste' ? `<fieldset class="f-gewerke"><legend>Gewerke</legend><div class="spalten">${gewerkeListe().map(([k, n]) => `<label class="haken"><input type="checkbox" value="${esc(k)}" ${gewerkeVorgabe.includes(k) ? 'checked' : ''}> ${esc(n)}</label>`).join('')}</div></fieldset>` : ''}
@@ -62,7 +66,14 @@ function ansichtFormular(art) {
     let kzBasis, nameBasis;
     if (art === 'grundriss') { const g = q('.f-geschoss')?.value ?? ''; kzBasis = `AN-GR-${g}`; nameBasis = `Grundriss ${g}`; }
     else if (art === '3d') { kzBasis = 'AN-3D'; nameBasis = '3D-Ansicht'; }
-    else { const l = LISTEN[q('.f-liste')?.value ?? 'raumliste']; kzBasis = `AN-LI-${l[1]}`; nameBasis = l[0]; }
+    else {
+      const liste = q('.f-liste')?.value ?? 'raumliste';
+      const l = LISTEN[liste];
+      kzBasis = `AN-LI-${l[1]}`; nameBasis = l[0];
+      const mitAnlage = liste === 'sanitaer_zusammenstellung';
+      if (q('.f-anlage-zeile')) q('.f-anlage-zeile').hidden = !mitAnlage;
+      if (mitAnlage && q('.f-anlage')?.value) { kzBasis += `-${q('.f-anlage').value}`; nameBasis += ` – ${q('.f-anlage').value}`; }
+    }
     if (!kzGeaendert) q('.f-kz').value = freiesKennzeichen(kzBasis);
     if (!nameGeaendert) q('.f-name').value = freierName(nameBasis, ansichten().map((a) => a.name || a.kennzeichen));
   };
@@ -70,6 +81,7 @@ function ansichtFormular(art) {
   q('.f-name').oninput = () => { nameGeaendert = true; };
   q('.f-geschoss')?.addEventListener('change', vorschlag);
   q('.f-liste')?.addEventListener('change', vorschlag);
+  q('.f-anlage')?.addEventListener('change', vorschlag);
   q('.f-vorlage')?.addEventListener('change', (e) => {
     const v = element(e.target.value);
     if (!v) return;
@@ -96,8 +108,10 @@ async function ansichtAnlegen(art) {
   const q = (s) => w.querySelector(s);
   const kz = q('.f-kz').value.trim();
   const eig = { art };
-  if (art === 'liste') eig.liste = q('.f-liste').value;
-  else {
+  if (art === 'liste') {
+    eig.liste = q('.f-liste').value;
+    if (eig.liste === 'sanitaer_zusammenstellung' && q('.f-anlage')?.value) eig.anlage = q('.f-anlage').value;
+  } else {
     eig.detailgrad = q('.f-detail').value;
     const g = [...w.querySelectorAll('.f-gewerke input:checked')].map((c) => c.value);
     if (g.length) eig.gewerke = g;

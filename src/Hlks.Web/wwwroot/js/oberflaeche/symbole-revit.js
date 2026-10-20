@@ -138,6 +138,7 @@ koAusPlan | Aussparungsplan anlegen | eigenes | Planblatt mit Öffnung
 koAusIfc | IFC für Architekt | IFC exportieren | Würfel mit gestrichelter Öffnung
 koBcfExport | BCF exportieren | eigenes | Blatt mit Pfeil heraus
 koBcfImport | BCF importieren | eigenes | Blatt mit Pfeil hinein
+sanZusammenstellung | Sanitär-Zusammenstellung | eigenes | Tabelle mit blauem Σ-Kopf und grünem Wassertropfen
 famFamilie | In das Projekt laden | In Projekt laden | Würfel mit blauem Punkt
 palette | Palette | Paletten | Fenster mit blauer Titelleiste
 projektbrowser | Projektbrowser | Projektbrowser | Baumstruktur
@@ -644,6 +645,12 @@ s('grundleitungsplan',
 s('listeCsv',
   '<rect class="fp" x="3.5" y="4.5" width="21" height="18"/><path class="fb" d="M3.5 4.5h21v5h-21z"/><path d="M3.5 14h21M10.5 9.5v13"/><path class="fp" d="M15.5 14.5h9l4 4v11h-13z"/><path class="f2" d="M24.5 14.5v4h4z"/><path class="op" d="M17.5 21.5h2.5M25 21.5h1.5M17.5 26h2.5M25 26h1.5"/><circle class="fb n" cx="22.6" cy="21.8" r="1.1"/><path class="sb w15" d="M22.4 22.5l-.7 1.6"/><circle class="fb n" cx="22.6" cy="26.3" r="1.1"/><path class="sb w15" d="M22.4 27l-.7 1.6"/>',
   '<rect class="fp" x="1.5" y="1.5" width="10" height="9"/><path class="fb" d="M1.5 1.5h10v2.5h-10z"/><path d="M1.5 7h10M5.5 4v6.5"/><path class="fp" d="M8.5 6.5h3.5l2.5 2.5v5.5h-6z"/><path class="f2" d="M12 6.5v2.5h2.5z"/><circle class="fb n" cx="11.5" cy="11.6" r="1.1"/><path class="sb w15" d="M11.4 12.3l-.6 1.5"/>');
+
+// ---------------------------------------------------------------------------------------------- Sanitär (Modul 4 Teil A-O)
+
+s('sanZusammenstellung',
+  '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v6.5h-25z"/><path d="M3.5 17h12M3.5 22h12M15.5 11v16.5"/><path class="sW w15" d="M12 6.2H8.5l2.5 2.3-2.5 2.3H12"/><path class="fsa" d="M22 13.5c-2.8 3.4-3.8 4.8-3.8 6.4a3.8 3.8 0 0 0 7.6 0c0-1.6-1-3-3.8-6.4z"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v4h-13z"/><path d="M1.5 9h6M1.5 12h6M7.5 5.5v9"/><path class="fsa" d="M11 6.8c-1.5 1.8-2 2.5-2 3.4a2 2 0 0 0 4 0c0-.9-.5-1.6-2-3.4z"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 

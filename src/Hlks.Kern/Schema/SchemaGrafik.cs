@@ -23,6 +23,9 @@
 //   Grössentexte Je Linie am längsten Abschnitt; überdecken sich Texte benachbarter Linien (gleiche Spur, Verteilleitung), werden sie
 //                freigestellt (Nachtrag B8b, wie die Aussparungen B4c: deterministische Suche nach freier Lage in der Reihenfolge der
 //                Linien): zuerst entlang des Abschnitts verschoben, auf derselben Seite vor der anderen (unter bzw. rechts der Linie).
+//   Belastung    (Modul 4 Teil A-O) Sanitärleitungen tragen ihre Belastungssumme als zweiten Text am selben Abschnitt wie die Grösse
+//                («ΣLU 12 / 8» Kalt-/Warmwasser, «ΣLU 12» nur Kaltwasser, «ΣDU 4.6» Abwasser; SchemaBelastung), freigestellt nach den
+//                Grössentexten (andere Seite der Linie bzw. verschoben). Ansichtseigenschaft belastung (Vorgabe ein), nicht im Detailgrad grob.
 //   Sinnbilder   Apparate mit Sinnbild aus der HKAP-Bibliothek (SchemaSymbole), sonst Kästchen mit Kürzel; Kennzeichen darüber.
 //   Beschriftung Detaillinien, Texte usw. mit bezuege.ansicht = diese Ansicht (BeschriftungGrafik, Massstab 1).
 //   Einlagen     (Nachtrag B8c) Deckenbänder in ihrer Höhe aus dem Schemaplan (wachsen mit den Einlage-Spuren); Einlage-Linien in der
@@ -63,8 +66,12 @@ public static class SchemaGrafik
         // Schächte im Schnitt (B8d) vor den Linien: die Ein- und Ausläufe enden an der Schachtwand bzw. auf der Sohle darin
         foreach (var k in plan.Graph.Knoten.Where(k => k.Schacht is not null && !k.Manuell)) Schacht(p, plan, k, g.Teile);
         var groessen = new List<GroessenText>();
-        foreach (var l in plan.Graph.Linien) Linie(p, l, detail, g.Teile, groessen);
-        GroessenTexte.Setzen(groessen);
+        var belastungen = new List<GroessenText>();
+        // Modul 4 Teil A-O: Belastungssummen an den Sanitärleitungen (Ansicht.belastung, Vorgabe ein); nicht im Detailgrad grob
+        var netz = detail != "grob" && p.Katalog.Sanitaer is not null && SchemaBelastung.Ein(a) ? SanitaerBelastung.Ergebnis(p.Modell, p.Katalog) : null;
+        foreach (var l in plan.Graph.Linien) Linie(p, l, detail, g.Teile, groessen, netz, belastungen);
+        // erst alle Grössen, dann die Belastungen: die bisherige Lage der Grössentexte bleibt, die Belastung weicht aus (andere Seite der Linie bzw. verschoben)
+        GroessenTexte.Setzen([.. groessen, .. belastungen]);
         foreach (var b in plan.Bloecke) Block(b, g.Teile);
         foreach (var d in plan.Daemmungen) Daemmung(d, g.Teile);
         foreach (var k in plan.Graph.Knoten) Knoten(p, plan.Graph, k, detail, g.Teile);
@@ -178,7 +185,7 @@ public static class SchemaGrafik
 
     // ------------------------------------------------------------------ Linien
 
-    static void Linie(Projekt p, SchemaLinie l, string detail, List<Grafikteil> teile, List<GroessenText> groessen)
+    static void Linie(Projekt p, SchemaLinie l, string detail, List<Grafikteil> teile, List<GroessenText> groessen, SanitaerNetz? netz, List<GroessenText> belastungen)
     {
         var k = p.Katalog;
         var md = l.Medium is not null && k.Medien.TryGetValue(l.Medium, out var x) ? x : null;
@@ -238,8 +245,9 @@ public static class SchemaGrafik
             var (dx, dy) = Richtung(pts[^2], pts[^1]);
             TeilVon(l.Nach.Element).Primitive.Add(SchemaSymbole.Kappe(pts[^1][0], pts[^1][1], dx, dy, farbe));
         }
-        // Grössen in Fliessrichtung am längsten Abschnitt
-        if (detail != "grob" && l.Groessen.Count > 0)
+        // Grössen in Fliessrichtung am längsten Abschnitt; Modul 4 Teil A-O: ebenso die Belastung der Leitung («ΣLU 12 / 8», «ΣDU 4.6»)
+        var belastung = netz is null ? null : SchemaBelastung.Text(netz, l);
+        if (detail != "grob" && (l.Groessen.Count > 0 || belastung is not null))
         {
             // Einlage (B8c): am längsten waagrechten Stück auf der Spur im Band, Text ausserhalb des Bandes; unter dem untersten Band (B8d)
             // am längsten Stück auf der Grundleitungsspur, Text wie sonst über der Linie (freigestellt); sonst am längsten Abschnitt
@@ -265,12 +273,13 @@ public static class SchemaGrafik
             if (laengste >= MinBeschriftung)
             {
                 var a = pts[beste - 1]; var b = pts[beste];
-                var text = string.Join(" / ", l.Groessen);
                 var t = l.Elemente.Count == 0 ? eigene[0] : eigene.FirstOrDefault(x => x.Id is not null && l.Elemente.Any(e => e.Id == x.Id && k.IstArt(e, "Leitung"))) ?? eigene[0];
-                groessen.Add(new GroessenText(t, a[0], a[1], b[0], b[1], text, SchriftGroesse, farbe)
+                GroessenText Neu(string text, bool weicht) => new(t, a[0], a[1], b[0], b[1], text, SchriftGroesse, farbe)
                 {
-                    BandUnten = imBand && l.Band is not null ? l.Band.Unten : null, BandOben = imBand && l.Band is not null ? l.Band.Oben : null,
-                });
+                    BandUnten = imBand && l.Band is not null ? l.Band.Unten : null, BandOben = imBand && l.Band is not null ? l.Band.Oben : null, Weicht = weicht,
+                };
+                if (l.Groessen.Count > 0) groessen.Add(Neu(string.Join(" / ", l.Groessen), false));
+                if (belastung is not null) belastungen.Add(Neu(belastung, true));
             }
         }
         teile.AddRange(eigene);
@@ -501,6 +510,8 @@ public sealed class GroessenText(Grafikteil ziel, double ax, double ay, double b
     /// andere Seite darunter) und bekommt einen Führungsstrich; sonst null.</summary>
     public double? BandUnten { get; init; }
     public double? BandOben { get; init; }
+    /// <summary>Ausweichender Text (Belastung, Modul 4 Teil A-O): rückt reihenweise von der Linie ab, wenn an der Linie nichts frei ist.</summary>
+    public bool Weicht { get; init; }
     public bool ImBand => BandUnten is not null && BandOben is not null && !Senkrecht;
     /// <summary>x des Führungsstrichs (auf der Leitung) – nur im Band.</summary>
     public double FuehrungX { get; internal set; }
@@ -518,17 +529,19 @@ public static class GroessenTexte
     public const double Textabstand = 0.4;
     public const double Schritt = 0.5;
     const double Hoehenfaktor = 0.75;
+    /// <summary>Anzahl zusätzlicher Reihen (weiter von der Linie), die ein ausweichender Text (GroessenText.Weicht) versucht (ANNAHME).</summary>
+    public const int MaxReihen = 4;
 
     /// <summary>Rahmen (x0, y0, x1, y1) des Texts mit Mitte bei (mx, my) auf dem Abschnitt; andereSeite false = über bzw. links der
     /// Linie, true = unter bzw. rechts.</summary>
-    public static double[] Rahmen(bool senkrecht, double mx, double my, double breite, double hoehe, bool andereSeite)
+    public static double[] Rahmen(bool senkrecht, double mx, double my, double breite, double hoehe, bool andereSeite, double extra = 0)
     {
         if (!senkrecht)
         {
-            double y = andereSeite ? my - Linienabstand - hoehe : my + Linienabstand;
+            double y = andereSeite ? my - Linienabstand - extra - hoehe : my + Linienabstand + extra;
             return [mx - breite / 2, y, mx + breite / 2, y + hoehe];
         }
-        double x = andereSeite ? mx + Linienabstand : mx - Linienabstand - hoehe;
+        double x = andereSeite ? mx + Linienabstand + extra : mx - Linienabstand - extra - hoehe;
         return [x, my - breite / 2, x + hoehe, my + breite / 2];
     }
 
@@ -559,14 +572,22 @@ public static class GroessenTexte
             }
             var wahl = kandidaten[0];
             bool frei = false;
-            double[] RahmenBei(double x, double y, bool seite) => t.ImBand ? RahmenAmBand(x, t.BandUnten!.Value, t.BandOben!.Value, breite, hoehe, seite)
-                : Rahmen(t.Senkrecht, x, y, breite, hoehe, seite);
-            foreach (var k in kandidaten)
+            double extra = 0;
+            double[] RahmenBei(double x, double y, bool seite) => t.ImBand ? RahmenAmBand(x, t.BandUnten!.Value, t.BandOben!.Value, breite, hoehe, seite, extra)
+                : Rahmen(t.Senkrecht, x, y, breite, hoehe, seite, extra);
+            // Reihe 0 = unmittelbar an der Linie; ausweichende Texte (Belastung, Modul 4 Teil A-O) rücken, wenn nichts frei ist, reihenweise weiter von der
+            // Linie ab (je Reihe eine Texthöhe plus Mindestabstand), statt andere Texte zu überdecken. Grössentexte bleiben wie bisher (kein Ausweichen).
+            for (int reihe = 0; reihe <= (t.Weicht ? MaxReihen : 0) && !frei; reihe++)
             {
-                var r = t.Senkrecht ? RahmenBei(mx, my + k.Versatz, k.Seite) : RahmenBei(mx + k.Versatz, my, k.Seite);
-                if (belegt.Any(b => Schneidet(r, b))) continue;
-                wahl = k; frei = true; break;
+                extra = reihe * (hoehe + Textabstand);
+                foreach (var k in kandidaten)
+                {
+                    var r = t.Senkrecht ? RahmenBei(mx, my + k.Versatz, k.Seite) : RahmenBei(mx + k.Versatz, my, k.Seite);
+                    if (belegt.Any(b => Schneidet(r, b))) continue;
+                    wahl = k; frei = true; break;
+                }
             }
+            if (!frei) extra = 0;
             double px = t.Senkrecht ? mx : mx + wahl.Versatz, py = t.Senkrecht ? my + wahl.Versatz : my;
             t.Rahmen = RahmenBei(px, py, wahl.Seite);
             t.Seite = wahl.Seite;
@@ -588,9 +609,9 @@ public static class GroessenTexte
     public const double Strichabstand = 0.25;
 
     /// <summary>Rahmen eines Texts ausserhalb eines Deckenbands (Nachtrag B8c): darüber bzw. (andere Seite) darunter.</summary>
-    public static double[] RahmenAmBand(double mx, double bandUnten, double bandOben, double breite, double hoehe, bool andereSeite)
+    public static double[] RahmenAmBand(double mx, double bandUnten, double bandOben, double breite, double hoehe, bool andereSeite, double extra = 0)
     {
-        double y = andereSeite ? bandUnten - Linienabstand - hoehe : bandOben + Linienabstand;
+        double y = andereSeite ? bandUnten - Linienabstand - extra - hoehe : bandOben + Linienabstand + extra;
         return [mx - breite / 2, y, mx + breite / 2, y + hoehe];
     }
 

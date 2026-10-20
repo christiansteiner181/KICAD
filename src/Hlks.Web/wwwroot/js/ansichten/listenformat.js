@@ -1,7 +1,9 @@
 // Aufbereitung der Ableitungen des Kerns (Raumliste, Strangliste, Mengen, seit Modul 1c Raumgrenzen und Hüllbauteile, seit Modul 3 Materialliste,
-// seit Modul 3b Kollisionsliste und Aussparungsliste) für die Listenansicht:
+// seit Modul 3b Kollisionsliste und Aussparungsliste, seit Modul 4 die Sanitär-Zusammenstellung (sanitaer-liste.js)) für die Listenansicht:
 // Spalten mit deutschen Titeln in sinnvoller Reihenfolge, Werte mit Dezimalkomma, Sortieren. Reine Funktionen (Node-testbar).
 // Der Kern liefert die Zahlen; hier wird nichts gerechnet, nur dargestellt.
+
+import { aufbereitenSanitaer } from './sanitaer-liste.js';
 
 /** Spaltenvorgaben je Ableitung: Reihenfolge, Titel, Art (zahl | text). Unbekannte Felder werden hinten angefügt. */
 const VORGABEN = {
@@ -161,6 +163,14 @@ export function formatWert(schluessel, wert) {
   return String(wert);
 }
 
+/**
+ * Text einer Zelle: Spalten mit eigener Formatierung (Spalte.format, Modul 4: Sanitär-Zusammenstellung mit gerundeten Zahlen) nutzen sie, alle anderen formatWert.
+ * Die Listenansicht und die CSV-Datei rufen beide diese Funktion, damit sie denselben Text zeigen.
+ */
+export function zelle(spalte, wert) {
+  return typeof spalte?.format === 'function' ? spalte.format(wert) : formatWert(spalte?.schluessel, wert);
+}
+
 /** Sortiert Zeilen nach einer Spalte; Zahlen numerisch, Text natürlich (U.2 vor U.10); leere Werte ans Ende. */
 export function sortiere(zeilen, schluessel, absteigend = false) {
   const leer = (v) => v === null || v === undefined || v === '' || (Array.isArray(v) && v.length === 0);
@@ -220,7 +230,9 @@ function filterText(filter) {
 /**
  * Bereitet das Ergebnis einer Ableitung auf.
  * Ergebnis: { titel, projekt, stand: { pruefsumme, pakete }, erzeugt, zusammenfassung: [Text…],
- *             tabellen: [{ titel, schluessel (Kennzeichenfeld oder null), spalten[], zeilen[], fuss? (Summenzeilen, nur Raumgrenzen und Hüllbauteile) }] }
+ *             tabellen: [{ titel, schluessel (Kennzeichenfeld oder null), spalten[], zeilen[], fuss? (Summenzeilen, Raumgrenzen, Hüllbauteile, Sanitär-Zusammenstellung) }] }
+ * Spalten: { schluessel, titel, art, format? (Funktion Wert → Text), nurCsv? (nur in der CSV-Datei), tooltip? }; Zeilen der Sanitär-Zusammenstellung dürfen klasse (Zeilenklasse),
+ * zellklassen ({ Spalte: Klasse }) und titel ({ Spalte | '*': Tooltip }) tragen; Tabellen ohneSortieren: true (Blöcke).
  */
 export function aufbereiten(name, daten) {
   const d = (daten && typeof daten === 'object') ? daten : {};
@@ -235,6 +247,8 @@ export function aufbereiten(name, daten) {
   };
   const z = kopf.zusammenfassung;
   const m2 = (v) => formatWert('x_m2', v);
+
+  if (name === 'sanitaer_zusammenstellung') return aufbereitenSanitaer(d, kopf);   // Modul 4 Teil A-O: drei Tabellen wie das Excel (sanitaer-liste.js)
 
   if (name === 'raumliste') {
     if (typeof d.anzahl === 'number') z.push(`${d.anzahl} ${d.anzahl === 1 ? 'Raum' : 'Räume'}${typeof d.flaecheTotal_m2 === 'number' ? ` · Gesamtfläche ${m2(d.flaecheTotal_m2)} m²` : ''}`);

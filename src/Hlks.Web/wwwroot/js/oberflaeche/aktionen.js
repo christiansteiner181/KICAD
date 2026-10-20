@@ -20,6 +20,7 @@ import '../familien/aktionen-unterlagen.js';
 import '../familien/aktionen-bibliothek.js';   // Familienbibliothek: Explorer, Aktualisieren, Laden aus der Bibliothek (Modul 2, C3)
 import './aktionen-schema.js';   // Schema-Ansicht (Modul 3, C2)
 import './aktionen-leitung.js';   // Rohr und Kanal zeichnen, Aufteilen mit Serie, Materialliste (Modul 3, C1)
+import './aktionen-sanitaer.js';   // Sanitär-Zusammenstellung: Knopf im Register Gebäudetechnik (Modul 4 Teil A-O)
 import './aktionen-koordination.js';   // Register Koordination: Projektvorgaben, Kollisionen, Aussparungen, BCF (Modul 3b, C1)
 import './aktionen-serienpdf.js';   // Serien-PDF: Plansätze je Gewerk, Gewerk eines Planblatts (entwurf/serien-pdf.md)
 import './aktionen-paletten.js';   // Register Ansicht › Paletten: je angemeldeter Palette ein Eintrag, Paletten zurücksetzen (W1)

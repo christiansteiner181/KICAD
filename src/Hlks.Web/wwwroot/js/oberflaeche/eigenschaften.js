@@ -23,6 +23,8 @@ import { leitungAenderung } from '../werkzeuge/leitung-bearbeiten.js';
 import { serieLaden, serienListe } from '../werkzeuge/leitung-daten.js';
 import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
+import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
+import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
 
 const lc = (t) => String(t ?? '').toLowerCase();
 const GRUPPEN_ZU = 'palette.gruppenZu';
@@ -53,6 +55,8 @@ export function einrichten(w) {
     if (fk) { ausfuehren('familie.bearbeiten', { familie: fk.dataset.fam }); return; }
     const lt = e.target.closest('.ep-lt-knopf');
     if (lt && gerade) { ausfuehren('leitung.aufteilen', { leitung: gerade.kz }); return; }
+    const sp = e.target.closest('.ep-spez-neu, .ep-spez-weg');
+    if (sp) { spezialKlick(sp); return; }
     const q = e.target.closest('.ep-warum');
     if (q && gerade) warumDialog(gerade.kz, q.dataset.warum);
   });
@@ -110,10 +114,13 @@ async function zeichnen() {
     return;
   }
   if (mein !== nr) return;
+  let san = null;
+  if (def?.eigenschaften?.some((d) => d.name === 'sanitaerArt')) san = await sanitaerKatalog();   // Modul 4: Vorgabe der Klasse für den Eintrag «Vorgabe der Klasse (…)»
+  if (mein !== nr) return;
   if (fam && ziel.klasse !== 'Familie') fam = { ...fam, exemplar: lesen?.eigenschaften?.parameter?.wert ?? null };
   gerade = { id: ziel.id, kz: ziel.kennzeichen, fam };
   const y = inhalt.scrollTop;
-  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam);
+  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san);
   inhalt.scrollTop = y;
 }
 
@@ -176,7 +183,7 @@ function eigenschaftsFeld(d, wert) {
     case 'auswahl':
       return auswahlFeld(ziel, (d.auswahl ?? []).map((a) => [a, a]), wert ?? null);
     case 'bool':
-      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${wert === true ? 'checked' : ''}>`;
+      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${(d.name === 'belastung' ? wert !== false : wert === true) ? 'checked' : ''}>`;   // Modul 4: Ansicht.belastung ist ohne Angabe ein (Häkchen, solange nicht false)
     case 'liste': {
       const aktuell = Array.isArray(wert) ? wert : [];
       const moegliche = d.auswahl ? d.auswahl.map((a) => [a, a]) : d.name === 'gewerke' ? gewerkeListe() : null;
@@ -189,6 +196,7 @@ function eigenschaftsFeld(d, wert) {
     case 'objekt':
       return `<code class="ep-objekt" title="Wird in dieser Palette nicht bearbeitet">${esc(wert === undefined ? '' : JSON.stringify(wert))}</code>`;
     default:
+      if (d.name === 'anlage' && d.typ === 'text') return auswahlFeld(ziel, derKlasse('Anlage').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen)).map(kennOption), wert ?? null);   // Ansicht.anlage (Liste Sanitär-Zusammenstellung)
       return textFeld(ziel, wert === undefined || wert === null ? '' : (typeof wert === 'string' ? wert : JSON.stringify(wert)));
   }
 }
@@ -213,7 +221,7 @@ const kennOption = (e) => [e.kennzeichen, e.name ? `${e.kennzeichen} – ${e.nam
 
 // ---------------------------------------------------------------------------------------------- Palette aufbauen
 
-function palette(el, l, def, istAnsicht, fam = null) {
+function palette(el, l, def, istAnsicht, fam = null, san = null) {
   const res = reservierungVon(el);
   let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(el.klasse, el.basis), 16)}</span>`
     + `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select></div>`
@@ -269,10 +277,17 @@ function palette(el, l, def, istAnsicht, fam = null) {
     if (fam && (d.name === 'familientyp' || d.name === 'parameter')) continue;   // stehen in der Gruppe «Familie»
     if (ltGruppe && LEITUNG_EIGENSCHAFTEN.includes(d.name)) continue;            // stehen in der Gruppe «Leitung»
     const w = werte[d.name]?.wert;
+    // Modul 4 Teil A-O: Apparateart mit Namen und abgeleiteten Werten darunter, Tabelle der Spezialinstallationen, Hinweis zu K
+    if (d.name === 'sanitaerArt' && san) { ez.push(...artZeilen({ def: d, wert: w ?? null, vorgabe: san.vorgabeJeKlasse?.[el.klasse] ?? null, l }, HELFER)); continue; }
+    if (d.name === 'spezialinstallationen' && d.typ === 'liste') {
+      ez.push(zeile(d.name, spezialFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
+      continue;
+    }
     // Kennwerte ohne Quelle gelten in der Rechnung nicht: Marke «ohne Quelle» am Feld (Herkunft aus element_lesen)
     const z = zeile(d.name, eigenschaftsFeld(d, w) + familienMarke(werte[d.name]?.herkunft), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), pflicht: d.pflicht, warum: werte[d.name] ? d.name : null,
       marke: werte[d.name] ? ohneQuelleMarke(el.klasse, d.name, werte[d.name].herkunft) : '' });
     ez.push(z);
+    if (d.name === 'abflusskennzahl') ez.push(kHinweisZeile(HELFER));
   }
   for (const [name, v] of Object.entries(werte)) {
     if (bekannt.has(name) || (fam && (name === 'familientyp' || name === 'parameter')) || (ltGruppe && LEITUNG_EIGENSCHAFTEN.includes(name))) continue;
@@ -281,10 +296,11 @@ function palette(el, l, def, istAnsicht, fam = null) {
   h += gruppe('Eigenschaften', ez);
 
   // Abgeleitet (nur lesen)
-  const ab = Object.entries(l.abgeleitet ?? {}).map(([k, v]) => {
+  const ab = Object.entries(l.abgeleitet ?? {}).filter(([k]) => !SANITAER_ABGELEITET.includes(k)).map(([k, v]) => {
     const [basis, einheit] = k.split('_');
     return zeile(ABGELEITET_NAMEN[basis] ?? basis, nurLesen(`${v}${einheit ? ' ' + (ABGELEITET_EINHEIT[einheit] ?? einheit) : ''}`), { warum: basis, titel: 'Berechnet aus der Geometrie' });
   });
+  ab.push(...(el.basis === 'Apparat' ? [] : leitungZeilen(l, HELFER)));   // Modul 4: Belastungssummen einer Leitung (die Werte eines Apparats stehen unter der Apparateart)
   h += gruppe('Abgeleitet', ab);
 
   // Herkunft
@@ -311,6 +327,13 @@ function wertLesen(feld) {
       return n;
     }
     case 'bool': return feld.checked;
+    case 'spezial': {   // Modul 4 Teil A-O: Tabelle der Spezialinstallationen → Liste { bezeichnung, versorgung, entsorgung }; unvollständige Zeilen werden nicht gesendet
+      const zeilen = [...feld.querySelectorAll('tbody tr')].map((tr) => ({ bezeichnung: tr.querySelector('.sp-b').value, versorgung: tr.querySelector('.sp-v').value, entsorgung: tr.querySelector('.sp-e').value }));
+      const r = spezialWert(zeilen);
+      feld.querySelector('.ep-spez-hinweis').hidden = r.offen === 0;
+      if (r.offen > 0) throw Object.assign(new Error(SPEZIAL_FEHLT), { still: true });
+      return r.wert;
+    }
     case 'haken': { const l = [...feld.querySelectorAll('input:checked')].map((c) => c.value); return l.length ? l : null; }
     case 'liste': { const l = feld.value.split(',').map((s) => s.trim()).filter(Boolean); return l.length ? l : null; }
     default: { const t = feld.value.trim(); return t === '' ? null : t; }
@@ -350,6 +373,28 @@ async function famAenderung(feld, ziel) {
   if (!r.angenommen) fehlerAnzeigen(feld, r.fehler || r.meldung || 'Die Änderung wurde abgelehnt.', r.vorschlag);
 }
 
+/** Modul 4 Teil A-O: Zeile der Tabelle Spezialinstallationen hinzufügen oder löschen (Löschen sendet sofort, Hinzufügen erst mit der ausgefüllten Zeile). */
+function spezialKlick(knopf) {
+  const tabelle = knopf.closest('.ep-spezial');
+  if (!tabelle) return;
+  if (knopf.classList.contains('ep-spez-neu')) {
+    schmutzig = true;
+    tabelle.querySelector('tbody').insertAdjacentHTML('beforeend', spezialZeileHtml());
+    tabelle.querySelector('tbody tr:last-child .sp-b').focus();
+    return;
+  }
+  knopf.closest('tr').remove();
+  tabelle.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+// Katalog der Sanitär-Vorgaben (Abfrage sanitaer_katalog: Vorgabe je Klasse), einmal je Modellstand-Wechsel «alles»
+let sanKatalog = null;
+abonnieren('modell', (d) => { if (d.alles) sanKatalog = null; });
+function sanitaerKatalog() {
+  sanKatalog ??= abfrage('sanitaer_katalog', {}).catch((e) => { console.warn('sanitaer_katalog', e?.message ?? e); sanKatalog = null; return null; });
+  return sanKatalog;
+}
+
 async function beiAenderung(e) {
   const feld = e.target.closest('[data-ziel]');
   if (!feld || !gerade) return;
@@ -369,7 +414,7 @@ async function beiAenderung(e) {
   }
   let wert;
   try { wert = wertLesen(feld); }
-  catch (err) { fehlerAnzeigen(feld, err.message); return; }
+  catch (err) { if (!err.still) fehlerAnzeigen(feld, err.message); return; }   // still: Zeile der Tabelle noch unvollständig, Hinweis steht schon an der Tabelle
 
   const param = { element: gerade.kz };
   if (ziel === 'kz') {

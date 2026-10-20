@@ -92,18 +92,18 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
         var p = Testhaus();
         var g = Grafik.Plan(p, Ansicht);
         // R-4/RD-1/R-5: senkrecht 50 mm → gedreht links der Linie
-        var t = TeileVon(g, p, "R-4")[0].Primitive.Single(x => x.Art == "text");
+        var t = TeileVon(g, p, "R-4")[0].Primitive.Single(x => x.Art == "text" && x.Text!.StartsWith("NW"));   // daneben steht seit Modul 4 die Belastung «ΣLU …»
         Assert.Equal("NW 25 / NW 20", t.Text);
         Assert.Equal(90, t.Winkel);
         Assert.True(Etwa(t.Punkte[0], 39.2, 95));
         // R-1: (55,26) (55,20) (40,20) (B8d: HA-1 auf dem Boden) – längster Abschnitt waagrecht 15 mm → über der Linie, Mitte 47.5
-        var t1 = TeileVon(g, p, "R-1")[0].Primitive.Single(x => x.Art == "text");
+        var t1 = TeileVon(g, p, "R-1")[0].Primitive.Single(x => x.Art == "text" && x.Text!.StartsWith("NW"));
         Assert.Equal("NW 25", t1.Text);
         Assert.Null(t1.Winkel);
         Assert.True(Etwa(t1.Punkte[0], 47.5, 20.8));
         // grob: keine Grössen
         Ok(p.Ausfuehren("element_aendern", Par(("element", Ansicht), ("eigenschaften", new JsonObject { ["detailgrad"] = "grob" }))));
-        Assert.DoesNotContain(TeileVon(Grafik.Plan(p, Ansicht), p, "R-4")[0].Primitive, x => x.Art == "text");
+        Assert.DoesNotContain(TeileVon(Grafik.Plan(p, Ansicht), p, "R-4")[0].Primitive, x => x.Art == "text");   // auch keine Belastung
     }
 
     [Fact]
