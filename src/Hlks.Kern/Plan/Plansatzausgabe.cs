@@ -25,6 +25,9 @@ public static class Plansatzausgabe
         var pn = Plaene.Projektnummer(m);
         var satz = Plaene.Finde(m, Param.Text(par, "plansatz", true));
         var datum = Plaene.Datum(Param.Text(par, "datum"));
+        // Revisionsstempel (Modul 7 Teil A): die Angabe der Ausgabe (auch leer = kein Stempel) übersteuert den Stempel des Blatts, dieser den des Plansatzes
+        string? stempelAngabe = par.ContainsKey("stempel") ? Param.Text(par, "stempel")?.Trim() ?? "" : null;
+        string? StempelVon(Element blatt) => stempelAngabe ?? (blatt.Text("stempel") is { Length: > 0 } sb ? sb : satz.Element?.Text("stempel"));
 
         // ---- Blätter, Reihenfolge, Auswahl
         var reihenfolge = satz.Blaetter.ToList();   // alle des Satzes, Reihenfolge nach Plannummer bzw. gespeichert
@@ -110,7 +113,7 @@ public static class Plansatzausgabe
                 {
                     try
                     {
-                        var seite = Planausgabe.Seite(p, doc, b.Blatt, Gecacht, logo);
+                        var seite = Planausgabe.Seite(p, doc, b.Blatt, Gecacht, logo, StempelVon(b.Blatt));
                         if (d.Art == "sammel") doc.Outlines.Add(Plaene.Lesezeichen(b.Blatt, pn), seite, true);
                     }
                     catch (HlksFehler f)

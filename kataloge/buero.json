@@ -16,5 +16,27 @@
   "anleitung": {
     "ordner": "%USERPROFILE%\\HLKS_CAD_anleitung",
     "hinweis": "Bedienungsanleitung, von KICAD unter /hilfe/ ausgeliefert; erzeugt mit werkzeuge/anleitung_bauen.mjs (Desktop-Start baut sie mit); lokal, nie OneDrive (Bilder echter Projekte). Sprungziele #k-<register>~<knopf>, #s-<suchwörter>. Umgebungsvariable HLKS_ANLEITUNG übersteuert den Ordner (Tests)."
-  }
+  },
+  "standorte": [
+    {
+      "schluessel": "bolligen",
+      "firma": "H+K Planungs AG, Bolligen",
+      "strasse": "Dorfmärit 9",
+      "plzOrt": "3065 Bolligen",
+      "telefon": "031 / 924 25 35",
+      "mail": "infob@hkplanung.ch",
+      "web": "www.hkplanung.ch",
+      "quelle": "Textauszug (PdfPig) Plankopf 1-0768-H03-Heizung Erdgeschoss-.pdf, Seite 1 (Firma, Strasse, PLZ Ort, Tel, Mail); Web aus dem Plankopf von S_Strangschema_Wasser-A0.pdf und S_Strangschema_Abwasser-A0.pdf, Seite 1 (Revisionspläne Bernstrasse 21.01.2026). Gleich wie im Planmuster-Katalog (entwurf/planmuster.md)."
+    },
+    {
+      "schluessel": "thun",
+      "firma": "H+K Planungs AG, Thun",
+      "strasse": "Kasernenstrasse 17",
+      "plzOrt": "3600 Thun",
+      "telefon": "033 / 225 25 45",
+      "mail": "infot@hkplanung.ch",
+      "quelle": "Textauszug (PdfPig) Plankopf 1-0768-H03-Heizung Erdgeschoss-.pdf, Seite 1. Web für Thun steht auf keinem gelesenen Plan und fehlt darum."
+    }
+  ],
+  "standorteHinweis": "Absender im Plankopf (Modul 7 Teil A): Der erste Standort ist der Hauptsitz; der Grundriss-Kopf zeigt die ersten zwei Standorte (Hauptsitz fett, mit Mail), der Schema-Kopf nur den Hauptsitz mit Telefon und Web. Werte nur aus echten Plänen ändern."
 }

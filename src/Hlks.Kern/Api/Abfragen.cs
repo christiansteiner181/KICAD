@@ -60,6 +60,7 @@ public sealed class Abfragen(Projekt p)
         .. KollisionAbfragen.Definitionen,   // Modul 3b: Kollisionen
         .. AussparungAbfragen.Definitionen,   // Modul 3b: Aussparungen
         .. PlansatzAbfragen.Definitionen,   // Serien-PDF: plansaetze, plansatz_pdf
+        .. PlanAbfragen.Definitionen,   // Modul 7 Teil A: plannummer_vorschlag
         .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
     ];

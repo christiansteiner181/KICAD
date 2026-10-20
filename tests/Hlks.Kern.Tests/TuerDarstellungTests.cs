@@ -65,6 +65,7 @@ public class TuerDarstellungTests
         ["typmaterial"] = """{"betroffen":false}""",                    // Modul 3b, Nachtrag B3d: leere Typenliste = Antwort mit Hinweis
         ["aussparungsliste"] = """{"geschoss":"EG"}""",                 // Modul 3b, B3 (der Test legt vorher eine Aussparung an: siehe aussparungen_ifc)
         ["aussparungen_ifc"] = "{\"datei\":\"" + AussparungIfcDatei() + "\"}",   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt der Test vorher an
+        ["plannummer_vorschlag"] = """{"gewerk":"heizung","geschoss":"EG"}""",   // Modul 7 Teil A
         ["plansaetze"] = "{}",                                          // Serien-PDF
         ["plansatz_pdf"] = "{\"plansatz\":\"allgemein\",\"ordner\":\"" + PlansatzOrdner + "\",\"ueberschreiben\":true}",   // Planblatt T-1 (ohne Fachbuchstabe = allgemein) legt der Test vorher an
         ["normen_suchen"] = """{"frage":"Mindestgefälle Prüfleitung"}""",   // Modul 3c: Test-PDF (erfunden), HLKS_NORMEN setzt der Test kurz

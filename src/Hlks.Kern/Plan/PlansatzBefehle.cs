@@ -53,6 +53,7 @@ public static class PlansatzTexte
     public const string ParPdfAbgewaehlt = "Planblätter, die diesmal nicht dabei sind (mit blaetter: die Liste enthält dann alle Blätter, auch die abgewählten)";
     public const string ParUeberschreiben = "true = vorhandene Dateien überschreiben (Vorgabe nein)";
     public const string ParPruefen = "true = nichts schreiben, nur zeigen, was geschrieben würde und welche Dateien es schon gibt";
+    public const string ParStempel = "Revisionsstempel auf allen Blättern dieses Exports, z. B. «Revisionsplan 21.01.2026» (roter, schräger Text über dem Plankopf); leer = kein Stempel; ohne Angabe gelten die Stempel der Blätter bzw. des Plansatzes";
 }
 
 public static class PlansatzBefehle
@@ -77,6 +78,7 @@ public static class PlansatzAbfragen
             new("plansatz", "text", true, PlansatzTexte.ParPdfPlansatz), new("ordner", "text", false, PlansatzTexte.ParOrdner), new("anlass", "text", false, PlansatzTexte.ParAnlass),
             new("einzeln", "bool", false, PlansatzTexte.ParEinzeln), new("blaetter", "liste", false, PlansatzTexte.ParPdfBlaetter), new("abgewaehlt", "liste", false, PlansatzTexte.ParPdfAbgewaehlt),
             new("ueberschreiben", "bool", false, PlansatzTexte.ParUeberschreiben), new("datum", "text", false, PlansatzTexte.ParDatum), new("pruefen", "bool", false, PlansatzTexte.ParPruefen),
+            new("stempel", "text", false, PlansatzTexte.ParStempel),
         ]),
     ];
 

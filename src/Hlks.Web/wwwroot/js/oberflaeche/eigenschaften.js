@@ -25,6 +25,7 @@ import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
+import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';   // Modul 7 Teil A: Revisionsliste des Planblatts
 
 const lc = (t) => String(t ?? '').toLowerCase();
 const GRUPPEN_ZU = 'palette.gruppenZu';
@@ -57,6 +58,8 @@ export function einrichten(w) {
     if (lt && gerade) { ausfuehren('leitung.aufteilen', { leitung: gerade.kz }); return; }
     const sp = e.target.closest('.ep-spez-neu, .ep-spez-weg');
     if (sp) { spezialKlick(sp); return; }
+    const rv = e.target.closest('.ep-rev-neu, .ep-rev-weg');
+    if (rv) { revisionKlick(rv); return; }
     const q = e.target.closest('.ep-warum');
     if (q && gerade) warumDialog(gerade.kz, q.dataset.warum);
   });
@@ -283,6 +286,11 @@ function palette(el, l, def, istAnsicht, fam = null, san = null) {
       ez.push(zeile(d.name, spezialFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
       continue;
     }
+    // Modul 7 Teil A: Revisionsliste des Planblatts als Tabelle (Index, Datum, Beschreibung); neue Revisionen setzt der Kern (revision_hinzufuegen)
+    if (el.klasse === 'Planblatt' && d.name === 'revisionen') {
+      ez.push(zeile(d.name, revisionFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
+      continue;
+    }
     // Kennwerte ohne Quelle gelten in der Rechnung nicht: Marke «ohne Quelle» am Feld (Herkunft aus element_lesen)
     const z = zeile(d.name, eigenschaftsFeld(d, w) + familienMarke(werte[d.name]?.herkunft), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), pflicht: d.pflicht, warum: werte[d.name] ? d.name : null,
       marke: werte[d.name] ? ohneQuelleMarke(el.klasse, d.name, werte[d.name].herkunft) : '' });
@@ -334,6 +342,7 @@ function wertLesen(feld) {
       if (r.offen > 0) throw Object.assign(new Error(SPEZIAL_FEHLT), { still: true });
       return r.wert;
     }
+    case 'revisionen': return revisionenWert(zeilenAusTabelle(feld));   // Modul 7 Teil A: Tabelle der Revisionen → Liste { index, datum, beschreibung }
     case 'haken': { const l = [...feld.querySelectorAll('input:checked')].map((c) => c.value); return l.length ? l : null; }
     case 'liste': { const l = feld.value.split(',').map((s) => s.trim()).filter(Boolean); return l.length ? l : null; }
     default: { const t = feld.value.trim(); return t === '' ? null : t; }
@@ -383,6 +392,14 @@ function spezialKlick(knopf) {
     tabelle.querySelector('tbody tr:last-child .sp-b').focus();
     return;
   }
+  knopf.closest('tr').remove();
+  tabelle.dispatchEvent(new Event('change', { bubbles: true }));
+}
+
+/** Modul 7 Teil A: Revision hinzufügen (Dialog, dann Befehl revision_hinzufuegen) oder eine Zeile der Revisionstabelle löschen (sendet sofort). */
+function revisionKlick(knopf) {
+  if (knopf.classList.contains('ep-rev-neu')) { if (gerade) ausfuehren('plan.revision', { planblatt: gerade.kz }); return; }
+  const tabelle = knopf.closest('.ep-revisionen');
   knopf.closest('tr').remove();
   tabelle.dispatchEvent(new Event('change', { bubbles: true }));
 }

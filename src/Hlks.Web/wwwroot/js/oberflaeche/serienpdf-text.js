@@ -91,14 +91,22 @@ export function exportParameter(satz, liste, form, extra = {}) {
     anlass: (form.anlass ?? '').trim(),
     ordner: form.ordnerVonHand ? (form.ordner ?? '').trim() : '',
     einzeln: !!form.einzeln,
+    ...(form.stempelAn ? { stempel: (form.stempel ?? '').trim() } : {}),   // Revisionsstempel (Modul 7 Teil A): nur mit Häkchen; sonst gelten die Stempel der Blätter bzw. des Plansatzes
     ...extra,
   };
+}
+
+/** Vorschlag für den Revisionsstempel: «Revisionsplan TT.MM.JJJJ» (Datum heute). Der Kern setzt den Text unverändert auf die Pläne. */
+export function stempelVorschlag(datum = new Date()) {
+  const z = (n) => String(n).padStart(2, '0');
+  return `Revisionsplan ${z(datum.getDate())}.${z(datum.getMonth() + 1)}.${datum.getFullYear()}`;
 }
 
 /** Prüfung vor dem Export; Text des Hindernisses oder true. */
 export function exportPruefen(liste, form) {
   if (gewaehlte(liste).length === 0) return 'Mindestens ein Plan muss gewählt sein.';
   if (form.ordnerVonHand && !(form.ordner ?? '').trim()) return 'Der Ordner ist leer. «Vorschlag» setzt den vorgeschlagenen Ordner ein.';
+  if (form.stempelAn && !(form.stempel ?? '').trim()) return 'Der Text des Revisionsstempels ist leer. Das Häkchen weglassen oder einen Text eintragen.';
   return true;
 }
 
@@ -107,7 +115,7 @@ export function formularAus(satz) {
   const a = satz?.ausgabe ?? {};
   const vorschlag = satz?.vorschlag ?? {};
   const ordnerVonHand = typeof a.ordner === 'string' && a.ordner.length > 0;
-  return { anlass: a.anlass ?? '', ordner: ordnerVonHand ? a.ordner : (vorschlag.ordner ?? ''), ordnerVonHand, einzeln: a.einzeln === true };
+  return { anlass: a.anlass ?? '', ordner: ordnerVonHand ? a.ordner : (vorschlag.ordner ?? ''), ordnerVonHand, einzeln: a.einzeln === true, stempelAn: false, stempel: stempelVorschlag() };
 }
 
 /** Parameter von plansatz_setzen für einen Handsatz mit geänderter Blattliste. */

@@ -13,23 +13,51 @@ namespace Hlks.Mcp;
 
 public sealed partial class Werkzeuge
 {
-    [McpServerTool(Name = "planblatt_anlegen"), Description("Legt ein Planblatt mit H+K-Plankopf an (Format A4 bis A0, Vorgabe quer). Das Kennzeichen (PB-1, PB-2 …) wird gebildet; Ansichten kommen danach mit ansicht_platzieren auf das Blatt.")]
+    [McpServerTool(Name = "planblatt_anlegen"), Description(PlanBefehleTexte.Anlegen)]
     public string PlanblattAnlegen(
-        [Description("Plannummer im Plankopf, im Projekt eindeutig, z. B. 2317-101")] string nummer,
-        [Description("Planinhalt (Titel im Plankopf), z. B. Grundriss Erdgeschoss Sanitär")] string titel,
+        [Description("Plannummer im Plankopf, im Projekt eindeutig, z. B. 2317-101; fehlt sie, gilt der Vorschlag nach dem H+K-Schema (gewerk, geschoss, ansicht, art)")] string? nummer = null,
+        [Description("Planinhalt (Titel im Plankopf), z. B. Grundriss Erdgeschoss Sanitär; fehlt er, gilt der Titelvorschlag aus Gewerk und Geschoss")] string? titel = null,
         [Description("A4 | A3 | A2 | A1 | A0 (Vorgabe A3)")] string? format = null,
         [Description("true = Hochformat, sonst quer")] bool hochformat = false,
+        [Description("Gewerk des Plans (heizung | lueftung | sanitaer | kaelte | elektro | koordination | allgemein): setzt Planblatt.gewerk und bestimmt den Fachbuchstaben des Vorschlags")] string? gewerk = null,
+        [Description("Geschoss (Kennzeichen) für den Vorschlag von Nummer und Titel")] string? geschoss = null,
+        [Description("Ansicht, aus der Geschoss, Gewerk und Art des Vorschlags kommen (die Ansicht wird nicht platziert)")] string? ansicht = null,
+        [Description(PlanAbfragen.ParArt)] string? art = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
     {
-        var par = Parameter(("nummer", nummer), ("titel", titel), ("format", format));
+        var par = Parameter(("nummer", nummer), ("titel", titel), ("format", format), ("gewerk", gewerk), ("geschoss", geschoss), ("ansicht", ansicht), ("art", art));
         par["hochformat"] = hochformat;
         return Befehl("planblatt_anlegen", par, trockenlauf);
     }
 
-    [McpServerTool(Name = "ansicht_platzieren"), Description("Setzt eine Ansicht (Grundriss, Schnitt, Ansicht, Schema) als Ansichtsfenster auf ein Planblatt. Eine Ansicht steht nur auf einem Blatt. Massstab und Ausschnitt kommen von der Ansicht; ein Schema hat keinen Massstab (Papier-mm, 1:1) und zeigt darum im Titel und im Plankopf keinen.")]
+    [McpServerTool(Name = "plannummer_vorschlag"), Description(PlanAbfragen.Text)]
+    public string PlannummerVorschlag(
+        [Description(PlanAbfragen.ParGewerk)] string? gewerk = null,
+        [Description(PlanAbfragen.ParGeschoss)] string? geschoss = null,
+        [Description(PlanAbfragen.ParAnsicht)] string? ansicht = null,
+        [Description(PlanAbfragen.ParArt)] string? art = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "plannummer_vorschlag", Parameter(("gewerk", gewerk), ("geschoss", geschoss), ("ansicht", ansicht), ("art", art)))));
+
+    [McpServerTool(Name = "revision_hinzufuegen"), Description(RevisionTexte.Hinzufuegen)]
+    public string RevisionHinzufuegenWerkzeug(
+        [Description(RevisionTexte.ParPlanblatt)] string planblatt,
+        [Description(RevisionTexte.ParBeschreibung)] string beschreibung,
+        [Description(RevisionTexte.ParDatum)] string? datum = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("revision_hinzufuegen", Parameter(("planblatt", planblatt), ("beschreibung", beschreibung), ("datum", datum)), trockenlauf);
+
+    [McpServerTool(Name = "plansatz_revision_hinzufuegen"), Description(RevisionTexte.PlansatzHinzufuegen)]
+    public string PlansatzRevisionHinzufuegenWerkzeug(
+        [Description(RevisionTexte.ParPlansatz)] string plansatz,
+        [Description(RevisionTexte.ParBeschreibung)] string beschreibung,
+        [Description(RevisionTexte.ParDatum)] string? datum = null,
+        [Description(RevisionTexte.ParBlaetter)] JsonElement? blaetter = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("plansatz_revision_hinzufuegen", Parameter(("plansatz", plansatz), ("beschreibung", beschreibung), ("datum", datum), ("blaetter", blaetter)), trockenlauf);
+    [McpServerTool(Name = "ansicht_platzieren"), Description(Hlks.Kern.AnsichtPlatzieren.Text)]
     public string AnsichtPlatzieren(
         [Description("Planblatt (Kennzeichen, Id oder Plannummer)")] string planblatt,
-        [Description("Ansicht (Kennzeichen oder Id): Grundriss, Schnitt, Ansicht oder Schema")] string ansicht,
+        [Description(Hlks.Kern.AnsichtPlatzieren.ParAnsicht)] string ansicht,
         [Description("[x, y] Mitte des Fensters auf dem Blatt in Papier-mm, Ursprung unten links; fehlt sie, kommt die Ansicht in die Mitte des freien Bereichs")] JsonElement? lage = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("ansicht_platzieren", Parameter(("planblatt", planblatt), ("ansicht", ansicht), ("lage", lage)), trockenlauf);
@@ -68,9 +96,10 @@ public sealed partial class Werkzeuge
         [Description(PlansatzTexte.ParPdfAbgewaehlt)] JsonElement? abgewaehlt = null,
         [Description(PlansatzTexte.ParUeberschreiben)] bool ueberschreiben = false,
         [Description(PlansatzTexte.ParDatum)] string? datum = null,
-        [Description(PlansatzTexte.ParPruefen)] bool pruefen = false)
+        [Description(PlansatzTexte.ParPruefen)] bool pruefen = false,
+        [Description(PlansatzTexte.ParStempel)] string? stempel = null)
     {
-        var par = Parameter(("plansatz", plansatz), ("ordner", ordner), ("anlass", anlass), ("blaetter", blaetter), ("abgewaehlt", abgewaehlt), ("datum", datum));
+        var par = Parameter(("plansatz", plansatz), ("ordner", ordner), ("anlass", anlass), ("blaetter", blaetter), ("abgewaehlt", abgewaehlt), ("datum", datum), ("stempel", stempel));
         par["einzeln"] = einzeln; par["ueberschreiben"] = ueberschreiben; par["pruefen"] = pruefen;
         return Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "plansatz_pdf", par)));
     }

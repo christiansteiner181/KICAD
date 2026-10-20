@@ -54,7 +54,7 @@ public static class Planausgabe
     /// <summary>Eine Seite eines Planblatts an ein PDF-Dokument anhängen: Format des Blatts, Zeichenrahmen, Fenster mit Titel und
     /// Massstab, Plankopf. Die eine Seitenfunktion für <see cref="Pdf"/> (ein Blatt) und das Serien-PDF der Plansätze
     /// (Plansatzausgabe.cs): beide zeichnen hier, es gibt keinen zweiten Zeichner. Das Logo lädt der Aufrufer einmal je Dokument.</summary>
-    internal static PdfPage Seite(Projekt p, PdfDocument doc, Element blatt, Func<Projekt, string, Plangrafik> grafik, XImage? logo)
+    internal static PdfPage Seite(Projekt p, PdfDocument doc, Element blatt, Func<Projekt, string, Plangrafik> grafik, XImage? logo, string? stempel = null)
     {
         var m = p.Modell;
         var format = blatt.Text("format") ?? Blattformate.Vorgabe;
@@ -65,7 +65,7 @@ public static class Planausgabe
             .Select(af => Fenster(p, af, grafik)).ToList();
         // Einheit der Masse (Entscheid Christian 17.10.2026: je Gewerk einstellbar): gemischt → Einheit in jedem Fenstertitel
         // (Schemas haben keine Masse und keinen Massstab: sie zählen hier nicht mit)
-        bool gemischt = fenster.Where(f => !f.Schema).Select(f => f.Einheit).Distinct().Count() > 1;
+        bool gemischt = fenster.Where(f => !f.OhneMass).Select(f => f.Einheit).Distinct().Count() > 1;
 
         var seite = doc.AddPage();
         seite.Width = XUnit.FromMillimeter(bw);
@@ -87,11 +87,13 @@ public static class Planausgabe
             z.Zeichnen(Fusszeile(z, f, gemischt), Abbildung.Papier);
         }
 
-        // Plankopf unten rechts, in der Ecke des Zeichenrahmens
-        double kb = Blattformate.KopfBreite(format), kh = Blattformate.KopfHoehe(format);
-        var daten = Kopfdaten(p, blatt, format, hoch, fenster);
+        // Plankopf in der Ecke des Zeichenrahmens: Grundriss-Kopf unten rechts, Schema-Kopf (schmal) unten links; er wächst mit den Planänderungen nach oben
+        var km = KopfMasse(p, blatt);
+        double kb = Blattformate.KopfBreite(format, km.Art), kh = Blattformate.KopfHoehe(format, km.Art, km.Zeilen, km.Titelband);
+        var daten = Kopfdaten(p, blatt, format, hoch, fenster, km, stempel ?? blatt.Text("stempel"));
         const double k = PdfZeichner.PtJeMm;
-        HkPlankopf.Zeichnen(gfx, (bw - r - kb) * k, (bh - r - kh) * k, kb * k, kh * k, daten, logo);
+        double kx = km.Art == HkPlankopf.Art.Schema ? r : bw - r - kb;
+        HkPlankopf.Zeichnen(gfx, kx * k, (bh - r - kh) * k, kb * k, kh * k, daten, logo);
         return seite;
     }
 
@@ -148,6 +150,9 @@ public static class Planausgabe
     {
         /// <summary>Schema-Ansicht: Papier-mm, 1:1 – ohne Massstab im Titel, ohne grafischen Massstab, nicht im Massstab des Plankopfs.</summary>
         public bool Schema => Ansicht.Text("art") == "schema";
+        /// <summary>Liste (Modul 7 Teil A): Tabelle in Papier-mm – wie ein Schema ohne Massstab, Nordpfeil und Masse.</summary>
+        public bool Liste => Ansicht.Text("art") == "liste";
+        public bool OhneMass => Schema || Liste;
     }
 
     static FensterDaten Fenster(Projekt p, Element af, Func<Projekt, string, Plangrafik> grafik)
@@ -160,7 +165,7 @@ public static class Planausgabe
         var l = af.Geometrie.Punkte[0];
         // Aussparungsplan: Masse wie seine Massketten (cm ohne Angabe), sonst Ansicht bzw. Gewerk (Befund Hauptlauf 19.10.2026:
         // der Kopf zeigte «Masse in m» über cm-Ketten); Einlage- und Grundleitungspläne (Modul 3, B10) bemassen mit denselben Ketten
-        var einheit = ansicht.Text("darstellung") is "aussparungen" or EinlageGrafik.Einlagen or EinlageGrafik.Grundleitungen ? AussparungGrafik.Einheit(p.Modell, ansicht) : Bemassungseinheit.Fuer(p.Modell, ansicht).Einheit;
+        var einheit = ansicht.Text("art") == "liste" ? "m" : ansicht.Text("darstellung") is "aussparungen" or EinlageGrafik.Einlagen or EinlageGrafik.Grundleitungen ? AussparungGrafik.Einheit(p.Modell, ansicht) : Bemassungseinheit.Fuer(p.Modell, ansicht).Einheit;
         return new FensterDaten(af, ansicht, g, l[0], l[1], w, h, cx, cy, g.Massstab > 0 ? g.Massstab : 50, einheit);
     }
 
@@ -197,8 +202,10 @@ public static class Planausgabe
     {
         var format = blatt.Text("format") ?? Blattformate.Vorgabe;
         var (bw, bh) = Blattformate.Groesse(format, Hoch(blatt));
-        double r = Blattformate.Rand, kb = Blattformate.KopfBreite(format), kh = Blattformate.KopfHoehe(format);
-        var kopf = (X0: bw - r - kb, Y0: r, X1: bw - r, Y1: r + kh);
+        double r = Blattformate.Rand;
+        var km = KopfMasse(p, blatt);
+        double kb = Blattformate.KopfBreite(format, km.Art), kh = Blattformate.KopfHoehe(format, km.Art, km.Zeilen, km.Titelband);
+        var kopf = km.Art == HkPlankopf.Art.Schema ? (X0: r, Y0: r, X1: r + kb, Y1: r + kh) : (X0: bw - r - kb, Y0: r, X1: bw - r, Y1: r + kh);
         var (w, h) = GroesseFuerPlatz(p, ansicht);
 
         var belegt = new List<(double X0, double Y0, double X1, double Y1)> { kopf };
@@ -270,10 +277,10 @@ public static class Planausgabe
         {
             var name = f.Ansicht.Name ?? f.Ansicht.Kennzeichen;
             ps.Add(Beschriftung(name, xl, wb - 5, TitelSchrift, fett: true));
-            if (!f.Schema)
+            if (!f.OhneMass)
                 ps.Add(Beschriftung(MassstabText(f.Massstab) + (einheitImTitel ? ", Masse in " + f.Einheit : ""), xl + z.Breite(name, TitelSchrift, true) + 3, wb - 5, MassstabSchrift));
         }
-        if (f.Schema) return ps;   // kein grafischer Massstab, kein Nordpfeil
+        if (f.OhneMass) return ps;   // kein grafischer Massstab, kein Nordpfeil
 
         // Grafischer Massstab (SIA 400 B.1.4): Balken in zwei Hälften, Beschriftung in m
         double maxPapier = Math.Clamp(f.W * 0.6, 30, 100);
@@ -305,43 +312,69 @@ public static class Planausgabe
 
     // ---------- Plankopf ----------
 
-    static HkPlankopfDaten Kopfdaten(Projekt p, Element blatt, string format, bool hoch, List<FensterDaten> fenster)
+    /// <summary>Art, Zeilenzahl der Planänderungen und Titelband des Kopfs eines Blatts – bestimmt seine Grösse (Platzsuche und PDF rechnen gleich).
+    /// Art: Eigenschaft kopfart, sonst schema, wenn alle Ansichten des Blatts Schemas sind, sonst grundriss.</summary>
+    internal static (HkPlankopf.Art Art, int Zeilen, bool Titelband) KopfMasse(Projekt p, Element blatt)
+    {
+        var m = p.Modell;
+        HkPlankopf.Art art;
+        if (blatt.Text("kopfart") is { } ka && ka.Equals("schema", StringComparison.OrdinalIgnoreCase)) art = HkPlankopf.Art.Schema;
+        else if (blatt.Text("kopfart") is { } kg && kg.Equals("grundriss", StringComparison.OrdinalIgnoreCase)) art = HkPlankopf.Art.Grundriss;
+        else
+        {
+            var arten = m.Kinder(blatt.Id).Where(e => e.Klasse == "Ansichtsfenster").Select(af => m.Finde(af.Bezuege.GetValueOrDefault("ansicht"))?.Text("art")).ToList();
+            art = arten.Count > 0 && arten.All(a => a == "schema") ? HkPlankopf.Art.Schema : HkPlankopf.Art.Grundriss;
+        }
+        return (art, Math.Max(1, Revisionen.Zeilen(blatt).Count), TitelbandAn(p, blatt));
+    }
+
+    /// <summary>Titelband «Planinhalt» zeigen: Eigenschaft titelband des Blatts, sonst die der Projektinformation, sonst aus.</summary>
+    internal static bool TitelbandAn(Projekt p, Element blatt)
+    {
+        if (blatt.Eigenschaft("titelband")?.Inhalt is JsonValue v && v.TryGetValue<bool>(out var b)) return b;
+        var info = p.Modell.DerKlasse("Projektinformation").OrderBy(e => e.Kennzeichen, StringComparer.Ordinal).FirstOrDefault();
+        return info?.Eigenschaft("titelband")?.Inhalt is JsonValue iv && iv.TryGetValue<bool>(out var ib) && ib;
+    }
+
+    static HkPlankopfDaten Kopfdaten(Projekt p, Element blatt, string format, bool hoch, List<FensterDaten> fenster, (HkPlankopf.Art Art, int Zeilen, bool Titelband) km, string? stempel)
     {
         var info = p.Modell.DerKlasse("Projektinformation").OrderBy(e => e.Kennzeichen, StringComparer.Ordinal).FirstOrDefault();
-        // Schemas zählen weder beim Massstab noch bei den Einheiten (Papier-mm, ohne Masse)
-        var mass = fenster.Where(f => !f.Schema).ToList();
-        bool nurSchema = fenster.Count > 0 && mass.Count == 0;
+        // Schemas und Listen zählen weder beim Massstab noch bei den Einheiten (Papier-mm, ohne Masse)
+        var mass = fenster.Where(f => !f.OhneMass).ToList();
+        bool nurOhneMass = fenster.Count > 0 && mass.Count == 0;
         var massstaebe = mass.Select(f => f.Massstab).Distinct().ToList();
         // Einheiten in der Reihenfolge m, cm, mm; ohne Fenster gilt m (Vorgabe Architektur)
         var einheiten = Bemassungseinheit.Einheiten.Where(e => mass.Any(f => f.Einheit == e)).ToList();
         if (einheiten.Count == 0) einheiten = ["m"];
+        var rev = Revisionen.Zeilen(blatt);
+        var letzte = Revisionen.Lesen(blatt) is { Count: > 0 } r ? r[^1] : null;
         return new HkPlankopfDaten
         {
             Projektphase = info?.Text("phase") ?? "",
             ProjektZeile1 = info?.Text("zeile1") ?? "",
-            ProjektZeile2 = info?.Text("zeile2") ?? "",
+            ProjektZeile2 = ProjektZeile2(info, blatt),
             Plannummer = blatt.Text("nummer") ?? blatt.Kennzeichen,
             Planinhalt = blatt.Text("titel") ?? "",
             Erstelldatum = blatt.Text("datum") ?? "",
             Kontrolliert = blatt.Text("kontrolliert") ?? "",
-            Massstab = nurSchema ? SchemaOhneMassstab : massstaebe.Count switch { 0 => "", 1 => MassstabText(massstaebe[0]), _ => "div." },
+            // «1 : 50» wie auf den H+K-Plänen; nur Schemas: «ohne» (kein Massstab); nur Listen: «-»
+            Massstab = nurOhneMass ? (fenster.Any(f => f.Schema) ? SchemaOhneMassstab : "-") : massstaebe.Count switch { 0 => "", 1 => KopfMassstab(massstaebe[0]), _ => "div." },
             Format = $"{format.ToUpperInvariant()} {(hoch ? "hoch" : "quer")}",
-            MasseHinweis = nurSchema ? "Schema, ohne Masse" : "Masse in " + string.Join(", ", einheiten) + (einheiten.Count > 1 ? " siehe Ansichtstitel" : ""),
-            Aenderungen = Aenderungen(blatt),
+            MasseHinweis = nurOhneMass ? (fenster.Any(f => f.Schema) ? "Schema, ohne Masse" : "Liste, ohne Masse") : "Masse in " + string.Join(", ", einheiten) + (einheiten.Count > 1 ? " siehe Ansichtstitel" : ""),
+            Aenderungen = rev.Select(z => (z.Index, z.Datum, z.Beschreibung)).ToList(),
+            RevIndex = letzte?.Index ?? "",
+            RevDatum = letzte?.Datum ?? "",
+            Titelband = km.Titelband,
+            Kopfart = km.Art,
+            Standorte = [.. Buero.Standorte(p.Katalog.Ordner)],
+            Stempel = stempel?.Trim() ?? "",
         };
     }
 
-    static List<(string, string, string)> Aenderungen(Element blatt)
-    {
-        var liste = new List<(string, string, string)>();
-        if (blatt.Eigenschaft("aenderungen")?.Inhalt is not JsonArray a) return liste;
-        foreach (var n in a)
-        {
-            if (n is not JsonObject o) continue;
-            string Feld(string name) => o.FirstOrDefault(kv => kv.Key.Equals(name, StringComparison.OrdinalIgnoreCase)).Value is JsonValue v
-                ? (v.TryGetValue<string>(out var s) ? s : v.ToJsonString()) : "";
-            liste.Add((Feld("index"), Feld("datum"), Feld("text")));
-        }
-        return liste;
-    }
+    /// <summary>Zweite Projektzeile des Kopfs: der Plantitel des Blatts («Heizung Erdgeschoss»), wie auf den H+K-Plänen – Projekt:
+    /// erste Zeile das Objekt, zweite der Plantitel. Ohne Titel die zweite Zeile der Projektinformation (Adresse).</summary>
+    static string ProjektZeile2(Element? info, Element blatt) => blatt.Text("titel") is { Length: > 0 } t ? t : info?.Text("zeile2") ?? "";
+
+    /// <summary>Massstab im Kopf wie auf den H+K-Plänen: «1 : 50».</summary>
+    public static string KopfMassstab(double massstab) => "1 : " + massstab.ToString("0.##", CultureInfo.InvariantCulture);
 }

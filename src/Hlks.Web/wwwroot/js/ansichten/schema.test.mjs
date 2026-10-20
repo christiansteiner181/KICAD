@@ -509,7 +509,7 @@ test('Einbindung: Ansichtsart schema hat ein eigenes Modul, kein Platzhalter meh
   assert.match(lies('js/oberflaeche/aktionen.js'), /import '\.\/aktionen-schema\.js'/);
   assert.match(lies('index.html'), /css\/schema\.css/);
   assert.ok(existsSync(path.join(wwwroot, 'css/schema.css')));
-  assert.match(lies('js/oberflaeche/aktionen-plaene.js'), /PLANARTEN = new Set\(\['grundriss', 'schnitt', 'ansicht', 'schema'\]\)/);
+  assert.match(lies('js/oberflaeche/aktionen-plaene.js'), /PLANARTEN = new Set\(\['grundriss', 'schnitt', 'ansicht', 'schema', 'liste'\]\)/);   // Modul 7 Teil A: Listen sind platzierbar
 });
 
 test('Einbindung: Symbole der Aktionen stehen in symbole.js, Aktionen sind registriert', () => {

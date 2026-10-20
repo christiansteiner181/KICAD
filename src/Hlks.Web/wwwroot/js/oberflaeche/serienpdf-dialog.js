@@ -98,6 +98,7 @@ export async function serienPdfDialog(opt = {}) {
     q('.sp-titel').textContent = T.satzTitel(s);
     q('.sp-zaehl').textContent = T.zaehlText(st.zeilen);
     q('.sp-kopf-knoepfe').innerHTML = '<button type="button" class="dlg-knopf klein sp-alle">Alle</button><button type="button" class="dlg-knopf klein sp-keine">Keine</button>'
+      + '<button type="button" class="dlg-knopf klein sp-revision" title="Allen gewählten Plänen dieses Satzes dieselbe Revision hinzufügen (Index: nächster Buchstabe je Plan)">Revision …</button>'
       + (!s.automatisch ? '<button type="button" class="dlg-knopf klein sp-loeschen">Plansatz löschen</button>'
         : s.angelegt ? '<button type="button" class="dlg-knopf klein sp-zuruecksetzen" title="Löscht die gespeicherte Auswahl, Reihenfolge und Einstellung; der Satz wird danach wieder neu angeboten">Zurücksetzen</button>' : '');
   }
@@ -109,6 +110,8 @@ export async function serienPdfDialog(opt = {}) {
       + `<label class="sp-f sp-f-ordner"><span>Ordner</span><span class="sp-f-zeile"><input type="text" class="sp-ordner" value="${esc(f.ordner)}" aria-label="Ordner" spellcheck="false">`
       + '<button type="button" class="dlg-knopf klein sp-vorschlag" title="Den vorgeschlagenen Ordner einsetzen">Vorschlag</button><button type="button" class="dlg-knopf klein sp-durchsuchen">Durchsuchen …</button></span></label>'
       + `<label class="haken sp-einzeln-zeile"><input type="checkbox" class="sp-einzeln"${f.einzeln ? ' checked' : ''}> zusätzlich Einzel-PDFs (je Plan ein PDF mit H+K-Namen)</label>`
+      + `<div class="sp-f sp-stempel-zeile"><label class="haken"><input type="checkbox" class="sp-stempel-an"${f.stempelAn ? ' checked' : ''}> Revisionsstempel auf alle Pläne</label>`
+      + `<input type="text" class="sp-stempel" value="${esc(f.stempel)}" aria-label="Text des Revisionsstempels" spellcheck="false"${f.stempelAn ? '' : ' disabled'}></div>`
       + `<div class="sp-sammel leise">Sammel-PDF: <span class="sp-sammel-name">${esc(s.vorschlag?.sammelDatei ?? '')}</span></div>`;
   }
 
@@ -194,6 +197,7 @@ export async function serienPdfDialog(opt = {}) {
       st.zeilen = st.zeilen.map((z) => ({ ...z, dabei: an }));
       tabelleZeichnen(); umfangZeichnen(); return;
     }
+    if (t.closest('.sp-revision')) { await revisionFuerSatz(s, st); return; }
     if (t.closest('.sp-bestaetigen')) { await gewerkSetzen(zeile.dataset.pb, st.zeilen[i].gewerk); return; }
     if (t.closest('.sp-weg')) {
       const rest = st.zeilen.filter((_, k) => k !== i).map((z) => z.planblatt);
@@ -242,6 +246,9 @@ export async function serienPdfDialog(opt = {}) {
       await gewerkSetzen(zeile.dataset.pb, t.value);
     } else if (t.matches('.sp-einzeln')) {
       st.form.einzeln = t.checked; umfangZeichnen();
+    } else if (t.matches('.sp-stempel-an')) {
+      st.form.stempelAn = t.checked;
+      const f = q('.sp-stempel'); if (f) f.disabled = !t.checked;
     } else if (t.matches('.sp-hinzu') && t.value) {
       const rest = [...st.zeilen.map((z) => z.planblatt), t.value];
       const r = await sende('plansatz_setzen', T.blattlisteParameter(s, rest));
@@ -255,6 +262,7 @@ export async function serienPdfDialog(opt = {}) {
     if (!s) return;
     const st = zustandVon(s);
     if (t.matches('.sp-anlass')) { st.form.anlass = t.value; vorschlagNeu(); }
+    else if (t.matches('.sp-stempel')) st.form.stempel = t.value;
     else if (t.matches('.sp-ordner')) { st.form.ordner = t.value; st.form.ordnerVonHand = t.value !== (s.vorschlag?.ordner ?? ''); }
   });
 
@@ -286,6 +294,16 @@ export async function serienPdfDialog(opt = {}) {
     dragVon = -1;
     w.querySelectorAll('tr.sp-zeile.zieht, tr.sp-zeile.ueber').forEach((x) => x.classList.remove('zieht', 'ueber'));
   });
+
+  /** Revision für alle gewählten Pläne des Satzes (Befehl plansatz_revision_hinzufuegen; die Häkchen des Dialogs gehen als blaetter mit). */
+  async function revisionFuerSatz(s, st) {
+    const gew = T.gewaehlte(st.zeilen);
+    if (gew.length === 0) { meldung('Kein Plan gewählt.', 'info', { vorschlag: 'Mindestens einen Plan wählen.' }); return; }
+    const text = await eingabe('Revision für alle gewählten Pläne', `Beschreibung (${gew.length} ${gew.length === 1 ? 'Plan' : 'Pläne'} im Satz «${s.name}»)`, '', { platzhalter: 'z. B. Beschriftungen ergänzt' });
+    if (!text) return;
+    const r = await sende('plansatz_revision_hinzufuegen', { plansatz: s.schluessel, beschreibung: text.trim(), blaetter: gew.map((z) => z.planblatt) });
+    ergebnisMelden(r, (r.hinweise ?? [])[0] ?? 'Revision hinzugefügt.');
+  }
 
   async function neuerSatz() {
     const name = await eingabe('Neuer Plansatz', 'Name', '', { platzhalter: 'z. B. Plansatz Bauherr' });

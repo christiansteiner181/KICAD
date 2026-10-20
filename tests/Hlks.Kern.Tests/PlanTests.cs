@@ -93,6 +93,10 @@ public class PlanTests
 
     static string Inhalt(byte[] pdf) => Encoding.Latin1.GetString(pdf);
 
+    /// <summary>Titelband «Planinhalt» einschalten (Modul 7 Teil A: abschaltbar, Vorgabe aus): Eigenschaft titelband am Planblatt.</summary>
+    static void Band(Projekt p, string blatt = "PB-1") =>
+        Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = blatt, ["eigenschaften"] = new JsonObject { ["titelband"] = true } }).Angenommen);
+
     static (double Breite, double Hoehe) Seite(byte[] pdf)
     {
         using var ms = new MemoryStream(pdf);
@@ -297,7 +301,7 @@ public class PlanTests
             ["element"] = "PB-1",
             ["eigenschaften"] = new JsonObject
             {
-                ["datum"] = "17.10.2026", ["kontrolliert"] = "CS 17.10.2026",
+                ["datum"] = "17.10.2026", ["kontrolliert"] = "CS 17.10.2026", ["titelband"] = true,
                 ["aenderungen"] = new JsonArray(new JsonObject { ["index"] = "a", ["datum"] = "18.10.2026", ["text"] = "Fenster verschoben" }),
             },
         }).Angenommen);
@@ -306,8 +310,8 @@ public class PlanTests
         var s = Inhalt(Planausgabe.Pdf(p, "PB-1", unkomprimiert: true, Fake()));
         foreach (var erwartet in new[]
                  {
-                     "2317-101", "Grundriss Erdgeschoss", "Bauprojekt", "MFH Musterweg", "Musterweg 12, 3000 Bern", "17.10.2026", "CS 17.10.2026",
-                     "Fenster verschoben", "1:50", "Masse in cm", "A3 quer", "H+K Planungs AG", "Plannummer", "Kontrolliert",
+                     "2317-101", "Grundriss Erdgeschoss", "Bauprojekt", "MFH Musterweg", "17.10.2026", "CS 17.10.2026",
+                     "Fenster verschoben", "1 : 50", "Masse in cm", "A3 quer", "H+K Planungs AG", "Plannummer", "Kontrolliert", "Planinhalt",
                  })
             Assert.Contains(erwartet, s);
         Assert.Contains("Grundriss EG Sanit", s);          // Name der Ansicht unter dem Fenster
@@ -320,7 +324,7 @@ public class PlanTests
         var p = Neu();
         Blatt(p);
         var leer = Inhalt(Planausgabe.Pdf(p, "PB-1", true, Fake()));
-        Assert.Contains("1:xx", leer);
+        Assert.Contains("1 : xx", leer);
         Assert.True(Platzieren(p, "PB-1", "AN-GR-EG", 100, 150).Angenommen);
         Assert.True(Platzieren(p, "PB-1", "AN-GR-1.OG", 300, 150).Angenommen);
         var s = Inhalt(Planausgabe.Pdf(p, "PB-1", true, Fake()));
@@ -334,6 +338,7 @@ public class PlanTests
     {
         var p = Neu();
         Blatt(p);
+        Band(p);
         Assert.True(Platzieren(p, "PB-1", "AN-GR-EG", 100, 150).Angenommen);
         Assert.True(Platzieren(p, "PB-1", "AN-GR-1.OG", 300, 150).Angenommen);
         // beide Sanitär-Grundrisse: Vorgabe cm, überall gleich → ein Hinweis, nichts im Titel
@@ -357,6 +362,7 @@ public class PlanTests
         // die Massketten aber in cm (AussparungGrafik.Einheit) – der Kopf muss dasselbe sagen
         var p = Neu();
         Blatt(p);
+        Band(p);
         Assert.True(Platzieren(p, "PB-1", "AN-GR-EG", 100, 150).Angenommen);
         Assert.True(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "AN-GR-EG", ["eigenschaften"] = new JsonObject { ["gewerke"] = new JsonArray("architektur") } }).Angenommen);
         Assert.Contains("Masse in m", Inhalt(Planausgabe.Pdf(p, "PB-1", true, Fake())));

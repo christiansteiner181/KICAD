@@ -70,6 +70,53 @@ public class WerkzeugPlansaetzeTests : IDisposable
         Assert.Equal(3, Json(w.PlansaetzeLesen(plansatz: "PS-1"))["plansaetze"]![0]!["blaetter"]!.AsArray().Count);
     }
 
+    // ------------------------------------------------------------------ Modul 7 Teil A: Revisionen, Plannummern-Vorschlag, Stempel
+
+    [Fact]
+    public void Revision_MitTrockenlaufRueckgaengigUndFehlerMitVorschlag()
+    {
+        var t = Json(w.RevisionHinzufuegenWerkzeug("1-0768 S01", "Beschriftungen ergänzt", "11.06.2025", trockenlauf: true));
+        Assert.True(t["angenommen"]!.GetValue<bool>(), t.ToJsonString());
+        Assert.True(t["trockenlauf"]!.GetValue<bool>());
+        Assert.Empty(Revisionen.Lesen(p.Modell.Hole("PB-2")));
+
+        var e = Json(w.RevisionHinzufuegenWerkzeug("1-0768 S01", "Beschriftungen ergänzt", "11.06.2025"));
+        Assert.True(e["angenommen"]!.GetValue<bool>(), e.ToJsonString());
+        Assert.Contains(e["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Revision A (11.06.2025)"));
+        Assert.Equal(("A", "11.06.2025"), (Revisionen.Lesen(p.Modell.Hole("PB-2"))[0].Index, Revisionen.Lesen(p.Modell.Hole("PB-2"))[0].Datum));
+
+        var leer = Json(w.RevisionHinzufuegenWerkzeug("1-0768 S01", " "));
+        Assert.False(leer["angenommen"]!.GetValue<bool>());
+        Assert.False(string.IsNullOrWhiteSpace(leer["vorschlag"]!.GetValue<string>()));
+
+        var satz = Json(w.PlansatzRevisionHinzufuegenWerkzeug("sanitaer", "Satz", "12.06.2025"));
+        Assert.True(satz["angenommen"]!.GetValue<bool>(), satz.ToJsonString());
+        Assert.Equal(["A", "B"], Revisionen.Lesen(p.Modell.Hole("PB-2")).Select(r => r.Index).ToArray());   // S01 hatte A, jetzt B
+        Assert.Equal(["A"], Revisionen.Lesen(p.Modell.Hole("PB-1")).Select(r => r.Index).ToArray());       // S02 neu A
+        var nur = Json(w.PlansatzRevisionHinzufuegenWerkzeug("sanitaer", "Nur S02", blaetter: Elem("""["1-0768 S02"]""")));
+        Assert.True(nur["angenommen"]!.GetValue<bool>(), nur.ToJsonString());
+        Assert.Equal(2, Revisionen.Lesen(p.Modell.Hole("PB-1")).Count);
+        Assert.Equal(2, Revisionen.Lesen(p.Modell.Hole("PB-2")).Count);
+
+        Assert.True(Json(w.Rueckgaengig())["angenommen"]!.GetValue<bool>());
+        Assert.Single(Revisionen.Lesen(p.Modell.Hole("PB-1")));
+    }
+
+    [Fact]
+    public void Plannummer_VorschlagUndPlanblattOhneNummer()
+    {
+        var v = Json(w.PlannummerVorschlag(gewerk: "heizung", geschoss: "EG"));
+        Assert.Equal("1-0768 H02", v["nummer"]!.GetValue<string>());
+        Assert.Equal("Heizung Erdgeschoss", v["titel"]!.GetValue<string>());
+        var e = Json(w.PlanblattAnlegen(gewerk: "heizung", geschoss: "EG", format: "A1"));
+        Assert.True(e["angenommen"]!.GetValue<bool>(), e.ToJsonString());
+        Assert.Equal("1-0768 H02", p.Modell.Hole("PB-4").Text("nummer"));
+        Assert.Equal("Heizung Erdgeschoss", p.Modell.Hole("PB-4").Text("titel"));
+        var ohne = Json(w.PlanblattAnlegen());
+        Assert.False(ohne["angenommen"]!.GetValue<bool>());
+        Assert.Contains("plannummer_vorschlag", ohne["vorschlag"]!.GetValue<string>());
+    }
+
     [Fact]
     public void PlansatzPdf_SchreibtSammelUndEinzelPdfs_UeberschreibtNichtOhneErlaubnis()
     {
