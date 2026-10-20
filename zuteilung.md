@@ -202,10 +202,10 @@ Modul 3 gebaut am 18./19.10.2026, Abnahme durch Christian offen (Auftrag: ohne A
 | 20.10.2026 | – | Grundausstattung: lokales Arbeitsprojekt `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` (Server 5153 aus Arbeitskopie 6e4e75b, Bibliothek lokal), 10 KI-Aufträge «Familie aus Unterlagen» nacheinander (Abo, mit Internet) | KI im Produkt (Hauptlauf steuert) | läuft |
 | 20.10.2026 | – | Sanitär-Zusammenstellung schlägt Sanitäranlage vor (nicht A-KAE) – Befund Browser-Reihe sanitaer-belastung auf 6e4e75b; Commit 043e22a | Hauptlauf | ok |
 | 20.10.2026 | 7 | Spezifikation Teil B2 (IFC-Export mit IDS) und B3 (Listenumbruch, Menüband); Entscheide A1–A4 | Hauptlauf | ok |
-| 20.10.2026 | 7 | B2 Kern: IFC-Export IFC4/IFC2x3, IfcCovering, IDS-Prüfer, Exportbericht | hlks-kern (worktree, Ports 5230–5239) | läuft |
-| 20.10.2026 | 7 | B3: Listenumbruch, Menüband Koordinationsplan/Aussparungsboxen | hlks-modul (worktree, Ports 5240–5249) | läuft |
+| 20.10.2026 | 7 | B2 Kern: IFC-Export IFC4/IFC2x3, IfcCovering, IDS-Prüfer, Exportbericht | hlks-kern (worktree, Ports 5230–5239) | ok – 510c495/ecf9791, Rundreise 131 Elemente/142 Verbindungen, eigener IDS-Prüfer (Xbim.IDS.Validator ist AGPL) |
+| 20.10.2026 | 7 | B3: Listenumbruch, Menüband Koordinationsplan/Aussparungsboxen | hlks-modul (worktree, Ports 5240–5249) | ok – 6a5f00c, P28, zusätzlich Option schrift |
 | 20.10.2026 | – | Gesamtprüfung 043e22a grün (Kern 4132, Mcp 66, Web 508, Node 908) → geprüft 178a8e0 (Marke geprueft-20261020-1034), Desktop losgelöst neu gestartet | Hauptlauf | ok |
-| 20.10.2026 | 3c | Sicherheitsauflagen B3(a–d), B4, B5 Rest, B7–B15 (B6 Abnahmelauf danach Hauptlauf) | hlks-kern (worktree, Ports 5250–5259) | läuft |
+| 20.10.2026 | 3c | Sicherheitsauflagen B3(a–d), B4, B5 Rest, B7–B15 (B6 Abnahmelauf danach Hauptlauf) | hlks-kern (worktree, Ports 5250–5259) | ok – 2a8d977; Nacharbeit Hauptlauf: Normen keine KI-Wurzel (f10affc) |
 | 20.10.2026 | – | Später Bericht des Browser-Laufs auf 636e78c: 23/24 grün, hilfe wacklig (erster Klick auf ✓ nach Sprung verloren, weiches Nachscrollen) → Hauptlauf: Test wartet auf stillstehende Seite, 2× 89/89 grün | Hauptlauf | ok |
 | 19.10.2026 | – | Geprüfter Stand 16e3207 (G2 + Q2): Kern 3867, MCP 51, Web 273, Node 643, alle 0 rot; Agenten-Arbeitskopien aufgeräumt | Hauptlauf | ok |
 | 19.10.2026 | – | G2 mehrere Gliederungen zugleich (Christian; Blöcke untereinander, Gebäude exklusiv, Liste als Benutzereinstellung) – Spezifikation vom Hauptlauf, Commit 26a13f2 | hlks-modul (worktree) | ok – Commit dd31d5d auf eigenem Zweig, vom Hauptlauf zusammengeführt (9f7c88a, ohne Konflikt); `aufteilen()`/`baumBauenListe()`, Häkchenfeld mit Tastatur, Farbstreifen am Feld, Server nimmt Listen (≤ 16, ohne Doppel) und alten Einzelwert; Node 642 (630 + 12), Web 273, MCP 51, Kern 3866/3867 (HKAP-Zeitgrenze unter Last), Browser projektbrowser 128, bibliothek 85, serienpdf 67, koordination 191, start 111, familien 110; Bild «Sanitär + Heizung» vom Hauptlauf angesehen; erster Auftrag mit Arbeitskopie – Ablauf bewährt; keine Nacharbeit |
@@ -303,3 +303,5 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 - Oberfläche/Ansichten (hlks-modul): zwei Mal ohne Nacharbeit → bleibt.
 - Synchronisation/Ablage (hlks-kern): zwei Mal ohne Nacharbeit → bleibt.
 - Gesamttest (hlks-test): ein Mal → bleibt.
+| 20.10.2026 | 7 | Gesamtprüfung 795779c (B3) grün → geprüft f9f9705, Desktop | Hauptlauf | ok |
+| 20.10.2026 | – | Merge Sicherheit 3c (815cb4f) und B2 (Merge ohne Konflikt), Stand f10affc: stand_pruefen + alle Browser-Reihen | Hauptlauf / hlks-test (Ports 5260–5299) | läuft |

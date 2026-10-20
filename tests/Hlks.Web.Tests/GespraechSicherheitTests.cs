@@ -205,22 +205,22 @@ public class GespraechSicherheitTests
         Assert.DoesNotContain("=== Seite", text);
     }
 
-    // ------------------------------------------------------------------ Internet-Schalter vorläufig gesperrt (B3/B4/B6 offen)
+    // ------------------------------------------------------------------ Internet-Schalter: frei seit B6, Notschalter sperrt ihn
 
     [Fact]
     public async Task Internet_Gesperrt_Vorgabe_409_UndEinstellungenMitGrund()
     {
-        Assert.False(new GespraechEinstellungen().InternetErlaubt, "Vorgabe: gesperrt");
+        Assert.True(new GespraechEinstellungen().InternetErlaubt, "Vorgabe seit dem Abnahmelauf B6: frei");
         using var s = new GespraechServer(e => e with { InternetErlaubt = false });
         await s.ProjektOeffnen();
         var id = await s.GespraechAnlegen();
         var (code, j) = await s.Fragen(id, "Suche im Netz [attrappe:internet]", internet: true);
         Assert.Equal(HttpStatusCode.Conflict, code);
-        Assert.Equal("Internet in der Palette vorläufig gesperrt (Sicherheitsprüfung 3c, B3/B4)", (string?)j!["fehler"]);
+        Assert.Equal("Internet in der Palette gesperrt (Einstellung HLKS_KI_INTERNET=0)", (string?)j!["fehler"]);
         var (c2, e) = await s.Get("/api/ki/einstellungen");
         Assert.Equal(HttpStatusCode.OK, c2);
         Assert.False((bool)e!["internetErlaubt"]!);
-        Assert.Contains("vorläufig gesperrt", (string?)e["internetGrund"]);
+        Assert.Contains("HLKS_KI_INTERNET=0", (string?)e["internetGrund"]);
         Assert.False((bool)e["internetVorgabe"]!);
         // ohne Internet geht die Frage
         var antwort = await s.FragenUndWarten(id, "Wie viele Geschosse? [attrappe:ueberblick]", internet: false);

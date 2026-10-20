@@ -89,9 +89,9 @@ public sealed record GespraechEinstellungen
     public string VorgabeModell { get; init; } = "sonnet";
     /// <summary>Internet je Frage; Vorgabe aus (Annahme A4).</summary>
     public bool InternetVorgabe { get; init; }
-    /// <summary>Internet in der Palette überhaupt erlaubt. Vorgabe false: vorläufig gesperrt, bis die Befunde B3/B4/B6 der
-    /// Sicherheitsprüfung 3c (berichte/modul-3c-sicherheitspruefung.md) behoben sind; die Tests setzen true.</summary>
-    public bool InternetErlaubt { get; init; }
+    /// <summary>Internet in der Palette überhaupt erlaubt. Vorgabe true seit 20.10.2026: Befunde B3/B4 der Sicherheitsprüfung 3c
+    /// (berichte/modul-3c-sicherheitspruefung.md) behoben und Abnahmelauf B6 mit echtem Claude bestanden; Notschalter HLKS_KI_INTERNET=0.</summary>
+    public bool InternetErlaubt { get; init; } = true;
     /// <summary>Verbotene MCP-Werkzeuge (Namen ohne Präfix); Vorgabe die begründete Liste GespraechDienst.Verbote.</summary>
     public IReadOnlyList<string> Verboten { get; init; } = GespraechDienst.Verbotsliste;
     /// <summary>Erlaubte MCP-Werkzeuge bei internet = true (ohne Projektzugriff); Vorgabe GespraechDienst.InternetWerkzeuge.</summary>
@@ -116,8 +116,8 @@ public sealed record GespraechEinstellungen
         var e = new GespraechEinstellungen { ClaudeExe = U("HLKS_CLAUDE_EXE"), McpDll = U("HLKS_MCP_DLL"), Aufwand = U("HLKS_KI_AUFWAND") };
         if (double.TryParse(U("HLKS_KI_FRAGE_ZEITLIMIT_MIN"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var min) && min > 0)
             e = e with { Zeitlimit = TimeSpan.FromMinutes(min) };
-        // Internet-Schalter: im Betrieb vorläufig gesperrt (B3/B4/B6); nur Testläufe (HLKS_TEST=1) dürfen ihn mit HLKS_KI_INTERNET=1 freigeben.
-        if (U("HLKS_TEST") == "1" && U("HLKS_KI_INTERNET") == "1") e = e with { InternetErlaubt = true };
+        // Internet-Schalter: frei seit dem Abnahmelauf B6 (20.10.2026); HLKS_KI_INTERNET=0 sperrt ihn wieder (Notschalter).
+        if (U("HLKS_KI_INTERNET") == "0") e = e with { InternetErlaubt = false };
         return e;
     }
 }
@@ -1105,8 +1105,8 @@ public sealed class GespraechDienst
     // liegt bei echten Projekten auf W:). Ergebnisse höchstens ProtokollMaxZeichen mit Vermerk; bei norm_lesen/normen_suchen nur
     // Norm, Seite und Länge – lizenzierte Normtexte gehören nicht in Projektordner. Die vollen Ergebnisse braucht nur Claude.
     public const int ProtokollMaxZeichen = 300;
-    /// <summary>Grund der vorläufigen Sperre des Internet-Schalters (GespraechEinstellungen.InternetErlaubt = false).</summary>
-    public const string InternetGesperrtGrund = "Internet in der Palette vorläufig gesperrt (Sicherheitsprüfung 3c, B3/B4)";
+    /// <summary>Grund der Sperre des Internet-Schalters (GespraechEinstellungen.InternetErlaubt = false, Notschalter HLKS_KI_INTERNET=0).</summary>
+    public const string InternetGesperrtGrund = "Internet in der Palette gesperrt (Einstellung HLKS_KI_INTERNET=0)";
     static readonly string[] NormWerkzeuge = ["norm_lesen", "normen_suchen"];
 
     (string? Name, JsonObject? Eingabe) WerkzeugFuerProtokoll(Lauf l, string? id)

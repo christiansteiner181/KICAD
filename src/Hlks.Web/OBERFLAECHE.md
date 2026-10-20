@@ -1335,8 +1335,8 @@ Anfragen (`text/plain`, ohne CORS) an `/api` schicken – z. B. eine KI-Frage st
 Eigene Aufrufe senden immer `Content-Type: application/json` (`api.js`, `ki-palette.js` `anfrage()`, Anleitung `vorlage.html`, alle
 `*.browser.mjs`, `anleitung_bilder.mjs`, `werkzeuge/*.ps1`); Uploads `application/octet-stream` (`unterlagen-dialog.js`,
 `aktionen-einfuegen.js`), Vorschau `image/png` (`vorschau.js`). Neue Endpunkte mit anderem Inhaltstyp gehören in `Herkunftsschutz.Uploads`.
-Dazu: Internet-Schalter der KI-Palette vorläufig gesperrt (`GespraechEinstellungen.InternetErlaubt`, Vorgabe aus; Schalter ausgegraut,
-Grund im Tooltip; `POST …/frage` mit `internet: true` → 409), bis B3/B4/B6 behoben sind.
+Internet-Schalter der KI-Palette: seit dem Abnahmelauf B6 (20.10.2026) frei (`GespraechEinstellungen.InternetErlaubt`, Vorgabe an);
+Notschalter `HLKS_KI_INTERNET=0` sperrt ihn wieder (Schalter ausgegraut, Grund im Tooltip; `POST …/frage` mit `internet: true` → 409).
 
 **Prüfen:** `dotnet test tests/Hlks.Web.Tests --filter FullyQualifiedName~GespraechSicherheit`.
 

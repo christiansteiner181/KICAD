@@ -7042,7 +7042,7 @@
       "id": "m3c",
       "titel": "KI-Palette Claude",
       "modul": "3c",
-      "einleitung": "Claude im Seitenfenster von KICAD: Fragen zum Projekt stellen, Claude ändern lassen (über die Befehle des Kerns, jede Änderung mit «Zurücknehmen»), Normfragen mit Zitat, ein Gespräch je Projekt, das nach einem Neustart weiterläuft. Claude läuft über Christians Abo (kein API-Schlüssel). Mit dem Schalter «Internet» arbeitet Claude ohne Modellzugriff (Herstellerunterlagen und Familien bleiben lesbar); der Schalter ist bis zum Abnahmelauf der Sicherheitsauflagen gesperrt. Die Bilder dieses Kapitels entstehen mit einer Attrappe, nie mit einem echten Claude-Lauf.",
+      "einleitung": "Claude im Seitenfenster von KICAD: Fragen zum Projekt stellen, Claude ändern lassen (über die Befehle des Kerns, jede Änderung mit «Zurücknehmen»), Normfragen mit Zitat, ein Gespräch je Projekt, das nach einem Neustart weiterläuft. Claude läuft über Christians Abo (kein API-Schlüssel). Mit dem Schalter «Internet» arbeitet Claude ohne Modellzugriff (Herstellerunterlagen und Familien bleiben lesbar); frei seit dem Abnahmelauf der Sicherheitsauflagen (20.10.2026). Die Bilder dieses Kapitels entstehen mit einer Attrappe, nie mit einem echten Claude-Lauf.",
       "funktionen": [
         {
           "id": "m3c-ein-aus",
