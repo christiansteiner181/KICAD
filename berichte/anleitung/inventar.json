@@ -1489,7 +1489,8 @@
             "src/Hlks.Web/OBERFLAECHE.md:937 (Paletten)",
             "entwurf/fenster-revit.md:15 (Teil W1)"
           ],
-          "hinweis": "Ein einziger Knopf in der bestehenden Gruppe «Fenster» (kein eigener Gruppenkasten, damit das Register Ansicht nicht noch breiter wird). Die Eigenschaften lassen sich auch mit PP umschalten."
+          "hinweis": "Ein einziger Knopf in der bestehenden Gruppe «Fenster» (kein eigener Gruppenkasten, damit das Register Ansicht nicht noch breiter wird). Die Eigenschaften lassen sich auch mit PP umschalten.",
+          "hauptfunktion": true
         },
         {
           "id": "palette-zuruecksetzen",
@@ -1793,7 +1794,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:175",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:155"
           ],
-          "hinweis": "Seit N3 gliedert der Dialog nach allen Registern (siehe «zb-n3-ks-register»); der frühere Befund (fehlende Registernamen) ist behoben. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Seit N3 gliedert der Dialog nach allen Registern (siehe «zb-n3-ks-register»); der frühere Befund (fehlende Registernamen) ist behoben. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt.",
+          "hauptfunktion": true
         },
         {
           "id": "kuerzel-esc",
@@ -2114,7 +2116,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:146",
             "berichte/modul-0a-testbericht.md:21 (Was gebaut ist)"
           ],
-          "hinweis": "Seit Modul 0a sind die Prüfungen bis P20 gewachsen (P12 Hülle, P13–P18 Leitungen/Schema, P19/P20 Koordination). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Seit Modul 0a sind die Prüfungen bis P20 gewachsen (P12 Hülle, P13–P18 Leitungen/Schema, P19/P20 Koordination). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt.",
+          "hauptfunktion": true
         },
         {
           "id": "m0a-netz-folgen",
@@ -2601,7 +2604,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:117",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:16"
           ],
-          "hinweis": ""
+          "hinweis": "",
+          "hauptfunktion": true
         },
         {
           "id": "m0b-ansicht-duplizieren",
@@ -3516,7 +3520,8 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:89"
           ],
-          "hinweis": "Für eine zweite Ansicht bleibt oft kein Platz (Testbericht 1a, bekannte Grenze)."
+          "hinweis": "Für eine zweite Ansicht bleibt oft kein Platz (Testbericht 1a, bekannte Grenze).",
+          "hauptfunktion": true
         },
         {
           "id": "m1a-pdf",
@@ -3547,7 +3552,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:107",
             "berichte/modul-1a-testbericht.md:14 (Ergebnis)"
           ],
-          "hinweis": "Der Betrachter ignoriert die Vorgabe «ganze Seite» (Testbericht 1a). Mehrere Blätter als eine PDF: Serien-PDF (Zusatzbaustein)."
+          "hinweis": "Der Betrachter ignoriert die Vorgabe «ganze Seite» (Testbericht 1a). Mehrere Blätter als eine PDF: Serien-PDF (Zusatzbaustein).",
+          "hauptfunktion": true
         },
         {
           "id": "m1a-2d-ist-3d",
@@ -3621,7 +3627,8 @@
             "src/Hlks.Web/OBERFLAECHE.md:161 (Register Einfügen)",
             "berichte/modul-1b-testbericht.md:66 (Abnahmelauf)"
           ],
-          "hinweis": "Die Datei ist 106 MB gross; Lesen und Übernehmen dauerten im Abnahmelauf 48 s. Archicad-IFC mit doppelten Geschossnamen sperren die Geschoss-Häkchen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Die Datei ist 106 MB gross; Lesen und Übernehmen dauerten im Abnahmelauf 48 s. Archicad-IFC mit doppelten Geschossnamen sperren die Geschoss-Häkchen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt.",
+          "hauptfunktion": true
         },
         {
           "id": "m1b-ifc-lage",
@@ -4344,7 +4351,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:260",
             "src/Hlks.Web/OBERFLAECHE.md:356 (Ansichten)"
           ],
-          "hinweis": "Die Farben sind frei gewählt (Annahme, kein Normwert); ob sie auf den Plan sollen, ist Prüfliste 14."
+          "hinweis": "Die Farben sind frei gewählt (Annahme, kein Normwert); ob sie auf den Plan sollen, ist Prüfliste 14.",
+          "hauptfunktion": true
         },
         {
           "id": "m1c-huelle-3d",
@@ -5634,7 +5642,8 @@
             "src/Hlks.Web/wwwroot/js/werkzeuge/leitung.browser.mjs:255",
             "src/Hlks.Web/OBERFLAECHE.md:614 (Leitungen zeichnen (Modul 3, C1))"
           ],
-          "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Esc verwirft zuerst die laufende Leitung (wie Revit), erst ein zweites Esc beendet das Werkzeug; Rückschritt nimmt den letzten Punkt zurück; Rechtsklick beendet. Nur im Grundriss."
+          "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Esc verwirft zuerst die laufende Leitung (wie Revit), erst ein zweites Esc beendet das Werkzeug; Rückschritt nimmt den letzten Punkt zurück; Rechtsklick beendet. Nur im Grundriss.",
+          "hauptfunktion": true
         },
         {
           "id": "m3-winkelfang",
@@ -7975,7 +7984,8 @@
             "src/Hlks.Kern/Plan/PlanBefehle.cs:52 (planblatt_anlegen)",
             "entwurf/modul-7.md (Teil A, Punkt 5)"
           ],
-          "hinweis": "Annahmen des Bauagenten (Testbericht 7A zur Bestätigung): Reihenfolge nach der Kote; FBH ab EG aufwärts (H13 ff.), Steigzonen H21; Sanitär-Sonderblätter aus den Bernstrasse-Plänen abgeleitet (Grundleitungen = Anzahl Geschosse, Einlagen die drei folgenden, Kanalisation = Anzahl + 4). Fach K: in den H+K-Plänen = Koordination, im Kern bisher Kälte (Entscheid Christian offen). Die Plannummer des Strangschemas Abwasser steht auf dem echten Plan als «1-0759-4» (Tippfehler?). Der Knopf «Einlageplan anlegen» (N3) nutzt eine eigene Nummernlogik."
+          "hinweis": "Annahmen des Bauagenten (Testbericht 7A zur Bestätigung): Reihenfolge nach der Kote; FBH ab EG aufwärts (H13 ff.), Steigzonen H21; Sanitär-Sonderblätter aus den Bernstrasse-Plänen abgeleitet (Grundleitungen = Anzahl Geschosse, Einlagen die drei folgenden, Kanalisation = Anzahl + 4). Fach K: in den H+K-Plänen = Koordination, im Kern bisher Kälte (Entscheid Christian offen). Die Plannummer des Strangschemas Abwasser steht auf dem echten Plan als «1-0759-4» (Tippfehler?). Der Knopf «Einlageplan anlegen» (N3) nutzt eine eigene Nummernlogik.",
+          "hauptfunktion": true
         },
         {
           "id": "m7-revision-hinzufuegen",
@@ -8682,7 +8692,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-serienpdf.js:17",
             "entwurf/serien-pdf.md:41 (Oberfläche)"
           ],
-          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt.",
+          "hauptfunktion": true
         },
         {
           "id": "zb-spdf-plansaetze",
@@ -9117,7 +9128,8 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/projektinfo-text.js:42 (Felder aus dem Katalog)",
             "src/Hlks.Web/OBERFLAECHE.md:995"
           ],
-          "hinweis": "Ersetzt den früheren, nur lesenden Dialog (siehe «m0b-projektinfo»). Die Vorgabe der Abflusskennzahl K (Modul 4) steht, sobald gesetzt, als weiteres Katalogfeld unter «Weitere»."
+          "hinweis": "Ersetzt den früheren, nur lesenden Dialog (siehe «m0b-projektinfo»). Die Vorgabe der Abflusskennzahl K (Modul 4) steht, sobald gesetzt, als weiteres Katalogfeld unter «Weitere».",
+          "hauptfunktion": true
         },
         {
           "id": "zb-n3-projektinfo-browser",

@@ -63,7 +63,7 @@ const kapitel = inventar.kapitel.map(k => ({
   funktionen: k.funktionen.map(f => {
     funktionen++;
     const bild = bildNach.get(f.id) || null; if (bild) mitBild++;
-    return { id: f.id, titel: f.titel, wo: f.wo, schritte: f.schritte, erwartung: f.erwartung, pruefpunkte: f.pruefpunkte || [], hinweis: f.hinweis || '', bild };
+    return { id: f.id, titel: f.titel, wo: f.wo, schritte: f.schritte, erwartung: f.erwartung, pruefpunkte: f.pruefpunkte || [], hinweis: f.hinweis || '', bild, ...(f.hauptfunktion ? { hauptfunktion: true } : {}) };
   }),
 }));
 

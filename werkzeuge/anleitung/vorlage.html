@@ -478,6 +478,8 @@ dialog.gross button { font: 600 .9rem var(--schrift-text); background: #fff; col
     const passt = f => String(f.wo?.knopf || '').split(/\s+\/\s+|,\s*/).some(t => hilfeSchluessel(t) === knopf);
     let treffer = [...funktionNach.values()].filter(f => passt(f) && (!reg || hilfeSchluessel(f.wo?.register) === reg));
     if (!treffer.length) treffer = [...funktionNach.values()].filter(passt);
+    // Mehrere Funktionen zum selben Knopf: die Hauptfunktion (Feld «hauptfunktion» im Verzeichnis) zuerst, sonst Verzeichnisreihenfolge
+    treffer.sort((a, b) => (b.hauptfunktion ? 1 : 0) - (a.hauptfunktion ? 1 : 0));
     document.querySelectorAll('article.funktion.ziel').forEach(a => a.classList.remove('ziel'));
     if (treffer.length === 1) {
       suchtext = ''; $('#suchfeld').value = ''; filtern();

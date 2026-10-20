@@ -555,8 +555,9 @@ try {
   const ziel = await H.ausw(`const z = [...document.querySelectorAll('article.funktion.ziel')].map((a) => a.id); const s = document.getElementById('f-${FUNKTION}'); const r = s.getBoundingClientRect();
     return { hash: location.hash, ziele: z, sichtbar: r.top >= 0 && r.top < 400, verborgen: s.hidden, suche: document.getElementById('suchfeld').value };`);
   console.log('   Ziel:', JSON.stringify(ziel));
-  // Im Inventar tragen zwei Funktionen genau den Knopf «Serien-PDF …» (Öffnen, Satz merken): die Seite markiert beide und springt zur ersten
-  pruef(ziel.hash === '#k-ansicht~serien-pdf' && ziel.ziele.length >= 1 && ziel.ziele[0] === `f-${FUNKTION}`, 'F1 über «Serien-PDF …» (Ansicht): article.funktion.ziel markiert «Serien-PDF öffnen» (als erste)', JSON.stringify(ziel));
+  // Im Inventar tragen mehrere Funktionen den Knopf «Serien-PDF …» (Öffnen, Satz merken, Stempel und Revision aus Modul 7): die Seite
+  // markiert alle (Dokumentreihenfolge) und springt zur Hauptfunktion «Serien-PDF öffnen» (Feld «hauptfunktion»); «sichtbar» prüft den Sprung
+  pruef(ziel.hash === '#k-ansicht~serien-pdf' && ziel.ziele.includes(`f-${FUNKTION}`), 'F1 über «Serien-PDF …» (Ansicht): article.funktion.ziel markiert «Serien-PDF öffnen»', JSON.stringify(ziel));
   pruef(ziel.sichtbar && !ziel.verborgen, '…und die Karte steht im sichtbaren Bereich', JSON.stringify(ziel));
   pruef((await seiten()).filter((t) => t.url.startsWith(`${SERVER}/hilfe/`)).length === 1, 'Es blieb bei einem Hilfefenster (kein zweites geöffnet)');
   await meldungenLeeren();
