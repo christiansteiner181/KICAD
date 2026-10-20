@@ -75,6 +75,8 @@ public static class Plannummernvorschlag
         if (an is not null)
         {
             if (string.IsNullOrWhiteSpace(geschoss) && an.Geschoss is not null) geschoss = m.Finde(an.Geschoss)?.Kennzeichen;
+            if (string.IsNullOrWhiteSpace(gewerk) && an.Text("darstellung") == KoordinationGrafik.Darstellung)
+                gewerk = "koordination";   // Modul 7 Teil B1: Koordinationsplan = Planblatt-Fach K
             if (string.IsNullOrWhiteSpace(gewerk))
             {
                 var gs = (an.Eigenschaft("gewerke")?.Inhalt as JsonArray)?.Select(x => x is JsonValue j && j.TryGetValue<string>(out var s) ? s : null).OfType<string>()

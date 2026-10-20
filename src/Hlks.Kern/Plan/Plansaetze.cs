@@ -257,6 +257,7 @@ public static class Plaene
         foreach (var af in m.Kinder(blatt.Id).Where(e => e.Klasse == "Ansichtsfenster"))
         {
             if (m.Finde(af.Bezuege.GetValueOrDefault("ansicht")) is not { } ansicht) continue;
+            if (ansicht.Text("darstellung") == KoordinationGrafik.Darstellung) { if (!gewerke.Contains("koordination")) gewerke.Add("koordination"); continue; }   // Modul 7 Teil B1
             if (ansicht.Eigenschaft("gewerke")?.Inhalt is not JsonArray liste) continue;
             foreach (var n in liste)
                 if (n is JsonValue v && v.TryGetValue<string>(out var s) && PlanGewerk.Finde(s) is { } g && !gewerke.Contains(g.Schluessel)) gewerke.Add(g.Schluessel);
