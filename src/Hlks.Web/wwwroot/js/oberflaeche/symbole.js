@@ -142,6 +142,8 @@ const S = {
   // Liste als CSV (Blatt mit Zellen und Pfeil)
   einlageplan: '<rect x="4" y="4" width="24" height="24"/><path d="M4 21h24"/><path d="M4 25l3-4M9 25l3-4M14 25l3-4M19 25l3-4M24 25l3-4"/><path d="M8 17h9l4-8"/><circle cx="21" cy="9" r="2"/>',
   grundleitungsplan: '<rect x="4" y="4" width="24" height="24"/><path d="M4 13h24" stroke-dasharray="3 2"/><path d="M8 19h10l3 5"/><path d="M8 17v4M18 17v4" /><path d="M21 24h3"/>',
+  // Modul 4 Teil A-O: Sanitär-Zusammenstellung (Tabelle mit Σ im Kopf und Wassertropfen)
+  sanZusammenstellung: '<rect x="4" y="4" width="24" height="24"/><path d="M4 12h24M15 12v16M4 18h11M4 23h11"/><path d="M12 6.5H8l2.5 2L8 10.5h4"/><path d="M21.5 15.5c-3 3.5-4 5-4 6.5a4 4 0 0 0 8 0c0-1.5-1-3-4-6.5z"/>',
   listeCsv: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M10 14h12M10 19h12M10 24h12M16 14v10"/><path d="M26 22v8M23 27l3 3 3-3"/>',
   // Paletten (W1): Palette allgemein, Projektbrowser (Baum), Koordination (Liste unten), zurücksetzen
   palette: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/>',

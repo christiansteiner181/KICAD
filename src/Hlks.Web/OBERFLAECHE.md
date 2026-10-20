@@ -1136,3 +1136,56 @@ zeigt nur, was der Kern liefert. Keine Dimensionierung (Spitzendurchfluss, DN, Q
 **Befunde** (Prüfsystem, wie P01–P20 in Befund-Browser und Koordination): P21 Apparat ohne Apparateart (warnung), P22 Apparateart passt nicht zu den
 Anschlüssen (warnung), P23 Apparat in keiner Anlage (hinweis), P24 Netz mit Masche – Summe nicht eindeutig (warnung, am Element, wo sich die Wege
 treffen), P25 Abflusskennzahl fehlt (warnung, an der Anlage).
+
+## Sanitär-Belastungswerte: Oberfläche (Modul 4 Teil A-O)
+
+Oberfläche zu `entwurf/modul-4.md` Teil A-O, gebaut auf der Schnittstelle des Abschnitts «Sanitär-Belastungswerte (Modul 4 Teil A-K)». Wie dort: die Oberfläche kennt keine LU-/DU-Werte, Formeln,
+Vorgaben je Klasse oder Normwerte – sie zeigt, was der Kern liefert (`element_lesen`, `warum`, `sanitaer_katalog`, `sanitaer_zusammenstellung`, Plangrafik), rundet nur für die Anzeige und sendet
+Eingaben als `element_aendern`. **Keine Dimensionierung** (Teil B), **keine Auswahlliste für K**. Der Node-Test `sanitaer-belastung.test.mjs` prüft, dass in `sanitaer-*.js` weder Rechenkonstanten noch
+Wurzeln stehen. Quelle jedes Werts: «LU_DU Zusammenstellung_.xlsx» mit Excel-Zeile (im «?», in den Tooltips der Liste und in der CSV-Datei).
+
+**Dateien:** `oberflaeche/sanitaer-text.js` (Rundung, Auswahl, Spezialtabelle als reine Funktionen), `oberflaeche/sanitaer-palette.js` (HTML-Bausteine der Palette), `oberflaeche/sanitaer-anlage.js` (aktive Anlage, Liste
+der Anlage), `oberflaeche/aktionen-sanitaer.js` (Knopf), `ansichten/sanitaer-liste.js` (Listenaufbau), `css/sanitaer.css`; geändert: `eigenschaften.js`, `dialoge.js` (Beiträge im «?»), `aktionen-ansicht.js` (Dialog
+«Liste anlegen»), `ansichten/liste.js`, `listenformat.js`, `liste-csv.js`, `symbole.js`, `symbole-revit.js`, `kataloge/klassen.json` (Ansicht), Kern `Schema/SchemaGrafik.cs` und `Schema/SchemaBelastung.cs` (nur die Beschriftung).
+
+**Rundung (nur Anzeige; der Kern rechnet ungerundet, das «?» und die Tooltips zeigen den genauen Wert)** – Regeln in `sanitaer-text.js`, im Code begründet:
+- LU: ganze Zahl, sonst eine Stelle (Excel «Standard»; der Katalog hat nur ganze LU). DU: immer eine Stelle («2,0», «38,8»; Katalogwerte haben höchstens eine Stelle, die feste Stelle hält die Spalten bündig).
+- l/s: zwei Nachkommastellen, unter 1 l/s drei («1,14», «0,762»; Referenz Walkringen 1.1412… → 1,14, Q_WW 3.1144… → 3,11, Volumenstrom 13,20). Von Hand eingetragene Spezialinstallationen: wie eingegeben, bis drei Stellen
+  ohne Nachnullen («0,5»).
+- Dezimaltrenner: Palette Punkt (wie ihre übrigen Felder, «0.5 DU»), Liste und CSV Komma (wie die anderen Listen), Beschriftung im Strangschema Punkt wie die übrigen Texte der Plangrafik («ΣDU 4.6»).
+
+**Eigenschaften-Palette** (`eigenschaften.js`, Bausteine `sanitaer-palette.js`):
+- Apparat: Zeile «Apparateart» (Eigenschaft `sanitaerArt`) als Auswahl mit Namen (`auswahlNamen`); erster Eintrag «Vorgabe der Klasse (Name)» = nicht gesetzt (`null`; die Vorgabe liest die Palette aus `sanitaer_katalog.vorgabeJeKlasse`,
+  Bodenablauf: «Vorgabe der Klasse: keine – Art wählen»). Darunter ein Satz zur wirksamen Art («gilt: … (Vorgabe der Klasse | am Apparat gesetzt | aus der Familie)», sonst Warnung P21) und die Zeilen LU KW / LU WW / DU
+  (nur, was die Art hat) mit «?» (`warum`: Quelle «LU_DU Zusammenstellung_.xlsx … Zeile n»). Die Werte stehen nicht mehr in der allgemeinen Gruppe «Abgeleitet».
+- Leitung (KW, WW, SW): Gruppe «Abgeleitet»: ΣLU KW, ΣLU WW, Grösster Einzel-LU bzw. ΣDU mit «?» (Rechenweg und Beiträge der Apparate als Tabelle in `dialoge.js`, Spalte «Excel-Zeile»), Zeile «n Apparate (Richtung)» mit
+  Hinweis bei Masche (P24) bzw. Apparaten ohne Wert.
+- Anlage: `abflusskennzahl` als freie Zahl, darunter der Hinweis «Wert aus SN 592000 nach Gebäudeart – Norm liegt nicht vor; Walkringen: 0.5» (ebenso bei der Projektinformation); `spezialinstallationen` als Tabelle
+  (Bezeichnung, Versorgung l/s, Entsorgung l/s; «+ Zeile hinzufügen», «×» löscht sofort). Eine Zeile geht erst an den Kern, wenn Bezeichnung und mindestens eine Zahl da sind (sonst Hinweis an der Tabelle); Komma und Punkt
+  gehen; Zahlen < 0 lehnt der Kern ab (Meldung am Feld); leere Tabelle sendet `null`. Kein «[object Object]» mehr.
+- Ansicht: `belastung` (Schalter, Vorgabe ein: das Häkchen steht, solange nicht `false` gesetzt ist) und `anlage` (Auswahl der Anlagen, bei der Liste Sanitär-Zusammenstellung).
+
+**Strangschema (Kern, `Schema/SchemaGrafik.cs`, `Schema/SchemaBelastung.cs`):** an jeder Sanitärleitung steht neben der Rohrbezeichnung ein zweiter Text – «ΣLU 12 / 8» (Kalt-/Warmwasser, beide > 0), «ΣLU 12» (nur Kaltwasser),
+«ΣLU – / 8» (nur Warmwasser), «ΣDU 4.6» (Abwasser); LU und DU auf eine Stelle gerundet, ohne Nachnull; Summe 0 = kein Text; Zirkulation, Regenwasser, Heizung usw. ohne. Die Summen sind die der Abfrage
+`sanitaer_belastung` (gleicher Netzkern `SanitaerBelastung`). Ansichtseigenschaft `belastung` (bool): ohne Angabe **ein** (also in jedem Schema mit Sanitärleitungen; Heizungs- und Lüftungsschemas haben keine Sanitärleitungen
+und damit nichts zu beschriften), `false` blendet aus; im Detailgrad grob keine Beschriftung (wie die Grössen). Platz: der Text sitzt am selben Abschnitt wie die Grösse und wird nach den Grössentexten freigestellt
+(`GroessenTexte.Setzen`): zuerst andere Seite der Linie, verschoben, dann reihenweise weiter von der Linie (`GroessenText.Weicht`, `MaxReihen` 4); die Lage der Grössentexte bleibt wie bisher.
+
+**Liste «Sanitär-Zusammenstellung (W3)»:** Katalog `Ansicht.liste` = `sanitaer_zusammenstellung` (+ Eigenschaft `anlage`); Dialog «Liste anlegen» zeigt bei dieser Liste die Zeile «Anlage» (Kennzeichen- und Namensvorschlag mit der Anlage:
+`AN-LI-SANITAER-<Anlage>`). `liste.js` fragt `sanitaer_zusammenstellung { anlage }` ab und frischt bei Modelländerungen auf; `sanitaer-liste.js` baut drei Tabellen: **Apparate** (Apparateart · LU KW · LU WW · DU je Stück · eine
+Spalte je Geschoss · Anzahl · ΣLU KW · ΣLU WW · ΣDU, Totalzeile als Fusszeile), **Trinkwasser** (Total LU, Volumenstrom, Spitze Kurve «grösster LU 3» und «grösster LU 5» – die massgebende fett mit «– massgebend», die andere klein
+«(nicht massgebend)» –, grösster Einzel-LU, Spezialinstallationen mit Summe, Spitzendurchfluss gesamt, daneben klein die andere Kurve gesamt), **Entwässerung** (ΣDU, K, Q_WW, Spezialinstallationen, Q_tot). Ohne K steht «K fehlt» (rot) statt K,
+Q_WW und Q_tot, der Kern-Hinweis (P25) im Kopf. Tooltip je Zeile: Formel mit Excel-Zelle (aus `formeln` des Kerns) und genauer Wert; Tooltip der Apparateart: Quelle mit Excel-Zeile und Kennzeichen der Apparate. Zeilen-/Zellklassen
+`li-massgebend`, `li-nebenwert`, `li-fehlt`. Erweiterungen der Listenaufbereitung (für alle Listen nutzbar): Spalte `format` (Funktion), `nurCsv`, `tooltip`; Zeile `klasse`, `zellklassen`, `titel`; Tabelle `klasse`, `ohneSortieren`;
+gemeinsame Zellenfunktion `zelle()` in `listenformat.js` für Ansicht und CSV. **CSV** (Knopf «CSV …», N3): alle drei Tabellen untereinander mit Titelzeilen, die Blöcke mit zusätzlicher Spalte «Formel (Excel-Zelle)», Zahlen gerundet wie in
+der Ansicht. **Planblätter:** Listen sind im Kern nicht platzierbar (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema) – das gilt für alle Listen; Ausgabe der Sanitär-Zusammenstellung ist die CSV-Datei. (Listen im Plan wären eine
+Kern-Erweiterung für alle Listenarten.)
+
+**Knopf:** Register Gebäudetechnik › Gruppe «Apparate und Armaturen» › «Sanitär-Zusammenstellung» (`sanitaer.zusammenstellung`, kein Kürzel; Symbol `sanZusammenstellung`, Strich und Revit-Stil). Öffnet die Liste der aktiven Anlage
+(Anlage des gewählten Elements über `system`/`teilVon`, sonst Anlage der offenen Sanitärliste, sonst die einzige Anlage; bei mehreren fragt ein Dialog) und legt sie beim ersten Mal an. Bei 1920 px bleibt in allen Registern jede Gruppe in Stufe G
+(Test `menueband.browser.mjs`, Strich und `HLKS_SYMBOLE=revit`).
+
+**Befunde P21–P25:** erscheinen von selbst im Dialog Verwalten › Modell › «Prüfbefunde» (Abfrage `pruefen` liefert alle Codes des Kerns) mit Code, Element, Text und Vorschlag; Klick wählt das Element. Kein Eingriff nötig (getestet für P25).
+
+**Prüfen:** `node --test js/oberflaeche/sanitaer-belastung.test.mjs` (Rundung, Palette, Tabelle, aktive Anlage, Liste mit Referenzfall Walkringen, CSV, Verdrahtung); Kern: `SchemaBelastungTests.cs`; Browser:
+`HLKS_M4_PORT=5211 HLKS_CDP_PORT=9560 node js/oberflaeche/sanitaer-belastung.browser.mjs` (Bilder hell/dunkel nach `%TEMP%\HLKS_CAD\m4_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).

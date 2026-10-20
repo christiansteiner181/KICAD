@@ -1,0 +1,41 @@
+/* Sanitär-Belastungswerte (Modul 4 Teil A-O): Palette (Apparateart, abgeleitete Werte, Abflusskennzahl, Tabelle der Spezialinstallationen) und Listenansicht «Sanitär-Zusammenstellung (W3)».
+   Farben nur über die Variablen der Oberfläche (hell und dunkel). */
+
+/* ------------------------------------------------------------------ Palette */
+.ep-zeile.ep-breit { grid-template-columns: 1fr; padding-bottom: 3px; }
+.ep-zeile.ep-breit .ep-feld { align-items: flex-start; }
+.ep-zeile.ep-breit .ep-spezial { flex: 1; min-width: 0; }
+
+.ep-zeile.ep-sanhinweis { grid-template-columns: 1fr; min-height: 0; padding-top: 1px; padding-bottom: 1px; }
+.ep-sanhinweis .ep-label { display: none; }
+.ep-sanhinweis .ep-text { white-space: normal; overflow: visible; color: var(--text-leise); font-size: 11px; line-height: 1.3; }
+.ep-sanwarnung .ep-text { color: var(--warnung); }
+.ep-sanwert .ep-text { font-variant-numeric: tabular-nums; }
+
+.ep-spez { width: 100%; border-collapse: collapse; table-layout: fixed; }
+.ep-spez th { font-weight: 400; font-size: 11px; color: var(--text-leise); text-align: left; padding: 0 2px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.ep-spez th:nth-child(1) { width: 38%; }
+.ep-spez th:nth-child(2), .ep-spez th:nth-child(3) { width: 28%; }
+.ep-spez th:nth-child(4) { width: 18px; }
+.ep-spez td { padding: 1px 2px; }
+.ep-spez input { width: 100%; box-sizing: border-box; min-width: 0; height: var(--hoehe-feld); padding: 0 3px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); }
+.ep-spez input.sp-v, .ep-spez input.sp-e { text-align: right; }
+.ep-spez input:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.ep-spez-weg { width: 16px; height: 16px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; line-height: 1; }
+.ep-spez-weg:hover { color: var(--fehler); }
+.ep-spez-fuss { display: flex; align-items: center; gap: 8px; padding: 2px 2px 0; flex-wrap: wrap; }
+.ep-spez-neu { height: var(--hoehe-feld); padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); border-radius: var(--radius); cursor: pointer; }
+.ep-spez-neu:hover { background: var(--ob-hover-tief); }
+.ep-spez-hinweis { color: var(--warnung); font-size: 11px; }
+.ep-spez-hinweis[hidden] { display: none; }
+
+/* Dialog «Liste anlegen»: Zeile Anlage nur bei der Sanitär-Zusammenstellung */
+.fz.f-anlage-zeile[hidden] { display: none; }
+
+/* ------------------------------------------------------------------ Liste «Sanitär-Zusammenstellung (W3)» */
+.li-tabelle tr.li-massgebend td { font-weight: 600; }
+.li-tabelle tr.li-nebenwert td { color: var(--text-leise); font-size: 11px; }
+.li-tabelle td.li-fehlt { color: var(--fehler); font-weight: 600; white-space: nowrap; }
+.li-tabelle.li-block { width: auto; min-width: 560px; }
+.li-tabelle.li-block th { cursor: default; }
+.li-tabelle.li-block th:hover { background: inherit; }

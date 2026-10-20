@@ -138,6 +138,7 @@ koAusPlan | Aussparungsplan anlegen | eigenes | Planblatt mit Öffnung
 koAusIfc | IFC für Architekt | IFC exportieren | Würfel mit gestrichelter Öffnung
 koBcfExport | BCF exportieren | eigenes | Blatt mit Pfeil heraus
 koBcfImport | BCF importieren | eigenes | Blatt mit Pfeil hinein
+sanZusammenstellung | Sanitär-Zusammenstellung | eigenes | Tabelle mit blauem Σ-Kopf und grünem Wassertropfen
 famFamilie | In das Projekt laden | In Projekt laden | Würfel mit blauem Punkt
 palette | Palette | Paletten | Fenster mit blauer Titelleiste
 projektbrowser | Projektbrowser | Projektbrowser | Baumstruktur
@@ -625,6 +626,12 @@ s('schemaAnordnen',
 s('koordinaten',
   '<path class="sb w2" d="M7.5 25.5V6M7.5 25.5H26"/><path class="fb n" d="M7.5 3l-3.2 5.5h6.4zM29.5 25.5l-5.5-3.2v6.4z"/><path class="sb dt" d="M20 25.5V12M7.5 12H20"/><circle class="fp" cx="7.5" cy="25.5" r="2.4"/><path class="so w2" d="M17.5 12h5M20 9.5v5"/>',
   '<path class="sb w15" d="M3.5 12.5V3.5M3.5 12.5H12"/><path class="fb n" d="M3.5 1.5L1.6 4.5h3.8zM14.5 12.5L11.5 10.6v3.8z"/><circle class="fp" cx="3.5" cy="12.5" r="1.4"/><path class="so" d="M8.5 6.5h3M10 5v3"/>');
+
+// ---------------------------------------------------------------------------------------------- Sanitär (Modul 4 Teil A-O)
+
+s('sanZusammenstellung',
+  '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v6.5h-25z"/><path d="M3.5 17h12M3.5 22h12M15.5 11v16.5"/><path class="sW w15" d="M12 6.2H8.5l2.5 2.3-2.5 2.3H12"/><path class="fsa" d="M22 13.5c-2.8 3.4-3.8 4.8-3.8 6.4a3.8 3.8 0 0 0 7.6 0c0-1.6-1-3-3.8-6.4z"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v4h-13z"/><path d="M1.5 9h6M1.5 12h6M7.5 5.5v9"/><path class="fsa" d="M11 6.8c-1.5 1.8-2 2.5-2 3.4a2 2 0 0 0 4 0c0-.9-.5-1.6-2-3.4z"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 

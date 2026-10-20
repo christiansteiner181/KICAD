@@ -1,15 +1,16 @@
 // Listenansicht (mit Knopf «CSV …» seit N3, liste-csv.js): zeigt die Ableitung des Kerns (werte.liste: raumliste | strangliste | mengen | raumgrenzen | huellbauteile | materialliste |
-// kollisionen | aussparungsliste, Vorgabe raumliste) als Tabelle. Keine eigene Rechnung – die Zahlen kommen aus abfrage(name). Kopf mit Titel und Modellstand, Sortieren per
+// kollisionen | aussparungsliste | sanitaer_zusammenstellung (Modul 4 Teil A-O, mit Ansicht.anlage, Aufbereitung in sanitaer-liste.js), Vorgabe raumliste) als Tabelle. Keine eigene Rechnung – die Zahlen kommen aus abfrage(name). Kopf mit Titel und Modellstand, Sortieren per
 // Klick auf den Spaltenkopf, Klick auf eine Zeile wählt das Element (Kennzeichen der ersten Spalte), Neuabfrage bei
 // Modelländerungen (entprellt 400 ms).
 
 import { zustand, element, auswaehlen } from '../zustand.js';
 import { abfrage } from '../api.js';
-import { aufbereiten, formatWert, sortiere } from './listenformat.js';
+import { aufbereiten, zelle, sortiere } from './listenformat.js';
 
 const ENTPRELLEN = 400;
 const NAMEN = ['raumliste', 'strangliste', 'mengen', 'raumgrenzen', 'huellbauteile'];
 const NAMEN_MODUL3 = ['materialliste'];   // Modul 3 (B4): Materialliste je Serie und Grösse
+const NAMEN_MODUL4 = ['sanitaer_zusammenstellung'];   // Modul 4 Teil A-O: Sanitär-Zusammenstellung (W3) je Anlage (Ansicht.anlage)
 const NAMEN_MODUL3B = ['kollisionen', 'aussparungsliste'];   // Modul 3b (B4a): Kollisionsliste und Aussparungsliste (Klick wählt die Kollision bzw. Aussparung)
 
 function erstellen(behaelter, ansichtElement) {
@@ -28,11 +29,12 @@ function erstellen(behaelter, ansichtElement) {
 
   const listenName = () => {
     const n = String(ansicht?.werte?.liste ?? 'raumliste').toLowerCase();
-    return NAMEN.includes(n) || NAMEN_MODUL3.includes(n) || NAMEN_MODUL3B.includes(n) ? n : (ansicht?.werte?.liste ?? 'raumliste');
+    return NAMEN.includes(n) || NAMEN_MODUL3.includes(n) || NAMEN_MODUL3B.includes(n) || NAMEN_MODUL4.includes(n) ? n : (ansicht?.werte?.liste ?? 'raumliste');
   };
 
   function parameter() {
     const n = listenName();
+    if (NAMEN_MODUL4.includes(n)) return ansicht?.werte?.anlage ? { anlage: ansicht.werte.anlage } : {};
     return (['raumliste', 'mengen', 'raumgrenzen', 'huellbauteile', 'materialliste'].includes(n) || NAMEN_MODUL3B.includes(n)) && ansicht?.geschoss ? { geschoss: ansicht.geschoss } : {};
   }
 
@@ -87,16 +89,18 @@ function erstellen(behaelter, ansichtElement) {
   function tabelle(t, index) {
     const wrap = el('div', 'li-tabelle-wrap');
     if (t.titel) wrap.append(el('h3', 'li-tabellentitel', t.titel));
-    const sort = sortierung.get(index);
+    const sort = t.ohneSortieren ? undefined : sortierung.get(index);
     const zeilen = sort ? sortiere(t.zeilen, sort.schluessel, sort.absteigend) : t.zeilen;
-    const tab = el('table', 'li-tabelle');
+    const sichtbar = t.spalten.filter((sp) => !sp.nurCsv);   // Spalten nur für die CSV-Datei (Formeln der Sanitär-Zusammenstellung) zeigt die Ansicht nicht
+    const tab = el('table', 'li-tabelle' + (t.klasse ? ' ' + t.klasse : ''));
     const thead = el('thead');
     const kopfZeile = el('tr');
-    for (const sp of t.spalten) {
+    for (const sp of sichtbar) {
       const th = el('th', sp.art === 'zahl' ? 'zahl' : '');
       const aktiv = sort?.schluessel === sp.schluessel;
       th.append(sp.titel, el('span', 'li-pfeil', aktiv ? (sort.absteigend ? ' ▼' : ' ▲') : ''));
-      th.title = 'Klicken zum Sortieren';
+      if (t.ohneSortieren) { if (sp.tooltip) th.title = sp.tooltip; kopfZeile.append(th); continue; }
+      th.title = sp.tooltip ? `${sp.tooltip}\nKlicken zum Sortieren` : 'Klicken zum Sortieren';
       th.setAttribute('aria-sort', aktiv ? (sort.absteigend ? 'descending' : 'ascending') : 'none');
       th.onclick = () => {
         const alt = sortierung.get(index);
@@ -108,7 +112,8 @@ function erstellen(behaelter, ansichtElement) {
     thead.append(kopfZeile);
     const tbody = el('tbody');
     for (const z of zeilen) {
-      const tr = el('tr');
+      const tr = el('tr', z.klasse || '');
+      if (z.titel?.['*']) tr.title = z.titel['*'];
       const kz = t.schluessel ? z[t.schluessel] : null;
       if (kz) {
         tr.classList.add('klickbar');
@@ -118,14 +123,15 @@ function erstellen(behaelter, ansichtElement) {
           if (e) auswaehlen(e.id); else console.warn('Liste: Element nicht gefunden', kz);
         };
       }
-      for (const sp of t.spalten) {
-        const td = el('td', sp.art === 'zahl' ? 'zahl' : '', formatWert(sp.schluessel, z[sp.schluessel]));
+      for (const sp of sichtbar) {
+        const td = el('td', [sp.art === 'zahl' ? 'zahl' : '', z.zellklassen?.[sp.schluessel] ?? ''].filter(Boolean).join(' '), zelle(sp, z[sp.schluessel]));
+        if (z.titel?.[sp.schluessel]) td.title = z.titel[sp.schluessel];
         tr.append(td);
       }
       tbody.append(tr);
     }
     if (zeilen.length === 0) {
-      const tr = el('tr'); const td = el('td', 'li-leer', 'Keine Einträge.'); td.colSpan = Math.max(t.spalten.length, 1); tr.append(td); tbody.append(tr);
+      const tr = el('tr'); const td = el('td', 'li-leer', 'Keine Einträge.'); td.colSpan = Math.max(sichtbar.length, 1); tr.append(td); tbody.append(tr);
     }
     tab.append(thead, tbody);
     // Fusszeilen (Summen je Angrenzung, Raumgrenzen und Hüllbauteile): vom Kern geliefert, hier nur dargestellt
@@ -133,7 +139,8 @@ function erstellen(behaelter, ansichtElement) {
       const tfoot = el('tfoot');
       for (const f of t.fuss) {
         const tr = el('tr', 'li-fuss');
-        for (const sp of t.spalten) tr.append(el('td', sp.art === 'zahl' ? 'zahl' : '', formatWert(sp.schluessel, f[sp.schluessel])));
+        if (f.titel?.['*']) tr.title = f.titel['*'];
+        for (const sp of sichtbar) tr.append(el('td', sp.art === 'zahl' ? 'zahl' : '', zelle(sp, f[sp.schluessel])));
         tfoot.append(tr);
       }
       tab.append(tfoot);

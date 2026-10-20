@@ -2,9 +2,10 @@
 // Rein (ohne DOM, Node-testbar). Format: UTF-8 mit BOM (Excel erkennt Umlaute), Semikolon als Trenner, Dezimalkomma, Zeilenende CRLF, erste Zeile = Kopfzeile
 // mit den Spaltentiteln. Es steht drin, was die Liste zeigt – dieselben Spalten, derselbe Text je Zelle (formatWert), dieselbe Reihenfolge wie beim Sortieren
 // im Bild; die Zahlen kommen vom Kern, hier wird nichts gerechnet. Listen mit mehreren Tabellen (Mengen, Materialliste) stehen untereinander, je mit einer
-// Titelzeile und durch eine Leerzeile getrennt. Fusszeilen (Summen der Raumgrenzen und Hüllbauteile) folgen unter ihrer Tabelle.
+// Titelzeile und durch eine Leerzeile getrennt. Fusszeilen (Summen der Raumgrenzen und Hüllbauteile, Totalzeile der Sanitär-Zusammenstellung) folgen unter ihrer Tabelle. Spalten mit nurCsv (Formeln der
+// Sanitär-Zusammenstellung mit Excel-Zelle) stehen nur in der Datei; Zellen mit eigener Formatierung (Spalte.format) erscheinen genau so wie in der Ansicht.
 
-import { formatWert, sortiere } from './listenformat.js';
+import { zelle, sortiere } from './listenformat.js';
 
 export const BOM = '﻿';
 export const TRENNER = ';';
@@ -36,8 +37,8 @@ export function csvAus(daten, sortierung = new Map()) {
     if (spalten.length > 0) zeilen.push(zeile(spalten.map((s) => s.titel)));   // eine leere Liste hat noch keine Spalten (sie entstehen aus den Daten)
     const sort = sortierung instanceof Map ? sortierung.get(index) : undefined;
     const sortiert = sort ? sortiere(t.zeilen ?? [], sort.schluessel, sort.absteigend) : (t.zeilen ?? []);
-    for (const z of sortiert) zeilen.push(zeile(spalten.map((s) => formatWert(s.schluessel, z[s.schluessel]))));
-    for (const f of Array.isArray(t.fuss) ? t.fuss : []) zeilen.push(zeile(spalten.map((s) => formatWert(s.schluessel, f[s.schluessel]))));
+    for (const z of sortiert) zeilen.push(zeile(spalten.map((s) => zelle(s, z[s.schluessel]))));
+    for (const f of Array.isArray(t.fuss) ? t.fuss : []) zeilen.push(zeile(spalten.map((s) => zelle(s, f[s.schluessel]))));
   });
   return BOM + (zeilen.length > 0 ? zeilen.join(ZEILENENDE) + ZEILENENDE : '');
 }

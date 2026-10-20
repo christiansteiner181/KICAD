@@ -277,10 +277,15 @@ function warumWert(v) {
 
 function warumHtml(r) {
   let h = '<table class="wtab">';
-  const gezeigt = new Set(['element', 'eigenschaft', 'verlauf']);
+  const gezeigt = new Set(['element', 'eigenschaft', 'verlauf', 'beitraege']);
   for (const k of WARUM_REIHENFOLGE) if (k in r) { gezeigt.add(k); h += `<tr><th>${esc(WARUM_NAMEN[k])}</th><td>${esc(warumWert(r[k]))}</td></tr>`; }
   for (const [k, v] of Object.entries(r)) if (!gezeigt.has(k)) h += `<tr><th>${esc(k)}</th><td>${esc(warumWert(v))}</td></tr>`;
   h += '</table>';
+  // Belastungssummen einer Leitung (Modul 4 Teil A-O): Beiträge der Apparate als Tabelle (Apparat, Art, Anschluss, Wert, Excel-Zeile)
+  if (Array.isArray(r.beitraege) && r.beitraege.length) {
+    h += `<h4>Beiträge der Apparate</h4><table class="tab"><thead><tr><th>Apparat</th><th>Apparateart</th><th>Anschluss</th><th>Spalte</th><th>Wert</th><th>Excel-Zeile</th></tr></thead><tbody>${
+      r.beitraege.map((b) => `<tr><td>${esc(b.apparat)}</td><td>${esc(b.artName ?? b.art ?? '')}</td><td>${esc(b.anschluss ?? '')}</td><td>${esc(b.spalte ?? '')}</td><td>${esc(b.wert ?? '–')}</td><td>${esc(b.zeile ?? '')}</td></tr>`).join('')}</tbody></table>`;
+  }
   const verlauf = Array.isArray(r.verlauf) ? r.verlauf : [];
   h += '<h4>Verlauf</h4>';
   h += verlauf.length === 0 ? '<p class="leise">Unverändert seit dem Anlegen.</p>' :
