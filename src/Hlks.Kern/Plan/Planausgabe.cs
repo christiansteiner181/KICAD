@@ -100,6 +100,7 @@ public static class Planausgabe
     /// <summary>Schreibt das PDF in eine Datei (leer: %TEMP%\HLKS_CAD\&lt;Plannummer&gt;.pdf) und meldet Datei, Seiten, Grösse.</summary>
     public static JsonObject PdfDatei(Projekt p, string planblatt, string? datei, Func<Projekt, string, Plangrafik>? grafik = null)
     {
+        if (!string.IsNullOrWhiteSpace(datei)) datei = KiPfade.Pruefen(p, datei, "plan_pdf");   // Sicherheitsprüfung 3c, B3a/B4: KI nur unter den Wurzeln
         var blatt = Blatt(p.Modell, planblatt);
         var bytes = Pdf(p, planblatt, false, grafik);
         if (string.IsNullOrWhiteSpace(datei))

@@ -39,6 +39,16 @@ public sealed class AussparungenNummerieren : IBefehl
         if (ohne.Count > 0 && filter is null)
             k.Hinweise.Add($"Ohne Geschoss, nicht nummeriert: {string.Join(", ", ohne.Select(a => a.Kennzeichen).Order(StringComparer.Ordinal))} (geschoss setzen).");
         int neu = 0;
+        // Sicherheitsprüfung 3c, B5: die KI nummeriert abgegebene Aussparungen nie um – die Nummer steht beim Bauingenieur bzw. auf dem freigegebenen
+        // Plan (Dokumentenlenkung, wie aussparung_status). Für die KI behalten freigegebene, versandte, angekommene, ausgeführte und fehlende Aussparungen
+        // mit Nummer ihre Nummer (auch mit alle), und nach dem Versand bekommt keine mehr eine erste Nummer; ihre Nummern bleiben belegt. Menschen unverändert.
+        bool ki = string.Equals(k.Herkunft.Art, "ki", StringComparison.OrdinalIgnoreCase);
+        var geschuetzt = new List<Element>();
+        bool Geschuetzt(Element a)
+        {
+            var st = AussparungStatus.Von(a);
+            return ki && AussparungStatus.Fest(st) && (a.Text("nummer") is { Length: > 0 } || st != AussparungStatus.Freigegeben);
+        }
         foreach (var jeGeschoss in aussparungen.Where(a => a.Geschoss is not null && m.Finde(a.Geschoss) is not null && (filter is null || a.Geschoss == filter.Id))
                      .GroupBy(a => a.Geschoss!).OrderBy(x => m.Finde(x.Key)!.Zahl("kote") ?? 0))
         {
@@ -47,10 +57,14 @@ public sealed class AussparungenNummerieren : IBefehl
             var folge = jeGeschoss.OrderBy(a => Koordinate(a, 0)).ThenBy(a => Koordinate(a, 1)).ThenBy(a => Koordinate(a, 2))
                 .ThenBy(a => a.Kennzeichen, StringComparer.Ordinal).ToList();
             int naechste = alle ? 0 : aussparungen.Select(a => Laufnummer(a.Text("nummer"), praefix) ?? 0).DefaultIfEmpty(0).Max();
+            var belegt = folge.Where(Geschuetzt).Select(a => a.Text("nummer")).Where(n => n is { Length: > 0 }).ToHashSet(StringComparer.OrdinalIgnoreCase);
             foreach (var a in folge)
             {
+                if (Geschuetzt(a)) { if (alle || a.Text("nummer") is not { Length: > 0 }) geschuetzt.Add(a); continue; }
                 if (!alle && (a.Text("nummer") is { Length: > 0 } || AussparungStatus.Von(a) == AussparungStatus.Veraltet)) continue;
-                var nummer = praefix + (++naechste).ToString("D3", CultureInfo.InvariantCulture);
+                string nummer;
+                do nummer = praefix + (++naechste).ToString("D3", CultureInfo.InvariantCulture);
+                while (belegt.Contains(nummer));
                 if (a.Text("nummer") == nummer) continue;
                 var e = a.Kopie();
                 e.Eigenschaften["nummer"] = new Wert
@@ -63,6 +77,9 @@ public sealed class AussparungenNummerieren : IBefehl
                 k.Hinweise.Add($"{a.Kennzeichen}: {(a.Text("nummer") is { Length: > 0 } alt ? $"{alt} → " : "")}{nummer}");
             }
         }
+        if (geschuetzt.Count > 0)
+            k.Hinweise.Add($"Abgegebene Aussparungen nummeriert die KI nicht (um): {string.Join(", ", geschuetzt.Take(20).Select(a => $"{a.Kennzeichen}{(a.Text("nummer") is { Length: > 0 } n ? " " + n : "")} ({AussparungStatus.Von(a)})"))}" +
+                $"{(geschuetzt.Count > 20 ? $" und {geschuetzt.Count - 20} weitere" : "")} – das entscheidet ein Mensch.");
         k.Hinweise.Insert(0, neu == 0 ? "Keine Aussparung ohne Nummer." : $"{neu} Nummer(n) vergeben{(alle ? " (alle neu)" : "")}.");
     }
 

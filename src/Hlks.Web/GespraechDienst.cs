@@ -26,7 +26,8 @@
 // - Mit internet = true (Entscheid Hauptlauf 20.10.2026, dieselbe enge Linie wie die Aufträge, Entscheid 18.10.2026): OHNE Projektzugriff –
 //   erlaubt sind nur WebSearch, unterlage_aus_url, normen_suchen, norm_lesen, kontext_bild und die Familien-/Unterlagen-Werkzeuge der
 //   Internetliste der Aufträge (InternetWerkzeuge); alle anderen Werkzeuge des Servers stehen in --disallowedTools (Claude sieht sie nicht).
-//   Schutz gegen Abfluss von Projektdaten über Suchanfragen und Abrufe bei eingeschleusten Webinhalten. Vermerk «Internet: ohne Projektzugriff».
+//   Schutz gegen Abfluss von Projektdaten über Suchanfragen und Abrufe bei eingeschleusten Webinhalten. Vermerk (seit B3d) «Internet: ohne
+//   Modellzugriff; Unterlagen und Familien lesbar».
 //   Dazu KEIN Projektkontext (Entscheid Hauptlauf 20.10.2026, zweiter Teil): der Server verwirft Ansicht, Geschoss, Auswahl und Bild der Anfrage
 //   selbst (kontextVerworfen: true in der Mensch-Nachricht), der Auftragstext nennt weder Projekt noch Ordner, der MCP-Server bekommt
 //   --ohne-projektkontext (kontext_bild: «Kein Bild – mit Internet ohne Projektkontext»). Ausserdem läuft die Frage in einer eigenen
@@ -36,7 +37,21 @@
 // - Nach dem Lauf gibt der Server die Reservierungen des Akteurs KI auf diesem Gerät frei (ein abgebrochener MCP-Server kann es nicht
 //   mehr selbst), damit «Zurücknehmen» nicht an der eigenen KI hängen bleibt.
 // - Zurücknehmen während eines KI-Laufs im Projekt: 409 (der Lauf könnte dieselben Elemente gerade ändern).
+//
+// SICHERHEITSPRÜFUNG 3c (berichte/modul-3c-sicherheitspruefung.md, Umsetzung 20.10.2026):
+// - B3(b)/B3(c): der MCP-Server bekommt mit --werkzeuge nur die erlaubten Werkzeuge (KiEinordnung; mit Internet die Internetliste) und mit
+//   Internet --nur-familienunterlagen (Unterlagen nur zweck «familie» bzw. abgerufen) – Sperren unabhängig von Claude Code.
+// - B3(d): Wortlaut «Internet: ohne Modellzugriff; Unterlagen und Familien lesbar».
+// - B7: Rolle und Regeln gehen als --append-system-prompt mit (je Aufruf, auch bei --resume); der Auftrag (stdin) trägt nur Kontext und Frage.
+// - B8: ein KI-Lauf je Projekt auch über Prozessgrenzen (KiLaeufe: Sperrdatei <Projekt>\ki\lauf.lock); die Reservierungen der KI gibt der Lauf
+//   nach dem Ende nur frei, solange die Sperrdatei noch seine ist.
+// - B9: Kontextfelder (ansicht, geschoss, Einträge der Auswahl) höchstens 100 Zeichen, Muster Kennzeichen/Id; Unbekanntes nicht wörtlich im Auftrag.
+// - B10: eine beschädigte Gesprächsdatei erscheint in der Liste mit lesbar: false (Datei, Fehler).
+// - B11: Lesen–Ändern–Schreiben einer Gesprächsdatei (Fragen, Abschliessen, Zurücknehmen, Löschen) unter einer Sperre je Gespräch.
+// - B12/B13/B15: KiUmgebung (Umgebung bereinigen, CLAUDE.md-Kette prüfen und warnen, Werkzeugergebnisse ohne Kopfzeile lesen).
+// - B14: die Reservierungen der Auswahl werden erst unmittelbar vor dem Start freigegeben; scheitert danach noch etwas, werden sie neu reserviert.
 
+using System.Collections.Concurrent;
 using System.Diagnostics;
 using System.Security.Cryptography;
 using System.Text;
@@ -121,7 +136,9 @@ public sealed class GespraechDienst
     /// der Mensch in der Palette sieht und zurücknehmen kann. Ein Test prüft, dass jedes Werkzeug hier im MCP-Server existiert und dass jedes
     /// hkap_*-Werkzeug darin steht (neue HKAP-Werkzeuge fallen so auf).
     /// Nicht in der Liste, weil es dafür kein Werkzeug gibt: Projekte löschen; Normtabellen (kataloge/) ändern; in die Gebäudeautomation
-    /// schreiben (datenpunkte und zeitreihe lesen nur, die Datenquelle ist nur lesend). Kommt so ein Werkzeug dazu, gehört es hierher.</summary>
+    /// schreiben (datenpunkte und zeitreihe lesen nur, die Datenquelle ist nur lesend). Kommt so ein Werkzeug dazu, gehört es hierher.
+    /// Sicherheitsprüfung 3c, B5: alle übrigen Werkzeuge sind in KiEinordnung ausdrücklich als erlaubt (lesend/ändernd) eingeordnet; ein Test verlangt
+    /// für jedes Werkzeug des Servers genau eine Einordnung.</summary>
     public static readonly IReadOnlyList<Verbot> Verbote =
     [
         // Familien: Freigaben und Entscheide macht nur ein Mensch (der Kern lehnt die KI dort zusätzlich ab)
@@ -168,8 +185,21 @@ public sealed class GespraechDienst
     public static readonly IReadOnlyList<string> InternetWerkzeuge =
         [.. AuftragDienst.InternetWerkzeuge.Concat(["normen_suchen", "norm_lesen", "kontext_bild"]).Distinct()];
 
-    /// <summary>Vermerk in Einstellungen und Nachrichten, wenn das Internet an ist.</summary>
-    public const string InternetHinweis = "Internet: ohne Projektzugriff";
+    /// <summary>Vermerk in Einstellungen und Nachrichten, wenn das Internet an ist (Sicherheitsprüfung 3c, B3d: das Modell ist weg, Herstellerunterlagen
+    /// und Familien bleiben lesbar).</summary>
+    public const string InternetHinweis = "Internet: ohne Modellzugriff; Unterlagen und Familien lesbar";
+
+    /// <summary>Werkzeuge, die der MCP-Server eines Laufs registriert (--werkzeuge, Sicherheitsprüfung 3c, B3c): mit Internet die Internetliste
+    /// (ohne Verbotenes ausser unterlage_aus_url), sonst die ausdrücklich erlaubten (KiEinordnung) ohne die Verbotsliste der Einstellungen –
+    /// ein neues, nicht eingeordnetes Werkzeug bekommt Claude nicht.</summary>
+    public static IReadOnlyList<string> McpWerkzeuge(GespraechEinstellungen e, bool internet) => internet
+        ? [.. e.WerkzeugeInternet.Where(w => w == "unterlage_aus_url" || !e.Verboten.Contains(w)).Distinct()]
+        : [.. KiEinordnung.Erlaubt.Where(w => !e.Verboten.Contains(w)).Distinct()];
+
+    /// <summary>Höchstlänge eines Kontextfelds (Ansicht, Geschoss, Eintrag der Auswahl; Sicherheitsprüfung 3c, B9).</summary>
+    public const int KontextFeldMax = 100;
+    /// <summary>Muster eines Kontextfelds: Kennzeichen oder Id – ohne Steuer- und Formatzeichen, Zeilenumbrüche, Anführungszeichen und Klammern.</summary>
+    static readonly Regex KontextMuster = new(@"^[^\p{C}\p{Zl}\p{Zp}""«»‹›<>{}\[\]\\|`]+$", RegexOptions.Compiled);
 
     /// <summary>Alle Werkzeuge des MCP-Servers «hlks», abgeleitet aus dem Kern genau wie Hlks.Mcp sie abbildet: Abfragen, Befehle, Verlauf
     /// (rueckgaengig, wiederholen, synchronisieren) und das Sitzungswerkzeug kontext_bild. Ein Test vergleicht die Liste mit dem Server.</summary>
@@ -189,9 +219,12 @@ public sealed class GespraechDienst
         public string Titel { get; } = titel;
         public DateTimeOffset Start = DateTimeOffset.Now;
         public string Modell = "", Exe = "", McpDatei = "", ArbeitsOrdner = "", LogPfad = "", Prompt = "", PromptNeu = "";
+        public string System = "";                                    // Rolle und Regeln (--append-system-prompt, B7)
+        public string? Warnung;                                       // z. B. CLAUDE.md in der Kette des Arbeitsordners (B13)
         public string? BildDatei;
         public bool Internet;
         public List<string> AuswahlFreigegeben = [];                  // Kennzeichen der Elemente, deren Reservierung des Menschen zur Frage freigegeben wurde
+        public List<string> AuswahlFreigegebenIds = [];               // dieselben als Ids (bei einem Fehler vor dem Start neu reservieren, B14)
         public string Sitzung = "";                                   // für --session-id bzw. --resume
         public bool Fortsetzen;                                       // erster Versuch mit --resume
         public bool SitzungNeu;                                       // --resume schlug fehl, neue Sitzung mit Verlauf
@@ -228,6 +261,10 @@ public sealed class GespraechDienst
     readonly object sperre = new();
     readonly object dateiSperre = new();
     readonly Dictionary<string, Lauf> laufend = new(StringComparer.OrdinalIgnoreCase);   // Gespräch-Id → laufende Frage
+    readonly ConcurrentDictionary<string, SemaphoreSlim> gespraechSperren = new(StringComparer.OrdinalIgnoreCase);
+
+    /// <summary>Sperre je Gespräch über den ganzen Zyklus Lesen–Ändern–Schreiben (Sicherheitsprüfung 3c, B11).</summary>
+    internal SemaphoreSlim GespraechSperre(string id) => gespraechSperren.GetOrAdd(id, _ => new SemaphoreSlim(1, 1));
 
     public GespraechDienst(ProjektDienst projekt, GespraechEinstellungen einstellungen, KiLaeufe laeufe)
     {
@@ -252,7 +289,7 @@ public sealed class GespraechDienst
             ["internetVorgabe"] = einstellungen.InternetVorgabe && einstellungen.InternetErlaubt,
             ["internetErlaubt"] = einstellungen.InternetErlaubt,
             ["internetGrund"] = einstellungen.InternetErlaubt ? null : InternetGesperrtGrund,
-            ["internetHinweis"] = InternetHinweis,   // Entscheid Hauptlauf 20.10.2026: mit Internet ohne Projektzugriff
+            ["internetHinweis"] = InternetHinweis,   // Entscheid Hauptlauf 20.10.2026: mit Internet ohne Modellzugriff (Wortlaut B3d)
             ["internetWerkzeuge"] = new JsonArray(einstellungen.WerkzeugeInternet.Prepend("WebSearch").Select(w => (JsonNode)JsonValue.Create(w)).ToArray()),
             ["verfuegbar"] = grund is null,
             ["grund"] = grund,
@@ -316,14 +353,26 @@ public sealed class GespraechDienst
             var id = Path.GetFileNameWithoutExtension(datei);
             if (!IdMuster.IsMatch(id)) continue;
             JsonObject? g;
+            string? fehler = null;
             try { lock (dateiSperre) g = JsonNode.Parse(File.ReadAllText(datei, Encoding.UTF8)) as JsonObject; }
-            catch (Exception ex) when (ex is JsonException or IOException) { continue; }
-            if (g is null) continue;
+            catch (Exception ex) when (ex is JsonException or IOException or UnauthorizedAccessException) { g = null; fehler = ex.Message; }
+            if (g is null)
+            {
+                // Sicherheitsprüfung 3c, B10: nicht still weglassen – der Mensch soll die beschädigte Datei sehen
+                string? zeit = null;
+                try { zeit = new DateTimeOffset(File.GetLastWriteTime(datei)).ToString("o"); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                liste.Add(new JsonObject
+                {
+                    ["id"] = id, ["titel"] = null, ["erstellt"] = null, ["geaendert"] = zeit, ["fragen"] = 0, ["laeuft"] = false,
+                    ["lesbar"] = false, ["datei"] = datei, ["fehler"] = Kurz(Einzeilig(fehler ?? "Inhalt ist kein JSON-Objekt"), 200),
+                });
+                continue;
+            }
             liste.Add(new JsonObject
             {
                 ["id"] = id, ["titel"] = T(g["titel"]), ["erstellt"] = T(g["erstellt"]), ["geaendert"] = T(g["geaendert"]),
                 ["fragen"] = (g["nachrichten"] as JsonArray ?? []).OfType<JsonObject>().Count(n => T(n["rolle"]) == "mensch"),
-                ["laeuft"] = LaufVon(id) is not null,
+                ["laeuft"] = LaufVon(id) is not null, ["lesbar"] = true,
             });
         }
         return liste.OrderByDescending(x => T(x["geaendert"]), StringComparer.Ordinal).ThenByDescending(x => T(x["id"]), StringComparer.Ordinal).ToList();
@@ -350,6 +399,10 @@ public sealed class GespraechDienst
     public async Task<JsonObject> Lesen(string id)
     {
         var ort = Ort();
+        // Stand des Laufs VOR dem Lesen der Datei (B11, Lesen–Schreiben-Reihenfolge): das Ende einer Frage speichert die Antwort, bevor der Lauf
+        // aus der Liste geht – ist beim Blick hier kein Lauf mehr da, enthält die Datei die fertige Antwort; sonst zeigt Ansicht den Stand des Laufs.
+        IdPruefen(id);
+        var lauf = LaufVon(id);
         var g = Laden(ort, id);
         // Pakete, die inzwischen anderswo zurückgenommen wurden (z. B. über /api/befehl/paket_zuruecknehmen), als zurückgenommen zeigen
         HashSet<string> zurueck;
@@ -357,11 +410,14 @@ public sealed class GespraechDienst
         catch (HlksFehler) { zurueck = []; }
         foreach (var a in (g["nachrichten"] as JsonArray ?? []).OfType<JsonObject>().SelectMany(n => (n["aenderungen"] as JsonArray ?? []).OfType<JsonObject>()))
             if (T(a["paket"]) is { } pk && zurueck.Contains(pk) && !B(a["zurueckgenommen"])) a["zurueckgenommen"] = true;
-        return Ansicht(ort, g);
+        return Ansicht(ort, g, lauf);
     }
 
-    /// <summary>Gespräch für die Oberfläche: ohne interne Felder (Sitzung), mit laeuft und – während einer Frage – der Antwort im Entstehen.</summary>
-    JsonObject Ansicht(string ort, JsonObject g)
+    JsonObject Ansicht(string ort, JsonObject g) => Ansicht(ort, g, LaufVon(T(g["id"])!));
+
+    /// <summary>Gespräch für die Oberfläche: ohne interne Felder (Sitzung), mit laeuft und – während einer Frage – der Antwort im Entstehen.
+    /// lauf = Stand des Laufs, ermittelt VOR dem Lesen der Datei.</summary>
+    JsonObject Ansicht(string ort, JsonObject g, Lauf? lauf)
     {
         var id = T(g["id"])!;
         var o = new JsonObject
@@ -370,7 +426,7 @@ public sealed class GespraechDienst
             ["modell"] = T(g["modell"]), ["laeuft"] = false, ["frage"] = null,
             ["nachrichten"] = g["nachrichten"]?.DeepClone() ?? new JsonArray(),
         };
-        if (LaufVon(id) is { } l)
+        if (lauf is { } l)
         {
             o["laeuft"] = true;
             o["frage"] = l.Frage;
@@ -399,12 +455,19 @@ public sealed class GespraechDienst
             return p;
         }
         string neu;
-        lock (dateiSperre)
+        var gs = GespraechSperre(id);   // B11: nicht mitten in einen Lese-Ändere-Schreibe-Zyklus
+        gs.Wait();
+        try
         {
-            neu = Frei(id + ".json");
-            File.Move(datei, neu);
-            if (File.Exists(LogDatei(ort, id))) File.Move(LogDatei(ort, id), Frei(id + ".log"));
+            if (LaufVon(id) is not null) throw new AuftragHttpFehler(409, "In diesem Gespräch läuft gerade eine Frage.", $"Zuerst abbrechen (POST /api/ki/gespraeche/{id}/abbrechen).");
+            lock (dateiSperre)
+            {
+                neu = Frei(id + ".json");
+                File.Move(datei, neu);
+                if (File.Exists(LogDatei(ort, id))) File.Move(LogDatei(ort, id), Frei(id + ".log"));
+            }
         }
+        finally { gs.Release(); }
         Melden(new JsonObject { ["art"] = "ki", ["typ"] = "gespraeche" });
         return new JsonObject { ["geloescht"] = true, ["id"] = id, ["ablage"] = neu };
     }
@@ -427,14 +490,15 @@ public sealed class GespraechDienst
         if (internet && !einstellungen.InternetErlaubt)
             throw new AuftragHttpFehler(409, InternetGesperrtGrund, "Ohne Internet fragen; Unterlagen aus dem Netz über «Unterlagen» hochladen.");
         var kontext = par["kontext"] as JsonObject ?? (par["kontext"] is null ? new JsonObject() : throw new HlksFehler("«kontext» muss ein Objekt sein.", "{ ansicht?, geschoss?, auswahl?: [Kennzeichen], bild?: \"data:image/png;base64,…\" }"));
-        var ansicht = Param.Text(kontext, "ansicht")?.Trim();
-        var geschoss = Param.Text(kontext, "geschoss")?.Trim();
+        // Sicherheitsprüfung 3c, B9: Kontextfelder höchstens 100 Zeichen, Muster Kennzeichen/Id (Unbekanntes geht später nicht wörtlich in den Auftrag)
+        var ansicht = KontextFeld(Param.Text(kontext, "ansicht"), "ansicht");
+        var geschoss = KontextFeld(Param.Text(kontext, "geschoss"), "geschoss");
         var auswahl = new List<string>();
         if (kontext["auswahl"] is JsonArray aw)
         {
             if (aw.Count > AuswahlMax) throw new HlksFehler($"Die Auswahl ist zu gross ({aw.Count} Elemente, höchstens {AuswahlMax}).", "Weniger Elemente wählen oder die Auswahl als Kontext abwählen.");
             foreach (var x in aw)
-                auswahl.Add(x is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s) ? s.Trim() : throw new HlksFehler("«auswahl» muss eine Liste von Kennzeichen (Text) sein."));
+                auswahl.Add(x is JsonValue v && v.TryGetValue<string>(out var s) && !string.IsNullOrWhiteSpace(s) ? KontextFeld(s, "auswahl")! : throw new HlksFehler("«auswahl» muss eine Liste von Kennzeichen (Text) sein."));
         }
         else if (kontext["auswahl"] is not null) throw new HlksFehler("«auswahl» muss eine Liste von Kennzeichen (Text) sein.");
         var (bild, bildArt) = BildLesen(Param.Text(kontext, "bild"));
@@ -443,111 +507,130 @@ public sealed class GespraechDienst
         var kontextVerworfen = internet;
         if (internet) { ansicht = null; geschoss = null; auswahl.Clear(); bild = null; bildArt = null; }
 
-        // ---- Gespräch, Starter, Belegung
-        var g = Laden(ort, id);
-        var (exe, vorArgs) = ClaudeStarter();
-        var (mcpBefehl, mcpVorArgs) = McpStarter();
-        var frage = Guid.NewGuid().ToString("N")[..8];
-        var l = new Lauf(id, frage, ort, T(g["titel"]) ?? "") { Modell = modell, Internet = internet, Exe = exe };
-        lock (sperre)
-        {
-            l.Beleg = laeufe.Belegen(ort, "gespraech", id, $"einer Frage im Gespräch «{Kurz(T(g["titel"]) ?? id, 60)}»");
-            laufend[id] = l;
-        }
+        // ---- Gespräch, Starter, Belegung – unter der Sperre des Gesprächs bis zum Speichern (B11)
+        var gs = GespraechSperre(id);
+        await gs.WaitAsync();
+        Lauf l;
         try
         {
-            // ---- Kontext über die Tür des Kerns auflösen (Daten, keine Anweisungen)
-            var (kontextText, kontextJson, projektName) = internet
-                ? ("", new JsonObject(), "")
-                : await projekt.Mit(p => KontextAufloesen(p, ansicht, geschoss, auswahl, bild is not null));
-
-            // ---- Reservierungen des Menschen auf diesem Gerät für die Auswahl freigeben (Entscheid Hauptlauf 20.10.2026): wer ein Element in der Oberfläche
-            // gewählt oder geändert hat, hält es reserviert, und Claude (anderer Akteur) bekäme sonst «Elemente werden gerade von jemand anderem bearbeitet».
-            // Nur eigene Reservierungen (Akteur und Gerät dieses Servers); die anderer Arbeitsplätze bleiben, Claude bekommt dort wie bisher einen lesbaren Fehler.
-            // Ohne Internet und nur für die mitgeschickte Auswahl samt deren Teilen bzw. Strang. Die Oberfläche reserviert beim nächsten eigenen Ändern von selbst neu.
-            if (!internet && auswahl.Count > 0)
-                l.AuswahlFreigegeben = await projekt.Mit(p => AuswahlFreigeben(p, auswahl));
-
-            // ---- Arbeitsordner (stabil je Projekt), Bild, MCP-Konfiguration
-            l.ArbeitsOrdner = ArbeitsOrdner(ort);
-            Directory.CreateDirectory(l.ArbeitsOrdner);
-            if (bild is not null)
+            var g = Laden(ort, id);
+            var (exe, vorArgs) = ClaudeStarter();
+            var (mcpBefehl, mcpVorArgs) = McpStarter();
+            var frage = Guid.NewGuid().ToString("N")[..8];
+            l = new Lauf(id, frage, ort, T(g["titel"]) ?? "") { Modell = modell, Internet = internet, Exe = exe };
+            lock (sperre)
             {
-                var bildOrdner = Path.Combine(l.ArbeitsOrdner, "bild");
-                Directory.CreateDirectory(bildOrdner);
-                l.BildDatei = Path.Combine(bildOrdner, $"{frage}{(bildArt == "image/png" ? ".png" : ".jpg")}");
-                await File.WriteAllBytesAsync(l.BildDatei, bild);
+                l.Beleg = laeufe.Belegen(ort, "gespraech", id, $"einer Frage im Gespräch «{Kurz(T(g["titel"]) ?? id, 60)}»", einstellungen.Zeitlimit);
+                laufend[id] = l;
             }
-            l.McpDatei = Path.Combine(l.ArbeitsOrdner, $"mcp-{frage}.json");
-            var mcpArgs = new List<string>(mcpVorArgs)
+            try
             {
-                "--projekt", ort, "--akteur", einstellungen.Akteur, "--art", "ki",
-                "--geraet", projekt.Einstellungen.Geraet, "--katalog", projekt.Einstellungen.KatalogOrdner,
-            };
-            if (l.BildDatei is not null) { mcpArgs.Add("--kontext-bild"); mcpArgs.Add(l.BildDatei); }
-            if (internet) mcpArgs.Add("--ohne-projektkontext");   // kontext_bild: «Kein Bild – mit Internet ohne Projektkontext»
-            if (einstellungen.NormenOrdner is { Length: > 0 } no) { mcpArgs.Add("--normen"); mcpArgs.Add(no); }
-            var konfig = new JsonObject
-            {
-                ["mcpServers"] = new JsonObject
+                // ---- Kontext über die Tür des Kerns auflösen (Daten, keine Anweisungen)
+                var (kontextText, kontextJson, projektName) = internet
+                    ? ("", new JsonObject(), "")
+                    : await projekt.Mit(p => KontextAufloesen(p, ansicht, geschoss, auswahl, bild is not null));
+
+                // ---- Arbeitsordner (stabil je Projekt), Bild, MCP-Konfiguration
+                l.ArbeitsOrdner = ArbeitsOrdner(ort);
+                Directory.CreateDirectory(l.ArbeitsOrdner);
+                if (bild is not null)
                 {
-                    ["hlks"] = new JsonObject { ["command"] = mcpBefehl, ["args"] = new JsonArray(mcpArgs.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()) },
-                },
-            };
-            await File.WriteAllTextAsync(l.McpDatei, konfig.ToJsonString(Json.Eingerueckt), new UTF8Encoding(false));
+                    var bildOrdner = Path.Combine(l.ArbeitsOrdner, "bild");
+                    Directory.CreateDirectory(bildOrdner);
+                    l.BildDatei = Path.Combine(bildOrdner, $"{frage}{(bildArt == "image/png" ? ".png" : ".jpg")}");
+                    await File.WriteAllBytesAsync(l.BildDatei, bild);
+                }
+                l.McpDatei = Path.Combine(l.ArbeitsOrdner, $"mcp-{frage}.json");
+                var mcpArgs = new List<string>(mcpVorArgs)
+                {
+                    "--projekt", ort, "--akteur", einstellungen.Akteur, "--art", "ki",
+                    "--geraet", projekt.Einstellungen.Geraet, "--katalog", projekt.Einstellungen.KatalogOrdner,
+                    // B3c: der MCP-Server registriert nur diese Werkzeuge (zweite Sperre unabhängig von Claude Code)
+                    "--werkzeuge", string.Join(",", McpWerkzeuge(einstellungen, internet)),
+                };
+                if (l.BildDatei is not null) { mcpArgs.Add("--kontext-bild"); mcpArgs.Add(l.BildDatei); }
+                if (internet) mcpArgs.Add("--ohne-projektkontext");   // kontext_bild: «Kein Bild – mit Internet ohne Projektkontext»
+                if (internet) mcpArgs.Add("--nur-familienunterlagen");   // B3b: Unterlagen nur zweck «familie» bzw. aus dem Internet abgerufen
+                if (einstellungen.NormenOrdner is { Length: > 0 } no) { mcpArgs.Add("--normen"); mcpArgs.Add(no); }
+                var konfig = new JsonObject
+                {
+                    ["mcpServers"] = new JsonObject
+                    {
+                        ["hlks"] = new JsonObject { ["command"] = mcpBefehl, ["args"] = new JsonArray(mcpArgs.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()) },
+                    },
+                };
+                await File.WriteAllTextAsync(l.McpDatei, konfig.ToJsonString(Json.Eingerueckt), new UTF8Encoding(false));
+                // B13: Anweisungsdateien (CLAUDE.md) in der Kette des Arbeitsordners – Warnung im Protokoll und in der Antwort
+                l.Warnung = KiUmgebung.ClaudeMdWarnung(KiUmgebung.ClaudeMdFunde(l.ArbeitsOrdner));
 
-            // ---- Sitzung: fortsetzen, wenn es eine gibt und sie auf diesem Rechner entstand; sonst neu (mit Verlauf).
-            // Mit Internet: eine eigene, getrennte Sitzung ohne Verlauf – die Claude-Sitzung des Gesprächs enthält Projektdaten früherer
-            // Fragen und darf nicht mit dem Internet zusammenkommen; umgekehrt gelangen Webinhalte nicht in die Sitzung mit Projektzugriff.
-            var sitzung = T(g["sitzung"]);
-            var sitzungGeraet = T(g["sitzungGeraet"]);
-            l.Fortsetzen = !internet && sitzung is not null && string.Equals(sitzungGeraet, projekt.Einstellungen.Geraet, StringComparison.OrdinalIgnoreCase);
-            l.Sitzung = l.Fortsetzen ? sitzung! : Guid.NewGuid().ToString();
-            var bisher = (g["nachrichten"] as JsonArray ?? []).OfType<JsonObject>().ToList();
-            var verlauf = internet ? null : Verlauf(bisher) is { Length: > 0 } v ? v : null;
-            var systemteil = Systemteil(internet);
-            l.PromptNeu = Auftrag(systemteil, kontextText, projektName, ort, verlauf, text, internet);
-            l.Prompt = l.Fortsetzen ? Auftrag(systemteil, kontextText, projektName, ort, null, text, internet) : l.PromptNeu;
-            if (!l.Fortsetzen && verlauf is not null) l.SitzungNeu = true;   // Sitzung von einem anderen Rechner: Verlauf mitgeben
+                // ---- Sitzung: fortsetzen, wenn es eine gibt und sie auf diesem Rechner entstand; sonst neu (mit Verlauf).
+                // Mit Internet: eine eigene, getrennte Sitzung ohne Verlauf – die Claude-Sitzung des Gesprächs enthält Projektdaten früherer
+                // Fragen und darf nicht mit dem Internet zusammenkommen; umgekehrt gelangen Webinhalte nicht in die Sitzung mit Projektzugriff.
+                var sitzung = T(g["sitzung"]);
+                var sitzungGeraet = T(g["sitzungGeraet"]);
+                l.Fortsetzen = !internet && sitzung is not null && string.Equals(sitzungGeraet, projekt.Einstellungen.Geraet, StringComparison.OrdinalIgnoreCase);
+                l.Sitzung = l.Fortsetzen ? sitzung! : Guid.NewGuid().ToString();
+                var bisher = (g["nachrichten"] as JsonArray ?? []).OfType<JsonObject>().ToList();
+                var verlauf = internet ? null : Verlauf(bisher) is { Length: > 0 } v ? v : null;
+                // B7: Rolle und Regeln als Systemteil (--append-system-prompt), der Auftrag trägt nur Kontext und Frage
+                l.System = Systemteil(internet);
+                l.PromptNeu = Auftrag(kontextText, projektName, ort, verlauf, text, internet);
+                l.Prompt = l.Fortsetzen ? Auftrag(kontextText, projektName, ort, null, text, internet) : l.PromptNeu;
+                if (!l.Fortsetzen && verlauf is not null) l.SitzungNeu = true;   // Sitzung von einem anderen Rechner: Verlauf mitgeben
 
-            // ---- Nachrichten: Mensch + Platzhalter der Antwort, Protokoll
-            l.Mensch = new JsonObject
+                // ---- Protokoll, Stand der Pakete, Argumente
+                Directory.CreateDirectory(GespraechOrdner(ort));
+                l.LogPfad = LogDatei(ort, id);
+                l.Log = new StreamWriter(new FileStream(l.LogPfad, FileMode.Append, FileAccess.Write, FileShare.Read), new UTF8Encoding(false)) { AutoFlush = true };
+                l.Vorher = await Task.Run(() => Speicher(ort).PaketListe().ToArray());
+                l.Argumente = [.. vorArgs, .. ClaudeArgumente(einstellungen, l.McpDatei, modell, internet, l.Sitzung, l.Fortsetzen, l.System)];
+
+                // ---- Reservierungen des Menschen auf diesem Gerät für die Auswahl freigeben (Entscheid Hauptlauf 20.10.2026): wer ein Element in der Oberfläche
+                // gewählt oder geändert hat, hält es reserviert, und Claude (anderer Akteur) bekäme sonst «Elemente werden gerade von jemand anderem bearbeitet».
+                // Nur eigene Reservierungen (Akteur und Gerät dieses Servers); die anderer Arbeitsplätze bleiben, Claude bekommt dort wie bisher einen lesbaren Fehler.
+                // Ohne Internet und nur für die mitgeschickte Auswahl samt deren Teilen bzw. Strang. Die Oberfläche reserviert beim nächsten eigenen Ändern von selbst neu.
+                // B14: erst jetzt, unmittelbar vor dem Start – scheitert danach noch etwas, holt der catch-Zweig sie zurück.
+                if (!internet && auswahl.Count > 0)
+                    (l.AuswahlFreigegebenIds, l.AuswahlFreigegeben) = await projekt.Mit(p => AuswahlFreigeben(p, auswahl));
+
+                // ---- Nachrichten: Mensch + Platzhalter der Antwort
+                l.Mensch = new JsonObject
+                {
+                    ["rolle"] = "mensch", ["frage"] = frage, ["text"] = text, ["zeit"] = Jetzt(), ["akteur"] = projekt.Einstellungen.Akteur,
+                    ["kontext"] = kontextJson, ["modell"] = modell, ["internet"] = internet,
+                };
+                if (internet) l.Mensch["internetHinweis"] = InternetHinweis;
+                if (kontextVerworfen) l.Mensch["kontextVerworfen"] = true;
+                if (l.AuswahlFreigegeben.Count > 0) l.Mensch["auswahlFreigegeben"] = new JsonArray(l.AuswahlFreigegeben.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
+                var nachrichten = g["nachrichten"] as JsonArray ?? new JsonArray();
+                nachrichten.Add(l.Mensch.DeepClone());
+                nachrichten.Add(Antwort(l));
+                g["nachrichten"] = nachrichten;
+                g["modell"] = modell;
+                g["geaendert"] = Jetzt();
+                if (B(g["titelAutomatisch"]) && bisher.Count == 0) g["titel"] = Kurz(Einzeilig(text), 60);
+                Speichern(ort, g);
+
+                Eigene(l, "Frage gestartet", new JsonObject
+                {
+                    ["gespraech"] = id, ["frage"] = frage, ["projekt"] = ort, ["claude"] = exe, ["argumente"] = new JsonArray(l.Argumente.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()),
+                    ["zeitlimitMinuten"] = einstellungen.Zeitlimit.TotalMinutes, ["mcpKonfiguration"] = konfig, ["auftrag"] = l.Prompt,
+                    ["kontext"] = kontextJson.DeepClone(), ["modell"] = modell, ["internet"] = internet, ["fortsetzen"] = l.Fortsetzen,
+                });
+                if (l.Warnung is not null) Eigene(l, l.Warnung, null);
+            }
+            catch
             {
-                ["rolle"] = "mensch", ["frage"] = frage, ["text"] = text, ["zeit"] = Jetzt(), ["akteur"] = projekt.Einstellungen.Akteur,
-                ["kontext"] = kontextJson, ["modell"] = modell, ["internet"] = internet,
-            };
-            if (internet) l.Mensch["internetHinweis"] = InternetHinweis;
-            if (kontextVerworfen) l.Mensch["kontextVerworfen"] = true;
-            if (l.AuswahlFreigegeben.Count > 0) l.Mensch["auswahlFreigegeben"] = new JsonArray(l.AuswahlFreigegeben.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
-            var nachrichten = g["nachrichten"] as JsonArray ?? new JsonArray();
-            nachrichten.Add(l.Mensch.DeepClone());
-            nachrichten.Add(Antwort(l));
-            g["nachrichten"] = nachrichten;
-            g["modell"] = modell;
-            g["geaendert"] = Jetzt();
-            if (B(g["titelAutomatisch"]) && bisher.Count == 0) g["titel"] = Kurz(Einzeilig(text), 60);
-            Speichern(ort, g);
-
-            Directory.CreateDirectory(GespraechOrdner(ort));
-            l.LogPfad = LogDatei(ort, id);
-            l.Log = new StreamWriter(new FileStream(l.LogPfad, FileMode.Append, FileAccess.Write, FileShare.Read), new UTF8Encoding(false)) { AutoFlush = true };
-            l.Vorher = await Task.Run(() => Speicher(ort).PaketListe().ToArray());
-            l.Argumente = [.. vorArgs, .. ClaudeArgumente(einstellungen, l.McpDatei, modell, internet, l.Sitzung, l.Fortsetzen)];
-            Eigene(l, "Frage gestartet", new JsonObject
-            {
-                ["gespraech"] = id, ["frage"] = frage, ["projekt"] = ort, ["claude"] = exe, ["argumente"] = new JsonArray(l.Argumente.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()),
-                ["zeitlimitMinuten"] = einstellungen.Zeitlimit.TotalMinutes, ["mcpKonfiguration"] = konfig, ["auftrag"] = l.Prompt,
-                ["kontext"] = kontextJson.DeepClone(), ["modell"] = modell, ["internet"] = internet, ["fortsetzen"] = l.Fortsetzen,
-            });
+                lock (sperre) laufend.Remove(id);
+                l.Beleg?.Dispose();
+                lock (l.LogSperre) { try { l.Log?.Dispose(); } catch (IOException) { } l.Log = null; }
+                BildLoeschen(l);
+                try { if (l.McpDatei.Length > 0 && File.Exists(l.McpDatei)) File.Delete(l.McpDatei); } catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+                await AuswahlZurueckholen(l);   // B14
+                throw;
+            }
         }
-        catch
-        {
-            lock (sperre) laufend.Remove(id);
-            l.Beleg?.Dispose();
-            lock (l.LogSperre) { try { l.Log?.Dispose(); } catch (IOException) { } l.Log = null; }
-            BildLoeschen(l);
-            throw;
-        }
+        finally { gs.Release(); }
 
         Melden(Ereignis(l, "frage", new JsonObject { ["nachricht"] = l.Mensch.DeepClone() }));
         Melden(new JsonObject { ["art"] = "ki", ["typ"] = "gespraeche" });
@@ -556,7 +639,29 @@ public sealed class GespraechDienst
         if (einstellungen.NormenAutomatischAufbauen)
             try { if (Normen() is { Sperre: null } nv) _ = nv.AufbauenImHintergrund(); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-        return new JsonObject { ["gespraech"] = id, ["frage"] = frage, ["laeuft"] = true, ["nachricht"] = l.Mensch.DeepClone() };
+        return new JsonObject { ["gespraech"] = id, ["frage"] = l.Frage, ["laeuft"] = true, ["nachricht"] = l.Mensch.DeepClone() };
+    }
+
+    /// <summary>Kontextfeld prüfen (Sicherheitsprüfung 3c, B9): höchstens KontextFeldMax Zeichen und Muster Kennzeichen/Id; null = leer.
+    /// Die Meldung nennt den Wert nicht (er kann von einer fremden Seite stammen).</summary>
+    public static string? KontextFeld(string? wert, string feld)
+    {
+        var s = wert?.Trim();
+        if (string.IsNullOrEmpty(s)) return null;
+        if (s.Length > KontextFeldMax)
+            throw new HlksFehler($"«{feld}» im Kontext ist zu lang ({s.Length} Zeichen, höchstens {KontextFeldMax}).", "Kennzeichen oder Id eines Elements angeben.");
+        if (!KontextMuster.IsMatch(s))
+            throw new HlksFehler($"«{feld}» im Kontext ist kein Kennzeichen und keine Id.",
+                "Kennzeichen oder Id eines Elements angeben – ohne Steuerzeichen, Zeilenumbrüche, Anführungszeichen und die Zeichen «» ‹› <> {} [] \\ | `.");
+        return s;
+    }
+
+    /// <summary>Gibt die zur Frage freigegebenen Reservierungen des Menschen zurück an ihn, wenn die Frage vor dem Start scheiterte (B14).</summary>
+    async Task AuswahlZurueckholen(Lauf l)
+    {
+        if (l.AuswahlFreigegebenIds.Count == 0) return;
+        try { await projekt.Mit(p => p.Speicher?.Reservieren(l.AuswahlFreigegebenIds, p.Akteur, p.Geraet)); }
+        catch (Exception ex) when (ex is HlksFehler or IOException or UnauthorizedAccessException) { /* der ursprüngliche Fehler zählt */ }
     }
 
     /// <summary>Bild als data-URL (PNG oder JPEG, höchstens 4 MB). null = kein Bild.</summary>
@@ -588,10 +693,12 @@ public sealed class GespraechDienst
         var sb = new StringBuilder();
         var json = new JsonObject();
         static string Name(Element e) => string.IsNullOrWhiteSpace(e.Name) ? "" : $" «{e.Name}»";
+        // Sicherheitsprüfung 3c, B9: Unbekanntes geht nicht wörtlich in den Auftrag (es könnte Text einer fremden Seite sein); das JSON der
+        // Nachricht behält das geprüfte Kennzeichen mit gefunden = false für die Anzeige beim Menschen.
         Element? ansichtEl = ansicht is null ? null : p.Modell.Finde(ansicht);
         if (ansicht is not null)
         {
-            if (ansichtEl is null) { sb.AppendLine($"Aktive Ansicht: «{ansicht}» (nicht im Modell)"); json["ansicht"] = new JsonObject { ["kennzeichen"] = ansicht, ["gefunden"] = false }; }
+            if (ansichtEl is null) { sb.AppendLine("Aktive Ansicht: die mitgeschickte Ansicht gibt es im Modell nicht"); json["ansicht"] = new JsonObject { ["kennzeichen"] = ansicht, ["gefunden"] = false }; }
             else
             {
                 var art = ansichtEl.Text("art");
@@ -604,7 +711,7 @@ public sealed class GespraechDienst
         if (gBezug is not null)
         {
             var g = p.Modell.Finde(gBezug);
-            if (g is null) { sb.AppendLine($"Geschoss: «{gBezug}» (nicht im Modell)"); json["geschoss"] = new JsonObject { ["kennzeichen"] = gBezug, ["gefunden"] = false }; }
+            if (g is null) { sb.AppendLine("Geschoss: das mitgeschickte Geschoss gibt es im Modell nicht"); json["geschoss"] = new JsonObject { ["kennzeichen"] = gBezug, ["gefunden"] = false }; }
             else
             {
                 var kote = g.Zahl("kote");
@@ -616,21 +723,25 @@ public sealed class GespraechDienst
         {
             sb.AppendLine($"Auswahl ({auswahl.Count} Element{(auswahl.Count == 1 ? "" : "e")}):");
             var kz = new JsonArray();
+            int unbekannt = 0;
             foreach (var a in auswahl)
             {
                 var e = p.Modell.Finde(a);
-                if (e is null) { sb.AppendLine($"- «{a}» (nicht im Modell)"); kz.Add(a); }
+                if (e is null) { unbekannt++; kz.Add(a); }
                 else { sb.AppendLine($"- {e.Kennzeichen} (Klasse {e.Klasse}){Name(e)}"); kz.Add(e.Kennzeichen); }
             }
+            if (unbekannt > 0) sb.AppendLine($"- {unbekannt} Element{(unbekannt == 1 ? "" : "e")} der Auswahl gibt es im Modell nicht");
             json["auswahl"] = kz;
+            if (unbekannt > 0) json["auswahlUnbekannt"] = unbekannt;
         }
         sb.AppendLine(bild ? "Bild der Ansicht: zur Frage mitgeschickt – mit dem Werkzeug kontext_bild ansehen." : "Bild der Ansicht: keines zur Frage.");
         json["bild"] = bild;
         return (sb.ToString().TrimEnd(), json, p.Kopf.Name);
     }
 
-    /// <summary>Gibt die eigenen Reservierungen für die gewählten Elemente, ihre Kinder und – bei Teilen eines Strangs – den Strang samt seinen Teilen frei. Gibt die Kennzeichen zurück.</summary>
-    static List<string> AuswahlFreigeben(Projekt p, List<string> auswahl)
+    /// <summary>Gibt die eigenen Reservierungen für die gewählten Elemente, ihre Kinder und – bei Teilen eines Strangs – den Strang samt seinen Teilen frei. Gibt Ids
+    /// und Kennzeichen der freigegebenen zurück.</summary>
+    static (List<string> Ids, List<string> Kennzeichen) AuswahlFreigeben(Projekt p, List<string> auswahl)
     {
         var ids = new HashSet<string>(StringComparer.Ordinal);
         foreach (var a in auswahl)
@@ -644,10 +755,12 @@ public sealed class GespraechDienst
                 foreach (var k in p.Modell.Kinder(strang.Id)) ids.Add(k.Id);
             }
         }
-        return p.FreigebenFuer(ids).Select(id => p.Modell.Finde(id)?.Kennzeichen ?? id).ToList();
+        var frei = p.FreigebenFuer(ids).ToList();
+        return (frei, frei.Select(id => p.Modell.Finde(id)?.Kennzeichen ?? id).ToList());
     }
 
-    /// <summary>Systemteil des Auftrags: Rolle und Regeln (Spezifikation 3c).</summary>
+    /// <summary>Systemteil: Rolle und Regeln (Spezifikation 3c). Geht als --append-system-prompt an Claude Code (Sicherheitsprüfung 3c, B7: Regeln im
+    /// Systemprompt wiegen bei eingeschleusten Inhalten mehr als im Benutzerteil), je Aufruf, auch bei --resume.</summary>
     public string Systemteil(bool internet) => $"""
         # Rolle
         {(internet ? RolleInternet : RolleProjekt)}
@@ -672,29 +785,29 @@ public sealed class GespraechDienst
         "«Claude» mit dem Menschen an diesem Projekt. Das Modell liest und änderst du nur mit den Werkzeugen des MCP-Servers «hlks» (Elemente\n" +
         "über ihr Kennzeichen; Überblick mit projekt_ueberblick, alle Befehle mit faehigkeiten).";
 
-    /// <summary>Rolle mit Internet: nur «Gespräch in KICAD, ohne Projektzugriff» – kein Projektname, kein Hinweis auf das Projekt (Entscheid
-    /// Hauptlauf 20.10.2026).</summary>
+    /// <summary>Rolle mit Internet: nur «Gespräch in KICAD, ohne Modellzugriff» – kein Projektname, kein Hinweis auf das Projekt (Entscheid
+    /// Hauptlauf 20.10.2026; Wortlaut nach Sicherheitsprüfung 3c, B3d).</summary>
     const string RolleInternet =
         "Du bist Claude in KICAD, dem BIM-Werkzeug der H+K Planungs AG für Heizung, Lüftung, Sanitär und MSRL – in einem Gespräch in KICAD,\n" +
-        "ohne Projektzugriff.";
+        "ohne Modellzugriff (lesbar sind nur Herstellerunterlagen und Familien).";
 
-    /// <summary>Regel 6 mit Internet: ohne Projektzugriff (Entscheid Hauptlauf 20.10.2026).</summary>
+    /// <summary>Regel 6 mit Internet: ohne Modellzugriff (Entscheid Hauptlauf 20.10.2026; Sicherheitsprüfung 3c, B3b/B3d).</summary>
     const string InternetRegel =
-        "Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Projektzugriff: du kannst das Modell weder lesen noch ändern. Erlaubt sind\n" +
+        "Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Modellzugriff: du kannst das Modell weder lesen noch ändern. Erlaubt sind\n" +
         "   nur WebSearch, unterlage_aus_url (Dateien und Seiten holen), normen_suchen, norm_lesen, kontext_bild und die Familien- und\n" +
-        "   Unterlagenwerkzeuge. Fragen zum Projekt (Modell lesen oder ändern) müssen ohne Internet gestellt werden – sag das dem Menschen, wenn\n" +
-        "   er danach fragt. Gib nie Projektdaten in eine Websuche.";
+        "   Unterlagenwerkzeuge; lesbar sind nur Herstellerunterlagen (zweck «familie») und aus dem Internet abgerufene. Fragen zum Projekt\n" +
+        "   (Modell lesen oder ändern) müssen ohne Internet gestellt werden – sag das dem Menschen, wenn er danach fragt. Gib nie Projektdaten\n" +
+        "   in eine Websuche oder eine Abruf-Adresse.";
 
-    static string Auftrag(string systemteil, string kontextText, string projektName, string ort, string? verlauf, string frage, bool internet)
+    /// <summary>Auftrag (Standardeingabe): nur Kontext und Frage – Rolle und Regeln stehen im Systemteil (B7).</summary>
+    static string Auftrag(string kontextText, string projektName, string ort, string? verlauf, string frage, bool internet)
     {
         var sb = new StringBuilder();
-        sb.AppendLine(systemteil.TrimEnd());
-        sb.AppendLine();
         if (internet)
         {
             // Entscheid Hauptlauf 20.10.2026: mit Internet kein Projektkontext (kein Projektname, Ordner, Ansicht, Geschoss, Auswahl, Bild)
             sb.AppendLine("# Kontext");
-            sb.AppendLine("Kein Projektkontext: Frage mit Internet, ohne Projektzugriff.");
+            sb.AppendLine("Kein Projektkontext: Frage mit Internet, ohne Modellzugriff.");
         }
         else
         {
@@ -756,7 +869,7 @@ public sealed class GespraechDienst
                     l.Fortsetzen = false; l.SitzungNeu = true; l.Sitzung = Guid.NewGuid().ToString(); l.Prompt = l.PromptNeu;
                     l.StderrEnde.Clear(); l.ResultEreignis = null; l.McpFehlgeschlagen = false; l.SitzungAusInit = null; l.InitGesehen = false;
                 }
-                l.Argumente = [.. einstellungen.ClaudeVorArgumente, .. ClaudeArgumente(einstellungen, l.McpDatei, l.Modell, l.Internet, l.Sitzung, false)];
+                l.Argumente = [.. einstellungen.ClaudeVorArgumente, .. ClaudeArgumente(einstellungen, l.McpDatei, l.Modell, l.Internet, l.Sitzung, false, l.System)];
                 Eigene(l, "Neuer Versuch", new JsonObject { ["argumente"] = new JsonArray(l.Argumente.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()), ["auftrag"] = l.Prompt });
                 (status, fehler, fehlerArt) = await Versuch(l);
                 if (status == "neu_beginnen") (status, fehler, fehlerArt) = Auswerten(l, -1, true);
@@ -785,11 +898,8 @@ public sealed class GespraechDienst
             RedirectStandardInput = true, RedirectStandardOutput = true, RedirectStandardError = true,
             StandardInputEncoding = new UTF8Encoding(false), StandardOutputEncoding = new UTF8Encoding(false), StandardErrorEncoding = new UTF8Encoding(false),
         };
-        // Über das Abo wie HKAP und die Aufträge: ein gesetzter API-Schlüssel ginge sonst vor
-        psi.Environment.Remove("ANTHROPIC_API_KEY");
-        psi.Environment.Remove("ANTHROPIC_AUTH_TOKEN");
-        psi.Environment.Remove("CLAUDECODE");
-        psi.Environment["MAX_MCP_OUTPUT_TOKENS"] = "60000";
+        // Über das Abo wie HKAP und die Aufträge: ein gesetzter API-Schlüssel ginge sonst vor; kein umgeleitetes Ziel (B12, KiUmgebung)
+        KiUmgebung.Bereinigen(psi.Environment);
         foreach (var a in l.Argumente) psi.ArgumentList.Add(a);
 
         Process? p;
@@ -852,9 +962,15 @@ public sealed class GespraechDienst
         // Änderungen: massgebend sind die neuen Pakete des Akteurs KI dieses Geräts in der Ablage
         try { await AenderungenAusAblage(l); }
         catch (Exception ex) { Eigene(l, "Änderungen nicht ermittelt: " + ex.Message, null); }
-        // Reservierungen der KI freigeben (ein abgebrochener MCP-Server kann es nicht mehr selbst)
-        try { await Task.Run(() => Speicher(l.Ort).Freigeben(einstellungen.Akteur, projekt.Einstellungen.Geraet)); }
-        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Eigene(l, "Reservierungen der KI nicht freigegeben: " + ex.Message, null); }
+        // Reservierungen der KI freigeben (ein abgebrochener MCP-Server kann es nicht mehr selbst). Sicherheitsprüfung 3c, B8: nur, solange die
+        // Sperrdatei des Projekts noch diesem Lauf gehört – dann ist er der einzige Lauf der KI auf diesem Gerät im Projekt, und alle Reservierungen
+        // von KI@Gerät sind seine (bzw. verwaiste früherer Läufe). Hat nach Ablauf ein anderer Prozess die Sperre übernommen, bleiben sie.
+        if (KiLaeufe.HaeltSperre(l.Beleg))
+        {
+            try { await Task.Run(() => Speicher(l.Ort).Freigeben(einstellungen.Akteur, projekt.Einstellungen.Geraet)); }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { Eigene(l, "Reservierungen der KI nicht freigegeben: " + ex.Message, null); }
+        }
+        else Eigene(l, "Reservierungen der KI nicht freigegeben: die Sperrdatei des Projekts gehört nicht mehr diesem Lauf (anderer KI-Lauf).", null);
 
         JsonObject nachricht;
         lock (l.Sperre)
@@ -863,7 +979,9 @@ public sealed class GespraechDienst
             if (l.Text.ToString().Trim().Length == 0 && T(l.ResultEreignis?["result"]) is { Length: > 0 } rt && status == "fertig") l.Text.Append(rt);
             nachricht = Antwort(l);
         }
-        // Gespräch speichern: Antwort ersetzen, Sitzung merken
+        // Gespräch speichern: Antwort ersetzen, Sitzung merken – unter der Sperre des Gesprächs (B11)
+        var gs = GespraechSperre(l.Gespraech);
+        await gs.WaitAsync();
         try
         {
             var g = Laden(l.Ort, l.Gespraech);
@@ -887,6 +1005,7 @@ public sealed class GespraechDienst
         }
         catch (Exception ex) when (ex is HlksFehler or AuftragHttpFehler or IOException or UnauthorizedAccessException)
         { Eigene(l, "Gespräch nicht gespeichert: " + ex.Message, null); }
+        finally { gs.Release(); }
 
         Eigene(l, $"Frage beendet: {status}" + (fehler is null ? "" : " – " + fehler), null);
         lock (l.LogSperre) { try { l.Log?.Dispose(); } catch (IOException) { } l.Log = null; }
@@ -921,6 +1040,7 @@ public sealed class GespraechDienst
             ["aenderungen"] = new JsonArray(l.Aenderungen.OrderBy(a => T(a["paket"]), StringComparer.Ordinal).Select(a => (JsonNode)a.DeepClone()).ToArray()),
         };
         if (l.Fehler is not null) { o["fehler"] = l.Fehler; o["fehlerart"] = l.FehlerArt; }
+        if (l.Warnung is not null) o["warnung"] = l.Warnung;   // B13: CLAUDE.md in der Kette des Arbeitsordners
         if (l.SitzungNeu) o["sitzungNeu"] = true;
         if (l.Internet) o["internetHinweis"] = InternetHinweis;
         if (l.Internet || l.Abrufe.Count > 0)
@@ -1145,7 +1265,7 @@ public sealed class GespraechDienst
             case "user":
                 foreach (var b in (o["message"]?["content"] as JsonArray ?? []).OfType<JsonObject>().Where(b => T(b["type"]) == "tool_result"))
                 {
-                    var inhalt = b["content"] is JsonArray arr ? string.Join(" ", arr.OfType<JsonObject>().Select(x => T(x["text"]) ?? "")) : T(b["content"]) ?? "";
+                    var inhalt = KiUmgebung.Werkzeuginhalt(b["content"]);   // B15: ohne Kopfzeile, damit paketId/fehler lesbar bleiben
                     WerkzeugEnde(l, T(b["tool_use_id"]), B(b["is_error"]), inhalt);
                 }
                 break;
@@ -1350,6 +1470,8 @@ public sealed class GespraechDienst
             {
                 var id = Path.GetFileNameWithoutExtension(datei);
                 if (!IdMuster.IsMatch(id)) continue;
+                var gs = GespraechSperre(id);   // B11: Lesen–Ändern–Schreiben nicht mit einer Frage überkreuzen
+                await gs.WaitAsync();
                 try
                 {
                     var g = Laden(ort, id);
@@ -1362,6 +1484,7 @@ public sealed class GespraechDienst
                     if (LaufVon(id) is null) break;
                 }
                 catch (Exception ex) when (ex is HlksFehler or AuftragHttpFehler or IOException) { }
+                finally { gs.Release(); }
             }
         Melden(new JsonObject { ["art"] = "ki", ["gespraech"] = gespraech, ["typ"] = "zurueckgenommen", ["paket"] = paketId, ["rueckgaengig"] = e.PaketId });
         return new JsonObject
@@ -1379,8 +1502,9 @@ public sealed class GespraechDienst
     /// Internetliste, --disallowedTools (Verbotsliste bzw. mit Internet alle Werkzeuge des Servers ausser der Internetliste),
     /// --permission-mode dontAsk (nicht Erlaubtes wird abgelehnt statt gefragt), --disable-slash-commands, --setting-sources local (keine
     /// Benutzereinstellungen; die Anmeldung bleibt), --model, --session-id (neue Sitzung mit fester Id) bzw. --resume (fortsetzen), optional --effort.
-    /// Bewusst NICHT --no-session-persistence (sonst liesse sich das Gespräch nicht fortsetzen).</summary>
-    public static List<string> ClaudeArgumente(GespraechEinstellungen e, string mcpDatei, string modell, bool internet, string sitzung, bool fortsetzen)
+    /// Bewusst NICHT --no-session-persistence (sonst liesse sich das Gespräch nicht fortsetzen).
+    /// system: Rolle und Regeln als --append-system-prompt (Sicherheitsprüfung 3c, B7; je Aufruf, auch mit --resume).</summary>
+    public static List<string> ClaudeArgumente(GespraechEinstellungen e, string mcpDatei, string modell, bool internet, string sitzung, bool fortsetzen, string? system = null)
     {
         // Ohne Internet: der ganze Server ausser der Verbotsliste. Mit Internet (ohne Projektzugriff): nur die Internetliste ist erlaubt, alles
         // andere des Servers steht in --disallowedTools (Claude sieht es gar nicht); die Verbotsliste gilt weiter (ausser unterlage_aus_url).
@@ -1401,6 +1525,7 @@ public sealed class GespraechDienst
         if (fortsetzen) { a.Add("--resume"); a.Add(sitzung); }
         else { a.Add("--session-id"); a.Add(sitzung); }
         if (!string.IsNullOrWhiteSpace(e.Aufwand)) { a.Add("--effort"); a.Add(e.Aufwand); }
+        if (!string.IsNullOrWhiteSpace(system)) { a.Add("--append-system-prompt"); a.Add(system); }
         return a;
     }
 

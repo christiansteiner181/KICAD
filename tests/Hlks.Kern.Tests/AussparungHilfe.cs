@@ -31,9 +31,9 @@ static class AussparungHilfe
     }
 
     /// <summary>Vier Wände 6000 × 4000, Dicke 200, Höhe 3000 (W-1 Süd: y −100 … 100), Geschoss OG (Kote 3000), Testserie, Vorgaben.</summary>
-    public static Projekt Wandprojekt(bool vorgaben = true)
+    public static Projekt Wandprojekt(bool vorgaben = true, IProjektSpeicher? speicher = null)
     {
-        var p = Rechteck();
+        var p = Rechteck(speicher: speicher);
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
             ["klasse"] = "Geschoss", ["kennzeichen"] = "OG", ["teilVon"] = "GEB", ["eigenschaften"] = new JsonObject { ["kote"] = 3000, ["hoehe"] = 3000 },

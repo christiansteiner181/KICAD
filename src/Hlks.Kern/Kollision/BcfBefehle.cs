@@ -61,7 +61,7 @@ public static class BcfLesen
 {
     public static JsonObject Abfrage(Projekt p, string datei)
     {
-        var inhalt = BcfLeser.Lesen(datei, p.Katalog);
+        var inhalt = BcfLeser.Lesen(KiPfade.Pruefen(p, datei, "bcf_lesen"), p.Katalog);   // Sicherheitsprüfung 3c, B3a/B4: KI nur unter den Wurzeln
         var nachGuid = BcfFormat.TopicGuids(p.Kopf.Id, p.Modell, p.Katalog).ToDictionary(x => x.Value, x => x.Key);
         var aufl = new BcfAufloesung(p, p.Modell);
         int zugeordnet = 0;
@@ -151,7 +151,7 @@ public sealed class BcfImport : IBefehl
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var inhalt = BcfLeser.Lesen(Param.Text(p, "datei", true)!, k.Katalog);
+        var inhalt = BcfLeser.Lesen(KiPfade.Pruefen(k.Projekt, Param.Text(p, "datei", true)!, Name), k.Katalog);   // Sicherheitsprüfung 3c, B3a/B4
         var name = Path.GetFileName(inhalt.Datei);
         var nachGuid = BcfFormat.TopicGuids(k.Projekt.Kopf.Id, k.Arbeit, k.Katalog).ToDictionary(x => x.Value, x => x.Key);
         var erlaubt = k.Katalog.Klasse("Kollision").Eigenschaften.FirstOrDefault(x => x.Name == "status")?.Auswahl ?? [];

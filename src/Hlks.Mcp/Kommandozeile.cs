@@ -31,6 +31,8 @@ public sealed class Argumente
 
     public bool Hat(string name) => optionen.ContainsKey(name);
     public string? Wert(string name, int index = 0) => optionen.TryGetValue(name, out var l) && index < l.Count ? l[index] : null;
+    /// <summary>Alle Werte einer Option (leer, wenn sie fehlt).</summary>
+    public IReadOnlyList<string> Werte(string name) => optionen.TryGetValue(name, out var l) ? l : [];
 }
 
 public static class Kommandozeile

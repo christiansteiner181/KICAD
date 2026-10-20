@@ -48,7 +48,11 @@ public sealed class UnterlageEinfuegen : IBefehl
         var zweck = (Param.Text(p, "zweck") ?? "plan").Trim().ToLowerInvariant();
         if (zweck is not ("plan" or "familie")) throw new HlksFehler($"zweck «{zweck}» gibt es nicht.", "Erlaubt: plan (Grundlage im Grundriss) oder familie (Herstellerunterlage für eine Familie).");
         bool fuerFamilie = zweck == "familie";
-        var art = ArtBestimmen(quelle, Param.Text(p, "art"), fuerFamilie);
+        // Sicherheitsprüfung 3c, B3a/B4: für die KI nur Pfade unter dem Projektordner und den Wurzeln aus kataloge/buero.json, geprüft vor dem
+        // ersten Dateizugriff (auch dem Blick in eine .txt); ein blosser Name meint den Ordner unterlagen
+        var inhalt = !KiPfade.IstKi(k.Projekt) ? quelle
+            : KiPfade.IstName(quelle) ? Path.Combine(Unterlagen.Ordner(k.Projekt), quelle) : KiPfade.Pruefen(k.Projekt, quelle, Name);
+        var art = ArtBestimmen(quelle, Param.Text(p, "art"), fuerFamilie, inhalt);
         if (fuerFamilie) { FamilienUnterlage(k, p, quelle, art); return; }
         if (p["bezuege"] is not null) k.Hinweise.Add("bezuege gilt nur bei zweck «familie» und wurde ignoriert.");
         if (Param.Text(p, "geschoss") is null)
@@ -184,7 +188,8 @@ public sealed class UnterlageEinfuegen : IBefehl
         return d.Length > Praefix && d[Praefix - 1] == '_' ? d[Praefix..] : d;
     }
 
-    static string ArtBestimmen(string datei, string? art, bool fuerFamilie = false)
+    /// <param name="inhalt">Pfad, unter dem der Inhalt gelesen werden darf (Typkatalog-Erkennung bei .txt); null = datei.</param>
+    static string ArtBestimmen(string datei, string? art, bool fuerFamilie = false, string? inhalt = null)
     {
         const string NurFamilie = "step, iges, stl, obj, xlsx, csv, typkatalog, html und ifc gibt es nur mit zweck «familie» (Herstellerunterlage ohne Geschoss und Lage).";
         if (art is not null)
@@ -203,7 +208,8 @@ public sealed class UnterlageEinfuegen : IBefehl
         var ext = Path.GetExtension(datei).ToLowerInvariant();
         if (fuerFamilie)
         {
-            return UnterlagenArten.AusEndung(datei, File.Exists(datei) ? datei : null)
+            var lesbar = inhalt ?? datei;
+            return UnterlagenArten.AusEndung(datei, File.Exists(lesbar) ? lesbar : null)
                 ?? throw new HlksFehler($"Aus der Endung «{ext}» lässt sich die Art der Datei nicht bestimmen.",
                     "art angeben: " + string.Join(", ", UnterlagenArten.FuerFamilie) + ". TIFF und RFA werden nicht gelesen.");
         }

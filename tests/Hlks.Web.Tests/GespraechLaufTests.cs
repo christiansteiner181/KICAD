@@ -217,11 +217,17 @@ public class GespraechLaufTests
         Assert.DoesNotContain("mcp__hlks__unterlage_aus_url", verboten);
         foreach (var w in new[] { "familie_freigeben", "projekt_ueberblick", "element_lesen", "element_aendern", "leitung_ziehen", "rueckgaengig", "elemente_suchen", "aenderungen" })
             Assert.Contains("mcp__hlks__" + w, verboten);
-        Assert.Contains("Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Projektzugriff", Z(info["prompt"]));
-        Assert.Contains("müssen ohne Internet gestellt werden", Z(info["prompt"]));
+        // B7: die Regeln stehen im Systemteil (--append-system-prompt), nicht im Auftrag
+        Assert.Contains("Internet ist bei dieser Frage erlaubt – dafür arbeitest du OHNE Modellzugriff", Schalter(info, "--append-system-prompt"));
+        Assert.Contains("müssen ohne Internet gestellt werden", Schalter(info, "--append-system-prompt"));
+        Assert.DoesNotContain("Internet ist bei dieser Frage erlaubt", Z(info["prompt"]));
+        // B3b/B3c: der MCP-Server registriert nur die Internetliste und liest nur Herstellerunterlagen
+        var margs = info["mcpKonfiguration"]!["mcpServers"]!["hlks"]!["args"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.Equal(GespraechDienst.InternetWerkzeuge.Order(), margs[margs.IndexOf("--werkzeuge") + 1].Split(',').Order());
+        Assert.Contains("--nur-familienunterlagen", margs);
         Assert.True(antwort["internet"]!.GetValue<bool>());
-        Assert.Equal("Internet: ohne Projektzugriff", Z(antwort["internetHinweis"]));
-        Assert.Equal("Internet: ohne Projektzugriff", Z((await s.Gespraech(id))["nachrichten"]![0]!["internetHinweis"]));
+        Assert.Equal("Internet: ohne Modellzugriff; Unterlagen und Familien lesbar", Z(antwort["internetHinweis"]));
+        Assert.Equal("Internet: ohne Modellzugriff; Unterlagen und Familien lesbar", Z((await s.Gespraech(id))["nachrichten"]![0]!["internetHinweis"]));
         var abrufe = antwort["abrufe"]!.AsArray();
         Assert.Contains(abrufe, a => Z(a!["art"]) == "suche" && Z(a["text"]) == "Prüfleitung Datenblatt" && a["erfolg"]!.GetValue<bool>());
         Assert.Contains(abrufe, a => Z(a!["art"]) == "abruf" && Z(a["url"]) == "https://www.hersteller.example/gesperrt.pdf" && !a["erfolg"]!.GetValue<bool>());
@@ -302,8 +308,11 @@ public class GespraechLaufTests
 
         var info = s.AttrappeInfos(id)[^1];
         var prompt = Z(info["prompt"]);
-        Assert.Contains("Kein Projektkontext: Frage mit Internet, ohne Projektzugriff.", prompt);
-        Assert.Contains("in einem Gespräch in KICAD,\nohne Projektzugriff.", prompt);
+        Assert.Contains("Kein Projektkontext: Frage mit Internet, ohne Modellzugriff.", prompt);
+        var system = Schalter(info, "--append-system-prompt")!;
+        Assert.Contains("in einem Gespräch in KICAD,\nohne Modellzugriff", system);
+        Assert.DoesNotContain("an diesem Projekt", system);
+        Assert.DoesNotContain(projektName, system);
         Assert.DoesNotContain("an diesem Projekt", prompt);
         Assert.DoesNotContain(projektName, prompt);
         Assert.DoesNotContain(s.Ordner, prompt);
@@ -329,7 +338,7 @@ public class GespraechLaufTests
         var mensch = (await s.Gespraech(id))["nachrichten"]![2]!;
         Assert.True(mensch["kontextVerworfen"]!.GetValue<bool>());
         Assert.Empty(mensch["kontext"]!.AsObject());
-        Assert.Equal("Internet: ohne Projektzugriff", Z(mensch["internetHinweis"]));
+        Assert.Equal("Internet: ohne Modellzugriff; Unterlagen und Familien lesbar", Z(mensch["internetHinweis"]));
         Assert.Null((await s.Gespraech(id))["nachrichten"]![0]!["kontextVerworfen"]);   // ohne Internet kein Vermerk
 
         // die nächste Frage ohne Internet setzt die Sitzung des Gesprächs fort

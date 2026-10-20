@@ -123,6 +123,7 @@ public static class AussparungIfcExport
         var datei = (Param.Text(par, "datei", true) ?? "").Trim().Trim('"');
         if (!string.Equals(Path.GetExtension(datei), ".ifc", StringComparison.OrdinalIgnoreCase))
             throw new HlksFehler($"Die Zieldatei «{datei}» braucht die Endung .ifc.", "datei z. B. «…\\Aussparungen_EG_2026-10-19.ifc» angeben.");
+        datei = KiPfade.Pruefen(p, datei, "aussparungen_ifc");   // Sicherheitsprüfung 3c, B3a/B4: KI nur unter den Wurzeln aus kataloge/buero.json
         string pfad;
         try { pfad = Path.GetFullPath(datei); }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)

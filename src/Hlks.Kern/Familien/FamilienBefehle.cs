@@ -280,9 +280,12 @@ public sealed class FamilieLaden : IBefehl
         // datei: mitgeliefert (kataloge/familien) › Ordner bzw. Datei der Bibliothek › voller Pfad
         var ordner = Path.Combine(k.Katalog.Ordner, "familien");
         var mitgeliefert = Path.IsPathRooted(datei!) ? null : Path.Combine(ordner, datei!.EndsWith(".json", StringComparison.OrdinalIgnoreCase) ? datei : datei + ".familie.json");
+        // Sicherheitsprüfung 3c, B3a/B4: für die KI nur Pfade unter dem Projektordner und den Wurzeln aus kataloge/buero.json (auch «..\» im Namen),
+        // geprüft vor dem ersten Dateizugriff. Die Bibliothek prüft BibliotheksPfad selbst (nur unter ihrer Wurzel, sonst ohne Zugriff null).
+        if (mitgeliefert is not null) mitgeliefert = KiPfade.Pruefen(k.Projekt, mitgeliefert, Name);
         if (mitgeliefert is not null && File.Exists(mitgeliefert)) { DateiLaden(k, mitgeliefert, ordner); return; }
         if (ort.Aktiv && BibliotheksPfad(ort.Pfad!, datei!) is { } bp) { AusBibliothek(k, ort, null, bp.Ordner, version ?? bp.Version); return; }
-        var pfad = Path.IsPathRooted(datei!) ? datei! : mitgeliefert!;
+        var pfad = KiPfade.Pruefen(k.Projekt, Path.IsPathRooted(datei!) ? datei! : mitgeliefert!, Name);
         if (!File.Exists(pfad)) throw new HlksFehler($"Familiendatei «{pfad}» gibt es nicht.", Vorschlag(k));
         if (version is not null) k.Hinweise.Add("version gilt nur für Familien der Bibliothek (id) und wurde ignoriert.");
         DateiLaden(k, pfad, ordner);

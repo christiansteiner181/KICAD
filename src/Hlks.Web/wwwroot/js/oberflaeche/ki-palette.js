@@ -4,11 +4,13 @@
 // nur die Wahl des Gesprächs, des Modells und des Internet-Schalters je Projekt (ki-text.js › wahlLesen/wahlSchreiben).
 //
 //   Ort:        Palettenverwaltung (paletten.js, Id «claude»): Vorgabe rechts angedockt, nur auf Verlangen sichtbar (Ansicht › Paletten oder Kürzel KI, aktionen-ki.js)
-//   Kopf:       Gesprächswahl (Liste, «Neues Gespräch», Entfernen), Modellwahl, Schalter «Internet» (mit Hinweis «ohne Projektzugriff»)
+//   Kopf:       Gesprächswahl (Liste, «Neues Gespräch», Entfernen; nicht lesbare Dateien grau «nicht lesbar – Datei …»), Modellwahl, Schalter «Internet»
+//               (mit Hinweis «ohne Modellzugriff; Unterlagen und Familien lesbar», Sicherheitsprüfung 3c, B3d)
 //   Verlauf:    Mensch rechts, Claude links; Text formatiert (ki-darstellung.js, nie HTML aus fremdem Text); Werkzeugaufrufe kompakt und aufklappbar;
 //               Änderungen als Liste mit Elementen (Klick wählt im Modell) und «Zurücknehmen» je Paket (409: Ablehnung und spätere Pakete verständlich)
 //   Eingabe:    mehrzeilig, Strg+Enter sendet, «Abbrechen» während des Laufs; Kontext-Chips (Ansicht, Geschoss, Auswahl, Bild der Ansicht) je Frage abwählbar
-//   Internet:   mit Internet arbeitet Claude OHNE Projektzugriff und OHNE Projektkontext: Chips ausgegraut, nichts geht mit, Nachrichten sind markiert
+//   Internet:   mit Internet arbeitet Claude OHNE Modellzugriff und OHNE Projektkontext (Herstellerunterlagen und Familien bleiben lesbar): Chips
+//               ausgegraut, nichts geht mit, Nachrichten sind markiert
 //   Normen:     zweiter Reiter «Normen»: Suchfeld, Treffer mit Norm, Seite, Ziffer und Auszug (GET /api/normen/suche)
 // Reine Teile (Formatierung, Kontext, Texte, Merken) stehen in ki-text.js, der Zustand des Verlaufs in ki-zustand.js – beide in Node getestet (ki-palette.test.mjs).
 
@@ -482,7 +484,11 @@ function kopfZeichnen() {
   sel.replaceChildren();
   const neu = el('option', null, '＋ Neues Gespräch'); neu.value = '';
   sel.appendChild(neu);
-  for (const g of z.gespraeche) { const o = el('option', null, T.gespraechLabel(g)); o.value = g.id; sel.appendChild(o); }
+  for (const g of z.gespraeche) {
+    const o = el('option', null, T.gespraechLabel(g)); o.value = g.id;
+    if (g.lesbar === false) { o.disabled = true; o.title = T.nichtLesbarTipp(g); o.className = 'ki-nicht-lesbar'; }   // Sicherheitsprüfung 3c, B10
+    sel.appendChild(o);
+  }
   sel.value = z.gespraech?.id ?? '';
   ui.loeschK.disabled = !z.gespraech;
   ui.neuK.disabled = !z.gespraech;   // schon eine leere Seite
@@ -497,7 +503,7 @@ function kopfZeichnen() {
   ui.internet.setAttribute('aria-disabled', String(!!gesperrt));
   ui.internet.classList.toggle('gesperrt', !!gesperrt);
   ui.internet.classList.toggle('an', wahl.internet);
-  ui.internet.title = gesperrt || (wahl.internet ? `Internet ist an: ${T.INTERNET_TIPP}` : 'Internet für die nächste Frage zuschalten (dann ohne Projektzugriff)');
+  ui.internet.title = gesperrt || (wahl.internet ? `Internet ist an: ${T.INTERNET_TIPP}` : `Internet für die nächste Frage zuschalten (dann ${T.INTERNET_HINWEIS})`);
   ui.internetNote.hidden = !wahl.internet;
   ui.internetNote.textContent = einst?.internetHinweis?.replace(/^Internet:\s*/i, '') || T.INTERNET_HINWEIS;
 }
@@ -506,7 +512,7 @@ function bandZeichnen() {
   const t = [];
   if (ladeFehler) t.push({ art: 'fehler', text: `Claude ist im Moment nicht erreichbar: ${ladeFehler}` });
   else if (einst?.verfuegbar === false) t.push({ art: 'fehler', text: T.verfuegbarText(einst) });
-  if (wahl.internet) t.push({ art: 'internet', text: 'Internet ist an: Claude arbeitet ohne Projektzugriff und ohne Projektkontext. Projektfragen bitte ohne Internet stellen.' });
+  if (wahl.internet) t.push({ art: 'internet', text: 'Internet ist an: Claude arbeitet ohne Modellzugriff und ohne Projektkontext; Unterlagen und Familien bleiben lesbar. Projektfragen bitte ohne Internet stellen.' });
   ui.band.hidden = t.length === 0;
   ui.band.replaceChildren(...t.map((x) => el('div', `ki-band-zeile ${x.art}`, x.text)));
 }
@@ -543,7 +549,7 @@ function eingabeZeichnen() {
   ui.abbrechen.textContent = bricht ? 'Bricht ab …' : 'Abbrechen';
   ui.senden.hidden = laeuft;
   ui.senden.disabled = sendet || einst?.verfuegbar === false;
-  ui.feld.placeholder = laeuft ? 'Claude antwortet … (die nächste Frage kann schon vorbereitet werden)' : wahl.internet ? 'Frage ohne Projektzugriff … (Strg+Enter sendet)' : 'Frage an Claude … (Strg+Enter sendet)';
+  ui.feld.placeholder = laeuft ? 'Claude antwortet … (die nächste Frage kann schon vorbereitet werden)' : wahl.internet ? 'Frage ohne Modellzugriff … (Strg+Enter sendet)' : 'Frage an Claude … (Strg+Enter sendet)';
   zaehlerZeichnen();
 }
 
@@ -617,7 +623,7 @@ function nachrichtZeichnen(rolle, frage) {
 }
 
 function internetMarke(n) {
-  const m = el('span', 'ki-internet-marke', `Internet · ${(n.internetHinweis || 'Internet: ohne Projektzugriff').replace(/^Internet:\s*/i, '')}`);
+  const m = el('span', 'ki-internet-marke', `Internet · ${(n.internetHinweis || `Internet: ${T.INTERNET_HINWEIS}`).replace(/^Internet:\s*/i, '')}`);
   m.title = T.INTERNET_TIPP;
   return m;
 }

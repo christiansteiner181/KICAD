@@ -125,7 +125,7 @@ public sealed class UnterlageAusUrl : IBefehl
         var umbenannt = Path.Combine(verz, eindeutig); File.Move(pfad, umbenannt); pfad = umbenannt;
         var artName = art is "png" or "jpg" ? "bild" : art;
         bool vorhanden = k.Arbeit.DerKlasse("Unterlage").Any(u => u.Geschoss is null && u.Text("zweck") == "familie" && u.Text("art") == artName && Unterlagen.OriginalName(u.Text("datei") ?? "") == eindeutig);
-        var (name, stand) = Unterlagen.Ablegen(k.Projekt, pfad);
+        var (name, stand) = Unterlagen.Ablegen(k.Projekt, pfad, kernDatei: true);   // eigener Download im Temp-Ordner, kein Parameter (KiPfade)
         var ordner = Unterlagen.Ordner(k.Projekt);
         if (quelleSeite is not null && art == "html") { try { File.WriteAllText(Path.Combine(ordner, name) + ".quelle", quelleSeite, new UTF8Encoding(false)); } catch (IOException) { } }
         int vorher = k.Operationen.Count;

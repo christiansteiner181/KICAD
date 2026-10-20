@@ -173,7 +173,8 @@ public sealed class KontextBildTests : IDisposable
             Assert.Equal(Png, Convert.FromBase64String(img["data"]!.GetValue<string>()));
 
             var n = Anfrage("tools/call", new JsonObject { ["name"] = "normen_suchen", ["arguments"] = new JsonObject { ["frage"] = "Mindestgefälle Prüfleitung" } })["result"]!;
-            var antwort = JsonNode.Parse(n["content"]!.AsArray()[0]!["text"]!.GetValue<string>())!;
+            Assert.Equal(KiInhalt.Kopfzeile, n["content"]!.AsArray()[0]!["text"]!.GetValue<string>());   // Sicherheitsprüfung 3c, B15
+            var antwort = JsonNode.Parse(n["content"]!.AsArray()[1]!["text"]!.GetValue<string>())!;
             Assert.Equal(normen, antwort["quelle"]!.GetValue<string>());
             Assert.Equal("SIA 9999:2026", antwort["treffer"]![0]!["norm"]!.GetValue<string>());
         }

@@ -25,6 +25,11 @@
 //   daneben; beides wird nach dem Lauf gelöscht (die Konfiguration steht in der Protokolldatei).
 // - Die Liste der Aufträge gilt seit dem Start dieses Servers (nur im Speicher); die Protokolle bleiben im Projektordner.
 // - Eine Familie gilt als «von der KI angelegt/geändert», wenn ein neues Paket des Akteurs «KI» (AkteurArt ki) sie berührt.
+// - Sicherheitsprüfung 3c (berichte/modul-3c-sicherheitspruefung.md): der MCP-Server registriert mit --werkzeuge nur die Liste des Laufs (B3c);
+//   mit Internet liest er nur Herstellerunterlagen (zweck «familie»), aus dem Internet abgerufene und ausdrücklich die Unterlagen des Auftrags
+//   (--nur-familienunterlagen, --unterlagen-erlaubt <Datei in der Ablage>…; B3b); Dateipfade der KI nur unter dem Projektordner und den Wurzeln
+//   aus kataloge/buero.json (Kern, B3a/B4); Sperrdatei über Prozessgrenzen (KiLaeufe, B8); Umgebung bereinigt und CLAUDE.md-Kette geprüft
+//   (KiUmgebung, B12/B13; Warnung im Protokoll und in ergebnis.warnung); Werkzeugergebnisse ohne Kopfzeile ausgewertet (B15).
 
 using System.Diagnostics;
 using System.Text;
@@ -185,6 +190,7 @@ public sealed class AuftragDienst
         public string[] Vorher = [];                            // Pakete vor dem Lauf
         public bool McpFehlgeschlagen;
         public IDisposable? Beleg;                              // Modul 3c: Projekt für diesen KI-Lauf belegt (KiLaeufe)
+        public string? Warnung;                                 // Sicherheitsprüfung 3c, B13: CLAUDE.md in der Kette des Arbeitsordners
     }
 
     readonly ProjektDienst projekt;
@@ -243,7 +249,8 @@ public sealed class AuftragDienst
                 throw new AuftragHttpFehler(409, $"Für dieses Projekt läuft schon ein KI-Auftrag ({laeuft.Id}).",
                     "Warten, bis er fertig ist, oder ihn abbrechen (POST /api/auftraege/" + laeuft.Id + "/abbrechen).");
             // Modul 3c: auch kein Auftrag, solange im Projekt eine Frage der KI-Palette läuft (409 «Claude arbeitet gerade an …»)
-            a.Beleg = laeufe?.Belegen(ort, "auftrag", id, $"dem KI-Auftrag {id} (Familie aus Unterlagen)");
+            // Sicherheitsprüfung 3c, B8: auch über Prozessgrenzen (Sperrdatei, gültig bis Zeitlimit + Nachlauf)
+            a.Beleg = laeufe?.Belegen(ort, "auftrag", id, $"dem KI-Auftrag {id} (Familie aus Unterlagen)", zeitlimit);
             auftraege.Add(a);
         }
         try
@@ -296,7 +303,17 @@ public sealed class AuftragDienst
             {
                 "--projekt", ort, "--akteur", einstellungen.Akteur, "--art", "ki",
                 "--geraet", projekt.Einstellungen.Geraet, "--katalog", projekt.Einstellungen.KatalogOrdner,
+                // Sicherheitsprüfung 3c, B3c: der MCP-Server registriert nur die erlaubten Werkzeuge (mit Internet die Internetliste)
+                "--werkzeuge", string.Join(",", (internet ? einstellungen.WerkzeugeInternet : einstellungen.Werkzeuge).Distinct()),
             };
+            if (internet)
+            {
+                // B3b: mit Internet nur Herstellerunterlagen (zweck «familie»), aus dem Internet abgerufene und ausdrücklich die des Auftrags
+                // (auch hochgeladene Dateien ohne Element bzw. ohne zweck) – Dateiname in der Ablage, eindeutig je Inhalt
+                mcpArgs.Add("--nur-familienunterlagen");
+                mcpArgs.Add("--unterlagen-erlaubt");
+                mcpArgs.AddRange(zeilen.Select(u => u.Datei).Distinct(StringComparer.OrdinalIgnoreCase));
+            }
             var konfig = new JsonObject
             {
                 ["mcpServers"] = new JsonObject
@@ -315,6 +332,9 @@ public sealed class AuftragDienst
             a.Vorher = await Task.Run(() => Speicher(ort).PaketListe().ToArray());
             a.Log.WriteLine(Json.Text(new { type = "hlks", zeit = Jetzt(), text = "Auftrag gestartet", id, art, projekt = ort,
                 claude = exe, argumente = a.Argumente, zeitlimitMinuten = zeitlimit.TotalMinutes, eingabe = a.Eingabe, mcpKonfiguration = konfig }));
+            // B13: Anweisungsdateien (CLAUDE.md) in der Kette des Arbeitsordners – Warnung im Protokoll und im Ergebnis
+            a.Warnung = KiUmgebung.ClaudeMdWarnung(KiUmgebung.ClaudeMdFunde(a.ArbeitsOrdner));
+            if (a.Warnung is not null) a.Log.WriteLine(Json.Text(new { type = "hlks", zeit = Jetzt(), text = a.Warnung }));
         }
         catch
         {
@@ -458,11 +478,8 @@ public sealed class AuftragDienst
                 StandardErrorEncoding = new UTF8Encoding(false),
             };
             // Über das Abo wie HKAP: ein gesetzter API-Schlüssel ginge sonst vor. CLAUDECODE (Server aus einer Claude-Sitzung
-            // gestartet) und MAX_MCP_OUTPUT_TOKENS wie im KI-Verständnistest (ki-test\ki_test.ps1).
-            psi.Environment.Remove("ANTHROPIC_API_KEY");
-            psi.Environment.Remove("ANTHROPIC_AUTH_TOKEN");
-            psi.Environment.Remove("CLAUDECODE");
-            psi.Environment["MAX_MCP_OUTPUT_TOKENS"] = "60000";
+            // gestartet) und MAX_MCP_OUTPUT_TOKENS wie im KI-Verständnistest (ki-test\ki_test.ps1); kein umgeleitetes Ziel (Sicherheitsprüfung 3c, B12).
+            KiUmgebung.Bereinigen(psi.Environment);
             foreach (var arg in a.Argumente) psi.ArgumentList.Add(arg);
 
             Process? p;
@@ -653,7 +670,7 @@ public sealed class AuftragDienst
             case "user":
                 foreach (var b in (o["message"]?["content"] as JsonArray ?? []).OfType<JsonObject>().Where(b => T(b["type"]) == "tool_result"))
                 {
-                    var inhalt = b["content"] is JsonArray arr ? string.Join(" ", arr.OfType<JsonObject>().Select(x => T(x["text"]) ?? "")) : T(b["content"]) ?? "";
+                    var inhalt = KiUmgebung.Werkzeuginhalt(b["content"]);   // Sicherheitsprüfung 3c, B15: ohne Kopfzeile auswerten
                     var istFehler = b["is_error"] is JsonValue v && v.TryGetValue<bool>(out var fehler) && fehler;
                     if (istFehler) Schritt(a, "Werkzeug meldet Fehler: " + Kurz(Einzeilig(inhalt), 200));
                     AbrufErgebnis(a, T(b["tool_use_id"]), !istFehler && !MeldetFehler(inhalt), inhalt);
@@ -883,6 +900,7 @@ public sealed class AuftragDienst
         }).ToArray());
 
         var warnungen = new List<string>();
+        if (a.Warnung is not null) warnungen.Add(a.Warnung);   // Sicherheitsprüfung 3c, B13
         if (abgelehnt.Count > 0 && !familien.Values.Any(f => f.Aktion is "angelegt" or "geaendert"))
         {
             var x = abgelehnt.LastOrDefault(y => !y.Trockenlauf) ?? abgelehnt[^1];

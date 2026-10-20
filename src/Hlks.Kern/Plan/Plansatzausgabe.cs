@@ -62,6 +62,7 @@ public static class Plansatzausgabe
         if (par.ContainsKey("ordner"))
         {
             var o = Param.Text(par, "ordner")?.Trim();
+            if (!string.IsNullOrEmpty(o)) o = KiPfade.Pruefen(p, o, "plansatz_pdf");   // Sicherheitsprüfung 3c, B3a/B4: KI nur unter den Wurzeln
             eigenerOrdner = string.IsNullOrEmpty(o) || Gleich(o, vorschlag) ? null : o;
         }
         var ordner = eigenerOrdner ?? vorschlag;
