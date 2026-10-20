@@ -148,6 +148,8 @@ const S = {
   // Modul 4 Teil A-O: Sanitär-Zusammenstellung (Tabelle mit Σ im Kopf und Wassertropfen)
   sanZusammenstellung: '<rect x="4" y="4" width="24" height="24"/><path d="M4 12h24M15 12v16M4 18h11M4 23h11"/><path d="M12 6.5H8l2.5 2L8 10.5h4"/><path d="M21.5 15.5c-3 3.5-4 5-4 6.5a4 4 0 0 0 8 0c0-1.5-1-3-4-6.5z"/>',
   listeCsv: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M10 14h12M10 19h12M10 24h12M16 14v10"/><path d="M26 22v8M23 27l3 3 3-3"/>',
+  // Modul 7 Teil B2: IFC exportieren (Würfel mit Pfeil heraus nach rechts unten)
+  ifcExport: '<path d="M13 3l9 5v10l-9 5-9-5V8z"/><path d="M4 8l9 5 9-5M13 13v10"/><path d="M19 25h10M25 21l4 4-4 4"/>',
   // Paletten (W1): Palette allgemein, Projektbrowser (Baum), Koordination (Liste unten), zurücksetzen
   palette: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/>',
   projektbrowser: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M9 10h6M12 15h8M12 20h8M9 15v8"/>',

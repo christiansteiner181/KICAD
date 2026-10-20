@@ -23,6 +23,7 @@ import { STUFEN, gruppenPlan, stufenWaehlen, minWeiter, minUmschalten, MIN_ZUSTA
 const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['gebaeudetechnik', 'Gebäudetechnik'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['verwalten', 'Verwalten']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
 const GRUPPENFOLGE = {
+  datei: ['Projekt', 'Ausgabe'],   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)
   architektur: ['Bauteile', 'Decke, Boden, Dach', 'Raum', 'Raster'],
   huelle: ['Aufbauten', 'Materialien', 'Fenster', 'Übergang', 'Prüfen', 'Listen'],
   einfuegen: ['Verknüpfen / Übernehmen', 'Importieren', 'Unterlagen'],

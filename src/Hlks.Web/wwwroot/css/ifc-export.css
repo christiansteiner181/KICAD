@@ -1,0 +1,74 @@
+/* Dialog «IFC exportieren» (Modul 7 Teil B2): Auswahl, Lauf, Bericht mit Zählern, Schemaprüfung und IDS-Ergebnis.
+   Farben und Grössen nur über die Variablen aus hlks.css (hell und dunkel). */
+.dlg.ifc-export { width: min(900px, 96vw); height: min(720px, 92vh); }
+.dlg.ifc-export .dlg-inhalt { overflow: auto; }
+.ie { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.ie [hidden] { display: none; }
+
+/* Auswahl */
+.ie-form { display: flex; flex-direction: column; gap: 8px; }
+.ie-block { display: grid; grid-template-columns: 100px 1fr; gap: 8px; align-items: start; }
+.ie-etikett { color: var(--text-leise); padding-top: 1px; }
+.ie-feld { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+.ie-fassungen { flex-direction: row; gap: 16px; }
+.ie-haken { display: inline-flex; align-items: center; gap: 5px; cursor: pointer; }
+.ie-gruppe { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px; padding: 3px 0; border-bottom: 1px solid var(--rand-leise); }
+.ie-gruppe:last-child { border-bottom: none; }
+.ie-alle { min-width: 130px; }
+.ie-liste-haken { display: inline-flex; flex-wrap: wrap; gap: 3px 14px; }
+.ie-liste-haken label:has(input:disabled) { color: var(--text-leise); }
+.ie-klein { font-size: 11px; }
+.ie-basis, .ie-basis-zeile .ie-basis { display: inline-block; padding: 0 6px; border: 1px solid var(--akzent); border-radius: 8px; color: var(--akzent); font-size: 11px; }
+.ie-ids-feld { display: grid; gap: 2px; margin-top: 4px; }
+.ie-ids { width: 100%; box-sizing: border-box; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: var(--schrift-mono); resize: vertical; }
+.ie-ids:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.ie-ziel { font-family: var(--schrift-mono); user-select: all; overflow-wrap: anywhere; }
+.ie-umfang { font-weight: 600; padding-top: 2px; }
+
+/* Lauf */
+.ie-lauf { padding: 6px 4px; }
+.ie-lauf-kopf { display: flex; align-items: center; gap: 10px; margin-bottom: 8px; }
+.ie-lauf-titel.fehler { color: var(--fehler); }
+.ie-zeit { margin-left: auto; }
+.ie-fehler { margin: 6px 0; }
+.ie-vorschlag { margin-top: 3px; }
+.ie-lauf-knoepfe { display: flex; gap: 6px; margin: 10px 0 0; }
+
+/* Bericht */
+.ie-ergebnisse { display: flex; flex-direction: column; gap: 6px; min-height: 0; }
+.ie-leiste { display: flex; align-items: center; gap: 6px; }
+.ie-ordnerpfad { margin-left: 6px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; min-width: 0; }
+.ie-bericht { display: flex; flex-direction: column; gap: 8px; }
+.ie-datei { padding: 6px 8px; border: 1px solid var(--rand-leise); background: var(--flaeche); border-radius: var(--radius); display: flex; flex-direction: column; gap: 3px; }
+.ie-datei-name { overflow-wrap: anywhere; }
+.ie-links a { color: var(--akzent); }
+.ie-marken { display: flex; flex-wrap: wrap; gap: 6px; }
+.ie-marke { display: inline-flex; gap: 5px; align-items: baseline; padding: 1px 8px; border: 1px solid var(--rand); border-radius: 10px; }
+.ie-marke.ok { border-color: var(--ok); color: var(--ok); }
+.ie-marke.schlecht { border-color: var(--fehler); color: var(--fehler); background: var(--ob-fehler-flaeche); }
+.ie-marke.leise { color: var(--text-leise); }
+.ie-marke-t { color: var(--text-leise); }
+.ie-ergebnis.ok { color: var(--ok); font-weight: 600; }
+.ie-ergebnis.schlecht { color: var(--fehler); font-weight: 600; }
+.ie-ergebnis.leise { color: var(--text-leise); }
+.ie-abschnitt h4 { margin: 0 0 3px; font-size: 12px; }
+.ie-zaehlzeile { display: flex; flex-wrap: wrap; gap: 3px 14px; margin-bottom: 4px; }
+.ie-klassen, .ie-entitaeten table { margin: 2px 0; }
+.ie-abschnitt td.zahl, .ie-abschnitt th.zahl { text-align: right; font-variant-numeric: tabular-nums; }
+.ie-entitaeten summary, .ie-hinweise summary { cursor: pointer; }
+.ie-liste { margin: 2px 0; padding-left: 18px; }
+.ie-liste li { margin: 1px 0; overflow-wrap: anywhere; }
+.ie-warnungen h4 { color: var(--warnung); }
+.ie-gruende { list-style: none; margin: 0; padding: 0; }
+.ie-grund { margin: 2px 0; }
+.ie-ids-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px; margin: 4px 0 2px; }
+.ie-regeln { list-style: none; margin: 0; padding: 0; border: 1px solid var(--rand-leise); background: var(--flaeche-hell); }
+.ie-regel { padding: 2px 8px; border-bottom: 1px solid var(--rand-leise); }
+.ie-regel:last-child { border-bottom: none; }
+.ie-regel summary { cursor: pointer; }
+.ie-regel-name { font-weight: 600; }
+.ie-betroffene { display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 0 2px; }
+.ie-kz { height: 20px; padding: 0 6px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; font-family: var(--schrift-mono); font-size: 11px; }
+.ie-kz:hover { background: var(--akzent-hell); border-color: var(--akzent); }
+.ie-kz.gewaehlt { background: var(--akzent-hell); border-color: var(--akzent); font-weight: 700; }
+.ie-kz:focus-visible { outline: 1px solid var(--akzent); outline-offset: 1px; }
