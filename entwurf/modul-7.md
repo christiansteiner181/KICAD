@@ -75,12 +75,68 @@ Aus `entwurf/planmuster.md` (Gemeinsam: «Aussparungen in Fachplänen», «Schni
 Fertig, wenn … im Beispielprojekt ein Koordinationsplan des EG in Gewerkefarben mit Aussparungsboxen und einer Schnittmarke
 «Schnitt … / <Plannummer>» als PDF entsteht.
 
+## Teil B2 – IFC-Export mit IDS und Exportbericht (20.10.2026, 10:30)
+
+Grundlage: `entwurf/modul-1b-ifc.md` (Version: **Export IFC4 als Vorgabe, IFC2x3 wählbar**, IFC 4.3 nicht), Abbildung
+`kataloge/ifc.json` (eine Quelle für Import und Export: Entität, Typobjekt, PredefinedType, Psets, Systemtypen, Fluss,
+Klassifikation), Muster `src/Hlks.Kern/Aussparungen/AussparungIfcExport.cs` + `AussparungIfcSchreiber.cs` (Xbim.Essentials
+6.1.605, IFC4 und IFC2x3 aus einer Beschreibung, Schemaprüfung). **Jede Zuordnung am Schema prüfen, nie aus dem Gedächtnis.**
+
+1. **Kern:** Befehl `ifc_export { datei, fassung: "IFC4"|"IFC2X3", umfang?: { gewerke?, geschosse?, klassen? }, raeume?: false,
+   ids?: [Pfade] }` → Datei + Bericht; MCP-Werkzeug gleich; Web `POST /api/ifc/export` (JSON, Herkunftsschutz) legt unter
+   `<Projekt>\ausgabe\ifc\<Projekt>_<Fassung>_<JJJJMMTT-hhmm>.ifc` ab, Bericht daneben (`.bericht.json` und `.bericht.md`).
+2. **Inhalt:** IfcProject/IfcSite/IfcBuilding/IfcBuildingStorey aus Gebäude und Geschossen (Koten), Einheiten mm, gemeinsame
+   Koordinaten wie beim Import (IFC4: IfcMapConversion, wenn das Projekt sie führt); **nur Elemente, die KICAD führt** – nie
+   Grundlagen/Hintergründe und nie aus fremden IFC übernommene Elemente ohne eigene Änderung (Hinweis im Bericht); Räume nur mit
+   `raeume: true` (Annahme A1). Je Katalogklasse Entität, Typobjekt und PredefinedType aus `ifc.json`; Typobjekt je Familie und
+   Typ (Name «<Familie> <Typ>»). Geometrie: Leitungen als Extrusion entlang der Achse (Aussendurchmesser bzw. b × h); **Dämmung als eigene
+   Geometrie** (IfcCovering um Leitung bzw. Formteil mit Dämmdicke, Zuordnung zum Element am Schema prüfen; Entscheid A2), Formteile und Apparate aus den Familienkörpern wie die 3D-Darstellung (gleiche Quelle),
+   ohne Körper ein Hüllquader mit Hinweis. Anschlüsse → IfcDistributionPort (Fluss nach `ifc.json fluss`, Systemart, Nennweite),
+   Verbindungen → IfcRelConnectsPorts; Systeme → IfcDistributionSystem (PredefinedType aus `ifc.json systemtypen`), Stränge →
+   IfcDistributionCircuit (nur IFC4), Anlagen → Gruppe der Systeme (Darstellung am Schema wählen und begründen); räumliche
+   Zuordnung zum Geschoss. Psets: der erste Eintrag je Eigenschaft in `ifc.json psets` (Standard-Pset), Mengen (Länge der
+   Leitungen in Qto_…BaseQuantities), Klassifikation BKP, dazu ein eigenes Pset `HK_KICAD` (Kennzeichen, Klasse, Medium, System,
+   Familie, Typ, Element-Id). **GlobalId stabil** je Element (aus der Element-Id abgeleitet wie bei den Aussparungen), damit ein
+   Partner neue Fassungen abgleichen kann.
+3. **IDS:** eigene Regeln `kataloge/ids/hk-hlks-basis.ids` (IDS 1.0; Schema von buildingSMART unter `schema/ids-1.0`, nie
+   ändern): Leitungen mit Nennweite bzw. Abmessung, jedem Element ein System und ein Geschoss, Systeme mit PredefinedType aus der
+   Liste, Apparate mit Typobjekt. Fremde IDS (Bauherr, Architekt) lassen sich angeben. Prüfer: zuerst ein passendes Paket zu
+   Xbim 6.1.605 suchen (Version und Lizenz im Bericht des Agenten); passt keines, eigener Prüfer für die genutzten Facetten
+   (entity, attribute, property, classification, partOf) – Entscheid Hauptlauf nach Vorschlag.
+4. **Exportbericht:** Zähler je Klasse und Entität, übersprungene Elemente mit Grund, Schemaprüfung (Xbim), IDS-Ergebnis je Regel
+   (bestanden / nicht bestanden mit Kennzeichen der Elemente), Dauer. Oberfläche: Dialog «IFC exportieren» (Register Datei,
+   Gruppe Ausgabe; Fassung, Umfang, Räume, IDS-Dateien, Ziel) mit Bericht und «Ordner öffnen».
+5. **Tests:** Rundreise Export → eigener IFC-Import (Modul 1b) im Beispielprojekt, je Fassung: gleiche Elemente, Verbindungen,
+   Systeme, Nennweiten, Lage ±1 mm, GlobalIds stabil über zwei Exporte; Schemaprüfung ohne Fehler; IDS: ein absichtlich
+   unvollständiges Element erscheint als Befund; Leistung: Bernstrasse-Grösse < 30 s.
+
+**Entscheide Christian 20.10.2026 (Fragefenster):** A1 Räume nur auf Wunsch (Vorgabe ohne IfcSpace), A2 **Dämmung als eigene
+Geometrie** (IfcCovering), A3 Datei in den Projektordner `ausgabe\ifc`, A4 eigenes Pset `HK_KICAD`.
+
+Fertig, wenn … das Beispielprojekt als IFC4 und IFC2x3 exportiert, die Schemaprüfung fehlerfrei ist, die IDS-Basis besteht (und
+ein absichtlich fehlerhaftes Element als Befund erscheint), die Rundreise gleich bleibt und die Datei in einem freien Viewer
+öffnet (Christian prüft auf Wunsch in Revit oder Solibri).
+
+## Teil B3 – Listenumbruch und Menüband-Knöpfe
+
+1. **Listen auf Planblättern umbrechen:** passt eine platzierte Liste nicht in ihren Bereich, geht sie in Blöcken rechts daneben
+   weiter (Kopfzeile wiederholt, Summen nur am Ende); reicht das Blatt nicht, Befund «Liste passt nicht aufs Blatt» mit Vorschlag
+   (Massstab der Schrift oder Folgeblatt). Option je platzierter Liste `umbruch`: `spalten` (Vorgabe) | `aus`.
+2. **Menüband:** Register Koordination: «Koordinationsplan» (legt für das aktive Geschoss eine Ansicht `darstellung =
+   koordination` mit Aussparungsboxen an bzw. öffnet die vorhandene), Schalter «Aussparungsboxen» (aktive Ansicht);
+   Register Ansicht: «Schnittmarke» bleibt beim Schnitt-Werkzeug. Kapitel in der Anleitung.
+
+Fertig, wenn … die Raumliste des Beispielprojekts auf einem A3-Blatt in zwei Blöcken steht und der Koordinationsplan über einen
+Knopf entsteht.
+
 ## Zuteilung
 
 | Teil | Wer |
 | --- | --- |
 | Spezifikation | Hauptlauf |
 | A1–A7 | hlks-modul (worktree) |
+| B2 Kern (Export, Geometrie, IDS-Prüfer) | hlks-kern (worktree) |
+| B2 Dialog, B3 | hlks-modul (worktree) |
 | Abnahme-Bilder, Testbericht | hlks-test |
 
 **Entscheid:** Christian, 20.10.2026 (Fragefenster): Fachbuchstabe **K = Koordination** (Kälte vorerst ohne Buchstaben). Nächster Schritt bis zur Normenlieferung: Teil B (IFC-Export mit IDS, Listenumbruch, Menüband-Knöpfe Koordinationsplan/Boxen).
