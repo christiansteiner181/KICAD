@@ -20,9 +20,9 @@ const PORT = Number(process.env.HLKS_KI_PORT ?? 5181);
 const PORT2 = Number(process.env.HLKS_KI_PORT2 ?? 5182);
 const SERVER = `http://localhost:${PORT}`;
 const SERVER2 = `http://localhost:${PORT2}`;
-for (const p of [PORT, PORT2]) if ([5013, 5098, 5130, 5131, 5149, 5150, 5151].includes(p) || (p >= 5190 && p <= 5219)) { console.error('Dieser Test läuft nie gegen einen der gesperrten Ports.'); process.exit(2); }
+for (const p of [PORT, PORT2]) if ([5013, 5098, 5130, 5131, 5149, 5150, 5151, 5152].includes(p)) { console.error('Dieser Test läuft nie gegen einen der gesperrten Ports (HKAP, Desktop, Abnahmeserver).'); process.exit(2); }   // nur die festen Sperren; Bereich je Auftrag über HLKS_KI_PORT
 const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9506);
-if (CDPPORT >= 9530 && CDPPORT <= 9569) { console.error('Gesperrter Debug-Port.'); process.exit(2); }
+// Debug-Port frei wählbar über HLKS_CDP_PORT (früher Sperre 9530–9569 nur für den Bauauftrag)
 const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const dotnet = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
 const BAU = process.env.HLKS_BAU ?? process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE ?? '', 'HLKS_CAD_build');
