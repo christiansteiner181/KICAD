@@ -19,6 +19,17 @@ public sealed class Modell
 
     static string Schluessel(string element, string anschluss) => element + "|" + anschluss;
 
+    readonly SortedSet<string> umgeschrieben = new(StringComparer.Ordinal);
+    /// <summary>Werte aus älteren Ständen, die beim Lesen umgeschrieben wurden (Kälte gehört zur Heizung, Entscheid Christian 20.10.2026), z. B.
+    /// «KUE-VL → KAE-VL», «kaelte → heizung». Leer, wenn nichts umzuschreiben war.</summary>
+    public IReadOnlyCollection<string> Umgeschrieben => umgeschrieben;
+
+    /// <summary>Alte Kennungen eines Elements umschreiben (<see cref="KaelteAlias"/>); gilt für Standabbild, Pakete und Rückgängig gleich.</summary>
+    void Umschreiben(Element e)
+    {
+        foreach (var u in KaelteAlias.ElementNormieren(e)) umgeschrieben.Add(u);
+    }
+
     /// <summary>Element über Id oder Kennzeichen (Gross-/Kleinschreibung egal).</summary>
     public Element? Finde(string? bezug)
     {
@@ -89,6 +100,7 @@ public sealed class Modell
                         if (!gewinnt) break;
                     }
                     var e = neu.Kopie();
+                    Umschreiben(e);
                     e.Id = op.Id;
                     e.Version = vorhanden + 1;
                     if (paketId is not null) e.Paket = paketId;
@@ -191,7 +203,7 @@ public sealed class Modell
         Aenderungszaehler++;
         elemente.Clear(); verbindungen.Clear(); nachKennzeichen.Clear(); anAnschluss.Clear();
         geloeschteElemente.Clear(); geloeschteVerbindungen.Clear();
-        foreach (var e in stand.Elemente) { var k = e.Kopie(); elemente[k.Id] = k; nachKennzeichen[k.Kennzeichen] = k.Id; }
+        foreach (var e in stand.Elemente) { var k = e.Kopie(); Umschreiben(k); elemente[k.Id] = k; nachKennzeichen[k.Kennzeichen] = k.Id; }
         foreach (var v in stand.Verbindungen)
         {
             var k = v.Kopie(); verbindungen[k.Id] = k;

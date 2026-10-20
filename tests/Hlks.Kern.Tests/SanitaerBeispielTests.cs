@@ -90,7 +90,7 @@ public class SanitaerBeispielTests
         foreach (var (kz, wert) in new[] { ("SW-F1", 8.2), ("SW-F2", 6.2), ("SW-S1", 14.4), ("SW-G1", 16.7) }) Etwa(wert, Zahl(strang[kz]["summeDu"]), kz);
         Assert.True(Sanitaerbefunde(B).Count == 0, Liste(Sanitaerbefunde(B)));
         // jede Leitung des Beispiels hat Summen (Kalt- und Schmutzwasser)
-        Assert.Equal(B.Modell.DerKlasse("Rohr").Count(), a["systeme"]!.AsArray().Sum(s => s!["leitungen"]!.AsArray().Count));
+        Assert.Equal(B.Modell.DerKlasse("Rohr").Count(r => Ableitungen.Gewerk(B.Modell, B.Katalog, r) == "sanitaer"), a["systeme"]!.AsArray().Sum(s => s!["leitungen"]!.AsArray().Count));   // (der Kältekreis des Beispiels gehört zur Heizung)
     }
 
     [Fact]

@@ -156,7 +156,8 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
         var p = Testhaus(mitHeizung: true);
         var g = Grafik.Plan(p, AnsichtHz);
         var linie = TeileVon(g, p, "R-H1")[0].Primitive.First(x => x.Art is "linie" or "polylinie");
-        Assert.Equal("#d0312d", linie.Stil.Farbe);   // HZ-VL im Katalog
+        Assert.Equal(p.Katalog.Medien["HZ-VL"].FarbeHex, linie.Stil.Farbe);   // HZ-VL im Katalog
+        Assert.Equal("#FF0000", linie.Stil.Farbe);                              // HKAP schema_systeme.json HZ_VL (Entscheid Christian 20.10.2026)
         Assert.Empty(TeileVon(g, p, "R-1"));          // anderes Gewerk
     }
 
@@ -260,7 +261,8 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
         var eg = Assert.Single(TeileVon(g, p, "EG"));
         Assert.Equal(["EG", "Erdgeschoss", "±0.00"], eg.Primitive.Where(x => x.Art == "text").Select(x => x.Text!).ToArray());
         // alle Sanitär-Netzelemente stehen im Schema: als Knoten oder in genau einer Linie
-        var netz = p.Modell.Elemente.Where(e => SchemaGraph.IstNetzelement(Kat, e)).ToList();
+        // (das Beispielprojekt hat seit dem Entscheid «Kälte ist Teil der Heizung», 20.10.2026, auch einen kleinen Kältekreis: Gewerk heizung, nicht im Sanitär-Schema)
+        var netz = p.Modell.Elemente.Where(e => SchemaGraph.IstNetzelement(Kat, e) && Ableitungen.Gewerk(p.Modell, Kat, e) == "sanitaer").ToList();
         Assert.All(netz, e => Assert.True(s.Graph.NachId.ContainsKey(e.Id) ^ s.Graph.LinieVon.ContainsKey(e.Id), $"{e.Kennzeichen}"));
         var inLinien = s.Graph.Linien.SelectMany(l => l.Elemente).Select(e => e.Id).ToList();
         Assert.Equal(inLinien.Count, inLinien.Distinct().Count());

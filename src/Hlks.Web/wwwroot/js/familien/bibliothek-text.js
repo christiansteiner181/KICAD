@@ -8,11 +8,13 @@
 // Stand einer Familie (Kern, stand.art): nicht_im_projekt · aktuell · neuere_version · im_projekt_geaendert · parallel_geaendert · nicht_in_bibliothek · gesperrt.
 
 import { esc } from './familien-text.js';
+import { gewerkAlias } from '../gewerk-alias.js';
 
 // ================================================================================================ Namen
 
-const GEWERK_NAMEN = { sanitaer: 'Sanitär', heizung: 'Heizung', lueftung: 'Lüftung', kaelte: 'Kälte', elektro: 'Elektro', msrl: 'MSRL', architektur: 'Architektur' };
-export const gewerkName = (g) => GEWERK_NAMEN[g] ?? (g ? String(g)[0].toUpperCase() + String(g).slice(1) : '–');
+const GEWERK_NAMEN = { sanitaer: 'Sanitär', heizung: 'Heizung', lueftung: 'Lüftung', elektro: 'Elektro', msrl: 'MSRL', architektur: 'Architektur' };
+// Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026): der frühere Wert «kaelte» heisst «Heizung»
+export const gewerkName = (g0) => { const g = gewerkAlias(g0); return GEWERK_NAMEN[g] ?? (g ? String(g)[0].toUpperCase() + String(g).slice(1) : '–'); };
 export const STATUS_NAMEN = { entwurf: 'Entwurf', freigegeben: 'freigegeben' };
 export const statusName = (s) => STATUS_NAMEN[s ?? 'entwurf'] ?? String(s);
 const lc = (t) => String(t ?? '').trim().toLowerCase();

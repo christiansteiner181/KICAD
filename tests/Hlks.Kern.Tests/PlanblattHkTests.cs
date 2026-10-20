@@ -283,7 +283,7 @@ public class PlanblattHkTests
         PlansatzProjekt.Ok(t.P.Rueckgaengig());                                            // ein Schritt macht alle zurück
         Assert.Equal(start, t.P.Modell.Pruefsumme());
         Nein(t.P.Ausfuehren("plansatz_revision_hinzufuegen", PlansatzProjekt.Par("""{"plansatz":"sanitaer","beschreibung":""}""")));
-        Nein(t.P.Ausfuehren("plansatz_revision_hinzufuegen", PlansatzProjekt.Par("""{"plansatz":"kaelte","beschreibung":"x"}""")));   // Satz ohne Blätter
+        Nein(t.P.Ausfuehren("plansatz_revision_hinzufuegen", PlansatzProjekt.Par("""{"plansatz":"elektro","beschreibung":"x"}""")));   // Satz ohne Blätter
     }
 
     // ================================================================== 3. Plannummern-Vorschlag
@@ -383,9 +383,9 @@ public class PlanblattHkTests
         Assert.Contains("Gewerk", Vorschlag(p)["begruendung"]!.GetValue<string>());
         Assert.Null(Vorschlag(p, "heizung")["nummer"]);                                    // Geschoss fehlt
         Assert.Contains("Geschoss", Vorschlag(p, "heizung")["begruendung"]!.GetValue<string>());
-        var kaelte = Vorschlag(p, "kaelte", "EG");
-        Assert.Null(kaelte["nummer"]);                                                     // Kälte und Elektro: kein Fachbuchstabe, nichts geraten
-        Assert.Contains("Fachbuchstaben", kaelte["begruendung"]!.GetValue<string>());
+        var elektro0 = Vorschlag(p, "elektro", "EG");
+        Assert.Null(elektro0["nummer"]);                                                   // Elektro: kein Fachbuchstabe, nichts geraten (Kälte gehört zur Heizung: H, siehe KaelteHeizungTests)
+        Assert.Contains("Fachbuchstaben", elektro0["begruendung"]!.GetValue<string>());
         Assert.Null(Vorschlag(p, "elektro", "EG")["nummer"]);
         var schema = Vorschlag(p, ansicht: "AN-SCHEMA-SAN");
         Assert.Null(schema["nummer"]);                                                     // Schemas tragen nur die Projektnummer
@@ -436,7 +436,7 @@ public class PlanblattHkTests
         Assert.Contains("Plannummer", e.Fehler);
         Assert.Contains("plannummer_vorschlag", e.Vorschlag);
         Assert.Empty(p.Modell.DerKlasse("Planblatt"));
-        Nein(p.Ausfuehren("planblatt_anlegen", Par(("gewerk", "kaelte"), ("geschoss", "EG"))));
+        Nein(p.Ausfuehren("planblatt_anlegen", Par(("gewerk", "elektro"), ("geschoss", "EG"))));
         // Trockenlauf legt nichts an, nennt aber den Vorschlag
         var tr = Ok(p.Ausfuehren("planblatt_anlegen", Par(("gewerk", "heizung"), ("geschoss", "EG")), trockenlauf: true));
         Assert.Contains(tr.Hinweise, h => h.Contains("1-0768 H02"));

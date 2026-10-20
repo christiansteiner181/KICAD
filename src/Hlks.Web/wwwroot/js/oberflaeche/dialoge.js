@@ -212,6 +212,8 @@ export async function projektGeoeffnet(status) {
   zustandMelden('status', status);
   const { projektLaden } = await import('../app.js');
   await projektLaden();
+  // Kälte gehört zur Heizung (Entscheid Christian 20.10.2026): alte Kennungen sind beim Lesen umgeschrieben – Hinweis des Kerns, kein Fehler
+  if (status?.aliasHinweis) meldung(status.aliasHinweis, 'info');
 }
 
 const ORDNER_PLATZHALTER = '…\\c_Pläne und Modelle\\e_KICAD';

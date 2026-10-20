@@ -4,7 +4,7 @@
 //   2. Ansicht      Eigenschaft «bemassungEinheit» der Ansicht (bzw. ihrer Vorlage)
 //   3. Projekt      Projektinformation «bemassungEinheiten» { gewerk: einheit }
 //   4. Vorgabe      Tabelle unten, Gewerk der Ansicht
-// Gewerk der Ansicht = erstes HLKS-Gewerk ihrer Liste «gewerke» in der Reihenfolge Lüftung, Heizung, Sanitär, Kälte,
+// Gewerk der Ansicht = erstes HLKS-Gewerk ihrer Liste «gewerke» in der Reihenfolge Lüftung, Heizung (auch Kälte), Sanitär,
 // Elektro, MSRL; ohne HLKS-Gewerk (Architektur oder alle Gewerke) gilt Architektur.
 
 using System.Text.Json.Nodes;
@@ -16,14 +16,14 @@ public static class Bemassungseinheit
     public static readonly IReadOnlyList<string> Einheiten = ["m", "cm", "mm"];
 
     /// <summary>Vorgabe je Gewerk. architektur, lueftung, heizung, sanitaer: Christian Steiner 17.10.2026;
-    /// kaelte, elektro, msrl: Annahme (Kälte wie Heizung, Elektro und MSRL wie Grundriss), Prüfliste.</summary>
+    /// elektro, msrl: Annahme (Elektro und MSRL wie Grundriss), Prüfliste. Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026) und hat keine eigene Vorgabe.</summary>
     public static readonly IReadOnlyDictionary<string, string> Vorgabe = new Dictionary<string, string>
     {
         ["architektur"] = "m", ["lueftung"] = "mm", ["heizung"] = "cm", ["sanitaer"] = "cm",
-        ["kaelte"] = "cm", ["elektro"] = "m", ["msrl"] = "m",
+        ["elektro"] = "m", ["msrl"] = "m",
     };
 
-    static readonly string[] Vorrang = ["lueftung", "heizung", "sanitaer", "kaelte", "elektro", "msrl"];
+    static readonly string[] Vorrang = ["lueftung", "heizung", "sanitaer", "elektro", "msrl"];
 
     /// <summary>Gewerk, nach dem sich die Masse einer Ansicht richten.</summary>
     public static string Gewerk(Element ansicht)

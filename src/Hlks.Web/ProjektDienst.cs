@@ -652,6 +652,7 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
             ["akteur"] = Einstellungen.Akteur,
             ["geraet"] = Einstellungen.Geraet,
             ["stand"] = p is null ? null : Json.Knoten(p.Stand),
+            ["aliasHinweis"] = p?.AliasHinweis,   // alte Kennungen (Kälte gehört zur Heizung) beim Lesen umgeschrieben; null = nichts
             ["reservierungen"] = Json.Knoten(res.Select(r => new
             {
                 element = p?.Modell.Finde(r.Element)?.Kennzeichen ?? r.Element,

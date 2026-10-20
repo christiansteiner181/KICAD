@@ -292,14 +292,14 @@ public class TuerDarstellungTests
     }
 
     [Fact]
-    public void Darstellung_ModellHat175ElementeUnd138VerbindungenMitKennzeichen()
+    public void Darstellung_ModellHat187ElementeUnd142VerbindungenMitKennzeichen()
     {
         var p = Beispiel();
         var o = Darstellung.Modell(p);
         Assert.Equal(p.Kopf.Name, o["projekt"]!.GetValue<string>());
-        Assert.Equal(175, o["elemente"]!.AsArray().Count);
+        Assert.Equal(187, o["elemente"]!.AsArray().Count);
         var v = o["verbindungen"]!.AsArray();
-        Assert.Equal(138, v.Count);
+        Assert.Equal(142, v.Count);
         foreach (var x in v)
         {
             foreach (var feld in new[] { "von", "nach" })
@@ -310,8 +310,8 @@ public class TuerDarstellungTests
             }
             Assert.False(string.IsNullOrEmpty(x!["vonAnschluss"]!.GetValue<string>()));
         }
-        Assert.Equal(175, o["stand"]!["elemente"]!.GetValue<int>());
-        Assert.Equal(138, o["stand"]!["verbindungen"]!.GetValue<int>());
+        Assert.Equal(187, o["stand"]!["elemente"]!.GetValue<int>());
+        Assert.Equal(142, o["stand"]!["verbindungen"]!.GetValue<int>());
     }
 
     [Fact]

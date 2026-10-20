@@ -203,6 +203,29 @@ public class PlanDarstellungB1Tests
     }
 
     [Fact]
+    public void Koordination_KaelteleitungInKoordinationsfarbeDerHeizung_FachplanBleibtInMedienfarbe()
+    {
+        // Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026): kein eigenes Gewerk, also auch keine eigene Koordinationsfarbe
+        var p = Koordination();
+        Assert.DoesNotContain(p.Katalog.Gewerke, x => x.Id == "kaelte");
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "System", ["kennzeichen"] = "KV", ["eigenschaften"] = new JsonObject { ["systemtyp"] = "Kälte Vorlauf" } }));
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Rohr", ["kennzeichen"] = "KR-1", ["system"] = "KV", ["geschoss"] = "EG",
+            ["eigenschaften"] = new JsonObject { ["dn"] = 25 },
+            ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts([1400, 800, 100], [1400, 3000, 100]) },
+        }));
+        Assert.Equal("heizung", Ableitungen.Gewerk(p.Modell, p.Katalog, p.Modell.Finde("KR-1")!));
+        var k = Grafik.Plan(p, "AN-EG");
+        Assert.Equal([Heizung], Farben(k, p, "KR-1"));                                   // Koordinationsplan: Heizungsfarbe
+        Assert.Equal([Heizung], Farben(k, p, "HR-1"));
+        Setze(p, "AN-EG", "darstellung", null);
+        var f = Grafik.Plan(p, "AN-EG");
+        Assert.Contains("#00CCCC", Farben(f, p, "KR-1"), StringComparer.OrdinalIgnoreCase);   // Fachplan: Medienfarbe KAE-VL (HKAP KAE_VL)
+        Assert.Contains("#FF0000", Farben(f, p, "HR-1"), StringComparer.OrdinalIgnoreCase);   // und HZ-VL (HKAP HZ_VL)
+    }
+
+    [Fact]
     public void Koordination_StandardGrundrissBleibtInMedienfarben()
     {
         var p = Koordination();

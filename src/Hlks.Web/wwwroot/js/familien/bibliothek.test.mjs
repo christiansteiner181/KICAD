@@ -168,7 +168,7 @@ test('Filter: Chips umschalten (Gross/klein egal), Werte aus den Familien dedupl
   assert.deepEqual(T.filterWerte(BIB, 'status').map((w) => [w.wert, w.anzahl]), [['entwurf', 2], ['freigegeben', 4]]);
   assert.deepEqual(T.filterWerte(BIB, 'kategorien').map((w) => w.wert), ['Heizkoerper', 'Rohr', 'Speicher', 'Waschtisch', 'Zuluftdurchlass']);
   assert.deepEqual(T.filterWerte([], 'gewerke'), []);
-  assert.equal(T.gewerkName('sanitaer'), 'Sanitär'); assert.equal(T.gewerkName('kaelte'), 'Kälte'); assert.equal(T.gewerkName('neu'), 'Neu'); assert.equal(T.gewerkName(null), '–');
+  assert.equal(T.gewerkName('sanitaer'), 'Sanitär'); assert.equal(T.gewerkName('kaelte'), 'Heizung');   // Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026) assert.equal(T.gewerkName('neu'), 'Neu'); assert.equal(T.gewerkName(null), '–');
 });
 
 test('Liste im Dialog: nach Kategorie und Name, Häkchen nach der Auswahl, Familien des Projekts fest angehakt, ohne Auswahl alles fest', () => {

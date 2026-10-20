@@ -27,10 +27,10 @@ public class AbfragenTests
     [Fact]
     public void Beispiel_HatDieErwarteteGroesse()
     {
-        Assert.Equal(175, P.Modell.Elemente.Count);
-        Assert.Equal(138, P.Modell.Verbindungen.Count);
-        Assert.Equal(175, P.Verlauf.Count);
-        Assert.Equal(175, P.BekanntePakete.Count);
+        Assert.Equal(187, P.Modell.Elemente.Count);
+        Assert.Equal(142, P.Modell.Verbindungen.Count);
+        Assert.Equal(187, P.Verlauf.Count);
+        Assert.Equal(187, P.BekanntePakete.Count);
     }
 
     // ---------------------------------------------------------------- system_lesen, strang_text
@@ -600,16 +600,16 @@ public class AbfragenTests
     {
         var o = A.ProjektUeberblick();
         Assert.Equal(Beispielprojekt.Name, Text(o["projekt"]));
-        Assert.Equal(175, (int)Zahl(o["modellStand"]!["elemente"]));
+        Assert.Equal(187, (int)Zahl(o["modellStand"]!["elemente"]));
         var geb = Liste(o["gebaeude"]).Single()!;
         Assert.Equal(3, Liste(geb["geschosse"]).Count);
         Assert.Equal("1.OG", Text(Liste(geb["geschosse"])[0]!["kennzeichen"])); // oberstes zuerst
-        Assert.Equal(["KW", "SW"], Liste(o["systeme"]).Select(s => Text(s!["kennzeichen"])).ToArray());
+        Assert.Equal(["KAE-RL", "KAE-VL", "KW", "SW"], Liste(o["systeme"]).Select(s => Text(s!["kennzeichen"])).ToArray());   // KW, SW (Sanitär) und der Kältekreis KAE-VL/KAE-RL (Gewerk Heizung)
         Assert.Equal(4, (int)Zahl(o["funktionsgraph"]!["datenpunkte"]));
         Assert.Equal(0, (int)Zahl(o["befunde"]!["fehler"]));
         Assert.Equal(0, (int)Zahl(o["befunde"]!["warnung"]));
         Assert.Equal(4, (int)Zahl(o["elementeJeKlasse"]!["WC"]));
-        Assert.Equal(5, Liste(o["ansichten"]).Count);
+        Assert.Equal(6, Liste(o["ansichten"]).Count);   // 5 Sanitär/3D-Ansichten + Grundriss UG Heizung/Kälte
     }
 
     [Fact]

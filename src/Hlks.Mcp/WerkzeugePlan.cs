@@ -19,7 +19,7 @@ public sealed partial class Werkzeuge
         [Description("Planinhalt (Titel im Plankopf), z. B. Grundriss Erdgeschoss Sanitär; fehlt er, gilt der Titelvorschlag aus Gewerk und Geschoss")] string? titel = null,
         [Description("A4 | A3 | A2 | A1 | A0 (Vorgabe A3)")] string? format = null,
         [Description("true = Hochformat, sonst quer")] bool hochformat = false,
-        [Description("Gewerk des Plans (heizung | lueftung | sanitaer | kaelte | elektro | koordination | allgemein): setzt Planblatt.gewerk und bestimmt den Fachbuchstaben des Vorschlags")] string? gewerk = null,
+        [Description("Gewerk des Plans (heizung (auch Kälte) | lueftung | sanitaer | elektro | koordination | allgemein): setzt Planblatt.gewerk und bestimmt den Fachbuchstaben des Vorschlags")] string? gewerk = null,
         [Description("Geschoss (Kennzeichen) für den Vorschlag von Nummer und Titel")] string? geschoss = null,
         [Description("Ansicht, aus der Geschoss, Gewerk und Art des Vorschlags kommen (die Ansicht wird nicht platziert)")] string? ansicht = null,
         [Description(PlanAbfragen.ParArt)] string? art = null,

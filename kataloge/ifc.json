@@ -7,7 +7,7 @@
     "Reinigungsoeffnung: kein eigener Wert → IfcPipeFitting USERDEFINED «Reinigungsoeffnung».",
     "Fussbodenheizkreis: IfcSpaceHeater USERDEFINED «Fussbodenheizkreis».",
     "Zuluftdurchlass DIFFUSER, Abluftdurchlass GRILLE.",
-    "Zirkulation als DOMESTICHOTWATER, Sole als HEATING, Aussenluft und Zuluft als VENTILATION, Abluft und Fortluft als EXHAUST (IFC4 kennt keine feineren Werte).",
+    "Zirkulation als DOMESTICHOTWATER, Heizung Glykol (früher Sole) als HEATING, Kälte (früher Kühlwasser) auch mit Glykol als CHILLEDWATER (Kälte gehört zum Gewerk Heizung, Entscheid Christian 20.10.2026), Aussenluft und Zuluft als VENTILATION, Abluft und Fortluft als EXHAUST (IFC4 kennt keine feineren Werte).",
     "Regelkreis: kein physisches Bauteil → IFC4 IfcDistributionSystem CONTROL, IFC2x3 IfcSystem.",
     "importWerte ist für echte Typwerte abschliessend. Ohne Typwert (fehlt, NOTDEFINED, USERDEFINED) gilt eine Klasse mit Liste nur dann regulär, wenn die Liste NOTDEFINED nennt (Decke, Rohr, Ventil …); sonst ist sie schwacher Kandidat (WC: ein Sanitärapparat ohne Typwert bleibt mehrdeutig)."
   ],
@@ -99,10 +99,12 @@
   "ohneIfcHinweis": "Material und Aufbau sind in IFC keine Produkte, sondern Materialdefinitionen (IfcMaterial, IfcMaterialLayerSet), die der Hüllen-Übertrag aus den Bauteilen liest (Modul 1c); Wärmebrücken haben in IFC keine eigene Entität. Eine Familie entspricht einem Typobjekt (IfcTypeProduct mit RepresentationMaps); Export mit Modul 7. Aussparung (Modul 3b) schreibt die eigene Abfrage aussparungen_ifc: IFC4 IfcBuildingElementProxy mit PredefinedType PROVISIONFORVOID, IFC2X3 IfcBuildingElementProxy mit ObjectType «ProvisionForVoid» (IFC2X3 kennt dort keinen PredefinedType); am 19.10.2026 an den Xbim-6.1.605-Klassen geprüft (AussparungIfcExportTests). Sie bleibt hier ohne Abbildung (Entscheid Hauptlauf 19.10.2026), damit der allgemeine Import fremde Proxies nicht als Aussparungen übernimmt; ob Aussparungen anderer Planer übernommen werden, entscheidet Modul 7. Kollision, Vorgaben und Typmaterial (Typenliste, Nachtrag B3d) sind keine Bauprodukte; Plansatz (Serien-PDF, 19.10.2026) ist wie Planblatt eine Ausgabe-Zusammenstellung.",
   "systemtypen": [
     { "systemtyp": "Zirkulation", "ifc4": "DOMESTICHOTWATER", "objectType": "Zirkulation", "namen": ["zirk", "\\bzir\\b", "\\bzil\\b", "\\bpwh-c\\b", "circulation"] },
-    { "systemtyp": "Sole Vorlauf", "ifc4": "HEATING", "objectType": "Sole Vorlauf", "namen": ["sole.*vorlauf", "sole vl"] },
-    { "systemtyp": "Sole Rücklauf", "ifc4": "HEATING", "objectType": "Sole Ruecklauf", "namen": ["sole.*r(ü|ue)cklauf", "sole rl"] },
-    { "systemtyp": "Kühlwasser Vorlauf", "ifc4": "CHILLEDWATER", "objectType": "Vorlauf", "namen": ["k(ü|ue)hl.*vorlauf", "k(ä|ae)lte.*vorlauf", "k(ä|ae)lte[\\s_-]*vl\\b", "\\bk vl\\b", "\\bkvl\\b", "chilled.*supply"] },
-    { "systemtyp": "Kühlwasser Rücklauf", "ifc4": "CHILLEDWATER", "objectType": "Ruecklauf", "namen": ["k(ü|ue)hl.*r(ü|ue)cklauf", "k(ä|ae)lte.*r(ü|ue)cklauf", "k(ä|ae)lte[\\s_-]*rl\\b", "\\bk rl\\b", "\\bkrl\\b", "chilled.*return"] },
+    { "systemtyp": "Kälte Vorlauf Glykol", "ifc4": "CHILLEDWATER", "objectType": "Vorlauf Glykol", "namen": ["k(ä|ae)lte.*vorlauf.*glyk", "k(ä|ae)lte.*glyk.*vorlauf", "k(ä|ae)lte[\\s_-]*vl[\\s_-]*glyk", "k(ü|ue)hl.*vorlauf.*glyk", "\\bkae[\\s_-]*vl[\\s_-]*glyk"] },
+    { "systemtyp": "Kälte Rücklauf Glykol", "ifc4": "CHILLEDWATER", "objectType": "Ruecklauf Glykol", "namen": ["k(ä|ae)lte.*r(ü|ue)cklauf.*glyk", "k(ä|ae)lte.*glyk.*r(ü|ue)cklauf", "k(ä|ae)lte[\\s_-]*rl[\\s_-]*glyk", "k(ü|ue)hl.*r(ü|ue)cklauf.*glyk", "\\bkae[\\s_-]*rl[\\s_-]*glyk"] },
+    { "systemtyp": "Heizung Vorlauf Glykol", "ifc4": "HEATING", "objectType": "Vorlauf Glykol", "namen": ["sole.*vorlauf", "sole vl", "glykol.*vorlauf", "vorlauf.*glykol", "\\bhz[\\s_-]*vl[\\s_-]*glyk"] },
+    { "systemtyp": "Heizung Rücklauf Glykol", "ifc4": "HEATING", "objectType": "Ruecklauf Glykol", "namen": ["sole.*r(ü|ue)cklauf", "sole rl", "glykol.*r(ü|ue)cklauf", "r(ü|ue)cklauf.*glykol", "\\bhz[\\s_-]*rl[\\s_-]*glyk"] },
+    { "systemtyp": "Kälte Vorlauf", "ifc4": "CHILLEDWATER", "objectType": "Vorlauf", "namen": ["k(ü|ue)hl.*vorlauf", "k(ä|ae)lte.*vorlauf", "k(ä|ae)lte[\\s_-]*vl\\b", "\\bk vl\\b", "\\bkvl\\b", "\\bkae[\\s_-]*vl\\b", "chilled.*supply"] },
+    { "systemtyp": "Kälte Rücklauf", "ifc4": "CHILLEDWATER", "objectType": "Ruecklauf", "namen": ["k(ü|ue)hl.*r(ü|ue)cklauf", "k(ä|ae)lte.*r(ü|ue)cklauf", "k(ä|ae)lte[\\s_-]*rl\\b", "\\bk rl\\b", "\\bkrl\\b", "\\bkae[\\s_-]*rl\\b", "chilled.*return"] },
     { "systemtyp": "Trinkwasser warm", "ifc4": "DOMESTICHOTWATER", "namen": ["warmwasser", "trinkwasser warm", "\\bww\\b", "\\bpwh\\b", "hot water"] },
     { "systemtyp": "Trinkwasser kalt", "ifc4": "DOMESTICCOLDWATER", "namen": ["kaltwasser", "trinkwasser kalt", "\\bkw\\b", "\\bka\\b", "\\bpwc\\b", "cold"] },
     { "systemtyp": "Regenwasser", "ifc4": "RAINWATER", "namen": ["regen", "\\brw\\b", "\\bwasr\\b", "\\bwarr\\b", "rain", "storm"] },
@@ -115,7 +117,7 @@
     { "systemtyp": "Fortluft", "ifc4": "EXHAUST", "objectType": "Fortluft", "namen": ["fortluft", "\\bfol\\b", "\\beha\\b", "exhaust air"] }
   ],
   "systemtypenImport": {
-    "beschreibung": "IFC4-Systeme mit einem PredefinedType, der mehreren Systemtypen entspricht (z. B. HEATING), werden über Name und ObjectType eingeordnet; IFC2x3-Systeme haben keinen PredefinedType und gehen immer über den Namen. Die Namensmuster sind reguläre Ausdrücke ohne Gross-/Kleinschreibung, geprüft in der Reihenfolge der Liste; spezifischere Muster vor allgemeineren: Zirkulation, Sole, Kühlwasser/Kälte, Warmwasser (vor Heizung, «Warmwasser Vorlauf»), Regenwasser (vor Schmutzwasser, «Regenwasser verschmutzt»), erst dann Heizung mit dem allgemeinen «VL/RL» (Befund B2-2, an den BKW-Nova- und Bernstrasse-Revit-Dateien). Kanal: NominalDiameterOrWidth ist mit NominalHeight die Breite, ohne den Durchmesser."
+    "beschreibung": "IFC4-Systeme mit einem PredefinedType, der mehreren Systemtypen entspricht (z. B. HEATING), werden über Name und ObjectType eingeordnet; IFC2x3-Systeme haben keinen PredefinedType und gehen immer über den Namen. Die Namensmuster sind reguläre Ausdrücke ohne Gross-/Kleinschreibung, geprüft in der Reihenfolge der Liste; spezifischere Muster vor allgemeineren: Zirkulation, Kälte Glykol, Heizung Glykol (Sole), Kälte (Kühlwasser), Warmwasser (vor Heizung, «Warmwasser Vorlauf»), Regenwasser (vor Schmutzwasser, «Regenwasser verschmutzt»), erst dann Heizung mit dem allgemeinen «VL/RL» (Befund B2-2, an den BKW-Nova- und Bernstrasse-Revit-Dateien). Kanal: NominalDiameterOrWidth ist mit NominalHeight die Breite, ohne den Durchmesser."
   },
   "fluss": { "rein": "SINK", "raus": "SOURCE", "beide": "SOURCEANDSINK" },
   "klassifikation": { "name": "BKP", "quelle": "CRB Baukostenplan Hochbau", "ifc": "IfcClassificationReference" }

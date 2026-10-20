@@ -182,8 +182,8 @@ public class ApiTests
         Assert.True(j["offen"]!.GetValue<bool>());
         Assert.StartsWith("MFH Musterweg", Z(j["projekt"]));
         Assert.Equal(s.Ordner, Z(j["ort"]));
-        Assert.Equal(175, j["stand"]!["elemente"]!.GetValue<int>());
-        Assert.Equal(138, j["stand"]!["verbindungen"]!.GetValue<int>());
+        Assert.Equal(187, j["stand"]!["elemente"]!.GetValue<int>());
+        Assert.Equal(142, j["stand"]!["verbindungen"]!.GetValue<int>());
         Assert.True(File.Exists(Path.Combine(s.Ordner, "projekt.json")));
         var status = (await s.Get("/api/status")).Json!;
         Assert.True(status["offen"]!.GetValue<bool>());
@@ -344,8 +344,8 @@ public class ApiTests
         var (code, j) = await s.Get("/api/modell");
         Assert.Equal(HttpStatusCode.OK, code);
         Assert.StartsWith("MFH Musterweg", Z(j!["projekt"]));
-        Assert.Equal(175, j["elemente"]!.AsArray().Count);
-        Assert.Equal(138, j["verbindungen"]!.AsArray().Count);
+        Assert.Equal(187, j["elemente"]!.AsArray().Count);
+        Assert.Equal(142, j["verbindungen"]!.AsArray().Count);
         var wc = j["elemente"]!.AsArray().First(e => Z(e!["kennzeichen"]) == "WC-E.02")!;
         Assert.Equal("verbraucher", Z(wc["rolle"]));
         Assert.Equal("E.02", Z(wc["raum"]));
@@ -551,7 +551,7 @@ public class ApiTests
         Assert.Equal(await s.Pruefsumme(), Z(ueberblick["modellStand"]!["pruefsumme"]));
 
         var (_, sl) = await s.Post("/api/abfrage/strangliste");
-        Assert.Equal(7, sl!["zeilen"]!.AsArray().Count);
+        Assert.Equal(9, sl!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge (Beispielprojekt)
 
         var (_, _, st) = await s.Roh(HttpMethod.Post, "/api/abfrage/strang_text", """{"strang":"SW-F2"}""");
         Assert.Contains("SW-F2", await st.Content.ReadAsStringAsync());
@@ -922,5 +922,36 @@ public class ApiTests
         Assert.Contains("ueberschreiben", f["vorschlag"]!.GetValue<string>());
         var (code4, _) = await s.Post("/api/abfrage/plansatz_pdf", new { plansatz = "PS-1", anlass = "Revisionspläne", datum = "2026-10-19", einzeln = true, ueberschreiben = true });
         Assert.Equal(HttpStatusCode.OK, code4);
+    }
+
+    [Fact]
+    public async Task Oeffnen_AltesProjektMitKuehlwasserUndKaelteGewerk_OeffnetOhneFehlerMitHinweis()
+    {
+        // «Kälte ist Teil der Heizung» (Entscheid Christian 20.10.2026): alte Kennungen werden beim Lesen umgeschrieben, nie ein Fehler
+        using var s = new Server();
+        var kat = Katalog.Laden(Katalog.StandardOrdner());
+        var speicher = new OrdnerSpeicher(s.Ordner);
+        Projekt.Anlegen(kat, speicher, "Altprojekt (fiktiv)", "alt", "pc").Freigeben();
+        Wert W(object v) => new() { Inhalt = JsonValue.Create(v), Herkunft = new Herkunft { Art = "mensch", Akteur = "alt", Zeit = DateTimeOffset.Parse("2026-10-01T10:00:00Z") } };
+        var sys = new Element { Id = "id-s", Klasse = "System", Kennzeichen = "KUE-VL", Version = 1 };
+        sys.Eigenschaften["systemtyp"] = W("Kühlwasser Vorlauf");
+        sys.Eigenschaften["medium"] = W("KUE-VL");
+        var blatt = new Element { Id = "id-b", Klasse = "Planblatt", Kennzeichen = "PB-1", Version = 1 };
+        blatt.Eigenschaften["nummer"] = W("1-0768 H05");
+        blatt.Eigenschaften["gewerk"] = W("kaelte");
+        speicher.StandSchreiben(new StandAbbild { Zeit = DateTimeOffset.UtcNow, Elemente = [sys, blatt] });
+
+        var (code, j) = await s.Post("/api/projekt/oeffnen", new { ordner = s.Ordner });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.True(j!["offen"]!.GetValue<bool>());
+        Assert.Contains("Kälte gehört zur Heizung", j["aliasHinweis"]!.GetValue<string>());
+        Assert.Contains("KUE-VL → KAE-VL", j["aliasHinweis"]!.GetValue<string>());
+        var (_, el) = await s.Post("/api/abfrage/element_lesen", new { element = "KUE-VL" });
+        var elText = el!.ToJsonString(new System.Text.Json.JsonSerializerOptions { Encoder = System.Text.Encodings.Web.JavaScriptEncoder.UnsafeRelaxedJsonEscaping });
+        Assert.Contains("Kälte Vorlauf", elText);
+        Assert.Contains("KAE-VL", elText);
+        // ein Projekt ohne alte Werte meldet nichts
+        var (_, neu) = await s.Post("/api/projekt/anlegen", new { ordner = Path.Combine(s.Wurzel, "zweites", "e_KICAD"), name = "Neu", beispiel = true });
+        Assert.Null(neu!["aliasHinweis"]);
     }
 }

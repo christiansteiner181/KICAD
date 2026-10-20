@@ -110,7 +110,11 @@ public sealed class Projekt
         }
     }
 
-    public StandInfo Stand => new(bekannt.Count, verlauf.LastOrDefault()?.Id, Modell.Pruefsumme(), Modell.Elemente.Count, Modell.Verbindungen.Count);
+    /// <summary>Hinweis, wenn beim Lesen alte Kennungen umgeschrieben wurden («Kälte gehört zur Heizung – alte Kennungen umgeschrieben: KUE-VL → KAE-VL …»,
+    /// Entscheid Christian 20.10.2026); null, wenn nichts umzuschreiben war. Kein Fehler: das Projekt öffnet in jedem Fall.</summary>
+    public string? AliasHinweis => KaelteAlias.Hinweis(Modell.Umgeschrieben);
+
+    public StandInfo Stand =>new(bekannt.Count, verlauf.LastOrDefault()?.Id, Modell.Pruefsumme(), Modell.Elemente.Count, Modell.Verbindungen.Count);
 
     Herkunft NeueHerkunft(string befehl) => new() { Art = AkteurArt, Akteur = Akteur, Zeit = DateTimeOffset.Now, Befehl = befehl,
         Quelle = AkteurArt == "beispiel" ? "Beispielprojekt, Werte fiktiv" : null };

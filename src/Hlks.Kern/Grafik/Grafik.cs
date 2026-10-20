@@ -177,10 +177,14 @@ public static class Grafik
     static bool IstBeschriftungVon(Katalog k, Element e, Element ansicht) =>
         k.Klassen.TryGetValue(e.Klasse, out var d) && d.BrauchtAnsicht && e.Bezuege.TryGetValue("ansicht", out var a) && a == ansicht.Id;
 
-    public static List<string> Liste(Element e, string name) =>
-        e.Eigenschaft(name)?.Inhalt is JsonArray a
+    public static List<string> Liste(Element e, string name)
+    {
+        var l = e.Eigenschaft(name)?.Inhalt is JsonArray a
             ? a.Select(x => x is JsonValue v && v.TryGetValue<string>(out var s) ? s : null).OfType<string>().ToList()
             : [];
+        // Kälte gehört zur Heizung (Entscheid Christian 20.10.2026): der alte Gewerk-Wert «kaelte» zählt als «heizung»
+        return name == "gewerke" && l.Any(KaelteAlias.IstAltesGewerk) ? l.Select(KaelteAlias.Gewerk).Distinct().ToList() : l;
+    }
 
     public static bool Bool(Element e, string name, bool vorgabe = false) =>
         e.Eigenschaft(name)?.Inhalt is JsonValue v && v.TryGetValue<bool>(out var b) ? b : vorgabe;

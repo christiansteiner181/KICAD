@@ -557,6 +557,12 @@ public sealed class FamilienauswahlSetzen : IBefehl
                     texte.Add(s.Trim());
                 }
                 texte = texte.Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                if (feld == "gewerke" && texte.Any(KaelteAlias.IstAltesGewerk))
+                {
+                    // Kälte gehört zur Heizung (Entscheid Christian 20.10.2026): der alte Wert «kaelte» wird als «heizung» gelesen, kein Fehler
+                    texte = texte.Select(KaelteAlias.Gewerk).Distinct(StringComparer.OrdinalIgnoreCase).ToList();
+                    k.Hinweise.Add(KaelteAlias.HinweisGewerk);
+                }
                 Pruefen(k, feld, texte);
                 neu[feld] = new JsonArray(texte.Select(t => (JsonNode)JsonValue.Create(t)).ToArray());
             }

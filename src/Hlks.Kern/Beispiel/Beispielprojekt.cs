@@ -1,7 +1,8 @@
 // Beispielprojekt «MFH Musterweg» (fiktiv) – entsteht vollständig über die Befehle der Kern-API.
 // 3 Geschosse (UG, EG, 1.OG), 13 Räume, Aussenwände, Sanitäranlage mit Schmutzwasser (2 Fallstränge, Sammel- und
 // Grundleitung bis Kontrollschacht) und Trinkwasser kalt (Verteilleitung, 2 Steigstränge), 16 Apparate,
-// Funktionsgraph mit Wasserzähler-Datenpunkten und Leckage-Verriegelung, 5 Ansichten. Alle Werte fiktiv.
+// Funktionsgraph mit Wasserzähler-Datenpunkten und Leckage-Verriegelung, 6 Ansichten. Dazu ein kleiner Kältekreis (Kälte Vorlauf/Rücklauf, Gewerk
+// Heizung, Entscheid Christian 20.10.2026) mit Grundriss UG Heizung/Kälte. Alle Werte fiktiv.
 
 using System.Text.Json.Nodes;
 
@@ -235,6 +236,21 @@ public static class Beispielprojekt
             Rohr($"KW-{k}.03-DU", "KW-S2", 15, MV, $"TS-KW-{k}.03-2.b", $"DU-{k}.03.kw", [Q(11500, 9650, z + 400), Q(11300, 9650, z + 400), Q(11300, 6800, z + 400), Q(11300, 6800, z + 1000)]);
         }
 
+        // ---------- Kälte (Teil der Heizung, Entscheid Christian 20.10.2026: «Kälte ist Teil der Heizung mit anderem Medium») ----------
+        // Kleiner Kältekreis in der Technik U.01: Umwälzpumpe und Absperrventil im Vorlauf, zwei Absperrventile im Rücklauf, je eine Leitung. Die Systeme tragen die Systemtypen
+        // «Kälte Vorlauf» / «Kälte Rücklauf» (Medium KAE-VL / KAE-RL, Gewerk heizung); im Projektbrowser stehen sie unter «Heizung».
+        Neu("Anlage", "A-KAE", "Kälteanlage", new JsonObject { ["beschreibung"] = "Kleiner Kältekreis (Gewerk Heizung, Medium Kälte), Werte fiktiv" });
+        Neu("System", "KAE-VL", "Kälte Vorlauf", new JsonObject { ["systemtyp"] = "Kälte Vorlauf" }, teilVon: "A-KAE");
+        Neu("System", "KAE-RL", "Kälte Rücklauf", new JsonObject { ["systemtyp"] = "Kälte Rücklauf" }, teilVon: "A-KAE");
+        Strang("KAE-V1", "Vorlauf Kälte Technik", "verteilleitung", "KAE-VL");
+        Strang("KAE-R1", "Rücklauf Kälte Technik", "verteilleitung", "KAE-RL");
+        Punkt("Pumpe", "P-KAE-1", "KAE-V1", 1500, 1000, -2400, new JsonObject { ["dn"] = 40 });
+        Punkt("Ventil", "VE-KAE-1", "KAE-V1", 3500, 1000, -2400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 40 });
+        Punkt("Ventil", "VE-KAE-2", "KAE-R1", 3500, 1400, -2400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 40 });
+        Punkt("Ventil", "VE-KAE-3", "KAE-R1", 1500, 1400, -2400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 40 });
+        Rohr("KAE-V1-1", "KAE-V1", 40, "Stahl", "P-KAE-1.druck", "VE-KAE-1.ein", [Q(1500, 1000, -2400), Q(3500, 1000, -2400)]);
+        Rohr("KAE-R1-1", "KAE-R1", 40, "Stahl", "VE-KAE-2.aus", "VE-KAE-3.ein", [Q(3500, 1400, -2400), Q(1500, 1400, -2400)]);
+
         // ---------- Funktionsgraph (MSRL) ----------
         Neu("Automationsstation", "AS-1", "Automationsstation Technik", new JsonObject { ["hersteller"] = "offen" });
         Neu("Datenpunkt", "DP-WZ1-VOL", "Wasserzähler Zählerstand",
@@ -256,6 +272,7 @@ public static class Beispielprojekt
         // ---------- Ansichten ----------
         foreach (var (g, kz) in new[] { ("UG", "AN-GR-UG"), ("EG", "AN-GR-EG"), ("1.OG", "AN-GR-1.OG") })
             Neu("Ansicht", kz, $"Grundriss {g} Sanitär", new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000, ["detailgrad"] = "mittel", ["gewerke"] = new JsonArray("sanitaer", "architektur") }, geschoss: g);
+        Neu("Ansicht", "AN-GR-UG-HZ", "Grundriss UG Heizung/Kälte", new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000, ["detailgrad"] = "mittel", ["gewerke"] = new JsonArray("heizung", "architektur") }, geschoss: "UG");
         Neu("Ansicht", "AN-SCHEMA-SAN", "Prinzipschema Sanitär", new JsonObject { ["art"] = "schema", ["detailgrad"] = "mittel", ["gewerke"] = new JsonArray("sanitaer") });
         Neu("Ansicht", "AN-3D", "3D Gesamt", new JsonObject { ["art"] = "3d", ["detailgrad"] = "fein" });
 

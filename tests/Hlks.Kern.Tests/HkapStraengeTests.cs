@@ -114,9 +114,9 @@ public sealed class HkapStraengeTests : IDisposable
         var erwartet = new Dictionary<string, string?>
         {
             ["Trinkwasser kalt"] = "Sanitär", ["Trinkwasser warm"] = "Sanitär", ["Zirkulation"] = "Sanitär", ["Schmutzwasser"] = "Sanitär", ["Regenwasser"] = "Sanitär",
-            ["Heizung Vorlauf"] = "Heizung", ["Heizung Rücklauf"] = "Heizung", ["Kühlwasser Vorlauf"] = "Kälte", ["Kühlwasser Rücklauf"] = "Kälte",
+            ["Heizung Vorlauf"] = "Heizung", ["Heizung Rücklauf"] = "Heizung", ["Kälte Vorlauf"] = "Kälte", ["Kälte Rücklauf"] = "Kälte",
             ["Zuluft"] = "Zuluft", ["Abluft"] = "Abluft", ["Fortluft"] = "Fortluft", ["Aussenluft"] = "Aussenluft",
-            ["Sole Vorlauf"] = null, ["Sole Rücklauf"] = null,
+            ["Heizung Vorlauf Glykol"] = null, ["Heizung Rücklauf Glykol"] = null, ["Kälte Vorlauf Glykol"] = "Kälte", ["Kälte Rücklauf Glykol"] = "Kälte",   // Heizung Glykol (früher Sole): kein HKAP-Medium
         };
         Assert.Equal(Kat.Systemtypen.Keys.Order(), erwartet.Keys.Order());              // jeder Systemtyp des Katalogs ist entschieden
         foreach (var (typ, medium) in erwartet) Assert.Equal(medium, HkapStraenge.MediumVon(typ));
@@ -271,24 +271,24 @@ public sealed class HkapStraengeTests : IDisposable
     public void Buendeln_NachNameKennzeichenNummerUndNein()
     {
         var p = MitSerie(formteile: false);
-        Sys(p, "HZ-VL", "Heizung Vorlauf"); Sys(p, "HZ-RL", "Heizung Rücklauf"); Sys(p, "KUE-VL", "Kühlwasser Vorlauf");
+        Sys(p, "HZ-VL", "Heizung Vorlauf"); Sys(p, "HZ-RL", "Heizung Rücklauf"); Sys(p, "KAE-VL", "Kälte Vorlauf");
         Strang(p, "HZ-VL-1", "HZ-VL", "Steigstrang A"); Strang(p, "HZ-RL-1", "HZ-RL", "Steigstrang B");     // verschiedene Namen, gleiche Nummer
         Strang(p, "HZ-VL-2", "HZ-VL", "Steigstrang 2"); Strang(p, "HZ-RL-2", "HZ-RL", "Steigstrang 2");     // gleicher Name
-        Strang(p, "KUE-VL-1", "KUE-VL", "Steigstrang A");                                                    // anderes Medium: bündelt nie mit Heizung
+        Strang(p, "KAE-VL-1", "KAE-VL", "Steigstrang A");                                                    // anderes Medium: bündelt nie mit Heizung
         var alle = p.Modell.DerKlasse("Strang").ToList();
         static string[][] Namen(List<List<Element>> g) => g.Select(x => x.Select(e => e.Kennzeichen).ToArray()).ToArray();
 
-        Assert.Equal([["HZ-RL-1", "HZ-VL-1"], ["HZ-RL-2", "HZ-VL-2"], ["KUE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "auto")));
-        Assert.Equal([["HZ-RL-1"], ["HZ-RL-2", "HZ-VL-2"], ["HZ-VL-1"], ["KUE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "name")));   // nur gleiche Namen, nach Kennzeichen sortiert
-        Assert.Equal([["HZ-RL-1", "HZ-VL-1"], ["HZ-RL-2", "HZ-VL-2"], ["KUE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "kennzeichen")));
+        Assert.Equal([["HZ-RL-1", "HZ-VL-1"], ["HZ-RL-2", "HZ-VL-2"], ["KAE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "auto")));
+        Assert.Equal([["HZ-RL-1"], ["HZ-RL-2", "HZ-VL-2"], ["HZ-VL-1"], ["KAE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "name")));   // nur gleiche Namen, nach Kennzeichen sortiert
+        Assert.Equal([["HZ-RL-1", "HZ-VL-1"], ["HZ-RL-2", "HZ-VL-2"], ["KAE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, alle, "kennzeichen")));
         Assert.Equal(5, HkapStraenge.Buendeln(p.Modell, alle, "nein").Count);
         // steigzone (Vorgabe seit 19.10.2026): ohne Steigzone je Strang eine Gruppe; gleiche Steigzone im selben Medium bündelt,
         // auch bei verschiedenen Namen und Nummern; ein anderes Medium bündelt nie mit
         Assert.Equal(5, HkapStraenge.Buendeln(p.Modell, alle, "steigzone").Count);
         Assert.Equal("steigzone", HkapStraenge.BuendelnPruefen(null));
-        foreach (var kz in new[] { "HZ-VL-1", "HZ-RL-2", "KUE-VL-1" })
+        foreach (var kz in new[] { "HZ-VL-1", "HZ-RL-2", "KAE-VL-1" })
             Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = kz, ["eigenschaften"] = new JsonObject { ["steigzone"] = "Schacht Nord" } }));
-        Assert.Equal([["HZ-RL-1"], ["HZ-RL-2", "HZ-VL-1"], ["HZ-VL-2"], ["KUE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, p.Modell.DerKlasse("Strang").ToList(), "steigzone")));
+        Assert.Equal([["HZ-RL-1"], ["HZ-RL-2", "HZ-VL-1"], ["HZ-VL-2"], ["KAE-VL-1"]], Namen(HkapStraenge.Buendeln(p.Modell, p.Modell.DerKlasse("Strang").ToList(), "steigzone")));
         // höchstens ein Strang je Systemtyp in einer Gruppe: ein zweiter Vorlauf mit derselben Nummer beginnt eine neue Gruppe
         Sys(p, "HZ-VL-B", "Heizung Vorlauf"); Strang(p, "HB-VL-1", "HZ-VL-B", "Steigstrang A");
         var g = HkapStraenge.Buendeln(p.Modell, p.Modell.DerKlasse("Strang").ToList(), "kennzeichen");
@@ -322,15 +322,15 @@ public sealed class HkapStraengeTests : IDisposable
     public void Medium_GemischteGruppeUndSole_ohneMediumMitHinweis_UndHkapMediumBleibt()
     {
         var p = MitSerie(formteile: false);
-        Sys(p, "HZ-VL", "Heizung Vorlauf"); Sys(p, "KUE-VL", "Kühlwasser Vorlauf"); Sys(p, "SO-VL", "Sole Vorlauf");
-        Strang(p, "HZ-VL-1", "HZ-VL", "Mischstrang"); Strang(p, "KUE-VL-1", "KUE-VL", "Mischstrang"); Strang(p, "SO-VL-1", "SO-VL", "Sole 1");
+        Sys(p, "HZ-VL", "Heizung Vorlauf"); Sys(p, "KAE-VL", "Kälte Vorlauf"); Sys(p, "HZ-VL-Glyk", "Heizung Vorlauf Glykol");
+        Strang(p, "HZ-VL-1", "HZ-VL", "Mischstrang"); Strang(p, "KAE-VL-1", "KAE-VL", "Mischstrang"); Strang(p, "HZ-VL-Glyk-1", "HZ-VL-Glyk", "Sole 1");
         Bereit(p);
         Gut(p, "hkap_senden", """{ "datenarten": ["straenge"] }""");
         Assert.Equal(3, a.Straenge.Count);                                       // gleicher Name, aber verschiedene Medien: nie in einer Gruppe
         var sole = a.Straenge.Single(s => s.Felder["bezeichnung"]!.GetValue<string>() == "Sole 1");
         Assert.Equal("", sole.Felder["medium"]!.GetValue<string>());            // Sole: kein Medium
         Assert.StartsWith("L_", sole.Felder["nummer"]!.GetValue<string>());     // ohne Medium: HKAP nummeriert wie Lüftung
-        Assert.Contains(Straenge(p)["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Sole Vorlauf") && h.GetValue<string>().Contains("kein HKAP-Medium"));
+        Assert.Contains(Straenge(p)["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Heizung Vorlauf Glykol") && h.GetValue<string>().Contains("kein HKAP-Medium"));
 
         // Kühlwasser und ein Heizungsstrang in einer HKAP-Gruppe: verschiedene Medien → Medium nicht schreiben, Hinweis
         var kue = a.Straenge.Single(s => s.Felder["medium"]!.GetValue<string>() == "Kälte");
@@ -498,9 +498,9 @@ public sealed class HkapStraengeTests : IDisposable
         Assert.Throws<HlksFehler>(() => HkapStraenge.BuendelnPruefen("x"));
         var falsch = Nein(p, "hkap_uebernehmen", """{ "datenarten": ["straenge"], "system": { "ST2": "gibt-es-nicht" } }""");
         Assert.Contains("gibt-es-nicht", falsch.Fehler);
-        Sys(p, "KUE-VL", "Kühlwasser Vorlauf");
-        Gut(p, "hkap_uebernehmen", """{ "datenarten": ["straenge"] }""");                  // jetzt eindeutig: Kälte → KUE-VL
-        Assert.Equal(p.Modell.Hole("KUE-VL").Id, p.Modell.Hole("K_01").TeilVon);
+        Sys(p, "KAE-VL", "Kälte Vorlauf");
+        Gut(p, "hkap_uebernehmen", """{ "datenarten": ["straenge"] }""");                  // jetzt eindeutig: Kälte → KAE-VL
+        Assert.Equal(p.Modell.Hole("KAE-VL").Id, p.Modell.Hole("K_01").TeilVon);
     }
 
     [Fact]

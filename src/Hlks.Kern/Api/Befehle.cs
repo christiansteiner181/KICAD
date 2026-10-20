@@ -211,9 +211,34 @@ static class Elementpflege
             else inhalt = roh.DeepClone();
             if (einheit is not null && def.Einheit is not null && !einheit.Equals(def.Einheit, StringComparison.OrdinalIgnoreCase))
                 throw new HlksFehler($"Eigenschaft «{def.Name}» erwartet die Einheit {def.Einheit}, nicht {einheit}.", $"Wert in {def.Einheit} umrechnen");
+            inhalt = KaelteUmschreiben(k, def, inhalt);
             inhalt = Normalisieren(def, inhalt);
             e.Eigenschaften[def.Name] = new Wert { Inhalt = inhalt, Einheit = def.Einheit ?? einheit, Herkunft = k.Herkunft with { Quelle = quelle ?? k.Herkunft.Quelle } };
         }
+    }
+
+    /// <summary>Alte Kennungen in Eingaben lesen, nie ablehnen (Kälte gehört zur Heizung, Entscheid Christian 20.10.2026): systemtyp
+    /// «Kühlwasser Vorlauf» → «Kälte Vorlauf», medium «KUE-VL» → «KAE-VL», gewerk «kaelte» → «heizung», gewerke-Liste ohne «kaelte»;
+    /// mit Hinweis im Ergebnis.</summary>
+    static JsonNode? KaelteUmschreiben(Kontext k, EigenschaftDef def, JsonNode? n)
+    {
+        if (def.Typ == "liste" && def.Name.Equals("gewerke", StringComparison.OrdinalIgnoreCase) && n is JsonArray liste && KaelteAlias.Gewerkliste(liste) is { } neu)
+        {
+            k.Hinweise.Add(KaelteAlias.HinweisGewerk);
+            return neu;
+        }
+        if (def.Typ is "auswahl" or "text" && n is JsonValue v && v.TryGetValue<string>(out var text))
+        {
+            var umgeschrieben = KaelteAlias.Eigenschaftswert(def.Name, text);
+            if (umgeschrieben != text)
+            {
+                k.Hinweise.Add(def.Name.Equals("gewerk", StringComparison.OrdinalIgnoreCase)
+                    ? KaelteAlias.HinweisGewerk
+                    : $"Kälte gehört zur Heizung: «{text}» wird als «{umgeschrieben}» gelesen.");
+                return JsonValue.Create(umgeschrieben);
+            }
+        }
+        return n;
     }
 
     static JsonNode? Normalisieren(EigenschaftDef def, JsonNode? n)

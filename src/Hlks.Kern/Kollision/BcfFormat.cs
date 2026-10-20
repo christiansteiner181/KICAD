@@ -14,7 +14,7 @@
 // ANNAHME Status: Abbildung Kollision.status ↔ TopicStatus siehe StatusAusgabe/StatusEingabe (deutsche Bezeichnungen; beim Lesen
 //   auch übliche englische). Unbekannter TopicStatus ändert nichts (Hinweis).
 // ANNAHME Bezeichnungen: TopicType «Kollision hart» / «Kollision weich»; Priority hart «Hoch», weich «Normal» (Liste Hoch, Normal,
-//   Tief); Labels = Gewerke der Beteiligten (Heizung, Lüftung, Sanitär, Kälte, MSRL, Architektur, Allgemein) bzw. «Fremdmodell» für
+//   Tief); Labels = Gewerke der Beteiligten (Heizung inkl. Kälte, Lüftung, Sanitär, MSRL, Architektur, Allgemein) bzw. «Fremdmodell» für
 //   IFC-Produkte, die nicht als Element übernommen sind.
 // ANNAHME Kommentare: Kollision.kommentar ist ein Text. Eigener Text = ein Comment (feste Guid). Übernommene BCF-Kommentare stehen
 //   je als Block «[BCF <JJJJ-MM-TT hh:mm> · <Autor> · <Guid>] <Text>» (Folgezeilen mit zwei Leerzeichen eingerückt) im Kommentar und
@@ -144,11 +144,11 @@ public static class BcfFormat
     public static string Prioritaet(string? art) => art == "weich" ? "Normal" : "Hoch";
 
     public const string LabelFremd = "Fremdmodell";
-    public static readonly string[] Labels = ["Architektur", "Heizung", "Lüftung", "Sanitär", "Kälte", "MSRL", "Allgemein", LabelFremd];
+    public static readonly string[] Labels = ["Architektur", "Heizung", "Lüftung", "Sanitär", "MSRL", "Allgemein", LabelFremd];
 
     public static string GewerkLabel(string? gewerk) => gewerk switch
     {
-        "heizung" => "Heizung", "lueftung" => "Lüftung", "sanitaer" => "Sanitär", "kaelte" => "Kälte", "msrl" => "MSRL",
+        "heizung" => "Heizung", "lueftung" => "Lüftung", "sanitaer" => "Sanitär", "kaelte" => "Heizung", "msrl" => "MSRL",   // «kaelte»: früherer Wert, Kälte gehört zur Heizung (Entscheid Christian 20.10.2026)
         "architektur" => "Architektur", null or "" or "allgemein" => "Allgemein",
         _ => char.ToUpperInvariant(gewerk[0]) + gewerk[1..],
     };

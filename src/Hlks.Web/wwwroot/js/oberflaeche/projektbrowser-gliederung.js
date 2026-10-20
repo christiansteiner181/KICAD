@@ -4,8 +4,10 @@
 // EINE Tabelle (GLIEDERUNGEN) beschreibt alle Gliederungen: je Gliederung die Äste in ihrer Reihenfolge. Ein Ast nennt seine QUELLE (was er zeigt:
 // Ansichten, Pläne, Systeme …) und eine AUSWAHL (welche Elemente der Quelle in diesen Ast kommen). «Weitere» wird NICHT von Hand beschrieben, sondern
 // aus der Tabelle abgeleitet: alles, was kein Ast der Gliederung aufgenommen hat, steht unter «Weitere» – nichts verschwindet ganz, und die Summe
-// aller Elemente ist in jeder Gliederung dieselbe wie in «Gebäude». Eine weitere Gliederung (Kälte, Elektro/MSRL) ist ein neuer Eintrag in der
-// Tabelle, ohne neuen Code.
+// aller Elemente ist in jeder Gliederung dieselbe wie in «Gebäude». Eine weitere Gliederung (z. B. Elektro/MSRL) ist ein neuer Eintrag in der
+// Tabelle, ohne neuen Code. Kälte hat keine eigene Gliederung: «Kälte ist Teil der Heizung mit anderem Medium» (Entscheid Christian 20.10.2026) – die
+// Gliederung «Heizung» zeigt die Kältesysteme (ihr Systemtyp hat das Gewerk heizung); eine gespeicherte Kennung «kaelte» (Benutzereinstellung) wird als
+// «heizung» gelesen.
 //
 // Auswahl eines Asts (fehlt sie: alle Elemente der Quelle; eine Liste von Auswahlen: eine davon genügt):
 //   { gewerk: 'sanitaer' | '$' }   das Gewerk gehört zu den Gewerken des Elements ($ = das Gewerk der Gliederung)
@@ -20,6 +22,7 @@
 //   Familie   → Gewerk ihrer Kategorie (Klasse)
 
 import { gewerkGruppen, blattGewerk } from './serienpdf-text.js';
+import { gewerkAlias, gewerkeAlias } from '../gewerk-alias.js';
 
 const lc = (t) => String(t ?? '').toLowerCase();
 
@@ -80,7 +83,7 @@ const exklusiv = (id, tabelle) => !!tabelle.find((g) => g.id === id)?.exklusiv;
 /** Macht aus dem gespeicherten Wert die Liste der gewählten Kennungen: Einzelwert (alte Einstellung) → Liste mit einem Eintrag; unbekannte Kennungen und Doppelte entfallen,
  *  die Reihenfolge ist die der Tabelle (= der Auswahlliste); eine exklusive Gliederung neben anderen entfällt; nichts Gültiges → die Vorgabe («Gebäude»). */
 export function gliederungenNormieren(wert, tabelle = GLIEDERUNGEN) {
-  const roh = Array.isArray(wert) ? wert : (wert === undefined || wert === null || wert === '' ? [] : [wert]);
+  const roh = (Array.isArray(wert) ? wert : (wert === undefined || wert === null || wert === '' ? [] : [wert])).map(gewerkAlias);   // «kaelte» (alt) = heizung
   const ids = tabelle.map((g) => g.id).filter((id) => roh.includes(id));
   if (ids.length === 0) return [GLIEDERUNG_VORGABE];
   if (ids.length > 1) return ids.filter((id) => !exklusiv(id, tabelle));
@@ -183,14 +186,14 @@ export function ansichtThema(a) {
 /** Gewerke einer Ansicht: «gewerke» und die Gewerke der Systeme der Ansicht (Kennzeichen in «systeme»), ohne Doppelte. */
 export function ansichtGewerke(ctx, a) {
   const w = a?.werte ?? {};
-  const aus = (Array.isArray(w.gewerke) ? w.gewerke : []).map(String);
+  const aus = gewerkeAlias((Array.isArray(w.gewerke) ? w.gewerke : []).map(String));
   const sys = (Array.isArray(w.systeme) ? w.systeme : []).map((kz) => systemGewerk(ctx, ctx.element(kz)));
   return [...new Set([...aus, ...sys].filter((g) => g && g !== 'allgemein'))];
 }
 
 /** Gewerk eines Planblatts: Plansatz (gesetzt oder Vorschlag, Abfrage plansaetze), sonst die Eigenschaft «gewerk»; '' = ohne. */
 export function planGewerk(ctx, p) {
-  const g = blattGewerk(ctx.plansaetze, p.kennzeichen)?.gewerk ?? p.werte?.gewerk;
+  const g = gewerkAlias(blattGewerk(ctx.plansaetze, p.kennzeichen)?.gewerk ?? p.werte?.gewerk);
   return !g || g === 'allgemein' ? '' : g;
 }
 

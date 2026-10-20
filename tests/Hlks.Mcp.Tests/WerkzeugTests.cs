@@ -231,7 +231,7 @@ public class WerkzeugTests
     {
         var p = Beispiel();
         var w = new Werkzeuge(p);
-        Assert.Equal(7, Json(w.Strangliste())["zeilen"]!.AsArray().Count);
+        Assert.Equal(9, Json(w.Strangliste())["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge (Beispielprojekt, Entscheid Christian 20.10.2026)
         Assert.Contains("MFH Musterweg", w.ProjektUeberblick());
         Assert.Contains("SW-F2", w.StrangText("SW-F2"));          // Textansicht bleibt Text
         Assert.StartsWith("System SW", w.SystemLesen("SW"));
