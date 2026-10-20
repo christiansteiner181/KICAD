@@ -360,7 +360,7 @@ const SERVER = process.env.HLKS_TEST_SERVER;
 const MINIMAL = ['../../../../../tests/daten/minimal_ifc4.ifc'].map((p) => new URL(p, import.meta.url)).find((u) => existsSync(u));
 
 test('Server: hochgeladene Testdatei → ifc_pruefen → Bausteine zeigen Lagebericht und Wahl', { skip: !SERVER || !MINIMAL }, async () => {
-  const hoch = await (await fetch(`${SERVER}/api/unterlagen?name=minimal_ifc4.ifc`, { method: 'POST', body: readFileSync(MINIMAL) })).json();
+  const hoch = await (await fetch(`${SERVER}/api/unterlagen?name=minimal_ifc4.ifc`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: readFileSync(MINIMAL) })).json();
   assert.match(hoch.name, /^[0-9a-f]{12}_minimal_ifc4\.ifc$/);
   const p = await (await fetch(`${SERVER}/api/abfrage/ifc_pruefen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ datei: hoch.name }) })).json();
   assert.equal(p.schema.toUpperCase(), 'IFC4');

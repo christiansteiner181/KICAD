@@ -113,7 +113,7 @@ public class AnleitungAuslieferungTests
         foreach (var m in new[] { HttpMethod.Post, HttpMethod.Put, HttpMethod.Delete, HttpMethod.Patch })
         {
             var a = await u.Http.SendAsync(new HttpRequestMessage(m, "/hilfe/index.html") { Content = new StringContent("x") });
-            Assert.True(a.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotFound, $"{m}: {a.StatusCode}");
+            Assert.True(a.StatusCode is HttpStatusCode.MethodNotAllowed or HttpStatusCode.NotFound or HttpStatusCode.UnsupportedMediaType, $"{m}: {a.StatusCode}");   // 415: Herkunftsschutz (text/plain)
         }
         Assert.Contains("Hallo Anleitung", File.ReadAllText(Path.Combine(u.Anleitung, "index.html")));   // unverändert
     }

@@ -357,11 +357,13 @@ await alleSchliessen();
 
 abschnitt('Grosse Datei hochladen (über 30 MB, Kestrel-Vorgabe)');
 const gross = Buffer.alloc(40 * 1024 * 1024, 7);
-const antwort = await fetch(`${SERVER}/api/unterlagen?name=${encodeURIComponent('gross.bin')}`, { method: 'POST', body: gross });
+const antwort = await fetch(`${SERVER}/api/unterlagen?name=${encodeURIComponent('gross.bin')}`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: gross });
 const aj = await antwort.json();
 pruef(antwort.status === 200 && /^[0-9a-f]{12}_gross\.bin$/.test(aj.name) && aj.bytes === gross.length, '40 MB roh hochgeladen', JSON.stringify(aj));
-const leer = await fetch(`${SERVER}/api/unterlagen`, { method: 'POST', body: 'x' });
+const leer = await fetch(`${SERVER}/api/unterlagen`, { method: 'POST', headers: { 'Content-Type': 'application/octet-stream' }, body: 'x' });
 pruef(leer.status === 400 && /Dateiname/.test((await leer.json()).fehler), 'ohne Namen: 400 mit Text');
+const textPlain = await fetch(`${SERVER}/api/unterlagen?name=x.txt`, { method: 'POST', body: 'x' });   // text/plain: Herkunftsschutz (Sicherheitsprüfung 3c, B1)
+pruef(textPlain.status === 415, 'Upload als text/plain: 415 (nur octet-stream oder multipart)', String(textPlain.status));
 
 abschnitt('C3: Ursprung passt, Inhalt liegt 30 m daneben (gleicher Gebäudeursprung)');
 await alleSchliessen();

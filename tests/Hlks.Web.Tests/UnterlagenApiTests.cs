@@ -61,7 +61,7 @@ public class UnterlagenApiTests
 
         public void Dispose()
         {
-            try { Http.PostAsync("/api/projekt/schliessen", new StringContent("{}")).GetAwaiter().GetResult(); } catch { /* egal */ }
+            try { Http.PostAsync("/api/projekt/schliessen", new StringContent("{}", System.Text.Encoding.UTF8, "application/json")).GetAwaiter().GetResult(); } catch { /* egal */ }
             Http.Dispose();
             fabrik.Dispose();
             basis.Dispose();
@@ -163,7 +163,9 @@ public class UnterlagenApiTests
     {
         using var s = new Server();
         await s.Anlegen();
-        var (code, text, _) = await s.Senden(HttpMethod.Post, "/api/unterlagen", new ByteArrayContent(Encoding.UTF8.GetBytes("x")));
+        var ohneName = new ByteArrayContent(Encoding.UTF8.GetBytes("x"));
+        ohneName.Headers.ContentType = new MediaTypeHeaderValue("application/octet-stream");   // ohne Inhaltstyp: 415 (Herkunftsschutz)
+        var (code, text, _) = await s.Senden(HttpMethod.Post, "/api/unterlagen", ohneName);
         Assert.Equal(HttpStatusCode.BadRequest, code);
         Assert.Contains("Dateiname", JsonNode.Parse(text)!["fehler"]!.GetValue<string>());
 

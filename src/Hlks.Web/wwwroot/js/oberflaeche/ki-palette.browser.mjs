@@ -37,7 +37,7 @@ const PROJEKT = path.join(arbeit, 'Worb_Testobjekt', 'c_Plaene und Modelle', 'e_
 const NORMEN = path.join(arbeit, 'normen');
 cpSync(path.join(REPO, 'tests', 'daten', 'normen'), NORMEN, { recursive: true, filter: (q) => !q.endsWith('erzeugen.mjs') });
 const ENV = {
-  HLKS_TEST: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ANLEITUNG: path.join(arbeit, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(arbeit, 'anleitung_pruefung'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'),
+  HLKS_TEST: '1', HLKS_KI_INTERNET: '1', HLKS_BENUTZER: path.join(arbeit, 'benutzer'), HLKS_ANLEITUNG: path.join(arbeit, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(arbeit, 'anleitung_pruefung'), HLKS_ZULETZT: path.join(arbeit, 'zuletzt'),
   HLKS_FAMILIENBIBLIOTHEK: path.join(arbeit, 'familienbibliothek'), HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(arbeit, 'ausstehend'), HLKS_PROJEKTABLAGE: path.join(arbeit, 'projektablage'), HLKS_NORMEN: NORMEN,
   HLKS_WEBROOT: WEBROOT, HLKS_KATALOG: path.join(REPO, 'kataloge'), DOTNET_ROOT: path.dirname(dotnet),
   HLKS_CLAUDE_EXE: path.join(BAU, 'Hlks.ClaudeAttrappe', 'bin', 'Debug', 'net10.0', 'Hlks.ClaudeAttrappe.exe'),

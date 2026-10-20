@@ -340,6 +340,22 @@ test('Wahl des Gesprächs, des Modells und des Internet-Schalters', () => {
   assert.equal(T.internetWaehlen(einst, true), true);
 });
 
+test('Internet-Schalter vorläufig gesperrt (Sicherheitsprüfung 3c): ausgegraut, Grund im Tooltip, gemerktes «an» gilt nicht', () => {
+  const grund = 'Internet in der Palette vorläufig gesperrt (Sicherheitsprüfung 3c, B3/B4)';
+  const gesperrt = { internetVorgabe: false, internetErlaubt: false, internetGrund: grund };
+  assert.equal(T.internetGesperrt(gesperrt), grund);
+  assert.equal(T.internetWaehlen(gesperrt, true), false, 'gemerktes «an» wird übergangen');
+  assert.equal(T.internetWaehlen({ ...gesperrt, internetVorgabe: true }, null), false);
+  assert.equal(T.internetGesperrt({ internetErlaubt: false }), 'Internet in der Palette vorläufig gesperrt', 'ohne Grund ein Ersatztext');
+  assert.equal(T.internetGesperrt({ internetErlaubt: true }), null);
+  assert.equal(T.internetGesperrt({}), null, 'älterer Server ohne Feld: nicht gesperrt');
+  assert.equal(T.internetWaehlen({ internetErlaubt: true }, true), true);
+  const quelle = readFileSync(path.join(path.dirname(fileURLToPath(import.meta.url)), 'ki-palette.js'), 'utf8');
+  assert.match(quelle, /ui\.internet\.title = gesperrt \|\|/, 'Tooltip zeigt den Grund');
+  assert.match(quelle, /classList\.toggle\('gesperrt'/, 'Schalter ausgegraut');
+  assert.match(quelle, /onclick = \(\) => \{ if \(T\.internetGesperrt\(einst\)\) return;/, 'Klick wirkungslos');
+});
+
 // ------------------------------------------------------------------------------------------------ Zustand und Ereignisse
 
 const mensch = (frage, text = 'Frage?', mehr = {}) => ({ rolle: 'mensch', frage, text, zeit: '2026-10-20T14:00:00', kontext: {}, modell: 'sonnet', internet: false, ...mehr });

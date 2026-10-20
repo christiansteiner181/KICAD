@@ -65,7 +65,7 @@ public class ApiTests
 
         public void Dispose()
         {
-            try { Http.PostAsync("/api/projekt/schliessen", new StringContent("{}")).GetAwaiter().GetResult(); } catch { /* egal */ }
+            try { Http.PostAsync("/api/projekt/schliessen", new StringContent("{}", System.Text.Encoding.UTF8, "application/json")).GetAwaiter().GetResult(); } catch { /* egal */ }
             Http.Dispose();
             fabrik.Dispose();
             basis.Dispose();

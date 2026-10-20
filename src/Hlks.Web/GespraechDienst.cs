@@ -74,6 +74,9 @@ public sealed record GespraechEinstellungen
     public string VorgabeModell { get; init; } = "sonnet";
     /// <summary>Internet je Frage; Vorgabe aus (Annahme A4).</summary>
     public bool InternetVorgabe { get; init; }
+    /// <summary>Internet in der Palette überhaupt erlaubt. Vorgabe false: vorläufig gesperrt, bis die Befunde B3/B4/B6 der
+    /// Sicherheitsprüfung 3c (berichte/modul-3c-sicherheitspruefung.md) behoben sind; die Tests setzen true.</summary>
+    public bool InternetErlaubt { get; init; }
     /// <summary>Verbotene MCP-Werkzeuge (Namen ohne Präfix); Vorgabe die begründete Liste GespraechDienst.Verbote.</summary>
     public IReadOnlyList<string> Verboten { get; init; } = GespraechDienst.Verbotsliste;
     /// <summary>Erlaubte MCP-Werkzeuge bei internet = true (ohne Projektzugriff); Vorgabe GespraechDienst.InternetWerkzeuge.</summary>
@@ -98,6 +101,8 @@ public sealed record GespraechEinstellungen
         var e = new GespraechEinstellungen { ClaudeExe = U("HLKS_CLAUDE_EXE"), McpDll = U("HLKS_MCP_DLL"), Aufwand = U("HLKS_KI_AUFWAND") };
         if (double.TryParse(U("HLKS_KI_FRAGE_ZEITLIMIT_MIN"), System.Globalization.NumberStyles.Float, System.Globalization.CultureInfo.InvariantCulture, out var min) && min > 0)
             e = e with { Zeitlimit = TimeSpan.FromMinutes(min) };
+        // Internet-Schalter: im Betrieb vorläufig gesperrt (B3/B4/B6); nur Testläufe (HLKS_TEST=1) dürfen ihn mit HLKS_KI_INTERNET=1 freigeben.
+        if (U("HLKS_TEST") == "1" && U("HLKS_KI_INTERNET") == "1") e = e with { InternetErlaubt = true };
         return e;
     }
 }
@@ -145,6 +150,10 @@ public sealed class GespraechDienst
         new("aussparungen_ifc", "Ausgabe der Aussparungen an Architekt und Bauingenieur, schreibt eine Datei ausserhalb des Projekts – Freigabe durch den Menschen."),
         new("plan_pdf", "Planausgabe als PDF an einen beliebigen Ort (ersetzt Dateien) – Pläne gibt der Mensch aus (Register Ausgabe)."),
         new("plansatz_pdf", "Serien-PDF eines Plansatzes in einen Ordner – Planausgabe gibt der Mensch frei."),
+        // Dokumentenlenkung (Sicherheitsprüfung 3c, B5, 20.10.2026): Revisionen und Ausgabeziel gegenüber Dritten setzt der Mensch
+        new("revision_hinzufuegen", "Setzt Revisionsindex und -datum im Plankopf – Dokumentenlenkung gegenüber Dritten wie Freigabe/Versand, das will ein Mensch (B5)."),
+        new("plansatz_revision_hinzufuegen", "Setzt eine Revision auf allen Plänen eines Plansatzes – Dokumentenlenkung, nur der Mensch (B5)."),
+        new("plansatz_setzen", "Kann mit ausgabe.ordner das Ziel des nächsten Serien-PDF auf einen beliebigen Ort setzen – Planausgabe richtet der Mensch ein (B5)."),
         // Internet nur auf Schalter
         new("unterlage_aus_url", "Abruf aus dem Internet – nur mit dem Schalter «Internet» der Frage (dann erlaubt und protokolliert)."),
     ];
@@ -202,6 +211,7 @@ public sealed class GespraechDienst
         public DateTimeOffset LetzterText;
         public readonly List<JsonObject> Werkzeuge = [];
         public readonly Dictionary<string, JsonObject> WerkzeugNachId = new(StringComparer.Ordinal);
+        public readonly Dictionary<string, JsonObject?> EingabeNachId = new(StringComparer.Ordinal);   // nur fürs Protokoll (B2: Norm/Seite statt Normtext)
         public readonly List<JsonObject> Aenderungen = [];
         public readonly List<Abruf> Abrufe = [];
         public readonly Dictionary<string, Abruf> AbrufNachId = new(StringComparer.Ordinal);
@@ -239,7 +249,9 @@ public sealed class GespraechDienst
         {
             ["modelle"] = new JsonArray(einstellungen.Modelle.Select(m => (JsonNode)new JsonObject { ["id"] = m.Id, ["name"] = m.Name }).ToArray()),
             ["vorgabeModell"] = einstellungen.VorgabeModell,
-            ["internetVorgabe"] = einstellungen.InternetVorgabe,
+            ["internetVorgabe"] = einstellungen.InternetVorgabe && einstellungen.InternetErlaubt,
+            ["internetErlaubt"] = einstellungen.InternetErlaubt,
+            ["internetGrund"] = einstellungen.InternetErlaubt ? null : InternetGesperrtGrund,
             ["internetHinweis"] = InternetHinweis,   // Entscheid Hauptlauf 20.10.2026: mit Internet ohne Projektzugriff
             ["internetWerkzeuge"] = new JsonArray(einstellungen.WerkzeugeInternet.Prepend("WebSearch").Select(w => (JsonNode)JsonValue.Create(w)).ToArray()),
             ["verfuegbar"] = grund is null,
@@ -412,6 +424,8 @@ public sealed class GespraechDienst
         var internet = einstellungen.InternetVorgabe;
         if (par["internet"] is { } iw)
             internet = iw is JsonValue iv && iv.TryGetValue<bool>(out var ib) ? ib : throw new HlksFehler("«internet» muss true oder false sein.");
+        if (internet && !einstellungen.InternetErlaubt)
+            throw new AuftragHttpFehler(409, InternetGesperrtGrund, "Ohne Internet fragen; Unterlagen aus dem Netz über «Unterlagen» hochladen.");
         var kontext = par["kontext"] as JsonObject ?? (par["kontext"] is null ? new JsonObject() : throw new HlksFehler("«kontext» muss ein Objekt sein.", "{ ansicht?, geschoss?, auswahl?: [Kennzeichen], bild?: \"data:image/png;base64,…\" }"));
         var ansicht = Param.Text(kontext, "ansicht")?.Trim();
         var geschoss = Param.Text(kontext, "geschoss")?.Trim();
@@ -966,6 +980,58 @@ public sealed class GespraechDienst
         lock (l.LogSperre) { try { l.Log?.WriteLine(zeile); } catch (Exception ex) when (ex is IOException or ObjectDisposedException) { } }
     }
 
+    // Sicherheitsprüfung 3c, Befund B2: Werkzeugergebnisse stehen nicht voll im Gesprächsprotokoll (<Projekt>\ki\gespraeche\<id>.log
+    // liegt bei echten Projekten auf W:). Ergebnisse höchstens ProtokollMaxZeichen mit Vermerk; bei norm_lesen/normen_suchen nur
+    // Norm, Seite und Länge – lizenzierte Normtexte gehören nicht in Projektordner. Die vollen Ergebnisse braucht nur Claude.
+    public const int ProtokollMaxZeichen = 300;
+    /// <summary>Grund der vorläufigen Sperre des Internet-Schalters (GespraechEinstellungen.InternetErlaubt = false).</summary>
+    public const string InternetGesperrtGrund = "Internet in der Palette vorläufig gesperrt (Sicherheitsprüfung 3c, B3/B4)";
+    static readonly string[] NormWerkzeuge = ["norm_lesen", "normen_suchen"];
+
+    (string? Name, JsonObject? Eingabe) WerkzeugFuerProtokoll(Lauf l, string? id)
+    {
+        if (id is null) return (null, null);
+        lock (l.Sperre)
+            return (l.WerkzeugNachId.TryGetValue(id, out var w) ? T(w["name"]) : null, l.EingabeNachId.GetValueOrDefault(id));
+    }
+
+    /// <summary>Text auf höchstens ProtokollMaxZeichen kürzen, mit Vermerk «… gekürzt, n Zeichen».</summary>
+    public static string ProtokollKuerzen(string text) =>
+        text.Length <= ProtokollMaxZeichen ? text : text[..ProtokollMaxZeichen] + $" … gekürzt, {text.Length} Zeichen";
+
+    /// <summary>Protokollzeile für eine user-Nachricht von Claude Code (Werkzeugergebnisse): nur Art, Id, Werkzeug, Fehlerkennung und
+    /// gekürzter Inhalt; Normwerkzeuge nur Norm (Datei bzw. Frage), Seite und Länge. Weitere Felder (z. B. tool_use_result) entfallen.</summary>
+    public static string ProtokollZeileWerkzeugergebnis(JsonObject o, Func<string?, (string? Name, JsonObject? Eingabe)> werkzeug)
+    {
+        var bloecke = new JsonArray();
+        foreach (var b in (o["message"]?["content"] as JsonArray ?? []).OfType<JsonObject>())
+        {
+            var art = T(b["type"]);
+            var inhalt = b["content"] is JsonArray arr
+                ? string.Join(" ", arr.OfType<JsonObject>().Select(x => T(x["text"]) ?? (T(x["type"]) is { } t ? "[" + t + "]" : "")))
+                : T(b["content"]) ?? T(b["text"]) ?? "";
+            var id = T(b["tool_use_id"]);
+            var (name, eingabe) = werkzeug(id);
+            var k = new JsonObject { ["type"] = art };
+            if (id is not null) k["tool_use_id"] = id;
+            if (name is not null) k["werkzeug"] = name;
+            if (B(b["is_error"])) k["is_error"] = true;
+            if (name is not null && NormWerkzeuge.Contains(name))
+            {
+                k["norm"] = ProtokollKuerzen(T(eingabe?["datei"]) ?? T(eingabe?["frage"]) ?? "");
+                if (eingabe?["seite"] is { } s) k["seite"] = s.DeepClone();
+                if (eingabe?["bis"] is { } bis) k["bis"] = bis.DeepClone();
+                k["laenge"] = inhalt.Length;
+            }
+            else k["content"] = ProtokollKuerzen(inhalt);
+            bloecke.Add(k);
+        }
+        var z = new JsonObject { ["type"] = "user" };
+        if (T(o["session_id"]) is { } sid) z["session_id"] = sid;
+        z["message"] = new JsonObject { ["role"] = "user", ["content"] = bloecke };
+        return z.ToJsonString(Json.Optionen);
+    }
+
     void Eigene(Lauf l, string text, JsonObject? mehr)
     {
         var o = new JsonObject { ["type"] = "hlks", ["zeit"] = Jetzt(), ["frage"] = l.Frage, ["text"] = text };
@@ -1035,7 +1101,8 @@ public sealed class GespraechDienst
         try { o = JsonNode.Parse(zeile) as JsonObject; } catch (JsonException) { LogZeile(l, zeile); return; }
         if (o is null) { LogZeile(l, zeile); return; }
         var typ = T(o["type"]);
-        if (typ != "stream_event") LogZeile(l, zeile);
+        if (typ == "user") LogZeile(l, ProtokollZeileWerkzeugergebnis(o, id => WerkzeugFuerProtokoll(l, id)));   // B2: gekürzt, nie Normtext
+        else if (typ != "stream_event") LogZeile(l, zeile);
         switch (typ)
         {
             case "system" when T(o["subtype"]) == "init":
@@ -1114,7 +1181,7 @@ public sealed class GespraechDienst
         lock (l.Sperre)
         {
             l.Werkzeuge.Add(w);
-            if (id is not null) l.WerkzeugNachId[id] = w;
+            if (id is not null) { l.WerkzeugNachId[id] = w; l.EingabeNachId[id] = eingabe?.DeepClone() as JsonObject; }
         }
         // Websuche und Abruf: eigene Protokollzeile (wer fragt was, wann)
         string? art = kurzname == "WebSearch" ? "suche" : kurzname == "unterlage_aus_url" ? "abruf" : null;

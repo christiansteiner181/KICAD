@@ -189,3 +189,19 @@ Tests: `dotnet test tests/Hlks.Web.Tests --filter FullyQualifiedName~Gespraech` 
 1. B1 (Middleware + 3 Web-Tests) und B2 (Kürzen der `tool_result`-Zeilen) – kleine Änderungen, gleicher Auftrag; danach `stand_pruefen.ps1`.
 2. B3(a)/B4 im Kern (eine Pfadprüfung für `ki`), B3(b) in der Internetliste, B5 (Revisionen in die Verbotsliste, Einordnungs-Test), B6 als Abnahmelauf.
 3. B7–B15 bei Gelegenheit; B12 sofort mit B1 möglich (zwei Zeilen).
+
+## Umsetzung (20.10.2026)
+
+Sicherheitsauftrag hlks-kern, eigener Zweig ab `fd83b00`.
+
+| Befund | Stand | Umsetzung |
+| --- | --- | --- |
+| B1 kritisch | **erledigt** | `src/Hlks.Web/Herkunftsschutz.cs`, in `Program.cs` vor allen Endpunkten: `/api` und `/hilfe` nur mit Host `localhost`/`127.0.0.1`/`[::1]` (sonst 403, auch lesend); ändernde Methoden mit fremdem `Origin` (auch localhost mit anderem Port, https, `null`) oder `Sec-Fetch-Site` ≠ `same-origin`/`none` → 403 «Anfrage von fremder Seite abgelehnt»; Körper nur `application/json`, Uploads `POST /api/unterlagen` (`application/octet-stream`, `multipart/form-data`) und `POST /api/projekt/vorschau` (`image/png`), sonst 415; ohne Körper kein Inhaltstyp nötig; keine CORS-Kopfzeilen. Abweichung vom Vorschlag: fremder Host → 403 statt 421 (Auftrag). Tests `GespraechSicherheitTests` (B1_*). |
+| B2 mittel | **erledigt** | `GespraechDienst.ProtokollZeileWerkzeugergebnis`: `user`-Zeilen im Gesprächsprotokoll nur mit Art, Id, Werkzeug, Fehlerkennung und Inhalt ≤ 300 Zeichen («… gekürzt, n Zeichen»); `norm_lesen`/`normen_suchen` nur Norm (Datei bzw. Suchfrage), Seite, bis, Länge – kein Text; `tool_use_result` entfällt. Offen: die Sitzungsablage von Claude Code unter `%USERPROFILE%\.claude\projects\` enthält die Ergebnisse weiterhin (lokal, Aufbewahrung durch Claude Code; `--no-session-persistence` nicht umgesetzt). |
+| B3 mittel | **offen**, entschärft | Internet-Schalter vorläufig gesperrt: `GespraechEinstellungen.InternetErlaubt` (Vorgabe false; nur Testläufe mit `HLKS_TEST=1` und `HLKS_KI_INTERNET=1`), `POST …/frage` mit `internet: true` → 409 «Internet in der Palette vorläufig gesperrt (Sicherheitsprüfung 3c, B3/B4)», `/api/ki/einstellungen` meldet `internetErlaubt: false` und `internetGrund`, die Palette graut den Schalter aus (Grund im Tooltip, Klick wirkungslos, gemerktes «an» gilt nicht). Pfadprüfung für Akteur `ki` (B3a), Beschränkung auf `zweck = familie` (B3b), `--werkzeuge` im MCP-Server (B3c) offen. Die KI-Aufträge (`AuftragDienst`) sind von der Sperre nicht erfasst. |
+| B4 mittel | **offen** | UNC-/Pfadprüfung für `ki` im Kern nicht umgesetzt (wirkt auch ohne Internet). |
+| B5 mittel | **teilweise** | `revision_hinzufuegen`, `plansatz_revision_hinzufuegen` und `plansatz_setzen` (ganz, wegen `ausgabe.ordner`) in der Verbotsliste, je begründet. Offen: Einordnungs-Test «jede ändernde Tür erlaubt/verboten» (aus Zeitgründen nicht gebaut) und die Prüfung von `aussparungen_nummerieren`/`aussparungen_abgleichen`. |
+| B6 mittel | **offen** | Abnahmelauf mit echtem Claude im Internet-Modus nicht gemacht; durch die Sperre des Schalters derzeit ohne Wirkung. |
+| B7–B15 gering | **offen** | unverändert. |
+
+Freigabe des Internet-Schalters erst nach B3, B4 und B6: dann `InternetErlaubt` in der Vorgabe auf true setzen und Sperre (409, Tooltip) entfernen.
