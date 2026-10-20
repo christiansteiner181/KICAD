@@ -501,4 +501,81 @@ public class SanitaerNetzTests
         Tw(p, "R1", 2, 0, 1, 2);
         using (Modell.PruefsummeNachpruefen()) _ = p.Modell.Pruefsumme();   // Rechnung ändert das Modell nicht
     }
+
+    /// <summary>Testfamilie Doppelwaschtisch (FIKTIV, keine Herstellerdaten): Art «waschtisch» im Typ, je zwei Anschlüsse desselben Mediums
+    /// (kw1/kw2 nach oben, sw1/sw2 nach unten) mit Lage, damit die Rohre räumlich anschliessen.</summary>
+    static JsonObject Doppelwaschtisch() => (JsonObject)JsonNode.Parse("""
+        { "format": 1, "name": "Test-Doppelwaschtisch (fiktiv)", "kategorie": "Waschtisch",
+          "parameter": [{ "name": "sanitaerArt", "art": "typ", "datentyp": "text", "ziel": "sanitaerArt" }],
+          "typen": [{ "name": "Doppel", "werte": { "sanitaerArt": "waschtisch" } }],
+          "koerper": [],
+          "anschluesse": [
+            { "name": "kw1", "medium": "KW", "fluss": "rein", "lage": [0, 0, 500], "richtung": [0, 0, 1] },
+            { "name": "kw2", "medium": "KW", "fluss": "rein", "lage": [800, 0, 500], "richtung": [0, 0, 1] },
+            { "name": "sw1", "medium": "SW", "fluss": "raus", "lage": [0, 0, 0], "richtung": [0, 0, -1] },
+            { "name": "sw2", "medium": "SW", "fluss": "raus", "lage": [800, 0, 0], "richtung": [0, 0, -1] }] }
+        """)!;
+
+    /// <summary>Senkrechtes Rohr (Fliessrichtung von → nach) zwischen zwei Punkten; Enden an Anschlüssen mit Lage liegen genau darauf.</summary>
+    static void RohrZwischen(Projekt p, string kz, string strang, string von, string nach, double[] a, double[] b) =>
+        Ok(p.Ausfuehren("leitung_ziehen", new JsonObject { ["kennzeichen"] = kz, ["strang"] = strang, ["dn"] = 20, ["punkte"] = Pts(a, b), ["von"] = von, ["nach"] = nach }));
+
+    static double[] Hoeher(double[] p, double dz) => [p[0], p[1], p[2] + dz];
+
+    [Fact]
+    public void Familie_ZweiAnschluesseDesselbenMediums_AnZweiLeitungen_EinmalJeLeitungUndAnDerAnlage()
+    {
+        // Prüfbericht 4A, Abschnitt 7, fehlender Test 2: Apparat aus einer Familie mit kw1/kw2 an zwei Leitungen (und sw1/sw2 ebenso)
+        // KW: HA-1 → K0 → VK.a; VK.v1 → K1 → WT-F.kw1; VK.v2 → K2 → WT-F.kw2.   SW: WT-F.sw1 → S1 → VS.v1; WT-F.sw2 → S2 → VS.v2; VS.a → S0 → KS-1.
+        var p = Netzprojekt(0.5, "KW", "SW");
+        Ok(p.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = Doppelwaschtisch() }));
+        Ok(p.Ausfuehren("familie_platzieren", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "Doppel", ["punkt"] = new JsonArray(1000, 1000, 0), ["kennzeichen"] = "WT-F" }));
+        var e = Hole(p, "WT-F");
+        Assert.Equal(new[] { "kw1", "kw2", "sw1", "sw2" }, e.Anschluesse.Select(a => a.Name));
+        var z = SanitaerArten.Von(p.Modell, p.Katalog, e);
+        Assert.Equal(("waschtisch", "familie"), (z.Art!.Schluessel, z.Woher));
+        double lu = z.Art.LuKw!.Value, du = z.Art.Du!.Value;   // Werte des Katalogs (Excel-Zeile der Art)
+        double[] Lage(string an) => Anschlusslagen.Stelle(p.Modell, p.Katalog, e, an)!.Lage!;
+
+        Hausanschluss(p); Kontrollschacht(p);
+        Verteiler(p, "VK", "KW-1", 2); Verteiler(p, "VS", "SW-1", 2);
+        Rohr(p, "K0", "KW-1", "HA-1.aus", "VK.a");
+        RohrZwischen(p, "K1", "KW-1", "VK.v1", "WT-F.kw1", Hoeher(Lage("kw1"), 1000), Lage("kw1"));
+        RohrZwischen(p, "K2", "KW-1", "VK.v2", "WT-F.kw2", Hoeher(Lage("kw2"), 1000), Lage("kw2"));
+        RohrZwischen(p, "S1", "SW-1", "WT-F.sw1", "VS.v1", Lage("sw1"), Hoeher(Lage("sw1"), -1000));
+        RohrZwischen(p, "S2", "SW-1", "WT-F.sw2", "VS.v2", Lage("sw2"), Hoeher(Lage("sw2"), -1000));
+        Rohr(p, "S0", "SW-1", "VS.a", "KS-1.ein");
+
+        // je Leitung einmal: jede Anschlussleitung trägt den Apparat über ihren Anschluss, die gemeinsame Leitung nur einmal (nicht 2 × LU bzw. 2 × DU)
+        Tw(p, "K1", lu, 0, lu, 1);
+        Tw(p, "K2", lu, 0, lu, 1);
+        Tw(p, "K0", lu, 0, lu, 1);
+        Assert.Equal("kw1", Assert.Single(Belastung(p, "K1")["beitraege"]!.AsArray())!["anschluss"]!.GetValue<string>());
+        Assert.Equal("kw2", Assert.Single(Belastung(p, "K2")["beitraege"]!.AsArray())!["anschluss"]!.GetValue<string>());
+        Assert.Equal("WT-F", Assert.Single(Belastung(p, "K0")["beitraege"]!.AsArray())!["apparat"]!.GetValue<string>());
+        Aw(p, "S1", du, 1);
+        Aw(p, "S2", du, 1);
+        Aw(p, "S0", du, 1);
+        Assert.Single(Belastung(p, "S0")["beitraege"]!.AsArray());
+
+        // an Strang, System und Anlage einmal
+        Etwa(lu, Zahl(Abfrage(p, "sanitaer_belastung", new JsonObject { ["strang"] = "KW-1" })["summeLuKw"]), "Strang KW-1 ΣLU KW");
+        Etwa(du, Zahl(Abfrage(p, "sanitaer_belastung", new JsonObject { ["strang"] = "SW-1" })["summeDu"]), "Strang SW-1 ΣDU");
+        var a = Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!;
+        Etwa(lu, Zahl(a["trinkwasser"]!["summeLuKw"]), "Anlage ΣLU KW");
+        Assert.Equal(1, a["trinkwasser"]!["apparate"]!.GetValue<int>());
+        Etwa(du, Zahl(a["abwasser"]!["summeDu"]), "Anlage ΣDU");
+        Assert.Equal(1, a["abwasser"]!["apparate"]!.GetValue<int>());
+        var kw = a["systeme"]!.AsArray().Single(s => s!["system"]!.GetValue<string>() == "KW")!;
+        Etwa(lu, Zahl(kw["summeLuKw"]), "System KW");
+        // Zusammenstellung der Anlage: ein Stück
+        var zs = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Assert.Equal(1, zs["apparate"]!.GetValue<int>());
+        Etwa(lu, Zahl(zs["summeLuKw"]), "Zusammenstellung ΣLU KW");
+        Etwa(du, Zahl(zs["summeDu"]), "Zusammenstellung ΣDU");
+        // keine Masche und kein Weg ohne Fortsetzung: jeder Anschluss hat seinen eigenen Weg, der Apparat zählt je Leitung und Medium einmal
+        Assert.DoesNotContain(Sanitaerbefunde(p), b => b.Code is "P24" or "P26");
+        Assert.All(new[] { "K0", "K1", "K2", "S0", "S1", "S2" }, l => Assert.False(Belastung(p, l)["masche"]?.GetValue<bool>() ?? false, l));
+        Assert.Null(Abfrage(p, "sanitaer_belastung")["ohneWeg"]);
+    }
 }

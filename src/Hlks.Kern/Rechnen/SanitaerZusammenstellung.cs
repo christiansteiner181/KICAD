@@ -2,7 +2,7 @@
 // Zeilen = vorkommende Apparatearten in Katalogreihenfolge (Excel-Zeile 7–40), Spalten = Geschosse (Gebäude, Kote aufsteigend: UG zuerst –
 // Annahme, im Excel nicht übertragen), Anzahl, ΣLU KW, ΣLU WW, ΣDU (Anzahl × Wert; leer, wenn die Art die Spalte nicht hat).
 // Darunter, Formeln wörtlich aus dem Katalog (rechnung):
-//   Total LU = ΣLU KW + ΣLU WW (B55), Volumenstrom = Total LU × Faktor (B56, Faktor aus der Zellformel des Katalogs),
+//   Total LU = ΣLU KW + ΣLU WW (B55), Volumenstrom = Total LU × Faktor (B56, Faktor aus rechnung.volumenstromFaktor des Katalogs),
 //   Spitze Kurve «grösster LU 3» = V^Exponent × Faktor (C57) und Kurve «grösster LU 5» (I57) – Kurvennummern («grösster LU»), Faktoren,
 //   Exponenten und Gültigkeitsbereiche aus dem Katalog –, massgebend nach der Regel rechnung.kurvenwahl des Katalogs (grösster Einzel-LU der
 //   vorkommenden Arten über dem «grössten LU» der kleineren Kurve → die grössere Kurve; NICHT im Excel, aus HKAP; ob bestätigt, steht im
@@ -198,7 +198,7 @@ public static class SanitaerZusammenstellung
             a.GroessterLu = Math.Max(a.GroessterLu, z.Art.GroessterLu);
         }
         a.TotalLu = a.SummeLuKw + a.SummeLuWw;                       // B55 = M43+N43
-        a.Volumenstrom = a.TotalLu * kat.VolumenstromFaktor;         // B56 = B55*Faktor (Katalog)
+        a.Volumenstrom = a.TotalLu * kat.VolumenstromFaktor;         // B56 = B55*Faktor (Katalog rechnung.volumenstromFaktor)
         a.SpitzeKurve3 = kat.Kurve3.Spitze(a.Volumenstrom);          // C57 = B56^Exponent*Faktor (Katalog spitzeKurve3)
         a.SpitzeKurve5 = kat.Kurve5.Spitze(a.Volumenstrom);          // I57 = B56^Exponent*Faktor (Katalog spitzeKurve5)
         var massgebend = kat.MassgebendeKurve(a.GroessterLu);        // Regel rechnung.kurvenwahl, Schwelle = grosserLu der kleineren Kurve (Katalog)

@@ -242,6 +242,15 @@ test('Liste der Anlage finden; Kennzeichen- und Namensvorschlag wie im Dialog', 
 
 // ---------------------------------------------------------------------------------------------- Liste «Sanitär-Zusammenstellung (W3)»
 
+/** Block kurvenwahl der Antwort wie SanitaerAbfragen.KurvenwahlJson: Regel und Kurven mit «grösster LU» aus dem Katalog (rechnung.spitzeKurve3/5). */
+function kurvenwahlAusKatalog(kat) {
+  const r = kat.rechnung;
+  return {
+    regel: r.kurvenwahl.regel, quelle: r.kurvenwahl.quelle, bestaetigt: r.kurvenwahl.bestaetigt,
+    kurven: ['spitzeKurve3', 'spitzeKurve5'].map((s) => ({ schluessel: s, grosserLu: r[s].grosserLu, bereichLs: r[s].bereichLs, bereichZelle: r[s].bereichZelle, zelle: r[s].zelle })),
+  };
+}
+
 /** Antwort der Abfrage sanitaer_zusammenstellung im Referenzfall Walkringen (Katalog referenz; Aufbau wie SanitaerAbfragen.cs). Geschosse EG und OG fiktiv. */
 function walkringen(k = 0.5) {
   const r = SKAT.referenz;
@@ -255,7 +264,8 @@ function walkringen(k = 0.5) {
     anlage: 'A-1', name: 'Testanlage', quelle: { dokument: SKAT.quelle.dokument, objekt: SKAT.quelle.objekt, stand: SKAT.quelle.stand },
     geschosse: [{ kennzeichen: 'EG', name: 'Erdgeschoss', kote: 0 }, { kennzeichen: 'OG', name: 'Obergeschoss', kote: 3000 }],
     zeilen, apparate: 49, summeLuKw: r.summeLuKw, summeLuWw: r.summeLuWw, summeDu: r.summeDu, totalLu: r.totalLu, volumenstrom: r.volumenstrom,
-    spitzeKurve3: r.spitzeKurve3, spitzeKurve5: r.spitzeKurve5, groessterLu: 5, massgebendeKurve: 5, spitzendurchfluss: r.spitzeKurve5,
+    spitzeKurve3: r.spitzeKurve3, spitzeKurve5: r.spitzeKurve5, groessterLu: 5, massgebendeKurve: SKAT.rechnung.spitzeKurve5.grosserLu, spitzendurchfluss: r.spitzeKurve5,
+    kurvenwahl: kurvenwahlAusKatalog(SKAT),
     spezialinstallationen: [], spezialVersorgung: 0, spezialEntsorgung: 0, spitzeGesamtKurve3: r.spitzeKurve3, spitzeGesamtKurve5: r.spitzeKurve5, spitzeGesamt: r.spitzeKurve5,
     abflusskennzahl: k, abflusskennzahlHerkunft: k === null ? null : 'Anlage A-1: Test', schmutzwasser: k === null ? null : r.schmutzwasser, gesamtabfluss: k === null ? null : r.schmutzwasser,
     formeln: { totalLu: 'ΣLU KW + ΣLU WW (B55 = M43+N43)', volumenstrom: 'Total LU × 0.1 l/s (B56 = B55*0.1)', spitzeKurve3: 'C57 = B56^0.353*0.459 – Spitzenvolumenstrom bei 0.3 bis 300 l/s, grösster LU 3',
@@ -410,6 +420,52 @@ test('CSV: beide Blöcke, Formeln nur in der Datei, Totalzeile, Dezimalkomma wie
   const ohne = CSV.csvAus(aufbereiten('sanitaer_zusammenstellung', walkringen(null))).split('\r\n');
   assert.ok(ohne.some((x) => x.startsWith('Gesamtabfluss Q_tot;K fehlt;;')));
   assert.equal(CSV.csvZeilenzahl(d), d.tabellen.reduce((n, t) => n + t.zeilen.length, 0));   // Kopf- und Totalzeilen zählen nicht
+});
+
+test('Kurvennamen «grösster LU n» aus dem Katalog (kurvenwahl.kurven), nicht fest im Code – Ansicht und CSV (Prüfbericht 4A)', () => {
+  // Katalog: die Liste nennt genau die Zahlen aus rechnung.spitzeKurve3/5.grosserLu
+  const n3 = SKAT.rechnung.spitzeKurve3.grosserLu, n5 = SKAT.rechnung.spitzeKurve5.grosserLu;
+  assert.deepEqual(L.kurvenNummern(walkringen()), { kurve3: n3, kurve5: n5 });
+  const [, tw] = aufbereiten('sanitaer_zusammenstellung', walkringen()).tabellen;
+  assert.ok(tw.zeilen.some((z) => z.groesse === `Spitzendurchfluss Kurve «grösster LU ${n3}» (nicht massgebend)`));
+  assert.ok(tw.zeilen.some((z) => z.groesse === `Spitzendurchfluss Kurve «grösster LU ${n5}» – massgebend`));
+
+  // abgewandelter Katalog (FIKTIV, nur für den Test): grosserLu 4 und 6, der Kern wählt 6 – die Liste folgt ohne Codeänderung
+  const kat = structuredClone(SKAT);
+  kat.rechnung.spitzeKurve3.grosserLu = 4; kat.rechnung.spitzeKurve5.grosserLu = 6;
+  const d = { ...walkringen(), kurvenwahl: kurvenwahlAusKatalog(kat), massgebendeKurve: 6 };
+  const auf = aufbereiten('sanitaer_zusammenstellung', d);
+  const t = auf.tabellen[1];
+  const namen = t.zeilen.map((z) => z.groesse);
+  assert.ok(namen.includes('Spitzendurchfluss Kurve «grösster LU 4» (nicht massgebend)'), JSON.stringify(namen));
+  assert.ok(namen.includes('Spitzendurchfluss Kurve «grösster LU 6» – massgebend'), JSON.stringify(namen));
+  assert.equal(zeileMit(t, 'Spitzendurchfluss Kurve «grösster LU 6»').klasse, 'li-massgebend');
+  assert.equal(zeileMit(t, 'Spitzendurchfluss Kurve «grösster LU 4»').klasse, 'li-nebenwert');
+  assert.equal(zelle(t, zeileMit(t, 'Spitzendurchfluss Kurve «grösster LU 6»'), 'wert'), '1,16');   // Wert spitzeKurve5 des Kerns
+  assert.ok(namen.includes('Spitzendurchfluss gesamt (Kurve «grösster LU 6» + Spezialinstallationen)'), JSON.stringify(namen));
+  assert.ok(namen.includes('Spitzendurchfluss gesamt Kurve «grösster LU 4» (nicht massgebend)'), JSON.stringify(namen));
+  assert.ok(!namen.some((n) => /grösster LU [35]»/.test(n)), 'keine fest eingetragenen Nummern 3 bzw. 5');
+  const csv = CSV.csvAus(auf).slice(1).split('\r\n');
+  assert.ok(csv.some((z) => z.startsWith('Spitzendurchfluss Kurve «grösster LU 6» – massgebend;1,16;l/s;I57 = B56^0.257*0.598')), 'CSV: Kurve 6 massgebend');
+  assert.ok(csv.some((z) => z.startsWith('Spitzendurchfluss Kurve «grösster LU 4» (nicht massgebend);1,14;l/s;C57 = B56^0.353*0.459')), 'CSV: Kurve 4');
+  assert.ok(csv.some((z) => z.startsWith('Spitzendurchfluss gesamt (Kurve «grösster LU 6» + Spezialinstallationen);1,16;l/s;')));
+  assert.ok(!csv.some((z) => /grösster LU [35]»/.test(z.split(';')[0])), 'CSV ohne feste Nummern');
+
+  // der Kern wählt die kleinere Kurve (4): sie ist massgebend, die andere Gesamtspitze trägt die 6
+  const t4 = aufbereiten('sanitaer_zusammenstellung', { ...d, massgebendeKurve: 4, spitzeGesamt: d.spitzeGesamtKurve3 }).tabellen[1];
+  assert.match(zeileMit(t4, 'Spitzendurchfluss Kurve «grösster LU 4»').groesse, /– massgebend$/);
+  assert.match(zeileMit(t4, 'Spitzendurchfluss Kurve «grösster LU 6»').groesse, /\(nicht massgebend\)$/);
+  assert.ok(t4.zeilen.some((z) => z.groesse === 'Spitzendurchfluss gesamt Kurve «grösster LU 6» (nicht massgebend)'));
+
+  // ohne Angabe der Kurven: «?» statt einer Zahl, kein «massgebend»/«nicht massgebend» geraten, keine Ausnahme
+  const ohne = { ...walkringen() };
+  delete ohne.kurvenwahl;
+  assert.deepEqual(L.kurvenNummern(ohne), { kurve3: null, kurve5: null });
+  const to = aufbereiten('sanitaer_zusammenstellung', ohne).tabellen[1];
+  assert.equal(to.zeilen.filter((z) => z.groesse === 'Spitzendurchfluss Kurve «grösster LU ?»').length, 2);
+  assert.ok(!to.zeilen.some((z) => /nicht massgebend/.test(z.groesse)));
+  assert.doesNotMatch(CSV.csvAus(aufbereiten('sanitaer_zusammenstellung', ohne)), /undefined|NaN/);
+  assert.deepEqual(L.kurvenNummern(null), { kurve3: null, kurve5: null });
 });
 
 test('andere Listen unverändert: formatWert und CSV ohne Spaltenformat wie vorher', () => {

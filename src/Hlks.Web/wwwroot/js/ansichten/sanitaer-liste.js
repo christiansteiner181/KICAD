@@ -1,8 +1,8 @@
 // Listenansicht «Sanitär-Zusammenstellung (W3)» (Modul 4 Teil A-O, entwurf/modul-4.md): macht aus der Antwort der Abfrage sanitaer_zusammenstellung drei Tabellen im Aufbau
 // von Christians Excel «LU_DU Zusammenstellung_.xlsx» –
 //   1. Apparate: Apparateart · LU KW · LU WW · DU (je Stück) · eine Spalte je Geschoss (Stückzahl) · Anzahl · ΣLU KW · ΣLU WW · ΣDU, darunter die Totalzeile;
-//   2. Trinkwasser: Total LU, Volumenstrom, Spitzendurchfluss der Kurven «grösster LU 3» und «grösster LU 5» (die massgebende fett, die andere klein), Spezialinstallationen,
-//      Spitzendurchfluss gesamt;
+//   2. Trinkwasser: Total LU, Volumenstrom, Spitzendurchfluss der beiden Kurven «grösster LU n» (die massgebende fett, die andere klein; n aus dem Katalog über die Antwort,
+//      kurvenwahl.kurven[].grosserLu = rechnung.spitzeKurve3/5.grosserLu – nicht fest im Code, Prüfbericht 4A), Spezialinstallationen, Spitzendurchfluss gesamt;
 //   3. Entwässerung: ΣDU, Abflusskennzahl K, Q_WW, Spezialinstallationen, Q_tot;
 //   4. Hinweise des Kerns (nur wenn vorhanden; Prüfbericht 4A): Herkunft der Kurvenwahl, Volumenstrom ausserhalb des Bereichs einer Kurve, Apparate ohne Netzverbindung
 //      bzw. ohne Weg im Netz (P26) in den Stückzahl-Summen u. a. – der Kopf nennt nur ihre Zahl.
@@ -82,23 +82,38 @@ function spezialZeilen(d, welche) {
   return z;
 }
 
-/** Tabelle 2 (Trinkwasser). */
+/**
+ * «Grösster LU» der beiden Kurven aus dem Katalog (Prüfbericht 4A): Antwort kurvenwahl.kurven[] { schluessel, grosserLu } = Katalog rechnung.spitzeKurve3.grosserLu bzw.
+ * rechnung.spitzeKurve5.grosserLu – nicht fest im Code. Fehlt die Angabe, steht «?» (nicht raten).
+ */
+export function kurvenNummern(d) {
+  const kurven = Array.isArray(d?.kurvenwahl?.kurven) ? d.kurvenwahl.kurven : [];
+  const lu = (schl) => { const k = kurven.find((x) => x && x.schluessel === schl); return zahl(k?.grosserLu) ? k.grosserLu : null; };
+  return { kurve3: lu('spitzeKurve3'), kurve5: lu('spitzeKurve5') };
+}
+
+const kurvenName = (n) => `Kurve «grösster LU ${zahl(n) ? n : '?'}»`;
+
+/** Tabelle 2 (Trinkwasser). Kurvennamen aus dem Katalog (kurvenNummern), die massgebende Kurve (Nummer) wählt der Kern. */
 function trinkwasserTabelle(d) {
   const f = d.formeln ?? {};
-  const kurve = d.massgebendeKurve;
-  const k3 = kurve === 3, k5 = kurve === 5;
+  const kurve = zahl(d.massgebendeKurve) ? d.massgebendeKurve : null;
+  const { kurve3: n3, kurve5: n5 } = kurvenNummern(d);
+  const k3 = kurve !== null && kurve === n3, k5 = kurve !== null && kurve === n5;
+  const wahlBekannt = k3 || k5;   // ohne Nummern bzw. ohne Wahl des Kerns kein «(nicht massgebend)»
+  const zusatz = (ja) => (ja ? ' – massgebend' : wahlBekannt ? ' (nicht massgebend)' : '');
   const zeilen = [
     blockZeile('Total LU', d.totalLu, 'LU', fL, { formel: f.totalLu, genauEinheit: 'LU' }),
     blockZeile('Volumenstrom', d.volumenstrom, 'l/s', fS, { formel: f.volumenstrom }),
-    blockZeile(`Spitzendurchfluss Kurve «grösster LU 3»${k3 ? ' – massgebend' : ' (nicht massgebend)'}`, d.spitzeKurve3, 'l/s', fS, { formel: f.spitzeKurve3, klasse: k3 ? 'massgebend' : 'nebenwert' }),
-    blockZeile(`Spitzendurchfluss Kurve «grösster LU 5»${k5 ? ' – massgebend' : ' (nicht massgebend)'}`, d.spitzeKurve5, 'l/s', fS, { formel: f.spitzeKurve5, klasse: k5 ? 'massgebend' : 'nebenwert' }),
+    blockZeile(`Spitzendurchfluss ${kurvenName(n3)}${zusatz(k3)}`, d.spitzeKurve3, 'l/s', fS, { formel: f.spitzeKurve3, klasse: k3 ? 'massgebend' : 'nebenwert' }),
+    blockZeile(`Spitzendurchfluss ${kurvenName(n5)}${zusatz(k5)}`, d.spitzeKurve5, 'l/s', fS, { formel: f.spitzeKurve5, klasse: k5 ? 'massgebend' : 'nebenwert' }),
   ];
   if (zahl(d.groessterLu)) zeilen.push(blockZeile('Grösster Einzel-LU', d.groessterLu, 'LU', fL, { formel: f.massgebendeKurve, klasse: 'nebenwert', genauEinheit: 'LU' }));
   zeilen.push(...spezialZeilen(d, 'versorgung'));
-  zeilen.push(blockZeile(`Spitzendurchfluss gesamt (Kurve «grösster LU ${kurve ?? ''}» + Spezialinstallationen)`, d.spitzeGesamt, 'l/s', fS, { formel: f.spitzeGesamt, klasse: 'massgebend' }));
-  const andere = k5 ? 3 : 5;
+  zeilen.push(blockZeile(`Spitzendurchfluss gesamt (${kurvenName(kurve)} + Spezialinstallationen)`, d.spitzeGesamt, 'l/s', fS, { formel: f.spitzeGesamt, klasse: 'massgebend' }));
+  const andere = k5 ? n3 : n5;
   const andereWert = k5 ? d.spitzeGesamtKurve3 : d.spitzeGesamtKurve5;
-  if (zahl(andereWert)) zeilen.push(blockZeile(`Spitzendurchfluss gesamt Kurve «grösster LU ${andere}» (nicht massgebend)`, andereWert, 'l/s', fS, { formel: f.spitzeGesamt, klasse: 'nebenwert' }));
+  if (wahlBekannt && zahl(andereWert)) zeilen.push(blockZeile(`Spitzendurchfluss gesamt ${kurvenName(andere)} (nicht massgebend)`, andereWert, 'l/s', fS, { formel: f.spitzeGesamt, klasse: 'nebenwert' }));
   return { titel: 'Trinkwasser', schluessel: null, klasse: 'li-san li-block', ohneSortieren: true, spalten: BLOCK_SPALTEN, zeilen };
 }
 

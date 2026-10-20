@@ -89,8 +89,11 @@ public sealed class SanitaerKatalog
     // ---- Rechnung (Formeln mit Zellbezug, Texte wörtlich aus dem Katalog)
     public string TotalLuText { get; private init; } = "";
     public string VolumenstromText { get; private init; } = "";
-    /// <summary>Faktor Total LU → Volumenstrom in l/s, gelesen aus der Zellformel des Katalogs («B56 = B55*0.1»).</summary>
+    /// <summary>Faktor Total LU → Volumenstrom in l/s aus dem Katalogfeld rechnung.volumenstromFaktor.wert (Prüfbericht 4A B5.4; nicht mehr
+    /// aus dem Formeltext gelesen).</summary>
     public double VolumenstromFaktor { get; private init; }
+    /// <summary>Excel-Zelle des Faktors wie im Katalog (rechnung.volumenstromFaktor.zelle, z. B. die Zellformel von B56).</summary>
+    public string VolumenstromFaktorZelle { get; private init; } = "";
     /// <summary>Kurve rechnung.spitzeKurve3 des Katalogs (kleinerer «grösster LU»; Excel C57).</summary>
     public SanitaerKurve Kurve3 { get; private init; } = null!;
     /// <summary>Kurve rechnung.spitzeKurve5 des Katalogs (grösserer «grösster LU»; Excel I57).</summary>
@@ -123,10 +126,6 @@ public sealed class SanitaerKatalog
     public string QuelleFormel(string formel) => $"Katalog {Datei}: {Dokument}, Blatt {Blatt}, {formel} ({Objekt}, Stand {Stand})";
 
     public SanitaerArt? Art(string? schluessel) => schluessel is not null && NachSchluessel.TryGetValue(schluessel.Trim(), out var a) ? a : null;
-
-    /// <summary>TECHNIK: der Faktor steht im Katalog nur in der Zellformel («B56 = B55*0.1»); der reguläre Ausdruck liest die Zahl nach dem
-    /// Malzeichen, der Wert selbst kommt aus dem Katalog. Ein eigenes Feld «faktor» (wie bei den Kurven) wäre robuster – Sache des Katalogs.</summary>
-    static readonly Regex FaktorMuster = new(@"=\s*[A-Z]+[0-9]+\s*\*\s*([0-9]+(?:\.[0-9]+)?)", RegexOptions.CultureInvariant);
 
     /// <summary>TECHNIK: Tabellenblatt in quelle.bereich in der Form «Blatt «Name» …».</summary>
     static readonly Regex BlattMuster = new(@"Blatt\s*«([^»]+)»", RegexOptions.CultureInvariant);
@@ -184,8 +183,14 @@ public sealed class SanitaerKatalog
 
         var r = w["rechnung"] as JsonObject ?? throw Fehl("rechnung", "fehlt");
         var volumenstrom = Pflicht(r["volumenstrom"], "rechnung.volumenstrom");
-        var fm = FaktorMuster.Match(volumenstrom);
-        if (!fm.Success) throw Fehl("rechnung.volumenstrom", $"Faktor der Zellformel nicht lesbar («{volumenstrom}»)");
+        // Prüfbericht 4A B5.4: Faktor Total LU → Volumenstrom als eigenes Feld { wert, zelle } (wie faktor/zelle der Kurven), nicht aus dem Formeltext
+        var vf = r["volumenstromFaktor"] as JsonObject
+            ?? throw Fehl("rechnung.volumenstromFaktor", "fehlt – Faktor Total LU → Volumenstrom als { wert, zelle } aus der Excel-Zelle des Volumenstroms eintragen");
+        var faktor = ZahlPflicht(vf["wert"], "rechnung.volumenstromFaktor.wert");
+        if (!(faktor > 0) || !double.IsFinite(faktor)) throw Fehl("rechnung.volumenstromFaktor.wert", $"muss eine Zahl > 0 sein (ist {faktor.ToString(CultureInfo.InvariantCulture)})");
+        var faktorZelle = Pflicht(vf["zelle"], "rechnung.volumenstromFaktor.zelle");
+        if (!volumenstrom.Contains(faktorZelle, StringComparison.Ordinal))
+            throw Fehl("rechnung.volumenstromFaktor.zelle", $"«{faktorZelle}» steht nicht in rechnung.volumenstrom («{volumenstrom}») – Formeltext und Faktor müssen dieselbe Excel-Zelle nennen");
         SanitaerKurve Kurve(string name)
         {
             var o = r[name] as JsonObject ?? throw Fehl($"rechnung.{name}", "fehlt");
@@ -226,7 +231,8 @@ public sealed class SanitaerKatalog
             VorgabeJeKlasse = vorgabe,
             TotalLuText = Pflicht(r["totalLu"], "rechnung.totalLu"),
             VolumenstromText = volumenstrom,
-            VolumenstromFaktor = double.Parse(fm.Groups[1].Value, CultureInfo.InvariantCulture),
+            VolumenstromFaktor = faktor,
+            VolumenstromFaktorZelle = faktorZelle,
             Kurve3 = k3,
             Kurve5 = k5,
             Kurvenwahl = new SanitaerKurvenwahl(Pflicht(kw["regel"], "rechnung.kurvenwahl.regel"), Pflicht(kw["quelle"], "rechnung.kurvenwahl.quelle"), bestaetigt),
