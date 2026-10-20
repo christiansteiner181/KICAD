@@ -1,5 +1,5 @@
 {
-  "stand": "6dc390e",
+  "stand": "636e78c",
   "kapitel": [
     {
       "id": "start",
@@ -3471,10 +3471,10 @@
             "Plannummer «2317-101», Titel «Grundriss Erdgeschoss Sanitär», Format A3 (Vorgabe), Hochformat aus eintragen.",
             "«Anlegen» klicken."
           ],
-          "erwartung": "Dialog «Planblatt anlegen»; ein leeres Planblatt öffnet im Format A3 quer mit dem H+K-Plankopf (Auftraggeber, Planinhalt, Planverfasser, Plan-Nr., Massstab, Index, Datum, Format, Visum). Es steht im Projektbrowser unter «Pläne».",
+          "erwartung": "Dialog «Planblatt anlegen» (seit Modul 7 Teil A mit Gewerk, Geschoss und Art für den Plannummern-Vorschlag, siehe Kapitel «Planblatt wie H+K»); ein leeres Planblatt öffnet im Format A3 quer mit dem H+K-Plankopf (Absender mit beiden Standorten und Logo, Projekt, Plannummer, Rev. Index, Rev. Datum, Massstab, Tabelle Planänderungen). Es steht im Projektbrowser unter «Pläne».",
           "pruefpunkte": [
             "Formate A4 bis A0.",
-            "Plankopf unten rechts.",
+            "H+K-Plankopf unten rechts.",
             "Blatt unter «Pläne»."
           ],
           "bild": {
@@ -3502,7 +3502,7 @@
             "Register Ansicht › Planblätter › «Ansicht platzieren» klicken.",
             "Ansicht «Grundriss EG Sanitär», Planblatt «2317-101 …» wählen, «Platzieren»."
           ],
-          "erwartung": "Der Kern setzt die Ansicht in die Mitte des freien Bereichs; Massstab und Ausschnitt kommen von der Ansicht. Ein Grundriss lässt sich nur auf einem Blatt platzieren; Schemas gehen auch.",
+          "erwartung": "Der Kern setzt die Ansicht in die Mitte des freien Bereichs; Massstab und Ausschnitt kommen von der Ansicht. Ein Grundriss lässt sich nur auf einem Blatt platzieren; Schemas und (seit Modul 7 Teil A) Listen gehen auch.",
           "pruefpunkte": [
             "Planblatt zeigt Grundriss mit Titel und Massstab.",
             "Dieselbe Ansicht lässt sich nicht nochmals auf ein Blatt setzen.",
@@ -7745,7 +7745,7 @@
             "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:13",
             "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs:71 (Kern)"
           ],
-          "hinweis": "Walkringen (Referenz im Excel): ΣKW 80, ΣWW 52, ΣDU 38.8, Total LU 132, 13.2 l/s, Spitze 1.1412…, 1.1606…, Q_WW 3.1144… (auf 1e-9 im Kern-Test); das Beispielprojekt ist fiktiv. Listen sind nicht auf Planblättern platzierbar (gilt für alle Listen); Ausgabe ist die CSV-Datei."
+          "hinweis": "Walkringen (Referenz im Excel): ΣKW 80, ΣWW 52, ΣDU 38.8, Total LU 132, 13.2 l/s, Spitze 1.1412…, 1.1606…, Q_WW 3.1144… (auf 1e-9 im Kern-Test); das Beispielprojekt ist fiktiv. Seit Modul 7 Teil A lässt sich die Liste auf ein Planblatt setzen (Kapitel «Planblatt wie H+K»); die CSV-Datei bleibt der zweite Weg."
         },
         {
           "id": "m4-knopf",
@@ -7890,7 +7890,7 @@
             "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:9",
             "src/Hlks.Web/OBERFLAECHE.md:1214"
           ],
-          "hinweis": "Listen auf Planblättern: im Kern nicht vorgesehen (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema); offener Punkt für alle Listen."
+          "hinweis": "Listen auf Planblättern: seit Modul 7 Teil A möglich (`ansicht_platzieren` nimmt auch Listenansichten, Kapitel «Planblatt wie H+K»); die CSV-Datei bleibt der zweite Weg."
         },
         {
           "id": "m4-befunde",
@@ -7926,6 +7926,430 @@
             "src/Hlks.Kern/Pruefung/Pruefungen.cs:42"
           ],
           "hinweis": "Für die Anzeige im Beispielprojekt muss der Zustand zuerst hergestellt werden (Art am Bodenablauf entfernen, K löschen)."
+        }
+      ]
+    },
+    {
+      "id": "m7",
+      "titel": "Planblatt wie H+K",
+      "modul": "7A",
+      "einleitung": "Teil A des Moduls 7: Das Planblatt des HLKS-CAD sieht im PDF aus wie die Revisionspläne von H+K. Der Plankopf trägt beide Standorte und das Logo, das Projekt zweizeilig (Objekt und Plantitel), die Plannummer, Rev. Index mit Rev. Datum, den Massstab und die Tabelle «Planänderungen»; Strangschemas haben einen schmalen Kopf unten links. Die Plannummer schlägt der Kern beim Anlegen nach dem H+K-Schema vor, Revisionen setzt der Kern (nächster Buchstabe, Datum), ein roter Revisionsstempel ist zuschaltbar, Listen lassen sich auf ein Planblatt setzen, und eine doppelte Plannummer meldet der Befund P27. Fachlogik gibt es nur im Kern; die Oberfläche sammelt Eingaben und zeigt Ergebnisse. Das Beispielprojekt hat fiktive Daten. Teil B (Schnitt- und Ansichtsmarken, Aussparungsboxen, Koordinationsplan, DWG-Unterlage, IFC-Export) fehlt noch.",
+      "funktionen": [
+        {
+          "id": "m7-planblatt-anlegen",
+          "titel": "Planblatt anlegen mit Plannummern-Vorschlag",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "Planblatt",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Pläne › Rechtsklick › «Planblatt anlegen …»"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Planblätter › «Planblatt» klicken.",
+            "Gewerk «Heizung» und Geschoss «EG» wählen; die Art bleibt «Geschossplan».",
+            "Unter dem Feld «Plannummer» die Begründung des Kerns lesen; Plannummer und Titel sind eingetragen.",
+            "Bei Bedarf Plannummer oder Titel von Hand ändern, Format wählen, «Anlegen» klicken.",
+            "Zum Vergleich die Art auf «Fussbodenheizung (FBH)» stellen und die Nummer ansehen."
+          ],
+          "erwartung": "Der Dialog «Planblatt anlegen» hat die Felder Gewerk, Geschoss, Art, Plannummer, Titel, Format und Hochformat. Sobald Gewerk (und Geschoss) gewählt sind, fragt die Oberfläche den Kern (Abfrage plannummer_vorschlag) und trägt Plannummer und Titel ein: «<Projektnummer> <Fachbuchstabe><NN>», im Beispielprojekt mit den Geschossen UG, EG, 1.OG für Heizung EG «1-0768 H02» und «Heizung Erdgeschoss». Darunter steht, wie der Kern auf die Nummer kommt (z. B. «Geschoss 2 von 3»). Die Nummern folgen der Kote der Geschosse (bei Sanitär ab 00, sonst ab 01); Sonderblätter (FBH, Steigzonen, Grundleitungen, Einlagen, Kanalisation) haben eigene Nummern. Was von Hand eingegeben wird, überschreibt der Vorschlag nie. Ist die Nummer im Projekt schon vergeben, schlägt der Kern die nächste freie vor und sagt es. Kälte und Elektro haben keinen Fachbuchstaben und damit keinen Vorschlag. Das neue Blatt trägt das gewählte Gewerk.",
+          "pruefpunkte": [
+            "Heizung + EG ergibt «1-0768 H02» und den Titel «Heizung Erdgeschoss».",
+            "Unter der Nummer steht «Vorschlag des Kerns: …» mit Begründung.",
+            "Eine von Hand getippte Nummer bleibt stehen, wenn Geschoss oder Art danach wechseln; der nicht von Hand geänderte Titel folgt dem Vorschlag.",
+            "Mit Art «Fussbodenheizung (FBH)» und Geschoss EG steht «1-0768 H13» und «FBH Erdgeschoss» im Dialog, die Begründung nennt «FBH ab Erdgeschoss».",
+            "Ein zweites Planblatt Heizung EG schlägt die nächste freie Nummer vor (H03) und nennt, dass H02 vergeben ist.",
+            "Ohne Plannummer oder Titel lässt sich das Blatt nicht anlegen (Hinweis im Dialog).",
+            "Das neue Blatt steht im Projektbrowser unter «Pläne», Gruppe Heizung."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Planblatt anlegen»",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): Projektinformation gesetzt; Dialog mit Gewerk Heizung, Geschoss EG, Art Geschossplan: Nummer 1-0768 H02, Titel Heizung Erdgeschoss, Begründung des Kerns"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:41 (Dialog, Vorschlag)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:94 (Aktion plan.anlegen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/planblatt-hk.js:9 (Arten)",
+            "src/Hlks.Kern/Plan/Plannummernvorschlag.cs:65 (Berechnen)",
+            "src/Hlks.Kern/Plan/PlanBefehle.cs:52 (planblatt_anlegen)",
+            "entwurf/modul-7.md (Teil A, Punkt 5)"
+          ],
+          "hinweis": "Annahmen des Bauagenten (Testbericht 7A zur Bestätigung): Reihenfolge nach der Kote; FBH ab EG aufwärts (H13 ff.), Steigzonen H21; Sanitär-Sonderblätter aus den Bernstrasse-Plänen abgeleitet (Grundleitungen = Anzahl Geschosse, Einlagen die drei folgenden, Kanalisation = Anzahl + 4). Fach K: in den H+K-Plänen = Koordination, im Kern bisher Kälte (Entscheid Christian offen). Die Plannummer des Strangschemas Abwasser steht auf dem echten Plan als «1-0759-4» (Tippfehler?). Der Knopf «Einlageplan anlegen» (N3) nutzt eine eigene Nummernlogik."
+        },
+        {
+          "id": "m7-revision-hinzufuegen",
+          "titel": "Revision hinzufügen (Menüband, Kontextmenü)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "Revision …",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Pläne › Rechtsklick auf ein Planblatt › «Revision …»; Eigenschaften des Planblatts › «+ Revision hinzufügen»"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Planblätter › «Revision …» klicken (oder im Projektbrowser unter «Pläne» mit der rechten Maustaste auf das Planblatt › «Revision …»).",
+            "Im Dialog das Planblatt prüfen (vorgewählt ist das gewählte bzw. aktive Blatt).",
+            "Bei «Beschreibung» die Änderung eintragen, z. B. «Beschriftungen ergänzt». Das Datum bleibt leer (= heute).",
+            "«Hinzufügen» klicken.",
+            "Das Blatt als PDF öffnen: der Plankopf zeigt Rev. Index A, das Datum und eine Zeile in «Planänderungen»."
+          ],
+          "erwartung": "Der Dialog «Revision hinzufügen» hat Planblatt, Beschreibung (Pflicht) und Datum (TT.MM.JJJJ; leer = heute). Der Kern setzt Index und Datum: der Index ist der nächste Buchstabe (A, B, C … Z, AA, AB …), das Datum das von heute oder das angegebene. Ohne Beschreibung meldet der Dialog «Die Beschreibung darf nicht leer sein.» und tut nichts. Die Revision ist ein Befehl wie alle anderen: sie steht im Verlauf und lässt sich mit Strg+Z zurücknehmen. Das Kontextmenü am Planblatt im Projektbrowser öffnet denselben Dialog mit vorgewähltem Blatt; der Knopf ist gesperrt, solange es kein Planblatt gibt.",
+          "pruefpunkte": [
+            "Der Knopf «Revision …» steht in der Gruppe «Planblätter» des Registers Ansicht, mit Symbol.",
+            "Ohne Beschreibung erscheint der Hinweis im Dialog; es entsteht keine Revision.",
+            "Die erste Revision heisst «A», die zweite «B», jeweils mit dem Datum von heute (oder dem eingegebenen).",
+            "Das Kontextmenü des Planblatts enthält «Revision …» und wählt das Blatt vor.",
+            "Strg+Z nimmt die Revision zurück.",
+            "Die Meldung nach dem Hinzufügen nennt Blatt, Index und Datum."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband, Dialog «Revision hinzufügen», Kontextmenü",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): Planblatt PB-1 «1-0768 H02 Heizung Erdgeschoss» ohne Revision; Knopf «Revision …», Dialog mit Beschreibung «Beschriftungen ergänzt», Kontextmenü im Projektbrowser"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:151 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:176 (Aktion plan.revision)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:435 (Kontextmenü Planblatt)",
+            "src/Hlks.Kern/Plan/Revisionen.cs:104 (revision_hinzufuegen)"
+          ],
+          "hinweis": "Kein Tastaturkürzel. Das Datum «heute» setzt der Kern (Systemdatum des Servers)."
+        },
+        {
+          "id": "m7-revisionsliste",
+          "titel": "Revisionsliste in den Eigenschaften bearbeiten",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Planblatts, Zeile «revisionen»"
+          },
+          "schritte": [
+            "Das Planblatt PB-1 im Projektbrowser oder im Blatt wählen.",
+            "In der Eigenschaftenpalette die Zeile «revisionen» ansehen: Tabelle mit Index, Datum, Beschreibung.",
+            "Die Beschreibung einer Zeile ändern und mit Enter oder durch Klick in ein anderes Feld übernehmen.",
+            "Mit «+ Revision hinzufügen» eine weitere Revision anlegen (der Dialog erscheint, das Blatt ist vorgewählt).",
+            "Mit dem Kreuz («×») am Zeilenende die letzte Revision löschen."
+          ],
+          "erwartung": "Die Eigenschaft «revisionen» des Planblatts erscheint als kleine Tabelle (Index · Datum · Beschreibung) statt als Rohtext. Eine geänderte Zeile wird sofort an den Kern geschickt (Befehl element_aendern) und ändert nur diese Revision; das Kreuz löscht eine Zeile. Das Plus fragt wie der Knopf im Menüband nach der Beschreibung; Index und Datum setzt der Kern. Unter der Tabelle steht «Letzte Revision: B» bzw. «Noch keine Revision – der Plankopf zeigt eine Strichzeile.». Der Plankopf zeigt im PDF höchstens die letzten zwölf Revisionen.",
+          "pruefpunkte": [
+            "Die Tabelle zeigt Index, Datum und Beschreibung aller Revisionen in der Reihenfolge A, B, …",
+            "Die geänderte Beschreibung steht danach im Plankopf des PDF.",
+            "«+ Revision hinzufügen» ergibt den nächsten Buchstaben; das Blatt ist vorgewählt.",
+            "Das Kreuz löscht die Zeile; die übrigen bleiben (z. B. A und B nach dem Löschen von C).",
+            "Strg+Z macht die letzte Änderung rückgängig."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 mit den Revisionen A (14.01.2026) und B (21.01.2026) gewählt, Tabelle «revisionen» sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:289 (Zeile revisionen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:400 (revisionKlick)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/planblatt-hk.js:32 (revisionFeld)",
+            "kataloge/klassen.json:438 (Planblatt.revisionen)"
+          ],
+          "hinweis": "Muster wie die Tabelle der Spezialinstallationen (Modul 4). Revisionsindex je Blatt (nicht je Projekt)."
+        },
+        {
+          "id": "m7-plankopf",
+          "titel": "Plankopf wie H+K: Absender, Projekt, Rev. Index und Planänderungen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "PDF öffnen",
+            "kuerzel": "",
+            "sonst": "Planblatt › Plankopf (unten rechts)"
+          },
+          "schritte": [
+            "Ein Planblatt mit Plannummer, Titel und Revisionen wählen (im Beispiel PB-1 «1-0768 H02», Revisionen A und B).",
+            "Register Ansicht › Planblätter › «PDF öffnen» klicken.",
+            "Den Plankopf unten rechts ansehen: Absender links, Logo, Felder, Tabelle «Planänderungen».",
+            "Eine weitere Revision hinzufügen und das PDF neu öffnen: die Tabelle wächst um eine Zeile, der Kopf nach oben."
+          ],
+          "erwartung": "Der Plankopf entspricht dem Aufbau der H+K-Revisionspläne: oben links der Absender mit beiden Standorten (Bolligen fett mit Mail, Thun normal) und rechts das Logo; darunter links «Projektphase:», «Projekt:» (zwei Zeilen: Objekt aus der Projektinformation und der Plantitel) und «Plannummer:»; rechts «Erstelldatum:», «Rev. Index:» (Buchstabe der letzten Revision), «Rev. Datum:», «Kontrolliert:» und «Massstab:» im Format «1 : 50»; ganz unten die Tabelle «Planänderungen» (Index · Datum · Beschreibung). Ohne Revisionen steht in der Tabelle eine Strichzeile. Der Kopf wächst mit jeder Zeile nach oben (höchstens zwölf Zeilen sichtbar). Die Absenderdaten stammen aus `kataloge/buero.json` (Quelle: echter Plan H03 der Bernstrasse, Seite 1); ein Titelband «Planinhalt» steht nur, wenn es eingeschaltet ist.",
+          "pruefpunkte": [
+            "Beide Standorte (Bolligen, Thun) und das Logo stehen im Kopf.",
+            "«Projekt:» zeigt zwei Zeilen: Objekt und Plantitel.",
+            "«Plannummer:» zeigt «1-0768 H02».",
+            "«Rev. Index:» zeigt B, «Rev. Datum:» das Datum der letzten Revision.",
+            "«Planänderungen» listet A und B mit Datum und Beschreibung.",
+            "Der Massstab steht als «1 : 50» (nicht «1:50»).",
+            "Das Titelband «Planinhalt» fehlt (Vorgabe aus)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Planblatt-PDF",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 «1-0768 H02 Heizung Erdgeschoss» (A3 quer) mit Revisionen A und B als PDF, ganze Seite und Ausschnitt Plankopf"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/Plankopf.cs:118 (ZeichnenGrundriss)",
+            "src/Hlks.Kern/Plan/Planausgabe.cs:339 (Kopfdaten)",
+            "kataloge/buero.json:20 (Standorte mit Quelle)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:138 (PDF öffnen)",
+            "entwurf/modul-7.md (Teil A, Punkte 1 und 2)"
+          ],
+          "hinweis": "Annahmen des Bauagenten (Testbericht 7A zur Bestätigung): Absenderdaten aus 1-0768-H03-Heizung Erdgeschoss-.pdf, Seite 1 bzw. den Strangschemas (Web); für Thun steht auf keinem Plan eine Web-Adresse. «Rev. Datum» steht als eigene Zeile (nicht unter dem Index). Die Proportionen des Kopfs sind geschätzt (Vergleichsbild Kopf KICAD gegen H03: Aufbau stimmt). Der Plankopf wird nur im PDF gezeichnet; der Bildschirm zeigt das PDF im Betrachter."
+        },
+        {
+          "id": "m7-titelband",
+          "titel": "Titelband «Planinhalt» ein- und ausschalten",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Planblatts, Zeile «titelband»; Projektinformation, Zeile «titelband»"
+          },
+          "schritte": [
+            "Das Planblatt PB-1 wählen.",
+            "In der Eigenschaftenpalette die Zeile «titelband» ansehen (Häkchen leer = aus).",
+            "Das Häkchen setzen.",
+            "Das PDF öffnen: über den Feldern steht das Band «Planinhalt» mit dem Plantitel, dem Format («Format A3 quer») und der Einheit der Masse (im Beispiel «Masse in cm»).",
+            "Das Häkchen wieder entfernen: das Band verschwindet."
+          ],
+          "erwartung": "Das Band «Planinhalt» (SIA 400 B.1.3: Planinhalt, Format, Einheit der Masse) sitzt über dem H+K-Kopf. Die H+K-Pläne haben es nicht (der Plantitel steht im Projektfeld), darum ist die Vorgabe aus. Die Eigenschaft «titelband» am Planblatt ist ein Häkchen; ist sie am Blatt nicht gesetzt, gilt die Eigenschaft «titelband» der Projektinformation, sonst aus. Mit dem Band wird der Kopf um 10 mm höher.",
+          "pruefpunkte": [
+            "Ohne Einstellung zeigt das PDF kein Band «Planinhalt».",
+            "Mit gesetztem Häkchen steht das Band über dem Kopf, der Kopf ist höher.",
+            "Ein Häkchen «titelband» an der Projektinformation gilt für alle Blätter, an denen nichts gesetzt ist.",
+            "Das Band nennt Plantitel, Format und die Einheit der Masse."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette, Planblatt-PDF",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 gewählt, Zeile «titelband»; Ausschnitt Plankopf mit eingeschaltetem Titelband"
+          },
+          "quelle": [
+            "kataloge/klassen.json:440 (Planblatt.titelband)",
+            "kataloge/klassen.json:460 (Projektinformation.titelband)",
+            "src/Hlks.Kern/Plan/Planausgabe.cs:332 (TitelbandAn)",
+            "src/Hlks.Kern/Plan/Plankopf.cs:132 (Titelband zeichnen)"
+          ],
+          "hinweis": "Annahme des Bauagenten (Testbericht 7A zur Bestätigung): Titelband Vorgabe aus. Es gibt keinen eigenen Knopf; die Einstellung ist eine Eigenschaft."
+        },
+        {
+          "id": "m7-stempel-eigenschaft",
+          "titel": "Revisionsstempel als Eigenschaft (Planblatt, Plansatz)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Planblatts bzw. Plansatzes, Zeile «stempel»"
+          },
+          "schritte": [
+            "Das Planblatt PB-1 wählen.",
+            "In der Zeile «stempel» den Text «Revisionsplan 21.01.2026» eintragen und mit Enter bzw. Tab übernehmen.",
+            "Das PDF öffnen: ein roter, schräger Text steht über dem Plankopf.",
+            "Den Text löschen: der Stempel verschwindet."
+          ],
+          "erwartung": "Ein Revisionsstempel ist roter Text (#E8202A), um etwa 12° ansteigend, grosse Schrift quer über dem Plankopf (Mitte des Kopfs), wie auf den H+K-Revisionsplänen. Vorgabe ist leer = kein Stempel. Der Text wird unverändert gesetzt. Der Stempel lässt sich am Planblatt und am Plansatz einstellen; beim Serien-PDF übersteuert die Eingabe im Dialog beides, dann gilt der Wert des Blatts vor dem des Plansatzes.",
+          "pruefpunkte": [
+            "Mit Text erscheint der Stempel im PDF, ohne Text nicht.",
+            "Der Stempel ist rot und steigt nach rechts an.",
+            "Lage: der Stempel steht schräg auf der Mitte des Kopfs und überdeckt dort Teile der Felder (im Beispiel «Erstelldatum:» und «Rev. Index:»); ob das so gewollt ist, soll Christian beurteilen (Testbericht 7A).",
+            "Am Plansatz gesetzt gilt der Stempel für alle Blätter des Satzes ohne eigenen Stempel (Serien-PDF)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette, Planblatt-PDF",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 gewählt, Zeile «stempel» mit «Revisionsplan 21.01.2026»; Ausschnitt Plankopf mit Stempel"
+          },
+          "quelle": [
+            "kataloge/klassen.json:441 (Planblatt.stempel)",
+            "kataloge/klassen.json:447 (Plansatz.stempel)",
+            "src/Hlks.Kern/Plan/Plankopf.cs:286 (Stempel zeichnen)"
+          ],
+          "hinweis": "Farbe und Winkel sind Näherungen aus dem Rendering der echten Pläne (Testbericht 7A)."
+        },
+        {
+          "id": "m7-stempel-serienpdf",
+          "titel": "Revisionsstempel im Serien-PDF",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "Serien-PDF …",
+            "kuerzel": "",
+            "sonst": "Dialog Serien-PDF › Ausgabe › «Revisionsstempel auf alle Pläne»"
+          },
+          "schritte": [
+            "Register Ansicht › Planblätter › «Serien-PDF …» klicken.",
+            "Links den Plansatz «Heizung» wählen.",
+            "Im Bereich Ausgabe das Häkchen «Revisionsstempel auf alle Pläne» setzen.",
+            "Der Text ist mit «Revisionsplan <heutiges Datum>» vorbelegt; nach Bedarf ändern, z. B. «Revisionsplan 21.01.2026».",
+            "«Exportieren» klicken und das Sammel-PDF öffnen: jede Seite trägt den Stempel."
+          ],
+          "erwartung": "Ohne Häkchen ist der Stempel aus und das Textfeld gesperrt; es gelten die Stempel der Blätter und des Plansatzes. Mit Häkchen ist das Feld frei, der Vorschlag «Revisionsplan TT.MM.JJJJ» (Datum heute) steht darin, und der Text kommt auf alle Pläne des Exports (Parameter stempel von plansatz_pdf). Ein leerer Text bei gesetztem Häkchen wird abgelehnt («Der Text des Revisionsstempels ist leer. Das Häkchen weglassen oder einen Text eintragen.»).",
+          "pruefpunkte": [
+            "Ohne Häkchen: Stempel aus, Feld gesperrt.",
+            "Mit Häkchen: Feld frei, vorbelegt mit «Revisionsplan <Datum heute>».",
+            "Im Sammel-PDF steht der Text auf jeder Seite, rot.",
+            "Leerer Text mit Häkchen: Hinweis, kein Export.",
+            "Die Eingabe im Dialog übersteuert den Stempel am Blatt und am Plansatz."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Serien-PDF»",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): Plansatz Heizung mit H02 und H03, Revisionsstempel eingeschaltet, Text «Revisionsplan 21.01.2026»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:113 (Häkchen und Feld)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:249 (Schalten)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-text.js:94 (Parameter stempel)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-text.js:100 (Vorschlag)"
+          ],
+          "hinweis": "Weiteres zum Serien-PDF: Kapitel «Zusatzbausteine» (Serien-PDF …)."
+        },
+        {
+          "id": "m7-satz-revision",
+          "titel": "Revision für alle Blätter eines Plansatzes",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "Serien-PDF …",
+            "kuerzel": "",
+            "sonst": "Dialog Serien-PDF › Kopf des Plansatzes › «Revision …»"
+          },
+          "schritte": [
+            "Register Ansicht › Planblätter › «Serien-PDF …» klicken und den Plansatz «Heizung» wählen.",
+            "Bei Bedarf einzelne Pläne mit dem Häkchen abwählen (die Revision gilt für die gewählten).",
+            "Im Kopf des Satzes «Revision …» klicken.",
+            "Die Beschreibung eintragen, z. B. «Heizkreise umbenannt», und «OK» klicken.",
+            "Die Eigenschaften der Blätter ansehen: jedes hat eine neue Revision mit derselben Beschreibung."
+          ],
+          "erwartung": "Der Knopf «Revision …» im Kopf des Plansatzes fragt eine Beschreibung ab (Titel «Revision für alle gewählten Pläne», Hinweis mit Zahl der Pläne). Der Kern (Befehl plansatz_revision_hinzufuegen) setzt auf jedes gewählte Blatt dieselbe Beschreibung und dasselbe Datum; der Index ist je Blatt der nächste Buchstabe des Blatts (hat ein Plan A und B, ein anderer nichts, bekommen sie C bzw. A). Ist kein Plan gewählt, meldet die Oberfläche «Kein Plan gewählt.». Abwählen im Dialog gilt als Auswahl.",
+          "pruefpunkte": [
+            "Der Knopf «Revision …» steht im Kopf des Plansatzes neben «Alle» und «Keine».",
+            "Beide Blätter bekommen die Beschreibung und dasselbe Datum.",
+            "Der Index richtet sich nach den Revisionen des jeweiligen Blatts.",
+            "Ein abgewähltes Blatt bleibt unverändert.",
+            "Mit keinem gewählten Plan erscheint die Meldung «Kein Plan gewählt.»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Serien-PDF»",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): Plansatz Heizung (H02, H03) mit je zwei Revisionen, Knopf «Revision …» und Eingabe der Beschreibung"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:101 (Knopf)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/serienpdf-dialog.js:299 (revisionFuerSatz)",
+            "src/Hlks.Kern/Plan/Revisionen.cs:126 (plansatz_revision_hinzufuegen)"
+          ],
+          "hinweis": "Annahme des Bauagenten: Revisionsindex je Blatt (nicht einheitlich je Satz)."
+        },
+        {
+          "id": "m7-schema-kopf",
+          "titel": "Schema-Kopf: schmaler Plankopf unten links",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Planblatts, Zeile «kopfart»; Planblatt-PDF, Plankopf unten links"
+          },
+          "schritte": [
+            "Ein Planblatt anlegen (Gewerk Sanitär, Nummer «1-0768 S00») und das Strangschema Sanitär darauf platzieren (Ansicht platzieren).",
+            "Eine Revision hinzufügen.",
+            "Das Planblatt wählen und die Zeile «kopfart» ansehen (leer).",
+            "Das PDF öffnen: der Kopf ist schmal und sitzt unten links.",
+            "Die Zeile «kopfart» auf «grundriss» stellen: der volle Kopf erscheint unten rechts."
+          ],
+          "erwartung": "Strangschemas haben bei H+K einen anderen Kopf als Grundrisse: schmal, unten links, nur der Hauptsitz Bolligen mit Telefon und Web, ohne Logo, ohne Massstab und ohne Rev.-Felder; die Planänderungen stehen rechts neben den Feldern. Ohne Angabe wählt der Kern «schema», wenn alle Ansichten auf dem Blatt Schemas sind, sonst «grundriss»; die Eigenschaft «kopfart» (grundriss | schema) übersteuert das. Der Kopf wird kleiner, die Platzsuche für Ansichten rechnet mit seiner Grösse.",
+          "pruefpunkte": [
+            "Ein Blatt mit nur Strangschemas zeigt den schmalen Kopf unten links.",
+            "Der Schema-Kopf nennt nur Bolligen, mit Telefon und Web, kein Logo.",
+            "Es steht kein Massstab im Kopf.",
+            "«kopfart» = grundriss erzwingt den vollen Kopf unten rechts.",
+            "Ein Blatt mit Grundriss und Schema erhält ohne Einstellung den Grundriss-Kopf."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Planblatt-PDF",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 «1-0768 S00 Strangschema Sanitär» (A3 quer) mit AN-SCHEMA-SAN und Revision A als PDF; Zeile «kopfart»; Ausschnitt Schema-Kopf unten links"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/Plankopf.cs:229 (ZeichnenSchema)",
+            "src/Hlks.Kern/Plan/Planausgabe.cs:317 (KopfMasse, Vorgabe aus dem Inhalt)",
+            "kataloge/klassen.json:439 (Planblatt.kopfart)"
+          ],
+          "hinweis": "Die Proportionen des Schema-Kopfs sind geschätzt (Annahme, Testbericht 7A). Die Strangschemas der Bernstrasse haben auf dem echten Plan die Plannummer «1-0759-4» (Befund, Tippfehler?)."
+        },
+        {
+          "id": "m7-liste-planblatt",
+          "titel": "Liste auf ein Planblatt platzieren",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "Ansicht platzieren",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Pläne › Rechtsklick › «Ansicht platzieren …»"
+          },
+          "schritte": [
+            "Eine Listenansicht anlegen (Register Ansicht › Erstellen › «Liste», z. B. Raumliste) und ein Planblatt bereit haben.",
+            "Register Ansicht › Planblätter › «Ansicht platzieren» klicken.",
+            "Bei «Ansicht» die Liste wählen (Name und Kennzeichen, z. B. «Raumliste (AN-L-R)»), bei «Planblatt» das Blatt.",
+            "«Platzieren» klicken und das Blatt als PDF öffnen."
+          ],
+          "erwartung": "Die Auswahl «Ansicht» im Dialog enthält jetzt auch Listenansichten (Raumliste, Strangliste, Mengen, Materialliste, Kollisionen, Aussparungen, Sanitär-Zusammenstellung W3 u. a.). Das PDF zeigt die Liste als Tabelle (fette Kopfzeile, Spalten wie am Bildschirm, darüber eine Zusammenfassung wie «13 Räume · Gesamtfläche 380,00 m²», Fusszeilen mit Summen, der Titel steht unter der Tabelle wie bei jeder Ansicht) ohne Massstab; der Massstab im Plankopf erscheint als «-». Die Zahlen kommen aus denselben Abfragen wie die Bildschirmliste. Grenzen in Teil A: Schrift Arial 2.2 mm, höchstens 45 Zeilen («… n weitere Zeilen»), höchstens 380 mm Breite, Spalten höchstens 60 mm (längere Texte mit «…»); ein Umbruch auf weitere Blattbereiche fehlt noch.",
+          "pruefpunkte": [
+            "Die Auswahl «Ansicht» führt Listenansichten auf.",
+            "Das PDF zeigt Titel, Spaltenköpfe und Zeilen der Liste, z. B. Raum «Technik» mit Fläche 25,00.",
+            "Die Liste hat keinen Massstab im Titel; im Plankopf steht «Massstab: -».",
+            "Bei mehr als 45 Zeilen steht am Ende «… n weitere Zeilen».",
+            "Dieselbe Liste lässt sich nicht auf einem zweiten Blatt platzieren (eine Ansicht steht nur auf einem Blatt)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Ansicht platzieren», Planblatt-PDF",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): Raumliste AN-L-R und Planblatt PB-2 «1-0768 H04 Raumliste»; Dialog mit gewählter Liste, danach das PDF mit der Tabelle"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-plaene.js:100 (Dialog Ansicht platzieren)",
+            "src/Hlks.Kern/Plan/PlanBefehle.cs:109 (ansicht_platzieren, Art liste)",
+            "src/Hlks.Kern/Plan/Listentabelle.cs:122 (Plan) und :391 (Zeichnen)"
+          ],
+          "hinweis": "Damit entfällt die offene Grenze aus dem Testbericht 4A (Sanitär-Zusammenstellung nicht auf Planblättern platzierbar). Annahmen des Bauagenten: Arial 2.2 mm, höchstens 45 Zeilen, Umbruch folgt in Teil B."
+        },
+        {
+          "id": "m7-befund-p27",
+          "titel": "Befund P27: doppelte Plannummer",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Modell",
+            "knopf": "Prüfbefunde",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Zwei Planblätter anlegen, z. B. «1-0768 H02» und «1-0768 H03».",
+            "Die Plannummer des zweiten Blatts in den Eigenschaften auf «1-0768 H02» ändern.",
+            "Register Verwalten › Gruppe Modell › «Prüfbefunde» klicken.",
+            "Den Befund P27 ansehen: Element, Text, Vorschlag.",
+            "Die Nummer auf den Vorschlag («1-0768 H03») ändern: der Befund verschwindet."
+          ],
+          "erwartung": "Der Dialog «Prüfbefunde» führt P27 als Warnung am späteren Blatt (nach Kennzeichen): «Plannummer «1-0768 H02» steht auch auf PB-1». Als Vorschlag nennt der Kern die nächste freie Plannummer im Fach der Nummer (eine über der höchsten, im selben Format). «Planblatt anlegen» selbst lehnt eine doppelte Nummer ab; der Befund entsteht, wenn die Nummer später über die Eigenschaften, IFC oder eine Datei doppelt wird. Ein Klick auf die Zeile wählt das Blatt.",
+          "pruefpunkte": [
+            "P27 erscheint als Warnung am Blatt mit dem höheren Kennzeichen.",
+            "Der Text nennt das andere Blatt mit derselben Nummer.",
+            "Der Vorschlag nennt die nächste freie Nummer (hier H03).",
+            "Nach der Korrektur ist P27 weg.",
+            "«Planblatt anlegen» mit schon vergebener Nummer wird abgelehnt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Prüfbefunde»",
+            "zustand": "Beispielprojekt MFH Musterweg (Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)»): PB-1 «1-0768 H02», PB-2 auf «1-0768 H02» geändert; Befund P27 am Blatt PB-2"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/PlanPruefung.cs:13 (Pruefen)",
+            "src/Hlks.Kern/Pruefung/Pruefungen.cs:137 (Aufruf)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:128 (Knopf Prüfbefunde)"
+          ],
+          "hinweis": "Vorschlag der nächsten freien Nummer rechnet nur im Fach der Nummer (H, L, S, K)."
         }
       ]
     },

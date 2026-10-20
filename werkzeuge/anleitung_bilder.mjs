@@ -2117,6 +2117,169 @@ bild('zb-n3-ks-register', 'beispiel', async () => {
 }, { markiere: () => ausw(`const rs = [...document.querySelectorAll('#dialogschicht .dlg tbody tr')].filter((r) => r.children[2]?.textContent === 'Beschriften').map((r) => r.getBoundingClientRect()).filter((r) => r.height > 0 && r.bottom <= innerHeight); if (!rs.length) return null; const x0 = Math.min(...rs.map((r) => r.left)), y0 = Math.min(...rs.map((r) => r.top)), x1 = Math.max(...rs.map((r) => r.right)), y1 = Math.max(...rs.map((r) => r.bottom)); return { x: x0, y: y0, b: x1 - x0, h: y1 - y0 };`),
   abstand: 3, titel: 'Dialog «Tastaturkürzel»: nach Register gegliedert, Abschnitt «Beschriften» (TX, DI, DL, EL)' });
 
+// ---- Kapitel «m7»: Planblatt wie H+K (Modul 7 Teil A; Beispielprojekt MFH Musterweg, Projektnummer 1-0768, Objekt «Testobjekt Worb (fiktiv)», alle Texte und Daten erfunden)
+const M7_PAL = '#palette-eigenschaften';
+/** Projektinformation und Planblätter wie in planblatt-hk.browser.mjs: PB-1 «1-0768 H02 Heizung Erdgeschoss» (AN-GR-EG), optional PB-2 «H03 Heizung 1. Obergeschoss» (AN-GR-1.OG) und die Revisionen A und B (Daten fiktiv). */
+async function m7Setup(w, { revisionen = false, zweites = false } = {}) {
+  await kern(w, 'element_anlegen', { klasse: 'Projektinformation', eigenschaften: { phase: 'Revision', zeile1: 'Testobjekt Worb (fiktiv)', zeile2: 'Musterstrasse 1, 3076 Worb', projektnummer: '1-0768' } });
+  await kern(w, 'planblatt_anlegen', { nummer: '1-0768 H02', titel: 'Heizung Erdgeschoss', format: 'A3', gewerk: 'heizung' });
+  await kern(w, 'ansicht_platzieren', { planblatt: 'PB-1', ansicht: 'AN-GR-EG' });
+  if (zweites) {
+    await kern(w, 'planblatt_anlegen', { nummer: '1-0768 H03', titel: 'Heizung 1. Obergeschoss', format: 'A3', gewerk: 'heizung' });
+    await kern(w, 'ansicht_platzieren', { planblatt: 'PB-2', ansicht: 'AN-GR-1.OG' });
+  }
+  if (revisionen) {
+    for (const b of zweites ? ['PB-1', 'PB-2'] : ['PB-1']) {
+      await kern(w, 'revision_hinzufuegen', { planblatt: b, beschreibung: 'Beschriftungen ergänzt', datum: '14.01.2026' });
+      await kern(w, 'revision_hinzufuegen', { planblatt: b, beschreibung: 'Leitungen angepasst', datum: '21.01.2026' });
+    }
+  }
+}
+/** PDF des Blatts vom Kern holen und mit Windows.Data.Pdf rendern → PNG-Pfad. */
+async function m7PdfPng(c, blatt, name, breite) {
+  const pdf = path.join(ARBEIT, name + '.pdf'), png = path.join(ARBEIT, name + '.png');
+  writeFileSync(pdf, Buffer.from(await (await fetch(`${c.welt.url}/api/plan/${encodeURIComponent(blatt)}.pdf`)).arrayBuffer()));
+  pdfZuPng(pdf, png, breite);
+  return png;
+}
+/** Zeigt das gerenderte PDF im Browserfenster: ganze Seite oder – mit «ausschnitt» – ein Eckenstück in natürlicher Grösse (ecke: 'rechts' | 'links' unten, b/h: Fenstergrösse des Stücks in Pixeln). */
+async function m7Zeigen(png, kopf, { ausschnitt = null, bildBreite = 1500 } = {}) {
+  const html = path.join(ARBEIT, 'm7_' + path.basename(png, '.png') + (ausschnitt ? '_a' : '') + '.html');
+  const bildUrl = 'file:///' + png.replace(/\\/g, '/');
+  const koerper = ausschnitt
+    ? `<div style="position:relative;overflow:hidden;width:${ausschnitt.b}px;height:${ausschnitt.h}px;margin:12px auto;background:#fff;box-shadow:0 0 8px #000"><img src="${bildUrl}" style="position:absolute;${ausschnitt.ecke === 'links' ? 'left' : 'right'}:0;bottom:0;width:${bildBreite}px"></div>`
+    : `<img src="${bildUrl}" style="display:block;margin:12px auto;height:880px;box-shadow:0 0 8px #000">`;
+  writeFileSync(html, `<html><body style="margin:0;background:#525659"><div style="color:#fff;font:13px Segoe UI,sans-serif;padding:6px 12px;background:#323639">${kopf}</div>${koerper}</body></html>`);
+  await send('Page.navigate', { url: 'file:///' + html.replace(/\\/g, '/') }); await warte(1500);
+}
+const m7Seite = async (c, blatt, name, kopf) => m7Zeigen(await m7PdfPng(c, blatt, name, 1500), kopf);
+const m7Stueck = async (c, blatt, name, kopf, ausschnitt, breite = 3000) => m7Zeigen(await m7PdfPng(c, blatt, name, breite), kopf, { ausschnitt, bildBreite: breite });
+const M7_BLATTKOPF = (b, nr) => `${b} · ${nr} · Seite 1 (PDF des Kerns, mit Windows.Data.Pdf gerendert)`;
+
+// Planblatt anlegen mit Vorschlag (Dialog)
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await kern(c.welt, 'element_anlegen', { klasse: 'Projektinformation', eigenschaften: { phase: 'Revision', zeile1: 'Testobjekt Worb (fiktiv)', zeile2: 'Musterstrasse 1, 3076 Worb', projektnummer: '1-0768' } }); await grundrissEG(); },
+  aufnahmen: [
+    { ids: ['m7-planblatt-anlegen'], titel: 'Dialog «Planblatt anlegen»: Gewerk Heizung, Geschoss EG, Art Geschossplan → Plannummer «1-0768 H02», Titel «Heizung Erdgeschoss» und Begründung des Kerns', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => {
+        await registerWahl('Ansicht'); await knopf('plan.anlegen'); await dialogDa(/Planblatt anlegen/);
+        await setze(dlg('.f-gewerk'), 'heizung'); await setze(dlg('.f-geschoss'), 'EG');
+        await warteBis(async () => (await wertVon(dlg('.f-nummer'))) === '1-0768 H02', 'Nummer vorgeschlagen', 15000); await warte(500);
+      } },
+    { ids: ['m7-planblatt-anlegen'], datei: 'm7-planblatt-anlegen_2', titel: 'Art «Fussbodenheizung (FBH)» für das Erdgeschoss: der Kern schlägt die Nummer der FBH-Reihe vor (nur wo keine Nummer von Hand steht)', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => { await setze(dlg('.f-art'), 'fbh'); await warte(1200); } },
+  ],
+});
+// Revision hinzufügen: Menüband, Dialog, Kontextmenü
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt); await grundrissEG(); await eigenschaftenAus(); await pbAuf('Pläne'); await warte(500); },
+  aufnahmen: [
+    { ids: ['m7-revision-hinzufuegen'], titel: 'Register Ansicht, Gruppe «Planblätter»: Knopf «Revision …»', markiere: menueKnopf('plan.revision'), abstand: 4,
+      vor: async () => { await registerWahl('Ansicht'); await warte(400); } },
+    { ids: ['m7-revision-hinzufuegen'], datei: 'm7-revision-hinzufuegen_2', titel: 'Dialog «Revision hinzufügen»: Planblatt PB-1, Beschreibung eingetragen, Datum leer (= heute)', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => { await knopf('plan.revision'); await dialogDa(/Revision hinzufügen/); await eingeben(dlg('.f-beschreibung'), 'Beschriftungen ergänzt'); await warte(400); } },
+    { ids: ['m7-revision-hinzufuegen'], datei: 'm7-revision-hinzufuegen_3', titel: 'Projektbrowser › Pläne › Planblatt: Kontextmenü mit «Revision …»', markiere: '.kmenu', abstand: 4,
+      vor: async () => { await alleDialogeZu(); await rechtsklick('#projektbrowser .pb-zeile[data-art="planblatt"] .pb-label'); await warteBis(() => gibt('.kmenu'), 'Kontextmenü'); await warte(300); } },
+  ],
+});
+// Revisionsliste in den Eigenschaften
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt, { revisionen: true }); await grundrissEG(); await eigWahl('PB-1'); await warteBis(() => gibt(`${M7_PAL} .ep-revisionen`), 'Revisionsliste in der Palette', 20000); await warte(400); },
+  aufnahmen: [
+    { ids: ['m7-revisionsliste'], titel: 'Planblatt PB-1 gewählt: Eigenschaft «revisionen» als Tabelle (Index, Datum, Beschreibung) mit «×» je Zeile und «+ Revision hinzufügen»', markiere: `${M7_PAL} .ep-revisionen`, abstand: 4 },
+    { ids: ['m7-revisionsliste'], datei: 'm7-revisionsliste_2', titel: 'Beschreibung der Revision A in der Tabelle geändert (Zeile übernommen, nur diese Zeile)', markiere: `${M7_PAL} .ep-rev tbody tr:nth-child(1)`, abstand: 4,
+      vor: async () => { await tippeFeld(`${M7_PAL} .ep-rev tbody tr:nth-child(1) .rev-b`, 'Beschriftungen ergänzt und korrigiert'); await warte(600); } },
+  ],
+});
+// Plankopf im PDF
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt, { revisionen: true }); await grundrissEG(); },
+  aufnahmen: [
+    { ids: ['m7-plankopf'], titel: 'Planblatt PB-1 (Heizung Erdgeschoss, A3 quer) als PDF, Seite 1: Plankopf unten rechts (gerendert; der Betrachter des Browsers lässt sich nicht aufnehmen)', markiere: false,
+      vor: async (c) => { await m7Seite(c, 'PB-1', 'm7_plankopf', M7_BLATTKOPF('PB-1', '1-0768 H02')); } },
+    { ids: ['m7-plankopf'], datei: 'm7-plankopf_2', titel: 'Plankopf vergrössert (Ausschnitt unten rechts): beide Standorte, Projekt zweizeilig, Plannummer, Rev. Index B mit Rev. Datum, Planänderungen A und B (gerendert)', markiere: false,
+      vor: async (c) => { await m7Stueck(c, 'PB-1', 'm7_plankopf_gross', M7_BLATTKOPF('PB-1', 'Ausschnitt Plankopf'), { ecke: 'rechts', b: 1500, h: 700 }); } },
+  ],
+});
+// Titelband ein/aus
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt, { revisionen: true }); await grundrissEG(); await eigWahl('PB-1'); await warteBis(() => gibt(`${M7_PAL} [data-ziel="eig:titelband"]`), 'Zeile titelband', 20000); },
+  aufnahmen: [
+    { ids: ['m7-titelband'], titel: 'Planblatt PB-1 gewählt: Eigenschaft «titelband» (leer = Einstellung der Projektinformation, sonst aus)', markiere: `${M7_PAL} .ep-zeile:has([data-ziel="eig:titelband"])`, abstand: 3 },
+    { ids: ['m7-titelband'], datei: 'm7-titelband_2', titel: 'Titelband eingeschaltet: Der Plankopf trägt über den Feldern das Band «Planinhalt» (Planinhalt, Format, Einheit der Masse; gerendert, Ausschnitt unten rechts)', markiere: false,
+      vor: async (c) => { await kern(c.welt, 'element_aendern', { element: 'PB-1', eigenschaften: { titelband: true } }); await m7Stueck(c, 'PB-1', 'm7_titelband', M7_BLATTKOPF('PB-1', 'Ausschnitt Plankopf mit Titelband'), { ecke: 'rechts', b: 1500, h: 760 }); } },
+  ],
+});
+// Revisionsstempel: Eigenschaft «stempel» (Planblatt)
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt, { revisionen: true }); await grundrissEG(); await eigWahl('PB-1'); await warteBis(() => gibt(`${M7_PAL} [data-ziel="eig:stempel"]`), 'Zeile stempel', 20000); },
+  aufnahmen: [
+    { ids: ['m7-stempel-eigenschaft'], titel: 'Planblatt PB-1 gewählt: Eigenschaft «stempel» mit dem Text «Revisionsplan 21.01.2026»', markiere: `${M7_PAL} .ep-zeile:has([data-ziel="eig:stempel"])`, abstand: 3,
+      vor: async () => { await tippeFeld(`${M7_PAL} [data-ziel="eig:stempel"]`, 'Revisionsplan 21.01.2026'); await ausw(`document.querySelector('${M7_PAL} [data-ziel="eig:stempel"]')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(500); } },
+    { ids: ['m7-stempel-eigenschaft'], datei: 'm7-stempel-eigenschaft_2', titel: 'PDF mit Stempel: roter, schräger Text «Revisionsplan 21.01.2026» über dem Plankopf (gerendert, Ausschnitt unten rechts)', markiere: false,
+      vor: async (c) => { await m7Stueck(c, 'PB-1', 'm7_stempel', M7_BLATTKOPF('PB-1', 'Ausschnitt Plankopf mit Stempel'), { ecke: 'rechts', b: 1500, h: 760 }); } },
+  ],
+});
+// Revisionsstempel im Serien-PDF und Revision für alle Blätter des Satzes
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7Setup(c.welt, { revisionen: true, zweites: true }); await grundrissEG(); await spdfOeffnen(); await satzWaehlen('Plansatz Heizung'); await warteBis(async () => (await anzahl('.sp-zeile')) === 2, 'zwei Pläne im Satz Heizung', 15000); },
+  aufnahmen: [
+    { ids: ['m7-stempel-serienpdf'], titel: 'Serien-PDF, Plansatz Heizung (H02, H03): «Revisionsstempel auf alle Pläne» eingeschaltet, Text «Revisionsplan 21.01.2026»', markiere: '.sp-stempel-zeile', abstand: 4,
+      vor: async () => { await klick('.sp-stempel-an'); await eingeben('.sp-stempel', 'Revisionsplan 21.01.2026'); await ausw(`const e = document.querySelector('.sp-stempel'); e.setSelectionRange(0, 0); e.scrollLeft = 0; e.blur(); return 1;`); await warte(400); } },
+    { ids: ['m7-satz-revision'], titel: 'Serien-PDF, Kopf des Plansatzes Heizung: Knopf «Revision …» neben «Alle» und «Keine»', markiere: '.sp-revision', abstand: 4 },
+    { ids: ['m7-satz-revision'], datei: 'm7-satz-revision_2', titel: 'Eingabe «Revision für alle gewählten Pläne»: eine Beschreibung gilt für beide Pläne des Satzes', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => { await klick('.sp-revision'); await warteBis(() => gibt('#dialogschicht .dlg:last-child input.gross'), 'Eingabe der Beschreibung'); await eingeben('#dialogschicht .dlg:last-child input.gross', 'Heizkreise umbenannt'); await warte(400); } },
+  ],
+});
+// Schema-Kopf
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => {
+    await kern(c.welt, 'element_anlegen', { klasse: 'Projektinformation', eigenschaften: { phase: 'Revision', zeile1: 'Testobjekt Worb (fiktiv)', zeile2: 'Musterstrasse 1, 3076 Worb', projektnummer: '1-0768' } });
+    await kern(c.welt, 'planblatt_anlegen', { nummer: '1-0768 S00', titel: 'Strangschema Sanitär', format: 'A3', gewerk: 'sanitaer' });
+    await kern(c.welt, 'ansicht_platzieren', { planblatt: 'PB-1', ansicht: 'AN-SCHEMA-SAN' });
+    await kern(c.welt, 'revision_hinzufuegen', { planblatt: 'PB-1', beschreibung: 'Beschriftungen ergänzt', datum: '14.01.2026' });
+    await grundrissEG(); await eigWahl('PB-1'); await warteBis(() => gibt(`${M7_PAL} [data-ziel="eig:kopfart"]`), 'Zeile kopfart', 20000);
+  },
+  aufnahmen: [
+    { ids: ['m7-schema-kopf'], titel: 'Planblatt PB-1 gewählt: Eigenschaft «kopfart» (leer: schema, weil nur Schema-Ansichten auf dem Blatt stehen)', markiere: `${M7_PAL} .ep-zeile:has([data-ziel="eig:kopfart"])`, abstand: 3 },
+    { ids: ['m7-schema-kopf'], datei: 'm7-schema-kopf_2', titel: 'Blatt «1-0768 S00 Strangschema Sanitär» als PDF: schmaler Schema-Kopf unten links (gerendert)', markiere: false,
+      vor: async (c) => { await warte(2500); await m7Seite(c, 'PB-1', 'm7_schema', M7_BLATTKOPF('PB-1', '1-0768 S00')); } },
+    { ids: ['m7-schema-kopf'], datei: 'm7-schema-kopf_3', titel: 'Schema-Kopf vergrössert (Ausschnitt unten links): nur Bolligen mit Telefon und Web, kein Massstab, Planänderungen rechts neben den Feldern (gerendert)', markiere: false,
+      vor: async (c) => { await m7Stueck(c, 'PB-1', 'm7_schema_gross', M7_BLATTKOPF('PB-1', 'Ausschnitt Schema-Kopf'), { ecke: 'links', b: 1500, h: 480 }); } },
+  ],
+});
+// Liste auf dem Planblatt
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => {
+    await m7Setup(c.welt);
+    await kern(c.welt, 'planblatt_anlegen', { nummer: '1-0768 H04', titel: 'Raumliste', format: 'A3', gewerk: 'heizung' });
+    await kern(c.welt, 'element_anlegen', { klasse: 'Ansicht', kennzeichen: 'AN-L-R', name: 'Raumliste', eigenschaften: { art: 'liste', liste: 'raumliste' } });
+    await grundrissEG();
+  },
+  aufnahmen: [
+    { ids: ['m7-liste-planblatt'], titel: 'Dialog «Ansicht platzieren»: Die Auswahl enthält jetzt auch Listenansichten (hier «Raumliste», AN-L-R) für Planblatt PB-2', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => { await registerWahl('Ansicht'); await knopf('plan.platzieren'); await dialogDa(/Ansicht platzieren/); await setze(dlg('.f-ansicht'), 'AN-L-R'); await setze(dlg('.f-blatt'), 'PB-2'); await warte(500); } },
+    { ids: ['m7-liste-planblatt'], datei: 'm7-liste-planblatt_2', titel: 'Blatt PB-2 «1-0768 H04 Raumliste» als PDF: die Raumliste steht als Tabelle auf dem Blatt (gerendert)', markiere: false,
+      vor: async (c) => { await dialogKnopf('Platzieren'); await warteBis(async () => (await anzahl('#dialogschicht .dlg')) === 0, 'Dialog zu'); await warte(1500); await m7Seite(c, 'PB-2', 'm7_liste', M7_BLATTKOPF('PB-2', '1-0768 H04 Raumliste')); } },
+  ],
+});
+// Befund P27 doppelte Plannummer
+bild('m7-befund-p27', 'beispiel', async (c) => {
+  await m7Setup(c.welt, { zweites: true });
+  await kern(c.welt, 'element_aendern', { element: 'PB-2', eigenschaften: { nummer: '1-0768 H02' } });
+  await grundrissEG(); await registerWahl('Verwalten'); await knopf('verwalten.befunde'); await dialogDa(/Prüfbefunde/);
+  await warteBis(async () => (await anzahl(dlg('.b-liste tbody tr'))) > 0, 'Befunde geladen'); await warte(500);
+}, { schreibt: true, markiere: () => rechteck(DLG), abstand: 2, titel: 'Dialog «Prüfbefunde»: P27 (Warnung) am späteren Blatt PB-2 mit Vorschlag «Nächste freie Plannummer: 1-0768 H03»' });
+
 // @@KATALOG-ENDE
 
 // ------------------------------------------------------------------ Welten: Beispielprojekt und Bernstrasse
