@@ -304,6 +304,6 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 - Synchronisation/Ablage (hlks-kern): zwei Mal ohne Nacharbeit → bleibt.
 - Gesamttest (hlks-test): ein Mal → bleibt.
 | 20.10.2026 | 7 | Gesamtprüfung 795779c (B3) grün → geprüft f9f9705, Desktop | Hauptlauf | ok |
-| 20.10.2026 | – | Merge Sicherheit 3c (815cb4f) und B2 (Merge ohne Konflikt), Stand f10affc: stand_pruefen + alle Browser-Reihen | Hauptlauf / hlks-test (Ports 5260–5299) | läuft |
+| 20.10.2026 | – | Merge Sicherheit 3c (815cb4f) und B2 (Merge ohne Konflikt), Stand f10affc: stand_pruefen + alle Browser-Reihen | Hauptlauf / hlks-test (Ports 5260–5299) | ok – stand_pruefen grün, 25/25 Browser-Reihen grün ohne Wiederholung |
 | 20.10.2026 | 3c | Abnahmelauf B6 mit echtem Claude (5 Prüfpunkte bestanden) → Internet-Schalter frei, Notschalter HLKS_KI_INTERNET=0; Befund N5 | Hauptlauf | ok |
 | 20.10.2026 | – | Grössenregeln Christian (DN aus di, Lüftung Aussendurchmesser, bis DN 300): KI-Anleitung Grundsatz 2, Spezifikation; R4 nachgeführt (12 Grössen DN 25–300, Formteile) | Hauptlauf | ok |

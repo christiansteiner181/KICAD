@@ -21,8 +21,8 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 | R7 | Geberit PE | Serie, Bogen, T-Stück (50), Reduktion (34) | 13 (d32 … d315) | keine | bestanden | Kürzel; Quelle Ausgabe AU; d32 ohne Masse |
 | R3 | Stahlrohr Gewinderohr | Serie, Bogen (Winkel Fig. 90/120), T-Stück (63), Reduktion (31) | 11 (1/4" … 4", EN 10255) | keine | bestanden | Kürzel; Rohrhersteller; Reihe M/H |
 | R4 | Stahlrohr geschweisst | Serie, Bogen (14), T-Stück (43), Reduktion (46) | 12 (33,7 × 2,3 DN 25 … 323,9 × 5,6 DN 300) | keine | bestanden | Kürzel; DN aus di (nachgeführt) |
-| K1 | Wickelfalzrohr rund | offen | | | | |
-| K3 | Flexrohr | offen | | | | |
+| K1 | Wickelfalzrohr rund | Serie, Bogen (7, Masse Lindab), T-Stück (325), Reduktion (300) | 25 (Ø 80 … 1250) | keine | bestanden | Bogen nur Ø 80–200; Lindab-Masse; aussen = d (Nachtrag) |
+| K3 | Flexrohr | 8 Serien (AR, ARH, ARHP, ARHI 25/50, ARHS 25/50, KSR), ohne Bogen | je 2–19 (Ø 80 … 400) | AR: v_max 25/30 m/s | bestanden | v_max, p_max; Biegeradius fehlt |
 | K2 | Rechteckkanal | offen | | | | |
 
 ## R1 Geberit Mapress C-Stahl
@@ -107,3 +107,21 @@ Stichprobe des Hauptlaufs gegen die Quelle.
   3. Unstimmigkeiten in den Debrunner-Blättern: 45°-Bogen «129.0 × 4.5» (vermutlich 159), T-Stück 323,9-273 und 323,9-219,1 beide b 230,
      Reduktion «P235PG» (vermutlich P235GH) – nicht korrigiert.
   4. Kürzel fehlt (Stahl P235TR1). Hersteller der Rohre und Formteile nennt Debrunner nicht.
+
+## K1 Wickelfalzrohr rund
+
+- **Ergebnis:** Serie (25 Grössen Ø 80 … 1250, Blech s 0,50 / 0,60 / 0,80 aus Schmidlin-Preisbuch Rohre S. 19), Bogen 90/60/45/30/15° (7 Grössen
+  Ø 80–200), T-Stück (325 Paare, Abzweig 90°), Reduktion zentrisch (300 Paare, l = (d1 − d2) × 2 + 50, S. 29).
+- **Stichprobe Hauptlauf** gegen das Schmidlin-Preisbuch: Reduktionsformel (S. 29) und Blechdicken (S. 19) – stimmen.
+- **Nachtrag (Regel «für Lüftung gilt der Aussendurchmesser»):** Die KI hatte Ø d als Innendurchmesser angenommen (aussen = d + 2·s). Umstellung
+  auf aussen = d, innen = d − 2·s ist vorbereitet; sie wird nach Ende von K2 eingetragen (Familie bis dahin vom KI-Lauf reserviert).
+- **Zur Entscheidung:** Schmidlin bemasst die Bögen nicht – Einbaulängen von **Lindab** (Bogen BU, «lindab safe», 2021) übernommen und als
+  anderer Hersteller bezeichnet (Christian: «andere Hersteller angeben»). Bogen Ø 224–1250 offen. Kein Kürzel (Kanal).
+
+## K3 Flexrohr
+
+- **Ergebnis:** 8 Serien je Schmidlin-Ausführung (AR Aluflex, ARH/ARHP hochflexibel, ARHI 25/50 und ARHS 25/50 gedämmt mit Hülle d1, KSR),
+  Grösse d = Aussendurchmesser (gedämmte: Hülle d1), Winkel frei, keine Bogen-Familie; T-Stück und Reduktion von K1.
+- **Stichprobe Hauptlauf:** Ø-Reihe 80 … 315 wie Preisbuch Rohre S. 21; 355/400 aus der Schmidlin-Broschüre Zubehör 2025.09 (von schmidlinag.ch).
+- **Zur Entscheidung:** AR: v_max 25 m/s (Preisbuch) gegen 30 m/s (Broschüre) als Konflikt; p_max 10 000 Pa gegen 3000 Pa (Entwurf 3000).
+  Biegeradius nennt Schmidlin nicht.
