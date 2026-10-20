@@ -1,10 +1,11 @@
-# Notizen zum Funktionsinventar (Stand: siehe «stand» in inventar.json; W1 nachgeführt)
+# Notizen zum Funktionsinventar (Stand: siehe «stand» in inventar.json; nachgeführt 20.10.2026 auf 6dc390e)
 
 Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiven Bedienungs- bzw. Testanleitung für das HLKS-CAD «KICAD».
 
 ## 1. Herkunft und Methode
 
 - **Stand:** das Inventar beschreibt den Stand des Commits in «stand» (Zweig main mit W1 «Dialoge und Paletten verschiebbar» und W2 «Ansichten frei anordnen»; die erste Fassung beschrieb `bd513c0`, vor W1). Alle Zeilenangaben unter «quelle» sind Zeilen der Dateien in diesem Stand; beim Nachführen auf W1 wurden sie maschinell umgerechnet (jede Zeile wurde im alten Stand gelesen und im neuen Stand wiedergefunden, zur Gegenprobe über die Diff-Hunks abgebildet). `layout.js` ist gelöscht (die Paletten laufen über `paletten.js`).
+- **Nachführung 20.10.2026 (Stand 6dc390e, hlks-test):** 36 Funktionen neu, 3 Hinweise angepasst. Neu: Kapitel «start» +5 (Hilfe «?», F1 über Knopf, F1 im Dialog, Knopf «Claude» in der Kopfleiste, Symbole im Revit-Stil), Kapitel «zusatz» +7 (N3: Einlageplan- und Grundleitungsplan-Knopf, Projektinformationen bearbeiten und im Projektbrowser, Kollisions-/Aussparungsliste, CSV, KS nach Register), neues Kapitel «m3c» (14) und «m4» (10). Reihenfolge der Kapitel: start, m0a … m3b, m3c, m4, zusatz. Orte, Kürzel und Zeilen (Feld «quelle») wurden im Code gesucht (Skript im Arbeitsordner der Sitzung, bricht ab, wenn ein Muster fehlt); Rechenwerte stehen nur dort, wo sie aus Tests und Katalog stammen (Beispielprojekt: Anlage A-SAN, 16 Apparate, K 0.5 fiktiv; Waschtisch Zeile 8, Badewanne Zeile 17 im Excel). Angepasst wurden die Hinweise von `m0b-projektinfo` (Dialog jetzt bearbeitbar), `zb-einlageplan` (Knopf seit N3) und `kuerzel-liste-ks` (Befund behoben). Nicht nachgeführt: die älteren Zeilenangaben der übrigen Funktionen (sie stammen aus 7c36986; einzelne Zeilen können durch spätere Änderungen verrutscht sein).
 - **W1 ist beschrieben** (14 neue Funktionen im Kapitel «start», Ids `dialog-…` und `palette-…`, Prüfpunkte aus «Fertig, wenn» in `entwurf/fenster-revit.md`). Angepasst wurden `eigenschaften-palette`, `eigenschaften-ansicht`, `projektbrowser-aufbau`, `anordnung-kacheln-reiter` (Gruppe «Fenster» hat vier Knöpfe), `m3b-kollisionsliste`, `m3b-aus-liste` (Palette «Koordination» ist eine Palette der Verwaltung) und `anordnung-reiter-ziehen` (Verweis); jede Funktion, die einen Dialog öffnet, trägt im «hinweis» den Satz, dass der Dialog verschiebbar, in der Grösse änderbar und einklappbar ist und der Plan dahinter nicht mehr abgedunkelt wird.
 - **Quellen für Orte und Kürzel:** der Code. Die Aktionen stehen in `src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-*.js` und `js/familien/aktionen-*.js`; Register, Gruppen und Gruppenreihenfolge in `menueband.js` (`REGISTER`, `GRUPPENFOLGE`). Die Namen der Knöpfe sind die `titel` der Aktionen (ohne die unsichtbaren Trennstriche). Spezifikationen, Testberichte und `OBERFLAECHE.md` lieferten Ablauf, Erwartung und Prüfpunkte; was dort steht, aber im Code keinen Ort hat, steht unten bei «Nicht gefunden».
 - **Zeilenangaben** wurden maschinell aufgelöst (jede Quelle ist eine wirklich gefundene Zeile im Stand); der Generator liegt nur im Arbeitsordner der Sitzung, nicht im Repository.
@@ -15,7 +16,7 @@ Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiv
 
 | Kapitel | Modul | Titel | Funktionen |
 | --- | --- | --- | --- |
-| start | – | Start und Oberfläche | 54 |
+| start | – | Start und Oberfläche | 59 |
 | m0a | 0a | Datenmodell und Kern-API | 7 |
 | m0b | 0b | Arbeitsplatz, Projektexplorer, Ansichten, Live-Abgleich | 19 |
 | m1a | 1a | Grundriss und 2D | 22 |
@@ -25,12 +26,24 @@ Begleitdatei zu `inventar.json`. Das Inventar ist die Grundlage einer interaktiv
 | m2 | 2 | Familien und Familie aus Unterlagen | 23 |
 | m3 | 3 | Leitungen und Schema | 26 |
 | m3b | 3b | Kollision und Aussparungen | 18 |
-| zusatz | – | Zusatzbausteine ausserhalb der Module | 20 |
-| | | **Summe** | **226** |
+| m3c | 3c | KI-Palette Claude | 14 |
+| m4 | 4 | Sanitär rechnen – Belastungswerte | 10 |
+| zusatz | – | Zusatzbausteine ausserhalb der Module | 27 |
+| | | **Summe** | **262** |
 
-Kapitel: 11. Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript den Zustand herstellen kann).
+Kapitel: 13. Vorher (7c36986 mit W1/W2): 226 Funktionen in 11 Kapiteln; neu 36 (start +5, zusatz +7, m3c 14, m4 10). Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript den Zustand herstellen kann; für die 36 neuen noch keines).
 
 ## 3. Nicht gefunden (in Spezifikation oder Testbericht versprochen, im Code kein Ort gefunden)
+
+**Nachtrag 20.10.2026 (6dc390e):** erledigt sind Punkt 1 (Einlage-/Grundleitungsplan: Knöpfe in Ansicht › Erstellen, N3), Punkt 2 (Projektinformationen bearbeitbar, Knoten im Projektbrowser, N3), Punkt 3 (Kollisions-/Aussparungsliste und CSV, N3) und Punkt 10 (Symbolsatz im Revit-Stil, Teil S, jetzt Funktion «start-symbole-revit»). Offen bleiben 4–9, 11, 12 und diese neuen Lücken (für `luecken.json` vorgeschlagen; die Datei habe ich nicht verändert):
+
+- **13. Einlageplan/Grundleitungsplan:** im Dialog keine Wahl von Name und Bauteil (der Kern kennt sie nicht).
+- **14. Sanitär-Zusammenstellung:** Listen sind nicht auf Planblättern platzierbar (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema; gilt für alle Listen); Ausgabe nur als CSV. Abflusskennzahl K hat kein Quellenfeld und keine Auswahlliste (SN 592000 fehlt).
+- **15. Modul 4 Teil B (Dimensionierung):** DN je Teilstrecke, Gefälle, Füllung, Hausanschluss: wartet auf SN 592000, SN EN 12056, SVGW W3 (liegen im Normenverzeichnis nicht vor). Entsprechend keine Funktion im Inventar.
+- **16. Normenverzeichnis:** Volltext erst für 62 von 315 Normen; die Palette weist darauf hin.
+- **17. KI-Palette im Zweitfenster:** Paletten sind dort ausgeblendet; es gibt keinen Knopf «Claude» (Absicht, W2).
+- **18. Echter Claude-Lauf:** Das Inventar beschreibt die Palette nach den Abläufen mit der Attrappe und dem Abnahmelauf vom 20.10.2026 (Gespräch 20261020-020626-b3ef); Bilder entstehen nur mit der Attrappe.
+- **19. Rechner ohne Abo:** die Meldung «Claude nicht verfügbar» (`m3c-meldungen`) ist nur durch Tests mit der Attrappe belegt.
 
 1. **Einlage- und Grundleitungspläne anlegen** (`einlageplaene_anlegen`, `entwurf/modul-3.md` B10 Punkt 4, `src/Hlks.Kern/Plan/EinlagePlaene.cs`): kein Knopf, kein Menüeintrag (nur MCP). Im Inventar steht der Umweg: Grundriss anlegen und in der Palette `darstellung` = einlagen bzw. grundleitungen setzen (`zb-einlageplan`, `zb-grundleitungsplan`). Ob die Palette die Eigenschaften `darstellung`, `einlagen`, `masseKnicke` und `verlegung` tatsächlich anzeigt, ist nur aus `OBERFLAECHE.md` (Nachtrag C1c: «zeigt die Eigenschaftspalette von selbst aus dem Katalog») abgeleitet, nicht aus Code bestätigt.
 2. **Projektweite Einstellungen** `Projektinformation.rohrbezeichnung` (NW/DN) und `Projektinformation.bemassungEinheiten` (Masseinheit je Gewerk): im Code kein Bedienort. Der Dialog «Projektinformationen» ist nur lesend; das Element Projektinformation steht nicht im Projektbrowser. Einstellbar ist nur `rohrbezeichnung` je Ansicht (Palette bei nichts gewählt). Betrifft `zb-rohr-nwdn`, `m1a-bemassung`.
@@ -58,6 +71,11 @@ Kapitel: 11. Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript d
 9. **Zahlen im Testbericht 0a** (50 Klassen, 15 Medien, 15 Systemtypen, Prüfungen P01–P11, 26 MCP-Werkzeuge, 175 Elemente/138 Verbindungen) sind überholt (Katalog und Beispielprojekt sind gewachsen, Prüfungen bis P20); im Inventar ohne Zahlen bzw. mit Hinweis.
 10. **Kürzel Füllbereich/Schnitt/Kote:** `entwurf/modul-1a.md` Zeile 161–162 führt «Füllbereich, Kote, Schnitt» unter «Werkzeuge mit Revit-Kürzeln» auf; im Code hat nur die Kote ein Kürzel (EL), Füllbereich, Nordpfeil und Schnitt keines (Testbericht 1a nennt das ausdrücklich).
 11. **HKAP-Vorgabeadresse:** Der Dialog «Mit HKAP verknüpfen» schlägt `http://localhost:5013` (HKAP im Betrieb) vor; Spezifikation 1d verlangt Tests nur gegen die Testkopie (5098). Kein Fehler, aber eine Falle für die Anleitung (steht in `m1d-verbinden`).
+12. **Kürzel-Liste (KS), Nachtrag 20.10.2026:** Punkt 7 ist durch N3 behoben (`kuerzel-liste.js › REGISTER_NAMEN` kennt alle Register).
+13. **Spezifikation 3c (Internet):** `entwurf/modul-3c.md` Teil K sagt «mit `internet=true` zusätzlich WebSearch und unterlage_aus_url»; der Code (Entscheid Hauptlauf 20.10.2026, GespraechDienst) lässt mit Internet **keinen Projektzugriff** und keinen Projektkontext zu. Im Inventar (`m3c-internet`) gilt der Code.
+14. **Spezifikation 3c (Verbotsliste):** die Spezifikation nennt Familien freigeben, Konflikte, HKAP, Freigaben; der Code verbietet 23 Werkzeuge (zusätzlich Status, BCF, Plan-/IFC-Ausgaben, Bibliothek). Im Inventar (`m3c-antwort`) gilt der Code.
+15. **Spezifikation 3c (Knopf):** die Spezifikation kennt nur die Palette mit Häkchen und Kürzel KI; den Knopf «Claude» in der Kopfleiste (neben «?») ergänzte der Hauptlauf bei der Nacharbeit. Im Inventar als `start-claude-knopf` und in `m3c-ein-aus`.
+16. **Spezifikation Modul 4:** «Register Gebäudetechnik **bzw. Analysieren**: Knopf Sanitär-Zusammenstellung» – der Code hat den Knopf nur in Gebäudetechnik › Apparate und Armaturen (ein Register «Analysieren» gibt es nicht). «Druck in Planblätter wie andere Listen» ist nicht umgesetzt (Listen sind im Kern nicht platzierbar); Ausgabe ist die CSV-Datei.
 
 ## 5. Offene Punkte und Unsicherheiten (im Bild oder am Gerät klären)
 
@@ -69,6 +87,10 @@ Kapitel: 11. Bilder: siehe Abschnitt 6 und 7 (eines je Funktion, wo ein Skript d
 - **Beispielprojekt:** hat keine Planblätter, Familien, Fenster, Türen, Einlagen; die Beispiele legen sie selbst an. `kataloge/materialien.json` ist leer.
 - **Echte Dateien:** Bernstrasse liegt lokal unter `%USERPROFILE%\HLKS_CAD_testdaten\bernstrasse42\` (architekt_3d.ifc, architekt_eg.dwg, hlks_hk_2024-09-17.ifc, hlks_hk_2026-02-10.ifc, sanitaer_eg.dwg, schema_wasser.dxf) und für 3b als Abnahmeprojekt `%USERPROFILE%\HLKS_CAD_build\abnahme3b` (Skript `werkzeuge/abnahme3b_bernstrasse.ps1`). Nie nach W: schreiben.
 - **Schreiben auf W:** `m2-freigeben` (Bibliothek speichern), `zb-bib-explorer`, `zb-spdf-ausgabe` (Ordner unter %TEMP% lassen) können auf W: schreiben.
+- **Nachtrag 20.10.2026:** `m4-befunde` und `m4-k` brauchen einen hergestellten Zustand im Beispielprojekt (Art am Bodenablauf BA-U.02 entfernen bzw. K löschen); im frischen Beispielprojekt ist BA-U.02 auf bodenablauf_70 gesetzt und K = 0.5 (beides fiktive Annahme des Hauptlaufs).
+- `zb-n3-einlageplan-knopf`/`-grundleitungsplan-knopf`: im Beispielprojekt gibt es keine Einlagen und keine Leitungen im Erdreich (der Dialog zeigt die leere Liste); aussagekräftig nur in der Bernstrasse-Kopie.
+- `m3c-*`: Bilder nur mit der Attrappe (`tests/Hlks.ClaudeAttrappe`; Marken in der Frage: `[attrappe:antwort]`, `[attrappe:aendern=<Kennzeichen>]`, `[attrappe:langsam]`, `[attrappe:zweimal=<Kennzeichen>]`); die Normbilder mit dem Test-PDF (`tests/daten/normen`, `HLKS_NORMEN` auf eine Kopie).
+- `start-f1-*`: Hilfefenster (zweites Browserfenster) und Tooltips sind in Edge headless nicht aufnehmbar; `window.open` ist im Browsertest ein Stub.
 
 ## 6. Bilder (Vorlage für ein Bildskript)
 
@@ -298,6 +320,49 @@ Ein Bild je Funktion; «id» = Id der Funktion in `inventar.json`. Projekt `beis
 
 Die Tabelle gilt für den Stand `7c36986`; die Bilder der W1-Funktionen (Ids `dialog-…`, `palette-…`) stehen in `inventar.json` (Feld «bild») und in `bilder.json`.
 
+### Nachtrag 20.10.2026 (Stand 6dc390e): Bildvorgaben der 36 neuen Funktionen
+
+Gleiche Spalten wie oben (Quelle ist das Feld «bild» in `inventar.json`). Beim Herstellen: Build `%USERPROFILE%\HLKS_CAD_build\anleitung2`, `HLKS_KATALOG` auf `kataloge` des Repositorys. KI-Palette nur mit Attrappe.
+
+| id | projekt | ansicht | zustand |
+| --- | --- | --- | --- |
+| start-hilfe-symbol | beispiel | Kopfleiste rechts | Beispielprojekt offen; Ausschnitt der Kopfleiste rechts mit den Knöpfen «Claude» und «?» (Tooltip des «?» sichtbar, nachgebildet) – das Fenster der Anleitung als zweites Bild, falls herstellbar |
+| start-f1-knopf | beispiel | Menüband › Ansicht | Register Ansicht, Zeiger über «Liste» (Tooltip mit letzter Zeile «F1: Hilfe zu diesem Befehl», nachgebildet, da Tooltips in Edge headless nicht aufnehmbar sind); zweites Bild: die Anleitung mit hervorgehobener Funktion (falls herstellbar) |
+| start-f1-dialog | beispiel | Dialog «Tastaturkürzel» und Anleitung | Dialog «Tastaturkürzel» offen; zweites Bild: Hilfefenster mit Suchfeld «tastaturkuerzel» (falls herstellbar) |
+| start-claude-knopf | beispiel | Kopfleiste und Palette «Claude» | Beispielprojekt, Palette «Claude» eingeblendet (Attrappe, nie echter Claude-Lauf): Knopf «Claude» gedrückt neben dem «?», Palette rechts angedockt mit leerem Verlauf |
+| start-symbole-revit | beispiel | Menüband › Gebäudetechnik | Zwei Bilder desselben Registers: Strichsymbole (Vorgabe) und Revit-Stil; Liste «Paletten» mit Häkchen vor dem Eintrag als drittes Bild |
+| m3c-ein-aus | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Liste des Knopfs «Paletten» offen mit Häkchen bei Claude, Palette im Hintergrund eingeblendet (zwei Bilder) |
+| m3c-frage | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Frage «Was ist ausgewählt?» gestellt, Antwort der Attrappe im Verlauf |
+| m3c-kontext | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Grundriss EG offen, Strang KW-S1 gewählt: Chips «Ansicht: …», «Geschoss: EG», «Auswahl: KW-S1» an, «Bild der Ansicht» aus |
+| m3c-antwort | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Antwort mit aufgeklapptem Werkzeugaufruf element_aendern (✓) |
+| m3c-aenderungen | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Antwort mit Änderungsliste (Paket, Element KW-S1, Knopf «Zurücknehmen»); zweites Bild nach dem Zurücknehmen (durchgestrichen, «zurückgenommen») |
+| m3c-freigabe | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Frage mit Hinweis «Auswahl für Claude freigegeben» unter der Frage, Antwort mit einer Änderung |
+| m3c-gespraeche | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Auswahlliste der Gespräche offen mit zwei Gesprächen und «＋ Neues Gespräch» |
+| m3c-modell | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Kopf mit geöffneter Modellwahl |
+| m3c-internet | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Schalter «Internet» an, Hinweisband und ausgegraute Chips, eine Frage mit Marke «Internet · ohne Projektzugriff» |
+| m3c-bild | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Grundriss EG, Chip «Bild der Ansicht» an (Haken) neben den anderen Chips |
+| m3c-normen | beispiel | Palette «Claude» › Normen | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); mit der Test-Norm (tests/daten/normen, HLKS_NORMEN auf eine Kopie): Reiter «Normen» mit Treffern |
+| m3c-normfrage | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Normfrage mit der Test-Norm, Antwort der Attrappe mit Zitat (Layout der Antwort) – kein echter Claude-Lauf |
+| m3c-neustart | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Palette nach dem Neuladen mit dem vorherigen Gespräch (zwei Fragen und Antworten) |
+| m3c-meldungen | beispiel | Palette «Claude» | Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf) mit Einstellung «verfuegbar: false» (Attrappe nicht gefunden): rotes Band mit Grund |
+| m4-apparateart | beispiel | Eigenschaftenpalette | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): WT-E.02 gewählt, Auswahlliste «Apparateart» geöffnet (Vorgabe der Klasse, Badewanne …) |
+| m4-lu-du | beispiel | Eigenschaftenpalette | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): WT-E.02 gewählt, Dialog «?» zu LU KW mit Quelle und Excel-Zeile 8 |
+| m4-summen-leitung | beispiel | Eigenschaftenpalette | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): KW-V1-0 gewählt, Gruppe «Abgeleitet» mit ΣLU; Dialog «?» mit Tabelle der Beiträge |
+| m4-schema-belastung | beispiel | Strangschema AN-SCHEMA-SAN | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Strangschema Sanitär, Beschriftungen «ΣLU 24 / …» und «ΣDU 16.7» an den Leitungen |
+| m4-liste | beispiel | Listenansicht «Sanitär-Zusammenstellung (W3)» | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Liste AN-LI-SANITAER-A-SAN offen, alle drei Tabellen sichtbar |
+| m4-knopf | beispiel | Menüband › Gebäudetechnik | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Register Gebäudetechnik, Knopf «Sanitär-Zusammenstellung» hervorgehoben |
+| m4-spezial | beispiel | Eigenschaftenpalette der Anlage | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Anlage A-SAN gewählt, Tabelle «Spezialinstallationen» mit einer Zeile «Garteneinrichtung 0,5 / –» |
+| m4-k | beispiel | Eigenschaftenpalette der Anlage | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Anlage A-SAN, Zeile Abflusskennzahl mit Hinweis; zweites Bild: Liste mit «K fehlt» |
+| m4-csv | beispiel | Dialog «Liste als CSV» | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Dialog «Liste als CSV» zur Sanitär-Zusammenstellung |
+| m4-befunde | beispiel | Dialog «Prüfbefunde» | Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Apparat BA-U.02 ohne Art (P21) und Anlage ohne K (P25); Dialog «Prüfbefunde» offen |
+| zb-n3-einlageplan-knopf | bernstrasse | Dialog «Einlageplan anlegen» | Bernstrasse (Kopie des Abnahmeprojekts), Dialog «Einlageplan anlegen» offen: Tabelle der erkannten Pläne, Vorschau (Trockenlauf) unten |
+| zb-n3-grundleitungsplan-knopf | bernstrasse | Dialog «Grundleitungsplan anlegen» | Bernstrasse (Kopie des Abnahmeprojekts «abnahme3»), Dialog «Grundleitungsplan anlegen» offen mit Tabelle und Vorschau |
+| zb-n3-projektinfo | beispiel | Dialog «Projektinformationen» | Beispielprojekt, Dialog «Projektinformationen» offen mit allen drei Gruppen; Überblick eingeklappt |
+| zb-n3-projektinfo-browser | beispiel | Projektbrowser | Beispielprojekt, Projektinformationen einmal übernommen (Phase gesetzt); Projektbrowser, Ast «Gebäude» aufgeklappt, Eintrag «Projektinformationen» hervorgehoben, Kontextmenü offen |
+| zb-n3-listen-kollision | bernstrasse | Listenansicht «Kollisionsliste» | Bernstrasse (Kopie), Listenansicht AN-LI-KOLLISIONEN geöffnet, obere Zeilen sichtbar |
+| zb-n3-csv | beispiel | Dialog «Liste als CSV» | Beispielprojekt, Strangliste angelegt und geöffnet; Dialog «Liste als CSV» offen mit Dateiname und Formathinweis |
+| zb-n3-ks-register | beispiel | Dialog «Tastaturkürzel» | Dialog offen, Abschnitt «Beschriften» sichtbar |
+
 ## 7. Bildskript `werkzeuge/anleitung_bilder.mjs`
 
 Das Skript erzeugt die Bilder zu den Funktionen des Inventars (Fenster 1600 × 950, helles Farbschema, WebP Qualität 85) und legt sie **nur lokal** unter `%USERPROFILE%\HLKS_CAD_testdaten\anleitung\bilder\` ab (zusammen mit `bilder.json`); nie ins Repository und nie nach OneDrive, weil die Bilder der Bernstrasse echte Projektdaten zeigen. Aufruf und Ports stehen im Kopfkommentar der Datei:
@@ -311,3 +376,13 @@ node werkzeuge/anleitung_bilder.mjs [--nur <id,id,…>] [--projekt beispiel|bern
 - **Zustände** entstehen über die Befehle des Kerns und über echte Maus- und Tastenereignisse (wie die `*.browser.mjs`-Tests); die Testwerte sind dieselben wie dort (alle fiktiv). Das Beispielprojekt «MFH Musterweg» und ein zweites fiktives Projekt («Schulhaus Ostring», für die angeheftete Kachel und die Bibliotheksbilder) liegen unter `%TEMP%`; die Bernstrasse ist eine **Kopie** der Abnahmeprojekte `abnahme3b` (Koordination) und `abnahme3` (Leitungen).
 - **Bilder, die ein Skript nicht herstellen kann** (in `bilder.json` unter `ohneBild` mit Grund): Desktop-Verknüpfung und Hinweisfenster (`start-icon`, `start-aktualisieren`), Windows-Explorer (`start-ordner-explorer`), KI-Lauf über das Abo (`m2-ki-lauf`), alles mit einer echten HKAP-Gegenstelle (`m1d-abgleich`, `m1d-konflikte`, `m1d-uebernehmen`, `m1d-senden`, `m1d-befunde`, `m1d-nicht-platziert`, `m1d-raum-platzieren`, `m1d-raum-zuordnen`, `m1d-plankopf`, `m3-hkap-straenge`). Gegen HKAP verbindet sich das Skript nie: Anfragen an `hkap_…` fängt der Browser ab (Antwort 503), `m1d-verbinden` zeigt den Dialog leer. Das Zweitfenster (`anordnung-eigenes-fenster`) ist als Bild des zweiten Browserfensters allein erfasst.
 - **Abweichungen vom Plan in Abschnitt 6** (der Plan blieb unverändert, die Titel in `bilder.json` nennen, was wirklich zu sehen ist): Tooltips sind in Edge headless nicht aufnehmbar, das Skript bildet sie nach (`menueband-schnellzugriff`, `menueband-gesperrt`); der Windows-Dateidialog fehlt, die Datei wird dem Dateifeld der Seite direkt übergeben; die Prüfansicht der Familie (`m2-pruefansicht` usw.) zeigt dieselbe fiktive Testfamilie, die sonst die Attrappe des Browsertests anlegt, angelegt mit dem Akteur «KI» über die Kommandozeile des Kerns; das PDF des Planblatts (`m1a-pdf`) wird mit `werkzeuge/pdf_bild.ps1` gerendert und in einer schlichten Seite gezeigt, weil sich der PDF-Betrachter des Browsers nicht aufnehmen lässt; das Menüband-Flyout (`menueband-flyout`) entsteht bei etwa 280–300 px Fensterbreite im Register Architektur, weil im Register Ansicht keine Gruppe zum Flyout wird.
+
+### Nachtrag 20.10.2026: Bilder der 36 neuen Funktionen
+
+**Es wurden keine Bilder erzeugt.** Gründe:
+
+1. `node werkzeuge/anleitung_bilder.mjs --liste` meldet für alle 36 neuen Ids «noch ohne Eintrag» (kein Katalogeintrag, keine Szene, kein `ohneBild`). Szenen im Skript zu ergänzen war nicht erlaubt; das Skript stellt Zustände nicht generisch aus «bild.zustand» her.
+2. Das Skript lässt nur Server auf 5190–5195 und CDP auf 9530–9539 zu (`portPruefen`, fest im Code; `HLKS_CDP_PORT` darf nur darin liegen). Für diesen Auftrag waren nur 5210–5219 und CDP 9560–9569 erlaubt, und 5190–5199 gehörte dem gleichzeitig laufenden Endprüflauf. Ein Lauf war deshalb ohne Änderung des Skripts nicht möglich.
+3. `bilder.json` im Bilderordner wurde nicht verändert: die 36 Ids stehen dort noch nicht; beim nächsten Gesamtlauf trägt das Skript sie unter «ohneBild» mit dem Grund «noch kein Eintrag im Bildskript» ein.
+
+Vorschlag für den Bauauftrag der Szenen (hlks-modul, Ports 5190–5195): `start-hilfe-symbol`, `start-claude-knopf`, `start-symbole-revit`, `m4-*` (Beispielprojekt, Zustände aus `sanitaer-belastung.browser.mjs`: Anlage A-SAN, WT-E.02, BA-U.02, KW-V1-0, SW-G1-1, AN-SCHEMA-SAN), `zb-n3-*` (aus `nachbearbeitung-n3.browser.mjs`, Einlagepläne mit der Bernstrasse-Kopie), `m3c-*` (Server mit Attrappe wie `ki-palette.browser.mjs`: Ports, `HLKS_CLAUDE_EXE`, `DOTNET_ROOT`, `HLKS_MCP_DLL`, `HLKS_NORMEN`). Nicht herstellbar bleiben voraussichtlich die Hilfefenster-Bilder von `start-hilfe-symbol`, `start-f1-knopf` und `start-f1-dialog` (zweites Fenster, Tooltip) – dort genügt das erste Bild.

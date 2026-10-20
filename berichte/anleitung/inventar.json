@@ -1,5 +1,5 @@
 {
-  "stand": "7c36986",
+  "stand": "6dc390e",
   "kapitel": [
     {
       "id": "start",
@@ -1793,7 +1793,7 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:175",
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:155"
           ],
-          "hinweis": "Befund: Die Registernamen im Dialog kennen «Beschriften», «Einfügen», «Hülle», «Koordination» und «Familie» nicht; deren Kürzel (z. B. DI, TX, CM) stehen als «Allgemein». Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Seit N3 gliedert der Dialog nach allen Registern (siehe «zb-n3-ks-register»); der frühere Befund (fehlende Registernamen) ist behoben. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
           "id": "kuerzel-esc",
@@ -1826,6 +1826,190 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/kuerzel.js:2"
           ],
           "hinweis": ""
+        },
+        {
+          "id": "start-hilfe-symbol",
+          "titel": "Hilfe «?» in der Kopfleiste: Bedienungsanleitung öffnen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Kopfleiste rechts, Symbol «?» (Tooltip «Hilfe – Bedienungsanleitung (F1)»)"
+          },
+          "schritte": [
+            "Ein Projekt öffnen (oder auf dem Startbildschirm bleiben; der Kopf ist dort auch sichtbar).",
+            "Ganz oben rechts in der Kopfleiste auf das Symbol «?» klicken.",
+            "Das neue Fenster «Bedienungsanleitung» ansehen (Inhaltsverzeichnis links, Suchfeld oben).",
+            "Zurück ins Programmfenster wechseln und nochmals auf «?» klicken."
+          ],
+          "erwartung": "Die Bedienungsanleitung öffnet in einem eigenen Fenster; sie wird von KICAD selbst unter «/hilfe/» ausgeliefert (ohne Anmeldung, ohne Internet). Der zweite Klick benutzt dasselbe Fenster (kein zweites). Ist die Anleitung auf diesem Rechner noch nicht erstellt, erscheint die Meldung «Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.» und es öffnet sich nichts. Sperrt der Browser das Fenster, nennt eine Meldung die Adresse.",
+          "pruefpunkte": [
+            "Das Symbol «?» steht ganz rechts in der Kopfleiste, rechts neben dem Knopf «Claude».",
+            "Der Tooltip lautet «Hilfe – Bedienungsanleitung (F1)».",
+            "Ein Klick öffnet die Anleitung ohne Sprungziel (Anfang der Seite).",
+            "Ein zweiter Klick öffnet kein zweites Fenster, sondern verwendet das erste.",
+            "Das «?» ist auch über dem Startbildschirm und im Zweitfenster sichtbar (dort neben «Zurück ins Hauptfenster»)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Kopfleiste rechts",
+            "zustand": "Beispielprojekt offen; Ausschnitt der Kopfleiste rechts mit den Knöpfen «Claude» und «?» (Tooltip des «?» sichtbar, nachgebildet) – das Fenster der Anleitung als zweites Bild, falls herstellbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js:54 (Knopf #hilfe-knopf anlegen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js:31 (window.open, Meldungen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe.js:18",
+            "src/Hlks.Web/OBERFLAECHE.md:950"
+          ],
+          "hinweis": "Häkchen und Notizen der Anleitung speichert KICAD je Benutzer über OneDrive (Entscheid Christian Steiner 19.10.2026); die Bilder bleiben lokal auf diesem Rechner, weil sie echte Projekte zeigen. Die Anleitung wird mit `node werkzeuge/anleitung_bauen.mjs` gebaut; der Desktop-Start baut sie zum geprüften Stand mit."
+        },
+        {
+          "id": "start-f1-knopf",
+          "titel": "F1 über einem Knopf des Menübands: Hilfe zu diesem Befehl",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Taste F1, Zeiger über (oder Tastaturfokus auf) einem Knopf des Menübands"
+          },
+          "schritte": [
+            "Den Zeiger auf einen Knopf des Menübands setzen, z. B. Register Ansicht › Gruppe Erstellen › «Liste», und ruhen lassen.",
+            "Den Tooltip lesen: seine letzte Zeile lautet «F1: Hilfe zu diesem Befehl».",
+            "F1 drücken.",
+            "Im Hilfefenster die markierte Funktion ansehen.",
+            "Als Zweites: mit Tab auf einen Knopf des Menübands fokussieren und F1 drücken."
+          ],
+          "erwartung": "Die Anleitung öffnet und springt zur Funktion dieses Knopfes (Sprungziel «#k-<Register>~<Knopf>»); die Funktion ist hervorgehoben. Gehören mehrere Funktionen zu demselben Knopf, sind alle markiert und die Seite springt zur ersten. Gibt es keine Funktion zu dem Knopf, zeigt die Suche den Knopfnamen. Edge öffnet seine eigene Hilfe nicht. Strg+F1, Alt+F1 und Umschalt+F1 bleiben unberührt. Der Fokus eines Mausklicks zählt nicht als Tastaturfokus.",
+          "pruefpunkte": [
+            "Jeder Knopf des Menübands (auch im Schnellzugriff und im Flyout einer zusammengeklappten Gruppe) endet im Tooltip mit «F1: Hilfe zu diesem Befehl».",
+            "F1 über dem Knopf öffnet die Anleitung an dessen Funktion.",
+            "Im Kontextregister «Ändern | <Klasse>» gilt dasselbe.",
+            "Zeiger nicht über einem Knopf und kein Dialog offen: F1 öffnet die Anleitung ohne Sprungziel."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband › Ansicht",
+            "zustand": "Register Ansicht, Zeiger über «Liste» (Tooltip mit letzter Zeile «F1: Hilfe zu diesem Befehl», nachgebildet, da Tooltips in Edge headless nicht aufnehmbar sind); zweites Bild: die Anleitung mit hervorgehobener Funktion (falls herstellbar)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js:45 (Kontext: Dialog vor Knopf)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js:68 (F1 global in der Aufnahmephase)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:433 (letzte Tooltip-Zeile)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/menueband.js:354",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe.js:16"
+          ],
+          "hinweis": "Schlüssel: klein, ä→ae ö→oe ü→ue, Akzente weg, alles andere zu «-»; sie sind in KICAD (`hilfe.js`) und in der Anleitungsseite (`werkzeuge/anleitung/vorlage.html`) Zeichen für Zeichen gleich, damit F1 trifft. Das Feld «wo › knopf» einer Funktion muss deshalb dem Knopfnamen entsprechen."
+        },
+        {
+          "id": "start-f1-dialog",
+          "titel": "F1 in einem offenen Dialog: Hilfe zum Dialog",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Taste F1 bei offenem Dialog"
+          },
+          "schritte": [
+            "Einen Dialog öffnen, z. B. Verwalten › Hilfe › «Tastaturkürzel» (oder KS tippen).",
+            "F1 drücken.",
+            "Im Hilfefenster das gefüllte Suchfeld und die gefundene Funktion ansehen.",
+            "Den Dialog schliessen (Esc)."
+          ],
+          "erwartung": "Die Anleitung öffnet mit dem Sprungziel «#s-<Dialogtitel>»: das Suchfeld ist mit dem Titel des Dialogs gefüllt (bei «Tastaturkürzel» mit «tastaturkuerzel»), die Seite zeigt die passenden Funktionen. Findet die Suche mit allen Wörtern nichts, kürzt sie von hinten. Ein offener Dialog hat Vorrang vor einem Knopf unter dem Zeiger.",
+          "pruefpunkte": [
+            "F1 bei offenem Dialog öffnet die Anleitung mit Suche nach dem Dialogtitel.",
+            "Liegen mehrere Dialoge übereinander, gilt der oberste.",
+            "Der Dialog bleibt offen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Tastaturkürzel» und Anleitung",
+            "zustand": "Dialog «Tastaturkürzel» offen; zweites Bild: Hilfefenster mit Suchfeld «tastaturkuerzel» (falls herstellbar)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js:51 (Dialog zuerst)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:27",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe.js:34",
+            "werkzeuge/anleitung/vorlage.html:467 (Sprung in der Anleitung)"
+          ],
+          "hinweis": "Gilt unverändert im Zweitfenster und über dem Startbildschirm. Die Hilfe zu einem Dialog ist nur so gut wie die Titel der Funktionen: der Dialogtitel muss in Titel, Knopf oder Text einer Funktion vorkommen."
+        },
+        {
+          "id": "start-claude-knopf",
+          "titel": "Knopf «Claude» in der Kopfleiste",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "KI",
+            "sonst": "Kopfleiste rechts, links neben dem «?» (Tooltip «Claude – Gespräch, Änderungen und Normensuche ein-/ausblenden (Kürzel KI)»)"
+          },
+          "schritte": [
+            "Ein Projekt öffnen (Beispielprojekt).",
+            "In der Kopfleiste rechts auf den Knopf «Claude» (Sprechblase mit Funken) klicken.",
+            "Die Palette «Claude» rechts ansehen; der Knopf ist jetzt gedrückt.",
+            "Nochmals auf den Knopf klicken."
+          ],
+          "erwartung": "Der Knopf blendet die Palette «Claude» ein bzw. aus (wie das Kürzel KI und das Häkchen unter Ansicht › Fenster › Paletten). Er ist gedrückt (aria-pressed), solange die Palette sichtbar ist. Ohne offenes Projekt meldet er «Zuerst ein Projekt öffnen.». Im Zweitfenster gibt es den Knopf nicht (dort sind alle Paletten ausgeblendet).",
+          "pruefpunkte": [
+            "Der Knopf steht links neben dem «?».",
+            "Klick blendet die Palette rechts ein; der Knopf erscheint gedrückt.",
+            "Zweiter Klick blendet sie aus; der Knopf ist nicht mehr gedrückt.",
+            "Der Tooltip nennt das Kürzel KI.",
+            "Im Zweitfenster fehlt der Knopf, das «?» bleibt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Kopfleiste und Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» eingeblendet (Attrappe, nie echter Claude-Lauf): Knopf «Claude» gedrückt neben dem «?», Palette rechts angedockt mit leerem Verlauf"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ki.js:26 (Knopf #claude-knopf)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ki.js:18 (Aktion, Kürzel KI)",
+            "src/Hlks.Web/OBERFLAECHE.md:1147"
+          ],
+          "hinweis": "Der Knopf ist keine Schaltfläche des Menübands: das Register Ansicht ist voll (Test menueband.browser.mjs bei 1920 px). Die Funktionen der Palette selbst stehen im Kapitel «KI-Palette Claude»."
+        },
+        {
+          "id": "start-symbole-revit",
+          "titel": "Symbole im Revit-Stil (Probe) zuschalten",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "",
+            "sonst": "Eintrag «Symbole im Revit-Stil (Probe)» am Ende der Liste"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Fenster › «Paletten» klicken.",
+            "In der Liste ganz unten «Symbole im Revit-Stil (Probe)» wählen.",
+            "Menüband, Schnellzugriff, Projektbrowser, Eigenschaften und Kopfleiste ansehen.",
+            "Die Liste nochmals öffnen: der Eintrag trägt ein Häkchen. Ihn erneut wählen, um zu den Strichsymbolen zurückzukehren.",
+            "Mit F5 neu laden: der gewählte Satz bleibt."
+          ],
+          "erwartung": "Alle Symbole wechseln ohne Neuladen von den heutigen Strichsymbolen zu eigenen, mehrfarbigen Zeichnungen in der Bildsprache von Revit (Wand als Block, Rohr als Zylinder in Medienfarbe, 3D als Würfel); gleiche Grössen (32 und 16 px), hell und dunkel. Gespeichert wird der Satz in der Benutzereinstellung `oberflaeche.symbole` (gilt für alle Projekte und Rechner des Benutzers). Fehlt zu einem Symbol die Revit-Fassung, bleibt es ein Strichsymbol. Vorgabe bleibt «Strich», bis Christian den Kontaktbogen freigibt.",
+          "pruefpunkte": [
+            "Der Eintrag steht am Ende der Liste «Paletten», nach «Paletten zurücksetzen» und einem Trennstrich.",
+            "Beim Zuschalten tauschen alle Symbole sofort (Menüband, Schnellzugriff, Projektbrowser, Eigenschaften, Kopf).",
+            "Die Knöpfe behalten ihre Grösse; bei 1920 px bleibt keine Gruppe zusammengeklappt.",
+            "Das Häkchen erscheint, die Wahl bleibt nach dem Neuladen.",
+            "Nochmaliges Wählen schaltet zurück auf die Strichsymbole."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband › Gebäudetechnik",
+            "zustand": "Zwei Bilder desselben Registers: Strichsymbole (Vorgabe) und Revit-Stil; Liste «Paletten» mit Häkchen vor dem Eintrag als drittes Bild"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-paletten.js:24 (Eintrag in der Liste)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/symbolstil-umschalten.js:46",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/symbole-revit.js:12 (Tabelle der Zeichnungen)",
+            "src/Hlks.Web/OBERFLAECHE.md:968"
+          ],
+          "hinweis": "Probe: schwach bei 16 px sind laut Protokoll wand, apparat, kanal, anlage, achse und die Familien-Ansichten. Kontaktbogen zur Freigabe: `node werkzeuge/symbole_kontaktbogen.mjs` (Ausgabe `%USERPROFILE%\\HLKS_CAD_kontaktbogen\\kontaktbogen.html`). 155 Symbole je 32 und 16 eigens gezeichnet; nichts aus Revit oder von Autodesk übernommen."
         }
       ]
     },
@@ -2226,7 +2410,7 @@
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:85"
           ],
-          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt. Seit N3 ist der Dialog bearbeitbar (Felder Projekt, Beschriftung und Bemassung, Lage; «Übernehmen»); der hier beschriebene Überblick steht aufklappbar darunter, siehe «zb-n3-projektinfo»."
         },
         {
           "id": "m0b-synchronisieren",
@@ -6846,6 +7030,906 @@
       ]
     },
     {
+      "id": "m3c",
+      "titel": "KI-Palette Claude",
+      "modul": "3c",
+      "einleitung": "Claude im Seitenfenster von KICAD: Fragen zum Projekt stellen, Claude ändern lassen (über die Befehle des Kerns, jede Änderung mit «Zurücknehmen»), Normfragen mit Zitat, ein Gespräch je Projekt, das nach einem Neustart weiterläuft. Claude läuft über Christians Abo (kein API-Schlüssel). Mit dem Schalter «Internet» arbeitet Claude ohne Projektzugriff. Die Bilder dieses Kapitels entstehen mit einer Attrappe, nie mit einem echten Claude-Lauf.",
+      "funktionen": [
+        {
+          "id": "m3c-ein-aus",
+          "titel": "Palette «Claude» ein- und ausblenden",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Eintrag «Claude» in der Liste; Knopf «Claude» in der Kopfleiste (siehe «start-claude-knopf»)"
+          },
+          "schritte": [
+            "Ein Projekt öffnen (Beispielprojekt).",
+            "KI tippen: die Palette «Claude» erscheint rechts.",
+            "Register Ansicht › Gruppe Fenster › «Paletten» klicken: «Claude» steht mit Häkchen in der Liste.",
+            "«Claude» in der Liste wählen: die Palette verschwindet. Nochmals KI tippen: sie ist wieder da.",
+            "Den Kopf der Palette ziehen und links oder unten andocken; dann wieder rechts."
+          ],
+          "erwartung": "Die Palette ist eine Palette der Verwaltung (W1): Vorgabe rechts angedockt, beim ersten Einblenden 380 px breit, die Ansichtsfläche schrumpft entsprechend (nichts wird überdeckt). Sie ist frei andockbar (links, rechts, unten, als Reiter, schwebend); Verlauf, Eingabe und Rollposition bleiben beim Umsetzen erhalten. Ohne Projekt ist sie gesperrt («Zuerst ein Projekt öffnen.»). Die Anordnung bleibt nach dem Neuladen. Im Zweitfenster sind alle Paletten ausgeblendet.",
+          "pruefpunkte": [
+            "Vorgabe: die Palette ist zu und nimmt keinen Platz weg.",
+            "KI blendet sie rechts ein; der Kopf heisst «Claude».",
+            "Das Häkchen in Ansicht › Paletten folgt dem Zustand.",
+            "Nach Aus- und Einblenden ist die Breite dieselbe wie vorher.",
+            "Beim Andocken unten rechts rücken die Einblendungen («Änderung von KI: …») links neben die Palette."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Liste des Knopfs «Paletten» offen mit Häkchen bei Claude, Palette im Hintergrund eingeblendet (zwei Bilder)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ki.js:18 (Aktion, Kürzel KI)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:856 (Palettenverwaltung)",
+            "src/Hlks.Web/OBERFLAECHE.md:1141",
+            "src/Hlks.Web/OBERFLAECHE.md:1168"
+          ],
+          "hinweis": "Annahme A1 (Christian zu bestätigen): rechts angedockt, frei andockbar. Kürzel KI ist frei (bei keiner anderen Aktion belegt)."
+        },
+        {
+          "id": "m3c-frage",
+          "titel": "Frage an Claude stellen: Streaming, Senden, Abbrechen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Reiter «Gespräch», Eingabefeld unten"
+          },
+          "schritte": [
+            "Palette «Claude» einblenden (KI).",
+            "In das Eingabefeld unten eine Frage schreiben, z. B. «Welche Geschosse hat das Projekt?».",
+            "Strg+Enter drücken (Enter allein ist ein Zeilenumbruch) oder «Senden» klicken.",
+            "Zusehen, wie die Antwort Stück für Stück erscheint (Schreibmarke).",
+            "Während der Antwort «Abbrechen» klicken (bei einer langen Frage)."
+          ],
+          "erwartung": "Die Frage erscheint rechts (blau) im Verlauf, die Antwort links; die Antwort wird gestreamt. Während Claude antwortet, wird «Senden» zu «Abbrechen» und die nächste Frage kann schon vorbereitet werden. Ab 75 % der 8000 Zeichen zeigt ein Zähler die Länge. Zu lange Fragen, ein belegter Lauf (nur ein KI-Lauf je Projekt) oder ein Fehler werden unter dem Verlauf gemeldet, die Frage bleibt im Feld. Zeitlimit je Frage 10 Minuten. Claude arbeitet über Christians Abo (kein API-Schlüssel).",
+          "pruefpunkte": [
+            "Strg+Enter sendet, Enter macht eine neue Zeile.",
+            "Die Antwort wächst sichtbar, am Ende steht der vollständige Text ohne Doppeltes.",
+            "Während des Laufs steht «Abbrechen» statt «Senden»; Abbrechen beendet die Antwort.",
+            "Nach der Antwort stehen Dauer und Modell bei der Nachricht.",
+            "Eine zweite Frage setzt dieselbe Sitzung fort."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Frage «Was ist ausgewählt?» gestellt, Antwort der Attrappe im Verlauf"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:361 (Frage senden)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:192 (Strg+Enter)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:409",
+            "src/Hlks.Web/GespraechDienst.cs:107 (Grenzen)",
+            "entwurf/modul-3c.md:65"
+          ],
+          "hinweis": "Für Tests und Bilder läuft ein Server mit der Attrappe (`tests/Hlks.ClaudeAttrappe`); mit [attrappe:antwort] am Ende der Frage antwortet sie kurz. Der Abnahmelauf mit echtem Claude steht im Testbericht 3c."
+        },
+        {
+          "id": "m3c-kontext",
+          "titel": "Kontext-Chips: Ansicht, Geschoss, Auswahl gehen mit der Frage mit",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Chips über dem Eingabefeld"
+          },
+          "schritte": [
+            "Einen Grundriss öffnen und einen Strang oder ein Element wählen.",
+            "Die Chips über dem Eingabefeld ansehen: «Ansicht: …», «Geschoss: …», «Auswahl: …» (mit Haken), «Bild der Ansicht» (ohne Haken).",
+            "Auf «Geschoss» klicken: der Chip ist durchgestrichen und geht bei dieser Frage nicht mit.",
+            "Eine Frage senden: unter der Frage stehen die mitgeschickten Angaben als kleine Chips.",
+            "Nach dem Senden gelten die Vorgaben wieder."
+          ],
+          "erwartung": "Aktive Ansicht, Geschoss und Auswahl gehen automatisch mit jeder Frage (Annahme A2) und sind je Frage abwählbar. Fehlt etwas (keine Ansicht, kein Geschoss, keine Auswahl), ist der Chip gesperrt. Geht die Ansicht mit, ergänzt der Server ihr Geschoss selbst; wer das Geschoss nicht schicken will, wählt auch die Ansicht ab. Mit Internet sind alle Chips ausgegraut. Claude erhält den Kontext als Daten, nicht als Anweisung.",
+          "pruefpunkte": [
+            "Der Auswahl-Chip nennt das gewählte Element (bei mehreren «n Elemente»; höchstens 200 gehen mit).",
+            "Ein Klick wählt den Chip ab (durchgestrichen) und wieder an.",
+            "Abgewählte Chips: weder Ansicht noch Geschoss noch Auswahl kommen beim Server an.",
+            "Ohne Auswahl ist der Chip «Keine Auswahl» gesperrt.",
+            "Nach dem Senden sind die Vorgaben wieder gesetzt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Grundriss EG offen, Strang KW-S1 gewählt: Chips «Ansicht: …», «Geschoss: EG», «Auswahl: KW-S1» an, «Bild der Ansicht» aus"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-text.js:201",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-text.js:221",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:510",
+            "src/Hlks.Web/OBERFLAECHE.md:1158"
+          ],
+          "hinweis": "Annahme A2 (Christian zu bestätigen): Kontext automatisch, als Chips sichtbar und abwählbar."
+        },
+        {
+          "id": "m3c-antwort",
+          "titel": "Antwort lesen und Werkzeugaufrufe aufklappen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Verlauf"
+          },
+          "schritte": [
+            "Eine Frage stellen, bei der Claude etwas im Modell nachsieht oder ändert (z. B. «Benenne den ausgewählten Strang um in …»).",
+            "Die Antwort lesen: Absätze, Listen, Fettschrift und Code sind formatiert.",
+            "Unter der Antwort auf «n Werkzeugaufrufe» klicken.",
+            "In der aufgeklappten Liste Name, Eingabe und Ergebnis (✓ oder ✗) ansehen."
+          ],
+          "erwartung": "Die Antwort ist einfach formatiert (Absätze, Überschriften, Listen, Fett/Kursiv, Code, Zitate, Tabellen, Links im neuen Fenster); fremder Text wird nie als HTML eingefügt. Werkzeugaufrufe stehen kompakt («1 Werkzeugaufruf», zugeklappt) und lassen sich aufklappen: ✓/✗, Name, Eingabe, Fehlermeldung. Scheitert ein Aufruf (z. B. Element reserviert), steht «… mit Fehler» in der Zusammenfassung. Claude darf nur die Befehle des Kerns benutzen, nicht alle: gesperrt sind Familien freigeben, Konflikte entscheiden, HKAP, Freigaben und Ausgaben (23 Werkzeuge, Verbotsliste im Code begründet).",
+          "pruefpunkte": [
+            "Die Zusammenfassung nennt die Zahl der Werkzeugaufrufe.",
+            "Aufgeklappt stehen Name (z. B. element_aendern) und ✓ oder ✗.",
+            "Antworten mit <script> oder Links «javascript:» erscheinen als Text bzw. ohne Link.",
+            "Dauer und Modell stehen bei der Antwort."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Antwort mit aufgeklapptem Werkzeugaufruf element_aendern (✓)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:672",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:621",
+            "src/Hlks.Web/GespraechDienst.cs:120 (Verbotsliste (23))",
+            "src/Hlks.Web/OBERFLAECHE.md:1156"
+          ],
+          "hinweis": "Die Verbotsliste ist strenger als die Spezifikation (zusätzlich Status, BCF, Plan- und IFC-Ausgaben, Bibliothek); Annahme im Testbericht 3c zur Bestätigung."
+        },
+        {
+          "id": "m3c-aenderungen",
+          "titel": "Änderungen von Claude ansehen und zurücknehmen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Liste «Änderungen» unter der Antwort"
+          },
+          "schritte": [
+            "Strang KW-S1 wählen und fragen: «Benenne den ausgewählten Strang um in «Steigstrang Bad/Küche Nord». Ändere sonst nichts.»",
+            "Unter der Antwort die Änderungsliste ansehen (Beschreibung, betroffenes Element als Knopf, «Zurücknehmen»).",
+            "Auf das Element in der Liste klicken: es wird im Modell gewählt.",
+            "In den Eigenschaften den neuen Namen sehen.",
+            "In der Palette auf «Zurücknehmen» klicken.",
+            "Den Namen in den Eigenschaften prüfen: wieder «Steigstrang Bad/Küche»."
+          ],
+          "erwartung": "Was Claude ändert, ist ein Paket des Akteurs «KI» und steht mit Beschreibung und Elementen in der Antwort; der Mensch sieht es auch als Einblendung «Änderung von KI: …». «Zurücknehmen» macht das Paket rückgängig; danach steht «zurückgenommen», die Beschreibung ist durchgestrichen und der Knopf weg. Haben spätere Pakete dasselbe Element erneut geändert, lehnt der Server ab (409): die Palette erklärt in Klartext («Danach wurde dasselbe noch einmal geändert … Es wurde nichts verändert») und nennt die späteren Pakete (wer, was, woran, wann); es wird nichts geändert. Gelöschte Elemente sind in der Liste ausgegraut.",
+          "pruefpunkte": [
+            "Die Änderungsliste nennt Paket-Beschreibung (z. B. «element_aendern: KW-S1 geändert») und das Element.",
+            "Ein Klick auf das Element wählt es im Modell.",
+            "«Zurücknehmen» stellt den alten Namen wieder her (Server antwortet 200).",
+            "Nach dem Zurücknehmen: «zurückgenommen», durchgestrichen, kein Knopf mehr.",
+            "Zwei Änderungen desselben Elements nacheinander: das Zurücknehmen des ersten Pakets wird abgelehnt, mit Erklärung.",
+            "Ohne Änderung erscheint keine Änderungsliste."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Antwort mit Änderungsliste (Paket, Element KW-S1, Knopf «Zurücknehmen»); zweites Bild nach dem Zurücknehmen (durchgestrichen, «zurückgenommen»)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:699",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:424",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:741 (409)",
+            "src/Hlks.Web/GespraechDienst.cs:342 (Server)",
+            "entwurf/modul-3c.md:35"
+          ],
+          "hinweis": "Abnahmelauf mit echtem Claude am 20.10.2026 02:06: Umbenennen über element_aendern (Paket …KI_188201), Zurücknehmen 200, Name wieder «Steigstrang Bad/Küche»."
+        },
+        {
+          "id": "m3c-freigabe",
+          "titel": "Hinweis «Auswahl für Claude freigegeben»",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», an der Frage"
+          },
+          "schritte": [
+            "Ein Element in der Eigenschaftenpalette ändern (damit KICAD es für dich reserviert hält), das Element gewählt lassen.",
+            "In der Palette «Claude» fragen, z. B. «Ändere das gewählte Element …».",
+            "An der Frage den Hinweis «Auswahl für Claude freigegeben» ansehen (Tooltip fahren).",
+            "Danach selbst wieder etwas am Element ändern."
+          ],
+          "erwartung": "Wer ein Element in der Oberfläche ändert, hält es reserviert; Claude (Akteur KI) bekäme sonst «Elemente werden gerade von jemand anderem bearbeitet». Darum gibt KICAD beim Start einer Frage ohne Internet die Reservierungen frei, die der Mensch auf diesem Gerät für die mitgeschickte Auswahl (samt Kindern, bei Teilen eines Strangs den Strang) hält. Die Frage trägt dann den Hinweis «Auswahl für Claude freigegeben». Reservierungen anderer Arbeitsplätze bleiben: Claude bekommt dort einen lesbaren Fehler (✗ in der Werkzeugliste). Ohne Auswahl in der Frage und mit Internet wird nichts freigegeben. Beim nächsten eigenen Ändern reserviert KICAD von selbst wieder.",
+          "pruefpunkte": [
+            "Claude kann das gewählte, vorher selbst geänderte Element ändern (eine Änderung in der Liste, kein Werkzeugfehler).",
+            "Der Hinweis steht an der Frage, nur wenn eine Auswahl mitging.",
+            "Ohne Auswahl-Chip kein Hinweis, und Claude bekommt den Reservierungsfehler.",
+            "Nach dem eigenen nächsten Ändern ist das Element wieder für dich reserviert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Frage mit Hinweis «Auswahl für Claude freigegeben» unter der Frage, Antwort mit einer Änderung"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-text.js:402",
+            "src/Hlks.Web/GespraechDienst.cs:633 (Server)",
+            "src/Hlks.Web/OBERFLAECHE.md:1162"
+          ],
+          "hinweis": "Entscheid Hauptlauf 20.10.2026, zur Bestätigung im Testbericht 3c: sonst wäre «Claude ändert ein ausgewähltes Element» (Fertig, wenn) nicht erfüllbar."
+        },
+        {
+          "id": "m3c-gespraeche",
+          "titel": "Gespräche: neu beginnen, wechseln, entfernen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Kopf (Auswahlliste, «Neu», «✕»)"
+          },
+          "schritte": [
+            "Zwei Fragen stellen (ein Gespräch entsteht).",
+            "Auf «Neu» klicken: leere Seite; eine Frage stellen (zweites Gespräch).",
+            "In der Auswahlliste oben das erste Gespräch wählen: sein Verlauf erscheint.",
+            "Auf «✕» klicken und die Rückfrage «… aus der Liste entfernen?» mit «Entfernen» bestätigen."
+          ],
+          "erwartung": "Gespräche gelten je Projekt (Annahme A3): die Liste zeigt «Titel · n Fragen · Zeit», neueste zuerst; erster Eintrag «＋ Neues Gespräch». «Neu» zeigt eine leere Seite, das Gespräch entsteht auf dem Server erst mit der ersten Frage (Titel = Anfang der Frage). Das gewählte Gespräch wird je Projekt auf diesem Rechner gemerkt; der Verlauf kommt immer vom Server. «✕» entfernt das Gespräch aus der Liste; die Datei bleibt im Projekt unter `ki\\geloescht`.",
+          "pruefpunkte": [
+            "Die Liste zeigt jedes Gespräch mit Titel, Zahl der Fragen und Zeit.",
+            "«Neu» erzeugt kein leeres Gespräch auf dem Server.",
+            "Beim Wechseln erscheint der gespeicherte Verlauf samt Änderungen.",
+            "«✕» fragt zuerst nach.",
+            "Nach dem Entfernen fehlt das Gespräch in der Liste; die Datei liegt in `ki\\geloescht`."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Auswahlliste der Gespräche offen mit zwei Gesprächen und «＋ Neues Gespräch»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:304",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:282",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:315",
+            "src/Hlks.Web/GespraechDienst.cs:255 (Ablage)"
+          ],
+          "hinweis": "Annahme A3 (Christian zu bestätigen): Verlauf je Projekt, frühere Gespräche wählbar. Ablage: `<Projektordner>\\ki\\gespraeche\\<id>.json` mit Protokoll `<id>.log`."
+        },
+        {
+          "id": "m3c-modell",
+          "titel": "Modell wählen (Sonnet, Opus, Haiku)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Kopf (Auswahlliste «Modell»)"
+          },
+          "schritte": [
+            "In der Palette «Claude» die Modellwahl im Kopf öffnen (Vorgabe «Sonnet»).",
+            "«Haiku» wählen und eine kurze Frage stellen.",
+            "An der Antwort das Modell ablesen.",
+            "Neu laden: die Wahl bleibt (je Projekt gemerkt)."
+          ],
+          "erwartung": "Wählbar sind Sonnet (Vorgabe), Opus und Haiku (Annahme A4). Das Modell gilt für die nächsten Fragen und steht an jeder Antwort; die Wahl wird je Projekt auf diesem Rechner gemerkt.",
+          "pruefpunkte": [
+            "Die Liste enthält Sonnet, Opus, Haiku; Vorgabe Sonnet.",
+            "Die Antwort nennt das verwendete Modell.",
+            "Die Wahl bleibt nach dem Neuladen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Kopf mit geöffneter Modellwahl"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:187",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-text.js:267",
+            "src/Hlks.Web/GespraechDienst.cs:240 (Server: /api/ki/einstellungen)"
+          ],
+          "hinweis": "Annahme A4 (Christian zu bestätigen). Jedes Modell läuft über das Abo; Kosten siehe Abo, nicht KICAD."
+        },
+        {
+          "id": "m3c-internet",
+          "titel": "Internet-Schalter: Claude ohne Projektzugriff",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Kopf (Schalter «Internet» mit «ohne Projektzugriff»)"
+          },
+          "schritte": [
+            "In der Palette «Claude» auf «Internet» klicken (Vorgabe aus).",
+            "Das orange Hinweisband und die ausgegrauten Kontext-Chips ansehen.",
+            "Eine allgemeine Frage stellen (z. B. zu einem Herstellerprodukt).",
+            "An Frage und Antwort die Marke «Internet · ohne Projektzugriff» sehen.",
+            "«Internet» wieder ausschalten und eine Projektfrage stellen."
+          ],
+          "erwartung": "Mit Internet arbeitet Claude ohne Projektzugriff und ohne Projektkontext (Entscheid Hauptlauf 20.10.2026): Schalter mit «ohne Projektzugriff», Hinweisband, alle Chips ausgegraut (es geht weder Ansicht noch Geschoss, Auswahl oder Bild mit), Nachrichten tragen die orange Marke. Claude hat dann nur Web-Suche, Normen und die Werkzeuge für Unterlagen/Familien, kann das Modell weder lesen noch ändern, und erinnert sich nicht an frühere Fragen (eigene Sitzung). Abrufe werden protokolliert und sind in den Werkzeugaufrufen sichtbar. Frühere Fragen ohne Internet bleiben im selben Gespräch.",
+          "pruefpunkte": [
+            "Der Schalter ist standardmässig aus.",
+            "Eingeschaltet erscheint das Hinweisband und die Chips sind ausgegraut (Tooltip erklärt es).",
+            "Frage und Antwort tragen die Marke «Internet · ohne Projektzugriff»; die Frage zusätzlich «ohne Projektkontext».",
+            "Abrufe im Internet stehen in der Zusammenfassung der Werkzeuge.",
+            "Ausgeschaltet geht der Kontext wieder mit."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Schalter «Internet» an, Hinweisband und ausgegraute Chips, eine Frage mit Marke «Internet · ohne Projektzugriff»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:188",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:501",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-text.js:15",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:615",
+            "src/Hlks.Web/OBERFLAECHE.md:1159"
+          ],
+          "hinweis": "Die Internet-Regel («ohne Projektzugriff») ist eine Entscheidung des Hauptlaufs nach einem Befund der Teil-K-Prüfung (Schalter gab alle Projektwerkzeuge frei); zur Bestätigung im Testbericht 3c. Annahme A4: Internet aus als Vorgabe."
+        },
+        {
+          "id": "m3c-bild",
+          "titel": "Bild der Ansicht mitschicken",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Chip «Bild der Ansicht»"
+          },
+          "schritte": [
+            "Einen Grundriss (oder das Strangschema, die 3D-Ansicht) öffnen.",
+            "In der Palette auf den Chip «Bild der Ansicht» klicken (Haken).",
+            "Fragen: «Was siehst du im Plan?».",
+            "Eine Liste oder ein Planblatt öffnen: der Chip ist gesperrt."
+          ],
+          "erwartung": "Das Bild der aktiven Ansicht entsteht aus der Zeichenfläche (SVG der Plan-Ansichten und Schemas, WebGL-Fläche der 3D-Ansicht) als PNG bis 4 MB (grösseres wird verkleinert, zuletzt als JPEG). Es geht nur mit dieser Frage an den Server, wird dort nach der Frage gelöscht und nie im Browser oder im Projekt gespeichert. Claude sieht es über das Werkzeug `kontext_bild`. Vorgabe: aus (Annahme: Bild als Vorgabe aus). Lässt sich das Bild nicht erzeugen, geht die Frage ohne Bild mit einer Warnung.",
+          "pruefpunkte": [
+            "Der Chip ist standardmässig aus, aber wählbar.",
+            "Bei Listen und Planblättern ist er gesperrt.",
+            "Beim Server kommt das Bild mit der Frage an (Kontext «bild»).",
+            "Nach dem Senden ist der Chip wieder aus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Grundriss EG, Chip «Bild der Ansicht» an (Haken) neben den anderen Chips"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-bild.js:80",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-bild.js:24",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:375 (beim Senden)",
+            "entwurf/modul-3c.md:51"
+          ],
+          "hinweis": "Annahme (Testbericht 3c): Bild der Ansicht ist als Vorgabe aus."
+        },
+        {
+          "id": "m3c-normen",
+          "titel": "Normensuche (Reiter «Normen»)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Reiter «Normen»"
+          },
+          "schritte": [
+            "In der Palette «Claude» auf den Reiter «Normen» klicken.",
+            "Ins Suchfeld einen Begriff schreiben, z. B. «Dichtheitsprüfung Grundleitungen», die Reihe auf «alle Reihen» lassen und «Suchen» klicken.",
+            "Treffer ansehen: Norm, Ausgabe, Seite, Ziffer, Auszug.",
+            "Bei einem Treffer «In die Frage übernehmen» klicken.",
+            "Zurück zum Reiter «Gespräch»: das Eingabefeld enthält «Zu …, Seite …: »."
+          ],
+          "erwartung": "Die Suche läuft im lokalen Normenverzeichnis (Vorgabe `W:\\05_Normen und Merkblätter`, Zwischenspeicher `%LOCALAPPDATA%\\HLKS_CAD\\normen`, nie OneDrive; nur deutsche Fassungen; nur lesen). Beim ersten Mal baut der Server das Verzeichnis auf («Sucht … das kann etwas dauern»). Der Volltext ist erst für 62 von 315 Normen aufgebaut; die Palette weist darauf hin («Der Volltext ist noch nicht für alle Normen aufgebaut; die Suche kann Stellen übersehen»). Reihenfilter: SIA, SWKI, VKF, Vorlage, suissetec, Sprinkler, Merkblatt. Ohne Verzeichnis meldet sie «Keine Treffer.» bzw. den Hinweis des Servers. SN 592000, SN EN 12056 und SVGW W3 liegen im Verzeichnis nicht vor.",
+          "pruefpunkte": [
+            "Der Reiter «Normen» hat Suchfeld, Reihenwahl und «Suchen».",
+            "Treffer zeigen Norm, Ausgabe, Seite, Ziffer und höchstens 600 Zeichen Auszug.",
+            "«In die Frage übernehmen» schreibt Fundstelle ins Eingabefeld.",
+            "Die Normensuche funktioniert auch, wenn Claude nicht verfügbar ist."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude» › Normen",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); mit der Test-Norm (tests/daten/normen, HLKS_NORMEN auf eine Kopie): Reiter «Normen» mit Treffern"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:778",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:827",
+            "src/Hlks.Kern/Normen/Normenverzeichnis.cs:29 (Kern)",
+            "src/Hlks.Web/OBERFLAECHE.md:1160"
+          ],
+          "hinweis": "Quelle der Normensuche: Kopie aus `KI_Planungsbuero/src/Kern/Normen.cs`. In der Anleitung/Prüfung ist das echte Verzeichnis nur zum Lesen nötig; Bilder mit dem Test-PDF."
+        },
+        {
+          "id": "m3c-normfrage",
+          "titel": "Normfrage an Claude: Antwort nur mit Zitat",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Reiter «Gespräch»"
+          },
+          "schritte": [
+            "Im Reiter «Gespräch» fragen: «Was sagt das Normenverzeichnis zur Dichtheitsprüfung von Grundleitungen? Antworte kurz und nur mit Zitat (Dokument, Ziffer, Seite).»",
+            "Die Antwort lesen: Dokument, Ausgabe, Seite, Auszüge in Anführungszeichen.",
+            "Die Werkzeugaufrufe aufklappen: normen_suchen und norm_lesen.",
+            "Die Fundstelle (Merkblatt, Seite) im Normenverzeichnis nachschlagen."
+          ],
+          "erwartung": "Claude nennt Normwerte nie aus dem Gedächtnis und rechnet sie nie selbst: nur mit Zitat aus `normen_suchen`/`norm_lesen` (Norm, Ausgabe, Ziffer, Seite) bzw. über die Rechenkerne. Im Abnahmelauf (20.10.2026) zitierte Claude das suissetec-Merkblatt «Grundleitungen – Dichtheitsprüfungen und Kontrolle», Ausgabe Juni 2018, Seite 1 (Abschnitt «Einleitung»; das Merkblatt hat keine Ziffern), wies darauf hin, dass nur Seite 1 gelesen wurde, dass nur 62 von 315 Normen einen Volltext haben und dass SN 592000 nicht als Treffer gefunden wurde.",
+          "pruefpunkte": [
+            "Die Antwort nennt Dokument, Ausgabe und Seite (und Ziffer, falls vorhanden).",
+            "Auszüge stehen in Anführungszeichen.",
+            "Die Werkzeugliste zeigt normen_suchen und norm_lesen.",
+            "Fehlt eine Quelle, sagt Claude es, statt einen Wert zu nennen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Normfrage mit der Test-Norm, Antwort der Attrappe mit Zitat (Layout der Antwort) – kein echter Claude-Lauf"
+          },
+          "quelle": [
+            "src/Hlks.Web/GespraechDienst.cs:645 (Regel im Systemteil)",
+            "entwurf/modul-3c.md:47",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:585 (Hinweis im leeren Verlauf)"
+          ],
+          "hinweis": "Abnahmelauf mit echtem Claude (Abo, Sonnet) am 20.10.2026: Gespräch 20261020-020626-b3ef im Projekt abnahme3c."
+        },
+        {
+          "id": "m3c-neustart",
+          "titel": "Neustart von KICAD: das Gespräch läuft weiter",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude»; KICAD beenden und neu starten (Desktop-Verknüpfung «KICAD»)"
+          },
+          "schritte": [
+            "In der Palette «Claude» eine Frage stellen und die Antwort abwarten.",
+            "KICAD beenden und über die Desktop-Verknüpfung neu starten; dasselbe Projekt öffnen.",
+            "Die Palette «Claude» einblenden (KI).",
+            "Das gemerkte Gespräch mit allen Nachrichten ansehen.",
+            "Eine Folgefrage stellen, die sich auf die frühere Frage bezieht (z. B. «Wie hiess der Strang vor deiner Umbenennung? Antworte in einem Satz, ohne Werkzeuge.»)."
+          ],
+          "erwartung": "Die Gespräche liegen im Projekt (`ki\\gespraeche`), die Wahl merkt der Browser je Projekt. Nach dem Neustart zeigt die Palette das letzte Gespräch mit allen Nachrichten und Änderungen; die Folgefrage setzt die Sitzung mit `claude --resume` fort. Findet Claude die Sitzung nicht mehr (anderer Rechner, Sitzung gelöscht), beginnt KICAD eine neue Sitzung und gibt die letzten Nachrichten des Gesprächs (höchstens 20 Nachrichten / 30 000 Zeichen) als Verlauf mit. Mitten in einer Antwort neu geladen, wird der Stand nachgeladen und dem Ereignisstrom weiter gefolgt.",
+          "pruefpunkte": [
+            "Nach dem Neustart steht das Gespräch mit allen früheren Nachrichten da.",
+            "Die Folgefrage wird richtig beantwortet (Abnahmelauf: «hiess vorher Steigstrang Bad/Küche»).",
+            "Änderungen mit dem Vermerk «zurückgenommen» bleiben so.",
+            "Auf einem zweiten Rechner (anderer Arbeitsordner) fehlt die Sitzung: die Folgefrage wird trotzdem mit Verlauf beantwortet."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf); Palette nach dem Neuladen mit dem vorherigen Gespräch (zwei Fragen und Antworten)"
+          },
+          "quelle": [
+            "src/Hlks.Web/GespraechDienst.cs:736 (Fallback mit Verlauf)",
+            "src/Hlks.Web/GespraechDienst.cs:255",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:231 (gemerktes Gespräch laden)",
+            "entwurf/modul-3c.md:18"
+          ],
+          "hinweis": "Abnahmelauf 20.10.2026 02:06–02:20: Server neu gestartet, Gespräch mit 4 Nachrichten da, Folgefrage ohne Werkzeuge richtig beantwortet."
+        },
+        {
+          "id": "m3c-meldungen",
+          "titel": "Meldungen der Palette: Claude nicht verfügbar, Lauf belegt, Zeitlimit",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Paletten",
+            "kuerzel": "KI",
+            "sonst": "Palette «Claude», Band und Meldung unter dem Verlauf"
+          },
+          "schritte": [
+            "Auf einem Rechner ohne angemeldetes Claude (kein Abo) die Palette «Claude» öffnen.",
+            "Das rote Band mit dem Grund ansehen; «Senden» ist gesperrt.",
+            "Den Reiter «Normen» öffnen: die Suche geht weiter.",
+            "Bei laufender Antwort eines anderen Gesprächs oder Auftrags eine Frage senden: Meldung «Claude arbeitet gerade an …»."
+          ],
+          "erwartung": "Ist Claude nicht verfügbar (kein Abo, keine claude.exe), zeigt die Palette ein rotes Band mit dem Grund und sperrt «Senden». Ein Fehler der Antwort steht in der Nachricht (Anmeldung: «unter Heute mit Claude anmelden», Zeitlimit von 10 Minuten, Start, MCP). Läuft schon ein KI-Lauf im Projekt (Gespräch oder Auftrag, höchstens einer), meldet die Palette 409 «Claude arbeitet gerade an …» und lässt die Frage im Feld.",
+          "pruefpunkte": [
+            "Das rote Band nennt den Grund; «Senden» ist gesperrt.",
+            "Die Normensuche funktioniert trotzdem.",
+            "Die Meldungen enthalten weder Codes noch JSON.",
+            "Die gescheiterte Frage bleibt im Eingabefeld."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Palette «Claude»",
+            "zustand": "Beispielprojekt, Palette «Claude» rechts angedockt (Server mit Attrappe statt claude.exe, nie echter Claude-Lauf) mit Einstellung «verfuegbar: false» (Attrappe nicht gefunden): rotes Band mit Grund"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:459",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ki-palette.js:548",
+            "src/Hlks.Web/GespraechDienst.cs:245 (Server)"
+          ],
+          "hinweis": "Nicht auf diesem Rechner geprüft: ein Rechner ohne Abo war nicht zur Hand; die Meldungen sind durch Tests mit der Attrappe belegt (ki-palette.browser.mjs)."
+        }
+      ]
+    },
+    {
+      "id": "m4",
+      "titel": "Sanitär rechnen – Belastungswerte",
+      "modul": "4",
+      "einleitung": "Teil A des Moduls Sanitär rechnen: Jeder Sanitärapparat hat eine Apparateart (LU und DU nach Christians Excel «LU_DU Zusammenstellung_.xlsx»), jede Leitung kennt ihre Belastungssumme, das Strangschema beschriftet sie, und die Liste «Sanitär-Zusammenstellung (W3)» sieht aus und rechnet wie das Excel. Die Dimensionierung (Teil B: DN, Gefälle, Füllung) fehlt noch, weil SN 592000, SN EN 12056 und SVGW W3 nicht vorliegen. Das Beispielprojekt hat fiktive Werte (K 0.5).",
+      "funktionen": [
+        {
+          "id": "m4-apparateart",
+          "titel": "Apparateart eines Sanitärapparats wählen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Apparats, Zeile «Apparateart»"
+          },
+          "schritte": [
+            "Den Waschtisch WT-E.02 im Grundriss oder Projektbrowser wählen.",
+            "In der Eigenschaftenpalette die Zeile «Apparateart» ansehen: der erste Eintrag lautet «Vorgabe der Klasse (Waschtisch / Wandbecken)».",
+            "Die Auswahlliste öffnen und «Badewanne» wählen.",
+            "Den Satz darunter lesen («gilt: Badewanne (am Apparat gesetzt)»).",
+            "Wieder «Vorgabe der Klasse» wählen."
+          ],
+          "erwartung": "Jeder Sanitärapparat hat eine Apparateart aus Christians Excel «LU_DU Zusammenstellung_.xlsx» (34 Arten, mit Namen in der Auswahl; gespeichert wird der Schlüssel). Ohne eigene Wahl gilt die Vorgabe der Klasse (WC → Klosettanlage bis 7.5 l, Waschtisch → Waschtisch/Wandbecken, Dusche, Badewanne, Spültisch → Spülbecken, Waschmaschine bis 6 kg, Ausgussbecken → Waschtrog). Bodenablauf hat keine Vorgabe: der erste Eintrag lautet «Vorgabe der Klasse: keine – Art wählen» und der Apparat erscheint als Befund P21. Eine Familie darf die Art im Typ vorgeben («aus der Familie»). Die Änderung wirkt sofort auf die Summen der Leitungen.",
+          "pruefpunkte": [
+            "Die Liste zeigt alle 34 Arten mit Namen (nicht Schlüsseln) und als ersten Eintrag die Vorgabe der Klasse.",
+            "Der Satz darunter nennt, woher die Art kommt (Vorgabe der Klasse / am Apparat gesetzt / aus der Familie).",
+            "Eine gewählte Art ändert LU/DU darunter live.",
+            "Beim Bodenablauf BA-U.02 steht «Bodenablauf DN 70» (im Beispiel gesetzt); ohne Art Warnung P21.",
+            "Strg+Z macht die Wahl rückgängig."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): WT-E.02 gewählt, Auswahlliste «Apparateart» geöffnet (Vorgabe der Klasse, Badewanne …)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:281 (Zeile Apparateart)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-palette.js:21",
+            "kataloge/klassen.json:296",
+            "entwurf/modul-4.md:29"
+          ],
+          "hinweis": "Annahme Hauptlauf (Testbericht 4A zur Bestätigung): die Vorgabe-Apparateart je Klasse (wie HKAP). Bodenablauf ohne Vorgabe, weil die Nennweite (DN) unterschiedlich ist."
+        },
+        {
+          "id": "m4-lu-du",
+          "titel": "LU KW, LU WW und DU eines Apparats mit «?» (Excel-Zeile)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette eines Apparats, Zeilen «LU KW», «LU WW», «DU» unter der Apparateart"
+          },
+          "schritte": [
+            "WT-E.02 wählen.",
+            "Unter der Apparateart die Zeilen «LU KW 1 LU», «LU WW 1 LU» und «DU 0.5 DU» ansehen.",
+            "Auf das «?» neben «LU KW» klicken.",
+            "Im Dialog die Quelle lesen («LU_DU Zusammenstellung_.xlsx, Zeile 8»), Art und Vorgabe.",
+            "Dasselbe beim Bodenablauf BA-U.02: nur DU."
+          ],
+          "erwartung": "LU KW, LU WW und DU werden aus der Apparateart abgeleitet (im Katalog, nicht am Apparat gespeichert); es erscheinen nur die Werte, die die Art hat (Klosett: kein LU WW; Bodenablauf: nur DU). Das «?» nennt Quelle und Excel-Zeile und die Art samt Vorgabe der Klasse. Anzeige: LU ganze Zahl (sonst eine Stelle), DU immer eine Stelle (der Kern rechnet ungerundet; das «?» zeigt den genauen Wert).",
+          "pruefpunkte": [
+            "Waschtisch: LU KW 1, LU WW 1, DU 0.5.",
+            "Das «?» nennt «LU_DU Zusammenstellung_.xlsx» und die Zeile (Waschtisch Zeile 8, Badewanne Zeile 17).",
+            "Bei Badewanne: LU KW 3, LU WW 3, DU 0.8.",
+            "Bodenablauf: keine LU-Zeilen, DU 1.5.",
+            "Kein «[object Object]» in der Palette."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): WT-E.02 gewählt, Dialog «?» zu LU KW mit Quelle und Excel-Zeile 8"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-palette.js:27",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-text.js:90",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/dialoge.js:284 (Beiträge im «?»)"
+          ],
+          "hinweis": "Rundungsregeln der Anzeige (Testbericht 4A zur Bestätigung): LU ganz/eine Stelle, DU eine Stelle, l/s zwei Stellen (unter 1 l/s drei)."
+        },
+        {
+          "id": "m4-summen-leitung",
+          "titel": "Belastungssummen an Leitungen (ΣLU, ΣDU) mit «?»",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette einer Trinkwasser- oder Abwasserleitung, Gruppe «Abgeleitet»"
+          },
+          "schritte": [
+            "Die Kaltwasserleitung KW-V1-0 wählen.",
+            "In der Gruppe «Abgeleitet» ΣLU KW, ΣLU WW und «Grösster Einzel-LU» ansehen; darunter «15 Apparate (Apparate stromab)».",
+            "Auf das «?» neben ΣLU KW klicken: Rechenweg und Tabelle «Beiträge der Apparate» mit Excel-Zeile.",
+            "Die Abwasser-Grundleitung SW-G1-1 wählen: ΣDU ansehen.",
+            "Einen Apparat auf eine andere Art stellen (siehe «m4-apparateart») und die Summe an der Leitung verfolgen."
+          ],
+          "erwartung": "Trinkwasser (KW, WW; Zirkulation ausgenommen): je Leitung die Summe der LU aller Apparate stromab (KW und WW getrennt) und der grösste Einzel-LU stromab. Abwasser (Schmutzwasser; Regenwasser ausgenommen): Summe der DU aller Apparate stromauf. Im Beispiel: KW-V1-0 ΣLU 24, SW-G1-1 ΣDU 16.7. Annahme: die Kaltwasserleitung vor dem Wassererwärmer trägt auch die ΣLU WW. Maschen werden erkannt (Apparat höchstens einmal gezählt; Befund P24). Keine Normrechnung je Teilstrecke (kein DN, kein Spitzendurchfluss je Teilstrecke): das ist Teil B.",
+          "pruefpunkte": [
+            "ΣLU KW 24, ΣLU WW 0, grösster Einzel-LU 3 an KW-V1-0 (Beispiel).",
+            "Das «?» zeigt den Rechenweg und 15 Beiträge mit Art und Excel-Zeile.",
+            "Die Zeile «n Apparate (Richtung)» nennt die Fliessrichtung.",
+            "Zirkulation und Regenwasser tragen keine Summen.",
+            "Eine Änderung der Apparateart ändert die Summe an der Leitung und im Schema sofort."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): KW-V1-0 gewählt, Gruppe «Abgeleitet» mit ΣLU; Dialog «?» mit Tabelle der Beiträge"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-palette.js:35",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-text.js:97",
+            "src/Hlks.Kern/Rechnen/SanitaerBelastung.cs:136 (Kern)",
+            "entwurf/modul-4.md:34"
+          ],
+          "hinweis": "Annahme (Testbericht 4A): KW vor dem Wassererwärmer trägt auch ΣLU WW. IFC-Export der Belastungswerte folgt erst mit Modul 7."
+        },
+        {
+          "id": "m4-schema-belastung",
+          "titel": "Belastungssummen im Strangschema (Beschriftung «belastung»)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Strangschema (Sanitär) und Eigenschaft «belastung» der Ansicht"
+          },
+          "schritte": [
+            "Das Strangschema AN-SCHEMA-SAN öffnen.",
+            "An den Sanitärleitungen neben der Rohrbezeichnung die Texte «ΣLU 24» bzw. «ΣLU 12 / 8» (Kalt- / Warmwasser) und «ΣDU 16.7» ansehen.",
+            "Nichts wählen (Esc) und in der Eigenschaftenpalette der Ansicht «belastung» ausschalten.",
+            "Wieder einschalten."
+          ],
+          "erwartung": "Neben der Rohrbezeichnung steht je Teilstrecke ein zweiter Text: «ΣLU 12 / 8» (Kalt-/Warmwasser, beide > 0), «ΣLU 12» (nur Kaltwasser), «ΣLU – / 8» (nur Warmwasser), «ΣDU 4.6» (Abwasser); LU und DU auf eine Stelle ohne Nachnull, Summe 0 = kein Text; Zirkulation, Regenwasser, Heizung usw. ohne. Die Ansichtseigenschaft `belastung` (Vorgabe ein) blendet die Texte aus; im Detailgrad «grob» stehen sie nicht. Die Texte überdecken andere Beschriftungen nicht (werden nach den Rohrgrössen freigestellt).",
+          "pruefpunkte": [
+            "Im Beispiel stehen «ΣLU 24» und «ΣDU 16.7».",
+            "Alle Texte haben die Form «ΣLU 12», «ΣLU 12 / 8» oder «ΣDU 4.6».",
+            "Schalter aus: keine Belastungstexte mehr, die Rohrgrössen («NW …») bleiben.",
+            "Schalter ein: die Texte sind wieder da.",
+            "Kein Text überdeckt einen anderen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Strangschema AN-SCHEMA-SAN",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Strangschema Sanitär, Beschriftungen «ΣLU 24 / …» und «ΣDU 16.7» an den Leitungen"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Schema/SchemaBelastung.cs:22 (Kern)",
+            "src/Hlks.Kern/Schema/SchemaGrafik.cs:249",
+            "kataloge/klassen.json:418"
+          ],
+          "hinweis": "Dezimaltrenner: im Schema Punkt (wie die übrigen Texte der Plangrafik), in Liste und CSV Komma."
+        },
+        {
+          "id": "m4-liste",
+          "titel": "Liste «Sanitär-Zusammenstellung (W3)» anlegen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Erstellen",
+            "knopf": "Liste",
+            "kuerzel": "",
+            "sonst": "Dialog «Liste anlegen», Eintrag «Sanitär-Zusammenstellung (W3)»"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Erstellen › «Liste» klicken.",
+            "Im Dialog «Liste anlegen» «Sanitär-Zusammenstellung (W3)» wählen.",
+            "Die Zeile «Anlage» erscheint: A-SAN wählen. Kennzeichen (AN-LI-SANITAER-A-SAN) und Name prüfen, «Anlegen» klicken.",
+            "Die drei Tabellen ansehen: «Apparate», «Trinkwasser», «Entwässerung».",
+            "Mit dem Zeiger über eine Zeile fahren: der Tooltip nennt Formel und Excel-Zelle."
+          ],
+          "erwartung": "Die Liste sieht aus und rechnet wie Christians Excel. Tabelle 1 «Apparate»: Apparateart · LU KW · LU WW · DU je Stück · eine Spalte je Geschoss · Anzahl · ΣLU KW · ΣLU WW · ΣDU, Totalzeile als Fusszeile. Tabelle 2 «Trinkwasser»: Total LU, Volumenstrom (×0.1), Spitzendurchfluss der Kurven «grösster LU 3» und «grösster LU 5» (die massgebende fett mit «– massgebend», die andere klein «(nicht massgebend)»), grösster Einzel-LU, Spezialinstallationen, Spitzendurchfluss gesamt. Tabelle 3 «Entwässerung»: ΣDU, Abflusskennzahl K, Schmutzwasserabfluss Q_WW, Spezialinstallationen, Gesamtabfluss Q_tot. Ohne K steht «K fehlt» statt K, Q_WW und Q_tot. Beispiel: Total LU 42, Volumenstrom 4,20 l/s, Kurve 3 massgebend 0,762 l/s, ΣDU 16,7, Q_WW 2,04 l/s (K 0,5, fiktiv). Die Liste frischt bei Modelländerungen auf.",
+          "pruefpunkte": [
+            "Der Dialog bietet «Sanitär-Zusammenstellung (W3)» und fragt die Anlage.",
+            "Die Spalten entsprechen dem Excel (Apparateart, LU KW, LU WW, DU, Geschosse, Anzahl, ΣLU KW, ΣLU WW, ΣDU).",
+            "Totalzeile: 16 Apparate, ΣLU KW 24, ΣLU WW 18, ΣDU 16,7.",
+            "Die massgebende Kurve ist fett, die andere klein.",
+            "Die Tooltips nennen Formeln mit Excel-Zelle (z. B. B55 = M43+N43) und den genauen Wert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Listenansicht «Sanitär-Zusammenstellung (W3)»",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Liste AN-LI-SANITAER-A-SAN offen, alle drei Tabellen sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:22 (LISTEN)",
+            "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:129",
+            "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:13",
+            "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs:71 (Kern)"
+          ],
+          "hinweis": "Walkringen (Referenz im Excel): ΣKW 80, ΣWW 52, ΣDU 38.8, Total LU 132, 13.2 l/s, Spitze 1.1412…, 1.1606…, Q_WW 3.1144… (auf 1e-9 im Kern-Test); das Beispielprojekt ist fiktiv. Listen sind nicht auf Planblättern platzierbar (gilt für alle Listen); Ausgabe ist die CSV-Datei."
+        },
+        {
+          "id": "m4-knopf",
+          "titel": "Knopf «Sanitär-Zusammenstellung» in Gebäudetechnik",
+          "wo": {
+            "register": "Gebäudetechnik",
+            "gruppe": "Apparate und Armaturen",
+            "knopf": "Sanitär-Zusammenstellung",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Register Gebäudetechnik › Gruppe «Apparate und Armaturen» › «Sanitär-Zusammenstellung» klicken.",
+            "Gibt es mehrere Anlagen und ist keine bestimmbar, im Dialog «Sanitär-Zusammenstellung» die Anlage wählen und «Öffnen» klicken.",
+            "Die Liste ansehen. Ein Element der Anlage wählen und den Knopf nochmals klicken."
+          ],
+          "erwartung": "Der Knopf öffnet die Liste der aktiven Anlage und legt sie beim ersten Mal an. Aktive Anlage: die Anlage des gewählten Elements (über system/teilVon), sonst die Anlage der offenen Sanitärliste, sonst die einzige Anlage; bei mehreren fragt ein Dialog. Ohne Anlage ist der Knopf gesperrt («Das Projekt hat noch keine Anlage (Sanitäranlage).»).",
+          "pruefpunkte": [
+            "Der Knopf steht in der Gruppe «Apparate und Armaturen» und bleibt bei 1920 px in der grossen Stufe.",
+            "Beim ersten Klick entsteht die Liste (AN-LI-SANITAER-<Anlage>), danach öffnet er sie nur.",
+            "Mit gewähltem Element: die Anlage dieses Elements.",
+            "Ohne Anlage gesperrt, Hinweis im Tooltip."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Menüband › Gebäudetechnik",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Register Gebäudetechnik, Knopf «Sanitär-Zusammenstellung» hervorgehoben"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-sanitaer.js:44",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-sanitaer.js:29",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-anlage.js:21 (Bestimmung der Anlage)"
+          ],
+          "hinweis": "Kein Tastaturkürzel. Symbol «sanZusammenstellung» (Strich und Revit-Stil)."
+        },
+        {
+          "id": "m4-spezial",
+          "titel": "Spezialinstallationen der Anlage (Tabelle)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette der Anlage, Zeile «Spezialinstallationen»"
+          },
+          "schritte": [
+            "Die Anlage A-SAN wählen (Projektbrowser, Gebäudetechnik-Gliederung oder Strangschema).",
+            "In der Eigenschaftenpalette bei «Spezialinstallationen» auf «+ Zeile hinzufügen» klicken.",
+            "Bezeichnung «Garteneinrichtung» und Versorgung «0,5» (l/s) eintragen.",
+            "Die Liste Sanitär-Zusammenstellung ansehen: Spezialinstallationen und Spitzendurchfluss gesamt wachsen um 0,5 l/s.",
+            "In der Tabelle bei «Entsorgung l/s» 0,25 ergänzen.",
+            "Mit «×» die Zeile löschen."
+          ],
+          "erwartung": "Spezialinstallationen (Excel-Zeilen 46–51) trägt der Mensch je Anlage von Hand ein: Bezeichnung, Versorgung l/s, Entsorgung l/s. Die Σ Versorgung kommt zum Spitzendurchfluss (Excel C59/I59), die Σ Entsorgung zum Gesamtabfluss Q_tot (Excel M67). Eine Zeile geht erst an den Kern, wenn Bezeichnung und mindestens eine Zahl da sind (sonst Hinweis «Bezeichnung und Versorgung oder Entsorgung (l/s) eintragen»); Komma und Punkt gehen; negative Zahlen lehnt der Kern ab (Meldung am Feld). «×» löscht sofort; die leere Tabelle sendet «keine».",
+          "pruefpunkte": [
+            "Die Tabelle hat die Spalten Bezeichnung, Versorgung l/s, Entsorgung l/s.",
+            "«0,5» wird als Zahl 0.5 gesendet.",
+            "Spitzendurchfluss gesamt wächst um die Versorgung.",
+            "Negative Versorgung: Fehlermeldung am Feld, nichts geändert.",
+            "Nach dem Löschen ist die Spitze wie vorher; kein «[object Object]»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette der Anlage",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Anlage A-SAN gewählt, Tabelle «Spezialinstallationen» mit einer Zeile «Garteneinrichtung 0,5 / –»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-palette.js:58",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-text.js:123",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js:330 (Senden)",
+            "kataloge/klassen.json:203"
+          ],
+          "hinweis": "Zeilen sind frei benennbar; es gibt keine Auswahl und keinen Normwert."
+        },
+        {
+          "id": "m4-k",
+          "titel": "Abflusskennzahl K (Anlage und Projektinformation)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaftenpalette der Anlage, Zeile «Abflusskennzahl»; Projektinformationen (Vorgabe für alle Anlagen)"
+          },
+          "schritte": [
+            "Die Anlage A-SAN wählen und in der Eigenschaftenpalette «Abflusskennzahl» ansehen (Beispiel 0.5).",
+            "Den Hinweis darunter lesen: «Wert aus SN 592000 nach Gebäudeart – Norm liegt nicht vor; Walkringen: 0.5».",
+            "Den Wert löschen: in der Liste Sanitär-Zusammenstellung steht «K fehlt» statt K, Q_WW und Q_tot; im Prüfbefund-Dialog erscheint P25.",
+            "Wieder einen Wert eintragen (oder in den Projektinformationen die Vorgabe für alle Anlagen setzen)."
+          ],
+          "erwartung": "K ist eine freie Zahl ohne Auswahlliste: der Wert gehört zur Gebäudeart und steht in SN 592000, die im Normenverzeichnis fehlt. Ohne K an der Anlage gilt die Vorgabe der Projektinformation; fehlt auch sie, entsteht der Befund P25 «Abflusskennzahl fehlt» und es gibt kein Q_WW. Q_WW = K × √ΣDU. Der Excel-Wert 0.5 gilt nur für Walkringen; im Beispielprojekt ist 0.5 fiktiv.",
+          "pruefpunkte": [
+            "K lässt sich als Zahl eingeben (keine Auswahlliste).",
+            "Der Hinweis nennt SN 592000 und den fehlenden Normtext.",
+            "Ohne K: «K fehlt» in der Liste und Befund P25.",
+            "Mit K 0,5 und ΣDU 16,7: Q_WW 2,04 l/s.",
+            "K hat kein Quellenfeld (offener Punkt)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaftenpalette der Anlage",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Anlage A-SAN, Zeile Abflusskennzahl mit Hinweis; zweites Bild: Liste mit «K fehlt»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-palette.js:47",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/sanitaer-text.js:119",
+            "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:14",
+            "kataloge/klassen.json:202"
+          ],
+          "hinweis": "Annahme Hauptlauf (Testbericht 4A): Beispielprojekt K 0.5 fiktiv. Offen: K ohne Quellenfeld; Auswahlliste folgt mit SN 592000 (Teil B)."
+        },
+        {
+          "id": "m4-csv",
+          "titel": "CSV der Sanitär-Zusammenstellung",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Knopf «CSV …» in der Kopfzeile der Liste «Sanitär-Zusammenstellung (W3)»"
+          },
+          "schritte": [
+            "Die Liste «Sanitär-Zusammenstellung (W3)» öffnen (siehe «m4-liste»).",
+            "Rechts in der Kopfzeile «CSV …» klicken.",
+            "Dateinamen prüfen und «Erzeugen» klicken.",
+            "Die Datei in Excel öffnen."
+          ],
+          "erwartung": "Die Datei enthält alle drei Tabellen untereinander mit Titelzeilen; die Blöcke Trinkwasser und Entwässerung tragen eine zusätzliche Spalte «Formel (Excel-Zelle)». Zahlen sind gerundet wie in der Ansicht (Dezimalkomma). Format wie jede CSV: UTF-8 mit BOM, Semikolon. Das ist der Weg, die Zusammenstellung auszugeben, solange Listen nicht auf Planblättern platzierbar sind.",
+          "pruefpunkte": [
+            "Drei Tabellen untereinander mit Titelzeilen.",
+            "Spalte «Formel (Excel-Zelle)» bei Trinkwasser und Entwässerung.",
+            "Excel zeigt Umlaute und Σ richtig.",
+            "Zahlen mit Dezimalkomma."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Liste als CSV»",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Dialog «Liste als CSV» zur Sanitär-Zusammenstellung"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/liste-csv.js:5 (Spalten nur für die Datei)",
+            "src/Hlks.Web/wwwroot/js/ansichten/sanitaer-liste.js:9",
+            "src/Hlks.Web/OBERFLAECHE.md:1214"
+          ],
+          "hinweis": "Listen auf Planblättern: im Kern nicht vorgesehen (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema); offener Punkt für alle Listen."
+        },
+        {
+          "id": "m4-befunde",
+          "titel": "Befunde P21–P25 der Sanitär-Belastungswerte",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Modell",
+            "knopf": "Prüfbefunde",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Register Verwalten › Gruppe Modell › «Prüfbefunde» klicken.",
+            "Nach den Codes P21 bis P25 suchen (z. B. Bodenablauf ohne Art: P21).",
+            "Auf eine Zeile klicken: das Element wird gewählt.",
+            "Die Ursache beheben (Art wählen, K eintragen) und den Dialog neu öffnen."
+          ],
+          "erwartung": "Fünf neue Prüfungen des Kerns erscheinen von selbst im Dialog «Prüfbefunde» (Code, Element, Text, Vorschlag): P21 Apparat ohne Apparateart; P22 Apparateart passt nicht zu den Anschlüssen (Art hat LU KW, aber kein KW-Anschluss verbunden – WW und DU analog – bzw. Anschluss verbunden, Art ohne diesen Wert); P23 Apparat in keiner Anlage; P24 Netz mit Masche – Summe nicht eindeutig; P25 Abflusskennzahl fehlt. Ein Klick auf die Zeile wählt das Element.",
+          "pruefpunkte": [
+            "Die Codes P21 bis P25 erscheinen mit Klartext und Vorschlag.",
+            "Klick auf eine Zeile wählt das Element.",
+            "Nach der Behebung verschwindet der Befund.",
+            "P25 verschwindet, sobald K an der Anlage oder in den Projektinformationen steht."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Prüfbefunde»",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Apparat BA-U.02 ohne Art (P21) und Anlage ohne K (P25); Dialog «Prüfbefunde» offen"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:128",
+            "src/Hlks.Kern/Rechnen/SanitaerPruefung.cs:17",
+            "src/Hlks.Kern/Pruefung/Pruefungen.cs:42"
+          ],
+          "hinweis": "Für die Anzeige im Beispielprojekt muss der Zustand zuerst hergestellt werden (Art am Bodenablauf entfernen, K löschen)."
+        }
+      ]
+    },
+    {
       "id": "zusatz",
       "titel": "Zusatzbausteine ausserhalb der Module",
       "modul": "–",
@@ -6918,7 +8002,7 @@
             "entwurf/modul-3.md:321 (Modul 3, B10)",
             "kataloge/klassen.json:416"
           ],
-          "hinweis": "Die Pläne samt Planblatt anlegt der Kern mit `einlageplaene_anlegen` (nur MCP, kein Knopf). Ohne Rohrgrössen aus dem IFC gibt es keine Beschriftung. Prüfung am echten Projekt nur lokal (Vergleich mit den H+K-Plänen S06–S09)."
+          "hinweis": "Die Pläne samt Planblatt anlegt der Kern mit `einlageplaene_anlegen` (seit N3 auch über den Knopf «Einlageplan» in Ansicht › Erstellen, siehe «zb-n3-einlageplan-knopf»). Ohne Rohrgrössen aus dem IFC gibt es keine Beschriftung. Prüfung am echten Projekt nur lokal (Vergleich mit den H+K-Plänen S06–S09)."
         },
         {
           "id": "zb-grundleitungsplan",
@@ -7498,6 +8582,257 @@
             "entwurf/modul-3.md:358 (Modul 3, B9b)"
           ],
           "hinweis": "Widerspruch (nur noch der Testbericht 3; OBERFLAECHE.md ist seit dem 19.10.2026 berichtigt): der Testbericht 3 nennt noch «CNS Ø22»; der Code (Leitungsbezeichnung.cs, familien-text.js) beschriftet «CNS NW 20» (B9b ersetzt B9). Die Einstellung der Ansicht gilt nur für diese Ansicht; die Projekteinstellung (Projektinformation.rohrbezeichnung) hat keinen Bedienort in der Oberfläche."
+        },
+        {
+          "id": "zb-n3-einlageplan-knopf",
+          "titel": "Einlageplan anlegen (Knopf in Ansicht › Erstellen)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Erstellen",
+            "knopf": "Einlageplan",
+            "kuerzel": "",
+            "sonst": "nur Symbol, Name im Tooltip; neben «Grundriss»"
+          },
+          "schritte": [
+            "Das Projekt Bernstrasse (Abnahmeprojekt, Leitungen mit Verlegung «einlage») öffnen.",
+            "Register Ansicht › Gruppe Erstellen: auf das Symbol «Einlageplan» klicken (Tooltip «Einlageplan»).",
+            "Im Dialog «Einlageplan anlegen» die erkannten Pläne ansehen (Plan, Bauteil, Geschoss, Inhalt).",
+            "Ein Geschoss wählen (oder «alle Geschosse»); Massstab und Blattformat auf «Vorgabe des Kerns» lassen.",
+            "Die Vorschau («Es entstehen: …») lesen und «Anlegen» klicken."
+          ],
+          "erwartung": "Der Dialog listet die Einlagepläne, die der Kern aus den Leitungen erkennt (Planschlüssel «Einlagen D.ü.2.UG», Bauteil Decke/Bodenplatte/Wand, Leitungen, Formteile, Länge) und zeigt als Vorschau den Trockenlauf des Befehls. «Anlegen» legt je Plan eine Ansicht und ein Planblatt an (ein Befehl, ein Rückgängig) und öffnet die erste neue Ansicht. Name, Kennzeichen, Plannummer und Gewerk bestimmt der Kern nach dem Planschlüssel; der Dialog bietet sie nicht zur Wahl. Vorhandene Ansichten und Blätter werden nicht doppelt angelegt. Ohne erkannte Einlagen steht «Keine Einlagepläne erkannt …», «Anlegen» meldet «Es gibt keine Einlagepläne zum Anlegen.».",
+          "pruefpunkte": [
+            "Der Knopf zeigt nur das Symbol; der Tooltip nennt «Einlageplan» und «F1: Hilfe zu diesem Befehl».",
+            "Ohne Projekt oder ohne Geschoss ist der Knopf gesperrt (Hinweis «Zuerst ein Projekt öffnen.» bzw. «Im Modell gibt es noch kein Geschoss.»).",
+            "Die Tabelle der erkannten Pläne ändert sich mit der Geschosswahl.",
+            "Die Vorschau nennt, was entsteht, oder «Es entsteht nichts.».",
+            "«Anlegen» öffnet die neue Ansicht; Strg+Z nimmt alles in einem Schritt zurück."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Dialog «Einlageplan anlegen»",
+            "zustand": "Bernstrasse (Kopie des Abnahmeprojekts), Dialog «Einlageplan anlegen» offen: Tabelle der erkannten Pläne, Vorschau (Trockenlauf) unten"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:139 (Aktion, nurSymbol)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/einlageplaene-dialog.js:74 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/einlageplaene-text.js:10",
+            "src/Hlks.Web/OBERFLAECHE.md:980 (Tabelle, Abschnitt «Einlageplan und Grundleitungsplan»)"
+          ],
+          "hinweis": "Im Beispielprojekt gibt es keine Einlagen: der Dialog zeigt dort nur die leere Liste. Frühere Fassung dieser Funktion: «zb-einlageplan» (Umweg über die Eigenschaft «darstellung»); sie bleibt für das manuelle Anlegen eines einzelnen Grundrisses. Bekannte Grenze: kein Name und keine Bauteilwahl im Dialog (der Kern kennt sie nicht)."
+        },
+        {
+          "id": "zb-n3-grundleitungsplan-knopf",
+          "titel": "Grundleitungsplan anlegen (Knopf in Ansicht › Erstellen)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Erstellen",
+            "knopf": "Grundleitungsplan",
+            "kuerzel": "",
+            "sonst": "nur Symbol, Name im Tooltip; unter bzw. neben «Einlageplan»"
+          },
+          "schritte": [
+            "Das Projekt Bernstrasse (Leitungen im Erdreich) öffnen.",
+            "Register Ansicht › Gruppe Erstellen: auf das Symbol «Grundleitungsplan» klicken.",
+            "Im Dialog «Grundleitungsplan anlegen» die erkannten Pläne ansehen und das Geschoss wählen.",
+            "Die Vorschau lesen und «Anlegen» klicken."
+          ],
+          "erwartung": "Gleicher Dialog wie beim Einlageplan, aber für Leitungen im Erdreich (Verlegung «erdreich»): «Legt je Grundleitungsplan eine Ansicht und ein Planblatt an.» Namen und Plannummern bestimmt der Kern.",
+          "pruefpunkte": [
+            "Der Knopf zeigt nur das Symbol «Grundleitungsplan».",
+            "Der Dialogtitel lautet «Grundleitungsplan anlegen».",
+            "Die Tabelle nennt nur Grundleitungspläne (Leitungen im Erdreich).",
+            "«Anlegen» öffnet die neue Ansicht, Strg+Z nimmt sie zurück."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Dialog «Grundleitungsplan anlegen»",
+            "zustand": "Bernstrasse (Kopie des Abnahmeprojekts «abnahme3»), Dialog «Grundleitungsplan anlegen» offen mit Tabelle und Vorschau"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:140",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/einlageplaene-text.js:11",
+            "src/Hlks.Kern/Plan/EinlagePlaene.cs:23 (Kern)"
+          ],
+          "hinweis": "Siehe auch «zb-grundleitungsplan» (Darstellung «grundleitungen» von Hand)."
+        },
+        {
+          "id": "zb-n3-projektinfo",
+          "titel": "Projektinformationen bearbeiten (Verwalten › Projekt)",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Projekt",
+            "knopf": "Projektinformationen",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Register Verwalten › Gruppe Projekt › «Projektinformationen» klicken.",
+            "Die Gruppen «Projekt», «Beschriftung und Bemassung» und «Lage» ansehen.",
+            "Unter «Beschriftung und Bemassung» die Masseinheit eines Gewerks umstellen (Auswahl aus dem Katalog).",
+            "«Übernehmen» klicken; danach die Meldung «Projektinformationen gespeichert.» lesen.",
+            "Mit Strg+Z zurücknehmen.",
+            "Den Dialog nochmals öffnen und «Überblick über das Projekt» aufklappen."
+          ],
+          "erwartung": "Der Dialog ist bearbeitbar: Projekt (Objekt Zeile 1 und 2, Projektnummer, Phase), Beschriftung und Bemassung (Rohrbezeichnung NW/DN, Masseinheit je Gewerk), Lage (Nordwinkel). Felder, die eine andere Funktion schreibt (letzter Kollisionslauf, IFC-Bezug, Wärmeübergang, HKAP-Verknüpfung, Familienauswahl), stehen nur lesend, mit dem Ort, wo man sie ändert. «Übernehmen» sendet nur die geänderten Felder mit `element_aendern` (leer = Eintrag entfernen); gibt es noch kein Element der Klasse, legt `element_anlegen` eines an («PI-1»). Ohne Änderung wird nichts gesendet; eine ungültige Zahl bleibt im Dialog mit Fehlertext. Der frühere Überblick (Projekt, Ablage, Stand, Prüfsumme, Gebäude, Systeme, Elemente je Klasse) steht aufklappbar darunter.",
+          "pruefpunkte": [
+            "Die Felder sind aus der Katalogdefinition der Klasse «Projektinformation» aufgebaut.",
+            "Eine Änderung erscheint nach «Übernehmen» in der Eigenschaftenpalette bzw. im Plan (Rohrbezeichnung, Masseinheit).",
+            "Eine ungültige Zahl (Nordwinkel «abc») wird mit Fehlertext abgelehnt, der Dialog bleibt offen.",
+            "Strg+Z macht die Änderung rückgängig (ein Befehl).",
+            "Der Dialog ist verschiebbar, in der Grösse änderbar und einklappbar; der Plan dahinter wird nicht abgedunkelt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Projektinformationen»",
+            "zustand": "Beispielprojekt, Dialog «Projektinformationen» offen mit allen drei Gruppen; Überblick eingeklappt"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:67",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektinfo-dialog.js:99 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektinfo-text.js:42 (Felder aus dem Katalog)",
+            "src/Hlks.Web/OBERFLAECHE.md:995"
+          ],
+          "hinweis": "Ersetzt den früheren, nur lesenden Dialog (siehe «m0b-projektinfo»). Die Vorgabe der Abflusskennzahl K (Modul 4) steht, sobald gesetzt, als weiteres Katalogfeld unter «Weitere»."
+        },
+        {
+          "id": "zb-n3-projektinfo-browser",
+          "titel": "Projektinformationen im Projektbrowser",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Gebäude › «Projektinformationen»"
+          },
+          "schritte": [
+            "Im Projektbrowser den Ast «Gebäude» aufklappen und ganz unten den Eintrag «Projektinformationen» (Untertitel «PI-1») suchen.",
+            "Darauf doppelklicken.",
+            "Den Dialog schliessen. Rechtsklick auf den Eintrag: «Bearbeiten …» wählen."
+          ],
+          "erwartung": "Doppelklick und «Bearbeiten …» im Kontextmenü öffnen den bearbeitbaren Dialog «Projektinformationen». Der Eintrag erscheint, sobald das Element Projektinformation im Projekt existiert (nach dem ersten «Übernehmen»); er steht nur im Ast «Gebäude», nicht in den Fachgliederungen.",
+          "pruefpunkte": [
+            "Der Eintrag heisst «Projektinformationen» und trägt das Kennzeichen als Untertitel.",
+            "Doppelklick öffnet den Dialog.",
+            "Das Kontextmenü enthält «Bearbeiten …» und «Auswählen»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Projektbrowser",
+            "zustand": "Beispielprojekt, Projektinformationen einmal übernommen (Phase gesetzt); Projektbrowser, Ast «Gebäude» aufgeklappt, Eintrag «Projektinformationen» hervorgehoben, Kontextmenü offen"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser-aeste.js:136 (Knoten)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:338 (Doppelklick)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/projektbrowser.js:411 (Kontextmenü)"
+          ],
+          "hinweis": "Im Beispielprojekt gibt es das Element erst nach dem ersten Übernehmen der Projektinformationen."
+        },
+        {
+          "id": "zb-n3-listen-kollision",
+          "titel": "Kollisionsliste und Aussparungsliste als Listenansicht",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Erstellen",
+            "knopf": "Liste",
+            "kuerzel": "",
+            "sonst": "Dialog «Liste anlegen», Einträge «Kollisionsliste» und «Aussparungsliste»"
+          },
+          "schritte": [
+            "Das Projekt Bernstrasse (Abnahmeprojekt abnahme3b mit Kollisionen und Aussparungen) öffnen.",
+            "Register Ansicht › Gruppe Erstellen › «Liste» klicken.",
+            "Im Dialog «Liste anlegen» die Liste «Kollisionsliste» wählen, «Anlegen» klicken.",
+            "Dasselbe mit «Aussparungsliste».",
+            "Im Projektbrowser unter «Listen» die beiden neuen Ansichten (AN-LI-KOLLISIONEN, AN-LI-AUSSPARUNGEN) sehen."
+          ],
+          "erwartung": "Die Listen-Ansichten zeichnen die Abfragen `kollisionen` und `aussparungsliste` als Tabelle (Spalten, Sortierung durch Klick auf die Kopfzeile, Titel mit Zeilenzahl). Kennzeichen AN-LI-KOLLISIONEN bzw. AN-LI-AUSSPARUNGEN. Die Palette «Koordination» bleibt für den Sprung in die Ansichten.",
+          "pruefpunkte": [
+            "Der Dialog «Liste anlegen» bietet zusätzlich Kollisionsliste und Aussparungsliste.",
+            "Die Liste öffnet als Ansicht, die Zeilenzahl stimmt mit der Palette «Koordination».",
+            "Die Kopfzeile der Liste trägt den Knopf «CSV …»."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Listenansicht «Kollisionsliste»",
+            "zustand": "Bernstrasse (Kopie), Listenansicht AN-LI-KOLLISIONEN geöffnet, obere Zeilen sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:20 (LISTEN)",
+            "src/Hlks.Web/OBERFLAECHE.md:996"
+          ],
+          "hinweis": "Im Beispielprojekt ist die Kollisionsliste leer (es gibt keine Prüfung ohne Vorgaben)."
+        },
+        {
+          "id": "zb-n3-csv",
+          "titel": "Liste als CSV-Datei speichern",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Knopf «CSV …» rechts in der Kopfzeile jeder Listenansicht; Projektbrowser › Kontextmenü einer Liste › «CSV …»"
+          },
+          "schritte": [
+            "Eine Listenansicht öffnen (z. B. Strangliste oder Raumliste).",
+            "Rechts in der Kopfzeile der Liste auf «CSV …» klicken.",
+            "Im Dialog «Liste als CSV» den Dateinamen prüfen (Vorschlag «Titel_Projekt_Datum.csv») und «Erzeugen» klicken.",
+            "Die Meldung «CSV erzeugt: …» lesen und die Datei im Download-Ordner des Browsers öffnen (Excel).",
+            "Alternativ: im Projektbrowser Rechtsklick auf die Liste › «CSV …»."
+          ],
+          "erwartung": "Die Datei enthält dieselben Spalten und Zellentexte wie die Liste, in der gerade gewählten Sortierung: UTF-8 mit BOM, Semikolon als Trenner, Dezimalkomma, CRLF, erste Zeile = Spaltentitel. Listen mit mehreren Tabellen (Mengen, Materialliste, Sanitär-Zusammenstellung) stehen untereinander mit Titelzeile und Leerzeile. Felder mit Semikolon, Anführungszeichen oder Zeilenumbruch stehen in Anführungszeichen. Der Browser legt die Datei in seinen Download-Ordner (kein Server-Endpunkt).",
+          "pruefpunkte": [
+            "Excel öffnet die Datei mit korrekten Umlauten und Spalten.",
+            "Zahlen haben Dezimalkomma.",
+            "Eine leere Liste ergibt eine leere Datei.",
+            "Ein leerer Dateiname wird abgelehnt («Der Dateiname darf nicht leer sein.»).",
+            "Das Kontextmenü der Liste im Projektbrowser enthält «CSV …»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Liste als CSV»",
+            "zustand": "Beispielprojekt, Strangliste angelegt und geöffnet; Dialog «Liste als CSV» offen mit Dateiname und Formathinweis"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:300 (Aktion)",
+            "src/Hlks.Web/wwwroot/js/ansichten/liste.js:80 (Knopf)",
+            "src/Hlks.Web/wwwroot/js/ansichten/liste-csv-dialog.js:34 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/ansichten/liste-csv.js:10 (CSV-Aufbau)"
+          ],
+          "hinweis": "Seit Modul 4 enthält die CSV der Sanitär-Zusammenstellung zusätzlich die Spalte «Formel (Excel-Zelle)» (siehe «m4-csv»)."
+        },
+        {
+          "id": "zb-n3-ks-register",
+          "titel": "Liste der Tastaturkürzel nach Register gegliedert (KS)",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Tastaturkürzel",
+            "kuerzel": "KS",
+            "sonst": ""
+          },
+          "schritte": [
+            "KS tippen (oder Verwalten › Hilfe › «Tastaturkürzel»).",
+            "Die Abschnitte nach Registern ansehen (Datei, Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten).",
+            "Im Suchfeld «DI» tippen.",
+            "Den Dialog schliessen."
+          ],
+          "erwartung": "Der Dialog «Tastaturkürzel» gliedert alle Kürzel nach den Registern des Menübands (in dessen Reihenfolge), dazu «Auswahl» und «Familie»; unter «Allgemein» steht nur noch, was zu keinem Register gehört (Esc, Strg+D). Das Kürzel KI (Palette Claude) steht unter «Allgemein». Beschriften-Kürzel (TX, DI, DL, EL) stehen jetzt unter «Beschriften».",
+          "pruefpunkte": [
+            "Alle zehn Register haben einen eigenen Abschnitt.",
+            "Das Suchfeld filtert die Tabelle.",
+            "DI, TX, DL, EL stehen unter «Beschriften», nicht unter «Allgemein».",
+            "KI ist aufgeführt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Tastaturkürzel»",
+            "zustand": "Dialog offen, Abschnitt «Beschriften» sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/kuerzel-liste.js:6",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:151"
+          ],
+          "hinweis": "Ersetzt die frühere Fassung mit nur vier Registernamen (Befund in «kuerzel-liste-ks» behoben)."
         }
       ]
     }
