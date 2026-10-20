@@ -305,3 +305,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 - Gesamttest (hlks-test): ein Mal → bleibt.
 | 20.10.2026 | 7 | Gesamtprüfung 795779c (B3) grün → geprüft f9f9705, Desktop | Hauptlauf | ok |
 | 20.10.2026 | – | Merge Sicherheit 3c (815cb4f) und B2 (Merge ohne Konflikt), Stand f10affc: stand_pruefen + alle Browser-Reihen | Hauptlauf / hlks-test (Ports 5260–5299) | läuft |
+| 20.10.2026 | 3c | Abnahmelauf B6 mit echtem Claude (5 Prüfpunkte bestanden) → Internet-Schalter frei, Notschalter HLKS_KI_INTERNET=0; Befund N5 | Hauptlauf | ok |

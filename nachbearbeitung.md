@@ -108,3 +108,10 @@ Datenblatt-Zeilen wurden dem falschen Typ zugeordnet («Zeilenleser», z. B. z45
 
 **Fertig, wenn** die Befunde der R7-Unterlage die Dezimalwerte als Zahl mit Zelle liefern und die Familien R1, R2, R7 mit
 Quellenverweis neu belegt werden können.
+
+## N5 – KI-Palette: abgelehnte Werkzeugaufrufe als «ok» angezeigt
+
+Befund Abnahmelauf B6 (20.10.2026): Lehnt der Kern `unterlagen_lesen` ab (Pfadprüfung bzw. «mit Internet nur Herstellerunterlagen»),
+zeigt die Palette den Aufruf als «ok»; `ifc_pruefen` und `befunde` erscheinen richtig als «abgelehnt». Vermutlich liefert der
+MCP-Server bei `unterlagen_lesen` den Fehler als normales Ergebnis (ohne Fehlerkennung). **Fertig, wenn** jeder abgelehnte Aufruf
+in Palette und Auftragsprotokoll als abgelehnt erscheint (Test über alle Werkzeuge mit HlksFehler).
