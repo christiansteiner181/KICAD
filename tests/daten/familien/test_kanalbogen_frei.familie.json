@@ -1,0 +1,35 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalbogen-frei",
+  "name": "Testkanalbogen frei rechteckig (fiktiv)",
+  "kategorie": "Bogen",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Bogen der Testkanalserie mit freier Grösse (Nachtrag «freie Grösse», 20.10.2026). Alle Werte sind FIKTIV. Breite und Höhe sind Exemplarparameter (die Typen geben die Normgrössen vor; eine freie Grösse setzt die Formteilwahl als Exemplarwert). Lokale Lage nach entwurf/modul-3.md: a bei (−L, 0, 0) Richtung (−1, 0, 0), b bei L·(cos w, sin w, 0). Einbaulänge L = (ri + breite/2)·tan(w/2) + lv mit Innenradius ri = 115 mm und geradem Vorstück lv = 35 mm (FIKTIV). Handrechnung 430 × 270, 90°: (115 + 215)·tan 45° + 35 = 365 mm; 45°: 330·tan 22.5° + 35 = 171.690 mm. Querschnitt: breite in der Biegeebene (lokal xy), hoehe in lokaler z.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "breite", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 400, "beschreibung": "Breite des Kanals (FIKTIV)" },
+    { "name": "hoehe", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 200, "beschreibung": "Höhe des Kanals (FIKTIV)" },
+    { "name": "ri", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 115, "beschreibung": "Innenradius (FIKTIV)" },
+    { "name": "lv", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 35, "beschreibung": "Gerades Vorstück je Seite (FIKTIV)" },
+    { "name": "winkel", "art": "exemplar", "datentyp": "winkel", "gruppe": "abmessung", "wert": 90, "ziel": "winkel", "beschreibung": "Umlenkwinkel" },
+    { "name": "r", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "ri + breite / 2", "beschreibung": "Radius der Achse" },
+    { "name": "l", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "r * tan(winkel / 2) + lv", "beschreibung": "Einbaulänge je Seite L = (ri + breite/2)·tan(w/2) + lv" }
+  ],
+  "typen": [
+    { "name": "400x200", "werte": { "breite": 400, "hoehe": 200 } },
+    { "name": "500x300", "werte": { "breite": 500, "hoehe": 300 } },
+    { "name": "300x200", "werte": { "breite": 300, "hoehe": 200 } },
+    { "name": "200x200", "werte": { "breite": 200, "hoehe": 200 } }
+  ],
+  "koerper": [
+    { "id": "bogen", "name": "Kanalbogen", "art": "sweep", "material": "rohr",
+      "profil": { "rechteck": ["breite", "hoehe"] }, "pfad": [["-l", 0, 0], [0, 0, 0], ["l * cos(winkel)", "l * sin(winkel)", 0]], "biegeradius": "r" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "breite", "h": "hoehe",
+      "lage": ["-l", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "breite", "h": "hoehe",
+      "lage": ["l * cos(winkel)", "l * sin(winkel)", 0], "richtung": ["cos(winkel)", "sin(winkel)", 0], "beschreibung": "Ausgang (um winkel umgelenkt)" }
+  ]
+}

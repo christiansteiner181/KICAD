@@ -12,7 +12,8 @@
 // Zuordnungen:
 //   – Entität, Typobjekt, PredefinedType, ObjectType aus ifc.json (Lüftung, varianteJe, predefinedTypeJe); USERDEFINED ohne ObjectType der
 //     Abbildung bekommt den Wert der Auswahl-Eigenschaft (z. B. Ventil «magnetventil») – IFC verlangt dann einen ObjectType.
-//   – Typobjekt je Familie und Typ (Name «<Familie> <Typ>»); ohne Familie je Klasse und Variante (Name = Klasse bzw. «Klasse art»).
+//   – Typobjekt je Familie und Typ (Name «<Familie> <Typ>»); ohne Familie je Klasse und Variante (Name = Klasse bzw. «Klasse art»). Freie
+//     Grösse einer Kanalserie (Nachtrag): je Familie und tatsächlicher Grösse («<Familie> 430 × 270», Formteile «… 430 × 270/250 × 200»).
 //   – Geschoss: das des Elements, sonst aus der Höhe wie Befehle.Zuordnen; unter dem untersten Geschoss das unterste, über dem obersten das
 //     oberste (Grundleitungen, Kontrollschächte) – mit Hinweis.
 //   – Systeme: Leitungsbauteile ihr System; Endgeräte die Systeme der angeschlossenen Leitungsbauteile (Netz.SystemeVon) – wie Revit.
@@ -397,7 +398,8 @@ public sealed class IfcExportAufbau
     IfcExTyp Typ(Element e, IfcKlasse k, IfcZiel ziel, string? variante)
     {
         var fam = Familien.FamilieVon(m, e);
-        var famTyp = fam is null ? null : Familien.Typ(e);
+        // freie Grösse (Nachtrag, entwurf/freie-groesse-kanal.md): Typobjekt je Familie und tatsächlicher Grösse («<Familie> 430 × 270»), nicht je Vorlage
+        var famTyp = fam is null ? null : FreieGroesse.Text(p, e) ?? Familien.Typ(e);
         var schluessel = $"{ziel.Typ}|{ziel.PredefinedType}|{ziel.ObjectType}|{k.Klasse}|{variante}|{fam?.Id}|{famTyp}";
         if (typen.TryGetValue(schluessel, out var t)) return t;
         var name = fam is not null
@@ -462,7 +464,7 @@ public sealed class IfcExportAufbau
             new("System", "label", sys?.Kennzeichen ?? (x.IstRaum ? null : string.Join(", ", Netz.SystemeVon(m, e).Select(s => s.Kennzeichen)) is { Length: > 0 } ss ? ss : null)),
             new("Strang", "label", strang?.Kennzeichen),
             new("Familie", "label", fam is null ? null : fam.Name ?? fam.Kennzeichen),
-            new("Typ", "label", fam is null ? null : Familien.Typ(e)),
+            new("Typ", "label", fam is null ? null : FreieGroesse.Text(p, e) ?? Familien.Typ(e)),
             new("ElementId", "kennung", e.Id),
             new("Gewerk", "label", gewerk),
         };

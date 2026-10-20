@@ -1,0 +1,36 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalfrei",
+  "name": "Testkanal frei rechteckig (fiktiv)",
+  "kategorie": "Kanal",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Rechteckige Kanalserie mit freier Grösse für die Tests des Nachtrags «freie Grösse» (entwurf/freie-groesse-kanal.md, 20.10.2026). Alle Werte sind FIKTIV – weder Herstellerdaten noch Normmasse, nur für Tests und Handrechnungen. Die Typen sind das Vorschlagsraster; jede andere Grösse b × h wird aus der Vorlage 400x200 gerechnet (Grenzen 145 … 2500 mm FIKTIV und ohne Quelle, Schritt 1 mm). Blechdicke s = 1 mm (FIKTIV), aussen = b + 2·s. Formteile aus fam-test-kanalbogen-frei, fam-test-kanal-t-frei und fam-test-kanalreduktion-frei (Grössen als Exemplarparameter).",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Breite (FIKTIV)" },
+    { "name": "h", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Höhe (FIKTIV)" },
+    { "name": "s", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 1, "beschreibung": "Blechdicke (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "500x300", "werte": { "b": 500, "h": 300 } },
+    { "name": "400x200", "werte": { "b": 400, "h": 200 } },
+    { "name": "300x200", "werte": { "b": 300, "h": 200 } },
+    { "name": "200x200", "werte": { "b": 200, "h": 200 } }
+  ],
+  "koerper": [],
+  "anschluesse": [],
+  "leitung": {
+    "querschnitt": "rechteck",
+    "groesse": { "b": "b", "h": "h" },
+    "aussen": "b + 2 * s",
+    "wand": "s",
+    "formteile": {
+      "bogen": { "familie": "fam-test-kanalbogen-frei" },
+      "tstueck": { "familie": "fam-test-kanal-t-frei" },
+      "reduktion": { "familie": "fam-test-kanalreduktion-frei", "vorlage": "400x200/300x200" }
+    },
+    "regeln": { "winkel": [45, 90], "abzweig": "tstueck" },
+    "frei": { "vorlage": "400x200", "grenzen": { "b": { "min": 145, "max": 2500 }, "h": { "min": 145, "max": 2500 } }, "schritt": 1 }
+  }
+}

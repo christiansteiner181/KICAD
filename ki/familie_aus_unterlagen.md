@@ -150,10 +150,23 @@ verweist):
    nennt sie einen anderen Werkstoff ohne Kürzel, lässt du `kuerzel` weg und führst das im Bericht unter «Offene Felder» auf
    («Kürzel fehlt: Werkstoff …, Christian entscheidet»). Widersprechen sich zwei Stellen (Werkstoff oder Kürzel), setzt du
    keines und meldest die Stellen unter «Konflikte». Bei Kanälen gibt es kein Kürzel.
+   **Freie Grösse (`leitung.frei`, nur Kanäle):** Nennt die Unterlage, dass die Kanäle **nach Mass** gefertigt werden (z. B.
+   Rechteckkanal mit beliebigem b × h), legst du die Serie mit `frei` an: `vorlage` = ein Typ des Rasters (seine Werte und
+   Formeln gelten für jede freie Grösse; die Grössenparameter sind Typparameter ohne Formel), `grenzen` je Grössenschlüssel
+   (`b`, `h` bzw. `d`) mit `min`/`max` in mm **nur aus der Unterlage** und mit dem Befund in `leitung.frei.quellen` – nennt
+   die Unterlage keine Grenze, lässt du sie weg und führst das im Bericht unter «Offene Felder» auf; `schritt` nur, wenn die
+   Unterlage ein Raster nennt (sonst weglassen = 1 mm). Die **Normgrössen bleiben Typen** (Vorschlagsraster). Nennt die
+   Unterlage keine Fertigung nach Mass, gibt es kein `frei`; bei Rohren nie (dort gilt die DN). Die Formteil-Familien einer
+   freien Serie führen ihre Anschlussgrössen als **Exemplarparameter ohne Formel** (Bogen `breite`/`hoehe` an a und b,
+   T-Stück Durchgang a/b und eigener Abzweig c, z. B. `b_c`/`h_c`, Reduktion `breite1`/`hoehe1` und `breite2`/`hoehe2`), die
+   Typen geben die Normgrössen als Werte vor, die Einbaulängen sind Formeln daraus (wie die Unterlage sie bemasst, Formeln
+   darauf ebenfalls als Exemplarparameter); `formteile.<art>.vorlage` nennt den Typ, der für freie Grössen gerechnet wird
+   (fehlt = erster Typ).
 3. Gibt es mehr Formteilarten (Bögen mit Muffe/Einschub, Übergänge), nimm die für die gerade Verlegung übliche Ausführung
    und nenne die übrigen im Bericht.
 4. **Kontrolle:** `leitungsserie` { familie } zeigt je Grösse aussen/innen/wand und ob Bogen, T-Stück und Reduktion
-   gefunden werden (mit Grund, wenn nicht). Fehlende Formteile für vorhandene Grössen nennst du im Bericht.
+   gefunden werden (mit Grund, wenn nicht); bei freier Grösse zeigt `probe`, ob die Formteile auch für eine freie Grösse
+   gerechnet werden. Fehlende Formteile für vorhandene Grössen nennst du im Bericht.
 
 ## Familienformat
 

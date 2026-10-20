@@ -74,6 +74,26 @@ public class AuftragVorlageTests
     }
 
     [Fact]
+    public void Vorlage_NenntFreieGroesseNurFuerKanaeleNachMass_GrenzenNurAusDerQuelle_RasterAlsTypen()
+    {
+        // Nachtrag freie Grösse (entwurf/freie-groesse-kanal.md, Entscheid Christian 20.10.2026)
+        var v = Vorlage();
+        Assert.Contains("`leitung.frei`, nur Kanäle", v);
+        Assert.Contains("**nach Mass**", v);
+        Assert.Contains("**nur aus der Unterlage**", v);
+        Assert.Contains("`leitung.frei.quellen`", v);
+        Assert.Contains("**Normgrössen bleiben Typen**", v);
+        Assert.Contains("bei Rohren nie", v);
+        Assert.Contains("**Exemplarparameter ohne Formel**", v);
+        Assert.Contains("`probe`", v);
+        // das Schema, das die KI im Auftrag sieht, kennt den Block
+        var schema = File.ReadAllText(AuftragServer.Quelldatei("schema", "hlks-familie.schema.json"));
+        Assert.Contains("\"frei\"", schema);
+        Assert.Contains("nie Rohre", schema);
+        Vorlage_HatAllePlatzhalter();
+    }
+
+    [Fact]
     public void Vorlage_VerbietetFreigabeEntscheidUndBibliothek_UndDieWerkzeugeFehlenInDerListe()
     {
         var v = Vorlage();

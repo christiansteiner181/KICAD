@@ -629,7 +629,10 @@ public sealed class Trennen : IBefehl
 public sealed class LeitungZiehen : IBefehl
 {
     public string Name => "leitung_ziehen";
-    public string Beschreibung => "Zieht eine Leitung (Rohr oder Kanal) entlang von Punkten in Fliessrichtung und verbindet Anfang und Ende auf Wunsch mit bestehenden Anschlüssen – in einem Schritt.";
+    public const string Text = "Zieht eine Leitung (Rohr oder Kanal) entlang von Punkten in Fliessrichtung und verbindet Anfang und Ende auf Wunsch mit bestehenden Anschlüssen – in einem Schritt. Mit serie und groesse bekommt die Leitung Serie und Grösse (bezuege.familie, familientyp, dn bzw. breite/hoehe/durchmesser) – sie bleibt eine Polylinie ohne Bögen (leitung_aufteilen setzt sie, leitung_zeichnen zeichnet mit Bögen); bei Kanalserien mit freier Grösse (leitung.frei) jede Grösse innerhalb von Grenzen und Schritt.";
+    public string Beschreibung => Text;
+    public const string ParSerie = "Leitungsserie (Familie Rohr bzw. Kanal; Kennzeichen, Name oder id) – optional; klasse folgt dann der Serie";
+    public const string ParGroesse = "Grösse der Serie (mit serie Pflicht): Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 }";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("system", "text", false, "System (Kennzeichen); entfällt, wenn strang angegeben ist"),
@@ -643,14 +646,28 @@ public sealed class LeitungZiehen : IBefehl
         new("eigenschaften", "objekt", false, "Weitere Eigenschaften, z. B. { gefaelle: 2 }"),
         new("von", "objekt", false, "Anschluss, an den der Anfang kommt: { element, anschluss }"),
         new("nach", "objekt", false, "Anschluss, an den das Ende kommt: { element, anschluss }"),
+        new("serie", "text", false, ParSerie),
+        new("groesse", "objekt", false, ParGroesse),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var klasse = Param.Text(p, "klasse") ?? "Rohr";
+        // Serie und Grösse (Nachtrag freie Grösse): Grösse wie leitung_zeichnen (Rastertyp bzw. freie Grösse einer Kanalserie)
+        Leitungsserie? serie = Param.Text(p, "serie") is { } sz ? Leitungsserie.Hole(k.Arbeit, k.Katalog, sz) : null;
+        if (serie is null && p["groesse"] is not null) throw new HlksFehler("groesse wirkt nur mit serie.", "serie angeben (Leitungsserie) oder groesse weglassen und dn bzw. eigenschaften setzen.");
+        var sg = serie is null ? null : RoutingBefehle.Groesse(serie, p["groesse"]);
+        var klasse = Param.Text(p, "klasse") ?? serie?.Kategorie ?? "Rohr";
+        if (serie is not null && !(k.Katalog.Klassen.TryGetValue(klasse, out var kd) && kd.IstArt(serie.Kategorie)))
+            throw new HlksFehler($"klasse {klasse} passt nicht zur Serie {serie.Bezeichnung} ({serie.Kategorie}).", $"klasse weglassen oder {serie.Kategorie} angeben.");
         var eig = (p["eigenschaften"] as JsonObject)?.DeepClone() as JsonObject ?? new JsonObject();
         if (Param.Zahl(p, "dn") is double dn) eig["dn"] = dn;
         if (Param.Text(p, "material") is { } mat) eig["material"] = mat;
+        if (sg is not null)
+        {
+            if (sg.Groesse.Dn is double sdn) eig["dn"] = sdn;
+            if (sg.Groesse.D is double sd) eig["durchmesser"] = sd;
+            if (sg.Groesse.B is double sb && sg.Groesse.H is double sh) { eig["breite"] = sb; eig["hoehe"] = sh; }
+        }
         var anlegen = new JsonObject
         {
             ["klasse"] = klasse,
@@ -664,6 +681,12 @@ public sealed class LeitungZiehen : IBefehl
         _ = Param.Punkte(p, "punkte");
         new ElementAnlegen().Ausfuehren(k, anlegen);
         var leitung = k.Arbeit.Finde(k.Operationen[^1].Id)!;
+        if (serie is not null && sg is not null)
+        {
+            var mitSerie = leitung.Kopie();
+            Routing.GroesseSetzen(k, mitSerie, serie, sg);
+            leitung = k.Setzen(mitSerie);
+        }
         if (Param.Punkt(p, "von") is { } von) Verbinden.Ausfuehren(k, k.Arbeit.Hole(von.Element), von.Anschluss, leitung, "anfang");
         if (Param.Punkt(p, "nach") is { } nach) Verbinden.Ausfuehren(k, leitung, "ende", k.Arbeit.Hole(nach.Element), nach.Anschluss);
     }

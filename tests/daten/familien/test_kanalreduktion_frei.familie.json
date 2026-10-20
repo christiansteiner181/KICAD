@@ -1,0 +1,29 @@
+{
+  "format": 1,
+  "id": "fam-test-kanalreduktion-frei",
+  "name": "Testkanalreduktion frei rechteckig (fiktiv)",
+  "kategorie": "Reduktion",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Reduktion der Testkanalserie mit freier Grösse (Nachtrag «freie Grösse», 20.10.2026). Alle Werte sind FIKTIV. Gross breite1 × hoehe1 (Anschluss a), klein breite2 × hoehe2 (Anschluss b), alle als Exemplarparameter. Lokale Lage nach entwurf/modul-3.md: a im Ursprung Richtung (−1, 0, 0), b bei (l, 0, 0) Richtung (1, 0, 0). Einbaulänge l = max(breite1 − breite2, hoehe1 − hoehe2) + zl mit zl = 100 mm (FIKTIV). Handrechnung 430 × 270 auf 400 × 200: max(30, 70) + 100 = 170 mm.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "breite1", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 400, "beschreibung": "Breite gross (Anschluss a, FIKTIV)" },
+    { "name": "hoehe1", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 200, "beschreibung": "Höhe gross (FIKTIV)" },
+    { "name": "breite2", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 300, "beschreibung": "Breite klein (Anschluss b, FIKTIV)" },
+    { "name": "hoehe2", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 200, "beschreibung": "Höhe klein (FIKTIV)" },
+    { "name": "zl", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 100, "beschreibung": "Zuschlag der Einbaulänge (FIKTIV)" },
+    { "name": "l", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "max(breite1 - breite2, hoehe1 - hoehe2) + zl", "beschreibung": "Einbaulänge (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "500x300/400x200", "werte": { "breite1": 500, "hoehe1": 300, "breite2": 400, "hoehe2": 200 } },
+    { "name": "400x200/300x200", "werte": { "breite1": 400, "hoehe1": 200, "breite2": 300, "hoehe2": 200 } }
+  ],
+  "koerper": [
+    { "id": "reduktion", "name": "Reduktion", "art": "quader", "material": "rohr", "von": [0, "-breite1 / 2", "-hoehe1 / 2"], "bis": ["l", "breite1 / 2", "hoehe1 / 2"] }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "breite1", "h": "hoehe1", "lage": [0, 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Gross" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "breite2", "h": "hoehe2", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Klein" }
+  ]
+}

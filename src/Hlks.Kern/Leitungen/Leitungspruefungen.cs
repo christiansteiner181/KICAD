@@ -1,4 +1,4 @@
-﻿// Leitungen (Modul 3, B1): Prüfungen P13, P14, P15 und P18 (Codes in Pruefungen.Codes; P16 Gefälle baut B2, P17 Schema B3).
+﻿// Leitungen (Modul 3, B1): Prüfungen P13, P14, P15 und P18 (Codes in Pruefungen.Codes; P16 Gefälle baut B2, P17 Schema B3; P29 freie Grösse).
 //   P13 (warnung)  verbundene Anschlüsse mit Lage liegen > 1 mm auseinander bzw. zeigen nicht gegeneinander (> 1°) – entsteht
 //                  z. B. nach Verschieben oder beim IFC-Import (der verbindet nach seinen Ports ohne diese Prüfung).
 //   P14 (fehler)   verbundene Anschlüsse mit unterschiedlicher Grösse (Reduktion fehlt).
@@ -19,6 +19,9 @@
 //   P15 Abzweigwinkel (B7): nur T-Stücke mit gültiger Familie (Winkel aus der lokalen Richtung von c, wie Formteilgeometrie);
 //   massgebend ist die Serie der Leitungen am Durchgang (das T-Stück gehört zu ihr), nicht die einer Abzweigleitung anderer Serie;
 //   Vergleich bis 1e-6° (das Routing setzt die Listenwinkel).
+//   P29 (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): Leitung mit freier Grösse (FreieGroesse.Von) einer Kanalserie mit
+//   leitung.frei – ausserhalb der Grenzen → fehler; nicht im Schritt → hinweis (nur, wenn innerhalb der Grenzen). P14/P15 bleiben
+//   unverändert und vergleichen die tatsächlichen Grössen.
 
 namespace Hlks.Kern;
 
@@ -101,6 +104,16 @@ public static class Leitungspruefungen
             if (Knicke(e) is { Anzahl: > 0 } kn)
                 b.Add(new("P15", "hinweis", e.Kennzeichen, $"{e.Klasse} mit Serie hat {kn.Anzahl} Knick{(kn.Anzahl == 1 ? "" : "e")} in der Polylinie (bis {Z(kn.Max)}°) – je Gerade gehört ein Element mit Bogen dazwischen",
                     "leitung_aufteilen: macht aus der Polylinie Geraden mit Bögen der Serie"));
+            // P29: freie Grösse innerhalb von Grenzen und Schritt der Serie
+            if (serie.Frei is not null && FreieGroesse.Von(serie.Def, e, serie.Familie.Name ?? serie.Def.Name) is { } fg)
+            {
+                if (serie.Grenzverletzung(fg) is { } ausser)
+                    b.Add(new("P29", "fehler", e.Kennzeichen, $"{e.Klasse} {fg} liegt ausserhalb der Grenzen der Serie {serie.Bezeichnung}: {ausser}",
+                        $"Grösse innerhalb der Grenzen wählen (leitung_groesse) – {serie.GroessenVorschlag(fg)}"));
+                else if (!serie.ImSchritt(fg))
+                    b.Add(new("P29", "hinweis", e.Kennzeichen, $"{e.Klasse} {fg} liegt nicht im Schritt der Serie {serie.Bezeichnung} ({serie.FreiText})",
+                        $"leitung_groesse mit {serie.Gerundet(fg).Kurz} (auf den Schritt gerundet) bzw. die Grösse so belassen, wenn sie gewollt ist"));
+            }
         }
         foreach (var g in ohneSerie.GroupBy(e => GruppeOhneSerie(m, k, e)).OrderBy(g => g.Key.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {

@@ -13,6 +13,8 @@
 // rechteckig breite und hoehe; Herkunft familie) und die Ziel-Eigenschaften; ihre Anschlüsse anfang/ende bleiben (Leitungsserien
 // haben keine Anschlüsse – nichts wird gelöscht oder getrennt), nur deren Grösse folgt. Eine neue bzw. geänderte ausrichtung
 // wird geprüft (Familien.AusrichtungLesen). Elemente ohne Geometrie («nicht platziert») werden nachgeführt wie platzierte.
+// Nachtrag freie Grösse (entwurf/freie-groesse-kanal.md): eine Kanal-Leitung mit familientyp = Vorlage einer freien Serie behält ihre
+// Grösse aus breite/hoehe bzw. durchmesser (Regel in FreieGroesse.Von); Kennwerte aus der Vorlage mit dieser Grösse, Quelle «… frei b × h».
 // ANNAHMEN (Prüfliste): Eigenschaften mit «ziel» gehören der Familie – ein Wert von Hand wird mit Hinweis ersetzt (wie Revit:
 // Typparameter sind am Exemplar nicht änderbar); Eigenschaften mit Herkunft familie, deren Parameter kein «ziel» mehr hat,
 // entfallen; fehlt familientyp und hat die Familie genau einen Typ, wird dieser gesetzt (Hinweis).
@@ -165,11 +167,14 @@ public sealed class FamilienNachfuehren : INachfuehrung
         }
         // Ohne Geometrie = «nicht platziert» (Modul 3: Elemente zuerst nur im Schema) – Anschlüsse und Kennwerte gelten trotzdem,
         // nur Lagen gibt es keine (Anschlusslagen null).
-        var a = FamilienAuswertung.Aufloesen(def, typ, ex);
-        if (!a.Gueltig) throw FamilienPruefung.Fehlermeldung($"{e.Kennzeichen} (Familie {f.Kennzeichen}, Typ «{typ}»)", a.Fehler);
+        // Freie Grösse einer Kanalserie (Nachtrag, FreieGroesse.cs): familientyp = Vorlage, Grösse aus breite/hoehe bzw. durchmesser –
+        // ausgewertet wird die Vorlage mit dieser Grösse, die Grösse bleibt (nicht durch die der Vorlage ersetzt).
+        var leitung = kat.IstArt(e, "Leitung");
+        var frei = leitung ? FreieGroesse.Von(def, neu, f.Name ?? def.Name) : null;
+        var a = FamilienAuswertung.Aufloesen(def, typ, ex, frei is { } gf ? FreieGroesse.Typwerte(def.Leitung!, gf) : null);
+        if (!a.Gueltig) throw FamilienPruefung.Fehlermeldung($"{e.Kennzeichen} (Familie {f.Kennzeichen}, Typ «{typ}»{(frei is { } gt ? $", frei {gt.Kurz}" : "")})", a.Fehler);
 
         // Leitung mit Serie (Modul 3): Grösse aus dem Typ; die Anschlüsse anfang/ende bleiben (Leitungsserien haben keine)
-        var leitung = kat.IstArt(e, "Leitung");
         if (leitung && !def.IstLeitungsserie)
             throw new HlksFehler($"{e.Kennzeichen} ist eine Leitung, die Familie {f.Kennzeichen} «{f.Name}» ist keine Leitungsserie.", "Eine Leitungsserie (Kategorie Rohr bzw. Kanal mit Block leitung) angeben; familien listet sie.");
         if (leitung) geaendert |= LeitungsgroesseAnschluesse(e, neu, def, a);
@@ -194,7 +199,7 @@ public sealed class FamilienNachfuehren : INachfuehrung
         }
 
         // Eigenschaften der Parameter mit «ziel»
-        var quelle = $"{f.Name ?? def.Name} Typ {typ}";
+        var quelle = frei is { } gq ? FreieGroesse.FreiQuelle(f.Name ?? def.Name, typ, gq) : FreieGroesse.RasterQuelle(f.Name ?? def.Name, typ);
         var ziele = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var p in def.Parameter.Where(p => p.Ziel is not null))
         {

@@ -192,6 +192,25 @@ public sealed class FamFormteilWahl
     public string Familie { get; init; } = "";
     public string? TypText { get; init; }
     public Ausdruck? TypFormel { get; init; }
+    /// <summary>Typ der Formteil-Familie für freie Grössen (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): passt kein Typ,
+    /// wird dieser mit Exemplarwerten für die Anschlussgrössen ausgewertet; null = der erste Typ der Familie.</summary>
+    public string? Vorlage { get; init; }
+}
+
+/// <summary>Grenzen einer freien Grösse je Grössenschlüssel (mm; null = keine Grenze auf dieser Seite).</summary>
+public sealed record FamGrenze(double? Min, double? Max);
+
+/// <summary>Freie Grösse einer Kanalserie (Block leitung.frei, Nachtrag Modul 3, entwurf/freie-groesse-kanal.md; Entscheid Christian
+/// 20.10.2026: «Rechteckkanäle mit freier Grösse b × h (Normraster nur als Vorschlag)»). Die Typen bleiben das Vorschlagsraster;
+/// eine Grösse, die keinem Typ entspricht, wird aus dem Typ <see cref="Vorlage"/> mit ersetzten Grössenparametern ausgewertet.</summary>
+public sealed class FamFrei
+{
+    /// <summary>Typname, dessen Werte und Formeln für jede freie Grösse gelten.</summary>
+    public string Vorlage { get; init; } = "";
+    /// <summary>Grenzen je Grössenschlüssel (b, h bzw. d) – nur aus der Quelle; fehlt ein Schlüssel = jede Grösse &gt; 0.</summary>
+    public IReadOnlyDictionary<string, FamGrenze> Grenzen { get; init; } = new Dictionary<string, FamGrenze>();
+    /// <summary>Raster der Eingabe in ganzen mm (Vorgabe 1): eine Grösse muss ein Vielfaches davon sein.</summary>
+    public double Schritt { get; init; } = 1;
 }
 
 /// <summary>Block «leitung» einer Leitungsserie (Familie der Kategorie Rohr bzw. Kanal, Modul 3, entwurf/modul-3.md
@@ -229,6 +248,8 @@ public sealed class FamLeitung
     /// <summary>regeln.abzweigwinkel (Modul 3, B7): erlaubte Abzweigwinkel der T-Stücke in Grad (0 &lt; w ≤ 90, Winkel zwischen
     /// Durchgang und Abzweig); null = nicht angegeben (gilt als [90], rechtwinklig).</summary>
     public IReadOnlyList<double>? Abzweigwinkel { get; init; }
+    /// <summary>leitung.frei (nur Kanalserien): freie Grösse mit Vorlage-Typ, Grenzen und Schritt; null = nur die Typen.</summary>
+    public FamFrei? Frei { get; init; }
 }
 
 /// <summary>Massbezug (für B4: Abweichungsliste je Typ).</summary>
@@ -378,8 +399,8 @@ public sealed class FamilieDef
                 "Block «leitung» entfernen oder als kategorie Rohr bzw. Kanal anlegen.");
             return;
         }
-        if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, formteile?, regeln?, quellen? }"); return; }
-        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "formteile", "regeln", "quellen"];
+        if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, formteile?, regeln?, frei?, quellen? }"); return; }
+        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "formteile", "regeln", "frei", "quellen"];
         foreach (var (feld, _) in o)
             if (!felder.Contains(feld)) Fehl("leitung", $"Unbekanntes Feld «{feld}»", "Erlaubt: " + string.Join(", ", felder));
 
@@ -437,9 +458,16 @@ public sealed class FamilieDef
             {
                 var ort = $"leitung.formteile.{art}";
                 if (!FamLeitung.Formteilarten.Contains(art)) { Fehl(ort, $"Formteilart «{art}» gibt es nicht", "Erlaubt: " + string.Join(", ", FamLeitung.Formteilarten)); continue; }
-                if (wahl is not JsonObject wo) { Fehl(ort, "muss ein Objekt { familie, typ? } sein", "{ \"familie\": \"<id der Formteil-Familie>\" }"); continue; }
+                if (wahl is not JsonObject wo) { Fehl(ort, "muss ein Objekt { familie, typ?, vorlage? } sein", "{ \"familie\": \"<id der Formteil-Familie>\" }"); continue; }
                 foreach (var (feld, _) in wo)
-                    if (feld is not ("familie" or "typ")) Fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: familie, typ");
+                    if (feld is not ("familie" or "typ" or "vorlage")) Fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: familie, typ, vorlage");
+                string? vorlage = null;
+                if (wo.ContainsKey("vorlage"))
+                {
+                    vorlage = Text(wo["vorlage"])?.Trim();
+                    if (string.IsNullOrEmpty(vorlage)) { Fehl(ort + ".vorlage", "vorlage muss ein Typname (Text) sein", "Typname der Formteil-Familie, der für freie Grössen mit Exemplarwerten ausgewertet wird; oder vorlage weglassen (dann der erste Typ)."); vorlage = null; }
+                    else if (o["frei"] is null) Hinweise.Add(new(ort + ".vorlage", "vorlage wirkt nur bei einer Serie mit freier Grösse (leitung.frei)", "leitung.frei ergänzen oder vorlage weglassen."));
+                }
                 var fam = Text(wo["familie"])?.Trim();
                 if (string.IsNullOrEmpty(fam)) Fehl(ort + ".familie", "familie fehlt", $"id der Formteil-Familie (Kategorie {FamLeitung.KlasseVon(art)}) angeben, z. B. \"fam-…\".");
                 string? typText = null; Ausdruck? typFormel = null;
@@ -461,7 +489,7 @@ public sealed class FamilieDef
                         }
                     }
                 }
-                formteile[art] = new FamFormteilWahl { Art = art, Familie = fam ?? "", TypText = typText, TypFormel = typFormel };
+                formteile[art] = new FamFormteilWahl { Art = art, Familie = fam ?? "", TypText = typText, TypFormel = typFormel, Vorlage = vorlage };
             }
         }
         else if (o["formteile"] is not null) Fehl("leitung.formteile", "formteile muss ein Objekt sein", "{ \"bogen\": { \"familie\": \"…\" }, \"tstueck\": …, \"reduktion\": … }");
@@ -523,6 +551,8 @@ public sealed class FamilieDef
         }
         else if (o["regeln"] is not null) Fehl("leitung.regeln", "regeln muss ein Objekt sein", "{ \"winkel\": [15, 30, 45, 90], \"abzweig\": \"tstueck\" }");
 
+        var frei = o["frei"] is null ? null : FreiLesen(o["frei"]!, istRohr, groesse);
+
         // Leitungsserien haben keine Körper und keine Anschlüsse
         if (d["koerper"] is JsonArray ka && ka.Count > 0)
             Fehl("koerper", "Eine Leitungsserie hat keine Körper – die Geometrie ergibt sich aus dem Verlauf der Leitung",
@@ -534,9 +564,97 @@ public sealed class FamilieDef
         Leitung = new FamLeitung
         {
             Querschnitt = querschnitt ?? "rund", Groesse = groesse, Aussen = aussen, Innen = innen, Wand = wand, Biegeradius = biegeradius, Kuerzel = kuerzel,
-            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel,
+            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei,
         };
     }
+
+    /// <summary>Block leitung.frei (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): nur Kanalserien (rund und rechteckig) –
+    /// Rohrserien nie, dort gilt die DN. vorlage muss ein Typ sein; die Grössenparameter sind Typparameter ohne Formel (sie werden für
+    /// jede freie Grösse ersetzt). grenzen je Grössenschlüssel { min, max } in mm (&gt; 0, min ≤ max), nur aus der Quelle – ohne
+    /// frei.quellen ein Hinweis. schritt: ganze mm ≥ 1 (Vorgabe 1), weil die Anschlussgrössen ganze mm sind.</summary>
+    FamFrei? FreiLesen(JsonNode n, bool istRohr, IReadOnlyDictionary<string, string> groesse)
+    {
+        const string Ort = "leitung.frei";
+        const string Form = "{ \"vorlage\": \"<Typname>\", \"grenzen\": { \"b\": { \"min\": …, \"max\": … }, \"h\": { … } }, \"schritt\": 1, \"quellen\": [ … ] } – Grenzen nur aus der Unterlage.";
+        if (istRohr || groesse.ContainsKey("dn"))
+        {
+            Fehl(Ort, "Freie Grössen gibt es nur bei Kanalserien – bei Rohren gilt die DN (die Typen sind die Grössen)", "Block frei entfernen; jede Rohrgrösse als Typ führen.");
+            return null;
+        }
+        if (n is not JsonObject o) { Fehl(Ort, "frei muss ein Objekt sein", Form); return null; }
+        foreach (var (feld, _) in o)
+            if (feld is not ("vorlage" or "grenzen" or "schritt" or "quellen")) Fehl(Ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: vorlage, grenzen, schritt, quellen");
+        bool ok = true;
+        var vorlage = Text(o["vorlage"])?.Trim();
+        if (string.IsNullOrEmpty(vorlage))
+        {
+            Fehl(Ort + ".vorlage", "vorlage fehlt", "Typname angeben, dessen Werte und Formeln (aussen, innen, wand …) für jede freie Grösse gelten, z. B. ein Typ des Rasters.");
+            ok = false;
+        }
+        else if (Typ(vorlage) is null)
+        {
+            Fehl(Ort + ".vorlage", $"Typ «{vorlage}» gibt es nicht", "Typen: " + string.Join(", ", Typen.Select(t => t.Name)));
+            ok = false;
+        }
+        foreach (var (schl, pn) in groesse)
+            if (NachName.TryGetValue(pn, out var p) && p.HatFormel)
+            {
+                Fehl(Ort, $"Der Grössenparameter «{pn}» ({schl}) hat eine Formel – bei freier Grösse muss er ein Typparameter ohne Formel sein (er wird durch die gewünschte Grösse ersetzt)",
+                    $"Die Formel von «{pn}» entfernen und die Grösse je Typ als Wert angeben (typen.werte.{pn}).");
+                ok = false;
+            }
+
+        var grenzen = new Dictionary<string, FamGrenze>(StringComparer.Ordinal);
+        switch (o["grenzen"])
+        {
+            case null: break;
+            case JsonObject go:
+                foreach (var (schl, g) in go)
+                {
+                    var ort = $"{Ort}.grenzen.{schl}";
+                    if (!groesse.ContainsKey(schl))
+                    {
+                        Fehl(ort, $"Grössenschlüssel «{schl}» gibt es in dieser Serie nicht", "Grössenschlüssel: " + string.Join(", ", groesse.Keys));
+                        ok = false; continue;
+                    }
+                    if (g is not JsonObject gb) { Fehl(ort, "Grenze muss ein Objekt { min, max } sein", "{ \"min\": 145, \"max\": 2500 } in mm"); ok = false; continue; }
+                    foreach (var (feld, _) in gb)
+                        if (feld is not ("min" or "max")) { Fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: min, max (mm)"); ok = false; }
+                    double? Grenze(string feld)
+                    {
+                        if (gb[feld] is null) return null;
+                        if (gb[feld] is JsonValue v && v.GetValueKind() == JsonValueKind.Number && Json.Zahl(v) is double z && double.IsFinite(z) && z > 0) return z;
+                        Fehl($"{ort}.{feld}", $"{feld} {gb[feld]!.ToJsonString()} ist keine Zahl > 0", "Grenze in mm angeben, nur aus der Unterlage.");
+                        ok = false;
+                        return null;
+                    }
+                    var min = Grenze("min"); var max = Grenze("max");
+                    if (min is double a && max is double b && a > b) { Fehl(ort, $"min {Zahltext(a)} ist grösser als max {Zahltext(b)}", "min ≤ max angeben."); ok = false; }
+                    if (min is not null || max is not null) grenzen[schl] = new FamGrenze(min, max);
+                }
+                break;
+            default:
+                Fehl(Ort + ".grenzen", "grenzen muss ein Objekt sein", Form);
+                ok = false;
+                break;
+        }
+        if (grenzen.Count > 0 && o["quellen"] is not JsonArray { Count: > 0 })
+            Hinweise.Add(new(Ort + ".grenzen", "Die Grenzen der freien Grösse haben keine Quelle (frei.quellen)", "Grenzen nur aus der Unterlage übernehmen und den Befund in leitung.frei.quellen nennen; sonst als Annahme im Bericht aufführen."));
+
+        double schritt = 1;
+        if (o["schritt"] is { } sn)
+        {
+            if (sn is JsonValue sv && sv.GetValueKind() == JsonValueKind.Number && Json.Zahl(sv) is double s && double.IsFinite(s) && s >= 1 && Math.Abs(s - Math.Round(s)) < 1e-9) schritt = Math.Round(s);
+            else
+            {
+                Fehl(Ort + ".schritt", $"schritt {sn.ToJsonString()} ist keine ganze Zahl ≥ 1", "Raster der Eingabe in ganzen mm angeben, z. B. 1 oder 5 (die Anschlussgrössen sind ganze mm); ohne Angabe gilt 1.");
+                ok = false;
+            }
+        }
+        return ok ? new FamFrei { Vorlage = vorlage!, Grenzen = grenzen, Schritt = schritt } : null;
+    }
+
+    static string Zahltext(double x) => x.ToString("0.###", CultureInfo.InvariantCulture);
 
     /// <summary>Höchstlänge des Werkstoff-Kürzels (leitung.kuerzel). Begründung (Hauptlauf 19.10.2026): das Kürzel steht mit der
     /// Grösse auf dem Rohr im Schema und im Grundriss («CNS NW 20», «PE-S 110»); die üblichen Kürzel haben 2 bis 5 Zeichen,
@@ -1066,7 +1184,11 @@ public sealed class FamilieDef
         foreach (var x in Quelle["anschluesse"] as JsonArray ?? []) { i++; if (x is JsonObject o) Liste(o["quellen"], $"anschluesse[{i}].quellen"); }
         i = 0;
         foreach (var x in Quelle["masse"] as JsonArray ?? []) { i++; if (x is JsonObject o) Liste(o["quellen"], $"masse[{i}].quellen"); }
-        if (Quelle["leitung"] is JsonObject lo) Liste(lo["quellen"], "leitung.quellen");   // Modul 3
+        if (Quelle["leitung"] is JsonObject lo)
+        {
+            Liste(lo["quellen"], "leitung.quellen");   // Modul 3
+            if (lo["frei"] is JsonObject fo) Liste(fo["quellen"], "leitung.frei.quellen");   // Nachtrag freie Grösse
+        }
     }
 
     // ------------------------------------------------------------------ Formeln: Namen, Typregel, Zyklen

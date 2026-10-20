@@ -61,4 +61,31 @@ public class WerkzeugLeitungenTests
         Assert.False(n["angenommen"]!.GetValue<bool>());
         Assert.Contains("rechtwinklig", n["fehler"]!.GetValue<string>());
     }
+
+    [Fact]
+    public void FreieGroesse_LeitungsserieMitProbe_LeitungZiehenUndZeichnen()
+    {
+        // Nachtrag freie Grösse (entwurf/freie-groesse-kanal.md): FIKTIVE Testfamilien test_kanalfrei und Formteile mit Exemplar-Grössen
+        var w = new Werkzeuge(Beispiel());
+        foreach (var f in new[] { "test_kanalfrei", "test_kanalbogen_frei", "test_kanal_t_frei", "test_kanalreduktion_frei" })
+            Assert.True(Json(w.FamilieLadenWerkzeug(Datei(f)))["angenommen"]!.GetValue<bool>(), f);
+        Assert.True(Json(w.ElementAnlegen("System", "ZUL", eigenschaften: Elem("""{ "systemtyp": "Zuluft" }""")))["angenommen"]!.GetValue<bool>());
+        var s = Json(w.LeitungsserieLesen("fam-test-kanalfrei"));
+        Assert.Equal("400x200", s["frei"]!["vorlage"]!.GetValue<string>());
+        Assert.True(s["probe"]!["formteile"]!["bogen"]!["verfuegbar"]!.GetValue<bool>());
+        // leitung_ziehen mit Serie und freier Grösse
+        var z = Json(w.LeitungZiehen(Elem("[[0, 90000, 2500], [3000, 90000, 2500]]"), system: "ZUL", kennzeichen: "KA-Z", serie: "fam-test-kanalfrei", groesse: Elem("\"430x270\"")));
+        Assert.True(z["angenommen"]!.GetValue<bool>(), z.ToJsonString());
+        var ka = Json(w.ElementLesen("KA-Z"));
+        Assert.Contains("430", ka.ToJsonString());
+        // leitung_zeichnen 430 × 270 mit Bogen 90°: Einbaulänge 365 mm (Hinweis der Vorschau)
+        var e = Json(w.LeitungZeichnenWerkzeug("fam-test-kanalfrei", Elem("""{ "b": 430, "h": 270 }"""), Elem("[[0, 95000, 2500], [3000, 95000, 2500], [3000, 98000, 2500]]"), system: "ZUL", trockenlauf: true));
+        Assert.True(e["angenommen"]!.GetValue<bool>(), e.ToJsonString());
+        Assert.Contains(e["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Einbaulängen a 365 mm, b 365 mm") && h.GetValue<string>().EndsWith(", frei 430 × 270"));
+        // ausserhalb der Grenzen: abgelehnt mit Vorschlag
+        var nein = Json(w.LeitungZeichnenWerkzeug("fam-test-kanalfrei", Elem("""{ "b": 120, "h": 270 }"""), Elem("[[0, 99000, 2500], [3000, 99000, 2500]]"), system: "ZUL"));
+        Assert.False(nein["angenommen"]!.GetValue<bool>());
+        Assert.Contains("ausserhalb der Grenzen", nein["fehler"]!.GetValue<string>());
+        Assert.Contains("145 × 270", nein["vorschlag"]!.GetValue<string>());
+    }
 }

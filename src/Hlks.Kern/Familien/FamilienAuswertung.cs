@@ -1,6 +1,8 @@
 // Familien (Modul 2, B1): Auswertung einer Familie für einen Typ und Exemplarwerte → aufgelöste Werte, Körper (in
 // Familienkoordinaten), Anschlüsse mit Lage und Richtung, Sinnbild. Reihenfolge der Werte (Spezifikation):
 // Exemplarwert › Typwert › Formel › Vorgabewert (ein Parameter mit Formel hat weder Typ- noch Exemplarwerte).
+// Freie Grösse einer Kanalserie (Nachtrag, entwurf/freie-groesse-kanal.md): Aufloesen mit «typwerte» ersetzt die Werte von
+// Typparametern ohne Formel (die Grössenparameter des Vorlage-Typs) – kein Textersatz in der Definition, eigener Zwischenspeicher-Schlüssel.
 //
 // Zwischenspeicher: je FamilieDef (= je Definitionsstand, siehe Familien.Definition) und Schlüssel «Typ + Exemplarwerte»
 // genau eine Auswertung; der Umriss von oben und die Körperteile je Detailgrad werden dort einmal gerechnet. 500 platzierte
@@ -84,11 +86,18 @@ public sealed class FamAufloesung
 public static class FamilienAuswertung
 {
     /// <summary>Auswertung für Typ und Exemplarwerte, zwischengespeichert je Definitionsstand.</summary>
-    public static FamAufloesung Aufloesen(FamilieDef f, string? typ, JsonObject? exemplar)
+    public static FamAufloesung Aufloesen(FamilieDef f, string? typ, JsonObject? exemplar) => Aufloesen(f, typ, exemplar, null);
+
+    /// <summary>Auswertung für Typ, Exemplarwerte und ersetzte Typwerte (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): typwerte
+    /// überschreibt die Werte von Typparametern ohne Formel (Name → Zahl) – so wird eine freie Grösse aus dem Vorlage-Typ einer Kanalserie
+    /// gerechnet (aussen, innen, wand und alle Formeln mit der gewünschten Grösse). Anderes als ein Typparameter ohne Formel mit Zahl ist
+    /// ein Fehler der Auswertung. Reihenfolge damit: Exemplarwert › ersetzter Typwert › Typwert › Formel › Vorgabewert.</summary>
+    public static FamAufloesung Aufloesen(FamilieDef f, string? typ, JsonObject? exemplar, IReadOnlyDictionary<string, double>? typwerte)
     {
-        var schluessel = (typ ?? "") + "\u0001" + (exemplar is null || exemplar.Count == 0 ? "" : exemplar.ToJsonString());
+        var schluessel = (typ ?? "") + "\u0001" + (exemplar is null || exemplar.Count == 0 ? "" : exemplar.ToJsonString())
+            + (typwerte is null || typwerte.Count == 0 ? "" : "\u0002" + string.Join("\u0003", typwerte.OrderBy(x => x.Key, StringComparer.Ordinal).Select(x => x.Key + "=" + x.Value.ToString("R", System.Globalization.CultureInfo.InvariantCulture))));
         if (f.Aufloesungen.TryGetValue(schluessel, out var a)) return a;
-        a = Rechnen(f, typ, exemplar);
+        a = Rechnen(f, typ, exemplar, typwerte is { Count: > 0 } ? typwerte : null);
         if (f.Aufloesungen.Count > 1000) f.Aufloesungen.Clear();   // Schutz gegen unbegrenztes Wachsen (viele Exemplarwerte)
         f.Aufloesungen[schluessel] = a;
         return a;
@@ -118,7 +127,24 @@ public static class FamilienAuswertung
     /// <summary>Fehler eines Felds mit Stelle (intern, wird zu FamFehler).</summary>
     sealed class FeldFehler(FamFehler f) : Exception(f.Meldung) { public FamFehler Fehler { get; } = f; }
 
-    static FamAufloesung Rechnen(FamilieDef f, string? typName, JsonObject? exemplar)
+    /// <summary>Ersetzte Typwerte prüfen: nur Typparameter ohne Formel mit Zahl (nicht Text, nicht ja_nein), Wert endlich.</summary>
+    public static List<FamFehler> TypwertePruefen(FamilieDef f, IReadOnlyDictionary<string, double>? typwerte)
+    {
+        var l = new List<FamFehler>();
+        if (typwerte is null) return l;
+        foreach (var (name, wert) in typwerte)
+        {
+            var ort = $"typwerte.{name}";
+            if (!f.NachName.TryGetValue(name, out var p)) { l.Add(new(ort, $"Parameter «{name}» gibt es in der Familie nicht")); continue; }
+            if (p.Art != "typ") { l.Add(new(ort, $"«{name}» ist kein Typparameter – ersetzt werden nur Typwerte")); continue; }
+            if (p.HatFormel) { l.Add(new(ort, $"«{name}» hat eine Formel und lässt sich nicht ersetzen")); continue; }
+            if (p.IstText || p.Datentyp == "ja_nein") { l.Add(new(ort, $"«{name}» ist {p.Datentyp} – ersetzt werden nur Zahlen")); continue; }
+            if (!double.IsFinite(wert)) l.Add(new(ort, $"Wert von «{name}» ist keine endliche Zahl"));
+        }
+        return l;
+    }
+
+    static FamAufloesung Rechnen(FamilieDef f, string? typName, JsonObject? exemplar, IReadOnlyDictionary<string, double>? typwerte)
     {
         var a = new FamAufloesung { Familie = f, Typ = typName ?? "" };
         if (!f.Gueltig) { a.Fehler.AddRange(f.Fehler); return a; }
@@ -130,7 +156,9 @@ public static class FamilienAuswertung
             return a;
         }
         a.Fehler.AddRange(ExemplarPruefen(f, exemplar));
-        var umg = new Umgebung(f, typ, a.Fehler.Count == 0 ? exemplar : null);
+        var twFehler = TypwertePruefen(f, typwerte);
+        a.Fehler.AddRange(twFehler);
+        var umg = new Umgebung(f, typ, a.Fehler.Count == 0 ? exemplar : null, twFehler.Count == 0 ? typwerte : null);
 
         // 1. Parameter
         foreach (var p in f.Parameter)
@@ -275,7 +303,7 @@ public static class FamilienAuswertung
     }
 
     /// <summary>Werte der Parameter für einen Typ und Exemplarwerte, mit Merkliste gegen Zyklen.</summary>
-    sealed class Umgebung(FamilieDef f, FamTyp typ, JsonObject? exemplar) : IFormelUmgebung
+    sealed class Umgebung(FamilieDef f, FamTyp typ, JsonObject? exemplar, IReadOnlyDictionary<string, double>? typwerte) : IFormelUmgebung
     {
         readonly Dictionary<string, FWert?> fertig = new(StringComparer.Ordinal);
         readonly HashSet<string> fehlerhaft = new(StringComparer.Ordinal);
@@ -291,6 +319,7 @@ public static class FamilienAuswertung
             {
                 FWert? r;
                 if (p.Formel is not null) r = p.Passend(p.Formel.Werten(this), 0);
+                else if (p.Art == "typ" && typwerte is not null && typwerte.TryGetValue(name, out var tw)) r = FWert.Z(tw);   // ersetzter Typwert (freie Grösse)
                 else
                 {
                     JsonNode? quelle; string woher;

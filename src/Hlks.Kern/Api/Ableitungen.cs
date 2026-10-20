@@ -125,7 +125,8 @@ public static class Ableitungen
             double? winkel = Formteilwinkel(p, e);
             if (fam is null || typ is null)
                 return (Familie: OhneFamilie, Typ: HlksEinordnung.Dn(e) is double dn ? $"{e.Klasse} DN {Zahl(dn)}" : e.Klasse, Klasse: e.Klasse, Winkel: winkel);
-            return (Familie: fam.Name ?? fam.Kennzeichen, Typ: typ, Klasse: e.Klasse, Winkel: winkel);
+            // freie Grösse (Nachtrag): Formteil aus der Vorlage mit Exemplar-Grössen → nach tatsächlicher Grösse, nicht nach Vorlage
+            return (Familie: fam.Name ?? fam.Kennzeichen, Typ: FreieGroesse.Text(p, e) ?? typ, Klasse: e.Klasse, Winkel: winkel);
         }).ToList();
         var formteilZeilen = new JsonArray(formteile.GroupBy(f => f)
             .OrderBy(g => g.Key.Familie == OhneFamilie).ThenBy(g => g.Key.Familie, Natuerlich).ThenBy(g => g.Key.Klasse, Natuerlich)
