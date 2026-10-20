@@ -12,6 +12,9 @@
 //  5. Liste «Sanitär-Zusammenstellung (W3)»: Dialog «Liste anlegen», Aufbau wie das Excel mit den Zahlen des Beispielprojekts, Tooltips mit Formel und Excel-Zelle, CSV mit beiden Blöcken,
 //     Spezialinstallation ändert die Spitze gesamt, K leer → «K fehlt» (kein Q_WW, kein Q_tot) und Befund P25 im Dialog Prüfbefunde.
 //  6. Knopf «Sanitär-Zusammenstellung» (Gebäudetechnik › Apparate und Armaturen) öffnet die vorhandene Liste; Listen sind (wie alle) nicht auf Planblätter platzierbar.
+//  7. Prüfbericht 4A: Hinweise des Kerns als Tabelle «Hinweise» unter den Blöcken (Kurvenwahl nicht bestätigt, ΣLU WW ohne WW-Verbindung); Befund P26 «Apparat ohne Weg
+//     im Netz» (verkehrt gezogene Leitung an einem T-Stück) im Dialog Prüfbefunde und als Hinweis in der Liste; Leitung gelöscht → P26 weg.
+// Ports: 5200–5219 (HLKS_M4_PORT), CDP über HLKS_CDP_PORT.
 // Bilder (hell und dunkel): %TEMP%\HLKS_CAD\m4_*.png (SHOTS ändert den Ordner). Rückgabewert 1, wenn eine Prüfung fehlschlägt.
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, readdirSync, existsSync, cpSync } from 'node:fs';
@@ -397,7 +400,12 @@ try {
   const kopfTexte = await ausw(`return [...document.querySelectorAll('.kachel.aktiv .li-summe')].map((e) => e.textContent);`);
   pruef(kopfTexte.some((t) => /Quelle: LU_DU Zusammenstellung_\.xlsx/.test(t)) && kopfTexte.some((t) => /16 Apparate/.test(t)), 'Kopf nennt Anlage, 16 Apparate und die Quelle (Excel)', kopfTexte.join(' | '));
   let tb = await tabellen();
-  pruef(tb.length === 3 && tb[0].titel.startsWith('Apparate') && tb[1].titel === 'Trinkwasser' && tb[2].titel === 'Entwässerung', 'drei Tabellen: Apparate, Trinkwasser, Entwässerung', tb.map((t) => t.titel).join(' | '));
+  pruef(tb.length === 4 && tb[0].titel.startsWith('Apparate') && tb[1].titel === 'Trinkwasser' && tb[2].titel === 'Entwässerung' && tb[3].titel === 'Hinweise',
+    'vier Tabellen: Apparate, Trinkwasser, Entwässerung und darunter die Hinweise des Kerns', tb.map((t) => t.titel).join(' | '));
+  const hw = (tb[3]?.zeilen ?? []).map((z) => z[0]);
+  pruef(hw.length === 2 && /^ΣLU WW enthält 10 Apparate ohne WW-Verbindung: /.test(hw[0]) && /^Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt/.test(hw[1]),
+    'Hinweise: ΣLU WW ohne WW-Verbindung (10 Apparate) und «Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt»', JSON.stringify(hw));
+  pruef(kopfTexte.includes('2 Hinweise des Kerns unter den Tabellen'), 'der Kopf verweist auf die 2 Hinweise unter den Tabellen', kopfTexte.join(' | '));
   const t0 = tb[0];
   pruef(JSON.stringify(t0.kopf) === JSON.stringify(['Apparateart', 'LU KW', 'LU WW', 'DU', 'UG', 'EG', '1.OG', 'Anzahl', 'ΣLU KW', 'ΣLU WW', 'ΣDU']), 'Spalten wie das Excel: Apparateart, LU KW, LU WW, DU, ein Geschoss je Spalte, Anzahl, ΣLU KW, ΣLU WW, ΣDU', JSON.stringify(t0.kopf));
   const wt = t0.zeilen.find((z) => z[0] === 'Waschtisch / Wandbecken');
@@ -472,8 +480,8 @@ try {
   pruef(ohneK.every((z) => z?.[1] === 'K fehlt'), 'ohne K steht «K fehlt» statt K, Q_WW und Q_tot (keine Zahl)', JSON.stringify(ohneK));
   pruef(tb[2].fehltZellen.length === 3, 'die drei Zellen sind als Fehler markiert (li-fehlt)', String(tb[2].fehltZellen.length));
   pruef(blockZeile(tb[2], 'ΣDU')?.[1] === '16,7', 'ΣDU bleibt (16,7)');
-  const hinweisKopf = await ausw(`return [...document.querySelectorAll('.kachel.aktiv .li-summe')].map((e) => e.textContent).join(' | ');`);
-  pruef(/Abflusskennzahl K fehlt/.test(hinweisKopf), 'der Hinweis des Kerns «Abflusskennzahl K fehlt …» steht im Kopf der Liste', hinweisKopf);
+  const hinweisUnten = (tb[3]?.zeilen ?? []).map((z) => z[0]).join(' | ');
+  pruef(tb[3]?.titel === 'Hinweise' && /Abflusskennzahl K fehlt/.test(hinweisUnten), 'der Hinweis des Kerns «Abflusskennzahl K fehlt …» steht unter den Blöcken (Tabelle Hinweise)', hinweisUnten);
   await zweiBilder('liste_k_fehlt', '.kachel.aktiv', 0);
   // csv ohne K
   await klick('.kachel.aktiv .li-csv');
@@ -545,11 +553,43 @@ try {
   await klick(k);
   await warteBis(async () => (await ausw(`const f = await import('/js/fenster.js'); const z = await import('/js/zustand.js'); return z.element(f.aktive()?.id)?.kennzeichen ?? null;`)) === 'AN-LI-SANITAER-A-SAN', 'Knopf legt die Liste an und öffnet sie', 15000);
   await listeWarten('Liste geladen');
-  pruef((await tabellen()).length === 3, 'die angelegte Liste zeigt die drei Tabellen');
+  pruef((await tabellen()).length === 4, 'die angelegte Liste zeigt die drei Tabellen und die Hinweise');
   // Planblätter: Listen sind (wie die anderen Listen auch) nicht platzierbar
   await befehl('planblatt_anlegen', { nummer: 'S01', titel: 'Test M4' });
   const platz = await kern('befehl', 'ansicht_platzieren', { planblatt: 'S01', ansicht: 'AN-LI-SANITAER-A-SAN' });
   pruef(platz.angenommen === false && /liste-Ansicht|Listen|liste/.test(platz.fehler ?? platz.meldung ?? ''), 'Planblatt: die Sanitär-Zusammenstellung ist – wie jede Liste – nicht platzierbar (nur CSV)', JSON.stringify(platz).slice(0, 240));
+
+  // ================================================================== 7. Befund P26 und Hinweise (Prüfbericht 4A)
+  abschnitt('7. Befund P26 «Apparat ohne Weg im Netz» und Hinweis in der Liste');
+  // FIKTIV: WC-X im EG an einem T-Stück T-X der Verteilleitung KW-V1; R-X2 ist verkehrt gezogen (fliesst von T-X weg) – T-X hat keine Zuleitung
+  await befehl('element_anlegen', { klasse: 'WC', kennzeichen: 'WC-X', geschoss: 'EG' });
+  await befehl('element_anlegen', { klasse: 'TStueck', kennzeichen: 'T-X', teilVon: 'KW-V1', geschoss: 'EG' });
+  await befehl('leitung_ziehen', { kennzeichen: 'R-X1', strang: 'KW-V1', dn: 15, von: 'T-X.b', nach: 'WC-X.kw', punkte: [[20000, 1000, 500], [20000, 1500, 500]] });
+  await befehl('leitung_ziehen', { kennzeichen: 'R-X2', strang: 'KW-V1', dn: 15, von: 'T-X.a', punkte: [[20500, 1000, 500], [21000, 1000, 500]] });
+  const p26Kern = (await kern('abfrage', 'pruefen', {})).befunde.filter((b) => b.code === 'P26');
+  pruef(p26Kern.length === 1 && p26Kern[0].element === 'WC-X' && p26Kern[0].schwere === 'warnung', 'Kern: ein Befund P26 (warnung) an WC-X', JSON.stringify(p26Kern));
+  await ausw(`const f = await import('/js/fenster.js'); await f.ansichtOeffnen('AN-LI-SANITAER-A-SAN'); return 1;`);
+  await warteBis(async () => ((await tabellen())[3]?.zeilen ?? []).some((z) => /ohne Weg im KW-Netz: WC-X/.test(z[0])), 'Liste zeigt den Hinweis zu WC-X', 15000);
+  tb = await tabellen();
+  const p26Hinweis = tb[3].zeilen.map((z) => z[0]).find((t) => /ohne Weg im KW-Netz/.test(t));
+  pruef(/^ΣLU KW enthält 1 Apparat ohne Weg im KW-Netz: WC-X – in den Netzsummen fehlen sie stromauf \(Befund P26\)\.$/.test(p26Hinweis ?? ''),
+    'Hinweis unter den Blöcken: «ΣLU KW enthält 1 Apparat ohne Weg im KW-Netz: WC-X … (Befund P26)»', p26Hinweis);
+  await zweiBilder('liste_hinweise_p26', '.kachel.aktiv', 0);
+  await registerWahl('Verwalten');
+  await klick(knopfSel('verwalten.befunde'));
+  await warteBis(async () => (await dlgTitel()) === 'Prüfbefunde', 'Dialog Prüfbefunde');
+  await warteBis(async () => (await anzahl('#dialogschicht .b-liste tbody tr')) > 0, 'Befunde geladen');
+  const bz = await ausw(`return [...document.querySelectorAll('#dialogschicht .b-liste tbody tr')].map((r) => [...r.children].map((c) => c.textContent));`);
+  const p26 = bz.find((z) => z[1] === 'P26');
+  pruef(!!p26 && p26[2] === 'WC-X' && /^Apparat ohne Weg im Netz – Belastung fehlt stromauf: kw \(KW\) ist verbunden, der Weg endet bei T-X/.test(p26[3]),
+    'Befund P26 erscheint im Dialog Prüfbefunde (an WC-X, «Apparat ohne Weg im Netz – Belastung fehlt stromauf …»)', JSON.stringify(p26));
+  pruef(/P26[^·]*: 1/.test(await text('#dialogschicht .b-zahl')), 'die Zusammenfassung zählt P26: 1', await text('#dialogschicht .b-zahl'));
+  await zweiBilder('befunde_p26', '#dialogschicht .dlg');
+  await alleDialogeZu();
+  // verkehrte Leitung weg: offenes Ende ist kein P26 (P01 meldet den offenen Anschluss)
+  await befehl('element_loeschen', { element: 'R-X2' });
+  pruef(!(await kern('abfrage', 'pruefen', {})).befunde.some((b) => b.code === 'P26'), 'R-X2 gelöscht: kein P26 mehr (offenes Ende)');
+  for (const kz of ['R-X1', 'T-X', 'WC-X']) await befehl('element_loeschen', { element: kz });
 
   // ================================================================== Fehler im Browser
   abschnitt('Browser-Fehler');

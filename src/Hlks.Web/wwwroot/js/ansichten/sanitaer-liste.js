@@ -3,7 +3,9 @@
 //   1. Apparate: Apparateart · LU KW · LU WW · DU (je Stück) · eine Spalte je Geschoss (Stückzahl) · Anzahl · ΣLU KW · ΣLU WW · ΣDU, darunter die Totalzeile;
 //   2. Trinkwasser: Total LU, Volumenstrom, Spitzendurchfluss der Kurven «grösster LU 3» und «grösster LU 5» (die massgebende fett, die andere klein), Spezialinstallationen,
 //      Spitzendurchfluss gesamt;
-//   3. Entwässerung: ΣDU, Abflusskennzahl K, Q_WW, Spezialinstallationen, Q_tot.
+//   3. Entwässerung: ΣDU, Abflusskennzahl K, Q_WW, Spezialinstallationen, Q_tot;
+//   4. Hinweise des Kerns (nur wenn vorhanden; Prüfbericht 4A): Herkunft der Kurvenwahl, Volumenstrom ausserhalb des Bereichs einer Kurve, Apparate ohne Netzverbindung
+//      bzw. ohne Weg im Netz (P26) in den Stückzahl-Summen u. a. – der Kopf nennt nur ihre Zahl.
 // Reine Funktionen (Node-testbar, sanitaer-belastung.test.mjs). Keine Rechnung: alle Zahlen, die Wahl der massgebenden Kurve und die Formeln mit Excel-Zelle kommen vom Kern;
 // hier werden sie nur gerundet (Regeln in oberflaeche/sanitaer-text.js) und mit der Formel als Tooltip beschriftet. Die Formeln stehen ausserdem in einer Spalte, die nur die CSV-Datei
 // enthält (nurCsv). Fehlt die Abflusskennzahl K, steht «K fehlt» statt einer Zahl (kein Q_WW, kein Q_tot; Befund P25).
@@ -114,22 +116,42 @@ function entwaesserungTabelle(d) {
   return { titel: 'Entwässerung', schluessel: null, klasse: 'li-san li-block', ohneSortieren: true, spalten: BLOCK_SPALTEN, zeilen };
 }
 
-/** Kopfzeilen über den Tabellen: Anlage, Stückzahl, Hinweise des Kerns, Quelle. */
+/** Hinweise des Kerns (sanitaer_zusammenstellung.hinweise) als Texte; leere Einträge fallen weg. */
+const hinweiseVon = (d) => (Array.isArray(d.hinweise) ? d.hinweise : []).filter((h) => h !== null && h !== undefined && h !== '').map(String);
+
+/**
+ * Tabelle 4 (Hinweise des Kerns) unter den Blöcken, nur wenn es welche gibt (Prüfbericht 4A): Kurvenwahl nicht im Excel und nicht bestätigt, Volumenstrom ausserhalb
+ * des Bereichs einer Kurve, Stückzahl-Summen mit Apparaten ohne Netzverbindung bzw. ohne Weg im Netz (Befund P26), K fehlt, Apparate ohne Art … – Texte wörtlich vom Kern.
+ */
+function hinweisTabelle(d) {
+  const h = hinweiseVon(d);
+  if (!h.length) return null;
+  return {
+    titel: 'Hinweise', schluessel: null, klasse: 'li-san li-hinweise', ohneSortieren: true,
+    spalten: [{ schluessel: 'hinweis', titel: 'Hinweis', art: 'text' }],
+    zeilen: h.map((t) => ({ hinweis: t, titel: { '*': t } })),
+  };
+}
+
+/** Kopfzeilen über den Tabellen: Anlage, Stückzahl, Quelle, Verweis auf die Hinweise unter den Tabellen, «keine Dimensionierung». */
 export function zusammenfassung(d) {
   const z = [];
   const q = d.quelle ?? {};
   if (d.anlage) z.push(`Anlage ${d.anlage}${d.name ? ' ' + d.name : ''} · ${d.apparate ?? 0} ${d.apparate === 1 ? 'Apparat' : 'Apparate'}`);
   if (q.dokument) z.push(`Quelle: ${q.dokument}${q.objekt ? ` (${q.objekt}` : ''}${q.stand ? `, Stand ${q.stand}` : ''}${q.objekt ? ')' : ''}`);
-  for (const h of Array.isArray(d.hinweise) ? d.hinweise : []) if (h) z.push(String(h));
+  const n = hinweiseVon(d).length;
+  if (n) z.push(`${n} ${n === 1 ? 'Hinweis' : 'Hinweise'} des Kerns unter den Tabellen`);
   if (d.hinweis) z.push(String(d.hinweis));
   return z;
 }
 
-/** Ergänzt den Kopf der aufbereiteten Liste (listenformat.aufbereiten) um Titel, Zusammenfassung und die drei Tabellen. */
+/** Ergänzt den Kopf der aufbereiteten Liste (listenformat.aufbereiten) um Titel, Zusammenfassung, die drei Tabellen und – falls vorhanden – die Hinweise. */
 export function aufbereitenSanitaer(d, kopf) {
   kopf.titel = TITEL;
   kopf.projekt = [d.anlage, d.name].filter(istSchluessel).join(' ');
   kopf.zusammenfassung.push(...zusammenfassung(d));
   kopf.tabellen.push(apparateTabelle(d), trinkwasserTabelle(d), entwaesserungTabelle(d));
+  const h = hinweisTabelle(d);
+  if (h) kopf.tabellen.push(h);
   return kopf;
 }

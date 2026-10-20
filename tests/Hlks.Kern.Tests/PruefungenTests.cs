@@ -160,11 +160,12 @@ public class PruefungenTests
     }
 
     [Fact]
-    public void Codes_EnthaltenGenauP01BisP25()
+    public void Codes_EnthaltenGenauP01BisP26()
     {
-        var erwartet = Enumerable.Range(1, 25).Select(i => $"P{i:D2}").ToList();   // P12 seit Modul 1c, P13–P18 seit Modul 3, P19/P20 seit 3b, P21–P25 seit Modul 4 Teil A
+        var erwartet = Enumerable.Range(1, 26).Select(i => $"P{i:D2}").ToList();   // P12 seit Modul 1c, P13–P18 seit Modul 3, P19/P20 seit 3b, P21–P25 seit Modul 4 Teil A, P26 seit Prüfbericht 4A (B2)
         Assert.Equal(erwartet, Pruefungen.Codes.Keys.OrderBy(k => k, StringComparer.Ordinal).ToList());
         Assert.All(Pruefungen.Codes.Values, t => Assert.False(string.IsNullOrWhiteSpace(t)));
+        Assert.Equal("Apparat ohne Weg im Netz – Belastung fehlt stromab/stromauf", Pruefungen.Codes["P26"]);
     }
 
     [Fact]

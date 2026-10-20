@@ -134,6 +134,19 @@ public sealed class Katalog
             if (!Klassen.TryGetValue(klasse, out var kd) || !kd.IstArt("Apparat"))
                 throw new HlksFehler($"Katalog {SanitaerKatalog.Datei}, vorgabeJeKlasse: «{klasse}» ist keine Klasse der Apparate in klassen.json.",
                     "Klassennamen wie in klassen.json schreiben (z. B. WC, Waschtisch).");
+        // Prüfbericht 4A B5: die Medien der Excel-Spalten (SanitaerKatalog.Spalten) müssen in medien.json stehen, und ihre Systemtypen müssen
+        // zur Spalte passen – LU (Versorgung): Verbraucher stromab, DU (Entwässerung): Verbraucher stromauf (systemtypen.json).
+        foreach (var (medium, spalte) in SanitaerKatalog.Spalten)
+        {
+            if (!Medien.ContainsKey(medium))
+                throw new HlksFehler($"Katalog {SanitaerKatalog.Datei}: das Medium «{medium}» der Spalte {SanitaerKatalog.SpaltenName(spalte)} fehlt in medien.json.",
+                    "medien.json bzw. die Zuordnung SanitaerKatalog.Spalten nachführen.");
+            var erwartet = SanitaerKatalog.Abwasser.Contains(medium) ? "stromauf" : "stromab";
+            foreach (var st in Systemtypen.Values.Where(s => s.Medium.Equals(medium, StringComparison.OrdinalIgnoreCase) && s.VerbraucherRichtung != erwartet))
+                throw new HlksFehler($"Katalog systemtypen.json: Systemtyp «{st.Name}» (Medium {medium}) hat verbraucherRichtung «{st.VerbraucherRichtung}», " +
+                    $"die Spalte {SanitaerKatalog.SpaltenName(spalte)} der Sanitär-Belastungswerte verlangt «{erwartet}».",
+                    "systemtypen.json prüfen: Trinkwasser versorgt die Apparate (stromab), Schmutzwasser nimmt ihr Abwasser auf (stromauf).");
+        }
     }
 
     /// <summary>Sucht den Katalogordner: HLKS_KATALOG, sonst neben der Programmdatei, sonst aufwärts nach «kataloge».</summary>

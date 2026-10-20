@@ -4,9 +4,12 @@
 //                bzw. er ist nicht verbunden – «nicht verbunden» nur, wenn der Apparat schon an einem Netz hängt und das Projekt ein System
 //                dieses Mediums hat (wie P01); umgekehrt Anschluss verbunden, die Art hat in dieser Spalte keinen Wert
 //   P23 hinweis  Apparat in keiner Anlage (an kein System angeschlossen, das teilVon einer Anlage ist) – zählt in keiner Zusammenstellung
-//   P24 warnung  Netz mit Masche: ab einem Apparat führen zwei Wege zum Element – die Summe ist nicht eindeutig (jeder Apparat zählt je
-//                Leitung einmal)
+//   P24 warnung  Netz mit Masche: ab einer Verzweigung führen zwei Wege zum Treffpunkt – die Summe ist nicht eindeutig (jeder Apparat zählt
+//                je Leitung einmal); gemeldet am Treffpunkt, der Text nennt die Verzweigung
 //   P25 warnung  Abflusskennzahl fehlt: Anlage mit Apparaten mit DU ohne K (weder an der Anlage noch als Vorgabe der Projektinformation)
+//   P26 warnung  Apparat ohne Weg im Netz (Prüfbericht 4A, B2): ein Anschluss ist verbunden, der Weg kommt aber nicht weiter (verkehrt
+//                gerichtete Leitung, falsche Fliessrichtung am Apparat, anderes Medium, Anschluss ohne Medium) – die Belastung fehlt in den
+//                Leitungen stromauf (Trinkwasser) bzw. stromab (Schmutzwasser); je Apparat und Anschluss, mit Medium und Stelle
 
 namespace Hlks.Kern;
 
@@ -19,11 +22,16 @@ public static class SanitaerPruefung
         ["P23"] = "Apparat in keiner Anlage",
         ["P24"] = "Netz mit Masche – Summe nicht eindeutig",
         ["P25"] = "Abflusskennzahl fehlt",
+        ["P26"] = "Apparat ohne Weg im Netz – Belastung fehlt stromab/stromauf",
     };
 
     const string ArtVorschlag = "sanitaerArt wählen (element_aendern eigenschaften.sanitaerArt; die Abfrage sanitaer_katalog listet die Arten mit LU und DU)";
 
     static string Z(double x) => x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Text des Befunds P26 zu einem Anschluss ohne Weg.</summary>
+    public static string OhneWegText(SanitaerOhneWeg o) =>
+        $"Apparat ohne Weg im Netz – Belastung fehlt {o.Fehlt}: {o.Anschluss} ({o.Medium}) ist verbunden, der Weg endet bei {o.EndetBei.Kennzeichen} ({o.Grund})";
 
     public static void Pruefen(Modell m, Katalog k, List<Befund> b)
     {
@@ -71,17 +79,24 @@ public static class SanitaerPruefung
             var e = m.Finde(id);
             if (e is null) continue;
             var namen = apparate.Select(a => m.Finde(a)?.Kennzeichen ?? a).Order(StringComparer.OrdinalIgnoreCase).ToList();
+            var verzweigungen = (netz.MaschenVerzweigungen.GetValueOrDefault(id) ?? []).Select(v => m.Finde(v)?.Kennzeichen ?? v).Order(StringComparer.OrdinalIgnoreCase).ToList();
             b.Add(new("P24", "warnung", e.Kennzeichen,
-                $"Netz mit Masche – Summe nicht eindeutig: {namen.Count} Apparat(e) erreichen {e.Kennzeichen} über mehrere Wege ({string.Join(", ", namen.Take(5))}{(namen.Count > 5 ? " …" : "")})",
-                "Masche bzw. Ringleitung prüfen (Fliessrichtung, Verbindungen); die Belastungssummen zählen jeden Apparat je Leitung einmal"));
+                $"Netz mit Masche – Summe nicht eindeutig: {namen.Count} Apparat(e) erreichen {e.Kennzeichen} über mehrere Wege{(verzweigungen.Count > 0 ? " ab " + string.Join(", ", verzweigungen) : "")} ({string.Join(", ", namen.Take(5))}{(namen.Count > 5 ? " …" : "")})",
+                "Masche bzw. Ringleitung prüfen (Fliessrichtung, Verbindungen); die Belastungssummen zählen jeden Apparat je Leitung einmal, die Leitungen in der Masche sind gekennzeichnet (masche)"));
         }
 
         foreach (var anlage in m.DerKlasse("Anlage").OrderBy(a => a.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
             bool mitDu = netz.AnlagenJeApparat.Any(x => x.Value.Contains(anlage.Id) && netz.Apparate[x.Key].Art?.Du is not null);
             if (mitDu && SanitaerZusammenstellung.Abflusskennzahl(m, anlage).Wert is null)
-                b.Add(new("P25", "warnung", anlage.Kennzeichen, "Abflusskennzahl K fehlt – kein Schmutzwasserabfluss Q_WW in der Sanitär-Zusammenstellung",
-                    "abflusskennzahl an der Anlage oder als Vorgabe in der Projektinformation setzen, mit Quelle (SN 592000, Gebäudeart); der Excel-Wert 0.5 gilt nur für Walkringen"));
+                b.Add(new("P25", "warnung", anlage.Kennzeichen, "Abflusskennzahl K fehlt – Wert nach Gebäudeart aus SN 592000 (liegt nicht vor) bzw. Projektvorgabe eintragen",
+                    "abflusskennzahl an der Anlage oder als Vorgabe in der Projektinformation setzen (element_aendern), mit Quelle (SN 592000 nach Gebäudeart bzw. Projektvorgabe); " +
+                    "ohne K gibt es in der Sanitär-Zusammenstellung kein Q_WW und kein Q_tot"));
         }
+
+        foreach (var o in netz.OhneWeg)
+            b.Add(new("P26", "warnung", o.Apparat.Kennzeichen, OhneWegText(o),
+                $"Fliessrichtung und Verbindung bei {o.EndetBei.Kennzeichen} prüfen (Leitung umdrehen: Punkte umkehren bzw. neu verbinden); bis dahin fehlt {o.Apparat.Kennzeichen} " +
+                $"in den Summen der Leitungen {o.Fehlt} (sanitaer_belastung: ohneWeg)"));
     }
 }

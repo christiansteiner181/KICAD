@@ -32,7 +32,12 @@ public class SanitaerBeispielTests
             z["zeilen"]!.AsArray().Select(r => r!["art"]!.GetValue<string>()));
         var wc = z["zeilen"]!.AsArray().Single(r => r!["art"]!.GetValue<string>() == "wc_75")!;
         Assert.Equal(new[] { 0, 2, 2 }, wc["jeGeschoss"]!.AsArray().Select(x => x!.GetValue<int>()));
-        Assert.Empty(z["hinweise"]!.AsArray());
+        // Hinweise: ΣLU WW zählt die Warmwasser-Apparate (Stückzahl × Wert wie das Excel), das Beispiel hat aber kein Warmwassernetz (Prüfbericht 4A B7);
+        // die Kurvenwahl ist nicht im Excel und nicht bestätigt (B3). 4.2 l/s liegt in beiden Kurvenbereichen.
+        var h = z["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.Equal(2, h.Count);
+        Assert.StartsWith("ΣLU WW enthält 10 Apparate ohne WW-Verbindung: ", h[0]);
+        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", h[1]);
         Assert.Empty(z["ohneArt"]!.AsArray());
     }
 
@@ -124,7 +129,8 @@ public class SanitaerBeispielTests
         Etwa(6, Zahl(ha["summeLuWw"]), "KW-V1-0 ΣLU WW");
         Assert.False(ha["masche"]!.GetValue<bool>());
         Etwa(16.7, Zahl(Belastung(p, "SW-G1-1")["summeDu"]), "Schmutzwasser unverändert");
-        Assert.DoesNotContain(Sanitaerbefunde(p), b => b.Code is "P21" or "P23" or "P24" or "P25");
+        var andere = Sanitaerbefunde(p).Where(b => b.Code is "P21" or "P23" or "P24" or "P25" or "P26").ToList();
+        Assert.True(andere.Count == 0, Liste(andere));
         // Das Projekt hat jetzt Warmwasser: Waschtische, Badewannen, Spültische *.02/*.01 haben LU WW, ihr WW-Anschluss ist offen → P22
         var p22 = Sanitaerbefunde(p).Where(b => b.Code == "P22").Select(b => b.Element).Order().ToList();
         Assert.Equal(new[] { "BW-1.02", "BW-E.02", "SP-1.01", "SP-E.01", "WT-1.02", "WT-E.02" }, p22);

@@ -1118,8 +1118,9 @@ zeigt nur, was der Kern liefert. Keine Dimensionierung (Spitzendurchfluss, DN, Q
   die Palette zeigt sie ohne Einheit (Einheit steht in `warum`).
 
 **Abfragen** (`abfrage(name, par)`, gleich in MCP):
-- `sanitaer_belastung { anlage? | strang? | leitung? }` – ohne Parameter `{ anlagen[], systemeOhneAnlage[]?, maschen[]?, quelle, hinweis }`; je Anlage
-  `{ anlage, name, trinkwasser { summeLuKw, summeLuWw, groessterLu, apparate }, abwasser { summeDu, apparate }, systeme[] }`; je System
+- `sanitaer_belastung { anlage? | strang? | leitung? }` – ohne Parameter `{ anlagen[], systemeOhneAnlage[]?, maschen[]?, ohneWeg[]?, quelle, hinweis }`; je Anlage
+  `{ anlage, name, trinkwasser { summeLuKw, summeLuWw, groessterLu, apparate }, abwasser { summeDu, apparate }, systeme[], ohneWeg[]? }` – `ohneWeg[] { apparat,
+  anschluss, medium, fehlt (stromauf | stromab), endetBei, grund }` = verbundene Apparateanschlüsse, deren Weg im Netz nicht weiterkommt (Befund P26); je System
   `{ system, name, systemtyp, medium, netz, richtung, summen…, straenge[], leitungen[] }`; je Strang `{ strang, name, art, system, medium, leitungen (Anzahl), summen… }`;
   je Leitung `{ leitung, strang, medium, summeLuKw, summeLuWw, groessterLu | summeDu, apparate, ohneWert[]?, masche? }`. Mit `strang`: der Strang mit
   `leitungen[]`. Mit `leitung`: `{ leitung, klasse, medium, netz, richtung, system, strang, anlage, summen…, masche, beitraege[] { apparat, klasse, anschluss,
@@ -1130,13 +1131,18 @@ zeigt nur, was der Kern liefert. Keine Dimensionierung (Spitzendurchfluss, DN, Q
   apparate[], quelle }, apparate, summeLuKw, summeLuWw, summeDu, totalLu, volumenstrom, spitzeKurve3, spitzeKurve5, groessterLu, massgebendeKurve (3 | 5),
   spitzendurchfluss, spezialinstallationen[], spezialVersorgung, spezialEntsorgung, spitzeGesamtKurve3, spitzeGesamtKurve5, spitzeGesamt, abflusskennzahl,
   abflusskennzahlHerkunft, schmutzwasser, gesamtabfluss (beide null ohne K), einheiten, formeln { totalLu, volumenstrom, spitzeKurve3, spitzeKurve5,
-  massgebendeKurve, spitzeGesamt, schmutzwasser, gesamtabfluss } (Text mit Excel-Zelle), ohneArt[], hinweise[], hinweis }`. Zahlen ungerundet – runden
-  nur in der Anzeige. Die nicht massgebende Kurve klein daneben (Spezifikation A-O).
-- `sanitaer_katalog {}` – `{ quelle, arten[] { schluessel, name, luKw, luWw, du, zeile }, vorgabeJeKlasse, ohneVorgabe[], formeln, hinweis }`.
+  massgebendeKurve, spitzeGesamt, schmutzwasser, gesamtabfluss } (Text mit Excel-Zelle; massgebendeKurve = Regel, Herkunft und Bestätigung aus dem Katalog),
+  kurvenwahl { regel, quelle, bestaetigt, kurven[] { schluessel, grosserLu, bereichLs [von, bis], bereichZelle, zelle } }, ohneArt[], hinweise[], hinweis }`.
+  Zahlen ungerundet – runden nur in der Anzeige. Die nicht massgebende Kurve klein daneben (Spezifikation A-O). `hinweise[]` (Prüfbericht 4A): u. a.
+  «Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt …» (solange `kurvenwahl.bestaetigt` false), Volumenstrom ausserhalb des Bereichs einer Kurve,
+  «ΣLU WW enthält n Apparate ohne WW-Verbindung …», «ΣLU KW enthält n Apparate ohne Weg im KW-Netz … (Befund P26)», K fehlt (P25).
+- `sanitaer_katalog {}` – `{ quelle { …, bereich, blatt }, arten[] { schluessel, name, luKw, luWw, du, zeile, nameExcel? }, vorgabeJeKlasse, ohneVorgabe[], formeln,
+  kurvenwahl, hinweis }`. Jede Quelle eines Werts lautet «Katalog …: LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile n (Objekt, Stand)».
 
 **Befunde** (Prüfsystem, wie P01–P20 in Befund-Browser und Koordination): P21 Apparat ohne Apparateart (warnung), P22 Apparateart passt nicht zu den
-Anschlüssen (warnung), P23 Apparat in keiner Anlage (hinweis), P24 Netz mit Masche – Summe nicht eindeutig (warnung, am Element, wo sich die Wege
-treffen), P25 Abflusskennzahl fehlt (warnung, an der Anlage).
+Anschlüssen (warnung), P23 Apparat in keiner Anlage (hinweis), P24 Netz mit Masche – Summe nicht eindeutig (warnung, am Treffpunkt der Wege, Text nennt die
+Verzweigung; `masche` nur an den Leitungen in der Masche), P25 Abflusskennzahl fehlt (warnung, an der Anlage), P26 Apparat ohne Weg im Netz – Belastung fehlt
+stromab/stromauf (warnung, am Apparat, mit Anschluss, Medium und Stelle, an der der Weg endet).
 
 ## KI-Palette (3c, Teil O)
 
@@ -1209,7 +1215,8 @@ und damit nichts zu beschriften), `false` blendet aus; im Detailgrad grob keine 
 `AN-LI-SANITAER-<Anlage>`). `liste.js` fragt `sanitaer_zusammenstellung { anlage }` ab und frischt bei Modelländerungen auf; `sanitaer-liste.js` baut drei Tabellen: **Apparate** (Apparateart · LU KW · LU WW · DU je Stück · eine
 Spalte je Geschoss · Anzahl · ΣLU KW · ΣLU WW · ΣDU, Totalzeile als Fusszeile), **Trinkwasser** (Total LU, Volumenstrom, Spitze Kurve «grösster LU 3» und «grösster LU 5» – die massgebende fett mit «– massgebend», die andere klein
 «(nicht massgebend)» –, grösster Einzel-LU, Spezialinstallationen mit Summe, Spitzendurchfluss gesamt, daneben klein die andere Kurve gesamt), **Entwässerung** (ΣDU, K, Q_WW, Spezialinstallationen, Q_tot). Ohne K steht «K fehlt» (rot) statt K,
-Q_WW und Q_tot, der Kern-Hinweis (P25) im Kopf. Tooltip je Zeile: Formel mit Excel-Zelle (aus `formeln` des Kerns) und genauer Wert; Tooltip der Apparateart: Quelle mit Excel-Zeile und Kennzeichen der Apparate. Zeilen-/Zellklassen
+Q_WW und Q_tot. Die Hinweise des Kerns (`hinweise[]`, z. B. K fehlt, Kurvenwahl nicht bestätigt, Apparate ohne WW-Verbindung bzw. ohne Weg im Netz – P26) stehen
+seit dem Prüfbericht 4A als vierte Tabelle **Hinweise** unter den Blöcken (nur wenn es welche gibt; Klasse `li-hinweise`, auch in der CSV), der Kopf nennt nur ihre Zahl. Tooltip je Zeile: Formel mit Excel-Zelle (aus `formeln` des Kerns) und genauer Wert; Tooltip der Apparateart: Quelle mit Excel-Zeile und Kennzeichen der Apparate. Zeilen-/Zellklassen
 `li-massgebend`, `li-nebenwert`, `li-fehlt`. Erweiterungen der Listenaufbereitung (für alle Listen nutzbar): Spalte `format` (Funktion), `nurCsv`, `tooltip`; Zeile `klasse`, `zellklassen`, `titel`; Tabelle `klasse`, `ohneSortieren`;
 gemeinsame Zellenfunktion `zelle()` in `listenformat.js` für Ansicht und CSV. **CSV** (Knopf «CSV …», N3): alle drei Tabellen untereinander mit Titelzeilen, die Blöcke mit zusätzlicher Spalte «Formel (Excel-Zelle)», Zahlen gerundet wie in
 der Ansicht. **Planblätter:** Listen sind im Kern nicht platzierbar (`ansicht_platzieren` nimmt nur Grundriss, Schnitt, Ansicht, Schema) – das gilt für alle Listen; Ausgabe der Sanitär-Zusammenstellung ist die CSV-Datei. (Listen im Plan wären eine
@@ -1219,7 +1226,7 @@ Kern-Erweiterung für alle Listenarten.)
 (Anlage des gewählten Elements über `system`/`teilVon`, sonst Anlage der offenen Sanitärliste, sonst die einzige Anlage; bei mehreren fragt ein Dialog) und legt sie beim ersten Mal an. Bei 1920 px bleibt in allen Registern jede Gruppe in Stufe G
 (Test `menueband.browser.mjs`, Strich und `HLKS_SYMBOLE=revit`).
 
-**Befunde P21–P25:** erscheinen von selbst im Dialog Verwalten › Modell › «Prüfbefunde» (Abfrage `pruefen` liefert alle Codes des Kerns) mit Code, Element, Text und Vorschlag; Klick wählt das Element. Kein Eingriff nötig (getestet für P25).
+**Befunde P21–P26:** erscheinen von selbst im Dialog Verwalten › Modell › «Prüfbefunde» (Abfrage `pruefen` liefert alle Codes des Kerns) mit Code, Element, Text und Vorschlag; Klick wählt das Element. Kein Eingriff nötig (getestet für P25 und P26).
 
 **Prüfen:** `node --test js/oberflaeche/sanitaer-belastung.test.mjs` (Rundung, Palette, Tabelle, aktive Anlage, Liste mit Referenzfall Walkringen, CSV, Verdrahtung); Kern: `SchemaBelastungTests.cs`; Browser:
-`HLKS_M4_PORT=5211 HLKS_CDP_PORT=9560 node js/oberflaeche/sanitaer-belastung.browser.mjs` (Bilder hell/dunkel nach `%TEMP%\HLKS_CAD\m4_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
+`HLKS_M4_PORT=5211 HLKS_CDP_PORT=9560 node js/oberflaeche/sanitaer-belastung.browser.mjs` (Ports 5200–5219) (Bilder hell/dunkel nach `%TEMP%\HLKS_CAD\m4_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).

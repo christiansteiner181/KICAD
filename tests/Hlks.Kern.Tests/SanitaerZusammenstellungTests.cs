@@ -104,9 +104,13 @@ public class SanitaerZusammenstellungTests
         var wt = z["zeilen"]!.AsArray().Single(r => r!["art"]!.GetValue<string>() == "waschtisch")!;
         Assert.Equal(new[] { 5, 5 }, wt["jeGeschoss"]!.AsArray().Select(x => x!.GetValue<int>()));
         Assert.Equal(8, wt["zeile"]!.GetValue<int>());
-        Assert.Contains("Tabelle1 Zeile 8", wt["quelle"]!.GetValue<string>());
+        Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 8", wt["quelle"]!.GetValue<string>());
+        Assert.Equal("MFHA", z["quelle"]!["blatt"]!.GetValue<string>());
         Assert.Contains("Testwert", z["abflusskennzahlHerkunft"]!.GetValue<string>());
-        Assert.Empty(z["hinweise"]!.AsArray());
+        // einziger Hinweis: die Kurvenwahl ist nicht im Excel und nicht bestätigt (13.2 l/s liegt in beiden Bereichen, alle Apparate verbunden)
+        var hinweis = Assert.Single(z["hinweise"]!.AsArray())!.GetValue<string>();
+        Assert.StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt", hinweis);
+        Assert.Contains("Kurve «grösster LU 5»", hinweis);
 
         // Netz: die Anlage trägt dieselben Summen; die Leitung vom Hausanschluss alles (KW direkt, WW über den Wassererwärmer)
         var an = Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!;
@@ -189,7 +193,10 @@ public class SanitaerZusammenstellungTests
         var p = WalkringenProjekt(k: null);
         var b = Assert.Single(Sanitaerbefunde(p));
         Assert.Equal(("P25", "warnung", "A-1"), (b.Code, b.Schwere, b.Element));
+        Assert.Equal("Abflusskennzahl K fehlt – Wert nach Gebäudeart aus SN 592000 (liegt nicht vor) bzw. Projektvorgabe eintragen", b.Text);
         Assert.Contains("SN 592000", b.Vorschlag);
+        Assert.DoesNotContain("0.5", b.Text + b.Vorschlag);   // kein Zahlenwert im Befund (Prüfbericht 4A B5)
+        Assert.DoesNotContain("Walkringen", b.Text + b.Vorschlag);
         var z = Abfrage(p, "sanitaer_zusammenstellung");   // ohne anlage: die einzige Anlage mit Apparaten
         Assert.Equal("A-1", z["anlage"]!.GetValue<string>());
         Assert.Null(z["abflusskennzahl"]);
@@ -232,6 +239,109 @@ public class SanitaerZusammenstellungTests
         Assert.Equal(0, leer.Volumenstrom);
         Assert.Equal(0, leer.SpitzeKurve3);
         Assert.Equal(0, leer.Schmutzwasser);
+        Assert.Empty(leer.Hinweise);   // ohne LU keine Kurvenhinweise
+    }
+
+    static SanitaerZeile Zeile(SanitaerKatalog kat, string art, int n) => new() { Art = kat.Art(art)!, JeGeschoss = [n], Anzahl = n };
+
+    [Fact]
+    public void Kurvenwahl_SchwelleUndNummernAusDemKatalog()
+    {
+        // abgewandelter Katalog (FIKTIV, nur für den Test): «grösster LU» der Kurven 4 und 6 statt 3 und 5 → Schwelle und Nummern folgen dem Katalog
+        var roh = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Katalog.StandardOrdner(), SanitaerKatalog.Datei)))!;
+        roh["rechnung"]!["spitzeKurve3"]!["grosserLu"] = 4;
+        roh["rechnung"]!["spitzeKurve5"]!["grosserLu"] = 6;
+        var kat = SanitaerKatalog.Lesen(roh);
+        var bis4 = SanitaerZusammenstellung.Auswerten(kat, [Zeile(kat, "badewanne", 2)], [], null, null);   // grösster Einzel-LU 3 ≤ 4
+        Assert.Equal(4, bis4.MassgebendeKurve);
+        Assert.Equal(bis4.SpitzeKurve3, bis4.Spitzendurchfluss);
+        var mit5 = SanitaerZusammenstellung.Auswerten(kat, [Zeile(kat, "entnahme_garten", 1)], [], null, null);   // 5 > 4
+        Assert.Equal(6, mit5.MassgebendeKurve);
+        Assert.Equal(mit5.SpitzeKurve5, mit5.Spitzendurchfluss);
+        Assert.Equal(mit5.SpitzeGesamtKurve5, mit5.SpitzeGesamt);
+        Assert.Contains(mit5.Hinweise, h => h.Contains("Kurve «grösster LU 6»"));
+        // grösster Einzel-LU über der grösseren Kurve: Hinweis (die Regel deckt ihn nicht ab)
+        roh["rechnung"]!["spitzeKurve3"]!["grosserLu"] = 2;
+        roh["rechnung"]!["spitzeKurve5"]!["grosserLu"] = 4;
+        var klein = SanitaerKatalog.Lesen(roh);
+        var ueber = SanitaerZusammenstellung.Auswerten(klein, [Zeile(klein, "entnahme_garten", 1), Zeile(klein, "waschtisch", 1)], [], null, null);
+        Assert.Contains(ueber.Hinweise, h => h.StartsWith("Grösster Einzel-LU 5 liegt über dem «grössten LU» der Kurve «grösster LU 4»"));
+        Assert.DoesNotContain(SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "entnahme_garten", 1)], [], null, null).Hinweise, h => h.StartsWith("Grösster Einzel-LU"));
+    }
+
+    [Fact]
+    public void Kurvenwahl_HerkunftInFormelnUndHinweisen_BestaetigtOhneHinweis()
+    {
+        var p = WalkringenProjekt();
+        var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        var formel = z["formeln"]!["massgebendeKurve"]!.GetValue<string>();
+        Assert.StartsWith(SKat.Kurvenwahl.Regel, formel);
+        Assert.Contains("NICHT im Excel", formel);
+        Assert.Contains("HKAP", formel);
+        Assert.EndsWith("Nicht bestätigt.", formel);
+        var kw = z["kurvenwahl"]!;
+        Assert.False(kw["bestaetigt"]!.GetValue<bool>());
+        Assert.Equal(SKat.Kurvenwahl.Quelle, kw["quelle"]!.GetValue<string>());
+        Assert.Equal(new[] { 3, 5 }, kw["kurven"]!.AsArray().Select(k => k!["grosserLu"]!.GetValue<int>()));
+        Assert.Equal(new[] { 0.5, 15 }, kw["kurven"]![1]!["bereichLs"]!.AsArray().Select(x => x!.GetValue<double>()));
+        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt"));
+        Assert.Equal(kw.ToJsonString(), Abfrage(p, "sanitaer_katalog")["kurvenwahl"]!.ToJsonString());
+        // bestätigt (abgewandelter Katalog): kein Hinweis mehr, die Formel sagt es
+        var roh = (JsonObject)JsonNode.Parse(File.ReadAllText(Path.Combine(Katalog.StandardOrdner(), SanitaerKatalog.Datei)))!;
+        roh["rechnung"]!["kurvenwahl"]!["bestaetigt"] = true;
+        var kat = SanitaerKatalog.Lesen(roh);
+        var a = SanitaerZusammenstellung.Auswerten(kat, [Zeile(kat, "wc_75", 10), Zeile(kat, "badewanne", 4)], [], null, null);
+        Assert.DoesNotContain(a.Hinweise, h => h.StartsWith("Kurvenwahl"));
+        Assert.EndsWith("Von Christian bestätigt.", SanitaerAbfragen.ZusammenstellungJson(kat, a)["formeln"]!["massgebendeKurve"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Volumenstrom_AusserhalbDesBereichsEinerKurve_Hinweis()
+    {
+        // 1 Waschtisch: Total LU 2 → 0.2 l/s, unter beiden Bereichen (0.3–300 und 0.5–15 l/s laut Katalog)
+        var klein = SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "waschtisch", 1)], [], null, null);
+        Etwa(0.2, klein.Volumenstrom, "Volumenstrom");
+        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 3» (massgebend): 0.3 bis 300 l/s"));
+        Assert.Contains(klein.Hinweise, h => h.StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»: 0.5 bis 15 l/s"));
+        Assert.Contains(klein.Hinweise, h => h.Contains("C55") );
+        // 3 Waschtische: 0.6 l/s liegt in beiden Bereichen
+        Assert.DoesNotContain(SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "waschtisch", 3)], [], null, null).Hinweise, h => h.StartsWith("Volumenstrom"));
+        // 200 Badewannen: Total LU 1200 → 120 l/s, über dem Bereich der Kurve «grösster LU 5» (bis 15 l/s), in dem der Kurve «grösster LU 3»
+        var gross = SanitaerZusammenstellung.Auswerten(SKat, [Zeile(SKat, "badewanne", 200)], [], null, null);
+        Assert.Equal(3, gross.MassgebendeKurve);
+        Assert.Equal(new[] { "Volumenstrom 120 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»: 0.5 bis 15 l/s laut Katalog (I55 «Spitzenvolumenstrom bei 0.5 bis 15 l/s», I56 «Grösster LU: 5») – Spitze dieser Kurve prüfen." },
+            gross.Hinweise.Where(h => h.StartsWith("Volumenstrom")));
+        // ein Hinweis, kein Befund
+        var p = Netzprojekt(0.5, "KW");
+        Apparat(p, "Waschtisch", "WT-1"); Hausanschluss(p);
+        Rohr(p, "R1", "KW-1", "HA-1.aus", "WT-1.kw");
+        var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("Volumenstrom 0.2 l/s liegt ausserhalb"));
+        Assert.DoesNotContain(Pruefungen.Alle(p.Modell, p.Katalog), b => b.Text.Contains("ausserhalb des Bereichs"));
+    }
+
+    [Fact]
+    public void StueckzahlSummen_MitAnschluessenOhneNetzverbindung_Hinweis()
+    {
+        // WT-1: KW und SW verbunden, WW offen (Projekt mit WW-System); WT-2 nur KW; die Zusammenstellung zählt beide voll (wie das Excel)
+        var p = Netzprojekt(0.5, "KW", "WW", "SW");
+        Apparat(p, "Waschtisch", "WT-1"); Apparat(p, "Waschtisch", "WT-2");
+        Hausanschluss(p); Kontrollschacht(p);
+        Verteiler(p, "VT", "KW-1", 2);
+        Rohr(p, "K0", "KW-1", "HA-1.aus", "VT.a");
+        Rohr(p, "K1", "KW-1", "VT.v1", "WT-1.kw");
+        Rohr(p, "K2", "KW-1", "VT.v2", "WT-2.kw");
+        Rohr(p, "S1", "SW-1", "WT-1.sw", "KS-1.ein");
+        var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Etwa(2, Zahl(z["summeLuWw"]), "ΣLU WW der Zusammenstellung (Stückzahl × Wert)");
+        var h = z["hinweise"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
+        Assert.Contains(h, x => x.StartsWith("ΣLU WW enthält 2 Apparate ohne WW-Verbindung: WT-1, WT-2"));
+        Assert.Contains(h, x => x.StartsWith("ΣDU enthält 1 Apparat ohne SW-Verbindung: WT-2"));
+        Assert.DoesNotContain(h, x => x.StartsWith("ΣLU KW"));
+        var an = Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!;
+        Etwa(0, Zahl(an["trinkwasser"]!["summeLuWw"]), "Netz ΣLU WW");
+        // Hinweise vor dem Hinweis zur Kurvenwahl
+        Assert.StartsWith("Kurvenwahl", h[^1]);
     }
 
     [Fact]

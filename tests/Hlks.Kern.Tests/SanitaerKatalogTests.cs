@@ -29,10 +29,17 @@ public class SanitaerKatalogTests
             Assert.Equal(r["zeile"]!.GetValue<int>(), a.Zeile);
             Assert.Equal(i, a.Reihenfolge);
         }
-        // Excel Tabelle1 A7:D40: Zeilen 7 bis 40 lückenlos in Katalogreihenfolge
+        // Excel Blatt «MFHA» A7:D40: Zeilen 7 bis 40 lückenlos in Katalogreihenfolge
         Assert.Equal(Enumerable.Range(7, 34), SKat.Arten.Select(a => a.Zeile));
-        Assert.Equal("Tabelle1", SKat.Blatt);
+        // Blattname aus dem Katalog (quelle.bereich «Blatt «MFHA» …»), nicht aus dem Code (Prüfbericht 4A B1); fest «MFHA», damit eine Änderung auffällt
+        Assert.Contains($"Blatt «{SKat.Blatt}»", Roh()["quelle"]!["bereich"]!.GetValue<string>());
+        Assert.Equal("MFHA", SKat.Blatt);
         Assert.Equal("LU_DU Zusammenstellung_.xlsx", SKat.Dokument);
+        // typografisch bereinigte Namen tragen den Namen im Excel (Prüfbericht 4A B4)
+        foreach (var (r, a) in roh.Zip(SKat.Arten))
+            Assert.Equal(r!["nameExcel"]?.GetValue<string>(), a.NameExcel);
+        Assert.Equal(4, SKat.Arten.Count(a => a.NameExcel is not null));
+        Assert.Equal("Waschrog KW", SKat.Art("waschtrog_kw")!.NameExcel);
     }
 
     [Fact]
@@ -47,21 +54,93 @@ public class SanitaerKatalogTests
         Assert.Equal(N(r["spitzeKurve5"]!["exponent"]), SKat.Kurve5.Exponent);
         Assert.Equal("C57 = B56^0.353*0.459", SKat.Kurve3.Zelle);
         Assert.Equal("I57 = B56^0.257*0.598", SKat.Kurve5.Zelle);
-        Assert.Equal(3, SKat.Kurve3.Nummer);
-        Assert.Equal(5, SKat.Kurve5.Nummer);
+        // Kurvennummern, Gültigkeitsbereiche und Regel der Kurvenwahl aus dem Katalog (Prüfbericht 4A B3)
+        Assert.Equal(r["spitzeKurve3"]!["grosserLu"]!.GetValue<int>(), SKat.Kurve3.Nummer);
+        Assert.Equal(r["spitzeKurve5"]!["grosserLu"]!.GetValue<int>(), SKat.Kurve5.Nummer);
+        Assert.Equal((3, 5), (SKat.Kurve3.Nummer, SKat.Kurve5.Nummer));
+        Assert.Equal(N(r["spitzeKurve3"]!["bereichLs"]![0]), SKat.Kurve3.BereichVon);
+        Assert.Equal(N(r["spitzeKurve3"]!["bereichLs"]![1]), SKat.Kurve3.BereichBis);
+        Assert.Equal(N(r["spitzeKurve5"]!["bereichLs"]![0]), SKat.Kurve5.BereichVon);
+        Assert.Equal(N(r["spitzeKurve5"]!["bereichLs"]![1]), SKat.Kurve5.BereichBis);
+        Assert.Equal((0.3, 300.0, 0.5, 15.0), (SKat.Kurve3.BereichVon, SKat.Kurve3.BereichBis, SKat.Kurve5.BereichVon, SKat.Kurve5.BereichBis));
+        Assert.Contains("C55", SKat.Kurve3.BereichZelle);
+        Assert.Contains("I56", SKat.Kurve5.BereichZelle);
+        Assert.Equal(r["kurvenwahl"]!["regel"]!.GetValue<string>(), SKat.Kurvenwahl.Regel);
+        Assert.Equal(r["kurvenwahl"]!["quelle"]!.GetValue<string>(), SKat.Kurvenwahl.Quelle);
+        Assert.False(SKat.Kurvenwahl.Bestaetigt);
+        Assert.Contains("HKAP", SKat.Kurvenwahl.Quelle);
         Assert.Equal(0.5, SKat.AbflusskennzahlBeispiel);
         Assert.Equal("M65", SKat.AbflusskennzahlBeispielZelle);
         Assert.Contains("M66", SKat.SchmutzwasserZelle);
     }
 
     [Fact]
-    public void Quelle_NenntKatalogDokumentUndExcelZeile()
+    public void Quelle_NenntKatalogDokumentBlattUndExcelZeile()
     {
         var q = SKat.Quelle(31);
         Assert.Contains("sanitaer_belastungswerte.json", q);
-        Assert.Contains("LU_DU Zusammenstellung_.xlsx", q);
-        Assert.Contains("Tabelle1 Zeile 31", q);
+        Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 31", q);
         Assert.Contains("14.03.2024", q);
+        Assert.DoesNotContain("Tabelle1", q);
+        Assert.Contains("Blatt MFHA, C57", SKat.QuelleFormel(SKat.Kurve3.Zelle));
+        Assert.Contains("Blatt «MFHA»", SKat.QuelleKurz);
+        // bereinigter Name: die Quelle nennt den Namen im Excel
+        Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 21, im Excel «Waschrog KW» (", SKat.Quelle(SKat.Art("waschtrog_kw")!));
+        Assert.Equal(SKat.Quelle(31), SKat.Quelle(SKat.Art("wc_75")!));
+    }
+
+    [Fact]
+    public void Blatt_AusFeldBlattOderBereich_SonstAbgelehnt()
+    {
+        var feld = Roh(); feld["quelle"]!["blatt"] = "Testblatt (fiktiv)";
+        Assert.Equal("Testblatt (fiktiv)", SanitaerKatalog.Lesen(feld).Blatt);                 // eigenes Feld geht vor
+        var bereich = Roh(); bereich["quelle"]!["bereich"] = "Blatt «Zweites Blatt» A1:D9";
+        Assert.Equal("Zweites Blatt", SanitaerKatalog.Lesen(bereich).Blatt);
+        Assert.Contains("Blatt Zweites Blatt, Zeile 8", SanitaerKatalog.Lesen(bereich).Quelle(8));
+        var ohne = Roh(); ohne["quelle"]!["bereich"] = "Tabelle1 A7:D40";                      // kein «Blatt «…»» und kein Feld blatt: nicht raten
+        var f = Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(ohne));
+        Assert.Contains("Tabellenblatt", f.Message);
+    }
+
+    [Fact]
+    public void Kurven_FehlerhafteAngaben_WerdenAbgelehnt()
+    {
+        var ohneLu = Roh(); ((JsonObject)ohneLu["rechnung"]!["spitzeKurve5"]!).Remove("grosserLu");
+        Assert.Contains("grosserLu", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(ohneLu)).Message);
+        var vertauscht = Roh(); vertauscht["rechnung"]!["spitzeKurve3"]!["grosserLu"] = 6;
+        Assert.Contains("kleiner", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(vertauscht)).Message);
+        var bereich = Roh(); bereich["rechnung"]!["spitzeKurve3"]!["bereichLs"] = new JsonArray(300, 0.3);
+        Assert.Contains("bereichLs", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(bereich)).Message);
+        var ohneWahl = Roh(); ((JsonObject)ohneWahl["rechnung"]!).Remove("kurvenwahl");
+        Assert.Contains("kurvenwahl", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(ohneWahl)).Message);
+        var wahlText = Roh(); wahlText["rechnung"]!["kurvenwahl"]!["bestaetigt"] = "ja";
+        Assert.Contains("bestaetigt", Assert.Throws<HlksFehler>(() => SanitaerKatalog.Lesen(wahlText)).Message);
+        var bestaetigt = Roh(); bestaetigt["rechnung"]!["kurvenwahl"]!["bestaetigt"] = true;
+        Assert.True(SanitaerKatalog.Lesen(bestaetigt).Kurvenwahl.Bestaetigt);
+    }
+
+    [Fact]
+    public void Medien_AusDenSpaltenAbgeleitet_UndGegenMedienUndSystemtypenGeprueft()
+    {
+        // Trinkwasser = Medien der LU-Spalten, Abwasser = Medium der DU-Spalte (eine Zuordnung, keine eigenen Listen; Prüfbericht 4A B5)
+        Assert.Equal(new[] { "KW", "WW" }, SanitaerKatalog.Trinkwasser.Order());
+        Assert.Equal(new[] { "SW" }, SanitaerKatalog.Abwasser.Order());
+        Assert.All(SanitaerKatalog.Spalten.Keys, m => Assert.True(Kat.Medien.ContainsKey(m), $"{m} fehlt in medien.json"));
+        // ein Systemtyp mit verkehrter Verbraucherrichtung (Schmutzwasser stromab) macht den Katalog ungültig
+        var ordner = Path.Combine(Path.GetTempPath(), "hlks_m4_medien_" + Guid.NewGuid().ToString("N")[..8]);
+        Directory.CreateDirectory(ordner);
+        try
+        {
+            foreach (var datei in Directory.GetFiles(Katalog.StandardOrdner(), "*.json")) File.Copy(datei, Path.Combine(ordner, Path.GetFileName(datei)));
+            var st = Path.Combine(ordner, "systemtypen.json");
+            var typen = (JsonArray)JsonNode.Parse(File.ReadAllText(st))!;
+            typen.Single(t => t!["medium"]!.GetValue<string>() == "SW")!["verbraucherRichtung"] = "stromab";
+            File.WriteAllText(st, typen.ToJsonString());
+            var f = Assert.Throws<HlksFehler>(() => Katalog.Laden(ordner));
+            Assert.Contains("verbraucherRichtung", f.Message);
+            Assert.Contains("SW", f.Message);
+        }
+        finally { Directory.Delete(ordner, true); }
     }
 
     [Fact]
@@ -134,7 +213,7 @@ public class SanitaerKatalogTests
             Assert.False(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "WC-1", ["eigenschaften"] = new JsonObject { ["sanitaerArt"] = "wc_75" } }).Angenommen);
             var f = Assert.Throws<HlksFehler>(() => Tuer.Abfrage(p, "sanitaer_katalog"));
             Assert.Contains(SanitaerKatalog.Datei, f.Message);
-            Assert.DoesNotContain(Pruefungen.Alle(p.Modell, k), b => b.Code is "P21" or "P22" or "P23" or "P24" or "P25");   // ohne Katalog keine Sanitärbefunde
+            Assert.DoesNotContain(Pruefungen.Alle(p.Modell, k), b => b.Code is "P21" or "P22" or "P23" or "P24" or "P25" or "P26");   // ohne Katalog keine Sanitärbefunde
         }
         finally { Directory.Delete(ordner, true); }
     }

@@ -3,14 +3,19 @@
 // Annahme, im Excel nicht übertragen), Anzahl, ΣLU KW, ΣLU WW, ΣDU (Anzahl × Wert; leer, wenn die Art die Spalte nicht hat).
 // Darunter, Formeln wörtlich aus dem Katalog (rechnung):
 //   Total LU = ΣLU KW + ΣLU WW (B55), Volumenstrom = Total LU × Faktor (B56, Faktor aus der Zellformel des Katalogs),
-//   Spitze Kurve «grösster LU 3» = V^Exponent × Faktor (C57) und Kurve «grösster LU 5» (I57), massgebend nach dem grössten Einzel-LU der
-//   vorkommenden Arten (> 3 → Kurve 5, sonst Kurve 3; Regel aus entwurf/modul-4.md wie HKAP – die andere steht klein daneben),
+//   Spitze Kurve «grösster LU 3» = V^Exponent × Faktor (C57) und Kurve «grösster LU 5» (I57) – Kurvennummern («grösster LU»), Faktoren,
+//   Exponenten und Gültigkeitsbereiche aus dem Katalog –, massgebend nach der Regel rechnung.kurvenwahl des Katalogs (grösster Einzel-LU der
+//   vorkommenden Arten über dem «grössten LU» der kleineren Kurve → die grössere Kurve; NICHT im Excel, aus HKAP; ob bestätigt, steht im
+//   Katalog; die andere Kurve steht klein daneben). Prüfbericht 4A B3: Herkunft der Kurvenwahl in formeln und – solange nicht bestätigt – in
+//   hinweise; Volumenstrom ausserhalb des Bereichs einer Kurve (bereichLs) bzw. grösster Einzel-LU über der grösseren Kurve → Hinweis (kein Befund).
 //   Spitze gesamt = Spitze + Σ Spezialinstallationen Versorgung (C59 bzw. I59),
 //   Q_WW = K × √ΣDU (M66), Q_tot = Q_WW + Σ Spezialinstallationen Entsorgung (M67).
-// K ist eine Eigenschaft der Anlage, sonst die Vorgabe der Projektinformation; fehlt sie, gibt es kein Q_WW (Befund P25). Der Excel-Wert 0.5
-// gilt nur für Walkringen (Katalog abflusskennzahlBeispiel) und wird nie still eingesetzt (anders als HKAP).
+// K ist eine Eigenschaft der Anlage, sonst die Vorgabe der Projektinformation; fehlt sie, gibt es kein Q_WW (Befund P25). Der Excel-Wert (Katalog
+// abflusskennzahlBeispiel, Zelle M65) gilt nur für Walkringen und wird nie still eingesetzt (anders als HKAP).
 // Zur Anlage gehören die Apparate, die an ein System der Anlage angeschlossen sind (Netz.SystemeVon); Apparate ohne Art zählen nicht
-// (Befund P21) und stehen in «ohneArt». Keine Normrechnung je Teilstrecke (Teil B).
+// (Befund P21) und stehen in «ohneArt». Die Stückzahl-Summen zählen wie das Excel jeden Apparat der Anlage, auch mit einem Anschluss ohne
+// Netzverbindung bzw. ohne Weg im Netz (P26) – das sagt dann ein Hinweis (Prüfbericht 4A B7), weil die Netzsummen ihn nicht enthalten.
+// Keine Normrechnung je Teilstrecke (Teil B).
 
 using System.Text.Json.Nodes;
 
@@ -72,9 +77,11 @@ public static class SanitaerZusammenstellung
 {
     public const string AbfrageText = "Sanitär-Zusammenstellung einer Anlage wie Christians Excel «LU_DU Zusammenstellung_.xlsx» (Modul 4 Teil A): Zeilen = vorkommende " +
         "Apparatearten in Katalogreihenfolge mit Excel-Zeile, Spalten = Geschosse (Kote aufsteigend); Anzahl, ΣLU KW, ΣLU WW, ΣDU; darunter Total LU, " +
-        "Volumenstrom, Spitzendurchfluss nach Kurve «grösster LU 3» und «grösster LU 5» (massgebend aus dem grössten Einzel-LU), Spezialinstallationen " +
+        "Volumenstrom, Spitzendurchfluss nach Kurve «grösster LU 3» und «grösster LU 5» (massgebend aus dem grössten Einzel-LU nach der Regel " +
+        "kurvenwahl des Katalogs – nicht im Excel, aus HKAP; Herkunft und Bestätigung in kurvenwahl), Spezialinstallationen " +
         "(Eigenschaft spezialinstallationen der Anlage), Spitze gesamt, ΣDU, Abflusskennzahl K (Anlage bzw. Projektinformation; fehlt sie: kein Q_WW, " +
-        "Befund P25), Q_WW = K × √ΣDU und Q_tot. Formeln mit Excel-Zelle und Quelle stehen in der Antwort. Keine Dimensionierung je Teilstrecke.";
+        "Befund P25), Q_WW = K × √ΣDU und Q_tot. Formeln mit Excel-Zelle und Quelle stehen in der Antwort; hinweise nennt u. a. Volumenstrom ausserhalb " +
+        "des Bereichs einer Kurve und Apparate, die in den Stückzahl-Summen, aber nicht in den Netzsummen stehen. Keine Dimensionierung je Teilstrecke.";
     public const string ParAnlage = "Anlage (Kennzeichen); leer = die einzige Anlage mit Sanitärapparaten";
 
     static SanitaerKatalog KatalogPflicht(Katalog k) => k.Sanitaer ?? throw new HlksFehler($"Katalog {SanitaerKatalog.Datei} fehlt im Katalogordner {k.Ordner}.",
@@ -131,15 +138,44 @@ public static class SanitaerZusammenstellung
         var (kWert, kHerkunft) = Abflusskennzahl(m, anlage);
         var aus = Auswerten(kat, proArt.Values, spezial, kWert, kHerkunft, anlage, geschosse.Select(g => g.Spalte).ToList());
         aus.OhneArt.AddRange(ohneArt);
-        aus.Hinweise.AddRange(hinweise);
         if (ohneArt.Count > 0)
-            aus.Hinweise.Add($"{ohneArt.Count} Apparat(e) ohne Apparateart zählen nicht: {string.Join(", ", ohneArt.Take(10))}{(ohneArt.Count > 10 ? " …" : "")} (Befund P21).");
+            hinweise.Add($"{ohneArt.Count} Apparat(e) ohne Apparateart zählen nicht: {Aufzaehlen(ohneArt)} (Befund P21).");
         if (kWert is null)
-            aus.Hinweise.Add("Abflusskennzahl K fehlt (Anlage und Projektinformation): kein Q_WW und kein Q_tot (Befund P25).");
+            hinweise.Add("Abflusskennzahl K fehlt (Anlage und Projektinformation): kein Q_WW und kein Q_tot (Befund P25).");
         var mehrere = apparate.Where(a => netz.AnlagenJeApparat[a.Id].Count > 1).Select(a => a.Kennzeichen).ToList();
         if (mehrere.Count > 0)
-            aus.Hinweise.Add($"{mehrere.Count} Apparat(e) hängen auch an Systemen einer anderen Anlage und zählen dort ebenfalls: {string.Join(", ", mehrere.Take(10))}.");
+            hinweise.Add($"{mehrere.Count} Apparat(e) hängen auch an Systemen einer anderen Anlage und zählen dort ebenfalls: {string.Join(", ", mehrere.Take(10))}.");
+        hinweise.AddRange(Netzabweichungen(m, netz, anlage, apparate));
+        aus.Hinweise.InsertRange(0, hinweise);   // vor den Hinweisen der Rechnung (Kurven)
         return aus;
+    }
+
+    static string Aufzaehlen(IReadOnlyList<string> kz) => string.Join(", ", kz.Take(10)) + (kz.Count > 10 ? " …" : "");
+
+    static string Stueck(int n) => n == 1 ? "1 Apparat" : $"{n} Apparate";
+
+    /// <summary>Prüfbericht 4A B7 (und B2): die Stückzahl-Summen der Zusammenstellung zählen jeden Apparat der Anlage (wie das Excel), die
+    /// Netzsummen nur über verbundene Wege. Je Spalte ein Hinweis, wenn Apparate mit einem Wert dieser Spalte keinen verbundenen Anschluss des
+    /// Mediums haben («ΣLU WW enthält n Apparate ohne WW-Verbindung») bzw. ihr Anschluss keinen Weg im Netz hat (Befund P26).</summary>
+    static IEnumerable<string> Netzabweichungen(Modell m, SanitaerNetz netz, Element anlage, IReadOnlyList<Element> apparate)
+    {
+        foreach (var (medium, spalte) in SanitaerKatalog.Spalten)
+        {
+            var summe = "Σ" + SanitaerKatalog.SpaltenName(spalte);
+            var mitWert = apparate.Where(a => netz.Apparate[a.Id].Art?.WertFuer(medium) is not null).ToList();
+            var mitWertIds = mitWert.Select(a => a.Id).ToHashSet(StringComparer.Ordinal);
+            var ohneWegIds = netz.OhneWegIn(anlage.Id).Where(o => o.Medium.Equals(medium, StringComparison.OrdinalIgnoreCase) && mitWertIds.Contains(o.Apparat.Id))
+                .Select(o => o.Apparat.Id).ToHashSet(StringComparer.Ordinal);
+            var ohneVerbindung = mitWert.Where(a => !ohneWegIds.Contains(a.Id) && !a.Anschluesse.Any(an => Netz.Medium(m, a, an).Equals(medium, StringComparison.OrdinalIgnoreCase)
+                    && m.VerbindungAn(a.Id, an.Name) is not null)).Select(a => a.Kennzeichen).ToList();
+            if (ohneVerbindung.Count > 0)
+                yield return $"{summe} enthält {Stueck(ohneVerbindung.Count)} ohne {medium}-Verbindung: {Aufzaehlen(ohneVerbindung)} – die Zusammenstellung zählt " +
+                    "Stückzahl × Wert wie das Excel, die Netzsummen (sanitaer_belastung) zählen sie nicht.";
+            var ohneWeg = mitWert.Where(a => ohneWegIds.Contains(a.Id)).Select(a => a.Kennzeichen).ToList();
+            if (ohneWeg.Count > 0)
+                yield return $"{summe} enthält {Stueck(ohneWeg.Count)} ohne Weg im {medium}-Netz: {Aufzaehlen(ohneWeg)} – in den Netzsummen fehlen sie " +
+                    $"{(SanitaerNetz.IstTrinkwasser(medium) ? "stromauf" : "stromab")} (Befund P26).";
+        }
     }
 
     /// <summary>Rechnung der Zusammenstellung aus Zeilen (Stückzahlen je Art) – Formeln wie im Excel, Werte aus dem Katalog. Auch für den
@@ -162,17 +198,19 @@ public static class SanitaerZusammenstellung
             a.GroessterLu = Math.Max(a.GroessterLu, z.Art.GroessterLu);
         }
         a.TotalLu = a.SummeLuKw + a.SummeLuWw;                       // B55 = M43+N43
-        a.Volumenstrom = a.TotalLu * kat.VolumenstromFaktor;         // B56 = B55*0.1
-        a.SpitzeKurve3 = kat.Kurve3.Spitze(a.Volumenstrom);          // C57 = B56^0.353*0.459
-        a.SpitzeKurve5 = kat.Kurve5.Spitze(a.Volumenstrom);          // I57 = B56^0.257*0.598
-        var massgebend = a.GroessterLu > kat.Kurve3.Nummer ? kat.Kurve5 : kat.Kurve3;   // grösster Einzel-LU > 3 → Kurve «grösster LU 5»
+        a.Volumenstrom = a.TotalLu * kat.VolumenstromFaktor;         // B56 = B55*Faktor (Katalog)
+        a.SpitzeKurve3 = kat.Kurve3.Spitze(a.Volumenstrom);          // C57 = B56^Exponent*Faktor (Katalog spitzeKurve3)
+        a.SpitzeKurve5 = kat.Kurve5.Spitze(a.Volumenstrom);          // I57 = B56^Exponent*Faktor (Katalog spitzeKurve5)
+        var massgebend = kat.MassgebendeKurve(a.GroessterLu);        // Regel rechnung.kurvenwahl, Schwelle = grosserLu der kleineren Kurve (Katalog)
+        bool fuenf = ReferenceEquals(massgebend, kat.Kurve5);
         a.MassgebendeKurve = massgebend.Nummer;
-        a.Spitzendurchfluss = massgebend.Nummer == 5 ? a.SpitzeKurve5 : a.SpitzeKurve3;
+        a.Spitzendurchfluss = fuenf ? a.SpitzeKurve5 : a.SpitzeKurve3;
         a.SpezialVersorgung = a.Spezialinstallationen.Sum(s => s.Versorgung);   // I51
         a.SpezialEntsorgung = a.Spezialinstallationen.Sum(s => s.Entsorgung);   // N51
         a.SpitzeGesamtKurve3 = a.SpitzeKurve3 + a.SpezialVersorgung;            // C59 = C57+I51
         a.SpitzeGesamtKurve5 = a.SpitzeKurve5 + a.SpezialVersorgung;            // I59 = I57+I51
-        a.SpitzeGesamt = massgebend.Nummer == 5 ? a.SpitzeGesamtKurve5 : a.SpitzeGesamtKurve3;
+        a.SpitzeGesamt = fuenf ? a.SpitzeGesamtKurve5 : a.SpitzeGesamtKurve3;
+        a.Hinweise.AddRange(KurvenHinweise(kat, a, massgebend));
         a.Abflusskennzahl = abflusskennzahl;
         a.AbflusskennzahlHerkunft = abflusskennzahl is null ? null : kHerkunft;
         if (abflusskennzahl is double k)
@@ -181,6 +219,26 @@ public static class SanitaerZusammenstellung
             a.Gesamtabfluss = a.Schmutzwasser + a.SpezialEntsorgung; // M67 = M66+N51
         }
         return a;
+    }
+
+    static string Z(double x) => x.ToString("0.###", System.Globalization.CultureInfo.InvariantCulture);
+
+    /// <summary>Prüfbericht 4A B3: Hinweise zur Kurvenwahl (nur mit LU, d. h. Volumenstrom > 0). Herkunft der Regel, solange sie im Katalog nicht
+    /// bestätigt ist; Volumenstrom ausserhalb des Gültigkeitsbereichs einer Kurve (Katalog bereichLs, Excel C55 bzw. I55); grösster Einzel-LU über
+    /// dem «grössten LU» der grösseren Kurve (die Regel deckt ihn nicht ab). Hinweise, keine Befunde – das Excel prüft das ebenfalls nicht.</summary>
+    static IEnumerable<string> KurvenHinweise(SanitaerKatalog kat, SanitaerAuswertung a, SanitaerKurve massgebend)
+    {
+        if (a.Volumenstrom <= 0) yield break;
+        foreach (var k in new[] { kat.Kurve3, kat.Kurve5 })
+            if (!k.ImBereich(a.Volumenstrom))
+                yield return $"Volumenstrom {Z(a.Volumenstrom)} l/s liegt ausserhalb des Bereichs der {k.Name}{(ReferenceEquals(k, massgebend) ? " (massgebend)" : "")}: " +
+                    $"{Z(k.BereichVon)} bis {Z(k.BereichBis)} l/s laut Katalog ({k.BereichZelle}) – Spitze dieser Kurve prüfen.";
+        if (a.GroessterLu > kat.Kurve5.Nummer)
+            yield return $"Grösster Einzel-LU {Z(a.GroessterLu)} liegt über dem «grössten LU» der {kat.Kurve5.Name} – die Regel der Kurvenwahl deckt ihn nicht ab " +
+                "(Katalog rechnung.kurvenwahl), Kurve prüfen.";
+        if (!kat.Kurvenwahl.Bestaetigt)
+            yield return $"Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt: massgebend ist die {massgebend.Name} nach der Regel «{kat.Kurvenwahl.Regel}» " +
+                "(Katalog rechnung.kurvenwahl); beide Kurven sind ausgewiesen.";
     }
 
     /// <summary>Abflusskennzahl der Anlage, sonst die Vorgabe der Projektinformation (mit Herkunft); null, wenn keine gesetzt ist.</summary>
