@@ -59,6 +59,22 @@ dem Kopf von Bernstrasse H03, Bild nebeneinander): beide Absender, Logo, Projekt
 vorgeschlagen, Revision B mit Datum und Planänderungstabelle (A, B), Stempel zuschaltbar; ein Schema-Blatt mit schmalem
 Kopf unten links; eine Liste auf einem Planblatt.
 
+## Teil B1 – Plandarstellung wie H+K (20.10.2026, 05:00)
+
+Aus `entwurf/planmuster.md` (Gemeinsam: «Aussparungen in Fachplänen», «Schnitt-/Ansichtsmarken»; Plantyp «Koordination»):
+1. **Aussparungsboxen in Fachplänen** (Option je Ansicht `aussparungsboxen`, Vorgabe aus): graue Box 3-zeilig an jeder
+   Aussparung im Grundriss: Gewerk / «WD 35 x35» bzw. «DD …» (Grösse in cm wie Aussparungsplan, ganze cm) / «BR -2.63» (Brüstung
+   = Unterkante ab ±0.00 in m) bzw. «Achse -3.49»; Werte aus den Aussparungen von Modul 3b; Führungslinie, kollisionsarm
+   platziert (Muster Beschriftungen).
+2. **Koordinationsplan in Gewerkefarben** (Ansichtseigenschaft `darstellung` = `koordination`): alle Gewerke in der
+   Koordinationsfarbe aus `kataloge/gewerke.json` statt Medienfarben (Heizung rot, Lüftung blau, Sanitär grün …), Architektur
+   grau, Aussparungsboxen ein; Planblatt-Fach K.
+3. **Schnitt- und Ansichtsmarken mit Blattverweis:** schwarzes Dreieck auf der Schnittlinie, Text «<Titel> / <Plannummer>»
+   des Planblatts, auf dem die Schnittansicht platziert ist (leer, solange sie auf keinem Blatt liegt); folgt beim Verschieben.
+
+Fertig, wenn … im Beispielprojekt ein Koordinationsplan des EG in Gewerkefarben mit Aussparungsboxen und einer Schnittmarke
+«Schnitt … / <Plannummer>» als PDF entsteht.
+
 ## Zuteilung
 
 | Teil | Wer |
