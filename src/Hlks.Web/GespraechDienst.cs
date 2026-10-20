@@ -165,6 +165,7 @@ public sealed class GespraechDienst
         new("bcf_import", "Übernimmt Statusentscheide anderer (akzeptiert, erledigt) aus einer Datei in die Kollisionen – entscheidet der Mensch."),
         new("bcf_export", "Ausgabe an Dritte (Architekt), ersetzt eine vorhandene Datei – Freigabe durch den Menschen."),
         new("aussparungen_ifc", "Ausgabe der Aussparungen an Architekt und Bauingenieur, schreibt eine Datei ausserhalb des Projekts – Freigabe durch den Menschen."),
+        new("ifc_export", "IFC-Ausgabe des Modells an Dritte (Koordination, Bauherr), schreibt an einen beliebigen Ort und ersetzt Dateien – Freigabe durch den Menschen (Modul 7 Teil B2)."),
         new("plan_pdf", "Planausgabe als PDF an einen beliebigen Ort (ersetzt Dateien) – Pläne gibt der Mensch aus (Register Ausgabe)."),
         new("plansatz_pdf", "Serien-PDF eines Plansatzes in einen Ordner – Planausgabe gibt der Mensch frei."),
         // Dokumentenlenkung (Sicherheitsprüfung 3c, B5, 20.10.2026): Revisionen und Ausgabeziel gegenüber Dritten setzt der Mensch

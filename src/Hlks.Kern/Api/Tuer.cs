@@ -49,6 +49,7 @@ public static class Tuer
                  ?? PlanAbfragen.Tuer(p, name, par)   // Modul 7 Teil A: plannummer_vorschlag
                  ?? NormenAbfragen.Tuer(p, name, par)   // Modul 3c: Normensuche
                  ?? SanitaerAbfragen.Tuer(p, name, par)   // Modul 4 Teil A
+                 ?? IfcExportAbfragen.Tuer(p, name, par)   // Modul 7 Teil B2: ifc_export
                  ?? throw new HlksFehler($"Abfrage «{name}» gibt es nicht.", "Abfragen: " + string.Join(", ", Abfragen.Liste.Select(x => x.Name))),
         };
     }

@@ -73,7 +73,16 @@ public class TuerDarstellungTests
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
+        ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",       // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
     };
+
+    static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
+
+    static void IfcExportAufraeumen()
+    {
+        var b = IfcExportDatei()[..^4];
+        foreach (var x in new[] { IfcExportDatei(), b + ".bericht.json", b + ".bericht.md" }) File.Delete(x);
+    }
 
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
 
@@ -117,7 +126,7 @@ public class TuerDarstellungTests
             else Assert.False(string.IsNullOrWhiteSpace(Hlks.Kern.Json.Text(ergebnis)), $"{a.Name}: leeres Ergebnis");
         }
         }
-        finally { File.Delete(PlanPdfDatei); File.Delete(BcfDatei()); File.Delete(AussparungIfcDatei()); try { Directory.Delete(PlansatzOrdner, true); } catch (IOException) { } }   // Ausgabe von plan_pdf, bcf_export, aussparungen_ifc und plansatz_pdf aufräumen
+        finally { File.Delete(PlanPdfDatei); File.Delete(BcfDatei()); File.Delete(AussparungIfcDatei()); IfcExportAufraeumen(); try { Directory.Delete(PlansatzOrdner, true); } catch (IOException) { } }   // Ausgabe von plan_pdf, bcf_export, aussparungen_ifc, ifc_export und plansatz_pdf aufräumen
     }
 
     [Fact]

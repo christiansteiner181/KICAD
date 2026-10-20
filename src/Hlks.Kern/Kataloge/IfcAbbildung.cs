@@ -81,6 +81,27 @@ public sealed class IfcSystemtyp
 /// <summary>Ergebnis der Klassenbestimmung beim Import.</summary>
 public sealed record IfcTreffer(string Klasse, string? Gewerk, string? Variante, int Guete, string Grund);
 
+/// <summary>Klassifikation der Bauteile (BKP): Name des Systems, Quelle, IFC-Entität der Referenz.</summary>
+public sealed class IfcKlassifikation
+{
+    public string Name { get; set; } = "BKP";
+    public string? Quelle { get; set; }
+    public string? Ifc { get; set; }
+}
+
+/// <summary>Werte an den Anschlüssen (IfcDistributionPort) je Fassung: Eigenschaft → «Pset.Name». Der Export schreibt den ersten
+/// Eintrag der Fassung, der Import liest alle (Modul 7 Teil B2).</summary>
+public sealed class IfcPorts
+{
+    public string? Beschreibung { get; set; }
+    public Dictionary<string, List<string>>? Ifc4 { get; set; }
+    public Dictionary<string, List<string>>? Ifc2x3 { get; set; }
+
+    /// <summary>Alle Lesekandidaten einer Eigenschaft (beide Fassungen).</summary>
+    public IEnumerable<string> Kandidaten(string eigenschaft) =>
+        (Ifc4?.GetValueOrDefault(eigenschaft) ?? []).Concat(Ifc2x3?.GetValueOrDefault(eigenschaft) ?? []);
+}
+
 public sealed class IfcAbbildung
 {
     public string Beschreibung { get; set; } = "";
@@ -90,6 +111,10 @@ public sealed class IfcAbbildung
     public List<string> OhneIfc { get; set; } = [];
     public List<IfcSystemtyp> Systemtypen { get; set; } = [];
     public Dictionary<string, string> Fluss { get; set; } = [];
+    /// <summary>Klassifikation (BKP) für den Export; null, wenn ifc.json keine nennt.</summary>
+    public IfcKlassifikation? Klassifikation { get; set; }
+    /// <summary>Werte an den Anschlüssen (Nennweite der Ports) je Fassung; null, wenn ifc.json keine nennt.</summary>
+    public IfcPorts? Ports { get; set; }
 
     public static IfcAbbildung Laden(string datei) =>
         JsonSerializer.Deserialize<IfcAbbildung>(File.ReadAllText(datei, System.Text.Encoding.UTF8), Json.Optionen)
