@@ -1,0 +1,33 @@
+{
+  "format": 1,
+  "id": "fam-test-kanal-t-frei",
+  "name": "Test-Kanal-T frei rechteckig (fiktiv)",
+  "kategorie": "TStueck",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "T-Stück der Testkanalserie mit freier Grösse (Nachtrag «freie Grösse», 20.10.2026). Alle Werte sind FIKTIV. Durchgang (a, b) mit b_a × h_a, Abzweig c mit eigenem b_c × h_c – alle als Exemplarparameter (Typen = Normgrössen). Lokale Lage nach entwurf/modul-3.md: a (−l, 0, 0)/(−1, 0, 0), b (l, 0, 0)/(1, 0, 0), c (0, lc, 0)/(0, 1, 0). Einbaulängen l = b_c/2 + zl, lc = b_a/2 + zl mit zl = 100 mm (FIKTIV). Handrechnung Durchgang 430 × 270, Abzweig 250 × 200: l = 225 mm, lc = 315 mm.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "b_a", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 400, "beschreibung": "Breite Durchgang (FIKTIV)" },
+    { "name": "h_a", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 200, "beschreibung": "Höhe Durchgang (FIKTIV)" },
+    { "name": "b_c", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 400, "beschreibung": "Breite Abzweig (FIKTIV)" },
+    { "name": "h_c", "art": "exemplar", "datentyp": "laenge", "gruppe": "anschluss", "wert": 200, "beschreibung": "Höhe Abzweig (FIKTIV)" },
+    { "name": "zl", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 100, "beschreibung": "Zuschlag der Einbaulängen (FIKTIV)" },
+    { "name": "l", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "b_c / 2 + zl", "beschreibung": "Einbaulänge Durchgang je Seite (FIKTIV)" },
+    { "name": "lc", "art": "exemplar", "datentyp": "laenge", "gruppe": "abmessung", "formel": "b_a / 2 + zl", "beschreibung": "Einbaulänge Abzweig (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "400x200", "werte": { "b_a": 400, "h_a": 200, "b_c": 400, "h_c": 200 } },
+    { "name": "400x200/300x200", "werte": { "b_a": 400, "h_a": 200, "b_c": 300, "h_c": 200 } },
+    { "name": "500x300", "werte": { "b_a": 500, "h_a": 300, "b_c": 500, "h_c": 300 } }
+  ],
+  "koerper": [
+    { "id": "durchgang", "name": "Durchgang", "art": "quader", "material": "rohr", "von": ["-l", "-b_a / 2", "-h_a / 2"], "bis": ["l", "b_a / 2", "h_a / 2"] },
+    { "id": "abzweig", "name": "Abzweig", "art": "quader", "material": "rohr", "von": ["-b_c / 2", 0, "-h_c / 2"], "bis": ["b_c / 2", "lc", "h_c / 2"] }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b_a", "h": "h_a", "lage": ["-l", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Durchgang Eingang" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b_a", "h": "h_a", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Durchgang Ausgang" },
+    { "name": "c", "medium": "*", "fluss": "beide", "art": "kanal", "form": "rechteck", "b": "b_c", "h": "h_c", "lage": [0, "lc", 0], "richtung": [0, 1, 0], "beschreibung": "Abzweig" }
+  ]
+}

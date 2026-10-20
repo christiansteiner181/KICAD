@@ -228,7 +228,7 @@ public sealed partial class Werkzeuge(Projekt projekt)
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("trennen", Parameter(("verbindung", verbindung), ("anschluss", anschluss)), trockenlauf);
 
-    [McpServerTool(Name = "leitung_ziehen"), Description("Zieht eine Leitung (Rohr oder Kanal) entlang von Punkten in Fliessrichtung und verbindet Anfang und Ende auf Wunsch mit bestehenden Anschlüssen – in einem Schritt.")]
+    [McpServerTool(Name = "leitung_ziehen"), Description(Hlks.Kern.LeitungZiehen.Text)]
     public string LeitungZiehen(
         [Description("Verlauf in Fliessrichtung: [[x,y,z], …] in mm")] JsonElement punkte,
         [Description("System (Kennzeichen); entfällt, wenn strang angegeben ist")] string? system = null,
@@ -241,10 +241,12 @@ public sealed partial class Werkzeuge(Projekt projekt)
         [Description("Weitere Eigenschaften, z. B. { gefaelle: 2 }")] JsonElement? eigenschaften = null,
         [Description("Anschluss, an den der Anfang kommt: { element, anschluss }")] JsonElement? von = null,
         [Description("Anschluss, an den das Ende kommt: { element, anschluss }")] JsonElement? nach = null,
+        [Description(Hlks.Kern.LeitungZiehen.ParSerie)] string? serie = null,
+        [Description(Hlks.Kern.LeitungZiehen.ParGroesse)] JsonElement? groesse = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_ziehen", Parameter(("punkte", punkte), ("system", system), ("strang", strang), ("klasse", klasse),
             ("kennzeichen", kennzeichen), ("geschoss", geschoss), ("dn", dn), ("material", material), ("eigenschaften", eigenschaften),
-            ("von", von), ("nach", nach)), trockenlauf);
+            ("von", von), ("nach", nach), ("serie", serie), ("groesse", groesse)), trockenlauf);
 
     // ---------- Verlauf und Abgleich ----------
 

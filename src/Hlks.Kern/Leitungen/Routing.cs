@@ -3,7 +3,9 @@
 // (Umlenkwinkel nach regeln.winkel bzw. frei), an einem Grössenwechsel eine Reduktion (an Anschlüssen anderer Grösse bzw. bei
 // leitung_serie an den bisherigen Wechselstellen); jede Gerade endet an den Anschlüssen der Formteile (um die Einbaulängen
 // gekürzt). Routing.Umsetzen legt die Elemente an – Geraden als Rohr bzw. Kanal mit genau zwei Punkten (Achse, mm absolut),
-// bezuege.familie = Serie, familientyp = Grösse; Formteile mit familie_platzieren und voller Ausrichtung – bzw. verwendet bestehende
+// bezuege.familie = Serie, familientyp = Grösse (freie Grösse einer Kanalserie: familientyp = Vorlage, breite/hoehe bzw. durchmesser =
+// tatsächliche Grösse; Formteile dann mit Vorlage-Typ und Exemplarwerten, Nachtrag entwurf/freie-groesse-kanal.md); Formteile mit
+// familie_platzieren und voller Ausrichtung – bzw. verwendet bestehende
 // wieder (leitung_aufteilen, leitung_groesse, leitung_serie) und verbindet alles mit dem strengen verbinden. Alles geschieht im
 // Kontext eines Befehls = ein Paket (Trockenlauf = Vorschau, Rückgängig in einem Schritt).
 //
@@ -300,8 +302,7 @@ public static class Routing
             d[i] = v.Einheit();
         }
         string Ort(int j) => $"Punkt {j + 1} {P(pkt[j])}: ";
-        SerienGroesse Typ(Leitungsgroesse g) => s.TypFuer(g)
-            ?? throw new HlksFehler($"Die Serie {s.Bezeichnung} hat keine Grösse {g}.", $"Grössen: {s.GroessenText} (leitungsserie zeigt sie mit ihren Formteilen).");
+        SerienGroesse Typ(Leitungsgroesse g) => s.Typ(g);   // Rastertyp bzw. freie Grösse (Nachtrag), sonst Grund und Vorschlag
         _ = Typ(g0);
 
         var plan = new RoutingPlan { Serie = s, Punkte = pkt, Von = von, Nach = nach };
@@ -511,14 +512,16 @@ public static class Routing
     static Wert W(Kontext k, JsonNode? inhalt, string? einheit = null) => new() { Inhalt = inhalt, Einheit = einheit, Herkunft = k.Herkunft };
 
     /// <summary>Serie und Grösse an eine Leitung: bezuege.familie, familientyp, Rohr dn bzw. Kanal durchmesser / breite und hoehe
-    /// (Herkunft familie wie die Nachführung von B1) und die Grösse an anfang und ende.</summary>
+    /// (Herkunft familie wie die Nachführung von B1) und die Grösse an anfang und ende. Freie Grösse (Nachtrag): familientyp = Vorlage,
+    /// breite/hoehe bzw. durchmesser = tatsächliche Grösse, Quelle «<Serie> Typ <Vorlage>, frei b × h» (FreieGroesse.cs).</summary>
     public static void GroesseSetzen(Kontext k, Element e, Leitungsserie s, SerienGroesse sg)
     {
         var kat = k.Katalog;
         var d = kat.Klassen[e.Klasse];
         e.Bezuege[Familien.Bezug] = s.Familie.Id;
         e.Eigenschaften["familientyp"] = W(k, JsonValue.Create(sg.Typ));
-        var hf = k.Herkunft with { Art = "familie", Quelle = $"{s.Familie.Name ?? s.Def.Name} Typ {sg.Typ}" };
+        var name = s.Familie.Name ?? s.Def.Name;
+        var hf = k.Herkunft with { Art = "familie", Quelle = sg.Frei ? FreieGroesse.FreiQuelle(name, sg.Typ, sg.Groesse) : FreieGroesse.RasterQuelle(name, sg.Typ) };
         void Setzen(string name, double? x)
         {
             if (d.Eigenschaften.FirstOrDefault(p => p.Name.Equals(name, StringComparison.OrdinalIgnoreCase)) is not { } ed) return;
@@ -630,10 +633,13 @@ public static class Routing
         foreach (var (t, e) in liste)
             k.Hinweise.Add(t switch
             {
-                PlanGerade g => $"Gerade {e.Kennzeichen} {g.Groesse.Groesse}: {Z(g.Laenge)} mm von {P(g.Von)} bis {P(g.Bis)}",
+                // Format liest die Oberfläche (leitung-logik.js vorschauAus); «frei» steht deshalb am Zeilenende
+                PlanGerade g => $"Gerade {e.Kennzeichen} {g.Groesse.Groesse}: {Z(g.Laenge)} mm von {P(g.Von)} bis {P(g.Bis)}"
+                    + (g.Groesse.Frei ? $", frei (Vorlage «{g.Groesse.Typ}»)" : ""),
                 PlanFormteil f => $"{Leitungsserie.Artname(f.Wahl.Art)} {e.Kennzeichen} Typ «{f.Wahl.Typ}»"
                     + (f.Winkel is double w ? $", {Z(w, 2)}°" + (f.Knick is double kn && Math.Abs(kn - w) > 1e-6 ? $" (Knick {Z(kn, 3)}°)" : "") : "")
-                    + $" bei {P(f.Ursprung)}, Einbaulängen {f.Ein} {Z(f.Wahl.Geometrie!.Einbaulaenge(f.Ein))} mm, {f.Aus} {Z(f.Wahl.Geometrie.Einbaulaenge(f.Aus))} mm",
+                    + $" bei {P(f.Ursprung)}, Einbaulängen {f.Ein} {Z(f.Wahl.Geometrie!.Einbaulaenge(f.Ein))} mm, {f.Aus} {Z(f.Wahl.Geometrie.Einbaulaenge(f.Aus))} mm"
+                    + (f.Wahl.Frei ? $", frei {f.Wahl.GroessenText}" : ""),
                 _ => "",
             });
     }

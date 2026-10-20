@@ -26,7 +26,7 @@ public static class LeitungenBefehle
 
 public static class LeitungenPruefung
 {
-    /// <summary>Prüfungen P13–P16 und P18 (Codes in Pruefungen.Codes); hängt die Befunde an b an.</summary>
+    /// <summary>Prüfungen P13–P16, P18 und P29 (Codes in Pruefungen.Codes); hängt die Befunde an b an.</summary>
     public static void Pruefen(Modell m, Katalog k, List<Befund> b)
     {
         Leitungspruefungen.Pruefen(m, k, b);   // B1: P13, P14, P15, P18
