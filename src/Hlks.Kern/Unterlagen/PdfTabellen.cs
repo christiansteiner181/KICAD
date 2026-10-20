@@ -157,11 +157,72 @@ static class PdfTabellen
 
         var benutzt = new HashSet<Reihe>();
         foreach (var block in bloecke.Where(b => b.Count >= 3))
-        {
-            var t = Block(seite, block, reihen, benutzt, maxBreite);
-            if (t is not null) ergebnis.Add(t);
-        }
+            foreach (var teil in Teilen(block, maxBreite).Where(b => b.Count >= 3))
+            {
+                var t = Block(seite, teil, reihen, benutzt, maxBreite);
+                if (t is not null) ergebnis.Add(t);
+            }
         return ergebnis;
+    }
+
+    /// <summary>Fliesstext direkt über bzw. unter einer Zahlentabelle gehört nicht zu ihr (Nachbearbeitung N4, 20.10.2026; Befund Geberit-Datenblatt
+    /// «Erstellt mit Geberit Produktdaten»: Aufzählungen «Verwendungszwecke | Eigenschaften» und «Werkstoff | Stahl unlegiert …» stehen so dicht
+    /// über dem Kopf «Art.-Nr. | DN | d, ø | arc | L | Z | VE1 | VE2 | VE3», dass sie mit der Tabelle einen Block bildeten; ihre langen Zellen
+    /// überdeckten mehrere Spalten und verschmolzen sie – «20603 15 18 mm» stand in einer Zelle, «1.7 cm 20 St.» in einer anderen, ohne Kopf).
+    /// Spaltenraster aus den vollen Zeilen des Blocks (mindestens drei Zellen und drei Viertel der grössten Zellenzahl, mindestens drei solche
+    /// Zeilen); die unterste Fliesstextzeile über der ersten vollen Zeile bzw. die oberste unter der letzten trennt den Block. Fliesstextzeile:
+    /// eine Zelle mit mindestens vier Wörtern, die zwei oder mehr Spalten des Rasters zur Hälfte überdeckt (ein kurzer Sammelkopf wie
+    /// «Abmessungen [mm]» über L, B, H bleibt beim Kopf).</summary>
+    static List<List<Reihe>> Teilen(List<Reihe> block, double maxBreite)
+    {
+        int max = block.Max(r => r.Alle.Count);
+        int schwelle = Math.Max(3, (int)Math.Ceiling(0.75 * max));
+        var voll = block.Where(r => r.Alle.Count >= schwelle).ToList();
+        if (voll.Count < 3) return [block];
+        var raster = Raster(voll.SelectMany(r => r.Alle).Where(c => Kurz(c, maxBreite)).ToList());
+        if (raster.Count < 3) return [block];
+        int erste = block.IndexOf(voll[0]), letzte = block.IndexOf(voll[^1]);
+        int oben = -1, unten = block.Count;
+        for (int i = erste - 1; i >= 0 && oben < 0; i--) if (Fliesstext(block[i].Alle, raster)) oben = i;
+        for (int i = letzte + 1; i < block.Count && unten == block.Count; i++) if (Fliesstext(block[i].Alle, raster)) unten = i;
+        if (oben < 0 && unten == block.Count) return [block];
+        var teile = new List<List<Reihe>>();
+        if (oben >= 0) teile.Add(block.Take(oben + 1).ToList());
+        teile.Add(block.Skip(oben + 1).Take(unten - oben - 1).ToList());
+        if (unten < block.Count) teile.Add(block.Skip(unten).ToList());
+        return teile;
+    }
+
+    /// <summary>Hat die Zeile eine Zelle mit mindestens vier Wörtern, die zwei oder mehr Spalten je zur Hälfte überdeckt?</summary>
+    static bool Fliesstext(List<PZelle> zellen, List<(double L, double R)> spalten) =>
+        zellen.Any(c => c.Woerter >= 4 && spalten.Count(s => Math.Min(c.R, s.R) - Math.Max(c.L, s.L) >= 0.5 * Math.Max(s.R - s.L, 0.5)) >= 2);
+
+    /// <summary>Spalten aus Zellen: Streifen der x-Achse (0.5 pt), die mindestens zwei Zellen belegen, über Lücken bis 2 pt verbunden; je Streifen
+    /// die Ausdehnung seiner Zellen (mindestens zwei), überlappende vereinigt – wie die Spalten in <see cref="Block"/>.</summary>
+    static List<(double L, double R)> Raster(List<PZelle> zellen)
+    {
+        if (zellen.Count == 0) return [];
+        int n = (int)Math.Ceiling(zellen.Max(c => c.R) * 2) + 4;
+        var belegt = new int[n];
+        foreach (var c in zellen)
+            for (int i = Math.Max(0, (int)Math.Floor(c.L * 2)); i < Math.Min(n, (int)Math.Ceiling(c.R * 2)); i++) belegt[i]++;
+        var spalten = new List<(double L, double R)>();
+        for (int i = 0; i < n; i++)
+        {
+            if (belegt[i] < 2) continue;
+            int j = i;
+            while (j + 1 < n && belegt[j + 1] >= 2) j++;
+            double sl = i / 2.0, sr = (j + 1) / 2.0;
+            var mitglieder = zellen.Where(c => Math.Min(c.R, sr) - Math.Max(c.L, sl) >= 0.5 * (c.R - c.L)).ToList();
+            if (mitglieder.Count >= 2)
+            {
+                var s = (L: mitglieder.Min(c => c.L), R: mitglieder.Max(c => c.R));
+                if (spalten.Count > 0 && s.L < spalten[^1].R + 2) spalten[^1] = (Math.Min(spalten[^1].L, s.L), Math.Max(spalten[^1].R, s.R));
+                else spalten.Add(s);
+            }
+            i = j;
+        }
+        return spalten;
     }
 
     /// <summary>Verbinden nur umbrochene Zellzeilen zwei Tabellenzeilen? Zwischen beiden liegen lückenlos Zeilen (Abstand
@@ -251,6 +312,7 @@ static class PdfTabellen
         {
             if (r.Grund - vor > Math.Max(1.7 * median, 16)) break;
             if (Zuordnen(r.Alle, t.Spalten, maxBreite).Count == 0) break;
+            if (Fliesstext(r.Alle, t.Spalten)) break;   // N4: Fliesstext über der Tabelle («Werkstoff | Stahl unlegiert …») ist kein Kopf
             kandidaten.Add(r); vor = r.Grund;
         }
         kandidaten = kandidaten.OrderByDescending(r => r.Grund).ToList();

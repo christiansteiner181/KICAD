@@ -84,4 +84,12 @@ static class Hilfe
     }
 
     public static Process ServerStarten(params string[] args) => Process.Start(Start(args))!;
+
+    /// <summary>Server mit zusätzlichen bzw. gelöschten (null) Umgebungsvariablen nur für diesen Prozess (z. B. HLKS_HKAP_URL auf einen freien Port).</summary>
+    public static Process ServerStarten(IReadOnlyDictionary<string, string?> umgebung, params string[] args)
+    {
+        var psi = Start(args);
+        foreach (var (k, v) in umgebung) { if (v is null) psi.Environment.Remove(k); else psi.Environment[k] = v; }
+        return Process.Start(psi)!;
+    }
 }

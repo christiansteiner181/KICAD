@@ -10,6 +10,8 @@ Protokoll in `zuteilung.md`. Erledigte Einträge mit Datum und Ort (Modul, Testb
 | N1 | 18.10.2026 | IFC über zwei Punktpaare ausrichten | Abnahme 1b, Befund Bernstrasse | zurückgestellt |
 | N2 | 18.10.2026 | Eigenschaftenpalette und Projektbrowser verschiebbar | Wunsch Christian | **erledigt 19.10.2026** mit W1/W2 (`entwurf/fenster-revit.md`, geprüfter Stand 72b16dc) |
 | N3 | 19.10.2026 | Fehlende Bedienorte aus dem Funktionsverzeichnis | Bedienungsanleitung, `berichte/anleitung/inventar-notizen.md` Abschnitt 3 | **erledigt 20.10.2026** (Merge N3, Bericht in `zuteilung.md`) |
+| N4 | 20.10.2026 | PDF-Leser: Dezimalzahlen, Zeilenleser der Datenblatt-Tabellen | Grundausstattung R1, R2, R7 | **erledigt 20.10.2026** (Leser 2); Neubelegung der Familien offen |
+| N5 | 20.10.2026 | KI-Palette: abgelehnte Werkzeugaufrufe als «ok» | Abnahmelauf B6 | **erledigt 20.10.2026** |
 
 ## N1 – IFC über zwei Punktpaare ausrichten
 
@@ -109,9 +111,30 @@ Datenblatt-Zeilen wurden dem falschen Typ zugeordnet («Zeilenleser», z. B. z45
 **Fertig, wenn** die Befunde der R7-Unterlage die Dezimalwerte als Zahl mit Zelle liefern und die Familien R1, R2, R7 mit
 Quellenverweis neu belegt werden können.
 
+**Erledigt: 20.10.2026** (Leserteil; PDF-Leser Version 2). Ursachen: (1) Die Schrift des HDPE-Katalogs bildet den Punkt auf « .» ab
+(Leerraum plus Punkt in einer Glyphe) – PdfPig setzte «101 .4» und «Art . no .» zusammen, keine getrennten Läufe. Jetzt fällt der Leerraum
+einer solchen Glyphe weg; zusätzlich werden echte getrennte Läufe («101» «.4», «4» «.» «3», «147» «,6») zusammengeführt, wenn jede Lücke
+kleiner als eine Zeichenbreite ist (Gegenprobe: echte Spalten bleiben getrennt). (2) «Zeilenleser»: die Zeilen selbst waren richtig; die
+Tabellenerkennung nahm den Fliesstext darüber («Verwendungszwecke | Eigenschaften», «Werkstoff | Stahl unlegiert …») in den Block, dessen
+lange Zellen die Spalten verschmolzen («20603 15 18 mm» in einer Zelle, «1.7 cm 20 St.» in einer anderen, kein Kopf). Die KI musste die
+ganze Zeile zitieren, und die Quellenprüfung nannte als «Datenblattwert» die nächstliegende Zahl der Zeile (15/18/20). Jetzt trennt eine
+Fliesstextzeile über bzw. unter den vollen Zeilen den Block; die Tabelle hat 9 Spalten mit Kopf «Art.-Nr. | DN | d, ø | arc | L | Z | VE1 |
+VE2 | VE3», z45 d15/d18/d22 = 1.6/1.7/2.1 cm. Tests: `tests/Hlks.Kern.Tests/UnterlagenPdfN4Tests.cs` (selbst erzeugte PDF, echte Unterlagen nur
+lokal). **Offen:** Leserversion 2 liest zwischengespeicherte PDF-Befunde neu – Befund-Ids können sich verschieben (z. B. Bogen-Datenblatt ab
+der Tabelle); Quellen der Familien R1, R2, R7 (und weiterer mit PDF-Quellen) mit familie_pruefen nachprüfen und neu belegen (Hauptlauf).
+Kopf der HDPE-Rohrtabelle enthält weiter die Zeilen darüber («Technical data Product material Art. no.», «PE-HD DN»).
+
 ## N5 – KI-Palette: abgelehnte Werkzeugaufrufe als «ok» angezeigt
 
 Befund Abnahmelauf B6 (20.10.2026): Lehnt der Kern `unterlagen_lesen` ab (Pfadprüfung bzw. «mit Internet nur Herstellerunterlagen»),
 zeigt die Palette den Aufruf als «ok»; `ifc_pruefen` und `befunde` erscheinen richtig als «abgelehnt». Vermutlich liefert der
 MCP-Server bei `unterlagen_lesen` den Fehler als normales Ergebnis (ohne Fehlerkennung). **Fertig, wenn** jeder abgelehnte Aufruf
 in Palette und Auftragsprotokoll als abgelehnt erscheint (Test über alle Werkzeuge mit HlksFehler).
+
+**Erledigt: 20.10.2026.** Ursache: Kein Werkzeug setzte isError; die Palette erkannte Ablehnungen nur an «fehler» oben im JSON.
+`unterlagen_lesen` meldet Fehler je Unterlage (verschachtelt) und galt darum als «ok»; das Auftragsprotokoll vermerkte nur is_error. Lösung:
+eine Regel im Kern (`Werkzeugergebnis.MeldetFehler`: «fehler» als nicht leerer Text bzw. Liste oder angenommen false), benutzt vom MCP-Filter
+`Fehlerkennung` (isError für alle Werkzeuge), der Palette, dem Auftragsprotokoll («Werkzeug abgelehnt: name – Meldung») und der Kommandozeile;
+`unterlagen_lesen` setzt «fehler»/«vorschlag» (und «gelesen») oben und zuerst, sobald eine Unterlage nicht gelesen wird. Nebenbefund behoben:
+`synchronisieren` meldet «fehler»: [] und galt in der Palette als abgelehnt. Tests: `tests/Hlks.Mcp.Tests/FehlerkennungTests.cs` (alle 130
+Werkzeuge über das Protokoll mit erzwungener Ablehnung), `tests/Hlks.Web.Tests/NachbearbeitungN5Tests.cs`, `WerkzeugergebnisTests.cs`.

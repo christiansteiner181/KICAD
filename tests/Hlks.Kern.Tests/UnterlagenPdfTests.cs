@@ -27,7 +27,7 @@ public class UnterlagenPdfTests
             Assert.Equal(595, Zahl(((JsonObject)seiten[0].Wert!)["breite"]), 0.5);
             Assert.Equal(842, Zahl(((JsonObject)seiten[0].Wert!)["hoehe"]), 0.5);
             Assert.Equal("pt", seiten[0].Einheit);
-            Assert.Equal("pdf 1", b.Leser);
+            Assert.Equal("pdf 2", b.Leser);   // N4: Leserversion 2
         }
     }
 

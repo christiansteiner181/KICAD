@@ -9,6 +9,7 @@
 // Einmalig:   --beispiel <ordner> | --ki-auftrag | --ki-erwartung | --ki-bewerten <antwort.json>
 //             | --abfrage <name> [json] | --befehl <name> <json> [--trockenlauf]      (alle ausser --beispiel/--ki-auftrag mit --projekt)
 // Exit-Codes: 0 ok, 1 Fehler/abgelehnt, 2 KI-Test nicht bestanden.
+// Abgelehnte Werkzeugaufrufe tragen im MCP-Ergebnis isError (Fehlerkennung, Regel Werkzeugergebnis.MeldetFehler; Nachbearbeitung N5).
 
 using System.Text;
 using Hlks.Kern;
@@ -68,7 +69,11 @@ try
         .WithStdioServerTransport()
         .WithTools<Werkzeuge>()
         .WithTools<SitzungWerkzeuge>()   // Modul 3c: kontext_bild
-        .WithRequestFilters(f => f.AddCallToolFilter(Werkzeugauswahl.Kopfzeile));   // Sicherheitsprüfung 3c, B15
+        .WithRequestFilters(f =>
+        {
+            f.AddCallToolFilter(Fehlerkennung.Filter);          // Nachbearbeitung N5: abgelehnte Aufrufe mit isError
+            f.AddCallToolFilter(Werkzeugauswahl.Kopfzeile);     // Sicherheitsprüfung 3c, B15
+        });
     // Sicherheitsprüfung 3c, B3c: nur die Werkzeuge der Liste registrieren (zweite Sperre neben den Berechtigungen von Claude Code)
     if (werkzeugListe is not null)
         builder.Services.PostConfigure<ModelContextProtocol.Server.McpServerOptions>(o => Werkzeugauswahl.Anwenden(o, werkzeugListe, Console.Error));

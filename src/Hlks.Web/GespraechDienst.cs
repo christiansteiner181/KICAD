@@ -1337,12 +1337,9 @@ public sealed class GespraechDienst
         if (ok && PaketAusErgebnis(inhalt) is { } paketId) AenderungMelden(l, paketId).GetAwaiter().GetResult();
     }
 
-    /// <summary>Antwort eines Kern-Werkzeugs, die einen Fehler meldet: JSON mit «fehler» oder angenommen = false.</summary>
-    static bool MeldetFehler(string inhalt)
-    {
-        try { return JsonNode.Parse(inhalt) is JsonObject o && (o["fehler"] is not null || (o["angenommen"] is JsonValue v && v.TryGetValue<bool>(out var b) && !b)); }
-        catch (JsonException) { return false; }
-    }
+    /// <summary>Antwort eines Kern-Werkzeugs, die einen Fehler meldet: JSON mit «fehler» oder angenommen = false – dieselbe Regel wie der
+    /// MCP-Server (isError) und das Auftragsprotokoll (Werkzeugergebnis im Kern, Nachbearbeitung N5).</summary>
+    static bool MeldetFehler(string inhalt) => Werkzeugergebnis.MeldetFehler(inhalt);
 
     static string? PaketAusErgebnis(string inhalt)
     {

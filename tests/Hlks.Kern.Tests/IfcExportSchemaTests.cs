@@ -211,6 +211,16 @@ public class IfcExportPsdTests
     }
 
     [Fact]
+    public void Ventil_Nennweite_Pset_ValveTypeCommon_Size_in_IFC4_und_IFC2x3()
+    {
+        // Nachbearbeitung 20.10.2026: Exportziel der Ventil-Nennweite; die Lesekandidaten des Imports bleiben dahinter
+        var dn = IfcHilfe.Kat.Ifc!.Klassen.Single(k => k.Klasse == "Ventil").Psets!["dn"];
+        Assert.Equal(["Pset_ValveTypeCommon.Size", "Pset MEP.Geom-DN", "Pset MEP.Tech-DN"], dn);
+        Assert.Equal("IfcPositiveLengthMeasure", ifc4.Value["Pset_ValveTypeCommon"]["Size"]);
+        Assert.Equal("IfcPositiveLengthMeasure", ifc2x3.Value["Pset_ValveTypeCommon"]["Size"]);
+    }
+
+    [Fact]
     public void Ifc2x3_RohrUndKanalPsetsGibtEsAuch()
     {
         Assert.Equal("IfcPositiveLengthMeasure", ifc2x3.Value["Pset_PipeSegmentTypeCommon"]["NominalDiameter"]);

@@ -186,6 +186,7 @@ public sealed class AuftragDienst
         public readonly Dictionary<string, Abruf> AbrufNachId = new(StringComparer.Ordinal);
         public readonly List<FamilienAufruf> FamilienAufrufe = [];
         public readonly Dictionary<string, FamilienAufruf> FamilienAufrufNachId = new(StringComparer.Ordinal);
+        public readonly Dictionary<string, string> WerkzeugNachId = new(StringComparer.Ordinal);   // N5: Werkzeugname je Aufruf (Protokoll «abgelehnt»)
         public readonly StringBuilder StderrEnde = new();
         public string[] Vorher = [];                            // Pakete vor dem Lauf
         public bool McpFehlgeschlagen;
@@ -661,6 +662,7 @@ public sealed class AuftragDienst
                             break;
                         case "tool_use":
                             Schritt(a, Kurzname(T(b["name"])) + " " + Kurz(b["input"]?.ToJsonString(Json.Optionen) ?? "", 140));
+                            if (T(b["id"]) is { } wid) lock (a.Sperre) a.WerkzeugNachId[wid] = Kurzname(T(b["name"]));
                             AbrufMerken(a, T(b["id"]), T(b["name"]), b["input"] as JsonObject);
                             FamilienAufrufMerken(a, T(b["id"]), T(b["name"]), b["input"] as JsonObject);
                             break;
@@ -672,7 +674,8 @@ public sealed class AuftragDienst
                 {
                     var inhalt = KiUmgebung.Werkzeuginhalt(b["content"]);   // Sicherheitsprüfung 3c, B15: ohne Kopfzeile auswerten
                     var istFehler = b["is_error"] is JsonValue v && v.TryGetValue<bool>(out var fehler) && fehler;
-                    if (istFehler) Schritt(a, "Werkzeug meldet Fehler: " + Kurz(Einzeilig(inhalt), 200));
+                    // Nachbearbeitung N5: abgelehnt ist ein Aufruf mit is_error ODER mit einer Ablehnung im Ergebnis (gleiche Regel wie Palette und MCP)
+                    if (istFehler || MeldetFehler(inhalt)) WerkzeugAbgelehnt(a, T(b["tool_use_id"]), inhalt);
                     AbrufErgebnis(a, T(b["tool_use_id"]), !istFehler && !MeldetFehler(inhalt), inhalt);
                     FamilienAufrufErgebnis(a, T(b["tool_use_id"]), istFehler, inhalt);
                 }
@@ -712,11 +715,18 @@ public sealed class AuftragDienst
             abruf = new { art = ab.Art, text = ab.Text, erfolg, meldung = erfolg ? null : Kurz(Einzeilig(inhalt), 300) } }));
     }
 
-    /// <summary>Antwort eines Kern-Werkzeugs, die einen Fehler meldet: JSON mit «fehler» oder angenommen = false.</summary>
-    static bool MeldetFehler(string inhalt)
+    /// <summary>Antwort eines Kern-Werkzeugs, die einen Fehler meldet: JSON mit «fehler» oder angenommen = false – dieselbe Regel wie der
+    /// MCP-Server (isError) und die KI-Palette (Werkzeugergebnis im Kern, Nachbearbeitung N5).</summary>
+    static bool MeldetFehler(string inhalt) => Werkzeugergebnis.MeldetFehler(inhalt);
+
+    /// <summary>Abgelehnter Werkzeugaufruf ins Auftragsprotokoll: Schritt und eigene Zeile {"type":"hlks", werkzeug {name, ok false, meldung}}.</summary>
+    void WerkzeugAbgelehnt(Auftrag a, string? toolId, string inhalt)
     {
-        try { return JsonNode.Parse(inhalt) is JsonObject o && (o["fehler"] is not null || (o["angenommen"] is JsonValue v && v.TryGetValue<bool>(out var b) && !b)); }
-        catch (JsonException) { return false; }
+        string name;
+        lock (a.Sperre) name = toolId is not null && a.WerkzeugNachId.TryGetValue(toolId, out var n) ? n : "?";
+        var meldung = Kurz(Einzeilig(inhalt), 300);
+        Schritt(a, $"Werkzeug abgelehnt: {name} – {Kurz(Einzeilig(inhalt), 200)}");
+        LogZeile(a, Json.Text(new { type = "hlks", zeit = Jetzt(), text = $"Werkzeug abgelehnt: {name}", werkzeug = new { name, ok = false, meldung } }));
     }
 
     /// <summary>Aufrufe von familie_entwurf und familie_aendern merken, um ihr Ergebnis auszuwerten.</summary>
