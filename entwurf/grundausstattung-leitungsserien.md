@@ -40,6 +40,9 @@ mit Massen enthält; fehlt ein Mass, bleibt der Formteiltyp offen (Befund), nie 
   lokalen Arbeitsprojekt `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` – **nicht direkt auf W:**. Ergebnis sind
   Entwürfe; Konflikte und **Freigabe nur durch Christian**; danach übernimmt **Christian** sie per Knopf in die Bürobibliothek.
 - Kürzel je Serie für die Beschriftung (Abwasser Aussendurchmesser «PE-S 110», sonst NW/DN nach Projekteinstellung).
+- **Grössen (Christian, 20.10.2026):** «DN ist immer vom Innendurchmesser abgeleitet» – nennt die Quelle keine DN, gilt DN = grösste
+  Stufe ≤ di (für alle Normgrössen bis DN 300 gleich wie die Debrunner-Tabellen); **Lüftung: Grösse = Aussendurchmesser**; Rohrserien
+  **bis DN 300** («die anderen können bis 300 berücksichtigt werden»); Zwischengrössen mit gleicher DN gestrichen, je DN die Normgrösse.
 - Kälte: R1/R3/R4 decken HZ- und KAE-Medien (Wasser und Glykol) ab (`entwurf/gewerk-kaelte.md`).
 
 ## Ablauf

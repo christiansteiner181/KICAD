@@ -20,7 +20,7 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 | R6 | Geberit Silent-db20 | Serie, Bogen, T-Stück (45°/88,5°), Reduktion | 7 (56 × 3,2 … 160 × 7), Kürzel PE-S | keine | bestanden | Quelle DIBt 2019; PE-S oder PE-S2 |
 | R7 | Geberit PE | Serie, Bogen, T-Stück (50), Reduktion (34) | 13 (d32 … d315) | keine | bestanden | Kürzel; Quelle Ausgabe AU; d32 ohne Masse |
 | R3 | Stahlrohr Gewinderohr | Serie, Bogen (Winkel Fig. 90/120), T-Stück (63), Reduktion (31) | 11 (1/4" … 4", EN 10255) | keine | bestanden | Kürzel; Rohrhersteller; Reihe M/H |
-| R4 | Stahlrohr geschweisst | Serie, Bogen (31), T-Stück (46), Reduktion (56) | 35 (33,7 × 2,3 … 508 × 6,3, EN 10217-1) | keine | bestanden | **DN fehlt** (nicht platzierbar); Kürzel |
+| R4 | Stahlrohr geschweisst | Serie, Bogen (14), T-Stück (43), Reduktion (46) | 12 (33,7 × 2,3 DN 25 … 323,9 × 5,6 DN 300) | keine | bestanden | Kürzel; DN aus di (nachgeführt) |
 | K1 | Wickelfalzrohr rund | offen | | | | |
 | K3 | Flexrohr | offen | | | | |
 | K2 | Rechteckkanal | offen | | | | |
@@ -99,8 +99,10 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 - **Stichprobe Hauptlauf** gegen M100628: 33,7 × 2,3, 60,3 × 2,9, 114,3 × 3,6 – stimmen (Spalten der PDF verrutscht; Wandstärken
   zusätzlich über das Metergewicht des Datenblatts bestätigt). Bogen 90° M107735: d33,7 × 2,6 a 38, d60,3 × 2,9 a 76 – stimmen.
 - **Zur Entscheidung:**
-  1. **DN fehlt in allen Typen** – Debrunner ordnet Siederohren keine DN zu, die KI leitet keine aus dem Aussendurchmesser ab
-     (Regel). Ohne DN ist die Serie nicht platzierbar. Christian: DN-Zuordnung aus einer Quelle festlegen (z. B. Herstellertabelle).
+  1. **DN – erledigt 20.10.2026:** Christian: «DN ist immer vom Innendurchmesser abgeleitet», «bis 300», Zwischengrössen streichen.
+     Hauptlauf hat nachgeführt: DN = grösste Stufe ≤ di (für alle Normgrössen gleich wie Debrunner M100602 und die Debrunner-
+     Flanschtabellen), 12 Rohrgrössen DN 25 … DN 300 (168,3 mit Wand 4,5 wie die Formteile); Formteile ebenso, Zwischengrössen und
+     Grössen über 323,9 gestrichen. Die Serie ist zeichenbar (jede Grösse findet Bogen, T-Stück, Reduktion; Beschriftung «NW 25»).
   2. Wandstärken Rohr ≠ Formteil bei mehreren Grössen (z. B. 48,3: Rohr 2,3, Bogen 2,6) – so verkauft Debrunner.
   3. Unstimmigkeiten in den Debrunner-Blättern: 45°-Bogen «129.0 × 4.5» (vermutlich 159), T-Stück 323,9-273 und 323,9-219,1 beide b 230,
      Reduktion «P235PG» (vermutlich P235GH) – nicht korrigiert.

@@ -24,7 +24,8 @@ public class AuftragVorlageTests
 
     [Theory]
     [InlineData("Nichts erfinden")]
-    [InlineData("Keine DN aus Durchmessern raten")]
+    [InlineData("DN nie raten, nie aus dem Aussendurchmesser")]
+    [InlineData("aus dem **Innendurchmesser**")]   // Regel Christian 20.10.2026
     [InlineData("Widersprüche nie selbst auflösen")]
     [InlineData("Keine Preise übernehmen")]
     [InlineData("Nie freigeben")]
