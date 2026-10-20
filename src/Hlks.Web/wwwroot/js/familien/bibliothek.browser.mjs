@@ -273,6 +273,9 @@ await kern('befehl', 'familienauswahl_setzen', { auswahl: { gewerke: ['heizung']
 await neuHolen();
 
 abschnitt('Projektbrowser: Bibliotheksfamilien grau mit Marke, je Kategorie');
+// Nach dem Neuholen kann der Knoten «Familien» neu gezeichnet und zugeklappt sein (je nach Katalog und gemerktem Zustand) – erneut öffnen.
+await warteBis(async () => gibt('.pb-zeile[data-key="w:familien"]'), 'Knoten «Familien» da');
+await oeffne('w:familien');
 await warteBis(async () => (await anzahl('.pb-zeile[data-art="bib-fam"]')) >= 1 || (await gibt('.pb-zeile[data-key="fk:Heizkoerper"]')), 'Kategorien im Explorer');
 await oeffne('fk:Heizkoerper'); await oeffne('fk:Waschtisch');
 await warteBis(async () => (await anzahl('.pb-zeile[data-art="bib-fam"]')) === 3, 'drei Bibliotheksfamilien sichtbar');
