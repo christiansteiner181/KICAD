@@ -40,6 +40,7 @@ public static class Pruefungen
         ["P23"] = SanitaerPruefung.Codes["P23"],
         ["P24"] = SanitaerPruefung.Codes["P24"],
         ["P25"] = SanitaerPruefung.Codes["P25"],
+        ["P26"] = SanitaerPruefung.Codes["P26"],   // Prüfbericht 4A (B2): Apparat ohne Weg im Netz
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete
@@ -130,7 +131,7 @@ public static class Pruefungen
         LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18
         SchemaPruefung.Pruefen(m, k, b);      // Modul 3: P17
         AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
-        SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P25
+        SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26
 
         return b.OrderBy(x => x.Schwere switch { "fehler" => 0, "warnung" => 1, _ => 2 }).ThenBy(x => x.Code).ThenBy(x => x.Element).ToList();
     }

@@ -98,7 +98,7 @@ static class SanitaerHilfe
         Assert.True(Math.Abs(erwartet - ist) <= tol, $"{was}: erwartet {erwartet:R}, ist {ist:R} (Toleranz {tol})");
 
     public static List<Befund> Sanitaerbefunde(Projekt p) =>
-        Pruefungen.Alle(p.Modell, p.Katalog).Where(b => b.Code is "P21" or "P22" or "P23" or "P24" or "P25").ToList();
+        Pruefungen.Alle(p.Modell, p.Katalog).Where(b => b.Code is "P21" or "P22" or "P23" or "P24" or "P25" or "P26").ToList();
 
     public static string Liste(IEnumerable<Befund> b) => string.Join("; ", b.Select(x => $"{x.Code} {x.Element}: {x.Text}"));
 }

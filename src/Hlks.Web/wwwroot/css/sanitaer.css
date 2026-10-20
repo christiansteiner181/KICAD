@@ -39,3 +39,7 @@
 .li-tabelle.li-block { width: auto; min-width: 560px; }
 .li-tabelle.li-block th { cursor: default; }
 .li-tabelle.li-block th:hover { background: inherit; }
+/* Hinweise des Kerns unter den Blöcken (Prüfbericht 4A): Fliesstext, nicht sortierbar */
+.li-tabelle.li-hinweise th { cursor: default; }
+.li-tabelle.li-hinweise th:hover { background: inherit; }
+.li-tabelle.li-hinweise td { white-space: normal; }

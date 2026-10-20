@@ -13,8 +13,19 @@
 // (Trinkwasser: KW und WW, Schmutzwasser: SW; Zirkulation ZIR und Regenwasser RW sind ausgenommen) und nur durch Leitungsbauteile und
 // Zentralen (Wassererwärmer: das Kaltwasser vor dem Wassererwärmer trägt dessen Warmwasser-Apparate mit, wie die Gesamtsumme ΣKW + ΣWW
 // am Hausanschluss); an Apparaten, Quellen und Senken endet der Weg.
-// Masche (Ringleitung): erreicht der Weg ab einem Apparat ein Element ein zweites Mal, gibt es zwei Wege – der Apparat zählt je Leitung
-// trotzdem höchstens einmal (je Apparat und Medium), das Element wird als Befund P24 gemeldet.
+// Masche (Ringleitung): erreicht der Weg ab einem Apparat ein Element ein zweites Mal (Treffpunkt), gibt es zwei Wege ab einer Verzweigung –
+// der Apparat zählt je Leitung trotzdem höchstens einmal (je Apparat und Medium), der Treffpunkt wird als Befund P24 gemeldet. Als «masche»
+// gekennzeichnet werden nur die Leitungen IN der Masche (zwischen Verzweigung und Treffpunkt, Prüfbericht 4A B6): nur dort ist die Summe
+// nicht eindeutig; die Leitungen davor und dahinter tragen den Apparat eindeutig.
+// Weg ohne Fortsetzung (Prüfbericht 4A B2): ist ein Apparateanschluss verbunden, kommt der Weg aber trotz Verbindung nicht weiter (Leitung
+// verkehrt gerichtet, Anschluss des Apparats mit falscher Fliessrichtung, anderes Medium, Anschluss ohne Medium «*»), fehlt der Apparat in den
+// Summen dahinter. Das geschieht nie still: der Anschluss steht in SanitaerNetz.OhneWeg und wird als Befund P26 gemeldet. Ein offenes Ende
+// (Netz noch nicht fertig gezeichnet, Befund P01) und ein Ende an einem Gerät (Hausanschluss, Kontrollschacht …) sind keine Sackgasse.
+// Erkennung: ein erreichtes Element ohne jede Fortsetzung (kein weiteres Element, kein Gerät, kein zweiter Weg), an dem ein verbundener
+// Anschluss dieses Netzes nur deshalb nicht weiterführt, weil die Gegenseite verkehrt gerichtet ist oder ein anderes Medium hat. Seitenäste
+// einer Verzweigung, die vom Weg wegführen, sind normal – sie zählen nur, wenn das Element sonst keine Fortsetzung hat. Formteile, die
+// ungerichtet («beide» ↔ «beide») aneinander hängen (T-Stück mit Reduktion am Abzweig), gelten dabei als ein Knoten: erst wenn die ganze
+// Gruppe keine Fortsetzung hat, ist es eine Sackgasse (sonst wäre jede Reduktion am Anfang eines Seitenasts ein Fehlalarm).
 // KEINE Normrechnung je Teilstrecke (kein Spitzendurchfluss, keine DN, kein Q_WW je Leitung) – das ist Teil B (Normen fehlen).
 //
 // Zwischengespeichert je Modellstand (Modell.Aenderungszaehler): Prüfungen, element_lesen und Abfragen teilen eine Rechnung.
@@ -33,6 +44,16 @@ public sealed record SanitaerZuordnung(SanitaerArt? Art, string? Schluessel, str
 public sealed record SanitaerBeitrag(Element Apparat, string Anschluss, string Medium, SanitaerZuordnung Zuordnung, double? Wert)
 {
     public string Schluessel => Apparat.Id + "|" + Medium.ToUpperInvariant();
+}
+
+/// <summary>Verbundener Apparateanschluss, dessen Weg im Netz nicht weiterkommt (Befund P26): die Belastung fehlt in den Leitungen dahinter.</summary>
+/// <param name="Medium">Medium des Netzes (KW, WW, SW); bei einem Anschluss ohne Medium das Medium der Gegenseite.</param>
+/// <param name="EndetBei">Element, an dem der Weg endet (der Apparat selbst, wenn schon der erste Schritt nicht geht).</param>
+/// <param name="Grund">Warum es nicht weitergeht, z. B. «T2.a ist mit R2.anfang «rein» verbunden – Fliessrichtung verkehrt».</param>
+public sealed record SanitaerOhneWeg(Element Apparat, string Anschluss, string Medium, Element EndetBei, string Grund)
+{
+    /// <summary>Wo die Belastung fehlt: Trinkwasser «stromauf» (in den versorgenden Leitungen), Schmutzwasser «stromab».</summary>
+    public string Fehlt => SanitaerNetz.IstTrinkwasser(Medium) ? "stromauf" : "stromab";
 }
 
 /// <summary>Summen über eine Menge von Beiträgen (Leitung, Strang, System, Anlage).</summary>
@@ -91,12 +112,16 @@ public sealed class SanitaerNetz
     public Dictionary<string, List<SanitaerBeitrag>> JeLeitung { get; } = new(StringComparer.Ordinal);
     /// <summary>Leitung (Id) → Medium der Leitung (KW, WW, SW).</summary>
     public Dictionary<string, string> LeitungMedium { get; } = new(StringComparer.Ordinal);
-    /// <summary>Element (Id), an dem sich zwei Wege ab einem Apparat treffen → Apparate (Ids).</summary>
+    /// <summary>Element (Id), an dem sich zwei Wege ab einem Apparat treffen (Treffpunkt) → Apparate (Ids).</summary>
     public Dictionary<string, SortedSet<string>> Maschen { get; } = new(StringComparer.Ordinal);
-    /// <summary>Leitungen (Ids), deren Summe Apparate einer Masche enthält.</summary>
+    /// <summary>Treffpunkt (Id) → Verzweigungen (Ids), ab denen die beiden Wege auseinandergehen.</summary>
+    public Dictionary<string, SortedSet<string>> MaschenVerzweigungen { get; } = new(StringComparer.Ordinal);
+    /// <summary>Leitungen (Ids) in einer Masche (zwischen Verzweigung und Treffpunkt): ihre Summe ist nicht eindeutig.</summary>
     public HashSet<string> MaschenLeitungen { get; } = new(StringComparer.Ordinal);
     /// <summary>Apparat (Id) → Anlagen (Ids), an deren Systeme er angeschlossen ist.</summary>
     public Dictionary<string, List<string>> AnlagenJeApparat { get; } = new(StringComparer.Ordinal);
+    /// <summary>Verbundene Apparateanschlüsse, deren Weg im Netz nicht weiterkommt (Befund P26), nach Apparat und Anschluss.</summary>
+    public List<SanitaerOhneWeg> OhneWeg { get; } = [];
 
     public static bool IstTrinkwasser(string medium) => SanitaerKatalog.Trinkwasser.Contains(medium);
     public static bool IstAbwasser(string medium) => SanitaerKatalog.Abwasser.Contains(medium);
@@ -131,6 +156,10 @@ public sealed class SanitaerNetz
         var ids = leitungen.Where(LeitungMedium.ContainsKey).ToList();
         return Summe(ids.SelectMany(i => JeLeitung.GetValueOrDefault(i) ?? []), ids.Any(MaschenLeitungen.Contains));
     }
+
+    /// <summary>Anschlüsse ohne Weg der Apparate einer Anlage (Anlage null = alle).</summary>
+    public IEnumerable<SanitaerOhneWeg> OhneWegIn(string? anlageId) =>
+        anlageId is null ? OhneWeg : OhneWeg.Where(o => AnlagenJeApparat.TryGetValue(o.Apparat.Id, out var l) && l.Contains(anlageId));
 }
 
 public static class SanitaerBelastung
@@ -160,7 +189,6 @@ public static class SanitaerBelastung
         foreach (var e in m.Elemente)
             if (k.IstArt(e, "Leitung") && LeitungsMedium(m, e) is { } med) { n.LeitungMedium[e.Id] = med; n.JeLeitung[e.Id] = []; }
 
-        var maschenApparate = new HashSet<string>(StringComparer.Ordinal);
         var gezaehlt = new HashSet<string>(StringComparer.Ordinal);   // «Leitung|Apparat|Medium»: je Leitung jeder Apparat je Medium einmal
         foreach (var a in m.Elemente.Where(e => SanitaerArten.IstApparat(k, e)).OrderBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
@@ -171,20 +199,29 @@ public static class SanitaerBelastung
             foreach (var an in a.Anschluesse)
             {
                 var medium = Netz.Medium(m, a, an);
+                if (medium == "*")
+                {
+                    // Anschluss ohne Medium (z. B. Familie mit «*»): er zählt in keiner Spalte. Hängt er an einer Leitung des Trinkwasser- oder
+                    // Abwassernetzes, fehlt der Apparat dort – nicht still (P26), mit dem Medium der Gegenseite.
+                    if (Gegenueber(m, a, an) is { } gg && Netz.Medium(m, gg.Element, gg.Anschluss) is var gm && SanitaerKatalog.SpalteFuer(gm) is not null)
+                        n.OhneWeg.Add(new(a, an.Name, gm.ToUpperInvariant(), a, $"{a.Kennzeichen}.{an.Name} hat kein Medium («*») und zählt in keiner Spalte – verbunden mit {gg.Element.Kennzeichen}.{gg.Anschluss.Name} ({gm})"));
+                    continue;
+                }
                 if (SanitaerKatalog.SpalteFuer(medium) is null) continue;
                 var beitrag = new SanitaerBeitrag(a, an.Name, medium.ToUpperInvariant(), z, z.Art?.WertFuer(medium));
-                Folgen(m, k, a, an, medium,
+                var sack = Folgen(m, k, a, an, medium,
                     erreicht: x => { if (n.JeLeitung.TryGetValue(x.Id, out var l) && gezaehlt.Add(x.Id + "|" + beitrag.Schluessel)) l.Add(beitrag); },
-                    masche: x =>
+                    masche: (treffpunkt, verzweigung, elemente) =>
                     {
-                        if (!n.Maschen.TryGetValue(x.Id, out var s)) n.Maschen[x.Id] = s = new(StringComparer.Ordinal);
+                        if (!n.Maschen.TryGetValue(treffpunkt.Id, out var s)) n.Maschen[treffpunkt.Id] = s = new(StringComparer.Ordinal);
                         s.Add(a.Id);
-                        maschenApparate.Add(a.Id);
+                        if (!n.MaschenVerzweigungen.TryGetValue(treffpunkt.Id, out var v)) n.MaschenVerzweigungen[treffpunkt.Id] = v = new(StringComparer.Ordinal);
+                        v.Add(verzweigung.Id);
+                        foreach (var x in elemente) if (n.LeitungMedium.ContainsKey(x.Id)) n.MaschenLeitungen.Add(x.Id);
                     });
+                if (sack is not null) n.OhneWeg.Add(new(a, an.Name, medium.ToUpperInvariant(), sack.Bei, sack.Grund));
             }
         }
-        foreach (var (id, l) in n.JeLeitung)
-            if (l.Any(b => maschenApparate.Contains(b.Apparat.Id))) n.MaschenLeitungen.Add(id);
         return n;
     }
 
@@ -211,34 +248,96 @@ public static class SanitaerBelastung
     /// und Senken beenden ihn.</summary>
     static bool Durchgang(Katalog k, Element e) => Netz.IstLeitungsbauteil(k, e) || Netz.Rolle(k, e) == "zentrale";
 
+    /// <summary>Gegenseite einer Verbindung an einem Anschluss (null = offen oder Verweis ins Leere, P08).</summary>
+    static (Element Element, Anschluss Anschluss)? Gegenueber(Modell m, Element e, Anschluss a)
+    {
+        var v = m.VerbindungAn(e.Id, a.Name);
+        var g = v?.Gegenueber(e.Id, a.Name);
+        var nb = m.Finde(g?.Element);
+        var na = nb?.AnschlussNamens(g!.Anschluss);
+        return nb is null || na is null ? null : (nb, na);
+    }
+
+    /// <summary>Warum der Weg von «e.a» nicht in die Gegenseite «nb.na» weitergeht (verkehrt gerichtet, anderes Medium); null = er geht.</summary>
+    static string? Sperre(Modell m, Element e, Anschluss a, Element nb, Anschluss na, string richtung, IReadOnlySet<string> medien)
+    {
+        if (!Eingang(na.Fluss, richtung))
+            return $"{e.Kennzeichen}.{a.Name} ist mit {nb.Kennzeichen}.{na.Name} «{na.Fluss}» verbunden – Fliessrichtung verkehrt";
+        if (!MediumPasst(m, nb, na, medien))
+            return $"{e.Kennzeichen}.{a.Name} ist mit {nb.Kennzeichen}.{na.Name} ({Netz.Medium(m, nb, na)}) verbunden – anderes Medium";
+        return null;
+    }
+
+    /// <summary>Stelle, an der ein Weg trotz Verbindung nicht weiterkommt.</summary>
+    sealed record Sackgasse(Element Bei, string Grund);
+
     /// <summary>Folgt dem Netz ab einem Apparateanschluss: Trinkwasser stromauf, Schmutzwasser stromab, nur über Anschlüsse der Medien des
-    /// Netzes. Ein zweites Erreichen eines Elements ist eine Masche.</summary>
-    static void Folgen(Modell m, Katalog k, Element apparat, Anschluss start, string medium, Action<Element> erreicht, Action<Element> masche)
+    /// Netzes (Breitensuche). Ein zweites Erreichen eines Elements ist eine Masche: masche(Treffpunkt, Verzweigung, Elemente der Masche).
+    /// Rückgabe: Sackgasse (Weg kommt trotz Verbindung nicht weiter, Befund P26) oder null.</summary>
+    static Sackgasse? Folgen(Modell m, Katalog k, Element apparat, Anschluss start, string medium, Action<Element> erreicht,
+        Action<Element, Element, IReadOnlyList<Element>> masche)
     {
         bool trink = SanitaerNetz.IstTrinkwasser(medium);
         var richtung = trink ? "stromauf" : "stromab";
         var medien = trink ? SanitaerKatalog.Trinkwasser : SanitaerKatalog.Abwasser;
-        if (!Ausgang(start.Fluss, richtung)) return;
-        var v = m.VerbindungAn(apparat.Id, start.Name);
-        var g = v?.Gegenueber(apparat.Id, start.Name);
-        var erster = m.Finde(g?.Element);
-        var ea = erster?.AnschlussNamens(g!.Anschluss);
-        if (erster is null || ea is null || !Eingang(ea.Fluss, richtung) || !Durchgang(k, erster) || !MediumPasst(m, erster, ea, medien)) return;
+        if (Gegenueber(m, apparat, start) is not { } g0) return null;   // nicht verbunden: P22 bzw. P01 (bzw. P08)
+        var (erster, ea) = g0;
+        if (!Ausgang(start.Fluss, richtung))
+            return new(apparat, $"{apparat.Kennzeichen}.{start.Name} hat die Fliessrichtung «{start.Fluss}» – so führt kein Weg ins {(trink ? "Trinkwassernetz" : "Abwassernetz")}");
+        if (Sperre(m, apparat, start, erster, ea, richtung, medien) is { } grund0) return new(apparat, grund0);
+        if (!Durchgang(k, erster)) return null;   // direkt an einem Gerät (z. B. Hausanschluss): keine Leitung dazwischen, kein Fehler
+
+        var eltern = new Dictionary<string, Element?>(StringComparer.Ordinal) { [erster.Id] = null };   // Baum der Breitensuche (für die Masche)
         var besucht = new HashSet<string>(StringComparer.Ordinal) { apparat.Id, erster.Id };
         var schlange = new Queue<(Element E, string Eintritt)>();
         schlange.Enqueue((erster, ea.Name));
         erreicht(erster);
+        List<Element> Pfad(Element x) { var l = new List<Element>(); for (Element? y = x; y is not null; y = eltern[y.Id]) l.Add(y); return l; }
+
+        // Sackgasse: Formteile, die «beide» ↔ «beide» verbunden sind (T-Stück mit Reduktion am Abzweig, Verteiler …), haben selbst keine Richtung –
+        // sie zählen als ein Knoten (Gruppe). Eine Gruppe ohne jede Fortsetzung nach aussen, an der ein verbundener Anschluss nur wegen der
+        // Gegenseite (verkehrt gerichtet, anderes Medium) nicht weiterführt, ist eine Sackgasse. Eine Reduktion am Anfang eines Seitenasts gehört
+        // so zur Gruppe des T-Stücks, das weiterführt – kein Fehlalarm.
+        var gruppe = new Dictionary<string, string>(StringComparer.Ordinal);   // Union-Find über die Ids
+        string Wurzel(string id) { while (gruppe.TryGetValue(id, out var p) && p != id) id = p; return id; }
+        void Vereinen(string x, string y) { var wx = Wurzel(x); var wy = Wurzel(y); if (wx != wy) gruppe[wy] = wx; }
+        var reihenfolge = new List<Element>();
+        var weiterNachAussen = new HashSet<string>(StringComparer.Ordinal);
+        var sperre = new Dictionary<string, string>(StringComparer.Ordinal);   // Element → erster Grund, warum ein verbundener Anschluss nicht weiterführt
         while (schlange.Count > 0)
         {
             var (e, ein) = schlange.Dequeue();
-            foreach (var (nb, nEin, aus) in Netz.Nachbarn(m, e, ein, richtung, null))
+            reihenfolge.Add(e);
+            foreach (var a in e.Anschluesse)
             {
-                if (!MediumPasst(m, e, e.AnschlussNamens(aus), medien) || !MediumPasst(m, nb, nb.AnschlussNamens(nEin), medien)) continue;
-                if (!Durchgang(k, nb)) continue;
-                if (!besucht.Add(nb.Id)) { masche(nb); continue; }
+                if (a.Name.Equals(ein, StringComparison.OrdinalIgnoreCase)) continue;
+                if (!MediumPasst(m, e, a, medien)) continue;          // Anschluss eines anderen Netzes (z. B. Zirkulation am Wassererwärmer)
+                if (!Ausgang(a.Fluss, richtung)) continue;            // Abgang in die andere Richtung
+                if (Gegenueber(m, e, a) is not { } g) continue;        // offen: Netz noch nicht fertig (P01) bzw. P08
+                var (nb, na) = g;
+                if (Sperre(m, e, a, nb, na, richtung, medien) is { } grund) { sperre.TryAdd(e.Id, grund); continue; }   // Seitenast oder verkehrt
+                bool durchgang = Durchgang(k, nb);
+                if (durchgang && a.Fluss == "beide" && na.Fluss == "beide") Vereinen(e.Id, nb.Id);   // ungerichtet: dieselbe Gruppe
+                else weiterNachAussen.Add(e.Id);                                                      // gerichtet weiter oder an einem Gerät
+                if (!durchgang) continue;                              // Weg endet an einem Gerät (Quelle, Senke …)
+                if (!besucht.Add(nb.Id))
+                {
+                    if (!eltern.ContainsKey(nb.Id)) continue;          // zurück zum Apparat selbst (kein Durchgang, nur zur Sicherheit)
+                    // Masche: Treffpunkt nb, Verzweigung = letztes gemeinsames Element der beiden Wege (vom ersten Element aus)
+                    var p1 = Pfad(e); var p2 = Pfad(nb);
+                    var in2 = p2.Select(x => x.Id).ToHashSet(StringComparer.Ordinal);
+                    var verzweigung = p1.FirstOrDefault(x => in2.Contains(x.Id)) ?? erster;
+                    masche(nb, verzweigung, p1.TakeWhile(x => x.Id != verzweigung.Id).Concat(p2.TakeWhile(x => x.Id != verzweigung.Id)).ToList());
+                    continue;
+                }
+                eltern[nb.Id] = e;
                 erreicht(nb);
-                schlange.Enqueue((nb, nEin));
+                schlange.Enqueue((nb, na.Name));
             }
         }
+        var weiter = weiterNachAussen.Select(Wurzel).ToHashSet(StringComparer.Ordinal);
+        foreach (var e in reihenfolge)
+            if (sperre.TryGetValue(e.Id, out var grund) && !weiter.Contains(Wurzel(e.Id))) return new(e, grund);
+        return null;
     }
 }

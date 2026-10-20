@@ -1,8 +1,11 @@
 // Modul 4 Teil A (entwurf/modul-4.md): Belastungswerte der Sanitärapparate. Einzige fachliche Quelle ist der Katalog
 // kataloge/sanitaer_belastungswerte.json, vom Hauptlauf aus Christians Excel «LU_DU Zusammenstellung_.xlsx» (Objekt Walkringen,
-// 14.03.2024, Tabelle1 A7:D40) übertragen: Apparatearten mit LU KW, LU WW, DU und Excel-Zeile, Rechenformeln mit Zellbezug,
-// Referenzergebnis, Vorgabe je Klasse. Werte und Formeln kommen NUR von dort – nichts ergänzen, nichts herleiten (CLAUDE.md:
-// Normwerte nie aus dem Gedächtnis). Fehlt etwas oder ist es unlesbar, lehnt das Laden ab (verständlicher Fehler), statt zu raten.
+// 14.03.2024; Tabellenblatt und Bereich stehen im Katalog unter quelle.bereich) übertragen: Apparatearten mit LU KW, LU WW, DU und
+// Excel-Zeile, Rechenformeln mit Zellbezug, Kurven mit «grösster LU» und Gültigkeitsbereich, Regel der Kurvenwahl mit Herkunft,
+// Referenzergebnis, Vorgabe je Klasse. Werte und Formeln kommen NUR von dort – nichts ergänzen, nichts herleiten (CLAUDE.md: Normwerte nie
+// aus dem Gedächtnis). Fehlt etwas oder ist es unlesbar, lehnt das Laden ab (verständlicher Fehler), statt zu raten.
+// Prüfbericht 4A (berichte/modul-4a-pruefbericht.md), Auflagen B1/B3/B5: kein Blattname, keine Kurvennummer und keine Schwelle der Kurvenwahl
+// im Code – alles aus dem Katalog.
 
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -14,6 +17,9 @@ namespace Hlks.Kern;
 /// <param name="Reihenfolge">Index im Katalog (0 …) = Reihenfolge der Excel-Zeilen; die Zusammenstellung liest wie das Excel.</param>
 public sealed record SanitaerArt(string Schluessel, string Name, double? LuKw, double? LuWw, double? Du, int Zeile, int Reihenfolge)
 {
+    /// <summary>Name, wie er im Excel steht, wenn der Katalog ihn typografisch bereinigt hat (Katalog nameExcel, Prüfbericht 4A B4); sonst null.</summary>
+    public string? NameExcel { get; init; }
+
     /// <summary>Wert der Spalte, die zum Medium eines Apparateanschlusses gehört: KW → LU KW, WW → LU WW, SW → DU; sonst null.</summary>
     public double? WertFuer(string medium) => SanitaerKatalog.SpalteFuer(medium) switch
     {
@@ -25,25 +31,40 @@ public sealed record SanitaerArt(string Schluessel, string Name, double? LuKw, d
 }
 
 /// <summary>Kurve des Spitzendurchflusses: Spitze = Volumenstrom^Exponent × Faktor (Excel-Zelle im Katalog).</summary>
-public sealed record SanitaerKurve(int Nummer, double Faktor, double Exponent, string Zelle, string Text)
+/// <param name="Schluessel">Schlüssel im Katalog (rechnung.spitzeKurve3 bzw. rechnung.spitzeKurve5).</param>
+/// <param name="Nummer">«Grösster LU» der Kurve aus dem Katalog (grosserLu; Excel C56 «Grösster LU: 3», I56 «Grösster LU: 5»).</param>
+/// <param name="BereichVon">Gültigkeitsbereich des Volumenstroms in l/s aus dem Katalog (bereichLs; Excel C55 bzw. I55).</param>
+public sealed record SanitaerKurve(string Schluessel, int Nummer, double Faktor, double Exponent, string Zelle, string Text,
+    double BereichVon, double BereichBis, string BereichZelle)
 {
     public double Spitze(double volumenstrom) => volumenstrom > 0 ? Math.Pow(volumenstrom, Exponent) * Faktor : 0;
+
+    /// <summary>Anzeigename wie in der Zusammenstellung: Kurve «grösster LU n».</summary>
+    public string Name => $"Kurve «grösster LU {Nummer}»";
+
+    public bool ImBereich(double volumenstrom) => volumenstrom >= BereichVon && volumenstrom <= BereichBis;
 }
+
+/// <summary>Regel, nach der die massgebende Kurve gewählt wird, mit Herkunft (Katalog rechnung.kurvenwahl). Bestaetigt = von Christian bestätigt.</summary>
+public sealed record SanitaerKurvenwahl(string Regel, string Quelle, bool Bestaetigt);
 
 public sealed class SanitaerKatalog
 {
     public const string Datei = "sanitaer_belastungswerte.json";
 
-    /// <summary>Spalten des Excel je Medium eines Apparateanschlusses (klassen.json: Anschlüsse kw/ww/sw der Apparate).
-    /// Trinkwasser kalt/warm und Schmutzwasser; Zirkulation (ZIR) und Regenwasser (RW) haben keine Spalte und sind ausgenommen.</summary>
+    /// <summary>Spalten des Excel je Medium eines Apparateanschlusses (klassen.json: Anschlüsse kw/ww/sw der Apparate). TECHNISCHE Zuordnung,
+    /// kein Fachwert: die Spaltenköpfe des Excel (B4 «LU KW», C4 «LU WW», D4 «DU») zu den Medienkennungen aus medien.json (KW Trinkwasser kalt,
+    /// WW Trinkwasser warm, SW Schmutzwasser). Zirkulation (ZIR) und Regenwasser (RW) haben keine Spalte und sind ausgenommen. Beim Laden der
+    /// Kataloge prüft Katalog.cs, dass es die Medien in medien.json gibt und ihre Systemtypen die passende Verbraucherrichtung haben.</summary>
     public static readonly IReadOnlyDictionary<string, string> Spalten = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
     {
         ["KW"] = "luKw", ["WW"] = "luWw", ["SW"] = "du",
     };
 
-    /// <summary>Medien des Trinkwassernetzes (Summen stromab) und des Abwassernetzes (Summen stromauf).</summary>
-    public static readonly IReadOnlySet<string> Trinkwasser = new HashSet<string>(["KW", "WW"], StringComparer.OrdinalIgnoreCase);
-    public static readonly IReadOnlySet<string> Abwasser = new HashSet<string>(["SW"], StringComparer.OrdinalIgnoreCase);
+    /// <summary>Medien des Trinkwassernetzes (Spalten LU: Belastungswerte der Versorgung, Summen stromab) und des Abwassernetzes (Spalte DU:
+    /// Anschlusswerte der Entwässerung, Summen stromauf) – abgeleitet aus <see cref="Spalten"/>, nicht eigens festgelegt.</summary>
+    public static readonly IReadOnlySet<string> Trinkwasser = new HashSet<string>(Spalten.Where(x => x.Value != "du").Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
+    public static readonly IReadOnlySet<string> Abwasser = new HashSet<string>(Spalten.Where(x => x.Value == "du").Select(x => x.Key), StringComparer.OrdinalIgnoreCase);
 
     public static string? SpalteFuer(string medium) => Spalten.TryGetValue(medium, out var s) ? s : null;
 
@@ -55,9 +76,9 @@ public sealed class SanitaerKatalog
     public string Objekt { get; private init; } = "";
     public string Stand { get; private init; } = "";
     public string Verfasser { get; private init; } = "";
-    /// <summary>Bereich im Excel, z. B. «Tabelle1 A7:D40».</summary>
+    /// <summary>Bereich im Excel wie im Katalog (quelle.bereich), z. B. «Blatt «MFHA» A7:D40 (Formeln B55–O67)».</summary>
     public string Bereich { get; private init; } = "";
-    /// <summary>Tabellenblatt (erstes Wort des Bereichs), z. B. «Tabelle1».</summary>
+    /// <summary>Tabellenblatt aus dem Katalog: quelle.blatt, sonst «Blatt «…»» in quelle.bereich.</summary>
     public string Blatt { get; private init; } = "";
 
     public IReadOnlyList<SanitaerArt> Arten { get; private init; } = [];
@@ -70,8 +91,12 @@ public sealed class SanitaerKatalog
     public string VolumenstromText { get; private init; } = "";
     /// <summary>Faktor Total LU → Volumenstrom in l/s, gelesen aus der Zellformel des Katalogs («B56 = B55*0.1»).</summary>
     public double VolumenstromFaktor { get; private init; }
+    /// <summary>Kurve rechnung.spitzeKurve3 des Katalogs (kleinerer «grösster LU»; Excel C57).</summary>
     public SanitaerKurve Kurve3 { get; private init; } = null!;
+    /// <summary>Kurve rechnung.spitzeKurve5 des Katalogs (grösserer «grösster LU»; Excel I57).</summary>
     public SanitaerKurve Kurve5 { get; private init; } = null!;
+    /// <summary>Regel der Kurvenwahl mit Herkunft (rechnung.kurvenwahl; nicht im Excel, aus HKAP).</summary>
+    public SanitaerKurvenwahl Kurvenwahl { get; private init; } = null!;
     public string SpitzeGesamtText { get; private init; } = "";
     public string SchmutzwasserZelle { get; private init; } = "";
     public string SchmutzwasserText { get; private init; } = "";
@@ -86,15 +111,25 @@ public sealed class SanitaerKatalog
     /// <summary>Kurze Quellenangabe: Katalog, Dokument, Objekt, Stand, Bereich.</summary>
     public string QuelleKurz => $"Katalog {Datei}: {Dokument} ({Objekt}, Stand {Stand}), {Bereich}";
 
-    /// <summary>Quelle eines Werts einer Excel-Zeile: Katalog und Excel-Zeile.</summary>
-    public string Quelle(int zeile) => $"Katalog {Datei}: {Dokument} ({Objekt}, Stand {Stand}), {Blatt} Zeile {zeile}";
+    /// <summary>Quelle eines Werts einer Excel-Zeile: «Katalog …: LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile n (Objekt, Stand)»; mit
+    /// nameExcel: «…, Zeile n, im Excel «Name» (Objekt, Stand)».</summary>
+    public string Quelle(int zeile, string? nameExcel = null) =>
+        $"Katalog {Datei}: {Dokument}, Blatt {Blatt}, Zeile {zeile}{(nameExcel is { Length: > 0 } n ? $", im Excel «{n}»" : "")} ({Objekt}, Stand {Stand})";
+
+    /// <summary>Quelle der Werte einer Apparateart (Excel-Zeile; bei bereinigtem Namen auch der Name im Excel).</summary>
+    public string Quelle(SanitaerArt a) => Quelle(a.Zeile, a.NameExcel);
 
     /// <summary>Quelle einer Formel: Katalog und Excel-Zelle bzw. Formeltext.</summary>
-    public string QuelleFormel(string formel) => $"Katalog {Datei}: {Dokument} ({Objekt}, Stand {Stand}), {Blatt} {formel}";
+    public string QuelleFormel(string formel) => $"Katalog {Datei}: {Dokument}, Blatt {Blatt}, {formel} ({Objekt}, Stand {Stand})";
 
     public SanitaerArt? Art(string? schluessel) => schluessel is not null && NachSchluessel.TryGetValue(schluessel.Trim(), out var a) ? a : null;
 
+    /// <summary>TECHNIK: der Faktor steht im Katalog nur in der Zellformel («B56 = B55*0.1»); der reguläre Ausdruck liest die Zahl nach dem
+    /// Malzeichen, der Wert selbst kommt aus dem Katalog. Ein eigenes Feld «faktor» (wie bei den Kurven) wäre robuster – Sache des Katalogs.</summary>
     static readonly Regex FaktorMuster = new(@"=\s*[A-Z]+[0-9]+\s*\*\s*([0-9]+(?:\.[0-9]+)?)", RegexOptions.CultureInvariant);
+
+    /// <summary>TECHNIK: Tabellenblatt in quelle.bereich in der Form «Blatt «Name» …».</summary>
+    static readonly Regex BlattMuster = new(@"Blatt\s*«([^»]+)»", RegexOptions.CultureInvariant);
 
     /// <summary>Liest den Katalog. Fehlt ein Pflichtteil oder ist er unlesbar: HlksFehler mit Stelle.</summary>
     public static SanitaerKatalog Laden(string datei)
@@ -117,6 +152,9 @@ public sealed class SanitaerKatalog
 
         var q = w["quelle"] as JsonObject ?? throw Fehl("quelle", "fehlt");
         var bereich = Pflicht(q["bereich"], "quelle.bereich");
+        var blatt = T(q["blatt"]) is { Length: > 0 } b ? b.Trim()
+            : BlattMuster.Match(bereich) is { Success: true } bm ? bm.Groups[1].Value.Trim()
+            : throw Fehl("quelle.bereich", $"Tabellenblatt nicht lesbar («{bereich}») – «Blatt «Name» …» schreiben oder quelle.blatt angeben");
 
         var arten = new List<SanitaerArt>();
         var nach = new Dictionary<string, SanitaerArt>(StringComparer.OrdinalIgnoreCase);
@@ -128,7 +166,8 @@ public sealed class SanitaerKatalog
             var zeile = ZahlPflicht(o["zeile"], $"arten[{i}].zeile");
             if (zeile <= 0 || zeile != Math.Floor(zeile)) throw Fehl($"arten[{i}].zeile", "muss eine Excel-Zeile (ganze Zahl > 0) sein");
             var a = new SanitaerArt(key, Pflicht(o["name"], $"arten[{i}].name"), ZahlOderNull(o["luKw"], $"arten[{i}].luKw"),
-                ZahlOderNull(o["luWw"], $"arten[{i}].luWw"), ZahlOderNull(o["du"], $"arten[{i}].du"), (int)zeile, i);
+                ZahlOderNull(o["luWw"], $"arten[{i}].luWw"), ZahlOderNull(o["du"], $"arten[{i}].du"), (int)zeile, i)
+            { NameExcel = T(o["nameExcel"]) is { Length: > 0 } ne ? ne : null };
             if (!nach.TryAdd(key, a)) throw Fehl($"arten[{i}].key", $"Schlüssel «{key}» doppelt");
             arten.Add(a);
         }
@@ -147,12 +186,29 @@ public sealed class SanitaerKatalog
         var volumenstrom = Pflicht(r["volumenstrom"], "rechnung.volumenstrom");
         var fm = FaktorMuster.Match(volumenstrom);
         if (!fm.Success) throw Fehl("rechnung.volumenstrom", $"Faktor der Zellformel nicht lesbar («{volumenstrom}»)");
-        SanitaerKurve Kurve(string name, int nummer)
+        SanitaerKurve Kurve(string name)
         {
             var o = r[name] as JsonObject ?? throw Fehl($"rechnung.{name}", "fehlt");
-            return new SanitaerKurve(nummer, ZahlPflicht(o["faktor"], $"rechnung.{name}.faktor"), ZahlPflicht(o["exponent"], $"rechnung.{name}.exponent"),
-                Pflicht(o["zelle"], $"rechnung.{name}.zelle"), Pflicht(o["text"], $"rechnung.{name}.text"));
+            var lu = ZahlPflicht(o["grosserLu"], $"rechnung.{name}.grosserLu");
+            if (lu <= 0 || lu != Math.Floor(lu)) throw Fehl($"rechnung.{name}.grosserLu", "muss eine ganze Zahl > 0 sein (Excel «Grösster LU: n»)");
+            if (o["bereichLs"] is not JsonArray br || br.Count != 2) throw Fehl($"rechnung.{name}.bereichLs", "fehlt oder ist kein Paar [von, bis] in l/s");
+            var von = ZahlPflicht(br[0], $"rechnung.{name}.bereichLs[0]");
+            var bis = ZahlPflicht(br[1], $"rechnung.{name}.bereichLs[1]");
+            if (!(von >= 0 && bis > von)) throw Fehl($"rechnung.{name}.bereichLs", "von muss ≥ 0 und kleiner als bis sein");
+            return new SanitaerKurve(name, (int)lu, ZahlPflicht(o["faktor"], $"rechnung.{name}.faktor"), ZahlPflicht(o["exponent"], $"rechnung.{name}.exponent"),
+                Pflicht(o["zelle"], $"rechnung.{name}.zelle"), Pflicht(o["text"], $"rechnung.{name}.text"), von, bis, Pflicht(o["bereichZelle"], $"rechnung.{name}.bereichZelle"));
         }
+        var k3 = Kurve("spitzeKurve3");
+        var k5 = Kurve("spitzeKurve5");
+        if (k3.Nummer >= k5.Nummer)
+            throw Fehl("rechnung.spitzeKurve3.grosserLu", $"muss kleiner sein als rechnung.spitzeKurve5.grosserLu ({k3.Nummer} ≥ {k5.Nummer}) – die Kurvenwahl vergleicht mit dem kleineren Wert");
+        var kw = r["kurvenwahl"] as JsonObject ?? throw Fehl("rechnung.kurvenwahl", "fehlt (Regel der massgebenden Kurve mit Quelle)");
+        var bestaetigt = kw["bestaetigt"] switch
+        {
+            null => false,
+            JsonValue v when v.GetValueKind() is System.Text.Json.JsonValueKind.True or System.Text.Json.JsonValueKind.False => v.GetValue<bool>(),
+            _ => throw Fehl("rechnung.kurvenwahl.bestaetigt", "muss true oder false sein"),
+        };
         var sw = r["schmutzwasser"] as JsonObject ?? throw Fehl("rechnung.schmutzwasser", "fehlt");
         var kb = r["abflusskennzahlBeispiel"] as JsonObject;
 
@@ -164,15 +220,16 @@ public sealed class SanitaerKatalog
             Stand = Pflicht(q["stand"], "quelle.stand"),
             Verfasser = T(q["verfasser"]) ?? "",
             Bereich = bereich,
-            Blatt = bereich.Split(' ', 2)[0],
+            Blatt = blatt,
             Arten = arten,
             NachSchluessel = nach,
             VorgabeJeKlasse = vorgabe,
             TotalLuText = Pflicht(r["totalLu"], "rechnung.totalLu"),
             VolumenstromText = volumenstrom,
             VolumenstromFaktor = double.Parse(fm.Groups[1].Value, CultureInfo.InvariantCulture),
-            Kurve3 = Kurve("spitzeKurve3", 3),
-            Kurve5 = Kurve("spitzeKurve5", 5),
+            Kurve3 = k3,
+            Kurve5 = k5,
+            Kurvenwahl = new SanitaerKurvenwahl(Pflicht(kw["regel"], "rechnung.kurvenwahl.regel"), Pflicht(kw["quelle"], "rechnung.kurvenwahl.quelle"), bestaetigt),
             SpitzeGesamtText = Pflicht(r["spitzeGesamt"], "rechnung.spitzeGesamt"),
             SchmutzwasserZelle = Pflicht(sw["zelle"], "rechnung.schmutzwasser.zelle"),
             SchmutzwasserText = Pflicht(sw["text"], "rechnung.schmutzwasser.text"),
@@ -183,6 +240,10 @@ public sealed class SanitaerKatalog
             Referenz = w["referenz"]?.DeepClone() as JsonObject ?? [],
         };
     }
+
+    /// <summary>Massgebende Kurve nach der Regel des Katalogs (rechnung.kurvenwahl): grösster Einzel-LU über dem «grössten LU» der kleineren
+    /// Kurve → die grössere Kurve, sonst die kleinere. Schwelle und Kurvennummern stehen im Katalog (grosserLu), nicht im Code.</summary>
+    public SanitaerKurve MassgebendeKurve(double groessterLu) => groessterLu > Kurve3.Nummer ? Kurve5 : Kurve3;
 
     /// <summary>Vorgabe-Art einer Klasse (eigene Klasse, sonst nächste Basisklasse mit Vorgabe); null ohne Vorgabe.</summary>
     public SanitaerArt? Vorgabe(Katalog k, string klasse, out string? vorgabeKlasse)

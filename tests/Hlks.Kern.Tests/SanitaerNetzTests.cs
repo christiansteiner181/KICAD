@@ -125,19 +125,211 @@ public class SanitaerNetzTests
         Tw(p, "R1", 1, 0, 1, 1);   // nicht 2: der Apparat zählt je Leitung einmal
         Tw(p, "R2", 1, 0, 1, 1);
         Tw(p, "R3", 1, 0, 1, 1);
-        Assert.True(Belastung(p, "R1")["masche"]!.GetValue<bool>());
+        // «masche» nur an den Leitungen IN der Masche (zwischen Verzweigung T2 und Treffpunkt T1, Prüfbericht 4A B6); R1 und R4 tragen den Apparat eindeutig
+        Assert.True(Belastung(p, "R2")["masche"]!.GetValue<bool>());
+        Assert.True(Belastung(p, "R3")["masche"]!.GetValue<bool>());
+        Assert.False(Belastung(p, "R1")["masche"]!.GetValue<bool>());
+        Assert.False(Belastung(p, "R4")["masche"]!.GetValue<bool>());
         var p24 = Assert.Single(Sanitaerbefunde(p), b => b.Code == "P24");
-        Assert.Equal(("warnung", "T1"), (p24.Schwere, p24.Element));
+        Assert.Equal(("warnung", "T1"), (p24.Schwere, p24.Element));   // am Treffpunkt
         Assert.Contains("Netz mit Masche – Summe nicht eindeutig", p24.Text);
+        Assert.Contains("über mehrere Wege ab T2", p24.Text);             // der Text nennt die Verzweigung
         Assert.Contains("WC-1", p24.Text);
         var st = Abfrage(p, "sanitaer_belastung", new JsonObject { ["strang"] = "KW-1" });
         Etwa(1, Zahl(st["summeLuKw"]), "Strang: Apparat einmal");
         Assert.True(st["masche"]!.GetValue<bool>());
         Assert.Equal(new[] { "T1" }, Abfrage(p, "sanitaer_belastung")["maschen"]!.AsArray().Select(x => x!.GetValue<string>()));
+        Assert.DoesNotContain(Sanitaerbefunde(p), b => b.Code == "P26");
         // Masche auflösen (R3 löschen) → P24 behoben
         var e = Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "R3" }));
         Assert.Contains(e.BehobeneBefunde, b => b.Code == "P24");
-        Assert.False(Belastung(p, "R1")["masche"]!.GetValue<bool>());
+        Assert.False(Belastung(p, "R2")["masche"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public void Masche_MitAbzweigInDerMasche_NurDieMaschenleitungenGekennzeichnet()
+    {
+        // Ring T1 → (R2 | R3) → T2 → R4 → T3; an T3 zwei Apparate (WC-1 über R5, WT-1 über R6); WT-2 direkt an T4 auf dem Weg R3 (R3a, R3b)
+        var p = Netzprojekt(0.5, "KW");
+        Apparat(p, "WC", "WC-1"); Apparat(p, "Waschtisch", "WT-1"); Apparat(p, "Waschtisch", "WT-2"); Hausanschluss(p);
+        foreach (var t in new[] { "T1", "T2", "T3", "T4" }) Formteil(p, t, "KW-1");
+        Rohr(p, "R1", "KW-1", "HA-1.aus", "T1.a");
+        Rohr(p, "R2", "KW-1", "T1.b", "T2.a");
+        Rohr(p, "R3a", "KW-1", "T1.c", "T4.a");
+        Rohr(p, "R3b", "KW-1", "T4.b", "T2.c");
+        Rohr(p, "R7", "KW-1", "T4.c", "WT-2.kw");
+        Rohr(p, "R4", "KW-1", "T2.b", "T3.a");
+        Rohr(p, "R5", "KW-1", "T3.b", "WC-1.kw");
+        Rohr(p, "R6", "KW-1", "T3.c", "WT-1.kw");
+        foreach (var r in new[] { "R2", "R3a", "R3b" }) Assert.True(Belastung(p, r)["masche"]!.GetValue<bool>(), r);
+        foreach (var r in new[] { "R1", "R4", "R5", "R6", "R7" }) Assert.False(Belastung(p, r)["masche"]!.GetValue<bool>(), r);
+        Tw(p, "R1", 3, 0, 1, 3);
+        Tw(p, "R4", 2, 0, 1, 2);
+        var p24 = Assert.Single(Sanitaerbefunde(p), b => b.Code == "P24");
+        Assert.Equal("T1", p24.Element);
+        Assert.Contains("ab T2", p24.Text);
+        Assert.DoesNotContain(Sanitaerbefunde(p), b => b.Code == "P26");
+    }
+
+    /// <summary>Prüfbericht 4A B2, Gedankenbeispiel: HA-1.aus → R1 → T1.a; T1.b ↔ R2.ende (R2 verkehrt gezogen, von T2.a nach T1.b);
+    /// R2.anfang ↔ T2.a; T2.b → R3 → WC-1.kw. Vom WC stromauf: R3, T2 – dann R2.anfang «rein»: der Weg endet. Kein P07 (beide ↔ rein/raus).</summary>
+    static Projekt VerkehrteLeitung()
+    {
+        var p = Netzprojekt(0.5, "KW");
+        Apparat(p, "WC", "WC-1"); Hausanschluss(p);
+        Formteil(p, "T1", "KW-1"); Formteil(p, "T2", "KW-1");
+        Rohr(p, "R1", "KW-1", "HA-1.aus", "T1.a");
+        Rohr(p, "R2", "KW-1", "T2.a", "T1.b");   // verkehrt
+        Rohr(p, "R3", "KW-1", "T2.b", "WC-1.kw");
+        return p;
+    }
+
+    [Fact]
+    public void OhneWeg_VerkehrteLeitungZwischenFormteilen_P26_NichtStill()
+    {
+        var p = VerkehrteLeitung();
+        Tw(p, "R3", 1, 0, 1, 1);    // bis zur verkehrten Leitung zählt der Apparat
+        Tw(p, "R2", 0, 0, 0, 0);    // dahinter fehlt er – deshalb der Befund
+        Tw(p, "R1", 0, 0, 0, 0);
+        var b = Sanitaerbefunde(p);
+        Assert.DoesNotContain(Pruefungen.Alle(p.Modell, p.Katalog), x => x.Code == "P07");   // vorher gab es keinen Befund (Prüfbericht B2)
+        var p26 = Assert.Single(b, x => x.Code == "P26");
+        Assert.Equal(("warnung", "WC-1"), (p26.Schwere, p26.Element));
+        Assert.StartsWith("Apparat ohne Weg im Netz – Belastung fehlt stromauf: kw (KW) ist verbunden, der Weg endet bei T2", p26.Text);
+        Assert.Contains("T2.a ist mit R2.anfang «rein» verbunden – Fliessrichtung verkehrt", p26.Text);
+        Assert.Contains("ohneWeg", p26.Vorschlag);
+        // sanitaer_belastung: Liste ohneWeg je Anlage und gesamt
+        var alle = Abfrage(p, "sanitaer_belastung");
+        var ow = Assert.Single(alle["anlagen"]![0]!["ohneWeg"]!.AsArray())!;
+        Assert.Equal(("WC-1", "kw", "KW", "stromauf", "T2"), (ow["apparat"]!.GetValue<string>(), ow["anschluss"]!.GetValue<string>(), ow["medium"]!.GetValue<string>(),
+            ow["fehlt"]!.GetValue<string>(), ow["endetBei"]!.GetValue<string>()));
+        Assert.Contains("R2.anfang", ow["grund"]!.GetValue<string>());
+        Assert.Single(alle["ohneWeg"]!.AsArray());
+        Assert.Single(Abfrage(p, "sanitaer_belastung", new JsonObject { ["anlage"] = "A-1" })["anlagen"]![0]!["ohneWeg"]!.AsArray());
+        // Zusammenstellung: ΣLU KW enthält den Apparat, das Netz nicht – der Hinweis sagt es
+        var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Etwa(1, Zahl(z["summeLuKw"]), "ΣLU KW (Stückzahl)");
+        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("ΣLU KW enthält 1 Apparat ohne Weg im KW-Netz: WC-1 – in den Netzsummen fehlen sie stromauf (Befund P26)"));
+        // Leitung richtig herum neu ziehen → P26 behoben, R1 trägt den Apparat
+        Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "R2" }));
+        var e = Ok(p.Ausfuehren("leitung_ziehen", new JsonObject
+        {
+            ["kennzeichen"] = "R2", ["strang"] = "KW-1", ["dn"] = 20, ["von"] = "T1.b", ["nach"] = "T2.a", ["punkte"] = Pts([5000, 0, 100], [5000, 500, 100]),
+        }));
+        Assert.DoesNotContain(Sanitaerbefunde(p), x => x.Code == "P26");
+        Tw(p, "R1", 1, 0, 1, 1);
+        Assert.Null(Abfrage(p, "sanitaer_belastung")["ohneWeg"]);
+    }
+
+    static JsonArray ZweiAnschluesse() => new(new[] { "a", "b" }.Select(x => (JsonNode)new JsonObject { ["name"] = x, ["medium"] = "*", ["fluss"] = "beide" }).ToArray());
+
+    [Fact]
+    public void OhneWeg_UngerichteteFormteile_SeitenastMitReduktionKeinFehlalarm_VerkehrtHinterReduktionErkannt()
+    {
+        // Seitenast, der mit einer Reduktion am T-Stück beginnt (wie im Abnahmeszenario 3): HA → R1 → T1.a; T1.b → R2 → WC-1.kw;
+        // T1.c ↔ RD.a (ungerichtet); RD.b → R3 → WT-1.kw. Vom WC her ist RD ein Seitenast (RD.b fliesst weg) – kein P26.
+        var p = Netzprojekt(0.5, "KW");
+        Apparat(p, "WC", "WC-1"); Apparat(p, "Waschtisch", "WT-1"); Hausanschluss(p);
+        Formteil(p, "T1", "KW-1"); Formteil(p, "RD", "KW-1", "TStueck", ZweiAnschluesse());
+        Rohr(p, "R1", "KW-1", "HA-1.aus", "T1.a");
+        Rohr(p, "R2", "KW-1", "T1.b", "WC-1.kw");
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "T1.c", ["nach"] = "RD.a" }));
+        Rohr(p, "R3", "KW-1", "RD.b", "WT-1.kw");
+        Assert.DoesNotContain(Sanitaerbefunde(p), x => x.Code == "P26");
+        Tw(p, "R1", 2, 0, 1, 2);
+        // dasselbe hinter einer Reduktion verkehrt: T2.b → R3' → WC-2.kw; T2.a ↔ RD2.a; R4 von RD2.b nach T1-Abgang (verkehrt) – die Gruppe T2/RD2 hat keine Fortsetzung
+        var q = Netzprojekt(0.5, "KW");
+        Apparat(q, "WC", "WC-1"); Hausanschluss(q);
+        Formteil(q, "T1", "KW-1"); Formteil(q, "T2", "KW-1"); Formteil(q, "RD2", "KW-1", "TStueck", ZweiAnschluesse());
+        Rohr(q, "R1", "KW-1", "HA-1.aus", "T1.a");
+        Rohr(q, "R2", "KW-1", "RD2.b", "T1.b");   // verkehrt
+        Ok(q.Ausfuehren("verbinden", new JsonObject { ["von"] = "T2.a", ["nach"] = "RD2.a" }));
+        Rohr(q, "R3", "KW-1", "T2.b", "WC-1.kw");
+        var p26 = Assert.Single(Sanitaerbefunde(q), x => x.Code == "P26");
+        Assert.Contains("der Weg endet bei RD2 (RD2.b ist mit R2.anfang «rein» verbunden – Fliessrichtung verkehrt)", p26.Text);
+        Tw(q, "R1", 0, 0, 0, 0);
+    }
+
+    [Fact]
+    public void OhneWeg_BehobenMeldetDerBefehl()
+    {
+        var p = VerkehrteLeitung();
+        Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "R2" }));   // offenes Ende: kein P26 (Netz noch nicht fertig, P01)
+        Assert.DoesNotContain(Sanitaerbefunde(p), x => x.Code == "P26");
+        Assert.Contains(Pruefungen.Alle(p.Modell, p.Katalog), x => x.Code == "P01" && x.Element == "T2");
+        Ok(p.Rueckgaengig());
+        Assert.Contains(Sanitaerbefunde(p), x => x.Code == "P26");
+        var e = Ok(p.Ausfuehren("element_loeschen", new JsonObject { ["element"] = "R2" }));
+        Assert.Contains(e.BehobeneBefunde, x => x.Code == "P26" && x.Element == "WC-1");
+    }
+
+    [Fact]
+    public void OhneWeg_Abwasser_VerkehrteLeitung_BelastungFehltStromab()
+    {
+        // WC-1.sw → S1 → T1.a; T1.b ↔ S2.ende (S2 verkehrt, von T2.a nach T1.b); T2.b → S3 → KS-1. Stromab ab T1: S2.ende «raus» – der Weg endet.
+        var p = Netzprojekt(0.5, "SW");
+        Apparat(p, "WC", "WC-1"); Kontrollschacht(p);
+        Formteil(p, "T1", "SW-1"); Formteil(p, "T2", "SW-1");
+        Rohr(p, "S1", "SW-1", "WC-1.sw", "T1.a");
+        Rohr(p, "S2", "SW-1", "T2.a", "T1.b");   // verkehrt
+        Rohr(p, "S3", "SW-1", "T2.b", "KS-1.ein");
+        var p26 = Assert.Single(Sanitaerbefunde(p), x => x.Code == "P26");
+        Assert.Equal("WC-1", p26.Element);
+        Assert.Equal("Apparat ohne Weg im Netz – Belastung fehlt stromab: sw (SW) ist verbunden, der Weg endet bei T1 (T1.b ist mit S2.ende «raus» verbunden – Fliessrichtung verkehrt)", p26.Text);
+        Aw(p, "S1", 2, 1);
+        Aw(p, "S2", 0, 0);
+        Aw(p, "S3", 0, 0);
+        Assert.Equal("stromab", Abfrage(p, "sanitaer_belastung")["ohneWeg"]![0]!["fehlt"]!.GetValue<string>());
+        var z = Abfrage(p, "sanitaer_zusammenstellung", new JsonObject { ["anlage"] = "A-1" });
+        Assert.Contains(z["hinweise"]!.AsArray(), h => h!.GetValue<string>().StartsWith("ΣDU enthält 1 Apparat ohne Weg im SW-Netz: WC-1 – in den Netzsummen fehlen sie stromab (Befund P26)"));
+    }
+
+    [Fact]
+    public void OhneWeg_AnschlussMitFalscherRichtungOderOhneMedium()
+    {
+        // Anschlüsse wie aus einer Familie, direkt an einem Verteiler (ungerichtet): leitung_ziehen würde «raus» ↔ «raus» ablehnen, verbinden am Formteil nicht
+        var p = Netzprojekt(0.5, "KW");
+        Hausanschluss(p); Verteiler(p, "VT", "KW-1", 2);
+        Rohr(p, "K0", "KW-1", "HA-1.aus", "VT.a");
+        // Apparat mit kw «raus»: der Weg kann nicht stromauf gehen
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Waschtisch", ["kennzeichen"] = "WT-R", ["geschoss"] = "EG",
+            ["anschluesse"] = new JsonArray(new JsonObject { ["name"] = "kw", ["medium"] = "KW", ["fluss"] = "raus" }),
+        }));
+        // Apparat mit Anschluss ohne Medium («*»): zählt in keiner Spalte
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Waschtisch", ["kennzeichen"] = "WT-S", ["geschoss"] = "EG",
+            ["anschluesse"] = new JsonArray(new JsonObject { ["name"] = "kw", ["medium"] = "*", ["fluss"] = "rein" }),
+        }));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "VT.v1", ["nach"] = "WT-R.kw" }));
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "VT.v2", ["nach"] = "WT-S.kw" }));
+        Tw(p, "K0", 0, 0, 0, 0);
+        var b = Sanitaerbefunde(p).Where(x => x.Code == "P26").ToDictionary(x => x.Element);
+        Assert.Contains("WT-R.kw hat die Fliessrichtung «raus»", b["WT-R"].Text);
+        Assert.StartsWith("Apparat ohne Weg im Netz – Belastung fehlt stromauf: kw (KW)", b["WT-S"].Text);
+        Assert.Contains("kein Medium («*»)", b["WT-S"].Text);
+        Assert.Equal(2, Abfrage(p, "sanitaer_belastung")["ohneWeg"]!.AsArray().Count);
+    }
+
+    [Fact]
+    public void OhneWeg_KeinBefund_BeiOffenemEnde_DirektAmGeraet_UndSeitenast()
+    {
+        // offenes Ende (Netz noch nicht fertig): kein P26, die gezeichneten Leitungen tragen den Apparat
+        var p = Netzprojekt(0.5, "KW");
+        Apparat(p, "WC", "WC-1");
+        Rohr(p, "R1", "KW-1", null, "WC-1.kw");
+        Tw(p, "R1", 1, 0, 1, 1);
+        Assert.DoesNotContain(Sanitaerbefunde(p), x => x.Code == "P26");
+        // Apparat direkt am Hausanschluss (ohne Leitung): kein Beitrag, kein Befund
+        var q = Netzprojekt(0.5, "KW");
+        Apparat(q, "WC", "WC-1"); Hausanschluss(q);
+        Ok(q.Ausfuehren("verbinden", new JsonObject { ["von"] = "HA-1.aus", ["nach"] = "WC-1.kw" }));
+        Assert.DoesNotContain(Sanitaerbefunde(q), x => x.Code is "P26" or "P22");
+        Assert.Null(Abfrage(q, "sanitaer_belastung")["ohneWeg"]);
+        // Verzweigung mit Seitenästen (Verzweigungstest): kein P26
+        Assert.DoesNotContain(Sanitaerbefunde(Verzweigung()), x => x.Code == "P26");
     }
 
     [Fact]

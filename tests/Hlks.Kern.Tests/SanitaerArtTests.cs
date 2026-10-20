@@ -122,7 +122,7 @@ public class SanitaerArtTests
         Assert.Equal("vorgabe", s["woher"]!.GetValue<string>());
         Assert.Equal(31, s["zeile"]!.GetValue<int>());
         Assert.Null(s["luWw"]);
-        Assert.Contains("Tabelle1 Zeile 31", s["quelle"]!.GetValue<string>());
+        Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 31", s["quelle"]!.GetValue<string>());
         Assert.Equal(1, Zahl(o["abgeleitet"]!["luKw"]));
         Assert.Equal(2, Zahl(o["abgeleitet"]!["du"]));
         Assert.Null(o["abgeleitet"]!["luWw"]);   // das WC hat keinen WW-Anschluss: kein Wert, nicht 0
@@ -132,7 +132,7 @@ public class SanitaerArtTests
             Assert.Equal(zahl, w["wert"]?.GetValue<double>());
             Assert.Equal(einheit, w["einheit"]!.GetValue<string>());
             Assert.Contains("sanitaer_belastungswerte.json", w["quelle"]!.GetValue<string>());
-            Assert.Contains("Zeile 31", w["quelle"]!.GetValue<string>());
+            Assert.Contains("LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile 31", w["quelle"]!.GetValue<string>());
             Assert.Contains("Excel", w["rechenweg"]!.GetValue<string>());
         }
         var art = (JsonObject)Tuer.Abfrage(p, "warum", new JsonObject { ["element"] = "WC-1", ["eigenschaft"] = "sanitaerArt" });

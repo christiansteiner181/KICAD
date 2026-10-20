@@ -14,7 +14,9 @@ public static class SanitaerAbfragen
 {
     public const string BelastungText = "Belastungssummen Sanitär (Modul 4 Teil A, Werte aus Christians Excel «LU_DU Zusammenstellung_.xlsx» über den Katalog " +
         "sanitaer_belastungswerte.json): je Leitung des Trinkwassernetzes (KW, WW) ΣLU KW, ΣLU WW und grösster Einzel-LU der Apparate stromab, je Leitung des " +
-        "Schmutzwassernetzes (SW) ΣDU der Apparate stromauf; dazu je Strang, System und Anlage. Jeder Apparat zählt je Leitung einmal (Masche: Befund P24). " +
+        "Schmutzwassernetzes (SW) ΣDU der Apparate stromauf; dazu je Strang, System und Anlage. Jeder Apparat zählt je Leitung einmal (Masche: Befund P24, " +
+        "masche nur an den Leitungen in der Masche). Kommt der Weg eines verbundenen Apparats im Netz nicht weiter (z. B. verkehrt gerichtete Leitung), fehlt er " +
+        "in den Summen dahinter: Liste ohneWeg (je Anlage und gesamt) und Befund P26. " +
         "Zirkulation und Regenwasser sind ausgenommen. Keine Dimensionierung (kein Spitzendurchfluss, keine DN, kein Q_WW je Teilstrecke). Mit leitung: eine " +
         "Leitung mit den Beiträgen der Apparate; mit strang bzw. anlage: nur diese; ohne Parameter: alle Anlagen.";
     public const string KatalogText = "Katalog der Sanitär-Apparatearten (kataloge/sanitaer_belastungswerte.json, aus Christians Excel «LU_DU Zusammenstellung_.xlsx»): " +
@@ -55,31 +57,53 @@ public static class SanitaerAbfragen
             ["quelle"] = new JsonObject
             {
                 ["katalog"] = "kataloge/" + SanitaerKatalog.Datei, ["dokument"] = kat.Dokument, ["objekt"] = kat.Objekt, ["stand"] = kat.Stand,
-                ["verfasser"] = kat.Verfasser, ["bereich"] = kat.Bereich,
+                ["verfasser"] = kat.Verfasser, ["bereich"] = kat.Bereich, ["blatt"] = kat.Blatt,
             },
-            ["arten"] = new JsonArray(kat.Arten.Select(a => (JsonNode)new JsonObject
+            ["arten"] = new JsonArray(kat.Arten.Select(a =>
             {
-                ["schluessel"] = a.Schluessel, ["name"] = a.Name, ["luKw"] = a.LuKw, ["luWw"] = a.LuWw, ["du"] = a.Du, ["zeile"] = a.Zeile,
+                var o = new JsonObject { ["schluessel"] = a.Schluessel, ["name"] = a.Name, ["luKw"] = a.LuKw, ["luWw"] = a.LuWw, ["du"] = a.Du, ["zeile"] = a.Zeile };
+                if (a.NameExcel is not null) o["nameExcel"] = a.NameExcel;   // im Katalog typografisch bereinigt (Prüfbericht 4A B4)
+                return (JsonNode)o;
             }).ToArray()),
             ["vorgabeJeKlasse"] = new JsonObject(kat.VorgabeJeKlasse.OrderBy(x => x.Key).Select(x => KeyValuePair.Create(x.Key, (JsonNode?)x.Value))),
             ["ohneVorgabe"] = new JsonArray(p.Katalog.Klassen.Values.Where(d => !d.Abstrakt && d.IstArt("Apparat") && kat.Vorgabe(p.Katalog, d.Name, out _) is null)
                 .Select(d => (JsonNode)JsonValue.Create(d.Name)).ToArray()),
             ["formeln"] = Formeln(kat),
+            ["kurvenwahl"] = KurvenwahlJson(kat),
             ["hinweis"] = "Werte nur aus dem Katalog (Christians Excel); fehlt eine Art, im Excel bzw. Katalog nachführen. " + KeineDimensionierung,
         };
     }
 
+    /// <summary>Formeln mit Excel-Zelle; die Kurvenwahl mit Regel, Herkunft und Stand der Bestätigung aus dem Katalog (Prüfbericht 4A B3).</summary>
     static JsonObject Formeln(SanitaerKatalog kat) => new()
     {
         ["totalLu"] = kat.TotalLuText,
         ["volumenstrom"] = kat.VolumenstromText,
         ["spitzeKurve3"] = $"{kat.Kurve3.Zelle} – {kat.Kurve3.Text}",
         ["spitzeKurve5"] = $"{kat.Kurve5.Zelle} – {kat.Kurve5.Text}",
-        ["massgebendeKurve"] = $"grösster Einzel-LU der vorkommenden Arten > {kat.Kurve3.Nummer} → Kurve «grösster LU {kat.Kurve5.Nummer}», sonst Kurve «grösster LU {kat.Kurve3.Nummer}» (entwurf/modul-4.md, wie HKAP)",
+        ["massgebendeKurve"] = $"{kat.Kurvenwahl.Regel} – Herkunft: {kat.Kurvenwahl.Quelle} {(kat.Kurvenwahl.Bestaetigt ? "Von Christian bestätigt." : "Nicht bestätigt.")}",
         ["spitzeGesamt"] = kat.SpitzeGesamtText,
         ["schmutzwasser"] = $"{kat.SchmutzwasserText} ({kat.SchmutzwasserZelle})",
         ["gesamtabfluss"] = kat.GesamtabflussText,
     };
+
+    /// <summary>Regel der Kurvenwahl und die beiden Kurven («grösster LU», Gültigkeitsbereich in l/s, Excel-Zellen) wie im Katalog.</summary>
+    static JsonObject KurvenwahlJson(SanitaerKatalog kat) => new()
+    {
+        ["regel"] = kat.Kurvenwahl.Regel, ["quelle"] = kat.Kurvenwahl.Quelle, ["bestaetigt"] = kat.Kurvenwahl.Bestaetigt,
+        ["kurven"] = new JsonArray(new[] { kat.Kurve3, kat.Kurve5 }.Select(k => (JsonNode)new JsonObject
+        {
+            ["schluessel"] = k.Schluessel, ["grosserLu"] = k.Nummer, ["bereichLs"] = new JsonArray(k.BereichVon, k.BereichBis), ["bereichZelle"] = k.BereichZelle,
+            ["zelle"] = k.Zelle,
+        }).ToArray()),
+    };
+
+    /// <summary>Anschlüsse ohne Weg im Netz (Befund P26) als JSON.</summary>
+    static JsonArray OhneWegJson(IEnumerable<SanitaerOhneWeg> liste) => new(liste.Select(o => (JsonNode)new JsonObject
+    {
+        ["apparat"] = o.Apparat.Kennzeichen, ["anschluss"] = o.Anschluss, ["medium"] = o.Medium, ["fehlt"] = o.Fehlt,
+        ["endetBei"] = o.EndetBei.Kennzeichen, ["grund"] = o.Grund,
+    }).ToArray());
 
     // ------------------------------------------------------------------ sanitaer_belastung
 
@@ -141,13 +165,16 @@ public static class SanitaerAbfragen
     {
         var systeme = m.DerKlasse("System").Where(s => s.TeilVon == anlage.Id && SanitaerSystem(s)).OrderBy(s => s.Kennzeichen, StringComparer.OrdinalIgnoreCase).ToList();
         IEnumerable<string> Leitungen(Func<string, bool> medium) => n.LeitungMedium.Where(x => medium(x.Value) && systeme.Any(s => s.Id == m.Finde(x.Key)?.System)).Select(x => x.Key);
-        return new JsonObject
+        var o = new JsonObject
         {
             ["anlage"] = anlage.Kennzeichen, ["name"] = anlage.Name,
             ["trinkwasser"] = Summen(n.Ueber(Leitungen(SanitaerNetz.IstTrinkwasser)), true, false),
             ["abwasser"] = Summen(n.Ueber(Leitungen(SanitaerNetz.IstAbwasser)), false, true),
             ["systeme"] = new JsonArray(systeme.Select(s => (JsonNode)SystemBlock(m, n, s)).ToArray()),
         };
+        var ohneWeg = n.OhneWegIn(anlage.Id).ToList();
+        if (ohneWeg.Count > 0) o["ohneWeg"] = OhneWegJson(ohneWeg);   // Befund P26: diese Apparate fehlen in den Summen dahinter
+        return o;
     }
 
     public static JsonObject Belastung(Projekt p, string? anlage, string? strang, string? leitung)
@@ -184,6 +211,7 @@ public static class SanitaerAbfragen
             if (ohne.Count > 0) ergebnis["systemeOhneAnlage"] = new JsonArray(ohne.Select(s => (JsonNode)SystemBlock(m, n, s)).ToArray());
         }
         if (n.Maschen.Count > 0) ergebnis["maschen"] = new JsonArray(n.Maschen.Keys.Select(id => Kz(m, id)).Order(StringComparer.OrdinalIgnoreCase).Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
+        if (anlage is null && n.OhneWeg.Count > 0) ergebnis["ohneWeg"] = OhneWegJson(n.OhneWeg);   // alle, auch Apparate ohne Anlage (P26)
         ergebnis["quelle"] = kat.QuelleKurz;
         ergebnis["hinweis"] = KeineDimensionierung + " Zirkulation (ZIR) und Regenwasser (RW) sind ausgenommen.";
         return ergebnis;
@@ -226,7 +254,7 @@ public static class SanitaerAbfragen
             ["spalte"] = SanitaerKatalog.SpaltenName(spalte), ["wert"] = b.Wert,
             ["art"] = b.Zuordnung.Art?.Schluessel, ["artName"] = b.Zuordnung.Art?.Name, ["artWoher"] = b.Zuordnung.Woher,
             ["zeile"] = b.Zuordnung.Art?.Zeile,
-            ["quelle"] = b.Zuordnung.Art is { } a ? kat.Quelle(a.Zeile) : null,
+            ["quelle"] = b.Zuordnung.Art is { } a ? kat.Quelle(a) : null,
         };
     }
 
@@ -260,6 +288,7 @@ public static class SanitaerAbfragen
             ["quelle"] = new JsonObject
             {
                 ["katalog"] = "kataloge/" + SanitaerKatalog.Datei, ["dokument"] = kat.Dokument, ["objekt"] = kat.Objekt, ["stand"] = kat.Stand, ["bereich"] = kat.Bereich,
+                ["blatt"] = kat.Blatt,
             },
             ["geschosse"] = new JsonArray(a.Geschosse.Select(g => (JsonNode)new JsonObject { ["kennzeichen"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Kote }).ToArray()),
             ["zeilen"] = new JsonArray(a.Zeilen.Select(z => (JsonNode)new JsonObject
@@ -269,7 +298,7 @@ public static class SanitaerAbfragen
                 ["jeGeschoss"] = new JsonArray(z.JeGeschoss.Select(x => (JsonNode)x).ToArray()),
                 ["anzahl"] = z.Anzahl, ["summeLuKw"] = z.SummeLuKw, ["summeLuWw"] = z.SummeLuWw, ["summeDu"] = z.SummeDu,
                 ["apparate"] = Texte(z.Apparate),
-                ["quelle"] = kat.Quelle(z.Art.Zeile),
+                ["quelle"] = kat.Quelle(z.Art),
             }).ToArray()),
             ["apparate"] = a.Apparate,
             ["summeLuKw"] = a.SummeLuKw, ["summeLuWw"] = a.SummeLuWw, ["summeDu"] = a.SummeDu,
@@ -290,6 +319,7 @@ public static class SanitaerAbfragen
                 ["schmutzwasser"] = "l/s", ["gesamtabfluss"] = "l/s",
             },
             ["formeln"] = f,
+            ["kurvenwahl"] = KurvenwahlJson(kat),
             ["ohneArt"] = Texte(a.OhneArt),
             ["hinweise"] = Texte(a.Hinweise),
             ["hinweis"] = KeineDimensionierung,
@@ -315,7 +345,7 @@ public static class SanitaerAbfragen
             {
                 ["art"] = z.Art?.Schluessel ?? z.Schluessel, ["name"] = z.Art?.Name, ["woher"] = z.Woher, ["herkunft"] = z.Herkunft,
                 ["luKw"] = z.Art?.LuKw, ["luWw"] = z.Art?.LuWw, ["du"] = z.Art?.Du, ["zeile"] = z.Art?.Zeile,
-                ["quelle"] = z.Art is { } a ? kat.Quelle(a.Zeile) : null,
+                ["quelle"] = z.Art is { } a ? kat.Quelle(a) : null,
                 ["anlagen"] = new JsonArray(n.AnlagenJeApparat[e.Id].Select(id => (JsonNode)JsonValue.Create(Kz(m, id))).ToArray()),
             };
             if (z.Art is { } art)
@@ -381,7 +411,7 @@ public static class SanitaerAbfragen
                 o["rechenweg"] = z.Art is null ? "Ohne Apparateart kein Wert (Befund P21)."
                     : v is null ? $"Die Apparateart «{z.Art.Name}» hat keinen Wert {SanitaerKatalog.SpaltenName(wert!)} (Excel-Zelle leer: der Apparat hat diesen Anschluss nicht)."
                     : $"Wert der Spalte {SanitaerKatalog.SpaltenName(wert!)} der Apparateart «{z.Art.Name}» ({z.Art.Schluessel}) im Katalog, Excel-Zeile {z.Art.Zeile}; abgeleitet, nicht gespeichert.";
-                o["quelle"] = z.Art is { } a ? kat.Quelle(a.Zeile) : null;
+                o["quelle"] = z.Art is { } a ? kat.Quelle(a) : null;
             }
             return o;
         }

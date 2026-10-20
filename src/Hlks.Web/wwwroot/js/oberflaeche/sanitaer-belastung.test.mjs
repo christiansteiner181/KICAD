@@ -249,7 +249,7 @@ function walkringen(k = 0.5) {
   const zeilen = arten.map(({ a, n }) => ({
     art: a.key, name: a.name, zeile: a.zeile, luKw: a.luKw, luWw: a.luWw, du: a.du, jeGeschoss: [Math.ceil(n / 2), Math.floor(n / 2)], anzahl: n,
     summeLuKw: a.luKw === null ? null : a.luKw * n, summeLuWw: a.luWw === null ? null : a.luWw * n, summeDu: a.du === null ? null : a.du * n,
-    apparate: [`${a.key}-1`], quelle: `Katalog sanitaer_belastungswerte.json: LU_DU Zusammenstellung_.xlsx (Walkringen), Tabelle1 Zeile ${a.zeile}`,
+    apparate: [`${a.key}-1`], quelle: `Katalog sanitaer_belastungswerte.json: LU_DU Zusammenstellung_.xlsx, Blatt MFHA, Zeile ${a.zeile} (Walkringen, Stand 14.03.2024)`,
   }));
   return {
     anlage: 'A-1', name: 'Testanlage', quelle: { dokument: SKAT.quelle.dokument, objekt: SKAT.quelle.objekt, stand: SKAT.quelle.stand },
@@ -346,8 +346,33 @@ test('ohne Abflusskennzahl K: «K fehlt» statt K, Q_WW und Q_tot – keine Zahl
     assert.equal(z.einheit, '', n);
   }
   assert.equal(zelle(ew, zeileMit(ew, 'ΣDU'), 'wert'), '38,8');   // ΣDU bleibt
-  assert.ok(d.zusammenfassung.some((t) => /Abflusskennzahl K fehlt/.test(t)), 'Hinweis des Kerns steht im Kopf');
+  // der Hinweis des Kerns steht unter den Blöcken (Tabelle «Hinweise»), der Kopf nennt nur die Zahl
+  assert.equal(d.tabellen.length, 4);
+  assert.equal(d.tabellen[3].titel, 'Hinweise');
+  assert.ok(d.tabellen[3].zeilen.some((z) => /Abflusskennzahl K fehlt/.test(z.hinweis)), 'Hinweis des Kerns unter den Blöcken');
+  assert.ok(d.zusammenfassung.includes('1 Hinweis des Kerns unter den Tabellen'));
+  assert.ok(!d.zusammenfassung.some((t) => /Abflusskennzahl K fehlt/.test(t)), 'nicht doppelt im Kopf');
   assert.doesNotMatch(JSON.stringify(ew.zeilen.map((z) => z.wert)), /NaN|null|undefined/);
+});
+
+test('Hinweise des Kerns (Prüfbericht 4A): eigene Tabelle unter den Blöcken, Texte wörtlich, Tooltip, in der CSV; ohne Hinweise keine Tabelle', () => {
+  const kurven = 'Kurvenwahl nicht im Excel, aus HKAP, nicht bestätigt: massgebend ist die Kurve «grösster LU 5» nach der Regel «grösster Einzel-LU > 3 → Kurve «grösster LU 5», sonst Kurve «grösster LU 3»» (Katalog rechnung.kurvenwahl); beide Kurven sind ausgewiesen.';
+  const ohneWeg = 'ΣLU KW enthält 1 Apparat ohne Weg im KW-Netz: WC-1 – in den Netzsummen fehlen sie stromauf (Befund P26).';
+  const ww = 'ΣLU WW enthält 2 Apparate ohne WW-Verbindung: WT-1, WT-2 – die Zusammenstellung zählt Stückzahl × Wert wie das Excel, die Netzsummen (sanitaer_belastung) zählen sie nicht.';
+  const bereich = 'Volumenstrom 0.2 l/s liegt ausserhalb des Bereichs der Kurve «grösster LU 5»: 0.5 bis 15 l/s laut Katalog (I55 «…», I56 «…») – Spitze dieser Kurve prüfen.';
+  const d = aufbereiten('sanitaer_zusammenstellung', { ...walkringen(), hinweise: [ww, ohneWeg, '', null, bereich, kurven] });
+  assert.equal(d.tabellen.length, 4);
+  const h = d.tabellen[3];
+  assert.deepEqual([h.titel, h.ohneSortieren, h.schluessel, h.klasse], ['Hinweise', true, null, 'li-san li-hinweise']);
+  assert.deepEqual(h.spalten.map((s) => s.titel), ['Hinweis']);
+  assert.deepEqual(h.zeilen.map((z) => z.hinweis), [ww, ohneWeg, bereich, kurven]);   // leere Einträge fallen weg, Reihenfolge des Kerns
+  assert.equal(h.zeilen[1].titel['*'], ohneWeg);
+  assert.ok(d.zusammenfassung.includes('4 Hinweise des Kerns unter den Tabellen'));
+  const csv = CSV.csvAus(d).slice(1).split('\r\n');
+  assert.ok(csv.includes('Hinweise') && csv.includes('Hinweis'));
+  assert.ok(csv.some((z) => z.includes('ohne Weg im KW-Netz: WC-1') && z.includes('Befund P26')));
+  assert.equal(aufbereiten('sanitaer_zusammenstellung', walkringen()).tabellen.length, 3);   // keine Hinweise: keine vierte Tabelle
+  assert.ok(!aufbereiten('sanitaer_zusammenstellung', walkringen()).zusammenfassung.some((t) => /Hinweis/.test(t) && /unter den Tabellen/.test(t)));
 });
 
 test('Kopf der Liste: Anlage, Stückzahl, Quelle (Excel) und der Hinweis «keine Dimensionierung»', () => {
