@@ -1,6 +1,7 @@
 // Symbole der Plangrafik: Nordpfeil (Symbol) und Schnittsymbol der Schnitt-/Ansichtslinien in Grundrissen.
 // Quelle Schnittsymbol: SIA 400:2000 Ziff. B.6.1 (Pfeil in Blickrichtung, dünnste Linie; Schnittlinie strichpunktiert,
-// an den Enden dick nach Tab. 4 in B.3.3; Bezeichnung = Kennzeichen der Schnittansicht).
+// an den Enden dick nach Tab. 4 in B.3.3; Bezeichnung = Kennzeichen der Schnittansicht). Seit Modul 7 Teil B1: «<Titel> / <Plankürzel>» mit dem Blatt,
+// auf dem die Ansicht liegt (Blattverweis.cs; «—», solange sie auf keinem Blatt liegt).
 // ANNAHMEN (nicht aus der Norm, Prüfliste Christian), in Papier-mm:
 //   dicke Endstücke der Schnittlinie je 10 mm; dazwischen dünn strichpunktiert durchgehend
 //   Pfeil: Schaft 6 mm, Spitze 2.5 mm lang und 1.6 mm breit (ausgefüllt); Bezeichnung 2.5 mm Schrift, 1 mm vom Pfeil
@@ -73,7 +74,8 @@ internal static class BeschriftungSymbole
             prim.Add(BeschriftungHilfen.Polylinie(Teilweg(pts, gesamt - ende, gesamt), Stifte.Dick, "strichpunkt"));
         }
 
-        // Pfeile an beiden Enden in Blickrichtung; Bezeichnung neben der Pfeilspitze
+        // Pfeile an beiden Enden in Blickrichtung; Bezeichnung neben der Pfeilspitze: «<Titel> / <Plankürzel>» (Modul 7 Teil B1, Blattverweis.cs)
+        var verweis = Blattverweis.Text(ctx.Modell, e);
         bool links = (e.Text("blick") ?? "links") != "rechts";
         var dAnfang = BeschriftungHilfen.Einheit(BeschriftungHilfen.Minus(pts[1], pts[0]));
         var dEnde = BeschriftungHilfen.Einheit(BeschriftungHilfen.Minus(pts[^1], pts[^2]));
@@ -86,7 +88,14 @@ internal static class BeschriftungSymbole
                 ctx.AufModell(BezeichnungAbstand + BezeichnungSchrift * 0.5)));
             // Text mittig zur Mitte setzen: Grundlinie liegt um etwa 0.35 der Schrifthöhe tiefer
             var pos = new[] { mitte[0], mitte[1] - ctx.AufModell(BezeichnungSchrift * 0.35) };
-            prim.Add(BeschriftungHilfen.Text(pos, e.Kennzeichen, BezeichnungSchrift, "mitte"));
+            string ausrichtung = "mitte";
+            if (Math.Abs(blick[0]) >= 0.5)
+            {
+                // Blick waagrecht: der lange Text «Titel / Plankürzel» steht neben der Spitze, vom Pfeil weg (nicht quer über die Schnittlinie)
+                ausrichtung = blick[0] > 0 ? "links" : "rechts";
+                pos = [spitze[0] + Math.Sign(blick[0]) * ctx.AufModell(BezeichnungAbstand), spitze[1] - ctx.AufModell(BezeichnungSchrift * 0.35)];
+            }
+            prim.Add(BeschriftungHilfen.Text(pos, verweis, BezeichnungSchrift, ausrichtung));
         }
 
         return [new Grafikteil

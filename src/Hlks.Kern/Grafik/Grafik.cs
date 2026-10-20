@@ -6,6 +6,8 @@
 //   BeschriftungGrafik Detaillinie, Füllbereich, Text, Bemassung, Kote, Symbol; Schnittsymbol der Schnittansichten
 //   HuelleGrafik       Darstellung «Hülle» im Grundriss (Streifen nach Angrenzung; nur gemeinsame Grafik, nur Bildschirm)
 //   AussparungGrafik   Aussparungen (Modul 3b, B4a): Symbol nach Status, Darstellung «aussparungen» = Aussparungsplan, Körper für 3D
+//   KoordinationGrafik Darstellung «koordination» (Modul 7 Teil B1): Koordinationsplan in Gewerkefarben, Architektur grau (für kein Element zuständig;
+//                      Weiche ImPlan wie bei den Einlageplänen); die Aussparungsboxen in Fachplänen liefert AussparungGrafik (Option aussparungsboxen)
 //   KollisionGrafik    Kollisionsmarken (Modul 3b, B4a): Kreis mit Kreuz, nur Bildschirm; Kugel für 3D
 //   EinlageGrafik      Darstellungen «einlagen» und «grundleitungen» (Modul 3, B10) und der Grundriss-Filter für Einlagen und Grundleitungen
 //                      (für kein Element zuständig; Weiche ImPlan und Sichtbarkeit wie der Aussparungsplan)
@@ -80,8 +82,10 @@ public static class Grafik
         foreach (var q in Quellen) q.Vorbereiten(ctx);
         if (ctx.Art == "grundriss")
         {
-            bool einlagen = EinlageGrafik.Aktiv(ctx);
-            foreach (var q in Quellen) g.Teile.AddRange(einlagen ? EinlageGrafik.GemeinsamImPlan(q, q.Gemeinsam(ctx)) : q.Gemeinsam(ctx));
+            bool einlagen = EinlageGrafik.Aktiv(ctx), koordination = KoordinationGrafik.Aktiv(ctx);
+            foreach (var q in Quellen)
+                g.Teile.AddRange(einlagen ? EinlageGrafik.GemeinsamImPlan(q, q.Gemeinsam(ctx))
+                    : koordination ? KoordinationGrafik.GemeinsamImPlan(ctx, q, q.Gemeinsam(ctx)) : q.Gemeinsam(ctx));
             foreach (var e in p.Modell.Elemente)
                 if (Sichtbar(ctx, e) && QuelleFuer(p.Katalog, e) is { } q)
                     g.Teile.AddRange(Zeichnen(ctx, q, e));
@@ -102,6 +106,7 @@ public static class Grafik
     static IEnumerable<Grafikteil> Zeichnen(GrafikKontext ctx, IGrafikquelle q, Element e) =>
         AussparungGrafik.Aktiv(ctx) ? AussparungGrafik.ImAussparungsplan(ctx, q, e)
         : EinlageGrafik.Aktiv(ctx) ? EinlageGrafik.ImPlan(ctx, q, e)
+        : KoordinationGrafik.Aktiv(ctx) ? KoordinationGrafik.ImPlan(ctx, q, e)
         : q.Plan(ctx, e);
 
     public static List<Koerper> Koerper(Projekt p, IEnumerable<string>? ids = null)

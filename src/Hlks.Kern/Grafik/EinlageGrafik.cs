@@ -108,7 +108,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         ctx.Art == "grundriss" && ctx.Geschoss is not null && ctx.Ansicht.Text("darstellung") is Einlagen or Grundleitungen;
 
     /// <summary>Gewöhnlicher Grundriss (darstellung standard, huelle oder ohne Angabe): dort gilt der Filter.</summary>
-    static bool Standard(GrafikKontext ctx) => ctx.Art == "grundriss" && ctx.Ansicht.Text("darstellung") is null or "standard" or "huelle";
+    static bool Standard(GrafikKontext ctx) => ctx.Art == "grundriss" && ctx.Ansicht.Text("darstellung") is null or "standard" or "huelle" or KoordinationGrafik.Darstellung;
 
     /// <summary>Bauteilart einer Einlage-Ansicht (Ansicht.einlagen, Vorgabe decke).</summary>
     public static string Bauteilart(Element ansicht) => ansicht.Text("einlagen") is "bodenplatte" or "wand" ? ansicht.Text("einlagen")! : "decke";
@@ -274,7 +274,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         return neu;
     }
 
-    static Primitiv Kopie(Primitiv p) => new()
+    internal static Primitiv Kopie(Primitiv p) => new()
     {
         Art = p.Art, Punkte = p.Punkte.Select(q => (double[])q.Clone()).ToList(), Quelle = p.Quelle,
         Loecher = p.Loecher?.Select(l => l.Select(q => (double[])q.Clone()).ToList()).ToList(),
@@ -282,7 +282,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = p.Stil.Fuellung, Muster = p.Stil.Muster, Deckkraft = p.Stil.Deckkraft, NurBildschirm = p.Stil.NurBildschirm },
     };
 
-    static Grafikteil Kopie(Grafikteil t, List<Primitiv> primitive) => new()
+    internal static Grafikteil Kopie(Grafikteil t, List<Primitiv> primitive) => new()
     {
         Id = t.Id, Ebene = t.Ebene, Primitive = primitive, Fangpunkte = t.Fangpunkte, Fangkanten = t.Fangkanten, Teil = t.Teil,
     };

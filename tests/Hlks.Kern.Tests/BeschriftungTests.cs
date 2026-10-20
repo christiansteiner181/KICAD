@@ -1,4 +1,4 @@
-using System.Text.Json.Nodes;
+﻿using System.Text.Json.Nodes;
 
 namespace Hlks.Kern.Tests;
 
@@ -412,7 +412,7 @@ public class BeschriftungTests
         Assert.All(spitzen, sp => Assert.Equal(300, sp.Punkte[0][1], 6));
         // Fangpunkte an den Enden, Bezeichnung = Kennzeichen, dünne Pfeile (B.6.1)
         Assert.Equal([[0.0, 0.0], [5000.0, 0.0]], t.Fangpunkte!.ToArray());
-        Assert.Equal(["AN-S", "AN-S"], Texte(t));
+        Assert.Equal(["AN-S / —", "AN-S / —"], Texte(t));   // Modul 7 Teil B1: Blattverweis, hier auf keinem Blatt
         Assert.All(spitzen, sp => Assert.Equal(Stifte.Duenn, sp.Stil.Stift));
     }
 
@@ -466,3 +466,4 @@ public class BeschriftungTests
         Assert.Contains(Grafik.Plan(p, "AN-OG").Teile, t => t.Id == s.Id);
     }
 }
+

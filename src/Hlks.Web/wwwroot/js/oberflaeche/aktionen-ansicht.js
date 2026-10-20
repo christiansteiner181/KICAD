@@ -294,6 +294,36 @@ registrieren({
   },
 });
 
+// Plandarstellung wie H+K (Modul 7 Teil B1): zwei Schalter für die aktive Grundrissansicht. Gerechnet und gezeichnet wird im Kern
+// (KoordinationGrafik, AussparungGrafik); hier wird nur die Ansichtseigenschaft gesetzt.
+//   «Koordination»: darstellung = koordination (alle Gewerke in der Koordinationsfarbe aus gewerke.json, Architektur grau, Aussparungsboxen ein).
+//   «Aussparungsboxen»: aussparungsboxen = true (graue Box mit Gewerk, Art und Mass, Brüstung bzw. Achse an jeder Aussparung des Fachplans).
+const grundrissMoeglich = (p) => { const a = ansichtVon(p); return !!a && a.werte?.art === 'grundriss' && a.werte?.vorlage !== true; };
+registrieren({
+  id: 'ansicht.koordinationsplan', titel: 'Koordination', symbol: 'huelleAnsicht', kuerzel: null, register: 'ansicht', gruppe: 'Darstellung',
+  gedrueckt: () => ansichtVon()?.werte?.darstellung === 'koordination',
+  aktiv: grundrissMoeglich,
+  hinweis: (p) => (ansichtVon(p) ? 'Den Koordinationsplan (Gewerkefarben) gibt es für Grundrisse.' : KEINE_ANSICHT),
+  async ausfuehren(p) {
+    const a = ansichtVon(p);
+    const an = a.werte?.darstellung !== 'koordination';
+    ergebnisMelden(await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { darstellung: an ? 'koordination' : null } }),
+      an ? `Koordinationsplan eingeschaltet (${anzeigeName(a)}).` : `Koordinationsplan ausgeschaltet (${anzeigeName(a)}).`);
+  },
+});
+registrieren({
+  id: 'ansicht.aussparungsboxen', titel: 'Aussparungsboxen', symbol: 'koAusPlan', kuerzel: null, register: 'ansicht', gruppe: 'Darstellung',
+  gedrueckt: () => ansichtVon()?.werte?.aussparungsboxen === true,
+  aktiv: grundrissMoeglich,
+  hinweis: (p) => (ansichtVon(p) ? 'Aussparungsboxen gibt es für Grundrisse.' : KEINE_ANSICHT),
+  async ausfuehren(p) {
+    const a = ansichtVon(p);
+    const an = a.werte?.aussparungsboxen !== true;
+    ergebnisMelden(await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { aussparungsboxen: an ? true : null } }),
+      an ? `Aussparungsboxen eingeschaltet (${anzeigeName(a)}).` : `Aussparungsboxen ausgeschaltet (${anzeigeName(a)}).`);
+  },
+});
+
 // N3 (Punkt 3): CSV jeder Listenansicht – Knopf «CSV …» in der Kopfzeile der Liste (ansichten/liste.js) und Eintrag im Kontextmenü der Liste im Projektbrowser.
 // Die Aktion öffnet die Liste, wenn sie noch nicht offen ist, und zeigt dann deren Dialog (ansichten/liste-csv-dialog.js).
 registrieren({

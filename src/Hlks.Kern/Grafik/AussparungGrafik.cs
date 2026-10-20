@@ -197,8 +197,65 @@ public sealed class AussparungGrafik : IGrafikquelle
                 }
             }
         }
+        if (Boxen(ctx))   // Modul 7 Teil B1: Box statt Beschriftung am Symbol
+        {
+            var zeilen = BoxZeilen(ctx, e, lage, kennung);
+            return Neu(e, teil, cx, cy, textX, zeilen[0], zeilen.Skip(1).ToList(), true, rahmen: true);
+        }
         var (kopf, einzel, gedruckt) = Beschriftung(ctx, e, lage, kennung, Aktiv(ctx), hinweis);
         return Neu(e, teil, cx, cy, textX, kopf, einzel, gedruckt);
+    }
+
+    // ------------------------------------------------------------------ Aussparungsboxen in Fachplänen (Modul 7 Teil B1, Punkt 1)
+    // H+K-Vorlage (entwurf/planmuster.md 0.6): kleine graue Box mit Rahmen, drei Zeilen – Gewerk (Sparte), Art und Mass, Höhe. Wörtlich:
+    // «S / WD Ø 10 / Achse -3.49», «L / WD 35 x75 / BR -2.58», «H / DD 15 x15». Christian 19.10.2026: «BR» = Brüstung = Unterkante der
+    // Aussparung, Kote ab ±0.00. KICAD: Option der Ansicht «aussparungsboxen» (bool, Vorgabe aus) in Grundrissen und immer im Koordinationsplan
+    // (darstellung = koordination); im Aussparungsplan (darstellung = aussparungen) gibt es keine Boxen (dort stehen Massketten).
+    //   Zeile 1  Gewerk: Kurzzeichen der Arbeitsgattung (S, H, L, K, E, wie das Kurzzeichen vor «WD»); mehrere Gewerke nebeneinander in der
+    //            Reihenfolge H L K S E («HLS»); ohne Leitungen «allgemein».
+    //   Zeile 2  Art (WD, DD, FD aus der Kennzeichnung) und Mass in ganzen cm wie der Aussparungsplan: rechteckig «WD 35 x35» (Breite x Höhe bzw.
+    //            Breite x Länge), rund «WD Ø 10». Das Mass kommt aus der Aussparung (b, h bzw. d), sonst aus ihrer Lage.
+    //   Zeile 3  nur bei Wanddurchbrüchen (vertikales Bauteil, wie in der Vorlage; «H / DD 15 x15» hat keine dritte Zeile): rechteckig «BR» +
+    //            Unterkante, rund «Achse» + Kote der Achse, jeweils in m ab ±0.00 (BeschriftungMass.KoteText, wie die Koten der Aussparungsliste).
+    // Rahmen und Schrift in der Koordinationsfarbe «architektur» (gewerke.json; grau), Fläche weiss (Papierfarbe), Führungslinie grau, wenn
+    // die Box nicht neben dem Symbol steht (Freistellung wie die Beschriftungen, siehe unten).
+    public const string OptionBoxen = "aussparungsboxen";
+    const double BoxRand = 0.8;   // mm Papier zwischen Text und Rahmen (Gestaltung, ANNAHME)
+
+    /// <summary>Farbe von Rahmen, Schrift und Führungslinie der Box: Koordinationsfarbe des Gewerks «architektur» (gewerke.json).</summary>
+    static string BoxFarbe(GrafikKontext ctx) => KoordinationGrafik.ArchitekturFarbe(ctx.Katalog);
+
+    /// <summary>Zeichnet diese Ansicht Aussparungsboxen? Option aussparungsboxen oder Koordinationsplan; nie im Aussparungsplan.</summary>
+    public static bool Boxen(GrafikKontext ctx) =>
+        ctx.Art == "grundriss" && ctx.Geschoss is not null && !Aktiv(ctx) && (Grafik.Bool(ctx.Ansicht, OptionBoxen) || KoordinationGrafik.Aktiv(ctx));
+
+    /// <summary>Zeilen der Box einer Aussparung (Dateikopf): Gewerk, Art und Mass, bei Wanddurchbrüchen die Höhe.</summary>
+    internal static List<string> BoxZeilen(GrafikKontext ctx, Element e, Aussparungslage? lage, AussparungKennung? kennung)
+    {
+        bool rund = e.Text("form") == "rund";
+        bool vertikal = kennung is not null ? kennung.Art == AussparungKennzeichnung.WD : lage is not null && Math.Abs(lage.Achse.Z) < 0.5;
+        string art = kennung?.Art ?? (vertikal ? AussparungKennzeichnung.WD : AussparungKennzeichnung.DD);
+        string M(double mm) => BeschriftungMass.MassText(mm, "cm");
+        string? masse = null;
+        if (rund) { if ((e.Zahl("d") ?? (lage?.Rund == true ? lage.D : null)) is double d) masse = $"Ø {M(d)}"; }
+        else if ((e.Zahl("b") ?? lage?.B) is double b && (e.Zahl("h") ?? lage?.H) is double h) masse = $"{M(b)} x{M(h)}";
+        var zeilen = new List<string> { BoxGewerk(ctx, e, kennung), masse is null ? art : $"{art} {masse}" };
+        if (vertikal)
+        {
+            if (rund) { if ((e.Zahl("kote_uk") ?? lage?.Mitte.Z) is double achse) zeilen.Add($"Achse {BeschriftungMass.KoteText(achse)}"); }
+            else if ((e.Zahl("kote_uk") ?? lage?.Koten().Uk) is double uk) zeilen.Add($"BR {BeschriftungMass.KoteText(uk)}");
+        }
+        return zeilen;
+    }
+
+    /// <summary>Gewerk-Zeile der Box: Kurzzeichen der Kennzeichnung; sonst die Kurzzeichen aller Gewerke der Leitungen (H L K S E), sonst «allgemein».</summary>
+    static string BoxGewerk(GrafikKontext ctx, Element e, AussparungKennung? kennung)
+    {
+        if (kennung?.Gewerk is { } g) return g;
+        var kurz = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var id in Aussparungsbezug.Leitungen(e))
+            if (ctx.Modell.Finde(id) is { } l && Ableitungen.Gewerk(ctx.Modell, ctx.Katalog, l) is { } gw && AussparungKennzeichnung.GewerkKurz.TryGetValue(gw, out var kz)) kurz.Add(kz);
+        return kurz.Count == 0 ? "allgemein" : string.Concat("HLKSE".Where(c => kurz.Contains(c.ToString())));
     }
 
     // ------------------------------------------------------------------ Beschriftung nach SIA 400 B.10.3 Tabelle 6
@@ -276,12 +333,14 @@ public sealed class AussparungGrafik : IGrafikquelle
         public List<string> Einzelheiten { get; init; } = [];
         /// <summary>Druckt die Beschriftung (Option beschriftungAmSymbol) oder steht sie nur am Bildschirm?</summary>
         public bool Gedruckt { get; init; }
+        /// <summary>Aussparungsbox (Modul 7 Teil B1): Text im grauen Rahmen statt freier Beschriftung.</summary>
+        public bool Rahmen { get; init; }
     }
 
-    static Entwurf Neu(Element e, Grafikteil symbol, double cx, double cy, double textX, string? kopf, List<string> einzelheiten, bool gedruckt) =>
+    static Entwurf Neu(Element e, Grafikteil symbol, double cx, double cy, double textX, string? kopf, List<string> einzelheiten, bool gedruckt, bool rahmen = false) =>
         new()
         {
-            E = e, Symbol = symbol, Cx = cx, Cy = cy, TextX = textX, Kopf = kopf, Einzelheiten = einzelheiten, Gedruckt = gedruckt,
+            E = e, Symbol = symbol, Cx = cx, Cy = cy, TextX = textX, Kopf = kopf, Einzelheiten = einzelheiten, Gedruckt = gedruckt, Rahmen = rahmen,
             Box = Grafik.Begrenzung([new Grafikteil { Primitive = symbol.Primitive.Where(x => !x.Stil.NurBildschirm).ToList() }]) ?? [cx, cy, cx, cy],
         };
 
@@ -322,9 +381,10 @@ public sealed class AussparungGrafik : IGrafikquelle
             var zeilen = new List<string> { en.Kopf! };
             zeilen.AddRange(en.Einzelheiten);
             int n = zeilen.Count;
-            double w = zeilen.Max(z => z.Length) * ZeichenBreite * s;
-            double h = (Oberlaenge + Unterlaenge) * s + (n - 1) * lh;
-            double stdUnten = en.Cy + (n - 1) * lh / 2 - s * 0.35 - (n - 1) * lh - Unterlaenge * s;   // Grundlage: Block mittig am Symbol
+            double pad = en.Rahmen ? ctx.AufModell(BoxRand) : 0;   // Aussparungsbox: Rand zwischen Text und Rahmen
+            double w = zeilen.Max(z => z.Length) * ZeichenBreite * s + 2 * pad;
+            double h = (Oberlaenge + Unterlaenge) * s + (n - 1) * lh + 2 * pad;
+            double stdUnten = en.Cy + (n - 1) * lh / 2 - s * 0.35 - (n - 1) * lh - Unterlaenge * s - pad;   // Grundlage: Block mittig am Symbol
             double rechts = en.TextX + luecke, links = en.Box[0] - luecke - w, mitteX = en.Cx - w / 2;
             double oben = en.Box[3] + luecke, unten = en.Box[1] - luecke - h;
 
@@ -372,10 +432,17 @@ public sealed class AussparungGrafik : IGrafikquelle
                 if (Math.Abs(ex - ax) + Math.Abs(ey - ay) > 1e-6)
                     teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[ax, ay], [ex, ey]], Stil = new Stil { Stift = Stifte.Duenn } });
             }
-            double y0 = lage.Y + (n - 1) * lh + Unterlaenge * s;   // Grundlinie der ersten Zeile
-            teil.Primitive.Add(BeschriftungHilfen.Text([lage.X, y0], en.Kopf!, Schrift, "links", 0, fett: true));
+            double y0 = lage.Y + pad + (n - 1) * lh + Unterlaenge * s;   // Grundlinie der ersten Zeile
+            if (en.Rahmen)   // Aussparungsbox: weisse Fläche mit grauem Rahmen unter dem Text, alles in der Koordinationsfarbe «architektur»
+                teil.Primitive.Insert(0, new Primitiv
+                {
+                    Art = "polygon", Punkte = [[lage.X, lage.Y], [lage.X + w, lage.Y], [lage.X + w, lage.Y + h], [lage.X, lage.Y + h]],
+                    Stil = new Stil { Stift = Stifte.Duenn, Farbe = BoxFarbe(ctx), Fuellung = "papier" },
+                });
+            teil.Primitive.Add(BeschriftungHilfen.Text([lage.X + pad, y0], en.Kopf!, Schrift, "links", 0, fett: true));
             if (en.Einzelheiten.Count > 0)
-                teil.Primitive.Add(BeschriftungHilfen.Text([lage.X, y0 - lh], string.Join("\n", en.Einzelheiten), Schrift));
+                teil.Primitive.Add(BeschriftungHilfen.Text([lage.X + pad, y0 - lh], string.Join("\n", en.Einzelheiten), Schrift));
+            if (en.Rahmen) foreach (var pr in teil.Primitive) pr.Stil.Farbe = BoxFarbe(ctx);
             if (!en.Gedruckt) foreach (var pr in teil.Primitive) pr.Stil.NurBildschirm = true;   // H+K-Vorlage: am Symbol nichts auf dem Plan
             ergebnis[en.E.Id].Add(teil);
         }

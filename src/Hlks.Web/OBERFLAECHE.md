@@ -1258,3 +1258,25 @@ Listen im PDF: Arial 2.2 mm, höchstens 45 Zeilen und 380 mm Breite je Liste, Sp
 
 **Prüfen:** `node --test js/oberflaeche/planblatt-hk.test.mjs`; Kern: `PlanblattHkTests.cs`; Browser: `HLKS_PH_PORT=5179 HLKS_CDP_PORT=9500 node js/oberflaeche/planblatt-hk.browser.mjs` (Bilder `%TEMP%\HLKS_CAD\ph_*.png`; `HLKS_KATALOG` auf die Kataloge
 der Arbeitskopie setzen).
+## Plandarstellung wie H+K (Modul 7 Teil B1)
+
+Entwurf: `entwurf/modul-7.md` Teil B1, Muster `entwurf/planmuster.md` («Gemeinsam», «Koordination»). Die Oberfläche setzt nur Ansichtseigenschaften (`element_aendern`); gerechnet und gezeichnet wird im Kern.
+
+**Kern:** `Grafik/KoordinationGrafik.cs` (Darstellung `koordination`: Gewerke in der Koordinationsfarbe aus `kataloge/gewerke.json`, Architektur grau, Weiche `ImPlan` wie bei den Einlageplänen) · `Grafik/AussparungGrafik.cs`
+(Aussparungsboxen: `Boxen`, `BoxZeilen`, Platzierung wie die Beschriftungen mit Führungslinie) · `Plan/Blattverweis.cs` (Text der Schnitt-/Ansichtsmarke «Titel / Plankürzel») · `Grafik/BeschriftungSymbole.cs` (Schnittsymbol) ·
+`Plan/Plannummernvorschlag.cs` und `Plan/Plansaetze.cs` (Koordinationsplan = Fach K).
+
+**Orte in der Oberfläche**
+
+| Funktion | Ort | Kern |
+| --- | --- | --- |
+| Koordinationsplan (Gewerkefarben) | Register **Ansicht › Darstellung › Koordination** (Schalter für die aktive Grundrissansicht); oder Eigenschaftenpalette der Ansicht › `darstellung` = `koordination` | `element_aendern` (`darstellung`), Grafik `KoordinationGrafik` |
+| Aussparungsboxen im Fachplan | Register **Ansicht › Darstellung › Aussparungsboxen** (Schalter); oder Eigenschaftenpalette › `aussparungsboxen`; im Koordinationsplan immer ein, im Aussparungsplan nie | `element_aendern` (`aussparungsboxen`), Grafik `AussparungGrafik` |
+| Schnitt-/Ansichtsmarke mit Blattverweis | keine Bedienung: die Marke in jedem Grundriss zeigt «Titel / Plankürzel» des Planblatts, auf dem die Schnittansicht steht («—» ohne Blatt); folgt dem Verschieben des Ansichtsfensters auf ein anderes Blatt | Ansichten › `ansicht_platzieren`, `element_aendern` (Ansichtsfenster `teilVon`) |
+| Planblatt-Fach K | Planblatt anlegen (Ansicht › Planblätter › Planblatt): bei einer Ansicht mit `darstellung koordination` schlägt der Kern «K» vor | Abfrage `plannummer_vorschlag` |
+
+**Darstellung (Annahmen, Prüfliste Christian):** Box = Rahmen, Schrift und Führungslinie im Grau des Gewerks «architektur» (gewerke.json, #808080), Fläche weiss, 2.0 mm Schrift; Zeile 1 Gewerk-Kurzzeichen (S, H, L, K, E; mehrere «HLS»; ohne Leitung «allgemein»),
+Zeile 2 «WD 35 x35» bzw. «WD Ø 10» (ganze cm wie der Aussparungsplan), Zeile 3 nur bei Wanddurchbrüchen: «BR +1.88» (Unterkante ab ±0.00, in m) bzw. «Achse −3.49»; Deckendurchbrüche haben wie in der Vorlage («H / DD 15 x15») keine dritte Zeile. Marke: Text mit dem Plankürzel (Plannummer ohne
+Projektnummer, wie die Vorlage «Heizung Steigzone 2 / H21»); bei waagrechtem Blick steht der Text neben der Pfeilspitze vom Pfeil weg. Die Schalter verwenden vorläufig die Symbole `huelleAnsicht` und `koAusPlan` (eigene Symbole folgen).
+
+**Prüfen:** `node --test js/oberflaeche/plandarstellung-b1.test.mjs`; Kern: `PlanDarstellungB1Tests.cs` (Abnahmebild mit `HLKS_M7B_BILD=%TEMP%\HLKS_CAD`, dann `werkzeuge\pdf_bild.ps1`).
