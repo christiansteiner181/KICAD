@@ -5,14 +5,18 @@
 // die Rahmenkoordinaten stehen zusätzlich in bilder.json.
 //
 // Aufruf (aus dem Hauptordner HLKS_CAD):
-//   node werkzeuge/anleitung_bilder.mjs [--nur <id,id,…>] [--projekt beispiel|bernstrasse] [--liste]
+//   node werkzeuge/anleitung_bilder.mjs [--nur <id,id,…>] [--projekt beispiel|bernstrasse] [--liste] [--port <Basis>] [--cdp <Port>]
 //     --nur <ids>      nur die Bilder, an denen eine dieser Funktionen hängt (Ids aus inventar.json; auch Teile wie «m3b» = alle Ids mit diesem Anfang, «m3b-»)
 //     --projekt <p>    nur Bilder dieses Projekts (beispiel = fiktives Beispielprojekt MFH Musterweg, bernstrasse = Kopie der echten Abnahmeprojekte)
 //     --liste          nur ausgeben, was erzeugt würde
+//     --port <Basis>   erster Serverport (Vorgabe 5190; HLKS_ANLEITUNG_PORT): Beispielprojekt = Basis, Bernstrasse (3b) = Basis+1, Bernstrasse (Leitungen) = Basis+2
+//     --cdp <Port>     Debug-Port von Edge (Vorgabe 9530; HLKS_CDP_PORT)
 //   Ohne Angaben: alle Bilder. Teilläufe führen bilder.json nach (bestehende Einträge bleiben, neu erzeugte ersetzen sie).
 //
 // Voraussetzung: der Build der Arbeitskopie unter %USERPROFILE%\HLKS_CAD_build\anleitung (HLKS_BAU ändert ihn):
 //   $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build\anleitung"; dotnet build src\Hlks.Web\Hlks.Web.csproj; dotnet build src\Hlks.Mcp\Hlks.Mcp.csproj
+//   Die Szenen der Palette «Claude» (m3c-…) brauchen zusätzlich die Attrappe statt claude.exe: dotnet build tests\Hlks.ClaudeAttrappe (gleicher HLKS_BUILD). Das Skript
+//   startet nie das echte claude.exe (HLKS_CLAUDE_EXE zeigt immer auf die Attrappe oder auf eine Datei, die es nicht gibt).
 // Edge (HLKS_EDGE) und dotnet (HLKS_DOTNET) wie bei den *.browser.mjs-Tests.
 //
 // Ausgabe NUR lokal: %USERPROFILE%\HLKS_CAD_testdaten\anleitung\bilder\  (<id>.webp und bilder.json; HLKS_ANLEITUNG_AUSGABE ändert die Wurzel
@@ -28,8 +32,8 @@
 // Der Server läuft mit HLKS_TEST=1; alle Ablagen (Benutzer, Zuletzt, Bibliothek, Projektablage) liegen unter %TEMP%. Es wird nichts auf W: geschrieben und kein
 // Bild gegen HKAP gemacht (die Dialoge der HKAP-Schnittstelle zeigt das Skript nur leer, ohne Verbindung).
 //
-// Ports: Server nur 5190–5195, Edge (CDP) nur 9530–9539. Gesperrt (der Lauf bricht ab): 5013, 5098, 5130, 5131, 5149, 5150, 5151, 5177, 5179–5189 und CDP 9500–9519.
-//   5190 Beispielprojekt · 5191 Bernstrasse (3b) · 5192 Bernstrasse (Leitungen) · 5193 Ausweich · CDP 9530
+// Ports: Vorgabe 5190 Beispielprojekt · 5191 Bernstrasse (3b) · 5192 Bernstrasse (Leitungen) · CDP 9530; wählbar mit --port / --cdp bzw. HLKS_ANLEITUNG_PORT / HLKS_CDP_PORT.
+// Fest gesperrt (der Lauf bricht ab): 5013, 5098, 5130, 5131, 5149, 5150, 5151, 5152. Welche weiteren Ports gleichzeitig laufende Prüfungen belegen, wählt der Aufrufer.
 //
 // Wie ein Bild entsteht: Katalog am Ende dieser Datei. Jeder Eintrag baut den Zustand auf (über die Befehle des Kerns und über echte Maus- und Tastenereignisse,
 // wie die Browsertests), nimmt dann ein oder mehrere Bilder auf (je Aufnahme: Funktions-Ids, Markierung). Was kein Skript herstellen kann, steht mit Grund unter «ohneBild».
@@ -50,29 +54,30 @@ const PROJEKTE = path.join(WURZEL, 'projekte');
 const BAU = process.env.HLKS_BAU ?? path.join(USER, 'HLKS_CAD_build', 'anleitung');
 const EDGE = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\\Application\\msedge.exe';
 const DOTNET = process.env.HLKS_DOTNET ?? 'C:\\Program Files\\dotnet\\dotnet.exe';
+const ATTRAPPE = path.join(BAU, 'Hlks.ClaudeAttrappe', 'bin', 'Debug', 'net10.0', 'Hlks.ClaudeAttrappe.exe');   // statt claude.exe
 const TESTDATEN = path.join(USER, 'HLKS_CAD_testdaten', 'bernstrasse42');
 const FAMILIEN = path.join(REPO, 'tests', 'daten', 'familien');
 const QUELLE_3B = path.join(USER, 'HLKS_CAD_build', 'abnahme3b', 'e_KICAD');
 const QUELLE_3 = path.join(USER, 'HLKS_CAD_build', 'abnahme3', 'e_KICAD');
-const CDPPORT = Number(process.env.HLKS_CDP_PORT ?? 9530);
-const PORTS = { beispiel: 5190, bernstrasse: 5191, bernstrasse_leitungen: 5192 };
+const ARG = process.argv.slice(2);
+const argWert = (n) => { const i = ARG.indexOf(n); return i >= 0 ? ARG[i + 1] : null; };
+const CDPPORT = Number(argWert('--cdp') ?? process.env.HLKS_CDP_PORT ?? 9530);
+const PORTBASIS = Number(argWert('--port') ?? process.env.HLKS_ANLEITUNG_PORT ?? 5190);
+const PORTS = { beispiel: PORTBASIS, bernstrasse: PORTBASIS + 1, bernstrasse_leitungen: PORTBASIS + 2 };
 const FB = 1600, FH = 950;
 const KICAD = 'c_Pläne und Modelle\\e_KICAD';
 const warte = (ms) => new Promise((r) => setTimeout(r, ms));
 
 // ------------------------------------------------------------------ Schutz: nur die erlaubten Ports
-const gesperrtPort = (p) => [5013, 5098, 5130, 5131, 5149, 5150, 5151, 5177].includes(p) || (p >= 5179 && p <= 5189);
+const gesperrtPort = (p) => [5013, 5098, 5130, 5131, 5149, 5150, 5151, 5152].includes(p);
 function portPruefen(p, art) {
-  const ok = art === 'cdp' ? (p >= 9530 && p <= 9539) : (p >= 5190 && p <= 5195);
-  if (!ok || gesperrtPort(p) || (art === 'cdp' && p >= 9500 && p <= 9519)) { console.error(`Port ${p} (${art}) ist nicht erlaubt: Server nur 5190–5195, CDP 9530–9539.`); process.exit(2); }
+  if (!Number.isInteger(p) || p < 1024 || p > 65535 || gesperrtPort(p)) { console.error(`Port ${p} (${art}) ist nicht erlaubt (fest gesperrt: 5013, 5098, 5130, 5131, 5149–5152; sonst 1024–65535).`); process.exit(2); }
 }
 Object.values(PORTS).forEach((p) => portPruefen(p, 'server'));
 portPruefen(CDPPORT, 'cdp');
 
 // ------------------------------------------------------------------ Argumente
-const ARG = process.argv.slice(2);
-const argWert = (n) => { const i = ARG.indexOf(n); return i >= 0 ? ARG[i + 1] : null; };
-const NUR = argWert('--nur')?.split(',').map((s) => s.trim()).filter(Boolean) ?? null;
+const NUR =argWert('--nur')?.split(',').map((s) => s.trim()).filter(Boolean) ?? null;
 const NUR_PROJEKT = argWert('--projekt');
 const NUR_LISTE = ARG.includes('--liste');
 if (NUR_PROJEKT && !['beispiel', 'bernstrasse'].includes(NUR_PROJEKT)) { console.error('--projekt: beispiel oder bernstrasse'); process.exit(2); }
@@ -112,10 +117,18 @@ class Welt {
     this.name = name; this.port = port; this.url = `http://localhost:${port}`;
     this.dir = path.join(ARBEIT, name);
     this.env = { HLKS_TEST: '1', HLKS_BENUTZER: path.join(this.dir, 'benutzer'), HLKS_ZULETZT: path.join(this.dir, 'zuletzt'), HLKS_FAMILIENBIBLIOTHEK: path.join(this.dir, 'bibliothek'),
-      HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(this.dir, 'ausstehend'), HLKS_PROJEKTABLAGE: path.join(this.dir, 'ablage'), HLKS_WEBROOT: path.join(REPO, 'src', 'Hlks.Web', 'wwwroot'), HLKS_KATALOG: path.join(REPO, 'kataloge') };
+      HLKS_BIBLIOTHEK_AUSSTEHEND: path.join(this.dir, 'ausstehend'), HLKS_PROJEKTABLAGE: path.join(this.dir, 'ablage'), HLKS_WEBROOT: path.join(REPO, 'src', 'Hlks.Web', 'wwwroot'), HLKS_KATALOG: path.join(REPO, 'kataloge'),
+      // Anleitung (Hilfe-Fenster), Prüfstand und Normen liegen ebenfalls unter %TEMP%; die Palette «Claude» läuft nur mit der Attrappe (nie mit dem echten claude.exe)
+      HLKS_ANLEITUNG: path.join(this.dir, 'anleitung'), HLKS_ANLEITUNG_PRUEFUNG: path.join(this.dir, 'anleitung_pruefung'), HLKS_NORMEN: path.join(this.dir, 'normen'),
+      DOTNET_ROOT: path.dirname(DOTNET), HLKS_CLAUDE_EXE: ATTRAPPE, HLKS_MCP_DLL: path.join(BAU, 'Hlks.Mcp', 'bin', 'Debug', 'net10.0', 'Hlks.Mcp.dll') };
+    this.basisEnv = { ...this.env }; this.aktEnv = '{}';   // aktEnv: Zusatz-Umgebung des laufenden Servers (Szenen mit «umgebung» starten ihn neu)
     this.proz = null;
   }
-  vorbereiten() { rm(this.dir); for (const d of ['benutzer', 'zuletzt', 'bibliothek', 'ausstehend', 'ablage']) mkdir(path.join(this.dir, d)); }
+  vorbereiten() {
+    rm(this.dir); for (const d of ['benutzer', 'zuletzt', 'bibliothek', 'ausstehend', 'ablage', 'anleitung_pruefung']) mkdir(path.join(this.dir, d));
+    // Test-Normen (fiktive SIA 9999) in einer Kopie, nie W:
+    cpSync(path.join(REPO, 'tests', 'daten', 'normen'), this.env.HLKS_NORMEN, { recursive: true, filter: (q) => !q.endsWith('erzeugen.mjs') });
+  }
   async starten(projektOrdner = null) {
     portPruefen(this.port, 'server');
     const args = [path.join(BAU, 'Hlks.Web', 'bin', 'Debug', 'net10.0', 'Hlks.Web.dll'), '--port', String(this.port), '--akteur', 'CS', '--geraet', 'pc-eins'];
@@ -289,6 +302,7 @@ async function seiteLaden(welt, { warten = 'projekt', design = 'hell', anhang = 
   aktuelleWelt = welt;
   // Einstellungen des Benutzers liegen auf dem Server (nicht im Browser): die Gliederung des Projektbrowsers bleibt sonst von Bild zu Bild stehen
   await welt.post('/api/benutzer/einstellungen', { schluessel: 'projektbrowser.gliederung', wert: ['gebaeude'] }).catch(() => {});
+  await welt.post('/api/benutzer/einstellungen', { schluessel: 'oberflaeche.symbole', wert: null }).catch(() => {});   // Strichsymbole (Vorgabe); der Revit-Stil bleibt sonst von Bild zu Bild stehen
   await send('Page.navigate', { url: 'about:blank' }); await warte(150);
   await send('Storage.clearDataForOrigin', { origin: welt.url, storageTypes: 'local_storage,session_storage,cache_storage,indexeddb' }).catch(() => {});
   if (initId) await send('Page.removeScriptToEvaluateOnNewDocument', { identifier: initId }).catch(() => {});
@@ -413,6 +427,8 @@ const OHNE_BILD = [];
  *   welt:    'projekt' (Voreinstellung: Projekt offen) | 'start' (Startbildschirm, kein Projekt offen) | 'nichts'
  *   schreibt: true, wenn der Zustand das Projekt verändert (danach wird es frisch angelegt bzw. neu kopiert)
  *   aufbau(c): stellt den Zustand her; aufnahmen: [{ ids, markiere, titel, vor, datei }]
+ *   umgebung: { NAME: Wert } – zusätzliche Umgebung des Servers für diese Szene (er wird dafür neu gestartet und danach wieder mit der Grundumgebung, z. B. «Claude nicht verfügbar»)
+ *   nachher(c): räumt nach der Szene auf (auch nach einem Fehler), z. B. Strichsymbole wieder einstellen
  */
 function szene(def) { KATALOG.push({ welt: 'projekt', schreibt: false, ...def }); }
 function ohneBild(ids, grund) { for (const id of [].concat(ids)) OHNE_BILD.push({ id, grund }); }
@@ -441,7 +457,7 @@ async function tooltipNachbilden(sel, { text: t = null, dx = 6, dy = 4 } = {}) {
     const txt = ${J(t)} ?? e.title ?? e.getAttribute('aria-label') ?? '';
     document.getElementById('anl-tooltip')?.remove();
     const d = document.createElement('div'); d.id = 'anl-tooltip'; d.setAttribute('data-anl', '1'); d.textContent = txt;
-    d.style.cssText = 'position:fixed;z-index:2147483600;max-width:420px;padding:3px 8px;font:12px "Segoe UI",sans-serif;color:#1b1b1b;background:#f9f9f9;border:1px solid #767676;box-shadow:2px 2px 4px rgba(0,0,0,.25);pointer-events:none;white-space:normal;';
+    d.style.cssText = 'position:fixed;z-index:2147483600;max-width:420px;padding:3px 8px;font:12px "Segoe UI",sans-serif;color:#1b1b1b;background:#f9f9f9;border:1px solid #767676;box-shadow:2px 2px 4px rgba(0,0,0,.25);pointer-events:none;white-space:pre-line;';   // pre-line: Tooltips mit mehreren Zeilen (letzte Zeile «F1: Hilfe zu diesem Befehl»)
     document.body.appendChild(d);
     const b = d.getBoundingClientRect();
     d.style.left = Math.max(2, Math.min(r.left + ${dx}, innerWidth - b.width - 4)) + 'px'; d.style.top = Math.min(r.bottom + ${dy} + 14, innerHeight - b.height - 4) + 'px';
@@ -1785,6 +1801,322 @@ bild('zb-bib-aktualisieren', 'beispiel', async (c) => {
 }, { schreibt: true, bibliothek: true, markiere: () => rechteck(DLG), titel: 'Aktualisieren …: Vorschau einer neueren Version aus der Bibliothek, betroffene Elemente' });
 bild('zb-bib-status', 'beispiel', async () => { await grundrissEG(); await klick('#statusleiste .sl-bib'); await warteBis(async () => (await anzahl('#dialogschicht .dlg')) >= 1, 'Dialog Bibliothek'); await warte(800); }, { markiere: '#statusleiste .sl-bib' });
 
+// ================================================================== Nachtrag 20.10.2026 (Stand 6dc390e): die 36 neuen Funktionen
+// Kapitel «start» (Hilfe «?», F1, Knopf «Claude», Revit-Stil), «m3c» (Palette «Claude», Server mit der Attrappe statt claude.exe, Normen aus tests/daten/normen),
+// «m4» (Sanitär-Belastungswerte, Zustände wie in sanitaer-belastung.browser.mjs) und «zusatz» N3 (Einlageplan, Grundleitungsplan, Projektinformationen, Listen, CSV, KS).
+// Alle Texte der Gespräche sind erkennbar fiktiv (Antwort der Attrappe); die Bilder zeigen nie einen echten Claude-Lauf.
+const { hilfeSchluessel, HILFE_TOOLTIP } = await import(pathToFileURL(path.join(REPO, 'src', 'Hlks.Web', 'wwwroot', 'js', 'oberflaeche', 'hilfe.js')).href);
+
+/** Bildet die aufgeklappte Auswahlliste eines <select> nach (Edge headless zeichnet die Liste des Betriebssystems nicht); nach der Aufnahme entfernt. */
+async function auswahlNachbilden(sel) {
+  return ausw(`
+    const s = document.querySelector(${J(sel)}); if (!s) throw new Error('Auswahl fehlt: ' + ${J(sel)});
+    s.scrollIntoView({ block: 'center', inline: 'nearest' });
+    const r = s.getBoundingClientRect();
+    const opts = [...s.options].map((o) => ({ t: o.textContent.trim(), a: o.selected }));
+    document.getElementById('anl-liste')?.remove();
+    const d = document.createElement('div'); d.id = 'anl-liste'; d.setAttribute('data-anl', '1');
+    d.style.cssText = 'position:fixed;z-index:2147483500;background:#fff;color:#1b1b1b;border:1px solid #767676;box-shadow:2px 3px 8px rgba(0,0,0,.3);pointer-events:none;overflow:hidden;font:' + getComputedStyle(s).font + ';min-width:' + r.width + 'px;';
+    for (const o of opts) { const z = document.createElement('div'); z.textContent = o.t; z.style.cssText = 'padding:3px 10px;white-space:nowrap;' + (o.a ? 'background:#0078d4;color:#fff;' : ''); d.appendChild(z); }
+    document.body.appendChild(d);
+    const b = d.getBoundingClientRect();
+    d.style.left = Math.max(2, Math.min(r.left, innerWidth - b.width - 4)) + 'px';
+    const unten = innerHeight - r.bottom - 6, oben = r.top - 6;   // wie die Liste des Systems: unter dem Feld, bei zu wenig Platz darüber; zu lange Listen rollen
+    d.style.overflowY = 'auto';
+    if (b.height <= unten || unten >= oben) { d.style.maxHeight = Math.min(b.height, unten) + 'px'; d.style.top = (r.bottom + 1) + 'px'; }
+    else { const h = Math.min(b.height, oben); d.style.maxHeight = h + 'px'; d.style.top = (r.top - h - 1) + 'px'; }
+    return opts.length;`);
+}
+const eigWahl = async (kz) => { await auswaehlen(kz); await warteBis(() => ausw(`return document.querySelector('#palette-eigenschaften [data-ziel="kz"]')?.value === ${J(kz)};`), 'Palette zeigt ' + kz); await warte(300); };
+/** Eingabe in ein Feld mit Tab zum Übernehmen (change-Hörer der Palette). */
+const tippeFeld = async (sel, t) => { await eingeben(sel, t); await taste('Tab'); await warte(300); };
+const rechteckVon = (sel, i = 0) => rechteck(sel, i);
+
+// ---- Hilfe-Fenster der Anleitung (zweite Bilder von start-hilfe-symbol, start-f1-knopf, start-f1-dialog): die Seite wird im selben Browserfenster geöffnet
+async function hilfeSeite(w, hash = '', { ziel = false } = {}) {
+  if (!w.hilfeGebaut) {
+    const r = spawnSync(process.execPath, [path.join(HIER, 'anleitung_bauen.mjs'), '--repo', REPO, '--aus', w.env.HLKS_ANLEITUNG, '--bilder', BILDER, '--commit', 'bildprobe', '--datum', new Date().toLocaleDateString('de-DE')],
+      { encoding: 'utf8', env: { ...process.env, HLKS_ANLEITUNG: w.env.HLKS_ANLEITUNG } });
+    if (r.status !== 0) throw new Error('Anleitung nicht gebaut: ' + (r.stderr || r.stdout || '').slice(-300));
+    w.hilfeGebaut = true;
+  }
+  await send('Page.navigate', { url: `${w.url}/hilfe/${hash}` });
+  await warteBis(() => ausw(`return document.readyState === 'complete' && document.querySelectorAll('article.funktion').length > 0;`), 'Hilfeseite aufgebaut', 30000);
+  if (ziel) await warteBis(() => gibt('article.funktion.ziel'), 'Sprungziel der Hilfeseite', 15000);
+  await warte(1200);
+  await ausw(`document.querySelector('article.funktion.ziel')?.scrollIntoView({ block: 'center', behavior: 'instant' }); return 1;`);
+  await warte(600);
+  await warteBis(() => ausw(`return [...document.images].filter((i) => { const r = i.getBoundingClientRect(); return r.bottom > 0 && r.top < innerHeight; }).every((i) => i.complete);`), 'Bilder der Hilfeseite', 15000).catch(() => {});
+}
+
+// ---- Kapitel «start»: Kopfleiste, F1, Knopf «Claude», Revit-Stil
+szene({
+  projekt: 'beispiel', aufbau: async () => { await grundrissEG(); await warte(400); },
+  aufnahmen: [
+    { ids: ['start-hilfe-symbol'], titel: 'Kopfleiste rechts: Knöpfe «Claude» und «?» (Tooltip des «?» nachgebildet)', markiere: '#hilfe-knopf', abstand: 5,
+      vor: async () => { await maus('mouseMoved', 5, 5); await tooltipNachbilden('#hilfe-knopf', { text: HILFE_TOOLTIP }); } },
+    { ids: ['start-hilfe-symbol'], datei: 'start-hilfe-symbol_2', titel: 'Das Fenster der Bedienungsanleitung nach Klick auf «?» (Anfang der Anleitung)', markiere: null,
+      vor: async (c) => { await hilfeSeite(c.welt, ''); } },
+  ],
+});
+szene({
+  projekt: 'beispiel', aufbau: async () => { await grundrissEG(); await registerWahl('Ansicht'); },
+  aufnahmen: [
+    { ids: ['start-f1-knopf'], titel: 'Register Ansicht, Zeiger über «Liste»: Tooltip mit der letzten Zeile «F1: Hilfe zu diesem Befehl» (nachgebildet)', markiere: menueKnopf('ansicht.liste'), abstand: 4,
+      vor: async () => { const p = await mitteVon(menueKnopf('ansicht.liste')); await maus('mouseMoved', p.x, p.y); await tooltipNachbilden(menueKnopf('ansicht.liste')); } },
+    { ids: ['start-f1-knopf'], datei: 'start-f1-knopf_2', titel: 'Nach F1: die Anleitung springt zur Funktion zum Knopf «Liste» und hebt sie hervor', markiere: 'article.funktion.ziel', abstand: 4,
+      vor: async (c) => { await hilfeSeite(c.welt, `#k-ansicht~${hilfeSchluessel('Liste')}`, { ziel: true }); } },
+  ],
+});
+szene({
+  projekt: 'beispiel', aufbau: async () => { await grundrissEG(); await tippeKuerzel('ks'); await dialogDa(/Tastaturkürzel/); await warte(500); },
+  aufnahmen: [
+    { ids: ['start-f1-dialog'], titel: 'Dialog «Tastaturkürzel» offen: F1 öffnet die Anleitung zu diesem Dialog', markiere: () => rechteck(dlg('.dlg-kopf')), abstand: 3 },
+    { ids: ['start-f1-dialog'], datei: 'start-f1-dialog_2', titel: 'Nach F1: die Anleitung mit der Suche «tastaturkuerzel» (Titel des Dialogs)', markiere: '#suchfeld', abstand: 4,
+      vor: async (c) => { await alleDialogeZu(); await hilfeSeite(c.welt, `#s-${hilfeSchluessel('Tastaturkürzel')}`); await warteBis(() => ausw(`return document.getElementById('suchfeld')?.value.length > 0;`), 'Suchfeld gefüllt', 10000).catch(() => {}); } },
+  ],
+});
+szene({
+  projekt: 'beispiel',
+  aufbau: async () => { await grundrissEG(); await warte(400); },
+  aufnahmen: [
+    { ids: ['start-claude-knopf'], titel: 'Knopf «Claude» (gedrückt) neben dem «?», Palette «Claude» rechts angedockt, Verlauf leer (Attrappe statt Claude)', markiere: '#claude-knopf', abstand: 5,
+      vor: async () => { await klick('#claude-knopf'); await warteBis(() => gibt(KIPAL + ' .ki-feld'), 'Palette Claude', 30000); await kiBereit(); await maus('mouseMoved', 5, 5); } },
+  ],
+});
+szene({
+  projekt: 'beispiel',
+  aufbau: async () => { await grundrissEG(); await registerWahl('Gebäudetechnik'); await warte(500); },
+  aufnahmen: [
+    { ids: ['start-symbole-revit'], titel: 'Register Gebäudetechnik mit den Strichsymbolen (Vorgabe)', markiere: '#menueband' },
+    { ids: ['start-symbole-revit'], datei: 'start-symbole-revit_2', titel: 'Dasselbe Register im Revit-Stil (Ansicht › Fenster › Paletten › «Symbole im Revit-Stil (Probe)»)', markiere: '#menueband',
+      vor: async () => { await revitUmschalten(); await registerWahl('Gebäudetechnik'); await warte(400); } },
+    { ids: ['start-symbole-revit'], datei: 'start-symbole-revit_3', titel: 'Liste «Paletten» mit Häkchen vor «Symbole im Revit-Stil (Probe)»', markiere: () => rechtMit('.kmenu button', 'Revit-Stil'), abstand: 3,
+      vor: async () => { await registerWahl('Ansicht'); await klick(menueKnopf('ansicht.paletten')); await warteBis(() => gibt('.kmenu'), 'Liste der Paletten'); await warte(300); } },
+  ],
+  nachher: async () => { await ausw(`const m = await import('/js/oberflaeche/symbolstil-umschalten.js'); await m.symbolstilWaehlen('strich', true); return 1;`).catch(() => {}); },
+});
+/** Schaltet im Revit-Stil um: Ansicht › Paletten › Eintrag «Symbole im Revit-Stil (Probe)». */
+async function revitUmschalten() {
+  await registerWahl('Ansicht'); await klick(menueKnopf('ansicht.paletten')); await warteBis(() => gibt('.kmenu'), 'Liste der Paletten');
+  await ausw(`const b = [...document.querySelectorAll('.kmenu button')].find((x) => x.textContent.includes('Revit-Stil')); if (!b) throw new Error('Eintrag Revit-Stil fehlt'); b.setAttribute('data-revit', '1'); return 1;`);
+  await klick('.kmenu button[data-revit="1"]'); await warteBis(async () => (await anzahl('svg.sym-rv')) > 20, 'Revit-Symbole', 10000); await warte(400);
+}
+
+// ---- Kapitel «m3c»: Palette «Claude» (Attrappe)
+const KIPAL = '#palette-claude';
+const kiBereit = async () => { await warteBis(async () => (await anzahl(KIPAL + ' .ki-wahl-modell option')) === 3, 'Modelle der Palette', 30000); await warte(400); };
+const kiEin = async () => { if (!(await gibt(KIPAL + ' .ki-feld'))) await klick('#claude-knopf'); await warteBis(() => gibt(KIPAL + ' .ki-feld'), 'Palette Claude', 30000); await kiBereit(); };
+const kiTippen = async (t) => { await ausw(`const f = document.querySelector('${KIPAL} .ki-feld'); f.focus(); f.select(); return 1;`); await send('Input.insertText', { text: t }); await warte(150); };
+const kiLaeuft = () => ausw(`return !!document.querySelector('${KIPAL} .ki-claude[data-status="laeuft"]') || !document.querySelector('${KIPAL} .ki-abbrechen')?.hidden;`);
+const kiFertig = async (ms = 90000) => { await warteBis(async () => !(await kiLaeuft()), 'Antwort fertig', ms); await warte(300); };
+async function kiFrage(t, { warten = true } = {}) {
+  const n0 = await anzahl(KIPAL + ' .ki-mensch');
+  await kiTippen(t); await klick(KIPAL + ' .ki-senden');
+  if (warten) { await warteBis(async () => (await anzahl(KIPAL + ' .ki-mensch')) > n0, 'Frage erscheint'); await kiFertig(); }
+}
+const kiNachrichten = () => ausw(`return [...document.querySelectorAll('${KIPAL} .ki-nachricht')].map((n) => (n.querySelector('.ki-blase')?.innerText ?? '').trim());`);
+const kiChip = (id) => `${KIPAL} .ki-chip[data-id="${id}"]`;
+
+szene({
+  projekt: 'beispiel',
+  aufbau: async () => { await grundrissEG(); await kiEin(); },
+  aufnahmen: [
+    { ids: ['m3c-ein-aus'], titel: 'Palette «Claude» rechts angedockt; Ansicht › Fenster › Paletten: Eintrag «Claude» mit Häkchen', markiere: () => rechtMit('.kmenu button', 'Claude'), abstand: 3,
+      vor: async () => { await registerWahl('Ansicht'); await klick(menueKnopf('ansicht.paletten')); await warteBis(() => gibt('.kmenu'), 'Liste der Paletten'); await warte(300); } },
+    { ids: ['m3c-ein-aus'], datei: 'm3c-ein-aus_2', titel: 'Eintrag «Claude» abgewählt: die Palette ist ausgeblendet, der Knopf «Claude» nicht mehr gedrückt', markiere: '#claude-knopf', abstand: 5,
+      vor: async () => {
+        await ausw(`const b = [...document.querySelectorAll('.kmenu button')].find((x) => x.textContent.includes('Claude')); b.setAttribute('data-ki', '1'); return 1;`);
+        await klick('.kmenu button[data-ki="1"]'); await warte(500); await maus('mouseMoved', 5, 5);
+      } },
+    { ids: ['m3c-modell'], titel: 'Kopf der Palette: Auswahlliste «Modell» geöffnet (Sonnet, Opus, Haiku; Liste nachgebildet)', markiere: KIPAL + ' .ki-wahl-modell', abstand: 4,
+      vor: async () => { await klick('#claude-knopf'); await warteBis(() => gibt(KIPAL + ' .ki-feld'), 'Palette wieder da'); await kiBereit(); await auswahlNachbilden(KIPAL + ' .ki-wahl-modell'); } },
+    { ids: ['m3c-kontext'], titel: 'Grundriss EG, Strang KW-S1 gewählt: Chips «Ansicht», «Geschoss», «Auswahl» an, «Bild der Ansicht» aus', markiere: KIPAL + ' .ki-chips', abstand: 4,
+      vor: async () => { await auswaehlen('KW-S1'); await warteBis(async () => /Auswahl: /.test((await text(kiChip('auswahl'))) ?? ''), 'Auswahl-Chip'); await warte(400); } },
+    { ids: ['m3c-bild'], titel: 'Chip «Bild der Ansicht» angewählt (Haken) neben den anderen Chips', markiere: kiChip('bild'), abstand: 4,
+      vor: async () => { await warteBis(() => ausw(`return !!document.querySelector('svg.gr-svg .gr-plan *');`), 'Plan gezeichnet', 20000); await klick(kiChip('bild')); await warte(400); } },
+  ],
+});
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async () => { await grundrissEG(); await kiEin(); await auswaehlen('KW-S1'); await warteBis(async () => /Auswahl: /.test((await text(kiChip('auswahl'))) ?? ''), 'Auswahl-Chip'); },
+  aufnahmen: [
+    { ids: ['m3c-frage'], titel: 'Frage «Was ist ausgewählt?» gestellt; unter der Frage die mitgeschickten Chips, darüber die Antwort der Attrappe', markiere: KIPAL + ' .ki-verlauf', abstand: 2,
+      vor: async () => { await kiFrage('Was ist ausgewählt?'); } },
+    { ids: ['m3c-antwort'], titel: 'Antwort mit aufgeklapptem Werkzeugaufruf element_aendern (✓), darunter die Änderung', markiere: KIPAL + ' .ki-claude:last-child .ki-werkzeuge', abstand: 4,
+      vor: async () => {
+        await abwaehlen(); await warte(300);
+        await kiFrage('Benenne KW-S1 um [attrappe:aendern=KW-S1]');
+        await klick(KIPAL + ' .ki-claude:last-child .ki-werkzeuge summary'); await warte(400);
+      } },
+    { ids: ['m3c-aenderungen'], titel: 'Änderungsliste unter der Antwort: Paket, Element KW-S1, Knopf «Zurücknehmen»', markiere: KIPAL + ' .ki-claude:last-child .ki-aenderungen', abstand: 4 },
+    { ids: ['m3c-neustart'], titel: 'Nach dem Neuladen der Seite (wie nach einem Neustart von KICAD): die Palette zeigt das vorherige Gespräch mit beiden Fragen und Antworten', markiere: KIPAL + ' .ki-verlauf', abstand: 2,
+      vor: async () => {
+        await send('Page.reload');
+        await warteBis(() => ausw(`const z = await import('/js/zustand.js'); return z.zustand.elemente.size > 50 && !!document.querySelector('.pal-gruppe');`), 'neu geladen', 40000); await warte(1500);
+        await warteBis(async () => (await kiNachrichten()).length >= 4, 'Verlauf nach dem Neuladen', 30000); await warte(500);
+      } },
+    { ids: ['m3c-aenderungen'], datei: 'm3c-aenderungen_2', titel: 'Nach «Zurücknehmen»: Beschreibung durchgestrichen, Marke «zurückgenommen»', markiere: KIPAL + ' .ki-claude:last-child .ki-aenderungen', abstand: 4,
+      vor: async () => {
+        await grundrissEG(); await warte(500);
+        await klick(KIPAL + ' .ki-claude:last-child .ki-zuruecknehmen');
+        await warteBis(() => gibt(KIPAL + ' .ki-claude:last-child .ki-zurueck-marke'), 'zurückgenommen', 30000); await warte(500);
+      } },
+    { ids: ['m3c-freigabe'], titel: 'Frage mit gewähltem Element: unter der Frage «Auswahl für Claude freigegeben», Antwort mit einer Änderung', markiere: KIPAL + ' .ki-kontext-chip.freigegeben', abstand: 4,
+      vor: async () => {
+        await auswaehlen('KW-S1'); await warteBis(async () => /reserviert/.test((await text('#palette-eigenschaften')) ?? '') || /reserviert/.test((await text('#statusleiste')) ?? ''), 'Reservierung des Menschen', 15000).catch(() => {});
+        await warteBis(async () => (await ausw(`return document.querySelector('${KIPAL} .ki-chip[data-id="auswahl"]')?.getAttribute('aria-pressed');`)) === 'true', 'Auswahl-Chip an');
+        await kiFrage('Ändere das gewählte Element [attrappe:aendern=KW-S1]'); await warte(400);
+      } },
+    { ids: ['m3c-gespraeche'], titel: 'Auswahlliste der Gespräche (zwei Gespräche und «＋ Neues Gespräch», Liste nachgebildet)', markiere: KIPAL + ' .ki-wahl-gespraech', abstand: 4,
+      vor: async () => {
+        await klick(KIPAL + ' .ki-neu'); await warte(400);
+        await abwaehlen(); await kiFrage('Neues Thema: Kaltwasser Strang 2'); await warte(300);
+        await auswahlNachbilden(KIPAL + ' .ki-wahl-gespraech');
+      } },
+  ],
+});
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async () => { await grundrissEG(); await kiEin(); },
+  aufnahmen: [
+    { ids: ['m3c-normen'], titel: 'Reiter «Normen»: Suche «Mindestgefälle Prüfleitung» in der Test-Norm (fiktive SIA 9999), Treffer mit Seite und Ziffer', markiere: KIPAL + ' .ki-normen-liste', abstand: 3,
+      vor: async () => {
+        await klick(KIPAL + ' .ki-tab[data-tab="normen"]'); await ausw(`document.querySelector('${KIPAL} .ki-normen-q').focus(); return 1;`);
+        await send('Input.insertText', { text: 'Mindestgefälle Prüfleitung' }); await klick(KIPAL + ' .ki-normen-suchen');
+        await warteBis(async () => (await anzahl(KIPAL + ' .ki-norm')) > 0, 'Normtreffer', 120000); await warte(500);
+      } },
+    { ids: ['m3c-normfrage'], titel: 'Normfrage [attrappe:normen]: die Antwort der Attrappe nennt Norm, Seite und Ziffer der Test-Norm (kein echter Claude-Lauf)', markiere: KIPAL + ' .ki-claude:last-child', abstand: 3,
+      vor: async () => { await klick(KIPAL + ' .ki-tab[data-tab="gespraech"]'); await warte(300); await kiFrage('Mindestgefälle der Prüfleitung? [attrappe:normen]'); await warte(300); } },
+    { ids: ['m3c-internet'], titel: 'Schalter «Internet» an: Hinweisband, ausgegraute Chips, Frage und Antwort mit der Marke «Internet · ohne Projektzugriff»', markiere: KIPAL + ' .ki-internet', abstand: 5,
+      vor: async () => { await auswaehlen('KW-S1'); await warte(300); await klick(KIPAL + ' .ki-internet'); await warte(400); await kiFrage('Suche im Netz [attrappe:internet]'); await warte(300); } },
+    { ids: ['m3c-meldungen'], datei: 'm3c-meldungen_2', titel: 'Meldung «Claude arbeitet gerade …», wenn schon ein Lauf im Projekt läuft; die Frage bleibt im Eingabefeld', markiere: KIPAL + ' .ki-meldung', abstand: 4,
+      vor: async (c) => {
+        await klick(KIPAL + ' .ki-internet'); await warte(300);
+        const neu = await (await fetch(`${c.welt.url}/api/ki/gespraeche`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ titel: 'Anderes Fenster' }) })).json();
+        const r = await fetch(`${c.welt.url}/api/ki/gespraeche/${neu.id}/frage`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ text: 'Lange [attrappe:langsam]', kontext: {} }) });
+        if (r.status !== 202) throw new Error('Lauf nicht gestartet: ' + r.status);
+        await kiFrage('Das geht nicht gleichzeitig', { warten: false });
+        await warteBis(() => gibt(KIPAL + ' .ki-meldung:not([hidden])'), 'Meldung', 20000); await warte(400);
+      } },
+  ],
+});
+szene({
+  projekt: 'beispiel', schreibt: true, umgebung: { HLKS_CLAUDE_EXE: path.join(ARBEIT, 'gibt_es_nicht', 'claude.exe') },
+  aufbau: async () => { await grundrissEG(); await klick('#claude-knopf'); await warteBis(() => gibt(KIPAL + ' .ki-band-zeile.fehler'), 'Hinweisband', 30000); await kiTippen('Hallo (fiktiv)'); await warte(300); },
+  aufnahmen: [
+    { ids: ['m3c-meldungen'], titel: 'Claude nicht verfügbar (Programm nicht gefunden): rotes Band mit Grund, «Senden» gesperrt', markiere: KIPAL + ' .ki-band', abstand: 4 },
+  ],
+});
+
+// ---- Kapitel «m4»: Sanitär-Belastungswerte (Beispielprojekt MFH Musterweg: Anlage A-SAN, 16 Apparate, K 0.5, alle Werte fiktiv)
+const SANPAL = '#palette-eigenschaften';
+const warumSan = async (zeilenKlasse) => {
+  await klick(`${SANPAL} .ep-san-${zeilenKlasse} .ep-warum`);
+  await warteBis(async () => (await dialogTitel()) === 'Warum – Herkunft des Werts', 'Warum-Dialog');
+  await warteBis(async () => !/Wird geladen/.test((await text('#dialogschicht .warum-inhalt')) ?? 'Wird geladen'), 'Warum geladen'); await warte(400);
+};
+szene({
+  projekt: 'beispiel',
+  aufbau: async () => { await grundrissEG(); await eigWahl('WT-E.02'); },
+  aufnahmen: [
+    { ids: ['m4-apparateart'], titel: 'Waschtisch WT-E.02 gewählt: Auswahlliste «Apparateart» geöffnet (erster Eintrag: Vorgabe der Klasse; Liste nachgebildet)', markiere: `${SANPAL} select[data-ziel="eig:sanitaerArt"]`, abstand: 4,
+      vor: async () => { await auswahlNachbilden(`${SANPAL} select[data-ziel="eig:sanitaerArt"]`); } },
+    { ids: ['m4-lu-du'], titel: 'Dialog «?» zu LU KW: Quelle (Excel) und Zeile 8; markiert sind LU KW, LU WW und DU', markiere: [`${SANPAL} .ep-san-luKw`, `${SANPAL} .ep-san-luWw`, `${SANPAL} .ep-san-du`], abstand: 3,
+      vor: async () => { await warumSan('luKw'); } },
+    { ids: ['m4-summen-leitung'], titel: 'Leitung KW-V1-0 gewählt: Gruppe «Abgeleitet» mit ΣLU KW, ΣLU WW und grösstem Einzel-LU', markiere: async () => { await ausw(`document.querySelector('${SANPAL} .ep-san-summeLuWw')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(300); return [`${SANPAL} .ep-san-summeLuKw`, `${SANPAL} .ep-san-summeLuWw`, `${SANPAL} .ep-san-groessterLu`]; }, abstand: 3,
+      vor: async () => { await alleDialogeZu(); await eigWahl('KW-V1-0'); } },
+    { ids: ['m4-summen-leitung'], datei: 'm4-summen-leitung_2', titel: 'Dialog «?» an ΣLU KW: Rechenweg und Tabelle der Beiträge je Apparat (mit Excel-Zeile)', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => { await warumSan('summeLuKw'); } },
+  ],
+});
+szene({
+  projekt: 'beispiel',
+  aufbau: async () => { await ansichtOeffnen('AN-SCHEMA-SAN'); await warteBis(async () => (await ausw(`return [...document.querySelectorAll('.kachel.aktiv svg text')].filter((t) => /^Σ/.test(t.textContent)).length;`)) >= 10, 'Schema mit Belastung', 30000); await warte(700); },
+  aufnahmen: [
+    { ids: ['m4-schema-belastung'], titel: 'Strangschema Sanitär (Ausschnitt hineingezoomt): Beschriftungen «ΣLU …» und «ΣDU …» an den Leitungen', vor: async () => { await maus('mouseMoved', 900, 470); for (let i = 0; i < 3; i++) { await rad(900, 470, -240); await warte(150); } await warte(700); }, markiere: () => ausw(`const c = document.querySelector('.kachel.aktiv').getBoundingClientRect(); const rs = [...document.querySelectorAll('.kachel.aktiv svg text')].filter((t) => /^Σ/.test(t.textContent)).map((t) => t.getBoundingClientRect()).filter((r) => r.width > 0 && r.left >= c.left && r.right <= c.right && r.top >= c.top && r.bottom <= c.bottom); if (!rs.length) return null; const x0 = Math.min(...rs.map((r) => r.left)), y0 = Math.min(...rs.map((r) => r.top)), x1 = Math.max(...rs.map((r) => r.right)), y1 = Math.max(...rs.map((r) => r.bottom)); return { x: x0, y: y0, b: x1 - x0, h: y1 - y0 };`), abstand: 8 },
+    { ids: ['m4-schema-belastung'], datei: 'm4-schema-belastung_2', titel: 'Palette der Ansicht: Schalter «belastung» (Vorgabe ein) schaltet die Beschriftungen ein und aus', markiere: `${SANPAL} [data-ziel="eig:belastung"]`, abstand: 4,
+      vor: async () => { await abwaehlen(); await warteBis(() => gibt(`${SANPAL} [data-ziel="eig:belastung"]`), 'Schalter belastung', 15000); await warte(400); } },
+  ],
+});
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async () => { await grundrissEG(); await eigWahl('A-SAN'); },
+  aufnahmen: [
+    { ids: ['m4-spezial'], titel: 'Anlage A-SAN gewählt: Tabelle «Spezialinstallationen» mit einer Zeile «Garteneinrichtung», Versorgung 0,5 l/s, Entsorgung –', markiere: `${SANPAL} .ep-spezial`, abstand: 4,
+      vor: async () => {
+        const sp = `${SANPAL} .ep-spezial`;
+        await klick(`${sp} .ep-spez-neu`); await tippeFeld(`${sp} tbody tr:last-child .sp-b`, 'Garteneinrichtung'); await tippeFeld(`${sp} tbody tr:last-child .sp-v`, '0,5');
+        await warteBis(async () => (await wertVon(`${sp} tbody tr .sp-v`)) === '0.5', 'Zeile im Modell', 15000); await warte(400);
+      } },
+  ],
+});
+const wertVon = (sel) => ausw(`return document.querySelector(${J(sel)})?.value ?? null;`);
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async () => { await grundrissEG(); },
+  aufnahmen: [
+    { ids: ['m4-knopf'], titel: 'Register Gebäudetechnik, Gruppe «Apparate und Armaturen»: Knopf «Sanitär-Zusammenstellung»', markiere: menueKnopf('sanitaer.zusammenstellung'), abstand: 4,
+      vor: async () => { await registerWahl('Gebäudetechnik'); await warte(400); } },
+    { ids: ['m4-liste'], titel: 'Dialog «Liste anlegen»: Eintrag «Sanitär-Zusammenstellung (W3)», Anlage A-SAN, Vorschlag für Kennzeichen und Name', markiere: dlg('.f-liste'), abstand: 4,
+      vor: async () => { await registerWahl('Ansicht'); await knopf('ansicht.liste'); await dialogDa(/Liste anlegen/); await setze(dlg('.f-liste'), 'sanitaer_zusammenstellung'); await warte(500); } },
+    { ids: ['m4-liste'], datei: 'm4-liste_2', titel: 'Liste AN-LI-SANITAER-A-SAN geöffnet: Apparate, Trinkwasser und Entwässerung', markiere: '.kachel.aktiv .li-titel', abstand: 5,
+      vor: async () => { await dialogKnopf('Anlegen'); await warteBis(async () => (await anzahl('.kachel.aktiv .li-tabelle')) >= 3, 'Liste mit drei Tabellen', 30000); await warte(600); } },
+    { ids: ['m4-csv'], titel: 'Dialog «Liste als CSV» zur Sanitär-Zusammenstellung (Dateiname-Vorschlag, Format UTF-8 mit BOM, Semikolon)', markiere: '.kachel.aktiv .li-csv', abstand: 4,
+      vor: async () => { await klick('.kachel.aktiv .li-csv'); await dialogDa(/Liste als CSV/); await warte(500); } },
+    { ids: ['m4-k'], titel: 'Anlage A-SAN: Zeile «Abflusskennzahl» (K = 0.5) mit dem Hinweis zur Herkunft', markiere: [`${SANPAL} [data-ziel="eig:abflusskennzahl"]`, `${SANPAL} .ep-k-hinweis`], abstand: 4,
+      vor: async () => { await alleDialogeZu(); await eigWahl('A-SAN'); await ausw(`document.querySelector('${SANPAL} [data-ziel="eig:abflusskennzahl"]')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(300); } },
+    { ids: ['m4-k'], datei: 'm4-k_2', titel: 'K leer gelassen: in der Liste steht «K fehlt» statt K, Q_WW und Q_tot', markiere: '.kachel.aktiv .li-fehlt', abstand: 6,
+      vor: async () => {
+        await tippeFeld(`${SANPAL} [data-ziel="eig:abflusskennzahl"]`, '');
+        await ansichtOeffnen('AN-LI-SANITAER-A-SAN');
+        await warteBis(() => gibt('.kachel.aktiv td.li-fehlt'), 'Liste zeigt «K fehlt»', 20000);
+        await ausw(`document.querySelector('.kachel.aktiv td.li-fehlt')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(500);
+      } },
+    { ids: ['m4-befunde'], titel: 'Dialog «Prüfbefunde»: P21 (Apparat BA-U.02 ohne Art) und P25 (Anlage A-SAN ohne K)', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async (c) => {
+        await kern(c.welt, 'element_aendern', { element: 'BA-U.02', eigenschaften: { sanitaerArt: null } });
+        await registerWahl('Verwalten'); await knopf('verwalten.befunde'); await dialogDa(/Prüfbefunde/);
+        await warteBis(async () => (await anzahl(dlg('.b-liste tbody tr'))) > 0, 'Befunde geladen'); await warte(500);
+      } },
+  ],
+});
+
+/** Klickt den Knopf des Menübands; ist er bei dieser Fensterbreite nicht einzeln sichtbar (zusammengeklappte Gruppe), löst es die Aktion aus. */
+const knopfSicher = async (id) => { if (await sichtbar(menueKnopf(id))) await knopf(id); else await aktion(id); };
+// ---- Zusatz N3: Einlageplan, Grundleitungsplan, Projektinformationen, Listen, CSV, KS (Bernstrasse: Kopien der Abnahmeprojekte)
+bild('zb-n3-einlageplan-knopf', 'bernstrasse', async () => {
+  await registerWahl('Ansicht'); await knopfSicher('ansicht.einlageplan'); await dialogDa(/Einlageplan anlegen/);
+  await warteBis(() => gibt('.epl-vorschau-inhalt .epl-summe'), 'Vorschau (Trockenlauf)', 40000); await warte(600);
+}, { schreibt: true, markiere: menueKnopf('ansicht.einlageplan'), abstand: 4, titel: 'Dialog «Einlageplan anlegen» (Bernstrasse, Kopie): Tabelle der erkannten Pläne und Vorschau (Trockenlauf)' });
+bild('zb-n3-grundleitungsplan-knopf', 'bernstrasse_leitungen', async () => {
+  await registerWahl('Ansicht'); await knopfSicher('ansicht.grundleitungsplan'); await dialogDa(/Grundleitungsplan anlegen/);
+  await warteBis(() => gibt('.epl-vorschau-inhalt .epl-summe'), 'Vorschau (Trockenlauf)', 40000); await warte(600);
+}, { schreibt: true, markiere: menueKnopf('ansicht.grundleitungsplan'), abstand: 4, titel: 'Dialog «Grundleitungsplan anlegen» (Bernstrasse, Kopie): Tabelle und Vorschau' });
+bild('zb-n3-projektinfo', 'beispiel', async () => {
+  await grundrissEG(); await registerWahl('Verwalten'); await knopf('verwalten.projektinfo'); await dialogDa(/Projektinformationen/); await warte(900);
+}, { markiere: menueKnopf('verwalten.projektinfo'), abstand: 4, titel: 'Dialog «Projektinformationen»: Objektzeilen, Rohrbezeichnung, Masseinheiten je Gewerk; Überblick eingeklappt' });
+bild('zb-n3-projektinfo-browser', 'beispiel', async (c) => {
+  await kern(c.welt, 'element_anlegen', { klasse: 'Projektinformation', eigenschaften: { phase: 'Bauprojekt' } });
+  await grundrissEG(); await eigenschaftenAus(); await pbAuf('Gebäude'); await warteBis(() => gibt('#projektbrowser .pb-zeile[data-art="projektinfo"]'), 'Eintrag Projektinformationen', 20000);
+  { const z = await rechteck('#projektbrowser .pb-zeile[data-art="projektinfo"]'); await klickAn(z.x + z.b - 24, z.y + z.h / 2, { taste: 'right' }); } await warteBis(() => gibt('.kmenu'), 'Kontextmenü'); await warte(300);
+}, { schreibt: true, markiere: '#projektbrowser .pb-zeile[data-art="projektinfo"] .pb-label', abstand: 3, titel: 'Projektbrowser › Gebäude › «Projektinformationen» (Phase gesetzt), Kontextmenü offen' });
+bild('zb-n3-listen-kollision', 'bernstrasse', async () => {
+  await registerWahl('Ansicht'); await knopf('ansicht.liste'); await dialogDa(/Liste anlegen/); await setze(dlg('.f-liste'), 'kollisionen'); await warte(400);
+  await dialogKnopf('Anlegen'); await warteBis(async () => (await aktiveAnsicht()) === 'AN-LI-KOLLISIONEN', 'Kollisionsliste geöffnet', 30000);
+  await warteBis(async () => (await anzahl('.kachel.aktiv .li-tabelle tbody tr')) > 0, 'Zeilen der Kollisionsliste', 30000); await warte(700);
+}, { schreibt: true, markiere: '.kachel.aktiv .li-titel', abstand: 5, titel: 'Listenansicht «Kollisionsliste» (AN-LI-KOLLISIONEN, Bernstrasse, Kopie): obere Zeilen' });
+bild('zb-n3-csv', 'beispiel', async () => {
+  await grundrissEG(); await registerWahl('Ansicht'); await knopf('ansicht.liste'); await dialogDa(/Liste anlegen/); await setze(dlg('.f-liste'), 'strangliste'); await warte(400);
+  await dialogKnopf('Anlegen'); await warteBis(async () => (await anzahl('.kachel.aktiv .li-tabelle')) >= 1, 'Strangliste', 30000); await warte(600);
+  await klick('.kachel.aktiv .li-csv'); await dialogDa(/Liste als CSV/); await warte(500);
+}, { schreibt: true, markiere: '.kachel.aktiv .li-csv', abstand: 4, titel: 'Dialog «Liste als CSV» zur Strangliste: Dateiname-Vorschlag und Formathinweis' });
+bild('zb-n3-ks-register', 'beispiel', async () => {
+  await grundrissEG(); await tippeKuerzel('ks'); await dialogDa(/Tastaturkürzel/); await warte(600);
+  await ausw(`const z = [...document.querySelectorAll('#dialogschicht .dlg tbody tr')].find((r) => r.children[2]?.textContent === 'Beschriften'); if (!z) throw new Error('Abschnitt Beschriften fehlt'); const alle = [...document.querySelectorAll('#dialogschicht .dlg tbody tr')].filter((r) => r.children[2]?.textContent === 'Beschriften'); alle[Math.floor(alle.length / 2)].scrollIntoView({ block: 'center' }); return 1;`); await warte(500);
+}, { markiere: () => ausw(`const rs = [...document.querySelectorAll('#dialogschicht .dlg tbody tr')].filter((r) => r.children[2]?.textContent === 'Beschriften').map((r) => r.getBoundingClientRect()).filter((r) => r.height > 0 && r.bottom <= innerHeight); if (!rs.length) return null; const x0 = Math.min(...rs.map((r) => r.left)), y0 = Math.min(...rs.map((r) => r.top)), x1 = Math.max(...rs.map((r) => r.right)), y1 = Math.max(...rs.map((r) => r.bottom)); return { x: x0, y: y0, b: x1 - x0, h: y1 - y0 };`),
+  abstand: 3, titel: 'Dialog «Tastaturkürzel»: nach Register gegliedert, Abschnitt «Beschriften» (TX, DI, DL, EL)' });
+
 // @@KATALOG-ENDE
 
 // ------------------------------------------------------------------ Welten: Beispielprojekt und Bernstrasse
@@ -1899,15 +2231,22 @@ async function szeneAusfuehren(s, nr, gesamt) {
     await seiteLaden(w, { warten: 'start' });
   } else {
     await weltFrisch(w);
-    const status = await (await fetch(`${w.url}/api/status`)).json();
     const soll = w.name === 'beispiel' ? w.mfh : w.projektOrdner;
+    const wunschEnv = JSON.stringify(s.umgebung ?? {});
+    if (w.aktEnv !== wunschEnv) {   // Szene mit eigener Umgebung (z. B. «Claude nicht verfügbar»): Server mit dieser Umgebung neu starten, danach wieder mit der Grundumgebung
+      console.log('   Server wird neu gestartet (Umgebung: ' + wunschEnv + ')');
+      await w.stoppen(); w.env = { ...w.basisEnv, ...(s.umgebung ?? {}) }; await w.starten(soll); w.aktEnv = wunschEnv;
+    }
+    const status = await (await fetch(`${w.url}/api/status`)).json();
     if (!status.offen || String(status.ort).toLowerCase() !== soll.toLowerCase()) await projektOeffnen(w, soll);
     await seiteLaden(w, { warten: s.welt === 'nichts' ? 'nichts' : 'projekt' });
   }
   if (s.schreibt) w.schmutzig = true;
   const c = { welt: w, szene: s };
-  await s.aufbau?.(c);
-  for (const a of s.aufnahmen) { if (a._gewaehlt === false) { if (a.vor) await a.vor(c); } else await aufnehmen(s, a, c); }
+  try {
+    await s.aufbau?.(c);
+    for (const a of s.aufnahmen) { if (a._gewaehlt === false) { if (a.vor) await a.vor(c); } else await aufnehmen(s, a, c); }
+  } finally { if (s.nachher) await s.nachher(c); }   // Aufräumen auch nach einem Fehler (z. B. Strichsymbole wieder einstellen)
 }
 
 async function main() {
