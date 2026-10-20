@@ -172,6 +172,7 @@ koordinaten | Koordinaten | Koordinaten | Achsenkreuz mit Ursprung
 einlageplan | Einlageplan | eigenes | Plan mit grauer Betonplatte, Abwasserleitung (braun) darin eingelegt
 grundleitungsplan | Grundleitungsplan | eigenes | Plan mit Bodenplatte über Erdreich, Abwasser-Grundleitung (braun) mit Gefällepfeil
 listeCsv | Liste als CSV | eigenes | Tabelle mit Blatt davor, blaue Kommas
+ifcExport | IFC exportieren | IFC exportieren | Würfel mit blauem Pfeil heraus nach rechts unten
 `;
 
 export const ZUORDNUNG = TABELLE.trim().split('\n').map((z) => z.split('|').map((t) => t.trim()));
@@ -653,6 +654,12 @@ s('grundleitungsplan',
 s('listeCsv',
   '<rect class="fp" x="3.5" y="4.5" width="21" height="18"/><path class="fb" d="M3.5 4.5h21v5h-21z"/><path d="M3.5 14h21M10.5 9.5v13"/><path class="fp" d="M15.5 14.5h9l4 4v11h-13z"/><path class="f2" d="M24.5 14.5v4h4z"/><path class="op" d="M17.5 21.5h2.5M25 21.5h1.5M17.5 26h2.5M25 26h1.5"/><circle class="fb n" cx="22.6" cy="21.8" r="1.1"/><path class="sb w15" d="M22.4 22.5l-.7 1.6"/><circle class="fb n" cx="22.6" cy="26.3" r="1.1"/><path class="sb w15" d="M22.4 27l-.7 1.6"/>',
   '<rect class="fp" x="1.5" y="1.5" width="10" height="9"/><path class="fb" d="M1.5 1.5h10v2.5h-10z"/><path d="M1.5 7h10M5.5 4v6.5"/><path class="fp" d="M8.5 6.5h3.5l2.5 2.5v5.5h-6z"/><path class="f2" d="M12 6.5v2.5h2.5z"/><circle class="fb n" cx="11.5" cy="11.6" r="1.1"/><path class="sb w15" d="M11.4 12.3l-.6 1.5"/>');
+
+// ---------------------------------------------------------------------------------------------- Ausgabe IFC (Modul 7 Teil B2)
+
+s('ifcExport',
+  '<path class="f1" d="M13 3.5l8.5 5-8.5 5-8.5-5z"/><path class="f2" d="M4.5 8.5l8.5 5v10l-8.5-5z"/><path class="f3" d="M21.5 8.5v10l-8.5 5v-10z"/><path class="fb" d="M17 23.5h6v-3.5l7 6-7 6v-3.5h-6z"/>',
+  '<path class="f1" d="M6.5 1.5l4 2.5-4 2.5-4-2.5z"/><path class="f2" d="M2.5 4l4 2.5v5l-4-2.5z"/><path class="f3" d="M10.5 4v5l-4 2.5v-5z"/><path class="fb" d="M8.5 11.5h3V9.8l3.5 3-3.5 3v-1.7h-3z"/>');
 
 // ---------------------------------------------------------------------------------------------- Sanitär (Modul 4 Teil A-O)
 

@@ -7942,7 +7942,7 @@
       "id": "m7",
       "titel": "Planblatt wie H+K",
       "modul": "7A",
-      "einleitung": "Teil A des Moduls 7: Das Planblatt des HLKS-CAD sieht im PDF aus wie die Revisionspläne von H+K. Der Plankopf trägt beide Standorte und das Logo, das Projekt zweizeilig (Objekt und Plantitel), die Plannummer, Rev. Index mit Rev. Datum, den Massstab und die Tabelle «Planänderungen»; Strangschemas haben einen schmalen Kopf unten links. Die Plannummer schlägt der Kern beim Anlegen nach dem H+K-Schema vor, Revisionen setzt der Kern (nächster Buchstabe, Datum), ein roter Revisionsstempel ist zuschaltbar, Listen lassen sich auf ein Planblatt setzen, und eine doppelte Plannummer meldet der Befund P27. Fachlogik gibt es nur im Kern; die Oberfläche sammelt Eingaben und zeigt Ergebnisse. Das Beispielprojekt hat fiktive Daten. Aus Teil B stehen hier der Umbruch langer Listen in Blöcken mit dem Befund P28 («Liste passt nicht aufs Blatt») und die Menüband-Knöpfe «Koordinationsplan» und «Aussparungsboxen» im Register Koordination (Teil B3); die übrigen Funktionen von Teil B (Schnitt- und Ansichtsmarken mit Blattverweis, DWG-Unterlage, IFC-Export) fehlen noch.",
+      "einleitung": "Teil A des Moduls 7: Das Planblatt des HLKS-CAD sieht im PDF aus wie die Revisionspläne von H+K. Der Plankopf trägt beide Standorte und das Logo, das Projekt zweizeilig (Objekt und Plantitel), die Plannummer, Rev. Index mit Rev. Datum, den Massstab und die Tabelle «Planänderungen»; Strangschemas haben einen schmalen Kopf unten links. Die Plannummer schlägt der Kern beim Anlegen nach dem H+K-Schema vor, Revisionen setzt der Kern (nächster Buchstabe, Datum), ein roter Revisionsstempel ist zuschaltbar, Listen lassen sich auf ein Planblatt setzen, und eine doppelte Plannummer meldet der Befund P27. Fachlogik gibt es nur im Kern; die Oberfläche sammelt Eingaben und zeigt Ergebnisse. Das Beispielprojekt hat fiktive Daten. Aus Teil B stehen hier der Umbruch langer Listen in Blöcken mit dem Befund P28 («Liste passt nicht aufs Blatt») und die Menüband-Knöpfe «Koordinationsplan» und «Aussparungsboxen» im Register Koordination (Teil B3); aus Teil B2 der Dialog «IFC exportieren» im Register Datei (Gruppe Ausgabe): Fassung, Umfang, Räume, weitere IDS-Dateien, Bericht mit Zählern, Schemaprüfung und IDS-Ergebnis, Download der Datei; die übrigen Funktionen von Teil B (Schnitt- und Ansichtsmarken mit Blattverweis, DWG-Unterlage) fehlen noch.",
       "funktionen": [
         {
           "id": "m7-planblatt-anlegen",
@@ -8515,6 +8515,137 @@
             "src/Hlks.Kern/Grafik/AussparungGrafik.cs (Boxen)"
           ],
           "hinweis": "Gleiche Eigenschaft wie in der Eigenschaftenpalette der Ansicht; der Knopf ersetzt dort das Anklicken."
+        },
+        {
+          "id": "m7-ifc-export",
+          "titel": "IFC exportieren: Dialog, Bericht und Download",
+          "wo": {
+            "register": "Datei",
+            "gruppe": "Ausgabe",
+            "knopf": "IFC exportieren",
+            "kuerzel": "",
+            "sonst": "F1 im Dialog «IFC exportieren»"
+          },
+          "schritte": [
+            "Register Datei › Gruppe Ausgabe › «IFC exportieren» klicken (der Knopf ist nur mit offenem Projekt aktiv).",
+            "Die Vorgaben im Dialog ansehen: Fassung IFC4, «alle Gewerke», «alle Geschosse», «Räume mitgeben» aus, darunter bei «Ziel» der Ordner <Projektordner>\\ausgabe\\ifc.",
+            "«Exportieren» klicken (auch ein Doppelklick schickt nur einen Export). Der Dialog zeigt «IFC wird geschrieben und geprüft …» mit der laufenden Zeit.",
+            "Den Bericht lesen: Dateiname mit Grösse und Fassung, die Marken «Kontrolle beim Zurücklesen», «Schemaprüfung» und «IDS», die Dauer, die Zähler je Klasse und Entität, die übersprungenen Elemente, die Schemaprüfung und das IDS-Ergebnis.",
+            "«IFC-Datei herunterladen» anklicken; die Datei öffnen (Texteditor) und die erste Zeile ansehen. Ebenso «Bericht (Markdown)» und «Bericht (JSON)».",
+            "«Ordner öffnen» klicken: der Explorer zeigt den Ordner ausgabe\\ifc des Projekts.",
+            "«Zurück zur Auswahl» klicken, IFC2X3 wählen und nochmals exportieren; im Ordner liegen jetzt zwei Dateien mit je einem Bericht."
+          ],
+          "erwartung": "Der Kern (Abfrage ifc_export, REST POST /api/ifc/export) schreibt das HLKS-Modell als IFC4 (Vorgabe) oder IFC2X3 in <Projektordner>\\ausgabe\\ifc, Dateiname «<Projekt>_<Fassung>_<JJJJMMTT-hhmm>.ifc», daneben den Bericht als .bericht.md und .bericht.json. Das Ziel lässt sich im Dialog nicht wählen. Der Dialog zeigt danach den Bericht des Kerns: Datei (Name, Grösse, Fassung, Zahl der Entitäten, Download-Link), drei Ergebnismarken (grün = bestanden bzw. fehlerfrei, rot = nicht bestanden), die Dauer mit Aufschlüsselung, die Zähler (Elemente, Anschlüsse, Verbindungen, Systeme, Stränge, Anlagen, Regelkreise, Typobjekte, Dämmungen, Geschosse, Übersprungene) und eine Tabelle je Klasse mit IFC-Entität, Typobjekt und PredefinedType, eingeklappt dazu die Zahl je IFC-Entität, die übersprungenen Elemente mit Grund und die Hinweise und Warnungen des Exports. Während des Laufs ist der Dialog gesperrt; ein zweiter Klick auf «Exportieren» startet keinen zweiten Export. Fehler stehen im Dialog mit Vorschlag: «Kein Projekt offen» (409), «Der Export ist so nicht möglich» (400, z. B. eine IDS-Datei, die es nicht gibt, oder nichts zu exportieren). Ändert das Modell nicht.",
+          "pruefpunkte": [
+            "Im Register Datei steht zwischen «Projekt» und «Zuletzt geöffnet» die Gruppe «Ausgabe» mit dem Knopf «IFC exportieren»; ohne offenes Projekt ist er gesperrt (Tooltip «Zuerst ein Projekt öffnen.»).",
+            "Der Dialog zeigt IFC4, «alle Gewerke», «alle Geschosse», «Räume mitgeben» aus und bei «Ziel» <Projektordner>\\ausgabe\\ifc ohne Eingabefeld.",
+            "Der Bericht nennt eine Datei «<Projekt>_IFC4_<JJJJMMTT-hhmm>.ifc»; Schemaprüfung «fehlerfrei», Kontrolle «bestanden», IDS «bestanden» (Beispielprojekt, Stand 20.10.2026: 148 Elemente, 298 Anschlüsse, 142 Verbindungen, 3 Geschosse, keine Übersprungenen).",
+            "Die heruntergeladene Datei beginnt mit «ISO-10303-21;» und trägt im Kopf FILE_SCHEMA (('IFC4')).",
+            "Die Datei und die zwei Berichte liegen im Projektordner unter ausgabe\\ifc.",
+            "«Ordner öffnen» zeigt diesen Ordner im Explorer; es erscheint keine Fehlermeldung.",
+            "Ein Doppelklick auf «Exportieren» ergibt genau eine Datei.",
+            "Die Fassung IFC2X3 ergibt eine Datei mit FILE_SCHEMA (('IFC2X3')) und ebenfalls fehlerfreier Schemaprüfung.",
+            "Wird das Projekt geschlossen, während der Dialog offen ist, meldet «Exportieren» «Kein Projekt offen» mit Vorschlag; nach «Zurück zur Auswahl» lässt sich der Dialog weiter bedienen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «IFC exportieren» mit dem Bericht nach dem Export (IFC4)",
+            "zustand": "Beispielprojekt MFH Musterweg (fiktiv), Register Datei › Ausgabe › «IFC exportieren»; Fassung IFC4, alle Gewerke und Geschosse, ohne Räume; «Exportieren» geklickt; Bericht mit Datei, Marken, Zählern und IDS-Basis sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ifc.js:8 (Aktion datei.ifc-export)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-dialog.js:40 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-dialog.js:175 (exportieren)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-text.js:239 (berichtHtml)",
+            "src/Hlks.Web/IfcExportEndpunkte.cs:26 (POST /api/ifc/export), :33 (GET …/datei)",
+            "src/Hlks.Kern/IfcExport/IfcExport.cs:89 (Schreiben)",
+            "entwurf/modul-7.md (Teil B2, Punkt 4)"
+          ],
+          "hinweis": "Der Dateiname enthält die Minute; zwei Exporte derselben Fassung in derselben Minute ersetzen die Datei. Das Ziel ist nach Entscheid A3 (Christian, 20.10.2026) fest der Projektordner. «Ordner öffnen» wirkt nur auf dem Rechner, auf dem der Server läuft (der Normalfall); in den Browsertests ist das Öffnen abgeschaltet. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt.",
+          "hauptfunktion": true
+        },
+        {
+          "id": "m7-ifc-umfang",
+          "titel": "IFC-Umfang wählen: Fassung, Gewerke, Geschosse, Räume",
+          "wo": {
+            "register": "Datei",
+            "gruppe": "Ausgabe",
+            "knopf": "IFC exportieren",
+            "kuerzel": "",
+            "sonst": "Dialog «IFC exportieren» › Fassung, Umfang, Räume"
+          },
+          "schritte": [
+            "Dialog «IFC exportieren» öffnen (Register Datei › Ausgabe).",
+            "Auf die Beschriftung eines Gewerks klicken (z. B. «Sanitär»): «alle Gewerke» fällt weg und das Gewerk ist angehakt.",
+            "Bei den Geschossen ebenso nur ein Geschoss wählen; unter «Umfang» in der Zeile unten steht die Auswahl.",
+            "«Räume mitgeben» ankreuzen und «IFC2X3» wählen.",
+            "«Exportieren» klicken und im Bericht die Zähler ansehen (Räume, Elemente, Übersprungene).",
+            "Zurück zur Auswahl: «alle Gewerke» und «alle Geschosse» wieder ankreuzen (die einzelnen Häkchen werden zurückgesetzt), «Räume mitgeben» ausschalten, nochmals exportieren.",
+            "Zum Prüfen der Auswahl: «alle Gewerke» abwählen, kein Gewerk anhaken und «Exportieren» klicken."
+          ],
+          "erwartung": "Die Auswahl geht als Anfrage an den Kern (fassung, raeume, umfang.gewerke, umfang.geschosse, ids); «alle» lässt umfang weg. Die Gewerke stammen aus dem Katalog (gewerke.json), die Geschosse aus dem Modell (oberstes zuerst). Bei «alle» sind die einzelnen Häkchen gesperrt; ein Klick darauf nimmt «alle» weg. Mit «Räume mitgeben» schreibt der Kern IfcSpace und Zonen (Vorgabe aus: keine Räume); der Geschossfilter gilt weiter. Elemente ausserhalb des Umfangs erscheinen im Bericht unter «Übersprungene Elemente» mit dem Grund «Gewerk … nicht im Umfang». Ist weder «alle» noch ein Häkchen gesetzt, meldet der Dialog «Mindestens ein Gewerk wählen oder «alle Gewerke» ankreuzen.» (bzw. Geschoss) und schickt nichts.",
+          "pruefpunkte": [
+            "Die Gewerke stehen als Häkchen für jedes Gewerk des Katalogs, die Geschosse für jedes Geschoss des Projekts.",
+            "Die Zeile «Umfang: …» unten folgt der Auswahl (z. B. «IFC2X3 · 1 Gewerk · alle Geschosse · mit Räumen»).",
+            "Mit Gewerk Sanitär sind es weniger Elemente als mit allen Gewerken; die übrigen stehen bei den Übersprungenen mit «Gewerk … nicht im Umfang» (Beispielprojekt, Stand 20.10.2026: 23 Übersprungene, davon 12 Architektur, 6 Heizung, 5 MSRL).",
+            "Mit «Räume mitgeben» zählt der Bericht Räume (Beispielprojekt: 13) und die Datei enthält IfcSpace; ohne das Häkchen sind es 0 Räume und kein IfcSpace.",
+            "Mit nur einem Geschoss (z. B. EG) sind es weniger Elemente als mit allen.",
+            "Ohne Häkchen und ohne «alle» erscheint die Meldung unten im Dialog und es entsteht keine Datei."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «IFC exportieren», Auswahl mit Fassung IFC2X3, Gewerk Sanitär, Räume mitgeben",
+            "zustand": "Beispielprojekt MFH Musterweg (fiktiv), Register Datei › Ausgabe › «IFC exportieren»; IFC2X3 gewählt, «alle Gewerke» abgewählt, Sanitär angehakt, «Räume mitgeben» an; Zeile «Umfang: IFC2X3 · 1 Gewerk · alle Geschosse · mit Räumen»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-dialog.js:40 (Dialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-text.js:42 (anfrageAus)",
+            "src/Hlks.Kern/IfcExport/IfcExport.cs:89 (Schreiben: Umfang, Räume)",
+            "entwurf/modul-7.md (Entscheid A1: Räume nur auf Wunsch)"
+          ],
+          "hinweis": "Welche Elemente zu einem Gewerk gehören, entscheidet allein der Kern (Klasse bzw. Systemart); die Oberfläche schickt nur die Auswahl. Kälte ist kein eigenes Gewerk (Teil der Heizung). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+        },
+        {
+          "id": "m7-ifc-ids",
+          "titel": "IDS-Ergebnis lesen, Element wählen, weitere IDS-Datei prüfen",
+          "wo": {
+            "register": "Datei",
+            "gruppe": "Ausgabe",
+            "knopf": "IFC exportieren",
+            "kuerzel": "",
+            "sonst": "Dialog «IFC exportieren» › IDS-Prüfung und Bericht › IDS-Prüfung"
+          },
+          "schritte": [
+            "Dialog «IFC exportieren» öffnen; bei «IDS-Prüfung» den Hinweis «IDS-Basis H+K» lesen.",
+            "In das Feld «Weitere IDS-Dateien» den vollständigen Pfad einer IDS-Datei eintippen (eine Datei je Zeile), z. B. die fiktive Testdatei «Bauherr_Test.ids» (Regel: jedes Rohr braucht «Pset_Bauherr.Freigabe»).",
+            "«Exportieren» klicken und im Bericht den Abschnitt «IDS-Prüfung» ansehen: zuerst die IDS-Basis H+K mit ihren Regeln, darunter die weitere Datei.",
+            "Bei der Regel «nicht bestanden» die Kennzeichen der betroffenen Elemente ansehen (die Regel ist aufgeklappt).",
+            "Ein Kennzeichen anklicken (z. B. «KW-1.01-SP»): das Element ist im Modell gewählt und das Kennzeichen hervorgehoben.",
+            "Ein zweites Kennzeichen anklicken, ebenso ein Kennzeichen bei den übersprungenen Elementen.",
+            "Zurück zur Auswahl, einen Pfad eintippen, den es nicht gibt, und «Exportieren» klicken."
+          ],
+          "erwartung": "Der Kern prüft die geschriebene Datei zuerst gegen die IDS-Basis von H+K (kataloge/ids/hk-hlks-basis.ids: Nennweite bzw. Abmessung, System, Geschoss, Typobjekt bei Apparaten, Kennzeichen) und dann gegen jede weitere IDS-Datei (IDS 1.0). Der Bericht zeigt je Datei Titel, Gesamtergebnis und je Regel das Ergebnis: «bestanden», «nicht bestanden» mit Zahl der betroffenen Elemente und Gründen, oder «nicht anwendbar (Fassung)», wenn die Regel nur für die andere IFC-Fassung gilt. Die betroffenen Elemente stehen als Kennzeichen-Knöpfe; ein Klick wählt das Element im Modell (Anschlüsse «Element.Anschluss» und Dämmungen «Dämmung Element» führen zum Element selbst). Gibt es das Element nicht mehr, meldet die Oberfläche «… gibt es im Modell nicht (mehr)». Eine IDS-Datei, die es nicht gibt, bricht den Export ab: «Die IDS-Datei … gibt es nicht.» mit dem Vorschlag, einen vollständigen Pfad anzugeben.",
+          "pruefpunkte": [
+            "Die IDS-Basis H+K steht immer an erster Stelle, mit der Marke «IDS-Basis H+K»; im Beispielprojekt hat sie 8 Regeln und besteht (bei IFC4 ist die IFC2X3-Regel «nicht anwendbar (Fassung)», bei IFC2X3 die IFC4-Regeln).",
+            "Mit der fiktiven Testdatei steht die Regel «Rohre mit Freigabevermerk» auf «nicht bestanden» (Beispielprojekt mit Gewerk Sanitär: 69 Rohre); die Marke «IDS» im Kopf des Berichts ist rot.",
+            "Ein Klick auf «KW-1.01-SP» wählt das Element im Modell (Statusleiste bzw. Eigenschaftenpalette zeigen es), das Kennzeichen ist hervorgehoben; ein zweiter Klick verschiebt die Hervorhebung.",
+            "Ein Klick auf ein Kennzeichen bei den übersprungenen Elementen (z. B. «AS-1») wählt ebenfalls das Element.",
+            "Ein Pfad, den es nicht gibt, ergibt den Fehler «Der Export ist so nicht möglich» mit Meldung und Vorschlag; «Zurück zur Auswahl» führt zum Formular zurück und der Export lässt sich wiederholen.",
+            "Texte aus dem Bericht (Namen, Kennzeichen, Gründe) erscheinen nur als Text, nie als Bedienelement oder Markup."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «IFC exportieren», Bericht mit IDS-Prüfung (Basis und weitere Datei, Kennzeichen als Knöpfe)",
+            "zustand": "Beispielprojekt MFH Musterweg (fiktiv), Register Datei › Ausgabe › «IFC exportieren»; IFC2X3, Gewerk Sanitär, Räume an, weitere IDS-Datei «Bauherr_Test.ids» (fiktive Regel «Pset_Bauherr.Freigabe»); Bericht aufgeblättert bis zum Abschnitt «IDS-Prüfung», ein Kennzeichen angeklickt"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-text.js:204 (idsHtml)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-text.js:118 (kennzeichenKandidaten)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ifc-export-dialog.js:28 (elementWaehlen)",
+            "src/Hlks.Kern/IfcExport/IdsPruefer.cs (Prüfer, Befunde je Regel)",
+            "kataloge/ids/hk-hlks-basis.ids"
+          ],
+          "hinweis": "Der Pfad der weiteren IDS-Datei wird eingetippt (ein Datei-Dialog des Browsers kennt den Pfad nicht); ein Hochladen über «Unterlagen» gibt es dafür nicht. Der Bericht nennt je Regel höchstens 200 betroffene Elemente (die Zahl «nicht bestanden» ist vollständig), der Dialog zeigt davon 60 als Knöpfe. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         }
       ]
     },

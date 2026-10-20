@@ -33,6 +33,7 @@ Lies zuerst `HLKS_CAD/LIESMICH.md` (Leitprinzipien). Für die Oberfläche gilt z
 | `js/oberflaeche/startbildschirm.js`, `start-text.js`, `ordner-browser.js`, `vorschau.js`, `vorschau-logik.js`, `css/start.css`, Tests `start.test.mjs`, `start.browser.mjs`; Server `ZuletztListe.cs`, `StartDienst.cs`, `StartEndpunkte.cs`; Ergänzungen in `dialoge.js`, `app.js`, `aktionen-projekt.js`, `menueband.js`, `symbole.js` | Startbildschirm wie Revit Home, Ordner-Browser, 3D-Vorschaubild (Teil S1; Abschnitt am Ende) | Agent «Start» (hlks-modul) |
 | `js/oberflaeche/koordination-*.js`, `aktionen-koordination.js`, `koordination.test.mjs`, `koordination.browser.mjs`; CSS-Block «Koordination» am Ende von `css/oberflaeche.css`; Ergänzungen in `menueband.js`, `aktionen.js`, `symbole.js` | Register Koordination: Projektvorgaben, Kollisionen, Aussparungen, BCF (Modul 3b, C1; Abschnitt am Ende) | Agent «Koordination» (hlks-modul) |
 | `js/oberflaeche/koordinationsplan.js`, `koordinationsplan.test.mjs`, `koordinationsplan.browser.mjs`; Ergänzungen in `aktionen-koordination.js`, `menueband.js`, `symbole.js`, `symbole-revit.js` | Knöpfe «Koordinationsplan» und «Aussparungsboxen» im Register Koordination, Optionen `umbruch`/`schrift` der Listen (Modul 7 Teil B3; Abschnitt «Listenumbruch und Koordinationsplan-Knöpfe») | Agent «Listenumbruch» (hlks-modul) |
+| `js/oberflaeche/ifc-export-dialog.js`, `ifc-export-text.js` (reine Anfrage, Bericht als HTML, Texte; in Node getestet), `aktionen-ifc.js`, `css/ifc-export.css`, Tests `ifc-export.test.mjs`, `ifc-export.browser.mjs`; Ergänzungen in `aktionen.js`, `menueband.js`, `index.html`, `symbole.js`, `symbole-revit.js` | Dialog «IFC exportieren» im Register Datei › Ausgabe (Modul 7 Teil B2; Abschnitt «IFC exportieren») | Agent «IFC-Dialog» (hlks-modul) |
 | `js/oberflaeche/ki-palette.js`, `ki-text.js`, `ki-zustand.js`, `ki-darstellung.js`, `ki-bild.js`, `aktionen-ki.js`, `css/ki-palette.css`, Tests `ki-palette.test.mjs`, `ki-palette.browser.mjs`; Ergänzungen in `ereignisse.js`, `zustand.js`, `aktionen.js`, `index.html`, `symbole.js`, `symbole-revit.js` | Palette «Claude»: Gespräch, Änderungen zurücknehmen, Normensuche (Modul 3c, Teil O; Abschnitt am Ende) | Agent «KI-Palette» (hlks-modul) |
 | `src/Hlks.Web/*.cs` | Server | Hauptlauf / Agent «Abgleich» (ProjektDienst, AbgleichDienst) |
 
@@ -1317,6 +1318,30 @@ Kopfzeile und eine Zeile; die letzte Zeile steht stets zusammen mit den Summenze
 Folgeblatt (zweite Listenansicht, z. B. für ein anderes Geschoss) oder ein grösseres Format. Die Lage des Fensters (Mitte) folgt dem Umbruch nicht von selbst: wächst eine schon platzierte Liste um einen Block, bleibt ihre Mitte, wo sie war (Lage mit `element_aendern` anpassen).
 
 **Prüfen:** `node --test js/oberflaeche/koordinationsplan.test.mjs`; Kern: `PlanListeUmbruchTests.cs` (Filter `PlanListeUmbruch`); Browser: `HLKS_B3_PORT=5240 HLKS_CDP_PORT=9580 node js/oberflaeche/koordinationsplan.browser.mjs` (Ports 5240–5249; Bilder `%TEMP%\HLKS_CAD\kp_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
+
+## IFC exportieren (Modul 7 Teil B2, Dialog)
+
+Entwurf: `entwurf/modul-7.md` Teil B2 (Punkt 4 Exportbericht) und die Entscheide A1–A4 (Räume nur auf Wunsch, Dämmung als IfcCovering, Ablage `<Projektordner>\ausgabe\ifc`, Pset `HK_KICAD`). Gerechnet, geschrieben und geprüft wird im Kern (`src/Hlks.Kern/IfcExport/`, Abfrage `ifc_export`); die Oberfläche schickt die Auswahl und zeigt den Bericht. Keine Fachlogik im Browser.
+
+**Ort:** Register **Datei › Gruppe Ausgabe › IFC exportieren** (Aktion `datei.ifc-export`, kein Kürzel, Symbol `ifcExport` in beiden Sätzen; aktiv nur mit offenem Projekt). Die Gruppenfolge im Register Datei ist `Projekt`, `Ausgabe`, `Zuletzt geöffnet` (`GRUPPENFOLGE.datei` in `menueband.js`). Es gibt kein neues Register.
+
+**Dialog «IFC exportieren»** (`ifc-export-dialog.js`, verschiebbar wie alle Dialoge):
+
+| Feld | Verhalten | Anfrage an `POST /api/ifc/export` |
+| --- | --- | --- |
+| Fassung | IFC4 (Vorgabe) oder IFC2X3 | `fassung` |
+| Umfang | Gewerke als Häkchen aus dem Katalog (`gewerke.json`), Geschosse als Häkchen aus dem Modell, je «alle» als Vorgabe (die einzelnen Häkchen sind dann gesperrt; ein Klick darauf nimmt «alle» weg); ohne Häkchen und ohne «alle» meldet der Dialog es und schickt nichts | `umfang.gewerke`, `umfang.geschosse` (bei «alle» weggelassen) |
+| Räume mitgeben | Vorgabe aus | `raeume` |
+| IDS-Prüfung | die IDS-Basis von H+K wird immer geprüft; weitere IDS-Dateien als **vollständiger Pfad, eine Datei je Zeile** (ein Browser kennt den Pfad einer gewählten Datei nicht; ein Hochladen über «Unterlagen» gibt es dafür nicht – der Server läuft auf demselben Rechner) | `ids` (Liste der Pfade) |
+| Ziel | nur Hinweis: `<Projektordner>\ausgabe\ifc` (nicht wählbar; Dateiname `<Projekt>_<Fassung>_<JJJJMMTT-hhmm>.ifc`) | – (der Kern bestimmt es, `datei` wird nie geschickt) |
+
+**Ergebnis im selben Dialog** (`ifc-export-text.js`, alles Dynamische mit `esc()` maskiert; ein Test prüft, dass Schadtext aus dem Bericht nie als Tag oder Attribut erscheint): Datei (Name, Grösse, Fassung, Entitäten) mit Download-Link und Links zu den Berichten (`GET /api/ifc/export/datei?pfad=<Dateiname>`, nur Dateien aus `ausgabe\ifc` des offenen Projekts), drei Ergebnismarken (Kontrolle beim Zurücklesen, Schemaprüfung, IDS), Dauer mit Aufschlüsselung, Zähler (Übersicht, Tabelle je Klasse mit Entität, Typobjekt, PredefinedType, eingeklappt je Entität), übersprungene Elemente mit Grund, Schemaprüfung und Kontrolle, **IDS-Ergebnis je Datei und Regel** (bestanden, nicht bestanden, nicht anwendbar (Fassung); nicht bestandene Regeln sind aufgeklappt) mit den **Kennzeichen der betroffenen Elemente als Knöpfe** – ein Klick wählt das Element im Modell (`auswaehlen`; «Element.Anschluss» und «Dämmung Element» führen zum Element selbst, gibt es es nicht mehr, kommt eine Meldung), Warnungen und Hinweise. «Ordner öffnen» schickt den Ordner an `POST /api/ordner/zeigen` (wie beim Serien-PDF; im Testlauf öffnet der Server keinen Explorer), «Zurück zur Auswahl» führt zum Formular.
+
+**Lauf und Fehler:** Während des Exports zeigt der Dialog «IFC wird geschrieben und geprüft …» mit der Zeit; er ist gesperrt, und ein Flag im Modul (`exportLaeuft`) verhindert einen zweiten Export, auch bei Doppelklick oder bei geschlossenem und neu geöffnetem Dialog. Wird der Dialog während des Laufs geschlossen, meldet am Ende eine Einblendung das Ergebnis. Fehler des Servers stehen im Dialog mit Vorschlag: **409** «Kein Projekt offen» (Vorschlag: zuerst ein Projekt öffnen), **400** «Der Export ist so nicht möglich» (z. B. eine IDS-Datei, die es nicht gibt; Vorschlag des Kerns); sonst «Nicht exportiert» mit der Meldung.
+
+**Anleitung:** Kapitel «m7» in `berichte/anleitung/inventar.json`: `m7-ifc-export` (Hauptfunktion des Knopfs, Feld `hauptfunktion`), `m7-ifc-umfang`, `m7-ifc-ids`.
+
+**Prüfen:** `node --test js/oberflaeche/ifc-export.test.mjs` (und `symbole-revit.test.mjs`, `menueband.test.mjs`); Browser: `HLKS_IFC_PORT=5301 HLKS_CDP_PORT=9651 node js/oberflaeche/ifc-export.browser.mjs` (zweiter Lauf mit `HLKS_SYMBOLE=revit`; Ports 5300–5309; Bilder `%TEMP%\HLKS_CAD\ie_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen; der Test legt eine fiktive IDS-Datei unter `%TEMP%` an und räumt auf).
 
 ## Schutz gegen Fremdaufrufe (Sicherheitsprüfung 3c, B1, 20.10.2026)
 
