@@ -453,7 +453,14 @@ public class ApiTests
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
+        ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",   // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
     };
+    static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
+    static void IfcExportAufraeumen()
+    {
+        var b = IfcExportDatei()[..^4];
+        foreach (var x in new[] { IfcExportDatei(), b + ".bericht.json", b + ".bericht.md" }) File.Delete(x);
+    }
     static string AussparungIfcDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}-aussparungen.ifc").Replace('\\', '/');
     static string BcfDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}.bcf").Replace('\\', '/');
     /// <summary>Kleine IFC-Testdatei aus HLKS_CAD/tests/daten (Modul 1b), Pfad mit /.</summary>
@@ -538,7 +545,7 @@ public class ApiTests
                 Assert.Null(j!.AsObject()["fehler"]);
             }
         }
-        } finally { File.Delete(PlanPdfDatei); File.Delete(BcfDatei()); File.Delete(AussparungIfcDatei()); try { Directory.Delete(PlansatzOrdner, true); } catch (IOException) { } }   // Ausgabe von plan_pdf, bcf_export, aussparungen_ifc und plansatz_pdf aufräumen
+        } finally { File.Delete(PlanPdfDatei); File.Delete(BcfDatei()); File.Delete(AussparungIfcDatei()); IfcExportAufraeumen(); try { Directory.Delete(PlansatzOrdner, true); } catch (IOException) { } }   // Ausgabe von plan_pdf, bcf_export, aussparungen_ifc, ifc_export und plansatz_pdf aufräumen
     }
 
     [Fact]

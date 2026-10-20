@@ -1,0 +1,242 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  IDS-Basis der H+K Planungs AG für HLKS-Modelle (KICAD, Modul 7 Teil B2, entwurf/modul-7.md). Format IDS 1.0 (buildingSMART), geprüft
+  gegen schema/ids-1.0/ids.xsd (Test IdsBasisTests). Die Entitätsnamen folgen der IFC4-Konvention auch für IFC2X3 (IDS-Dokumentation
+  entity-facet.md: in IFC2X3 über das Typobjekt aufgelöst). Die Listen der Entitäten sind die HLKS-Klassen aus kataloge/ifc.json
+  (Klassen mit Rolle im Netz; ein Test hält beide gleich). Property-Set-Namen nach der PSD IFC4 von buildingSMART.
+-->
+<ids:ids xmlns:ids="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd">
+  <ids:info>
+    <ids:title>H+K HLKS-Basis</ids:title>
+    <ids:copyright>H+K Planungs AG</ids:copyright>
+    <ids:version>1.0</ids:version>
+    <ids:description>Mindestinhalt eines HLKS-Modells aus KICAD: Leitungen mit Nennweite bzw. Abmessung, jedes HLKS-Element in einem System und in einem Geschoss, Systeme mit einer Systemart aus der Liste, Apparate und Geräte mit Typobjekt, jedes HLKS-Element mit Name und Kennzeichen.</ids:description>
+    <ids:date>2026-10-20</ids:date>
+    <ids:purpose>Eigenprüfung beim IFC-Export (ifc_export) vor der Abgabe an Bauherrschaft, Architektur und Koordination.</ids:purpose>
+  </ids:info>
+  <ids:specifications>
+    <ids:specification name="Rohre mit Nennweite bzw. Aussendurchmesser" ifcVersion="IFC2X3 IFC4" identifier="HK-HLKS-01" description="Jedes Rohr trägt seine Grösse: Nennweite (NominalDiameter) oder Aussendurchmesser (OuterDiameter) in Pset_PipeSegmentTypeCommon." instructions="In KICAD: Rohr dn bzw. da setzen oder eine Leitungsserie mit Grösse wählen.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCPIPESEGMENT</ids:simpleValue></ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:property dataType="IFCPOSITIVELENGTHMEASURE" cardinality="required">
+          <ids:propertySet><ids:simpleValue>Pset_PipeSegmentTypeCommon</ids:simpleValue></ids:propertySet>
+          <ids:baseName>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="NominalDiameter"/>
+              <xs:enumeration value="OuterDiameter"/>
+            </xs:restriction>
+          </ids:baseName>
+        </ids:property>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="Kanäle mit Abmessung" ifcVersion="IFC2X3 IFC4" identifier="HK-HLKS-02" description="Jeder Kanal trägt Durchmesser bzw. Breite (NominalDiameterOrWidth) in Pset_DuctSegmentTypeCommon." instructions="In KICAD: Kanal durchmesser bzw. breite und hoehe setzen oder eine Kanalserie wählen.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCDUCTSEGMENT</ids:simpleValue></ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:property dataType="IFCPOSITIVELENGTHMEASURE" cardinality="required">
+          <ids:propertySet><ids:simpleValue>Pset_DuctSegmentTypeCommon</ids:simpleValue></ids:propertySet>
+          <ids:baseName><ids:simpleValue>NominalDiameterOrWidth</ids:simpleValue></ids:baseName>
+        </ids:property>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="HLKS-Elemente in einem System (IFC4)" ifcVersion="IFC4" identifier="HK-HLKS-03" description="Jedes HLKS-Element gehört einem Verteilsystem an (IfcRelAssignsToGroup zu IfcDistributionSystem)." instructions="In KICAD: Leitungsbauteile einem System bzw. Strang zuordnen, Geräte anschliessen.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="IFCPIPESEGMENT"/>
+              <xs:enumeration value="IFCDUCTSEGMENT"/>
+              <xs:enumeration value="IFCPIPEFITTING"/>
+              <xs:enumeration value="IFCDUCTFITTING"/>
+              <xs:enumeration value="IFCVALVE"/>
+              <xs:enumeration value="IFCFLOWMETER"/>
+              <xs:enumeration value="IFCPUMP"/>
+              <xs:enumeration value="IFCAIRTERMINALBOX"/>
+              <xs:enumeration value="IFCDISTRIBUTIONCHAMBERELEMENT"/>
+              <xs:enumeration value="IFCSANITARYTERMINAL"/>
+              <xs:enumeration value="IFCELECTRICAPPLIANCE"/>
+              <xs:enumeration value="IFCWASTETERMINAL"/>
+              <xs:enumeration value="IFCTANK"/>
+              <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
+              <xs:enumeration value="IFCHEATEXCHANGER"/>
+              <xs:enumeration value="IFCSPACEHEATER"/>
+              <xs:enumeration value="IFCAIRTERMINAL"/>
+            </xs:restriction>
+          </ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:partOf relation="IFCRELASSIGNSTOGROUP" cardinality="required">
+          <ids:entity>
+            <ids:name><ids:simpleValue>IFCDISTRIBUTIONSYSTEM</ids:simpleValue></ids:name>
+          </ids:entity>
+        </ids:partOf>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="HLKS-Elemente in einem System (IFC2X3)" ifcVersion="IFC2X3" identifier="HK-HLKS-04" description="Jedes HLKS-Element gehört einem System an (IfcRelAssignsToGroup zu IfcSystem; IFC2X3 kennt kein IfcDistributionSystem)." instructions="In KICAD: Leitungsbauteile einem System bzw. Strang zuordnen, Geräte anschliessen.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="IFCPIPESEGMENT"/>
+              <xs:enumeration value="IFCDUCTSEGMENT"/>
+              <xs:enumeration value="IFCPIPEFITTING"/>
+              <xs:enumeration value="IFCDUCTFITTING"/>
+              <xs:enumeration value="IFCVALVE"/>
+              <xs:enumeration value="IFCFLOWMETER"/>
+              <xs:enumeration value="IFCPUMP"/>
+              <xs:enumeration value="IFCAIRTERMINALBOX"/>
+              <xs:enumeration value="IFCDISTRIBUTIONCHAMBERELEMENT"/>
+              <xs:enumeration value="IFCSANITARYTERMINAL"/>
+              <xs:enumeration value="IFCELECTRICAPPLIANCE"/>
+              <xs:enumeration value="IFCWASTETERMINAL"/>
+              <xs:enumeration value="IFCTANK"/>
+              <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
+              <xs:enumeration value="IFCHEATEXCHANGER"/>
+              <xs:enumeration value="IFCSPACEHEATER"/>
+              <xs:enumeration value="IFCAIRTERMINAL"/>
+            </xs:restriction>
+          </ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:partOf relation="IFCRELASSIGNSTOGROUP" cardinality="required">
+          <ids:entity>
+            <ids:name><ids:simpleValue>IFCSYSTEM</ids:simpleValue></ids:name>
+          </ids:entity>
+        </ids:partOf>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="HLKS-Elemente in einem Geschoss" ifcVersion="IFC2X3 IFC4" identifier="HK-HLKS-05" description="Jedes HLKS-Element steht in einem Geschoss (IfcRelContainedInSpatialStructure zu IfcBuildingStorey)." instructions="In KICAD: Geschoss des Elements setzen bzw. Lage im Bereich eines Geschosses.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="IFCPIPESEGMENT"/>
+              <xs:enumeration value="IFCDUCTSEGMENT"/>
+              <xs:enumeration value="IFCPIPEFITTING"/>
+              <xs:enumeration value="IFCDUCTFITTING"/>
+              <xs:enumeration value="IFCVALVE"/>
+              <xs:enumeration value="IFCFLOWMETER"/>
+              <xs:enumeration value="IFCPUMP"/>
+              <xs:enumeration value="IFCAIRTERMINALBOX"/>
+              <xs:enumeration value="IFCDISTRIBUTIONCHAMBERELEMENT"/>
+              <xs:enumeration value="IFCSANITARYTERMINAL"/>
+              <xs:enumeration value="IFCELECTRICAPPLIANCE"/>
+              <xs:enumeration value="IFCWASTETERMINAL"/>
+              <xs:enumeration value="IFCTANK"/>
+              <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
+              <xs:enumeration value="IFCHEATEXCHANGER"/>
+              <xs:enumeration value="IFCSPACEHEATER"/>
+              <xs:enumeration value="IFCAIRTERMINAL"/>
+            </xs:restriction>
+          </ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:partOf relation="IFCRELCONTAINEDINSPATIALSTRUCTURE" cardinality="required">
+          <ids:entity>
+            <ids:name><ids:simpleValue>IFCBUILDINGSTOREY</ids:simpleValue></ids:name>
+          </ids:entity>
+        </ids:partOf>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="Systeme mit Systemart aus der Liste" ifcVersion="IFC4" identifier="HK-HLKS-06" description="Jedes Verteilsystem nennt als PredefinedType eine Systemart aus kataloge/ifc.json (systemtypen) bzw. CONTROL (Regelkreis) – nicht NOTDEFINED." instructions="In KICAD: Systemtyp des Systems setzen.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCDISTRIBUTIONSYSTEM</ids:simpleValue></ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:entity>
+          <ids:name><ids:simpleValue>IFCDISTRIBUTIONSYSTEM</ids:simpleValue></ids:name>
+          <ids:predefinedType>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="DOMESTICHOTWATER"/>
+              <xs:enumeration value="DOMESTICCOLDWATER"/>
+              <xs:enumeration value="CHILLEDWATER"/>
+              <xs:enumeration value="HEATING"/>
+              <xs:enumeration value="RAINWATER"/>
+              <xs:enumeration value="WASTEWATER"/>
+              <xs:enumeration value="VENTILATION"/>
+              <xs:enumeration value="EXHAUST"/>
+              <xs:enumeration value="CONTROL"/>
+            </xs:restriction>
+          </ids:predefinedType>
+        </ids:entity>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="Apparate und Geräte mit Typobjekt" ifcVersion="IFC2X3 IFC4" identifier="HK-HLKS-07" description="Apparate und Geräte haben ein Typobjekt (IfcRelDefinesByType); KICAD schreibt am Typobjekt das Pset HK_KICAD_Typ mit dem Typnamen – geprüft wird dessen Eigenschaft Typname, die das Element nur über sein Typobjekt hat." instructions="In KICAD: Familie und Typ zuordnen; ohne Familie gilt das Typobjekt der Klasse.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="IFCSANITARYTERMINAL"/>
+              <xs:enumeration value="IFCELECTRICAPPLIANCE"/>
+              <xs:enumeration value="IFCWASTETERMINAL"/>
+              <xs:enumeration value="IFCTANK"/>
+              <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
+              <xs:enumeration value="IFCHEATEXCHANGER"/>
+              <xs:enumeration value="IFCSPACEHEATER"/>
+              <xs:enumeration value="IFCAIRTERMINAL"/>
+              <xs:enumeration value="IFCDISTRIBUTIONCHAMBERELEMENT"/>
+            </xs:restriction>
+          </ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:property dataType="IFCLABEL" cardinality="required">
+          <ids:propertySet><ids:simpleValue>HK_KICAD_Typ</ids:simpleValue></ids:propertySet>
+          <ids:baseName><ids:simpleValue>Typname</ids:simpleValue></ids:baseName>
+        </ids:property>
+      </ids:requirements>
+    </ids:specification>
+    <ids:specification name="HLKS-Elemente mit Name und Kennzeichen" ifcVersion="IFC2X3 IFC4" identifier="HK-HLKS-08" description="Jedes HLKS-Element hat einen Namen und ein Kennzeichen (Attribute Name und Tag)." instructions="In KICAD hat jedes Element ein Kennzeichen; es steht in Name und Tag.">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded">
+        <ids:entity>
+          <ids:name>
+            <xs:restriction base="xs:string">
+              <xs:enumeration value="IFCPIPESEGMENT"/>
+              <xs:enumeration value="IFCDUCTSEGMENT"/>
+              <xs:enumeration value="IFCPIPEFITTING"/>
+              <xs:enumeration value="IFCDUCTFITTING"/>
+              <xs:enumeration value="IFCVALVE"/>
+              <xs:enumeration value="IFCFLOWMETER"/>
+              <xs:enumeration value="IFCPUMP"/>
+              <xs:enumeration value="IFCAIRTERMINALBOX"/>
+              <xs:enumeration value="IFCDISTRIBUTIONCHAMBERELEMENT"/>
+              <xs:enumeration value="IFCSANITARYTERMINAL"/>
+              <xs:enumeration value="IFCELECTRICAPPLIANCE"/>
+              <xs:enumeration value="IFCWASTETERMINAL"/>
+              <xs:enumeration value="IFCTANK"/>
+              <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
+              <xs:enumeration value="IFCHEATEXCHANGER"/>
+              <xs:enumeration value="IFCSPACEHEATER"/>
+              <xs:enumeration value="IFCAIRTERMINAL"/>
+            </xs:restriction>
+          </ids:name>
+        </ids:entity>
+      </ids:applicability>
+      <ids:requirements>
+        <ids:attribute cardinality="required">
+          <ids:name><ids:simpleValue>Name</ids:simpleValue></ids:name>
+        </ids:attribute>
+        <ids:attribute cardinality="required">
+          <ids:name><ids:simpleValue>Tag</ids:simpleValue></ids:name>
+        </ids:attribute>
+      </ids:requirements>
+    </ids:specification>
+  </ids:specifications>
+</ids:ids>

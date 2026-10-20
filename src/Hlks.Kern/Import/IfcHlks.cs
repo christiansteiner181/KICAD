@@ -315,7 +315,10 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
     string PortDnFundstelle(IfcHlksPort p) => Pset(d.Eigenschaften(p.Port), DnKandidaten())?.Name ?? "";
 
     List<string>? dnKandidaten;
-    List<string> DnKandidaten() => dnKandidaten ??= abb.Klassen.Where(k => k.Psets?.ContainsKey("dn") == true).SelectMany(k => k.Psets!["dn"]).Distinct().ToList();
+    /// <summary>Kandidaten der Port-Nennweite: die der Rohr-Nennweite und (Modul 7 Teil B2) die Port-Psets aus ifc.json ports.dn
+    /// (IFC4 Pset_DistributionPortTypePipe.NominalDiameter, IFC2x3 HK_KICAD.Nennweite – so schreibt sie der eigene Export).</summary>
+    List<string> DnKandidaten() => dnKandidaten ??= abb.Klassen.Where(k => k.Psets?.ContainsKey("dn") == true).SelectMany(k => k.Psets!["dn"])
+        .Concat(abb.Ports?.Kandidaten("dn") ?? []).Distinct().ToList();
 
     /// <summary>Nennweite aus einem Pset-Wert: Längenmass → mm der Datei; reine Zahl oder «DN 100» → wie geschrieben.
     /// Unplausibel (≤ 0 oder über 5000) → leer.</summary>

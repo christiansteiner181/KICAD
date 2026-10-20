@@ -63,6 +63,7 @@ public sealed class Abfragen(Projekt p)
         .. PlanAbfragen.Definitionen,   // Modul 7 Teil A: plannummer_vorschlag
         .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
+        .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
     ];
 
     string Kz(string? id) => M.Finde(id)?.Kennzeichen ?? (id is null ? "" : $"?{id}");

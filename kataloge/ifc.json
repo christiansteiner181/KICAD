@@ -1,6 +1,6 @@
 {
   "beschreibung": "Abbildung des KICAD-Katalogs auf IFC (openBIM-Abgleich, Modul 1b). Eine Quelle für Import und Export. Je Klasse die IFC-Entität des Exemplars, das Typobjekt und der PredefinedType, getrennt für IFC4 und IFC2x3 (Entscheid Christian 17.10.2026: «IFC 4 und alle zuvor»). In IFC2x3 gibt es für Rohre, Kanäle, Armaturen, Geräte keine eigenen Exemplar-Entitäten: dort steht die allgemeine Entität (IfcFlowSegment, IfcFlowController …) und die Art steckt im Typobjekt.",
-  "geprueft": "Entitäten und Aufzählungswerte am 17.10.2026 an den Schemaklassen von xBIM Essentials 6.1.605 geprüft (Xbim.Ifc4 und Xbim.Ifc2x3, erzeugt aus den EXPRESS-Schemas von buildingSMART, IFC4 ADD2 TC1 und IFC2X3 TC1); der Test IfcAbbildungTests prüft jeden Eintrag gegen diese Klassen. Property-Set-Namen sind NICHT am Schema geprüft (stehen nicht im EXPRESS-Schema): sie sind Lesekandidaten für den Import, an den Testdateien bestätigt; für den Export prüft Modul 7 sie gegen die Property-Set-Definitionen (IDS).",
+  "geprueft": "Entitäten und Aufzählungswerte am 17.10.2026 an den Schemaklassen von xBIM Essentials 6.1.605 geprüft (Xbim.Ifc4 und Xbim.Ifc2x3, erzeugt aus den EXPRESS-Schemas von buildingSMART, IFC4 ADD2 TC1 und IFC2X3 TC1); der Test IfcAbbildungTests prüft jeden Eintrag gegen diese Klassen. Property-Set-Namen sind NICHT am Schema geprüft (stehen nicht im EXPRESS-Schema): sie sind Lesekandidaten für den Import, an den Testdateien bestätigt. Der Export (Modul 7 Teil B2) schreibt je Eigenschaft nur den ersten Eintrag und nur buildingSMART-Psets («Pset_»); diese Namen samt Qto_PipeSegmentBaseQuantities/Qto_DuctSegmentBaseQuantities.Length und den Port-Psets (ports) sind am 20.10.2026 gegen die Property-Set-Definitionen (PSD) von buildingSMART geprüft, wie sie Xbim.Properties 6.0.11 mitliefert (Test IfcExportPsdTests).",
   "annahmen": [
     "Wassererwaermer und Speicher: IFC4 IfcTank STORAGE, IFC2x3 kennt STORAGE nicht → PRESSUREVESSEL.",
     "Waermeerzeuger Wärmepumpe: IFC kennt keine eigene Entität → IfcUnitaryEquipment USERDEFINED «Waermepumpe»; Fernwärme → IfcHeatExchanger PLATE.",
@@ -40,7 +40,7 @@
 
     { "klasse": "Rohr", "ifc4": { "entitaet": "IfcPipeSegment", "typ": "IfcPipeSegmentType", "predefinedType": "RIGIDSEGMENT" }, "ifc2x3": { "entitaet": "IfcFlowSegment", "typ": "IfcPipeSegmentType", "predefinedType": "RIGIDSEGMENT" },
       "importWerte": ["RIGIDSEGMENT", "FLEXIBLESEGMENT", "SPOOL", "USERDEFINED", "NOTDEFINED"],
-      "psets": { "dn": ["Pset_PipeSegmentTypeCommon.NominalDiameter", "Pset MEP.Geom-DN", "Pset MEP.Tech-DN"] } },
+      "psets": { "dn": ["Pset_PipeSegmentTypeCommon.NominalDiameter", "Pset MEP.Geom-DN", "Pset MEP.Tech-DN"], "da": ["Pset_PipeSegmentTypeCommon.OuterDiameter"] } },
     { "klasse": "Kanal", "ifc4": { "entitaet": "IfcDuctSegment", "typ": "IfcDuctSegmentType", "predefinedType": "RIGIDSEGMENT" }, "ifc2x3": { "entitaet": "IfcFlowSegment", "typ": "IfcDuctSegmentType", "predefinedType": "RIGIDSEGMENT" },
       "importWerte": ["RIGIDSEGMENT", "FLEXIBLESEGMENT", "USERDEFINED", "NOTDEFINED"],
       "psets": { "breite": ["Pset_DuctSegmentTypeCommon.NominalDiameterOrWidth", "Pset_DuctSegmentTypeCommon.NominalWidth"], "hoehe": ["Pset_DuctSegmentTypeCommon.NominalHeight"], "durchmesser": ["Pset_DuctSegmentTypeCommon.NominalDiameterOrWidth", "Pset_DuctSegmentTypeCommon.NominalDiameter"] } },
@@ -120,5 +120,10 @@
     "beschreibung": "IFC4-Systeme mit einem PredefinedType, der mehreren Systemtypen entspricht (z. B. HEATING), werden über Name und ObjectType eingeordnet; IFC2x3-Systeme haben keinen PredefinedType und gehen immer über den Namen. Die Namensmuster sind reguläre Ausdrücke ohne Gross-/Kleinschreibung, geprüft in der Reihenfolge der Liste; spezifischere Muster vor allgemeineren: Zirkulation, Kälte Glykol, Heizung Glykol (Sole), Kälte (Kühlwasser), Warmwasser (vor Heizung, «Warmwasser Vorlauf»), Regenwasser (vor Schmutzwasser, «Regenwasser verschmutzt»), erst dann Heizung mit dem allgemeinen «VL/RL» (Befund B2-2, an den BKW-Nova- und Bernstrasse-Revit-Dateien). Kanal: NominalDiameterOrWidth ist mit NominalHeight die Breite, ohne den Durchmesser."
   },
   "fluss": { "rein": "SINK", "raus": "SOURCE", "beide": "SOURCEANDSINK" },
+  "ports": {
+    "beschreibung": "Nennweite an den Anschlüssen (IfcDistributionPort, Modul 7 Teil B2): der Export schreibt den ersten Eintrag der Fassung, der Import liest alle. IFC4 Pset_DistributionPortTypePipe.NominalDiameter (IfcPositiveLengthMeasure) steht in der PSD IFC4 von buildingSMART (geprüft am 20.10.2026 an Xbim.Properties 6.0.11, Test IfcExportPsdTests); IFC2x3 kennt keine Port-Nennweite (Pset_DistributionPortPipe nur PortNumber und ConnectionType) – dort das eigene Pset HK_KICAD.",
+    "ifc4": { "dn": ["Pset_DistributionPortTypePipe.NominalDiameter"] },
+    "ifc2x3": { "dn": ["HK_KICAD.Nennweite"] }
+  },
   "klassifikation": { "name": "BKP", "quelle": "CRB Baukostenplan Hochbau", "ifc": "IfcClassificationReference" }
 }
