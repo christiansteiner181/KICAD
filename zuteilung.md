@@ -312,5 +312,6 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | ok – c20e863 (nach API-Abbruch fortgesetzt); Leserversion 2 → Befund-Ids R1/R2/R7 neu belegen |
 | 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |
 | 20.10.2026 | 3 | Spezifikation «Freie Grösse für Kanalserien» (Entscheid Christian: Rechteckkanal b × h frei, Raster als Vorschlag) | Hauptlauf | ok |
-| 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | läuft |
+| 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | ok – 20687bf (nach API-Abbruch neu begonnen), P29 |
 | 20.10.2026 | 3 | Spezifikation «Abwasser-Serien nach Aussendurchmesser» (Christian: «Geberit PE ist immer Abwasser», Fragefenster «Abwasser-Serie») – Bau nach «Freie Grösse» (gleiche Dateien) | Hauptlauf | ok |
+| 20.10.2026 | 3 | Abwasser-Serie Kern (einsatz abwasser, Grösse d, Beschriftung, Prüfung, Formteile, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5330–5339) | läuft |
