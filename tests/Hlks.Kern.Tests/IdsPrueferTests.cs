@@ -5,11 +5,32 @@ using static Hlks.Kern.Tests.IfcExportHilfe;
 
 namespace Hlks.Kern.Tests;
 
+/// <summary>Das Beispielprojekt einmal je Fassung exportiert (für alle Tests der Klasse); der Ordner wird am Ende gelöscht.</summary>
+public sealed class IdsBeispielDateien : IDisposable
+{
+    readonly IfcExportOrdner ordner = new();
+    readonly Dictionary<string, string> exportiert = [];
+    readonly Lazy<Projekt> beispiel = new(() => Beispielprojekt.Erzeugen(IfcHilfe.Kat, null));
+
+    public string Datei(string fassung)
+    {
+        lock (exportiert)
+        {
+            if (exportiert.TryGetValue(fassung, out var d)) return d;
+            d = ordner.Datei($"beispiel_{fassung}.ifc");
+            Export(beispiel.Value, d, fassung);
+            return exportiert[fassung] = d;
+        }
+    }
+
+    public void Dispose() => ordner.Dispose();
+}
+
 /// <summary>Modul 7 Teil B2: IDS 1.0 – Schema (schema/ids-1.0, unverändert), IDS-Basis von H+K (kataloge/ids/hk-hlks-basis.ids) und der eigene
 /// Prüfer je Facette (entity mit PredefinedType und USERDEFINED, attribute, property mit Datentyp und Meter-Umrechnung, classification, partOf
 /// rekursiv und mit Beziehung, material), Einschränkungen (Aufzählung, Muster, Grenzen, Länge), Kardinalitäten der Spezifikation und der
 /// Anforderungen, IFC2X3-Zuordnung über das Typobjekt. Geprüft wird das exportierte Beispielprojekt «MFH Musterweg» (fiktiv).</summary>
-public sealed class IdsPrueferTests : IDisposable
+public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, IClassFixture<IdsBeispielDateien>
 {
     readonly IfcExportOrdner ordner = new();
     public void Dispose() => ordner.Dispose();
@@ -37,22 +58,7 @@ public sealed class IdsPrueferTests : IDisposable
     static string EigAnw(string set, string name, string wert) =>
         $"<ids:property><ids:propertySet><ids:simpleValue>{set}</ids:simpleValue></ids:propertySet><ids:baseName><ids:simpleValue>{name}</ids:simpleValue></ids:baseName><ids:value><ids:simpleValue>{wert}</ids:simpleValue></ids:value></ids:property>";
 
-    static readonly Dictionary<string, string> exportiert = [];
-    static readonly Lazy<Projekt> beispiel = new(() => Beispielprojekt.Erzeugen(IfcHilfe.Kat, null));
-
-    /// <summary>Beispielprojekt einmal je Fassung exportieren (Temp-Ordner des Prozesses).</summary>
-    static string Datei(string fassung)
-    {
-        lock (exportiert)
-        {
-            if (exportiert.TryGetValue(fassung, out var d) && File.Exists(d)) return d;
-            var o = Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"ids_{Environment.ProcessId}");
-            Directory.CreateDirectory(o);
-            d = Path.Combine(o, $"beispiel_{fassung}.ifc");
-            Export(beispiel.Value, d, fassung);
-            return exportiert[fassung] = d;
-        }
-    }
+    string Datei(string fassung) => beispiel.Datei(fassung);
 
     JsonObject Pruefen(string fassung, string spezifikationen)
     {
