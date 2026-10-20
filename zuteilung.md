@@ -313,3 +313,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |
 | 20.10.2026 | 3 | Spezifikation «Freie Grösse für Kanalserien» (Entscheid Christian: Rechteckkanal b × h frei, Raster als Vorschlag) | Hauptlauf | ok |
 | 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | läuft |
+| 20.10.2026 | 3 | Spezifikation «Abwasser-Serien nach Aussendurchmesser» (Christian: «Geberit PE ist immer Abwasser», Fragefenster «Abwasser-Serie») – Bau nach «Freie Grösse» (gleiche Dateien) | Hauptlauf | ok |
