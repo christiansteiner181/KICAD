@@ -5,7 +5,7 @@ Alle Zuteilungen mit Ergebnis stehen in `zuteilung.md` (Zeilen 19./20.10.2026).
 
 ## Auf dem Desktop
 
-**Geprüfter Stand 928021e (20.10.2026, 06:12)** – läuft seit 06:13 auf dem Desktop.
+**Geprüfter Stand da7724b (20.10.2026, 07:08)** – mit Schutz gegen Fremdaufrufe; läuft auf dem Desktop.
 
 Das Symbol «KICAD» startet den letzten geprüften Stand (Zweig `geprueft`); ein Klick holt einen neueren und baut dabei die
 Bedienungsanleitung neu. Jeder geprüfte Stand: Kern-, MCP-, Web- und Node-Tests grün (`werkzeuge/stand_pruefen.ps1`) und alle
