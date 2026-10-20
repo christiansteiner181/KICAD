@@ -309,7 +309,7 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | – | Grössenregeln Christian (DN aus di, Lüftung Aussendurchmesser, bis DN 300): KI-Anleitung Grundsatz 2, Spezifikation; R4 nachgeführt (12 Grössen DN 25–300, Formteile) | Hauptlauf | ok |
 | 20.10.2026 | – | Hersteller-DN hat Vorrang (bestätigt Christian), KI-Anleitung/Spezifikation | Hauptlauf | ok |
 | 20.10.2026 | 7 | B2 Oberfläche: Dialog «IFC exportieren», Anleitung, Browser-Reihe ifc-export | hlks-modul (worktree, Ports 5300–5309) | ok – 3cc5fb9, Merge c882376 |
-| 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | läuft |
+| 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | ok – c20e863 (nach API-Abbruch fortgesetzt); Leserversion 2 → Befund-Ids R1/R2/R7 neu belegen |
 | 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |
 | 20.10.2026 | 3 | Spezifikation «Freie Grösse für Kanalserien» (Entscheid Christian: Rechteckkanal b × h frei, Raster als Vorschlag) | Hauptlauf | ok |
 | 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | läuft |
