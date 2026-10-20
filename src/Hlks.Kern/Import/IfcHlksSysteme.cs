@@ -4,7 +4,8 @@
 // seine Mitglieder bleiben ohne System (Hinweis). Revit zerlegt ein System in viele Teile («H VL NT 6», «H VL NT 29» …):
 // Teile mit gleichem Basisnamen (ohne Nummer am Ende) und gleichem Systemtyp werden ein System; ihre Kennung ist dann
 // «system:<Basisname>», damit eine neue Fassung abgleicht, auch wenn Revit Teile neu nummeriert. Anlage je Gewerk
-// (aus systemtypen.json), wenn das Projekt noch keine hat. Strang nur aus IfcDistributionCircuit (IFC4).
+// (aus systemtypen.json), Kälte (Medien KAE-…) als eigene Anlage A-KAE im Gewerk Heizung, wenn das Projekt noch keine
+// hat. Strang nur aus IfcDistributionCircuit (IFC4).
 
 using System.Text.RegularExpressions;
 using Xbim.Common;
@@ -139,7 +140,7 @@ public sealed class IfcHlksSysteme
         lauf.Wert(e, "systemtyp", sys.Systemtyp, $"{IfcDatei.Entitaet(erster)} {sys.Grund} über die Namensmuster in ifc.json");
         if (sys.Medium is not null)
             e.Eigenschaften["medium"] = new Wert { Inhalt = sys.Medium, Herkunft = lauf.Herkunft with { Art = "katalog", Quelle = $"Systemtyp «{sys.Systemtyp}»" } };
-        if (sys.Gewerk is not null) e.TeilVon = AnlageRef(sys.Gewerk);
+        if (sys.Gewerk is not null) e.TeilVon = AnlageRef(AnlageGruppe(sys.Gewerk, sys.Medium));
         sys.Ref = e.Id;
         return sys.Ref;
     }
@@ -164,24 +165,32 @@ public sealed class IfcHlksSysteme
     /// <summary>Stränge ohne System (für den Hinweis).</summary>
     public int StraengeOhneSystem => kreisRef.Count(x => x.Value is null);
 
-    /// <summary>Anlage je Gewerk: eine bestehende (gleiche Kennung oder alle ihre Systeme in diesem Gewerk) oder neu.</summary>
-    string AnlageRef(string gewerk)
+    /// <summary>Gruppe der Anlage: das Gewerk, ausser Kälte (Medium KAE-…): eigene Anlage «kaelte» im Gewerk Heizung
+    /// (Entscheid Christian 20.10.2026: «Eigene Anlage unter Heizung» – Kältekreise bleiben getrennt gruppiert).</summary>
+    public static string AnlageGruppe(string gewerk, string? medium) =>
+        gewerk == "heizung" && medium is not null && medium.StartsWith("KAE-", StringComparison.OrdinalIgnoreCase) ? "kaelte" : gewerk;
+
+    /// <summary>Anlage je Gruppe (Gewerk bzw. Kälte): eine bestehende (gleiche Kennung oder alle ihre Systeme in dieser
+    /// Gruppe) oder neu.</summary>
+    string AnlageRef(string gruppe)
     {
-        if (anlagen.TryGetValue(gewerk, out var r)) return r;
-        var kennung = "anlage:" + gewerk;
+        if (anlagen.TryGetValue(gruppe, out var r)) return r;
+        var kennung = "anlage:" + gruppe;
         var arbeit = lauf.Kontext.Arbeit;
         var da = arbeit.DerKlasse("Anlage").OrderBy(a => a.Kennzeichen).FirstOrDefault(a => a.Kennungen?.GetValueOrDefault("ifc") == kennung)
                  ?? arbeit.DerKlasse("Anlage").OrderBy(a => a.Kennzeichen).FirstOrDefault(a =>
                      arbeit.Kinder(a.Id).Where(x => x.Klasse == "System").ToList() is { Count: > 0 } sys
-                     && sys.All(x => x.Text("systemtyp") is { } t && lauf.Katalog.Systemtypen.TryGetValue(t, out var st) && st.Gewerk == gewerk));
-        if (da is not null && da.Kennungen?.GetValueOrDefault("quelle") != lauf.UnterlageId) return anlagen[gewerk] = da.Id;
-        var (name, kz) = gewerk switch
+                     && sys.All(x => x.Text("systemtyp") is { } t && lauf.Katalog.Systemtypen.TryGetValue(t, out var st) && AnlageGruppe(st.Gewerk, st.Medium) == gruppe));
+        if (da is not null && da.Kennungen?.GetValueOrDefault("quelle") != lauf.UnterlageId) return anlagen[gruppe] = da.Id;
+        var (name, kz) = gruppe switch
         {
             "sanitaer" => ("Sanitäranlage", "A-SAN"),
             "heizung" => ("Heizungsanlage", "A-HZG"),
+            "kaelte" => ("Kälteanlage", "A-KAE"),
             "lueftung" => ("Lüftungsanlage", "A-LUE"),
-            _ => ($"Anlage {gewerk}", "A"),
+            _ => ($"Anlage {gruppe}", "A"),
         };
+        var gewerk = gruppe == "kaelte" ? "heizung" : gruppe;
         var e = new Element
         {
             Id = "ifc:" + kennung, Klasse = "Anlage", Name = name, Kennzeichen = da?.Kennzeichen ?? kz,
@@ -190,11 +199,11 @@ public sealed class IfcHlksSysteme
         };
         e.Eigenschaften["beschreibung"] = new Wert
         {
-            Inhalt = $"Systeme des Gewerks {gewerk} aus {lauf.Quelle}",
+            Inhalt = gruppe == "kaelte" ? $"Kältesysteme (Gewerk heizung) aus {lauf.Quelle}" : $"Systeme des Gewerks {gewerk} aus {lauf.Quelle}",
             Herkunft = lauf.Herkunft with { Quelle = $"{lauf.Quelle}: je Gewerk aus den Systemtypen" },
         };
         lauf.Geplant[e.Id] = e;
-        return anlagen[gewerk] = e.Id;
+        return anlagen[gruppe] = e.Id;
     }
 
     /// <summary>Kennzeichen aus dem Basisnamen: Leerzeichen → «-», höchstens 30 Zeichen.</summary>

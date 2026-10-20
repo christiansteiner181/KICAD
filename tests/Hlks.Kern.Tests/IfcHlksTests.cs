@@ -191,6 +191,32 @@ public sealed class IfcHlksTests : IDisposable
         Assert.Contains(e.Hinweise, h => h.StartsWith("System «S SW» (2 Teile zusammengefasst) → Schmutzwasser"));
     }
 
+    [Fact]
+    public void Kaeltesysteme_EigeneAnlageImGewerkHeizung()
+    {
+        // Entscheid Christian 20.10.2026: Kälte gehört zum Gewerk Heizung, bleibt aber eine eigene Anlage (A-KAE)
+        var (p, _) = Laden("IFC2X3", new IfcHlksSpec { SwSysteme = ["Kälte VL", "Heizung VL"] });
+        var kae = p.Modell.DerKlasse("System").Single(s => s.Text("systemtyp") == "Kälte Vorlauf");
+        var hz = p.Modell.DerKlasse("System").Single(s => s.Text("systemtyp") == "Heizung Vorlauf");
+        Assert.Equal("KAE-VL", kae.Text("medium"));
+        var a1 = p.Modell.Finde(kae.TeilVon)!;
+        var a2 = p.Modell.Finde(hz.TeilVon)!;
+        Assert.Equal(("A-KAE", "Kälteanlage", "anlage:kaelte"), (a1.Kennzeichen, a1.Name, a1.Kennungen!["ifc"]));
+        Assert.Equal(("A-HZG", "anlage:heizung"), (a2.Kennzeichen, a2.Kennungen!["ifc"]));
+        Assert.Contains("Gewerk heizung", a1.Text("beschreibung"));
+        Assert.Equal("heizung", p.Katalog.Systemtypen["Kälte Vorlauf"].Gewerk);
+    }
+
+    [Theory]
+    [InlineData("heizung", "KAE-VL", "kaelte")]
+    [InlineData("heizung", "KAE-RL-Glyk", "kaelte")]
+    [InlineData("heizung", "HZ-VL", "heizung")]
+    [InlineData("heizung", "HZ-RL-Glyk", "heizung")]
+    [InlineData("heizung", null, "heizung")]
+    [InlineData("sanitaer", "SW", "sanitaer")]
+    public void AnlageGruppe_KaelteEigeneGruppe(string gewerk, string? medium, string gruppe) =>
+        Assert.Equal(gruppe, IfcHlksSysteme.AnlageGruppe(gewerk, medium));
+
     [Theory]
     [InlineData("IFC4")]
     [InlineData("IFC2X3")]

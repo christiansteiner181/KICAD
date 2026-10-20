@@ -19,15 +19,17 @@ findest du schon in HKAP Prinzipschema».
 | --- | --- | --- | --- | --- |
 | HZ-VL | Heizung Vorlauf | heizung | #FF0000 | HKAP `schema_systeme.json` HZ_VL |
 | HZ-RL | Heizung Rücklauf | heizung | #0000FF | HKAP HZ_RL |
-| HZ-VL-Glyk | Heizung Vorlauf Glykol | heizung | wie HZ-VL (Annahme, HKAP kennt kein Glykol) | – |
-| HZ-RL-Glyk | Heizung Rücklauf Glykol | heizung | wie HZ-RL (Annahme) | – |
+| HZ-VL-Glyk | Heizung Vorlauf Glykol | heizung | wie HZ-VL (bestätigt; HKAP kennt kein Glykol) | – |
+| HZ-RL-Glyk | Heizung Rücklauf Glykol | heizung | wie HZ-RL (bestätigt) | – |
 | KAE-VL | Kälte Vorlauf | heizung | #00CCCC | HKAP KAE_VL |
 | KAE-RL | Kälte Rücklauf | heizung | #FF00CC | HKAP KAE_RL |
-| KAE-VL-Glyk | Kälte Vorlauf Glykol | heizung | wie KAE-VL (Annahme) | – |
-| KAE-RL-Glyk | Kälte Rücklauf Glykol | heizung | wie KAE-RL (Annahme) | – |
+| KAE-VL-Glyk | Kälte Vorlauf Glykol | heizung | wie KAE-VL (bestätigt) | – |
+| KAE-RL-Glyk | Kälte Rücklauf Glykol | heizung | wie KAE-RL (bestätigt) | – |
 
 - Strichart: wie bisher (Vorlauf voll, Rücklauf gestrichelt); Glykol gleich wie die Grundleitung, Unterscheidung über Kennung
-  und Beschriftung (Annahme, Christian bestätigt).
+  und Beschriftung (bestätigt Christian 20.10.2026, Fragefenster «Gleiche Farbe, Beschriftung»).
+- **Anlage:** Kälte bleibt eine eigene Anlage **A-KAE «Kälteanlage»** im Gewerk Heizung (Christian 20.10.2026, Fragefenster
+  «Eigene Anlage unter Heizung»); der IFC-Import legt Kältesysteme (Medien KAE-…) in diese Anlage, nicht in A-HZG.
 - Apparate: Hinterlegung Kälte #CCE0FF (HKAP `FlaecheApparatKaelte`, «blau»), Heizung #CCFFE0 (HKAP `FlaecheApparat`), wo
   KICAD Apparate hinterlegt (Schemas, später Prinzipschema Modul 5); die Strichfarbe eines Apparats folgt dem Medium seines Kreises.
 - **Alias für alte Kennungen** (Projekte, Familien, Leitungsserien, Befehle, IFC-Zuordnung, HKAP-Abgleich): KUE-VL → KAE-VL,
