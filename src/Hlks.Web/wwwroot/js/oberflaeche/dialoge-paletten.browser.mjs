@@ -190,7 +190,7 @@ abschnitt('1. Vorgabe-Anordnung wie heute');
   pruef(!(await gibt('#koord-panel')), 'die Koordination ist zu');
   pruef((await anzahl('.pal-schwebend')) === 0, 'nichts schwebt');
   const a = await anordnung();
-  pruef(a.version === 1 && a.bereiche.links.gruppen.map((g) => g.paletten[0]).join() === 'eigenschaften,projektbrowser' && a.versteckt.join() === 'koordination', 'Anordnung als Daten', JSON.stringify(a));
+  pruef(a.version === 1 && a.bereiche.links.gruppen.map((g) => g.paletten[0]).join() === 'eigenschaften,projektbrowser' && a.versteckt.join() === 'koordination,claude', 'Anordnung als Daten (Koordination und Claude sind angemeldet, aber zu)', JSON.stringify(a));
   pruef(/rgb\(46, 52, 64\)/.test(await stil('#palette-eigenschaften', 'backgroundColor')) || true, 'Hintergrund der Eigenschaften (Variable --palette)');
   pruef((await stil('#palette-browser', 'backgroundColor')) !== (await stil('#palette-eigenschaften', 'backgroundColor')) || true, 'Projektbrowser hat eigene Fläche');
 }
@@ -548,7 +548,7 @@ abschnitt('15. ✕ am Palettenkopf und Register Ansicht › Paletten');
   pruef(pb.h > 600, 'der Projektbrowser füllt die Seitenleiste', JSON.stringify(pb));
   await paletteMenue();
   const t = await menueTexte();
-  pruef(t.length === 5 && t[0].includes('Eigenschaften') && t[1].includes('Projektbrowser') && t[2].includes('Koordination') && t[3] === 'Paletten zurücksetzen' && t[4].includes('Symbole im Revit-Stil (Probe)') && !t[4].startsWith('✓'), 'Register Ansicht › Paletten: Liste aller Paletten, «Paletten zurücksetzen» und der Schalter «Symbole im Revit-Stil (Probe)» (Teil S, aus)', JSON.stringify(t));
+  pruef(t.length === 6 && t[0].includes('Eigenschaften') && t[1].includes('Projektbrowser') && t[2].includes('Koordination') && t[3].includes('Claude') && t[4] === 'Paletten zurücksetzen' && t[5].includes('Symbole im Revit-Stil (Probe)') && !t[5].startsWith('✓'),'Register Ansicht › Paletten: Liste aller Paletten, «Paletten zurücksetzen» und der Schalter «Symbole im Revit-Stil (Probe)» (Teil S, aus)', JSON.stringify(t));
   pruef(!mitHaken(t, 'Eigenschaften') && mitHaken(t, 'Projektbrowser') && !mitHaken(t, 'Koordination'), 'Häkchen nur bei der sichtbaren Palette', JSON.stringify(t));
   const ein = await ausw(`return [...document.querySelectorAll('.kmenu button')].map((b) => b.classList.contains('gesperrt'));`);
   pruef(ein.every((g) => g === false), 'alle Einträge sind bedienbar (Projekt offen)');
@@ -650,7 +650,7 @@ abschnitt('19. Ungültige gemerkte Anordnung');
     await neuLaden();
     const a = await anordnung();
     const ids = [...a.bereiche.links.gruppen, ...a.bereiche.rechts.gruppen, ...a.bereiche.unten.gruppen, ...a.schwebend].flatMap((g) => g.paletten).concat(a.versteckt).sort();
-    pruef(ids.join() === 'eigenschaften,koordination,projektbrowser', `Fall ${i + 1}: jede Palette genau einmal`, ids.join());
+    pruef(ids.join() === 'claude,eigenschaften,koordination,projektbrowser', `Fall ${i + 1}: jede Palette genau einmal`, ids.join());
     pruef((await gibt('#palette-eigenschaften')) && (await anzahl('#projektbrowser .pb-zeile')) > 5, `Fall ${i + 1}: Oberfläche ist benutzbar`);
   }
   pruef(fehler.length === fehlerVor, 'dabei keine Fehler im Browser', fehler.slice(fehlerVor).join(' | '));

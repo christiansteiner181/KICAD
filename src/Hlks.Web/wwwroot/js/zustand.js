@@ -8,6 +8,7 @@
 //   'abgleich'  { fehler } – Abgleich mit der Projektablage
 //   'konflikt'  { konflikte }
 //   'verbindung'{ ok } – Ereignisstrom zum Server
+//   'ki'        { gespraech, frage, typ, … } – Gespräch mit Claude (Modul 3c, Palette «Claude»)
 
 import { holen, senden } from './api.js';
 

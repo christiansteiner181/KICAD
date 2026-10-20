@@ -148,6 +148,8 @@ const S = {
   projektbrowser: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M9 10h6M12 15h8M12 20h8M9 15v8"/>',
   koordination: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 17h24M4 22h24M12 17v10"/>',
   palettenZurueck: '<rect x="4" y="5" width="24" height="22" rx="1"/><path d="M4 11h24M12 11v16"/><path d="M20 20a4 4 0 104-4M24 13v3h-3"/>',
+  // Palette «Claude» (3c, Teil O): Sprechblase mit vierzackigem Funken
+  claude: '<path d="M4.5 4.5h23v18H14l-6 5v-5H4.5z"/><path d="M16 8.5l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/>',
 };
 
 /** Liefert ein Inline-SVG; groesse in px. Ist der Symbolsatz «revit» gewählt (symbolstil.js, Teil S) und gibt es zum Namen eine Revit-Fassung, kommt diese; sonst der Strich.

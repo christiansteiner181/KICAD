@@ -182,6 +182,7 @@ public sealed class GespraechDienst
         public string Modell = "", Exe = "", McpDatei = "", ArbeitsOrdner = "", LogPfad = "", Prompt = "", PromptNeu = "";
         public string? BildDatei;
         public bool Internet;
+        public List<string> AuswahlFreigegeben = [];                  // Kennzeichen der Elemente, deren Reservierung des Menschen zur Frage freigegeben wurde
         public string Sitzung = "";                                   // für --session-id bzw. --resume
         public bool Fortsetzen;                                       // erster Versuch mit --resume
         public bool SitzungNeu;                                       // --resume schlug fehl, neue Sitzung mit Verlauf
@@ -446,6 +447,13 @@ public sealed class GespraechDienst
                 ? ("", new JsonObject(), "")
                 : await projekt.Mit(p => KontextAufloesen(p, ansicht, geschoss, auswahl, bild is not null));
 
+            // ---- Reservierungen des Menschen auf diesem Gerät für die Auswahl freigeben (Entscheid Hauptlauf 20.10.2026): wer ein Element in der Oberfläche
+            // gewählt oder geändert hat, hält es reserviert, und Claude (anderer Akteur) bekäme sonst «Elemente werden gerade von jemand anderem bearbeitet».
+            // Nur eigene Reservierungen (Akteur und Gerät dieses Servers); die anderer Arbeitsplätze bleiben, Claude bekommt dort wie bisher einen lesbaren Fehler.
+            // Ohne Internet und nur für die mitgeschickte Auswahl samt deren Teilen bzw. Strang. Die Oberfläche reserviert beim nächsten eigenen Ändern von selbst neu.
+            if (!internet && auswahl.Count > 0)
+                l.AuswahlFreigegeben = await projekt.Mit(p => AuswahlFreigeben(p, auswahl));
+
             // ---- Arbeitsordner (stabil je Projekt), Bild, MCP-Konfiguration
             l.ArbeitsOrdner = ArbeitsOrdner(ort);
             Directory.CreateDirectory(l.ArbeitsOrdner);
@@ -496,6 +504,7 @@ public sealed class GespraechDienst
             };
             if (internet) l.Mensch["internetHinweis"] = InternetHinweis;
             if (kontextVerworfen) l.Mensch["kontextVerworfen"] = true;
+            if (l.AuswahlFreigegeben.Count > 0) l.Mensch["auswahlFreigegeben"] = new JsonArray(l.AuswahlFreigegeben.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
             var nachrichten = g["nachrichten"] as JsonArray ?? new JsonArray();
             nachrichten.Add(l.Mensch.DeepClone());
             nachrichten.Add(Antwort(l));
@@ -604,6 +613,24 @@ public sealed class GespraechDienst
         sb.AppendLine(bild ? "Bild der Ansicht: zur Frage mitgeschickt – mit dem Werkzeug kontext_bild ansehen." : "Bild der Ansicht: keines zur Frage.");
         json["bild"] = bild;
         return (sb.ToString().TrimEnd(), json, p.Kopf.Name);
+    }
+
+    /// <summary>Gibt die eigenen Reservierungen für die gewählten Elemente, ihre Kinder und – bei Teilen eines Strangs – den Strang samt seinen Teilen frei. Gibt die Kennzeichen zurück.</summary>
+    static List<string> AuswahlFreigeben(Projekt p, List<string> auswahl)
+    {
+        var ids = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var a in auswahl)
+        {
+            if (p.Modell.Finde(a) is not { } e) continue;
+            ids.Add(e.Id);
+            foreach (var k in p.Modell.Kinder(e.Id)) ids.Add(k.Id);
+            if (e.TeilVon is not null && p.Modell.Finde(e.TeilVon) is { } strang)
+            {
+                ids.Add(strang.Id);
+                foreach (var k in p.Modell.Kinder(strang.Id)) ids.Add(k.Id);
+            }
+        }
+        return p.FreigebenFuer(ids).Select(id => p.Modell.Finde(id)?.Kennzeichen ?? id).ToList();
     }
 
     /// <summary>Systemteil des Auftrags: Rolle und Regeln (Spezifikation 3c).</summary>
@@ -872,7 +899,8 @@ public sealed class GespraechDienst
     {
         var o = new JsonObject
         {
-            ["rolle"] = "claude", ["frage"] = l.Frage, ["status"] = l.Status, ["text"] = l.Text.ToString().Trim(), ["zeit"] = l.Start.ToString("o"),
+            // laufende Antwort ungekürzt (die «ab»-Zähler der Text-Ereignisse zählen Zeichen des ganzen Textes); die fertige Nachricht ist wie bisher getrimmt
+            ["rolle"] = "claude", ["frage"] = l.Frage, ["status"] = l.Status, ["text"] = l.Status == "laeuft" ? l.Text.ToString() : l.Text.ToString().Trim(), ["zeit"] = l.Start.ToString("o"),
             ["dauerSekunden"] = Math.Round((DateTimeOffset.Now - l.Start).TotalSeconds, 1),
             ["modell"] = l.Modell, ["internet"] = l.Internet,
             ["werkzeuge"] = new JsonArray(l.Werkzeuge.Select(w => (JsonNode)w.DeepClone()).ToArray()),
@@ -985,7 +1013,8 @@ public sealed class GespraechDienst
             var teil = l.OffenerText.ToString();
             l.OffenerText.Clear();
             l.LetzterText = DateTimeOffset.Now;
-            Melden(Ereignis(l, "text", new JsonObject { ["teil"] = teil }));   // unter der Sperre: Reihenfolge bleibt
+            // «ab» = Zeichen vor diesem Teil: damit erkennt die Palette Teile, die ein nachgeladener Stand der Antwort (GET, Antwort im Entstehen) schon enthält
+            Melden(Ereignis(l, "text", new JsonObject { ["teil"] = teil, ["ab"] = l.Text.Length - teil.Length }));   // unter der Sperre: Reihenfolge bleibt
         }
     }
 

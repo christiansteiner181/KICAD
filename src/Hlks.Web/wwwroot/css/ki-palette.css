@@ -1,0 +1,166 @@
+/* Palette «Claude» (Modul 3c, Teil O): Gespräch, Änderungen, Normensuche. Dichte wie die übrigen Paletten (Revit), Farben und Masse nur über die Variablen aus hlks.css,
+   damit hell und dunkel stimmen. Klassen alle mit Vorsatz ki-. Der Inhalt sitzt im Slot der Palettenverwaltung (#palette-claude, css/fensterrahmen.css). */
+
+/* Knopf «Claude» in der Kopfleiste rechts (aktionen-ki.js), gleiche Form wie der «?» der Hilfe */
+.ki-kopfknopf { width: 26px; height: 24px; padding: 0; border: 1px solid transparent; background: none; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.ki-kopfknopf:hover { background: var(--ob-hover); border-color: var(--rand); color: var(--akzent); }
+.ki-kopfknopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.ki-kopfknopf.an { background: var(--akzent-hell); border-color: var(--akzent); }
+
+#palette-claude { background: var(--palette); }
+/* Einblendungen der Oberfläche links neben die Palette, solange sie unten rechts steht (ki-palette.js › meldungenAusweichen) */
+#meldungen { right: var(--meldungen-rechts, 12px); }
+.ki-panel { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; min-width: 0; height: 100%; font-size: var(--schriftgroesse); color: var(--text); }
+.ki-panel [hidden] { display: none !important; }
+
+/* Reiter Gespräch / Normen */
+.ki-reiter { flex: none; display: flex; background: var(--palettenkopf); border-bottom: 1px solid var(--trenner); }
+.ki-tab { height: 22px; padding: 0 12px; border: none; background: none; color: var(--text-leise); cursor: pointer; font: inherit; }
+.ki-tab:hover { color: var(--text); }
+.ki-tab.aktiv { color: var(--text); font-weight: 600; background: var(--palette); box-shadow: inset 0 -2px 0 var(--akzent); }
+.ki-seite { flex: 1 1 auto; display: flex; flex-direction: column; min-height: 0; min-width: 0; overflow-y: auto; }   /* ist die Palette sehr niedrig, rollt die Seite (der Verlauf behält mindestens 80 px) */
+.ki-leer { padding: 14px 10px; color: var(--text-leise); }
+
+/* Kopf */
+.ki-kopf { flex: none; display: flex; flex-direction: column; gap: 3px; padding: 4px 6px; border-bottom: 1px solid var(--rand-leise); }
+.ki-kopfzeile1, .ki-kopfzeile2 { display: flex; align-items: center; gap: 4px; min-width: 0; }
+.ki-panel select, .ki-panel input[type="search"], .ki-feld { font: inherit; color: var(--text); background: var(--eingabe); border: 1px solid var(--eingabe-rand); border-radius: var(--radius); }
+.ki-panel select { height: var(--hoehe-suchfeld); min-width: 0; }
+.ki-wahl-gespraech { flex: 1 1 auto; }
+.ki-wahl-modell { flex: none; }
+.ki-knopf { height: 22px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; font: inherit; white-space: nowrap; }
+.ki-knopf:hover:not(:disabled) { background: var(--ob-hover-tief, var(--akzent-hell)); }
+.ki-knopf:disabled { opacity: .5; cursor: default; }
+.ki-knopf.ki-primaer { border-color: var(--akzent); background: var(--akzent); color: var(--akzent-text); }
+.ki-knopf.ki-primaer:hover:not(:disabled) { background: var(--akzent); filter: brightness(1.1); }
+.ki-entfernen { padding: 0 6px; color: var(--text-leise); }
+.ki-internet { height: 22px; padding: 0 8px 0 22px; position: relative; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; font: inherit; }
+.ki-internet::before { content: ''; position: absolute; left: 6px; top: 5px; width: 10px; height: 10px; border: 1px solid var(--text-leise); border-radius: 2px; background: var(--flaeche-hell); }
+.ki-internet.an { border-color: var(--warnung); color: var(--text); background: color-mix(in srgb, var(--warnung) 18%, var(--eingabe)); font-weight: 600; }
+.ki-internet.an::before { background: var(--warnung); border-color: var(--warnung); }
+.ki-internet-note { color: var(--warnung); font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* Band: Hinweise (nicht verfügbar, Internet) */
+.ki-band { flex: none; }
+.ki-band-zeile { padding: 4px 8px; border-bottom: 1px solid var(--rand-leise); line-height: 1.3; }
+.ki-band-zeile.fehler { background: color-mix(in srgb, var(--fehler) 14%, var(--palette)); color: var(--text); border-left: 3px solid var(--fehler); }
+.ki-band-zeile.internet { background: color-mix(in srgb, var(--warnung) 16%, var(--palette)); border-left: 3px solid var(--warnung); }
+
+/* Verlauf */
+.ki-verlauf { flex: 1 1 auto; min-height: 80px; overflow-y: auto; padding: 6px 6px 8px; display: flex; flex-direction: column; gap: 8px; background: var(--flaeche-hell); border-bottom: 1px solid var(--rand-leise); }
+.ki-verlauf-leer { margin: auto 0; padding: 10px 8px; color: var(--text-leise); display: flex; flex-direction: column; gap: 6px; line-height: 1.4; }
+.ki-verlauf-leer-titel { font-weight: 600; color: var(--text); font-size: 13px; }
+.ki-nachricht { display: flex; flex-direction: column; gap: 2px; max-width: 94%; min-width: 0; }
+.ki-mensch { align-self: flex-end; align-items: flex-end; }
+.ki-claude { align-self: flex-start; align-items: flex-start; }
+.ki-nachricht-kopf { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; font-size: 11px; color: var(--text-leise); }
+.ki-mensch .ki-nachricht-kopf { justify-content: flex-end; }
+.ki-wer { font-weight: 600; color: var(--text); display: inline-flex; align-items: center; gap: 3px; }
+.ki-wer svg { vertical-align: middle; }
+.ki-blase { padding: 5px 8px; border-radius: 6px; border: 1px solid var(--rand-leise); line-height: 1.4; overflow-wrap: anywhere; min-width: 0; max-width: 100%; box-sizing: border-box; }
+.ki-blase-mensch { background: var(--akzent-hell); border-color: color-mix(in srgb, var(--akzent) 40%, transparent); white-space: pre-wrap; color: var(--text); }
+.ki-blase-claude { background: var(--palette); }
+.ki-nachricht.mit-internet .ki-blase { border-color: var(--warnung); }
+.ki-internet-marke { padding: 0 6px; border-radius: 8px; background: color-mix(in srgb, var(--warnung) 24%, transparent); color: var(--text); border: 1px solid var(--warnung); font-weight: 600; }
+.ki-kontext { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; }
+.ki-kontext-chip { padding: 0 6px; border-radius: 8px; background: var(--flaeche-tief); color: var(--text-leise); font-size: 10.5px; border: 1px solid var(--rand-leise); }
+.ki-kontext-chip.freigegeben { background: color-mix(in srgb, var(--ok) 16%, transparent); border-color: var(--ok); color: var(--text); }
+.ki-kontext-chip.verworfen { background: color-mix(in srgb, var(--warnung) 14%, transparent); border-color: var(--warnung); }
+.ki-denkt { color: var(--text-leise); font-style: italic; }
+.ki-cursor { display: inline-block; width: 6px; height: 12px; margin-left: 2px; vertical-align: text-bottom; background: var(--akzent); animation: ki-blinken 1s steps(2, start) infinite; }
+@keyframes ki-blinken { to { visibility: hidden; } }
+.ki-hinweis { font-size: 11px; color: var(--text-leise); padding: 2px 4px; border-left: 3px solid var(--rand); }
+.ki-ende { font-size: 11.5px; padding: 3px 6px; border-radius: var(--radius); }
+.ki-ende.fehler { background: color-mix(in srgb, var(--fehler) 14%, transparent); border-left: 3px solid var(--fehler); }
+.ki-ende.abgebrochen { color: var(--text-leise); border-left: 3px solid var(--rand); }
+
+/* Text der Antworten */
+.ki-text > :first-child { margin-top: 0; }
+.ki-text > :last-child { margin-bottom: 0; }
+.ki-absatz { margin: 0 0 6px; }
+.ki-ue { font-weight: 700; margin: 8px 0 3px; }
+.ki-ue1 { font-size: 14px; } .ki-ue2 { font-size: 13px; } .ki-ue3, .ki-ue4 { font-size: 12px; }
+.ki-liste { margin: 0 0 6px; padding-left: 20px; }
+.ki-liste li { margin: 1px 0; }
+.ki-code-inline { font-family: var(--schrift-mono); font-size: 11.5px; padding: 0 3px; border-radius: 2px; background: var(--flaeche-tief); }
+.ki-code { margin: 4px 0 6px; padding: 5px 7px; overflow-x: auto; font-family: var(--schrift-mono); font-size: 11.5px; line-height: 1.35; background: var(--flaeche-tief); border: 1px solid var(--rand-leise); border-radius: var(--radius); white-space: pre; }
+.ki-zitat { margin: 4px 0 6px; padding: 1px 8px; border-left: 3px solid var(--akzent); color: var(--text-leise); }
+.ki-linie { border: none; border-top: 1px solid var(--rand); margin: 6px 0; }
+.ki-tabelle-wrap { overflow-x: auto; margin: 4px 0 6px; }
+.ki-tabelle { border-collapse: collapse; font-size: 11.5px; }
+.ki-tabelle th, .ki-tabelle td { border: 1px solid var(--rand); padding: 2px 6px; vertical-align: top; }
+.ki-tabelle th { background: var(--flaeche-tief); font-weight: 600; }
+.ki-link { color: var(--akzent); text-decoration: underline; }
+
+/* Werkzeuge (kompakt, aufklappbar) */
+.ki-werkzeuge { font-size: 11px; color: var(--text-leise); max-width: 100%; }
+.ki-werkzeuge summary { cursor: pointer; user-select: none; padding: 1px 0; }
+.ki-werkzeuge summary:hover { color: var(--text); }
+.ki-werkzeug-liste { list-style: none; margin: 2px 0 0; padding: 3px 6px; background: var(--flaeche-tief); border-radius: var(--radius); }
+.ki-werkzeug { display: flex; flex-wrap: wrap; gap: 5px; padding: 1px 0; align-items: baseline; }
+.ki-werkzeug-zeichen { width: 12px; text-align: center; font-weight: 700; }
+.ki-werkzeug.ok .ki-werkzeug-zeichen { color: var(--ok); }
+.ki-werkzeug.fehler .ki-werkzeug-zeichen { color: var(--fehler); }
+.ki-werkzeug-name { font-family: var(--schrift-mono); color: var(--text); }
+.ki-werkzeug-kurz { color: var(--text-leise); overflow-wrap: anywhere; min-width: 0; }
+.ki-werkzeug-meldung { flex-basis: 100%; padding-left: 17px; color: var(--fehler); }
+
+/* Änderungen */
+.ki-aenderungen { width: 100%; box-sizing: border-box; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--palette); }
+.ki-aenderungen-titel { padding: 2px 6px; font-weight: 600; font-size: 11px; background: var(--palettenkopf); border-bottom: 1px solid var(--rand-leise); }
+.ki-aenderung { padding: 4px 6px; border-bottom: 1px solid var(--rand-leise); }
+.ki-aenderung:last-child { border-bottom: none; }
+.ki-aenderung-kopf { display: flex; align-items: center; gap: 6px; }
+.ki-aenderung-text { flex: 1 1 auto; min-width: 0; overflow-wrap: anywhere; }
+.ki-aenderung.zurueckgenommen .ki-aenderung-text { text-decoration: line-through; color: var(--text-leise); }
+.ki-zurueck-marke { flex: none; padding: 0 6px; border-radius: 8px; border: 1px solid var(--rand); color: var(--text-leise); font-size: 10.5px; }
+.ki-zuruecknehmen { flex: none; }
+.ki-elemente { display: flex; flex-wrap: wrap; gap: 3px; margin-top: 3px; }
+.ki-element { height: 18px; padding: 0 6px; border: 1px solid var(--akzent); background: var(--akzent-hell); color: var(--text); border-radius: 9px; cursor: pointer; font: inherit; font-size: 11px; }
+.ki-element:hover:not(:disabled) { background: var(--akzent); color: var(--akzent-text); }
+.ki-element.weg, .ki-element:disabled { border-color: var(--rand); background: none; color: var(--text-leise); cursor: default; text-decoration: line-through; }
+.ki-aenderung.zurueckgenommen .ki-element { opacity: .6; }
+.ki-ablehnung { margin-top: 4px; padding: 4px 6px; border-left: 3px solid var(--fehler); background: color-mix(in srgb, var(--fehler) 12%, transparent); font-size: 11.5px; line-height: 1.35; }
+.ki-ablehnung-titel { font-weight: 600; }
+.ki-ablehnung-zeile { margin-top: 2px; }
+.ki-ablehnung-liste { margin: 2px 0 0; padding-left: 16px; }
+
+/* Meldung unter dem Verlauf */
+.ki-meldung { flex: none; position: relative; padding: 4px 22px 4px 8px; font-size: 11.5px; line-height: 1.35; border-top: 1px solid var(--rand-leise); }
+.ki-meldung.fehler { background: color-mix(in srgb, var(--fehler) 16%, var(--palette)); border-left: 3px solid var(--fehler); }
+.ki-meldung.warnung { background: color-mix(in srgb, var(--warnung) 16%, var(--palette)); border-left: 3px solid var(--warnung); }
+.ki-meldung-zu { position: absolute; right: 2px; top: 2px; width: 18px; height: 18px; padding: 0; border: none; background: none; color: var(--text-leise); cursor: pointer; }
+.ki-meldung-zu:hover { color: var(--fehler); }
+
+/* Kontext-Chips */
+.ki-chips { flex: none; display: flex; flex-wrap: wrap; gap: 3px; padding: 4px 6px 0; }
+.ki-chip { display: inline-flex; align-items: center; gap: 3px; height: 20px; max-width: 100%; padding: 0 7px 0 4px; border: 1px solid var(--akzent); border-radius: 10px; background: var(--akzent-hell); color: var(--text); cursor: pointer; font: inherit; font-size: 11px; }
+.ki-chip-haken { width: 12px; text-align: center; font-weight: 700; color: var(--akzent); }
+.ki-chip-text { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.ki-chip:not(.an) { background: none; border-style: dashed; border-color: var(--rand); color: var(--text-leise); }
+.ki-chip:not(.an) .ki-chip-text { text-decoration: line-through; }
+.ki-chip.gesperrt { cursor: default; }
+.ki-chips.internet .ki-chip { opacity: .45; border-color: var(--rand); background: var(--flaeche-tief); filter: grayscale(1); }
+.ki-chips.internet .ki-chip-text { text-decoration: line-through; }
+.ki-chip:focus-visible, .ki-element:focus-visible, .ki-tab:focus-visible, .ki-knopf:focus-visible, .ki-internet:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px; }
+
+/* Eingabe */
+.ki-eingabe { flex: none; display: flex; flex-direction: column; gap: 3px; padding: 4px 6px 6px; }
+.ki-feld { width: 100%; box-sizing: border-box; padding: 4px 6px; resize: vertical; min-height: 48px; max-height: 40vh; line-height: 1.35; }
+.ki-feld:focus { outline: 1px solid var(--akzent); border-color: var(--akzent); }
+.ki-leiste { display: flex; align-items: center; justify-content: flex-end; gap: 6px; }
+.ki-zaehler { margin-right: auto; font-size: 10.5px; color: var(--text-leise); }
+.ki-zaehler.zu-lang { color: var(--fehler); font-weight: 600; }
+
+/* Normen */
+.ki-normen-form { flex: none; display: flex; gap: 4px; align-items: center; padding: 6px; border-bottom: 1px solid var(--rand-leise); }
+.ki-normen-q { flex: 1 1 auto; min-width: 0; height: var(--hoehe-suchfeld); padding: 0 6px; box-sizing: border-box; }
+.ki-normen-info { flex: none; padding: 5px 8px; color: var(--text-leise); line-height: 1.35; }
+.ki-normen-info.fehler { color: var(--fehler); }
+.ki-normen-liste { flex: 1 1 auto; min-height: 0; overflow-y: auto; padding: 0 6px 8px; display: flex; flex-direction: column; gap: 6px; }
+.ki-norm { padding: 5px 7px; border: 1px solid var(--rand); border-radius: var(--radius); background: var(--flaeche-hell); }
+.ki-norm-kopf { display: flex; justify-content: space-between; gap: 8px; flex-wrap: wrap; }
+.ki-norm-name { font-weight: 700; }
+.ki-norm-ort { color: var(--akzent); font-weight: 600; white-space: nowrap; }
+.ki-norm-titel { color: var(--text-leise); font-size: 11px; margin-top: 1px; }
+.ki-norm-auszug { margin: 4px 0; line-height: 1.4; overflow-wrap: anywhere; white-space: pre-wrap; }

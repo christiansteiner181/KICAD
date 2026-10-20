@@ -147,7 +147,7 @@ try {
     pruef(!('oberflaeche.symbole' in (await einstellungen())), 'beim Server ist «oberflaeche.symbole» nicht gesetzt');
     pruef(await ausw(`const s = document.querySelector('#menueband .mb-feld svg.sym'); return s.getAttribute('stroke') === 'currentColor' && !s.classList.contains('sym-rv');`), 'die Symbole im Band sind einfarbige Striche (currentColor)');
     const t = await paletteListe();
-    pruef(t.length === 5 && t[4].includes(SCHALTER) && !t[4].startsWith('✓'), 'Ansicht › Paletten: Eintrag «Symbole im Revit-Stil (Probe)» am Ende, ohne Häkchen', JSON.stringify(t));
+    pruef(t.length === 6 && t[5].includes(SCHALTER) && !t[5].startsWith('✓'),'Ansicht › Paletten: Eintrag «Symbole im Revit-Stil (Probe)» am Ende, ohne Häkchen', JSON.stringify(t));
     pruef((await anzahl('.mb-tab')) === 10, 'kein neues Register');
     await esc();
     pruef((await anzahl('.kmenu')) === 0, 'Esc schliesst die Liste');
@@ -170,7 +170,7 @@ try {
     pruef((await anzahl('#hilfe-knopf svg.sym-rv')) === 1, 'Hilfe-Symbol «?» im Kopf ist getauscht');
     pruef((await anzahl('#palette-browser .pb-sym svg.sym-rv')) > 3, 'Projektbrowser: Baumsymbole getauscht', String(await anzahl('#palette-browser .pb-sym svg')));
     const t = await paletteListe();
-    pruef(t[4].startsWith('✓') && t[4].includes(SCHALTER), 'die Liste zeigt jetzt das Häkchen', JSON.stringify(t));
+    pruef(t[5].startsWith('✓') && t[5].includes(SCHALTER), 'die Liste zeigt jetzt das Häkchen', JSON.stringify(t));
     await esc();
   }
 

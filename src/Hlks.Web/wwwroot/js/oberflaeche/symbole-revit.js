@@ -143,6 +143,7 @@ palette | Palette | Paletten | Fenster mit blauer Titelleiste
 projektbrowser | Projektbrowser | Projektbrowser | Baumstruktur
 koordination | Koordination (Palette) | eigenes | Liste unten im Fenster
 palettenZurueck | Paletten zurücksetzen | Benutzeroberfläche | Fenster mit Rückpfeil
+claude | Claude (Palette) | eigenes | Sprechblase in Hellblau mit gelbem Funken
 achse | Achse | Raster | Rasterkreis mit Strich-Punkt-Linie
 bemassung | Bemassung | Bemaßung | Masslinie mit Pfeilen
 text | Text | Text | Buchstabe A
@@ -556,6 +557,9 @@ s('projektbrowser',
 s('koordination',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 17.5h25v10h-25z"/><path d="M3.5 22.5h25M12.5 17.5v10"/>',
   '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 9h13v4.5h-13z"/><path d="M1.5 11.3h13M6 9v4.5"/>');
+s('claude',
+  '<path class="fl" d="M4.5 4.5h23v18H14l-6 5v-5H4.5z"/><path class="fy" d="M16 8.5l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/>',
+  '<path class="fl" d="M1.5 1.5h13v9.5H8l-3.5 3.5V11h-3z"/><path class="fy" d="M8 3.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/>');
 s('palettenZurueck',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 9.5h8v18h-8z"/><circle class="fo n" cx="23" cy="22.5" r="6.5"/><path class="sW w2" d="M20 22.5a3 3 0 1 0 1.2-2.4M20.5 18.5v2.2h2.2"/>',
   '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 5h4v8.5h-4z"/><circle class="fo n" cx="11.5" cy="10.5" r="4"/><path class="sW w15" d="M9.8 10.5a1.7 1.7 0 1 0 .7-1.4"/>');
