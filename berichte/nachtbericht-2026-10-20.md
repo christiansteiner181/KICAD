@@ -25,6 +25,14 @@ Browser-Reihen ausser HKAP grün (Port 5098 tabu).
 | **Modul 7 Teil A** | Planblatt wie H+K: Plankopf mit Bolligen und Thun, Revisionen und Planänderungen, Plannummern-Vorschlag, P27, Revisionsstempel, Schema-Kopf, Listen auf Planblättern | `berichte/modul-7a-testbericht.md` |
 | **Modul 7 Teil B1** | Koordinationsplan in Gewerkefarben, Aussparungsboxen «L / WD 44 x24 / BR +2.18» in Fachplänen (Option), Schnittmarken mit Blattverweis «Schnitt Lüftung A / L03»; vorerst über die Eigenschaften der Ansicht bedient | `OBERFLAECHE.md`, `zuteilung.md` |
 
+## Sicherheit der KI-Palette (unabhängige Prüfung 06:29)
+
+Urteil **mit Auflagen** (`berichte/modul-3c-sicherheitspruefung.md`). Behoben bis 06:48: **Schutz gegen Fremdaufrufe** auf alle
+Schnittstellen (vorher konnte eine fremde Webseite im Browser Anfragen an KICAD auf diesem Rechner schicken – betraf alle
+Schnittstellen seit Beginn, mit Claude erst gefährlich), Gesprächsprotokoll ohne Normtexte, Claude darf keine Revisionen und
+Plansatz-Einstellungen mehr setzen. **Internet-Schalter der Palette vorläufig gesperrt**, bis die übrigen Auflagen (B3/B4/B6:
+Projektdateien über Pfade lesbar, UNC-Pfade, Nachweis mit echtem Claude) erledigt sind.
+
 ## Deine Entscheide (Reihenfolge nach Dringlichkeit)
 
 1. **Fach K:** in deinen Plänen Koordination (K01–K06), in KICAD bisher Kälte. Was gilt?
