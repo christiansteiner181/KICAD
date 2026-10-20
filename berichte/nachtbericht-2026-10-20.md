@@ -21,6 +21,7 @@ Browser-Reihen ausser HKAP grün (Port 5098 tabu).
 | **Modul 3c KI-Palette** | Gespräch mit Claude über das Abo, Änderungen mit «Zurücknehmen», Normensuche mit Zitat, Verlauf je Projekt; Abnahmelauf mit echtem Claude bestanden (Schnittstelle und Oberfläche) | `berichte/modul-3c-testbericht.md` |
 | **Modul 4 Teil A** | Belastungswerte LU/DU nach deinem Excel, Summen im Netz, Liste «Sanitär-Zusammenstellung (W3)», Befunde P21–P26; unabhängige Prüfung «abnahmefähig mit Auflagen», Auflagen umgesetzt | `berichte/modul-4a-testbericht.md`, `modul-4a-pruefbericht.md` |
 | **Modul 7 Teil A** | Planblatt wie H+K: Plankopf mit Bolligen und Thun, Revisionen und Planänderungen, Plannummern-Vorschlag, P27, Revisionsstempel, Schema-Kopf, Listen auf Planblättern | `berichte/modul-7a-testbericht.md` |
+| **Modul 7 Teil B1** | Koordinationsplan in Gewerkefarben, Aussparungsboxen «L / WD 44 x24 / BR +2.18» in Fachplänen (Option), Schnittmarken mit Blattverweis «Schnitt Lüftung A / L03»; vorerst über die Eigenschaften der Ansicht bedient | `OBERFLAECHE.md`, `zuteilung.md` |
 
 ## Deine Entscheide (Reihenfolge nach Dringlichkeit)
 
@@ -33,6 +34,8 @@ Browser-Reihen ausser HKAP grün (Port 5098 tabu).
    trägt auch ΣLU WW; Vorgabe-Apparateart je Klasse (WC 7.5 l, Waschmaschine bis 6 kg …); Beispielprojekt K = 0.5 (fiktiv).
 4. **Symbole:** Kontaktbogen ansehen – ersetzen, nachbessern oder bei den alten bleiben.
 5. **Plankopf:** Titelband «Planinhalt» als Vorgabe aus (wie deine Pläne); Stempel liegt über der Mitte des Kopfs.
+6. **Plandarstellung:** Blattverweis an Schnittmarken mit Plankürzel («L03») statt voller Plannummer; Box-Zeile «Gewerk» als
+   Spartenkürzel (S, H, L).
 
 ## Was ich brauche
 
