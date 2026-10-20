@@ -19,7 +19,7 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 | R5 | JRG Sanipex MT | Serie, Bogen, T-Stück (30 inkl. reduziert), Reduktion | 8 (12 × 1,7 … 63 × 4,5) | keine | bestanden | Kürzel; z1 Reduktion |
 | R6 | Geberit Silent-db20 | Serie, Bogen, T-Stück (45°/88,5°), Reduktion | 7 (56 × 3,2 … 160 × 7), Kürzel PE-S | keine | bestanden | Quelle DIBt 2019; PE-S oder PE-S2 |
 | R7 | Geberit PE | Serie, Bogen, T-Stück (50), Reduktion (34) | 13 (d32 … d315) | keine | bestanden | Kürzel; Quelle Ausgabe AU; d32 ohne Masse |
-| R3 | Stahlrohr Gewinderohr | offen | | | | |
+| R3 | Stahlrohr Gewinderohr | Serie, Bogen (Winkel Fig. 90/120), T-Stück (63), Reduktion (31) | 11 (1/4" … 4", EN 10255) | keine | bestanden | Kürzel; Rohrhersteller; Reihe M/H |
 | R4 | Stahlrohr geschweisst | offen | | | | |
 | K1 | Wickelfalzrohr rund | offen | | | | |
 | K3 | Flexrohr | offen | | | | |
@@ -81,3 +81,13 @@ Stichprobe des Hauptlaufs gegen die Quelle.
   d32 ohne DN/di/s (nicht platzierbar). Kürzel fehlt (PE-HD). Bogen-, T-Stück- und Reduktionsmasse in cm (als Formel × 10).
 - **Befund KICAD (Produkt):** Der PDF-Leser liest Dezimalzahlen dieses Katalogs nicht als Zahl («4 .5») – die KI hat solche
   Werte ohne Quellenverweis eingetragen. → Nachbearbeitung im Unterlagen-Leser (Kern).
+
+## R3 Stahlrohr Gewinderohr
+
+- **Ergebnis:** Serie (11 Grössen 1/4" … 4", DN 8–100, Aussendurchmesser a und Wandstärke t aus Debrunner Acifer M100602
+  rohschwarz und M100614 verzinkt, EN 10255, S195T; Werte beider Blätter gleich), Bogen = +GF+ Temperguss-Winkel Fig. 90 (90°) und
+  Fig. 120 (45°), T-Stück Fig. 130 egal/reduziert (63), Reduktion = Muffe reduziert Fig. 240 (31); Fittings aus GF-Katalog
+  770.971.132 (05.2024), Fig. 90 gegengeprüft mit Debrunner M105123 – gleich.
+- **Stichprobe Hauptlauf** gegen Debrunner M100602: 1/2" 21,3 × 2,6 (DN 15), 1" 33,7 × 3,2 (DN 25), 2 1/2" 76,1 × 3,6 (DN 65) – stimmen.
+- **Zur Entscheidung:** Kürzel fehlt (Stahl S195T). Debrunner nennt den Rohrhersteller und die Reihe der EN 10255 (mittel/schwer)
+  nicht – Wandstärken entsprechen dem Debrunner-Sortiment. 45° nur 3/8" … 3". 1/8"-Fittings weggelassen (kein Rohr).
