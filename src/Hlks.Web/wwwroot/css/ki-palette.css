@@ -1,6 +1,12 @@
 /* Palette «Claude» (Modul 3c, Teil O): Gespräch, Änderungen, Normensuche. Dichte wie die übrigen Paletten (Revit), Farben und Masse nur über die Variablen aus hlks.css,
    damit hell und dunkel stimmen. Klassen alle mit Vorsatz ki-. Der Inhalt sitzt im Slot der Palettenverwaltung (#palette-claude, css/fensterrahmen.css). */
 
+/* Knopf «Claude» in der Kopfleiste rechts (aktionen-ki.js), gleiche Form wie der «?» der Hilfe */
+.ki-kopfknopf { width: 26px; height: 24px; padding: 0; border: 1px solid transparent; background: none; border-radius: var(--radius); display: grid; place-items: center; cursor: pointer; color: var(--text); }
+.ki-kopfknopf:hover { background: var(--ob-hover); border-color: var(--rand); color: var(--akzent); }
+.ki-kopfknopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: -1px; }
+.ki-kopfknopf.an { background: var(--akzent-hell); border-color: var(--akzent); }
+
 #palette-claude { background: var(--palette); }
 /* Einblendungen der Oberfläche links neben die Palette, solange sie unten rechts steht (ki-palette.js › meldungenAusweichen) */
 #meldungen { right: var(--meldungen-rechts, 12px); }
@@ -58,6 +64,7 @@
 .ki-internet-marke { padding: 0 6px; border-radius: 8px; background: color-mix(in srgb, var(--warnung) 24%, transparent); color: var(--text); border: 1px solid var(--warnung); font-weight: 600; }
 .ki-kontext { display: flex; flex-wrap: wrap; gap: 3px; justify-content: flex-end; }
 .ki-kontext-chip { padding: 0 6px; border-radius: 8px; background: var(--flaeche-tief); color: var(--text-leise); font-size: 10.5px; border: 1px solid var(--rand-leise); }
+.ki-kontext-chip.freigegeben { background: color-mix(in srgb, var(--ok) 16%, transparent); border-color: var(--ok); color: var(--text); }
 .ki-kontext-chip.verworfen { background: color-mix(in srgb, var(--warnung) 14%, transparent); border-color: var(--warnung); }
 .ki-denkt { color: var(--text-leise); font-style: italic; }
 .ki-cursor { display: inline-block; width: 6px; height: 12px; margin-left: 2px; vertical-align: text-bottom; background: var(--akzent); animation: ki-blinken 1s steps(2, start) infinite; }

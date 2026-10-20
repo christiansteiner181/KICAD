@@ -641,9 +641,11 @@ function nachrichtElement(n) {
   if (mensch) {
     box.appendChild(el('div', 'ki-blase ki-blase-mensch', n.text ?? ''));
     const k = T.kontextText(n);
-    if (k.length || n.kontextVerworfen) {
+    const frei = T.freigabeHinweis(n);
+    if (k.length || n.kontextVerworfen || frei) {
       const kz = el('div', 'ki-kontext');
       for (const t of k) kz.appendChild(el('span', 'ki-kontext-chip', t));
+      if (frei) { const f = el('span', 'ki-kontext-chip freigegeben', frei.text); f.title = frei.tipp; kz.appendChild(f); }
       if (n.kontextVerworfen) { const v = el('span', 'ki-kontext-chip verworfen', 'ohne Projektkontext'); v.title = T.INTERNET_TIPP; kz.appendChild(v); }
       box.appendChild(kz);
     }

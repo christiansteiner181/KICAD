@@ -247,6 +247,16 @@ abschnitt('1. Einblenden: Kürzel KI, Ansicht › Paletten, rechts angedockt');
   pruef(await sichtbarP('claude'), 'und wieder ein');
   const b = await R(PAL);
   pruef(nah(b.b, p.b, 3), 'dieselbe Breite wie vorher', `${p.b} / ${b.b}`);
+  // Knopf «Claude» in der Kopfleiste (neben dem «?»)
+  const kn = await ausw(`const k = document.getElementById('claude-knopf'); const h = document.getElementById('hilfe-knopf'); const r = k?.getBoundingClientRect(); return { da: !!k, imKopf: k?.parentElement?.id === 'kopf-rechts', vorHilfe: !!k && !!h && r.right <= h.getBoundingClientRect().left + 1, sichtbar: !!r && r.width > 10, symbol: !!k?.querySelector('svg.sym[data-sym="claude"]'), gedrueckt: k?.getAttribute('aria-pressed'), tipp: k?.title };`);
+  pruef(kn.da && kn.imKopf && kn.vorHilfe && kn.sichtbar && kn.symbol, 'Kopfleiste rechts: Knopf «Claude» mit dem neuen Symbol, links neben dem «?»', JSON.stringify(kn));
+  pruef(kn.gedrueckt === 'true' && /Claude/.test(kn.tipp ?? '') && /KI/.test(kn.tipp ?? ''), 'der Knopf ist gedrückt, solange die Palette sichtbar ist; Tooltip nennt das Kürzel', JSON.stringify(kn));
+  await klick('#claude-knopf');
+  pruef(!(await sichtbarP('claude')) && (await ausw(`return document.getElementById('claude-knopf').getAttribute('aria-pressed');`)) === 'false', 'Klick auf den Knopf blendet die Palette aus (Knopf nicht mehr gedrückt)');
+  await klick('#claude-knopf');
+  await warteBis(() => gibt(PAL + ' .ki-feld'), 'Palette wieder da');
+  pruef(await sichtbarP('claude') && (await ausw(`return document.getElementById('claude-knopf').getAttribute('aria-pressed');`)) === 'true', 'und wieder ein');
+  await beide('kopfknopf');
 }
 
 abschnitt('2. Kopf, leerer Verlauf, Kontext-Chips');
@@ -354,12 +364,28 @@ abschnitt('5. Werkzeugaufruf kompakt, Änderung mit Elementen, Klick wählt, Zur
 
 abschnitt('6. Zurücknehmen abgelehnt (409): verständlich mit späteren Paketen');
 {
-  // Ein gewähltes Element ist in der Eigenschaftenpalette für den Menschen reserviert: Claude kann es dann nicht ändern (der Fehler steht in der Werkzeugliste).
+  // Das Element ist im Modell gewählt (Eigenschaftenpalette) und für den Menschen reserviert (seine letzte Änderung: Zurücknehmen).
+  await zst(`z.auswaehlen(${JSON.stringify(EL.id)})`);
+  await warteBis(async () => /reserviert/.test((await text('#palette-eigenschaften')) ?? '') || /eigene reserviert/.test((await text('#statusleiste')) ?? ''), 'Reservierung des Menschen', 10000);
+  pruef(await ausw(`return document.querySelector('${PAL} .ki-chip[data-id="auswahl"]').getAttribute('aria-pressed');`) === 'true', 'Auswahl-Chip an');
+  // Ohne die Auswahl in der Frage bleibt die Reservierung: Claude kann das Element nicht ändern (der Fehler steht in der Werkzeugliste).
+  await klick(PAL + ' .ki-chip[data-id="auswahl"]');
   await fragen(`Ändere das reservierte Element [attrappe:aendern=${EL.kz}]`);
   pruef(/1 mit Fehler/.test((await text(PAL + ' .ki-claude:last-child .ki-werkzeuge summary')) ?? ''), 'Werkzeugfehler (Element reserviert) werden in der Liste gezeigt', await text(PAL + ' .ki-claude:last-child .ki-werkzeuge summary'));
   await klick(PAL + ' .ki-claude:last-child .ki-werkzeuge summary');
   pruef(await gibt(PAL + ' .ki-claude:last-child .ki-werkzeug.fehler .ki-werkzeug-meldung') || (await text(PAL + ' .ki-claude:last-child .ki-werkzeug.fehler')) !== null, 'der Fehler steht in der Werkzeugliste (✗)', await text(PAL + ' .ki-claude:last-child .ki-werkzeug-liste'));
   pruef((await anzahl(PAL + ' .ki-claude:last-child .ki-aenderung')) === 0, 'ohne Änderung keine Änderungsliste');
+  pruef(!(await gibt(PAL + ' .ki-mensch:nth-last-child(2) .ki-kontext-chip.freigegeben')), 'ohne Auswahl in der Frage kein Hinweis «freigegeben»');
+  // Mit der Auswahl in der Frage gibt der Server die Reservierung des Menschen für Claude frei: die Änderung gelingt (Eigenschaftenpalette: Element gewählt).
+  pruef((await ausw(`return document.querySelector('${PAL} .ki-chip[data-id="auswahl"]').getAttribute('aria-pressed');`)) === 'true' && (await zst('z.zustand.auswahl')) === EL.id, 'Element ist gewählt, der Auswahl-Chip ist wieder an');
+  await fragen(`Ändere das gewählte Element [attrappe:aendern=${EL.kz}]`);
+  pruef((await anzahl(PAL + ' .ki-claude:last-child .ki-aenderung')) === 1, 'gewähltes, reserviertes Element: Claude ändert es – eine Änderung in der Liste');
+  pruef(!/Fehler/.test((await text(PAL + ' .ki-claude:last-child .ki-werkzeuge summary')) ?? ''), 'kein Werkzeugfehler');
+  pruef((await zst(`z.element(${JSON.stringify(EL.kz)}).name`)) === 'Von der Attrappe geändert', 'das Modell zeigt die Änderung');
+  pruef((await text(PAL + ' .ki-mensch:nth-last-child(2) .ki-kontext-chip.freigegeben')) === 'Auswahl für Claude freigegeben', 'Hinweis «Auswahl für Claude freigegeben» an der Frage');
+  await beide('freigegeben');
+  await klick(PAL + ' .ki-claude:last-child .ki-zuruecknehmen');
+  await warteBis(async () => (await zst(`z.element(${JSON.stringify(EL.kz)}).name`)) === EL.name, 'zurückgenommen', 20000);
   await zst(`z.auswaehlen(null)`);
   await fetch(`${SERVER}/api/freigeben`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' });
   await warte(800);
@@ -648,6 +674,7 @@ abschnitt('16. Zweitfenster: Paletten sind ausgeblendet');
   const info = await ausw(`const d = document.querySelector('#dock-rechts'); const p = document.querySelector('#palette-claude'); return { dock: d ? getComputedStyle(d).visibility : null, breite: d ? d.getBoundingClientRect().width : null, panel: !!document.querySelector('#ki-panel'), ki: performance.getEntriesByType('resource').filter((r) => r.name.includes('/api/ki')).length, sicht: p ? p.getBoundingClientRect().width > 0 && getComputedStyle(d).visibility !== 'hidden' : false };`);
   pruef(info.dock === 'hidden' || info.breite === 0, 'im Zweitfenster ist der rechte Bereich mit der Palette ausgeblendet', JSON.stringify(info));
   pruef(!info.panel && info.ki === 0, 'und es werden keine KI-Daten geladen', JSON.stringify(info));
+  pruef(!(await gibt('#claude-knopf')) && await gibt('#hilfe-knopf'), 'im Zweitfenster gibt es den Knopf «Claude» nicht (das «?» bleibt)');
   await beide('zweitfenster');
   await send('Page.navigate', { url: `${SERVER}/` });
   await warteBis(async () => (await ausw(`const z = await import('/js/zustand.js'); return z.zustand.elemente.size > 50 && !!document.querySelector('.pal-gruppe');`)), 'Hauptfenster', 40000);

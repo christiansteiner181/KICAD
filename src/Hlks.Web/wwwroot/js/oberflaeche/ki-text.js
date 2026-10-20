@@ -398,6 +398,13 @@ export function kontextText(n) {
   return aus;
 }
 
+/** Hinweis an der Frage, wenn der Server Reservierungen des Menschen für die Auswahl freigegeben hat (Nachricht.auswahlFreigegeben = Kennzeichen); sonst null. */
+export function freigabeHinweis(n) {
+  const l = Array.isArray(n?.auswahlFreigegeben) ? n.auswahlFreigegeben.filter((x) => typeof x === 'string' && x) : [];
+  if (l.length === 0) return null;
+  return { text: 'Auswahl für Claude freigegeben', tipp: `Ihre Reservierung von ${l.slice(0, 12).join(', ')}${l.length > 12 ? ` … (${l.length})` : ''} wurde für Claude freigegeben. Beim nächsten eigenen Ändern reserviert KICAD wieder.` };
+}
+
 // ------------------------------------------------------------------------------------------------ Bild
 
 /** Grösse für das Bild: längste Kante höchstens max, nie vergrössern, mindestens 1. */

@@ -144,9 +144,6 @@ projektbrowser | Projektbrowser | Projektbrowser | Baumstruktur
 koordination | Koordination (Palette) | eigenes | Liste unten im Fenster
 palettenZurueck | Paletten zurücksetzen | Benutzeroberfläche | Fenster mit Rückpfeil
 claude | Claude (Palette) | eigenes | Sprechblase in Hellblau mit gelbem Funken
-einlageplan | Einlageplan | eigenes | Grundriss mit schraffierter Platte und Sanitärrohr mit Bogen nach oben
-grundleitungsplan | Grundleitungsplan | eigenes | Grundriss mit Erdreich, gestrichelter Geländelinie und Abwasserleitung
-listeCsv | Liste als CSV | eigenes | Blatt mit Zellen und blauem Exportpfeil
 achse | Achse | Raster | Rasterkreis mit Strich-Punkt-Linie
 bemassung | Bemassung | Bemaßung | Masslinie mit Pfeilen
 text | Text | Text | Buchstabe A
@@ -169,6 +166,9 @@ schemaTrennen | Schema: Trennen | eigenes | zwei Kästchen, Verbindung durchtren
 schemaEinfuegen | Schema: Element einfügen | eigenes | gestrichelter Kasten mit Plus
 schemaAnordnen | Schema: Neu anordnen | eigenes | Baum aus Kästchen
 koordinaten | Koordinaten | Koordinaten | Achsenkreuz mit Ursprung
+einlageplan | Einlageplan | eigenes | Plan mit grauer Betonplatte, Abwasserleitung (braun) darin eingelegt
+grundleitungsplan | Grundleitungsplan | eigenes | Plan mit Bodenplatte über Erdreich, Abwasser-Grundleitung (braun) mit Gefällepfeil
+listeCsv | Liste als CSV | eigenes | Tabelle mit Blatt davor, blaue Kommas
 `;
 
 export const ZUORDNUNG = TABELLE.trim().split('\n').map((z) => z.split('|').map((t) => t.trim()));
@@ -557,23 +557,12 @@ s('projektbrowser',
 s('koordination',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 17.5h25v10h-25z"/><path d="M3.5 22.5h25M12.5 17.5v10"/>',
   '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 9h13v4.5h-13z"/><path d="M1.5 11.3h13M6 9v4.5"/>');
-s('palettenZurueck',
-  '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 9.5h8v18h-8z"/><circle class="fo n" cx="23" cy="22.5" r="6.5"/><path class="sW w2" d="M20 22.5a3 3 0 1 0 1.2-2.4M20.5 18.5v2.2h2.2"/>',
-  '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 5h4v8.5h-4z"/><circle class="fo n" cx="11.5" cy="10.5" r="4"/><path class="sW w15" d="M9.8 10.5a1.7 1.7 0 1 0 .7-1.4"/>');
-
-// Nachbearbeitung N3 (Einlageplan, Grundleitungsplan, Liste als CSV): bisher nur im Strichsatz; hier nachgeliefert, damit im Revit-Stil kein Strichsymbol im Menüband steht (symbole.browser.mjs)
-s('einlageplan',
-  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="f2" d="M3.5 21.5h25v7h-25z"/><path class="op" d="M6.5 28.5l3-7M11.5 28.5l3-7M16.5 28.5l3-7M21.5 28.5l3-7"/><path class="ssa w2" d="M7.5 17.5h9l4-8"/><circle class="fsa n" cx="21" cy="9.5" r="2.4"/>',
-  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="f2" d="M1.5 10.5h13v4h-13z"/><path class="ssa w15" d="M3.5 8.5h4.5l2-4"/><circle class="fsa n" cx="10.5" cy="4.5" r="1.4"/>');
-s('grundleitungsplan',
-  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="f3" d="M3.5 12.5h25v16h-25z"/><path class="sb dd w15" d="M3.5 12.5h25"/><path class="sab w2" d="M7.5 19.5h10l3 5h4"/><circle class="fab n" cx="7.5" cy="19.5" r="2"/>',
-  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="f3" d="M1.5 7.5h13v7h-13z"/><path class="sab w15" d="M3.5 10.5h5l1.5 2.5h2.5"/>');
-s('listeCsv',
-  DOC32 + '<path class="op" d="M10.5 11.5h12M10.5 15h12M10.5 18.5h12M16 11.5v7"/><path class="fb" d="M10.5 22h7v-3.5l6 5-6 5V25h-7z"/>',
-  DOC16 + '<path class="op" d="M4.5 6.5h6M4.5 8.5h6M7.5 5v4"/><path class="fb" d="M4.5 10.5h3.2V9l3.3 3L7.7 15v-1.5H4.5z"/>');
 s('claude',
   '<path class="fl" d="M4.5 4.5h23v18H14l-6 5v-5H4.5z"/><path class="fy" d="M16 8.5l1.6 4 4 1.6-4 1.6-1.6 4-1.6-4-4-1.6 4-1.6z"/>',
   '<path class="fl" d="M1.5 1.5h13v9.5H8l-3.5 3.5V11h-3z"/><path class="fy" d="M8 3.4l.9 2.2 2.2.9-2.2.9-.9 2.2-.9-2.2-2.2-.9 2.2-.9z"/>');
+s('palettenZurueck',
+  '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v5h-25z"/><path class="f2" d="M3.5 9.5h8v18h-8z"/><circle class="fo n" cx="23" cy="22.5" r="6.5"/><path class="sW w2" d="M20 22.5a3 3 0 1 0 1.2-2.4M20.5 18.5v2.2h2.2"/>',
+  '<rect class="fp" x="1.5" y="2.5" width="13" height="11"/><path class="fb" d="M1.5 2.5h13v2.5h-13z"/><path class="f2" d="M1.5 5h4v8.5h-4z"/><circle class="fo n" cx="11.5" cy="10.5" r="4"/><path class="sW w15" d="M9.8 10.5a1.7 1.7 0 1 0 .7-1.4"/>');
 
 // ---------------------------------------------------------------------------------------------- Zeichenwerkzeuge (werkzeuge/symbole.js)
 
@@ -643,6 +632,18 @@ s('schemaAnordnen',
 s('koordinaten',
   '<path class="sb w2" d="M7.5 25.5V6M7.5 25.5H26"/><path class="fb n" d="M7.5 3l-3.2 5.5h6.4zM29.5 25.5l-5.5-3.2v6.4z"/><path class="sb dt" d="M20 25.5V12M7.5 12H20"/><circle class="fp" cx="7.5" cy="25.5" r="2.4"/><path class="so w2" d="M17.5 12h5M20 9.5v5"/>',
   '<path class="sb w15" d="M3.5 12.5V3.5M3.5 12.5H12"/><path class="fb n" d="M3.5 1.5L1.6 4.5h3.8zM14.5 12.5L11.5 10.6v3.8z"/><circle class="fp" cx="3.5" cy="12.5" r="1.4"/><path class="so" d="M8.5 6.5h3M10 5v3"/>');
+
+// ---------------------------------------------------------------------------------------------- Nachbearbeitung N3: Einlageplan, Grundleitungsplan, Liste als CSV
+
+s('einlageplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="fb" d="M3.5 3.5h25v4h-25z"/><path class="f2" d="M6.5 10.5h19v13h-19z"/><path class="s3 op" d="M6.5 15.5l5-5M6.5 21.5l11-11M9.5 23.5l13-13M15.5 23.5l10-10M21.5 23.5l4-4"/><path class="sk w4" d="M8.5 20.5h6l3-6h5"/><path class="sab w2" d="M8.5 20.5h6l3-6h5"/><circle class="fp sab w15" cx="22.5" cy="14.5" r="2.2"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v2.5h-13z"/><path class="f2" d="M3 5.5h10v7H3z"/><path class="sk w3" d="M4.5 10.5h2.5l1.5-3h2"/><path class="sab w15" d="M4.5 10.5h2.5l1.5-3h2"/><circle class="fp sab" cx="11" cy="7.5" r="1.3"/>');
+s('grundleitungsplan',
+  '<rect class="fp" x="3.5" y="3.5" width="25" height="25"/><path class="fb" d="M3.5 3.5h25v4h-25z"/><path class="fy op" d="M6.5 14.5h19v11h-19z"/><path class="f3" d="M6.5 10.5h19v4h-19z"/><path class="sk w4" d="M9 18.5h4.5l5 4.5h2.5"/><path class="sab w2" d="M9 18.5h4.5l5 4.5h2.5"/><circle class="fp sab w15" cx="9" cy="18.5" r="2.2"/><path class="fb" d="M21 20.5l4.5 2.5-4.5 2.5z"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v2.5h-13z"/><path class="fy op" d="M3 7.5h10v5H3z"/><path class="f3" d="M3 5.5h10v2H3z"/><path class="sk w3" d="M4.5 9.5h2.5l2 1.5h1"/><path class="sab w15" d="M4.5 9.5h2.5l2 1.5h1"/><circle class="fp sab" cx="4.5" cy="9.5" r="1.2"/><path class="fb n" d="M10.5 9.5l2.5 1.5-2.5 1.5z"/>');
+s('listeCsv',
+  '<rect class="fp" x="3.5" y="4.5" width="21" height="18"/><path class="fb" d="M3.5 4.5h21v5h-21z"/><path d="M3.5 14h21M10.5 9.5v13"/><path class="fp" d="M15.5 14.5h9l4 4v11h-13z"/><path class="f2" d="M24.5 14.5v4h4z"/><path class="op" d="M17.5 21.5h2.5M25 21.5h1.5M17.5 26h2.5M25 26h1.5"/><circle class="fb n" cx="22.6" cy="21.8" r="1.1"/><path class="sb w15" d="M22.4 22.5l-.7 1.6"/><circle class="fb n" cx="22.6" cy="26.3" r="1.1"/><path class="sb w15" d="M22.4 27l-.7 1.6"/>',
+  '<rect class="fp" x="1.5" y="1.5" width="10" height="9"/><path class="fb" d="M1.5 1.5h10v2.5h-10z"/><path d="M1.5 7h10M5.5 4v6.5"/><path class="fp" d="M8.5 6.5h3.5l2.5 2.5v5.5h-6z"/><path class="f2" d="M12 6.5v2.5h2.5z"/><circle class="fb n" cx="11.5" cy="11.6" r="1.1"/><path class="sb w15" d="M11.4 12.3l-.6 1.5"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 

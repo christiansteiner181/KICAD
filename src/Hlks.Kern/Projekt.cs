@@ -500,6 +500,26 @@ public sealed class Projekt
     /// <summary>Schreibt ein Standabbild (beschleunigt das nächste Öffnen).</summary>
     public void StandSichern() => Speicher?.StandSchreiben(Modell.Abbild(bekannt.Order(StringComparer.Ordinal)));
 
+    /// <summary>
+    /// Gibt die eigenen Reservierungen (dieser Akteur auf diesem Gerät) für die genannten Elemente frei und nennt deren Ids. Reservierungen anderer Akteure oder
+    /// Geräte bleiben unangetastet. Gebraucht für die KI-Palette: Claude soll die Auswahl des Menschen ändern können (Entscheid Hauptlauf 20.10.2026).
+    /// </summary>
+    public IReadOnlyList<string> FreigebenFuer(IEnumerable<string> elementIds)
+    {
+        if (Speicher is null) return [];
+        var ids = elementIds.Distinct(StringComparer.Ordinal).ToHashSet(StringComparer.Ordinal);
+        if (ids.Count == 0) return [];
+        try
+        {
+            var eigene = Speicher.Reservierungen()
+                .Where(r => ids.Contains(r.Element) && string.Equals(r.Akteur, Akteur, StringComparison.OrdinalIgnoreCase) && string.Equals(r.Geraet, Geraet, StringComparison.OrdinalIgnoreCase))
+                .Select(r => r.Element).ToList();
+            if (eigene.Count > 0) Speicher.Freigeben(Akteur, Geraet, eigene);
+            return eigene;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return []; }
+    }
+
     /// <summary>Gibt alle eigenen Reservierungen frei (beim Schliessen). Ohne Netz bleiben sie bis zum Ablauf bestehen.</summary>
     public bool Freigeben()
     {

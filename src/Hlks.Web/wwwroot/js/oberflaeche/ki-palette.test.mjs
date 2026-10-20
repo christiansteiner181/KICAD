@@ -272,6 +272,16 @@ test('Ablehnung: übrige Gründe', () => {
   assert.deepEqual(unbekannt.zeilen, ['Claude arbeitet gerade an einer Frage.', 'Abbrechen oder warten.']);
 });
 
+test('Hinweis «Auswahl für Claude freigegeben» nur, wenn der Server Reservierungen freigegeben hat', () => {
+  const h = T.freigabeHinweis({ auswahlFreigegeben: ['WT-E.02', 'WC-E.02'] });
+  assert.equal(h.text, 'Auswahl für Claude freigegeben');
+  assert.match(h.tipp, /WT-E\.02, WC-E\.02/);
+  assert.equal(T.freigabeHinweis({}), null);
+  assert.equal(T.freigabeHinweis({ auswahlFreigegeben: [] }), null);
+  assert.equal(T.freigabeHinweis({ auswahlFreigegeben: [5, '', null] }), null);
+  assert.equal(T.freigabeHinweis(null), null);
+});
+
 test('Kontext einer früheren Frage (Chips unter der Nachricht des Menschen)', () => {
   assert.deepEqual(T.kontextText({ kontext: { ansicht: { kennzeichen: 'AN-1', name: 'Grundriss' }, geschoss: { kennzeichen: 'EG', name: 'Erdgeschoss' }, auswahl: ['A', 'B', 'C'], bild: true } }),
     ['Ansicht: Grundriss', 'Geschoss: Erdgeschoss', 'Auswahl: 3 Elemente', 'Bild der Ansicht']);
@@ -539,6 +549,10 @@ test('Verdrahtung: Palette «claude» rechts angedockt, nur auf Verlangen, Kürz
   const aktion = lies('aktionen-ki.js');
   assert.match(aktion, /kuerzel: 'KI'/);
   assert.match(aktion, /umschalten\('claude'\)/);
+  assert.match(aktion, /id = 'claude-knopf'/);   // Knopf in der Kopfleiste (#kopf-rechts)
+  assert.match(aktion, /getElementById\('kopf-rechts'\)/);
+  assert.match(aktion, /istZweitfenster\(\)/, 'im Zweitfenster kein Knopf');
+  assert.match(lies('../../css/ki-palette.css'), /\.ki-kopfknopf/);
   assert.match(lies('aktionen.js'), /import '\.\/aktionen-ki\.js'/);
   assert.match(lies('../ereignisse.js'), /case 'ki':[^\n]*\n\s+melden\('ki', d\)/);
   assert.match(lies('../../index.html'), /css\/ki-palette\.css/);
