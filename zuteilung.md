@@ -315,3 +315,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | 3 | Freie Grösse Kern (Serie, Formteilwahl mit Exemplarwerten, Routing, Prüfungen, Abfrage, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5320–5329) | ok – 20687bf (nach API-Abbruch neu begonnen), P29 |
 | 20.10.2026 | 3 | Spezifikation «Abwasser-Serien nach Aussendurchmesser» (Christian: «Geberit PE ist immer Abwasser», Fragefenster «Abwasser-Serie») – Bau nach «Freie Grösse» (gleiche Dateien) | Hauptlauf | ok |
 | 20.10.2026 | 3 | Abwasser-Serie Kern (einsatz abwasser, Grösse d, Beschriftung, Prüfung, Formteile, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5330–5339) | läuft |
+| 21.10.2026 | – | Gesamtprüfung 6d776f9 grün (Kern 4305, Mcp 77, Web 533, Node 944; Rechner schlief zwischendurch), Browser-Reihen 27/27 grün (hlks-test) | Hauptlauf / hlks-test | ok |
