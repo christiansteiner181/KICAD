@@ -155,3 +155,15 @@ Je eine Nacharbeit bei hlks-kern und hlks-modul; die Schwelle «zwei Nacharbeite
 - Ein einzelner Lauf mit einem Modell (Sonnet) und einem Projekt (Beispielprojekt); das Verhalten von Claude ist nicht deterministisch.
 - Normwerte habe ich weder geprüft noch eingetragen; das Zitat der Normfrage stammt aus der Antwort von Claude und wurde von mir nicht am Merkblatt nachgeprüft.
 - Kein unabhängiger Prüfer (hlks-pruefer) für 3c vorgesehen; die Prüfer-Regel gilt für die Rechenkerne und M3/M5.
+
+## Nachtrag Hauptlauf 20.10.2026, 02:37 – Bedienung der Palette mit echtem Claude
+
+Testserver 5152 (Stand 6dc390e, Beispielprojekt %USERPROFILE%\HLKS_CAD_build\abnahme3c), Bedienung im Browser wie Christian:
+Knopf «Claude» in der Kopfleiste → Palette rechts mit dem Verlauf des Abnahmegesprächs (4 Fragen, nach Neustart erhalten);
+Badewanne BW-1.02 im Grundriss 1.OG gewählt (Chip «Auswahl: BW-1.02», Element vom Menschen reserviert); Frage «Benenne die
+ausgewählte Badewanne um in «Badewanne Bad 1.OG (Test)». Nenne danach ihre Apparateart mit LU KW, LU WW und DU und woher die
+Werte stammen.» → Claude (Sonnet, rund 30 s): element_lesen, sanitaer_katalog, element_aendern – Umbenennung trotz
+Reservierung gelungen (Freigabe der Auswahl), Antwort «Badewanne, LU KW 3, LU WW 3, DU 0.8, Vorgabe der Klasse, Excel
+«LU_DU Zusammenstellung_.xlsx» Blatt «MFHA» Zeile 17» (stimmt mit Excel-Zeile 17 überein). Änderung in der Liste mit
+«Zurücknehmen» → Klick → «zurückgenommen», Name wieder leer wie vorher (geprüft über die Kern-Abfrage). Ergebnis: Palette mit
+echtem Claude in der Oberfläche bestanden; zugleich erster Einsatz der Modul-4-Werkzeuge durch Claude.
