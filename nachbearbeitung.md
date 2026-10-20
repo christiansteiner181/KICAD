@@ -94,3 +94,17 @@ die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (erichte/anle
 
 **Fertig, wenn** alle vier Orte in der Oberfläche erreichbar sind, Tests (Node, Web, Browser) grün sind und das
 Funktionsverzeichnis die Lücken nicht mehr führt.
+
+## N4 – PDF-Leser: Dezimalzahlen mit getrennten Zeichenläufen
+
+Befund 20.10.2026 (Grundausstattung R7, Geberit-HDPE-Katalog Ausgabe 2020, Händlerablage Reece): Der Unterlagen-Leser liest
+Dezimalzahlen dieses PDF als «4 .5» statt 4.5 (Ganzzahl und Nachkommastelle in getrennten Zeichenläufen). Die KI konnte
+solche Werte nur ohne Quellenverweis eintragen (Bogen, T-Stück, Reduktion, Rohr di/s). Ähnlich bei R1/R2: Werte aus
+Datenblatt-Zeilen wurden dem falschen Typ zugeordnet («Zeilenleser», z. B. z45 d15/d18/d22 als 15/18/20 statt 16/17/21).
+
+1. Zeichenläufe innerhalb einer Zelle zusammenführen, wenn der Abstand kleiner als die Zeichenbreite ist (Punkt bzw. Komma
+   zwischen Ziffern) – Test mit einem selbst erzeugten PDF, das Zahl und Nachkommastelle getrennt setzt.
+2. Zeilenleser der Datenblatt-Tabellen (Geberit «Erstellt mit Geberit Produktdaten»): Zuordnung Zeile ↔ Artikel prüfen.
+
+**Fertig, wenn** die Befunde der R7-Unterlage die Dezimalwerte als Zahl mit Zelle liefern und die Familien R1, R2, R7 mit
+Quellenverweis neu belegt werden können.

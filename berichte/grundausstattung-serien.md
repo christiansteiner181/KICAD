@@ -15,10 +15,10 @@ Stichprobe des Hauptlaufs gegen die Quelle.
 | Nr | Serie | Familien | Typen (Grössen) | Offene Konflikte | Stichprobe Hauptlauf | Zur Entscheidung |
 | --- | --- | --- | --- | --- | --- | --- |
 | R1 | Geberit Mapress C-Stahl | Serie, Bogen, T-Stück, Reduktion | 12 (d12 … d108) | 4 Familien mit je 1 Konflikt (Bogen 12 Werte) | bestanden (s. unten) | 66,7; Kürzel; neue Masse |
-| R2 | Geberit Mapress Edelstahl | läuft | | | | |
-| R5 | JRG Sanipex MT | offen | | | | |
-| R6 | Geberit Silent-db20 | offen | | | | |
-| R7 | Geberit PE | offen | | | | |
+| R2 | Geberit Mapress Edelstahl | Serie, Bogen, T-Stück, Reduktion | 11 (d12 … d108), Kürzel CNS | Bogen 6 (neue Masse 2023/24) | bestanden | neue Masse; Auffälligkeit 45° |
+| R5 | JRG Sanipex MT | Serie, Bogen, T-Stück (30 inkl. reduziert), Reduktion | 8 (12 × 1,7 … 63 × 4,5) | keine | bestanden | Kürzel; z1 Reduktion |
+| R6 | Geberit Silent-db20 | Serie, Bogen, T-Stück (45°/88,5°), Reduktion | 7 (56 × 3,2 … 160 × 7), Kürzel PE-S | keine | bestanden | Quelle DIBt 2019; PE-S oder PE-S2 |
+| R7 | Geberit PE | Serie, Bogen, T-Stück (50), Reduktion (34) | 13 (d32 … d315) | keine | bestanden | Kürzel; Quelle Ausgabe AU; d32 ohne Masse |
 | R3 | Stahlrohr Gewinderohr | offen | | | | |
 | R4 | Stahlrohr geschweisst | offen | | | | |
 | K1 | Wickelfalzrohr rund | offen | | | | |
@@ -42,3 +42,42 @@ Stichprobe des Hauptlaufs gegen die Quelle.
      entscheidet.
   4. Quellen teils aus Händlerablagen (Geberit-Datenblätter bei heizung-billiger.de, unidomo.de, stober, sankom) – als «nicht
      vom Hersteller abgerufen» vermerkt; Werte inhaltlich Geberit-Dokumente.
+
+## R2 Geberit Mapress Edelstahl
+
+- **Ergebnis:** Serie (11 Grössen 12 × 1,0 … 108 × 2,0, DN nach Geberit, Kürzel **CNS** belegt mit Werkstoff CrNiMo 1.4401,
+  Bogenwinkel 15/30/45/60/90°), Bogen (11), T-Stück (11, nur 90°), Reduktion (30 Paare wie Katalog Geberit Schweiz).
+- **Stichprobe Hauptlauf** gegen «Massänderungen Geberit Mapress Edelstahl April 2023 bis April 2024» (Geberit Schweiz): Bogen
+  90° d12 L 31 / Z 14, d15 L 38 / Z 18, d22 L 47 / Z 26 – stimmen.
+- **Zur Entscheidung:** 6 Konflikte Bogen 90° (alt Datenblatt 2021 gegen neue Masse 2023/24; Vorschlag neue Masse).
+  Auffällig laut KI: 45° d22/d28 kürzer als 30°/15° – Datenblatt prüfen. d12/d18 nur 45°/90°. Formteilmasse teils aus
+  Händlerablagen (unidomo, sankom; T-Stück aus dem Geberit-Katalog Polen).
+
+## R5 JRG Sanipex MT
+
+- **Ergebnis:** Serie (8 Grössen 12 × 1,70 … 63 × 4,50, DN 8–50), Winkel 90°/45°, T-Stück 30 Typen (7 egal, 23 reduziert),
+  Reduktion 16. Quelle GF Lieferprogramm Schweiz Februar 2025, Gegenprobe GF Deutschland 2017 – gleich.
+- **Stichprobe Hauptlauf** gegen das GF-Sortiment (DE): Rohr 16 × 2,25 (DN 12) … 63 × 4,5 (DN 50), Winkel 90° 4670 d16 l 46 /
+  z 27, d20 55 / 31, d63 142 / 79 – stimmen.
+- **Zur Entscheidung:** Kürzel fehlt (Mehrschichtverbund PE-X/AL/PE-X, keine Konvention). Reduktion: Mass z1 im Massbild nicht
+  eindeutig (l1 − z1 passt nicht zu den Einstecktiefen) – prüfen. Unstimmigkeit Herstellertabelle T-Stück 50-50-50 (z 64 statt
+  63). d12 ohne Formteile, d16 ohne 45°-Winkel (laut Hersteller).
+
+## R6 Geberit Silent-db20
+
+- **Ergebnis:** Serie (7 Grössen 56 × 3,2 … 160 × 7, DN 56–150, Kürzel **PE-S**), Bogen 15/30/45/88,5°, T-Stück 45°/88,5° (19),
+  Reduktion exzentrisch (13).
+- **Stichprobe Hauptlauf** gegen geberit.ch (Produktseite Silent-db20): alle 7 Grössen d × s mit DN und Werkstoff PE-S2 – stimmen.
+- **Zur Entscheidung:** Formteilmasse und s/di aus der **DIBt-Zulassung Z-42.1-265 (2019, abgelaufen 2022)** in einer
+  Händlerablage (Heinze) – aktuelle Geberit-Datenblätter nur teilweise. Kürzel «PE-S» oder «PE-S2»? 67°-Bögen (nur DE) nicht
+  übernommen. Lücken: Bogen 88,5° d160, T-Stück 88,5° d110/90 und d110/110.
+
+## R7 Geberit PE
+
+- **Ergebnis:** Serie (13 Grössen d32 … d315, DN 40–300), Bogen 15/30/45/88,5/90° (12), T-Stück 45°/88,5° (50), Reduktion (34).
+- **Stichprobe Hauptlauf** gegen den Geberit-HDPE-Katalog (Rohrtabelle): d110 di 101,4 / s 4,3 (DN 100), d160 147,6 / 6,2,
+  d315 295,4 / 9,8 – stimmen; Artikelnummern wie im Schweizer Katalog (Sortiment d40 … d315 bestätigt).
+- **Zur Entscheidung:** Quelle ist die **australische Katalogausgabe 2020** (Händler Reece), Schweizer Massblätter nicht gefunden.
+  d32 ohne DN/di/s (nicht platzierbar). Kürzel fehlt (PE-HD). Bogen-, T-Stück- und Reduktionsmasse in cm (als Formel × 10).
+- **Befund KICAD (Produkt):** Der PDF-Leser liest Dezimalzahlen dieses Katalogs nicht als Zahl («4 .5») – die KI hat solche
+  Werte ohne Quellenverweis eingetragen. → Nachbearbeitung im Unterlagen-Leser (Kern).
