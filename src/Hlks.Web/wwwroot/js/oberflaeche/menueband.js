@@ -29,7 +29,7 @@ const GRUPPENFOLGE = {
   beschriften: ['Bemassung', 'Text', 'Detail', 'Symbol'],
   aendern: ['Auswahl', 'Verändern', 'Bearbeiten', 'Verlauf', 'Paletten'],
   ansicht: ['Erstellen', 'Ansicht', 'Ansichtsvorlage', 'Grafik', 'Fenster', 'Zoom', 'Darstellung'],
-  koordination: ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'BCF'],   // Modul 3b, C1; Typenliste seit C1c
+  koordination: ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'Koordinationsplan', 'BCF'],   // Modul 3b, C1; Typenliste seit C1c; Koordinationsplan seit Modul 7 Teil B3
   verwalten: ['Projekt', 'Zusammenarbeit', 'Modell', 'HKAP', 'Hilfe'],
   familie: ['Parameter', 'Typen', 'Körper', 'Anschlüsse', 'Sinnbild', 'Ansicht', 'Prüfen', 'Unterlagen', 'Bibliothek'],
 };

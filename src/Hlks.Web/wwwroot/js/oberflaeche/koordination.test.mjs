@@ -1165,7 +1165,7 @@ test('Verdrahtung: Register «Koordination» zwischen Ändern und Ansicht, Grupp
   assert.match(mb, /\['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\]/);
   assert.match(mb, /\['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\]/, 'Reihenfolge Einfügen › Beschriften › Ändern bleibt (einfuegen.browser.mjs, werkzeuge.browser.mjs)');
   const folge = /koordination: \[([^\]]*)\]/.exec(mb)[1].match(/'([^']+)'/g).map((x) => x.slice(1, -1));
-  assert.deepEqual(folge, ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'BCF']);
+  assert.deepEqual(folge, ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'Koordinationsplan', 'BCF']);   // Koordinationsplan seit Modul 7 Teil B3
   assert.match(lies('./aktionen.js'), /import '\.\/aktionen-koordination\.js';/);
 
   const q = lies('./aktionen-koordination.js');
@@ -1174,7 +1174,7 @@ test('Verdrahtung: Register «Koordination» zwischen Ändern und Ansicht, Grupp
   assert.match(q, /const REGISTER = 'koordination'/);
   const ids = [...q.matchAll(/id: '(koordination\.[a-z-]+)'/g)].map((m) => m[1]);
   assert.deepEqual(ids, ['koordination.vorgaben', 'koordination.typenliste', 'koordination.pruefen', 'koordination.kollisionsliste', 'koordination.aus-vorschlagen', 'koordination.aus-nummerieren',
-    'koordination.aus-liste', 'koordination.aus-abgleich', 'koordination.aus-plan', 'koordination.aus-ifc', 'koordination.bcf-export', 'koordination.bcf-import']);
+    'koordination.aus-liste', 'koordination.aus-abgleich', 'koordination.aus-plan', 'koordination.aus-ifc', 'koordination.plan', 'koordination.boxen', 'koordination.bcf-export', 'koordination.bcf-import']);
   const symbole = [...q.matchAll(/symbol: '([^']+)'/g)].map((m) => m[1]);
   assert.equal(symbole.length, ids.length);
   const unbekannt = sym.symbol('gibtsnicht');

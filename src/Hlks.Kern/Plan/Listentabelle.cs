@@ -4,9 +4,17 @@
 // arbeiten. Die Zahlen kommen aus denselben Abfragen wie die Listenansicht des Bildschirms (Tuer.Abfrage); Spaltenwahl, Titel und Rundung entsprechen
 // js/ansichten/listenformat.js und sanitaer-liste.js (nur Darstellung, nichts wird gerechnet).
 //
-// Gestaltung (Annahmen, in Papier-mm): Schrift Arial 2.2 mm, Kopfzeile fett, Zeilenhöhe 3.4 mm, Zellrand 1 mm, Spaltenbreite aus dem Inhalt (höchstens
-// 60 mm, längere Texte werden mit «…» gekürzt), Gesamtbreite höchstens 380 mm (breitere Tabellen werden schmaler gesetzt), höchstens 45 Zeilen
-// (weitere Zeilen: «… n weitere Zeilen»). Der Umbruch auf weitere Blattbereiche gehört zu Teil B.
+// Gestaltung (Annahmen, in Papier-mm): Schrift Arial 2.2 mm (am Ansichtsfenster mit «schrift» einstellbar), Kopfzeile fett, Zeilenhöhe 3.4 mm, Zellrand 1 mm,
+// Spaltenbreite aus dem Inhalt (höchstens 60 mm, längere Texte werden mit «…» gekürzt).
+//
+// Umbruch (Modul 7 Teil B3): Steht die Liste auf einem Planblatt, hat sie einen Bereich – die ganze Blattbreite im Zeichenrahmen und die Höhe vom
+// Rahmen oben bis über den Plankopf und den Ansichtstitel (derselbe freie Bereich wie bei der Platzsuche, Planausgabe.ListenBereich). Passt sie nicht in
+// die Höhe, geht sie in Blöcken rechts daneben weiter (Option des Ansichtsfensters umbruch = spalten, Vorgabe): die Kopfzeile jeder Tabelle steht in jedem
+// Block wieder (Titel mit «(Fortsetzung)»), Summen- und Totalzeilen nur am Ende ihrer Tabelle und stets zusammen mit der letzten Zeile. Reicht die Blattbreite
+// für alle Blöcke nicht, werden die Blöcke, die nicht mehr aufs Blatt passen, nicht gezeichnet: eine Markierungszeile «… n weitere Zeilen (Liste passt
+// nicht aufs Blatt)» sagt es, und PlanPruefung meldet P28. Mit umbruch = aus bleibt die Liste eine Spalte mit höchstens 45 Zeilen (weitere Zeilen:
+// «… n weitere Zeilen»); P28 meldet dann auch eine Liste, die höher ist als ihr Bereich. Ohne Bereich (Ansicht nicht auf einem Blatt) gilt das Verhalten
+// ohne Umbruch, Gesamtbreite höchstens 380 mm (breitere Tabellen werden schmaler gesetzt).
 
 using System.Globalization;
 using System.Text.Json;
@@ -37,15 +45,54 @@ public sealed class ListeInhalt
     public List<ListeTabelle> Tabellen { get; init; } = [];
 }
 
+/// <summary>Verfügbarer Platz der Tabelle auf dem Blatt in Papier-mm (ohne die Zugabe des Ansichtsfensters).</summary>
+public sealed record ListeBereich(double Breite, double Hoehe);
+
+/// <summary>Ergebnis des Anordnens einer Liste: die Primitive und die Masse, an denen sich zeigt, ob die Liste in ihren Bereich passt.</summary>
+public sealed class ListeLayout
+{
+    const double Eps = 0.01;
+    public List<Primitiv> Primitive { get; init; } = [];
+    /// <summary>Blöcke nebeneinander (1 = nicht umbrochen); nur gezeichnete Blöcke.</summary>
+    public int Bloecke { get; init; }
+    /// <summary>Gezeichnete Breite und Höhe der Liste in Papier-mm (Höhe mit den Titelzeilen der Zusammenfassung).</summary>
+    public double Breite { get; init; }
+    public double Hoehe { get; init; }
+    /// <summary>Breite, die alle Blöcke ohne Abschneiden brauchen würden.</summary>
+    public double NoetigeBreite { get; init; }
+    /// <summary>Blöcke, die die ganze Liste ohne Abschneiden brauchen würde.</summary>
+    public int NoetigeBloecke { get; init; }
+    /// <summary>Nicht gezeichnete Zeilen (einschliesslich Summenzeilen): wegen der Blattbreite (Umbruch) bzw. der Grenze von 45 Zeilen (ohne Umbruch).</summary>
+    public int Verborgen { get; init; }
+    /// <summary>Eine Tabelle war breiter als der Bereich: Spalten schmaler gesetzt, Texte mit «…» gekürzt.</summary>
+    public bool Gestaucht { get; init; }
+    public ListeBereich? Bereich { get; init; }
+    /// <summary>Passt alles in den Bereich: nichts abgeschnitten oder gekürzt, nicht höher und nicht breiter. Ohne Bereich immer wahr.</summary>
+    public bool Passt => Bereich is null
+        || (Verborgen == 0 && !Gestaucht && Hoehe <= Bereich.Hoehe + Eps && NoetigeBreite <= Bereich.Breite + Eps);
+}
+
 public static class Listentabelle
 {
     /// <summary>Listen, die auf ein Planblatt dürfen (Katalog Ansicht.liste).</summary>
     public static readonly IReadOnlyList<string> Namen =
         ["raumliste", "strangliste", "mengen", "raumgrenzen", "huellbauteile", "materialliste", "kollisionen", "aussparungsliste", "sanitaer_zusammenstellung"];
 
-    // Gestaltung in Papier-mm
+    // Gestaltung in Papier-mm (bei der Vorgabeschrift; andere Schriftgrössen skalieren Schrift, Zeilenhöhe, Rand und Abstände im gleichen Verhältnis)
     const double Schrift = 2.2, TabTitel = 2.6, ZeileH = 3.4, Rand = 1.0, TabAbstand = 4, MaxSpalte = 60, MaxBreite = 380;
     public const int MaxZeilen = 45;
+
+    /// <summary>Umbruch der Liste auf dem Planblatt (Eigenschaft umbruch des Ansichtsfensters).</summary>
+    public const string UmbruchSpalten = "spalten", UmbruchAus = "aus";
+    /// <summary>Schriftgrösse der Liste in Papier-mm: Vorgabe und Grenzen der Eigenschaft schrift (Annahme; weder Norm noch Vorlage legen sie fest).</summary>
+    public const double SchriftVorgabe = Schrift, SchriftMin = 1.5, SchriftMax = 4;
+    /// <summary>Genauigkeit beim Vergleich von Längen in mm.</summary>
+    const double Eps = 0.01;
+
+    /// <summary>Bereich für die Tabelle in einem freien Rechteck des Blatts (Breite und Höhe des Ansichtsfensters in Papier-mm): das Fenster ist um die Zugabe der Plangrafik
+    /// (Begrenzung ±0.5 mm seitlich, 1.0 mm unten, Schrifthöhe + 0.5 mm oben) und 1 mm Rand je Seite (Planausgabe.Gebiet) grösser als die Tabelle.</summary>
+    public static ListeBereich BereichImFenster(double fensterBreite, double fensterHoehe, double schrift) =>
+        new(Math.Max(fensterBreite - (1.0 + 2.0) - 0.5, 20), Math.Max(fensterHoehe - (1.0 + schrift + 0.5 + 2.0) - 0.5, 20));
 
     // ------------------------------------------------------------------ Spaltenvorgaben (wie listenformat.js VORGABEN)
 
@@ -118,16 +165,51 @@ public static class Listentabelle
         return Aufbereiten(name, d);
     }
 
-    /// <summary>Plangrafik der Liste (Art «liste», Papier-mm, Massstab 1): Tabellen als Linien und Texte, Ursprung oben links bei (0, 0), y nach unten negativ.</summary>
-    public static Plangrafik Plan(Projekt p, Element ansicht)
+    /// <summary>Plangrafik der Liste (Art «liste», Papier-mm, Massstab 1): Tabellen als Linien und Texte, Ursprung oben links bei (0, 0), y nach unten negativ.
+    /// Steht die Ansicht auf einem Planblatt (Ansichtsfenster), gelten dessen Eigenschaften umbruch und schrift und der Bereich des Blatts (Umbruch in Blöcken);
+    /// sonst gibt es keinen Umbruch.</summary>
+    public static Plangrafik Plan(Projekt p, Element ansicht) => Plan(p, ansicht, null, null);
+
+    /// <summary>Wie <see cref="Plan(Projekt, Element)"/>, für eine Platzierung, die es noch nicht gibt (Platzsuche von ansicht_platzieren): Blatt, Umbruch und Schrift werden
+    /// angegeben. Ohne Blatt wird die Platzierung der Ansicht im Modell gesucht.</summary>
+    public static Plangrafik Plan(Projekt p, Element ansicht, Element? blatt, Platzierung? vorgabe)
     {
+        var platz = vorgabe ?? Platzierung.Von(p.Modell, ansicht, blatt);
         var inhalt = Fuer(p, ansicht);
+        var lay = Anordnen(inhalt, platz.Bereich(p), platz.Umbruch, platz.Schrift);
         var g = new Plangrafik { Ansicht = ansicht.Kennzeichen, Art = "liste", Massstab = 1, Stand = p.Modell.Pruefsumme() };
-        g.Teile.Add(new Grafikteil { Ebene = "beschriftung", Primitive = Zeichnen(inhalt) });
+        g.Teile.Add(new Grafikteil { Ebene = "beschriftung", Primitive = lay.Primitive });
         // Texte zählen in der Begrenzung nur mit ihrem Einfügepunkt (Grundlinie): oben Platz für die Schrifthöhe, unten für Unterlängen lassen
-        if (Grafik.Begrenzung(g.Teile) is { Length: 4 } b) g.Begrenzung = [b[0] - 0.5, b[1] - 1.0, b[2] + 0.5, b[3] + Schrift + 0.5];
+        if (Grafik.Begrenzung(g.Teile) is { Length: 4 } b) g.Begrenzung = [b[0] - 0.5, b[1] - 1.0, b[2] + 0.5, b[3] + platz.Schrift + 0.5];
         return g;
     }
+
+    /// <summary>Platzierung einer Liste auf einem Planblatt: das Blatt und die Optionen des Ansichtsfensters.</summary>
+    /// <param name="Blatt">Planblatt oder null (Ansicht nicht auf einem Blatt)</param>
+    /// <param name="Umbruch">spalten | aus</param>
+    /// <param name="Schrift">Schriftgrösse in Papier-mm</param>
+    public sealed record Platzierung(Element? Blatt, string Umbruch, double Schrift)
+    {
+        /// <summary>Liest die Optionen aus einem Ansichtsfenster (Eigenschaften umbruch und schrift; ungültige Werte gelten als Vorgabe bzw. werden auf die Grenzen gesetzt).</summary>
+        public static Platzierung Aus(Element? blatt, Element? fenster) => new(blatt, Umbruchwert(fenster?.Text("umbruch")), SchriftWert(fenster?.Zahl("schrift")));
+
+        /// <summary>Platzierung der Ansicht im Modell: das Ansichtsfenster der Ansicht und dessen Blatt; <paramref name="blatt"/> übersteuert das Blatt.</summary>
+        public static Platzierung Von(Modell m, Element ansicht, Element? blatt = null)
+        {
+            var fenster = m.DerKlasse("Ansichtsfenster").FirstOrDefault(f => f.Bezuege.GetValueOrDefault("ansicht") == ansicht.Id);
+            blatt ??= fenster is null ? null : m.Finde(fenster.TeilVon) is { Klasse: "Planblatt" } b ? b : null;
+            return Aus(blatt, fenster);
+        }
+
+        /// <summary>Bereich der Tabelle auf dem Blatt (null ohne Blatt).</summary>
+        public ListeBereich? Bereich(Projekt p) => Blatt is null ? null : Planausgabe.ListenBereich(p, Blatt, Schrift);
+    }
+
+    /// <summary>Wert der Eigenschaft umbruch: «aus» oder (Vorgabe) «spalten».</summary>
+    public static string Umbruchwert(string? t) => string.Equals(t?.Trim(), UmbruchAus, StringComparison.OrdinalIgnoreCase) ? UmbruchAus : UmbruchSpalten;
+
+    /// <summary>Wert der Eigenschaft schrift, auf die Grenzen gesetzt; ohne Wert die Vorgabe.</summary>
+    public static double SchriftWert(double? mm) => mm is double d && double.IsFinite(d) && d > 0 ? Math.Clamp(d, SchriftMin, SchriftMax) : SchriftVorgabe;
 
     static string Text(JsonNode? n, string vorgabe = "") => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : vorgabe;
 
@@ -353,10 +435,12 @@ public static class Listentabelle
         return z;
     }
 
-    // ------------------------------------------------------------------ Zeichnen
+
+    // ------------------------------------------------------------------ Anordnen und Zeichnen
 
     static readonly object MessSperre = new();
     static XGraphics? messer;
+    static readonly Dictionary<(double, bool), XFont> Schriftarten = [];
 
     /// <summary>Breite eines Textes in Papier-mm in Arial (wie PdfZeichner.Breite).</summary>
     static double Breite(string text, double mm, bool fett)
@@ -365,15 +449,17 @@ public static class Listentabelle
         {
             Schriften.Sicherstellen();
             messer ??= XGraphics.CreateMeasureContext(new XSize(4000, 4000), XGraphicsUnit.Point, XPageDirection.Downwards);
-            var f = new XFont("Arial", Math.Max(1, mm * PdfZeichner.PtJeMm), fett ? XFontStyleEx.Bold : XFontStyleEx.Regular);
+            if (!Schriftarten.TryGetValue((mm, fett), out var f))
+                Schriftarten[(mm, fett)] = f = new XFont("Arial", Math.Max(1, mm * PdfZeichner.PtJeMm), fett ? XFontStyleEx.Bold : XFontStyleEx.Regular);
             return messer.MeasureString(text, f).Width / PdfZeichner.PtJeMm;
         }
     }
 
-    static string Kuerzen(string t, double maxBreite, bool fett)
+    static string Kuerzen(string t, double maxBreite, bool fett, double schrift)
     {
-        if (Breite(t, Schrift, fett) <= maxBreite) return t;
-        while (t.Length > 1 && Breite(t + "…", Schrift, fett) > maxBreite) t = t[..^1];
+        // Toleranz: die Spaltenbreite entsteht aus (Textbreite + 2 Rand), der Text darf nicht wegen eines Rundungsrests von 1e-15 gekürzt werden
+        if (Breite(t, schrift, fett) <= maxBreite + 1e-6) return t;
+        while (t.Length > 1 && Breite(t + "…", schrift, fett) > maxBreite) t = t[..^1];
         return t + "…";
     }
 
@@ -387,11 +473,46 @@ public static class Listentabelle
         Art = "text", Punkte = [[x, y]], Text = text, Groesse = groesse, Ausrichtung = ausrichtung, Fett = fett, Stil = new Stil { Stift = null },
     };
 
-    /// <summary>Tabellen der Liste als Primitive (Papier-mm); Ursprung links oben bei (0, 0), nach unten wächst y ins Negative.</summary>
-    public static List<Primitiv> Zeichnen(ListeInhalt inhalt)
+    /// <summary>Mass der Tabelle zu einer Schriftgrösse (alles im Verhältnis zur Vorgabeschrift).</summary>
+    readonly record struct Mass(double Schr, double Titel, double Zeile, double Zelle, double Abstand, double F)
     {
-        var ps = new List<Primitiv>();
-        double y = 0;
+        public static Mass Fuer(double schrift)
+        {
+            double f = schrift / SchriftVorgabe;
+            return new(schrift, TabTitel * f, ZeileH * f, Rand * f, TabAbstand * f, f);
+        }
+        public double Luecke => 1.5 * F;
+        public double TitelLuecke => 0.6 * F;
+    }
+
+    /// <summary>Ein Stück einer Tabelle in einem Block: Zeilen von bis (ohne bis), mit Summenzeilen nur im letzten Stück.</summary>
+    sealed class Teilstueck
+    {
+        public int Tab, Von, Bis;
+        public bool MitFuss, Fortsetzung;
+        /// <summary>Zeile innerhalb der Tabelle vor den Summenzeilen (Zeilen über der Grenze von 45).</summary>
+        public string? Marker;
+        /// <summary>Zeile unter dem Stück (Blöcke, die nicht aufs Blatt passen).</summary>
+        public string? Ende;
+    }
+
+    sealed class Block
+    {
+        public List<Teilstueck> S = [];
+        public double Breite;
+    }
+
+    static string WeitereZeilen(int n, string grund) => $"… {n} weitere {(n == 1 ? "Zeile" : "Zeilen")} ({grund})";
+
+    /// <summary>Tabellen der Liste als Primitive (Papier-mm) ohne Bereich und ohne Umbruch (höchstens 45 Zeilen); Ursprung links oben bei (0, 0), nach unten wächst y ins Negative.</summary>
+    public static List<Primitiv> Zeichnen(ListeInhalt inhalt) => Anordnen(inhalt).Primitive;
+
+    /// <summary>Ordnet die Tabellen der Liste an. Mit Bereich und umbruch = spalten gehen sie in Blöcken rechts daneben weiter, wenn die Höhe nicht reicht; sonst eine Spalte
+    /// (höchstens 45 Zeilen). Siehe Kopf der Datei.</summary>
+    public static ListeLayout Anordnen(ListeInhalt inhalt, ListeBereich? bereich = null, string umbruch = UmbruchSpalten, double schrift = SchriftVorgabe)
+    {
+        var m = Mass.Fuer(Math.Clamp(schrift, SchriftMin, SchriftMax));
+        bool spalten = bereich is not null && Umbruchwert(umbruch) == UmbruchSpalten;
 
         // Leere Tabellen (keine Spalten, weil alle ohne Wert wären, oder keine Zeilen): eine Zeile «Keine Einträge.» wie die Listenansicht
         inhalt = new ListeInhalt
@@ -404,84 +525,190 @@ public static class Listentabelle
                     : t).ToList(),
         };
 
-        // Zeilen begrenzen (ein Teil des Blatts; Umbruch folgt in Teil B)
+        // Zeilen begrenzen: mit Umbruch zeigen alle Tabellen alle Zeilen, sonst höchstens 45 (jede Tabelle mindestens eine)
         int frei = MaxZeilen;
-        var tabellen = new List<(ListeTabelle T, int Verborgen)>();
+        var tabs = new List<(ListeTabelle T, int Sichtbar)>();
         foreach (var t in inhalt.Tabellen)
         {
-            int zeigen = Math.Min(t.Zeilen.Count, Math.Max(frei, 1));
+            int zeigen = spalten ? t.Zeilen.Count : Math.Min(t.Zeilen.Count, Math.Max(frei, 1));
             frei -= zeigen;
-            tabellen.Add((t, t.Zeilen.Count - zeigen));
+            tabs.Add((t, zeigen));
         }
+        int verborgen = tabs.Sum(x => x.T.Zeilen.Count - x.Sichtbar);
 
-        // Breiten: aus dem Inhalt, je Spalte höchstens MaxSpalte, Gesamtbreite höchstens MaxBreite
+        // Breiten: aus dem Inhalt, je Spalte höchstens MaxSpalte; Gesamtbreite einer Tabelle höchstens die des Bereichs (ohne Umbruch zusätzlich höchstens MaxBreite)
+        double kappe = bereich is null ? MaxBreite : spalten ? Math.Max(bereich.Breite, 8 * m.Zelle) : Math.Min(MaxBreite, Math.Max(bereich.Breite, 8 * m.Zelle));
+        bool gestaucht = false;
         var breiten = new List<double[]>();
-        foreach (var (t, verborgen) in tabellen)
+        foreach (var (t, sichtbar) in tabs)
         {
             var b = new double[t.Spalten.Count];
             for (int i = 0; i < b.Length; i++)
             {
-                double m = Breite(t.Spalten[i].Titel, Schrift, true);
-                foreach (var z in t.Zeilen.Take(t.Zeilen.Count - verborgen).Concat(t.Fuss)) m = Math.Max(m, Breite(z[i], Schrift, false));
-                b[i] = Math.Min(m, MaxSpalte) + 2 * Rand;
+                double w = Breite(t.Spalten[i].Titel, m.Schr, true);
+                foreach (var z in t.Zeilen.Take(sichtbar)) w = Math.Max(w, Breite(z[i], m.Schr, false));
+                foreach (var z in t.Fuss) w = Math.Max(w, Breite(z[i], m.Schr, true));   // Summenzeilen sind fett gesetzt
+                b[i] = Math.Min(w, MaxSpalte) + 2 * m.Zelle;
             }
             double summe = b.Sum();
-            if (summe > MaxBreite) { double f = MaxBreite / summe; for (int i = 0; i < b.Length; i++) b[i] = Math.Max(b[i] * f, 4 * Rand); }
+            if (summe > kappe + Eps) { gestaucht = true; double f = kappe / summe; for (int i = 0; i < b.Length; i++) b[i] = Math.Max(b[i] * f, 4 * m.Zelle); }
             breiten.Add(b);
         }
-        double gesamt = breiten.Count == 0 ? 0 : breiten.Max(b => b.Sum());
 
-        // Titelzeilen (Zusammenfassung)
-        if (inhalt.Projekt.Length > 0 || inhalt.Zusammenfassung.Count > 0)
+        double summenH = inhalt.Zusammenfassung.Count > 0 ? inhalt.Zusammenfassung.Count * m.Zeile + m.Luecke : 0;
+        double hoehe = spalten ? Math.Max(bereich!.Hoehe - summenH, 3 * m.Zeile) : double.PositiveInfinity;
+
+        double StueckH(Teilstueck s, bool erstes)
         {
-            foreach (var zeile in inhalt.Zusammenfassung)
-            {
-                ps.Add(Beschriftung(Kuerzen(zeile, Math.Max(gesamt, 60), false), 0, y - ZeileH + 0.9, Schrift));
-                y -= ZeileH;
-            }
-            if (inhalt.Zusammenfassung.Count > 0) y -= 1.5;
+            var t = tabs[s.Tab].T;
+            return (erstes ? 0 : m.Abstand) + (t.Titel.Length > 0 ? m.Zeile + m.TitelLuecke : 0) + m.Zeile + (s.Bis - s.Von) * m.Zeile
+                + (s.Marker is not null ? m.Zeile : 0) + (s.MitFuss ? t.Fuss.Count * m.Zeile : 0) + (s.Ende is not null ? m.Zeile : 0);
         }
+        double BlockH(Block bl) { double h = 0; for (int i = 0; i < bl.S.Count; i++) h += StueckH(bl.S[i], i == 0); return h; }
 
-        for (int ti = 0; ti < tabellen.Count; ti++)
+        // Verteilen: Tabelle für Tabelle in den Block; was nicht mehr in die Höhe passt, beginnt einen neuen Block (mit wiederholter Kopfzeile).
+        // Ein Stück braucht mindestens Kopfzeile und eine Zeile; die letzte Zeile steht stets zusammen mit den Summenzeilen.
+        var bloecke = new List<Block> { new() };
+        for (int ti = 0; ti < tabs.Count; ti++)
         {
-            var (t, verborgen) = tabellen[ti];
-            var b = breiten[ti];
-            double breite = b.Sum();
-            if (t.Titel.Length > 0)
+            var (t, sichtbar) = tabs[ti];
+            double w = breiten[ti].Sum();
+            double fuss = t.Fuss.Count * m.Zeile;
+            int i = 0; bool fort = false;
+            while (true)
             {
-                ps.Add(Beschriftung(Kuerzen(t.Titel, Math.Max(breite, 60), true), 0, y - ZeileH + 0.8, TabTitel, fett: true));
-                y -= ZeileH + 0.6;
-            }
-            double yOben = y;
-            var xs = new List<double> { 0 };
-            foreach (var w in b) xs.Add(xs[^1] + w);
-
-            void Zeile(string[] zellen, bool fett)
-            {
-                for (int i = 0; i < zellen.Length; i++)
+                var cur = bloecke[^1];
+                bool erstes = cur.S.Count == 0;
+                double kopf = (erstes ? 0 : m.Abstand) + (t.Titel.Length > 0 ? m.Zeile + m.TitelLuecke : 0) + m.Zeile;
+                int rest = sichtbar - i;
+                int n;
+                if (double.IsPositiveInfinity(hoehe)) n = rest;
+                else
                 {
-                    var text = Kuerzen(zellen[i], b[i] - 2 * Rand, fett);
-                    if (text.Length == 0) continue;
-                    bool rechts = t.Spalten[i].Zahl;
-                    ps.Add(Beschriftung(text, rechts ? xs[i + 1] - Rand : xs[i] + Rand, y - ZeileH + 0.95, Schrift, rechts ? "rechts" : "links", fett));
+                    double platz = hoehe - BlockH(cur) - kopf + Eps;
+                    n = platz >= rest * m.Zeile + fuss ? rest : Math.Min(rest - 1, (int)Math.Floor(platz / m.Zeile));
                 }
-                y -= ZeileH;
-                ps.Add(Linie(0, y, breite, y));
+                int mindest = rest > 0 ? 1 : 0;
+                if (n < mindest)
+                {
+                    if (!erstes) { bloecke.Add(new()); continue; }
+                    n = mindest;   // ein leerer Block nimmt mindestens eine Zeile, sonst kämen wir nie weiter
+                }
+                var s = new Teilstueck { Tab = ti, Von = i, Bis = i + n, MitFuss = i + n == sichtbar, Fortsetzung = fort };
+                if (s.MitFuss && t.Zeilen.Count > sichtbar)
+                    s.Marker = WeitereZeilen(t.Zeilen.Count - sichtbar, bereich is null ? $"höchstens {MaxZeilen} Zeilen" : "Umbruch aus");
+                cur.S.Add(s);
+                cur.Breite = Math.Max(cur.Breite, w);
+                i += n; fort = true;
+                if (i >= sichtbar) break;
+                bloecke.Add(new());
             }
-
-            ps.Add(Linie(0, y, breite, y));
-            Zeile(t.Spalten.Select(s => s.Titel).ToArray(), true);
-            foreach (var z in t.Zeilen.Take(t.Zeilen.Count - verborgen)) Zeile(z, false);
-            if (verborgen > 0)
-            {
-                ps.Add(Beschriftung($"… {verborgen} weitere {(verborgen == 1 ? "Zeile" : "Zeilen")} (Umbruch auf weitere Blattbereiche folgt)", Rand, y - ZeileH + 0.95, Schrift));
-                y -= ZeileH;
-                ps.Add(Linie(0, y, breite, y));
-            }
-            foreach (var z in t.Fuss) Zeile(z, true);
-            foreach (var x in xs) ps.Add(Linie(x, yOben, x, y));
-            y -= TabAbstand;
         }
-        return ps;
+        var xs = new List<double>();
+        double xo = 0;
+        foreach (var bl in bloecke) { xs.Add(xo); xo += bl.Breite + m.Abstand; }
+        double noetig = xs[^1] + bloecke[^1].Breite;
+        int noetigeBloecke = bloecke.Count;
+
+        // Reicht die Blattbreite für alle Blöcke nicht, bleiben nur die Blöcke, die noch aufs Blatt passen; eine Markierung sagt, was fehlt
+        if (spalten && noetig > bereich!.Breite + Eps)
+        {
+            int behalten = 1;
+            while (behalten < bloecke.Count && xs[behalten] + bloecke[behalten].Breite <= bereich.Breite + Eps) behalten++;
+            int weg = 0;
+            for (int k = behalten; k < bloecke.Count; k++)
+                foreach (var s in bloecke[k].S) weg += s.Bis - s.Von + (s.MitFuss ? tabs[s.Tab].T.Fuss.Count : 0);
+            bloecke.RemoveRange(behalten, bloecke.Count - behalten);
+            var letzter = bloecke[^1];
+            // Platz für die Markierungszeile: die letzten Zeilen des letzten Blocks wandern ebenfalls in die fehlenden
+            while (BlockH(letzter) + m.Zeile > hoehe + Eps && !(letzter.S.Count == 1 && letzter.S[0].Bis - letzter.S[0].Von <= 1))
+            {
+                var ls = letzter.S[^1];
+                var lt = tabs[ls.Tab].T;
+                if (ls.Bis - ls.Von <= 1 && letzter.S.Count > 1)
+                {
+                    weg += ls.Bis - ls.Von + (ls.MitFuss ? lt.Fuss.Count : 0);
+                    letzter.S.RemoveAt(letzter.S.Count - 1);
+                    continue;
+                }
+                ls.Bis--; weg++;
+                if (ls.MitFuss) { ls.MitFuss = false; weg += lt.Fuss.Count; }
+            }
+            letzter.S[^1].Ende = WeitereZeilen(weg, "Liste passt nicht aufs Blatt");
+            verborgen += weg;
+        }
+        double gezeigt = xs[bloecke.Count - 1] + bloecke[^1].Breite;
+
+        // Zeichnen
+        var ps = new List<Primitiv>();
+        double y0 = 0;
+        foreach (var zeile in inhalt.Zusammenfassung)
+        {
+            ps.Add(Beschriftung(Kuerzen(zeile, Math.Max(gezeigt, 60), false, m.Schr), 0, y0 - m.Zeile + 0.9 * m.F, m.Schr));
+            y0 -= m.Zeile;
+        }
+        if (inhalt.Zusammenfassung.Count > 0) y0 -= m.Luecke;
+
+        double tiefste = y0;
+        for (int bi = 0; bi < bloecke.Count; bi++)
+        {
+            double y = y0, x0 = xs[bi];
+            for (int si = 0; si < bloecke[bi].S.Count; si++)
+            {
+                var s = bloecke[bi].S[si];
+                var t = tabs[s.Tab].T;
+                var b = breiten[s.Tab];
+                double breite = b.Sum();
+                if (si > 0) y -= m.Abstand;
+                if (t.Titel.Length > 0)
+                {
+                    var titel = s.Fortsetzung ? t.Titel + " (Fortsetzung)" : t.Titel;
+                    ps.Add(Beschriftung(Kuerzen(titel, Math.Max(breite, 60), true, m.Schr), x0, y - m.Zeile + 0.8 * m.F, m.Titel, fett: true));
+                    y -= m.Zeile + m.TitelLuecke;
+                }
+                double yOben = y;
+                var sx = new List<double> { x0 };
+                foreach (var w in b) sx.Add(sx[^1] + w);
+
+                void Zeile(string[] zellen, bool fett)
+                {
+                    for (int i = 0; i < zellen.Length; i++)
+                    {
+                        var text = Kuerzen(zellen[i], b[i] - 2 * m.Zelle, fett, m.Schr);
+                        if (text.Length == 0) continue;
+                        bool rechts = t.Spalten[i].Zahl;
+                        ps.Add(Beschriftung(text, rechts ? sx[i + 1] - m.Zelle : sx[i] + m.Zelle, y - m.Zeile + 0.95 * m.F, m.Schr, rechts ? "rechts" : "links", fett));
+                    }
+                    y -= m.Zeile;
+                    ps.Add(Linie(x0, y, x0 + breite, y));
+                }
+
+                ps.Add(Linie(x0, y, x0 + breite, y));
+                Zeile(t.Spalten.Select(c => c.Titel).ToArray(), true);
+                for (int r = s.Von; r < s.Bis; r++) Zeile(t.Zeilen[r], false);
+                if (s.Marker is not null)
+                {
+                    ps.Add(Beschriftung(s.Marker, x0 + m.Zelle, y - m.Zeile + 0.95 * m.F, m.Schr));
+                    y -= m.Zeile;
+                    ps.Add(Linie(x0, y, x0 + breite, y));
+                }
+                if (s.MitFuss) foreach (var z in t.Fuss) Zeile(z, true);
+                foreach (var x in sx) ps.Add(Linie(x, yOben, x, y));
+                if (s.Ende is not null)
+                {
+                    ps.Add(Beschriftung(s.Ende, x0 + m.Zelle, y - m.Zeile + 0.95 * m.F, m.Schr));
+                    y -= m.Zeile;
+                }
+            }
+            tiefste = Math.Min(tiefste, y);
+        }
+        return new ListeLayout
+        {
+            Primitive = ps, Bloecke = bloecke.Count, Breite = gezeigt, Hoehe = -tiefste, NoetigeBreite = noetig, NoetigeBloecke = noetigeBloecke, Verborgen = verborgen,
+            Gestaucht = gestaucht, Bereich = bereich,
+        };
     }
+
+    /// <summary>Misst die Liste einer Ansicht in ihrer Platzierung (für die Prüfung P28): Inhalt, Bereich des Blatts, Umbruch und Schrift der Platzierung.</summary>
+    public static ListeLayout Messen(Projekt p, ListeInhalt inhalt, Platzierung platz) => Anordnen(inhalt, platz.Bereich(p), platz.Umbruch, platz.Schrift);
 }

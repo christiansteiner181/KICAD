@@ -59,8 +59,10 @@ public sealed partial class Werkzeuge
         [Description("Planblatt (Kennzeichen, Id oder Plannummer)")] string planblatt,
         [Description(Hlks.Kern.AnsichtPlatzieren.ParAnsicht)] string ansicht,
         [Description("[x, y] Mitte des Fensters auf dem Blatt in Papier-mm, Ursprung unten links; fehlt sie, kommt die Ansicht in die Mitte des freien Bereichs")] JsonElement? lage = null,
+        [Description(Hlks.Kern.AnsichtPlatzieren.ParUmbruch)] string? umbruch = null,
+        [Description(Hlks.Kern.AnsichtPlatzieren.ParSchrift)] double? schrift = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("ansicht_platzieren", Parameter(("planblatt", planblatt), ("ansicht", ansicht), ("lage", lage)), trockenlauf);
+        Befehl("ansicht_platzieren", Parameter(("planblatt", planblatt), ("ansicht", ansicht), ("lage", lage), ("umbruch", umbruch), ("schrift", schrift)), trockenlauf);
 
     [McpServerTool(Name = "einlageplaene_anlegen"), Description(EinlageplaeneAnlegen.Text)]
     public string EinlageplaeneAnlegenWerkzeug(

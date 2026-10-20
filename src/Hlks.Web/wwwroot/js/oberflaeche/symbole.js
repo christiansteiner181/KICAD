@@ -137,6 +137,9 @@ const S = {
   koAusIfc: '<path d="M5 12l11-7 11 7v11l-11 7-11-7z"/><path d="M5 12l11 7 11-7M16 19v11"/><circle cx="16" cy="12.5" r="2.4" stroke-dasharray="2 1.6"/>',
   koBcfExport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M11 20h9M17 16l4 4-4 4"/>',
   koBcfImport: '<path d="M7 3h13l5 5v21H7z"/><path d="M20 3v5h5"/><path d="M22 20h-9M16 16l-4 4 4 4"/>',
+  // Modul 7 Teil B3: Koordinationsplan (Grundriss mit drei Leitungen in verschiedenen Linienarten und einer Aussparungsbox), Aussparungsboxen (Box mit drei Zeilen und Führungslinie zum Kreis)
+  koPlan: '<rect x="4" y="4" width="24" height="24"/><path d="M4 18h11v10M15 18h13"/><path d="M8 8h14M8 12h18" stroke-dasharray="3 2"/><path d="M21 8v6"/><rect x="21" y="21" width="5" height="4"/>',
+  koBoxen: '<rect x="13" y="4" width="15" height="12"/><path d="M16 8h9M16 11h9M16 14h5"/><circle cx="8" cy="23" r="4.5"/><path d="M11 19.8l3-3.8"/>',
   famFamilie: '<path d="M16 3l11 6v14l-11 6-11-6V9z"/><path d="M5 9l11 6 11-6M16 15v14"/><circle cx="16" cy="15" r="2.4" fill="currentColor"/>',
   // Nachbearbeitung N3: Einlageplan (Grundriss mit schraffierter Platte und Rohr mit Bogen nach oben), Grundleitungsplan (Grundriss mit Erdreichlinie und Rohr mit Sohle),
   // Liste als CSV (Blatt mit Zellen und Pfeil)

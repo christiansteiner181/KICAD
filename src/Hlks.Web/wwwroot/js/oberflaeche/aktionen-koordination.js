@@ -1,15 +1,20 @@
 // Aktionen des Registers «Koordination» (Modul 3b, Auftrag C1): Projektvorgaben, Kollisionen prüfen, Kollisionsliste, Aussparungen vorschlagen / nummerieren,
-// Aussparungsliste, Abgleich, Aussparungsplan, IFC für den Architekten, BCF exportieren und importieren. Eigenes Register (wie «Hülle»): das Modul hat zehn Knöpfe
+// Aussparungsliste, Abgleich, Aussparungsplan, IFC für den Architekten, BCF exportieren und importieren, seit Modul 7 Teil B3 dazu Koordinationsplan und Aussparungsboxen. Eigenes Register (wie «Hülle»): das Modul hat zehn Knöpfe
 // in vier Gruppen und gehört weder zum Zeichnen (Gebäudetechnik) noch zur Verwaltung; Revit führt Austausch und Prüfung ebenfalls in einem eigenen Register
 // («Zusammenarbeit»). Keine Fachlogik: alles geht über Befehle und Abfragen des Kerns, die Dialoge stehen in koordination-dialoge.js, die Listen in
 // koordination-panel.js, Texte und Parameter in koordination-text.js (in Node getestet).
 
-import { zustand, derKlasse, abonnieren } from '../zustand.js';
+import { zustand, element, derKlasse, abonnieren } from '../zustand.js';
 import { abfrage } from '../api.js';
+import * as fenster from '../fenster.js';
 import { registrieren } from './register.js';
+import { meldung } from './dialoge.js';
+import { sende, ergebnisMelden } from './befehle.js';
+import { aufElement, freiesKennzeichen, freierName } from './werkzeug.js';
 import * as D from './koordination-dialoge.js';
 import { panelOeffnen } from './koordination-panel.js';
 import * as T from './koordination-text.js';
+import * as KP from './koordinationsplan.js';
 
 const projektOffen = () => !!zustand.status?.offen;
 const KEIN_PROJEKT = 'Zuerst ein Projekt öffnen.';
@@ -90,6 +95,45 @@ registrieren({
   aktiv: () => projektOffen() && !!ifcFaehig()?.vorhanden,
   hinweis: () => (!projektOffen() ? KEIN_PROJEKT : ifcFaehig() === null ? 'Der Kern wird noch befragt …' : T.IFC_FEHLT_HINWEIS),
   ausfuehren: () => D.ifcDialog(ifcFaehig()),
+});
+
+// ---------------------------------------------------------------------------------------------- Gruppe Koordinationsplan (Modul 7 Teil B3)
+// «Koordinationsplan» legt für das Geschoss der aktiven Ansicht einen Grundriss mit darstellung = koordination und Aussparungsboxen an (element_anlegen) oder öffnet den
+// vorhandenen; «Aussparungsboxen» schaltet die Option aussparungsboxen der aktiven Grundrissansicht (element_aendern). Die Bausteine stehen in koordinationsplan.js (Node-Test),
+// gezeichnet und gefärbt wird vom Kern.
+
+const aktiveAnsicht = () => element(zustand.aktiveAnsicht);
+const geschosseListe = () => derKlasse('Geschoss');
+
+registrieren({
+  id: 'koordination.plan', titel: 'Koordinations​plan', symbol: 'koPlan', kuerzel: null, register: REGISTER, gruppe: 'Koordinationsplan',
+  aktiv: () => projektOffen() && KP.aktivesGeschoss(aktiveAnsicht(), geschosseListe()) !== null,
+  hinweis: () => KP.planHinweis({ projektOffen: projektOffen(), aktiveAnsicht: aktiveAnsicht(), geschosse: geschosseListe() }),
+  async ausfuehren() {
+    const aktiv = aktiveAnsicht();
+    const g = KP.aktivesGeschoss(aktiv, geschosseListe());
+    if (!g) return;
+    const vorhanden = KP.vorhandener(derKlasse('Ansicht'), g);
+    if (vorhanden) { await fenster.ansichtOeffnen(vorhanden.kennzeichen); return; }
+    const kz = freiesKennzeichen(KP.kennzeichen(g));
+    const anzeige = freierName(KP.name(g), derKlasse('Ansicht').map((a) => a.name || a.kennzeichen));
+    const r = await sende('element_anlegen', KP.anlegenParameter({ geschoss: g, massstab: KP.massstabFuer(aktiv), kz, anzeigeName: anzeige }));
+    if (!ergebnisMelden(r, `Koordinationsplan «${anzeige}» angelegt.`)) return;
+    if (await aufElement(kz)) await fenster.ansichtOeffnen(kz);
+    else meldung('Der neue Koordinationsplan ist noch nicht eingetroffen.', 'warnung', { vorschlag: 'Im Projektbrowser nachsehen.' });
+  },
+});
+
+registrieren({
+  id: 'koordination.boxen', titel: 'Aussparungs​boxen', symbol: 'koBoxen', kuerzel: null, register: REGISTER, gruppe: 'Koordinationsplan',
+  gedrueckt: () => KP.boxenAn(aktiveAnsicht()),
+  aktiv: () => projektOffen() && KP.boxenHinweis(aktiveAnsicht()) === '',
+  hinweis: () => (projektOffen() ? KP.boxenHinweis(aktiveAnsicht()) : KEIN_PROJEKT),
+  async ausfuehren() {
+    const a = aktiveAnsicht();
+    if (!a) return;
+    ergebnisMelden(await sende('element_aendern', KP.boxenParameter(a)), KP.boxenMeldung(a));
+  },
 });
 
 // ---------------------------------------------------------------------------------------------- Gruppe BCF
