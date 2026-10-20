@@ -310,3 +310,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | – | Hersteller-DN hat Vorrang (bestätigt Christian), KI-Anleitung/Spezifikation | Hauptlauf | ok |
 | 20.10.2026 | 7 | B2 Oberfläche: Dialog «IFC exportieren», Anleitung, Browser-Reihe ifc-export | hlks-modul (worktree, Ports 5300–5309) | läuft |
 | 20.10.2026 | – | N4 PDF-Leser Dezimalzahlen/Zeilenleser, N5 Fehlerkennung MCP, Ventil-Pset ifc.json | hlks-kern (worktree, Ports 5310–5319) | läuft |
+| 20.10.2026 | – | Gesamtprüfung fff1d6c grün → geprüft 9d1835f (Marke geprueft-20261020-1606), Desktop | Hauptlauf | ok |
