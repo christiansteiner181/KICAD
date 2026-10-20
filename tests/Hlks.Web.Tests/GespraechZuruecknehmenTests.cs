@@ -253,8 +253,8 @@ public class GespraechVerbotslisteTests
         foreach (var w in server)
             Assert.True(GespraechDienst.InternetWerkzeuge.Contains(w) ? !verboten.Contains("mcp__hlks__" + w) : verboten.Contains("mcp__hlks__" + w),
                 $"{w}: mit Internet falsch eingeordnet");
-        Assert.Contains("OHNE Projektzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(true));
-        Assert.DoesNotContain("OHNE Projektzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(false));
+        Assert.Contains("OHNE Modellzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(true));
+        Assert.DoesNotContain("OHNE Modellzugriff", new GespraechDienst(null!, new GespraechEinstellungen(), new KiLaeufe()).Systemteil(false));
     }
 
     [Fact]
@@ -268,9 +268,11 @@ public class GespraechVerbotslisteTests
     public void ClaudeArgumente_NurSchalterDieDieAttrappeKennt()
     {
         // Die Attrappe kennt genau die Schalter aus «claude --help» (2.1.299), die die Aufträge und Gespräche brauchen; ein unbekannter endet mit Code 2.
-        var a = GespraechDienst.ClaudeArgumente(new GespraechEinstellungen { Aufwand = "low" }, "m.json", "sonnet", true, "abc", true);
+        var a = GespraechDienst.ClaudeArgumente(new GespraechEinstellungen { Aufwand = "low" }, "m.json", "sonnet", true, "abc", true, "# Rolle\nSystemteil");
         var bekannt = new HashSet<string> { "-p", "--output-format", "--verbose", "--include-partial-messages", "--mcp-config", "--strict-mcp-config", "--tools",
-            "--allowedTools", "--disallowedTools", "--permission-mode", "--disable-slash-commands", "--setting-sources", "--model", "--resume", "--session-id", "--effort" };
+            "--allowedTools", "--disallowedTools", "--permission-mode", "--disable-slash-commands", "--setting-sources", "--model", "--resume", "--session-id", "--effort",
+            "--append-system-prompt" };   // Sicherheitsprüfung 3c, B7 («claude --help» 2.1.299)
         Assert.All(a.Where(x => x.StartsWith('-')), x => Assert.Contains(x, bekannt));
+        Assert.Equal("# Rolle\nSystemteil", a[a.IndexOf("--append-system-prompt") + 1]);
     }
 }

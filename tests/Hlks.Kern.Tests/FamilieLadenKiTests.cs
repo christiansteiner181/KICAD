@@ -35,11 +35,16 @@ public sealed class FamilieLadenKiTests : BibliothekTestBasis
     public void KI_laedt_neue_Familie_aus_einer_Datei()
     {
         BibliothekFuellen();
-        var datei = Path.Combine(Wurzel, "heizkoerper.familie.json");
-        File.WriteAllText(datei, VersionLesen(2).ToJsonString());
         var ki = NeuesProjekt("KI Datei", "ki");
+        // Sicherheitsprüfung 3c, B3a: die KI lädt Dateien nur unter dem Projektordner bzw. den Wurzeln aus kataloge/buero.json
+        var datei = Path.Combine(ki.Speicher!.Ort, "heizkoerper.familie.json");
+        File.WriteAllText(datei, VersionLesen(2).ToJsonString());
         Ok(ki.Ausfuehren("familie_laden", new JsonObject { ["datei"] = datei }));
         Assert.Single(ki.Modell.DerKlasse("Familie"));
+        // ausserhalb (Testwurzel neben Projekt und Bibliothek): abgelehnt
+        var aussen = Path.Combine(Wurzel, "heizkoerper.familie.json");
+        File.WriteAllText(aussen, VersionLesen(2).ToJsonString());
+        Assert.StartsWith(KiPfade.Meldung, Nein(NeuesProjekt("KI Datei aussen", "ki").Ausfuehren("familie_laden", new JsonObject { ["datei"] = aussen })).Fehler);
     }
 
     [Fact]
@@ -74,7 +79,7 @@ public sealed class FamilieLadenKiTests : BibliothekTestBasis
     {
         BibliothekFuellen();
         var ki = NeuesProjekt("KI Datei vorhanden", "ki");
-        var datei = Path.Combine(Wurzel, "heizkoerper.familie.json");
+        var datei = Path.Combine(ki.Speicher!.Ort, "heizkoerper.familie.json");   // unter dem Projektordner (Sicherheitsprüfung 3c, B3a)
         File.WriteAllText(datei, VersionLesen(1).ToJsonString());
         Ok(ki.Ausfuehren("familie_laden", new JsonObject { ["datei"] = datei }));
         var version = FamilienBefehle.Version(Hole(ki, "FAM-1"));

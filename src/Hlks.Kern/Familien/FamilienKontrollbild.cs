@@ -105,7 +105,7 @@ public static class FamilienKontrollbild
             if (aa.Count != 4) throw new HlksFehler("ausschnitt muss [x0, y0, x1, y1] sein.", "Vier Zahlen in Unterlagen-Koordinaten.");
             ausschnitt = aa.Select(x => Json.Zahl(x) ?? throw new HlksFehler("ausschnitt enthält keine Zahl.", "Vier Zahlen in Unterlagen-Koordinaten.")).ToArray();
         }
-        var u = UnterlagenService.Aufloesen(p, Param.Text(par, "unterlage", true));
+        var u = UnterlagenService.AufloesenZumLesen(p, Param.Text(par, "unterlage", true), "familie_vergleichen");   // Sicherheitsprüfung 3c, B3b
         var a = FamilienAuswertung.Aufloesen(f, typ, null);
         if (!a.Gueltig) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} Typ «{typ}»", a.Fehler);
         var def = (JsonObject)fam.Eigenschaft("definition")!.Inhalt!;

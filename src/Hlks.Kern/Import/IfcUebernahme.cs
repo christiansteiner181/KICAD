@@ -31,9 +31,15 @@ public static class IfcImport
     public static IReadOnlyList<IIfcUebertrag> Uebertrager => uebertrager.Value;
     public static IIfcGrundlage? Grundlage => grundlage.Value;
 
-    /// <summary>Datei eines Parameters: Pfad oder Name einer abgelegten Unterlage.</summary>
-    public static string Dateipfad(Projekt p, string datei) =>
-        File.Exists(datei) ? datei : Unterlagen.Pfad(p, datei);
+    /// <summary>Datei eines Parameters: Pfad oder Name einer abgelegten Unterlage. Für die KI (Sicherheitsprüfung 3c, B3a/B4) nur Pfade unter dem
+    /// Projektordner und den Wurzeln aus kataloge/buero.json, geprüft vor dem ersten Dateizugriff; ein blosser Name meint den Ordner unterlagen.</summary>
+    public static string Dateipfad(Projekt p, string datei)
+    {
+        if (!KiPfade.IstKi(p)) return File.Exists(datei) ? datei : Unterlagen.Pfad(p, datei);
+        if (KiPfade.IstName(datei)) return Unterlagen.Pfad(p, datei);
+        var voll = KiPfade.Pruefen(p, datei, "IFC-Datei");
+        return File.Exists(voll) ? voll : Unterlagen.Pfad(p, datei);
+    }
 
     /// <summary>Abfrage ifc_pruefen: was steht in der Datei, was würde übernommen – ohne etwas zu ändern.</summary>
     public static JsonObject Pruefen(Projekt p, string datei)

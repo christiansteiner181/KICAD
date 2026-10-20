@@ -13,6 +13,18 @@
     "umgebungsvariable": "HLKS_PROJEKTABLAGE",
     "hinweis": "Nur lesen (Suche nach projekt.json). Tests setzen HLKS_PROJEKTABLAGE auf einen Ordner unter %TEMP%."
   },
+  "normen": {
+    "pfad": "W:\\05_Normen und Merkblätter",
+    "quelle": "Vorgabe der Normensuche (src/Hlks.Kern/Normen/Normenverzeichnis.cs, VorgabeWurzel; Spezifikation entwurf/modul-3c.md, Teil K «Normensuche»)",
+    "umgebungsvariable": "HLKS_NORMEN",
+    "hinweis": "Nur lesen. Wurzel für die Pfadprüfung der KI (src/Hlks.Kern/Sicherheit/KiPfade.cs); die Normensuche selbst liest HLKS_NORMEN bzw. ihre Vorgabe. Tests setzen HLKS_NORMEN auf einen Ordner unter %TEMP%."
+  },
+  "netz": {
+    "server": ["HK-NAS02"],
+    "laufwerke": { "W:": "\\\\HK-NAS02\\WorkShare_NAS" },
+    "quelle": "Server: Auftrag Hauptlauf 20.10.2026 (Sicherheitsprüfung 3c, Befund B4: UNC-Pfade der KI nur zu \\\\HK-NAS02). Laufwerk W: = \\\\HK-NAS02\\WorkShare_NAS: dieselben Ordner der Revisionspläne Bernstrasse (02_Projektdateien Objekte\\Worb_BES_Bernstrasse\\…\\21.01.2026_Revisionspläne) stehen in den Arbeitsordnern der Sitzung vom 20.10.2026 unter beiden Pfaden.",
+    "hinweis": "Pfadprüfung der KI (berichte/modul-3c-sicherheitspruefung.md, B3a/B4): Dateipfade der KI nur unter dem Projektordner und den Wurzeln projektablage, familienbibliothek und normen; UNC-Pfade nur zu diesen Servern; ein Laufwerk aus laufwerke gilt gleich wie seine UNC-Form. Menschen sind nicht betroffen."
+  },
   "anleitung": {
     "ordner": "%USERPROFILE%\\HLKS_CAD_anleitung",
     "hinweis": "Bedienungsanleitung, von KICAD unter /hilfe/ ausgeliefert; erzeugt mit werkzeuge/anleitung_bauen.mjs (Desktop-Start baut sie mit); lokal, nie OneDrive (Bilder echter Projekte). Sprungziele #k-<register>~<knopf>, #s-<suchwörter>. Umgebungsvariable HLKS_ANLEITUNG übersteuert den Ordner (Tests)."

@@ -29,7 +29,7 @@ public static class UnterlagenAbfrage
         {
             try
             {
-                var u = UnterlagenService.Aufloesen(p, bezug);
+                var u = UnterlagenService.AufloesenZumLesen(p, bezug, "unterlagen_lesen");   // B3b: mit Internet nur Herstellerunterlagen
                 aus.Add(ZusammenfassungAusAblage(p, u) ?? Neu(p, u));
             }
             catch (HlksFehler f) { aus.Add(new JsonObject { ["unterlage"] = bezug, ["fehler"] = f.Message, ["vorschlag"] = f.Vorschlag }); }
@@ -219,7 +219,7 @@ public static class UnterlagenAbfrage
 
     public static JsonObject Befunde(Projekt p, JsonObject par)
     {
-        var u = UnterlagenService.Aufloesen(p, Param.Text(par, "unterlage", true));
+        var u = UnterlagenService.AufloesenZumLesen(p, Param.Text(par, "unterlage", true), "befunde");
         var r = UnterlagenService.Lesen(p, u);
         IEnumerable<UnterlagenBefund> q = r.Befunde.Befunde;
 
@@ -320,7 +320,7 @@ public static class UnterlagenAbfrage
     /// <summary>Bild und Angaben dazu (Bereich, Grösse, Hinweise); der MCP-Server gibt die Bytes als Bildinhalt zurück.</summary>
     public static JsonObject BildErzeugen(Projekt p, JsonObject par, out byte[] bild, out string mime)
     {
-        var u = UnterlagenService.Aufloesen(p, Param.Text(par, "unterlage", true));
+        var u = UnterlagenService.AufloesenZumLesen(p, Param.Text(par, "unterlage", true), "unterlage_bild");
         double[]? ausschnitt = null;
         if (par["ausschnitt"] is JsonArray a)
         {

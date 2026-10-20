@@ -194,6 +194,7 @@ public sealed class PlansatzSetzen : IBefehl
                 if (leer) { summe.Remove(key); continue; }
                 if (key == "einzeln" && !(wert is JsonValue bv && bv.TryGetValue<bool>(out _))) throw new HlksFehler("ausgabe.einzeln muss true oder false sein.");
                 if (key != "einzeln" && !(wert is JsonValue tv && tv.TryGetValue<string>(out _))) throw new HlksFehler($"ausgabe.{key} muss Text sein.");
+                if (key == "ordner") KiPfade.Pruefen(k.Projekt, wert!.GetValue<string>(), Name + " ausgabe.ordner");   // Sicherheitsprüfung 3c, B3a/B4
                 summe[key] = wert!.DeepClone();
             }
             eig["ausgabe"] = summe;

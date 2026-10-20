@@ -11,8 +11,9 @@
 // Schnittstelle des Servers: src/Hlks.Web/OBERFLAECHE.md, Abschnitt «KI-Palette: Schnittstelle (3c, Teil K)».
 
 export const GRENZEN = { textZeichen: 8000, auswahl: 200, bildBytes: 4194304, titelZeichen: 200 };
-export const INTERNET_HINWEIS = 'ohne Projektzugriff';
-export const INTERNET_TIPP = 'Mit Internet arbeitet Claude ohne Projektzugriff und ohne Projektkontext: weder Ansicht noch Geschoss, Auswahl oder Bild gehen mit, und Claude kann das Modell weder lesen noch ändern.';
+// Wortlaut nach der Sicherheitsprüfung 3c, B3d: mit Internet ist das Modell weg, Herstellerunterlagen und Familien bleiben lesbar
+export const INTERNET_HINWEIS = 'ohne Modellzugriff; Unterlagen und Familien lesbar';
+export const INTERNET_TIPP = 'Mit Internet arbeitet Claude ohne Modellzugriff und ohne Projektkontext: weder Ansicht noch Geschoss, Auswahl oder Bild gehen mit, und Claude kann das Modell weder lesen noch ändern. Lesbar bleiben Herstellerunterlagen (zweck «familie») und Familien.';
 export const BILD_MAX_KANTE = 1600;
 
 // ------------------------------------------------------------------------------------------------ Links
@@ -266,9 +267,11 @@ export function dauerText(sek) {
 const MODELLNAMEN = { sonnet: 'Sonnet', opus: 'Opus', haiku: 'Haiku' };
 export const modellName = (id, modelle = []) => modelle.find((m) => m.id === id)?.name ?? MODELLNAMEN[id] ?? (id || '');
 
-/** Text im Gesprächswahlfeld: «Titel · 3 Fragen · 20.10. 14:05». */
+/** Text im Gesprächswahlfeld: «Titel · 3 Fragen · 20.10. 14:05». Eine beschädigte Gesprächsdatei (Server: lesbar false, Sicherheitsprüfung 3c, B10)
+ *  erscheint als «nicht lesbar – Datei 2026….json». */
 export function gespraechLabel(g) {
   if (!g) return '';
+  if (g.lesbar === false) return `nicht lesbar – Datei ${String(g.datei ?? g.id ?? '').split(/[\\/]/).pop()}`;
   const teile = [g.titel || 'Neues Gespräch'];
   if (typeof g.fragen === 'number') teile.push(einzahl(g.fragen, 'Frage', 'Fragen'));
   const z = zeitText(g.geaendert);
@@ -456,11 +459,16 @@ export function wahlSchreiben(roh, ort, wahl) {
   return { ...Object.fromEntries(rest), ...neu };
 }
 
-/** Wahl des Gesprächs: gemerkte Id, wenn es sie gibt, sonst das neueste; null, wenn es keine Gespräche gibt. */
+/** Wahl des Gesprächs: gemerkte Id, wenn es sie gibt, sonst das neueste; null, wenn es keine Gespräche gibt. Nicht lesbare (B10) nie. */
 export function gespraechWaehlen(liste, gemerkt) {
-  const l = liste ?? [];
+  const l = (liste ?? []).filter((g) => g.lesbar !== false);
   if (gemerkt && l.some((g) => g.id === gemerkt)) return gemerkt;
   return l[0]?.id ?? null;
+}
+
+/** Hinweis zu einer nicht lesbaren Gesprächsdatei (Tooltip): voller Pfad und Fehler. */
+export function nichtLesbarTipp(g) {
+  return g?.lesbar === false ? `Die Gesprächsdatei ist nicht lesbar: ${g.datei ?? g.id}${g.fehler ? ` (${g.fehler})` : ''}. Datei prüfen oder aus dem Ordner entfernen.` : '';
 }
 
 /** Modell: gemerktes, wenn bekannt, sonst die Vorgabe des Servers, sonst «sonnet». */

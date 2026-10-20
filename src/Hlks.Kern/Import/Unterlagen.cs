@@ -26,11 +26,19 @@ public static class Unterlagen
     }
 
     /// <summary>Legt eine Datei als Unterlage ab (oder findet sie wieder) und gibt Name und Prüfsumme zurück. Steht
-    /// quelle schon im Unterlagenordner (Name aus einer früheren Ablage), wird nur nachgeschlagen.</summary>
-    public static (string Name, string Stand) Ablegen(Projekt p, string quelle)
+    /// quelle schon im Unterlagenordner (Name aus einer früheren Ablage), wird nur nachgeschlagen.
+    /// Für die KI (Sicherheitsprüfung 3c, B3a/B4) nur Pfade unter dem Projektordner und den Wurzeln aus kataloge/buero.json (KiPfade); ein
+    /// blosser Name meint dann nur den Ordner unterlagen.</summary>
+    public static (string Name, string Stand) Ablegen(Projekt p, string quelle) => Ablegen(p, quelle, false);
+
+    /// <summary>Wie <see cref="Ablegen(Projekt, string)"/>; kernDatei = true für Dateien, die der Kern selbst erzeugt hat (z. B. der Download
+    /// von unterlage_aus_url in einem eigenen Temp-Ordner) – sie stammen nicht aus einem Parameter und werden nicht geprüft.</summary>
+    public static (string Name, string Stand) Ablegen(Projekt p, string quelle, bool kernDatei)
     {
         var ordner = Ordner(p);
         var imOrdner = Path.Combine(ordner, Path.GetFileName(quelle));
+        if (!kernDatei && KiPfade.IstKi(p))
+            quelle = KiPfade.IstName(quelle) ? imOrdner : KiPfade.Pruefen(p, quelle, "Unterlage ablegen");
         if (!File.Exists(quelle) && File.Exists(imOrdner)) quelle = imOrdner;
         if (!File.Exists(quelle)) throw new HlksFehler($"Datei {quelle} gibt es nicht.", "Pfad prüfen (Netzlaufwerk verbunden?) oder die Datei hochladen.");
         string stand;

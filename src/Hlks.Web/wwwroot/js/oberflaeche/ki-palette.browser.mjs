@@ -516,23 +516,23 @@ abschnitt('11. Neuladen zeigt den Verlauf; gespeichert wird nur die Wahl');
   pruef(ende.text === 'Eins. Zwei. Drei. Vier. Fünf.', 'der Text ist vollständig und nichts steht doppelt', JSON.stringify(ende));
 }
 
-abschnitt('12. Internet: ohne Projektzugriff, Chips ausgegraut, Nachrichten markiert');
+abschnitt('12. Internet: ohne Modellzugriff, Chips ausgegraut, Nachrichten markiert');
 {
   await zst(`z.auswaehlen(${JSON.stringify(EL.id)})`);
   await warte(200);
   await klick(PAL + ' .ki-internet');
   pruef((await ausw(`return document.querySelector('${PAL} .ki-internet').getAttribute('aria-pressed');`)) === 'true', 'Schalter «Internet» an');
-  pruef(/ohne Projektzugriff/.test(await text(PAL + ' .ki-internet-note')), 'Hinweis «ohne Projektzugriff» am Schalter', await text(PAL + ' .ki-internet-note'));
-  pruef(/ohne Projektzugriff und ohne Projektkontext/.test(await text(PAL + ' .ki-band')), 'Hinweisband erklärt es', await text(PAL + ' .ki-band'));
+  pruef(/ohne Modellzugriff/.test(await text(PAL + ' .ki-internet-note')), 'Hinweis «ohne Modellzugriff» am Schalter', await text(PAL + ' .ki-internet-note'));
+  pruef(/ohne Modellzugriff und ohne Projektkontext/.test(await text(PAL + ' .ki-band')), 'Hinweisband erklärt es', await text(PAL + ' .ki-band'));
   const chips = await ausw(`return [...document.querySelectorAll('${PAL} .ki-chip')].map((c) => ({ id: c.dataset.id, an: c.getAttribute('aria-pressed'), gesperrt: c.disabled, deckkraft: getComputedStyle(c).opacity, tipp: c.title, streich: getComputedStyle(c.querySelector('.ki-chip-text')).textDecorationLine }));`);
-  pruef(chips.every((c) => c.gesperrt && c.an === 'false' && Number(c.deckkraft) < 0.7 && /ohne Projektzugriff/.test(c.tipp) && c.streich.includes('line-through')), 'alle Kontext-Chips ausgegraut, gesperrt, durchgestrichen, mit Tooltip', JSON.stringify(chips));
+  pruef(chips.every((c) => c.gesperrt && c.an === 'false' && Number(c.deckkraft) < 0.7 && /ohne Modellzugriff/.test(c.tipp) && c.streich.includes('line-through')), 'alle Kontext-Chips ausgegraut, gesperrt, durchgestrichen, mit Tooltip', JSON.stringify(chips));
   await klick(PAL + ' .ki-chip[data-id="ansicht"]');   // gesperrt: Klick ändert nichts
   pruef((await ausw(`return document.querySelector('${PAL} .ki-chip[data-id="ansicht"]').getAttribute('aria-pressed');`)) === 'false', 'ein gesperrter Chip lässt sich nicht anwählen');
   await beide('internet_chips');
   await fragen('Suche im Netz [attrappe:internet]');
   const n = await nachrichten();
-  pruef(n.at(-2).internet && n.at(-1).internet, 'beide Nachrichten sind mit «Internet · ohne Projektzugriff» markiert', JSON.stringify(n.slice(-2)));
-  pruef(/ohne Projektzugriff/.test(await text(PAL + ' .ki-mensch:nth-last-child(2) .ki-internet-marke')) || /ohne Projektzugriff/.test(await ausw(`return [...document.querySelectorAll('${PAL} .ki-internet-marke')].at(-1).textContent;`)), 'Marke nennt «ohne Projektzugriff»');
+  pruef(n.at(-2).internet && n.at(-1).internet, 'beide Nachrichten sind mit «Internet · ohne Modellzugriff» markiert', JSON.stringify(n.slice(-2)));
+  pruef(/ohne Modellzugriff/.test(await text(PAL + ' .ki-mensch:nth-last-child(2) .ki-internet-marke')) || /ohne Modellzugriff/.test(await ausw(`return [...document.querySelectorAll('${PAL} .ki-internet-marke')].at(-1).textContent;`)), 'Marke nennt «ohne Modellzugriff»');
   pruef(await ausw(`return [...document.querySelectorAll('${PAL} .ki-mensch .ki-kontext-chip.verworfen')].length > 0;`), 'unter der Frage: «ohne Projektkontext»');
   const g = await gespraech(await ausw(`return document.querySelector('${PAL} .ki-wahl-gespraech').value;`));
   const frage = g.nachrichten.at(-2);

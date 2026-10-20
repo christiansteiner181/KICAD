@@ -187,10 +187,28 @@ test('Kontext-Chips: abgewählt ergibt aus; fehlendes ist gesperrt und nie an', 
   assert.deepEqual(ab.map((x) => x.an), [false, true, true, true]);
 });
 
-test('Kontext-Chips mit Internet: alle ausgegraut (gesperrt, nicht an) mit Tooltip «ohne Projektzugriff»', () => {
+test('Kontext-Chips mit Internet: alle ausgegraut (gesperrt, nicht an) mit Tooltip «ohne Modellzugriff» (Sicherheitsprüfung 3c, B3d)', () => {
   const c = T.kontextChips(daten(), { ansicht: true, geschoss: true, auswahl: true, bild: true }, true);
   assert.ok(c.every((x) => x.gesperrt && !x.an));
-  for (const x of c) { assert.match(x.tipp, /ohne Projektzugriff/); assert.match(x.tipp, /Projektkontext/); }
+  for (const x of c) { assert.match(x.tipp, /ohne Modellzugriff/); assert.match(x.tipp, /Projektkontext/); assert.match(x.tipp, /Herstellerunterlagen .* Familien/); }
+});
+
+test('Wortlaut Internet (Sicherheitsprüfung 3c, B3d): «ohne Modellzugriff; Unterlagen und Familien lesbar», nirgends mehr «ohne Projektzugriff»', () => {
+  assert.equal(T.INTERNET_HINWEIS, 'ohne Modellzugriff; Unterlagen und Familien lesbar');
+  assert.match(T.INTERNET_TIPP, /ohne Modellzugriff/);
+  for (const datei of ['ki-text.js', 'ki-palette.js']) assert.doesNotMatch(lies(datei), /ohne Projektzugriff/, datei);
+});
+
+test('Nicht lesbare Gesprächsdatei (Sicherheitsprüfung 3c, B10): Liste zeigt «nicht lesbar – Datei …», Wahl überspringt sie', () => {
+  const kaputt = { id: '20261020-010101-aaaa', lesbar: false, datei: 'C:\\P\\ki\\gespraeche\\20261020-010101-aaaa.json', fehler: 'Unerwartetes Ende' };
+  assert.equal(T.gespraechLabel(kaputt), 'nicht lesbar – Datei 20261020-010101-aaaa.json');
+  assert.match(T.nichtLesbarTipp(kaputt), /C:\\P\\ki\\gespraeche\\20261020-010101-aaaa\.json \(Unerwartetes Ende\)/);
+  assert.equal(T.nichtLesbarTipp({ id: 'x', lesbar: true }), '');
+  const liste = [kaputt, { id: 'gut', titel: 'Gut', lesbar: true }];
+  assert.equal(T.gespraechWaehlen(liste, null), 'gut');
+  assert.equal(T.gespraechWaehlen(liste, kaputt.id), 'gut', 'auch gemerkt nicht');
+  assert.equal(T.gespraechWaehlen([kaputt], null), null);
+  assert.match(lies('ki-palette.js'), /g\.lesbar === false\) \{ o\.disabled = true/);
 });
 
 test('Kontext der Frage: nur was angewählt ist; Auswahl höchstens 200; Bild nur, wenn gewünscht und vorhanden', () => {
@@ -616,5 +634,5 @@ test('OBERFLAECHE.md: Abschnitt «KI-Palette (3c, Teil O)» am Ende', () => {
   assert.ok(i > 0, 'Abschnitt fehlt');
   assert.ok(i > md.indexOf('## KI-Palette: Schnittstelle (3c, Teil K)'), 'steht nach dem Abschnitt von Teil K');
   const abschnitt = md.slice(i);
-  for (const stichwort of ['Kürzel', 'KI', 'Internet', 'ohne Projektzugriff', 'Zurücknehmen', 'Normen', 'ki-palette.browser.mjs', 'Zweitfenster']) assert.ok(abschnitt.includes(stichwort), `«${stichwort}» fehlt im Abschnitt`);
+  for (const stichwort of ['Kürzel', 'KI', 'Internet', 'ohne Modellzugriff', 'Zurücknehmen', 'Normen', 'ki-palette.browser.mjs', 'Zweitfenster', 'nicht lesbar']) assert.ok(abschnitt.includes(stichwort), `«${stichwort}» fehlt im Abschnitt`);
 });

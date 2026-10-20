@@ -29,10 +29,11 @@ static class ArchitekturHilfe
 
     public static Element Hole(Projekt p, string kz) => p.Modell.Finde(kz) ?? throw new Xunit.Sdk.XunitException($"{kz} fehlt im Modell");
 
-    /// <summary>katalog: abgewandelte Katalogkopie (z. B. SanitaerHilfe.KatalogUnbestaetigt); Vorgabe der Katalog der Arbeitskopie.</summary>
-    public static Projekt Neu(double schnitthoehe = 1000, Katalog? katalog = null)
+    /// <summary>katalog: abgewandelte Katalogkopie (z. B. SanitaerHilfe.KatalogUnbestaetigt); Vorgabe der Katalog der Arbeitskopie.
+    /// speicher: Ablage (z. B. damit ein zweiter Akteur das Projekt öffnet); Vorgabe ohne Ablage.</summary>
+    public static Projekt Neu(double schnitthoehe = 1000, Katalog? katalog = null, IProjektSpeicher? speicher = null)
     {
-        var p = Projekt.Anlegen(katalog ?? Kat, null, "Test Architektur", "T", "pc");
+        var p = Projekt.Anlegen(katalog ?? Kat, speicher, "Test Architektur", "T", "pc");
         Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["kennzeichen"] = "GEB" }));
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
@@ -51,9 +52,9 @@ static class ArchitekturHilfe
         }));
 
     /// <summary>Vier Wände um das Rechteck 6000 × 4000 (Achsen), Dicke 200: W-1 Süd (→ +x), W-2 Ost, W-3 Nord, W-4 West.</summary>
-    public static Projekt Rechteck(string? material = null, double schnitthoehe = 1000)
+    public static Projekt Rechteck(string? material = null, double schnitthoehe = 1000, IProjektSpeicher? speicher = null)
     {
-        var p = Neu(schnitthoehe);
+        var p = Neu(schnitthoehe, speicher: speicher);
         var par = new JsonObject
         {
             ["geschoss"] = "EG", ["punkte"] = Pts([0, 0], [6000, 0], [6000, 4000], [0, 4000]), ["dicke"] = 200, ["geschlossen"] = true,

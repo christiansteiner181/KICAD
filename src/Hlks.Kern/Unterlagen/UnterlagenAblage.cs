@@ -112,9 +112,9 @@ public static class UnterlagenService
                 .Where(f => !Path.GetFileName(f).StartsWith('.') && string.Equals(Unterlagen.OriginalName(f), Path.GetFileName(bezug), StringComparison.OrdinalIgnoreCase))
                 .OrderByDescending(File.GetLastWriteTimeUtc).FirstOrDefault();
         }
-        if (gefunden is null && File.Exists(bezug))
+        if (gefunden is null && DateiPfad(p, bezug) is { } quelle)
         {
-            var (name, _) = Unterlagen.Ablegen(p, bezug);
+            var (name, _) = Unterlagen.Ablegen(p, quelle);
             gefunden = Path.Combine(ordner, name);
         }
         if (gefunden is null) throw new HlksFehler($"Unterlage «{bezug}» gibt es nicht.", Hilfe(p));
@@ -126,6 +126,29 @@ public static class UnterlagenService
         // Unterlage-Element der Datei (falls eingefügt), damit Kennzeichen erscheinen
         var el = p.Modell.DerKlasse("Unterlage").FirstOrDefault(u => string.Equals(u.Text("datei"), dateiName, StringComparison.OrdinalIgnoreCase));
         return new UnterlageRef(dateiName, Unterlagen.OriginalName(dateiName), a, Pruefsumme(dateiName, gefunden), gefunden, el?.Kennzeichen, el?.Id);
+    }
+
+    /// <summary>Unterlage zum Lesen ihres Inhalts (unterlagen_lesen, befunde, unterlage_bild, familie_vergleichen): wie <see cref="Aufloesen"/>,
+    /// dazu die Lesegrenze eines Laufs mit Internet (Sicherheitsprüfung 3c, B3b; KiUnterlagen).</summary>
+    public static UnterlageRef AufloesenZumLesen(Projekt p, string? bezug, string werkzeug)
+    {
+        var u = Aufloesen(p, bezug);
+        KiUnterlagen.Pruefen(p, u, werkzeug);
+        return u;
+    }
+
+    /// <summary>Dateipfad als Bezug (die Datei wird dann abgelegt), sonst null. Für die KI (Sicherheitsprüfung 3c, B3a/B4) nur Pfade unter dem
+    /// Projektordner und den Wurzeln aus kataloge/buero.json – geprüft vor jedem Dateizugriff; ein blosser Name meint nur den Ordner unterlagen
+    /// (oben schon gesucht); mit Internet (Lesegrenze) gar keine Pfade.</summary>
+    static string? DateiPfad(Projekt p, string bezug)
+    {
+        if (!KiPfade.IstKi(p)) return File.Exists(bezug) ? bezug : null;
+        if (KiPfade.IstName(bezug)) return null;
+        if (KiUnterlagen.Grenze(p) is not null)
+            throw new HlksFehler($"Mit Internet nimmt die KI keine Dateipfade («{bezug}») – nur Unterlagen des Projekts.",
+                "Kennzeichen oder Dateinamen einer Unterlage angeben; andere Dateien legt ein Mensch über «Unterlagen» ins Projekt.");
+        var voll = KiPfade.Pruefen(p, bezug, "Unterlage");
+        return File.Exists(voll) ? voll : null;
     }
 
     static string Hilfe(Projekt p)

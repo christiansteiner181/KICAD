@@ -25,7 +25,10 @@ static class FamiliePruefungHilfe
     /// <summary>Unterlage mit zweck «familie» einfügen und ihre Befunde lesen.</summary>
     public static UnterlagenBefunde Ablegen(Projekt p, string pfad)
     {
-        Ok(p.Ausfuehren("unterlage_einfuegen", new JsonObject { ["datei"] = pfad, ["zweck"] = "familie" }));
+        // Sicherheitsprüfung 3c, B3a: die KI nimmt Dateien nur unter dem Projektordner bzw. den Wurzeln aus kataloge/buero.json. Wie im Betrieb legt
+        // zuerst ein Mensch die Datei ins Projekt (Hochladen = Unterlagen.Ablegen); die KI fügt sie über ihren Namen ein.
+        var datei = KiPfade.IstKi(p) ? Unterlagen.Ablegen(p, pfad, kernDatei: true).Name : pfad;
+        Ok(p.Ausfuehren("unterlage_einfuegen", new JsonObject { ["datei"] = datei, ["zweck"] = "familie" }));
         var u = UnterlagenService.Aufloesen(p, Path.GetFileName(pfad));
         return UnterlagenService.Lesen(p, u).Befunde;
     }
