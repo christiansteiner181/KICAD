@@ -19,7 +19,7 @@ public static class PlansatzTexte
         "Trockenlauf zeigt, was entstünde.";
     public const string ParPlansatz = "Plansatz (Kennzeichen, Id oder Name) bzw. «auto:<gewerk>» für den automatischen Satz eines Gewerks; fehlt er, wird ein neuer Plansatz angelegt";
     public const string ParName = "Name, z. B. «Plansatz Sanitär»; beim Anlegen nötig, bei einem automatischen Satz mit Gewerk «Plansatz <Gewerk>»";
-    public const string ParGewerk = "Gewerk: heizung | lueftung | sanitaer | kaelte | elektro | koordination | allgemein";
+    public const string ParGewerk = "Gewerk: heizung (auch Kälte) | lueftung | sanitaer | elektro | koordination | allgemein";
     public const string ParAutomatisch = "true = automatischer Plansatz des Gewerks (braucht gewerk); ohne Angabe bleibt der Wert, beim Anlegen nein";
     public const string ParBlaetter = "Planblätter (Kennzeichen oder Plannummer) in der Reihenfolge des PDF; bei einem automatischen Satz müssen sie zum Gewerk gehören";
     public const string ParAbgewaehlt = "Planblätter, die beim Export nicht dabei sind (die gewählte Auswahl bleibt für den nächsten Export gespeichert)";
@@ -29,7 +29,7 @@ public static class PlansatzTexte
         "Setzt das Gewerk von Planblättern von Hand (bestätigt auch einen Vorschlag aus Plannummer oder Ansichten). gewerk «vorschlag» nimmt die Angabe zurück. " +
         "Das Gewerk bestimmt, in welchem automatischen Plansatz ein Blatt steht.";
     public const string ParPlanblaetter = "Planblätter (Kennzeichen oder Plannummer)";
-    public const string ParGewerkBlatt = "heizung | lueftung | sanitaer | kaelte | elektro | koordination | allgemein, oder «vorschlag» (Angabe zurücknehmen)";
+    public const string ParGewerkBlatt = "heizung (auch Kälte) | lueftung | sanitaer | elektro | koordination | allgemein, oder «vorschlag» (Angabe zurücknehmen)";
 
     public const string Aufzaehlen =
         "Alle Plansätze für das Serien-PDF. Automatische Plansätze je Gewerk, für das es Planblätter gibt: angelegte nachgeführt, noch nicht angelegte angeboten " +
@@ -147,6 +147,7 @@ public sealed class PlansatzSetzen : IBefehl
         if (!string.IsNullOrEmpty(bezug)) bestehend = Plaene.Finde(m, bezug);
 
         var gewerk = p.ContainsKey("gewerk") && Param.Text(p, "gewerk") is { Length: > 0 } gt ? PlanGewerk.Hole(gt).Schluessel : null;
+        KaelteAlias.HinweisFuerBefehl(k, Param.Text(p, "gewerk"));
         var eig = new JsonObject();
         string? name = Param.Text(p, "name")?.Trim();
         if (name is { Length: 0 }) throw new HlksFehler("Der Name ist leer.", "Einen Namen angeben, z. B. «Plansatz Sanitär».");
@@ -154,7 +155,7 @@ public sealed class PlansatzSetzen : IBefehl
         bool automatisch = p.ContainsKey("automatisch") ? Param.Bool(p, "automatisch") : bestehend?.Automatisch ?? false;
         var gewerkWirksam = gewerk ?? bestehend?.Gewerk;
         if (automatisch && gewerkWirksam is null)
-            throw new HlksFehler("Ein automatischer Plansatz braucht ein Gewerk.", "gewerk angeben (heizung, lueftung, sanitaer, kaelte, elektro, koordination, allgemein) oder automatisch weglassen.");
+            throw new HlksFehler("Ein automatischer Plansatz braucht ein Gewerk.", "gewerk angeben (heizung (auch Kälte), lueftung, sanitaer, elektro, koordination, allgemein) oder automatisch weglassen.");
 
         if (gewerk is not null) eig["gewerk"] = gewerk;
         if (p.ContainsKey("automatisch")) eig["automatisch"] = automatisch;
@@ -242,6 +243,7 @@ public sealed class PlanblattGewerkSetzen : IBefehl
         var roh = Param.Text(p, "gewerk", true)!.Trim();
         bool zurueck = roh.Length == 0 || roh.Equals("vorschlag", StringComparison.OrdinalIgnoreCase);
         var gewerk = zurueck ? null : PlanGewerk.Hole(roh);
+        KaelteAlias.HinweisFuerBefehl(k, roh);
         var pn = Plaene.Projektnummer(m);
 
         var blaetter = new List<Element>();

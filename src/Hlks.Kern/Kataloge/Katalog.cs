@@ -29,7 +29,7 @@ public sealed class KlassenDef
     public string? Basis { get; set; }
     public bool Abstrakt { get; set; }
     public string Beschreibung { get; set; } = "";
-    /// <summary>sanitaer | heizung | lueftung | kaelte | elektro | msrl | architektur | allgemein</summary>
+    /// <summary>sanitaer | heizung | lueftung | elektro | msrl | architektur | allgemein (Kälte gehört zu heizung, Entscheid Christian 20.10.2026)</summary>
     public string? Gewerk { get; set; }
     /// <summary>Rolle im Netz: verbraucher | quelle | senke | zentrale | leitung – oder leer (Gliederung, Raum, Hülle, Funktion).</summary>
     public string? Rolle { get; set; }
@@ -91,8 +91,10 @@ public sealed class Katalog
     public List<GewerkDef> Gewerke { get; } = [];
     /// <summary>Deckkraft des Pastelltons im dunklen Design (gewerke.json: dunkelDeckkraft).</summary>
     public double GewerkeDunkelDeckkraft { get; private set; } = 0.22;
-    public Dictionary<string, MediumDef> Medien { get; } = new(StringComparer.OrdinalIgnoreCase);
-    public Dictionary<string, SystemtypDef> Systemtypen { get; } = new(StringComparer.OrdinalIgnoreCase);
+    /// <summary>Medien nach Kennung; alte Kennungen (KUE-VL, SOLE-RL, HZ_VL …) finden den heutigen Eintrag (<see cref="KaelteAlias"/>).</summary>
+    public Dictionary<string, MediumDef> Medien { get; } = new(KaelteAlias.MediumVergleich.Instanz);
+    /// <summary>Systemtypen nach Name; alte Namen (Kühlwasser Vorlauf, Sole Rücklauf …) finden den heutigen Eintrag (<see cref="KaelteAlias"/>).</summary>
+    public Dictionary<string, SystemtypDef> Systemtypen { get; } = new(KaelteAlias.SystemtypVergleich.Instanz);
     /// <summary>openBIM-Abgleich: Abbildung auf IFC4/IFC2x3 (ifc.json, Modul 1b); null, wenn die Datei fehlt.</summary>
     public IfcAbbildung? Ifc { get; private set; }
     /// <summary>Belastungswerte der Sanitärapparate (sanitaer_belastungswerte.json, Modul 4 Teil A); null, wenn die Datei fehlt.</summary>

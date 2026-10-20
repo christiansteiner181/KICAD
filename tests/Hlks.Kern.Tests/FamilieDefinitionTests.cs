@@ -94,6 +94,28 @@ public class FamilieDefinitionTests
     }
 
     [Fact]
+    public void Anschluss_AlteKaelteUndSoleKennungen_WerdenGelesenUndUmgeschrieben()
+    {
+        // Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026): KUE-VL → KAE-VL, SOLE-RL → HZ-RL-Glyk, nie ein Fehler
+        var f = Def(Mini(anschluesse: """
+            [{ "name": "a", "medium": "KUE-VL", "fluss": "rein", "lage": [0, 0, 0], "richtung": [0, 0, -1] },
+             { "name": "b", "medium": "kue-rl", "fluss": "raus", "lage": [0, 0, 0], "richtung": [0, 1, 0] },
+             { "name": "c", "medium": "SOLE-VL", "fluss": "rein", "lage": [0, 0, 0], "richtung": [1, 0, 0] },
+             { "name": "d", "medium": "SOLE-RL", "fluss": "raus", "lage": [0, 0, 0], "richtung": [-1, 0, 0] },
+             { "name": "e", "medium": "KAE_RL", "fluss": "raus", "lage": [0, 0, 0], "richtung": [0, -1, 0] }]
+            """));
+        Assert.True(f.Gueltig, string.Join(" | ", f.Fehler));
+        Assert.Equal(["KAE-VL", "KAE-RL", "HZ-VL-Glyk", "HZ-RL-Glyk", "KAE-RL"], f.Anschluesse.Select(x => x.Medium).ToArray());
+        // als Wert eines Medium-Parameters ebenso
+        var g = Def(Mini("""[{ "name": "med", "art": "typ", "datentyp": "medium", "wert": "KUE-VL" }]""",
+            """[{ "name": "A", "werte": {} }, { "name": "B", "werte": { "med": "SOLE-RL" } }]""",
+            anschluesse: """[{ "name": "a", "medium": "med", "fluss": "rein", "lage": [0, 0, 0], "richtung": [0, 0, -1] }]"""));
+        Assert.True(g.Gueltig, string.Join(" | ", g.Fehler));
+        Assert.Equal("KAE-VL", FamilienAuswertung.Aufloesen(g, "A", null).Anschluesse[0].Medium);
+        Assert.Equal("HZ-RL-Glyk", FamilienAuswertung.Aufloesen(g, "B", null).Anschluesse[0].Medium);
+    }
+
+    [Fact]
     public void Anschluss_MediumAusParameter()
     {
         var f = Def(Mini("""[{ "name": "med", "art": "typ", "datentyp": "medium", "wert": "KW" }]""",

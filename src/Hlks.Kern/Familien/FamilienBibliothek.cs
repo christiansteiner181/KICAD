@@ -57,6 +57,7 @@ public static class FamilienBibliothek
         bool Trifft(string feld, string? wert)
         {
             var l = L(auswahl[feld]);
+            if (feld == "gewerke") l = l.Select(KaelteAlias.Gewerk).ToList();   // gespeichertes «kaelte» = heizung (Entscheid Christian 20.10.2026)
             return l.Count == 0 || (wert is not null && l.Contains(wert.Trim(), StringComparer.OrdinalIgnoreCase));
         }
         if (id is not null && L(auswahl["aus"]).Contains(id, StringComparer.OrdinalIgnoreCase)) return false;

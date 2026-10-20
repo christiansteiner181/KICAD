@@ -6,7 +6,7 @@
 //             grundleitungen, massstab (Vorgabe 50), detailgrad mittel; Kennzeichen sprechend: «EL-D.ü.<G>» (Decke über G), «EL-BP-<G>»
 //             (Bodenplatte), «EL-W-<G>» (Wände), «GL-<G>» (Grundleitungen); Name = Titel des Blatts.
 //   Planblatt Titel «<Gewerk> Einlagen D.ü.2.UG» – Gewerk nur, wenn alle Elemente des Plans mit Medium zu EINEM Gewerk gehören (Sanitär,
-//             Heizung, Lüftung, Kälte) – bzw. «Grundleitungen 2.UG» (wie S06); Format Vorgabe A1 quer.
+//             Heizung inkl. Kälte, Lüftung) – bzw. «Grundleitungen 2.UG» (wie S06); Format Vorgabe A1 quer.
 //             Plannummer nach vorhandenem Muster (ANNAHME): tragen Planblätter Nummern «<Präfix><Fachbuchstabe><Ziffern>» mit dem
 //             Fachbuchstaben des Gewerks (S Sanitär, H Heizung, L Lüftung; wie «1-0768 S07»), bekommt das neue Blatt die nächste freie
 //             Nummer nach der höchsten (gleiche Stellenzahl); sonst bleibt die Nummer leer (frei, von Hand nachtragen).
@@ -46,7 +46,7 @@ public sealed class EinlageplaeneAnlegen : IBefehl
 
     static readonly Dictionary<string, (string Name, string? Fach)> Gewerke = new(StringComparer.Ordinal)
     {
-        ["sanitaer"] = ("Sanitär", "S"), ["heizung"] = ("Heizung", "H"), ["lueftung"] = ("Lüftung", "L"), ["kaelte"] = ("Kälte", null),
+        ["sanitaer"] = ("Sanitär", "S"), ["heizung"] = ("Heizung", "H"), ["lueftung"] = ("Lüftung", "L"),   // Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026)
     };
 
     public void Ausfuehren(Kontext k, JsonObject p)

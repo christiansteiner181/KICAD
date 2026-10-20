@@ -73,7 +73,7 @@ public class AbleitungenTests
     {
         var o = Ableitungen.Strangliste(P);
         Assert.Equal("Strangliste", Text(o["ableitung"]));
-        Assert.Equal(7, (int)Zahl(o["anzahl"]));
+        Assert.Equal(9, (int)Zahl(o["anzahl"]));   // 7 Sanitär-Stränge + 2 Kälte-Stränge (KAE-V1, KAE-R1; Entscheid Christian 20.10.2026)
 
         void Pruefe(string strang, int direkt, int gesamt)
         {
@@ -154,7 +154,7 @@ public class AbleitungenTests
     {
         var o = Ableitungen.Mengen(P);
         Assert.Equal("Mengen", Text(o["ableitung"]));
-        Assert.Equal(119.77, Zahl(o["leitungslaengeTotal_m"]), 2);   // nach den Gefälle-Korrekturen (vorher 120.19)
+        Assert.Equal(123.77, Zahl(o["leitungslaengeTotal_m"]), 2);   // nach den Gefälle-Korrekturen (vorher 120.19) = 119.77 Sanitär + 4.00 Kälte (KAE-V1-1, KAE-R1-1)
 
         var gruppen = Liste(o["leitungen"]);
         Assert.NotEmpty(gruppen);
@@ -181,7 +181,9 @@ public class AbleitungenTests
         double total = Zahl(Ableitungen.Mengen(P)["leitungslaengeTotal_m"]);
         double sw = Zahl(Ableitungen.Mengen(P, "SW")["leitungslaengeTotal_m"]);
         double kw = Zahl(Ableitungen.Mengen(P, "KW")["leitungslaengeTotal_m"]);
-        Assert.Equal(total, sw + kw, 1);
+        double kae = Zahl(Ableitungen.Mengen(P, "KAE-VL")["leitungslaengeTotal_m"]) + Zahl(Ableitungen.Mengen(P, "KAE-RL")["leitungslaengeTotal_m"]);   // Kältekreis (Gewerk Heizung)
+        Assert.Equal(4.0, kae, 2);
+        Assert.Equal(total, sw + kw + kae, 1);
         Assert.True(sw > 0 && kw > 0);
         double jeGeschoss = new[] { "UG", "EG", "1.OG" }.Sum(g => Zahl(Ableitungen.Mengen(P, null, g)["leitungslaengeTotal_m"]));
         Assert.Equal(total, jeGeschoss, 1);
@@ -208,7 +210,7 @@ public class AbleitungenTests
         Assert.DoesNotContain(stueck, s => Text(s!["klasse"]) is "Rohr" or "System" or "Strang" or "Anlage");
         // Hausanschluss, Kontrollschacht, Wasserzähler, Ventil je 1
         foreach (var k in new[] { "Hausanschluss", "Kontrollschacht", "Wasserzaehler", "Ventil" })
-            Assert.Equal(1, (int)Zahl(stueck.Single(s => Text(s!["klasse"]) == k)!["stueck"]));
+            Assert.Equal(1, (int)Zahl(stueck.Single(s => Text(s!["klasse"]) == k && Text(s["gewerk"]) == "sanitaer")!["stueck"]));   // (Kältekreis: Pumpe und drei Ventile im Gewerk heizung)
     }
 
     // ---------------------------------------------------------------- Determinismus

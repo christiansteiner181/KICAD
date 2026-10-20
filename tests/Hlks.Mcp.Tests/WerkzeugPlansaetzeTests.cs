@@ -118,6 +118,27 @@ public class WerkzeugPlansaetzeTests : IDisposable
     }
 
     [Fact]
+    public void Gewerk_Kaelte_WirdAlsHeizungGelesen_MitHinweis_NieEinFehler()
+    {
+        // Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026): der frühere Wert «kaelte» in Werkzeugen wird als «heizung» gelesen
+        var v = Json(w.PlannummerVorschlag(gewerk: "kaelte", geschoss: "EG"));
+        Assert.Equal("1-0768 H02", v["nummer"]!.GetValue<string>());
+        Assert.Equal("heizung", v["gewerk"]!.GetValue<string>());
+        var g = Json(w.PlanblattGewerkSetzenWerkzeug(Elem("""["1-0768 S01"]"""), "kaelte"));
+        Assert.True(g["angenommen"]!.GetValue<bool>(), g.ToJsonString());
+        Assert.Contains(g["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Kälte gehört zur Heizung"));
+        Assert.Equal("heizung", p.Modell.Hole("PB-2").Text("gewerk"));
+        var e = Json(w.PlanblattAnlegen(gewerk: "kaelte", geschoss: "EG", format: "A1"));
+        Assert.True(e["angenommen"]!.GetValue<bool>(), e.ToJsonString());
+        Assert.Equal("1-0768 H02", p.Modell.Hole("PB-4").Text("nummer"));
+        Assert.Equal("heizung", p.Modell.Hole("PB-4").Text("gewerk"));
+        // der Plansatz Heizung nimmt es auf, einen Plansatz «Kälte» gibt es nicht
+        var saetze = Json(w.PlansaetzeLesen())["plansaetze"]!.AsArray().Select(s => s!["schluessel"]!.GetValue<string>()).ToArray();
+        Assert.Contains("auto:heizung", saetze);
+        Assert.DoesNotContain(saetze, s => s.Contains("kaelte"));
+    }
+
+    [Fact]
     public void PlansatzPdf_SchreibtSammelUndEinzelPdfs_UeberschreibtNichtOhneErlaubnis()
     {
         var ordner = Path.Combine(wurzel, "Ausgang");

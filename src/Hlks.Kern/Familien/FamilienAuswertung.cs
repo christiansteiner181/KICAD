@@ -186,6 +186,8 @@ public static class FamilienAuswertung
                     medium = a.Werte.GetValueOrDefault(mp.Name)?.Text ?? "*";
                     if (medium != "*" && f.Katalog is { } kat && !kat.Medien.ContainsKey(medium))
                         throw new FeldFehler(new($"anschluss «{an.Name}».medium", $"Parameter «{mp.Name}» ergibt das Medium «{medium}», das es nicht gibt", "Medien: " + string.Join(", ", kat.Medien.Keys)));
+                    // alte Kennung (KUE-VL, SOLE-RL …) in der heutigen Schreibweise (Kälte gehört zur Heizung, Entscheid Christian 20.10.2026)
+                    if (medium != "*" && f.Katalog is { } kat2 && kat2.Medien.TryGetValue(medium, out var md)) medium = md.Kennung;
                 }
                 double? Groesse(FamZahl? z, string feld)
                 {

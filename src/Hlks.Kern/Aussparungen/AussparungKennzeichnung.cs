@@ -23,7 +23,7 @@
 //     eines Geschosses). BD (Bodenkonstruktion = nichttragende Überkonstruktion, SIA 410/2 Ziff. 3 5) erkennt der Kern nicht:
 //     Aussparungen gibt es nur im Rohbau (Nachtrag B3c).
 //   Gewerk aus den Leitungen (Ableitungen.Gewerk: Systemtyp des Systems, sonst Katalog): sanitaer S, heizung H, lueftung L,
-//     kaelte K, elektro E; msrl → E (ANNAHME Prüfliste: MSRL-Leitungen sind elektrische Installationen). Haben alle Leitungen dasselbe
+//     elektro E (Kälte gehört zur Heizung: H, Entscheid Christian 20.10.2026); msrl → E (ANNAHME Prüfliste: MSRL-Leitungen sind elektrische Installationen). Haben alle Leitungen dasselbe
 //     Kurzzeichen, steht es davor; mehrere Gewerke, ein unbekanntes Gewerk oder keine Leitung → kein Gewerk-Kurzzeichen (allgemein).
 //   Kernbohrung (rund, nur von Hand): ANNAHME runder Durchbruch – SIA 400/410 regeln Kernbohrungen nicht eigens.
 
@@ -66,10 +66,11 @@ public static class AussparungKennzeichnung
         ["E"] = "Elektro", ["H"] = "Heizung", ["L"] = "Lüftung/Klima", ["K"] = "Kälte", ["S"] = "Sanitär",
     };
 
-    /// <summary>Gewerk des Katalogs → Kurzzeichen der Arbeitsgattung. msrl → E ist eine ANNAHME (Dateikopf).</summary>
+    /// <summary>Gewerk des Katalogs → Kurzzeichen der Arbeitsgattung. msrl → E ist eine ANNAHME (Dateikopf). Kälte ist Teil der Heizung (Entscheid
+    /// Christian 20.10.2026): Kälteleitungen tragen das Gewerk heizung und damit H; das SIA-Kurzzeichen K (Kälte) bleibt in <see cref="GewerkTexte"/>, wird aber nicht vergeben.</summary>
     public static readonly IReadOnlyDictionary<string, string> GewerkKurz = new Dictionary<string, string>
     {
-        ["sanitaer"] = "S", ["heizung"] = "H", ["lueftung"] = "L", ["kaelte"] = "K", ["elektro"] = "E", ["msrl"] = "E",
+        ["sanitaer"] = "S", ["heizung"] = "H", ["lueftung"] = "L", ["elektro"] = "E", ["msrl"] = "E",
     };
 
     /// <summary>Kennzeichnung der Aussparung (Regeln im Dateikopf); null, wenn weder ein Bauteil noch die Achse die Lage sagen.</summary>

@@ -266,7 +266,7 @@ public class KatalogTests
     [Fact]
     public void Bkp_UndGewerk_SindGefuellt()
     {
-        string[] gewerke = ["sanitaer", "heizung", "lueftung", "kaelte", "elektro", "msrl", "architektur", "allgemein"];
+        string[] gewerke = ["sanitaer", "heizung", "lueftung", "elektro", "msrl", "architektur", "allgemein"];
         // Leitungsbauteile haben kein eigenes Gewerk: es kommt über den Systemtyp (Ableitungen.Gewerk)
         Assert.All(Konkrete.Where(k => k.Rolle != "leitung"), k => Assert.True(k.Gewerk is not null && gewerke.Contains(k.Gewerk), $"{k.Name}: Gewerk «{k.Gewerk}»"));
         Assert.All(Konkrete.Where(k => k.Gewerk is not null), k => Assert.Contains(k.Gewerk!, gewerke));

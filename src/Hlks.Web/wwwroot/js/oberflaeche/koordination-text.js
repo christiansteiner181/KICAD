@@ -11,6 +11,7 @@
 // und Hinweise kommen vom Kern; hier stehen nur Anzeige, Auswahl und die Parameter des Befehls (jede Festlegung mit Quelle).
 
 import { esc } from './einfuegen-text.js';
+import { gewerkAlias } from '../gewerk-alias.js';
 import { zahlLesen, zahlAnzeige, zahlFeld } from './huelle-text.js';
 
 export { esc, zahlLesen, zahlAnzeige, zahlFeld };
@@ -65,8 +66,9 @@ export const KOLLISION_TYPEN = ['kontakt', 'durchdringung'];
 export const AUSSPARUNG_STATUS = ['vorgeschlagen', 'freigegeben', 'versandt', 'angekommen', 'ausgefuehrt', 'veraltet', 'fehlt'];
 export const IFC_FASSUNGEN = ['IFC4', 'IFC2X3'];
 
-export const GEWERK_TEXT = { sanitaer: 'Sanitär', heizung: 'Heizung', lueftung: 'Lüftung', kaelte: 'Kälte', elektro: 'Elektro', msrl: 'MSRL', architektur: 'Architektur', fremd: 'Fremd-IFC', hlks: 'alle HLKS-Gewerke' };
-export const seitenText = (s) => GEWERK_TEXT[s] ?? s;
+export const GEWERK_TEXT = { sanitaer: 'Sanitär', heizung: 'Heizung', lueftung: 'Lüftung', elektro: 'Elektro', msrl: 'MSRL', architektur: 'Architektur', fremd: 'Fremd-IFC', hlks: 'alle HLKS-Gewerke' };
+// Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026): eine alte Seite «kaelte» in abstand_weich heisst «Heizung»
+export const seitenText = (s) => GEWERK_TEXT[gewerkAlias(s)] ?? s;
 
 export function geschossOptionenHtml(geschosse, gewaehlt = '', alle = '(alle)') {
   return `<option value="">${esc(alle)}</option>` + geschosse.map((g) => `<option value="${esc(g.kennzeichen)}"${g.kennzeichen === gewaehlt ? ' selected' : ''}>${esc(g.kennzeichen)}${g.name ? ' – ' + esc(g.name) : ''}</option>`).join('');

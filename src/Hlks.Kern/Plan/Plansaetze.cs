@@ -26,15 +26,17 @@ public static class PlanGewerk
     /// <summary>In der Reihenfolge des Katalogs. Der Name dient auch als Ordnername im Ausgang (wie «Sanitär», «Lüftung»).</summary>
     public static readonly IReadOnlyList<Eintrag> Alle =
     [
-        // Fach K = Koordination wie in den H+K-Plänen (K01–K06), Entscheid Christian 20.10.2026; Kälte vorerst ohne Fachbuchstaben.
-        new("heizung", "Heizung", 'H'), new("lueftung", "Lüftung", 'L'), new("sanitaer", "Sanitär", 'S'), new("kaelte", "Kälte", null),
+        // Fach K = Koordination wie in den H+K-Plänen (K01–K06), Entscheid Christian 20.10.2026. Kälte ist kein eigenes Gewerk (Entscheid
+        // Christian 20.10.2026): Kältepläne tragen den Fachbuchstaben H und liegen im Plansatz Heizung; der alte Wert «kaelte» wird als «heizung» gelesen.
+        new("heizung", "Heizung", 'H'), new("lueftung", "Lüftung", 'L'), new("sanitaer", "Sanitär", 'S'),
         new("elektro", "Elektro", null), new("koordination", "Koordination", 'K'), new("allgemein", "Allgemein", null),
     ];
 
+    /// <summary>Gewerk zum Schlüssel; der frühere Wert «kaelte» ist das Gewerk «heizung» (<see cref="KaelteAlias"/>).</summary>
     public static Eintrag? Finde(string? schluessel) =>
-        string.IsNullOrWhiteSpace(schluessel) ? null : Alle.FirstOrDefault(g => g.Schluessel.Equals(schluessel.Trim(), StringComparison.OrdinalIgnoreCase));
+        string.IsNullOrWhiteSpace(schluessel) ? null : Alle.FirstOrDefault(g => g.Schluessel.Equals(KaelteAlias.Gewerk(schluessel.Trim()), StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Gewerk aus Schlüssel oder Anzeigename (sanitaer, Sanitär); Fehler mit der Liste der erlaubten.</summary>
+    /// <summary>Gewerk aus Schlüssel oder Anzeigename (sanitaer, Sanitär); Fehler mit der Liste der erlaubten. «kaelte» und «Kälte» sind «heizung».</summary>
     public static Eintrag Hole(string? text)
     {
         var t = text?.Trim();

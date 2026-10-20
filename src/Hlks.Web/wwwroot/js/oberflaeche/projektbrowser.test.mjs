@@ -432,18 +432,18 @@ test('Vollständigkeit auch ohne Daten: leeres Projekt, nur Katalog', () => {
   assert.equal(baum('sanitaer', c).find((k) => k.key === 'x:weitere')?.zahl, G.blattZahl(baum('sanitaer', c).find((k) => k.key === 'x:weitere')));
 });
 
-test('Erweiterbar ohne neuen Code: eine neue Gliederung (Kälte) ist ein Eintrag der Tabelle', () => {
-  const kaelte = { id: 'kaelte', titel: 'Kälte', sym: 'rohr', gewerk: 'kaelte', aeste: [
+test('Erweiterbar ohne neuen Code: eine neue Gliederung (Elektro) ist ein Eintrag der Tabelle', () => {
+  const elektro = { id: 'elektro', titel: 'Elektro', sym: 'rohr', gewerk: 'elektro', aeste: [
     { quelle: 'ansichten', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'systeme', titel: 'Anlagen', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'gebaeude', titel: 'Räume' }] };
-  const tabelle = [...G.GLIEDERUNGEN, kaelte];
-  assert.equal(G.gliederung('kaelte', tabelle).titel, 'Kälte');
+  const tabelle = [...G.GLIEDERUNGEN, elektro];
+  assert.equal(G.gliederung('elektro', tabelle).titel, 'Elektro');
   const c = ctxMitDaten();
-  // das Projekt hat kein Kältesystem: alles steht unter «Weitere»
-  const w = baumBauen(kaelte, c);
+  // das Projekt hat kein Elektrosystem: alles steht unter «Weitere»
+  const w = baumBauen(elektro, c);
   assert.deepEqual(w.map((k) => k.label), ['Ansichten', 'Anlagen', 'Räume', 'Weitere']);
   const gebaeude = G.elementMenge(baumBauen(def('gebaeude'), c));
   assert.deepEqual([...elementeOhneZusatz(w)].sort(), [...gebaeude].sort());
-  assert.deepEqual(w[0].gewerk, 'kaelte');
+  assert.deepEqual(w[0].gewerk, 'elektro');
 });
 
 // ---------------------------------------------------------------------------------------------- Koordination
@@ -865,14 +865,34 @@ test('G2 Suche durchsucht alle Blöcke und «Weitere» und behält Treffer mit i
   assert.ok(G.astSchluessel(t).has('b:sanitaer') && G.astSchluessel(t).has('b:heizung'), 'die Köpfe der Blöcke klappen für die Treffer auf');
 });
 
-test('G2 Erweiterbar: eine weitere Fachgliederung (Kälte) lässt sich mit den anderen zu Blöcken kombinieren', () => {
-  const kaelte = { id: 'kaelte', titel: 'Kälte', sym: 'rohr', gewerk: 'kaelte', aeste: [
+test('G2 Erweiterbar: eine weitere Fachgliederung (Elektro) lässt sich mit den anderen zu Blöcken kombinieren', () => {
+  const elektro = { id: 'elektro', titel: 'Elektro', sym: 'rohr', gewerk: 'elektro', aeste: [
     { quelle: 'ansichten', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'systeme', titel: 'Anlagen', auswahl: { gewerk: '$' }, farbe: true }, { quelle: 'gebaeude', titel: 'Räume' }] };
-  const tabelle = [...G.GLIEDERUNGEN, kaelte];
-  assert.deepEqual(G.gliederungenNormieren(['kaelte', 'sanitaer'], tabelle), ['sanitaer', 'kaelte']);
-  assert.deepEqual(G.gliederungUmschalten(['sanitaer'], 'kaelte', tabelle), ['sanitaer', 'kaelte']);
-  const w = baumBauenListe([def('sanitaer'), kaelte], ctxMitDaten());
-  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Kälte', 'Räume', 'Weitere']);
+  const tabelle = [...G.GLIEDERUNGEN, elektro];
+  assert.deepEqual(G.gliederungenNormieren(['elektro', 'sanitaer'], tabelle), ['sanitaer', 'elektro']);
+  assert.deepEqual(G.gliederungUmschalten(['sanitaer'], 'elektro', tabelle), ['sanitaer', 'elektro']);
+  const w = baumBauenListe([def('sanitaer'), elektro], ctxMitDaten());
+  assert.deepEqual(w.map((k) => k.label), ['Sanitär', 'Elektro', 'Räume', 'Weitere']);
+});
+
+// ---------------------------------------------------------------------------------------------- Kälte ist Teil der Heizung (Entscheid Christian 20.10.2026)
+
+test('Kälte: es gibt keine eigene Gliederung; eine gespeicherte Kennung «kaelte» wird als «heizung» gelesen', () => {
+  assert.equal(G.GLIEDERUNGEN.some((g) => g.id === 'kaelte' || g.gewerk === 'kaelte'), false);
+  assert.deepEqual(G.gliederungenNormieren('kaelte'), ['heizung']);
+  assert.deepEqual(G.gliederungenNormieren(['kaelte']), ['heizung']);
+  assert.deepEqual(G.gliederungenNormieren(['kaelte', 'heizung']), ['heizung'], 'keine Doppelten');
+  assert.deepEqual(G.gliederungenNormieren(['sanitaer', 'kaelte']), ['sanitaer', 'heizung'], 'Reihenfolge der Tabelle');
+  assert.deepEqual(G.gliederungUmschalten(['sanitaer'], 'kaelte'), ['sanitaer'], 'Umschalten einer unbekannten Kennung ändert nichts');
+});
+
+test('Kälte: ein Kältesystem (Gewerk heizung im Katalog) steht in der Gliederung «Heizung», nicht unter «Weitere»; alte Gewerkangaben «kaelte» zählen als heizung', () => {
+  const c = ctxMitDaten();
+  // die Systemtypen kommen aus kataloge/systemtypen.json
+  for (const typ of ['Kälte Vorlauf', 'Kälte Rücklauf', 'Kälte Vorlauf Glykol', 'Kälte Rücklauf Glykol']) assert.equal(G.systemGewerk(c, { werte: { systemtyp: typ } }), 'heizung', typ);
+  assert.deepEqual(G.ansichtGewerke(c, { werte: { gewerke: ['kaelte'] } }), ['heizung']);
+  assert.deepEqual(G.ansichtGewerke(c, { werte: { gewerke: ['kaelte', 'heizung', 'sanitaer'] } }), ['heizung', 'sanitaer']);
+  assert.equal(G.passt({ gewerk: '$' }, { gewerke: G.ansichtGewerke(c, { werte: { gewerke: ['kaelte'] } }) }, def('heizung')), true);
 });
 
 test('G2 Verdrahtung: Wert als Liste im Browser, Server nimmt Listen an', () => {

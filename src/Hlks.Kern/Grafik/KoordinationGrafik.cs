@@ -27,11 +27,11 @@ public static class KoordinationGrafik
 
     /// <summary>Koordinationsfarbe des Gewerks (gewerke.json) oder null.</summary>
     public static string? Farbe(Katalog k, string? gewerk) =>
-        k.Gewerke.FirstOrDefault(g => string.Equals(g.Id, gewerk, StringComparison.OrdinalIgnoreCase)) is { Koordination: { Length: > 0 } f } ? f : null;
+        k.Gewerke.FirstOrDefault(g => string.Equals(g.Id, KaelteAlias.Gewerk(gewerk), StringComparison.OrdinalIgnoreCase)) is { Koordination: { Length: > 0 } f } ? f : null;
 
     /// <summary>Pastellton des Gewerks (gewerke.json) oder null.</summary>
     public static string? Pastell(Katalog k, string? gewerk) =>
-        k.Gewerke.FirstOrDefault(g => string.Equals(g.Id, gewerk, StringComparison.OrdinalIgnoreCase)) is { Pastell: { Length: > 0 } f } ? f : null;
+        k.Gewerke.FirstOrDefault(g => string.Equals(g.Id, KaelteAlias.Gewerk(gewerk), StringComparison.OrdinalIgnoreCase)) is { Pastell: { Length: > 0 } f } ? f : null;
 
     /// <summary>Grau der Architektur (gewerke.json «architektur»); fehlt der Eintrag, das Grau der Unterlagen.</summary>
     public static string ArchitekturFarbe(Katalog k) => Farbe(k, "architektur") ?? GrundlagenIfc.Farbe;

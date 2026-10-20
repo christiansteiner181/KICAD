@@ -24,7 +24,7 @@ public static class PlanAbfragen
 {
     public const string Text = "Schlägt eine Plannummer nach dem H+K-Schema vor «<Projektnummer> <Fach><NN>» (Fach H Heizung, L Lüftung, S Sanitär, K Koordination; NN je Geschoss von unten, bei S ab 00, sonst ab 01; " +
         "Sonderblätter FBH H13 ff., Steigzonen H21, Grundleitungen/Einlagen/Kanalisation S06–S10) samt Begründung, Titelvorschlag und Hinweisen (z. B. Nummer schon vergeben → nächste freie). Ändert nichts.";
-    public const string ParGewerk = "heizung | lueftung | sanitaer | koordination (kaelte und elektro haben keinen Fachbuchstaben); fehlt es, aus den Gewerken der Ansicht";
+    public const string ParGewerk = "heizung | lueftung | sanitaer | koordination (Kälte gehört zu heizung; elektro hat keinen Fachbuchstaben); fehlt es, aus den Gewerken der Ansicht";
     public const string ParGeschoss = "Geschoss (Kennzeichen); fehlt es, das der Ansicht";
     public const string ParAnsicht = "Ansicht, für deren Blatt die Nummer gedacht ist (liefert Geschoss, Gewerk und Art)";
     public const string ParArt = "geschoss (Vorgabe) | fbh | steigzonen | grundleitungen | einlagen | kanalisation";
@@ -59,7 +59,7 @@ public sealed class PlanblattAnlegen : IBefehl
         new("titel", "text", false, "Planinhalt (Titel im Plankopf), z. B. Grundriss Erdgeschoss Sanitär; fehlt er, gilt der Titelvorschlag aus Gewerk und Geschoss"),
         new("format", "text", false, "A4 | A3 | A2 | A1 | A0 (Vorgabe A3)"),
         new("hochformat", "bool", false, "true = Hochformat, sonst quer"),
-        new("gewerk", "text", false, "Gewerk des Plans (heizung | lueftung | sanitaer | kaelte | elektro | koordination | allgemein): setzt Planblatt.gewerk und bestimmt den Fachbuchstaben des Vorschlags"),
+        new("gewerk", "text", false, "Gewerk des Plans (heizung (auch Kälte) | lueftung | sanitaer | elektro | koordination | allgemein): setzt Planblatt.gewerk und bestimmt den Fachbuchstaben des Vorschlags"),
         new("geschoss", "text", false, "Geschoss (Kennzeichen) für den Vorschlag von Nummer und Titel"),
         new("ansicht", "text", false, "Ansicht, aus der Geschoss, Gewerk und Art des Vorschlags kommen (die Ansicht wird nicht platziert)"),
         new("art", "text", false, PlanAbfragen.ParArt),
@@ -70,6 +70,7 @@ public sealed class PlanblattAnlegen : IBefehl
         var nummer = Param.Text(p, "nummer")?.Trim() ?? "";
         var titel = Param.Text(p, "titel")?.Trim() ?? "";
         var gewerk = Param.Text(p, "gewerk") is { Length: > 0 } gt ? PlanGewerk.Hole(gt) : null;
+        KaelteAlias.HinweisFuerBefehl(k, Param.Text(p, "gewerk"));
         string? vorschlagText = null;
         if (nummer.Length == 0 || titel.Length == 0)
         {

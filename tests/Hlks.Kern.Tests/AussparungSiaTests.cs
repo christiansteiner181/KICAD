@@ -153,7 +153,7 @@ public class AussparungSiaTests
         Assert.Equal("S", AussparungKennzeichnung.GewerkKurz["sanitaer"]);
         Assert.Equal("H", AussparungKennzeichnung.GewerkKurz["heizung"]);
         Assert.Equal("L", AussparungKennzeichnung.GewerkKurz["lueftung"]);
-        Assert.Equal("K", AussparungKennzeichnung.GewerkKurz["kaelte"]);
+        Assert.False(AussparungKennzeichnung.GewerkKurz.ContainsKey("kaelte"));   // Kälte gehört zur Heizung (Entscheid Christian 20.10.2026): Kälteleitungen tragen H
         Assert.Equal("E", AussparungKennzeichnung.GewerkKurz["elektro"]);
         Assert.Equal("E", AussparungKennzeichnung.GewerkKurz["msrl"]);   // ANNAHME
         Assert.Equal(["BD", "DD", "FD", "WD"], AussparungKennzeichnung.ArtTexte.Keys.Order());

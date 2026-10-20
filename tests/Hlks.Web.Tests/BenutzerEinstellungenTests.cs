@@ -130,7 +130,7 @@ public class BenutzerEinstellungenTests : IDisposable
     [Theory]
     [InlineData("sanitaer", true)]
     [InlineData("gebaeude", true)]
-    [InlineData("kaelte", true)]                 // künftige Gliederung: keine Änderung am Server nötig
+    [InlineData("kaelte", true)]                 // älterer Wert (Kälte gehört zur Heizung): der Server prüft nur die Form, die Oberfläche liest ihn als «heizung»
     [InlineData("Sanitär", false)]
     [InlineData("", false)]
     [InlineData("mit leerzeichen", false)]
@@ -177,7 +177,7 @@ public class BenutzerEinstellungenTests : IDisposable
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer"));
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung"));
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("sanitaer", "heizung", "lueftung", "koordination", "energie"));
-        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("kaelte", "sanitaer"));   // künftige Gliederung: keine Änderung am Server nötig
+        BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", new JsonArray("kaelte", "sanitaer"));   // älterer Wert: nur die Form wird geprüft, die Oberfläche liest «kaelte» als «heizung»
         BenutzerEinstellungen.Pruefen("projektbrowser.gliederung", S("sanitaer"));                          // alter Einzelwert
     }
 

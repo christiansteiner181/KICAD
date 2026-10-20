@@ -78,7 +78,7 @@ const straenge = {
     hkapId: 'ST4', medium: 'Heizung', bezeichnung: 'Heizung Haus', kandidaten: ['HZ-RL', 'HZ-VL'],
     systeme: [{ kennzeichen: 'HZ-RL', systemtyp: 'Heizung Rücklauf' }, { kennzeichen: 'HZ-VL', systemtyp: 'Heizung Vorlauf' }, { kennzeichen: 'KW', systemtyp: 'Trinkwasser kalt' }],
   }],
-  buendeln: 'auto', hinweise: ['SO-VL-1: der Systemtyp «Sole Vorlauf» hat kein HKAP-Medium (Annahme) – das Medium bleibt leer.'],
+  buendeln: 'auto', hinweise: ['SO-VL-1: der Systemtyp «Heizung Vorlauf Glykol» hat kein HKAP-Medium (Annahme) – das Medium bleibt leer.'],
 };
 const projektDaten = { name: 'projekt', nachKicad: { neu: [], geaendert: [{ hkapId: 'P-005', element: 'PI-1', felder: [{ feld: 'bauherr', kicad: 'Muster AG', hkap: 'Muster Immobilien AG', basis: 'Muster AG', ueberschreibt: true, grund: 'HKAP führt' }] }], geloescht: [] }, nachHkap: { neu: [], geaendert: [], geloescht: [] }, konflikte: [], abweichend: [], nurLesen: [], unveraendert: 1 };
 const pendenzen = {
@@ -579,7 +579,7 @@ test('Stränge: Abschnitt mit Konflikt, Zuordnungsvorschlag (Knopf mit KICAD-Str
   assert.ok(!/data-raum=/.test(h), 'der Knopf für Stränge trägt kein data-raum');
   assert.match(h, /Nicht platzierte Stränge \(1\):<\/b> L_01/);
   assert.ok(!/Nicht platzierte Räume/.test(h));
-  assert.match(h, /Sole Vorlauf/);
+  assert.match(h, /Heizung Vorlauf Glykol/);
   assert.match(h, /wird nicht platzierter Strang im System ZUL/);
   assert.match(h, /3 KICAD-Stränge in einem neuen HKAP-Strang gebündelt/);
 });

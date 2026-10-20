@@ -27,13 +27,14 @@ public static class HkapStraenge
     public static readonly string[] HkapMedien = ["Zuluft", "Abluft", "Zu-/Abluft", "Fortluft", "Aussenluft", "Heizung", "Kälte", "Sanitär"];
     public static readonly string[] BuendelnArten = ["steigzone", "auto", "name", "kennzeichen", "nein"];
 
-    /// <summary>Systemtyp (KICAD) → HKAP-Medium. ANNAHME (Auftrag Modul 3 B5, bis Christian prüft). Sole fehlt absichtlich: kein Medium.</summary>
+    /// <summary>Systemtyp (KICAD) → HKAP-Medium. ANNAHME (Auftrag Modul 3 B5, bis Christian prüft). Heizung Glykol (früher Sole) fehlt absichtlich: kein Medium.</summary>
     static readonly Dictionary<string, string> MediumJeSystemtyp = new(StringComparer.OrdinalIgnoreCase)
     {
         ["Trinkwasser kalt"] = "Sanitär", ["Trinkwasser warm"] = "Sanitär", ["Zirkulation"] = "Sanitär",
         ["Schmutzwasser"] = "Sanitär", ["Regenwasser"] = "Sanitär",
         ["Heizung Vorlauf"] = "Heizung", ["Heizung Rücklauf"] = "Heizung",
-        ["Kühlwasser Vorlauf"] = "Kälte", ["Kühlwasser Rücklauf"] = "Kälte",
+        // Kälte ist im KICAD ein Medium der Heizung (Entscheid Christian 20.10.2026), im HKAP bleibt «Kälte» ein eigenes Medium des Strangs.
+        ["Kälte Vorlauf"] = "Kälte", ["Kälte Rücklauf"] = "Kälte", ["Kälte Vorlauf Glykol"] = "Kälte", ["Kälte Rücklauf Glykol"] = "Kälte",
         ["Zuluft"] = "Zuluft", ["Abluft"] = "Abluft", ["Fortluft"] = "Fortluft", ["Aussenluft"] = "Aussenluft",
     };
 
@@ -41,7 +42,8 @@ public static class HkapStraenge
 
     // ---------------------------------------------------------------- Medium
 
-    public static string? MediumVon(string? systemtyp) => systemtyp is not null && MediumJeSystemtyp.TryGetValue(systemtyp.Trim(), out var m) ? m : null;
+    /// <summary>HKAP-Medium zum Systemtyp; alte Namen (Kühlwasser …, Sole …) werden zuerst umgeschrieben (<see cref="KaelteAlias"/>).</summary>
+    public static string? MediumVon(string? systemtyp) => systemtyp is not null && MediumJeSystemtyp.TryGetValue(KaelteAlias.Systemtyp(systemtyp.Trim()), out var m) ? m : null;
 
     public static Element? SystemVon(Modell m, Element strang) =>
         m.Finde(strang.TeilVon) is { Klasse: "System" } s ? s : m.Finde(strang.System) is { Klasse: "System" } s2 ? s2 : null;

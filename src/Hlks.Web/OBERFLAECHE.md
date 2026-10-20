@@ -893,7 +893,7 @@ Mindestbreite einer Stufe 1 px Gewinn. (3) Doppelklick auf ein Register merkt si
 Der Projektbrowser hat oben ein **Auswahlfeld** (Symbol + Name): Gebäude (wie bisher), Sanitär, Heizung, Lüftung, Koordination, Energie und Umwelt. Die gewählte ist die **primäre Gliederung des Benutzers**
 und gilt in allen Projekten und auf allen seinen Rechnern; gewechselt wird nur von Hand. Vorgabe ohne Einstellung ist «Gebäude» (auch für Tests).
 
-- **Eine Tabelle** (`js/oberflaeche/projektbrowser-gliederung.js`, `GLIEDERUNGEN`): je Gliederung die Äste in ihrer Reihenfolge (Quelle, Auswahl, Titel, Farbe). Eine weitere Gliederung (Kälte, Elektro/MSRL) ist ein Eintrag
+- **Eine Tabelle** (`js/oberflaeche/projektbrowser-gliederung.js`, `GLIEDERUNGEN`): je Gliederung die Äste in ihrer Reihenfolge (Quelle, Auswahl, Titel, Farbe). Eine weitere Gliederung (z. B. Elektro/MSRL) ist ein Eintrag
   dort, ohne neuen Code (Test «Erweiterbar ohne neuen Code»). **«Weitere»** wird nicht beschrieben, sondern abgeleitet: alles, was kein Ast der Gliederung aufnimmt, steht eingeklappt darunter – die Summe der Elemente
   ist in jeder Gliederung die von «Gebäude» (Node-Test «Weitere ist vollständig»). Unter «Weitere» stehen zuerst die Äste der anderen Gewerke (je Gewerk eine Gruppe in dessen Farbe, «Ohne Gewerk» zuletzt), dann Vorlagen, Gebäude/Räume, Hülle, Unterlagen, Katalog.
 - **Zuordnung zum Gewerk:** Klasse → `gewerk` aus dem Katalog; System → Systemtyp, sonst Medium; Strang → sein System; Anlage → die Gewerke ihrer Systeme (eine gemischte Anlage steht in jedem ihrer Gewerke, jedes System einmal);
@@ -1253,7 +1253,7 @@ Planänderungen mit beliebig vielen Zeilen – der Kopf wächst nach oben, höch
 | Titelband, Kopfart | Eigenschaften des Planblatts: `titelband` (bool), `kopfart` (grundriss oder schema); Projektinformation: `titelband` | Katalog `Planblatt`, `Projektinformation` |
 
 **Annahmen:** Plannummern-Reihenfolge nach der Kote der Geschosse des Gebäudes (S ab 00, sonst ab 01); FBH ab EG aufwärts (H13 ff.), Steigzonen H21, Sanitär-Sonderblätter = Zahl der Geschosse (Grundleitungen), +1 … +3 (Einlagen, erste freie), +4
-(Kanalisation) – nach den Bernstrasse-Plänen; Kälte und Elektro haben keinen Fachbuchstaben (kein Vorschlag). Koordination trägt K (wie die echten Pläne); das bestehende Gewerk-Raster der Plansätze (`PlanGewerk`) kennt K als Kälte – nicht geändert.
+(Kanalisation) – nach den Bernstrasse-Plänen; Elektro hat keinen Fachbuchstaben (kein Vorschlag). Koordination trägt K (wie die echten Pläne); Kälte ist Teil der Heizung und trägt H (Entscheid Christian 20.10.2026, Abschnitt «Kälte als Teil der Heizung»).
 Listen im PDF: Arial 2.2 mm, höchstens 45 Zeilen und 380 mm Breite je Liste, Spalten ≤ 60 mm (längere Texte mit «…»); der Umbruch auf weitere Blattbereiche folgt in Teil B.
 
 **Prüfen:** `node --test js/oberflaeche/planblatt-hk.test.mjs`; Kern: `PlanblattHkTests.cs`; Browser: `HLKS_PH_PORT=5179 HLKS_CDP_PORT=9500 node js/oberflaeche/planblatt-hk.browser.mjs` (Bilder `%TEMP%\HLKS_CAD\ph_*.png`; `HLKS_KATALOG` auf die Kataloge
@@ -1305,3 +1305,27 @@ Dazu: Internet-Schalter der KI-Palette vorläufig gesperrt (`GespraechEinstellun
 Grund im Tooltip; `POST …/frage` mit `internet: true` → 409), bis B3/B4/B6 behoben sind.
 
 **Prüfen:** `dotnet test tests/Hlks.Web.Tests --filter FullyQualifiedName~GespraechSicherheit`.
+
+## Kälte als Teil der Heizung
+
+Entscheid Christian Steiner, 20.10.2026: «Kälte ist Teil der Heizung mit anderem Medium.» (Spezifikation `entwurf/gewerk-kaelte.md`.) Kälte ist kein eigenes Gewerk;
+Kältesysteme unterscheiden sich von der Heizung nur über Medium und Systemtyp. Die Oberfläche hat dafür keine eigene Logik – sie zeigt, was der Kern liefert.
+
+- **Medien (Katalog `medien.json`, Farben und Strichart kommen vom Kern):** `HZ-VL`, `HZ-RL`, `HZ-VL-Glyk`, `HZ-RL-Glyk` und `KAE-VL`, `KAE-RL`, `KAE-VL-Glyk`, `KAE-RL-Glyk`, alle Gewerk
+  Heizung. Farben aus HKAP `schema_systeme.json` (HZ_VL rot #FF0000, HZ_RL blau #0000FF, KAE_VL cyan #00CCCC, KAE_RL magenta #FF00CC); Glykol hat die Farbe der Grundleitung (Annahme), die
+  Unterscheidung läuft über Kennung und Beschriftung. Vorlauf voll, Rücklauf gestrichelt. Je Medium ein Systemtyp in `systemtypen.json` («Kälte Vorlauf», «Heizung Rücklauf Glykol» …).
+- **Projektbrowser:** die Gliederung «Heizung» zeigt auch die Kältesysteme, ihre Ansichten und Pläne; es gibt keinen eigenen Block «Kälte» und keine Kennung `kaelte` in der Tabelle
+  `GLIEDERUNGEN`. Eine gespeicherte Benutzereinstellung `projektbrowser.gliederung` mit `kaelte` wird als `heizung` gelesen (`js/gewerk-alias.js`, `gliederungenNormieren`); der Server
+  prüft bei den Einstellungen weiterhin nur die Form der Kennung.
+- **Pläne:** ein Kälteplan trägt den Fachbuchstaben H («1-0768 H03») und liegt im automatischen Plansatz «Heizung»; es gibt keinen Plansatz «Kälte». Der Koordinationsplan zeichnet
+  Kälteleitungen in der Koordinationsfarbe der Heizung, Fachpläne in der Medienfarbe (cyan/magenta).
+- **Alte Werte werden gelesen, nie abgelehnt:** Gewerk `kaelte` → `heizung`; Medium `KUE-VL`/`KUE-RL` → `KAE-VL`/`KAE-RL`, `SOLE-VL`/`SOLE-RL` → `HZ-VL-Glyk`/`HZ-RL-Glyk`; Systemtyp
+  «Kühlwasser …» → «Kälte …», «Sole …» → «Heizung … Glykol»; HKAP-Schlüssel mit Unterstrich (`HZ_VL`, `KAE_RL`) → Kennungen mit Bindestrich. Beim Öffnen eines Projekts steht
+  im Status `aliasHinweis` («Kälte gehört zur Heizung – alte Kennungen umgeschrieben: …»); die Oberfläche zeigt ihn einmal als Meldung (`projektGeoeffnet`). Befehle liefern denselben
+  Hinweis in `hinweise`. Kennzeichen von Elementen (z. B. ein System «KUE-VL») sind frei gewählte Namen und bleiben unverändert.
+- **Apparate-Hinterlegung** (Kälte #CCE0FF, Heizung #CCFFE0, HKAP `FlaecheApparatKaelte` / `FlaecheApparat`): KICAD hinterlegt Apparate heute an keiner Stelle (weder Grundriss noch
+  Schema); die Werte sind noch nirgends eingetragen und kommen erst mit dem Prinzipschema (Modul 5).
+- Der Familienbibliothek-Filter (`bibliothek-text.js`), die Gewerkliste der Ansichten (`werkzeug.js`) und die Seiten der Abstandsvorgaben (`koordination-text.js`) kennen kein Gewerk Kälte mehr.
+- Das Beispielprojekt «MFH Musterweg» hat einen kleinen Kältekreis (Anlage A-KAE, Systeme KAE-VL/KAE-RL, Pumpe, drei Ventile, zwei Rohre) mit dem Grundriss «UG Heizung/Kälte».
+
+**Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~KaelteHeizung`, Node-Tests `projektbrowser.test.mjs` («Kälte:»), `bibliothek.test.mjs`.

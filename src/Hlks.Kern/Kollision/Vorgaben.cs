@@ -7,7 +7,7 @@
 // eine Quelle; fehlt sie bei einem, wird der ganze Befehl abgelehnt und alle fehlerhaften Werte werden genannt. null (oder
 // { wert: null }) entfernt einen Wert. Zahlen in mm, ≥ 0.
 // abstand_weich ist ein Objekt { "<a>-<b>": mm } je Gewerkpaar (eine Quelle für das ganze Objekt). a, b: Gewerke aus dem Katalog
-// (Systemtypen und Klassen: sanitaer, heizung, lueftung, kaelte, msrl …), «architektur», «fremd» (Produkte fremder IFC-Dateien,
+// (Systemtypen und Klassen: sanitaer, heizung, lueftung, msrl …; Kälte gehört zu heizung, «kaelte» wird als heizung gelesen), «architektur», «fremd» (Produkte fremder IFC-Dateien,
 // Paar hlks-fremd) oder «hlks» (jedes HLKS-Gewerk). Die Reihenfolge der beiden Seiten zählt nicht. Gesucht wird für ein Paar
 // zuerst der genaue Schlüssel, dann mit «hlks» an Stelle des HLKS-Gewerks (siehe Projektvorgaben.AbstandWeichFuer).
 // Abfrage vorgaben: Werte mit Quelle und Herkunft, fehlende Werte mit ihrer Wirkung, Werte ohne Quelle (über element_aendern
@@ -132,7 +132,7 @@ public sealed class Projektvorgaben
     /// <summary>Geordneter Schlüssel eines Gewerkpaars «a-b» (klein, Seiten alphabetisch); null, wenn er nicht aus zwei Seiten besteht.</summary>
     public static string? Schluessel(string text)
     {
-        var teile = text.Trim().ToLowerInvariant().Split('-', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries);
+        var teile = text.Trim().ToLowerInvariant().Split('-', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Select(KaelteAlias.Gewerk).ToArray();   // «kaelte» (früher) = heizung
         if (teile.Length != 2) return null;
         return string.CompareOrdinal(teile[0], teile[1]) <= 0 ? $"{teile[0]}-{teile[1]}" : $"{teile[1]}-{teile[0]}";
     }

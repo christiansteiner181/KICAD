@@ -264,7 +264,7 @@ await design('hell');
 await browserGross();
 const GEW = await katalogGewerke();
 const farbe = (id) => GEW.find((g) => g.id === id);
-pruef(GEW.length >= 9 && farbe('sanitaer')?.pastell === '#D4F2D4', 'Die Abfrage katalog liefert die Gewerke mit Farben aus gewerke.json', JSON.stringify(GEW).slice(0, 200));
+pruef(GEW.length >= 8 && farbe('sanitaer')?.pastell === '#D4F2D4' && !farbe('kaelte'), 'Die Abfrage katalog liefert die Gewerke mit Farben aus gewerke.json (ohne Kälte: Kälte ist Teil der Heizung)', JSON.stringify(GEW).slice(0, 200));
 
 // ================================================================== Vorgabe «Gebäude»
 abschnitt('Ohne Einstellung gilt «Gebäude» wie bisher');
@@ -398,7 +398,9 @@ abschnitt('Heizung, Lüftung, Energie und Umwelt');
 await warteBis(async () => (await oberste()).length >= 5, 'Heizung steht');
 pruef((await oberste()).map((t) => t.replace(/ \(\d+\)$/, '')).join('|') === 'Ansichten|Pläne|Anlagen|Familien|Räume|Weitere', 'Heizung hat dieselbe Tabelle: Ansichten, Pläne, Anlagen, Familien, Räume, Weitere', (await oberste()).join('|'));
 const heizAn = await ansichtenImAst();
-pruef(JSON.stringify(heizAn) === JSON.stringify(['AN-HZG-EG', 'AN-HZG-OG']), 'Heizung: nur die Heizungsansichten', JSON.stringify(heizAn));
+pruef(JSON.stringify(heizAn) === JSON.stringify(['AN-GR-UG-HZ', 'AN-HZG-EG', 'AN-HZG-OG']), 'Heizung: nur die Heizungsansichten (auch der Grundriss UG Heizung/Kälte des Beispielprojekts)', JSON.stringify(heizAn));
+pruef(/Kälteanlage/.test(await text('.pb-baum')), 'Heizung: die Kälteanlage steht im Ast «Anlagen» (Kälte ist Teil der Heizung, kein eigener Block «Kälte»)');
+pruef((await oberste()).every((t) => !/^Kälte/.test(t)), 'Kein eigener Block «Kälte» in der Gliederung Heizung', (await oberste()).join('|'));
 pruef(/Heizzentrale/.test(await text('.pb-baum')), 'Heizung: die Heizzentrale steht im Ast «Anlagen»');
 pruef(!/Sanitäranlage/.test(await ausw(`const w = document.querySelector('.pb-zeile[data-key="w:systeme"]'); const l = []; for (let e = w.nextElementSibling; e && e.style.getPropertyValue('--t') !== '0'; e = e.nextElementSibling) l.push(e.innerText); return l.join(' ');`)), 'Die Sanitäranlage steht nicht im Ast «Anlagen» der Heizung');
 pruef((await stil(Z('w:ansichten'), 'backgroundColor')) === rgbText(farbeRgb(farbe('heizung').pastell)), 'Fachäste der Heizung in Pastellrot', await stil(Z('w:ansichten'), 'backgroundColor'));

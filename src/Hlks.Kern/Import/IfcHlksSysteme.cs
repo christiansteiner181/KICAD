@@ -180,7 +180,6 @@ public sealed class IfcHlksSysteme
             "sanitaer" => ("Sanitäranlage", "A-SAN"),
             "heizung" => ("Heizungsanlage", "A-HZG"),
             "lueftung" => ("Lüftungsanlage", "A-LUE"),
-            "kaelte" => ("Kälteanlage", "A-KAE"),
             _ => ($"Anlage {gewerk}", "A"),
         };
         var e = new Element

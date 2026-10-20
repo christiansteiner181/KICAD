@@ -22,7 +22,7 @@ export function entprellen(fn, ms = 60) {
 }
 
 /** Gewerke, die in Ansichten gewählt werden können; ergänzt um weitere Gewerke aus dem Katalog. */
-export const GEWERKE = [['sanitaer', 'Sanitär'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['kaelte', 'Kälte'],
+export const GEWERKE = [['sanitaer', 'Sanitär'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'],
   ['elektro', 'Elektro'], ['msrl', 'MSRL'], ['architektur', 'Architektur']];
 
 export function gewerkeListe() {

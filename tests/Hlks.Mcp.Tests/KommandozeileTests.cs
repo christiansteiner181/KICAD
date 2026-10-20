@@ -35,7 +35,7 @@ public class KommandozeileTests
             // Abfrage
             var (c3, a3, _) = Lauf("--projekt", ordner, "--abfrage", "strangliste");
             Assert.Equal(0, c3);
-            Assert.Equal(7, JsonNode.Parse(a3)!["zeilen"]!.AsArray().Count);
+            Assert.Equal(9, JsonNode.Parse(a3)!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge
 
             // Abfrage mit Parameter und Textansicht, Fehlerfall
             var (c3b, a3b, _) = Lauf("--projekt", ordner, "--abfrage", "strang_text", """{"strang":"SW-F2"}""");
