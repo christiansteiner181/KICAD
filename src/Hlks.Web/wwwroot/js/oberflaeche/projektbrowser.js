@@ -426,6 +426,7 @@ function kontext(e) {
     eintraege.push({ titel: 'Auswählen', aktion: () => { familieSetzen(null); auswaehlen(z.dataset.id); } },
       eintrag(u?.werte?.anzeigen === false ? 'Anzeigen' : 'Ausblenden', 'unterlage.anzeigen', p),
       eintrag('Deckkraft …', 'unterlage.deckkraft', p),
+      ...(u?.werte?.art === 'ifc' ? [eintrag('Farben …', 'unterlage.farben', p)] : []),
       eintrag('Lagebericht zeigen', 'unterlage.lagebericht', p));
     if (u?.werte?.art !== 'ifc') eintraege.push(eintrag('Kalibrieren', 'einfuegen.kalibrieren', p));
     eintraege.push({ trenner: true }, eintrag('Entfernen', 'aendern.loeschen', p));

@@ -12,6 +12,7 @@ import { einlageplanDialog } from './einlageplaene-dialog.js';
 import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, freierName, anzeigeName } from './werkzeug.js';
 import { systemGewerk } from './projektbrowser-gliederung.js';
 import { anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
+import { MODI, MODUS_NAMEN, ARTEN as IFC_ARTEN, ifcModus } from '../ansichten/ifc-darstellung.js';
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
 const DETAILGRADE = ['grob', 'mittel', 'fein'];
@@ -32,8 +33,8 @@ const anlagenFuer = (gewerk) => {
   return anlagenVorne(anlagen(), (a) => anlageMitGewerk(a, systeme, (s) => systemGewerk(ctx, s), element, gewerk));
 };
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
-const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden'];
-const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden'];
+const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden', 'ifcDarstellung'];
+const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden', 'ifcDarstellung'];
 const GLIEDERUNG = new Set(['Gebaeude', 'Geschoss', 'Anlage', 'System', 'Strang', 'Zone']);
 const NIE_GRAFISCH = new Set(['ansicht', 'funktion']);
 
@@ -231,8 +232,15 @@ async function sichtbarkeit(p) {
   const aus = new Set(Array.isArray(a.werte?.klassenAusblenden) ? a.werte.klassenAusblenden : []);
   const { basen, klassen } = klassenFuerAusblenden();
   const haken = (wert, an, klasse) => `<label class="haken"><input type="checkbox" class="${klasse}" value="${esc(wert)}" ${an ? 'checked' : ''}> ${esc(wert)}</label>`;
+  // N12: IFC-Unterlagen als Nachbau, Original oder beide zeigen (nur wo es eine IFC-Unterlage gibt und die Ansicht Modellgrafik zeigt)
+  const ifcDa = derKlasse('Unterlage').some((u) => u.werte?.art === 'ifc') && IFC_ARTEN.includes(a.werte?.art);
+  const ifcModusAlt = ifcModus(a);
+  const ifcFeld = ifcDa ? `<fieldset class="v-ifc"><legend>IFC-Unterlagen zeigen</legend>
+      ${MODI.map((m) => `<label class="haken"><input type="radio" name="v-ifc" class="v-ifc-modus" value="${m}" ${m === ifcModusAlt ? 'checked' : ''}> ${esc(MODUS_NAMEN[m])}</label>`).join('')}
+      <p class="leise">Farbe und Transparenz von Original und Nachbau: Einfügen → Unterlagen verwalten → «Farben …».</p></fieldset>` : '';
   const w = knoten(`<div class="vv">
     <p class="dlg-text">Ansicht: <b>${esc(anzeigeName(a))}</b> (${esc(a.kennzeichen)})</p>
+    ${ifcFeld}
     <fieldset><legend>Gewerke anzeigen</legend><div class="spalten">${gewerkeListe().map(([k, n]) => `<label class="haken"><input type="checkbox" class="v-gewerk" value="${esc(k)}" ${aktuellG.has(k) ? 'checked' : ''}> ${esc(n)}</label>`).join('')}</div>
       <p class="leise">Ist nichts angekreuzt, zeigt die Ansicht alle Gewerke.</p></fieldset>
     <fieldset><legend>Klassen ausblenden</legend>
@@ -242,7 +250,10 @@ async function sichtbarkeit(p) {
   if (ok !== true) return;
   const g = [...w.querySelectorAll('.v-gewerk:checked')].map((c) => c.value);
   const k = [...w.querySelectorAll('.v-klasse:checked')].map((c) => c.value);
-  const r = await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { gewerke: g.length ? g : null, klassenAusblenden: k.length ? k : null } });
+  const eig = { gewerke: g.length ? g : null, klassenAusblenden: k.length ? k : null };
+  const ifcNeu = w.querySelector('.v-ifc-modus:checked')?.value;
+  if (ifcNeu && ifcNeu !== ifcModusAlt) eig.ifcDarstellung = ifcNeu === 'nachbau' ? null : ifcNeu;
+  const r = await sende('element_aendern', { element: a.kennzeichen, eigenschaften: eig });
   ergebnisMelden(r, 'Sichtbarkeit angepasst.');
 }
 

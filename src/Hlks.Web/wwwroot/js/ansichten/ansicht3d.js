@@ -6,7 +6,8 @@
 // Wandanschlüsse wirken auf die Nachbarn).
 // Hintergrund-Netze von IFC-Unterlagen (Körperteil «netz», Modul 1b): die Netzdatei wird einmal je Unterlage geladen und gelesen
 // (netzdatei.js), alle Hintergrund-Produkte bilden EINE Geometrie (Zwischenspeicher `netze`); sie wird nur neu geladen, wenn sich
-// der Dateiname der Unterlage ändert. Das Mesh ist durchscheinend, doppelseitig und nie ein Treffer.
+// der Dateiname der Unterlage oder die Auswahl der Ansicht ändert (N12, ifcDarstellung: nachbau → Hintergrund, sonst alle Produkte;
+// ifc-darstellung.js). Das Mesh ist durchscheinend, doppelseitig und nie ein Treffer.
 // Darstellung «Hülle» (Ansichtseigenschaft darstellung = huelle, Modul 1c): zusätzlich werden die Raumgrenzen (Abfrage raumgrenzen
 // mit geometrie) als farbige, durchscheinende Flächen gezeigt (huelle3d.js, eine Geometrie je Angrenzung); die Architekturkörper
 // werden blasser. Klick auf eine Fläche zeigt Raum, Nachbar, Bauteil, Fläche und U im Infofeld; Legende unten links.
@@ -19,6 +20,7 @@ import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, ne
 import { istHuelle, legendeDaten, legendeHtml, infoHtml } from './huelle-darstellung.js';
 import { baueHuelle, zeileAmTreffer, umrissLinie, huelleFreigeben } from './huelle3d.js';
 import { leseNetz } from './netzdatei.js';
+import { netzAuswahl, nachbauStil } from './ifc-darstellung.js';
 import { cssVar, esc } from './hilfen.js';
 import { ORBIT_TASTEN, mitteDoppelklick } from './maus.js';
 import { erzeugeWuerfel } from './wuerfel.js';
@@ -186,8 +188,9 @@ function erstellen(behaelter, ansichtElement) {
   function hinzufuegen(k) {
     entfernen(k.id);
     const el = element(k.id);
-    if (el && !sichtbar(el, ansicht)) return;
-    const o = baueKoerper(k, huelleAn ? { blasser: BLASS_HUELLE } : {});
+    if (el && !sichtbar(el, ansicht, element)) return;
+    const stil = el ? nachbauStil(el, ansicht, element) : null;   // N12: Farbe und Deckkraft des Nachbaus aus der Unterlage
+    const o = baueKoerper(k, { ...(huelleAn ? { blasser: BLASS_HUELLE } : {}), ...(stil ? { ueberschreiben: stil } : {}) });
     if (!o) return;
     modell.add(o);
     objekte.set(k.id, o);
@@ -197,12 +200,12 @@ function erstellen(behaelter, ansichtElement) {
 
   // ---------- Hintergrund-Netze ----------
   /** Lädt und liest die Netzdatei einer Unterlage; Ergebnis eine Geometrie (oder null bei Fehler). Je Dateiname nur einmal. */
-  function netzHolen(quelle) {
+  function netzHolen(quelle, nur = 'hintergrund') {
     const schluessel = netzSchluessel(element(quelle));
     const alt = netze.get(quelle);
-    if (alt && alt.schluessel === schluessel && !(alt.fehlerZeit && Date.now() - alt.fehlerZeit > NETZ_WIEDERHOLEN)) return alt.zusage;
-    if (alt) alt.zusage.then((g) => g?.dispose());   // andere Datei (oder erneuter Versuch): alte Geometrie freigeben
-    const eintrag = { schluessel, zusage: null, fehlerZeit: 0 };
+    if (alt && alt.schluessel === schluessel && alt.nur === nur && !(alt.fehlerZeit && Date.now() - alt.fehlerZeit > NETZ_WIEDERHOLEN)) return alt.zusage;
+    if (alt) alt.zusage.then((g) => g?.dispose());   // andere Datei, andere Auswahl (N12) oder erneuter Versuch: alte Geometrie freigeben
+    const eintrag = { schluessel, nur, zusage: null, fehlerZeit: 0 };
     eintrag.zusage = (async () => {
       const t0 = performance.now();
       try {
@@ -211,10 +214,10 @@ function erstellen(behaelter, ansichtElement) {
         const puffer = await r.arrayBuffer();
         const t1 = performance.now();
         await new Promise((fertig) => setTimeout(fertig, 0));   // dem Browser Luft lassen, bevor das Lesen beginnt
-        const netz = leseNetz(puffer);
+        const netz = leseNetz(puffer, { nur });
         const g = netzGeometrie(netz);
         const t2 = performance.now();
-        wurzel.dataset.netz = JSON.stringify({ quelle, produkte: netz.produkte.length, hintergrund: netz.dreiecke, bytes: puffer.byteLength, ladenMs: Math.round(t1 - t0), lesenMs: Math.round(t2 - t1) });
+        wurzel.dataset.netz = JSON.stringify({ quelle, nur, produkte: netz.produkte.length, hintergrund: netz.dreiecke, bytes: puffer.byteLength, ladenMs: Math.round(t1 - t0), lesenMs: Math.round(t2 - t1) });
         return g;
       } catch (e) {
         eintrag.fehlerZeit = Date.now();
@@ -232,7 +235,7 @@ function erstellen(behaelter, ansichtElement) {
     o.traverse((h) => { if (h.userData.netz && h.userData.netz !== true) halter.push(h); });
     for (const h of halter) {
       const n = h.userData.netz;
-      netzHolen(n.quelle).then((g) => {
+      netzHolen(n.quelle, netzAuswahl(ansicht)).then((g) => {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
         h.add(netzMesh(g, n.farbe, n.deckkraft));
         if (!benutzt) zoomAlles(); else anfordern();
@@ -249,6 +252,12 @@ function erstellen(behaelter, ansichtElement) {
       netze.delete(q);
       e.zusage.then((g) => g?.dispose());
     }
+  }
+
+  /** N12: Wird eine IFC-Unterlage geändert (Farbe oder Deckkraft des Nachbaus, Anzeigen), baut die Ansicht deren Nachbau-Körper neu. */
+  function nachbauNeu(unterlagen) {
+    if (unterlagen.length === 0) return;
+    for (const k of daten.values()) if (unterlagen.includes(element(k.id)?.kennungen?.quelle)) hinzufuegen(k);
   }
 
   function hinweisAktualisieren() {
@@ -546,6 +555,7 @@ function erstellen(behaelter, ansichtElement) {
         const betroffen = brauchtAlleKoerper([...ids, ...ebenen.keys()], (id) => element(id)?.klasse ?? null, (id) => ebenen.get(id) ?? objekte.get(id)?.userData.ebene ?? null);
         if (betroffen) anstehend.alle = true;
         for (const id of ids) anstehend.ids.add(id);
+        nachbauNeu(ids.filter((id) => element(id)?.klasse === 'Unterlage'));   // N12: Farbe des Nachbaus geändert
         if (ereignis.quelle === 'fremd') for (const id of ids) fremdOffen.add(id);
         if (anstehend.alle || anstehend.ids.size > 0) planen(); else { hinweisAktualisieren(); anfordern(); }
       } catch (e) { console.error('3D: Aktualisieren fehlgeschlagen', e); }
