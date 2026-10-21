@@ -20,6 +20,14 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).
 - Umgesetzt in `ansichten/vr3d.js` und `vr-logik.js`. Einrichtung, Bedienung und Annahmen stehen in `OBERFLAECHE.md`, Abschnitt N23. KICAD muss dafür in Chrome über `http://localhost:<Port>` laufen.
 
+- **VR-Auftrag vom PC** (Christian 21.10.2026: «ev. ist es einfacher die am pc eingestellten befehle (bsp. in sitzungsraum betrachten,
+  oder in vr begehen) vom VR gerät aufzurufen. es bleibt ja immer die gleiche adresse auf localhost.»):
+  - Am PC Rechtsklick auf einen Raum: «In VR begehen (Brille)» bzw. «Im Sitzungsraum zeigen (Brille)». KICAD merkt sich den Auftrag
+    je Benutzer.
+  - Die Startseite `/vr` in der Quest zeigt ihn, ein Tipp startet ihn.
+  - Während der Sitzung wechselt ein neuer Auftrag vom PC Raum, Modus oder Etage ohne Tipp.
+  - Im Bau mit der VR-Startseite (hlks-modul).
+
 ### XR-B – Greifen (N24)
 - **Stand:** gebaut 21.10.2026 (hlks-modul), Brillentest offen. Greifen mit Faust bzw. Grifftaste, Leitung quer in 1-cm-Schritten mit Massen zu Decke und Wand, Strahl holt Entferntes heran; **im Kern fehlt** ein Befehl, der eine verbundene Leitung quer versetzt (Verzüge mit Bögen der Serie), und eine Reservierung auf Zuruf. Einzelheiten: `OBERFLAECHE.md`, Abschnitt «Modul XR».
 - Ein Element in Reichweite mit der Hand greifen: Es folgt der Hand mit Fang und bleibt beim Öffnen der Hand liegen.
