@@ -116,6 +116,11 @@ export function schraffurMap(liste) {
   return new Map((Array.isArray(liste) ? liste : []).map((s) => [String(s.name).toLowerCase(), s]));
 }
 
+let praefixZaehler = 0;
+/** Neues Id-Präfix für die Muster einer Ansicht (planSvg: opt.idPraefix). Mehrere Ansichten teilen sich ein Dokument; ohne eigenes Präfix
+ *  würde «url(#sch-beton-45-p-50)» das erste Muster dieses Namens im Dokument treffen – liegt es in einer verborgenen Ansicht, wird nichts gezeichnet. */
+export const neuerMusterPraefix = () => `v${++praefixZaehler}-`;
+
 /** Rundung der Musterlage auf 0.5 Modell-mm (bei 1:50 sind das 0.01 mm auf dem Papier): hält die Zahl der <pattern> klein und
  *  lässt Bauteile mit demselben Anker dasselbe Muster teilen. */
 const LAGE_RASTER = 0.5;
@@ -141,7 +146,7 @@ function musterMarkup(def, winkel, farbe, ctx, anker = null) {
   const fKey = farbe ? farbe.slice(1).toLowerCase() : 'p';
   const { tx, ty } = musterLage(winkel, anker, d, def.art);
   const lage = tx || ty ? `-t${zahl(tx)}_${zahl(ty)}` : '';
-  const id = `sch-${def.name}-${def.art === 'linien' || winkel ? zahl(winkel) : 'p'}-${fKey}-${ctx.massstab}${lage}`.replace(/[^A-Za-z0-9_-]/g, '_');
+  const id = `${ctx.idPraefix ?? ''}sch-${def.name}-${def.art === 'linien' || winkel ? zahl(winkel) : 'p'}-${fKey}-${ctx.massstab}${lage}`.replace(/[^A-Za-z0-9_-]/g, '_');
   if (ctx.muster.has(id)) return id;
   const kopf = `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${zahl(d)}" height="${zahl(d)}"`;
   const dreh = `rotate(${zahl(winkel)})${lage ? ` translate(${zahl(tx)} ${zahl(ty)})` : ''}`;
@@ -303,8 +308,8 @@ export function teilSvg(teil, ctx) {
 }
 
 /** Die ganze Plangrafik: <defs> mit den benutzten Mustern, dann die Teile in Ebenenreihenfolge. */
-export function planSvg(plan, schraffurenMap = new Map()) {
-  const ctx = { massstab: Number(plan?.massstab) > 0 ? Number(plan.massstab) : 100, schraffuren: schraffurenMap, muster: new Map() };
+export function planSvg(plan, schraffurenMap = new Map(), opt = {}) {
+  const ctx = { massstab: Number(plan?.massstab) > 0 ? Number(plan.massstab) : 100, schraffuren: schraffurenMap, muster: new Map(), idPraefix: opt?.idPraefix ?? '' };
   const teile = nachEbenen(plan?.teile).map((t) => teilSvg(t, ctx)).join('');
   return `<defs>${[...ctx.muster.values()].join('')}</defs>${teile}`;
 }

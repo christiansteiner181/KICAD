@@ -162,3 +162,11 @@ Befund Christian 21.10.2026 (Grundriss, schräge Wand mit Kreuzschraffur): «sch
 Schraffurraster achsparallel zum Blatt. **Fertig, wenn** die Schraffur jeder Wand (und jedes Bauteils mit Achse) an der Wandachse
 ausgerichtet ist – auf dem Bildschirm, im PDF und im Schnitt –, bei gebogenen Wänden je Abschnitt, und Flächen ohne Achse (Decken,
 Räume) bleiben wie bisher.
+
+**Umgesetzt: 21.10.2026 (hlks-modul, Zweig des Agenten, vom Hauptlauf zu prüfen).** Kern: `Stil.MusterWinkel` (Richtung der Achse, [0, 180), 0.001°) und
+`Stil.MusterUrsprung` (Lot vom Ursprung auf die Achse) über `Schraffuren.AnAchse` für Wände und Unterzüge im Grundriss; die Winkel der Tabelle gelten gegen
+die Achse. Bildschirm (`plangrafik.js`, `patternTransform`) und PDF (`PdfZeichner.Schraffieren`) wenden an. Bleiben achsparallel: Decken, Räume, Füllbereiche,
+Stützen (Achse senkrecht zur Zeichenebene) und der Schnitt (Wandachse dort waagrecht). Gebogene Wände kennt das Modell nicht (IFC-Bogenwände gehen als
+Hintergrund; Kette gerader Wände = je Abschnitt eine Achse). Nebenbefund behoben: Muster-Ids der offenen Ansichten waren nicht eindeutig, die Schraffur einer
+sichtbaren Ansicht blieb leer, wenn eine verborgene Ansicht dasselbe Muster (Massstab, Winkel) früher im Dokument hatte (`neuerMusterPraefix`). Tests:
+`SchraffurAchseTests.cs` (35), Node-Tests «N8 Muster» (8), Browser-Test `js/ansichten/schraffur-achse.browser.mjs` (23 Prüfungen am gerenderten Bild).

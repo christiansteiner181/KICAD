@@ -13,7 +13,7 @@
 import { zustand, element, auswaehlen } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { ansichtsWerte, esc } from './hilfen.js';
-import { planSvg, fangdatenVon, begrenzungVon, schraffurMap } from './plangrafik.js';
+import { planSvg, fangdatenVon, begrenzungVon, schraffurMap, neuerMusterPraefix } from './plangrafik.js';
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
@@ -28,6 +28,9 @@ let schraffurenGeholt = null;
 const schraffuren = () => (schraffurenGeholt ??= holen('/api/schraffuren').then(schraffurMap).catch((e) => { schraffurenGeholt = null; console.warn('Schraffuren nicht geladen', e); return new Map(); }));
 
 function erstellen(behaelter, ansichtElement) {
+  // Muster-Ids je Ansicht eindeutig: Alle offenen Ansichten teilen ein Dokument; gleiche Ids (gleicher Massstab, gleicher Winkel) lösten
+  // «url(#…)» auf das erste Muster im Dokument auf – lag das in einer verborgenen Ansicht (display: none), blieb die Schraffur der sichtbaren leer.
+  const musterPraefix = neuerMusterPraefix();
   let ansicht = ansichtElement;
   let plan = null;               // letzte Plangrafik des Kerns
   let fang = null;               // Fangdaten, bei Bedarf aus plan berechnet
@@ -90,7 +93,7 @@ function erstellen(behaelter, ansichtElement) {
       const warLeer = !plan || (plan.teile ?? []).length === 0;
       plan = p;
       fang = null;
-      planGruppe.innerHTML = planSvg(plan, sch);
+      planGruppe.innerHTML = planSvg(plan, sch, { idPraefix: musterPraefix });
       svg.style.setProperty('--m', String(massstab()));
       const hat = (plan.teile ?? []).length > 0;
       leer.hidden = hat;

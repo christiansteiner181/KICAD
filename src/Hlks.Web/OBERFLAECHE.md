@@ -327,6 +327,9 @@ Fremde Änderungen kurz melden («Änderung von KI: 3 Elemente»).
     (Raumfarben, im dunklen Design über `--gr-raum-deckung` gedämpft); die Planfarbe ist `--gr-text` (im dunklen Design hell), das Papier `--zeichenflaeche`.
     Farben aus den Daten (#rrggbb, Medienfarben) bleiben Attribute. `nurBildschirm` wird gezeigt.
   - Muster: SVG-`<pattern>` aus `/api/schraffuren` (Abstand mm Papier × Massstab, im Ursprung verankert wie im PDF, Linienscharen je Winkel, Punkte, voll).
+    Schraffur folgt der Achse (N8): Die Primitive tragen `stil.musterWinkel` (Richtung der Wandachse, Grad, 0 … 180; zu den Winkeln der Schraffur addiert) und
+    `stil.musterUrsprung` (Fusspunkt des Lots vom Ursprung auf die Achse); `patternTransform="rotate(w) translate(tx ty)"`, die Verschiebung hält eine Musterlinie
+    bzw. das Punktraster im Anker (auf 0.5 mm gerundet, damit nur wenige `<pattern>` entstehen). Ohne die Felder gilt das achsparallele Muster wie bisher.
   - Nach jedem Ereignis «modell» wird die Grafik neu geholt (entprellt 150 ms); Zoom und Auswahl bleiben; eingepasst wird beim ersten Zeigen,
     beim Wechsel von Geschoss/Art und bei «Zoom alles». Zoom mit Mausrad an der Mausposition, Verschieben mit mittlerer Taste, Leertaste+Ziehen oder
     Ziehen auf leerer Fläche, Doppelklick mittlere Taste = alles. Massstabsbalken, Nordpfeil (nur im Grundriss), Ansichtssteuerleiste unten.
