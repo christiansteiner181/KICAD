@@ -35,6 +35,15 @@ public sealed class Stil
     /// <summary>Schraffur nach SIA 400:2000 Ziff. B.8.3.1 Fig. 34 (beton, backstein, kalksandstein, porenbeton, daemmung,
     /// holz, glas, putz, erdreich, kies) über der Füllung; null = keine.</summary>
     public string? Muster { get; set; }
+    /// <summary>Drehung des Schraffurmusters in Grad, Gegenuhrzeigersinn, zusätzlich zu den Winkeln der Schraffur (Schraffuren.cs):
+    /// effektiver Linienwinkel = Winkel der Schraffur + MusterWinkel. Gesetzt bei Bauteilen mit Achse (Wand, Unterzug): die
+    /// Richtung der Achse, auf [0, 180) gebracht (die Schraffur folgt dem Bauteil, Nachbearbeitung N8); null = Muster achsparallel
+    /// zum Blatt. Der Kern rechnet, Bildschirm und PDF wenden an.</summary>
+    public double? MusterWinkel { get; set; }
+    /// <summary>Ankerpunkt des Musters [x, y] in Modell-mm der Ansicht: Fusspunkt des Lots vom Ursprung auf die Achse des Bauteils, also
+    /// ein Punkt auf der Achse. Gleich gerichtete Bauteile auf derselben Achse haben denselben Anker und damit ein durchlaufendes
+    /// Muster; nur zusammen mit MusterWinkel. null = Anker im Ursprung (im PDF der Papierursprung).</summary>
+    public double[]? MusterUrsprung { get; set; }
     /// <summary>Deckkraft der Füllung 0…1 (Raumfarben am Bildschirm), null = 1. Ohne Füllung gilt sie der Linie
     /// (Unterlagen: graue Linien halb deckend) bzw. dem Bild.</summary>
     public double? Deckkraft { get; set; }
