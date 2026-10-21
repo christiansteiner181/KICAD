@@ -2280,6 +2280,272 @@ bild('m7-befund-p27', 'beispiel', async (c) => {
   await warteBis(async () => (await anzahl(dlg('.b-liste tbody tr'))) > 0, 'Befunde geladen'); await warte(500);
 }, { schreibt: true, markiere: () => rechteck(DLG), abstand: 2, titel: 'Dialog «Prüfbefunde»: P27 (Warnung) am späteren Blatt PB-2 mit Vorschlag «Nächste freie Plannummer: 1-0768 H03»' });
 
+
+// ---- Nachtrag 21.10.2026: Kapitel «m7» (Listenumbruch, Befund P28, Koordinationsplan per Knopf, Aussparungsboxen, IFC-Export) und «m3» (freie Grösse Rechteckkanal, Abwasser-Serie)
+// Alle Testdaten FIKTIV (Beispielprojekt «MFH Musterweg», Testräume T.nn, Testfamilien aus tests/daten/familien); Abläufe wie in koordinationsplan.browser.mjs, ifc-export.browser.mjs,
+// freie-groesse.browser.mjs und abwasser-serie.browser.mjs.
+const wartePalette = (sel, t) => warteBis(() => gibt(sel), t, 20000);
+/** Legt die Testräume T.von … T.bis im EG an (je 3 × 3 m, gleiche Lage; nur die Raumliste braucht sie). */
+async function m7Raeume(w, von, bis) {
+  for (let i = von; i <= bis; i++) {
+    const kz = `T.${i < 10 ? '0' + i : i}`;
+    const r = await w.befehl('element_anlegen', { klasse: 'Raum', kennzeichen: kz, name: `Testraum ${i}`, geschoss: 'EG', eigenschaften: { nummer: kz, nutzung: 'Büro', lichteHoehe: 2500 }, geometrie: { art: 'polygon', punkte: [[0, 0], [3000, 0], [3000, 3000], [0, 3000]] } });
+    if (r?.angenommen === false) throw new Error(`Raum ${kz}: ${r.fehler}`);
+  }
+  await warte(600);
+}
+/** Raumliste AN-L-R auf dem Planblatt PB-1 «1-0768 L99 Listen» (A3 quer) mit n Testräumen. */
+async function m7ListeSetup(w, n) {
+  await kern(w, 'element_anlegen', { klasse: 'Projektinformation', eigenschaften: { phase: 'Bauprojekt', zeile1: 'Testobjekt Worb (fiktiv)', zeile2: 'Musterstrasse 1, 3076 Worb', projektnummer: '1-0768' } });
+  await m7Raeume(w, 1, n);
+  await kern(w, 'element_anlegen', { klasse: 'Ansicht', kennzeichen: 'AN-L-R', name: 'Raumliste', eigenschaften: { art: 'liste', liste: 'raumliste' } });
+  await kern(w, 'planblatt_anlegen', { nummer: '1-0768 L99', titel: 'Listen', format: 'A3' });
+  await kern(w, 'ansicht_platzieren', { planblatt: 'PB-1', ansicht: 'AN-L-R' });
+  await warteBis(async () => (await zustandDaten(`z.derKlasse('Ansichtsfenster').length`)) === 1, 'Ansichtsfenster da', 20000);
+}
+const ansichtsfensterWaehlen = async () => {
+  await ausw(`const z = await import('/js/zustand.js'); const f = z.derKlasse('Ansichtsfenster')[0]; if (!f) throw new Error('kein Ansichtsfenster'); z.auswaehlen(f.id); return 1;`);
+  await warteBis(() => gibt(`${M7_PAL} [data-ziel="eig:umbruch"]`), 'Zeile umbruch in der Palette', 20000); await warte(500);
+};
+
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7ListeSetup(c.welt, 80); await grundrissEG(); await ansichtsfensterWaehlen(); },
+  aufnahmen: [
+    { ids: ['m7-liste-umbruch'], titel: 'Ansichtsfenster der Raumliste gewählt: Eigenschaftenpalette mit den Zeilen «umbruch» und «schrift»', abstand: 4,
+      markiere: [`${M7_PAL} .ep-zeile:has([data-ziel="eig:umbruch"])`, `${M7_PAL} .ep-zeile:has([data-ziel="eig:schrift"])`] },
+    { ids: ['m7-liste-umbruch'], datei: 'm7-liste-umbruch_2', titel: 'Blatt PB-1 «1-0768 L99 Listen» als PDF: die lange Raumliste (93 Zeilen) steht in zwei Blöcken nebeneinander, die Kopfzeile in beiden (gerendert)', markiere: false,
+      vor: async (c) => { await m7Seite(c, 'PB-1', 'm7_liste_umbruch', M7_BLATTKOPF('PB-1', '1-0768 L99 Listen, Raumliste in zwei Blöcken')); } },
+  ],
+});
+bild('m7-befund-p28', 'beispiel', async (c) => {
+  await m7ListeSetup(c.welt, 90);
+  await grundrissEG(); await registerWahl('Verwalten'); await knopf('verwalten.befunde'); await dialogDa(/Prüfbefunde/);
+  await warteBis(async () => (await anzahl(dlg('.b-liste tbody tr'))) > 0, 'Befunde geladen'); await warte(500);
+  await warteBis(() => rechtMit(dlg('.b-liste tbody tr'), 'P28'), 'Zeile P28', 15000);
+  await ausw(`const r = [...document.querySelectorAll(${J(dlg('.b-liste tbody tr'))})].find((x) => x.innerText.includes('P28')); r.scrollIntoView({ block: 'center' }); return 1;`); await warte(400);
+}, { schreibt: true, markiere: () => rechtMit(dlg('.b-liste tbody tr'), 'P28'), abstand: 3, titel: 'Dialog «Prüfbefunde»: P28 (Warnung) am Ansichtsfenster der Raumliste: drei Blöcke brauchen mehr als die Blattbreite, Vorschlag kleinere Schrift' });
+
+/** Testrohre quer durch die Südwand (Sanitär KW, Heizung HZ-V) und ein Lüftungskanal ZU, Systeme und Serien fiktiv; stufe wie koordSetup. */
+async function m7KoordSetup(w, stufe) {
+  const k = await rohrSerieLaden(w, ['test_kanalbogen', 'test_kanal_t', 'test_kanalreduktion', 'test_kanalserie']);
+  for (const [kz, typ] of [['HZ-V', 'Heizung Vorlauf'], ['ZU', 'Zuluft']]) await kern(w, 'element_anlegen', { klasse: 'System', kennzeichen: kz, teilVon: 'A-SAN', eigenschaften: { systemtyp: typ } });
+  const rohr = (kz, sys, x) => kern(w, 'element_anlegen', { klasse: 'Rohr', kennzeichen: kz, system: sys, geschoss: 'EG', eigenschaften: { familientyp: 'DN 50' }, bezuege: { familie: k.test_rohrserie }, geometrie: { art: 'polylinie', punkte: [[x, -1000, 1000], [x, 1000, 1000]] } });
+  await rohr('T-1', 'KW', 3000); await rohr('T-2', 'KW', 6000); await rohr('T-3', 'KW', 3120); await rohr('T-4', 'HZ-V', 4500);
+  await kern(w, 'element_anlegen', { klasse: 'Kanal', kennzeichen: 'T-5', system: 'ZU', geschoss: 'EG', eigenschaften: { familientyp: '400x200' }, bezuege: { familie: k.test_kanalserie }, geometrie: { art: 'polylinie', punkte: [[1800, -1000, 2200], [1800, 1000, 2200]] } });
+  if (stufe === 'rohre') return;
+  await kern(w, 'vorgaben_setzen', { werte: { spiel_aussparung: { wert: 20, quelle: FIKTIV }, abstand_zusammenfassen: { wert: 100, quelle: FIKTIV }, toleranz_hart: { wert: 2, quelle: FIKTIV } } });
+  await kern(w, 'kollision_pruefen', {});
+  await kern(w, 'aussparungen_vorschlagen', { geschoss: 'EG' });
+}
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7KoordSetup(c.welt, 'rohre'); await grundrissEG(); await registerWahl('Koordination'); await planAuf(1000, -1800, 7800, 1800); await warte(500); },
+  aufnahmen: [
+    { ids: ['m7-koordinationsplan'], titel: 'Register Koordination, Gruppe «Koordinationsplan»: Knopf «Koordinationsplan» (aktiv, der Grundriss EG ist offen)', markiere: menueKnopf('koordination.plan'), abstand: 4 },
+    { ids: ['m7-koordinationsplan'], datei: 'm7-koordinationsplan_2', titel: 'Nach dem Klick: der Plan «Koordination EG» (AN-KO-EG) ist als Reiter geöffnet, alle Gewerke in ihren Farben', markiere: '.reiterleiste .reiter.aktiv', abstand: 3,
+      vor: async () => { await knopf('koordination.plan'); await warteBis(async () => (await aktiveAnsicht()) === 'AN-KO-EG', 'AN-KO-EG aktiv', 20000); await warte(1500); await planAuf(1000, -1800, 7800, 1800); await warte(500); } },
+  ],
+});
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => { await m7KoordSetup(c.welt, 'aussparungen'); await grundrissEG(); await planAuf(1000, -1800, 7800, 1800); await registerWahl('Koordination'); await warteBis(async () => !(await ausw(`return document.querySelector(${J(menueKnopf('koordination.boxen'))})?.classList.contains('gesperrt');`)), 'Schalter frei', 10000); await warte(400); },
+  aufnahmen: [
+    { ids: ['m7-aussparungsboxen'], titel: 'Grundriss EG Sanitär mit eingeschaltetem Schalter «Aussparungsboxen»: die beschrifteten Boxen der vorgeschlagenen Aussparungen (Art, Mass, Brüstungshöhe) stehen in der Südwand', markiere: menueKnopf('koordination.boxen'), abstand: 4,
+      vor: async () => { await knopf('koordination.boxen'); await warteBis(() => ausw(`return document.querySelector(${J(menueKnopf('koordination.boxen'))})?.classList.contains('gedrueckt');`), 'Schalter gedrückt', 10000); await warte(1500); } },
+    { ids: ['m7-aussparungsboxen'], datei: 'm7-aussparungsboxen_2', titel: 'Derselbe Grundriss mit ausgeschaltetem Schalter: die beschrifteten Boxen (Art, Mass, Brüstung) fehlen, nur die Kollisionsmarken bleiben', markiere: menueKnopf('koordination.boxen'), abstand: 4,
+      vor: async () => { await knopf('koordination.boxen'); await warteBis(async () => !(await ausw(`return document.querySelector(${J(menueKnopf('koordination.boxen'))})?.classList.contains('gedrueckt');`)), 'Schalter wieder oben', 10000); await warte(1200); } },
+  ],
+});
+
+// IFC-Export (Dialog, Umfang, IDS): drei Funktionen, eine Szene
+const IDS_BAUHERR = path.join(ARBEIT, 'Bauherr_Test.ids');
+const IDS_XML = `<?xml version="1.0" encoding="UTF-8"?>
+<ids:ids xmlns:ids="http://standards.buildingsmart.org/IDS" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://standards.buildingsmart.org/IDS http://standards.buildingsmart.org/IDS/1.0/ids.xsd">
+  <ids:info><ids:title>Testregel Bauherr (fiktiv)</ids:title></ids:info>
+  <ids:specifications>
+    <ids:specification name="Rohre mit Freigabevermerk" ifcVersion="IFC2X3 IFC4" identifier="T-1">
+      <ids:applicability minOccurs="0" maxOccurs="unbounded"><ids:entity><ids:name><ids:simpleValue>IFCPIPESEGMENT</ids:simpleValue></ids:name></ids:entity></ids:applicability>
+      <ids:requirements><ids:property dataType="IFCLABEL" cardinality="required"><ids:propertySet><ids:simpleValue>Pset_Bauherr</ids:simpleValue></ids:propertySet><ids:baseName><ids:simpleValue>Freigabe</ids:simpleValue></ids:baseName></ids:property></ids:requirements>
+    </ids:specification>
+  </ids:specifications>
+</ids:ids>
+`;
+const ifcBerichtDa = (t) => warteBis(() => ausw(`const b = document.querySelector('.ie-bericht'); return !!b && b !== window.__alt && !document.querySelector('.ie-ergebnisse').hidden;`), t, 90000);
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async () => { mkdir(ARBEIT); writeFileSync(IDS_BAUHERR, IDS_XML, 'utf8'); await grundrissEG(); },
+  aufnahmen: [
+    { ids: ['m7-ifc-export'], titel: 'Dialog «IFC exportieren» nach dem Export (IFC4, alle Gewerke und Geschosse, ohne Räume): Bericht mit Datei, Marken, Zählern und IDS-Basis', markiere: () => rechteck(DLG), abstand: 2,
+      vor: async () => {
+        await registerWahl('Datei'); await knopf('datei.ifc-export'); await warteBis(() => gibt('#dialogschicht .dlg .ie'), 'Dialog IFC exportieren', 15000); await warte(500);
+        await ausw(`window.__alt = document.querySelector('.ie-bericht'); return 1;`);
+        await dialogKnopf('Exportieren'); await ifcBerichtDa('Bericht IFC4'); await warte(700);
+      } },
+    { ids: ['m7-ifc-umfang'], titel: 'Auswahl im Dialog: Fassung IFC2X3, nur Gewerk Sanitär, alle Geschosse, «Räume mitgeben», eine weitere IDS-Datei; die Zeile «Umfang» fasst zusammen',
+      markiere: ['.ie-form > .ie-block:nth-child(-n+3)', '.ie-umfang'], abstand: 4,
+      vor: async () => {
+        await klick('.ie-ergebnisse .ie-zurueck'); await warteBis(() => sichtbar('.ie-form'), 'Auswahl wieder da', 8000);
+        await klick('.ie-fassung[value="IFC2X3"]'); await klick('.ie-gewerke-alle'); await klick('.ie-gewerk[value="sanitaer"]'); await klick('.ie-raeume');
+        await eingeben('textarea.ie-ids', IDS_BAUHERR); await warte(400);
+        await ausw(`document.querySelector('.ie-fassungen').scrollIntoView({ block: 'start' }); return 1;`); await warte(300);
+      } },
+    { ids: ['m7-ifc-ids'], titel: 'Bericht des zweiten Exports, Abschnitt «IDS-Prüfung»: IDS-Basis und die weitere Datei «nicht bestanden», betroffene Kennzeichen als Knöpfe, ein Kennzeichen angeklickt', markiere: '.ie-idsblock', abstand: 4,
+      vor: async () => {
+        await ausw(`window.__alt = document.querySelector('.ie-bericht'); return 1;`);
+        await dialogKnopf('Exportieren'); await ifcBerichtDa('Bericht IFC2X3'); await warte(600);
+        await ausw(`document.querySelector('.ie-idsblock').scrollIntoView({ block: 'start' }); return 1;`); await warte(400);
+        await klick('.ie-idsblock .ie-kz'); await warte(600);
+        await ausw(`document.querySelector('.ie-idsblock').scrollIntoView({ block: 'start' }); return 1;`); await warte(400);
+      } },
+    { ids: ['m7-ifc-export'], datei: 'm7-ifc-export_2', titel: 'Register Datei, Gruppe «Ausgabe»: Knopf «IFC exportieren»', markiere: menueKnopf('datei.ifc-export'), abstand: 4,
+      vor: async () => { await alleDialogeZu(); await registerWahl('Datei'); await warte(500); } },
+  ],
+});
+
+// ---- m3: freie Grösse (Rechteckkanal)
+/** Wartet, bis die Familienliste der Oberfläche eine Familie dieser Kategorie kennt (wie h.familienDa der Browsertests). */
+const famListeDa = (kategorie, mindestens = 1) => warteBis(() => ausw(`const d = await import('/js/familien/daten.js'); await d.familienLaden(); return d.familienListe().filter((f) => f.kategorie === ${J(kategorie)}).length >= ${mindestens};`), 'Familienliste ' + kategorie, 30000);
+/** Freie Kanalserie (fiktiv, Grenzen 145 … 2500 mm, Schritt 1 mm) samt Formteilen, Zuluft-System ZU / Strang ZU-1 und Lüftung im Grundriss EG; liefert das Kennzeichen der Serie. */
+async function freieKanalserie(w) {
+  for (const f of ['test_kanalbogen_frei', 'test_kanal_t_frei', 'test_kanalreduktion_frei']) await famLaden(w, f);
+  const kz = await famLaden(w, 'test_kanalfrei');
+  await kern(w, 'element_anlegen', { klasse: 'System', kennzeichen: 'ZU', teilVon: 'A-SAN', eigenschaften: { systemtyp: 'Zuluft' } });
+  await kern(w, 'element_anlegen', { klasse: 'Strang', kennzeichen: 'ZU-1', teilVon: 'ZU', eigenschaften: { art: 'verteilleitung' } });
+  await kern(w, 'element_aendern', { element: 'AN-GR-EG', eigenschaften: { gewerke: ['sanitaer', 'heizung', 'lueftung', 'architektur'] } });
+  return kz;
+}
+/** Rect (x, y, b, h) einer Gruppe im Familieneditor: Abschnittstitel (h4) und alle Felder bis zum nächsten Titel. */
+const editorGruppe = (titel) => ausw(`const h = [...document.querySelectorAll('.fe-seite h4.fe-abschnitt')].find((x) => x.textContent.trim().startsWith(${J(titel)})); if (!h) return null; h.scrollIntoView({ block: 'start' }); const l = [h]; for (let e = h.nextElementSibling; e && e.tagName !== 'H4'; e = e.nextElementSibling) l.push(e); const rs = l.map((e) => e.getBoundingClientRect()).filter((r) => r.width > 0); const x0 = Math.min(...rs.map((r) => r.left)), y0 = Math.min(...rs.map((r) => r.top)), x1 = Math.max(...rs.map((r) => r.right)), y1 = Math.max(...rs.map((r) => r.bottom)); return { x: x0, y: y0, b: x1 - x0, h: y1 - y0 };`);
+const LEIT = '.ep-gruppe[data-g="Leitung"]';
+let FREI_KZ = null;
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => {
+    FREI_KZ = await freieKanalserie(c.welt); await grundrissEG(); await planAuf(12500, -500, 22500, 11000); await famListeDa('Kanal');
+    await tippeKuerzel('dt'); await warteBis(async () => (await ausw(`return document.querySelector('#optionsleiste [data-feld="freiB"]')?.value ?? null;`)) === '400', 'Zahlenfelder mit der Vorlage vorbelegt', 20000);
+    await feldSetzen('hoehe', '300'); await feldSetzen('system', 'ZU'); await warte(200); await feldSetzen('strang', 'ZU-1'); await feldSetzen('freiB', '430'); await feldSetzen('freiH', '270'); await warte(400);
+  },
+  aufnahmen: [
+    { ids: ['m3-frei-kanal'], titel: 'Optionsleiste Kanal bei einer freien Serie: Breite und Kanalhöhe als Zahlenfelder (hier 430 × 270), die Normgrösse als Vorschlagsliste, Hinweis mit Grenzen und Schritt', abstand: 5,
+      markiere: ['#optionsleiste label:has([data-feld="freiB"])', '#optionsleiste label:has([data-feld="freiH"])', '#optionsleiste label:has([data-feld="groesse"])', '#optionsleiste .ol-hinweis.ol-info'] },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_2', titel: 'Drei Punkte geklickt (Knick 90°): Vorschau-Zeile «2 Geraden, 3270 mm · 1 Bogen 90°», Liste aufgeklappt mit der Marke «frei»', markiere: '.lt-leiste', abstand: 4,
+      vor: async () => {
+        await klickM([14000, 3000]); await bewege([16000, 3000]); await klickM([16000, 3000]); await klickM([16000, 5000]); await taste('Enter');
+        await warteBis(async () => !!(await vorschauZeile()), 'Vorschau-Zeile', 15000); await klick('.lt-leiste [data-lt="liste"]'); await warte(500);
+      } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_3', titel: 'Breite 3000 liegt ausserhalb der Grenzen: die Vorschau ist «Abgelehnt», der Kern nennt die Grenze und schlägt 2500 × 270 vor', markiere: '.lt-leiste', abstand: 4,
+      vor: async () => {
+        await taste('Enter'); await warte(1500);
+        await klickM([18000, 1000]); await klickM([20000, 1000]); await feldSetzen('freiB', '3000'); await taste('Enter');
+        await warteBis(async () => /Abgelehnt/.test((await vorschauZeile()) ?? ''), 'Ablehnung', 15000); await warte(400);
+      } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_4', titel: 'Gezeichnete Leitung gewählt: Palette, Gruppe «Leitung», Breite und Höhe als Zahlenfelder, «430 × 270 (frei)», Normgrösse «frei (keine Normgrösse)» und Hinweis', markiere: LEIT, abstand: 4,
+      vor: async (c) => {
+        await werkzeugEnde(); await esc(); await warte(300);
+        const ka = (await c.welt.modell()).filter((e) => e.klasse === 'Kanal' && e.bezuege?.familie === FREI_KZ && e.werte?.breite === 430);
+        if (!ka.length) throw new Error('freie Kanäle nicht angelegt'); c.ka = ka.map((e) => e.kennzeichen);
+        await auswaehlen(c.ka[0]); await wartePalette(`${LEIT} [data-ziel="lt:b"]`, 'Gruppe Leitung mit Zahlenfeldern'); await warte(800);
+      } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_5', titel: 'Breite von Hand auf 3000 gesetzt: die Palette zeigt den Befund P29 («ausserhalb der Grenzen») mit dem Text des Kerns', markiere: `${LEIT} .ep-befundzeile`, abstand: 4,
+      vor: async (c) => {
+        const ziel = c.ka[c.ka.length - 1];
+        await kern(c.welt, 'element_aendern', { element: ziel, eigenschaften: { breite: 3000 } });
+        await abwaehlen(); await warte(400); await auswaehlen(ziel); await wartePalette(`${LEIT} .ep-befund`, 'Befundzeile P29'); await warte(600);
+      } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_6', titel: 'Familieneditor der Serie, Seite «Leitungsserie»: Gruppe «Freie Grösse (nach Mass gefertigt)» mit Vorlage, Grenzen je Seite und Schritt', abstand: 5,
+      markiere: () => editorGruppe('Freie Grösse'),
+      vor: async () => {
+        await abwaehlen(); await editorOeffnen(FREI_KZ); await warteBis(() => gibt('.fe-seite .fe-feld[data-pfad="frei.vorlage"]'), 'Feld Vorlage', 20000); await warte(800);
+      } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_7', titel: 'Kontrolle auf Abruf: Der Kern rechnet die Kontrolltabelle einer freien Serie nur auf Knopfdruck («Kontrolltabelle und Probe berechnen»)', markiere: '.fe-seite .fe-kontrolle-lauf', abstand: 5,
+      vor: async () => { await ausw(`document.querySelector('.fe-seite .fe-kontrolle-lauf')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(400); } },
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_8', titel: 'Kontrolltabelle mit den vier Rastergrössen und die Probe mit einer freien Grösse (Mitte der Grenzen, Zeile «frei»)', markiere: '.fe-seite tr.fe-probe', abstand: 6,
+      vor: async () => {
+        await klick('.fe-seite [data-aktion="kontrolle-laden"]'); await warteBis(() => gibt('.fe-seite tr.fe-probe'), 'Kontrolltabelle mit Probe', 120000); await warte(600);
+        await ausw(`document.querySelector('.fe-seite tr.fe-probe')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(400);
+      } },
+  ],
+});
+// Laufanzeige mit «Abbrechen»: grosse freie Serie (225 Grössen); der Kern rechnet im Hintergrund zu Ende, darum zuletzt und mit Wartezeit danach
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => {
+    for (const f of ['test_kanalbogen_frei', 'test_kanal_t_frei', 'test_kanalreduktion_frei']) await famLaden(c.welt, f);
+    const gross = JSON.parse(readFileSync(famPfad('test_kanalfrei'), 'utf8')); gross.id = 'fam-test-kanalfrei-gross'; gross.name = 'Testkanal gross frei (fiktiv)'; gross.typen = [];
+    for (let bb = 200; bb <= 900; bb += 50) for (let hh = 200; hh <= 900; hh += 50) gross.typen.push({ name: `${bb}x${hh}`, werte: { b: bb, h: hh } });
+    await kern(c.welt, 'familie_entwurf', { definition: gross });
+    c.gross = (await c.welt.abfrage('familien')).familien.find((x) => x.id === 'fam-test-kanalfrei-gross').kennzeichen;
+    await grundrissEG(); await editorOeffnen(c.gross); await warteBis(() => gibt('.fe-seite [data-aktion="kontrolle-laden"]'), 'Knopf Kontrolle', 20000); await warte(500);
+  },
+  aufnahmen: [
+    { ids: ['m3-frei-kanal'], datei: 'm3-frei-kanal_9', titel: 'Grosse freie Serie (225 Grössen), Knopf gedrückt: Laufanzeige mit Drehzeichen, Laufzeit und Knopf «Abbrechen»; die Seite bleibt bedienbar', markiere: '.fe-seite .fe-kontrolle-lauf', abstand: 5,
+      vor: async () => {
+        await klick('.fe-seite [data-aktion="kontrolle-laden"]'); await warteBis(() => gibt('.fe-seite .fe-kontrolle-lauf[data-zustand="laedt"]'), 'Laufanzeige', 15000);
+        await warteBis(async () => /^[1-9]\d* s$/.test((await text('.fe-seite .fe-kontrolle-zeit')) ?? ''), 'Laufzeit zählt', 15000).catch(() => {}); await warte(300);
+      } },
+  ],
+  nachher: async (c) => {   // Abbrechen, dann warten, bis der Kern die Berechnung beendet hat (er bedient andere Anfragen erst danach)
+    try { await klick('.fe-seite [data-aktion="kontrolle-abbrechen"]'); } catch { /* egal */ }
+    const t0 = Date.now();
+    await warteBis(async () => { try { const r = await fetch(`${c.welt.url}/api/abfrage/familien`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: '{}' }); return r.ok; } catch { return false; } }, 'Kern wieder frei', 400000).catch(() => {});
+    console.log(`   (Kern nach ${Math.round((Date.now() - t0) / 1000)} s wieder frei)`);
+  },
+});
+
+// ---- m3: Abwasser-Serie (Grösse nach Aussendurchmesser, fiktiv)
+let ABW_KZ = null;
+szene({
+  projekt: 'beispiel', schreibt: true,
+  aufbau: async (c) => {
+    for (const f of ['test_abwasser_d_bogen', 'test_abwasser_d_t', 'test_abwasser_d_reduktion']) await famLaden(c.welt, f);
+    ABW_KZ = await famLaden(c.welt, 'test_abwasser_d_serie');
+    await kern(c.welt, 'element_anlegen', { klasse: 'System', kennzeichen: 'HZ-V', teilVon: 'A-SAN', eigenschaften: { systemtyp: 'Heizung Vorlauf' } });
+    await kern(c.welt, 'element_anlegen', { klasse: 'Strang', kennzeichen: 'HZ-V1', teilVon: 'HZ-V', eigenschaften: { art: 'verteilleitung' } });
+    await grundrissEG(); await planAuf(12500, -500, 22500, 11000); await famListeDa('Rohr');
+    await warteBis(() => zustandDaten(`!!z.element('HZ-V1') && !!z.element('SW-G1')`), 'Systeme im Zustand', 20000);
+    await tippeKuerzel('pi'); await warteBis(async () => (await ausw(`return document.querySelector('#optionsleiste [data-feld="serie"]')?.value ?? null;`)) === ABW_KZ, 'Abwasser-Serie vorgewählt', 20000);
+    await warteBis(async () => (await anzahl('#optionsleiste [data-feld="groesse"] option')) === 5, 'Grössen der Serie', 20000);
+    await feldSetzen('groesse', 'd 110'); await warteBis(async () => /Beschriftung «PE 110»/.test((await text('#optionsleiste .ol-hinweis.ol-info')) ?? ''), 'Hinweis mit Beschriftung', 15000);
+    await feldSetzen('hoehe', '300'); await feldSetzen('system', 'SW'); await warte(200); await feldSetzen('strang', 'SW-G1'); await feldSetzen('gefaelle', '2'); await warte(400);
+  },
+  aufnahmen: [
+    { ids: ['m3-abwasser-serie'], titel: 'Optionsleiste Rohr bei der Abwasser-Serie: Grösse «d 110» (Aussendurchmesser statt DN) und Hinweis mit der Beschriftung «PE 110»', abstand: 5,
+      markiere: ['#optionsleiste label:has([data-feld="groesse"])', '#optionsleiste .ol-hinweis.ol-info'] },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_2', titel: 'Rohr d 110 mit zwei Punkten: Vorschau-Zeile, Liste aufgeklappt: «Gerade RO-n · d 110 · …» (nicht «DN 100»)', markiere: '.lt-leiste', abstand: 4,
+      vor: async () => {
+        await klickM([14000, 8000]); await klickM([16000, 8000]); await taste('Enter');
+        await warteBis(async () => !!(await vorschauZeile()), 'Vorschau-Zeile', 15000); await klick('.lt-leiste [data-lt="liste"]'); await warte(500);
+      } },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_3', titel: 'Dieselbe Serie im Heizungssystem HZ-V (Grösse d 75): die Vorschau nennt den Prüfbefund P30 «Abwasser-Serie … für Heizung Vorlauf» (Hinweis des Kerns, keine Sperre)', markiere: '.lt-leiste', abstand: 4,
+      vor: async () => {
+        await taste('Enter'); await warte(1500); await werkzeugEnde(); await tippeKuerzel('pi');
+        await feldSetzen('groesse', 'd 75'); await feldSetzen('system', 'HZ-V'); await warte(200); await feldSetzen('strang', 'HZ-V1'); await feldSetzen('gefaelle', ''); await warte(300);
+        await klickM([14000, 6500]); await klickM([16000, 6500]); await taste('Enter');
+        await warteBis(async () => /P30/.test((await vorschauZeile()) ?? ''), 'Vorschau mit P30', 15000); await warte(400);
+      } },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_4', titel: 'Das Rohr d 110 gewählt: Palette, Gruppe «Leitung», mit Einsatz «Abwasser», Aussendurchmesser 110 mm, DN (Hersteller) und Beschriftung «PE 110»', markiere: LEIT, abstand: 4,
+      vor: async (c) => {
+        await taste('Enter'); await warte(1500); await werkzeugEnde(); await esc(); await warte(300);
+        const r110 = (await c.welt.modell()).filter((e) => e.klasse === 'Rohr' && e.bezuege?.familie === ABW_KZ && e.werte?.durchmesser === 110);
+        if (!r110.length) throw new Error('Rohr d 110 nicht angelegt');
+        await auswaehlen(r110[0].kennzeichen); await wartePalette(`${LEIT} [data-ziel="lt:groesse"]`, 'Gruppe Leitung');
+        await warteBis(async () => /Beschriftung/.test((await text(LEIT)) ?? ''), 'Beschriftung in der Palette', 20000); await warte(600);
+      } },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_5', titel: 'Das Rohr im Heizungssystem gewählt: die Palette zeigt den Befund P30 mit «nur für die Entwässerung»', markiere: `${LEIT} .ep-befundzeile`, abstand: 4,
+      vor: async (c) => {
+        const hz = (await c.welt.modell()).filter((e) => e.klasse === 'Rohr' && e.system === 'HZ-V');
+        if (!hz.length) throw new Error('Heizungsrohr nicht angelegt');
+        await abwaehlen(); await warte(400); await auswaehlen(hz[0].kennzeichen); await wartePalette(`${LEIT} .ep-befund`, 'Befundzeile P30'); await warte(600);
+      } },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_6', titel: 'Familieneditor der Serie, Seite «Leitungsserie»: Einsatz «Abwasser» und «Grösse geführt nach» Aussendurchmesser d', abstand: 5,
+      markiere: ['.fe-seite .fe-feld[data-pfad="einsatz"]', '.fe-seite .fe-feld[data-pfad="groessenart"]'],
+      vor: async () => { await abwaehlen(); await editorOeffnen(ABW_KZ); await warteBis(() => gibt('.fe-seite .fe-feld[data-pfad="einsatz"]'), 'Feld Einsatz', 20000); await warte(800); } },
+    { ids: ['m3-abwasser-serie'], datei: 'm3-abwasser-serie_7', titel: 'Kontrolltabelle der Abwasser-Serie: Spalten «Beschriftung» (PE 110, PE 32) und «DN Hersteller» (100 bzw. –)', markiere: '.fe-seite table.fe-kontrolle', abstand: 5,
+      vor: async () => { await warteBis(() => gibt('.fe-seite table.fe-kontrolle tbody tr'), 'Kontrolltabelle', 60000); await ausw(`document.querySelector('.fe-seite table.fe-kontrolle')?.scrollIntoView({ block: 'center' }); return 1;`); await warte(500); } },
+  ],
+});
+
 // @@KATALOG-ENDE
 
 // ------------------------------------------------------------------ Welten: Beispielprojekt und Bernstrasse
