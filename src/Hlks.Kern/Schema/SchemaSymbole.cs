@@ -26,6 +26,11 @@
 //     Anschluss der HKAP, AW/A1/RW) an. SinnbildAnschluss liefert den Abfluss (x, y − halbe Höhe).
 //   - Ohne Sinnbild (Heizkörper, Wassererwärmer, Ausgussbecken ohne Zuordnung …) bleibt das Kästchen mit Kürzel.
 //
+// Modul 5, Teil A-S 2 (Heizung und Kälte): Die Symbole aus Christians überarbeiteter HKAP-Bibliothek (data/schema_symbole.json) stehen im Katalog
+// kataloge/schemasymbole.json (SchemaSymbolKatalog; erzeugt mit werkzeuge/hkap_symbole_uebernehmen, nie von Hand), gezeichnet von
+// SchemaSymbolZeichnung, zugeordnet nach Klasse/art (Katalog zuordnung). Reihenfolge der Quellen: Familie mit schemasymbol, Sinnbild (Sanitär),
+// Katalogsymbol, Klassendarstellung. Ventile und Pumpen bekommen das Katalogsymbol nur in Heizungs- und Kältesystemen (Sanitär bleibt).
+//
 // Nachtrag B8d (Christian 19.10.2026): Schächte (Schemaplan.SchachtKlassen) erscheinen im Schnitt (SchachtSchnitt, Schlüssel
 // «schacht»); das HKAP-Draufsichtsymbol «kontrollschacht» (Doppelkreis) entfällt im Strangschema. Abläufe im Deckenband als Quadrat
 // in Bandhöhe (AblaufImBand): Bodenablauf mit dem HKAP-Sinnbild auf diese Grösse, Dachablauf leer wie der Terrasseneinlauf im Vorbild.
@@ -38,10 +43,14 @@ public static class SchemaSymbole
     public const double Schrift = 1.8;
     public const double SchriftKlein = 1.6;
 
-    /// <summary>Symbolschlüssel: schacht | familie | sinnbild | tstueck | reinigungsoeffnung | formteil | pumpe | zaehler |
+    /// <summary>Symbolschlüssel: schacht | familie | sinnbild | katalogsymbol | tstueck | reinigungsoeffnung | formteil | pumpe | zaehler |
     /// volumenstromregler | ventil | armatur | apparat | geraet | sonst. Schächte erscheinen immer im Schnitt (Nachtrag B8d).</summary>
     public static string Schluessel(Projekt p, Element e, string detail = "mittel") =>
-        Schemaplan.IstSchacht(p.Katalog, e) ? "schacht" : FamilienSymbol(p, e, detail) is { Count: > 0 } ? "familie" : KlassenSchluessel(p.Katalog, e);
+        Schemaplan.IstSchacht(p.Katalog, e) ? "schacht" : FamilienSymbol(p, e, detail) is { Count: > 0 } ? "familie"
+        : SinnbildVon(p.Katalog, e) is null && KatalogSymbolVon(p, e) is not null ? "katalogsymbol" : KlassenSchluessel(p.Katalog, e);
+
+    /// <summary>Symbol aus dem Katalog der HKAP-Bibliothek (Modul 5 A-S 2) für das Element oder null (keine Zuordnung, Katalog fehlt, Zeile offen).</summary>
+    public static KatalogSymbol? KatalogSymbolVon(Projekt p, Element e) => p.Katalog.Schemasymbole?.Waehle(p, e);
 
     public static string KlassenSchluessel(Katalog k, Element e)
     {
@@ -84,6 +93,12 @@ public static class SchemaSymbole
         {
             lokal = SinnbildPrimitive(sinnbild, farbe);
             drehen = false;   // Sinnbilder stehen immer aufrecht
+        }
+        else if (KatalogSymbolVon(p, e) is { } ks)
+        {
+            // Symbol der HKAP-Bibliothek: Armaturen drehen mit der Leitung (senkrecht gezeichnet an waagrechten Leitungen um 90°), Apparate stehen aufrecht
+            lokal = SchemaSymbolZeichnung.Primitive(ks, p.Katalog.Schemasymbole!.Massstab, SchemaSymbolZeichnung.Gedreht(ks, senkrecht));
+            drehen = false;
         }
         else
         {
