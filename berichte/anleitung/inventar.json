@@ -8749,7 +8749,7 @@
       "id": "zusatz",
       "titel": "Zusatzbausteine ausserhalb der Module",
       "modul": "–",
-      "einleitung": "Einlagen und Grundleitungen (Einlageplan, Grundleitungsplan), die projektübergreifende Familienbibliothek, Serien-PDF mit Plansätzen und die Rohrbezeichnung (Abwasser PE-S mit Aussendurchmesser, übrige Rohre NW/DN nach Einstellung). Sie sind während der Module 2, 3 und 7 (vorgezogen) entstanden und haben eigene Spezifikationen.",
+      "einleitung": "Einlagen und Grundleitungen (Einlageplan, Grundleitungsplan), die projektübergreifende Familienbibliothek, Serien-PDF mit Plansätzen und die Rohrbezeichnung (Abwasser PE-S mit Aussendurchmesser, übrige Rohre NW/DN nach Einstellung). Sie sind während der Module 2, 3 und 7 (vorgezogen) entstanden und haben eigene Spezifikationen. Dazu die Ausrichtung der Grundrisse nach Geometrie oder Himmelsrichtung (Nachbearbeitung N9).",
       "funktionen": [
         {
           "id": "zb-einlage-verlegung",
@@ -9651,6 +9651,181 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:151"
           ],
           "hinweis": "Ersetzt die frühere Fassung mit nur vier Registernamen (Befund in «kuerzel-liste-ks» behoben)."
+        },
+        {
+          "id": "zb-n9-geometrie",
+          "titel": "Grundriss nach Geometrie ausgerichtet (Vorgabe): längste Gebäudekante waagrecht",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Jede Grundriss-Ansicht (auch Koordinations-, Einlage- und Aussparungsplan); Anzeige unten links in der Ansicht"
+          },
+          "schritte": [
+            "Einen Grundriss eines Gebäudes öffnen, das im Projekt schräg liegt (z. B. nach einem IFC-Import).",
+            "Unten links in der Ansicht die Zeile unter «Massstab» lesen.",
+            "Den Nordpfeil oben rechts ansehen.",
+            "Mit der Maus über eine Gebäudeecke fahren und die Zeile «x … · y … mm (Modell)» lesen."
+          ],
+          "erwartung": "Der Grundriss steht gerade: die längste Aussenwand liegt waagrecht (bei einer Kante näher an der Senkrechten senkrecht), gedreht wird höchstens ±45°. Unten links steht «Geometrie, gedreht −37.0°» (Beispiel). Raumstempel, Boxen und Legenden bleiben waagrecht, Masszahlen und Leitungsbezeichnungen folgen ihrem Bauteil und bleiben lesbar. Der Nordpfeil zeigt nach geografisch Nord. Die Mausposition nennt Modellkoordinaten (x Ost, y Nord des Projekts), nicht die gedrehten.",
+          "pruefpunkte": [
+            "Die längste Gebäudekante liegt waagrecht.",
+            "Anzeige «Geometrie, gedreht …°» unten links.",
+            "Raumstempel sind waagrecht und gut lesbar.",
+            "Der Nordpfeil zeigt nach geografisch Nord (bei einem Nordwinkel nicht nach oben).",
+            "Die Koordinatenanzeige nennt die Modellkoordinaten der Ecke."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss eines schräg liegenden Testgebäudes",
+            "zustand": "Ausrichtung Geometrie (wie n9_geometrie.png der Browser-Reihe ausrichtung.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Grafik/Ansichtsausrichtung.cs:1",
+            "src/Hlks.Kern/Architektur/Planwinkel.cs:1",
+            "src/Hlks.Web/wwwroot/js/ansichten/grundriss.js:1",
+            "nachbearbeitung.md (N9)"
+          ],
+          "hinweis": "Nur Darstellung: die Modellkoordinaten bleiben. Ohne Angabe gilt Geometrie, auch für bestehende Projekte. Den Winkel bestimmt der Kern aus der längsten geraden Aussenwand (Vorgabe angrenzung = aussen oder Raumgrenze gegen aussen), sonst aus der längsten Wand, sonst 0. Projekte, deren Architektur nur als IFC-Unterlage vorliegt (keine Wände übernommen), haben deshalb den Planwinkel 0."
+        },
+        {
+          "id": "zb-n9-himmelsrichtung",
+          "titel": "Grundriss nach Himmelsrichtung ausrichten (geografisch Nord oben)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Darstellung",
+            "knopf": "Nach Himmelsrichtung",
+            "kuerzel": "",
+            "sonst": "Eigenschaften der Ansicht › ausrichtung"
+          },
+          "schritte": [
+            "Einen Grundriss öffnen und aktiv machen.",
+            "Register «Ansicht», Gruppe «Darstellung», Knopf «Nach Himmelsrichtung» klicken.",
+            "Den Nordpfeil oben rechts und die Anzeige unten links ansehen.",
+            "Den Knopf nochmals klicken (zurück auf Geometrie).",
+            "Alternativ: in den Eigenschaften der Ansicht unter «ausrichtung» geometrie oder himmelsrichtung wählen."
+          ],
+          "erwartung": "Mit «Nach Himmelsrichtung» (Knopf gedrückt) liegt geografisch Nord oben: der Grundriss dreht um den Nordwinkel der Projektinformation, der Nordpfeil zeigt nach oben, unten links steht «Himmelsrichtung, gedreht 30.0°» (Beispiel). Ohne Nordwinkel bleibt die Drehung 0, die Eigenschaften nennen den Hinweis. Der zweite Klick stellt die Vorgabe Geometrie wieder her (Eigenschaft entfernt). Schnitt, Ansicht, 3D, Schema und Liste werden nicht gedreht (Knopf gesperrt).",
+          "pruefpunkte": [
+            "Nordpfeil zeigt nach oben.",
+            "Anzeige «Himmelsrichtung, gedreht …°».",
+            "Der Knopf ist gedrückt; zweiter Klick: wieder Geometrie.",
+            "In einem Schnitt ist der Knopf gesperrt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss des Testgebäudes",
+            "zustand": "Ausrichtung Himmelsrichtung, Register Ansicht offen (wie n9_himmelsrichtung.png)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.ausrichtung)",
+            "kataloge/klassen.json (Ansicht.ausrichtung)"
+          ],
+          "hinweis": "Der Nordwinkel steht in Verwalten › Projekt › «Projektinformationen» (Lage › Nordwinkel); er ist der Winkel von Projekt-Nord zu geografisch Nord im Uhrzeigersinn."
+        },
+        {
+          "id": "zb-n9-zeichnen",
+          "titel": "Zeichnen und Fangen im gedrehten Grundriss",
+          "wo": {
+            "register": "Architektur",
+            "gruppe": "Bauteile",
+            "knopf": "Wand",
+            "kuerzel": "WA",
+            "sonst": "gilt für alle Zeichenwerkzeuge, Griffe, Bemassung und Leitungen"
+          },
+          "schritte": [
+            "Im gedrehten Grundriss das Werkzeug «Wand» (WA) starten, Dicke eintragen.",
+            "Einen Startpunkt klicken, die Maus nach rechts bewegen und dabei Umschalt halten.",
+            "Das temporäre Mass (Länge und Winkel) lesen und den zweiten Punkt klicken, Enter.",
+            "Eine Bemassung «horizontal» (DI, Optionsleiste Richtung horizontal) zwischen zwei Gebäudeecken setzen.",
+            "Die neue Wand anklicken (Auswahl) und an einem Griff ziehen."
+          ],
+          "erwartung": "Waagrecht gezeichnet heisst parallel zur Gebäudekante: mit Umschalt rastet die Wand auf die Achsen der Ansicht ein, das temporäre Mass zeigt 0.0°. Raster, Winkelfang der Leitungen und «horizontal/vertikal» der Bemassung gelten ebenfalls in den Achsen der Ansicht. Texte, Fangsymbole und Griffe stehen waagrecht. Auswahl, Fang und Ziehen treffen wie gewohnt.",
+          "pruefpunkte": [
+            "Die neue Wand ist parallel zur Gebäudekante.",
+            "Das temporäre Mass zeigt 0.0°.",
+            "Die horizontale Bemassung misst entlang der Gebäudekante.",
+            "Klick wählt die Wand, Griff ziehen funktioniert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss des Testgebäudes",
+            "zustand": "Wandwerkzeug mit Vorschau und temporärem Mass (wie n9_wand_orthogonal.png)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/werkzeuge/fangen.js (fangen, drehung)",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/schicht.js (drehungSetzen)",
+            "src/Hlks.Kern/Grafik/BeschriftungMass.cs (Achse)"
+          ],
+          "hinweis": "Gespeichert wird immer in Modellkoordinaten; eine Wand, die im gedrehten Grundriss waagrecht gezeichnet ist, steht im Modell unter dem Winkel der Gebäudekante."
+        },
+        {
+          "id": "zb-n9-planwinkel",
+          "titel": "Planwinkel des Gebäudes ansehen und neu bestimmen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Darstellung",
+            "knopf": "Planwinkel neu bestimmen",
+            "kuerzel": "",
+            "sonst": "Eigenschaften eines Gebäudes › Knopf «Planwinkel neu bestimmen»; Eigenschaften der Ansicht › Zeilen «Drehung», «Quelle»"
+          },
+          "schritte": [
+            "Ohne Auswahl die Eigenschaften der aktiven Grundriss-Ansicht ansehen: Zeilen «Drehung» und «Quelle» unter «ausrichtung».",
+            "Im Projektbrowser das Gebäude wählen: Eigenschaft «planwinkel», darunter «Neu bestimmt» und der Knopf.",
+            "Eine längere Aussenwand zeichnen: der Grundriss dreht nicht mit.",
+            "Knopf «Planwinkel neu bestimmen» klicken (oder Ansicht › Darstellung).",
+            "Optional den Wert von Hand in «planwinkel» eintragen."
+          ],
+          "erwartung": "Der Planwinkel steht am Gebäude (Grad, Gegenuhrzeigersinn, −45 … 45) mit Herkunft «abgeleitet: längste Gebäudekante W-… (Aussenwand), Länge …, Richtung …°». Er wird beim IFC-Import bzw. mit den ersten Wänden gesetzt und ändert sich danach nur auf den Knopf oder von Hand – die Ansichten springen nicht, wenn eine Wand dazukommt. «Neu bestimmt» zeigt, was der Knopf setzen würde; weicht es ab, steht ein Hinweis da. Nach dem Klick meldet KICAD den neuen Winkel (oder «unverändert»); Rückgängig nimmt ihn zurück.",
+          "pruefpunkte": [
+            "Ansicht: «Drehung −37.0° · Geometrie …» und die Quelle.",
+            "Gebäude: planwinkel mit Herkunft (Fragezeichen «Warum»).",
+            "Neue Wand: Grundriss dreht nicht.",
+            "Knopf: Meldung mit Winkel; Rückgängig stellt den alten Wert her."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaften des Gebäudes GEB-T",
+            "zustand": "Gebäude gewählt, Knopf «Planwinkel neu bestimmen» sichtbar (wie n9_eigenschaften_gebaeude.png)"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Architektur/Planwinkel.cs (planwinkel_bestimmen, Abfrage planwinkel)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/ausrichtung-palette.js"
+          ],
+          "hinweis": "Für die KI: Abfrage planwinkel (lesend) und Befehl planwinkel_bestimmen (ändernd, zurücknehmbar) – zur Bestätigung eingeordnet."
+        },
+        {
+          "id": "zb-n9-pdf",
+          "titel": "Plan-PDF mit gedrehtem Grundriss",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Planblätter",
+            "knopf": "PDF öffnen",
+            "kuerzel": "",
+            "sonst": "Planblatt-Ansicht (zeigt das PDF), Serien-PDF …"
+          },
+          "schritte": [
+            "Den gedrehten Grundriss auf ein Planblatt platzieren.",
+            "Das Planblatt öffnen bzw. das PDF ausgeben.",
+            "Fenster, Raumstempel, Masse und den Nordpfeil unter dem Fenster ansehen."
+          ],
+          "erwartung": "Das PDF zeigt den Grundriss wie am Bildschirm: gleich gedreht, Beschriftungen waagrecht bzw. lesbar entlang ihrer Bauteile, das Fenster eng um das gerade stehende Gebäude. Der Nordpfeil unter dem Fenster zeigt nach geografisch Nord (bei Himmelsrichtung nach oben).",
+          "pruefpunkte": [
+            "Grundriss im PDF gleich gedreht wie am Bildschirm.",
+            "Fenster passt eng um das Gebäude.",
+            "Nordpfeil unter dem Fenster zeigt nach geografisch Nord."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Planblatt mit dem Testgebäude",
+            "zustand": "PDF in der Planblatt-Ansicht"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Plan/PdfZeichner.cs (Drehen)",
+            "src/Hlks.Kern/Plan/Planausgabe.cs (Gebiet, Fusszeile)"
+          ],
+          "hinweis": "Der Ausschnitt einer Ansicht (Eigenschaft ausschnitt) gilt in den Achsen der Ansicht."
         }
       ]
     }
