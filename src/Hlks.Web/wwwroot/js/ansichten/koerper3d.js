@@ -236,7 +236,8 @@ function material(farbe, deckkraft) {
 export const BLASS_HUELLE = Object.freeze({ wand: 0.5, oeffnung: 0.5, decke: 0.22, raum: 0.4 });
 
 /** Baut einen Körper des Kerns; null, wenn nichts darstellbar ist. Fehler werden gemeldet, nicht geworfen.
- *  opt.blasser: Faktoren je Ebene auf die Deckkraft (BLASS_HUELLE); die Kanten richten sich nach der unverminderten Deckkraft. */
+ *  opt.blasser: Faktoren je Ebene auf die Deckkraft (BLASS_HUELLE); die Kanten richten sich nach der unverminderten Deckkraft.
+ *  opt.ueberschreiben: { farbe, deckkraft } (je null = keine Übersteuerung) für den Nachbau einer IFC-Unterlage (N12). */
 export function baueKoerper(k, opt = {}) {
   try {
     const g = new THREE.Group();
@@ -253,7 +254,8 @@ export function baueKoerper(k, opt = {}) {
       }
       const geom = teilGeometrie(t);
       if (!geom) continue;
-      const farbe = teilFarbe(t), deckVoll = teilDeckkraft(t);
+      // N12: Nachbau einer IFC-Unterlage in der Farbe und Deckkraft der Unterlage (opt.ueberschreiben)
+      const farbe = opt.ueberschreiben?.farbe ?? teilFarbe(t), deckVoll = opt.ueberschreiben?.deckkraft ?? teilDeckkraft(t);
       const deck = deckVoll * (opt.blasser?.[k.ebene] ?? 1);
       const schluessel = `${farbe}|${deck}`;
       let mat = materialien.get(schluessel);

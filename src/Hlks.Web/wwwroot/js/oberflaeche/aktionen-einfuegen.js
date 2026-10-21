@@ -13,6 +13,7 @@ import { zeigen, meldung } from './dialoge.js';
 import { sende, ergebnisMelden } from './befehle.js';
 import { esc, knoten, entprellen } from './werkzeug.js';
 import * as T from './einfuegen-text.js';
+import { originalStil, gueltigeFarbe, gueltigeDeckkraft, ORIGINAL_FARBE } from '../ansichten/ifc-darstellung.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { kalibrierenWerkzeug, kalibrierbareUnterlagen } from '../werkzeuge/kalibrieren.js';
 import { transformationVon } from '../werkzeuge/kalibrierung.js';
@@ -370,6 +371,38 @@ async function deckkraftDialog(p) {
   if (!r.angenommen) ergebnisMelden(r);
 }
 
+/** N12: Farben einer IFC-Unterlage – Original (Farbe, Deckkraft) und Nachbau (eigene Farbe und Deckkraft oder normale Darstellung). Welche der beiden
+ *  eine Ansicht zeigt, steht in der Ansicht (Sichtbarkeit/Grafiken → IFC-Unterlagen zeigen). */
+async function farbenDialog(p) {
+  const u = element(p?.element ?? p?.unterlage ?? zustand.auswahl);
+  if (!u || u.klasse !== 'Unterlage' || u.werte?.art !== 'ifc') return;
+  const o = originalStil(u);
+  const nf = gueltigeFarbe(u.werte?.farbeNachbau), nd = gueltigeDeckkraft(u.werte?.deckkraftNachbau);
+  const pz = (d) => Math.round(d * 100);
+  const w = knoten(`<div class="ul-farben">
+    <fieldset><legend>Original (die IFC-Datei selbst)</legend>
+      <label class="fz"><span>Farbe</span><input type="color" class="f-orig" value="${o.farbe}"></label>
+      <label class="fz"><span>Deckkraft [%]</span><input type="range" class="f-orig-d" min="0" max="100" step="5" value="${pz(o.deckkraft)}"><output class="f-orig-w">${pz(o.deckkraft)}</output></label></fieldset>
+    <fieldset><legend>Nachbau (die aus der Datei übernommenen Elemente)</legend>
+      <label class="haken"><input type="checkbox" class="f-nach-an" ${nf || nd !== null ? 'checked' : ''}> Eigene Farbe und Deckkraft (sonst normale Darstellung)</label>
+      <label class="fz"><span>Farbe</span><input type="color" class="f-nach" value="${nf ?? '#ff8000'}"></label>
+      <label class="fz"><span>Deckkraft [%]</span><input type="range" class="f-nach-d" min="0" max="100" step="5" value="${pz(nd ?? 0.6)}"><output class="f-nach-w">${pz(nd ?? 0.6)}</output></label></fieldset>
+    <p class="leise">0 % unsichtbar, 100 % voll deckend. In «Beide übereinander» lassen sich Original und Nachbau so unterscheiden.</p></div>`);
+  const q = (k) => w.querySelector(k);
+  q('.f-orig-d').oninput = (e) => { q('.f-orig-w').textContent = e.target.value; };
+  q('.f-nach-d').oninput = (e) => { q('.f-nach-w').textContent = e.target.value; };
+  const ok = await zeigen({ titel: `Farben – ${unterlagenText(u)}`, inhalt: w, breite: 460, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Übernehmen', wert: true, primaer: true }] });
+  if (ok !== true) return;
+  const orig = q('.f-orig').value.toLowerCase(), an = q('.f-nach-an').checked;
+  const r = await sende('element_aendern', { element: u.kennzeichen, eigenschaften: {
+    farbeOriginal: orig === ORIGINAL_FARBE ? null : orig,
+    deckkraft: Number(q('.f-orig-d').value) / 100,
+    farbeNachbau: an ? q('.f-nach').value.toLowerCase() : null,
+    deckkraftNachbau: an ? Number(q('.f-nach-d').value) / 100 : null,
+  } });
+  if (!r.angenommen) ergebnisMelden(r);
+}
+
 /** Dialog «Unterlagen verwalten»: alle Unterlagen mit Anzeige, Deckkraft, Lage, Kalibrieren und Entfernen (live nachgeführt). */
 async function unterlagenVerwalten() {
   const w = knoten('<div class="ul-dlg"></div>');
@@ -383,7 +416,7 @@ async function unterlagenVerwalten() {
           + `<td class="leise" title="${esc(u.werte?.datei ?? '')}">${esc(ohnePruefsumme(u.werte?.datei ?? u.werte?.original ?? ''))}</td>`
           + `<td><input type="checkbox" class="u-an" ${u.werte?.anzeigen === false ? '' : 'checked'} aria-label="anzeigen"></td>`
           + `<td><input type="text" class="u-deck" size="3" inputmode="numeric" value="${Math.round(Number(u.werte?.deckkraft ?? 0.5) * 100)}"> %</td>`
-          + `<td class="u-knoepfe"><button type="button" class="dlg-knopf u-lage">Lage</button>${KALIB(art) ? '<button type="button" class="dlg-knopf u-kal">Kalibrieren</button>' : ''}<button type="button" class="dlg-knopf u-weg">Entfernen</button></td></tr>`;
+          + `<td class="u-knoepfe"><button type="button" class="dlg-knopf u-lage">Lage</button>${art === 'ifc' ? '<button type="button" class="dlg-knopf u-farben">Farben …</button>' : ''}${KALIB(art) ? '<button type="button" class="dlg-knopf u-kal">Kalibrieren</button>' : ''}<button type="button" class="dlg-knopf u-weg">Entfernen</button></td></tr>`;
       }).join('')}</tbody></table>`;
   };
   const KALIB = (art) => ['dwg', 'dxf', 'pdf', 'bild'].includes(art);
@@ -405,6 +438,7 @@ async function unterlagenVerwalten() {
     const u = zeile(e);
     if (!u) return;
     if (e.target.closest('.u-lage')) lageberichtZeigen({ unterlage: u.kennzeichen });
+    else if (e.target.closest('.u-farben')) farbenDialog({ element: u.kennzeichen });
     else if (e.target.closest('.u-kal')) { zu?.(); ausfuehren('einfuegen.kalibrieren', { unterlage: u.kennzeichen }); }
     else if (e.target.closest('.u-weg')) ausfuehren('aendern.loeschen', { element: u.kennzeichen });
     else { auswaehlen(u.id); }
@@ -456,6 +490,7 @@ registrieren({
 // Kontextaktionen der Unterlagen im Projektbrowser (nicht im Menüband)
 registrieren({ id: 'unterlage.anzeigen', titel: 'Anzeigen / Ausblenden', symbol: 'unterlagen', ausfuehren: anzeigenUmschalten });
 registrieren({ id: 'unterlage.deckkraft', titel: 'Deckkraft …', symbol: 'unterlagen', ausfuehren: deckkraftDialog });
+registrieren({ id: 'unterlage.farben', titel: 'Farben …', symbol: 'unterlagen', ausfuehren: farbenDialog });
 registrieren({ id: 'unterlage.lagebericht', titel: 'Lagebericht zeigen', symbol: 'koordinaten', ausfuehren: lageberichtZeigen });
 
 export { ifcDialog, ergebnisDialog, lageberichtZeigen, koordinatenZeigen, unterlagenVerwalten, unterlageEinfuegen };

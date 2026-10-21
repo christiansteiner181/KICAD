@@ -49,6 +49,9 @@ public sealed class Stil
     public double? Deckkraft { get; set; }
     /// <summary>Nur am Bildschirm zeichnen, nicht auf dem Plan (z. B. Raumfarben, Auswahlhilfen).</summary>
     public bool NurBildschirm { get; set; }
+
+    /// <summary>Flache Kopie (alle Felder sind Werte oder unveränderte Listen).</summary>
+    public Stil Kopie() => (Stil)MemberwiseClone();
 }
 
 /// <summary>Ein 2D-Primitiv der Plangrafik.</summary>

@@ -77,24 +77,12 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 
         // Geschnittene Wände: Öffnungen, deren Höhenbereich die Schnitthöhe schneidet, über die ganze Dicke + 2 mm aussparen
         var aus = Aussparungen(v, geschnitten, (w, o) => o.Schneidet(sh - w.Unterkante));
-        var umriss = Polygone.Abziehen(Polygone.Vereinigen(new PathsD(geschnitten.Select(w => w.Band()))), aus);
-        if (umriss.Count > 0)
-            v.Gemeinsam.Add(new Grafikteil
-            {
-                Id = null, Ebene = "wand",
-                Primitive = Polygone.Flaechen(umriss).Select(f => Polygon(f, new Stil { Stift = Stifte.Dick })).ToList(),
-            });
+        GemeinsamerUmriss(ctx, v, geschnitten, aus, Stifte.Dick);
         Wandteile(v, geschnitten, aus, w => Schnittstil(w.Wand.Text("material")), (w, o) => o.Schneidet(sh - w.Unterkante));
 
         // Niedrige Wände: Umriss dünn (vereinigt, damit an Ecken keine Doppellinien entstehen); Türen reichen bis zum Boden
         var ausN = Aussparungen(v, niedrig, (w, o) => o.IstTuer);
-        var umrissN = Polygone.Abziehen(Polygone.Vereinigen(new PathsD(niedrig.Select(w => w.Band()))), ausN);
-        if (umrissN.Count > 0)
-            v.Gemeinsam.Add(new Grafikteil
-            {
-                Id = null, Ebene = "wand",
-                Primitive = Polygone.Flaechen(umrissN).Select(f => Polygon(f, new Stil { Stift = Stifte.Duenn })).ToList(),
-            });
+        GemeinsamerUmriss(ctx, v, niedrig, ausN, Stifte.Duenn);
         Wandteile(v, niedrig, ausN, _ => new Stil { Stift = null }, (w, o) => o.IstTuer);
 
         // Wände ohne Dicke: nur die Achse (Annahme: Linie «mittel», bis eine Dicke gesetzt ist)
@@ -107,6 +95,24 @@ public sealed class ArchitekturGrafik : IGrafikquelle
                 Fangkanten = [[[w.Ax, w.Ay], [w.Bx, w.By]]],
             };
         return v;
+    }
+
+    /// <summary>Vereinigter Umriss der Wände als gemeinsame Grafik. N12: Wände aus einer IFC-Unterlage mit eigener Farbe oder Deckkraft für den
+    /// Nachbau (IfcDarstellung) bekommen einen eigenen Umriss in dieser Farbe; ohne Übersteuerung ist es wie bisher ein Umriss für alle.</summary>
+    static void GemeinsamerUmriss(GrafikKontext ctx, Vorbereitung v, List<Wandlage> waende, PathsD aus, string stift)
+    {
+        foreach (var gruppe in waende.GroupBy(w => IfcDarstellung.NachbauStil(ctx, w.Wand)))
+        {
+            var umriss = Polygone.Abziehen(Polygone.Vereinigen(new PathsD(gruppe.Select(w => w.Band()))), aus);
+            if (umriss.Count == 0) continue;
+            var teil = new Grafikteil
+            {
+                Id = null, Ebene = "wand",
+                Primitive = Polygone.Flaechen(umriss).Select(f => Polygon(f, new Stil { Stift = stift })).ToList(),
+            };
+            if (gruppe.Key is { } s) IfcDarstellung.Ueberschreiben(teil, s);
+            v.Gemeinsam.Add(teil);
+        }
     }
 
     static PathsD Aussparungen(Vorbereitung v, IEnumerable<Wandlage> waende, Func<Wandlage, Oeffnungslage, bool> wahl) =>
