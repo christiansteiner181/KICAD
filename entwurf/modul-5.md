@@ -235,7 +235,7 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
 - **Prinzipschema nur aus dem Modell:** Im Prinzipschema werden keine Elemente angelegt.
   - A-S 5 «Schema zuerst» entfällt.
   - Im Prinzipschema gibt es kein «Element einfügen» und kein «Verbinden».
-  - Lage und Anordnung bleiben einstellbar (schema_lage, «Neu anordnen»).
+  - Lage und Anordnung bleiben einstellbar (`schema_lage`, «Neu anordnen»).
 - **Heizgruppen «nach Hydraulik des Modells»:**
   - Es gibt keine mitgelieferten Bausteine. A-S 3 entfällt, `baustein_einfuegen` wird nicht gebaut.
   - Gruppen und Glieder ergeben sich aus dem Netz (A-D 3, `heizgruppen_vorschlagen`).
