@@ -124,17 +124,18 @@ test('Gesten: Zufassen in der Nähe, Zufassen ausserhalb zählt nicht, der Wechs
   const m = S.modellMitte(l0);
   let g = S.gestenNeu(l0);
   const aus = { griff: false, nah: true, x: m.x, z: m.z, gieren: 0 };
-  // eine Hand greift in der Nähe
+  // eine Hand greift in der Nähe: das Modell ruht (nur zwei Hände bewegen, Christian 21.10.2026)
   g = S.gestenSchritt(g, { links: null, rechts: aus });
   assert.equal(g.modus, null);
   g = S.gestenSchritt(g, { links: null, rechts: { ...aus, griff: true } });
-  assert.equal(g.modus, 'ein');
+  assert.equal(g.modus, 'wartet');
   const vor = g.lage;
   g = S.gestenSchritt(g, { links: null, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
-  nah(g.lage.x - vor.x, 0.1, 1e-9, 'folgt der Hand');
+  assert.deepEqual(g.lage, vor, 'eine Hand allein bewegt nichts');
   // zweite Hand greift ausserhalb der Nähe von aussen kommend: zählt nicht (kein Zufassen am Modell)
   g = S.gestenSchritt(g, { links: { griff: true, nah: false, x: m.x - 1.2, z: m.z, gieren: 0 }, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
-  assert.equal(g.modus, 'ein');
+  assert.equal(g.modus, 'wartet');
+  assert.deepEqual(g.lage, vor);
   g = S.gestenSchritt(g, { links: { griff: false, nah: false, x: m.x - 1.2, z: m.z, gieren: 0 }, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
   // nun greift die linke Hand nah am Modell zu: zwei Hände, Massstab und Lage ändern sich im selben Schritt noch nicht
   const links = { griff: true, nah: true, x: m.x - 0.2, z: m.z, gieren: 0 }, rechts = { griff: true, nah: true, x: m.x + 0.2, z: m.z, gieren: 0 };
@@ -146,10 +147,12 @@ test('Gesten: Zufassen in der Nähe, Zufassen ausserhalb zählt nicht, der Wechs
   assert.deepEqual(g.lage, eins, 'beim Wechsel springt nichts');
   g = S.gestenSchritt(g, { links: { ...links, x: m.x - 0.4 }, rechts: { ...rechts, x: m.x + 0.4 } });
   nah(g.lage.massstab, 25, 1e-9, 'doppelter Abstand');
-  // eine Hand lässt los: weiter mit einer, wieder ohne Sprung
+  // eine Hand lässt los: das Modell bleibt stehen, auch wenn die andere sich bewegt
   const zoomLage = g.lage;
   g = S.gestenSchritt(g, { links: { ...links, griff: false }, rechts: { ...rechts, x: m.x + 0.4 } });
-  assert.equal(g.modus, 'ein'); assert.deepEqual(g.lage, zoomLage);
+  assert.equal(g.modus, 'wartet'); assert.deepEqual(g.lage, zoomLage);
+  g = S.gestenSchritt(g, { links: { ...links, griff: false }, rechts: { ...rechts, x: m.x + 0.6 } });
+  assert.deepEqual(g.lage, zoomLage, 'eine Hand allein bewegt nichts');
   // beide los: Ruhe, die Lage bleibt
   g = S.gestenSchritt(g, { links: null, rechts: null });
   assert.equal(g.modus, null); assert.deepEqual(g.lage, zoomLage);
@@ -186,15 +189,15 @@ test('Geschosse: sortiert nach Kote, Geschosse ohne Höhe fehlen, Oberkante der 
   assert.equal(g3[0].deckeOK, 2800);
 });
 
-test('Schnitthöhe: unter der Decke = Unterkante der Decke, mit «Decke zeigen» = Oberkante; ohne Decke die Oberkante', () => {
+test('Schnitthöhe: unter der Decke = Unterkante der Decke − SCHNITT_TIEFER_MM, mit «Decke zeigen» = Oberkante; ohne Decke die Oberkante − SCHNITT_TIEFER_MM', () => {
   const decken = [{ oberkante: 2900, dicke: 200 }, { oberkante: 2901, dicke: 250 }, { oberkante: 5800, dicke: 180 }, { oberkante: 8700, dicke: 0 }, { oberkante: 4000, dicke: 300 }];
   const g = S.geschosseAufbereiten(GESCHOSSE, decken);
   const eg = g.find((x) => x.kennzeichen === 'EG'), og1 = g.find((x) => x.kennzeichen === '1.OG'), og2 = g.find((x) => x.kennzeichen === '2.OG'), ug = g.find((x) => x.kennzeichen === 'UG');
   assert.equal(eg.dicke, 250, 'die dickere der beiden Platten auf der Kote (±2 mm) zählt');
-  assert.equal(S.schnittHoeheMm(eg, false), 2650); assert.equal(S.schnittHoeheMm(eg, true), 2900);
-  assert.equal(S.schnittHoeheMm(og1, false), 5620); assert.equal(S.schnittHoeheMm(og1, true), 5800);
-  assert.equal(og2.ohneDecke, true, 'Dicke 0 zählt nicht'); assert.equal(S.schnittHoeheMm(og2, false), 8700);
-  assert.equal(ug.ohneDecke, true); assert.equal(S.schnittHoeheMm(ug, false), 0);
+  assert.equal(S.SCHNITT_TIEFER_MM, 50); assert.equal(S.schnittHoeheMm(eg, false), 2600); assert.equal(S.schnittHoeheMm(eg, true), 2900);
+  assert.equal(S.schnittHoeheMm(og1, false), 5570); assert.equal(S.schnittHoeheMm(og1, true), 5800);
+  assert.equal(og2.ohneDecke, true, 'Dicke 0 zählt nicht'); assert.equal(S.schnittHoeheMm(og2, false), 8650);
+  assert.equal(ug.ohneDecke, true); assert.equal(S.schnittHoeheMm(ug, false), -50);
 });
 
 test('Clipping-Ebene im Raum: Plattenoberkante + (Schnitt − Unterkante des Modells) / Massstab, Spiel nach der Seite der Fläche', () => {
@@ -214,7 +217,7 @@ test('«Alle Etagen» und Zurücksetzen: Kopfzeilen, Umschalter, Startlage', () 
   const lage = { massstab: 50, drehung: 0, x: 0, z: 0 };
   assert.deepEqual(S.kopfZeilen(lage, { geschoss: null, deckeZeigen: false }, g), ['Sitzungsraum · Massstab 1:50', 'Alle Etagen']);
   const z = S.kopfZeilen({ ...lage, massstab: 25 }, { geschoss: 'EG', deckeZeigen: false }, g);
-  assert.equal(z[0], 'Sitzungsraum · Massstab 1:25'); assert.ok(z[1].startsWith('EG · Schnitt unter der Decke (2.70 m)'), z[1]);
+  assert.equal(z[0], 'Sitzungsraum · Massstab 1:25'); assert.ok(z[1].startsWith('EG · Schnitt unter der Decke (2.65 m)'), z[1]);
   assert.ok(S.kopfZeilen(lage, { geschoss: 'EG', deckeZeigen: true }, g)[1].includes('über der Decke (2.90 m)'));
   assert.ok(S.kopfZeilen(lage, { geschoss: '1.OG', deckeZeigen: false }, g).some((t) => t.startsWith('Keine Decke im Modell')));
   assert.deepEqual(S.sitzungsTasten({ geschoss: null, deckeZeigen: false }, false), { alle: true, decke: false, ifc: false });

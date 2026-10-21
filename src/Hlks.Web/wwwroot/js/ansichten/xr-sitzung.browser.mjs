@@ -333,7 +333,7 @@ try {
   abschnitt('Etagen: EG gewählt → Clipping-Ebene gegen unabhängige Rechnung aus den Geschossdaten der API');
   const erwEbene = (g, o2) => {
     const ok = kotenDarueber(g);
-    const mm = o2.deckeZeigen ? ok + 0.5 : ok - (o2.dicke ?? 0) - 0.5;
+    const mm = o2.deckeZeigen ? ok + 0.5 : ok - (o2.dicke ?? 0) - 50 - 0.5;   // unter der Decke: 50 mm tiefer (SCHNITT_TIEFER_MM, Christian 21.10.2026)
     return rig0.y + 0.75 + (mm / 1000 - vorher.min[1]) / o2.massstab;
   };
   await tippe('g:' + eg.kz);
@@ -341,7 +341,7 @@ try {
   await warte(500);
   const s2 = await sitz(), w2 = await modellWelt();
   const e2 = erwEbene(eg, { deckeZeigen: false, massstab: 50 });
-  pruef(nahe(s2.ebeneWelt, e2, 2e-4), `ohne Decke im Modell: Ebene ${s2.ebeneWelt} m = Oberkante Decke ${kotenDarueber(eg)} mm − 0.5 mm Spiel (unabhängig ${e2.toFixed(5)} m)`, JSON.stringify(s2).slice(0, 400));
+  pruef(nahe(s2.ebeneWelt, e2, 2e-4), `ohne Decke im Modell: Ebene ${s2.ebeneWelt} m = Oberkante Decke ${kotenDarueber(eg)} mm − 50 mm − 0.5 mm Spiel (unabhängig ${e2.toFixed(5)} m)`, JSON.stringify(s2).slice(0, 400));
   pruef(w2.ebene && nahe(w2.ebene.c, e2, 2e-4) && w2.ebene.n[1] === -1 && w2.ebene.n[0] === 0 && w2.ebene.n[2] === 0, `die Ebene hängt an den Materialien: waagrecht, nach unten haltend, Konstante ${w2.ebene?.c}`);
   pruef(s2.geclippt === s2.material && s2.material > 0, `alle ${s2.material} Materialien des Modells sind geschnitten`);
   pruef(w2.oben > 0 && w2.unten > 0, `oberhalb der Ebene entfällt etwas (${w2.oben} Körper ganz darüber), darunter bleibt es (${w2.unten} darunter, ${w2.durch} durchschnitten)`);
@@ -358,7 +358,7 @@ try {
   await warte(300);
   const s3 = await sitz();
   const e3 = erwEbene(eg, { deckeZeigen: false, massstab: 50, dicke: 200 });
-  pruef(nahe(s3.ebeneWelt, e3, 2e-4) && s3.schnittMm === kotenDarueber(eg) - 200, `mit Decke: Schnitt unter der Decke ${s3.schnittMm} mm (Oberkante ${kotenDarueber(eg)} − 200), Ebene ${s3.ebeneWelt} m (unabhängig ${e3.toFixed(5)} m)`);
+  pruef(nahe(s3.ebeneWelt, e3, 2e-4) && s3.schnittMm === kotenDarueber(eg) - 250, `mit Decke: Schnitt unter der Decke ${s3.schnittMm} mm (Oberkante ${kotenDarueber(eg)} − 200 − 50), Ebene ${s3.ebeneWelt} m (unabhängig ${e3.toFixed(5)} m)`);
   await tippe('decke');
   await bisS((s) => s?.deckeZeigen === true, 'Decke zeigen', 6000);
   await warte(300);
@@ -380,7 +380,7 @@ try {
   pruef(s6.ebeneWelt === null && s6.geclippt === 0 && !w6.ebene, '«Alle Etagen»: keine Ebene, nichts geschnitten');
 
   // ================================================================== Hände
-  abschnitt('Hände: Controller-Rohwerte (Grifftaste, Zielstrahl) – eine Hand verschiebt und dreht, zwei Hände zoomen, ausserhalb zählt nicht');
+  abschnitt('Hände: Controller-Rohwerte (Grifftaste, Zielstrahl) – eine Hand allein bewegt nichts, zwei Hände verschieben, drehen und zoomen, ausserhalb zählt nicht');
   await keineHand('left'); await keineHand('right');
   const halter = async () => (await modellWelt()).halter;
   const ctrl = (seite, p, extra = {}) => controllerRoh(seite, { ort: p, ...extra });
@@ -390,15 +390,15 @@ try {
   const nahR = plus3({ x: H[0], y: H[1], z: H[2] }, { x: 0.04, y: 0.12, z: 0 });
   await ctrl('right', nahR, { griffTaste: false, strahl: STRAHL(0) }); await warte(250);
   await ctrl('right', nahR, { griffTaste: true, strahl: STRAHL(0) });
-  await bisS((s) => s?.modus === 'ein', 'eine Hand greift', 4000);
-  pruef(true, 'Grifftaste in der Nähe des Modells: eine Hand greift');
+  await bisS((s) => s?.modus === 'wartet', 'eine Hand greift (wartet auf die zweite)', 4000);
+  pruef(true, 'Grifftaste in der Nähe des Modells: eine Hand allein wartet auf die zweite');
   await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: true, strahl: STRAHL(0) }); await warte(350);
   const H2 = await halter();
-  pruef(nahe(H2[0] - H[0], 0.10, 6e-3) && nahe(H2[2] - H[2], 0, 6e-3), `Verschieben mit einer Hand: Modell um ${(H2[0] - H[0]).toFixed(3)} / ${(H2[2] - H[2]).toFixed(3)} m (Hand: 0.100 / 0)`);
+  pruef(nahe(H2[0], H[0], 1e-6) && nahe(H2[2], H[2], 1e-6), `eine Hand allein verschiebt nicht: Modell um ${(H2[0] - H[0]).toFixed(4)} / ${(H2[2] - H[2]).toFixed(4)} m (Hand 0.100 m)`);
   const dreh0 = (await sitz()).drehungGrad;
   await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: true, strahl: STRAHL(30) }); await warte(350);
   const dreh1 = (await sitz()).drehungGrad;
-  pruef(nahe(dreh1 - dreh0, 30, 0.6), `Drehen mit einer Hand: Handdrehung +30° → Modell ${dreh1 - dreh0}° (um die Senkrechte; das Modell bleibt waagrecht)`);
+  pruef(nahe(dreh1 - dreh0, 0, 1e-6), `eine Hand allein dreht nicht: Handdrehung +30° → Modell ${dreh1 - dreh0}°`);
   const lotrecht = await ausw(`const T = await import('three'); const q = window.__modell.parent.getWorldQuaternion(new T.Quaternion()); const o = new T.Vector3(0, 1, 0).applyQuaternion(q); return { y: o.y };`);
   pruef(nahe(lotrecht.y, 1, 1e-9), 'das Modell bleibt waagrecht (senkrechte Achse bleibt senkrecht)');
   await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: false, strahl: STRAHL(30) });
@@ -436,13 +436,15 @@ try {
   pruef((await sitz()).modus === null, 'Zufassen weit weg vom Modell greift nichts');
   await ctrl('right', weit, { griffTaste: false }); await warte(250);
   // Modell auf der Platte begrenzt
-  await ctrl('right', plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: 0.02, y: 0.12, z: 0 }), { griffTaste: false }); await warte(250);
-  await ctrl('right', plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: 0.02, y: 0.12, z: 0 }), { griffTaste: true });
-  await bisS((s) => s?.modus === 'ein', 'greift wieder', 4000);
-  await ctrl('right', plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: 5, y: 0.12, z: 5 }), { griffTaste: true }); await warte(400);
+  // (zwei Hände: nur so bewegt sich das Modell, Christian 21.10.2026)
+  const beiHc = (dx, dz = 0) => plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: dx, y: 0.12, z: dz });
+  await ctrl('right', beiHc(0.02), { griffTaste: false }); await ctrl('left', beiHc(-0.03), { griffTaste: false }); await warte(250);
+  await ctrl('right', beiHc(0.02), { griffTaste: true }); await ctrl('left', beiHc(-0.03), { griffTaste: true });
+  await bisS((s) => s?.modus === 'zwei', 'greift wieder (zwei Hände)', 4000);
+  await ctrl('right', beiHc(5.02, 5), { griffTaste: true }); await ctrl('left', beiHc(4.97, 5), { griffTaste: true }); await warte(400);
   const sGr = await sitz();
   pruef(Math.abs(sGr.lage.x) <= 0.76 && Math.abs(sGr.lage.z) <= 0.46 && (Math.abs(sGr.lage.x) > 0.7 || Math.abs(sGr.lage.z) > 0.4), `das Modell bleibt auf der Tischplatte (Lage ${sGr.lage.x} / ${sGr.lage.z} m)`);
-  await ctrl('right', plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: 5, y: 0.12, z: 5 }), { griffTaste: false });
+  await ctrl('right', beiHc(5.02, 5), { griffTaste: false }); await ctrl('left', beiHc(4.97, 5), { griffTaste: false });
   await bisS((s) => s?.modus === null, 'losgelassen', 4000);
   await keineHand('left'); await keineHand('right');
 

@@ -128,7 +128,9 @@ export const gestenNeu = (lage) => ({ lage, modus: null, griff: null, besitzt: {
 
 /**
  * Ein Schritt der Gestenerkennung. haende = { links, rechts }, je null oder { griff, nah, x, z, gieren }. Eine Hand «besitzt» das Modell, wenn sie zufasst, während sie nah
- * ist (steigende Flanke), und bis sie loslässt. Ein Besitzer: Einhand-Griff, zwei: Zweihand-Griff (neuer Bezug bei jedem Wechsel, damit nichts springt).
+ * ist (steigende Flanke), und bis sie loslässt. Bewegt wird das Modell **nur, solange beide Hände greifen** (Christian 21.10.2026 nach dem Brillentest: «greifen soll nur
+ * mit zwei händen funktionieren und nur wenn gegriffen. zoomen nur wenn gegriffen.»): dann verschieben, drehen und zoomen; greift nur eine Hand, ruht das Modell
+ * (modus 'wartet'). Jeder Wechsel setzt einen neuen Bezug, damit nichts springt. einhandStart/einhandSchritt bleiben für eine spätere Wahl erhalten.
  */
 export function gestenSchritt(g, haende) {
   const besitzt = { links: false, rechts: false }, vorher = { links: false, rechts: false };
@@ -140,12 +142,9 @@ export function gestenSchritt(g, haende) {
   const n = (besitzt.links ? 1 : 0) + (besitzt.rechts ? 1 : 0);
   const gleich = besitzt.links === g.besitzt.links && besitzt.rechts === g.besitzt.rechts;
   let { lage, griff } = g;
-  const modus = n === 0 ? null : n === 1 ? 'ein' : 'zwei';
-  if (n === 0) griff = null;
-  else if (!gleich || !griff) {
-    if (n === 1) griff = einhandStart(lage, haende[besitzt.links ? 'links' : 'rechts']);
-    else griff = zweihandStart(lage, haende.links, haende.rechts);
-  } else if (n === 1) lage = einhandSchritt(griff, haende[besitzt.links ? 'links' : 'rechts']);
+  const modus = n === 0 ? null : n === 1 ? 'wartet' : 'zwei';
+  if (n < 2) griff = null;
+  else if (!gleich || !griff) griff = zweihandStart(lage, haende.links, haende.rechts);
   else lage = zweihandSchritt(griff, haende.links, haende.rechts);
   return { lage, modus, griff, besitzt, vorher };
 }
@@ -166,8 +165,12 @@ export function geschosseAufbereiten(geschosse, decken = []) {
   });
 }
 
-/** Höhe des Schnitts in mm (Modell, z oben): Unterkante der Decke bzw. mit deckeZeigen deren Oberkante. */
-export const schnittHoeheMm = (geschoss, deckeZeigen = false) => (deckeZeigen ? geschoss.deckeOK : geschoss.deckeUK);
+/** Der Schnitt «unter der Decke» liegt so viel tiefer als die Unterkante der Decke (mm). Christian 21.10.2026 nach dem Brillentest: «etagenwahl zeigt decke. ev. 5cm
+ * weiter unten schneiden.» (Die Decken kommen oft nur aus der IFC-Unterlage; KICAD kennt dann ihre Dicke nicht.) Nach dem nächsten Brillentest nachstellen. */
+export const SCHNITT_TIEFER_MM = 50;
+
+/** Höhe des Schnitts in mm (Modell, z oben): SCHNITT_TIEFER_MM unter der Unterkante der Decke bzw. mit deckeZeigen deren Oberkante. */
+export const schnittHoeheMm = (geschoss, deckeZeigen = false) => (deckeZeigen ? geschoss.deckeOK : geschoss.deckeUK - SCHNITT_TIEFER_MM);
 
 /**
  * Höhe der Clipping-Ebene im Raum (m): Plattenoberkante + (Schnitthöhe − tiefster Punkt des Modells) / Massstab. Das Spiel schiebt die Ebene um SPIEL_MM (im Modell) so,
