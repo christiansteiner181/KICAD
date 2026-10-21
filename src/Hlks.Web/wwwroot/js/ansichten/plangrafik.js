@@ -116,28 +116,58 @@ export function schraffurMap(liste) {
   return new Map((Array.isArray(liste) ? liste : []).map((s) => [String(s.name).toLowerCase(), s]));
 }
 
-/** Id und Markup einer Musterfläche (SVG-<pattern>) für einen Winkel; Abstand mm Papier × Massstab. Anker im Ursprung wie im PDF. */
-function musterMarkup(def, winkel, farbe, ctx) {
+let praefixZaehler = 0;
+/** Neues Id-Präfix für die Muster einer Ansicht (planSvg: opt.idPraefix). Mehrere Ansichten teilen sich ein Dokument; ohne eigenes Präfix
+ *  würde «url(#sch-beton-45-p-50)» das erste Muster dieses Namens im Dokument treffen – liegt es in einer verborgenen Ansicht, wird nichts gezeichnet. */
+export const neuerMusterPraefix = () => `v${++praefixZaehler}-`;
+
+/** Rundung der Musterlage auf 0.5 Modell-mm (bei 1:50 sind das 0.01 mm auf dem Papier): hält die Zahl der <pattern> klein und
+ *  lässt Bauteile mit demselben Anker dasselbe Muster teilen. */
+const LAGE_RASTER = 0.5;
+
+/**
+ * Lage des Musters (N8): Das Muster ist an die Achse des Bauteils gebunden. winkel = effektiver Linienwinkel (Winkel der
+ * Schraffur + Stil.musterWinkel), anker = Stil.musterUrsprung (Punkt auf der Achse, Modell-mm) oder null. Ergibt { tx, ty }:
+ * Verschiebung der Kachel im gedrehten Mustersystem, so dass eine Musterlinie durch den Anker läuft (bei Linien nur quer zur
+ * Linie, ty; bei Punkten auch längs, tx), jeweils modulo Abstand d. Ohne Anker { 0, 0 }.
+ */
+export function musterLage(winkel, anker, d, art = 'linien') {
+  if (!Array.isArray(anker) || !Number.isFinite(anker[0]) || !Number.isFinite(anker[1]) || !(d > 0)) return { tx: 0, ty: 0 };
+  const r = winkel * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  const lx = c * anker[0] + s * anker[1], ly = -s * anker[0] + c * anker[1];
+  const mod = (v) => { const m = ((v % d) + d) % d; const q = Math.round(m / LAGE_RASTER) * LAGE_RASTER; return q >= d ? 0 : q; };
+  return { tx: art === 'punkte' ? mod(lx) : 0, ty: mod(ly) };
+}
+
+/** Id und Markup einer Musterfläche (SVG-<pattern>) für einen Winkel; Abstand mm Papier × Massstab. Ohne Anker im Ursprung
+ *  verankert wie im PDF; mit Anker (Stil.musterUrsprung) läuft eine Musterlinie bzw. das Punktraster durch den Anker. */
+function musterMarkup(def, winkel, farbe, ctx, anker = null) {
   const d = def.abstandMm * ctx.massstab;
   const fKey = farbe ? farbe.slice(1).toLowerCase() : 'p';
-  const id = `sch-${def.name}-${def.art === 'linien' ? zahl(winkel) : 'p'}-${fKey}-${ctx.massstab}`.replace(/[^A-Za-z0-9_-]/g, '_');
+  const { tx, ty } = musterLage(winkel, anker, d, def.art);
+  const lage = tx || ty ? `-t${zahl(tx)}_${zahl(ty)}` : '';
+  const id = `${ctx.idPraefix ?? ''}sch-${def.name}-${def.art === 'linien' || winkel ? zahl(winkel) : 'p'}-${fKey}-${ctx.massstab}${lage}`.replace(/[^A-Za-z0-9_-]/g, '_');
   if (ctx.muster.has(id)) return id;
   const kopf = `<pattern id="${id}" patternUnits="userSpaceOnUse" width="${zahl(d)}" height="${zahl(d)}"`;
+  const dreh = `rotate(${zahl(winkel)})${lage ? ` translate(${zahl(tx)} ${zahl(ty)})` : ''}`;
   let inhalt;
   if (def.art === 'punkte') {
     const r = PUNKT_MM / 2 * ctx.massstab;
     const kreis = (x, y) => `<circle cx="${x}" cy="${y}" r="${zahl(r)}"/>`;
-    inhalt = `${kopf}><g class="pk ${farbe ? '' : 'pf'}"${farbe ? ` fill="${farbe}"` : ''}>${kreis(0, 0)}${kreis(zahl(d), 0)}${kreis(0, zahl(d))}${kreis(zahl(d), zahl(d))}</g></pattern>`;
+    const gedreht = winkel || lage ? ` patternTransform="${dreh}"` : '';
+    inhalt = `${kopf}${gedreht}><g class="pk ${farbe ? '' : 'pf'}"${farbe ? ` fill="${farbe}"` : ''}>${kreis(0, 0)}${kreis(zahl(d), 0)}${kreis(0, zahl(d))}${kreis(zahl(d), zahl(d))}</g></pattern>`;
   } else {
     // Linienschar: Linien bei y = k·d, im Muster gedreht um den Winkel; Linien auf Kachelrand doppelt, damit die Mitte voll ist
     const w = zahl(strichbreite('duenn', ctx.massstab));
-    inhalt = `${kopf} patternTransform="rotate(${zahl(winkel)})"><path class="sd ${farbe ? '' : 'pl'}" fill="none" stroke-width="${w}"${farbe ? ` stroke="${farbe}"` : ''} d="M0 0H${zahl(d)}M0 ${zahl(d)}H${zahl(d)}"/></pattern>`;
+    inhalt = `${kopf} patternTransform="${dreh}"><path class="sd ${farbe ? '' : 'pl'}" fill="none" stroke-width="${w}"${farbe ? ` stroke="${farbe}"` : ''} d="M0 0H${zahl(d)}M0 ${zahl(d)}H${zahl(d)}"/></pattern>`;
   }
   ctx.muster.set(id, inhalt);
   return id;
 }
 
-/** Schraffur-Füllungen eines Polygons: Liste von Pfad-Elementen mit Musterfüllung; «voll» als Volltonfläche. */
+/** Schraffur-Füllungen eines Polygons: Liste von Pfad-Elementen mit Musterfüllung; «voll» als Volltonfläche.
+ *  Das Muster folgt der Achse des Bauteils (N8): Der Kern liefert stil.musterWinkel (Drehung auf das Blatt, Grad) und
+ *  stil.musterUrsprung (Anker auf der Achse); hier wird nur angewendet. */
 function schraffuren(p, d, ctx) {
   const stil = p.stil ?? {};
   const def = stil.muster ? ctx.schraffuren?.get(String(stil.muster).toLowerCase()) : null;
@@ -145,8 +175,13 @@ function schraffuren(p, d, ctx) {
   const f = hex(stil.farbe);
   if (def.art === 'voll') return `<path${klassen(f ? '' : 'pf', 'ph')} d="${d}" fill-rule="evenodd"${f ? ` fill="${f}"` : ''} stroke="none"/>`;
   if (!(def.abstandMm > 0)) return '';
+  const dreh = Number.isFinite(stil.musterWinkel) ? stil.musterWinkel : 0;
+  const anker = Array.isArray(stil.musterUrsprung) ? stil.musterUrsprung : null;
   const winkel = def.art === 'linien' ? (def.winkel?.length ? def.winkel : [0]) : [0];
-  return winkel.map((w) => `<path class="ph" d="${d}" fill-rule="evenodd" fill="url(#${musterMarkup(def, w, f, ctx)})" stroke="none"/>`).join('');
+  // Linienscharen sind nach 180° deckungsgleich, das Punktraster nach 90°: gleiche Lage, gleiches <pattern>
+  const periode = def.art === 'punkte' ? 90 : 180;
+  const eff = (w) => { const v = Math.round(((w + dreh) % periode + periode) % periode * 1000) / 1000; return v >= periode ? 0 : v; };
+  return winkel.map((w) => `<path class="ph" d="${d}" fill-rule="evenodd" fill="url(#${musterMarkup(def, eff(w), f, ctx, anker)})" stroke="none"/>`).join('');
 }
 
 // ---------------------------------------------------------------------------------------------- Primitive
@@ -273,8 +308,8 @@ export function teilSvg(teil, ctx) {
 }
 
 /** Die ganze Plangrafik: <defs> mit den benutzten Mustern, dann die Teile in Ebenenreihenfolge. */
-export function planSvg(plan, schraffurenMap = new Map()) {
-  const ctx = { massstab: Number(plan?.massstab) > 0 ? Number(plan.massstab) : 100, schraffuren: schraffurenMap, muster: new Map() };
+export function planSvg(plan, schraffurenMap = new Map(), opt = {}) {
+  const ctx = { massstab: Number(plan?.massstab) > 0 ? Number(plan.massstab) : 100, schraffuren: schraffurenMap, muster: new Map(), idPraefix: opt?.idPraefix ?? '' };
   const teile = nachEbenen(plan?.teile).map((t) => teilSvg(t, ctx)).join('');
   return `<defs>${[...ctx.muster.values()].join('')}</defs>${teile}`;
 }

@@ -238,10 +238,10 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
   - Lage und Anordnung bleiben einstellbar (schema_lage, «Neu anordnen»).
 - **Heizgruppen «nach Hydraulik des Modells»:**
   - Es gibt keine mitgelieferten Bausteine. A-S 3 entfällt, austein_einfuegen wird nicht gebaut.
-  - Gruppen und Glieder ergeben sich aus dem Netz (A-D 3, heizgruppen_vorschlagen).
-- **Symbole:** Christians HKAP-Bibliothek data/schema_symbole.json gilt, Stand 14.10.2026. Massgebend ist sie mit ihren
-  Übersteuerungen, ihren eigenen Symbolen und ersteckt, nicht die Grundsymbole im HKAP-Code.
-  - Die Fernwärme-Übergabe und der Wärmetauscher bekommen die Raute (wt_platte, angepasst).
+  - Gruppen und Glieder ergeben sich aus dem Netz (A-D 3, `heizgruppen_vorschlagen`).
+- **Symbole:** Christians HKAP-Bibliothek `data/schema_symbole.json` gilt, Stand 14.10.2026. Massgebend ist sie mit ihren
+  Übersteuerungen, ihren eigenen Symbolen und `versteckt`, nicht die Grundsymbole im HKAP-Code.
+  - Die Fernwärme-Übergabe und der Wärmetauscher bekommen die Raute (`wt_platte`, angepasst).
   - Die Handabsperrung in Heizungsleitungen bekommt den Kugelhahn.
 - **Anordnung des Prinzipschemas:** «anders» als vorgeschlagen (Erzeugung links, Verteilbalken waagrecht, Gruppen senkrecht
   nach oben). Die Beschreibung folgt; A-S 1 wartet darauf.

@@ -279,7 +279,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         Art = p.Art, Punkte = p.Punkte.Select(q => (double[])q.Clone()).ToList(), Quelle = p.Quelle,
         Loecher = p.Loecher?.Select(l => l.Select(q => (double[])q.Clone()).ToList()).ToList(),
         Radius = p.Radius, Von = p.Von, Bis = p.Bis, Text = p.Text, Groesse = p.Groesse, Ausrichtung = p.Ausrichtung, Winkel = p.Winkel, Fett = p.Fett,
-        Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = p.Stil.Fuellung, Muster = p.Stil.Muster, Deckkraft = p.Stil.Deckkraft, NurBildschirm = p.Stil.NurBildschirm },
+        Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = p.Stil.Fuellung, Muster = p.Stil.Muster, MusterWinkel = p.Stil.MusterWinkel, MusterUrsprung = p.Stil.MusterUrsprung, Deckkraft = p.Stil.Deckkraft, NurBildschirm = p.Stil.NurBildschirm },
     };
 
     internal static Grafikteil Kopie(Grafikteil t, List<Primitiv> primitive) => new()
