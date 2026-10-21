@@ -36,7 +36,7 @@ public static class Planwinkel
     static bool ImGebaeude(Modell m, Element e, Element? geb, bool einzigesGebaeude)
     {
         if (geb is null) return true;
-        return m.Finde(e.Geschoss) is { TeilVon: { } t } ? t == geb.Id : einzigesGebaeude;
+        return m.Finde(e.Geschoss) is { TeilVon: { } t } ? t == geb.Id || m.Finde(t)?.Id == geb.Id : einzigesGebaeude;
     }
 
     static bool EinzigesGebaeude(Modell m) => m.DerKlasse("Gebaeude").Take(2).Count() <= 1;
