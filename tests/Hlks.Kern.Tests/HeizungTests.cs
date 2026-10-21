@@ -567,6 +567,22 @@ public class HeizungTests
     }
 
     [Fact]
+    public void HeizgruppenVorschlagen_NachHydraulik_UnterverteilerImWegBildenKeineEigeneGruppe()
+    {
+        // Hauptweg (Entscheid Christian 21.10.2026): eine Gruppe je Gruppenpumpe; FBH-Verteiler ohne eigene Pumpe sind Unterverteiler, keine Gruppen
+        var p = NetzMitUnterverteilern();
+        var e = Gut(p, "heizgruppen_vorschlagen", "{}");
+        var hg = Assert.Single(p.Modell.DerKlasse("Heizgruppe"));
+        Assert.Equal("FBH ungemischt", hg.Name);
+        var w = Weg(p, hg.Kennzeichen);
+        Assert.Equal("VT-1.vl_1/rl_1", w.AbgangText);
+        Assert.Equal(["VT-2", "VT-3"], w.Unterverteiler.Select(u => u.Kennzeichen).Order());
+        Assert.Equal(2, w.Verbraucher.Count);
+        Assert.Contains(e.Hinweise, h => h.Contains("2 Unterverteiler, 2 Verbraucher in 2 Ästen"));
+        Assert.Empty(Befunde(p, "P37"));
+    }
+
+    [Fact]
     public void HeizgruppenVorschlagen_PumpeOhneVerbraucherseite_Hinweis()
     {
         var p = Netz(gruppen: false);
