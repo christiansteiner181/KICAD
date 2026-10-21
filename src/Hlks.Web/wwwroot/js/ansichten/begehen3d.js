@@ -6,6 +6,7 @@
 // (erzeugeBegehen) und wuerfel.js (Option `begehen`).
 
 import { esc } from './hilfen.js';
+import { erzeugeDurchgang } from './durchgang3d.js';
 import {
   FOV_GRAD, NAH_M, FERN_M, TASTENHILFE, tastenAktion, tastenVerlauf, zustandAusStandort, kameraWerte, projektWerte, tippen, fliessend, umsehen, verschieben,
   einblendung,
@@ -15,11 +16,17 @@ const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Da
 const eingabeFeld = (t) => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName));
 
 /**
- * o: { wurzel, dom (Leinwand), kamera, steuerung, anfordern(), schnitt() → Schnittbereich | null, benutzt: { lesen(), setzen(b) }, beiBeendet?() }
- * Rückgabe { starten(standort, augenhoeheMm?), beenden(), aktiv, zustand, zerstoeren() }
+ * o: { wurzel, dom (Leinwand), kamera, steuerung, anfordern(), schnitt() → Schnittbereich | null, benutzt: { lesen(), setzen(b) }, beiBeendet?(),
+ *      bauteile?() → Iterable<Körpergruppe> (N22: Wände, Decken usw. sind beim Begehen undurchsichtig, durchscheinend nur im Durchgang) }
+ * Rückgabe { starten(standort, augenhoeheMm?), beenden(), neueObjekte(), aktiv, zustand, zerstoeren() }
  */
 export function erzeugeBegehen(o) {
   const { wurzel, dom, kamera, steuerung } = o;
+  // N22: Durchgang – Bauteile undurchsichtig, durchscheinend nur näher als 500 mm (durchgang3d.js); Kontrolle für Browser-Tests in data-durchgang
+  const durchgang = o.bauteile ? erzeugeDurchgang({
+    bauteile: o.bauteile, kamera, anfordern: () => o.anfordern(),
+    beiAenderung: (z) => { if (z) wurzel.dataset.durchgang = JSON.stringify(z); else delete wurzel.dataset.durchgang; },
+  }) : null;
   let aktiv = false;
   let zustand = null;
   let standort = null;
@@ -60,6 +67,7 @@ export function erzeugeBegehen(o) {
     kamera.lookAt(k.ziel.x, k.ziel.y, k.ziel.z);
     kamera.updateMatrixWorld(true);
     hudAktualisieren();
+    durchgang?.pruefen();   // N22: nach jeder Bewegung Abstand zu den Bauteilen neu bewerten
     // Kontrolle für Browser-Tests und Fehlersuche: Standort im Projekt (mm) und Blick
     wurzel.dataset.begehen = JSON.stringify({ raum: standort?.raum ?? null, ...projektWerte(zustand), fov: kamera.fov });
     o.anfordern();
@@ -180,6 +188,7 @@ export function erzeugeBegehen(o) {
     kamera.updateProjectionMatrix();
     o.benutzt.setzen(true);   // weder Grössenänderung noch Neuladen stellen die Kamera neu ein
     anwenden();
+    durchgang?.starten();     // N22: Bauteile undurchsichtig (beim zweiten Aufruf nur neu bewerten)
   }
 
   /** Beendet das Begehen: Kamera, Steuerung und Schnittbereich wie vorher. */
@@ -205,6 +214,7 @@ export function erzeugeBegehen(o) {
       steuerung.update();
       o.benutzt.setzen(g.benutzt);
     }
+    durchgang?.beenden();   // N22: Deckkraft der Bauteile wie vorher (der Schnittbereich bekommt seine Ebenen unten zurück)
     o.schnitt()?.pausieren(false);
     o.anfordern();
     o.beiBeendet?.();
@@ -212,10 +222,12 @@ export function erzeugeBegehen(o) {
 
   return {
     starten, beenden,
+    /** Es sind Körper dazugekommen oder weggefallen (N22). */
+    neueObjekte: () => durchgang?.neueObjekte(),
     get aktiv() { return aktiv; },
     get zustand() { return zustand; },
     zerstoeren() {
-      if (aktiv) { aktiv = false; schleifeStoppen(); loesen(); hud?.remove(); hud = null; }
+      if (aktiv) { aktiv = false; schleifeStoppen(); loesen(); hud?.remove(); hud = null; durchgang?.beenden(); }
     },
   };
 }

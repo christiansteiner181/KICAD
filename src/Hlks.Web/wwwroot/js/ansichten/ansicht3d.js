@@ -155,6 +155,7 @@ function erstellen(behaelter, ansichtElement) {
   const begehen = erzeugeBegehen({
     wurzel, dom: renderer.domElement, kamera, steuerung, anfordern,
     schnitt: () => schnitt,
+    bauteile: () => objekte.values(),   // N22: Wände, Decken usw. beim Begehen undurchsichtig, durchscheinend nur im Durchgang
     benutzt: { lesen: () => benutzt, setzen: (b) => { benutzt = b; } },
     // war die Kamera vor dem Begehen noch nicht vom Benutzer bewegt (z. B. die Ansicht wurde erst für das Begehen geöffnet), passt sie sich wieder dem Modell an
     beiBeendet: () => { if (!benutzt) zoomAlles(); },
@@ -241,6 +242,7 @@ function erstellen(behaelter, ansichtElement) {
     modell.remove(o);
     freigeben(o);
     objekte.delete(id);
+    begehen.neueObjekte();   // N22
   }
 
   function farbeSetzen(id) {
@@ -262,6 +264,7 @@ function erstellen(behaelter, ansichtElement) {
     farbeSetzen(k.id);
     netzeAnhaengen(o);
     schnitt?.neueObjekte();
+    begehen.neueObjekte();   // N22
   }
 
   // ---------- Hintergrund-Netze ----------
