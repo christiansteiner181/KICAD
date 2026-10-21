@@ -10367,6 +10367,77 @@
             "src/Hlks.Web/BenutzerEinstellungen.cs (ansicht3d.augenhoehe)"
           ],
           "hinweis": "Ohne Einstellung gilt 1700 mm. Die Abfrage raum_begehen nimmt «augenhoehe» als Parameter (KI)."
+        },
+        {
+          "id": "zb-n17-treppe-grundriss",
+          "titel": "Treppe im Grundriss: Stufen, Schnittlinie, Lauflinie, Beschriftung",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Jeder Grundriss mit einer Treppe (Klasse Treppe, Kürzel TR); entsteht beim IFC-Übernehmen aus IfcStair bzw. IfcStairFlight"
+          },
+          "schritte": [
+            "Ein Architekten-IFC mit Treppen übernehmen (Register «Einfügen», «IFC übernehmen») und den Grundriss eines Geschosses mit einer Treppe öffnen.",
+            "Die Treppe ansehen: Stufenkanten, Seitenlinien, die schräge Doppellinie, Kreis und Pfeil, Beschriftung.",
+            "Die Treppe anklicken und im Fenster «Eigenschaften» stufen, steigung, auftritt, laufbreite, unterkante und oberkante lesen; mit dem Mauszeiger über den Wert die Herkunft ansehen.",
+            "Die Schnitthöhe der Ansicht ändern (Eigenschaft schnitthoehe) und die Treppe nochmals ansehen."
+          ],
+          "erwartung": "Die Treppe ist als Treppe erkennbar, kein Gewirr aus Stufenkanten mehr. Stufenkanten und Seitenlinien unter der Schnitthöhe sind durchgezogen, darüber gestrichelt. Wo die Steigungslinie die Schnitthöhe erreicht, kreuzt eine schräge Doppellinie (60° zur Gehrichtung) den Lauf. Die Lauflinie hat einen gefüllten Kreis am Antritt und einen Pfeil am Austritt (aufwärts). Daneben steht «n Stg. h/a», zum Beispiel «16 Stg. 17.5/28» (Anzahl Steigungen, Steigung und Auftritt in cm, auf 0.5 mm gerundet); die Schrift folgt dem Lauf und bleibt auch im gedrehten Grundriss lesbar. Podeste erscheinen als Umriss. Liegt die Schnitthöhe über dem Austritt, ist alles durchgezogen und es gibt keine Schnittlinie. Auf dem PDF sieht die Treppe gleich aus.",
+          "pruefpunkte": [
+            "Stufenkanten unter der Schnitthöhe durchgezogen, darüber gestrichelt.",
+            "Schräge Doppellinie an der Stelle der Schnitthöhe.",
+            "Kreis am Antritt, Pfeil am Austritt in Gehrichtung aufwärts.",
+            "Beschriftung «n Stg. h/a» mit richtigen Werten, im gedrehten Grundriss lesbar.",
+            "Stufenzahl, Steigung und Auftritt stimmen mit der Datei überein (Herkunft: IFC-Attribut, Pset oder «Geometrie»).",
+            "PDF zeigt dieselbe Treppe wie der Bildschirm."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Grundriss EG der Bernstrasse mit Treppen",
+            "zustand": "Nach der Übernahme von architekt_3d.ifc: Grundriss EG, Massstab 1:50, Ausschnitt um das Treppenhaus (Prüfbild von N17: werkzeuge/treppe_pruefbild.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Grafik/TreppeGrafik.cs:1",
+            "src/Hlks.Kern/Import/IfcTreppe.cs:1",
+            "src/Hlks.Kern/Architektur/Treppenanalyse.cs:1",
+            "nachbearbeitung.md (N17)"
+          ],
+          "hinweis": "Stufenzahl, Steigung und Auftritt stammen aus den Attributen der Datei (IfcStairFlight.NumberOfRisers, RiserHeight, TreadLength bzw. Pset_StairCommon / Pset_StairFlightCommon); fehlen sie, zählt der Kern aus der Geometrie (waagrechte Trittflächen nach Höhe). Ohne Attribut kann die Zahl bei Treppen, die an einem Podest oder Boden enden, der in keiner Geschoss- oder halben Geschosshöhe liegt, um eins abweichen (Bernstrasse 8 von 10 genau). Das Original-Netz der Treppe ist nicht mehr Hintergrund der Unterlage, die Treppe zeigt Stufenprismen im Schnitt und in 3D."
+        },
+        {
+          "id": "zb-n17-treppe-obergeschoss",
+          "titel": "Treppe von oben im Geschoss darüber",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Grundriss des Geschosses, in das eine Treppe von unten hinaufführt"
+          },
+          "schritte": [
+            "Den Grundriss des Erdgeschosses öffnen und die Treppe ins Obergeschoss ansehen.",
+            "Den Grundriss des Obergeschosses öffnen.",
+            "Die Treppe dort ansehen: Stufenkanten, Lauflinie, Beschriftung."
+          ],
+          "erwartung": "Im Obergeschoss erscheint dieselbe Treppe von oben: alle Stufenkanten und Seitenlinien sind durchgezogen (sie liegen unter der Schnittebene des Obergeschosses), es gibt keine Schnittlinie; Kreis, Pfeil und Beschriftung stehen wie im Erdgeschoss. Eine Treppe, die erst im Obergeschoss beginnt, erscheint im Erdgeschoss nicht.",
+          "pruefpunkte": [
+            "Die Treppe erscheint im Geschoss darüber.",
+            "Alle Linien sind durchgezogen, keine Schnittlinie.",
+            "Eine Treppe, die im Obergeschoss beginnt, fehlt im Erdgeschoss."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Grundriss 1.OG der Bernstrasse mit Treppen",
+            "zustand": "Grundriss 1.OG, Massstab 1:50, Ausschnitt um das Treppenhaus (Prüfbild von N17)"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Grafik/TreppeGrafik.cs (AusUnterGeschoss)",
+            "src/Hlks.Kern/Grafik/Grafik.cs (Sichtbar)",
+            "nachbearbeitung.md (N17)"
+          ],
+          "hinweis": "Regel: die Oberkante der Treppe liegt über dem Boden des Geschosses (50 mm Toleranz), die Unterkante unter der Schnittebene und unter dem Boden des nächsten Geschosses."
         }
       ]
     }

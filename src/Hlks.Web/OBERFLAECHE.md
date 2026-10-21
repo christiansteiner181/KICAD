@@ -1637,3 +1637,20 @@ Tastenhilfe, Schrittweiten und «keine Kollision» sind Annahmen des Auftrags; z
   `node --test src/Hlks.Web/wwwroot/js/ansichten/begehen.test.mjs` (19: Bewegungsrechnung, Tastenbelegung, Tastenverlauf, Einblendung); Browser
   `node src/Hlks.Web/wwwroot/js/ansichten/begehen.browser.mjs` (Port 5540, CDP 9540; 79 Prüfungen; Prüfbilder `n15-*.png` in `%TEMP%\HLKS_CAD\n15`).
 - **Anleitung:** Kapitel «zb» in `berichte/anleitung/inventar.json`: `zb-n15-begehen`, `zb-n15-bewegen`, `zb-n15-augenhoehe`.
+## Nachbearbeitung N17: Treppen im Grundriss (`nachbearbeitung.md`, Abschnitt N17)
+
+Christian, 21.10.2026: «auch treppen sind im Grundriss noch nicht korrekt angezeigt. resp. nicht erkennbar.» Die Treppe ist ein Element der Klasse **Treppe** (Kürzel TR); der Kern
+rechnet alles (`Grafik/TreppeGrafik.cs`, `Architektur/Treppenlage.cs`, `Import/IfcTreppe.cs`), die Oberfläche zeichnet nur die Primitive (`plangrafik.js` unverändert: `linie`, `polylinie`,
+`polygon`, `kreis`, `text`, Linienart `strich`). Keine neue Bedienung: die Treppe entsteht beim IFC-Übernehmen; Zeichnen von Hand folgt später (heute `element_anlegen`).
+
+| Funktion | Ort | Kürzel | Dateien |
+| --- | --- | --- | --- |
+| Treppe im Grundriss (Stufenkanten, Schnittlinie, Lauflinie mit Kreis und Pfeil, «n Stg. h/a», Podeste) | Grundriss jedes Geschosses mit einer Treppe | – | `TreppeGrafik.cs` |
+| Treppe von oben im Geschoss darüber | Grundriss des Geschosses, in das sie hinaufführt | – | `TreppeGrafik.AusUnterGeschoss`, `Grafik.Sichtbar` |
+| Werte lesen und ändern (stufen, steigung, auftritt, laufbreite, richtung, unterkante, oberkante, laufdicke, material) | Eigenschaften der Treppe (anklicken; Herkunft am Wert: IFC-Attribut, Pset oder «Geometrie …») | – | `klassen.json` (Treppe) |
+
+- **Anwählen:** eine unsichtbare Fläche über den Trittflächen (`nurBildschirm`, Deckkraft 0.01) macht die Treppe anklickbar; Fangpunkte sind die Enden der Stufenkanten und der Lauflinie.
+- **Beschriftung:** Text mit `mitdrehen` (folgt dem Lauf; im gedrehten Grundriss N9 bleibt er lesbar), Schrift 2.5 mm Papier, über der Lauflinie.
+- **Verschieben, Kopieren, Drehen, Spiegeln** (`elemente_*`) führen Stufenkanten, Podeste, unterkante und oberkante mit der Lauflinie mit.
+
+**Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~Treppe`; Prüfbilder `node werkzeuge/treppe_pruefbild.mjs` (nach `TreppeEchtTests`; Bilder in `%TEMP%\HLKS_CAD\n17`).

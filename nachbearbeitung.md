@@ -537,3 +537,29 @@ Christian 21.10.2026: «bei begehung wände nur transparent wenn man durch geht 
 - Liegt die Kamera wieder mehr als 500 mm entfernt, wird das Bauteil wieder undurchsichtig.
 - Beim Beenden gilt wieder die normale Transparenz der 3D-Ansicht.
 - Leitungen und Apparate bleiben wie bisher.
+**Umgesetzt: 21.10.2026** (hlks-modul, auf Wunsch auch Kern und Geometrie).
+- **Klasse Treppe** (`klassen.json`, Basis Bauteil, Kürzel TR, Geometrie Polylinie = Lauflinie [x, y, z] vom Antritt zum Austritt). Eigenschaften: `stufen` (Anzahl *Steigungen*,
+  nicht Trittflächen), `steigung`, `auftritt`, `laufbreite`, `richtung` (aufwaerts | abwaerts; der Pfeil steht am oberen Ende), `unterkante`, `oberkante`, `stufenkanten`
+  (Liste [x1, y1, x2, y2, z], rechts → links in Gehrichtung, z = Trittfläche, zu der die Steigung hinaufführt), `podeste` (Liste { z, punkte }), `laufdicke`, `material`.
+  `ifc.json`: IfcStair, importAuch IfcStairFlight, beide Fassungen (kein Typobjekt: IfcStairType verlangt in IFC4 einen PredefinedType).
+- **IFC-Übertrag** `Import/IfcTreppe.cs`: je IfcStairFlight eine Treppe; eine IfcStair ohne Läufe (Archicad: Teile IfcBuildingElementPart) ist selbst eine; Podestplatten
+  (IfcSlab unter einer IfcStair) kommen als Umriss zum nächsten Lauf und nicht mehr als Decke (`IfcArchitektur.Decke` übergeht sie). Stufen, Steigung, Auftritt aus
+  `IfcStairFlight.NumberOfRisers/RiserHeight/TreadLength`, sonst `Pset_StairFlightCommon` bzw. `Pset_StairCommon` (`NumberOfRiser`, `RiserHeight`, `TreadLength`; Namen
+  an den PSD von buildingSMART geprüft), sonst aus dem Körper (`Architektur/Treppenanalyse.cs`: waagrechte Trittflächen nach Höhe, Vorderkanten, Lauflinie durch die Mitten,
+  Podest = Fläche über dem 2.2fachen der mittleren). Die übernommene Treppe ist in der Netzdatei «übernommen», also kein Hintergrund mehr (kein Gewirr im Grundrissschnitt).
+- **Grundriss** `Grafik/TreppeGrafik.cs`: Stufenkanten und Seitenlinien durchgezogen bis zur Schnitthöhe, darüber gestrichelt; Schnittlinie als Doppellinie unter 60° (1 mm
+  Papier Abstand, Stift mittel) an der Stelle, wo die Steigungslinie die Schnitthöhe erreicht (linear zwischen den zwei Kanten); Lauflinie mit gefülltem Kreis (Ø 1.8 mm) und
+  Pfeil (3 × 2 mm); Beschriftung «n Stg. h/a» (cm, auf 0.5 mm gerundet, Schrift 2.5 mm, mitdrehend); Podeste als Umriss. Im Geschoss darüber (Oberkante über dem Boden, Antritt
+  unter der Schnittebene und unter dem nächsten Boden) liegt die ganze Treppe unter der Schnittebene: alles durchgezogen, keine Schnittlinie. PDF und Bildschirm zeichnen
+  dieselben Primitive.
+- **Schnitt und 3D:** Stufenprismen (je Trittfläche und Podest ein Prisma von der Trittfläche bis `laufdicke` darunter, Ebene «wand», Schraffur nach Material) statt des
+  Original-Netzes. Begründung: Die Netzdatei kennt nur «übernommen» oder «Hintergrund»; das Original-Netz im Hintergrund zu lassen hiesse, den Grundrissschnitt wieder mit
+  dem Gewirr zu füllen, und eine neue Netzfassung wäre ein Eingriff in die Parallelaufträge. Die Prismen gehören dem Element (editierbar, IFC-Export als Körper); die exakte Geometrie
+  bleibt für die Kollisionsprüfung in der Netzdatei.
+- **Ändern:** `elemente_verschieben`, `_kopieren`, `_drehen`, `_spiegeln` führen Stufenkanten, Podeste, unterkante und oberkante mit (`Bearbeitung.Mitgefuehrt`).
+- **Annahmen:** Stufenzahl ohne Attribut: Der Boden unten liegt eine Steigung unter der ersten Fläche, ausser sie liegt auf einer Geschosskote oder halben Geschosshöhe (Zwischenpodest
+  zweiläufiger Treppen); oben ebenso. Mit dem Attribut der Datei entscheidet dessen Stufenzahl, wo Boden und Podest an den Enden liegen. Bernstrasse (10 IfcStair, Archicad 27,
+  Pset_StairCommon): Stufenzahl, Steigung aus dem Pset, Auftritt aus der Geometrie (TreadLength fehlt); ohne Attribut zählt die Geometrie 8 von 10 genau, 2 um eine Steigung anders
+  (Lauf endet an einem Podest in ungewöhnlicher Höhe). Schnittlinie, Kreis- und Pfeilgrösse, Podest-Schwelle und Laufdicke 250 mm (Vorgabe) sind Annahmen ohne Quelle.
+- **Tests:** `TreppeTests` (36 Fälle, synthetische Datei `TreppeTestdatei` in IFC4 und IFC2X3), `TreppeIfcTests` (3, am Schema geprüft), `TreppeEchtTests` (3, Bernstrasse; schreibt die
+  Prüfbilder-Daten nach `%TEMP%\HLKS_CAD\n17`). Prüfbilder: `node werkzeuge/treppe_pruefbild.mjs` (Bildschirm), PDF über `Planausgabe.Pdf`.

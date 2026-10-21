@@ -15,6 +15,16 @@ static class Bearbeitung
         return n;
     }
 
+    /// <summary>N17: Was mit der Geometrie wandern muss – bei einer Treppe die Stufenkanten und Podeste (Eigenschaften), mit derselben
+    /// Abbildung wie die Lauflinie. <paramref name="bisher"/> sind die Eigenschaften, die der Befehl ohnehin setzt.</summary>
+    public static JsonObject? Mitgefuehrt(Element e, Func<double[], double[]> f, bool spiegelt = false, JsonObject? bisher = null)
+    {
+        if (Treppenlage.Abbilden(e, f, spiegelt) is not { } neu) return bisher;
+        var aus = bisher ?? new JsonObject();
+        foreach (var (name, wert) in neu) aus[name] = wert?.DeepClone();
+        return aus;
+    }
+
     public static void Setzen(Kontext k, Element e, Geometrie g, JsonObject? eigenschaften = null)
     {
         var par = new JsonObject { ["element"] = e.Id, ["geometrie"] = Json.Knoten(g) };
@@ -64,8 +74,9 @@ public sealed class ElementeVerschieben : IBefehl
         var liste = Bearbeitung.MitGeometrie(k, ArchParam.Elemente(k, p));
         double dx = Param.Zahl(p, "dx") ?? 0, dy = Param.Zahl(p, "dy") ?? 0, dz = Param.Zahl(p, "dz") ?? 0;
         if (dx == 0 && dy == 0 && dz == 0) { k.Hinweise.Add("Verschiebung 0 – keine Änderung."); return; }
+        double[] Schieben(double[] q) { var z = Bearbeitung.Z(q); return [z[0] + dx, z[1] + dy, z[2] + dz]; }
         foreach (var e in liste)
-            Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, q => { var z = Bearbeitung.Z(q); return [z[0] + dx, z[1] + dy, z[2] + dz]; }));
+            Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Schieben), Bearbeitung.Mitgefuehrt(e, Schieben));
     }
 }
 
@@ -114,7 +125,13 @@ public sealed class ElementeKopieren : IBefehl
                 n.Kennzeichen = k.NaechstesKennzeichen(d.Kuerzel);
                 n.Version = 0; n.Paket = null; n.Angelegt = null; n.Geaendert = null;
                 if (n.Geometrie is not null)
-                    n.Geometrie = Bearbeitung.Abbilden(n.Geometrie, q => { var z = Bearbeitung.Z(q); return [z[0] + ox, z[1] + oy, z[2]]; });
+                {
+                    double[] Versatz(double[] q) { var z = Bearbeitung.Z(q); return [z[0] + ox, z[1] + oy, z[2]]; }
+                    if (Treppenlage.Abbilden(n, Versatz, false) is { } mit)   // N17: Stufenkanten und Podeste einer Treppe wandern mit
+                        foreach (var (name, wert) in mit)
+                            if (n.Eigenschaften.TryGetValue(name, out var w)) w.Inhalt = wert?.DeepClone();
+                    n.Geometrie = Bearbeitung.Abbilden(n.Geometrie, Versatz);
+                }
                 n.TeilVon = Abb(n.TeilVon); n.System = Abb(n.System); n.Geschoss = Abb(n.Geschoss);
                 bool raumMit = e.Raum is not null && abb.ContainsKey(e.Raum);
                 n.Raum = Abb(n.Raum);
@@ -148,17 +165,18 @@ public sealed class ElementeDrehen : IBefehl
         double winkel = Param.Zahl(p, "winkel") ?? throw new HlksFehler("Parameter «winkel» fehlt.", "Drehwinkel in Grad angeben (Gegenuhrzeigersinn).");
         if (Bearbeitung.Norm(winkel) == 0) { k.Hinweise.Add("Drehung 0° – keine Änderung."); return; }
         double r = winkel * Math.PI / 180, cos = Math.Cos(r), sin = Math.Sin(r);
+        double[] Drehung(double[] q)
+        {
+            var z = Bearbeitung.Z(q);
+            double x = z[0] - c[0], y = z[1] - c[1];
+            return [Bearbeitung.R(c[0] + x * cos - y * sin), Bearbeitung.R(c[1] + x * sin + y * cos), z[2]];
+        }
         foreach (var e in liste)
         {
-            var g = Bearbeitung.Abbilden(e.Geometrie!, q =>
-            {
-                var z = Bearbeitung.Z(q);
-                double x = z[0] - c[0], y = z[1] - c[1];
-                return [Bearbeitung.R(c[0] + x * cos - y * sin), Bearbeitung.R(c[1] + x * sin + y * cos), z[2]];
-            });
+            var g = Bearbeitung.Abbilden(e.Geometrie!, Drehung);
             JsonObject? eig = null;
             if (Bearbeitung.HatDrehung(k.Katalog, e)) eig = new JsonObject { ["winkel"] = Bearbeitung.Norm((e.Zahl("winkel") ?? 0) + winkel) };
-            Bearbeitung.Setzen(k, e, g, eig);
+            Bearbeitung.Setzen(k, e, g, Bearbeitung.Mitgefuehrt(e, Drehung, false, eig));
         }
     }
 }
@@ -208,7 +226,7 @@ public sealed class ElementeSpiegeln : IBefehl
                 if (w > 90 && w <= 270) w = Bearbeitung.Norm(w - 180);
                 eig = new JsonObject { ["winkel"] = w };
             }
-            Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Punkt), eig);
+            Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Punkt), Bearbeitung.Mitgefuehrt(e, Punkt, true, eig));
         }
 
         // Aufschlagseite und Bandseite der Türen im Bezug zur (gespiegelten) Wand neu bestimmen:
