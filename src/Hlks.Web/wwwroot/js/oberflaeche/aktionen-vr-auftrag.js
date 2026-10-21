@@ -17,3 +17,9 @@ registrieren({
   aktiv: (p) => !!raumVon(p)?.geschoss, hinweis: 'Zuerst einen Raum mit Geschoss wählen.',
   ausfuehren: (p) => { const r = raumVon(p); return r ? auftragSenden({ modus: 'sitzungsraum', raum: r.id }) : undefined; },
 });
+// «Raum zeigen (VR)»: das Gegenstück zu «Raum im 3D zeigen» (N14) für die Brille – der Sitzungsraum zeigt auf dem Tisch nur den Raum plus Rand (derselbe Quader, vom Kern berechnet)
+registrieren({
+  id: 'ansicht.vrRaumZeigen', titel: 'Raum zeigen (VR)', symbol: 'raum3d', kuerzel: null,
+  aktiv: (p) => !!raumVon(p), hinweis: 'Zuerst einen Raum wählen.',
+  ausfuehren: (p) => { const r = raumVon(p); return r ? auftragSenden({ modus: 'sitzungsraum', raum: r.id, ausschnitt: true }) : undefined; },
+});

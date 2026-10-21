@@ -137,14 +137,19 @@ export const AUFTRAG_TAKT_MS = 2000;
 /** Die Modi des Auftrags. */
 export const MODI = Object.freeze({ begehen: 'begehen', sitzungsraum: 'sitzungsraum' });
 
-/** Prüft einen Auftrag des Servers; null bei allem, was nicht { modus, nr ≥ 1, raum?/geschoss? gültig } ist. */
+/**
+ * Prüft einen Auftrag des Servers; null bei allem, was nicht { modus, nr ≥ 1, raum?/geschoss?/ansicht? gültig } ist.
+ * ausschnitt (nur Sitzungsraum mit Raum): «Raum zeigen (VR)» – auf dem Tisch nur der Raum plus Rand; ansicht (nur Sitzungsraum, ohne Raum): eine 3D-Ansicht (Schnittbereich und Filter).
+ */
 export function auftragPruefen(a) {
   if (!a || typeof a !== 'object' || !Object.values(MODI).includes(a.modus)) return null;
   if (!Number.isInteger(a.nr) || a.nr < 1) return null;
   const roh = (t) => (t === null || t === undefined ? null : raumGueltig(t) ? t : false);
-  const raum = roh(a.raum), geschoss = roh(a.geschoss);
-  if (raum === false || geschoss === false) return null;
-  return { modus: a.modus, raum, geschoss, nr: a.nr, zeit: typeof a.zeit === 'string' ? a.zeit : null };
+  const raum = roh(a.raum), geschoss = roh(a.geschoss), ansicht = roh(a.ansicht);
+  if (raum === false || geschoss === false || ansicht === false) return null;
+  const ausschnitt = a.ausschnitt === true && a.modus === MODI.sitzungsraum && raum !== null;
+  if (ansicht !== null && (a.modus !== MODI.sitzungsraum || raum !== null)) return null;
+  return { modus: a.modus, raum, geschoss, ausschnitt, ansicht, nr: a.nr, zeit: typeof a.zeit === 'string' ? a.zeit : null };
 }
 
 /** Ist der Auftrag neu gegenüber der zuletzt verbrauchten Nummer? */
@@ -152,13 +157,16 @@ export const auftragNeu = (a, verbrauchtNr) => { const p = auftragPruefen(a); re
 
 /**
  * Was tun, wenn der Auftrag mitten in der Sitzung kommt (ohne neuen Tipp)? Zustand { imSitzungsraum }. Rückgabe die Schritte in der Reihenfolge:
- *   'verlassen' (Sitzungsraum zu), 'standort' (an den Raum des Auftrags wechseln), 'betreten' (Sitzungsraum auf), 'etage' (Etage des Auftrags im Sitzungsraum wählen).
+ *   'verlassen' (Sitzungsraum zu), 'standort' (an den Raum des Auftrags wechseln), 'betreten' (Sitzungsraum auf), 'etage' (Etage des Auftrags im Sitzungsraum wählen),
+ *   'ausschnitt' (Raum plus Rand bzw. Schnittbereich und Filter der 3D-Ansicht des Auftrags auf den Tisch), 'ganz' (offener Sitzungsraum ohne Wunsch nach Ausschnitt, Etage oder Ansicht:
+ *   wieder das ganze Modell der Gesamtansicht). Die Etage ersetzt einen Ausschnitt, deshalb steht 'etage' zuletzt.
  */
 export function auftragSchritte(a, { imSitzungsraum = false } = {}) {
   const p = auftragPruefen(a);
   if (!p) return [];
   if (p.modus === MODI.begehen) return [...(imSitzungsraum ? ['verlassen'] : []), ...(p.raum ? ['standort'] : [])];
-  return [...(imSitzungsraum ? [] : ['betreten']), ...(p.geschoss ? ['etage'] : [])];
+  const zeigen = p.ausschnitt || p.ansicht ? ['ausschnitt'] : imSitzungsraum && !p.geschoss ? ['ganz'] : [];
+  return [...(imSitzungsraum ? [] : ['betreten']), ...zeigen, ...(p.geschoss ? ['etage'] : [])];
 }
 
 /** Was nach dem Start durch den Tipp noch zu tun ist: bei «sitzungsraum» betreten und Etage wählen (der Standort des Begehens gilt schon beim Start). */
@@ -167,11 +175,13 @@ export const auftragNachStart = (a) => (auftragPruefen(a)?.modus === MODI.sitzun
 /**
  * Text für den Knopf: «Begehen · EG · E.01 Wohnen/Küche» bzw. «Sitzungsraum · 1.OG». standort = Antwort von raum_begehen zum Raum (oder null), geschoss = Kennzeichen des Geschosses (oder '').
  */
-export function auftragText(a, standort = null, geschoss = '') {
+export function auftragText(a, standort = null, geschoss = '', ansichtName = '') {
   const p = auftragPruefen(a);
   if (!p) return '';
-  if (p.modus === MODI.sitzungsraum) return ['Sitzungsraum', geschoss].filter(Boolean).join(' · ');
   const s = standort ?? {};
   const raum = [s.nummer, s.name].filter((t) => typeof t === 'string' && t !== '').join(' ') || s.raum || '';
+  if (p.modus === MODI.sitzungsraum && p.ansicht) return ['Sitzungsraum', '3D-Ansicht', ansichtName].filter(Boolean).join(' · ');
+  if (p.modus === MODI.sitzungsraum && p.ausschnitt) return ['Raum zeigen', s.geschoss || geschoss, raum].filter(Boolean).join(' · ');
+  if (p.modus === MODI.sitzungsraum) return ['Sitzungsraum', geschoss].filter(Boolean).join(' · ');
   return ['Begehen', s.geschoss || geschoss, raum].filter(Boolean).join(' · ');
 }

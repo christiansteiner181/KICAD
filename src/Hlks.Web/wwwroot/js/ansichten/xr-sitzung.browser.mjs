@@ -692,6 +692,56 @@ try {
   await vrBeenden();
   await mitN13('VR beendet');
 
+  // (5) Ausschnitt («Raum zeigen (VR)», 3D-Ansicht in VR): nur der Raum plus Rand auf dem Tisch; «Alle Etagen» und die Etagenwahl auf dem Tablet heben ihn auf
+  abschnitt('Ausschnitt im Sitzungsraum: Quader statt Etagenebene, Massstab passt, «Alle Etagen» zeigt wieder alles');
+  await befehl('element_aendern', { element: 'AN-3D', eigenschaften: { schnittbereich: null } });
+  await inst('AN-3D', `i.begehenVr(${JSON.stringify(standort)})`);
+  await bereit();
+  await sitzungVorbereiten();
+  await tabletAuf();
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (5)', 8000);
+  const bereich = (await kern('abfrage', 'raum_begehen', { raum: raum1.kz, rand: 1500 })).bereich;
+  const setzen = (b, t) => ausw(`return window.__vr.api.sitzung.ausschnittSetzen(${JSON.stringify(b)}, ${JSON.stringify(t)});`);
+  pruef((await setzen({ aktiv: true, min: [0, 0, 0], max: [0.2, 5, 5] }, 'zu klein')) === false && (await sitz()).ausschnitt === null, 'ein ungültiger Quader wird abgelehnt, das Modell bleibt');
+  pruef((await setzen({ ...bereich, aktiv: false }, 'aus')) === false, 'ein ausgeschalteter Quader gilt nicht');
+  pruef((await setzen(bereich, `Raum ${raum1.kz} + 1.5 m`)) === true, 'Ausschnitt gesetzt');
+  await warte(500);
+  const sa = await sitz();
+  pruef(sa.ausschnitt?.text === `Raum ${raum1.kz} + 1.5 m` && sa.massstab >= 20 && sa.massstab < 50 && sa.geschoss === null, `Massstab ${sa.massstabText} für den Ausschnitt (das ganze Modell hätte 1:50), keine Etage gewählt`);
+  const ka = await klipp();
+  pruef(ka.n13 === ka.mat && ka.sitz === 0 && ka.mat > 0, `alle ${ka.mat} Materialien tragen die sechs Ebenen des Quaders`);
+  const kz = await ausw(`return window.__vr.api.sitzung.kopfZeilen();`);
+  pruef(kz[1].startsWith('Ausschnitt: ') && kz[2].includes('Alle Etagen'), `Kopf des Tablets: ${kz.join(' | ')}`);
+  pruef((await ausw(`return window.__vr.api.sitzung.tastenZustand();`)).alle === false, '«Alle Etagen» steht nicht auf Ein');
+  const wa = await modellWelt();
+  pruef(wa.parent === 'sitzung-modellhalter' && nahe(wa.scale, 1 / sa.massstab, 1e-9), 'Modell hängt im Halter mit dem neuen Massstab');
+  const bildAus = await bildTisch('xrh-ausschnitt', true);
+  pruef(bildPruefen(bildAus), 'Prüfbild: Ausschnitt auf dem Tisch');
+  // «Alle Etagen» (auf dem Tablet): wieder das ganze Modell
+  await tippe('alle');
+  await bisS((s) => s?.ausschnitt === null, 'Ausschnitt aufgehoben', 6000);
+  const sb = await sitz(), kb = await klipp();
+  pruef(sb.massstab === 50 && sb.geschoss === null && kb.n13 === 0 && kb.sitz === 0, '«Alle Etagen» auf dem Tablet: das ganze Modell (1:50), keine Ebenen');
+  // die Etagenwahl ersetzt den Ausschnitt
+  await setzen(bereich, 'Ausschnitt');
+  await tippe('g:' + eg.kz);
+  await bisS((s) => s?.geschoss === eg.kz, 'Etage gewählt', 6000);
+  const sc = await sitz();
+  pruef(sc.ausschnitt === null && sc.massstab === 50 && sc.ebeneWelt !== null, 'die Etagenwahl ersetzt den Ausschnitt (Etagenebene statt Quader)');
+  // Zurücksetzen behält den Ausschnitt und passt ihn neu ein
+  await tippe('alle');
+  await setzen(bereich, 'Ausschnitt');
+  await tippe('zuruecksetzen');
+  await warte(400);
+  pruef((await sitz()).ausschnitt !== null && (await sitz()).massstab === sa.massstab, 'Zurücksetzen passt den Ausschnitt wieder auf die Platte');
+  // Verlassen mit Ausschnitt: nichts bleibt an den Materialien hängen
+  await tippe('raum');
+  await warteBis(async () => !(await sitz()), 'Sitzungsraum verlassen (5)', 6000);
+  await warte(700);
+  await ohneN13('Rückkehr ins Begehen nach dem Ausschnitt');
+  await vrBeenden();
+
   // Schnittbereich wieder weg (die Reihe läuft danach nicht weiter)
   await befehl('element_aendern', { element: 'AN-3D', eigenschaften: { schnittbereich: null } });
 

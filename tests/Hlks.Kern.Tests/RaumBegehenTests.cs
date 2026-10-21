@@ -36,6 +36,31 @@ public class RaumBegehenTests
         return kz;
     }
 
+    // ------------------------------------------------------------------ Bereich für «Raum zeigen (VR)»
+
+    [Fact]
+    public void MitRand_LiefertDenQuaderVonRaumImDreiDZeigen_OhneDasModellZuAendern()
+    {
+        var (p, raum) = Einfach();
+        var ohne = (JsonObject)Tuer.Abfrage(p, "raum_begehen", new JsonObject { ["raum"] = raum });
+        Assert.Null(ohne["bereich"]);   // ohne rand: wie bisher nur der Standort
+        var vorher = p.Modell.DerKlasse("Ansicht").Count();
+        var o = (JsonObject)Tuer.Abfrage(p, "raum_begehen", new JsonObject { ["raum"] = raum, ["rand"] = 1500 });
+        var b = (JsonObject)o["bereich"]!;
+        Assert.True(b["aktiv"]!.GetValue<bool>());
+        // dieselbe Rechnung wie ansicht_raum_zeigen: Innenmass 100 … 3900 × 100 … 2900, Raum von z 0, 2500 hoch, Rand 1500 in alle Richtungen
+        Assert.Equal(100 - 1500, ((JsonArray)b["min"]!).Select(Z).First(), 1);
+        var viaBefehl = Ok(p.Ausfuehren("ansicht_raum_zeigen", new JsonObject { ["raum"] = raum, ["rand"] = 1500 }));
+        var befehl = (JsonObject)p.Modell.Finde("AN-3D")!.Eigenschaft("schnittbereich")!.Inhalt!;
+        Assert.Equal(befehl.ToJsonString(), b.ToJsonString());
+        Assert.NotNull(viaBefehl);
+        Assert.Equal(0, vorher);   // die Abfrage hat keine Ansicht angelegt
+        // anderer Rand → anderer Quader; ungültiger Rand wird abgelehnt
+        var klein = (JsonObject)((JsonObject)Tuer.Abfrage(p, "raum_begehen", new JsonObject { ["raum"] = raum, ["rand"] = 0 }))["bereich"]!;
+        Assert.Equal(100, Z(((JsonArray)klein["min"]!)[0]), 1);
+        Assert.Throws<HlksFehler>(() => Tuer.Abfrage(p, "raum_begehen", new JsonObject { ["raum"] = raum, ["rand"] = -1 }));
+    }
+
     // ------------------------------------------------------------------ Standpunkt
 
     [Fact]

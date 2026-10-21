@@ -17,8 +17,9 @@ import { derKlasse } from '../zustand.js';
 import { HOLO, etikett, glowTextur, rundSchein } from './xr-holo.js';
 import {
   TISCH, TISCH_MITTE, RAUM, GRIFF_DURCHMESSER_M, einpassen, massstabText, griffPunkte, griffTreffer, gestenNeu, gestenSchritt, geschosseAufbereiten, schnittHoeheMm, schnittEbeneY,
-  kopfZeilen, sitzungsLayout, sitzungsTasten, modellMitte,
+  kopfZeilen, sitzungsLayout, sitzungsTasten, modellMitte, ausschnittBezug, ausschnittLage, ausschnittEbenen,
 } from './xr-sitzung-logik.js';
+import { schnittbereichLesen } from './schnittbereich-logik.js';
 
 const SCHREIB_MS = 250;
 const SYNC_S = 0.5;          // so oft werden die Clipping-Ebenen an die Materialien nachgeführt (neue Körper)
@@ -44,15 +45,16 @@ function elementeLesen(o) {
   return geschosseAufbereiten(geschosse, decken);
 }
 
-/** Box der sichtbaren Teile (ausgeblendete IFC-Netze zählen nicht), in der Welt. */
+/** Box der sichtbaren Teile (ausgeblendete IFC-Netze zählen nicht), im Koordinatensystem der Gruppe (= der Welt, solange die Gruppe unverschoben in der Szene steht; im Sitzungsraum steht sie auf dem Tisch). */
 function sichtbareBox(gruppe) {
-  const box = new THREE.Box3(), b = new THREE.Box3();
+  const box = new THREE.Box3(), b = new THREE.Box3(), rel = new THREE.Matrix4(), inv = new THREE.Matrix4();
   gruppe.updateWorldMatrix(true, true);
+  inv.copy(gruppe.matrixWorld).invert();
   const rec = (obj) => {
     if (!obj.visible) return;
     if ((obj.isMesh || obj.isLine || obj.isPoints) && obj.geometry) {
       if (!obj.geometry.boundingBox) obj.geometry.computeBoundingBox();
-      b.copy(obj.geometry.boundingBox).applyMatrix4(obj.matrixWorld);
+      b.copy(obj.geometry.boundingBox).applyMatrix4(rel.multiplyMatrices(inv, obj.matrixWorld));
       if (!b.isEmpty()) box.union(b);
     }
     for (const c of obj.children) rec(c);
@@ -72,6 +74,8 @@ export function erzeugeSitzung(o) {
   let aktiv = false;
   let lage = einpassen(null), groesse = { b: 1, t: 1, h: 1 }, anker = { x: 0, z: 0 }, unten = 0;
   let wahl = { geschoss: null, deckeZeigen: false };
+  let ausschnitt = null;                           // { sb (Quader wie die Ansichtseigenschaft schnittbereich), text } – «Raum zeigen (VR)» bzw. Schnittbereich einer 3D-Ansicht; null = ganzes Modell
+  let gemessen = { groesse: { b: 1, t: 1, h: 1 }, anker: { x: 0, z: 0 }, unten: 0 };   // Grösse, Mitte und Unterkante des sichtbaren Modells beim Betreten
   let gesten = gestenNeu(lage);
   let etagen = [], etagenSig = '', layoutListe = null, etagenUhr = 0;
   let uhr = 0, syncUhr = 0, letztesSchreiben = -1e9, schmutzig = true, materialSchmutzig = true;
@@ -82,6 +86,9 @@ export function erzeugeSitzung(o) {
   let griffNah = new Set();                        // Griffe, denen sich gerade eine Hand bis GRIFF_HOVER_M nähert
   const ebene = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
   const EBENEN = [ebene];
+  const BOXEN = Array.from({ length: 6 }, () => new THREE.Plane());   // die sechs Ebenen des Ausschnitts, in der Welt (folgen dem Modell auf dem Tisch)
+  const ebenenSoll = () => (ausschnitt ? BOXEN : wahl.geschoss && geschossGewaehlt() ? EBENEN : null);
+  const eigeneEbenen = (p) => p === EBENEN || p === BOXEN;
   let fuehrung = null;                             // Material, an dem die Ebenen zuletzt kontrolliert wurden
   const tmp = new THREE.Vector3();
 
@@ -204,7 +211,7 @@ export function erzeugeSitzung(o) {
 
   /** Hängt die Ebene an alle Materialien des Modells (bzw. nimmt sie weg). Der Stand davor (Ebenen des Schnittbereichs) wird nicht gemerkt: beim Verlassen entscheidet der Schnittbereich neu. */
   function ebeneAnwenden() {
-    const soll = wahl.geschoss && geschossGewaehlt() ? EBENEN : null;
+    const soll = ebenenSoll();
     const material = [];
     modell.traverse((m) => {
       const mat = m.material;
@@ -215,6 +222,46 @@ export function erzeugeSitzung(o) {
       if (x.clippingPlanes !== soll) { x.clippingPlanes = soll; x.needsUpdate = true; }
     }
     fuehrung = material[0] ?? null;
+  }
+
+  // ---------------------------------------------------------------------------------------------- Ausschnitt
+  /** Misst das sichtbare Modell (ohne ausgeblendete IFC-Netze): Grösse, Mitte und Unterkante, im Koordinatensystem der Körpergruppe. */
+  function messen() {
+    const box = sichtbareBox(modell);
+    const leer = box.isEmpty();
+    gemessen = {
+      groesse: leer ? { b: 1, t: 1, h: 1 } : { b: box.max.x - box.min.x, t: box.max.z - box.min.z, h: box.max.y - box.min.y },
+      anker: leer ? { x: 0, z: 0 } : { x: (box.min.x + box.max.x) / 2, z: (box.min.z + box.max.z) / 2 },
+      unten: leer ? 0 : box.min.y,
+    };
+  }
+
+  /** Grösse, Mitte und Unterkante, nach denen das Modell auf den Tisch kommt: der Ausschnitt, sonst das ganze sichtbare Modell; setzt die Startlage dafür neu. */
+  function bezugSetzen() {
+    const b = ausschnitt ? ausschnittBezug(ausschnitt.sb) : null;
+    const m = b ?? gemessen;
+    groesse = m.groesse; anker = m.anker; unten = m.unten;
+    modell.position.set(-anker.x, -unten, -anker.z);
+    lage = b ? ausschnittLage(groesse) : einpassen(groesse);
+    gesten = gestenNeu(lage);
+  }
+
+  /**
+   * Zeigt nur den Ausschnitt auf dem Tisch: sb = Quader { aktiv, min, max, winkel } (mm, wie die Eigenschaft schnittbereich; «Raum im 3D zeigen» bzw. Schnittbereich einer 3D-Ansicht),
+   * text = Beschriftung für Tablet und Tisch. Der Massstab passt den Ausschnitt auf die Platte (ausschnittLage); die Etagenwahl ist dabei aus. sb = null: wieder das ganze Modell.
+   * Nur im Sitzungsraum; Rückgabe false, wenn er nicht offen ist oder der Quader ungültig ist.
+   */
+  function ausschnittSetzen(sb, text = '') {
+    if (!aktiv || !halter) return false;
+    if (sb && !ausschnittBezug(sb)) return false;
+    ausschnitt = sb ? { sb: schnittbereichLesen(sb), text: String(text || 'Ausschnitt') } : null;
+    wahl = { geschoss: null, deckeZeigen: false };
+    if (!ausschnitt) messen();   // das Modell kann sich geändert haben (andere Filter einer 3D-Ansicht): neu messen
+    bezugSetzen();
+    schmutzig = true; materialSchmutzig = true;
+    anwenden(true);
+    schreiben(true);
+    return true;
   }
 
   // ---------------------------------------------------------------------------------------------- Betreten und Verlassen
@@ -228,11 +275,8 @@ export function erzeugeSitzung(o) {
     // IFC-Unterlage aus (Bildrate); vor der Messung, damit nur das sichtbare Modell eingepasst wird
     ifcVorher = !!o.ifc?.an();
     o.ifc?.setzen(false);
-    const box = sichtbareBox(modell);
-    const leer = box.isEmpty();
-    groesse = leer ? { b: 1, t: 1, h: 1 } : { b: box.max.x - box.min.x, t: box.max.z - box.min.z, h: box.max.y - box.min.y };
-    anker = leer ? { x: 0, z: 0 } : { x: (box.min.x + box.max.x) / 2, z: (box.min.z + box.max.z) / 2 };
-    unten = leer ? 0 : box.min.y;
+    messen();
+    ausschnitt = null;
     // Stand sichern
     gespeichert = {
       parent: modell.parent, position: modell.position.clone(), quaternion: modell.quaternion.clone(), scale: modell.scale.clone(), matrixAutoUpdate: modell.matrixAutoUpdate,
@@ -256,10 +300,8 @@ export function erzeugeSitzung(o) {
     for (const { c } of gespeichert.lichter) c.intensity *= c.isAmbientLight ? 0.65 : 0.8;
     renderer.localClippingEnabled = true;
     // Modell auf den Tisch
-    lage = einpassen(groesse);
-    gesten = gestenNeu(lage);
     wahl = { geschoss: null, deckeZeigen: false };
-    modell.position.set(-anker.x, -unten, -anker.z);
+    bezugSetzen();
     modell.quaternion.identity(); modell.scale.set(1, 1, 1);
     halter.add(modell);
     aktiv = true;
@@ -282,7 +324,7 @@ export function erzeugeSitzung(o) {
     modell.traverse((m) => {
       const mat = m.material;
       if (!mat) return;
-      for (const x of Array.isArray(mat) ? mat : [mat]) if (x.clippingPlanes === EBENEN) { x.clippingPlanes = null; x.needsUpdate = true; }
+      for (const x of Array.isArray(mat) ? mat : [mat]) if (eigeneEbenen(x.clippingPlanes)) { x.clippingPlanes = null; x.needsUpdate = true; }
     });
     if (g) {
       modell.removeFromParent();
@@ -320,9 +362,13 @@ export function erzeugeSitzung(o) {
     const s = 1 / lage.massstab;
     halter.scale.set(s, s, s);
     halter.updateMatrixWorld(true);
-    massLabel?.setzen(`Massstab ${massstabText(lage.massstab)}\n${geschossGewaehlt() ? `${geschossGewaehlt().kennzeichen}${wahl.deckeZeigen ? ' mit Decke' : ''}` : 'Alle Etagen'}`);
+    massLabel?.setzen(`Massstab ${massstabText(lage.massstab)}\n${ausschnitt ? ausschnitt.text : geschossGewaehlt() ? `${geschossGewaehlt().kennzeichen}${wahl.deckeZeigen ? ' mit Decke' : ''}` : 'Alle Etagen'}`);
     const y = ebeneRaumY();
     if (y !== null) { raum.updateMatrixWorld(true); tmp.set(0, y, 0); raum.localToWorld(tmp); ebene.constant = tmp.y; }
+    if (ausschnitt) {   // die sechs Ebenen des Quaders gelten im Koordinatensystem der 3D-Ansicht = dem der Körpergruppe: mit deren Weltmatrix auf den Tisch bringen
+      modell.updateWorldMatrix(true, false);
+      ausschnittEbenen(ausschnitt.sb).forEach((e, i) => BOXEN[i].set(tmp.set(...e.normale), e.konstante).applyMatrix4(modell.matrixWorld));
+    }
     if (materialSchmutzig) { materialSchmutzig = false; ebeneAnwenden(); syncUhr = uhr; }
     griffeZeigen();
     o.anfordern?.();
@@ -348,13 +394,14 @@ export function erzeugeSitzung(o) {
   function aktion(id) {
     if (id === 'raum') { if (aktiv) verlassen(); else betreten(); return true; }
     if (!aktiv) return false;
-    if (id === 'alle') wahl = { ...wahl, geschoss: null };
+    if (id === 'alle') { wahl = { ...wahl, geschoss: null }; if (ausschnitt) { ausschnitt = null; bezugSetzen(); } }   // «Alle Etagen» zeigt wieder das ganze Modell
     else if (id.startsWith('g:')) {
       const kz = id.slice(2);
       if (!etagen.some((g) => g.kennzeichen === kz)) return true;
       wahl = { ...wahl, geschoss: kz };
+      if (ausschnitt) { ausschnitt = null; bezugSetzen(); }   // die Etagenwahl ersetzt den Ausschnitt
     } else if (id === 'decke') wahl = { ...wahl, deckeZeigen: !wahl.deckeZeigen };
-    else if (id === 'zuruecksetzen') { lage = einpassen(groesse); gesten = gestenNeu(lage); }
+    else if (id === 'zuruecksetzen') { lage = ausschnitt ? ausschnittLage(groesse) : einpassen(groesse); gesten = gestenNeu(lage); }
     else return false;   // IFC-Unterlage und «VR beenden» erledigt das Tablet wie sonst
     schmutzig = true; materialSchmutzig = true;
     anwenden();
@@ -408,7 +455,7 @@ export function erzeugeSitzung(o) {
   /** Vor jedem Bild (nach dem Schnittbereich der Ansicht): die Ebenen kontrollieren – die Ansicht setzt sie bei neuen Körpern zurück. */
   function vorRender() {
     if (!aktiv) return;
-    if (fuehrung && fuehrung.clippingPlanes !== (wahl.geschoss && geschossGewaehlt() ? EBENEN : null)) materialSchmutzig = true;
+    if (fuehrung && fuehrung.clippingPlanes !== ebenenSoll()) materialSchmutzig = true;
     else if (uhr - syncUhr > SYNC_S) materialSchmutzig = true;
     if (materialSchmutzig) anwenden(true);
   }
@@ -429,7 +476,7 @@ export function erzeugeSitzung(o) {
       return { seite: p.seite, x: rund(w.x), y: rund(w.y), z: rund(w.z), hover: griffNah.has(p.index) && gesten.besitzt.links !== p.index && gesten.besitzt.rechts !== p.index, gehalten: gesten.besitzt.links === p.index || gesten.besitzt.rechts === p.index };
     }) : [];
     let geclippt = 0, material = 0;
-    modell.traverse((m) => { const mat = m.material; if (!mat) return; for (const x of Array.isArray(mat) ? mat : [mat]) { material++; if (x.clippingPlanes === EBENEN) geclippt++; } });
+    modell.traverse((m) => { const mat = m.material; if (!mat) return; for (const x of Array.isArray(mat) ? mat : [mat]) { material++; if (eigeneEbenen(x.clippingPlanes)) geclippt++; } });
     return {
       aktiv: true, massstab: rund(lage.massstab, 3), massstabText: massstabText(lage.massstab), drehungGrad: rund(lage.drehung / (Math.PI / 180), 2), lage: { x: rund(lage.x), z: rund(lage.z) },
       passt: lage.passt !== false, modus: gesten.modus, geschoss: wahl.geschoss, deckeZeigen: wahl.deckeZeigen,
@@ -438,6 +485,7 @@ export function erzeugeSitzung(o) {
       modellUnten: rund(unten, 4), groesse: { b: rund(groesse.b, 3), t: rund(groesse.t, 3), h: rund(groesse.h, 3) },
       tisch: tischWelt ? { x: rund(tischWelt.x), y: rund(tischWelt.y, 5), z: rund(tischWelt.z) } : null,
       raum: raum ? { x: rund(raum.position.x), y: rund(raum.position.y), z: rund(raum.position.z), gieren: rund(raum.rotation.y) } : null,
+      ausschnitt: ausschnitt ? { text: ausschnitt.text, min: ausschnitt.sb.min, max: ausschnitt.sb.max, winkel: ausschnitt.sb.winkel } : null,
       griffe: griffeWelt, material, geclippt, ifc: !!o.ifc?.an(),
     };
   }
@@ -452,8 +500,9 @@ export function erzeugeSitzung(o) {
     get aktiv() { return aktiv; },
     betreten, verlassen, umschalten: () => (aktiv ? verlassen() : betreten()), aktion,
     layout: () => (aktiv ? layoutListe : null),
-    tastenZustand: () => (aktiv ? sitzungsTasten(wahl, o.ifc?.an()) : {}),
-    kopfZeilen: () => (aktiv ? kopfZeilen(lage, wahl, etagen) : null),
+    tastenZustand: () => (aktiv ? sitzungsTasten({ ...wahl, ausschnitt: ausschnitt?.text ?? null }, o.ifc?.an()) : {}),
+    kopfZeilen: () => (aktiv ? kopfZeilen(lage, { ...wahl, ausschnitt: ausschnitt?.text ?? null }, etagen) : null),
+    ausschnittSetzen,
     bild, vorRender, zustand, schreiben,
     /** Test-Naht: Etagenwahl und Lage direkt setzen. */
     get lage() { return { ...lage }; },

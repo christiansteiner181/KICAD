@@ -321,6 +321,143 @@ try {
   await ausw(`await window.__xr.sitzung.end(); return 1;`);
   await warteBis(() => ausw(`return document.querySelector('${KNOPF}').dataset.status === 'bereit';`), 'Startseite wieder da', 10000);
 
+  // ================================================================== Raum zeigen (VR) und 3D-Ansicht in VR
+  abschnitt('Raum zeigen (VR): Auftrag mit Ausschnitt → der Sitzungsraum zeigt nur den Raum plus Rand (Quader aus dem Kern), Massstab passt, Etagenwahl aus');
+  /** Prüft in der Seite unabhängig die Ebenen an den Materialien: für jede Ecke der Netz-Boxen stimmt „innerhalb des Quaders“ (eigene Rechnung aus min/max/winkel) mit „alle Ebenen ≥ 0“ überein. */
+  const ebenenPruefen = (sb) => naht(`(async () => {
+    const T = await import('three'); const v = n.instanz().vr; const m = v.api.modell; m.updateWorldMatrix(true, true);
+    const sb = ${JSON.stringify(sb)}; const w = (sb.winkel ?? 0) * Math.PI / 180, c = Math.cos(w), s = Math.sin(w);
+    const inv = new T.Matrix4().copy(m.matrixWorld).invert(), rel = new T.Matrix4(), bb = new T.Box3(), q = new T.Vector3(), wp = new T.Vector3();
+    const mass = (p) => { const u = p.x * c - p.z * s, vv = -p.x * s - p.z * c; return [u - sb.min[0] / 1000, sb.max[0] / 1000 - u, vv - sb.min[1] / 1000, sb.max[1] / 1000 - vv, p.y - sb.min[2] / 1000, sb.max[2] / 1000 - p.y]; };
+    let punkte = 0, abw = 0, bleiben = 0, verschwinden = 0, material = 0, mit6 = 0;
+    m.traverse((o) => {
+      if (!o.isMesh || !o.geometry) return;
+      for (const x of Array.isArray(o.material) ? o.material : [o.material]) { material++; if (x.clippingPlanes?.length === 6) mit6++; }
+      const ebenen = (Array.isArray(o.material) ? o.material[0] : o.material).clippingPlanes ?? [];
+      if (!o.geometry.boundingBox) o.geometry.computeBoundingBox();
+      bb.copy(o.geometry.boundingBox);
+      rel.multiplyMatrices(inv, o.matrixWorld);
+      const ecken = []; for (const x of [bb.min.x, bb.max.x]) for (const y of [bb.min.y, bb.max.y]) for (const z of [bb.min.z, bb.max.z]) ecken.push(new T.Vector3(x, y, z));
+      const ms = ecken.map((e) => mass(q.copy(e).applyMatrix4(rel)));
+      const ganzAussen = [0, 1, 2, 3, 4, 5].some((i) => ms.every((mm) => mm[i] < 0));
+      if (ganzAussen) verschwinden++; else bleiben++;
+      ecken.forEach((e, i) => {
+        if (Math.min(...ms[i].map(Math.abs)) < 1e-4) return;   // genau auf einer Fläche: nicht entscheidbar
+        punkte++;
+        const drin = ms[i].every((d) => d > 0);
+        wp.copy(e).applyMatrix4(o.matrixWorld);
+        const sichtbar = ebenen.length === 6 && ebenen.every((pl) => pl.distanceToPoint(wp) >= 0);
+        if (drin !== sichtbar) abw++;
+      });
+    });
+    return { punkte, abweichungen: abw, bleiben, verschwinden, material, mit6 };
+  })()`);
+  const rand1500 = (await (await fetch(`${SERVER}/api/abfrage/raum_begehen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ raum: raeumeEG[0].kennzeichen, rand: 1500 }) })).json());
+  pruef(rand1500.bereich?.aktiv === true && rand1500.bereich.min.length === 3 && rand1500.standpunkt, 'die Abfrage raum_begehen liefert mit rand den Quader (bereich)', JSON.stringify(rand1500.bereich));
+  pruef((await auftragPost({ modus: 'sitzungsraum', raum: raeumeEG[0].id, ausschnitt: 'ja' })).code === 400 && (await auftragPost({ modus: 'sitzungsraum', ausschnitt: true })).code === 400, 'ungültige Ausschnitt-Aufträge werden abgelehnt (400)');
+  const nr6 = await nrPost({ modus: 'sitzungsraum', raum: raeumeEG[0].id, ausschnitt: true });
+  await gehe();
+  const k6 = await ausw(`return document.getElementById('vr-auftrag').textContent;`);
+  pruef(k6.startsWith('Auftrag vom PC: Raum zeigen · ') && k6.includes(raeumeEG[0].geschoss), `Zeile «${k6}»`);
+  await naehe();
+  await klickAn(640, 400);
+  await laeuft();
+  await warteBis(async () => (await sitzungZ())?.aktiv === true && (await sitzungZ())?.ausschnitt, 'Sitzungsraum mit Ausschnitt', 12000);
+  await warte(600);
+  const s6 = await sitzungZ();
+  pruef(s6.ausschnitt.text.startsWith('Raum ') && s6.ausschnitt.text.includes('1.5 m'), `Beschriftung «${s6.ausschnitt.text}»`);
+  pruef(JSON.stringify(s6.ausschnitt.min) === JSON.stringify(rand1500.bereich.min) && JSON.stringify(s6.ausschnitt.max) === JSON.stringify(rand1500.bereich.max) && s6.ausschnitt.winkel === rand1500.bereich.winkel,
+    `der Quader ist der des Kerns: min ${JSON.stringify(s6.ausschnitt.min)}, max ${JSON.stringify(s6.ausschnitt.max)}`);
+  const ext = (b) => { const w = (b.winkel ?? 0) * Math.PI / 180; const du = (b.max[0] - b.min[0]) / 1000, dv = (b.max[1] - b.min[1]) / 1000; return { b: Math.abs(du * Math.cos(w)) + Math.abs(dv * Math.sin(w)), t: Math.abs(du * Math.sin(w)) + Math.abs(dv * Math.cos(w)), h: (b.max[2] - b.min[2]) / 1000 }; };
+  const e6 = ext(rand1500.bereich), erwMass = Math.max(20, Math.ceil(Math.max(e6.b / 1.4, e6.t / 0.8)));
+  pruef(s6.massstab === erwMass && e6.b / s6.massstab <= 1.4 + 1e-6 && e6.t / s6.massstab <= 0.8 + 1e-6, `Massstab ${s6.massstabText}: der Ausschnitt (${e6.b.toFixed(1)} × ${e6.t.toFixed(1)} m) passt auf die Platte, so fein wie möglich (erwartet 1:${erwMass})`);
+  pruef(s6.geschoss === null && s6.etagen.length >= 3, 'die Etagenwahl ist aus (alle Etagen gelistet, keine gewählt)');
+  const tz6 = await naht('n.instanz().vr.api.sitzung.tastenZustand()');
+  pruef(tz6 && tz6.alle === false && !Object.keys(tz6).some((k) => k.startsWith('g:') && tz6[k]), '«Alle Etagen» steht nicht auf Ein, solange der Ausschnitt gilt');
+  pruef(s6.geclippt === s6.material && s6.material > 0, `alle ${s6.material} Materialien tragen die Ebenen des Ausschnitts`);
+  const p6 = await ebenenPruefen(rand1500.bereich);
+  pruef(p6.punkte > 100 && p6.abweichungen === 0 && p6.mit6 === p6.material, `die sechs Ebenen schneiden genau am Quader: ${p6.punkte} Ecken geprüft, ${p6.abweichungen} Abweichungen`, JSON.stringify(p6));
+  pruef(p6.bleiben > 0 && p6.verschwinden > 0, `nur Körper im Quader bleiben: ${p6.bleiben} Netze im Ausschnitt, ${p6.verschwinden} ganz weggeschnitten`);
+  pruef(nahe(s6.modellUnten, rand1500.bereich.min[2] / 1000, 1e-3), `Unterkante des Ausschnitts (${s6.modellUnten} m) steht auf der Platte`);
+  await speichern('vrstart-6-raum-zeigen');
+  // Raum zeigen live in der Sitzung: ein anderer Raum, ohne Tipp
+  await nrPost({ modus: 'sitzungsraum', raum: raeumeEG[1].id, ausschnitt: true });
+  await naht('n.takt()');
+  await warteBis(async () => JSON.stringify((await sitzungZ())?.ausschnitt?.min) !== JSON.stringify(s6.ausschnitt.min), 'neuer Ausschnitt live', 8000);
+  const r2 = await (await fetch(`${SERVER}/api/abfrage/raum_begehen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ raum: raeumeEG[1].kennzeichen, rand: 1500 }) })).json();
+  const s6c = await sitzungZ();
+  pruef(JSON.stringify(s6c.ausschnitt.min) === JSON.stringify(r2.bereich.min) && JSON.stringify(s6c.ausschnitt.max) === JSON.stringify(r2.bereich.max), 'ein neuer Auftrag in der Sitzung wechselt den Ausschnitt ohne Tipp');
+  const p6c = await ebenenPruefen(r2.bereich);
+  pruef(p6c.abweichungen === 0 && p6c.punkte > 100, `die Ebenen folgen dem neuen Quader (${p6c.punkte} Ecken, ${p6c.abweichungen} Abweichungen)`);
+  // «Alle Etagen» auf dem Tablet: wieder das ganze Modell (über die Taste des Sitzungsraums)
+  await naht(`n.instanz().vr.api.sitzung.aktion('alle')`);
+  await warte(500);
+  const s6b = await sitzungZ();
+  pruef(s6b.ausschnitt === null && s6b.massstab === 50 && s6b.geclippt === 0, '«Alle Etagen» zeigt wieder das ganze Modell (1:50, nichts geschnitten)');
+  const p6b = await naht(`(() => { let n6 = 0, mm = 0; n.instanz().vr.api.modell.traverse((o) => { for (const x of [].concat(o.material ?? [])) { mm++; if (x.clippingPlanes) n6++; } }); return { mm, n6 }; })()`);
+  pruef(p6b.mm > 0 && p6b.n6 === 0, 'keine Ebene mehr an den Materialien');
+  // ein einfacher Sitzungsraum-Auftrag zeigt wieder alles
+  await nrPost({ modus: 'sitzungsraum' });
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.ausschnitt === null, 'wieder das ganze Modell', 8000);
+  pruef(true, 'ein Auftrag «Sitzungsraum» ohne Raum zeigt im offenen Sitzungsraum wieder das ganze Modell');
+  // Die Etagenwahl ersetzt den Ausschnitt
+  await nrPost({ modus: 'sitzungsraum', raum: raeumeEG[0].id, ausschnitt: true });
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.ausschnitt, 'Ausschnitt wieder da', 8000);
+  await naht(`n.instanz().vr.api.sitzung.aktion('g:${eg.kz}')`);
+  await warte(400);
+  const s6d = await sitzungZ();
+  pruef(s6d.ausschnitt === null && s6d.geschoss === eg.kz && s6d.ebeneWelt !== null, `die Etage ${eg.kz} ersetzt den Ausschnitt (Etagenebene statt Quader)`);
+  await ausw(`await window.__xr.sitzung.end(); return 1;`);
+  await warteBis(() => ausw(`return document.querySelector('${KNOPF}').dataset.status === 'bereit';`), 'Startseite wieder da', 10000);
+
+  abschnitt('3D-Ansicht in VR: Auftrag mit ansicht → Schnittbereich und Filter dieser Ansicht auf dem Tisch');
+  const post = async (name, body) => (await (await fetch(`${SERVER}/api/befehl/${name}`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) })).json());
+  // die Klasse mit den wenigsten Körpern (ohne Wand und Decke, die den Rest des Modells tragen) filtert die Test-Ansicht aus
+  const klassenZahl = await ausw(`const z = await import('/js/zustand.js'); const v = (await import('/js/vr-start.js')).naht.instanz().vr.api.modell; const k = {}; for (const g of v.children) { const kl = z.element(g.userData.id)?.klasse; if (kl) k[kl] = (k[kl] ?? 0) + 1; } return k;`);
+  const klasseAus = Object.entries(klassenZahl).filter(([k]) => !['Wand', 'Decke'].includes(k)).sort((a, b) => a[1] - b[1] || a[0].localeCompare(b[0]))[0]?.[0];
+  pruef(!!klasseAus, `Klasse für den Filtertest: ${klasseAus} (Körper je Klasse ${JSON.stringify(klassenZahl)})`);
+  const an1 = await post('element_anlegen', { klasse: 'Ansicht', kennzeichen: 'AN-VRT', name: 'VR-Test', eigenschaften: { art: '3d', klassenAusblenden: [klasseAus] } });
+  pruef(an1.angenommen, 'Test-Ansicht AN-VRT (3D, ohne ' + klasseAus + ') angelegt', JSON.stringify(an1).slice(0, 200));
+  const rz = await post('ansicht_raum_zeigen', { raum: [raeumeEG[0].kennzeichen], ansicht: 'AN-VRT', rand: 1500 });
+  pruef(rz.angenommen, 'Schnittbereich der Ansicht auf den Raum gesetzt (ansicht_raum_zeigen)', JSON.stringify(rz).slice(0, 200));
+  const anModell = (await holenJson('/api/modell')).elemente.find((e) => e.kennzeichen === 'AN-VRT');
+  const sbAn = anModell.werte.schnittbereich;
+  pruef(sbAn?.aktiv === true, 'die Ansicht trägt den aktiven Schnittbereich', JSON.stringify(sbAn));
+  const gr = modell.elemente.find((e) => e.klasse === 'Ansicht' && (e.werte?.art ?? 'grundriss') !== '3d');
+  const falsch = await auftragPost({ modus: 'sitzungsraum', ansicht: gr.kennzeichen });
+  pruef(falsch.code === 400 && /3D-Ansicht/.test(falsch.j.fehler ?? ''), `eine Grundriss-Ansicht (${gr.kennzeichen}) wird abgelehnt: ${falsch.j.fehler}`);
+  pruef((await auftragPost({ modus: 'sitzungsraum', ansicht: 'GIBT-ES-NICHT' })).code === 400, 'eine unbekannte Ansicht wird abgelehnt');
+  const vorFilter = await naht(`n.instanz().vr.api.modell.children.length`);
+  const nr7 = await nrPost({ modus: 'sitzungsraum', ansicht: 'AN-VRT' });
+  await gehe();
+  const k7 = await ausw(`return document.getElementById('vr-auftrag').textContent;`);
+  pruef(k7 === 'Auftrag vom PC: Sitzungsraum · 3D-Ansicht · VR-Test', `Zeile «${k7}»`);
+  const gesamt = await naht(`n.instanz().vr.api.modell.children.length`);
+  await naehe();
+  await klickAn(640, 400);
+  await laeuft();
+  await warteBis(async () => (await sitzungZ())?.aktiv === true && (await sitzungZ())?.ausschnitt, 'Sitzungsraum mit der Ansicht', 12000);
+  await warte(600);
+  const s7 = await sitzungZ();
+  pruef(JSON.stringify(s7.ausschnitt.min) === JSON.stringify(sbAn.min) && JSON.stringify(s7.ausschnitt.max) === JSON.stringify(sbAn.max), `der Schnittbereich der Ansicht ist der Ausschnitt: ${s7.ausschnitt.text}`);
+  const p7 = await ebenenPruefen(sbAn);
+  pruef(p7.punkte > 50 && p7.abweichungen === 0 && p7.verschwinden > 0 && p7.bleiben > 0, `Ebenen genau am Quader (${p7.punkte} Ecken, ${p7.abweichungen} Abweichungen; ${p7.bleiben} bleiben, ${p7.verschwinden} weg)`, JSON.stringify(p7));
+  const ohneKlasse = await ausw(`const z = await import('/js/zustand.js'); const v = (await import('/js/vr-start.js')).naht.instanz().vr.api.modell; let mit = 0, gesamt = 0; for (const g of v.children) { gesamt++; if (z.element(g.userData.id)?.klasse === ${JSON.stringify(klasseAus)}) mit++; } return { mit, gesamt };`);
+  pruef(ohneKlasse.mit === 0 && ohneKlasse.gesamt > 0, `der Filter der Ansicht gilt: ${ohneKlasse.gesamt} Körper, keiner der Klasse ${klasseAus}`, JSON.stringify(ohneKlasse));
+  pruef(s7.massstab >= 20 && s7.massstab === Math.max(20, Math.ceil(Math.max(ext(sbAn).b / 1.4, ext(sbAn).t / 0.8))), `Massstab ${s7.massstabText} passt den Ausschnitt auf die Platte`);
+  await speichern('vrstart-7-ansicht');
+  // ein neuer Auftrag «Sitzungsraum» ohne Ansicht: Gesamtansicht und ganzes Modell zurück
+  await nrPost({ modus: 'sitzungsraum' });
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.ausschnitt === null, 'wieder das ganze Modell', 8000);
+  const zurueck = await ausw(`const z = await import('/js/zustand.js'); const v = (await import('/js/vr-start.js')).naht.instanz().vr.api.modell; let mit = 0; for (const g of v.children) if (z.element(g.userData.id)?.klasse === ${JSON.stringify(klasseAus)}) mit++; return { mit, gesamt: v.children.length };`);
+  pruef(zurueck.mit > 0 && (await sitzungZ()).massstab === 50, `ohne Ansicht gilt wieder die Gesamtansicht (${zurueck.mit} ${klasseAus}-Körper, 1:50)`);
+  pruef(gesamt >= vorFilter - 1, 'die Seite begann mit der Gesamtansicht');
+  await ausw(`await window.__xr.sitzung.end(); return 1;`);
+  await warteBis(() => ausw(`return document.querySelector('${KNOPF}').dataset.status === 'bereit';`), 'Startseite wieder da', 10000);
+
   // ================================================================== Manifest und Symbole
   abschnitt('Manifest und Symbole');
   const man = await ausw(`const l = document.querySelector('link[rel="manifest"]'); const r = await fetch(l.href); const j = await r.json();

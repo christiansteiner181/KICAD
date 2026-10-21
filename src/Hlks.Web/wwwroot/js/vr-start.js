@@ -12,6 +12,7 @@ import { holen, abfrage } from './api.js';
 import { zustand, modellLaden, nachladen, abonnieren, derKlasse, element } from './zustand.js';
 import { benutzerLaden, benutzerWert, benutzerSetzen } from './oberflaeche/benutzer.js';
 import ansicht3d from './ansichten/ansicht3d.js';
+import { schnittbereichLesen, RAND_RAUM, RAND_RAUM_SCHLUESSEL } from './ansichten/schnittbereich-logik.js';
 import {
   SCHLUESSEL, AUFTRAG_TAKT_MS, MODI, raumParameter, standpunktMerken, standortAusGemerkt, egRaeume, startpunktWaehlen, startAnzeige,
   auftragPruefen, auftragNeu, auftragSchritte, auftragNachStart, auftragText,
@@ -53,7 +54,8 @@ function anzeigen() {
   el('vr-quelle').textContent = a.quelle ? `Startpunkt: ${a.quelle}` : '';
   knopf.dataset.startquelle = punkt.quelle;
   const geschossKz = auftrag?.geschoss ? element(auftrag.geschoss)?.kennzeichen ?? '' : '';
-  const text = auftrag ? auftragText(auftrag, punkt.quelle === 'auftrag' ? punkt.standort : null, geschossKz) : '';
+  const ansichtName = auftrag?.ansicht ? (element(auftrag.ansicht)?.name || element(auftrag.ansicht)?.kennzeichen || '') : '';
+  const text = auftrag ? auftragText(auftrag, punkt.quelle === 'auftrag' ? punkt.standort : null, geschossKz, ansichtName) : '';
   el('vr-auftrag').textContent = text ? `Auftrag vom PC: ${text}` : '';
   knopf.dataset.auftrag = auftrag?.modus ?? '';
   knopf.dataset.auftragNr = auftrag ? String(auftrag.nr) : '';
@@ -133,6 +135,37 @@ async function sitzungBereit() {
 }
 const geschossKennzeichen = (bezug) => (bezug ? element(bezug)?.kennzeichen ?? null : null);
 
+let ansichtId = null;   // Id der 3D-Ansicht, deren Filter (Gewerke, Klassen) die Szene gerade zeigt
+
+/** Stellt die Szene auf die 3D-Ansicht um (Filter und Schnittbereich der Ansicht); null = die Gesamtansicht, mit der die Seite begann. */
+function ansichtWaehlen(an) {
+  const ziel = an ?? dreiDAnsicht();
+  if (ziel.id === ansichtId) return;
+  ansichtId = ziel.id;
+  instanz.ansichtGeaendert(ziel);
+}
+
+/** «Raum zeigen (VR)» bzw. 3D-Ansicht in VR: Quader und Beschriftung für den Sitzungsraum. Quader null = ganzes Modell (der Ansicht). */
+async function ausschnittVon(a) {
+  if (a.ansicht) {
+    const an = element(a.ansicht);
+    if (an?.klasse !== 'Ansicht' || an.werte?.art !== '3d') return { sb: null, text: '' };
+    ansichtWaehlen(an);
+    const sb = schnittbereichLesen(an.werte?.schnittbereich);
+    return { sb: sb?.aktiv ? sb : null, text: `3D-Ansicht ${an.name || an.kennzeichen}${sb?.aktiv ? ' (Schnittbereich)' : ''}` };
+  }
+  ansichtWaehlen(null);
+  if (!a.ausschnitt || !a.raum) return { sb: null, text: '' };
+  // dieselbe Berechnung wie «Raum im 3D zeigen» (N14): der Kern liefert den Quader zum Standort (Abfrage raum_begehen mit rand), Rand wie dort (Benutzereinstellung, Vorgabe 1500 mm)
+  const roh = Number(benutzerWert(RAND_RAUM_SCHLUESSEL, RAND_RAUM));
+  const rand = Number.isFinite(roh) && roh >= 0 ? roh : RAND_RAUM;
+  try {
+    const r = await abfrage('raum_begehen', { raum: a.raum, rand });
+    const name = [r?.nummer, r?.name].filter((t) => typeof t === 'string' && t !== '').join(' ') || r?.raum || '';
+    return { sb: schnittbereichLesen(r?.bereich), text: `Raum ${name} + ${Math.round(rand / 100) / 10} m` };
+  } catch { return { sb: null, text: '' }; }
+}
+
 /** Führt Schritte von auftragSchritte/auftragNachStart in der laufenden Sitzung aus: Sitzungsraum (xr-sitzung.js über vr.api.sitzung), Standortwechsel (vr.versetzen). */
 async function schritteAusfuehren(a, schritte) {
   const vr = instanz.vr;
@@ -142,6 +175,8 @@ async function schritteAusfuehren(a, schritte) {
     else if (s === 'standort') { const st = a.raum ? await raumStandort(a.raum) : null; if (st) vr.versetzen(st); }
     else if (s === 'betreten') sitz?.betreten();
     else if (s === 'etage') { const kz = geschossKennzeichen(a.geschoss); if (kz) sitz?.aktion(`g:${kz}`); }
+    else if (s === 'ausschnitt') { const z = await ausschnittVon(a); sitz?.ausschnittSetzen(z.sb, z.text); }
+    else if (s === 'ganz') { ansichtWaehlen(null); sitz?.ausschnittSetzen(null); }
   }
 }
 
@@ -169,7 +204,7 @@ async function auftragLesen() {
 /** Ein neuer Auftrag, solange keine Sitzung läuft: auf den Knopf (Startpunkt wechselt bei «begehen» in den Raum des Auftrags). */
 async function auftragUebernehmen(a) {
   auftrag = a;
-  if (a.modus === MODI.begehen && a.raum) {
+  if ((a.modus === MODI.begehen || a.ausschnitt) && a.raum) {
     const s = await raumStandort(a.raum);
     if (s) punkt = { quelle: 'auftrag', standort: s };
   }
@@ -214,7 +249,9 @@ async function start() {
   await modellLaden();
   await benutzerLaden();
 
-  instanz = ansicht3d.erstellen(el('vr-szene'), dreiDAnsicht());
+  const start3d = dreiDAnsicht();
+  ansichtId = start3d.id;
+  instanz = ansicht3d.erstellen(el('vr-szene'), start3d);
   if (!instanz?.vr) { ohneProjekt('Die 3D-Ansicht konnte nicht gestartet werden (WebGL).'); return; }
   abonnieren('modell', (d) => instanz.aktualisieren(d));
   instanz.vr.api.beiEnde = beiSitzungsEnde;

@@ -317,3 +317,78 @@ test('Tablet-Seite: Alle Etagen und die Geschosse (oberstes zuerst), feste Taste
   assert.equal(S.geschossText({ kennzeichen: 'EG' }), 'EG');
   assert.ok(S.geschossText({ kennzeichen: 'GESCHOSS-WEIT-LANG', name: 'Dachgeschoss mit Galerie' }).length <= S.GESCHOSS_TEXT_MAX);
 });
+
+test('Tablet-Seite im Hochformat: Etagen untereinander in voller Breite, darunter zwei Spalten, «VR beenden» ganz unten, Texte ungekürzt', async () => {
+  const T = await import('./xr-greifen-logik.js');
+  const g = S.geschosseAufbereiten(GESCHOSSE, []);
+  const layout = S.sitzungsLayout(g);
+  const etagen = layout.filter((t) => t.id === 'alle' || t.id.startsWith('g:'));
+  assert.equal(etagen.length, 5);
+  assert.ok(etagen.every((t) => t.x === etagen[0].x && t.w === etagen[0].w && t.w > T.TABLET_PX.b * 0.9), 'volle Breite, untereinander');
+  assert.ok(etagen.every((t, i) => i === 0 || t.y > etagen[i - 1].y), 'eine Zeile je Etage');
+  const unten = ['decke', 'zuruecksetzen', 'ifc', 'raum'].map((id) => layout.find((t) => t.id === id));
+  assert.equal(unten[0].y, unten[1].y); assert.equal(unten[2].y, unten[3].y); assert.ok(unten[2].y > unten[0].y); assert.ok(unten[0].x < unten[1].x);
+  assert.ok(unten[0].y > etagen[etagen.length - 1].y, 'die Tasten stehen unter der Etagenliste');
+  assert.ok(layout.find((t) => t.id === 'ende').y > unten[2].y);
+  // 15 Zoll hochkant
+  assert.ok(T.TABLET_H > T.TABLET_B && T.TABLET_PX.h > T.TABLET_PX.b, 'Hochformat');
+  // Begehen-Seite: zwei Spalten, alle zwölf Tasten, keine Beschriftung gekürzt
+  const b = T.tabletLayout();
+  assert.equal(b.length, 13); assert.equal(T.TABLET_SPALTEN, 2);
+  assert.ok(b.filter((t) => t.id !== 'ende').every((t) => t.x < T.TABLET_PX.b / 2 ? t.w < T.TABLET_PX.b / 2 : t.x > T.TABLET_PX.b / 2 - 1), 'zwei Spalten');
+  assert.ok(b.every((t) => t.h >= 40 && t.y + t.h <= T.TABLET_PX.h && t.x >= 0 && t.x + t.w <= T.TABLET_PX.b), 'gross genug und im Bild');
+  for (const t of b) assert.equal(T.tasteBei((t.x + t.w / 2) / T.TABLET_PX.b, (t.y + t.h / 2) / T.TABLET_PX.h, b)?.id, t.id, t.id);
+  for (const t of T.TABLET_TASTEN) assert.ok(t.text.length > 0 && t.text.length <= 20, t.text);
+});
+
+// ------------------------------------------------------------------------------------------------ Ausschnitt («Raum zeigen (VR)», 3D-Ansicht in VR)
+const BOX = { aktiv: true, min: [0, 0, 0], max: [10000, 8000, 3000], winkel: 0 };
+
+test('Ausschnitt: Grösse, Mitte und Unterkante aus dem Quader (Koordinaten der 3D-Ansicht: z = −Nord), ungültig oder ausgeschaltet gibt null', () => {
+  const b = S.ausschnittBezug(BOX);
+  nah(b.groesse.b, 10); nah(b.groesse.t, 8); nah(b.groesse.h, 3);
+  nah(b.anker.x, 5); nah(b.anker.z, -4); nah(b.unten, 0);
+  const hoch = S.ausschnittBezug({ ...BOX, min: [1000, 2000, 2900], max: [3000, 6000, 5800] });
+  nah(hoch.anker.x, 2); nah(hoch.anker.z, -4); nah(hoch.unten, 2.9); nah(hoch.groesse.h, 2.9);
+  assert.equal(S.ausschnittBezug({ ...BOX, aktiv: false }), null);
+  assert.equal(S.ausschnittBezug(null), null);
+  assert.equal(S.ausschnittBezug({ min: [0, 0, 0], max: [0.5, 1, 1] }), null, 'kleiner als 1 mm');
+  assert.equal(S.ausschnittBezug({ aktiv: true, min: [0, 0], max: [1, 1] }), null);
+  // gedrehter Quader: die Achsenbox ist grösser als die Kantenlängen
+  const g = S.ausschnittBezug({ ...BOX, winkel: 30 });
+  assert.ok(g.groesse.b > 10 && g.groesse.t > 8);
+});
+
+test('Ausschnitt: der Massstab passt den Ausschnitt auf die Platte – so fein wie möglich (1:20), gröber nur wenn nötig, höchstens 1:200', () => {
+  assert.equal(S.ausschnittLage({ b: 10, t: 8, h: 3 }).massstab, 20, 'Raum plus 1.5 m: 1:20 genügt');
+  assert.equal(S.ausschnittLage({ b: 40, t: 30, h: 9 }).massstab, 38, 'gross: nächster ganzer Massstab, der noch auf die Platte (1.4 × 0.8 m) passt');
+  assert.ok(40 / 38 <= 1.4 + 1e-9 && 30 / 38 <= 0.8 + 1e-9);
+  assert.equal(S.ausschnittLage({ b: 400, t: 300, h: 9 }).massstab, 200);
+  assert.equal(S.ausschnittLage({ b: 400, t: 300, h: 9 }).passt, false);
+  assert.equal(S.ausschnittLage({ b: 1, t: 1, h: 1 }).massstab, 20, 'ein kleiner Ausschnitt wird nicht über 1:20 hinaus vergrössert');
+  assert.equal(S.einpassen({ b: 10, t: 8, h: 3 }).massstab, 50, 'zum Vergleich: das ganze Modell beginnt bei 1:50');
+  const z = S.ausschnittLage({ b: 10, t: 8, h: 3 });
+  assert.ok(z.x === 0 && z.z === 0 && z.drehung === 0, 'Mitte der Platte, nicht gedreht');
+});
+
+test('Ausschnitt: sechs Ebenen, die genau den Quader sichtbar lassen', () => {
+  const e = S.ausschnittEbenen(BOX);
+  assert.equal(e.length, 6);
+  const abstand = (p) => e.map((x) => x.normale[0] * p.x + x.normale[1] * p.y + x.normale[2] * p.z + x.konstante);
+  assert.ok(abstand({ x: 5, y: 1.5, z: -4 }).every((d) => d > 0), 'Mitte: innen');
+  assert.ok(abstand({ x: 0, y: 0, z: 0 }).every((d) => d > -1e-9), 'Ecke liegt auf den Ebenen');
+  for (const aus of [{ x: -0.01, y: 1, z: -4 }, { x: 10.01, y: 1, z: -4 }, { x: 5, y: -0.01, z: -4 }, { x: 5, y: 3.01, z: -4 }, { x: 5, y: 1, z: 0.01 }, { x: 5, y: 1, z: -8.01 }])
+    assert.ok(abstand(aus).some((d) => d < 0), `ausserhalb: ${JSON.stringify(aus)}`);
+  // gedrehter Quader (30°): die Ebenen drehen mit
+  const r = S.ausschnittEbenen({ ...BOX, winkel: 30 });
+  assert.equal(r.length, 6);
+  assert.deepEqual(S.ausschnittEbenen(null), []);
+});
+
+test('Ausschnitt: Kopfzeilen und Tasten – «Alle Etagen» ist aus, solange der Ausschnitt gilt', () => {
+  const lage = { massstab: 20, drehung: 0, x: 0, z: 0 };
+  const z = S.kopfZeilen(lage, { geschoss: null, deckeZeigen: false, ausschnitt: 'Raum E.01 + 1.5 m' }, []);
+  assert.equal(z[0], 'Sitzungsraum · Massstab 1:20'); assert.equal(z[1], 'Ausschnitt: Raum E.01 + 1.5 m'); assert.ok(z[2].includes('Alle Etagen')); assert.equal(z.length, 3);
+  assert.deepEqual(S.sitzungsTasten({ geschoss: null, deckeZeigen: false, ausschnitt: 'x' }, false), { alle: false, decke: false, ifc: false });
+  assert.equal(S.sitzungsTasten({ geschoss: null, deckeZeigen: false, ausschnitt: null }, false).alle, true);
+});

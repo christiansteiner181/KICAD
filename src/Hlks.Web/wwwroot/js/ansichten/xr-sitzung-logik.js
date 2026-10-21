@@ -18,6 +18,7 @@
 //   über einem Geschoss = Kote des Geschosses darüber, sonst Kote + Geschosshöhe (Regel von decke_erzeugen, Kern). Gibt es keine Decke im Modell, gilt deren Oberkante.
 
 import { TABLET_PX, TABLET_KOPF_H, TABLET_ENDE } from './xr-greifen-logik.js';
+import { schnittbereichLesen, weltGrenzen, ebenen as quaderEbenen } from './schnittbereich-logik.js';
 
 export const TISCH = Object.freeze({ hoehe: 0.75, breite: 1.6, tiefe: 1.0, vorderkante: 0.4, rand: 0.1, halt: 0.05 });
 /** Mitte der Tischplatte (Oberkante) im Raum. */
@@ -200,6 +201,25 @@ export function gestenSchritt(g, haende) {
   return { lage, modus, griff, besitzt, vorher };
 }
 
+// ------------------------------------------------------------------------------------------------------ Ausschnitt («Raum zeigen (VR)», 3D-Ansicht in VR)
+/**
+ * Bezug des Sitzungsraums für einen Ausschnitt: der Quader { aktiv, min [u, v, z], max, winkel } (mm, wie die Ansichtseigenschaft schnittbereich und der Quader von «Raum im 3D zeigen»)
+ * wird auf den Tisch gestellt – seine Achsenbox (Welt, m) ist die Grösse, ihr Mittelpunkt (x, z) der Anker, ihre Unterkante der tiefste Punkt. Rückgabe { groesse {b, t, h}, anker {x, z}, unten }
+ * oder null, wenn der Quader fehlt, ungültig oder ausgeschaltet ist.
+ */
+export function ausschnittBezug(roh) {
+  const sb = schnittbereichLesen(roh);
+  if (!sb || !sb.aktiv) return null;
+  const g = weltGrenzen(sb);
+  return { groesse: { b: g.max.x - g.min.x, t: g.max.z - g.min.z, h: g.max.y - g.min.y }, anker: { x: (g.min.x + g.max.x) / 2, z: (g.min.z + g.max.z) / 2 }, unten: g.min.y };
+}
+
+/** Startlage für einen Ausschnitt: so gross wie möglich (Start 1:20, Grenze des Zoomens), gröber nur, wenn der Ausschnitt sonst nicht auf die Platte passt. */
+export const ausschnittLage = (groesse) => einpassen(groesse, MASSSTAB.min);
+
+/** Die sechs Clipping-Ebenen des Quaders in den Koordinaten der 3D-Ansicht (m): [{ normale [x, y, z], konstante }], Abstand = normale · p + konstante (≥ 0 = sichtbar). */
+export const ausschnittEbenen = (roh) => { const sb = schnittbereichLesen(roh); return sb ? quaderEbenen(sb).map(({ normale, konstante }) => ({ normale, konstante })) : []; };
+
 // ------------------------------------------------------------------------------------------------------ Geschosse und Schnitthöhe
 /**
  * Geschosse für den Sitzungsraum. geschosse: [{ kennzeichen, name, kote, hoehe, teilVon? }] (mm), decken: [{ oberkante, dicke }] (mm, nur Klasse Decke).
@@ -236,7 +256,8 @@ export function schnittEbeneY({ schnittMm, deckeZeigen, modellUnten, massstab, t
 export function kopfZeilen(lage, wahl, geschosse) {
   const z = [`Sitzungsraum · Massstab ${massstabText(lage.massstab)}`];
   const g = wahl?.geschoss ? geschosse.find((x) => x.kennzeichen === wahl.geschoss) : null;
-  if (!g) z.push('Alle Etagen');
+  if (wahl?.ausschnitt) z.push(`Ausschnitt: ${wahl.ausschnitt}`, '«Alle Etagen» zeigt wieder das ganze Modell');
+  else if (!g) z.push('Alle Etagen');
   else {
     const hoehe = (schnittHoeheMm(g, wahl.deckeZeigen) / 1000).toFixed(2);
     z.push(`${g.kennzeichen} · ${wahl.deckeZeigen ? 'Schnitt über der Decke' : 'Schnitt unter der Decke'} (${hoehe} m)`);
@@ -274,7 +295,7 @@ export function sitzungsLayout(geschosse) {
 
 /** Zustand der Umschalter für die Tasten: gewählte Etage, «Decke zeigen», IFC. */
 export function sitzungsTasten(wahl, ifcAn) {
-  const z = { alle: !wahl.geschoss, decke: !!wahl.deckeZeigen, ifc: !!ifcAn };
+  const z = { alle: !wahl.geschoss && !wahl.ausschnitt, decke: !!wahl.deckeZeigen, ifc: !!ifcAn };
   if (wahl.geschoss) z[`g:${wahl.geschoss}`] = true;
   return z;
 }
