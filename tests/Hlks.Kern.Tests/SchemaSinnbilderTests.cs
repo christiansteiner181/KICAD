@@ -142,7 +142,7 @@ public class SchemaSinnbilderTests(ITestOutputHelper aus)
 
     [Theory]
     [InlineData("Wassererwaermer", "geraet", "WE")]
-    [InlineData("Heizkoerper", "apparat", "HK")]
+    // Heizkörper: seit Modul 5 A-S 2 Verbraucherfeld Heizung aus dem Katalog der HKAP-Bibliothek (SchemaSymbolKatalogTests, SchemaansichtGrafikTests)
     public void OhneSinnbild_BleibtDasKaestchenMitKuerzel(string klasse, string schluessel, string kuerzel)
     {
         var p = Leer();

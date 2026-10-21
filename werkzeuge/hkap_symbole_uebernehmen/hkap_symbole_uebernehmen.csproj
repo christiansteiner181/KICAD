@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Modul 5 A-S 2 (zweiter Anlauf): erzeugt den KICAD-Katalog kataloge/schemasymbole.json aus Christians Symbolbibliothek.
+       Die HKAP-Datei SchemaSymbole.cs (eingebaute Symbole, Datenformat, SetzeEigene/Alle) wird nur einkompiliert, nie verändert;
+       die Datei data/schema_symbole.json wird nur gelesen (Vorgabe: die Testkopie, NIE die Live-Daten von HKAP).
+       Aufruf: dotnet run mit dem Projekt werkzeuge/hkap_symbole_uebernehmen und Argumente nach dem Trenner: daten, ausgabe, zuordnung
+       Anderer Quellort des Codes: Eigenschaft HkapQuelle (Pfad der SchemaSymbole.cs). -->
+
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <NoWarn>$(NoWarn);CS8618;CS8625;CS8600;CS8602;CS8604;CS0618</NoWarn>
+    <HkapQuelle Condition="'$(HkapQuelle)' == ''">$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))\OneDrive\Claude_Code\AufgabenProtokolle.Web\Services\SchemaSymbole.cs</HkapQuelle>
+    <DefineConstants>$(DefineConstants);HKAP_QUELLE_PFAD</DefineConstants>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="$(HkapQuelle)" Link="Quelle\SchemaSymbole.cs" />
+  </ItemGroup>
+  <ItemGroup>
+    <AssemblyAttribute Include="System.Reflection.AssemblyMetadataAttribute">
+      <_Parameter1>HkapQuelle</_Parameter1>
+      <_Parameter2>$(HkapQuelle)</_Parameter2>
+    </AssemblyAttribute>
+  </ItemGroup>
+</Project>

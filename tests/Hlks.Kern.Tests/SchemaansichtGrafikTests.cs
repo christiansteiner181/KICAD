@@ -211,8 +211,11 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
         var p = FamilieTestHilfe.MitHeizkoerper();
         Ok(p.Ausfuehren("element_anlegen", Par(("klasse", "Ansicht"), ("kennzeichen", "AN-S"), ("eigenschaften", new JsonObject { ["art"] = "schema" }))));
         var s = Plan(p, "AN-S");
-        Assert.Equal("apparat", SchemaSymbole.Schluessel(p, Knoten(s, "HK-1").Element));
-        Assert.Contains(TeileVon(Grafik.Plan(p, "AN-S"), p, "HK-1")[0].Primitive, x => x.Art == "text" && x.Text == "HK");
+        // Modul 5 A-S 2: der Heizkörper bekommt jetzt das Verbraucherfeld Heizung aus Christians HKAP-Bibliothek (Katalog schemasymbole.json, zuordnung)
+        Assert.Equal("katalogsymbol", SchemaSymbole.Schluessel(p, Knoten(s, "HK-1").Element));
+        var prim = TeileVon(Grafik.Plan(p, "AN-S"), p, "HK-1")[0].Primitive;
+        Assert.Contains(prim, x => x.Art == "polygon" && x.Stil.Fuellung == "#CCFFE0");
+        Assert.DoesNotContain(prim, x => x.Art == "text" && x.Text == "HK");   // Kürzel des Kästchens entfällt
     }
 
     [Fact]

@@ -1,0 +1,11 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <!-- Modul 5 A-S 2: schreibt die Zeichenprimitive aller sichtbaren Katalogsymbole (kataloge/schemasymbole.json) und der Zuordnung als daten.json
+       (Vorgabe: %TEMP%\HLKS_CAD\symbole_hk\daten.json); werkzeuge/schemasymbole_uebersicht.mjs macht daraus mit der Plangrafik der Weboberfläche
+       (plangrafik.js) die Prüfseite uebersicht.html. Nicht im Repository abgelegt: die Prüfbilder. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\Hlks.Kern\Hlks.Kern.csproj" />
+  </ItemGroup>
+</Project>
