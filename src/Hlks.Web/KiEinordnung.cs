@@ -87,6 +87,8 @@ public static class KiEinordnung
     [
         new("quest_verbinden", "Startet ein Programm auf dem PC (adb.exe der Android Platform Tools) und öffnet damit einen Weg von der VR-Brille auf diesen PC (Modul XR, " +
             "QuestEndpunkte.cs) – nur der Mensch am Rechner."),
+        new("quest_automatik", "Startet adb.exe, liest die Nachbartabelle des PCs und pingt das eigene Netz an, um die gemerkte VR-Brille über ihre MAC-Adresse zu finden und zu " +
+            "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
     ];
 
     /// <summary>Einordnung eines Werkzeugs: lesend | aendernd | verboten; null = nicht eingeordnet.</summary>

@@ -52,6 +52,8 @@ public class QuestTests : IDisposable
         public Adb Geraete(params string[] zeilen) { Schreibe("geraete.txt", zeilen); return this; }
         public Adb Reverse(params string[] zeilen) { Schreibe("reverse.txt", zeilen); return this; }
         public Adb Ip(string ausgabe) { File.WriteAllText(Path.Combine(Ordner, "ip.txt"), ausgabe); return this; }
+        public Adb Mac(string mac) { File.WriteAllText(Path.Combine(Ordner, "mac.txt"), mac); return this; }
+        public Adb Verbindbar(params string[] ips) { Schreibe("verbindbar.txt", ips); return this; }
         public Adb Verhalten(params string[] schalter) { Schreibe("verhalten.txt", schalter); return this; }
         public string[] Aufrufe()
         {
@@ -78,6 +80,7 @@ public class QuestTests : IDisposable
         new(@"^-s [A-Za-z0-9._:\-]{1,64} reverse --list$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} reverse --remove tcp:\d{1,5}$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} shell ip -f inet addr show wlan0$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell ip link show wlan0$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} tcpip 5555$"),
         new(@"^connect (\d{1,3}\.){3}\d{1,3}:\d{1,5}$"),
     ];
@@ -89,14 +92,14 @@ public class QuestTests : IDisposable
         readonly WebApplicationFactory<Program> basis = new();
         readonly WebApplicationFactory<Program> fabrik;
         public HttpClient Http { get; }
-        public Server(string wurzel, QuestEinstellungen quest, int port = 5130, string geraet = "testpc")
+        public Server(string wurzel, QuestEinstellungen quest, int port = 5130, string geraet = "testpc", IQuestNetz? netz = null)
         {
             var e = new Einstellungen("Test", geraet, Katalog.StandardOrdner(), null)
             {
                 BenutzerOrdner = Path.Combine(wurzel, "benutzer"), ZuletztOrdner = Path.Combine(wurzel, "zuletzt"), ZuletztMerken = false,
                 ProjektAblage = Path.Combine(wurzel, "ablage"), Familienbibliothek = Path.Combine(wurzel, "bibliothek"),
             };
-            fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(quest); }));
+            fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(quest); if (netz is not null) s.AddSingleton(netz); }));
             Http = fabrik.CreateClient(new WebApplicationFactoryClientOptions { BaseAddress = new Uri($"http://localhost:{port}") });
         }
         public void Dispose() { Http.Dispose(); fabrik.Dispose(); basis.Dispose(); }
@@ -121,9 +124,9 @@ public class QuestTests : IDisposable
         Zeitlimit = limit ?? TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
     };
 
-    async Task<Server> Start(Adb? adb, QuestEinstellungen? quest = null, int port = 5130)
+    async Task<Server> Start(Adb? adb, QuestEinstellungen? quest = null, int port = 5130, IQuestNetz? netz = null)
     {
-        var s = new Server(wurzel, quest ?? Ohne(), port);
+        var s = new Server(wurzel, quest ?? Ohne(), port, netz: netz);
         aufraeumen.Add(s);
         if (adb is not null) Assert.Equal(HttpStatusCode.OK, (await s.AdbSetzen(adb.Pfad)).Code);
         return s;
@@ -558,7 +561,7 @@ public class QuestTests : IDisposable
             return (await s.Http.SendAsync(r)).StatusCode;
         }
 
-        foreach (var pfad in new[] { "/api/quest/verbinden", "/api/quest/wlan", "/api/quest/ip", "/api/quest/trennen" })
+        foreach (var pfad in new[] { "/api/quest/verbinden", "/api/quest/wlan", "/api/quest/ip", "/api/quest/trennen", "/api/quest/automatik" })
         {
             Assert.Equal(HttpStatusCode.Forbidden, await Senden(HttpMethod.Post, pfad, r => r.Headers.TryAddWithoutValidation("Origin", "http://boese.example")));
             Assert.Equal(HttpStatusCode.Forbidden, await Senden(HttpMethod.Post, pfad, r => r.Headers.TryAddWithoutValidation("Origin", "http://localhost:6666")));   // anderer Port
@@ -583,6 +586,427 @@ public class QuestTests : IDisposable
         Assert.Equal(["UsbFfs tcp:5641 tcp:5641"], adb.Weiterleitungen());
     }
 
+    // ---------------------------------------------------------------- Brille automatisch verbinden (MAC statt IP)
+
+    const string BrillenMac = "aa:bb:cc:dd:ee:01";
+    const string QuestIp = "192.168.1.50";
+    const string WlanText = "    inet 192.168.1.50/24 brd 192.168.1.255 scope global wlan0";
+
+    /// <summary>Netz-Attrappe: Nachbartabelle, Schnittstellen, Pings (mit Zählung, auch der gleichzeitigen). Wer auf einen Ping antwortet, landet in der Tabelle.</summary>
+    sealed class NetzAttrappe : IQuestNetz
+    {
+        public List<NachbarEintrag> Tabelle { get; } = [];
+        public List<NetzSchnittstelle> Netze { get; } = [new("Ethernet", "Intel(R) Ethernet Connection", "Ethernet", "192.168.1.20", 24)];
+        public System.Collections.Concurrent.ConcurrentBag<string> Pings { get; } = [];
+        public string? AntwortIp { get; set; }
+        public string? AntwortMac { get; set; }
+        public int Lesungen;
+        int gleichzeitig, hoechstens;
+        public int Hoechstens => hoechstens;
+        public IReadOnlyList<NachbarEintrag> Nachbarn() { Interlocked.Increment(ref Lesungen); lock (Tabelle) return Tabelle.ToArray(); }
+        public IReadOnlyList<NetzSchnittstelle> Schnittstellen() => Netze.ToArray();
+        public async Task<bool> Anpingen(string ip, TimeSpan zeitgrenze, CancellationToken abbruch)
+        {
+            Pings.Add(ip);
+            var n = Interlocked.Increment(ref gleichzeitig);
+            int alt;
+            while ((alt = Volatile.Read(ref hoechstens)) < n && Interlocked.CompareExchange(ref hoechstens, n, alt) != alt) { }
+            await Task.Delay(3, abbruch);
+            Interlocked.Decrement(ref gleichzeitig);
+            if (ip != AntwortIp) return false;
+            lock (Tabelle) Tabelle.Add(new NachbarEintrag(ip, AntwortMac!));
+            return true;
+        }
+    }
+
+    sealed class Uhr { public DateTimeOffset Jetzt { get; set; } = new(2026, 10, 21, 9, 0, 0, TimeSpan.Zero); }
+
+    static QuestEinstellungen MitUhr(Uhr u) => Ohne() with { Uhr = () => u.Jetzt };
+
+    static object Brille(string mac = BrillenMac, string serie = Seriennummer, string? ip = "192.168.1.40") => new { seriennummer = serie, mac, letzteIp = ip, zuletzt = "2026-10-20T08:00:00Z" };
+
+    /// <summary>Schaltet «Brille automatisch verbinden» ein und merkt eine Brille (über die Benutzereinstellungen, wie die Oberfläche).</summary>
+    static async Task Vorbereiten(Server s, bool automatisch = true, bool brille = true)
+    {
+        if (automatisch) Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.automatisch", wert = true })).Code);
+        if (brille) Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.brillen", wert = new[] { Brille() } })).Code);
+    }
+
+    static async Task<JsonNode?> Einstellung(Server s, string schluessel) => (await s.Get("/api/benutzer/einstellungen")).Json!["werte"]![schluessel];
+
+    static Task<(HttpStatusCode Code, JsonNode? Json)> Automatik(Server s, string anlass) => s.Post("/api/quest/automatik", new { anlass });
+
+    [Fact]
+    public async Task MAC_wird_nach_dem_Verbinden_gemerkt_mit_Seriennummer_und_IP()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(BrillenMac);
+        var s = await Start(adb);
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/verbinden")).Code);
+        Assert.Contains($"-s {Seriennummer} shell ip link show wlan0", adb.Aufrufe());
+        var liste = (await Einstellung(s, "quest.brillen"))!.AsArray();
+        var b = Assert.Single(liste)!;
+        Assert.Equal(Seriennummer, b["seriennummer"]!.GetValue<string>());
+        Assert.Equal(BrillenMac, b["mac"]!.GetValue<string>());
+        Assert.Equal(QuestIp, b["letzteIp"]!.GetValue<string>());
+        Assert.NotNull(b["zuletzt"]);
+        // der Zustand nennt sie ebenfalls; die Automatik ist noch aus (Vorgabe)
+        var (_, z) = await s.Get();
+        Assert.False(z!["automatisch"]!.GetValue<bool>());
+        Assert.Equal(BrillenMac, z["brillen"]![0]!["mac"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task MAC_nach_Auf_WLAN_umstellen_und_ueber_WLAN_Adresse_bleibt_die_USB_Seriennummer()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(BrillenMac);
+        var s = await Start(adb);
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/wlan")).Code);
+        Assert.Equal(Seriennummer, (await Einstellung(s, "quest.brillen"))![0]!["seriennummer"]!.GetValue<string>());
+        // später über die WLAN-Adresse verbunden: gleiche MAC, derselbe Eintrag, die USB-Seriennummer bleibt
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/ip", new { ip = QuestIp })).Code);
+        var liste = (await Einstellung(s, "quest.brillen"))!.AsArray();
+        Assert.Single(liste);
+        Assert.Equal(Seriennummer, liste[0]!["seriennummer"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Theory]
+    [InlineData("00:00:00:00:00:00")]
+    [InlineData("02:00:00:00:00:00")]
+    [InlineData("ff:ff:ff:ff:ff:ff")]
+    [InlineData("01:00:5e:00:00:01")]
+    [InlineData("aa:bb:cc:dd:ee")]
+    [InlineData("zz:bb:cc:dd:ee:01")]
+    [InlineData("aa:bb:cc:dd:ee:01:02")]
+    [InlineData("aabbccddee01")]
+    public async Task Ungueltige_MAC_der_Quest_wird_verworfen_und_nicht_gemerkt(string mac)
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(mac);
+        var s = await Start(adb);
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/verbinden")).Code);   // das Verbinden selbst gelingt
+        Assert.Null(await Einstellung(s, "quest.brillen"));
+    }
+
+    [Fact]
+    public async Task Ungueltige_MAC_in_den_Einstellungen_wird_abgelehnt_und_in_der_Datei_ignoriert()
+    {
+        var s = await Start(null);
+        foreach (var schlecht in new[] { "00:00:00:00:00:00", "AA:BB:CC:DD:EE:01", "aa:bb:cc:dd:ee:0g", "aa:bb:cc:dd:ee:01; calc" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.brillen", wert = new[] { Brille(schlecht) } })).Code);
+        Assert.Equal(HttpStatusCode.BadRequest, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.brillen", wert = new[] { Brille(serie: "-s evil") } })).Code);
+        Assert.Equal(HttpStatusCode.BadRequest, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.brillen", wert = "text" })).Code);
+        Assert.Equal(HttpStatusCode.BadRequest, (await s.Post("/api/benutzer/einstellungen", new { schluessel = "quest.automatisch", wert = "ja" })).Code);
+        // von Hand in die Datei geschrieben: der ungültige Eintrag fällt beim Lesen weg
+        var ordner = Path.Combine(wurzel, "handbrille");
+        var ablage = new RechnerAblage(ordner, "pc", true, "einstellungen.json", "Umleitung");
+        var d = new EinstellungsDatei { Rechner = "pc" };
+        d.Werte["quest.brillen"] = new EinstellungsWert
+        {
+            Wert = JsonNode.Parse("[{\"seriennummer\":\"A1\",\"mac\":\"00:00:00:00:00:00\"},{\"seriennummer\":\"A2\",\"mac\":\"aa:bb:cc:dd:ee:02\",\"letzteIp\":\"999.1.1.1\"},{\"seriennummer\":\"A2\",\"mac\":\"aa:bb:cc:dd:ee:02\"}]"),
+            Zeit = DateTimeOffset.UtcNow,
+        };
+        Directory.CreateDirectory(ordner);
+        File.WriteAllText(ablage.EigenerPfad, Json.Text(d));
+        var brillen = new QuestDienst(new BenutzerEinstellungen(ablage), Ohne()).Brillen();
+        var b = Assert.Single(brillen);
+        Assert.Equal(("A2", "aa:bb:cc:dd:ee:02", null), (b.Seriennummer, b.Mac, b.LetzteIp));   // die ungültige IP fällt weg, der Doppelte auch
+    }
+
+    [Fact]
+    public void MacPruefen_und_MacLesen_rein()
+    {
+        Assert.Equal(BrillenMac, QuestDienst.MacPruefen(BrillenMac));
+        Assert.Null(QuestDienst.MacPruefen(null));
+        Assert.Null(QuestDienst.MacPruefen(" aa:bb:cc:dd:ee:01"));
+        Assert.Null(QuestDienst.MacPruefen("AA:BB:CC:DD:EE:01"));   // nur die Schreibweise der Nachbartabelle und von adb nach ToLower
+        Assert.Equal(BrillenMac, QuestDienst.MacLesen("21: wlan0: <UP>\n    link/ether AA:BB:CC:DD:EE:01 brd ff:ff:ff:ff:ff:ff"));
+        Assert.Null(QuestDienst.MacLesen("21: wlan0: <UP>\n    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff"));
+        Assert.Null(QuestDienst.MacLesen("link/ether aa:bb:cc:dd:ee:01:02:03"));
+        Assert.Null(QuestDienst.MacLesen("Device \"wlan0\" does not exist."));
+        Assert.Null(QuestDienst.MacLesen(null));
+    }
+
+    [Fact]
+    public async Task Automatik_findet_die_IP_ueber_die_Nachbartabelle_und_verbindet_ohne_Ping()
+    {
+        var adb = NeueAttrappe().Geraete().Verbindbar(QuestIp);
+        var netz = new NetzAttrappe();
+        netz.Tabelle.Add(new NachbarEintrag("192.168.1.1", "11:22:33:44:55:66"));
+        netz.Tabelle.Add(new NachbarEintrag(QuestIp, BrillenMac));
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s);
+        var (code, j) = await Automatik(s, "takt");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.Equal(QuestIp, j["ip"]!.GetValue<string>());
+        Assert.Equal("nein", j["ping"]!.GetValue<string>());
+        Assert.Empty(netz.Pings);
+        var a = adb.Aufrufe();
+        var iConnect = Array.IndexOf(a, $"connect {QuestIp}:5555");
+        Assert.True(iConnect >= 0 && Array.IndexOf(a, $"-s {QuestIp}:5555 reverse tcp:5130 tcp:5130") > iConnect, string.Join(" | ", a));
+        // gemerkt: neue IP; die Seriennummer der Brille bleibt
+        var b = (await Einstellung(s, "quest.brillen"))![0]!;
+        Assert.Equal(QuestIp, b["letzteIp"]!.GetValue<string>());
+        Assert.Equal(Seriennummer, b["seriennummer"]!.GetValue<string>());
+        // noch einmal: es besteht schon eine Weiterleitung, nichts wird neu gesetzt (idempotent)
+        var vorher = adb.Aufrufe().Count(x => x.StartsWith("connect") || x.Contains("reverse tcp:"));
+        var (_, j2) = await Automatik(s, "takt");
+        Assert.Equal("bereit", j2!["status"]!.GetValue<string>());
+        Assert.Equal(vorher, adb.Aufrufe().Count(x => x.StartsWith("connect") || x.Contains("reverse tcp:")));
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Automatik_ohne_Eintrag_in_der_Tabelle_pingt_nur_auf_Anlass_im_eigenen_Netz_und_findet_die_Brille()
+    {
+        var adb = NeueAttrappe().Geraete().Verbindbar(QuestIp);
+        var netz = new NetzAttrappe { AntwortIp = QuestIp, AntwortMac = BrillenMac };
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s);
+        // im Takt: nur die Tabelle, kein Ping
+        var (_, t) = await Automatik(s, "takt");
+        Assert.Equal("nicht_gefunden", t!["status"]!.GetValue<string>());
+        Assert.Empty(netz.Pings);
+        Assert.Contains("Kabel", t["hinweis"]!.GetValue<string>());   // nach einem Neustart der Brille
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.StartsWith("connect"));
+        // auf Anlass: Ping-Durchlauf, danach die Tabelle nochmals gelesen
+        var (_, j) = await Automatik(s, "start");
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.Equal("gelaufen", j["ping"]!.GetValue<string>());
+        Assert.Equal(QuestIp, j["ip"]!.GetValue<string>());
+        Assert.Equal(253, netz.Pings.Count);   // 192.168.1.1 – .254 ohne die eigene .20
+        Assert.All(netz.Pings, ip => Assert.StartsWith("192.168.1.", ip));
+        Assert.DoesNotContain("192.168.1.20", netz.Pings);
+        Assert.True(netz.Hoechstens is > 1 and <= 32, $"gleichzeitig höchstens {netz.Hoechstens}");
+        Assert.Contains($"-s {QuestIp}:5555 reverse tcp:5130 tcp:5130", adb.Aufrufe());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Ping_Durchlauf_hoechstens_einmal_je_2_Minuten()
+    {
+        var adb = NeueAttrappe().Geraete();
+        var netz = new NetzAttrappe();   // niemand antwortet
+        var uhr = new Uhr();
+        var s = await Start(adb, MitUhr(uhr), netz: netz);
+        await Vorbereiten(s);
+        var (_, a) = await Automatik(s, "start");
+        Assert.Equal(("nicht_gefunden", "gelaufen", 253), (a!["status"]!.GetValue<string>(), a["ping"]!.GetValue<string>(), netz.Pings.Count));
+        uhr.Jetzt += TimeSpan.FromSeconds(60);
+        var (_, b) = await Automatik(s, "klick");
+        Assert.Equal(("gesperrt", 253), (b!["ping"]!.GetValue<string>(), netz.Pings.Count));
+        var (_, c) = await Automatik(s, "ansicht3d");
+        Assert.Equal(("gesperrt", 253), (c!["ping"]!.GetValue<string>(), netz.Pings.Count));
+        uhr.Jetzt += TimeSpan.FromSeconds(61);   // jetzt sind es 121 s
+        var (_, d) = await Automatik(s, "ansicht3d");
+        Assert.Equal(("gelaufen", 506), (d!["ping"]!.GetValue<string>(), netz.Pings.Count));
+        // der Takt pingt nie, auch nach Ablauf der Frist
+        uhr.Jetzt += TimeSpan.FromMinutes(10);
+        await Automatik(s, "takt");
+        Assert.Equal(506, netz.Pings.Count);
+    }
+
+    [Fact]
+    public async Task Veralteter_Tabelleneintrag_fuehrt_zu_einem_Ping_Durchlauf_und_zur_neuen_Adresse()
+    {
+        var adb = NeueAttrappe().Geraete().Verbindbar(QuestIp);
+        var netz = new NetzAttrappe { AntwortIp = QuestIp, AntwortMac = BrillenMac };
+        netz.Tabelle.Add(new NachbarEintrag("192.168.1.99", BrillenMac));   // alte Adresse
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s);
+        var (_, j) = await Automatik(s, "klick");
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.Equal(QuestIp, j["ip"]!.GetValue<string>());
+        Assert.Contains("connect 192.168.1.99:5555", adb.Aufrufe());
+        Assert.Contains($"connect {QuestIp}:5555", adb.Aufrufe());
+    }
+
+    [Fact]
+    public async Task USB_Quest_ohne_WLAN_Weg_wird_automatisch_auf_WLAN_umgestellt()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(BrillenMac);
+        var netz = new NetzAttrappe();
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s, brille: false);
+        var (_, j) = await Automatik(s, "takt");
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.Contains("Kabel kann ab", j["meldung"]!.GetValue<string>());
+        var a = adb.Aufrufe();
+        var iTcpip = Array.IndexOf(a, $"-s {Seriennummer} tcpip 5555");
+        var iConnect = Array.IndexOf(a, $"connect {QuestIp}:5555");
+        Assert.True(iTcpip >= 0 && iConnect > iTcpip && Array.IndexOf(a, $"-s {QuestIp}:5555 reverse tcp:5130 tcp:5130") > iConnect, string.Join(" | ", a));
+        Assert.Equal(BrillenMac, (await Einstellung(s, "quest.brillen"))![0]!["mac"]!.GetValue<string>());
+        Assert.Empty(netz.Pings);
+        // zweiter Schritt: nichts mehr zu tun (die Weiterleitung steht), kein zweites tcpip
+        var (_, j2) = await Automatik(s, "takt");
+        Assert.Equal("bereit", j2!["status"]!.GetValue<string>());
+        Assert.Single(adb.Aufrufe(), z => z.Contains("tcpip"));
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task USB_Quest_ohne_WLAN_Adresse_wird_wenigstens_ueber_das_Kabel_verbunden()
+    {
+        var adb = NeueAttrappe().Geraete(Usb);   // kein wlan0
+        var s = await Start(adb);
+        await Vorbereiten(s, brille: false);
+        var (_, j) = await Automatik(s, "takt");
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.Contains("Kabel", j["meldung"]!.GetValue<string>());
+        Assert.Contains($"-s {Seriennummer} reverse tcp:5130 tcp:5130", adb.Aufrufe());
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("tcpip") || z.StartsWith("connect"));
+    }
+
+    [Fact]
+    public async Task Quest_mit_Weiterleitung_ist_bereit_ohne_etwas_zu_tun()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Reverse("UsbFfs tcp:5130 tcp:5130");
+        var netz = new NetzAttrappe();
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s, brille: false);
+        var (_, j) = await Automatik(s, "start");
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("tcpip") || z.StartsWith("connect") || z.Contains("reverse tcp:"));
+        Assert.Equal(0, netz.Lesungen);
+        Assert.Empty(netz.Pings);
+    }
+
+    [Fact]
+    public async Task Ausgeschaltete_Einstellung_laesst_Takt_Start_und_3D_Ansicht_nichts_tun()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(BrillenMac);
+        var netz = new NetzAttrappe { AntwortIp = QuestIp, AntwortMac = BrillenMac };
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s, automatisch: false);   // eine Brille ist gemerkt, die Automatik aber aus
+        foreach (var anlass in new[] { "takt", "start", "ansicht3d" })
+        {
+            var (code, j) = await Automatik(s, anlass);
+            Assert.Equal(HttpStatusCode.OK, code);
+            Assert.Equal("aus", j!["status"]!.GetValue<string>());
+            Assert.False(j["automatisch"]!.GetValue<bool>());
+        }
+        Assert.Empty(adb.Aufrufe());
+        Assert.Empty(netz.Pings);
+        Assert.Equal(0, netz.Lesungen);
+        // ein ausdrücklicher Klick des Menschen darf trotzdem einen Schritt machen
+        var (_, k) = await Automatik(s, "klick");
+        Assert.Equal("bereit", k!["status"]!.GetValue<string>());
+        Assert.Contains("devices", adb.Aufrufe());
+    }
+
+    [Fact]
+    public async Task Unbekannter_Anlass_ist_ein_Fehler_und_startet_nichts()
+    {
+        var adb = NeueAttrappe().Geraete(Usb);
+        var s = await Start(adb);
+        await Vorbereiten(s);
+        foreach (var schlecht in new[] { "immer", "klick; calc", "-s evil" })
+            Assert.Equal(HttpStatusCode.BadRequest, (await Automatik(s, schlecht)).Code);
+        Assert.Empty(adb.Aufrufe());
+        // ohne Anlass gilt der Takt
+        var (code, j) = await s.Post("/api/quest/automatik");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal("bereit", j!["status"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Nicht_freigegebene_Quest_und_fehlendes_adb_werden_gemeldet()
+    {
+        var s0 = await Start(null);
+        await Vorbereiten(s0, brille: false);
+        Assert.Equal("kein_adb", (await Automatik(s0, "takt")).Json!["status"]!.GetValue<string>());
+        var adb = NeueAttrappe("frei").Geraete(Seriennummer + "\tunauthorized");
+        var s = await Start(adb);
+        await Vorbereiten(s, brille: false);
+        var (_, j) = await Automatik(s, "takt");
+        Assert.Equal("nicht_freigegeben", j!["status"]!.GetValue<string>());
+        Assert.Contains("USB-Debugging erlauben", j["hinweis"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Ohne_gemerkte_Brille_wird_nicht_gesucht_und_gesagt_was_zu_tun_ist()
+    {
+        var adb = NeueAttrappe().Geraete();
+        var netz = new NetzAttrappe();
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s, brille: false);
+        var (_, j) = await Automatik(s, "start");
+        Assert.Equal("nicht_gefunden", j!["status"]!.GetValue<string>());
+        Assert.Contains("Kabel", j["hinweis"]!.GetValue<string>());
+        Assert.Empty(netz.Pings);
+    }
+
+    [Fact]
+    public void VPN_und_TAP_Adapter_werden_beim_Ping_Durchlauf_ausgelassen()
+    {
+        NetzSchnittstelle[] netze =
+        [
+            new("Ethernet", "Intel(R) Ethernet Connection I219-LM", "Ethernet", "192.168.1.20", 24),
+            new("Ethernet 2", "TAP-Windows Adapter V9", "Ethernet", "10.9.0.5", 24),
+            new("OpenVPN Data Channel Offload", "OpenVPN Data Channel Offload", "Ethernet", "10.8.0.2", 24),
+            new("Firmen-VPN", "Cisco AnyConnect Secure Mobility Client Virtual Miniport Adapter", "Ethernet", "10.20.0.2", 24),
+            new("WireGuard", "WireGuard Tunnel", "Tunnel", "10.7.0.2", 24),
+            new("vEthernet (WSL)", "Hyper-V Virtual Ethernet Adapter", "Ethernet", "172.20.0.1", 20),
+            new("Mobilfunk", "Mobilfunk", "Ethernet", "85.1.2.3", 24),   // nicht privat
+            new("Ethernet 3", "Realtek", "Ethernet", "169.254.4.4", 16),   // Link-lokal
+        ];
+        Assert.Equal(["Ethernet"], netze.Where(QuestDienst.EchteSchnittstelle).Select(n => n.Name));
+        var ziele = QuestDienst.PingZiele(netze);
+        Assert.Equal(253, ziele.Count);
+        Assert.All(ziele, z => Assert.StartsWith("192.168.1.", z));
+    }
+
+    [Fact]
+    public void Ping_Ziele_bei_engerer_Maske_nur_im_eigenen_Netz_und_ohne_Doppelte()
+    {
+        var ziele = QuestDienst.PingZiele([
+            new("a", "Wi-Fi", "Wireless80211", "192.168.5.20", 28),
+            new("b", "Wi-Fi 2", "Wireless80211", "192.168.5.21", 28),
+            new("c", "Ethernet", "Ethernet", "10.1.2.3", 16)]);   // weitere Maske: trotzdem nur das /24
+        // 192.168.5.16/28: .17 – .30 ohne die eigenen .20 und .21 = 12; dazu 10.1.2.1 – .254 ohne .3 = 253
+        Assert.Equal(12 + 253, ziele.Count);
+        Assert.Equal(ziele.Count, ziele.Distinct().Count());
+        Assert.DoesNotContain("192.168.5.20", ziele);
+        Assert.DoesNotContain("192.168.5.21", ziele);
+        Assert.DoesNotContain("192.168.5.31", ziele);   // Broadcast
+        Assert.DoesNotContain("192.168.5.16", ziele);   // Netzadresse
+        Assert.DoesNotContain("10.1.3.1", ziele);       // kein weiteres /24 aus der weiten Maske
+        Assert.Contains("10.1.2.254", ziele);
+    }
+
+    [Fact]
+    public async Task VPN_und_TAP_Adapter_bekommen_im_Ablauf_keinen_Ping()
+    {
+        var adb = NeueAttrappe().Geraete();
+        var netz = new NetzAttrappe();
+        netz.Netze.Add(new("Ethernet 2", "TAP-Windows Adapter V9", "Ethernet", "10.9.0.5", 24));
+        netz.Netze.Add(new("WireGuard", "WireGuard Tunnel", "Tunnel", "10.7.0.2", 24));
+        var s = await Start(adb, netz: netz);
+        await Vorbereiten(s);
+        await Automatik(s, "start");
+        Assert.Equal(253, netz.Pings.Count);
+        Assert.All(netz.Pings, ip => Assert.StartsWith("192.168.1.", ip));
+        // nur VPN-Adapter da: kein einziger Ping
+        var netz2 = new NetzAttrappe();
+        netz2.Netze.Clear();
+        netz2.Netze.Add(new("Ethernet 2", "TAP-Windows Adapter V9", "Ethernet", "10.9.0.5", 24));
+        var s2 = await Start(NeueAttrappe("adb2").Geraete(), netz: netz2);
+        await Vorbereiten(s2);
+        Assert.Equal("nicht_gefunden", (await Automatik(s2, "klick")).Json!["status"]!.GetValue<string>());
+        Assert.Empty(netz2.Pings);
+    }
+
+    [Fact]
+    public void Im_Testlauf_ist_das_echte_Netz_leer()
+    {
+        var netz = IQuestNetz.Vorgabe();
+        Assert.IsType<QuestNetzLeer>(netz);
+        Assert.Empty(netz.Nachbarn());
+        Assert.Empty(netz.Schnittstellen());
+        Assert.False(netz.Anpingen("192.168.1.1", TimeSpan.FromMilliseconds(100), CancellationToken.None).Result);
+    }
+
     // ---------------------------------------------------------------- Für die KI nicht freigegeben
 
     [Fact]
@@ -592,6 +1016,12 @@ public class QuestTests : IDisposable
         var f = Assert.Single(KiEinordnung.RechnerFunktionen, x => x.Name == "quest_verbinden");
         Assert.Contains("startet ein Programm", f.Grund, StringComparison.OrdinalIgnoreCase);
         Assert.True(f.Grund.Length >= 40);
+        // «Brille automatisch verbinden»: ebenso verboten, kein MCP-Werkzeug, in keiner Liste
+        Assert.Equal("verboten", KiEinordnung.Von("quest_automatik"));
+        Assert.Single(KiEinordnung.RechnerFunktionen, x => x.Name == "quest_automatik");
+        Assert.DoesNotContain("quest_automatik", KiEinordnung.Erlaubt);
+        Assert.DoesNotContain("quest_automatik", AuftragDienst.ErlaubteWerkzeuge);
+        Assert.DoesNotContain("quest_automatik", GespraechDienst.McpWerkzeuge(new GespraechEinstellungen(), true));
         // kein MCP-Werkzeug zu einer Rechner-Funktion; keines mit quest/adb im Namen; nichts davon erlaubt
         var server = Hlks.Mcp.Werkzeugauswahl.Alle();
         Assert.All(KiEinordnung.RechnerFunktionen, r => Assert.DoesNotContain(r.Name, server));

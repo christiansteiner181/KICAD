@@ -10763,6 +10763,52 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Quest verbinden»)"
           ],
           "hinweis": "Von Christian mit der Brille zu testen. Der Dialog ist eine reine Rechner-Funktion (kein Befehl des Kerns) und für die KI nicht freigegeben. Das Skript werkzeuge/quest_verbinden.ps1 macht dasselbe auf der Kommandozeile."
+        },
+        {
+          "id": "zb-xr-quest-automatisch",
+          "titel": "Brille automatisch verbinden: die Quest wird über ihre MAC-Adresse gefunden (Modul XR)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Quest verbinden … › Schalter «Brille automatisch verbinden»",
+            "kuerzel": "",
+            "sonst": "Statusleiste (Mitte): Anzeige «Brille» mit grünem, gelbem oder grauem Punkt; Klick = jetzt suchen, Rechtsklick = Dialog «Quest verbinden»"
+          },
+          "schritte": [
+            "Die Quest einmal wie bei «Quest verbinden» per Kabel verbinden («Verbinden» oder «Auf WLAN umstellen»). KICAD liest dabei die WLAN-Adresse (MAC) der Brille und merkt sie. Im Dialog steht dann unter «Brille automatisch verbinden» die gemerkte Brille mit Seriennummer, MAC und letzter IP.",
+            "Im Dialog «Quest verbinden» den Schalter «Brille automatisch verbinden» einschalten. In der Statusleiste erscheint die Anzeige «Brille».",
+            "Ab jetzt sucht KICAD die Brille selbst: beim Programmstart, beim Öffnen einer 3D-Ansicht und, solange die Anzeige nicht grün ist, alle 10 Sekunden. Zuerst liest es die Nachbartabelle des PCs, danach (nur bei Start, 3D-Ansicht und Klick, höchstens alle 2 Minuten) pingt es das eigene Netz kurz an. Dann verbindet es per WLAN und setzt die Weiterleitung.",
+            "Hängt die Brille nur am Kabel und noch nicht am WLAN, stellt KICAD selbst auf WLAN um; die Anzeige wird grün, die Meldung sagt «Kabel kann ab».",
+            "Auf den Punkt «Brille» in der Statusleiste klicken, wenn die Brille sofort gesucht werden soll (grün = bereit, gelb = sucht, grau = nicht gefunden). Mit der rechten Maustaste öffnet sich der Dialog «Quest verbinden».",
+            "In der Quest den Browser öffnen und die Adresse http://localhost:<Port> eingeben (wie bei «Quest verbinden»).",
+            "Nach einem Neustart der Brille einmal das Kabel anstecken (die Umstellung auf WLAN gilt nicht über den Neustart); KICAD erkennt die Brille danach wieder an ihrer MAC.",
+            "Zum Vergessen im Dialog «Vergessen» neben der gemerkten Brille klicken; zum Ausschalten den Schalter ausschalten (ohne Schalter und ohne gemerkte Brille verschwindet die Anzeige)."
+          ],
+          "erwartung": "Ist der Schalter aus und keine Brille gemerkt, gibt es die Anzeige «Brille» nicht und KICAD tut im Hintergrund nichts. Ist eine Brille gemerkt oder der Schalter an, steht in der Statusleiste «Brille bereit» (grün), «Brille: sucht …» (gelb) oder «Brille: nicht gefunden» (grau; bei fehlendem adb oder fehlender Freigabe steht der Grund). Im Tipp der Anzeige steht die Meldung, bei «nicht gefunden» der Hinweis auf das Kabel nach einem Neustart. Es startet nur adb.exe mit festen Befehlen; gepingt wird nur das eigene /24-Netz der LAN- und WLAN-Karten (keine VPN- oder TAP-Adapter), höchstens einmal je 2 Minuten und nie laufend. Die KI kann die Funktion nicht benutzen.",
+          "pruefpunkte": [
+            "Nach dem ersten Verbinden per Kabel steht die Brille (Seriennummer, MAC, letzte IP) im Dialog, und die Anzeige «Brille» erscheint grau.",
+            "Der Schalter «Brille automatisch verbinden» schaltet die Anzeige auf grün, wenn die Quest mit Weiterleitung verbunden ist.",
+            "Quest nur am Kabel: KICAD stellt selbst auf WLAN um; die Meldung sagt «Kabel kann ab»; danach lässt sich das Kabel abziehen und die Anzeige bleibt grün.",
+            "Programm neu starten (Brille im selben WLAN, Kabel ab): die Anzeige wird ohne Klick grün; in der Quest öffnet http://localhost:<Port> KICAD.",
+            "IP-Adresse der Brille im Router ändern lassen (oder Brille aus- und einschalten): ein Klick auf «Brille» findet sie wieder.",
+            "Brille ausschalten: die Anzeige wird grau mit dem Hinweis auf das Kabel nach einem Neustart.",
+            "Mit VPN-Verbindung: der Ping-Durchlauf läuft nur im LAN/WLAN, nicht im VPN-Netz (nur in der Firma mit echtem Netz zu prüfen).",
+            "«Vergessen» entfernt die Brille; Schalter aus und keine Brille: die Anzeige verschwindet, und es laufen keine Hintergrundschritte mehr."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Statusleiste und Dialog «Quest verbinden»",
+            "zustand": "Brille gemerkt, Schalter an, Anzeige grün (Prüfbilder quest-09_brille_gemerkt.png bis quest-11_brille_grau.png aus quest.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-status.js (Statusanzeige, Takt, Klick)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-text.js (brilleAnzeige, taktNoetig, schrittErlaubt)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-dialog.js (Schalter, gemerkte Brille, Vergessen)",
+            "src/Hlks.Web/QuestDienst.cs (Automatik, MacLesen, PingZiele) und QuestNetz.cs (Nachbartabelle, Ping)",
+            "src/Hlks.Web/QuestEndpunkte.cs (POST /api/quest/automatik)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Brille automatisch verbinden»)"
+          ],
+          "hinweis": "Von Christian mit der Brille und im Büronetz zu testen (die echte Nachbartabelle und der Ping-Durchlauf sind in den Tests ersetzt). Reine Rechner-Funktion, für die KI verboten (KiEinordnung quest_automatik). Einstellungen: quest.automatisch (Ja/Nein, Vorgabe nein) und quest.brillen (Liste mit seriennummer, mac, letzteIp, zuletzt)."
         }
       ]
     }
