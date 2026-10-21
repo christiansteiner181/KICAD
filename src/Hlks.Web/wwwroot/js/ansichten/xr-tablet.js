@@ -11,11 +11,12 @@ const ZEICHEN_ABSTAND = 1 / 12;   // s: das Band läuft mit etwa 12 Bildern je S
 const SCHLIESS_DAUER = 0.15;
 
 /**
- * o: { szene, eigenschaften() → Zeilen, messZeilen() → Zeilen, tastenZustand() → { id: bool }, aktion(id), zeit?() → s }
+ * o: { szene, eigenschaften() → Zeilen, messZeilen() → Zeilen, tastenZustand() → { id: bool }, aktion(id), zeit?() → s, layout?() → Tasten | null (XR-H: andere Seite im Sitzungsraum) }
  * Rückgabe { offen, anteil, oeffnen(), schliessen(), bild(dt, lage), tippen(u, v), taste(id), zustand(), freigeben(), gruppe, layout }
  */
 export function erzeugeTablet(o) {
-  const layout = tabletLayout();
+  const layoutStandard = tabletLayout();
+  const aktuellesLayout = () => o.layout?.() ?? layoutStandard;   // XR-H: im Sitzungsraum zeigt das Tablet die Etagen
   const SK = 2;   // Textur in doppelter Auflösung (scharfe Schrift)
   const canvas = typeof document !== 'undefined' ? document.createElement('canvas') : null;
   if (canvas) { canvas.width = TABLET_PX.b * SK; canvas.height = TABLET_PX.h * SK; }
@@ -48,7 +49,8 @@ export function erzeugeTablet(o) {
     const tz = o.tastenZustand?.() ?? {};
     const eig = o.eigenschaften?.() ?? [];
     const mz = o.messZeilen?.() ?? [];
-    const neu = JSON.stringify([tz, eig, mz]);
+    const layout = aktuellesLayout();
+    const neu = JSON.stringify([tz, eig, mz, layout.map((k) => k.id + k.text)]);
     if (!zwang && neu === sig && now() - letztesZeichnen < ZEICHEN_ABSTAND) return;   // sonst höchstens 12 Bilder je Sekunde (Band, Aufleuchten)
     sig = neu; letztesZeichnen = now();
     ctx.setTransform(SK, 0, 0, SK, 0, 0);
@@ -89,7 +91,7 @@ export function erzeugeTablet(o) {
   return {
     get offen() { return offen && !schliessend; },
     get anteil() { return anteil; },
-    gruppe, layout,
+    gruppe, get layout() { return aktuellesLayout(); },
     /** Öffnen: von der Hand aus aufbauen. handMitte = Punkt, von dem aus es wächst. */
     oeffnen(handMitte = null) {
       if (offen && !schliessend) return;
@@ -113,14 +115,14 @@ export function erzeugeTablet(o) {
     /** Tippen an der Stelle (u, v): die Taste leuchtet auf und die Aktion läuft; Platzhalter tun nichts. Rückgabe die Taste oder null. */
     tippen(u, v) {
       if (!offen || schliessend) return null;
-      const k = tasteBei(u, v, layout);
+      const k = tasteBei(u, v, aktuellesLayout());
       if (!k) return null;
       leuchten.set(k.id, now());
       if (!k.platzhalter) o.aktion?.(k.id);
       zeichnen(true);
       return k;
     },
-    taste: (id) => layout.find((k) => k.id === id) ?? null,
+    taste: (id) => aktuellesLayout().find((k) => k.id === id) ?? null,
     zustand: () => ({ offen: offen && !schliessend, anteil: Math.round(anteil * 1000) / 1000, sichtbar: gruppe.visible, mitte: gruppe.visible ? { x: gruppe.position.x, y: gruppe.position.y, z: gruppe.position.z } : null,
       leuchten: Object.fromEntries([...leuchten].map(([k, ts]) => [k, Math.round(aufleuchten(now() - ts) * 100) / 100])) }),
     freigeben() {

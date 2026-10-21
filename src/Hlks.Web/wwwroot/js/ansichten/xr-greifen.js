@@ -40,7 +40,8 @@ const pt = (v) => (v ? { x: rund(v.x), y: rund(v.y), z: rund(v.z) } : null);
 /**
  * o: { wurzel, renderer, szene, rig() → THREE.Group, controller() → [c0, c1], quellen() → XRInputSource[], kopf() → Welt-Kopf | null, koerperDaten() → Map id → Körper,
  *      element(id|kennzeichen), gewaehlt(), auswaehlen(id), befehl(name, par), abfrage(name, par), status(), verbindungen() → Liste, meldung(text, art), anfordern(),
- *      aktionen: { hoehe(dm), schnitt(), schnittAn(), schnittVorhanden(), ifc(), ifcAn(), ende() }, zeit?() }
+ *      aktionen: { hoehe(dm), schnitt(), schnittAn(), schnittVorhanden(), ifc(), ifcAn(), ende() }, zeit?(),
+ *      sitzung?: Sitzungsraum XR-H (xr-sitzung.js): { aktiv, aktion(id) → bool, layout(), tastenZustand(), kopfZeilen(), bild(dt, seiten) } }
  */
 export function erzeugeXr(o) {
   const api = { haende: null };
@@ -77,13 +78,14 @@ export function erzeugeXr(o) {
   const hinweis = (text, art = 'info') => { hinweisZeit.text = text; hinweisZeit.t = uhr; o.meldung?.(text, art); };
   const tablet = erzeugeTablet({
     szene: wurzelGruppe, zeit: () => uhr,
-    eigenschaften: () => eigenschaftenZeilen(o.element(grab?.id ?? o.gewaehlt())),
+    layout: () => o.sitzung?.layout?.() ?? null,   // XR-H: im Sitzungsraum zeigt das Tablet die Etagen
+    eigenschaften: () => o.sitzung?.kopfZeilen?.() ?? eigenschaftenZeilen(o.element(grab?.id ?? o.gewaehlt())),
     messZeilen: () => {
       if (!messen.an) return [];
       const l = messen.letzte();
       return [messen.hinweis(), ...l].filter(Boolean);
     },
-    tastenZustand: () => ({ messen: messen.an, lot: messen.lot, schnitt: !!o.aktionen.schnittAn?.(), ifc: !!o.aktionen.ifcAn?.() }),
+    tastenZustand: () => ({ messen: messen.an, lot: messen.lot, schnitt: !!o.aktionen.schnittAn?.(), ifc: !!o.aktionen.ifcAn?.(), ...(o.sitzung?.tastenZustand?.() ?? {}) }),
     aktion: (id) => aktion(id),
   });
 
@@ -98,6 +100,8 @@ export function erzeugeXr(o) {
     }
   }
   async function aktion(id) {
+    if (id === 'raum') { messen.anSetzen(false); messen.lotSetzen(false); }   // XR-H: im Sitzungsraum gibt es kein Messen am Modell
+    if (o.sitzung?.aktion(id)) { schreiben(true); return; }                   // XR-H: Wechsel, Etagen, Zurücksetzen (xr-sitzung.js)
     switch (id) {
       case 'rueckgaengig': case 'wiederholen': {
         const r = await befehlSenden(id);
@@ -384,6 +388,7 @@ export function erzeugeXr(o) {
       const h = tabletStrahl(tabletLageJetzt, ray.u, ray.r);
       if (h) { tablet.tippen(h.u, h.v); schreiben(true); return true; }
     }
+    if (o.sitzung?.aktiv) return true;   // XR-H: im Sitzungsraum gibt es weder Teleport noch Antippen von Elementen
     if (messen.an) {
       if (!q?.hand && seite === 'right') { fangSync(); messen.sonde({ art: 'strahl', u: ray.u, r: ray.r }); messen.setzen(); schreiben(true); }
       return true;
@@ -468,11 +473,12 @@ export function erzeugeXr(o) {
       // Greifen: steigende Flanke der Faust bzw. der Grifftaste (Tablet-Hand ist offen); sinkende Flanke lässt los
       for (const seite of ['left', 'right']) {
         const S = seiten[seite];
-        if (S?.griff && !vor[seite] && !grab && !messen.an) greifenStart(seite, S.ort);
+        if (S?.griff && !vor[seite] && !grab && !messen.an && !o.sitzung?.aktiv) greifenStart(seite, S.ort);
         if (grab && grab.seite === seite && grab.art === 'nah' && S && !S.griff) loslassen();
         if (grab && grab.seite === seite && grab.art === 'nah' && !S) loslassen();
       }
       griffAktualisieren(dt);
+      if (o.sitzung?.aktiv) o.sitzung.bild(dt, seiten);   // XR-H: Modell auf dem Tisch greifen, drehen, zoomen
       haendeZeigen();
       schreiben();
     },
