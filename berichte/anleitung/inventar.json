@@ -10386,7 +10386,7 @@
             "Den Knopf «In VR begehen» ansehen: unten rechts in der 3D-Ansicht bzw. in der Einblendung oben links beim Begehen.",
             "Ist der Knopf grau: Quest Link starten, Seite neu laden (F5) und den Knopf anklicken (prüft erneut)."
           ],
-          "erwartung": "Solange keine Brille über Quest Link bzw. Air Link verbunden ist (oder die OpenXR-Runtime nicht «Meta Quest Link» ist), bleibt der Knopf «In VR begehen» ausgegraut und trägt den Hinweis «Keine VR-Brille verbunden (Quest Link/Air Link starten)». Sobald die Verbindung steht, wird er frei (ohne Neuladen, sonst mit F5). Ohne Gewähr: die Schritte beschreiben den üblichen Weg; Namen von Menüs der Meta-App können sich ändern.",
+          "erwartung": "Solange keine Brille über Quest Link bzw. Air Link verbunden ist (oder die OpenXR-Runtime nicht «Meta Quest Link» ist), bleibt der Knopf «In VR begehen» ausgegraut und trägt den Hinweis «Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)». Sobald die Verbindung steht, wird er frei (ohne Neuladen, sonst mit F5). Ohne Gewähr: die Schritte beschreiben den üblichen Weg; Namen von Menüs der Meta-App können sich ändern.",
           "pruefpunkte": [
             "Ohne verbundene Brille ist der Knopf grau und der Hinweis steht darunter.",
             "Mit laufendem Air Link und aktiver OpenXR-Runtime ist der Knopf frei.",
@@ -10432,6 +10432,7 @@
             "Abzug halten zeigt einen Strahl mit Ring auf dem Boden; Loslassen springt, nach oben gezielt springt nichts.",
             "Mit der Hand: Pinch auf den Boden zeigend springt ebenso (falls Handverfolgung ankommt; sonst notieren).",
             "Eine Wand wird erst durchscheinend, wenn der Kopf näher als 50 cm ist.",
+            "Alle Wände, Decken und Böden sind undurchsichtig, auch die Flächen einer eingeblendeten IFC-Unterlage (Original); nach dem Beenden ist die Unterlage am PC wieder durchscheinend wie eingestellt.",
             "Die Bildrate bleibt flüssig (kein Ruckeln beim Drehen); bei grossen Projekten wie Bernstrasse: IFC-Unterlage mit Taste A aus.",
             "Nach dem Beenden: Kamera, Schnittbereich und Darstellung wie vorher; der Knopf heisst wieder «In VR begehen».",
             "Esc während VR beendet nur die Sitzung; war vorher «Raum begehen» aktiv, bleibt der Raum am Bildschirm."
@@ -10506,7 +10507,8 @@
             "Tippen: mit der Spitze des rechten Zeigefingers die Taste berühren bzw. mit dem rechten Zeigestrahl zielen und Abzug drücken. Die Taste leuchtet kurz auf.",
             "Tasten: Rückgängig, Wiederholen, Augenhöhe + und −, Schnittbereich, IFC-Unterlage, VR beenden. «Familie platzieren», «Problem markieren» und «Raum wechseln» sind ausgegraut («folgt»).",
             "Messen: «Messen» tippen. Mit dem rechten Zeigefinger (Pinch zum Setzen) bzw. mit Strahl und Abzug zwei Punkte setzen. Die Punkte fangen an Ecken, Kanten, Leitungsachsen, Anschlüssen und Flächen; das Fangsymbol zeigt, woran.",
-            "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt auf.",
+            "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt alle auf.",
+            "Einzelne Masslinie löschen: mit der offenen Hand schnell und waagrecht durch die Linie wischen (wie an der Wandtafel). Nur die getroffene Linie leuchtet kurz auf und verschwindet; ein Wisch ins Leere tut nichts. Mit der Faust, im Pinch oder am Tablet wischt es nicht.",
             "Hand schliessen oder wegdrehen: Das Tablet schliesst sich."
           ],
           "erwartung": "Das Tablet ist eine durchscheinende Hologramm-Fläche (dunkler Grund hinter der Schrift, Cyan-Linien, leuchtender Rand), 14 cm über der linken Hand, dem Kopf zugewandt. Es zeigt oben die Eigenschaften des gewählten bzw. gegriffenen Elements. Rückgängig und Wiederholen wirken wie am PC. Die Messungen ändern das Modell nicht.",
@@ -10518,7 +10520,9 @@
             "Rückgängig nimmt das zuletzt Verschobene zurück.",
             "Messen: Fangsymbol und Name erscheinen am Leitungsende, an Ecken und auf Flächen; Abstand und dx/dy/dz stimmen mit dem PC überein.",
             "Lot zur Fläche: Abstand zur Decke lotrecht, unabhängig davon, wo auf der Decke man den Punkt setzt.",
-            "Ohne Handverfolgung öffnet Taste Y links das Tablet."
+            "Wischgeste: Mit der offenen Hand schnell (mindestens 15 cm in 0,4 s) und waagrecht durch eine stehende Masslinie wischen löscht genau diese Messung; mehrere getroffene Linien verschwinden zusammen. Ein Wisch ins Leere, eine langsame oder senkrechte Bewegung, die Faust und der Pinch löschen nichts. Schwellen am Brillentest nachstellen.",
+            "Ohne Handverfolgung öffnet Taste Y links das Tablet.",
+            "Tablet steht ruhig, wenn die Hand still gehalten wird; Hände ausgeblendet, Fingerpunkt sichtbar. Bei grösseren Bewegungen (über etwa 1,5 cm) folgt das Tablet weich; schliesst es, sind die Hände wieder da."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -10747,6 +10751,7 @@
             "Nach «USB-Debugging erlauben» und «Erneut prüfen»: «Verbinden» ist frei; nach dem Klick sind alle vier Punkte grün und die Adresse http://localhost:<Port> steht im Dialog.",
             "In der Quest öffnet der Browser diese Adresse und zeigt KICAD.",
             "«Trennen» setzt «Weiterleitung aktiv» auf rot; «Verbinden» setzt sie wieder.",
+            "«Auf WLAN umstellen» (Kabel steckt): der Dialog wartet bis zu 15 s, bis die Quest über WLAN antwortet, und meldet dann «WLAN aktiv»; «Weiterleitung aktiv» ist grün, auch wenn das Kabel danach abgezogen wird. Ein zweiter Klick auf «Auf WLAN umstellen» bricht die WLAN-Verbindung nicht ab (Meldung «schon über WLAN verbunden»), und bei Kabel und WLAN zugleich gilt der WLAN-Weg (Knopf «Auf WLAN umstellen» gesperrt, in der Geräteliste steht die Adresse mit «WLAN»). Antwortet die Quest nicht, steht der Hinweis «gleiches WLAN, Adresse von Hand».",
             "Eine ungültige WLAN-Adresse (z. B. 999.1.1.1) lässt «Über WLAN verbinden» gesperrt; eine gültige gibt den Knopf frei, ein Verbindungsfehler erscheint mit Vorschlag im Dialog.",
             "In der 3D-Ansicht öffnen der Link «Quest im Browser der Brille nutzen …» und der Klick auf den grauen Knopf «In VR begehen» den Dialog; bei verbundener Brille ist der Link weg."
           ],

@@ -1,11 +1,12 @@
 // Modul XR-C: Messwerkzeug mit Fang im Tablet («Messen»). Zwei Punkte mit dem Zeigefinger bzw. dem Strahl; die Punkte fangen (Anschluss, Ecke, Mitte, Kante, Leitungsachse,
 // Fläche) mit sichtbarem Fangsymbol und Namen. Angezeigt werden Abstand und dx/dy/dz; «Lot zur Fläche» misst lotrecht zu einer Decke, Wand oder einem Boden. Messungen
-// bleiben stehen, «Messungen löschen» entfernt sie. Fang und Abstand rechnet xr-mess-logik.js (dieselbe Logik wie die Masse zu Decke und Wand beim Greifen, XR-B).
+// bleiben stehen, «Messungen löschen» entfernt sie alle, eine Wischgeste (xr-greifen.js) nur die getroffene Masslinie. Fang und Abstand rechnet xr-mess-logik.js (dieselbe Logik wie die Masse zu Decke und Wand beim Greifen, XR-B).
 // Darstellung im Hologramm-Stil (xr-holo.js). Nichts davon ändert das Modell.
 
 import * as THREE from 'three';
 import { fangenPunkt, fangenStrahl, masse, massText, massKurz, lotMass, mitteVon3, plus, minus, mal, skalar, FANGNAMEN_XR } from './xr-mess-logik.js';
 import { etikett, fangSymbol, holoLinie } from './xr-holo.js';
+import { WISCH_AUSBLENDEN_S } from './xr-greifen-logik.js';
 
 const vec = (p) => new THREE.Vector3(p.x, p.y, p.z);
 
@@ -29,6 +30,8 @@ export function erzeugeMessen(o) {
   let sondeErg = null;           // letztes Fangergebnis
   const liste = [];              // fertige Messungen { typ, a, b, fuss?, m, linie, etikett }
   let hinweisText = '';
+  const zerfall = [];            // weggewischte Messungen im Ausblenden { m, t }
+  const abbauen = (m) => { m.linie.linie.removeFromParent(); m.linie.freigeben(); m.etikett.sprite.removeFromParent(); m.etikett.freigeben(); for (const p of m.punkte) { p.sprite.removeFromParent(); p.freigeben(); } };
   const symbole = new Map();
   const symbolFuer = (art) => {
     if (!symbole.has(art)) { const s = fangSymbol(art); s.sprite.visible = false; halter.add(s.sprite); symbole.set(art, s); }
@@ -98,9 +101,32 @@ export function erzeugeMessen(o) {
       return ok;
     },
     loeschen() {
-      for (const m of liste) { m.linie.linie.removeFromParent(); m.linie.freigeben(); m.etikett.sprite.removeFromParent(); m.etikett.freigeben(); for (const p of m.punkte) { p.sprite.removeFromParent(); p.freigeben(); } }
-      liste.length = 0; wartend = null; wartePunkt.sprite.visible = false; hinweisSetzen();
+      for (const m of liste) abbauen(m);
+      for (const z of zerfall) abbauen(z.m);
+      liste.length = 0; zerfall.length = 0; wartend = null; wartePunkt.sprite.visible = false; hinweisSetzen();
     },
+    /** Wischgeste: entfernt die Messungen mit diesen Indizes (Reihenfolge von messungen()) sofort aus der Liste; ihre Linie leuchtet kurz auf und blendet in WISCH_AUSBLENDEN_S aus (bild(dt)). Rückgabe: Anzahl. */
+    entfernen(indizes) {
+      const weg = [...new Set(indizes)].filter((i) => i >= 0 && i < liste.length).sort((a, b) => b - a);
+      for (const i of weg) {
+        const [m] = liste.splice(i, 1);
+        m.linie.linie.material.color.set(0xffffff);   // Aufleuchten
+        zerfall.push({ m, t: 0 });
+      }
+      return weg.length;
+    },
+    /** Je Bild: Ausblenden der weggewischten Linien. */
+    bild(dt) {
+      for (let i = zerfall.length - 1; i >= 0; i--) {
+        const z = zerfall[i];
+        z.t += dt;
+        const a = Math.max(0, 1 - z.t / WISCH_AUSBLENDEN_S);
+        z.m.linie.linie.material.opacity = 0.95 * a; z.m.etikett.sprite.material.opacity = a;
+        for (const p of z.m.punkte) p.sprite.material.opacity = a;
+        if (a <= 0) { abbauen(z.m); zerfall.splice(i, 1); }
+      }
+    },
+    ausblendend: () => zerfall.length,
     messungen: () => liste.map((m) => ({ typ: m.typ, a: m.a, b: m.b, fuss: m.fuss, abstandMm: m.m.abstandMm, dx: m.m.dx, dy: m.m.dy, dz: m.m.dz })),
     /** Zeilen für das Tablet: letzte Messung (Abstand, dx/dy/dz) bzw. die Anweisung. */
     letzte() {

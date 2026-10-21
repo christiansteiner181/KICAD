@@ -427,6 +427,23 @@ try {
   await tippe('familie');
   pruef((await logBefehle()).length === logP, 'Platzhalter «Familie platzieren (folgt)» tut nichts');
 
+  abschnitt('XR-C Tablet beruhigt, Hände bei offenem Tablet ausgeblendet (Rückmeldung Brillentest 21.10.2026)');
+  const hd = (await xrDaten()).haende;
+  pruef(hd && hd.gelenke.left === false && hd.gelenke.right === false, 'Tablet offen: Gelenkkugeln beider Hände unsichtbar', JSON.stringify(hd));
+  pruef(hd.fingerPunkt === true && hd.fingerPunktOrt, `Tablet offen: Punkt an der Spitze des rechten Zeigefingers sichtbar (${JSON.stringify(hd.fingerPunktOrt)})`);
+  const sichtbar = await ausw(`const g = window.__vr.api.xr; let n = 0, kugel = 0; const wg = g.tablet.gruppe.parent; wg.traverse((o) => { if (o.isInstancedMesh && o.visible) kugel++; if (o.isMesh && !o.isInstancedMesh && o.geometry?.type === 'SphereGeometry' && o.visible) n++; }); return { kugel, punkte: n };`);
+  pruef(sichtbar.kugel === 0 && sichtbar.punkte === 1, `Szene: keine sichtbare Gelenk-Instanzgruppe, genau ein Fingerpunkt (${JSON.stringify(sichtbar)})`);
+  const mitteVor = (await xrDaten()).tablet.lage.mitte;
+  await hand('left', { offen: true, palm: plus3(palmL, { x: 0.008, y: 0.004, z: -0.006 }) }); await warte(600);
+  const mitteZittern = (await xrDaten()).tablet.lage.mitte;
+  pruef(Math.hypot(mitteZittern.x - mitteVor.x, mitteZittern.y - mitteVor.y, mitteZittern.z - mitteVor.z) < 0.001, `Hand verschiebt sich um ~1 cm: das Tablet bleibt stehen (Totzone), Änderung ${(Math.hypot(mitteZittern.x - mitteVor.x, mitteZittern.y - mitteVor.y, mitteZittern.z - mitteVor.z) * 1000).toFixed(2)} mm`);
+  await hand('left', { offen: true, palm: plus3(palmL, { x: 0.10, y: 0, z: 0 }) }); await warte(900);
+  const mitteWeg = (await xrDaten()).tablet.lage.mitte;
+  pruef(nahe(mitteWeg.x - mitteVor.x, 0.10, 0.02), `Hand 10 cm zur Seite: das Tablet folgt (${((mitteWeg.x - mitteVor.x) * 100).toFixed(1)} cm)`);
+  await hand('left', { offen: true, palm: palmL }); await warte(900);
+  const mitteZurueck = (await xrDaten()).tablet.lage.mitte;
+  pruef(nahe(mitteZurueck.x, mitteVor.x, 0.02), 'Hand zurück: das Tablet folgt wieder');
+
   abschnitt('XR-C Messwerkzeug mit Fang: zwei Punkte mit dem Zeigefinger, Fangsymbol, Abstand und dx/dy/dz; Lot zur Fläche; löschen');
   await tippe('messen');
   await bis((d) => d?.messen?.an === true, 'Messen an', 4000);
@@ -462,6 +479,38 @@ try {
   const lotM = dL2.messungen[1];
   const erwLot = deckeUnten - 1200;
   pruef(lotM && lotM.typ === 'lot' && nahe(lotM.abstandMm, erwLot, 15), `Lot zur Decke: ${lotM?.abstandMm} mm (unabhängig ${erwLot} mm), zweiter Punkt ${sUnten?.art}`, JSON.stringify(dL2.messungen));
+  // ---- Wischgeste (21.10.2026): offene rechte Hand wischt schnell und waagrecht durch eine stehende Masslinie → genau diese Messung verschwindet
+  abschnitt('XR-C Wischgeste: durch eine Masslinie wischen löscht genau diese Messung; Wisch ins Leere tut nichts');
+  await ausw(`window.__wische = async (seite, a, b, ms) => { const n = Math.max(2, Math.round(ms / 16)); for (let i = 0; i <= n; i++) { const k = i / n; window.__haende[seite] = { art: 'hand', gelenke: window.__hand(seite, true, { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k }, false, false) }; await new Promise((r) => setTimeout(r, 16)); } return 1; }; return 1;`);
+  const dW0 = await xrDaten();
+  const mAbstand = dW0.messungen.find((q) => q.typ === 'abstand'), mLot = dW0.messungen.find((q) => q.typ === 'lot');
+  pruef(dW0.messungen.length === 2 && mAbstand && mLot, 'zwei Messungen stehen (Abstand und Lot)');
+  const tabM = dW0.tablet.lage.mitte;
+  const weitWeg = (p) => Math.hypot(p.x - tabM.x, p.y - tabM.y, p.z - tabM.z) > 0.35;
+  const lotMitte = { x: (mLot.a.x + mLot.b.x) / 2, y: (mLot.a.y + mLot.b.y) / 2, z: (mLot.a.z + mLot.b.z) / 2 };
+  const wischen = async (a, b, ms = 300) => { await ausw(`window.__haende.right = { art: 'hand', gelenke: window.__hand('right', true, ${JSON.stringify(a)}, false, false) }; return 1;`); await warte(700); await ausw(`return window.__wische('right', ${JSON.stringify(a)}, ${JSON.stringify(b)}, ${ms});`); await warte(350); };
+  // Wisch ins Leere: 80 cm südlich aller Linien, 50 cm über der Abstandslinie
+  const zLeer = Math.max(mAbstand.a.z, mAbstand.b.z, mLot.a.z, mLot.b.z) + 0.8;
+  const leerA = { x: lotMitte.x - 0.3, y: mAbstand.a.y + 0.5, z: zLeer }, leerB = { x: lotMitte.x + 0.3, y: mAbstand.a.y + 0.5, z: zLeer };
+  await wischen(leerA, leerB);
+  const dLeer = await xrDaten();
+  pruef(dLeer.wisch.wische >= 1 && dLeer.messungen.length === 2 && dLeer.wisch.geloescht === 0, `Wisch ins Leere: erkannt (${dLeer.wisch.wische}), beide Messungen bleiben`, JSON.stringify(dLeer.wisch));
+  // Wisch durch das Lot (senkrechte Linie, in halber Höhe quer durch): nur das Lot verschwindet
+  const lotA = { x: lotMitte.x - 0.3, y: lotMitte.y, z: lotMitte.z }, lotB = { x: lotMitte.x + 0.3, y: lotMitte.y, z: lotMitte.z };
+  pruef(weitWeg(lotA) && weitWeg(lotB) && weitWeg(lotMitte), `Prüfweg liegt ausserhalb der Tablet-Nähe (Lot-Mitte ${Math.hypot(lotMitte.x - tabM.x, lotMitte.y - tabM.y, lotMitte.z - tabM.z).toFixed(2)} m von der Tablet-Mitte)`);
+  await wischen(lotA, lotB);
+  const dTr = await xrDaten();
+  pruef(dTr.messungen.length === 1 && dTr.messungen[0].typ === 'abstand' && dTr.wisch.geloescht === 1, `Wisch durch das Lot: genau diese Messung weg, die Abstandsmessung bleibt (${dTr.messungen.map((q) => q.typ)})`, JSON.stringify(dTr.wisch));
+  await bis((d) => d?.wisch?.ausblendend === 0, 'Ausblenden beendet', 3000);
+  pruef(true, 'die weggewischte Linie blendet in 0.2 s aus und wird abgebaut');
+  // Bei der Hand an der Faust wird nichts gelöscht: schneller Strich mit geschlossener Hand durch die Abstandslinie
+  const abM = { x: (mAbstand.a.x + mAbstand.b.x) / 2, y: (mAbstand.a.y + mAbstand.b.y) / 2, z: (mAbstand.a.z + mAbstand.b.z) / 2 };
+  const abA = { x: abM.x, y: abM.y, z: abM.z + 0.3 }, abB = { x: abM.x, y: abM.y, z: abM.z - 0.3 };
+  await ausw(`window.__haende.right = { art: 'hand', gelenke: window.__hand('right', false, ${JSON.stringify(abA)}, false, false) }; return 1;`); await warte(600);
+  await ausw(`const a = ${JSON.stringify(abA)}, b = ${JSON.stringify(abB)}; for (let i = 0; i <= 19; i++) { const k = i / 19; window.__haende.right = { art: 'hand', gelenke: window.__hand('right', false, { x: a.x + (b.x - a.x) * k, y: a.y, z: a.z + (b.z - a.z) * k }, false, false) }; await new Promise((r) => setTimeout(r, 16)); } return 1;`);
+  await warte(300);
+  pruef((await xrDaten()).messungen.length === 1, 'Faust (geschlossene Hand) wischt nicht: die Abstandslinie bleibt');
+  await fingerAuf(p1); await warte(300);
   const logL = (await logBefehle()).length;
   await tippe('messungenLoeschen');
   await bis((d) => d?.messungen?.length === 0, 'Messungen gelöscht', 4000);
@@ -487,6 +536,8 @@ try {
   await warte(500);
   const tZu = (await xrDaten()).tablet;
   pruef(!tZu.sichtbar && tZu.anteil === 0, 'Hand weggedreht: das Tablet schliesst sich und verschwindet');
+  const hZu = (await xrDaten()).haende;
+  pruef(hZu.gelenke.left === true && hZu.fingerPunkt === false, 'Tablet zu: die Gelenkkugeln der Hand sind wieder da, der Fingerpunkt weg', JSON.stringify(hZu));
   // Menütaste (Y links) als Ersatz
   await keineHand('left');
   await ausw(`const cs = window.__vr.api.controller(); cs[0].dispatchEvent({ type: 'connected', data: { handedness: 'left' } }); return 1;`);

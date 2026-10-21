@@ -13,7 +13,8 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ## Teile
 
-### XR-A – Begehen in VR (N23, gebaut 21.10.2026, Brillentest offen)
+### XR-A – Begehen in VR (N23, gebaut 21.10.2026; Start mit der Brille bestätigt 21.10.2026)
+- **Erster Brillentest 21.10.2026 ~19:15 (Christian: «VR läuft in der Brille»):** Quest 3 im eigenen Browser, KICAD über `http://localhost:5130`, adb über WLAN (Weg 2). Bestätigt ist der Start der VR-Sitzung; Gehen, Drehen, Wände, Tablet, Greifen und Messen sind noch einzeln abzunehmen.
 - Knopf «In VR begehen». Der Standpunkt ist der von «Raum begehen» (N15); die Augenhöhe kommt aus der echten Kopfhöhe.
 - Bewegen: Stick zum Gehen, Snap-Turn zum Drehen, Teleport per Abzug bzw. Pinch auf den Boden. Keine Kollision.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).
@@ -30,6 +31,7 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ### XR-C – Tablet an der linken Hand
 - **Stand:** gebaut 21.10.2026 (hlks-modul), Brillentest offen. Tablet im Hologramm-Stil mit Geste bzw. Taste Y links, Eigenschaften, Rückgängig/Wiederholen, Augenhöhe, Schnittbereich, IFC, «VR beenden», Messwerkzeug mit Fang und Lot; Platzhalter «folgt».
+- Wischgeste löscht die getroffene Masslinie (21.10.2026, hlks-modul), Brillentest offen.
 - Die linke Hand öffnen und auf die Handfläche schauen öffnet ein Tablet mit interaktiver Bedienung und Werkzeugen. Bedient wird es mit dem
   Zeigefinger der rechten Hand; Hand schliessen bzw. wegdrehen schliesst es.
 - Inhalt (Vorschlag, am Freitag festlegen):
@@ -128,6 +130,24 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
   - **Idee MAC (Christian 21.10.2026: «könnte man nicht über MACadr. anstelle IP. dann müsste nur einmal eingerichtet werden», «ist die brillen Mac gespeichert, könnte man nach jedem programmstart neu suchen. automatisiert oder ein icon ohne manuellen eingriff»):** KICAD merkt sich die WLAN-MAC der Brille (`quest.brillen`), findet ihre IP in der Nachbartabelle des PCs bzw. mit einem Ping-Durchlauf im eigenen /24-Netz (höchstens einmal je 2 Minuten, nie VPN/TAP) und verbindet selbst (`quest.automatisch`, Statusanzeige «Brille» in der Statusleiste). Grenze: `adb tcpip` gilt nicht über den Neustart der Brille, danach einmal das Kabel.
     **Gebaut 21.10.2026 (hlks-modul), Brillentest offen** (echte Nachbartabelle, Ping-Durchlauf im Büronetz und `ip link show wlan0` der Quest nur mit der Brille prüfbar). Beschreibung: `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Brille automatisch verbinden».
 - **Befund 21.10.2026 an Christians PC** (Intel Core Ultra 9 386H, nur integrierte Grafik): Meta Horizon Link 1.115 ist installiert, lehnt die Grafik aber ab (Protokoll: «Failed to find a compatible GPU … USB Link disabled», GPU «UNSUPPORTED_CLASS»). Chrome findet deshalb keine VR-Laufzeit, «In VR begehen» bleibt grau. Was in der Brille den Windows-Desktop zeigt, ist Mixed Reality Link bzw. Meta Remote Desktop – nur ein Bildschirmbild, kein WebXR. **An diesem PC gilt nur Weg 2.**
+- **Idee Christian 21.10.2026:** «könnte man nicht über MACadr. anstelle IP. dann müsste nur einmal eingerichtet werden.»
+  - Vorschlag: Beim ersten Verbinden per Kabel merkt sich KICAD die WLAN-MAC der Quest (`adb shell cat /sys/class/net/wlan0/address`)
+    zusammen mit der Seriennummer, je Benutzer.
+  - Später findet «Verbinden» die aktuelle IP über die Nachbartabelle des PCs (Get-NetNeighbor). Steht sie dort nicht, folgt ein kurzer
+    Ping über das eigene /24-Netz, dann `adb connect`. Die IP muss niemand mehr eintippen.
+  - Grenze: Nach einem **Neustart** der Quest ist adb über WLAN aus, denn `adb tcpip` gilt nicht über den Neustart. Dann braucht es
+    einmal das Kabel. Ruhezustand ist kein Problem.
+  - Alternative ohne Code: feste IP für die Quest im Router (DHCP-Reservierung).
+  - **Ergänzung Christian 21.10.2026:** «ist die brillen Mac gespeichert, könnte man nach jedem programmstart neu suchen. automatisiert
+    oder ein icon ohne manuellen eingriff.» Vorschlag:
+    - Einstellung «Brille automatisch verbinden» (je Benutzer).
+    - Ist sie an, sucht KICAD beim Start und beim Öffnen einer 3D-Ansicht die gespeicherte MAC, verbindet und setzt die Weiterleitung
+      ohne Klick.
+    - Dazu eine Statusanzeige «Brille» in der Statusleiste: grün = bereit, grau = nicht gefunden. Ein Klick darauf sucht erneut.
+    - Nach einem Neustart der Quest genügt es, das Kabel einzustecken: KICAD erkennt das USB-Gerät, stellt selbst auf WLAN um und meldet
+      «Kabel kann ab».
+    - Suche zuerst in der Nachbartabelle. Ein Ping nur im eigenen /24-Netz und nur auf Anlass, nie laufend; Rücksicht aufs Büronetz.
+  - Am Freitag priorisieren.
 - **Nicht empfohlen:** KICAD für das Büronetz öffnen (`http://<PC>:5130`). Ohne HTTPS gibt es kein WebXR, und der Server hat keine
   Anmeldung.
 - Anderer, Link-fähiger PC mit eigenem KICAD: möglich. Dafür braucht es dort .NET und den Start aus einer eigenen Kopie. Die Regel «nie zwei

@@ -55,6 +55,20 @@ public class QuestTests : IDisposable
         public Adb Mac(string mac) { File.WriteAllText(Path.Combine(Ordner, "mac.txt"), mac); return this; }
         public Adb Verbindbar(params string[] ips) { Schreibe("verbindbar.txt", ips); return this; }
         public Adb Verhalten(params string[] schalter) { Schreibe("verhalten.txt", schalter); return this; }
+        // Weiterleitungen getrennt je Weg: Schalter «je_weg» in Verhalten(); tcpip löscht die des Weges, auf dem es läuft.
+        static string Datei(string serie) => "reverse_" + serie.Replace(':', '_') + ".txt";
+        public Adb ReverseJe(string serie, params string[] zeilen) { Schreibe(Datei(serie), zeilen); return this; }
+        public string[] WeiterleitungenJe(string serie)
+        {
+            var d = Path.Combine(Ordner, Datei(serie));
+            return File.Exists(d) ? File.ReadAllLines(d).Where(z => z.Length > 0).ToArray() : [];
+        }
+        /// <summary>Die ersten n «connect» scheitern (adbd startet in der Quest neu).</summary>
+        public Adb ConnectScheitertNoch(int n) { Schreibe("connect_fehlschlaege.txt", n.ToString()); return this; }
+        /// <summary>Ein neu verbundener WLAN-Weg steht für die nächsten n «devices» als offline.</summary>
+        public Adb WlanOfflineFuer(int n) { Schreibe("wlan_offline.txt", n.ToString()); return this; }
+        /// <summary>Die ersten n «reverse tcp:…» scheitern mit «device offline».</summary>
+        public Adb ReverseScheitertNoch(int n) { Schreibe("reverse_fehlschlaege.txt", n.ToString()); return this; }
         public string[] Aufrufe()
         {
             var d = Path.Combine(Ordner, "aufrufe.log");
@@ -122,7 +136,14 @@ public class QuestTests : IDisposable
     static QuestEinstellungen Ohne(TimeSpan? limit = null) => new()
     {
         Zeitlimit = limit ?? TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
+        WlanGrenze = TimeSpan.FromMilliseconds(500), WlanAbstand = TimeSpan.FromMilliseconds(50), WeiterleitungGrenze = TimeSpan.FromMilliseconds(500),
     };
+
+    /// <summary>Wie Ohne(), aber mit grosszügigen Grenzen für Fälle, die erst nach mehreren Versuchen gelingen (jeder Aufruf der Attrappe braucht ~0,1 s).</summary>
+    static QuestEinstellungen Geduldig() => Ohne() with { WlanGrenze = TimeSpan.FromSeconds(20), WeiterleitungGrenze = TimeSpan.FromSeconds(10) };
+
+    const string WlanWeg = "192.168.1.124:5555";
+    const string Wlan = WlanWeg + "\tdevice";
 
     async Task<Server> Start(Adb? adb, QuestEinstellungen? quest = null, int port = 5130, IQuestNetz? netz = null)
     {
@@ -281,6 +302,183 @@ public class QuestTests : IDisposable
         Assert.True(iTcpip >= 0 && iConnect > iTcpip && iReverse > iConnect, string.Join(" | ", a));
         Assert.Contains("192.168.1.50", j!["meldung"]!.GetValue<string>());
         NurFesteAufrufe(adb);
+    }
+
+    // ---- Zwei Wege derselben Quest (USB und WLAN), Befund Meta Quest 3 am 21.10.2026
+
+    [Fact]
+    public async Task Zustand_beide_Wege_da_waehlt_den_WLAN_Weg()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg");
+        var s = await Start(adb);
+        var (_, j) = await s.Get();
+        Assert.Equal(2, j!["geraete"]!.AsArray().Count);   // die Liste bleibt, wie sie ist
+        Assert.Equal(WlanWeg, j["seriennummer"]!.GetValue<string>());
+        Assert.True(j["wlan"]!.GetValue<bool>());
+        Assert.Equal("192.168.1.124", j["ip"]!.GetValue<string>());
+        Assert.False(j["weiterleitung"]!.GetValue<bool>());
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("shell"));   // die Adresse steht in der Seriennummer
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Zustand_Weiterleitung_nur_auf_WLAN_ist_true()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg").ReverseJe(WlanWeg, "host-35 tcp:5130 tcp:5130");
+        var s = await Start(adb);
+        var (_, j) = await s.Get();
+        Assert.Equal(WlanWeg, j!["seriennummer"]!.GetValue<string>());
+        Assert.True(j["weiterleitung"]!.GetValue<bool>());
+    }
+
+    [Fact]
+    public async Task Zustand_Weg_mit_der_Weiterleitung_geht_vor_WLAN()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg").ReverseJe(Seriennummer, "UsbFfs tcp:5130 tcp:5130")
+            .Ip("    inet 192.168.1.124/24 brd 192.168.1.255 scope global wlan0");
+        var s = await Start(adb);
+        var (_, j) = await s.Get();
+        Assert.Equal(Seriennummer, j!["seriennummer"]!.GetValue<string>());
+        Assert.False(j["wlan"]!.GetValue<bool>());
+        Assert.True(j["weiterleitung"]!.GetValue<bool>());
+        Assert.Equal("192.168.1.124", j["ip"]!.GetValue<string>());
+        // Haben beide die Weiterleitung, gilt WLAN
+        adb.ReverseJe(WlanWeg, "host-35 tcp:5130 tcp:5130");
+        var (_, k) = await s.Get();
+        Assert.Equal(WlanWeg, k!["seriennummer"]!.GetValue<string>());
+    }
+
+    [Fact]
+    public async Task Verbinden_mit_zwei_Wegen_setzt_die_Weiterleitung_auf_dem_WLAN_Weg()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg");
+        var s = await Start(adb);
+        var (code, j) = await s.Post("/api/quest/verbinden");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Single(adb.WeiterleitungenJe(WlanWeg));
+        Assert.Empty(adb.WeiterleitungenJe(Seriennummer));
+        Assert.True(j!["weiterleitung"]!.GetValue<bool>());
+        Assert.Equal(WlanWeg, j["seriennummer"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Auf_WLAN_umstellen_wiederholt_connect_bis_der_WLAN_Weg_device_ist()
+    {
+        // adbd startet nach tcpip neu: zwei Mal abgelehnt, dann kurz offline, dazu schlägt auch die erste Weiterleitung fehl
+        var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").ReverseJe(Seriennummer, "UsbFfs tcp:5130 tcp:5130")
+            .Ip("    inet 192.168.1.124/24 brd 192.168.1.255 scope global wlan0")
+            .ConnectScheitertNoch(2).WlanOfflineFuer(2).ReverseScheitertNoch(1);
+        var s = await Start(adb, Geduldig());
+        var (code, j) = await s.Post("/api/quest/wlan");
+        Assert.Equal(HttpStatusCode.OK, code);
+        var a = adb.Aufrufe();
+        Assert.True(a.Count(z => z == $"connect {WlanWeg}") >= 4, string.Join(" | ", a));   // 2 abgelehnt, 2 mal verbunden aber offline, dann device
+        Assert.Single(a, z => z == $"-s {Seriennummer} tcpip 5555");
+        Assert.Empty(adb.WeiterleitungenJe(Seriennummer));   // tcpip hat sie auf USB gelöscht
+        Assert.Single(adb.WeiterleitungenJe(WlanWeg));
+        Assert.True(j!["wlan"]!.GetValue<bool>());
+        Assert.True(j["weiterleitung"]!.GetValue<bool>());
+        Assert.Equal(WlanWeg, j["seriennummer"]!.GetValue<string>());
+        Assert.Contains("192.168.1.124", j["meldung"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Auf_WLAN_umstellen_Weiterleitung_scheitert_dauernd_meldet_den_Fehler_von_adb()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").ReverseScheitertNoch(1000);
+        var s = await Start(adb);
+        var (code, f) = await s.Post("/api/quest/wlan");
+        Assert.Equal(HttpStatusCode.BadRequest, code);
+        Assert.Contains("device offline", f!["fehler"]!.GetValue<string>());
+        Assert.True(adb.Aufrufe().Count(z => z.Contains("reverse tcp:5130")) >= 2);   // wiederholt, nicht nur einmal
+    }
+
+    [Fact]
+    public async Task Auf_WLAN_umstellen_bei_bestehendem_WLAN_Weg_fuehrt_kein_zweites_tcpip_aus()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0");
+        var s = await Start(adb);
+        var (code, j) = await s.Post("/api/quest/wlan");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("tcpip") || z.StartsWith("connect"));
+        Assert.Single(adb.WeiterleitungenJe(WlanWeg));
+        Assert.True(j!["weiterleitung"]!.GetValue<bool>());
+        Assert.True(j["wlan"]!.GetValue<bool>());
+        Assert.Contains("schon über WLAN", j["meldung"]!.GetValue<string>());
+        // zweiter Klick: wieder kein tcpip/connect, die bestehende Weiterleitung bleibt (nichts wird neu gesetzt)
+        var vorher = adb.Aufrufe().Count(z => z.Contains("reverse tcp:"));
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/wlan")).Code);
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("tcpip") || z.StartsWith("connect"));
+        Assert.Equal(vorher, adb.Aufrufe().Count(z => z.Contains("reverse tcp:")));
+        Assert.Single(adb.WeiterleitungenJe(WlanWeg));
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Trennen_entfernt_die_Weiterleitung_auf_beiden_Wegen_und_ignoriert_Wege_ohne()
+    {
+        var adb = NeueAttrappe().Geraete(Usb, Wlan).Verhalten("je_weg")
+            .ReverseJe(Seriennummer, "UsbFfs tcp:5130 tcp:5130").ReverseJe(WlanWeg, "host-35 tcp:5130 tcp:5130");
+        var s = await Start(adb);
+        var (code, j) = await s.Post("/api/quest/trennen");
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Empty(adb.WeiterleitungenJe(Seriennummer));
+        Assert.Empty(adb.WeiterleitungenJe(WlanWeg));
+        Assert.False(j!["weiterleitung"]!.GetValue<bool>());
+        Assert.Contains($"-s {Seriennummer} reverse --remove tcp:5130", adb.Aufrufe());
+        Assert.Contains($"-s {WlanWeg} reverse --remove tcp:5130", adb.Aufrufe());
+        // nur ein Weg hat sie: der andere meldet «not found», das wird ignoriert
+        adb.ReverseJe(WlanWeg, "host-35 tcp:5130 tcp:5130");
+        var (c2, k) = await s.Post("/api/quest/trennen");
+        Assert.Equal(HttpStatusCode.OK, c2);
+        Assert.False(k!["weiterleitung"]!.GetValue<bool>());
+        Assert.Empty(adb.WeiterleitungenJe(WlanWeg));
+        // auf keinem Weg: die Meldung von adb kommt
+        var (c3, f) = await s.Post("/api/quest/trennen");
+        Assert.Equal(HttpStatusCode.BadRequest, c3);
+        Assert.Contains("not found", f!["fehler"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
+    public async Task Auf_WLAN_umstellen_Zeitgrenze_ausgeschoepft_meldet_klar_mit_Hinweis()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").ConnectScheitertNoch(1000);
+        var s = await Start(adb, new QuestEinstellungen
+        {
+            Zeitlimit = TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
+            WlanGrenze = TimeSpan.FromMilliseconds(1500), WlanAbstand = TimeSpan.FromMilliseconds(80), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),
+        });
+        var uhr = Stopwatch.StartNew();
+        var (code, f) = await s.Post("/api/quest/wlan");
+        uhr.Stop();
+        Assert.Equal(HttpStatusCode.BadRequest, code);
+        Assert.True(uhr.Elapsed < TimeSpan.FromSeconds(8), $"dauerte {uhr.Elapsed}");
+        Assert.Contains("fehlgeschlagen", f!["fehler"]!.GetValue<string>());
+        Assert.Contains("Connection refused", f["fehler"]!.GetValue<string>());
+        Assert.Contains("Versuche", f["fehler"]!.GetValue<string>());
+        Assert.Contains("gleiches WLAN", f["vorschlag"]!.GetValue<string>());
+        Assert.Contains("Adresse von Hand", f["vorschlag"]!.GetValue<string>());
+        var a = adb.Aufrufe();
+        Assert.True(a.Count(z => z.StartsWith("connect")) >= 3, string.Join(" | ", a));
+        Assert.DoesNotContain(a, z => z.Contains("reverse tcp:"));   // ohne WLAN-Weg keine Weiterleitung
+    }
+
+    [Fact]
+    public async Task Auf_WLAN_umstellen_WLAN_Weg_bleibt_offline_meldet_den_Zustand()
+    {
+        var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").WlanOfflineFuer(1000);
+        var s = await Start(adb, new QuestEinstellungen
+        {
+            PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
+            WlanGrenze = TimeSpan.FromMilliseconds(400), WlanAbstand = TimeSpan.FromMilliseconds(60), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),
+        });
+        var (code, f) = await s.Post("/api/quest/wlan");
+        Assert.Equal(HttpStatusCode.BadRequest, code);
+        Assert.Contains("offline", f!["fehler"]!.GetValue<string>());
+        Assert.DoesNotContain(adb.Aufrufe(), z => z.Contains("reverse tcp:"));
     }
 
     [Fact]
