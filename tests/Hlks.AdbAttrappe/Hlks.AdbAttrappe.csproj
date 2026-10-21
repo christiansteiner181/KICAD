@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <!-- Attrappe statt adb.exe für die Tests des Quest-Verbinders (Modul XR): liefert feste Ausgaben aus Dateien neben dem Programm und
+       protokolliert jeden Aufruf. Die Tests kopieren die Dateien nach %TEMP% und nennen das Programm dort adb.exe.
+       Kein Teil der Software, nur Testwerkzeug. Es wird nie ein echtes adb gestartet. -->
+  <PropertyGroup>
+    <OutputType>Exe</OutputType>
+    <RootNamespace>Hlks.AdbAttrappe</RootNamespace>
+    <IsPackable>false</IsPackable>
+  </PropertyGroup>
+
+</Project>

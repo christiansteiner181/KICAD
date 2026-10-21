@@ -5,6 +5,7 @@
     <Project Path="src/Hlks.Web/Hlks.Web.csproj" />
   </Folder>
   <Folder Name="/tests/">
+    <Project Path="tests/Hlks.AdbAttrappe/Hlks.AdbAttrappe.csproj" />
     <Project Path="tests/Hlks.ClaudeAttrappe/Hlks.ClaudeAttrappe.csproj" />
     <Project Path="tests/Hlks.Kern.Tests/Hlks.Kern.Tests.csproj" />
     <Project Path="tests/Hlks.Mcp.Tests/Hlks.Mcp.Tests.csproj" />
