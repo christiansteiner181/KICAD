@@ -1,7 +1,7 @@
 # Vorrat für Freitag, 23.10.2026 ab 17:00
 
 Christian, 21.10.2026: «momentan sammeln wir ideen. führe mit für am freitag». Bis das Wochenkontingent neu beginnt
-(Fr 23.10.2026 17:00), werden Ideen und Befunde hier gesammelt und **nicht** umgesetzt. Ausführliche Beschreibungen mit «Fertig, wenn»
+(Fr 23.10.2026 17:00), werden Ideen und Befunde hier gesammelt und **nicht** umgesetzt. **Nachtrag 21.10. ~14:10, Christian: «du kannst bis 95% kontingent bauen»** – N12, N13/N14 laufen; N15 folgt, wenn das Kontingent reicht. Ausführliche Beschreibungen mit «Fertig, wenn»
 stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste freie N-Nummer und eine Zeile hier.
 
 ## Feilarbeiten (Befunde aus Christians Prüfung)
