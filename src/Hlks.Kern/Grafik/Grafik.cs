@@ -92,6 +92,7 @@ public static class Grafik
             foreach (var e in p.Modell.Elemente)
                 if (Sichtbar(ctx, e) && QuelleFuer(p.Katalog, e) is { } q)
                     g.Teile.AddRange(Zeichnen(ctx, q, e));
+            IfcDarstellung.Ueberschreiben(ctx, g.Teile);   // N12: Farbe und Deckkraft des Nachbaus aus der Unterlage
         }
         else
         {
@@ -166,6 +167,7 @@ public static class Grafik
         if (e.Klasse == "Ansicht")
             return ctx.Art == "grundriss" && e.Id != ctx.Ansicht.Id && e.Text("art") is "schnitt" or "ansicht" && e.Geometrie.Punkte.Count >= 2;
         if (NieGrafisch.Contains(d.Schicht) || Gliederung.Contains(e.Klasse)) return false;
+        if (IfcDarstellung.Ausgeblendet(ctx, e)) return false;   // N12: Ansicht zeigt nur das Original der IFC-Unterlage
         if (ctx.KlassenAus.Contains(e.Klasse) || d.Linie.Any(ctx.KlassenAus.Contains)) return false;
         if (ctx.Gewerke is not null && d.Gewerk is { } gw && gw != "allgemein" && !ctx.Gewerke.Contains(gw)) return false;
         // Modul 3, B10: Einlagen und Grundleitungen nur im Einlage- bzw. Grundleitungsplan; dort nur die Elemente des Plans (EinlageGrafik)

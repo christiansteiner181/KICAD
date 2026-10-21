@@ -20,6 +20,8 @@
 //   5. Je Element ein Grafikteil (Id = Element, Ebene des Körpers): erst die Sichtkanten, darüber die Schnittflächen;
 //      Fangpunkte = Ecken der Schnittflächen und Enden gerader Sichtkanten, Fangkanten = Kanten der Schnittflächen und
 //      gerade Sichtkanten.
+//   5b. N12: IFC-Unterlagen: Nachbau in der Farbe der Unterlage; Original (ifcDarstellung original/beide) als Schnittlinien der
+//      Netze mit der Ebene w = 0 (GrundlagenIfc.Ansicht).
 //   6. Geschosskoten und Achsen (SchnittBezug.cs).
 // ANNAHMEN (Prüfliste Christian):
 //   - Schnittflächen von Decken/Dächern: Füllung «schnitt», Deckkraft 0.25 (wie Wand «unbestimmt»; Decken haben kein Material).
@@ -57,6 +59,8 @@ public static class Schnittgrafik
                 if (Grafik.QuelleFuer(ctx.Katalog, e) is { } q && FamilienGrafik.KoerperFuer(q, ctx.Projekt, e, ctx.Detailgrad) is { Leer: false } k) liste.Add((e, k));
             }
         var teile = Zeichnen(raum, schnitt, liste, ctx.Katalog);
+        IfcDarstellung.Ueberschreiben(ctx, teile);                       // N12: Nachbau in der Farbe der Unterlage
+        teile.InsertRange(0, GrundlagenIfc.Ansicht(ctx, raum));          // N12: Original der IFC-Unterlagen (Schnitt mit der Ebene), unterste Ebene
 
         // 6. Geschosskoten und Achsen
         teile.AddRange(Schnittbezug.Erzeugen(ctx, raum, teile));
