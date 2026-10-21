@@ -282,6 +282,23 @@ Christian 21.10.2026: «In der 3d ansicht ein navigationswürfel anzeigen (analo
 - ein Haus-Knopf für die Startansicht und das Kontextmenü «Aktuelle Ansicht als Startansicht»;
 - «VORNE» richtet sich nach der Gebäudeausrichtung (N9, `planwinkel` des Gebäudes); ohne Wert gelten die Projektachsen.
 
+**N10 und N11 umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf zusammengeführt).
+- **Mittlere Taste:** In allen Ansichten verschiebt sie, auch während ein Werkzeug aktiv ist. Im 3D gilt: Mitte verschiebt, Shift + Mitte
+  dreht, das Rad zoomt zum Zeiger. Ein Doppelklick mit der Mitte zeigt alles, aber nur, wenn dabei nicht gezogen wurde.
+- **Würfel:** oben rechts, mit 26 anklickbaren Bereichen (Flächen, Kanten, Ecken) und weicher Kamerafahrt; Ziehen am Würfel dreht.
+  - Kompassring mit Nordwinkel.
+  - Haus-Knopf und Kontextmenü für die Startansicht.
+- **Code und Tests:** `ansichten/maus.js`, `wuerfel-logik.js`, `wuerfel.js`; Node-Tests `maus.test.mjs`, Browser-Reihe
+  `maus-wuerfel.browser.mjs` (76 Prüfpunkte).
+
+**Offen:**
+1. **Planblatt:** Das PDF läuft im Betrachter des Browsers; dort löst die mittlere Taste dessen Autoscroll aus. Abhilfe wäre ein eigener
+   PDF-Betrachter (pdf.js).
+2. **Startansicht:** Sie liegt vorerst je Rechner im Browser (`localStorage`). Sie soll als Ansichtseigenschaft ins Modell, zusammen mit
+   dem 3D-Schnittbereich (N13).
+3. **VORNE:** Nach dem Zusammenführen von N9 Vorzeichen und Herkunft von `planwinkel` in `gebaeudeAusrichtungGrad`
+   (`wuerfel-logik.js`) prüfen.
+
 ## N12 – IFC: Original oder Nachbau als Unterlage zeigen, je eigene Farbe (transparent)
 
 Christian 21.10.2026: «Es soll gewählt werden können ob das originale IFC oder der nachbau als Unterlage abgebildet werden soll.» – «für beide
