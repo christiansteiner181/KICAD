@@ -213,7 +213,7 @@ public class SchemaansichtBefehleTests
         Assert.Equal("sinnbild", wto["symbol"]!.GetValue<string>());   // Waschtisch: HKAP-Sinnbild (B8b)
         var wco = knoten.Single(k => k!["kennzeichen"]!.GetValue<string>() == "WC-O")!;
         Assert.False(wco["platziert"]!.GetValue<bool>());
-        Assert.Equal("heizsymbol", knoten.Single(k => k!["kennzeichen"]!.GetValue<string>() == "V-1")!["symbol"]!.GetValue<string>());   // Absperrventil: Heizungssymbol der HKAP (Modul 5 A-S 2; vorher «ventil»)
+        Assert.Equal("ventil", knoten.Single(k => k!["kennzeichen"]!.GetValue<string>() == "V-1")!["symbol"]!.GetValue<string>());
         var linien = o["linien"]!.AsArray();
         Assert.Equal(10, linien.Count);
         var bogen = linien.Single(l => l!["kennzeichen"]!.AsArray().Any(x => x!.GetValue<string>() == "BO-1"))!;

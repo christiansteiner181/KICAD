@@ -142,8 +142,7 @@ public class SchemaSinnbilderTests(ITestOutputHelper aus)
 
     [Theory]
     [InlineData("Wassererwaermer", "geraet", "WE")]
-    // Heizkoerper hatte hier das Kästchen «HK»; seit Modul 5 A-S 2 zeichnet er das Heizkörpersymbol der H+K-Legende
-    // (SchemaSymboleHeizungTests.Heizkoerper_ZeigtDasSymbolStattDesKaestchensHK)
+    [InlineData("Heizkoerper", "apparat", "HK")]
     public void OhneSinnbild_BleibtDasKaestchenMitKuerzel(string klasse, string schluessel, string kuerzel)
     {
         var p = Leer();

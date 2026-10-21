@@ -27,8 +27,6 @@
   <ItemGroup>
     <!-- Modul 3c: Test-PDF der Normensuche (selbst erzeugt, erfundener Text; tests/daten/normen/erzeugen.mjs) -->
     <None Include="..\daten\normen\**\*.pdf" Link="normen\%(RecursiveDir)%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
-    <!-- Modul 5 A-S 2: Referenz der Heizungs- und Kältesymbole, aus dem HKAP-Quelltext erzeugt (werkzeuge/hkap_symbole_referenz) -->
-    <None Include="..\daten\hkap\*.json" Link="hkap\%(Filename)%(Extension)" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>
