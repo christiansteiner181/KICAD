@@ -9,6 +9,8 @@
 // (Knopf «Verbinden» frei) › «Verbinden» setzt reverse für den Port dieses Servers, Ampel grün, Adresse in der Quest › «Trennen» › Fehlerfälle (falscher Pfad, falsche IP,
 // Verbindungsfehler) mit Meldung im Dialog › WLAN-Adresse › «Auf WLAN umstellen» › Pfad zurücksetzen › 3D-Ansicht: grauer Knopf «In VR begehen», Link «Quest im Browser der Brille
 // nutzen …» (nur beim grauen Knopf), Klick öffnet den Dialog, Klick auf den grauen Knopf öffnet ihn ebenfalls.
+// Dann «Brille automatisch verbinden»: Statusanzeige «Brille» in der Statusleiste (erst sichtbar, wenn eine Brille gemerkt ist oder die Automatik an ist), Schalter im Dialog,
+// gemerkte Brille mit «Vergessen», Schritt «start» beim Einschalten (grün), Klick (grau, Hinweis Kabel), Takt alle 10 s mit selbsttätiger Umstellung auf WLAN, Rechtsklick öffnet den Dialog.
 // Rückgabewert 1, wenn eine Prüfung fehlschlägt.
 import { spawn } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, cpSync, readFileSync, copyFileSync, existsSync } from 'node:fs';
@@ -285,6 +287,94 @@ pruef(await sichtbar('.qd-einrichtung') && /zurückgesetzt/.test((await meldungs
 pruef((await ausw(`return (await (await fetch('/api/benutzer/einstellungen')).json()).werte['quest.adb'] ?? null;`)) === null, 'Die Einstellung quest.adb ist zurückgesetzt');
 await dialogZu();
 pruef(!(await dialogOffen()), 'Esc schliesst den Dialog');
+
+// ================================================================== 9b. Brille automatisch verbinden
+abschnitt('Brille automatisch verbinden: Statusanzeige in der Statusleiste, Schalter, Vergessen');
+const brilleStufe = () => ausw(`const k = document.querySelector('.sl-brille'); return k && !k.hidden ? { stufe: k.dataset.stufe, text: k.textContent, titel: k.title } : null;`);
+const MAC = 'aa:bb:cc:dd:ee:01';
+pruef(!(await sichtbar('.sl-brille')), 'Ohne Automatik und ohne gemerkte Brille ist die Statusanzeige «Brille» nicht sichtbar');
+pruef((await anrufe('/api/quest/automatik')).length === 0, 'Im Hintergrund lief kein Schritt (Einstellung aus)', JSON.stringify(await anrufe('/api/quest/automatik')));
+adbDatei('geraete.txt', [`${SERIE}\tdevice`]);
+adbDatei('reverse.txt', []);
+adbDatei('verhalten.txt', []);
+adbDatei('mac.txt', [MAC]);
+await register('Ansicht');
+await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
+await warteBis(dialogOffen, 'Dialog offen', 8000);
+await eingeben('.qd-adb', ADB);
+await klick('.qd-adb-speichern');
+await warteBis(async () => (await ampelStufen()).frei === 'ok', 'Quest freigegeben', 10000);
+pruef(!(await sichtbar('.sl-brille')), 'Das Speichern des Pfads allein macht die Anzeige nicht sichtbar');
+pruef(await gibt('.qd-auto') && !(await ausw(`return document.querySelector('.qd-auto').checked;`)), 'Im Dialog steht der Schalter «Brille automatisch verbinden», ausgeschaltet');
+pruef(/Noch keine Brille gemerkt/.test(await text('.qd-brillen')), 'Noch keine Brille gemerkt');
+await klick('.qd-verbinden');
+await warteBis(async () => (await ampelStufen()).weiter === 'ok', 'Weiterleitung aktiv', 10000);
+await warteBis(() => sichtbar('.sl-brille'), 'Statusanzeige sichtbar', 10000);
+let bs = await brilleStufe();
+pruef(bs && bs.stufe === 'grau' && /nicht verbunden/.test(bs.text), 'Brille gemerkt: Statusanzeige sichtbar, grau (Automatik aus)', JSON.stringify(bs));
+pruef((await text('.qd-brillen')).includes(MAC) && (await text('.qd-brillen')).includes(SERIE) && (await text('.qd-brillen')).includes('192.168.1.50'), 'Der Dialog zeigt die gemerkte Brille (Seriennummer, MAC, letzte IP)', await text('.qd-brillen'));
+pruef(aufrufe().includes(`-s ${SERIE} shell ip link show wlan0`), 'Die MAC wurde mit einem festen adb-Befehl gelesen');
+const gespeichert = await ausw(`return (await (await fetch('/api/benutzer/einstellungen')).json()).werte['quest.brillen'];`);
+pruef(Array.isArray(gespeichert) && gespeichert.length === 1 && gespeichert[0].mac === MAC && gespeichert[0].seriennummer === SERIE, 'Die Brille liegt in den Benutzereinstellungen (quest.brillen)', JSON.stringify(gespeichert));
+pruef((await anrufe('/api/quest/automatik')).length === 0, 'Ohne Automatik kein Schritt, auch mit gemerkter Brille');
+await shot('09_brille_gemerkt');
+
+// Schalter ein: ein Schritt «start»; die Quest hängt mit Weiterleitung am Kabel = bereit (grün)
+await klick('.qd-auto');
+await warteBis(async () => (await brilleStufe())?.stufe === 'gruen', 'Statusanzeige grün', 15000);
+bs = await brilleStufe();
+pruef(bs && bs.stufe === 'gruen' && /Brille bereit/.test(bs.text), 'Schalter ein: Statusanzeige grün «Brille bereit»', JSON.stringify(bs));
+const startAufrufe = await anrufe('/api/quest/automatik');
+pruef(startAufrufe.length >= 1 && startAufrufe[0].includes('"anlass":"start"'), 'Beim Einschalten ruft die Oberfläche den Schritt mit Anlass «start» auf', JSON.stringify(startAufrufe));
+pruef((await ausw(`return (await (await fetch('/api/benutzer/einstellungen')).json()).werte['quest.automatisch'];`)) === true, 'Die Einstellung quest.automatisch ist an');
+await shot('10_brille_gruen');
+await dialogZu();
+
+// Quest weg: ein Klick = ein Schritt «klick», nicht gefunden = grau mit Hinweis auf das Kabel
+adbDatei('geraete.txt', []);
+adbDatei('reverse.txt', []);
+await klick('.sl-brille');
+await warteBis(async () => (await brilleStufe())?.stufe === 'grau', 'Statusanzeige grau', 15000);
+bs = await brilleStufe();
+pruef(bs && /nicht gefunden/.test(bs.text) && /Kabel/.test(bs.titel) && /Rechtsklick/.test(bs.titel), 'Quest weg: grau «nicht gefunden», Hinweis auf das Kabel im Tipp', JSON.stringify(bs));
+pruef((await anrufe('/api/quest/automatik')).some((a) => a.includes('"anlass":"klick"')), 'Der Klick ruft den Schritt mit Anlass «klick» auf', JSON.stringify(await anrufe('/api/quest/automatik')));
+await shot('11_brille_grau');
+
+// Solange nicht grün, alle 10 s ein Schritt «takt»; kommt die Quest per Kabel, stellt KICAD selbst auf WLAN um (ohne Klick)
+await warteBis(async () => (await anrufe('/api/quest/automatik')).some((a) => a.includes('"anlass":"takt"')), 'Takt', 16000);
+pruef(true, 'Im Takt (10 s) ruft die Oberfläche den Schritt mit Anlass «takt» auf, solange die Brille nicht grün ist');
+adbDatei('geraete.txt', [`${SERIE}\tdevice`]);
+const vorTakt = aufrufe().length;
+await warteBis(async () => (await brilleStufe())?.stufe === 'gruen', 'Statusanzeige wieder grün', 25000);
+pruef(aufrufe().slice(vorTakt).includes(`-s ${SERIE} tcpip 5555`) && aufrufe().slice(vorTakt).includes('connect 192.168.1.50:5555'), 'USB-Quest ohne WLAN: KICAD hat selbst auf WLAN umgestellt (tcpip, connect)', JSON.stringify(aufrufe().slice(vorTakt)));
+bs = await brilleStufe();
+pruef(/Kabel kann ab/.test(bs?.titel ?? ''), 'Der Tipp sagt «Kabel kann ab»', bs?.titel);
+
+// Rechtsklick öffnet den Dialog «Quest verbinden»
+await ausw(`document.querySelector('.sl-brille').dispatchEvent(new MouseEvent('contextmenu', { bubbles: true, cancelable: true })); return 1;`);
+await warteBis(dialogOffen, 'Dialog über Rechtsklick', 8000);
+pruef(await dialogOffen(), 'Rechtsklick auf die Statusanzeige öffnet den Dialog «Quest verbinden»');
+await warteBis(async () => (await sichtbar('.qd-vergessen')), 'Knopf «Vergessen»', 8000);
+
+// Vergessen und ausschalten
+await klick('.qd-vergessen');
+await warteBis(async () => /Noch keine Brille gemerkt/.test(await text('.qd-brillen')), 'Brille vergessen', 8000);
+pruef((await ausw(`return (await (await fetch('/api/benutzer/einstellungen')).json()).werte['quest.brillen'] ?? null;`)) === null, 'Vergessen setzt quest.brillen zurück');
+pruef(await sichtbar('.sl-brille'), 'Die Automatik ist noch an: die Statusanzeige bleibt sichtbar');
+await klick('.qd-auto');
+await warteBis(async () => !(await sichtbar('.sl-brille')) && !(await sichtbar('.qd-spinner')), 'Statusanzeige weg', 10000);
+pruef(!(await sichtbar('.sl-brille')) && !(await ausw(`return document.querySelector('.qd-auto').checked;`)), 'Automatik aus und keine Brille: die Statusanzeige verschwindet');
+const nachAus = (await anrufe('/api/quest/automatik')).length;
+await warte(1500);
+pruef((await anrufe('/api/quest/automatik')).length === nachAus, 'Ohne die Einstellung ruft die Oberfläche nichts mehr auf');
+await dialogZu();
+await register('Ansicht');
+await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
+await warteBis(dialogOffen, 'Dialog offen', 8000);
+await eingeben('.qd-adb', '');
+await klick('.qd-adb-speichern');
+await warteBis(async () => (await ampelStufen()).adb === 'schlecht', 'adb wieder nicht gefunden', 10000);
+await dialogZu();
 
 // ================================================================== 10. 3D-Ansicht
 abschnitt('3D-Ansicht: grauer Knopf «In VR begehen» und Link «Quest im Browser der Brille nutzen …»');

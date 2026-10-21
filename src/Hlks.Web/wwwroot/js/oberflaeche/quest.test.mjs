@@ -151,6 +151,97 @@ test('Verdrahtung: Aktion im Register Ansicht, Symbol, Stilblatt, Link in der 3D
   assert.match(lies('../../css/ansichten.css'), /\.d3-vr\[data-vr-status="aus"\] \.d3-vr-quest \{ display: inline; \}/);
 });
 
+// ------------------------------------------------------------------------------------------ Brille automatisch verbinden (MAC statt IP)
+
+const brille = { seriennummer: '1WMHH000000000', mac: 'aa:bb:cc:dd:ee:01', letzteIp: '192.168.1.50', zuletzt: '2026-10-21T08:00:00Z' };
+
+test('Statusanzeige «Brille»: nur sichtbar bei eingeschalteter Automatik oder gemerkter Brille', () => {
+  assert.equal(T.statusSichtbar(false, []), false);
+  assert.equal(T.statusSichtbar(undefined, undefined), false);
+  assert.equal(T.statusSichtbar(true, []), true);
+  assert.equal(T.statusSichtbar(false, [brille]), true);
+  assert.equal(T.statusSichtbar('ja', []), false, 'nur ein echtes true schaltet ein');
+});
+
+test('Statusanzeige «Brille»: grün = bereit, gelb = sucht, grau = nicht gefunden', () => {
+  assert.equal(T.brilleAnzeige({ status: 'bereit', meldung: 'Verbunden.' }).stufe, 'gruen');
+  assert.equal(T.brilleAnzeige({ status: 'bereit' }).text, 'Brille bereit');
+  assert.equal(T.brilleAnzeige({ status: 'bereit' }, true).stufe, 'gelb', 'während eines Aufrufs gelb');
+  assert.equal(T.brilleAnzeige({ status: 'sucht' }).stufe, 'gelb');
+  assert.equal(T.brilleAnzeige(null, false, true).stufe, 'gelb', 'Automatik an, noch keine Antwort = sucht');
+  assert.equal(T.brilleAnzeige(null, false, false).stufe, 'grau', 'Automatik aus, Brille gemerkt = grau');
+  for (const status of ['nicht_gefunden', 'kein_adb', 'nicht_freigegeben', 'fehler', 'aus', 'irgendwas'])
+    assert.equal(T.brilleAnzeige({ status }).stufe, 'grau', status);
+  assert.equal(T.brilleAnzeige({ status: 'nicht_gefunden' }).text, 'Brille: nicht gefunden');
+  assert.equal(T.brilleAnzeige({ status: 'kein_adb' }).text, 'Brille: adb fehlt');
+  const grau = T.brilleAnzeige({ status: 'nicht_gefunden', meldung: 'Nicht im Netz.', hinweis: 'Einmal das Kabel.' });
+  assert.match(grau.titel, /Nicht im Netz\./);
+  assert.match(grau.titel, /Einmal das Kabel\./);
+  assert.match(grau.titel, /Klick: Brille jetzt suchen/);
+  assert.match(grau.titel, /Rechtsklick: Dialog «Quest verbinden»/);
+});
+
+test('Takt: nur bei eingeschalteter Automatik, ohne laufenden Aufruf und solange nicht grün', () => {
+  assert.equal(T.taktNoetig({ automatisch: true, antwort: null, laeuft: false }), true);
+  assert.equal(T.taktNoetig({ automatisch: true, antwort: { status: 'nicht_gefunden' }, laeuft: false }), true);
+  assert.equal(T.taktNoetig({ automatisch: true, antwort: { status: 'bereit' }, laeuft: false }), false, 'grün: kein Takt mehr');
+  assert.equal(T.taktNoetig({ automatisch: true, antwort: null, laeuft: true }), false);
+  assert.equal(T.taktNoetig({ automatisch: false, antwort: null, laeuft: false }), false, 'ohne die Einstellung läuft nichts im Hintergrund');
+  assert.equal(T.TAKT_MS, 10000);
+});
+
+test('Schritt: Anlässe, und ohne Einstellung nur auf ausdrücklichen Klick', () => {
+  assert.deepEqual([...T.ANLAESSE], ['takt', 'start', 'klick', 'ansicht3d']);
+  for (const a of T.ANLAESSE) assert.equal(T.schrittErlaubt(a, true), true, a);
+  assert.deepEqual(T.ANLAESSE.filter((a) => T.schrittErlaubt(a, false)), ['klick']);
+  assert.equal(T.schrittErlaubt('immer', true), false);
+});
+
+test('Gemerkte Brillen: gültige Einträge, Anzeige, Vergessen', () => {
+  assert.deepEqual(T.brillenListe(null), []);
+  assert.deepEqual(T.brillenListe('text'), []);
+  assert.deepEqual(T.brillenListe([brille, { seriennummer: 'X', mac: '00:11' }, { mac: brille.mac }, null, 5, { seriennummer: 'B', mac: 'AA:BB:CC:DD:EE:02' }]), [brille]);
+  assert.equal(T.brilleText(brille), '1WMHH000000000 · MAC aa:bb:cc:dd:ee:01 · zuletzt 192.168.1.50');
+  assert.match(T.brilleText({ ...brille, letzteIp: null }), /zuletzt unbekannt/);
+  const zwei = [brille, { ...brille, seriennummer: 'B2', mac: 'aa:bb:cc:dd:ee:02' }];
+  assert.deepEqual(T.ohneBrille(zwei, brille.mac).map((b) => b.seriennummer), ['B2']);
+  assert.equal(T.ohneBrille([brille], brille.mac), null, 'nichts übrig = Einstellung zurücksetzen');
+  assert.equal(T.AUTOMATIK_SCHLUESSEL, 'quest.automatisch');
+  assert.equal(T.BRILLEN_SCHLUESSEL, 'quest.brillen');
+});
+
+test('Verdrahtung «Brille»: Statusleiste, Stilblatt, Schalter und «Vergessen» im Dialog, Schritt nur über /api/quest/automatik', () => {
+  const sl = lies('statusleiste.js');
+  assert.match(sl, /import \{ questStatusEinrichten \} from '\.\/quest-status\.js'/);
+  assert.match(sl, /class="sl-brille" hidden/);
+  assert.match(sl, /questStatusEinrichten\(w\.querySelector\('\.sl-brille'\)\)/);
+  assert.match(lies('../../css/quest.css'), /\.sl-brille\.gruen \{ color: var\(--ok\); \}/);
+  const st = lies('quest-status.js');
+  assert.match(st, /senden\('\/api\/quest\/automatik', \{ anlass \}\)/);
+  assert.match(st, /abonnieren\('ansicht'/);
+  assert.match(st, /'3d'/);
+  assert.match(st, /oncontextmenu/);
+  assert.match(st, /T\.TAKT_MS/);
+  assert.doesNotMatch(st, /fetch\(/, 'nur über api.js');
+  assert.doesNotMatch(st.split('\n').filter((z) => !z.trim().startsWith('//')).join('\n'), /ping/i, 'die Oberfläche entscheidet nie über Pings: das tut der Server');
+  const d = lies('quest-dialog.js');
+  assert.match(d, /class="qd-auto"/);
+  assert.match(d, /Brille automatisch verbinden/);
+  assert.match(d, /class="dlg-knopf qd-vergessen"/);
+  assert.match(d, /benutzerSetzen\(T\.AUTOMATIK_SCHLUESSEL, an\)/);
+  assert.match(d, /benutzerSetzen\(T\.BRILLEN_SCHLUESSEL, T\.ohneBrille/);
+  assert.doesNotMatch(d, /\$\{b\.[^}]*\}/, 'Brillendaten nur über esc()');
+});
+
+test('OBERFLAECHE.md beschreibt die Automatik «Brille automatisch verbinden»', () => {
+  const md = lies('../../../OBERFLAECHE.md');
+  assert.match(md, /Brille automatisch verbinden/);
+  assert.match(md, /quest\.automatisch/);
+  assert.match(md, /quest\.brillen/);
+  assert.match(md, /\/api\/quest\/automatik/);
+  assert.match(md, /quest-status\.js/);
+});
+
 test('OBERFLAECHE.md beschreibt den Dialog «Quest verbinden»', () => {
   const md = lies('../../../OBERFLAECHE.md');
   assert.match(md, /Quest verbinden/);

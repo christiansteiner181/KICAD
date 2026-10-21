@@ -43,6 +43,14 @@ public sealed record QuestEinstellungen
     public bool PfadDurchsuchen { get; init; } = true;
     /// <summary>Orte, an denen nach adb.exe gesucht wird (wie quest_verbinden.ps1); null = die bekannten Orte (QuestDienst.BekannteOrte).</summary>
     public IReadOnlyList<string>? Orte { get; init; }
+    /// <summary>Zeitgrenze je Ping beim Suchen der Brille im eigenen Netz.</summary>
+    public TimeSpan PingZeitlimit { get; init; } = TimeSpan.FromMilliseconds(300);
+    /// <summary>Höchstens so viele Pings zugleich (nie mehr als 32).</summary>
+    public int PingParallel { get; init; } = 32;
+    /// <summary>Mindestabstand zwischen zwei Ping-Durchläufen (Christian 21.10.2026: höchstens einmal je 2 Minuten).</summary>
+    public TimeSpan PingAbstand { get; init; } = TimeSpan.FromMinutes(2);
+    /// <summary>Uhr für Zeitstempel und den Ping-Abstand (Tests setzen eine feste); null = UTC-Systemzeit.</summary>
+    public Func<DateTimeOffset>? Uhr { get; init; }
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
@@ -59,12 +67,25 @@ public sealed record QuestEinstellungen
 /// <summary>Ein Gerät aus «adb devices».</summary>
 public sealed record QuestGeraet(string Seriennummer, string Zustand, bool Wlan);
 
-public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen)
+/// <summary>Eine gemerkte Brille (Benutzereinstellung «quest.brillen»): Seriennummer, WLAN-MAC, zuletzt gesehene IP und Zeitpunkt (UTC, ISO).</summary>
+public sealed record QuestBrille(string Seriennummer, string Mac, string? LetzteIp, string? Zuletzt);
+
+public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen, IQuestNetz? netzNaht = null)
 {
     /// <summary>Schlüssel der Benutzereinstellung mit dem Pfad zur adb.exe.</summary>
     public const string AdbSchluessel = "quest.adb";
+    /// <summary>Schlüssel (Ja/Nein): «Brille automatisch verbinden». Vorgabe nein.</summary>
+    public const string AutomatikSchluessel = "quest.automatisch";
+    /// <summary>Schlüssel der gemerkten Brillen: Liste { seriennummer, mac, letzteIp, zuletzt }.</summary>
+    public const string BrillenSchluessel = "quest.brillen";
     public const int WlanPort = 5555;
     const int AusgabeMax = 64 * 1024;
+    const int BrillenMax = 8;
+    /// <summary>Anlässe des Automatik-Schritts. «takt» liest nur adb devices und die Nachbartabelle (kein Ping-Durchlauf); die übrigen dürfen suchen.</summary>
+    public static readonly IReadOnlyList<string> Anlaesse = ["takt", "start", "klick", "ansicht3d"];
+
+    readonly IQuestNetz netz = netzNaht ?? IQuestNetz.Vorgabe();
+    DateTimeOffset? letzterPing;
 
     static readonly Regex IpMuster = new(@"^(?<ip>(?:\d{1,3}\.){3}\d{1,3})(?::(?<port>\d{1,5}))?$", RegexOptions.CultureInvariant);
     static readonly Regex SerieMuster = new(@"^[A-Za-z0-9][A-Za-z0-9._:\-]{0,63}$", RegexOptions.CultureInvariant);   // nie mit «-» beginnen (Schalter-Einschleusung)
@@ -136,6 +157,175 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     }
 
     static string Kuerzen(string s, int n) => s.Length <= n ? s : s[..n] + "…";
+
+    // ---------------------------------------------------------------- MAC, gemerkte Brillen (rein)
+
+    static readonly Regex MacMuster = new(@"^([0-9a-f]{2}:){5}[0-9a-f]{2}$", RegexOptions.CultureInvariant);
+    static readonly Regex LinkMuster = new(@"link/ether\s+([0-9A-Fa-f]{2}(?::[0-9A-Fa-f]{2}){5})(?![0-9A-Fa-f:])", RegexOptions.CultureInvariant);
+
+    /// <summary>Prüft eine MAC («aa:bb:cc:dd:ee:ff», klein): gibt sie zurück oder null. Verworfen werden auch 00:00:…, 02:00:00:00:00:00, ff:ff:… und Gruppenadressen.</summary>
+    public static string? MacPruefen(string? text)
+    {
+        if (text is null || !MacMuster.IsMatch(text)) return null;
+        if (text is "00:00:00:00:00:00" or "02:00:00:00:00:00" or "ff:ff:ff:ff:ff:ff") return null;
+        if ((Convert.ToInt32(text[..2], 16) & 1) != 0) return null;   // Gruppenadresse (Multicast/Broadcast) ist nie die MAC eines Geräts
+        return text;
+    }
+
+    /// <summary>Liest die MAC aus der Ausgabe von «ip link show wlan0» (Zeile «link/ether aa:bb:…»); null, wenn keine gültige da ist.</summary>
+    public static string? MacLesen(string? ausgabe)
+    {
+        if (string.IsNullOrEmpty(ausgabe)) return null;
+        var m = LinkMuster.Match(ausgabe);
+        return m.Success ? MacPruefen(m.Groups[1].Value.ToLowerInvariant()) : null;
+    }
+
+    static string? TextVon(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
+
+    static QuestBrille? BrilleAus(JsonNode? n)
+    {
+        if (n is not JsonObject o) return null;
+        var serie = TextVon(o["seriennummer"]);
+        var mac = MacPruefen(TextVon(o["mac"]));
+        if (serie is null || !SerieMuster.IsMatch(serie) || mac is null) return null;
+        string? ip = null;
+        if (TextVon(o["letzteIp"]) is { } roh)
+        {
+            try { ip = IpPruefen(roh).Ip; } catch (HlksFehler) { ip = null; }
+        }
+        var zuletzt = TextVon(o["zuletzt"]);
+        if (zuletzt is { Length: > 40 }) zuletzt = null;
+        return new QuestBrille(serie, mac, ip, zuletzt);
+    }
+
+    /// <summary>Prüfung der Einstellung «quest.brillen» (BenutzerEinstellungen.Bekannt): eine Liste von höchstens 8 Einträgen mit gültiger Seriennummer und MAC.</summary>
+    public static string? BrillenPruefen(JsonNode w)
+    {
+        if (w is not JsonArray a) return "Der Wert muss eine Liste von Brillen sein: [{ \"seriennummer\", \"mac\", \"letzteIp\", \"zuletzt\" }].";
+        if (a.Count == 0) return "Die Liste darf nicht leer sein (zum Vergessen die Einstellung zurücksetzen).";
+        if (a.Count > BrillenMax) return $"Es lassen sich höchstens {BrillenMax} Brillen merken.";
+        var macs = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var n in a)
+        {
+            if (BrilleAus(n) is not { } b) return "Jede Brille braucht eine gültige Seriennummer und eine gültige MAC (aa:bb:cc:dd:ee:ff; nicht 00:00:…).";
+            if (!macs.Add(b.Mac)) return "Jede MAC darf nur einmal vorkommen.";
+        }
+        return null;
+    }
+
+    /// <summary>Prüfung der Einstellung «quest.automatisch»: Ja oder Nein.</summary>
+    public static string? AutomatikPruefen(JsonNode w) =>
+        w is JsonValue v && v.TryGetValue<bool>(out _) ? null : "Erlaubt sind true und false.";
+
+    static readonly Regex UnechtMuster = new(@"\b(vpn|tap|tun|wintun|wireguard|openvpn|virtual|vethernet|hyper-v|vmware|virtualbox|zerotier|tailscale|anyconnect|globalprotect|bluetooth|docker|wsl|npcap|pseudo|loopback)\b",
+        RegexOptions.CultureInvariant | RegexOptions.IgnoreCase);
+    static readonly HashSet<string> EchteArten = new(StringComparer.Ordinal) { "Ethernet", "FastEthernetT", "FastEthernetFx", "GigabitEthernet", "Wireless80211" };
+
+    /// <summary>Ist die Schnittstelle ein echtes LAN/WLAN (kein VPN-, TAP-, Tunnel-, virtueller Adapter) mit privater IPv4-Adresse (10/8, 172.16/12, 192.168/16)?</summary>
+    public static bool EchteSchnittstelle(NetzSchnittstelle s)
+    {
+        if (!EchteArten.Contains(s.Art)) return false;
+        if (UnechtMuster.IsMatch(s.Name ?? "") || UnechtMuster.IsMatch(s.Beschreibung ?? "")) return false;
+        var t = (s.Ip ?? "").Split('.');
+        if (t.Length != 4 || !t.All(x => int.TryParse(x, out var z) && z is >= 0 and <= 255)) return false;
+        int a = int.Parse(t[0]), b = int.Parse(t[1]);
+        return a == 10 || (a == 172 && b is >= 16 and <= 31) || (a == 192 && b == 168);
+    }
+
+    /// <summary>Die Adressen, die ein Ping-Durchlauf anpingt: das eigene /24-Netz jeder echten Schnittstelle (bei engerer Maske nur deren Netz), ohne die eigene Adresse, ohne Doppelte.</summary>
+    public static IReadOnlyList<string> PingZiele(IEnumerable<NetzSchnittstelle> schnittstellen)
+    {
+        var ziele = new List<string>();
+        var gesehen = new HashSet<string>(StringComparer.Ordinal);
+        static uint Zahl(string ip) { var t = ip.Split('.').Select(uint.Parse).ToArray(); return t[0] << 24 | t[1] << 16 | t[2] << 8 | t[3]; }
+        var echte = schnittstellen.Where(EchteSchnittstelle).ToList();
+        var eigene = echte.Select(s => Zahl(s.Ip)).ToHashSet();   // die eigenen Adressen aller echten Schnittstellen
+        foreach (var s in echte)
+        {
+            uint ip = Zahl(s.Ip);
+            int praefix = Math.Max(24, s.Praefix);
+            if (praefix >= 31) continue;
+            uint maske = uint.MaxValue << (32 - praefix);
+            uint adr = ip & maske, rund = adr | ~maske;
+            for (uint h = adr + 1; h < rund; h++)
+            {
+                if (eigene.Contains(h)) continue;
+                var text = $"{h >> 24}.{(h >> 16) & 255}.{(h >> 8) & 255}.{h & 255}";
+                if (gesehen.Add(text)) ziele.Add(text);
+            }
+        }
+        return ziele;
+    }
+
+    /// <summary>Anlass des Automatik-Schritts prüfen (Vorgabe «takt»).</summary>
+    public static string AnlassPruefen(string? anlass)
+    {
+        var a = string.IsNullOrWhiteSpace(anlass) ? "takt" : anlass.Trim();
+        if (!Anlaesse.Contains(a)) throw new HlksFehler($"Der Anlass «{Kuerzen(a, 20)}» ist unbekannt.", "Erlaubt: " + string.Join(", ", Anlaesse) + ".");
+        return a;
+    }
+
+    // ---------------------------------------------------------------- gemerkte Brillen (Benutzereinstellungen)
+
+    DateTimeOffset Jetzt() => (einstellungen.Uhr ?? (() => DateTimeOffset.UtcNow))();
+
+    /// <summary>«Brille automatisch verbinden» eingeschaltet? Vorgabe nein.</summary>
+    public bool AutomatikAn() => benutzer.Hole(AutomatikSchluessel) is JsonValue v && v.TryGetValue<bool>(out var an) && an;
+
+    /// <summary>Die gemerkten Brillen (ungültige Einträge, z. B. von Hand in die Datei geschrieben, fallen weg).</summary>
+    public List<QuestBrille> Brillen()
+    {
+        var liste = new List<QuestBrille>();
+        if (benutzer.Hole(BrillenSchluessel) is not JsonArray a) return liste;
+        foreach (var n in a)
+            if (BrilleAus(n) is { } b && liste.All(x => x.Mac != b.Mac) && liste.Count < BrillenMax) liste.Add(b);
+        return liste;
+    }
+
+    /// <summary>Merkt eine Brille (nach MAC; ändert nur, wenn sich Seriennummer, IP oder der Tag geändert haben). Scheitert still: die Hauptsache (Verbinden) geht vor.</summary>
+    void BrilleMerken(string serie, string mac, string? ip)
+    {
+        try
+        {
+            if (MacPruefen(mac) is not { } m) return;
+            var liste = Brillen();
+            var alt = liste.FirstOrDefault(b => b.Mac == m);
+            if (alt is not null && WlanSerie.IsMatch(serie) && !WlanSerie.IsMatch(alt.Seriennummer)) serie = alt.Seriennummer;   // die USB-Seriennummer bleibt
+            var jetzt = Jetzt().UtcDateTime;
+            var neu = new QuestBrille(serie, m, ip ?? alt?.LetzteIp, jetzt.ToString("yyyy-MM-dd'T'HH:mm:ss'Z'", System.Globalization.CultureInfo.InvariantCulture));
+            if (alt is not null && alt.Seriennummer == neu.Seriennummer && alt.LetzteIp == neu.LetzteIp && alt.Zuletzt is { Length: >= 10 } z && z[..10] == neu.Zuletzt![..10]) return;
+            liste.RemoveAll(b => b.Mac == m);
+            liste.Insert(0, neu);
+            var a = new JsonArray();
+            foreach (var b in liste.Take(BrillenMax))
+            {
+                var o = new JsonObject { ["seriennummer"] = b.Seriennummer, ["mac"] = b.Mac };
+                if (b.LetzteIp is not null) o["letzteIp"] = b.LetzteIp;
+                if (b.Zuletzt is not null) o["zuletzt"] = b.Zuletzt;
+                a.Add(o);
+            }
+            benutzer.Setzen(BrillenSchluessel, a);
+        }
+        catch (HlksFehler) { /* nicht gemerkt – das Verbinden gilt trotzdem */ }
+    }
+
+    /// <summary>Liest die WLAN-MAC der Quest über adb (feste Argumente) und merkt die Brille; scheitert still.</summary>
+    async Task BrilleMerkenVon(AdbFund adb, QuestGeraet g)
+    {
+        try
+        {
+            var mac = await MacVonGeraet(adb, g.Seriennummer);
+            if (mac is null) return;
+            BrilleMerken(g.Seriennummer, mac, await WlanAdresse(adb, g));
+        }
+        catch (HlksFehler) { /* nicht gemerkt */ }
+    }
+
+    async Task<string?> MacVonGeraet(AdbFund adb, string serie)
+    {
+        var r = await Aufruf(adb, "-s", serie, "shell", "ip", "link", "show", "wlan0");
+        return r.Zeitueberschreitung || r.Code != 0 ? null : MacLesen(r.Ausgabe);
+    }
 
     /// <summary>Liest die Ausgabe von «adb devices»: Seriennummer und Zustand je Zeile (Kopfzeile und Meldungen des Dienstes mit «*» fallen weg).</summary>
     public static List<QuestGeraet> GeraeteLesen(string ausgabe)
@@ -295,7 +485,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             return new
             {
                 adbGefunden = false, adbHinweis = hinweis, suchorte = (einstellungen.Orte ?? BekannteOrte()).ToArray(), geraete = Array.Empty<QuestGeraet>(), questVerbunden = false, freigegeben = false, nichtFreigegeben = false,
-                weiterleitung = false, wlan = false, port, url, meldung,
+                weiterleitung = false, wlan = false, port, url, meldung, automatisch = AutomatikAn(), brillen = Brillen(),
             };
         List<QuestGeraet> geraete = [];
         string? fehler = null;
@@ -318,7 +508,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             freigegeben = ziel is not null,
             nichtFreigegeben = ziel is null && geraete.Any(g => g.Zustand == "unauthorized"),
             seriennummer = ziel?.Seriennummer, wlan = ziel?.Wlan ?? false, ip,
-            weiterleitung = weiter, port, url, fehler, meldung,
+            weiterleitung = weiter, port, url, fehler, meldung, automatisch = AutomatikAn(), brillen = Brillen(),
         };
     }
 
@@ -402,6 +592,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             Freigegebene(geraete);
             var (g, _) = await Waehlen(adb, geraete, port);
             await WeiterleitungSetzen(adb, g!.Seriennummer, port);
+            await BrilleMerkenVon(adb, g);
             return await ZustandOhneSperre(port, $"Bereit. In der Quest den Browser öffnen und http://localhost:{port} eingeben.");
         }
         finally { sperre.Release(); }
@@ -427,17 +618,25 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
                 if (mit is null) await WeiterleitungSetzen(adb, wlanWege[0].Seriennummer, port, wiederholen: true);
                 return await ZustandOhneSperre(port, "Die Quest ist schon über WLAN verbunden; die Weiterleitung ist gesetzt.");
             }
-            var g = frei[0];
-            var ip = await WlanAdresse(adb, g)
-                ?? throw new HlksFehler("Die WLAN-Adresse der Quest wurde nicht gefunden.", "WLAN der Brille einschalten (gleiches Netz wie der PC) und erneut versuchen, oder die Adresse unten von Hand eingeben.");
-            await Gut(adb, "tcpip", "-s", g.Seriennummer, "tcpip", WlanPort.ToString());
-            if (einstellungen.WlanWartezeit > TimeSpan.Zero) await Task.Delay(einstellungen.WlanWartezeit);
-            var ziel = $"{ip}:{WlanPort}";
-            await WlanVerbinden(adb, ziel);
-            await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);
+            var ip = await UmstellenKern(adb, frei[0], port);
             return await ZustandOhneSperre(port, $"WLAN aktiv. Das Kabel kann ab. Nächstes Mal genügt die Adresse {ip}.");
         }
         finally { sperre.Release(); }
+    }
+
+    /// <summary>Die Schritte von «Auf WLAN umstellen» für eine USB-Quest (unter der Sperre): WLAN-Adresse und MAC lesen, tcpip, connect, Weiterleitung, Brille merken. Gibt die IP zurück.</summary>
+    async Task<string> UmstellenKern(AdbFund adb, QuestGeraet g, int port)
+    {
+        var ip = await WlanAdresse(adb, g)
+            ?? throw new HlksFehler("Die WLAN-Adresse der Quest wurde nicht gefunden.", "WLAN der Brille einschalten (gleiches Netz wie der PC) und erneut versuchen, oder die Adresse unten von Hand eingeben.");
+        var mac = await MacVonGeraet(adb, g.Seriennummer);   // vor tcpip: danach erscheint die USB-Seriennummer unter Umständen nicht mehr
+        await Gut(adb, "tcpip", "-s", g.Seriennummer, "tcpip", WlanPort.ToString());
+        if (einstellungen.WlanWartezeit > TimeSpan.Zero) await Task.Delay(einstellungen.WlanWartezeit);
+        var ziel = $"{ip}:{WlanPort}";
+        await WlanVerbinden(adb, ziel);
+        await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);
+        if (mac is not null) BrilleMerken(g.Seriennummer, mac, ip);
+        return ip;
     }
 
     /// <summary>«adb connect» wiederholen, bis adb die Verbindung meldet UND der WLAN-Weg in «adb devices» als «device» steht (Gesamtgrenze WlanGrenze,
@@ -492,6 +691,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             await WlanVerbinden(adb, ziel);
             var g = await Geraet(adb, ziel);
             await WeiterleitungSetzen(adb, g.Seriennummer, port, wiederholen: true);
+            await BrilleMerkenVon(adb, g);
             return await ZustandOhneSperre(port, $"Über WLAN verbunden ({ziel}). In der Quest http://localhost:{port} öffnen.");
         }
         finally { sperre.Release(); }
@@ -507,6 +707,156 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             throw new HlksFehler("Die Quest ist verbunden, aber noch nicht freigegeben.", "In der Brille «USB-Debugging erlauben» bestätigen und erneut versuchen.");
         if (g.Zustand != "device") throw new HlksFehler($"Die Quest meldet den Zustand «{g.Zustand}».", "Brille aufsetzen und erneut versuchen.");
         return g;
+    }
+
+    // ---------------------------------------------------------------- Brille automatisch verbinden
+
+    const string NeustartHinweis = "Nach einem Neustart der Brille ist einmal das Kabel nötig (adb tcpip gilt nicht über den Neustart); dann findet KICAD die Brille wieder über ihre MAC. Brille eingeschaltet und im selben WLAN?";
+
+    object AutomatikErgebnis(string status, int port, bool automatisch, string? meldung = null, string? hinweis = null, string ping = "nein", string? ip = null, string? serie = null) => new
+    {
+        automatisch, status, meldung, hinweis, ping, ip, seriennummer = serie, brille = Brillen().FirstOrDefault(), port, url = $"http://localhost:{port}",
+    };
+
+    bool PingErlaubt() => letzterPing is null || Jetzt() - letzterPing.Value >= einstellungen.PingAbstand;
+
+    /// <summary>Ein Ping-Durchlauf im eigenen /24-Netz der echten Schnittstellen (höchstens 32 Pings zugleich, 300 ms je Ping). Unter der Sperre; setzt die Uhr für den Mindestabstand.</summary>
+    async Task<bool> PingDurchlauf()
+    {
+        var ziele = PingZiele(netz.Schnittstellen());
+        if (ziele.Count == 0) return false;   // kein echtes privates LAN/WLAN: nichts zu tun
+        letzterPing = Jetzt();
+        using var gate = new SemaphoreSlim(Math.Clamp(einstellungen.PingParallel, 1, 32));
+        using var grenze = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        try
+        {
+            await Task.WhenAll(ziele.Select(async ip =>
+            {
+                await gate.WaitAsync(grenze.Token);
+                try { await netz.Anpingen(ip, einstellungen.PingZeitlimit, grenze.Token); }
+                finally { gate.Release(); }
+            }));
+        }
+        catch (OperationCanceledException) { /* Zeitgrenze des ganzen Durchlaufs */ }
+        return true;
+    }
+
+    static bool AdresseOk(string ip)
+    {
+        try { var (a, _) = IpPruefen(ip); return !a.StartsWith("169.254.", StringComparison.Ordinal); }
+        catch (HlksFehler) { return false; }
+    }
+
+    /// <summary>Die Adressen der gemerkten Brillen in der Nachbartabelle (nach MAC; höchstens 4, ohne Doppelte).</summary>
+    List<(QuestBrille Brille, string Ip)> InTabelle(List<QuestBrille> brillen)
+    {
+        var tabelle = netz.Nachbarn();
+        var liste = new List<(QuestBrille, string)>();
+        foreach (var b in brillen)
+            foreach (var n in tabelle)
+                if (n.Mac == b.Mac && AdresseOk(n.Ip) && liste.All(x => x.Item2 != n.Ip) && liste.Count < 4) liste.Add((b, n.Ip));
+        return liste;
+    }
+
+    async Task<bool> Verbindet(AdbFund adb, string ip)
+    {
+        try { await WlanVerbinden(adb, $"{ip}:{WlanPort}"); return true; }
+        catch (HlksFehler) { return false; }
+    }
+
+    /// <summary>
+    /// Ein Schritt von «Brille automatisch verbinden» (idempotent, unter der Sperre; läuft die Sperre schon, antwortet er «sucht»). Anlass «takt» liest nur
+    /// «adb devices» und die Nachbartabelle; «start», «ansicht3d» und «klick» dürfen zusätzlich einen Ping-Durchlauf machen (höchstens einmal je 2 Minuten).
+    /// Ist die Einstellung quest.automatisch aus, geschieht nichts – ausser bei «klick» (ein ausdrücklicher Klick des Menschen).
+    /// Status: aus | kein_adb | bereit | sucht | nicht_gefunden | nicht_freigegeben | fehler.
+    /// </summary>
+    public async Task<object> Automatik(int port, string? anlassText)
+    {
+        PortPruefen(port);
+        var anlass = AnlassPruefen(anlassText);
+        var an = AutomatikAn();
+        if (!an && anlass != "klick")
+            return AutomatikErgebnis("aus", port, false, "Brille automatisch verbinden ist ausgeschaltet.");
+        if (!await sperre.WaitAsync(0))
+            return AutomatikErgebnis("sucht", port, an, "Ein anderer Schritt läuft noch.");
+        try { return await AutomatikSchritt(port, anlass, an); }
+        catch (HlksFehler f) { return AutomatikErgebnis("fehler", port, an, f.Message, f.Vorschlag); }
+        finally { sperre.Release(); }
+    }
+
+    async Task<object> AutomatikSchritt(int port, string anlass, bool an)
+    {
+        var adb = AdbFinden(out var adbHinweis);
+        if (adb is null) return AutomatikErgebnis("kein_adb", port, an, adbHinweis);
+        var d = await Aufruf(adb, "devices");
+        if (d.Zeitueberschreitung) throw Zeitfehler("devices");
+        if (d.Code != 0) throw new HlksFehler($"adb meldet: {Kuerzen(d.Ausgabe, 300)}", "Verbindung prüfen und erneut versuchen.");
+        var geraete = GeraeteLesen(d.Ausgabe);
+
+        // Gemeinsame Gerätewahl (Weg mit Weiterleitung › WLAN › USB), wie Zustand, Verbinden, Trennen und Umstellen.
+        var (weg, hatWeiterleitung) = await Waehlen(adb, geraete, port);
+
+        // 1. Schon verbunden mit Weiterleitung: nichts tun.
+        if (weg is not null && hatWeiterleitung)
+        {
+            if (Brillen().Count == 0) await BrilleMerkenVon(adb, weg);
+            return AutomatikErgebnis("bereit", port, an, $"Die Brille ist verbunden. In der Quest http://localhost:{port} öffnen.", serie: weg.Seriennummer);
+        }
+
+        // 2. Ein WLAN-Weg besteht, nur die Weiterleitung fehlt.
+        if (weg is { Wlan: true } wlan)
+        {
+            await WeiterleitungSetzen(adb, wlan.Seriennummer, port, wiederholen: true);
+            await BrilleMerkenVon(adb, wlan);
+            return AutomatikErgebnis("bereit", port, an, $"Die Brille ist über WLAN verbunden. In der Quest http://localhost:{port} öffnen.", ip: wlan.Seriennummer.Split(':')[0], serie: wlan.Seriennummer);
+        }
+
+        // 3. Eine USB-Quest, aber kein WLAN-Weg: selbst auf WLAN umstellen.
+        if (weg is { } usb)
+        {
+            try
+            {
+                var ip = await UmstellenKern(adb, usb, port);
+                return AutomatikErgebnis("bereit", port, an, $"WLAN eingerichtet. Das Kabel kann ab. In der Quest http://localhost:{port} öffnen.", ip: ip, serie: usb.Seriennummer);
+            }
+            catch (HlksFehler f)
+            {
+                await WeiterleitungSetzen(adb, usb.Seriennummer, port);   // wenigstens über das Kabel
+                await BrilleMerkenVon(adb, usb);
+                return AutomatikErgebnis("bereit", port, an, $"Über das Kabel verbunden. Auf WLAN umstellen ging nicht: {f.Message}", f.Vorschlag, serie: usb.Seriennummer);
+            }
+        }
+        if (geraete.Any(g => g.Zustand == "unauthorized" && !g.Wlan))
+            return AutomatikErgebnis("nicht_freigegeben", port, an, "Die Quest ist verbunden, aber noch nicht freigegeben.", "In der Brille «USB-Debugging erlauben» bestätigen.");
+
+        // 4. Keine Verbindung: die gemerkte Brille über ihre MAC im Netz suchen.
+        var brillen = Brillen();
+        if (brillen.Count == 0)
+            return AutomatikErgebnis("nicht_gefunden", port, an, "Es ist noch keine Brille gemerkt.", "Die Brille einmal per Kabel anschliessen: KICAD merkt sich ihre WLAN-Adresse (MAC) und verbindet sie danach selbst.");
+        var suchen = anlass != "takt";
+        var ping = "nein";
+        async Task Durchlauf()
+        {
+            if (PingErlaubt()) ping = await PingDurchlauf() ? "gelaufen" : "keine_netze";
+            else ping = "gesperrt";
+        }
+        // Adressen aus der Nachbartabelle der Reihe nach versuchen; gelingt keine (oder steht keine drin), auf Anlass ein Ping-Durchlauf und nochmals die Tabelle.
+        var versucht = new HashSet<string>(StringComparer.Ordinal);
+        async Task<(QuestBrille Brille, string Ip)?> Versuche()
+        {
+            foreach (var k in InTabelle(brillen))
+                if (versucht.Add(k.Ip) && await Verbindet(adb, k.Ip)) return k;
+            return null;
+        }
+        var fund = await Versuche();
+        if (fund is null && suchen) { await Durchlauf(); fund = await Versuche(); }
+        if (fund is not { } treffer)
+            return AutomatikErgebnis("nicht_gefunden", port, an, "Die Brille wurde im Netz nicht gefunden.", NeustartHinweis, ping);
+
+        var ziel = $"{treffer.Ip}:{WlanPort}";
+        await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);   // WlanVerbinden hat gewartet, bis der Weg «device» ist
+        BrilleMerken(treffer.Brille.Seriennummer, treffer.Brille.Mac, treffer.Ip);
+        return AutomatikErgebnis("bereit", port, an, $"Die Brille wurde über WLAN gefunden und verbunden ({ziel}). In der Quest http://localhost:{port} öffnen.", ping: ping, ip: treffer.Ip, serie: treffer.Brille.Seriennummer);
     }
 
     /// <summary>Entfernt die Weiterleitung für den Port auf allen Wegen im Zustand «device». Fehler auf Wegen ohne Weiterleitung werden ignoriert;

@@ -2,6 +2,8 @@
 //   geraete.txt    Ausgabe von «adb devices» ab der zweiten Zeile, z. B. «1WMHH000000000<TAB>device»
 //   reverse.txt    Weiterleitungen, eine je Zeile, z. B. «UsbFfs tcp:5130 tcp:5130» (gilt für jedes Gerät; anders mit dem Schalter je_weg)
 //   ip.txt         Ausgabe von «adb shell ip -f inet addr show wlan0» (fehlt = Schnittstelle gibt es nicht, Code 1)
+//   mac.txt        WLAN-MAC der Quest für «shell ip link show wlan0» (fehlt = Schnittstelle gibt es nicht, Code 1)
+//   verbindbar.txt Adressen (ohne Port), zu denen «connect» gelingt; ohne die Datei gelingt jede, mit ihr nur diese (sonst «failed to connect … timed out»)
 //   verhalten.txt  Schalter, je Zeile: haengt (devices schläft 60 s), connect_fehler (connect scheitert immer), tcpip_fehler, reverse_fehler,
 //                  je_weg (Weiterleitungen getrennt je Weg in reverse_<Seriennummer>.txt, «:» als «_»; «adb tcpip» löscht die des Weges, auf dem es läuft;
 //                  ein Weg, der nicht in geraete.txt steht, ist «not found»)
@@ -89,6 +91,11 @@ switch (a[0])
     case "shell" when string.Join(' ', a.Skip(1)) == "ip -f inet addr show wlan0":
         if (WegFehler() is { } f4) return f4;
         return File.Exists(P("ip.txt")) ? Ende(File.ReadAllText(P("ip.txt")).TrimEnd()) : Ende("Device \"wlan0\" does not exist.", 1);
+    case "shell" when string.Join(' ', a.Skip(1)) == "ip link show wlan0":
+        if (WegFehler() is { } f5) return f5;
+        return File.Exists(P("mac.txt"))
+            ? Ende("21: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether " + File.ReadAllText(P("mac.txt")).Trim() + " brd ff:ff:ff:ff:ff:ff")
+            : Ende("Device \"wlan0\" does not exist.", 1);
     case "tcpip" when a.Count == 2 && a[1] == "5555":
         if (verhalten.Contains("tcpip_fehler")) return Ende("error: closed", 1);
         if (JeWeg && serie is not null && File.Exists(P(ReverseDatei()))) File.Delete(P(ReverseDatei()));   // adbd startet neu: Weiterleitungen dieses Weges sind weg
@@ -96,6 +103,9 @@ switch (a[0])
     case "connect" when a.Count == 2:
     {
         if (verhalten.Contains("connect_fehler")) return Ende($"failed to connect to '{a[1]}': Connection refused");   // adb meldet das mit Code 0
+        // verbindbar.txt: nur diese Adressen (ohne Port) antworten; alle anderen laufen in die Zeitüberschreitung (adb meldet auch das mit Code 0)
+        if (Zeilen("verbindbar.txt") is { Length: > 0 } erlaubt && !erlaubt.Contains(a[1].Split(':')[0]))
+            return Ende($"failed to connect to '{a[1]}': Connection timed out");
         if (Verbraucht("connect_fehlschlaege.txt")) return Ende($"failed to connect to '{a[1]}': Connection refused");
         if (Zeilen("geraete.txt").Any(z => z.StartsWith(a[1] + "\t"))) return Ende($"already connected to {a[1]}");
         File.AppendAllText(P("geraete.txt"), $"{a[1]}\t{(Zaehler("wlan_offline.txt") > 0 ? "offline" : "device")}{Environment.NewLine}");

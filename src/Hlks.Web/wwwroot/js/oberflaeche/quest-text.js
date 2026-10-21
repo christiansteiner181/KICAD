@@ -150,3 +150,64 @@ export function naechsterSchritt(z) {
 export function fehlerAnzeige(err) {
   return { text: err?.message || String(err ?? 'Unbekannter Fehler.'), vorschlag: err?.vorschlag || null };
 }
+
+// ------------------------------------------------------------------------------------------ Brille automatisch verbinden (MAC statt IP)
+// Statusanzeige «Brille» in der Statusleiste (quest-status.js) und der Schalter im Dialog. Der Server (QuestDienst.cs, POST /api/quest/automatik) macht je Aufruf genau einen
+// Schritt; hier steht nur, wann die Oberfläche ihn aufruft und wie sie das Ergebnis zeigt. Hintergrund: entwurf/modul-xr.md, Idee MAC.
+
+/** Schlüssel der Benutzereinstellungen: «Brille automatisch verbinden» (Ja/Nein, Vorgabe nein) und die gemerkten Brillen. */
+export const AUTOMATIK_SCHLUESSEL = 'quest.automatisch';
+export const BRILLEN_SCHLUESSEL = 'quest.brillen';
+/** Takt der Oberfläche, solange die Brille nicht bereit ist (nur adb devices und die Nachbartabelle, nie ein Ping-Durchlauf). */
+export const TAKT_MS = 10000;
+/** Anlässe des Schritts; nur «takt» darf keinen Ping-Durchlauf auslösen (der Server prüft das ebenfalls). */
+export const ANLAESSE = Object.freeze(['takt', 'start', 'klick', 'ansicht3d']);
+
+const MAC = /^([0-9a-f]{2}:){5}[0-9a-f]{2}$/;
+
+/** Die gemerkten Brillen aus einem Einstellungswert: nur Einträge mit Seriennummer und gültiger MAC. */
+export function brillenListe(wert) {
+  if (!Array.isArray(wert)) return [];
+  return wert.filter((b) => b && typeof b === 'object' && typeof b.seriennummer === 'string' && b.seriennummer !== '' && typeof b.mac === 'string' && MAC.test(b.mac)).map((b) => ({
+    seriennummer: b.seriennummer, mac: b.mac, letzteIp: typeof b.letzteIp === 'string' ? b.letzteIp : null, zuletzt: typeof b.zuletzt === 'string' ? b.zuletzt : null,
+  }));
+}
+
+/** Die Statusanzeige ist nur sichtbar, wenn die Automatik an ist oder schon eine Brille gemerkt ist. */
+export const statusSichtbar = (automatisch, brillen) => automatisch === true || (brillen ?? []).length > 0;
+
+/** Ruft die Oberfläche im Takt auf? Nur bei eingeschalteter Automatik, ohne laufenden Aufruf und solange die Brille nicht bereit (grün) ist. */
+export const taktNoetig = ({ automatisch, antwort, laeuft }) => automatisch === true && !laeuft && antwort?.status !== 'bereit';
+
+/** Darf die Oberfläche den Schritt aufrufen? Bei ausgeschalteter Automatik nur auf ausdrücklichen Klick. */
+export const schrittErlaubt = (anlass, automatisch) => ANLAESSE.includes(anlass) && (anlass === 'klick' || automatisch === true);
+
+const GRUND_TEXT = {
+  kein_adb: 'adb fehlt', nicht_freigegeben: 'nicht freigegeben', fehler: 'Fehler', nicht_gefunden: 'nicht gefunden', aus: 'Automatik aus',
+};
+
+/**
+ * Anzeige der Statusleiste: { stufe: 'gruen' | 'grau' | 'gelb', text, titel }. grün = bereit, gelb = sucht (Aufruf läuft oder der Server meldet «sucht»),
+ * grau = nicht gefunden (auch: adb fehlt, nicht freigegeben, Fehler, Automatik aus).
+ */
+export function brilleAnzeige(antwort, laeuft = false, automatisch = false) {
+  const tipp = 'Klick: Brille jetzt suchen und verbinden · Rechtsklick: Dialog «Quest verbinden»';
+  if (laeuft) return { stufe: 'gelb', text: 'Brille: sucht …', titel: `Die Brille wird gesucht.\n${tipp}` };
+  if (!antwort) {
+    return automatisch ? { stufe: 'gelb', text: 'Brille: sucht …', titel: `Die Brille wird gesucht.\n${tipp}` }
+      : { stufe: 'grau', text: 'Brille: nicht verbunden', titel: `Brille gemerkt, Automatik aus.\n${tipp}` };
+  }
+  const zusatz = [antwort.meldung, antwort.hinweis].filter(Boolean).join('\n');
+  if (antwort.status === 'bereit') return { stufe: 'gruen', text: 'Brille bereit', titel: `${zusatz || 'Die Brille ist verbunden.'}\n${tipp}` };
+  if (antwort.status === 'sucht') return { stufe: 'gelb', text: 'Brille: sucht …', titel: `${zusatz || 'Die Brille wird gesucht.'}\n${tipp}` };
+  return { stufe: 'grau', text: `Brille: ${GRUND_TEXT[antwort.status] ?? 'nicht gefunden'}`, titel: `${zusatz || 'Die Brille wurde nicht gefunden.'}\n${tipp}` };
+}
+
+/** «1WMHH000000000 · MAC aa:bb:cc:dd:ee:01 · zuletzt 192.168.1.50» – eine gemerkte Brille in einfachen Worten. */
+export const brilleText = (b) => `${b.seriennummer} · MAC ${b.mac} · zuletzt ${b.letzteIp ?? 'unbekannt'}`;
+
+/** Die Liste ohne die Brille mit dieser MAC; null, wenn nichts übrig bleibt (die Einstellung wird dann zurückgesetzt). */
+export function ohneBrille(liste, mac) {
+  const rest = (liste ?? []).filter((b) => b.mac !== mac);
+  return rest.length === 0 ? null : rest;
+}

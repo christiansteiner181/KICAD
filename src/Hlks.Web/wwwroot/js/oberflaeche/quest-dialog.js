@@ -4,6 +4,9 @@
 // für den Pfad zur adb.exe (Benutzereinstellung quest.adb). Fehlt adb, führt er Schritt für Schritt durch die Einrichtung; KICAD lädt nichts herunter und
 // installiert nichts. Alles läuft über /api/quest (Server: QuestDienst.cs); die Logik der Ampel und der Knöpfe steht in quest-text.js.
 //
+// Dazu der Schalter «Brille automatisch verbinden» (Einstellung quest.automatisch) und die gemerkte Brille (Seriennummer, MAC, letzte IP) mit «Vergessen» (quest.brillen);
+// die Statusanzeige «Brille» der Statusleiste steht in quest-status.js.
+//
 // Öffnen: Knopf «Quest verbinden …» im Register Ansicht (Aktion ansicht.questVerbinden) und der graue Knopf «In VR begehen» bzw. der Link «Quest im Browser
 // der Brille nutzen …» der 3D-Ansicht (ansichten/vr3d.js ruft questDialog() über einen dynamischen Import).
 
@@ -12,6 +15,7 @@ import { zeigen, meldung } from './dialoge.js';
 import { knoten } from './werkzeug.js';
 import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import * as T from './quest-text.js';
+import { questStatusAktualisieren } from './quest-status.js';
 
 const esc = T.esc;
 
@@ -25,6 +29,7 @@ export function questDialog() {
   let laeuft = false;    // ein Aufruf läuft
   let offen = true;
   let letzteMeldung = null;   // { text, art: 'ok' | 'fehler', vorschlag }
+  let brillenZahl = null;     // Zahl der gemerkten Brillen beim letzten Lesen (null = noch nicht gelesen)
 
   const w = knoten(`<div class="qd">
     <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
@@ -52,6 +57,11 @@ export function questDialog() {
       <input id="qd-adb" type="text" class="qd-adb" spellcheck="false" autocomplete="off" data-kein-enter="1" placeholder="leer = automatisch suchen" aria-label="Pfad zur adb.exe">
       <button type="button" class="dlg-knopf qd-adb-speichern">Speichern</button></div>
     <div class="leise qd-klein">Der Pfad muss auf adb.exe enden und auf diesem Rechner liegen (kein Netzlaufwerk). Leer lassen und speichern: wieder automatisch suchen.</div>
+    <section class="qd-brille"><b>Brille automatisch verbinden</b>
+      <label class="qd-schalter"><input type="checkbox" class="qd-auto" aria-label="Brille automatisch verbinden"> Brille automatisch verbinden</label>
+      <div class="leise qd-klein">KICAD merkt sich die WLAN-Adresse (MAC) der Brille und sucht sie nach jedem Programmstart im eigenen Netz, ohne dass die IP-Adresse bekannt sein muss. Nach einem Neustart der Brille ist einmal das Kabel nötig.</div>
+      <div class="qd-brillen" aria-label="Gemerkte Brille"></div>
+    </section>
     <section class="qd-hinweise"><b>Gut zu wissen</b>
       <ul>${T.HINWEISE.map((h) => `<li>${esc(h)}</li>`).join('')}</ul></section>
     <div class="qd-adresse"></div>
@@ -78,6 +88,13 @@ export function questDialog() {
     q('.qd-ip-verbinden').disabled = !sch.ipVerbinden;
     qa('.qd-neu').forEach((b) => { b.disabled = !sch.neuPruefen; });
     q('.qd-adb-speichern').disabled = !sch.adbSpeichern;
+    const brillen = T.brillenListe(z?.brillen);
+    q('.qd-auto').checked = z?.automatisch === true;
+    q('.qd-auto').disabled = !z || laeuft;
+    q('.qd-brillen').innerHTML = brillen.length === 0
+      ? '<div class="leise qd-keine-brille">Noch keine Brille gemerkt. Sie wird gemerkt, sobald die Quest einmal verbunden wurde.</div>'
+      : brillen.map((b) => `<div class="qd-brille-zeile" data-mac="${esc(b.mac)}"><span class="qd-brille-text">${esc(T.brilleText(b))}</span>`
+        + `<button type="button" class="dlg-knopf qd-vergessen" data-mac="${esc(b.mac)}" title="Vergisst diese Brille (die Automatik sucht sie dann nicht mehr)"${laeuft ? ' disabled' : ''}>Vergessen</button></div>`).join('');
     q('.qd-spinner').hidden = !laeuft;
     const m = q('.qd-meldung');
     m.hidden = !letzteMeldung;
@@ -108,6 +125,10 @@ export function questDialog() {
     } finally {
       laeuft = false;
       if (offen) zeigeAmpel();
+      // eine Brille wurde gemerkt (oder vergessen): die Statusanzeige in der Statusleiste zieht nach
+      const n = T.brillenListe(z?.brillen).length;
+      if (brillenZahl !== null && n !== brillenZahl) questStatusAktualisieren();
+      brillenZahl = n;
     }
   }
 
@@ -121,6 +142,15 @@ export function questDialog() {
     else if (t.matches('.qd-wlan')) lauf(() => senden('/api/quest/wlan'));
     else if (t.matches('.qd-trennen')) lauf(() => senden('/api/quest/trennen'));
     else if (t.matches('.qd-ip-verbinden')) lauf(() => senden('/api/quest/ip', { ip: q('.qd-ip').value.trim() }));
+    else if (t.matches('.qd-vergessen')) {
+      const mac = t.dataset.mac;
+      lauf(async () => {
+        await benutzerSetzen(T.BRILLEN_SCHLUESSEL, T.ohneBrille(T.brillenListe(z?.brillen), mac));
+        await questStatusAktualisieren();
+        z = await holen('/api/quest');
+        return { ...z, meldung: 'Die Brille ist vergessen.' };
+      });
+    }
     else if (t.matches('.qd-adb-speichern')) {
       const pfad = q('.qd-adb').value.trim();
       lauf(async () => {
@@ -129,6 +159,15 @@ export function questDialog() {
         return { ...z, meldung: pfad === '' ? 'Der Pfad ist zurückgesetzt: adb wird automatisch gesucht.' : 'Der Pfad zur adb.exe ist gespeichert.' };
       });
     }
+  });
+  q('.qd-auto').addEventListener('change', (e) => {
+    const an = e.target.checked;
+    lauf(async () => {
+      await benutzerSetzen(T.AUTOMATIK_SCHLUESSEL, an);
+      await questStatusAktualisieren();   // schaltet die Statusanzeige ein bzw. aus; beim Einschalten folgt ein Schritt
+      z = await holen('/api/quest');
+      return { ...z, meldung: an ? 'Die Brille wird jetzt automatisch verbunden (beim Start, beim Öffnen einer 3D-Ansicht und im Takt, bis sie bereit ist).' : 'Die Automatik ist ausgeschaltet.' };
+    });
   });
   q('.qd-ip').addEventListener('input', zeigeAmpel);
   q('.qd-ip').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); q('.qd-ip-verbinden').click(); } });

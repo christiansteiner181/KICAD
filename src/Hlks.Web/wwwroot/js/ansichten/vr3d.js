@@ -15,6 +15,7 @@ import {
   stickBewegung, snapPruefen, teleportZiel, ifcAnfangsSichtbar, bildzeit,
 } from './vr-logik.js';
 import { erzeugeXr } from './xr-greifen.js';
+import { erzeugeSitzung } from './xr-sitzung.js';   // XR-H: Sitzungsraum mit dem Modell auf dem Tisch
 
 const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const rund = (x, n = 3) => { const f = 10 ** n; return Math.round(x * f) / f; };
@@ -59,6 +60,7 @@ export function erzeugeVr(o) {
   const zielende = new Set();           // Controller, die gerade zielen
   let marker = null;
   let xrWerk = null;                    // XR-B Greifen, XR-C Tablet und Messen (xr-greifen.js)
+  let raum = null;                      // XR-H Sitzungsraum (xr-sitzung.js); solange er aktiv ist, pausiert das Begehen (keine Sticks, kein Teleport, kein Durchgang)
   let ziel = null;                      // letztes gültiges Teleportziel
   let letzterKopf = null;               // letzter Kopfstand der Sitzung { x, z, boden, gieren } für api.beiEnde
 
@@ -205,7 +207,7 @@ export function erzeugeVr(o) {
     return teleportZiel(u, d, rig.y);
   }
   function teleportieren(c) {
-    if (!rig) return;
+    if (!rig || raum?.aktiv) return;
     const z = zielen(c);
     if (!z) return;
     const k = kopfLokal() ?? { x: 0, y: 0, z: 0 };
@@ -250,7 +252,16 @@ export function erzeugeVr(o) {
   }
   /** XR-B/XR-C: Greifen, Tablet und Messwerkzeug an die Sitzung hängen (Hände, Controller und Tabletflächen hängen im Rig). */
   function xrBauen() {
+    raum = erzeugeSitzung({
+      szene, modell, renderer, wurzel, rig: () => rigObj, kopf,
+      blick: () => { if (!rig) return null; const k = kopfLokal(); return k ? blickGierenWelt(rig, k.gieren) : rig.gieren; },
+      boden: () => rig?.y ?? 0,
+      ifc: { an: () => ifcAn, setzen: (an) => ifcSetzen(an) },
+      anfordern: o.anfordern, meldung: o.meldung,
+    });
+    api.sitzung = raum;   // Test-Naht
     xrWerk = erzeugeXr({
+      sitzung: raum,
       wurzel, renderer, szene, rig: () => rigObj, controller, quellen: () => quellen, kopf,
       koerperDaten: o.koerperDaten ?? (() => new Map()), objekte: o.objekte ?? (() => new Map()), element: o.element ?? (() => null), gewaehlt: o.gewaehlt ?? (() => null),
       auswaehlen: o.auswaehlen ?? (() => {}), befehl: o.befehl, abfrage: o.abfrage ?? (async () => ({})), status: o.status ?? (async () => ({})), verbindungen: o.verbindungen ?? (() => []),
@@ -265,6 +276,7 @@ export function erzeugeVr(o) {
     xrWerk.anbinden();
   }
   function ifcUmschalten() { ifcAn = !ifcAn; netzeAnwenden(); zustandSchreiben(true); o.anfordern?.(); }
+  function ifcSetzen(an) { if (ifcAn !== !!an) ifcUmschalten(); }   // XR-H: der Sitzungsraum blendet die IFC-Unterlage aus und stellt sie danach wieder her
 
   // ---------------------------------------------------------------------------------------------- Bild
   /** Merkt den Kopfstand für api.beiEnde (jedes Bild, nicht gedrosselt: der Standpunkt am Ende soll der letzte sein). */
@@ -305,11 +317,11 @@ export function erzeugeVr(o) {
       }
       const e = (api.eingabe ?? eingabeVorgabe)();
       // linker Stick: gehen in Blickrichtung des Kopfes, ohne Höhe (keine Kollision)
-      const b = stickBewegung(e.links, blickGierenWelt(rig, k.gieren), dt, !!e.links?.schnell);
+      const b = raum?.aktiv ? { dx: 0, dz: 0 } : stickBewegung(e.links, blickGierenWelt(rig, k.gieren), dt, !!e.links?.schnell);   // im Sitzungsraum steht man am Tisch
       if (b.dx !== 0 || b.dz !== 0) rigSetzen(rigVersetzen(rig, b.dx, b.dz));
       // rechter Stick: Snap-Turn um den Kopf
       snap = snapPruefen(snap, e.rechts?.x);
-      if (snap.schritt !== 0) { rigSetzen(rigDrehen(rig, k, snap.schritt * SNAP_GRAD)); zustandSchreiben(true); }
+      if (snap.schritt !== 0 && !raum?.aktiv) { rigSetzen(rigDrehen(rig, k, snap.schritt * SNAP_GRAD)); zustandSchreiben(true); }
       // Taste A rechts: IFC-Unterlage ein/aus
       if (e.ifc && !aVorher) ifcUmschalten();
       aVorher = !!e.ifc;
@@ -328,8 +340,9 @@ export function erzeugeVr(o) {
       } else v.strahl.scale.z = 0.4;
     }
     if (marker) { marker.visible = !!ziel; if (ziel) marker.position.set(ziel.x, ziel.y + 0.01, ziel.z); }
-    begehen.pruefenDurchgang();   // N22 mit der Kopfposition
+    if (!raum?.aktiv) begehen.pruefenDurchgang();   // N22 mit der Kopfposition (im Sitzungsraum pausiert das Begehen)
     o.vorRender?.();              // Schnittbereich (N13): hängt die Clipping-Ebenen an die Materialien bzw. nimmt sie weg (pausiert im Begehen) – sonst nur in zeichnen()
+    raum?.vorRender();            // XR-H: danach die Etagenebene an den Materialien kontrollieren (die Ansicht setzt sie bei neuen Körpern zurück)
     renderer.render(szene, kamera);
     zeit.neu(jetzt() - t0);
     zustandSchreiben();
@@ -430,6 +443,8 @@ export function erzeugeVr(o) {
     try { renderer.setAnimationLoop(null); } catch { /* egal */ }
     for (const m of versteckt) m.visible = true;
     versteckt.clear();
+    try { raum?.abbauen(); } catch { /* egal */ }   // XR-H: Modell, Hintergrund, Lichter, Clipping zurückstellen (vor dem Abbau des Rigs)
+    raum = null; api.sitzung = null;
     netzeZurueck();
     try { xrWerk?.abbauen(); } catch { /* egal */ }
     xrWerk = null; api.xr = null;

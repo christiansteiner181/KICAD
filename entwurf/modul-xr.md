@@ -21,6 +21,14 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).
 - Umgesetzt in `ansichten/vr3d.js` und `vr-logik.js`. Einrichtung, Bedienung und Annahmen stehen in `OBERFLAECHE.md`, Abschnitt N23. KICAD muss dafür in Chrome über `http://localhost:<Port>` laufen.
 
+- **VR-Auftrag vom PC** (Christian 21.10.2026: «ev. ist es einfacher die am pc eingestellten befehle (bsp. in sitzungsraum betrachten,
+  oder in vr begehen) vom VR gerät aufzurufen. es bleibt ja immer die gleiche adresse auf localhost.»):
+  - Am PC Rechtsklick auf einen Raum: «In VR begehen (Brille)» bzw. «Im Sitzungsraum zeigen (Brille)». KICAD merkt sich den Auftrag
+    je Benutzer.
+  - Die Startseite `/vr` in der Quest zeigt ihn, ein Tipp startet ihn.
+  - Während der Sitzung wechselt ein neuer Auftrag vom PC Raum, Modus oder Etage ohne Tipp.
+  - Im Bau mit der VR-Startseite (hlks-modul).
+
 ### XR-B – Greifen (N24)
 - **Stand:** gebaut 21.10.2026 (hlks-modul), Brillentest offen. Greifen mit Faust bzw. Grifftaste, Leitung quer in 1-cm-Schritten mit Massen zu Decke und Wand, Strahl holt Entferntes heran; **im Kern fehlt** ein Befehl, der eine verbundene Leitung quer versetzt (Verzüge mit Bögen der Serie), und eine Reservierung auf Zuruf. Einzelheiten: `OBERFLAECHE.md`, Abschnitt «Modul XR».
 - Ein Element in Reichweite mit der Hand greifen: Es folgt der Hand mit Fang und bleibt beim Öffnen der Hand liegen.
@@ -94,6 +102,7 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 Christian: «eine art xr sitzungsraum …, wo das verkleinerte Modell auf einem tisch liegt und mit dem tablet die etagen ausgewählt werden
 kann. das modell soll dann ebenfalls mit der hand gedreht und gezoomt werden können. wird bsp. 1. OG gewählt wird alles oberhalb der Decke
 dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge.»
+- **Stand:** erste Fassung gebaut 21.10.2026 (hlks-modul), Brillentest offen. Annahmen: Schnitt unter der Decke (Unterkante der Decke, ohne Decke im Modell die Oberkante), Aussehen des Raums, Tischmasse, Gesten-Schwellen. Einzelheiten: `OBERFLAECHE.md`, Abschnitt «Modul XR, Teil XR-H». Nicht in dieser Fassung: «Hier hineingehen», Mehrbenutzer (XR-G).
 - **Ort:** Ein eigener virtueller Raum, kein Begehen. Er wird auf dem Tablet über «Sitzungsraum» bzw. «Begehen» gewechselt (XR-C).
   In der Mitte steht ein Tisch, darauf das ganze Modell verkleinert, zu Beginn 1:50 und auf die Tischplatte eingepasst.
 - **Etagen:** Das Tablet listet die Geschosse aus dem Modell. Bei der Wahl z. B. «1. OG» wird alles oberhalb der Decke dieses Geschosses
@@ -128,6 +137,8 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
   - Die Verbindung läuft per USB oder per ADB über WLAN.
   - **In KICAD eingebaut (21.10.2026): Dialog «Quest verbinden»** (Register Ansicht › Fenster, sowie Link «Quest im Browser der Brille nutzen …» beim grauen Knopf «In VR begehen»): Ampel, Verbinden, WLAN, Trennen, Pfad zur adb.exe, Einrichtung Schritt für Schritt. Das Skript `werkzeuge/quest_verbinden.ps1` bleibt als Alternative. Reine Rechner-Funktion, für die KI verboten (`KiEinordnung.RechnerFunktionen`); Beschreibung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR: Quest verbinden».
   - Die Quest rechnet selbst, deshalb ist die IFC-Unterlage bei grossen Modellen aus. Hand-Tracking geht im Quest-Browser sicher.
+  - **Idee MAC (Christian 21.10.2026: «könnte man nicht über MACadr. anstelle IP. dann müsste nur einmal eingerichtet werden», «ist die brillen Mac gespeichert, könnte man nach jedem programmstart neu suchen. automatisiert oder ein icon ohne manuellen eingriff»):** KICAD merkt sich die WLAN-MAC der Brille (`quest.brillen`), findet ihre IP in der Nachbartabelle des PCs bzw. mit einem Ping-Durchlauf im eigenen /24-Netz (höchstens einmal je 2 Minuten, nie VPN/TAP) und verbindet selbst (`quest.automatisch`, Statusanzeige «Brille» in der Statusleiste). Grenze: `adb tcpip` gilt nicht über den Neustart der Brille, danach einmal das Kabel.
+    **Gebaut 21.10.2026 (hlks-modul), Brillentest offen** (echte Nachbartabelle, Ping-Durchlauf im Büronetz und `ip link show wlan0` der Quest nur mit der Brille prüfbar). Beschreibung: `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Brille automatisch verbinden».
 - **Befund 21.10.2026 an Christians PC** (Intel Core Ultra 9 386H, nur integrierte Grafik): Meta Horizon Link 1.115 ist installiert, lehnt die Grafik aber ab (Protokoll: «Failed to find a compatible GPU … USB Link disabled», GPU «UNSUPPORTED_CLASS»). Chrome findet deshalb keine VR-Laufzeit, «In VR begehen» bleibt grau. Was in der Brille den Windows-Desktop zeigt, ist Mixed Reality Link bzw. Meta Remote Desktop – nur ein Bildschirmbild, kein WebXR. **An diesem PC gilt nur Weg 2.**
 - **Idee Christian 21.10.2026:** «könnte man nicht über MACadr. anstelle IP. dann müsste nur einmal eingerichtet werden.»
   - Vorschlag: Beim ersten Verbinden per Kabel merkt sich KICAD die WLAN-MAC der Quest (`adb shell cat /sys/class/net/wlan0/address`)
