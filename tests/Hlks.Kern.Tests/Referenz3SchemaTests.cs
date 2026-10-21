@@ -127,7 +127,7 @@ public class Referenz3SchemaTests
     [InlineData("WM-1", 125, 26)]    // KW-B: 110 + 15; 20 + 3 + 3
     [InlineData("WC-2", 125, 83.375)] // 76 + 3 + 4.375 (gemeinsamer Boden der Zeile EG)
     [InlineData("WT-3", 125, 125.625)]
-    [InlineData("HK-1", 160, 81.25)] // HZ-1: 145 + 15; 76 + 3 + 2.25
+    [InlineData("HK-1", 160, 85.25)] // HZ-1: 145 + 15; 76 + 3 + 6.25 (Modul 5 A-S 2: Verbraucherfeld Heizung der HKAP, 20 × 12.5 mm, halbe Höhe 6.25; vorher Kästchen Apparat 2.25)
     public void Knotenlagen_VonHandGerechnet(string kz, double x, double y)
     {
         var s = Plan(Netz(), An);
@@ -143,7 +143,7 @@ public class Referenz3SchemaTests
     [InlineData("R-A4", "TA-2b", "DU-1", "(40,76) (55,76) (55,81.5)")]      // höhere Wurzel, Endgerät weiter links: kreuzt R-A3 nicht
     [InlineData("R-B0", "TA-1", "TB-1", "(40,20) (110,20)")]              // Strang zu Strang auf gleicher Höhe
     [InlineData("R-B5", "TB-3", "WT-3", "(110,120) (125,120) (125,125.63)")]
-    [InlineData("R-H1", "TH-1", "HK-1", "(145,70) (160,70) (160,81.25)")]
+    [InlineData("R-H1", "TH-1", "HK-1", "(145,70) (160,70) (160,85.25)")]
     public void Linien_OrthogonalZwischenDenKnotenlagen(string element, string von, string nach, string zug)
     {
         var l = LinieMit(Plan(Netz(), An), element);

@@ -209,7 +209,7 @@ public class SchemaansichtAnordnungTests
         Assert.Equal(["HK-E", "TS-H1"], hz.Graph.Knoten.Select(k => k.Kennzeichen));
         Assert.Equal(["HZ-1"], hz.Spalten.Select(x => x.Titel));
         Assert.Equal((40.0, 70.0), Lage(hz, "TS-H1"));
-        Assert.Equal((55.0, 75.25), Lage(hz, "HK-E"));   // B8d: 70 + 3 + 2.25 (Kästchen Apparat)
+        Assert.Equal((55.0, 79.25), Lage(hz, "HK-E"));   // B8d: 70 + 3 + 6.25 (Verbraucherfeld Heizung der HKAP-Bibliothek, Modul 5 A-S 2; vorher Kästchen Apparat 2.25)
         Assert.Equal("HZ-VL", LinieMit(hz, "R-H1").Medium);
     }
 

@@ -130,7 +130,7 @@ public class SchemaSymbolZeichnungTests
         var pr = SchemaSymbolZeichnung.Primitive(s, 1);
         Assert.Equal("#FF00CC", pr[0].Stil.Farbe);
         Assert.Equal("#FF00CC", pr[1].Stil.Farbe);
-        Assert.Equal("schnitt", pr[0].Stil.Fuellung);   // mit Farbe → gefüllt in dieser Linienfarbe
+        Assert.Equal("#FF00CC", pr[0].Stil.Fuellung);   // fill ohne fc: gefüllt in der Linienfarbe (hier die Standardfarbe)
     }
 
     [Fact]
