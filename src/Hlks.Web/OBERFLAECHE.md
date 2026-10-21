@@ -1637,6 +1637,65 @@ Tastenhilfe, Schrittweiten und «keine Kollision» sind Annahmen des Auftrags; z
   `node --test src/Hlks.Web/wwwroot/js/ansichten/begehen.test.mjs` (19: Bewegungsrechnung, Tastenbelegung, Tastenverlauf, Einblendung); Browser
   `node src/Hlks.Web/wwwroot/js/ansichten/begehen.browser.mjs` (Port 5540, CDP 9540; 79 Prüfungen; Prüfbilder `n15-*.png` in `%TEMP%\HLKS_CAD\n15`).
 - **Anleitung:** Kapitel «zb» in `berichte/anleitung/inventar.json`: `zb-n15-begehen`, `zb-n15-bewegen`, `zb-n15-augenhoehe`.
+## Nachbearbeitung N23: «In VR begehen» (Meta Quest über Air Link, WebXR in Chrome; `vorrat_freitag.md`)
+
+Christian, 21.10.2026: «Weg 1»: KICAD läuft in **Chrome am PC**, die Quest hängt per **Air Link (WLAN)** an der Meta-Quest-Link-App; WebXR läuft über die OpenXR-Schnittstelle dieser App. **Ohne Gewähr:** gebaut und ohne Brille geprüft
+(Attrappe für `navigator.xr`); der Test mit der Brille steht aus (Christian).
+
+**Kern unverändert**, keine neue Abfrage, kein Modellzustand: VR lebt wie das Begehen am Bildschirm nur in der Instanz der 3D-Ansicht. Standort und Blick liefert weiter die Abfrage `raum_begehen` (N15).
+
+| Funktion | Ort | Dateien |
+| --- | --- | --- |
+| **In VR begehen** (Knopf) | in der Einblendung des Begehens (oben links, unter der Tastenhilfe) und in der 3D-Ansicht unten rechts (dort nur ausserhalb des Begehens) | `ansichten/vr3d.js` (Knopf, Sitzung), `ansicht3d.js`, `begehen3d.js` (schmale Anschlüsse), `css/ansichten.css` |
+| Rechenregeln (Rig, Sticks, Snap-Turn, Teleport, Knopfzustand, Standort ohne Raum) | – | `ansichten/vr-logik.js` (rein, Node-getestet) |
+
+**Knopf:** sichtbar immer; **frei** nur, wenn `navigator.xr.isSessionSupported('immersive-vr')` wahr ist (geprüft beim Aufbau, bei `devicechange` und beim Klick auf den grauen Knopf). Sonst ausgegraut (`aria-disabled`, Deckkraft .55) mit dem Hinweis
+«Keine VR-Brille verbunden (Quest Link/Air Link starten)» (ohne `navigator.xr`: «Dieser Browser kann kein WebXR (Chrome am PC benutzen)»). In der Sitzung steht «VR beenden». Beide Knöpfe zeigen denselben Zustand (`data-vr-status`: aus, bereit, startet, aktiv).
+
+**Ablauf (`vr3d.js`, `starten`):** `navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'], optionalFeatures: ['hand-tracking'] })` (als Erstes, im Klick – WebXR verlangt die Benutzeraktion) →
+das Begehen am Bildschirm startet (Schnittbereich aus, Bauteile undurchsichtig; läuft es schon, bleibt es und gilt danach weiter) → die Kamera hängt in einem **Rig** (`THREE.Group` in der Szene), das auf **OK Boden** des Raums an den N15-Standpunkt gesetzt wird;
+beim ersten gültigen Kopfwert wird das Rig so ausgerichtet, dass der **Kopf** (nicht der Nullpunkt des Referenzraums) am Standpunkt steht und in die N15-Blickrichtung schaut; die **Augenhöhe ist die echte Kopfhöhe** (`local-floor`), nicht die Einstellung →
+`renderer.xr` übernimmt, `setAnimationLoop(bild)` zeichnet in jedem Bild (Schatten aus). Ohne Raum (3D-Ansicht, kein Begehen) gilt der **aktuelle Kamerastandpunkt** der Umlaufansicht (x, z), Blick zum Kamerazielpunkt (waagrecht), Boden = tiefste Stelle des Modells.
+
+| Eingabe | Wirkung |
+| --- | --- |
+| Linker Stick | gehen in Blickrichtung des **Kopfes** (vor/zurück/seitlich), 1.4 m/s, nur waagrecht (Höhe ändert sich nie), Totzone 0.15, Stick gedrückt = dreifach schneller; **keine Kollision** |
+| Rechter Stick seitlich | **Snap-Turn** 30° (nach rechts = rechtsherum) um den Kopf; ein Ausschlag = ein Schritt, der nächste erst nach Rückkehr in die Mitte (Ausschlag ab 0.7, zurück unter 0.3) |
+| Abzug (Controller) bzw. **Pinch** (Hand) halten | Zielstrahl (blau) auf den Boden des Geschosses (waagrechte Ebene auf **OK Boden**, höchstens 15 m); Ring am Ziel; **Loslassen springt** (der Kopf steht danach über dem Ziel, Höhe und Blick bleiben) |
+| Taste A (rechts) | IFC-Unterlage ein/aus |
+| Quest-Menü / Esc am PC / Knopf «VR beenden» | Sitzung beenden |
+
+Hände: die Seite bittet um `hand-tracking` (optional) und wertet das `select`-Ereignis aus, das Chrome beim Pinch der Hand auslöst (Zielstrahl = Pinch-Strahl der Hand). Ob die Handverfolgung über **Air Link in Chrome** ankommt, ist ohne Brille nicht prüfbar:
+`data-vr` enthält `haende` (true, sobald eine Quelle `inputSource.hand` liefert) und `steuerung` (Zahl der Controller).
+
+**N22 in VR:** Wände, Decken usw. sind undurchsichtig und werden nur **durchscheinend, wenn die Kopfposition** (Weltposition des Kopfes im Referenzraum + Rig, nicht die Kameraposition im Rig) **näher als 500 mm** am Körper ist; `begehen3d.js` bekommt dafür die Option `vr { kopf() }`
+(Messpunkt des Durchgangs), `vr3d.js` ruft `begehen.pruefenDurchgang()` in jedem Bild.
+
+**Beenden** (Quest-Menü, Esc, Knopf, Schliessen der Ansicht): Kamera (Lage, Drehung, FOV, near/far, Elternobjekt), Schatten, Renderer-Zustand, IFC-Netze, Controller und Marker werden zurückgesetzt; lief das Begehen nur für VR, endet es (Kamera, Schnittbereich, Darstellung wie vorher),
+sonst bleibt der Raum am Bildschirm stehen (Esc in VR beendet nur die Sitzung). Das Beenden ist idempotent (Ereignis `end` und Knopf dürfen beide kommen).
+
+**Leistung:** Schatten aus, Pixeldichte und Auflösung bestimmt WebXR (Standard-Framebuffer, Foveation wie in three), kein Neuzeichnen auf Anforderung (`zeichnen()` tut in VR nichts), kein Navigationswürfel. Die **IFC-Unterlage** (ein durchscheinendes, doppelseitiges Netz) ist bei mehr als **300 000 Dreiecken**
+in VR zuerst ausgeblendet (Taste A schaltet; weniger: sichtbar). Gemessen ohne Brille (Edge, Software-Grafik, Beispielprojekt «MFH Musterweg»): **92 Zeichenaufrufe, 19 460 Dreiecke je Bild** und rund 0.7 ms CPU je Bild für den Aufbau der Zeichenbefehle –
+das ist **kein Mass für die Quest** (dort zählen GPU und Link-Übertragung, 72–90 Bilder/s verlangen unter 11–14 ms je Bild); Bernstrasse mit IFC-Unterlage und die Bildrate in der Brille misst Christian beim Test (`data-vr.bildMs`, `aufrufe`, `dreieckeBild`).
+
+**Eingriffe (schmal):** `ansicht3d.js` (`erzeugeVr`, `zeichnen()` und `groesseAnpassen()` ruhen in VR, Knopf unten rechts, `netzeAnwenden` nach dem Laden eines Netzes, Instanz `vr` und `begehenVr(standort?)`), `begehen3d.js` (Option `vr`, `pruefenDurchgang()`, `standort`),
+`css/ansichten.css` (`.d3-vr*`).
+
+**Prüfhilfen am DOM:** `.d3-wurzel[data-vr]` (JSON `{ aktiv, rig {x, y, z, gieren}, kopf {x, y, z}, blickGrad, kamera {x, y, z}, haende, steuerung, ifc {sichtbar, dreiecke}, bildMs, bilder, aufrufe, dreieckeBild }`, Meter bzw. Grad; fehlt ausserhalb von VR), Klasse `d3-vr-an`,
+`data-vr-status` am Knopf-Halter `.d3-vr`. Test-Nähte in `instanz.vr.api` (austauschbar): `anbinden`, `kopfPose`, `eingabe`, `controller`, `modell`.
+
+**Einrichtung (Quest per Air Link mit Chrome; ohne Gewähr, Christian testet mit der Brille):**
+1. Am PC die **Meta-Quest-Link-App** (früher «Oculus») installieren und mit der Quest verbinden; PC und Quest im selben WLAN (5 GHz), der PC wenn möglich per Kabel am Router.
+2. In der App unter *Einstellungen › Allgemein* bei **«OpenXR-Runtime»** «Meta Quest Link» als aktiv festlegen (ohne das findet Chrome die Brille nicht).
+3. Auf der Quest *Schnelleinstellungen › Quest Link* bzw. *Air Link* › den PC wählen › *Starten* (die Quest zeigt dann die PC-Umgebung).
+4. In **Chrome** KICAD öffnen: Adresse `http://localhost:<Port>` (WebXR geht nur über `localhost` oder https, nicht über den Rechnernamen). Das Programmfenster «ohne Adressleiste» ist je nach Browser nicht Chrome: dann KICAD zusätzlich im Chrome-Tab öffnen.
+5. Einen Raum begehen (Grundriss › Rechtsklick › «Raum begehen») oder die 3D-Ansicht öffnen, dann **«In VR begehen»** klicken. Chrome fragt einmal um Erlaubnis; danach setzt man die Brille auf.
+6. Bleibt der Knopf grau: Quest Link läuft? Runtime aktiv? Seite neu laden (F5) und den Knopf anklicken (prüft erneut). Handverfolgung: in den Quest-Einstellungen aktivieren; ob sie über Air Link ankommt, zeigt `data-vr.haende`.
+
+**Prüfen:** Node `node --test src/Hlks.Web/wwwroot/js/ansichten/vr.test.mjs` (18: Knopfzustand, Rig-Start aus `raum_begehen`, Snap-Turn, Stick, Teleport, Standort ohne Raum, IFC-Grenze, Bildzeit, N22 mit Kopfposition, Rig im three-Szenegraphen);
+Browser `node src/Hlks.Web/wwwroot/js/ansichten/vr.browser.mjs` (Port 5600, CDP 9600; 70 Prüfungen mit eingespritztem `navigator.xr`; Prüfbilder `n23-*.png` in `%TEMP%\HLKS_CAD\n23`).
+**Anleitung:** Kapitel «zb» in `berichte/anleitung/inventar.json`: `zb-n23-vr-einrichten`, `zb-n23-vr-bedienen`.
+
 ## Nachbearbeitung N17: Treppen im Grundriss (`nachbearbeitung.md`, Abschnitt N17)
 
 Christian, 21.10.2026: «auch treppen sind im Grundriss noch nicht korrekt angezeigt. resp. nicht erkennbar.» Die Treppe ist ein Element der Klasse **Treppe** (Kürzel TR); der Kern
