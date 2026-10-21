@@ -20,6 +20,7 @@ import {
   GREIF_REICHWEITE, istFaust, istPinch, handflaechenMitte, handflaechenNormale, tabletGeste, tabletLage, tabletNachfuehren, tabletPalmGlaetten, neuerTabletZustand, tabletBeruehrung, tabletStrahl, elementInReichweite, abstandZuElement,
   querVerschiebung, querAchsen, befehlsMasse, aufSchritt, eigenschaftenZeilen, heranholAnteil, HERANHOLEN_ABSTAND, SCHRITT_M,
 } from './xr-greifen-logik.js';
+import { istOffen, neuerWischer, wischSchritt, wischTreffer, WISCH_TABLET_NAEHE_M } from './xr-greifen-logik.js';   // Wischgeste
 import { erzeugeFangdaten, fangenPunkt, fangenStrahl, deckeUndWaende, v3, plus, minus, mal, einheit, laenge, massKurz, mitteVon3 } from './xr-mess-logik.js';
 import { erzeugeTablet } from './xr-tablet.js';
 import { erzeugeMessen } from './xr-messen.js';
@@ -217,6 +218,30 @@ export function erzeugeXr(o) {
     else messen.sonde(null);
     mem.right.pinchAlt = R.art === 'hand' ? R.pinch : false;
   }
+
+  // ---------------------------------------------------------------------------------------------- Wischgeste: stehende Masslinien wegwischen (nur Hand-Tracking; Controller haben den Tablet-Knopf «Messungen löschen»)
+  const wischer = { left: neuerWischer(), right: neuerWischer() };
+  const wischInfo = { wische: 0, geloescht: 0, zuletzt: 0 };   // Prüfnaht (data-xr)
+  function wischPflegen(dt) {
+    messen.bild(dt);
+    for (const seite of ['left', 'right']) {
+      const S = seiten[seite], z = wischer[seite];
+      let erlaubt = S?.art === 'hand' && !!S.ort && !S.griff && !S.pinch && istOffen(S.gelenke) && !(grab && grab.seite === seite) && messen.messungen().length > 0;
+      if (erlaubt && tablet.offen) erlaubt = seite === 'right' && !(tabletLageJetzt && minusLaenge(S.ort, tabletLageJetzt.mitte) < WISCH_TABLET_NAEHE_M);   // linke Hand trägt das Tablet, rechte bedient es
+      if (erlaubt && seite === 'left' && o.kopf() && tabletGeste(S.gelenke, 'left', o.kopf(), false)) erlaubt = false;   // offene Hand, Handfläche zum Kopf = Tablet-Geste
+      const w = wischSchritt(z, uhr, erlaubt ? S.ort : null, erlaubt);
+      if (!w) continue;
+      if (w.neu) wischInfo.wische++;
+      const treffer = wischTreffer(w.weg, messen.messungen());
+      if (!treffer.length) continue;
+      const n = messen.entfernen(treffer);
+      wischInfo.geloescht += n; wischInfo.zuletzt = n;
+      hinweis(n === 1 ? 'Masslinie weggewischt' : `${n} Masslinien weggewischt`, 'info');
+      o.anfordern?.();
+      schreiben(true);
+    }
+  }
+  const minusLaenge = (a, b) => laenge(minus(a, b));
 
   // ---------------------------------------------------------------------------------------------- Greifen
   const ebeneVon = (id) => daten.get(id)?.ebene ?? o.koerperDaten().get(id)?.ebene ?? 'sonst';
@@ -461,7 +486,7 @@ export function erzeugeXr(o) {
       messen: messen.zustand(), messungen: messen.messungen().map((m) => ({ ...m, a: pt(m.a), b: pt(m.b), fuss: pt(m.fuss), abstandMm: rund(m.abstandMm, 1), dx: rund(m.dx, 1), dy: rund(m.dy, 1), dz: rund(m.dz, 1) })),
       greifen: grab ? { id: grab.id, kz: grab.kz, art: grab.art, offset: pt(grab.offset), oben: rund(grab.oben), seitlich: rund(grab.seitlich), masse: grab.masse ?? null, fang: grab.fang ?? null } : null,
       haende: { gelenke: { left: !!handMesh.left?.visible, right: !!handMesh.right?.visible }, fingerPunkt: !!fingerPunkt?.visible, fingerPunktOrt: fingerPunkt?.visible ? pt(fingerPunkt.position) : null },
-      befehl: letztesGreifen, hinweis: hinweisZeit.text, fangdaten: daten.anzahl,
+      befehl: letztesGreifen, hinweis: hinweisZeit.text, fangdaten: daten.anzahl, wisch: { ...wischInfo, ausblendend: messen.ausblendend() },
     };
   }
 
@@ -480,6 +505,7 @@ export function erzeugeXr(o) {
       seiten = { left: auswerten('left', roh.left), right: auswerten('right', roh.right) };
       tabletPflegen(dt);
       sondePflegen();
+      wischPflegen(dt);
       // Greifen: steigende Flanke der Faust bzw. der Grifftaste (Tablet-Hand ist offen); sinkende Flanke lässt los
       for (const seite of ['left', 'right']) {
         const S = seiten[seite];

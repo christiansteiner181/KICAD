@@ -328,3 +328,97 @@ export function aufbauAnteil(t) {
 /** Aufleuchten einer Taste nach dem Antippen: 1 → 0 über 0.35 s. */
 export const AUFLEUCHT_DAUER = 0.35;
 export const aufleuchten = (t) => Math.max(0, 1 - t / AUFLEUCHT_DAUER);
+
+// ---------------------------------------------------------------------------------------------------- Wischgeste (XR-C, Masslinien wegwischen)
+// Rückmeldung Brillentest 21.10.2026: «masslinien nach einem mass nach wischgeste löschen». Offene Hand, schnelle, überwiegend waagrechte Bewegung der Handflächenmitte;
+// wo der Weg der Hand eine stehende Masslinie streift, verschwindet diese Messung («wie an der Wandtafel»). Ein Wisch ins Leere tut nichts. Alle Schwellen sind Annahmen:
+// Christian stellt sie nach dem nächsten Brillentest nach.
+export const WISCH_WEG_M = 0.15;             // m: Mindestweg (Sehne) innerhalb von WISCH_ZEIT_S
+export const WISCH_ZEIT_S = 0.4;             // s: längstes Fenster, in dem der Weg zurückgelegt sein muss
+export const WISCH_MIN_ZEIT_S = 0.08;        // s: kürzeres Fenster zählt nicht (Ausreisser des Trackings)
+export const WISCH_V_MS = 0.8;               // m/s: Mindestgeschwindigkeit (Sehne / Zeit)
+export const WISCH_WAAGRECHT = 0.8;          // Anteil des Wegs, der waagrecht verlaufen muss (0.8 ≈ höchstens 37° gegen die Waagrechte)
+export const WISCH_VERLAUF_S = 0.5;          // s: so lange wird der Verlauf der Handflächenmitte je Hand gehalten
+export const WISCH_SPERRE_S = 0.5;           // s: Sperre nach einem Wisch (keine Doppelauslösung)
+export const WISCH_TREFFER_M = 0.10;         // m: Abstand des Handwegs zur Masslinie, unter dem sie getroffen ist
+export const WISCH_TABLET_NAEHE_M = 0.30;    // m: bei offenem Tablet wischt die rechte Hand nur ausserhalb dieses Abstands zur Tablet-Mitte
+export const WISCH_AUSBLENDEN_S = 0.2;       // s: Aufleuchten und Ausblenden der gelöschten Linie
+export const WISCH_SPRUNG_MS = 8;            // m/s: schneller als jede Armbewegung = Sprung des Trackings, kein Wisch (der Verlauf beginnt neu)
+
+/**
+ * Erkennt einen Wisch im Verlauf [{ t (s), p ({x, y, z}) }] einer Hand (aufsteigend in t, Ende = jetzt). Gesucht ist ein Anfang höchstens WISCH_ZEIT_S vor dem Ende,
+ * von dem aus die Sehne mindestens WISCH_WEG_M lang ist, zu mindestens WISCH_WAAGRECHT waagrecht verläuft und mit mindestens WISCH_V_MS durchlaufen wurde.
+ * Rückgabe { weg: [p …] (vom Anfang bis jetzt), strecke, dauer, v, richtung (waagrechter Einheitsvektor) } oder null.
+ */
+export function wischErkennen(verlauf) {
+  if (!verlauf || verlauf.length < 2) return null;
+  const e = verlauf[verlauf.length - 1];
+  for (let i = 0; i < verlauf.length - 1; i++) {
+    const dt = e.t - verlauf[i].t;
+    if (dt > WISCH_ZEIT_S + 1e-9) continue;     // zu alt
+    if (dt < WISCH_MIN_ZEIT_S) break;           // alle weiteren sind noch kürzer
+    const d = minus(e.p, verlauf[i].p), gesamt = laenge(d), waagrecht = Math.hypot(d.x, d.z);
+    if (waagrecht < WISCH_WEG_M || waagrecht < WISCH_WAAGRECHT * gesamt) continue;
+    const v = gesamt / dt;
+    if (v < WISCH_V_MS) continue;
+    return { weg: verlauf.slice(i).map((s) => s.p), strecke: gesamt, dauer: dt, v, richtung: v3(d.x / waagrecht, 0, d.z / waagrecht) };
+  }
+  return null;
+}
+
+/** Kleinster Abstand zweier Strecken p1–q1 und p2–q2 (m). */
+export function streckenAbstand(p1, q1, p2, q2) {
+  const klemm = (x) => Math.min(1, Math.max(0, x));
+  const d1 = minus(q1, p1), d2 = minus(q2, p2), r = minus(p1, p2);
+  const a = skalar(d1, d1), e = skalar(d2, d2), f = skalar(d2, r), EPS = 1e-12;
+  let s, t;
+  if (a <= EPS && e <= EPS) return abstand3(p1, p2);
+  if (a <= EPS) { s = 0; t = klemm(f / e); }
+  else {
+    const c = skalar(d1, r);
+    if (e <= EPS) { t = 0; s = klemm(-c / a); }
+    else {
+      const b = skalar(d1, d2), den = a * e - b * b;
+      s = den > EPS ? klemm((b * f - c * e) / den) : 0;
+      t = (b * s + f) / e;
+      if (t < 0) { t = 0; s = klemm(-c / a); } else if (t > 1) { t = 1; s = klemm((b - c) / a); }
+    }
+  }
+  return abstand3(plus(p1, mal(d1, s)), plus(p2, mal(d2, t)));
+}
+
+/** Welche Masslinien streift der Handweg (Streckenzug) im Abstand unter radius? linien = [{ a, b }]; Rückgabe: Indizes (aufsteigend). */
+export function wischTreffer(weg, linien, radius = WISCH_TREFFER_M) {
+  const treffer = [];
+  if (!weg?.length) return treffer;
+  linien.forEach((l, i) => {
+    for (let k = 0; k < weg.length; k++) {
+      const q = weg[Math.min(k + 1, weg.length - 1)];
+      if (streckenAbstand(weg[k], q, l.a, l.b) < radius) { treffer.push(i); return; }
+    }
+  });
+  return treffer;
+}
+
+/** Neuer Zustand der Wischerkennung einer Hand. */
+export const neuerWischer = () => ({ verlauf: [], aktiv: false, sperreBis: -Infinity });
+
+/**
+ * Ein Schritt je Bild und Hand. z = neuerWischer(), t = Zeit (s), ort = Handflächenmitte, erlaubt = Hand offen, nicht am Greifen/Pinchen/Tablet.
+ * Der Wisch gilt, solange die Bewegung die Schwellen erfüllt (so trifft er auch eine Linie am Ende des Strichs); danach gilt die Sperre WISCH_SPERRE_S.
+ * Rückgabe null oder { weg, strecke, dauer, v, richtung, neu } (neu = erstes Bild dieses Wischs).
+ */
+export function wischSchritt(z, t, ort, erlaubt) {
+  const beenden = () => { if (z.aktiv) { z.aktiv = false; z.sperreBis = t + WISCH_SPERRE_S; } z.verlauf = []; return null; };
+  if (!erlaubt || !ort) return beenden();
+  if (t < z.sperreBis) { z.verlauf = []; return null; }
+  const letzter = z.verlauf[z.verlauf.length - 1];
+  if (letzter && t > letzter.t && abstand3(letzter.p, ort) / (t - letzter.t) > WISCH_SPRUNG_MS) { if (z.aktiv) beenden(); z.verlauf = []; }   // Sprung des Trackings
+  z.verlauf.push({ t, p: { x: ort.x, y: ort.y, z: ort.z } });
+  while (z.verlauf.length > 2 && t - z.verlauf[0].t > WISCH_VERLAUF_S) z.verlauf.shift();
+  const w = wischErkennen(z.verlauf);
+  if (!w) return z.aktiv ? beenden() : null;   // noch kein Wisch: Verlauf weitersammeln
+  const neu = !z.aktiv;
+  z.aktiv = true;
+  return { ...w, neu };
+}
