@@ -416,3 +416,36 @@ Schraffur. Beton behält die Schraffur. Nicht geschnittene Stützen bleiben wie 
   - bei runden Querschnitten und Vielecken durch die Mitte von Rand zu Rand.
 - `IstBeton`: Als Beton gilt jedes Material mit «beton» im Namen, ausser Porenbeton. Die Materialliste kennt heute «beton».
 - **Tests:** `StuetzeKreuzTests.cs` (11).
+
+## N17 – Treppen im Grundriss erkennbar darstellen
+
+Christian 21.10.2026: «auch treppen sind im Grundriss noch nicht korrekt angezeigt. resp. nicht erkennbar.»
+
+Bestand: KICAD hat keine Klasse für Treppen. Aus dem IFC bleiben IfcStair und IfcStairFlight Hintergrund-Netz der Unterlage. Der Grundriss
+schneidet dieses Netz auf Schnitthöhe (`GrundlagenIfc`); dabei entsteht ein Gewirr aus Stufenkanten statt einer lesbaren Treppe.
+
+Entscheide Hauptlauf:
+- **Neue Klasse `Treppe`** (Kürzel TR, Schicht Architektur, IFC IfcStair bzw. IfcStairFlight), je Lauf ein Element. Inhalt:
+  - Lauflinie als Polylinie;
+  - Laufbreite, Stufenanzahl, Steigung und Auftritt;
+  - Unterkante und Oberkante bzw. Geschoss von–bis;
+  - Stufenkanten als Liste von Strecken;
+  - Podeste als Umriss.
+- **IFC-Übernahme:** IfcStairFlight bzw. IfcStair werden zu Treppen-Elementen.
+  - Stufenanzahl, Steigung und Auftritt aus den Attributen (NumberOfRisers, RiserHeight, TreadLength) bzw. aus den Psets.
+  - Fehlen sie, kommen sie aus der Geometrie: waagrechte Trittflächen des Körpers, Vorderkanten, Lauflinie durch die Mitten.
+  - Die Originalgeometrie bleibt in der Netzdatei; übernommene Treppen gelten dort als `uebernommen`, wie Wände.
+- **Grundriss** (Darstellung wie Revit bzw. H+K-Planbild):
+  - Stufenkanten unterhalb der Schnitthöhe durchgezogen, oberhalb gestrichelt bzw. ausgeblendet.
+  - Schnittlinie als schräge Doppellinie bzw. Zickzack an der Schnitthöhe.
+  - Lauflinie mit Anfangspunkt (Kreis) und Pfeil in Gehrichtung aufwärts.
+  - Beschriftung «n Stg. h/a» (z. B. «16 Stg. 17.5/28»).
+  - Podeste als Umriss.
+  - Im Geschoss darüber erscheint die Treppe von oben (unterer Teil, ab Schnitt gestrichelt), wie im Planbild üblich.
+- **Schnitt und 3D:** Körper aus den Stufen bzw. weiter das Original-Netz.
+- **Zeichnen von Hand** (Werkzeug Treppe) ist später; zuerst Darstellung und IFC.
+
+**Fertig, wenn** die Treppen der Bernstrasse (Archicad-IFC) im Grundriss jedes Geschosses als Treppe erkennbar sind:
+- Stufen, Schnittlinie, Lauflinie mit Pfeil und Beschriftung;
+- im PDF gleich wie auf dem Bildschirm;
+- eine Treppe ohne Attribute wird aus ihrer Geometrie richtig gezählt.
