@@ -69,6 +69,12 @@ const S = {
   huelleAnsicht: '<rect x="4" y="4" width="24" height="24"/><path d="M8 8h16v16H8z" stroke-width="3.5"/><path d="M16 4v4M16 24v4"/>',
   ausrichtungNord: '<circle cx="16" cy="17" r="11"/><path d="M16 5l4.5 12L16 15l-4.5 2z"/><path d="M13 27v-5l6 5v-5"/>',   // N9: Grundriss nach Himmelsrichtung
   planwinkel: '<path d="M6 22l13-9 7 10-13 9z" transform="translate(0 -6)"/><path d="M4 26h24"/><path d="M14 26a9 9 0 00-2-6"/>',   // N9: Planwinkel neu bestimmen
+  // 3D-Schnittbereich (N13): Quader mit gestrichelter Schnittfläche; an Auswahl (Quader um ein kleines Teil), auf Geschoss (Quader mit Höhenband), zurücksetzen (Pfeil im Kreis), Raum im 3D
+  schnittbereich: '<path d="M5 11l8-4 14 5v11l-8 4-14-5z"/><path d="M5 11l14 5 8-4M19 16v11" stroke-dasharray="2.4 2"/>',
+  schnittbereichAuswahl: '<path d="M4 9l8-4 10 3v8l-8 4-10-3z"/><rect x="14" y="17" width="7" height="7"/><path d="M24 19h5M24 24h5"/>',
+  schnittbereichGeschoss: '<path d="M5 8l9-4 13 4v16l-9 4-13-4z"/><path d="M5 14l13 4 9-4M5 19l13 4 9-4"/>',
+  schnittbereichZurueck: '<path d="M5 11l8-4 14 5v11l-8 4-14-5z"/><path d="M12 17a5 5 0 119 2M12 13v4h4"/>',
+  raum3d: '<path d="M4 20l12-6 12 6-12 6z"/><path d="M4 20V10l12-6 12 6v10M16 14v12"/><circle cx="16" cy="14" r="2.2"/>',
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
   hkapVerbinden: '<rect x="3" y="5" width="9" height="9" rx="1"/><rect x="20" y="18" width="9" height="9" rx="1"/><path d="M12 9.5h5a3 3 0 013 3V18M16 22.5h-4M7.5 14v8.5H12"/>',
   hkapAbgleich: '<rect x="3" y="4" width="10" height="24" rx="1"/><rect x="19" y="4" width="10" height="24" rx="1"/><path d="M6 10h4M6 16h4M6 22h4M22 10h4M22 16h4M22 22h4M14 12h4M16 10l2 2-2 2M18 20h-4M16 18l-2 2 2 2"/>',

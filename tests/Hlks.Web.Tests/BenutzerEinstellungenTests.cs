@@ -169,6 +169,29 @@ public class BenutzerEinstellungenTests : IDisposable
         BenutzerEinstellungen.Pruefen("oberflaeche.symbole", null);
     }
 
+    // ---------------------------------------------------------------- N14: Rand von «Raum im 3D zeigen»
+
+    [Theory]
+    [InlineData(0, true)]
+    [InlineData(1500, true)]
+    [InlineData(300.5, true)]
+    [InlineData(100000, true)]
+    [InlineData(-1, false)]
+    [InlineData(100001, false)]
+    public void Pruefen_Raumrand_nimmt_0_bis_100000_mm(double wert, bool gut)
+    {
+        if (gut) BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", JsonValue.Create(wert));
+        else Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", JsonValue.Create(wert)));
+    }
+
+    [Fact]
+    public void Pruefen_Raumrand_lehnt_Text_und_Liste_ab_null_setzt_zurueck()
+    {
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", S("gross")));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", new JsonArray(1500)));
+        BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", null);
+    }
+
     // ---------------------------------------------------------------- G2: mehrere Gliederungen zugleich (Wert ist eine Liste)
 
     [Fact]

@@ -58,7 +58,12 @@ public sealed class BenutzerEinstellungen
         ["projektbrowser.gliederung"] = GliederungPruefen,
         // Symbolsatz der Oberfläche (Teil S, entwurf/menueband-revit.md): «strich» (Vorgabe, einfarbige Strichsymbole) oder «revit» (mehrfarbiger Satz im Stil von Revit, Probe).
         ["oberflaeche.symbole"] = SymbolsatzPruefen,
+        // Rand um den Raum bei «Raum im 3D zeigen» in mm (N14, Vorgabe 1500 steht in der Oberfläche): eine Zahl von 0 bis 100000.
+        ["ansicht3d.raumrand"] = RaumrandPruefen,
     };
+
+    static string? RaumrandPruefen(JsonNode w) =>
+        w is JsonValue v && v.TryGetValue<double>(out var d) && d >= 0 && d <= 100000 ? null : "Der Rand muss eine Zahl von 0 bis 100000 sein (mm).";
 
     static string? SymbolsatzPruefen(JsonNode w) =>
         w is JsonValue v && v.TryGetValue<string>(out var s) && (s == "strich" || s == "revit") ? null : "Erlaubt sind «strich» (Vorgabe) und «revit».";

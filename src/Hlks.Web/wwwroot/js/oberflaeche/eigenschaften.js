@@ -27,6 +27,7 @@ import { anmelden } from './paletten.js';
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
 import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';   // Modul 7 Teil A: Revisionsliste des Planblatts
+import { schnittbereichZeilen, startansichtText } from './schnittbereich-palette.js';   // N13: 3D-Schnittbereich und Startansicht der 3D-Ansicht
 import { ausrichtungZeilen, planwinkelZeilen } from './ausrichtung-palette.js';   // N9: Ausrichtung der Grundrisse (Ansicht) und Planwinkel (Gebäude)
 
 const lc = (t) => String(t ?? '').toLowerCase();
@@ -62,6 +63,15 @@ export function einrichten(w) {
     if (sp) { spezialKlick(sp); return; }
     const rv = e.target.closest('.ep-rev-neu, .ep-rev-weg');
     if (rv) { revisionKlick(rv); return; }
+    // N13: Schalter und Knöpfe des 3D-Schnittbereichs (Aktionen in aktionen-ansicht.js; gearbeitet wird an der Ansicht, deren Palette gezeigt wird)
+    const sbSchalter = e.target.closest('input.ep-sb-schalter');
+    if (sbSchalter && gerade) { ausfuehren('ansicht.schnittbereich', { ansicht: gerade.kz, an: sbSchalter.checked }); return; }
+    const sbKnopf = e.target.closest('.ep-sb-auswahl, .ep-sb-geschoss, .ep-sb-zurueck');
+    if (sbKnopf && gerade) {
+      const id = sbKnopf.classList.contains('ep-sb-auswahl') ? 'ansicht.schnittbereichAuswahl' : sbKnopf.classList.contains('ep-sb-geschoss') ? 'ansicht.schnittbereichGeschoss' : 'ansicht.schnittbereichZurueck';
+      ausfuehren(id, { ansicht: gerade.kz, x: e.clientX, y: e.clientY });
+      return;
+    }
     const pw = e.target.closest('.ep-pw-knopf');   // N9: Planwinkel des Gebäudes neu bestimmen
     if (pw) { ausfuehren('ansicht.planwinkel', { gebaeude: pw.dataset.gebaeude }); return; }
     const q = e.target.closest('.ep-warum');
@@ -290,6 +300,13 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null) {
     if (fam && (d.name === 'familientyp' || d.name === 'parameter')) continue;   // stehen in der Gruppe «Familie»
     if (ltGruppe && ltEig.includes(d.name)) continue;                            // stehen in der Gruppe «Leitung»
     const w = werte[d.name]?.wert;
+    // N13: schnittbereich und startansicht gehören nur zur 3D-Ansicht: dort Schalter, Masse und Knöpfe bzw. der Text der Startansicht, sonst ausgeblendet
+    if (el.klasse === 'Ansicht' && (d.name === 'schnittbereich' || d.name === 'startansicht')) {
+      if ((werte.art?.wert ?? el.werte?.art) !== '3d') continue;
+      if (d.name === 'schnittbereich') ez.push(...schnittbereichZeilen(w, HELFER));
+      else ez.push(zeile(d.name, nurLesen(startansichtText(w)), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n') }));
+      continue;
+    }
     // Modul 4 Teil A-O: Apparateart mit Namen und abgeleiteten Werten darunter, Tabelle der Spezialinstallationen, Hinweis zu K
     if (d.name === 'sanitaerArt' && san) { ez.push(...artZeilen({ def: d, wert: w ?? null, vorgabe: san.vorgabeJeKlasse?.[el.klasse] ?? null, l }, HELFER)); continue; }
     if (d.name === 'spezialinstallationen' && d.typ === 'liste') {
