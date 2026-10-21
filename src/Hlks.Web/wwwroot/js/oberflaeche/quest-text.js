@@ -211,3 +211,38 @@ export function ohneBrille(liste, mac) {
   const rest = (liste ?? []).filter((b) => b.mac !== mac);
   return rest.length === 0 ? null : rest;
 }
+
+// ------------------------------------------------------------------------------------------ Begehung beim Aufsetzen automatisch starten
+// Der Server (QuestStarter.cs) öffnet nach dem Klick am PC die VR-Startseite in der Brille und startet die Begehung selbst, sobald die Brille aufgesetzt ist.
+// Hier nur die Anzeige: GET /api/quest/autostart liefert { autostart, status: leer | laeuft | aktiv | fehler | abgebrochen, phase?, meldung?, hinweis? }.
+
+/** Schlüssel der Benutzereinstellung (Ja/Nein, Vorgabe ja). */
+export const AUTOSTART_SCHLUESSEL = 'quest.autostart';
+/** Abfrageabstand der Statusanzeige, solange ein Autostart läuft. */
+export const AUTOSTART_TAKT_MS = 2000;
+/** Ist der Autostart eingeschaltet? Vorgabe ja: nur ein ausdrückliches «nein» schaltet ihn aus. */
+export const autostartAn = (wert) => wert !== false;
+/** Läuft ein Autostart? */
+export const autostartLaeuft = (a) => a?.status === 'laeuft';
+
+/**
+ * Anzeige der Statusleiste für den Autostart: { stufe: 'gruen' | 'grau' | 'gelb', text, titel } oder null, wenn es nichts zu zeigen gibt (nie gestartet, abgebrochen).
+ * laeuft → «Brille aufsetzen – die Begehung startet automatisch» (gelb), aktiv → «Begehung läuft» (grün), fehler → «nicht gestartet: …» (grau).
+ */
+export function autostartAnzeige(a) {
+  if (!a || !a.status || a.status === 'leer' || a.status === 'abgebrochen') return null;
+  const zusatz = [a.meldung, a.hinweis].filter(Boolean).join('\n');
+  if (a.status === 'laeuft') {
+    const vorbereitung = a.phase === 'verbinden' || a.phase === 'browser';
+    return {
+      stufe: 'gelb',
+      text: vorbereitung ? 'Brille: wird vorbereitet …' : a.phase === 'aufsetzen' ? 'Brille aufsetzen – die Begehung startet automatisch' : 'Brille: Begehung startet …',
+      titel: zusatz || 'Brille aufsetzen – die Begehung startet automatisch.',
+    };
+  }
+  if (a.status === 'aktiv') return { stufe: 'gruen', text: 'Begehung läuft', titel: zusatz || 'Die Begehung läuft in der Brille.' };
+  return { stufe: 'grau', text: `Begehung nicht gestartet: ${a.meldung || 'unbekannter Fehler'}`, titel: zusatz || 'Die Begehung wurde nicht gestartet.' };
+}
+
+/** Hinweis zum Schalter im Dialog. */
+export const AUTOSTART_HINWEIS = 'KICAD öffnet nach dem Klick die VR-Startseite im Browser der Brille und startet die Begehung, sobald die Brille aufgesetzt ist. Beim ersten Mal fragt der Browser in der Brille «VR erlauben» – das einmal bestätigen.';

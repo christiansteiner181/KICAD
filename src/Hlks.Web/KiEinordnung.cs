@@ -89,6 +89,8 @@ public static class KiEinordnung
             "QuestEndpunkte.cs) – nur der Mensch am Rechner."),
         new("quest_automatik", "Startet adb.exe, liest die Nachbartabelle des PCs und pingt das eigene Netz an, um die gemerkte VR-Brille über ihre MAC-Adresse zu finden und zu " +
             "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
+        new("quest_autostart", "Steuert den Browser der VR-Brille (Modul XR, QuestStarter.cs, «Begehung beim Aufsetzen automatisch starten»): startet adb.exe, öffnet die VR-Startseite " +
+            "im Browser der Brille und klickt dort über das Fern-Debugging (CDP) den Knopf «Eintreten» – nur auf eine Handlung des Menschen am Rechner, nie durch die KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

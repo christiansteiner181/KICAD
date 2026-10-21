@@ -14,7 +14,7 @@ namespace Hlks.Web.Tests;
 /// «Quest verbinden» (Modul XR): QuestDienst und die Endpunkte /api/quest. Statt adb.exe läuft die Attrappe tests/Hlks.AdbAttrappe (als adb.exe unter %TEMP%
 /// angelegt, feste Ausgaben aus Dateien, jeder Aufruf im Protokoll) – nie ein echtes adb. Die Benutzereinstellungen (quest.adb) liegen unter %TEMP%.
 /// </summary>
-public class QuestTests : IDisposable
+public partial class QuestTests : IDisposable
 {
     readonly string wurzel = Path.Combine(Path.GetTempPath(), "hlks_quest_" + Guid.NewGuid().ToString("N")[..10]);
     readonly List<IDisposable> aufraeumen = [];
@@ -69,6 +69,10 @@ public class QuestTests : IDisposable
         public Adb WlanOfflineFuer(int n) { Schreibe("wlan_offline.txt", n.ToString()); return this; }
         /// <summary>Die ersten n «reverse tcp:…» scheitern mit «device offline».</summary>
         public Adb ReverseScheitertNoch(int n) { Schreibe("reverse_fehlschlaege.txt", n.ToString()); return this; }
+        /// <summary>Autostart: die ersten n «dumpsys power» melden Asleep.</summary>
+        public Adb Wach(int n) { Schreibe("wach_ab.txt", n.ToString()); return this; }
+        /// <summary>Autostart: Wachzustand für «dumpsys power» (Awake | Asleep …).</summary>
+        public Adb WachDauer(string zustand) { File.WriteAllText(Path.Combine(Ordner, "wach.txt"), zustand); return this; }
         public string[] Aufrufe()
         {
             var d = Path.Combine(Ordner, "aufrufe.log");
@@ -97,6 +101,11 @@ public class QuestTests : IDisposable
         new(@"^-s [A-Za-z0-9._:\-]{1,64} shell ip link show wlan0$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} tcpip 5555$"),
         new(@"^connect (\d{1,3}\.){3}\d{1,3}:\d{1,5}$"),
+        // Autostart (QuestStarter.cs)
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell am start -a android.intent.action.VIEW -d http://localhost:\d{1,5}/vr com.oculus.browser$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell dumpsys power$"), new(@"^-s [A-Za-z0-9._:\-]{1,64} shell dumpsys activity activities$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} forward tcp:\d{1,5} localabstract:chrome_devtools_remote$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} forward --remove tcp:\d{1,5}$"),
     ];
 
     static void NurFesteAufrufe(Adb adb) => Assert.All(adb.Aufrufe(), z => Assert.True(Erlaubt.Any(r => r.IsMatch(z)), $"Unerwarteter adb-Aufruf: {z}"));
