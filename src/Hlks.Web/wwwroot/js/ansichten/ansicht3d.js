@@ -12,7 +12,7 @@
 // werden blasser. Klick auf eine Fläche zeigt Raum, Nachbar, Bauteil, Fläche und U im Infofeld; Legende unten links.
 
 import * as THREE from 'three';
-import { zustand, element, auswaehlen } from '../zustand.js';
+import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { sichtbar } from './filter.js';
 import { baueKoerper, hervorheben, freigeben, brauchtAlleKoerper, koerperUrl, netzSchluessel, netzUrl, netzGeometrie, netzMesh, BLASS_HUELLE } from './koerper3d.js';
@@ -20,6 +20,9 @@ import { istHuelle, legendeDaten, legendeHtml, infoHtml } from './huelle-darstel
 import { baueHuelle, zeileAmTreffer, umrissLinie, huelleFreigeben } from './huelle3d.js';
 import { leseNetz } from './netzdatei.js';
 import { cssVar, esc } from './hilfen.js';
+import { ORBIT_TASTEN, istDoppelklick } from './maus.js';
+import { erzeugeWuerfel } from './wuerfel.js';
+import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen } from './wuerfel-logik.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -51,7 +54,7 @@ function erstellen(behaelter, ansichtElement) {
   let huelleGruppe = null;                    // three-Gruppe der Hüllflächen (ausserhalb von «modell», zählt nicht zum Einpassen)
   let huelleUmriss = null;                    // Hervorhebung der angeklickten Raumgrenze
 
-  behaelter.innerHTML = '<div class="d3-wurzel"><div class="d3-tip" hidden></div><div class="d3-hinweis" hidden></div><div class="d3-legende hl-feldbox" hidden></div><div class="d3-info hl-feldbox" hidden></div><div class="d3-bedienung" title="Bedienung">Links drehen · rechts verschieben · Rad zoomen</div></div>';
+  behaelter.innerHTML = '<div class="d3-wurzel"><div class="d3-tip" hidden></div><div class="d3-hinweis" hidden></div><div class="d3-legende hl-feldbox" hidden></div><div class="d3-info hl-feldbox" hidden></div><div class="d3-bedienung" title="Bedienung wie in Revit">Links drehen · Mitte verschieben · Umschalt + Mitte drehen · Rad zoomen · Doppelklick Mitte: alles zeigen</div></div>';
   const wurzel = behaelter.querySelector('.d3-wurzel');
   const tip = wurzel.querySelector('.d3-tip');
   const hinweis = wurzel.querySelector('.d3-hinweis');
@@ -93,7 +96,10 @@ function erstellen(behaelter, ansichtElement) {
   kamera.position.set(18, 14, 24);
   const steuerung = new OrbitControls(kamera, renderer.domElement);
   steuerung.enableDamping = false;           // keine Dauerschleife nötig
-  steuerung.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+  // Maustasten wie in Revit (N10, maus.js): links drehen, Mitte verschieben, Umschalt + Mitte drehen (die Steuerung vertauscht mit Umschalt),
+  // Rad zoomt zum Mauszeiger, rechts verschiebt wie bisher
+  steuerung.mouseButtons = { LEFT: THREE.MOUSE[ORBIT_TASTEN.LEFT], MIDDLE: THREE.MOUSE[ORBIT_TASTEN.MIDDLE], RIGHT: THREE.MOUSE[ORBIT_TASTEN.RIGHT] };
+  steuerung.zoomToCursor = true;
   steuerung.screenSpacePanning = true;
   const strahl = new THREE.Raycaster();
 
@@ -102,12 +108,34 @@ function erstellen(behaelter, ansichtElement) {
     geplant = 0;
     if (zerstoert) return;
     renderer.render(szene, kamera);
+    wuerfel?.zeichnen();
+    kameraMerken();
+  }
+  /** Kamerazustand zur Kontrolle (Browser-Tests, Fehlersuche): Ziel, Lage, Blickrichtung. */
+  function kameraMerken() {
+    const f = (v) => [v.x, v.y, v.z].map((x) => Math.round(x * 1000) / 1000);
+    const blick = new THREE.Vector3().copy(steuerung.target).sub(kamera.position).normalize();
+    wurzel.dataset.kamera = JSON.stringify({ ziel: f(steuerung.target), lage: f(kamera.position), blick: f(blick) });
   }
   function anfordern() {
     if (!geplant && !zerstoert) geplant = requestAnimationFrame(zeichnen);
   }
   steuerung.addEventListener('change', anfordern);
   steuerung.addEventListener('start', () => { benutzt = true; });
+
+  // ---------- Navigationswürfel (N11) ----------
+  const ausrichtungGrad = () => gebaeudeAusrichtungGrad(derKlasse('Gebaeude').sort((a, b) => String(a.kennzeichen).localeCompare(String(b.kennzeichen)))[0]);
+  const startSchluessel = () => startansichtSchluessel(zustand.status?.ort ?? zustand.status?.projekt, ansicht?.kennzeichen);
+  const wuerfel = erzeugeWuerfel({
+    wurzel, renderer, kamera, steuerung,
+    anfordern, beiBenutzt: () => { benutzt = true; },
+    ausrichtungGrad,
+    nordwinkelGrad: () => nordwinkelGrad(derKlasse('Projektinformation')[0]),
+    einpassung: () => einpassWerte(),
+    startLesen: () => merken.lesen(startSchluessel(), null),
+    startSchreiben: (wert) => merken.schreiben(startSchluessel(), wert),
+    menue: (x, y, eintraege) => import('../oberflaeche/dialoge.js').then(({ kontextmenue }) => kontextmenue(x, y, eintraege)),
+  });
 
   // ---------- Grösse ----------
   function groesseAnpassen() {
@@ -265,22 +293,29 @@ function erstellen(behaelter, ansichtElement) {
     ladeTimer = setTimeout(abarbeiten, ms);
   }
 
-  function zoomAlles() {
-    if (zerstoert) return;
-    benutzt = false;
+  /** Mitte und Abstand, bei denen alle Körper im Bild sind; stellt auch die Schnittebenen der Kamera und den grössten Abstand ein. */
+  function einpassWerte() {
     const box = new THREE.Box3();
     for (const o of objekte.values()) box.expandByObject(o);
     if (box.isEmpty()) { box.set(new THREE.Vector3(-5, 0, -5), new THREE.Vector3(5, 3, 5)); }
     const kugel = box.getBoundingSphere(new THREE.Sphere());
     const r = Math.max(kugel.radius, 0.5);
     const dist = (r / Math.sin(THREE.MathUtils.degToRad(kamera.fov) / 2)) * 1.05;
-    const richtung = new THREE.Vector3(1, 0.85, 1.15).normalize();   // von Südosten, schräg von oben
-    kamera.position.copy(kugel.center).addScaledVector(richtung, dist);
     kamera.near = Math.max(dist / 500, 0.02);
     kamera.far = dist * 40 + 100;
     kamera.updateProjectionMatrix();
-    steuerung.target.copy(kugel.center);
     steuerung.maxDistance = dist * 20;
+    return { ziel: kugel.center.clone(), abstand: dist };
+  }
+
+  /** Alles zeigen, aus der Richtung der Startansicht (gemerkt oder Isometrie von vorne rechts oben). */
+  function zoomAlles() {
+    if (zerstoert) return;
+    benutzt = false;
+    const e = einpassWerte();
+    const z = startansichtZiel(startansichtLesen(merken.lesen(startSchluessel(), null)), ausrichtungGrad() * Math.PI / 180);
+    kamera.position.copy(e.ziel).addScaledVector(new THREE.Vector3(z.richtung.x, z.richtung.y, z.richtung.z), e.abstand);
+    steuerung.target.copy(e.ziel);
     steuerung.update();
     anfordern();
   }
@@ -370,6 +405,31 @@ function erstellen(behaelter, ansichtElement) {
 
   let druck = null;
   const dom = renderer.domElement;
+  // Mittlere Taste (N10): Doppelklick = alles zeigen; Umschalt + Mitte dreht um die Auswahl bzw. die Modellmitte (Aufnahmephase: vor der Steuerung);
+  // kein Autoscroll des Browsers
+  let letzteMitte = 0;
+  const pivot = () => {
+    const box = new THREE.Box3();
+    const o = gewaehlt ? objekte.get(gewaehlt) : null;
+    if (o) box.expandByObject(o); else for (const k of objekte.values()) box.expandByObject(k);
+    return box.isEmpty() ? null : box.getCenter(new THREE.Vector3());
+  };
+  wurzel.addEventListener('pointerdown', (e) => {
+    if (e.button !== 1) return;
+    e.preventDefault();
+    const jetzt = performance.now();
+    if (istDoppelklick(letzteMitte, jetzt)) { letzteMitte = 0; e.stopPropagation(); zoomAlles(); return; }
+    letzteMitte = jetzt;
+    if (e.shiftKey) {
+      const p = pivot();
+      if (p) {
+        const z = schwenkZiel(kamera.position, steuerung.target, p);
+        if (new THREE.Vector3(z.x, z.y, z.z).distanceTo(kamera.position) < steuerung.maxDistance) steuerung.target.set(z.x, z.y, z.z);
+      }
+    }
+  }, true);
+  dom.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+  dom.addEventListener('auxclick', (e) => e.preventDefault());
   dom.addEventListener('pointerdown', (e) => {
     tip.hidden = true;
     if (e.button === 0) druck = { x: e.clientX, y: e.clientY, bewegt: false };
@@ -416,6 +476,7 @@ function erstellen(behaelter, ansichtElement) {
   function designGeaendert() {
     if (zerstoert) return;
     szene.background.set(hintergrund());
+    wuerfel.designGeaendert();
     farbeAuswahl.set(cssVar('--auswahl', '#1e90ff'));
     farbeFremd.set(cssVar('--fremd', '#d69e2e'));
     ausDatenNeu();   // Kamera bleibt, wie sie ist (Farben der Körper kommen aus dem Design)
@@ -488,6 +549,7 @@ function erstellen(behaelter, ansichtElement) {
       window.removeEventListener('hlks-design', designGeaendert);
       beobachter?.disconnect();
       steuerung.removeEventListener('change', anfordern);
+      wuerfel.zerstoeren();
       steuerung.dispose();
       for (const id of [...objekte.keys()]) entfernen(id);
       infoZeigen(null);

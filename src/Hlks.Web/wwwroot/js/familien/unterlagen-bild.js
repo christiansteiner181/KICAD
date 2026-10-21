@@ -3,6 +3,7 @@
 // Bildpunkt ↔ Unterlagen-Koordinaten steht in unterlagen-text.js (boxImBild, bildPunktZuUnterlage) und folgt dem «bereich» des Kerns.
 
 import { abfrage } from '../api.js';
+import { mitteVerschieben, rollenderVorfahre } from '../ansichten/maus.js';
 import { boxImBild, bildPunktZuUnterlage, esc } from './unterlagen-text.js';
 
 /**
@@ -38,7 +39,7 @@ export function bildBetrachter(host, { klasse = '' } = {}) {
     klickFn({ punkt: bildPunktZuUnterlage(px, py, antwort.bereich, antwort.breite, antwort.hoehe, antwort.art), px, py, ereignis: e });
   });
 
-  return {
+  const api = {
     element: wurzel,
     antwort: () => antwort,
     async laden(p) {
@@ -70,4 +71,14 @@ export function bildBetrachter(host, { klasse = '' } = {}) {
     leeren(text = '') { nr++; antwort = null; marken = []; rahmen.hidden = true; ueber.innerHTML = ''; info.textContent = text; },
     zerstoeren() { tot = true; nr++; },
   };
+
+  // Mittlere Taste (N10): verschiebt das vergrösserte Bild (der Behälter rollt), Doppelklick Mitte = ganz zeigen; kein Autoscroll
+  let roller = null;
+  mitteVerschieben(wurzel, {
+    beiBeginn: () => { roller = rollenderVorfahre(rahmen); wurzel.classList.add('schiebt'); },
+    beiBewegung: (dx, dy) => { if (roller) { roller.scrollLeft -= dx; roller.scrollTop -= dy; } },
+    beiEnde: () => { roller = null; wurzel.classList.remove('schiebt'); },
+    beiDoppelklick: () => { api.zoom(1); const r = rollenderVorfahre(rahmen); if (r) { r.scrollLeft = 0; r.scrollTop = 0; } },
+  });
+  return api;
 }
