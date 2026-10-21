@@ -24,7 +24,8 @@ public static class KiEinordnung
         new("Fachabfragen", "Auswertungen und Listen des Kerns (Hülle, Material, Kollisionen, Aussparungen, Leitungen, Schema, Sanitär, Pläne); nur lesend.",
             ["aufbau_rechnen", "huellbauteile", "huelle_pruefen", "materialien", "materialliste", "typmaterial", "kollisionen", "aussparungsliste",
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
-             "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze"]),
+             "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze",
+             "abzweigwinkel"]),   // Nachtrag Modul 3, 21.10.2026 (hlks-kern, zur Bestätigung): Abzweigwinkel einer Serie bzw. Leitung, nur lesend wie leitungsserie
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +

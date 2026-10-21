@@ -48,6 +48,8 @@ public static class Pruefungen
         ["P29"] = "Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Serie",
         // Nachtrag Modul 3 (entwurf/abwasser-serie.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
         ["P30"] = "Abwasser-Serie für ein anderes Medium als Abwasser",
+        // Nachtrag Modul 3, 21.10.2026 (Formteile in Vorgabegrösse): gemeldet von LeitungenPruefung (Leitungen/FreieGroesse.cs)
+        ["P45"] = "Formteil einer freien Serie trägt seine Grösse nicht selbst",
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete

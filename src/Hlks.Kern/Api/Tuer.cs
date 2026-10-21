@@ -54,6 +54,17 @@ public static class Tuer
         };
     }
 
+    /// <summary>Abfrage in zwei Schritten (Nachtrag 21.10.2026, Abfrage leitungsserie): Aufruf unter der Sperre des Projekts; das Ergebnis
+    /// rechnet danach ohne Sperre auf einem festen Lesestand und bricht mit dem CancellationToken ab (HTTP-Anfrage bzw. MCP-Aufruf). Für
+    /// alle übrigen Abfragen rechnet schon dieser Aufruf (wie Abfrage), das Ergebnis gibt die Antwort nur zurück.</summary>
+    public static Func<CancellationToken, object> AbfrageVorbereiten(Projekt p, string name, JsonObject? par = null)
+    {
+        par ??= new JsonObject();
+        if (LeitungenAbfragen.Vorbereiten(p, name, par) is { } spaeter) return spaeter;
+        var ergebnis = Abfrage(p, name, par);
+        return _ => ergebnis;
+    }
+
     /// <summary>Führt einen Befehl aus (inkl. rueckgaengig, wiederholen, synchronisieren und paket_zuruecknehmen {paket, akteurArt?}).</summary>
     public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false) => name switch
     {

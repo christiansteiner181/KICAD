@@ -532,7 +532,7 @@ test('Kern: Format der Hinweise, das die Vorschau-Zeile liest (Routing.Uebersich
   assert.ok(q.includes('Gerade(n), zusammen'), 'Kopfzeile');
   assert.ok(q.includes('$"Gerade {e.Kennzeichen} {g.Groesse.Groesse}: {Z(g.Laenge)} mm von {P(g.Von)} bis {P(g.Bis)}"'), 'Zeile je Gerade');
   assert.ok(q.includes('{Leitungsserie.Artname(f.Wahl.Art)} {e.Kennzeichen} Typ «{f.Wahl.Typ}»'), 'Zeile je Formteil');
-  const s = quelle('Leitungen/Leitungsserie.cs');
+  const s = quelle('Leitungen/Leitungsserie.cs') + quelle('Leitungen/LeitungsserieAbfrage.cs');   // Abfrage seit 21.10.2026 in LeitungsserieAbfrage.cs
   for (const name of ['winkelRegel', 'groessen', 'aussen', 'innen', 'wand', 'formteilFamilien']) assert.ok(s.includes(`["${name}"]`), `leitungsserie: ${name}`);
   assert.ok(s.includes('"liste"') && s.includes('"frei"'), 'winkelRegel liste | frei');
   const a = quelle('Leitungen/Anschlusslagen.cs');

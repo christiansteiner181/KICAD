@@ -5,6 +5,8 @@
 // B2: Befehle leitung_zeichnen, leitung_abzweigen, leitung_aufteilen, leitung_groesse, leitung_serie (RoutingBefehle.cs, Routing.cs),
 //     Abfrage leitungszug (Leitungszug.cs), P16 (Leitungspruefungen.cs), Nachführung beim Verschieben (LeitungenNachfuehren.cs).
 // B8c: Abfrage verlegung (Verlegung.cs: Einlagen im Beton und Leitungen im Erdreich).
+// Nachtrag 21.10.2026: leitungsserie in zwei Schritten (Vorbereiten: Lesestand unter der Sperre, Rechnung danach ohne Sperre und abbrechbar,
+//     LeitungsserieAbfrage.cs); Abfrage abzweigwinkel (Abzweigwinkel einer Serie bzw. Leitung für das Werkzeug Abzweig).
 
 using System.Text.Json.Nodes;
 
@@ -26,10 +28,11 @@ public static class LeitungenBefehle
 
 public static class LeitungenPruefung
 {
-    /// <summary>Prüfungen P13–P16, P18, P29 und P30 (Codes in Pruefungen.Codes); hängt die Befunde an b an.</summary>
+    /// <summary>Prüfungen P13–P16, P18, P29, P30 und P45 (Codes in Pruefungen.Codes); hängt die Befunde an b an.</summary>
     public static void Pruefen(Modell m, Katalog k, List<Befund> b)
     {
         Leitungspruefungen.Pruefen(m, k, b);   // B1: P13, P14, P15, P18
+        FreieGroesse.PruefenFormteile(m, k, b);   // Nachtrag 21.10.2026: P45 Formteil einer freien Serie ohne eigene Grösse
     }
 }
 
@@ -51,6 +54,12 @@ public static class LeitungenAbfragen
             new("geschoss", "text", false, Verlegung.ParGeschoss),
             new("art", "text", false, Verlegung.ParArt),
         ]),
+        new("abzweigwinkel", Leitungsserie.AbzweigwinkelAbfrageText,   // Nachtrag 21.10.2026 (LeitungsserieAbfrage.cs)
+        [
+            new("leitung", "text", false, Leitungsserie.ParAbzweigLeitung),
+            new("familie", "text", false, Leitungsserie.ParAbzweigFamilie),
+            new("groesse", "objekt", false, Leitungsserie.ParAbzweigGroesse),
+        ]),
     ];
 
     /// <summary>Beantwortet eine Leitungsabfrage; null = nicht zuständig.</summary>
@@ -60,6 +69,15 @@ public static class LeitungenAbfragen
         "leitungszug" => Leitungszug.Abfrage(p, Param.Text(par, "leitung", true)!),   // B2
         "materialliste" => Ableitungen.Materialliste(p, Param.Text(par, "system"), Param.Text(par, "strang"), Param.Text(par, "geschoss")),   // B4
         "verlegung" => Verlegung.Abfrage(p, Param.Text(par, "geschoss"), Param.Text(par, "art")),   // Nachtrag B8c
+        "abzweigwinkel" => Leitungsserie.AbzweigwinkelAbfrage(p, Param.Text(par, "leitung"), Param.Text(par, "familie"), par["groesse"]),   // Nachtrag 21.10.2026
+        _ => null,
+    };
+
+    /// <summary>Abfragen in zwei Schritten (Nachtrag 21.10.2026): unter der Sperre nur den Lesestand vorbereiten, gerechnet wird danach ohne
+    /// Sperre und abbrechbar (Tuer.AbfrageVorbereiten); null = die Abfrage rechnet wie alle übrigen in einem Schritt.</summary>
+    public static Func<CancellationToken, object>? Vorbereiten(Projekt p, string name, JsonObject par) => name switch
+    {
+        "leitungsserie" => Leitungsserie.AbfrageVorbereiten(p, Param.Text(par, "familie", true)!),
         _ => null,
     };
 }
