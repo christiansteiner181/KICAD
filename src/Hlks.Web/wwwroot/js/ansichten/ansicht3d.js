@@ -10,6 +10,8 @@
 // Darstellung «Hülle» (Ansichtseigenschaft darstellung = huelle, Modul 1c): zusätzlich werden die Raumgrenzen (Abfrage raumgrenzen
 // mit geometrie) als farbige, durchscheinende Flächen gezeigt (huelle3d.js, eine Geometrie je Angrenzung); die Architekturkörper
 // werden blasser. Klick auf eine Fläche zeigt Raum, Nachbar, Bauteil, Fläche und U im Infofeld; Legende unten links.
+// 3D-Schnittbereich (N13): Clipping, Griffe und Bedienung stehen in schnittbereich3d.js (hier nur die Anschlüsse); die Ansichtseigenschaften
+// schnittbereich und startansicht liegen im Modell (Kern, element_aendern), die Startansicht nicht mehr je Rechner im Browser.
 
 import * as THREE from 'three';
 import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
@@ -22,7 +24,10 @@ import { leseNetz } from './netzdatei.js';
 import { cssVar, esc } from './hilfen.js';
 import { ORBIT_TASTEN, mitteDoppelklick } from './maus.js';
 import { erzeugeWuerfel } from './wuerfel.js';
-import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen } from './wuerfel-logik.js';
+import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen, zielWinkel, START_VORGABE } from './wuerfel-logik.js';
+import { erzeugeSchnittbereich } from './schnittbereich3d.js';
+import { startansichtUebernahme } from './schnittbereich-logik.js';
+import { befehl } from '../api.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -53,6 +58,7 @@ function erstellen(behaelter, ansichtElement) {
   let huelleTimer = null;
   let huelleGruppe = null;                    // three-Gruppe der Hüllflächen (ausserhalb von «modell», zählt nicht zum Einpassen)
   let huelleUmriss = null;                    // Hervorhebung der angeklickten Raumgrenze
+  let schnitt = null;                         // 3D-Schnittbereich (schnittbereich3d.js)
 
   behaelter.innerHTML = '<div class="d3-wurzel"><div class="d3-tip" hidden></div><div class="d3-hinweis" hidden></div><div class="d3-legende hl-feldbox" hidden></div><div class="d3-info hl-feldbox" hidden></div><div class="d3-bedienung" title="Bedienung wie in Revit">Links drehen · Mitte verschieben · Umschalt + Mitte drehen · Rad zoomen · Doppelklick Mitte: alles zeigen</div></div>';
   const wurzel = behaelter.querySelector('.d3-wurzel');
@@ -107,6 +113,7 @@ function erstellen(behaelter, ansichtElement) {
   function zeichnen() {
     geplant = 0;
     if (zerstoert) return;
+    schnitt?.vorRender();
     renderer.render(szene, kamera);
     wuerfel?.zeichnen();
     kameraMerken();
@@ -147,9 +154,57 @@ function erstellen(behaelter, ansichtElement) {
     ausrichtungGrad,
     nordwinkelGrad: () => nordwinkelGrad(derKlasse('Projektinformation')[0]),
     einpassung: () => einpassWerte(),
-    startLesen: () => merken.lesen(startSchluessel(), null),
-    startSchreiben: (wert) => merken.schreiben(startSchluessel(), wert),
+    startLesen: () => startRoh(),
+    startSchreiben: (wert) => startSchreiben(wert),
     menue: (x, y, eintraege) => import('../oberflaeche/dialoge.js').then(({ kontextmenue }) => kontextmenue(x, y, eintraege)),
+  });
+
+  // ---------- Ansichtseigenschaften im Modell: Startansicht (Rest N11) und Schnittbereich (N13) ----------
+  /** Ändert Eigenschaften dieser Ansicht über den Kern (ein Paket, zurücknehmbar). false bei Ablehnung oder Fehler (mit Meldung). */
+  async function ansichtSpeichern(eigenschaften) {
+    try {
+      const r = await befehl('element_aendern', { element: ansicht.kennzeichen, eigenschaften });
+      if (r.angenommen) return true;
+      const { meldung } = await import('../oberflaeche/dialoge.js');
+      meldung(r.fehler || 'Die Änderung wurde abgelehnt.', 'warnung', { vorschlag: r.vorschlag });
+    } catch (e) { console.error('3D: Ansichtseigenschaft nicht gespeichert', e); }
+    return false;
+  }
+  // Startansicht: der gerade geschriebene Wert gilt sofort (startLokal), bis die Antwort des Kerns die Ansicht erreicht hat; sonst der Wert der Ansicht.
+  let startLokal;            // undefined = Wert aus dem Modell; sonst der geschriebene Wert (null = zurückgesetzt)
+  let startLaeuft = 0;
+  const startRoh = () => (startLokal !== undefined ? startLokal : ansicht?.werte?.startansicht ?? null);
+  async function startSchreiben(wert) {
+    startLokal = wert ?? null;
+    startLaeuft++;
+    let ok = false;
+    try { ok = await ansichtSpeichern({ startansicht: wert ?? null }); } finally { startLaeuft--; }
+    if (!ok && !startLaeuft) startLokal = undefined;
+    return ok;
+  }
+  /** Die alte Startansicht aus dem Browser (localStorage, bis N11) wird einmal ins Modell übernommen und dann entfernt. */
+  function startUebernehmen() {
+    try {
+      const schl = startSchluessel();
+      const lokal = merken.lesen(schl, null);
+      if (lokal === null || lokal === undefined) return;
+      const u = startansichtUebernahme(ansicht?.werte?.startansicht ?? null, lokal, startansichtLesen);
+      if (u.schreiben) startSchreiben({ azimutGrad: u.wert.azimutGrad, polarGrad: u.wert.polarGrad }).then((ok) => { if (ok) merken.entfernen(schl); });
+      else if (u.aufraeumen) merken.entfernen(schl);
+    } catch (e) { console.warn('3D: alte Startansicht nicht übernommen', e?.message ?? e); }
+  }
+  startUebernehmen();
+
+  // ---------- 3D-Schnittbereich (N13) ----------
+  schnitt = erzeugeSchnittbereich({
+    wurzel, dom: renderer.domElement, renderer, kamera, szene, anfordern,
+    gruppen: () => [modell, huelleGruppe],
+    objekte: () => [...objekte.values()],
+    auswahlObjekt: () => (gewaehlt ? objekte.get(gewaehlt) ?? null : null),
+    ausrichtung: () => ausrichtungGrad(),
+    gespeichert: () => ansicht?.werte?.schnittbereich ?? null,
+    speichern: (wert) => ansichtSpeichern({ schnittbereich: wert }),
+    beiBenutzt: () => { benutzt = true; },
   });
 
   // ---------- Grösse ----------
@@ -193,6 +248,7 @@ function erstellen(behaelter, ansichtElement) {
     objekte.set(k.id, o);
     farbeSetzen(k.id);
     netzeAnhaengen(o);
+    schnitt?.neueObjekte();
   }
 
   // ---------- Hintergrund-Netze ----------
@@ -235,6 +291,7 @@ function erstellen(behaelter, ansichtElement) {
       netzHolen(n.quelle).then((g) => {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
         h.add(netzMesh(g, n.farbe, n.deckkraft));
+        schnitt?.neueObjekte();
         if (!benutzt) zoomAlles(); else anfordern();
       });
     }
@@ -313,7 +370,8 @@ function erstellen(behaelter, ansichtElement) {
     const box = new THREE.Box3();
     for (const o of objekte.values()) box.expandByObject(o);
     if (box.isEmpty()) { box.set(new THREE.Vector3(-5, 0, -5), new THREE.Vector3(5, 3, 5)); }
-    const kugel = box.getBoundingSphere(new THREE.Sphere());
+    const sk = schnitt?.kugelWelt();   // N13: ist ein Schnittbereich aktiv, wird er eingepasst (nur das ist sichtbar)
+    const kugel = sk ? new THREE.Sphere(sk.mitte, sk.radius) : box.getBoundingSphere(new THREE.Sphere());
     const r = Math.max(kugel.radius, 0.5);
     const dist = (r / Math.sin(THREE.MathUtils.degToRad(kamera.fov) / 2)) * 1.05;
     kamera.near = Math.max(dist / 500, 0.02);
@@ -323,16 +381,25 @@ function erstellen(behaelter, ansichtElement) {
     return { ziel: kugel.center.clone(), abstand: dist };
   }
 
-  /** Alles zeigen, aus der Richtung der Startansicht (gemerkt oder Isometrie von vorne rechts oben). */
-  function zoomAlles() {
+  /** Alles zeigen, aus der Richtung der Startansicht (im Modell gespeichert oder Isometrie von vorne rechts oben); mit aktivem Schnittbereich
+   *  dessen Inhalt. `richtung` (Ergebnis von zielWinkel) erzwingt eine andere Richtung. */
+  function zoomAlles(richtung = null) {
     if (zerstoert) return;
     benutzt = false;
     const e = einpassWerte();
-    const z = startansichtZiel(startansichtLesen(merken.lesen(startSchluessel(), null)), ausrichtungGrad() * Math.PI / 180);
+    const z = richtung && richtung.richtung ? richtung : startansichtZiel(startansichtLesen(startRoh()), ausrichtungGrad() * Math.PI / 180);
     kamera.position.copy(e.ziel).addScaledVector(new THREE.Vector3(z.richtung.x, z.richtung.y, z.richtung.z), e.abstand);
     steuerung.target.copy(e.ziel);
     steuerung.update();
     anfordern();
+  }
+
+  /** N14 «Raum im 3D zeigen»: den ganzen Schnittbereich im Bild, Isometrie von vorne rechts oben (unabhängig von der Startansicht). */
+  function zeigeBereich() {
+    if (zerstoert) return;
+    zoomAlles(zielWinkel(START_VORGABE, ausrichtungGrad() * Math.PI / 180));
+    benutzt = true;       // bleibt so stehen: weder das erste Laden noch eine Grössenänderung stellt die Kamera neu ein
+    hatGezoomt = true;
   }
 
   // ---------- Darstellung «Hülle» ----------
@@ -370,6 +437,7 @@ function erstellen(behaelter, ansichtElement) {
       if (huelleGruppe) { szene.remove(huelleGruppe); huelleFreigeben(huelleGruppe); }
       huelleGruppe = neu;
       szene.add(huelleGruppe);
+      schnitt?.neueObjekte();
       legende.innerHTML = legendeHtml(legendeDaten(a), { titel: 'Hülle – Gebäude' });
       legende.hidden = false;
       wurzel.dataset.huelle = JSON.stringify({ zeilen: zeilen.length, flaechen: huelleGruppe.children.reduce((n, m) => n + m.userData.dreiecke, 0), holenMs: Math.round(t1 - t0), bauenMs: Math.round(t2 - t1) });
@@ -395,7 +463,7 @@ function erstellen(behaelter, ansichtElement) {
   }
   function koerperTreffer(e) {
     if (!strahlFuer(e)) return null;
-    const treffer = strahl.intersectObjects(modell.children, true);
+    const treffer = schnitt ? schnitt.filtern(strahl.intersectObjects(modell.children, true)) : strahl.intersectObjects(modell.children, true);   // N13: nur was nicht weggeschnitten ist
     // Treffer sind nach Abstand sortiert: höherer Vorrang gewinnt, bei Gleichstand der nächste
     let beste = null, bestVorrang = -1, distanz = Infinity;
     for (const t of treffer) {
@@ -412,7 +480,7 @@ function erstellen(behaelter, ansichtElement) {
   /** Klick in der Darstellung Hülle: die vorderste Hüllfläche, ausser ein Haustechnikkörper (Vorrang 2) liegt davor. */
   function huelleKlick(e) {
     if (!huelleAn || !huelleGruppe || !strahlFuer(e)) return null;
-    const h = zeileAmTreffer(huelleGruppe, strahl.intersectObjects(huelleGruppe.children, false));
+    const h = zeileAmTreffer(huelleGruppe, schnitt ? schnitt.filtern(strahl.intersectObjects(huelleGruppe.children, false)) : strahl.intersectObjects(huelleGruppe.children, false));
     if (!h) return null;
     const k = koerperTreffer(e);
     return k && k.vorrang >= 2 && k.distanz < h.distanz ? null : h;
@@ -519,6 +587,8 @@ function erstellen(behaelter, ansichtElement) {
   function ansichtGeaendert(a) {
     try {
       ansicht = a ?? ansicht;
+      if (!startLaeuft) startLokal = undefined;   // der Wert der Ansicht ist wieder massgebend
+      schnitt?.setzen(ansicht?.werte?.schnittbereich ?? null);
       const war = huelleAn;
       huelleAn = istHuelle(ansicht);
       ausDatenNeu();   // Filter der Ansicht (Gewerke, Klassen) neu anwenden; bei Hülle auch blassere Körper
@@ -552,7 +622,9 @@ function erstellen(behaelter, ansichtElement) {
     },
     ansichtGeaendert,
     auswahlGeaendert: hervorhebenId,
-    zoomAlles,
+    zoomAlles: () => zoomAlles(),
+    zeigeBereich,
+    get schnittbereich() { return schnitt; },
     zerstoeren() {
       zerstoert = true;
       cancelAnimationFrame(geplant);
@@ -567,6 +639,7 @@ function erstellen(behaelter, ansichtElement) {
       beobachter?.disconnect();
       steuerung.removeEventListener('change', anfordern);
       wuerfel.zerstoeren();
+      schnitt?.zerstoeren();
       steuerung.dispose();
       for (const id of [...objekte.keys()]) entfernen(id);
       infoZeigen(null);

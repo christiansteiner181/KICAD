@@ -121,4 +121,5 @@ export function klasse(name) {
 export const merken = {
   lesen(schluessel, vorgabe) { try { const t = localStorage.getItem('hlks.' + schluessel); return t ? JSON.parse(t) : vorgabe; } catch { return vorgabe; } },
   schreiben(schluessel, wert) { try { localStorage.setItem('hlks.' + schluessel, JSON.stringify(wert)); } catch { /* egal */ } },
+  entfernen(schluessel) { try { localStorage.removeItem('hlks.' + schluessel); } catch { /* egal */ } },
 };
