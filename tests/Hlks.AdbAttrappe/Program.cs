@@ -10,6 +10,11 @@
 //   connect_fehlschlaege.txt  Zahl N: die ersten N «connect» melden «failed to connect … Connection refused» (adbd startet in der Quest neu), danach geht es
 //   wlan_offline.txt          Zahl M: ein durch «connect» neu hinzugekommener WLAN-Weg steht für die nächsten M «devices» als «offline», dann als «device»
 //   reverse_fehlschlaege.txt  Zahl N: die ersten N «reverse tcp:A tcp:B» scheitern mit «error: device offline» (Code 1)
+//   wach.txt       Autostart: Wachzustand für «shell dumpsys power» (mWakefulness=…), Vorgabe Awake
+//   wach_ab.txt    Zahl N: die ersten N «dumpsys power» melden Asleep, danach gilt wach.txt
+//   vorne.txt      Autostart: Paket der Vordergrund-App in «shell dumpsys activity activities», Vorgabe com.oculus.browser
+//   am_start.log   (die Attrappe schreibt) die Adresse jedes «shell am start -a android.intent.action.VIEW -d <Adresse> com.oculus.browser»
+//   forward.txt    (die Attrappe schreibt) die Weiterleitungen «forward tcp:A localabstract:chrome_devtools_remote»; «forward --remove tcp:A» entfernt sie
 //   aufrufe.log    jeder Aufruf mit seinen Argumenten, eine Zeile (die Attrappe schreibt)
 // Bekannte Aufrufe (optional mit «-s <Seriennummer>» davor): start-server, devices, reverse tcp:A tcp:B, reverse --list, reverse --remove tcp:A,
 // shell ip -f inet addr show wlan0, tcpip 5555, connect <Adresse>. Alles andere meldet «unknown command» mit Code 1.
@@ -96,6 +101,38 @@ switch (a[0])
         return File.Exists(P("mac.txt"))
             ? Ende("21: wlan0: <BROADCAST,MULTICAST,UP,LOWER_UP> mtu 1500 qdisc mq state UP mode DEFAULT group default qlen 1000\n    link/ether " + File.ReadAllText(P("mac.txt")).Trim() + " brd ff:ff:ff:ff:ff:ff")
             : Ende("Device \"wlan0\" does not exist.", 1);
+    // Autostart (QuestStarter.cs): Browser öffnen, Wachzustand, Vordergrund-App, Fern-Debugging-Weiterleitung
+    case "shell" when a.Count == 8 && string.Join(' ', a.Skip(1).Take(5)) == "am start -a android.intent.action.VIEW -d"
+                      && System.Text.RegularExpressions.Regex.IsMatch(a[6], @"^http://localhost:\d{1,5}/vr$") && a[7] == "com.oculus.browser":
+        if (WegFehler() is { } f6) return f6;
+        File.AppendAllText(P("am_start.log"), a[6] + Environment.NewLine);
+        return Ende("Starting: Intent { act=android.intent.action.VIEW dat=" + a[6] + " pkg=com.oculus.browser }");
+    case "shell" when string.Join(' ', a.Skip(1)) == "dumpsys power":
+    {
+        if (WegFehler() is { } f7) return f7;
+        var w = Verbraucht("wach_ab.txt") ? "Asleep" : (Zeilen("wach.txt") is { Length: > 0 } wz ? wz[0] : "Awake");
+        return Ende("POWER MANAGER (dumpsys power)\n\nPower Manager State:\n  mWakefulness=" + w + "\n  mWakefulnessChanging=false\n  mHalAutoSuspendModeEnabled=false");
+    }
+    case "shell" when string.Join(' ', a.Skip(1)) == "dumpsys activity activities":
+    {
+        if (WegFehler() is { } f8) return f8;
+        var pkg = Zeilen("vorne.txt") is { Length: > 0 } vz ? vz[0] : "com.oculus.browser";
+        return Ende("ACTIVITY MANAGER ACTIVITIES (dumpsys activity activities)\n  mFocusedApp=ActivityRecord{9f8e7d u0 " + pkg + "/.Main t7}\n"
+            + "  mResumedActivity: ActivityRecord{1a2b3c u0 " + pkg + "/.Main t7}\n  topResumedActivity=ActivityRecord{1a2b3c u0 " + pkg + "/.Main t7}");
+    }
+    case "forward" when a.Count == 3 && a[1].StartsWith("tcp:") && a[2] == "localabstract:chrome_devtools_remote":
+        if (WegFehler() is { } f9) return f9;
+        File.AppendAllText(P("forward.txt"), a[1] + " " + a[2] + Environment.NewLine);
+        return Ende(a[1][4..]);
+    case "forward" when a.Count == 3 && a[1] == "--remove" && a[2].StartsWith("tcp:"):
+    {
+        if (WegFehler() is { } f10) return f10;
+        var alleF = Zeilen("forward.txt");
+        var restF = alleF.Where(z => z.Split(' ')[0] != a[2]).ToArray();
+        if (restF.Length == alleF.Length) return Ende($"adb: error: listener '{a[2]}' not found", 1);
+        File.WriteAllLines(P("forward.txt"), restF);
+        return 0;
+    }
     case "tcpip" when a.Count == 2 && a[1] == "5555":
         if (verhalten.Contains("tcpip_fehler")) return Ende("error: closed", 1);
         if (JeWeg && serie is not null && File.Exists(P(ReverseDatei()))) File.Delete(P(ReverseDatei()));   // adbd startet neu: Weiterleitungen dieses Weges sind weg

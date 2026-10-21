@@ -242,6 +242,62 @@ test('OBERFLAECHE.md beschreibt die Automatik «Brille automatisch verbinden»',
   assert.match(md, /quest-status\.js/);
 });
 
+// ------------------------------------------------------------------------------------------ Begehung beim Aufsetzen (Autostart)
+
+test('Autostart: Vorgabe an, nur ein ausdrückliches «nein» schaltet aus', () => {
+  assert.equal(T.AUTOSTART_SCHLUESSEL, 'quest.autostart');
+  assert.equal(T.autostartAn(undefined), true);
+  assert.equal(T.autostartAn(null), true);
+  assert.equal(T.autostartAn(true), true);
+  assert.equal(T.autostartAn(false), false);
+});
+
+test('Autostart: Anzeige der Statusleiste je Zustand', () => {
+  assert.equal(T.autostartAnzeige(null), null);
+  assert.equal(T.autostartAnzeige({ status: 'leer' }), null);
+  assert.equal(T.autostartAnzeige({ status: 'abgebrochen' }), null, 'ein abgelöster Lauf zeigt nichts');
+  const wartet = T.autostartAnzeige({ status: 'laeuft', phase: 'aufsetzen', meldung: 'Brille aufsetzen – die Begehung startet automatisch.' });
+  assert.equal(wartet.stufe, 'gelb');
+  assert.match(wartet.text, /Brille aufsetzen – die Begehung startet automatisch/);
+  assert.equal(T.autostartAnzeige({ status: 'laeuft', phase: 'verbinden' }).stufe, 'gelb');
+  assert.match(T.autostartAnzeige({ status: 'laeuft', phase: 'klick' }).text, /Begehung startet/);
+  const aktiv = T.autostartAnzeige({ status: 'aktiv' });
+  assert.equal(aktiv.stufe, 'gruen');
+  assert.equal(aktiv.text, 'Begehung läuft');
+  const fehler = T.autostartAnzeige({ status: 'fehler', meldung: 'Die Brille wurde nicht aufgesetzt.', hinweis: 'Erneut senden.' });
+  assert.equal(fehler.stufe, 'grau');
+  assert.match(fehler.text, /nicht gestartet: Die Brille wurde nicht aufgesetzt/);
+  assert.match(fehler.titel, /Erneut senden/);
+  assert.equal(T.autostartLaeuft({ status: 'laeuft' }), true);
+  assert.equal(T.autostartLaeuft({ status: 'aktiv' }), false);
+  assert.match(T.AUTOSTART_HINWEIS, /VR erlauben/);
+});
+
+test('Autostart: Oberfläche nur Verdrahtung (Auftrag mit autostart, Schalter, Verfolgen über api.js)', () => {
+  const v = lies('vr-auftrag.js');
+  assert.match(v, /T\.autostartAn\(benutzerWert\(T\.AUTOSTART_SCHLUESSEL, true\)\)/);
+  assert.match(v, /koerper\.autostart = true/);
+  assert.match(v, /autostartVerfolgen/);
+  assert.match(v, /Brille aufsetzen, die Begehung startet automatisch/);
+  const st = lies('quest-status.js');
+  assert.match(st, /\/api\/quest\/autostart/);
+  assert.match(st, /T\.autostartAnzeige\(autostart\)/);
+  assert.doesNotMatch(st, /fetch\(/, 'nur über api.js');
+  const d = lies('quest-dialog.js');
+  assert.match(d, /class="qd-autostart"/);
+  assert.match(d, /Begehung beim Aufsetzen automatisch starten/);
+  assert.match(d, /benutzerSetzen\(T\.AUTOSTART_SCHLUESSEL, an\)/);
+});
+
+test('OBERFLAECHE.md beschreibt den Autostart', () => {
+  const md = lies('../../../OBERFLAECHE.md');
+  assert.match(md, /Modul XR: Autostart/);
+  assert.match(md, /quest\.autostart/);
+  assert.match(md, /\/api\/quest\/autostart/);
+  assert.match(md, /VR erlauben/);
+  assert.match(md, /QuestStarter\.cs/);
+});
+
 test('OBERFLAECHE.md beschreibt den Dialog «Quest verbinden»', () => {
   const md = lies('../../../OBERFLAECHE.md');
   assert.match(md, /Quest verbinden/);

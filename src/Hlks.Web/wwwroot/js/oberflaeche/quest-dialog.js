@@ -62,6 +62,10 @@ export function questDialog() {
       <div class="leise qd-klein">KICAD merkt sich die WLAN-Adresse (MAC) der Brille und sucht sie nach jedem Programmstart im eigenen Netz, ohne dass die IP-Adresse bekannt sein muss. Nach einem Neustart der Brille ist einmal das Kabel nötig.</div>
       <div class="qd-brillen" aria-label="Gemerkte Brille"></div>
     </section>
+    <section class="qd-autostart-block"><b>Begehung beim Aufsetzen</b>
+      <label class="qd-schalter"><input type="checkbox" class="qd-autostart" aria-label="Begehung beim Aufsetzen automatisch starten"> Begehung beim Aufsetzen automatisch starten</label>
+      <div class="leise qd-klein">${esc(T.AUTOSTART_HINWEIS)}</div>
+    </section>
     <section class="qd-hinweise"><b>Gut zu wissen</b>
       <ul>${T.HINWEISE.map((h) => `<li>${esc(h)}</li>`).join('')}</ul></section>
     <div class="qd-adresse"></div>
@@ -91,6 +95,8 @@ export function questDialog() {
     const brillen = T.brillenListe(z?.brillen);
     q('.qd-auto').checked = z?.automatisch === true;
     q('.qd-auto').disabled = !z || laeuft;
+    q('.qd-autostart').checked = T.autostartAn(z?.autostart);
+    q('.qd-autostart').disabled = !z || laeuft;
     q('.qd-brillen').innerHTML = brillen.length === 0
       ? '<div class="leise qd-keine-brille">Noch keine Brille gemerkt. Sie wird gemerkt, sobald die Quest einmal verbunden wurde.</div>'
       : brillen.map((b) => `<div class="qd-brille-zeile" data-mac="${esc(b.mac)}"><span class="qd-brille-text">${esc(T.brilleText(b))}</span>`
@@ -167,6 +173,14 @@ export function questDialog() {
       await questStatusAktualisieren();   // schaltet die Statusanzeige ein bzw. aus; beim Einschalten folgt ein Schritt
       z = await holen('/api/quest');
       return { ...z, meldung: an ? 'Die Brille wird jetzt automatisch verbunden (beim Start, beim Öffnen einer 3D-Ansicht und im Takt, bis sie bereit ist).' : 'Die Automatik ist ausgeschaltet.' };
+    });
+  });
+  q('.qd-autostart').addEventListener('change', (e) => {
+    const an = e.target.checked;
+    lauf(async () => {
+      await benutzerSetzen(T.AUTOSTART_SCHLUESSEL, an);
+      z = await holen('/api/quest');
+      return { ...z, meldung: an ? 'Nach dem Klick am PC startet die Begehung, sobald die Brille aufgesetzt ist (beim ersten Mal in der Brille «VR erlauben» bestätigen).' : 'Der Autostart ist ausgeschaltet: in der Brille die VR-Startseite von Hand öffnen und tippen.' };
     });
   });
   q('.qd-ip').addEventListener('input', zeigeAmpel);

@@ -10905,6 +10905,46 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Brille automatisch verbinden»)"
           ],
           "hinweis": "Von Christian mit der Brille und im Büronetz zu testen (die echte Nachbartabelle und der Ping-Durchlauf sind in den Tests ersetzt). Reine Rechner-Funktion, für die KI verboten (KiEinordnung quest_automatik). Einstellungen: quest.automatisch (Ja/Nein, Vorgabe nein) und quest.brillen (Liste mit seriennummer, mac, letzteIp, zuletzt)."
+        },
+        {
+          "id": "zb-xr-autostart",
+          "titel": "Begehung beim Aufsetzen automatisch starten: Klick am PC, Brille aufsetzen, fertig (Modul XR)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Quest verbinden … › Schalter «Begehung beim Aufsetzen automatisch starten»",
+            "kuerzel": "",
+            "sonst": "Auslöser: Grundriss › Rechtsklick auf einen Raum › «In VR begehen (Brille)» bzw. «Im Sitzungsraum zeigen (Brille)»; 3D-Ansicht › «An die Brille senden». Rückmeldung in der Statusleiste (Anzeige «Brille»)"
+          },
+          "schritte": [
+            "Die Quest wie bei «Quest verbinden» bzw. «Brille automatisch verbinden» einrichten (adb, Freigabe, Brille gemerkt). Im Dialog «Quest verbinden» ist der Schalter «Begehung beim Aufsetzen automatisch starten» eingeschaltet (Vorgabe).",
+            "Am PC im Grundriss mit der rechten Maustaste auf einen Raum klicken und «In VR begehen (Brille)» wählen (oder in der 3D-Ansicht «An die Brille senden»).",
+            "In der Statusleiste steht «Brille aufsetzen – die Begehung startet automatisch». KICAD verbindet die Brille, öffnet im Browser der Quest die VR-Startseite und wartet bis zu 10 Minuten.",
+            "Die Brille aufsetzen. Sobald sie wach ist und der Browser vorne steht, startet KICAD die Sitzung selbst; die Anzeige wird grün («Begehung läuft»). Beim allerersten Mal fragt die Brille «VR erlauben» – einmal bestätigen.",
+            "Ein neuer Klick am PC bricht den laufenden Autostart ab und beginnt von vorn. Zum Ausschalten den Schalter im Dialog ausschalten: dann wird nur der Auftrag gesetzt, und in der Brille genügt der Tipp auf die Startseite."
+          ],
+          "erwartung": "Nach dem Klick am PC startet die Begehung, sobald die Brille aufgesetzt ist, ohne dass in der Brille etwas getippt werden muss. Die Anzeige «Brille» zeigt gelb «Brille aufsetzen – die Begehung startet automatisch», dann grün «Begehung läuft»; bei einem Fehler grau «Begehung nicht gestartet: …» mit Hinweis im Tipp. Das Fern-Debugging der Brille ist nur für die Dauer des Autostarts offen und wird danach entfernt; KICAD steuert nur die eigene Startseite (http://localhost:<Port>/vr) im Browser der Brille. Die KI kann die Funktion nicht benutzen.",
+          "pruefpunkte": [
+            "Der Schalter «Begehung beim Aufsetzen automatisch starten» ist standardmässig an; der Hinweis nennt die einmalige Bestätigung «VR erlauben».",
+            "Brille abgesetzt, Klick am PC: die Anzeige wird gelb «Brille aufsetzen – die Begehung startet automatisch»; im Browser der Brille ist die VR-Startseite geöffnet.",
+            "Brille aufsetzen: die Begehung startet ohne Tipp; die Anzeige wird grün «Begehung läuft».",
+            "Beim ersten Mal fragt die Brille «VR erlauben»; nach der Bestätigung startet die Begehung von selbst.",
+            "Zweiter Klick am PC während des Wartens: der erste Lauf bricht ab, nur der zweite startet die Begehung (kein doppelter Start).",
+            "Brille nicht aufgesetzt (10 Minuten): grau «Begehung nicht gestartet: …», kein offenes Fern-Debugging zurück.",
+            "Schalter aus: Klick am PC setzt nur den Auftrag; es wird kein Browser geöffnet, die Anzeige bleibt unverändert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Statusleiste und Dialog «Quest verbinden»",
+            "zustand": "Autostart läuft: gelbe Anzeige «Brille aufsetzen – die Begehung startet automatisch»; Dialog mit eingeschaltetem Schalter"
+          },
+          "quelle": [
+            "src/Hlks.Web/QuestStarter.cs (Autostart: adb, Wachzustand, Vordergrund, CDP-Klick; Sicherheit im Dateikopf)",
+            "src/Hlks.Web/VrAuftrag.cs (autostart im Auftrag) und QuestEndpunkte.cs (GET /api/quest/autostart)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/vr-auftrag.js, quest-status.js, quest-text.js, quest-dialog.js",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Autostart»)"
+          ],
+          "hinweis": "Nur mit der echten Brille zu prüfen (Wachzustand und Vordergrund-App der Quest 3, Klick im Quest-Browser als Benutzeraktion, Abfrage «VR erlauben»); die Tests laufen gegen Attrappen. Reine Rechner-Funktion, für die KI verboten (KiEinordnung quest_autostart). Einstellung: quest.autostart (Ja/Nein, Vorgabe ja)."
         }
       ]
     }
