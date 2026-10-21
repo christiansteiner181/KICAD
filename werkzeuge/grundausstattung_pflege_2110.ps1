@@ -34,7 +34,7 @@
 #   - Jede geänderte Familie ist danach für zwei Stunden für CS@grundausstattung reserviert (Sperre des Kerns, wie bei jedem familie_aendern).
 # Exit 0 = alles grün, 1 = eine Prüfung bzw. ein Befehl nicht grün, 2 = abgebrochen (Server, Voraussetzung).
 # Datei mit UTF-8-BOM speichern (PowerShell 5.1 liest sonst «» und Umlaute falsch – Befund 20.10.2026).
-param([int]$Port = 5153, [switch]$Ausfuehren, [switch]$Probe, [switch]$ProbeBehalten)
+param([int]$Port = 5153, [switch]$Ausfuehren, [switch]$Probe, [switch]$ProbeBehalten, [switch]$K3QuellenEntfernen)
 $ErrorActionPreference = 'Stop'
 $u = "http://localhost:$Port"
 
@@ -304,7 +304,10 @@ $k3Hinweis = $null
 $k3Def = $fam[$K3Id].definition
 $vm = Param $k3Def 'v_max'; $pm = Param $k3Def 'p_max'
 $k3Soll = $vm -and $pm -and $vm.wert -eq 30 -and @($vm.quellen).Count -eq 1 -and @($vm.quellen)[0] -eq $K3Wert -and $pm.wert -eq 3000 -and @($pm.quellen) -contains $K3Wert
-if (-not $k3Soll) {
+# Hauptlauf 21.10.2026: Konflikte entscheidet nur ein Mensch im Projekt. Das Skript nimmt deshalb ohne -K3QuellenEntfernen keine
+#   Preisbuch-Quellen von den Parametern, sondern laesst den Konflikt v_max 25/30 m/s offen; Christian waehlt «Broschüre 2025» im Familieneditor.
+if (-not $k3Soll -and -not $K3QuellenEntfernen) { $k3Hinweis = "zurückgestellt – der Konflikt v_max 25 (Preisbuch) / 30 m/s (Broschüre 2025) bleibt offen; Entscheid Christian «Broschüre 2025 gilt» im Familieneditor festhalten (konflikt_entscheiden, nur Mensch)" }
+if (-not $k3Soll -and -not $k3Hinweis) {
   $ul = @($k3Def.unterlagen | Where-Object { ([string]$_.pruefsumme).StartsWith($K3Pruefsumme) }) | Select-Object -First 1
   if (-not $ul) { $k3Hinweis = "Die Schmidlin-Broschüre Zubehör 2025.09 ($K3Pruefsumme…) liegt nicht als Unterlage bei $($KzVon[$K3Id])" }
   elseif (-not $vm -or -not $pm) { $k3Hinweis = "$($KzVon[$K3Id]) hat keinen Parameter v_max bzw. p_max" }
