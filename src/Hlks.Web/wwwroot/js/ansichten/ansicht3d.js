@@ -261,6 +261,7 @@ function erstellen(behaelter, ansichtElement) {
   }
 
   function hinweisAktualisieren() {
+    wurzel.dataset.anzahl = String(objekte.size);   // Kontrolle (Browser-Tests): Zahl der Körper in der Szene
     hinweis.hidden = objekte.size > 0;
     if (objekte.size === 0 && !hinweis.dataset.fehler) hinweis.innerHTML = 'Keine Elemente sichtbar.<br>Gewerke- und Klassenfilter der Ansicht prüfen.';
   }
