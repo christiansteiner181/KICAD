@@ -96,7 +96,7 @@ internal static class BeschriftungMass
             string text = pts.Count == 2 && !string.IsNullOrEmpty(ersatz) ? ersatz : MassText(laenge, einheit);
             var mitte = BeschriftungHilfen.Mal(BeschriftungHilfen.Plus(AufLinie(s[i - 1]), AufLinie(s[i])), 0.5);
             var pos = BeschriftungHilfen.Plus(mitte, BeschriftungHilfen.Mal(oben, ctx.AufModell(ZahlAbstand)));
-            prim.Add(BeschriftungHilfen.Text(pos, text, ZahlGroesse, "mitte", winkel));
+            prim.Add(BeschriftungHilfen.Text(pos, text, ZahlGroesse, "mitte", winkel).Mitdrehend());   // N9: folgt der Masslinie
         }
 
         return [new Grafikteil
@@ -137,7 +137,7 @@ internal static class BeschriftungMass
             text, KoteSchrift, "links");
         return [new Grafikteil
         {
-            Id = e.Id, Ebene = "beschriftung", Primitive = [dreieck, schrift],
+            Id = e.Id, Ebene = "beschriftung", Primitive = [dreieck.Verankert(spitze), schrift.Verankert(spitze)],   // N9: Kote bleibt waagrecht
             Fangpunkte = [[p[0], p[1]]],
         }];
     }

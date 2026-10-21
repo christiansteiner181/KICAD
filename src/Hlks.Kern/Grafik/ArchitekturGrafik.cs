@@ -299,7 +299,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         for (int i = 0; i < zeilen.Count; i++)
             prim.Add(new Primitiv
             {
-                Art = "text", Punkte = [[c[0], y0 - i * zeile]], Text = zeilen[i].Text, Groesse = RaumSchrift, Ausrichtung = "mitte",
+                Art = "text", Punkte = [[c[0], y0 - i * zeile]], Text = zeilen[i].Text, Groesse = RaumSchrift, Ausrichtung = "mitte", Anker = [c[0], c[1]],   // N9: Stempel bleibt waagrecht
                 Fett = zeilen[i].Fett ? true : null,
             });
         return
@@ -359,7 +359,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         foreach (var k in new[] { ka, kb })
         {
             prim.Add(new Primitiv { Art = "kreis", Punkte = [k], Radius = r, Stil = new Stil { Stift = Stifte.Duenn } });
-            prim.Add(new Primitiv { Art = "text", Punkte = [[k[0], k[1] - 0.35 * fs]], Text = text, Groesse = AchsSchrift, Ausrichtung = "mitte" });
+            prim.Add(new Primitiv { Art = "text", Punkte = [[k[0], k[1] - 0.35 * fs]], Text = text, Groesse = AchsSchrift, Ausrichtung = "mitte", Anker = k });   // N9: um die Kreismitte
         }
         return [new Grafikteil { Id = e.Id, Ebene = "achse", Primitive = prim, Fangpunkte = [a, b, [(a[0] + b[0]) / 2, (a[1] + b[1]) / 2]], Fangkanten = [[a, b]] }];
     }

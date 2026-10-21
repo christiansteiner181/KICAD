@@ -80,7 +80,7 @@ public static class Planausgabe
 
         foreach (var f in fenster)
         {
-            var abb = Abbildung.Fuer(f.Massstab, f.Lx, f.Ly, f.Cx, f.Cy);
+            var abb = Abbildung.Fuer(f.Massstab, f.Lx, f.Ly, f.Cx, f.Cy, f.Grafik.Drehung);   // N9: Ausrichtung der Ansicht (gedreht um die Fenstermitte)
             var zustand = z.Zuschneiden(f.Lx - f.W / 2, f.Ly - f.H / 2, f.Lx + f.W / 2, f.Ly + f.H / 2);
             z.Zeichnen(f.Grafik, abb);
             z.Wiederherstellen(zustand);
@@ -171,7 +171,8 @@ public static class Planausgabe
     }
 
     /// <summary>Gezeigter Bereich: Mitte (Modell-mm) und Grösse (Papier-mm). Ausschnitt der Ansicht, sonst Begrenzung der Grafik
-    /// mit 1 mm Papier Zugabe (Annahme), damit dicke Kanten am Rand nicht halbiert werden.</summary>
+    /// mit 1 mm Papier Zugabe (Annahme), damit dicke Kanten am Rand nicht halbiert werden. Gedrehte Ansicht (N9): Ausschnitt und
+    /// Begrenzung gelten in den Achsen der Ansicht; die Mitte wird ins Modell zurückgedreht.</summary>
     static (double Cx, double Cy, double W, double H) Gebiet(Element ansicht, Plangrafik g)
     {
         double ms = g.Massstab > 0 ? g.Massstab : 50;
@@ -180,10 +181,11 @@ public static class Planausgabe
             && Json.Zahl(o["minx"]) is double x0 && Json.Zahl(o["miny"]) is double y0 && Json.Zahl(o["maxx"]) is double x1 && Json.Zahl(o["maxy"]) is double y1
             && x1 > x0 && y1 > y0)
             b = [x0, y0, x1, y1];
-        else if (g.Begrenzung is { Length: 4 } gb)
+        else if ((g.BegrenzungAnsicht ?? g.Begrenzung) is { Length: 4 } gb)
             b = [gb[0] - ms, gb[1] - ms, gb[2] + ms, gb[3] + ms];
         if (b is null) return (0, 0, LeerBreite, LeerHoehe);
-        return ((b[0] + b[2]) / 2, (b[1] + b[3]) / 2, (b[2] - b[0]) / ms, (b[3] - b[1]) / ms);
+        var c = Ansichtsausrichtung.Drehen([(b[0] + b[2]) / 2, (b[1] + b[3]) / 2], -g.Drehung);
+        return (c[0], c[1], (b[2] - b[0]) / ms, (b[3] - b[1]) / ms);
     }
 
     /// <summary>Grösse des Fensters einer Ansicht in Papier-mm für die Platzsuche; ohne berechenbare Grafik eine Ersatzgrösse.</summary>
@@ -315,13 +317,16 @@ public static class Planausgabe
         ps.Add(Beschriftung(Zahl(laenge / 2), xl + lp / 2, wb - 13, ZahlSchrift, "mitte"));
         ps.Add(Beschriftung(Zahl(laenge) + " m", xl + lp, wb - 13, ZahlSchrift, "mitte"));
 
-        // Nordpfeil: Grundrisse sind nach Norden (+y) ausgerichtet, Norden liegt oben (C.2)
+        // Nordpfeil (C.2): zeigt nach geografisch Nord – N9: um die Nordrichtung der Ansicht gedreht (Grafik.Nord, im Uhrzeigersinn ab oben;
+        // 0 bei Ausrichtung nach Himmelsrichtung bzw. ohne Nordwinkel und ohne Drehung); das «N» bleibt waagrecht neben dem Pfeil
         if (f.Grafik.Art == "grundriss")
         {
-            double nx = xr - 4;
-            ps.Add(Linienzug(Stifte.Duenn, [nx, wb - 11.5], [nx, wb - 4]));
-            ps.Add(Dreieck([nx, wb - 2.5], [nx - 1.6, wb - 6.5], [nx + 1.6, wb - 6.5]));
-            ps.Add(Beschriftung("N", nx + 2.8, wb - 6, MassstabSchrift, fett: true));
+            double nx = xr - 4, ny = wb - 7;   // Mitte des Pfeils
+            double[] P(double dx, double dy) { var q = Ansichtsausrichtung.Drehen([dx, dy], -f.Grafik.Nord); return [nx + q[0], ny + q[1]]; }
+            ps.Add(Linienzug(Stifte.Duenn, P(0, -4.5), P(0, 3)));
+            ps.Add(Dreieck(P(0, 4.5), P(-1.6, 0.5), P(1.6, 0.5)));
+            var n = P(2.8, 1);
+            ps.Add(Beschriftung("N", n[0], n[1], MassstabSchrift, fett: true));
         }
         return ps;
     }

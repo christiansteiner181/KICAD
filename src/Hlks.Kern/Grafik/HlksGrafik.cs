@@ -283,7 +283,7 @@ public sealed class HlksGrafik : IGrafikquelle
         teil.Primitive.Add(new Primitiv
         {
             Art = "text", Punkte = [[m.X - Math.Sin(rad) * abstand, m.Y + Math.Cos(rad) * abstand]],
-            Text = text, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad,
+            Text = text, Groesse = Schrift, Ausrichtung = "mitte", Winkel = grad, Mitdrehen = true,   // N9: folgt der Leitung
         });
     }
 

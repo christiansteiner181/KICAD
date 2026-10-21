@@ -16,6 +16,7 @@ public static class PlanBefehle
         r.Hinzufuegen(new RevisionHinzufuegen());    // Modul 7 Teil A: Revision eines Planblatts (Revisionen.cs)
         r.Hinzufuegen(new PlansatzRevisionHinzufuegen());   // … für alle gewählten Blätter eines Plansatzes
         PlansatzBefehle.Registrieren(r);             // Serien-PDF: plansatz_setzen, planblatt_gewerk_setzen (PlansatzBefehle.cs)
+        r.Hinzufuegen(new PlanwinkelBestimmen());    // N9: Ausrichtung der Grundrisse nach Geometrie (Architektur/Planwinkel.cs)
     }
 }
 

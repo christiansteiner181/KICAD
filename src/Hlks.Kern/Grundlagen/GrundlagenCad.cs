@@ -64,6 +64,7 @@ public sealed class GrundlagenCad : IGrundlagenArt
                         Art = "text", Punkte = [[x, y]], Text = p.Text, Groesse = papierMm,
                         Winkel = Winkel(w[3] + lage.Drehung) is var wk && wk != 0 ? wk : null,
                         Ausrichtung = w[4] switch { 1 => "mitte", 2 => "rechts", _ => "links" }, Stil = stil,
+                        Mitdrehen = true,   // N9: Text der Unterlage dreht mit der Ansicht
                     });
                     break;
                 }

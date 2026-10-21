@@ -595,7 +595,7 @@ public sealed class EinlageGrafik : IGrafikquelle
             aus.Add(new Grafikteil
             {
                 Ebene = "beschriftung",
-                Primitive = [BeschriftungHilfen.Text([q[0] + b / 2 + ctx.AufModell(1), q[1] - ctx.AufModell(BausteinSchrift * 0.35)], s.Kennzeichen, BausteinSchrift, "links", 0, fett: true)],
+                Primitive = [BeschriftungHilfen.Text([q[0] + b / 2 + ctx.AufModell(1), q[1] - ctx.AufModell(BausteinSchrift * 0.35)], s.Kennzeichen, BausteinSchrift, "links", 0, fett: true).Verankert(q)],   // N9: rechts vom Schacht, auch gedreht
             });
         }
         if (achse) aus.Add(Hinweis(ctx, d));
@@ -694,6 +694,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         teil.Primitive.Add(Rahmen(b));
         double unten = ty - ctx.AufModell(0.6);
         if (unterstrichen) teil.Primitive.Add(Strich([tx, unten], [tx + w, unten], farbe));
+        foreach (var pr in teil.Primitive) pr.Anker = [(b[0] + b[2]) / 2, (b[1] + b[3]) / 2];   // N9: Textblock bleibt waagrecht (Führungslinien nicht)
         foreach (var z in ziele)
         {
             // Führungslinie vom nächsten Punkt des Textblocks (unterstrichen: vom näheren Ende des Strichs) zum Ziel
@@ -855,7 +856,7 @@ public sealed class EinlageGrafik : IGrafikquelle
         return new Grafikteil
         {
             Ebene = "beschriftung",
-            Primitive = [Strich(f, ende, null), BeschriftungHilfen.Text(gr, text, Schrift, "mitte", winkel), Rahmen(bx)],
+            Primitive = [Strich(f, ende, null), BeschriftungHilfen.Text(gr, text, Schrift, "mitte", winkel).Mitdrehend(), Rahmen(bx)],   // N9: folgt der Leitung
         };
     }
 

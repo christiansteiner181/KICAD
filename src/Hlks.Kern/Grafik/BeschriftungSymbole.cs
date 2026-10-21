@@ -29,7 +29,9 @@ internal static class BeschriftungSymbole
         if ((e.Text("art") ?? "nordpfeil") != "nordpfeil") return [];
         var p = e.Geometrie!.Punkte[0];
         double groesse = e.Zahl("groesse") is double g and > 0 ? g : NordVorgabe;
-        double winkel = e.Zahl("winkel") ?? 0;
+        // N9: der Pfeil zeigt im Modell nach geografisch Nord (nordwinkel im Uhrzeigersinn ab Projekt-Nord), winkel dreht zusätzlich –
+        // so zeigt er in jeder Ausrichtung der Ansicht (Geometrie, Himmelsrichtung) richtig
+        double winkel = (e.Zahl("winkel") ?? 0) - Raumgrenzen.Nordwinkel(ctx.Modell);
         double k = groesse / 40;   // Papier-mm je Einheit des SVG (Pfeil von y = 4 bis y = 44)
 
         // lokale SVG-Einheit (x rechts, y unten, Mitte des Pfeils bei 20/24) → Plan (Papier-mm, y oben), drehen, auf Modell
@@ -44,7 +46,7 @@ internal static class BeschriftungSymbole
         var haelfte = BeschriftungHilfen.Polygon([Plan(20, 4), Plan(20, 36), Plan(9, 44)], null, "schnitt");
         double nSchrift = NordSchrift * groesse / NordVorgabe;
         var nPos = BeschriftungHilfen.Drehen([0, -(44 - 24) * k - 1.0 - 0.7 * nSchrift], winkel);
-        var n = BeschriftungHilfen.Text([p[0] + ctx.AufModell(nPos[0]), p[1] + ctx.AufModell(nPos[1])], "N", nSchrift, "mitte", winkel, fett: true);
+        var n = BeschriftungHilfen.Text([p[0] + ctx.AufModell(nPos[0]), p[1] + ctx.AufModell(nPos[1])], "N", nSchrift, "mitte", winkel, fett: true).Mitdrehend();
 
         return [new Grafikteil
         {
