@@ -36,7 +36,6 @@ const GREIFBAR = new Set(['leitung', 'formteil', 'armatur', 'apparat', 'wand', '
 const FERN = new Set(['leitung', 'formteil', 'armatur', 'apparat']);
 const VORRANG = { leitung: 3, formteil: 3, armatur: 3, apparat: 3, wand: 1, sonst: 1 };
 const SCHREIB_MS = 250;
-const FINGERPUNKT_RADIUS = 0.0025;   // m (Durchmesser 5 mm)
 const wv = (p) => new THREE.Vector3(p.x, p.y, p.z);
 const rund = (x, n = 3) => { const f = 10 ** n; return Math.round(x * f) / f; };
 const pt = (v) => (v ? { x: rund(v.x), y: rund(v.y), z: rund(v.z) } : null);
@@ -454,11 +453,11 @@ export function erzeugeXr(o) {
 
   // ---------------------------------------------------------------------------------------------- Hände zeigen
   function haendeZeigen() {
-    const offen = tablet.offen;   // bei offenem Tablet sind die Gelenkkugeln aus; nur an der Spitze des rechten Zeigefingers bleibt ein kleiner Punkt zum Zielen
+    const offen = tablet.offen;   // bei offenem Tablet ist die linke Hand (trägt das Tablet) aus, die rechte bleibt ganz sichtbar (Christian 21.10.2026: «bei tablet rechte hand immer ganz zeigen»)
     for (const seite of ['left', 'right']) {
       const S = seiten[seite];
       let m = handMesh[seite];
-      if (!S?.gelenke || offen) { if (m) m.visible = false; continue; }
+      if (!S?.gelenke || (offen && seite === 'left')) { if (m) m.visible = false; continue; }
       if (!m) {
         m = new THREE.InstancedMesh(new THREE.SphereGeometry(0.007, 8, 6), new THREE.MeshBasicMaterial({ color: 0x38e8ff, transparent: true, opacity: 0.75, depthTest: false }), GELENKE.length);
         m.frustumCulled = false; m.renderOrder = 997; wurzelGruppe.add(m); handMesh[seite] = m;
@@ -467,14 +466,7 @@ export function erzeugeXr(o) {
       GELENKE.forEach((n, i) => { const p = S.gelenke[n]; mat.makeTranslation(p ? p.x : 0, p ? p.y : -100, p ? p.z : 0); m.setMatrixAt(i, mat); });
       m.instanceMatrix.needsUpdate = true; m.visible = true;
     }
-    const R = seiten.right;
-    if (offen && R?.art === 'hand' && R.spitze) {
-      if (!fingerPunkt) {
-        fingerPunkt = new THREE.Mesh(new THREE.SphereGeometry(FINGERPUNKT_RADIUS, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38e8ff, transparent: true, opacity: 0.95, depthTest: false }));
-        fingerPunkt.frustumCulled = false; fingerPunkt.renderOrder = 997; wurzelGruppe.add(fingerPunkt);
-      }
-      fingerPunkt.position.set(R.spitze.x, R.spitze.y, R.spitze.z); fingerPunkt.visible = true;
-    } else if (fingerPunkt) fingerPunkt.visible = false;
+    if (fingerPunkt) fingerPunkt.visible = false;   // der Fingerpunkt entfällt: die rechte Hand ist ganz sichtbar
   }
 
   // ---------------------------------------------------------------------------------------------- Zustand für Prüfung
