@@ -60,6 +60,18 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
   - Am PC und im BCF erscheint sie als Bild mit Blickpunkt.
   - Löschen, Farbe und Strichstärke über das Tablet (XR-C).
 
+### XR-G – Mehrere Personen (Frage Christian 21.10.2026: «ist das multiuserfähig?»)
+- **Schon heute:**
+  - Änderungen aus VR sind normale Befehle mit Paketen. Andere KICAD-Plätze sehen sie beim Abgleich, im Takt von etwa 2 s.
+  - Gegriffene Elemente werden reserviert (Sperrdatei), damit niemand gleichzeitig daran arbeitet.
+  - Marker und Liste (XR-E) sind für alle sichtbar.
+  - Am PC lässt sich mitschauen, was die Brille zeigt (Spiegelbild von Air Link).
+- **Fehlt für eine gemeinsame Begehung** (mehrere Brillen bzw. PC-Teilnehmer im selben Raum, mit Kopf und Händen als Figuren, Zeigestrahl,
+  Sprache): ein Live-Kanal mit 20–30 Positionen je Sekunde. Der NAS-Abgleich ist dafür zu langsam.
+- **Vorschlag:** Ein KICAD-Server im Büronetz führt die Begehung (WebSocket), die anderen treten bei. Gezeigt werden Figuren mit Namen, ein
+  «Folgen»-Modus und ein Zeigestrahl, der für alle sichtbar ist. Ton läuft über die Brille bzw. Teams oder über einen eigenen Sprachkanal
+  (am Freitag klären).
+
 ## Reihenfolge
 XR-A, dann XR-B mit XR-C, dann XR-E, dann XR-D. Jeder Teil wird mit der Brille an Christians PC abgenommen.
 
