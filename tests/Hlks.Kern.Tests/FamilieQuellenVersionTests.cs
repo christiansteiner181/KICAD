@@ -8,7 +8,7 @@ using static Hlks.Kern.Tests.GrundlagenHilfe;
 namespace Hlks.Kern.Tests;
 
 /// <summary>Nachtrag 21.10.2026 (FamilienQuellenVersion.cs): Quellen von Familien bleiben über einen Wechsel der Leserversion gültig.
-/// Zwei synthetische Befundsätze: die Ausgabe des aktuellen PDF-Lesers (Version 2) aus dem Test-PDF und eine Ablage «pdf-1», die daraus
+/// Zwei synthetische Befundsätze: die Ausgabe des aktuellen PDF-Lesers (Version 3) aus dem Test-PDF und eine Ablage «pdf-1», die daraus
 /// mit zusätzlichen Befunden nach dem Seitenbefund von Seite 1 erzeugt wird (alle späteren Nummern verschoben). Werte FIKTIV (Testventil).</summary>
 public class FamilieQuellenVersionTests
 {
@@ -22,8 +22,8 @@ public class FamilieQuellenVersionTests
     };
 
     /// <summary>Ältere Version: Kopie der Befunde mit <paramref name="einfuegen"/> zusätzlichen Linien nach dem Seitenbefund von Seite 1,
-    /// neu nummeriert (Verweise auf Tabellen und Zellen nachgeführt). Gibt die Befunde und die Zuordnung «Id nach Leser 2 → Id nach Leser 1» zurück.</summary>
-    static (UnterlagenBefunde Alt, Dictionary<string, string> NachAlt) AlteVersion(UnterlagenBefunde neu, int einfuegen, Action<List<UnterlagenBefund>>? aendern = null)
+    /// neu nummeriert (Verweise auf Tabellen und Zellen nachgeführt). Gibt die Befunde und die Zuordnung «Id nach aktuellem Leser → Id nach Leser 1» zurück.</summary>
+    static (UnterlagenBefunde Alt, Dictionary<string, string> NachAlt) AlteVersion(UnterlagenBefunde neu, int einfuegen, Action<List<UnterlagenBefund>>? aendern = null, string leser = "pdf 1")
     {
         var liste = neu.Befunde.Select(Kopie).ToList();
         int nach = liste.FindIndex(b => b.Art == "seite" && b.Seite == 1) + 1;
@@ -48,7 +48,7 @@ public class FamilieQuellenVersionTests
                     for (int k = 0; k < zeile.Count; k++)
                         if (Json.Zahl(zeile[k]) is double d && nachAlt.TryGetValue($"{px}#{(int)d}", out var neuId)) zeile[k] = Nr(neuId);
         }
-        var alt = new UnterlagenBefunde { Datei = neu.Datei, Pruefsumme = px, Art = neu.Art, Leser = "pdf 1", Seiten = neu.Seiten, Befunde = liste };
+        var alt = new UnterlagenBefunde { Datei = neu.Datei, Pruefsumme = px, Art = neu.Art, Leser = leser, Seiten = neu.Seiten, Befunde = liste };
         return (alt, nachAlt);
     }
 
@@ -63,7 +63,7 @@ public class FamilieQuellenVersionTests
     {
         var p = ProjektB4();
         var pdf = FamiliePruefungHilfe.Ablegen(p, UnterlagenHilfe.TestPdf(o));
-        Assert.Equal("pdf-2", FamilienQuellenVersion.Text(UnterlagenLeser.Fuer("pdf")!));   // Annahme der Tests: der aktuelle PDF-Leser ist Version 2
+        Assert.Equal("pdf-3", FamilienQuellenVersion.Text(UnterlagenLeser.Fuer("pdf")!));   // Annahme der Tests: der aktuelle PDF-Leser ist Version 3
         for (int i = 1; i <= familien; i++)
             Ok(p.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = Ventil(pdf, i == 1 ? "Testventil B4 (fiktiv)" : $"Testventil {i} (fiktiv)") }));
         return (p, pdf);
@@ -103,7 +103,7 @@ public class FamilieQuellenVersionTests
         using var o = new Ordner();
         var (p, pdf) = Aufbau(o, familien: 0);
         var (alt, nachAlt) = AlteVersion(pdf, 3);
-        var z = new BefundZuordner(alt.Befunde, pdf.Befunde, "pdf-1", "pdf-2");
+        var z = new BefundZuordner(alt.Befunde, pdf.Befunde, "pdf-1", "pdf-3");
         var zelle = Zelle(pdf, 2, 3);   // V-20 | L = 78
         var altId = nachAlt[zelle];
         Assert.NotEqual(zelle, altId);   // Nummer verschoben
@@ -116,7 +116,7 @@ public class FamilieQuellenVersionTests
         var linie = alt.Befunde.First(b => b.Art == "linie" && b.Box![0] == 520);
         var keine = z.Zuordnen(linie.Id);
         Assert.Null(keine.Neu);
-        Assert.Contains("kein Befund mit gleicher Seite, Art, Wert und Lage in Leser pdf-2", keine.Grund);
+        Assert.Contains("kein Befund mit gleicher Seite, Art, Wert und Lage in Leser pdf-3", keine.Grund);
         // Id ausserhalb der alten Ablage
         Assert.Contains("gibt es in der Ablage von Leser pdf-1 nicht", z.Zuordnen($"{pdf.Pruefsumme}#99999").Grund);
     }
@@ -131,7 +131,7 @@ public class FamilieQuellenVersionTests
         var neu = pdf.Befunde.Select(Kopie).ToList();
         var doppelt = Kopie(zelle); doppelt.Id = $"{pdf.Pruefsumme}#{neu.Count + 1}"; neu.Add(doppelt);
         var (alt, nachAlt) = AlteVersion(pdf, 2);
-        var r = new BefundZuordner(alt.Befunde, neu, "pdf-1", "pdf-2").Zuordnen(nachAlt[zelle.Id]);
+        var r = new BefundZuordner(alt.Befunde, neu, "pdf-1", "pdf-3").Zuordnen(nachAlt[zelle.Id]);
         Assert.Null(r.Neu);
         Assert.Contains("nicht eindeutig: 2 Befunde", r.Grund);
         Assert.Contains(zelle.Id, r.Grund);
@@ -142,7 +142,7 @@ public class FamilieQuellenVersionTests
             var neu2 = pdf.Befunde.Select(Kopie).ToList();
             var z2 = neu2.Single(b => b.Id == zelle.Id);
             z2.Box = [z2.Box![0] + d, z2.Box[1], z2.Box[2] + d, z2.Box[3]];
-            var r2 = new BefundZuordner(alt.Befunde, neu2, "pdf-1", "pdf-2").Zuordnen(nachAlt[zelle.Id]);
+            var r2 = new BefundZuordner(alt.Befunde, neu2, "pdf-1", "pdf-3").Zuordnen(nachAlt[zelle.Id]);
             Assert.Equal(erwartet ? zelle.Id : null, r2.Neu);
         }
     }
@@ -180,13 +180,13 @@ public class FamilieQuellenVersionTests
         using var o = new Ordner();
         var (p, pdf) = Aufbau(o);
         var u = (JsonObject)Definition(p)["unterlagen"]![0]!;
-        Assert.Equal("pdf-2", u["leser"]!.GetValue<string>());
+        Assert.Equal("pdf-3", u["leser"]!.GetValue<string>());
         Assert.StartsWith(pdf.Pruefsumme, u["pruefsumme"]!.GetValue<string>());
         // Prüfung meldet nichts zur Leserversion
         var pr = Pruefen(p);
         Assert.True(pr["gueltig"]!.GetValue<bool>(), pr.ToJsonString());
         Assert.DoesNotContain(Befunde(pr), b => b["art"]!.GetValue<string>() == "leserversion");
-        Assert.Equal("pdf-2", pr["unterlagen"]![0]!["quelle"]!.GetValue<string>());
+        Assert.Equal("pdf-3", pr["unterlagen"]![0]!["quelle"]!.GetValue<string>());
         // Schema kennt das Feld
         var schema = File.ReadAllText(Path.Combine(Kat.Ordner, "..", "schema", "hlks-familie.schema.json"));
         Assert.Contains("\"leser\"", schema);
@@ -203,7 +203,7 @@ public class FamilieQuellenVersionTests
         var altDef = AlsAltbestand(p, "FAM-1", nachAlt, null);
         Assert.NotEqual(richtig, AlleIds(altDef));
         Assert.Equal("(keiner)", Leser(p));
-        // vorher (ohne Umschlüsselung) wäre die Prüfung gegen Leser 2 gescheitert: die alten Ids zeigen dort auf andere Zellen
+        // vorher (ohne Umschlüsselung) wäre die Prüfung gegen den aktuellen Leser gescheitert: die alten Ids zeigen dort auf andere Zellen
         var q = new BefundQuelle(p);
         var v20L = nachAlt[Zelle(pdf, 2, 3)];
         Assert.NotEqual("78", q.Hole(v20L, out _)?.Zusatz?["text"]?.GetValue<string>());
@@ -218,9 +218,9 @@ public class FamilieQuellenVersionTests
 
         // familie_aendern speichert umgeschlüsselt
         var e = Ok(p.Ausfuehren("familie_aendern", new JsonObject { ["familie"] = "FAM-1", ["ops"] = new JsonArray(new JsonObject { ["op"] = "kopf_setzen", ["beschreibung"] = "Test Leserversion" }) }));
-        Assert.Contains(e.Hinweise, h => h.Contains("von Leser pdf-1 auf pdf-2 umgeschlüsselt", StringComparison.Ordinal));
+        Assert.Contains(e.Hinweise, h => h.Contains("von Leser pdf-1 auf pdf-3 umgeschlüsselt", StringComparison.Ordinal));
         Assert.Equal(richtig, AlleIds(Definition(p)));
-        Assert.Equal("pdf-2", Leser(p));
+        Assert.Equal("pdf-3", Leser(p));
         Assert.Equal("geprüft", Abdeckung(p, "V-20/L")["status"]!.GetValue<string>());
         Assert.Equal(Zelle(pdf, 2, 3), Abdeckung(p, "V-20/L")["quellen"]![0]!.GetValue<string>());
     }
@@ -238,12 +238,12 @@ public class FamilieQuellenVersionTests
         AlsAltbestand(p, "FAM-1", new Dictionary<string, string>(), null);
         var pr = Pruefen(p);
         var u = (JsonObject)pr["unterlagen"]![0]!;
-        Assert.Equal("pdf-2", u["quelle"]!.GetValue<string>());
-        Assert.Contains("pdf-2: 9 von 9 Quellen bestehen (9 geprüft)", u["wahl"]!.GetValue<string>());
+        Assert.Equal("pdf-3", u["quelle"]!.GetValue<string>());
+        Assert.Contains("pdf-3: 9 von 9 Quellen bestehen (9 geprüft)", u["wahl"]!.GetValue<string>());
         Assert.Equal(0, u["umgeschluesselt"]!.GetValue<int>());
         Ok(p.Ausfuehren("familie_aendern", new JsonObject { ["familie"] = "FAM-1", ["ops"] = new JsonArray(new JsonObject { ["op"] = "kopf_setzen", ["beschreibung"] = "a" }) }));
         Assert.Equal(richtig, AlleIds(Definition(p)));
-        Assert.Equal("pdf-2", Leser(p));
+        Assert.Equal("pdf-3", Leser(p));
 
         // b) beide Versionen vollständig: deterministisch – bei gleich vielen geprüften die aktuelle (gleiche Familie, zweimal gerechnet)
         var def = (JsonObject)Definition(p).DeepClone();
@@ -288,7 +288,7 @@ public class FamilieQuellenVersionTests
 
         var altId = nachAlt[zelle.Id];
         var n = Nein(p.Ausfuehren("familie_aendern", new JsonObject { ["familie"] = "FAM-1", ["ops"] = new JsonArray(new JsonObject { ["op"] = "kopf_setzen", ["beschreibung"] = "x" }) }));
-        Assert.Contains($"Quelle «{altId}» (Befund-Id nach Leser pdf-1) lässt sich nicht eindeutig auf Leser pdf-2 umschlüsseln: nicht eindeutig: 2 Befunde", n.Fehler);
+        Assert.Contains($"Quelle «{altId}» (Befund-Id nach Leser pdf-1) lässt sich nicht eindeutig auf Leser pdf-3 umschlüsseln: nicht eindeutig: 2 Befunde", n.Fehler);
         Assert.Contains("typ «V-15».quellen.L", n.Fehler);
         Assert.Equal(altDef.ToJsonString(), Definition(p).ToJsonString());   // nichts gespeichert
 
@@ -346,7 +346,7 @@ public class FamilieQuellenVersionTests
         Assert.Equal(Zelle(pdf, 2, 2), q["dn"]![0]!.GetValue<string>());
         Assert.Equal(Zelle(pdf, 2, 3), q["L"]![0]!.GetValue<string>());
         Assert.Equal(Zelle(pdf, 2, 4), q["H"]![0]!.GetValue<string>());
-        Assert.Equal("pdf-2", Leser(p));
+        Assert.Equal("pdf-3", Leser(p));
     }
 
     [Fact]
@@ -389,7 +389,7 @@ public class FamilieQuellenVersionTests
         var t = Ok(p.Ausfuehren(FamilienQuellenNachfuehren.BefehlName, new JsonObject(), trockenlauf: true));
         Assert.True(t.Trockenlauf);
         Assert.StartsWith("familien_quellen_nachfuehren: 3 Familie(n) – 2 umgeschlüsselt (18 Ids, davon 18 mit neuer Nummer), 0 Id(s) nicht zuordenbar, 1 ohne Änderung, 0 nicht gespeichert", t.Hinweise[0]);
-        Assert.Contains(t.Hinweise, h => h.StartsWith("FAM-1 «Testventil B4 (fiktiv)»", StringComparison.Ordinal) && h.Contains("9 Id(s) umgeschlüsselt (9 mit neuer Nummer)") && h.Contains("datenblatt.pdf pdf-1 → pdf-2") && h.Contains("würde gespeichert als Version"));
+        Assert.Contains(t.Hinweise, h => h.StartsWith("FAM-1 «Testventil B4 (fiktiv)»", StringComparison.Ordinal) && h.Contains("9 Id(s) umgeschlüsselt (9 mit neuer Nummer)") && h.Contains("datenblatt.pdf pdf-1 → pdf-3") && h.Contains("würde gespeichert als Version"));
         Assert.Contains(t.Hinweise, h => h.StartsWith("FAM-3 ", StringComparison.Ordinal) && h.Contains("ohne Änderung"));
         Assert.Equal(vorher1, Definition(p, "FAM-1").ToJsonString());   // Trockenlauf ändert nichts
         Assert.Equal(v1, FamilienBefehle.Version(Hole(p, "FAM-1")));
@@ -398,8 +398,8 @@ public class FamilieQuellenVersionTests
         Assert.NotNull(e.PaketId);
         Assert.Equal(richtig, AlleIds(Definition(p, "FAM-1")));
         Assert.Equal(richtig, AlleIds(Definition(p, "FAM-2")));
-        Assert.Equal("pdf-2", Leser(p, "FAM-1"));
-        Assert.Equal("pdf-2", Leser(p, "FAM-2"));
+        Assert.Equal("pdf-3", Leser(p, "FAM-1"));
+        Assert.Equal("pdf-3", Leser(p, "FAM-2"));
         Assert.Equal(v1 + 1, FamilienBefehle.Version(Hole(p, "FAM-1")));
         Assert.Equal(v2 + 1, FamilienBefehle.Version(Hole(p, "FAM-2")));
         Assert.Equal(v3, FamilienBefehle.Version(Hole(p, "FAM-3")));
@@ -432,6 +432,38 @@ public class FamilieQuellenVersionTests
         Assert.Contains(e.Hinweise, h => h.StartsWith("FAM-1 ", StringComparison.Ordinal) && h.Contains("nicht gespeichert") && h.Contains(nachAlt[h25]) && h.Contains("typ «V-25».quellen.H"));
         Assert.Equal(vorher1, Definition(p, "FAM-1").ToJsonString());
         Assert.Equal("pdf-1", Leser(p, "FAM-2"));   // nicht in der Liste
+    }
+
+    /// <summary>PDF-Leser 3 (21.10.2026): Quellen nach Leser 2 werden auf 3 umgeschlüsselt – mit leser «pdf-2» und als Altbestand ohne leser,
+    /// wenn die Ablagen von Leser 1 und 2 liegen (die Version, unter der alle Quellen bestehen, ist 2).</summary>
+    [Fact]
+    public void Leser_2_auf_3_mit_leser_und_als_Altbestand()
+    {
+        using var o = new Ordner();
+        var (p, pdf) = Aufbau(o, familien: 2);
+        var richtig1 = AlleIds(Definition(p, "FAM-1"));
+        var richtig2 = AlleIds(Definition(p, "FAM-2"));
+        var (alt2, nachAlt2) = AlteVersion(pdf, 5, leser: "pdf 2");
+        Ablegen(FamilienQuellenVersion.AblagePfad(p, pdf.Pruefsumme, "pdf-2"), alt2);
+        var (alt1, _) = AlteVersion(pdf, 3);
+        Ablegen(FamilienQuellenVersion.AblagePfad(p, pdf.Pruefsumme, "pdf-1"), alt1);
+        AlsAltbestand(p, "FAM-1", nachAlt2, "pdf-2");   // leser nach Version 2
+        AlsAltbestand(p, "FAM-2", nachAlt2, null);      // Altbestand mit Ids nach Version 2
+        Assert.NotEqual(richtig1, AlleIds(Definition(p, "FAM-1")));
+
+        var u = (JsonObject)Pruefen(p, "FAM-2")["unterlagen"]![0]!;
+        Assert.Equal("pdf-2", u["quelle"]!.GetValue<string>());
+        Assert.Equal("pdf-3", u["aktuell"]!.GetValue<string>());
+        Assert.Contains("ohne leser: pdf-2 gewählt", u["wahl"]!.GetValue<string>());
+
+        var e = Ok(p.Ausfuehren(FamilienQuellenNachfuehren.BefehlName, new JsonObject()));
+        Assert.StartsWith("familien_quellen_nachfuehren: 2 Familie(n) – 2 umgeschlüsselt (18 Ids, davon 18 mit neuer Nummer), 0 Id(s) nicht zuordenbar", e.Hinweise[0]);
+        Assert.Contains(e.Hinweise, h => h.StartsWith("FAM-1 ", StringComparison.Ordinal) && h.Contains("datenblatt.pdf pdf-2 → pdf-3"));
+        Assert.Equal(richtig1, AlleIds(Definition(p, "FAM-1")));
+        Assert.Equal(richtig2, AlleIds(Definition(p, "FAM-2")));
+        Assert.Equal("pdf-3", Leser(p, "FAM-1"));
+        Assert.Equal("pdf-3", Leser(p, "FAM-2"));
+        Assert.DoesNotContain(Befunde(Pruefen(p, "FAM-1")), b => b["art"]!.GetValue<string>() == "leserversion");
     }
 
     // ------------------------------------------------------------------ Abfragen lesen umgeschlüsselt

@@ -14,8 +14,12 @@ public sealed class PdfLeser : IUnterlagenLeser
 {
     public string Name => "pdf";
     /// <summary>2 (Nachbearbeitung N4, 20.10.2026): Dezimalzahlen aus getrennten Zeichenläufen und Glyphen « .» als eine Zahl; Fliesstext über bzw.
-    /// unter einer Zahlentabelle trennt den Block. Andere Wörter, Zeilen und Tabellen – und damit die Befund-Ids – können sich gegenüber 1 ändern.</summary>
-    public int Version => 2;
+    /// unter einer Zahlentabelle trennt den Block. Andere Wörter, Zeilen und Tabellen – und damit die Befund-Ids – können sich gegenüber 1 ändern.
+    /// 3 (21.10.2026, Rückschritt von 2 im Gewinderohr-Katalog): Text der Nachbarseite ausserhalb der sichtbaren Seite bricht das Lesen einer Seite nicht mehr
+    /// ab (Spaltenraster der Fliesstext-Regel mit negativer Länge – die Seite hatte danach keine Tabellen, Zellen, Linien und Masse); eine kurze
+    /// Zelle allein auf ihrer Zeile (Überschrift) gilt nicht als Fliesstext und trennt die Tabelle nicht mehr – dort wieder wie Leser 1. Sonst
+    /// gleich wie 2; Befund-Ids ändern sich auf den betroffenen Seiten und dahinter (Umschlüsseln: FamilienQuellenVersion).</summary>
+    public int Version => 3;
     public IReadOnlyCollection<string> Arten { get; } = ["pdf"];
 
     public UnterlagenBefunde Lesen(string pfad, string datei, string pruefsumme, string art)

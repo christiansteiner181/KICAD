@@ -43,7 +43,7 @@ public class UnterlagenAbfragenTests
         Assert.Equal("pdf", u.Art);
         var erst = UnterlagenService.Lesen(p, u);
         Assert.False(erst.AusAblage);
-        var datei = Path.Combine(Unterlagen.Ordner(p), "befunde", $"{u.Pruefsumme}.pdf-2.json");
+        var datei = Path.Combine(Unterlagen.Ordner(p), "befunde", $"{u.Pruefsumme}.pdf-3.json");
         Assert.Equal(datei, erst.AblageDatei);
         Assert.True(File.Exists(datei));
         var zweit = UnterlagenService.Lesen(p, u);
@@ -213,7 +213,7 @@ public class UnterlagenAbfragenTests
         var u = (JsonObject)a["unterlagen"]![0]!;
         Assert.Equal("pdf", u["art"]!.GetValue<string>());
         Assert.Equal(2, u["seiten"]!.GetValue<int>());
-        Assert.Equal("pdf 2", u["leser"]!.GetValue<string>());
+        Assert.Equal("pdf 3", u["leser"]!.GetValue<string>());
         Assert.False(u["ausAblage"]!.GetValue<bool>());
         Assert.True(u["jeArt"]!["wort"]!.GetValue<int>() > 20);
         Assert.Equal(2, u["jeArt"]!["tabelle"]!.GetValue<int>());
