@@ -77,9 +77,21 @@ public static class KiEinordnung
     /// <summary>Verbotene Werkzeuge (GespraechDienst.Verbote, je Eintrag begründet).</summary>
     public static IReadOnlyList<string> Verboten => GespraechDienst.Verbotsliste;
 
+    /// <summary>Eine Funktion des Arbeitsplatz-Servers, die es nur als REST-Endpunkt für die Oberfläche gibt (kein Kern-Befehl, kein MCP-Werkzeug).</summary>
+    public sealed record RechnerFunktion(string Name, string Grund);
+
+    /// <summary>Reine Rechner-Funktionen der Oberfläche, die ein Programm auf dem PC starten oder sonst über das Modell hinausgreifen: für die KI nicht
+    /// freigegeben. Es gibt dazu kein MCP-Werkzeug (ein Test prüft das); die Einordnung hält fest, dass das so gewollt ist, und fällt auf, falls jemand eines
+    /// anlegt. Von() gibt für sie «verboten» zurück.</summary>
+    public static readonly IReadOnlyList<RechnerFunktion> RechnerFunktionen =
+    [
+        new("quest_verbinden", "Startet ein Programm auf dem PC (adb.exe der Android Platform Tools) und öffnet damit einen Weg von der VR-Brille auf diesen PC (Modul XR, " +
+            "QuestEndpunkte.cs) – nur der Mensch am Rechner."),
+    ];
+
     /// <summary>Einordnung eines Werkzeugs: lesend | aendernd | verboten; null = nicht eingeordnet.</summary>
     public static string? Von(string werkzeug) =>
-        Verboten.Contains(werkzeug) ? "verboten"
+        Verboten.Contains(werkzeug) || RechnerFunktionen.Any(f => f.Name == werkzeug) ? "verboten"
         : Aendernd.Any(g => g.Werkzeuge.Contains(werkzeug)) ? "aendernd"
         : Lesend.Any(g => g.Werkzeuge.Contains(werkzeug)) ? "lesend"
         : null;

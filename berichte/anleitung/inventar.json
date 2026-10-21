@@ -10717,6 +10717,52 @@
             "kataloge/klassen.json (Ansicht.schnitthoeheNachSia)"
           ],
           "hinweis": "Ansichtsvorlagen übertragen Handwert (schnitthoehe) und Schalter. Für die KI: element_aendern mit eigenschaften { schnitthoeheNachSia: false, schnitthoehe: 1500 }."
+        },
+        {
+          "id": "zb-xr-quest-verbinden",
+          "titel": "Quest verbinden: KICAD im Browser der Meta Quest ohne Meta Link (Modul XR)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Quest verbinden …",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht: grauer Knopf «In VR begehen» (Klick) und Link «Quest im Browser der Brille nutzen …»"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» klicken (oder in einer 3D-Ansicht den Link «Quest im Browser der Brille nutzen …» bzw. den grauen Knopf «In VR begehen»). Der Dialog zeigt oben vier Punkte: adb gefunden, Quest verbunden, Freigegeben, Weiterleitung aktiv.",
+            "Ist der erste Punkt rot («adb gefunden»): den drei Schritten im Dialog folgen. (1) Android Platform Tools von der offiziellen Seite holen (Link im Dialog, öffnet im Browser). (2) Die ZIP-Datei nach %USERPROFILE%\\platform-tools entpacken. (3) «Erneut prüfen» klicken. KICAD lädt nichts herunter und installiert nichts. Liegt adb.exe woanders: den Pfad im Feld «Pfad zur adb.exe» eintragen und «Speichern» klicken.",
+            "Entwicklermodus der Quest in der Meta-Horizon-App einschalten (einmalig braucht es eine Entwickler-Organisation bei Meta), die Quest mit einem Datenkabel (USB-C) an den PC stecken und aufsetzen. Dort «USB-Debugging erlauben» bestätigen (immer von diesem Computer). Im Dialog «Erneut prüfen» klicken: «Quest verbunden» und «Freigegeben» werden grün. Steht trotz Kabel «Keine Quest gefunden»: Meta-ADB-Treiber installieren (developers.meta.com, Administratorrechte; KICAD installiert den Treiber nicht).",
+            "«Verbinden» klicken: «Weiterleitung aktiv» wird grün, unten steht die Adresse http://localhost:<Port>.",
+            "In der Quest den Browser öffnen, diese Adresse eingeben, im Grundriss «Raum begehen» und dann «In VR begehen» wählen.",
+            "Ohne Kabel: einmal mit Kabel «Auf WLAN umstellen» klicken (danach darf das Kabel ab). Nächstes Mal die WLAN-Adresse der Quest (in den WLAN-Einstellungen der Brille) in das Feld «WLAN-Adresse der Quest» eintragen und «Über WLAN verbinden» klicken.",
+            "Zum Beenden «Trennen» klicken (entfernt die Weiterleitung)."
+          ],
+          "erwartung": "Der Dialog «Quest verbinden» zeigt eine Ampel mit vier Punkten (grün = in Ordnung, rot = hier fehlt etwas, grau = noch nicht an der Reihe) und darunter in einem Satz, was als Nächstes zu tun ist. Fehlt adb, erscheint die Einrichtung in drei Schritten mit Link auf die offizielle Seite der Android Platform Tools, dem Entpackordner %USERPROFILE%\\platform-tools und «Erneut prüfen»; die Knöpfe «Verbinden», «Auf WLAN umstellen», «Trennen» und «Über WLAN verbinden» sind dann gesperrt. «Verbinden» setzt die Weiterleitung für den Port, auf dem dieses KICAD läuft (Beispiel: http://localhost:5130). «Trennen» nimmt sie weg. Fehler (keine Quest, nicht freigegeben, Verbindung fehlgeschlagen, Zeitgrenze von 10 s) stehen mit einem Vorschlag im Dialog. Es startet nur adb.exe mit festen Befehlen; die KI kann die Funktion nicht benutzen. Das Skript werkzeuge/quest_verbinden.ps1 bleibt als Alternative.",
+          "pruefpunkte": [
+            "Ohne adb ist der erste Punkt rot, die übrigen grau, die Einrichtung in drei Schritten ist sichtbar und die vier Knöpfe sind gesperrt.",
+            "Der Link in Schritt 1 öffnet https://developer.android.com/tools/releases/platform-tools in einem neuen Browser-Tab.",
+            "Mit gespeichertem Pfad zur adb.exe wird der erste Punkt grün (Pfad und «eingestellter Pfad» stehen daneben); die Einrichtung verschwindet.",
+            "Ein Pfad, der nicht auf adb.exe endet (z. B. cmd.exe) oder auf einem Netzlaufwerk liegt, wird abgelehnt.",
+            "Quest per Kabel, aber nicht freigegeben: «Quest verbunden» grün, «Freigegeben» rot mit der Anweisung für die Brille.",
+            "Nach «USB-Debugging erlauben» und «Erneut prüfen»: «Verbinden» ist frei; nach dem Klick sind alle vier Punkte grün und die Adresse http://localhost:<Port> steht im Dialog.",
+            "In der Quest öffnet der Browser diese Adresse und zeigt KICAD.",
+            "«Trennen» setzt «Weiterleitung aktiv» auf rot; «Verbinden» setzt sie wieder.",
+            "Eine ungültige WLAN-Adresse (z. B. 999.1.1.1) lässt «Über WLAN verbinden» gesperrt; eine gültige gibt den Knopf frei, ein Verbindungsfehler erscheint mit Vorschlag im Dialog.",
+            "In der 3D-Ansicht öffnen der Link «Quest im Browser der Brille nutzen …» und der Klick auf den grauen Knopf «In VR begehen» den Dialog; bei verbundener Brille ist der Link weg."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Quest verbinden»",
+            "zustand": "ohne adb: Ampel rot und Einrichtung in drei Schritten (Prüfbild quest-02_ohne_adb.png aus quest.browser.mjs); verbunden: alle vier Punkte grün (quest-05_verbunden.png)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-dialog.js (questDialog)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-text.js (ampel, knoepfe, EINRICHTUNG, HINWEISE)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-quest.js (ansicht.questVerbinden)",
+            "src/Hlks.Web/QuestDienst.cs und QuestEndpunkte.cs (GET /api/quest, POST /api/quest/verbinden|wlan|ip|trennen)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Quest verbinden»)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen. Der Dialog ist eine reine Rechner-Funktion (kein Befehl des Kerns) und für die KI nicht freigegeben. Das Skript werkzeuge/quest_verbinden.ps1 macht dasselbe auf der Kommandozeile."
         }
       ]
     }

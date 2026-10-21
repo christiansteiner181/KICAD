@@ -212,6 +212,11 @@ try {
   await klickKnopf(HAUPT);
   await warte(300);
   pruef((await anfragen()).length === 0 && !(await vrDaten()), 'ein Klick auf den ausgegrauten Knopf startet keine Sitzung');
+  // Modul XR: der Klick auf den grauen Knopf öffnet «Quest verbinden» (oberflaeche/quest-dialog.js) – prüfen und schliessen, sonst blockiert der Dialog die weitere Reihe
+  await warteBis(() => ausw(`return !!document.querySelector('#dialogschicht .dlg.quest-verbinden');`), 'Dialog «Quest verbinden» offen', 8000);
+  pruef(true, 'der Klick auf den ausgegrauten Knopf öffnet den Dialog «Quest verbinden»');
+  await ausw(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return 1;`);
+  await warteBis(() => ausw(`return !document.querySelector('#dialogschicht .dlg.quest-verbinden');`), 'Dialog «Quest verbinden» zu', 5000);
 
   abschnitt('N23 Brille verbunden (Ereignis devicechange): der Knopf wird frei');
   await ausw(`window.__xr._unterstuetzt = true; window.__xr.dispatchEvent(new Event('devicechange')); return 1;`);

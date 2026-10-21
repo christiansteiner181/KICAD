@@ -62,6 +62,9 @@ public sealed class BenutzerEinstellungen
         ["ansicht3d.raumrand"] = RaumrandPruefen,
         // Augenhöhe bei «Raum begehen» in mm über OK Boden (N15, Vorgabe 1700 steht in der Oberfläche und im Kern): eine Zahl von 300 bis 5000.
         ["ansicht3d.augenhoehe"] = AugenhoeheDaten,
+        // Pfad zur adb.exe der Android Platform Tools für «Quest verbinden» (Modul XR, QuestDienst.cs): leer/zurückgesetzt = suchen; sonst ein
+        // vollständiger lokaler Pfad, der auf adb.exe endet (kein Netzpfad – es wird ein Programm gestartet).
+        ["quest.adb"] = QuestDienst.AdbPfadPruefen,
     };
 
     static string? AugenhoeheDaten(JsonNode w) =>

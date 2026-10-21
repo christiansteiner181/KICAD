@@ -1,0 +1,34 @@
+/* Dialog «Quest verbinden» (Modul XR): Ampel, Einrichtung, Knöpfe, Felder. Farben und Grössen nur über die Variablen aus hlks.css (hell und dunkel). */
+.dlg.quest-verbinden { width: min(640px, 96vw); }
+.dlg.quest-verbinden .dlg-inhalt { overflow: auto; }
+.qd { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+.qd [hidden] { display: none; }
+.qd-kopf { display: flex; align-items: center; gap: 10px; }
+.qd-kopf .dlg-knopf { margin-left: auto; }
+.qd-spinner { margin-left: 6px; }
+.qd-ampel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.qd-punkt { display: grid; grid-template-columns: 14px 150px 1fr; gap: 8px; align-items: baseline; padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.qd-lampe { width: 10px; height: 10px; border-radius: 50%; background: var(--rand); align-self: center; }
+.qd-punkt.ok .qd-lampe { background: var(--ok); }
+.qd-punkt.schlecht .qd-lampe { background: var(--fehler); }
+.qd-punkt.schlecht { border-color: var(--fehler); }
+.qd-titel { font-weight: 600; }
+.qd-text { overflow-wrap: anywhere; }
+.qd-meldung { padding: 6px 8px; border: 1px solid var(--ok); border-radius: var(--radius); }
+.qd-meldung.fehler { border-color: var(--fehler); background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.qd-meldung.fehler .qd-vorschlag { color: var(--text); margin-top: 2px; }
+.qd-einrichtung { padding: 6px 8px; border: 1px solid var(--warnung); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
+.qd-schritte { margin: 0; padding-left: 20px; display: flex; flex-direction: column; gap: 4px; }
+.qd-link { color: var(--akzent); }
+.qd-suchorte { font-family: var(--schrift-mono); overflow-wrap: anywhere; }
+.qd-aktionen { display: flex; flex-wrap: wrap; gap: 6px; }
+.qd-aktionen .dlg-knopf { padding: 0 12px; }
+.qd-zeile { display: grid; grid-template-columns: 150px 1fr auto; gap: 8px; align-items: center; }
+.qd-etikett { color: var(--text-leise); }
+.qd-ip, .qd-adb { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: var(--schrift-mono); }
+.qd-ip:focus, .qd-adb:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.qd-klein { font-size: 11px; }
+.qd-hinweise ul { margin: 4px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
+.qd-adresse { padding-top: 2px; }
+.qd-url { font-family: var(--schrift-mono); user-select: all; }
+.dlg.quest-verbinden .dlg-knopf:disabled { opacity: .5; cursor: default; }

@@ -27,6 +27,8 @@
     <!-- KI-Aufträge (Modul 2, B5): der MCP-Server, den die Attrappe startet, und die Attrappe selbst (statt claude.exe) -->
     <ProjectReference Include="..\..\src\Hlks.Mcp\Hlks.Mcp.csproj" />
     <ProjectReference Include="..\Hlks.ClaudeAttrappe\Hlks.ClaudeAttrappe.csproj" />
+    <!-- Quest verbinden (Modul XR): die Attrappe statt adb.exe (nie ein echtes adb) -->
+    <ProjectReference Include="..\Hlks.AdbAttrappe\Hlks.AdbAttrappe.csproj" />
   </ItemGroup>
 
   <ItemGroup>
