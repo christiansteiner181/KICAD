@@ -135,6 +135,15 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
   - Grenze: Nach einem **Neustart** der Quest ist adb über WLAN aus, denn `adb tcpip` gilt nicht über den Neustart. Dann braucht es
     einmal das Kabel. Ruhezustand ist kein Problem.
   - Alternative ohne Code: feste IP für die Quest im Router (DHCP-Reservierung).
+  - **Ergänzung Christian 21.10.2026:** «ist die brillen Mac gespeichert, könnte man nach jedem programmstart neu suchen. automatisiert
+    oder ein icon ohne manuellen eingriff.» Vorschlag:
+    - Einstellung «Brille automatisch verbinden» (je Benutzer).
+    - Ist sie an, sucht KICAD beim Start und beim Öffnen einer 3D-Ansicht die gespeicherte MAC, verbindet und setzt die Weiterleitung
+      ohne Klick.
+    - Dazu eine Statusanzeige «Brille» in der Statusleiste: grün = bereit, grau = nicht gefunden. Ein Klick darauf sucht erneut.
+    - Nach einem Neustart der Quest genügt es, das Kabel einzustecken: KICAD erkennt das USB-Gerät, stellt selbst auf WLAN um und meldet
+      «Kabel kann ab».
+    - Suche zuerst in der Nachbartabelle. Ein Ping nur im eigenen /24-Netz und nur auf Anlass, nie laufend; Rücksicht aufs Büronetz.
   - Am Freitag priorisieren.
 - **Nicht empfohlen:** KICAD für das Büronetz öffnen (`http://<PC>:5130`). Ohne HTTPS gibt es kein WebXR, und der Server hat keine
   Anmeldung.
