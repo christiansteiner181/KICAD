@@ -34,6 +34,7 @@ export function erzeugeVr(o) {
     anbinden: o.anbinden ?? ((s) => renderer.xr.setSession(s)),
     kopfPose: null,   // () → { x, y, z, gieren } im Referenzraum | null (Vorgabe: Kamera des Renderers)
     eingabe: null,    // () → { links: { x, y, schnell }, rechts: { x }, ifc: bool } (Vorgabe: Controller)
+    beiEnde: null,    // (ende) → Rückruf nach dem Ende einer gelaufenen Sitzung, ende = { x, z, boden, gieren }: letzter Kopfstand (Welt, m / rad); die VR-Startseite /vr merkt ihn
   };
   const knoepfe = new Map();   // Element → war schon eingehängt
   const zeit = bildzeit();
@@ -59,6 +60,7 @@ export function erzeugeVr(o) {
   let marker = null;
   let xrWerk = null;                    // XR-B Greifen, XR-C Tablet und Messen (xr-greifen.js)
   let ziel = null;                      // letztes gültiges Teleportziel
+  let letzterKopf = null;               // letzter Kopfstand der Sitzung { x, z, boden, gieren } für api.beiEnde
 
   // ---------------------------------------------------------------------------------------------- Knopf
   function knopfZeigen(k) {
@@ -265,8 +267,15 @@ export function erzeugeVr(o) {
   function ifcUmschalten() { ifcAn = !ifcAn; netzeAnwenden(); zustandSchreiben(true); o.anfordern?.(); }
 
   // ---------------------------------------------------------------------------------------------- Bild
+  /** Merkt den Kopfstand für api.beiEnde (jedes Bild, nicht gedrosselt: der Standpunkt am Ende soll der letzte sein). */
+  function kopfMerken() {
+    if (!rig) return;
+    const k = kopf(), kp = kopfLokal();
+    if (k) letzterKopf = { x: k.x, z: k.z, boden: rig.y, gieren: kp ? blickGierenWelt(rig, kp.gieren) : rig.gieren };
+  }
   function zustandSchreiben(erzwingen = false) {
     if (!sitzung) return;
+    kopfMerken();
     const t = jetzt();
     if (!erzwingen && t - letztesSchreiben < SCHREIB_ABSTAND_MS) return;
     letztesSchreiben = t;
@@ -377,7 +386,7 @@ export function erzeugeVr(o) {
       rigObj.add(kamera);
       rigSetzen(rigStart(startZustand));           // bis zum ersten Kopfwert: Rig auf dem Standpunkt, Kopf im Nullpunkt
       ausrichten = true;
-      snap = { bereit: true }; aVorher = false; letzteZeit = 0; letztesSchreiben = 0; ifcDreiecke = 0; ifcAn = true;
+      snap = { bereit: true }; aVorher = false; letzteZeit = 0; letztesSchreiben = 0; ifcDreiecke = 0; ifcAn = true; letzterKopf = null;
       zeit.leeren();
       steuerungBauen();
       xrBauen();
@@ -414,6 +423,8 @@ export function erzeugeVr(o) {
     startet = false;
     if (!sitzung && !rigObj) { knoepfeAktualisieren(); return; }
     const s = sitzung;
+    const ende = wurzel.classList.contains('d3-vr-an') ? (letzterKopf ?? (rig ? { x: rig.x, z: rig.z, boden: rig.y, gieren: rig.gieren } : null)) : null;   // nur nach einer wirklich gelaufenen Sitzung
+    letzterKopf = null;
     sitzung = null;
     try { s?.removeEventListener?.('end', beiEnde); } catch { /* egal */ }
     try { renderer.setAnimationLoop(null); } catch { /* egal */ }
@@ -434,6 +445,7 @@ export function erzeugeVr(o) {
     knoepfeAktualisieren();
     o.beiBeendet?.();
     o.anfordern?.();
+    if (ende) { try { api.beiEnde?.(ende); } catch (e) { console.error('VR: Rückruf am Sitzungsende', e); } }
   }
 
   return {

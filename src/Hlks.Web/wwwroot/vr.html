@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de-CH" data-design="dunkel">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="theme-color" content="#0b1220">
+  <title>KICAD VR</title>
+  <!-- VR-Startseite (Modul XR): ein Tipp bzw. Pinch irgendwo startet die VR-Sitzung im Modell. Ohne Menüband und Projektbrowser; Logik in js/vr-start.js. -->
+  <link rel="manifest" href="/vr.webmanifest">
+  <link rel="icon" type="image/png" sizes="192x192" href="/vr-symbole/vr-192.png">
+  <link rel="apple-touch-icon" href="/vr-symbole/vr-192.png">
+  <link rel="stylesheet" href="/css/hlks.css">
+  <link rel="stylesheet" href="/css/vr-start.css">
+  <script type="importmap">
+    { "imports": { "three": "/lib/three/three.module.js", "three/addons/": "/lib/three/addons/" } }
+  </script>
+</head>
+<body>
+  <!-- Die 3D-Szene des offenen Projekts (dieselbe 3D-Ansicht wie am PC, ohne Bedienelemente) liegt dahinter; die Seite darüber ist ein einziger grosser Knopf. -->
+  <div id="vr-szene" aria-hidden="true"></div>
+  <button id="vr-eintreten" type="button" data-status="laedt" data-startquelle="" aria-live="polite">
+    <span class="vr-marke">KICAD VR</span>
+    <span class="vr-projekt" id="vr-projekt">Projekt wird geladen …</span>
+    <span class="vr-ort">
+      <span class="vr-geschoss" id="vr-geschoss"></span>
+      <span class="vr-raum" id="vr-raum"></span>
+    </span>
+    <span class="vr-gross" id="vr-gross">Eintreten</span>
+    <span class="vr-hinweis" id="vr-hinweis"></span>
+    <span class="vr-quelle" id="vr-quelle"></span>
+  </button>
+  <div id="meldungen" aria-live="polite"></div>
+  <script type="module" src="/js/vr-start.js"></script>
+</body>
+</html>
