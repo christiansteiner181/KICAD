@@ -137,11 +137,56 @@ function kantenListe(daten, extraKanten) {
 
 /**
  * Fängt den Mauspunkt.
- * opt: { punkt, daten, radius, letzter?, raster?, ortho?, extraPunkte?, extraKanten?, arten? }
+ * opt: { punkt, daten, radius, letzter?, raster?, ortho?, extraPunkte?, extraKanten?, arten?, drehung? }
  *   arten: Menge der erlaubten Arten (Vorgabe alle); 'raster' schaltet das Raster, raster = 0 ebenso.
+ *   drehung (N9): Drehung der Ansicht in Grad (Gegenuhrzeigersinn, Modell → Ansicht). Orthogonal (Shift) und Raster beziehen sich dann auf
+ *   die Achsen der Ansicht – waagrecht gezeichnet heisst parallel zur Gebäudekante; alle Punkte bleiben in Modellkoordinaten.
  * Rückgabe: { punkt: [x, y], art, id?, kante?: { a, b, id }, ortho: bool }; art 'frei' ohne Treffer und ohne Raster.
  */
 export function fangen(opt) {
+  const d = Number(opt?.drehung) || 0;
+  if (!d) return fangenAchsen(opt);
+  // In den Achsen der Ansicht fangen (Abstände bleiben gleich, nur Orthogonal und Raster hängen an den Achsen), dann zurück ins Modell
+  const hin = (p) => drehenUm(p, d);
+  const r = fangenAchsen({
+    ...opt,
+    punkt: hin(opt.punkt),
+    letzter: opt.letzter ? hin(opt.letzter) : null,
+    daten: gedrehteDaten(opt.daten, d),
+    extraPunkte: (opt.extraPunkte ?? []).map((q) => (Array.isArray(q) ? hin(q) : q && Array.isArray(q.p) ? { ...q, p: hin(q.p) } : q)),
+    extraKanten: (opt.extraKanten ?? []).map((k) => (k?.a && k?.b ? { ...k, a: hin(k.a), b: hin(k.b), orig: k } : k)),
+  });
+  const zurueck = (p) => rundPunkt(drehenUm(p, -d), 6);
+  const aus = { ...r, punkt: zurueck(r.punkt) };
+  if (r.kante) aus.kante = r.kante.orig ?? { ...r.kante, a: zurueck(r.kante.a), b: zurueck(r.kante.b) };
+  return aus;
+}
+
+/** Punkt [x, y] um den Ursprung gedreht (Grad, Gegenuhrzeigersinn). */
+export function drehenUm(p, grad) {
+  if (!grad) return [p[0], p[1]];
+  const w = grad * Math.PI / 180, c = Math.cos(w), s = Math.sin(w);
+  return [p[0] * c - p[1] * s, p[0] * s + p[1] * c];
+}
+
+/** Fangdaten in den Achsen der Ansicht; je Datenobjekt und Drehung einmal gerechnet (die Ansicht hält ihre Fangdaten, bis die Grafik neu kommt). */
+const gedrehtSpeicher = new WeakMap();
+function gedrehteDaten(daten, d) {
+  if (!daten || typeof daten !== 'object') return daten;
+  let je = gedrehtSpeicher.get(daten);
+  if (!je) { je = new Map(); gedrehtSpeicher.set(daten, je); }
+  let g = je.get(d);
+  if (!g) {
+    g = {
+      punkte: (daten.punkte ?? []).filter((q) => q?.p).map((q) => ({ ...q, p: drehenUm(q.p, d) })),
+      kanten: (daten.kanten ?? []).filter((k) => k?.a && k?.b).map((k) => ({ ...k, a: drehenUm(k.a, d), b: drehenUm(k.b, d), orig: k })),
+    };
+    je.set(d, g);
+  }
+  return g;
+}
+
+function fangenAchsen(opt) {
   const { punkt, daten = null, radius = 0, letzter = null, raster = 0, ortho = false, extraPunkte = [], extraKanten = [] } = opt;
   const erlaubt = new Set(opt.arten ?? [...FANGARTEN, 'anschluss']);
   const punkte = punkteListe(daten, extraPunkte);

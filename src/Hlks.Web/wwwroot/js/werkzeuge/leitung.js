@@ -87,7 +87,7 @@ function kandidaten(z, ctx) {
   const winkel = L.erlaubteWinkel(D.serieDef(ctx.opt.serie));
   const erster = z.von && z.punkte.length === 1 ? L.anschlussRichtungPlan(z.von) : null;
   if (z.von && z.punkte.length === 1 && erster === null) return null;      // senkrechter Anschluss: Höhenwechsel nötig
-  return L.richtungsKandidaten({ vorher: L.letzteRichtung(z.punkte), winkel, erster });
+  return L.richtungsKandidaten({ vorher: L.letzteRichtung(z.punkte), winkel, erster, drehung: ctx.ansicht.drehung ?? 0 });   // N9: Achsen der Ansicht
 }
 
 /** Zielpunkt des Mauszeigers: Anschluss, sonst Winkelfang (wenn kein anderer Fang greift), sonst der Fang der Basis. */
@@ -394,7 +394,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
       const gefangen = zl?.anschluss ?? null;
       for (const a of nah) h += S.kreis(a.p, (gefangen && gefangen.element === a.element && gefangen.name === a.name ? 6 : 4) * s, a.verbunden ? 'wz-anschluss wz-anschluss-belegt' : 'wz-anschluss');
       if (gefangen) h += S.text(gefangen.p, L.anschlussText(gefangen), s, { versatzPx: [12, 14], klasse: 'wz-text wz-fangtext' });
-      else if (zl?.art === 'winkel' && pts.length) h += S.text(zl.punkt, `${Math.round(zl.winkel * 10) / 10}°`, s, { versatzPx: [12, -16], klasse: 'wz-text wz-masstext' });
+      else if (zl?.art === 'winkel' && pts.length) h += S.text(zl.punkt, `${Math.round(L.normWinkel(zl.winkel + S.drehung()) * 10) / 10}°`, s, { versatzPx: [12, -16], klasse: 'wz-text wz-masstext' });   // N9: Winkel in den Achsen der Ansicht
       return h;
     },
 

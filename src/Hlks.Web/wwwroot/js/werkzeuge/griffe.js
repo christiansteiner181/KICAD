@@ -95,6 +95,7 @@ class Griffe {
     sch.classList.add('wz-schicht');
     sch.style.pointerEvents = 'none';
     const s = this.s();
+    S.drehungSetzen(this.ansicht.drehung ?? 0);   // N9: Masse und Fangsymbole beim Ziehen bleiben in gedrehten Ansichten waagrecht
     this.gezeichnetBei = this.ansicht.pxJeMm?.() ?? 0;
     let h = '';
     const alle = auswahlElemente();
@@ -122,10 +123,12 @@ class Griffe {
     const z = this.ziehen;
     const maus = this.ansicht.zuModell(e.clientX, e.clientY);
     const daten = this.ansicht.fangdaten?.() ?? { punkte: [], kanten: [] };
-    // Das gezogene Element selbst und seine Fangobjekte nicht fangen
+    // Das gezogene Element selbst und seine Fangobjekte nicht fangen (einmal je Ziehen gefiltert; N9: so rechnet fangen die Drehung nur einmal)
     const eigen = z.g.el.id;
-    const gefiltert = { punkte: (daten.punkte ?? []).filter((q) => q.id !== eigen), kanten: (daten.kanten ?? []).filter((k) => k.id !== eigen) };
-    return fangen({ punkt: maus, daten: gefiltert, radius: FANGRADIUS_PX * this.s(), letzter: z.anker, raster: rasterWert(), ortho: !!e.shiftKey });
+    if (z.daten?.von !== daten) z.daten = { von: daten, punkte: (daten.punkte ?? []).filter((q) => q.id !== eigen), kanten: (daten.kanten ?? []).filter((k) => k.id !== eigen) };
+    const gefiltert = z.daten;
+    return fangen({ punkt: maus, daten: gefiltert, radius: FANGRADIUS_PX * this.s(), letzter: z.anker, raster: rasterWert(), ortho: !!e.shiftKey,
+      drehung: this.ansicht.drehung ?? 0 });   // N9: Orthogonal und Raster in den Achsen der Ansicht
   }
 
   ereignis(art, e, ansicht) {

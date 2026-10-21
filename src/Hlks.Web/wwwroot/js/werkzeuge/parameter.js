@@ -122,31 +122,36 @@ const ansichtBezug = (ansicht) => {
   return { ansicht };
 };
 
-/** Messrichtung d (Einheitsvektor) einer Masskette nach der Regel des Kerns (BeschriftungMass). */
-export function messrichtung(punkte, richtung = 'ausgerichtet') {
+/** Messrichtung d (Einheitsvektor) einer Masskette nach der Regel des Kerns (BeschriftungMass). N9: horizontal/vertikal in den Achsen der
+ *  Ansicht (drehung in Grad, Gegenuhrzeigersinn); ohne Drehung genau wie bisher. */
+export function messrichtung(punkte, richtung = 'ausgerichtet', drehung = 0) {
   const p0 = punkte[0];
   let ziel = punkte[punkte.length - 1];
   if (abstand(p0, ziel) < 1e-9) ziel = punkte.reduce((m, q) => (abstand(p0, q) > abstand(p0, m) ? q : m), ziel);
   const v = [ziel[0] - p0[0], ziel[1] - p0[1]];
-  if (richtung === 'horizontal') return [v[0] >= 0 ? 1 : -1, 0];
-  if (richtung === 'vertikal') return [0, v[1] >= 0 ? 1 : -1];
+  const achse = (grad) => {
+    const w = (grad - drehung) * Math.PI / 180, a = [Math.cos(w), Math.sin(w)];
+    return v[0] * a[0] + v[1] * a[1] >= 0 ? a : [-a[0], -a[1]];
+  };
+  if (richtung === 'horizontal') return drehung ? achse(0) : [v[0] >= 0 ? 1 : -1, 0];
+  if (richtung === 'vertikal') return drehung ? achse(90) : [0, v[1] >= 0 ? 1 : -1];
   const l = Math.hypot(v[0], v[1]);
   return l < 1e-9 ? [1, 0] : [v[0] / l, v[1] / l];
 }
 
 /** Versatz der Masslinie: Abstand des Klickpunkts von der Linie durch den ersten Messpunkt, positiv = links der Messrichtung. */
-export function bemassungVersatz(punkte, richtung, lage) {
-  const d = messrichtung(punkte, richtung);
+export function bemassungVersatz(punkte, richtung, lage, drehung = 0) {
+  const d = messrichtung(punkte, richtung, drehung);
   const n = [-d[1], d[0]];
   return rund((lage[0] - punkte[0][0]) * n[0] + (lage[1] - punkte[0][1]) * n[1], 1);
 }
 
-/** element_anlegen Klasse Bemassung: Messpunkte, Richtung, versatz aus dem letzten Klick. */
-export function bemassungParameter({ ansicht, punkte, richtung = 'ausgerichtet', lage, einheit = '' }) {
+/** element_anlegen Klasse Bemassung: Messpunkte, Richtung, versatz aus dem letzten Klick (drehung: N9, Drehung der Ansicht). */
+export function bemassungParameter({ ansicht, punkte, richtung = 'ausgerichtet', lage, einheit = '', drehung = 0 }) {
   const bezug = ansichtBezug(ansicht);
   const pts = ohneDoppelte(punkte);
   if (pts.length < 2) throw new WerkzeugFehler('Eine Bemassung braucht mindestens zwei Messpunkte.', 'Zwei Punkte anklicken, dann die Lage der Masslinie.');
-  const eig = { richtung, versatz: bemassungVersatz(pts, richtung, lage) };
+  const eig = { richtung, versatz: bemassungVersatz(pts, richtung, lage, drehung) };
   if (einheit) eig.einheit = einheit;
   return { klasse: 'Bemassung', eigenschaften: eig, geometrie: { art: 'polylinie', punkte: pts }, bezuege: bezug };
 }

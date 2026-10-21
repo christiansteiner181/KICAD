@@ -170,6 +170,7 @@ class Lauf {
       punkt: this.maus, daten: this.fangdaten(), radius: FANGRADIUS_PX * this.s(),
       letzter: d.letzterPunkt?.(z) ?? null, raster: rasterWert(), ortho: this.shift,
       extraPunkte: d.extraPunkte?.(z) ?? [], extraKanten: d.extraKanten?.(z) ?? [], arten: d.fangArten,
+      drehung: this.ansicht.drehung ?? 0,   // N9: Orthogonal und Raster in den Achsen der (gedrehten) Ansicht
     });
   }
 
@@ -182,6 +183,7 @@ class Lauf {
     const sch = this.schicht();
     if (!sch || this.fertig) return;
     const s = this.s();
+    S.drehungSetzen(this.ansicht.drehung ?? 0);   // N9: Texte und Fangsymbole der Schicht bleiben in gedrehten Ansichten waagrecht
     let h = '';
     try { h = this.def.zeichne?.(this.z, this.fang, this.ctx, s) ?? ''; } catch (e) { console.error('Vorschau', e); }
     if (this.fang) h += S.fangsymbol(this.fang, s);

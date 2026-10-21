@@ -40,10 +40,16 @@ internal static class BeschriftungMass
         if (BeschriftungHilfen.Laenge(BeschriftungHilfen.Minus(ziel, p0)) < 1e-9)
             ziel = pts.MaxBy(p => BeschriftungHilfen.Laenge(BeschriftungHilfen.Minus(p, p0)))!;
         var v = BeschriftungHilfen.Minus(ziel, p0);
+        // N9: horizontal/vertikal in den Achsen der Ansicht (gedrehter Grundriss); ohne Drehung genau wie bisher
+        double[] Achse(double grad)
+        {
+            var a = BeschriftungHilfen.Drehen([1, 0], grad - ctx.Drehung);
+            return BeschriftungHilfen.Punktprodukt(v, a) >= 0 ? a : [-a[0], -a[1]];
+        }
         double[] d = (e.Text("richtung") ?? "ausgerichtet") switch
         {
-            "horizontal" => [v[0] >= 0 ? 1 : -1, 0],
-            "vertikal" => [0, v[1] >= 0 ? 1 : -1],
+            "horizontal" => ctx.Drehung == 0 ? [v[0] >= 0 ? 1 : -1, 0] : Achse(0),
+            "vertikal" => ctx.Drehung == 0 ? [0, v[1] >= 0 ? 1 : -1] : Achse(90),
             _ => BeschriftungHilfen.Einheit(v),
         };
         var n = BeschriftungHilfen.Links(d);

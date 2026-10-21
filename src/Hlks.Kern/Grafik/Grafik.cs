@@ -53,6 +53,9 @@ public sealed class GrafikKontext
     /// <summary>Gewerke, die gezeigt werden; null = alle.</summary>
     public IReadOnlySet<string>? Gewerke { get; init; }
     public IReadOnlySet<string> KlassenAus { get; init; } = new HashSet<string>();
+    /// <summary>N9: Drehung der Ansicht in Grad (Gegenuhrzeigersinn, Modell → Ansicht; nur Grundrisse). «horizontal» und «vertikal» einer
+    /// Bemassung gelten in den Achsen der Ansicht.</summary>
+    public double Drehung { get; init; }
     /// <summary>Zwischenergebnisse aus Vorbereiten, je Quelle unter ihrem Namen.</summary>
     public Dictionary<string, object> Ablage { get; } = [];
 
@@ -149,6 +152,7 @@ public static class Grafik
             Schnitthoehe = (geschoss?.Zahl("kote") ?? 0) + (ansicht.Zahl("schnitthoehe") ?? 1000),
             Gewerke = gewerke.Count > 0 ? gewerke.ToHashSet() : null,
             KlassenAus = Liste(ansicht, "klassenAusblenden").ToHashSet(),
+            Drehung = art == "grundriss" ? Ansichtsausrichtung.Fuer(p, ansicht).Drehung : 0,   // N9
         };
     }
 

@@ -27,6 +27,7 @@ import { anmelden } from './paletten.js';
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
 import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';   // Modul 7 Teil A: Revisionsliste des Planblatts
+import { ausrichtungZeilen, planwinkelZeilen } from './ausrichtung-palette.js';   // N9: Ausrichtung der Grundrisse (Ansicht) und Planwinkel (Gebäude)
 
 const lc = (t) => String(t ?? '').toLowerCase();
 const GRUPPEN_ZU = 'palette.gruppenZu';
@@ -61,6 +62,8 @@ export function einrichten(w) {
     if (sp) { spezialKlick(sp); return; }
     const rv = e.target.closest('.ep-rev-neu, .ep-rev-weg');
     if (rv) { revisionKlick(rv); return; }
+    const pw = e.target.closest('.ep-pw-knopf');   // N9: Planwinkel des Gebäudes neu bestimmen
+    if (pw) { ausfuehren('ansicht.planwinkel', { gebaeude: pw.dataset.gebaeude }); return; }
     const q = e.target.closest('.ep-warum');
     if (q && gerade) warumDialog(gerade.kz, q.dataset.warum);
   });
@@ -104,13 +107,16 @@ async function zeichnen() {
     inhalt.innerHTML = `<div class="ep-leer">${istAnsicht ? 'Nichts ausgewählt.<br>Eine Ansicht öffnen oder ein Element anklicken.' : 'Element nicht gefunden.'}</div>`;
     return;
   }
-  let lesen, def = null, fam = null;
+  let lesen, def = null, fam = null, aus = null;
   try {
     const famBezug = ziel.klasse === 'Familie' ? ziel.kennzeichen : ziel.bezuege?.familie ?? null;
-    [lesen, def, fam] = await Promise.all([
+    // N9: Drehung der Ansicht bzw. Planwinkel des Gebäudes (Abfrage planwinkel); fehlt sie, bleibt die Palette wie bisher
+    const ausParameter = ziel.klasse === 'Ansicht' ? { ansicht: ziel.kennzeichen } : ziel.klasse === 'Gebaeude' ? { gebaeude: ziel.kennzeichen } : null;
+    [lesen, def, fam, aus] = await Promise.all([
       ziel.klasse === 'Familie' ? Promise.resolve({}) : abfrage('element_lesen', { element: ziel.kennzeichen }),
       ziel.klasse === 'Familie' ? Promise.resolve(null) : klassenDefinition(ziel.klasse).catch((e) => { console.error(e); return null; }),
       famBezug ? famDaten(famBezug, ziel) : Promise.resolve(null),
+      ausParameter ? abfrage('planwinkel', ausParameter).catch((e) => { console.warn('planwinkel', e?.message ?? e); return null; }) : Promise.resolve(null),
     ]);
   } catch (e) {
     console.error(e);
@@ -124,7 +130,7 @@ async function zeichnen() {
   if (fam && ziel.klasse !== 'Familie') fam = { ...fam, exemplar: lesen?.eigenschaften?.parameter?.wert ?? null };
   gerade = { id: ziel.id, kz: ziel.kennzeichen, fam };
   const y = inhalt.scrollTop;
-  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san);
+  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san, aus);
   inhalt.scrollTop = y;
 }
 
@@ -227,7 +233,7 @@ const kennOption = (e) => [e.kennzeichen, e.name ? `${e.kennzeichen} – ${e.nam
 
 // ---------------------------------------------------------------------------------------------- Palette aufbauen
 
-function palette(el, l, def, istAnsicht, fam = null, san = null) {
+function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null) {
   const res = reservierungVon(el);
   let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(el.klasse, el.basis), 16)}</span>`
     + `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select></div>`
@@ -300,6 +306,8 @@ function palette(el, l, def, istAnsicht, fam = null, san = null) {
       marke: werte[d.name] ? ohneQuelleMarke(el.klasse, d.name, werte[d.name].herkunft) : '' });
     ez.push(z);
     if (d.name === 'abflusskennzahl') ez.push(kHinweisZeile(HELFER));
+    if (el.klasse === 'Ansicht' && d.name === 'ausrichtung') ez.push(...ausrichtungZeilen(aus, HELFER));                  // N9: Drehung und Quelle
+    if (el.klasse === 'Gebaeude' && d.name === 'planwinkel') ez.push(...planwinkelZeilen(aus, el.kennzeichen, HELFER));   // N9: Knopf «Planwinkel neu bestimmen»
   }
   for (const [name, v] of Object.entries(werte)) {
     if (bekannt.has(name) || (fam && (name === 'familientyp' || name === 'parameter')) || (ltGruppe && ltEig.includes(name))) continue;

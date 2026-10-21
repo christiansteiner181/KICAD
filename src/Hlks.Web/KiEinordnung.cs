@@ -25,7 +25,8 @@ public static class KiEinordnung
             ["aufbau_rechnen", "huellbauteile", "huelle_pruefen", "materialien", "materialliste", "typmaterial", "kollisionen", "aussparungsliste",
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
              "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze",
-             "abzweigwinkel"]),   // Nachtrag Modul 3, 21.10.2026 (hlks-kern, zur Bestätigung): Abzweigwinkel einer Serie bzw. Leitung, nur lesend wie leitungsserie
+             "abzweigwinkel",   // Nachtrag Modul 3, 21.10.2026 (hlks-kern, zur Bestätigung): Abzweigwinkel einer Serie bzw. Leitung, nur lesend wie leitungsserie
+             "planwinkel"]),    // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel und Ausrichtung der Grundrisse, nur lesend
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
@@ -58,7 +59,8 @@ public static class KiEinordnung
             "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar.",
             ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen"]),
         new("Pläne einrichten", "Planblätter anlegen und Ansichten platzieren – im Modell, zurücknehmbar; Revisionen, Plansätze und PDF-Ausgaben sind verboten.",
-            ["planblatt_anlegen", "ansicht_platzieren", "einlageplaene_anlegen", "planblatt_gewerk_setzen"]),
+            ["planblatt_anlegen", "ansicht_platzieren", "einlageplaene_anlegen", "planblatt_gewerk_setzen",
+             "planwinkel_bestimmen"]),   // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel des Gebäudes neu bestimmen – ein Paket, zurücknehmbar, nur Darstellung
         new("Aussparungen und Kollisionen prüfen", "Vorschläge und Prüfergebnisse: aussparung_form nur bei vorgeschlagenen/veralteten Aussparungen (Kern); " +
             "aussparungen_nummerieren nummeriert für die KI keine abgegebene (freigegebene, versandte …) Aussparung um (Kern, B5); aussparungen_abgleichen " +
             "setzt nur angekommen/fehlt aus dem Abgleich mit der Architekten-IFC (Herkunft berechnung, Prüfergebnis, keine Freigabe); kollision_pruefen " +

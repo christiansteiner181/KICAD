@@ -303,6 +303,34 @@ registrieren({
   },
 });
 
+// N9: Ausrichtung der Grundrisse – «Nach Himmelsrichtung» schaltet die Eigenschaft ausrichtung der aktiven Grundriss-Ansicht zwischen
+// himmelsrichtung (geografisch Nord oben) und der Vorgabe geometrie (ohne Angabe: längste Gebäudekante waagrecht); «Planwinkel neu bestimmen»
+// sendet planwinkel_bestimmen für das Gebäude der Ansicht (über ihr Geschoss), sonst für alle Gebäude. Gedreht wird im Kern und in grundriss.js.
+const grundrissVon = (p) => { const a = ansichtVon(p); return a && (a.werte?.art ?? 'grundriss') === 'grundriss' ? a : null; };
+registrieren({
+  id: 'ansicht.ausrichtung', titel: 'Nach Himmels­richtung', symbol: 'ausrichtungNord', kuerzel: null, register: 'ansicht', gruppe: 'Darstellung',
+  gedrueckt: () => grundrissVon()?.werte?.ausrichtung === 'himmelsrichtung',
+  aktiv: (p) => !!grundrissVon(p),
+  hinweis: (p) => (ansichtVon(p) ? 'Die Ausrichtung gibt es für Grundrisse; Schnitt und Ansicht folgen ihrer Linie, 3D, Schema und Liste werden nicht gedreht.' : KEINE_ANSICHT),
+  async ausfuehren(p) {
+    const a = grundrissVon(p);
+    const an = a.werte?.ausrichtung !== 'himmelsrichtung';
+    ergebnisMelden(await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { ausrichtung: an ? 'himmelsrichtung' : null } }),
+      an ? `${anzeigeName(a)}: nach Himmelsrichtung ausgerichtet (geografisch Nord oben).` : `${anzeigeName(a)}: nach Geometrie ausgerichtet (längste Gebäudekante waagrecht).`);
+  },
+});
+registrieren({
+  id: 'ansicht.planwinkel', titel: 'Planwinkel neu bestimmen', symbol: 'planwinkel', kuerzel: null, register: 'ansicht', gruppe: 'Darstellung', groesse: 'klein',
+  aktiv: () => derKlasse('Gebaeude').length > 0,
+  hinweis: 'Im Modell gibt es kein Gebäude – der Planwinkel steht am Gebäude.',
+  async ausfuehren(p) {
+    const a = ansichtVon(p);
+    const geb = p?.gebaeude ?? element(element(a?.geschoss)?.teilVon)?.kennzeichen ?? null;
+    const r = await sende('planwinkel_bestimmen', geb ? { gebaeude: geb } : {});
+    ergebnisMelden(r, (r.hinweise ?? []).filter(Boolean).join(' ') || 'Planwinkel bestimmt.');
+  },
+});
+
 // N3 (Punkt 3): CSV jeder Listenansicht – Knopf «CSV …» in der Kopfzeile der Liste (ansichten/liste.js) und Eintrag im Kontextmenü der Liste im Projektbrowser.
 // Die Aktion öffnet die Liste, wenn sie noch nicht offen ist, und zeigt dann deren Dialog (ansichten/liste-csv-dialog.js).
 registrieren({

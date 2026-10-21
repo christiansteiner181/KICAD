@@ -5,6 +5,9 @@
 // Nach jedem Ereignis «modell» wird die Grafik neu geholt (entprellt, Zoom und Auswahl bleiben).
 // Darstellung «Hülle» (darstellung = huelle, Modul 1c): die Streifen zeichnet der Kern (HuelleGrafik); diese Datei zeigt nur die
 // Legende unten links mit den Flächensummen je Angrenzung für das Geschoss (Abfrage raumgrenzen).
+// N9 (gedrehte Grundrisse): die Plangrafik bleibt in Modellkoordinaten; gedreht wird nur die Gruppe gr-welt (plan.drehung, ausrichtung.js),
+// der Ausschnitt vb liegt in den Achsen der Ansicht, zuModell/zuBildschirm rechnen zurück ins Modell. Der Nordpfeil oben rechts zeigt nach
+// geografisch Nord (plan.nord), unten links stehen die Ausrichtung und die Mausposition in Modellkoordinaten.
 //
 // Werkzeug-Schnittstelle (Entwurf modul-1a.md «Schnittstelle Ansicht ↔ Werkzeug»): art, ansicht, massstab, zuModell,
 // zuBildschirm, pxJeMm, fangdaten, werkzeugSchicht, setzeWerkzeug/werkzeug. Ist ein Werkzeug aktiv, bekommt es pointerdown,
@@ -13,8 +16,9 @@
 import { zustand, element, auswaehlen } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { ansichtsWerte, esc } from './hilfen.js';
-import { planSvg, fangdatenVon, begrenzungVon, schraffurMap } from './plangrafik.js';
+import { planSvg, fangdatenVon, schraffurMap } from './plangrafik.js';
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
+import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText } from './ausrichtung.js';   // N9: gedrehte Grundrisse
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FREMD_DAUER = 1500;      // ms Hervorhebung fremder Änderungen
@@ -41,7 +45,8 @@ function erstellen(behaelter, ansichtElement) {
   let werkzeug = null;
   let zerstoert = false;
   let nochNichtGezeigt = true;   // erste Grafik: Ausschnitt einpassen
-  let wunschBox = null;          // zoomAuf vor der ersten Grafik (Schema: «Im Grundriss zeigen»): Ausschnitt, der nach dem Laden gilt
+  let wunschBox = null;          // zoomAuf vor der ersten Grafik (Schema: «Im Grundriss zeigen»): Ausschnitt (Modell), der nach dem Laden gilt
+  let drehung = 0;               // N9: Drehung der Ansicht (Grad, Gegenuhrzeigersinn, Modell → Ansicht); vb liegt in den Achsen der Ansicht
   const fremdOffen = new Set();  // Ids fremder Änderungen, die nach dem Neuholen aufleuchten
   const timer = new Set();
 
@@ -53,16 +58,17 @@ function erstellen(behaelter, ansichtElement) {
       </svg>
       <div class="gr-tip" hidden></div>
       <div class="gr-leer" hidden></div>
-      <div class="gr-nord" title="Norden oben"><svg viewBox="0 0 40 52" width="34" height="44" aria-hidden="true">
+      <div class="gr-nord" title="Geografisch Nord"><svg viewBox="0 0 40 52" width="34" height="44" aria-hidden="true">
         <path d="M20 4 L31 44 L20 36 L9 44 Z" fill="var(--text-leise)" stroke="var(--text)" stroke-width="1.5" stroke-linejoin="round"/>
         <path d="M20 4 L20 36 L9 44 Z" fill="var(--text)"/>
       </svg><span>N</span></div>
       <div class="gr-legende hl-feldbox" hidden></div>
-      <div class="gr-masstab"><span class="gr-massstab-text"></span><span class="gr-balken-zeile"><span class="gr-balken"></span><span class="gr-balken-text"></span></span></div>
+      <div class="gr-masstab"><span class="gr-massstab-text"></span><span class="gr-ausrichtung"></span><span class="gr-balken-zeile"><span class="gr-balken"></span><span class="gr-balken-text"></span></span><span class="gr-koord"></span></div>
     </div>`;
   const wurzel = behaelter.querySelector('.gr-wurzel');
   const svg = wurzel.querySelector('.gr-svg');
   const planGruppe = svg.querySelector('.gr-plan');
+  const welt = svg.querySelector('.gr-welt');
   const werkzeugSchicht = svg.querySelector('.gr-werkzeug');
   const tip = wurzel.querySelector('.gr-tip');
   const leer = wurzel.querySelector('.gr-leer');
@@ -71,6 +77,8 @@ function erstellen(behaelter, ansichtElement) {
   const massstabText = wurzel.querySelector('.gr-massstab-text');
   const balken = wurzel.querySelector('.gr-balken');
   const balkenText = wurzel.querySelector('.gr-balken-text');
+  const ausrichtungAnzeige = wurzel.querySelector('.gr-ausrichtung');
+  const koordAnzeige = wurzel.querySelector('.gr-koord');
 
   const massstab = () => plan?.massstab ?? ansichtsWerte(ansicht).massstab;
 
@@ -90,6 +98,7 @@ function erstellen(behaelter, ansichtElement) {
       const warLeer = !plan || (plan.teile ?? []).length === 0;
       plan = p;
       fang = null;
+      ausrichtungUebernehmen();
       planGruppe.innerHTML = planSvg(plan, sch);
       svg.style.setProperty('--m', String(massstab()));
       const hat = (plan.teile ?? []).length > 0;
@@ -100,7 +109,7 @@ function erstellen(behaelter, ansichtElement) {
       hervorheben(gewaehlt);
       fremdAnwenden();
       if (nochNichtGezeigt || !vb || (warLeer && hat && !benutzt)) { nochNichtGezeigt = false; zoomAlles(); } else vbAnwenden();
-      if (wunschBox) { const b = wunschBox; wunschBox = null; benutzt = true; einpassen(b); }
+      if (wunschBox) { const b = wunschBox; wunschBox = null; benutzt = true; einpassen(boxInAnsicht(b, drehung)); }
     } catch (e) {
       if (nr !== ladeNr || zerstoert) return;
       console.error('Plan-Ansicht: Grafik nicht geladen', e);
@@ -110,6 +119,25 @@ function erstellen(behaelter, ansichtElement) {
       leer.innerHTML = `Die Grafik konnte nicht geladen werden:<br>${esc(e.message ?? e)}${e.vorschlag ? '<br>' + esc(e.vorschlag) : ''}`;
       if (!vb) zoomAlles();
     }
+  }
+
+  /**
+   * N9: Ausrichtung der Plangrafik übernehmen – die eine Stelle der Drehung am Bildschirm: Gruppe gr-welt um «drehung» drehen, Nordpfeil
+   * nach «nord». Ändert sich die Drehung (Ausrichtung umgeschaltet, Planwinkel neu bestimmt), bleibt die Mitte des Ausschnitts im Modell
+   * dieselbe; ohne eigenen Zoom wird neu eingepasst.
+   */
+  function ausrichtungUebernehmen() {
+    const alt = drehung;
+    drehung = drehungVon(plan);
+    welt.setAttribute('transform', weltTransform(drehung));
+    const pfeil = nord.querySelector('svg');
+    if (pfeil) pfeil.style.transform = nordCss(plan?.nord);
+    nord.title = drehung || plan?.nord ? `Geografisch Nord (${Math.round((plan?.nord ?? 0) * 10) / 10}° gegen «oben»)` : 'Geografisch Nord oben';
+    ausrichtungAnzeige.textContent = art() === 'grundriss' ? ausrichtungText(plan) : '';
+    if (alt === drehung || !vb) return;
+    if (!benutzt) { nochNichtGezeigt = true; return; }
+    const m = drehen([vb.x + vb.w / 2, -(vb.y + vb.h / 2)], -alt), v = drehen(m, drehung);
+    vb = { ...vb, x: v[0] - vb.w / 2, y: -v[1] - vb.h / 2 };
   }
 
   /** Legende der Darstellung Hülle: Summen je Angrenzung für das Geschoss; sonst ausgeblendet. */
@@ -180,7 +208,7 @@ function erstellen(behaelter, ansichtElement) {
     vbAnwenden();
   }
 
-  function zoomAlles() { benutzt = false; einpassen(begrenzungVon(plan)); }
+  function zoomAlles() { benutzt = false; einpassen(ansichtsBegrenzung(plan)); }   // N9: Begrenzung in den Achsen der Ansicht
 
   function groesseGeaendert() {
     const { W, H } = groesse();
@@ -277,7 +305,15 @@ function erstellen(behaelter, ansichtElement) {
     svg.classList.add('schiebt');
   }
 
+  /** N9: Mausposition immer in Modellkoordinaten (x Ost, y Nord, mm) – auch im gedrehten Grundriss; Schnitt/Ansicht: u, v. */
+  function koordZeigen(e) {
+    if (!vb) return;
+    const [x, y] = instanz.zuModell(e.clientX, e.clientY);
+    koordAnzeige.textContent = art() === 'grundriss' ? `x ${Math.round(x)} · y ${Math.round(y)} mm (Modell)` : `u ${Math.round(x)} · v ${Math.round(y)} mm`;
+  }
+
   function beiPointerMove(e) {
+    koordZeigen(e);
     if (druck?.taste === 1 || (druck && schiebt)) {
       // Verschieben (mittlere Taste, Leertaste oder Ziehen auf leerer Fläche)
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
@@ -342,7 +378,7 @@ function erstellen(behaelter, ansichtElement) {
   svg.addEventListener('pointerup', beiPointerUp);
   svg.addEventListener('pointercancel', beiPointerUp);
   svg.addEventListener('dblclick', beiDoppelklick);
-  svg.addEventListener('pointerleave', () => { if (!druck) tip.hidden = true; });
+  svg.addEventListener('pointerleave', () => { if (!druck) tip.hidden = true; koordAnzeige.textContent = ''; });
   svg.addEventListener('wheel', beiRad, { passive: false });
   svg.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });   // kein Autoscroll
   svg.addEventListener('auxclick', (e) => e.preventDefault());
@@ -378,8 +414,9 @@ function erstellen(behaelter, ansichtElement) {
     ansichtGeaendert,
     auswahlGeaendert(id) { hervorheben(id); },
     zoomAlles,
-    /** Zoomt auf ein Rechteck {minx, miny, maxx, maxy} in Modell-mm (auch vor der ersten Grafik); der Ausschnitt bleibt dann stehen. */
-    zoomAuf(b) { if (plan && vb) { benutzt = true; einpassen(b); } else wunschBox = b; },
+    /** Zoomt auf ein Rechteck {minx, miny, maxx, maxy} in Modell-mm (auch vor der ersten Grafik); der Ausschnitt bleibt dann stehen.
+     *  N9: in gedrehten Grundrissen auf das umschliessende Rechteck in den Achsen der Ansicht. */
+    zoomAuf(b) { if (plan && vb) { benutzt = true; einpassen(boxInAnsicht(b, drehung)); } else wunschBox = b; },
     zerstoeren() {
       zerstoert = true;
       ladeNr++;
@@ -399,17 +436,20 @@ function erstellen(behaelter, ansichtElement) {
     get art() { return art(); },
     get ansicht() { return ansicht; },
     get massstab() { return massstab(); },
-    /** Bildschirm (clientX, clientY) → Modell-mm der Ansicht [x, y]. */
+    /** N9: Drehung der Ansicht in Grad (Gegenuhrzeigersinn, Modell → Ansicht); Werkzeuge fangen orthogonal zu diesen Achsen. */
+    get drehung() { return drehung; },
+    /** Bildschirm (clientX, clientY) → Modell-mm der Ansicht [x, y] (N9: aus den gedrehten Achsen zurück ins Modell). */
     zuModell(clientX, clientY) {
       if (!vb) return [0, 0];
       const p = zuSvg(clientX, clientY);
-      return [p.x, -p.y];
+      return drehen([p.x, -p.y], -drehung);
     },
     /** Modell-mm [x, y] → Client-Pixel { x, y }. */
     zuBildschirm(p) {
       const r = svg.getBoundingClientRect();
       if (!vb || !r.width) return { x: 0, y: 0 };
-      return { x: r.left + ((p[0] - vb.x) / vb.w) * r.width, y: r.top + ((-p[1] - vb.y) / vb.h) * r.height };
+      const v = drehen(p, drehung);
+      return { x: r.left + ((v[0] - vb.x) / vb.w) * r.width, y: r.top + ((-v[1] - vb.y) / vb.h) * r.height };
     },
     /** Bildschirm-Pixel (CSS) je Modell-mm beim aktuellen Zoom. */
     pxJeMm() { const { W } = groesse(); return vb && W > 0 ? W / vb.w : 1; },

@@ -171,6 +171,7 @@ public class WerkzeugTests
             ["aussparungsliste"] = () => w.AussparungslisteLesen(geschoss: "EG"),   // Modul 3b, B3: im Beispielprojekt ohne Aussparungen = leere Liste
             ["aussparungen_ifc"] = () => w.AussparungenIfcSchreiben(AussparungIfcTestdatei(w)),   // Modul 3b, B4b: freigegebene Testaussparung (fiktiv) legt AussparungIfcTestdatei an
             ["plannummer_vorschlag"] = () => w.PlannummerVorschlag(gewerk: "heizung", geschoss: "EG"),   // Modul 7 Teil A
+            ["planwinkel"] = () => w.PlanwinkelLesen(ansicht: "AN-GR-EG"),   // N9: Planwinkel GEB-1 und Ausrichtung des Grundrisses EG
             ["plansaetze"] = () => w.PlansaetzeLesen(),   // Serien-PDF: Planblatt T-1 (plan_pdf oben) ohne Fachbuchstabe = Plansatz «allgemein» angeboten
             ["plansatz_pdf"] = () => w.PlansatzPdfSchreiben("allgemein", ordner: PlansatzOrdner, ueberschreiben: true),
             ["normen_suchen"] = () => NormenTestdaten.Mit(() => w.NormenSuchen("Mindestgefälle Prüfleitung")),   // Modul 3c: eigene Test-PDF, nie W:
