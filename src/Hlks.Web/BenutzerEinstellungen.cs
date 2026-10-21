@@ -65,6 +65,9 @@ public sealed class BenutzerEinstellungen
         // Pfad zur adb.exe der Android Platform Tools für «Quest verbinden» (Modul XR, QuestDienst.cs): leer/zurückgesetzt = suchen; sonst ein
         // vollständiger lokaler Pfad, der auf adb.exe endet (kein Netzpfad – es wird ein Programm gestartet).
         ["quest.adb"] = QuestDienst.AdbPfadPruefen,
+        // «Brille automatisch verbinden» (Modul XR): Ja/Nein, Vorgabe nein; und die gemerkten Brillen (Liste { seriennummer, mac, letzteIp, zuletzt }, gültige MAC).
+        ["quest.automatisch"] = QuestDienst.AutomatikPruefen,
+        ["quest.brillen"] = QuestDienst.BrillenPruefen,
     };
 
     static string? AugenhoeheDaten(JsonNode w) =>

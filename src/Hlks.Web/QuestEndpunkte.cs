@@ -9,6 +9,11 @@
 //   POST /api/quest/wlan       Quest per USB auf adb über WLAN umstellen (tcpip 5555, connect) und Weiterleitung neu setzen → Zustand + meldung
 //   POST /api/quest/ip         { ip }  über WLAN verbinden (IPv4, optional :Port) und Weiterleitung setzen → Zustand + meldung
 //   POST /api/quest/trennen    Weiterleitung entfernen                                              → Zustand + meldung
+//   POST /api/quest/automatik  { anlass: takt | start | klick | ansicht3d }  EIN Schritt von «Brille automatisch verbinden» (idempotent, unter der Sperre) →
+//                              { automatisch, status: aus | kein_adb | bereit | sucht | nicht_gefunden | nicht_freigegeben | fehler, meldung?, hinweis?, ping: nein | gelaufen | gesperrt | keine_netze,
+//                              ip?, seriennummer?, brille?, port, url }. «takt» liest nur adb devices und die Nachbartabelle; die anderen dürfen einen Ping-Durchlauf machen
+//                              (im eigenen /24-Netz, höchstens einmal je 2 Minuten). Ist quest.automatisch aus, geschieht nichts (ausser bei «klick»).
+// GET /api/quest liefert zusätzlich automatisch (Einstellung quest.automatisch) und brillen (Einstellung quest.brillen: [{ seriennummer, mac, letzteIp, zuletzt }]).
 // Den Pfad zur adb.exe speichert die Oberfläche als Benutzereinstellung «quest.adb» (POST /api/benutzer/einstellungen). Fehler: 400 { fehler, vorschlag }.
 
 using Hlks.Kern;
@@ -21,7 +26,8 @@ public static class QuestEndpunkte
     public static WebApplication MapQuest(this WebApplication app, ProjektDienst dienst)
     {
         var einst = app.Services.GetService<QuestEinstellungen>() ?? QuestEinstellungen.Vorgabe();
-        var quest = new QuestDienst(dienst.Benutzer, einst);
+        var netz = app.Services.GetService<IQuestNetz>() ?? IQuestNetz.Vorgabe();
+        var quest = new QuestDienst(dienst.Benutzer, einst, netz);
         var g = app.MapGroup("/api/quest");
 
         g.MapGet("", (HttpRequest r) => Gesichert(async () => Antwort(await quest.Zustand(Port(r)))));
@@ -33,6 +39,11 @@ public static class QuestEndpunkte
             return Antwort(await quest.MitIpVerbinden(Param.Text(p, "ip", true), Port(r)));
         }));
         g.MapPost("/trennen", (HttpRequest r) => Gesichert(async () => Antwort(await quest.Trennen(Port(r)))));
+        g.MapPost("/automatik", (HttpRequest r) => Gesichert(async () =>
+        {
+            var p = await KoerperLesen(r);
+            return Antwort(await quest.Automatik(Port(r), Param.Text(p, "anlass")));
+        }));
         return app;
     }
 
