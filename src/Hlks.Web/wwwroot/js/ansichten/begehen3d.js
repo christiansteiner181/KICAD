@@ -118,6 +118,7 @@ export function erzeugeBegehen(o) {
   }
   function beiMausBewegt(e) {
     if (!aktiv || !zeiger || e.pointerId !== zeiger.id) return;
+    if (e.buttons === 0) { beiMausOben(e); return; }   // Loslassen verpasst (ausserhalb des Fensters): nicht an der Maus hängen bleiben
     const dx = e.clientX - zeiger.x, dy = e.clientY - zeiger.y;
     if (dx === 0 && dy === 0) return;
     zeiger.x = e.clientX; zeiger.y = e.clientY;

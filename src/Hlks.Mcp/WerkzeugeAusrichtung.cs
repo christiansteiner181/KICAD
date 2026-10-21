@@ -1,4 +1,4 @@
-// MCP-Werkzeuge der Ausrichtung der Grundrisse (Nachbearbeitung N9): planwinkel (Abfrage), planwinkel_bestimmen (Befehl); N14: ansicht_raum_zeigen (Befehl).
+// MCP-Werkzeuge der Ausrichtung der Grundrisse (Nachbearbeitung N9): planwinkel (Abfrage), planwinkel_bestimmen (Befehl); N14: ansicht_raum_zeigen (Befehl); N15: raum_begehen (Abfrage).
 // Dünne Hülle über dem Kern wie in Werkzeuge.cs; Name, Beschreibung und Parameter stehen genau so im Kern (Architektur/Planwinkel.cs).
 // Die Ausrichtung einer Ansicht selbst (geometrie | himmelsrichtung) setzt element_aendern (Eigenschaft ausrichtung).
 

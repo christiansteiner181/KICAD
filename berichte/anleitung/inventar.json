@@ -10253,6 +10253,120 @@
             "src/Hlks.Web/BenutzerEinstellungen.cs (ansicht3d.raumrand)"
           ],
           "hinweis": "Ohne Einstellung gilt 1500 mm. Der Befehl selbst nimmt «rand» als Parameter (KI)."
+        },
+        {
+          "id": "zb-n15-begehen",
+          "titel": "Raum begehen (N15)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "3D-Schnitt",
+            "knopf": "Raum begehen",
+            "kuerzel": "",
+            "sonst": "Grundriss, Rechtsklick auf einen Raum › «Raum begehen»"
+          },
+          "schritte": [
+            "Einen Grundriss öffnen (z. B. «Grundriss EG Sanitär»).",
+            "Mit der rechten Maustaste in einen Raum klicken.",
+            "Im Kontextmenü «Raum begehen» wählen.",
+            "Im Raum umsehen und mit den Pfeiltasten gehen (siehe «Im Raum gehen und umsehen»).",
+            "Mit Esc oder dem Haus-Knopf des Navigationswürfels beenden."
+          ],
+          "erwartung": "Der Raum wird gewählt, KICAD wechselt in die zuletzt benutzte 3D-Ansicht (gibt es keine, wird «3D» angelegt) und zeigt den Raum in der Ich-Perspektive: perspektivische Kamera (Öffnungswinkel 75°) in der Mitte des Raums, 1.70 m über OK Boden, Blick waagrecht in Richtung «oben» des ausgerichteten Grundrisses (Gebäudeausrichtung, Planwinkel). Bei L-förmigen Räumen steht die Kamera im innersten Punkt des Raums, nicht im Schwerpunkt, der draussen liegen kann. Oben links stehen Raumname, Geschoss, Augenhöhe und die Tastenhilfe. Ein 3D-Schnittbereich ist für die Dauer abgeschaltet (seine gespeicherte Einstellung bleibt). Der Navigationswürfel bleibt sichtbar und dreht mit. Esc, der Haus-Knopf oder ein Klick auf eine Würfelfläche beenden das Begehen und stellen Kamera und Schnittbereich wieder her.",
+          "pruefpunkte": [
+            "Das Kontextmenü erscheint beim Rechtsklick auf einen Raum, «Raum begehen» steht unter «Raum im 3D zeigen».",
+            "Die Kamera steht im Raum, 1.70 m über dem Boden, Blick waagrecht.",
+            "Oben links stehen Raumname, Geschoss, «Augenhöhe 1.70 m» und die Tastenhilfe.",
+            "Ein vorher eingeschalteter Schnittbereich ist weg, solange man im Raum steht, und danach wieder wie vorher.",
+            "Esc stellt die vorherige Kamera wieder her; nach Esc bewegen die Pfeiltasten die Kamera nicht mehr.",
+            "Der Haus-Knopf beendet das Begehen (keine Startansicht), ein Klick auf eine Würfelfläche beendet es und fährt zu dieser Fläche.",
+            "In einem L-förmigen Raum steht man im Raum.",
+            "Das Begehen ändert nichts am Modell (kein Eintrag im Verlauf)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Raum E.01 begehen, Blick nach vorn (Prüfbild n15-begehen-raum.png aus begehen.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/grundriss.js (kontextMenue)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.raumBegehen)",
+            "src/Hlks.Web/wwwroot/js/ansichten/begehen3d.js",
+            "src/Hlks.Kern/Plan/RaumBegehen.cs (Abfrage raum_begehen)"
+          ],
+          "hinweis": "Abfrage raum_begehen {raum, augenhoehe?} (auch KI): Standpunkt, Augenhöhe, Blick und Raumname; rechnet nur. Die Tastenbelegung und «keine Kollision» sind Annahmen und am Freitag mit Christian zu bestätigen."
+        },
+        {
+          "id": "zb-n15-bewegen",
+          "titel": "Im Raum gehen und umsehen (N15)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "Pfeiltasten, Bild auf/ab, Umschalt, Esc",
+            "sonst": "In der 3D-Ansicht im Modus «Begehen»"
+          },
+          "schritte": [
+            "«Raum begehen» starten.",
+            "Pfeil hoch bzw. runter drücken: ein Schritt von 10 cm vor bzw. zurück; Taste gehalten: flüssiges Gehen (1.4 m/s).",
+            "Pfeil links bzw. rechts drücken: 5° drehen; gehalten: 90°/s.",
+            "Umschalt dazu halten: dreimal so schnell.",
+            "Bild auf bzw. Bild ab: Augenhöhe ± 10 cm.",
+            "Mit der linken Maustaste ziehen: umsehen. Mit der mittleren Maustaste ziehen: seitlich bzw. hoch und runter verschieben.",
+            "Esc: beenden."
+          ],
+          "erwartung": "Die Kamera geht in Blickrichtung vor und zurück und dreht sich auf der Stelle. Die Höhe über dem Boden bleibt dabei gleich, auch wenn man durch Wände geht: es gibt keine Kollision (wie in Revit). Beim Umsehen mit der Maus ist das Nicken auf 80° nach oben und unten begrenzt. Die mittlere Maustaste schiebt wie beim Greifen: nach links ziehen heisst nach rechts gehen, nach unten ziehen heisst höher. Die Augenhöhe liegt zwischen 0.3 und 5 m. Der Navigationswürfel dreht mit; am Würfel ziehen bewirkt beim Begehen nichts.",
+          "pruefpunkte": [
+            "Ein kurzer Druck auf Pfeil hoch bewegt um 10 cm nach vorn, Pfeil runter wieder zurück.",
+            "Pfeil links dreht um 5° nach links, Pfeil rechts nach rechts; der Standort bleibt.",
+            "Mit Umschalt sind Schritt und Drehung dreimal so gross.",
+            "Pfeil hoch eine Sekunde gehalten: rund 1.2 m weit.",
+            "Bild auf bzw. ab ändert «Augenhöhe» oben links um 10 cm.",
+            "Maus nach oben ziehen: nach oben schauen, aber nicht über 80°.",
+            "Durch eine Wand gehen ist möglich; die Höhe über Boden bleibt gleich."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "nach dem Gehen durch die Wand (Prüfbild n15-begehen-ausserhalb.png aus begehen.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/begehen3d.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/begehen-logik.js (TASTEN, tippen, fliessend, umsehen, verschieben)"
+          ],
+          "hinweis": "Annahme, am Freitag mit Christian zu bestätigen: Tastenbelegung, Schrittweiten und «keine Kollision»."
+        },
+        {
+          "id": "zb-n15-augenhoehe",
+          "titel": "Augenhöhe für «Raum begehen» einstellen (N15)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Grundriss, Rechtsklick auf einen Raum › «Augenhöhe für «Raum begehen» …»"
+          },
+          "schritte": [
+            "Im Grundriss mit der rechten Maustaste in einen Raum klicken.",
+            "«Augenhöhe für «Raum begehen» …» wählen.",
+            "Die Augenhöhe in mm eingeben (Vorgabe 1700) und mit OK bestätigen.",
+            "Danach «Raum begehen» wählen."
+          ],
+          "erwartung": "Die Augenhöhe über OK Boden ist eine Benutzereinstellung (alle Projekte und alle Rechner des Benutzers). Zahlen von 300 bis 5000 mm sind erlaubt; andere werden mit einer Meldung abgelehnt. Das nächste «Raum begehen» beginnt mit dieser Augenhöhe; Bild auf und Bild ab ändern sie nur für das laufende Begehen.",
+          "pruefpunkte": [
+            "Das Eingabefenster zeigt die aktuelle Augenhöhe (anfangs 1700).",
+            "Eine ungültige Eingabe (Text, 100) wird gemeldet und nicht gespeichert.",
+            "Beim nächsten Begehen steht oben links die neue Augenhöhe."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG Sanitär",
+            "zustand": "Eingabefenster «Raum begehen» mit der Augenhöhe"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.begehenAugenhoehe)",
+            "src/Hlks.Web/BenutzerEinstellungen.cs (ansicht3d.augenhoehe)"
+          ],
+          "hinweis": "Ohne Einstellung gilt 1700 mm. Die Abfrage raum_begehen nimmt «augenhoehe» als Parameter (KI)."
         }
       ]
     }

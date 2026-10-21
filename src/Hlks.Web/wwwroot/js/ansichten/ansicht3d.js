@@ -125,7 +125,7 @@ function erstellen(behaelter, ansichtElement) {
   function kameraMerken() {
     const f = (v) => [v.x, v.y, v.z].map((x) => Math.round(x * 1000) / 1000);
     const blick = new THREE.Vector3().copy(steuerung.target).sub(kamera.position).normalize();
-    wurzel.dataset.kamera = JSON.stringify({ ziel: f(steuerung.target), lage: f(kamera.position), blick: f(blick) });
+    wurzel.dataset.kamera = JSON.stringify({ ziel: f(steuerung.target), lage: f(kamera.position), blick: f(blick), fov: kamera.fov });
   }
   function anfordern() {
     if (!geplant && !zerstoert) geplant = requestAnimationFrame(zeichnen);
@@ -156,6 +156,8 @@ function erstellen(behaelter, ansichtElement) {
     wurzel, dom: renderer.domElement, kamera, steuerung, anfordern,
     schnitt: () => schnitt,
     benutzt: { lesen: () => benutzt, setzen: (b) => { benutzt = b; } },
+    // war die Kamera vor dem Begehen noch nicht vom Benutzer bewegt (z. B. die Ansicht wurde erst für das Begehen geöffnet), passt sie sich wieder dem Modell an
+    beiBeendet: () => { if (!benutzt) zoomAlles(); },
   });
   const wuerfel = erzeugeWuerfel({
     wurzel, renderer, kamera, steuerung,
