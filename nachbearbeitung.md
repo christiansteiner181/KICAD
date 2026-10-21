@@ -79,8 +79,8 @@ lässt.
 ## N3 – Fehlende Bedienorte (aus dem Funktionsverzeichnis)
 
 **Eingetragen** vom Hauptlauf am 19.10.2026: Beim Funktionsverzeichnis für die Bedienungsanleitung fanden sich Funktionen,
-die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (erichte/anleitung/inventar-notizen.md, Abschnitt 3;
-erichte/anleitung/luecken.json). Gebaut in der Nacht 19./20.10.2026 auf Christians Auftrag «arbeite bis 08:00 durch».
+die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (`berichte/anleitung/inventar-notizen.md`, Abschnitt 3;
+`berichte/anleitung/luecken.json`). Gebaut in der Nacht 19./20.10.2026 auf Christians Auftrag «arbeite bis 08:00 durch».
 
 1. **Einlage- und Grundleitungspläne anlegen:** Knöpfe «Einlageplan» und «Grundleitungsplan» im Register Ansicht, Gruppe
    Erstellen (bzw. Flyout «Grundriss ▾»), rufen den Kernbefehl einlageplaene_anlegen (Dialog: Geschoss bzw. Bauteil
