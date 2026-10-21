@@ -380,3 +380,24 @@ des raumes, +1.5m in alle richtungen.» (Vorrat für Freitag; baut auf N13 auf.)
 - Die Kamera zeigt den Bereich ganz: Isometrie von vorne rechts, wie Revit «Auswahlbereich».
 - Mehrere gewählte Räume ergeben einen gemeinsamen Bereich.
 - Der Rand von 1,5 m ist eine Benutzereinstellung mit Vorgabe 1,5 m.
+
+## N15 – «Raum begehen» aus dem Grundriss (Ich-Perspektive)
+
+Christian 21.10.2026: «gleicher ablauf, Kontextm. "Raum begehen" ansicht wechselt in egoperspektive in den raum. position 1.7m über boden,
+zentrum raum. position kann mittels pfeiltaste geändert werden.» (Vorrat für Freitag.)
+
+**Fertig, wenn:**
+- Bei einem gewählten Raum bietet das Kontextmenü des Grundrisses «Raum begehen» an, mit eigenem Befehl wie bei N14.
+- Ein Klick wechselt in die 3D-Ansicht im Modus «Begehen», mit perspektivischer Kamera:
+  - Standort in der Mitte des Raums. Bei L-förmigen Räumen gilt ein Punkt, der sicher im Raum liegt (Schwerpunkt, sonst der innerste Punkt).
+  - Augenhöhe 1,7 m über OK Boden des Raums.
+  - Blick waagrecht, auf die Gebäudeausrichtung (N9).
+- **Bewegen:**
+  - Pfeil hoch/runter = vor/zurück, Pfeil links/rechts = drehen. Mit Umschalt schneller.
+  - Maus ziehen = umsehen.
+  - Bild auf/ab = Augenhöhe ändern.
+  - Die Höhe über Boden bleibt beim Gehen gleich, auch über Geschossgrenzen am selben Geschoss.
+  - **Annahmen, am Freitag mit Christian bestätigen:** die Tastenbelegung, und dass man durch Wände gehen kann (wie Revit, keine Kollision).
+- **Anzeige:** Raumname und Geschoss stehen eingeblendet.
+- **Verlassen:** Esc bzw. Haus-Knopf führt zurück zur normalen 3D-Ansicht.
+- **Navigationswürfel (N11) und Schnittbereich (N13)** bleiben nutzbar bzw. ausgeschaltet; das am Freitag festlegen.
