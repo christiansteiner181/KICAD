@@ -1650,7 +1650,7 @@ Christian, 21.10.2026: «Weg 1»: KICAD läuft in **Chrome am PC**, die Quest h�
 | Rechenregeln (Rig, Sticks, Snap-Turn, Teleport, Knopfzustand, Standort ohne Raum) | – | `ansichten/vr-logik.js` (rein, Node-getestet) |
 
 **Knopf:** sichtbar immer; **frei** nur, wenn `navigator.xr.isSessionSupported('immersive-vr')` wahr ist (geprüft beim Aufbau, bei `devicechange` und beim Klick auf den grauen Knopf). Sonst ausgegraut (`aria-disabled`, Deckkraft .55) mit dem Hinweis
-«Keine VR-Brille verbunden (Quest Link/Air Link starten)» (ohne `navigator.xr`: «Dieser Browser kann kein WebXR (Chrome am PC benutzen)»). In der Sitzung steht «VR beenden». Beide Knöpfe zeigen denselben Zustand (`data-vr-status`: aus, bereit, startet, aktiv).
+«Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)» (ohne `navigator.xr`: «Dieser Browser kann kein WebXR (Chrome am PC benutzen)»). In der Sitzung steht «VR beenden». Beide Knöpfe zeigen denselben Zustand (`data-vr-status`: aus, bereit, startet, aktiv).
 
 **Ablauf (`vr3d.js`, `starten`):** `navigator.xr.requestSession('immersive-vr', { requiredFeatures: ['local-floor'], optionalFeatures: ['hand-tracking'] })` (als Erstes, im Klick – WebXR verlangt die Benutzeraktion) →
 das Begehen am Bildschirm startet (Schnittbereich aus, Bauteile undurchsichtig; läuft es schon, bleibt es und gilt danach weiter) → die Kamera hängt in einem **Rig** (`THREE.Group` in der Szene), das auf **OK Boden** des Raums an den N15-Standpunkt gesetzt wird;

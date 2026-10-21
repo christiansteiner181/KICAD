@@ -10386,7 +10386,7 @@
             "Den Knopf «In VR begehen» ansehen: unten rechts in der 3D-Ansicht bzw. in der Einblendung oben links beim Begehen.",
             "Ist der Knopf grau: Quest Link starten, Seite neu laden (F5) und den Knopf anklicken (prüft erneut)."
           ],
-          "erwartung": "Solange keine Brille über Quest Link bzw. Air Link verbunden ist (oder die OpenXR-Runtime nicht «Meta Quest Link» ist), bleibt der Knopf «In VR begehen» ausgegraut und trägt den Hinweis «Keine VR-Brille verbunden (Quest Link/Air Link starten)». Sobald die Verbindung steht, wird er frei (ohne Neuladen, sonst mit F5). Ohne Gewähr: die Schritte beschreiben den üblichen Weg; Namen von Menüs der Meta-App können sich ändern.",
+          "erwartung": "Solange keine Brille über Quest Link bzw. Air Link verbunden ist (oder die OpenXR-Runtime nicht «Meta Quest Link» ist), bleibt der Knopf «In VR begehen» ausgegraut und trägt den Hinweis «Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)». Sobald die Verbindung steht, wird er frei (ohne Neuladen, sonst mit F5). Ohne Gewähr: die Schritte beschreiben den üblichen Weg; Namen von Menüs der Meta-App können sich ändern.",
           "pruefpunkte": [
             "Ohne verbundene Brille ist der Knopf grau und der Hinweis steht darunter.",
             "Mit laufendem Air Link und aktiver OpenXR-Runtime ist der Knopf frei.",

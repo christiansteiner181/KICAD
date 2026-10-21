@@ -1,4 +1,5 @@
-// «In VR begehen» (Nachbearbeitung N23): WebXR-Sitzung auf der Meta Quest über Air Link, KICAD läuft in Chrome am PC (OpenXR-Schnittstelle der Meta-Quest-Link-App).
+// «In VR begehen» (Nachbearbeitung N23): WebXR-Sitzung auf der Meta Quest – entweder über Quest Link/Air Link mit KICAD in Chrome am PC (OpenXR-Schnittstelle
+// der Meta-Link-App) oder im Browser der Quest selbst (adb reverse, Dialog «Quest verbinden»; der Weg für PCs, die Link ablehnen).
 // Diese Datei hängt die Sitzung an die vorhandene 3D-Ansicht (three, r160, WebXRManager des Renderers) und ans Begehen am Bildschirm (begehen3d.js):
 //   Knopf «In VR begehen» (3D-Ansicht und Einblendung des Begehens) → immersive-vr mit Referenzraum local-floor → Begehen startet (Schnittbereich aus, Bauteile
 //   undurchsichtig, N22 mit der Kopfposition) → die Kamera hängt in einem Rig (Gruppe), das auf OK Boden an den Standpunkt gesetzt wird → Controller bzw. Hände bewegen das Rig
@@ -65,7 +66,7 @@ export function erzeugeVr(o) {
     b.textContent = z.text;
     b.setAttribute('aria-disabled', z.deaktiviert ? 'true' : 'false');
     b.classList.toggle('d3-vr-aus', z.deaktiviert);
-    b.title = z.hinweis || (sitzung ? 'Die VR-Sitzung beenden' : 'Den Raum mit der VR-Brille begehen (Meta Quest über Air Link)');
+    b.title = z.hinweis || (sitzung ? 'Die VR-Sitzung beenden' : 'Den Raum mit der VR-Brille begehen');
     k.querySelector('.d3-vr-hinweis').textContent = z.hinweis;
     k.dataset.vrStatus = sitzung ? 'aktiv' : startet ? 'startet' : z.deaktiviert ? 'aus' : 'bereit';
   }

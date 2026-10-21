@@ -38,7 +38,7 @@ test('Knopf: ohne WebXR und ohne Brille ausgegraut mit Hinweis, mit Brille berei
   assert.equal(kein.deaktiviert, true); assert.equal(kein.hinweis, VR_TEXT.keinBrowser);
   const ohne = knopfZustand({ xrVorhanden: true, unterstuetzt: false });
   assert.equal(ohne.deaktiviert, true);
-  assert.equal(ohne.hinweis, 'Keine VR-Brille verbunden (Quest Link/Air Link starten)');
+  assert.equal(ohne.hinweis, 'Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)');
   assert.equal(ohne.text, 'In VR begehen');
   assert.equal(knopfZustand({ xrVorhanden: true, unterstuetzt: null }).deaktiviert, true, 'noch nicht geprüft: nicht anklickbar');
   const gut = knopfZustand({ xrVorhanden: true, unterstuetzt: true });

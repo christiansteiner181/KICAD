@@ -38,7 +38,7 @@ export const VR_TEXT = Object.freeze({
   knopf: 'In VR begehen',
   beenden: 'VR beenden',
   startet: 'VR startet …',
-  keineBrille: 'Keine VR-Brille verbunden (Quest Link/Air Link starten)',
+  keineBrille: 'Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)',
   keinBrowser: 'Dieser Browser kann kein WebXR (Chrome am PC benutzen)',
 });
 

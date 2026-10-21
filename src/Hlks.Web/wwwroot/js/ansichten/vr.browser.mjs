@@ -204,7 +204,7 @@ try {
   const k0 = await knopfZustand(HAUPT);
   pruef(k0 && k0.sichtbar, 'der Knopf steht in der 3D-Ansicht (unten rechts)', JSON.stringify(k0));
   pruef(k0.status === 'aus' && k0.aus === 'true' && k0.text === 'In VR begehen', `ohne Brille ausgegraut (Status «${k0.status}»)`, JSON.stringify(k0));
-  pruef(k0.hinweis === 'Keine VR-Brille verbunden (Quest Link/Air Link starten)' && k0.titel === k0.hinweis, `Hinweis: «${k0.hinweis}»`, JSON.stringify(k0));
+  pruef(k0.hinweis === 'Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)' && k0.titel === k0.hinweis, `Hinweis: «${k0.hinweis}»`, JSON.stringify(k0));
   const kStil = await ausw(`return Number(getComputedStyle(document.querySelector('${HAUPT} .d3-vr-knopf')).opacity);`);
   pruef(kStil < 0.8, `optisch ausgegraut (Deckkraft ${kStil})`);
   const bildAus = await speichern('n23-knopf-ausgegraut', { x: leinB.x + leinB.width - 330, y: leinB.y + leinB.height - 70, width: 330, height: 70 });
