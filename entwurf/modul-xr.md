@@ -31,6 +31,7 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ### XR-C – Tablet an der linken Hand
 - **Stand:** gebaut 21.10.2026 (hlks-modul), Brillentest offen. Tablet im Hologramm-Stil mit Geste bzw. Taste Y links, Eigenschaften, Rückgängig/Wiederholen, Augenhöhe, Schnittbereich, IFC, «VR beenden», Messwerkzeug mit Fang und Lot; Platzhalter «folgt».
+- Wischgeste löscht die getroffene Masslinie (21.10.2026, hlks-modul), Brillentest offen.
 - Die linke Hand öffnen und auf die Handfläche schauen öffnet ein Tablet mit interaktiver Bedienung und Werkzeugen. Bedient wird es mit dem
   Zeigefinger der rechten Hand; Hand schliessen bzw. wegdrehen schliesst es.
 - Inhalt (Vorschlag, am Freitag festlegen):

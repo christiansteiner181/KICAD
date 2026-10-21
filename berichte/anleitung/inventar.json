@@ -10507,7 +10507,8 @@
             "Tippen: mit der Spitze des rechten Zeigefingers die Taste berühren bzw. mit dem rechten Zeigestrahl zielen und Abzug drücken. Die Taste leuchtet kurz auf.",
             "Tasten: Rückgängig, Wiederholen, Augenhöhe + und −, Schnittbereich, IFC-Unterlage, VR beenden. «Familie platzieren», «Problem markieren» und «Raum wechseln» sind ausgegraut («folgt»).",
             "Messen: «Messen» tippen. Mit dem rechten Zeigefinger (Pinch zum Setzen) bzw. mit Strahl und Abzug zwei Punkte setzen. Die Punkte fangen an Ecken, Kanten, Leitungsachsen, Anschlüssen und Flächen; das Fangsymbol zeigt, woran.",
-            "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt auf.",
+            "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt alle auf.",
+            "Einzelne Masslinie löschen: mit der offenen Hand schnell und waagrecht durch die Linie wischen (wie an der Wandtafel). Nur die getroffene Linie leuchtet kurz auf und verschwindet; ein Wisch ins Leere tut nichts. Mit der Faust, im Pinch oder am Tablet wischt es nicht.",
             "Hand schliessen oder wegdrehen: Das Tablet schliesst sich."
           ],
           "erwartung": "Das Tablet ist eine durchscheinende Hologramm-Fläche (dunkler Grund hinter der Schrift, Cyan-Linien, leuchtender Rand), 14 cm über der linken Hand, dem Kopf zugewandt. Es zeigt oben die Eigenschaften des gewählten bzw. gegriffenen Elements. Rückgängig und Wiederholen wirken wie am PC. Die Messungen ändern das Modell nicht.",
@@ -10519,6 +10520,7 @@
             "Rückgängig nimmt das zuletzt Verschobene zurück.",
             "Messen: Fangsymbol und Name erscheinen am Leitungsende, an Ecken und auf Flächen; Abstand und dx/dy/dz stimmen mit dem PC überein.",
             "Lot zur Fläche: Abstand zur Decke lotrecht, unabhängig davon, wo auf der Decke man den Punkt setzt.",
+            "Wischgeste: Mit der offenen Hand schnell (mindestens 15 cm in 0,4 s) und waagrecht durch eine stehende Masslinie wischen löscht genau diese Messung; mehrere getroffene Linien verschwinden zusammen. Ein Wisch ins Leere, eine langsame oder senkrechte Bewegung, die Faust und der Pinch löschen nichts. Schwellen am Brillentest nachstellen.",
             "Ohne Handverfolgung öffnet Taste Y links das Tablet.",
             "Tablet steht ruhig, wenn die Hand still gehalten wird; Hände ausgeblendet, Fingerpunkt sichtbar. Bei grösseren Bewegungen (über etwa 1,5 cm) folgt das Tablet weich; schliesst es, sind die Hände wieder da."
           ],

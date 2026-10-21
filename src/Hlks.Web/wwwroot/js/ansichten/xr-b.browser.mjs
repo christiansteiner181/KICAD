@@ -479,6 +479,38 @@ try {
   const lotM = dL2.messungen[1];
   const erwLot = deckeUnten - 1200;
   pruef(lotM && lotM.typ === 'lot' && nahe(lotM.abstandMm, erwLot, 15), `Lot zur Decke: ${lotM?.abstandMm} mm (unabhängig ${erwLot} mm), zweiter Punkt ${sUnten?.art}`, JSON.stringify(dL2.messungen));
+  // ---- Wischgeste (21.10.2026): offene rechte Hand wischt schnell und waagrecht durch eine stehende Masslinie → genau diese Messung verschwindet
+  abschnitt('XR-C Wischgeste: durch eine Masslinie wischen löscht genau diese Messung; Wisch ins Leere tut nichts');
+  await ausw(`window.__wische = async (seite, a, b, ms) => { const n = Math.max(2, Math.round(ms / 16)); for (let i = 0; i <= n; i++) { const k = i / n; window.__haende[seite] = { art: 'hand', gelenke: window.__hand(seite, true, { x: a.x + (b.x - a.x) * k, y: a.y + (b.y - a.y) * k, z: a.z + (b.z - a.z) * k }, false, false) }; await new Promise((r) => setTimeout(r, 16)); } return 1; }; return 1;`);
+  const dW0 = await xrDaten();
+  const mAbstand = dW0.messungen.find((q) => q.typ === 'abstand'), mLot = dW0.messungen.find((q) => q.typ === 'lot');
+  pruef(dW0.messungen.length === 2 && mAbstand && mLot, 'zwei Messungen stehen (Abstand und Lot)');
+  const tabM = dW0.tablet.lage.mitte;
+  const weitWeg = (p) => Math.hypot(p.x - tabM.x, p.y - tabM.y, p.z - tabM.z) > 0.35;
+  const lotMitte = { x: (mLot.a.x + mLot.b.x) / 2, y: (mLot.a.y + mLot.b.y) / 2, z: (mLot.a.z + mLot.b.z) / 2 };
+  const wischen = async (a, b, ms = 300) => { await ausw(`window.__haende.right = { art: 'hand', gelenke: window.__hand('right', true, ${JSON.stringify(a)}, false, false) }; return 1;`); await warte(700); await ausw(`return window.__wische('right', ${JSON.stringify(a)}, ${JSON.stringify(b)}, ${ms});`); await warte(350); };
+  // Wisch ins Leere: 80 cm südlich aller Linien, 50 cm über der Abstandslinie
+  const zLeer = Math.max(mAbstand.a.z, mAbstand.b.z, mLot.a.z, mLot.b.z) + 0.8;
+  const leerA = { x: lotMitte.x - 0.3, y: mAbstand.a.y + 0.5, z: zLeer }, leerB = { x: lotMitte.x + 0.3, y: mAbstand.a.y + 0.5, z: zLeer };
+  await wischen(leerA, leerB);
+  const dLeer = await xrDaten();
+  pruef(dLeer.wisch.wische >= 1 && dLeer.messungen.length === 2 && dLeer.wisch.geloescht === 0, `Wisch ins Leere: erkannt (${dLeer.wisch.wische}), beide Messungen bleiben`, JSON.stringify(dLeer.wisch));
+  // Wisch durch das Lot (senkrechte Linie, in halber Höhe quer durch): nur das Lot verschwindet
+  const lotA = { x: lotMitte.x - 0.3, y: lotMitte.y, z: lotMitte.z }, lotB = { x: lotMitte.x + 0.3, y: lotMitte.y, z: lotMitte.z };
+  pruef(weitWeg(lotA) && weitWeg(lotB) && weitWeg(lotMitte), `Prüfweg liegt ausserhalb der Tablet-Nähe (Lot-Mitte ${Math.hypot(lotMitte.x - tabM.x, lotMitte.y - tabM.y, lotMitte.z - tabM.z).toFixed(2)} m von der Tablet-Mitte)`);
+  await wischen(lotA, lotB);
+  const dTr = await xrDaten();
+  pruef(dTr.messungen.length === 1 && dTr.messungen[0].typ === 'abstand' && dTr.wisch.geloescht === 1, `Wisch durch das Lot: genau diese Messung weg, die Abstandsmessung bleibt (${dTr.messungen.map((q) => q.typ)})`, JSON.stringify(dTr.wisch));
+  await bis((d) => d?.wisch?.ausblendend === 0, 'Ausblenden beendet', 3000);
+  pruef(true, 'die weggewischte Linie blendet in 0.2 s aus und wird abgebaut');
+  // Bei der Hand an der Faust wird nichts gelöscht: schneller Strich mit geschlossener Hand durch die Abstandslinie
+  const abM = { x: (mAbstand.a.x + mAbstand.b.x) / 2, y: (mAbstand.a.y + mAbstand.b.y) / 2, z: (mAbstand.a.z + mAbstand.b.z) / 2 };
+  const abA = { x: abM.x, y: abM.y, z: abM.z + 0.3 }, abB = { x: abM.x, y: abM.y, z: abM.z - 0.3 };
+  await ausw(`window.__haende.right = { art: 'hand', gelenke: window.__hand('right', false, ${JSON.stringify(abA)}, false, false) }; return 1;`); await warte(600);
+  await ausw(`const a = ${JSON.stringify(abA)}, b = ${JSON.stringify(abB)}; for (let i = 0; i <= 19; i++) { const k = i / 19; window.__haende.right = { art: 'hand', gelenke: window.__hand('right', false, { x: a.x + (b.x - a.x) * k, y: a.y, z: a.z + (b.z - a.z) * k }, false, false) }; await new Promise((r) => setTimeout(r, 16)); } return 1;`);
+  await warte(300);
+  pruef((await xrDaten()).messungen.length === 1, 'Faust (geschlossene Hand) wischt nicht: die Abstandslinie bleibt');
+  await fingerAuf(p1); await warte(300);
   const logL = (await logBefehle()).length;
   await tippe('messungenLoeschen');
   await bis((d) => d?.messungen?.length === 0, 'Messungen gelöscht', 4000);
