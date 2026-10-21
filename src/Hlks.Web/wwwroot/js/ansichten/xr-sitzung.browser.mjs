@@ -315,7 +315,7 @@ try {
   pruef(gross.b / 50 <= platte.b && gross.t / 50 <= platte.t, 'bei 1:50 passt das Modell auf die nutzbare Platte (1.4 × 0.8 m)');
   const sn1 = await schnappschuss();
   pruef(sn1.raumKind && sn1.ifcAn === false, `IFC-Unterlage vorgabemässig aus; Raumgruppe in der Szene (${sn1.sichtbar.join(', ')})`);
-  pruef(sn1.bg === 0x020306 && sn1.fog === true, 'dunkler Hintergrund und Nebel (Dunst)');
+  pruef(sn1.bg === 0x0d1219 && sn1.fog === true, 'dunkler Hintergrund und Nebel (Dunst)');
   const ids = await tastenIds();
   const erwartet = ['alle', ...geschosse.map((g) => 'g:' + g.kz), 'decke', 'zuruecksetzen', 'ifc', 'raum', 'ende'];
   pruef(JSON.stringify([...ids].sort()) === JSON.stringify([...erwartet].sort()), `Tablet zeigt die Etagen aus dem Modell: ${ids.join(', ')}`, JSON.stringify(erwartet));

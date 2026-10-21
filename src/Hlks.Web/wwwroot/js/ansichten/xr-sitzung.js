@@ -22,6 +22,8 @@ const SYNC_S = 0.5;          // so oft werden die Clipping-Ebenen an die Materia
 const ETAGEN_S = 1.5;        // so oft wird die Etagenliste aus dem Modell neu gelesen
 const rund = (x, n = 4) => { const f = 10 ** n; return Math.round(x * f) / f; };
 const ID_HALTER = 'vr-sitzung';
+/** Hintergrund des Sitzungsraums (dunkles Blaugrau statt fast schwarz; Christian 21.10.2026: «etwas weniger hart»). */
+export const RAUM_HINTERGRUND = 0x0d1219;
 
 /** Geschossdaten aus dem Modell der Oberfläche: dieselbe Quelle wie «Auf Geschoss» (derKlasse('Geschoss'), werte.kote/hoehe) und die Decken (Oberkante aus den Punkten, Dicke). */
 function elementeLesen(o) {
@@ -78,10 +80,11 @@ export function erzeugeSitzung(o) {
     g.name = ID_HALTER;
     const entsorgen = [];
     const mat = (m) => { entsorgen.push(m); return m; };
-    // Hülle: Wände und Decke mattschwarz, Boden dunkel und glänzend (leicht durchscheinend, darunter spiegeln sich die Lichtlinien)
-    const wand = mat(new THREE.MeshStandardMaterial({ color: 0x07080a, roughness: 0.95, metalness: 0, side: THREE.BackSide }));
-    const decke = mat(new THREE.MeshStandardMaterial({ color: 0x050608, roughness: 0.95, metalness: 0, side: THREE.BackSide }));
-    const boden = mat(new THREE.MeshStandardMaterial({ color: 0x06080b, roughness: 0.1, metalness: 0.75, transparent: true, opacity: 0.8, side: THREE.BackSide }));
+    // Hülle: Wände und Decke matt anthrazit-blau, Boden dunkel und glänzend (leicht durchscheinend, darunter spiegeln sich die Lichtlinien).
+    // Christian 21.10.2026 zum ersten Prüfbild: «ev. etwas weniger hart. aber tron optik ist gut» → nicht mehr fast schwarz, Linien und Kontrast gedämpft.
+    const wand = mat(new THREE.MeshStandardMaterial({ color: 0x1b222c, roughness: 0.95, metalness: 0, side: THREE.BackSide }));
+    const decke = mat(new THREE.MeshStandardMaterial({ color: 0x151b24, roughness: 0.95, metalness: 0, side: THREE.BackSide }));
+    const boden = mat(new THREE.MeshStandardMaterial({ color: 0x111820, roughness: 0.15, metalness: 0.6, transparent: true, opacity: 0.85, side: THREE.BackSide }));
     const huelle = new THREE.Mesh(new THREE.BoxGeometry(RAUM.breite, RAUM.hoehe, RAUM.tiefe), [wand, wand, decke, boden, wand, wand]);   // +x, −x, +y, −y, +z, −z
     huelle.position.set(0, RAUM.hoehe / 2, -(RAUM.tiefe / 2 - RAUM.hinten));
     huelle.name = 'sitzung-huelle';
@@ -96,7 +99,7 @@ export function erzeugeSitzung(o) {
       linien.push([-hx + 0.01, y, zm, 0.02, 0.025, RAUM.tiefe - 0.02], [hx - 0.01, y, zm, 0.02, 0.025, RAUM.tiefe - 0.02]);
     }
     for (const x of [-2.5, 2.5]) linien.push([x, 1.2, z0 + 0.01, 0.03, 2.2, 0.02]);                                               // zwei senkrechte Schlitze vorn
-    const lichtMat = mat(new THREE.MeshBasicMaterial({ color: 0xeaf6ff, side: THREE.DoubleSide }));
+    const lichtMat = mat(new THREE.MeshBasicMaterial({ color: 0xb8dff2, transparent: true, opacity: 0.8, side: THREE.DoubleSide }));
     const lichtGeo = new THREE.BoxGeometry(1, 1, 1);
     entsorgen.push(lichtGeo);
     const lichtMesh = (spiegel) => {
@@ -222,9 +225,9 @@ export function erzeugeSitzung(o) {
     raum.position.set(kopf.x, boden, kopf.z);
     raum.rotation.set(0, blick - Math.PI / 2, 0);
     szene.add(raum);
-    szene.background = new THREE.Color(0x020306);
-    szene.fog = new THREE.Fog(0x04060a, 3.5, 14);
-    for (const { c } of gespeichert.lichter) c.intensity *= c.isAmbientLight ? 0.45 : 0.6;
+    szene.background = new THREE.Color(RAUM_HINTERGRUND);
+    szene.fog = new THREE.Fog(0x111821, 4.5, 18);
+    for (const { c } of gespeichert.lichter) c.intensity *= c.isAmbientLight ? 0.65 : 0.8;
     renderer.localClippingEnabled = true;
     // Modell auf den Tisch
     lage = einpassen(groesse);
