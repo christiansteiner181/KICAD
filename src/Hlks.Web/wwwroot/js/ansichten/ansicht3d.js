@@ -29,6 +29,8 @@ import { erzeugeWuerfel } from './wuerfel.js';
 import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen, zielWinkel, START_VORGABE } from './wuerfel-logik.js';
 import { erzeugeSchnittbereich } from './schnittbereich3d.js';
 import { erzeugeBegehen } from './begehen3d.js';
+import { erzeugeVr } from './vr3d.js';
+import { standortAusKamera } from './vr-logik.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
 
@@ -62,6 +64,7 @@ function erstellen(behaelter, ansichtElement) {
   let huelleGruppe = null;                    // three-Gruppe der Hüllflächen (ausserhalb von «modell», zählt nicht zum Einpassen)
   let huelleUmriss = null;                    // Hervorhebung der angeklickten Raumgrenze
   let schnitt = null;                         // 3D-Schnittbereich (schnittbereich3d.js)
+  let vr = null;                              // N23: «In VR begehen» (vr3d.js)
 
   behaelter.innerHTML = '<div class="d3-wurzel"><div class="d3-tip" hidden></div><div class="d3-hinweis" hidden></div><div class="d3-legende hl-feldbox" hidden></div><div class="d3-info hl-feldbox" hidden></div><div class="d3-bedienung" title="Bedienung wie in Revit">Links drehen · Mitte verschieben · Umschalt + Mitte drehen · Rad zoomen · Doppelklick Mitte: alles zeigen</div></div>';
   const wurzel = behaelter.querySelector('.d3-wurzel');
@@ -115,7 +118,7 @@ function erstellen(behaelter, ansichtElement) {
   // ---------- Rendern bei Bedarf ----------
   function zeichnen() {
     geplant = 0;
-    if (zerstoert) return;
+    if (zerstoert || vr?.aktiv) return;   // N23: in VR zeichnet die Schleife von vr3d.js (Kopfpose je Bild), nicht auf Anforderung
     schnitt?.vorRender();
     renderer.render(szene, kamera);
     wuerfel?.zeichnen();
@@ -159,10 +162,27 @@ function erstellen(behaelter, ansichtElement) {
     benutzt: { lesen: () => benutzt, setzen: (b) => { benutzt = b; } },
     // war die Kamera vor dem Begehen noch nicht vom Benutzer bewegt (z. B. die Ansicht wurde erst für das Begehen geöffnet), passt sie sich wieder dem Modell an
     beiBeendet: () => { if (!benutzt) zoomAlles(); },
+    vr: { aktiv: () => !!vr?.aktiv, beenden: () => vr?.beenden(), kopf: () => vr?.kopf() ?? null, knopf: () => vr?.knopf() },   // N23
   });
+  // N23: «In VR begehen» (vr3d.js) – Meta Quest über Air Link, WebXR in Chrome; startet das Begehen und hängt die Kamera in ein Rig
+  const begehenEnde = () => { if (vr?.aktiv) vr.beenden(); else begehen.beenden(); };   // in VR beendet jedes Ende des Begehens zuerst die Sitzung
+  vr = erzeugeVr({
+    wurzel, renderer, kamera, szene, modell, begehen, anfordern,
+    // ohne Raum: am aktuellen Kamerastandpunkt, auf der tiefsten Stelle des Modells
+    standortAusKamera: () => {
+      const box = new THREE.Box3().setFromObject(modell);
+      return standortAusKamera({ position: kamera.position, ziel: steuerung.target }, box.isEmpty() ? steuerung.target.y : box.min.y);
+    },
+    meldung: (text, art) => { import('../oberflaeche/dialoge.js').then(({ meldung }) => meldung(text, art)).catch(() => {}); },
+    vorRender: () => schnitt?.vorRender(),
+    beiBeendet: () => groesseAnpassen(),
+  });
+  const vrKnopf = vr.knopf();
+  vrKnopf.classList.add('d3-vr-haupt');
+  wurzel.appendChild(vrKnopf);
   const wuerfel = erzeugeWuerfel({
     wurzel, renderer, kamera, steuerung,
-    begehen: { aktiv: () => begehen.aktiv, beenden: () => begehen.beenden() },
+    begehen: { aktiv: () => begehen.aktiv, beenden: begehenEnde },
     anfordern, beiBenutzt: () => { benutzt = true; },
     ausrichtungGrad,
     nordwinkelGrad: () => nordwinkelGrad(derKlasse('Projektinformation')[0]),
@@ -222,7 +242,7 @@ function erstellen(behaelter, ansichtElement) {
 
   // ---------- Grösse ----------
   function groesseAnpassen() {
-    if (zerstoert) return;
+    if (zerstoert || vr?.aktiv) return;   // N23: in VR bestimmt die Brille die Grösse (danach ruft vr3d.js dies wieder auf)
     const W = wurzel.clientWidth, H = wurzel.clientHeight;
     if (W < 2 || H < 2) return;
     if (renderer.getPixelRatio() !== pixeldichte()) renderer.setPixelRatio(pixeldichte());   // Fenster auf anderen Bildschirm gezogen, Zoom
@@ -308,6 +328,7 @@ function erstellen(behaelter, ansichtElement) {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
         h.add(netzMesh(g, n.farbe, n.deckkraft));
         schnitt?.neueObjekte();
+        vr?.netzeAnwenden();   // N23: in VR folgt das neue Netz der Wahl «IFC-Unterlage zeigen»
         if (!benutzt) zoomAlles(); else anfordern();
       });
     }
@@ -420,7 +441,7 @@ function erstellen(behaelter, ansichtElement) {
   /** N14 «Raum im 3D zeigen»: den ganzen Schnittbereich im Bild, Isometrie von vorne rechts oben (unabhängig von der Startansicht). */
   function zeigeBereich() {
     if (zerstoert) return;
-    if (begehen.aktiv) begehen.beenden();
+    if (begehen.aktiv) begehenEnde();
     zoomAlles(zielWinkel(START_VORGABE, ausrichtungGrad() * Math.PI / 180));
     benutzt = true;       // bleibt so stehen: weder das erste Laden noch eine Grössenänderung stellt die Kamera neu ein
     hatGezoomt = true;
@@ -655,6 +676,10 @@ function erstellen(behaelter, ansichtElement) {
     begehen: (standort, augenhoeheMm = null) => begehen.starten(standort, augenhoeheMm),
     beendeBegehen: () => begehen.beenden(),
     get begehenAktiv() { return begehen.aktiv; },
+    /** N23: «In VR begehen» (Meta Quest über Air Link): die VR-Steuerung der Ansicht (vr3d.js: knopf, pruefen, starten, beenden, aktiv, api) */
+    get vr() { return vr; },
+    /** N23: VR starten, am Standort der Abfrage raum_begehen (sonst am Standort des Begehens bzw. der Kamera); nur aus einer Benutzeraktion (Klick). */
+    begehenVr: (standort = null) => vr.starten(standort),
     /** Element, das an dieser Bildschirmstelle gewählt würde (clientX, clientY), sonst null – weggeschnittene Teile zählen nicht (Kontrolle für Browser-Tests). */
     trefferBei: (clientX, clientY) => trefferId({ clientX, clientY }),
     /** Darstellung der Materialien je Körper { id: { ebene, m: [{ deckkraft, transparent, depthWrite, geclippt }] } } (Kontrolle für Browser-Tests, N22). */
@@ -675,6 +700,7 @@ function erstellen(behaelter, ansichtElement) {
       window.removeEventListener('hlks-design', designGeaendert);
       beobachter?.disconnect();
       steuerung.removeEventListener('change', anfordern);
+      vr?.zerstoeren();
       begehen.zerstoeren();
       wuerfel.zerstoeren();
       schnitt?.zerstoeren();

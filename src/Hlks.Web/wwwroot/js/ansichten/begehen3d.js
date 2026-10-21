@@ -17,14 +17,18 @@ const eingabeFeld = (t) => t && (t.isContentEditable || /^(INPUT|TEXTAREA|SELECT
 
 /**
  * o: { wurzel, dom (Leinwand), kamera, steuerung, anfordern(), schnitt() → Schnittbereich | null, benutzt: { lesen(), setzen(b) }, beiBeendet?(),
- *      bauteile?() → Iterable<Körpergruppe> (N22: Wände, Decken usw. sind beim Begehen undurchsichtig, durchscheinend nur im Durchgang) }
- * Rückgabe { starten(standort, augenhoeheMm?), beenden(), neueObjekte(), aktiv, zustand, zerstoeren() }
+ *      bauteile?() → Iterable<Körpergruppe> (N22: Wände, Decken usw. sind beim Begehen undurchsichtig, durchscheinend nur im Durchgang),
+ *      vr?: { aktiv(), beenden(), kopf() → {x, y, z} | null, knopf?() → Element } (N23: in VR gilt der Kopf statt der Kamera für den Durchgang; Tasten und Maus ruhen,
+ *      Esc beendet VR; der Knopf «In VR begehen» steht in der Einblendung) }
+ * Rückgabe { starten(standort, augenhoeheMm?), beenden(), neueObjekte(), pruefenDurchgang(), aktiv, zustand, standort, zerstoeren() }
  */
 export function erzeugeBegehen(o) {
   const { wurzel, dom, kamera, steuerung } = o;
+  // N23: in VR zählt die Kopfposition (vr3d.js), sonst die Kamera
+  const durchgangKamera = o.vr ? { get position() { return o.vr.aktiv() ? (o.vr.kopf() ?? kamera.position) : kamera.position; } } : kamera;
   // N22: Durchgang – Bauteile undurchsichtig, durchscheinend nur näher als 500 mm (durchgang3d.js); Kontrolle für Browser-Tests in data-durchgang
   const durchgang = o.bauteile ? erzeugeDurchgang({
-    bauteile: o.bauteile, kamera, anfordern: () => o.anfordern(),
+    bauteile: o.bauteile, kamera: durchgangKamera, anfordern: () => o.anfordern(),
     beiAenderung: (z) => { if (z) wurzel.dataset.durchgang = JSON.stringify(z); else delete wurzel.dataset.durchgang; },
   }) : null;
   let aktiv = false;
@@ -47,6 +51,8 @@ export function erzeugeBegehen(o) {
     hud.setAttribute('role', 'status');
     hud.innerHTML = '<div class="d3-begehen-titel"></div><div class="d3-begehen-zeile d3-begehen-geschoss"></div><div class="d3-begehen-zeile d3-begehen-augen"></div>'
       + `<table class="d3-begehen-tasten">${TASTENHILFE.map(([t, w]) => `<tr><th>${esc(t)}</th><td>${esc(w)}</td></tr>`).join('')}</table>`;
+    const vrKnopf = o.vr?.knopf?.();   // N23: «In VR begehen» (nimmt Mausklicks an, die Einblendung selbst nicht)
+    if (vrKnopf) hud.appendChild(vrKnopf);
     wurzel.appendChild(hud);
     wurzel.classList.add('d3-begehen-an');
   }
@@ -93,6 +99,10 @@ export function erzeugeBegehen(o) {
 
   function beiTasteUnten(e) {
     if (!aktiv || !sichtbar() || eingabeFeld(e.target)) return;
+    if (o.vr?.aktiv()) {   // N23: in VR ruhen die Tasten, Esc beendet die VR-Sitzung (das Begehen am Bildschirm bleibt)
+      if (tastenAktion(e.code) === 'ende') { e.preventDefault(); e.stopImmediatePropagation(); if (!e.repeat) o.vr.beenden(); }
+      return;
+    }
     umschalt = e.shiftKey;
     if (e.ctrlKey || e.metaKey || e.altKey) return;
     const a = tastenAktion(e.code);
@@ -118,7 +128,7 @@ export function erzeugeBegehen(o) {
 
   // ---------------------------------------------------------------------------------------------- Maus
   function beiMausUnten(e) {
-    if (!aktiv || (e.button !== 0 && e.button !== 1) || zeiger) return;
+    if (!aktiv || o.vr?.aktiv() || (e.button !== 0 && e.button !== 1) || zeiger) return;
     if (e.button === 1) e.preventDefault();
     zeiger = { id: e.pointerId, taste: e.button, x: e.clientX, y: e.clientY };
     try { dom.setPointerCapture(e.pointerId); } catch { /* egal */ }
@@ -224,8 +234,11 @@ export function erzeugeBegehen(o) {
     starten, beenden,
     /** Es sind Körper dazugekommen oder weggefallen (N22). */
     neueObjekte: () => durchgang?.neueObjekte(),
+    /** N23: Abstand zu den Bauteilen neu bewerten (in VR jedes Bild, mit der Kopfposition; ohne Bewegung wird nichts gerechnet). */
+    pruefenDurchgang: () => durchgang?.pruefen(),
     get aktiv() { return aktiv; },
     get zustand() { return zustand; },
+    get standort() { return standort; },
     zerstoeren() {
       if (aktiv) { aktiv = false; schleifeStoppen(); loesen(); hud?.remove(); hud = null; durchgang?.beenden(); }
     },

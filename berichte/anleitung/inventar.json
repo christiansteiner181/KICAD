@@ -10369,6 +10369,87 @@
           "hinweis": "Ohne Einstellung gilt 1700 mm. Die Abfrage raum_begehen nimmt «augenhoehe» als Parameter (KI)."
         },
         {
+          "id": "zb-n23-vr-einrichten",
+          "titel": "VR einrichten: Meta Quest per Air Link mit Chrome (N23)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Am PC: Meta-Quest-Link-App und Chrome; in KICAD: 3D-Ansicht bzw. Einblendung des Begehens"
+          },
+          "schritte": [
+            "Am PC die Meta-Quest-Link-App installieren und mit der Quest anmelden. PC und Quest im selben WLAN (5 GHz); der PC wenn möglich per Kabel am Router.",
+            "In der App unter «Einstellungen › Allgemein» bei «OpenXR-Runtime» die Option «Meta Quest Link» als aktiv festlegen.",
+            "Auf der Quest in den Schnelleinstellungen «Quest Link» bzw. «Air Link» wählen, den PC auswählen und «Starten».",
+            "In Chrome KICAD über http://localhost:<Port> öffnen (WebXR geht nur über localhost oder https, nicht über den Rechnernamen) und eine 3D-Ansicht öffnen.",
+            "Den Knopf «In VR begehen» ansehen: unten rechts in der 3D-Ansicht bzw. in der Einblendung oben links beim Begehen.",
+            "Ist der Knopf grau: Quest Link starten, Seite neu laden (F5) und den Knopf anklicken (prüft erneut)."
+          ],
+          "erwartung": "Solange keine Brille über Quest Link bzw. Air Link verbunden ist (oder die OpenXR-Runtime nicht «Meta Quest Link» ist), bleibt der Knopf «In VR begehen» ausgegraut und trägt den Hinweis «Keine VR-Brille verbunden (Quest Link/Air Link starten)». Sobald die Verbindung steht, wird er frei (ohne Neuladen, sonst mit F5). Ohne Gewähr: die Schritte beschreiben den üblichen Weg; Namen von Menüs der Meta-App können sich ändern.",
+          "pruefpunkte": [
+            "Ohne verbundene Brille ist der Knopf grau und der Hinweis steht darunter.",
+            "Mit laufendem Air Link und aktiver OpenXR-Runtime ist der Knopf frei.",
+            "KICAD ist über localhost geöffnet (nicht über den Rechnernamen).",
+            "Chrome fragt beim ersten Start einmal um die Erlaubnis für VR."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Knopf «In VR begehen» ausgegraut mit Hinweis (Prüfbild n23-knopf-ausgegraut.png aus vr.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/vr3d.js (knopf, pruefen)",
+            "src/Hlks.Web/wwwroot/js/ansichten/vr-logik.js (knopfZustand, sitzungsOptionen)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt N23, Einrichtung)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen. Das Programmfenster «ohne Adressleiste» ist je nach Browser nicht Chrome: dann KICAD zusätzlich im Chrome-Tab öffnen. Handverfolgung: in den Quest-Einstellungen einschalten; ob sie über Air Link in Chrome ankommt, ist offen (data-vr.haende am .d3-wurzel)."
+        },
+        {
+          "id": "zb-n23-vr-bedienen",
+          "titel": "In VR begehen: gehen, drehen, teleportieren (N23)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "3D-Schnitt",
+            "knopf": "Raum begehen",
+            "kuerzel": "",
+            "sonst": "Knopf «In VR begehen» in der Einblendung des Begehens oder unten rechts in der 3D-Ansicht"
+          },
+          "schritte": [
+            "Einen Raum begehen (Grundriss, Rechtsklick auf den Raum, «Raum begehen») und in der Einblendung «In VR begehen» klicken. Ohne Raum geht es auch aus der 3D-Ansicht (Knopf unten rechts): dann steht man am bisherigen Kamerastandpunkt.",
+            "Brille aufsetzen: man steht im Raum am Standpunkt, Blick wie beim Begehen am Bildschirm.",
+            "Linker Stick: gehen in Blickrichtung (vor, zurück, seitlich). Stick drücken: dreimal so schnell.",
+            "Rechter Stick nach rechts bzw. links: in 30°-Schritten drehen.",
+            "Abzug halten: ein Strahl zeigt auf den Boden; Abzug loslassen: man springt dorthin. Mit der Hand (Handverfolgung): Daumen und Zeigefinger zusammenführen und auf den Boden zeigen.",
+            "Taste A (rechter Controller): IFC-Unterlage ein- oder ausblenden.",
+            "Beenden: Quest-Menü, Esc am PC oder «VR beenden» in der Einblendung am Bildschirm."
+          ],
+          "erwartung": "Man steht auf OK Boden des Raums; die Augenhöhe ist die echte Kopfhöhe. Wände und Decken sind undurchsichtig und werden nur durchscheinend, wenn der Kopf näher als 500 mm daran ist. Es gibt keine Kollision: man geht durch Wände. Der Stick geht immer waagrecht, die Höhe ändert sich nie. Der Teleport zielt auf den Boden des Geschosses (OK Boden des Raums). Ein 3D-Schnittbereich ist während VR ausgeschaltet und nachher wie vorher. Eine grosse IFC-Unterlage (über 300 000 Dreiecke) ist anfangs ausgeblendet. Nach dem Beenden zeigt KICAD wieder die normale 3D-Ansicht bzw. das Begehen am Bildschirm, mit Kamera, Schnittbereich und Darstellung wie vor VR.",
+          "pruefpunkte": [
+            "Der Start ist am N15-Standpunkt, der Blick in die Richtung wie beim Begehen am Bildschirm.",
+            "Der linke Stick geht in Blickrichtung des Kopfes, nicht des Controllers; die Höhe bleibt.",
+            "Der rechte Stick dreht in 30°-Schritten, gehalten nicht weiter; die Brille bleibt an derselben Stelle.",
+            "Abzug halten zeigt einen Strahl mit Ring auf dem Boden; Loslassen springt, nach oben gezielt springt nichts.",
+            "Mit der Hand: Pinch auf den Boden zeigend springt ebenso (falls Handverfolgung ankommt; sonst notieren).",
+            "Eine Wand wird erst durchscheinend, wenn der Kopf näher als 50 cm ist.",
+            "Die Bildrate bleibt flüssig (kein Ruckeln beim Drehen); bei grossen Projekten wie Bernstrasse: IFC-Unterlage mit Taste A aus.",
+            "Nach dem Beenden: Kamera, Schnittbereich und Darstellung wie vorher; der Knopf heisst wieder «In VR begehen».",
+            "Esc während VR beendet nur die Sitzung; war vorher «Raum begehen» aktiv, bleibt der Raum am Bildschirm."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Einblendung des Begehens mit dem Knopf «In VR begehen» (Prüfbild n23-begehen-mit-vr-knopf.png aus vr.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/vr3d.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/vr-logik.js (rigStart, stickBewegung, snapPruefen, teleportZiel)",
+            "src/Hlks.Web/wwwroot/js/ansichten/begehen3d.js (Option vr)",
+            "src/Hlks.Web/wwwroot/js/ansichten/ansicht3d.js (erzeugeVr)"
+          ],
+          "hinweis": "Ohne Gewähr: Belegung der Sticks, 30°-Schritte, 1.4 m/s, Teleport auf OK Boden und «keine Kollision» sind Annahmen des Auftrags und mit der Brille zu bestätigen. Ohne Brille geprüft mit einer Attrappe für navigator.xr (vr.browser.mjs)."
+        },
+        {
           "id": "zb-n17-treppe-grundriss",
           "titel": "Treppe im Grundriss: Stufen, Schnittlinie, Lauflinie, Beschriftung",
           "wo": {
