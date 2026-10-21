@@ -1,7 +1,8 @@
 // Leitungen (Modul 3, B1): Anschlusslagen für ALLE Elemente (entwurf/modul-3.md, Grundsatzentscheid 4) – eine zentrale Funktion
 // für verbinden, die Prüfungen P13–P15, die Abfrage «anschlusslagen» und das Routing (B2).
 //   - Leitung (Rohr, Kanal): anfang = erster Punkt, Richtung vom zweiten zum ersten Punkt (nach aussen); ende = letzter Punkt,
-//     Richtung vom vorletzten zum letzten. Grösse aus den Eigenschaften (Rohr dn; Kanal durchmesser bzw. breite und hoehe).
+//     Richtung vom vorletzten zum letzten. Grösse aus den Eigenschaften (Rohr dn; Rohr einer Abwasser-Serie nach Aussendurchmesser
+//     durchmesser = «d 110», Nachtrag entwurf/abwasser-serie.md; Kanal durchmesser bzw. breite und hoehe).
 //   - Element mit Familie: Lage und Richtung aus der Familie in der Einbaulage (Einfügepunkt, ausrichtung bzw. drehung),
 //     Grösse aus dem Familienanschluss.
 //   - Element ohne Familie und nicht platziertes Element (ohne Geometrie): Lage und Richtung null – nur logisch verbindbar.
@@ -47,15 +48,25 @@ public static class Anschlusslagen
     static AnschlussStelle Ohne(Modell m, Element e, Anschluss a, string quelle) =>
         new(a.Name, Netz.Medium(m, e, a), a.Fluss, null, null, default, null, null, a.Gewinde, quelle);
 
-    /// <summary>Grösse einer Leitung aus ihren Eigenschaften (Rohr dn; Kanal nach Serie bzw. durchmesser, sonst breite × hoehe).</summary>
+    /// <summary>Grösse einer Leitung aus ihren Eigenschaften (Rohr dn; Rohr einer Abwasser-Serie nach Aussendurchmesser durchmesser «d 110»,
+    /// die DN des Herstellers zählt dort nicht; Rohr ohne dn mit durchmesser ebenso; Kanal nach Serie bzw. durchmesser, sonst breite × hoehe).</summary>
     public static Leitungsgroesse LeitungGroesse(Modell m, Katalog k, Element e)
     {
-        if (!k.IstArt(e, "Kanal")) return e.Zahl("dn") is double dn ? Leitungsgroesse.Rohr(dn) : default;
+        if (!k.IstArt(e, "Kanal"))
+        {
+            if (NachAussendurchmesser(m, k, e)) return e.Zahl("durchmesser") is double da ? Leitungsgroesse.Aussen(da) : default;
+            if (e.Zahl("dn") is double dn) return Leitungsgroesse.Rohr(dn);
+            return e.Zahl("durchmesser") is double d0 ? Leitungsgroesse.Aussen(d0) : default;
+        }
         var rechteck = Leitungsserie.VonLeitung(m, k, e)?.Querschnitt == "rechteck";
         if (!rechteck && e.Zahl("durchmesser") is double d) return Leitungsgroesse.Rund(d);
         if (e.Zahl("breite") is double b && e.Zahl("hoehe") is double h) return Leitungsgroesse.Rechteck(b, h);
         return default;
     }
+
+    /// <summary>Die Leitung gehört zu einer gültigen Abwasser-Serie nach Aussendurchmesser (leitung.einsatz abwasser, Grösse d).</summary>
+    public static bool NachAussendurchmesser(Modell m, Katalog k, Element leitung) =>
+        Familien.FamilieVon(m, leitung) is { } f && Familien.Definition(f, k) is { Gueltig: true, Leitung.NachAussendurchmesser: true };
 
     static List<AnschlussStelle> Leitung(Modell m, Katalog k, Element e)
     {

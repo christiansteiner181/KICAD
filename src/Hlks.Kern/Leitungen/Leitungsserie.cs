@@ -35,13 +35,22 @@
 // ANNAHMEN (Prüfliste, freie Grösse): Schritt = Vielfache des Schritts ab 0 (ganze mm, weil Anschlussgrössen ganze mm sind); ein
 //   Formteil-Grössenwert als Konstante muss schon stimmen; die Probe der Abfrage nimmt je Schlüssel die Mitte der Grenzen (gerundet
 //   auf den Schritt), ohne beide Grenzen 430 × 270 bzw. d 430.
+//
+// Abwasser-Serie (Nachtrag Modul 3, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»): Rohrserien
+// mit leitung.einsatz = abwasser werden immer nach Aussendurchmesser beschriftet (Rohrgroessen.Von, unabhängig vom Medium; P30 meldet sie in
+// einem anderen Medium) und dürfen die Grösse d = Aussendurchmesser haben (groesse { d }, keine DN nötig – d32 wird zeichenbar). Dann ist d die
+// Grösse für Typwahl, Formteilwahl (Anschlüsse der Formteile mit d), Routing und Befehle ({ "d": 110 }, Meldungen «d 110»:
+// Leitungsgroesse.Aussendurchmesser); das Rohr trägt durchmesser (Aussendurchmesser), dn nur als Herstellerangabe aus einem Typparameter mit
+// ziel dn. Regel Christian: DN wird nie aus dem Aussendurchmesser abgeleitet (und nie umgekehrt). Eine Leitung mit DN bzw. ohne Grösse kommt
+// über ihren Aussendurchmesser (Typ ihrer Serie bzw. Leitung.da, z. B. aus dem IFC-Import) in eine solche Serie (GroesseFuer).
 
 using System.Globalization;
 using System.Text.Json.Nodes;
 
 namespace Hlks.Kern;
 
-/// <summary>Grösse einer Leitung bzw. eines Anschlusses: Rohr DN, Kanal rund d (mm), Kanal rechteckig b × h (mm).</summary>
+/// <summary>Grösse einer Leitung bzw. eines Anschlusses: Rohr DN, Kanal rund d (mm), Kanal rechteckig b × h (mm); Rohr einer
+/// Abwasser-Serie nach Aussendurchmesser d (mm, <see cref="Aussendurchmesser"/>).</summary>
 public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, double? H)
 {
     public const double Toleranz = 1e-6;
@@ -49,6 +58,15 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
     public static Leitungsgroesse Rohr(double dn) => new(dn, null, null, null);
     public static Leitungsgroesse Rund(double d) => new(null, d, null, null);
     public static Leitungsgroesse Rechteck(double b, double h) => new(null, null, b, h);
+    /// <summary>Aussendurchmesser eines Rohrs einer Abwasser-Serie (Nachtrag, entwurf/abwasser-serie.md): d in mm, Text «d 110».</summary>
+    public static Leitungsgroesse Aussen(double d) => new(null, d, null, null) { Aussendurchmesser = true };
+
+    /// <summary>D ist der Aussendurchmesser eines Rohrs (Abwasser-Serie nach Aussendurchmesser, Rohranschluss mit d) – nur für Texte
+    /// («d 110» statt «Ø 110 mm»); Vergleiche (Gleich, Equals) ignorieren das Kennzeichen, die Zahl ist dieselbe.</summary>
+    public bool Aussendurchmesser { get; init; }
+
+    public bool Equals(Leitungsgroesse o) => Dn == o.Dn && D == o.D && B == o.B && H == o.H;
+    public override int GetHashCode() => HashCode.Combine(Dn, D, B, H);
 
     /// <summary>Keine Grösse (weder dn noch d noch b und h).</summary>
     public bool Leer => Dn is null && D is null && (B is null || H is null);
@@ -64,16 +82,18 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
     public static string Zahl(double x) => x.ToString("0.###", CultureInfo.InvariantCulture);
 
     public override string ToString() =>
-        Dn is double dn ? $"DN {Zahl(dn)}" : D is double d ? $"Ø {Zahl(d)} mm" : B is double b && H is double h ? $"{Zahl(b)} × {Zahl(h)} mm" : "ohne Grösse";
+        Dn is double dn ? $"DN {Zahl(dn)}" : D is double d ? (Aussendurchmesser ? $"d {Zahl(d)}" : $"Ø {Zahl(d)} mm") : B is double b && H is double h ? $"{Zahl(b)} × {Zahl(h)} mm" : "ohne Grösse";
 
-    /// <summary>Kurz ohne Einheit: «430 × 270», «Ø 250», «DN 20» – Name einer freien Grösse in Listen, Mengen und im IFC-Typobjekt.</summary>
+    /// <summary>Kurz ohne Einheit: «430 × 270», «Ø 250», «DN 20», «d 110» (Abwasser-Serie) – Name einer freien Grösse in Listen, Mengen und
+    /// im IFC-Typobjekt.</summary>
     public string Kurz =>
-        Dn is double dn ? $"DN {Zahl(dn)}" : D is double d ? $"Ø {Zahl(d)}" : B is double b && H is double h ? $"{Zahl(b)} × {Zahl(h)}" : "ohne Grösse";
+        Dn is double dn ? $"DN {Zahl(dn)}" : D is double d ? (Aussendurchmesser ? $"d {Zahl(d)}" : $"Ø {Zahl(d)}") : B is double b && H is double h ? $"{Zahl(b)} × {Zahl(h)}" : "ohne Grösse";
 
     /// <summary>Wert je Grössenschlüssel (dn | d | b | h) oder null.</summary>
     public double? Wert(string schluessel) => schluessel switch { "dn" => Dn, "d" => D, "b" => B, "h" => H, _ => null };
 
-    /// <summary>Grösse aus einem Text «430x270», «430 × 270» bzw. «Ø 250» (Kanäle, freie Grösse) oder null.</summary>
+    /// <summary>Grösse aus einem Text «430x270», «430 × 270» bzw. «Ø 250» (Kanäle, freie Grösse) bzw. «d 110» (Aussendurchmesser einer
+    /// Abwasser-Serie, kleines d) oder null.</summary>
     public static Leitungsgroesse? AusText(string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
@@ -83,6 +103,7 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
         var teile = t.Split(['x', 'X', '×', '*'], StringSplitOptions.TrimEntries);
         if (teile.Length == 2 && Z(teile[0]) is double b && Z(teile[1]) is double h) return Rechteck(b, h);
         if ((t.StartsWith('Ø') || t.StartsWith('ø')) && Z(t[1..]) is double d) return Rund(d);
+        if (t.StartsWith('d') && Z(t[1..]) is double da) return Aussen(da);   // «d 110» – nicht «DN 100» (gross, mit N)
         return null;
     }
 
@@ -100,7 +121,7 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
     /// <summary>Aus { dn } | { d } | { b, h } bzw. einer Zahl (DN) – für Abfragen und Befehle.</summary>
     public static Leitungsgroesse Lesen(JsonNode? n, string wer = "groesse")
     {
-        const string Form = "Grösse als { \"dn\": 20 } (Rohr), { \"d\": 125 } (Kanal rund) bzw. { \"b\": 400, \"h\": 200 } (Kanal rechteckig) bzw. als Zahl (DN).";
+        const string Form = "Grösse als { \"dn\": 20 } (Rohr), { \"d\": 110 } (Aussendurchmesser einer Abwasser-Serie bzw. Kanal rund, mm) bzw. { \"b\": 400, \"h\": 200 } (Kanal rechteckig) bzw. als Zahl (DN).";
         if (n is JsonValue v && Json.Zahl(v) is double z) return Rohr(z);
         if (n is not JsonObject o) throw new HlksFehler($"{wer} fehlt oder ist keine Grösse.", Form);
         foreach (var (feld, _) in o)
@@ -112,8 +133,10 @@ public readonly record struct Leitungsgroesse(double? Dn, double? D, double? B, 
         return g;
     }
 
-    /// <summary>Grösse aus den Werten eines Formteil- bzw. Familienanschlusses.</summary>
-    public static Leitungsgroesse Von(FamAnschlussErgebnis a) => new(a.Dn, a.D, a.B, a.H);
+    /// <summary>Grösse aus den Werten eines Formteil- bzw. Familienanschlusses; ein Rohranschluss mit d (ohne dn) trägt den
+    /// Aussendurchmesser (Formteil einer Abwasser-Serie nach Aussendurchmesser).</summary>
+    public static Leitungsgroesse Von(FamAnschlussErgebnis a) =>
+        new(a.Dn, a.D, a.B, a.H) { Aussendurchmesser = a.Art == "rohr" && a.D is not null && a.Dn is null };
 }
 
 /// <summary>Eine Grösse (= ein Typ) einer Leitungsserie mit ihren Massen in mm (null = nicht angegeben). Fehler = der Typ lässt
@@ -164,7 +187,7 @@ public sealed class Leitungsserie
                 continue;
             }
             var w = a.Leitung;
-            groessen.Add(new SerienGroesse(t.Name, AusSchluesseln(w.Groesse), w.Aussen, w.Innen, w.Wand, w.Biegeradius, null));
+            groessen.Add(new SerienGroesse(t.Name, AusSchluesseln(w.Groesse, def.Leitung), w.Aussen, w.Innen, w.Wand, w.Biegeradius, null));
         }
         return new Leitungsserie(familie, def, groessen);
     }
@@ -190,16 +213,31 @@ public sealed class Leitungsserie
         return l.Count > 0 ? string.Join(", ", l) : "im Projekt gibt es noch keine – mit familie_laden bzw. familie_entwurf anlegen.";
     }
 
-    /// <summary>Grösse aus den Schlüsseln dn | d | b, h.</summary>
-    public static Leitungsgroesse AusSchluesseln(IReadOnlyDictionary<string, double> g) =>
-        new(g.TryGetValue("dn", out var dn) ? dn : null, g.TryGetValue("d", out var d) ? d : null, g.TryGetValue("b", out var b) ? b : null, g.TryGetValue("h", out var h) ? h : null);
+    /// <summary>Grösse aus den Schlüsseln dn | d | b, h; bei einer Abwasser-Serie nach Aussendurchmesser (l.NachAussendurchmesser) ist
+    /// d der Aussendurchmesser («d 110»).</summary>
+    public static Leitungsgroesse AusSchluesseln(IReadOnlyDictionary<string, double> g, FamLeitung? l = null) =>
+        new(g.TryGetValue("dn", out var dn) ? dn : null, g.TryGetValue("d", out var d) ? d : null, g.TryGetValue("b", out var b) ? b : null, g.TryGetValue("h", out var h) ? h : null)
+        { Aussendurchmesser = l?.NachAussendurchmesser == true && g.ContainsKey("d") };
 
-    /// <summary>Die Grösse hat die Art dieser Serie (Rohr: DN; Kanal rund: d; Kanal rechteckig: b und h).</summary>
+    /// <summary>Die Grösse hat die Art dieser Serie (Rohr: DN; Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund: d; Kanal rechteckig: b und h).</summary>
     public bool PasstArt(Leitungsgroesse g) => Block.Groesse.Keys.All(s => s switch { "dn" => g.Dn is not null, "d" => g.D is not null, "b" => g.B is not null, "h" => g.H is not null, _ => false })
         && (Block.Groesse.ContainsKey("dn") || g.Dn is null) && (Block.Groesse.ContainsKey("d") || g.D is null) && (Block.Groesse.ContainsKey("b") || g.B is null);
 
+    /// <summary>Abwasser-Serie (leitung.einsatz abwasser, Nachtrag entwurf/abwasser-serie.md): Beschriftung immer nach Aussendurchmesser.</summary>
+    public bool Abwasser => Block.Abwasser;
+    /// <summary>Abwasser-Serie mit Grösse d = Aussendurchmesser (keine DN nötig).</summary>
+    public bool NachAussendurchmesser => Block.NachAussendurchmesser;
+
+    /// <summary>Die Grösse in der Schreibweise dieser Serie: bei einer Abwasser-Serie nach Aussendurchmesser ist d der Aussendurchmesser
+    /// («d 110»), bei allen anderen Serien nie (Kanal rund «Ø 250 mm», auch wenn die Eingabe «d 250» lautete). Für Eingaben aus Befehlen
+    /// ({ "d": 110 }) vor Meldungen; die Zahl bleibt dieselbe.</summary>
+    public Leitungsgroesse Norm(Leitungsgroesse g) =>
+        g.D is null ? g : NachAussendurchmesser != g.Aussendurchmesser ? g with { Aussendurchmesser = NachAussendurchmesser } : g;
+
     /// <summary>Wie eine Grösse dieser Serie angegeben wird.</summary>
-    public string GroessenForm => Block.Groesse.ContainsKey("dn") ? "{ \"dn\": … } bzw. eine Zahl (DN)" : Block.Groesse.ContainsKey("d") ? "{ \"d\": … } (mm)" : "{ \"b\": …, \"h\": … } (mm)";
+    public string GroessenForm => Block.Groesse.ContainsKey("dn") ? "{ \"dn\": … } bzw. eine Zahl (DN)"
+        : NachAussendurchmesser ? "{ \"d\": … } (Aussendurchmesser in mm) bzw. eine Zahl oder «d 110»"
+        : Block.Groesse.ContainsKey("d") ? "{ \"d\": … } (mm)" : "{ \"b\": …, \"h\": … } (mm)";
 
     /// <summary>Typ (Grösse) der Serie zu einer Grösse oder null – siehe <see cref="TypFuer(Leitungsgroesse, out string?)"/>.</summary>
     public SerienGroesse? TypFuer(Leitungsgroesse g) => TypFuer(g, out _);
@@ -210,6 +248,7 @@ public sealed class Leitungsserie
     public SerienGroesse? TypFuer(Leitungsgroesse g, out string? grund)
     {
         grund = null;
+        g = Norm(g);
         if (Groessen.FirstOrDefault(x => x.Gueltig && x.Groesse.Gleich(g)) is { } t) return t;
         if (Frei is null || !PasstArt(g))
         {
@@ -230,13 +269,55 @@ public sealed class Leitungsserie
     /// Grösse innerhalb der Grenzen und die nächsten Normgrössen.</summary>
     public string GroessenVorschlag(Leitungsgroesse g)
     {
-        if (Frei is null || !PasstArt(g)) return $"Grössen: {GroessenText} (leitungsserie zeigt sie mit ihren Formteilen).";
+        g = Norm(g);
+        if (Frei is null || !PasstArt(g))
+            return $"Grössen: {GroessenText} (leitungsserie zeigt sie mit ihren Formteilen)."
+                + (NachAussendurchmesser && g.Dn is not null ? " Die Serie ist nach Aussendurchmesser geführt (Abwasser): Grösse als { \"d\": … } angeben – eine DN wird nie in einen Aussendurchmesser umgerechnet." : "");
         var naechste = Groessen.Where(x => x.Gueltig).OrderBy(x => Abstand(x.Groesse, g)).Take(3).Select(x => x.Groesse.Kurz).ToList();
         return $"Vorschlag: {Gerundet(g).Kurz} (innerhalb der Grenzen, im Schritt){(naechste.Count > 0 ? " oder die Normgrösse " + string.Join(", ", naechste) : "")} – {FreiText}.";
     }
 
     /// <summary>Grösse über den Typnamen oder null.</summary>
     public SerienGroesse? Groesse(string typ) => Groessen.FirstOrDefault(x => x.Typ == typ);
+
+    // ------------------------------------------------------------------ Abwasser-Serie (Nachtrag, entwurf/abwasser-serie.md)
+
+    /// <summary>DN des Herstellers zu einer Grösse einer Abwasser-Serie nach Aussendurchmesser: Wert des Typparameters mit ziel dn
+    /// (Herstellerangabe, nie abgeleitet); null = keiner bzw. ohne Wert. Bei DN-geführten Serien null (dort ist die DN die Grösse).</summary>
+    public double? DnHersteller(SerienGroesse g)
+    {
+        if (!NachAussendurchmesser || !g.Gueltig) return null;
+        var p = Def.Parameter.FirstOrDefault(x => string.Equals(x.Ziel, "dn", StringComparison.OrdinalIgnoreCase));
+        if (p is null) return null;
+        var a = FamilienAuswertung.Aufloesen(Def, g.Typ, null);
+        return a.Gueltig && a.Wert(p.Name) is { IstText: false } w && w.Zahl > 0 ? w.Zahl : null;
+    }
+
+    /// <summary>Aussendurchmesser einer Leitung (mm) ohne Umrechnung: aus dem Typ ihrer Serie (d einer Abwasser-Serie nach
+    /// Aussendurchmesser, sonst aussen), sonst Leitung.da (z. B. IFC-Import: OuterDiameter), sonst Rohr.durchmesser; null = unbekannt.
+    /// Nie aus einer DN gerechnet.</summary>
+    public static double? AussendurchmesserVon(Modell m, Katalog k, Element leitung)
+    {
+        if (VonLeitung(m, k, leitung) is { } s && s.GroesseVon(leitung) is { Gueltig: true } sg)
+        {
+            if (sg.Groesse.Aussendurchmesser && sg.Groesse.D is double d && d > 0) return d;
+            if (sg.Aussen is double a && a > 0 && s.Kategorie == "Rohr") return a;
+        }
+        if (leitung.Zahl("da") is double da && da > 0 && double.IsFinite(da)) return da;
+        if (!k.IstArt(leitung, "Kanal") && leitung.Zahl("durchmesser") is double dm && dm > 0 && double.IsFinite(dm)) return dm;
+        return null;
+    }
+
+    /// <summary>Grösse einer bestehenden Leitung in der Art dieser Serie (leitung_aufteilen, leitung_serie): ihre Grösse (Anschlusslagen);
+    /// ist diese Serie nach Aussendurchmesser geführt und die Grösse eine DN bzw. keine, ihr Aussendurchmesser (<see cref="AussendurchmesserVon"/> –
+    /// so kommt eine importierte Abwasserleitung über den Aussendurchmesser in die Serie). Nie aus einer DN gerechnet; ohne Aussendurchmesser
+    /// bleibt die Grösse, wie sie ist (der Aufrufer lehnt mit Grund ab).</summary>
+    public Leitungsgroesse GroesseFuer(Modell m, Katalog k, Element leitung)
+    {
+        var g = Anschlusslagen.LeitungGroesse(m, k, leitung);
+        if (!NachAussendurchmesser || PasstArt(g)) return Norm(g);
+        return AussendurchmesserVon(m, k, leitung) is double da ? Leitungsgroesse.Aussen(da) : g;
+    }
 
     /// <summary>Grösse einer Leitung dieser Serie: freie Grösse (familientyp = Vorlage, Grösse aus den Eigenschaften, siehe
     /// FreieGroesse.Von) bzw. der Typ nach familientyp; null = ohne bzw. unbekannter Typ.</summary>
@@ -350,7 +431,7 @@ public sealed class Leitungsserie
             if (!a.Gueltig || a.Leitung is null)
                 return new SerienGroesse(fr.Vorlage, g, null, null, null, null, a.Fehler.Count > 0 ? $"{a.Fehler[0].Stelle}: {a.Fehler[0].Meldung}" : "nicht auswertbar", true);
             var w = a.Leitung;
-            return new SerienGroesse(fr.Vorlage, AusSchluesseln(w.Groesse), w.Aussen, w.Innen, w.Wand, w.Biegeradius, null, true);
+            return new SerienGroesse(fr.Vorlage, AusSchluesseln(w.Groesse, Block), w.Aussen, w.Innen, w.Wand, w.Biegeradius, null, true);
         });
     }
 
@@ -392,6 +473,8 @@ public sealed class Leitungsserie
     public FormteilWahl Formteil(Modell m, Katalog k, string art, Leitungsgroesse g1, Leitungsgroesse? g2 = null, double? winkel = null)
     {
         FormteilWahl Nein(string grund, string vorschlag) => new() { Art = art, Fehler = grund, Vorschlag = vorschlag };
+        g1 = Norm(g1);
+        if (g2 is { } gn) g2 = Norm(gn);
         if (!FamLeitung.Formteilarten.Contains(art))
             return Nein($"Formteilart «{art}» gibt es nicht.", "Formteilarten: " + string.Join(", ", FamLeitung.Formteilarten));
         if (!PasstArt(g1) || (g2 is { } gx && !PasstArt(gx)))
@@ -643,7 +726,7 @@ public sealed class Leitungsserie
 
     // ------------------------------------------------------------------ Abfrage «leitungsserie»
 
-    public const string AbfrageText = "Eine Leitungsserie (Familie der Kategorie Rohr bzw. Kanal, Modul 3): Querschnitt, Werkstoff-Kürzel (leitung.kuerzel, falls angegeben), Grössen mit aussen, innen, wand und Biegeradius (mm) und der Beschriftung der Rohre dieser Grösse (Rohre ausser Abwasser: beschriftung mit NW/DN, z. B. «CNS NW 20»; Abwasser: beschriftungAbwasser mit dem Aussendurchmesser, z. B. «PE-S 110»; ohne Kürzel nur die Grösse; ohne Zahl null), erlaubte Bogenwinkel und Abzweigwinkel der T-Stücke (regeln.abzweigwinkel, fehlt = 90°), Formteil-Familien je Art (im Projekt vorhanden?) und je Grösse, ob Bogen, T-Stück (gleiche Grösse, erster Abzweigwinkel; tstueckJeWinkel je erlaubtem Abzweigwinkel), Reduktion (auf jede kleinere Grösse) und Reinigungsöffnung verfügbar sind – mit Grund und Vorschlag, wenn nicht. Kanalserien mit freier Grösse (leitung.frei): frei mit Vorlage, Grenzen, Schritt und Text (die Typen sind dann das Vorschlagsraster) und eine probe mit einer freien Grösse (Mitte der Grenzen, sonst 430 × 270) samt Massen und Formteilverfügbarkeit (frei: true und parameter = Exemplarwerte, wenn ein Formteil aus seiner Vorlage gerechnet wird).";
+    public const string AbfrageText = "Eine Leitungsserie (Familie der Kategorie Rohr bzw. Kanal, Modul 3): Querschnitt, Werkstoff-Kürzel (leitung.kuerzel, falls angegeben), Grössen mit aussen, innen, wand und Biegeradius (mm) und der Beschriftung der Rohre dieser Grösse (Rohre ausser Abwasser: beschriftung mit NW/DN, z. B. «CNS NW 20»; Abwasser: beschriftungAbwasser mit dem Aussendurchmesser, z. B. «PE-S 110»; ohne Kürzel nur die Grösse; ohne Zahl null). Abwasser-Serien (leitung.einsatz abwasser, einsatz und nachAussendurchmesser): beschriftung ist immer die Abwasserform mit dem Aussendurchmesser, unabhängig vom Medium (z. B. «PE 110»); bei Grösse d (nachAussendurchmesser: true) heissen die Grössen { d } («d 110»), keine DN nötig, dnHersteller = DN der Unterlage (Typparameter mit ziel dn, nie abgeleitet) bzw. null. Erlaubte Bogenwinkel und Abzweigwinkel der T-Stücke (regeln.abzweigwinkel, fehlt = 90°), Formteil-Familien je Art (im Projekt vorhanden?) und je Grösse, ob Bogen, T-Stück (gleiche Grösse, erster Abzweigwinkel; tstueckJeWinkel je erlaubtem Abzweigwinkel), Reduktion (auf jede kleinere Grösse) und Reinigungsöffnung verfügbar sind – mit Grund und Vorschlag, wenn nicht. Kanalserien mit freier Grösse (leitung.frei): frei mit Vorlage, Grenzen, Schritt und Text (die Typen sind dann das Vorschlagsraster) und eine probe mit einer freien Grösse (Mitte der Grenzen, sonst 430 × 270) samt Massen und Formteilverfügbarkeit (frei: true und parameter = Exemplarwerte, wenn ein Formteil aus seiner Vorlage gerechnet wird).";
 
     public static JsonObject Abfrage(Projekt p, string bezug)
     {
@@ -677,8 +760,13 @@ public sealed class Leitungsserie
             {
                 // B9b (Entscheide Christian 19.10.2026): Rohre ausser Abwasser NW/DN (Einstellung des Projekts), Abwasser Aussendurchmesser; nie umgerechnet
                 var art = Leitungsbezeichnung.Art(m, null).Art;
-                o["beschriftung"] = g.Groesse.Dn is double dnw && dnw > 0 ? Rohrgroessen.Beschriftung(false, art, s.Block.Kuerzel, dnw) : null;
-                o["beschriftungAbwasser"] = g.Aussen is double daw && daw > 0 ? Rohrgroessen.Beschriftung(true, "da", s.Block.Kuerzel, daw) : null;
+                // Abwasser-Serie (Nachtrag, Entscheid Christian 20.10.2026): immer der Aussendurchmesser (d bzw. aussen), unabhängig vom Medium
+                double? da = g.Groesse.Aussendurchmesser ? g.Groesse.D : g.Aussen;
+                var abwasserform = da is double daw && daw > 0 ? Rohrgroessen.Beschriftung(true, "da", s.Block.Kuerzel, daw) : null;
+                o["beschriftung"] = s.Abwasser ? abwasserform
+                    : g.Groesse.Dn is double dnw && dnw > 0 ? Rohrgroessen.Beschriftung(false, art, s.Block.Kuerzel, dnw) : null;
+                o["beschriftungAbwasser"] = abwasserform;
+                if (s.NachAussendurchmesser) o["dnHersteller"] = s.DnHersteller(g);
             }
             var ft = new JsonObject
             {
@@ -746,6 +834,7 @@ public sealed class Leitungsserie
         {
             ["familie"] = s.Familie.Kennzeichen, ["name"] = s.Familie.Name, ["id"] = Familien.DefinitionsId(s.Familie), ["kategorie"] = s.Kategorie,
             ["querschnitt"] = s.Querschnitt, ["kuerzel"] = s.Block.Kuerzel,
+            ["einsatz"] = s.Block.Einsatz, ["nachAussendurchmesser"] = s.NachAussendurchmesser,
             ["groessenparameter"] = new JsonObject(s.Block.Groesse.Select(x => KeyValuePair.Create(x.Key, (JsonNode?)JsonValue.Create(x.Value)))),
             ["winkel"] = s.Block.Winkel is { } wl ? (JsonNode)new JsonArray(wl.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()) : JsonValue.Create("frei"),
             ["winkelRegel"] = s.Block.Winkel is not null ? "liste" : s.Block.WinkelFrei ? "frei" : "keine",

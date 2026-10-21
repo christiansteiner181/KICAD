@@ -18,7 +18,9 @@
 //     oberste (Grundleitungen, Kontrollschächte) – mit Hinweis.
 //   – Systeme: Leitungsbauteile ihr System; Endgeräte die Systeme der angeschlossenen Leitungsbauteile (Netz.SystemeVon) – wie Revit.
 //   – Psets: der erste Eintrag je Eigenschaft in ifc.json psets, nur buildingSMART-Psets («Pset_»; sonst Hinweis), Länge der Leitungen in
-//     Qto_<Entität>BaseQuantities.Length, eigenes Pset HK_KICAD (Entscheid A4) und am Typobjekt HK_KICAD_Typ.
+//     Qto_<Entität>BaseQuantities.Length, eigenes Pset HK_KICAD (Entscheid A4) und am Typobjekt HK_KICAD_Typ. Rohre einer Abwasser-Serie
+//     nach Aussendurchmesser (Nachtrag, entwurf/abwasser-serie.md): OuterDiameter = durchmesser, NominalDiameter und Port-Nennweite nur aus
+//     der DN des Herstellers (dn aus dem Typparameter mit ziel dn), sonst keine.
 //   – Ports: je Anschluss; Fluss nach ifc.json fluss, PortTyp PIPE/DUCT und SystemType (IFC4) aus dem System bzw. Medium, Nennweite nach
 //     ifc.json ports (IFC4 Pset_DistributionPortTypePipe.NominalDiameter, IFC2x3 HK_KICAD.Nennweite). Lage und Richtung aus
 //     Anschlusslagen; ohne Lage im Einfügepunkt, Richtung gegen die des verbundenen Anschlusses (sonst ohne Richtung).
@@ -485,6 +487,9 @@ public sealed class IfcExportAufbau
                 "breite" or "hoehe" or "durchmesser" => null,
                 _ => e.Zahl(eig),
             };
+        // Abwasser-Serie nach Aussendurchmesser (Nachtrag, entwurf/abwasser-serie.md): OuterDiameter = durchmesser (die Grösse d); die
+        // NominalDiameter (dn) steht nur, wenn die Serie eine DN des Herstellers nennt (ziel dn) – nie aus d gerechnet
+        if (eig == "da" && e.Zahl("da") is null && def.IstArt("Rohr") && e.Zahl("durchmesser") is double dm && dm > 0 && double.IsFinite(dm)) return dm;
         if (eig == "da" && e.Zahl("da") is null && q is { NurDarstellung: false, Rechteck: false }) return q.B;
         return e.Zahl(eig) is double v && v > 0 && double.IsFinite(v) ? v : null;
     }

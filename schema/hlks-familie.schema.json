@@ -157,7 +157,7 @@
           "form": { "enum": ["rund", "rechteck"] },
           "dn": { "$ref": "#/$defs/zahl", "description": "Rohr: Nennweite DN – nur aus der Unterlage, nie aus dem Aussendurchmesser geraten" },
           "gewinde": { "type": "string", "description": "z. B. G 1/2, Rp 3/4 – wie in der Unterlage" },
-          "d": { "$ref": "#/$defs/zahl", "description": "Kanal rund: Anschlussdurchmesser in mm (Nennmass des Kanals, z. B. 125), wie Kanal.durchmesser" },
+          "d": { "$ref": "#/$defs/zahl", "description": "Kanal rund: Anschlussdurchmesser in mm (Nennmass des Kanals, z. B. 125), wie Kanal.durchmesser. Rohr (Formteil einer Abwasser-Serie nach Aussendurchmesser, leitung.einsatz abwasser mit Grösse d): Aussendurchmesser in mm (z. B. 110) statt dn – nur aus der Unterlage" },
           "b": { "$ref": "#/$defs/zahl", "description": "Kanal rechteckig: Breite in mm (Nennmass des Kanals)" },
           "h": { "$ref": "#/$defs/zahl", "description": "Kanal rechteckig: Höhe in mm" },
           "lage": { "$ref": "#/$defs/punkt3" },
@@ -175,10 +175,11 @@
       "additionalProperties": false,
       "properties": {
         "querschnitt": { "enum": ["rund", "rechteck"] },
-        "groesse": { "type": "object", "description": "Parameternamen der Grösse (Typparameter mit Zahl): Rohr { dn } (Rohrserien sind immer rund), Kanal rund { d }, Kanal rechteckig { b, h }", "properties": { "dn": { "type": "string" }, "d": { "type": "string" }, "b": { "type": "string" }, "h": { "type": "string" } } },
+        "groesse": { "type": "object", "description": "Parameternamen der Grösse (Typparameter mit Zahl): Rohr { dn } (Rohrserien sind immer rund), Abwasser-Serie (einsatz abwasser) { d } = Aussendurchmesser (empfohlen) oder { dn }, Kanal rund { d }, Kanal rechteckig { b, h }", "properties": { "dn": { "type": "string" }, "d": { "type": "string" }, "b": { "type": "string" }, "h": { "type": "string" } } },
         "aussen": { "$ref": "#/$defs/zahl", "description": "Aussendurchmesser bzw. bei rechteckig nicht genutzt (Formel aus Parametern, z. B. «da»)" },
         "innen": { "$ref": "#/$defs/zahl", "description": "Innendurchmesser (z. B. «da - 2 * s»)" },
         "wand": { "$ref": "#/$defs/zahl" },
+        "einsatz": { "enum": ["abwasser"], "description": "Optional, nur Rohre: abwasser = Abwasser-Serie (Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»; z. B. Silent-db20, Geberit PE, PP-Hausabfluss). Grösse und Beschriftung nach Aussendurchmesser (groesse { d }, Beschriftung «<kuerzel> <Aussendurchmesser>», z. B. «PE 110», unabhängig vom Medium); keine DN nötig – eine DN des Herstellers nur als eigener Typparameter mit Wert je Typ und ziel dn, nie aus d gerechnet. dn als Grösse bleibt erlaubt. Prüfbefund P30, wenn die Serie in einem anderen Medium als Abwasser liegt" },
         "kuerzel": { "type": "string", "minLength": 1, "maxLength": 12, "pattern": "^[^\\u0000-\\u001f\\u007f-\\u009f]+$", "description": "Optional, nur Rohre: Werkstoff-Kürzel für die Beschriftung der Rohre dieser Serie, z. B. «CNS» (nichtrostender Stahl), «PE-S» (Polyethylen-Schallschutz-Abwasserrohr), «PEX». Die Beschriftung lautet «<kuerzel> NW|DN <Nennweite>» (z. B. «CNS NW 20», NW oder DN nach Projekteinstellung), bei Abwasser «<kuerzel> <Aussendurchmesser>» (z. B. «PE-S 110»); ohne kuerzel nur die Grösse (Entscheid Christian 19.10.2026). Nur setzen, wenn die Unterlage den Werkstoff bzw. das Kürzel nennt – nie ein Kürzel erfinden. Eine Zeile, höchstens 12 Zeichen, ohne Zeilenumbruch" },
         "formteile": {
           "type": "object",

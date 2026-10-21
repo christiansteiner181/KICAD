@@ -94,6 +94,27 @@ public class AuftragVorlageTests
     }
 
     [Fact]
+    public void Vorlage_NenntAbwasserSerieNachAussendurchmesser_DnNurAlsHerstellerangabe()
+    {
+        // Nachtrag Abwasser-Serie (entwurf/abwasser-serie.md, Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»)
+        var v = Vorlage();
+        Assert.Contains("`leitung.einsatz` = `abwasser`", v);
+        Assert.Contains("Geberit PE ist immer Abwasser", v);
+        Assert.Contains("Silent-db20", v);
+        Assert.Contains("**Grösse d =\n   Aussendurchmesser**", v.Replace("\r\n", "\n"));
+        Assert.Contains("**Keine DN nötig:**", v);
+        Assert.Contains("`dn_hersteller`", v);
+        Assert.Contains("nie aus dem Aussendurchmesser oder Innendurchmesser abgeleitet", v);
+        Assert.Contains("**keine** DN ab (auch nicht aus dem Innendurchmesser)", v);   // Ausnahme zur Regel «DN aus di»
+        Assert.Contains("P30", v);
+        // das Schema, das die KI im Auftrag sieht, kennt das Feld
+        var schema = File.ReadAllText(AuftragServer.Quelldatei("schema", "hlks-familie.schema.json"));
+        Assert.Contains("\"einsatz\": { \"enum\": [\"abwasser\"]", schema);
+        Assert.Contains("nie aus d gerechnet", schema);
+        Vorlage_HatAllePlatzhalter();
+    }
+
+    [Fact]
     public void Vorlage_VerbietetFreigabeEntscheidUndBibliothek_UndDieWerkzeugeFehlenInDerListe()
     {
         var v = Vorlage();

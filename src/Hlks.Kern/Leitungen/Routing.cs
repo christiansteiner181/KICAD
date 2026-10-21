@@ -513,7 +513,9 @@ public static class Routing
 
     /// <summary>Serie und Grösse an eine Leitung: bezuege.familie, familientyp, Rohr dn bzw. Kanal durchmesser / breite und hoehe
     /// (Herkunft familie wie die Nachführung von B1) und die Grösse an anfang und ende. Freie Grösse (Nachtrag): familientyp = Vorlage,
-    /// breite/hoehe bzw. durchmesser = tatsächliche Grösse, Quelle «<Serie> Typ <Vorlage>, frei b × h» (FreieGroesse.cs).</summary>
+    /// breite/hoehe bzw. durchmesser = tatsächliche Grösse, Quelle «<Serie> Typ <Vorlage>, frei b × h» (FreieGroesse.cs). Abwasser-Serie
+    /// nach Aussendurchmesser (Nachtrag, entwurf/abwasser-serie.md): Rohr durchmesser = d, dn entfällt – eine DN des Herstellers setzt die
+    /// Nachführung aus dem Typparameter mit ziel dn (nie aus d gerechnet).</summary>
     public static void GroesseSetzen(Kontext k, Element e, Leitungsserie s, SerienGroesse sg)
     {
         var kat = k.Katalog;
@@ -531,7 +533,7 @@ public static class Routing
         var g = sg.Groesse;
         bool kanal = kat.IstArt(e, "Kanal");
         if (kanal) { Setzen("durchmesser", g.D); Setzen("breite", g.B); Setzen("hoehe", g.H); }
-        else Setzen("dn", g.Dn);
+        else { Setzen("dn", g.Dn); Setzen("durchmesser", g.D); }
         foreach (var a in e.Anschluesse.Where(a => a.Name.Equals("anfang", StringComparison.OrdinalIgnoreCase) || a.Name.Equals("ende", StringComparison.OrdinalIgnoreCase)))
         {
             if (!kanal) a.Dn = Familien.Ganz(g.Dn);

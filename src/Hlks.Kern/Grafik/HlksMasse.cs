@@ -14,8 +14,9 @@ using System.Runtime.CompilerServices;
 namespace Hlks.Kern;
 
 /// <summary>Serie und Typ (Grösse) einer Leitung samt den ausgewerteten Massen des Typs. Frei (Nachtrag freie Grösse): Typ ist die
-/// tatsächliche Grösse («430 × 270»), Werte aus der Vorlage mit ersetzten Grössenparametern.</summary>
-public sealed record LeitungsSerieInfo(Element Familie, string SerieName, string Kategorie, string Querschnitt, string Typ, FamLeitungWerte Werte, string? Kuerzel = null, bool Frei = false);
+/// tatsächliche Grösse («430 × 270»), Werte aus der Vorlage mit ersetzten Grössenparametern. Abwasser (Nachtrag Abwasser-Serie): die Serie hat
+/// leitung.einsatz abwasser – Beschriftung immer nach Aussendurchmesser.</summary>
+public sealed record LeitungsSerieInfo(Element Familie, string SerieName, string Kategorie, string Querschnitt, string Typ, FamLeitungWerte Werte, string? Kuerzel = null, bool Frei = false, bool Abwasser = false);
 
 /// <summary>Querschnitt einer Leitung in Modell-mm für die Darstellung: rund (Breite = Hoehe = Durchmesser) oder rechteckig
 /// (Breite quer, Höhe senkrecht bei waagrechter Leitung) plus Dämmdicke. <see cref="Serie"/> ist null, wenn die Masse aus den
@@ -58,7 +59,7 @@ public static class HlksMasse
             var a = FamilienAuswertung.Aufloesen(def, typ, null, frei is { } gf ? FreieGroesse.Typwerte(def.Leitung!, gf) : null);
             return a.Gueltig ? a.Leitung : null;
         });
-        return werte is null ? null : new LeitungsSerieInfo(f, f.Name ?? def.Name, def.Kategorie, def.Leitung!.Querschnitt, frei?.Kurz ?? typ, werte, def.Leitung.Kuerzel, frei is not null);
+        return werte is null ? null : new LeitungsSerieInfo(f, f.Name ?? def.Name, def.Kategorie, def.Leitung!.Querschnitt, frei?.Kurz ?? typ, werte, def.Leitung.Kuerzel, frei is not null, def.Leitung.Abwasser);
     }
 
     /// <summary>Masse der Leitung für die Darstellung: aus der Serie (Rohr: Aussendurchmesser; Kanal: Kanalmass der Grösse),

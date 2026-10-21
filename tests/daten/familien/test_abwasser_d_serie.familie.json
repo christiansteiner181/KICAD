@@ -1,0 +1,39 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasser-d",
+  "name": "Testabwasser PE nach Aussendurchmesser (fiktiv)",
+  "kategorie": "Rohr",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Abwasser-Serie nach Aussendurchmesser für die Tests des Nachtrags Abwasser-Serie (entwurf/abwasser-serie.md, Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»). Alle Werte sind FIKTIV und weder Herstellerdaten noch Normmasse – nur für Tests und Handrechnungen. Grösse d = Aussendurchmesser (einsatz abwasser), Wandstärke s FIKTIV; eine DN des Herstellers (dn_hersteller, ziel dn) nur bei d 56 (DN 50) und d 110 (DN 100), FIKTIV zugeordnet und nie aus d gerechnet; d 32 und d 75 ohne DN. Bogenwinkel FIKTIV 45 und 88.5, Abzweigwinkel FIKTIV 45 und 88.5. Formteile aus fam-test-abwasser-d-bogen, fam-test-abwasser-d-t, fam-test-abwasser-d-reduktion.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "d", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Aussendurchmesser (Grösse, FIKTIV)" },
+    { "name": "s", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Wandstärke (FIKTIV)" },
+    { "name": "di", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "d - 2 * s", "beschreibung": "Innendurchmesser (Formel)" },
+    { "name": "dn_hersteller", "art": "typ", "datentyp": "dn", "gruppe": "kennwert", "ziel": "dn", "beschreibung": "DN laut Hersteller (FIKTIV, nur wo die Testunterlage sie nennt; nie aus d gerechnet)" }
+  ],
+  "typen": [
+    { "name": "d 32", "werte": { "d": 32, "s": 3 } },
+    { "name": "d 56", "werte": { "d": 56, "s": 3, "dn_hersteller": 50 } },
+    { "name": "d 75", "werte": { "d": 75, "s": 3 } },
+    { "name": "d 110", "werte": { "d": 110, "s": 4, "dn_hersteller": 100 } }
+  ],
+  "koerper": [],
+  "anschluesse": [],
+  "leitung": {
+    "querschnitt": "rund",
+    "groesse": { "d": "d" },
+    "aussen": "d",
+    "innen": "di",
+    "wand": "s",
+    "kuerzel": "PE",
+    "einsatz": "abwasser",
+    "formteile": {
+      "bogen": { "familie": "fam-test-abwasser-d-bogen" },
+      "tstueck": { "familie": "fam-test-abwasser-d-t" },
+      "reduktion": { "familie": "fam-test-abwasser-d-reduktion" }
+    },
+    "regeln": { "winkel": [45, 88.5], "abzweig": "tstueck", "abzweigwinkel": [45, 88.5] }
+  }
+}

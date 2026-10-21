@@ -46,6 +46,8 @@ public static class Pruefungen
         ["P28"] = PlanPruefung.Codes["P28"],   // Modul 7 Teil B3: Liste passt nicht aufs Blatt
         // Nachtrag Modul 3 (entwurf/freie-groesse-kanal.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
         ["P29"] = "Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Serie",
+        // Nachtrag Modul 3 (entwurf/abwasser-serie.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
+        ["P30"] = "Abwasser-Serie für ein anderes Medium als Abwasser",
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete
@@ -133,7 +135,7 @@ public static class Pruefungen
                 if (m.Finde(p.Element)?.AnschlussNamens(p.Anschluss) is null)
                     b.Add(new("P08", "fehler", v.Id, $"Verbindung {v.Id} verweist auf fehlenden Anschluss {p.Element}.{p.Anschluss}", "Verbindung trennen"));
 
-        LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18; Nachtrag freie Grösse: P29
+        LeitungenPruefung.Pruefen(m, k, b);   // Modul 3: P13–P16, P18; Nachtrag freie Grösse: P29; Nachtrag Abwasser-Serie: P30
         SchemaPruefung.Pruefen(m, k, b);      // Modul 3: P17
         AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
         SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26

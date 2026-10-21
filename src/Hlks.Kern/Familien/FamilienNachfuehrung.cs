@@ -9,8 +9,9 @@
 // Prüfungen (Befehl wird abgelehnt): Familie vorhanden, Klasse des Elements IstArt Kategorie, Typ vorhanden, Exemplarwerte
 // gültig, Typ auswertbar. Ändert der Befehl nur die Familie, entfallen ungültig gewordene Exemplarwerte mit Hinweis
 // (Annahme); ein verwendeter Typ darf nicht verschwinden.
-// Modul 3 (B1): Leitungen (Rohr, Kanal) mit Serie bekommen ihre Grösse aus dem Typ (Rohr dn, Kanal rund durchmesser, Kanal
-// rechteckig breite und hoehe; Herkunft familie) und die Ziel-Eigenschaften; ihre Anschlüsse anfang/ende bleiben (Leitungsserien
+// Modul 3 (B1): Leitungen (Rohr, Kanal) mit Serie bekommen ihre Grösse aus dem Typ (Rohr dn, Rohr einer Abwasser-Serie nach
+// Aussendurchmesser durchmesser, Kanal rund durchmesser, Kanal rechteckig breite und hoehe; Herkunft familie) und die Ziel-Eigenschaften
+// (bei der Abwasser-Serie damit auch eine DN des Herstellers, ziel dn); ihre Anschlüsse anfang/ende bleiben (Leitungsserien
 // haben keine Anschlüsse – nichts wird gelöscht oder getrennt), nur deren Grösse folgt. Eine neue bzw. geänderte ausrichtung
 // wird geprüft (Familien.AusrichtungLesen). Elemente ohne Geometrie («nicht platziert») werden nachgeführt wie platzierte.
 // Nachtrag freie Grösse (entwurf/freie-groesse-kanal.md): eine Kanal-Leitung mit familientyp = Vorlage einer freien Serie behält ihre
@@ -265,7 +266,9 @@ public sealed class FamilienNachfuehren : INachfuehrung
         bool geaendert = false;
         foreach (var an in neu.Anschluesse.Where(x => x.Name.Equals("anfang", StringComparison.OrdinalIgnoreCase) || x.Name.Equals("ende", StringComparison.OrdinalIgnoreCase)))
         {
-            int? dn = def.Leitung!.Groesse.ContainsKey("dn") ? G("dn") : an.Dn, dd = G("d"), b = G("b"), h = G("h");
+            // Abwasser-Serie nach Aussendurchmesser (Nachtrag, entwurf/abwasser-serie.md): Grösse d, am Anschluss keine DN (eine DN des
+            // Herstellers steht nur als Eigenschaft dn aus dem Typparameter mit ziel dn)
+            int? dn = def.Leitung!.Groesse.ContainsKey("dn") ? G("dn") : def.Leitung.NachAussendurchmesser ? null : an.Dn, dd = G("d"), b = G("b"), h = G("h");
             if (an.Dn == dn && an.D == dd && an.B == b && an.H == h) continue;
             an.Dn = dn; an.D = dd; an.B = b; an.H = h;
             geaendert = true;

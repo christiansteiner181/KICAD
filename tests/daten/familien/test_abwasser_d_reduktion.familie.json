@@ -1,0 +1,28 @@
+{
+  "format": 1,
+  "id": "fam-test-abwasser-d-reduktion",
+  "name": "Testabwasser-PE-Reduktion nach Aussendurchmesser (fiktiv)",
+  "kategorie": "Reduktion",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Reduktion der Testabwasser-Serie nach Aussendurchmesser (Nachtrag Abwasser-Serie, entwurf/abwasser-serie.md). Alle Werte sind FIKTIV. Anschlüsse über den Aussendurchmesser (d1 gross, d2 klein), keine DN. Lokale Lage nach entwurf/modul-3.md: a (gross) im Ursprung Richtung (−1, 0, 0), b (klein) bei (l, 0, 0) Richtung (1, 0, 0). Einbaulänge l = 60 mm fest (FIKTIV). Nur die Typen der Liste.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "d1", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Aussendurchmesser gross (Anschluss a), FIKTIV" },
+    { "name": "d2", "art": "typ", "datentyp": "laenge", "gruppe": "anschluss", "beschreibung": "Aussendurchmesser klein (Anschluss b), FIKTIV" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "wert": 60, "beschreibung": "Einbaulänge (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "d 56/32", "werte": { "d1": 56, "d2": 32 } },
+    { "name": "d 75/56", "werte": { "d1": 75, "d2": 56 } },
+    { "name": "d 110/56", "werte": { "d1": 110, "d2": 56 } },
+    { "name": "d 110/75", "werte": { "d1": 110, "d2": 75 } }
+  ],
+  "koerper": [
+    { "id": "kegel", "name": "Reduktion", "art": "kegel", "material": "rohr", "von": [0, 0, 0], "nach": ["l", 0, 0], "r1": "d1 / 2", "r2": "d2 / 2" }
+  ],
+  "anschluesse": [
+    { "name": "a", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "d": "d1", "lage": [0, 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Gross" },
+    { "name": "b", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "d": "d2", "lage": ["l", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Klein" }
+  ]
+}

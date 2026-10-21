@@ -250,6 +250,18 @@ public sealed class FamLeitung
     public IReadOnlyList<double>? Abzweigwinkel { get; init; }
     /// <summary>leitung.frei (nur Kanalserien): freie Grösse mit Vorlage-Typ, Grenzen und Schritt; null = nur die Typen.</summary>
     public FamFrei? Frei { get; init; }
+
+    /// <summary>Erlaubte Werte von leitung.einsatz (weitere später).</summary>
+    public static readonly string[] Einsaetze = ["abwasser"];
+    /// <summary>leitung.einsatz (Nachtrag Abwasser-Serie, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026: «Geberit PE ist immer
+    /// Abwasser»): «abwasser» = Abwasser-Serie, nur Kategorie Rohr – Grösse und Beschriftung nach Aussendurchmesser, unabhängig vom Medium;
+    /// null = nicht angegeben.</summary>
+    public string? Einsatz { get; init; }
+    /// <summary>Abwasser-Serie (einsatz abwasser).</summary>
+    public bool Abwasser => Einsatz == "abwasser";
+    /// <summary>Abwasser-Serie mit Grösse d = Aussendurchmesser (groesse { d }); die DN des Herstellers steht höchstens als Typparameter
+    /// (ziel dn), nie abgeleitet.</summary>
+    public bool NachAussendurchmesser => Abwasser && Groesse.ContainsKey("d");
 }
 
 /// <summary>Massbezug (für B4: Abweichungsliste je Typ).</summary>
@@ -399,13 +411,15 @@ public sealed class FamilieDef
                 "Block «leitung» entfernen oder als kategorie Rohr bzw. Kanal anlegen.");
             return;
         }
-        if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, formteile?, regeln?, frei?, quellen? }"); return; }
-        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "formteile", "regeln", "frei", "quellen"];
+        if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, einsatz?, formteile?, regeln?, frei?, quellen? }"); return; }
+        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "einsatz", "formteile", "regeln", "frei", "quellen"];
         foreach (var (feld, _) in o)
             if (!felder.Contains(feld)) Fehl("leitung", $"Unbekanntes Feld «{feld}»", "Erlaubt: " + string.Join(", ", felder));
 
-        // Querschnitt und Grösse passend zur Kategorie: Rohr dn, Kanal rund d, Kanal rechteckig b und h
+        // Querschnitt und Grösse passend zur Kategorie: Rohr dn (Abwasser-Serie auch d = Aussendurchmesser), Kanal rund d, Kanal rechteckig b und h
         bool istRohr = klasse?.IstArt("Rohr") == true, istKanal = klasse?.IstArt("Kanal") == true;
+        var einsatz = o["einsatz"] is null ? null : EinsatzLesen(o["einsatz"]!, klasse, istRohr);
+        bool abwasser = einsatz == "abwasser";
         var querschnitt = Text(o["querschnitt"]);
         if (querschnitt is not ("rund" or "rechteck"))
         {
@@ -417,7 +431,8 @@ public sealed class FamilieDef
         string[]? schluessel = querschnitt switch
         {
             "rechteck" => ["b", "h"],
-            "rund" when istRohr => ["dn"],
+            // Abwasser-Serie (Nachtrag, entwurf/abwasser-serie.md): Grösse d = Aussendurchmesser (empfohlen) oder dn wie bisher
+            "rund" when istRohr => abwasser && o["groesse"] is JsonObject ga && ga.ContainsKey("d") ? ["d"] : ["dn"],
             "rund" when istKanal => ["d"],
             "rund" => o["groesse"] is JsonObject g0 && g0.ContainsKey("d") ? ["d"] : ["dn"],   // ohne Klasse: dn oder d
             _ => null,
@@ -425,11 +440,14 @@ public sealed class FamilieDef
         var groesse = new Dictionary<string, string>(StringComparer.Ordinal);
         if (o["groesse"] is not JsonObject go)
             Fehl("leitung.groesse", "groesse fehlt oder ist kein Objekt",
-                schluessel is null ? "{ dn: \"dn\" } (Rohr), { d: \"d\" } (Kanal rund) bzw. { b: \"b\", h: \"h\" } (Kanal rechteckig)"
+                schluessel is null ? "{ dn: \"dn\" } (Rohr), { d: \"d\" } (Abwasser-Serie bzw. Kanal rund) bzw. { b: \"b\", h: \"h\" } (Kanal rechteckig)"
                 : $"{{ {string.Join(", ", schluessel.Select(s => $"\"{s}\": \"<Parameter>\""))} }} angeben (Parametername der Grösse).");
         else if (schluessel is not null)
         {
-            string Erwartet() => istRohr ? "Rohr: dn" : istKanal ? (querschnitt == "rund" ? "Kanal rund: d" : "Kanal rechteckig: b und h") : querschnitt == "rund" ? "rund: dn bzw. d" : "rechteckig: b und h";
+            string Erwartet() => istRohr
+                ? (abwasser ? "Abwasser-Serie (einsatz abwasser): d (Aussendurchmesser, empfohlen) oder dn, nicht beides – eine DN des Herstellers als eigener Typparameter mit ziel dn"
+                            : "Rohr: dn (die Grösse d = Aussendurchmesser gibt es nur bei einer Abwasser-Serie, leitung.einsatz «abwasser»)")
+                : istKanal ? (querschnitt == "rund" ? "Kanal rund: d" : "Kanal rechteckig: b und h") : querschnitt == "rund" ? "rund: dn bzw. d" : "rechteckig: b und h";
             foreach (var (k, _) in go)
                 if (!schluessel.Contains(k)) Fehl("leitung.groesse", $"Grössenschlüssel «{k}» passt nicht zu {Kategorie} {querschnitt}", "Erlaubt – " + Erwartet());
             foreach (var k in schluessel)
@@ -443,6 +461,21 @@ public sealed class FamilieDef
                 groesse[k] = pn;
             }
         }
+        // Abwasser-Serie nach Aussendurchmesser: eine DN steht nur als Herstellerangabe (Typparameter mit Wert je Typ, ziel dn) –
+        // nie aus dem Aussendurchmesser abgeleitet (Regel Christian 20.10.2026)
+        if (abwasser && groesse.TryGetValue("d", out var dPar))
+            foreach (var p in Parameter.Where(p => string.Equals(p.Ziel, "dn", StringComparison.OrdinalIgnoreCase)))
+            {
+                var ort = $"parameter «{p.Name}».ziel";
+                if (p.Name == dPar)
+                    Fehl(ort, $"Der Aussendurchmesser «{p.Name}» (Grösse d der Abwasser-Serie) ist keine DN – die DN wird nie aus dem Aussendurchmesser abgeleitet",
+                        "ziel dn entfernen; eine DN des Herstellers als eigenen Typparameter (z. B. dn_hersteller, ziel dn) mit den Werten der Unterlage führen – oder ganz weglassen (keine DN nötig).");
+                else if (p.HatFormel)
+                    Fehl(ort, $"«{p.Name}» (ziel dn) hat eine Formel – die DN einer Abwasser-Serie nach Aussendurchmesser ist eine Herstellerangabe, nie gerechnet",
+                        $"Die Formel von «{p.Name}» entfernen und die DN je Typ als Wert aus der Unterlage angeben (typen.werte.{p.Name}) – oder den Parameter weglassen (keine DN nötig).");
+                else if (p.Art != "typ")
+                    Fehl(ort, $"«{p.Name}» (ziel dn) ist ein Exemplarparameter – die DN des Herstellers gehört zum Typ (zur Grösse)", $"«{p.Name}» als Typparameter (art typ) führen.");
+            }
 
         var aussen = o["aussen"] is null ? null : Zahl(o["aussen"], "leitung.aussen");
         if (o["aussen"] is null) Fehl("leitung.aussen", "aussen fehlt", "Aussendurchmesser als Formel aus den Parametern angeben, z. B. \"da\" (bei rechteckigen Kanälen nicht genutzt, trotzdem Pflicht).");
@@ -564,8 +597,28 @@ public sealed class FamilieDef
         Leitung = new FamLeitung
         {
             Querschnitt = querschnitt ?? "rund", Groesse = groesse, Aussen = aussen, Innen = innen, Wand = wand, Biegeradius = biegeradius, Kuerzel = kuerzel,
-            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei,
+            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei, Einsatz = einsatz,
         };
+    }
+
+    /// <summary>leitung.einsatz (Nachtrag Abwasser-Serie, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026): «abwasser», nur bei
+    /// Rohrserien (ohne Katalog wird er gelesen). Abwasser-Serien werden immer nach Aussendurchmesser beschriftet, auch wenn ihre Grösse dn ist;
+    /// die Grösse darf d (Aussendurchmesser) sein; P30 meldet sie in einem anderen Medium als Abwasser.</summary>
+    string? EinsatzLesen(JsonNode n, KlassenDef? klasse, bool istRohr)
+    {
+        const string Ort = "leitung.einsatz";
+        var t = Text(n)?.Trim();
+        if (t is null || !FamLeitung.Einsaetze.Contains(t))
+        {
+            Fehl(Ort, $"einsatz {n.ToJsonString()} gibt es nicht", "\"abwasser\" (Abwasser-Serie: Grösse und Beschriftung nach Aussendurchmesser, z. B. «PE 110») – oder das Feld weglassen.");
+            return null;
+        }
+        if (klasse is not null && !istRohr)
+        {
+            Fehl(Ort, $"einsatz «{t}» gibt es nur bei Rohrserien, nicht bei {Kategorie}", "Feld weglassen (Kanäle haben ihre Grösse d bzw. b × h ohnehin) oder die Serie als Kategorie Rohr anlegen.");
+            return null;
+        }
+        return t;
     }
 
     /// <summary>Block leitung.frei (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): nur Kanalserien (rund und rechteckig) –
@@ -578,7 +631,7 @@ public sealed class FamilieDef
         const string Form = "{ \"vorlage\": \"<Typname>\", \"grenzen\": { \"b\": { \"min\": …, \"max\": … }, \"h\": { … } }, \"schritt\": 1, \"quellen\": [ … ] } – Grenzen nur aus der Unterlage.";
         if (istRohr || groesse.ContainsKey("dn"))
         {
-            Fehl(Ort, "Freie Grössen gibt es nur bei Kanalserien – bei Rohren gilt die DN (die Typen sind die Grössen)", "Block frei entfernen; jede Rohrgrösse als Typ führen.");
+            Fehl(Ort, "Freie Grössen gibt es nur bei Kanalserien – bei Rohren gilt die DN bzw. bei Abwasser-Serien der Aussendurchmesser (die Typen sind die Grössen)", "Block frei entfernen; jede Rohrgrösse als Typ führen.");
             return null;
         }
         if (n is not JsonObject o) { Fehl(Ort, "frei muss ein Objekt sein", Form); return null; }
@@ -1063,7 +1116,9 @@ public sealed class FamilieDef
     }
 
     /// <summary>Grösse des Anschlusses passend zur Art (Entscheid Hauptlauf 18.10.2026): Rohr nimmt dn, Kanal rund d, Kanal
-    /// rechteckig b und h. Fehlt etwas oder passt es nicht zur Art, ist das ein Hinweis, kein Fehler – Entwürfe dürfen Lücken haben.</summary>
+    /// rechteckig b und h. Nachtrag Abwasser-Serie (entwurf/abwasser-serie.md): ein Rohranschluss darf statt dn den Aussendurchmesser d
+    /// tragen (Formteile einer Abwasser-Serie nach Aussendurchmesser). Fehlt etwas oder passt es nicht zur Art, ist das ein Hinweis, kein
+    /// Fehler – Entwürfe dürfen Lücken haben.</summary>
     void GroesseHinweise(string ort, string? art, string? form, JsonObject o)
     {
         void Hinweis(string text) => Hinweise.Add(new FamFehler(ort, text, null));
@@ -1071,8 +1126,9 @@ public sealed class FamilieDef
         switch (art)
         {
             case "rohr":
-                if (!Hat("dn")) Hinweis("Rohranschluss ohne dn (Nennweite) – aus der Unterlage ergänzen");
-                if (Hat("d") || Hat("b") || Hat("h")) Hinweis("Rohranschluss: d, b und h gelten nur für Kanäle, für Rohre zählt dn");
+                if (!Hat("dn") && !Hat("d")) Hinweis("Rohranschluss ohne dn (Nennweite) bzw. d (Aussendurchmesser, nur Formteile einer Abwasser-Serie nach Aussendurchmesser) – aus der Unterlage ergänzen");
+                if (Hat("dn") && Hat("d")) Hinweis("Rohranschluss mit dn und d: d gilt nur für Kanäle bzw. für Formteile einer Abwasser-Serie nach Aussendurchmesser (dann nur d, eine DN des Herstellers als Typparameter) – für die übrigen Rohre zählt dn");
+                if (Hat("b") || Hat("h")) Hinweis("Rohranschluss: b und h gelten nur für Kanäle, für Rohre zählt dn bzw. bei Abwasser-Serien d");
                 break;
             case "kanal":
                 if (Hat("dn")) Hinweis("Kanalanschluss: dn gilt nur für Rohre, für Kanäle zählen d bzw. b und h");
