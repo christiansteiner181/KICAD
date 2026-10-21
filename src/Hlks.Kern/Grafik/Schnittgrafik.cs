@@ -58,7 +58,7 @@ public static class Schnittgrafik
                 // Familien im Detailgrad der Ansicht (Modul 2), alle anderen Quellen wie bisher
                 if (Grafik.QuelleFuer(ctx.Katalog, e) is { } q && FamilienGrafik.KoerperFuer(q, ctx.Projekt, e, ctx.Detailgrad) is { Leer: false } k) liste.Add((e, k));
             }
-        var teile = Zeichnen(raum, schnitt, liste, ctx.Katalog);
+        var teile = Zeichnen(raum, schnitt, liste, ctx.Katalog, ctx.Detailgrad == "grob");
         IfcDarstellung.Ueberschreiben(ctx, teile);                       // N12: Nachbau in der Farbe der Unterlage
         teile.InsertRange(0, GrundlagenIfc.Ansicht(ctx, raum));          // N12: Original der IFC-Unterlagen (Schnitt mit der Ebene), unterste Ebene
 
@@ -71,7 +71,7 @@ public static class Schnittgrafik
     }
 
     /// <summary>Schritte 2–5 für eine gegebene Liste von Körpern (auch für Familienansichten ohne Modell, FamilienAnsicht).</summary>
-    internal static List<Grafikteil> Zeichnen(Schnittraum raum, bool schnitt, List<(Element E, Koerper K)> liste, Katalog katalog)
+    internal static List<Grafikteil> Zeichnen(Schnittraum raum, bool schnitt, List<(Element E, Koerper K)> liste, Katalog katalog, bool grob = false)
     {
         var zerlegung = new Schnittzerlegung(raum, schnitt);
         for (int i = 0; i < liste.Count; i++) zerlegung.Koerper(i, liste[i].K);
@@ -126,7 +126,7 @@ public static class Schnittgrafik
                 teil.Primitive.Add(new Primitiv
                 {
                     Art = "polygon", Punkte = fl.Aussen, Loecher = fl.Loecher.Count > 0 ? fl.Loecher : null,
-                    Stil = Schnittstil(k, e, farbe),
+                    Stil = Schnittstil(k, e, farbe, grob),
                 });
                 foreach (var ring in fl.Loecher.Prepend(fl.Aussen))
                     for (int j = 0; j < ring.Count; j++)
@@ -166,12 +166,12 @@ public static class Schnittgrafik
     }
 
     /// <summary>Stil der Schnittfläche nach Zeichenebene und Material (siehe Annahmen im Dateikopf).</summary>
-    static Stil Schnittstil(Koerper k, Element e, string? farbe)
+    static Stil Schnittstil(Koerper k, Element e, string? farbe, bool grob)
     {
         switch (k.Ebene)
         {
             case "wand":
-                var s = ArchitekturGrafik.Schnittstil(e.Text("material"));
+                var s = ArchitekturGrafik.Schnittstil(e.Text("material"), grob);   // N20: grob = schwarz voll
                 s.Stift = Stifte.Dick;
                 return s;
             case "decke":

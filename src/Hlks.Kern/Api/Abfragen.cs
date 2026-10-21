@@ -65,6 +65,7 @@ public sealed class Abfragen(Projekt p)
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
         .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)
+        .. SchnitthoeheAbfragen.Definitionen,   // N21: schnitthoehe_sia (Schnitthöhe des Grundrisses nach SIA 400)
     ];
 
     string Kz(string? id) => M.Finde(id)?.Kennzeichen ?? (id is null ? "" : $"?{id}");

@@ -460,7 +460,7 @@ public class AussparungSiaTests
             Ok(p.Ausfuehren("element_anlegen", new JsonObject
             {
                 ["klasse"] = "Ansicht", ["kennzeichen"] = "AN-H", ["geschoss"] = eg.Kennzeichen,
-                ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 500 - (eg.Zahl("kote") ?? 0) },
+                ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 500 - (eg.Zahl("kote") ?? 0), ["schnitthoeheNachSia"] = false },
             }));
             var ul = Assert.Single(p.Modell.DerKlasse("Unterlage"));
             Assert.Contains(Grafik.Plan(p, "AN-H").Teile, t => t.Id == ul.Id && t.Primitive.Count > 0);

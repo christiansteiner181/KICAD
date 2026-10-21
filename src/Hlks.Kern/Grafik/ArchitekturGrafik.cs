@@ -72,6 +72,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             v.Oeffnungen[w.Id] = Wandgeometrie.Oeffnungen(k, w, jeWand.GetValueOrDefault(w.Id) ?? []);
         }
         double sh = ctx.Schnitthoehe;
+        bool grob = ctx.Detailgrad == "grob";   // N20
         var sichtbar = alle.Where(w => Grafik.Sichtbar(ctx, w.Wand)).ToList();
         var geschnitten = sichtbar.Where(w => w.Dicke > 0 && w.Geschnitten(sh)).ToList();
         // Nicht geschnitten, weil niedriger (Oberkante unter der Schnitthöhe): Sichtkanten dünn. Wände ganz über der
@@ -81,7 +82,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         // Geschnittene Wände: Öffnungen, deren Höhenbereich die Schnitthöhe schneidet, über die ganze Dicke + 2 mm aussparen
         var aus = Aussparungen(v, geschnitten, (w, o) => o.Schneidet(sh - w.Unterkante));
         GemeinsamerUmriss(ctx, v, geschnitten, aus, Stifte.Dick);
-        Wandteile(v, geschnitten, aus, w => Schnittstil(w.Wand.Text("material")), (w, o) => o.Schneidet(sh - w.Unterkante));
+        Wandteile(v, geschnitten, aus, w => Schnittstil(w.Wand.Text("material"), grob), (w, o) => o.Schneidet(sh - w.Unterkante));
 
         // Niedrige Wände: Umriss dünn (vereinigt, damit an Ecken keine Doppellinien entstehen); Türen reichen bis zum Boden
         var ausN = Aussparungen(v, niedrig, (w, o) => o.IstTuer);
@@ -165,8 +166,9 @@ public sealed class ArchitekturGrafik : IGrafikquelle
     /// <summary>Schnittfläche nach Material: Schraffur aus Schraffuren über deckendem Papiergrund (Annahme: deckend, damit
     /// Raumfarben die Wand nicht durchscheinen); unbestimmt, leer oder ohne Muster (z. B. «leichtbau») → Füllung «schnitt»,
     /// Deckkraft 0.25. Holz ohne Schraffur, beige und durchscheinend (Nachbearbeitung N18).</summary>
-    public static Stil Schnittstil(string? material)
+    public static Stil Schnittstil(string? material, bool grob = false)
     {
+        if (grob) return GrobStil();   // N20
         var name = material?.Trim();
         // N18 (Christian 21.10.2026): «stelle holz als wand ohne schraffur dar. verwende eine beige/transparente farbe.»
         if (string.Equals(name, "holz", StringComparison.OrdinalIgnoreCase))
@@ -175,6 +177,11 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             return new Stil { Stift = null, Fuellung = "papier", Muster = s.Name };
         return new Stil { Stift = null, Fuellung = "schnitt", Deckkraft = UnbestimmtDeckkraft };
     }
+
+    /// <summary>Schnittfläche im Detailgrad «grob» (N20, Christian 21.10.2026: «detaillierungsgrad grob, alle wände schwarz solid»; SIA 400:2000
+    /// Ziff. B.8.3.1: bis 1:100 schwarz): volle Fläche in Planfarbe, deckend, ohne Muster und ohne Materialfarbe (auch kein Holzbeige).
+    /// Die Kontur zeichnet der dicke Stift des Wandumrisses bzw. des Bauteils.</summary>
+    public static Stil GrobStil() => new() { Stift = null, Fuellung = "schnitt", Deckkraft = 1 };
 
     static Stil Kopie(Stil s) => new()
     {
@@ -687,10 +694,10 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 
     /// <summary>Stil der Schnittfläche bzw. Sichtkante. Mit Achse von → bis (Unterzug) folgt die Schraffur der Achse (N8); Stützen
     /// haben im Grundriss keine Achsrichtung (ihre Achse steht senkrecht zur Zeichenebene) und bleiben achsparallel.</summary>
-    static Stil BauteilStil(string? material, int lage, double[]? von = null, double[]? bis = null)
+    static Stil BauteilStil(string? material, int lage, double[]? von = null, double[]? bis = null, bool grob = false)
     {
         if (lage != 0) return new Stil { Stift = Stifte.Duenn, Linie = lage > 0 ? "strich" : "voll" };
-        var s = Schnittstil(material);
+        var s = Schnittstil(material, grob);
         s.Stift = Stifte.Dick;
         if (von is not null && bis is not null) Schraffuren.AnAchse(s, von[0], von[1], bis[0], bis[1]);
         return s;
@@ -708,13 +715,13 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         int lage = Schnittlage(unten, g.Hoehe, ctx.Schnitthoehe);
         var material = e.Text("material");
         var primitive = new List<Primitiv>();
-        if (lage == 0 && !IstBeton(material))
+        if (lage == 0 && !IstBeton(material) && ctx.Detailgrad != "grob")   // N20: grob = volle schwarze Fläche statt Kreuz
         {
             primitive.Add(new Primitiv { Art = "polygon", Punkte = ring, Stil = new Stil { Stift = Stifte.Dick, Fuellung = "papier" } });
             foreach (var (a, b) in Kreuz(ring))
                 primitive.Add(new Primitiv { Art = "linie", Punkte = [a, b], Stil = new Stil { Stift = Stifte.Duenn } });
         }
-        else primitive.Add(new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(material, lage) });
+        else primitive.Add(new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(material, lage, grob: ctx.Detailgrad == "grob") });
         return
         [
             new Grafikteil
@@ -769,7 +776,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             new Grafikteil
             {
                 Id = e.Id, Ebene = "wand",
-                Primitive = [new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(e.Text("material"), lage, a, b) }],
+                Primitive = [new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(e.Text("material"), lage, a, b, ctx.Detailgrad == "grob") }],
                 Fangpunkte = [a, b, .. ring],
                 Fangkanten = [[ring[0], ring[1]], [ring[2], ring[3]]],
             },

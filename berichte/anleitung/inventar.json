@@ -10253,6 +10253,119 @@
             "src/Hlks.Web/BenutzerEinstellungen.cs (ansicht3d.raumrand)"
           ],
           "hinweis": "Ohne Einstellung gilt 1500 mm. Der Befehl selbst nimmt «rand» als Parameter (KI)."
+        },
+        {
+          "id": "zb-n20-grob",
+          "titel": "Detailgrad «grob»: geschnittene Wände schwarz voll (N20)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Unten in der Ansicht › Auswahl «Detailgrad» (grob | mittel | fein); Eigenschaften der Ansicht › Detailgrad"
+          },
+          "schritte": [
+            "Einen Grundriss mit Wänden (am besten verschiedene Materialien: Beton, Backstein, Holz), einer Stütze und einem Unterzug öffnen.",
+            "Unten in der Ansicht den Detailgrad auf «grob» stellen.",
+            "Die geschnittenen Wände, die Stütze und den Unterzug ansehen.",
+            "Den Detailgrad auf «mittel» zurückstellen und dasselbe nochmals ansehen.",
+            "Einen Schnitt öffnen und dort ebenfalls auf «grob» stellen."
+          ],
+          "erwartung": "Bei «grob» sind alle geschnittenen Wände, Stützen und Unterzüge voll schwarz gefüllt (im dunklen Design hell, in der Planfarbe), ohne Schraffur, ohne Kreuz in der Stütze und ohne Materialfarbe (auch Holz ist nicht beige). Die Kontur bleibt dick. Das gilt auch im Schnitt und im PDF. Bei «mittel» und «fein» ist alles wie bisher: Schraffur nach Material, Holz beige, Stützen mit Kreuz (ausser Beton). Decken im Schnitt bleiben wie bisher. Grundlage: SIA 400:2000 Ziff. B.8.3.1 (bis 1:100 werden Schnittflächen schwarz dargestellt).",
+          "pruefpunkte": [
+            "Grob: Wände (jedes Material) voll schwarz, keine Schraffur.",
+            "Grob: Stütze voll schwarz ohne Kreuz, Unterzug voll schwarz.",
+            "Grob: Holzwand nicht beige.",
+            "Mittel: Schraffuren, Kreuz und Holzbeige wie vorher.",
+            "Grob im Schnitt: Schnittflächen von Wand, Stütze und Unterzug schwarz.",
+            "Das PDF der Ansicht zeigt dasselbe wie der Bildschirm."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG Sanitär",
+            "zustand": "Detailgrad grob (Wände schwarz voll) neben mittel (Schraffur)"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Grafik/ArchitekturGrafik.cs (GrobStil, Schnittstil)",
+            "src/Hlks.Kern/Grafik/Schnittgrafik.cs (Schnittstil)",
+            "src/Hlks.Web/wwwroot/js/fenster.js (Auswahl Detailgrad)"
+          ],
+          "hinweis": "Annahme (am Freitag bestätigen): Stützen und Unterzüge gelten wie Wände. Decken im Schnitt (Deckkraft 0.25) sind nicht Teil von N20."
+        },
+        {
+          "id": "zb-n21-schnitthoehe",
+          "titel": "Schnitthöhe des Grundrisses nach SIA 400 ansehen (N21)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaften der Ansicht (nichts gewählt, Grundriss aktiv) › Zeile «schnitthoehe» mit «Herkunft», «Hinweis», «Handwert»"
+          },
+          "schritte": [
+            "Einen Grundriss mit Türen und Fenstern öffnen, nichts wählen.",
+            "In den Eigenschaften der Ansicht die Zeile «schnitthoehe» ansehen.",
+            "Darunter die Zeile «Herkunft» lesen (Norm, Bereich, massgebende Öffnungen).",
+            "Ein Fenster mit grosser Brüstung (z. B. 1300 mm) einfügen oder eine Brüstung ändern und die Palette erneut ansehen (Ansicht wechseln oder neu wählen).",
+            "Ein Oberlicht (Brüstung 2200, Höhe 300) einfügen: «Hinweis» nennt die nicht geschnittenen Öffnungen."
+          ],
+          "erwartung": "Die Schnitthöhe wird nicht mehr von Hand gesetzt: Der Kern rechnet sie je Geschoss nach SIA 400:2000 Ziff. C.3.1.1 («durch alle Tür- und Fensteröffnungen schneiden») aus den Höhenbereichen aller Türen (ab OK Boden) und Fenster (ab Brüstung). Gibt es einen gemeinsamen Bereich, gilt der Wert darin, der am nächsten bei 1000 mm über OK Boden liegt (auf 10 mm gerundet, im Bereich). Sonst gilt die Höhe, die die meisten Öffnungen schneidet, und der Hinweis nennt die übrigen. Ohne Türen und Fenster gilt 1000 mm mit Hinweis. Die Zeile ist schreibgeschützt; Wände, Öffnungen, Stützen, Unterzüge, IFC-Schnitt und PDF schneiden auf dieser Höhe.",
+          "pruefpunkte": [
+            "Die Zeile «schnitthoehe» zeigt «… mm über OK Geschoss (nach SIA 400)» und ist nicht bearbeitbar.",
+            "Die Zeile «Herkunft» nennt SIA 400:2000 Ziff. C.3.1.1 und die massgebenden Öffnungen.",
+            "Im Grundriss sind alle Türen und Fenster des Geschosses geschnitten (Öffnungen sichtbar).",
+            "Mit einem Oberlicht ohne gemeinsamen Bereich erscheint ein Hinweis mit den nicht geschnittenen Öffnungen.",
+            "Beim Einfügen eines höher liegenden Fensters ändert sich die Höhe (nach erneutem Zeichnen der Palette)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaften der Ansicht Grundriss EG Sanitär",
+            "zustand": "Zeile schnitthoehe schreibgeschützt mit Herkunft und Schalter schnitthoeheNachSia"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Grafik/SchnitthoeheSia.cs (SchnitthoeheNachSia, Abfrage schnitthoehe_sia)",
+            "src/Hlks.Kern/Grafik/Grafik.cs (Kontext)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/schnitthoehe-palette.js",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js"
+          ],
+          "hinweis": "Annahmen (am Freitag bestätigen): 1000 mm als bevorzugter Wert im Bereich; Türen ohne Schwelle (UK = OK Boden). Die Palette rechnet beim Wählen bzw. Wechseln der Ansicht neu, nicht bei jeder Änderung an Türen und Fenstern. Für die KI: Abfrage schnitthoehe_sia (lesend)."
+        },
+        {
+          "id": "zb-n21-schalter",
+          "titel": "Schnitthöhe von Hand setzen: Schalter «schnitthoeheNachSia» (N21)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Eigenschaften der Ansicht › Haken «schnitthoeheNachSia»; danach Feld «schnitthoehe»"
+          },
+          "schritte": [
+            "Die Eigenschaften eines Grundrisses ansehen: Haken «schnitthoeheNachSia» ist gesetzt.",
+            "Den Haken entfernen.",
+            "Im Feld «schnitthoehe» einen Wert eintragen (z. B. 1500) und mit Enter bestätigen.",
+            "Den Grundriss ansehen: Er schneidet auf 1500 mm über OK Geschoss.",
+            "Den Haken wieder setzen: Die gerechnete Höhe gilt wieder, der Handwert bleibt gespeichert."
+          ],
+          "erwartung": "Ansichten ohne Angabe schneiden nach SIA (Vorgabe: Haken gesetzt). Ohne Haken wird das Feld «schnitthoehe» wie bisher bearbeitbar (mm über OK Geschoss, Vorgabe 1000) und gilt als Schnitthöhe des Grundrisses. Mit Haken gilt die gerechnete Höhe; der Handwert bleibt gespeichert und steht in der Zeile «Handwert». Beides ist ein Paket und mit Strg+Z zurücknehmbar.",
+          "pruefpunkte": [
+            "Ohne Haken ist das Feld «schnitthoehe» bearbeitbar.",
+            "Der Grundriss schneidet auf dem eingetragenen Wert.",
+            "Mit Haken ist das Feld wieder schreibgeschützt und zeigt die gerechnete Höhe.",
+            "Der Handwert geht nicht verloren.",
+            "Rückgängig stellt den vorigen Zustand her."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Eigenschaften der Ansicht Grundriss EG Sanitär",
+            "zustand": "Haken schnitthoeheNachSia entfernt, Feld schnitthoehe bearbeitbar"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/eigenschaften.js (Feld schnitthoehe, Haken)",
+            "src/Hlks.Kern/Grafik/SchnitthoeheSia.cs (Aktiv, Hoehe)",
+            "kataloge/klassen.json (Ansicht.schnitthoeheNachSia)"
+          ],
+          "hinweis": "Ansichtsvorlagen übertragen den Handwert (schnitthoehe), nicht den Schalter. Für die KI: element_aendern mit eigenschaften { schnitthoeheNachSia: false, schnitthoehe: 1500 }."
         }
       ]
     }

@@ -406,7 +406,8 @@
     "eigenschaften": [
       { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "grundriss", "schnitt", "ansicht", "3d", "schema", "liste" ], "beschreibung": "Art der Ansicht" },
       { "name": "massstab", "typ": "zahl", "beschreibung": "Massstabsnenner, 50 = 1:50" },
-      { "name": "schnitthoehe", "typ": "zahl", "einheit": "mm", "beschreibung": "Schnitthöhe über OK Geschoss (Grundriss)" },
+      { "name": "schnitthoehe", "typ": "zahl", "einheit": "mm", "beschreibung": "Schnitthöhe über OK Geschoss (Grundriss) von Hand; gilt nur, wenn schnitthoeheNachSia aus ist (Vorgabe 1000)" },
+      { "name": "schnitthoeheNachSia", "typ": "bool", "beschreibung": "Grundriss (N21): Schnitthöhe nach SIA 400:2000 Ziff. C.3.1.1 aus den Türen und Fenstern des Geschosses rechnen, so dass durch alle Öffnungen geschnitten wird (Abfrage schnitthoehe_sia zeigt Wert und Herkunft); ohne Angabe ja. Aus: es gilt das Feld schnitthoehe" },
       { "name": "detailgrad", "typ": "auswahl", "auswahl": [ "grob", "mittel", "fein" ], "beschreibung": "Darstellungstiefe" },
       { "name": "gewerke", "typ": "liste", "beschreibung": "Sichtbare Gewerke, z. B. [\"sanitaer\"]" },
       { "name": "systeme", "typ": "liste", "beschreibung": "Sichtbare Systeme (Kennzeichen), z. B. [\"KW\", \"WW\"]; leer = alle (Schema, Modul 3)" },

@@ -106,7 +106,7 @@ Auf `window`-Ereignis `resize` die Zeichenfläche anpassen.
 ```
 Koordinaten in mm: x Ost, y Nord, z Höhe über ±0.00 (absolut; Geschoss EG Kote 0, 1.OG 2900, UG −2700).
 Leitungen fliessen vom ersten zum letzten Punkt. `linie`: voll | gestrichelt. Ansicht-Werte: `art`
-(grundriss|schnitt|ansicht|3d|schema|liste), `massstab` (Nenner), `schnitthoehe`, `detailgrad` (grob|mittel|fein),
+(grundriss|schnitt|ansicht|3d|schema|liste), `massstab` (Nenner), `schnitthoehe` (Handwert; gilt nur bei `schnitthoeheNachSia` false, sonst schneidet der Grundriss nach SIA 400, N21), `detailgrad` (grob|mittel|fein; grob = Schnittflächen schwarz voll, N20),
 `gewerke` (Liste), `klassenAusblenden` (Liste), `vorlage` (bool), `ansichtsvorlage` (Kennzeichen), `liste`
 (raumliste|strangliste|mengen bei art liste; seit 1c auch raumgrenzen|huellbauteile, siehe «Liste» und «Gebäudehülle»). Katalog: `abfrage('katalog')` → `{ klassen: [{name, schicht, basis,
 gewerk, ifc, beschreibung, anschluesse[], eigenschaften[] (Text «name [einheit] *»)}], medien, systemtypen }`;
@@ -1582,3 +1582,30 @@ Ohne `ansicht`: die erste 3D-Ansicht nach Kennzeichen, sonst wird `AN-3D` angele
   `node src/Hlks.Web/wwwroot/js/ansichten/schnittbereich.browser.mjs` (Port 5480, CDP 9480; Prüfbilder `n13-*.png`, `n14-*.png` in `%TEMP%\HLKS_CAD\n13`).
 - **Offen / nicht geprüft:** IFC-Netze der Unterlagen sind im Code geclippt (gleiche Schleife über alle Materialien), in der Browser-Reihe aber nicht belegt (das Beispielprojekt hat keine IFC-Unterlage);
   Schnittflächen offen (siehe oben).
+
+## Nachbearbeitung N20 und N21: Detailgrad «grob» schwarz voll, Schnitthöhe nach SIA 400 (`nachbearbeitung.md`)
+
+Christian, 21.10.2026: «detaillierungsgrad grob, alle wände schwarz solid.» und «schnitthöhe plan gem. sia». Beides rechnet der Kern; die Oberfläche zeigt nur.
+
+**N20 (Kern `Grafik/ArchitekturGrafik.cs › GrobStil`, `Schnittgrafik.cs`):** Bei `detailgrad = grob` zeichnen geschnittene Wände, Stützen und Unterzüge eine volle Fläche
+`{ fuellung: "schnitt", deckkraft: 1 }` ohne `muster`, ohne `farbe` und ohne Kreuz (N16) bzw. Holzbeige (N18); der Stift der Kontur bleibt dick. Gilt im Grundriss und im Schnitt (die Schnittfläche
+der Ebene «wand»). Bildschirm (`plangrafik.js`, Füllung «schnitt» = Planfarbe, hell im dunklen Design) und PDF (`PdfZeichner`, Pinsel «schnitt») zeichnen die vorhandene Füllung –
+nichts Neues in der Oberfläche. «mittel» und «fein» sind unverändert. Der Detailgrad wird wie bisher unten in der Ansicht oder in den Eigenschaften gewählt.
+
+**N21 (Kern `Grafik/SchnitthoeheSia.cs`):**
+
+| Eigenschaft der Ansicht | Inhalt |
+| --- | --- |
+| `schnitthoeheNachSia` (bool) | Ohne Angabe **ja**, auch für bestehende Ansichten. Ja: der Kern rechnet die Schnitthöhe des Grundrisses je Geschoss (SIA 400:2000 Ziff. C.3.1.1). Nein: es gilt `schnitthoehe` von Hand (Vorgabe 1000). |
+| `schnitthoehe` (mm über OK Geschoss) | Handwert; gilt nur bei `schnitthoeheNachSia = false`. Er bleibt beim Einschalten gespeichert. |
+
+- **Regel:** Höhenbereiche aller Türen (ab OK Boden) und Fenster (Brüstung … Brüstung + Höhe) der Wände des Geschosses; gemeinsamer Bereich → der Wert darin am nächsten bei 1000 mm; sonst die Höhe mit den
+  meisten geschnittenen Öffnungen (Gleichstand: nächste bei 1000) mit Hinweis auf die übrigen; ohne Öffnungen 1000 mm mit Hinweis. Auf 10 mm gerundet, im Bereich bleibend. Zwischengespeichert je Stand des Modells.
+  `Grafik.Kontext` setzt damit `GrafikKontext.Schnitthoehe`; alles Übrige (Wände, Öffnungen, Stützen, Unterzüge, IFC-Schnitt, Treppen, Aussparungen, PDF) liest nur diesen Wert.
+- **Abfrage `schnitthoehe_sia { ansicht | geschoss }`** (auch MCP-Werkzeug und KI, lesend, zur Bestätigung): `wert`, `herkunft` (Text mit «SIA 400:2000 Ziff. C.3.1.1», Bereich und massgebenden Öffnungen), `hinweise[]`,
+  `massgebend[]`, `oeffnungen`, `geschnitten`, `von`, `bis` (mm über OK Boden) und mit `ansicht` zusätzlich `nachSia`, `handwert`, `gilt`.
+- **Eigenschaftenpalette** (`oberflaeche/schnitthoehe-palette.js`, eingehängt in `eigenschaften.js`): Ist der Haken `schnitthoeheNachSia` ein, ersetzt eine schreibgeschützte Zeile «schnitthoehe» («1000 mm über OK Geschoss
+  (nach SIA 400)») das Eingabefeld, darunter «Herkunft», «Hinweis» (je nicht geschnittener Öffnung) und «Handwert». Ist der Haken aus (oder antwortet der Kern nicht), erscheint das Feld `schnitthoehe` wie bisher.
+  Der Haken steht nur bei Grundrissen. Die Palette fragt beim Zeichnen (Wahl bzw. Wechsel der Ansicht, Änderung der Ansicht), nicht bei jeder Änderung an Türen und Fenstern.
+- **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~SchnitthoeheSiaTests|FullyQualifiedName~DetailgradGrobTests"`; Node
+  `node --test src/Hlks.Web/wwwroot/js/oberflaeche/schnitthoehe-palette.test.mjs`.
