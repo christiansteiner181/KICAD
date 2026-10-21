@@ -8,7 +8,7 @@
 //   Faust = Mittel der Entfernungen der vier Fingerspitzen zum Handgelenk, geteilt durch die Handgrösse (Handgelenk → Grundgelenk des Mittelfingers, ≈ 0.09 m).
 //     Offene Hand ≈ 1.9, Faust ≈ 1.0. Greifen ab < 1.3, Loslassen ab > 1.55 (Hysterese).
 //   Pinch = Daumen- und Zeigefingerspitze unter 2.5 cm (los ab 4 cm).
-//   Tablet: Hand offen (Verhältnis > 1.65) und die Handflächen-Normale zeigt höchstens 45° neben den Kopf. Schliessen: Faust oder Wegdrehen (> 65°, Hysterese).
+//   Tablet: Hand offen (Verhältnis > 1.65) und die Handflächen-Normale zeigt höchstens 60° neben den Kopf (wer auf die Hand blickt, hält sie etwa 50° unter der Blickrichtung). Schliessen: Faust oder Wegdrehen (> 80°, Hysterese).
 //   Berühren: Fingerspitze höchstens 1.5 cm vor der Tablet-Ebene bzw. dahinter (bis 4 cm), im Rechteck; ein Druck zählt beim Eintritt.
 
 import { v3, plus, minus, mal, skalar, kreuz, laenge, abstand3, einheit } from './xr-mess-logik.js';
@@ -21,8 +21,8 @@ export const FAUST_LOS = 1.55;
 export const OFFEN_AB = 1.65;
 export const PINCH_AN = 0.025;
 export const PINCH_LOS = 0.04;
-export const PALM_AN_GRAD = 45;
-export const PALM_AUS_GRAD = 65;
+export const PALM_AN_GRAD = 60;
+export const PALM_AUS_GRAD = 80;
 export const HERANHOLEN_DAUER = 0.5;          // s, bis ein per Strahl geholtes Element bei der Hand ist
 export const HERANHOLEN_ABSTAND = 0.4;        // m Abstand zur Hand nach dem Heranholen
 

@@ -247,7 +247,7 @@ export function erzeugeXr(o) {
     const el = elementVon(ziel.id);
     if (!el) return;
     const ebene = ebeneVon(ziel.id);
-    if (ebene === 'leitung' && o.gewaehlt() !== ziel.id) { o.auswaehlen(ziel.id); hinweis('Leitung gewählt – zum Verschieben nochmals greifen', 'info'); schreiben(true); return; }   // erst antippen, dann greifen
+    if (ebene === 'leitung' && !fern && o.gewaehlt() !== ziel.id) { o.auswaehlen(ziel.id); hinweis('Leitung gewählt – zum Verschieben nochmals greifen', 'info'); schreiben(true); return; }   // erst antippen, dann greifen
     startet = true;
     const grund = await fremdReserviert(el);
     startet = false;
@@ -271,7 +271,8 @@ export function erzeugeXr(o) {
     };
     if (fern) {
       const richtung = einheit(minus(fern.punkt, ort));
-      grab.fernZiel = plus(ort, mal(richtung, HERANHOLEN_ABSTAND));
+      // Elemente werden zur Hand geholt; eine Leitung bleibt dabei an ihrem Ort (sie bewegt sich nur quer, mit der Hand) – sonst würde sie quer durch den Raum wandern
+      grab.fernZiel = ebene === 'leitung' ? fern.punkt : plus(ort, mal(richtung, HERANHOLEN_ABSTAND));
       grab.fernPunkt = fern.punkt;
     }
     schreiben(true);
@@ -392,7 +393,7 @@ export function erzeugeXr(o) {
     if (!t.id || !FERN.has(ebeneVon(t.id))) return false;
     const el = elementVon(t.id);
     if (!el) return false;
-    const ort = seiten[seite]?.ort ?? seiten[seite]?.strahl?.u ?? ray.u;
+    const ort = q?.hand ? (seiten[seite]?.ort ?? ray.u) : ray.u;   // Controller: der Strahlursprung ist die Hand (genauer als der Wert des letzten Bildes)
     const z = daten.get(t.id);
     const nahe = abstandZuElement(ort, { id: t.id, box: z.box, strecken: ebeneVon(t.id) === 'leitung' ? z.strecken.filter((s) => s.art === 'achse').map((s) => ({ a: s.a, b: s.b, radius: s.radius })) : null });
     if (nahe <= GREIF_REICHWEITE) { o.auswaehlen(t.id); schreiben(true); return true; }   // antippen
@@ -442,7 +443,7 @@ export function erzeugeXr(o) {
     const s = (S) => (S ? { art: S.art, griff: S.griff, pinch: S.pinch, ort: pt(S.ort) } : null);
     return {
       links: s(seiten.left), rechts: s(seiten.right),
-      tablet: { ...tablet.zustand(), lage: tabletLageJetzt ? { mitte: pt(tabletLageJetzt.mitte), normale: pt(tabletLageJetzt.normale) } : null, ursache: tabletUrsache },
+      tablet: { ...tablet.zustand(), lage: tabletLageJetzt ? { mitte: pt(tabletLageJetzt.mitte), normale: pt(tabletLageJetzt.normale), rechts: pt(tabletLageJetzt.rechts), oben: pt(tabletLageJetzt.oben) } : null, ursache: tabletUrsache },
       messen: messen.zustand(), messungen: messen.messungen().map((m) => ({ ...m, a: pt(m.a), b: pt(m.b), fuss: pt(m.fuss), abstandMm: rund(m.abstandMm, 1), dx: rund(m.dx, 1), dy: rund(m.dy, 1), dz: rund(m.dz, 1) })),
       greifen: grab ? { id: grab.id, kz: grab.kz, art: grab.art, offset: pt(grab.offset), oben: rund(grab.oben), seitlich: rund(grab.seitlich), masse: grab.masse ?? null, fang: grab.fang ?? null } : null,
       befehl: letztesGreifen, hinweis: hinweisZeit.text, fangdaten: daten.anzahl,

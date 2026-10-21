@@ -210,10 +210,10 @@ test('Tablet-Geste: offene linke Hand, Handfläche zum Kopf; Wegdrehen und Faust
   // rechte Hand spiegelbildlich: gleiche Aussage
   const r = hand({ seite: 'right', offen: true, ort: v(0.3, 1.1, -0.2) });
   nah(G.handflaechenNormale(r, 'right').y, 1, 1e-9);
-  // Hysterese beim Wegdrehen: 55° neben dem Kopf – offen noch gehalten, aber nicht neu geöffnet
+  // Hysterese beim Wegdrehen: 70° neben dem Kopf – offen noch gehalten, aber nicht neu geöffnet
   const schief = hand({ seite: 'left', offen: true, ort: v(0, 1.1, -0.2) });
-  const k55 = v(Math.sin(55 * Math.PI / 180) * 0.6, 1.1 + Math.cos(55 * Math.PI / 180) * 0.6, -0.2);
-  assert.equal(G.tabletGeste(schief, 'left', k55, false), false); assert.equal(G.tabletGeste(schief, 'left', k55, true), true);
+  const k70 = v(Math.sin(70 * Math.PI / 180) * 0.6, 1.1 + Math.cos(70 * Math.PI / 180) * 0.6, -0.2);
+  assert.equal(G.tabletGeste(schief, 'left', k70, false), false); assert.equal(G.tabletGeste(schief, 'left', k70, true), true);
 });
 
 test('Tablet-Treffer: Lage über der Hand, Fingerspitze und Strahl liefern (u, v) und die Taste', () => {
