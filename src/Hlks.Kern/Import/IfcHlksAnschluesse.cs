@@ -29,10 +29,12 @@ public static class IfcHlksAnschluesse
 
     /// <param name="medium">Medium eines Ports (eigenes System, sonst das gegenüber); null = unbekannt.</param>
     /// <param name="mitte">Lage des Elements (für den Abzweig eines T-Stücks ohne Port-Achsen).</param>
-    public static IfcHlksZuordnung Zuordnen(KlassenDef def, IReadOnlyList<IfcHlksPort> ports, Func<IfcHlksPort, string?> medium, double[]? mitte)
+    /// <param name="anschluesse">Anschlüsse statt derer der Klasse (Modul 5: Mischventil je art, z. B. Umschaltventil ab ein, a/b aus); null = Katalog.</param>
+    public static IfcHlksZuordnung Zuordnen(KlassenDef def, IReadOnlyList<IfcHlksPort> ports, Func<IfcHlksPort, string?> medium, double[]? mitte,
+        IReadOnlyList<Anschluss>? anschluesse = null)
     {
         var z = new IfcHlksZuordnung();
-        z.Anschluesse.AddRange(def.Anschluesse.Select(a => a.Kopie()));
+        z.Anschluesse.AddRange((anschluesse ?? def.Anschluesse).Select(a => a.Kopie()));
         var frei = new List<Anschluss>(z.Anschluesse);
         var art = new Dictionary<IfcHlksPort, string>();
         var offen = ports.ToList();

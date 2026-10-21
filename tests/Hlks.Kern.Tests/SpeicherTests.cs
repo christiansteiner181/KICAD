@@ -71,8 +71,8 @@ public sealed class SpeicherTests : IDisposable
     public void BeispielSpeichernUndOeffnen()
     {
         var original = Beispielprojekt.Erzeugen(Kat, new OrdnerSpeicher(ordner));
-        Assert.Equal(187, original.Modell.Elemente.Count);
-        Assert.Equal(142, original.Modell.Verbindungen.Count);
+        Assert.Equal(270, original.Modell.Elemente.Count);
+        Assert.Equal(224, original.Modell.Verbindungen.Count);
 
         var speicher = new OrdnerSpeicher(ordner);
         Assert.Equal(original.Verlauf.Count, speicher.PaketListe().Count);
@@ -82,8 +82,8 @@ public sealed class SpeicherTests : IDisposable
         // mit Standabbild
         var b = Projekt.Oeffnen(Kat, speicher, "B", "pc-b");
         Assert.Equal(original.Modell.Pruefsumme(), b.Modell.Pruefsumme());
-        Assert.Equal(187, b.Modell.Elemente.Count);
-        Assert.Equal(142, b.Modell.Verbindungen.Count);
+        Assert.Equal(270, b.Modell.Elemente.Count);
+        Assert.Equal(224, b.Modell.Verbindungen.Count);
         Assert.Equal(original.Verlauf.Count, b.BekanntePakete.Count);
         Assert.Equal(Inhalt(original.Modell), Inhalt(b.Modell));
 
@@ -91,8 +91,8 @@ public sealed class SpeicherTests : IDisposable
         Directory.Delete(Unterordner("stand"), recursive: true);
         var c = Projekt.Oeffnen(Kat, new OrdnerSpeicher(ordner), "C", "pc-c");
         Assert.Equal(original.Modell.Pruefsumme(), c.Modell.Pruefsumme());
-        Assert.Equal(187, c.Modell.Elemente.Count);
-        Assert.Equal(142, c.Modell.Verbindungen.Count);
+        Assert.Equal(270, c.Modell.Elemente.Count);
+        Assert.Equal(224, c.Modell.Verbindungen.Count);
         Assert.Equal(original.Verlauf.Count, c.Verlauf.Count);
         Assert.Equal(Inhalt(original.Modell), Inhalt(c.Modell));
     }

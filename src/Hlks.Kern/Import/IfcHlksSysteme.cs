@@ -43,9 +43,13 @@ public sealed class IfcHlksSysteme
 
     IfcHlksSysteme(IfcLauf lauf) => this.lauf = lauf;
 
-    /// <summary>IfcSystem (genau diese Entität) oder IfcDistributionSystem – nicht IfcZone, IfcBuildingSystem, Stränge.</summary>
-    public static bool IstSystem(IPersistEntity g) => IfcDatei.Entitaet(g) == "IfcSystem" || (IfcHlksHilfe.IstArt(g, "IfcDistributionSystem") && !IstKreis(g));
-    public static bool IstKreis(IPersistEntity g) => IfcHlksHilfe.IstArt(g, "IfcDistributionCircuit");
+    /// <summary>IfcSystem (genau diese Entität) oder IfcDistributionSystem – nicht IfcZone, IfcBuildingSystem, Stränge, Heizgruppen.</summary>
+    public static bool IstSystem(IPersistEntity g) => !IstHeizgruppe(g) && (IfcDatei.Entitaet(g) == "IfcSystem" || (IfcHlksHilfe.IstArt(g, "IfcDistributionSystem") && !IstKreis(g)));
+    public static bool IstKreis(IPersistEntity g) => IfcHlksHilfe.IstArt(g, "IfcDistributionCircuit") && !IstHeizgruppe(g);
+
+    /// <summary>Modul 5: Heizgruppe aus dem KICAD-Export (ObjectType «Heizgruppe», IFC4 IfcDistributionCircuit bzw. IFC2X3 IfcSystem) – weder System
+    /// noch Strang; der Import übergeht sie (die Gruppe wird aus dem Netz abgeleitet bzw. mit heizgruppen_vorschlagen angelegt).</summary>
+    public static bool IstHeizgruppe(IPersistEntity g) => g is IIfcObject o && string.Equals(IfcLauf.Text(o.ObjectType), "Heizgruppe", StringComparison.OrdinalIgnoreCase);
 
     /// <summary>Basisname: Name ohne Nummer am Ende («H VL NT 6» → «H VL NT»); bleibt nichts mit Buchstaben, der Name.</summary>
     public static string Basisname(string name)

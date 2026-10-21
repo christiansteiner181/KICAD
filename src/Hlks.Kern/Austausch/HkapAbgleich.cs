@@ -232,7 +232,7 @@ public static class HkapAbgleich
             var h = f.Hkap(paar.HkapFlach);
             bool bekannt = f.BasisBekannt(basisFlach);
             var b = bekannt ? f.Hkap(basisFlach!) : null;
-            bool hat = f.Liest;
+            bool hat = f.Liest && (f.OrtFuer?.Invoke(m, paar) ?? true);
             var k = hat && paar.Element is not null ? f.KicadWert(m, paar) : null;
             var fs = Vergleichen(f.Name, hat, k, h, bekannt, b, f.DarfSenden(plan.Def), f.DarfUebernehmen(plan.Def));
             if (f.HkapWertBleibt && fs.Aktion == "senden" && (fs.Ueberschreibt || HkapWerte.Normal(fs.Kicad) is null))

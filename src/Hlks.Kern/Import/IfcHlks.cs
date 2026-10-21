@@ -63,7 +63,33 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         raeume = Raeume();
         foreach (var x in Produkte()) Planen(x);
         Verbinden();
+        Systempaare();
+        Anlegefuehler();
         Zusammenfassen(uhr.Elapsed);
+    }
+
+    /// <summary>Modul 5 (entwurf/modul-5.md, A-D 2): Systempaar Vor-/Rücklauf, wenn die Namen eindeutig zusammenpassen («H VL NT» ↔ «H RL NT») und die
+    /// Medien ein Paar sind (medien.json gegenstueck) – in beide Richtungen eindeutig, sonst kein Paar (Hinweis).</summary>
+    void Systempaare()
+    {
+        var geplant = systeme.Systeme.Where(s => s.Ref is not null && s.Medium is not null && lauf.Geplant.ContainsKey(s.Ref)).ToList();
+        var vl = geplant.Where(s => kat.PaarRolle(s.Medium) == "vorlauf").ToList();
+        var rl = geplant.Where(s => kat.PaarRolle(s.Medium) == "ruecklauf").ToList();
+        bool Passt(IfcHlksSystem v, IfcHlksSystem r) =>
+            string.Equals(kat.GegenstueckMedium(v.Medium), r.Medium, StringComparison.OrdinalIgnoreCase) && Heizgruppen.NamenPassen(v.Basis, r.Basis);
+        foreach (var v in vl.OrderBy(s => s.Basis, StringComparer.Ordinal))
+        {
+            var kand = rl.Where(r => Passt(v, r)).ToList();
+            if (kand.Count != 1 || vl.Count(x => Passt(x, kand[0])) != 1)
+            {
+                if (kand.Count > 1) lauf.Hinweise.Add($"System «{v.Basis}»: mehrere Rücklaufsysteme passen ({string.Join(", ", kand.Select(r => $"«{r.Basis}»"))}) – kein Systempaar gesetzt (system_paar_anlegen).");
+                continue;
+            }
+            var r = kand[0];
+            lauf.Geplant[v.Ref!].Bezuege[Heizgruppen.Bezug.Gegenstueck] = r.Ref!;
+            lauf.Geplant[r.Ref!].Bezuege[Heizgruppen.Bezug.Gegenstueck] = v.Ref!;
+            lauf.Hinweise.Add($"Systempaar «{v.Basis}» ↔ «{r.Basis}» aus den Namen.");
+        }
     }
 
     /// <summary>Produkte des Bereichs: Verteilelemente (Fluss und Regelung, ausgewählt über den Schemanamen) sowie
@@ -88,7 +114,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         var def = kat.Klassen[wahl.Klasse];
         bool leitungsbauteil = def.IstArt("Leitung") || def.IstArt("Formteil") || def.IstArt("Armatur");
         if (wahl.AusName) Notiz($"Klasse aus dem Namen: {wahl.Klasse} ({IfcDatei.Entitaet(x)})", Kurzname(x));
-        if (wahl.AusPorts) Notiz($"Klasse aus der Lage der Ports: {wahl.Klasse} ({IfcDatei.Entitaet(x)} ohne PredefinedType)", Kurzname(x));
+        if (wahl.AusPorts)
+            Notiz(wahl.Klasse == "Mischventil" ? "Mischventil aus der Zahl der Ports (Ventil mit 3 bzw. 4 Ports)" : $"Klasse aus der Lage der Ports: {wahl.Klasse} ({IfcDatei.Entitaet(x)} ohne PredefinedType)", Kurzname(x));
         if (medien.Count > 0 && !IfcHlksKlasse.MediumPasst(kat, wahl.Klasse, medien))
             Notiz($"Klasse {wahl.Klasse} passt nicht zum Medium des Systems ({string.Join(", ", medien.Order())})", Kurzname(x));
 
@@ -115,7 +142,10 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         {
             if (px.Count == 0 && x.Representation is null) { NichtUebernommen(x, $"{wahl.Klasse} ohne Körper und ohne Ports"); return; }
             geo = new Geometrie { Art = "punkt", Punkte = [Runden(Punkt(x, def, px, lage, koerper))] };
-            zu = IfcHlksAnschluesse.Zuordnen(def, px, PortMedium, geo.Punkte[0]);
+            // Modul 5: Mischventil – Anschlüsse nach der art (Umschaltventil: ab ein, a/b aus; 4-Weg: zusätzlich b_aus)
+            IReadOnlyList<Anschluss>? bild = wahl.Klasse == "Mischventil"
+                ? HeizungNachfuehren.Anschlussbild(wahl.ArtWert).Select(a => new Anschluss { Name = a.Name, Medium = "*", Fluss = a.Fluss }).ToList() : null;
+            zu = IfcHlksAnschluesse.Zuordnen(def, px, PortMedium, geo.Punkte[0], bild);
         }
 
         var e = lauf.Neu(wahl.Klasse, x);
@@ -138,6 +168,78 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         Anschluesse(e, def, px, zu, leitungsbauteil);
         if (def.BrauchtRaum && geo.Art == "punkt") e.Raum = Raum(x, e);
         geplant[x.EntityLabel] = zu;
+        if (wahl.Klasse == "Fuehler") fuehler.Add((x, e));
+    }
+
+    readonly List<(IIfcProduct Produkt, Element Element)> fuehler = [];
+
+    /// <summary>Modul 5: Fühler ohne Verbindung zum Netz (Revit: Thermometer mit Übergang auf das Rohr gesetzt, ohne T-Stück und ohne
+    /// IfcRelConnectsPorts) – liegt ein offener Port der Kette Fühler → Formteile im Körper einer Leitung desselben Systems (Abstand zur Achse höchstens
+    /// da/2 + 1 mm, zwischen den Enden) bzw. eines Formteils (Abstand zu seinem Punkt höchstens da/2 + 1 mm der angeschlossenen Rohre), zeigt
+    /// bezuege.an auf dieses Leitungsbauteil. Geometrie der Datei, keine erfundene Verbindung (Bernstrasse: Port 8 mm neben der Achse).</summary>
+    void Anlegefuehler()
+    {
+        if (fuehler.Count == 0) return;
+        var leitungen = lauf.Geplant.Values.Where(e => kat.IstArt(e, "Leitung") && e.Geometrie is { Punkte.Count: >= 2 } && e.Zahl("da") is > 0).ToList();
+        // Formteile: Radius = grösster Aussendurchmesser der angeschlossenen Rohre / 2
+        var nachbarn = new Dictionary<string, List<string>>(StringComparer.Ordinal);
+        foreach (var v in lauf.Verbindungen)
+        {
+            (nachbarn.TryGetValue(v.VonRef, out var a) ? a : nachbarn[v.VonRef] = []).Add(v.NachRef);
+            (nachbarn.TryGetValue(v.NachRef, out var b) ? b : nachbarn[v.NachRef] = []).Add(v.VonRef);
+        }
+        var formteile = lauf.Geplant.Values.Where(e => kat.IstArt(e, "Formteil") && e.Geometrie is { Punkte.Count: >= 1 })
+            .Select(e => (Element: e, Da: (nachbarn.GetValueOrDefault(e.Id) ?? []).Select(r => lauf.Geplant.GetValueOrDefault(r)?.Zahl("da") ?? 0).DefaultIfEmpty(0).Max()))
+            .Where(x => x.Da > 0).ToList();
+        foreach (var (x, e) in fuehler)
+        {
+            var offen = new List<double[]>();
+            bool amNetz = false;
+            var besucht = new HashSet<int> { x.EntityLabel };
+            var stapel = new Stack<IIfcProduct>([x]);
+            while (stapel.Count > 0 && !amNetz)
+            {
+                var el = stapel.Pop();
+                foreach (var p in ports.Von(el))
+                {
+                    if (p.Gegenueber is not { } g) { offen.Add(p.Lage); continue; }
+                    var n = g.Element;
+                    if (!besucht.Add(n.EntityLabel)) continue;
+                    if (besucht.Count <= 4 && ports.Von(n).Count <= 2 && lauf.Geplant.TryGetValue(IfcLauf.Ref(n), out var ne) && kat.IstArt(ne, "Formteil")) stapel.Push(n);
+                    else { amNetz = true; break; }
+                }
+            }
+            if (amNetz || offen.Count == 0 || e.System is null) continue;
+            Element? treffer = null; double best = double.MaxValue;
+            foreach (var l in leitungen.Where(l => l.System == e.System))
+            {
+                var a = l.Geometrie!.Punkte[0]; var b = l.Geometrie.Punkte[^1];
+                double r = l.Zahl("da")!.Value / 2 + 1;
+                foreach (var pt in offen)
+                    if (AbstandZurStrecke(pt, a, b) is { } d && d <= r && d < best) { best = d; treffer = l; }
+            }
+            var kette = besucht.Select(label => d.Modell.Instances[label]).OfType<Xbim.Common.IPersistEntity>().OfType<IIfcRoot>().Select(IfcLauf.Ref).ToHashSet(StringComparer.Ordinal);
+            foreach (var (f, da) in formteile.Where(x => x.Element.System == e.System && !kette.Contains(x.Element.Id)))
+            {
+                foreach (var pt in offen)
+                    if (Geometrie.Abstand(pt, f.Geometrie!.Punkte[0]) is var d && d <= da / 2 + 1 && d < best) { best = d; treffer = f; }
+            }
+            if (treffer is null) continue;
+            e.Bezuege[Heizgruppen.Bezug.An] = treffer.Id;
+            Notiz("Fühler ohne Verbindung an der Leitung, in deren Rohrkörper sein offener Port liegt (bezuege.an)", $"{Kurzname(x)} → {Math.Round(best, 1)} mm neben der Achse");
+        }
+    }
+
+    /// <summary>Abstand eines Punkts zur Strecke a–b, nur wenn sein Fusspunkt zwischen a und b liegt; sonst null.</summary>
+    static double? AbstandZurStrecke(double[] p, double[] a, double[] b)
+    {
+        double[] ab = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], ap = [p[0] - a[0], p[1] - a[1], p[2] - a[2]];
+        double l2 = ab[0] * ab[0] + ab[1] * ab[1] + ab[2] * ab[2];
+        if (l2 < 1e-9) return null;
+        double t = (ap[0] * ab[0] + ap[1] * ab[1] + ap[2] * ab[2]) / l2;
+        if (t < 0 || t > 1) return null;
+        double[] f = [a[0] + t * ab[0] - p[0], a[1] + t * ab[1] - p[1], a[2] + t * ab[2] - p[2]];
+        return Math.Sqrt(f[0] * f[0] + f[1] * f[1] + f[2] * f[2]);
     }
 
     /// <summary>Medien der Systeme des Produkts und seiner Ports; fehlen sie, die der verbundenen Ports und Produkte.</summary>

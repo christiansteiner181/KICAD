@@ -2,7 +2,8 @@
 // 3 Geschosse (UG, EG, 1.OG), 13 Räume, Aussenwände, Sanitäranlage mit Schmutzwasser (2 Fallstränge, Sammel- und
 // Grundleitung bis Kontrollschacht) und Trinkwasser kalt (Verteilleitung, 2 Steigstränge), 16 Apparate,
 // Funktionsgraph mit Wasserzähler-Datenpunkten und Leckage-Verriegelung, 6 Ansichten. Dazu ein kleiner Kältekreis (Kälte Vorlauf/Rücklauf, Gewerk
-// Heizung, Entscheid Christian 20.10.2026) mit Grundriss UG Heizung/Kälte. Alle Werte fiktiv.
+// Heizung, Entscheid Christian 20.10.2026) mit Grundriss UG Heizung/Kälte und eine Heizungsanlage (Modul 5 A-D: Systempaar HZ-VL/HZ-RL,
+// Wärmepumpe, Speicher, Ausdehnungsgefäss, Verteiler, Heizgruppen «FBH gemischt» und «Heizkörper ungemischt»). Alle Werte fiktiv.
 
 using System.Text.Json.Nodes;
 
@@ -250,6 +251,128 @@ public static class Beispielprojekt
         Punkt("Ventil", "VE-KAE-3", "KAE-R1", 1500, 1400, -2400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 40 });
         Rohr("KAE-V1-1", "KAE-V1", 40, "Stahl", "P-KAE-1.druck", "VE-KAE-1.ein", [Q(1500, 1000, -2400), Q(3500, 1000, -2400)]);
         Rohr("KAE-R1-1", "KAE-R1", 40, "Stahl", "VE-KAE-2.aus", "VE-KAE-3.ein", [Q(3500, 1400, -2400), Q(1500, 1400, -2400)]);
+
+        // ---------- Heizung (Modul 5 Teil A-D) – ALLE WERTE FIKTIV (Leistungen, Temperaturen, Inhalte, Vordruck), wie K = 0.5 in Modul 4 ----------
+        // Wärmepumpe Luft/Wasser → Speicher (Ausdehnungsgefäss am Rücklauf) → Verteiler VT-1 mit Heizgruppe «FBH gemischt» (vl_1/rl_1: Absperrventil,
+        // Mischventil mit Bypass vom Rücklauf, Pumpe, Fühler; je Geschoss ein FBH-Verteiler mit drei Kreisen, im Grundriss verlegt) und Heizgruppe
+        // «Heizkörper ungemischt» (vl_2/rl_2: Absperrventil, Pumpe; Heizkörper im Bad EG und 1.OG). Leitungen ohne Serie (wie der Bestand).
+        const string Fiktiv = "FIKTIV – Beispielprojekt, kein Auslegungswert";
+        static JsonObject F(double wert) => new() { ["wert"] = wert, ["quelle"] = Fiktiv };
+        Neu("Anlage", "A-HZG", "Heizungsanlage", new JsonObject { ["beschreibung"] = "Wärmepumpe, Speicher, zwei Heizgruppen – Werte fiktiv" });
+        Ok(p.Ausfuehren("system_paar_anlegen", new JsonObject { ["vorlauf"] = "HZ-VL", ["ruecklauf"] = "HZ-RL", ["systemtyp"] = "Heizung Vorlauf", ["anlage"] = "A-HZG", ["name"] = "Heizung" }));
+        Strang("HZ-V0", "Erzeugerkreis Vorlauf", "verteilleitung", "HZ-VL");
+        Strang("HZ-R0", "Erzeugerkreis Rücklauf", "verteilleitung", "HZ-RL");
+        Strang("HZ-V1", "Verteilung Vorlauf Technik", "verteilleitung", "HZ-VL");
+        Strang("HZ-R1", "Verteilung Rücklauf Technik", "verteilleitung", "HZ-RL");
+        Strang("HZ-VF", "Fussbodenheizung Vorlauf", "steigstrang", "HZ-VL");
+        Strang("HZ-RF", "Fussbodenheizung Rücklauf", "steigstrang", "HZ-RL");
+        Strang("HZ-VH", "Heizkörper Vorlauf", "steigstrang", "HZ-VL");
+        Strang("HZ-RH", "Heizkörper Rücklauf", "steigstrang", "HZ-RL");
+        void Geraet(string klasse, string kz, string name, double x, double y, double z, JsonObject? eig = null, string? system = null) =>
+            Neu(klasse, kz, name, eig, new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(P(x, y, z)) }, system: system);
+        Geraet("Waermeerzeuger", "WEZ-1", "Wärmepumpe Luft/Wasser (fiktiv)", 800, 4200, -2700, new JsonObject { ["art"] = "waermepumpe", ["leistung"] = F(12) });
+        Geraet("Speicher", "SPE-1", "Speicher Heizung (fiktiv)", 2400, 4200, -2700, new JsonObject { ["inhalt"] = F(500) });
+        Geraet("Ausdehnungsgefaess", "AG-1", "Ausdehnungsgefäss (fiktiv)", 1600, 4700, -2700, new JsonObject { ["inhalt"] = F(35), ["vordruck"] = F(1.0) }, system: "HZ-RL");
+        Neu("Verteiler", "VT-1", "Heizungsverteiler", null, new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(P(4200, 4200, -2700)) });
+        // Erzeugerkreis: Wärmepumpe → Speicher, Rücklauf mit Ausdehnungsgefäss
+        Punkt("TStueck", "TS-HZ-AG", "HZ-R0", 1600, 4400, -2000, new JsonObject { ["dn"] = 32 });
+        const string ST = "Stahl";
+        Rohr("HZ-V0-1", "HZ-V0", 32, ST, "WEZ-1.vl", "SPE-1.vl_ein", [Q(800, 4000, -2000), Q(2400, 4000, -2000)]);
+        Rohr("HZ-R0-1", "HZ-R0", 32, ST, "SPE-1.rl_aus", "TS-HZ-AG.a", [Q(2400, 4400, -2000), Q(1600, 4400, -2000)]);
+        Rohr("HZ-R0-2", "HZ-R0", 32, ST, "TS-HZ-AG.b", "WEZ-1.rl", [Q(1600, 4400, -2000), Q(800, 4400, -2000)]);
+        Rohr("HZ-R0-AG", "HZ-R0", 20, ST, "TS-HZ-AG.c", "AG-1.anschluss", [Q(1600, 4400, -2000), Q(1600, 4700, -2000)]);
+        // Speicher → Verteiler
+        Rohr("HZ-V1-1", "HZ-V1", 32, ST, "SPE-1.vl_aus", "VT-1.vl_ein", [Q(2400, 4000, -1800), Q(4200, 4000, -1800)]);
+        Rohr("HZ-R1-1", "HZ-R1", 32, ST, "VT-1.rl_aus", "SPE-1.rl_ein", [Q(4200, 4400, -1800), Q(2400, 4400, -1800)]);
+
+        // Heizgruppe 1: FBH gemischt (VT-1.vl_1/rl_1)
+        Punkt("Ventil", "VE-HG1-V", "HZ-V1", 4400, 4000, -1600, new JsonObject { ["art"] = "absperrventil", ["dn"] = 25 });
+        Punkt("Mischventil", "MV-HG1", "HZ-V1", 4500, 4000, -1600, new JsonObject { ["art"] = "3weg", ["dn"] = 25, ["kvs"] = F(4) });
+        Punkt("Pumpe", "P-HG1", "HZ-V1", 4600, 4000, -1600, new JsonObject { ["dn"] = 25 });
+        Punkt("Fuehler", "TF-HG1-V", "HZ-V1", 4700, 4000, -1600, new JsonObject { ["art"] = "temperatur", ["dn"] = 25 });
+        Rohr("HZ-V1-2", "HZ-V1", 25, ST, "VT-1.vl_1", "VE-HG1-V.ein", [Q(4200, 4000, -1600), Q(4400, 4000, -1600)]);
+        Rohr("HZ-V1-3", "HZ-V1", 25, ST, "VE-HG1-V.aus", "MV-HG1.a", [Q(4400, 4000, -1600), Q(4500, 4000, -1600)]);
+        Rohr("HZ-V1-4", "HZ-V1", 25, ST, "MV-HG1.ab", "P-HG1.saug", [Q(4500, 4000, -1600), Q(4600, 4000, -1600)]);
+        Rohr("HZ-V1-5", "HZ-V1", 25, ST, "P-HG1.druck", "TF-HG1-V.ein", [Q(4600, 4000, -1600), Q(4700, 4000, -1600)]);
+        Punkt("TStueck", "TS-HZ-VF-EG", "HZ-VF", 4800, 4800, 200, new JsonObject { ["dn"] = 25 });
+        Rohr("HZ-VF-1", "HZ-VF", 25, ST, "TF-HG1-V.aus", "TS-HZ-VF-EG.a", [Q(4700, 4000, -1600), Q(4800, 4000, -1600), Q(4800, 4800, -1600), Q(4800, 4800, 200)]);
+        // FBH-Verteiler je Geschoss (drei Abgänge, eigene Anschlüsse wie die Familie eines FBH-Verteilers)
+        JsonArray FbvAnschluesse()
+        {
+            var a = new JsonArray(new JsonObject { ["name"] = "vl_ein", ["medium"] = "HZ-VL", ["fluss"] = "rein" }, new JsonObject { ["name"] = "rl_aus", ["medium"] = "HZ-RL", ["fluss"] = "raus" });
+            for (int i = 1; i <= 3; i++)
+            {
+                a.Add(new JsonObject { ["name"] = $"vl_{i}", ["medium"] = "HZ-VL", ["fluss"] = "raus" });
+                a.Add(new JsonObject { ["name"] = $"rl_{i}", ["medium"] = "HZ-RL", ["fluss"] = "rein" });
+            }
+            return a;
+        }
+        foreach (var (g, z, kz) in new[] { ("EG", 200.0, "FBV-EG"), ("1.OG", 3100.0, "FBV-1.OG") })
+            Ok(p.Ausfuehren("element_anlegen", new JsonObject
+            {
+                ["klasse"] = "Verteiler", ["kennzeichen"] = kz, ["name"] = $"FBH-Verteiler {g}", ["geschoss"] = g, ["anschluesse"] = FbvAnschluesse(),
+                ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(P(4800, 5500, z)) },
+            }));
+        Rohr("HZ-VF-2", "HZ-VF", 25, ST, "TS-HZ-VF-EG.c", "FBV-EG.vl_ein", [Q(4800, 4800, 200), Q(4800, 5500, 200)]);
+        Rohr("HZ-VF-3", "HZ-VF", 25, ST, "TS-HZ-VF-EG.b", "FBV-1.OG.vl_ein", [Q(4800, 4800, 200), Q(4800, 4800, 3100), Q(4800, 5500, 3100)]);
+        // FBH-Kreise im Grundriss verlegt (belegte Fläche als Polygon im Raum), Leistung fiktiv
+        foreach (var (g, k, z, fbv, l1, l2, l3) in new[] { ("EG", "E", 0.0, "FBV-EG", 1200.0, 1000.0, 900.0), ("1.OG", "1", 2900.0, "FBV-1.OG", 1100.0, 950.0, 850.0) })
+        {
+            var kreise = new[]
+            {
+                ($"FBH-{k}.01-1", $"{k}.01", Rechteck(500, 500, 3500, 5500), l1),
+                ($"FBH-{k}.01-2", $"{k}.01", Rechteck(3600, 500, 6800, 4600), l2),
+                ($"FBH-{k}.04", $"{k}.04", Rechteck(500, 6500, 6500, 9500), l3),
+            };
+            for (int i = 0; i < kreise.Length; i++)
+            {
+                var (kz, raum, geo, leistung) = kreise[i];
+                Neu("Fussbodenheizkreis", kz, $"FBH-Kreis {i + 1} {g}", new JsonObject { ["leistung"] = F(leistung) }, geo, geschoss: g, raum: raum);
+                double y = 5450 - 100 * i, zz = z + 150;
+                Rohr($"HZ-VF-{k}-{i + 1}", "HZ-VF", 16, "PE-Xa", $"{fbv}.vl_{i + 1}", $"{kz}.vl", [Q(4750, 5500, zz), Q(4700, y, zz)], geschoss: g);
+                Rohr($"HZ-RF-{k}-{i + 1}", "HZ-RF", 16, "PE-Xa", $"{kz}.rl", $"{fbv}.rl_{i + 1}", [Q(4700, y - 50, zz), Q(4850, 5500, zz)], geschoss: g);
+            }
+        }
+        // Rücklauf FBH mit Bypass zum Mischventil
+        Punkt("TStueck", "TS-HZ-RF-EG", "HZ-RF", 4900, 4900, 200, new JsonObject { ["dn"] = 25 });
+        Punkt("TStueck", "TS-HG1-BY", "HZ-R1", 4500, 4200, -1400, new JsonObject { ["dn"] = 25 });
+        Punkt("Fuehler", "TF-HG1-R", "HZ-R1", 4400, 4200, -1400, new JsonObject { ["art"] = "temperatur", ["dn"] = 25 });
+        Punkt("Ventil", "VE-HG1-R", "HZ-R1", 4300, 4200, -1400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 25 });
+        Rohr("HZ-RF-1", "HZ-RF", 25, ST, "FBV-EG.rl_aus", "TS-HZ-RF-EG.c", [Q(4900, 5500, 200), Q(4900, 4900, 200)]);
+        Rohr("HZ-RF-2", "HZ-RF", 25, ST, "FBV-1.OG.rl_aus", "TS-HZ-RF-EG.b", [Q(4900, 5500, 3100), Q(4900, 4900, 3100), Q(4900, 4900, 200)]);
+        Rohr("HZ-RF-3", "HZ-RF", 25, ST, "TS-HZ-RF-EG.a", "TS-HG1-BY.a", [Q(4900, 4900, 200), Q(4900, 4900, -1400), Q(4900, 4200, -1400), Q(4500, 4200, -1400)]);
+        Rohr("HZ-R1-BY", "HZ-R1", 25, ST, "TS-HG1-BY.c", "MV-HG1.b", [Q(4500, 4200, -1400), Q(4500, 4000, -1400), Q(4500, 4000, -1600)]);
+        Rohr("HZ-R1-2", "HZ-R1", 25, ST, "TS-HG1-BY.b", "TF-HG1-R.ein", [Q(4500, 4200, -1400), Q(4400, 4200, -1400)]);
+        Rohr("HZ-R1-3", "HZ-R1", 25, ST, "TF-HG1-R.aus", "VE-HG1-R.ein", [Q(4400, 4200, -1400), Q(4300, 4200, -1400)]);
+        Rohr("HZ-R1-4", "HZ-R1", 25, ST, "VE-HG1-R.aus", "VT-1.rl_1", [Q(4300, 4200, -1400), Q(4200, 4200, -1400)]);
+
+        // Heizgruppe 2: Heizkörper ungemischt (VT-1.vl_2/rl_2)
+        Punkt("Ventil", "VE-HG2-V", "HZ-V1", 5200, 3800, -1600, new JsonObject { ["art"] = "absperrventil", ["dn"] = 20 });
+        Punkt("Pumpe", "P-HG2", "HZ-V1", 5400, 3800, -1600, new JsonObject { ["dn"] = 20 });
+        Punkt("TStueck", "TS-HZ-VH-EG", "HZ-VH", 7200, 6100, 300, new JsonObject { ["dn"] = 20 });
+        Rohr("HZ-V1-6", "HZ-V1", 20, ST, "VT-1.vl_2", "VE-HG2-V.ein", [Q(4200, 3800, -1600), Q(5200, 3800, -1600)]);
+        Rohr("HZ-V1-7", "HZ-V1", 20, ST, "VE-HG2-V.aus", "P-HG2.saug", [Q(5200, 3800, -1600), Q(5400, 3800, -1600)]);
+        Rohr("HZ-VH-1", "HZ-VH", 20, ST, "P-HG2.druck", "TS-HZ-VH-EG.a", [Q(5400, 3800, -1600), Q(7200, 3800, -1600), Q(7200, 6100, -1600), Q(7200, 6100, 300)]);
+        foreach (var (g, k, z, leistung) in new[] { ("EG", "E", 0.0, 600.0), ("1.OG", "1", 2900.0, 550.0) })
+            Geraet("Heizkoerper", $"HK-{k}.02", $"Heizkörper Bad {g} (fiktiv)", 7500, 6300, z + 200, new JsonObject { ["leistung"] = F(leistung) });
+        Rohr("HZ-VH-2", "HZ-VH", 15, ST, "TS-HZ-VH-EG.c", "HK-E.02.vl", [Q(7200, 6100, 300), Q(7400, 6100, 300), Q(7400, 6300, 300)]);
+        Rohr("HZ-VH-3", "HZ-VH", 15, ST, "TS-HZ-VH-EG.b", "HK-1.02.vl", [Q(7200, 6100, 300), Q(7200, 6100, 3200), Q(7400, 6100, 3200), Q(7400, 6300, 3200)]);
+        Punkt("TStueck", "TS-HZ-RH-EG", "HZ-RH", 7600, 6150, 250, new JsonObject { ["dn"] = 20 });
+        Punkt("Ventil", "VE-HG2-R", "HZ-R1", 5300, 3600, -1400, new JsonObject { ["art"] = "absperrventil", ["dn"] = 20 });
+        Rohr("HZ-RH-1", "HZ-RH", 15, ST, "HK-1.02.rl", "TS-HZ-RH-EG.b", [Q(7600, 6300, 3150), Q(7600, 6150, 3150), Q(7600, 6150, 250)]);
+        Rohr("HZ-RH-2", "HZ-RH", 15, ST, "HK-E.02.rl", "TS-HZ-RH-EG.c", [Q(7600, 6300, 250), Q(7600, 6150, 250)]);
+        Rohr("HZ-RH-3", "HZ-RH", 20, ST, "TS-HZ-RH-EG.a", "VE-HG2-R.ein", [Q(7600, 6150, 250), Q(7600, 6150, -1400), Q(7600, 3600, -1400), Q(5300, 3600, -1400)]);
+        Rohr("HZ-R1-5", "HZ-R1", 20, ST, "VE-HG2-R.aus", "VT-1.rl_2", [Q(5300, 3600, -1400), Q(4200, 3600, -1400)]);
+
+        // Heizgruppen über die Befehle (Glieder, Verbraucher und Leistungssumme leitet der Kern ab), Temperaturen fiktiv
+        Ok(p.Ausfuehren("heizgruppe_anlegen", new JsonObject
+        {
+            ["kennzeichen"] = "HG-1", ["name"] = "FBH gemischt", ["verteiler"] = "VT-1", ["abgangVl"] = "vl_1", ["vlTemp"] = 35, ["rlTemp"] = 28, ["quelle"] = Fiktiv,
+        }));
+        Ok(p.Ausfuehren("heizgruppe_anlegen", new JsonObject
+        {
+            ["kennzeichen"] = "HG-2", ["name"] = "Heizkörper ungemischt", ["verteiler"] = "VT-1", ["abgangVl"] = "vl_2", ["vlTemp"] = 55, ["rlTemp"] = 45, ["quelle"] = Fiktiv,
+        }));
 
         // ---------- Funktionsgraph (MSRL) ----------
         Neu("Automationsstation", "AS-1", "Automationsstation Technik", new JsonObject { ["hersteller"] = "offen" });

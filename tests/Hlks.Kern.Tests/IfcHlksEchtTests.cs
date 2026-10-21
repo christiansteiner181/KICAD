@@ -59,7 +59,10 @@ public sealed class IfcHlksEchtTests(ITestOutputHelper aus)
         try
         {
             Assert.Equal(1521, z.JeKlasse["Rohr"]);
-            Assert.Equal(238, z.JeKlasse["Ventil"]);
+            // 238 IfcValve: 225 Ventile und 13 «Dreiwegeventil» mit PredefinedType DIVERTING und drei Ports = Mischventil art umschalt (Modul 5 A-D)
+            Assert.Equal(225, z.JeKlasse["Ventil"]);
+            Assert.Equal(13, z.JeKlasse["Mischventil"]);
+            Assert.All(p.Modell.DerKlasse("Mischventil"), mv => Assert.Equal(("umschalt", 3), (mv.Text("art"), mv.Anschluesse.Count)));
             Assert.Equal(32, z.JeKlasse["Pumpe"]);
             Assert.Equal(13, z.JeKlasse["Wasserzaehler"]);
             Assert.True(z.Formteile >= 1890, $"Formteile {z.Formteile}");

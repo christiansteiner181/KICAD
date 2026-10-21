@@ -20,6 +20,10 @@ public class PlanListeUmbruchTests
     static Projekt Haus(int zusaetzlich, string format = "A3", bool hoch = false)
     {
         var p = Beispielprojekt.Erzeugen(Kat, null);
+        // Modul 5 A-D: Heizkörper und FBH-Kreise der Heizungsanlage stehen in Räumen und verbreitern die Spalte «Systeme» (HZ-RL, HZ-VL, KW, SW) –
+        // die Blattbreiten dieser Tests sind auf die Raumliste ohne Heizung abgestimmt, darum fallen sie hier weg (Leitungen bleiben offen, egal für P28)
+        foreach (var hz in p.Modell.Elemente.Where(e => e.Klasse is "Heizkoerper" or "Fussbodenheizkreis").Select(e => e.Kennzeichen).ToList())
+            Ok(p.Ausfuehren("element_loeschen", Par(("element", hz))));
         Ok(p.Ausfuehren("element_anlegen", Par(("klasse", "Projektinformation"),
             ("eigenschaften", new JsonObject { ["phase"] = "Bauprojekt", ["zeile1"] = "MFH Musterweg fiktiv", ["zeile2"] = "Musterweg 1, 3000 Bern", ["projektnummer"] = "1-0768" }))));
         for (int i = 1; i <= zusaetzlich; i++)

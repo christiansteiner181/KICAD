@@ -12,7 +12,7 @@ public class KommandozeileTests
     {
         var (code, aus, _) = Lauf("--ki-auftrag");
         Assert.Equal(0, code);
-        for (int i = 1; i <= 10; i++) Assert.Contains($"f{i}:", aus);
+        for (int i = 1; i <= 11; i++) Assert.Contains($"f{i}:", aus);   // f11 Heizgruppen seit Modul 5 A-D
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public class KommandozeileTests
             // Abfrage
             var (c3, a3, _) = Lauf("--projekt", ordner, "--abfrage", "strangliste");
             Assert.Equal(0, c3);
-            Assert.Equal(9, JsonNode.Parse(a3)!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge
+            Assert.Equal(17, JsonNode.Parse(a3)!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge + 8 Heizungsstränge (Modul 5 A-D)
 
             // Abfrage mit Parameter und Textansicht, Fehlerfall
             var (c3b, a3b, _) = Lauf("--projekt", ordner, "--abfrage", "strang_text", """{"strang":"SW-F2"}""");
@@ -52,15 +52,15 @@ public class KommandozeileTests
             var (c4, a4, _) = Lauf("--projekt", ordner, "--ki-erwartung");
             Assert.Equal(0, c4);
             var erwartung = JsonNode.Parse(a4)!.AsObject();
-            for (int i = 1; i <= 10; i++) Assert.True(erwartung.ContainsKey($"f{i}"), $"f{i} fehlt");
+            for (int i = 1; i <= 11; i++) Assert.True(erwartung.ContainsKey($"f{i}"), $"f{i} fehlt");
 
-            // Bewertung: richtige Antwort -> 0, richtig = 10
+            // Bewertung: richtige Antwort -> 0, richtig = 11 (f11 Heizgruppen seit Modul 5 A-D)
             var antwort = Path.Combine(wurzel, "antwort.json");
             File.WriteAllText(antwort, erwartung.ToJsonString(), new UTF8Encoding(false));
             var (c5, a5, _) = Lauf("--projekt", ordner, "--ki-bewerten", antwort);
             Assert.Equal(0, c5);
             var b5 = JsonNode.Parse(a5)!;
-            Assert.Equal(10, b5["richtig"]!.GetValue<int>());
+            Assert.Equal(Hlks.Kern.KiVerstaendnistest.Fragen.Count, b5["richtig"]!.GetValue<int>());
             Assert.True(b5["bestanden"]!.GetValue<bool>());
 
             // falsche Antwort -> 2

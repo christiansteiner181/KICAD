@@ -184,9 +184,36 @@ public static class HkapStraenge
                 AusHkap = f => Normalisiere(f.TryGetPropertyValue("kicad.straenge", out var v) ? v : null),
                 GruppeLesen = (m, g) => Normalisiere(new JsonArray(g.Select(s => (JsonNode)BlockVon(m, s).DeepClone()).ToArray())),
             },
-            Lesen("tempVL"), Lesen("tempRL"), Lesen("anschluss"), Lesen("anschlussEtageId"), Lesen("etagen"),
+            Temperatur("tempVL", "vlTemp", katalog), Temperatur("tempRL", "rlTemp", katalog),
+            Lesen("anschluss"), Lesen("anschlussEtageId"), Lesen("etagen"),
         ];
     }
+
+    /// <summary>Modul 5 (entwurf/modul-5.md, A-D 9): tempVL/tempRL eines HKAP-Strangs fliessen nur HKAP → KICAD (nie gesendet) in die verknüpfte
+    /// Heizgruppe – die Heizgruppen, in deren Wegen Leitungen der KICAD-Stränge der Gruppe liegen – mit Herkunft «hkap». Ohne verknüpfte Heizgruppe hat
+    /// KICAD keinen Ort: das Feld wird nur gelesen. Mehrere Heizgruppen mit verschiedenen Werten: KICAD-Wert leer (die Übernahme setzt alle gleich).</summary>
+    static HkapFeld Temperatur(string feld, string eigenschaft, Katalog? katalog) => new()
+    {
+        Name = feld, HkapPfade = [feld], Einheit = "°C",
+        OrtFuer = (m, p) => katalog is not null && Heizgruppen.FuerStraenge(m, katalog, p.Gruppe).Count > 0,
+        GruppeLesen = (m, g) =>
+        {
+            if (katalog is null) return null;
+            var werte = Heizgruppen.FuerStraenge(m, katalog, g).Select(h => h.Zahl(eigenschaft)).Distinct().ToList();
+            return werte is [double w] ? JsonValue.Create(w) : null;
+        },
+        GruppeSchreiben = (k, g, w, h) =>
+        {
+            if (Json.Zahl(w) is not double wert) return;
+            foreach (var hg in Heizgruppen.FuerStraenge(k.Arbeit, k.Katalog, g))
+            {
+                var c = k.Arbeit.Finde(hg.Id)!.Kopie();
+                c.Eigenschaften[eigenschaft] = new Wert { Inhalt = JsonValue.Create(wert), Einheit = "°C", Herkunft = h };
+                k.Setzen(c);
+                k.Hinweise.Add($"{hg.Kennzeichen}: {eigenschaft} {HkapAbbildung.Zahltext(wert)} °C aus HKAP ({h.Quelle}).");
+            }
+        },
+    };
 
     // ---------------------------------------------------------------- Gruppen bilden
 

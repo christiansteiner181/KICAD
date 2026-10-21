@@ -185,7 +185,10 @@ public sealed class IfcExportLeistungTests(Xunit.Abstractions.ITestOutputHelper 
         aus.WriteLine($"{anzahl} HLKS-Elemente: {uhr.Elapsed.TotalSeconds:0.0} s (Bericht {b["dauerSekunden"]} s: {b["dauer"]!.ToJsonString()}), {b["entitaetenDatei"]} Entitäten, {(b["groesseBytes"]!.GetValue<long>() / 1024.0 / 1024.0):0.0} MB");
         Assert.Equal("fehlerfrei", b["schemapruefung"]!["ergebnis"]!.GetValue<string>());
         Assert.Equal("bestanden", b["ergebnis"]!["ids"]!.GetValue<string>());
-        Assert.True(Regel(b, "HK-HLKS-05")["anwendbar"]!.GetValue<int>() >= 5000);   // die IDS-Prüfung hat das ganze Modell gesehen
+        // die IDS-Prüfung hat das ganze Modell gesehen – ausser den Fühlern (IfcSensor teilen sie mit den Datenpunkten, Modul 5 A-D: nicht in den HLKS-Regeln)
+        int fuehler = p.Modell.Elemente.Count(e => e.Klasse == "Fuehler");
+        var anwendbar = Regel(b, "HK-HLKS-05")["anwendbar"]!.GetValue<int>();
+        Assert.True(anwendbar >= anzahl - fuehler, $"HK-HLKS-05 anwendbar {anwendbar}, HLKS-Elemente {anzahl}, davon Fühler {fuehler}");
         Assert.True(uhr.Elapsed.TotalSeconds < 30, $"Export dauerte {uhr.Elapsed.TotalSeconds:0.0} s (Grenze 30 s)");
     }
 }

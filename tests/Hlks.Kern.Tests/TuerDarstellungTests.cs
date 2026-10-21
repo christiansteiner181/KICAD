@@ -74,6 +74,8 @@ public class TuerDarstellungTests
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",       // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
+        ["heizung_lesen"] = "{\"anlage\":\"A-HZG\"}",   // Modul 5 Teil A-D
+        ["heizung_leistung"] = "{\"heizgruppe\":\"HG-1\"}",
     };
 
     static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
@@ -301,14 +303,14 @@ public class TuerDarstellungTests
     }
 
     [Fact]
-    public void Darstellung_ModellHat187ElementeUnd142VerbindungenMitKennzeichen()
+    public void Darstellung_ModellHat270ElementeUnd224VerbindungenMitKennzeichen()
     {
         var p = Beispiel();
         var o = Darstellung.Modell(p);
         Assert.Equal(p.Kopf.Name, o["projekt"]!.GetValue<string>());
-        Assert.Equal(187, o["elemente"]!.AsArray().Count);
+        Assert.Equal(270, o["elemente"]!.AsArray().Count);
         var v = o["verbindungen"]!.AsArray();
-        Assert.Equal(142, v.Count);
+        Assert.Equal(224, v.Count);
         foreach (var x in v)
         {
             foreach (var feld in new[] { "von", "nach" })
@@ -319,8 +321,8 @@ public class TuerDarstellungTests
             }
             Assert.False(string.IsNullOrEmpty(x!["vonAnschluss"]!.GetValue<string>()));
         }
-        Assert.Equal(187, o["stand"]!["elemente"]!.GetValue<int>());
-        Assert.Equal(142, o["stand"]!["verbindungen"]!.GetValue<int>());
+        Assert.Equal(270, o["stand"]!["elemente"]!.GetValue<int>());
+        Assert.Equal(224, o["stand"]!["verbindungen"]!.GetValue<int>());
     }
 
     [Fact]

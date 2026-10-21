@@ -44,7 +44,10 @@ public static class IfcHlksKlasse
         ("Dachablauf", @"dachablauf|dachwassereinlauf|dacheinlauf", Geraete),
         ("Wassererwaermer", @"wassererw(ä|ae)rmer|warmwasserspeicher|boiler", Geraete),
         ("Verteiler", @"verteiler", Verteiler),
+        ("Ausdehnungsgefaess", @"ausdehnungsgef(ä|ae)ss|expansionsgef(ä|ae)ss", Geraete),   // Modul 5 (vor «speicher»)
         ("Speicher", @"speicher", Geraete),
+        // Modul 5: FBH-Kreis als Proxy (Revit «FBH Feld_Rechteck», Bernstrasse 42); erst nach Verteiler (FBH-Verteiler) und nur mit Ports
+        ("Fussbodenheizkreis", @"fbh[\s_\-]*(feld|kreis)|fu(ss|ß)bodenheiz(feld|kreis)|heizfeld", Geraete),
         ("Heizkoerper", @"heizk(ö|oe)rper|radiator", Geraete),
         ("Lueftungsgeraet", @"l(ü|ue)ftungsger(ä|ae)t|monobloc", Geraete),
         ("Pumpe", @"pumpe(?!n)", Armaturen),
@@ -103,6 +106,18 @@ public static class IfcHlksKlasse
             wahl = AusNamen(x, d, ports, null);
             if (wahl is null)
                 return (null, $"keine Klasse für {ent}{(typ is null ? "" : " " + typ)}{(pt is null or "NOTDEFINED" ? "" : " " + pt)}");
+        }
+
+        // Modul 5: ein Ventil mit drei bzw. vier Ports ist ein Mischer (Mischventil), wenn die Datei es sagt: PredefinedType MIXING (3weg bzw.
+        // 4weg) oder DIVERTING (umschalt). Ohne diesen Typwert bleibt es Ventil, auch mit drei Ports (Bernstrasse: Viega-Rohbausets, Waschautomaten-
+        // und Batterieventile im Trinkwasser haben drei Ports mit Richtung, sind aber keine Mischer) – nichts geraten. Ist die Klasse schon
+        // Mischventil (ObjectType «Mischventil», z. B. aus dem eigenen Export), aber MIXING lässt 3weg und 4weg offen: art aus der Zahl der Ports.
+        if ((wahl.Klasse == "Ventil" || (wahl.Klasse == "Mischventil" && wahl.ArtWert is null)) && ports.Count is 3 or 4
+            && kat.Klassen.ContainsKey("Mischventil") && pt?.ToUpperInvariant() is "MIXING" or "DIVERTING")
+        {
+            var p0 = pt!.ToUpperInvariant();
+            var art = p0 == "DIVERTING" ? "umschalt" : ports.Count == 4 ? "4weg" : "3weg";
+            wahl = new IfcHlksWahl("Mischventil", $"{wahl.Grund}; {ports.Count} Ports, art {art} aus PredefinedType {p0}", "art", art, AusPorts: true);
         }
 
         // Luftdurchlässe: Medium des Systems vor der Annahme DIFFUSER/GRILLE

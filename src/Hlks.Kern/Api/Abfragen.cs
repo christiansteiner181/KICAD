@@ -63,6 +63,7 @@ public sealed class Abfragen(Projekt p)
         .. PlanAbfragen.Definitionen,   // Modul 7 Teil A: plannummer_vorschlag
         .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
+        .. HeizungAbfragen.Definitionen,   // Modul 5 Teil A-D: heizung_lesen, heizung_leistung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
     ];
 
@@ -123,6 +124,7 @@ public sealed class Abfragen(Projekt p)
             ["anlage"] = s.TeilVon is null ? null : Kz(s.TeilVon),
             ["straenge"] = Arr(M.DerKlasse("Strang").Where(x => x.TeilVon == s.Id).Select(x => x.Kennzeichen).Order()),
             ["bauteile"] = M.Elemente.Count(e => e.System == s.Id && e.Klasse != "Strang"),
+            ["gegenstueck"] = Heizgruppen.Gegenstueck(M, s)?.Kennzeichen,   // Modul 5: Systempaar Vor-/Rücklauf
         }).ToArray());
         return new JsonObject
         {
@@ -130,6 +132,8 @@ public sealed class Abfragen(Projekt p)
             ["modellStand"] = Json.Knoten(p.Stand),
             ["gebaeude"] = gebaeude,
             ["systeme"] = systeme,
+            // Modul 5: Heizgruppen mit Anlage (Einzelheiten: heizung_lesen)
+            ["heizgruppen"] = Arr(M.DerKlasse("Heizgruppe").OrderBy(h => h.Kennzeichen).Select(h => $"{h.Kennzeichen} «{h.Name}» ({Kz(h.TeilVon)})")),
             ["funktionsgraph"] = new JsonObject
             {
                 ["automationsstationen"] = M.DerKlasse("Automationsstation").Count(),
@@ -183,6 +187,7 @@ public sealed class Abfragen(Projekt p)
             if (abg.Count > 0) o["abgeleitet"] = abg;
         }
         SanitaerAbfragen.ElementErgaenzen(p, e, o);   // Modul 4 Teil A: Apparateart mit LU/DU bzw. Belastungssummen der Leitung (abgeleitet)
+        HeizungAbfragen.ElementErgaenzen(p, e, o);    // Modul 5 Teil A-D: Heizgruppe (Glieder, Spreizung, Σ Normleistung), Systempaar, Leistungssumme der Leitung
         if (e.Bezuege.Count > 0) o["bezuege"] = new JsonObject(e.Bezuege.Select(b => KeyValuePair.Create(b.Key, (JsonNode?)Kz(b.Value))));
         if (Netz.IstEndgeraet(K, e)) o["angeschlossenAn"] = Arr(Netz.SystemeVon(M, e).Select(s => s.Kennzeichen));
         var dp = M.DerKlasse("Datenpunkt").Where(d => d.Bezuege.GetValueOrDefault("an") == e.Id).Select(d => d.Kennzeichen).ToList();
@@ -256,6 +261,14 @@ public sealed class Abfragen(Projekt p)
         var sb = new StringBuilder();
         sb.AppendLine($"System {s.Kennzeichen} «{s.Name}» · Systemtyp {s.Text("systemtyp")} · Medium {medium} ({(K.Medien.TryGetValue(medium, out var md) ? md.Name : "?")}) · Verbraucher liegen {richtung}");
         if (s.TeilVon is not null) sb.AppendLine($"Anlage: {Kz(s.TeilVon)}");
+        // Modul 5: Systempaar und Heizgruppen
+        if (K.PaarRolle(medium) is { } paarRolle)
+        {
+            var g = Heizgruppen.Gegenstueck(M, s);
+            sb.AppendLine($"Systempaar: {(paarRolle == "vorlauf" ? "Vorlauf" : "Rücklauf")}, Gegenstück {(g is null ? "fehlt (system_paar_anlegen)" : g.Kennzeichen + (Heizgruppen.IstPaar(M, s, g) ? "" : " (nicht gegenseitig)"))}");
+            var hg = M.DerKlasse("Heizgruppe").Where(h => h.Bezuege.Values.Contains(s.Id)).OrderBy(h => h.Kennzeichen).Select(h => $"{h.Kennzeichen} «{h.Name}»").ToList();
+            if (hg.Count > 0) sb.AppendLine($"Heizgruppen: {string.Join(", ", hg)}");
+        }
         var straenge = M.DerKlasse("Strang").Where(x => x.TeilVon == s.Id).OrderBy(x => x.Kennzeichen).ToList();
         sb.AppendLine($"Stränge ({straenge.Count}):");
         foreach (var st in straenge)
@@ -286,6 +299,13 @@ public sealed class Abfragen(Projekt p)
         var sb = new StringBuilder();
         sb.AppendLine($"Strang {st.Kennzeichen} «{st.Name}» · {st.Text("art")} · System {sys?.Kennzeichen} ({sys?.Text("systemtyp")}, Medium {sys?.Text("medium")}, Verbraucher liegen {richtung})");
         var reihe = InFliessrichtung(st);
+        // Modul 5: Heizgruppen, in deren Weg Bauteile des Strangs liegen
+        if (sys is not null && K.PaarRolle(sys.Text("medium")) is not null)
+        {
+            var stand = Heizgruppen.Ergebnis(M, K);
+            var hg = reihe.SelectMany(e => stand.In(e.Id)).Select(w => w.Gruppe).DistinctBy(g => g.Id).OrderBy(g => g.Kennzeichen).Select(g => $"{g.Kennzeichen} «{g.Name}»").ToList();
+            sb.AppendLine($"Heizgruppe: {(hg.Count == 0 ? "keine" : string.Join(", ", hg))}");
+        }
         sb.AppendLine($"Bauteile in Fliessrichtung ({reihe.Count}):");
         foreach (var e in reihe) sb.AppendLine("  " + Bauteilzeile(e));
         var (direkt, gesamt) = Netz.Verbraucher(M, K, st);
@@ -367,6 +387,7 @@ public sealed class Abfragen(Projekt p)
     {
         var e = M.Hole(element);
         if (SanitaerAbfragen.Warum(p, e, eigenschaft) is { } sanitaer) return sanitaer;   // Modul 4 Teil A: luKw, luWw, du, sanitaerArt (Vorgabe), Belastungssummen
+        if (HeizungAbfragen.Warum(p, e, eigenschaft) is { } heizung) return heizung;      // Modul 5 Teil A-D: spreizung, leistung (Heizgruppe), summeLeistung
         var o = new JsonObject { ["element"] = e.Kennzeichen, ["eigenschaft"] = eigenschaft };
         switch (eigenschaft.ToLowerInvariant())
         {

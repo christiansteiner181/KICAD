@@ -82,6 +82,9 @@ public sealed class HkapFeld
     /// <summary>Wer zuerst setzt, gewinnt, und KICAD leitet den Wert nur ab (Medium): ein Wert, den HKAP schon hat oder geändert hat,
     /// wird nie überschrieben (Abweichung statt Senden).</summary>
     public bool HkapWertBleibt { get; init; }
+    /// <summary>Hat KICAD für dieses Paar einen Ort (Modul 5: tempVL/tempRL nur, wenn eine Heizgruppe mit den Strängen verknüpft ist)? null = immer;
+    /// ohne Ort wird das Feld nur gelesen.</summary>
+    public Func<Modell, HkapPaar, bool>? OrtFuer { get; init; }
     /// <summary>Der KICAD-Wert kann unter dem Pfad Name nach HKAP gesendet werden.</summary>
     public bool Sendbar { get; init; }
     /// <summary>Einheit in KICAD (aus dem Katalog). Nennt der HKAP-Katalog eine andere, fliesst der Wert nicht.</summary>

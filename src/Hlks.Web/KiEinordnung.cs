@@ -24,7 +24,7 @@ public static class KiEinordnung
         new("Fachabfragen", "Auswertungen und Listen des Kerns (Hülle, Material, Kollisionen, Aussparungen, Leitungen, Schema, Sanitär, Pläne); nur lesend.",
             ["aufbau_rechnen", "huellbauteile", "huelle_pruefen", "materialien", "materialliste", "typmaterial", "kollisionen", "aussparungsliste",
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
-             "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze"]),
+             "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze", "heizung_lesen", "heizung_leistung"]),
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
@@ -45,6 +45,9 @@ public static class KiEinordnung
         new("Leitungen und Schema", "Leitungen zeichnen, teilen, dimensionieren und Schemata anordnen – Modellarbeit, als Paket zurücknehmbar.",
             ["leitung_abzweigen", "leitung_aufteilen", "leitung_groesse", "leitung_serie", "leitung_zeichnen", "uebergang_setzen", "schema_anlegen",
              "schema_anordnen", "schema_lage"]),
+        new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
+            "Temperaturen sind Eingaben ohne Vorgabewert, der Kern rechnet daraus nichts nach Norm.",
+            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +
             "Zahlenwerte brauchen eine Quelle (Kern).",
             ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",

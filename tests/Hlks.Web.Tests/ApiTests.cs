@@ -182,8 +182,8 @@ public class ApiTests
         Assert.True(j["offen"]!.GetValue<bool>());
         Assert.StartsWith("MFH Musterweg", Z(j["projekt"]));
         Assert.Equal(s.Ordner, Z(j["ort"]));
-        Assert.Equal(187, j["stand"]!["elemente"]!.GetValue<int>());
-        Assert.Equal(142, j["stand"]!["verbindungen"]!.GetValue<int>());
+        Assert.Equal(270, j["stand"]!["elemente"]!.GetValue<int>());   // seit Modul 5 A-D mit der Heizungsanlage (+83 Elemente, +82 Verbindungen)
+        Assert.Equal(224, j["stand"]!["verbindungen"]!.GetValue<int>());
         Assert.True(File.Exists(Path.Combine(s.Ordner, "projekt.json")));
         var status = (await s.Get("/api/status")).Json!;
         Assert.True(status["offen"]!.GetValue<bool>());
@@ -344,8 +344,8 @@ public class ApiTests
         var (code, j) = await s.Get("/api/modell");
         Assert.Equal(HttpStatusCode.OK, code);
         Assert.StartsWith("MFH Musterweg", Z(j!["projekt"]));
-        Assert.Equal(187, j["elemente"]!.AsArray().Count);
-        Assert.Equal(142, j["verbindungen"]!.AsArray().Count);
+        Assert.Equal(270, j["elemente"]!.AsArray().Count);   // seit Modul 5 A-D mit der Heizungsanlage
+        Assert.Equal(224, j["verbindungen"]!.AsArray().Count);
         var wc = j["elemente"]!.AsArray().First(e => Z(e!["kennzeichen"]) == "WC-E.02")!;
         Assert.Equal("verbraucher", Z(wc["rolle"]));
         Assert.Equal("E.02", Z(wc["raum"]));
@@ -454,6 +454,8 @@ public class ApiTests
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",   // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
+        ["heizung_lesen"] = "{\"anlage\":\"A-HZG\"}",   // Modul 5 Teil A-D
+        ["heizung_leistung"] = "{\"heizgruppe\":\"HG-1\"}",
     };
     static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"api-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
     static void IfcExportAufraeumen()
@@ -471,7 +473,7 @@ public class ApiTests
                 if (File.Exists(p)) return p.Replace('\\', '/');
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive", "Claude_Code", "HLKS_CAD", "tests", "daten", name).Replace('\\', '/');
     }
-    static readonly string[] Textabfragen = ["system_lesen", "strang_text", "norm_lesen"];
+    static readonly string[] Textabfragen = ["system_lesen", "strang_text", "norm_lesen", "heizung_lesen"];   // heizung_lesen: Textansicht der Heizung (Modul 5 A-D)
 
     /// <summary>Modul 4 Teil A: Sanitär-Zusammenstellung, Belastungssummen und Apparateart über REST (dieselbe Tür wie Kern und MCP);
     /// Beispielprojekt «MFH Musterweg» (fiktiv), Werte aus dem Katalog sanitaer_belastungswerte.json.</summary>
@@ -558,7 +560,7 @@ public class ApiTests
         Assert.Equal(await s.Pruefsumme(), Z(ueberblick["modellStand"]!["pruefsumme"]));
 
         var (_, sl) = await s.Post("/api/abfrage/strangliste");
-        Assert.Equal(9, sl!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge (Beispielprojekt)
+        Assert.Equal(17, sl!["zeilen"]!.AsArray().Count);   // 7 Sanitär-Stränge + 2 Kälte-Stränge + 8 Heizungsstränge (Beispielprojekt, Modul 5 A-D)
 
         var (_, _, st) = await s.Roh(HttpMethod.Post, "/api/abfrage/strang_text", """{"strang":"SW-F2"}""");
         Assert.Contains("SW-F2", await st.Content.ReadAsStringAsync());

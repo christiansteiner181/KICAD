@@ -67,6 +67,8 @@ public sealed class MediumDef
     /// <summary>voll | gestrichelt | strichpunktiert</summary>
     public string Linie { get; set; } = "voll";
     public string Quelle { get; set; } = "";
+    /// <summary>Medienpaar Vor-/Rücklauf (Modul 5 A-D 2): Kennung des Gegenstücks, z. B. HZ-VL ↔ HZ-RL; null = kein Paar (Sanitär, Lüftung).</summary>
+    public string? Gegenstueck { get; set; }
 }
 
 public sealed class SystemtypDef
@@ -247,7 +249,35 @@ public sealed class Katalog
                     throw new HlksFehler($"Klasse {d.Name}, Anschluss {a.Name}: Medium «{a.Medium}» fehlt in medien.json.");
         foreach (var s in Systemtypen.Values)
             if (!Medien.ContainsKey(s.Medium)) throw new HlksFehler($"Systemtyp {s.Name}: Medium «{s.Medium}» fehlt in medien.json.");
+        // Modul 5 A-D 2: Medienpaare gegenseitig und innerhalb eines Gewerks; der Vorlauf hat einen Systemtyp «Verbraucher stromab», der Rücklauf «stromauf»
+        foreach (var md in Medien.Values.Where(x => x.Gegenstueck is not null))
+        {
+            if (!Medien.TryGetValue(md.Gegenstueck!, out var g))
+                throw new HlksFehler($"medien.json: Gegenstück «{md.Gegenstueck}» von {md.Kennung} gibt es nicht.", "Kennung des Gegenstücks prüfen (z. B. HZ-VL ↔ HZ-RL).");
+            if (!string.Equals(g.Gegenstueck, md.Kennung, StringComparison.OrdinalIgnoreCase))
+                throw new HlksFehler($"medien.json: {md.Kennung} nennt {g.Kennung} als Gegenstück, {g.Kennung} aber «{g.Gegenstueck ?? "keines"}».", "Gegenstück beidseitig eintragen.");
+            if (!string.Equals(g.Gewerk, md.Gewerk, StringComparison.OrdinalIgnoreCase))
+                throw new HlksFehler($"medien.json: Medienpaar {md.Kennung} ↔ {g.Kennung} liegt in verschiedenen Gewerken.");
+        }
     }
+
+    /// <summary>Medium → (Gegenstück, Rolle im Paar), zwischengespeichert (heisse Stelle der Heizungsprüfungen: der Medienvergleich schreibt alte Kennungen um).</summary>
+    readonly System.Collections.Concurrent.ConcurrentDictionary<string, (string? Gegenstueck, string? Rolle)> paare = new(StringComparer.OrdinalIgnoreCase);
+
+    (string? Gegenstueck, string? Rolle) Paar(string medium) => paare.GetOrAdd(medium, md =>
+    {
+        string? gegen = Medien.TryGetValue(md, out var d) && d.Gegenstueck is { } g && Medien.TryGetValue(g, out var gd) ? gd.Kennung : null;
+        if (gegen is null) return (null, null);
+        var kennung = d!.Kennung;
+        var st = Systemtypen.Values.FirstOrDefault(s => s.Medium.Equals(kennung, StringComparison.OrdinalIgnoreCase));
+        return (gegen, st is null ? null : st.VerbraucherRichtung == "stromab" ? "vorlauf" : "ruecklauf");
+    });
+
+    /// <summary>Gegenstück eines Mediums (HZ-VL → HZ-RL); null = kein Medienpaar.</summary>
+    public string? GegenstueckMedium(string? medium) => medium is null or "*" ? null : Paar(medium).Gegenstueck;
+
+    /// <summary>Rolle eines Mediums im Paar: «vorlauf» (Systemtyp mit Verbrauchern stromab), «ruecklauf» (stromauf) oder null (kein Paar).</summary>
+    public string? PaarRolle(string? medium) => medium is null or "*" ? null : Paar(medium).Rolle;
 
     public KlassenDef Klasse(string name) =>
         Klassen.TryGetValue(name, out var d) && !d.Abstrakt ? d
