@@ -354,3 +354,5 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | – | Gesamtprüfung 8e38bc8 (N15, N17–N22) grün (Kern 4668 nach Wiederholung, Mcp 79, Web 549, Node 1093) → geprueft = 8e38bc8 (geprueft-20261021-1605); Desktop per Icon | Hauptlauf | ok |
 | 21.10.2026 | – | Gesamtprüfung 06d2190 (XR-A) grün (Kern 4668 nach Wiederholung, Mcp 79, Web 549, Node 1111) → geprueft = 06d2190 (geprueft-20261021-1633) | Hauptlauf | ok |
 | 21.10.2026 | XR | XR-B Greifen (Leitung quer in 1-cm-Schritten mit Massen, Nachbarn verbunden) und XR-C Tablet an der linken Hand | hlks-modul (als general-purpose sonnet/high) | läuft (Christian: «wir sind erst bei 90% … die grenze ist bei 95») |
+| 21.10.2026 | XR | Werkzeug quest_verbinden.ps1 (adb reverse, WLAN) | Hauptlauf | ok – 7ee1b75, Fehlerfälle geprüft |
+| 21.10.2026 | XR | Quest-Verbinder in KICAD (Web-Dienst adb mit Attrappen-Tests, Dialog «Quest verbinden», KI verboten) | hlks-modul (als general-purpose sonnet/high) | läuft (Kontingent 91 %) |
