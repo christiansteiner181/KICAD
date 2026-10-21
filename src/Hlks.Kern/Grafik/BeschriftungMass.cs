@@ -40,10 +40,16 @@ internal static class BeschriftungMass
         if (BeschriftungHilfen.Laenge(BeschriftungHilfen.Minus(ziel, p0)) < 1e-9)
             ziel = pts.MaxBy(p => BeschriftungHilfen.Laenge(BeschriftungHilfen.Minus(p, p0)))!;
         var v = BeschriftungHilfen.Minus(ziel, p0);
+        // N9: horizontal/vertikal in den Achsen der Ansicht (gedrehter Grundriss); ohne Drehung genau wie bisher
+        double[] Achse(double grad)
+        {
+            var a = BeschriftungHilfen.Drehen([1, 0], grad - ctx.Drehung);
+            return BeschriftungHilfen.Punktprodukt(v, a) >= 0 ? a : [-a[0], -a[1]];
+        }
         double[] d = (e.Text("richtung") ?? "ausgerichtet") switch
         {
-            "horizontal" => [v[0] >= 0 ? 1 : -1, 0],
-            "vertikal" => [0, v[1] >= 0 ? 1 : -1],
+            "horizontal" => ctx.Drehung == 0 ? [v[0] >= 0 ? 1 : -1, 0] : Achse(0),
+            "vertikal" => ctx.Drehung == 0 ? [0, v[1] >= 0 ? 1 : -1] : Achse(90),
             _ => BeschriftungHilfen.Einheit(v),
         };
         var n = BeschriftungHilfen.Links(d);
@@ -96,7 +102,7 @@ internal static class BeschriftungMass
             string text = pts.Count == 2 && !string.IsNullOrEmpty(ersatz) ? ersatz : MassText(laenge, einheit);
             var mitte = BeschriftungHilfen.Mal(BeschriftungHilfen.Plus(AufLinie(s[i - 1]), AufLinie(s[i])), 0.5);
             var pos = BeschriftungHilfen.Plus(mitte, BeschriftungHilfen.Mal(oben, ctx.AufModell(ZahlAbstand)));
-            prim.Add(BeschriftungHilfen.Text(pos, text, ZahlGroesse, "mitte", winkel));
+            prim.Add(BeschriftungHilfen.Text(pos, text, ZahlGroesse, "mitte", winkel).Mitdrehend());   // N9: folgt der Masslinie
         }
 
         return [new Grafikteil
@@ -137,7 +143,7 @@ internal static class BeschriftungMass
             text, KoteSchrift, "links");
         return [new Grafikteil
         {
-            Id = e.Id, Ebene = "beschriftung", Primitive = [dreieck, schrift],
+            Id = e.Id, Ebene = "beschriftung", Primitive = [dreieck.Verankert(spitze), schrift.Verankert(spitze)],   // N9: Kote bleibt waagrecht
             Fangpunkte = [[p[0], p[1]]],
         }];
     }

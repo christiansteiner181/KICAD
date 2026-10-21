@@ -523,7 +523,7 @@ internal static class AussparungMassketten
         double[] AufLinie(double si) => BeschriftungHilfen.Plus(BeschriftungHilfen.Plus(p0, BeschriftungHilfen.Mal(d, si)), BeschriftungHilfen.Mal(n, v));
         double winkel = BeschriftungHilfen.LesbarerWinkel(Math.Atan2(d[1], d[0]) * 180 / Math.PI);
         var oben = BeschriftungHilfen.Mal(BeschriftungHilfen.Drehen([0, 1], winkel), ctx.AufModell(ZahlAbstand));
-        Primitiv Zahl(double si, string text) => BeschriftungHilfen.Text(BeschriftungHilfen.Plus(AufLinie(si), oben), text, ZahlGroesse, "mitte", winkel);
+        Primitiv Zahl(double si, string text) => BeschriftungHilfen.Text(BeschriftungHilfen.Plus(AufLinie(si), oben), text, ZahlGroesse, "mitte", winkel).Mitdrehend();   // N9: folgt der Masskette
         double Breite(string text) => ctx.AufModell(text.Length * ZeichenBreite * ZahlGroesse);
 
         var felder = GerundeteFelder(s, sBezug);

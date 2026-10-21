@@ -51,6 +51,7 @@ public sealed class KollisionGrafik : IGrafikquelle
         {
             Art = "text", Punkte = [[x + r + ctx.AufModell(0.8), y - ctx.AufModell(Schrift) * 0.35]], Text = e.Kennzeichen,
             Groesse = Schrift, Ausrichtung = "links", Stil = new Stil { Farbe = farbe == FarbeWeich ? null : farbe, NurBildschirm = true },
+            Anker = [x, y],   // N9: rechts neben der Marke, auch in gedrehten Grundrissen
         });
         return [teil];
     }

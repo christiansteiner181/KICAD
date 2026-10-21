@@ -88,14 +88,18 @@ export function teilflaechen(schwelle = SCHWELLE, luecke = 0.03) {
 
 /**
  * EINE Stelle für die Gebäudeausrichtung (Nachbearbeitung N9): Winkel θ in Grad, um den VORNE gegen die Projektachsen gedreht ist
- * (gegen den Uhrzeigersinn, von oben gesehen). Liest Gebaeude.planwinkel (N9: Drehung der Darstellung in Grad, die die längste Gebäudekante
- * waagrecht stellt – die Gebäudekante liegt also um −planwinkel gegen die x-Achse), sonst 0 = Projektachsen.
- * Nach dem Zusammenführen mit N9 nur hier anpassen (Vorzeichen, Herkunft des Winkels).
+ * (gegen den Uhrzeigersinn, von oben gesehen). Quelle ist Gebaeude.planwinkel (N9, Kern Planwinkel.cs): die Drehung P des geraden
+ * Grundrisses im Gegenuhrzeigersinn (−45 … 45°), die die längste Gebäudekante achsparallel stellt. Im geraden Grundriss liegt «unten»
+ * (die Front, auf die VORNE schaut) im Modell in Richtung Süd um −P gedreht; der Würfel dreht VORNE (Süd) um θ – also θ = −P
+ * (geprüft in ausrichtung.test.mjs: VORNE steht senkrecht auf der langen Kante und zeigt dorthin, wo im geraden Grundriss unten ist).
+ * Steht am Gebäude noch kein Winkel (Projekt von vor N9), gilt `gerechnet` (Abfrage planwinkel, bestimmt.winkel), sonst 0 = Projektachsen.
  */
-export function gebaeudeAusrichtungGrad(gebaeude) {
+export function gebaeudeAusrichtungGrad(gebaeude, gerechnet = null) {
   const w = gebaeude?.werte ?? gebaeude;
   const p = Number(w?.planwinkel);
-  return Number.isFinite(p) ? -p : 0;
+  if (Number.isFinite(p)) return p === 0 ? 0 : -p;
+  const g = Number(gerechnet);
+  return gerechnet !== null && gerechnet !== undefined && Number.isFinite(g) && g !== 0 ? -g : 0;
 }
 
 /** Nordwinkel in Grad aus Projektinformation.nordwinkel (Winkel von Projekt-Nord +y zu geografisch Nord im Uhrzeigersinn); ohne Angabe 0. */

@@ -124,7 +124,22 @@ function erstellen(behaelter, ansichtElement) {
   steuerung.addEventListener('start', () => { benutzt = true; });
 
   // ---------- Navigationswürfel (N11) ----------
-  const ausrichtungGrad = () => gebaeudeAusrichtungGrad(derKlasse('Gebaeude').sort((a, b) => String(a.kennzeichen).localeCompare(String(b.kennzeichen)))[0]);
+  // N9: VORNE folgt dem Planwinkel des Gebäudes (wie der gerade Grundriss). Steht noch keiner am Gebäude (Projekt von vor N9), gilt der
+  // Winkel, den der Kern rechnet (Abfrage planwinkel) – derselbe, den der Grundriss dann zeigt.
+  const erstesGebaeude = () => derKlasse('Gebaeude').sort((a, b) => String(a.kennzeichen).localeCompare(String(b.kennzeichen)))[0];
+  let planwinkelGerechnet = null;
+  async function planwinkelHolen() {
+    const g = erstesGebaeude();
+    if (!g || Number.isFinite(Number(g.werte?.planwinkel))) { planwinkelGerechnet = null; return; }
+    try {
+      const r = await abfrage('planwinkel', { gebaeude: g.kennzeichen });
+      const w = r?.gebaeude?.[0]?.bestimmt?.winkel;
+      const neu = Number.isFinite(w) ? w : null;
+      if (neu !== planwinkelGerechnet) { planwinkelGerechnet = neu; anfordern(); }
+    } catch (e) { console.warn('3D: Planwinkel nicht geholt', e?.message ?? e); }
+  }
+  const ausrichtungGrad = () => gebaeudeAusrichtungGrad(erstesGebaeude(), planwinkelGerechnet);
+  planwinkelHolen();
   const startSchluessel = () => startansichtSchluessel(zustand.status?.ort ?? zustand.status?.projekt, ansicht?.kennzeichen);
   const wuerfel = erzeugeWuerfel({
     wurzel, renderer, kamera, steuerung,
@@ -521,6 +536,7 @@ function erstellen(behaelter, ansichtElement) {
     aktualisieren(ereignis) {
       try {
         if (huelleAn) { clearTimeout(huelleTimer); huelleTimer = setTimeout(huelleLaden, HUELLE_ENTPRELLUNG); }
+        planwinkelHolen();   // N9: gerechneter Planwinkel, solange am Gebäude keiner steht
         if (!ereignis || ereignis.alles) { anstehend.alle = true; anstehend.zoom = true; planen(0); return; }
         const ids = (ereignis.ids ?? []).filter((id) => id !== ansicht?.id && element(id)?.schicht !== 'ansicht');   // Ansichten und Planblätter haben keine Körper
         // gelöschte Körper sofort weg; war es eine Wand, Tür, ein Fenster oder eine Decke, ändern sich die Nachbarn

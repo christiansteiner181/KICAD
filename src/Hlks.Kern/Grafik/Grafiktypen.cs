@@ -76,6 +76,12 @@ public sealed class Primitiv
     public string? Ausrichtung { get; set; }
     /// <summary>Text: Drehung in Grad, Gegenuhrzeigersinn.</summary>
     public double? Winkel { get; set; }
+    /// <summary>Gedrehte Ansicht (N9, Ansichtsausrichtung.cs): Text folgt der Richtung eines Bauteils (Masszahl, Leitungsbezeichnung, Text einer
+    /// Unterlage) – er dreht mit der Ansicht und bleibt lesbar. Sonst steht ein Text auf dem Blatt im Winkel «Winkel» (0 = waagrecht).</summary>
+    public bool? Mitdrehen { get; set; }
+    /// <summary>Gedrehte Ansicht (N9): Punkt im Modell, um den das Primitiv gegengedreht wird, damit eine Beschriftung aus mehreren Teilen
+    /// (Raumstempel, Box, Legende) auf dem Blatt waagrecht steht. Texte ohne Anker drehen um ihren Einfügepunkt.</summary>
+    public double[]? Anker { get; set; }
     /// <summary>Text: fett (z. B. Raumnummer im Stempel).</summary>
     public bool? Fett { get; set; }
     public Stil Stil { get; set; } = new();
@@ -121,6 +127,15 @@ public sealed class Plangrafik
     public List<Grafikteil> Teile { get; set; } = [];
     /// <summary>Prüfsumme des Modellstands, aus dem die Grafik entstand.</summary>
     public string Stand { get; set; } = "";
+    /// <summary>N9: Drehung der Ansicht in Grad, Gegenuhrzeigersinn (Modell → Ansicht); 0 = Projekt-Nord oben. Nur Grundrisse; die
+    /// Primitive bleiben in Modellkoordinaten, Bildschirm und PDF drehen sie je an einer Stelle (grundriss.js, PdfZeichner).</summary>
+    public double Drehung { get; set; }
+    /// <summary>N9: Richtung von geografisch Nord in der Ansicht, Grad im Uhrzeigersinn ab «oben» (Nordpfeil am Bildschirm und im PDF).</summary>
+    public double Nord { get; set; }
+    /// <summary>N9: Ausrichtung der Ansicht: geometrie | himmelsrichtung (Grundriss), sonst null.</summary>
+    public string? Ausrichtung { get; set; }
+    /// <summary>N9: Begrenzung [minx, miny, maxx, maxy] in den Achsen der Ansicht (um Drehung gedreht); gleich Begrenzung bei Drehung 0.</summary>
+    public double[]? BegrenzungAnsicht { get; set; }
 }
 
 /// <summary>Ein 3D-Teil eines Körpers.</summary>

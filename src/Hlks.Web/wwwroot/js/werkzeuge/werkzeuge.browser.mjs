@@ -88,6 +88,11 @@ const abschnitt = (t) => console.log('\n== ' + t);
 // ------------------------------------------------------------------ Start
 await warteBis(async () => { try { return await ausw(`${INST} return !!inst && (await import('/js/zustand.js')).zustand.elemente.size > 50;`); } catch { return false; } }, 'App gestartet');
 await warte(1200);
+// Erst zoomen, wenn die erste Plangrafik gezeichnet ist: kommt sie nach dem Rad, passt die Ansicht beim ersten Laden neu ein (zoomAlles) und
+// das Herauszoomen ist verloren – dann liegen die Wandpunkte bei x 18000 ausserhalb des Ausschnitts (Befund N9-Nacharbeit 21.10.2026: Wettlauf
+// unter Last, nicht die Drehung; die Plangrafik ist bei Planwinkel 0 mit und ohne N9 gleich).
+await warteBis(async () => { try { return await ausw(`return document.querySelectorAll('.kachel.aktiv .gr-plan [data-id], .gr-plan [data-id]').length > 0;`); } catch { return false; } }, 'erste Plangrafik gezeichnet', 20000);
+await warte(300);
 await send('Input.dispatchMouseEvent', { type: 'mouseWheel', x: 800, y: 450, deltaX: 0, deltaY: 400 });   // etwas herauszoomen
 await warte(300);
 

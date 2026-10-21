@@ -85,11 +85,14 @@ public sealed class BeschriftungGrafik : IGrafikquelle
         var inhalt = e.Text("inhalt");
         if (string.IsNullOrEmpty(inhalt)) return [];
         var p = e.Geometrie!.Punkte[0];
+        var text = BeschriftungHilfen.Text([p[0], p[1]], inhalt, e.Zahl("groesse") is double g and > 0 ? g : TextGroesse,
+            e.Text("ausrichtung") ?? "links", e.Zahl("winkel") ?? 0);
+        // N9 (Annahme): eine gedrehte Textnotiz gilt als an einem Bauteil ausgerichtet und dreht mit der Ansicht; Winkel 0 bleibt waagrecht
+        if ((e.Zahl("winkel") ?? 0) != 0) text.Mitdrehend();
         return [new Grafikteil
         {
             Id = e.Id, Ebene = "beschriftung",
-            Primitive = [BeschriftungHilfen.Text([p[0], p[1]], inhalt, e.Zahl("groesse") is double g and > 0 ? g : TextGroesse,
-                e.Text("ausrichtung") ?? "links", e.Zahl("winkel") ?? 0)],
+            Primitive = [text],
             Fangpunkte = [[p[0], p[1]]],
         }];
     }

@@ -6,7 +6,8 @@
       { "name": "egid", "typ": "text", "beschreibung": "Eidg. Gebäudeidentifikator aus dem GWR" },
       { "name": "terrain", "typ": "zahl", "einheit": "mm", "beschreibung": "Terrainhöhe über ±0.00 (Modul 1c): Bauteilflächen darunter grenzen an Erdreich; ohne Angabe ±0" },
       { "name": "n50", "typ": "zahl", "einheit": "1/h", "beschreibung": "Luftdichtheit: Luftwechsel bei 50 Pa (gemessen oder Ziel), mit Quelle" },
-      { "name": "q50", "typ": "zahl", "einheit": "m³/(h·m²)", "beschreibung": "Luftdichtheit: Leckagestrom bei 50 Pa je m² Hüllfläche, mit Quelle" } ] },
+      { "name": "q50", "typ": "zahl", "einheit": "m³/(h·m²)", "beschreibung": "Luftdichtheit: Leckagestrom bei 50 Pa je m² Hüllfläche, mit Quelle" },
+      { "name": "planwinkel", "typ": "zahl", "einheit": "°", "beschreibung": "Drehung der Grundrisse mit Ausrichtung «geometrie» in Grad, Gegenuhrzeigersinn, −45 … 45 (N9): die längste gerade Aussenwand (sonst die längste Wand) liegt damit achsparallel. Abgeleitet (Herkunft berechnung mit Wand, Länge, Richtung) beim IFC-Import bzw. sobald es Wände gibt und noch kein Winkel steht; danach nur mit planwinkel_bestimmen oder von Hand geändert – die Ansichten springen nicht, wenn eine Wand dazukommt" } ] },
 
   { "name": "Geschoss", "kuerzel": "G", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcBuildingStorey",
     "beschreibung": "Ein Geschoss. teilVon = Gebäude. Kote = OK fertig Boden über ±0.00.",
@@ -193,7 +194,7 @@
     "beschreibung": "Plansymbol, z. B. Nordpfeil.",
     "eigenschaften": [
       { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "nordpfeil" ], "beschreibung": "Art des Symbols" },
-      { "name": "winkel", "typ": "zahl", "einheit": "grad", "beschreibung": "Drehung im Gegenuhrzeigersinn" },
+      { "name": "winkel", "typ": "zahl", "einheit": "grad", "beschreibung": "Drehung im Gegenuhrzeigersinn. Nordpfeil (N9): zeigt von selbst nach geografisch Nord (Projektinformation.nordwinkel), in jeder Ausrichtung der Ansicht; winkel dreht ihn zusätzlich (ohne Angabe 0)" },
       { "name": "groesse", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösse auf dem Plan in mm (Vorgabe 15)" } ] },
 
   { "name": "Anlage", "kuerzel": "A", "schicht": "system", "gewerk": "allgemein", "ifc": "IfcSystem",
@@ -425,7 +426,8 @@
       { "name": "ansichtsvorlage", "typ": "text", "beschreibung": "Kennzeichen der Ansichtsvorlage, aus der diese Ansicht ihre Einstellungen hat" },
       { "name": "blick", "typ": "auswahl", "auswahl": [ "links", "rechts" ], "beschreibung": "Schnitt/Ansicht: Blickrichtung, von der Linie (Anfang → Ende) aus gesehen" },
       { "name": "tiefe", "typ": "zahl", "einheit": "mm", "beschreibung": "Schnitt/Ansicht: Sichttiefe ab der Linie in Blickrichtung" },
-      { "name": "ausschnitt", "typ": "objekt", "beschreibung": "Zugeschnittener Bereich in Modell-mm der Ansicht { minx, miny, maxx, maxy }; fehlt er, zeigt die Ansicht alles" },
+      { "name": "ausschnitt", "typ": "objekt", "beschreibung": "Zugeschnittener Bereich in Modell-mm der Ansicht { minx, miny, maxx, maxy }, in den Achsen der Ansicht (bei gedrehtem Grundriss um die Drehung der Ansicht gedreht, N9); fehlt er, zeigt die Ansicht alles" },
+      { "name": "ausrichtung", "typ": "auswahl", "auswahl": [ "geometrie", "himmelsrichtung" ], "beschreibung": "Grundriss (auch Koordinations-, Einlage- und Aussparungsplan): geometrie = gedreht um den Planwinkel des Gebäudes, die längste Gebäudekante liegt waagrecht bzw. achsparallel; himmelsrichtung = geografisch Nord oben (Drehung um Projektinformation.nordwinkel). Ohne Angabe geometrie (N9, Entscheid Christian 21.10.2026). Nur Darstellung, die Modellkoordinaten bleiben; Beschriftungen bleiben waagrecht, der Nordpfeil zeigt immer nach geografisch Nord. Schnitt und Ansicht folgen ihrer Linie; 3D, Schema und Liste sind nicht betroffen" },
       { "name": "bemassungEinheit", "typ": "auswahl", "auswahl": [ "m", "cm", "mm" ], "beschreibung": "Einheit der Masszahlen dieser Ansicht; fehlt sie, gilt die Projekteinstellung bzw. die Vorgabe des Gewerks: Grundriss/Architektur m, Lüftung mm, Heizung und Sanitär cm" },
       { "name": "rohrbezeichnung", "typ": "auswahl", "auswahl": [ "NW", "DN" ], "beschreibung": "Nennweite der Rohre als NW oder DN beschriften (Wasser, Heizung, Kälte); fehlt sie, gilt die Projekteinstellung bzw. NW. Abwasser (Schmutz-, Regenwasser) wird immer mit dem Aussendurchmesser (Leitung.da, «PE-S 110») bezeichnet, die Einstellung gilt dort nicht (Entscheid Christian 19.10.2026). Kanäle und Lüftungsrohre immer in mm (400×200, Ø 250)" } ] },
   { "name": "Planblatt", "kuerzel": "PB", "schicht": "ansicht", "gewerk": "allgemein",

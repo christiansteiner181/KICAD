@@ -11,6 +11,18 @@ const f = (x) => (Math.round(x * 1000) / 1000).toString();
 const xy = (p) => `${f(p[0])},${f(p[1])}`;
 export const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
 
+// N9: Drehung der Ansicht (Grad, Gegenuhrzeigersinn, Modell → Ansicht). Die Schicht liegt in der gedrehten Gruppe der Ansicht; damit Texte,
+// Fangsymbole und Griffe auf dem Bildschirm waagrecht bleiben, drehen sie hier gegen. Die Werkzeuge setzen sie vor jedem Zeichnen
+// (basis.js, griffe.js); Winkelangaben der temporären Masse gelten in den Achsen der Ansicht.
+let dreh = 0;
+export function drehungSetzen(d) { dreh = Number.isFinite(Number(d)) ? Number(d) : 0; }
+export const drehung = () => dreh;
+const um = (v, grad) => { const w = grad * Math.PI / 180, c = Math.cos(w), s = Math.sin(w); return [v[0] * c - v[1] * s, v[0] * s + v[1] * c]; };
+/** Lesbarer Winkel auf (−90, 90]. */
+const lesbar = (w) => { let n = ((w % 360) + 360) % 360; if (n > 180) n -= 360; if (n > 90) n -= 180; else if (n <= -90) n += 180; return n; };
+/** Gruppe, die ihren Inhalt um p gegen die Drehung der Ansicht dreht (bleibt auf dem Bildschirm waagrecht). */
+const gegen = (p, inhalt) => (dreh ? `<g transform="rotate(${f(-dreh)} ${f(p[0])} ${f(p[1])})">${inhalt}</g>` : inhalt);
+
 export function linie(a, b, klasse = 'wz-linie') {
   return `<line class="${klasse}" x1="${f(a[0])}" y1="${f(a[1])}" x2="${f(b[0])}" y2="${f(b[1])}"/>`;
 }
@@ -31,12 +43,16 @@ export function bogen(p1, p2, r, sweep, klasse = 'wz-linie') {
 
 /**
  * Text bei p; groessePx = Schrifthöhe in Bildschirmpixeln, s = mm je Pixel. Die Schicht ist gespiegelt, daher scale(1,-1).
- * versatzPx verschiebt den Text in Bildschirmpixeln (x nach rechts, y nach oben).
+ * versatzPx verschiebt den Text in Bildschirmpixeln (x nach rechts, y nach oben). winkel: Winkel auf dem Bildschirm (0 = waagrecht); mit
+ * ausgerichtet ist winkel die Richtung im Modell (z. B. eines Segments) – der Text folgt ihr und bleibt lesbar (N9: auch gedreht).
  */
-export function text(p, inhalt, s, { groessePx = 11, anker = 'start', versatzPx = [0, 0], winkel = 0, klasse = 'wz-text' } = {}) {
-  const x = p[0] + versatzPx[0] * s, y = p[1] + versatzPx[1] * s;
-  const dreh = winkel ? ` rotate(${f(-winkel)})` : '';
-  return `<text class="${klasse}" transform="translate(${f(x)} ${f(y)}) scale(1 -1)${dreh}" font-size="${f(groessePx * s)}" text-anchor="${anker}">${esc(inhalt)}</text>`;
+export function text(p, inhalt, s, { groessePx = 11, anker = 'start', versatzPx = [0, 0], winkel = 0, klasse = 'wz-text', ausgerichtet = false } = {}) {
+  const v = um([versatzPx[0] * s, versatzPx[1] * s], -dreh);   // Versatz in Bildschirmrichtung → Modell
+  const x = p[0] + v[0], y = p[1] + v[1];
+  const blatt = ausgerichtet ? lesbar(winkel + dreh) : winkel;   // Winkel auf dem Bildschirm
+  const lokal = blatt - dreh;                                     // in der gedrehten Gruppe
+  const r = Math.abs(lokal) > 1e-9 ? ` rotate(${f(-lokal)})` : '';
+  return `<text class="${klasse}" transform="translate(${f(x)} ${f(y)}) scale(1 -1)${r}" font-size="${f(groessePx * s)}" text-anchor="${anker}">${esc(inhalt)}</text>`;
 }
 
 /** Winkel, bei dem ein Text entlang der Linie a → b lesbar bleibt (nicht auf dem Kopf). */
@@ -62,14 +78,15 @@ export function fangsymbol(fang, s) {
   }
   const name = FANGNAMEN[fang.art] ?? '';
   const t = name && fang.art !== 'raster' ? text([x, y], name, s, { versatzPx: [10, -16], klasse: 'wz-text wz-fangtext' }) : '';
-  return g + t;
+  return gegen([x, y], g) + t;   // N9: Symbol auf dem Bildschirm achsparallel
 }
 
 /** Temporäre Bemassung eines Segments: Länge in mm und Winkel (wie Revit) als Text neben der Mitte, mit kurzer Masslinie. */
 export function tempMass(a, b, s, { mitWinkel = true, seite = 1 } = {}) {
   const l = abstand(a, b);
   if (l < 1e-6) return '';
-  const w = winkelGrad(a, b);
+  let w = (((winkelGrad(a, b) + dreh) % 360) + 360) % 360;   // N9: Winkel in den Achsen der Ansicht (waagrecht gezeichnet = 0°)
+  if (w >= 359.95) w = 0;                                       // Rundungsrest der Drehung: nicht «360.0°»
   const d = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], n = [-d[1] * seite, d[0] * seite];
   const v = 14 * s;   // Abstand der Masslinie vom Segment (14 px)
   const a2 = [a[0] + n[0] * v, a[1] + n[1] * v], b2 = [b[0] + n[0] * v, b[1] + n[1] * v];
@@ -78,7 +95,7 @@ export function tempMass(a, b, s, { mitWinkel = true, seite = 1 } = {}) {
   const beschr = `${laengeText(l)}${mitWinkel ? `  ${winkelText(w)}` : ''}`;
   const tm = [m[0] + n[0] * 6 * s, m[1] + n[1] * 6 * s];
   return linie(a, a2, 'wz-hilf') + linie(b, b2, 'wz-hilf') + linie(a2, b2, 'wz-mass')
-    + text(tm, beschr, s, { anker: 'middle', winkel: tw, klasse: 'wz-text wz-masstext' });
+    + text(tm, beschr, s, { anker: 'middle', winkel: tw, ausgerichtet: true, klasse: 'wz-text wz-masstext' });
 }
 
 /** Beschriftung am Mauszeiger (z. B. getippte Länge). */
@@ -89,7 +106,7 @@ export function eingabeAnzeige(p, textInhalt, s) {
 /** Griff (Quadrat in Pixelgrösse). */
 export function griff(p, s, klasse = 'wz-griff', px = 8) {
   const h = px / 2 * s;
-  return `<rect class="${klasse}" x="${f(p[0] - h)}" y="${f(p[1] - h)}" width="${f(2 * h)}" height="${f(2 * h)}"/>`;
+  return gegen(p, `<rect class="${klasse}" x="${f(p[0] - h)}" y="${f(p[1] - h)}" width="${f(2 * h)}" height="${f(2 * h)}"/>`);   // N9: achsparallel
 }
 
 /** Kleiner Doppelpfeil (Griff zum Umdrehen) um p in Richtung d (Einheitsvektor), Länge in Pixeln. */

@@ -1087,8 +1087,10 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 - **Startansicht speichern (Annahme):** der Katalog hat für die Ansicht keine passende Eigenschaft; sie liegt deshalb vorerst im Browser (`localStorage`, Schlüssel
   `hlks.startansicht3d.<Projektort>.<Kennzeichen>`, Wert `{ azimutGrad, polarGrad }` relativ zur Gebäudeausrichtung, damit sie einer Drehung des Gebäudes folgt), je Rechner und Projekt. Soll sie mit
   dem Projekt wandern, braucht die Klasse Ansicht eine Eigenschaft (z. B. `startansicht`) und die Oberfläche schreibt sie mit `element_aendern` – nur an `startLesen`/`startSchreiben` in `ansicht3d.js` anzupassen.
-- **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude)` in `wuerfel-logik.js`: liest `Gebaeude.planwinkel` (Nachbearbeitung N9: Drehung der Darstellung in Grad, die die längste
-  Gebäudekante waagrecht stellt; die Gebäudekante liegt um −planwinkel gegen die x-Achse), sonst 0 = Projektachsen (VORNE = Blick nach Norden). Nach dem Zusammenführen mit N9 nur dort Vorzeichen und Herkunft prüfen.
+- **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude, gerechnet)` in `wuerfel-logik.js`: θ = −`Gebaeude.planwinkel` (N9: Drehung des geraden Grundrisses im
+  Gegenuhrzeigersinn, −45 … 45°). VORNE schaut damit dorthin, wo im geraden Grundriss «unten» ist – auf die lange Gebäudekante, wenn sie dort waagrecht liegt (geprüft in
+  `ausrichtung.test.mjs`). Steht noch kein Winkel am Gebäude (Projekt von vor N9), holt `ansicht3d.js` den vom Kern gerechneten (Abfrage `planwinkel`, `bestimmt.winkel`);
+  sonst 0 = Projektachsen (VORNE = Blick nach Norden).
 - **Prüfen:** Node-Tests (Kamerarichtung je Fläche, Kante, Ecke, mit und ohne Ausrichtung, Nordwinkel, Ring, Startansicht) in `maus.test.mjs`; Browser-Reihe `maus-wuerfel.browser.mjs` (alle 26 Bereiche
   angeklickt, OBEN = Draufsicht, Ecke = Isometrie, VORNE, Haus-Knopf, Ziehen am Würfel und am Ring, Kontextmenü, Bilder hell und dunkel).
 
@@ -1480,3 +1482,33 @@ Kältesysteme unterscheiden sich von der Heizung nur über Medium und Systemtyp.
 - Das Beispielprojekt «MFH Musterweg» hat einen kleinen Kältekreis (Anlage A-KAE, Systeme KAE-VL/KAE-RL, Pumpe, drei Ventile, zwei Rohre) mit dem Grundriss «UG Heizung/Kälte».
 
 **Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~KaelteHeizung`, Node-Tests `projektbrowser.test.mjs` («Kälte:»), `bibliothek.test.mjs`.
+
+## Nachbearbeitung N9: Ausrichtung der Grundrisse (`nachbearbeitung.md`, Abschnitt N9)
+
+Christian, 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach himmelsrichtung oder nach geometrie ausgerichtet sein sollen. standard ist geometrie
+(längste Gebäudekante waagerecht)». Die Drehung rechnet der Kern (`Grafik/Ansichtsausrichtung.cs`, `Architektur/Planwinkel.cs`); die Oberfläche dreht nur.
+
+| Funktion | Ort | Kürzel | Dateien |
+| --- | --- | --- | --- |
+| **Nach Himmelsrichtung** ein/aus (sonst Geometrie) | Ansicht › Darstellung › «Nach Himmelsrichtung» (gedrückt = Himmelsrichtung); Eigenschaften der Ansicht › `ausrichtung` | – | `aktionen-ansicht.js` (Aktion `ansicht.ausrichtung`) |
+| **Planwinkel neu bestimmen** | Ansicht › Darstellung › «Planwinkel neu bestimmen»; Eigenschaften eines Gebäudes › Knopf unter `planwinkel` | – | `aktionen-ansicht.js` (`ansicht.planwinkel`), `ausrichtung-palette.js` |
+| Drehung und Quelle anzeigen | Eigenschaften der Ansicht › Zeilen «Drehung», «Quelle» unter `ausrichtung`; unten links in der Ansicht «Geometrie, gedreht −37.0°» | – | `ausrichtung-palette.js`, `ansichten/grundriss.js` |
+
+- **Plangrafik:** `/api/plangrafik/{ansicht}` liefert zusätzlich `drehung` (Grad, Gegenuhrzeigersinn, Modell → Ansicht), `nord` (Richtung von geografisch Nord auf dem Blatt,
+  Grad im Uhrzeigersinn ab oben), `ausrichtung` (geometrie | himmelsrichtung; null bei Schnitt, Ansicht, Schema, Liste) und `begrenzungAnsicht` (Begrenzung in den Achsen der
+  Ansicht). Die Primitive bleiben in Modellkoordinaten; Beschriftungen hat der Kern schon gegengedreht (waagrecht auf dem Blatt, Masszahlen und Leitungsbezeichnungen folgen
+  ihrem Bauteil und bleiben lesbar).
+- **Eine Stelle der Drehung am Bildschirm:** `grundriss.js` setzt `transform="scale(1 -1) rotate(drehung)"` an der Gruppe `gr-welt` (Plan und Werkzeugschicht). Der Ausschnitt
+  (`viewBox`) liegt in den Achsen der Ansicht; `zuModell`/`zuBildschirm` rechnen über `ansichten/ausrichtung.js` (`svgAusModell`, `modellAusSvg`) ins Modell zurück, `zoomAuf`
+  nimmt ein Modellrechteck und passt das umschliessende Rechteck der Ansicht ein. Ändert sich die Drehung (Umschalten), bleibt die Modellmitte des Ausschnitts; ohne eigenen Zoom
+  wird neu eingepasst. Der Nordpfeil oben rechts dreht nach `nord`; unten links stehen die Ausrichtung und die **Mausposition in Modellkoordinaten** («x … · y … mm (Modell)»).
+- **Werkzeuge:** `instanz.drehung` der Ansicht. `fangen.js › fangen({ …, drehung })` fängt in den Achsen der Ansicht (Umschalt = orthogonal und Raster; Endpunkte, Kanten
+  und Abstände unverändert, Ergebnis in Modellkoordinaten, auf 1e-6 mm gerundet). Winkelfang der Leitungen (`richtungsKandidaten({ drehung })`), Bemassung
+  horizontal/vertikal (`messrichtung(…, drehung)`, im Kern `GrafikKontext.Drehung`) und die Winkelangabe der temporären Masse gelten in den Achsen der Ansicht –
+  waagrecht gezeichnet heisst parallel zur Gebäudekante. Texte, Fangsymbole und Griffe der Werkzeugschicht bleiben waagrecht (`schicht.js › drehungSetzen`, gesetzt in
+  `basis.js` und `griffe.js` vor jedem Zeichnen, danach wieder 0 – der Familieneditor zeichnet ungedreht). Auswahl per Klick und Ziehen laufen über das SVG bzw. `zuModell` und brauchen nichts Eigenes.
+- **PDF und Planblatt:** `PdfZeichner.Drehen` dreht alle Primitive eines Fensters um die Fenstermitte (eine `cm`-Matrix je Fenster); Ausschnitt und Begrenzung gelten in den
+  Achsen der Ansicht; der Nordpfeil unter dem Fenster zeigt nach geografisch Nord. Die Planblatt-Ansicht zeigt das PDF.
+
+**Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~AnsichtAusrichtungTests`; Node `ansichten/ausrichtung.test.mjs`; Browser
+`node ansichten/ausrichtung.browser.mjs` (Port 5440, CDP 5441; Bilder `n9_*.png` in `%TEMP%\HLKS_CAD\n9`).

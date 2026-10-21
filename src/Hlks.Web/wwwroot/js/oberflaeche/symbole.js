@@ -67,6 +67,8 @@ const S = {
   anleitung: '<path d="M16 4a12 11 0 110 22h-.6L9 29.5V24A12 11 0 0116 4z"/><path d="M12.2 12.6a3.9 3.6 0 117.4 1.4c-.6 1.8-3.6 2.2-3.6 4.6" stroke-width="2"/><path d="M16 21.9v.4" stroke-width="2.4"/>',
   // Darstellung Hülle (Modul 1c, C1b): Grundriss mit kräftigem Streifen innen an der Aussenwand
   huelleAnsicht: '<rect x="4" y="4" width="24" height="24"/><path d="M8 8h16v16H8z" stroke-width="3.5"/><path d="M16 4v4M16 24v4"/>',
+  ausrichtungNord: '<circle cx="16" cy="17" r="11"/><path d="M16 5l4.5 12L16 15l-4.5 2z"/><path d="M13 27v-5l6 5v-5"/>',   // N9: Grundriss nach Himmelsrichtung
+  planwinkel: '<path d="M6 22l13-9 7 10-13 9z" transform="translate(0 -6)"/><path d="M4 26h24"/><path d="M14 26a9 9 0 00-2-6"/>',   // N9: Planwinkel neu bestimmen
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
   hkapVerbinden: '<rect x="3" y="5" width="9" height="9" rx="1"/><rect x="20" y="18" width="9" height="9" rx="1"/><path d="M12 9.5h5a3 3 0 013 3V18M16 22.5h-4M7.5 14v8.5H12"/>',
   hkapAbgleich: '<rect x="3" y="4" width="10" height="24" rx="1"/><rect x="19" y="4" width="10" height="24" rx="1"/><path d="M6 10h4M6 16h4M6 22h4M22 10h4M22 16h4M22 22h4M14 12h4M16 10l2 2-2 2M18 20h-4M16 18l-2 2 2 2"/>',

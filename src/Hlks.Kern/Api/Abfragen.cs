@@ -64,6 +64,7 @@ public sealed class Abfragen(Projekt p)
         .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
+        .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)
     ];
 
     string Kz(string? id) => M.Finde(id)?.Kennzeichen ?? (id is null ? "" : $"?{id}");

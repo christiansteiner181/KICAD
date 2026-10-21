@@ -444,6 +444,8 @@ public sealed class AussparungGrafik : IGrafikquelle
                 teil.Primitive.Add(BeschriftungHilfen.Text([lage.X + pad, y0 - lh], string.Join("\n", en.Einzelheiten), Schrift));
             if (en.Rahmen) foreach (var pr in teil.Primitive) pr.Stil.Farbe = BoxFarbe(ctx);
             if (!en.Gedruckt) foreach (var pr in teil.Primitive) pr.Stil.NurBildschirm = true;   // H+K-Vorlage: am Symbol nichts auf dem Plan
+            // N9: in gedrehten Grundrissen drehen Box und Texte um die Mitte der Box zurück (bleiben waagrecht); die Führungslinie bleibt
+            foreach (var pr in teil.Primitive) if (pr.Art != "linie") pr.Anker = [lage.X + w / 2, lage.Y + h / 2];
             ergebnis[en.E.Id].Add(teil);
         }
         return ergebnis;
@@ -618,6 +620,7 @@ public sealed class AussparungGrafik : IGrafikquelle
             Kasten(y, farbe, FuellDeckkraft, true, farbe);
             teil.Primitive.Add(new Primitiv { Art = "text", Punkte = [[tx, y]], Text = text, Groesse = Schrift, Ausrichtung = "links", Winkel = 0, Stil = new Stil { NurBildschirm = true } });
         }
+        foreach (var pr in teil.Primitive) pr.Anker = [x0, miny - ctx.AufModell(8)];   // N9: Legende bleibt in gedrehten Grundrissen waagrecht
         aus.Add(teil);
         return aus;
     }

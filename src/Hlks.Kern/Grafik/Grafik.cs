@@ -53,6 +53,9 @@ public sealed class GrafikKontext
     /// <summary>Gewerke, die gezeigt werden; null = alle.</summary>
     public IReadOnlySet<string>? Gewerke { get; init; }
     public IReadOnlySet<string> KlassenAus { get; init; } = new HashSet<string>();
+    /// <summary>N9: Drehung der Ansicht in Grad (Gegenuhrzeigersinn, Modell → Ansicht; nur Grundrisse). «horizontal» und «vertikal» einer
+    /// Bemassung gelten in den Achsen der Ansicht.</summary>
+    public double Drehung { get; init; }
     /// <summary>Zwischenergebnisse aus Vorbereiten, je Quelle unter ihrem Namen.</summary>
     public Dictionary<string, object> Ablage { get; } = [];
 
@@ -96,7 +99,10 @@ public static class Grafik
             foreach (var e in p.Modell.Elemente)
                 if (IstBeschriftungVon(p.Katalog, e, a) && QuelleFuer(p.Katalog, e) is { } q) g.Teile.AddRange(q.Plan(ctx, e));
         }
+        // N9: Ausrichtung der Ansicht (Geometrie bzw. Himmelsrichtung); Beschriftungen werden hier gegengedreht (Ansichtsausrichtung.cs)
+        Ansichtsausrichtung.Uebernehmen(p, a, g);
         g.Begrenzung = Begrenzung(g.Teile);
+        g.BegrenzungAnsicht = g.Drehung == 0 ? g.Begrenzung : Begrenzung(g.Teile, g.Drehung);
         return g;
     }
 
@@ -146,6 +152,7 @@ public static class Grafik
             Schnitthoehe = (geschoss?.Zahl("kote") ?? 0) + (ansicht.Zahl("schnitthoehe") ?? 1000),
             Gewerke = gewerke.Count > 0 ? gewerke.ToHashSet() : null,
             KlassenAus = Liste(ansicht, "klassenAusblenden").ToHashSet(),
+            Drehung = art == "grundriss" ? Ansichtsausrichtung.Fuer(p, ansicht).Drehung : 0,   // N9
         };
     }
 
@@ -189,18 +196,22 @@ public static class Grafik
     public static bool Bool(Element e, string name, bool vorgabe = false) =>
         e.Eigenschaft(name)?.Inhalt is JsonValue v && v.TryGetValue<bool>(out var b) ? b : vorgabe;
 
-    /// <summary>[minx, miny, maxx, maxy] über alle Punkte (Kreise/Bögen mit Radius); null wenn leer.</summary>
-    public static double[]? Begrenzung(IEnumerable<Grafikteil> teile)
+    /// <summary>[minx, miny, maxx, maxy] über alle Punkte (Kreise/Bögen mit Radius); null wenn leer. Mit <paramref name="drehung"/> (Grad,
+    /// Gegenuhrzeigersinn) in den Achsen einer gedrehten Ansicht (N9): jeder Punkt wird vorher um den Ursprung gedreht.</summary>
+    public static double[]? Begrenzung(IEnumerable<Grafikteil> teile, double drehung = 0)
     {
         double x0 = double.MaxValue, y0 = double.MaxValue, x1 = double.MinValue, y1 = double.MinValue;
+        double dc = Math.Cos(drehung * Math.PI / 180), ds = Math.Sin(drehung * Math.PI / 180);
+        double[] D(double[] q) => drehung == 0 ? q : [q[0] * dc - q[1] * ds, q[0] * ds + q[1] * dc];
         void Dazu(double x, double y) { x0 = Math.Min(x0, x); y0 = Math.Min(y0, y); x1 = Math.Max(x1, x); y1 = Math.Max(y1, y); }
         foreach (var t in teile)
             foreach (var pr in t.Primitive)
             {
-                if (pr.Art == "bogen" && pr.Radius is double rb && pr.Punkte.Count > 0 && pr.Von is double von && pr.Bis is double bis)
+                if (pr.Art == "bogen" && pr.Radius is double rb && pr.Punkte.Count > 0 && pr.Von is double von0 && pr.Bis is double bis0)
                 {
                     // nur der Bogen selbst: Endpunkte und die Achsextreme (0°, 90°, 180°, 270°), die er überstreicht
-                    var m = pr.Punkte[0];
+                    var m = D(pr.Punkte[0]);
+                    double von = von0 + drehung, bis = bis0 + drehung;
                     double laenge = ((bis - von) % 360 + 360) % 360;
                     if (laenge == 0) laenge = 360;
                     foreach (var w in new[] { von, von + laenge }.Concat(Enumerable.Range(0, 8).Select(i => i * 90.0).Where(a => ((a - von) % 360 + 360) % 360 <= laenge)))
@@ -208,7 +219,7 @@ public static class Grafik
                     continue;
                 }
                 double r = pr.Art is "kreis" or "bogen" ? pr.Radius ?? 0 : 0;
-                foreach (var pt in pr.Punkte) { Dazu(pt[0] - r, pt[1] - r); Dazu(pt[0] + r, pt[1] + r); }
+                foreach (var pt0 in pr.Punkte) { var pt = D(pt0); Dazu(pt[0] - r, pt[1] - r); Dazu(pt[0] + r, pt[1] + r); }
             }
         return x0 == double.MaxValue ? null : [x0, y0, x1, y1];
     }

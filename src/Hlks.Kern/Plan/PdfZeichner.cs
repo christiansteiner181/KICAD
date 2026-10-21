@@ -11,15 +11,17 @@ using PdfSharp.Fonts;
 
 namespace Hlks.Kern;
 
-/// <summary>Abbildung Modell-mm → Papier-mm (Ursprung unten links): papier = O + S · modell, x und y gleich.</summary>
-public readonly record struct Abbildung(double S, double Ox, double Oy)
+/// <summary>Abbildung Modell-mm → Papier-mm (Ursprung unten links): papier = O + S · modell, x und y gleich. Gedrehte Ansicht (N9):
+/// danach um <paramref name="Drehung"/> (Grad, Gegenuhrzeigersinn) um den Papierpunkt (Dx, Dy) gedreht – das macht PdfZeichner.Zeichnen
+/// an einer Stelle für alle Primitive (Texte hat der Kern schon gegengedreht, Ansichtsausrichtung.cs).</summary>
+public readonly record struct Abbildung(double S, double Ox, double Oy, double Drehung = 0, double Dx = 0, double Dy = 0)
 {
     /// <summary>Papier-mm direkt (keine Umrechnung).</summary>
     public static readonly Abbildung Papier = new(1, 0, 0);
 
-    /// <summary>Ansichtsfenster: Modellpunkt (cx, cy) kommt auf den Papierpunkt (lx, ly), Massstab 1:massstab.</summary>
-    public static Abbildung Fuer(double massstab, double lx, double ly, double cx, double cy) =>
-        new(1 / massstab, lx - cx / massstab, ly - cy / massstab);
+    /// <summary>Ansichtsfenster: Modellpunkt (cx, cy) kommt auf den Papierpunkt (lx, ly), Massstab 1:massstab; gedreht um (lx, ly).</summary>
+    public static Abbildung Fuer(double massstab, double lx, double ly, double cx, double cy, double drehung = 0) =>
+        new(1 / massstab, lx - cx / massstab, ly - cy / massstab, drehung, lx, ly);
 
     public double X(double x) => Ox + S * x;
     public double Y(double y) => Oy + S * y;
@@ -108,11 +110,30 @@ public sealed class PdfZeichner
     /// <summary>Alle Teile einer Plangrafik in der Zeichenreihenfolge der Ebenen (unten → oben).</summary>
     public void Zeichnen(Plangrafik g, Abbildung abb)
     {
+        var dreh = Drehen(abb);
         foreach (var t in g.Teile.OrderBy(t => Rang(t.Ebene)))   // stabil: innerhalb einer Ebene Listenreihenfolge
-            Zeichnen(t.Primitive, abb);
+            Primitive(t.Primitive, abb);
+        if (dreh is not null) gfx.Restore(dreh);
     }
 
     public void Zeichnen(IEnumerable<Primitiv> primitive, Abbildung abb)
+    {
+        var dreh = Drehen(abb);
+        Primitive(primitive, abb);
+        if (dreh is not null) gfx.Restore(dreh);
+    }
+
+    /// <summary>N9: gedrehte Ansicht – die eine Stelle im PDF, an der alles um die Drehung der Ansicht gedreht wird (um den Papierpunkt
+    /// der Fenstermitte). Rückgabe: Zustand zum Wiederherstellen, ohne Drehung null.</summary>
+    XGraphicsState? Drehen(Abbildung abb)
+    {
+        if (abb.Drehung == 0) return null;
+        var s = gfx.Save();
+        gfx.RotateAtTransform(-abb.Drehung, Pt(abb.Dx, abb.Dy));   // Seite: y nach unten, positiv = Uhrzeigersinn
+        return s;
+    }
+
+    void Primitive(IEnumerable<Primitiv> primitive, Abbildung abb)
     {
         foreach (var p in primitive)
         {

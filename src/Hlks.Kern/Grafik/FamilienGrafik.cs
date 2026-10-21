@@ -191,6 +191,7 @@ public sealed class FamilienGrafik : IGrafikquelle
             Bis = p.Bis is double b ? b + dreh : null,
             Text = p.Text, Groesse = p.Groesse, Ausrichtung = p.Ausrichtung, Fett = p.Fett,
             Winkel = p.Art == "text" ? HlksLinien.LesbarerWinkel((p.Winkel ?? 0) + dreh) : p.Winkel,
+            Mitdrehen = p.Art == "text" ? true : null,   // N9: Text des Sinnbilds dreht mit der Ansicht (bleibt lesbar)
             Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = farbe ?? p.Stil.Farbe, Fuellung = p.Stil.Fuellung, Deckkraft = p.Stil.Deckkraft, NurBildschirm = p.Stil.NurBildschirm },
         };
     }

@@ -7,10 +7,10 @@ import { abstand, laengeText } from './fangen.js';
 import { bemassungParameter, bemassungVersatz, messrichtung, WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
 
-/** Vorschau der Masslinie: Hilfslinien, Masslinie, Länge je Abschnitt in mm. */
-export function massVorschau(punkte, richtung, lage, s) {
-  const d = messrichtung(punkte, richtung), n = [-d[1], d[0]];
-  const versatz = bemassungVersatz(punkte, richtung, lage);
+/** Vorschau der Masslinie: Hilfslinien, Masslinie, Länge je Abschnitt in mm (N9: horizontal/vertikal in den Achsen der Ansicht). */
+export function massVorschau(punkte, richtung, lage, s, drehung = 0) {
+  const d = messrichtung(punkte, richtung, drehung), n = [-d[1], d[0]];
+  const versatz = bemassungVersatz(punkte, richtung, lage, drehung);
   const p0 = punkte[0];
   const sPos = punkte.map((p) => (p[0] - p0[0]) * d[0] + (p[1] - p0[1]) * d[1]);
   const auf = (si) => [p0[0] + d[0] * si + n[0] * versatz, p0[1] + d[1] * si + n[1] * versatz];
@@ -21,7 +21,7 @@ export function massVorschau(punkte, richtung, lage, s) {
     const l = Math.abs(sPos[i] - sPos[i - 1]);
     if (l < 1e-6) continue;
     const m = auf((sPos[i] + sPos[i - 1]) / 2);
-    h += S.text([m[0] + n[0] * 6 * s, m[1] + n[1] * 6 * s], laengeText(l), s, { anker: 'middle', winkel: S.lesbarerWinkel([0, 0], d), klasse: 'wz-text wz-masstext' });
+    h += S.text([m[0] + n[0] * 6 * s, m[1] + n[1] * 6 * s], laengeText(l), s, { anker: 'middle', winkel: S.lesbarerWinkel([0, 0], d), ausgerichtet: true, klasse: 'wz-text wz-masstext' });
   }
   return h;
 }
@@ -42,7 +42,7 @@ export function bemassungWerkzeug() {
       if (z.phase === 'lage') {
         const punkte = z.punkte;
         z.punkte = []; z.phase = 'punkte';
-        await ctx.befehl('element_anlegen', bemassungParameter({ ansicht: ctx.ansichtKz, punkte, richtung: ctx.opt.richtung, lage: fang.punkt }), 'Bemassung angelegt.');
+        await ctx.befehl('element_anlegen', bemassungParameter({ ansicht: ctx.ansichtKz, punkte, richtung: ctx.opt.richtung, lage: fang.punkt, drehung: ctx.ansicht.drehung ?? 0 }), 'Bemassung angelegt.');
         return;
       }
       if (z.punkte.length && abstand(fang.punkt, z.punkte.at(-1)) < 1) return;
@@ -55,7 +55,7 @@ export function bemassungWerkzeug() {
     },
     zeichne(z, fang, ctx, s) {
       if (!fang) return '';
-      if (z.phase === 'lage') return massVorschau(z.punkte, ctx.opt.richtung, fang.punkt, s);
+      if (z.phase === 'lage') return massVorschau(z.punkte, ctx.opt.richtung, fang.punkt, s, ctx.ansicht.drehung ?? 0);
       const pts = [...z.punkte, fang.punkt];
       let h = '';
       for (let i = 0; i + 1 < pts.length; i++) h += S.linie(pts[i], pts[i + 1], 'wz-gummi');

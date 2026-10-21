@@ -76,6 +76,7 @@ public class TuerDarstellungTests
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",       // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
+        ["planwinkel"] = """{"ansicht":"AN-GR-EG"}""",                       // N9: Planwinkel GEB-1 und Ausrichtung des Grundrisses EG
     };
 
     static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
