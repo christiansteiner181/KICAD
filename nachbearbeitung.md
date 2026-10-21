@@ -153,6 +153,20 @@ gebäude». Hauptlauf:
 - die Türen in 3D und Grundriss richtig stehen;
 - Türen ohne Körper weiter `OverallHeight` nehmen.
 
+**Umgesetzt: 21.10.2026** (hlks-kern, vom Hauptlauf zusammengeführt).
+- **Ursache:** Das IFC ist widersprüchlich. `OverallHeight` (5190) ist die Höhe der Öffnung; sie reicht 3,04 m unter die Tür. Der Türkörper
+  selbst ist nur 0 … 2150 mm hoch. Dasselbe gilt im BKW-IFC (Archicad 28) für 15 Türen.
+- **Regel** (`src/Hlks.Kern/Import/IfcArchitektur.cs`): Weicht die Körperhöhe um mehr als 400 mm **und** mehr als 15 % von `OverallHeight`
+  ab, gilt der Körper. Die Herkunft nennt beide Werte, ein Importhinweis listet jede Tür bzw. jedes Fenster.
+  - Die Schwelle stammt aus den echten Dateien: Rahmen, Futter und Bänke machen den Körper bis 298 mm bzw. 12,6 % höher. Die
+    widersprüchlichen Fälle weichen 725 … 4160 mm bzw. 20,8 … 66,5 % ab.
+  - Gilt auch für Fenster; dort kommt dann auch `bruestung` von der Unterkante des Körpers.
+- **Wanddarstellung:** Die Aussparung ist jetzt 2150 mm hoch. Kollision und Aussparungen nutzen weiter das IfcOpeningElement; sein
+  unterer Teil wirkt dort nicht.
+- **Tests:** `NachbearbeitungN6N7Tests.cs` (synthetisch, IFC4 und IFC2X3) und `NachbearbeitungN6N7EchtTests.cs` (echtes IFC, wird
+  übersprungen, wenn die Datei fehlt).
+- **Für «Test_praxis»:** Das IFC muss neu übernommen werden (`ifc_uebernehmen`), damit die Türen nachgeführt werden.
+
 ## N7 – Zwei Stahl-Unterzüge ragen 3–4 m aus dem Gebäude
 
 Befund Christian 21.10.2026 (gleiches Projekt): «unterzüge neben gebäude». Hauptlauf:
@@ -163,6 +177,18 @@ Befund Christian 21.10.2026 (gleiches Projekt): «unterzüge neben gebäude». H
 
 **Fertig, wenn** die Ursache belegt ist, gegen die Geometrie im IFC gerechnet, und die Träger dort liegen, wo das IFC sie zeichnet. Zeichnet
 das IFC sie tatsächlich ausserhalb, meldet ein Befund sie.
+
+**Umgesetzt: 21.10.2026** (hlks-kern, vom Hauptlauf zusammengeführt). Es war ein **Leserfehler von KICAD**; das IFC zeichnet die Träger
+im Gebäude.
+- **Ursache:** UZ-14 = IfcBeam #28246, UZ-62 = #32964, ein lotrechtes H-Profil 220 × 220. Als Trägeranfang nahm KICAD den Schwerpunkt des
+  Profils im Grundriss. Dort hat das Profil die Fläche 0, und weit vom Ursprung blieb ein Rundungsrest über der Schwelle. Der
+  «Schwerpunkt» lag dadurch rund 15,5 m längs der Achse daneben.
+- **Lösung:**
+  - Der Trägeranfang ist die Mitte des lotrechten Profils.
+  - `Polygone.Schwerpunkt` rechnet ab dem ersten Punkt und erkennt Fläche 0 relativ zur Ausdehnung; das behebt die Ursache auch für
+    andere Aufrufer.
+- **Tests:** Die alten Werte reproduzieren Christians Koordinaten genau. Alle 73 Träger liegen jetzt in ihrem IFC-Körper.
+- **Für «Test_praxis»:** Das IFC muss neu übernommen werden.
 
 ## N8 – Schraffuren drehen mit der Wand
 
