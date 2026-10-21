@@ -256,7 +256,20 @@ Entscheide Hauptlauf:
 - Zeichnen, Fang und PDF in beiden Fällen stimmen;
 - der Nordpfeil richtig zeigt.
 
-## N10 – Mittlere Maustaste verschiebt in allen Ansichten
+**Umgesetzt: 21.10.2026** (hlks-kern, vom Hauptlauf zusammengeführt).
+- **Planwinkel** (`Architektur/Planwinkel.cs`): Er kommt aus der längsten Aussenwand und wird beim IFC-Import bzw. bei der ersten Wand
+  gesetzt. Neu sind die Abfrage `planwinkel` und der Befehl `planwinkel_bestimmen`.
+- **Drehung** je Ausgabeweg an einer Stelle:
+  - Bildschirm: Gruppe `gr-welt` in `grundriss.js`, Rückrechnung in `ansichten/ausrichtung.js`.
+  - PDF: `PdfZeichner.Drehen`.
+- **Beschriftungen** bleiben waagrecht (`Ansichtsausrichtung.Uebernehmen`, Merkmale `Anker` und `Mitdrehen`).
+- **Bedienung:**
+  - Menüband: Ansicht › Darstellung › «Nach Himmelsrichtung» und «Planwinkel neu bestimmen».
+  - Eigenschaften der Ansicht bzw. des Gebäudes.
+  - Fang und Bemassung richten sich nach den Ansichtsachsen.
+- **Probe:** Das Archicad-IFC der Bernstrasse ergibt 42,7° (W-70), Grundriss und Plan stehen gerade.
+- **Navigationswürfel:** VORNE folgt jetzt dem Planwinkel.
+- **Grenze:** Wegen ±45° kann die längste Kante auch senkrecht stehen. – Mittlere Maustaste verschiebt in allen Ansichten
 
 Christian 21.10.2026: «mittlere maustaste = plan verschieben».
 
