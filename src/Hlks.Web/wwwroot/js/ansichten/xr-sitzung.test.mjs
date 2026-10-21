@@ -36,16 +36,48 @@ test('Zoomgrenzen: 1:20 bis 1:200, ungültige Werte fallen auf 1:50', () => {
   nah(l.x, S.TISCH.breite / 2 - S.TISCH.halt); nah(l.z, -(S.TISCH.tiefe / 2 - S.TISCH.halt));
 });
 
-// ------------------------------------------------------------------------------------------------ Nähe
-test('Nähe: nur wer beim Zufassen am Modell ist, greift', () => {
-  const l = S.einpassen({ b: 12, t: 8, h: 9 });
-  const g = { b: 12, t: 8, h: 9 };
+// ------------------------------------------------------------------------------------------------ Griffe
+test('Griffe: links und rechts der Modellmitte, GRIFF_ABSTAND_M ausserhalb der Modellbreite, GRIFF_HOEHE_M über der Platte; sie folgen Lage, Drehung und Massstab', () => {
+  const G = { b: 12, t: 8, h: 9 };
+  const l = S.einpassen(G);                                   // 1:50, Mitte der Platte
   const m = S.modellMitte(l);
-  assert.equal(S.nahAmModell({ x: m.x, y: S.TISCH.hoehe + 0.1, z: m.z }, l, g), true);
-  assert.equal(S.nahAmModell({ x: m.x + 0.3, y: S.TISCH.hoehe + 0.1, z: m.z }, l, g), true, 'Umkreis 0.5 m·√(12²+8²)/50 ≈ 0.14 plus 0.25 m');
-  assert.equal(S.nahAmModell({ x: m.x + 0.7, y: S.TISCH.hoehe + 0.1, z: m.z }, l, g), false, 'weit daneben');
-  assert.equal(S.nahAmModell({ x: m.x, y: S.TISCH.hoehe + 1.2, z: m.z }, l, g), false, 'viel zu hoch');
-  assert.equal(S.nahAmModell({ x: m.x, y: 0.2, z: m.z }, l, g), false, 'unter dem Tisch');
+  let p = S.griffPunkte(l, G);
+  assert.equal(p.length, 2); assert.equal(p[0].seite, 'links'); assert.equal(p[1].seite, 'rechts');
+  const halb = 12 / 50 / 2 + S.GRIFF_ABSTAND_M;
+  nah(p[0].x, m.x - halb); nah(p[1].x, m.x + halb); nah(p[0].z, m.z); nah(p[1].z, m.z);
+  nah(p[0].y, S.TISCH.hoehe + S.GRIFF_HOEHE_M); nah(p[1].y, S.TISCH.hoehe + S.GRIFF_HOEHE_M);
+  assert.equal(S.GRIFF_ABSTAND_M, 0.06); assert.equal(S.GRIFF_HOEHE_M, 0.05); assert.equal(S.GRIFF_FANG_M, 0.05); assert.equal(S.GRIFF_HOVER_M, 0.05); assert.equal(S.GRIFF_DURCHMESSER_M, 0.025);
+  // Zoom auf 1:25: die Modellbreite verdoppelt sich, die Griffe rücken mit (der Abstand von 6 cm bleibt)
+  p = S.griffPunkte({ ...l, massstab: 25 }, G);
+  nah(p[1].x - S.modellMitte(l).x, 12 / 25 / 2 + S.GRIFF_ABSTAND_M);
+  // Verschiebung: die Griffe folgen der Modellmitte
+  p = S.griffPunkte({ ...l, x: 0.1, z: -0.05 }, G);
+  nah((p[0].x + p[1].x) / 2, m.x + 0.1); nah((p[0].z + p[1].z) / 2, m.z - 0.05);
+  // Drehung um 90° (gegen den Uhrzeigersinn von oben): der rechte Griff liegt bei −z (in Blickrichtung des Raums hinten), der linke bei +z; die Höhe bleibt
+  p = S.griffPunkte({ ...l, drehung: 90 * GRAD }, G);
+  nah(p[1].x, m.x, 1e-9); nah(p[1].z, m.z - halb, 1e-9); nah(p[0].z, m.z + halb, 1e-9); nah(p[1].y, S.TISCH.hoehe + S.GRIFF_HOEHE_M);
+  // winziges oder unbekanntes Modell: Mindestabstand, keine NaN
+  for (const u of [null, { b: 0 }, { b: NaN }]) { const q = S.griffPunkte(l, u); assert.ok(q.every((x) => Number.isFinite(x.x)), 'endlich'); nah(q[1].x - m.x, S.GRIFF_MIN_HALB_M + S.GRIFF_ABSTAND_M); }
+});
+
+test('Griff-Treffer: ein Pinch in höchstens 5 cm fasst den nächsten Griff, weiter weg nichts; Controller zielen mit dem Strahl', () => {
+  const l = S.einpassen({ b: 12, t: 8, h: 9 });
+  const gp = S.griffPunkte(l, { b: 12, t: 8, h: 9 });
+  const bei = (g, dx, dy = 0, dz = 0) => ({ x: g.x + dx, y: g.y + dy, z: g.z + dz });
+  assert.equal(S.griffTreffer(bei(gp[0], 0.04), null, gp), 0);
+  assert.equal(S.griffTreffer(bei(gp[1], 0, 0.03, 0.03), null, gp), 1, '3D-Abstand √(0.03²+0.03²) = 4.2 cm');
+  assert.equal(S.griffTreffer(bei(gp[0], 0.051), null, gp), null, 'knapp ausserhalb');
+  assert.equal(S.griffTreffer(bei(gp[0], 0, 0.06), null, gp), null, 'zu hoch');
+  assert.equal(S.griffTreffer(bei(gp[0], -0.3), null, gp), null, 'weit weg');
+  assert.equal(S.griffTreffer(null, null, gp), null);
+  assert.equal(S.griffTreffer({ x: (gp[0].x + gp[1].x) / 2, y: gp[0].y, z: gp[0].z }, null, gp), null, 'in der Mitte des Modells: weder noch');
+  // Controller: Strahl von 0.5 m entfernt, auf den rechten Griff gerichtet
+  const u = bei(gp[1], 0, 0.3, 0.5), r = { x: gp[1].x - u.x, y: gp[1].y - u.y, z: gp[1].z - u.z };
+  assert.equal(S.griffTreffer(u, { u, r }, gp), 1, 'Zielstrahl trifft');
+  assert.equal(S.griffTreffer(u, null, gp), null, 'ohne Strahl ist die Hand zu weit weg');
+  assert.equal(S.griffTreffer(u, { u, r: { x: -r.x, y: -r.y, z: -r.z } }, gp), null, 'Strahl zeigt weg');
+  nah(S.strahlAbstand({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 }, { x: 0.03, y: 0, z: -2 }), 0.03);
+  nah(S.strahlAbstand({ x: 0, y: 0, z: 0 }, { x: 0, y: 0, z: -1 }, { x: 0, y: 0, z: 1 }), 1, 1e-9, 'hinter dem Ursprung zählt der Abstand zum Ursprung');
 });
 
 // ------------------------------------------------------------------------------------------------ Einhand: starr an der Hand
@@ -119,43 +151,72 @@ test('Zwei Hände: die Drehung der Verbindungslinie dreht das Modell um den Mitt
 });
 
 // ------------------------------------------------------------------------------------------------ Gestenablauf
-test('Gesten: Zufassen in der Nähe, Zufassen ausserhalb zählt nicht, der Wechsel von einer auf zwei Hände springt nicht', () => {
+test('Gesten: ein Pinch am Griff hält ihn, ein Pinch weit weg nicht; bewegt wird nur mit beiden Griffen; der Wechsel springt nicht', () => {
   const l0 = S.einpassen({ b: 12, t: 8, h: 9 });
-  const m = S.modellMitte(l0);
+  const gp = S.griffPunkte(l0, { b: 12, t: 8, h: 9 });
   let g = S.gestenNeu(l0);
-  const aus = { griff: false, nah: true, x: m.x, z: m.z, gieren: 0 };
-  // eine Hand greift in der Nähe: das Modell ruht (nur zwei Hände bewegen, Christian 21.10.2026)
-  g = S.gestenSchritt(g, { links: null, rechts: aus });
-  assert.equal(g.modus, null);
-  g = S.gestenSchritt(g, { links: null, rechts: { ...aus, griff: true } });
-  assert.equal(g.modus, 'wartet');
+  const A = (dx = 0) => ({ griff: true, nah: 0, x: gp[0].x + dx, z: gp[0].z });
+  const B = (dx = 0) => ({ griff: true, nah: 1, x: gp[1].x + dx, z: gp[1].z });
+  // kein Pinch: Ruhe, auch nah am Griff
+  g = S.gestenSchritt(g, { links: { ...A(), griff: false }, rechts: null });
+  assert.equal(g.modus, null); assert.deepEqual(g.besitzt, { links: null, rechts: null });
+  // Pinch am linken Griff: gehalten, aber das Modell ruht (ein Griff allein)
+  g = S.gestenSchritt(g, { links: A(), rechts: null });
+  assert.equal(g.modus, 'wartet'); assert.equal(g.besitzt.links, 0);
   const vor = g.lage;
-  g = S.gestenSchritt(g, { links: null, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
-  assert.deepEqual(g.lage, vor, 'eine Hand allein bewegt nichts');
-  // zweite Hand greift ausserhalb der Nähe von aussen kommend: zählt nicht (kein Zufassen am Modell)
-  g = S.gestenSchritt(g, { links: { griff: true, nah: false, x: m.x - 1.2, z: m.z, gieren: 0 }, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
-  assert.equal(g.modus, 'wartet');
-  assert.deepEqual(g.lage, vor);
-  g = S.gestenSchritt(g, { links: { griff: false, nah: false, x: m.x - 1.2, z: m.z, gieren: 0 }, rechts: { ...aus, griff: true, x: m.x + 0.1 } });
-  // nun greift die linke Hand nah am Modell zu: zwei Hände, Massstab und Lage ändern sich im selben Schritt noch nicht
-  const links = { griff: true, nah: true, x: m.x - 0.2, z: m.z, gieren: 0 }, rechts = { griff: true, nah: true, x: m.x + 0.2, z: m.z, gieren: 0 };
-  const nachher = S.gestenSchritt(g, { links: { ...links, griff: false }, rechts });   // Flanke erst mit griff = true
-  g = nachher;
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: null });
+  assert.deepEqual(g.lage, vor, 'ein Griff allein bewegt nichts');
+  // die andere Hand pinch weit weg vom Griff (nah = null): zählt nicht
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: { griff: true, nah: null, x: gp[1].x + 1, z: gp[1].z } });
+  assert.equal(g.modus, 'wartet'); assert.equal(g.besitzt.rechts, null); assert.deepEqual(g.lage, vor);
+  // sie pinchte weit weg schon: ein späteres Hineinwandern in die Fangreichweite fasst nicht (nur die steigende Flanke zählt)
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: B() });
+  assert.equal(g.modus, 'wartet', 'Pinch war schon gesetzt, bevor die Hand am Griff war');
+  // loslassen und am Griff neu pinchen: nun halten beide
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: { ...B(), griff: false } });
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: B() });
+  assert.equal(g.modus, 'zwei'); assert.deepEqual(g.besitzt, { links: 0, rechts: 1 });
   const eins = g.lage;
-  g = S.gestenSchritt(g, { links, rechts });
-  assert.equal(g.modus, 'zwei');
-  assert.deepEqual(g.lage, eins, 'beim Wechsel springt nichts');
-  g = S.gestenSchritt(g, { links: { ...links, x: m.x - 0.4 }, rechts: { ...rechts, x: m.x + 0.4 } });
-  nah(g.lage.massstab, 25, 1e-9, 'doppelter Abstand');
-  // eine Hand lässt los: das Modell bleibt stehen, auch wenn die andere sich bewegt
+  g = S.gestenSchritt(g, { links: A(0.1), rechts: B() });
+  for (const k of ['massstab', 'drehung', 'x', 'z']) nah(g.lage[k], eins[k], 1e-9, `beim Wechsel springt ${k} nicht`);
+  // Hände auseinander: doppelter Abstand → 1:25
+  const d0 = gp[1].x - (gp[0].x + 0.1);
+  g = S.gestenSchritt(g, { links: { ...A(), x: gp[0].x + 0.1 - d0 / 2 }, rechts: { ...B(), x: gp[1].x + d0 / 2 } });
+  nah(g.lage.massstab, l0.massstab / 2, 1e-6, 'Abstand verdoppelt → Massstab halbiert');
+  // eine Hand lässt los: das Modell bleibt stehen, die andere bewegt sich ohne Wirkung
   const zoomLage = g.lage;
-  g = S.gestenSchritt(g, { links: { ...links, griff: false }, rechts: { ...rechts, x: m.x + 0.4 } });
+  g = S.gestenSchritt(g, { links: { ...A(), griff: false }, rechts: B(0.6) });
   assert.equal(g.modus, 'wartet'); assert.deepEqual(g.lage, zoomLage);
-  g = S.gestenSchritt(g, { links: { ...links, griff: false }, rechts: { ...rechts, x: m.x + 0.6 } });
-  assert.deepEqual(g.lage, zoomLage, 'eine Hand allein bewegt nichts');
-  // beide los: Ruhe, die Lage bleibt
   g = S.gestenSchritt(g, { links: null, rechts: null });
-  assert.equal(g.modus, null); assert.deepEqual(g.lage, zoomLage);
+  assert.equal(g.modus, null); assert.deepEqual(g.lage, zoomLage); assert.deepEqual(g.besitzt, { links: null, rechts: null });
+});
+
+test('Gesten: verschieben und drehen mit beiden Griffen; die Hände dürfen die Griffe vertauschen (rechte Hand am linken Griff)', () => {
+  const l0 = S.einpassen({ b: 12, t: 8, h: 9 });
+  const G = { b: 12, t: 8, h: 9 };
+  const gp = S.griffPunkte(l0, G);
+  let g = S.gestenNeu(l0);
+  // rechte Hand am linken Griff (0), linke Hand am rechten Griff (1)
+  const R = (dx = 0, dz = 0) => ({ griff: true, nah: 0, x: gp[0].x + dx, z: gp[0].z + dz }), L = (dx = 0, dz = 0) => ({ griff: true, nah: 1, x: gp[1].x + dx, z: gp[1].z + dz });
+  g = S.gestenSchritt(g, { links: { ...L(), griff: false }, rechts: { ...R(), griff: false } });
+  g = S.gestenSchritt(g, { links: L(), rechts: R() });
+  assert.equal(g.modus, 'zwei'); assert.deepEqual(g.besitzt, { links: 1, rechts: 0 });
+  // beide 10 cm nach vorn (−z) und 5 cm nach rechts: das Modell wandert mit
+  g = S.gestenSchritt(g, { links: L(0.05, -0.1), rechts: R(0.05, -0.1) });
+  nah(g.lage.x, 0.05, 1e-9); nah(g.lage.z, -0.1, 1e-9); nah(g.lage.drehung, 0, 1e-9); nah(g.lage.massstab, l0.massstab, 1e-9);
+  // Drehung: die Verbindungslinie (Griff 0 → Griff 1) um 90° gegen den Uhrzeigersinn gedreht → das Modell dreht um 90°
+  const m = { x: (gp[0].x + gp[1].x) / 2, z: (gp[0].z + gp[1].z) / 2 }, halb = Math.abs(gp[1].x - gp[0].x) / 2;
+  g = S.gestenSchritt(g, { links: { ...L(), x: m.x, z: m.z - halb }, rechts: { ...R(), x: m.x, z: m.z + halb } });
+  nah(g.lage.drehung, 90 * GRAD, 1e-9);
+});
+
+test('Gesten: derselbe Griff wird nicht von zwei Händen gehalten', () => {
+  const l0 = S.einpassen({ b: 12, t: 8, h: 9 });
+  let g = S.gestenNeu(l0);
+  const beide = { links: { griff: true, nah: 0, x: 0, z: -1 }, rechts: { griff: true, nah: 0, x: 0.01, z: -1 } };
+  g = S.gestenSchritt(g, beide);
+  assert.deepEqual(g.besitzt, { links: 0, rechts: null }, 'die linke Hand hält ihn zuerst');
+  assert.equal(g.modus, 'wartet');
 });
 
 test('Richtung der Hand: aus Handgelenk und Mittelfinger, ersatzweise aus dem Zielstrahl', () => {
@@ -254,5 +315,5 @@ test('Tablet-Seite: Alle Etagen und die Geschosse (oberstes zuerst), feste Taste
   assert.deepEqual(S.sitzungsLayout([]).slice(0, 1).map((t) => t.id), ['alle']);
   // Beschriftung kurz
   assert.equal(S.geschossText({ kennzeichen: 'EG' }), 'EG');
-  assert.ok(S.geschossText({ kennzeichen: 'GESCHOSS-WEIT-LANG', name: 'Dachgeschoss mit Galerie' }).length <= 14);
+  assert.ok(S.geschossText({ kennzeichen: 'GESCHOSS-WEIT-LANG', name: 'Dachgeschoss mit Galerie' }).length <= S.GESCHOSS_TEXT_MAX);
 });

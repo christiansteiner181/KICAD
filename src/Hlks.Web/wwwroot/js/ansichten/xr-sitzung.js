@@ -164,8 +164,8 @@ export function erzeugeSitzung(o) {
     halter.name = 'sitzung-modellhalter';
     g.add(halter);
     // Griffe links und rechts des Modells (Hologramm-Stil: Kugel, Ring und weicher Schein in Cyan; Lage und Farbe setzt griffeZeigen)
-    const schein = rundSchein();
-    if (schein) entsorgen.push(schein);
+    const kugelSchein = rundSchein();
+    if (kugelSchein) entsorgen.push(kugelSchein);
     const kernGeo = new THREE.SphereGeometry(GRIFF_DURCHMESSER_M / 2, 20, 14), ringGeo = new THREE.TorusGeometry(GRIFF_DURCHMESSER_M * 0.9, 0.0025, 8, 40).rotateX(Math.PI / 2);
     entsorgen.push(kernGeo, ringGeo);
     griffe = [0, 1].map((i) => {
@@ -173,7 +173,7 @@ export function erzeugeSitzung(o) {
       gruppe.name = `sitzung-griff-${i}`;
       const kern = new THREE.Mesh(kernGeo, mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(HOLO.cyan), transparent: true, opacity: 0.6 })));
       const ring = new THREE.Mesh(ringGeo, mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(HOLO.cyan), transparent: true, opacity: 0.6 })));
-      const glanz = new THREE.Sprite(mat(new THREE.SpriteMaterial({ map: schein, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.4 })));
+      const glanz = new THREE.Sprite(mat(new THREE.SpriteMaterial({ map: kugelSchein, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.4 })));
       for (const m of [kern, ring, glanz]) m.renderOrder = 5;
       gruppe.add(kern, ring, glanz);
       g.add(gruppe);
@@ -363,18 +363,37 @@ export function erzeugeSitzung(o) {
   }
 
   // ---------------------------------------------------------------------------------------------- Hände
-  /** Je Bild nach der Eingabe: seiten = { left, right } der Auswertung in xr-greifen.js ({ griff, ort, gelenke, strahl, … } in der Welt). */
+  /** Pinch-Punkt einer Hand in der Welt: Mitte zwischen Daumen- und Zeigefingerspitze; Controller: ihre Lage. */
+  function pinchPunkt(S) {
+    const d = S.gelenke?.['thumb-tip'], i = S.gelenke?.['index-finger-tip'];
+    if (d && i) return { x: (d.x + i.x) / 2, y: (d.y + i.y) / 2, z: (d.z + i.z) / 2 };
+    return S.ort ?? null;
+  }
+  const lokal = (p) => { tmp.set(p.x, p.y, p.z); raum.worldToLocal(tmp); return { x: tmp.x, y: tmp.y, z: tmp.z }; };
+
+  /** Je Bild nach der Eingabe: seiten = { left, right } der Auswertung in xr-greifen.js ({ pinch, griff (Faust), ort, gelenke, strahl, … } in der Welt). */
   function bild(dt, seiten) {
     if (!aktiv || !raum) return;
     uhr += dt;
     raum.updateMatrixWorld(true);
+    const gp = griffPunkte(lage, groesse);
     const h = {};
+    griffNah = new Set();
     for (const [seite, name] of [['left', 'links'], ['right', 'rechts']]) {
       const S = seiten?.[seite];
-      if (!S?.ort) { h[name] = null; continue; }
-      tmp.set(S.ort.x, S.ort.y, S.ort.z);
-      raum.worldToLocal(tmp);
-      h[name] = { griff: !!S.griff, nah: nahAmModell(tmp, lage, groesse), x: tmp.x, z: tmp.z, gieren: handGieren(S) };
+      const p = S ? pinchPunkt(S) : null;
+      if (!p) { h[name] = null; continue; }
+      const pl = lokal(p);
+      let strahl = null;   // Controller: der Zielstrahl zählt wie die Nähe (Abzug am Griff)
+      if (S.art === 'controller' && S.strahl?.u && S.strahl?.r) {
+        const u = lokal(S.strahl.u), e = lokal({ x: S.strahl.u.x + S.strahl.r.x, y: S.strahl.u.y + S.strahl.r.y, z: S.strahl.u.z + S.strahl.r.z });
+        strahl = { u, r: { x: e.x - u.x, y: e.y - u.y, z: e.z - u.z } };
+      }
+      const nah = griffTreffer(pl, strahl, gp);
+      if (nah !== null) griffNah.add(nah);
+      // nur Daumen und Zeigefinger (bzw. der Abzug) greifen; eine Faust greift nichts
+      const pinch = !!S.pinch && !(S.art === 'hand' && S.griff);
+      h[name] = { griff: pinch, nah, x: pl.x, z: pl.z };
     }
     const vorher = lage;
     gesten = gestenSchritt(gesten, h);
@@ -382,6 +401,7 @@ export function erzeugeSitzung(o) {
     if (lage !== vorher) schmutzig = true;
     etagenLesen();
     anwenden();
+    griffeZeigen();
     schreiben();
   }
 
@@ -404,6 +424,10 @@ export function erzeugeSitzung(o) {
       tischWelt = raum.localToWorld(new THREE.Vector3(TISCH_MITTE.x, TISCH.hoehe, TISCH_MITTE.z));
       if (y !== null) ebeneWelt = raum.localToWorld(new THREE.Vector3(0, y, 0)).y;
     }
+    const griffeWelt = raum ? griffPunkte(lage, groesse).map((p) => {
+      const w = raum.localToWorld(new THREE.Vector3(p.x, p.y, p.z));
+      return { seite: p.seite, x: rund(w.x), y: rund(w.y), z: rund(w.z), hover: griffNah.has(p.index) && gesten.besitzt.links !== p.index && gesten.besitzt.rechts !== p.index, gehalten: gesten.besitzt.links === p.index || gesten.besitzt.rechts === p.index };
+    }) : [];
     let geclippt = 0, material = 0;
     modell.traverse((m) => { const mat = m.material; if (!mat) return; for (const x of Array.isArray(mat) ? mat : [mat]) { material++; if (x.clippingPlanes === EBENEN) geclippt++; } });
     return {
@@ -414,7 +438,7 @@ export function erzeugeSitzung(o) {
       modellUnten: rund(unten, 4), groesse: { b: rund(groesse.b, 3), t: rund(groesse.t, 3), h: rund(groesse.h, 3) },
       tisch: tischWelt ? { x: rund(tischWelt.x), y: rund(tischWelt.y, 5), z: rund(tischWelt.z) } : null,
       raum: raum ? { x: rund(raum.position.x), y: rund(raum.position.y), z: rund(raum.position.z), gieren: rund(raum.rotation.y) } : null,
-      material, geclippt, ifc: !!o.ifc?.an(),
+      griffe: griffeWelt, material, geclippt, ifc: !!o.ifc?.an(),
     };
   }
   function schreiben(erzwingen = false) {

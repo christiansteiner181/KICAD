@@ -247,25 +247,27 @@ export function kopfZeilen(lage, wahl, geschosse) {
 
 // ------------------------------------------------------------------------------------------------------ Tablet-Seite
 /** Beschriftung eines Geschosses auf der Taste. */
-export const geschossText = (g) => { const k = String(g.kennzeichen ?? ''); const t = k.length <= 8 ? k : String(g.name || k); return t.length > 14 ? `${t.slice(0, 13)}…` : t; };
+export const GESCHOSS_TEXT_MAX = 26;      // Zeichen: so lang darf die Beschriftung einer Etagentaste sein (die Tasten sind im Hochformat so breit wie das Tablet)
+export const SITZUNG_TASTE_H_MAX = 72;     // Bildpunkte: höher werden die Tasten der Sitzungsraum-Seite bei wenigen Etagen nicht
+export const geschossText = (g) => { const k = String(g.kennzeichen ?? ''); const t = k.length <= 8 ? k : String(g.name || k); return t.length > GESCHOSS_TEXT_MAX ? `${t.slice(0, GESCHOSS_TEXT_MAX - 1)}…` : t; };
 
 /**
  * Tasten der Tablet-Seite im Sitzungsraum (Bildpunkte wie tabletLayout): oben «Alle Etagen» und die Geschosse (oberstes zuerst, höchstens MAX_ETAGEN),
  * darunter «Decke zeigen», «Zurücksetzen», «IFC-Unterlage», dann «Begehen» und unten «VR beenden».
  */
 export function sitzungsLayout(geschosse) {
-  const rand = 14, spalten = 3, luecke = 8, fussH = 38;
+  const rand = 14, luecke = 8, fussH = 44;
   const eintraege = [{ id: 'alle', text: 'Alle Etagen', umschalter: true }, ...[...geschosse].reverse().slice(0, MAX_ETAGEN).map((g) => ({ id: `g:${g.kennzeichen}`, text: geschossText(g), umschalter: true }))];
-  const etagenZeilen = Math.ceil(eintraege.length / spalten);
-  const zeilen = etagenZeilen + 2;
+  const zeilen = eintraege.length + 2;
   const raumH = TABLET_PX.h - TABLET_KOPF_H - fussH - rand;
-  const bw = (TABLET_PX.b - 2 * rand - (spalten - 1) * luecke) / spalten, bh = (raumH - (zeilen - 1) * luecke) / zeilen;
-  const zelle = (spalte, zeile, breit = 1) => ({ x: rand + spalte * (bw + luecke), y: TABLET_KOPF_H + zeile * (bh + luecke), w: bw * breit + luecke * (breit - 1), h: bh });
-  const tasten = eintraege.map((e, i) => ({ ...e, ...zelle(i % spalten, Math.floor(i / spalten)) }));
-  tasten.push({ id: 'decke', text: 'Decke zeigen', umschalter: true, ...zelle(0, etagenZeilen) });
-  tasten.push({ id: 'zuruecksetzen', text: 'Zurücksetzen', ...zelle(1, etagenZeilen) });
-  tasten.push({ id: 'ifc', text: 'IFC-Unterlage', umschalter: true, ...zelle(2, etagenZeilen) });
-  tasten.push({ id: 'raum', text: 'Begehen', ...zelle(0, etagenZeilen + 1, 3) });
+  const bh = Math.min(SITZUNG_TASTE_H_MAX, (raumH - (zeilen - 1) * luecke) / zeilen), bw = TABLET_PX.b - 2 * rand, bw2 = (bw - luecke) / 2;
+  const zelle = (spalte, zeile, zwei = false) => ({ x: rand + (zwei ? spalte * (bw2 + luecke) : 0), y: TABLET_KOPF_H + zeile * (bh + luecke), w: zwei ? bw2 : bw, h: bh });
+  const tasten = eintraege.map((e, i) => ({ ...e, ...zelle(0, i) }));
+  const z0 = eintraege.length;
+  tasten.push({ id: 'decke', text: 'Decke zeigen', umschalter: true, ...zelle(0, z0, true) });
+  tasten.push({ id: 'zuruecksetzen', text: 'Zurücksetzen', ...zelle(1, z0, true) });
+  tasten.push({ id: 'ifc', text: 'IFC-Unterlage', umschalter: true, ...zelle(0, z0 + 1, true) });
+  tasten.push({ id: 'raum', text: 'Begehen', ...zelle(1, z0 + 1, true) });
   tasten.push({ ...TABLET_ENDE, x: rand, y: TABLET_PX.h - fussH - rand / 2, w: TABLET_PX.b - 2 * rand, h: fussH - 4 });
   return tasten;
 }

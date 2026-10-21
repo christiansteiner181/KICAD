@@ -26,7 +26,7 @@ export function erzeugeTablet(o) {
   const grundMat = new THREE.MeshBasicMaterial({ map: tex, transparent: true, depthWrite: false, depthTest: false, side: THREE.DoubleSide });
   const grund = new THREE.Mesh(new THREE.PlaneGeometry(TABLET_B, TABLET_H), grundMat);
   grund.renderOrder = 990;
-  const glowTex = glowTextur();
+  const glowTex = glowTextur(TABLET_PX.b * 0.4, TABLET_PX.h * 0.4);   // Hochformat, wie das Tablet
   const glowMat = new THREE.MeshBasicMaterial({ map: glowTex, transparent: true, depthWrite: false, depthTest: false, blending: THREE.AdditiveBlending, side: THREE.DoubleSide });
   const glow = new THREE.Mesh(new THREE.PlaneGeometry(TABLET_B * 1.22, TABLET_H * 1.26), glowMat);
   glow.position.z = -0.002; glow.renderOrder = 989;
@@ -58,7 +58,7 @@ export function erzeugeTablet(o) {
     // Kopf: Titel und Eigenschaften des gewählten bzw. gegriffenen Elements (lesend)
     holoZeile(ctx, 'KICAD · VR', 20, 36, { gross: true, farbe: HOLO.cyan });
     const zeilen = mz.length ? mz : eig;
-    zeilen.slice(0, 3).forEach((z, i) => holoZeile(ctx, z, 20, 62 + i * 21, { max: 470, farbe: mz.length ? '#ffffff' : HOLO.hell }));
+    zeilen.slice(0, 3).forEach((z, i) => holoZeile(ctx, z, 20, 62 + i * 21, { max: TABLET_PX.b - 40, farbe: mz.length ? '#ffffff' : HOLO.hell }));
     ctx.strokeStyle = 'rgba(56, 232, 255, 0.45)'; ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(16, TABLET_KOPF_H - 8); ctx.lineTo(TABLET_PX.b - 16, TABLET_KOPF_H - 8); ctx.stroke();
     for (const k of layout) {

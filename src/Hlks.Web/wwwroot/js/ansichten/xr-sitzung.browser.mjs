@@ -379,72 +379,127 @@ try {
   const s6 = await sitz(), w6 = await modellWelt();
   pruef(s6.ebeneWelt === null && s6.geclippt === 0 && !w6.ebene, '«Alle Etagen»: keine Ebene, nichts geschnitten');
 
-  // ================================================================== Hände
-  abschnitt('Hände: Controller-Rohwerte (Grifftaste, Zielstrahl) – eine Hand allein bewegt nichts, zwei Hände verschieben, drehen und zoomen, ausserhalb zählt nicht');
+  // ================================================================== Griffe und Hände
+  abschnitt('Griffe: zwei sichtbare Griffe am Modell, gehalten nur mit Daumen und Zeigefinger (Pinch) bzw. Abzug – ein Griff allein bewegt nichts, beide verschieben, drehen und zoomen');
   await keineHand('left'); await keineHand('right');
   const halter = async () => (await modellWelt()).halter;
+  const gP = (g) => ({ x: g.x, y: g.y, z: g.z });
+  const dist = (a, b) => Math.hypot(a.x - b.x, a.z - b.z);
+  const griffe = async () => (await sitz()).griffe;
+  /** Hand mit der Mitte zwischen Daumen- und Zeigefingerspitze (Pinch-Punkt) auf dem Punkt P (Welt). */
+  const handBei = (seite, P, o = {}) => ausw(`const P = ${JSON.stringify(P)}; const g0 = window.__hand(${JSON.stringify(seite)}, ${o.offen ?? true}, { x: 0, y: 0, z: 0 }, false, ${!!o.pinch});
+    const m = { x: (g0['thumb-tip'].x + g0['index-finger-tip'].x) / 2, y: (g0['thumb-tip'].y + g0['index-finger-tip'].y) / 2, z: (g0['thumb-tip'].z + g0['index-finger-tip'].z) / 2 };
+    window.__haende.${seite} = { art: 'hand', gelenke: window.__hand(${JSON.stringify(seite)}, ${o.offen ?? true}, { x: P.x - m.x, y: P.y - m.y, z: P.z - m.z }, false, ${!!o.pinch}) }; return 1;`);
   const ctrl = (seite, p, extra = {}) => controllerRoh(seite, { ort: p, ...extra });
-  const STRAHL = (grad) => ({ u: { x: 0, y: 0, z: 0 }, r: { x: Math.cos(grad * GRAD), y: 0, z: -Math.sin(grad * GRAD) } });
   await ausw(`const cs = window.__vr.api.controller(); cs[0].dispatchEvent({ type: 'connected', data: { handedness: 'left' } }); cs[1].dispatchEvent({ type: 'connected', data: { handedness: 'right' } }); return 1;`);
-  let H = await halter();
-  const nahR = plus3({ x: H[0], y: H[1], z: H[2] }, { x: 0.04, y: 0.12, z: 0 });
-  await ctrl('right', nahR, { griffTaste: false, strahl: STRAHL(0) }); await warte(250);
-  await ctrl('right', nahR, { griffTaste: true, strahl: STRAHL(0) });
-  await bisS((s) => s?.modus === 'wartet', 'eine Hand greift (wartet auf die zweite)', 4000);
-  pruef(true, 'Grifftaste in der Nähe des Modells: eine Hand allein wartet auf die zweite');
-  await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: true, strahl: STRAHL(0) }); await warte(350);
-  const H2 = await halter();
-  pruef(nahe(H2[0], H[0], 1e-6) && nahe(H2[2], H[2], 1e-6), `eine Hand allein verschiebt nicht: Modell um ${(H2[0] - H[0]).toFixed(4)} / ${(H2[2] - H[2]).toFixed(4)} m (Hand 0.100 m)`);
-  const dreh0 = (await sitz()).drehungGrad;
-  await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: true, strahl: STRAHL(30) }); await warte(350);
-  const dreh1 = (await sitz()).drehungGrad;
-  pruef(nahe(dreh1 - dreh0, 0, 1e-6), `eine Hand allein dreht nicht: Handdrehung +30° → Modell ${dreh1 - dreh0}°`);
-  const lotrecht = await ausw(`const T = await import('three'); const q = window.__modell.parent.getWorldQuaternion(new T.Quaternion()); const o = new T.Vector3(0, 1, 0).applyQuaternion(q); return { y: o.y };`);
-  pruef(nahe(lotrecht.y, 1, 1e-9), 'das Modell bleibt waagrecht (senkrechte Achse bleibt senkrecht)');
-  await ctrl('right', plus3(nahR, { x: 0.10, y: 0, z: 0 }), { griffTaste: false, strahl: STRAHL(30) });
-  await bisS((s) => s?.modus === null, 'losgelassen', 4000);
-  const H3 = await halter(), massstab3 = (await sitz()).massstab;
-  await warte(300);
-  const H3b = await halter();
-  pruef(nahe(H3b[0], H3[0], 1e-6) && massstab3 === 50, 'Loslassen: das Modell bleibt, wo es ist');
 
-  // zwei Hände: asymmetrisch um den Mittelpunkt
-  const Mw = { x: H3[0], y: H3[1] + 0.12, z: H3[2] };
-  const links = (dx) => plus3(Mw, { x: dx, y: 0, z: 0 });
-  await ctrl('left', links(-0.05), { griffTaste: false }); await ctrl('right', links(0.15), { griffTaste: false }); await warte(250);
-  await ctrl('left', links(-0.05), { griffTaste: true }); await ctrl('right', links(0.15), { griffTaste: true });
-  await bisS((s) => s?.modus === 'zwei', 'zwei Hände greifen', 4000);
-  await ctrl('left', links(-0.15), { griffTaste: true }); await ctrl('right', links(0.25), { griffTaste: true }); await warte(400);
-  const sz = await sitz(), Hz = await halter();
-  pruef(nahe(sz.massstab, 25, 0.3), `Zoom mit zwei Händen: Abstand 0.2 → 0.4 m: Massstab ${sz.massstabText} (erwartet 1:25)`, JSON.stringify(sz).slice(0, 200));
-  // Die Stelle unter dem Mittelpunkt (Mitte der Hände = Halter + 0.05 in x) bleibt dort: Halterposition rückt von der Mitte weg, Abstand verdoppelt
-  const mitteX = H3[0] + 0.05;
-  pruef(nahe(Hz[0] - mitteX, 2 * (H3[0] - mitteX), 8e-3) && nahe(Hz[2] - H3[2], 0, 8e-3), `Zoom um den Mittelpunkt der Hände: Modellmitte ${(Hz[0] - mitteX).toFixed(3)} m vom Mittelpunkt (vorher ${(H3[0] - mitteX).toFixed(3)}, doppelt erwartet)`);
+  // die Griffe: Lage, Höhe, Mitte
+  const sg = await sitz();
+  const G0 = sg.griffe;
+  pruef(G0?.length === 2 && G0[0].seite === 'links' && G0[1].seite === 'rechts', 'zwei Griffe, links und rechts des Modells', JSON.stringify(G0));
+  const Dsoll = (s) => s.groesse.b / s.massstab + 2 * 0.06;
+  pruef(nahe(dist(G0[0], G0[1]), Dsoll(sg), 2e-3), `Abstand der Griffe = Modellbreite ${(sg.groesse.b / sg.massstab).toFixed(3)} m + 2 × 6 cm: ${dist(G0[0], G0[1]).toFixed(3)} m`);
+  const H0 = await halter();
+  pruef(nahe((G0[0].x + G0[1].x) / 2, H0[0], 2e-3) && nahe((G0[0].z + G0[1].z) / 2, H0[2], 2e-3), 'die Griffe liegen symmetrisch zur Modellmitte');
+  pruef(nahe(G0[0].y, tischY + 0.05, 2e-3) && nahe(G0[1].y, tischY + 0.05, 2e-3), `Höhe: Tischplatte + 5 cm (${G0[0].y} m)`);
+  pruef(G0.every((g) => !g.hover && !g.gehalten), 'ohne Hand sind beide Griffe frei und nicht hervorgehoben');
+  const bildGriffe = await bildTisch('xrh-griffe', true);
+  pruef(bildPruefen(bildGriffe), 'Prüfbild: Modell mit zwei Griffen');
+
+  // Hover: eine offene Hand (kein Pinch) nähert sich
+  await handBei('right', plus3(gP(G0[0]), { x: 0.03, y: 0, z: 0 }), { pinch: false });
+  await bisS((s) => s?.griffe?.[0]?.hover === true, 'Griff leuchtet auf', 4000);
+  pruef((await griffe())[1].hover === false && (await sitz()).modus === null, 'Annäherung auf 3 cm: der Griff wird heller, der andere nicht; nichts wird gehalten');
+  await handBei('right', plus3(gP(G0[0]), { x: 0.20, y: 0, z: 0 }), { pinch: false });
+  await bisS((s) => s?.griffe?.[0]?.hover === false, 'Hover aus', 4000);
+  pruef(true, 'bei 20 cm Abstand ist der Griff wieder gewöhnlich');
+
+  // Faust am Griff: bewegt nichts
+  await handBei('right', gP(G0[0]), { offen: false, pinch: false }); await warte(400);
+  pruef((await sitz()).modus === null && (await griffe()).every((g) => !g.gehalten), 'eine Faust am Griff greift nichts');
+  // Pinch weit weg vom Griff, dann an den Griff gebracht: greift nicht (nur die steigende Flanke in der Nähe zählt)
+  await handBei('right', plus3(gP(G0[0]), { x: 0.25, y: 0, z: 0 }), { pinch: true }); await warte(400);
+  pruef((await sitz()).modus === null, 'Pinch weit weg vom Griff greift nichts');
+  await handBei('right', gP(G0[0]), { pinch: true }); await warte(400);
+  pruef((await sitz()).modus === null && (await griffe()).every((g) => !g.gehalten), 'ein Pinch, der schon weit weg begann, fasst den Griff nicht, wenn er hinkommt');
+  await handBei('right', gP(G0[0]), { pinch: false }); await warte(300);
+  // Pinch am Griff (in 4 cm): gehalten; ein Griff allein bewegt nichts
+  await handBei('right', plus3(gP(G0[0]), { x: 0.04, y: 0, z: 0 }), { pinch: false }); await warte(250);
+  await handBei('right', plus3(gP(G0[0]), { x: 0.04, y: 0, z: 0 }), { pinch: true });
+  await bisS((s) => s?.modus === 'wartet', 'ein Griff gehalten', 4000);
+  pruef((await griffe())[0].gehalten === true && (await griffe())[1].gehalten === false, 'Pinch in 4 cm Abstand hält den Griff (leuchtet deutlich)');
+  const bildHalten = await bildTisch('xrh-griff-gehalten', false);
+  pruef(bildPruefen(bildHalten), 'Prüfbild: ein Griff gehalten');
+  await handBei('right', plus3(gP(G0[0]), { x: 0.14, y: 0, z: 0.05 }), { pinch: true }); await warte(400);
+  const H1 = await halter();
+  pruef(nahe(H1[0], H0[0], 1e-6) && nahe(H1[2], H0[2], 1e-6) && (await sitz()).massstab === 50, 'ein Griff allein verschiebt, dreht und zoomt nicht');
+  await handBei('right', gP(G0[0]), { pinch: false });
+  await bisS((s) => s?.modus === null, 'losgelassen', 4000);
+  await keineHand('right');
+
+  // beide Griffe mit Händen: zoomen, danach loslassen
+  await handBei('left', plus3(gP(G0[0]), { x: 0.02, y: 0, z: 0 }), { pinch: false }); await handBei('right', plus3(gP(G0[1]), { x: -0.02, y: 0, z: 0 }), { pinch: false }); await warte(300);
+  await handBei('left', plus3(gP(G0[0]), { x: 0.02, y: 0, z: 0 }), { pinch: true }); await handBei('right', plus3(gP(G0[1]), { x: -0.02, y: 0, z: 0 }), { pinch: true });
+  await bisS((s) => s?.modus === 'zwei', 'beide Griffe gehalten (Hände)', 4000);
+  pruef((await griffe()).every((g) => g.gehalten), 'beide Griffe leuchten, wenn beide gepincht sind');
+  await keineHand('left'); await keineHand('right');
+  await bisS((s) => s?.modus === null, 'beide Hände weg', 4000);
+
+  // Controller: Abzug am Griff = Pinch; Verschieben, Zoomen, Drehen, Begrenzung
+  const halbeBreite = (s) => s.groesse.b / s.massstab / 2 + 0.06;
+  const richtung = (s) => { const a = (s.griffe[1].x - s.griffe[0].x), b = (s.griffe[1].z - s.griffe[0].z), l = Math.hypot(a, b); return { x: a / l, z: b / l }; };
+  const s0 = await sitz(), u0 = richtung(s0), M0 = { x: (s0.griffe[0].x + s0.griffe[1].x) / 2, y: s0.griffe[0].y, z: (s0.griffe[0].z + s0.griffe[1].z) / 2 };
+  const punktA = (m, u, d) => ({ x: m.x - u.x * d, y: m.y, z: m.z - u.z * d }), punktB = (m, u, d) => ({ x: m.x + u.x * d, y: m.y, z: m.z + u.z * d });
+  const h0 = halbeBreite(s0);
+  await ctrl('left', punktA(M0, u0, h0), { abzug: false }); await ctrl('right', punktB(M0, u0, h0), { abzug: false }); await warte(250);
+  await ctrl('left', punktA(M0, u0, h0), { abzug: true }); await ctrl('right', punktB(M0, u0, h0), { abzug: true });
+  await bisS((s) => s?.modus === 'zwei', 'zwei Griffe gehalten (Controller)', 4000);
+  // beide 10 cm weiter nach rechts (senkrecht zur Verbindung) → Modell wandert mit
+  const quer = { x: -u0.z, z: u0.x };
+  const sv = { x: quer.x * 0.1, y: 0, z: quer.z * 0.1 };
+  await ctrl('left', plus3(punktA(M0, u0, h0), sv), { abzug: true }); await ctrl('right', plus3(punktB(M0, u0, h0), sv), { abzug: true }); await warte(400);
+  const Hv = await halter();
+  pruef(nahe(Hv[0] - H0[0], sv.x, 3e-3) && nahe(Hv[2] - H0[2], sv.z, 3e-3) && (await sitz()).massstab === 50, `beide Griffe 10 cm verschoben: das Modell wandert mit (${(Hv[0] - H0[0]).toFixed(3)} / ${(Hv[2] - H0[2]).toFixed(3)} m)`);
+  // auseinander: doppelter Abstand → 1:25, und die Griffe folgen mit der neuen Breite
+  const Mv = { x: M0.x + sv.x, y: M0.y, z: M0.z + sv.z }, D0 = 2 * h0;
+  await ctrl('left', punktA(Mv, u0, D0), { abzug: true }); await ctrl('right', punktB(Mv, u0, D0), { abzug: true }); await warte(400);
+  const sz = await sitz();
+  pruef(nahe(sz.massstab, 25, 0.3), `Zoom: Abstand der Hände verdoppelt → Massstab ${sz.massstabText} (erwartet 1:25)`);
+  pruef(nahe(dist(sz.griffe[0], sz.griffe[1]), Dsoll(sz), 2e-3), `die Griffe folgen dem neuen Massstab: Abstand ${dist(sz.griffe[0], sz.griffe[1]).toFixed(3)} m = Breite/25 + 12 cm`);
   const bildZoom = await bildTisch('xrh-zoom', false);
-  pruef(bildPruefen(bildZoom), 'Prüfbild: gezoomtes Modell');
-  await ctrl('left', links(-2), { griffTaste: true }); await ctrl('right', links(2), { griffTaste: true }); await warte(400);
+  pruef(bildPruefen(bildZoom), 'Prüfbild: gezoomtes Modell mit Griffen');
+  // Drehen: Verbindungslinie um 90° (gegen den Uhrzeigersinn von oben) → Modell dreht um 90°
+  const hz = dist(sz.griffe[0], sz.griffe[1]) / 2;
+  const u1 = { x: u0.z, z: -u0.x };
+  const Mz = { x: (sz.griffe[0].x + sz.griffe[1].x) / 2, y: M0.y, z: (sz.griffe[0].z + sz.griffe[1].z) / 2 };
+  await ctrl('left', punktA(Mz, u1, hz), { abzug: true }); await ctrl('right', punktB(Mz, u1, hz), { abzug: true }); await warte(400);
+  const sd = await sitz();
+  pruef(nahe(winkelDiff(sd.drehungGrad, 90), 0, 1.5), `Drehen: Verbindungslinie um 90° → Modell um ${sd.drehungGrad}°`);
+  const ud = richtung(sd);
+  pruef(nahe(ud.x, u1.x, 0.03) && nahe(ud.z, u1.z, 0.03), 'die Griffe liegen nun in der gedrehten Richtung (sie drehen mit dem Modell)');
+  // Zoomgrenzen
+  await ctrl('left', punktA(Mz, u1, 2), { abzug: true }); await ctrl('right', punktB(Mz, u1, 2), { abzug: true }); await warte(400);
   pruef((await sitz()).massstab === 20, 'Zoomgrenze: nicht grösser als 1:20');
-  await ctrl('left', links(-0.0005), { griffTaste: true }); await ctrl('right', links(0.0005), { griffTaste: true }); await warte(400);
+  await ctrl('left', punktA(Mz, u1, 0.0005), { abzug: true }); await ctrl('right', punktB(Mz, u1, 0.0005), { abzug: true }); await warte(400);
   pruef((await sitz()).massstab === 200, 'Zoomgrenze: nicht kleiner als 1:200');
-  await ctrl('left', links(-0.1), { griffTaste: false }); await ctrl('right', links(0.1), { griffTaste: false });
-  await bisS((s) => s?.modus === null, 'beide losgelassen', 4000);
-  // Greifen weit weg vom Modell zählt nicht
-  const Hc = await halter();
-  const weit = { x: Hc[0] + 1.3, y: Hc[1] + 0.12, z: Hc[2] };
-  await ctrl('right', weit, { griffTaste: false }); await warte(250);
-  await ctrl('right', weit, { griffTaste: true }); await warte(400);
-  pruef((await sitz()).modus === null, 'Zufassen weit weg vom Modell greift nichts');
-  await ctrl('right', weit, { griffTaste: false }); await warte(250);
-  // Modell auf der Platte begrenzt
-  // (zwei Hände: nur so bewegt sich das Modell, Christian 21.10.2026)
-  const beiHc = (dx, dz = 0) => plus3({ x: Hc[0], y: Hc[1], z: Hc[2] }, { x: dx, y: 0.12, z: dz });
-  await ctrl('right', beiHc(0.02), { griffTaste: false }); await ctrl('left', beiHc(-0.03), { griffTaste: false }); await warte(250);
-  await ctrl('right', beiHc(0.02), { griffTaste: true }); await ctrl('left', beiHc(-0.03), { griffTaste: true });
-  await bisS((s) => s?.modus === 'zwei', 'greift wieder (zwei Hände)', 4000);
-  await ctrl('right', beiHc(5.02, 5), { griffTaste: true }); await ctrl('left', beiHc(4.97, 5), { griffTaste: true }); await warte(400);
+  // das Modell bleibt auf der Platte
+  await ctrl('left', plus3(punktA(Mz, u1, 0.1), { x: 5, y: 0, z: 5 }), { abzug: true }); await ctrl('right', plus3(punktB(Mz, u1, 0.1), { x: 5, y: 0, z: 5 }), { abzug: true }); await warte(400);
   const sGr = await sitz();
   pruef(Math.abs(sGr.lage.x) <= 0.76 && Math.abs(sGr.lage.z) <= 0.46 && (Math.abs(sGr.lage.x) > 0.7 || Math.abs(sGr.lage.z) > 0.4), `das Modell bleibt auf der Tischplatte (Lage ${sGr.lage.x} / ${sGr.lage.z} m)`);
-  await ctrl('right', beiHc(5.02, 5), { griffTaste: false }); await ctrl('left', beiHc(4.97, 5), { griffTaste: false });
+  await ctrl('left', punktA(Mz, u1, 0.1), { abzug: false }); await ctrl('right', punktB(Mz, u1, 0.1), { abzug: false });
+  await bisS((s) => s?.modus === null, 'losgelassen', 4000);
+  // Zielstrahl: Abzug mit Strahl auf den Griff aus 40 cm Entfernung fasst ihn; ohne Strahl auf den Griff nicht
+  const sq = await sitz();
+  const ziel = gP(sq.griffe[1]), von = plus3(ziel, { x: 0.1, y: 0.25, z: 0.35 });
+  const strahlAuf = (a, b) => { const d = { x: b.x - a.x, y: b.y - a.y, z: b.z - a.z }, l = Math.hypot(d.x, d.y, d.z); return { u: a, r: { x: d.x / l, y: d.y / l, z: d.z / l } }; };
+  await ctrl('right', von, { abzug: false, strahl: strahlAuf(von, plus3(ziel, { x: 0.5, y: 0, z: 0 })) }); await warte(250);
+  await ctrl('right', von, { abzug: true, strahl: strahlAuf(von, plus3(ziel, { x: 0.5, y: 0, z: 0 })) }); await warte(400);
+  pruef((await sitz()).modus === null, 'Abzug mit Strahl neben dem Griff greift nichts');
+  await ctrl('right', von, { abzug: false, strahl: strahlAuf(von, ziel) }); await warte(250);
+  await ctrl('right', von, { abzug: true, strahl: strahlAuf(von, ziel) });
+  await bisS((s) => s?.modus === 'wartet' && s.griffe[1].gehalten, 'Griff per Zielstrahl gehalten', 4000);
+  pruef(true, 'Abzug mit dem Zielstrahl auf den Griff hält ihn (Controller)');
+  await ctrl('right', von, { abzug: false, strahl: strahlAuf(von, ziel) });
   await bisS((s) => s?.modus === null, 'losgelassen', 4000);
   await keineHand('left'); await keineHand('right');
 

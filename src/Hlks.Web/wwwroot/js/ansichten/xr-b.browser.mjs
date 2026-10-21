@@ -397,12 +397,14 @@ try {
   await bis((d) => d?.tablet?.anteil >= 0.99, 'Tablet aufgebaut', 4000);
   await warte(500);
   const tab = (await xrDaten()).tablet;
-  pruef(tab.offen && tab.sichtbar && nahe(tab.lage.mitte.y, palmL.y + 0.08, 0.03), `Tablet steht ${(tab.lage.mitte.y - palmL.y).toFixed(2)} m über der linken Hand (Y ${tab.lage.mitte.y})`, JSON.stringify(tab));
+  pruef(tab.offen && tab.sichtbar && nahe(tab.lage.mitte.y, palmL.y + 0.025 + 0.08, 0.025), `Tablet steht ${(tab.lage.mitte.y - palmL.y).toFixed(2)} m über der linken Hand (Y ${tab.lage.mitte.y})`, JSON.stringify(tab));
   pruef(tab.ursache === 'geste', 'geöffnet durch die Geste');
   const bildTab = await speichern('xrb-tablet');
   pruef(bildPruefen(bildTab), 'Prüfbild: Tablet im Hologramm-Stil');
+  const gross = await ausw(`const p = window.__vr.api.xr.tablet.gruppe.children[1].geometry.parameters; return { b: p.width, h: p.height };`);
+  pruef(nahe(gross.b, 0.2286, 1e-3) && nahe(gross.h, 0.3048, 1e-3) && nahe(Math.hypot(gross.b, gross.h), 0.381, 1e-3), `Tablet 15 Zoll im Hochformat: ${(gross.b * 100).toFixed(1)} × ${(gross.h * 100).toFixed(1)} cm`);
   const farben = await ausw(`const t = window.__vr.api.xr.tablet; const mesh = t.gruppe.children[1]; const cv = mesh.material.map.image; const c = cv.getContext('2d'); const d = c.getImageData(0, 0, cv.width, cv.height).data; let cyan = 0, dunkel = 0, n = 0; for (let i = 0; i < d.length; i += 4) { n++; const r = d[i], g = d[i + 1], b = d[i + 2], a = d[i + 3]; if (a > 200 && g > 180 && b > 200 && r < 140) cyan++; if (a > 150 && a < 230 && r < 20 && g < 40 && b < 60) dunkel++; } return { cyan: cyan / n, dunkel: dunkel / n, blend: mesh.material.transparent, glow: t.gruppe.children[0].material.blending };`);
-  pruef(farben.cyan > 0.003 && farben.dunkel > 0.3 && farben.blend && farben.glow === 2, `Stil: Cyan-Linien/Schrift ${(farben.cyan * 100).toFixed(1)} %, dunkler halbtransparenter Grund ${(farben.dunkel * 100).toFixed(0)} %, Leuchtrand additiv`, JSON.stringify(farben));
+  pruef(farben.cyan > 0.003 && farben.dunkel > 0.2 && farben.blend && farben.glow === 2, `Stil: Cyan-Linien/Schrift ${(farben.cyan * 100).toFixed(1)} %, dunkler halbtransparenter Grund ${(farben.dunkel * 100).toFixed(0)} %, Leuchtrand additiv`, JSON.stringify(farben));
 
   // Tippen: Spitze des rechten Zeigefingers auf die Taste (zuerst 8 cm davor, dann 1 cm davor)
   const tippSpitze = async (id, tiefe) => ausw(`const G = await import('/js/ansichten/xr-greifen-logik.js'); const d = JSON.parse(document.querySelector('${AKTIV3D}').dataset.xr); const l = d.tablet.lage;
