@@ -99,6 +99,11 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
   (am Freitag klären).
 
 ### XR-H – Sitzungsraum mit Modell auf dem Tisch (Christian 21.10.2026)
+- **Brillentest 21.10.2026:**
+  - Christian: «etwas weniger hart, aber tron optik ist gut» → weicher gemacht.
+  - Christian: «greifen soll nur mit zwei händen funktionieren und nur wenn gegriffen. zoomen nur wenn gegriffen» → umgesetzt.
+  - Christian: «etagenwahl zeigt decke, ev. 5cm weiter unten schneiden» → `SCHNITT_TIEFER_MM` = 50.
+  - Fehler: Tisch und Modell standen 68 m daneben, weil der Kopf doppelt um das Rig versetzt war. Korrigiert in 0720e14; Christian: «Tisch und Modell stehen vor mir».
 Christian: «eine art xr sitzungsraum …, wo das verkleinerte Modell auf einem tisch liegt und mit dem tablet die etagen ausgewählt werden
 kann. das modell soll dann ebenfalls mit der hand gedreht und gezoomt werden können. wird bsp. 1. OG gewählt wird alles oberhalb der Decke
 dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge.»
