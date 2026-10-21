@@ -35,9 +35,10 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 | N14 | Raum im Grundriss gewählt → Kontextmenü «Raum im 3D zeigen»: springt in die 3D-Ansicht, Schnittbereich = Raum + 1,5 m in alle Richtungen | Christian 21.10. | klein, sobald N13 steht | **umgesetzt 21.10.** mit N13 |
 | N15 | Raum im Grundriss gewählt → Kontextmenü «Raum begehen»: 3D in Ich-Perspektive, Augenhöhe 1,7 m über Boden, Raummitte; mit den Pfeiltasten bewegen | Christian 21.10. | mittel (Kamera-Modus im 3D) | **umgesetzt 21.10.**; Tastenbelegung als Annahme, am Freitag bestätigen |
 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf), Tests 11 |
-| N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übernahme, Stufen/Schnittlinie/Lauflinie/Beschriftung) | Christian 21.10. | mittel–gross | läuft (Sonnet, Freigabe bis 95 %) |
+| N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übernahme, Stufen/Schnittlinie/Lauflinie/Beschriftung) | Christian 21.10. | mittel–gross | **umgesetzt 21.10.** |
 | N18 | Holz ohne Schraffur, beige durchscheinend | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
 | N19 | 3D-Schnittbereich blau wie Revit | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
 | N20 | Detaillierungsgrad grob: Wände (und Stützen/Unterzüge) schwarz voll (SIA 400 B.8.3.1) | Christian 21.10. | klein | läuft (Sonnet) |
 | N21 | Schnitthöhe nach SIA 400 C.3.1.1: durch alle Tür- und Fensteröffnungen, je Geschoss gerechnet | Christian 21.10. | klein–mittel | läuft (Sonnet) |
 | N22 | Begehen: Wände undurchsichtig, nur beim Durchgehen (±50 cm) durchscheinend | Christian 21.10. | klein | läuft (Sonnet) |
+| N23 | Begehen in VR auf der Meta Quest (WebXR, über Quest Link am PC bzw. Quest-Browser) | Christian 21.10. (Rechercheauftrag) | mittel | nur Idee; Recherche im Chat beantwortet |
