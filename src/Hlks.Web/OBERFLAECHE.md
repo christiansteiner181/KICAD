@@ -1600,7 +1600,7 @@ Christian, 21.10.2026: «gleicher Ablauf, Kontextm. "Raum begehen", Ansicht wech
 
 | Funktion | Ort | Dateien |
 | --- | --- | --- |
-| **Raum begehen** | Grundriss › Rechtsklick auf einen Raum (direkt unter «Raum im 3D zeigen»); Ansicht › 3D-Schnitt bei gewähltem Raum | `grundriss.js` (Kontextmenü), `aktionen-ansicht.js` (`ansicht.raumBegehen`) |
+| **Raum begehen** | Grundriss › Rechtsklick auf einen Raum (direkt unter «Raum im 3D zeigen»); Ansicht › 3D-Schnitt (Symbol Figur im Raum, gesperrt ohne gewählten Raum) | `grundriss.js` (Kontextmenü), `aktionen-ansicht.js` (`ansicht.raumBegehen`) |
 | **Augenhöhe für «Raum begehen» …** | Grundriss › Kontextmenü; Aktion `ansicht.begehenAugenhoehe` | Benutzereinstellung `ansicht3d.augenhoehe` |
 
 **Ablauf der Aktion `ansicht.raumBegehen`:** Raum aus `p.raeume` oder der Auswahl → Abfrage `raum_begehen` mit der Augenhöhe aus der Benutzereinstellung → die zuletzt benutzte 3D-Ansicht (wie N14; fehlt jede, legt die Oberfläche
@@ -1635,5 +1635,5 @@ Tastenhilfe, Schrittweiten und «keine Kollision» sind Annahmen des Auftrags; z
 - **Prüfhilfen am DOM:** `.d3-wurzel[data-begehen]` (JSON `{ raum, x, y, z, augenhoehe, bodenOk, azimutGrad, nickenGrad, fov }` in Projekt-mm bzw. Grad; fehlt ausserhalb des Begehens), Klasse `d3-begehen-an`.
 - **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~RaumBegehenTests` (11), Web `…Hlks.Web.Tests --filter FullyQualifiedName~BenutzerEinstellungen`; Node
   `node --test src/Hlks.Web/wwwroot/js/ansichten/begehen.test.mjs` (19: Bewegungsrechnung, Tastenbelegung, Tastenverlauf, Einblendung); Browser
-  `node src/Hlks.Web/wwwroot/js/ansichten/begehen.browser.mjs` (Port 5540, CDP 9540; 76 Prüfungen; Prüfbilder `n15-*.png` in `%TEMP%\HLKS_CAD\n15`).
+  `node src/Hlks.Web/wwwroot/js/ansichten/begehen.browser.mjs` (Port 5540, CDP 9540; 79 Prüfungen; Prüfbilder `n15-*.png` in `%TEMP%\HLKS_CAD\n15`).
 - **Anleitung:** Kapitel «zb» in `berichte/anleitung/inventar.json`: `zb-n15-begehen`, `zb-n15-bewegen`, `zb-n15-augenhoehe`.

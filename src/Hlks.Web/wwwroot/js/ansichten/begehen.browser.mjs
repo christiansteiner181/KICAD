@@ -215,6 +215,18 @@ try {
   pruef(sbAnzeige0?.aktiv === true && clip0?.geclippt > 0 && kam0, `Ausgangslage: Schnittbereich ein (${clip0?.geclippt}/${clip0?.materialien} Materialien geclippt), Kamera ${JSON.stringify(kam0.lage)}`);
   pruef(kam0.fov === 45, `Kamera der Umlaufansicht: FOV ${kam0.fov}°`);
 
+  // Menüband: Knopf «Raum begehen» in der Gruppe «3D-Schnitt», gesperrt ohne gewählten Raum
+  await register('Ansicht');
+  await auswahlSetzen(null);
+  const kB0 = await knopfInfo('ansicht.raumBegehen');
+  pruef(kB0 && kB0.gruppe === '3D-Schnitt' && kB0.symbol && kB0.gesperrt, 'Menüband Ansicht › 3D-Schnitt: Knopf «Raum begehen» mit Symbol, ohne Raum gesperrt', JSON.stringify(kB0));
+  await auswahlSetzen(raum1.id);
+  const kB1 = await knopfInfo('ansicht.raumBegehen');
+  pruef(kB1 && !kB1.gesperrt, 'bei gewähltem Raum frei', JSON.stringify(kB1));
+  const bandBild = await speichern('n15-menueband', { x: 0, y: 0, width: 1600, height: 190 });
+  pruef(bildPruefen(bandBild), 'Prüfbild: Menüband Ansicht mit «Raum begehen»');
+  await auswahlSetzen(null);
+
   const raumMenue = async (r) => {
     await zeige('AN-GR-EG');
     await warteBis(() => ausw(`return !!document.querySelector('.kachel.aktiv svg.gr-svg [data-id]');`), 'Grundriss gezeichnet', 15000);
