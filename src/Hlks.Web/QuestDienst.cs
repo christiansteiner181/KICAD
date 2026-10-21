@@ -309,14 +309,15 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         catch (HlksFehler) { /* nicht gemerkt – das Verbinden gilt trotzdem */ }
     }
 
-    /// <summary>Liest die WLAN-MAC der Quest über adb (feste Argumente) und merkt die Brille; scheitert still.</summary>
+    /// <summary>Liest die WLAN-MAC der Quest über adb (feste Argumente), sonst aus der Nachbartabelle des PCs, und merkt die Brille; scheitert still.</summary>
     async Task BrilleMerkenVon(AdbFund adb, QuestGeraet g)
     {
         try
         {
-            var mac = await MacVonGeraet(adb, g.Seriennummer);
+            var ip = await WlanAdresse(adb, g);
+            var mac = await MacVonGeraet(adb, g.Seriennummer) ?? MacAusNachbarn(ip);
             if (mac is null) return;
-            BrilleMerken(g.Seriennummer, mac, await WlanAdresse(adb, g));
+            BrilleMerken(g.Seriennummer, mac, ip);
         }
         catch (HlksFehler) { /* nicht gemerkt */ }
     }
@@ -325,6 +326,16 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     {
         var r = await Aufruf(adb, "-s", serie, "shell", "ip", "link", "show", "wlan0");
         return r.Zeitueberschreitung || r.Code != 0 ? null : MacLesen(r.Ausgabe);
+    }
+
+    /// <summary>MAC zu einer IP aus der Nachbartabelle des PCs. Befund Quest 3 (21.10.2026): «ip link show wlan0» und /sys/class/net/wlan0/address sind für
+    /// adb shell gesperrt («Permission denied»); nach einem adb connect über WLAN steht die Quest aber in der Tabelle des PCs.</summary>
+    string? MacAusNachbarn(string? ip)
+    {
+        if (string.IsNullOrEmpty(ip)) return null;
+        foreach (var n in netz.Nachbarn())
+            if (n.Ip == ip && MacPruefen(n.Mac?.Replace('-', ':').ToLowerInvariant()) is { } mac) return mac;
+        return null;
     }
 
     /// <summary>Liest die Ausgabe von «adb devices»: Seriennummer und Zustand je Zeile (Kopfzeile und Meldungen des Dienstes mit «*» fallen weg).</summary>
@@ -635,6 +646,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         var ziel = $"{ip}:{WlanPort}";
         await WlanVerbinden(adb, ziel);
         await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);
+        mac ??= MacAusNachbarn(ip);   // nach dem connect über WLAN kennt der PC die MAC
         if (mac is not null) BrilleMerken(g.Seriennummer, mac, ip);
         return ip;
     }

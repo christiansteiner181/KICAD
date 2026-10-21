@@ -855,6 +855,21 @@ public class QuestTests : IDisposable
     }
 
     [Fact]
+    public async Task MAC_aus_der_Nachbartabelle_wenn_die_Quest_ip_link_sperrt()
+    {
+        // Befund Quest 3 (21.10.2026): «ip link show wlan0» meldet «Permission denied»; nach dem connect über WLAN kennt der PC die MAC
+        var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText);   // ohne mac.txt: ip link scheitert
+        var netz = new NetzAttrappe();
+        netz.Tabelle.Add(new NachbarEintrag(QuestIp, BrillenMac));
+        var s = await Start(adb, netz: netz);
+        Assert.Equal(HttpStatusCode.OK, (await s.Post("/api/quest/wlan")).Code);
+        var b = Assert.Single((await Einstellung(s, "quest.brillen"))!.AsArray())!;
+        Assert.Equal(BrillenMac, b["mac"]!.GetValue<string>());
+        Assert.Equal(QuestIp, b["letzteIp"]!.GetValue<string>());
+        NurFesteAufrufe(adb);
+    }
+
+    [Fact]
     public async Task MAC_nach_Auf_WLAN_umstellen_und_ueber_WLAN_Adresse_bleibt_die_USB_Seriennummer()
     {
         var adb = NeueAttrappe().Geraete(Usb).Ip(WlanText).Mac(BrillenMac);
