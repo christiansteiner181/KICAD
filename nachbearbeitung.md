@@ -138,3 +138,27 @@ eine Regel im Kern (`Werkzeugergebnis.MeldetFehler`: «fehler» als nicht leerer
 `unterlagen_lesen` setzt «fehler»/«vorschlag» (und «gelesen») oben und zuerst, sobald eine Unterlage nicht gelesen wird. Nebenbefund behoben:
 `synchronisieren` meldet «fehler»: [] und galt in der Palette als abgelehnt. Tests: `tests/Hlks.Mcp.Tests/FehlerkennungTests.cs` (alle 130
 Werkzeuge über das Protokoll mit erzwungener Ablehnung), `tests/Hlks.Web.Tests/NachbearbeitungN5Tests.cs`, `WerkzeugergebnisTests.cs`.
+
+## N6 – Türen aus Archicad-IFC 5,19 m hoch (ragen durch Decke und Dach)
+
+Befund Christian 21.10.2026 (3D, Projekt «Test_praxis», IFC «440_Bernstrasse 42 3D Modell.ifc», IFC2X3, Archicad 27): «türen über
+gebäude». Hauptlauf: 23 von 57 IfcDoor tragen OverallHeight 5.19 m, die Öffnung (IfcOpeningElement, Rechteckprofil 0.94 × 5.19) ebenso,
+der Türkörper selbst (Body, MappedRepresentation) ist aber nur 2.15 m hoch (z 0 … 2.15, Breite ±0.47). KICAD übernimmt OverallHeight
+(«hoehe» 5190) – das IFC ist hier widersprüchlich, nicht der Leser. **Fertig, wenn** die Türhöhe aus dem Körper kommt, sobald er von
+OverallHeight deutlich abweicht (Herkunft nennt beides), ein Prüf- bzw. Importhinweis die Abweichung je Tür meldet, die Türen in 3D und
+Grundriss richtig stehen und Türen ohne Körper weiter OverallHeight nehmen.
+
+## N7 – Zwei Stahl-Unterzüge ragen 3–4 m aus dem Gebäude
+
+Befund Christian 21.10.2026 (gleiches Projekt): «unterzüge neben gebäude». Hauptlauf: UZ-14 (1.OG) und UZ-62 (2.OG), beide «Unterzug-002»,
+Material Stahl, Linie von ca. [2972, −43351] nach [−3964, −36955] bzw. [3266, −43622] nach [−3670, −37226]; die Wände enden bei y −39903.
+Die übrigen 71 Träger liegen im Gebäude. Ursache offen (Achse/Extrusionsrichtung, Länge aus Profil, Platzierung). **Fertig, wenn** die
+Ursache belegt ist (gegen die Geometrie im IFC gerechnet) und die Träger dort liegen, wo das IFC sie zeichnet – bzw. ein Befund sie meldet,
+falls das IFC sie tatsächlich ausserhalb zeichnet.
+
+## N8 – Schraffuren drehen mit der Wand
+
+Befund Christian 21.10.2026 (Grundriss, schräge Wand mit Kreuzschraffur): «schraffuren sollten mit wand rotieren». Heute liegt das
+Schraffurraster achsparallel zum Blatt. **Fertig, wenn** die Schraffur jeder Wand (und jedes Bauteils mit Achse) an der Wandachse
+ausgerichtet ist – auf dem Bildschirm, im PDF und im Schnitt –, bei gebogenen Wänden je Abschnitt, und Flächen ohne Achse (Decken,
+Räume) bleiben wie bisher.
