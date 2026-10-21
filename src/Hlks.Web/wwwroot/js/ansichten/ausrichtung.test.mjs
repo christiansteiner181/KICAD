@@ -142,6 +142,28 @@ test('Werkzeugschicht: Texte bleiben auf dem Bildschirm waagrecht, Masse folgen 
   assert.doesNotMatch(S.fangsymbol({ punkt: [10, 20], art: 'endpunkt' }, 1), /<g transform/);
 });
 
+// ============================================================================================== Navigationswürfel (N11) am Planwinkel
+
+test('Würfel: VORNE schaut auf die lange Gebäudekante wie der gerade Grundriss (θ = −planwinkel)', async () => {
+  const W = await import('./wuerfel-logik.js');
+  for (const kante of [37, -20, 127, 0]) {
+    const pw = (((-kante % 90) + 90) % 90) > 45 ? (((-kante % 90) + 90) % 90) - 90 : ((-kante % 90) + 90) % 90;   // wie Planwinkel.AusRichtung
+    const theta = W.gebaeudeAusrichtungGrad({ werte: { planwinkel: pw } }) * RAD;
+    const vorne = W.lokalZuWelt({ x: 0, y: 0, z: 1 }, theta);   // three: x Ost, z −Nord
+    const vorneModell = [vorne.x, -vorne.z];
+    // liegt die Kante im geraden Grundriss waagrecht (37°, −20°, 0°), schaut VORNE senkrecht auf sie; steht sie dort senkrecht
+    // (127°: Drehung bleibt in −45 … 45°), schaut VORNE wie der Grundriss auf die Schmalseite
+    const waagrecht = Math.abs(Math.sin((kante + pw) * RAD)) < 1e-9;
+    nah(Math.abs(vorneModell[0] * Math.cos(kante * RAD) + vorneModell[1] * Math.sin(kante * RAD)), waagrecht ? 0 : 1, 1e-9);
+    // und genau dorthin, wo im geraden Grundriss (Drehung pw) «unten» ist
+    punktGleich(A.svgAusModell(vorneModell, pw).map((v) => Math.round(v * 1e9) / 1e9), [0, 1], 1e-9);
+  }
+  // ohne gespeicherten Planwinkel: der vom Kern gerechnete; ohne beides 0
+  assert.equal(W.gebaeudeAusrichtungGrad({ werte: {} }, -37), 37);
+  assert.equal(W.gebaeudeAusrichtungGrad({ werte: { planwinkel: 10 } }, -37), -10);
+  assert.equal(W.gebaeudeAusrichtungGrad({ werte: {} }, null), 0);
+});
+
 // ============================================================================================== Eigenschaftenpalette
 
 const H = { zeile: (l, f) => `<z l="${l}">${f}</z>`, nurLesen: (t) => `<t>${t}</t>` };

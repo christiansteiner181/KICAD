@@ -1087,8 +1087,10 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 - **Startansicht speichern (Annahme):** der Katalog hat für die Ansicht keine passende Eigenschaft; sie liegt deshalb vorerst im Browser (`localStorage`, Schlüssel
   `hlks.startansicht3d.<Projektort>.<Kennzeichen>`, Wert `{ azimutGrad, polarGrad }` relativ zur Gebäudeausrichtung, damit sie einer Drehung des Gebäudes folgt), je Rechner und Projekt. Soll sie mit
   dem Projekt wandern, braucht die Klasse Ansicht eine Eigenschaft (z. B. `startansicht`) und die Oberfläche schreibt sie mit `element_aendern` – nur an `startLesen`/`startSchreiben` in `ansicht3d.js` anzupassen.
-- **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude)` in `wuerfel-logik.js`: liest `Gebaeude.planwinkel` (Nachbearbeitung N9: Drehung der Darstellung in Grad, die die längste
-  Gebäudekante waagrecht stellt; die Gebäudekante liegt um −planwinkel gegen die x-Achse), sonst 0 = Projektachsen (VORNE = Blick nach Norden). Nach dem Zusammenführen mit N9 nur dort Vorzeichen und Herkunft prüfen.
+- **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude, gerechnet)` in `wuerfel-logik.js`: θ = −`Gebaeude.planwinkel` (N9: Drehung des geraden Grundrisses im
+  Gegenuhrzeigersinn, −45 … 45°). VORNE schaut damit dorthin, wo im geraden Grundriss «unten» ist – auf die lange Gebäudekante, wenn sie dort waagrecht liegt (geprüft in
+  `ausrichtung.test.mjs`). Steht noch kein Winkel am Gebäude (Projekt von vor N9), holt `ansicht3d.js` den vom Kern gerechneten (Abfrage `planwinkel`, `bestimmt.winkel`);
+  sonst 0 = Projektachsen (VORNE = Blick nach Norden).
 - **Prüfen:** Node-Tests (Kamerarichtung je Fläche, Kante, Ecke, mit und ohne Ausrichtung, Nordwinkel, Ring, Startansicht) in `maus.test.mjs`; Browser-Reihe `maus-wuerfel.browser.mjs` (alle 26 Bereiche
   angeklickt, OBEN = Draufsicht, Ecke = Isometrie, VORNE, Haus-Knopf, Ziehen am Würfel und am Ring, Kontextmenü, Bilder hell und dunkel).
 
