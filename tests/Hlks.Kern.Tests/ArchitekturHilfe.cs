@@ -48,7 +48,7 @@ static class ArchitekturHilfe
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
             ["klasse"] = "Ansicht", ["kennzeichen"] = kz, ["geschoss"] = "EG",
-            ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = schnitthoehe },
+            ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = schnitthoehe, ["schnitthoeheNachSia"] = false },
         }));
 
     /// <summary>Vier Wände um das Rechteck 6000 × 4000 (Achsen), Dicke 200: W-1 Süd (→ +x), W-2 Ost, W-3 Nord, W-4 West.</summary>

@@ -48,7 +48,7 @@ public sealed class GrafikKontext
     public string Detailgrad { get; init; } = "mittel";
     /// <summary>Grundriss: Geschoss der Ansicht (Element) oder null.</summary>
     public Element? Geschoss { get; init; }
-    /// <summary>Grundriss: Schnitthöhe absolut (z über ±0.00) = Geschosskote + Schnitthöhe der Ansicht.</summary>
+    /// <summary>Grundriss: Schnitthöhe absolut (z über ±0.00) = Geschosskote + Schnitthöhe der Ansicht (N21: nach SIA 400 gerechnet oder von Hand).</summary>
     public double Schnitthoehe { get; init; }
     /// <summary>Gewerke, die gezeigt werden; null = alle.</summary>
     public IReadOnlySet<string>? Gewerke { get; init; }
@@ -150,7 +150,8 @@ public static class Grafik
             Massstab = ansicht.Zahl("massstab") is double m && m > 0 ? m : 50,
             Detailgrad = ansicht.Text("detailgrad") ?? "mittel",
             Geschoss = geschoss,
-            Schnitthoehe = (geschoss?.Zahl("kote") ?? 0) + (ansicht.Zahl("schnitthoehe") ?? 1000),
+            // N21: nach SIA 400:2000 Ziff. C.3.1.1 gerechnet (SchnitthoeheSia), solange schnitthoeheNachSia nicht ausgeschaltet ist; sonst der Handwert
+            Schnitthoehe = (geschoss?.Zahl("kote") ?? 0) + (art == "grundriss" ? SchnitthoeheSia.Hoehe(p.Modell, p.Katalog, ansicht, geschoss) : ansicht.Zahl("schnitthoehe") ?? 1000),
             Gewerke = gewerke.Count > 0 ? gewerke.ToHashSet() : null,
             KlassenAus = Liste(ansicht, "klassenAusblenden").ToHashSet(),
             Drehung = art == "grundriss" ? Ansichtsausrichtung.Fuer(p, ansicht).Drehung : 0,   // N9

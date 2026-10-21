@@ -37,7 +37,7 @@ const anlagenFuer = (gewerk) => {
   return anlagenVorne(anlagen(), (a) => anlageMitGewerk(a, systeme, (s) => systemGewerk(ctx, s), element, gewerk));
 };
 /** Einstellungen, die eine Ansichtsvorlage überträgt (Art und Geschoss bleiben bei der Ansicht). */
-const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'detailgrad', 'gewerke', 'klassenAusblenden', 'ifcDarstellung'];
+const VORLAGE_EINSTELLUNGEN = ['massstab', 'schnitthoehe', 'schnitthoeheNachSia', 'detailgrad', 'gewerke', 'klassenAusblenden', 'ifcDarstellung'];
 const NUR_MIT_VORLAGE_LEER = ['gewerke', 'klassenAusblenden', 'ifcDarstellung'];
 const GLIEDERUNG = new Set(['Gebaeude', 'Geschoss', 'Anlage', 'System', 'Strang', 'Zone']);
 const NIE_GRAFISCH = new Set(['ansicht', 'funktion']);
@@ -135,6 +135,7 @@ async function ansichtAnlegen(art) {
   if (v) {
     eig.ansichtsvorlage = v.kennzeichen;
     if (v.werte?.schnitthoehe !== undefined && art === 'grundriss') eig.schnitthoehe = v.werte.schnitthoehe;
+    if (v.werte?.schnitthoeheNachSia !== undefined && art === 'grundriss') eig.schnitthoeheNachSia = v.werte.schnitthoeheNachSia;   // N21
     if (Array.isArray(v.werte?.klassenAusblenden)) eig.klassenAusblenden = v.werte.klassenAusblenden;
   }
   const param = { klasse: 'Ansicht', kennzeichen: kz, name: q('.f-name').value.trim(), eigenschaften: eig };

@@ -325,7 +325,7 @@ public class IfcArchitekturTests
             Ok(p.Ausfuehren("element_anlegen", new JsonObject
             {
                 ["klasse"] = "Ansicht", ["kennzeichen"] = kz, ["geschoss"] = "EG",
-                ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = h },
+                ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = h, ["schnitthoeheNachSia"] = false },
             }));
         var u = Namens(p, "Traeger", "UZ 1");
         var tu = Grafik.Plan(p, "GR-2500").Teile.Single(t => t.Id == u.Id).Primitive[0];

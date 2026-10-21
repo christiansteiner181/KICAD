@@ -28,6 +28,7 @@ import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml 
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
 import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';   // Modul 7 Teil A: Revisionsliste des Planblatts
 import { schnittbereichZeilen, startansichtText } from './schnittbereich-palette.js';   // N13: 3D-Schnittbereich und Startansicht der 3D-Ansicht
+import { schnitthoeheZeilen } from './schnitthoehe-palette.js';   // N21: Schnitthöhe nach SIA 400 (gerechnet, schreibgeschützt) und Schalter
 import { ausrichtungZeilen, planwinkelZeilen } from './ausrichtung-palette.js';   // N9: Ausrichtung der Grundrisse (Ansicht) und Planwinkel (Gebäude)
 
 const lc = (t) => String(t ?? '').toLowerCase();
@@ -117,16 +118,20 @@ async function zeichnen() {
     inhalt.innerHTML = `<div class="ep-leer">${istAnsicht ? 'Nichts ausgewählt.<br>Eine Ansicht öffnen oder ein Element anklicken.' : 'Element nicht gefunden.'}</div>`;
     return;
   }
-  let lesen, def = null, fam = null, aus = null;
+  let lesen, def = null, fam = null, aus = null, sia = null;
   try {
     const famBezug = ziel.klasse === 'Familie' ? ziel.kennzeichen : ziel.bezuege?.familie ?? null;
     // N9: Drehung der Ansicht bzw. Planwinkel des Gebäudes (Abfrage planwinkel); fehlt sie, bleibt die Palette wie bisher
     const ausParameter = ziel.klasse === 'Ansicht' ? { ansicht: ziel.kennzeichen } : ziel.klasse === 'Gebaeude' ? { gebaeude: ziel.kennzeichen } : null;
-    [lesen, def, fam, aus] = await Promise.all([
+    // N21: gerechnete Schnitthöhe des Grundrisses (Abfrage schnitthoehe_sia); fehlt sie, bleibt das Feld schnitthoehe bearbeitbar
+    const siaAbfrage = ziel.klasse === 'Ansicht' && (ziel.werte?.art ?? 'grundriss') === 'grundriss'
+      ? abfrage('schnitthoehe_sia', { ansicht: ziel.kennzeichen }).catch((e) => { console.warn('schnitthoehe_sia', e?.message ?? e); return null; }) : Promise.resolve(null);
+    [lesen, def, fam, aus, sia] = await Promise.all([
       ziel.klasse === 'Familie' ? Promise.resolve({}) : abfrage('element_lesen', { element: ziel.kennzeichen }),
       ziel.klasse === 'Familie' ? Promise.resolve(null) : klassenDefinition(ziel.klasse).catch((e) => { console.error(e); return null; }),
       famBezug ? famDaten(famBezug, ziel) : Promise.resolve(null),
       ausParameter ? abfrage('planwinkel', ausParameter).catch((e) => { console.warn('planwinkel', e?.message ?? e); return null; }) : Promise.resolve(null),
+      siaAbfrage,
     ]);
   } catch (e) {
     console.error(e);
@@ -140,7 +145,7 @@ async function zeichnen() {
   if (fam && ziel.klasse !== 'Familie') fam = { ...fam, exemplar: lesen?.eigenschaften?.parameter?.wert ?? null };
   gerade = { id: ziel.id, kz: ziel.kennzeichen, fam };
   const y = inhalt.scrollTop;
-  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san, aus);
+  inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san, aus, sia);
   inhalt.scrollTop = y;
 }
 
@@ -205,7 +210,7 @@ function eigenschaftsFeld(d, wert) {
     case 'auswahl':
       return auswahlFeld(ziel, (d.auswahl ?? []).map((a) => [a, a]), wert ?? null);
     case 'bool':
-      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${(d.name === 'belastung' ? wert !== false : wert === true) ? 'checked' : ''}>`;   // Modul 4: Ansicht.belastung ist ohne Angabe ein (Häkchen, solange nicht false)
+      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${(d.name === 'schnitthoeheNachSia' ? wert !== false : d.name === 'belastung' ? wert !== false : wert === true) ? 'checked' : ''}>`;   // Modul 4: Ansicht.belastung ist ohne Angabe ein (Häkchen, solange nicht false)
     case 'liste': {
       const aktuell = Array.isArray(wert) ? wert : [];
       const moegliche = d.auswahl ? d.auswahl.map((a) => [a, a]) : d.name === 'gewerke' ? gewerkeListe() : null;
@@ -243,7 +248,7 @@ const kennOption = (e) => [e.kennzeichen, e.name ? `${e.kennzeichen} – ${e.nam
 
 // ---------------------------------------------------------------------------------------------- Palette aufbauen
 
-function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null) {
+function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia = null) {
   const res = reservierungVon(el);
   let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(el.klasse, el.basis), 16)}</span>`
     + `<select disabled title="Typwechsel folgt später"><option>${esc(el.klasse)}</option></select></div>`
@@ -306,6 +311,13 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null) {
       if (d.name === 'schnittbereich') ez.push(...schnittbereichZeilen(w, HELFER));
       else ez.push(zeile(d.name, nurLesen(startansichtText(w)), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n') }));
       continue;
+    }
+    // N21: Schnitthöhe nach SIA 400 – der Schalter gilt nur im Grundriss; solange er ein ist, zeigt die Palette die gerechnete Höhe mit Herkunft
+    // schreibgeschützt; aus (oder keine Antwort des Kerns): das Feld schnitthoehe wie bisher
+    if (el.klasse === 'Ansicht' && d.name === 'schnitthoeheNachSia' && (werte.art?.wert ?? el.werte?.art) !== 'grundriss') continue;
+    if (el.klasse === 'Ansicht' && d.name === 'schnitthoehe' && werte.schnitthoeheNachSia?.wert !== false) {
+      const zs = schnitthoeheZeilen(sia, HELFER);
+      if (zs) { ez.push(...zs); continue; }
     }
     // Modul 4 Teil A-O: Apparateart mit Namen und abgeleiteten Werten darunter, Tabelle der Spezialinstallationen, Hinweis zu K
     if (d.name === 'sanitaerArt' && san) { ez.push(...artZeilen({ def: d, wert: w ?? null, vorgabe: san.vorgabeJeKlasse?.[el.klasse] ?? null, l }, HELFER)); continue; }

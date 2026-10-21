@@ -206,7 +206,7 @@ public class DeckeBefehleTests
         Assert.Contains(dachEg.Hinweise, h => h.Contains("Auf gleicher Höhe liegt schon D-2"));
 
         // Grundriss: die Decke über EG erscheint im Grundriss von OG, wenn die Schnitthöhe sie schneidet
-        Ansicht(p, "AN-OG", "OG", new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = -100 });
+        Ansicht(p, "AN-OG", "OG", new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = -100, ["schnitthoeheNachSia"] = false });
         var g = Grafik.Plan(p, "AN-OG");
         Assert.Contains(g.Teile, t => t.Id == decke.Id && t.Ebene == "decke");
         Assert.DoesNotContain(g.Teile, t => t.Id == boden.Id);         // Boden gehört zu EG

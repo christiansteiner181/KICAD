@@ -78,6 +78,7 @@ public class TuerDarstellungTests
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",       // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
         ["planwinkel"] = """{"ansicht":"AN-GR-EG"}""",                       // N9: Planwinkel GEB-1 und Ausrichtung des Grundrisses EG
         ["raum_begehen"] = """{"raum":"E.02"}""",                             // N15: Standort für «Raum begehen» im Raum E.02
+        ["schnitthoehe_sia"] = """{"ansicht":"AN-GR-EG"}""",                // N21: Schnitthöhe des Grundrisses EG nach SIA 400
     };
 
     static string IfcExportDatei() => Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-export.ifc").Replace('\\', '/');
