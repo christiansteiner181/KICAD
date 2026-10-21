@@ -28,6 +28,7 @@ import { ORBIT_TASTEN, mitteDoppelklick } from './maus.js';
 import { erzeugeWuerfel } from './wuerfel.js';
 import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen, zielWinkel, START_VORGABE } from './wuerfel-logik.js';
 import { erzeugeSchnittbereich } from './schnittbereich3d.js';
+import { erzeugeBegehen } from './begehen3d.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
 
@@ -150,8 +151,15 @@ function erstellen(behaelter, ansichtElement) {
   const ausrichtungGrad = () => gebaeudeAusrichtungGrad(erstesGebaeude(), planwinkelGerechnet);
   planwinkelHolen();
   const startSchluessel = () => startansichtSchluessel(zustand.status?.ort ?? zustand.status?.projekt, ansicht?.kennzeichen);
+  // N15: «Raum begehen» (begehen3d.js) – Ich-Perspektive; Esc, Haus-Knopf und Klick auf den Würfel beenden es
+  const begehen = erzeugeBegehen({
+    wurzel, dom: renderer.domElement, kamera, steuerung, anfordern,
+    schnitt: () => schnitt,
+    benutzt: { lesen: () => benutzt, setzen: (b) => { benutzt = b; } },
+  });
   const wuerfel = erzeugeWuerfel({
     wurzel, renderer, kamera, steuerung,
+    begehen: { aktiv: () => begehen.aktiv, beenden: () => begehen.beenden() },
     anfordern, beiBenutzt: () => { benutzt = true; },
     ausrichtungGrad,
     nordwinkelGrad: () => nordwinkelGrad(derKlasse('Projektinformation')[0]),
@@ -394,7 +402,7 @@ function erstellen(behaelter, ansichtElement) {
   /** Alles zeigen, aus der Richtung der Startansicht (im Modell gespeichert oder Isometrie von vorne rechts oben); mit aktivem Schnittbereich
    *  dessen Inhalt. `richtung` (Ergebnis von zielWinkel) erzwingt eine andere Richtung. */
   function zoomAlles(richtung = null) {
-    if (zerstoert) return;
+    if (zerstoert || begehen.aktiv) return;   // beim Begehen (N15) bleibt die Kamera im Raum
     benutzt = false;
     const e = einpassWerte();
     const z = richtung && richtung.richtung ? richtung : startansichtZiel(startansichtLesen(startRoh()), ausrichtungGrad() * Math.PI / 180);
@@ -407,6 +415,7 @@ function erstellen(behaelter, ansichtElement) {
   /** N14 «Raum im 3D zeigen»: den ganzen Schnittbereich im Bild, Isometrie von vorne rechts oben (unabhängig von der Startansicht). */
   function zeigeBereich() {
     if (zerstoert) return;
+    if (begehen.aktiv) begehen.beenden();
     zoomAlles(zielWinkel(START_VORGABE, ausrichtungGrad() * Math.PI / 180));
     benutzt = true;       // bleibt so stehen: weder das erste Laden noch eine Grössenänderung stellt die Kamera neu ein
     hatGezoomt = true;
@@ -510,6 +519,7 @@ function erstellen(behaelter, ansichtElement) {
   wurzel.addEventListener('pointerdown', (e) => {
     if (e.button !== 1) return;
     e.preventDefault();
+    if (begehen.aktiv) return;   // N15: die mittlere Taste verschiebt beim Begehen (begehen3d.js)
     if (mitteDk.unten(e)) { e.stopPropagation(); zoomAlles(); return; }
     if (e.shiftKey) {
       const p = pivot();
@@ -636,6 +646,10 @@ function erstellen(behaelter, ansichtElement) {
     zoomAlles: () => zoomAlles(),
     zeigeBereich,
     get schnittbereich() { return schnitt; },
+    /** N15: Raum begehen – standort = Antwort der Abfrage raum_begehen; augenhoeheMm übersteuert deren Augenhöhe. */
+    begehen: (standort, augenhoeheMm = null) => begehen.starten(standort, augenhoeheMm),
+    beendeBegehen: () => begehen.beenden(),
+    get begehenAktiv() { return begehen.aktiv; },
     /** Element, das an dieser Bildschirmstelle gewählt würde (clientX, clientY), sonst null – weggeschnittene Teile zählen nicht (Kontrolle für Browser-Tests). */
     trefferBei: (clientX, clientY) => trefferId({ clientX, clientY }),
     zerstoeren() {
@@ -651,6 +665,7 @@ function erstellen(behaelter, ansichtElement) {
       window.removeEventListener('hlks-design', designGeaendert);
       beobachter?.disconnect();
       steuerung.removeEventListener('change', anfordern);
+      begehen.zerstoeren();
       wuerfel.zerstoeren();
       schnitt?.zerstoeren();
       steuerung.dispose();

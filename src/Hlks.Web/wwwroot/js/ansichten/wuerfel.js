@@ -26,6 +26,7 @@ const HAUS = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"
 /**
  * Baut den Würfel in `wurzel` (Behälter der 3D-Ansicht).
  *  optionen: renderer, kamera (Hauptkamera), steuerung (OrbitControls), anfordern() (neu zeichnen), beiBenutzt() (Kamera vom Benutzer bewegt),
+ *            begehen { aktiv(), beenden() } (N15 «Raum begehen»: Haus-Knopf und Klick auf eine Fläche beenden es, Ziehen ist dann aus),
  *            ausrichtungGrad() (Gebäudeausrichtung, wuerfel-logik gebaeudeAusrichtungGrad), nordwinkelGrad(), einpassung() → { ziel: Vector3, abstand },
  *            startLesen() / startSchreiben(wert | null) (Startansicht merken), menue(x, y, eintraege)
  */
@@ -202,6 +203,7 @@ export function erzeugeWuerfel(o) {
 
   /** Dreht die Hauptkamera um Winkel (Ziehen am Würfel bzw. Ring). */
   function drehen(dAzimut, dPolar) {
+    if (o.begehen?.aktiv()) return;   // N15: beim Begehen dreht der Würfel mit, wird aber nicht gezogen
     abbrechen();
     o.beiBenutzt?.();
     const a = aktuell();
@@ -230,6 +232,7 @@ export function erzeugeWuerfel(o) {
     o.anfordern();
   }
   function klickBereich(bereich) {
+    if (o.begehen?.aktiv()) o.begehen.beenden();   // N15: ein Klick auf eine Fläche beendet das Begehen (vorherige Kamera), dann fährt die Kamera dorthin
     const z = zielWinkel(bereich, ausrichtungRad());
     fahreZu({ azimut: z.azimut, polar: z.polar });
   }
@@ -295,11 +298,13 @@ export function erzeugeWuerfel(o) {
   function startZiel() { return startansichtZiel(startansichtLesen(o.startLesen?.()), ausrichtungRad()); }
   /** Zur Startansicht (Home): gemerkte oder Isometrie, alles im Bild. */
   function heim(dauer = FAHRT_MS) {
+    if (o.begehen?.aktiv()) { o.begehen.beenden(); return; }   // N15: Haus-Knopf beim Begehen = zurück zur vorherigen Kamera
     const z = startZiel();
     const e = o.einpassung();
     fahreZu({ azimut: z.azimut, polar: z.polar, abstand: e.abstand, ziel: e.ziel }, dauer);
   }
   function startFestlegen() {
+    if (o.begehen?.aktiv()) return null;   // N15: die Kamera im Raum ist keine Startansicht
     const d = new THREE.Vector3().copy(kamera.position).sub(steuerung.target);
     // im Modell (Eigenschaft startansicht der Ansicht): Blickrichtung relativ zur Gebäudeausrichtung, dazu Position und Ziel der Kamera in Modell-mm
     const wert = startansichtWert(startansichtAusRichtung({ x: d.x, y: d.y, z: d.z }, ausrichtungRad()), kamera.position, steuerung.target);

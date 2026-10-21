@@ -399,8 +399,10 @@ function erstellen(behaelter, ansichtElement) {
     const [{ kontextmenue }, { ausfuehren }] = await Promise.all([import('../oberflaeche/dialoge.js'), import('../oberflaeche/register.js')]);
     kontextmenue(e.clientX, e.clientY, [
       { titel: 'Raum im 3D zeigen', aktion: () => ausfuehren('ansicht.raum3d', { raeume: [raum.kennzeichen] }) },
+      { titel: 'Raum begehen', aktion: () => ausfuehren('ansicht.raumBegehen', { raeume: [raum.kennzeichen] }) },   // N15: Ich-Perspektive im 3D
       { trenner: true },
       { titel: 'Rand für «Raum im 3D zeigen» …', aktion: () => ausfuehren('ansicht.raum3dRand') },
+      { titel: 'Augenhöhe für «Raum begehen» …', aktion: () => ausfuehren('ansicht.begehenAugenhoehe') },
     ]);
   }
   wurzel.addEventListener('pointerenter', () => { imFenster = true; });
