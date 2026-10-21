@@ -10,6 +10,7 @@ import { abfrage } from '../api.js';
 import { planSvg, begrenzungVon } from '../ansichten/plangrafik.js';
 import { baueKoerper, hervorheben, freigeben } from '../ansichten/koerper3d.js';
 import { cssVar } from '../ansichten/hilfen.js';
+import { ORBIT_TASTEN, mitteDoppelklick, mitteVerschieben } from '../ansichten/maus.js';
 import { ANSICHTEN, VIER_FENSTER, teilBox, boxProjektion, teilIndexVon, achsenLaenge, ueberlagerungSvg, naechsterPunkt, pickPunkteSvg } from './familien-ansicht.js';
 import { esc, kernFehler } from './familien-text.js';
 
@@ -38,7 +39,14 @@ class Fenster2D {
   bind() {
     const svg = this.svg;
     let druck = null;
-    svg.addEventListener('pointerdown', (e) => { if (e.button !== 0 && e.button !== 1) return; druck = { x: e.clientX, y: e.clientY }; this.start = e.button === 0 ? { x: e.clientX, y: e.clientY } : null; try { svg.setPointerCapture(e.pointerId); } catch { /* egal */ } svg.classList.add('schiebt'); });
+    // Mittlere Taste (N10): verschieben, Doppelklick = alles zeigen, kein Autoscroll – auch während die Punktwahl aktiv ist
+    mitteVerschieben(svg, {
+      beiBeginn: () => svg.classList.add('schiebt'),
+      beiBewegung: (dx, dy) => { if (!this.vb) return; const r = svg.getBoundingClientRect(); this.vb.x -= (dx / r.width) * this.vb.w; this.vb.y -= (dy / r.height) * this.vb.h; this.benutzt = true; this.anwenden(); },
+      beiEnde: () => svg.classList.remove('schiebt'),
+      beiDoppelklick: () => { this.benutzt = false; this.einpassen(); },
+    });
+    svg.addEventListener('pointerdown', (e) => { if (e.button !== 0) return; druck = { x: e.clientX, y: e.clientY }; this.start = { x: e.clientX, y: e.clientY }; try { svg.setPointerCapture(e.pointerId); } catch { /* egal */ } svg.classList.add('schiebt'); });
     svg.addEventListener('pointermove', (e) => {
       if (!druck || !this.vb) return;
       const r = svg.getBoundingClientRect();
@@ -163,7 +171,21 @@ class Fenster3D {
     this.kamera = new THREE.PerspectiveCamera(40, 1, 0.001, 100);
     this.steuerung = new OrbitControls(this.kamera, this.renderer.domElement);
     this.steuerung.enableDamping = false;
-    this.steuerung.mouseButtons = { LEFT: THREE.MOUSE.ROTATE, MIDDLE: THREE.MOUSE.DOLLY, RIGHT: THREE.MOUSE.PAN };
+    // Maustasten wie in der 3D-Ansicht (N10): links drehen, Mitte verschieben, Umschalt + Mitte drehen, Rad zoomt zum Mauszeiger, Doppelklick Mitte = alles zeigen
+    this.steuerung.mouseButtons = { LEFT: THREE.MOUSE[ORBIT_TASTEN.LEFT], MIDDLE: THREE.MOUSE[ORBIT_TASTEN.MIDDLE], RIGHT: THREE.MOUSE[ORBIT_TASTEN.RIGHT] };
+    this.steuerung.zoomToCursor = true;
+    const dom = this.renderer.domElement;
+    const mitteDk = mitteDoppelklick();
+    dom.addEventListener('pointerdown', (e) => {
+      if (e.button !== 1) return;
+      e.preventDefault();
+      if (mitteDk.unten(e)) { e.stopPropagation(); this.benutzt = false; this.einpassen(); }
+    }, true);
+    dom.addEventListener('pointermove', (e) => mitteDk.bewegt(e), true);
+    dom.addEventListener('pointerup', (e) => mitteDk.oben(e), true);
+    dom.addEventListener('pointercancel', (e) => mitteDk.oben(e), true);
+    dom.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
+    dom.addEventListener('auxclick', (e) => e.preventDefault());
     this.steuerung.addEventListener('change', () => this.anfordern());
     this.steuerung.addEventListener('start', () => { this.benutzt = true; });
     this.beobachter = typeof ResizeObserver === 'function' ? new ResizeObserver(() => this.groesse()) : null;

@@ -58,6 +58,13 @@ nicht aus der Norm stammen, sind als **Annahme** markiert und stehen in Christia
   steigend, kalksandstein fallend, daemmung 90°, holz dichter 45°, glas waagrecht, putz Punkte. Material
   `unbestimmt`: Füllung «schnitt» mit Deckkraft 0.25 (**Annahme**; B.8.3.1 sagt bis 1:100 schwarz, Christian will
   im KI-Planungsbüro Schraffuren statt Schwarz).
+- Schraffur folgt der Achse (Nachbearbeitung N8, Christian 21.10.2026 «schraffuren sollten mit wand rotieren», wie Revit
+  «an Element ausrichten»): Die Winkel der Tabelle gelten gegen die Achse des Bauteils. Bauteile mit Achse im Grundriss (Wand,
+  Unterzug) tragen `stil.musterWinkel` = Richtung der Achse auf [0, 180) gerundet auf 0.001° und `stil.musterUrsprung` = Fusspunkt
+  des Lots vom Ursprung auf die Achse; Bildschirm und PDF addieren den Winkel zu denen der Schraffur und verankern das Muster im
+  Anker – Bauteile auf derselben Achse haben ein durchlaufendes Muster. Ohne Achse (Decke, Raum, Füllbereich, Stütze im Grundriss)
+  und im Schnitt (Achse waagrecht bzw. zum Betrachter) bleibt das Muster achsparallel zum Blatt. Gebogene Wände gibt es im Modell
+  nicht (Kette gerader Wände, je Abschnitt eine Achse).
 - Masslinien B.5.3: Masslinie dünnste Linie, Massstriche doppelt so dick (Schrägstrich 45°, `mittel`), Masszahl
   über der Linie, von unten bzw. rechts lesbar, Einheit auf dem Plan (Planblatt-Text «Masse in m»).
   Masszahl-Einheit (**Entscheid Christian 17.10.2026**: Grundriss/Architektur in m, Lüftung in mm, Heizung und

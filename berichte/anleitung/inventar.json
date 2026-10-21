@@ -2553,7 +2553,7 @@
           "schritte": [
             "3D tippen (oder Ansicht › Erstellen › «3D-Ansicht»).",
             "Name und Kennzeichen bestätigen (Vorschlag AN-3D-2, weil AN-3D im Beispielprojekt schon vergeben ist).",
-            "Mit gedrückter linker Maustaste drehen, mit dem Rad zoomen, mit der rechten Taste verschieben.",
+            "Mit gedrückter linker Maustaste drehen, mit der mittleren Taste verschieben (Umschalt + Mitte dreht), mit dem Rad zoomen (zum Mauszeiger), mit der rechten Taste verschieben.",
             "Ein Bauteil anklicken."
           ],
           "erwartung": "Eine 3D-Ansicht öffnet (Wände, Decken, Räume durchscheinend, Apparate, Leitungen in Medienfarben). Ein Klick wählt das Element, Haustechnik hat Vorrang vor Wänden.",
@@ -9651,6 +9651,185 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:151"
           ],
           "hinweis": "Ersetzt die frühere Fassung mit nur vier Registernamen (Befund in «kuerzel-liste-ks» behoben)."
+        },
+        {
+          "id": "zb-n10-mitte-verschieben",
+          "titel": "Mittlere Maustaste verschiebt in allen Ansichten (N10)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Grundriss, Schnitt, Ansicht, Schema, 3D, Familieneditor (2D und 3D), Unterlagen-Bild"
+          },
+          "schritte": [
+            "Grundriss EG öffnen. Die mittlere Maustaste (Rad drücken) gedrückt halten und die Maus ziehen.",
+            "Das Wand-Werkzeug starten (WA tippen) und noch einmal mit der mittleren Taste ziehen.",
+            "Esc drücken. Mit dem Rad zoomen, dann die mittlere Taste zweimal kurz hintereinander klicken (ohne zu ziehen).",
+            "Dasselbe im Schnitt, im Schema und im Familieneditor (die Fenster Vorne, Oben, Links) versuchen.",
+            "Ein Unterlagen-Bild (Familie aus Unterlagen) mit der Vergrösserung 2 oder mehr öffnen und mit der mittleren Taste ziehen."
+          ],
+          "erwartung": "Der Plan folgt der Hand: Ziehen mit gedrückter mittlerer Taste verschiebt den Ausschnitt, die Zoomstufe bleibt. Das gilt auch, während ein Zeichenwerkzeug aktiv ist; das Werkzeug setzt dabei keinen Punkt und die Meldung des Werkzeugs bleibt aus. Der Doppelklick mit der mittleren Taste zeigt alles; zwei kurze Verschiebungen hintereinander zählen nicht als Doppelklick. Der Browser startet nie den Autoscroll (Rollkreis). Das Rad zoomt zum Mauszeiger. Im Unterlagen-Bild rollt die mittlere Taste das vergrösserte Bild, der Doppelklick stellt Zoom 1 her.",
+          "pruefpunkte": [
+            "Verschieben mit der mittleren Taste im Grundriss, Schnitt, Schema und Familieneditor.",
+            "Mit aktivem Wand-Werkzeug verschiebt die mittlere Taste ebenfalls und setzt keinen Punkt.",
+            "Doppelklick Mitte zeigt alles; zwei kurze Verschiebungen zeigen nicht alles.",
+            "Kein Rollkreis des Browsers.",
+            "Unterlagen-Bild: Mitte rollt das vergrösserte Bild."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG",
+            "zustand": "Grundriss EG mit verschobenem Ausschnitt (Bildschirmfoto von Hand: die mittlere Taste ist im Bild nicht sichtbar)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/maus.js:25",
+            "src/Hlks.Web/wwwroot/js/ansichten/maus.js:84",
+            "src/Hlks.Web/wwwroot/js/ansichten/grundriss.js:257",
+            "src/Hlks.Web/OBERFLAECHE.md (Nachbearbeitung N10)"
+          ],
+          "hinweis": "Planblatt: Das Blatt ist das PDF im eingebauten Betrachter des Browsers; dort kann KICAD die Maus nicht abfangen, die mittlere Taste löst den Autoscroll des Betrachters aus. Listen rollen mit dem Rad (nicht zoombar)."
+        },
+        {
+          "id": "zb-n10-3d-maus",
+          "titel": "3D: Maustasten wie in Revit (N10)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht (z. B. «3D Gesamt») und die 3D-Ansicht im Familieneditor"
+          },
+          "schritte": [
+            "«3D Gesamt» öffnen. Mit gedrückter mittlerer Taste ziehen.",
+            "Umschalt drücken und mit der mittleren Taste ziehen.",
+            "Mit gedrückter linken Taste ziehen, mit gedrückter rechten Taste ziehen.",
+            "Das Rad über einem Gebäudeteil drehen.",
+            "Die mittlere Taste zweimal kurz hintereinander klicken."
+          ],
+          "erwartung": "Mitte verschiebt (die Blickrichtung bleibt). Umschalt + Mitte dreht die Ansicht um die Auswahl bzw. die Modellmitte, ohne dass der Blick beim Anfassen springt. Links dreht wie bisher, rechts verschiebt wie bisher. Das Rad zoomt zum Mauszeiger (die Stelle unter dem Zeiger bleibt unter dem Zeiger). Doppelklick Mitte zeigt alles, aus der Richtung der Startansicht. Die Hinweiszeile unten links nennt die Tasten.",
+          "pruefpunkte": [
+            "Mitte verschiebt, die Blickrichtung bleibt.",
+            "Umschalt + Mitte dreht.",
+            "Links dreht, rechts verschiebt.",
+            "Das Rad zoomt zum Mauszeiger.",
+            "Doppelklick Mitte zeigt alles."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "3D Gesamt mit Hinweiszeile unten links"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/ansicht3d.js:101",
+            "src/Hlks.Web/wwwroot/js/ansichten/ansicht3d.js:417",
+            "src/Hlks.Web/wwwroot/js/ansichten/maus.js:25"
+          ],
+          "hinweis": "Annahme: die linke Taste dreht weiter (wie bisher); Umschalt + Links verschiebt, wie es die Steuerung vorgibt."
+        },
+        {
+          "id": "zb-n11-wuerfel",
+          "titel": "Navigationswürfel in der 3D-Ansicht (N11)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht, oben rechts"
+          },
+          "schritte": [
+            "«3D Gesamt» öffnen. Den Würfel oben rechts ansehen.",
+            "Die Maus über den Würfel bewegen.",
+            "Die Fläche «OBEN» anklicken, dann «VORNE», dann eine Ecke.",
+            "Am Würfel mit gedrückter linker Taste ziehen."
+          ],
+          "erwartung": "Oben rechts steht ein hellgrauer Würfel mit den Flächen OBEN, UNTEN, VORNE, HINTEN, LINKS und RECHTS. Er dreht mit der Ansicht mit. Flächen, Kanten und Ecken sind anklickbar (26 Bereiche), unter dem Zeiger erscheint der Bereich blau. Ein Klick fährt die Kamera weich in die Standardansicht: Fläche = Blick senkrecht darauf (OBEN = Draufsicht), Kante = 45°, Ecke = Isometrie. Ziehen am Würfel dreht die Ansicht, das Kameraziel bleibt. «VORNE» richtet sich nach der Gebäudeausrichtung (planwinkel am Gebäude, Nachbearbeitung N9; ohne Angabe die Projektachsen: Blick nach Norden). Das Aussehen folgt dem hellen und dunklen Design.",
+          "pruefpunkte": [
+            "Der Würfel steht oben rechts und zeigt die sechs Beschriftungen.",
+            "Hover färbt den Bereich unter dem Zeiger.",
+            "OBEN gibt die Draufsicht, eine Ecke die Isometrie, eine Kante 45°.",
+            "Ziehen am Würfel dreht die Ansicht.",
+            "Hell und dunkel sind lesbar."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "3D Gesamt in der Isometrie, Würfel oben rechts, Kompassring darunter"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:31",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel-logik.js:95",
+            "src/Hlks.Web/OBERFLAECHE.md (Nachbearbeitung N11)"
+          ],
+          "hinweis": "Der Würfel wird in die Leinwand der 3D-Ansicht gezeichnet (kein zweiter WebGL-Kontext); er hat eine eigene kleine Szene und Kamera."
+        },
+        {
+          "id": "zb-n11-kompass",
+          "titel": "Kompassring unter dem Würfel (N11)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht, unter dem Navigationswürfel"
+          },
+          "schritte": [
+            "Verwalten › Projekt › Projektinformationen öffnen und einen Nordwinkel eintragen (z. B. 30), bestätigen.",
+            "«3D Gesamt» öffnen und den Ring unter dem Würfel ansehen (N rot).",
+            "Am Ring mit gedrückter linker Taste im Uhrzeigersinn ziehen."
+          ],
+          "erwartung": "Der Ring zeigt N, O, S und W. N steht dort, wo geografisch Nord liegt: Projekt-Nord um den Nordwinkel (Projektinformation, im Uhrzeigersinn) gedreht. Ohne Nordwinkel gilt Plan genordet. Ziehen am Ring dreht die Ansicht um die Hochachse (die Höhe der Kamera und das Ziel bleiben); der Ring dreht mit.",
+          "pruefpunkte": [
+            "N, O, S, W stehen auf dem Ring.",
+            "N liegt bei Ansichtsrichtung + Nordwinkel.",
+            "Ziehen am Ring dreht um die Hochachse, die Kamerahöhe bleibt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Würfel und Ring in der Isometrie, Nordwinkel 30° (fiktiv)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:153",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel-logik.js:180"
+          ],
+          "hinweis": "Der Ring ist flach gezeichnet (immer bedienbar, auch beim Blick von der Seite)."
+        },
+        {
+          "id": "zb-n11-startansicht",
+          "titel": "Startansicht: Haus-Knopf und Kontextmenü (N11)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "Haus-Knopf am Würfel",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht, Rechtsklick auf den Würfel"
+          },
+          "schritte": [
+            "«3D Gesamt» öffnen, die Ansicht drehen und zoomen.",
+            "Den Haus-Knopf links oben am Würfel anklicken.",
+            "Eine Lieblingsansicht einstellen, mit der rechten Taste auf den Würfel klicken und «Aktuelle Ansicht als Startansicht festlegen» wählen.",
+            "Die Ansicht verstellen und wieder den Haus-Knopf anklicken.",
+            "Rechtsklick auf den Würfel › «Startansicht zurücksetzen (Isometrie)»."
+          ],
+          "erwartung": "Der Haus-Knopf fährt weich zur Startansicht und zeigt dabei alles. Ohne eigene Einstellung ist das die Isometrie von vorne rechts oben. «Aktuelle Ansicht als Startansicht festlegen» merkt die Blickrichtung für diese 3D-Ansicht in diesem Projekt (je Rechner; sie folgt einer geänderten Gebäudeausrichtung). Doppelklick mit der mittleren Taste und das Öffnen der Ansicht benutzen dieselbe Startrichtung.",
+          "pruefpunkte": [
+            "Der Haus-Knopf führt zur Isometrie.",
+            "Das Kontextmenü am Würfel hat «Zur Startansicht», «Aktuelle Ansicht als Startansicht festlegen» und «Startansicht zurücksetzen».",
+            "Nach dem Festlegen führt der Haus-Knopf zur eigenen Ansicht.",
+            "Nach dem Zurücksetzen wieder zur Isometrie."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Kontextmenü am Würfel (Bildschirmfoto von Hand)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:296",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:301",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel-logik.js:237"
+          ],
+          "hinweis": "Die Startansicht liegt vorerst im Browser (localStorage, Schlüssel startansicht3d.<Projekt>.<Kennzeichen>), nicht im Modell: der Katalog hat dafür noch keine Ansichtseigenschaft."
         },
         {
           "id": "zb-n9-geometrie",

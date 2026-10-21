@@ -79,8 +79,8 @@ lässt.
 ## N3 – Fehlende Bedienorte (aus dem Funktionsverzeichnis)
 
 **Eingetragen** vom Hauptlauf am 19.10.2026: Beim Funktionsverzeichnis für die Bedienungsanleitung fanden sich Funktionen,
-die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (erichte/anleitung/inventar-notizen.md, Abschnitt 3;
-erichte/anleitung/luecken.json). Gebaut in der Nacht 19./20.10.2026 auf Christians Auftrag «arbeite bis 08:00 durch».
+die im Kern gebaut, aber in der Oberfläche nicht erreichbar sind (`berichte/anleitung/inventar-notizen.md`, Abschnitt 3;
+`berichte/anleitung/luecken.json`). Gebaut in der Nacht 19./20.10.2026 auf Christians Auftrag «arbeite bis 08:00 durch».
 
 1. **Einlage- und Grundleitungspläne anlegen:** Knöpfe «Einlageplan» und «Grundleitungsplan» im Register Ansicht, Gruppe
    Erstellen (bzw. Flyout «Grundriss ▾»), rufen den Kernbefehl einlageplaene_anlegen (Dialog: Geschoss bzw. Bauteil
@@ -142,43 +142,211 @@ Werkzeuge über das Protokoll mit erzwungener Ablehnung), `tests/Hlks.Web.Tests/
 ## N6 – Türen aus Archicad-IFC 5,19 m hoch (ragen durch Decke und Dach)
 
 Befund Christian 21.10.2026 (3D, Projekt «Test_praxis», IFC «440_Bernstrasse 42 3D Modell.ifc», IFC2X3, Archicad 27): «türen über
-gebäude». Hauptlauf: 23 von 57 IfcDoor tragen OverallHeight 5.19 m, die Öffnung (IfcOpeningElement, Rechteckprofil 0.94 × 5.19) ebenso,
-der Türkörper selbst (Body, MappedRepresentation) ist aber nur 2.15 m hoch (z 0 … 2.15, Breite ±0.47). KICAD übernimmt OverallHeight
-(«hoehe» 5190) – das IFC ist hier widersprüchlich, nicht der Leser. **Fertig, wenn** die Türhöhe aus dem Körper kommt, sobald er von
-OverallHeight deutlich abweicht (Herkunft nennt beides), ein Prüf- bzw. Importhinweis die Abweichung je Tür meldet, die Türen in 3D und
-Grundriss richtig stehen und Türen ohne Körper weiter OverallHeight nehmen.
+gebäude». Hauptlauf:
+- 23 von 57 `IfcDoor` tragen `OverallHeight` 5.19 m; die Öffnung (`IfcOpeningElement`, Rechteckprofil 0.94 × 5.19) ebenso.
+- Der Türkörper selbst (Body, `MappedRepresentation`) ist nur 2.15 m hoch (z 0 … 2.15, Breite ±0.47).
+- KICAD übernimmt `OverallHeight` («hoehe» 5190). Widersprüchlich ist hier das IFC, nicht der Leser.
+
+**Fertig, wenn:**
+- die Türhöhe aus dem Körper kommt, sobald er deutlich von `OverallHeight` abweicht, und die Herkunft beide Werte nennt;
+- ein Prüf- bzw. Importhinweis die Abweichung je Tür meldet;
+- die Türen in 3D und Grundriss richtig stehen;
+- Türen ohne Körper weiter `OverallHeight` nehmen.
+
+**Umgesetzt: 21.10.2026** (hlks-kern, vom Hauptlauf zusammengeführt).
+- **Ursache:** Das IFC ist widersprüchlich. `OverallHeight` (5190) ist die Höhe der Öffnung; sie reicht 3,04 m unter die Tür. Der Türkörper
+  selbst ist nur 0 … 2150 mm hoch. Dasselbe gilt im BKW-IFC (Archicad 28) für 15 Türen.
+- **Regel** (`src/Hlks.Kern/Import/IfcArchitektur.cs`): Weicht die Körperhöhe um mehr als 400 mm **und** mehr als 15 % von `OverallHeight`
+  ab, gilt der Körper. Die Herkunft nennt beide Werte, ein Importhinweis listet jede Tür bzw. jedes Fenster.
+  - Die Schwelle stammt aus den echten Dateien: Rahmen, Futter und Bänke machen den Körper bis 298 mm bzw. 12,6 % höher. Die
+    widersprüchlichen Fälle weichen 725 … 4160 mm bzw. 20,8 … 66,5 % ab.
+  - Gilt auch für Fenster; dort kommt dann auch `bruestung` von der Unterkante des Körpers.
+- **Wanddarstellung:** Die Aussparung ist jetzt 2150 mm hoch. Kollision und Aussparungen nutzen weiter das IfcOpeningElement; sein
+  unterer Teil wirkt dort nicht.
+- **Tests:** `NachbearbeitungN6N7Tests.cs` (synthetisch, IFC4 und IFC2X3) und `NachbearbeitungN6N7EchtTests.cs` (echtes IFC, wird
+  übersprungen, wenn die Datei fehlt).
+- **Für «Test_praxis»:** Das IFC muss neu übernommen werden (`ifc_uebernehmen`), damit die Türen nachgeführt werden.
 
 ## N7 – Zwei Stahl-Unterzüge ragen 3–4 m aus dem Gebäude
 
-Befund Christian 21.10.2026 (gleiches Projekt): «unterzüge neben gebäude». Hauptlauf: UZ-14 (1.OG) und UZ-62 (2.OG), beide «Unterzug-002»,
-Material Stahl, Linie von ca. [2972, −43351] nach [−3964, −36955] bzw. [3266, −43622] nach [−3670, −37226]; die Wände enden bei y −39903.
-Die übrigen 71 Träger liegen im Gebäude. Ursache offen (Achse/Extrusionsrichtung, Länge aus Profil, Platzierung). **Fertig, wenn** die
-Ursache belegt ist (gegen die Geometrie im IFC gerechnet) und die Träger dort liegen, wo das IFC sie zeichnet – bzw. ein Befund sie meldet,
-falls das IFC sie tatsächlich ausserhalb zeichnet.
+Befund Christian 21.10.2026 (gleiches Projekt): «unterzüge neben gebäude». Hauptlauf:
+- Betroffen sind UZ-14 (1.OG) und UZ-62 (2.OG), beide «Unterzug-002», Material Stahl.
+- Ihre Linie läuft von ca. [2972, −43351] nach [−3964, −36955] bzw. von [3266, −43622] nach [−3670, −37226]. Die Wände enden bei y −39903.
+- Die übrigen 71 Träger liegen im Gebäude.
+- Ursache offen: Achse bzw. Extrusionsrichtung, Länge aus dem Profil oder Platzierung.
+
+**Fertig, wenn** die Ursache belegt ist, gegen die Geometrie im IFC gerechnet, und die Träger dort liegen, wo das IFC sie zeichnet. Zeichnet
+das IFC sie tatsächlich ausserhalb, meldet ein Befund sie.
+
+**Umgesetzt: 21.10.2026** (hlks-kern, vom Hauptlauf zusammengeführt). Es war ein **Leserfehler von KICAD**; das IFC zeichnet die Träger
+im Gebäude.
+- **Ursache:** UZ-14 = IfcBeam #28246, UZ-62 = #32964, ein lotrechtes H-Profil 220 × 220. Als Trägeranfang nahm KICAD den Schwerpunkt des
+  Profils im Grundriss. Dort hat das Profil die Fläche 0, und weit vom Ursprung blieb ein Rundungsrest über der Schwelle. Der
+  «Schwerpunkt» lag dadurch rund 15,5 m längs der Achse daneben.
+- **Lösung:**
+  - Der Trägeranfang ist die Mitte des lotrechten Profils.
+  - `Polygone.Schwerpunkt` rechnet ab dem ersten Punkt und erkennt Fläche 0 relativ zur Ausdehnung; das behebt die Ursache auch für
+    andere Aufrufer.
+- **Tests:** Die alten Werte reproduzieren Christians Koordinaten genau. Alle 73 Träger liegen jetzt in ihrem IFC-Körper.
+- **Für «Test_praxis»:** Das IFC muss neu übernommen werden.
 
 ## N8 – Schraffuren drehen mit der Wand
 
 Befund Christian 21.10.2026 (Grundriss, schräge Wand mit Kreuzschraffur): «schraffuren sollten mit wand rotieren». Heute liegt das
-Schraffurraster achsparallel zum Blatt. **Fertig, wenn** die Schraffur jeder Wand (und jedes Bauteils mit Achse) an der Wandachse
-ausgerichtet ist – auf dem Bildschirm, im PDF und im Schnitt –, bei gebogenen Wänden je Abschnitt, und Flächen ohne Achse (Decken,
-Räume) bleiben wie bisher.
+Schraffurraster achsparallel zum Blatt.
+
+**Fertig, wenn:**
+- die Schraffur jeder Wand und jedes Bauteils mit Achse an der Wandachse ausgerichtet ist, auf dem Bildschirm, im PDF und im Schnitt;
+- gebogene Wände je Abschnitt ausgerichtet sind;
+- Flächen ohne Achse (Decken, Räume) wie bisher bleiben.
+
+**Umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf geprüft und zusammengeführt).
+- **Kern:**
+  - `Stil.MusterWinkel`: Richtung der Achse, [0, 180), 0.001°.
+  - `Stil.MusterUrsprung`: Lot vom Ursprung auf die Achse.
+  - Beides kommt über `Schraffuren.AnAchse`, für Wände und Unterzüge im Grundriss. Die Winkel der Tabelle gelten gegen die Achse.
+- **Anwendung:** auf dem Bildschirm in `plangrafik.js` (`patternTransform`), im PDF in `PdfZeichner.Schraffieren`.
+- **Bleiben achsparallel:**
+  - Decken, Räume, Füllbereiche;
+  - Stützen, deren Achse senkrecht zur Zeichenebene steht;
+  - der Schnitt, weil die Wandachse dort waagrecht liegt.
+- **Gebogene Wände** kennt das Modell nicht; IFC-Bogenwände gehen als Hintergrund. Bei einer Kette gerader Wände hat jeder Abschnitt seine eigene
+  Achse.
+- **Nebenbefund behoben:** Die Muster-Ids der offenen Ansichten waren nicht eindeutig. Die Schraffur einer sichtbaren Ansicht blieb leer, wenn
+  eine verborgene Ansicht früher im Dokument dasselbe Muster (Massstab, Winkel) hatte. Lösung: `neuerMusterPraefix`.
+- **Tests:**
+  - `SchraffurAchseTests.cs` (35)
+  - Node-Tests «N8 Muster» (8)
+  - Browser-Test `js/ansichten/schraffur-achse.browser.mjs` (23 Prüfungen am gerenderten Bild)
 
 ## N9 – Ausrichtung der Ansichten: nach Geometrie (Vorgabe) oder nach Himmelsrichtung
 
 Christian 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach himmelsrichtung oder nach geometrie ausgerichtet sein
-sollen. standard ist geometrie (längste Gebäudekante waagerecht)». Heute zeigt jede Ansicht das Projektsystem (Projekt-Nord = +y oben);
-bei schräg liegenden Gebäuden (Bernstrasse) steht der Grundriss schief. Entscheide Hauptlauf:
-- Neue Ansichtseigenschaft usrichtung: geometrie (Vorgabe) | himmelsrichtung. Gilt für Grundriss-artige Ansichten (Grundriss, Koordination,
-  Einlage/Aussparungsplan …); Schnitt und Ansicht folgen ihrer Linie, 3D und Schema/Liste sind nicht betroffen.
-- **geometrie:** Drehwinkel aus der längsten geraden Gebäudekante – Achse der längsten Aussenwand des Gebäudes (Angrenzung aussen, über alle
-  Geschosse), sonst der längsten Wand, sonst 0 – so gewählt, dass diese Kante waagrecht liegt und die Drehung klein bleibt (−45° … 45°).
-  Der Winkel wird am Gebäude gespeichert (planwinkel, Herkunft «längste Gebäudekante W-…, Länge, Richtung»), beim Import bzw. sobald Wände
-  da sind, und danach nur auf Befehl neu bestimmt oder von Hand gesetzt – die Ansichten springen nicht, wenn eine Wand dazukommt.
-- **himmelsrichtung:** geografisch Nord oben, Drehwinkel aus Projektinformation.nordwinkel (ohne Angabe 0, mit Hinweis).
-- Nur Darstellung: Modellkoordinaten bleiben. Alles in der Ansicht dreht mit (auch Unterlagen, Schnittlinien, Ausschnitt); Beschriftungen
-  bleiben lesbar (auf dem Bildschirm waagrecht); der Nordpfeil zeigt in beiden Fällen geografisch Nord.
-- Zeichnen in einer gedrehten Ansicht: Orthogonal-/Winkelfang und Koordinateneingabe beziehen sich auf die Ansichtsachsen (waagrecht
-  gezeichnet = parallel zur Gebäudekante); die Statusanzeige nennt Modellkoordinaten.
-- Plan-PDF und Planblatt übernehmen die Ausrichtung der Ansicht.
-**Fertig, wenn** Christian im Bernstrasse-Projekt den Grundriss gerade sieht (längste Kante waagrecht), auf «Himmelsrichtung» umschalten kann
-(Nord oben), Zeichnen, Fang und PDF in beiden Fällen stimmen und der Nordpfeil richtig zeigt.
+sollen. standard ist geometrie (längste Gebäudekante waagerecht)».
+
+Heute zeigt jede Ansicht das Projektsystem (Projekt-Nord = +y oben). Bei schräg liegenden Gebäuden wie der Bernstrasse steht der Grundriss
+deshalb schief.
+
+Entscheide Hauptlauf:
+- **Neue Ansichtseigenschaft `ausrichtung`:** `geometrie` (Vorgabe) | `himmelsrichtung`.
+  - Gilt für Grundriss-artige Ansichten: Grundriss, Koordination, Einlage- und Aussparungsplan …
+  - Schnitt und Ansicht folgen ihrer Linie; 3D sowie Schema und Liste sind nicht betroffen.
+- **`geometrie`:** Der Drehwinkel kommt aus der längsten geraden Gebäudekante.
+  - Massgebend ist die Achse der längsten Aussenwand des Gebäudes (Angrenzung aussen, über alle Geschosse). Gibt es keine, gilt die längste
+    Wand, sonst 0.
+  - Der Winkel wird so gewählt, dass diese Kante waagrecht liegt und die Drehung klein bleibt (−45° … 45°).
+  - Gespeichert wird er am Gebäude als `planwinkel`, mit Herkunft «längste Gebäudekante W-…, Länge, Richtung». Das geschieht beim Import bzw.
+    sobald Wände da sind.
+  - Danach wird er nur auf Befehl neu bestimmt oder von Hand gesetzt. Die Ansichten springen also nicht, wenn eine Wand dazukommt.
+- **`himmelsrichtung`:** Geografisch Nord liegt oben. Der Drehwinkel kommt aus `Projektinformation.nordwinkel`; ohne Angabe gilt 0, mit
+  Hinweis.
+- **Nur Darstellung:** Die Modellkoordinaten bleiben.
+  - Alles in der Ansicht dreht mit, auch Unterlagen, Schnittlinien und Ausschnitt.
+  - Beschriftungen bleiben lesbar, also auf dem Bildschirm waagrecht.
+  - Der Nordpfeil zeigt in beiden Fällen geografisch Nord.
+- **Zeichnen in einer gedrehten Ansicht:**
+  - Orthogonal- und Winkelfang sowie die Koordinateneingabe beziehen sich auf die Ansichtsachsen. Waagrecht gezeichnet heisst damit parallel
+    zur Gebäudekante.
+  - Die Statusanzeige nennt Modellkoordinaten.
+- **Plan-PDF und Planblatt** übernehmen die Ausrichtung der Ansicht.
+
+**Fertig, wenn:**
+- Christian im Bernstrasse-Projekt den Grundriss gerade sieht (längste Kante waagrecht);
+- er auf «Himmelsrichtung» umschalten kann (Nord oben);
+- Zeichnen, Fang und PDF in beiden Fällen stimmen;
+- der Nordpfeil richtig zeigt.
+
+## N10 – Mittlere Maustaste verschiebt in allen Ansichten
+
+Christian 21.10.2026: «mittlere maustaste = plan verschieben».
+
+Befund Hauptlauf:
+- Grundriss (`ansichten/grundriss.js`) und Schema verschieben mit der mittleren Taste bereits. Doppelklick mit der mittleren Taste zeigt
+  alles.
+- Im **3D** (`ansichten/ansicht3d.js`, OrbitControls) zoomt die mittlere Taste (MIDDLE = DOLLY); Verschieben liegt auf der rechten Taste.
+
+**Fertig, wenn:**
+- in jeder Ansicht Ziehen mit gedrückter mittlerer Taste verschiebt, auch während ein Werkzeug aktiv ist. Gemeint sind Grundriss, Schnitt bzw.
+  Ansicht, 3D, Schema, Plan bzw. Planblatt, Familieneditor, Unterlagen-Ansicht …;
+- das 3D wie Revit bedient wird: Mitte verschiebt, Shift + Mitte dreht (Orbit), das Rad zoomt;
+- ein Doppelklick mit der mittleren Taste überall gleich alles zeigt.
+
+## N11 – Navigationswürfel in der 3D-Ansicht (analog Revit ViewCube)
+
+Christian 21.10.2026: «In der 3d ansicht ein navigationswürfel anzeigen (analog revit)».
+
+**Fertig, wenn** oben rechts in der 3D-Ansicht ein Würfel steht, der die Kamera mitdreht:
+- Flächen OBEN, UNTEN, VORNE, HINTEN, LINKS, RECHTS; Flächen, Kanten und Ecken anklickbar für Standardansichten, mit weichem Übergang;
+- Ziehen am Würfel dreht;
+- ein Kompassring mit N/O/S/W; geografisch Nord kommt aus `Projektinformation.nordwinkel`;
+- ein Haus-Knopf für die Startansicht und das Kontextmenü «Aktuelle Ansicht als Startansicht»;
+- «VORNE» richtet sich nach der Gebäudeausrichtung (N9, `planwinkel` des Gebäudes); ohne Wert gelten die Projektachsen.
+
+**N10 und N11 umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf zusammengeführt).
+- **Mittlere Taste:** In allen Ansichten verschiebt sie, auch während ein Werkzeug aktiv ist. Im 3D gilt: Mitte verschiebt, Shift + Mitte
+  dreht, das Rad zoomt zum Zeiger. Ein Doppelklick mit der Mitte zeigt alles, aber nur, wenn dabei nicht gezogen wurde.
+- **Würfel:** oben rechts, mit 26 anklickbaren Bereichen (Flächen, Kanten, Ecken) und weicher Kamerafahrt; Ziehen am Würfel dreht.
+  - Kompassring mit Nordwinkel.
+  - Haus-Knopf und Kontextmenü für die Startansicht.
+- **Code und Tests:** `ansichten/maus.js`, `wuerfel-logik.js`, `wuerfel.js`; Node-Tests `maus.test.mjs`, Browser-Reihe
+  `maus-wuerfel.browser.mjs` (76 Prüfpunkte).
+
+**Offen:**
+1. **Planblatt:** Das PDF läuft im Betrachter des Browsers; dort löst die mittlere Taste dessen Autoscroll aus. Abhilfe wäre ein eigener
+   PDF-Betrachter (pdf.js).
+2. **Startansicht:** Sie liegt vorerst je Rechner im Browser (`localStorage`). Sie soll als Ansichtseigenschaft ins Modell, zusammen mit
+   dem 3D-Schnittbereich (N13).
+3. **VORNE:** Nach dem Zusammenführen von N9 Vorzeichen und Herkunft von `planwinkel` in `gebaeudeAusrichtungGrad`
+   (`wuerfel-logik.js`) prüfen.
+
+## N12 – IFC: Original oder Nachbau als Unterlage zeigen, je eigene Farbe (transparent)
+
+Christian 21.10.2026: «Es soll gewählt werden können ob das originale IFC oder der nachbau als Unterlage abgebildet werden soll.» – «für beide
+muss eine unterschiedliche farbe wählbar sein (transparent)».
+
+Bestand (Bestandsaufnahme 21.10.2026):
+- Die Netzdatei der IFC-Unterlage enthält die Originalgeometrie aller Produkte, mit Kennzeichen `uebernommen`.
+- Gezeichnet wird heute fest nur das nicht Übernommene, als Hintergrund: im Kern `GrundlagenIfc.Laden` mit `nurHintergrund: true`, im Web
+  `leseNetz` mit Vorgabe `hintergrund`.
+- Der Nachbau (Wand, Tür, Decke, Träger …) wird in eigener Darstellung gezeichnet.
+- Im Schnitt fehlt das Original ganz, weil `Schnittzerlegung` die Art `netz` nicht kennt.
+
+Entscheide Hauptlauf:
+- **Ansichtseigenschaft `ifcDarstellung`:**
+  - `nachbau` (Vorgabe, wie heute): Nachbau plus nicht übernommenes Original;
+  - `original`: Original aller Produkte; Elemente mit `kennungen.quelle` = diese Unterlage werden ausgeblendet;
+  - `beide`: übereinander, zum Vergleichen.
+- **Farben an der Unterlage:**
+  - Original: `farbeOriginal` und `deckkraft`, heute grau #8a8a8a mit 0.5.
+  - Nachbau: `farbeNachbau` und `deckkraftNachbau`. Vorgabe ist keine Übersteuerung, also die normale Darstellung.
+  - Beide sind wählbar und transparent. In `beide` müssen sie sich unterscheiden lassen.
+- **Geltungsbereich:** Grundriss (Schnitt auf Schnitthöhe), 3D sowie Schnitt und Ansicht; dort ist das Original-Netz neu. Kollision,
+  Aussparungen und IFC-Export bleiben unverändert.
+
+**Fertig, wenn** Christian in «Test_praxis»:
+- je Ansicht zwischen Original, Nachbau und beiden umschalten kann;
+- für beide Farbe und Transparenz wählen kann, im Dialog Sichtbarkeit/Grafiken bzw. an der Unterlage;
+- den Unterschied sieht, z. B. die Türen mit 5,19 m im Original gegenüber dem Nachbau.
+
+## N13 – 3D-Schnittbereich einstellbar (wie Revit)
+
+Christian 21.10.2026: «in der 3d Ansicht, sollte der 3dansichtsbereich eingestellt werden können. (es ist nur sichtbar was eingestellt
+ist, wie in revit)». Heute gibt es im 3D (`ansichten/ansicht3d.js`) keinen Schnittbereich, keine Clipping-Ebenen und keinen Ausschnitt.
+
+Entscheide Hauptlauf:
+- **Eigenschaft der 3D-Ansicht `schnittbereich`:** ein/aus, dazu ein Quader (min/max in Modell-mm).
+  - Ausgerichtet an der Gebäudeausrichtung (`planwinkel`, N9); ohne Wert an den Projektachsen.
+  - Gespeichert im Modell über die Befehle des Kerns, nicht nur im Browser.
+- **Sichtbarkeit:** Es ist nur sichtbar, was im Quader liegt. Geschnittene Bauteile werden an den Flächen des Quaders abgeschnitten (Clipping),
+  auch Unterlagen-Netze (IFC). Die Schnittflächen werden geschlossen dargestellt, soweit es mit vertretbarem Aufwand geht; sonst offen, mit Hinweis.
+- **Bedienung wie Revit:**
+  - Schalter «3D-Schnittbereich» in den Eigenschaften der 3D-Ansicht.
+  - Der Quader erscheint mit Griffen je Fläche; Ziehen an einem Griff verschiebt diese Fläche.
+  - «Schnittbereich an Auswahl anpassen» (Auswahl → Quader mit Rand).
+  - «Schnittbereich auf Geschoss» (OK/UK des Geschosses).
+  - Zurücksetzen auf das ganze Modell.
+- **Navigationswürfel (N11)** und mittlere Taste (N10) funktionieren unverändert mit eingeschaltetem Bereich.
+
+**Fertig, wenn** Christian in einer 3D-Ansicht den Bereich einschalten und an den Griffen auf einen Gebäudeteil oder ein Geschoss verkleinern
+kann, nur dieser Teil sichtbar und sauber abgeschnitten ist, die Einstellung mit der Ansicht gespeichert bleibt (auch nach Neustart und auf
+einem anderen Rechner) und die Auswahl darin weiter funktioniert.

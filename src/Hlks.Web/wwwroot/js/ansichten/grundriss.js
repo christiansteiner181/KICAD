@@ -16,7 +16,7 @@
 import { zustand, element, auswaehlen } from '../zustand.js';
 import { holen, abfrage } from '../api.js';
 import { ansichtsWerte, esc } from './hilfen.js';
-import { planSvg, fangdatenVon, schraffurMap } from './plangrafik.js';
+import { planSvg, fangdatenVon, schraffurMap, neuerMusterPraefix } from './plangrafik.js';
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
 import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText, svgAusModell, modellAusSvg } from './ausrichtung.js';   // N9: gedrehte Grundrisse
 
@@ -32,6 +32,9 @@ let schraffurenGeholt = null;
 const schraffuren = () => (schraffurenGeholt ??= holen('/api/schraffuren').then(schraffurMap).catch((e) => { schraffurenGeholt = null; console.warn('Schraffuren nicht geladen', e); return new Map(); }));
 
 function erstellen(behaelter, ansichtElement) {
+  // Muster-Ids je Ansicht eindeutig: Alle offenen Ansichten teilen ein Dokument; gleiche Ids (gleicher Massstab, gleicher Winkel) lösten
+  // «url(#…)» auf das erste Muster im Dokument auf – lag das in einer verborgenen Ansicht (display: none), blieb die Schraffur der sichtbaren leer.
+  const musterPraefix = neuerMusterPraefix();
   let ansicht = ansichtElement;
   let plan = null;               // letzte Plangrafik des Kerns
   let fang = null;               // Fangdaten, bei Bedarf aus plan berechnet
@@ -99,7 +102,7 @@ function erstellen(behaelter, ansichtElement) {
       plan = p;
       fang = null;
       ausrichtungUebernehmen();
-      planGruppe.innerHTML = planSvg(plan, sch);
+      planGruppe.innerHTML = planSvg(plan, sch, { idPraefix: musterPraefix });
       svg.style.setProperty('--m', String(massstab()));
       const hat = (plan.teile ?? []).length > 0;
       leer.hidden = hat;
@@ -284,10 +287,9 @@ function erstellen(behaelter, ansichtElement) {
     tip.hidden = true;
     if (e.button === 1) {
       e.preventDefault();
-      const jetzt = performance.now();
-      if (jetzt - letzteMitte < 400) { letzteMitte = 0; zoomAlles(); return; }   // Doppelklick mittlere Taste
-      letzteMitte = jetzt;
-      druck = { id: null, x: e.clientX, y: e.clientY, bewegt: true, taste: 1 };
+      if (letzteMitte > 0 && performance.now() - letzteMitte < 400) { letzteMitte = 0; zoomAlles(); return; }   // Doppelklick mittlere Taste (zählt nur ohne Ziehen)
+      letzteMitte = 0;
+      druck = { id: null, x: e.clientX, y: e.clientY, bewegt: true, taste: 1, weg: 0 };
       schiebenStart(e);
       return;
     }
@@ -317,6 +319,7 @@ function erstellen(behaelter, ansichtElement) {
     if (druck?.taste === 1 || (druck && schiebt)) {
       // Verschieben (mittlere Taste, Leertaste oder Ziehen auf leerer Fläche)
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
+      if (druck.taste === 1) druck.weg += Math.abs(dx) + Math.abs(dy);
       if (vb) {
         const { W, H } = groesse();
         vb.x -= dx * vb.w / W; vb.y -= dy * vb.h / H;
@@ -339,6 +342,7 @@ function erstellen(behaelter, ansichtElement) {
 
   function beiPointerUp(e) {
     if (e.button === 1 || druck?.taste === 1) {
+      if (druck?.taste === 1 && druck.weg <= 4) letzteMitte = performance.now();   // Klick ohne Ziehen: zählt für den Doppelklick
       druck = null;
       if (schiebt) { schiebt = false; svg.classList.remove('schiebt'); try { svg.releasePointerCapture(e.pointerId); } catch { /* egal */ } }
       return;

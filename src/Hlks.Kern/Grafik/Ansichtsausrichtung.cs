@@ -130,6 +130,16 @@ public static class Ansichtsausrichtung
             if (pr.Von is double v) pr.Von = v + grad;
             if (pr.Bis is double b) pr.Bis = b + grad;
         }
+        // Schraffur an einer Achse (N8): Muster dreht mit dem Primitiv um den Anker
+        if (pr.Stil.MusterWinkel is double mw)
+        {
+            var s = pr.Stil;   // Kopie: ein Stil kann mehreren Primitiven gehören
+            pr.Stil = new Stil
+            {
+                Stift = s.Stift, Linie = s.Linie, Farbe = s.Farbe, Fuellung = s.Fuellung, Muster = s.Muster, Deckkraft = s.Deckkraft, NurBildschirm = s.NurBildschirm,
+                MusterWinkel = Norm(mw + grad), MusterUrsprung = s.MusterUrsprung is { Length: >= 2 } u ? UmPunkt(u, anker, grad) : null,
+            };
+        }
     }
 
     /// <summary>Winkel auf (−180, 180]; 0 wird null (wie bisher ohne Drehung).</summary>

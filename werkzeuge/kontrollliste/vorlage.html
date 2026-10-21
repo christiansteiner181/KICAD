@@ -1,0 +1,328 @@
+<title>KICAD Kontrollliste</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Source+Sans+3:wght@400;600;700&family=IBM+Plex+Mono:wght@500&display=swap">
+<style>
+/* Layout: Arbeitsliste wie ein Prüfprotokoll – links Kapitel mit Fortschritt, rechts Funktionen als aufklappbare Prüfzeilen */
+:root {
+  --bg: #f3f5f4; --flaeche: #ffffff; --fg: #1d2522; --leise: #5b6863; --linie: #d6ddda;
+  --akzent: #1f6f5c; --akzent-weich: #e1efe9;
+  --ok: #237a3b; --ok-weich: #e3f3e6; --mangel: #b3261e; --mangel-weich: #fbe7e5; --offen: #8a948f;
+  --schrift: "Source Sans 3", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", ui-monospace, "Cascadia Mono", Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) { :root:not([data-theme="light"]) {
+  --bg: #121715; --flaeche: #1a211e; --fg: #e3ebe7; --leise: #9aa8a2; --linie: #2e3934;
+  --akzent: #5fbf9f; --akzent-weich: #1f3a31;
+  --ok: #6fcf86; --ok-weich: #1d3324; --mangel: #ff8a80; --mangel-weich: #3d1f1d; --offen: #7c8a84; color-scheme: dark } }
+:root[data-theme="dark"] {
+  --bg: #121715; --flaeche: #1a211e; --fg: #e3ebe7; --leise: #9aa8a2; --linie: #2e3934;
+  --akzent: #5fbf9f; --akzent-weich: #1f3a31;
+  --ok: #6fcf86; --ok-weich: #1d3324; --mangel: #ff8a80; --mangel-weich: #3d1f1d; --offen: #7c8a84; color-scheme: dark }
+* { box-sizing: border-box }
+body { background: var(--bg); color: var(--fg); font-family: var(--schrift); font-size: 15px; line-height: 1.45;
+  padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 20px 40px }
+.seite { max-width: 1180px; margin: 0 auto; display: flex; flex-direction: column; gap: 18px }
+header { display: flex; flex-wrap: wrap; align-items: flex-end; justify-content: space-between; gap: 12px }
+h1 { font-size: 26px; margin: 0; letter-spacing: -0.01em; text-wrap: balance }
+.unter { color: var(--leise); margin: 2px 0 0; max-width: 70ch }
+.zahlen { display: flex; gap: 10px; flex-wrap: wrap; font-variant-numeric: tabular-nums }
+.zahl { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 8px; padding: 6px 12px; min-width: 92px }
+.zahl b { display: block; font-size: 22px; line-height: 1.1 }
+.zahl span { font-size: 12px; color: var(--leise); text-transform: uppercase; letter-spacing: 0.06em }
+.zahl.ok b { color: var(--ok) } .zahl.mangel b { color: var(--mangel) }
+.hinweis-stand { background: var(--akzent-weich); border-radius: 8px; padding: 10px 14px; font-size: 14px }
+.hinweis-stand code, .wo code { font-family: var(--mono); font-size: 12.5px }
+.speicher { font-size: 13px; color: var(--leise) }
+.speicher.fehler { color: var(--mangel) }
+.raster { display: grid; grid-template-columns: 270px minmax(0, 1fr); gap: 18px; align-items: start }
+@media (max-width: 820px) { .raster { grid-template-columns: minmax(0, 1fr) } }
+nav { background: var(--flaeche); border: 1px solid var(--linie); border-radius: 10px; padding: 6px; position: sticky; top: env(safe-area-inset-top, 0px) }
+@media (max-width: 820px) { nav { position: static } }
+nav button { all: unset; box-sizing: border-box; width: 100%; display: grid; grid-template-columns: 1fr auto; gap: 2px 8px; padding: 8px 10px; border-radius: 7px; cursor: pointer }
+nav button:hover { background: var(--bg) }
+nav button[aria-current="true"] { background: var(--akzent-weich) }
+nav button:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px }
+nav .k-titel { font-weight: 600; font-size: 14px }
+nav .k-zahl { font-size: 12px; color: var(--leise); font-variant-numeric: tabular-nums; text-align: right }
+nav .k-status { grid-column: 1 / -1; font-size: 12px; color: var(--leise) }
+.balken { grid-column: 1 / -1; height: 4px; border-radius: 2px; background: var(--linie); display: flex; overflow: hidden }
+.balken i { display: block; height: 100% } .balken .b-ok { background: var(--ok) } .balken .b-mangel { background: var(--mangel) }
+.werkzeug { display: flex; flex-wrap: wrap; gap: 10px; align-items: center }
+.werkzeug input[type="search"] { flex: 1 1 220px; min-width: 0; font: inherit; padding: 8px 10px; border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); color: var(--fg) }
+.filter { display: inline-flex; border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; background: var(--flaeche) }
+.filter button { font: inherit; font-size: 14px; border: 0; background: none; color: var(--fg); padding: 7px 11px; cursor: pointer }
+.filter button[aria-pressed="true"] { background: var(--akzent); color: var(--flaeche) }
+.knopf { font: inherit; font-size: 14px; border: 1px solid var(--linie); border-radius: 8px; background: var(--flaeche); color: var(--fg); padding: 7px 12px; cursor: pointer }
+.knopf:focus-visible, .filter button:focus-visible, .seg button:focus-visible, .kopf:focus-visible { outline: 2px solid var(--akzent); outline-offset: 1px }
+.kapitel-kopf h2 { font-size: 19px; margin: 6px 0 2px }
+.kapitel-kopf p { margin: 0; color: var(--leise); max-width: 75ch; font-size: 14px }
+.liste { display: flex; flex-direction: column; gap: 8px }
+.fn { background: var(--flaeche); border: 1px solid var(--linie); border-left: 4px solid var(--offen); border-radius: 8px }
+.fn[data-status="ok"] { border-left-color: var(--ok) } .fn[data-status="mangel"] { border-left-color: var(--mangel) }
+.fn-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; padding: 10px 12px }
+.kopf { all: unset; flex: 1 1 260px; min-width: 0; cursor: pointer; display: flex; flex-direction: column; gap: 2px }
+.kopf .t { font-weight: 600 }
+.wo { font-size: 13px; color: var(--leise) }
+.wo code { background: var(--bg); border-radius: 4px; padding: 0 4px }
+.seg { display: inline-flex; border: 1px solid var(--linie); border-radius: 8px; overflow: hidden; flex: 0 0 auto }
+.seg button { font: inherit; font-size: 13px; border: 0; background: var(--flaeche); color: var(--fg); padding: 6px 10px; cursor: pointer }
+.seg button + button { border-left: 1px solid var(--linie) }
+.seg button[data-w="ok"][aria-pressed="true"] { background: var(--ok); color: var(--flaeche) }
+.seg button[data-w="mangel"][aria-pressed="true"] { background: var(--mangel); color: var(--flaeche) }
+.seg button[data-w=""][aria-pressed="true"] { background: var(--bg) }
+.bem-mark { font-size: 12px; color: var(--mangel); flex: 0 0 auto }
+.fn-inhalt { border-top: 1px solid var(--linie); padding: 12px 14px 14px; display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px }
+@media (max-width: 720px) { .fn-inhalt { grid-template-columns: minmax(0, 1fr) } }
+.fn-inhalt h3 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.07em; color: var(--leise); margin: 0 0 4px }
+.fn-inhalt ol { margin: 0; padding-left: 20px } .fn-inhalt ol li { margin-bottom: 3px }
+.fn-inhalt p { margin: 0 }
+.punkte { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 5px }
+.punkte label { display: flex; gap: 8px; align-items: flex-start; cursor: pointer }
+.punkte input { margin-top: 3px; accent-color: var(--ok) }
+textarea { width: 100%; min-height: 70px; font: inherit; font-size: 14px; padding: 8px; border: 1px solid var(--linie); border-radius: 8px; background: var(--bg); color: var(--fg); resize: vertical }
+textarea:focus-visible { outline: 2px solid var(--akzent) }
+.voll { grid-column: 1 / -1 }
+.klein { font-size: 13px; color: var(--leise) }
+.leer { padding: 24px; text-align: center; color: var(--leise); background: var(--flaeche); border: 1px dashed var(--linie); border-radius: 8px }
+@media (prefers-reduced-motion: no-preference) { .fn { transition: border-color .15s } }
+</style>
+
+<div class="seite">
+  <header>
+    <div>
+      <h1>KICAD Kontrollliste</h1>
+      <p class="unter">Alle lauffähigen Module mit ihren Funktionen: wo sie liegen, wie man sie bedient, was zu erwarten ist. Je Funktion OK oder Mangel setzen und eine Bemerkung schreiben – Claude liest die Befunde direkt.</p>
+    </div>
+    <div class="zahlen" aria-live="polite">
+      <div class="zahl ok"><b id="z-ok">0</b><span>OK</span></div>
+      <div class="zahl mangel"><b id="z-mangel">0</b><span>Mängel</span></div>
+      <div class="zahl"><b id="z-offen">0</b><span>offen</span></div>
+    </div>
+  </header>
+  <div class="hinweis-stand" id="stand"></div>
+  <div class="werkzeug">
+    <input type="search" id="suche" placeholder="Suchen: Funktion, Knopf, Kürzel …" aria-label="Funktionen durchsuchen">
+    <div class="filter" role="group" aria-label="Nach Status filtern">
+      <button type="button" data-f="alle" aria-pressed="true">Alle</button>
+      <button type="button" data-f="offen" aria-pressed="false">Offen</button>
+      <button type="button" data-f="ok" aria-pressed="false">OK</button>
+      <button type="button" data-f="mangel" aria-pressed="false">Mängel</button>
+    </div>
+    <button type="button" class="knopf" id="kopieren">Mängel als Text kopieren</button>
+    <span class="speicher" id="speicher">Verbinde …</span>
+  </div>
+  <div class="raster">
+    <nav aria-label="Kapitel" id="nav"></nav>
+    <main id="haupt"></main>
+  </div>
+</div>
+
+<script type="application/json" id="daten">__DATEN__</script>
+<script>
+(() => {
+  const DATEN = JSON.parse(document.getElementById('daten').textContent);
+  const zustand = new Map();          // Funktions-Id -> { status, bemerkung, punkte[], zeit }
+  const schmutzig = new Set();        // lokal geändert, Schreiben ausstehend
+  const laeuft = new Map();           // Id -> laufendes Schreiben (Promise)
+  const offenZu = new Set();          // aufgeklappte Funktionen
+  let db = null, kapitelWahl = 'alle', filter = 'alle', suche = '';
+  const alle = [];
+  for (const k of DATEN.kapitel) for (const f of k.funktionen) alle.push({ k, f });
+
+  const $ = (s, el = document) => el.querySelector(s);
+  const esc = (t) => String(t ?? '').replace(/[&<>"]/g, (c) => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  const z = (id) => zustand.get(id) || { status: '', bemerkung: '', punkte: [] };
+
+  function woText(wo) {
+    if (!wo) return '';
+    const pfad = [wo.register, wo.gruppe, wo.knopf].filter(Boolean).map(esc).join(' › ');
+    const teile = [];
+    if (pfad) teile.push(pfad);
+    if (wo.kuerzel) teile.push('<code>' + esc(wo.kuerzel) + '</code>');
+    if (wo.sonst) teile.push(esc(wo.sonst));
+    return teile.join(' · ');
+  }
+
+  function zaehle(liste) {
+    let ok = 0, mangel = 0;
+    for (const { f } of liste) { const s = z(f.id).status; if (s === 'ok') ok++; else if (s === 'mangel') mangel++; }
+    return { ok, mangel, offen: liste.length - ok - mangel, n: liste.length };
+  }
+
+  function passt({ k, f }) {
+    if (kapitelWahl !== 'alle' && k.id !== kapitelWahl) return false;
+    const s = z(f.id).status;
+    if (filter === 'offen' && s) return false;
+    if (filter !== 'alle' && filter !== 'offen' && s !== filter) return false;
+    if (suche) {
+      const t = [f.titel, f.id, f.wo && Object.values(f.wo).join(' '), f.erwartung].join(' ').toLowerCase();
+      if (!t.includes(suche)) return false;
+    }
+    return true;
+  }
+
+  function zeichneNav() {
+    const nav = $('#nav');
+    const eintraege = [{ id: 'alle', titel: 'Alle Module', status: '', liste: alle }]
+      .concat(DATEN.kapitel.map((k) => ({ id: k.id, titel: (k.modul && k.modul !== '–' ? k.modul + ' · ' : '') + k.titel, status: k.status, liste: alle.filter((x) => x.k === k) })));
+    nav.innerHTML = eintraege.map((e) => {
+      const c = zaehle(e.liste);
+      const pOk = c.n ? (100 * c.ok / c.n) : 0, pM = c.n ? (100 * c.mangel / c.n) : 0;
+      return `<button type="button" data-k="${esc(e.id)}" aria-current="${e.id === kapitelWahl}">
+        <span class="k-titel">${esc(e.titel)}</span><span class="k-zahl">${c.ok + c.mangel}/${c.n}</span>
+        ${e.status ? `<span class="k-status">${esc(e.status)}</span>` : ''}
+        <span class="balken" aria-hidden="true"><i class="b-ok" style="width:${pOk}%"></i><i class="b-mangel" style="width:${pM}%"></i></span>
+      </button>`;
+    }).join('');
+    const c = zaehle(alle);
+    $('#z-ok').textContent = c.ok; $('#z-mangel').textContent = c.mangel; $('#z-offen').textContent = c.offen;
+  }
+
+  function fnHtml({ k, f }) {
+    const s = z(f.id);
+    const offen = offenZu.has(f.id);
+    const punkte = (f.pruefpunkte || []).map((p, i) => `<li><label><input type="checkbox" data-p="${i}" ${s.punkte && s.punkte[i] ? 'checked' : ''}> <span>${esc(p)}</span></label></li>`).join('');
+    const schritte = (f.schritte || []).map((x) => `<li>${esc(x)}</li>`).join('');
+    return `<article class="fn" data-id="${esc(f.id)}" data-status="${esc(s.status)}">
+      <div class="fn-zeile">
+        <button type="button" class="kopf" aria-expanded="${offen}" aria-controls="i-${esc(f.id)}">
+          <span class="t">${esc(f.titel)}</span>
+          <span class="wo">${kapitelWahl === 'alle' ? esc(k.modul && k.modul !== '–' ? 'Modul ' + k.modul + ' · ' : '') : ''}${woText(f.wo)}</span>
+        </button>
+        ${s.bemerkung ? '<span class="bem-mark" title="Bemerkung vorhanden">● Bemerkung</span>' : ''}
+        <div class="seg" role="group" aria-label="Status von ${esc(f.titel)}">
+          <button type="button" data-w="ok" aria-pressed="${s.status === 'ok'}">OK</button>
+          <button type="button" data-w="mangel" aria-pressed="${s.status === 'mangel'}">Mangel</button>
+          <button type="button" data-w="" aria-pressed="${!s.status}">offen</button>
+        </div>
+      </div>
+      <div class="fn-inhalt" id="i-${esc(f.id)}" ${offen ? '' : 'hidden'}>
+        <div><h3>Bedienung</h3>${schritte ? `<ol>${schritte}</ol>` : '<p class="klein">–</p>'}</div>
+        <div><h3>Erwartung</h3><p>${esc(f.erwartung || '–')}</p></div>
+        <div class="voll"><h3>Prüfpunkte</h3>${punkte ? `<ul class="punkte">${punkte}</ul>` : '<p class="klein">–</p>'}</div>
+        <div class="voll"><h3>Bemerkung</h3><textarea id="b-${esc(f.id)}" placeholder="Was stimmt nicht, was soll anders sein?">${esc(s.bemerkung || '')}</textarea>
+          ${f.hinweis ? `<p class="klein">${esc(f.hinweis)}</p>` : ''}</div>
+      </div>
+    </article>`;
+  }
+
+  function zeichneListe() {
+    const haupt = $('#haupt');
+    const treffer = alle.filter(passt);
+    let kopf = '';
+    if (kapitelWahl !== 'alle') {
+      const k = DATEN.kapitel.find((x) => x.id === kapitelWahl);
+      kopf = `<div class="kapitel-kopf"><h2>${esc((k.modul && k.modul !== '–' ? 'Modul ' + k.modul + ' – ' : '') + k.titel)}</h2>${k.status ? `<p><b>${esc(k.status)}</b></p>` : ''}${k.einleitung ? `<p>${esc(k.einleitung)}</p>` : ''}</div>`;
+    }
+    haupt.innerHTML = kopf + (treffer.length
+      ? `<div class="liste">${treffer.map(fnHtml).join('')}</div>`
+      : `<div class="leer">Keine Funktion passt zu Filter und Suche.</div>`);
+  }
+
+  function aktualisiereKarte(id) {
+    const el = document.querySelector(`.fn[data-id="${CSS.escape(id)}"]`);
+    if (!el) return;
+    const s = z(id);
+    el.dataset.status = s.status || '';
+    for (const b of el.querySelectorAll('.seg button')) b.setAttribute('aria-pressed', String((b.dataset.w || '') === (s.status || '')));
+    for (const c of el.querySelectorAll('input[data-p]')) c.checked = !!(s.punkte && s.punkte[+c.dataset.p]);
+    const ta = el.querySelector('textarea');
+    if (ta && document.activeElement !== ta) ta.value = s.bemerkung || '';
+    const mark = el.querySelector('.bem-mark');
+    if (!!s.bemerkung !== !!mark) {
+      if (mark) mark.remove();
+      else el.querySelector('.seg').insertAdjacentHTML('beforebegin', '<span class="bem-mark" title="Bemerkung vorhanden">● Bemerkung</span>');
+    }
+  }
+
+  function speicherAnzeige(text, fehler) { const e = $('#speicher'); e.textContent = text; e.classList.toggle('fehler', !!fehler); }
+
+  async function schreiben(id) {
+    if (!db) { speicherAnzeige('Nicht gespeichert – Speicher nicht verfügbar', true); return; }
+    if (laeuft.has(id)) { schmutzig.add(id); return; }   // eine Schreibung je Dokument; danach nochmals
+    schmutzig.delete(id);
+    const fund = alle.find((x) => x.f.id === id);
+    const s = z(id);
+    const dok = { status: s.status || '', bemerkung: s.bemerkung || '', punkte: s.punkte || [], zeit: s.zeit || new Date().toISOString(),
+      titel: fund ? fund.f.titel : '', kapitel: fund ? fund.k.id : '', modul: fund ? (fund.k.modul || '') : '' };
+    const p = db.collection('pruefung').doc(id).set(dok);
+    laeuft.set(id, p);
+    speicherAnzeige('Speichert …');
+    try { await p; speicherAnzeige('Gespeichert ' + new Date().toLocaleTimeString('de-CH', { hour: '2-digit', minute: '2-digit' })); }
+    catch (e) { speicherAnzeige('Speichern fehlgeschlagen: ' + (e && e.message ? e.message : 'unbekannt') + ' – Änderung bleibt hier stehen', true); schmutzig.add(id); }
+    finally { laeuft.delete(id); if (schmutzig.has(id)) schreiben(id); }
+  }
+
+  function aendere(id, teil) {
+    const s = Object.assign({ status: '', bemerkung: '', punkte: [] }, z(id), teil, { zeit: new Date().toISOString() });
+    zustand.set(id, s);
+    aktualisiereKarte(id); zeichneNav();
+    schreiben(id);
+  }
+
+  const verzoegert = new Map();
+  document.addEventListener('click', (e) => {
+    const k = e.target.closest('nav button[data-k]');
+    if (k) { kapitelWahl = k.dataset.k; zeichneNav(); zeichneListe(); $('#haupt').scrollIntoView({ block: 'start', behavior: 'smooth' }); return; }
+    const f = e.target.closest('.filter button[data-f]');
+    if (f) { filter = f.dataset.f; for (const b of document.querySelectorAll('.filter button')) b.setAttribute('aria-pressed', String(b === f)); zeichneListe(); return; }
+    const seg = e.target.closest('.seg button');
+    if (seg) { const id = seg.closest('.fn').dataset.id; aendere(id, { status: seg.dataset.w || '' }); return; }
+    const kopf = e.target.closest('.kopf');
+    if (kopf) {
+      const fn = kopf.closest('.fn'), id = fn.dataset.id, inhalt = fn.querySelector('.fn-inhalt');
+      const auf = inhalt.hidden; inhalt.hidden = !auf; kopf.setAttribute('aria-expanded', String(auf));
+      if (auf) offenZu.add(id); else offenZu.delete(id);
+    }
+  });
+  document.addEventListener('change', (e) => {
+    const c = e.target.closest('input[data-p]');
+    if (!c) return;
+    const id = c.closest('.fn').dataset.id, s = z(id);
+    const punkte = (s.punkte || []).slice(); punkte[+c.dataset.p] = c.checked;
+    for (let i = 0; i < punkte.length; i++) if (punkte[i] == null) punkte[i] = false;
+    aendere(id, { punkte });
+  });
+  document.addEventListener('input', (e) => {
+    const ta = e.target.closest('textarea');
+    if (!ta) return;
+    const id = ta.closest('.fn').dataset.id;
+    clearTimeout(verzoegert.get(id));
+    verzoegert.set(id, setTimeout(() => aendere(id, { bemerkung: ta.value }), 700));
+  });
+  $('#suche').addEventListener('input', (e) => { suche = e.target.value.trim().toLowerCase(); zeichneListe(); });
+  $('#kopieren').addEventListener('click', async () => {
+    const zeilen = [];
+    for (const { k, f } of alle) {
+      const s = z(f.id);
+      if (s.status === 'mangel' || (s.bemerkung && s.status !== 'ok')) zeilen.push(`- ${k.modul && k.modul !== '–' ? 'Modul ' + k.modul + ' · ' : ''}${f.titel} (${f.id}): ${s.bemerkung || 'Mangel ohne Bemerkung'}`);
+    }
+    const text = zeilen.length ? 'Mängel aus der KICAD Kontrollliste:\n' + zeilen.join('\n') : 'Keine Mängel erfasst.';
+    try { await navigator.clipboard.writeText(text); speicherAnzeige('Mängelliste kopiert (' + zeilen.length + ')'); }
+    catch { speicherAnzeige('Kopieren nicht möglich – bitte Claude «lies die Kontrollliste» schreiben', true); }
+  });
+
+  // Stand
+  $('#stand').innerHTML = DATEN.standHtml;
+
+  zeichneNav(); zeichneListe();
+
+  // Gemeinsamer Speicher: Befunde liegen im Datenspeicher der Seite, Claude liest sie mit.
+  (async () => {
+    try { db = window.claude && window.claude.use ? await window.claude.use('db') : null; } catch { db = null; }
+    if (!db) { speicherAnzeige('Speicher nicht verfügbar – Eingaben gehen beim Schliessen verloren', true); return; }
+    speicherAnzeige('Lädt Befunde …');
+    db.collection('pruefung').onSnapshot((snap) => {
+      for (const d of snap.docs) {
+        if (schmutzig.has(d.id) || laeuft.has(d.id) || verzoegert.has(d.id) && document.activeElement && document.activeElement.id === 'b-' + d.id) continue;
+        const x = d.data() || {};
+        zustand.set(d.id, { status: x.status || '', bemerkung: x.bemerkung || '', punkte: Array.isArray(x.punkte) ? x.punkte : [], zeit: x.zeit || '' });
+        aktualisiereKarte(d.id);
+      }
+      zeichneNav();
+      if (!laeuft.size) speicherAnzeige(snap.size ? `Befunde geladen (${snap.size})` : 'Bereit – noch keine Befunde erfasst');
+    }, (err) => speicherAnzeige('Befunde nicht lesbar: ' + (err && err.message ? err.message : 'Fehler'), true));
+  })();
+})();
+</script>

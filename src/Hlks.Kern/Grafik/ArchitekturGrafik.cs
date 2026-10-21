@@ -122,6 +122,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             belegt = Polygone.Vereinigen(belegt, f);
             var flaechen = Polygone.Flaechen(f);
             var s = stil(w);
+            Schraffuren.AnAchse(s, w.Ax, w.Ay, w.Bx, w.By);   // N8: Muster folgt der Wandachse
             var punkte = new List<double[]> { new[] { w.Ax, w.Ay }, new[] { w.Bx, w.By } };
             foreach (var fl in flaechen) { punkte.AddRange(fl.Aussen); foreach (var l in fl.Loecher) punkte.AddRange(l); }
             v.Waende[w.Id] = new Grafikteil
@@ -165,7 +166,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 
     static Stil Kopie(Stil s) => new()
     {
-        Stift = s.Stift, Linie = s.Linie, Farbe = s.Farbe, Fuellung = s.Fuellung, Muster = s.Muster, Deckkraft = s.Deckkraft, NurBildschirm = s.NurBildschirm,
+        Stift = s.Stift, Linie = s.Linie, Farbe = s.Farbe, Fuellung = s.Fuellung, Muster = s.Muster, MusterWinkel = s.MusterWinkel, MusterUrsprung = s.MusterUrsprung, Deckkraft = s.Deckkraft, NurBildschirm = s.NurBildschirm,
     };
 
     // ------------------------------------------------------------------ Plan je Element
@@ -672,11 +673,14 @@ public sealed class ArchitekturGrafik : IGrafikquelle
     static int Schnittlage(double unten, double? hoehe, double schnitthoehe) =>
         unten > schnitthoehe ? 1 : hoehe is double h && h > 0 && unten + h <= schnitthoehe ? -1 : 0;
 
-    static Stil BauteilStil(string? material, int lage)
+    /// <summary>Stil der Schnittfläche bzw. Sichtkante. Mit Achse von → bis (Unterzug) folgt die Schraffur der Achse (N8); Stützen
+    /// haben im Grundriss keine Achsrichtung (ihre Achse steht senkrecht zur Zeichenebene) und bleiben achsparallel.</summary>
+    static Stil BauteilStil(string? material, int lage, double[]? von = null, double[]? bis = null)
     {
         if (lage != 0) return new Stil { Stift = Stifte.Duenn, Linie = lage > 0 ? "strich" : "voll" };
         var s = Schnittstil(material);
         s.Stift = Stifte.Dick;
+        if (von is not null && bis is not null) Schraffuren.AnAchse(s, von[0], von[1], bis[0], bis[1]);
         return s;
     }
 
@@ -716,7 +720,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             new Grafikteil
             {
                 Id = e.Id, Ebene = "wand",
-                Primitive = [new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(e.Text("material"), lage) }],
+                Primitive = [new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(e.Text("material"), lage, a, b) }],
                 Fangpunkte = [a, b, .. ring],
                 Fangkanten = [[ring[0], ring[1]], [ring[2], ring[3]]],
             },

@@ -455,6 +455,6 @@ public static class SchemaSymbole
     {
         Art = pr.Art, Punkte = pr.Punkte.Select(q => (double[])q.Clone()).ToList(), Radius = pr.Radius, Von = pr.Von, Bis = pr.Bis,
         Text = pr.Text, Groesse = pr.Groesse, Ausrichtung = pr.Ausrichtung, Winkel = pr.Winkel, Fett = pr.Fett,
-        Stil = new Stil { Stift = pr.Stil.Stift, Linie = pr.Stil.Linie, Farbe = pr.Stil.Farbe, Fuellung = pr.Stil.Fuellung, Muster = pr.Stil.Muster, Deckkraft = pr.Stil.Deckkraft, NurBildschirm = pr.Stil.NurBildschirm },
+        Stil = new Stil { Stift = pr.Stil.Stift, Linie = pr.Stil.Linie, Farbe = pr.Stil.Farbe, Fuellung = pr.Stil.Fuellung, Muster = pr.Stil.Muster, MusterWinkel = pr.Stil.MusterWinkel, MusterUrsprung = pr.Stil.MusterUrsprung, Deckkraft = pr.Stil.Deckkraft, NurBildschirm = pr.Stil.NurBildschirm },
     };
 }

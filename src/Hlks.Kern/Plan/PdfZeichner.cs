@@ -211,6 +211,11 @@ public sealed class PdfZeichner
         if (muster.Art == "voll") { gfx.DrawPath(new XSolidBrush(farbe), pfad); return; }
         if (muster.AbstandMm <= 0) return;
 
+        // Muster folgt der Achse des Bauteils (N8): Drehung und Anker kommen aus dem Kern (Stil.MusterWinkel/-Ursprung). Ohne sie gilt
+        // das Papierraster: achsparallel, Anker im Papierursprung.
+        double drehung = p.Stil.MusterWinkel ?? 0;
+        var (ax, ay) = p.Stil.MusterUrsprung is { Length: >= 2 } anker ? (abb.X(anker[0]), abb.Y(anker[1])) : (0.0, 0.0);
+
         var zustand = gfx.Save();
         gfx.IntersectClip(pfad);
         if (muster.Art == "linien")
@@ -219,9 +224,10 @@ public sealed class PdfZeichner
             double cx = (x0 + x1) / 2, cy = (y0 + y1) / 2, r = Math.Sqrt((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)) / 2;
             foreach (var winkel in muster.Winkel)
             {
-                double w = winkel * Math.PI / 180, dx = Math.Cos(w), dy = Math.Sin(w), nx = -dy, ny = dx;
-                // Abstand der Ecken zur Linie durch den Ursprung: n·p
-                var ns = new[] { nx * x0 + ny * y0, nx * x1 + ny * y0, nx * x0 + ny * y1, nx * x1 + ny * y1 };
+                double w = (winkel + drehung) * Math.PI / 180, dx = Math.Cos(w), dy = Math.Sin(w), nx = -dy, ny = dx;
+                // Abstand der Ecken zur Linie durch den Anker: n·(p − Anker); die Linien liegen bei k·d
+                double b0 = nx * ax + ny * ay;
+                var ns = new[] { nx * x0 + ny * y0 - b0, nx * x1 + ny * y0 - b0, nx * x0 + ny * y1 - b0, nx * x1 + ny * y1 - b0 };
                 double d = muster.AbstandMm;
                 int k0 = (int)Math.Floor(ns.Min() / d), k1 = (int)Math.Ceiling(ns.Max() / d);
                 if (k1 - k0 + 1 > MaxLinien) d = (ns.Max() - ns.Min()) / MaxLinien;
@@ -229,7 +235,7 @@ public sealed class PdfZeichner
                 double tc = dx * cx + dy * cy;
                 for (int k = k0; k <= k1; k++)
                 {
-                    double bx = nx * k * d, by = ny * k * d;
+                    double bx = nx * (b0 + k * d), by = ny * (b0 + k * d);
                     gfx.DrawLine(pen, Pt(bx + dx * (tc - r), by + dy * (tc - r)), Pt(bx + dx * (tc + r), by + dy * (tc + r)));
                 }
             }
@@ -238,13 +244,24 @@ public sealed class PdfZeichner
         {
             var pen = new XPen(farbe, PunktMm * PtJeMm) { LineCap = XLineCap.Round };
             double d = muster.AbstandMm;
-            double anzahl = (x1 - x0) / d * ((y1 - y0) / d);
+            // Punktraster im Bauteilsystem: Ursprung im Anker, x-Achse um die Drehung gegen das Blatt gedreht
+            double wr = drehung * Math.PI / 180, c = Math.Cos(wr), s = Math.Sin(wr);
+            double lx0 = double.MaxValue, lx1 = double.MinValue, ly0 = double.MaxValue, ly1 = double.MinValue;
+            foreach (var (ex, ey) in new[] { (x0, y0), (x1, y0), (x0, y1), (x1, y1) })
+            {
+                double lx = c * (ex - ax) + s * (ey - ay), ly = -s * (ex - ax) + c * (ey - ay);
+                lx0 = Math.Min(lx0, lx); lx1 = Math.Max(lx1, lx); ly0 = Math.Min(ly0, ly); ly1 = Math.Max(ly1, ly);
+            }
+            double anzahl = (lx1 - lx0) / d * ((ly1 - ly0) / d);
             if (anzahl > MaxPunkte) d *= Math.Sqrt(anzahl / MaxPunkte);
             var ringe = new List<List<(double X, double Y)>> { ring };
             foreach (var loch in p.Loecher ?? []) ringe.Add(loch.Select(q => (abb.X(q[0]), abb.Y(q[1]))).ToList());
-            for (double y = Math.Ceiling(y0 / d) * d; y <= y1; y += d)
-                for (double x = Math.Ceiling(x0 / d) * d; x <= x1; x += d)
+            for (double ly = Math.Ceiling(ly0 / d) * d; ly <= ly1; ly += d)
+                for (double lx = Math.Ceiling(lx0 / d) * d; lx <= lx1; lx += d)
+                {
+                    double x = ax + c * lx - s * ly, y = ay + s * lx + c * ly;
                     if (Innen(ringe, x, y)) gfx.DrawLine(pen, Pt(x, y), Pt(x + 0.01, y));   // Punkt = sehr kurzer Strich mit runder Kappe
+                }
         }
         gfx.Restore(zustand);
     }

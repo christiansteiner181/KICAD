@@ -176,6 +176,110 @@ test('Muster: Schraffur als SVG-pattern, Abstand mm Papier × Massstab, Winkel, 
   assert.match(svg, /class="ph"/);
 });
 
+// ---------- N8: Schraffur folgt der Achse des Bauteils (Kern: Stil.musterWinkel / Stil.musterUrsprung) ----------
+const BACKSTEIN = { name: 'backstein', art: 'linien', winkel: [45], abstandMm: 1.2, annahme: false };
+const schraffuren8 = pg.schraffurMap([BETON, PUTZ, BACKSTEIN]);
+const wandPoly = (muster, stil = {}) => ({ ebene: 'wand', primitive: [prim('polygon', { punkte: [[0, 0], [2000, 0], [2000, 1000], [0, 1000]] }, { stift: null, fuellung: 'papier', muster, ...stil })] });
+/** Patterns des SVG als { id, w, tx, ty } (patternTransform «rotate(w)» bzw. «rotate(w) translate(tx ty)»). */
+const patterns = (svg) => [...svg.matchAll(/<pattern ([^>]*)>/g)].map((m) => {
+  const t = m[1].match(/patternTransform="rotate\(([-\d.]+)\)(?: translate\(([-\d.]+) ([-\d.]+)\))?"/);
+  return { id: m[1].match(/id="([^"]+)"/)[1], w: Number(t?.[1] ?? 0), tx: Number(t?.[2] ?? 0), ty: Number(t?.[3] ?? 0) };
+});
+
+test('N8 Muster: musterWinkel dreht die Linienschar – Backstein 45° an einer 45°-Wand liegt senkrecht', () => {
+  const svg = pg.planSvg({ massstab: 50, teile: [wandPoly('backstein', { musterWinkel: 45 })] }, schraffuren8);
+  const p = patterns(svg);
+  assert.equal(p.length, 1);
+  assert.equal(p[0].w, 90);                                                    // 45° (Tabelle) + 45° (Wand)
+  assert.match(svg, /fill="url\(#sch-backstein-90-p-50\)"/);
+  // ohne musterWinkel unverändert (achsparallel zum Blatt)
+  const alt = patterns(pg.planSvg({ massstab: 50, teile: [wandPoly('backstein')] }, schraffuren8));
+  assert.deepEqual(alt.map((x) => x.w), [45]);
+  assert.equal(alt[0].id, 'sch-backstein-45-p-50');
+});
+
+test('N8 Muster: Kreuzschraffur dreht beide Scharen; Winkel werden auf [0, 180) gebracht, gleiche Lage = gleiches Pattern', () => {
+  const svg = pg.planSvg({ massstab: 50, teile: [wandPoly('beton', { musterWinkel: 45 })] }, schraffuren8);
+  assert.deepEqual(patterns(svg).map((x) => x.w).sort((a, b) => a - b), [0, 90]);   // 45+45 und 135+45 = 180 ≙ 0
+  const m60 = patterns(pg.planSvg({ massstab: 50, teile: [wandPoly('beton', { musterWinkel: 60 })] }, schraffuren8));
+  assert.deepEqual(m60.map((x) => x.w).sort((a, b) => a - b), [15, 105]);          // 45+60 = 105; 135+60 = 195 ≙ 15
+  const m135 = patterns(pg.planSvg({ massstab: 50, teile: [wandPoly('backstein', { musterWinkel: 135 })] }, schraffuren8));
+  assert.deepEqual(m135.map((x) => x.w), [0]);                                    // 45 + 135 = 180 ≙ 0
+  // zwei Wände mit derselben Lage teilen ein Pattern
+  const zwei = pg.planSvg({ massstab: 50, teile: [wandPoly('backstein', { musterWinkel: 30 }), wandPoly('backstein', { musterWinkel: 30 })] }, schraffuren8);
+  assert.equal(patterns(zwei).length, 1);
+  assert.equal([...zwei.matchAll(/url\(#sch-backstein-75-p-50\)/g)].length, 2);
+});
+
+test('N8 Muster: musterUrsprung – eine Musterlinie läuft durch den Anker (Rechnung gegen die Pattern-Matrix)', () => {
+  const d = 1.2 * 50;
+  for (const [winkel, anker] of [[45, [-500, 500]], [30, [1234.5, -987.6]], [0, [0, 5000]], [90, [3010, 77]], [135, [-2210.2, 1805.4]]]) {
+    const svg = pg.planSvg({ massstab: 50, teile: [wandPoly('backstein', { musterWinkel: winkel, musterUrsprung: anker })] }, schraffuren8);
+    const [p] = patterns(svg);
+    // Linie y_lokal = k·d im Pattern; Pattern-Raum → Benutzerraum: R(w) · (p + t). Lage des Ankers quer zur Linie im Mustersystem:
+    const r = p.w * Math.PI / 180;
+    const yAnker = -Math.sin(r) * anker[0] + Math.cos(r) * anker[1];
+    const abstand = (((yAnker - p.ty) % d) + d) % d;
+    assert.ok(Math.min(abstand, d - abstand) <= 0.3, `Winkel ${winkel}: Anker ${abstand.toFixed(2)} mm neben der Musterlinie (Raster 0.5)`);
+    assert.equal(p.tx, 0);                                                          // Linien: nur quer verschoben
+  }
+});
+
+test('N8 Muster: zwei Wände auf derselben Achse (gleicher Winkel und Anker) = ein Pattern, durchlaufendes Muster', () => {
+  const stil = { musterWinkel: 45, musterUrsprung: [-500, 500] };
+  const svg = pg.planSvg({ massstab: 50, teile: [wandPoly('beton', stil), wandPoly('beton', { ...stil })] }, schraffuren8);
+  assert.equal(patterns(svg).length, 2);                                            // zwei Scharen, nicht vier
+  // Anker ausserhalb der Achse (andere Wand): anderes Pattern
+  const versetzt = pg.planSvg({ massstab: 50, teile: [wandPoly('beton', stil), wandPoly('beton', { musterWinkel: 45, musterUrsprung: [-500 - 21, 500 + 21] })] }, schraffuren8);
+  assert.equal(patterns(versetzt).length, 4);
+});
+
+test('N8 Muster: Punktraster dreht mit und wird im Anker verankert', () => {
+  const svg = pg.planSvg({ massstab: 100, teile: [wandPoly('putz', { musterWinkel: 30, musterUrsprung: [100, 200] })] }, schraffuren8);
+  const [p] = patterns(svg);
+  assert.equal(p.w, 30);
+  assert.match(svg, /patternTransform="rotate\(30\)(?: translate\([-\d.]+ [-\d.]+\))?"/);
+  // Punkt des Rasters liegt im Anker: R(w)·(t + i·d) = Anker für ganze i, j  ⇒  (Anker im Mustersystem − t) ist ein Vielfaches von d
+  const d = 0.8 * 100, r = 30 * Math.PI / 180;
+  const lx = Math.cos(r) * 100 + Math.sin(r) * 200, ly = -Math.sin(r) * 100 + Math.cos(r) * 200;
+  const nahe = (v) => { const m = ((v % d) + d) % d; return Math.min(m, d - m); };
+  assert.ok(nahe(lx - p.tx) <= 0.3 && nahe(ly - p.ty) <= 0.3, `${nahe(lx - p.tx)} ${nahe(ly - p.ty)}`);
+  // ohne Drehung und Anker: wie bisher, id «sch-putz-p-…»
+  assert.match(pg.planSvg({ massstab: 100, teile: [wandPoly('putz')] }, schraffuren8), /<pattern id="sch-putz-p-p-100" patternUnits="userSpaceOnUse" width="80" height="80"><g/);
+});
+
+test('N8 Muster: ungültige Werte (NaN, Text, kurzer Anker) werden ignoriert, das Muster bleibt achsparallel', () => {
+  for (const stil of [{ musterWinkel: 'x' }, { musterWinkel: NaN }, { musterWinkel: null, musterUrsprung: [1, 2] }, { musterUrsprung: 'a' }, { musterUrsprung: [1] }]) {
+    const svg = pg.planSvg({ massstab: 50, teile: [wandPoly('backstein', stil)] }, schraffuren8);
+    const [p] = patterns(svg);
+    assert.equal(p.w, 45, JSON.stringify(stil));
+  }
+  assert.deepEqual(pg.musterLage(45, null, 60), { tx: 0, ty: 0 });
+  assert.deepEqual(pg.musterLage(45, [NaN, 1], 60), { tx: 0, ty: 0 });
+  assert.deepEqual(pg.musterLage(45, [1, 2], 0), { tx: 0, ty: 0 });
+});
+
+test('N8 Muster: Id-Präfix je Ansicht – mehrere offene Ansichten teilen sich ein Dokument, gleiche Ids blieben in verborgenen Ansichten leer', () => {
+  const a = pg.neuerMusterPraefix(), b = pg.neuerMusterPraefix();
+  assert.notEqual(a, b);
+  const plan = { massstab: 50, teile: [wandPoly('beton')] };
+  const sa = pg.planSvg(plan, schraffuren8, { idPraefix: a }), sb = pg.planSvg(plan, schraffuren8, { idPraefix: b });
+  const ids = (s) => [...s.matchAll(/<pattern id="([^"]+)"/g)].map((m) => m[1]);
+  assert.equal(ids(sa).length, 2);
+  assert.ok(ids(sa).every((i) => i.startsWith(a)) && ids(sb).every((i) => i.startsWith(b)));
+  assert.equal(ids(sa).filter((i) => ids(sb).includes(i)).length, 0);              // keine gemeinsame Id
+  for (const i of ids(sa)) assert.match(sa, new RegExp(`fill="url\\(#${i}\\)"`));   // jede Füllung zeigt auf das eigene Muster
+  // ohne Präfix wie bisher
+  assert.match(pg.planSvg(plan, schraffuren8), /<pattern id="sch-beton-45-p-50"/);
+});
+
+test('N8 Muster: dieselbe Funktion zeichnet Grundriss und Schnitt – das Primitiv entscheidet allein (Schnitt ohne musterWinkel bleibt waagrecht)', () => {
+  const grundriss = pg.planSvg({ massstab: 50, art: 'grundriss', teile: [wandPoly('backstein', { musterWinkel: 45 })] }, schraffuren8);
+  const schnitt = pg.planSvg({ massstab: 50, art: 'schnitt', teile: [wandPoly('backstein')] }, schraffuren8);
+  assert.deepEqual(patterns(grundriss).map((x) => x.w), [90]);
+  assert.deepEqual(patterns(schnitt).map((x) => x.w), [45]);
+});
+
 test('Muster: Punkte, Vollton, Farbe aus den Daten, unbekannte Muster entfallen, gleiches Muster nur einmal definiert', () => {
   const ring = [[0, 0], [1000, 0], [1000, 1000], [0, 1000]];
   const poly = (muster, stil = {}) => ({ ebene: 'wand', primitive: [prim('polygon', { punkte: ring }, { stift: null, muster, ...stil })] });
