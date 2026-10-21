@@ -657,6 +657,11 @@ function erstellen(behaelter, ansichtElement) {
     get begehenAktiv() { return begehen.aktiv; },
     /** Element, das an dieser Bildschirmstelle gewählt würde (clientX, clientY), sonst null – weggeschnittene Teile zählen nicht (Kontrolle für Browser-Tests). */
     trefferBei: (clientX, clientY) => trefferId({ clientX, clientY }),
+    /** Darstellung der Materialien je Körper { id: { ebene, m: [{ deckkraft, transparent, depthWrite, geclippt }] } } (Kontrolle für Browser-Tests, N22). */
+    deckkraftAlle: () => Object.fromEntries([...objekte].map(([id, g]) => [id, {
+      ebene: g.userData.ebene,
+      m: g.userData.materialien.map((m) => ({ deckkraft: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite, geclippt: !!m.clippingPlanes })),
+    }])),
     zerstoeren() {
       zerstoert = true;
       cancelAnimationFrame(geplant);
