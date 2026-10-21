@@ -18,7 +18,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 {
     public string Name => "architektur";
 
-    static readonly string[] Klassen = ["Wand", "Tuer", "Fenster", "Decke", "Dach", "Raum", "Achse", "Stuetze", "Traeger"];
+    static readonly string[] Klassen = ["Wand", "Tuer", "Fenster", "Decke", "Dach", "Raum", "Achse", "Stuetze", "Traeger", "Treppe"];
 
     // Massvorgaben der Darstellung
     const double RaumSchrift = 2.5;          // mm Papier, Raumstempel (Spezifikation; dort als Annahme geführt)
@@ -183,6 +183,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         if (k.IstArt(e, "Decke") || k.IstArt(e, "Dach")) return Decke(ctx, e);
         if (k.IstArt(e, "Stuetze")) return Stuetze(ctx, e);
         if (k.IstArt(e, "Traeger")) return Traeger(ctx, e);
+        if (k.IstArt(e, "Treppe")) return TreppeGrafik.Plan(ctx, e);   // N17
         return [];
     }
 
@@ -387,6 +388,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         if (k.IstArt(e, "Raum")) return RaumKoerper(p, e);
         if (k.IstArt(e, "Stuetze")) return StuetzeKoerper(e);
         if (k.IstArt(e, "Traeger")) return TraegerKoerper(e);
+        if (k.IstArt(e, "Treppe")) return TreppeGrafik.Koerper(e);   // N17: Stufenprismen
         return null;   // Achse: kein Körper
     }
 

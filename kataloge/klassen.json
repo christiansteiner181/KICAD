@@ -130,6 +130,20 @@
     "beschreibung": "Unterzug oder Träger als Achse (Linie) mit Breite (geometrie.dicke) und Höhe; z der Punkte = Unterkante. Durchbrüche in Unterzügen sind typische Aussparungen (Modul 1b, Christian 17.10.2026).",
     "eigenschaften": [
       { "name": "material", "typ": "auswahl", "auswahl": [ "unbestimmt", "beton", "stahl", "holz" ], "beschreibung": "Hauptmaterial; bestimmt die Schraffur der Schnittfläche" } ] },
+  { "name": "Treppe", "kuerzel": "TR", "basis": "Bauteil", "ifc": "IfcStair", "geometrie": "polylinie",
+    "beschreibung": "Treppenlauf (Nachbearbeitung N17, Christian 21.10.2026: Treppen im Grundriss erkennbar). Je Lauf ein Element. Geometrie = Lauflinie als Polylinie [x, y, z] vom Antritt (unten) zum Austritt (oben), z = Höhe der Trittflächen an dieser Stelle. Die Stufenkanten (Steigungslinien, rechts → links in Gehrichtung gesehen, mit z der Trittfläche, zu der sie hinaufführen) und die Podeste (Umrisse) stehen als Listen in den Eigenschaften. Der Grundriss zeigt Stufenkanten unter der Schnitthöhe durchgezogen, darüber gestrichelt, die Schnittlinie als schräge Doppellinie, die Lauflinie mit Kreis am Antritt und Pfeil am Austritt und die Beschriftung «n Stg. h/a» (Steigung/Auftritt in cm). Schnitt und 3D zeigen Stufenprismen (je Trittfläche ein Prisma von laufdicke unter der Trittfläche bis zur Trittfläche).",
+    "eigenschaften": [
+      { "name": "stufen", "typ": "zahl", "beschreibung": "Anzahl Steigungen des Laufs («n Stg.»), nicht Trittflächen: ein Lauf von Boden zu Boden mit 16 Steigungen hat 15 Trittflächen" },
+      { "name": "steigung", "typ": "zahl", "einheit": "mm", "beschreibung": "Steigungshöhe einer Stufe" },
+      { "name": "auftritt", "typ": "zahl", "einheit": "mm", "beschreibung": "Auftrittstiefe einer Stufe in Gehrichtung" },
+      { "name": "laufbreite", "typ": "zahl", "einheit": "mm", "beschreibung": "Breite des Laufs quer zur Gehrichtung" },
+      { "name": "richtung", "typ": "auswahl", "auswahl": [ "aufwaerts", "abwaerts" ], "beschreibung": "aufwaerts = die Lauflinie läuft in Gehrichtung nach oben vom ersten zum letzten Punkt (Normalfall; der Pfeil steht am letzten Punkt); abwaerts = umgekehrt, der Pfeil steht am ersten Punkt" },
+      { "name": "unterkante", "typ": "zahl", "einheit": "mm", "beschreibung": "z des Bodens vor der ersten Steigung (Antritt)" },
+      { "name": "oberkante", "typ": "zahl", "einheit": "mm", "beschreibung": "z des Bodens nach der letzten Steigung (Austritt); unterkante + stufen · steigung" },
+      { "name": "stufenkanten", "typ": "liste", "beschreibung": "Steigungslinien als Liste [x1, y1, x2, y2, z]: von der rechten zur linken Seite des Laufs in Gehrichtung gesehen (aufwärts), z = Trittfläche, zu der die Steigung hinaufführt (Oberkante der Steigung)" },
+      { "name": "podeste", "typ": "liste", "beschreibung": "Podeste und Zwischenpodeste als Liste von { \"z\": Oberkante, \"punkte\": [[x, y], …] } (Umriss im Gegenuhrzeigersinn)" },
+      { "name": "laufdicke", "typ": "zahl", "einheit": "mm", "beschreibung": "Senkrechte Dicke des Laufs unter den Trittflächen (für Schnitt und 3D); ohne Angabe 250 mm, mindestens eine Steigung" },
+      { "name": "material", "typ": "auswahl", "auswahl": [ "unbestimmt", "beton", "stahl", "holz", "backstein", "kalksandstein" ], "beschreibung": "Hauptmaterial; bestimmt die Schraffur der Schnittfläche" } ] },
   { "name": "Fenster", "kuerzel": "F", "basis": "Bauteil", "ifc": "IfcWindow", "geometrie": "punkt",
     "beschreibung": "Fenster in einer Wand (bezuege.wand). Lage = Mitte unten in der Wandachse; abstand = Lage entlang der Wandachse ab Wandanfang. Wird die Wand verschoben, führt der Kern die Lage nach.",
     "eigenschaften": [

@@ -642,6 +642,8 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
 
     void Decke(IIfcProduct p)
     {
+        // N17: Podeste einer Treppe (IfcSlab LANDING als Teil einer IfcStair) gehören zur Treppe (IfcTreppe), nicht zu den Decken
+        if (p is IIfcSlab && d.Eltern(p) is IIfcStair or IIfcStairFlight) return;
         // Dach aus Platten (IfcRoof ohne Körper, zerlegt in IfcSlab): die Platten tragen die Geometrie
         if (p is IIfcRoof && !IfcGeometrie.HatKoerper(p) && (!kinder.TryGetValue(p.EntityLabel, out var k) || k.All(x => x is IIfcSlab))) return;
         var klasse = Klasse(p, p is IIfcRoof || d.PredefinedType(p) == "ROOF" ? "Dach" : "Decke");

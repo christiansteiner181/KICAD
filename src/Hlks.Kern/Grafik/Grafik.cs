@@ -172,7 +172,9 @@ public static class Grafik
         if (EinlageGrafik.Sichtbarkeit(ctx, e) is bool b) return b;
         // Achsen in allen Grundrissen; Unterlagen ohne Geschoss (IFC über mehrere Geschosse) ebenso, sie schneiden selbst
         bool ueberall = d.Schicht == "bezug" || (d.Schicht == "grundlage" && e.Geschoss is null);
-        if (ctx.Art == "grundriss" && !ueberall && ctx.Geschoss is not null && e.Geschoss != ctx.Geschoss.Id) return false;
+        // N17: eine Treppe, die von unten in dieses Geschoss reicht, erscheint hier von oben (TreppeGrafik.AusUnterGeschoss)
+        if (ctx.Art == "grundriss" && !ueberall && ctx.Geschoss is not null && e.Geschoss != ctx.Geschoss.Id
+            && !(k.IstArt(e, "Treppe") && TreppeGrafik.AusUnterGeschoss(ctx, e))) return false;
         return true;
     }
 

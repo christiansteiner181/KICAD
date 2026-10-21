@@ -27,6 +27,8 @@
       "importAuch": ["IfcColumnStandardCase"], "importWerte": ["COLUMN", "PILASTER", "USERDEFINED", "NOTDEFINED"] },
     { "klasse": "Traeger", "ifc4": { "entitaet": "IfcBeam", "typ": "IfcBeamType", "predefinedType": "BEAM" }, "ifc2x3": { "entitaet": "IfcBeam", "typ": "IfcBeamType", "predefinedType": "BEAM" },
       "importAuch": ["IfcBeamStandardCase"], "importWerte": ["BEAM", "JOIST", "LINTEL", "T_BEAM", "HOLLOWCORE", "SPANDREL", "NOTDEFINED", "USERDEFINED"] },
+    { "klasse": "Treppe", "ifc4": { "entitaet": "IfcStair" }, "ifc2x3": { "entitaet": "IfcStair" },
+      "importAuch": ["IfcStairFlight"] },
     { "klasse": "Fenster", "ifc4": { "entitaet": "IfcWindow", "typ": "IfcWindowType", "predefinedType": "WINDOW" }, "ifc2x3": { "entitaet": "IfcWindow", "typ": "IfcWindowStyle" },
       "importAuch": ["IfcWindowStandardCase"], "importWerte": ["WINDOW", "SKYLIGHT", "LIGHTDOME", "USERDEFINED", "NOTDEFINED"] },
     { "klasse": "Tuer", "ifc4": { "entitaet": "IfcDoor", "typ": "IfcDoorType", "predefinedType": "DOOR" }, "ifc2x3": { "entitaet": "IfcDoor", "typ": "IfcDoorStyle" },
