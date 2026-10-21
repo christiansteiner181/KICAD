@@ -349,4 +349,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | – | Gesamtprüfung df88653 (N12, N13/N14, N16) grün (Kern 4571 nach Wiederholung, Mcp 79, Web 542, Node 1054) → geprueft = df88653 (geprueft-20261021-1500) | Hauptlauf | ok |
 | 21.10.2026 | N18/N19 | Holz ohne Schraffur (beige 0.6), 3D-Schnittbereich blau | Hauptlauf | ok – 11e5e9e, Tests 48 + Node 21 grün |
 | 21.10.2026 | N20/N21 | grob = Wände/Stützen/Unterzüge schwarz voll (SIA 400 B.8.3.1); Schnitthöhe nach SIA 400 C.3.1.1 (durch alle Türen/Fenster, je Geschoss) | hlks-modul (als general-purpose sonnet/high) | läuft |
-| 21.10.2026 | N22 | Begehen: Wände undurchsichtig, nur ±50 cm um die Kamera durchscheinend | hlks-modul (als general-purpose sonnet/high) | läuft |
+| 21.10.2026 | N22 | Begehen: Wände undurchsichtig, nur ±50 cm um die Kamera durchscheinend | hlks-modul (als general-purpose sonnet/high) | ok – bbbf636 (durchgang3d.js, Abstand gegen Körperformen), Node 1075, Browser begehen 103 / schnittbereich 63 / maus-wuerfel 76; zusammengeführt ohne Konflikt, Node 1075 grün |

@@ -40,5 +40,6 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 | N19 | 3D-Schnittbereich blau wie Revit | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
 | N20 | Detaillierungsgrad grob: Wände (und Stützen/Unterzüge) schwarz voll (SIA 400 B.8.3.1) | Christian 21.10. | klein | läuft (Sonnet) |
 | N21 | Schnitthöhe nach SIA 400 C.3.1.1: durch alle Tür- und Fensteröffnungen, je Geschoss gerechnet | Christian 21.10. | klein–mittel | läuft (Sonnet) |
-| N22 | Begehen: Wände undurchsichtig, nur beim Durchgehen (±50 cm) durchscheinend | Christian 21.10. | klein | läuft (Sonnet) |
+| N22 | Begehen: Wände undurchsichtig, nur beim Durchgehen (±50 cm) durchscheinend | Christian 21.10. | klein | **umgesetzt 21.10.** |
 | N23 | Begehen in VR auf der Meta Quest: **Weg 1 über WLAN (Air Link)**, KICAD in Chrome am PC, WebXR über OpenXR (Entscheid Christian 21.10.) | Christian 21.10. | mittel | hinten angestellt (Christian 21.10.): nach N20–N22 starten, wenn das Kontingent noch unter 95 % bleibt; Knopf «In VR begehen», Kopf statt Maus, Stick/Teleport, Start am N15-Standpunkt, N22-Regel |
+| N24 | VR: gezeichnete Elemente im VR-Raum auswählen und bearbeiten (Controller-Strahl, Verschieben/Drehen mit Fang, Rückgängig) | Christian 21.10. (Frage) | gross, stufenweise | nach N23; Stufen siehe Chat 21.10. |

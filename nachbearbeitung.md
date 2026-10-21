@@ -563,3 +563,5 @@ Christian 21.10.2026: «bei begehung wände nur transparent wenn man durch geht 
   (Lauf endet an einem Podest in ungewöhnlicher Höhe). Schnittlinie, Kreis- und Pfeilgrösse, Podest-Schwelle und Laufdicke 250 mm (Vorgabe) sind Annahmen ohne Quelle.
 - **Tests:** `TreppeTests` (36 Fälle, synthetische Datei `TreppeTestdatei` in IFC4 und IFC2X3), `TreppeIfcTests` (3, am Schema geprüft), `TreppeEchtTests` (3, Bernstrasse; schreibt die
   Prüfbilder-Daten nach `%TEMP%\HLKS_CAD\n17`). Prüfbilder: `node werkzeuge/treppe_pruefbild.mjs` (Bildschirm), PDF über `Planausgabe.Pdf`.
+
+**N22 umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf zusammengeführt). `ansichten/durchgang3d.js`: Wände, Stützen, Unterzüge, Decken und Böden sind beim Begehen undurchsichtig; durchscheinend wird nur, was näher als 500 mm (`DURCHGANG_MM`) an der Kamera liegt. Gerechnet wird gegen die Körperformen (Polygon mit Höhe), die Hüllbox dient nur der Vorauswahl. Esc stellt Deckkraft und Clipping wieder her. Tests: `durchgang.test.mjs` (15), Browser `begehen` (103).
