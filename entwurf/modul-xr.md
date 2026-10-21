@@ -50,6 +50,16 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 - Liste zum Nachverfolgen (offen/erledigt, zuständig, Frist), am PC und auf dem Tablet. Ein Klick springt an die Stelle.
 - Vorschlag: als BCF-Themen über den bestehenden BCF-Weg (`bcf_export`, `bcf_lesen`), damit Architekt und Fachplaner sie sehen.
 
+### XR-F – Skizzenfläche per Rahmen-Geste
+- **Geste:** Beide Hände bilden mit Daumen und Zeigefinger je ein L und damit zwei gegenüberliegende Ecken eines Quadrats. Dann wird eine
+  durchscheinende Zeichenfläche im Raum vor der aktuellen Ansicht verankert. Grösse und Lage ergeben sich aus den beiden Ecken.
+- **Zeichnen:** Mit dem Finger wird auf der Fläche frei skizziert. Das ist eine Skizze bzw. Notiz zum Modell, kein Modellieren; «nicht
+  zeichnen» in XR-B meint Bauteile.
+- **Vorschlag, am Freitag festlegen:**
+  - Die Skizzenfläche bleibt im Raum stehen und gehört zu einem Problem-Marker (XR-E).
+  - Am PC und im BCF erscheint sie als Bild mit Blickpunkt.
+  - Löschen, Farbe und Strichstärke über das Tablet (XR-C).
+
 ## Reihenfolge
 XR-A, dann XR-B mit XR-C, dann XR-E, dann XR-D. Jeder Teil wird mit der Brille an Christians PC abgenommen.
 
