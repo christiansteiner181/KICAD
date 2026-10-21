@@ -30,8 +30,15 @@ public sealed record QuestEinstellungen
 {
     /// <summary>Zeitgrenze je adb-Aufruf.</summary>
     public TimeSpan Zeitlimit { get; init; } = TimeSpan.FromSeconds(10);
-    /// <summary>Wartezeit nach «adb tcpip», bis die Quest über WLAN erreichbar ist.</summary>
+    /// <summary>Feste Wartezeit nach «adb tcpip», bevor das erste «adb connect» kommt (adbd startet in der Quest neu).</summary>
     public TimeSpan WlanWartezeit { get; init; } = TimeSpan.FromSeconds(2);
+    /// <summary>Gesamtgrenze für «adb connect»: wiederholt, bis adb die Verbindung meldet UND der WLAN-Weg in «adb devices» als «device» steht
+    /// (nach dem Neustart von adbd ist er kurz «offline»). Befund Meta Quest 3, 21.10.2026.</summary>
+    public TimeSpan WlanGrenze { get; init; } = TimeSpan.FromSeconds(15);
+    /// <summary>Abstand zwischen zwei Versuchen (connect und Weiterleitung auf dem WLAN-Weg).</summary>
+    public TimeSpan WlanAbstand { get; init; } = TimeSpan.FromSeconds(1.5);
+    /// <summary>Gesamtgrenze für das Setzen der Weiterleitung auf dem WLAN-Weg (bei «offline» oder einem Fehler wird kurz wiederholt).</summary>
+    public TimeSpan WeiterleitungGrenze { get; init; } = TimeSpan.FromSeconds(6);
     /// <summary>adb.exe auch in den Ordnern von PATH suchen (Tests: aus).</summary>
     public bool PfadDurchsuchen { get; init; } = true;
     /// <summary>Orte, an denen nach adb.exe gesucht wird (wie quest_verbinden.ps1); null = die bekannten Orte (QuestDienst.BekannteOrte).</summary>
@@ -41,7 +48,11 @@ public sealed record QuestEinstellungen
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
     /// ohne adb.exe, damit die Liste der Suchorte im Dialog nicht leer ist.</summary>
     public static QuestEinstellungen Vorgabe() => FamilienBibliothekDienst.Testlauf()
-        ? new QuestEinstellungen { PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")] }
+        ? new QuestEinstellungen
+        {
+            PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")],
+            WlanGrenze = TimeSpan.FromSeconds(3), WlanAbstand = TimeSpan.FromMilliseconds(300), WeiterleitungGrenze = TimeSpan.FromSeconds(2),   // Browserreihen warten nicht 15 s auf einen absichtlichen Fehlschlag
+        }
         : new QuestEinstellungen();
 }
 
@@ -292,14 +303,13 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         if (d.Zeitueberschreitung) fehler = Zeitfehler("devices").Message;
         else if (d.Code != 0) fehler = $"adb meldet: {Kuerzen(d.Ausgabe, 300)}";
         else geraete = GeraeteLesen(d.Ausgabe);
-        var ziel = geraete.FirstOrDefault(g => g.Zustand == "device");
+        QuestGeraet? ziel = null;
         bool weiter = false;
         string? ip = null;
-        if (ziel is not null && fehler is null)
+        if (fehler is null)
         {
-            var l = await Aufruf(adb, "-s", ziel.Seriennummer, "reverse", "--list");
-            weiter = !l.Zeitueberschreitung && l.Code == 0 && WeiterleitungIn(l.Ausgabe, port);
-            ip = await WlanAdresse(adb, ziel);
+            (ziel, weiter) = await Waehlen(adb, geraete, port);
+            if (ziel is not null) ip = await WlanAdresse(adb, ziel);
         }
         return new
         {
@@ -312,31 +322,75 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         };
     }
 
-    // ---------------------------------------------------------------- Handeln
+    // ---------------------------------------------------------------- Gerätewahl
 
-    /// <summary>Wählt die freigegebene Quest; mit Erklärung, wenn keine da ist.</summary>
-    async Task<QuestGeraet> Geraet(AdbFund adb)
+    /// <summary>Alle Geräte aus «adb devices»; Fehler und Zeitüberschreitung als HlksFehler.</summary>
+    async Task<List<QuestGeraet>> GeraeteListe(AdbFund adb)
     {
         var d = await Aufruf(adb, "devices");
         if (d.Zeitueberschreitung) throw Zeitfehler("devices");
         if (d.Code != 0) throw new HlksFehler($"adb meldet: {Kuerzen(d.Ausgabe, 300)}", "Verbindung prüfen und erneut versuchen.");
-        var geraete = GeraeteLesen(d.Ausgabe);
-        var ok = geraete.FirstOrDefault(g => g.Zustand == "device");
-        if (ok is not null) return ok;
+        return GeraeteLesen(d.Ausgabe);
+    }
+
+    /// <summary>Die Wege im Zustand «device»; mit Erklärung, wenn es keinen gibt.</summary>
+    static List<QuestGeraet> Freigegebene(List<QuestGeraet> geraete)
+    {
+        var ok = geraete.Where(g => g.Zustand == "device").ToList();
+        if (ok.Count > 0) return ok;
         if (geraete.Any(g => g.Zustand == "unauthorized"))
             throw new HlksFehler("Die Quest ist verbunden, aber noch nicht freigegeben.", "In der Brille «USB-Debugging erlauben» bestätigen (Fenster beim Aufsetzen) und erneut versuchen.");
         throw new HlksFehler("Es wurde keine Quest gefunden.", "USB-Kabel prüfen, Brille einschalten, Entwicklermodus in der Meta-Horizon-App aktivieren – oder über WLAN verbinden.");
     }
 
-    async Task WeiterleitungSetzen(AdbFund adb, string serie, int port)
+    async Task<bool> HatWeiterleitung(AdbFund adb, string serie, int port)
     {
-        await Gut(adb, "reverse", "-s", serie, "reverse", $"tcp:{port}", $"tcp:{port}");
-        var liste = await Gut(adb, "reverse --list", "-s", serie, "reverse", "--list");
-        if (!WeiterleitungIn(liste, port))
-            throw new HlksFehler($"Die Weiterleitung ist nicht aktiv. adb meldet: {Kuerzen(liste, 200)}", "Quest neu verbinden und erneut versuchen.");
+        var l = await Aufruf(adb, "-s", serie, "reverse", "--list");
+        return !l.Zeitueberschreitung && l.Code == 0 && WeiterleitungIn(l.Ausgabe, port);
     }
 
-    /// <summary>Setzt die Weiterleitung «Quest localhost:Port → dieser PC».</summary>
+    /// <summary>Eine Quest kann zwei Wege gleichzeitig haben (USB und WLAN). Wahl für alle Funktionen (Zustand, Verbinden, Trennen, Umstellen):
+    /// 1. der Weg, der die Weiterleitung für den Port schon hat; 2. sonst ein WLAN-Weg; 3. sonst USB. Nur Wege im Zustand «device»;
+    /// haben beide die Weiterleitung, gilt WLAN. Gibt zusätzlich an, ob der gewählte Weg die Weiterleitung hat.</summary>
+    async Task<(QuestGeraet? Geraet, bool Weiterleitung)> Waehlen(AdbFund adb, List<QuestGeraet> geraete, int port)
+    {
+        var kandidaten = geraete.Where(g => g.Zustand == "device").OrderBy(g => g.Wlan ? 0 : 1).ToList();   // stabil: WLAN zuerst, sonst Reihenfolge von adb
+        foreach (var g in kandidaten)
+            if (await HatWeiterleitung(adb, g.Seriennummer, port)) return (g, true);
+        return (kandidaten.FirstOrDefault(), false);
+    }
+
+    // ---------------------------------------------------------------- Handeln
+
+    /// <summary>Ein Versuch: Weiterleitung setzen und prüfen. Gibt den Fehler zurück (null = gesetzt); eine Zeitüberschreitung wird geworfen (nicht wiederholt).</summary>
+    async Task<HlksFehler?> WeiterleitungVersuch(AdbFund adb, string serie, int port)
+    {
+        var r = await Aufruf(adb, "-s", serie, "reverse", $"tcp:{port}", $"tcp:{port}");
+        if (r.Zeitueberschreitung) throw Zeitfehler("reverse");
+        if (r.Code != 0) return new HlksFehler($"adb meldet bei «reverse»: {Kuerzen(r.Ausgabe, 300)}", "Verbindung und Freigabe in der Brille prüfen.");
+        var l = await Aufruf(adb, "-s", serie, "reverse", "--list");
+        if (l.Zeitueberschreitung) throw Zeitfehler("reverse --list");
+        if (l.Code != 0) return new HlksFehler($"adb meldet bei «reverse --list»: {Kuerzen(l.Ausgabe, 300)}", "Verbindung und Freigabe in der Brille prüfen.");
+        if (!WeiterleitungIn(l.Ausgabe, port))
+            return new HlksFehler($"Die Weiterleitung ist nicht aktiv. adb meldet: {Kuerzen(l.Ausgabe, 200)}", "Quest neu verbinden und erneut versuchen.");
+        return null;
+    }
+
+    /// <summary>Setzt die Weiterleitung auf dem Weg. Mit wiederholen (WLAN-Weg, der gerade erst aufgekommen ist) wird bei Fehler oder «offline» innerhalb
+    /// von QuestEinstellungen.WeiterleitungGrenze im Abstand WlanAbstand erneut versucht.</summary>
+    async Task WeiterleitungSetzen(AdbFund adb, string serie, int port, bool wiederholen = false)
+    {
+        var uhr = Stopwatch.StartNew();
+        while (true)
+        {
+            var fehler = await WeiterleitungVersuch(adb, serie, port);
+            if (fehler is null) return;
+            if (!wiederholen || uhr.Elapsed + einstellungen.WlanAbstand >= einstellungen.WeiterleitungGrenze) throw fehler;
+            await Task.Delay(einstellungen.WlanAbstand);
+        }
+    }
+
+    /// <summary>Setzt die Weiterleitung «Quest localhost:Port → dieser PC» auf dem gewählten Weg.</summary>
     public async Task<object> Verbinden(int port)
     {
         PortPruefen(port);
@@ -344,14 +398,17 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         try
         {
             var adb = AdbOderFehler();
-            var g = await Geraet(adb);
-            await WeiterleitungSetzen(adb, g.Seriennummer, port);
+            var geraete = await GeraeteListe(adb);
+            Freigegebene(geraete);
+            var (g, _) = await Waehlen(adb, geraete, port);
+            await WeiterleitungSetzen(adb, g!.Seriennummer, port);
             return await ZustandOhneSperre(port, $"Bereit. In der Quest den Browser öffnen und http://localhost:{port} eingeben.");
         }
         finally { sperre.Release(); }
     }
 
-    /// <summary>Stellt die per USB verbundene Quest auf adb über WLAN um (einmal mit Kabel) und setzt die Weiterleitung neu.</summary>
+    /// <summary>Stellt die per USB verbundene Quest auf adb über WLAN um (einmal mit Kabel) und setzt die Weiterleitung auf dem WLAN-Weg. Besteht schon ein
+    /// WLAN-Weg im Zustand «device», wird nicht erneut «tcpip» ausgeführt (das würde die Verbindung abbrechen): es wird nur die Weiterleitung gesetzt.</summary>
     public async Task<object> AufWlanUmstellen(int port)
     {
         PortPruefen(port);
@@ -359,31 +416,67 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         try
         {
             var adb = AdbOderFehler();
-            var g = await Geraet(adb);
-            if (g.Wlan)
+            var geraete = await GeraeteListe(adb);
+            var frei = Freigegebene(geraete);
+            var wlanWege = frei.Where(g => g.Wlan).ToList();
+            if (wlanWege.Count > 0)
             {
-                await WeiterleitungSetzen(adb, g.Seriennummer, port);
+                QuestGeraet? mit = null;
+                foreach (var w in wlanWege)
+                    if (await HatWeiterleitung(adb, w.Seriennummer, port)) { mit = w; break; }
+                if (mit is null) await WeiterleitungSetzen(adb, wlanWege[0].Seriennummer, port, wiederholen: true);
                 return await ZustandOhneSperre(port, "Die Quest ist schon über WLAN verbunden; die Weiterleitung ist gesetzt.");
             }
+            var g = frei[0];
             var ip = await WlanAdresse(adb, g)
                 ?? throw new HlksFehler("Die WLAN-Adresse der Quest wurde nicht gefunden.", "WLAN der Brille einschalten (gleiches Netz wie der PC) und erneut versuchen, oder die Adresse unten von Hand eingeben.");
             await Gut(adb, "tcpip", "-s", g.Seriennummer, "tcpip", WlanPort.ToString());
             if (einstellungen.WlanWartezeit > TimeSpan.Zero) await Task.Delay(einstellungen.WlanWartezeit);
             var ziel = $"{ip}:{WlanPort}";
             await WlanVerbinden(adb, ziel);
-            await WeiterleitungSetzen(adb, ziel, port);
+            await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);
             return await ZustandOhneSperre(port, $"WLAN aktiv. Das Kabel kann ab. Nächstes Mal genügt die Adresse {ip}.");
         }
         finally { sperre.Release(); }
     }
 
+    /// <summary>«adb connect» wiederholen, bis adb die Verbindung meldet UND der WLAN-Weg in «adb devices» als «device» steht (Gesamtgrenze WlanGrenze,
+    /// Abstand WlanAbstand; jeder einzelne Aufruf behält seine Zeitgrenze). Nach «adb tcpip» startet adbd in der Quest neu: erste Versuche werden
+    /// abgelehnt, der neue Weg ist kurz «offline».</summary>
     async Task WlanVerbinden(AdbFund adb, string ziel)
     {
-        var r = await Aufruf(adb, "connect", ziel);
-        if (r.Zeitueberschreitung) throw Zeitfehler("connect");
-        // adb meldet auch Fehlschläge mit Code 0 («failed to connect», «cannot connect»)
-        if (r.Code != 0 || !Regex.IsMatch(r.Ausgabe, @"\b(connected to|already connected to)\b", RegexOptions.IgnoreCase) || Regex.IsMatch(r.Ausgabe, @"\b(failed|cannot|unable)\b", RegexOptions.IgnoreCase))
-            throw new HlksFehler($"Verbindung zu {ziel} fehlgeschlagen: {Kuerzen(r.Ausgabe, 300)}", "Adresse prüfen, PC und Quest im selben WLAN, einmal mit Kabel «Auf WLAN umstellen».");
+        var uhr = Stopwatch.StartNew();
+        var versuche = 0;
+        string letzte;
+        while (true)
+        {
+            versuche++;
+            var r = await Aufruf(adb, "connect", ziel);
+            if (r.Zeitueberschreitung) letzte = $"keine Antwort innerhalb von {einstellungen.Zeitlimit.TotalSeconds:0.#} s";
+            else
+            {
+                letzte = Kuerzen(r.Ausgabe, 300);
+                // adb meldet auch Fehlschläge mit Code 0 («failed to connect», «cannot connect»)
+                var verbunden = r.Code == 0 && Regex.IsMatch(r.Ausgabe, @"\b(connected to|already connected to)\b", RegexOptions.IgnoreCase)
+                    && !Regex.IsMatch(r.Ausgabe, @"\b(failed|cannot|unable)\b", RegexOptions.IgnoreCase);
+                if (verbunden)
+                {
+                    var d = await Aufruf(adb, "devices");
+                    if (d.Zeitueberschreitung) throw Zeitfehler("devices");
+                    if (d.Code == 0)
+                    {
+                        var g = GeraeteLesen(d.Ausgabe).FirstOrDefault(x => x.Seriennummer == ziel);
+                        if (g?.Zustand == "device") return;
+                        letzte = g is null ? $"{ziel} fehlt in der Geräteliste von adb" : $"{ziel} meldet den Zustand «{g.Zustand}»";
+                    }
+                    else letzte = $"adb devices: {Kuerzen(d.Ausgabe, 200)}";
+                }
+            }
+            if (uhr.Elapsed + einstellungen.WlanAbstand >= einstellungen.WlanGrenze) break;
+            await Task.Delay(einstellungen.WlanAbstand);
+        }
+        throw new HlksFehler($"Verbindung zu {ziel} fehlgeschlagen (nach {versuche} Versuch{(versuche == 1 ? "" : "en")} in {uhr.Elapsed.TotalSeconds:0.#} s): {letzte}",
+            "Prüfen: gleiches WLAN für PC und Quest (kein Gastnetz), Brille aufgesetzt und wach. Dann erneut versuchen – oder die Adresse von Hand unten eingeben (WLAN-Einstellungen der Brille).");
     }
 
     /// <summary>Verbindet über WLAN mit der Quest unter der angegebenen Adresse und setzt die Weiterleitung.</summary>
@@ -398,7 +491,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             var ziel = $"{ip}:{wlanPort}";
             await WlanVerbinden(adb, ziel);
             var g = await Geraet(adb, ziel);
-            await WeiterleitungSetzen(adb, g.Seriennummer, port);
+            await WeiterleitungSetzen(adb, g.Seriennummer, port, wiederholen: true);
             return await ZustandOhneSperre(port, $"Über WLAN verbunden ({ziel}). In der Quest http://localhost:{port} öffnen.");
         }
         finally { sperre.Release(); }
@@ -416,7 +509,8 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         return g;
     }
 
-    /// <summary>Entfernt die Weiterleitung für den Port.</summary>
+    /// <summary>Entfernt die Weiterleitung für den Port auf allen Wegen im Zustand «device». Fehler auf Wegen ohne Weiterleitung werden ignoriert;
+    /// hat sie auf keinem Weg bestanden, wird die Meldung von adb weitergegeben.</summary>
     public async Task<object> Trennen(int port)
     {
         PortPruefen(port);
@@ -424,8 +518,20 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         try
         {
             var adb = AdbOderFehler();
-            var g = await Geraet(adb);
-            await Gut(adb, "reverse --remove", "-s", g.Seriennummer, "reverse", "--remove", $"tcp:{port}");
+            var wege = Freigegebene(await GeraeteListe(adb));
+            var entfernt = 0;
+            AdbErgebnis? ersterFehler = null;
+            foreach (var g in wege)
+            {
+                var r = await Aufruf(adb, "-s", g.Seriennummer, "reverse", "--remove", $"tcp:{port}");
+                if (!r.Zeitueberschreitung && r.Code == 0) entfernt++;
+                else ersterFehler ??= r;
+            }
+            if (entfernt == 0 && ersterFehler is not null)
+            {
+                if (ersterFehler.Zeitueberschreitung) throw Zeitfehler("reverse --remove");
+                throw new HlksFehler($"adb meldet bei «reverse --remove»: {Kuerzen(ersterFehler.Ausgabe, 300)}", "Verbindung und Freigabe in der Brille prüfen.");
+            }
             return await ZustandOhneSperre(port, $"Die Weiterleitung für Port {port} ist entfernt.");
         }
         finally { sperre.Release(); }

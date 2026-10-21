@@ -10747,6 +10747,7 @@
             "Nach «USB-Debugging erlauben» und «Erneut prüfen»: «Verbinden» ist frei; nach dem Klick sind alle vier Punkte grün und die Adresse http://localhost:<Port> steht im Dialog.",
             "In der Quest öffnet der Browser diese Adresse und zeigt KICAD.",
             "«Trennen» setzt «Weiterleitung aktiv» auf rot; «Verbinden» setzt sie wieder.",
+            "«Auf WLAN umstellen» (Kabel steckt): der Dialog wartet bis zu 15 s, bis die Quest über WLAN antwortet, und meldet dann «WLAN aktiv»; «Weiterleitung aktiv» ist grün, auch wenn das Kabel danach abgezogen wird. Ein zweiter Klick auf «Auf WLAN umstellen» bricht die WLAN-Verbindung nicht ab (Meldung «schon über WLAN verbunden»), und bei Kabel und WLAN zugleich gilt der WLAN-Weg (Knopf «Auf WLAN umstellen» gesperrt, in der Geräteliste steht die Adresse mit «WLAN»). Antwortet die Quest nicht, steht der Hinweis «gleiches WLAN, Adresse von Hand».",
             "Eine ungültige WLAN-Adresse (z. B. 999.1.1.1) lässt «Über WLAN verbinden» gesperrt; eine gültige gibt den Knopf frei, ein Verbindungsfehler erscheint mit Vorschlag im Dialog.",
             "In der 3D-Ansicht öffnen der Link «Quest im Browser der Brille nutzen …» und der Klick auf den grauen Knopf «In VR begehen» den Dialog; bei verbundener Brille ist der Link weg."
           ],
