@@ -108,7 +108,7 @@ public static class Planwinkel
 
     sealed class Speicher
     {
-        public int Operationen = -1;
+        public long Zaehler = -1;
         public long Schluessel;
         public readonly Dictionary<string, PlanwinkelErgebnis> Je = new(StringComparer.Ordinal);
     }
@@ -122,11 +122,11 @@ public static class Planwinkel
         var s = zwischen.GetValue(m, _ => new Speicher());
         lock (sperre)
         {
-            if (s.Operationen != m.AngewandteOperationen)
+            if (s.Zaehler != m.Aenderungszaehler)
             {
                 long schluessel = Schluessel(m, k);
                 if (schluessel != s.Schluessel) { s.Je.Clear(); s.Schluessel = schluessel; }
-                s.Operationen = m.AngewandteOperationen;
+                s.Zaehler = m.Aenderungszaehler;
             }
             var key = geb?.Id ?? "";
             if (!s.Je.TryGetValue(key, out var e)) s.Je[key] = e = Bestimmen(m, k, geb);

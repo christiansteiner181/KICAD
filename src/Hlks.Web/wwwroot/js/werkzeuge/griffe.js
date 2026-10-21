@@ -98,10 +98,12 @@ class Griffe {
     S.drehungSetzen(this.ansicht.drehung ?? 0);   // N9: Masse und Fangsymbole beim Ziehen bleiben in gedrehten Ansichten waagrecht
     this.gezeichnetBei = this.ansicht.pxJeMm?.() ?? 0;
     let h = '';
-    const alle = auswahlElemente();
-    if (alle.length > 1) h += S.umrisseSvg(alle, (p) => p, s, 'wz-auswahl');
-    if (this.ziehen) h += this.zeichneZiehen(s);
-    else for (const g of this.griffe()) h += g.art === 'punkt' ? S.griff(g.p, s, 'wz-griff', GRIFF_PX) : S.doppelpfeil(g.p, g.d, s);
+    try {
+      const alle = auswahlElemente();
+      if (alle.length > 1) h += S.umrisseSvg(alle, (p) => p, s, 'wz-auswahl');
+      if (this.ziehen) h += this.zeichneZiehen(s);
+      else for (const g of this.griffe()) h += g.art === 'punkt' ? S.griff(g.p, s, 'wz-griff', GRIFF_PX) : S.doppelpfeil(g.p, g.d, s);
+    } finally { S.drehungSetzen(0); }   // andere Nutzer der Schicht-Bausteine zeichnen ungedreht
     sch.innerHTML = h;
   }
 

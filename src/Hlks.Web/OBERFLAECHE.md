@@ -1450,7 +1450,7 @@ Christian, 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach
   und Abstände unverändert, Ergebnis in Modellkoordinaten, auf 1e-6 mm gerundet). Winkelfang der Leitungen (`richtungsKandidaten({ drehung })`), Bemassung
   horizontal/vertikal (`messrichtung(…, drehung)`, im Kern `GrafikKontext.Drehung`) und die Winkelangabe der temporären Masse gelten in den Achsen der Ansicht –
   waagrecht gezeichnet heisst parallel zur Gebäudekante. Texte, Fangsymbole und Griffe der Werkzeugschicht bleiben waagrecht (`schicht.js › drehungSetzen`, gesetzt in
-  `basis.js` und `griffe.js` vor jedem Zeichnen). Auswahl per Klick und Ziehen laufen über das SVG bzw. `zuModell` und brauchen nichts Eigenes.
+  `basis.js` und `griffe.js` vor jedem Zeichnen, danach wieder 0 – der Familieneditor zeichnet ungedreht). Auswahl per Klick und Ziehen laufen über das SVG bzw. `zuModell` und brauchen nichts Eigenes.
 - **PDF und Planblatt:** `PdfZeichner.Drehen` dreht alle Primitive eines Fensters um die Fenstermitte (eine `cm`-Matrix je Fenster); Ausschnitt und Begrenzung gelten in den
   Achsen der Ansicht; der Nordpfeil unter dem Fenster zeigt nach geografisch Nord. Die Planblatt-Ansicht zeigt das PDF.
 
