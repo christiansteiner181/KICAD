@@ -1,9 +1,10 @@
 // Modul 5 Teil A-D (entwurf/modul-5.md, Punkte 2, 3 und 7): Befehle der Heizung über die eine Tür (Projekt.Ausfuehren, MCP, REST):
 //   system_paar_anlegen      legt Vor- und Rücklaufsystem mit passenden Medien an bzw. koppelt bestehende (bezuege.gegenstueck beidseitig)
-//   heizgruppe_anlegen       legt eine Heizgruppe an (Abgang über verteiler + abgangVl oder aus der Gruppenpumpe); fehlende Systeme, art und
+//   heizgruppe_anlegen       legt eine Heizgruppe von Hand an (Abgang über verteiler + abgangVl oder aus der Gruppenpumpe); fehlende Systeme, art und
 //                            verbraucherart werden aus den abgeleiteten Wegen gesetzt (Herkunft «berechnung»), Temperaturen nur als Eingabe
 //   heizgruppe_aendern       ändert eine Heizgruppe (null bzw. "" entfernt einen Wert)
-//   heizgruppen_vorschlagen  legt Heizgruppen nach dem Vorschlag an (Heizgruppen.Vorschlaege; mit trockenlauf nur zeigen) und setzt ein fehlendes
+//   heizgruppen_vorschlagen  Hauptweg (Entscheid Christian 21.10.2026: Heizgruppen nach der Hydraulik des Modells, keine mitgelieferten Bausteine):
+//                            legt Heizgruppen nach dem Vorschlag an (Heizgruppen.Vorschlaege; mit trockenlauf nur zeigen) und setzt ein fehlendes
 //                            Systempaar, wenn beide Systeme noch keines haben
 // Dazu HeizungNachfuehren (Nachführung im selben Paket): Mischventil-Anschlüsse nach art (Bypass b im Rücklaufmedium), Systempaar beidseitig,
 // Prüfung der Heizgruppen-Angaben (Bezüge, Abgang, Strangschema).
@@ -263,7 +264,7 @@ public sealed class SystemPaarAnlegen : IBefehl
 public sealed class HeizgruppeAnlegen : IBefehl
 {
     public string Name => "heizgruppe_anlegen";
-    public const string Text = "Legt eine Heizgruppe an (Modul 5): Abgang über verteiler + abgangVl (z. B. VT-1, vl_2) oder aus der Gruppenpumpe (pumpe). Glieder, " +
+    public const string Text = "Legt eine Heizgruppe von Hand an (Modul 5; der Hauptweg ist heizgruppen_vorschlagen – Heizgruppen ergeben sich aus der Hydraulik des Modells): Abgang über verteiler + abgangVl (z. B. VT-1, vl_2) oder aus der Gruppenpumpe (pumpe). Glieder, " +
         "Verbraucher und Leistungssumme werden abgeleitet (heizung_lesen). Fehlen Vor-/Rücklaufsystem, art oder verbraucherart, werden sie aus dem Weg ab dem Abgang " +
         "gesetzt (Herkunft berechnung); Temperaturen nur als Eingabe, ohne Vorgabewert.";
     public string Beschreibung => Text;
@@ -379,7 +380,7 @@ public sealed class HeizgruppeAendern : IBefehl
 public sealed class HeizgruppenVorschlagen : IBefehl
 {
     public string Name => "heizgruppen_vorschlagen";
-    public const string Text = "Schlägt Heizgruppen aus dem Netz vor und legt sie an (Modul 5, für Altbestand und IFC-Import; zuerst mit trockenlauf ansehen): je Gruppenpumpe " +
+    public const string Text = "Leitet Heizgruppen aus der Hydraulik des Modells ab und legt sie an (Modul 5, Hauptweg, Entscheid Christian 21.10.2026 – auch für Altbestand und IFC-Import; zuerst mit trockenlauf ansehen): je Gruppenpumpe " +
         "eine Gruppe ab der ersten Zentrale bzw. Verzweigung auf der Speiseseite (Verteiler im Weg sind Unterverteiler, z. B. FBH-Verteiler je Geschoss), danach je " +
         "Verteiler-Abgang ausserhalb aller Gruppen eine Gruppe ohne Pumpe. art (gemischt mit Mischventil) und verbraucherart werden abgeleitet, Name z. B. «FBH gemischt»; " +
         "ein fehlendes Systempaar wird gesetzt, wenn beide Systeme noch keines haben. Bestehende Gruppen und ihre Abgänge bleiben.";

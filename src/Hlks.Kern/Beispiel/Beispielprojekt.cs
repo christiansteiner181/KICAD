@@ -364,15 +364,11 @@ public static class Beispielprojekt
         Rohr("HZ-RH-3", "HZ-RH", 20, ST, "TS-HZ-RH-EG.a", "VE-HG2-R.ein", [Q(7600, 6150, 250), Q(7600, 6150, -1400), Q(7600, 3600, -1400), Q(5300, 3600, -1400)]);
         Rohr("HZ-R1-5", "HZ-R1", 20, ST, "VE-HG2-R.aus", "VT-1.rl_2", [Q(5300, 3600, -1400), Q(4200, 3600, -1400)]);
 
-        // Heizgruppen über die Befehle (Glieder, Verbraucher und Leistungssumme leitet der Kern ab), Temperaturen fiktiv
-        Ok(p.Ausfuehren("heizgruppe_anlegen", new JsonObject
-        {
-            ["kennzeichen"] = "HG-1", ["name"] = "FBH gemischt", ["verteiler"] = "VT-1", ["abgangVl"] = "vl_1", ["vlTemp"] = 35, ["rlTemp"] = 28, ["quelle"] = Fiktiv,
-        }));
-        Ok(p.Ausfuehren("heizgruppe_anlegen", new JsonObject
-        {
-            ["kennzeichen"] = "HG-2", ["name"] = "Heizkörper ungemischt", ["verteiler"] = "VT-1", ["abgangVl"] = "vl_2", ["vlTemp"] = 55, ["rlTemp"] = 45, ["quelle"] = Fiktiv,
-        }));
+        // Heizgruppen nach der Hydraulik des Modells (Entscheid Christian 21.10.2026: keine mitgelieferten Bausteine): heizgruppen_vorschlagen leitet sie
+        // je Gruppenpumpe ab – HG-1 «FBH gemischt» (P-HG1, ab VT-1.vl_1), HG-2 «Heizkörper ungemischt» (P-HG2, ab VT-1.vl_2); Temperaturen fiktiv
+        Ok(p.Ausfuehren("heizgruppen_vorschlagen", new JsonObject { ["anlage"] = "A-HZG" }));
+        Ok(p.Ausfuehren("heizgruppe_aendern", new JsonObject { ["heizgruppe"] = "HG-1", ["vlTemp"] = 35, ["rlTemp"] = 28, ["quelle"] = Fiktiv }));
+        Ok(p.Ausfuehren("heizgruppe_aendern", new JsonObject { ["heizgruppe"] = "HG-2", ["vlTemp"] = 55, ["rlTemp"] = 45, ["quelle"] = Fiktiv }));
 
         // ---------- Funktionsgraph (MSRL) ----------
         Neu("Automationsstation", "AS-1", "Automationsstation Technik", new JsonObject { ["hersteller"] = "offen" });

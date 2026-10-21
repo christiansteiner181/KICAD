@@ -103,7 +103,7 @@ public class SchemaTests
     public void Beispielprojekt_AllePaketeSindGueltig()
     {
         var pakete = Beispiel.Verlauf;
-        Assert.Equal(269, pakete.Count);
+        Assert.Equal(270, pakete.Count);   // Modul 5 A-D: +83 Pakete Heizung
         var fehler = new List<string>();
         foreach (var paket in pakete)
         {

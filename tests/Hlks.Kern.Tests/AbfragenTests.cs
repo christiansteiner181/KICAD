@@ -29,8 +29,8 @@ public class AbfragenTests
     {
         Assert.Equal(270, P.Modell.Elemente.Count);
         Assert.Equal(224, P.Modell.Verbindungen.Count);
-        Assert.Equal(269, P.Verlauf.Count);
-        Assert.Equal(269, P.BekanntePakete.Count);
+        Assert.Equal(270, P.Verlauf.Count);   // Modul 5 A-D: +83 Elemente in 83 Paketen (system_paar_anlegen legt zwei Systeme an, heizgruppen_vorschlagen zwei Gruppen, dazu zwei heizgruppe_aendern)
+        Assert.Equal(270, P.BekanntePakete.Count);
     }
 
     // ---------------------------------------------------------------- system_lesen, strang_text
