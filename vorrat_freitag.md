@@ -32,7 +32,7 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 
 | Nr. | Idee | Herkunft | Umfang (Schätzung) | Hinweis |
 | --- | --- | --- | --- | --- |
-| N14 | Raum im Grundriss gewählt → Kontextmenü «Raum im 3D zeigen»: springt in die 3D-Ansicht, Schnittbereich = Raum + 1,5 m in alle Richtungen | Christian 21.10. | klein, sobald N13 steht | baut auf dem 3D-Schnittbereich (N13) auf |
+| N14 | Raum im Grundriss gewählt → Kontextmenü «Raum im 3D zeigen»: springt in die 3D-Ansicht, Schnittbereich = Raum + 1,5 m in alle Richtungen | Christian 21.10. | klein, sobald N13 steht | **umgesetzt 21.10.** mit N13 |
 | N15 | Raum im Grundriss gewählt → Kontextmenü «Raum begehen»: 3D in Ich-Perspektive, Augenhöhe 1,7 m über Boden, Raummitte; mit den Pfeiltasten bewegen | Christian 21.10. | mittel (Kamera-Modus im 3D) | Belegung der Tasten am Freitag bestätigen (siehe N15) |
 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf), Tests 11 |
 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übernahme, Stufen/Schnittlinie/Lauflinie/Beschriftung) | Christian 21.10. | mittel–gross | läuft (Sonnet, Freigabe bis 95 %) |
