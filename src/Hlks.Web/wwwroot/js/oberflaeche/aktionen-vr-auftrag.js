@@ -1,4 +1,4 @@
-// Aktionen «In VR begehen (Brille)» und «Im Sitzungsraum zeigen (Brille)» (Modul XR): Kontextmenü eines Raums im Grundriss (ansichten/grundriss.js). Sie setzen den VR-Auftrag des Servers
+// Aktionen «In VR begehen», «Im Sitzungsraum zeigen (VR)» und «Raum zeigen (VR)» (Modul XR): Kontextmenü eines Raums im Grundriss (ansichten/grundriss.js). Sie setzen den VR-Auftrag des Servers
 // (vr-auftrag.js); die VR-Startseite /vr in der Quest führt ihn aus. Ohne Register-Eintrag (nur Kontextmenü, wie «Rand für Raum im 3D zeigen»); keine Änderung am Modell.
 
 import { registrieren } from './register.js';
