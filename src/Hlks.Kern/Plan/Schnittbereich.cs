@@ -54,8 +54,9 @@ public static class Schnittbereich
         if (o["winkel"] is { } w) winkel = Json.Zahl(w) is double d && double.IsFinite(d) ? d : throw new HlksFehler("schnittbereich.winkel muss eine Zahl in Grad sein.");
         winkel = R(((winkel + 180) % 360 + 360) % 360 - 180, 4);   // −180 … 180
         if (winkel == 0) winkel = 0;   // −0 vermeiden
+        // ohne Angabe ein: wer einen Quader setzt (auch die KI), will ihn wirken sehen; ausgeschaltet wird mit aktiv false
         bool aktiv = o["aktiv"] is JsonValue av && av.TryGetValue<bool>(out var ab) ? ab
-            : o["aktiv"] is null ? false : throw new HlksFehler("schnittbereich.aktiv muss true oder false sein.");
+            : o["aktiv"] is null ? true : throw new HlksFehler("schnittbereich.aktiv muss true oder false sein.");
         return new JsonObject
         {
             ["aktiv"] = aktiv,

@@ -22,7 +22,8 @@ test('schnittbereichLesen: gültige Form, Kopie, ungültige Formen ergeben null'
   assert.deepEqual(sb, roh);
   sb.min[0] = 99;
   assert.equal(roh.min[0], 0, 'Kopie');
-  assert.equal(schnittbereichLesen({ min: [0, 0, 0], max: [1, 1, 1] }).aktiv, false, 'ohne aktiv = aus');
+  assert.equal(schnittbereichLesen({ min: [0, 0, 0], max: [1, 1, 1] }).aktiv, true, 'ohne aktiv = ein (wie im Kern)');
+  assert.equal(schnittbereichLesen({ aktiv: false, min: [0, 0, 0], max: [1, 1, 1] }).aktiv, false);
   assert.equal(schnittbereichLesen({ min: [0, 0, 0], max: [1, 1, 1] }).winkel, 0);
   for (const schlecht of [null, undefined, 5, {}, { min: [0, 0], max: [1, 1, 1] }, { min: [0, 0, 0], max: [0, 1, 1] }, { min: [0, 0, 0], max: [1, 1, 'x'] }, { min: [2, 0, 0], max: [1, 1, 1] }])
     assert.equal(schnittbereichLesen(schlecht), null, JSON.stringify(schlecht));

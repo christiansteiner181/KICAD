@@ -16,6 +16,7 @@ import { ebenen, griffe, ecken, weltGrenzen, enthaelt, schnittbereichLesen, fuer
 
 /** Pause in ms nach der letzten Mausbewegung beim Ziehen, nach der gespeichert wird (sonst gäbe jeder Zug ein eigenes Paket). */
 export const PAUSE_MS = 600;
+const SPIEL_M = 0.0005;   // Meter: Clipping-Ebenen liegen so weit ausserhalb des Quaders (gegen Flackern bei Flächen in der Ebene)
 const FARBE = 0xff8a00;
 const FARBE_HOVER = 0xffd23f;
 const GRIFF_GROESSE = 0.045;   // Höhe des Kegels im Verhältnis zum Abstand zur Kamera
@@ -68,7 +69,9 @@ export function erzeugeSchnittbereich(o) {
     linien.geometry.dispose();
     linien.geometry = new THREE.BufferGeometry();
     linien.geometry.setAttribute('position', new THREE.Float32BufferAttribute(pos, 3));
-    ebenen(quader).forEach((p, i) => ebenenObjekte[i].set(new THREE.Vector3(...p.normale), p.konstante));
+    // Die Ebenen liegen um SPIEL_M weiter aussen: Flächen, die genau auf dem Quader liegen (Dach, Aussenwände, Geschossdecken beim Quader «ganzes Modell»
+    // bzw. «Auf Geschoss»), flackerten sonst (Clipping an einer Fläche in der Ebene). Gespeichert wird der genaue Quader.
+    ebenen(quader).forEach((p, i) => ebenenObjekte[i].set(new THREE.Vector3(...p.normale), p.konstante + SPIEL_M));
     aktuelleGriffe = griffe(quader);
     wurzel.dataset.schnittbereich = JSON.stringify(aktiv() ? fuerSpeichern(quader) : null);
   }

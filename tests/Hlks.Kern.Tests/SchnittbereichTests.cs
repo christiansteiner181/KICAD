@@ -74,6 +74,16 @@ public class SchnittbereichTests
         Assert.Null(p.Modell.Finde("AN-3D")!.Eigenschaft("schnittbereich"));
     }
 
+    [Fact]
+    public void Schnittbereich_OhneAktiv_IstEin_UndOhneWinkelNull()
+    {
+        var p = MitAnsicht();
+        Eigenschaften(p, "AN-3D", new JsonObject { ["schnittbereich"] = new JsonObject { ["min"] = new JsonArray(0, 0, 0), ["max"] = new JsonArray(1000, 2000, 3000) } });
+        var o = (JsonObject)p.Modell.Finde("AN-3D")!.Eigenschaft("schnittbereich")!.Inhalt!;
+        Assert.True(o["aktiv"]!.GetValue<bool>());
+        Assert.Equal(0, o["winkel"]!.GetValue<double>());
+    }
+
     [Theory]
     [InlineData("vertauscht")]
     [InlineData("keineZahl")]

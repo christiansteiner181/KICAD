@@ -27,7 +27,7 @@ const dreier = (a) => Array.isArray(a) && a.length === 3 && a.every(zahl);
 export function schnittbereichLesen(roh) {
   if (!roh || typeof roh !== 'object' || !dreier(roh.min) || !dreier(roh.max)) return null;
   for (let i = 0; i < 3; i++) if (!(roh.max[i] - roh.min[i] >= 1)) return null;
-  return { aktiv: roh.aktiv === true, min: [...roh.min], max: [...roh.max], winkel: zahl(roh.winkel) ? roh.winkel : 0 };
+  return { aktiv: roh.aktiv !== false, min: [...roh.min], max: [...roh.max], winkel: zahl(roh.winkel) ? roh.winkel : 0 };
 }
 
 /** Wert für die Eigenschaft (auf 0.1 mm gerundet, so wie ihn der Kern speichert). */
