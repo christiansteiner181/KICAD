@@ -13,10 +13,11 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ## Teile
 
-### XR-A – Begehen in VR (N23, im Bau seit 21.10.2026)
+### XR-A – Begehen in VR (N23, gebaut 21.10.2026, Brillentest offen)
 - Knopf «In VR begehen». Der Standpunkt ist der von «Raum begehen» (N15); die Augenhöhe kommt aus der echten Kopfhöhe.
 - Bewegen: Stick zum Gehen, Snap-Turn zum Drehen, Teleport per Abzug bzw. Pinch auf den Boden. Keine Kollision.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).
+- Umgesetzt in `ansichten/vr3d.js` und `vr-logik.js`. Einrichtung, Bedienung und Annahmen stehen in `OBERFLAECHE.md`, Abschnitt N23. KICAD muss dafür in Chrome über `http://localhost:<Port>` laufen.
 
 ### XR-B – Greifen (N24)
 - Ein Element in Reichweite mit der Hand greifen: Es folgt der Hand mit Fang und bleibt beim Öffnen der Hand liegen.
