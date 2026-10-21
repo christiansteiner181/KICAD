@@ -1608,4 +1608,5 @@ nichts Neues in der Oberfläche. «mittel» und «fein» sind unverändert. Der 
   (nach SIA 400)») das Eingabefeld, darunter «Herkunft», «Hinweis» (je nicht geschnittener Öffnung) und «Handwert». Ist der Haken aus (oder antwortet der Kern nicht), erscheint das Feld `schnitthoehe` wie bisher.
   Der Haken steht nur bei Grundrissen. Die Palette fragt beim Zeichnen (Wahl bzw. Wechsel der Ansicht, Änderung der Ansicht), nicht bei jeder Änderung an Türen und Fenstern.
 - **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~SchnitthoeheSiaTests|FullyQualifiedName~DetailgradGrobTests"`; Node
-  `node --test src/Hlks.Web/wwwroot/js/oberflaeche/schnitthoehe-palette.test.mjs`.
+  `node --test src/Hlks.Web/wwwroot/js/oberflaeche/schnitthoehe-palette.test.mjs`; Browser `node src/Hlks.Web/wwwroot/js/oberflaeche/schnitthoehe.browser.mjs` (Port 5560, CDP 9560; Bilder `n21-*.png`
+  in `%TEMP%\HLKS_CAD\n21`). Die echte Bernstrasse 42 prüft `SchnitthoeheSiaProjektTests.Bernstrasse42_Echt_…` (nur mit `HLKS_ABNAHME=1`).

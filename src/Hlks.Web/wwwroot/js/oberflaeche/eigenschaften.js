@@ -210,7 +210,7 @@ function eigenschaftsFeld(d, wert) {
     case 'auswahl':
       return auswahlFeld(ziel, (d.auswahl ?? []).map((a) => [a, a]), wert ?? null);
     case 'bool':
-      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${(d.name === 'belastung' || d.name === 'schnitthoeheNachSia' ? wert !== false : wert === true) ? 'checked' : ''}>`;   // Modul 4: Ansicht.belastung ist ohne Angabe ein (Häkchen, solange nicht false)
+      return `<input type="checkbox" data-ziel="${esc(ziel)}" data-typ="bool" ${(d.name === 'schnitthoeheNachSia' ? wert !== false : d.name === 'belastung' ? wert !== false : wert === true) ? 'checked' : ''}>`;   // Modul 4: Ansicht.belastung ist ohne Angabe ein (Häkchen, solange nicht false)
     case 'liste': {
       const aktuell = Array.isArray(wert) ? wert : [];
       const moegliche = d.auswahl ? d.auswahl.map((a) => [a, a]) : d.name === 'gewerke' ? gewerkeListe() : null;
