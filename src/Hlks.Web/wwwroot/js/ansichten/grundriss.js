@@ -18,7 +18,7 @@ import { holen, abfrage } from '../api.js';
 import { ansichtsWerte, esc } from './hilfen.js';
 import { planSvg, fangdatenVon, schraffurMap } from './plangrafik.js';
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
-import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText } from './ausrichtung.js';   // N9: gedrehte Grundrisse
+import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText, svgAusModell, modellAusSvg } from './ausrichtung.js';   // N9: gedrehte Grundrisse
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FREMD_DAUER = 1500;      // ms Hervorhebung fremder Änderungen
@@ -442,14 +442,14 @@ function erstellen(behaelter, ansichtElement) {
     zuModell(clientX, clientY) {
       if (!vb) return [0, 0];
       const p = zuSvg(clientX, clientY);
-      return drehen([p.x, -p.y], -drehung);
+      return modellAusSvg([p.x, p.y], drehung);
     },
     /** Modell-mm [x, y] → Client-Pixel { x, y }. */
     zuBildschirm(p) {
       const r = svg.getBoundingClientRect();
       if (!vb || !r.width) return { x: 0, y: 0 };
-      const v = drehen(p, drehung);
-      return { x: r.left + ((v[0] - vb.x) / vb.w) * r.width, y: r.top + ((-v[1] - vb.y) / vb.h) * r.height };
+      const s = svgAusModell(p, drehung);
+      return { x: r.left + ((s[0] - vb.x) / vb.w) * r.width, y: r.top + ((s[1] - vb.y) / vb.h) * r.height };
     },
     /** Bildschirm-Pixel (CSS) je Modell-mm beim aktuellen Zoom. */
     pxJeMm() { const { W } = groesse(); return vb && W > 0 ? W / vb.w : 1; },

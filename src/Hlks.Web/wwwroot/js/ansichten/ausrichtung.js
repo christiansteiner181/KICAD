@@ -22,6 +22,15 @@ export const ausAnsicht = (v, drehung) => drehen(v, -(drehung || 0));
 /** Drehung aus der Plangrafik (Zahl, sonst 0). */
 export const drehungVon = (plan) => (Number.isFinite(plan?.drehung) ? plan.drehung : 0);
 
+/** Modell-mm → SVG-Koordinaten der Ansicht (viewBox: x nach rechts, y nach unten) – dasselbe wie transform der Gruppe gr-welt. */
+export function svgAusModell(p, drehung) {
+  const v = drehen(p, drehung);
+  return [v[0], -v[1]];
+}
+
+/** SVG-Koordinaten der Ansicht → Modell-mm (Umkehrung von svgAusModell; Klick → Modell). */
+export const modellAusSvg = (s, drehung) => drehen([s[0], -s[1]], -(drehung || 0));
+
 /** transform der Gruppe gr-welt: y spiegeln (Modell y nach oben) und um die Drehung der Ansicht drehen. */
 export function weltTransform(drehung) {
   const d = Number(drehung) || 0;

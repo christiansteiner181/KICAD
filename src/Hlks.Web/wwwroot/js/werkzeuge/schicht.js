@@ -85,13 +85,14 @@ export function fangsymbol(fang, s) {
 export function tempMass(a, b, s, { mitWinkel = true, seite = 1 } = {}) {
   const l = abstand(a, b);
   if (l < 1e-6) return '';
-  const w = (((winkelGrad(a, b) + dreh) % 360) + 360) % 360;   // N9: Winkel in den Achsen der Ansicht (waagrecht gezeichnet = 0°)
+  let w = (((winkelGrad(a, b) + dreh) % 360) + 360) % 360;   // N9: Winkel in den Achsen der Ansicht (waagrecht gezeichnet = 0°)
+  if (w >= 359.95) w = 0;                                       // Rundungsrest der Drehung: nicht «360.0°»
   const d = [(b[0] - a[0]) / l, (b[1] - a[1]) / l], n = [-d[1] * seite, d[0] * seite];
   const v = 14 * s;   // Abstand der Masslinie vom Segment (14 px)
   const a2 = [a[0] + n[0] * v, a[1] + n[1] * v], b2 = [b[0] + n[0] * v, b[1] + n[1] * v];
   const m = mitteVon(a2, b2);
   const tw = lesbarerWinkel(a, b);
-  const beschr = `${laengeText(l)}${mitWinkel ? `  ${winkelText(w >= 360 - 1e-9 ? 0 : w)}` : ''}`;
+  const beschr = `${laengeText(l)}${mitWinkel ? `  ${winkelText(w)}` : ''}`;
   const tm = [m[0] + n[0] * 6 * s, m[1] + n[1] * 6 * s];
   return linie(a, a2, 'wz-hilf') + linie(b, b2, 'wz-hilf') + linie(a2, b2, 'wz-mass')
     + text(tm, beschr, s, { anker: 'middle', winkel: tw, ausgerichtet: true, klasse: 'wz-text wz-masstext' });
