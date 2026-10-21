@@ -1,4 +1,5 @@
-// MCP-Werkzeuge der Leitungen (Modul 3): Abfragen leitungsserie (B1), leitungszug (B2) und verlegung (B8c), Befehle des Routings (B2:
+// MCP-Werkzeuge der Leitungen (Modul 3): Abfragen leitungsserie (B1; seit 21.10.2026 ohne Sperre gerechnet und abbrechbar), abzweigwinkel
+// (Nachtrag 21.10.2026), leitungszug (B2) und verlegung (B8c), Befehle des Routings (B2:
 // leitung_zeichnen, leitung_abzweigen, leitung_aufteilen, leitung_groesse, leitung_serie). Dünne Hülle über dem Kern wie in
 // Werkzeuge.cs; Name, Beschreibung und Parameter stehen genau so im Kern (LeitungenAbfragen.Definitionen, Leitungsserie.AbfrageText,
 // Leitungszug.AbfrageText, RoutingBefehle.Par*, LeitungZeichnen.Text usw.).
@@ -14,9 +15,18 @@ public sealed partial class Werkzeuge
 {
     // ---------- Abfragen ----------
 
+    // Nachtrag 21.10.2026: leitungsserie rechnet ohne Sperre auf einem Lesestand und bricht ab, wenn der Client den Aufruf abbricht
     [McpServerTool(Name = "leitungsserie"), Description(Leitungsserie.AbfrageText)]
-    public string LeitungsserieLesen([Description("Leitungsserie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")] string familie) =>
-        Lauf(() => Antwort(Leitungsserie.Abfrage(projekt, familie)));
+    public string LeitungsserieLesen([Description("Leitungsserie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)")] string familie,
+        CancellationToken abbruch = default) =>
+        LaufAbgesetzt(() => { var r = Leitungsserie.AbfrageVorbereiten(projekt, familie); return a => r(a); }, abbruch);
+
+    [McpServerTool(Name = "abzweigwinkel"), Description(Leitungsserie.AbzweigwinkelAbfrageText)]
+    public string AbzweigwinkelLesen(
+        [Description(Leitungsserie.ParAbzweigLeitung)] string? leitung = null,
+        [Description(Leitungsserie.ParAbzweigFamilie)] string? familie = null,
+        [Description(Leitungsserie.ParAbzweigGroesse)] JsonElement? groesse = null) =>
+        Lauf(() => Antwort(Leitungsserie.AbzweigwinkelAbfrage(projekt, leitung, familie, Knoten(groesse))));
 
     [McpServerTool(Name = "leitungszug"), Description(Leitungszug.AbfrageText)]
     public string LeitungszugLesen([Description(Leitungszug.ParLeitung)] string leitung) =>
@@ -51,6 +61,8 @@ public sealed partial class Werkzeuge
     public string LeitungAbzweigenWerkzeug(
         [Description(LeitungAbzweigen.ParHaupt)] string leitung,
         [Description(LeitungAbzweigen.ParPunkt)] JsonElement punkt,
+        [Description(LeitungAbzweigen.ParWinkel)] double? winkel = null,
+        [Description(LeitungAbzweigen.ParSeite)] JsonElement? seite = null,
         [Description(LeitungAbzweigen.ParRichtung)] JsonElement? richtung = null,
         [Description(LeitungAbzweigen.ParLaenge)] double? laenge = null,
         [Description(LeitungAbzweigen.ParAbzweigPunkte)] JsonElement? punkte = null,
@@ -63,7 +75,7 @@ public sealed partial class Werkzeuge
         [Description(RoutingBefehle.ParGeschoss)] string? geschoss = null,
         [Description(RoutingBefehle.ParPraefix)] string? praefix = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("leitung_abzweigen", Parameter(("leitung", leitung), ("punkt", punkt), ("richtung", richtung), ("laenge", laenge), ("punkte", punkte),
+        Befehl("leitung_abzweigen", Parameter(("leitung", leitung), ("punkt", punkt), ("winkel", winkel), ("seite", seite), ("richtung", richtung), ("laenge", laenge), ("punkte", punkte),
             ("groesse", groesse), ("serie", serie), ("ende", ende), ("gefaelle", gefaelle), ("system", system), ("strang", strang), ("geschoss", geschoss),
             ("praefix", praefix)), trockenlauf);
 

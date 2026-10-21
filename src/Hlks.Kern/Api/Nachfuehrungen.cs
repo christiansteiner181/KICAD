@@ -16,6 +16,7 @@ public static class Nachfuehrungen
 {
     /// <summary>Alle Regeln in fester Reihenfolge. Neue Regeln hier eintragen.</summary>
     public static readonly IReadOnlyList<INachfuehrung> Liste = [new WaermebrueckenNachfuehren(), new OeffnungenNachfuehren(), new HuelleNachfuehren(), new DeckenNachfuehren(),
+        new FormteilGroessenNachfuehren(),   // Modul 3 (Nachtrag 21.10.2026): Formteile freier Serien tragen ihre Grösse selbst (vor der Familie)
         new FamilienNachfuehren(),   // Modul 2 (B1): Anschlüsse und Kennwerte aus der Familie
         new LeitungenNachfuehren(),    // Modul 3 (B2): Leitungsenden folgen verschobenen Anschlüssen
         new SanitaerNachfuehren(),     // Modul 4 Teil A: Eingaben der Sanitär-Zusammenstellung prüfen (abflusskennzahl, spezialinstallationen)

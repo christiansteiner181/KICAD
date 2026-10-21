@@ -52,6 +52,8 @@ public static class Pruefungen
         // nur auf Abruf, nicht in pruefen (die Prüfung braucht die Befunde der Unterlagen; pruefen läuft bei jedem Befehl)
         ["P31"] = "Quellen einer Familie nach einer Leserversion, deren Befunde im Projekt fehlen",
         ["P32"] = "Quelle einer Familie nicht eindeutig auf die aktuelle Leserversion umschlüsselbar",
+        // Nachtrag Modul 3, 21.10.2026 (Formteile in Vorgabegrösse): gemeldet von LeitungenPruefung (Leitungen/FreieGroesse.cs)
+        ["P45"] = "Formteil einer freien Serie trägt seine Grösse nicht selbst",
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete

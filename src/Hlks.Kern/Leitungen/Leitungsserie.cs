@@ -43,6 +43,13 @@
 // Leitungsgroesse.Aussendurchmesser); das Rohr trägt durchmesser (Aussendurchmesser), dn nur als Herstellerangabe aus einem Typparameter mit
 // ziel dn. Regel Christian: DN wird nie aus dem Aussendurchmesser abgeleitet (und nie umgekehrt). Eine Leitung mit DN bzw. ohne Grösse kommt
 // über ihren Aussendurchmesser (Typ ihrer Serie bzw. Leitung.da, z. B. aus dem IFC-Import) in eine solche Serie (GroesseFuer).
+//
+// Formteile in Vorgabegrösse (Nachtrag 21.10.2026, Auftrag «Nachträge zu Leitungsserien» Punkt 2): In einer freien Serie trägt ein Formteil
+// seine Grössen immer selbst als Exemplarwerte – auch wenn ein Typ schon mit seinen Typwerten bzw. der Vorgabe der Familie passt (z. B.
+// Bogen 400 × 200 bei Vorlage 400 × 200). Sonst hinge es an der Vorgabe der Familie und änderte sich mit ihr. Nur, wenn sich die
+// Anschlussgrössen als Exemplarwerte setzen lassen (FreiExemplar); sind es Typparameter, Konstanten oder Formeln, legt sie der Typ fest.
+// Bestehende Formteile: FormteilGroessenNachfuehren (FreieGroesse.cs) und Prüfung P45.
+// Die Abfrage «leitungsserie» steht in LeitungsserieAbfrage.cs.
 
 using System.Globalization;
 using System.Text.Json.Nodes;
@@ -150,7 +157,7 @@ public sealed record SerienGroesse(string Typ, Leitungsgroesse Groesse, double? 
 }
 
 /// <summary>Eine Leitungsserie (Familie der Kategorie Rohr bzw. Kanal) mit ihren Grössen, Regeln und der Formteilwahl.</summary>
-public sealed class Leitungsserie
+public sealed partial class Leitungsserie
 {
     public Element Familie { get; }
     public FamilieDef Def { get; }
@@ -167,8 +174,9 @@ public sealed class Leitungsserie
     /// <summary>Bezeichnung für Meldungen: «FAM-1 «Name»».</summary>
     public string Bezeichnung => $"{Familie.Kennzeichen} «{Familie.Name ?? Def.Name}»";
 
-    /// <summary>Serie aus einem Familie-Element; HlksFehler, wenn es keine gültige Leitungsserie ist.</summary>
-    public static Leitungsserie Von(Modell m, Katalog k, Element familie)
+    /// <summary>Serie aus einem Familie-Element; HlksFehler, wenn es keine gültige Leitungsserie ist. abbruch wird je Typ geprüft
+    /// (Abfrage leitungsserie, Nachtrag 21.10.2026).</summary>
+    public static Leitungsserie Von(Modell m, Katalog k, Element familie, CancellationToken abbruch = default)
     {
         if (familie.Klasse != Familien.Klasse)
             throw new HlksFehler($"{familie.Kennzeichen} ist keine Familie, sondern {familie.Klasse}.", "Eine Leitungsserie angeben (Familie der Kategorie Rohr bzw. Kanal); familien listet sie.");
@@ -180,6 +188,7 @@ public sealed class Leitungsserie
         var groessen = new List<SerienGroesse>();
         foreach (var t in def.Typen)
         {
+            abbruch.ThrowIfCancellationRequested();
             var a = FamilienAuswertung.Aufloesen(def, t.Name, null);
             if (!a.Gueltig || a.Leitung is null)
             {
@@ -451,6 +460,10 @@ public sealed class Leitungsserie
     /// <summary>«45°, 88.5°» bzw. «90°».</summary>
     public string AbzweigwinkelText => string.Join(", ", Abzweigwinkel.Select(x => Leitungsgroesse.Zahl(x) + "°"));
 
+    /// <summary>Vorgabe des Abzweigwinkels für leitung_abzweigen mit winkel bzw. seite (Nachtrag 21.10.2026): der einzige Winkel der Serie,
+    /// sonst 90 (rechtwinklig – in einer Serie ohne 90 wird er dann mit den erlaubten Winkeln abgelehnt).</summary>
+    public double AbzweigwinkelVorgabe => Abzweigwinkel.Count == 1 ? Abzweigwinkel[0] : 90;
+
     /// <summary>Der erlaubte Abzweigwinkel zu einem gemessenen Winkel (der nächste der Liste bis ±Routing.WinkelToleranz) oder null.</summary>
     public double? AbzweigwinkelZu(double gemessen)
     {
@@ -464,6 +477,32 @@ public sealed class Leitungsserie
     /// <summary>Formteil-Familien im Projekt über die Definitions-id.</summary>
     public static List<Element> FamilienMitId(Modell m, string id) =>
         m.DerKlasse(Familien.Klasse).Where(f => Familien.DefinitionsId(f) == id).OrderBy(f => f.Kennzeichen, StringComparer.OrdinalIgnoreCase).ToList();
+
+    /// <summary>Formteil-Familie einer Art – der Teil der Formteilwahl, der nicht von der Grösse abhängt (auch für die Regel der Abfrage
+    /// leitungsserie): die Serie nennt eine Familie, sie ist im Projekt, gültig und hat die passende Kategorie. null = in Ordnung (wahl, fam,
+    /// def gesetzt), sonst abgelehnt mit Grund und Vorschlag.</summary>
+    internal FormteilWahl? FormteilFamilie(Modell m, Katalog k, string art, out FamFormteilWahl wahl, out Element fam, out FamilieDef def)
+    {
+        FormteilWahl Nein(string grund, string vorschlag) => new() { Art = art, Fehler = grund, Vorschlag = vorschlag };
+        wahl = null!; fam = null!; def = null!;
+        if (!Block.Formteile.TryGetValue(art, out var w))
+            return Nein($"Die Serie {Bezeichnung} nennt keine Formteil-Familie für {Artname(art)}.",
+                $"In der Serie leitung.formteile.{art} = {{ \"familie\": \"<id der {FamLeitung.KlasseVon(art)}-Familie>\" }} ergänzen (familie_aendern mit op leitung_setzen).");
+        wahl = w;
+        var kandidaten = FamilienMitId(m, w.Familie);
+        if (kandidaten.Count == 0)
+            return Nein($"Die Formteil-Familie «{w.Familie}» ({Artname(art)} der Serie {Bezeichnung}) fehlt im Projekt.",
+                $"familie_laden mit der Datei der Formteil-Familie (familien_bibliothek listet die Bibliothek), danach erneut versuchen.");
+        fam = kandidaten[0];
+        def = Familien.Definition(fam, k);
+        if (!def.Gueltig)
+            return Nein($"Die Formteil-Familie {fam.Kennzeichen} «{fam.Name}» ist ungültig: {def.Fehler[0]}", "Familie korrigieren (familie abfragen zeigt alle Fehler).");
+        var klasse = FamLeitung.KlasseVon(art);
+        if (!k.Klassen.TryGetValue(def.Kategorie, out var kd) || !kd.IstArt(klasse))
+            return Nein($"Die Formteil-Familie {fam.Kennzeichen} «{fam.Name}» hat die Kategorie {def.Kategorie}, für {Artname(art)} braucht es {klasse}.",
+                $"In der Serie leitung.formteile.{art} eine Familie der Kategorie {klasse} nennen.");
+        return null;
+    }
 
     /// <summary>Wählt das Formteil der Serie für eine Art (bogen | tstueck | reduktion | reinigungsoeffnung) und Grösse(n):
     /// Bogen g1 (winkel = Umlenkwinkel in Grad, optional), T-Stück g1 = Durchgang und g2 = Abzweig (Vorgabe g1; winkel =
@@ -506,21 +545,7 @@ public sealed class Leitungsserie
                 if (a2.Mass > a1.Mass) { (a1, a2) = (a2, a1); vertauscht = true; }
                 break;
         }
-        if (!Block.Formteile.TryGetValue(art, out var wahl))
-            return Nein($"Die Serie {Bezeichnung} nennt keine Formteil-Familie für {Artname(art)}.",
-                $"In der Serie leitung.formteile.{art} = {{ \"familie\": \"<id der {FamLeitung.KlasseVon(art)}-Familie>\" }} ergänzen (familie_aendern mit op leitung_setzen).");
-        var kandidaten = FamilienMitId(m, wahl.Familie);
-        if (kandidaten.Count == 0)
-            return Nein($"Die Formteil-Familie «{wahl.Familie}» ({Artname(art)} der Serie {Bezeichnung}) fehlt im Projekt.",
-                $"familie_laden mit der Datei der Formteil-Familie (familien_bibliothek listet die Bibliothek), danach erneut versuchen.");
-        var fam = kandidaten[0];
-        var def = Familien.Definition(fam, k);
-        if (!def.Gueltig)
-            return Nein($"Die Formteil-Familie {fam.Kennzeichen} «{fam.Name}» ist ungültig: {def.Fehler[0]}", "Familie korrigieren (familie abfragen zeigt alle Fehler).");
-        var klasse = FamLeitung.KlasseVon(art);
-        if (!k.Klassen.TryGetValue(def.Kategorie, out var kd) || !kd.IstArt(klasse))
-            return Nein($"Die Formteil-Familie {fam.Kennzeichen} «{fam.Name}» hat die Kategorie {def.Kategorie}, für {Artname(art)} braucht es {klasse}.",
-                $"In der Serie leitung.formteile.{art} eine Familie der Kategorie {klasse} nennen.");
+        if (FormteilFamilie(m, k, art, out var wahl, out var fam, out var def) is { } ohneFamilie) return ohneFamilie;
 
         // Exemplarwerte: Bogenwinkel bzw. Abzweigwinkel (T-Stück) in den Exemplarparameter mit ziel «winkel» (bzw. namens winkel)
         JsonObject? Exemplar(FamilieDef d)
@@ -645,6 +670,12 @@ public sealed class Leitungsserie
             }
         }
 
+        // Nachtrag 21.10.2026 (Formteile in Vorgabegrösse): in einer freien Serie trägt das Formteil seine Grössen immer selbst, auch wenn
+        // der Typ schon mit seinen Typwerten bzw. der Vorgabe der Familie passt – sonst änderte es sich mit der Vorgabe. Nur, wenn sich die
+        // Anschlussgrössen als Exemplarwerte setzen lassen (sonst legt sie der Typ fest); die Werte sind dieselben, die Auswertung bleibt gleich.
+        if (!frei && Frei is not null && FreiExemplar(def, soll, ex) is { Grund: null, Exemplar: { } exGroessen } && exGroessen.Count > (ex?.Count ?? 0))
+            ex = exGroessen;
+
         Formteilgeometrie geo;
         try { geo = Formteilgeometrie.Lokal(def, typ, ex, art); }
         catch (HlksFehler f)
@@ -659,7 +690,7 @@ public sealed class Leitungsserie
     }
 
     /// <summary>Vorschlag, wenn sich ein Formteil-Typ für eine freie Grösse nicht einstellen lässt.</summary>
-    static string FreiVorschlag(string art) =>
+    internal static string FreiVorschlag(string art) =>
         $"In der {FamLeitung.KlasseVon(art)}-Familie die Anschlussgrössen (d bzw. b und h) direkt als Exemplarparameter ohne Formel führen – " +
         (art switch
         {
@@ -672,33 +703,66 @@ public sealed class Leitungsserie
     /// Anschlusses direkt der Name eines Exemplarparameters ohne Formel, wird dieser auf die Soll-Grösse gesetzt; eine Konstante muss
     /// schon stimmen. Abgelehnt mit Grund: Grössenwert ist eine Formel, ein Typparameter, ein Parameter mit Formel, oder derselbe
     /// Parameter müsste zwei Werte haben. Die übrigen Exemplarwerte (winkel) bleiben.</summary>
-    public static (JsonObject? Exemplar, string? Grund) FreiExemplar(FamilieDef def, IReadOnlyList<(string Name, Leitungsgroesse G)> soll, JsonObject? exemplar)
+    public static (JsonObject? Exemplar, string? Grund) FreiExemplar(FamilieDef def, IReadOnlyList<(string Name, Leitungsgroesse G)> soll, JsonObject? exemplar) =>
+        FreiAnwenden(FreiPlan(def, soll), soll, exemplar);
+
+    /// <summary>Ein Schritt von FreiExemplar (Nachtrag 21.10.2026: einmal je Familie vorbereitet, je Grösse nur angewandt – Abfrage leitungsserie):
+    /// Soll-Index, Anschluss, Grössenschlüssel und entweder ein Grund (abgelehnt, unabhängig von der Grösse), eine Konstante (muss stimmen)
+    /// oder der Exemplarparameter, der die Soll-Grösse bekommt.</summary>
+    internal sealed record FreiSchritt(int Soll, string Anschluss, string Schl, string? Grund, double? Konstante, string? Parameter);
+
+    /// <summary>Plan von FreiExemplar für Soll-Anschlüsse (Namen) und die Grössenschlüssel ihrer Grössen; endet beim ersten Grund, der nicht
+    /// von der Grösse abhängt (FreiExemplar lehnt dort ab).</summary>
+    internal static List<FreiSchritt> FreiPlan(FamilieDef def, IReadOnlyList<(string Name, Leitungsgroesse G)> soll)
     {
-        var ex = exemplar?.DeepClone() as JsonObject ?? new JsonObject();
-        var gesetzt = new Dictionary<string, (double Wert, string Wo)>(StringComparer.Ordinal);
-        foreach (var (name, g) in soll)
+        var plan = new List<FreiSchritt>();
+        for (int i = 0; i < soll.Count; i++)
         {
+            var (name, g) = soll[i];
             var an = def.Anschluesse.FirstOrDefault(x => x.Name.Equals(name, StringComparison.OrdinalIgnoreCase));
-            if (an is null) return (null, $"Anschluss «{name}» fehlt");
+            if (an is null) { plan.Add(new(i, name, "", $"Anschluss «{name}» fehlt", null, null)); return plan; }
             foreach (var (schl, feld, wert) in new[] { ("d", an.D, g.D), ("b", an.B, g.B), ("h", an.H, g.H) })
             {
-                if (wert is not double w) continue;
+                if (wert is null) continue;
                 var wo = $"{an.Name}.{schl}";
-                if (feld is null) return (null, $"Anschluss {an.Name} hat keine Grösse {schl}");
-                if (feld.Konstante is double c)
-                {
-                    if (Math.Abs(c - w) > Leitungsgroesse.Toleranz) return (null, $"{wo} ist fest {Leitungsgroesse.Zahl(c)} mm");
-                    continue;
-                }
+                string? Nein(string grund) { plan.Add(new(i, an.Name, schl, grund, null, null)); return grund; }
+                if (feld is null) { Nein($"Anschluss {an.Name} hat keine Grösse {schl}"); return plan; }
+                if (feld.Konstante is double c) { plan.Add(new(i, an.Name, schl, null, c, null)); continue; }
                 var pn = feld.Text?.Trim();
-                if (pn is null || !def.NachName.TryGetValue(pn, out var p)) return (null, $"{wo} ist die Formel «{feld.Text}», kein einzelner Parameter");
-                if (p.HatFormel) return (null, $"{wo} = «{pn}» hat eine Formel");
-                if (p.Art != "exemplar") return (null, $"{wo} = «{pn}» ist ein Typparameter (pro Exemplar nicht einstellbar)");
-                if (gesetzt.TryGetValue(pn, out var vorher) && Math.Abs(vorher.Wert - w) > Leitungsgroesse.Toleranz)
-                    return (null, $"«{pn}» müsste zugleich {Leitungsgroesse.Zahl(vorher.Wert)} mm ({vorher.Wo}) und {Leitungsgroesse.Zahl(w)} mm ({wo}) sein");
-                gesetzt.TryAdd(pn, (w, wo));   // erste Stelle bleibt für die Meldung
-                ex[pn] = w;
+                if (pn is null || !def.NachName.TryGetValue(pn, out var p)) { Nein($"{wo} ist die Formel «{feld.Text}», kein einzelner Parameter"); return plan; }
+                if (p.HatFormel) { Nein($"{wo} = «{pn}» hat eine Formel"); return plan; }
+                if (p.Art != "exemplar") { Nein($"{wo} = «{pn}» ist ein Typparameter (pro Exemplar nicht einstellbar)"); return plan; }
+                plan.Add(new(i, an.Name, schl, null, null, pn));
             }
+        }
+        return plan;
+    }
+
+    /// <summary>Wendet einen Plan von FreiExemplar auf Soll-Grössen an (dieselben Anschlüsse und Grössenschlüssel wie beim Planen).</summary>
+    internal static (JsonObject? Exemplar, string? Grund) FreiAnwenden(List<FreiSchritt> plan, IReadOnlyList<(string Name, Leitungsgroesse G)> soll, JsonObject? exemplar)
+    {
+        var ex = exemplar?.DeepClone() as JsonObject ?? new JsonObject();
+        List<(string Parameter, double Wert, FreiSchritt Wo)>? gesetzt = null;
+        foreach (var s in plan)
+        {
+            if (s.Grund is not null) return (null, s.Grund);
+            double w = soll[s.Soll].G.Wert(s.Schl) ?? double.NaN;
+            if (s.Konstante is double c)
+            {
+                if (!(Math.Abs(c - w) <= Leitungsgroesse.Toleranz)) return (null, $"{s.Anschluss}.{s.Schl} ist fest {Leitungsgroesse.Zahl(c)} mm");
+                continue;
+            }
+            var pn = s.Parameter!;
+            gesetzt ??= [];
+            var i = gesetzt.FindIndex(x => x.Parameter == pn);
+            if (i >= 0)
+            {
+                var vorher = gesetzt[i];
+                if (Math.Abs(vorher.Wert - w) > Leitungsgroesse.Toleranz)
+                    return (null, $"«{pn}» müsste zugleich {Leitungsgroesse.Zahl(vorher.Wert)} mm ({vorher.Wo.Anschluss}.{vorher.Wo.Schl}) und {Leitungsgroesse.Zahl(w)} mm ({s.Anschluss}.{s.Schl}) sein");
+            }
+            else gesetzt.Add((pn, w, s));   // erste Stelle bleibt für die Meldung
+            ex[pn] = w;
         }
         return (ex, null);
     }
@@ -722,129 +786,6 @@ public sealed class Leitungsserie
             }
             throw new FormelFehler($"unbekannter Name «{name}»", stelle, "In der Typregel gibt es nur die Grössen der Serie: " + string.Join(", ", FamilieDef.TypregelNamen(groesse.Values, "reduktion")));
         }
-    }
-
-    // ------------------------------------------------------------------ Abfrage «leitungsserie»
-
-    public const string AbfrageText = "Eine Leitungsserie (Familie der Kategorie Rohr bzw. Kanal, Modul 3): Querschnitt, Werkstoff-Kürzel (leitung.kuerzel, falls angegeben), Grössen mit aussen, innen, wand und Biegeradius (mm) und der Beschriftung der Rohre dieser Grösse (Rohre ausser Abwasser: beschriftung mit NW/DN, z. B. «CNS NW 20»; Abwasser: beschriftungAbwasser mit dem Aussendurchmesser, z. B. «PE-S 110»; ohne Kürzel nur die Grösse; ohne Zahl null). Abwasser-Serien (leitung.einsatz abwasser, einsatz und nachAussendurchmesser): beschriftung ist immer die Abwasserform mit dem Aussendurchmesser, unabhängig vom Medium (z. B. «PE 110»); bei Grösse d (nachAussendurchmesser: true) heissen die Grössen { d } («d 110»), keine DN nötig, dnHersteller = DN der Unterlage (Typparameter mit ziel dn, nie abgeleitet) bzw. null. Erlaubte Bogenwinkel und Abzweigwinkel der T-Stücke (regeln.abzweigwinkel, fehlt = 90°), Formteil-Familien je Art (im Projekt vorhanden?) und je Grösse, ob Bogen, T-Stück (gleiche Grösse, erster Abzweigwinkel; tstueckJeWinkel je erlaubtem Abzweigwinkel), Reduktion (auf jede kleinere Grösse) und Reinigungsöffnung verfügbar sind – mit Grund und Vorschlag, wenn nicht. Kanalserien mit freier Grösse (leitung.frei): frei mit Vorlage, Grenzen, Schritt und Text (die Typen sind dann das Vorschlagsraster) und eine probe mit einer freien Grösse (Mitte der Grenzen, sonst 430 × 270) samt Massen und Formteilverfügbarkeit (frei: true und parameter = Exemplarwerte, wenn ein Formteil aus seiner Vorlage gerechnet wird).";
-
-    public static JsonObject Abfrage(Projekt p, string bezug)
-    {
-        var m = p.Modell; var k = p.Katalog;
-        var s = Hole(m, k, bezug);
-        static JsonNode? Z(double? x) => x is double d ? JsonValue.Create(Math.Round(d, 6)) : null;
-        JsonObject Verfuegbar(FormteilWahl w)
-        {
-            if (!w.Ok) return new JsonObject { ["verfuegbar"] = false, ["grund"] = w.Fehler, ["vorschlag"] = w.Vorschlag };
-            var o = new JsonObject { ["verfuegbar"] = true, ["familie"] = w.Familie!.Kennzeichen, ["typ"] = w.Typ, ["hinweis"] = w.Hinweis };
-            if (w.Frei) { o["frei"] = true; o["parameter"] = w.Exemplar?.DeepClone(); }
-            return o;
-        }
-        var gueltig = s.Groessen.Where(g => g.Gueltig).ToList();
-        var formteile = new JsonObject();
-        foreach (var art in FamLeitung.Formteilarten)
-        {
-            if (!s.Block.Formteile.TryGetValue(art, out var w)) { formteile[art] = null; continue; }
-            var im = FamilienMitId(m, w.Familie).FirstOrDefault();
-            formteile[art] = new JsonObject { ["familie"] = w.Familie, ["typregel"] = w.TypText, ["imProjekt"] = im?.Kennzeichen };
-            if (w.Vorlage is not null) formteile[art]!["vorlage"] = w.Vorlage;
-        }
-        var groessen = new JsonArray();
-        foreach (var g in s.Groessen)
-        {
-            var o = new JsonObject { ["typ"] = g.Typ, ["gueltig"] = g.Gueltig };
-            if (!g.Gueltig) { o["fehler"] = g.Fehler; groessen.Add(o); continue; }
-            foreach (var (schl, wert) in g.Groesse.AlsJson()!) o[schl] = wert?.DeepClone();
-            o["aussen"] = Z(g.Aussen); o["innen"] = Z(g.Innen); o["wand"] = Z(g.Wand); o["biegeradius"] = Z(g.Biegeradius);
-            if (s.Kategorie == "Rohr")
-            {
-                // B9b (Entscheide Christian 19.10.2026): Rohre ausser Abwasser NW/DN (Einstellung des Projekts), Abwasser Aussendurchmesser; nie umgerechnet
-                var art = Leitungsbezeichnung.Art(m, null).Art;
-                // Abwasser-Serie (Nachtrag, Entscheid Christian 20.10.2026): immer der Aussendurchmesser (d bzw. aussen), unabhängig vom Medium
-                double? da = g.Groesse.Aussendurchmesser ? g.Groesse.D : g.Aussen;
-                var abwasserform = da is double daw && daw > 0 ? Rohrgroessen.Beschriftung(true, "da", s.Block.Kuerzel, daw) : null;
-                o["beschriftung"] = s.Abwasser ? abwasserform
-                    : g.Groesse.Dn is double dnw && dnw > 0 ? Rohrgroessen.Beschriftung(false, art, s.Block.Kuerzel, dnw) : null;
-                o["beschriftungAbwasser"] = abwasserform;
-                if (s.NachAussendurchmesser) o["dnHersteller"] = s.DnHersteller(g);
-            }
-            var ft = new JsonObject
-            {
-                ["bogen"] = Verfuegbar(s.Formteil(m, k, "bogen", g.Groesse)),
-                ["tstueck"] = Verfuegbar(s.Formteil(m, k, "tstueck", g.Groesse, g.Groesse, s.Abzweigwinkel[0])),
-                ["reinigungsoeffnung"] = Verfuegbar(s.Formteil(m, k, "reinigungsoeffnung", g.Groesse)),
-            };
-            if (s.Block.Abzweigwinkel is not null)
-            {
-                var jeWinkel = new JsonArray();
-                foreach (var aw in s.Abzweigwinkel)
-                {
-                    var t = Verfuegbar(s.Formteil(m, k, "tstueck", g.Groesse, g.Groesse, aw));
-                    t["winkel"] = aw;
-                    jeWinkel.Add(t);
-                }
-                ft["tstueckJeWinkel"] = jeWinkel;
-            }
-            var red = new JsonArray();
-            foreach (var kl in gueltig.Where(x => x.Groesse.Mass < g.Groesse.Mass))
-            {
-                var r = Verfuegbar(s.Formteil(m, k, "reduktion", g.Groesse, kl.Groesse));
-                r["auf"] = kl.Typ;
-                red.Add(r);
-            }
-            ft["reduktion"] = red;
-            o["formteile"] = ft;
-            groessen.Add(o);
-        }
-
-        // Freie Grösse (Nachtrag): Block frei und eine Probe mit einer freien Grösse samt Formteilverfügbarkeit
-        JsonObject? frei = null, probe = null;
-        if (s.Frei is { } fr)
-        {
-            frei = new JsonObject
-            {
-                ["vorlage"] = fr.Vorlage,
-                ["grenzen"] = new JsonObject(fr.Grenzen.Select(x => KeyValuePair.Create(x.Key, (JsonNode?)new JsonObject { ["min"] = x.Value.Min, ["max"] = x.Value.Max }))),
-                ["schritt"] = fr.Schritt, ["text"] = s.FreiText,
-            };
-            var pg = s.Probe();
-            probe = new JsonObject { ["groesse"] = pg.AlsJson(), ["text"] = pg.Kurz };
-            if (s.TypFuer(pg, out var grund) is not { } sg) { probe["gueltig"] = false; probe["grund"] = grund; }
-            else
-            {
-                probe["gueltig"] = true; probe["typ"] = sg.Typ; probe["frei"] = sg.Frei;
-                probe["aussen"] = Z(sg.Aussen); probe["innen"] = Z(sg.Innen); probe["wand"] = Z(sg.Wand); probe["biegeradius"] = Z(sg.Biegeradius);
-                var ft = new JsonObject
-                {
-                    ["bogen"] = Verfuegbar(s.Formteil(m, k, "bogen", pg)),
-                    ["tstueck"] = Verfuegbar(s.Formteil(m, k, "tstueck", pg, pg, s.Abzweigwinkel[0])),
-                    ["reinigungsoeffnung"] = Verfuegbar(s.Formteil(m, k, "reinigungsoeffnung", pg)),
-                };
-                if (gueltig.Where(x => x.Groesse.Mass < pg.Mass).OrderByDescending(x => x.Groesse.Mass).FirstOrDefault() is { } kl)
-                {
-                    var r = Verfuegbar(s.Formteil(m, k, "reduktion", pg, kl.Groesse));
-                    r["auf"] = kl.Typ;
-                    ft["reduktion"] = new JsonArray(r);
-                }
-                else ft["reduktion"] = new JsonArray();
-                probe["formteile"] = ft;
-            }
-        }
-        return new JsonObject
-        {
-            ["familie"] = s.Familie.Kennzeichen, ["name"] = s.Familie.Name, ["id"] = Familien.DefinitionsId(s.Familie), ["kategorie"] = s.Kategorie,
-            ["querschnitt"] = s.Querschnitt, ["kuerzel"] = s.Block.Kuerzel,
-            ["einsatz"] = s.Block.Einsatz, ["nachAussendurchmesser"] = s.NachAussendurchmesser,
-            ["groessenparameter"] = new JsonObject(s.Block.Groesse.Select(x => KeyValuePair.Create(x.Key, (JsonNode?)JsonValue.Create(x.Value)))),
-            ["winkel"] = s.Block.Winkel is { } wl ? (JsonNode)new JsonArray(wl.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()) : JsonValue.Create("frei"),
-            ["winkelRegel"] = s.Block.Winkel is not null ? "liste" : s.Block.WinkelFrei ? "frei" : "keine",
-            ["abzweig"] = s.Block.Abzweig,
-            ["abzweigwinkel"] = new JsonArray(s.Abzweigwinkel.Select(x => (JsonNode)JsonValue.Create(x)).ToArray()),
-            ["formteilFamilien"] = formteile,
-            ["groessen"] = groessen,
-            ["frei"] = frei,
-            ["probe"] = probe,
-        };
     }
 }
 

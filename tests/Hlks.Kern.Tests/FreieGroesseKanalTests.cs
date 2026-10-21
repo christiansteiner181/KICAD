@@ -315,11 +315,13 @@ public class FreieGroesseKanalTests
         var r2 = s.Formteil(m, k, "reduktion", R(400, 200), g);   // klein → gross: geordnet
         Assert.True(r2.Vertauscht);
         Assert.Equal(g, r2.Groesse1);
-        // Normgrössen: Typ wie bisher, keine Grössen als Exemplarwerte
+        // Normgrössen: Typ wie bisher; seit dem Nachtrag 21.10.2026 (Formteile in Vorgabegrösse) trägt das Formteil seine Grössen trotzdem
+        // als Exemplarwerte – sonst änderte es sich mit den Typwerten bzw. der Vorgabe der Familie
         var bn = s.Formteil(m, k, "bogen", R(400, 200), winkel: 90);
         Assert.False(bn.Frei);
         Assert.Equal("400x200", bn.Typ);
-        Assert.Equal(["winkel"], bn.Exemplar!.Select(x => x.Key));
+        Assert.Equal(["winkel", "breite", "hoehe"], bn.Exemplar!.Select(x => x.Key));
+        Assert.Equal(new[] { 400.0, 200 }, new[] { "breite", "hoehe" }.Select(n => bn.Exemplar[n]!.GetValue<double>()));
         Etwa(350, bn.Geometrie!.Einbaulaenge("a"));   // (115 + 200)·1 + 35
         var tn = s.Formteil(m, k, "tstueck", R(400, 200), R(300, 200));
         Assert.False(tn.Frei);

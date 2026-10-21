@@ -18,6 +18,15 @@
 //     T-Stück wird um die Leitungsachse gedreht, bis c in der Ebene von Leitung und Abzweig liegt (volle Ausrichtung). Die Höhen
 //     der Abzweigpunkte gelten dann relativ zum Abzweigpunkt: das erste Stück beginnt auf der Höhe von c, die Höhen folgen aus dem
 //     Gefälle ab c. Hauptfall: senkrechter Fallstrang mit Zulauf 2 % → 90° − arctan(0.02) = 88.854° → T-Stück 88.5°.
+//   - leitung_abzweigen mit winkel bzw. seite (Nachtrag 21.10.2026, Auftrag «Nachträge zu Leitungsserien» Punkt 3 – für das Werkzeug Abzweig der
+//     Oberfläche, das bisher nur rechtwinklig abzweigte): der Kern legt die Richtung selbst fest. winkel = einer der Abzweigwinkel der Serie
+//     (genau, ±1e-6; Vorgabe der einzige Winkel der Serie, sonst 90), seite = «links»/«rechts» (im Grundriss, in Fliessrichtung gesehen),
+//     «oben»/«unten» oder ein Vektor (nur sein Anteil quer zur Leitung zählt; ohne seite gilt richtung als Seite). Richtung vom T-Stück weg:
+//     u = ∓cos w·d + sin w·s (d = Leitung in Fliessrichtung, s = Seite quer dazu; zulaufend −, damit der Zulauf schräg in Fliessrichtung
+//     einmündet; zuführend +, T-Stück gespiegelt wie oben). Mit gefaelle: lässt sich der Abzweig waagrecht zeichnen und nach dem Gefälle neigen,
+//     ohne dass der gemessene Winkel einen anderen Listenwinkel ergibt (z. B. 88.5° am senkrechten Fallstrang mit 2 %), wird die waagrechte
+//     Richtung gezeichnet und wie oben geneigt; sonst gilt u (z. B. 45° am Fallstrang). laenge = erste Gerade ab der Achse, punkte führen den
+//     Abzweig danach weiter (ohne laenge nur das T-Stück).
 //   - leitung_groesse / leitung_serie mit leitungen (ohne zug): geändert werden die genannten Geraden mit den Formteilen zwischen
 //     ihnen; eine Reduktion direkt daneben gehört dazu (wird ersetzt bzw. entfernt), ein Bogen am Rand bleibt (Reduktion davor).
 //     Mit zug: der ganze Leitungszug (Leitungszug.cs), Bögen werden ersetzt, Reduktionen im Zug entfallen (leitung_groesse) bzw.
@@ -358,12 +367,14 @@ public sealed class LeitungZeichnen : IBefehl
 public sealed class LeitungAbzweigen : IBefehl
 {
     public string Name => "leitung_abzweigen";
-    public const string Text = "Abzweig an einer bestehenden Geraden (Modul 3): die Gerade wird am Punkt geteilt (Punkt auf die Achse projiziert), ein T-Stück der Hauptgrösse eingesetzt (beide Teilstücke um seine Einbaulängen gekürzt, die Verbindung am Ende umgehängt) und der Abzweig ab Anschluss c wie leitung_zeichnen gezeichnet – kleinerer Abzweig mit Reduktion an c, wenn die Serie kein passendes T-Stück hat. Der Abzweig wird vom T-Stück weg angegeben: punkte, oder richtung mit laenge (ohne laenge nur das T-Stück). Abzweigwinkel = Winkel zwischen der Leitung in Fliessrichtung und dem Abzweig in seiner Fliessrichtung; erlaubt sind die Abzweigwinkel der Serie (regeln.abzweigwinkel, ohne Angabe nur 90°) ±0.5°, das T-Stück mit diesem Winkel wird gewählt. Fliessrichtung nach dem System: Entsorgung und Rücklauf laufen dem T-Stück zu (ein schräger Zulauf mündet in Fliessrichtung ein, der Abzweig zeigt also gegen die Fliessrichtung der Leitung), Versorgung und Vorlauf gehen vom T-Stück weg (schräg: T-Stück gespiegelt, Abzweig in Fliessrichtung). Mit gefaelle fällt ein waagrecht gezeichneter Abzweig in seiner Fliessrichtung (Abwasser: zum T-Stück hin); seine Neigung zählt beim Abzweigwinkel mit und das T-Stück wird um die Leitungsachse gedreht, bis c in der Ebene des Abzweigs liegt – z. B. Zulauf mit 2 % an einen senkrechten Fallstrang: 90° − arctan(0.02) = 88.85° → T-Stück 88.5°. Zu nah an einem Ende (T-Stück passt nicht) oder nicht erlaubter Winkel wird abgelehnt (mit den erlaubten Winkeln). Bei Kanalserien mit freier Grösse (leitung.frei) darf der Abzweig jede Grösse innerhalb von Grenzen und Schritt haben; passt kein T-Stück-Typ, wird die Vorlage der T-Stück-Familie mit Durchgang und Abzweig als Exemplarwerte gerechnet.";
+    public const string Text = "Abzweig an einer bestehenden Geraden (Modul 3): die Gerade wird am Punkt geteilt (Punkt auf die Achse projiziert), ein T-Stück der Hauptgrösse eingesetzt (beide Teilstücke um seine Einbaulängen gekürzt, die Verbindung am Ende umgehängt) und der Abzweig ab Anschluss c wie leitung_zeichnen gezeichnet – kleinerer Abzweig mit Reduktion an c, wenn die Serie kein passendes T-Stück hat. Der Abzweig wird vom T-Stück weg angegeben: punkte, oder richtung mit laenge (ohne laenge nur das T-Stück). Abzweigwinkel = Winkel zwischen der Leitung in Fliessrichtung und dem Abzweig in seiner Fliessrichtung; erlaubt sind die Abzweigwinkel der Serie (regeln.abzweigwinkel, ohne Angabe nur 90°) ±0.5°, das T-Stück mit diesem Winkel wird gewählt. Fliessrichtung nach dem System: Entsorgung und Rücklauf laufen dem T-Stück zu (ein schräger Zulauf mündet in Fliessrichtung ein, der Abzweig zeigt also gegen die Fliessrichtung der Leitung), Versorgung und Vorlauf gehen vom T-Stück weg (schräg: T-Stück gespiegelt, Abzweig in Fliessrichtung). Mit gefaelle fällt ein waagrecht gezeichneter Abzweig in seiner Fliessrichtung (Abwasser: zum T-Stück hin); seine Neigung zählt beim Abzweigwinkel mit und das T-Stück wird um die Leitungsachse gedreht, bis c in der Ebene des Abzweigs liegt – z. B. Zulauf mit 2 % an einen senkrechten Fallstrang: 90° − arctan(0.02) = 88.85° → T-Stück 88.5°. Zu nah an einem Ende (T-Stück passt nicht) oder nicht erlaubter Winkel wird abgelehnt (mit den erlaubten Winkeln). Mit winkel (Abzweigwinkel der Serie, Vorgabe der einzige Winkel der Serie bzw. 90) und seite (links, rechts, oben, unten oder ein Vektor) legt der Kern die Richtung selbst fest – schräg in Fliessrichtung, das T-Stück mit diesem Winkel (Einbaulängen aus der Familie); laenge ist dann die erste Gerade ab der Achse, punkte führen den Abzweig weiter; die Abfrage abzweigwinkel nennt die Winkel einer Leitung samt T-Stück. Bei Kanalserien mit freier Grösse (leitung.frei) darf der Abzweig jede Grösse innerhalb von Grenzen und Schritt haben; passt kein T-Stück-Typ, wird die Vorlage der T-Stück-Familie mit Durchgang und Abzweig als Exemplarwerte gerechnet.";
     public string Beschreibung => Text;
     public const string ParPunkt = "Punkt des Abzweigs [x, y, z] in mm auf der Achse der Leitung (wird projiziert)";
-    public const string ParRichtung = "Richtung des Abzweigs vom T-Stück weg [dx, dy, dz], unter einem erlaubten Abzweigwinkel der Serie (Vorgabe rechtwinklig), statt punkte";
-    public const string ParLaenge = "Länge des Abzweigs ab der Achse der Leitung in mm (mit richtung); ohne laenge nur das T-Stück";
-    public const string ParAbzweigPunkte = "Verlauf des Abzweigs vom T-Stück weg: [[x, y, z], …] in mm (der erste Punkt unter einem erlaubten Abzweigwinkel neben der Leitung, Vorgabe rechtwinklig; mit gefaelle waagrecht auf der Höhe des Abzweigpunkts)";
+    public const string ParRichtung = "Richtung des Abzweigs vom T-Stück weg [dx, dy, dz], unter einem erlaubten Abzweigwinkel der Serie (Vorgabe rechtwinklig), statt punkte; mit winkel zählt nur ihre Seite (wie seite)";
+    public const string ParLaenge = "Länge des Abzweigs ab der Achse der Leitung in mm (mit richtung bzw. winkel: die erste Gerade); ohne laenge nur das T-Stück";
+    public const string ParAbzweigPunkte = "Verlauf des Abzweigs vom T-Stück weg: [[x, y, z], …] in mm (der erste Punkt unter einem erlaubten Abzweigwinkel neben der Leitung, Vorgabe rechtwinklig; mit gefaelle waagrecht auf der Höhe des Abzweigpunkts); mit winkel der Verlauf nach der ersten Geraden (laenge nötig)";
+    public const string ParWinkel = "Abzweigwinkel in Grad (zwischen der Leitung in Fliessrichtung und dem Abzweig), einer der Serie der Leitung (Abfrage abzweigwinkel); Vorgabe mit seite: der einzige Winkel der Serie, sonst 90. Mit winkel bzw. seite legt der Kern die Richtung fest: Entsorgung und Rücklauf münden schräg in Fliessrichtung ein, Versorgung und Vorlauf gehen schräg in Fliessrichtung ab (T-Stück gespiegelt)";
+    public const string ParSeite = "Seite des Abzweigs (mit winkel): \"links\" bzw. \"rechts\" (im Grundriss, in Fliessrichtung der Leitung gesehen), \"oben\" bzw. \"unten\" – alle nicht an senkrechten Leitungen – oder ein Vektor [dx, dy, dz] zur Seite hin (z. B. Mauszeiger minus Abzweigpunkt; nur sein Anteil quer zur Leitung zählt); ohne seite gilt richtung als Seite";
     public const string ParAbzweigGroesse = "Grösse des Abzweigs (Vorgabe: Grösse der Leitung) – Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 250, \"h\": 200 }";
     public const string ParAbzweigSerie = "Serie des Abzweigs (Vorgabe: Serie der Leitung)";
     public const string ParEnde = "Anschluss am anderen Ende des Abzweigs: { element, anschluss } oder \"KENNZEICHEN.anschluss\"";
@@ -374,6 +385,8 @@ public sealed class LeitungAbzweigen : IBefehl
     [
         new("leitung", "text", true, ParHaupt),
         new("punkt", "liste", true, ParPunkt),
+        new("winkel", "zahl", false, ParWinkel),
+        new("seite", "objekt", false, ParSeite),
         new("richtung", "liste", false, ParRichtung),
         new("laenge", "zahl", false, ParLaenge),
         new("punkte", "liste", false, ParAbzweigPunkte),
@@ -388,6 +401,64 @@ public sealed class LeitungAbzweigen : IBefehl
     ];
 
     static string Z(double x, int stellen = 1) => Math.Round(x, stellen).ToString("0.###", CultureInfo.InvariantCulture);
+
+    /// <summary>Richtung des Abzweigs aus Abzweigwinkel und Seite (Nachtrag 21.10.2026, siehe Dateikopf): gezeichnete Richtung vom T-Stück weg
+    /// (vor der Neigung nach dem Gefälle), ob sie als waagrecht gezeichnet gilt, der Abzweigwinkel und die Seite als Text.</summary>
+    static (V3 U, bool Waagrecht, double Winkel, string Seite) Winkelrichtung(JsonObject p, Leitungsserie sm, V3 d, bool hin, double? gefaelle, Element haupt)
+    {
+        double w = Param.Zahl(p, "winkel") ?? sm.AbzweigwinkelVorgabe;
+        if (!double.IsFinite(w) || !sm.AbzweigwinkelErlaubt(w))
+            throw new HlksFehler($"Einen Abzweigwinkel von {Z(w, 3)}°{(p["winkel"] is null ? " (Vorgabe ohne winkel)" : "")} hat die Serie {sm.Bezeichnung} von {haupt.Kennzeichen} nicht – verfügbar: {sm.AbzweigwinkelText}.",
+                $"winkel = {string.Join(" bzw. ", sm.Abzweigwinkel.Select(x => Z(x, 3)))} angeben (die Abfrage abzweigwinkel nennt die Winkel samt T-Stück) oder eine Serie mit diesem Abzweigwinkel wählen (leitung.regeln.abzweigwinkel).");
+        var seite = p["seite"] ?? p["richtung"]
+            ?? throw new HlksFehler("Die Seite des Abzweigs fehlt.", "seite angeben: \"links\", \"rechts\", \"oben\", \"unten\" oder einen Vektor [dx, dy, dz] zur Seite hin.");
+        bool senkrecht = Math.Sqrt(d.X * d.X + d.Y * d.Y) < 1e-9;
+        V3 sv;
+        string text;
+        if (seite is JsonValue sw && sw.TryGetValue<string>(out var st))
+        {
+            text = st.Trim().ToLowerInvariant();
+            if (text is "links" or "rechts" or "oben" or "unten" && senkrecht)
+                throw new HlksFehler($"{haupt.Kennzeichen} ist senkrecht – «{text}» bestimmt dort keine Seite.", "seite als Vektor [dx, dy, dz] angeben, z. B. [1, 0, 0] für einen Abzweig nach Osten.");
+            sv = text switch
+            {
+                "links" => new V3(-d.Y, d.X, 0),
+                "rechts" => new V3(d.Y, -d.X, 0),
+                "oben" => new V3(0, 0, 1),
+                "unten" => new V3(0, 0, -1),
+                _ => throw new HlksFehler($"Die Seite «{st}» gibt es nicht.", "seite: \"links\", \"rechts\", \"oben\", \"unten\" oder ein Vektor [dx, dy, dz]."),
+            };
+            text = "nach " + text;
+        }
+        else if (seite is JsonArray a && a.Count is 2 or 3 && a.All(x => Json.Zahl(x) is double z && double.IsFinite(z)))
+        {
+            sv = new V3(Json.Zahl(a[0])!.Value, Json.Zahl(a[1])!.Value, a.Count > 2 ? Json.Zahl(a[2])!.Value : 0);
+            text = "zur Seite " + Routing.P(sv);
+        }
+        else throw new HlksFehler("seite ist weder «links», «rechts», «oben», «unten» noch ein Vektor.", "seite als Text oder als [dx, dy, dz] angeben.");
+        var quer = sv - d * d.Mal(sv);
+        if (quer.Laenge < 1e-6 * Math.Max(1, sv.Laenge))
+            throw new HlksFehler($"Die Seite {Routing.P(sv)} liegt in der Achse von {haupt.Kennzeichen} – daraus ergibt sich keine Seite.", "Eine Richtung quer zur Leitung angeben.");
+        var s = quer.Einheit();
+        double r = w * Math.PI / 180;
+        // vom T-Stück weg: zulaufend gegen die Fliessrichtung (der Zulauf mündet in Fliessrichtung ein), zuführend in Fliessrichtung
+        var u0 = d * (hin ? -Math.Cos(r) : Math.Cos(r)) + s * Math.Sin(r);
+        if (Math.Abs(u0.X) < 1e-12 && Math.Abs(u0.Y) < 1e-12 && Math.Abs(u0.Z) < 1e-12) u0 = s;
+        // Mit Gefälle: waagrecht zeichnen und nach dem Gefälle neigen, wenn der gemessene Winkel dabei bei w bleibt (z. B. 88.5° am Fallstrang)
+        if (gefaelle is double gf && gf > 0)
+        {
+            var h = new V3(u0.X, u0.Y, 0);
+            if (h.Laenge > 1e-9)
+            {
+                var he = h.Einheit();
+                double alpha = Math.Atan(gf / 100);
+                var ut = he * Math.Cos(alpha) + new V3(0, 0, hin ? Math.Sin(alpha) : -Math.Sin(alpha));
+                double gem = Math.Acos(Math.Clamp(d.Mal(hin ? -ut : ut), -1, 1)) * 180 / Math.PI;
+                if (sm.AbzweigwinkelZu(gem) is double wz && Math.Abs(wz - w) <= 1e-9) return (he, true, w, text);
+            }
+        }
+        return (u0.Einheit(), Math.Abs(u0.Z) <= 1e-9, w, text);
+    }
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
@@ -442,7 +513,27 @@ public sealed class LeitungAbzweigen : IBefehl
         V3 u;
         bool waagrecht;   // erstes Stück des Abzweigs waagrecht gezeichnet (für das Gefälle)
         double[]? fernNahe = null;
-        if (p["punkte"] is not null)
+        double? winkelSoll = null;   // Nachtrag 21.10.2026: Abzweigwinkel aus winkel bzw. seite
+        if (p["winkel"] is not null || p["seite"] is not null)
+        {
+            (u, waagrecht, var wS, var seiteText) = Winkelrichtung(p, sm, d, hin, gefaelle, haupt);
+            winkelSoll = wS;
+            if (Param.Zahl(p, "laenge") is double lg)
+            {
+                if (!(lg > 0) || !double.IsFinite(lg)) throw new HlksFehler($"laenge {Z(lg)} mm ist ungültig.", ParLaenge);
+                kurs.Add(q + u * lg);
+            }
+            if (p["punkte"] is not null)
+            {
+                if (kurs.Count == 0)
+                    throw new HlksFehler("Mit winkel beginnt der Abzweig mit einer Geraden unter diesem Winkel – ihre Länge (laenge) fehlt.",
+                        "laenge angeben (erste Gerade ab der Achse der Leitung); punkte führen den Abzweig danach weiter.");
+                kurs.AddRange(Param.Punkte(p, "punkte").Select(x => new V3(x[0], x[1], x.Length > 2 ? x[2] : q.Z)));
+            }
+            if (kurs.Count > 0) fernNahe = kurs[^1].Feld();
+            hinweise.Add($"Abzweig unter {Z(wS, 3)}° {seiteText} ({(hin ? "zulaufend: mündet schräg in Fliessrichtung ein" : "zuführend: geht in Fliessrichtung ab")}), Richtung {Routing.P(u)}.");
+        }
+        else if (p["punkte"] is not null)
         {
             kurs = Param.Punkte(p, "punkte").Select(x => new V3(x[0], x[1], x.Length > 2 ? x[2] : q.Z)).ToList();
             if (kurs.Count > 0 && (kurs[0] - q).Laenge <= Anschlusslagen.AbstandMax) kurs.RemoveAt(0);
@@ -488,6 +579,9 @@ public sealed class LeitungAbzweigen : IBefehl
             throw new HlksFehler($"Der Abzweig steht unter {Z(gemessen, 2)}° zu {haupt.Kennzeichen} (Winkel zwischen der Leitung in Fliessrichtung und dem Abzweig, der {(hin ? "zuläuft" : "abgeht")}{(geneigt ? $", mit {Z(gefaelle!.Value, 3)} % Gefälle" : "")}) – die Serie {sm.Bezeichnung} erlaubt Abzweigwinkel {sm.AbzweigwinkelText} (Toleranz ±{Z(Routing.WinkelToleranz)}°).{richtungHinweis}",
                 "Den ersten Punkt des Abzweigs bzw. die Richtung so legen, dass der Winkel einem erlaubten Abzweigwinkel entspricht (mit gefaelle zählt die Neigung des Abzweigs mit); für einen anderen Verlauf danach einen Bogen setzen (weiterer Punkt).");
         }
+        if (winkelSoll is double ws && Math.Abs(ws - w) > 1e-9)
+            throw new HlksFehler($"Der Abzweig unter {Z(ws, 3)}° ergibt mit {Z(gefaelle ?? 0, 3)} % Gefälle {Z(gemessen, 3)}° – das T-Stück wäre {Z(w, 3)}°.",
+                "Ohne gefaelle abzweigen bzw. einen anderen Abzweigwinkel wählen.");
         // Zuführend und schräg: Spiegelbild – das T-Stück wird b → a durchflossen, damit c in Fliessrichtung abgeht
         bool spiegel = !hin && w < 90 - 1e-9;
         var tx = spiegel ? -d : d;

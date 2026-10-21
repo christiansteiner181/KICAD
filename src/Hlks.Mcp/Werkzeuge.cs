@@ -53,6 +53,27 @@ public sealed partial class Werkzeuge(Projekt projekt)
         }
     }
 
+    /// <summary>Hülle für Abfragen in zwei Schritten (Nachtrag 21.10.2026, leitungsserie): unter der Sperre synchronisieren und den
+    /// Lesestand vorbereiten, danach ohne Sperre rechnen – andere Werkzeuge warten nicht; bricht der Client den Aufruf ab
+    /// (notifications/cancelled), endet die Rechnung (abbruch).</summary>
+    public string LaufAbgesetzt(Func<Func<CancellationToken, JsonNode>> vorbereiten, CancellationToken abbruch)
+    {
+        Func<CancellationToken, JsonNode> rechnen;
+        lock (projekt)
+        {
+            try
+            {
+                projekt.Synchronisieren();
+                rechnen = vorbereiten();
+            }
+            catch (Exception ex) { return FehlerText(ex); }
+        }
+        try { return Antwort(rechnen(abbruch)); }
+        catch (OperationCanceledException) when (abbruch.IsCancellationRequested)
+        { return Json.Text(new JsonObject { ["fehler"] = "Abfrage abgebrochen.", ["vorschlag"] = "Neu anfragen, wenn das Ergebnis gebraucht wird." }); }
+        catch (Exception ex) { return FehlerText(ex); }
+    }
+
     static JsonNode? Knoten(JsonElement? e)
     {
         if (e is not { } v || v.ValueKind is JsonValueKind.Undefined or JsonValueKind.Null) return null;

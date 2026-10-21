@@ -118,10 +118,22 @@ api.MapGet("/schraffuren", () => JsonAntwort(Schraffuren.Alle));
 api.MapGet("/plan/{planblatt}.pdf", (string planblatt) => Sicher(async () =>
     Results.File(await dienst.Mit(p => Planausgabe.Pdf(p, planblatt)), "application/pdf", $"{planblatt}.pdf")));
 
+// Abfragen in zwei Schritten (Nachtrag 21.10.2026): unter der Sperre nur vorbereiten (leitungsserie: Lesestand), gerechnet wird danach ohne
+// Sperre – andere Anfragen warten nicht; bricht der Browser ab (AbortController), endet die Rechnung im Kern (RequestAborted).
 api.MapPost("/abfrage/{name}", (string name, HttpRequest r) => Sicher(async () =>
 {
     var par = await Koerper(r);
-    var ergebnis = await dienst.Mit(p => Tuer.Abfrage(p, name, par));
+    var abbruch = r.HttpContext.RequestAborted;
+    object ergebnis;
+    try
+    {
+        var rechnen = await dienst.Mit(p => Tuer.AbfrageVorbereiten(p, name, par));
+        ergebnis = await Task.Run(() => rechnen(abbruch), abbruch);
+    }
+    catch (OperationCanceledException) when (abbruch.IsCancellationRequested)
+    {
+        return Fehler(new HlksFehler("Abfrage abgebrochen.", "Neu anfragen, wenn das Ergebnis gebraucht wird."), 499);
+    }
     return ergebnis is string text ? Results.Text(text, "text/plain; charset=utf-8") : JsonAntwort(ergebnis);
 }));
 

@@ -61,13 +61,18 @@ public class ProtokollTests
             g.Senden(new JsonObject { ["jsonrpc"] = "2.0", ["method"] = "notifications/initialized" });
 
             var namen = new List<string>();
+            var werkzeuge = new List<JsonNode>();
             string? cursor = null;
             do
             {
                 var liste = g.Anfrage("tools/list", cursor is null ? null : new JsonObject { ["cursor"] = cursor });
                 namen.AddRange(liste["result"]!["tools"]!.AsArray().Select(t => t!["name"]!.GetValue<string>()));
+                werkzeuge.AddRange(liste["result"]!["tools"]!.AsArray().Select(t => t!));
                 cursor = liste["result"]!["nextCursor"]?.GetValue<string>();
             } while (cursor is not null);
+            // Nachtrag 21.10.2026: der Abbruch (CancellationToken) von leitungsserie ist kein Werkzeugparameter
+            var serie = werkzeuge.Single(t => t["name"]!.GetValue<string>() == "leitungsserie");
+            Assert.Equal(["familie"], serie["inputSchema"]!["properties"]!.AsObject().Select(x => x.Key).ToArray());
             var erwartet = Abfragen.Liste.Select(a => a.Name).Concat(Projekt.Anlegen(Kat, null, "x", "x", "x").Befehle.Alle.Select(b => b.Name))
                 .Concat(["rueckgaengig", "wiederholen", "synchronisieren", "kontext_bild"]).Order().ToList();   // kontext_bild: Sitzungswerkzeug (Modul 3c)
             Assert.Equal(erwartet, namen.Order().ToList());

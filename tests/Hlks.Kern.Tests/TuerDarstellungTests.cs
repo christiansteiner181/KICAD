@@ -55,6 +55,7 @@ public class TuerDarstellungTests
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",
         ["familie_pruefen"] = """{"familie":"FAM-1"}""",                  // Nachtrag 21.10.2026: Prüfbefunde der Testfamilie (ohne Unterlagen)
         ["leitungsserie"] = """{"familie":"fam-test-rohrserie"}""",   // Modul 3, B1: fiktive Testrohrserie legt der Test vorher an
+        ["abzweigwinkel"] = """{"familie":"fam-test-rohrserie","groesse":"DN 20"}""",   // Nachtrag Modul 3, 21.10.2026: Abzweigwinkel der Testrohrserie
         ["schema"] = """{"ansicht":"AN-SCHEMA-SAN"}""",                  // Modul 3, B3: Schema-Ansicht des Beispielprojekts
         ["materialliste"] = """{"system":"SW"}""",                      // Modul 3, B4
         ["leitungszug"] = """{"leitung":"KW-V1-3"}""",                  // Modul 3, B2: Zug einer Polylinie des Beispielprojekts

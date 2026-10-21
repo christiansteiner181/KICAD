@@ -435,6 +435,7 @@ public class ApiTests
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf")
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",
         ["leitungsserie"] = """{"familie":"fam-test-rohrserie"}""",   // Modul 3, B1: fiktive Testrohrserie legt der Test vorher an
+        ["abzweigwinkel"] = """{"familie":"fam-test-rohrserie","groesse":"DN 20"}""",   // Nachtrag Modul 3, 21.10.2026: Abzweigwinkel der Testrohrserie
         ["materialliste"] = """{"system":"SW"}""",                      // Modul 3, B4
         ["schema"] = """{"ansicht":"AN-SCHEMA-SAN"}""",                  // Modul 3, B3: Schema-Ansicht des Beispielprojekts
         ["leitungszug"] = """{"leitung":"KW-V1-3"}""",                  // Modul 3, B2: Zug einer Polylinie des Beispielprojekts
