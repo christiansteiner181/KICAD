@@ -255,6 +255,8 @@ api.MapGet("/ereignisse", async (HttpContext ctx) =>
 app.Lifetime.ApplicationStopping.Register(() => dienst.Schliessen().GetAwaiter().GetResult());
 app.MapStart(dienst);   // Startbildschirm (S1): StartEndpunkte.cs
 app.MapBenutzer(dienst);   // Benutzereinstellungen (G1): BenutzerEndpunkte.cs (z. B. primäre Gliederung des Projektbrowsers)
+app.MapVrSeite();   // VR-Startseite /vr (VrSeite.cs; Modul XR)
+app.MapVrAuftrag(dienst);   // VR-Auftrag vom PC an die Brille (VrAuftrag.cs; Modul XR)
 app.MapAnleitung(dienst);   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hilfe/ und Prüfstand /api/hilfe/pruefung
 app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; hinter dem Schliessen angemeldet, damit beim Beenden zuerst die Läufe enden
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche

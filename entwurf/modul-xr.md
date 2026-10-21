@@ -15,6 +15,7 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ### XR-A – Begehen in VR (N23, gebaut 21.10.2026; Start mit der Brille bestätigt 21.10.2026)
 - **Erster Brillentest 21.10.2026 ~19:15 (Christian: «VR läuft in der Brille»):** Quest 3 im eigenen Browser, KICAD über `http://localhost:5130`, adb über WLAN (Weg 2). Bestätigt ist der Start der VR-Sitzung; Gehen, Drehen, Wände, Tablet, Greifen und Messen sind noch einzeln abzunehmen.
+- VR-Startseite `/vr` mit Icon (21.10.2026, hlks-modul), Brillentest offen. Christian: «ich möchte in VR lediglich ein Icon anklicken um im Modell zu landen.» Ein Tipp startet VR; Startpunkt: `?raum=` › letzter Standpunkt (`vr.letzter_standpunkt`) › erster Raum im EG › 3D-Gesamtansicht. Hauptweg seit Christians Wunsch vom 21.10.2026 («die am pc eingestellten befehle vom VR gerät aufrufen»): **VR-Auftrag** vom PC (Rechtsklick Raum › «In VR begehen (Brille)» / «Im Sitzungsraum zeigen (Brille)», 3D «An die Brille senden»), die Brille liest ihn alle 2 s und wendet ihn auch live an. Einzelheiten: `OBERFLAECHE.md`, «Modul XR: VR-Startseite».
 - Knopf «In VR begehen». Der Standpunkt ist der von «Raum begehen» (N15); die Augenhöhe kommt aus der echten Kopfhöhe.
 - Bewegen: Stick zum Gehen, Snap-Turn zum Drehen, Teleport per Abzug bzw. Pinch auf den Boden. Keine Kollision.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).

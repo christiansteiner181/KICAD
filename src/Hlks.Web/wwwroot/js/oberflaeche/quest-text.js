@@ -85,8 +85,9 @@ export function geraeteText(geraete) {
 }
 const ZUSTAND_TEXT = { unauthorized: 'nicht freigegeben', offline: 'offline', device: 'bereit' };
 
-/** Die Adresse, die in der Quest einzugeben ist. */
-export const urlText = (z) => z?.url || `http://localhost:${z?.port ?? ''}`;
+/** Die Adresse, die in der Quest einzugeben ist: die VR-Startseite /vr (ein Tipp, und man steht im Modell), nicht die PC-Oberfläche «/». */
+export const VR_PFAD = '/vr';
+export const urlText = (z) => `${(z?.url || `http://localhost:${z?.port ?? ''}`).replace(/\/+$/, '')}${VR_PFAD}`;
 
 /** Einfache Vorprüfung der IP-Adresse für den Knopf (die Regeln gelten auf dem Server): IPv4, optional :Port. */
 export function ipFormatOk(text) {
@@ -131,7 +132,7 @@ export const HINWEISE = Object.freeze([
   'Ein USB-C-Kabel, das auch Daten überträgt (nicht nur laden), verbindet die Brille mit dem PC. Es geht auch ohne Kabel: einmal mit Kabel «Auf WLAN umstellen».',
   'In der Brille erscheint «USB-Debugging erlauben». Dort «Immer von diesem Computer erlauben» wählen und bestätigen.',
   'Steht «Keine Quest gefunden», obwohl das Kabel steckt: den Meta-ADB-Treiber installieren (developers.meta.com, braucht Administratorrechte). KICAD installiert den Treiber nicht selbst.',
-  'Danach in der Quest den Browser öffnen und die Adresse eingeben, die unten steht (http://localhost:<Port>). Mit «Trennen» wird die Weiterleitung wieder entfernt.',
+  'Danach in der Quest den Browser öffnen und die Adresse eingeben, die unten steht (http://localhost:<Port>/vr, die VR-Startseite mit dem Knopf «Eintreten»). Mit «Trennen» wird die Weiterleitung wieder entfernt.',
 ]);
 
 /** Text über den Knöpfen: was als Nächstes zu tun ist. */

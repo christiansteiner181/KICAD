@@ -87,6 +87,11 @@
 .d3-vr-quest { display: none; padding: 0; border: 0; background: none; color: var(--akzent); font: inherit; text-decoration: underline; cursor: pointer; text-align: right; }
 .d3-vr[data-vr-status="aus"] .d3-vr-quest { display: inline; }
 .d3-begehen .d3-vr-quest { text-align: left; }
+/* VR-Auftrag: «An die Brille senden» (Modul XR), immer sichtbar ausser in der Sitzung selbst */
+.d3-vr-brille { padding: 0; border: 0; background: none; color: var(--akzent); font: inherit; text-decoration: underline; cursor: pointer; text-align: right; }
+.d3-begehen .d3-vr-brille { text-align: left; }
+.d3-vr-an .d3-vr-brille { display: none; }
+.d3-vr-brille:focus-visible { outline: 2px solid var(--auswahl); outline-offset: 1px; }
 .d3-vr-quest:focus-visible { outline: 2px solid var(--auswahl); outline-offset: 1px; }
 .d3-begehen .d3-vr-hinweis { text-align: left; }
 

@@ -15,6 +15,7 @@ import {
   stickBewegung, snapPruefen, teleportZiel, ifcAnfangsSichtbar, bildzeit,
 } from './vr-logik.js';
 import { erzeugeXr } from './xr-greifen.js';
+import { etikett } from './xr-holo.js';   // kurzer Hinweis in VR (hinweisen)
 import { erzeugeSitzung } from './xr-sitzung.js';   // XR-H: Sitzungsraum mit dem Modell auf dem Tisch
 
 const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
@@ -35,6 +36,7 @@ export function erzeugeVr(o) {
     anbinden: o.anbinden ?? ((s) => renderer.xr.setSession(s)),
     kopfPose: null,   // () → { x, y, z, gieren } im Referenzraum | null (Vorgabe: Kamera des Renderers)
     eingabe: null,    // () → { links: { x, y, schnell }, rechts: { x }, ifc: bool } (Vorgabe: Controller)
+    beiEnde: null,    // (ende) → Rückruf nach dem Ende einer gelaufenen Sitzung, ende = { x, z, boden, gieren }: letzter Kopfstand (Welt, m / rad); die VR-Startseite /vr merkt ihn
   };
   const knoepfe = new Map();   // Element → war schon eingehängt
   const zeit = bildzeit();
@@ -61,6 +63,7 @@ export function erzeugeVr(o) {
   let xrWerk = null;                    // XR-B Greifen, XR-C Tablet und Messen (xr-greifen.js)
   let raum = null;                      // XR-H Sitzungsraum (xr-sitzung.js); solange er aktiv ist, pausiert das Begehen (keine Sticks, kein Teleport, kein Durchgang)
   let ziel = null;                      // letztes gültiges Teleportziel
+  let letzterKopf = null;               // letzter Kopfstand der Sitzung { x, z, boden, gieren } für api.beiEnde
 
   // ---------------------------------------------------------------------------------------------- Knopf
   function knopfZeigen(k) {
@@ -85,7 +88,9 @@ export function erzeugeVr(o) {
     const k = document.createElement('div');
     k.className = 'd3-vr';
     k.innerHTML = '<button type="button" class="d3-vr-knopf"></button><span class="d3-vr-hinweis"></span>'
-      + '<button type="button" class="d3-vr-quest">Quest im Browser der Brille nutzen …</button>';   // Modul XR: nur bei grauem Knopf sichtbar (CSS), öffnet «Quest verbinden»
+      + '<button type="button" class="d3-vr-quest">Quest im Browser der Brille nutzen …</button>'
+      + '<button type="button" class="d3-vr-brille" title="Das Begehen (sonst die 3D-Gesamtansicht) als Auftrag an die Brille senden; in der Quest KICAD VR öffnen">An die Brille senden</button>';   // VR-Auftrag (VrAuftrag.cs)
+    k.querySelector('.d3-vr-brille').addEventListener('click', (e) => { e.stopPropagation(); import('../oberflaeche/vr-auftrag.js').then((m) => m.anBrilleSenden()).catch((x) => console.error('An die Brille senden', x)); });   // Modul XR: nur bei grauem Knopf sichtbar (CSS), öffnet «Quest verbinden»
     k.querySelector('.d3-vr-quest').addEventListener('click', (e) => { e.stopPropagation(); questDialogOeffnen(); });
     k.querySelector('.d3-vr-knopf').addEventListener('click', (e) => {
       e.stopPropagation();
@@ -274,11 +279,44 @@ export function erzeugeVr(o) {
     xrWerk.anbinden();
   }
   function ifcUmschalten() { ifcAn = !ifcAn; netzeAnwenden(); zustandSchreiben(true); o.anfordern?.(); }
+  /** VR-Startseite /vr (neuer Auftrag vom PC, ohne neuen Tipp): in der laufenden Sitzung an den Standort einer Abfrage raum_begehen wechseln; ein offener Sitzungsraum wird dabei verlassen. */
+  function versetzen(standort) {
+    if (!sitzung || !rig || !standort) return false;
+    try {
+      if (raum?.aktiv) raum.verlassen();
+      begehen.starten(standort);   // läuft das Begehen schon, wird nur umgesetzt
+    } catch (e) { console.warn('VR: Standort nicht gewechselt', e?.message ?? e); return false; }
+    startZustand = { ...begehen.zustand };
+    ausrichten = true;             // beim nächsten Bild: Kopf an den neuen Standpunkt
+    zustandSchreiben(true);
+    return true;
+  }
+  /** Kurzer Hinweis in VR (Tablet-Zeile des Greifens/Messens); ohne XR-Werk bleibt es bei der Meldung. */
+  let hinweisEtikett = null;   // { e, bis } – das Hologramm-Etikett des Hinweises
+  function hinweisWeg() { if (!hinweisEtikett) return; szene.remove(hinweisEtikett.e.sprite); hinweisEtikett.e.freigeben(); hinweisEtikett = null; }
+  /** Kurzer Hinweis in VR: ein Hologramm-Etikett etwa 1 m vor dem Kopf, 2 s lang. */
+  function hinweisen(text) {
+    if (!sitzung || !rig) { o.meldung?.(text, 'info'); return; }
+    hinweisWeg();
+    const e = etikett(text, { breite: 0.6 });
+    const k = kopf() ?? { x: rig.x, y: rig.y + 1.6, z: rig.z }, kp = kopfLokal();
+    const g = kp ? blickGierenWelt(rig, kp.gieren) : rig.gieren;
+    e.sprite.position.set(k.x + Math.cos(g), k.y - 0.1, k.z - Math.sin(g));
+    szene.add(e.sprite);
+    hinweisEtikett = { e, bis: jetzt() + 2000 };
+  }
   function ifcSetzen(an) { if (ifcAn !== !!an) ifcUmschalten(); }   // XR-H: der Sitzungsraum blendet die IFC-Unterlage aus und stellt sie danach wieder her
 
   // ---------------------------------------------------------------------------------------------- Bild
+  /** Merkt den Kopfstand für api.beiEnde (jedes Bild, nicht gedrosselt: der Standpunkt am Ende soll der letzte sein). */
+  function kopfMerken() {
+    if (!rig) return;
+    const k = kopf(), kp = kopfLokal();
+    if (k) letzterKopf = { x: k.x, z: k.z, boden: rig.y, gieren: kp ? blickGierenWelt(rig, kp.gieren) : rig.gieren };
+  }
   function zustandSchreiben(erzwingen = false) {
     if (!sitzung) return;
+    kopfMerken();
     const t = jetzt();
     if (!erzwingen && t - letztesSchreiben < SCHREIB_ABSTAND_MS) return;
     letztesSchreiben = t;
@@ -296,6 +334,7 @@ export function erzeugeVr(o) {
 
   function bild(zeitstempel) {
     if (!sitzung || !rig) return;
+    if (hinweisEtikett && jetzt() > hinweisEtikett.bis) hinweisWeg();
     const t0 = jetzt();
     const dt = letzteZeit ? Math.min(Math.max(((zeitstempel ?? t0) - letzteZeit) / 1000, 0), 0.1) : 0;
     letzteZeit = zeitstempel ?? t0;
@@ -390,7 +429,7 @@ export function erzeugeVr(o) {
       rigObj.add(kamera);
       rigSetzen(rigStart(startZustand));           // bis zum ersten Kopfwert: Rig auf dem Standpunkt, Kopf im Nullpunkt
       ausrichten = true;
-      snap = { bereit: true }; aVorher = false; letzteZeit = 0; letztesSchreiben = 0; ifcDreiecke = 0; ifcAn = true;
+      snap = { bereit: true }; aVorher = false; letzteZeit = 0; letztesSchreiben = 0; ifcDreiecke = 0; ifcAn = true; letzterKopf = null;
       zeit.leeren();
       steuerungBauen();
       xrBauen();
@@ -427,6 +466,8 @@ export function erzeugeVr(o) {
     startet = false;
     if (!sitzung && !rigObj) { knoepfeAktualisieren(); return; }
     const s = sitzung;
+    const ende = wurzel.classList.contains('d3-vr-an') ? (letzterKopf ?? (rig ? { x: rig.x, z: rig.z, boden: rig.y, gieren: rig.gieren } : null)) : null;   // nur nach einer wirklich gelaufenen Sitzung
+    letzterKopf = null;
     sitzung = null;
     try { s?.removeEventListener?.('end', beiEnde); } catch { /* egal */ }
     try { renderer.setAnimationLoop(null); } catch { /* egal */ }
@@ -438,6 +479,7 @@ export function erzeugeVr(o) {
     try { xrWerk?.abbauen(); } catch { /* egal */ }
     xrWerk = null; api.xr = null;
     steuerungAbbauen();
+    hinweisWeg();
     kameraZurueck();
     if (rigObj) { rigObj.removeFromParent(); rigObj = null; }
     rig = null; startZustand = null; ausrichten = false;
@@ -449,10 +491,11 @@ export function erzeugeVr(o) {
     knoepfeAktualisieren();
     o.beiBeendet?.();
     o.anfordern?.();
+    if (ende) { try { api.beiEnde?.(ende); } catch (e) { console.error('VR: Rückruf am Sitzungsende', e); } }
   }
 
   return {
-    knopf, pruefen, starten, beenden, kopf, netzeAnwenden, api,
+    knopf, pruefen, starten, beenden, kopf, netzeAnwenden, api, versetzen, hinweisen,
     get aktiv() { return !!sitzung; },
     get startet() { return startet; },
     get unterstuetzt() { return unterstuetzt; },

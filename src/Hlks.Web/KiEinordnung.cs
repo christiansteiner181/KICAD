@@ -91,9 +91,18 @@ public static class KiEinordnung
             "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
     ];
 
+    /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,
+    /// kein MCP-Werkzeug; ein Test prüft das). Anders als die Rechner-Funktionen starten sie nichts auf dem PC. Für die KI gibt es sie trotzdem nicht: Was die Brille des Benutzers
+    /// zeigt, löst der Mensch aus (Von() gibt «verboten» zurück).</summary>
+    public static readonly IReadOnlyList<RechnerFunktion> Oberflaechenfunktionen =
+    [
+        new("vr_auftrag", "«An die Brille senden» (Modul XR, VrAuftrag.cs, /api/vr/auftrag): ein Auftrag «begehen» oder «sitzungsraum» für die VR-Startseite des Benutzers. Er ändert weder " +
+            "Modell noch Rechner, sondern nur, was die Brille beim nächsten Tipp zeigt – eine Ansichtsfunktion des Menschen am Rechner, kein Werkzeug der KI."),
+    ];
+
     /// <summary>Einordnung eines Werkzeugs: lesend | aendernd | verboten; null = nicht eingeordnet.</summary>
     public static string? Von(string werkzeug) =>
-        Verboten.Contains(werkzeug) || RechnerFunktionen.Any(f => f.Name == werkzeug) ? "verboten"
+        Verboten.Contains(werkzeug) || RechnerFunktionen.Any(f => f.Name == werkzeug) || Oberflaechenfunktionen.Any(f => f.Name == werkzeug) ? "verboten"
         : Aendernd.Any(g => g.Werkzeuge.Contains(werkzeug)) ? "aendernd"
         : Lesend.Any(g => g.Werkzeuge.Contains(werkzeug)) ? "lesend"
         : null;

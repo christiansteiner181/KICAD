@@ -10812,6 +10812,55 @@
           "hinweis": "Von Christian mit der Brille zu testen. Der Dialog ist eine reine Rechner-Funktion (kein Befehl des Kerns) und für die KI nicht freigegeben. Das Skript werkzeuge/quest_verbinden.ps1 macht dasselbe auf der Kommandozeile."
         },
         {
+          "id": "zb-xr-vr-start",
+          "titel": "VR-Startseite: mit einem Icon in der Quest im Modell landen (Modul XR)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Browser der Meta Quest: Adresse http://localhost:<Port>/vr bzw. das Icon «KICAD VR»; die Adresse steht im Dialog «Quest verbinden»"
+          },
+          "schritte": [
+            "Am PC KICAD starten und das Projekt öffnen. Im Dialog «Quest verbinden» (Register Ansicht › Gruppe Fenster) die Quest verbinden; unten steht die Adresse http://localhost:<Port>/vr.",
+            "In der Quest den Browser öffnen und diese Adresse eingeben. Die Startseite erscheint: Projektname, Geschoss und Raum des Startpunkts und ein grosser Knopf «Eintreten».",
+            "Einmalig das Icon anlegen: im Menü des Browsers (drei Punkte) «Zur Startseite hinzufügen», «Zum Startbildschirm hinzufügen» oder «Als App installieren» wählen (die Namen können sich je nach Version ändern); sonst die Seite als Lesezeichen speichern. Das Icon «KICAD VR» (Cyan, VR-Brille auf Dunkel) öffnet künftig die Startseite.",
+            "Ein Tipp (Controller-Abzug oder Pinch) irgendwo auf der Seite startet VR: man steht im Modell, im Raum des Startpunkts.",
+            "Zum Beenden das Quest-Menü öffnen (oder am Tablet «VR beenden»): man ist zurück auf der Startseite mit «Eintreten». Das nächste Eintreten beginnt am zuletzt benutzten Standpunkt.",
+            "Vom PC aus: im Grundriss mit Rechtsklick auf einen Raum «In VR begehen (Brille)» oder «Im Sitzungsraum zeigen (Brille)» wählen (in der 3D-Ansicht der Link «An die Brille senden»). KICAD meldet «Auftrag an die Brille: … – in der Quest KICAD VR öffnen». Auf der Startseite in der Quest steht der Auftrag («Auftrag vom PC: Begehen · EG · E.01 …» bzw. «Sitzungsraum · 1.OG»); ein Tipp führt ihn aus.",
+            "Läuft VR schon und kommt am PC ein neuer Auftrag, wechselt die Brille von selbst (anderer Raum, Sitzungsraum oder Begehen, Etage) und zeigt kurz «Neuer Auftrag vom PC».",
+            "Nebenweg: Adresse http://localhost:<Port>/vr?raum=<Id des Raums> startet im gewählten Raum."
+          ],
+          "erwartung": "Die Seite /vr zeigt kein Menüband und keinen Projektbrowser, nur den Knopf «Eintreten» über die ganze Fläche mit Projektname, Geschoss und Raum. Der Startpunkt ist, in dieser Reihenfolge: der Raum aus ?raum=, der zuletzt in VR benutzte Standpunkt (je Benutzer gemerkt, Einstellung vr.letzter_standpunkt), der erste Raum im Erdgeschoss, sonst der Standpunkt der 3D-Gesamtansicht. Ein Tipp irgendwo startet die Sitzung genau einmal. Nach dem Ende der Sitzung erscheint wieder die Startseite, nicht die PC-Oberfläche. Ohne erkannte Brille steht ein Hinweis; ohne offenes Projekt steht «Kein Projekt offen».",
+          "pruefpunkte": [
+            "In der Quest öffnet http://localhost:<Port>/vr die Startseite; sie zeigt Projektname, Geschoss und Raum und den Knopf «Eintreten», kein Menüband.",
+            "Ein Tipp mit dem Controller bzw. Pinch mit der Hand irgendwo auf der Seite startet VR; man steht im genannten Raum.",
+            "Nach dem Quest-Menü (VR beenden) steht wieder die Startseite mit «Eintreten» da.",
+            "Nach einem Spaziergang, Beenden und erneutem Eintreten steht man dort, wo man aufgehört hat.",
+            "Mit /vr?raum=<Id eines Raums im Obergeschoss> startet VR in diesem Raum; mit einer ungültigen Angabe beginnt es am gemerkten Standpunkt.",
+            "Am PC im Grundriss Rechtsklick auf einen Raum › «In VR begehen (Brille)»: die Meldung «Auftrag an die Brille …» erscheint; auf der Startseite in der Quest steht der Auftrag (spätestens nach 2 s) und ein Tipp beginnt in diesem Raum.",
+            "«Im Sitzungsraum zeigen (Brille)» (Raum im Obergeschoss): ein Tipp öffnet den Sitzungsraum mit der Etage des Raums.",
+            "Während VR läuft, einen neuen Auftrag am PC senden: die Brille wechselt ohne Tipp (anderer Raum, Sitzungsraum ↔ Begehen, Etage) und zeigt kurz «Neuer Auftrag vom PC».",
+            "In der 3D-Ansicht: «An die Brille senden» schickt das laufende Begehen bzw. die Gesamtansicht (Sitzungsraum).",
+            "Das Icon «KICAD VR» lässt sich anlegen (Startseite, Mediathek oder Lesezeichen) und öffnet die Startseite.",
+            "Ist am PC kein Projekt offen, steht «Kein Projekt offen»; nach dem Öffnen eines Projekts lädt die Seite selbst neu.",
+            "Das Bild stimmt: Wände und Böden sind solide, der Standpunkt liegt in der Raummitte auf Augenhöhe."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "VR-Startseite /vr",
+            "zustand": "Startseite mit «Eintreten», Geschoss und Raum (Prüfbild vrstart-1-startseite.png aus vr-start.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/vr.html, vr.webmanifest, css/vr-start.css",
+            "src/Hlks.Web/wwwroot/js/vr-start.js (Seite) und vr-start-logik.js (Startpunkt, Merken, Parameter)",
+            "src/Hlks.Web/VrSeite.cs (GET /vr), Herkunftsschutz.cs (Ursprungsprüfung)",
+            "src/Hlks.Web/wwwroot/js/ansichten/vr3d.js (api.beiEnde)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: VR-Startseite»)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen: Tipp startet VR im Quest-Browser, Icon anlegen (Menünamen ohne Gewähr), Rückkehr nach dem Quest-Menü. Die Schaltfläche am PC, die ?raum=<Id> öffnet, ist noch nicht gebaut."
+        },
+        {
           "id": "zb-xr-quest-automatisch",
           "titel": "Brille automatisch verbinden: die Quest wird über ihre MAC-Adresse gefunden (Modul XR)",
           "wo": {

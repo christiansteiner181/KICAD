@@ -1,7 +1,7 @@
 // Schutz gegen Fremdaufrufe (Sicherheitsprüfung 3c, Befund B1, 20.10.2026): Der Server bindet nur localhost, aber der Browser
 // des Benutzers ist localhost. Ohne Prüfung könnte jede fremde Webseite «einfache» Anfragen (text/plain, kein CORS nötig) an
 // /api schicken – z. B. eine KI-Frage starten – und per DNS-Rebinding Antworten lesen. Diese Middleware steht vor allen
-// Endpunkten unter /api und /hilfe:
+// Endpunkten unter /api und /hilfe sowie vor der VR-Startseite (/vr, /vr.html, /vr.webmanifest; nur Punkt 1, es sind GET-Seiten):
 //   1. Host-Kopf nur localhost / 127.0.0.1 / [::1] (beliebiger Port), sonst 403 (DNS-Rebinding).
 //   2. Ändernde Methoden (POST, PUT, PATCH, DELETE): Sec-Fetch-Site, falls vorhanden, nur same-origin/none; Origin, falls
 //      vorhanden, nur http://localhost|127.0.0.1|[::1]:<Port dieses Servers>, sonst 403. Werkzeuge (PowerShell, Node, MCP)
@@ -27,7 +27,12 @@ public static class Herkunftsschutz
         ("/api/projekt/vorschau", ["image/png"]),
     ];
 
-    public static bool Geschuetzt(PathString pfad) => pfad.StartsWithSegments("/api") || pfad.StartsWithSegments("/hilfe");
+    /// <summary>Einzelne Seiten ausserhalb von /api und /hilfe, die ebenfalls geprüft werden (VR-Startseite, Modul XR).</summary>
+    static readonly string[] Seiten = ["/vr.html", "/vr.webmanifest"];
+
+    public static bool Geschuetzt(PathString pfad) =>
+        pfad.StartsWithSegments("/api") || pfad.StartsWithSegments("/hilfe") || pfad.StartsWithSegments("/vr")
+        || Seiten.Any(s => pfad.Equals(s, StringComparison.OrdinalIgnoreCase));
 
     public static bool Aendernd(string methode) =>
         HttpMethods.IsPost(methode) || HttpMethods.IsPut(methode) || HttpMethods.IsPatch(methode) || HttpMethods.IsDelete(methode);

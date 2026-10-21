@@ -183,7 +183,7 @@ const hinweise = await text('.qd-hinweise');
 pruef(/Entwicklermodus/.test(hinweise) && /Meta-Horizon-App/.test(hinweise) && /Entwickler-Organisation/.test(hinweise), 'Hinweis: Entwicklermodus über die Meta-Horizon-App, Entwickler-Organisation');
 pruef(/Daten/.test(hinweise) && /USB-Debugging erlauben/.test(hinweise) && /Meta-ADB-Treiber/.test(hinweise) && /KICAD installiert den Treiber nicht selbst/.test(hinweise), 'Hinweise: Datenkabel, USB-Debugging erlauben, Meta-ADB-Treiber (nicht von KICAD)');
 pruef((await gesperrt('.qd-verbinden')) && (await gesperrt('.qd-wlan')) && (await gesperrt('.qd-trennen')) && (await gesperrt('.qd-ip-verbinden')), 'Knöpfe «Verbinden», «Auf WLAN umstellen», «Trennen», «Über WLAN verbinden» sind gesperrt');
-pruef((await text('.qd-url')) === `http://localhost:${PORT}`, 'Die Adresse für die Quest steht im Dialog', await text('.qd-url'));
+pruef((await text('.qd-url')) === `http://localhost:${PORT}/vr`, 'Die Adresse für die Quest steht im Dialog', await text('.qd-url'));
 pruef((await anrufe('/api/quest')).length === 1 && !(await anrufe('/api/quest/')).length, 'Beim Öffnen genügt ein lesender Aufruf von GET /api/quest', JSON.stringify(await anrufe('/api/quest')));
 pruef(aufrufe().length === 0, 'Es lief kein adb (kein Pfad eingestellt)', JSON.stringify(aufrufe()));
 await shot('02_ohne_adb');

@@ -1,0 +1,34 @@
+/* VR-Startseite /vr (Modul XR): schlicht, Cyan auf Dunkel, grosse Schrift für den Blick durch den Browser der Quest. */
+html, body { margin: 0; height: 100%; background: #0b1220; color: #e6f7fb; font-family: var(--schrift); overflow: hidden; }
+#vr-szene { position: fixed; inset: 0; }
+/* Von der 3D-Ansicht bleibt nur die Leinwand: keine Hinweise, Würfel, Knöpfe */
+#vr-szene .d3-wurzel > :not(canvas.d3-leinwand) { display: none !important; }
+#vr-eintreten {
+  position: fixed; inset: 0; width: 100%; height: 100%; margin: 0; padding: 4vmin; box-sizing: border-box;
+  display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2.2vmin; text-align: center;
+  border: 0; border-radius: 0; cursor: pointer; font: inherit; color: inherit;
+  background: radial-gradient(ellipse at center, rgba(11, 18, 32, .72) 0%, rgba(11, 18, 32, .9) 100%);
+}
+#vr-eintreten > span { display: block; max-width: 90vw; }
+#vr-eintreten:focus-visible { outline: .6vmin solid #22d3ee; outline-offset: -1.2vmin; }
+.vr-marke { font-size: 3.2vmin; letter-spacing: .35em; color: #22d3ee; text-transform: uppercase; }
+.vr-projekt { font-size: 5.2vmin; font-weight: 600; }
+#vr-eintreten > .vr-ort { display: flex; flex-direction: column; gap: .8vmin; font-size: 3.6vmin; color: #b4cdd4; }
+.vr-geschoss:empty, .vr-raum:empty { display: none; }
+.vr-gross {
+  margin-top: 2vmin; padding: 3vmin 12vmin; border-radius: 6vmin; background: #22d3ee; color: #062b33;
+  font-size: 9vmin; font-weight: 700; box-shadow: 0 0 6vmin rgba(34, 211, 238, .45);
+}
+.vr-auftrag { font-size: 4vmin; font-weight: 600; color: #22d3ee; }
+#vr-eintreten > .vr-auftrag:empty { display: none; }
+.vr-hinweis { font-size: 3vmin; color: #fbbf77; }
+#vr-eintreten > .vr-hinweis:empty { display: none; }
+.vr-quelle { font-size: 2.6vmin; color: #7fa0a8; }
+#vr-eintreten:hover .vr-gross { background: #67e8f9; }
+#vr-eintreten[data-status="laedt"] .vr-gross, #vr-eintreten[data-status="kein-projekt"] .vr-gross, #vr-eintreten[data-status="startet"] .vr-gross { background: #3b4a55; color: #9fb4bd; box-shadow: none; }
+#vr-eintreten[data-status="laedt"], #vr-eintreten[data-status="kein-projekt"] { cursor: default; }
+#vr-eintreten[data-status="aktiv"] { display: none; }   /* in der Sitzung sieht man die Seite ohnehin nicht; nach dem Ende ist sie sofort wieder da */
+#meldungen { position: fixed; left: 50%; bottom: 2vmin; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; gap: 1vmin; max-width: 90vw; }
+#meldungen .meldung { padding: 1.4vmin 2.4vmin; border-radius: 1.2vmin; background: #1e293b; color: #e6f7fb; font-size: 2.8vmin; border: 1px solid #334155; }
+#meldungen .meldung.warnung, #meldungen .meldung.fehler { border-color: #f59e0b; }
+#meldungen .m-vorschlag { color: #94a3b8; font-size: .85em; }
