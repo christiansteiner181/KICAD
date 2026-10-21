@@ -26,6 +26,9 @@ public sealed class ArchitekturGrafik : IGrafikquelle
     const double AchsSchrift = 3.5;          // mm Papier – Annahme (wie Titel; Schriftgrössentabelle der Norm nicht lesbar)
     const double RaumDeckkraft = 0.35;       // Raumfarbe am Bildschirm (Spezifikation «~0.35»)
     const double UnbestimmtDeckkraft = 0.25; // Material unbestimmt: Füllung «schnitt» (Spezifikation, Annahme Christian)
+    /// <summary>Holz im Schnitt (N18): Beige, durchscheinend; Farbton und Deckkraft sind eine Annahme des Hauptlaufs.</summary>
+    internal const string HolzFarbe = "#d8bf94";
+    internal const double HolzDeckkraft = 0.6;
     const double FensterbankAusladung = 50;  // mm Modell – Annahme (keine Quelle), Fensterbank vor der Wandfläche
     const double OeffnungTiefe = 40;         // mm Modell – Annahme: Dicke des Tür- bzw. Glaskörpers im 3D
 
@@ -161,10 +164,13 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 
     /// <summary>Schnittfläche nach Material: Schraffur aus Schraffuren über deckendem Papiergrund (Annahme: deckend, damit
     /// Raumfarben die Wand nicht durchscheinen); unbestimmt, leer oder ohne Muster (z. B. «leichtbau») → Füllung «schnitt»,
-    /// Deckkraft 0.25.</summary>
+    /// Deckkraft 0.25. Holz ohne Schraffur, beige und durchscheinend (Nachbearbeitung N18).</summary>
     public static Stil Schnittstil(string? material)
     {
         var name = material?.Trim();
+        // N18 (Christian 21.10.2026): «stelle holz als wand ohne schraffur dar. verwende eine beige/transparente farbe.»
+        if (string.Equals(name, "holz", StringComparison.OrdinalIgnoreCase))
+            return new Stil { Stift = null, Fuellung = HolzFarbe, Deckkraft = HolzDeckkraft };
         if (!string.IsNullOrEmpty(name) && !name.Equals("unbestimmt", StringComparison.OrdinalIgnoreCase) && Schraffuren.Definition(name) is { } s)
             return new Stil { Stift = null, Fuellung = "papier", Muster = s.Name };
         return new Stil { Stift = null, Fuellung = "schnitt", Deckkraft = UnbestimmtDeckkraft };

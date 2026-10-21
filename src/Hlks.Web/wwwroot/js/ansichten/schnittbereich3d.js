@@ -17,8 +17,9 @@ import { ebenen, griffe, ecken, weltGrenzen, enthaelt, schnittbereichLesen, fuer
 /** Pause in ms nach der letzten Mausbewegung beim Ziehen, nach der gespeichert wird (sonst gäbe jeder Zug ein eigenes Paket). */
 export const PAUSE_MS = 600;
 const SPIEL_M = 0.0005;   // Meter: Clipping-Ebenen liegen so weit ausserhalb des Quaders (gegen Flackern bei Flächen in der Ebene)
-const FARBE = 0xff8a00;
-const FARBE_HOVER = 0xffd23f;
+// Blau wie der 3D-Schnittbereich in Revit (Christian 21.10.2026: «der 3d auswahlrahmen in blau, analog revit»); Hover heller.
+const FARBE = 0x1e6fd9;
+const FARBE_HOVER = 0x5fa8ff;
 const GRIFF_GROESSE = 0.045;   // Höhe des Kegels im Verhältnis zum Abstand zur Kamera
 const KANTEN = [[0, 1], [2, 3], [4, 5], [6, 7], [0, 2], [1, 3], [4, 6], [5, 7], [0, 4], [1, 5], [2, 6], [3, 7]];   // Index = 4·u + 2·v + z (Reihenfolge von ecken())
 

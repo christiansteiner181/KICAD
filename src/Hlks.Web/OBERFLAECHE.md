@@ -1560,7 +1560,7 @@ Ohne `ansicht`: die erste 3D-Ansicht nach Kennzeichen, sonst wird `AN-3D` angele
   nächsten Zeichnen gesetzt. Die Ebenenobjekte sind dieselben, wenn der Quader sich ändert (kein Neuaufbau der Materialien).
 - **Schnittflächen bleiben offen (Entscheid):** ein Deckel (Stencil-Kappe) kostet je Ebene zwei weitere Durchläufe über das ganze Modell, und die Wände sind durchscheinend (Deckkraft ~0.3) – ein
   undurchsichtiger Deckel würde sie verfälschen. Die Schnitte zeigen deshalb die Hohlform der Bauteile.
-- **Griffe:** Kegel in der Mitte jeder Fläche, Spitze nach aussen, orange, auf dem Bildschirm gleich gross und immer sichtbar (`depthTest` aus). Ziehen (linke Taste auf einem Griff; Aufnahmephase vor den
+- **Griffe:** Kegel in der Mitte jeder Fläche, Spitze nach aussen, blau wie der Schnittbereich in Revit, auf dem Bildschirm gleich gross und immer sichtbar (`depthTest` aus). Ziehen (linke Taste auf einem Griff; Aufnahmephase vor den
   OrbitControls) verschiebt die Fläche entlang ihrer Achse: der Strahl der Maus wird mit der Achse geschnitten (`achsenParameter`, nächster Punkt), die Verschiebung ist der Unterschied zum
   Beginn (`flaecheSchieben`, Mindestkante 100 mm). Gespeichert wird nach einer Pause von 600 ms und beim Loslassen (ein Zug ergibt meist **ein** Paket); während des Ziehens und Speicherns gilt der angezeigte
   Stand (Echo des Servers wird ignoriert). Lehnt der Kern ab, gilt wieder der Stand des Modells. Bricht der Browser den Zeiger ab (`pointercancel`), wird der Zug verworfen.

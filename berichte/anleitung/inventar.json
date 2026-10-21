@@ -10095,10 +10095,10 @@
           "schritte": [
             "«3D Gesamt» öffnen (nichts wählen), in den Eigenschaften nach unten rollen bis «Schnittbereich».",
             "Den Haken «3D-Schnittbereich» setzen (oder Register Ansicht › 3D-Schnitt › «3D-Schnittbereich»).",
-            "Den orangen Quader und die sechs Griffe ansehen.",
+            "Den blauen Quader und die sechs Griffe ansehen.",
             "Den Haken wieder entfernen."
           ],
-          "erwartung": "Mit dem Haken umschliesst ein oranger Quader das ganze Modell; sichtbar und wählbar ist nur, was im Quader liegt (wie «Schnittbereich» in Revit). Der Quader ist parallel zur längsten Gebäudekante ausgerichtet (Planwinkel, N9). Auf jeder Fläche sitzt ein oranger Griff. Die Zeile «Masse» nennt Länge × Breite × Höhe. Ohne Haken ist alles sichtbar; der Quader bleibt aber gespeichert und kommt beim nächsten Einschalten wieder. Die Einstellung gehört zur Ansicht und steht im Modell: sie bleibt nach dem Neuladen und gilt auf jedem Rechner.",
+          "erwartung": "Mit dem Haken umschliesst ein blauer Quader (wie Revit) das ganze Modell; sichtbar und wählbar ist nur, was im Quader liegt (wie «Schnittbereich» in Revit). Der Quader ist parallel zur längsten Gebäudekante ausgerichtet (Planwinkel, N9). Auf jeder Fläche sitzt ein blauer Griff. Die Zeile «Masse» nennt Länge × Breite × Höhe. Ohne Haken ist alles sichtbar; der Quader bleibt aber gespeichert und kommt beim nächsten Einschalten wieder. Die Einstellung gehört zur Ansicht und steht im Modell: sie bleibt nach dem Neuladen und gilt auf jedem Rechner.",
           "pruefpunkte": [
             "Mit dem Haken erscheinen der Quader und sechs Griffe.",
             "Der Knopf im Menüband ist gedrückt.",
@@ -10127,7 +10127,7 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "3D-Ansicht, orange Griffe am Quader (bei eingeschaltetem Schnittbereich)"
+            "sonst": "3D-Ansicht, blaue Griffe am Quader (bei eingeschaltetem Schnittbereich)"
           },
           "schritte": [
             "Den 3D-Schnittbereich einschalten.",

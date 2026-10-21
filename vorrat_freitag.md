@@ -36,3 +36,5 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 | N15 | Raum im Grundriss gewählt → Kontextmenü «Raum begehen»: 3D in Ich-Perspektive, Augenhöhe 1,7 m über Boden, Raummitte; mit den Pfeiltasten bewegen | Christian 21.10. | mittel (Kamera-Modus im 3D) | läuft seit 21.10. (Sonnet); Tastenbelegung als Annahme, am Freitag bestätigen |
 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf), Tests 11 |
 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übernahme, Stufen/Schnittlinie/Lauflinie/Beschriftung) | Christian 21.10. | mittel–gross | läuft (Sonnet, Freigabe bis 95 %) |
+| N18 | Holz ohne Schraffur, beige durchscheinend | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
+| N19 | 3D-Schnittbereich blau wie Revit | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |

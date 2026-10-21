@@ -467,3 +467,16 @@ Entscheide Hauptlauf:
 - Stufen, Schnittlinie, Lauflinie mit Pfeil und Beschriftung;
 - im PDF gleich wie auf dem Bildschirm;
 - eine Treppe ohne Attribute wird aus ihrer Geometrie richtig gezählt.
+
+## N18 – Holz ohne Schraffur, beige und durchscheinend
+
+Christian 21.10.2026: «stelle holz als wand ohne schraffur dar. verwende eine baig/transparente farbe.»
+
+**Umgesetzt: 21.10.2026** (Hauptlauf). `ArchitekturGrafik.Schnittstil("holz")` zeichnet keine Schraffur mehr, sondern eine beige,
+durchscheinende Füllung (`HolzFarbe` #d8bf94, `HolzDeckkraft` 0.6; Farbton und Deckkraft sind eine Annahme). Das gilt für Wände im
+Grundriss und für Holz im Schnitt; die anderen Materialien bleiben unverändert. Tests: `HolzOhneSchraffurTests.cs` (2).
+
+## N19 – 3D-Schnittbereich blau wie in Revit
+
+Christian 21.10.2026: «der 3d auswahlrahmen in blau, analog revit». **Umgesetzt: 21.10.2026** (Hauptlauf). Quader und Griffe in
+`ansichten/schnittbereich3d.js` sind blau #1e6fd9, Hover #5fa8ff (vorher orange). Anleitung und `OBERFLAECHE.md` sind nachgeführt.
