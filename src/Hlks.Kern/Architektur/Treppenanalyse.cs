@@ -17,10 +17,15 @@
 //   7. Lauflinie = Mitte der ersten Kante (leicht nach innen), Schwerpunkte der Regionen, Mitte der Austrittskante (leicht nach
 //      innen); Punkte auf einer Geraden (unter 15 mm Abstand) entfallen.
 //   8. Stufenzahl (Steigungen) = (Oberkante − Unterkante) / Steigung. Die Unterkante liegt eine Steigung unter der ersten Region,
-//      ausser diese liegt in Höhe einer Geschosskote (dann ist sie selbst der Boden). Die Oberkante liegt eine Steigung über der
-//      letzten Region, ausser diese ist ein Podest oder liegt in Höhe einer Geschosskote.
-// Grenze (Annahme): Mündet ein Lauf in ein Podest oder einen Boden, den der Körper nicht enthält und der auf keiner Geschosskote
-// liegt, zählt die Geometrie eine Steigung zu viel; die Attribute der Datei gehen deshalb vor (IfcTreppe).
+//      ausser diese liegt in Höhe eines Bodens (dann ist sie selbst der Boden). Die Oberkante liegt eine Steigung über der
+//      letzten Region, ausser diese ist ein Podest oder liegt in Höhe eines Bodens. Böden = Geschosskoten und die halben
+//      Geschosshöhen (Zwischenpodest zweiläufiger Treppen; Annahme).
+//      Nennt die Datei die Stufenzahl (<c>stufenVorgabe</c>), entscheidet sie, wie viele der zwei Steigungen ausserhalb der Flächen
+//      liegen: Sprünge = (letzte − erste Höhe) / Steigung; Stufen = Sprünge → beide Enden sind Böden, Sprünge + 2 → keines, Sprünge + 1 →
+//      eines (welches, sagen Geschosskoten und Podest).
+// Grenze (Annahme): Mündet ein Lauf in ein Podest oder einen Boden, den der Körper nicht enthält und der auf keiner Geschosskote und
+// keiner halben Geschosshöhe liegt, zählt die Geometrie ohne Stufenzahl eine Steigung zu viel (Bernstrasse: 2 von 10); die Attribute der
+// Datei gehen deshalb vor (IfcTreppe).
 
 using Clipper2Lib;
 

@@ -107,6 +107,7 @@ public class TreppeEchtTests(ITestOutputHelper aus)
                 ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000 },
             }));
         var treppen = p.Modell.DerKlasse("Treppe").ToList();
+        var sichtbarIn = treppen.ToDictionary(t => t.Id, _ => new JsonArray());
         foreach (var g in geschosse)
         {
             var plan = Grafik.Plan(p, "AN-" + g.Kennzeichen);
@@ -117,6 +118,7 @@ public class TreppeEchtTests(ITestOutputHelper aus)
             double kote = g.Zahl("kote")!.Value;
             foreach (var t in treppen.Where(x => x.Geschoss != g.Id && x.Zahl("oberkante")! > kote - 50 && x.Zahl("unterkante")! < kote + 1000 && x.Zahl("unterkante")! < kote - 1))
                 Assert.Contains(t.Id, da);
+            foreach (var id in da) sichtbarIn[id!].Add(g.Kennzeichen);
             File.WriteAllText(Path.Combine(ordner, $"grundriss_{g.Kennzeichen}.json"), Json.Text(plan));
             aus.WriteLine($"{g.Kennzeichen} (Kote {kote}): {da.Count} Treppen im Grundriss");
         }
@@ -129,11 +131,12 @@ public class TreppeEchtTests(ITestOutputHelper aus)
             Ok(p.Ausfuehren("ansicht_platzieren", new JsonObject { ["planblatt"] = nr, ["ansicht"] = "AN-" + g.Kennzeichen }));
             File.WriteAllBytes(Path.Combine(ordner, $"grundriss_{g.Kennzeichen}.pdf"), Planausgabe.Pdf(p, nr));
         }
+        File.WriteAllText(Path.Combine(ordner, "schraffuren.json"), Json.Text(Schraffuren.Alle));
         // Lage der Treppen für den Zuschnitt der Bilder
         File.WriteAllText(Path.Combine(ordner, "treppen.json"), new JsonArray(treppen.OrderBy(t => t.Kennzeichen).Select(t => (JsonNode)new JsonObject
         {
-            ["kennzeichen"] = t.Kennzeichen, ["geschoss"] = p.Modell.Finde(t.Geschoss)!.Kennzeichen,
-            ["lauflinie"] = Json.Knoten(t.Geometrie!).DeepClone(), ["beschriftung"] = TreppeGrafik.Beschriftung(Treppenlage.Von(t)!),
+            ["id"] = t.Id, ["kennzeichen"] = t.Kennzeichen, ["geschoss"] = p.Modell.Finde(t.Geschoss)!.Kennzeichen,
+            ["sichtbarIn"] = sichtbarIn[t.Id], ["lauflinie"] = Json.Knoten(t.Geometrie!).DeepClone(), ["beschriftung"] = TreppeGrafik.Beschriftung(Treppenlage.Von(t)!),
         }).ToArray()).ToJsonString(Json.Eingerueckt));
     }
 }
