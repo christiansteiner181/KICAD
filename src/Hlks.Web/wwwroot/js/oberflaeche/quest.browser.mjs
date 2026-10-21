@@ -384,23 +384,15 @@ await warteBis(() => ausw(`const z = await import('/js/zustand.js'); return [...
 await ausw(`const f = await import('/js/fenster.js'); const z = await import('/js/zustand.js'); const e = [...z.zustand.elemente.values()].find((x) => x.kennzeichen === 'AN-3D'); await f.ansichtOeffnen(e.id); return 1;`);
 await warteBis(() => gibt('.d3-vr-haupt .d3-vr-knopf'), 'VR-Knopf da', 20000);
 await warte(600);
-const vr = () => ausw(`const k = document.querySelector('.d3-vr-haupt'); return { status: k.dataset.vrStatus, link: getComputedStyle(k.querySelector('.d3-vr-quest')).display, linkText: k.querySelector('.d3-vr-quest').textContent };`);
+const vr = () => ausw(`const k = document.querySelector('.d3-vr-haupt'); const b = k.querySelector('.d3-vr-knopf'); return { status: k.dataset.vrStatus, aus: b.getAttribute('aria-disabled'), links: k.querySelectorAll('.d3-vr-quest, .d3-vr-brille').length, titel: b.title };`);
+// Christian 21.10.2026: «den button in VR … so gestalten, dass er immer den neuen weg geht. nur noch diesen button anzeigen» – ohne VR im Browser geht der Knopf über die Brille
 let v = await vr();
-pruef(v.status === 'aus' && v.link !== 'none' && v.linkText === 'Quest im Browser der Brille nutzen …', 'Beim grauen Knopf steht der Link «Quest im Browser der Brille nutzen …» daneben', JSON.stringify(v));
-await shot('08_vr_knopf_grau');
-await klick('.d3-vr-haupt .d3-vr-quest');
-await warteBis(dialogOffen, 'Dialog über den Link', 8000);
-pruef(await dialogOffen(), 'Der Link öffnet den Dialog «Quest verbinden»');
-await dialogZu();
-await klick('.d3-vr-haupt .d3-vr-knopf');
-await warteBis(dialogOffen, 'Dialog über den grauen Knopf', 8000);
-pruef(await dialogOffen(), 'Ein Klick auf den grauen Knopf «In VR begehen» öffnet den Dialog');
-pruef((await ausw(`return document.querySelectorAll('#dialogschicht .dlg.quest-verbinden').length;`)) === 1, 'Es gibt nur einen Dialog');
-await dialogZu();
+pruef(v.status === 'brille' && v.aus === 'false' && v.links === 0 && /an die Brille/.test(v.titel), 'Ohne VR im Browser: ein Knopf «In VR begehen», nie grau, geht über die Brille (Auftrag mit Autostart), keine Zusatz-Links', JSON.stringify(v));
+await shot('08_vr_knopf_brille');
 await ausw(`window.__xr._unterstuetzt = true; window.__xr.dispatchEvent(new Event('devicechange')); return 1;`);
 await warteBis(async () => (await vr()).status === 'bereit', 'Knopf bereit', 8000);
 v = await vr();
-pruef(v.status === 'bereit' && v.link === 'none', 'Mit verbundener Brille ist der Knopf bereit und der Link ausgeblendet', JSON.stringify(v));
+pruef(v.status === 'bereit' && v.links === 0, 'Kann der Browser selbst VR (z. B. Quest-Browser), startet derselbe Knopf die Sitzung direkt', JSON.stringify(v));
 
 // ================================================================== Schluss
 abschnitt('Fehler im Browser');
