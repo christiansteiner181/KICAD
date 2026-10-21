@@ -244,7 +244,7 @@ public static class PlanwinkelAbfragen
         var liste = new JsonArray();
         foreach (var g in gebs)
         {
-            var e = Planwinkel.Bestimmen(m, p.Katalog, g);
+            var e = Planwinkel.Gerechnet(m, p.Katalog, g);   // zwischengespeichert: die Eigenschaftenpalette fragt bei jedem Zeichnen (Raumgrenzen nur je Stand der Wände und Räume)
             var w = g.Eigenschaft(Planwinkel.Eigenschaft);
             liste.Add(new JsonObject
             {
