@@ -164,7 +164,7 @@ export function befehlsMasse(offset) {
 // ---------------------------------------------------------------------------------------------------- Tablet
 export const TABLET_B = 0.26;          // m
 export const TABLET_H = 0.195;         // m
-export const TABLET_ABSTAND = 0.14;    // m über der Handfläche
+export const TABLET_ABSTAND = 0.08;    // m über der Handfläche (vorher 0.14; Christian 21.10.2026 nach dem Brillentest: «tablet etwas weiter weg» – 6 cm weiter vom Gesicht)
 export const TABLET_PX = { b: 512, h: 384 };
 export const BERUEHR_VOR = 0.015;
 export const BERUEHR_HINTER = 0.04;

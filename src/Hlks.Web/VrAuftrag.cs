@@ -3,7 +3,8 @@
 // und führt ihn aus (neuer Auftrag während der Sitzung: sofort, ohne neuen Tipp).
 //
 //   GET  /api/vr/auftrag   { auftrag: { modus, raum?, geschoss?, nr, zeit } | null }
-//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id }  → { auftrag }; nr zählt bei jedem Setzen hoch (vom Server vergeben, ein nr im Körper zählt nicht)
+//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar };
+//                          autostart: true startet nach dem Speichern «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs), wenn die Einstellung quest.autostart an ist; nr zählt bei jedem Setzen hoch (vom Server vergeben, ein nr im Körper zählt nicht)
 //
 // Gespeichert im Speicher des Servers und zusätzlich in den BenutzerEinstellungen (Schlüssel vr.auftrag), damit er einen Neustart übersteht; die Ablage ist nur eine
 // Zugabe (im Testlauf ohne Umleitung nach %TEMP% wird sie abgelehnt, der Speicher gilt trotzdem). Keine Fachlogik: der Auftrag ist nur eine Anweisung für die Anzeige,
@@ -88,7 +89,7 @@ public sealed class VrAuftragSpeicher
 
 public static class VrAuftragEndpunkte
 {
-    public static WebApplication MapVrAuftrag(this WebApplication app, ProjektDienst dienst)
+    public static WebApplication MapVrAuftrag(this WebApplication app, ProjektDienst dienst, QuestStarter? starter = null)
     {
         var speicher = new VrAuftragSpeicher(dienst.Benutzer);
         var g = app.MapGroup("/api/vr");
@@ -96,7 +97,11 @@ public static class VrAuftragEndpunkte
         g.MapPost("/auftrag", (HttpRequest r) => Gesichert(async () =>
         {
             var p = await KoerperLesen(r);
-            return Antwort(new { auftrag = VrAuftragSpeicher.Zuobjekt(speicher.Setzen(p)) });
+            var a = speicher.Setzen(p);
+            // Autostart (QuestStarter.cs): nur auf Wunsch des Menschen (autostart: true im Körper) und nur mit eingeschalteter Einstellung quest.autostart. Der Port ist der des Servers.
+            var gewuenscht = p["autostart"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
+            var autostart = !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
+            return Antwort(new { auftrag = VrAuftragSpeicher.Zuobjekt(a), autostart });
         }));
         return app;
     }

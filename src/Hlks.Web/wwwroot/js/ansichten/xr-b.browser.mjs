@@ -397,7 +397,7 @@ try {
   await bis((d) => d?.tablet?.anteil >= 0.99, 'Tablet aufgebaut', 4000);
   await warte(500);
   const tab = (await xrDaten()).tablet;
-  pruef(tab.offen && tab.sichtbar && nahe(tab.lage.mitte.y, palmL.y + 0.14, 0.03), `Tablet steht ${(tab.lage.mitte.y - palmL.y).toFixed(2)} m über der linken Hand (Y ${tab.lage.mitte.y})`, JSON.stringify(tab));
+  pruef(tab.offen && tab.sichtbar && nahe(tab.lage.mitte.y, palmL.y + 0.08, 0.03), `Tablet steht ${(tab.lage.mitte.y - palmL.y).toFixed(2)} m über der linken Hand (Y ${tab.lage.mitte.y})`, JSON.stringify(tab));
   pruef(tab.ursache === 'geste', 'geöffnet durch die Geste');
   const bildTab = await speichern('xrb-tablet');
   pruef(bildPruefen(bildTab), 'Prüfbild: Tablet im Hologramm-Stil');
@@ -429,10 +429,10 @@ try {
 
   abschnitt('XR-C Tablet beruhigt, Hände bei offenem Tablet ausgeblendet (Rückmeldung Brillentest 21.10.2026)');
   const hd = (await xrDaten()).haende;
-  pruef(hd && hd.gelenke.left === false && hd.gelenke.right === false, 'Tablet offen: Gelenkkugeln beider Hände unsichtbar', JSON.stringify(hd));
-  pruef(hd.fingerPunkt === true && hd.fingerPunktOrt, `Tablet offen: Punkt an der Spitze des rechten Zeigefingers sichtbar (${JSON.stringify(hd.fingerPunktOrt)})`);
+  pruef(hd && hd.gelenke.left === false && hd.gelenke.right === true, 'Tablet offen: linke Hand (trägt das Tablet) unsichtbar, rechte ganz sichtbar', JSON.stringify(hd));
+  pruef(hd.fingerPunkt === false, 'Tablet offen: kein eigener Fingerpunkt mehr (die rechte Hand ist ganz da)');
   const sichtbar = await ausw(`const g = window.__vr.api.xr; let n = 0, kugel = 0; const wg = g.tablet.gruppe.parent; wg.traverse((o) => { if (o.isInstancedMesh && o.visible) kugel++; if (o.isMesh && !o.isInstancedMesh && o.geometry?.type === 'SphereGeometry' && o.visible) n++; }); return { kugel, punkte: n };`);
-  pruef(sichtbar.kugel === 0 && sichtbar.punkte === 1, `Szene: keine sichtbare Gelenk-Instanzgruppe, genau ein Fingerpunkt (${JSON.stringify(sichtbar)})`);
+  pruef(sichtbar.kugel === 1 && sichtbar.punkte === 0, `Szene: genau eine sichtbare Gelenk-Instanzgruppe (rechte Hand), kein Fingerpunkt (${JSON.stringify(sichtbar)})`);
   const mitteVor = (await xrDaten()).tablet.lage.mitte;
   await hand('left', { offen: true, palm: plus3(palmL, { x: 0.008, y: 0.004, z: -0.006 }) }); await warte(600);
   const mitteZittern = (await xrDaten()).tablet.lage.mitte;

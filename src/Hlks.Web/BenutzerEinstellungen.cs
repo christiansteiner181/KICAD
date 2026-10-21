@@ -68,6 +68,8 @@ public sealed class BenutzerEinstellungen
         // «Brille automatisch verbinden» (Modul XR): Ja/Nein, Vorgabe nein; und die gemerkten Brillen (Liste { seriennummer, mac, letzteIp, zuletzt }, gültige MAC).
         ["quest.automatisch"] = QuestDienst.AutomatikPruefen,
         ["quest.brillen"] = QuestDienst.BrillenPruefen,
+        // «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs): Ja/Nein, Vorgabe ja.
+        ["quest.autostart"] = QuestDienst.AutomatikPruefen,
     };
 
     static string? AugenhoeheDaten(JsonNode w) =>

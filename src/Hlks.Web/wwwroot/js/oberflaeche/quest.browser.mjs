@@ -307,6 +307,7 @@ await warteBis(async () => (await ampelStufen()).frei === 'ok', 'Quest freigegeb
 pruef(!(await sichtbar('.sl-brille')), 'Das Speichern des Pfads allein macht die Anzeige nicht sichtbar');
 pruef(await gibt('.qd-auto') && !(await ausw(`return document.querySelector('.qd-auto').checked;`)), 'Im Dialog steht der Schalter «Brille automatisch verbinden», ausgeschaltet');
 pruef(/Noch keine Brille gemerkt/.test(await text('.qd-brillen')), 'Noch keine Brille gemerkt');
+pruef(await gibt('.qd-autostart') && await ausw(`return document.querySelector('.qd-autostart').checked;`) && /VR erlauben/.test(await text('.qd-autostart-block')), 'Im Dialog steht der Schalter «Begehung beim Aufsetzen automatisch starten», eingeschaltet (Vorgabe), mit dem Hinweis «VR erlauben»');
 await klick('.qd-verbinden');
 await warteBis(async () => (await ampelStufen()).weiter === 'ok', 'Weiterleitung aktiv', 10000);
 await warteBis(() => sichtbar('.sl-brille'), 'Statusanzeige sichtbar', 10000);

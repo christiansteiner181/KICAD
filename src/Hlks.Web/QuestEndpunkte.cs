@@ -13,7 +13,9 @@
 //                              { automatisch, status: aus | kein_adb | bereit | sucht | nicht_gefunden | nicht_freigegeben | fehler, meldung?, hinweis?, ping: nein | gelaufen | gesperrt | keine_netze,
 //                              ip?, seriennummer?, brille?, port, url }. «takt» liest nur adb devices und die Nachbartabelle; die anderen dürfen einen Ping-Durchlauf machen
 //                              (im eigenen /24-Netz, höchstens einmal je 2 Minuten). Ist quest.automatisch aus, geschieht nichts (ausser bei «klick»).
-// GET /api/quest liefert zusätzlich automatisch (Einstellung quest.automatisch) und brillen (Einstellung quest.brillen: [{ seriennummer, mac, letzteIp, zuletzt }]).
+//   GET  /api/quest/autostart  Zustand von «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs): { autostart, status: leer | laeuft | aktiv | fehler | abgebrochen, phase?, meldung?, hinweis?, nr, port }.
+//                              Gestartet wird der Autostart nur durch POST /api/vr/auftrag mit autostart: true (VrAuftrag.cs), nie hier.
+// GET /api/quest liefert zusätzlich autostart (Einstellung quest.autostart, Vorgabe ja), automatisch (Einstellung quest.automatisch) und brillen (Einstellung quest.brillen: [{ seriennummer, mac, letzteIp, zuletzt }]).
 // Den Pfad zur adb.exe speichert die Oberfläche als Benutzereinstellung «quest.adb» (POST /api/benutzer/einstellungen). Fehler: 400 { fehler, vorschlag }.
 
 using Hlks.Kern;
@@ -23,12 +25,22 @@ namespace Hlks.Web;
 
 public static class QuestEndpunkte
 {
-    public static WebApplication MapQuest(this WebApplication app, ProjektDienst dienst)
+    /// <summary>Erzeugt Quest-Dienst und Autostart (gemeinsame Sperre und Einstellungen); MapVrAuftrag und MapQuest teilen sich den Starter.</summary>
+    public static QuestStarter StarterErzeugen(WebApplication app, ProjektDienst dienst)
     {
         var einst = app.Services.GetService<QuestEinstellungen>() ?? QuestEinstellungen.Vorgabe();
         var netz = app.Services.GetService<IQuestNetz>() ?? IQuestNetz.Vorgabe();
-        var quest = new QuestDienst(dienst.Benutzer, einst, netz);
+        return new QuestStarter(new QuestDienst(dienst.Benutzer, einst, netz), einst);
+    }
+
+    public static WebApplication MapQuest(this WebApplication app, ProjektDienst dienst, QuestStarter? starter = null)
+    {
+        starter ??= StarterErzeugen(app, dienst);
+        var quest = starter.Quest;
         var g = app.MapGroup("/api/quest");
+
+        // Zustand des Autostarts (nur lesen): { autostart (Einstellung), status: leer | laeuft | aktiv | fehler | abgebrochen, phase?, meldung?, hinweis?, nr, port, seit?, ende? }
+        g.MapGet("/autostart", () => Gesichert(() => Task.FromResult(Antwort(AutostartAntwort(starter)))));
 
         g.MapGet("", (HttpRequest r) => Gesichert(async () => Antwort(await quest.Zustand(Port(r)))));
         g.MapPost("/verbinden", (HttpRequest r) => Gesichert(async () => Antwort(await quest.Verbinden(Port(r)))));
@@ -45,6 +57,12 @@ public static class QuestEndpunkte
             return Antwort(await quest.Automatik(Port(r), Param.Text(p, "anlass")));
         }));
         return app;
+    }
+
+    public static object AutostartAntwort(QuestStarter starter)
+    {
+        var s = starter.Zustand();
+        return new { autostart = starter.Quest.AutostartAn(), status = s.Status, phase = s.Phase, meldung = s.Meldung, hinweis = s.Hinweis, nr = s.Nr, port = s.Port, seit = s.Seit, ende = s.Ende };
     }
 
     /// <summary>Der Port dieses Servers aus dem Host-Kopf (der Herkunftsschutz hat den Host-Namen schon als localhost geprüft); ohne Angabe 80.</summary>

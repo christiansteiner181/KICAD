@@ -51,6 +51,18 @@ public sealed record QuestEinstellungen
     public TimeSpan PingAbstand { get; init; } = TimeSpan.FromMinutes(2);
     /// <summary>Uhr für Zeitstempel und den Ping-Abstand (Tests setzen eine feste); null = UTC-Systemzeit.</summary>
     public Func<DateTimeOffset>? Uhr { get; init; }
+    /// <summary>Autostart (QuestStarter.cs): Gesamtgrenze, bis die Brille aufgesetzt ist (Christian 21.10.2026: höchstens 10 min).</summary>
+    public TimeSpan AutostartGrenze { get; init; } = TimeSpan.FromMinutes(10);
+    /// <summary>Autostart: Abstand der Abfragen (Wachzustand, Vordergrund, Knopf-Status).</summary>
+    public TimeSpan AutostartAbstand { get; init; } = TimeSpan.FromSeconds(1.5);
+    /// <summary>Autostart: Zeitgrenze je Anfrage an das Fern-Debugging (CDP) der Brille; im Ruhezustand antwortet der Browser nicht.</summary>
+    public TimeSpan CdpZeitlimit { get; init; } = TimeSpan.FromSeconds(5);
+    /// <summary>Autostart: Gesamtgrenze, bis die Startseite den Status «bereit» meldet.</summary>
+    public TimeSpan BereitGrenze { get; init; } = TimeSpan.FromSeconds(60);
+    /// <summary>Autostart: Wartezeit nach dem Klick, bis der Status «aktiv» erreicht ist (danach ein zweiter Versuch).</summary>
+    public TimeSpan KlickGrenze { get; init; } = TimeSpan.FromSeconds(10);
+    /// <summary>Naht für Tests: der lokale Port des Fern-Debuggings; null = KICAD wählt selbst einen freien Port (nur 127.0.0.1).</summary>
+    public Func<int>? CdpPortWahl { get; init; }
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
@@ -78,6 +90,8 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     public const string AutomatikSchluessel = "quest.automatisch";
     /// <summary>Schlüssel der gemerkten Brillen: Liste { seriennummer, mac, letzteIp, zuletzt }.</summary>
     public const string BrillenSchluessel = "quest.brillen";
+    /// <summary>Schlüssel (Ja/Nein): «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs). Vorgabe ja (Christian 21.10.2026).</summary>
+    public const string AutostartSchluessel = "quest.autostart";
     public const int WlanPort = 5555;
     const int AusgabeMax = 64 * 1024;
     const int BrillenMax = 8;
@@ -272,6 +286,9 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     /// <summary>«Brille automatisch verbinden» eingeschaltet? Vorgabe nein.</summary>
     public bool AutomatikAn() => benutzer.Hole(AutomatikSchluessel) is JsonValue v && v.TryGetValue<bool>(out var an) && an;
 
+    /// <summary>«Begehung beim Aufsetzen automatisch starten» eingeschaltet? Vorgabe ja; nur ein ausdrückliches «nein» schaltet aus.</summary>
+    public bool AutostartAn() => !(benutzer.Hole(AutostartSchluessel) is JsonValue v && v.TryGetValue<bool>(out var an) && !an);
+
     /// <summary>Die gemerkten Brillen (ungültige Einträge, z. B. von Hand in die Datei geschrieben, fallen weg).</summary>
     public List<QuestBrille> Brillen()
     {
@@ -390,10 +407,15 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
 
     // ---------------------------------------------------------------- adb aufrufen
 
-    sealed record AdbErgebnis(int Code, string Ausgabe, bool Zeitueberschreitung);
+    internal sealed record AdbErgebnis(int Code, string Ausgabe, bool Zeitueberschreitung);
 
     /// <summary>Startet adb mit festen Argumenten. Zeitgrenze: danach wird nur dieser Prozess über seine PID beendet.</summary>
-    async Task<AdbErgebnis> Aufruf(AdbFund adb, params string[] argumente)
+    internal Task<AdbErgebnis> Aufruf(AdbFund adb, params string[] argumente) => AufrufBegrenzt(adb, AusgabeMax, argumente);
+
+    /// <summary>Wie Aufruf, aber mit grösserer Ausgabegrenze (nur für «dumpsys activity activities», QuestStarter.cs).</summary>
+    internal Task<AdbErgebnis> AufrufGross(AdbFund adb, params string[] argumente) => AufrufBegrenzt(adb, 1024 * 1024, argumente);
+
+    async Task<AdbErgebnis> AufrufBegrenzt(AdbFund adb, int ausgabeMax, string[] argumente)
     {
         if (AdbPfadFehler(adb.Pfad) is { } fehler) throw new HlksFehler($"adb wird nicht gestartet: {fehler}", "Den Pfad zur adb.exe prüfen.");
         var psi = new ProcessStartInfo(adb.Pfad)
@@ -411,8 +433,8 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         using (p)
         {
             try { p.StandardInput.Close(); } catch (IOException) { /* egal */ }
-            var aus = Lesen(p.StandardOutput);
-            var err = Lesen(p.StandardError);
+            var aus = Lesen(p.StandardOutput, ausgabeMax);
+            var err = Lesen(p.StandardError, ausgabeMax);
             bool zeit = false;
             using (var grenze = new CancellationTokenSource(einstellungen.Zeitlimit))
             {
@@ -430,7 +452,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         }
     }
 
-    static async Task<string> Lesen(StreamReader leser)
+    static async Task<string> Lesen(StreamReader leser, int max)
     {
         var sb = new StringBuilder();
         var puffer = new char[4096];
@@ -438,7 +460,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         try
         {
             while ((n = await leser.ReadAsync(puffer, 0, puffer.Length)) > 0)
-                if (sb.Length < AusgabeMax) sb.Append(puffer, 0, Math.Min(n, AusgabeMax - sb.Length));   // der Rest wird gelesen und verworfen
+                if (sb.Length < max) sb.Append(puffer, 0, Math.Min(n, max - sb.Length));   // der Rest wird gelesen und verworfen
         }
         catch (Exception ex) when (ex is IOException or ObjectDisposedException or InvalidOperationException) { /* Prozess beendet */ }
         return sb.ToString();
@@ -496,7 +518,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             return new
             {
                 adbGefunden = false, adbHinweis = hinweis, suchorte = (einstellungen.Orte ?? BekannteOrte()).ToArray(), geraete = Array.Empty<QuestGeraet>(), questVerbunden = false, freigegeben = false, nichtFreigegeben = false,
-                weiterleitung = false, wlan = false, port, url, meldung, automatisch = AutomatikAn(), brillen = Brillen(),
+                weiterleitung = false, wlan = false, port, url, meldung, automatisch = AutomatikAn(), autostart = AutostartAn(), brillen = Brillen(),
             };
         List<QuestGeraet> geraete = [];
         string? fehler = null;
@@ -519,7 +541,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             freigegeben = ziel is not null,
             nichtFreigegeben = ziel is null && geraete.Any(g => g.Zustand == "unauthorized"),
             seriennummer = ziel?.Seriennummer, wlan = ziel?.Wlan ?? false, ip,
-            weiterleitung = weiter, port, url, fehler, meldung, automatisch = AutomatikAn(), brillen = Brillen(),
+            weiterleitung = weiter, port, url, fehler, meldung, automatisch = AutomatikAn(), autostart = AutostartAn(), brillen = Brillen(),
         };
     }
 
@@ -869,6 +891,25 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         await WeiterleitungSetzen(adb, ziel, port, wiederholen: true);   // WlanVerbinden hat gewartet, bis der Weg «device» ist
         BrilleMerken(treffer.Brille.Seriennummer, treffer.Brille.Mac, treffer.Ip);
         return AutomatikErgebnis("bereit", port, an, $"Die Brille wurde über WLAN gefunden und verbunden ({ziel}). In der Quest http://localhost:{port} öffnen.", ping: ping, ip: treffer.Ip, serie: treffer.Brille.Seriennummer);
+    }
+
+    /// <summary>Für den Autostart (QuestStarter.cs): verbindet die Brille wie die Automatik (Anlass «klick», ein ausdrücklicher Auftrag des Menschen), stellt die
+    /// Weiterleitung für den Port sicher und gibt adb und den Weg zurück, der sie hat. Unter der Sperre; wirft HlksFehler, wenn die Brille nicht bereit wird.</summary>
+    internal async Task<(AdbFund Adb, string Serie)> BrilleFuerStart(int port, CancellationToken abbruch)
+    {
+        PortPruefen(port);
+        await sperre.WaitAsync(abbruch);
+        try
+        {
+            var antwort = JsonNode.Parse(Json.Text(await AutomatikSchritt(port, "klick", AutomatikAn())));
+            if (antwort?["status"]?.GetValue<string>() != "bereit")
+                throw new HlksFehler(antwort?["meldung"]?.GetValue<string>() ?? "Die Brille ist nicht verbunden.", antwort?["hinweis"]?.GetValue<string>());
+            var adb = AdbOderFehler();
+            var (weg, weiter) = await Waehlen(adb, await GeraeteListe(adb), port);
+            if (weg is null || !weiter) throw new HlksFehler("Die Weiterleitung zur Brille ist nicht aktiv.", "Brille aufsetzen, wach halten und erneut senden.");
+            return (adb, weg.Seriennummer);
+        }
+        finally { sperre.Release(); }
     }
 
     /// <summary>Entfernt die Weiterleitung für den Port auf allen Wegen im Zustand «device». Fehler auf Wegen ohne Weiterleitung werden ignoriert;

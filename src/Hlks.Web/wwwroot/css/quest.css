@@ -32,7 +32,7 @@
 .qd-adresse { padding-top: 2px; }
 .qd-url { font-family: var(--schrift-mono); user-select: all; }
 .dlg.quest-verbinden .dlg-knopf:disabled { opacity: .5; cursor: default; }
-.qd-brille { padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
+.qd-autostart-block, .qd-brille { padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); display: flex; flex-direction: column; gap: 4px; }
 .qd-schalter { display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
 .qd-brille-zeile { display: grid; grid-template-columns: 1fr auto; gap: 8px; align-items: center; }
 .qd-brille-text { font-family: var(--schrift-mono); overflow-wrap: anywhere; }

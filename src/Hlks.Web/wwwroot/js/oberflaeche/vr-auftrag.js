@@ -5,6 +5,8 @@
 import { senden } from '../api.js';
 import { element } from '../zustand.js';
 import { meldung } from './dialoge.js';
+import { benutzerLaden, benutzerWert } from './benutzer.js';
+import * as T from './quest-text.js';
 
 /** Text der Rückmeldung zu einem Auftrag: «Begehen · EG · E.01 Wohnen/Küche» bzw. «Sitzungsraum · 1.OG». */
 export function auftragBeschreibung(modus, raum, geschoss) {
@@ -20,9 +22,17 @@ export async function auftragSenden({ modus, raum = null, geschoss = null }) {
   const koerper = { modus };
   if (r && modus === 'begehen') koerper.raum = r.id;
   if (modus === 'sitzungsraum' && g) koerper.geschoss = g.id;
+  // Begehung beim Aufsetzen automatisch starten (QuestStarter.cs): nur bei eingeschalteter Einstellung quest.autostart (Vorgabe ja); der Server entscheidet am Ende
+  try { await benutzerLaden(); } catch { /* ohne Einstellungen gilt die Vorgabe */ }
+  if (T.autostartAn(benutzerWert(T.AUTOSTART_SCHLUESSEL, true))) koerper.autostart = true;
   try {
-    await senden('/api/vr/auftrag', koerper);
-    meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g)} – in der Quest KICAD VR öffnen.`, 'ok');
+    const antwort = await senden('/api/vr/auftrag', koerper);
+    if (antwort?.autostart === 'gestartet') {
+      meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g)} – Brille aufsetzen, die Begehung startet automatisch.`, 'ok');
+      import('./quest-status.js').then((m) => m.autostartVerfolgen()).catch(() => { /* die Anzeige ist nur eine Zugabe */ });
+    } else {
+      meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g)} – in der Quest KICAD VR öffnen.`, 'ok');
+    }
     return true;
   } catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); return false; }
 }
