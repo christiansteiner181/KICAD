@@ -317,4 +317,5 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 20.10.2026 | 3 | Abwasser-Serie Kern (einsatz abwasser, Grösse d, Beschriftung, Prüfung, Formteile, IFC, KI-Anleitung) | hlks-kern (worktree, Ports 5330–5339) | läuft |
 | 21.10.2026 | – | Gesamtprüfung 6d776f9 grün (Kern 4305, Mcp 77, Web 533, Node 944; Rechner schlief zwischendurch), Browser-Reihen 27/27 grün (hlks-test) | Hauptlauf / hlks-test | ok |
 | 21.10.2026 | 3 | Grundriss: Formteile (Bogen, T-Stück, Reduktion) ohne Anschlusskreise und Kennzeichen-Etikett (Christian: «Endpunkte bei Rohren nicht anzeigen», «gleiches auch bei T-Stücken») – 6bf6fc9, Tests FamilieGrafik 19, Browser leitung 114, familien-leitung 78 | Hauptlauf | ok |
-| 21.10.2026 | 3 | Abwasser-Serie Kern nach Sitzungsende fortgesetzt | hlks-kern | läuft |
+| 21.10.2026 | 3 | Abwasser-Serie Kern (einsatz abwasser, Grösse d, P30, Beschriftung, IFC) | hlks-kern | ok – 56c5260 (nach Abbrüchen neu begonnen), gezielte Tests 206 grün |
+| 21.10.2026 | – | Entscheide Christian (16 Fragen: Kürzel C-St/ST/PEX/PE/PE-S, 66,7 streichen, neue Bogenmasse, K2 2500/1 mm, Quellen mit Vermerk, Flexrohr Broschüre 2025, IDS eigen, Normen 4B später, Symbole Strich, Sanipex z1 wie bemasst, Abnahmeserver bereithalten, danach Modul 5 vorbereiten) | Hauptlauf | ok |
