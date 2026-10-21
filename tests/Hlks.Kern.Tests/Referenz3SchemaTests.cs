@@ -119,7 +119,8 @@ public class Referenz3SchemaTests
     [InlineData("TH-1", 145, 70)]    // HZ-1, EG
     // Endgeräte: x = Stranglinie + 15 (+ 13 je weiteres, nach Lage im Netz); y auf dem Boden der Zeile (Nachtrag B8d): Unterkante =
     // oberste Etagenleitung der Zeile + 3 (UG 20, EG 76 von TA-2b, OG 120), Knoten = Unterkante + Abstand über der Unterkante des
-    // Symbols (Kästchen Gerät 3, Waschmaschine 3, Dusche 2.5, Waschtisch 2.625, WC 4.375, Kästchen Apparat 2.25)
+    // Symbols (Kästchen Gerät 3, Waschmaschine 3, Dusche 2.5, Waschtisch 2.625, WC 4.375, Heizkörpersymbol der H+K-Legende 3.4375 =
+    // halbe Höhe 11 · 0.625 / 2; Modul 5 A-S 2, vorher Kästchen Apparat 2.25)
     [InlineData("HA-K", 55, 26)]     // UG; Gerät über R-A0 an KW-A: 20 + 3 + 3
     [InlineData("DU-1", 55, 81.5)]   // EG, erstes (Wurzel TA-2b liegt oben): 40 + 15; 76 + 3 + 2.5
     [InlineData("WT-1", 68, 81.625)] // EG, zweites: 55 + 13; 76 + 3 + 2.625
@@ -127,7 +128,7 @@ public class Referenz3SchemaTests
     [InlineData("WM-1", 125, 26)]    // KW-B: 110 + 15; 20 + 3 + 3
     [InlineData("WC-2", 125, 83.375)] // 76 + 3 + 4.375 (gemeinsamer Boden der Zeile EG)
     [InlineData("WT-3", 125, 125.625)]
-    [InlineData("HK-1", 160, 81.25)] // HZ-1: 145 + 15; 76 + 3 + 2.25
+    [InlineData("HK-1", 160, 82.438)] // HZ-1: 145 + 15; 76 + 3 + 3.4375 (die Anordnung rundet auf 3 Stellen)
     public void Knotenlagen_VonHandGerechnet(string kz, double x, double y)
     {
         var s = Plan(Netz(), An);
@@ -143,7 +144,7 @@ public class Referenz3SchemaTests
     [InlineData("R-A4", "TA-2b", "DU-1", "(40,76) (55,76) (55,81.5)")]      // höhere Wurzel, Endgerät weiter links: kreuzt R-A3 nicht
     [InlineData("R-B0", "TA-1", "TB-1", "(40,20) (110,20)")]              // Strang zu Strang auf gleicher Höhe
     [InlineData("R-B5", "TB-3", "WT-3", "(110,120) (125,120) (125,125.63)")]
-    [InlineData("R-H1", "TH-1", "HK-1", "(145,70) (160,70) (160,81.25)")]
+    [InlineData("R-H1", "TH-1", "HK-1", "(145,70) (160,70) (160,82.44)")]
     public void Linien_OrthogonalZwischenDenKnotenlagen(string element, string von, string nach, string zug)
     {
         var l = LinieMit(Plan(Netz(), An), element);

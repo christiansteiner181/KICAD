@@ -1382,8 +1382,7 @@ Kältesysteme unterscheiden sich von der Heizung nur über Medium und Systemtyp.
   «Kühlwasser …» → «Kälte …», «Sole …» → «Heizung … Glykol»; HKAP-Schlüssel mit Unterstrich (`HZ_VL`, `KAE_RL`) → Kennungen mit Bindestrich. Beim Öffnen eines Projekts steht
   im Status `aliasHinweis` («Kälte gehört zur Heizung – alte Kennungen umgeschrieben: …»); die Oberfläche zeigt ihn einmal als Meldung (`projektGeoeffnet`). Befehle liefern denselben
   Hinweis in `hinweise`. Kennzeichen von Elementen (z. B. ein System «KUE-VL») sind frei gewählte Namen und bleiben unverändert.
-- **Apparate-Hinterlegung** (Kälte #CCE0FF, Heizung #CCFFE0, HKAP `FlaecheApparatKaelte` / `FlaecheApparat`): KICAD hinterlegt Apparate heute an keiner Stelle (weder Grundriss noch
-  Schema); die Werte sind noch nirgends eingetragen und kommen erst mit dem Prinzipschema (Modul 5).
+- **Apparate-Hinterlegung** (Kälte #CCE0FF, Heizung #CCFFE0, Gefässe #E4D6EA; HKAP `FlaecheApparatKaelte` / `FlaecheApparat` / `FlaecheGefaess`): umgesetzt mit Modul 5 A-S 2 im Kern (`HeizungSymbole`, `src/Hlks.Kern/Schema/SchemaSymboleHeizung.cs`): Die Heizungs- und Kältesymbole der HKAP tragen die Hinterlegung in der Füllung ihrer Flächen (Apparat grün, Speicher-Ausdehnung und Druckhaltung violett); ein Apparat im System mit Medium KAE-… (auch Kälteerzeuger) erhält statt #CCFFE0 das #CCE0FF. Sie gilt im Schema (Strangschema und künftig Prinzipschema); im Grundriss hinterlegt KICAD Apparate weiterhin nicht. Die Oberfläche rechnet nichts: sie zeichnet die Füllung der Primitive.
 - Der Familienbibliothek-Filter (`bibliothek-text.js`), die Gewerkliste der Ansichten (`werkzeug.js`) und die Seiten der Abstandsvorgaben (`koordination-text.js`) kennen kein Gewerk Kälte mehr.
 - Das Beispielprojekt «MFH Musterweg» hat einen kleinen Kältekreis (Anlage A-KAE, Systeme KAE-VL/KAE-RL, Pumpe, drei Ventile, zwei Rohre) mit dem Grundriss «UG Heizung/Kälte».
 
