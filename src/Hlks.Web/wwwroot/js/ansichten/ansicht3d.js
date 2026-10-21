@@ -168,6 +168,10 @@ function erstellen(behaelter, ansichtElement) {
   const begehenEnde = () => { if (vr?.aktiv) vr.beenden(); else begehen.beenden(); };   // in VR beendet jedes Ende des Begehens zuerst die Sitzung
   vr = erzeugeVr({
     wurzel, renderer, kamera, szene, modell, begehen, anfordern,
+    // XR-B/XR-C: Greifen, Tablet, Messen – lesender Zugriff auf Körper, Auswahl, Befehle (dieselbe Tür wie am PC)
+    koerperDaten: () => daten, objekte: () => objekte, element: (id) => element(id), gewaehlt: () => gewaehlt, auswaehlen: (id) => auswaehlen(id),
+    befehl: (name, par) => befehl(name, par), abfrage: (name, par) => abfrage(name, par), status: () => holen('/api/status'), verbindungen: () => zustand.verbindungen,
+    schnittSchalter: () => { if (schnitt) schnitt.pausieren(!schnitt.pausiert); }, schnittAn: () => !!schnitt?.aktiv, schnittVorhanden: () => !!schnitt?.quader,
     // ohne Raum: am aktuellen Kamerastandpunkt, auf der tiefsten Stelle des Modells
     standortAusKamera: () => {
       const box = new THREE.Box3().setFromObject(modell);

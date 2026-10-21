@@ -13,6 +13,7 @@ import {
   SNAP_GRAD, VR_TEXT, knopfZustand, sitzungsOptionen, gierenVonRichtung, kopfWelt, blickGierenWelt, rigStart, rigDrehen, rigAufZiel, rigVersetzen,
   stickBewegung, snapPruefen, teleportZiel, ifcAnfangsSichtbar, bildzeit,
 } from './vr-logik.js';
+import { erzeugeXr } from './xr-greifen.js';
 
 const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const rund = (x, n = 3) => { const f = 10 ** n; return Math.round(x * f) / f; };
@@ -52,6 +53,7 @@ export function erzeugeVr(o) {
   const quellen = [];                   // XRInputSource je Controller-Index
   const zielende = new Set();           // Controller, die gerade zielen
   let marker = null;
+  let xrWerk = null;                    // XR-B Greifen, XR-C Tablet und Messen (xr-greifen.js)
   let ziel = null;                      // letztes gültiges Teleportziel
 
   // ---------------------------------------------------------------------------------------------- Knopf
@@ -156,8 +158,8 @@ export function erzeugeVr(o) {
       c.add(strahl);
       const verbunden = (e) => { quellen[i] = e.data; strahl.visible = true; zustandSchreiben(true); };
       const getrennt = () => { quellen[i] = null; zielende.delete(c); strahl.visible = false; zustandSchreiben(true); };
-      const start = () => { zielende.add(c); };   // Abzug gedrückt bzw. Pinch der Hand: Zielstrahl
-      const ende = () => { if (zielende.delete(c)) teleportieren(c); };   // loslassen: springen
+      const start = () => { if (xrWerk?.selectStart(c)) return; zielende.add(c); };   // Tablet, Messen, Antippen und Heranholen gehen vor dem Teleport   // Abzug gedrückt bzw. Pinch der Hand: Zielstrahl
+      const ende = () => { xrWerk?.selectEnd(c); if (zielende.delete(c)) teleportieren(c); };   // loslassen: springen
       c.addEventListener('connected', verbunden);
       c.addEventListener('disconnected', getrennt);
       c.addEventListener('selectstart', start);
@@ -220,6 +222,22 @@ export function erzeugeVr(o) {
       else { if (m.visible) versteckt.add(m); m.visible = false; }
     }
   }
+  /** XR-B/XR-C: Greifen, Tablet und Messwerkzeug an die Sitzung hängen (Hände, Controller und Tabletflächen hängen im Rig). */
+  function xrBauen() {
+    xrWerk = erzeugeXr({
+      wurzel, renderer, szene, rig: () => rigObj, controller, quellen: () => quellen, kopf,
+      koerperDaten: o.koerperDaten ?? (() => new Map()), objekte: o.objekte ?? (() => new Map()), element: o.element ?? (() => null), gewaehlt: o.gewaehlt ?? (() => null),
+      auswaehlen: o.auswaehlen ?? (() => {}), befehl: o.befehl, abfrage: o.abfrage ?? (async () => ({})), status: o.status ?? (async () => ({})), verbindungen: o.verbindungen ?? (() => []),
+      meldung: o.meldung, anfordern: o.anfordern,
+      aktionen: {
+        hoehe: (d) => { if (rig) { rigSetzen({ ...rig, y: rig.y + d }); zustandSchreiben(true); } },
+        schnitt: () => o.schnittSchalter?.(), schnittAn: () => !!o.schnittAn?.(), schnittVorhanden: () => o.schnittVorhanden?.() ?? true,
+        ifc: () => ifcUmschalten(), ifcAn: () => ifcAn, ende: () => { beenden(); },
+      },
+    });
+    api.xr = xrWerk;
+    xrWerk.anbinden();
+  }
   function ifcUmschalten() { ifcAn = !ifcAn; netzeAnwenden(); zustandSchreiben(true); o.anfordern?.(); }
 
   // ---------------------------------------------------------------------------------------------- Bild
@@ -263,6 +281,7 @@ export function erzeugeVr(o) {
       if (e.ifc && !aVorher) ifcUmschalten();
       aVorher = !!e.ifc;
     }
+    if (xrWerk) xrWerk.bild(dt);   // XR-B/XR-C: Greifen, Tablet, Messwerkzeug
     // Zielstrahl und Marker
     ziel = null;
     for (const c of controller()) {
@@ -337,6 +356,7 @@ export function erzeugeVr(o) {
       snap = { bereit: true }; aVorher = false; letzteZeit = 0; letztesSchreiben = 0; ifcDreiecke = 0; ifcAn = true;
       zeit.leeren();
       steuerungBauen();
+      xrBauen();
       renderer.xr.setReferenceSpaceType('local-floor');
       await api.anbinden(s);
       if (!sitzung) return;                        // inzwischen beendet
@@ -375,6 +395,8 @@ export function erzeugeVr(o) {
     try { renderer.setAnimationLoop(null); } catch { /* egal */ }
     for (const m of versteckt) m.visible = true;
     versteckt.clear();
+    try { xrWerk?.abbauen(); } catch { /* egal */ }
+    xrWerk = null; api.xr = null;
     steuerungAbbauen();
     kameraZurueck();
     if (rigObj) { rigObj.removeFromParent(); rigObj = null; }
