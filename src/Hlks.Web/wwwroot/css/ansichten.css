@@ -69,7 +69,7 @@
 .d3-kompass.zieht { cursor: grabbing; }
 .d3-ring { fill: none; stroke: var(--wuerfel-teil); stroke-width: 9; }
 .d3-marke { fill: var(--wuerfel-text); font: 700 11px "Segoe UI", Arial, sans-serif; pointer-events: none; paint-order: stroke; stroke: var(--wuerfel-flaeche); stroke-width: 2px; }
-.d3-marke-N { fill: #b3261e; }
+.d3-marke-N { fill: var(--fehler); }
 .d3-marke.hinten { opacity: .55; font-size: 9px; }
 
 /* ---------- Planblatt (PDF) ---------- */

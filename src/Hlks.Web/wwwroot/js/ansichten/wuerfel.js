@@ -8,7 +8,7 @@
 // Ziehen am Würfel dreht die Hauptkamera, Ziehen am Ring dreht um die Hochachse. Kontextmenü: Startansicht festlegen.
 
 import * as THREE from 'three';
-import { cssVar, esc } from './hilfen.js';
+import { cssVar } from './hilfen.js';
 import {
   teilflaechen, FLAECHEN, bereichsSchluessel, bereichsName, bereichsArt, zielWinkel, kugelwinkel, richtungAusWinkeln, weltZuLokal, zwischenstand,
   ziehenZuWinkel, ringMarken, ringWinkel, ringZug, startansichtZiel, startansichtAusRichtung, startansichtLesen,
@@ -103,7 +103,7 @@ export function erzeugeWuerfel(o) {
     c.width = c.height = 256;
     const g = c.getContext('2d');
     g.fillStyle = farbe;
-    g.font = '600 52px "Segoe UI", Arial, sans-serif';
+    g.font = '600 62px "Segoe UI", Arial, sans-serif';
     g.textAlign = 'center';
     g.textBaseline = 'middle';
     g.fillText(text, 128, 132);

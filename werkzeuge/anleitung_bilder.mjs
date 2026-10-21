@@ -796,6 +796,10 @@ bild('m0b-ansicht-grundriss', 'beispiel', async () => {
   await setze(dlg('.f-massstab'), '100'); await warte(400);
 });
 bild('m0b-ansicht-3d', 'beispiel', async () => { await nurAnsicht('AN-3D'); await warte(1500); await auswaehlen('WC-E.02'); await warte(1200); });
+// N11: Navigationswürfel und Kompassring in der 3D-Ansicht (Isometrie, Hinweiszeile unten links)
+bild('zb-n10-3d-maus', 'beispiel', async () => { await nurAnsicht('AN-3D'); await warte(1500); }, { markiere: '.kachel.aktiv .d3-bedienung', abstand: 4, titel: '«3D Gesamt»: Hinweiszeile mit den Maustasten unten links' });
+bild('zb-n11-wuerfel', 'beispiel', async () => { await nurAnsicht('AN-3D'); await warte(1500); }, { markiere: '.kachel.aktiv .d3-wuerfel-flaeche', abstand: 6, titel: '«3D Gesamt»: Navigationswürfel oben rechts in der Isometrie' });
+bild('zb-n11-kompass', 'beispiel', async () => { await nurAnsicht('AN-3D'); await warte(1500); }, { markiere: '.kachel.aktiv .d3-kompass', abstand: 6, titel: '«3D Gesamt»: Kompassring mit N, O, S, W unter dem Würfel' });
 bild('m0b-ansicht-liste', 'beispiel', async () => {
   await aktion('ansicht.liste'); await dialogDa(/Liste anlegen/);
   await setze(dlg('.f-liste'), await ausw(`const s = document.querySelector(${J(dlg('.f-liste'))}); return [...s.options].find((o) => /Raumliste/i.test(o.textContent)).value;`));

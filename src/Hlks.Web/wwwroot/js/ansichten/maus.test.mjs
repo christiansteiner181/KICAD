@@ -3,7 +3,7 @@
 import { test } from 'node:test';
 import assert from 'node:assert/strict';
 import {
-  tasteAktion, orbitAktion, ORBIT_TASTEN, istDoppelklick, mitteVerschieben, ART_PLAN, ART_3D, DOPPELKLICK_MS,
+  tasteAktion, orbitAktion, ORBIT_TASTEN, istDoppelklick, mitteDoppelklick, mitteVerschieben, ART_PLAN, ART_3D, DOPPELKLICK_MS,
 } from './maus.js';
 import {
   SCHWELLE, FLAECHEN, bereichVonPunkt, bereichsArt, bereichsName, richtungLokal, alleBereiche, teilflaechen, bereichsSchluessel,
@@ -47,6 +47,22 @@ test('N10: Doppelklick der mittleren Taste innerhalb von 400 ms', () => {
   assert.equal(istDoppelklick(1000, 1000 + DOPPELKLICK_MS), false);
 });
 
+test('N10: mitteDoppelklick – nur Klicks ohne Ziehen zählen, zwei kurze Verschiebungen sind kein Doppelklick', () => {
+  let t = 0;
+  const dk = mitteDoppelklick(() => t);
+  const druck = (x = 0, y = 0) => ({ button: 1, clientX: x, clientY: y, type: 'pointerdown' });
+  const los = { button: 1, type: 'pointerup' };
+  // Verschiebung (Weg 30 px), dann kurz danach ein neuer Druck: kein Doppelklick
+  t = 1000; assert.equal(dk.unten(druck()), false); dk.bewegt({ clientX: 30, clientY: 0 }); t = 1100; dk.oben(los);
+  t = 1200; assert.equal(dk.unten(druck()), false);
+  dk.oben(los);                                   // jetzt ein Klick ohne Weg
+  t = 1300; assert.equal(dk.unten(druck()), true, 'zweiter Klick nach einem Klick ohne Weg');
+  t = 1350; assert.equal(dk.unten(druck()), false, 'danach beginnt es von vorn');
+  dk.oben(los);
+  t = 2000; assert.equal(dk.unten(druck()), false, 'zu spät (650 ms)');
+  assert.equal(dk.unten({ button: 0 }), false, 'andere Tasten zählen nicht');
+});
+
 /** Kleiner Ereignisempfänger mit Aufnahmephase wie ein Element, genug für mitteVerschieben. */
 function falschesElement() {
   const h = new Map();
@@ -78,12 +94,18 @@ test('N10: mitteVerschieben – Zug mit der mittleren Taste, andere Tasten bleib
   assert.ok(oben.stopped);
   assert.deepEqual(ereignisse, ['beginn', ['bew', 4, -3], ['bew', 6, 0], 'ende']);
   assert.deepEqual(el.erfasst, [['an', 7], ['aus', 7]]);
-  // zweiter Klick kurz danach = Doppelklick, kein neuer Zug
+  // nach einem Zug (mit Weg) ist ein zweiter Druck kurz danach KEIN Doppelklick, sondern ein neuer Zug
   t = 1200;
   el.senden('pointerdown', { button: 1, clientX: 0, clientY: 0 });
-  assert.deepEqual(ereignisse.slice(4), ['doppel']);
+  assert.deepEqual(ereignisse.slice(4), ['beginn']);
+  el.senden('pointerup', { button: 1, clientX: 0, clientY: 0 });   // ein Klick ohne Weg
+  assert.deepEqual(ereignisse.slice(5), ['ende']);
+  // der zweite Klick kurz nach einem Klick ohne Weg = Doppelklick, kein neuer Zug
+  t = 1350;
+  el.senden('pointerdown', { button: 1, clientX: 0, clientY: 0 });
+  assert.deepEqual(ereignisse.slice(6), ['doppel']);
   el.senden('pointermove', { clientX: 50, clientY: 50 });
-  assert.equal(ereignisse.length, 5, 'nach dem Doppelklick keine Bewegung');
+  assert.equal(ereignisse.length, 7, 'nach dem Doppelklick keine Bewegung');
   // mousedown / auxclick der mittleren Taste: Autoscroll verhindern
   assert.ok(el.senden('mousedown', { button: 1 }).prevented);
   assert.ok(el.senden('auxclick', { button: 1 }).prevented);

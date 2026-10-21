@@ -1038,6 +1038,57 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 
 **Prüfen:** Node `nachbearbeitung-n3.test.mjs` (CSV, Kürzel, Felder der Projektinformation aus dem echten Katalog, Planzeilen und Parameter, Knoten im Projektbrowser, Verdrahtung); Browser `node nachbearbeitung-n3.browser.mjs` (Port 5183, CDP 9503; alle vier Punkte mit echten Klicks, CSV-Datei im Download-Ordner nachgelesen; Bilder hell/dunkel `n3_*.png` in `%TEMP%\HLKS_CAD`); `menueband.browser.mjs` bleibt grün (bei 1920 px keine Gruppe zusammengeklappt).
 
+## Nachbearbeitung N10 und N11: Maustasten in allen Ansichten, Navigationswürfel (`nachbearbeitung.md`)
+
+**N10 – mittlere Taste verschiebt überall** («mittlere maustaste = plan verschieben»). Die Zuordnung Taste → Aktion steht an einer Stelle: `ansichten/maus.js`
+(`tasteAktion`, rein, in Node getestet). Die mittlere Taste geht nie an ein Werkzeug und löst nie den Autoscroll des Browsers aus (`mousedown`/`auxclick` verhindert).
+
+| Ansicht | links | Mitte | Umschalt + Mitte | Rad | Doppelklick Mitte | rechts |
+| --- | --- | --- | --- | --- | --- | --- |
+| Grundriss, Schnitt, Ansicht (`grundriss.js`), auch bei aktivem Werkzeug | wählt bzw. Werkzeug | verschiebt | verschiebt | zoomt zum Zeiger | alles zeigen | Werkzeug beenden / –  |
+| Schema (`schema.js`) | wählt, Knoten ziehen | verschiebt | verschiebt | zoomt zum Zeiger | alles zeigen | Kontextmenü |
+| 3D (`ansicht3d.js`, OrbitControls) | dreht (wie bisher) | verschiebt | **dreht** (Orbit um die Auswahl bzw. Modellmitte) | zoomt zum Zeiger | alles zeigen | verschiebt (wie bisher) |
+| Familieneditor 2D (`editor-ansicht.js`, Fenster2D) | verschiebt, Punktwahl | verschiebt | verschiebt | zoomt zum Zeiger | alles zeigen | – |
+| Familieneditor 3D (Fenster3D) | dreht | verschiebt | dreht | zoomt zum Zeiger | alles zeigen | verschiebt |
+| Unterlagen-Bild (`unterlagen-bild.js`) | Klick = Punkt wählen | rollt das vergrösserte Bild | rollt | Zoom über die Knöpfe | Zoom 1, ganz | – |
+| Planblatt (`planblatt.js`, PDF-Betrachter des Browsers) | Betrachter | **Autoscroll des Betrachters** | – | Betrachter | – | – |
+| Listen | – | (nicht zoombar; rollen mit dem Rad) | – | rollt | – | – |
+
+- **Doppelklick Mitte** zählt nur, wenn der erste Klick ohne Ziehen blieb (Weg ≤ 4 px, Frist 400 ms nach dem Loslassen): zwei kurze Verschiebungen kurz nacheinander zeigen nicht alles
+  (`mitteDoppelklick` in `maus.js`; `grundriss.js` und `schema.js` führen dafür `druck.weg` mit).
+- **Gemeinsame Hilfen** (`maus.js`): `mitteVerschieben(el, { beiBeginn, beiBewegung, beiEnde, beiDoppelklick })` (Aufnahmephase, hält das Ereignis an; Familieneditor 2D, Unterlagen-Bild),
+  `ORBIT_TASTEN` (Belegung für OrbitControls: links ROTATE, Mitte PAN, rechts PAN; die Steuerung vertauscht Drehen und Verschieben mit Umschalt/Strg), `orbitAktion` (Nachbildung dieser Regel,
+  der Node-Test prüft sie gegen `tasteAktion`), `rollenderVorfahre`.
+- **3D:** `steuerung.zoomToCursor = true`. Umschalt + Mitte: ein Aufnahme-Handler am Behälter setzt das Ziel der Steuerung auf der Blicklinie auf die Tiefe der Auswahl bzw. der Modellmitte
+  (`schwenkZiel`, rein), damit der Blick beim Anfassen nicht springt und um den Drehpunkt gedreht wird. Prüfhilfe: `.d3-wurzel[data-kamera]` (JSON: `ziel`, `lage`, `blick`).
+- **Planblatt (Befund):** das Blatt ist das PDF im eingebauten Betrachter des Browsers (iframe); dessen Ereignisse sieht KICAD nicht. Die mittlere Taste löst dort den Autoscroll des Betrachters aus
+  (das Blatt läuft weiter, solange der Zeiger vom Druckpunkt entfernt ist), links zieht nicht. Ein eigener Betrachter (z. B. pdf.js) wäre nötig; nicht gebaut.
+- **Prüfen:** `node --test src/Hlks.Web/wwwroot/js/ansichten/maus.test.mjs` (Zuordnung, Doppelklick, Würfelrechnung);
+  `node src/Hlks.Web/wwwroot/js/ansichten/maus-wuerfel.browser.mjs` (Port 5460, CDP 9460; Edge headless, echte Maus über CDP; Bilder unter `%TEMP%\HLKS_CAD\n11\`).
+
+**N11 – Navigationswürfel** (analog Revit ViewCube), `wuerfel.js` (zeichnen, bedienen) und `wuerfel-logik.js` (Rechenregeln, rein):
+
+- **Aufbau:** oben rechts in der 3D-Ansicht (`.d3-wuerfel`, 128 px); eigene kleine Szene und Kamera, in einen Ausschnitt (Viewport/Scissor) der Leinwand der 3D-Ansicht gezeichnet (kein
+  zweiter WebGL-Kontext). Die kleine Kamera folgt der Richtung der Hauptkamera (`d3-wuerfel` dreht mit). Darüber liegt der Bedienbereich (`.d3-wuerfel-flaeche`), der die Zeigerereignisse annimmt;
+  Treffer über einen Strahl in der kleinen Szene. Flächen hellgrau, Kanten dunkel, Beschriftung deutsch (OBEN, UNTEN, VORNE, HINTEN, LINKS, RECHTS), Farben über `--wuerfel-*` in `hlks.css`
+  (hell und dunkel). Würfelachsen: +x RECHTS, +y OBEN, +z VORNE.
+- **26 Bereiche:** jede Fläche ist in 3 × 3 Teilflächen geteilt (Schwelle 0.62): Mitte = Fläche, Rand = Kante, Ecke = Ecke (`teilflaechen`, `bereichVonPunkt`). Hover färbt alle Teilflächen des Bereichs
+  (`--wuerfel-hover`), `title` und `data-bereich` nennen ihn («VORNE-RECHTS (Kante)»). Klick = weiche Kamerafahrt (380 ms, `zwischenstand`; Azimut auf dem kurzen Weg) zur Standardansicht:
+  Fläche senkrecht, Kante 45°, Ecke Isometrie; Abstand und Ziel bleiben. Ziehen am Würfel (> 4 px) dreht die Hauptkamera (`ziehenZuWinkel`), das Ziel bleibt; Rad über dem Würfel zoomt die Ansicht.
+- **Kompassring** unter dem Würfel (SVG, flach gezeichnet, damit er immer bedienbar bleibt): N, O, S, W. **N steht bei Azimut + Nordwinkel** (`nordAufRing`; Nordwinkel aus
+  `Projektinformation.nordwinkel` = Winkel von Projekt-Nord +y zu geografisch Nord im Uhrzeigersinn, ohne Angabe 0; `data-nord` am Ring zur Prüfung). Ziehen am Ring dreht um die Hochachse (`ringWinkel`,
+  `ringZug`: Winkeländerung der Hand = Änderung des Azimuts).
+- **Haus-Knopf** (links oben am Würfel) fährt zur Startansicht und zeigt dabei alles (`einpassWerte` in `ansicht3d.js`); Kontextmenü am Würfel (Rechtsklick): «Zur Startansicht», «Aktuelle Ansicht als
+  Startansicht festlegen», «Startansicht zurücksetzen (Isometrie)». Vorgabe der Startansicht: Isometrie von VORNE-RECHTS-OBEN; «Alles zeigen» (Zoom alles, Doppelklick Mitte, erstes Laden) schaut aus
+  derselben Richtung.
+- **Startansicht speichern (Annahme):** der Katalog hat für die Ansicht keine passende Eigenschaft; sie liegt deshalb vorerst im Browser (`localStorage`, Schlüssel
+  `hlks.startansicht3d.<Projektort>.<Kennzeichen>`, Wert `{ azimutGrad, polarGrad }` relativ zur Gebäudeausrichtung, damit sie einer Drehung des Gebäudes folgt), je Rechner und Projekt. Soll sie mit
+  dem Projekt wandern, braucht die Klasse Ansicht eine Eigenschaft (z. B. `startansicht`) und die Oberfläche schreibt sie mit `element_aendern` – nur an `startLesen`/`startSchreiben` in `ansicht3d.js` anzupassen.
+- **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude)` in `wuerfel-logik.js`: liest `Gebaeude.planwinkel` (Nachbearbeitung N9: Drehung der Darstellung in Grad, die die längste
+  Gebäudekante waagrecht stellt; die Gebäudekante liegt um −planwinkel gegen die x-Achse), sonst 0 = Projektachsen (VORNE = Blick nach Norden). Nach dem Zusammenführen mit N9 nur dort Vorzeichen und Herkunft prüfen.
+- **Prüfen:** Node-Tests (Kamerarichtung je Fläche, Kante, Ecke, mit und ohne Ausrichtung, Nordwinkel, Ring, Startansicht) in `maus.test.mjs`; Browser-Reihe `maus-wuerfel.browser.mjs` (alle 26 Bereiche
+  angeklickt, OBEN = Draufsicht, Ecke = Isometrie, VORNE, Haus-Knopf, Ziehen am Würfel und am Ring, Kontextmenü, Bilder hell und dunkel).
+
 ## KI-Palette: Schnittstelle (3c, Teil K)
 
 Server und Kern der Palette «Claude» (Spezifikation `entwurf/modul-3c.md`, Teil K). Die Palette (Teil O) baut **nur** auf diesen Endpunkten und

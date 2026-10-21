@@ -10,7 +10,7 @@ import { abfrage } from '../api.js';
 import { planSvg, begrenzungVon } from '../ansichten/plangrafik.js';
 import { baueKoerper, hervorheben, freigeben } from '../ansichten/koerper3d.js';
 import { cssVar } from '../ansichten/hilfen.js';
-import { ORBIT_TASTEN, istDoppelklick, mitteVerschieben } from '../ansichten/maus.js';
+import { ORBIT_TASTEN, mitteDoppelklick, mitteVerschieben } from '../ansichten/maus.js';
 import { ANSICHTEN, VIER_FENSTER, teilBox, boxProjektion, teilIndexVon, achsenLaenge, ueberlagerungSvg, naechsterPunkt, pickPunkteSvg } from './familien-ansicht.js';
 import { esc, kernFehler } from './familien-text.js';
 
@@ -175,13 +175,15 @@ class Fenster3D {
     this.steuerung.mouseButtons = { LEFT: THREE.MOUSE[ORBIT_TASTEN.LEFT], MIDDLE: THREE.MOUSE[ORBIT_TASTEN.MIDDLE], RIGHT: THREE.MOUSE[ORBIT_TASTEN.RIGHT] };
     this.steuerung.zoomToCursor = true;
     const dom = this.renderer.domElement;
-    let letzteMitte = 0;
+    const mitteDk = mitteDoppelklick();
     dom.addEventListener('pointerdown', (e) => {
       if (e.button !== 1) return;
       e.preventDefault();
-      const t = performance.now();
-      if (istDoppelklick(letzteMitte, t)) { letzteMitte = 0; e.stopPropagation(); this.benutzt = false; this.einpassen(); } else letzteMitte = t;
+      if (mitteDk.unten(e)) { e.stopPropagation(); this.benutzt = false; this.einpassen(); }
     }, true);
+    dom.addEventListener('pointermove', (e) => mitteDk.bewegt(e), true);
+    dom.addEventListener('pointerup', (e) => mitteDk.oben(e), true);
+    dom.addEventListener('pointercancel', (e) => mitteDk.oben(e), true);
     dom.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
     dom.addEventListener('auxclick', (e) => e.preventDefault());
     this.steuerung.addEventListener('change', () => this.anfordern());

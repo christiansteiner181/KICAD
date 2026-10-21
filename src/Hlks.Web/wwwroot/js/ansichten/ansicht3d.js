@@ -20,7 +20,7 @@ import { istHuelle, legendeDaten, legendeHtml, infoHtml } from './huelle-darstel
 import { baueHuelle, zeileAmTreffer, umrissLinie, huelleFreigeben } from './huelle3d.js';
 import { leseNetz } from './netzdatei.js';
 import { cssVar, esc } from './hilfen.js';
-import { ORBIT_TASTEN, istDoppelklick } from './maus.js';
+import { ORBIT_TASTEN, mitteDoppelklick } from './maus.js';
 import { erzeugeWuerfel } from './wuerfel.js';
 import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwenkZiel, startansichtZiel, startansichtLesen } from './wuerfel-logik.js';
 
@@ -407,7 +407,7 @@ function erstellen(behaelter, ansichtElement) {
   const dom = renderer.domElement;
   // Mittlere Taste (N10): Doppelklick = alles zeigen; Umschalt + Mitte dreht um die Auswahl bzw. die Modellmitte (Aufnahmephase: vor der Steuerung);
   // kein Autoscroll des Browsers
-  let letzteMitte = 0;
+  const mitteDk = mitteDoppelklick();
   const pivot = () => {
     const box = new THREE.Box3();
     const o = gewaehlt ? objekte.get(gewaehlt) : null;
@@ -417,9 +417,7 @@ function erstellen(behaelter, ansichtElement) {
   wurzel.addEventListener('pointerdown', (e) => {
     if (e.button !== 1) return;
     e.preventDefault();
-    const jetzt = performance.now();
-    if (istDoppelklick(letzteMitte, jetzt)) { letzteMitte = 0; e.stopPropagation(); zoomAlles(); return; }
-    letzteMitte = jetzt;
+    if (mitteDk.unten(e)) { e.stopPropagation(); zoomAlles(); return; }
     if (e.shiftKey) {
       const p = pivot();
       if (p) {
@@ -428,6 +426,9 @@ function erstellen(behaelter, ansichtElement) {
       }
     }
   }, true);
+  wurzel.addEventListener('pointermove', (e) => mitteDk.bewegt(e), true);
+  wurzel.addEventListener('pointerup', (e) => mitteDk.oben(e), true);
+  wurzel.addEventListener('pointercancel', (e) => mitteDk.oben(e), true);
   dom.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });
   dom.addEventListener('auxclick', (e) => e.preventDefault());
   dom.addEventListener('pointerdown', (e) => {

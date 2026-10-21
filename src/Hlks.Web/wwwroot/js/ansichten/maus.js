@@ -46,6 +46,33 @@ export function orbitAktion(belegung, button, mod = {}) {
 export const istDoppelklick = (letzte, jetzt, grenze = DOPPELKLICK_MS) => letzte > 0 && jetzt - letzte < grenze;
 
 /**
+ * Erkennt den Doppelklick der mittleren Taste: zählt nur ein Klick ohne Ziehen (Weg höchstens 4 px); zwei kurze Verschiebungen kurz nacheinander
+ * sind also kein Doppelklick. unten(e) → true beim zweiten Klick; bewegt(e) und oben(e) bei jeder Bewegung bzw. beim Loslassen der Taste aufrufen.
+ */
+export function mitteDoppelklick(jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now())) {
+  let letzte = 0;          // Zeit des letzten Klicks ohne Ziehen
+  let zug = null;          // { x, y, weg } der gedrückten mittleren Taste
+  return {
+    unten(e) {
+      if (e.button !== TASTE_MITTE) return false;
+      const doppelt = istDoppelklick(letzte, jetzt());
+      letzte = 0;
+      zug = doppelt ? null : { x: e.clientX, y: e.clientY, weg: 0 };
+      return doppelt;
+    },
+    bewegt(e) {
+      if (!zug) return;
+      zug.weg = Math.max(zug.weg, Math.hypot(e.clientX - zug.x, e.clientY - zug.y));
+    },
+    oben(e) {
+      if (!zug || (e.type === 'pointerup' && e.button !== TASTE_MITTE)) return;
+      if (zug.weg <= 4) letzte = jetzt();
+      zug = null;
+    },
+  };
+}
+
+/**
  * Verschieben mit der mittleren Taste für ein beliebiges Element (Familieneditor, Unterlagenbild …). Die Ereignisse laufen in der Aufnahmephase
  * und werden angehalten: weder ein Werkzeug noch eine andere Bedienung bekommt die mittlere Taste, der Browser keinen Autoscroll.
  *   beiBeginn(e)                 Zug beginnt
@@ -56,14 +83,12 @@ export const istDoppelklick = (letzte, jetzt, grenze = DOPPELKLICK_MS) => letzte
  */
 export function mitteVerschieben(el, { beiBeginn, beiBewegung, beiEnde, beiDoppelklick, jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now()) } = {}) {
   let zug = null;
-  let letzte = 0;
+  const dk = mitteDoppelklick(jetzt);
   const unten = (e) => {
     if (e.button !== TASTE_MITTE) return;
     e.preventDefault?.();
     e.stopPropagation?.();
-    const t = jetzt();
-    if (istDoppelklick(letzte, t)) { letzte = 0; beiDoppelklick?.(e); return; }
-    letzte = t;
+    if (dk.unten(e)) { beiDoppelklick?.(e); return; }
     zug = { id: e.pointerId, x: e.clientX, y: e.clientY };
     try { el.setPointerCapture?.(e.pointerId); } catch { /* egal */ }
     beiBeginn?.(e);
@@ -72,12 +97,14 @@ export function mitteVerschieben(el, { beiBeginn, beiBewegung, beiEnde, beiDoppe
     if (!zug || (e.pointerId !== undefined && zug.id !== undefined && e.pointerId !== zug.id)) return;
     const dx = e.clientX - zug.x, dy = e.clientY - zug.y;
     zug.x = e.clientX; zug.y = e.clientY;
+    dk.bewegt(e);
     if (dx || dy) beiBewegung?.(dx, dy, e);
     e.stopPropagation?.();
   };
   const oben = (e) => {
     if (!zug) return;
     if (e.type === 'pointerup' && e.button !== TASTE_MITTE) return;
+    dk.oben(e);
     zug = null;
     e.stopPropagation?.();
     try { el.releasePointerCapture?.(e.pointerId); } catch { /* egal */ }

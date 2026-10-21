@@ -256,10 +256,9 @@ function erstellen(behaelter, ansichtElement) {
     tip.hidden = true;
     if (e.button === 1) {
       e.preventDefault();
-      const jetzt = performance.now();
-      if (jetzt - letzteMitte < 400) { letzteMitte = 0; zoomAlles(); return; }   // Doppelklick mittlere Taste
-      letzteMitte = jetzt;
-      druck = { id: null, x: e.clientX, y: e.clientY, bewegt: true, taste: 1 };
+      if (letzteMitte > 0 && performance.now() - letzteMitte < 400) { letzteMitte = 0; zoomAlles(); return; }   // Doppelklick mittlere Taste (zählt nur ohne Ziehen)
+      letzteMitte = 0;
+      druck = { id: null, x: e.clientX, y: e.clientY, bewegt: true, taste: 1, weg: 0 };
       schiebenStart(e);
       return;
     }
@@ -281,6 +280,7 @@ function erstellen(behaelter, ansichtElement) {
     if (druck?.taste === 1 || (druck && schiebt)) {
       // Verschieben (mittlere Taste, Leertaste oder Ziehen auf leerer Fläche)
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
+      if (druck.taste === 1) druck.weg += Math.abs(dx) + Math.abs(dy);
       if (vb) {
         const { W, H } = groesse();
         vb.x -= dx * vb.w / W; vb.y -= dy * vb.h / H;
@@ -303,6 +303,7 @@ function erstellen(behaelter, ansichtElement) {
 
   function beiPointerUp(e) {
     if (e.button === 1 || druck?.taste === 1) {
+      if (druck?.taste === 1 && druck.weg <= 4) letzteMitte = performance.now();   // Klick ohne Ziehen: zählt für den Doppelklick
       druck = null;
       if (schiebt) { schiebt = false; svg.classList.remove('schiebt'); try { svg.releasePointerCapture(e.pointerId); } catch { /* egal */ } }
       return;
