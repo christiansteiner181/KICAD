@@ -144,9 +144,13 @@ public static class FamilienQuellenAnalyse
         // 1. Existenz aller Quellen
         var abwesend = new HashSet<string>(StringComparer.Ordinal);
         var gefunden = new SortedSet<string>(StringComparer.Ordinal);
+        // Nachtrag 21.10.2026 (FamilienQuellenVersion): Quellen einer anderen Leserversion, deren Befunde fehlen bzw. die sich nicht
+        // umschlüsseln lassen – nicht gegen die falsche Version prüfen; ihre Unterlage behält ihren Eintrag (und leser)
+        var uebersprungen = new SortedSet<string>(StringComparer.Ordinal);
         foreach (var (stelle, ids) in AlleQuellen(def))
             foreach (var id in ids)
             {
+                if (q.Grund(id) is not null) { if (BefundQuelle.Praefix(id) is { } ux) uebersprungen.Add(ux); continue; }
                 if (q.Hole(id, out var fehler) is not null) { gefunden.Add(BefundQuelle.Praefix(id)!); continue; }
                 var px = BefundQuelle.Praefix(id);
                 if (px is not null && !q.UnterlageDa(id) && vertrauteUnterlagen.ContainsKey(px)) { abwesend.Add(px); continue; }
@@ -212,7 +216,9 @@ public static class FamilienQuellenAnalyse
                 if (fw is null || umwandelFehler is not null) { status = "fehlt"; vermerk = umwandelFehler ?? "kein Wert"; }
                 else
                 {
-                    var erg = x.Quellen.Select(id => QuellVergleiche.Vergleichen(f, p, fw.Value, id, q, () => abwesend.Contains(BefundQuelle.Praefix(id) ?? ""))).ToList();
+                    var erg = x.Quellen.Select(id => q.Grund(id) is { } grund
+                        ? new QuellVergleich { Id = id, Status = "abwesend", Meldung = grund, Stelle = id }   // andere Leserversion: Wertprüfung entfällt
+                        : QuellVergleiche.Vergleichen(f, p, fw.Value, id, q, () => abwesend.Contains(BefundQuelle.Praefix(id) ?? ""))).ToList();
                     foreach (var r in erg.Where(r => r.Status == "keine"))
                         e.Fehler.Add(new FamFehler($"{x.Ort} (Quelle {r.Id})", $"{r.Meldung} ({r.Stelle})", "Die Zelle (bzw. das Wort, die Masszahl) nennen, die den Wert trägt – Ids aus befunde."));
                     foreach (var r in erg.Where(r => r.Status == "einheit"))
@@ -231,9 +237,10 @@ public static class FamilienQuellenAnalyse
                         if (ok > 0) status = "geprüft";
                         else if (erg.All(r => r.Status is "ungeprueft" or "abwesend"))
                         {
+                            var version = erg.Select(r => q.Grund(r.Id)).FirstOrDefault(g => g is not null);
                             if (erg.All(r => r.Status == "abwesend") && vorEintrag is not null && Gleich(vorEintrag["wert"], x.Wert) && T(vorEintrag["status"]) is { } vs)
-                            { status = vs; vermerk = "Unterlage nicht im Projekt – Status übernommen"; }
-                            else if (erg.All(r => r.Status == "abwesend")) { status = "fehlt"; vermerk = "Unterlage nicht im Projekt – Quelle nicht prüfbar"; }
+                            { status = vs; vermerk = version is null ? "Unterlage nicht im Projekt – Status übernommen" : $"{version} – Status übernommen"; }
+                            else if (erg.All(r => r.Status == "abwesend")) { status = "fehlt"; vermerk = version is null ? "Unterlage nicht im Projekt – Quelle nicht prüfbar" : $"{version} – Quelle nicht prüfbar"; }
                             else { status = "ungeprüft-bild"; vermerk = bild ? QuellVergleiche.AusBild : erg.First(r => r.Status == "ungeprueft").Meldung; }
                         }
                         else status = "geprüft";   // abgelehnt wird ohnehin (Fehler)
@@ -284,11 +291,17 @@ public static class FamilienQuellenAnalyse
             }
         }
 
-        // 4. Unterlagen als Verweis (Datei, Prüfsumme), ohne Befunde
+        // 4. Unterlagen als Verweis (Datei, Prüfsumme, Leserversion), ohne Befunde. Nachtrag 21.10.2026: leser = «<name>-<version>» des Lesers,
+        // dessen Befund-Ids die Quellen nennen (auch die Quellen des Blocks leitung); Unterlagen mit übersprungenen Quellen (andere Leserversion)
+        // behalten ihren Eintrag samt leser.
         var rollen = new Dictionary<string, JsonObject>(StringComparer.Ordinal);
         foreach (var u in (def["unterlagen"] as JsonArray ?? []).OfType<JsonObject>()) if (T(u["pruefsumme"]) is { Length: >= 12 } s) rollen[s[..12]] = u;
-        foreach (var px in gefunden)
+        foreach (var id in FamilienQuellenVersion.LeitungQuellen(def))
+            if (q.Grund(id) is null && q.Hole(id, out _) is not null) gefunden.Add(BefundQuelle.Praefix(id)!);
+        foreach (var px in gefunden.Union(uebersprungen).Distinct().Order(StringComparer.Ordinal))
         {
+            bool behalten = uebersprungen.Contains(px);
+            if (behalten && rollen.TryGetValue(px, out var bisher)) { e.Unterlagen.Add(bisher.DeepClone()); continue; }
             var u = q.Unterlage(px);
             if (u is null) continue;
             var o = new JsonObject();
@@ -296,6 +309,7 @@ public static class FamilienQuellenAnalyse
             o["datei"] = u.Original;
             o["pruefsumme"] = BefundQuelle.Pruefsumme(u.Pfad);
             o["art"] = u.Art;
+            if (!behalten && UnterlagenLeser.Fuer(u.Art) is { } leser) o["leser"] = FamilienQuellenVersion.Text(leser);
             if (rollen.TryGetValue(px, out var r) && T(r["rolle"]) is { } rolle) o["rolle"] = rolle;
             e.Unterlagen.Add(o);
         }
@@ -413,16 +427,26 @@ public sealed class FamilienQuellenPruefung : IFamilienPruefung
     {
         if (ctx.Projekt is null) return;
         var vorherWert = ctx.Bisher?.Eigenschaft("definition");
-        var vorher = vorherWert?.Inhalt as JsonObject;
+        // Kopie: die gespeicherte Definition gehört dem Modell; sie wird unten umgeschlüsselt (Konflikte, Abdeckung)
+        var vorher = (vorherWert?.Inhalt as JsonObject)?.DeepClone() as JsonObject;
         if (!FamilienQuellenAnalyse.AusUnterlagen(ctx.Definition) && !FamilienQuellenAnalyse.AusUnterlagen(vorher)) return;
         bool vertrauen = ctx.Befehl is "familie_laden" or "konflikt_entscheiden" or "wert_bestaetigen";
         var q = new BefundQuelle(ctx.Projekt);
+        // Nachtrag 21.10.2026: Quellen einer älteren Leserversion auf die aktuelle umschlüsseln (FamilienQuellenVersion). Bei familie_aendern
+        // gelten nur die Ids als alt, die schon in der gespeicherten Definition stehen (neu genannte kommen aus der aktuellen Abfrage befunde).
+        var n = FamilienQuellenVersion.Nachfuehren(ctx.Projekt, ctx.Definition, ctx.Befehl == "familie_aendern" ? vorher : null, q);
+        if (vorher is not null) FamilienQuellenVersion.Anwenden(vorher, n.Zuordnung);
+        foreach (var x in n.NichtZuordenbar)
+            ctx.Fehler.Add(new FamFehler(x.Stelle, $"Quelle «{x.Id}» (Befund-Id nach Leser {x.Von}) lässt sich nicht eindeutig auf Leser {x.Nach} umschlüsseln: {x.Grund}",
+                "Den Befund in der aktuellen Fassung suchen (Abfrage befunde der Unterlage) und die Quelle mit seiner Id neu nennen."));
+        ctx.Hinweise.AddRange(n.Hinweise);
+        ctx.Hinweise.AddRange(n.Warnungen);
         // wer ändert: die Herkunft des Befehls (Nachtrag Hauptlauf 18.10.2026), ausserhalb eines Befehls die Akteur-Art des Projekts
         var akteurArt = ctx.Herkunft?.Art ?? ctx.Projekt.AkteurArt;
         var e = FamilienQuellenAnalyse.Rechnen(ctx.Projekt, ctx.Definition, ctx.Familie, vorher, vorherWert?.Herkunft.Art, vertrauen, akteurArt, q);
         ctx.Fehler.AddRange(e.Fehler);
         ctx.Hinweise.AddRange(e.Hinweise);
-        if (e.Fehler.Count > 0) return;
+        if (ctx.Fehler.Count > 0) return;
         FamilienQuellenAnalyse.Anwenden(ctx.Definition, e);
         // Massvergleich je Typ als Hinweis (die Freigabe verlangt ihn bestanden)
         if (ctx.Familie.Masse.Count == 0) return;

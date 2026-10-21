@@ -210,12 +210,15 @@ public sealed class BefundQuelle(Projekt projekt)
     {
         public UnterlageRef? Ref;
         public UnterlagenBefunde? Befunde;
+        public string? AblageDatei;
         public Dictionary<string, UnterlagenBefund> NachId = new(StringComparer.Ordinal);
         public Dictionary<(string Tabelle, int Zeile, int Spalte), UnterlagenBefund> Zellen = [];
         public string? Fehler;
     }
 
     readonly Dictionary<string, Satz> saetze = new(StringComparer.Ordinal);
+    /// <summary>Ids, deren Wertprüfung entfällt (Quellen einer anderen Leserversion, die sich nicht umschlüsseln lassen), mit Grund.</summary>
+    readonly Dictionary<string, string> uebersprungen = new(StringComparer.Ordinal);
     public Projekt Projekt { get; } = projekt;
 
     public static string? Praefix(string id) => id.Length > 13 && id[12] == '#' ? id[..12] : null;
@@ -230,20 +233,50 @@ public sealed class BefundQuelle(Projekt projekt)
             s.Ref = Finden(praefix);
             if (s.Ref is null) { s.Fehler = $"Zur Prüfsumme «{praefix}» gibt es im Projekt keine Unterlage"; return s; }
             var r = UnterlagenService.Lesen(Projekt, s.Ref);
-            s.Befunde = r.Befunde;
-            foreach (var b in r.Befunde.Befunde)
-            {
-                s.NachId[b.Id] = b;
-                if (b.Art == "zelle" && b.Zusatz?["tabelle"] is JsonValue tv && tv.TryGetValue<string>(out var t)
-                    && Json.Zahl(b.Zusatz["zeile"]) is double z && Json.Zahl(b.Zusatz["spalte"]) is double sp)
-                    s.Zellen[(t, (int)z, (int)sp)] = b;
-            }
+            s.AblageDatei = r.AblageDatei;
+            Fuellen(s, r.Befunde);
         }
         catch (HlksFehler f) { s.Fehler = $"Die Unterlage zur Prüfsumme «{praefix}» lässt sich nicht lesen: {f.Message}"; }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException)
         { s.Fehler = $"Die Unterlage zur Prüfsumme «{praefix}» lässt sich nicht lesen: {ex.Message}"; }
         return s;
     }
+
+    static void Fuellen(Satz s, UnterlagenBefunde befunde)
+    {
+        s.Befunde = befunde;
+        foreach (var b in befunde.Befunde)
+        {
+            s.NachId[b.Id] = b;
+            if (b.Art == "zelle" && b.Zusatz?["tabelle"] is JsonValue tv && tv.TryGetValue<string>(out var t)
+                && Json.Zahl(b.Zusatz["zeile"]) is double z && Json.Zahl(b.Zusatz["spalte"]) is double sp)
+                s.Zellen[(t, (int)z, (int)sp)] = b;
+        }
+    }
+
+    /// <summary>Die Befunde einer Unterlage vorgeben statt sie zu lesen (Nachtrag 21.10.2026: Wertprüfung unter einer älteren Leserversion
+    /// aus deren Ablagedatei, FamilienQuellenVersion). Gibt die Quelle zurück.</summary>
+    public BefundQuelle Vorgeben(string praefix, UnterlagenBefunde befunde)
+    {
+        var s = new Satz { Ref = Finden(praefix) };
+        if (s.Ref is null) s.Fehler = $"Zur Prüfsumme «{praefix}» gibt es im Projekt keine Unterlage";
+        else Fuellen(s, befunde);
+        saetze[praefix] = s;
+        return this;
+    }
+
+    /// <summary>Befunde der Unterlage zur Prüfsumme in der aktuellen Leserversion (bzw. vorgegeben), null wenn nicht lesbar.</summary>
+    public UnterlagenBefunde? BefundeVon(string praefix) => Laden(praefix).Befunde;
+
+    /// <summary>Ablagedatei, aus der die Befunde stammen (null, wenn vorgegeben oder nicht lesbar).</summary>
+    public string? AblageVon(string praefix) => Laden(praefix).AblageDatei;
+
+    /// <summary>Die Wertprüfung dieser Id entfällt (Nachtrag 21.10.2026: Quelle einer anderen Leserversion, deren Befunde fehlen bzw. die sich
+    /// nicht eindeutig umschlüsseln lässt) – statt gegen die falsche Version zu prüfen. <see cref="Hole"/> liefert dann null mit dem Grund.</summary>
+    public void Ueberspringen(string id, string grund) => uebersprungen[id] = grund;
+
+    /// <summary>Grund, warum die Wertprüfung dieser Id entfällt, sonst null.</summary>
+    public string? Grund(string id) => uebersprungen.GetValueOrDefault(id);
 
     /// <summary>Unterlage zur Prüfsumme (12 Zeichen): Unterlage-Element mit dieser Datei, sonst Datei «&lt;prüfsumme&gt;_…» im Ordner.</summary>
     public UnterlageRef? Finden(string praefix)
@@ -274,6 +307,7 @@ public sealed class BefundQuelle(Projekt projekt)
     public UnterlagenBefund? Hole(string id, out string? fehler)
     {
         fehler = null;
+        if (uebersprungen.TryGetValue(id, out var grund)) { fehler = grund; return null; }
         var p = Praefix(id);
         if (p is null) { fehler = $"«{id}» ist keine Befund-Id"; return null; }
         var s = Laden(p);

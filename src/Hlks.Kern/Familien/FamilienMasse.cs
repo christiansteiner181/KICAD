@@ -331,8 +331,10 @@ public static class FamilienMasse
         if (!f.Gueltig) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} «{fam.Name}»", f.Fehler);
         if (typ is not null && f.Typ(typ) is null)
             throw new HlksFehler($"Typ «{typ}» gibt es in der Familie {fam.Kennzeichen} nicht.", "Typen: " + string.Join(", ", f.Typen.Select(t => t.Name)));
-        var def = (JsonObject)fam.Eigenschaft("definition")!.Inhalt!;
-        var zeilen = Vergleichen(f, def, new BefundQuelle(p), typ);
+        var def = (JsonObject)fam.Eigenschaft("definition")!.Inhalt!.DeepClone();
+        var q = new BefundQuelle(p);
+        FamilienQuellenVersion.Nachfuehren(p, def, null, q);   // Nachtrag 21.10.2026: Quellen einer älteren Leserversion im Speicher umschlüsseln
+        var zeilen = Vergleichen(f, def, q, typ);
         var o = new JsonObject
         {
             ["familie"] = fam.Kennzeichen, ["name"] = fam.Name, ["masse"] = f.Masse.Count,

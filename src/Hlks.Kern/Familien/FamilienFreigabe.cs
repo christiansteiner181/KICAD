@@ -43,40 +43,56 @@ public static class FamilienFreigabe
 
     static string? T(JsonNode? n) => n is JsonValue v && v.TryGetValue<string>(out var s) ? s : null;
 
-    /// <summary>Stand einer gespeicherten Familie für die Freigabe: Quellenprüfung auf Abruf, Massvergleich, Sperrgründe.</summary>
-    public sealed record Stand(FamilieDef Familie, JsonObject Definition, QuellenErgebnis? Quellen, List<MassZeile> Masse, List<FamFehler> Sperren);
+    /// <summary>Stand einer gespeicherten Familie für die Freigabe: Quellenprüfung auf Abruf, Massvergleich, Sperrgründe. Fehler = Definition,
+    /// Typen, Quellen und nicht umschlüsselbare Ids; Offen = offene Konflikte, Pflichtwerte ohne Quelle, Masse ausserhalb der Toleranz;
+    /// Sperren = beides. Nachfuehrung = Leserversion der Quellen (Nachtrag 21.10.2026, in der Definition schon umgeschlüsselt).</summary>
+    public sealed record Stand(FamilieDef Familie, JsonObject Definition, QuellenErgebnis? Quellen, List<MassZeile> Masse, List<FamFehler> Sperren)
+    {
+        public QuellenNachfuehrung? Nachfuehrung { get; init; }
+        /// <summary>Fehler der Definition bzw. der Auswertung der Typen.</summary>
+        public List<FamFehler> DefinitionFehler { get; init; } = [];
+        public List<FamFehler> Fehler { get; init; } = [];
+        public List<FamFehler> Offen { get; init; } = [];
+    }
 
     public static Stand Pruefen(Projekt p, Element fam, Katalog kat, string akteurArt)
     {
-        var sperren = new List<FamFehler>();
+        var fehler = new List<FamFehler>();
+        var offen = new List<FamFehler>();
         var wert = fam.Eigenschaft("definition");
         var def = (wert?.Inhalt as JsonObject)?.DeepClone() as JsonObject ?? [];
         var f = FamilieDef.Lesen(def, kat);
         if (!f.Gueltig)
         {
-            sperren.AddRange(f.Fehler);
-            return new Stand(f, def, null, [], sperren);
+            fehler.AddRange(f.Fehler);
+            return new Stand(f, def, null, [], [.. fehler]) { Fehler = fehler, DefinitionFehler = [.. fehler] };
         }
         foreach (var t in f.Typen)
         {
             var a = FamilienAuswertung.Aufloesen(f, t.Name, null);
-            foreach (var x in a.Fehler) sperren.Add(new FamFehler($"typ «{t.Name}»: {x.Stelle}", x.Meldung, x.Vorschlag));
+            foreach (var x in a.Fehler) fehler.Add(new FamFehler($"typ «{t.Name}»: {x.Stelle}", x.Meldung, x.Vorschlag));
         }
+        var definitionFehler = fehler.ToList();
         var q = new BefundQuelle(p);
+        // Nachtrag 21.10.2026: Quellen einer älteren Leserversion im Speicher umschlüsseln (die Freigabe speichert die Definition so)
+        var n = FamilienQuellenVersion.Nachfuehren(p, def, null, q);
+        foreach (var x in n.NichtZuordenbar)
+            fehler.Add(new FamFehler(x.Stelle, $"Quelle «{x.Id}» (Befund-Id nach Leser {x.Von}) lässt sich nicht eindeutig auf Leser {x.Nach} umschlüsseln: {x.Grund}",
+                "Den Befund in der aktuellen Fassung suchen (Abfrage befunde der Unterlage) und die Quelle mit seiner Id neu nennen (familie_aendern)."));
         var e = FamilienQuellenAnalyse.Rechnen(p, def, f, def, wert?.Herkunft.Art, true, akteurArt, q);
-        sperren.AddRange(e.Fehler);
+        fehler.AddRange(e.Fehler);
         foreach (var k in e.Konflikte.OfType<JsonObject>().Where(k => k["entscheid"] is null))
-            sperren.Add(new FamFehler($"Konflikt {T(k["id"])}", $"«{T(k["parameter"])}»{(T(k["typ"]) is { } ty ? $" (Typ {ty})" : "")} ist offen: {string.Join(" / ", (k["werte"] as JsonArray ?? []).Select(w => w?["wert"]?.ToJsonString()))} (Vorschlag {k["vorschlag"]?.ToJsonString()})",
+            offen.Add(new FamFehler($"Konflikt {T(k["id"])}", $"«{T(k["parameter"])}»{(T(k["typ"]) is { } ty ? $" (Typ {ty})" : "")} ist offen: {string.Join(" / ", (k["werte"] as JsonArray ?? []).Select(w => w?["wert"]?.ToJsonString()))} (Vorschlag {k["vorschlag"]?.ToJsonString()})",
                 $"konflikt_entscheiden {{ familie, konflikt: «{T(k["id"])}», wert, begruendung }} (nur ein Mensch)."));
         foreach (var s in e.FehlendePflicht)
-            sperren.Add(new FamFehler($"abdeckung «{s}»", "Pflichtwert ohne Quelle (weder aus einer Unterlage noch von einem Menschen gesetzt)",
+            offen.Add(new FamFehler($"abdeckung «{s}»", "Pflichtwert ohne Quelle (weder aus einer Unterlage noch von einem Menschen gesetzt)",
                 "Quelle (Befund-Id) nennen oder den Wert als Mensch setzen (familie_aendern)."));
         if (FamilienQuellenAnalyse.AusUnterlagen(def)) FamilienQuellenAnalyse.Anwenden(def, e);
         var masse = f.Masse.Count > 0 ? FamilienMasse.Vergleichen(FamilieDef.Lesen(def, kat), def, q, null) : [];
         foreach (var z in masse.Where(z => z.Bestanden == false))
-            sperren.Add(new FamFehler($"mass «{z.Mass}» Typ «{z.Typ}»", $"ausserhalb der Toleranz: Soll {QuellVergleiche.F(z.Soll!.Value)} mm ({z.SollQuelle}), Ist {QuellVergleiche.F(z.Ist!.Value)} mm, Toleranz ±{QuellVergleiche.F(z.Toleranz!.Value)} mm",
+            offen.Add(new FamFehler($"mass «{z.Mass}» Typ «{z.Typ}»", $"ausserhalb der Toleranz: Soll {QuellVergleiche.F(z.Soll!.Value)} mm ({z.SollQuelle}), Ist {QuellVergleiche.F(z.Ist!.Value)} mm, Toleranz ±{QuellVergleiche.F(z.Toleranz!.Value)} mm",
                 "Körper, Massbezug (von/bis) oder Typwert korrigieren; Abweichungsliste: familie_masse, Kontrollbild: familie_vergleichen."));
-        return new Stand(f, def, e, masse, sperren);
+        return new Stand(f, def, e, masse, [.. fehler, .. offen]) { Nachfuehrung = n, Fehler = fehler, Offen = offen, DefinitionFehler = definitionFehler };
     }
 
     /// <summary>Dateiname der Bibliothek aus dem Familiennamen: ohne Umlaute und Sonderzeichen.</summary>
@@ -197,8 +213,12 @@ public sealed class WertBestaetigen : IBefehl
         // Stand der Abdeckung (auf Abruf, aus der gespeicherten, vertrauten Definition)
         var wert = fam.Eigenschaft("definition");
         var def = (wert?.Inhalt as JsonObject)?.DeepClone() as JsonObject ?? [];
-        var e = FamilienQuellenAnalyse.Rechnen(k.Projekt, def, f, def, wert?.Herkunft.Art, true, k.Herkunft.Art);
-        if (e.Fehler.Count > 0) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} «{fam.Name}»", e.Fehler);
+        var q = new BefundQuelle(k.Projekt);
+        var n = FamilienQuellenVersion.Nachfuehren(k.Projekt, def, null, q);   // Nachtrag 21.10.2026: ältere Leserversion umschlüsseln
+        var e = FamilienQuellenAnalyse.Rechnen(k.Projekt, def, f, def, wert?.Herkunft.Art, true, k.Herkunft.Art, q);
+        var fehler = n.NichtZuordenbar.Select(x => new FamFehler(x.Stelle, $"Quelle «{x.Id}» (Befund-Id nach Leser {x.Von}) lässt sich nicht eindeutig auf Leser {x.Nach} umschlüsseln: {x.Grund}",
+            "Den Befund in der aktuellen Fassung suchen (Abfrage befunde der Unterlage) und die Quelle mit seiner Id neu nennen (familie_aendern).")).Concat(e.Fehler).ToList();
+        if (fehler.Count > 0) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} «{fam.Name}»", fehler);
         if (e.Abdeckung[schluessel] is not JsonObject eintrag)
             throw new HlksFehler($"«{schluessel}» hat keinen eigenen Wert, der sich bestätigen liesse.",
                 typ is not null && par.Wert is not null ? $"Der Typ übernimmt den Vorgabewert: ohne typ bestätigen (parameter «{pn}»)."

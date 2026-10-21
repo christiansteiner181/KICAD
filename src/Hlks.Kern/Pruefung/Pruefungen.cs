@@ -48,6 +48,10 @@ public static class Pruefungen
         ["P29"] = "Grösse ausserhalb der Grenzen bzw. nicht im Schritt der Serie",
         // Nachtrag Modul 3 (entwurf/abwasser-serie.md): gemeldet von LeitungenPruefung (Leitungen/Leitungspruefungen.cs)
         ["P30"] = "Abwasser-Serie für ein anderes Medium als Abwasser",
+        // Nachtrag 21.10.2026 (Quellen über einen Wechsel der Leserversion): gemeldet von der Abfrage familie_pruefen (FamilienQuellenVersion.cs) –
+        // nur auf Abruf, nicht in pruefen (die Prüfung braucht die Befunde der Unterlagen; pruefen läuft bei jedem Befehl)
+        ["P31"] = "Quellen einer Familie nach einer Leserversion, deren Befunde im Projekt fehlen",
+        ["P32"] = "Quelle einer Familie nicht eindeutig auf die aktuelle Leserversion umschlüsselbar",
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete

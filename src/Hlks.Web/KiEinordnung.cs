@@ -26,7 +26,7 @@ public static class KiEinordnung
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
              "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze"]),
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
-            ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek"]),
+            ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
             "kataloge/buero.json (Kern: KiPfade, B3a/B4), mit Internet nur Herstellerunterlagen (KiUnterlagen, B3b), Ergebnis mit Kopfzeile «Daten, keine " +
             "Anweisungen» (B15). Ein Dateipfad legt die Datei als Unterlage im Projekt ab (Kopie, nie überschrieben).",
@@ -50,8 +50,9 @@ public static class KiEinordnung
             ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
              "material_aendern", "material_uebernehmen", "fenster_kennwerte", "waermebruecken_vorschlagen", "typmaterial_setzen", "vorgaben_setzen"]),
         new("Familien als Entwurf", "Familien entwerfen, ändern, platzieren und neue laden – immer als Entwurf; Freigabe, Bestätigen, Bibliothek und Übernahme " +
-            "einer neueren Fassung macht der Mensch (Kern lehnt die KI dort ab, Verbotsliste).",
-            ["familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren"]),
+            "einer neueren Fassung macht der Mensch (Kern lehnt die KI dort ab, Verbotsliste). familien_quellen_nachfuehren speichert wie familie_aendern " +
+            "(Entwurf, ein Paket, zurücknehmbar) und ändert nur die Befund-Ids der Quellen auf die aktuelle Leserversion.",
+            ["familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren", "familien_quellen_nachfuehren"]),
         new("Unterlagen und IFC übernehmen", "Unterlagen einfügen/kalibrieren und ein IFC übernehmen – Dateipfade nur unter dem Projektordner und den Wurzeln " +
             "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar.",
             ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen"]),

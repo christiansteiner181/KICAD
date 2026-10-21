@@ -430,6 +430,7 @@ public class ApiTests
         ["unterlagen_lesen"] = "{\"unterlagen\":[\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\"]}",   // Modul 2, B2: kleines Beispiel-PDF
         ["befunde"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"art\":\"wort\"}",
         ["unterlage_bild"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"breite\":200}",
+        ["familie_pruefen"] = """{"familie":"FAM-1"}""",                  // Nachtrag 21.10.2026: Prüfbefunde der Testfamilie
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf")
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",

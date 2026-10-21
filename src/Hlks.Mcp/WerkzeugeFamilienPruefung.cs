@@ -21,6 +21,10 @@ public sealed partial class Werkzeuge
         [Description("Nur dieser Typ; leer = alle Typen")] string? typ = null) =>
         Lauf(() => Antwort(FamilienMasse.Abfrage(projekt, familie, typ)));
 
+    [McpServerTool(Name = FamiliePruefen.Name), Description(FamiliePruefen.Text)]   // Nachtrag 21.10.2026
+    public string FamiliePruefenWerkzeug([Description("Familie (Kennzeichen, Name oder id)")] string familie) =>
+        Lauf(() => Antwort(FamiliePruefen.Abfrage(projekt, familie)));
+
     [McpServerTool(Name = "familie_vergleichen"), Description(FamilienKontrollbild.AbfrageText)]
     public CallToolResult FamilieVergleichen(
         [Description("Familie (Kennzeichen, Name oder id)")] string familie,

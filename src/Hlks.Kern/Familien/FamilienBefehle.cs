@@ -41,6 +41,8 @@ public static class FamilienBefehle
         r.Hinzufuegen(new FamilieInBibliothek());
         r.Hinzufuegen(new FamilieAktualisieren());
         r.Hinzufuegen(new FamilienauswahlSetzen());
+        // Nachtrag 21.10.2026 (FamilienQuellenVersion.cs): Quellen auf die aktuelle Leserversion nachführen
+        r.Hinzufuegen(new FamilienQuellenNachfuehren());
     }
 
     /// <summary>Definition ohne die mitgeführten Felder version und status (zum Vergleich «hat sich etwas geändert?»).</summary>
