@@ -3,17 +3,20 @@
 // Die Rechenregeln (Einpassen, Gesten, Schnitthöhe, Tablet-Seite) stehen in xr-sitzung-logik.js (Node-getestet: xr-sitzung.test.mjs); hier stehen three, die Szene und die Anschlüsse.
 //
 // Keine zweite Geometrie: die Körpergruppe der 3D-Ansicht (`modell`) wird skaliert in einen Halter auf dem Tisch umgehängt und beim Verlassen exakt zurückgestellt
-// (Elternknoten, Lage, Drehung, Grösse, Hintergrund, Nebel, Lichter, ausgeblendete Objekte, Clipping-Ebenen der Materialien). Der Raum steht um den Kopf beim Betreten
+// (Elternknoten, Lage, Drehung, Grösse, Hintergrund, Nebel, Lichter, ausgeblendete Objekte). Die Clipping-Ebenen der Materialien gibt er nicht zurück, sondern an den
+// Schnittbereich der Ansicht (N13) ab (`uebergeben`): der bewertet neu, ob er gerade gilt (im Begehen pausiert) – Befund Brillentest 21.10.2026, siehe verlassen(). Der Raum steht um den Kopf beim Betreten
 // (Boden = OK Boden des Rigs, Blick nach vorn = Blickrichtung); das Rig bleibt dort, wo es ist, das Begehen pausiert, bis man zurückwechselt.
 // Der Etagenschnitt ist eine eigene waagrechte Clipping-Ebene an den Materialien (wie bei N13, aber ohne den gespeicherten Schnittbereich der Ansicht anzufassen).
 //
-// Prüfhilfe: .d3-wurzel[data-xr-sitzung] (JSON: Massstab, Lage, Etage, Schnitthöhe, Ebene in der Welt, Griff, Tisch).
+// Griffe: zwei leuchtende Kugeln links und rechts des Modells (Lage und Regeln: xr-sitzung-logik.js); gegriffen wird nur mit Daumen und Zeigefinger (Pinch) bzw. dem Abzug.
+//
+// Prüfhilfe: .d3-wurzel[data-xr-sitzung] (JSON: Massstab, Lage, Etage, Schnitthöhe, Ebene in der Welt, Modus, Griffe (Welt, Hover, gehalten), Tisch).
 
 import * as THREE from 'three';
 import { derKlasse } from '../zustand.js';
-import { HOLO, etikett, glowTextur } from './xr-holo.js';
+import { HOLO, etikett, glowTextur, rundSchein } from './xr-holo.js';
 import {
-  TISCH, TISCH_MITTE, RAUM, einpassen, massstabText, nahAmModell, handGieren, gestenNeu, gestenSchritt, geschosseAufbereiten, schnittHoeheMm, schnittEbeneY,
+  TISCH, TISCH_MITTE, RAUM, GRIFF_DURCHMESSER_M, einpassen, massstabText, griffPunkte, griffTreffer, gestenNeu, gestenSchritt, geschosseAufbereiten, schnittHoeheMm, schnittEbeneY,
   kopfZeilen, sitzungsLayout, sitzungsTasten, modellMitte,
 } from './xr-sitzung-logik.js';
 
@@ -22,6 +25,12 @@ const SYNC_S = 0.5;          // so oft werden die Clipping-Ebenen an die Materia
 const ETAGEN_S = 1.5;        // so oft wird die Etagenliste aus dem Modell neu gelesen
 const rund = (x, n = 4) => { const f = 10 ** n; return Math.round(x * f) / f; };
 const ID_HALTER = 'vr-sitzung';
+/** Aussehen der Griffe je Stufe: frei, Hand in der Nähe (Hover), gehalten. */
+const GRIFF_STUFEN = [
+  { farbe: 0x38e8ff, deckkraft: 0.6, schein: 0.45, scheinGroesse: 0.09 },
+  { farbe: 0xc8f8ff, deckkraft: 0.95, schein: 0.85, scheinGroesse: 0.14 },
+  { farbe: 0xffffff, deckkraft: 1, schein: 1, scheinGroesse: 0.21 },
+];
 /** Hintergrund des Sitzungsraums (dunkles Blaugrau statt fast schwarz; Christian 21.10.2026: «etwas weniger hart»). */
 export const RAUM_HINTERGRUND = 0x0d1219;
 
@@ -54,7 +63,8 @@ function sichtbareBox(gruppe) {
 
 /**
  * o: { szene, modell, renderer, wurzel, rig() → THREE.Group, kopf() → Welt-Kopf | null, blick() → Gieren in der Welt (rad) | null, boden() → OK Boden (m),
- *      ifc: { an(), setzen(bool) }, anfordern(), meldung?(text, art), geschosse?(), decken?() }
+ *      ifc: { an(), setzen(bool) }, anfordern(), meldung?(text, art), geschosse?(), decken?(),
+ *      uebergeben?() (nach dem Verlassen: Schnittbereich N13 und Durchgang N22 neu bewerten lassen) }
  * Rückgabe { aktiv, betreten(), verlassen(), umschalten(), aktion(id) → bool, layout(), tastenZustand(), kopfZeilen(), bild(dt, seiten), vorRender(), zustand(), abbauen() }
  */
 export function erzeugeSitzung(o) {
@@ -68,7 +78,8 @@ export function erzeugeSitzung(o) {
   let ifcVorher = true;
   let gespeichert = null;
   let raum = null, halter = null, bauteile = null, massLabel = null, punktLicht = null;
-  const originale = new Map();                     // Material → Clipping-Ebenen vor dem Sitzungsraum
+  let griffe = null;                               // [{ gruppe, kern, ring, schein }] – die beiden Griffe (Anzeige)
+  let griffNah = new Set();                        // Griffe, denen sich gerade eine Hand bis GRIFF_HOVER_M nähert
   const ebene = new THREE.Plane(new THREE.Vector3(0, -1, 0), 0);
   const EBENEN = [ebene];
   let fuehrung = null;                             // Material, an dem die Ebenen zuletzt kontrolliert wurden
@@ -152,6 +163,22 @@ export function erzeugeSitzung(o) {
     halter = new THREE.Group();
     halter.name = 'sitzung-modellhalter';
     g.add(halter);
+    // Griffe links und rechts des Modells (Hologramm-Stil: Kugel, Ring und weicher Schein in Cyan; Lage und Farbe setzt griffeZeigen)
+    const schein = rundSchein();
+    if (schein) entsorgen.push(schein);
+    const kernGeo = new THREE.SphereGeometry(GRIFF_DURCHMESSER_M / 2, 20, 14), ringGeo = new THREE.TorusGeometry(GRIFF_DURCHMESSER_M * 0.9, 0.0025, 8, 40).rotateX(Math.PI / 2);
+    entsorgen.push(kernGeo, ringGeo);
+    griffe = [0, 1].map((i) => {
+      const gruppe = new THREE.Group();
+      gruppe.name = `sitzung-griff-${i}`;
+      const kern = new THREE.Mesh(kernGeo, mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(HOLO.cyan), transparent: true, opacity: 0.6 })));
+      const ring = new THREE.Mesh(ringGeo, mat(new THREE.MeshBasicMaterial({ color: new THREE.Color(HOLO.cyan), transparent: true, opacity: 0.6 })));
+      const glanz = new THREE.Sprite(mat(new THREE.SpriteMaterial({ map: schein, color: 0xffffff, transparent: true, depthWrite: false, blending: THREE.AdditiveBlending, opacity: 0.4 })));
+      for (const m of [kern, ring, glanz]) m.renderOrder = 5;
+      gruppe.add(kern, ring, glanz);
+      g.add(gruppe);
+      return { gruppe, kern, ring, schein: glanz };
+    });
     return { gruppe: g, entsorgen };
   }
 
@@ -175,7 +202,7 @@ export function erzeugeSitzung(o) {
     return schnittEbeneY({ schnittMm: schnittHoeheMm(g, wahl.deckeZeigen), deckeZeigen: wahl.deckeZeigen, modellUnten: unten, massstab: lage.massstab });
   }
 
-  /** Hängt die Ebene an alle Materialien des Modells (bzw. nimmt sie weg). Merkt sich vorher den Stand, damit das Verlassen ihn zurückgibt. */
+  /** Hängt die Ebene an alle Materialien des Modells (bzw. nimmt sie weg). Der Stand davor (Ebenen des Schnittbereichs) wird nicht gemerkt: beim Verlassen entscheidet der Schnittbereich neu. */
   function ebeneAnwenden() {
     const soll = wahl.geschoss && geschossGewaehlt() ? EBENEN : null;
     const material = [];
@@ -185,7 +212,6 @@ export function erzeugeSitzung(o) {
       for (const x of Array.isArray(mat) ? mat : [mat]) material.push(x);
     });
     for (const x of material) {
-      if (!originale.has(x)) originale.set(x, x.clippingPlanes ?? null);
       if (x.clippingPlanes !== soll) { x.clippingPlanes = soll; x.needsUpdate = true; }
     }
     fuehrung = material[0] ?? null;
@@ -250,10 +276,10 @@ export function erzeugeSitzung(o) {
     if (!aktiv) return false;
     aktiv = false;
     const g = gespeichert; gespeichert = null;
-    // Clipping der Materialien zurück
-    for (const [x, ebenen] of originale) { if (x.clippingPlanes !== ebenen) { x.clippingPlanes = ebenen; x.needsUpdate = true; } }
-    originale.clear();
-    modell.traverse((m) => {   // Materialien, die erst im Sitzungsraum dazukamen
+    // Clipping der Materialien: die eigene Ebene weg, danach entscheidet der Schnittbereich (N13). Früher gab der Sitzungsraum die Ebenen zurück, die er beim Betreten vorfand: waren das
+    // die des Schnittbereichs und hatte sich dessen Zustand inzwischen geändert (Begehen pausiert ihn, die Taste «Schnittbereich» schaltet ihn), kamen veraltete Ebenen zurück – bei einem
+    // Schnittbereich, der den Standpunkt nicht enthält, sieht man dann nur Schwarz (Befund Brillentest 21.10.2026).
+    modell.traverse((m) => {
       const mat = m.material;
       if (!mat) return;
       for (const x of Array.isArray(mat) ? mat : [mat]) if (x.clippingPlanes === EBENEN) { x.clippingPlanes = null; x.needsUpdate = true; }
@@ -271,9 +297,10 @@ export function erzeugeSitzung(o) {
       raum.removeFromParent();
       massLabel?.freigeben(); massLabel = null;
       for (const e of bauteile ?? []) e.dispose?.();
-      raum = null; halter = null; bauteile = null; punktLicht = null;
+      raum = null; halter = null; bauteile = null; punktLicht = null; griffe = null; griffNah = new Set();
     }
     fuehrung = null;
+    try { o.uebergeben?.(); } catch (e) { console.warn('Sitzungsraum: Übergabe an den Schnittbereich', e?.message ?? e); }   // Schnittbereich (N13) und Durchgang (N22) bewerten neu
     if (!ende) o.ifc?.setzen(ifcVorher);
     wurzel.dataset.xrSitzung = '';
     delete wurzel.dataset.xrSitzung;
@@ -297,7 +324,24 @@ export function erzeugeSitzung(o) {
     const y = ebeneRaumY();
     if (y !== null) { raum.updateMatrixWorld(true); tmp.set(0, y, 0); raum.localToWorld(tmp); ebene.constant = tmp.y; }
     if (materialSchmutzig) { materialSchmutzig = false; ebeneAnwenden(); syncUhr = uhr; }
+    griffeZeigen();
     o.anfordern?.();
+  }
+
+  /** Die beiden Griffe an die Lage des Modells setzen und einfärben: frei (dunkel), Hand nahe (heller), gehalten (leuchtet deutlich). */
+  function griffeZeigen() {
+    if (!griffe) return;
+    const gp = griffPunkte(lage, groesse);
+    gp.forEach((p, i) => {
+      const v = griffe[i];
+      v.gruppe.position.set(p.x, p.y, p.z);
+      const gehalten = gesten.besitzt.links === i || gesten.besitzt.rechts === i;
+      const stufe = gehalten ? 2 : griffNah.has(i) ? 1 : 0;
+      const s = GRIFF_STUFEN[stufe];
+      v.kern.material.color.setHex(s.farbe); v.kern.material.opacity = s.deckkraft;
+      v.ring.material.color.setHex(s.farbe); v.ring.material.opacity = s.deckkraft;
+      v.schein.material.opacity = s.schein; v.schein.scale.set(s.scheinGroesse, s.scheinGroesse, 1);
+    });
   }
 
   // ---------------------------------------------------------------------------------------------- Tablet

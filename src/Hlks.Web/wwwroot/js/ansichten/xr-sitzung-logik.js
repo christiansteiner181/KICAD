@@ -9,9 +9,11 @@
 // ANNAHMEN (am Brillentest zu bestätigen; alle Werte sind hier benannt):
 //   Tisch 1.6 × 1.0 m, Plattenoberkante 0.75 m, Vorderkante 0.4 m vor dem Kopf (Mitte also 0.9 m vor dem Kopf); nutzbare Platte mit 0.1 m Rand.
 //   Massstab zu Beginn 1:50 (grösser, wenn das Modell sonst nicht auf die Platte passt, höchstens 1:200); Zoom von 1:200 bis 1:20.
-//   Greifen: eine Hand muss beim Zufassen bis NAH_ABSTAND (0.25 m) an das Modell herankommen (Umkreis auf dem Tisch, Höhe von 0.15 m unter der Platte bis 0.35 m über dem
-//   Modell); eine Hand, die schon greift, bleibt dran. Mit einer Hand hängt das Modell starr an der Hand (verschiebt sich mit ihr und dreht sich mit ihrer Drehung um die
-//   Senkrechte); mit zwei Händen zoomt der Abstand um den Mittelpunkt, die Drehung der Verbindungslinie dreht das Modell, der Mittelpunkt verschiebt es.
+//   Griffe (Christian 21.10.2026 nach dem Brillentest: «das ist nicht praktikabel. es braucht griffe. halten nur mit daumen und zeigefinger.»): zwei sichtbare Griffe links und
+//   rechts des Modells (GRIFF_ABSTAND_M ausserhalb der Modellbreite, GRIFF_HOEHE_M über der Platte), sie wandern mit Lage, Drehung und Massstab des Modells. Gegriffen wird nur
+//   mit einem Pinch (Daumen- und Zeigefingerspitze) bzw. dem Abzug, der höchstens GRIFF_FANG_M vom Griff entfernt beginnt (Controller auch mit dem Zielstrahl), und bis zum
+//   Loslassen. Bewegt wird das Modell nur, solange BEIDE Griffe gehalten sind (verschieben, drehen, zoomen um den Mittelpunkt der beiden Pinch-Punkte); ein Griff allein: Ruhe.
+//   Die Faust greift nichts. Zoom: der Abstand der Hände, Drehung: die Richtung der Verbindungslinie, Verschieben: der Mittelpunkt.
 //   Schnitt: unter der Decke des gewählten Geschosses = Unterkante der Decke (Oberkante der Decke minus Dicke), «Decke zeigen» = Oberkante der Decke. Oberkante der Decke
 //   über einem Geschoss = Kote des Geschosses darüber, sonst Kote + Geschosshöhe (Regel von decke_erzeugen, Kern). Gibt es keine Decke im Modell, gilt deren Oberkante.
 
@@ -22,7 +24,12 @@ export const TISCH = Object.freeze({ hoehe: 0.75, breite: 1.6, tiefe: 1.0, vorde
 export const TISCH_MITTE = Object.freeze({ x: 0, y: TISCH.hoehe, z: -(TISCH.vorderkante + TISCH.tiefe / 2) });
 export const RAUM = Object.freeze({ breite: 8, tiefe: 6, hoehe: 3.2, hinten: 1.5 });
 export const MASSSTAB = Object.freeze({ start: 50, min: 20, max: 200 });
-export const NAH_ABSTAND = 0.25;
+export const GRIFF_ABSTAND_M = 0.06;      // m: Abstand eines Griffs zur Modellbreite (aussen, in der Lage des Modells gemessen)
+export const GRIFF_HOEHE_M = 0.05;         // m: Höhe der Griffe über der Tischplatte
+export const GRIFF_DURCHMESSER_M = 0.025;  // m: Grösse der Kugel eines Griffs (Anzeige)
+export const GRIFF_FANG_M = 0.05;          // m: so nah am Griff muss ein Pinch beginnen, damit er den Griff fasst
+export const GRIFF_HOVER_M = 0.05;         // m: so nah an einem freien Griff leuchtet er heller (Annäherung)
+export const GRIFF_MIN_HALB_M = 0.02;      // m: kleinster Abstand der Griffe von der Modellmitte (winziges Modell)
 export const MIN_HANDABSTAND = 0.03;       // m: kleinster Abstand zweier Hände, der noch zählt (gegen Teilen durch fast null)
 export const MIN_RICHTUNG = 0.03;          // m: kürzere Vektoren (Hand, Verbindungslinie) liefern keine Richtung
 export const SPIEL_MM = 0.5;               // mm: Flächen genau auf der Schnittebene bleiben/entfallen sicher (wie SPIEL_M in schnittbereich3d.js)
@@ -72,12 +79,45 @@ export const zuruecksetzen = (groesse) => einpassen(groesse);
 /** Mitte des Modells im Raum (x, z). */
 export const modellMitte = (lage) => ({ x: TISCH_MITTE.x + lage.x, z: TISCH_MITTE.z + lage.z });
 
-/** Ist ein Punkt p (Raum-lokal) nahe genug am Modell, um zuzugreifen? groesse = { b, t, h } des Modells in m (unverkleinert). */
-export function nahAmModell(p, lage, groesse, abstand = NAH_ABSTAND) {
-  const s = 1 / lage.massstab, m = modellMitte(lage);
-  const r = Math.max(0.5 * Math.hypot(groesse.b, groesse.t) * s, 0.12);
-  const hoehe = (groesse.h ?? 0) * s;
-  return Math.hypot(p.x - m.x, p.z - m.z) <= r + abstand && p.y >= TISCH.hoehe - 0.15 && p.y <= TISCH.hoehe + hoehe + 0.35;
+// ------------------------------------------------------------------------------------------------------ Griffe
+const abstand3 = (p, q) => Math.hypot(p.x - q.x, p.y - q.y, p.z - q.z);
+
+/**
+ * Lage der beiden Griffe (Raum-lokal, m): links (index 0) und rechts (index 1) der Modellmitte, in der Drehung des Modells, GRIFF_ABSTAND_M ausserhalb der halben Modellbreite
+ * (groesse.b, unverkleinert), GRIFF_HOEHE_M über der Platte. Beim Zoomen und Drehen wandern sie mit.
+ */
+export function griffPunkte(lage, groesse) {
+  const halb = Math.max((zahl(groesse?.b) ? groesse.b : 0) / lage.massstab / 2, GRIFF_MIN_HALB_M) + GRIFF_ABSTAND_M;
+  const m = modellMitte(lage);
+  return [{ index: 0, seite: 'links', vz: -1 }, { index: 1, seite: 'rechts', vz: 1 }].map(({ index, seite, vz }) => {
+    const d = dreheXZ({ x: vz * halb, z: 0 }, lage.drehung);
+    return { index, seite, x: m.x + d.x, y: TISCH.hoehe + GRIFF_HOEHE_M, z: m.z + d.z };
+  });
+}
+
+/** Abstand des Punkts p vom Strahl (Ursprung u, Richtung r), nur nach vorn; hinter dem Ursprung zählt der Abstand zum Ursprung. */
+export function strahlAbstand(u, r, p) {
+  const len = Math.hypot(r.x, r.y, r.z);
+  if (!(len > 1e-9)) return abstand3(u, p);
+  const d = { x: r.x / len, y: r.y / len, z: r.z / len }, w = { x: p.x - u.x, y: p.y - u.y, z: p.z - u.z };
+  const t = w.x * d.x + w.y * d.y + w.z * d.z;
+  if (t <= 0) return abstand3(u, p);
+  return Math.hypot(w.x - t * d.x, w.y - t * d.y, w.z - t * d.z);
+}
+
+/**
+ * Welcher Griff liegt in Fangreichweite? punkt = Pinch-Punkt bzw. Position des Controllers (Raum-lokal, mit y), strahl = Zielstrahl { u, r } des Controllers (Raum-lokal) oder null
+ * (Hände greifen nur in der Nähe). Rückgabe der Index des nächsten Griffs (0 | 1) oder null.
+ */
+export function griffTreffer(punkt, strahl, griffe, fang = GRIFF_FANG_M) {
+  if (!punkt) return null;
+  let best = null, bd = fang;
+  for (const g of griffe) {
+    let d = abstand3(punkt, g);
+    if (strahl?.u && strahl?.r) d = Math.min(d, strahlAbstand(strahl.u, strahl.r, g));
+    if (d <= bd) { bd = d; best = g.index; }
+  }
+  return best;
 }
 
 // ------------------------------------------------------------------------------------------------------ Gesten
@@ -124,28 +164,39 @@ export function zweihandSchritt(g, a, b) {
   return lageBegrenzen({ massstab: n, drehung: theta, x: mitte.x - q.x - TISCH_MITTE.x, z: mitte.z - q.z - TISCH_MITTE.z });
 }
 
-export const gestenNeu = (lage) => ({ lage, modus: null, griff: null, besitzt: { links: false, rechts: false }, vorher: { links: false, rechts: false } });
+/** besitzt = welchen Griff (0 | 1) eine Hand hält, sonst null; vorher = war der Pinch im letzten Schritt gesetzt (Flanke). */
+export const gestenNeu = (lage) => ({ lage, modus: null, griff: null, besitzt: { links: null, rechts: null }, vorher: { links: false, rechts: false } });
 
 /**
- * Ein Schritt der Gestenerkennung. haende = { links, rechts }, je null oder { griff, nah, x, z, gieren }. Eine Hand «besitzt» das Modell, wenn sie zufasst, während sie nah
- * ist (steigende Flanke), und bis sie loslässt. Bewegt wird das Modell **nur, solange beide Hände greifen** (Christian 21.10.2026 nach dem Brillentest: «greifen soll nur
- * mit zwei händen funktionieren und nur wenn gegriffen. zoomen nur wenn gegriffen.»): dann verschieben, drehen und zoomen; greift nur eine Hand, ruht das Modell
- * (modus 'wartet'). Jeder Wechsel setzt einen neuen Bezug, damit nichts springt. einhandStart/einhandSchritt bleiben für eine spätere Wahl erhalten.
+ * Ein Schritt der Gestenerkennung. haende = { links, rechts }, je null oder { griff, nah, x, z }:
+ *   griff = Pinch (Daumen und Zeigefinger) bzw. Abzug ist gesetzt – die Faust zählt nicht (das entscheidet der Aufrufer, xr-sitzung.js);
+ *   nah   = Index des Griffs (0 | 1) in Fangreichweite der Hand (griffTreffer), sonst null;
+ *   x, z  = Pinch-Punkt der Hand (Raum-lokal), an dem gemessen wird.
+ * Eine Hand hält einen Griff, wenn der Pinch in Fangreichweite beginnt (steigende Flanke, der Griff ist frei) – und bis sie loslässt. Bewegt wird das Modell **nur, solange beide
+ * Griffe gehalten sind** (verschieben, drehen, zoomen); hält nur eine Hand, ruht es (modus 'wartet'). Jeder Wechsel setzt einen neuen Bezug, damit nichts springt.
+ * einhandStart/einhandSchritt bleiben für eine spätere Wahl erhalten.
  */
 export function gestenSchritt(g, haende) {
-  const besitzt = { links: false, rechts: false }, vorher = { links: false, rechts: false };
+  const besitzt = { links: null, rechts: null }, vorher = { links: false, rechts: false };
+  const andere = { links: 'rechts', rechts: 'links' };
   for (const s of ['links', 'rechts']) {
     const h = haende?.[s];
     vorher[s] = !!h?.griff;
-    besitzt[s] = !!h?.griff && (g.besitzt[s] || (!g.vorher[s] && !!h.nah));
+    if (!h?.griff) continue;
+    if (g.besitzt[s] !== null) besitzt[s] = g.besitzt[s];
+    else if (!g.vorher[s] && (h.nah === 0 || h.nah === 1) && g.besitzt[andere[s]] !== h.nah && besitzt[andere[s]] !== h.nah) besitzt[s] = h.nah;
   }
-  const n = (besitzt.links ? 1 : 0) + (besitzt.rechts ? 1 : 0);
+  const n = (besitzt.links !== null ? 1 : 0) + (besitzt.rechts !== null ? 1 : 0);
   const gleich = besitzt.links === g.besitzt.links && besitzt.rechts === g.besitzt.rechts;
   let { lage, griff } = g;
   const modus = n === 0 ? null : n === 1 ? 'wartet' : 'zwei';
   if (n < 2) griff = null;
-  else if (!gleich || !griff) griff = zweihandStart(lage, haende.links, haende.rechts);
-  else lage = zweihandSchritt(griff, haende.links, haende.rechts);
+  else {
+    // a = die Hand am Griff 0 (links am Modell), b = die Hand am Griff 1: die Richtung a → b ist die Richtung der Verbindungslinie der Griffe
+    const a = besitzt.links === 0 ? haende.links : haende.rechts, b = besitzt.links === 0 ? haende.rechts : haende.links;
+    if (!gleich || !griff) griff = zweihandStart(lage, a, b);
+    else lage = zweihandSchritt(griff, a, b);
+  }
   return { lage, modus, griff, besitzt, vorher };
 }
 

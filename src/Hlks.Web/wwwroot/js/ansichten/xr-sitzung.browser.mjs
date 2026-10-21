@@ -506,6 +506,140 @@ try {
     'VR im Sitzungsraum beendet: Modell, Hintergrund, Nebel, Lichter und Clipping wie vor VR', JSON.stringify(snap2));
   pruef(!(await sitz()) && !(await vrDaten()) && !(await xrDaten()), 'Prüfhilfen entfernt');
 
+  // ================================================================== Schnittbereich (N13) ausserhalb des Standpunkts
+  // Befund Brillentest 21.10.2026 (grosses Projekt mit Schnittbereich, der den Standpunkt nicht enthält): nach Sitzungsraum → Begehen sah Christian nur Schwarz. Ursache: der Sitzungsraum
+  // stellte beim Verlassen die Ebenen zurück, die er beim Betreten vorfand – das waren die des Schnittbereichs (N13), obwohl das Begehen ihn pausiert. Jetzt gibt er an den Schnittbereich ab.
+  abschnitt('Schnittbereich aktiv, Standpunkt ausserhalb: Sitzungsraum und Zurück dürfen das Begehen nicht abschneiden');
+  const klipp = () => ausw(`const m = window.__modell; let mat = 0, n13 = 0, sitz = 0; m.traverse((o) => { const x = o.material; if (!x) return; for (const y of Array.isArray(x) ? x : [x]) { mat++; const n = y.clippingPlanes?.length ?? 0; if (n === 6) n13++; else if (n === 1) sitz++; } }); return { mat, n13, sitz };`);
+  const schnittPausiert = () => inst('AN-3D', 'i.schnittbereich.pausiert');
+  const sp = standort.standpunkt;
+  const sbAussen = { aktiv: true, min: [sp.x + 3000, sp.y - 3000, eg.kote - 100], max: [sp.x + 9000, sp.y + 3000, eg.kote + eg.hoehe], winkel: 0 };
+  const vrBeenden = async () => { if (await inst('AN-3D', 'i.vr.aktiv')) { await inst('AN-3D', 'i.vr.beenden()'); await vrAus(); } };
+  const sitzungVorbereiten = async () => {   // je Sitzung neu: Hand-Naht und Controller
+    await ausw(`const v = window.__vr; v.api.xr.api.haende = () => window.__haende; const cs = v.api.controller(); cs[0].dispatchEvent({ type: 'connected', data: { handedness: 'left', hand: {} } }); cs[1].dispatchEvent({ type: 'connected', data: { handedness: 'right', hand: {} } }); return 1;`);
+    await keineHand('left'); await keineHand('right');
+  };
+  const tabletAuf = async () => {
+    const k = (await vrZ()).kopf, b = (await vrDaten()).blickGrad * GRAD;
+    const palm = plus3(plus3(k, mal3({ x: Math.cos(b), y: 0, z: -Math.sin(b) }, 0.33)), { x: 0, y: -0.30, z: 0 });
+    await keineHand('right');
+    await hand('left', { offen: false, palm }); await warte(300);
+    await hand('left', { offen: true, palm });
+    await bis((d) => d?.tablet?.offen && d.tablet.anteil >= 0.99, 'Tablet offen', 6000);
+    await warte(500);
+  };
+  const ohneN13 = async (t) => { await warteBis(async () => (await klipp()).n13 === 0, t, 2000).catch(() => {}); const c = await klipp(); pruef(c.n13 === 0 && c.mat > 0, `${t}: keine Schnittbereich-Ebenen an ${c.mat} Materialien (${c.n13} geschnitten)`, JSON.stringify(c)); return c; };
+  const mitN13 = async (t) => { await warteBis(async () => { const c = await klipp(); return c.n13 === c.mat && c.mat > 0; }, t, 6000).catch(() => {}); const c = await klipp(); pruef(c.n13 === c.mat && c.mat > 0 && c.sitz === 0, `${t}: Schnittbereich wirkt wieder (${c.n13} von ${c.mat} Materialien, ${c.sitz} mit Etagenebene)`, JSON.stringify(c)); };
+  const gleichDarst = (a, b) => a.bg === b.bg && a.fog === b.fog && JSON.stringify(a.lichter) === JSON.stringify(b.lichter) && JSON.stringify(a.sichtbar) === JSON.stringify(b.sichtbar);
+
+  await vrBeenden();
+  if (await inst('AN-3D', 'i.begehenAktiv')) await inst('AN-3D', 'i.beendeBegehen()');
+  await befehl('element_aendern', { element: 'AN-3D', eigenschaften: { schnittbereich: sbAussen } });
+  await warteBis(async () => (await sbDaten())?.aktiv === true, 'Schnittbereich aktiv', 8000);
+  await mitN13('Ausgangslage am Bildschirm');
+
+  // (1) Begehen am Bildschirm → VR → Sitzungsraum (Etage) → Begehen → VR beenden → Begehen beenden
+  await inst('AN-3D', `i.begehen(${JSON.stringify(standort)})`);
+  await warteBis(async () => (await begehenDaten())?.raum === raum1.kz, 'Begehen läuft', 10000);
+  await warteBis(async () => (await klipp()).n13 === 0, 'Begehen pausiert den Schnittbereich', 6000);
+  await kopfSetzen({ x: 0, y: 1.62, z: 0, gieren: Math.PI / 2 });
+  await klickKnopf(IM_HUD);
+  await bereit();
+  await sitzungVorbereiten();
+  await tabletAuf();
+  const dA = await schnappschuss();
+  await ohneN13('Begehen in VR');
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (1)', 8000);
+  await tippe('g:' + eg.kz);
+  await bisS((s) => s?.geschoss === eg.kz, 'EG gewählt (1)', 6000);
+  const cS = await klipp();
+  pruef(cS.n13 === 0 && cS.sitz > 0 && cS.sitz === cS.mat, `Sitzungsraum: nur die Etagenebene (${cS.sitz} von ${cS.mat} Materialien), keine Ebenen des Schnittbereichs`, JSON.stringify(cS));
+  await tippe('raum');
+  await warteBis(async () => !(await sitz()), 'Sitzungsraum verlassen (1)', 6000);
+  await warte(900);
+  const cZ = await klipp();
+  pruef(cZ.n13 === 0 && cZ.sitz === 0 && cZ.mat > 0, `zurück im Begehen: kein Material trägt Ebenen (${cZ.n13} Schnittbereich, ${cZ.sitz} Etage von ${cZ.mat})`, JSON.stringify(cZ));
+  pruef((await schnittPausiert()) === true && (await sbDaten()) === null, 'der Schnittbereich ist weiter pausiert (Begehen), sein Stand unverändert gespeichert');
+  const dZ = await schnappschuss();
+  pruef(gleichDarst(dA, dZ) && !dZ.raumKind, 'Hintergrund, Nebel, Lichter und sichtbare Objekte wie vor dem Sitzungsraum', JSON.stringify([dA.sichtbar, dZ.sichtbar]));
+  const dg = await durchgang();
+  pruef(dg && dg.bauteile > 0 && dg.undurchsichtig > 0, `Durchgang N22 nach der Rückkehr neu bewertet: ${dg?.bauteile} Bauteile, ${dg?.undurchsichtig} undurchsichtig`, JSON.stringify(dg));
+  const opak = Object.values(await darst()).filter((g) => ['wand', 'decke'].includes(g.ebene)).flatMap((g) => g.m);
+  pruef(opak.length > 0 && opak.filter((m) => m.deckkraft === 1 && !m.transparent).length >= opak.length * 0.5, `Wände und Decken sind im Begehen undurchsichtig (${opak.filter((m) => m.deckkraft === 1 && !m.transparent).length} von ${opak.length})`);
+  await vrBeenden();
+  await ohneN13('VR beendet, Begehen läuft weiter');
+  await inst('AN-3D', 'i.beendeBegehen()');
+  await mitN13('Begehen beendet');
+
+  // (2) direkter Start in VR (wie /vr): Sitzungsraum → Begehen → Sitzungsraum → «VR beenden»
+  await klipp();
+  await inst('AN-3D', `i.begehenVr(${JSON.stringify(standort)})`);
+  await bereit();
+  await sitzungVorbereiten();
+  await tabletAuf();
+  await ohneN13('direkter VR-Start');
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (2)', 8000);
+  await tippe('g:' + eg.kz);
+  await bisS((s) => s?.geschoss === eg.kz, 'EG gewählt (2)', 6000);
+  await tippe('raum');
+  await warteBis(async () => !(await sitz()), 'Sitzungsraum verlassen (2)', 6000);
+  await warte(900);
+  await ohneN13('direkter Start, zurück im Begehen');
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'wieder im Sitzungsraum (2)', 8000);
+  await tippe('g:' + eg.kz);
+  await bisS((s) => s?.geschoss === eg.kz, 'EG gewählt (2b)', 6000);
+  for (const tiefe of [0.08, 0.01]) { await fingerAuf(await tippSpitze2('ende', tiefe)); await warte(250); }
+  await vrAus();
+  await warte(500);
+  await mitN13('«VR beenden» im Sitzungsraum');
+  pruef(!(await inst('AN-3D', 'i.begehenAktiv')) && (await schnittPausiert()) === false && (await sbDaten())?.aktiv === true, 'Begehen beendet, Schnittbereich nicht mehr pausiert und aktiv');
+
+  // (3) Quest-Menü beendet die Sitzung im Sitzungsraum
+  await inst('AN-3D', `i.begehenVr(${JSON.stringify(standort)})`);
+  await bereit();
+  await sitzungVorbereiten();
+  await tabletAuf();
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (3)', 8000);
+  await ausw(`await window.__xr.sitzung.end(); return 1;`);
+  await vrAus();
+  await warte(500);
+  await mitN13('Sitzung vom Quest-Menü im Sitzungsraum beendet');
+
+  // (4) der Schnittbereich ändert seinen Zustand (Taste «Schnittbereich» des Begehens, Auftrag vom PC) WÄHREND der Sitzungsraum offen ist: beim Verlassen gilt der Stand von dann,
+  //     nicht der von vor dem Sitzungsraum (der Sitzungsraum gab früher die beim Betreten vorgefundenen Ebenen zurück)
+  await inst('AN-3D', `i.begehenVr(${JSON.stringify(standort)})`);
+  await bereit();
+  await sitzungVorbereiten();
+  await tabletAuf();
+  await ohneN13('Start (4)');
+  await inst('AN-3D', 'i.schnittbereich.pausieren(false)');   // wie die Taste «Schnittbereich» des Begehens: der Schnitt gilt (zeigt hier nur das Wegschneiden)
+  await mitN13('Schnittbereich im Begehen eingeschaltet');
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (4a)', 8000);
+  await inst('AN-3D', 'i.schnittbereich.pausieren(true)');    // im Sitzungsraum wieder pausiert
+  await tippe('raum');
+  await warteBis(async () => !(await sitz()), 'Sitzungsraum verlassen (4a)', 6000);
+  await warte(900);
+  await ohneN13('Schnitt im Sitzungsraum pausiert → im Begehen keine Ebenen');
+  await tippe('raum');
+  await bisS((s) => s?.aktiv === true, 'Sitzungsraum aktiv (4b)', 8000);
+  await inst('AN-3D', 'i.schnittbereich.pausieren(false)');   // im Sitzungsraum eingeschaltet
+  await tippe('raum');
+  await warteBis(async () => !(await sitz()), 'Sitzungsraum verlassen (4b)', 6000);
+  await warte(900);
+  await mitN13('Schnitt im Sitzungsraum eingeschaltet → im Begehen gilt er');
+  await inst('AN-3D', 'i.schnittbereich.pausieren(true)');
+  await ohneN13('wieder pausiert');
+  await vrBeenden();
+  await mitN13('VR beendet');
+
+  // Schnittbereich wieder weg (die Reihe läuft danach nicht weiter)
+  await befehl('element_aendern', { element: 'AN-3D', eigenschaften: { schnittbereich: null } });
+
   pruef(fehler.length === 0, 'keine Skriptfehler in der Seite', fehler.join(' | ').slice(0, 400));
   const wichtig = konsole.filter((m) => !/favicon|404|ResizeObserver|WebGL|GPU stall|swiftshader|VR: Sitzung konnte nicht/i.test(m));
   pruef(wichtig.length === 0, 'keine Fehler in der Konsole', wichtig.join(' | ').slice(0, 400));
