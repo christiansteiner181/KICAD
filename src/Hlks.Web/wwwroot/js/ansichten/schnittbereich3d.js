@@ -189,13 +189,20 @@ export function erzeugeSchnittbereich(o) {
       if (schmutzig) {
         schmutzig = false;
         const planes = aktiv() ? ebenenObjekte : null;
+        const zaehler = { materialien: 0, geclippt: 0 };
         for (const g of o.gruppen()) g?.traverse((m) => {
           const mat = m.material;
           if (!mat) return;
-          for (const x of Array.isArray(mat) ? mat : [mat]) { if (x.clippingPlanes !== planes) { x.clippingPlanes = planes; x.needsUpdate = true; } }
+          for (const x of Array.isArray(mat) ? mat : [mat]) {
+            if (x.clippingPlanes !== planes) { x.clippingPlanes = planes; x.needsUpdate = true; }
+            zaehler.materialien++;
+            if (x.clippingPlanes) zaehler.geclippt++;
+          }
         });
+        wurzel.dataset.clipping = JSON.stringify(zaehler);   // Kontrolle für Browser-Tests
       }
-      if (!aktiv()) return;
+      if (!aktiv()) { if (wurzel.dataset.griffe) wurzel.dataset.griffe = ''; return; }
+      const lage = [];   // Kontrolle für Browser-Tests: Bildschirmlage der Griffe in CSS-Pixeln der Leinwand
       aktuelleGriffe.forEach((g, i) => {
         const k = kegel[i];
         const abstand = kamera.position.distanceTo(new THREE.Vector3(g.mitte.x, g.mitte.y, g.mitte.z));
@@ -204,7 +211,10 @@ export function erzeugeSchnittbereich(o) {
         k.position.set(g.mitte.x, g.mitte.y, g.mitte.z);
         k.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), new THREE.Vector3(...g.nachAussen));
         k.material.color.setHex(i === hover || (ziehend && ziehend.griff === i) ? FARBE_HOVER : FARBE);
+        const bp = new THREE.Vector3(g.mitte.x, g.mitte.y, g.mitte.z).project(kamera);
+        lage.push({ name: g.name, x: Math.round(((bp.x + 1) / 2) * dom.clientWidth), y: Math.round(((1 - bp.y) / 2) * dom.clientHeight), vorn: bp.z < 1 });
       });
+      wurzel.dataset.griffe = JSON.stringify(lage);
     },
     /** Umschliessende Kugel des aktiven Quaders { mitte: Vector3, radius } in m, sonst null (Einpassen der Kamera). */
     kugelWelt() {

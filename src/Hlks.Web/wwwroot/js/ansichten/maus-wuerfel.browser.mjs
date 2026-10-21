@@ -500,9 +500,10 @@ try {
   const eintraege = await ausw(`return [...document.querySelectorAll('.kmenu button')].map((b) => b.textContent);`);
   pruef(eintraege.includes('Aktuelle Ansicht als Startansicht festlegen') && eintraege.includes('Zur Startansicht'), 'Kontextmenü am Würfel: «Aktuelle Ansicht als Startansicht festlegen»', eintraege.join(' | '));
   await ausw(`[...document.querySelectorAll('.kmenu button')].find((b) => b.textContent === 'Aktuelle Ansicht als Startansicht festlegen').click(); return 1;`);
-  await warte(300);
-  const gemerkt = await ausw(`const k = Object.keys(localStorage).filter((x) => x.startsWith('hlks.startansicht3d.')); return k.map((x) => [x, localStorage.getItem(x)]);`);
-  pruef(gemerkt.length === 1 && /AN-3D/.test(gemerkt[0][0]), 'Startansicht ist gemerkt (je Projekt und 3D-Ansicht)', JSON.stringify(gemerkt));
+  await warte(900);
+  // seit N13 steht die Startansicht als Eigenschaft startansicht im Modell (nicht mehr je Rechner im Browser)
+  const gemerkt = await ausw(`const z = await import('/js/zustand.js'); const a = [...z.zustand.elemente.values()].find((x) => x.kennzeichen === 'AN-3D'); return { modell: a?.werte?.startansicht ?? null, lokal: Object.keys(localStorage).filter((x) => x.startsWith('hlks.startansicht3d.')) };`);
+  pruef(!!gemerkt.modell && Number.isFinite(gemerkt.modell.azimutGrad) && Array.isArray(gemerkt.modell.position) && gemerkt.modell.projektion === 'perspektive' && gemerkt.lokal.length === 0, 'Startansicht ist im Modell gemerkt (Eigenschaft startansicht der Ansicht AN-3D, nichts mehr im Browser)', JSON.stringify(gemerkt));
   await klickAn({ x: ringM.cx, y: ringM.cy }, 'links');   // Ring anklicken ändert nichts
   await ziehen({ x: cube.cx, y: cube.cy + 30 }, { x: cube.cx - 70, y: cube.cy - 40 }, 'links', 0, 10);
   await warte(300);

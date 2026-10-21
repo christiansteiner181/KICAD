@@ -307,8 +307,8 @@ Christian 21.10.2026: «In der 3d ansicht ein navigationswürfel anzeigen (analo
 **Offen:**
 1. **Planblatt:** Das PDF läuft im Betrachter des Browsers; dort löst die mittlere Taste dessen Autoscroll aus. Abhilfe wäre ein eigener
    PDF-Betrachter (pdf.js).
-2. **Startansicht:** Sie liegt vorerst je Rechner im Browser (`localStorage`). Sie soll als Ansichtseigenschaft ins Modell, zusammen mit
-   dem 3D-Schnittbereich (N13).
+2. **Startansicht:** ~~liegt je Rechner im Browser~~ – **erledigt 21.10.2026 mit N13:** Ansichtseigenschaft `startansicht` im Modell
+   (`{ azimutGrad, polarGrad, position, ziel, projektion }`); ein alter Wert im Browser wird beim Öffnen einmal übernommen und entfernt.
 3. **VORNE:** Nach dem Zusammenführen von N9 Vorzeichen und Herkunft von `planwinkel` in `gebaeudeAusrichtungGrad`
    (`wuerfel-logik.js`) prüfen.
 
@@ -364,6 +364,13 @@ Entscheide Hauptlauf:
 kann, nur dieser Teil sichtbar und sauber abgeschnitten ist, die Einstellung mit der Ansicht gespeichert bleibt (auch nach Neustart und auf
 einem anderen Rechner) und die Auswahl darin weiter funktioniert.
 
+**Umgesetzt 21.10.2026** (hlks-modul, Zweig `worktree-agent-ac5afc0f9323a35d7`; Beschreibung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «N13 und N14»):
+- Kern: Eigenschaften `schnittbereich` und `startansicht` der Ansicht (`Plan/Schnittbereich.cs`, Prüfung der Form), gespeichert mit `element_aendern`.
+- 3D: sechs Clipping-Ebenen an allen Materialien (`ansichten/schnittbereich3d.js`, Rechenteil `schnittbereich-logik.js`), Quader mit sechs Griffen (Ziehen speichert nach einer Pause und beim
+  Loslassen), «An Auswahl anpassen» (+300 mm), «Auf Geschoss», «Zurücksetzen», Treffer nur im Sichtbaren; Schalter in den Eigenschaften der 3D-Ansicht und im Menüband (Gruppe «3D-Schnitt»).
+- **Offen:** Schnittflächen bleiben offen (kein Deckel; die Wände sind durchscheinend). IFC-Netze sind im Code geclippt, aber nicht in der Browser-Reihe belegt (keine IFC-Unterlage im Beispielprojekt) –
+  in «Test_praxis» mit einer IFC-Unterlage ansehen.
+
 ## N14 – «Raum im 3D zeigen» aus dem Grundriss
 
 Christian 21.10.2026: «ist im GR ein Raum ausgewählt; Kontextmenue "raum im 3D zeigen" springt zur 3d ansicht und zeigt den 3d ausschnitt
@@ -380,6 +387,11 @@ des raumes, +1.5m in alle richtungen.» (Vorrat für Freitag; baut auf N13 auf.)
 - Die Kamera zeigt den Bereich ganz: Isometrie von vorne rechts, wie Revit «Auswahlbereich».
 - Mehrere gewählte Räume ergeben einen gemeinsamen Bereich.
 - Der Rand von 1,5 m ist eine Benutzereinstellung mit Vorgabe 1,5 m.
+
+**Umgesetzt 21.10.2026** (hlks-modul, zusammen mit N13): Befehl `ansicht_raum_zeigen {raum, ansicht?, rand=1500}` (Kern, MCP, KI «zur Bestätigung»; `raum` auch als Liste); Rechtsklick auf einen Raum im
+Grundriss › «Raum im 3D zeigen» (Aktion `ansicht.raum3d`, auch im Menüband); Rand als Benutzereinstellung `ansicht3d.raumrand` (mm), einzustellen über «Rand für «Raum im 3D zeigen» …» im selben
+Kontextmenü. **Annahmen:** Raumunterkante = tiefster Punkt des Raum-Polygons, Raumhöhe wie die Raumliste; die Oberfläche kennt keine Mehrfachauswahl, mehrere Räume gehen über den Befehl; die Kamera
+ist die Isometrie von vorne rechts oben (unabhängig von der Startansicht).
 
 ## N15 – «Raum begehen» aus dem Grundriss (Ich-Perspektive)
 

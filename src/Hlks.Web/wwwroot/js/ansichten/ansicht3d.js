@@ -625,6 +625,8 @@ function erstellen(behaelter, ansichtElement) {
     zoomAlles: () => zoomAlles(),
     zeigeBereich,
     get schnittbereich() { return schnitt; },
+    /** Element, das an dieser Bildschirmstelle gewählt würde (clientX, clientY), sonst null – weggeschnittene Teile zählen nicht (Kontrolle für Browser-Tests). */
+    trefferBei: (clientX, clientY) => trefferId({ clientX, clientY }),
     zerstoeren() {
       zerstoert = true;
       cancelAnimationFrame(geplant);
