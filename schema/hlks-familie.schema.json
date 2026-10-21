@@ -245,7 +245,8 @@
           "datei": { "type": "string" },
           "pruefsumme": { "type": "string" },
           "art": { "type": "string" },
-          "rolle": { "type": "string", "description": "z. B. datenblatt, massbild, typentabelle, 3d-modell" }
+          "rolle": { "type": "string", "description": "z. B. datenblatt, massbild, typentabelle, 3d-modell" },
+          "leser": { "type": "string", "pattern": "^[a-z0-9]+-[0-9]+$", "description": "Leser und Version, nach denen die Befund-Ids der Quellen dieser Unterlage gelten, z. B. «pdf-2» (Nachtrag 21.10.2026). Setzt der Kern bei jedem Speichern; fehlt es (Altbestand), wählt der Kern die Version, unter der die Quellen die Wertprüfung bestehen. Ids einer älteren Version schlüsselt der Kern beim Speichern und Prüfen auf die aktuelle um (gleiche Seite, Art, Wert und Lage)." }
         }
       }
     },

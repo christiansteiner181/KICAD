@@ -108,9 +108,11 @@ public static class FamilienKontrollbild
         var u = UnterlagenService.AufloesenZumLesen(p, Param.Text(par, "unterlage", true), "familie_vergleichen");   // Sicherheitsprüfung 3c, B3b
         var a = FamilienAuswertung.Aufloesen(f, typ, null);
         if (!a.Gueltig) throw FamilienPruefung.Fehlermeldung($"Familie {fam.Kennzeichen} Typ «{typ}»", a.Fehler);
-        var def = (JsonObject)fam.Eigenschaft("definition")!.Inhalt!;
+        var def = (JsonObject)fam.Eigenschaft("definition")!.Inhalt!.DeepClone();
         var q = new BefundQuelle(p);
         var hinweise = new List<string>();
+        var nf = FamilienQuellenVersion.Nachfuehren(p, def, null, q);   // Nachtrag 21.10.2026: Quellen einer älteren Leserversion im Speicher umschlüsseln
+        hinweise.AddRange(nf.Warnungen);
 
         // Familie: Kanten der Ansicht (u/v in mm)
         var fa = FamilienAnsicht.Erzeugen(p, fam.Kennzeichen, typ, ansicht, detail, null);

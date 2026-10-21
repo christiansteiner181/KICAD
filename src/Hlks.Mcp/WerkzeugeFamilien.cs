@@ -64,6 +64,12 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("familie_aendern", Parameter(("familie", familie), ("ops", ops)), trockenlauf);
 
+    [McpServerTool(Name = FamilienQuellenNachfuehren.BefehlName), Description(FamilienQuellenNachfuehren.Text)]   // Nachtrag 21.10.2026
+    public string FamilienQuellenNachfuehrenWerkzeug(
+        [Description("Familien (Kennzeichen, Name oder id); leer = alle Familien des Projekts")] JsonElement? familien = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl(FamilienQuellenNachfuehren.BefehlName, Parameter(("familien", familien)), trockenlauf);
+
     [McpServerTool(Name = "familie_laden"), Description(FamilieLaden.Text)]
     public string FamilieLadenWerkzeug(
         [Description("Statt id: Dateiname in kataloge/familien (mit oder ohne .familie.json), Ordner bzw. Datei in der Bibliothek oder voller Pfad")] string? datei = null,

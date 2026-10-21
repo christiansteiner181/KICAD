@@ -53,6 +53,7 @@ public class TuerDarstellungTests
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/")
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",
+        ["familie_pruefen"] = """{"familie":"FAM-1"}""",                  // Nachtrag 21.10.2026: Prüfbefunde der Testfamilie (ohne Unterlagen)
         ["leitungsserie"] = """{"familie":"fam-test-rohrserie"}""",   // Modul 3, B1: fiktive Testrohrserie legt der Test vorher an
         ["schema"] = """{"ansicht":"AN-SCHEMA-SAN"}""",                  // Modul 3, B3: Schema-Ansicht des Beispielprojekts
         ["materialliste"] = """{"system":"SW"}""",                      // Modul 3, B4
