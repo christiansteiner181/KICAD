@@ -73,6 +73,18 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
   «Folgen»-Modus und ein Zeigestrahl, der für alle sichtbar ist. Ton läuft über die Brille bzw. Teams oder über einen eigenen Sprachkanal
   (am Freitag klären).
 
+### Start ohne Link-fähigen PC (Frage Christian 21.10.2026: «dieser ist nicht mit meta link kompatibel»)
+- **Empfehlung:** Weg 2 über den Browser der Quest, mit ADB-Portweiterleitung, ohne Meta Link und ohne zweiten Rechner.
+  - Der KICAD-Server auf dem PC bleibt auf localhost.
+  - `adb reverse tcp:5130 tcp:5130` macht ihn in der Quest als `http://localhost:5130` erreichbar. WebXR gilt dort als sicher, und die
+    Ursprungsprüfung von KICAD bleibt unverändert.
+  - Die Verbindung läuft per USB oder per ADB über WLAN.
+  - Die Quest rechnet selbst, deshalb ist die IFC-Unterlage bei grossen Modellen aus. Hand-Tracking geht im Quest-Browser sicher.
+- **Nicht empfohlen:** KICAD für das Büronetz öffnen (`http://<PC>:5130`). Ohne HTTPS gibt es kein WebXR, und der Server hat keine
+  Anmeldung.
+- Anderer, Link-fähiger PC mit eigenem KICAD: möglich. Dafür braucht es dort .NET und den Start aus einer eigenen Kopie. Die Regel «nie zwei
+  Rechner gleichzeitig am Repository» gilt.
+
 ## Reihenfolge
 XR-A, dann XR-B mit XR-C, dann XR-E, dann XR-D. Jeder Teil wird mit der Brille an Christians PC abgenommen.
 
