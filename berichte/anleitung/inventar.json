@@ -10365,7 +10365,7 @@
             "src/Hlks.Kern/Grafik/SchnitthoeheSia.cs (Aktiv, Hoehe)",
             "kataloge/klassen.json (Ansicht.schnitthoeheNachSia)"
           ],
-          "hinweis": "Ansichtsvorlagen übertragen den Handwert (schnitthoehe), nicht den Schalter. Für die KI: element_aendern mit eigenschaften { schnitthoeheNachSia: false, schnitthoehe: 1500 }."
+          "hinweis": "Ansichtsvorlagen übertragen Handwert (schnitthoehe) und Schalter. Für die KI: element_aendern mit eigenschaften { schnitthoeheNachSia: false, schnitthoehe: 1500 }."
         }
       ]
     }
