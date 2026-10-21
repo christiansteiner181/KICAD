@@ -345,7 +345,8 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | – | Gesamtprüfung fa1db8a (N6–N11) grün ohne Wiederholung (Kern 4521, Mcp 79, Web 535, Node 1024) → geprueft = fa1db8a (geprueft-20261021-1346); Desktop beim nächsten Klick aufs Icon | Hauptlauf | ok |
 | 21.10.2026 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Hauptlauf | ok – c00099d, StuetzeKreuzTests 11, Grafik/Architektur/IFC 1639 grün |
 | 21.10.2026 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übertrager, Stufen/Schnittlinie/Lauflinie/Beschriftung) | hlks-modul (als general-purpose sonnet/high; Geometrie ausnahmsweise Sonnet wegen Kontingent 88 %) | läuft |
-| 21.10.2026 | N15 | Raum begehen (Ich-Perspektive aus dem Grundriss, Pfeiltasten, Augenhöhe 1,7 m) | hlks-modul (als general-purpose sonnet/high) | läuft (Kontingent 89 %) |
+| 21.10.2026 | N15 | Raum begehen (Ich-Perspektive aus dem Grundriss, Pfeiltasten, Augenhöhe 1,7 m) | hlks-modul (als general-purpose sonnet/high) | ok – 517f2d1, Kern 4582, Web 549, Mcp 79 (136), Node 1060, Browser begehen 79 / schnittbereich 63; Prüfbild angesehen; zusammengeführt ohne Konflikt |
 | 21.10.2026 | – | Gesamtprüfung df88653 (N12, N13/N14, N16) grün (Kern 4571 nach Wiederholung, Mcp 79, Web 542, Node 1054) → geprueft = df88653 (geprueft-20261021-1500) | Hauptlauf | ok |
 | 21.10.2026 | N18/N19 | Holz ohne Schraffur (beige 0.6), 3D-Schnittbereich blau | Hauptlauf | ok – 11e5e9e, Tests 48 + Node 21 grün |
 | 21.10.2026 | N20/N21 | grob = Wände/Stützen/Unterzüge schwarz voll (SIA 400 B.8.3.1); Schnitthöhe nach SIA 400 C.3.1.1 (durch alle Türen/Fenster, je Geschoss) | hlks-modul (als general-purpose sonnet/high) | läuft |
+| 21.10.2026 | N22 | Begehen: Wände undurchsichtig, nur ±50 cm um die Kamera durchscheinend | hlks-modul (als general-purpose sonnet/high) | läuft |

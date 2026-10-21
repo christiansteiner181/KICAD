@@ -516,3 +516,24 @@ Entscheide Hauptlauf:
 
 **Fertig, wenn** ein Grundriss ohne Handwert seine Schnitthöhe aus den Öffnungen des Geschosses bestimmt, alle Türen und Fenster
 geschnitten zeigt (im Beispielprojekt und in der Bernstrasse), die Herkunft sichtbar ist und ein Handwert weiter gilt.
+
+**N15 umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf zusammengeführt).
+- **Abfrage** `raum_begehen {raum, augenhoehe?}` (`Plan/RaumBegehen.cs`):
+  - Standpunkt ist der Schwerpunkt des Raums, bei einer L-Form der innerste Punkt.
+  - Augenhöhe 1700 mm; Benutzereinstellung `ansicht3d.augenhoehe`.
+  - Blick auf «oben» des ausgerichteten Grundrisses.
+- **3D** (`ansichten/begehen3d.js`): FOV 75°, Schnittbereich pausiert; Esc stellt die Kamera wieder her.
+- **Tasten:** Belegung wie in `OBERFLAECHE.md`, als Annahme; am Freitag bestätigen.
+- **Tests:** `RaumBegehenTests` (11), `begehen.test.mjs` (19), Browser `begehen.browser.mjs` (79).
+
+## N22 – Begehen: Wände undurchsichtig, nur beim Durchgehen durchscheinend
+
+Christian 21.10.2026: «bei begehung wände nur transparent wenn man durch geht +/- 50cm».
+
+**Fertig, wenn:**
+- Im Modus «Begehen» (N15) sind Wände sowie Decken und Böden undurchsichtig, also Deckkraft 1. Das Bild wirkt dann wie ein echter Raum.
+- Durchscheinend wird nur das Bauteil, dem die Kamera näher als 500 mm kommt, also beim Durchgehen. Gemessen wird der Abstand der Kamera
+  zum Wandkörper (Grundriss-Umriss und Höhe), nicht zu dessen achsparallelem Hüllquader.
+- Liegt die Kamera wieder mehr als 500 mm entfernt, wird das Bauteil wieder undurchsichtig.
+- Beim Beenden gilt wieder die normale Transparenz der 3D-Ansicht.
+- Leitungen und Apparate bleiben wie bisher.
