@@ -401,3 +401,18 @@ zentrum raum. position kann mittels pfeiltaste geändert werden.» (Vorrat für 
 - **Anzeige:** Raumname und Geschoss stehen eingeblendet.
 - **Verlassen:** Esc bzw. Haus-Knopf führt zurück zur normalen 3D-Ansicht.
 - **Navigationswürfel (N11) und Schnittbereich (N13)** bleiben nutzbar bzw. ausgeschaltet; das am Freitag festlegen.
+
+## N16 – Stützen im Grundriss mit Kreuz, nur Beton schraffiert
+
+Christian 21.10.2026: «stützen werden im Grundriss mit einem Kreuz angezeigt. nur bei betton bleibt die schraffur.»
+
+**Fertig, wenn:** Geschnittene Stützen aus Stahl, Holz, Mauerwerk oder ohne Material zeigen ihren Umriss mit beiden Diagonalen und ohne
+Schraffur. Beton behält die Schraffur. Nicht geschnittene Stützen bleiben wie bisher, auf dem Bildschirm und im PDF.
+
+**Umgesetzt: 21.10.2026** (Hauptlauf).
+- `ArchitekturGrafik.Stuetze`: Bei Schnittlage 0 und einem Material, das nicht Beton ist, wird der Umriss papierweiss mit dickem Stift
+  gezeichnet. Dazu kommen zwei dünne Linien:
+  - beim Viereck Ecke zu Ecke;
+  - bei runden Querschnitten und Vielecken durch die Mitte von Rand zu Rand.
+- `IstBeton`: Als Beton gilt jedes Material mit «beton» im Namen, ausser Porenbeton. Die Materialliste kennt heute «beton».
+- **Tests:** `StuetzeKreuzTests.cs` (11).

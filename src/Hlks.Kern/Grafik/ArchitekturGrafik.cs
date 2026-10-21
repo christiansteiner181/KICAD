@@ -684,7 +684,9 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         return s;
     }
 
-    /// <summary>Stütze: Querschnitt (Polygon, z = Unterkante) mit Höhe.</summary>
+    /// <summary>Stütze: Querschnitt (Polygon, z = Unterkante) mit Höhe. Geschnitten im Grundriss mit Kreuz (beide Diagonalen),
+    /// nur Beton behält die Schraffur (Nachbearbeitung N16, Christian 21.10.2026: «stützen werden im Grundriss mit einem Kreuz
+    /// angezeigt. nur bei beton bleibt die schraffur»). Ohne Material gilt das Kreuz.</summary>
     IEnumerable<Grafikteil> Stuetze(GrafikKontext ctx, Element e)
     {
         var g = e.Geometrie;
@@ -692,16 +694,51 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         var ring = g.Punkte.Select(p => new[] { p[0], p[1] }).ToList();
         double unten = g.Punkte.Min(p => p.Length > 2 ? p[2] : 0);
         int lage = Schnittlage(unten, g.Hoehe, ctx.Schnitthoehe);
+        var material = e.Text("material");
+        var primitive = new List<Primitiv>();
+        if (lage == 0 && !IstBeton(material))
+        {
+            primitive.Add(new Primitiv { Art = "polygon", Punkte = ring, Stil = new Stil { Stift = Stifte.Dick, Fuellung = "papier" } });
+            foreach (var (a, b) in Kreuz(ring))
+                primitive.Add(new Primitiv { Art = "linie", Punkte = [a, b], Stil = new Stil { Stift = Stifte.Duenn } });
+        }
+        else primitive.Add(new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(material, lage) });
         return
         [
             new Grafikteil
             {
                 Id = e.Id, Ebene = "wand",
-                Primitive = [new Primitiv { Art = "polygon", Punkte = ring, Stil = BauteilStil(e.Text("material"), lage) }],
+                Primitive = primitive,
                 Fangpunkte = ring,
                 Fangkanten = ring.Select((p, i) => new[] { p, ring[(i + 1) % ring.Count] }).ToList(),
             },
         ];
+    }
+
+    /// <summary>Beton im Sinn von N16: jedes Material mit «beton» im Namen (Beton, Stahlbeton, Ortbeton …), ausser Porenbeton.</summary>
+    internal static bool IstBeton(string? material)
+    {
+        var m = material?.Trim().ToLowerInvariant() ?? "";
+        return m.Contains("beton") && !m.Contains("poren");
+    }
+
+    /// <summary>Die zwei Diagonalen des Stützenquerschnitts: beim Viereck Ecke zu Ecke, bei mehr Ecken (rund, Vieleck) zwischen
+    /// den gegenüberliegenden Punkten unter 45° und 135° zur längeren Seite des umschliessenden Rechtecks.</summary>
+    internal static IEnumerable<(double[] A, double[] B)> Kreuz(IReadOnlyList<double[]> ring)
+    {
+        if (ring.Count == 4) { yield return (ring[0], ring[2]); yield return (ring[1], ring[3]); yield break; }
+        double cx = ring.Average(p => p[0]), cy = ring.Average(p => p[1]);
+        double minX = ring.Min(p => p[0]), maxX = ring.Max(p => p[0]), minY = ring.Min(p => p[1]), maxY = ring.Max(p => p[1]);
+        foreach (var (dx, dy) in new[] { (maxX - minX, maxY - minY), (maxX - minX, -(maxY - minY)) })
+        {
+            double l = Math.Sqrt(dx * dx + dy * dy);
+            if (l < 1e-9) continue;
+            double ux = dx / l, uy = dy / l;
+            // äusserster Punkt des Rings in beide Richtungen längs der Diagonale
+            var a = ring.MinBy(p => (p[0] - cx) * ux + (p[1] - cy) * uy)!;
+            var b = ring.MaxBy(p => (p[0] - cx) * ux + (p[1] - cy) * uy)!;
+            yield return (a, b);
+        }
     }
 
     /// <summary>Unterzug: Band um die Achse (Breite = geometrie.dicke), z = Unterkante, Höhe.</summary>
