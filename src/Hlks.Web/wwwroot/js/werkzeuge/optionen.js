@@ -12,6 +12,7 @@ import { KALIBRIERBAR } from './kalibrierung.js';
 import { familieFelder, definitionAus, typTeile } from '../familien/typauswahl.js';
 import { serienListe, serieDef, serieLaden, haken as leitungHaken } from './leitung-daten.js';
 import { groessenListe } from './leitung-logik.js';
+import { istFrei, istRechteck, istAbwasser, groessenOptionen, vorbelegung, freiHinweis, abwasserHinweis, beschriftungVon } from './leitung-frei.js';
 
 const BEZUGSLINIEN = [['mitte', 'Mitte'], ['links', 'Links'], ['rechts', 'Rechts']];
 
@@ -157,22 +158,60 @@ const systemOptionen = () => derKlasse('System').sort((a, b) => kz(a).localeComp
 const strangOptionen = (wid) => derKlasse('Strang').filter((e) => !wert(wid, 'system') || !e.teilVon || e.teilVon === wert(wid, 'system'))
   .sort((a, b) => kz(a).localeCompare(kz(b), 'de', { numeric: true })).map((e) => [kz(e), e.teilVon ? `${kz(e)} (${e.teilVon})` : kz(e)]);
 
-/** Felder der Werkzeuge Rohr (PI) und Kanal (DT): Serie, Grösse, Höhe der Achse über OK Geschoss, Gefälle, System/Strang, Dämmdicke, Winkelfang. */
+/** Zahlenfelder der freien Grösse mit der Vorlage der Serie füllen (nur freie Serien). nurLeere: nur, was noch leer ist (Start des Werkzeugs);
+ *  sonst immer (die Serie wurde gewechselt). Bei einer Serie ohne freie Grösse werden die Felder geleert (nicht bei nurLeere). */
+export function freiVorbelegen(wid, serie, nurLeere = false) {
+  const v = vorbelegung(serie);
+  for (const f of ['freiB', 'freiH', 'freiD']) {
+    if (!v) { if (!nurLeere) setze(wid, f, null); continue; }
+    if (!(f in v)) { setze(wid, f, null); continue; }
+    if (!nurLeere || wert(wid, f) === null) setze(wid, f, v[f]);
+  }
+}
+
+/** Felder der Werkzeuge Rohr (PI) und Kanal (DT): Serie, Grösse (bei einer freien Serie Breite × Höhe und die Normgrösse als Vorschlag), Höhe der Achse über OK Geschoss,
+ *  Gefälle, System/Strang, Dämmdicke, Winkelfang. */
 function leitungFelder(wid, kategorie) {
+  const aktuelleSerie = () => serieDef(wert(wid, 'serie'));
+  const frei = () => istFrei(aktuelleSerie());
   const nachSerie = (el) => {
     el?.blur?.();
-    const s = serieDef(wert(wid, 'serie'));
-    if (wert(wid, 'serie')) serieLaden(wert(wid, 'serie'));
+    const kzS = wert(wid, 'serie');
+    const s = serieDef(kzS);
+    if (kzS) {
+      // Die Serie wird (leicht oder vollständig) geladen; danach Grösse prüfen und bei einer freien Serie die Vorlage eintragen
+      serieLaden(kzS).then((d) => {
+        if (!d || wert(wid, 'serie') !== kzS) return;
+        if (wert(wid, 'groesse') && !groessenListe(d).some((g) => g.typ === wert(wid, 'groesse'))) setze(wid, 'groesse', '');
+        freiVorbelegen(wid, d);
+        leitungHaken.optionenNeu?.();
+      });
+    }
     if (wert(wid, 'groesse') && s && !groessenListe(s).some((g) => g.typ === wert(wid, 'groesse'))) setze(wid, 'groesse', '');
+    leitungHaken.optionenNeu?.();
+  };
+  // Normgrösse gewählt (freie Serie): die Zahlenfelder zeigen ihre Grösse, geändert werden sie von Hand
+  const nachNormgroesse = (el) => {
+    el?.blur?.();
+    const s = aktuelleSerie();
+    const g = istFrei(s) ? groessenListe(s).find((x) => x.typ === wert(wid, 'groesse')) : null;
+    if (g) { setze(wid, 'freiB', g.b); setze(wid, 'freiH', g.h); setze(wid, 'freiD', g.d); }
     leitungHaken.optionenNeu?.();
   };
   return [
     { id: 'serie', titel: 'Serie', art: 'auswahl', get werte() { return serienListe(kategorie).map((s) => [s.kz, s.name]); }, leer: 'wählen …', beiAenderung: nachSerie },
-    { id: 'groesse', titel: 'Grösse', art: 'auswahl', leer: 'wählen …',
+    { id: 'groesse', get titel() { return frei() ? 'Normgrösse' : 'Grösse'; }, art: 'auswahl', get leer() { return frei() ? 'Vorschlag …' : 'wählen …'; },
       get werte() {
-        const s = serieDef(wert(wid, 'serie'));
-        return s ? groessenListe(s).map((g) => [g.typ, g.typ]) : (serienListe(kategorie).find((x) => x.kz === wert(wid, 'serie'))?.typen ?? []).map((t) => [t, t]);
-      } },
+        const s = aktuelleSerie();
+        return s ? groessenOptionen(s) : (serienListe(kategorie).find((x) => x.kz === wert(wid, 'serie'))?.typen ?? []).map((t) => [t, t]);
+      },
+      beiAenderung: nachNormgroesse },
+    // Freie Grösse (Nachtrag): Zahlenfelder statt der Typwahl, vorbelegt mit der Vorlage; Grenzen und Schritt prüft der Kern
+    { id: 'freiB', titel: 'Breite', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'b', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()) },
+    { id: 'freiH', titel: 'Kanalhöhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'h', breite: 5, sichtbar: () => frei() && istRechteck(aktuelleSerie()) },
+    { id: 'freiD', titel: 'Durchmesser', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'd', breite: 5, sichtbar: () => frei() && !istRechteck(aktuelleSerie()) },
+    { id: 'freiHinweis', art: 'hinweis', klasse: 'ol-info', get text() { return freiHinweis(aktuelleSerie()); }, sichtbar: frei },
+    { id: 'abwasserHinweis', art: 'hinweis', klasse: 'ol-info', get text() { const s = aktuelleSerie(); return abwasserHinweis(s, s ? beschriftungVon(s, wert(wid, 'groesse')) : null); }, sichtbar: () => istAbwasser(aktuelleSerie()) },
     { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
       beiAenderung: () => leitungHaken.hoeheGeaendert?.() },
     { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },

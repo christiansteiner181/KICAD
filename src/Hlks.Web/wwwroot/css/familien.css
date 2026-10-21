@@ -161,5 +161,12 @@ table.fe-kontrolle { width: auto; min-width: 520px; }
 .fe-kontrolle td.fe-teils { color: var(--warnung); }
 .fe-kontrolle td.fe-keine { color: var(--text-leise); font-weight: 400; }
 .fe-kontrolle-kopf { margin: 2px 0 4px; }
+/* Freie Serie: Kontrolle auf Abruf mit Laufanzeige und «Abbrechen» (Nachtrag freie Grösse) */
+.fe-kontrolle-lauf { display: flex; align-items: center; gap: 8px; margin: 4px 0; }
+.fe-kontrolle-zeit { font-variant-numeric: tabular-nums; }
+.fe-spinner { flex: none; width: 12px; height: 12px; border: 2px solid var(--rand-leise); border-top-color: var(--akzent); border-radius: 50%; animation: fe-drehen 0.9s linear infinite; }
+@keyframes fe-drehen { to { transform: rotate(360deg); } }
+.fe-kontrolle td.fe-beschriftung { white-space: nowrap; }
+.fe-probe-tabelle { margin-top: 2px; }
 .fe-gruende { margin: 2px 0 6px 16px; padding: 0; }
 .fe-gruende li { margin: 2px 0; }

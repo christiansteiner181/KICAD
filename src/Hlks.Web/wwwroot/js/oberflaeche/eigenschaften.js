@@ -18,9 +18,10 @@ import { esc, entprellen, vergleichen, gewerkeListe, zahlText } from './werkzeug
 import { ohneQuelleMarke, paletteHinweise, paletteHinweiseHtml } from './huelle-text.js';
 import { elementGruppen, familienKopfHtml, familienMarke, exemplarNeu, kopfOp } from '../familien/familien-palette.js';
 import { familieHolen } from '../familien/daten.js';
-import { leitungGruppe, altbestandGruppe, formteilGruppe, leitungsArt, LEITUNG_EIGENSCHAFTEN } from '../werkzeuge/leitung-palette.js';
+import { leitungGruppe, altbestandGruppe, formteilGruppe, leitungsArt, leitungEigenschaften } from '../werkzeuge/leitung-palette.js';
 import { leitungAenderung } from '../werkzeuge/leitung-bearbeiten.js';
-import { serieLaden, serienListe } from '../werkzeuge/leitung-daten.js';
+import { serieLaden, serienListe, befundeVon } from '../werkzeuge/leitung-daten.js';
+import { istFrei, istAbwasser, freiEingabe } from '../werkzeuge/leitung-frei.js';
 import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
@@ -135,12 +136,14 @@ async function famDaten(bezug, ziel) {
   let lagen = null;
   try { lagen = await abfrage('anschlusslagen', { element: ziel.kennzeichen }); } catch (e) { console.warn('Anschlusslagen', e?.message ?? e); }
   // Leitungen (Modul 3, C1): Serie mit ihren Grössen und die Summen des Leitungszugs
-  let serie = null, zug = null;
+  let serie = null, zug = null, befunde = [];
   if (leitungsArt(ziel) === 'leitung') {
-    serie = await serieLaden(bezug);
+    serie = await serieLaden(bezug, f);     // eine freie Serie bleibt leicht (nie die langsame Abfrage leitungsserie)
     try { zug = await abfrage('leitungszug', { leitung: ziel.kennzeichen }); } catch { zug = null; }
+    // freie Grösse (P29) und Abwasser-Serie (P30): Prüfbefunde des Kerns zu dieser Leitung
+    if (istFrei(serie) || istAbwasser(serie)) befunde = await befundeVon(ziel.kennzeichen);
   }
-  return { f, lagen, serie, zug };
+  return { f, lagen, serie, zug, befunde };
 }
 
 async function familieZeigen(mein) {
@@ -242,12 +245,13 @@ function palette(el, l, def, istAnsicht, fam = null, san = null) {
   // Familie (Modul 2, C1): Familie, Typ, Exemplarparameter und Anschlüsse eines platzierten Elements
   // Leitungen (Modul 3, C1): Serie/Grösse/Dämmung statt der allgemeinen Familiengruppe; Altbestand: Aufteilen; Formteile: Art, Typ, Winkel
   const ltArt = leitungsArt(el);
-  if (ltArt === 'leitung' && fam?.f) h += leitungGruppe({ el, l, f: fam.f, serie: fam.serie ?? null, serien: serienListe(kategorieVon(el.klasse)), zug: fam.zug ?? null }, HELFER);
+  if (ltArt === 'leitung' && fam?.f) h += leitungGruppe({ el, l, f: fam.f, serie: fam.serie ?? null, serien: serienListe(kategorieVon(el.klasse)), zug: fam.zug ?? null, befunde: fam.befunde ?? [] }, HELFER);
   else if (ltArt === 'altbestand') h += altbestandGruppe({ el }, HELFER);
   else if (ltArt === 'formteil') h += formteilGruppe({ el, l, f: fam?.f ?? null }, HELFER);
   if (fam?.f && ltArt !== 'leitung') h += elementGruppen({ f: fam.f, lagen: fam.lagen, typ: l.eigenschaften?.familientyp?.wert ?? null, exemplar: l.eigenschaften?.parameter?.wert ?? null, kz: el.kennzeichen }, HELFER);
   fam = fam?.f ? fam : null;
   const ltGruppe = ltArt === 'leitung' && !!fam;
+  const ltEig = ltGruppe ? leitungEigenschaften(fam.serie) : [];
 
   // Zuordnung: Auswahllisten aus passenden Elementen
   const zu_ = [];
@@ -278,7 +282,7 @@ function palette(el, l, def, istAnsicht, fam = null, san = null) {
   for (const d of def?.eigenschaften ?? []) {
     bekannt.add(d.name);
     if (fam && (d.name === 'familientyp' || d.name === 'parameter')) continue;   // stehen in der Gruppe «Familie»
-    if (ltGruppe && LEITUNG_EIGENSCHAFTEN.includes(d.name)) continue;            // stehen in der Gruppe «Leitung»
+    if (ltGruppe && ltEig.includes(d.name)) continue;                            // stehen in der Gruppe «Leitung»
     const w = werte[d.name]?.wert;
     // Modul 4 Teil A-O: Apparateart mit Namen und abgeleiteten Werten darunter, Tabelle der Spezialinstallationen, Hinweis zu K
     if (d.name === 'sanitaerArt' && san) { ez.push(...artZeilen({ def: d, wert: w ?? null, vorgabe: san.vorgabeJeKlasse?.[el.klasse] ?? null, l }, HELFER)); continue; }
@@ -298,7 +302,7 @@ function palette(el, l, def, istAnsicht, fam = null, san = null) {
     if (d.name === 'abflusskennzahl') ez.push(kHinweisZeile(HELFER));
   }
   for (const [name, v] of Object.entries(werte)) {
-    if (bekannt.has(name) || (fam && (name === 'familientyp' || name === 'parameter')) || (ltGruppe && LEITUNG_EIGENSCHAFTEN.includes(name))) continue;
+    if (bekannt.has(name) || (fam && (name === 'familientyp' || name === 'parameter')) || (ltGruppe && ltEig.includes(name))) continue;
     ez.push(zeile(name, nurLesen(v?.wert === undefined ? '' : (typeof v.wert === 'object' ? JSON.stringify(v.wert) : `${v.wert}${v.einheit ? ' ' + v.einheit : ''}`)), { titel: v?.herkunft ?? '', warum: name }));
   }
   h += gruppe('Eigenschaften', ez);
@@ -421,10 +425,18 @@ async function beiAenderung(e) {
   zeileEl?.querySelector('.ep-fehler')?.remove();
   const ziel = feld.dataset.ziel;
   if (ziel.startsWith('fam')) { await famAenderung(feld, ziel); return; }
-  if (ziel === 'lt:serie' || ziel === 'lt:groesse') {
+  if (['lt:serie', 'lt:groesse', 'lt:raster', 'lt:b', 'lt:h', 'lt:d'].includes(ziel)) {
     // Leitung (Modul 3, C1): Rückfrage «nur diese Leitung / ganzer Zug», dann leitung_serie bzw. leitung_groesse
+    // Freie Grösse (Nachtrag): Zahlenfelder b, h bzw. d (beide Felder zusammen, Grenzen und Schritt prüft der Kern) und die Normgrösse als Vorschlag
     schmutzig = false;
-    const r = await leitungAenderung(ziel.slice(3), gerade.kz, feld.value);
+    let wert = feld.value;
+    if (ziel === 'lt:b' || ziel === 'lt:h' || ziel === 'lt:d') {
+      const lesen = (n) => inhalt.querySelector(`[data-ziel="lt:${n}"]`)?.value;
+      const e = freiEingabe(gerade.fam?.serie, { b: lesen('b'), h: lesen('h'), d: lesen('d') });
+      if (e.fehler) { fehlerAnzeigen(feld, e.fehler); return; }
+      wert = e.groesse;
+    }
+    const r = await leitungAenderung(ziel === 'lt:serie' ? 'serie' : 'groesse', gerade.kz, wert);
     if (r?.fehler) fehlerAnzeigen(feld, r.fehler, r.vorschlag);
     else if (!r?.ok) zeichnen();      // abgebrochen: die Auswahl zeigt wieder den Stand des Modells
     return;

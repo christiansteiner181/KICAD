@@ -11,6 +11,7 @@ import { esc, knoten, entprellen } from '../oberflaeche/werkzeug.js';
 import { familienLaden } from '../familien/daten.js';
 import { serienListe, serieLaden } from './leitung-daten.js';
 import * as L from './leitung-logik.js';
+import * as F from './leitung-frei.js';
 import { zugText } from './leitung-palette.js';
 
 const zugHolen = (kz) => abfrage('leitungszug', { leitung: kz }).catch(() => null);
@@ -29,17 +30,23 @@ async function umfangFragen(kz, was, wert) {
 
 /** Ergebnis für die Palette: { ok: true } | { fehler, vorschlag } | { abgebrochen: true }. */
 const ergebnis = (r, okText) => {
-  if (r.angenommen) { ergebnisMelden(r, okText); return { ok: true }; }
+  if (r.angenommen) {
+    ergebnisMelden(r, okText);
+    const b = L.neueBefundeTexte(r);                       // z. B. P29 (freie Grösse), P30 (Abwasser-Serie für ein anderes Medium)
+    if (b.length) meldung(b.join(' · '), 'warnung');
+    return { ok: true };
+  }
   const a = L.ablehnung(r);
   return { fehler: a.text, vorschlag: a.vorschlag };
 };
 
-/** Grösse einer Leitung ändern (leitung_groesse). */
+/** Grösse einer Leitung ändern (leitung_groesse). groesse: Typname oder, bei einer freien Serie, { b, h } bzw. { d } (Grenzen und Schritt prüft der Kern). */
 export async function groesseAendern(kz, groesse) {
-  const umfang = await umfangFragen(kz, 'Grösse', groesse);
+  const text = typeof groesse === 'string' ? groesse : F.groesseText(groesse);
+  const umfang = await umfangFragen(kz, 'Grösse', text);
   if (!umfang) return { abgebrochen: true };
   const r = await sende('leitung_groesse', L.groessenParameter({ leitung: kz, groesse, zug: umfang === 'zug' }));
-  return ergebnis(r, `${kz}: Grösse ${groesse}${umfang === 'zug' ? ' (ganzer Zug)' : ''}.`);
+  return ergebnis(r, `${kz}: Grösse ${text}${umfang === 'zug' ? ' (ganzer Zug)' : ''}.`);
 }
 
 /** Serie einer Leitung ändern (leitung_serie). */
@@ -51,7 +58,8 @@ export async function serieAendern(kz, serie) {
   return ergebnis(r, `${kz}: Serie ${name}${umfang === 'zug' ? ' (ganzer Zug)' : ''}.`);
 }
 
-/** Palette: Änderung eines Feldes «lt:serie» oder «lt:groesse». */
+/** Palette: Änderung eines Feldes «lt:serie», «lt:groesse» (Typ), «lt:raster» (Normgrösse einer freien Serie) oder der Zahlenfelder b, h, d einer freien Serie
+ *  (wert = { b, h } bzw. { d }, gelesen mit leitung-frei.js freiEingabe). */
 export async function leitungAenderung(was, kz, wert) {
   if (!wert) return { abgebrochen: true };
   return was === 'serie' ? serieAendern(kz, wert) : groesseAendern(kz, wert);
@@ -80,7 +88,7 @@ export async function aufteilenDialog(kz) {
   async function groessenFuellen() {
     const d = await serieLaden(q('.lt-serie').value);
     const alt = q('.lt-groesse').value;
-    q('.lt-groesse').innerHTML = `<option value="">(aus der Leitung)</option>${L.groessenListe(d).map((g) => `<option value="${esc(g.typ)}"${g.typ === alt ? ' selected' : ''}>${esc(g.typ)}</option>`).join('')}`;
+    q('.lt-groesse').innerHTML = `<option value="">(aus der Leitung)</option>${F.groessenOptionen(d).map(([typ, text]) => `<option value="${esc(typ)}"${typ === alt ? ' selected' : ''}>${esc(text)}</option>`).join('')}`;
   }
   async function vorschau() {
     const mein = ++nr; bereit = false;

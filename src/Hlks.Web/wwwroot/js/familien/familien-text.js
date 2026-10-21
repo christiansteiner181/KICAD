@@ -587,6 +587,9 @@ export const FORMTEIL_ARTEN = [
   { art: 'reinigungsoeffnung', label: 'Reinigungsöffnung', kategorie: 'Reinigungsoeffnung' },
 ];
 const GROESSE_LABEL = { dn: 'Grösse DN', d: 'Grösse Ø d', b: 'Grösse Breite b', h: 'Grösse Höhe h' };
+/** Einsatz einer Rohrserie (leitung.einsatz; weitere Werte später) und Grössenart eines Rohrs (Abwasser: Aussendurchmesser oder Nennweite). */
+export const EINSAETZE = [['abwasser', 'Abwasser (Schmutz-, Regenwasser)']];
+export const GROESSENARTEN = [['d', 'Aussendurchmesser d (Abwasser)'], ['dn', 'Nennweite DN']];
 /** Datentypen, die als Grössenparameter in Frage kommen (der Kern verlangt eine Zahl). */
 const GROESSE_DATENTYPEN = new Set(['dn', 'laenge', 'zahl']);
 
@@ -639,8 +642,24 @@ export const groessenParameter = (def) => (def?.parameter ?? []).filter((p) => p
 export function groesseSchluessel(block, art) {
   if (block?.querschnitt === 'rechteck') return ['b', 'h'];
   if (art === 'kanal') return ['d'];
-  if (art === 'rohr') return ['dn'];
+  // Rohr: DN, bei einer Abwasser-Serie (einsatz abwasser) auch der Aussendurchmesser d (Nachtrag, entwurf/abwasser-serie.md); bleibt, was der Block hat
+  if (art === 'rohr') return block?.groesse && Object.hasOwn(block.groesse, 'd') ? ['d'] : ['dn'];
   return block?.groesse && Object.hasOwn(block.groesse, 'd') ? ['d'] : ['dn'];
+}
+
+/** Grössenart eines Rohrs wechseln (nur Abwasser-Serien): 'dn' Nennweite oder 'd' Aussendurchmesser. Der Typparameter mit dem Schlüsselnamen wird genommen oder (ohne Werte)
+ *  angelegt; den Rest (ob einsatz abwasser gesetzt ist, ob die Werte stimmen) prüft der Kern. → { block, ops } | { fehler }. */
+export function groessenartWechseln(block, def, neu) {
+  if (!['dn', 'd'].includes(neu)) return { fehler: `Grössenart «${neu}» gibt es nicht.` };
+  const b = klon(block ?? {});
+  const gueltig = new Set(groessenParameter(def));
+  const ops = [];
+  const vorhanden = (def?.parameter ?? []).find((p) => p.name === neu);
+  if (vorhanden && !gueltig.has(neu)) return { fehler: `Der Parameter «${neu}» gibt es schon, er ist aber kein Typparameter mit Zahl – als Grösse braucht der Block einen Typparameter (Datentyp DN, Länge oder Zahl).` };
+  if (!vorhanden) ops.push({ op: 'parameter_setzen', parameter: groessenParameterNeu(neu) });
+  b.groesse = { [neu]: neu };
+  ops.push({ op: 'leitung_setzen', leitung: b });
+  return { block: b, ops };
 }
 
 /** Querschnitt wechseln: neuer Block mit den Grössenschlüsseln der neuen Form. Gibt es den Typparameter mit dem Schlüsselnamen schon, wird er genommen, sonst kommt ein neuer
@@ -697,6 +716,18 @@ export function leitungFeldLesen(typ, text) {
       if (r.fehler) return { fehler: `${r.fehler} – Liste in Grad, z. B. 45, 88.5` };
       return r.liste.length ? { wert: r.liste } : { wert: undefined };
     }
+    case 'masse': {   // freie Grösse: Grenze in mm (Zahl > 0), leer = keine Grenze
+      if (t === '') return { wert: undefined };
+      const z = zahlLesen(t.replace(/\s*mm$/i, ''));
+      if (z === null || !(z > 0)) return { fehler: `«${t}» ist keine Grenze – eine Zahl über 0 in mm (leer = keine Grenze)` };
+      return { wert: z };
+    }
+    case 'ganzzahl': {   // freie Grösse: Schritt in ganzen mm, leer = Vorgabe 1
+      if (t === '') return { wert: undefined };
+      const z = zahlLesen(t.replace(/\s*mm$/i, ''));
+      if (z === null || !Number.isInteger(z) || z < 1) return { fehler: `«${t}» ist kein Schritt – eine ganze Zahl ab 1 in mm (leer = 1 mm)` };
+      return { wert: z };
+    }
     case 'typregel': { const f = t.startsWith('=') ? t.slice(1).trim() : t; return { wert: f === '' ? undefined : f }; }
     case 'auswahl': return { wert: t === '' ? undefined : t };
     case 'text': return { wert: t === '' ? undefined : t };   // freier Text (Kürzel); Länge und Zeichen prüft der Kern
@@ -709,6 +740,8 @@ export function leitungMitFeld(block, pfad, wert) {
   let n = pfadSetzen(block ?? {}, pfad, wert);
   const m = /^formteile\.([a-z]+)\.familie$/.exec(pfad);
   if (m && wert === undefined) n = pfadSetzen(n, `formteile.${m[1]}`, undefined);
+  // Freie Grösse: ohne Vorlage entfällt der ganze Block frei (Grenzen und Schritt gehören dazu); leere Grenzen eines Schlüssels entfallen mit ihm
+  if (pfad === 'frei.vorlage' && wert === undefined) n = pfadSetzen(n, 'frei', undefined);
   return n;
 }
 
@@ -720,6 +753,14 @@ export function formteilOptionen(liste, kategorie, aktuell) {
   const o = (liste ?? []).filter((f) => f.kategorie === kategorie && f.id).sort((a, b) => String(a.name).localeCompare(String(b.name), 'de'))
     .map((f) => [f.id, `${f.kennzeichen} · ${f.name}${f.gueltig === false ? ' (ungültig)' : ''}`]);
   if (aktuell && !o.some(([w]) => w === aktuell)) o.push([aktuell, `${aktuell} (nicht im Projekt)`]);
+  return o;
+}
+
+/** Typen der Formteil-Familie mit dieser Definitions-id (Antwort familien: typen = Namen) als Auswahl; ein Typ, den der Block nennt und die Familie nicht hat, bleibt sichtbar. */
+export function formteilTypOptionen(liste, familieId, aktuell) {
+  const f = (liste ?? []).find((x) => x.id === familieId);
+  const o = (f?.typen ?? []).map((t) => [t, t]);
+  if (aktuell && !o.some(([w]) => w === aktuell)) o.push([aktuell, f ? `${aktuell} (nicht in der Familie)` : `${aktuell} (Familie nicht im Projekt)`]);
   return o;
 }
 
@@ -736,13 +777,39 @@ export function leitungFelder(def, o = {}) {
   const f = [];
   f.push({ gruppe: 'Querschnitt und Grösse', pfad: 'querschnitt', label: 'Querschnitt', typ: 'auswahl', optionen: querschnittOptionen(o.art), wert: b.querschnitt ?? '',
     titel: 'Rohre sind immer rund; Kanäle rund (Ø d) oder rechteckig (b × h). Ein Wechsel legt fehlende Grössenparameter ohne Werte an.' });
+  // Einsatz (Nachtrag, entwurf/abwasser-serie.md; nur Rohre): «Abwasser» = Grösse und Beschriftung nach Aussendurchmesser, keine DN nötig, Prüfbefund P30 in einem anderen Medium
+  if (o.art !== 'kanal') {
+    f.push({ gruppe: 'Querschnitt und Grösse', pfad: 'einsatz', label: 'Einsatz', typ: 'auswahl', optionen: EINSAETZE, wert: b.einsatz ?? '', leer: '(nicht angegeben)',
+      titel: 'Abwasser: Abwasser-Serie (z. B. Geberit PE, Silent-db20, PP-Hausabfluss). Grösse und Beschriftung immer nach Aussendurchmesser (z. B. «PE 110»), unabhängig vom Medium; keine DN nötig. Verwendet jemand die Serie für Heizung, Kälte oder Trinkwasser, meldet der Kern den Prüfbefund P30.' });
+    if (b.einsatz === 'abwasser')
+      f.push({ gruppe: 'Querschnitt und Grösse', pfad: 'groessenart', label: 'Grösse geführt nach', typ: 'auswahl', optionen: GROESSENARTEN, wert: Object.hasOwn(b.groesse ?? {}, 'd') ? 'd' : 'dn',
+        titel: 'Aussendurchmesser d (Abwasser-Serie nach Aussendurchmesser, «d 110», keine DN nötig) oder Nennweite DN. Eine DN der Herstellerunterlage steht höchstens als eigener Typparameter mit Ziel dn – der Kern leitet sie nie aus d ab.' });
+  }
   for (const k of groesseSchluessel(b, o.art)) {
-    f.push({ gruppe: 'Querschnitt und Grösse', pfad: `groesse.${k}`, label: GROESSE_LABEL[k], typ: 'auswahl', optionen: params.map((n) => [n, n]), wert: b.groesse?.[k] ?? '', leer: '(wählen)',
+    f.push({ gruppe: 'Querschnitt und Grösse', pfad: `groesse.${k}`, label: k === 'd' && o.art === 'rohr' ? 'Grösse Aussendurchmesser d' : GROESSE_LABEL[k], typ: 'auswahl', optionen: params.map((n) => [n, n]), wert: b.groesse?.[k] ?? '', leer: '(wählen)',
       titel: `Typparameter mit der Grösse «${k}»: sein Wert je Typ ist die Grösse der Leitung` });
   }
   f.push({ gruppe: 'Masse (Formeln aus den Parametern)', pfad: 'aussen', label: 'Aussendurchmesser', typ: 'zahl', text: feldText(b.aussen), platzhalter: 'z. B. da', titel: 'Pflicht. Formel aus den Parametern, z. B. «da» (bei rechteckigen Kanälen nicht genutzt)' });
   f.push({ gruppe: 'Masse (Formeln aus den Parametern)', pfad: 'innen', label: 'Innendurchmesser', typ: 'zahlopt', text: feldText(b.innen), platzhalter: 'z. B. da - 2 * s', titel: 'Optional. Formel, z. B. «da - 2 * s»' });
   f.push({ gruppe: 'Masse (Formeln aus den Parametern)', pfad: 'wand', label: 'Wandstärke', typ: 'zahlopt', text: feldText(b.wand), platzhalter: 'z. B. s', titel: 'Optional. Formel aus den Parametern' });
+  // Freie Grösse (Nachtrag, entwurf/freie-groesse-kanal.md): nur Kanalserien, nie Rohre. Die Typen bleiben das Vorschlagsraster; jede andere Grösse innerhalb von Grenzen
+  // und Schritt rechnet der Kern aus dem Typ «Vorlage» (die Grössenparameter ersetzt er). Grenzen nur aus der Unterlage (frei.quellen).
+  if (o.art !== 'rohr') {
+    const fr = b.frei ?? null;
+    const typen = (def?.typen ?? []).map((t) => [t.name, t.name]);
+    f.push({ gruppe: 'Freie Grösse (nach Mass gefertigt)', pfad: 'frei.vorlage', label: 'Vorlage (Typ)', typ: 'auswahl', optionen: typen, wert: fr?.vorlage ?? '', leer: '(keine – nur die Typen)',
+      hinweis: fr && fr.grenzen && Object.keys(fr.grenzen).length ? (Array.isArray(fr.quellen) && fr.quellen.length ? `Quellen der Grenzen: ${fr.quellen.length}` : 'Grenzen ohne Quelle (frei.quellen) – der Kern meldet das als Hinweis') : undefined,
+      titel:'Leer = nur die Grössen der Typen. Mit Vorlage kann jede Grösse b × h bzw. Ø d innerhalb der Grenzen gewählt werden; ihre Werte und Formeln (aussen, innen, wand …) gelten für jede freie Grösse, die Grössenparameter werden ersetzt (sie müssen Typparameter ohne Formel sein). Die Typen bleiben das Vorschlagsraster.' });
+    for (const k of groesseSchluessel(b, o.art)) {
+      for (const [seite, label] of [['min', 'kleinste'], ['max', 'grösste']]) {
+        f.push({ gruppe: 'Freie Grösse (nach Mass gefertigt)', pfad: `frei.grenzen.${k}.${seite}`, label: `${label} ${k === 'b' ? 'Breite b' : k === 'h' ? 'Höhe h' : 'Ø d'} [mm]`, typ: 'masse', text: feldText(fr?.grenzen?.[k]?.[seite]),
+          deaktiviert: !fr, platzhalter: 'leer = keine Grenze',
+          titel: `Grenze ${seite === 'min' ? 'nach unten' : 'nach oben'} für ${k} in mm – nur eintragen, was die Unterlage nennt (Quelle in frei.quellen). Leer = jede Grösse über 0.` });
+      }
+    }
+    f.push({ gruppe: 'Freie Grösse (nach Mass gefertigt)', pfad: 'frei.schritt', label: 'Schritt [mm]', typ: 'ganzzahl', text: feldText(fr?.schritt), deaktiviert: !fr, platzhalter: 'leer = 1 mm',
+      titel: 'Raster der Eingabe in ganzen mm (Vorgabe 1). Eine Grösse ausserhalb des Rasters lehnt der Kern mit einem gerundeten Vorschlag ab, nie still.' });
+  }
   // Beschriftung (B9/B9b, Entscheid Christian 19.10.2026): Werkstoff-Kürzel der Serie; die Beschriftung («CNS NW 20», bei Abwasser «PE-S 110») setzt der Kern zusammen (Rohrgroessen.Von)
   if (o.art !== 'kanal') {
     f.push({ gruppe: 'Beschriftung', pfad: 'kuerzel', label: 'Kürzel (Werkstoff)', typ: 'text', text: typeof b.kuerzel === 'string' ? b.kuerzel : '', platzhalter: 'z. B. CNS, PE-S, PEX',
@@ -757,6 +824,12 @@ export function leitungFelder(def, o = {}) {
       titel: `Formteil-Familie für ${a.label} (Familien der Kategorie ${a.kategorie})` });
     f.push({ gruppe: 'Formteile (Familien des Projekts)', pfad: `formteile.${a.art}.typ`, label: `${a.label}: Typregel`, typ: 'typregel', text: b.formteile?.[a.art]?.typ ?? '', deaktiviert: !cur,
       platzhalter: 'leer = Typ nach den Anschlussgrössen', titel: 'Optional: Formel, die den Typnamen ergibt, z. B. if(dn = 15, "DN 15", "DN 20"). Namen: die Grössenparameter der Serie, bei T-Stück und Reduktion mit Endung _2 für Abzweig bzw. kleine Grösse.' });
+    // Vorlage für freie Grössen (Nachtrag): nur bei einer Serie mit freier Grösse; der Typ der Formteil-Familie, der mit Exemplarwerten gerechnet wird, wenn kein Typ passt
+    const vor = b.formteile?.[a.art]?.vorlage ?? '';
+    if (b.frei || vor)
+      f.push({ gruppe: 'Formteile (Familien des Projekts)', pfad: `formteile.${a.art}.vorlage`, label: `${a.label}: Vorlage (freie Grösse)`, typ: 'auswahl', optionen: formteilTypOptionen(o.familien, cur, vor), wert: vor, leer: '(erster Typ der Familie)',
+        deaktiviert: !cur,
+        titel: 'Nur bei freier Grösse: Typ der Formteil-Familie, der für eine freie Grösse mit Exemplarwerten gerechnet wird, wenn kein Typ passt (leer = der erste Typ). Die Anschlussgrössen (b, h bzw. d) der Formteil-Familie müssen dafür Exemplarparameter ohne Formel sein; die Einbaulängen rechnen die Formeln der Familie.' });
   }
   f.push({ gruppe: 'Regeln', pfad: 'regeln.winkel', label: 'Erlaubte Bogenwinkel', typ: 'winkel', text: b.regeln?.winkel === 'frei' ? 'frei' : zahlenListeText(b.regeln?.winkel), platzhalter: '15, 30, 45, 90  oder  frei',
     titel: 'Liste in Grad oder «frei»; leer = nicht angegeben (der Kern lässt dann jeden Winkel zu)' });
@@ -772,6 +845,10 @@ export function leitungAenderung(def, art, pfad, typ, text) {
     const r = querschnittWechseln(def?.leitung, def, art, text);
     return r.fehler ? { fehler: r.fehler } : { ops: r.ops };
   }
+  if (pfad === 'groessenart') {
+    const r = groessenartWechseln(def?.leitung, def, text);
+    return r.fehler ? { fehler: r.fehler } : { ops: r.ops };
+  }
   const r = leitungFeldLesen(typ, text);
   if (r.fehler) return { fehler: r.fehler };
   return { ops: leitungOps(leitungMitFeld(def?.leitung, pfad, r.wert)) };
@@ -780,9 +857,9 @@ export function leitungAenderung(def, art, pfad, typ, text) {
 // ------------------------------------------------------------------------------------------------ Kontrolltabelle (Abfrage leitungsserie)
 
 /** Text der Grösse einer Zeile: «DN 20», «Ø 125», «400 × 200». */
-export function groesseText(g) {
+export function groesseText(g, serie = null) {
   if (g?.dn !== undefined && g.dn !== null) return `DN ${feldText(g.dn)}`;
-  if (g?.d !== undefined && g.d !== null) return `Ø ${feldText(g.d)}`;
+  if (g?.d !== undefined && g.d !== null) return serie?.nachAussendurchmesser ? `d ${feldText(g.d)}` : `Ø ${feldText(g.d)}`;   // Abwasser-Serie nach Aussendurchmesser: «d 110»
   if (g?.b !== undefined && g?.h !== undefined) return `${feldText(g.b)} × ${feldText(g.h)}`;
   return '–';
 }
@@ -790,13 +867,15 @@ export function groesseText(g) {
 /** Zellen der Formteile einer Grösse: { bogen, tstueck, reinigungsoeffnung, reduktion } je { zustand: 'ja' | 'nein' | 'teils' | 'keine', text, titel }. */
 export function serieZellen(g) {
   const ft = g?.formteile ?? {};
+  // freie Grösse: das Formteil wird aus seiner Vorlage mit Exemplarwerten gerechnet (parameter) – im Tooltip
+  const exemplar = (w) => (w?.frei && w.parameter && typeof w.parameter === 'object' ? 'Exemplarwerte: ' + Object.entries(w.parameter).map(([k, v]) => `${k} = ${feldText(v)}`).join(', ') : '');
   const einfach = (w) => (w?.verfuegbar
-    ? { zustand: 'ja', text: 'ja', titel: [w.familie, w.typ, w.hinweis].filter(Boolean).join(' · ') }
+    ? { zustand: 'ja', text: 'ja', titel: [w.familie, w.typ, w.hinweis, exemplar(w)].filter(Boolean).join(' · ') }
     : { zustand: 'nein', text: 'nein', titel: [w?.grund, w?.vorschlag].filter(Boolean).join(' – ') });
   const red = ft.reduktion ?? [];
   const ok = red.filter((r) => r.verfuegbar).length;
   const reduktion = red.length === 0 ? { zustand: 'keine', text: '–', titel: 'Kleinste Grösse: keine Reduktion nötig' }
-    : ok === red.length ? { zustand: 'ja', text: 'ja', titel: red.map((r) => `auf ${r.auf}: ${r.typ}`).join(' · ') }
+    : ok === red.length ? { zustand: 'ja', text: 'ja', titel: red.map((r) => `auf ${r.auf}: ${r.typ}${exemplar(r) ? ` (${exemplar(r)})` : ''}`).join(' · ') }
       : { zustand: ok === 0 ? 'nein' : 'teils', text: ok === 0 ? 'nein' : `${ok} von ${red.length}`, titel: red.filter((r) => !r.verfuegbar).map((r) => `auf ${r.auf}: ${r.grund}`).join(' – ') };
   return { bogen: einfach(ft.bogen), tstueck: einfach(ft.tstueck), reduktion, reinigungsoeffnung: einfach(ft.reinigungsoeffnung) };
 }

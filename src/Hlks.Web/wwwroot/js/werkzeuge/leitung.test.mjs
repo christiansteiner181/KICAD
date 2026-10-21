@@ -367,7 +367,8 @@ test('Optionsleiste: Grössen und Breite der Vorschau aus der Serie (Rohr: ausse
 test('Optionen: Felder von Rohr und Kanal (Serie, Grösse, Höhe als Pflicht, Gefälle, System, Strang, Dämmdicke, Winkelfang)', () => {
   for (const wid of ['rohr', 'kanal']) {
     const ids = O.WERKZEUGE[wid].felder.map((f) => f.id);
-    assert.deepEqual(ids, ['serie', 'groesse', 'hoehe', 'gefaelle', 'system', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
+    // Nachtrag freie Grösse / Abwasser-Serie: Zahlenfelder und Hinweise hinter der Grösse (sichtbar nur bei den passenden Serien, siehe frei-abwasser.test.mjs)
+    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'hoehe', 'gefaelle', 'system', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
     const hoehe = O.feldDef(wid, 'hoehe');
     assert.equal(hoehe.pflicht, true);
     assert.equal(hoehe.art, 'zahl');
