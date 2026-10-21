@@ -229,12 +229,25 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
 | 3 | A-O 1–6 Oberfläche, Anleitung, Browser-Reihen | hlks-modul |
 | 4 | Testbericht, Prüfung Teil A | hlks-test, hlks-pruefer |
 
-## Annahmen (Rückfrage an Christian am Morgen)
+## Entscheide und offene Fragen
 
-1. **Schema zuerst erlaubt** (A-S 5): Elemente entstehen im Prinzipschema ohne Grundrisslage, wie im Strangschema.
-2. **Anordnung:** Erzeugung links, Verteilbalken waagrecht (VL oben, RL unten), Heizgruppen senkrecht nach oben,
-   Verbraucher als Sammelsymbol, H+K-Konvention der Armaturen.
-3. **Bausteine:** zuerst nur die drei HKAP-Standardgruppen; eigene Bausteine später.
-4. **Kälte:** neue Klasse Kälteerzeuger in Modul 5; Rückkühler und Kühldecke später. BKP der Kälteklassen bestätigen.
-5. **Plannummer** des Prinzipschemas Heizung: welche Nummer nach H+K-Schema?
-6. **Teil B:** Ablageort und Auswahl der Normen bzw. Quellen für Heizlast, Heizkörper, FBH und Rohrnetz.
+**Christian, 21.10.2026 (Fragefenster):**
+- **Prinzipschema nur aus dem Modell:** Im Prinzipschema werden keine Elemente angelegt.
+  - A-S 5 «Schema zuerst» entfällt.
+  - Im Prinzipschema gibt es kein «Element einfügen» und kein «Verbinden».
+  - Lage und Anordnung bleiben einstellbar (schema_lage, «Neu anordnen»).
+- **Heizgruppen «nach Hydraulik des Modells»:**
+  - Es gibt keine mitgelieferten Bausteine. A-S 3 entfällt, austein_einfuegen wird nicht gebaut.
+  - Gruppen und Glieder ergeben sich aus dem Netz (A-D 3, heizgruppen_vorschlagen).
+- **Symbole:** Christians HKAP-Bibliothek data/schema_symbole.json gilt, Stand 14.10.2026. Massgebend ist sie mit ihren
+  Übersteuerungen, ihren eigenen Symbolen und ersteckt, nicht die Grundsymbole im HKAP-Code.
+  - Die Fernwärme-Übergabe und der Wärmetauscher bekommen die Raute (wt_platte, angepasst).
+  - Die Handabsperrung in Heizungsleitungen bekommt den Kugelhahn.
+- **Anordnung des Prinzipschemas:** «anders» als vorgeschlagen (Erzeugung links, Verteilbalken waagrecht, Gruppen senkrecht
+  nach oben). Die Beschreibung folgt; A-S 1 wartet darauf.
+
+**Offen:**
+1. Anordnung des Prinzipschemas, siehe oben.
+2. Kälte: Kälteerzeuger als eigene Klasse jetzt, Rückkühler und Kühldecke später? Welche BKP gilt für die Kälte?
+3. Plannummer des Prinzipschemas Heizung.
+4. Teil B: Ablageort und Auswahl der Normen bzw. Quellen für Heizlast, Heizkörper, FBH und Rohrnetz.
