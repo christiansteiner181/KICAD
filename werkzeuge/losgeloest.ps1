@@ -5,7 +5,7 @@
 # Benutzersitzung und ueberlebt das (Speichertest 1.5 GB ok).
 # Der neue Prozess erbt die Umgebungsvariablen der Sitzung NICHT: alles Noetige ueber -Umgebung mitgeben.
 # Aufruf: powershell -File werkzeuge\losgeloest.ps1 -Skript <datei.ps1> [-Argumente '<args>'] [-Log <datei>] [-Umgebung 'K=V;K=V']
-# Gibt die PID aus. Datei bewusst nur ASCII (PowerShell 5.1).
+# Gibt die PID des kurzlebigen WMI-Prozesses aus (er startet die Arbeit per Start-Process und endet). Datei bewusst nur ASCII (PowerShell 5.1).
 param(
   [Parameter(Mandatory = $true)][string]$Skript,
   [string]$Argumente = '',
@@ -25,7 +25,15 @@ $aufruf = "& '{0}' {1}" -f $Skript.Replace("'", "''"), $Argumente
 if ($Log) { $aufruf += (" *> '{0}'" -f $Log.Replace("'", "''")) }
 $zeilen += $aufruf
 Set-Content -Path $start -Value $zeilen -Encoding UTF8
-$cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$start`""
+# Zweite Stufe (Befund 21.10.2026 ~10:20): Was der WMI-Prozess selbst im Vordergrund laufen liess (Abnahmeserver 5150-5153), starb,
+# als der WMI-Host (WmiPrvSE) im Leerlauf beendet wurde. Der Desktop-Server ueberlebte - kicad_starten.ps1 hatte ihn per
+# Start-Process (ShellExecute, ohne Umleitung) gestartet. Darum startet der WMI-Prozess hier nur noch per Start-Process die
+# eigentliche Arbeit und beendet sich sofort.
+$aussen = Join-Path $ordner ([IO.Path]::GetFileNameWithoutExtension($start) + '_aussen.ps1')
+Set-Content -Path $aussen -Encoding UTF8 -Value @(
+  ("Start-Process -FilePath 'powershell.exe' -WindowStyle Hidden -WorkingDirectory '{0}' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', '`"{1}`"')" -f (Split-Path $Skript).Replace("'", "''"), $start.Replace("'", "''"))
+)
+$cmd = "powershell.exe -NoProfile -ExecutionPolicy Bypass -WindowStyle Hidden -File `"$aussen`""
 $r = Invoke-CimMethod -ClassName Win32_Process -MethodName Create -Arguments @{ CommandLine = $cmd; CurrentDirectory = (Split-Path $Skript) }
 if ($r.ReturnValue -ne 0) { throw "Win32_Process.Create fehlgeschlagen: $($r.ReturnValue)" }
 $r.ProcessId

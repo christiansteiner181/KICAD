@@ -122,6 +122,16 @@ function AnleitungSichern([string]$sha) {
   } catch { Log "Anleitung: Fehler - $($_.Exception.Message)" }
 }
 
+# Abnahmeserver 5150-5153 (Christian 21.10.2026: "das KICAD-Icon soll die fehlenden Abnahmeserver mitstarten"): eigenes Skript in
+# einem eigenen Prozess, damit der Desktop-Start nicht wartet; es startet nur, was nicht laeuft. Fehler nur protokolliert.
+function AbnahmeserverSichern {
+  try {
+    $s = Join-Path $PSScriptRoot 'abnahmeserver_starten.ps1'
+    if (Test-Path $s) { Start-Process -FilePath 'powershell.exe' -ArgumentList @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$s`"") -WindowStyle Hidden | Out-Null }
+  } catch { Log "Abnahmeserver: $($_.Exception.Message)" }
+}
+AbnahmeserverSichern
+
 # ------------------------------------------------------------------ Stand bestimmen
 $ohneGeprueft = $false
 try { $sha = GitAufruf @('-C', $repo, 'rev-parse', '--verify', 'geprueft^{commit}') }
