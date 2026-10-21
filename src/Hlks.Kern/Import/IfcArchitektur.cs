@@ -15,6 +15,15 @@
 //   Materialien unten); sonst nicht gesetzt.
 // - Tür/Fenster: über IfcRelFillsElement → IfcOpeningElement → IfcRelVoidsElement → Wand. abstand = Mitte der Öffnung
 //   auf der Achse, breite/hoehe = OverallWidth/OverallHeight (sonst Öffnung), bruestung = Unterkante Öffnung − Geschosskote.
+//   Nachbearbeitung N6 (Befund Christian 21.10.2026, Archicad 27 Bernstrasse 42: 23 Türen 5.19 m hoch, Körper 2.15 m): Weicht
+//   die Ausdehnung des Körpers längs der z-Achse der Tür bzw. des Fensters um mehr als 400 mm UND mehr als 15 % von
+//   OverallHeight ab, gilt der Körper (hoehe, beim Fenster auch bruestung ab Unterkante Körper); Herkunft nennt beide Werte,
+//   ein Hinweis nennt jede solche Tür bzw. jedes Fenster. Ohne lesbaren oder mit vereinfachtem Körper bleibt OverallHeight.
+//   Schwelle aus den echten Dateien (Probelauf 21.10.2026, 91 bzw. 920 Türen und Fenster mit Körper): Rahmen, Futter und Bänke
+//   machen den Körper bis 298 mm (12.6 %) höher als OverallHeight (Bernstrasse bis 170 mm / 7.7 %, BKW Hauptsitz bis 298 mm /
+//   12.6 %) – das bleibt OverallHeight; die widersprüchlichen Fälle weichen um 725 bis 4160 mm (20.8 bis 66.5 %) ab: Archicad
+//   schreibt dort die Höhe der Öffnung, die unter die Tür reicht (Bernstrasse 3.04 m, BKW 0.74 bis 4.16 m). Die Öffnung selbst
+//   bleibt, wie die Datei sie zeichnet (Netzdatei, Kollision).
 //   Tür seite/band aus OperationType und Lage der Tür (Annahme IFC-Konvention: Tür öffnet in +y ihrer Lage, «LEFT» = Band
 //   links bei Blick in +y); andere Bauarten: leer mit Hinweis.
 // - Decke/Dach: Umriss aus dem Profil der Extrusion, sonst Netz-Grundfläche; z = Oberkante, Dicke senkrecht; Löcher als
@@ -35,16 +44,19 @@ public sealed class IfcArchitektur : IIfcUebertrag
     public void Uebertragen(IfcLauf lauf) => new IfcArchitekturLauf(lauf).Ausfuehren();
 }
 
-/// <summary>Hinweise gesammelt nach Grund, mit Anzahl und einigen Beispielen (die Übernahme zeigt höchstens 50 Hinweise).</summary>
+/// <summary>Hinweise gesammelt nach Grund, mit Anzahl und einigen Beispielen (die Übernahme zeigt höchstens 50 Hinweise).
+/// Gründe mit «alle» nennen jedes Objekt (N6: Abweichung je Tür bzw. Fenster), nicht nur vier Beispiele.</summary>
 sealed class IfcSammler
 {
     readonly Dictionary<string, (int Anzahl, List<string> Beispiele)> gruende = [];
     readonly List<string> reihenfolge = [];
+    readonly HashSet<string> vollstaendig = [];
 
-    public void Dazu(string grund, string? beispiel = null, int anzahl = 1)
+    public void Dazu(string grund, string? beispiel = null, int anzahl = 1, bool alle = false)
     {
         if (!gruende.TryGetValue(grund, out var g)) { g = (0, []); reihenfolge.Add(grund); }
-        if (beispiel is not null && g.Beispiele.Count < 4) g.Beispiele.Add(beispiel);
+        if (alle) vollstaendig.Add(grund);
+        if (beispiel is not null && (alle || g.Beispiele.Count < 4)) g.Beispiele.Add(beispiel);
         gruende[grund] = (g.Anzahl + anzahl, g.Beispiele);
     }
 
@@ -55,7 +67,7 @@ sealed class IfcSammler
         foreach (var grund in reihenfolge)
         {
             var (n, b) = gruende[grund];
-            ziel.Add($"{bereich}: {grund} – {n}" + (b.Count > 0 ? $" (z. B. {string.Join(", ", b)})" : ""));
+            ziel.Add($"{bereich}: {grund} – {n}" + (b.Count == 0 ? "" : vollstaendig.Contains(grund) ? $": {string.Join(", ", b)}" : $" (z. B. {string.Join(", ", b)})"));
         }
     }
 
@@ -545,14 +557,57 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         string ent = IfcDatei.Entitaet(f);
         if (gesamt.Breite is double gb && gb > 0) lauf.Wert(e, "breite", R(gb), $"{ent}.OverallWidth");
         else lauf.Wert(e, "breite", R(s1 - s0), $"{quelleLage}, Ausdehnung längs der Wand");
-        if (gesamt.Hoehe is double gh && gh > 0) lauf.Wert(e, "hoehe", R(gh), $"{ent}.OverallHeight");
+        double unterkante = bb[2];
+        string quelleUnterkante = quelleLage;
+        if (gesamt.Hoehe is double gh && gh > 0)
+        {
+            if (HoeheAusKoerper(f, gh) is { } k)
+            {
+                string koerper = $"Körper {ent} #{f.EntityLabel}";
+                lauf.Wert(e, "hoehe", R(k.Hoehe), $"{koerper}, Ausdehnung längs der z-Achse {(klasse == "Tuer" ? "der Tür" : "des Fensters")} {IfcBauteile.Mm(R(k.Hoehe))} mm; " +
+                    $"{ent}.OverallHeight {IfcBauteile.Mm(R(gh))} mm weicht um {IfcBauteile.Mm(R(Math.Abs(gh - k.Hoehe)))} mm ab ({SchwelleText}) und gilt nicht");
+                unterkante = k.Unterkante;
+                quelleUnterkante = koerper;
+                hinweise.Dazu($"{art}: Höhe aus dem Körper statt OverallHeight ({SchwelleText}; die Öffnung bleibt, wie die Datei sie zeichnet)",
+                    IfcSammler.Beispiel(f) + $" {IfcBauteile.Mm(R(k.Hoehe))} statt {IfcBauteile.Mm(R(gh))} mm", alle: true);
+            }
+            else lauf.Wert(e, "hoehe", R(gh), $"{ent}.OverallHeight");
+        }
         else lauf.Wert(e, "hoehe", R(bb[5] - bb[2]), $"{quelleLage}, Höhe");
         lauf.Wert(e, "abstand", abstand, $"Mitte {quelleLage} auf der Achse der Wand");
         if (klasse == "Fenster")
-            lauf.Wert(e, "bruestung", R(bb[2] - GeschossKote(wand.GeschossId)), $"Unterkante {quelleLage} − Geschosskote");
+            lauf.Wert(e, "bruestung", R(unterkante - GeschossKote(wand.GeschossId)), $"Unterkante {quelleUnterkante} − Geschosskote");
         else TuerSeite(e, f, wand);
         if (Math.Abs(bestQ) > wand.Dicke / 2 + 50 && bestQ < 1e6)
             hinweise.Dazu($"{art} liegt neben der Wandachse (auf die Achse gesetzt)", IfcSammler.Beispiel(f) + $" {IfcBauteile.Mm(bestQ)} mm");
+    }
+
+    /// <summary>N6: Der Körper gilt statt OverallHeight erst ab dieser Abweichung – beides muss überschritten sein (Herleitung
+    /// im Kopf der Datei: Rahmen und Bänke bis 298 mm bzw. 12.6 %, widersprüchliche Dateien ab 725 mm bzw. 20.8 %).</summary>
+    const double KoerperAbweichungMm = 400;
+    const double KoerperAbweichungAnteil = 0.15;
+    static readonly string SchwelleText = $"Abweichung über {IfcBauteile.Mm(KoerperAbweichungMm)} mm und über {IfcBauteile.Mm(KoerperAbweichungAnteil * 100)} %";
+
+    /// <summary>N6: Höhe und Unterkante (z, mm) des Körpers einer Tür bzw. eines Fensters, wenn sie deutlich von OverallHeight
+    /// abweicht (<see cref="KoerperAbweichungMm"/> und <see cref="KoerperAbweichungAnteil"/>); sonst null – auch ohne lesbaren
+    /// Körper und bei vereinfachtem Körper (Boolean: nur der erste Operand, kann zu gross sein). Höhe = Ausdehnung der Körperpunkte
+    /// längs der z-Achse der Lage des Elements (bei lotrechter Lage die z-Ausdehnung).</summary>
+    (double Hoehe, double Unterkante)? HoeheAusKoerper(IIfcElement f, double overallHeight)
+    {
+        if (g.Koerper(f) is not { Leer: false } n || g.IstVereinfacht(f) || n.Begrenzung() is not { } bb) return null;
+        var lage = Affin.Aus(d.Lage(f));
+        double[] z = lage.AchseZ, o = lage.Ursprung;
+        double zl = Math.Sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
+        if (zl < 1e-9) return null;
+        double z0 = double.MaxValue, z1 = double.MinValue;
+        for (int i = 0; i < n.P.Count; i += 3)
+        {
+            double s = ((n.P[i] - o[0]) * z[0] + (n.P[i + 1] - o[1]) * z[1] + (n.P[i + 2] - o[2]) * z[2]) / zl;
+            z0 = Math.Min(z0, s); z1 = Math.Max(z1, s);
+        }
+        double h = z1 - z0, ab = Math.Abs(h - overallHeight);
+        if (h <= 0 || ab <= KoerperAbweichungMm || ab <= KoerperAbweichungAnteil * overallHeight) return null;
+        return (h, bb[2]);
     }
 
     /// <summary>Tür: seite (Aufschlag links/rechts in Wandrichtung) und band (anfang/ende) aus OperationType und Lage.</summary>
@@ -714,7 +769,12 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
             if (l > 0 && Math.Abs(v[2]) / l >= 0.99) { Hintergrund(b, "Senkrechter Träger (wie Stütze)"); return; }
             if (achse is null)
             {
-                var c = Polygone.Schwerpunkt(ex.Aussen[0]);
+                // Waagrechte Extrusion: das Profil steht lotrecht und ist im Grundriss eine Strecke quer zur Achse. Anfang = Mitte
+                // dieser Strecke (Lage quer und Unterkante kommen danach aus dem Netz). Nachbearbeitung N7 (21.10.2026): vorher der
+                // Flächenschwerpunkt im Grundriss – bei Fläche 0 und Koordinaten weit vom Ursprung ein Rundungsrest, der UZ-14 und
+                // UZ-62 (Bernstrasse 42, Archicad 27) um 15.9 bzw. 15.5 m längs ihrer Achse aus dem Gebäude schob.
+                var ring = ex.Aussen[0];
+                double[] c = [(ring.Min(q => q[0]) + ring.Max(q => q[0])) / 2, (ring.Min(q => q[1]) + ring.Max(q => q[1])) / 2];
                 a = [c[0], c[1]]; e2 = [c[0] + v[0], c[1] + v[1]];
             }
         }
