@@ -427,6 +427,23 @@ try {
   await tippe('familie');
   pruef((await logBefehle()).length === logP, 'Platzhalter «Familie platzieren (folgt)» tut nichts');
 
+  abschnitt('XR-C Tablet beruhigt, Hände bei offenem Tablet ausgeblendet (Rückmeldung Brillentest 21.10.2026)');
+  const hd = (await xrDaten()).haende;
+  pruef(hd && hd.gelenke.left === false && hd.gelenke.right === false, 'Tablet offen: Gelenkkugeln beider Hände unsichtbar', JSON.stringify(hd));
+  pruef(hd.fingerPunkt === true && hd.fingerPunktOrt, `Tablet offen: Punkt an der Spitze des rechten Zeigefingers sichtbar (${JSON.stringify(hd.fingerPunktOrt)})`);
+  const sichtbar = await ausw(`const g = window.__vr.api.xr; let n = 0, kugel = 0; const wg = g.tablet.gruppe.parent; wg.traverse((o) => { if (o.isInstancedMesh && o.visible) kugel++; if (o.isMesh && !o.isInstancedMesh && o.geometry?.type === 'SphereGeometry' && o.visible) n++; }); return { kugel, punkte: n };`);
+  pruef(sichtbar.kugel === 0 && sichtbar.punkte === 1, `Szene: keine sichtbare Gelenk-Instanzgruppe, genau ein Fingerpunkt (${JSON.stringify(sichtbar)})`);
+  const mitteVor = (await xrDaten()).tablet.lage.mitte;
+  await hand('left', { offen: true, palm: plus3(palmL, { x: 0.008, y: 0.004, z: -0.006 }) }); await warte(600);
+  const mitteZittern = (await xrDaten()).tablet.lage.mitte;
+  pruef(Math.hypot(mitteZittern.x - mitteVor.x, mitteZittern.y - mitteVor.y, mitteZittern.z - mitteVor.z) < 0.001, `Hand verschiebt sich um ~1 cm: das Tablet bleibt stehen (Totzone), Änderung ${(Math.hypot(mitteZittern.x - mitteVor.x, mitteZittern.y - mitteVor.y, mitteZittern.z - mitteVor.z) * 1000).toFixed(2)} mm`);
+  await hand('left', { offen: true, palm: plus3(palmL, { x: 0.10, y: 0, z: 0 }) }); await warte(900);
+  const mitteWeg = (await xrDaten()).tablet.lage.mitte;
+  pruef(nahe(mitteWeg.x - mitteVor.x, 0.10, 0.02), `Hand 10 cm zur Seite: das Tablet folgt (${((mitteWeg.x - mitteVor.x) * 100).toFixed(1)} cm)`);
+  await hand('left', { offen: true, palm: palmL }); await warte(900);
+  const mitteZurueck = (await xrDaten()).tablet.lage.mitte;
+  pruef(nahe(mitteZurueck.x, mitteVor.x, 0.02), 'Hand zurück: das Tablet folgt wieder');
+
   abschnitt('XR-C Messwerkzeug mit Fang: zwei Punkte mit dem Zeigefinger, Fangsymbol, Abstand und dx/dy/dz; Lot zur Fläche; löschen');
   await tippe('messen');
   await bis((d) => d?.messen?.an === true, 'Messen an', 4000);
@@ -487,6 +504,8 @@ try {
   await warte(500);
   const tZu = (await xrDaten()).tablet;
   pruef(!tZu.sichtbar && tZu.anteil === 0, 'Hand weggedreht: das Tablet schliesst sich und verschwindet');
+  const hZu = (await xrDaten()).haende;
+  pruef(hZu.gelenke.left === true && hZu.fingerPunkt === false, 'Tablet zu: die Gelenkkugeln der Hand sind wieder da, der Fingerpunkt weg', JSON.stringify(hZu));
   // Menütaste (Y links) als Ersatz
   await keineHand('left');
   await ausw(`const cs = window.__vr.api.controller(); cs[0].dispatchEvent({ type: 'connected', data: { handedness: 'left' } }); return 1;`);

@@ -52,6 +52,7 @@ export function erzeugeVr(o) {
   let letzteZeit = 0, letztesSchreiben = 0, aVorher = false;
   let ifcAn = true, ifcDreiecke = 0;
   const versteckt = new Set();          // Netze der IFC-Unterlage, die VR ausgeblendet hat
+  const netzOriginal = new Map();       // Material eines Netzes → { opacity, transparent, depthWrite } vor der Sitzung (VR zeigt die Unterlage undurchsichtig)
   const quellen = [];                   // XRInputSource je Controller-Index
   const zielende = new Set();           // Controller, die gerade zielen
   let marker = null;
@@ -211,6 +212,23 @@ export function erzeugeVr(o) {
   }
 
   // ---------------------------------------------------------------------------------------------- IFC-Unterlage
+  /** Macht das Netz der IFC-Unterlage für die Dauer der Sitzung undurchsichtig (Deckkraft 1, nicht transparent, schreibt Tiefe); die bisherigen Werte merkt sich netzOriginal. */
+  function netzUndurchsichtig(m) {
+    for (const mat of [].concat(m.material ?? [])) {
+      if (!mat) continue;
+      if (!netzOriginal.has(mat)) netzOriginal.set(mat, { opacity: mat.opacity, transparent: mat.transparent, depthWrite: mat.depthWrite });
+      if (mat.transparent) mat.needsUpdate = true;   // «transparent» steckt im Shaderschlüssel
+      mat.opacity = 1; mat.transparent = false; mat.depthWrite = true;
+    }
+  }
+  /** Stellt die Netze der IFC-Unterlage exakt so her, wie sie vor der Sitzung waren. */
+  function netzeZurueck() {
+    for (const [mat, w] of netzOriginal) {
+      if (mat.transparent !== w.transparent) mat.needsUpdate = true;
+      mat.opacity = w.opacity; mat.transparent = w.transparent; mat.depthWrite = w.depthWrite;
+    }
+    netzOriginal.clear();
+  }
   /** Blendet das Hintergrund-Netz der IFC-Unterlage in VR aus oder ein (Bildrate); neu geladene Netze folgen der Wahl. */
   function netzeAnwenden() {
     if (!sitzung) return;
@@ -222,6 +240,7 @@ export function erzeugeVr(o) {
     if (ifcDreiecke === 0 && dreiecke > 0) ifcAn = ifcAnfangsSichtbar(dreiecke);   // die erste Messung entscheidet die Vorgabe
     ifcDreiecke = dreiecke;
     for (const m of netze) {
+      netzUndurchsichtig(m);   // Christian 21.10.2026: «alle wände und boden sollten in vr solide sein»
       if (ifcAn) { if (versteckt.delete(m)) m.visible = true; }
       else { if (m.visible) versteckt.add(m); m.visible = false; }
     }
@@ -399,6 +418,7 @@ export function erzeugeVr(o) {
     try { renderer.setAnimationLoop(null); } catch { /* egal */ }
     for (const m of versteckt) m.visible = true;
     versteckt.clear();
+    netzeZurueck();
     try { xrWerk?.abbauen(); } catch { /* egal */ }
     xrWerk = null; api.xr = null;
     steuerungAbbauen();

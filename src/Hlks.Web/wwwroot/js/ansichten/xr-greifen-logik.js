@@ -169,16 +169,83 @@ export const TABLET_PX = { b: 512, h: 384 };
 export const BERUEHR_VOR = 0.015;
 export const BERUEHR_HINTER = 0.04;
 
-/** Lage des Tablets: über der Handfläche (in Richtung ihrer Normale), dem Kopf zugewandt, aufrecht. */
-export function tabletLage(mitte, normale, kopf) {
-  const m = plus(mitte, mal(einheit(normale), TABLET_ABSTAND));
-  const n = einheit(minus(kopf, m));
+/** Lage aus Mitte und (Blick-)Normale des Tablets: aufrecht, rechts/oben daraus abgeleitet. */
+export function tabletLageAus(mitte, normale) {
+  const n = einheit(normale);
   const hoch = v3(0, 1, 0);
   let rechts = kreuz(hoch, n);
   if (laenge(rechts) < 1e-6) rechts = v3(1, 0, 0);
   rechts = einheit(rechts);
   const oben = einheit(kreuz(n, rechts));
-  return { mitte: m, normale: n, rechts, oben, b: TABLET_B, h: TABLET_H };
+  return { mitte, normale: n, rechts, oben, b: TABLET_B, h: TABLET_H };
+}
+
+/** Lage des Tablets: über der Handfläche (in Richtung ihrer Normale), dem Kopf zugewandt, aufrecht. */
+export function tabletLage(mitte, normale, kopf) {
+  const m = plus(mitte, mal(einheit(normale), TABLET_ABSTAND));
+  return tabletLageAus(m, minus(kopf, m));
+}
+
+// ---- Beruhigen des Tablets (Rückmeldung nach dem ersten Brillentest, 21.10.2026: «tablet ist etwas nervös»). Alle Werte stellt Christian nach dem nächsten Brillentest nach.
+export const TABLET_TOTZONE_M = 0.015;     // m: weicht die Mitte weniger ab, bleibt das Tablet stehen
+export const TABLET_TOTZONE_GRAD = 4;      // Grad: dasselbe für die Normale des Tablets
+export const TABLET_RUHE_ANTEIL = 0.3;     // das Nachführen endet, sobald die Abweichung unter diesem Anteil der Totzone liegt
+export const TABLET_FOLGE_ZEIT = 0.04;     // s: Zeitkonstante, mit der das Tablet beim Nachführen das gefilterte Ziel einholt
+/** One-Euro-Filter der Tablet-Mitte (Hz; beta: zusätzliche Grenzfrequenz je m/s). Langsam bei kleinen, zügig bei grossen Bewegungen. */
+export const TABLET_FILTER_MITTE = Object.freeze({ minCut: 1.2, beta: 40, dCut: 3 });
+/** One-Euro-Filter der Tablet-Normale (Einheitsvektor; beta je 1/s). */
+export const TABLET_FILTER_NORMALE = Object.freeze({ minCut: 1.2, beta: 8, dCut: 3 });
+/** One-Euro-Filter der Handflächen-Normale (Hauptquelle des Zitterns: Hebel TABLET_ABSTAND). */
+export const TABLET_FILTER_PALM = Object.freeze({ minCut: 0.8, beta: 8, dCut: 3 });
+
+/** Neuer, leerer Zustand der Beruhigung (je Sitzung; beim Öffnen des Tablets neu anlegen). */
+export const neuerTabletZustand = () => ({ mitte: null, normale: null, palm: null, folgt: false });
+
+/** One-Euro-Filter für Vektoren. z = { x (gefiltert), roh (letzter Rohwert), dx (gefilterte Geschwindigkeit) }; liefert den gefilterten Wert. */
+export function einEuroVektor(z, wert, dt, par) {
+  const d = Math.min(0.1, Math.max(1e-3, dt));
+  if (!z.x) { z.x = { ...wert }; z.roh = { ...wert }; z.dx = v3(); return z.x; }
+  const alpha = (fc) => 1 / (1 + 1 / (2 * Math.PI * fc) / d);
+  const geschw = mal(minus(wert, z.roh), 1 / d);
+  z.dx = plus(z.dx, mal(minus(geschw, z.dx), alpha(par.dCut)));
+  const fc = par.minCut + par.beta * laenge(z.dx);
+  z.x = plus(z.x, mal(minus(wert, z.x), alpha(fc)));
+  z.roh = { ...wert };
+  return z.x;
+}
+
+/** Normale der Handfläche vor tabletLage glätten (Zustand je Sitzung); gibt einen Einheitsvektor zurück. */
+export function tabletPalmGlaetten(zustand, normale, dt) {
+  zustand.palm ??= {};
+  return einheit(einEuroVektor(zustand.palm, einheit(normale), dt, TABLET_FILTER_PALM));
+}
+
+/** Winkel (Grad) zwischen zwei Einheitsvektoren. */
+export const winkelGrad = (a, b) => Math.acos(Math.min(1, Math.max(-1, skalar(einheit(a), einheit(b))))) / GRAD;
+
+/**
+ * Beruhigt die Lage des Tablets. alt = bisher gezeigte Lage (null: erste Lage, sofort übernommen), neu = Soll aus tabletLage, dt in s,
+ * zustand aus neuerTabletZustand(). Das Soll wird je Bild gefiltert (One-Euro); das Tablet bleibt stehen, solange das gefilterte Soll weniger als die Totzone
+ * (TABLET_TOTZONE_M, TABLET_TOTZONE_GRAD) abweicht, folgt darüber weich und bleibt wieder stehen, sobald es angekommen ist (Hysterese TABLET_RUHE_ANTEIL).
+ */
+export function tabletNachfuehren(alt, neu, dt, zustand) {
+  if (!alt || !zustand.mitte) {
+    zustand.folgt = false;
+    zustand.mitte = {}; zustand.normale = {};
+    einEuroVektor(zustand.mitte, neu.mitte, dt, TABLET_FILTER_MITTE);
+    einEuroVektor(zustand.normale, neu.normale, dt, TABLET_FILTER_NORMALE);
+    return neu;
+  }
+  const d = Math.min(0.1, Math.max(1e-3, dt));
+  const fm = einEuroVektor(zustand.mitte, neu.mitte, d, TABLET_FILTER_MITTE);
+  const fn = einheit(einEuroVektor(zustand.normale, neu.normale, d, TABLET_FILTER_NORMALE));
+  const abwM = abstand3(fm, alt.mitte), abwN = winkelGrad(fn, alt.normale);
+  const ueber = abwM > TABLET_TOTZONE_M || abwN > TABLET_TOTZONE_GRAD;
+  const ruhig = abwM < TABLET_TOTZONE_M * TABLET_RUHE_ANTEIL && abwN < TABLET_TOTZONE_GRAD * TABLET_RUHE_ANTEIL;
+  if (ueber) zustand.folgt = true; else if (ruhig) zustand.folgt = false;
+  if (!zustand.folgt) return alt;
+  const k = 1 - Math.exp(-d / TABLET_FOLGE_ZEIT);
+  return tabletLageAus(plus(alt.mitte, mal(minus(fm, alt.mitte), k)), plus(alt.normale, mal(minus(fn, alt.normale), k)));
 }
 
 /** Punkt (Welt) → Ebenenkoordinaten des Tablets { u, v (0 … 1, links oben = 0/0), tiefe (vor der Ebene > 0) } oder null, wenn ausserhalb. */
