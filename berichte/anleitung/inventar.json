@@ -3924,7 +3924,81 @@
             "src/Hlks.Web/OBERFLAECHE.md:348 (Ansichten)",
             "berichte/modul-1b-testbericht.md:57 (Annahmen)"
           ],
-          "hinweis": "Grosse Modelle (BKW) drehen im 3D langsam (Testbericht 1b)."
+          "hinweis": "Grosse Modelle (BKW) drehen im 3D langsam (Testbericht 1b). Seit N12 wählt die Ansichtseigenschaft «ifcDarstellung», ob stattdessen das Original aller Produkte oder beide gezeigt werden (siehe «m1b-ifc-darstellung»)."
+        },
+        {
+          "id": "m1b-ifc-darstellung",
+          "titel": "IFC-Unterlage: Original, Nachbau oder beide zeigen",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Grafik",
+            "knopf": "Sichtbarkeit/Grafiken",
+            "kuerzel": "VV (auch VG)",
+            "sonst": "Eigenschaft «ifcDarstellung» der Ansicht"
+          },
+          "schritte": [
+            "Einen Grundriss, Schnitt, eine Ansicht oder eine 3D-Ansicht eines Projekts mit übernommener IFC-Datei öffnen.",
+            "Register Ansicht › Grafik › «Sichtbarkeit/Grafiken» klicken (oder VV tippen).",
+            "Oben im Dialog unter «IFC-Unterlagen zeigen» «Original» wählen und mit OK schliessen.",
+            "Dasselbe mit «Beide übereinander» und danach mit «Nachbau» wiederholen."
+          ],
+          "erwartung": "Nachbau (Vorgabe, wie bisher): die aus der IFC-Datei übernommenen Elemente (Wände, Türen, Decken …) und dazu das nicht übernommene Original als Hintergrund. Original: das Original aller Produkte der IFC-Datei; die übernommenen Elemente dieser Unterlage entfallen in dieser Ansicht. Beide: Nachbau und Original übereinander zum Vergleichen. Im Grundriss schneidet der Kern das Original auf Schnitthöhe, im Schnitt und in der Ansicht mit der Schnittebene; das 3D zeigt das Netz aller Produkte. Jede Ansicht hat ihre eigene Einstellung; sie wird mit der Ansichtsvorlage übertragen.",
+          "pruefpunkte": [
+            "Original: Die Nachbau-Wände und der Wandumriss verschwinden im Grundriss, dafür erscheinen die Wände des Originals als dünne Linien.",
+            "Original: In der 3D-Ansicht bleibt nur das Netz stehen (die übernommenen Körper entfallen).",
+            "Beide: Nachbau und Original sind zugleich zu sehen.",
+            "Schnitt: Im Modus Original erscheinen die Schnittlinien des Originals, im Modus Nachbau keine.",
+            "Eine Ansicht mit Darstellung «Hülle» zeigt weiter den Nachbau.",
+            "Eine ausgeblendete Unterlage ändert nichts: der Nachbau bleibt."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Grundriss EG, Sichtbarkeit/Grafiken",
+            "zustand": "Grundriss mit «Beide übereinander»: Original blau, Nachbau orange, beide durchscheinend; daneben der Dialog mit der Auswahl"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:229",
+            "src/Hlks.Web/wwwroot/js/ansichten/ifc-darstellung.js:38",
+            "src/Hlks.Kern/Grafik/IfcDarstellung.cs:28",
+            "nachbearbeitung.md:315 (N12)"
+          ],
+          "hinweis": "Die Einstellung gilt nur in der Darstellung «standard» und für Unterlagen, die angezeigt werden. Im Schnitt und in der Ansicht erscheint das Original als Schnittlinien der Netze mit der Ebene der Linie, nicht als Fassadenprojektion (offen)."
+        },
+        {
+          "id": "m1b-ifc-farben",
+          "titel": "IFC-Unterlage: Farben von Original und Nachbau",
+          "wo": {
+            "register": "Einfügen",
+            "gruppe": "Unterlagen",
+            "knopf": "Unterlagen verwalten › Farben …",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Unterlagen › Kontextmenü «Farben …» (nur IFC)"
+          },
+          "schritte": [
+            "Register Einfügen › Unterlagen › «Unterlagen verwalten» klicken.",
+            "In der Zeile der IFC-Unterlage «Farben …» klicken.",
+            "Original: Farbe wählen und die Deckkraft mit dem Regler auf 30 % stellen.",
+            "Nachbau: «Eigene Farbe und Deckkraft» ankreuzen, eine andere Farbe (z. B. Orange) wählen und die Deckkraft auf 40 % stellen.",
+            "«Übernehmen» klicken, dann in einer Ansicht «Beide übereinander» wählen."
+          ],
+          "erwartung": "Das Original (Netz der IFC-Datei) erscheint in Grundriss, Schnitt, Ansicht und 3D in der gewählten Farbe und Deckkraft (Vorgabe grau 50 %). Der Nachbau erscheint in seiner eigenen Farbe und Deckkraft: im Plan Linien und Füllungen ohne Schraffur, im 3D die Körper. Ohne Haken bei «Eigene Farbe und Deckkraft» bleibt der Nachbau in der normalen Darstellung.",
+          "pruefpunkte": [
+            "Original und Nachbau sind in «Beide übereinander» an ihrer Farbe zu unterscheiden.",
+            "Beide scheinen durch (Deckkraft unter 100 %).",
+            "Haken beim Nachbau entfernen: der Nachbau sieht wieder normal aus.",
+            "Die Farben gelten in allen Ansichten dieser Unterlage."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Dialog «Farben» und Grundriss",
+            "zustand": "Dialog mit Original blau 30 % und Nachbau orange 40 %, im Hintergrund der Grundriss mit beiden"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-einfuegen.js:376",
+            "src/Hlks.Kern/Grafik/IfcDarstellung.cs:62",
+            "kataloge/klassen.json (Unterlage: farbeOriginal, farbeNachbau, deckkraftNachbau)"
+          ],
+          "hinweis": "Im Plan gilt die Deckkraft des Nachbaus der Füllung; bei einer gefüllten Fläche bleibt die Kontur deckend. Eigenschaften: farbeOriginal, deckkraft, farbeNachbau, deckkraftNachbau (auch über die KI und den MCP-Server änderbar)."
         },
         {
           "id": "m1b-koordinaten",

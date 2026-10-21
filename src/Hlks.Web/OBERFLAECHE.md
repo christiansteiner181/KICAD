@@ -194,6 +194,20 @@ und meldet sie. Danach endet das Werkzeug.
 (IFC: Tabelle aus `lage`; andere Arten: Transformation), Kalibrieren (nicht bei IFC), Entfernen (der übliche Löschdialog mit Vorschau der Folgen).
 «Unterlagen verwalten» (Register Einfügen) zeigt dieselben Möglichkeiten als Liste.
 
+**IFC: Original oder Nachbau zeigen (N12, 21.10.2026):** eine IFC-Unterlage kennt zwei Darstellungen: das **Original** (das Netz aller Produkte der Datei) und den **Nachbau** (die daraus übernommenen Elemente, `kennungen.quelle` = Id der Unterlage).
+Welche eine Ansicht zeigt, steht an der Ansicht: Eigenschaft `ifcDarstellung` = `nachbau` (Vorgabe, wie bisher: Nachbau plus nicht übernommenes Original als Hintergrund) | `original` (Original aller Produkte; die Nachbau-Elemente dieser Unterlage
+entfallen in der Ansicht) | `beide` (übereinander zum Vergleichen). Bedienung: Register Ansicht › Grafik › **Sichtbarkeit/Grafiken** (VV) – oben die Auswahl «IFC-Unterlagen zeigen» (nur wenn das Projekt eine IFC-Unterlage hat und die Ansicht Grundriss, Schnitt,
+Ansicht oder 3D ist), oder die Eigenschaft in der Eigenschaftenpalette der Ansicht. Die Einstellung gehört zu den Einstellungen der Ansichtsvorlage (`VORLAGE_EINSTELLUNGEN`, ein Wert «nachbau» in der Vorlage setzt sie in der Ansicht zurück).
+Farben an der **Unterlage**: `farbeOriginal` (#rrggbb, Vorgabe grau #8a8a8a) mit `deckkraft` (Vorgabe 0.5) für das Original; `farbeNachbau` und `deckkraftNachbau` für den Nachbau (Vorgabe: leer = normale Darstellung, keine Übersteuerung). Bedienung: Dialog **«Farben …»**
+(Knopf in der Zeile der IFC-Unterlage in «Unterlagen verwalten», auch im Kontextmenü der Unterlage im Projektbrowser): Farbwähler und Deckkraft-Regler je für Original und Nachbau, beim Nachbau mit Haken «Eigene Farbe und Deckkraft» (ohne Haken: Eigenschaften leer).
+Wirkung: *Grundriss* – `GrundlagenIfc.Plan` schneidet je nach Modus nur den Hintergrund oder alle Produkte auf Schnitthöhe (zwei Zwischenspeicher je Datei); der Kern zeichnet den Nachbau in der Farbe der Unterlage (Linie und Füllung, Schraffur entfällt, Deckkraft der Füllung bzw.
+der Linie; der gemeinsame Wandumriss wird je Übersteuerung getrennt vereinigt). *Schnitt und Ansicht* – `Schnittgrafik`: das Original erscheint als Schnittlinien der Netze mit der Ebene der Schnittlinie (`GrundlagenIfc.SchnittSenkrecht`, dieselbe Schnittfunktion
+`Netzflaechen.Schneiden`), nur bei `original` und `beide`; der Nachbau in der Ansicht wird wie im Grundriss gefärbt. *3D* – `ifc-darstellung.js` (rein): `netzAuswahl(ansicht)` wählt `leseNetz({ nur })` (`hintergrund` bzw. `alle`; Zwischenspeicher `netze` je Unterlage mit
+`nur`), `filter.sichtbar(el, ansicht, nachId)` lässt den Nachbau bei `original` weg, `baueKoerper({ ueberschreiben })` färbt ihn; eine Änderung an der Unterlage baut nur deren Nachbau-Körper neu. Das Original in der Farbe der Unterlage kommt als Körperteil `netz` (`farbe`, `deckkraft`) vom Kern.
+Die Einstellung gilt nur in der Darstellung «standard» (Hülle, Aussparungs-, Einlage-, Koordinationsplan haben eigene Farben) und nur für angezeigte Unterlagen. Kollision, Aussparungen und IFC-Export lesen das Modell und bleiben unverändert.
+Offen: eine Projektion des Originals in der Ansicht (Fassade) statt der Schnittlinien; im Plan bleibt die Kontur einer gefüllten Fläche deckend, auch bei transparenter Füllung.
+Prüfen: `node --test js/ansichten/ifc-darstellung.test.mjs`, Kern `IfcDarstellungTests`, Browser `js/ansichten/ifc-darstellung.browser.mjs` (Port 5500, CDP 9500; `IFC=<Datei>` für echte Daten).
+
 **Koordinaten** (Register Verwalten, `verwalten.koordinaten`, nur lesend): ein Satz Erklärung, der Projektbezug (`ifcBezug` der Projektinformation) mit Quelle, Landeskoordinaten und Koordinationskörper,
 darunter alle IFC-Unterlagen mit Fassung, Ausrichtung und Abweichung (Klick auf eine Zeile = Lagebericht).
 
@@ -354,7 +368,7 @@ Fremde Änderungen kurz melden («Änderung von KI: 3 Elemente»).
   gelöscht) → alle Körper neu (`WIRKT_AUF_NACHBARN_KLASSEN`; seit 1c: Dach, weil «Decke läuft durch» die Wände auch unter einem Dach kürzt, und Geschoss, weil Kote und Höhe Wände, Decken und Dächer ändern). Koordinaten: three-y = Höhe z.
   - **Hintergrund-Netz (Modul 1b, C2):** Körperteil Art `netz` (`quelle` = Id der IFC-Unterlage). `baueKoerper` setzt nur einen leeren Halter (`userData.netz`); `ansicht3d.js` lädt die Netzdatei einmal je Unterlage
     (`GET /api/unterlagen/{id}/netz?v=<Dateiname>`, `fetch` → `arrayBuffer`), `netzdatei.js` (rein, ohne three und DOM; Format im Dateikopf und in `Hlks.Kern/Import/IfcNetz.cs`) liest sie mit `DataView` und führt
-    **nur die Hintergrund-Produkte (Kennzeichen 0)** zu EINER Geometrie zusammen (`leseNetz`: Punkte gleich in three-Metern, Indizes mit Versatz; die übernommenen zeichnet der Kern als Körper). Eine
+    **nur die Hintergrund-Produkte (Kennzeichen 0; seit N12 bei `ifcDarstellung` original/beide alle Produkte, Option `nur`)** zu EINER Geometrie zusammen (`leseNetz`: Punkte gleich in three-Metern, Indizes mit Versatz; die übernommenen zeichnet der Kern als Körper). Eine
     `BufferGeometry` je Unterlage im Zwischenspeicher `netze` (Schlüssel = Dateiname aus `werte.netz`); neu geladen wird nur, wenn sich der Dateiname ändert oder die Unterlage verschwindet (Ausblenden
     behält das Netz im Speicher). Mesh (`netzMesh`): Farbe und Deckkraft aus dem Körperteil (Vorgabe 0.5), `MeshLambertMaterial` doppelseitig, `flatShading` (keine Normalen nötig), `depthWrite` aus, `raycast` aus
     (nie ein Treffer, kein Hover – auch aus Leistungsgründen), `renderOrder −1`; `freigeben()` lässt die geteilte Geometrie stehen. Das Lesen läuft im Hauptstrang (Bernstrasse, 8 MB, 305 000 Dreiecke: ca. 80 ms);

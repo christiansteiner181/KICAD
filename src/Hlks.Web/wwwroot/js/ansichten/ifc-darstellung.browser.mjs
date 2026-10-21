@@ -167,8 +167,8 @@ const nachbauWaende = modell.filter((e) => e.klasse === 'Wand' && e.kennungen?.q
 pruef(nachbauWaende > 0, `Nachbau-Wände aus der Unterlage: ${nachbauWaende}`);
 
 // Ansichten: Grundriss, Schnitt, 3D
-// Schnittlinie von Süd nach Nord durch die Mitte der Wände des Erdgeschosses (der Umriss der Unterlage reicht über alle Geschosse und Nebenanlagen)
-const wp = modell.filter((e) => e.klasse === 'Wand' && e.geschoss === eg.id && e.geometrie?.punkte?.length).flatMap((e) => e.geometrie.punkte);
+// Schnittlinie von Süd nach Nord durch die Mitte der übernommenen Wände (der Umriss der Unterlage reicht über alle Geschosse und Nebenanlagen)
+const wp = modell.filter((e) => e.klasse === 'Wand' && e.kennungen?.quelle === ULID && e.geometrie?.punkte?.length).flatMap((e) => e.geometrie.punkte);
 const wx = wp.map((p) => p[0]).sort((p, q) => p - q), wy = wp.map((p) => p[1]);
 const mx = process.env.SCHNITT_X ? Number(process.env.SCHNITT_X) : (wx.length ? wx[Math.floor(wx.length / 2)] : 3000), y0 = (wy.length ? Math.min(...wy) : 0) - 1000, y1 = (wy.length ? Math.max(...wy) : 4000) + 1000;
 console.log('   Schnittlinie x =', mx, 'y', y0, '…', y1);
@@ -295,6 +295,19 @@ await warteBis(() => ausw(`return !!(await import('/js/zustand.js')).element('VL
 await ausw(`const z = await import('/js/zustand.js'); const r = await import('/js/oberflaeche/register.js'); r.ausfuehren('ansicht.vorlage-anwenden', { ansicht: z.element('AN-GR-N12').id, vorlage: 'VL-N12' }); return true;`);
 await warteBis(async () => ((await lesen('AN-GR-N12')).eigenschaften?.ifcDarstellung?.wert ?? null) === 'original', 'Grundriss übernimmt ifcDarstellung aus der Vorlage', 15000);
 pruef(true, 'Vorlage: Grundriss hat ifcDarstellung = original');
+
+// ================================================================== Prüfbild
+abschnitt('Prüfbild: beide, Original blau, Nachbau orange (Grundriss und 3D)');
+await sicher(await kern('befehl', 'element_aendern', { element: ULKZ, eigenschaften: { farbeOriginal: '#0066ff', deckkraft: 0.5, farbeNachbau: '#ff8000', deckkraftNachbau: 0.35 } }), 'Farben für das Prüfbild');
+await sicher(await kern('befehl', 'element_aendern', { element: 'AN-GR-N12', eigenschaften: { ifcDarstellung: 'beide' } }), 'Grundriss beide');
+await oeffnen('AN-GR-N12');
+await warte(3000 * Math.min(FAKTOR, 3));
+await shot('11_pruefbild_grundriss_beide');
+await sicher(await kern('befehl', 'element_aendern', { element: 'AN-3D-N12', eigenschaften: { ifcDarstellung: 'beide' } }), '3D beide');
+await oeffnen('AN-3D-N12');
+await warte(4000 * Math.min(FAKTOR, 3));
+await ausw(`const w = document.querySelector('.kachel.aktiv .d3-wurzel'); w?.dispatchEvent(new MouseEvent('dblclick')); return true;`);
+await shot('12_pruefbild_3d_beide');
 
 abschnitt('Keine Fehler im Browser');
 pruef(fehler.length === 0, 'keine Ausnahmen', fehler.join(' | '));
