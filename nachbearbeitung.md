@@ -162,3 +162,23 @@ Befund Christian 21.10.2026 (Grundriss, schräge Wand mit Kreuzschraffur): «sch
 Schraffurraster achsparallel zum Blatt. **Fertig, wenn** die Schraffur jeder Wand (und jedes Bauteils mit Achse) an der Wandachse
 ausgerichtet ist – auf dem Bildschirm, im PDF und im Schnitt –, bei gebogenen Wänden je Abschnitt, und Flächen ohne Achse (Decken,
 Räume) bleiben wie bisher.
+
+## N9 – Ausrichtung der Ansichten: nach Geometrie (Vorgabe) oder nach Himmelsrichtung
+
+Christian 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach himmelsrichtung oder nach geometrie ausgerichtet sein
+sollen. standard ist geometrie (längste Gebäudekante waagerecht)». Heute zeigt jede Ansicht das Projektsystem (Projekt-Nord = +y oben);
+bei schräg liegenden Gebäuden (Bernstrasse) steht der Grundriss schief. Entscheide Hauptlauf:
+- Neue Ansichtseigenschaft usrichtung: geometrie (Vorgabe) | himmelsrichtung. Gilt für Grundriss-artige Ansichten (Grundriss, Koordination,
+  Einlage/Aussparungsplan …); Schnitt und Ansicht folgen ihrer Linie, 3D und Schema/Liste sind nicht betroffen.
+- **geometrie:** Drehwinkel aus der längsten geraden Gebäudekante – Achse der längsten Aussenwand des Gebäudes (Angrenzung aussen, über alle
+  Geschosse), sonst der längsten Wand, sonst 0 – so gewählt, dass diese Kante waagrecht liegt und die Drehung klein bleibt (−45° … 45°).
+  Der Winkel wird am Gebäude gespeichert (planwinkel, Herkunft «längste Gebäudekante W-…, Länge, Richtung»), beim Import bzw. sobald Wände
+  da sind, und danach nur auf Befehl neu bestimmt oder von Hand gesetzt – die Ansichten springen nicht, wenn eine Wand dazukommt.
+- **himmelsrichtung:** geografisch Nord oben, Drehwinkel aus Projektinformation.nordwinkel (ohne Angabe 0, mit Hinweis).
+- Nur Darstellung: Modellkoordinaten bleiben. Alles in der Ansicht dreht mit (auch Unterlagen, Schnittlinien, Ausschnitt); Beschriftungen
+  bleiben lesbar (auf dem Bildschirm waagrecht); der Nordpfeil zeigt in beiden Fällen geografisch Nord.
+- Zeichnen in einer gedrehten Ansicht: Orthogonal-/Winkelfang und Koordinateneingabe beziehen sich auf die Ansichtsachsen (waagrecht
+  gezeichnet = parallel zur Gebäudekante); die Statusanzeige nennt Modellkoordinaten.
+- Plan-PDF und Planblatt übernehmen die Ausrichtung der Ansicht.
+**Fertig, wenn** Christian im Bernstrasse-Projekt den Grundriss gerade sieht (längste Kante waagrecht), auf «Himmelsrichtung» umschalten kann
+(Nord oben), Zeichnen, Fang und PDF in beiden Fällen stimmen und der Nordpfeil richtig zeigt.
