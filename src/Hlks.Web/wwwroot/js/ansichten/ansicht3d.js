@@ -179,6 +179,7 @@ function erstellen(behaelter, ansichtElement) {
     },
     meldung: (text, art) => { import('../oberflaeche/dialoge.js').then(({ meldung }) => meldung(text, art)).catch(() => {}); },
     vorRender: () => schnitt?.vorRender(),
+    schnittNeu: () => schnitt?.neueObjekte(),   // XR-H: nach dem Sitzungsraum die Ebenen des Schnittbereichs neu bewerten (pausiert im Begehen)
     beiBeendet: () => groesseAnpassen(),
   });
   const vrKnopf = vr.knopf();

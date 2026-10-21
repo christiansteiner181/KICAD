@@ -10511,7 +10511,7 @@
             "Einzelne Masslinie löschen: mit der offenen Hand schnell und waagrecht durch die Linie wischen (wie an der Wandtafel). Nur die getroffene Linie leuchtet kurz auf und verschwindet; ein Wisch ins Leere tut nichts. Mit der Faust, im Pinch oder am Tablet wischt es nicht.",
             "Hand schliessen oder wegdrehen: Das Tablet schliesst sich."
           ],
-          "erwartung": "Das Tablet ist eine durchscheinende Hologramm-Fläche (dunkler Grund hinter der Schrift, Cyan-Linien, leuchtender Rand), 14 cm über der linken Hand, dem Kopf zugewandt. Es zeigt oben die Eigenschaften des gewählten bzw. gegriffenen Elements. Rückgängig und Wiederholen wirken wie am PC. Die Messungen ändern das Modell nicht.",
+          "erwartung": "Das Tablet ist eine durchscheinende Hologramm-Fläche im Hochformat (15 Zoll, 22.9 × 30.5 cm; dunkler Grund hinter der Schrift, Cyan-Linien, leuchtender Rand), wie in der Hand gehalten: 2.5 cm über der linken Handfläche, etwas nach oben versetzt, dem Kopf zugewandt. Die Tasten stehen in zwei Spalten, unten «VR beenden». Es zeigt oben die Eigenschaften des gewählten bzw. gegriffenen Elements. Rückgängig und Wiederholen wirken wie am PC. Die Messungen ändern das Modell nicht.",
           "pruefpunkte": [
             "Das Tablet öffnet mit offener linker Hand und Handfläche zum Kopf, nicht bei Faust oder weggedrehter Hand.",
             "Es baut sich von der Hand aus auf und schliesst sich beim Schliessen bzw. Wegdrehen.",
@@ -10522,7 +10522,8 @@
             "Lot zur Fläche: Abstand zur Decke lotrecht, unabhängig davon, wo auf der Decke man den Punkt setzt.",
             "Wischgeste: Mit der offenen Hand schnell (mindestens 15 cm in 0,4 s) und waagrecht durch eine stehende Masslinie wischen löscht genau diese Messung; mehrere getroffene Linien verschwinden zusammen. Ein Wisch ins Leere, eine langsame oder senkrechte Bewegung, die Faust und der Pinch löschen nichts. Schwellen am Brillentest nachstellen.",
             "Ohne Handverfolgung öffnet Taste Y links das Tablet.",
-            "Tablet steht ruhig, wenn die Hand still gehalten wird; Hände ausgeblendet, Fingerpunkt sichtbar. Bei grösseren Bewegungen (über etwa 1,5 cm) folgt das Tablet weich; schliesst es, sind die Hände wieder da."
+            "Grösse und Lage: Das Tablet ist so gross wie ein 15-Zoll-Bildschirm im Hochformat und liegt wie in der Hand gehalten (2–3 cm über der Handfläche); die Hand trägt den unteren Teil. Alle Tasten sind in zwei Spalten gut lesbar und treffbar, keine Beschriftung ist gekürzt.",
+            "Tablet steht ruhig, wenn die Hand still gehalten wird; die linke Hand ist ausgeblendet, die rechte bleibt ganz sichtbar. Bei grösseren Bewegungen (über etwa 1,5 cm) folgt das Tablet weich; schliesst es, sind die Hände wieder da. Eine blosse Neigung der Hand bewegt das Tablet kaum (kleiner Hebel)."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -10551,8 +10552,9 @@
           "schritte": [
             "In VR das Tablet öffnen (linke Hand offen, Handfläche zum Kopf) und «Sitzungsraum» tippen. Das Begehen pausiert; man steht in einem dunklen Raum vor einem Glastisch, auf dem das Modell im Massstab 1:50 liegt.",
             "Etage wählen: Auf dem Tablet erscheinen «Alle Etagen» und die Geschosse des Modells. Ein Geschoss antippen: alles oberhalb wird weggeschnitten, man sieht von oben hinein. «Decke zeigen» legt den Schnitt über die Decke. «Alle Etagen» zeigt wieder alles.",
-            "Modell bewegen und drehen: Mit einer Hand nahe am Modell eine Faust machen (Controller: Grifftaste) und halten. Das Modell folgt der Hand und dreht sich mit ihr um die Senkrechte. Hand öffnen: loslassen.",
-            "Zoomen: Mit beiden Händen nahe am Modell eine Faust machen und die Hände auseinanderziehen (grösser) oder zusammenschieben (kleiner). Gezoomt wird um den Mittelpunkt zwischen den Händen, von 1:200 bis 1:20. Der Massstab steht als Hologramm-Schrift an der Tischkante.",
+            "Griffe: Links und rechts des Modells schweben zwei leuchtende Kugeln (Griffe). Mit Daumen und Zeigefinger (Pinch) einen Griff fassen: Der Pinch muss höchstens 5 cm vom Griff beginnen. Nähert sich die Hand, wird der Griff heller; gehalten leuchtet er deutlich. Controller: Abzug am Griff (Nähe oder Zielstrahl). Eine Faust greift nichts.",
+            "Modell bewegen, drehen und zoomen: Beide Griffe gleichzeitig halten (mit jeder Hand einen). Die Hände gemeinsam bewegen: das Modell wandert mit. Die Verbindungslinie der Hände drehen: das Modell dreht sich um die Senkrechte. Die Hände auseinanderziehen (grösser) oder zusammenschieben (kleiner): gezoomt wird um den Mittelpunkt zwischen den Händen, von 1:200 bis 1:20. Wird nur ein Griff gehalten, ruht das Modell. Der Massstab steht als Hologramm-Schrift an der Tischkante.",
+            "Ausschnitt (Aufträge «Raum zeigen (VR)» bzw. 3D-Ansicht in VR vom PC): Der Tisch zeigt nur den Raum plus 1,5 m Rand bzw. den Schnittbereich der 3D-Ansicht, im Massstab, der den Ausschnitt auf die Platte passt (meist 1:20). Auf dem Tablet steht «Alle Etagen» dann nicht auf Ein; antippen zeigt wieder das ganze Modell, eine Etage ersetzt den Ausschnitt.",
             "«IFC-Unterlage» schaltet die IFC-Unterlage zu (vorgabemässig aus). «Zurücksetzen» stellt Massstab, Lage und Drehung des Modells wieder auf den Anfang.",
             "Zurück: «Begehen» tippen. Man steht wieder am alten Standpunkt, die Darstellung ist wie vorher. «VR beenden» im Sitzungsraum beendet die Sitzung."
           ],
@@ -10562,8 +10564,12 @@
             "Das Modell liegt zu Beginn im Massstab 1:50 auf der Mitte der Platte, die IFC-Unterlage ist aus.",
             "Das Tablet zeigt «Alle Etagen» und alle Geschosse des Modells; die gewählte Etage ist hervorgehoben.",
             "Bei «EG» ist alles oberhalb der Decke des EG weggeschnitten, bei «1.OG» entsprechend höher; «Alle Etagen» zeigt wieder alles. «Decke zeigen» schneidet über der Decke.",
-            "Eine Hand: Das Modell folgt der Hand, dreht sich mit ihr und fällt nicht vom Tisch. Das Zufassen weit weg vom Modell greift nichts.",
-            "Zwei Hände: Auseinanderziehen vergrössert bis 1:20, Zusammenschieben verkleinert bis 1:200; die Stelle zwischen den Händen bleibt dort. Der Massstab an der Tischkante stimmt.",
+            "Zwei sichtbare Griffe stehen links und rechts des Modells (6 cm ausserhalb, 5 cm über der Platte) und wandern beim Verschieben, Drehen und Zoomen mit.",
+            "Griffe: Ein Pinch (Daumen und Zeigefinger) in höchstens 5 cm Abstand hält den Griff; er leuchtet deutlich, vorher beim Annähern heller. Eine Faust greift nichts; ein Pinch weit weg vom Griff greift nichts.",
+            "Ein gehaltener Griff allein bewegt das Modell nicht. Mit beiden Griffen: Verschieben, Drehen um die Senkrechte, und Auseinanderziehen vergrössert bis 1:20, Zusammenschieben verkleinert bis 1:200; die Stelle zwischen den Händen bleibt dort. Der Massstab an der Tischkante stimmt.",
+            "«Raum zeigen (VR)» (Grundriss, Rechtsklick auf einen Raum): Der Sitzungsraum zeigt nur den Raum plus 1,5 m; alles andere ist weggeschnitten, der Massstab passt den Ausschnitt auf die Platte. «Alle Etagen» zeigt wieder das ganze Modell.",
+            "«In VR begehen» in einer 3D-Ansicht ohne laufendes Begehen: Der Tisch zeigt das Modell mit den Filtern und dem Schnittbereich dieser Ansicht.",
+            "Nach «Begehen» bzw. dem Ende der VR-Sitzung ist der Schnittbereich der 3D-Ansicht wieder wie vorher: im Begehen ist er pausiert (kein Schwarz, auch wenn der Standpunkt ausserhalb des Quaders liegt), nach der Sitzung wirkt er wieder.",
             "«Zurücksetzen» bringt das Modell auf 1:50, ungedreht in die Mitte der Platte.",
             "«Begehen» stellt Standpunkt und Darstellung exakt wieder her (auch IFC-Unterlage und Schnittbereich der 3D-Ansicht).",
             "Die Bildrate bleibt flüssig (Quest 3); der Raum wirkt dunkel, kühl und technisch, ohne Logos."
@@ -10575,10 +10581,11 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/ansichten/xr-sitzung.js",
-            "src/Hlks.Web/wwwroot/js/ansichten/xr-sitzung-logik.js (einpassen, gestenSchritt, geschosseAufbereiten, schnittEbeneY, sitzungsLayout)",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-sitzung-logik.js (einpassen, griffPunkte, griffTreffer, gestenSchritt, ausschnittBezug, geschosseAufbereiten, schnittEbeneY, sitzungsLayout)",
+            "src/Hlks.Web/wwwroot/js/vr-start.js (Schritte ausschnitt und ganz), src/Hlks.Web/VrAuftrag.cs (ausschnitt, ansicht)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Teil XR-H»)"
           ],
-          "hinweis": "Ohne Gewähr, erste Fassung: Der Schnitt unter der Decke (statt über der Decke), das Aussehen des Raums, Tischhöhe und Abstand, die Gesten (Zufassen-Nähe 0.25 m, Drehung mit der Hand) und die Bildrate sind Annahmen und mit der Brille zu bestätigen. Gibt es im Modell keine Decke, schneidet «unter der Decke» auf der Oberkante des Geschosses. Ohne Brille geprüft mit Attrappen (xr-sitzung.browser.mjs)."
+          "hinweis": "Ohne Gewähr, erste Fassung: Der Schnitt unter der Decke (statt über der Decke), das Aussehen des Raums, Tischhöhe und Abstand, die Griffe (Lage 6 cm / 5 cm, Fangweite 5 cm, Grösse; ob ein Pinch bei gekrümmten Fingern als Faust zählt) und die Bildrate sind Annahmen und mit der Brille zu bestätigen. Gibt es im Modell keine Decke, schneidet «unter der Decke» auf der Oberkante des Geschosses. Ohne Brille geprüft mit Attrappen (xr-sitzung.browser.mjs)."
         },
         {
           "id": "zb-n17-treppe-grundriss",

@@ -146,17 +146,27 @@ public static class RaumBegehenAbfragen
 {
     public const string Text = "Standort zum «Raum begehen» (N15, Ich-Perspektive im 3D): Standpunkt in der Mitte des Raums (Schwerpunkt, bei L-förmigen Räumen der innerste Punkt), " +
         "Augenhöhe über OK Boden (Vorgabe 1700 mm), Blick waagrecht in Richtung der Gebäudeausrichtung (Planwinkel, N9), dazu Raumname und Geschoss. Rechnet nur, ändert nichts " +
-        "(das Begehen selbst ist eine Ansicht der Oberfläche).";
+        "(das Begehen selbst ist eine Ansicht der Oberfläche). Mit «rand» kommt zusätzlich «bereich»: der Quader von «Raum im 3D zeigen» (N14, Raum plus Rand in alle Richtungen, " +
+        "dieselbe Berechnung wie ansicht_raum_zeigen) für «Raum zeigen (VR)» – ohne den Schnittbereich einer Ansicht zu ändern.";
     public const string ParRaum = "Raum (Kennzeichen oder Id)";
     public const string ParAugenhoehe = "Augenhöhe über OK Boden in mm (300 … 5000, Vorgabe 1700)";
+    public const string ParRand = "Optional: Rand um den Raum in mm (0 … 100000, Vorgabe von «Raum im 3D zeigen» 1500); liefert zusätzlich «bereich» { aktiv, min, max, winkel } wie die Eigenschaft schnittbereich";
 
     public static readonly IReadOnlyList<AbfrageDef> Definitionen =
     [
-        new("raum_begehen", Text, [new("raum", "text", true, ParRaum), new("augenhoehe", "zahl", false, ParAugenhoehe)]),
+        new("raum_begehen", Text, [new("raum", "text", true, ParRaum), new("augenhoehe", "zahl", false, ParAugenhoehe), new("rand", "zahl", false, ParRand)]),
     ];
 
-    public static object? Tuer(Projekt p, string name, JsonObject par) =>
-        name == "raum_begehen"
-            ? RaumBegehen.Standort(p, p.Modell.HoleDerKlasse(Param.Text(par, "raum") ?? throw new HlksFehler("Parameter «raum» fehlt.", "Kennzeichen eines Raums angeben, z. B. \"R-1\"."), "Raum"), Param.Zahl(par, "augenhoehe"))
-            : null;
+    public static object? Tuer(Projekt p, string name, JsonObject par)
+    {
+        if (name != "raum_begehen") return null;
+        var raum = p.Modell.HoleDerKlasse(Param.Text(par, "raum") ?? throw new HlksFehler("Parameter «raum» fehlt.", "Kennzeichen eines Raums angeben, z. B. \"R-1\"."), "Raum");
+        var standort = RaumBegehen.Standort(p, raum, Param.Zahl(par, "augenhoehe"));
+        if (Param.Zahl(par, "rand") is double rand)
+        {
+            if (!(rand >= 0 && rand <= 100000)) throw new HlksFehler($"rand {rand} mm ist ungültig.", "Rand zwischen 0 und 100000 mm angeben (Vorgabe von «Raum im 3D zeigen» 1500).");
+            standort["bereich"] = Schnittbereich.AusRaeumen(p.Modell, p.Katalog, [raum], rand);
+        }
+        return standort;
+    }
 }

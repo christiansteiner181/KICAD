@@ -231,10 +231,37 @@ test('vr.webmanifest: Start auf /vr, eigenständig, Symbole 192 und 512 als PNG'
 
 // ------------------------------------------------------------------------------------------ VR-Auftrag vom PC
 test('auftragPruefen: gültige Aufträge, alles andere null', () => {
-  assert.deepEqual(L.auftragPruefen({ modus: 'begehen', raum: ID, geschoss: null, nr: 3, zeit: '2026-10-21T10:00:00Z' }), { modus: 'begehen', raum: ID, geschoss: null, nr: 3, zeit: '2026-10-21T10:00:00Z' });
+  assert.deepEqual(L.auftragPruefen({ modus: 'begehen', raum: ID, geschoss: null, nr: 3, zeit: '2026-10-21T10:00:00Z' }), { modus: 'begehen', raum: ID, geschoss: null, ausschnitt: false, ansicht: null, nr: 3, zeit: '2026-10-21T10:00:00Z' });
   assert.equal(L.auftragPruefen({ modus: 'sitzungsraum', geschoss: '1.OG', nr: 1 }).geschoss, '1.OG');
   for (const schlecht of [null, undefined, 'x', {}, { modus: 'fliegen', nr: 1 }, { modus: 'begehen', nr: 0 }, { modus: 'begehen', nr: 1.5 }, { modus: 'begehen', nr: '1' },
-    { modus: 'begehen', nr: 1, raum: '../x' }, { modus: 'sitzungsraum', nr: 1, geschoss: '<b>' }]) assert.equal(L.auftragPruefen(schlecht), null, JSON.stringify(schlecht));
+    { modus: 'begehen', nr: 1, raum: '../x' }, { modus: 'sitzungsraum', nr: 1, geschoss: '<b>' },
+    { modus: 'sitzungsraum', nr: 1, ansicht: '../x' }, { modus: 'begehen', nr: 1, ansicht: 'AN-3D' }, { modus: 'sitzungsraum', nr: 1, ansicht: 'AN-3D', raum: 'R-1' }]) assert.equal(L.auftragPruefen(schlecht), null, JSON.stringify(schlecht));
+});
+
+test('auftragPruefen: Ausschnitt gilt nur im Sitzungsraum mit Raum, Ansicht nur im Sitzungsraum ohne Raum', () => {
+  const r = L.auftragPruefen({ modus: 'sitzungsraum', raum: 'R-1', ausschnitt: true, nr: 2 });
+  assert.equal(r.ausschnitt, true); assert.equal(r.raum, 'R-1'); assert.equal(r.ansicht, null);
+  assert.equal(L.auftragPruefen({ modus: 'sitzungsraum', ausschnitt: true, nr: 2 }).ausschnitt, false, 'ohne Raum kein Ausschnitt');
+  assert.equal(L.auftragPruefen({ modus: 'begehen', raum: 'R-1', ausschnitt: true, nr: 2 }).ausschnitt, false, 'Begehen kennt keinen Ausschnitt');
+  assert.equal(L.auftragPruefen({ modus: 'sitzungsraum', raum: 'R-1', ausschnitt: 'ja', nr: 2 }).ausschnitt, false, 'nur true zählt');
+  const a = L.auftragPruefen({ modus: 'sitzungsraum', ansicht: ID, nr: 4 });
+  assert.equal(a.ansicht, ID); assert.equal(a.ausschnitt, false);
+});
+
+test('auftragSchritte: Raum zeigen und 3D-Ansicht, die Etage ersetzt den Ausschnitt, ein einfacher Auftrag im offenen Sitzungsraum zeigt wieder alles', () => {
+  const raum = { modus: 'sitzungsraum', raum: 'R-1', ausschnitt: true, nr: 5 }, ansicht = { modus: 'sitzungsraum', ansicht: 'AN-3D', nr: 6 };
+  assert.deepEqual(L.auftragSchritte(raum, { imSitzungsraum: false }), ['betreten', 'ausschnitt']);
+  assert.deepEqual(L.auftragSchritte(raum, { imSitzungsraum: true }), ['ausschnitt']);
+  assert.deepEqual(L.auftragSchritte(ansicht, { imSitzungsraum: false }), ['betreten', 'ausschnitt']);
+  assert.deepEqual(L.auftragSchritte(ansicht, { imSitzungsraum: true }), ['ausschnitt']);
+  assert.deepEqual(L.auftragSchritte({ ...raum, geschoss: '1.OG' }, { imSitzungsraum: true }), ['ausschnitt', 'etage'], 'die Etage kommt zuletzt');
+  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 7 }, { imSitzungsraum: true }), ['ganz']);
+  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', geschoss: '1.OG', nr: 7 }, { imSitzungsraum: true }), ['etage']);
+  assert.deepEqual(L.auftragNachStart(raum), ['betreten', 'ausschnitt']);
+  assert.deepEqual(L.auftragNachStart(ansicht), ['betreten', 'ausschnitt']);
+  assert.equal(L.auftragText(raum, { geschoss: 'EG', nummer: 'E.01', name: 'Wohnen' }), 'Raum zeigen · EG · E.01 Wohnen');
+  assert.equal(L.auftragText(ansicht, null, '', 'Ansicht Nord'), 'Sitzungsraum · 3D-Ansicht · Ansicht Nord');
+  assert.equal(L.auftragText({ modus: 'sitzungsraum', nr: 1 }), 'Sitzungsraum');
 });
 
 test('auftragNeu: nur eine höhere Nummer als die verbrauchte ist neu', () => {
@@ -255,7 +282,7 @@ test('auftragSchritte: Begehen und Sitzungsraum, mit und ohne offenen Sitzungsra
   assert.deepEqual(L.auftragSchritte(sitz, { imSitzungsraum: false }), ['betreten', 'etage']);
   assert.deepEqual(L.auftragSchritte(sitz, { imSitzungsraum: true }), ['etage']);
   assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 3 }, { imSitzungsraum: false }), ['betreten']);
-  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 3 }, { imSitzungsraum: true }), []);
+  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 3 }, { imSitzungsraum: true }), ['ganz']);
   assert.deepEqual(L.auftragSchritte({ modus: 'begehen', nr: 3 }, { imSitzungsraum: true }), ['verlassen']);
   assert.deepEqual(L.auftragSchritte({ modus: 'begehen', nr: 3 }, { imSitzungsraum: false }), []);
   assert.deepEqual(L.auftragSchritte(null), []);

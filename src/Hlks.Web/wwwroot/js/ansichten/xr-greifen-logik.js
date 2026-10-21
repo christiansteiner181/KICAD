@@ -162,10 +162,13 @@ export function befehlsMasse(offset) {
 }
 
 // ---------------------------------------------------------------------------------------------------- Tablet
-export const TABLET_B = 0.26;          // m
-export const TABLET_H = 0.195;         // m
-export const TABLET_ABSTAND = 0.08;    // m über der Handfläche (vorher 0.14; Christian 21.10.2026 nach dem Brillentest: «tablet etwas weiter weg» – 6 cm weiter vom Gesicht)
-export const TABLET_PX = { b: 512, h: 384 };
+// Christian 21.10.2026 beim Brillentest: «tablett soll auf handdistanz sein. 15" hochformat». 15 Zoll = 381 mm Diagonale, Seitenverhältnis 3:4 → 0.229 × 0.305 m, hochkant.
+export const TABLET_DIAGONALE_M = 0.381;                                  // m: 15 Zoll
+export const TABLET_B = Math.round(TABLET_DIAGONALE_M * 0.6 * 1e4) / 1e4;   // m: Breite = 3/5 der Diagonale (3-4-5-Dreieck, 3:4 hochkant): 0.2286
+export const TABLET_H = Math.round(TABLET_DIAGONALE_M * 0.8 * 1e4) / 1e4;   // m: Höhe: 0.3048
+export const TABLET_ABSTAND = 0.025;   // m über der Handfläche: das Tablet liegt wie in der Hand gehalten (vorher 0.08; 0.14 beim ersten Brillentest)
+export const TABLET_VERSATZ_OBEN = 0.08;   // m: die Mitte liegt so weit über der Handmitte (in Richtung «oben» des Tablets), damit die Hand den unteren Teil trägt
+export const TABLET_PX = { b: 480, h: 640 };   // Bildpunkte der Textur, im Verhältnis 3:4 hochkant (1 Bildpunkt ≈ 0.48 mm)
 export const BERUEHR_VOR = 0.015;
 export const BERUEHR_HINTER = 0.04;
 
@@ -180,10 +183,14 @@ export function tabletLageAus(mitte, normale) {
   return { mitte, normale: n, rechts, oben, b: TABLET_B, h: TABLET_H };
 }
 
-/** Lage des Tablets: über der Handfläche (in Richtung ihrer Normale), dem Kopf zugewandt, aufrecht. */
+/**
+ * Lage des Tablets: TABLET_ABSTAND über der Handfläche (in Richtung ihrer Normale) und TABLET_VERSATZ_OBEN nach oben versetzt (die Hand trägt den unteren Teil),
+ * dem Kopf zugewandt, aufrecht.
+ */
 export function tabletLage(mitte, normale, kopf) {
   const m = plus(mitte, mal(einheit(normale), TABLET_ABSTAND));
-  return tabletLageAus(m, minus(kopf, m));
+  const z = tabletLageAus(m, minus(kopf, m));
+  return tabletLageAus(plus(m, mal(z.oben, TABLET_VERSATZ_OBEN)), z.normale);
 }
 
 // ---- Beruhigen des Tablets (Rückmeldung nach dem ersten Brillentest, 21.10.2026: «tablet ist etwas nervös»). Alle Werte stellt Christian nach dem nächsten Brillentest nach.
@@ -271,27 +278,28 @@ export function tabletBeruehrung(lage, spitze) {
   return k.tiefe <= BERUEHR_VOR && k.tiefe >= -BERUEHR_HINTER ? { u: k.u, v: k.v, tiefe: k.tiefe } : null;
 }
 
-/** Tasten des Tablets in Bildpunkten (512 × 384): Kopf mit Eigenschaften oben, darunter Raster 3 × 4. */
+/** Tasten des Tablets in Bildpunkten (480 × 640, hochkant): Kopf mit Eigenschaften oben, darunter Raster 2 × 6. */
 export const TABLET_TASTEN = Object.freeze([
   { id: 'rueckgaengig', text: 'Rückgängig', spalte: 0, zeile: 0 },
   { id: 'wiederholen', text: 'Wiederholen', spalte: 1, zeile: 0 },
-  { id: 'messen', text: 'Messen', spalte: 2, zeile: 0, umschalter: true },
-  { id: 'hoeher', text: 'Augenhöhe +', spalte: 0, zeile: 1 },
-  { id: 'tiefer', text: 'Augenhöhe −', spalte: 1, zeile: 1 },
-  { id: 'messungenLoeschen', text: 'Messungen löschen', spalte: 2, zeile: 1 },
-  { id: 'schnitt', text: 'Schnittbereich', spalte: 0, zeile: 2, umschalter: true },
-  { id: 'ifc', text: 'IFC-Unterlage', spalte: 1, zeile: 2, umschalter: true },
-  { id: 'lot', text: 'Lot zur Fläche', spalte: 2, zeile: 2, umschalter: true },
-  { id: 'familie', text: 'Familie platzieren', spalte: 0, zeile: 3, platzhalter: true },
-  { id: 'problem', text: 'Problem markieren', spalte: 1, zeile: 3, platzhalter: true },
-  { id: 'raum', text: 'Sitzungsraum', spalte: 2, zeile: 3 },   // XR-H: wechselt in den Sitzungsraum (xr-sitzung.js), dort heisst die Taste «Begehen»
+  { id: 'messen', text: 'Messen', spalte: 0, zeile: 1, umschalter: true },
+  { id: 'lot', text: 'Lot zur Fläche', spalte: 1, zeile: 1, umschalter: true },
+  { id: 'hoeher', text: 'Augenhöhe +', spalte: 0, zeile: 2 },
+  { id: 'tiefer', text: 'Augenhöhe −', spalte: 1, zeile: 2 },
+  { id: 'messungenLoeschen', text: 'Messungen löschen', spalte: 0, zeile: 3 },
+  { id: 'schnitt', text: 'Schnittbereich', spalte: 1, zeile: 3, umschalter: true },
+  { id: 'ifc', text: 'IFC-Unterlage', spalte: 0, zeile: 4, umschalter: true },
+  { id: 'raum', text: 'Sitzungsraum', spalte: 1, zeile: 4 },   // XR-H: wechselt in den Sitzungsraum (xr-sitzung.js), dort heisst die Taste «Begehen»
+  { id: 'familie', text: 'Familie platzieren', spalte: 0, zeile: 5, platzhalter: true },
+  { id: 'problem', text: 'Problem markieren', spalte: 1, zeile: 5, platzhalter: true },
 ]);
-export const TABLET_KOPF_H = 112;     // px für Titel und Eigenschaften
+export const TABLET_KOPF_H = 118;     // px für Titel und Eigenschaften (Titel plus bis zu drei Zeilen)
 export const TABLET_ENDE = { id: 'ende', text: 'VR beenden' };
+export const TABLET_SPALTEN = 2;      // Tastenspalten (hochkant)
 
 /** Rechtecke aller Tasten in Bildpunkten (zuzüglich der Taste «VR beenden» unten). */
 export function tabletLayout() {
-  const rand = 14, spalten = 3, zeilen = 4, fussH = 38, luecke = 8;
+  const rand = 14, spalten = TABLET_SPALTEN, zeilen = 6, fussH = 44, luecke = 8;
   const raumH = TABLET_PX.h - TABLET_KOPF_H - fussH - rand;
   const bw = (TABLET_PX.b - 2 * rand - (spalten - 1) * luecke) / spalten, bh = (raumH - (zeilen - 1) * luecke) / zeilen;
   const tasten = TABLET_TASTEN.map((t) => ({ ...t, x: rand + t.spalte * (bw + luecke), y: TABLET_KOPF_H + t.zeile * (bh + luecke), w: bw, h: bh }));

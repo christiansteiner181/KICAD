@@ -219,7 +219,9 @@ test('Tablet-Geste: offene linke Hand, Handfläche zum Kopf; Wegdrehen und Faust
 test('Tablet-Treffer: Lage über der Hand, Fingerspitze und Strahl liefern (u, v) und die Taste', () => {
   const kopf = v(0, 1.7, 1);
   const lage = G.tabletLage(v(0, 1.1, 0), v(0, 1, 0), kopf);
-  nah(lage.mitte.y, 1.1 + G.TABLET_ABSTAND, 1e-9, 'über der Handfläche');
+  nah(M.abstand3(lage.mitte, M.plus(M.plus(v(0, 1.1, 0), M.mal(v(0, 1, 0), G.TABLET_ABSTAND)), M.mal(lage.oben, G.TABLET_VERSATZ_OBEN))), 0, 1e-9, 'TABLET_ABSTAND über der Handfläche, TABLET_VERSATZ_OBEN nach oben');
+  assert.ok(G.TABLET_ABSTAND >= 0.02 && G.TABLET_ABSTAND <= 0.03, 'auf Handdistanz: 2–3 cm');
+  nah(Math.hypot(G.TABLET_B, G.TABLET_H), 0.381, 1e-3, '15 Zoll Diagonale'); nah(G.TABLET_B / G.TABLET_H, 0.75, 1e-3, '3:4 hochkant'); assert.ok(G.TABLET_H > G.TABLET_B, 'Hochformat'); nah(G.TABLET_PX.b / G.TABLET_PX.h, G.TABLET_B / G.TABLET_H, 1e-9, 'Textur im Seitenverhältnis');
   nah(Math.hypot(lage.normale.x, lage.normale.y, lage.normale.z), 1, 1e-9);
   assert.ok(lage.normale.z > 0.5, 'dem Kopf zugewandt');
   nah(lage.rechts.x * lage.oben.x + lage.rechts.y * lage.oben.y + lage.rechts.z * lage.oben.z, 0, 1e-9, 'Rechts ⟂ Oben');

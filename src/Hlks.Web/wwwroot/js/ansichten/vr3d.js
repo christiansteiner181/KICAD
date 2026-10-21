@@ -26,7 +26,7 @@ const questDialogOeffnen = () => import('../oberflaeche/quest-dialog.js').then((
 
 /**
  * o: { wurzel, renderer, kamera, szene, modell (Gruppe der Körper), begehen (begehen3d.js), standortAusKamera() → Standort, anfordern(), meldung?(text, art),
- *      vorRender?() (Schnittbereich vor jedem Bild), beiBeendet?(), xr?() → navigator.xr (Vorgabe: navigator.xr), anbinden?(sitzung) → Promise }
+ *      vorRender?() (Schnittbereich vor jedem Bild), schnittNeu?() (Schnittbereich neu bewerten lassen), beiBeendet?(), xr?() → navigator.xr (Vorgabe: navigator.xr), anbinden?(sitzung) → Promise }
  * Rückgabe { knopf(), pruefen(), starten(standort?), beenden(), aktiv, kopf(), netzeAnwenden(), zustand(), api, zerstoeren() }
  */
 export function erzeugeVr(o) {
@@ -282,6 +282,8 @@ export function erzeugeVr(o) {
       boden: () => rig?.y ?? 0,
       ifc: { an: () => ifcAn, setzen: (an) => ifcSetzen(an) },
       anfordern: o.anfordern, meldung: o.meldung,
+      // nach dem Verlassen des Sitzungsraums: der Schnittbereich (N13) hängt seine Ebenen neu an bzw. nimmt sie weg (im Begehen pausiert er), der Durchgang (N22) bewertet neu
+      uebergeben: () => { o.schnittNeu?.(); begehen.neueObjekte(); },
     });
     api.sitzung = raum;   // Test-Naht
     xrWerk = erzeugeXr({

@@ -90,6 +90,19 @@ export function glowTextur(b = 256, h = 192) {
   return t;
 }
 
+/** Runder weicher Schein (Cyan, nach aussen ausklingend) für Griffe und Punkte; null ohne DOM. */
+export function rundSchein(g = 64) {
+  const c = leinwand(g, g);
+  if (!c) return null;
+  const ctx = c.getContext('2d');
+  const grad = ctx.createRadialGradient(g / 2, g / 2, 0, g / 2, g / 2, g / 2);
+  grad.addColorStop(0, 'rgba(200, 248, 255, 0.95)'); grad.addColorStop(0.25, 'rgba(56, 232, 255, 0.55)'); grad.addColorStop(1, 'rgba(56, 232, 255, 0)');
+  ctx.fillStyle = grad; ctx.fillRect(0, 0, g, g);
+  const t = new THREE.CanvasTexture(c);
+  t.colorSpace = THREE.SRGBColorSpace;
+  return t;
+}
+
 /** Etikett im Raum (Mass, Fangname): dunkler halbtransparenter Grund, Cyan-Schrift, leuchtender Rand. Rückgabe { sprite, setzen(text), freigeben() }. */
 export function etikett(text = '', { breite = 0.2, farbe = HOLO.hell } = {}) {
   const B = 512, H = 96;

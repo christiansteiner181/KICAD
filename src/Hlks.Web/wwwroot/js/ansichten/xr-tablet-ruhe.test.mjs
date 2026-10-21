@@ -51,7 +51,8 @@ test('eine Drehung der Hand um 20° wird gefolgt', () => {
   const ziel = G.tabletLage(v(0, 1.1, -0.3), kipp(20, 0), v(0, 1.6, 0.8));
   const ende = lagen[lagen.length - 1];
   assert.ok(M.abstand3(ende.mitte, ziel.mitte) < 0.015, `Mitte weicht ${(M.abstand3(ende.mitte, ziel.mitte) * 1000).toFixed(1)} mm ab`);
-  assert.ok(M.abstand3(ende.mitte, lagen[0].mitte) > 0.015, 'Tablet hat sich mit der Hand bewegt');   // Hebel TABLET_ABSTAND 0.08 m: 20° ≈ 2.8 cm
+  // Hebel TABLET_ABSTAND 0.025 m: 20° ≈ 0.9 cm, unter der Totzone – das Tablet bleibt bei der Handdrehung stehen (es folgt der Lage der Hand, nicht ihrer Neigung)
+  assert.ok(M.abstand3(ende.mitte, lagen[0].mitte) <= G.TABLET_TOTZONE_M, 'kleiner Hebel: die Neigung der Hand bewegt das Tablet kaum');
 });
 
 test('Öffnen übernimmt die erste Lage sofort; langsames Wandern wird nachgeführt', () => {

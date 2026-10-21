@@ -94,6 +94,69 @@ public class VrAuftragTests
         finally { Weg(o); }
     }
 
+    [Fact]
+    public async Task AusschnittUndAnsicht_WerdenGespeichertUndGelesen()
+    {
+        var o = NeuerOrdner();
+        try
+        {
+            using var s = new Server(o);
+            var (c1, j1) = await s.Post(new { modus = "sitzungsraum", raum = Id, ausschnitt = true });
+            Assert.Equal(HttpStatusCode.OK, c1);
+            Assert.True((bool)j1!["auftrag"]!["ausschnitt"]!);
+            Assert.Equal(Id, (string?)j1["auftrag"]!["raum"]);
+            var (c2, _) = await s.Post(new { modus = "sitzungsraum", ansicht = "AN-3D" });
+            Assert.Equal(HttpStatusCode.OK, c2);
+            var a = await s.Auftrag();
+            Assert.Equal("AN-3D", (string?)a!["ansicht"]);
+            Assert.False((bool)a["ausschnitt"]!);
+            Assert.Null(a["raum"]);
+            var (_, j3) = await s.Post(new { modus = "begehen", raum = Id });   // ohne Ausschnitt und Ansicht: beide leer
+            Assert.False((bool)j3!["auftrag"]!["ausschnitt"]!); Assert.Null(j3["auftrag"]!["ansicht"]);
+        }
+        finally { Weg(o); }
+    }
+
+    [Fact]
+    public async Task AusschnittUndAnsicht_UeberstehenEinenNeustart()
+    {
+        var o = NeuerOrdner();
+        try
+        {
+            using (var s = new Server(o)) await s.Post(new { modus = "sitzungsraum", raum = "R-1", ausschnitt = true });
+            using var neu = new Server(o);
+            var a = await neu.Auftrag();
+            Assert.True((bool)a!["ausschnitt"]!); Assert.Equal("R-1", (string?)a["raum"]);
+            await neu.Post(new { modus = "sitzungsraum", ansicht = Id });
+            using var nochmal = new Server(o);
+            Assert.Equal(Id, (string?)(await nochmal.Auftrag())!["ansicht"]);
+        }
+        finally { Weg(o); }
+    }
+
+    [Theory]
+    [InlineData("{\"modus\":\"sitzungsraum\",\"ansicht\":\"../x\"}")]                                  // ungültiges Muster
+    [InlineData("{\"modus\":\"sitzungsraum\",\"ansicht\":\"<script>\"}")]
+    [InlineData("{\"modus\":\"begehen\",\"ansicht\":\"AN-3D\"}")]                                      // Ansicht nur im Sitzungsraum
+    [InlineData("{\"modus\":\"sitzungsraum\",\"ansicht\":\"AN-3D\",\"raum\":\"R-1\"}")]               // Ansicht und Raum schliessen sich aus
+    [InlineData("{\"modus\":\"sitzungsraum\",\"ausschnitt\":true}")]                                   // Ausschnitt braucht einen Raum
+    [InlineData("{\"modus\":\"begehen\",\"raum\":\"R-1\",\"ausschnitt\":true}")]                       // und den Modus sitzungsraum
+    [InlineData("{\"modus\":\"sitzungsraum\",\"raum\":\"R-1\",\"ausschnitt\":\"ja\"}")]                // ausschnitt muss ein bool sein
+    public async Task UngueltigerAusschnittOderAnsicht_WirdAbgelehnt(string koerper)
+    {
+        var o = NeuerOrdner();
+        try
+        {
+            using var s = new Server(o);
+            await s.Post(new { modus = "begehen", raum = Id });
+            var (code, j) = await s.Post(koerper);
+            Assert.Equal(HttpStatusCode.BadRequest, code);
+            Assert.False(string.IsNullOrEmpty((string?)j!["fehler"]));
+            Assert.Equal(1, (long)(await s.Auftrag())!["nr"]!);
+        }
+        finally { Weg(o); }
+    }
+
     [Theory]
     [InlineData("{\"modus\":\"fliegen\"}")]
     [InlineData("{}")]
