@@ -448,7 +448,7 @@ public class IfcAbbildungTests
     [Fact]
     public void KlasseFuer_UnbekannteEntitaet_ErgibtNull_FalscherPredefinedType_AndereKlasseOderNull()
     {
-        Assert.Null(Abb.KlasseFuer("IFC4", "IfcStair", null, null, null));
+        Assert.Null(Abb.KlasseFuer("IFC4", "IfcRamp", null, null, null));
         Assert.Null(Abb.KlasseFuer("IFC4", "IfcFurniture", null, "NOTDEFINED", null));
         Assert.Null(Abb.KlasseFuer("IFC4", "IfcBuildingElementProxy", null, null, null));
         Assert.Null(Abb.KlasseFuer("IFC2X3", "IfcBuildingElementProxy", null, null, null));
