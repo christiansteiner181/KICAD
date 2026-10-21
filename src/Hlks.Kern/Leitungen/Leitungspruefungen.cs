@@ -1,4 +1,4 @@
-﻿// Leitungen (Modul 3, B1): Prüfungen P13, P14, P15 und P18 (Codes in Pruefungen.Codes; P16 Gefälle baut B2, P17 Schema B3; P29 freie Grösse).
+﻿// Leitungen (Modul 3, B1): Prüfungen P13, P14, P15 und P18 (Codes in Pruefungen.Codes; P16 Gefälle baut B2, P17 Schema B3; P29 freie Grösse; P30 Abwasser-Serie).
 //   P13 (warnung)  verbundene Anschlüsse mit Lage liegen > 1 mm auseinander bzw. zeigen nicht gegeneinander (> 1°) – entsteht
 //                  z. B. nach Verschieben oder beim IFC-Import (der verbindet nach seinen Ports ohne diese Prüfung).
 //   P14 (fehler)   verbundene Anschlüsse mit unterschiedlicher Grösse (Reduktion fehlt).
@@ -22,6 +22,10 @@
 //   P29 (Nachtrag freie Grösse, entwurf/freie-groesse-kanal.md): Leitung mit freier Grösse (FreieGroesse.Von) einer Kanalserie mit
 //   leitung.frei – ausserhalb der Grenzen → fehler; nicht im Schritt → hinweis (nur, wenn innerhalb der Grenzen). P14/P15 bleiben
 //   unverändert und vergleichen die tatsächlichen Grössen.
+//   P30 (Nachtrag Abwasser-Serie, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026: «Prüfbefund, wenn jemand sie für Heizung, Kälte
+//   oder Trinkwasser verwendet»): Leitung einer Serie mit leitung.einsatz abwasser, deren Medium keinen Systemtyp mit fliessart schwerkraft
+//   hat (Abwasser laut kataloge/systemtypen.json) → fehler «Abwasser-Serie für <Medium>»; ohne Medium → hinweis. Medium wie die Beschriftung:
+//   System der Leitung, sonst des Strangs, sonst der verbundenen Bauteile. Eine Meldung je Leitung (wie P16); Formteile nicht.
 
 namespace Hlks.Kern;
 
@@ -104,6 +108,8 @@ public static class Leitungspruefungen
             if (Knicke(e) is { Anzahl: > 0 } kn)
                 b.Add(new("P15", "hinweis", e.Kennzeichen, $"{e.Klasse} mit Serie hat {kn.Anzahl} Knick{(kn.Anzahl == 1 ? "" : "e")} in der Polylinie (bis {Z(kn.Max)}°) – je Gerade gehört ein Element mit Bogen dazwischen",
                     "leitung_aufteilen: macht aus der Polylinie Geraden mit Bögen der Serie"));
+            // P30: Abwasser-Serie (leitung.einsatz abwasser) nur in der Entwässerung
+            if (serie.Abwasser) AbwasserEinsatz(m, k, e, serie, b);
             // P29: freie Grösse innerhalb von Grenzen und Schritt der Serie
             if (serie.Frei is not null && FreieGroesse.Von(serie.Def, e, serie.Familie.Name ?? serie.Def.Name) is { } fg)
             {
@@ -163,6 +169,30 @@ public static class Leitungspruefungen
 
     /// <summary>Toleranz des Gefälles gegen den z-Verlauf (%-Punkte, ANNAHME Prüfliste 6).</summary>
     public const double GefaelleToleranz = 0.1;
+
+    /// <summary>Medium einer Leitung für P30: das Medium ihres Systems (eigenes, sonst des Strangs, sonst der verbundenen Bauteile –
+    /// wie die Beschriftung, Rohrgroessen.SystemVon); null = ohne System bzw. ohne Medium.</summary>
+    public static (string Medium, Element System)? MediumVon(Modell m, Katalog k, Element leitung) =>
+        Rohrgroessen.SystemVon(m, leitung) is { Klasse: "System" } sys && SchemaBefehle.MediumVon(k, sys) is { Length: > 0 } md ? (md, sys) : null;
+
+    /// <summary>P30 (Nachtrag Abwasser-Serie, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026): eine Leitung einer Abwasser-Serie
+    /// gehört in die Entwässerung – Medium, zu dem kein Systemtyp mit fliessart schwerkraft gehört (Katalog systemtypen.json) → fehler;
+    /// ohne Medium → hinweis.</summary>
+    static void AbwasserEinsatz(Modell m, Katalog k, Element e, Leitungsserie serie, List<Befund> b)
+    {
+        if (MediumVon(m, k, e) is not var (medium, sys))
+        {
+            b.Add(new("P30", "hinweis", e.Kennzeichen, $"{e.Klasse} der Abwasser-Serie {serie.Bezeichnung} ohne Medium (kein System) – ob sie in der Entwässerung liegt, ist offen",
+                "System bzw. Strang zuordnen (element_aendern system bzw. teilVon): Abwasser-Serien gehören in Schmutz- bzw. Regenwasser (Systemtyp mit fliessart schwerkraft)"));
+            return;
+        }
+        var typen = k.Systemtypen.Values.Where(st => string.Equals(st.Medium, medium, StringComparison.OrdinalIgnoreCase)).ToList();
+        if (typen.Any(st => st.Fliessart == "schwerkraft")) return;
+        var name = k.Medien.TryGetValue(medium, out var md) ? $"{md.Name} ({medium})" : medium;
+        var wie = typen.Count > 0 ? $"Systemtyp {string.Join(", ", typen.Select(st => st.Name))}, fliessart {string.Join(", ", typen.Select(st => st.Fliessart).Distinct())}" : "kein Systemtyp im Katalog";
+        b.Add(new("P30", "fehler", e.Kennzeichen, $"Abwasser-Serie {serie.Bezeichnung} für {name}: {e.Klasse} in {sys.Kennzeichen} ({wie}) – die Serie ist nur für die Entwässerung",
+            "Eine Serie für dieses Medium wählen (leitung_serie) oder die Leitung dem richtigen System zuordnen; Abwasser-Serien (leitung.einsatz abwasser) gehören in Schmutz- bzw. Regenwasser"));
+    }
 
     /// <summary>Die Leitung gehört zu einem System, dessen Systemtyp schwerkraft fliesst.</summary>
     public static bool Schwerkraft(Modell m, Katalog k, Element leitung) =>

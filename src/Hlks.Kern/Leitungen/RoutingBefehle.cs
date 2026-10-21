@@ -33,7 +33,7 @@ namespace Hlks.Kern;
 public static class RoutingBefehle
 {
     public const string ParSerie = "Leitungsserie: Familie der Kategorie Rohr bzw. Kanal (Kennzeichen, Name oder id)";
-    public const string ParGroesse = "Grösse der Serie: Typname (z. B. \"DN 20\", \"400x200\"), Zahl (Rohr DN, Kanal rund d) bzw. { \"dn\": 20 }, { \"d\": 160 } oder { \"b\": 400, \"h\": 200 } (mm); bei Kanalserien mit freier Grösse (leitung.frei) jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 } oder \"430x270\" (die Typen sind dann Vorschläge, leitungsserie nennt Grenzen und Schritt)";
+    public const string ParGroesse = "Grösse der Serie: Typname (z. B. \"DN 20\", \"400x200\"), Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { \"dn\": 20 }, { \"d\": 160 } oder { \"b\": 400, \"h\": 200 } (mm); Abwasser-Serien mit Grösse d (leitung.einsatz abwasser) nach Aussendurchmesser, z. B. { \"d\": 110 } oder \"d 110\" (keine DN nötig); bei Kanalserien mit freier Grösse (leitung.frei) jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 } oder \"430x270\" (die Typen sind dann Vorschläge, leitungsserie nennt Grenzen und Schritt)";
     public const string ParPunkte = "Verlauf in Fliessrichtung: [[x, y, z], …] in mm (Achse); jeder Knick wird ein Bogen der Serie";
     public const string ParVon = "Anschluss am Anfang: { element, anschluss } oder \"KENNZEICHEN.anschluss\" – der erste Punkt wird seine Lage (ohne Lage: logisch verbunden)";
     public const string ParNach = "Anschluss am Ende: { element, anschluss } oder \"KENNZEICHEN.anschluss\" – der letzte Punkt wird seine Lage (ohne Lage: logisch verbunden)";
@@ -49,9 +49,10 @@ public static class RoutingBefehle
 
     static string Z(double x, int stellen = 1) => Math.Round(x, stellen).ToString("0.###", CultureInfo.InvariantCulture);
 
-    /// <summary>Grösse einer Serie aus Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien
-    /// auch «430x270» bzw. «Ø 250» und jede Grösse innerhalb von Grenzen und Schritt (Rastertyp hat Vorrang, sonst virtuelle Grösse).
-    /// Abgelehnt mit Grund (Grenzen, Schritt) und Vorschlag (gerundete Grösse, nächste Normgrössen).</summary>
+    /// <summary>Grösse einer Serie aus Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } |
+    /// { b, h }; bei Abwasser-Serien nach Aussendurchmesser auch «d 110»; bei freien Kanalserien auch «430x270» bzw. «Ø 250» und jede Grösse
+    /// innerhalb von Grenzen und Schritt (Rastertyp hat Vorrang, sonst virtuelle Grösse). Abgelehnt mit Grund (Grenzen, Schritt) und
+    /// Vorschlag (gerundete Grösse, nächste Normgrössen). Eine DN wird nie in einen Aussendurchmesser umgerechnet.</summary>
     public static SerienGroesse Groesse(Leitungsserie s, JsonNode? n, string wer = "groesse")
     {
         if (n is null) throw new HlksFehler($"{wer} fehlt.", $"Grösse angeben: {s.GroessenText} ({ParGroesse}).");
@@ -60,14 +61,16 @@ public static class RoutingBefehle
         {
             if (s.Groesse(t.Trim()) is { Gueltig: true } sg) return sg;
             if (double.TryParse(t.Trim().Replace(',', '.'), NumberStyles.Float, CultureInfo.InvariantCulture, out var zahl)) n = JsonValue.Create(zahl);
-            else if (s.Frei is not null && Leitungsgroesse.AusText(t) is { } gt) ausText = gt;
+            else if ((s.Frei is not null || s.NachAussendurchmesser) && Leitungsgroesse.AusText(t) is { } gt) ausText = gt;
             else throw new HlksFehler($"Die Serie {s.Bezeichnung} hat keinen Typ «{t}».", $"Typen: {string.Join(", ", s.Groessen.Where(x => x.Gueltig).Select(x => x.Typ))}."
-                + (s.Frei is null ? "" : $" Freie Grösse als {s.GroessenForm} bzw. «430x270» – {s.FreiText}."));
+                + (s.Frei is null ? "" : $" Freie Grösse als {s.GroessenForm} bzw. «430x270» – {s.FreiText}.")
+                + (s.NachAussendurchmesser ? $" Grösse nach Aussendurchmesser als {s.GroessenForm}." : ""));
         }
-        // Zahl: Rohr DN, Kanal rund d
-        var g = ausText ?? (n is JsonValue zv && Json.Zahl(zv) is double z && s.Block.Groesse.ContainsKey("d") ? Leitungsgroesse.Lesen(new JsonObject { ["d"] = z }, wer) : Leitungsgroesse.Lesen(n, wer));
+        // Zahl: Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d
+        var g = s.Norm(ausText ?? (n is JsonValue zv && Json.Zahl(zv) is double z && s.Block.Groesse.ContainsKey("d") ? Leitungsgroesse.Lesen(new JsonObject { ["d"] = z }, wer) : Leitungsgroesse.Lesen(n, wer)));
         if (!s.PasstArt(g))
-            throw new HlksFehler($"Die Grösse {g} passt nicht zur Serie {s.Bezeichnung} ({s.Kategorie}, {s.Querschnitt}).", "Grösse angeben als " + s.GroessenForm + ".");
+            throw new HlksFehler($"Die Grösse {g} passt nicht zur Serie {s.Bezeichnung} ({s.Kategorie}, {s.Querschnitt}{(s.NachAussendurchmesser ? ", Abwasser-Serie nach Aussendurchmesser" : "")}).",
+                "Grösse angeben als " + s.GroessenForm + "." + (s.NachAussendurchmesser && g.Dn is not null ? " Eine DN wird nie in einen Aussendurchmesser umgerechnet." : ""));
         return s.Typ(g);
     }
 
@@ -254,19 +257,26 @@ public static class RoutingBefehle
         var formteile = new List<Element>();
         int abschnitt = 0;
         Leitungsgroesse? g0 = gNeu;
-        foreach (var gl in lauf.Glieder)
+        // Grösse in der Art der Serie: eine Abwasser-Serie nach Aussendurchmesser nimmt Leitungen mit DN über ihren Aussendurchmesser
+        // (Typ ihrer bisherigen Serie bzw. Leitung.da) – nie aus der DN gerechnet; sonst wie bisher
+        Leitungsgroesse GroesseIn(Element leitung) => s.GroesseFuer(m, kat, leitung);
+        // eine Reduktion der bisherigen Serie mit DN-Grössen: die Grösse danach ist die der nächsten Leitung im Lauf
+        Leitungsgroesse NachReduktion(int i, Leitungsgroesse aus) =>
+            s.PasstArt(aus) || lauf.Glieder.Skip(i + 1).FirstOrDefault(x => kat.IstArt(x.Element, "Leitung")) is not { } n ? aus : GroesseIn(n.Element);
+        for (int gi = 0; gi < lauf.Glieder.Count; gi++)
         {
+            var gl = lauf.Glieder[gi];
             var e = gl.Element;
             if (kat.IstArt(e, "Leitung"))
             {
                 geraden.Add((e, abschnitt));
-                if (g0 is null && Anschlusslagen.LeitungGroesse(m, kat, e) is { Leer: false } lg) g0 = lg;
+                if (g0 is null && GroesseIn(e) is { Leer: false } lg) g0 = lg;
             }
             else if (kat.IstArt(e, "Bogen"))
             {
                 pkt.Add(V3.Aus(Familien.Einfuegepunkt(e) ?? throw new HlksFehler($"{e.Kennzeichen} hat keine Lage.", "Bogen platzieren bzw. entfernen.")));
                 formteile.Add(e);
-                if (g0 is null && Stelle(e, gl.Ein) is { HatGroesse: true } bs) g0 = bs.Groesse;
+                if (g0 is null && Stelle(e, gl.Ein) is { HatGroesse: true } bs && s.PasstArt(bs.Groesse)) g0 = bs.Groesse;
                 abschnitt++;
             }
             else
@@ -276,8 +286,8 @@ public static class RoutingBefehle
                 var ein = Stelle(e, gl.Ein); var aus = Stelle(e, gl.Aus);
                 if (!ein.HatLage || !ein.HatGroesse || !aus.HatGroesse)
                     throw new HlksFehler($"Die Reduktion {e.Kennzeichen} hat keine Familie (keine Lage bzw. Grösse) – ihr Ort im Zug ist unklar.", "Reduktion aus einer Formteil-Familie setzen oder den Zug mit leitung_groesse auf eine Grösse bringen.");
-                g0 ??= ein.Groesse;
-                wechsel.Add(new Groessenwechsel(abschnitt, (V3.Aus(ein.Lage!) - pkt[^1]).Laenge, aus.Groesse));
+                if (s.PasstArt(ein.Groesse)) g0 ??= ein.Groesse;
+                wechsel.Add(new Groessenwechsel(abschnitt, (V3.Aus(ein.Lage!) - pkt[^1]).Laenge, NachReduktion(gi, aus.Groesse)));
             }
         }
         pkt.Add(nach is { HatLage: true } ? nach.Lage : Aussen(lauf.Glieder[^1], false));
@@ -308,7 +318,7 @@ public static class RoutingBefehle
 public sealed class LeitungZeichnen : IBefehl
 {
     public string Name => "leitung_zeichnen";
-    public const string Text = "Zeichnet eine Leitung wie in Revit (Modul 3): Serie (Leitungsserie = Familie Rohr bzw. Kanal) und Grösse wählen, Verlauf in Fliessrichtung angeben – je Gerade entsteht ein Rohr bzw. Kanal (zwei Punkte, Achse), am Knick ein Bogen der Serie (Winkel nach regeln.winkel, Toleranz ±0.5°; Steig- und Fallbögen voll ausgerichtet), an einem Anschluss anderer Grösse eine Reduktion; die Geraden enden an den Formteilen (um die Einbaulängen gekürzt) und alles wird streng verbunden. Mit von bzw. nach beginnt bzw. endet der Verlauf an diesem Anschluss (seine Lage wird übernommen; ohne Lage wird logisch verbunden). Mit gefaelle fallen waagrecht gezeichnete Stücke in Fliessrichtung, senkrechte behalten ihre Länge; endet bzw. beginnt der Verlauf an einem Anschluss, dessen Achse dem Gefälle folgt (z. B. am schrägen Abzweig c eines T-Stücks am Fallstrang), gilt das Stück daran als waagrecht gezeichnet, wenn sein Punkt zwischen der Waagrechten durch den Anschluss und dessen Achse liegt. Abgelehnt mit Vorschlag: Winkel nicht in der Serie, Gerade kürzer als die Einbaulängen, Formteil fehlt. Der Trockenlauf zeigt in den Hinweisen die Geraden mit Längen und die Formteile mit Typ und Winkel. Kanalserien mit freier Grösse (leitung.frei, z. B. Rechteckkanal nach Mass): jede Grösse b × h bzw. d innerhalb von Grenzen und Schritt (Normgrössen = Typen haben Vorrang, sonst familientyp = Vorlage und breite/hoehe = tatsächliche Grösse); die Formteile werden dann aus der Vorlage ihrer Familie mit den Grössen als Exemplarwerte gerechnet (Einbaulängen aus deren Formeln). Ausserhalb der Grenzen oder nicht im Schritt: abgelehnt mit gerundetem Vorschlag und Normgrössen.";
+    public const string Text = "Zeichnet eine Leitung wie in Revit (Modul 3): Serie (Leitungsserie = Familie Rohr bzw. Kanal) und Grösse wählen, Verlauf in Fliessrichtung angeben – je Gerade entsteht ein Rohr bzw. Kanal (zwei Punkte, Achse), am Knick ein Bogen der Serie (Winkel nach regeln.winkel, Toleranz ±0.5°; Steig- und Fallbögen voll ausgerichtet), an einem Anschluss anderer Grösse eine Reduktion; die Geraden enden an den Formteilen (um die Einbaulängen gekürzt) und alles wird streng verbunden. Mit von bzw. nach beginnt bzw. endet der Verlauf an diesem Anschluss (seine Lage wird übernommen; ohne Lage wird logisch verbunden). Mit gefaelle fallen waagrecht gezeichnete Stücke in Fliessrichtung, senkrechte behalten ihre Länge; endet bzw. beginnt der Verlauf an einem Anschluss, dessen Achse dem Gefälle folgt (z. B. am schrägen Abzweig c eines T-Stücks am Fallstrang), gilt das Stück daran als waagrecht gezeichnet, wenn sein Punkt zwischen der Waagrechten durch den Anschluss und dessen Achse liegt. Abgelehnt mit Vorschlag: Winkel nicht in der Serie, Gerade kürzer als die Einbaulängen, Formteil fehlt. Der Trockenlauf zeigt in den Hinweisen die Geraden mit Längen und die Formteile mit Typ und Winkel. Kanalserien mit freier Grösse (leitung.frei, z. B. Rechteckkanal nach Mass): jede Grösse b × h bzw. d innerhalb von Grenzen und Schritt (Normgrössen = Typen haben Vorrang, sonst familientyp = Vorlage und breite/hoehe = tatsächliche Grösse); die Formteile werden dann aus der Vorlage ihrer Familie mit den Grössen als Exemplarwerte gerechnet (Einbaulängen aus deren Formeln). Ausserhalb der Grenzen oder nicht im Schritt: abgelehnt mit gerundetem Vorschlag und Normgrössen. Abwasser-Serien mit Grösse d (leitung.einsatz abwasser): Grösse als Aussendurchmesser { \"d\": 110 } bzw. \"d 110\", keine DN nötig; die Formteile werden über d gewählt.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
@@ -354,7 +364,7 @@ public sealed class LeitungAbzweigen : IBefehl
     public const string ParRichtung = "Richtung des Abzweigs vom T-Stück weg [dx, dy, dz], unter einem erlaubten Abzweigwinkel der Serie (Vorgabe rechtwinklig), statt punkte";
     public const string ParLaenge = "Länge des Abzweigs ab der Achse der Leitung in mm (mit richtung); ohne laenge nur das T-Stück";
     public const string ParAbzweigPunkte = "Verlauf des Abzweigs vom T-Stück weg: [[x, y, z], …] in mm (der erste Punkt unter einem erlaubten Abzweigwinkel neben der Leitung, Vorgabe rechtwinklig; mit gefaelle waagrecht auf der Höhe des Abzweigpunkts)";
-    public const string ParAbzweigGroesse = "Grösse des Abzweigs (Vorgabe: Grösse der Leitung) – Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 250, \"h\": 200 }";
+    public const string ParAbzweigGroesse = "Grösse des Abzweigs (Vorgabe: Grösse der Leitung) – Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 250, \"h\": 200 }";
     public const string ParAbzweigSerie = "Serie des Abzweigs (Vorgabe: Serie der Leitung)";
     public const string ParEnde = "Anschluss am anderen Ende des Abzweigs: { element, anschluss } oder \"KENNZEICHEN.anschluss\"";
     public const string ParHaupt = "Gerade, an der abgezweigt wird (Kennzeichen oder Id)";
@@ -578,7 +588,7 @@ public sealed class LeitungAufteilen : IBefehl
     public const string Text = "Zerlegt bestehende Leitungen (Polylinien des Altbestands) in Geraden mit Bögen der Serie (Modul 3): je Gerade ein Element (die Leitung selbst bleibt das erste Stück, weitere heissen «<kennzeichen>-2», «-3» …), am Knick ein Bogen nach regeln.winkel (Toleranz ±0.5°). Serie und Grösse aus der Leitung (bezuege.familie, familientyp bzw. dn) oder aus den Parametern. Die Verbindungen an Anfang und Ende bleiben (an die neuen Enden umgehängt, Lage geprüft; passt sie nicht, bleibt sie logisch und P13/P14 melden es). Eine Leitung mit freier Grösse (Kanalserie mit leitung.frei) behält ihre tatsächliche Grösse (breite/hoehe bzw. durchmesser).";
     public string Beschreibung => Text;
     public const string ParSerie = "Leitungsserie (Kennzeichen, Name oder id); Vorgabe: die Serie der Leitung";
-    public const string ParGroesse = "Grösse der Serie (Vorgabe: Grösse der Leitung – familientyp bzw. bei freier Grösse breite/hoehe bzw. durchmesser, sonst dn) – Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt";
+    public const string ParGroesse = "Grösse der Serie (Vorgabe: Grösse der Leitung – familientyp bzw. bei freier Grösse breite/hoehe bzw. durchmesser, sonst dn; in eine Abwasser-Serie nach Aussendurchmesser über den Aussendurchmesser der Leitung, z. B. da aus dem IFC-Import, nie aus der DN gerechnet) – Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("leitung", "text", false, RoutingBefehle.ParLeitung),
@@ -606,10 +616,14 @@ public sealed class LeitungAufteilen : IBefehl
             else if (eigene?.Familie.Id == s.Familie.Id && s.GroesseVon(e) is { Gueltig: true } eg) sg = eg;   // Typ bzw. freie Grösse der Leitung
             else
             {
-                var g = Anschlusslagen.LeitungGroesse(m, kat, e);
+                // Abwasser-Serie nach Aussendurchmesser: eine Leitung ohne d (z. B. aus dem IFC-Import mit da, oder mit DN) über ihren
+                // Aussendurchmesser – nie aus der DN gerechnet (Leitungsserie.GroesseFuer)
+                var g = s.GroesseFuer(m, kat, e);
                 if (g.Leer) throw new HlksFehler($"{e.Kennzeichen} hat keine Grösse.", $"groesse angeben; Grössen der Serie: {s.GroessenText}.");
-                sg = s.TypFuer(g, out var grund) ?? throw new HlksFehler(s.Frei is null ? $"Die Serie {s.Bezeichnung} hat keine Grösse {g} (wie {e.Kennzeichen})." : $"{grund} (wie {e.Kennzeichen})",
-                    $"groesse angeben; Grössen: {s.GroessenText}.");
+                sg = s.TypFuer(g, out var grund) ?? throw new HlksFehler(s.Frei is null && !s.NachAussendurchmesser ? $"Die Serie {s.Bezeichnung} hat keine Grösse {g} (wie {e.Kennzeichen})." : $"{grund} (wie {e.Kennzeichen})",
+                    s.NachAussendurchmesser && g.Dn is not null
+                        ? $"groesse angeben ({s.GroessenForm}) oder den Aussendurchmesser an der Leitung nachtragen (da) – eine DN wird nie in einen Aussendurchmesser umgerechnet; Grössen: {s.GroessenText}."
+                        : $"groesse angeben; Grössen: {s.GroessenText}.");
             }
             var hinweise = new List<string>();
             var pkt = pts.Select(V3.Aus).ToList();
@@ -646,7 +660,7 @@ public sealed class LeitungGroesseAendern : IBefehl
         new("zug", "bool", false, RoutingBefehle.ParZug),
         new("groesse", "objekt", true, ParGroesse),
     ];
-    public const string ParGroesse = "Neue Grösse der Serie: Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 } oder \"430x270\"";
+    public const string ParGroesse = "Neue Grösse der Serie: Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 } oder \"430x270\"";
 
     public void Ausfuehren(Kontext k, JsonObject p) => RoutingBefehle.ZugAendern(k, p, Name, null, p["groesse"] ?? throw new HlksFehler("Parameter «groesse» fehlt.", RoutingBefehle.ParGroesse));
 }
@@ -654,7 +668,7 @@ public sealed class LeitungGroesseAendern : IBefehl
 public sealed class LeitungSerieAendern : IBefehl
 {
     public string Name => "leitung_serie";
-    public const string Text = "Ändert die Serie von Geraden bzw. eines ganzen Leitungszugs (Modul 3): die Grössen bleiben (müssen in der neuen Serie vorkommen), Bögen und Reduktionen werden durch die Formteile der neuen Serie ersetzt (Lage neu, Geraden neu gekürzt), Winkel müssen in der neuen Serie erlaubt sein; an den Grenzen werden Reduktionen nach Bedarf eingesetzt. Leitungszug wie bei leitung_groesse. Eine freie Grösse (Kanalserie mit leitung.frei) bleibt nur, wenn die neue Serie sie als Typ oder als freie Grösse innerhalb ihrer Grenzen und ihres Schritts hat.";
+    public const string Text = "Ändert die Serie von Geraden bzw. eines ganzen Leitungszugs (Modul 3): die Grössen bleiben (müssen in der neuen Serie vorkommen; in eine Abwasser-Serie nach Aussendurchmesser kommen Leitungen mit DN über ihren Aussendurchmesser – Typ ihrer bisherigen Serie bzw. da –, nie aus der DN gerechnet), Bögen und Reduktionen werden durch die Formteile der neuen Serie ersetzt (Lage neu, Geraden neu gekürzt), Winkel müssen in der neuen Serie erlaubt sein; an den Grenzen werden Reduktionen nach Bedarf eingesetzt. Leitungszug wie bei leitung_groesse. Eine freie Grösse (Kanalserie mit leitung.frei) bleibt nur, wenn die neue Serie sie als Typ oder als freie Grösse innerhalb ihrer Grenzen und ihres Schritts hat.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [

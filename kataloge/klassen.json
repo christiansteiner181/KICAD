@@ -225,7 +225,9 @@
       { "name": "da", "typ": "zahl", "einheit": "mm", "beschreibung": "Aussendurchmesser des Rohrs. Bei Abwasser (Schmutz-, Regen-, Mischabwasser) ist er die Grössenbezeichnung in Plan, Schema und allen Exporten: «PE-S 110», Grösse 110 (Entscheid Christian 19.10.2026: «praxisorientiert werden Ablaufrohre immer mit dem Aussendurchmesser definiert», DA = 110 → 110). Quelle: Familientyp der Leitungsserie, sonst die Datei (IFC: Pset bzw. Rohrkörper); nie aus einer Nennweite gerechnet und umgekehrt keine Nennweite aus da." },
       { "name": "verlegung", "typ": "auswahl", "auswahl": [ "auto", "frei", "einlage", "erdreich" ], "beschreibung": "Verlegung (Modul 3, Nachtrag B8c, Entscheid Christian 19.10.2026): auto (Vorgabe) = aus der Lage erkannt – Achse überwiegend im Beton einer Decke, Bodenplatte oder Wand = einlage, unter der Bodenplatte = erdreich, sonst frei; von Hand gesetzt bleibt der Wert. Einlagen liegen im Strangschema im Deckenband und erscheinen nur im Einlageplan, Leitungen im Erdreich nur im Grundleitungsplan." } ] },
   { "name": "Rohr", "kuerzel": "RO", "basis": "Leitung", "ifc": "IfcPipeSegment", "bkpJeGewerk": { "sanitaer": "254", "heizung": "243" },
-    "beschreibung": "Rohrabschnitt mit Verlauf als Polylinie (mm)." },
+    "beschreibung": "Rohrabschnitt mit Verlauf als Polylinie (mm).",
+    "eigenschaften": [
+      { "name": "durchmesser", "typ": "zahl", "einheit": "mm", "beschreibung": "Aussendurchmesser als Grösse eines Rohrs einer Abwasser-Serie nach Aussendurchmesser (Familie mit leitung.einsatz abwasser und Grösse d; Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser», Beschriftung z. B. «PE 110»). Kommt aus dem Typ der Serie (Herkunft familie); DN-geführte Rohre führen stattdessen dn. Nie aus einer DN gerechnet und nie eine DN daraus – eine DN des Herstellers steht nur als dn aus der Serie (Typparameter mit ziel dn)." } ] },
   { "name": "Kanal", "kuerzel": "KA", "basis": "Leitung", "ifc": "IfcDuctSegment", "gewerk": "lueftung", "bkp": "244",
     "beschreibung": "Lüftungskanal mit Verlauf als Polylinie (mm).",
     "eigenschaften": [

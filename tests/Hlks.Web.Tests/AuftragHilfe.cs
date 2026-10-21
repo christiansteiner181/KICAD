@@ -86,6 +86,10 @@ public sealed class AuftragServer : IDisposable
     public static string Quelldatei(params string[] teile)
     {
         var rel = Path.Combine(teile);
+        // Arbeitskopie zuerst (Agent-Worktree, Prüfstand stand_pruefen.ps1): HLKS_KATALOG zeigt auf <Arbeitskopie>\kataloge
+        if (Environment.GetEnvironmentVariable("HLKS_KATALOG") is { Length: > 0 } kat
+            && Path.GetDirectoryName(Path.GetFullPath(kat).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)) is { } ak
+            && Path.Combine(ak, rel) is var pa && File.Exists(pa)) return pa;
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
             foreach (var p in new[] { Path.Combine(d.FullName, rel), Path.Combine(d.FullName, "HLKS_CAD", rel) })
                 if (File.Exists(p)) return p;

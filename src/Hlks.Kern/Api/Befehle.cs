@@ -632,7 +632,7 @@ public sealed class LeitungZiehen : IBefehl
     public const string Text = "Zieht eine Leitung (Rohr oder Kanal) entlang von Punkten in Fliessrichtung und verbindet Anfang und Ende auf Wunsch mit bestehenden Anschlüssen – in einem Schritt. Mit serie und groesse bekommt die Leitung Serie und Grösse (bezuege.familie, familientyp, dn bzw. breite/hoehe/durchmesser) – sie bleibt eine Polylinie ohne Bögen (leitung_aufteilen setzt sie, leitung_zeichnen zeichnet mit Bögen); bei Kanalserien mit freier Grösse (leitung.frei) jede Grösse innerhalb von Grenzen und Schritt.";
     public string Beschreibung => Text;
     public const string ParSerie = "Leitungsserie (Familie Rohr bzw. Kanal; Kennzeichen, Name oder id) – optional; klasse folgt dann der Serie";
-    public const string ParGroesse = "Grösse der Serie (mit serie Pflicht): Typname, Zahl (Rohr DN, Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 }";
+    public const string ParGroesse = "Grösse der Serie (mit serie Pflicht): Typname, Zahl (Rohr DN, Abwasser-Serie nach Aussendurchmesser bzw. Kanal rund d) bzw. { dn } | { d } | { b, h }; bei freien Kanalserien jede Grösse innerhalb von Grenzen und Schritt, z. B. { \"b\": 430, \"h\": 270 }";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("system", "text", false, "System (Kennzeichen); entfällt, wenn strang angegeben ist"),

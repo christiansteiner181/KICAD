@@ -12,8 +12,13 @@
 // – SchemaBefehle.Vorlagen, Katalog systemtypen.json). Das Medium kommt aus System.medium bzw. dem Systemtyp (SchemaBefehle.MediumVon),
 // bei Leitungen ohne eigenes System aus dem System des Strangs bzw. der verbundenen Bauteile.
 //
+// Abwasser-Serie (Nachtrag Modul 3, entwurf/abwasser-serie.md; Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»): Rohre einer
+// Serie mit leitung.einsatz = abwasser sind immer Abwasser im Sinn dieser Datei – Beschriftung «{kuerzel} {da}» («PE 110»), unabhängig vom
+// Medium (P30 meldet die Serie in einem anderen Medium). Bei Grösse d ist d der Aussendurchmesser.
+//
 // Woher die Zahl kommt (nie umgerechnet – Normwerte):
-//   da:  1. Typ der Leitungsserie (Aussendurchmesser der Grösse), 2. Eigenschaft Leitung.da (Katalog; IFC-Import mit Herkunft).
+//   da:  1. Typ der Leitungsserie (Abwasser-Serie mit Grösse d: d; sonst Aussendurchmesser der Grösse), 2. Eigenschaft Leitung.da (Katalog;
+//        IFC-Import mit Herkunft), 3. Rohr.durchmesser (Abwasser-Serie nach Aussendurchmesser, Serie nicht auswertbar).
 //   dn:  1. Typ der Leitungsserie (Grössenschlüssel dn), 2. Eigenschaft Leitung.dn.
 //   Nie da aus DN gerechnet und nie DN aus da; fehlt die Zahl, gibt es keine Grösse (Beschriftung null) und einen Hinweis. Nie auf Ø ausweichen.
 // Kürzel: Block leitung.kuerzel der Serie. Rohre ohne Serie (Fremddatei): bei Abwasser das Material, wenn die Datei es nennt (Herkunft ifc) und
@@ -55,7 +60,7 @@ public static class Rohrgroessen
     }
 
     /// <summary>System der Leitung: eigenes, sonst das des Strangs, sonst das erste der verbundenen Bauteile.</summary>
-    static Element? SystemVon(Modell m, Element e) =>
+    public static Element? SystemVon(Modell m, Element e) =>
         m.Finde(e.System) ?? (m.Finde(e.TeilVon) is { } st ? (m.Finde(st.System) ?? m.Finde(st.TeilVon)) : null) ?? Netz.SystemeVon(m, e).FirstOrDefault();
 
     /// <summary>Leitung der Entwässerung (Medium Schmutz- oder Regenwasser)?</summary>
@@ -69,9 +74,15 @@ public static class Rohrgroessen
     /// beides fehlt. Nie aus DN gerechnet. Für Abwasser die Grösse, für die Bausteine im Einlageplan («KW: B.n.o Ø16») jedes Rohr.</summary>
     public static (double Da, string Quelle)? Aussendurchmesser(Projekt p, Element e)
     {
-        if (HlksMasse.Serie(p, e) is { Kategorie: "Rohr" } s && s.Werte.Aussen is double sa && sa > 0)
-            return (sa, $"Serie {s.SerieName}, Typ {s.Typ}");
-        return e.Zahl("da") is double da && da > 0 ? (da, "Leitung.da") : null;
+        if (HlksMasse.Serie(p, e) is { Kategorie: "Rohr" } s)
+        {
+            // Abwasser-Serie nach Aussendurchmesser (Nachtrag): die Grösse d ist der Aussendurchmesser
+            if (s.Abwasser && s.Werte.Groesse.TryGetValue("d", out var sd) && sd > 0) return (sd, $"Serie {s.SerieName}, Typ {s.Typ}");
+            if (s.Werte.Aussen is double sa && sa > 0) return (sa, $"Serie {s.SerieName}, Typ {s.Typ}");
+        }
+        if (e.Zahl("da") is double da && da > 0) return (da, "Leitung.da");
+        // Rohr mit Grösse d (Abwasser-Serie nach Aussendurchmesser) ohne auswertbare Serie: durchmesser ist der Aussendurchmesser
+        return e.Klasse != "Kanal" && e.Zahl("durchmesser") is double dm && dm > 0 ? (dm, "Leitung.durchmesser") : null;
     }
 
     /// <summary>Beschriftung aus den Einzelteilen (für die Abfrage einer Leitungsserie, die ihr Medium nicht kennt).</summary>
@@ -87,7 +98,8 @@ public static class Rohrgroessen
     public static Rohrgroesse Von(Projekt p, Element? ansicht, Element e)
     {
         var serie = HlksMasse.Serie(p, e) is { Kategorie: "Rohr" } s ? s : null;
-        if (IstAbwasser(p, e))
+        // Abwasser-Serie (leitung.einsatz abwasser, Entscheid Christian 20.10.2026): immer nach Aussendurchmesser, unabhängig vom Medium
+        if (serie is { Abwasser: true } || IstAbwasser(p, e))
         {
             var kuerzel = serie is not null ? serie.Kuerzel : MaterialKuerzel(e);
             if (Aussendurchmesser(p, e) is var (da, quelle))

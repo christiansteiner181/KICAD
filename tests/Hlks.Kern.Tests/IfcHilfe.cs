@@ -12,6 +12,9 @@ static class IfcHilfe
     /// Raum 1.01 «Wohnen» 4 × 3 m, 2.5 m hoch).</summary>
     public static string Testdaten(string name)
     {
+        // Arbeitskopie zuerst (Agent-Worktree, Prüfstand stand_pruefen.ps1): HLKS_KATALOG zeigt auf <Arbeitskopie>\kataloge – deren
+        // tests\daten gilt vor dem OneDrive-Hauptordner, sonst prüfen die Tests neue Testdateien einer Arbeitskopie nicht
+        if (Arbeitskopie() is { } ak && Path.Combine(ak, "tests", "daten", name) is var pa && File.Exists(pa)) return pa;
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
         {
             foreach (var p in new[] { Path.Combine(d.FullName, "tests", "daten", name), Path.Combine(d.FullName, "HLKS_CAD", "tests", "daten", name) })
@@ -19,6 +22,16 @@ static class IfcHilfe
         }
         var bekannt = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "OneDrive", "Claude_Code", "HLKS_CAD", "tests", "daten", name);
         return File.Exists(bekannt) ? bekannt : throw new FileNotFoundException("Testdatei nicht gefunden: " + name);
+    }
+
+    /// <summary>Wurzel der Arbeitskopie aus HLKS_KATALOG (= «&lt;Arbeitskopie&gt;\kataloge», gesetzt für Läufe in einer eigenen
+    /// Arbeitskopie) oder null.</summary>
+    public static string? Arbeitskopie()
+    {
+        var kat = Environment.GetEnvironmentVariable("HLKS_KATALOG");
+        if (string.IsNullOrWhiteSpace(kat)) return null;
+        var voll = Path.GetFullPath(kat).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        return Path.GetDirectoryName(voll) is { } w && Directory.Exists(Path.Combine(w, "tests", "daten")) ? w : null;
     }
 
     /// <summary>Echte Projektdatei aus %USERPROFILE%\HLKS_CAD_testdaten (Bernstrasse 42, BKW Hauptsitz) oder null, wenn
