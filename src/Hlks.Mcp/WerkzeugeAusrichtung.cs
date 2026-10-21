@@ -1,8 +1,9 @@
-// MCP-Werkzeuge der Ausrichtung der Grundrisse (Nachbearbeitung N9): planwinkel (Abfrage), planwinkel_bestimmen (Befehl).
+// MCP-Werkzeuge der Ausrichtung der Grundrisse (Nachbearbeitung N9): planwinkel (Abfrage), planwinkel_bestimmen (Befehl); N14: ansicht_raum_zeigen (Befehl).
 // Dünne Hülle über dem Kern wie in Werkzeuge.cs; Name, Beschreibung und Parameter stehen genau so im Kern (Architektur/Planwinkel.cs).
 // Die Ausrichtung einer Ansicht selbst (geometrie | himmelsrichtung) setzt element_aendern (Eigenschaft ausrichtung).
 
 using System.ComponentModel;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hlks.Kern;
 using ModelContextProtocol.Server;
@@ -22,4 +23,12 @@ public sealed partial class Werkzeuge
         [Description("Gebäude (Kennzeichen); fehlt es, alle Gebäude")] string? gebaeude = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("planwinkel_bestimmen", Parameter(("gebaeude", gebaeude)), trockenlauf);
+
+    [McpServerTool(Name = "ansicht_raum_zeigen"), Description(AnsichtRaumZeigen.Text)]
+    public string AnsichtRaumZeigenWerkzeug(
+        [Description(AnsichtRaumZeigen.ParRaum)] JsonElement raum,
+        [Description(AnsichtRaumZeigen.ParAnsicht)] string? ansicht = null,
+        [Description(AnsichtRaumZeigen.ParRand)] double? rand = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("ansicht_raum_zeigen", Parameter(("raum", raum), ("ansicht", ansicht), ("rand", rand)), trockenlauf);
 }

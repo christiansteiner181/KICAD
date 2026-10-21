@@ -2,10 +2,12 @@
 // Ansichtsvorlagen speichern und anwenden, Fensteranordnung (WT, WC, eigenes Fenster), Zoom (ZF, ZA), Design hell/dunkel.
 // Eine Ansicht ist ein Element der Klasse Ansicht; alles läuft über element_anlegen / element_aendern.
 
-import { zustand, element, derKlasse } from '../zustand.js';
+import { zustand, element, derKlasse, abonnieren } from '../zustand.js';
 import * as fenster from '../fenster.js';
 import { registrieren } from './register.js';
-import { zeigen, meldung, eingabe } from './dialoge.js';
+import { zeigen, meldung, eingabe, kontextmenue } from './dialoge.js';
+import { benutzerWert, benutzerSetzen } from './benutzer.js';
+import { RAND_RAUM, RAND_RAUM_SCHLUESSEL } from '../ansichten/schnittbereich-logik.js';
 import { sende, ergebnisMelden } from './befehle.js';
 import { design, designUmschalten } from './design.js';
 import { einlageplanDialog } from './einlageplaene-dialog.js';
@@ -339,6 +341,116 @@ registrieren({
     const geb = p?.gebaeude ?? element(element(a?.geschoss)?.teilVon)?.kennzeichen ?? null;
     const r = await sende('planwinkel_bestimmen', geb ? { gebaeude: geb } : {});
     ergebnisMelden(r, (r.hinweise ?? []).filter(Boolean).join(' ') || 'Planwinkel bestimmt.');
+  },
+});
+
+// N13: 3D-Schnittbereich (wie Revit) – Schalter, an Auswahl anpassen, auf Geschoss, zurücksetzen. Gerechnet und gezeichnet wird in der 3D-Ansicht
+// (ansichten/schnittbereich3d.js), gespeichert als Eigenschaft schnittbereich der Ansicht über den Kern. Die Aktionen arbeiten an der aktiven 3D-Ansicht.
+const ansicht3dVon = (p) => { const a = ansichtVon(p); return a && a.werte?.art === '3d' ? a : null; };
+const KEINE_3D = 'Zuerst eine 3D-Ansicht öffnen (der 3D-Schnittbereich gehört zur 3D-Ansicht).';
+/** Öffnet die 3D-Ansicht (oder holt sie nach vorn) und gibt ihre Instanz zurück; null, wenn sie nicht zu öffnen ist (z. B. eigenes Fenster). */
+async function instanz3d(a) {
+  const o = await fenster.ansichtOeffnen(a.kennzeichen);
+  return o?.instanz?.schnittbereich ? o.instanz : null;
+}
+const schnittMeldung = (r, ok) => (r.ok ? meldung(ok, 'ok') : meldung(r.fehler || 'Der Schnittbereich konnte nicht gesetzt werden.', 'warnung'));
+registrieren({
+  id: 'ansicht.schnittbereich', titel: '3D-Schnitt­bereich', symbol: 'schnittbereich', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt',
+  gedrueckt: () => ansicht3dVon()?.werte?.schnittbereich?.aktiv === true,
+  aktiv: (p) => !!ansicht3dVon(p),
+  hinweis: KEINE_3D,
+  async ausfuehren(p) {
+    const a = ansicht3dVon(p);
+    const i = await instanz3d(a);
+    if (!i) return;
+    const an = p?.an ?? a.werte?.schnittbereich?.aktiv !== true;
+    schnittMeldung(await i.schnittbereich.schalten(an), an ? '3D-Schnittbereich eingeschaltet: sichtbar ist nur, was im Quader liegt. Die Griffe an den Flächen verschieben sie.' : '3D-Schnittbereich ausgeschaltet.');
+  },
+});
+registrieren({
+  id: 'ansicht.schnittbereichAuswahl', titel: 'An Auswahl anpassen', symbol: 'schnittbereichAuswahl', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt', groesse: 'klein',
+  aktiv: (p) => !!ansicht3dVon(p) && !!zustand.auswahl,
+  hinweis: (p) => (ansicht3dVon(p) ? 'Zuerst ein Element wählen, an das sich der Schnittbereich anpassen soll.' : KEINE_3D),
+  async ausfuehren(p) {
+    const i = await instanz3d(ansicht3dVon(p));
+    if (i) schnittMeldung(await i.schnittbereich.anAuswahl(), 'Schnittbereich an die Auswahl angepasst (Rand 300 mm).');
+  },
+});
+const geschosseSortiert = () => derKlasse('Geschoss').filter((g) => Number.isFinite(g.werte?.kote) && Number.isFinite(g.werte?.hoehe)).sort((a, b) => a.werte.kote - b.werte.kote);
+/** Geschoss der Auswahl (das Geschoss selbst oder das des gewählten Elements); sonst null. */
+const geschossDerAuswahl = () => { const e = element(zustand.auswahl); return e?.klasse === 'Geschoss' ? e : element(e?.geschoss); };
+function geschossWaehlen(x, y) {
+  return new Promise((fertig) => kontextmenue(x ?? window.innerWidth / 2, y ?? 140, geschosseSortiert().map((g) => ({
+    titel: `${g.name || g.kennzeichen} (OK ${(g.werte.kote / 1000).toFixed(2)} m, Höhe ${(g.werte.hoehe / 1000).toFixed(2)} m)`, aktion: () => fertig(g),
+  }))));
+}
+registrieren({
+  id: 'ansicht.schnittbereichGeschoss', titel: 'Auf Geschoss', symbol: 'schnittbereichGeschoss', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt', groesse: 'klein',
+  aktiv: (p) => !!ansicht3dVon(p) && geschosseSortiert().length > 0,
+  hinweis: (p) => (ansicht3dVon(p) ? 'Im Modell gibt es kein Geschoss mit Kote und Höhe.' : KEINE_3D),
+  async ausfuehren(p) {
+    const a = ansicht3dVon(p);
+    const g = element(p?.geschoss) ?? geschossDerAuswahl() ?? await geschossWaehlen(p?.x, p?.y);
+    if (!g?.werte) return;
+    const i = await instanz3d(a);
+    if (i) schnittMeldung(await i.schnittbereich.aufGeschoss(g.werte.kote, g.werte.hoehe), `Schnittbereich auf ${g.name || g.kennzeichen}: von OK ${(g.werte.kote / 1000).toFixed(2)} m bis OK Geschoss darüber.`);
+  },
+});
+registrieren({
+  id: 'ansicht.schnittbereichZurueck', titel: 'Zurücksetzen', symbol: 'schnittbereichZurueck', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt', groesse: 'klein',
+  aktiv: (p) => !!ansicht3dVon(p),
+  hinweis: KEINE_3D,
+  async ausfuehren(p) {
+    const i = await instanz3d(ansicht3dVon(p));
+    if (i) schnittMeldung(await i.schnittbereich.zuruecksetzen(), 'Schnittbereich auf das ganze Modell zurückgesetzt.');
+  },
+});
+
+// N14: «Raum im 3D zeigen» – Kontextmenü im Grundriss bei gewähltem Raum (grundriss.js) und Knopf im Register Ansicht. Der Befehl ansicht_raum_zeigen setzt den
+// Schnittbereich der zuletzt benutzten 3D-Ansicht (sonst legt er eine an) auf den Raum plus Rand; danach öffnet die Oberfläche die Ansicht und stellt die Kamera
+// schräg von vorne rechts so ein, dass der ganze Bereich im Bild ist. Rand: Benutzereinstellung ansicht3d.raumrand (mm), Vorgabe 1500.
+let letzte3d = null;   // Kennzeichen der zuletzt benutzten 3D-Ansicht
+abonnieren('ansicht', (kz) => { if (element(kz)?.werte?.art === '3d') letzte3d = element(kz).kennzeichen; });
+const raumRand = () => { const n = Number(benutzerWert(RAND_RAUM_SCHLUESSEL, RAND_RAUM)); return Number.isFinite(n) && n >= 0 ? n : RAND_RAUM; };
+/** Gewählte Räume (Kennzeichen): p.raeume, sonst das gewählte Element, wenn es ein Raum ist. */
+function raeumeVon(p) {
+  const liste = (Array.isArray(p?.raeume) ? p.raeume : [element(zustand.auswahl)?.kennzeichen]).map((k) => element(k)).filter((e) => e?.klasse === 'Raum');
+  return liste.map((e) => e.kennzeichen);
+}
+/** Die 3D-Ansicht für «Raum im 3D zeigen»: die zuletzt benutzte, sonst eine offene, sonst irgendeine (nach Kennzeichen); null = der Befehl legt eine an. */
+function ansicht3dFuerRaum() {
+  const alle = ansichten().filter((a) => a.werte?.art === '3d').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
+  const offen = new Set(fenster.alle().map((o) => o.id));
+  return alle.find((a) => a.kennzeichen === letzte3d) ?? alle.find((a) => offen.has(a.id)) ?? alle[0] ?? null;
+}
+registrieren({
+  id: 'ansicht.raum3d', titel: 'Raum im 3D zeigen', symbol: 'raum3d', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt',
+  aktiv: (p) => raeumeVon(p).length > 0,
+  hinweis: 'Zuerst einen Raum wählen (im Grundriss anklicken).',
+  async ausfuehren(p) {
+    const raeume = raeumeVon(p);
+    const ziel = ansicht3dFuerRaum();
+    const rand = raumRand();
+    const r = await sende('ansicht_raum_zeigen', { raum: raeume, ...(ziel ? { ansicht: ziel.kennzeichen } : {}), rand });
+    if (!ergebnisMelden(r, `${raeume.join(', ')} im 3D gezeigt (Rand ${(rand / 1000).toFixed(2).replace(/\.?0+$/, '')} m).`)) return;
+    const kz = ziel?.kennzeichen ?? (r.aenderungen ?? []).find((x) => x.klasse === 'Ansicht')?.kennzeichen ?? null;
+    if (!kz) return;
+    // die Eigenschaft muss in der Ansicht angekommen sein (Ereignis des Servers), bevor die Kamera auf den Bereich zeigt
+    for (let i = 0; i < 60 && element(kz)?.werte?.schnittbereich?.aktiv !== true; i++) await new Promise((fertig) => setTimeout(fertig, 50));
+    const o = await fenster.ansichtOeffnen(kz);
+    letzte3d = kz;
+    o?.instanz?.zeigeBereich?.();
+  },
+});
+registrieren({
+  id: 'ansicht.raum3dRand', titel: 'Rand für «Raum im 3D zeigen» …', symbol: 'raum3d', kuerzel: null,
+  async ausfuehren() {
+    const eingegeben = await eingabe('Raum im 3D zeigen', 'Rand um den Raum in mm (alle Richtungen)', String(raumRand()));
+    if (eingegeben === null || eingegeben === undefined) return;
+    const n = Number(String(eingegeben).replace(',', '.'));
+    if (!Number.isFinite(n) || n < 0 || n > 100000) { meldung('Der Rand muss eine Zahl zwischen 0 und 100000 mm sein.', 'warnung'); return; }
+    try { await benutzerSetzen(RAND_RAUM_SCHLUESSEL, n); meldung(`Rand für «Raum im 3D zeigen»: ${n} mm (gilt für alle Projekte und Rechner des Benutzers).`, 'ok'); }
+    catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); }
   },
 });
 

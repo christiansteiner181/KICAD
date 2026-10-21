@@ -13,6 +13,7 @@ import {
   teilflaechen, FLAECHEN, bereichsSchluessel, bereichsName, bereichsArt, zielWinkel, kugelwinkel, richtungAusWinkeln, weltZuLokal, zwischenstand,
   ziehenZuWinkel, ringMarken, ringWinkel, ringZug, startansichtZiel, startansichtAusRichtung, startansichtLesen,
 } from './wuerfel-logik.js';
+import { startansichtWert } from './schnittbereich-logik.js';
 
 const KLICK_TOLERANZ = 4;      // px, darunter ist es ein Klick
 const FAHRT_MS = 380;          // weicher Kameraübergang
@@ -300,7 +301,8 @@ export function erzeugeWuerfel(o) {
   }
   function startFestlegen() {
     const d = new THREE.Vector3().copy(kamera.position).sub(steuerung.target);
-    const wert = startansichtAusRichtung({ x: d.x, y: d.y, z: d.z }, ausrichtungRad());
+    // im Modell (Eigenschaft startansicht der Ansicht): Blickrichtung relativ zur Gebäudeausrichtung, dazu Position und Ziel der Kamera in Modell-mm
+    const wert = startansichtWert(startansichtAusRichtung({ x: d.x, y: d.y, z: d.z }, ausrichtungRad()), kamera.position, steuerung.target);
     o.startSchreiben?.(wert);
     return wert;
   }

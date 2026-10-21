@@ -386,7 +386,23 @@ function erstellen(behaelter, ansichtElement) {
   svg.addEventListener('wheel', beiRad, { passive: false });
   svg.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });   // kein Autoscroll
   svg.addEventListener('auxclick', (e) => e.preventDefault());
-  svg.addEventListener('contextmenu', (e) => e.preventDefault());
+  svg.addEventListener('contextmenu', (e) => { e.preventDefault(); kontextMenue(e); });
+  /** N14: Rechtsklick auf einen Raum (oder ins Leere bei gewähltem Raum) bietet «Raum im 3D zeigen» an; mit aktivem Werkzeug hat der Rechtsklick keine Bedeutung. */
+  async function kontextMenue(e) {
+    if (werkzeug && !werkzeug.passiv) return;
+    const id = idVon(e.target);
+    const el = id ? element(id) : null;
+    const gewaehlt = zustand.auswahl ? element(zustand.auswahl) : null;
+    const raum = el?.klasse === 'Raum' ? el : (!el || el.id === gewaehlt?.id) && gewaehlt?.klasse === 'Raum' ? gewaehlt : null;
+    if (!raum) return;
+    if (zustand.auswahl !== raum.id) auswaehlen(raum.id);
+    const [{ kontextmenue }, { ausfuehren }] = await Promise.all([import('../oberflaeche/dialoge.js'), import('../oberflaeche/register.js')]);
+    kontextmenue(e.clientX, e.clientY, [
+      { titel: 'Raum im 3D zeigen', aktion: () => ausfuehren('ansicht.raum3d', { raeume: [raum.kennzeichen] }) },
+      { trenner: true },
+      { titel: 'Rand für «Raum im 3D zeigen» …', aktion: () => ausfuehren('ansicht.raum3dRand') },
+    ]);
+  }
   wurzel.addEventListener('pointerenter', () => { imFenster = true; });
   wurzel.addEventListener('pointerleave', () => { imFenster = false; });
   window.addEventListener('keydown', beiTasteUnten, true);   // Aufnahmephase: vor den Kürzeln

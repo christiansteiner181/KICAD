@@ -1098,9 +1098,11 @@ Vier Funktionen, die der Kern schon konnte und die in der Oberfläche nicht erre
 - **Haus-Knopf** (links oben am Würfel) fährt zur Startansicht und zeigt dabei alles (`einpassWerte` in `ansicht3d.js`); Kontextmenü am Würfel (Rechtsklick): «Zur Startansicht», «Aktuelle Ansicht als
   Startansicht festlegen», «Startansicht zurücksetzen (Isometrie)». Vorgabe der Startansicht: Isometrie von VORNE-RECHTS-OBEN; «Alles zeigen» (Zoom alles, Doppelklick Mitte, erstes Laden) schaut aus
   derselben Richtung.
-- **Startansicht speichern (Annahme):** der Katalog hat für die Ansicht keine passende Eigenschaft; sie liegt deshalb vorerst im Browser (`localStorage`, Schlüssel
-  `hlks.startansicht3d.<Projektort>.<Kennzeichen>`, Wert `{ azimutGrad, polarGrad }` relativ zur Gebäudeausrichtung, damit sie einer Drehung des Gebäudes folgt), je Rechner und Projekt. Soll sie mit
-  dem Projekt wandern, braucht die Klasse Ansicht eine Eigenschaft (z. B. `startansicht`) und die Oberfläche schreibt sie mit `element_aendern` – nur an `startLesen`/`startSchreiben` in `ansicht3d.js` anzupassen.
+- **Startansicht speichern (seit N13 im Modell):** Ansichtseigenschaft `startansicht` der 3D-Ansicht `{ azimutGrad, polarGrad, position, ziel, projektion }` (Blickrichtung relativ zur
+  Gebäudeausrichtung, damit sie einer Drehung des Gebäudes folgt; Position und Ziel der Kamera in Modell-mm zur Information; `projektion` immer `perspektive`). Sie wandert mit dem Projekt
+  und gilt auf allen Rechnern. Der Haus-Knopf benutzt die Richtung und passt alles ein; Position und Ziel hält der Kern fest, die Oberfläche nutzt sie nicht. Früher lag sie im Browser
+  (`localStorage`, `hlks.startansicht3d.<Projektort>.<Kennzeichen>`): `ansicht3d.js › startUebernehmen` übernimmt einen solchen Wert beim Öffnen **einmal** ins Modell, wenn dort noch keiner
+  steht, und entfernt ihn dann (steht im Modell schon einer, wird der Browser-Wert nur entfernt; Regel `startansichtUebernahme` in `schnittbereich-logik.js`).
 - **Ausrichtung von VORNE:** eine Funktion, `gebaeudeAusrichtungGrad(gebaeude, gerechnet)` in `wuerfel-logik.js`: θ = −`Gebaeude.planwinkel` (N9: Drehung des geraden Grundrisses im
   Gegenuhrzeigersinn, −45 … 45°). VORNE schaut damit dorthin, wo im geraden Grundriss «unten» ist – auf die lange Gebäudekante, wenn sie dort waagrecht liegt (geprüft in
   `ausrichtung.test.mjs`). Steht noch kein Winkel am Gebäude (Projekt von vor N9), holt `ansicht3d.js` den vom Kern gerechneten (Abfrage `planwinkel`, `bestimmt.winkel`);
@@ -1526,3 +1528,57 @@ Christian, 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach
 
 **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~AnsichtAusrichtungTests`; Node `ansichten/ausrichtung.test.mjs`; Browser
 `node ansichten/ausrichtung.browser.mjs` (Port 5440, CDP 5441; Bilder `n9_*.png` in `%TEMP%\HLKS_CAD\n9`).
+
+## Nachbearbeitung N13 und N14: 3D-Schnittbereich, «Raum im 3D zeigen» (`nachbearbeitung.md`), Rest von N11
+
+Christian, 21.10.2026: «in der 3d Ansicht sollte der 3d-Ansichtsbereich eingestellt werden können (es ist nur sichtbar was eingestellt ist, wie in revit)» und «ist im GR ein Raum
+ausgewählt; Kontextmenü "Raum im 3D zeigen" springt zur 3D-Ansicht und zeigt den 3D-Ausschnitt des Raumes, +1.5 m in alle Richtungen».
+
+**Daten (Kern, `kataloge/klassen.json`, `Plan/Schnittbereich.cs`):** zwei Eigenschaften der Klasse Ansicht, gespeichert mit `element_aendern` (ein Paket, zurücknehmbar; der Kern prüft die Form).
+
+| Eigenschaft | Inhalt |
+| --- | --- |
+| `schnittbereich` | `{ aktiv, min [u, v, z], max [u, v, z], winkel }` in mm. Der Quader ist um die Hochachse (Ursprung des Modells) um `winkel` (Grad, Gegenuhrzeigersinn) gegen die Modellachsen gedreht: `u = x·cos + y·sin`, `v = −x·sin + y·cos`, `z` absolut über ±0.00. Bei Winkel 0 sind es Modellkoordinaten. **Winkel = −`planwinkel`** des Gebäudes (N9), also parallel zur Gebäudekante. `aktiv: false` schaltet aus und behält den Quader. Mindestens 1 mm je Kante. |
+| `startansicht` | siehe N11 oben: `{ azimutGrad, polarGrad, position, ziel, projektion }`. |
+
+**Befehl `ansicht_raum_zeigen { raum, ansicht?, rand = 1500 }`** (auch MCP-Werkzeug und KI, eingeordnet unter «Pläne einrichten», zur Bestätigung): setzt `schnittbereich` der Ansicht (aktiv) auf die Räume –
+Umriss in den Achsen des Gebäudes plus `rand` in alle Richtungen, Höhe von Raumunterkante − `rand` bis Raumoberkante + `rand`. Raumunterkante = tiefster Punkt des Raum-Polygons, Raumoberkante =
+Unterkante + Raumhöhe (`lichteHoehe` › Geometriehöhe › Geschosshöhe wie die Raumliste). `raum` ist ein Kennzeichen oder eine Liste (mehrere Räume = gemeinsamer Bereich in den Achsen des ersten Raums).
+Ohne `ansicht`: die erste 3D-Ansicht nach Kennzeichen, sonst wird `AN-3D` angelegt (im selben Paket). Die Kamera stellt die Oberfläche ein; der Befehl ändert nur den Schnittbereich.
+
+| Funktion | Ort | Dateien |
+| --- | --- | --- |
+| **3D-Schnittbereich** ein/aus | Ansicht › 3D-Schnitt › «3D-Schnittbereich» (gedrückt = ein); Eigenschaften der 3D-Ansicht › Haken «3D-Schnittbereich» | `aktionen-ansicht.js` (`ansicht.schnittbereich`), `schnittbereich-palette.js`, `eigenschaften.js` |
+| **An Auswahl anpassen** | Ansicht › 3D-Schnitt; Palette › Knopf (bei gewähltem Element ist die Palette die des Elements: dann das Menüband) | `ansicht.schnittbereichAuswahl` |
+| **Auf Geschoss** | Ansicht › 3D-Schnitt; Palette › Knopf; Geschoss der Auswahl, sonst Menü der Geschosse | `ansicht.schnittbereichGeschoss` |
+| **Zurücksetzen** | Ansicht › 3D-Schnitt; Palette › Knopf | `ansicht.schnittbereichZurueck` |
+| **Raum im 3D zeigen** | Grundriss › Rechtsklick auf einen Raum (oder ins Leere bei gewähltem Raum); Ansicht › 3D-Schnitt bei gewähltem Raum | `grundriss.js` (Kontextmenü), `ansicht.raum3d` |
+| **Rand für «Raum im 3D zeigen» …** | Grundriss › Kontextmenü; Aktion `ansicht.raum3dRand` | Benutzereinstellung `ansicht3d.raumrand` (mm, 0 … 100000, Vorgabe 1500; `BenutzerEinstellungen.cs`) |
+
+- **Clipping (`ansichten/schnittbereich3d.js`):** `renderer.localClippingEnabled`; die sechs Ebenen (`ebenen`, Normalen ins Innere) hängen als `material.clippingPlanes` an **allen** Materialien von `modell` (Körper, Kanten,
+  IFC-Netze der Unterlagen) und der Hülle; Quader und Griffe sind nicht geclippt. `ansicht3d.js` meldet neue Objekte mit `schnitt.neueObjekte()` (Körper gebaut, Netz angehängt, Hülle gebaut), die Ebenen werden vor dem
+  nächsten Zeichnen gesetzt. Die Ebenenobjekte sind dieselben, wenn der Quader sich ändert (kein Neuaufbau der Materialien).
+- **Schnittflächen bleiben offen (Entscheid):** ein Deckel (Stencil-Kappe) kostet je Ebene zwei weitere Durchläufe über das ganze Modell, und die Wände sind durchscheinend (Deckkraft ~0.3) – ein
+  undurchsichtiger Deckel würde sie verfälschen. Die Schnitte zeigen deshalb die Hohlform der Bauteile.
+- **Griffe:** Kegel in der Mitte jeder Fläche, Spitze nach aussen, orange, auf dem Bildschirm gleich gross und immer sichtbar (`depthTest` aus). Ziehen (linke Taste auf einem Griff; Aufnahmephase vor den
+  OrbitControls) verschiebt die Fläche entlang ihrer Achse: der Strahl der Maus wird mit der Achse geschnitten (`achsenParameter`, nächster Punkt), die Verschiebung ist der Unterschied zum
+  Beginn (`flaecheSchieben`, Mindestkante 100 mm). Gespeichert wird nach einer Pause von 600 ms und beim Loslassen (ein Zug ergibt meist **ein** Paket); während des Ziehens und Speicherns gilt der angezeigte
+  Stand (Echo des Servers wird ignoriert). Lehnt der Kern ab, gilt wieder der Stand des Modells. Bricht der Browser den Zeiger ab (`pointercancel`), wird der Zug verworfen.
+- **«An Auswahl anpassen»:** alle Dreieckspunkte der Körper der Auswahl, in den Achsen des Quaders (`quaderSammler`) plus 300 mm. **«Auf Geschoss»:** nur die Höhe wechselt (OK/UK aus `Geschoss.kote` und `hoehe`), der
+  Grundriss des Quaders bleibt (ohne Quader: ganzes Modell). **«Zurücksetzen»:** ganzes Modell in den Achsen der Gebäudeausrichtung; der Schalter bleibt, wie er ist. Beim ersten Einschalten gilt ebenfalls das ganze Modell.
+- **Auswahl nur im Sichtbaren:** `koerperTreffer` und `huelleKlick` in `ansicht3d.js` lassen Treffer aus, deren Punkt ausserhalb des Quaders liegt (`schnitt.filtern`; der Raycaster kennt das Clipping nicht).
+- **Kamera:** «Alles zeigen», Haus-Knopf und erstes Laden passen den aktiven Quader ein (umschliessende Kugel der acht Ecken) statt des Modells. «Raum im 3D zeigen» fährt nach dem Befehl `zeigeBereich()` an:
+  Isometrie von vorne rechts oben (`zielWinkel(START_VORGABE, θ)`, unabhängig von der Startansicht), danach bleibt die Kamera stehen (`benutzt`, `hatGezoomt`).
+- **Raum im 3D zeigen (Ablauf der Aktion `ansicht.raum3d`):** Räume aus `p.raeume` oder der Auswahl → `ansicht_raum_zeigen` mit der **zuletzt benutzten** 3D-Ansicht (Kennzeichen aus dem Ereignis `ansicht`;
+  sonst eine offene, sonst die erste; fehlt jede, legt der Befehl sie an) und dem Rand aus `ansicht3d.raumrand` → wartet, bis die Eigenschaft in der Ansicht angekommen ist → öffnet bzw. holt die Ansicht
+  nach vorn → `zeigeBereich()`. Der Rechtsklick wählt den Raum, wenn er noch nicht gewählt ist; mit aktivem Werkzeug hat er keine Bedeutung. Es gibt keine Mehrfachauswahl in der Oberfläche: mehrere Räume
+  kommen über `p.raeume` bzw. den Befehl (KI).
+- **Menüband:** neue Gruppe «3D-Schnitt» im Register Ansicht (nach «Darstellung», `menueband.js › GRUPPENFOLGE`), fünf Knöpfe; Symbole `schnittbereich*` und `raum3d` in `symbole.js` (im Revit-Satz fällt
+  jedes Symbol ohne eigene Fassung auf den Strich zurück).
+- **Prüfhilfen am DOM:** `.d3-wurzel[data-schnittbereich]` (JSON des angezeigten Quaders oder `null`), `[data-clipping]` (`{ materialien, geclippt }`), `[data-griffe]` (Bildschirmlage der Griffe in px der
+  Leinwand), `[data-griff]` (während des Ziehens der Name des Griffs); Instanz `trefferBei(clientX, clientY)` (was dort gewählt würde).
+- **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~SchnittbereichTests`, Web `…Hlks.Web.Tests --filter FullyQualifiedName~BenutzerEinstellungen`; Node
+  `node --test src/Hlks.Web/wwwroot/js/ansichten/schnittbereich.test.mjs` (Ebenen aus dem Quader, Griffe, Ziehen, Quader aus Punkten, Übernahme der Startansicht, Palette); Browser
+  `node src/Hlks.Web/wwwroot/js/ansichten/schnittbereich.browser.mjs` (Port 5480, CDP 9480; Prüfbilder `n13-*.png`, `n14-*.png` in `%TEMP%\HLKS_CAD\n13`).
+- **Offen / nicht geprüft:** IFC-Netze der Unterlagen sind im Code geclippt (gleiche Schleife über alle Materialien), in der Browser-Reihe aber nicht belegt (das Beispielprojekt hat keine IFC-Unterlage);
+  Schnittflächen offen (siehe oben).

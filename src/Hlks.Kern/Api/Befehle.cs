@@ -261,7 +261,7 @@ static class Elementpflege
             case "liste":
                 return n is JsonArray ? n : throw new HlksFehler($"Eigenschaft «{def.Name}» muss eine Liste sein.");
             case "objekt":
-                return n is JsonObject ? n : throw new HlksFehler($"Eigenschaft «{def.Name}» muss ein Objekt sein.");
+                return n is JsonObject o ? Schnittbereich.Normalisieren(def.Name, o) : throw new HlksFehler($"Eigenschaft «{def.Name}» muss ein Objekt sein.");   // schnittbereich und startansicht der 3D-Ansicht werden geprüft (N13)
             default:
                 return n is JsonValue tv && tv.TryGetValue<string>(out var ts) ? JsonValue.Create(ts) : JsonValue.Create(n?.ToJsonString());
         }

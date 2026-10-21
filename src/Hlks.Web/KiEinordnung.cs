@@ -58,9 +58,10 @@ public static class KiEinordnung
         new("Unterlagen und IFC übernehmen", "Unterlagen einfügen/kalibrieren und ein IFC übernehmen – Dateipfade nur unter dem Projektordner und den Wurzeln " +
             "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar.",
             ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen"]),
-        new("Pläne einrichten", "Planblätter anlegen und Ansichten platzieren – im Modell, zurücknehmbar; Revisionen, Plansätze und PDF-Ausgaben sind verboten.",
+        new("Pläne einrichten", "Planblätter anlegen und Ansichten platzieren, Räume im 3D zeigen – im Modell, zurücknehmbar; Revisionen, Plansätze und PDF-Ausgaben sind verboten.",
             ["planblatt_anlegen", "ansicht_platzieren", "einlageplaene_anlegen", "planblatt_gewerk_setzen",
-             "planwinkel_bestimmen"]),   // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel des Gebäudes neu bestimmen – ein Paket, zurücknehmbar, nur Darstellung
+             "planwinkel_bestimmen",
+             "ansicht_raum_zeigen"]),   // N14, 21.10.2026 (hlks-modul, zur Bestätigung): setzt nur den 3D-Schnittbereich einer Ansicht (legt bei Bedarf AN-3D an) – ein Paket, zurücknehmbar, nur Darstellung   // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel des Gebäudes neu bestimmen – ein Paket, zurücknehmbar, nur Darstellung
         new("Aussparungen und Kollisionen prüfen", "Vorschläge und Prüfergebnisse: aussparung_form nur bei vorgeschlagenen/veralteten Aussparungen (Kern); " +
             "aussparungen_nummerieren nummeriert für die KI keine abgegebene (freigegebene, versandte …) Aussparung um (Kern, B5); aussparungen_abgleichen " +
             "setzt nur angekommen/fehlt aus dem Abgleich mit der Architekten-IFC (Herkunft berechnung, Prüfergebnis, keine Freigabe); kollision_pruefen " +

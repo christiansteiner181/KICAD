@@ -9886,11 +9886,12 @@
             "Die Ansicht verstellen und wieder den Haus-Knopf anklicken.",
             "Rechtsklick auf den Würfel › «Startansicht zurücksetzen (Isometrie)»."
           ],
-          "erwartung": "Der Haus-Knopf fährt weich zur Startansicht und zeigt dabei alles. Ohne eigene Einstellung ist das die Isometrie von vorne rechts oben. «Aktuelle Ansicht als Startansicht festlegen» merkt die Blickrichtung für diese 3D-Ansicht in diesem Projekt (je Rechner; sie folgt einer geänderten Gebäudeausrichtung). Doppelklick mit der mittleren Taste und das Öffnen der Ansicht benutzen dieselbe Startrichtung.",
+          "erwartung": "Der Haus-Knopf fährt weich zur Startansicht und zeigt dabei alles. Ohne eigene Einstellung ist das die Isometrie von vorne rechts oben. «Aktuelle Ansicht als Startansicht festlegen» speichert die Blickrichtung (und Position und Ziel der Kamera) als Eigenschaft «startansicht» der 3D-Ansicht im Modell: sie gilt für alle Benutzer und Rechner des Projekts, bleibt nach dem Neuladen und folgt einer geänderten Gebäudeausrichtung. Doppelklick mit der mittleren Taste und das Öffnen der Ansicht benutzen dieselbe Startrichtung. Mit eingeschaltetem 3D-Schnittbereich zeigt der Haus-Knopf den Bereich.",
           "pruefpunkte": [
             "Der Haus-Knopf führt zur Isometrie.",
             "Das Kontextmenü am Würfel hat «Zur Startansicht», «Aktuelle Ansicht als Startansicht festlegen» und «Startansicht zurücksetzen».",
-            "Nach dem Festlegen führt der Haus-Knopf zur eigenen Ansicht.",
+            "Nach dem Festlegen führt der Haus-Knopf zur eigenen Ansicht, auch nach dem Neuladen der Seite.",
+            "In den Eigenschaften der 3D-Ansicht steht unter «startansicht» der Blick (Winkel zur Gebäudeausrichtung).",
             "Nach dem Zurücksetzen wieder zur Isometrie."
           ],
           "bild": {
@@ -9899,11 +9900,12 @@
             "zustand": "Kontextmenü am Würfel (Bildschirmfoto von Hand)"
           },
           "quelle": [
-            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:296",
-            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js:301",
-            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel-logik.js:237"
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js (startFestlegen, Kontextmenü)",
+            "src/Hlks.Web/wwwroot/js/ansichten/ansicht3d.js (startSchreiben, startUebernehmen)",
+            "src/Hlks.Web/wwwroot/js/ansichten/schnittbereich-logik.js (startansichtWert, startansichtUebernahme)",
+            "src/Hlks.Kern/Plan/Schnittbereich.cs (Prüfung der Eigenschaft startansicht)"
           ],
-          "hinweis": "Die Startansicht liegt vorerst im Browser (localStorage, Schlüssel startansicht3d.<Projekt>.<Kennzeichen>), nicht im Modell: der Katalog hat dafür noch keine Ansichtseigenschaft."
+          "hinweis": "Seit N13 liegt die Startansicht im Modell (Eigenschaft «startansicht» der Ansicht), nicht mehr je Rechner im Browser. Eine alte Startansicht aus dem Browser (localStorage) wird beim Öffnen der Ansicht einmal ins Modell übernommen und dann entfernt. Position und Ziel der Kamera speichert der Kern zur Information; der Haus-Knopf benutzt die Richtung und passt alles ein."
         },
         {
           "id": "zb-n9-geometrie",
@@ -10079,6 +10081,178 @@
             "src/Hlks.Kern/Plan/Planausgabe.cs (Gebiet, Fusszeile)"
           ],
           "hinweis": "Der Ausschnitt einer Ansicht (Eigenschaft ausschnitt) gilt in den Achsen der Ansicht."
+        },
+        {
+          "id": "zb-n13-schalter",
+          "titel": "3D-Schnittbereich ein- und ausschalten (N13)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "3D-Schnitt",
+            "knopf": "3D-Schnittbereich",
+            "kuerzel": "",
+            "sonst": "Eigenschaften der 3D-Ansicht › Haken «3D-Schnittbereich»"
+          },
+          "schritte": [
+            "«3D Gesamt» öffnen (nichts wählen), in den Eigenschaften nach unten rollen bis «Schnittbereich».",
+            "Den Haken «3D-Schnittbereich» setzen (oder Register Ansicht › 3D-Schnitt › «3D-Schnittbereich»).",
+            "Den orangen Quader und die sechs Griffe ansehen.",
+            "Den Haken wieder entfernen."
+          ],
+          "erwartung": "Mit dem Haken umschliesst ein oranger Quader das ganze Modell; sichtbar und wählbar ist nur, was im Quader liegt (wie «Schnittbereich» in Revit). Der Quader ist parallel zur längsten Gebäudekante ausgerichtet (Planwinkel, N9). Auf jeder Fläche sitzt ein oranger Griff. Die Zeile «Masse» nennt Länge × Breite × Höhe. Ohne Haken ist alles sichtbar; der Quader bleibt aber gespeichert und kommt beim nächsten Einschalten wieder. Die Einstellung gehört zur Ansicht und steht im Modell: sie bleibt nach dem Neuladen und gilt auf jedem Rechner.",
+          "pruefpunkte": [
+            "Mit dem Haken erscheinen der Quader und sechs Griffe.",
+            "Der Knopf im Menüband ist gedrückt.",
+            "Ohne Haken sind Quader und Griffe weg und alle Bauteile wieder sichtbar.",
+            "Nach dem Neuladen der Seite ist der Zustand derselbe.",
+            "Rückgängig nimmt das Ein- bzw. Ausschalten zurück."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Schnittbereich eingeschaltet, Quader um das ganze Modell mit sechs Griffen (Prüfbild n13-bereich-ganzes-modell.png aus schnittbereich.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.schnittbereich)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/schnittbereich-palette.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/schnittbereich3d.js",
+            "src/Hlks.Kern/Plan/Schnittbereich.cs (Eigenschaft schnittbereich)"
+          ],
+          "hinweis": "Die Schnittflächen bleiben offen (kein Deckel): die Wände sind durchscheinend. Für die KI: die Eigenschaft «schnittbereich» der Ansicht setzt element_aendern; ansicht_raum_zeigen setzt sie aus Räumen."
+        },
+        {
+          "id": "zb-n13-griffe",
+          "titel": "Schnittbereich mit den Griffen verkleinern (N13)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "3D-Ansicht, orange Griffe am Quader (bei eingeschaltetem Schnittbereich)"
+          },
+          "schritte": [
+            "Den 3D-Schnittbereich einschalten.",
+            "Den Griff oben auf dem Quader mit der linken Maustaste anfassen und nach unten ziehen.",
+            "Loslassen und kurz warten.",
+            "Einen seitlichen Griff nach innen oder aussen ziehen."
+          ],
+          "erwartung": "Beim Ziehen eines Griffs wandert nur diese eine Fläche des Quaders entlang ihrer Achse; was ausserhalb liegt, verschwindet sofort (abgeschnitten, auch Leitungen, Räume und IFC-Unterlagen), und der Mauszeiger auf einem Körper wählt nur noch Sichtbares. Die Kamera dreht dabei nicht. Gespeichert wird nach dem Loslassen (oder einer kurzen Pause) als ein Schritt im Modell; Rückgängig stellt den vorigen Quader wieder her. Die Kante bleibt mindestens 100 mm lang.",
+          "pruefpunkte": [
+            "Der Griff färbt sich beim Überfahren gelb, der Zeiger wird zur Hand.",
+            "Nur die gezogene Fläche bewegt sich.",
+            "Teile ausserhalb des Quaders sind nicht sichtbar und nicht anklickbar.",
+            "Nach dem Loslassen steht der Wert in den Eigenschaften der Ansicht (Zeile «Masse»).",
+            "Ein Zug ergibt einen Rückgängig-Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Quader auf das Erdgeschoss verkleinert, Griffe sichtbar (Prüfbild n13-bereich-erdgeschoss.png aus schnittbereich.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/schnittbereich3d.js (Griffe ziehen)",
+            "src/Hlks.Web/wwwroot/js/ansichten/schnittbereich-logik.js (flaecheSchieben, achsenParameter)"
+          ],
+          "hinweis": "Der Strahl der Maus wird mit der Achse des Griffs geschnitten; die Verschiebung ist der Unterschied zum Beginn des Ziehens."
+        },
+        {
+          "id": "zb-n13-auswahl-geschoss",
+          "titel": "Schnittbereich an Auswahl, auf Geschoss, zurücksetzen (N13)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "3D-Schnitt",
+            "knopf": "An Auswahl anpassen · Auf Geschoss · Zurücksetzen",
+            "kuerzel": "",
+            "sonst": "Eigenschaften der 3D-Ansicht › drei Knöpfe unter «Schnittbereich»"
+          },
+          "schritte": [
+            "In der 3D-Ansicht ein Bauteil (z. B. eine Wand) anklicken, Register Ansicht › 3D-Schnitt › «An Auswahl anpassen».",
+            "Nichts wählen, «Auf Geschoss» anklicken und im Menü ein Geschoss wählen.",
+            "«Zurücksetzen» anklicken."
+          ],
+          "erwartung": "«An Auswahl anpassen» legt den Quader um das gewählte Bauteil plus 300 mm Rand in alle Richtungen. «Auf Geschoss» setzt die Höhe auf Oberkante und Unterkante des Geschosses (Oberkante des Bodens bis Oberkante des Geschosses darüber); der Grundriss des Quaders bleibt. Ist ein Element des Geschosses gewählt, gilt dieses Geschoss, sonst fragt ein Menü. «Zurücksetzen» legt den Quader wieder um das ganze Modell. Alle drei schalten den Bereich ein (Zurücksetzen lässt ihn, wie er ist) und speichern im Modell.",
+          "pruefpunkte": [
+            "An Auswahl: der Quader ist nur wenig grösser als das Bauteil.",
+            "Auf Geschoss: Menü mit allen Geschossen; danach sind nur Teile dieses Geschosses sichtbar.",
+            "Zurücksetzen: wieder das ganze Modell.",
+            "Ohne Auswahl ist «An Auswahl anpassen» gesperrt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Menü der Geschosse nach Klick auf «Auf Geschoss»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.schnittbereichAuswahl, ansicht.schnittbereichGeschoss, ansicht.schnittbereichZurueck)",
+            "src/Hlks.Web/wwwroot/js/ansichten/schnittbereich3d.js (anAuswahl, aufGeschoss, zuruecksetzen)"
+          ],
+          "hinweis": "Der Rand bei «An Auswahl anpassen» ist fest 300 mm."
+        },
+        {
+          "id": "zb-n14-raum3d",
+          "titel": "Raum im 3D zeigen (N14)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "3D-Schnitt",
+            "knopf": "Raum im 3D zeigen",
+            "kuerzel": "",
+            "sonst": "Grundriss, Rechtsklick auf einen Raum › «Raum im 3D zeigen»"
+          },
+          "schritte": [
+            "Einen Grundriss öffnen (z. B. «Grundriss EG Sanitär»).",
+            "Mit der rechten Maustaste in einen Raum klicken.",
+            "Im Kontextmenü «Raum im 3D zeigen» wählen."
+          ],
+          "erwartung": "Der Raum wird gewählt, KICAD wechselt in die zuletzt benutzte 3D-Ansicht (gibt es keine, wird «3D» angelegt), schaltet den 3D-Schnittbereich ein und setzt ihn auf den Raum plus 1.5 m in alle Richtungen: Umriss des Raums in den Achsen des Gebäudes, Höhe von Raumunterkante − 1.5 m bis Raumoberkante + 1.5 m. Die Kamera schaut schräg von vorne rechts oben auf den Bereich, so dass er ganz im Bild ist. Eine Meldung unten rechts bestätigt. Der Bereich ist ein Schritt im Modell (Rückgängig) und lässt sich wie jeder Schnittbereich mit den Griffen ändern. Die KI kann dasselbe mit dem Befehl «ansicht_raum_zeigen» (auch mehrere Räume).",
+          "pruefpunkte": [
+            "Das Kontextmenü erscheint beim Rechtsklick auf einen Raum.",
+            "Die 3D-Ansicht wird aktiv und zeigt nur den Raum und 1.5 m Umgebung.",
+            "Alle sechs Griffe sind im Bild; die Kamera schaut von vorne rechts oben.",
+            "Rückgängig stellt den vorigen Zustand der 3D-Ansicht her."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Raum E.01 im 3D gezeigt (Prüfbild n14-raum-im-3d-gesamt.png aus schnittbereich.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/grundriss.js (kontextMenue)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.raum3d)",
+            "src/Hlks.Kern/Plan/Schnittbereich.cs (AnsichtRaumZeigen)"
+          ],
+          "hinweis": "Befehl ansicht_raum_zeigen {raum, ansicht?, rand=1500}. Mehrere gewählte Räume gibt es in der Oberfläche noch nicht (nur über den Befehl bzw. die KI). Der Rand ist eine Benutzereinstellung (siehe nächste Funktion)."
+        },
+        {
+          "id": "zb-n14-rand",
+          "titel": "Rand für «Raum im 3D zeigen» einstellen (N14)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Grundriss, Rechtsklick auf einen Raum › «Rand für «Raum im 3D zeigen» …»"
+          },
+          "schritte": [
+            "Im Grundriss mit der rechten Maustaste in einen Raum klicken.",
+            "«Rand für «Raum im 3D zeigen» …» wählen.",
+            "Den Rand in mm eingeben (Vorgabe 1500) und mit OK bestätigen.",
+            "Danach «Raum im 3D zeigen» wählen."
+          ],
+          "erwartung": "Der Rand um den Raum ist eine Benutzereinstellung (alle Projekte und alle Rechner des Benutzers). Zahlen von 0 bis 100000 mm sind erlaubt; andere werden mit einer Meldung abgelehnt. Der nächste «Raum im 3D zeigen» benutzt den neuen Rand.",
+          "pruefpunkte": [
+            "Das Eingabefenster zeigt den aktuellen Rand (anfangs 1500).",
+            "Eine ungültige Eingabe (Text, negativ) wird gemeldet und nicht gespeichert.",
+            "Der Bereich um den Raum ist danach um den neuen Rand grösser als der Raum."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG Sanitär",
+            "zustand": "Eingabefenster «Raum im 3D zeigen» mit dem Rand"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js (ansicht.raum3dRand)",
+            "src/Hlks.Web/BenutzerEinstellungen.cs (ansicht3d.raumrand)"
+          ],
+          "hinweis": "Ohne Einstellung gilt 1500 mm. Der Befehl selbst nimmt «rand» als Parameter (KI)."
         }
       ]
     }
