@@ -458,6 +458,11 @@ table.huelle-ableitung th, table.huelle-ableitung td { white-space: nowrap; }
 
 /* Leitungen zeichnen (Modul 3, C1): Rohr und Kanal – Hinweis in der Optionsleiste, Anschlussmarken, Ringe, Vorschau-Zeile, Palette */
 #optionsleiste .ol-hinweis { color: var(--warnung); white-space: nowrap; }
+/* Freie Grösse und Abwasser-Serie (Nachtrag): Hinweis zu Grenzen, Schritt bzw. Aussendurchmesser (kein Warnhinweis); Prüfbefunde P29/P30 in der Palette */
+#optionsleiste .ol-hinweis.ol-info { color: var(--text-leise); white-space: normal; }
+.ep-befund { white-space: normal; overflow: visible; }
+.ep-befund-fehler { color: var(--fehler); }
+.ep-befund-warnung, .ep-befund-hinweis { color: var(--warnung); }
 .wz-schicht .wz-anschluss { stroke: var(--akzent); stroke-width: 1.6px; fill: var(--flaeche-hell); fill-opacity: .85; }
 .wz-schicht .wz-anschluss-belegt { stroke: var(--text-leise); fill: var(--flaeche-tief); stroke-dasharray: 2 2; }
 .wz-schicht .wz-ring { stroke: var(--akzent); stroke-width: 1.6px; fill: var(--akzent); fill-opacity: .2; }
@@ -470,6 +475,7 @@ table.huelle-ableitung th, table.huelle-ableitung td { white-space: nowrap; }
 .lt-abgelehnt { color: var(--text); }
 .lt-text { flex: 1 1 auto; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .lt-vorschlag { padding: 1px 0 2px; color: var(--text-leise); }
+.lt-befunde { padding: 1px 0 2px; color: var(--warnung); }
 .lt-liste { margin: 3px 0 1px; padding: 0 0 0 16px; max-height: 160px; overflow: auto; color: var(--text-leise); font-size: 11px; }
 .lt-liste[hidden] { display: none; }
 .lt-knopf { flex: none; height: 18px; padding: 0 8px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); cursor: pointer; }

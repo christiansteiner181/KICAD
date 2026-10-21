@@ -96,7 +96,7 @@ test('Art der Leitungsserie: Rohr, Kanal, abgeleitete Klassen über basis; ander
 
 test('Definition → Formular: Testrohrserie mit allen Feldern, Werten und Gruppen', () => {
   const f = T.leitungFelder(rohr, { art: 'rohr', familien });
-  assert.deepEqual(f.map((x) => x.pfad), ['querschnitt', 'groesse.dn', 'aussen', 'innen', 'wand', 'kuerzel',
+  assert.deepEqual(f.map((x) => x.pfad), ['querschnitt', 'einsatz', 'groesse.dn', 'aussen', 'innen', 'wand', 'kuerzel',
     'formteile.bogen.familie', 'formteile.bogen.typ', 'formteile.tstueck.familie', 'formteile.tstueck.typ', 'formteile.reduktion.familie', 'formteile.reduktion.typ', 'formteile.reinigungsoeffnung.familie', 'formteile.reinigungsoeffnung.typ',
     'regeln.winkel', 'regeln.biegeradius', 'regeln.abzweig', 'regeln.abzweigwinkel']);
   const w = (p) => feld(rohr, p);

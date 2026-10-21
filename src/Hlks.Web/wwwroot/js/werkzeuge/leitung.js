@@ -12,11 +12,12 @@ import { sende } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { hinweisSetzen } from '../oberflaeche/register.js';
 import { abstand, punktNachLaenge } from './fangen.js';
-import { setze, rasterWert } from './optionen.js';
+import { setze, rasterWert, freiVorbelegen } from './optionen.js';
 import { familienLaden } from '../familien/daten.js';
 import { esc } from './schicht.js';
 import * as S from './schicht.js';
 import * as L from './leitung-logik.js';
+import * as F from './leitung-frei.js';
 import * as D from './leitung-daten.js';
 
 let laufend = null;      // { z, ctx, id, kategorie, leiste } des laufenden Werkzeugs
@@ -47,6 +48,12 @@ function leisteErstellen(ctx) {
   return div;
 }
 
+/** Prüfbefunde, die das Ausführen auslösen würde (Trockenlauf des Kerns): P29 freie Grösse, P30 Abwasser-Serie für ein anderes Medium, P13–P18 … */
+function befundeHtml(r) {
+  const b = L.neueBefundeTexte(r);
+  return b.length ? `<div class="lt-befunde" role="status">Prüfbefund bei Ausführung: ${esc(b.join(' · '))}</div>` : '';
+}
+
 function leisteAus() { if (laufend?.leiste) { laufend.leiste.hidden = true; laufend.leiste.innerHTML = ''; } }
 
 function leisteZeigen(v) {
@@ -59,7 +66,8 @@ function leisteZeigen(v) {
       + `<button type="button" class="lt-knopf" data-lt="liste" title="Einzelheiten ein-/ausblenden">▾</button>`
       + `<button type="button" class="lt-knopf lt-primaer" data-lt="ausfuehren">Ausführen (Enter)</button>`
       + `<button type="button" class="lt-knopf" data-lt="zurueck">Weiter zeichnen (Esc)</button></div>`
-      + `<ul class="lt-liste" hidden>${zeilen.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`;
+      + `<ul class="lt-liste" hidden>${zeilen.map((t) => `<li>${esc(t)}</li>`).join('')}</ul>`
+      + befundeHtml(v.r);
   } else {
     const a = L.ablehnung(v.r);
     div.innerHTML = `<div class="lt-kopf lt-abgelehnt"><span class="lt-titel lt-fehler">Abgelehnt</span><span class="lt-text">${esc(a.text)}</span>`
@@ -114,9 +122,9 @@ function befehlBauen(z, ctx) {
   if (z.abzweig) {
     const pts = z.punkte.slice(1);
     const richtung = pts.length ? null : L.abzweigSeite(z.abzweig.winkel ?? 0, plan(z.abzweig.punkt), ctx.maus ?? plan(z.abzweig.punkt));
-    return { name: 'leitung_abzweigen', parameter: L.abzweigParameter({ opt: ctx.opt, leitung: z.abzweig.leitung, punkt: z.abzweig.punkt, punkte: pts, richtung, nach: z.nach, geschoss: ctx.geschoss }) };
+    return { name: 'leitung_abzweigen', parameter: L.abzweigParameter({ opt: ctx.opt, leitung: z.abzweig.leitung, punkt: z.abzweig.punkt, punkte: pts, richtung, nach: z.nach, geschoss: ctx.geschoss, serie: D.serieDef(ctx.opt.serie) }) };
   }
-  return { name: 'leitung_zeichnen', parameter: L.leitungParameter({ opt: ctx.opt, punkte: z.punkte, von: z.von, nach: z.nach, geschoss: ctx.geschoss }).parameter };
+  return { name: 'leitung_zeichnen', parameter: L.leitungParameter({ opt: ctx.opt, punkte: z.punkte, von: z.von, nach: z.nach, geschoss: ctx.geschoss, serie: D.serieDef(ctx.opt.serie) }).parameter };
 }
 
 async function vorschauHolen(z, ctx) {
@@ -152,7 +160,7 @@ async function ausfuehren(z, ctx) {
 // ------------------------------------------------------------------------------------------------ Start und Klicks
 
 function pflichtPruefen(ctx, kategorie) {
-  const pf = L.pflichtFehlt(ctx.opt, { kategorie, serien: D.serienListe(kategorie) });
+  const pf = L.pflichtFehlt(ctx.opt, { kategorie, serien: D.serienListe(kategorie), serie: D.serieDef(ctx.opt.serie) });
   if (!pf) return true;
   ctx.pflicht(pf.feld, `${pf.text} ${pf.vorschlag}`);
   return false;
@@ -179,6 +187,8 @@ function abzweigStarten(z, hit, maus, ctx, id) {
   // Der Abzweig übernimmt Serie, Grösse und Höhe der Leitung (änderbar in der Optionsleiste)
   if (el.bezuege?.familie) setze(id, 'serie', el.bezuege.familie);
   if (el.werte?.familientyp) setze(id, 'groesse', el.werte.familientyp);
+  // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser der Leitung (aus ihren Eigenschaften) in die Zahlenfelder; sie gelten nur bei einer freien Serie
+  F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
   setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
   ctx.optionenNeu();
   return true;
@@ -309,6 +319,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
         if (ctx.lauf.fertig) return;
         const def = D.serieDef(ctx.opt.serie);
         if (def && ctx.opt.groesse && !L.groessenListe(def).some((g) => g.typ === ctx.opt.groesse)) setze(id, 'groesse', '');
+        if (def) freiVorbelegen(id, def, true);                                // freie Serie: leere Zahlenfelder mit der Vorlage füllen
         ctx.optionenNeu();
       })();
       return z;
@@ -353,7 +364,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
 
     zeichne(z, fang, ctx, s) {
       const zl = ziel(z, fang, ctx);
-      const breite = L.vorschauBreite(D.serieDef(ctx.opt.serie), ctx.opt.groesse) ?? 0;
+      const breite = L.bandBreite(D.serieDef(ctx.opt.serie), ctx.opt) ?? 0;
       let h = '';
       const pts = z.punkte;
       if (z.abzweig) {

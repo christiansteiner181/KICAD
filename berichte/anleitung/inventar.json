@@ -5816,6 +5816,55 @@
           "hinweis": "Alle Werte der Testserien sind FIKTIV (tests/daten/familien/test_*.familie.json), keine Herstellerwerte. Damit der Kanal im Grundriss sichtbar ist, muss die Ansicht das Gewerk des Systems zeigen."
         },
         {
+          "id": "m3-frei-kanal",
+          "titel": "Freie Grösse (Rechteckkanal)",
+          "wo": {
+            "register": "Gebäudetechnik",
+            "gruppe": "Leitungen",
+            "knopf": "Kanal",
+            "kuerzel": "DT",
+            "sonst": "Optionsleiste (Felder «Breite», «Kanalhöhe», «Normgrösse»), Eigenschaftenpalette › Gruppe «Leitung», Familieneditor › Seite «Leitungsserie» › «Freie Grösse (nach Mass gefertigt)»"
+          },
+          "schritte": [
+            "test_kanalfrei.familie.json (und test_kanalbogen_frei, test_kanal_t_frei, test_kanalreduktion_frei) laden; ein System der Lüftung (Zuluft) mit Strang anlegen.",
+            "DT tippen. In der Optionsleiste stehen bei der Serie «Testkanal frei rechteckig» die Felder «Breite» und «Kanalhöhe» (vorbelegt mit der Vorlage 400 × 200), daneben die «Normgrösse» als Vorschlagsliste und der Hinweis mit Grenzen und Schritt.",
+            "Höhe, System und Strang eintragen, Breite 430 und Kanalhöhe 270 setzen. Drei Punkte klicken (ein Knick von 90°), Enter: die Vorschau-Zeile nennt «frei», ▾ zeigt die Einzelheiten. Enter führt aus.",
+            "Breite 3000 setzen und Enter: der Kern lehnt ab («ausserhalb der Grenzen») und schlägt 2500 × 270 vor. Breite 430.5: «nicht im Schritt», gerundet 431 × 270 wird vorgeschlagen.",
+            "In der Liste «Normgrösse» 500 × 300 wählen: die Zahlenfelder zeigen die Grösse, die Vorschau trägt keine Marke «frei» (eine Rastergrösse bleibt ein normaler Typ).",
+            "Die gezeichnete Leitung anklicken: in der Gruppe «Leitung» der Palette stehen Breite und Höhe als Zahlenfelder, «430 × 270 (frei)», die Normgrösse als Vorschlag und der Hinweis. Breite auf 450 ändern: Rückfrage «Ganzer Leitungszug», der Bogen folgt.",
+            "In der Palette Breite 3000 eintragen und «Nur diese Leitung» wählen: der Text des Kerns mit Vorschlag steht am Feld, nichts wird geändert.",
+            "Den Familieneditor der Serie öffnen (Knopf «Editor» in der Palette): in der Gruppe «Freie Grösse (nach Mass gefertigt)» die Vorlage, die Grenzen je Seite und den Schritt ansehen und ändern; bei den Formteilen die «Vorlage (freie Grösse)».",
+            "Unten auf der Seite «Kontrolltabelle und Probe berechnen» klicken: die Kontrolle erscheint erst jetzt (Laufzeit und «Abbrechen» solange der Kern rechnet), danach die Tabelle der Normgrössen und die Probe mit einer freien Grösse."
+          ],
+          "erwartung": "Eine Kanalserie mit freier Grösse nimmt jede Grösse b × h innerhalb der Grenzen und des Schritts, die Normgrössen (Typen) bleiben Vorschläge. Optionsleiste und Palette zeigen Breite und Höhe als Zahlenfelder; eine Rastergrösse bleibt ein normaler Typ, jede andere Grösse heisst «frei». Grenzen und Schritt prüft der Kern: er lehnt mit Meldung und Vorschlag ab (nie stille Rundung), und der Prüfbefund P29 («ausserhalb der Grenzen» als Fehler, «nicht im Schritt» als Hinweis) erscheint in der Palette. Der Familieneditor zeigt und bearbeitet den Block «frei» (Vorlage, Grenze je Seite, Schritt) und die Vorlage der Formteile; die Kontrolle (Abfrage leitungsserie, bei grossen Serien bis 155 s) wird bei freien Serien nie ungefragt geholt, sondern auf Knopfdruck, mit Laufzeit, abbrechbar und mit der Probe.",
+          "pruefpunkte": [
+            "Breite und Kanalhöhe in der Optionsleiste sind mit der Vorlage der Serie vorbelegt (400 × 200).",
+            "Die Normgrössen stehen als Vorschlagsliste («200 × 200» … «500 × 300»), der Hinweis nennt Grenzen und Schritt.",
+            "Vorschau: «frei» bei 430 × 270, keine Marke bei der Normgrösse 500 × 300.",
+            "Breite 3000 und 430.5 werden vom Kern mit Text und Vorschlag abgelehnt, «Vorschlag» steht nur einmal.",
+            "Palette: Zahlenfelder, «(frei)» bzw. «(Normgrösse …)», Rückfrage «Nur diese Leitung» / «Ganzer Leitungszug».",
+            "Ablehnung des Kerns steht mit Vorschlag am Feld der Palette; ein Zahlenfeld mit Text meldet «keine Zahl».",
+            "Von Hand auf 3000 gesetzte Breite (Eigenschaft) ergibt den Befund P29 in der Palette.",
+            "Familieneditor: Vorlage, Grenzen je Seite (leer = keine Grenze), Schritt und Vorlage der Formteile lassen sich ändern; eine ungültige Eingabe meldet die Seite, nichts wird gesendet.",
+            "Die Kontrolle erscheint nicht von selbst: Knopf, danach Laufanzeige mit Sekunden und «Abbrechen»; die Seite bleibt bedienbar; das Ergebnis zeigt die Probe (1323 × 1323 bei Grenzen 145 … 2500)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Optionsleiste, Palette und Familieneditor",
+            "zustand": "Gewünschte Bilder: (1) Optionsleiste Kanal mit Breite, Kanalhöhe, Normgrösse und Hinweis; (2) Vorschau-Zeile «2 Geraden, 3270 mm · 1 Bogen 90°» mit aufgeklappter Liste («frei»); (3) Vorschau «Abgelehnt» mit «ausserhalb der Grenzen» und Vorschlag; (4) Palette Gruppe «Leitung» mit Zahlenfeldern und «430 × 270 (frei)»; (5) Palette mit Befund P29; (6) Familieneditor, Gruppe «Freie Grösse (nach Mass gefertigt)»; (7) Kontrolle auf Abruf (Knopf), (8) Laufanzeige mit «Abbrechen», (9) Kontrolltabelle mit Probe"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/werkzeuge/leitung-frei.js:68",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/optionen.js:173",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/leitung-palette.js:45",
+            "src/Hlks.Web/wwwroot/js/familien/editor-leitung.js:74",
+            "src/Hlks.Web/wwwroot/js/familien/editor.js:141",
+            "entwurf/freie-groesse-kanal.md (Oberfläche)",
+            "src/Hlks.Web/OBERFLAECHE.md (Freie Grösse und Abwasser-Serie: Oberfläche)"
+          ],
+          "hinweis": "Alle Werte der Testserie sind FIKTIV (tests/daten/familien/test_kanalfrei.familie.json: Grenzen 145 … 2500 mm, Schritt 1 mm), keine Herstellerwerte. Der Kern rechnet beim Öffnen von Optionsleiste und Palette nichts nach: die Oberfläche liest die freie Serie aus der Abfrage «familie» (schnell) und stellt die Abfrage «leitungsserie» nur im Familieneditor auf Knopfdruck. Bricht man die Berechnung ab, rechnet der Kern im Hintergrund zu Ende und bedient andere Anfragen erst danach. Das Abzweig-Werkzeug übernimmt die Grösse der gewählten Leitung in die Zahlenfelder."
+        },
+        {
           "id": "m3-gefaelle-daemmung",
           "titel": "Gefälle und Dämmung",
           "wo": {
@@ -6041,6 +6090,53 @@
             "src/Hlks.Web/OBERFLAECHE.md:661 (Leitungsserie im Familieneditor)"
           ],
           "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+        },
+        {
+          "id": "m3-abwasser-serie",
+          "titel": "Abwasser-Serie (Grösse nach Aussendurchmesser)",
+          "wo": {
+            "register": "Gebäudetechnik",
+            "gruppe": "Leitungen",
+            "knopf": "Rohr",
+            "kuerzel": "PI",
+            "sonst": "Optionsleiste (Feld «Grösse» mit «d 110»), Eigenschaftenpalette › Gruppe «Leitung», Familieneditor › Seite «Leitungsserie» › «Einsatz»"
+          },
+          "schritte": [
+            "test_abwasser_d_serie.familie.json (und test_abwasser_d_bogen, test_abwasser_d_t, test_abwasser_d_reduktion) laden.",
+            "PI tippen. Bei der Serie «Testabwasser PE nach Aussendurchmesser» heisst die Auswahl «Grösse» und bietet «d 32», «d 56», «d 75», «d 110» (statt DN); der Hinweis nennt die Beschriftung des Kerns («PE 110»).",
+            "«d 110», System «Schmutzwasser» mit Strang, Höhe und Gefälle eintragen, zwei Punkte klicken, Enter: die Vorschau-Zeile nennt «d 110». Enter führt aus.",
+            "«d 32» wählen und eine zweite Leitung zeichnen: die Grösse ohne DN lässt sich zeichnen.",
+            "Mit dem Heizungssystem eine Leitung zeichnen: die Vorschau und die Meldung nach dem Ausführen nennen den Befund P30 («Abwasser-Serie … nur für die Entwässerung»).",
+            "Eine Leitung der Serie anklicken: die Gruppe «Leitung» der Palette zeigt Grösse «d 110», Einsatz «Abwasser», Aussendurchmesser, DN (Hersteller) und die Beschriftung «PE 110». Die Grösse auf «d 75» stellen: Rückfrage «Nur diese Leitung», danach «PE 75».",
+            "Das Heizungsrohr anklicken: in der Palette steht der Befund P30 mit dem Text des Kerns.",
+            "Den Familieneditor der Serie öffnen: Einsatz «Abwasser», «Grösse geführt nach» Aussendurchmesser d, die Kontrolltabelle mit den Spalten «Beschriftung» und «DN Hersteller». Den Einsatz leeren: der Kern lehnt ab, weil die Grösse d den Einsatz verlangt."
+          ],
+          "erwartung": "Eine Serie mit Einsatz «Abwasser» wird nach dem Aussendurchmesser geführt: die Grösse heisst «d 110» statt «DN 100», das Rohr trägt «durchmesser» (Aussendurchmesser), eine DN steht nur als Angabe des Herstellers (nie aus d gerechnet), d 32 ohne DN ist zeichenbar. Die Beschriftung kommt vom Kern («PE 110», unabhängig vom Medium) und steht in Optionsleiste, Palette und Kontrolltabelle. Verwendet jemand die Serie für ein anderes Medium (Heizung, Kälte, Trinkwasser), meldet der Kern den Befund P30; die Oberfläche zeigt ihn in der Vorschau, als Meldung und in der Palette. Der Familieneditor zeigt und setzt den Einsatz und die Grössenart (d bzw. DN).",
+          "pruefpunkte": [
+            "Die Grössenwahl heisst «d 32» … «d 110» (keine DN) und es gibt keine Zahlenfelder.",
+            "Der Hinweis der Optionsleiste nennt «Beschriftung «PE 110»» und folgt der gewählten Grösse.",
+            "Vorschau und Einzelheiten: «Gerade RO-n · d 110 · …».",
+            "Kern: durchmesser 110; dn 100 nur als Angabe des Herstellers; d 32 hat keine DN.",
+            "Heizungssystem: «Prüfbefund bei Ausführung: P30 …» in der Vorschau, P30 als Warnung nach dem Ausführen, «Befund P30» in der Palette.",
+            "Palette: Einsatz «Abwasser», Aussendurchmesser, «DN (Hersteller)» nur wo die Unterlage eine DN nennt, Beschriftung «PE 110» bzw. «PE 75» nach dem Wechsel.",
+            "«durchmesser» und «dn» stehen nicht noch einmal unter «Eigenschaften».",
+            "Familieneditor: Einsatz «Abwasser», Grössenart d, Kontrolltabelle mit «Beschriftung» und «DN Hersteller» (d 32: –).",
+            "Einsatz leeren: der Kern lehnt ab, nichts wird gespeichert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG, Optionsleiste, Palette und Familieneditor",
+            "zustand": "Gewünschte Bilder: (1) Optionsleiste Rohr mit Grösse «d 110» und Hinweis «Beschriftung «PE 110»»; (2) Vorschau-Zeile mit «d 110»; (3) Vorschau mit «Prüfbefund bei Ausführung: P30 …»; (4) Palette Gruppe «Leitung» mit Einsatz, Aussendurchmesser, DN (Hersteller) und Beschriftung; (5) Palette mit Befund P30; (6) Familieneditor mit Einsatz und Grössenart; (7) Kontrolltabelle mit Beschriftung und DN Hersteller"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/werkzeuge/leitung-frei.js:213",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/optionen.js:173",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/leitung-palette.js:79",
+            "src/Hlks.Web/wwwroot/js/familien/familien-text.js:780",
+            "entwurf/abwasser-serie.md (Oberfläche)",
+            "src/Hlks.Web/OBERFLAECHE.md (Freie Grösse und Abwasser-Serie: Oberfläche)"
+          ],
+          "hinweis": "Alle Werte der Testserie sind FIKTIV (tests/daten/familien/test_abwasser_d_*.familie.json), keine Herstellerwerte; die Bögen und Abzweige haben Winkel 45° und 88.5°. Das Abzweig-Werkzeug zweigt heute nur rechtwinklig ab: bei einer Serie, die nur 45° und 88.5° erlaubt, lehnt der Kern den Abzweig ab und die Vorschau zeigt seine Meldung. Der Befund P30 ist beim Zeichnen ein Hinweis des Kerns, keine Sperre."
         },
         {
           "id": "m3-schema-anlegen",

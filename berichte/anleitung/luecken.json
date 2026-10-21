@@ -11,6 +11,7 @@
     "Symbole im Revit-Stil (Teil S): zuschaltbar zur Probe (Ansicht › Fenster › Paletten); die alten werden erst nach Freigabe des Kontaktbogens ersetzt.",
     "Planblatt wie H+K (Modul 7 Teil A): Schnitt- und Ansichtsmarken mit Blattverweis, Aussparungsboxen in Fachplänen, Koordinationsplan in Gewerkefarben, Architektur-Unterlage DWG/PDF und IFC-Export mit IDS folgen mit Teil B.",
     "Listen auf Planblättern: höchstens 45 Zeilen, kein Umbruch auf weitere Blattbereiche (Teil B); breitere Tabellen werden auf 380 mm gesetzt, Spalten auf 60 mm gekürzt.",
-    "Absender im Plankopf (Standorte Bolligen und Thun): nur in kataloge/buero.json, keine Bedienung in der Oberfläche; die Plannummer des Fachs K (Koordination oder Kälte) ist noch zu entscheiden."
+    "Absender im Plankopf (Standorte Bolligen und Thun): nur in kataloge/buero.json, keine Bedienung in der Oberfläche; die Plannummer des Fachs K (Koordination oder Kälte) ist noch zu entscheiden.",
+    "Abzweig-Werkzeug: zweigt nur rechtwinklig ab. Serien mit Abzweigwinkeln ohne 90° (z. B. Abwasser-Serien mit 45° und 88.5°) lehnt der Kern den Abzweig ab; die Vorschau zeigt seine Meldung, die Winkel der Serie anzubieten ist nicht gebaut."
   ]
 }

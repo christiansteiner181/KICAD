@@ -17,12 +17,13 @@ async function antwort(r) {
 
 export async function holen(pfad) { return antwort(await fetch(pfad, { cache: 'no-store' })); }
 
-export async function senden(pfad, koerper = {}) {
-  return antwort(await fetch(pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(koerper) }));
+export async function senden(pfad, koerper = {}, { signal } = {}) {
+  return antwort(await fetch(pfad, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(koerper), signal }));
 }
 
-/** Abfrage über ihren Namen (siehe faehigkeiten). Ergebnis: Objekt oder Text (Textansichten). */
-export function abfrage(name, parameter = {}) { return senden(`/api/abfrage/${encodeURIComponent(name)}`, parameter); }
+/** Abfrage über ihren Namen (siehe faehigkeiten). Ergebnis: Objekt oder Text (Textansichten).
+ *  opt.signal (AbortSignal): bricht das Warten auf die Antwort ab (lange Abfragen wie leitungsserie einer grossen freien Serie); der Server rechnet weiter. */
+export function abfrage(name, parameter = {}, opt = {}) { return senden(`/api/abfrage/${encodeURIComponent(name)}`, parameter, opt); }
 
 /** Befehl über seinen Namen. Ergebnis: BefehlsErgebnis { angenommen, meldung, fehler, vorschlag, aenderungen, neueBefunde, … }.
  *  Ein abgelehnter Befehl ist kein Ausnahmefall, sondern angenommen=false. */

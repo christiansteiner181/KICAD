@@ -8,6 +8,7 @@
 
 import { abstand, winkelGrad, rund } from './fangen.js';
 import { WerkzeugFehler } from './parameter.js';
+import { istFrei, istRechteck, freiPflichtFehlt, groesseAusOptionen } from './leitung-frei.js';
 
 export const LEITUNGSKLASSEN = ['Rohr', 'Kanal'];
 export const FORMTEILKLASSEN = ['Bogen', 'TStueck', 'Reduktion', 'Reinigungsoeffnung'];
@@ -236,6 +237,7 @@ export function serienDerKategorie(familien, kategorie) {
 export function groessenListe(serie) {
   return (serie?.groessen ?? []).filter((g) => g.gueltig !== false).map((g) => ({
     typ: g.typ, aussen: g.aussen ?? null, innen: g.innen ?? null, wand: g.wand ?? null, dn: g.dn ?? null, b: g.b ?? null, h: g.h ?? null, d: g.d ?? null,
+    beschriftung: g.beschriftung ?? null, dnHersteller: g.dnHersteller ?? null,   // Abwasser-Serie (Nachtrag): Beschriftung des Kerns, DN des Herstellers
   }));
 }
 
@@ -243,6 +245,16 @@ export function groessenListe(serie) {
 export function vorschauBreite(serie, typ) {
   const g = groessenListe(serie).find((x) => x.typ === typ);
   return g ? (g.aussen ?? g.b ?? g.d ?? null) : null;
+}
+
+/** Breite des Gummibands: bei einer freien Serie die gewünschte Breite bzw. der Durchmesser aus der Optionsleiste (freiB/freiD; nur Anzeige,
+ *  die Masse rechnet der Kern), sonst wie vorschauBreite. */
+export function bandBreite(serie, opt) {
+  if (istFrei(serie)) {
+    const w = istRechteck(serie) ? opt?.freiB : opt?.freiD;
+    return zahlOK(w) && w > 0 ? w : null;
+  }
+  return vorschauBreite(serie, opt?.groesse);
 }
 
 /**
@@ -278,10 +290,12 @@ export function optionenZustand({ serien, serie = '', serieDef = null, groesse =
 // ------------------------------------------------------------------------------------------------ Befehlsparameter
 
 /** Fehlende Pflichtangaben vor dem ersten Klick: { feld, text, vorschlag } oder null. */
-export function pflichtFehlt(opt, { kategorie = 'Rohr', serien = [] } = {}) {
+export function pflichtFehlt(opt, { kategorie = 'Rohr', serien = [], serie = null } = {}) {
   if (!serien.length) return { feld: 'serie', text: `Keine Leitungsserie der Kategorie ${kategorie} im Projekt.`, vorschlag: 'Eine Leitungsserie als Familie laden (Projektbrowser › Familien › Familie laden).' };
   if (!opt.serie) return { feld: 'serie', text: 'Die Serie fehlt.', vorschlag: 'In der Optionsleiste eine Leitungsserie wählen.' };
-  if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Serie wählen.' };
+  // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser statt der Typwahl; Grenzen und Schritt prüft der Kern
+  if (istFrei(serie)) { const f = freiPflichtFehlt(serie, opt); if (f) return f; }
+  else if (!opt.groesse) return { feld: 'groesse', text: 'Die Grösse fehlt.', vorschlag: 'In der Optionsleiste eine Grösse der Serie wählen.' };
   if (!zahlOK(opt.hoehe)) return { feld: 'hoehe', text: 'Die Höhe fehlt.', vorschlag: 'In der Optionsleiste die Höhe der Achse über OK Geschoss in mm eintragen (Pflichtfeld).' };
   return null;
 }
@@ -298,12 +312,17 @@ export function eigenschaftenAus(opt) {
  * bzw. Ende der Zeichnung. Zeichnet man gegen die Fliessrichtung, wird umgedreht (flussRichtung). System oder Strang sind
  * Pflicht, solange kein Anschluss das System liefert.
  */
-export function leitungParameter({ opt, punkte, von = null, nach = null, geschoss = null }) {
+export function leitungParameter({ opt, punkte, von = null, nach = null, geschoss = null, serie = null }) {
   if (punkte.length < 2) throw new WerkzeugFehler('Eine Leitung braucht mindestens zwei Punkte.', 'Weitere Punkte anklicken.');
   if (!opt.serie) throw new WerkzeugFehler('Die Serie fehlt.', 'In der Optionsleiste eine Leitungsserie wählen.');
-  if (!opt.groesse) throw new WerkzeugFehler('Die Grösse fehlt.', 'In der Optionsleiste eine Grösse der Serie wählen.');
+  // Freie Grösse (Nachtrag): groesse = { b, h } bzw. { d } aus den Zahlenfeldern; sonst der Typ der Serie
+  const groesse = groesseAusOptionen(serie, opt);
+  if (groesse === null) {
+    const f = freiPflichtFehlt(serie, opt);
+    throw new WerkzeugFehler(f ? f.text : 'Die Grösse fehlt.', f ? f.vorschlag : 'In der Optionsleiste eine Grösse der Serie wählen.');
+  }
   const r = flussRichtung({ punkte, von, nach });
-  const p = { serie: opt.serie, groesse: opt.groesse, punkte: r.punkte.map(gerundet) };
+  const p = { serie: opt.serie, groesse, punkte: r.punkte.map(gerundet) };
   if (r.von) p.von = anschlussEnde(r.von);
   if (r.nach) p.nach = anschlussEnde(r.nach);
   if (opt.strang) p.strang = opt.strang;
@@ -322,14 +341,16 @@ export function leitungParameter({ opt, punkte, von = null, nach = null, geschos
  * Fusspunkt, in Zeichenrichtung = vom T-Stück weg); ohne punkte gilt richtung (nur das T-Stück). Serie und Grösse aus der
  * Optionsleiste (System und Strang übernimmt der Kern von der Leitung).
  */
-export function abzweigParameter({ opt, leitung, punkt, punkte = [], richtung = null, nach = null, geschoss = null }) {
+export function abzweigParameter({ opt, leitung, punkt, punkte = [], richtung = null, nach = null, geschoss = null, serie = null }) {
   if (!leitung) throw new WerkzeugFehler('Keine Leitung für den Abzweig.', 'Zuerst auf eine bestehende Gerade klicken.');
   const p = { leitung, punkt: gerundet(punkt) };
   if (punkte.length) p.punkte = punkte.map(gerundet);
   else if (richtung) p.richtung = richtung;
   else throw new WerkzeugFehler('Der Abzweig hat keine Richtung.', 'Einen Punkt neben der Leitung anklicken oder Enter für nur das T-Stück.');
   if (opt?.serie) p.serie = opt.serie;
-  if (opt?.groesse) p.groesse = opt.groesse;
+  // Freie Grösse (Nachtrag): { b, h } bzw. { d }; ohne ausgefüllte Felder übernimmt der Kern die Grösse der Leitung
+  const g = opt ? groesseAusOptionen(serie, opt) : null;
+  if (g) p.groesse = g;
   if (nach) p.ende = anschlussEnde(nach);
   if (opt && zahlOK(opt.gefaelle) && opt.gefaelle > 0) p.gefaelle = opt.gefaelle;
   if (geschoss) p.geschoss = geschoss;
@@ -374,8 +395,9 @@ export function vorschauAus(r) {
   let kopf = null;
   for (const h of hin) {
     let m;
-    if ((m = /^Gerade (\S+) ([^:]+): ([\d.]+) mm/.exec(h))) geraden.push({ kz: m[1], groesse: m[2], laenge: ZAHL(m[3]) });
-    else if ((m = FORMTEIL_ART.exec(h))) formteile.push({ art: m[1], kz: m[2], typ: m[3], winkel: m[4] !== undefined ? ZAHL(m[4]) : null });
+    // frei: Hinweis des Kerns bei einer freien Grösse («…, frei (Vorlage «400x200»)» bzw. «…, frei 430 × 270»)
+    if ((m = /^Gerade (\S+) ([^:]+): ([\d.]+) mm/.exec(h))) geraden.push({ kz: m[1], groesse: m[2], laenge: ZAHL(m[3]), ...(/, frei \(Vorlage/.test(h) ? { frei: true } : {}) });
+    else if ((m = FORMTEIL_ART.exec(h))) formteile.push({ art: m[1], kz: m[2], typ: m[3], winkel: m[4] !== undefined ? ZAHL(m[4]) : null, ...(/, frei \d/.test(h) ? { frei: true } : {}) });
     else if (/\d+ Gerade\(n\), zusammen [\d.]+ mm/.test(h)) kopf = h;
     else sonst.push(h);
   }
@@ -401,21 +423,23 @@ export function vorschauZeile(v) {
 /** Alle Zeilen der Vorschau mit Länge bzw. Typ und Winkel (für das Aufklappen). */
 export function vorschauListe(v) {
   return [
-    ...v.geraden.map((g) => `Gerade ${g.kz} · ${g.groesse} · ${mmText(g.laenge)}`),
-    ...v.formteile.map((f) => `${f.art} ${f.kz} · Typ «${f.typ}»${f.winkel !== null ? ` · ${f.winkel}°` : ''}`),
+    ...v.geraden.map((g) => `Gerade ${g.kz} · ${g.groesse} · ${mmText(g.laenge)}${g.frei ? ' · frei' : ''}`),
+    ...v.formteile.map((f) => `${f.art} ${f.kz} · Typ «${f.typ}»${f.winkel !== null ? ` · ${f.winkel}°` : ''}${f.frei ? ' · frei (Exemplarwerte)' : ''}`),
     ...v.sonst,
   ];
 }
 
-/** Ablehnung des Kerns: Text und Vorschlag (der Kern sagt, was nicht passt und wie es geht). */
+/** Ablehnung des Kerns: Text und Vorschlag (der Kern sagt, was nicht passt und wie es geht). Der Kern beginnt manche Vorschläge selbst
+ *  mit «Vorschlag: » (Grösse ausserhalb von Grenzen und Schritt) – das Wort steht nur einmal in der Anzeige. */
 export function ablehnung(r) {
   const text = r?.fehler || r?.meldung || 'Der Kern hat den Befehl abgelehnt.';
-  return { text, vorschlag: r?.vorschlag ?? null };
+  const v = typeof r?.vorschlag === 'string' ? r.vorschlag.replace(/^\s*Vorschlag:\s*/i, '') : null;
+  return { text, vorschlag: v === '' ? null : (v ?? null) };
 }
 
-/** Befunde, die ein Befehl neu auslöst (Prüfungen P13–P18 …), als kurze Texte für Meldungen. */
+/** Befunde, die ein Befehl neu auslöst (Prüfungen P13–P18, P29 freie Grösse, P30 Abwasser-Serie …), als kurze Texte für Meldungen. */
 export function neueBefundeTexte(r, max = 3) {
-  const l = (r?.neueBefunde ?? []).filter((b) => b && (b.schwere !== 'hinweis' || /^P1[3-8]$/.test(b.code ?? '')));
+  const l = (r?.neueBefunde ?? []).filter((b) => b && (b.schwere !== 'hinweis' || /^P(1[3-8]|29|30)$/.test(b.code ?? '')));
   const texte = l.slice(0, max).map((b) => `${b.code}${b.element ? ' ' + b.element : ''}: ${b.text}`);
   if (l.length > max) texte.push(`… und ${l.length - max} weitere`);
   return texte;

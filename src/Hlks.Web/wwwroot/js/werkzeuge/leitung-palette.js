@@ -9,12 +9,21 @@
 
 import { esc } from './schicht.js';
 import { groessenListe, hatSerie, istLeitungsklasse, istFormteilklasse, kategorieVon, mmText } from './leitung-logik.js';
+import { istFrei, istRechteck, istAbwasser, nachAussendurchmesser, groessenOptionen, rasterVorschlag, groesseAnzeige, freiHinweis, abwasserHinweis, beschriftungVon, zahlText } from './leitung-frei.js';
 
 const zahl = (w) => (w === null || w === undefined || w === '' ? '' : String(Math.round(Number(w) * 1000) / 1000));
 const wertVon = (l, name) => l?.eigenschaften?.[name]?.wert;
 
 /** Eigenschaften der Leitung, die die Gruppe «Leitung» zeigt (die allgemeine Liste lässt sie aus). */
 export const LEITUNG_EIGENSCHAFTEN = ['dn', 'gefaelle', 'daemmung', 'daemmdicke'];
+
+/** Dazu bei einer freien Serie die Grösse (breite, hoehe, durchmesser: Zahlenfelder der Gruppe) und bei einer Abwasser-Serie nach Aussendurchmesser der
+ *  Aussendurchmesser (durchmesser: eigene Zeile der Gruppe). Bei allen anderen Serien bleiben die Grössen unter «Eigenschaften». */
+export function leitungEigenschaften(serie) {
+  if (istFrei(serie)) return [...LEITUNG_EIGENSCHAFTEN, 'breite', 'hoehe', 'durchmesser'];
+  if (nachAussendurchmesser(serie)) return [...LEITUNG_EIGENSCHAFTEN, 'durchmesser'];
+  return LEITUNG_EIGENSCHAFTEN;
+}
 
 const optionen = (liste, aktuell) => {
   const l = liste.some(([w]) => w === aktuell) || aktuell === null || aktuell === undefined || aktuell === '' ? liste : [...liste, [aktuell, `${aktuell} (gibt es nicht mehr)`]];
@@ -43,11 +52,45 @@ export function leitungGruppe(d, H) {
   zeilen.push(H.zeile('Serie', `<select data-ziel="lt:serie" data-typ="auswahl">${optionen(sl, f?.kennzeichen ?? el.bezuege?.familie ?? null)}</select>`
     + `<button type="button" class="ep-fam-knopf" data-aktion="fam-editor" data-fam="${esc(f?.kennzeichen ?? el.bezuege?.familie ?? '')}" title="Leitungsserie im Editor öffnen">Editor</button>`,
     { titel: 'Leitungsserie (Familie der Kategorie Rohr bzw. Kanal). Eine Änderung ersetzt die Formteile der Leitung (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
-  zeilen.push(H.zeile('Grösse', `<select data-ziel="lt:groesse" data-typ="auswahl">${optionen(gr, typ)}</select>`,
-    { titel: 'Grösse der Serie. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
-  if (aktuell) {
-    const masse = [aktuell.aussen != null ? `aussen ${zahl(aktuell.aussen)}` : null, aktuell.innen != null ? `innen ${zahl(aktuell.innen)}` : null, aktuell.wand != null ? `Wand ${zahl(aktuell.wand)}` : null].filter(Boolean).join(' · ');
-    if (masse) zeilen.push(H.zeile('Mass', H.nurLesen(`${masse} mm`), { titel: 'Aus der Serie (mit Quelle in der Familie)', klasse: 'klein' }));
+  if (istFrei(serie)) {
+    // Freie Grösse (Nachtrag): Zahlenfelder b × h bzw. d, die Normgrössen der Serie als Vorschlag; Grenzen und Schritt prüft der Kern (Ablehnung mit Vorschlag am Feld)
+    const werte = { breite: wertVon(l, 'breite'), hoehe: wertVon(l, 'hoehe'), durchmesser: wertVon(l, 'durchmesser'), familientyp: typ };
+    const anz = groesseAnzeige(serie, werte);
+    zeilen.push(H.zeile('Grösse', H.nurLesen(`${anz.text}${anz.frei ? ' (frei)' : anz.typ ? ` (Normgrösse ${anz.typ})` : ''}`),
+      { titel: anz.frei ? 'Freie Grösse: keine Normgrösse der Serie, Masse aus der Vorlage gerechnet' : 'Normgrösse = Typ der Serie' }));
+    const eingabe = (ziel, wert, einheit = 'mm') => `<input type="text" inputmode="decimal" data-ziel="lt:${ziel}" data-typ="frei" value="${esc(zahl(wert))}"><span class="ep-einheit">${einheit}</span>`;
+    if (istRechteck(serie)) {
+      zeilen.push(H.zeile('Breite', eingabe('b', werte.breite), { titel: 'Breite b des Kanals. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
+      zeilen.push(H.zeile('Höhe', eingabe('h', werte.hoehe), { titel: 'Höhe h des Kanals' }));
+    } else zeilen.push(H.zeile('Durchmesser', eingabe('d', werte.durchmesser), { titel: 'Durchmesser d des Kanals' }));
+    const raster = rasterVorschlag(serie);
+    zeilen.push(H.zeile('Normgrösse', `<select data-ziel="lt:raster" data-typ="auswahl"><option value=""${anz.typ ? '' : ' selected'}>${anz.typ ? 'Normgrösse wählen …' : 'frei (keine Normgrösse)'}</option>`
+      + `${raster.map((r) => `<option value="${esc(r.typ)}"${r.typ === anz.typ ? ' selected' : ''}>${esc(r.text)}</option>`).join('')}</select>`,
+      { titel: 'Vorschlagsliste: die Typen der Serie. Die Wahl setzt die Grösse auf die Normgrösse (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
+    zeilen.push(H.zeile('', H.nurLesen(serie.frei.text ?? ''), { titel: freiHinweis(serie), klasse: 'klein' }));
+  } else {
+    zeilen.push(H.zeile('Grösse', `<select data-ziel="lt:groesse" data-typ="auswahl">${optionen(nachAussendurchmesser(serie) ? groessenOptionen(serie) : gr, typ)}</select>`,
+      { titel: 'Grösse der Serie. Eine Änderung führt Bögen und Reduktionen nach (Rückfrage: nur diese Leitung oder ganzer Zug).' }));
+    if (aktuell) {
+      const masse = [aktuell.aussen != null ? `aussen ${zahl(aktuell.aussen)}` : null, aktuell.innen != null ? `innen ${zahl(aktuell.innen)}` : null, aktuell.wand != null ? `Wand ${zahl(aktuell.wand)}` : null].filter(Boolean).join(' · ');
+      if (masse) zeilen.push(H.zeile('Mass', H.nurLesen(`${masse} mm`), { titel: 'Aus der Serie (mit Quelle in der Familie)', klasse: 'klein' }));
+    }
+  }
+  // Abwasser-Serie (Nachtrag): Grösse nach Aussendurchmesser, Beschriftung vom Kern, DN nur als Angabe des Herstellers
+  if (istAbwasser(serie)) {
+    zeilen.push(H.zeile('Einsatz', H.nurLesen('Abwasser'), { titel: abwasserHinweis(serie), klasse: 'klein' }));
+    if (nachAussendurchmesser(serie)) {
+      const dm = wertVon(l, 'durchmesser'), dn = wertVon(l, 'dn');
+      zeilen.push(H.zeile('Aussendurchmesser', H.nurLesen(dm != null ? `${zahlText(dm)} mm` : '–'), { titel: 'Aussendurchmesser des Rohrs (Typ der Serie); die Grösse der Serie ist d' }));
+      if (dn != null) zeilen.push(H.zeile('DN (Hersteller)', H.nurLesen(`DN ${zahlText(dn)}`), { titel: 'Angabe der Herstellerunterlage (Typparameter mit ziel dn) – nie aus dem Aussendurchmesser abgeleitet', klasse: 'klein' }));
+    }
+    const bes = beschriftungVon(serie, typ);
+    if (bes) zeilen.push(H.zeile('Beschriftung', H.nurLesen(bes), { titel: 'Beschriftung im Plan und im Schema (Kern): Kürzel und Aussendurchmesser, unabhängig vom Medium' }));
+  }
+  // Prüfbefunde des Kerns zu dieser Leitung: P29 (freie Grösse ausserhalb von Grenzen bzw. Schritt), P30 (Abwasser-Serie für ein anderes Medium)
+  for (const b of d.befunde ?? []) {
+    zeilen.push(H.zeile(`Befund ${b.code}`, `<span class="ep-text ep-befund ep-befund-${esc(b.schwere)}">${esc(b.text)}${b.vorschlag ? ` <span class="leise">→ ${esc(b.vorschlag)}</span>` : ''}</span>`,
+      { titel: `Prüfbefund ${b.code} (${b.schwere}) – Register Verwalten › Prüfbefunde`, klasse: 'ep-befundzeile' }));
   }
   zeilen.push(H.zeile('Gefälle', `<input type="text" inputmode="decimal" data-ziel="eig:gefaelle" data-typ="zahl" value="${esc(zahl(wertVon(l, 'gefaelle')))}"><span class="ep-einheit">%</span>`, { titel: 'Gefälle in Fliessrichtung (Schwerkraftleitungen)' }));
   zeilen.push(H.zeile('Dämmung', `<input type="text" data-ziel="eig:daemmung" data-typ="text" value="${esc(wertVon(l, 'daemmung') ?? '')}" placeholder="Art / Produkt">`, { titel: 'Art der Dämmung' }));

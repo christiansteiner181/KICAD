@@ -16,7 +16,7 @@ function feldHtml(wid, f) {
   const pflicht = f.pflicht && (w === null || w === '') ? ' pflicht-leer' : '';
   switch (f.art) {
     case 'hinweis':
-      return `<span class="ol-hinweis">${esc(f.text)}</span>`;
+      return `<span class="ol-hinweis${f.klasse ? ' ' + esc(f.klasse) : ''}">${esc(f.text)}</span>`;
     case 'knopf':
       return `<button type="button" class="ol-knopf" data-ol-aktion="${esc(f.aktion)}" title="${esc(f.titel)}">${esc(f.titel)}</button>`;
     case 'bool':

@@ -5,8 +5,9 @@
 
 import { abfrage } from '../api.js';
 import { abonnieren, element, alleElemente, klasse, zustand } from '../zustand.js';
-import { familienListe } from '../familien/daten.js';
+import { familienListe, familieHolen } from '../familien/daten.js';
 import { anschluesseAus, serienDerKategorie } from './leitung-logik.js';
+import { serieLeichtAus, leitungsBefunde } from './leitung-frei.js';
 
 /** Haken vom laufenden Werkzeug (leitung.js; hier keine Abhängigkeit von der Oberfläche, damit Node-Tests laden können):
  *  hoeheGeaendert() – in der Optionsleiste wurde die Höhe geändert (Höhenwechsel), optionenNeu() – Optionsleiste neu zeichnen. */
@@ -27,18 +28,41 @@ export function serieDef(kz) {
   return null;
 }
 
-export function serieLaden(kz) {
+/**
+ * Lädt die Serie. Eine freie Serie (leitung.frei, Nachtrag freie Grösse) bleibt «leicht»: Block und Typwerte aus der Abfrage `familie` – die Abfrage
+ * `leitungsserie` rechnet alle Grössen mit allen Formteilen und dauert bei einer grossen freien Serie bis 155 s, sie wird hier nie ungefragt gestellt
+ * (der Familieneditor holt sie auf Knopfdruck). Alle anderen Serien: Antwort von `leitungsserie` wie bisher. `familienAntwort`: schon geholte
+ * Antwort der Abfrage `familie` (spart die Rückfrage).
+ */
+export function serieLaden(kz, familienAntwort = null) {
   if (!kz) return Promise.resolve(null);
   const e = serien.get(kz);
   if (e?.laedt) return e.laedt;
   if (e?.def) return Promise.resolve(e.def);
   const eintrag = { def: null, laedt: null };
   serien.set(kz, eintrag);
-  eintrag.laedt = abfrage('leitungsserie', { familie: kz })
+  eintrag.laedt = (async () => {
+    const f = familienAntwort ?? await familieHolen(kz);
+    if (f?.definition?.leitung?.frei) return serieLeichtAus(f);
+    return abfrage('leitungsserie', { familie: kz });
+  })()
     .then((d) => { eintrag.def = d; eintrag.laedt = null; optionenNeu(); return d; })
     .catch((err) => { console.warn('Leitungsserie', kz, err?.message ?? err); serien.delete(kz); return null; });
   return eintrag.laedt;
 }
+
+// ------------------------------------------------------------------------------------------------ Prüfbefunde P29 / P30
+
+let befundeLaedt = null;     // Promise auf die Befunde P29 und P30 des Projekts (leert sich bei jeder Änderung am Modell)
+
+/** Prüfbefunde P29 (freie Grösse) und P30 (Abwasser-Serie) eines Elements aus der Abfrage `pruefen` (vom Kern, nicht berechnet). */
+export async function befundeVon(kz) {
+  befundeLaedt ??= abfrage('pruefen', {}).then((r) => r?.befunde ?? []).catch((err) => { console.warn('Prüfbefunde', err?.message ?? err); befundeLaedt = null; return []; });
+  return leitungsBefunde(await befundeLaedt, kz);
+}
+
+/** Legt eine fertige Serie in den Zwischenspeicher (Tests ohne Server; leert sich wie alle bei Änderungen am Modell). */
+export function serieEinsetzen(kz, def) { serien.set(kz, { def, laedt: null }); }
 
 const optionenNeu = () => haken.optionenNeu?.();
 
@@ -99,6 +123,7 @@ export function elementeNahe(p, rand, geschossKz) {
 
 abonnieren('modell', (d) => {
   anschluesse.clear();
+  befundeLaedt = null;
   if (d?.alles || (d?.geloescht ?? []).length || (d?.ids ?? []).some((id) => element(id)?.klasse === 'Familie')) serien.clear();
 });
-abonnieren('status', () => { if (!zustand.status?.offen) { anschluesse.clear(); serien.clear(); } });
+abonnieren('status', () => { if (!zustand.status?.offen) { anschluesse.clear(); serien.clear(); befundeLaedt = null; } });

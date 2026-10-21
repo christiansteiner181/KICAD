@@ -37,6 +37,11 @@ function erstellen(behaelter, familieElement) {
   const eigeneId = familieElement.id;
   let fam = null;               // Antwort der Abfrage familie
   let serieDaten = null;        // Antwort der Abfrage leitungsserie (Kontrolltabelle) oder { fehler, vorschlag }; null = Familie ist keine Serie / noch nicht geladen
+  // Freie Serien (leitung.frei): die Abfrage leitungsserie rechnet alle Grössen mit allen Formteilen (bis 155 s) – sie kommt nur auf Knopfdruck, abbrechbar
+  let kontrolleLauf = { zustand: 'bereit', sekunden: 0 };   // bereit | laedt | abgebrochen | fertig
+  let kontrolleAbbruch = null;  // AbortController der laufenden Abfrage
+  let kontrolleTimer = null;
+  let kontrolleStand = null;    // Definition (als Text), für die serieDaten gerechnet wurden
   let tab = merken.lesen('familieEditorTab', null);   // null: noch nichts gemerkt – dann beginnt eine Leitungsserie auf «Leitungsserie», alles andere auf «Parameter»
   if (!TABS.some((t) => t.id === tab)) tab = null;
   const istSerie = () => !!fam?.definition?.leitung;
@@ -103,6 +108,10 @@ function erstellen(behaelter, familieElement) {
     familien: () => familienListe(),
     klassen: () => zustand.katalog?.klassen ?? [],
     serie: () => serieDaten,
+    /** Freie Serie: Zustand der Kontrolle { lauf, veraltet } – veraltet: die Definition hat sich seit der Berechnung geändert. */
+    kontrolle: () => ({ lauf: kontrolleLauf, veraltet: !!serieDaten && kontrolleStand !== null && kontrolleStand !== JSON.stringify(fam?.definition ?? null) }),
+    kontrolleLaden: () => kontrolleLaden(),
+    kontrolleAbbrechen: () => kontrolleAbbrechen(),
     auswahl,
     medien: () => zustand.katalog?.medien ?? [],
     fehler: (t) => meldungZeigen('fehler', t),
@@ -128,6 +137,35 @@ function erstellen(behaelter, familieElement) {
     if (!f?.definition?.leitung) return null;
     try { return await abfrage('leitungsserie', { familie: kz }); } catch (e) { return { fehler: e.message, vorschlag: e.vorschlag ?? '' }; }
   }
+  /** Kontrolltabelle und Probe einer freien Serie auf Knopfdruck holen: Laufzeit sichtbar, «Abbrechen» beendet das Warten (die Oberfläche bleibt bedienbar; der Kern rechnet im Hintergrund zu Ende). */
+  async function kontrolleLaden() {
+    if (kontrolleAbbruch || tot || !fam?.definition?.leitung) return;
+    const ac = new AbortController();
+    kontrolleAbbruch = ac;
+    const t0 = Date.now();
+    kontrolleLauf = { zustand: 'laedt', sekunden: 0 };
+    const stand = JSON.stringify(fam.definition ?? null);
+    zeichnen();
+    kontrolleTimer = setInterval(() => {
+      kontrolleLauf.sekunden = Math.floor((Date.now() - t0) / 1000);
+      const z = seite.querySelector('.fe-kontrolle-zeit');     // nur die Zahl nachführen: die Seite wird nicht neu geschrieben (Eingaben und Fokus bleiben)
+      if (z) z.textContent = `${kontrolleLauf.sekunden} s`;
+    }, 1000);
+    try {
+      const d = await abfrage('leitungsserie', { familie: kz }, { signal: ac.signal });
+      if (ac.signal.aborted || tot) return;
+      serieDaten = d; kontrolleStand = stand; kontrolleLauf = { zustand: 'fertig', sekunden: Math.floor((Date.now() - t0) / 1000) };
+    } catch (e) {
+      if (ac.signal.aborted) kontrolleLauf = { zustand: 'abgebrochen', sekunden: 0 };
+      else { serieDaten = { fehler: e.message, vorschlag: e.vorschlag ?? '' }; kontrolleStand = stand; kontrolleLauf = { zustand: 'fertig', sekunden: 0 }; }
+    } finally {
+      clearInterval(kontrolleTimer); kontrolleTimer = null;
+      if (kontrolleAbbruch === ac) kontrolleAbbruch = null;
+      if (!tot) zeichnen();
+    }
+  }
+  function kontrolleAbbrechen() { kontrolleAbbruch?.abort(); }
+
   const fokusKey = () => { const a = document.activeElement; return a && seite.contains(a) ? a.dataset?.fk ?? null : null; };
   function fokusHerstellen(key) {
     if (!key) return;
@@ -197,7 +235,9 @@ function erstellen(behaelter, familieElement) {
     if (!f) { meldungZeigen('fehler', `Familie ${kz} konnte nicht gelesen werden.`); return; }
     fam = f;
     if (f.definition?.leitung) await familienLaden();   // die Auswahl der Formteil-Familien braucht die Liste des Projekts (sonst stünde «nicht im Projekt» da)
-    serieDaten = await serieLaden(f);
+    // Freie Serie: keine Abfrage leitungsserie ungefragt (bis 155 s); eine früher geholte Kontrolle bleibt stehen (veraltet, wenn sich die Definition geändert hat)
+    if (f.definition?.leitung?.frei) { if (!kontrolleAbbruch && !serieDaten) kontrolleLauf = { zustand: 'bereit', sekunden: 0 }; }
+    else { serieDaten = await serieLaden(f); kontrolleStand = null; }
     if (mein !== ladeNr || tot) return;
     if (schmutzig && !explizit && seite.contains(document.activeElement)) veraltet = true; else zeichnen();
     tabsZeichnen(); fussZeichnen();
@@ -399,7 +439,7 @@ function erstellen(behaelter, familieElement) {
     zoomAlles() { ansicht.zoomAlles(); },
     /** Die laufende eigene Seite (Prüfansicht, Befund-Browser) – für Tests. */
     get eigeneSeite() { return eigen?.ctrl ?? null; },
-    zerstoeren() { tot = true; ladeNr++; eigenAus(); abmelden(); ansicht.zerstoeren(); behaelter.replaceChildren(); },
+    zerstoeren() { tot = true; ladeNr++; kontrolleAbbruch?.abort(); clearInterval(kontrolleTimer); eigenAus(); abmelden(); ansicht.zerstoeren(); behaelter.replaceChildren(); },
   };
 
   // Die Liste der Familien des Projekts ändert sich (Formteil-Familie geladen): Auswahl und Kontrolltabelle der Leitungsserie neu holen
