@@ -251,8 +251,8 @@ test('Tablet-Treffer: Lage über der Hand, Fingerspitze und Strahl liefern (u, v
 
 test('Tablet-Inhalt: Platzhalter «folgt», Umschalter, Eigenschaften lesend, Aufbau und Aufleuchten', () => {
   const t = G.tabletLayout();
-  for (const id of ['familie', 'problem', 'raum']) assert.equal(t.find((x) => x.id === id).platzhalter, true, id);
-  for (const id of ['rueckgaengig', 'wiederholen', 'hoeher', 'tiefer', 'schnitt', 'ifc', 'messen', 'messungenLoeschen', 'lot', 'ende']) assert.ok(t.find((x) => x.id === id) && !t.find((x) => x.id === id).platzhalter, id);
+  for (const id of ['familie', 'problem']) assert.equal(t.find((x) => x.id === id).platzhalter, true, id);
+  for (const id of ['rueckgaengig', 'wiederholen', 'hoeher', 'tiefer', 'schnitt', 'ifc', 'messen', 'messungenLoeschen', 'lot', 'ende', 'raum']) assert.ok(t.find((x) => x.id === id) && !t.find((x) => x.id === id).platzhalter, id);
   assert.deepEqual(G.eigenschaftenZeilen(null), ['Kein Element gewählt']);
   const z = G.eigenschaftenZeilen({ kennzeichen: 'RO-1', klasse: 'Rohr', system: 'KW-1', geschoss: 'EG', werte: { dn: 20, material: 'Stahl', geometrie: 'x' } });
   assert.equal(z[0], 'RO-1 · Rohr'); assert.ok(z[1].includes('System KW-1')); assert.ok(z[2].includes('dn 20') && !z[2].includes('geometrie'));

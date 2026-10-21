@@ -10505,7 +10505,7 @@
           "schritte": [
             "Linke Hand öffnen und auf die Handfläche schauen: Über der Hand baut sich das Tablet auf. (Controller: Taste Y links drücken; nochmals drücken schliesst.)",
             "Tippen: mit der Spitze des rechten Zeigefingers die Taste berühren bzw. mit dem rechten Zeigestrahl zielen und Abzug drücken. Die Taste leuchtet kurz auf.",
-            "Tasten: Rückgängig, Wiederholen, Augenhöhe + und −, Schnittbereich, IFC-Unterlage, VR beenden. «Familie platzieren», «Problem markieren» und «Raum wechseln» sind ausgegraut («folgt»).",
+            "Tasten: Rückgängig, Wiederholen, Augenhöhe + und −, Schnittbereich, IFC-Unterlage, VR beenden. «Sitzungsraum» wechselt in den Sitzungsraum (XR-H). «Familie platzieren» und «Problem markieren» sind ausgegraut («folgt»).",
             "Messen: «Messen» tippen. Mit dem rechten Zeigefinger (Pinch zum Setzen) bzw. mit Strahl und Abzug zwei Punkte setzen. Die Punkte fangen an Ecken, Kanten, Leitungsachsen, Anschlüssen und Flächen; das Fangsymbol zeigt, woran.",
             "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt alle auf.",
             "Einzelne Masslinie löschen: mit der offenen Hand schnell und waagrecht durch die Linie wischen (wie an der Wandtafel). Nur die getroffene Linie leuchtet kurz auf und verschwindet; ein Wisch ins Leere tut nichts. Mit der Faust, im Pinch oder am Tablet wischt es nicht.",
@@ -10537,6 +10537,48 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt Modul XR)"
           ],
           "hinweis": "Ohne Gewähr: Die Geste (Handfläche höchstens 60° neben dem Kopf), die Berührungstiefe und die Taste Y als Ersatz für die Menütaste (sie gehört dem System) sind Annahmen und mit der Brille zu bestätigen. Das Aussehen entspricht dem Wunsch «futuristisch, hologrammmässig»."
+        },
+        {
+          "id": "zb-xr-sitzungsraum",
+          "titel": "Sitzungsraum: das Modell verkleinert auf dem Tisch, Etagen wählen, drehen und zoomen (XR-H)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In VR: Tablet an der linken Hand › Taste «Sitzungsraum» (zurück: «Begehen»)"
+          },
+          "schritte": [
+            "In VR das Tablet öffnen (linke Hand offen, Handfläche zum Kopf) und «Sitzungsraum» tippen. Das Begehen pausiert; man steht in einem dunklen Raum vor einem Glastisch, auf dem das Modell im Massstab 1:50 liegt.",
+            "Etage wählen: Auf dem Tablet erscheinen «Alle Etagen» und die Geschosse des Modells. Ein Geschoss antippen: alles oberhalb wird weggeschnitten, man sieht von oben hinein. «Decke zeigen» legt den Schnitt über die Decke. «Alle Etagen» zeigt wieder alles.",
+            "Modell bewegen und drehen: Mit einer Hand nahe am Modell eine Faust machen (Controller: Grifftaste) und halten. Das Modell folgt der Hand und dreht sich mit ihr um die Senkrechte. Hand öffnen: loslassen.",
+            "Zoomen: Mit beiden Händen nahe am Modell eine Faust machen und die Hände auseinanderziehen (grösser) oder zusammenschieben (kleiner). Gezoomt wird um den Mittelpunkt zwischen den Händen, von 1:200 bis 1:20. Der Massstab steht als Hologramm-Schrift an der Tischkante.",
+            "«IFC-Unterlage» schaltet die IFC-Unterlage zu (vorgabemässig aus). «Zurücksetzen» stellt Massstab, Lage und Drehung des Modells wieder auf den Anfang.",
+            "Zurück: «Begehen» tippen. Man steht wieder am alten Standpunkt, die Darstellung ist wie vorher. «VR beenden» im Sitzungsraum beendet die Sitzung."
+          ],
+          "erwartung": "Ein dunkler Raum (ca. 8 × 6 m) mit mattschwarzen Wänden, schmalen weissen Lichtlinien, leichtem Dunst und glänzendem Boden. In der Mitte ein Glastisch mit leuchtender Kante; darauf liegt das Modell hell und matt, mit der Unterkante auf der Platte. Das Modell bleibt immer waagrecht. Etagenwahl, Drehen und Zoomen ändern das Modell im Projekt nicht.",
+          "pruefpunkte": [
+            "«Sitzungsraum» auf dem Tablet führt in den Raum; das Begehen pausiert (Stick und Teleport tun nichts).",
+            "Das Modell liegt zu Beginn im Massstab 1:50 auf der Mitte der Platte, die IFC-Unterlage ist aus.",
+            "Das Tablet zeigt «Alle Etagen» und alle Geschosse des Modells; die gewählte Etage ist hervorgehoben.",
+            "Bei «EG» ist alles oberhalb der Decke des EG weggeschnitten, bei «1.OG» entsprechend höher; «Alle Etagen» zeigt wieder alles. «Decke zeigen» schneidet über der Decke.",
+            "Eine Hand: Das Modell folgt der Hand, dreht sich mit ihr und fällt nicht vom Tisch. Das Zufassen weit weg vom Modell greift nichts.",
+            "Zwei Hände: Auseinanderziehen vergrössert bis 1:20, Zusammenschieben verkleinert bis 1:200; die Stelle zwischen den Händen bleibt dort. Der Massstab an der Tischkante stimmt.",
+            "«Zurücksetzen» bringt das Modell auf 1:50, ungedreht in die Mitte der Platte.",
+            "«Begehen» stellt Standpunkt und Darstellung exakt wieder her (auch IFC-Unterlage und Schnittbereich der 3D-Ansicht).",
+            "Die Bildrate bleibt flüssig (Quest 3); der Raum wirkt dunkel, kühl und technisch, ohne Logos."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Sitzungsraum mit Tisch und Modell, EG gewählt (Prüfbilder xrh-sitzungsraum.png, xrh-etage-eg.png, xrh-zoom.png aus xr-sitzung.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-sitzung.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-sitzung-logik.js (einpassen, gestenSchritt, geschosseAufbereiten, schnittEbeneY, sitzungsLayout)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Teil XR-H»)"
+          ],
+          "hinweis": "Ohne Gewähr, erste Fassung: Der Schnitt unter der Decke (statt über der Decke), das Aussehen des Raums, Tischhöhe und Abstand, die Gesten (Zufassen-Nähe 0.25 m, Drehung mit der Hand) und die Bildrate sind Annahmen und mit der Brille zu bestätigen. Gibt es im Modell keine Decke, schneidet «unter der Decke» auf der Oberkante des Geschosses. Ohne Brille geprüft mit Attrappen (xr-sitzung.browser.mjs)."
         },
         {
           "id": "zb-n17-treppe-grundriss",

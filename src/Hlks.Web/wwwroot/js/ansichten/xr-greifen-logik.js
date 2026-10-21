@@ -284,7 +284,7 @@ export const TABLET_TASTEN = Object.freeze([
   { id: 'lot', text: 'Lot zur Fläche', spalte: 2, zeile: 2, umschalter: true },
   { id: 'familie', text: 'Familie platzieren', spalte: 0, zeile: 3, platzhalter: true },
   { id: 'problem', text: 'Problem markieren', spalte: 1, zeile: 3, platzhalter: true },
-  { id: 'raum', text: 'Raum wechseln', spalte: 2, zeile: 3, platzhalter: true },
+  { id: 'raum', text: 'Sitzungsraum', spalte: 2, zeile: 3 },   // XR-H: wechselt in den Sitzungsraum (xr-sitzung.js), dort heisst die Taste «Begehen»
 ]);
 export const TABLET_KOPF_H = 112;     // px für Titel und Eigenschaften
 export const TABLET_ENDE = { id: 'ende', text: 'VR beenden' };

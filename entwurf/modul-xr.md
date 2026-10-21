@@ -93,6 +93,7 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 Christian: «eine art xr sitzungsraum …, wo das verkleinerte Modell auf einem tisch liegt und mit dem tablet die etagen ausgewählt werden
 kann. das modell soll dann ebenfalls mit der hand gedreht und gezoomt werden können. wird bsp. 1. OG gewählt wird alles oberhalb der Decke
 dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge.»
+- **Stand:** erste Fassung gebaut 21.10.2026 (hlks-modul), Brillentest offen. Annahmen: Schnitt unter der Decke (Unterkante der Decke, ohne Decke im Modell die Oberkante), Aussehen des Raums, Tischmasse, Gesten-Schwellen. Einzelheiten: `OBERFLAECHE.md`, Abschnitt «Modul XR, Teil XR-H». Nicht in dieser Fassung: «Hier hineingehen», Mehrbenutzer (XR-G).
 - **Ort:** Ein eigener virtueller Raum, kein Begehen. Er wird auf dem Tablet über «Sitzungsraum» bzw. «Begehen» gewechselt (XR-C).
   In der Mitte steht ein Tisch, darauf das ganze Modell verkleinert, zu Beginn 1:50 und auf die Tischplatte eingepasst.
 - **Etagen:** Das Tablet listet die Geschosse aus dem Modell. Bei der Wahl z. B. «1. OG» wird alles oberhalb der Decke dieses Geschosses
