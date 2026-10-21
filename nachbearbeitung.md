@@ -182,3 +182,19 @@ bei schräg liegenden Gebäuden (Bernstrasse) steht der Grundriss schief. Entsch
 - Plan-PDF und Planblatt übernehmen die Ausrichtung der Ansicht.
 **Fertig, wenn** Christian im Bernstrasse-Projekt den Grundriss gerade sieht (längste Kante waagrecht), auf «Himmelsrichtung» umschalten kann
 (Nord oben), Zeichnen, Fang und PDF in beiden Fällen stimmen und der Nordpfeil richtig zeigt.
+
+## N10 – Mittlere Maustaste verschiebt in allen Ansichten
+
+Christian 21.10.2026: «mittlere maustaste = plan verschieben». Befund Hauptlauf: Grundriss (nsichten/grundriss.js) und Schema verschieben
+mit der mittleren Taste bereits (Doppelklick Mitte = alles zeigen); im **3D** (nsichten/ansicht3d.js, OrbitControls) zoomt die mittlere Taste
+(MIDDLE = DOLLY), Verschieben liegt auf rechts. **Fertig, wenn** in jeder Ansicht (Grundriss, Schnitt/Ansicht, 3D, Schema, Plan/Planblatt,
+Familieneditor, Unterlagen-Ansicht …) Ziehen mit gedrückter mittlerer Taste verschiebt – auch während ein Werkzeug aktiv ist –, im 3D wie in
+Revit: Mitte = verschieben, Shift + Mitte = drehen (Orbit), Rad = zoomen; Doppelklick Mitte = alles zeigen überall gleich.
+
+## N11 – Navigationswürfel in der 3D-Ansicht (analog Revit ViewCube)
+
+Christian 21.10.2026: «In der 3d ansicht ein navigationswürfel anzeigen (analog revit)». **Fertig, wenn** oben rechts in der 3D-Ansicht ein
+Würfel steht, der die Kamera mitdreht: Flächen OBEN, UNTEN, VORNE, HINTEN, LINKS, RECHTS, Kanten und Ecken anklickbar (Standardansichten,
+weicher Übergang), Ziehen am Würfel dreht, Kompassring mit N/O/S/W (geografisch Nord aus Projektinformation.nordwinkel), Haus-Knopf
+(Startansicht), Kontextmenü «Aktuelle Ansicht als Startansicht». «VORNE» richtet sich nach der Gebäudeausrichtung (N9, planwinkel des
+Gebäudes; ohne Wert Projektachsen).
