@@ -340,3 +340,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | N9 | Ausrichtung der Ansichten (Geometrie/Himmelsrichtung, planwinkel am Gebäude, Fang in Ansichtsachsen, PDF) – Kern und Oberfläche aus einer Hand | hlks-kern (als general-purpose opus/xhigh) | läuft |
 | 21.10.2026 | N10/N11 | Mittlere Taste verschiebt überall (3D wie Revit), Navigationswürfel im 3D | hlks-modul (als general-purpose sonnet/high) | läuft |
 | 21.10.2026 | N12 | IFC Original/Nachbau/beide je Ansicht, Farben mit Transparenz | – | zurückgestellt (Christian: erst nach N6–N11, Wochenkontingent 84 % soll bis Fr 23.10. 17:00 reichen) |
+| 21.10.2026 | N13 | 3D-Schnittbereich (Quader mit Griffen, an Auswahl/Geschoss, gespeichert in der Ansicht) | – | zurückgestellt bis N6–N11 fertig (Kontingent) |

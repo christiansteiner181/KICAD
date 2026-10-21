@@ -284,3 +284,26 @@ Entscheide Hauptlauf:
 - je Ansicht zwischen Original, Nachbau und beiden umschalten kann;
 - für beide Farbe und Transparenz wählen kann, im Dialog Sichtbarkeit/Grafiken bzw. an der Unterlage;
 - den Unterschied sieht, z. B. die Türen mit 5,19 m im Original gegenüber dem Nachbau.
+
+## N13 – 3D-Schnittbereich einstellbar (wie Revit)
+
+Christian 21.10.2026: «in der 3d Ansicht, sollte der 3dansichtsbereich eingestellt werden können. (es ist nur sichtbar was eingestellt
+ist, wie in revit)». Heute gibt es im 3D (`ansichten/ansicht3d.js`) keinen Schnittbereich, keine Clipping-Ebenen und keinen Ausschnitt.
+
+Entscheide Hauptlauf:
+- **Eigenschaft der 3D-Ansicht `schnittbereich`:** ein/aus, dazu ein Quader (min/max in Modell-mm).
+  - Ausgerichtet an der Gebäudeausrichtung (`planwinkel`, N9); ohne Wert an den Projektachsen.
+  - Gespeichert im Modell über die Befehle des Kerns, nicht nur im Browser.
+- **Sichtbarkeit:** Es ist nur sichtbar, was im Quader liegt. Geschnittene Bauteile werden an den Flächen des Quaders abgeschnitten (Clipping),
+  auch Unterlagen-Netze (IFC). Die Schnittflächen werden geschlossen dargestellt, soweit es mit vertretbarem Aufwand geht; sonst offen, mit Hinweis.
+- **Bedienung wie Revit:**
+  - Schalter «3D-Schnittbereich» in den Eigenschaften der 3D-Ansicht.
+  - Der Quader erscheint mit Griffen je Fläche; Ziehen an einem Griff verschiebt diese Fläche.
+  - «Schnittbereich an Auswahl anpassen» (Auswahl → Quader mit Rand).
+  - «Schnittbereich auf Geschoss» (OK/UK des Geschosses).
+  - Zurücksetzen auf das ganze Modell.
+- **Navigationswürfel (N11)** und mittlere Taste (N10) funktionieren unverändert mit eingeschaltetem Bereich.
+
+**Fertig, wenn** Christian in einer 3D-Ansicht den Bereich einschalten und an den Griffen auf einen Gebäudeteil oder ein Geschoss verkleinern
+kann, nur dieser Teil sichtbar und sauber abgeschnitten ist, die Einstellung mit der Ansicht gespeichert bleibt (auch nach Neustart und auf
+einem anderen Rechner) und die Auswahl darin weiter funktioniert.
