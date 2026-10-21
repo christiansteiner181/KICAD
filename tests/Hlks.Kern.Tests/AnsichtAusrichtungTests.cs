@@ -318,6 +318,34 @@ public class AnsichtAusrichtungTests
     }
 
     [Fact]
+    public void Grafik_SchraffurAnDerWandachse_DrehtMitDerAnsicht()
+    {
+        // N8 + N9: das Muster liegt im Modell an der Wandachse (MusterWinkel = Achswinkel 37° bzw. 127°); gedreht wird es nur mit der
+        // ganzen Ansicht – auf dem Blatt also achsparallel wie bei einem gerade liegenden Gebäude
+        var p = Leer();
+        Geschoss(p, "EG", 0, 3000);
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Ansicht", ["kennzeichen"] = "AN-EG", ["geschoss"] = "EG",
+            ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50, ["schnitthoehe"] = 1000 },
+        }));
+        Ok(p.Ausfuehren("wand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts(D(0, 0), D(10000, 0), D(10000, 6000), D(0, 6000)), ["dicke"] = 300, ["geschlossen"] = true, ["material"] = "backstein",
+        }));
+        var g = Grafik.Plan(p, "AN-EG");
+        Assert.Equal(-37, g.Drehung, 6);
+        var stile = g.Teile.SelectMany(t => t.Primitive).Where(x => x.Art == "polygon" && x.Stil.Muster == "backstein").Select(x => x.Stil).ToList();
+        Assert.NotEmpty(stile);
+        foreach (var s in stile)
+        {
+            Assert.Contains(s.MusterWinkel!.Value, new[] { 37.0, 127.0 });                       // im Modell an der Achse
+            double blatt = ((s.MusterWinkel.Value + g.Drehung) % 90 + 90) % 90;
+            Assert.True(blatt < 1e-6 || blatt > 90 - 1e-6, $"auf dem Blatt {s.MusterWinkel + g.Drehung}°");   // auf dem Blatt achsparallel
+        }
+    }
+
+    [Fact]
     public void Grafik_BegrenzungAnsicht_UmschliesstDasGedrehteGebaeudeEng()
     {
         var p = Gedreht();
@@ -336,7 +364,8 @@ public class AnsichtAusrichtungTests
         // Text mit Anker: dreht um den Anker gegen; mitdrehender Text bei 80° + 30° = 110° → umgeklappt auf −70°, links ↔ rechts, versetzt
         var anker = new Primitiv { Art = "text", Punkte = [[1000, 0]], Text = "A", Groesse = 2, Anker = [0, 0] };
         var mit = new Primitiv { Art = "text", Punkte = [[0, 0]], Text = "B", Groesse = 2, Winkel = 80, Ausrichtung = "links", Mitdrehen = true };
-        var box = new Primitiv { Art = "polygon", Punkte = [[0, 0], [100, 0], [100, 50]], Anker = [0, 0] };
+        var geteilt = new Stil { Muster = "backstein", MusterWinkel = 10, MusterUrsprung = [100, 0] };
+        var box = new Primitiv { Art = "polygon", Punkte = [[0, 0], [100, 0], [100, 50]], Anker = [0, 0], Stil = geteilt };
         var linie = new Primitiv { Art = "linie", Punkte = [[0, 0], [100, 0]] };
         Ansichtsausrichtung.Anwenden([new Grafikteil { Primitive = [anker, mit, box, linie] }], 30, 50);
         Assert.Equal(-30, anker.Winkel!.Value, 6);
@@ -348,6 +377,9 @@ public class AnsichtAusrichtungTests
         Assert.Equal(oben[0] * 0.7 * 2 * 50, mit.Punkte[0][0], 6);
         Assert.Equal(oben[1] * 0.7 * 2 * 50, mit.Punkte[0][1], 6);
         Assert.Equal(-30, Math.Atan2(box.Punkte[1][1], box.Punkte[1][0]) * 180 / Math.PI, 6);
+        Assert.Equal(-20, box.Stil.MusterWinkel!.Value, 6);                                  // Achsmuster dreht mit (N8)
+        Assert.Equal(-30, Math.Atan2(box.Stil.MusterUrsprung![1], box.Stil.MusterUrsprung[0]) * 180 / Math.PI, 6);
+        Assert.Equal(10, geteilt.MusterWinkel);                                               // der geteilte Stil bleibt unverändert
         Assert.Equal(100, linie.Punkte[1][0]);              // ohne Anker: dreht mit der Ansicht
     }
 
