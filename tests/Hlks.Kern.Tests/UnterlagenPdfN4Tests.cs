@@ -71,7 +71,7 @@ public class UnterlagenPdfN4Tests
     {
         using var o = new Ordner();
         var b = LesenPdf(LaeufePdf(o));
-        Assert.Equal("pdf 2", b.Leser);
+        Assert.Equal("pdf 3", b.Leser);   // Leser 3 (21.10.2026) behält die Regeln von N4
         var t = Art(b, "tabelle").Single();
         Assert.Equal(["Art.-Nr.", "d [mm]", "di [mm]", "s [mm]"], Kopf(t));
         var daten = Daten(t);

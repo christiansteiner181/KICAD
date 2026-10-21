@@ -157,7 +157,7 @@ static class PdfTabellen
 
         var benutzt = new HashSet<Reihe>();
         foreach (var block in bloecke.Where(b => b.Count >= 3))
-            foreach (var teil in Teilen(block, maxBreite).Where(b => b.Count >= 3))
+            foreach (var teil in Teilen(block, seite.Breite, maxBreite).Where(b => b.Count >= 3))
             {
                 var t = Block(seite, teil, reihen, benutzt, maxBreite);
                 if (t is not null) ergebnis.Add(t);
@@ -172,8 +172,9 @@ static class PdfTabellen
     /// Spaltenraster aus den vollen Zeilen des Blocks (mindestens drei Zellen und drei Viertel der grössten Zellenzahl, mindestens drei solche
     /// Zeilen); die unterste Fliesstextzeile über der ersten vollen Zeile bzw. die oberste unter der letzten trennt den Block. Fliesstextzeile:
     /// eine Zelle mit mindestens vier Wörtern, die zwei oder mehr Spalten des Rasters zur Hälfte überdeckt (ein kurzer Sammelkopf wie
-    /// «Abmessungen [mm]» über L, B, H bleibt beim Kopf).</summary>
-    static List<List<Reihe>> Teilen(List<Reihe> block, double maxBreite)
+    /// «Abmessungen [mm]» über L, B, H bleibt beim Kopf); seit Leser 3 nur, wenn die Zelle lang ist oder nicht allein auf der sichtbaren Seite
+    /// steht (<see cref="Trennt"/>).</summary>
+    static List<List<Reihe>> Teilen(List<Reihe> block, double breite, double maxBreite)
     {
         int max = block.Max(r => r.Alle.Count);
         int schwelle = Math.Max(3, (int)Math.Ceiling(0.75 * max));
@@ -183,8 +184,8 @@ static class PdfTabellen
         if (raster.Count < 3) return [block];
         int erste = block.IndexOf(voll[0]), letzte = block.IndexOf(voll[^1]);
         int oben = -1, unten = block.Count;
-        for (int i = erste - 1; i >= 0 && oben < 0; i--) if (Fliesstext(block[i].Alle, raster)) oben = i;
-        for (int i = letzte + 1; i < block.Count && unten == block.Count; i++) if (Fliesstext(block[i].Alle, raster)) unten = i;
+        for (int i = erste - 1; i >= 0 && oben < 0; i--) if (Trennt(block[i].Alle, raster, breite, maxBreite)) oben = i;
+        for (int i = letzte + 1; i < block.Count && unten == block.Count; i++) if (Trennt(block[i].Alle, raster, breite, maxBreite)) unten = i;
         if (oben < 0 && unten == block.Count) return [block];
         var teile = new List<List<Reihe>>();
         if (oben >= 0) teile.Add(block.Take(oben + 1).ToList());
@@ -193,9 +194,26 @@ static class PdfTabellen
         return teile;
     }
 
-    /// <summary>Hat die Zeile eine Zelle mit mindestens vier Wörtern, die zwei oder mehr Spalten je zur Hälfte überdeckt?</summary>
-    static bool Fliesstext(List<PZelle> zellen, List<(double L, double R)> spalten) =>
-        zellen.Any(c => c.Woerter >= 4 && spalten.Count(s => Math.Min(c.R, s.R) - Math.Max(c.L, s.L) >= 0.5 * Math.Max(s.R - s.L, 0.5)) >= 2);
+    /// <summary>Hat die Zeile eine Zelle mit mindestens vier Wörtern, die zwei oder mehr Spalten je zur Hälfte überdeckt (N4)?</summary>
+    static bool Fliesstext(List<PZelle> zellen, List<(double L, double R)> spalten) => zellen.Any(c => FliesstextZelle(c, spalten));
+
+    static bool FliesstextZelle(PZelle c, List<(double L, double R)> spalten) =>
+        c.Woerter >= 4 && spalten.Count(s => Math.Min(c.R, s.R) - Math.Max(c.L, s.L) >= 0.5 * Math.Max(s.R - s.L, 0.5)) >= 2;
+
+    /// <summary>Trennt die Zeile den Block (<see cref="Teilen"/>)? Eine Fliesstextzelle (<see cref="FliesstextZelle"/>), die lang ist (nicht
+    /// <see cref="Kurz"/>: mehr als sechs Wörter oder breiter als 45 % der Seite) oder nicht allein auf der sichtbaren Seite steht.
+    /// Leser 3 (21.10.2026): Eine kurze Zelle allein auf ihrer Zeile ist eine Überschrift, kein Fliesstext – Befund Gewinderohr-Katalog
+    /// (Temperguss-Fittings, Doppelseiten): «Winkel 90°, egal, ISO/EN A1» über «EN Dim. | Schwarz | Verzinkt | a | z» trennte in Leser 2 die Tabelle
+    /// von ihrer Nummer «90», die Tabelle war eine andere als in Leser 1. Die Werkstoffzeilen der Datenblätter («Werkstoff | CrNiMo-Stahl 1.4401
+    /// (DIN EN 10088)») und Aufzählungen («• | Do wody gaśniczej i tryskacza») haben zwei Zellen und trennen weiter. Text ausserhalb der sichtbaren
+    /// Seite (CropBox; bei Doppelseiten die Nachbarseite, x negativ bzw. über der Seitenbreite) zählt nicht mit. Nur hier: Die Kopfsuche in
+    /// <see cref="Block"/> bleibt bei <see cref="Fliesstext"/> wie in Leser 2 (sonst würden Bildunterschriften und Aufzählungen über Datenblatt-
+    /// Tabellen wieder Kopfzeilen, Probe 21.10.2026: zehn Unterlagen der Grundausstattung).</summary>
+    static bool Trennt(List<PZelle> zellen, List<(double L, double R)> spalten, double breite, double maxBreite)
+    {
+        int sichtbar = zellen.Count(c => c.R > 0 && c.L < breite);
+        return zellen.Any(c => FliesstextZelle(c, spalten) && (sichtbar >= 2 || !Kurz(c, maxBreite)));
+    }
 
     /// <summary>Spalten aus Zellen: Streifen der x-Achse (0.5 pt), die mindestens zwei Zellen belegen, über Lücken bis 2 pt verbunden; je Streifen
     /// die Ausdehnung seiner Zellen (mindestens zwei), überlappende vereinigt – wie die Spalten in <see cref="Block"/>.</summary>
@@ -203,6 +221,9 @@ static class PdfTabellen
     {
         if (zellen.Count == 0) return [];
         int n = (int)Math.Ceiling(zellen.Max(c => c.R) * 2) + 4;
+        // Leser 3: Zellen links der sichtbaren Seite (x negativ; Seite aus einer Doppelseite, Text der Nachbarseite) belegen keinen Streifen – wie in Block.
+        // Liegen alle Zellen dort, gibt es kein Raster (Leser 2: Feld mit negativer Länge, OverflowException, die Seite brach ab).
+        if (n <= 0) return [];
         var belegt = new int[n];
         foreach (var c in zellen)
             for (int i = Math.Max(0, (int)Math.Floor(c.L * 2)); i < Math.Min(n, (int)Math.Ceiling(c.R * 2)); i++) belegt[i]++;
