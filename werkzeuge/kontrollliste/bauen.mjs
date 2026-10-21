@@ -49,10 +49,16 @@ kapitel.push({
       erwartung: 'Die Schraffur jeder Wand ist an ihrer Achse ausgerichtet, auf dem Bildschirm und im PDF. Wände auf derselben Achse haben ein durchlaufendes Muster.',
       pruefpunkte: ['Kreuzschraffur an einer 45°-Wand liegt parallel bzw. senkrecht zur Wand.', 'Im PDF gleich wie auf dem Bildschirm.', 'Decken und Räume bleiben achsparallel.', 'Im Schnitt unverändert.'],
       hinweis: '' },
+    { id: 'n16-stuetzen-kreuz', titel: 'N16 – Stützen im Grundriss mit Kreuz, nur Beton schraffiert',
+      wo: { register: 'Architektur', gruppe: 'Bauteile', knopf: 'Stütze', kuerzel: '', sonst: 'Grundriss mit Stützen (z. B. Bernstrasse)' },
+      schritte: ['Einen Grundriss mit Stützen öffnen, deren Schnitthöhe die Stützen schneidet.', 'Material einer Stütze zwischen Stahl und Beton wechseln.', 'Plan als PDF ausgeben.'],
+      erwartung: 'Geschnittene Stützen aus Stahl, Holz oder ohne Material zeigen Umriss mit Kreuz und ohne Schraffur; Beton bleibt schraffiert. Nicht geschnittene Stützen wie bisher.',
+      pruefpunkte: ['Stahlstütze: weiss mit Kreuz.', 'Runde Stütze: Kreuz durch die Mitte von Rand zu Rand.', 'Betonstütze: Schraffur, kein Kreuz.', 'Im PDF gleich wie auf dem Bildschirm.'],
+      hinweis: '' },
   ],
 });
 
-const standHtml = `<b>Geprüfter Stand:</b> <code>fa1db8a</code> (21.10.2026 13:46) – ein Klick aufs KICAD-Icon holt ihn auf den Desktop. Neu darin: deine HKAP-Heizungssymbole, PDF-Leser 3, schnelle Serienkontrolle mit Abzweigwinkel, N6–N8, N9 (Ausrichtung der Ansichten nach Geometrie oder Himmelsrichtung) und N10/N11 (mittlere Maustaste, Navigationswürfel). Nach Freitag 23.10. 17:00: N12 IFC Original/Nachbau, N13 3D-Schnittbereich. Pausiert: Modul 5.`;
+const standHtml = `<b>Geprüfter Stand:</b> <code>df88653</code> (21.10.2026 15:00) – ein Klick aufs KICAD-Icon holt ihn auf den Desktop. Neu darin: deine HKAP-Heizungssymbole, PDF-Leser 3, schnelle Serienkontrolle mit Abzweigwinkel, N6–N9, N10/N11 (mittlere Maustaste, Navigationswürfel), N12 (IFC Original/Nachbau mit Farben), N13/N14 (3D-Schnittbereich, «Raum im 3D zeigen») und N16 (Stützen mit Kreuz). In Arbeit: N15 «Raum begehen», N17 Treppen. Pausiert: Modul 5.`;
 
 const daten = { stand: inv.stand, standHtml, kapitel };
 const json = JSON.stringify(daten).replace(/</g, '\\u003c');
