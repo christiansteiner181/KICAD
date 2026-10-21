@@ -87,6 +87,36 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
   «Folgen»-Modus und ein Zeigestrahl, der für alle sichtbar ist. Ton läuft über die Brille bzw. Teams oder über einen eigenen Sprachkanal
   (am Freitag klären).
 
+### XR-H – Sitzungsraum mit Modell auf dem Tisch (Christian 21.10.2026)
+Christian: «eine art xr sitzungsraum …, wo das verkleinerte Modell auf einem tisch liegt und mit dem tablet die etagen ausgewählt werden
+kann. das modell soll dann ebenfalls mit der hand gedreht und gezoomt werden können. wird bsp. 1. OG gewählt wird alles oberhalb der Decke
+dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge.»
+- **Ort:** Ein eigener virtueller Raum, kein Begehen. Er wird auf dem Tablet über «Sitzungsraum» bzw. «Begehen» gewechselt (XR-C).
+  In der Mitte steht ein Tisch, darauf das ganze Modell verkleinert, zu Beginn 1:50 und auf die Tischplatte eingepasst.
+- **Etagen:** Das Tablet listet die Geschosse aus dem Modell. Bei der Wahl z. B. «1. OG» wird alles oberhalb der Decke dieses Geschosses
+  ausgeblendet. Die Technik ist dieselbe Schnittebene wie beim 3D-Schnittbereich (N13). Dazu gibt es «Alle Etagen».
+  - Vorschlag: Der Schnitt liegt unter der Decke des gewählten Geschosses, damit man von oben hineinsieht; «Decke zeigen» schaltet um.
+  - Festlegen am Freitag.
+- **Hand:**
+  - Mit einer Hand greifen: Das Modell dreht sich um die senkrechte Achse und verschiebt sich auf dem Tisch.
+  - Mit zwei Händen greifen: Auseinanderziehen bzw. Zusammenschieben zoomt um den Mittelpunkt zwischen den Händen, etwa von 1:200 bis 1:20.
+  - Das Modell bleibt waagrecht (gegen Übelkeit).
+  - Der Massstab steht am Tisch; «Zurücksetzen» ist auf dem Tablet.
+- **Zeigen:** Mit Strahl oder Finger auf ein Element bzw. einen Raum zeigen; die Eigenschaften erscheinen auf dem Tablet. Vorschlag:
+  «Hier hineingehen» springt im Massstab 1:1 an diese Stelle ins Begehen (XR-A), «Zurück an den Tisch» führt zurück.
+- **Aussehen** («wie in einer Black-Mirror-Folge», Vorschlag zum Abnehmen):
+  - kühl, minimalistisch, technisch
+  - dunkler Raum mit mattschwarzen Wänden und glänzendem, leicht spiegelndem Boden
+  - schmale weisse Lichtlinien in Decke und Wänden, leichter Dunst
+  - Glastisch mit leuchtender Kante
+  - Modell hell und matt («Architekturmodell»); die HLKS-Leitungen in den Gewerkfarben der H+K-Koordinationspläne (Heizung rot,
+    Lüftung blau, Sanitär grün), leicht leuchtend
+  - keine Logos und keine Anlehnung an konkrete Szenen
+- **Mehrere Personen:** Der Sitzungsraum ist der natürliche Ort für XR-G. Mehrere Personen stehen um den Tisch, jemand führt die Wahl
+  der Etage, die anderen sehen sie mit. Dafür braucht es den Live-Kanal aus XR-G.
+- **Leistung:** Im Quest-Browser (Weg 2) rechnet die Brille. Das verkleinerte Modell hat dieselbe Geometrie wie 1:1, deshalb gilt: IFC-Unterlage
+  aus, nur sichtbare Geschosse zeichnen. Über Air Link rechnet der PC.
+
 ### Start ohne Link-fähigen PC (Frage Christian 21.10.2026: «dieser ist nicht mit meta link kompatibel»)
 - **Empfehlung:** Weg 2 über den Browser der Quest, mit ADB-Portweiterleitung, ohne Meta Link und ohne zweiten Rechner.
   - Der KICAD-Server auf dem PC bleibt auf localhost.
@@ -109,3 +139,4 @@ XR-A, dann XR-B mit XR-C, dann XR-E, dann XR-D. Jeder Teil wird mit der Brille a
 - lokale Spracherkennung
 - Marker als BCF
 - Tastenbelegung bzw. Gesten aus N15/N23 bestätigen
+- XR-H: Schnitt unter oder über der Decke des gewählten Geschosses, Aussehen des Raums, Platz in der Reihenfolge
