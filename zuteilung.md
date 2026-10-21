@@ -346,3 +346,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Hauptlauf | ok – c00099d, StuetzeKreuzTests 11, Grafik/Architektur/IFC 1639 grün |
 | 21.10.2026 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übertrager, Stufen/Schnittlinie/Lauflinie/Beschriftung) | hlks-modul (als general-purpose sonnet/high; Geometrie ausnahmsweise Sonnet wegen Kontingent 88 %) | läuft |
 | 21.10.2026 | N15 | Raum begehen (Ich-Perspektive aus dem Grundriss, Pfeiltasten, Augenhöhe 1,7 m) | hlks-modul (als general-purpose sonnet/high) | läuft (Kontingent 89 %) |
+| 21.10.2026 | – | Gesamtprüfung df88653 (N12, N13/N14, N16) grün (Kern 4571 nach Wiederholung, Mcp 79, Web 542, Node 1054) → geprueft = df88653 (geprueft-20261021-1500) | Hauptlauf | ok |
