@@ -183,6 +183,7 @@ tr.fu-masse-offen td { color: var(--text-leise); }
 /* ------------------------------------------------------------------ Bildbetrachter */
 .fu-bild { max-width: 100%; }
 .fu-bild-info { margin-bottom: 2px; }
+.fu-bild.schiebt, .fu-bild.schiebt * { cursor: grabbing; }
 .fu-bild-rahmen { position: relative; display: inline-block; max-width: 100%; border: 1px solid var(--rand); background: var(--zeichenflaeche); line-height: 0; }
 .fu-bild-rahmen[hidden] { display: none; }
 .fu-bild-rahmen.klickbar { cursor: crosshair; }

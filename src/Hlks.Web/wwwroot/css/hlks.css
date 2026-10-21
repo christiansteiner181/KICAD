@@ -74,6 +74,12 @@
   --d3-geraet: #7b8a99;
   --d3-armatur: #666666;
   --d3-sonst: #888888;
+  /* Navigationswürfel der 3D-Ansicht (N11) */
+  --wuerfel-flaeche: #eceff3;
+  --wuerfel-teil: #d2d7de;
+  --wuerfel-kante: #5a626d;
+  --wuerfel-text: #2b313a;
+  --wuerfel-hover: #8fc3ff;
 
   /* Masse (Revit 2026 bei 100 %, CSS-Pixel) */
   --hoehe-kopf: 32px;            /* Titelleiste mit Schnellzugriff */
@@ -156,6 +162,11 @@
   --d3-geraet: #7b8a99;
   --d3-armatur: #8a929e;
   --d3-sonst: #8a929e;
+  --wuerfel-flaeche: #9aa4b3;
+  --wuerfel-teil: #7a8596;
+  --wuerfel-kante: #14181f;
+  --wuerfel-text: #11151b;
+  --wuerfel-hover: #4aa8ff;
 }
 
 * { box-sizing: border-box; }
