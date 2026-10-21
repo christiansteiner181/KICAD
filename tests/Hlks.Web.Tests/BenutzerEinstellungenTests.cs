@@ -192,6 +192,29 @@ public class BenutzerEinstellungenTests : IDisposable
         BenutzerEinstellungen.Pruefen("ansicht3d.raumrand", null);
     }
 
+    // ---------------------------------------------------------------- N15: Augenhöhe von «Raum begehen»
+
+    [Theory]
+    [InlineData(1700, true)]
+    [InlineData(300, true)]
+    [InlineData(5000, true)]
+    [InlineData(1650.5, true)]
+    [InlineData(299, false)]
+    [InlineData(5001, false)]
+    public void Pruefen_Augenhoehe_nimmt_300_bis_5000_mm(double wert, bool gut)
+    {
+        if (gut) BenutzerEinstellungen.Pruefen("ansicht3d.augenhoehe", JsonValue.Create(wert));
+        else Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.augenhoehe", JsonValue.Create(wert)));
+    }
+
+    [Fact]
+    public void Pruefen_Augenhoehe_lehnt_Text_und_Liste_ab_null_setzt_zurueck()
+    {
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.augenhoehe", S("hoch")));
+        Assert.Throws<HlksFehler>(() => BenutzerEinstellungen.Pruefen("ansicht3d.augenhoehe", new JsonArray(1700)));
+        BenutzerEinstellungen.Pruefen("ansicht3d.augenhoehe", null);
+    }
+
     // ---------------------------------------------------------------- G2: mehrere Gliederungen zugleich (Wert ist eine Liste)
 
     [Fact]

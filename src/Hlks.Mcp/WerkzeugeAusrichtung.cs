@@ -24,6 +24,12 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("planwinkel_bestimmen", Parameter(("gebaeude", gebaeude)), trockenlauf);
 
+    [McpServerTool(Name = "raum_begehen"), Description(RaumBegehenAbfragen.Text)]
+    public string RaumBegehenLesen(
+        [Description(RaumBegehenAbfragen.ParRaum)] string raum,
+        [Description(RaumBegehenAbfragen.ParAugenhoehe)] double? augenhoehe = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "raum_begehen", Parameter(("raum", raum), ("augenhoehe", augenhoehe)))));
+
     [McpServerTool(Name = "ansicht_raum_zeigen"), Description(AnsichtRaumZeigen.Text)]
     public string AnsichtRaumZeigenWerkzeug(
         [Description(AnsichtRaumZeigen.ParRaum)] JsonElement raum,
