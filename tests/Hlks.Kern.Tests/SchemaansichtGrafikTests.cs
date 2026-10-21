@@ -166,16 +166,18 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
     {
         var p = Testhaus();
         var g = Grafik.Plan(p, Ansicht);
-        var dreiecke = TeileVon(g, p, "V-1")[0].Primitive.Where(x => x.Art == "polygon").ToList();
-        Assert.Equal(2, dreiecke.Count);
-        var x = dreiecke.SelectMany(d => d.Punkte).Select(q => q[0]).ToList();
-        var y = dreiecke.SelectMany(d => d.Punkte).Select(q => q[1]).ToList();
-        Assert.Equal(3, x.Max() - x.Min(), 6);   // quer 3 mm
-        Assert.Equal(4, y.Max() - y.Min(), 6);   // längs der senkrechten Leitung 4 mm
-        // auf einer waagrechten Spur bzw. frei: ungedreht (Hand-Lage = frei)
+        // Modul 5 A-S 2: Absperrventil = Heizungssymbol der HKAP, senkrecht gezeichnet (Durchfluss oben → unten, Handrad/Stiel links):
+        // Sanduhr 6.8 × 6.8 und Stiel 5.4 nach links, mal Skala 0.625 → Sanduhr 4.25 × 4.25, Stiel bis x −3.375 (vorher zwei Dreiecke 4 × 3)
+        var teile = TeileVon(g, p, "V-1")[0].Primitive.Where(x => x.Art is "polygon" or "linie").ToList();
+        Assert.Single(teile, x => x.Art == "polygon");
+        var pts = teile.SelectMany(d => d.Punkte).ToList();
+        Assert.Equal(2.125 + 3.375, pts.Max(q => q[0]) - pts.Min(q => q[0]), 6);   // quer zur senkrechten Leitung: Sanduhr + Stiel, unverändert gezeichnet
+        Assert.Equal(4.25, pts.Max(q => q[1]) - pts.Min(q => q[1]), 6);            // längs der Leitung
+        // auf einer waagrechten Spur bzw. frei: um 90° gedreht (Hand-Lage = frei): der Stiel zeigt nach unten
         Ok(p.Ausfuehren("schema_lage", Par(("ansicht", Ansicht), ("element", "V-1"), ("x", 20), ("y", 120))));
-        var frei = TeileVon(Grafik.Plan(p, Ansicht), p, "V-1")[0].Primitive.Where(q => q.Art == "polygon").SelectMany(d => d.Punkte).ToList();
-        Assert.Equal(4, frei.Max(q => q[0]) - frei.Min(q => q[0]), 6);
+        var frei = TeileVon(Grafik.Plan(p, Ansicht), p, "V-1")[0].Primitive.Where(q => q.Art is "polygon" or "linie").SelectMany(d => d.Punkte).ToList();
+        Assert.Equal(4.25, frei.Max(q => q[0]) - frei.Min(q => q[0]), 6);
+        Assert.Equal(2.125 + 3.375, frei.Max(q => q[1]) - frei.Min(q => q[1]), 6);
     }
 
     [Fact]
@@ -208,11 +210,15 @@ public class SchemaansichtGrafikTests(ITestOutputHelper aus)
     [Fact]
     public void Symbol_OhneSchemasymbol_Klassendarstellung()
     {
+        // Modul 5 A-S 2: ohne Schemasymbol der Familie gilt für den Heizkörper das Symbol der H+K-Legende (vorher Kästchen mit «HK»)
         var p = FamilieTestHilfe.MitHeizkoerper();
         Ok(p.Ausfuehren("element_anlegen", Par(("klasse", "Ansicht"), ("kennzeichen", "AN-S"), ("eigenschaften", new JsonObject { ["art"] = "schema" }))));
         var s = Plan(p, "AN-S");
-        Assert.Equal("apparat", SchemaSymbole.Schluessel(p, Knoten(s, "HK-1").Element));
-        Assert.Contains(TeileVon(Grafik.Plan(p, "AN-S"), p, "HK-1")[0].Primitive, x => x.Art == "text" && x.Text == "HK");
+        Assert.Equal("heizsymbol", SchemaSymbole.Schluessel(p, Knoten(s, "HK-1").Element));
+        var prims = TeileVon(Grafik.Plan(p, "AN-S"), p, "HK-1")[0].Primitive;
+        Assert.Contains(prims, x => x.Art == "polygon" && x.Stil.Fuellung == "#CCFFE0");     // Hinterlegung des Apparats der Heizung
+        Assert.DoesNotContain(prims, x => x.Art == "text" && x.Text == "HK");                  // kein Kürzel im Symbol (das Kennzeichen steht daneben)
+        Assert.Contains(prims, x => x.Art == "text" && x.Text == "HK-1");
     }
 
     [Fact]

@@ -26,6 +26,11 @@
 //     Anschluss der HKAP, AW/A1/RW) an. SinnbildAnschluss liefert den Abfluss (x, y − halbe Höhe).
 //   - Ohne Sinnbild (Heizkörper, Wassererwärmer, Ausgussbecken ohne Zuordnung …) bleibt das Kästchen mit Kürzel.
 //
+// Modul 5, Teil A-S 2 (Heizung und Kälte): Die Symbole der HKAP-Bibliothek für Heizung und Kälte (nach der H+K-Legende) und ihre
+// Zuordnung Klasse/art → Symbol stehen in HeizungSymbole (SchemaSymboleHeizung.cs). Reihenfolge der Quellen damit: Familie mit
+// schemasymbol, dann Sinnbild (Sanitär), dann Heizungs-/Kältesymbol, dann Kästchen mit Kürzel. Armaturen drehen mit der Leitung
+// (HeizungSymbole.Gedreht), Apparate stehen aufrecht; Hinterlegung und Linienfarbe gibt das Symbol vor.
+//
 // Nachtrag B8d (Christian 19.10.2026): Schächte (Schemaplan.SchachtKlassen) erscheinen im Schnitt (SchachtSchnitt, Schlüssel
 // «schacht»); das HKAP-Draufsichtsymbol «kontrollschacht» (Doppelkreis) entfällt im Strangschema. Abläufe im Deckenband als Quadrat
 // in Bandhöhe (AblaufImBand): Bodenablauf mit dem HKAP-Sinnbild auf diese Grösse, Dachablauf leer wie der Terrasseneinlauf im Vorbild.
@@ -38,8 +43,9 @@ public static class SchemaSymbole
     public const double Schrift = 1.8;
     public const double SchriftKlein = 1.6;
 
-    /// <summary>Symbolschlüssel: schacht | familie | sinnbild | tstueck | reinigungsoeffnung | formteil | pumpe | zaehler |
-    /// volumenstromregler | ventil | armatur | apparat | geraet | sonst. Schächte erscheinen immer im Schnitt (Nachtrag B8d).</summary>
+    /// <summary>Symbolschlüssel: schacht | familie | sinnbild | heizsymbol | tstueck | reinigungsoeffnung | formteil | pumpe | zaehler |
+    /// volumenstromregler | ventil | armatur | apparat | geraet | sonst. Schächte erscheinen immer im Schnitt (Nachtrag B8d);
+    /// «heizsymbol» = Heizungs- oder Kältesymbol der HKAP (Modul 5 A-S 2, HeizungSymbole).</summary>
     public static string Schluessel(Projekt p, Element e, string detail = "mittel") =>
         Schemaplan.IstSchacht(p.Katalog, e) ? "schacht" : FamilienSymbol(p, e, detail) is { Count: > 0 } ? "familie" : KlassenSchluessel(p.Katalog, e);
 
@@ -47,6 +53,7 @@ public static class SchemaSymbole
     {
         if (Schemaplan.IstSchacht(k, e)) return "schacht";
         if (SinnbildVon(k, e) is not null) return "sinnbild";
+        if (HeizungSymbole.SymbolVon(k, e) is not null) return "heizsymbol";
         if (k.IstArt(e, "TStueck")) return "tstueck";
         if (k.IstArt(e, "Reinigungsoeffnung")) return "reinigungsoeffnung";
         if (k.IstArt(e, "Formteil")) return "formteil";
@@ -84,6 +91,13 @@ public static class SchemaSymbole
         {
             lokal = SinnbildPrimitive(sinnbild, farbe);
             drehen = false;   // Sinnbilder stehen immer aufrecht
+        }
+        else if (HeizungSymbole.Wahl(p, e) is { } hz)
+        {
+            // Heizungs- und Kältesymbol der HKAP (Modul 5 A-S 2): senkrecht gezeichnete Armaturen drehen an waagrechten Leitungen,
+            // liegende an senkrechten; Apparate stehen aufrecht. Hinterlegung und Linienfarbe gibt das Symbol vor (nicht die Medienfarbe).
+            lokal = HeizungSymbole.Primitive(hz.Symbol, hz.Kaelte, HeizungSymbole.Gedreht(hz.Symbol, senkrecht));
+            drehen = false;
         }
         else
         {
