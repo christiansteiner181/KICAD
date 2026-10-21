@@ -195,8 +195,13 @@ der Art «ifc» die `IGrundlagenArt` aus `GrundlagenIfc.cs` (B1) auf.
   Projektion der Öffnungsmitte auf die Achse, `breite` = OverallWidth (sonst Öffnungsbreite), `hoehe` = OverallHeight,
   `bruestung` = Unterkante − Geschosskote; Tür `seite`/`band` aus der Lage des Türblatts bzw. OperationType (sonst
   Vorgabe, Hinweis). Ohne Wirtswand → Hintergrund + Hinweis. Die Nachführung (1a) setzt den Punkt aus `abstand`.
+  Nachbearbeitung N6 (21.10.2026): weicht die Höhe des Körpers (längs der z-Achse der Lage) um über 400 mm und über 15 %
+  von OverallHeight ab, gilt der Körper (`hoehe`; Fenster auch `bruestung` ab Unterkante Körper), Herkunft nennt beide
+  Werte, ein Hinweis nennt jedes solche Element; ohne lesbaren oder mit vereinfachtem Körper bleibt OverallHeight.
+  Herleitung der Schwelle im Kopf von `IfcArchitektur.cs`.
 - Stütze: Querschnitt (Profil bzw. Netz-Grundfläche) als Polygon, Höhe, Unterkante; Unterzug/Träger: Achse
-  (Axis-Repräsentation bzw. Längsrichtung des Netzes), Breite, Höhe, Unterkante; `material` wie bei der Wand. Dazu
+  (Axis-Repräsentation bzw. Extrusion: Anfang = Mitte des lotrechten Profils, Länge = Extrusion – Nachbearbeitung N7,
+  21.10.2026; sonst Längsrichtung des Netzes), Breite, Höhe, Unterkante; `material` wie bei der Wand. Dazu
   Plangrafik (Schnitt dick mit Schraffur, wenn geschnitten; sonst Sichtkante bzw. Unterzug gestrichelt über der
   Schnitthöhe) und Körper in `ArchitekturGrafik` ergänzen (nur diese zwei Klassen; bestehendes nicht ändern).
 - Achse: IfcGrid → je IfcGridAxis eine Achse (`bezeichnung` = AxisTag, Linie in Projektkoordinaten).
