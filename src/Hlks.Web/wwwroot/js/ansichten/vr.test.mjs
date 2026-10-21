@@ -325,3 +325,11 @@ test('Rig im Szenegraphen (three): Kamera als Kind des Rigs steht am Standpunkt 
     nah(wd(blickGierenWelt(rg, kopf.gieren), gierenVonRichtung({ x: d.x, z: d.z })), 0, 1e-9);
   }
 });
+
+test('kopfAusWelt kehrt kopfWelt um (Befund Brillentest 21.10.2026: Kopf doppelt um das Rig versetzt)', () => {
+  const rig = { x: 67.434, y: -5.7, z: 19.772, gieren: -0.837 };
+  const lokal = { x: 0.48, y: 1.62, z: -0.31, gieren: 0.4 };
+  const w = V.kopfWelt(rig, lokal);
+  const zurueck = V.kopfAusWelt(rig, { ...w, gieren: V.blickGierenWelt(rig, lokal.gieren) });
+  for (const k of ['x', 'y', 'z', 'gieren']) assert.ok(Math.abs(zurueck[k] - lokal[k]) < 1e-9, `${k}: ${zurueck[k]} statt ${lokal[k]}`);
+});

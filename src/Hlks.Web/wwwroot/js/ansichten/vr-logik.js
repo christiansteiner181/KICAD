@@ -81,6 +81,15 @@ export function kopfWelt(rig, kopf) {
 export const blickGierenWelt = (rig, kopfGieren) => kopfGieren + rig.gieren;
 
 /**
+ * Umkehrung von kopfWelt: Kopf in der Welt {x, y, z, gieren} → Referenzraum des Rigs. Befund Brillentest 21.10.2026: three r160 liefert mit zwei Augen
+ * renderer.xr.getCamera().position in Weltkoordinaten (die Kamera hängt im Rig); kopfWelt erwartet aber den Referenzraum – sonst sitzt der Kopf doppelt um das Rig versetzt.
+ */
+export function kopfAusWelt(rig, w) {
+  const d = drehe({ x: w.x - rig.x, z: w.z - rig.z }, -rig.gieren);
+  return { x: d.x, y: w.y - rig.y, z: d.z, gieren: w.gieren - rig.gieren };
+}
+
+/**
  * Rig so, dass der Kopf an der Stelle des Begehens steht und in dessen Blickrichtung schaut.
  * zustand: Anfangszustand des Begehens (begehen-logik zustandAusStandort: x, z, boden, gieren in m bzw. rad);
  * kopf: Kopfpose im Referenzraum { x, z, gieren } (die Brille sitzt nicht genau im Nullpunkt und blickt nicht genau nach −z).

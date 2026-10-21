@@ -11,7 +11,7 @@
 
 import * as THREE from 'three';
 import {
-  SNAP_GRAD, VR_TEXT, knopfZustand, sitzungsOptionen, gierenVonRichtung, kopfWelt, blickGierenWelt, rigStart, rigDrehen, rigAufZiel, rigVersetzen,
+  SNAP_GRAD, VR_TEXT, knopfZustand, sitzungsOptionen, gierenVonRichtung, kopfWelt, kopfAusWelt, blickGierenWelt, rigStart, rigDrehen, rigAufZiel, rigVersetzen,
   stickBewegung, snapPruefen, teleportZiel, ifcAnfangsSichtbar, bildzeit,
 } from './vr-logik.js';
 import { erzeugeXr } from './xr-greifen.js';
@@ -117,11 +117,25 @@ export function erzeugeVr(o) {
 
   // ---------------------------------------------------------------------------------------------- Kopf
   /** Kopfpose im Referenzraum (vor der Rig-Drehung) aus dem XR-Kameraobjekt des Renderers; null, solange die Brille keine Pose liefert. */
+  // Kopf im Referenzraum des Rigs. Vorrang hat die Pose des Betrachters aus dem XRFrame (genau der Referenzraum, ohne Verzug). Sonst die Kamera des Renderers:
+  // three r160 liefert ihre Lage mit zwei Augen in Weltkoordinaten (die Kamera hängt im Rig) – darum zurück in den Referenzraum (Befund Brillentest 21.10.2026:
+  // Kopf, Sitzungsraum, Durchgang und Gehrichtung lagen doppelt um das Rig versetzt, sobald das Rig weit vom Nullpunkt stand bzw. gedreht war).
+  const tmpQ = new THREE.Quaternion();
   function kopfPoseVorgabe() {
     const c = renderer.xr.getCamera();
     if (!c.cameras || c.cameras.length === 0) return null;
+    try {
+      const frame = renderer.xr.getFrame?.(), ref = renderer.xr.getReferenceSpace?.();
+      const pose = frame && ref ? frame.getViewerPose(ref) : null;
+      if (pose) {
+        const p = pose.transform.position, o = pose.transform.orientation;
+        tmp.set(0, 0, -1).applyQuaternion(tmpQ.set(o.x, o.y, o.z, o.w));
+        return { x: p.x, y: p.y, z: p.z, gieren: gierenVonRichtung({ x: tmp.x, z: tmp.z }) };
+      }
+    } catch { /* ausserhalb des Bildaufrufs: weiter mit der Kamera */ }
     tmp.set(0, 0, -1).applyQuaternion(c.quaternion);
-    return { x: c.position.x, y: c.position.y, z: c.position.z, gieren: gierenVonRichtung({ x: tmp.x, z: tmp.z }) };
+    const welt = { x: c.position.x, y: c.position.y, z: c.position.z, gieren: gierenVonRichtung({ x: tmp.x, z: tmp.z }) };
+    return rig && c.cameras.length > 1 && kamera.parent === rigObj ? kopfAusWelt(rig, welt) : welt;
   }
   const kopfLokal = () => (api.kopfPose ?? kopfPoseVorgabe)();
   /** Kopfposition in der Welt (m) oder null, wenn keine VR-Sitzung läuft (begehen3d.js: Durchgang N22). */
