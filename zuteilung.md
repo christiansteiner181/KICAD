@@ -345,3 +345,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 21.10.2026 | – | Gesamtprüfung fa1db8a (N6–N11) grün ohne Wiederholung (Kern 4521, Mcp 79, Web 535, Node 1024) → geprueft = fa1db8a (geprueft-20261021-1346); Desktop beim nächsten Klick aufs Icon | Hauptlauf | ok |
 | 21.10.2026 | N16 | Stützen im Grundriss mit Kreuz, nur Beton schraffiert | Hauptlauf | ok – c00099d, StuetzeKreuzTests 11, Grafik/Architektur/IFC 1639 grün |
 | 21.10.2026 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übertrager, Stufen/Schnittlinie/Lauflinie/Beschriftung) | hlks-modul (als general-purpose sonnet/high; Geometrie ausnahmsweise Sonnet wegen Kontingent 88 %) | läuft |
+| 21.10.2026 | N15 | Raum begehen (Ich-Perspektive aus dem Grundriss, Pfeiltasten, Augenhöhe 1,7 m) | hlks-modul (als general-purpose sonnet/high) | läuft (Kontingent 89 %) |
