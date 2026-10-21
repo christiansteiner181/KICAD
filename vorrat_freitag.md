@@ -30,4 +30,6 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 
 ## Neue Ideen (laufend ergänzen)
 
-*(noch keine)*
+| Nr. | Idee | Herkunft | Umfang (Schätzung) | Hinweis |
+| --- | --- | --- | --- | --- |
+| N14 | Raum im Grundriss gewählt → Kontextmenü «Raum im 3D zeigen»: springt in die 3D-Ansicht, Schnittbereich = Raum + 1,5 m in alle Richtungen | Christian 21.10. | klein, sobald N13 steht | baut auf dem 3D-Schnittbereich (N13) auf |

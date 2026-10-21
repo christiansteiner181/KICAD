@@ -363,3 +363,20 @@ Entscheide Hauptlauf:
 **Fertig, wenn** Christian in einer 3D-Ansicht den Bereich einschalten und an den Griffen auf einen Gebäudeteil oder ein Geschoss verkleinern
 kann, nur dieser Teil sichtbar und sauber abgeschnitten ist, die Einstellung mit der Ansicht gespeichert bleibt (auch nach Neustart und auf
 einem anderen Rechner) und die Auswahl darin weiter funktioniert.
+
+## N14 – «Raum im 3D zeigen» aus dem Grundriss
+
+Christian 21.10.2026: «ist im GR ein Raum ausgewählt; Kontextmenue "raum im 3D zeigen" springt zur 3d ansicht und zeigt den 3d ausschnitt
+des raumes, +1.5m in alle richtungen.» (Vorrat für Freitag; baut auf N13 auf.)
+
+**Fertig, wenn:**
+- Bei einem gewählten Raum bietet das Kontextmenü des Grundrisses «Raum im 3D zeigen» an; es gibt auch einen Befehl dafür, damit die KI es
+  ebenso kann.
+- Ein Klick wechselt in eine 3D-Ansicht. Ist eine offen, die zuletzt benutzte; sonst wird eine angelegt.
+- Der 3D-Schnittbereich (N13) wird auf den Raum gesetzt, plus 1,5 m in alle Richtungen:
+  - Grundriss-Umriss des Raums plus 1,5 m;
+  - Höhe von Raumunterkante − 1,5 m bis Raumoberkante + 1,5 m;
+  - ausgerichtet am Planwinkel (N9).
+- Die Kamera zeigt den Bereich ganz: Isometrie von vorne rechts, wie Revit «Auswahlbereich».
+- Mehrere gewählte Räume ergeben einen gemeinsamen Bereich.
+- Der Rand von 1,5 m ist eine Benutzereinstellung mit Vorgabe 1,5 m.
