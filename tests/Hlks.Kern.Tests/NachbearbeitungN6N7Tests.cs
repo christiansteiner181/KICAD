@@ -129,19 +129,24 @@ public class NachbearbeitungN6N7Tests
         Assert.Equal("stahl", uz.Text("material"));
     }
 
-    [Fact]
-    public void N7_Schwerpunkt_RingOhneFlaecheWeitVomUrsprung_IstMittelwert()
+    [Theory]
+    [InlineData("IFC4")]
+    [InlineData("IFC2X3")]
+    public void N7_Schwerpunkt_LotrechtesProfilWeitVomUrsprung_IstMittelwertDerPunkte(string schema)
     {
-        // Lotrechtes Profil im Grundriss: alle Punkte auf einer Strecke quer zur Achse, 50 km vom Ursprung (Rundungsrest ≠ 0)
-        double ux = -0.6779209389291859, uy = -0.735134817949314, nx = -uy, ny = ux;
-        double ox = 14660.97, oy = -54130.13;
-        double[] s = [0, -110.0002712680377, -110.000135633996, -4.999999999999695, -5.000000000001399, 110.000135633996, 5.00000000000031, 110.0002712680377];
-        var ring = s.Select(t => new[] { ox + t * nx, oy + t * ny, 5000.0 }).ToList();
+        // Das Profil des Trägers in Projektkoordinaten (lotrecht, im Grundriss eine Strecke quer zur Achse, rund 55 m vom
+        // Ursprung): vorher blieb ein Rundungsrest als Fläche und der «Schwerpunkt» lag 15.9 m längs der Achse daneben
+        using var d = IfcDatei.Oeffnen(NachbearbeitungN6N7Testdatei.Datei(schema));
+        var beam = d.Modell.Instances.OfType<Xbim.Ifc4.Interfaces.IIfcBeam>().Single();
+        var ex = IfcGeometrie.Von(d).Extrusion(beam)!;
+        Assert.True(ex.Vereinfacht);
+        var ring = ex.Aussen[0];
         var c = Polygone.Schwerpunkt(ring);
         Assert.Equal(ring.Average(q => q[0]), c[0], 6);
         Assert.Equal(ring.Average(q => q[1]), c[1], 6);
-        // Längs der Achse liegt der Punkt auf der Strecke (vorher bis 15.9 m daneben)
-        Assert.True(Math.Abs((c[0] - ox) * ux + (c[1] - oy) * uy) < 1e-6);
+        var (an, en) = NachbearbeitungN6N7Testdatei.UzErwartet();
+        double ux = en[0] - an[0], uy = en[1] - an[1], l = Math.Sqrt(ux * ux + uy * uy);
+        Assert.True(Math.Abs(((c[0] - an[0]) * ux + (c[1] - an[1]) * uy) / l) < 0.01, $"längs der Achse {((c[0] - an[0]) * ux + (c[1] - an[1]) * uy) / l:0.0} mm neben dem Profil");
     }
 
     [Fact]

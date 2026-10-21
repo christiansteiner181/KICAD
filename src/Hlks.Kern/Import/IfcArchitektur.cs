@@ -18,11 +18,12 @@
 //   Nachbearbeitung N6 (Befund Christian 21.10.2026, Archicad 27 Bernstrasse 42: 23 Türen 5.19 m hoch, Körper 2.15 m): Weicht
 //   die Ausdehnung des Körpers längs der z-Achse der Tür bzw. des Fensters um mehr als 400 mm UND mehr als 15 % von
 //   OverallHeight ab, gilt der Körper (hoehe, beim Fenster auch bruestung ab Unterkante Körper); Herkunft nennt beide Werte,
-//   ein Hinweis nennt jede solche Tür bzw. jedes Fenster. Ohne lesbaren Körper bleibt OverallHeight. Schwelle aus den echten
-//   Dateien (Probelauf 21.10.2026): Rahmen, Futter und Bänke machen den Körper bis 298 mm (12.6 %) höher als OverallHeight
-//   (Bernstrasse bis 170 mm / 7.7 %, BKW Hauptsitz bis 298 mm / 12.6 %) – das bleibt OverallHeight; die widersprüchlichen
-//   Fälle weichen um 725 mm (20.8 %) bis 4160 mm (66.5 %) ab: Archicad schreibt dort die Höhe der Öffnung, die bis ein
-//   Geschoss unter die Tür reicht. Die Öffnung selbst bleibt, wie die Datei sie zeichnet (Netzdatei, Kollision).
+//   ein Hinweis nennt jede solche Tür bzw. jedes Fenster. Ohne lesbaren oder mit vereinfachtem Körper bleibt OverallHeight.
+//   Schwelle aus den echten Dateien (Probelauf 21.10.2026, 91 bzw. 920 Türen und Fenster mit Körper): Rahmen, Futter und Bänke
+//   machen den Körper bis 298 mm (12.6 %) höher als OverallHeight (Bernstrasse bis 170 mm / 7.7 %, BKW Hauptsitz bis 298 mm /
+//   12.6 %) – das bleibt OverallHeight; die widersprüchlichen Fälle weichen um 725 bis 4160 mm (20.8 bis 66.5 %) ab: Archicad
+//   schreibt dort die Höhe der Öffnung, die unter die Tür reicht (Bernstrasse 3.04 m, BKW 0.74 bis 4.16 m). Die Öffnung selbst
+//   bleibt, wie die Datei sie zeichnet (Netzdatei, Kollision).
 //   Tür seite/band aus OperationType und Lage der Tür (Annahme IFC-Konvention: Tür öffnet in +y ihrer Lage, «LEFT» = Band
 //   links bei Blick in +y); andere Bauarten: leer mit Hinweis.
 // - Decke/Dach: Umriss aus dem Profil der Extrusion, sonst Netz-Grundfläche; z = Oberkante, Dicke senkrecht; Löcher als
@@ -589,10 +590,11 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
 
     /// <summary>N6: Höhe und Unterkante (z, mm) des Körpers einer Tür bzw. eines Fensters, wenn sie deutlich von OverallHeight
     /// abweicht (<see cref="KoerperAbweichungMm"/> und <see cref="KoerperAbweichungAnteil"/>); sonst null – auch ohne lesbaren
-    /// Körper. Höhe = Ausdehnung der Körperpunkte längs der z-Achse der Lage des Elements (bei lotrechter Lage die z-Ausdehnung).</summary>
+    /// Körper und bei vereinfachtem Körper (Boolean: nur der erste Operand, kann zu gross sein). Höhe = Ausdehnung der Körperpunkte
+    /// längs der z-Achse der Lage des Elements (bei lotrechter Lage die z-Ausdehnung).</summary>
     (double Hoehe, double Unterkante)? HoeheAusKoerper(IIfcElement f, double overallHeight)
     {
-        if (g.Koerper(f) is not { Leer: false } n || n.Begrenzung() is not { } bb) return null;
+        if (g.Koerper(f) is not { Leer: false } n || g.IstVereinfacht(f) || n.Begrenzung() is not { } bb) return null;
         var lage = Affin.Aus(d.Lage(f));
         double[] z = lage.AchseZ, o = lage.Ursprung;
         double zl = Math.Sqrt(z[0] * z[0] + z[1] * z[1] + z[2] * z[2]);
