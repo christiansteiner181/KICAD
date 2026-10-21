@@ -40,6 +40,13 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
   Technik: bestehende KICAD-Oberflächenteile als Fläche im VR-Raum.
 
+- **Messwerkzeug mit Fang** (Christian 21.10.2026: «noch ein messwerkzeug mit fängen. im tablet ergänzen»):
+  - Auf dem Tablet «Messen» wählen.
+  - Zwei Punkte mit Finger bzw. Strahl setzen. Die Punkte fangen auf Ecken, Kanten, Flächen, Leitungsachsen und Anschlüsse, mit
+    sichtbarem Fangsymbol.
+  - Angezeigt werden der Abstand und dx/dy/dz, in mm bzw. cm.
+  - Weitere Funktionen: lotrecht zur Fläche messen (Decke, Wand, Boden), mehrere Messungen stehen lassen, «Messungen löschen».
+
 ### XR-D – «Hey Claude» (N25, nur VR)
 - Das Weckwort öffnet die Claude-Eingabe; die Anweisung wird per Sprachaufnahme erfasst und geht wie getippt an Claude.
 - Ändernde Befehle bestätigt man auf dem Tablet oder mit «ja».
