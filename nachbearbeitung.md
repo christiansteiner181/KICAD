@@ -341,6 +341,12 @@ Entscheide Hauptlauf:
 - für beide Farbe und Transparenz wählen kann, im Dialog Sichtbarkeit/Grafiken bzw. an der Unterlage;
 - den Unterschied sieht, z. B. die Türen mit 5,19 m im Original gegenüber dem Nachbau.
 
+**Umgesetzt: 21.10.2026** (hlks-modul, vom Hauptlauf zusammengeführt).
+- **Bedienung:** Ansicht › Grafik › Sichtbarkeit/Grafiken (VV) «IFC-Unterlagen zeigen» (Nachbau / Original / Beide), auch in den Eigenschaften der Ansicht und in der Ansichtsvorlage. «Farben …» an der IFC-Unterlage (Unterlagen verwalten, Projektbrowser) mit Farbe und Deckkraft für Original und Nachbau.
+- **Kern:** `Grafik/IfcDarstellung.cs`; `GrundlagenIfc` mit zwei Zwischenspeichern und `SchnittSenkrecht` (Netz im Schnitt), Schnitt und 3D.
+- **Grenzen:** Im Schnitt erscheint das Original nur als Schnittlinien (keine Fassadenprojektion); im Modus «nachbau» bleibt der Schnitt wie bisher; die Einstellung wirkt nur in der Darstellung «standard».
+- **Tests:** `IfcDarstellungTests.cs` (18), Node 9, Browser-Reihe `ifc-darstellung.browser.mjs` (27, auch mit dem Bernstrasse-IFC).
+
 ## N13 – 3D-Schnittbereich einstellbar (wie Revit)
 
 Christian 21.10.2026: «in der 3d Ansicht, sollte der 3dansichtsbereich eingestellt werden können. (es ist nur sichtbar was eingestellt
