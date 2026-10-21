@@ -13,7 +13,8 @@ zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
 
 ## Teile
 
-### XR-A – Begehen in VR (N23, gebaut 21.10.2026, Brillentest offen)
+### XR-A – Begehen in VR (N23, gebaut 21.10.2026; Start mit der Brille bestätigt 21.10.2026)
+- **Erster Brillentest 21.10.2026 ~19:15 (Christian: «VR läuft in der Brille»):** Quest 3 im eigenen Browser, KICAD über , adb über WLAN (Weg 2). Bestätigt ist der Start der VR-Sitzung; Gehen, Drehen, Wände, Tablet, Greifen und Messen sind noch einzeln abzunehmen.
 - Knopf «In VR begehen». Der Standpunkt ist der von «Raum begehen» (N15); die Augenhöhe kommt aus der echten Kopfhöhe.
 - Bewegen: Stick zum Gehen, Snap-Turn zum Drehen, Teleport per Abzug bzw. Pinch auf den Boden. Keine Kollision.
 - Wände sind undurchsichtig und werden nur unter 500 mm zum Kopf durchscheinend (N22).
