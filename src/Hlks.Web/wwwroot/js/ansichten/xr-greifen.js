@@ -12,10 +12,12 @@
 // das Element gerade reserviert hat (/api/status); dann gibt es einen Hinweis und kein Greifen. Dazwischen kann ein anderer noch ändern; der Befehl beim Loslassen lehnt das ab.
 //
 // Tablet: linke Hand offen, Handfläche zum Kopf (ersatzweise Taste Y links, die Menütaste der Quest gehört dem System); Tippen mit dem rechten Zeigefinger bzw. dem Strahl.
+// Ruhe: Das Tablet steht in einer Totzone still und folgt der Hand erst bei grösseren Bewegungen (tabletNachfuehren in xr-greifen-logik.js); bei offenem Tablet sind die Gelenkkugeln aus,
+// nur an der rechten Zeigefingerspitze bleibt ein kleiner Punkt (Rückmeldung Brillentest 21.10.2026).
 
 import * as THREE from 'three';
 import {
-  GREIF_REICHWEITE, istFaust, istPinch, handflaechenMitte, handflaechenNormale, tabletGeste, tabletLage, tabletBeruehrung, tabletStrahl, elementInReichweite, abstandZuElement,
+  GREIF_REICHWEITE, istFaust, istPinch, handflaechenMitte, handflaechenNormale, tabletGeste, tabletLage, tabletNachfuehren, tabletPalmGlaetten, neuerTabletZustand, tabletBeruehrung, tabletStrahl, elementInReichweite, abstandZuElement,
   querVerschiebung, querAchsen, befehlsMasse, aufSchritt, eigenschaftenZeilen, heranholAnteil, HERANHOLEN_ABSTAND, SCHRITT_M,
 } from './xr-greifen-logik.js';
 import { erzeugeFangdaten, fangenPunkt, fangenStrahl, deckeUndWaende, v3, plus, minus, mal, einheit, laenge, massKurz, mitteVon3 } from './xr-mess-logik.js';
@@ -33,6 +35,7 @@ const GREIFBAR = new Set(['leitung', 'formteil', 'armatur', 'apparat', 'wand', '
 const FERN = new Set(['leitung', 'formteil', 'armatur', 'apparat']);
 const VORRANG = { leitung: 3, formteil: 3, armatur: 3, apparat: 3, wand: 1, sonst: 1 };
 const SCHREIB_MS = 250;
+const FINGERPUNKT_RADIUS = 0.0025;   // m (Durchmesser 5 mm)
 const wv = (p) => new THREE.Vector3(p.x, p.y, p.z);
 const rund = (x, n = 3) => { const f = 10 ** n; return Math.round(x * f) / f; };
 const pt = (v) => (v ? { x: rund(v.x), y: rund(v.y), z: rund(v.z) } : null);
@@ -53,12 +56,14 @@ export function erzeugeXr(o) {
   let grab = null;                    // laufendes Greifen
   let startet = false;                // Reservierung wird geprüft
   let tabletLageJetzt = null;
-  let tabletGlatt = null;
+  let tabletGlatt = null;             // gezeigte (beruhigte) Lage, solange das Tablet offen ist
+  const tabletRuhe = neuerTabletZustand();   // Zustand der Beruhigung (Filter, Palm-Normale)
   let tabletUrsache = null;           // 'geste' | 'taste'
   let letztesGreifen = null;          // zuletzt gesendeter Befehl { befehl, parameter, angenommen }
   let faehigkeiten = null;            // Zwischenspeicher der Abfrage faehigkeiten
   const hinweisZeit = { text: '', t: -10 };
   const handMesh = {};
+  let fingerPunkt = null;             // einzelner Punkt an der rechten Zeigefingerspitze, solange das Tablet offen ist
   let massAnzeige = null;
   const wurzelGruppe = new THREE.Group(); wurzelGruppe.name = 'vr-xr';
   o.szene.add(wurzelGruppe);
@@ -167,22 +172,26 @@ export function erzeugeXr(o) {
     if (L && kopf) {
       if (L.art === 'hand' && L.gelenke) {
         const soll = tabletGeste(L.gelenke, 'left', kopf, tablet.offen && tabletUrsache === 'geste');
-        const n = handflaechenNormale(L.gelenke, 'left');
+        const n0 = handflaechenNormale(L.gelenke, 'left');
+        const n = n0 ? tabletPalmGlaetten(tabletRuhe, n0, dt) : null;   // die Normale (Hebel 14 cm) ist die Hauptquelle des Zitterns
         lage = n && L.ort ? tabletLage(L.ort, n, kopf) : null;
-        if (soll && lage) { if (!tablet.offen) { tabletUrsache = 'geste'; tabletGlatt = lage; tablet.oeffnen(L.ort); } }
+        if (soll && lage) { if (!tablet.offen) { tabletUrsache = 'geste'; tablet.oeffnen(L.ort); } }
         else if (tablet.offen && tabletUrsache === 'geste') tablet.schliessen();
       } else if (L.art === 'controller') {
         lage = L.ort ? tabletLage(L.ort, { x: 0, y: 1, z: 0 }, kopf) : null;
         if (L.menue && !mem.left.menue) {   // Taste Y links: ein Druck öffnet, der nächste schliesst
           if (tablet.offen) { tablet.schliessen(); tabletUrsache = null; }
-          else if (lage) { tabletUrsache = 'taste'; tabletGlatt = lage; tablet.oeffnen(L.ort); }
+          else if (lage) { tabletUrsache = 'taste'; tablet.oeffnen(L.ort); }
         }
         mem.left.menue = L.menue;
       }
     } else if (tablet.offen) tablet.schliessen();
+    if (!L || L.art !== 'hand') tabletRuhe.palm = null;   // Hand verloren: die Glättung der Normale beginnt neu
     if (lage) {
-      tabletGlatt = tabletGlatt ? glaetten(tabletGlatt, lage, Math.min(1, dt * 14)) : lage;
-      tabletLageJetzt = tabletGlatt;
+      // offen: beruhigtes Nachführen (Totzone); geschlossen: Lage roh (das Tablet ist unsichtbar), damit beim Öffnen die erste Lage sofort gilt
+      tabletGlatt = tablet.offen ? tabletNachfuehren(tabletGlatt, lage, dt, tabletRuhe) : null;
+      if (tabletGlatt) tabletLageJetzt = tabletGlatt;
+      else if (!tablet.zustand().sichtbar) tabletLageJetzt = lage;   // beim Schliessen bleibt die zuletzt gezeigte Lage stehen
     }
     tablet.bild(dt, tabletLageJetzt);
     // Tippen mit dem rechten Zeigefinger
@@ -193,10 +202,6 @@ export function erzeugeXr(o) {
       if (b && !m.beruehrung) tablet.tippen(b.u, b.v);
       m.beruehrung = !!b;
     } else m.beruehrung = false;
-  }
-  function glaetten(a, b, k) {
-    const mix = (p, q) => ({ x: p.x + (q.x - p.x) * k, y: p.y + (q.y - p.y) * k, z: p.z + (q.z - p.z) * k });
-    return { ...b, mitte: mix(a.mitte, b.mitte), normale: einheit(mix(a.normale, b.normale)), rechts: einheit(mix(a.rechts, b.rechts)), oben: einheit(mix(a.oben, b.oben)) };
   }
 
   // ---------------------------------------------------------------------------------------------- Messen: Sonde und Setzen (rechte Seite)
@@ -419,10 +424,11 @@ export function erzeugeXr(o) {
 
   // ---------------------------------------------------------------------------------------------- Hände zeigen
   function haendeZeigen() {
+    const offen = tablet.offen;   // bei offenem Tablet sind die Gelenkkugeln aus; nur an der Spitze des rechten Zeigefingers bleibt ein kleiner Punkt zum Zielen
     for (const seite of ['left', 'right']) {
       const S = seiten[seite];
       let m = handMesh[seite];
-      if (!S?.gelenke) { if (m) m.visible = false; continue; }
+      if (!S?.gelenke || offen) { if (m) m.visible = false; continue; }
       if (!m) {
         m = new THREE.InstancedMesh(new THREE.SphereGeometry(0.007, 8, 6), new THREE.MeshBasicMaterial({ color: 0x38e8ff, transparent: true, opacity: 0.75, depthTest: false }), GELENKE.length);
         m.frustumCulled = false; m.renderOrder = 997; wurzelGruppe.add(m); handMesh[seite] = m;
@@ -431,6 +437,14 @@ export function erzeugeXr(o) {
       GELENKE.forEach((n, i) => { const p = S.gelenke[n]; mat.makeTranslation(p ? p.x : 0, p ? p.y : -100, p ? p.z : 0); m.setMatrixAt(i, mat); });
       m.instanceMatrix.needsUpdate = true; m.visible = true;
     }
+    const R = seiten.right;
+    if (offen && R?.art === 'hand' && R.spitze) {
+      if (!fingerPunkt) {
+        fingerPunkt = new THREE.Mesh(new THREE.SphereGeometry(FINGERPUNKT_RADIUS, 10, 8), new THREE.MeshBasicMaterial({ color: 0x38e8ff, transparent: true, opacity: 0.95, depthTest: false }));
+        fingerPunkt.frustumCulled = false; fingerPunkt.renderOrder = 997; wurzelGruppe.add(fingerPunkt);
+      }
+      fingerPunkt.position.set(R.spitze.x, R.spitze.y, R.spitze.z); fingerPunkt.visible = true;
+    } else if (fingerPunkt) fingerPunkt.visible = false;
   }
 
   // ---------------------------------------------------------------------------------------------- Zustand für Prüfung
@@ -446,6 +460,7 @@ export function erzeugeXr(o) {
       tablet: { ...tablet.zustand(), lage: tabletLageJetzt ? { mitte: pt(tabletLageJetzt.mitte), normale: pt(tabletLageJetzt.normale), rechts: pt(tabletLageJetzt.rechts), oben: pt(tabletLageJetzt.oben) } : null, ursache: tabletUrsache },
       messen: messen.zustand(), messungen: messen.messungen().map((m) => ({ ...m, a: pt(m.a), b: pt(m.b), fuss: pt(m.fuss), abstandMm: rund(m.abstandMm, 1), dx: rund(m.dx, 1), dy: rund(m.dy, 1), dz: rund(m.dz, 1) })),
       greifen: grab ? { id: grab.id, kz: grab.kz, art: grab.art, offset: pt(grab.offset), oben: rund(grab.oben), seitlich: rund(grab.seitlich), masse: grab.masse ?? null, fang: grab.fang ?? null } : null,
+      haende: { gelenke: { left: !!handMesh.left?.visible, right: !!handMesh.right?.visible }, fingerPunkt: !!fingerPunkt?.visible, fingerPunktOrt: fingerPunkt?.visible ? pt(fingerPunkt.position) : null },
       befehl: letztesGreifen, hinweis: hinweisZeit.text, fangdaten: daten.anzahl,
     };
   }
@@ -484,6 +499,7 @@ export function erzeugeXr(o) {
       massAnzeige?.freigeben(); massAnzeige = null;
       tablet.freigeben(); messen.freigeben();
       for (const m of Object.values(handMesh)) { m.geometry.dispose(); m.material.dispose(); }
+      if (fingerPunkt) { fingerPunkt.geometry.dispose(); fingerPunkt.material.dispose(); fingerPunkt = null; }
       wurzelGruppe.removeFromParent();
       delete o.wurzel.dataset.xr;
     },

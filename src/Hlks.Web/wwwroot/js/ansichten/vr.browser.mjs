@@ -248,6 +248,10 @@ try {
   pruef(clip1.geclippt === 0, `Schnittbereich aus, solange VR läuft (${clip1.geclippt} Materialien geclippt)`);
   const wandIds = Object.keys(dar0).filter((id) => dar0[id].ebene === 'wand');
   pruef(wandIds.length >= 4 && wandIds.every((id) => dar1[id].m.every((m) => m.deckkraft === 1 && !m.transparent && m.depthWrite)) || (await durchgang())?.nah.length > 0, `Wände undurchsichtig (N22), ${wandIds.length} Wände`);
+  const duNah = new Set(((await durchgang())?.nah ?? []).map((n) => n.id));
+  const feste = Object.keys(dar1).filter((id) => ['wand', 'decke'].includes(dar1[id].ebene));
+  const nichtFest = feste.filter((id) => !duNah.has(id) && !dar1[id].m.every((m) => m.deckkraft === 1 && !m.transparent && m.depthWrite));
+  pruef(feste.length >= 4 && nichtFest.length === 0, `in VR sind alle Wand- und Deckenkörper undurchsichtig (${feste.length} Körper, ${duNah.size} im Durchgang < 500 mm)`, nichtFest.join(','));
   const hk = await knopfZustand(IM_HUD);
   pruef(hk && hk.text === 'VR beenden' && hk.status === 'aktiv' && hk.aus === 'false', 'in der Einblendung des Begehens steht «VR beenden»', JSON.stringify(hk));
   const hk2 = await knopfZustand(HAUPT);
@@ -412,6 +416,8 @@ try {
     v.netzeAnwenden();
     return { sichtbar: m.visible, z: v.zustand() };`);
   pruef(ifc.sichtbar === false && ifc.z.ifcAn === false && Math.round(ifc.z.ifcDreiecke) === 320000, `Netz mit ${ifc.z.ifcDreiecke} Dreiecken ist in VR zuerst ausgeblendet`, JSON.stringify(ifc));
+  const netzMat = await ausw(`const m = window.__netz.material; return { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite };`);
+  pruef(netzMat.opacity === 1 && netzMat.transparent === false && netzMat.depthWrite === true, 'IFC-Unterlage in VR undurchsichtig (Deckkraft 1, nicht transparent, schreibt Tiefe)', JSON.stringify(netzMat));
   await eingabe({ ifc: true }); await warte(500); await eingabe({ ifc: false }); await warte(300);
   pruef(await ausw(`return window.__netz.visible === true;`) && (await vrDaten()).ifc.sichtbar === true, 'Taste A blendet die IFC-Unterlage ein (einmal je Druck)');
   await eingabe({ ifc: true }); await warte(500); await eingabe({ ifc: false }); await warte(300);
@@ -432,6 +438,8 @@ try {
   abschnitt('N23 Esc in VR beendet nur die Sitzung; das Begehen am Bildschirm war vorher da und bleibt');
   await taste('Escape');
   await vrAus();
+  const netzNach = await ausw(`const m = window.__netz.material; return { opacity: m.opacity, transparent: m.transparent, depthWrite: m.depthWrite };`);
+  pruef(netzNach.opacity === 0.4 && netzNach.transparent === true && netzNach.depthWrite === true, 'nach dem Ende hat die IFC-Unterlage wieder ihre Deckkraft 0,4, transparent', JSON.stringify(netzNach));
   const bEsc = await begehenDaten();
   pruef(bEsc?.raum === raum1.kz, 'das Begehen von Raum 1 läuft weiter', JSON.stringify(bEsc));
   pruef(!(await vrDaten()) && (await knopfZustand(IM_HUD))?.status === 'bereit', 'data-vr entfernt, Knopf in der Einblendung wieder «In VR begehen»');

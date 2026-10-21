@@ -10432,6 +10432,7 @@
             "Abzug halten zeigt einen Strahl mit Ring auf dem Boden; Loslassen springt, nach oben gezielt springt nichts.",
             "Mit der Hand: Pinch auf den Boden zeigend springt ebenso (falls Handverfolgung ankommt; sonst notieren).",
             "Eine Wand wird erst durchscheinend, wenn der Kopf näher als 50 cm ist.",
+            "Alle Wände, Decken und Böden sind undurchsichtig, auch die Flächen einer eingeblendeten IFC-Unterlage (Original); nach dem Beenden ist die Unterlage am PC wieder durchscheinend wie eingestellt.",
             "Die Bildrate bleibt flüssig (kein Ruckeln beim Drehen); bei grossen Projekten wie Bernstrasse: IFC-Unterlage mit Taste A aus.",
             "Nach dem Beenden: Kamera, Schnittbereich und Darstellung wie vorher; der Knopf heisst wieder «In VR begehen».",
             "Esc während VR beendet nur die Sitzung; war vorher «Raum begehen» aktiv, bleibt der Raum am Bildschirm."
@@ -10518,7 +10519,8 @@
             "Rückgängig nimmt das zuletzt Verschobene zurück.",
             "Messen: Fangsymbol und Name erscheinen am Leitungsende, an Ecken und auf Flächen; Abstand und dx/dy/dz stimmen mit dem PC überein.",
             "Lot zur Fläche: Abstand zur Decke lotrecht, unabhängig davon, wo auf der Decke man den Punkt setzt.",
-            "Ohne Handverfolgung öffnet Taste Y links das Tablet."
+            "Ohne Handverfolgung öffnet Taste Y links das Tablet.",
+            "Tablet steht ruhig, wenn die Hand still gehalten wird; Hände ausgeblendet, Fingerpunkt sichtbar. Bei grösseren Bewegungen (über etwa 1,5 cm) folgt das Tablet weich; schliesst es, sind die Hände wieder da."
           ],
           "bild": {
             "projekt": "beispiel",
