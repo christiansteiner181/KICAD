@@ -11,6 +11,9 @@
 //  - Navigationswürfel bleibt sichtbar und dreht mit; Klick auf eine Würfelfläche bzw. der Haus-Knopf und Esc beenden das Begehen.
 //  - Esc stellt die vorherige Kamera und den Schnittbereich wieder her (Anzeige, Clipping, gespeicherter Wert).
 //  - Mit Planwinkel ≠ 0 zeigt der Blick in Richtung «oben» des ausgerichteten Grundrisses; L-förmiger Raum: Standpunkt im Raum.
+//  - N22 (Durchgang): Beim Begehen sind Wände und Decken undurchsichtig (Deckkraft 1); beim Gehen durch eine Wand wird sie durchscheinend, solange die Kamera näher als
+//    500 mm ist (gegen eine unabhängige Abstandsrechnung aus /api/koerper geprüft), danach wieder undurchsichtig; Esc stellt Deckkraft und Schnittbereich-Clipping wieder her.
+//    Bilder: %TEMP%\HLKS_CAD\n22\*.png (SHOTS22 ändert den Ordner). Ordner der Testumgebung: HLKS_N15_ORDNER (Vorgabe n15_test).
 // Bilder: %TEMP%\HLKS_CAD\n15\*.png (SHOTS ändert den Ordner).
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdtempSync, writeFileSync, mkdirSync, rmSync, readFileSync, cpSync } from 'node:fs';
@@ -26,7 +29,9 @@ const edge = process.env.HLKS_EDGE ?? 'C:\\Program Files (x86)\\Microsoft\\Edge\
 const dotnet = 'C:\\Program Files\\dotnet\\dotnet.exe';
 const BUILD = process.env.HLKS_BUILD ?? path.join(process.env.USERPROFILE, 'HLKS_CAD_build');
 const SHOTS = process.env.SHOTS ?? path.join(tmpdir(), 'HLKS_CAD', 'n15');
-const WURZEL = path.join(tmpdir(), 'HLKS_CAD', 'n15_test');
+const WURZEL = path.join(tmpdir(), 'HLKS_CAD', process.env.HLKS_N15_ORDNER ?? 'n15_test');
+const SHOTS22 = process.env.SHOTS22 ?? path.join(tmpdir(), 'HLKS_CAD', 'n22');   // Prüfbilder zu N22 (Durchgang)
+mkdirSync(SHOTS22, { recursive: true });
 const hier = path.dirname(fileURLToPath(import.meta.url));
 mkdirSync(SHOTS, { recursive: true });
 
@@ -418,6 +423,113 @@ try {
   await ziehen({ x: wuerfelR.cx, y: wuerfelR.cy }, { x: wuerfelR.cx - 40, y: wuerfelR.cy + 10 }, 'links', 0, 8);
   const bZ1 = await begehenDaten();
   pruef(bZ1 && strecke(bZ0, bZ1) < 0.5 && nahe(bZ0.azimutGrad, bZ1.azimutGrad, 0.01), 'Ziehen am Würfel beim Begehen ändert nichts (Würfel dreht nur mit)');
+  await taste('Escape');
+
+  // ================================================================== N22: Durchgang
+  abschnitt('N22 Wände undurchsichtig, nur beim Durchgehen (näher als 500 mm) durchscheinend');
+  const dur = () => ausw(`const w = document.querySelector('${AKTIV3D}'); const d = w?.dataset.durchgang; const b = w?.dataset.begehen; return { dur: d ? JSON.parse(d) : null, beg: b ? JSON.parse(b) : null };`);
+  const darst = () => inst('AN-3D', 'i.deckkraftAlle()');
+  const bild22 = async (name) => { const r = await send('Page.captureScreenshot', { format: 'png', clip: { x: leinB.x, y: leinB.y, width: leinB.width, height: leinB.height, scale: 1 } }); const f = path.join(SHOTS22, name + '.png'); writeFileSync(f, Buffer.from(r.data, 'base64')); return f; };
+  // eine Decke über dem Raum (Unterkante 2550, Oberkante 2800 über EG-Kote): im Beispielprojekt gibt es keine
+  const dOk = eg.kote + 2800;
+  await befehl('element_anlegen', { klasse: 'Decke', kennzeichen: 'D-N22', geschoss: eg.kz, eigenschaften: {}, geometrie: { art: 'polygon', punkte: raum1.punkte.map((p) => [p[0], p[1], dOk]), dicke: 250 } });
+  await warteBis(async () => Object.values(await darst()).some((x) => x.ebene === 'decke'), 'Decke in der 3D-Ansicht', 15000);
+  // Gegenprobe: Abstand zu den Wandquadern, unabhängig von der Oberfläche nur aus /api/koerper (mm, Quader im eigenen System)
+  const koerperAlle = await (await fetch(`${SERVER}/api/koerper`)).json();
+  const waende = koerperAlle.filter((k) => k.ebene === 'wand' && (k.teile ?? []).length > 0 && k.teile.every((t) => t.art === 'quader')).map((k) => ({ id: k.id, teile: k.teile }));
+  const abstandWand = (w, x, y, z) => Math.min(...w.teile.map((t) => {
+    const a = -(t.drehung ?? 0) * GRAD, c = Math.cos(a), s = Math.sin(a), px = x - t.mitte[0], py = y - t.mitte[1];
+    const lx = px * c - py * s, ly = px * s + py * c;
+    return Math.hypot(Math.max(Math.abs(lx) - t.masse[0] / 2, 0), Math.max(Math.abs(ly) - t.masse[1] / 2, 0), Math.max(Math.abs(z - t.mitte[2]) - t.masse[2] / 2, 0));
+  }));
+  pruef(waende.length >= 4, `Gegenprobe: ${waende.length} Wandkörper aus /api/koerper`);
+  const vorher = await darst();   // normale Darstellung der 3D-Ansicht (mit Schnittbereich)
+  const clipVor = await clipping();
+  const wandIds = Object.keys(vorher).filter((id) => vorher[id].ebene === 'wand');
+  const deckeIds = Object.keys(vorher).filter((id) => vorher[id].ebene === 'decke');
+  pruef(wandIds.length >= 4 && wandIds.every((id) => vorher[id].m.every((m) => m.deckkraft < 1 && m.transparent && !m.depthWrite)), `normale 3D-Ansicht: ${wandIds.length} Wände durchscheinend`, JSON.stringify(vorher[wandIds[0]]));
+  await starten(raum1);
+  const d0 = await dur();
+  const nach0 = await darst();
+  pruef(d0.dur && d0.dur.grenzeMm === 500 && d0.dur.bauteile >= wandIds.length, `Durchgang aktiv: ${d0.dur?.bauteile} Bauteile, Grenze ${d0.dur?.grenzeMm} mm`, JSON.stringify(d0.dur));
+  pruef(d0.dur.nah.length === 0 && d0.dur.undurchsichtig === d0.dur.bauteile, 'in der Raummitte ist nichts im Durchgang: alle Bauteile undurchsichtig');
+  pruef(wandIds.every((id) => nach0[id].m.every((m) => m.deckkraft === 1 && !m.transparent && m.depthWrite)), 'alle Wände undurchsichtig (Deckkraft 1, depthWrite an)');
+  pruef(deckeIds.length > 0 && deckeIds.every((id) => nach0[id].m.every((m) => m.deckkraft === 1 && !m.transparent && m.depthWrite)), `alle Decken (${deckeIds.length}) undurchsichtig`);
+  const andere = Object.keys(vorher).filter((id) => !wandIds.includes(id) && !deckeIds.includes(id));
+  pruef(andere.length > 0 && andere.every((id) => JSON.stringify(nach0[id].m.map((m) => [m.deckkraft, m.transparent, m.depthWrite])) === JSON.stringify(vorher[id].m.map((m) => [m.deckkraft, m.transparent, m.depthWrite]))), `${andere.length} übrige Körper (Räume, Leitungen, Apparate …) unverändert`);
+  pruef(waende.some((w) => abstandWand(w, d0.beg.x, d0.beg.y, d0.beg.z) > 500), 'Gegenprobe: nicht alle Wände sind in der Raummitte nah');
+  const bildW0 = await bild22('n22-begehen-undurchsichtig');
+  pruef(bildPruefen(bildW0), 'Prüfbild: im Raum, Wände undurchsichtig');
+  // gehen: in 300-mm-Schritten (Umschalt + Pfeil hoch) bis über die nächste Wand hinaus; bei jedem Schritt mit der Gegenprobe vergleichen
+  const schritte = []; let falsch = null;
+  let bildNah = null;
+  for (let i = 0; i < 34; i++) {
+    await taste('ArrowUp', { umschalt: true });
+    const s = await dur();
+    const dm = await darst();
+    const nahIds = new Set(s.dur.nah.map((n) => n.id));
+    for (const w of waende) {
+      if (!dm[w.id]) continue;
+      const a = abstandWand(w, s.beg.x, s.beg.y, s.beg.z);
+      if (Math.abs(a - 500) < 15) continue;   // Rundung der Kontrollwerte
+      const soll = a < 500;
+      const m = dm[w.id].m;
+      const istNah = nahIds.has(w.id), istDurch = m.every((x) => x.deckkraft < 1 && x.transparent), istHart = m.every((x) => x.deckkraft === 1 && !x.transparent && x.depthWrite);
+      if (istNah !== soll || (soll ? !istDurch : !istHart)) falsch ??= `Schritt ${i + 1} ${w.id}: Abstand ${a.toFixed(0)} mm, nah ${istNah}, Material ${JSON.stringify(m)}`;
+    }
+    schritte.push({ i: i + 1, nah: [...nahIds], d: Math.min(...waende.map((w) => abstandWand(w, s.beg.x, s.beg.y, s.beg.z))) });
+    if (nahIds.size > 0 && !bildNah && waende.some((w) => nahIds.has(w.id) && abstandWand(w, s.beg.x, s.beg.y, s.beg.z) === 0)) bildNah = await bild22('n22-begehen-in-der-wand');
+  }
+  pruef(falsch === null, 'bei jedem Schritt stimmt «nah» (< 500 mm zum Wandkörper) mit der unabhängigen Abstandsrechnung überein', falsch ?? '');
+  const ersterNah = schritte.findIndex((s) => s.nah.length > 0);
+  const danachFrei = ersterNah >= 0 ? schritte.findIndex((s, k) => k > ersterNah && s.nah.length === 0) : -1;
+  pruef(ersterNah >= 1, `beim Gehen wird eine Wand erst nach ein paar Schritten durchscheinend (Schritt ${ersterNah + 1}, vorher undurchsichtig)`, JSON.stringify(schritte.map((s) => s.nah.length)));
+  pruef(danachFrei > ersterNah, `und danach wieder undurchsichtig (Schritt ${danachFrei + 1})`, JSON.stringify(schritte.map((s) => s.nah.length)));
+  pruef(schritte.some((s) => s.d === 0), 'die Kamera ging durch eine Wand (Abstand 0 zum Wandkörper)');
+  pruef(bildNah && bildPruefen(bildNah), 'Prüfbild: mitten in der Wand, durchscheinend');
+  const sNah = schritte[ersterNah];
+  pruef(sNah && sNah.d < 500, `erster Durchgang bei Abstand ${sNah?.d.toFixed(0)} mm (< 500)`);
+  // Esc: Darstellung und Schnittbereich wie vorher
+  await taste('Escape');
+  await warte(400);
+  const nachEsc = await darst();
+  const gleich = Object.keys(vorher).every((id) => nachEsc[id] && JSON.stringify(nachEsc[id].m) === JSON.stringify(vorher[id].m));
+  pruef(gleich && Object.keys(nachEsc).length === Object.keys(vorher).length, 'Esc: Deckkraft, depthWrite und Clipping aller Körper wie vor dem Begehen');
+  const clipNach = await clipping();
+  pruef(clipNach.geclippt === clipVor.geclippt && clipNach.geclippt > 0, `Schnittbereich-Clipping wieder da (${clipNach.geclippt}/${clipNach.materialien})`);
+  pruef((await dur()).dur === null, 'Kontrolle data-durchgang entfernt');
+  // Höhenabstand: Augenhöhe mit Bild auf zur Decke (Unterkante 2550 über Kote) heben, danach wieder senken
+  const deckeId = deckeIds[0];
+  await starten(raum1);
+  const dz0 = (await dur()).dur;
+  pruef(!dz0.nah.some((n) => n.id === deckeId), 'Decke in 1.7 m Augenhöhe undurchsichtig (850 mm entfernt)');
+  for (let i = 0; i < 5; i++) await taste('PageUp');   // Augenhöhe 2.2 m: 350 mm unter der Decke
+  const dz1 = await dur(), dm1 = await darst();
+  pruef(dz1.dur.nah.some((n) => n.id === deckeId) && dm1[deckeId].m.every((m) => m.deckkraft === 0.3 && m.transparent && !m.depthWrite), `Augenhöhe ${dz1.beg.augenhoehe} mm: Decke 350 mm über der Kamera, durchscheinend mit der Vorgabe 0.3`, JSON.stringify([dz1.dur.nah, dm1[deckeId]]));
+  const bildDecke = await bild22('n22-begehen-decke-nah');
+  pruef(bildPruefen(bildDecke), 'Prüfbild: Decke direkt über der Kamera');
+  for (let i = 0; i < 5; i++) await taste('PageDown');
+  const dz2 = await dur(), dm2 = await darst();
+  pruef(!dz2.dur.nah.some((n) => n.id === deckeId) && dm2[deckeId].m.every((m) => m.deckkraft === 1 && !m.transparent && m.depthWrite), 'Augenhöhe wieder 1.7 m: Decke wieder undurchsichtig');
+  await taste('Escape');
+  await warte(300);
+  pruef(JSON.stringify(await darst()) === JSON.stringify(vorher), 'Esc: auch die Decke wieder wie in der normalen Ansicht');
+  // Prüfbilder: Blick zum Nachbarraum, Wand dazwischen – kurz davor (undurchsichtig) und beim Durchgehen (durchscheinend, der Nachbarraum scheint durch)
+  await starten(raum1);
+  {
+    const cA = schwerpunkt(raum1), cB = schwerpunkt(raum2);
+    const ziel = Math.atan2(cB[1] - cA[1], cB[0] - cA[0]) / GRAD;
+    const diff = ((ziel - (await begehenDaten()).azimutGrad + 540) % 360) - 180;
+    const n15 = Math.round(diff / 15);
+    for (let i = 0; i < Math.abs(n15); i++) await taste(n15 > 0 ? 'ArrowLeft' : 'ArrowRight', { umschalt: true });
+    let davor = null, drin = null;
+    for (let i = 0; i < 40 && !drin; i++) {
+      await taste('ArrowUp', { umschalt: true });
+      const s = await dur();
+      if (s.dur.nah.length === 0) davor = await bild22('n22-vor-der-wand'); else drin = await bild22('n22-in-der-wand');
+    }
+    pruef(davor && drin && bildPruefen(davor) && bildPruefen(drin), 'Prüfbilder: kurz vor der Wand (undurchsichtig) und in der Wand (durchscheinend), Blick zum Nachbarraum');
+  }
   await taste('Escape');
 
   // ================================================================== Planwinkel ≠ 0

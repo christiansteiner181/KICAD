@@ -12,6 +12,7 @@
 
 import * as THREE from 'three';
 import { cssVar } from './hilfen.js';
+import { formAusTeil, huellboxVon } from './begehen-logik.js';
 
 const M = 1 / 1000;
 /** Segmente je Umfang für Zylinder und Kugeln (unter ~11° je Segment wirkt es rund). */
@@ -241,7 +242,7 @@ export const BLASS_HUELLE = Object.freeze({ wand: 0.5, oeffnung: 0.5, decke: 0.2
 export function baueKoerper(k, opt = {}) {
   try {
     const g = new THREE.Group();
-    g.userData = { id: k.id, ebene: k.ebene ?? 'sonst', vorrang: vorrangVon(k.ebene), materialien: [] };
+    g.userData = { id: k.id, ebene: k.ebene ?? 'sonst', vorrang: vorrangVon(k.ebene), materialien: [], formen: [] };
     const kantenfarbe = cssVar('--d3-kante', '#6b7280');
     const materialien = new Map();   // Farbe|Deckkraft → gemeinsames Material des Körpers
     for (const t of k.teile ?? []) {
@@ -261,6 +262,8 @@ export function baueKoerper(k, opt = {}) {
       let mat = materialien.get(schluessel);
       if (!mat) { mat = material(farbe, deck); materialien.set(schluessel, mat); g.userData.materialien.push(mat); }
       g.add(new THREE.Mesh(geom, mat));
+      const form = formAusTeil(t);   // N22: Abstand der Kamera zum Körper beim Begehen
+      if (form) g.userData.formen.push(form);
       if (MIT_KANTEN.has(t.art) && deckVoll >= KANTE_AB_DECKKRAFT) {
         const kante = new THREE.LineSegments(new THREE.EdgesGeometry(geom, 20), new THREE.LineBasicMaterial({ color: kantenfarbe }));
         kante.raycast = () => {};   // Kanten werden nie angeklickt
@@ -270,6 +273,7 @@ export function baueKoerper(k, opt = {}) {
     }
     if (g.children.length === 0) return null;
     g.traverse((o) => { o.userData.id = k.id; });   // (der Halter des Netzes trägt die Id der Unterlage; das Mesh darunter ist nie ein Treffer)
+    g.userData.huellbox = huellboxVon(g.userData.formen);
     g.userData.original = g.userData.materialien.map((m) => ({ m, farbe: m.color.clone(), emissiv: m.emissive.clone() }));
     return g;
   } catch (e) {
