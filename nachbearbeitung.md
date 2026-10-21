@@ -198,3 +198,21 @@ Würfel steht, der die Kamera mitdreht: Flächen OBEN, UNTEN, VORNE, HINTEN, LIN
 weicher Übergang), Ziehen am Würfel dreht, Kompassring mit N/O/S/W (geografisch Nord aus Projektinformation.nordwinkel), Haus-Knopf
 (Startansicht), Kontextmenü «Aktuelle Ansicht als Startansicht». «VORNE» richtet sich nach der Gebäudeausrichtung (N9, planwinkel des
 Gebäudes; ohne Wert Projektachsen).
+
+## N12 – IFC: Original oder Nachbau als Unterlage zeigen, je eigene Farbe (transparent)
+
+Christian 21.10.2026: «Es soll gewählt werden können ob das originale IFC oder der nachbau als Unterlage abgebildet werden soll.» – «für beide
+muss eine unterschiedliche farbe wählbar sein (transparent)». Bestand (Bestandsaufnahme 21.10.2026): Die Netzdatei der IFC-Unterlage enthält
+die Originalgeometrie aller Produkte mit Kennzeichen uebernommen; gezeichnet wird heute fest nur das nicht Übernommene als Hintergrund
+(GrundlagenIfc.Laden mit 
+urHintergrund: true, Web leseNetz Vorgabe hintergrund), der Nachbau (Wand, Tür, Decke, Träger …) in eigener
+Darstellung; im Schnitt fehlt das Original ganz (Schnittzerlegung kennt 
+etz nicht). Entscheide Hauptlauf:
+- Ansichtseigenschaft ifcDarstellung: 
+achbau (Vorgabe, wie heute: Nachbau + nicht übernommenes Original) | original (Original aller
+  Produkte; Elemente mit kennungen.quelle = diese Unterlage ausgeblendet) | eide (übereinander zum Vergleichen).
+- Farben an der Unterlage: arbeOriginal + deckkraft (heute grau #8a8a8a, 0.5) und arbeNachbau + deckkraftNachbau (Vorgabe: keine
+  Übersteuerung = normale Darstellung); beide wählbar, transparent; in eide muss sich beides unterscheiden lassen.
+- Gilt in Grundriss (Schnitt auf Schnitthöhe), 3D und Schnitt/Ansicht (Original-Netz dort neu); Kollision, Aussparungen und IFC-Export unverändert.
+**Fertig, wenn** Christian in «Test_praxis» je Ansicht zwischen Original, Nachbau und beiden umschalten kann, die Farben/Transparenz beider
+wählen kann (Dialog Sichtbarkeit/Grafiken bzw. Unterlage) und der Unterschied (z. B. Türen 5,19 m im Original gegen den Nachbau) sichtbar wird.
