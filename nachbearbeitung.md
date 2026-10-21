@@ -480,3 +480,39 @@ Grundriss und für Holz im Schnitt; die anderen Materialien bleiben unverändert
 
 Christian 21.10.2026: «der 3d auswahlrahmen in blau, analog revit». **Umgesetzt: 21.10.2026** (Hauptlauf). Quader und Griffe in
 `ansichten/schnittbereich3d.js` sind blau #1e6fd9, Hover #5fa8ff (vorher orange). Anleitung und `OBERFLAECHE.md` sind nachgeführt.
+
+## N20 – Detaillierungsgrad «grob»: Wände schwarz voll
+
+Christian 21.10.2026: «detaillierungsgrad grob, alle wände schwarz solid.» Quelle dazu: SIA 400:2000 Ziff. B.8.3.1 (bis 1:100 werden
+Schnittflächen schwarz dargestellt; Text im Normen-Cache gelesen).
+
+**Fertig, wenn** im Detaillierungsgrad «grob» alle geschnittenen Wände ohne Schraffur und ohne Materialfarbe schwarz und voll gefüllt sind,
+auf dem Bildschirm und im PDF. Im dunklen Design gilt die Planfarbe.
+- Gleiches gilt für geschnittene Stützen (statt Kreuz bzw. Schraffur, N16) und Unterzüge. Das ist eine Annahme nach SIA B.8.3.1; am
+  Freitag bestätigen.
+- «mittel» und «fein» bleiben wie bisher: Schraffur, Holz beige (N18), Stützen mit Kreuz (N16).
+
+## N21 – Schnitthöhe des Grundrisses nach SIA 400
+
+Christian 21.10.2026: «schnitthöhe plan gem. sia».
+
+Quelle: SIA 400:2000 Ziff. C.3.1.1: Der Grundriss ist ein Horizontalschnitt durch ein Geschoss; die Höhenlage des Schnittes «ist nicht
+genau fixiert … Sie ist in der Regel so zu wählen, dass durch alle Tür- und Fensteröffnungen geschnitten wird». Einen festen Wert nennt die
+Norm nicht.
+
+Entscheide Hauptlauf:
+- Neue Ansichtseigenschaft `schnitthoeheNachSia` (Vorgabe ja, auch für bestehende Ansichten ohne Wert). Ist sie gesetzt, rechnet der Kern
+  die Schnitthöhe je Geschoss:
+  - Massgebend sind die Höhenbereiche aller Türen und Fenster des Geschosses über OK Boden: Tür UK … UK + Höhe, Fenster Brüstung …
+    Brüstung + Höhe.
+  - Gibt es einen gemeinsamen Bereich, gilt der Wert darin, der am nächsten bei 1000 mm liegt (bisherige Vorgabe; Annahme, am Freitag
+    bestätigen).
+  - Gibt es keinen gemeinsamen Bereich, gilt die Höhe, die die meisten Öffnungen schneidet (bei Gleichstand die nächste bei 1000 mm).
+    Ein Hinweis nennt die Öffnungen, die nicht geschnitten werden.
+  - Ohne Türen und Fenster gilt 1000 mm mit Hinweis.
+- Die Eigenschaften der Ansicht zeigen die gerechnete Schnitthöhe mit Herkunft «SIA 400:2000 Ziff. C.3.1.1» und den massgebenden
+  Öffnungen. Wer `schnitthoeheNachSia` ausschaltet, setzt `schnitthoehe` von Hand wie bisher.
+- Die Schnitthöhe wirkt wie heute überall: Wände, Öffnungen, Stützen, IFC-Netz, Treppen-Schnittlinie (N17), Planausgabe.
+
+**Fertig, wenn** ein Grundriss ohne Handwert seine Schnitthöhe aus den Öffnungen des Geschosses bestimmt, alle Türen und Fenster
+geschnitten zeigt (im Beispielprojekt und in der Bernstrasse), die Herkunft sichtbar ist und ein Handwert weiter gilt.

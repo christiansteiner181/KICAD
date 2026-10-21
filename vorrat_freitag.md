@@ -38,3 +38,5 @@ stehen in `nachbearbeitung.md` (N-Nummern). Neue Ideen bekommen die nächste fre
 | N17 | Treppen im Grundriss erkennbar (Klasse Treppe, IFC-Übernahme, Stufen/Schnittlinie/Lauflinie/Beschriftung) | Christian 21.10. | mittel–gross | läuft (Sonnet, Freigabe bis 95 %) |
 | N18 | Holz ohne Schraffur, beige durchscheinend | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
 | N19 | 3D-Schnittbereich blau wie Revit | Christian 21.10. | klein | **umgesetzt 21.10.** (Hauptlauf) |
+| N20 | Detaillierungsgrad grob: Wände (und Stützen/Unterzüge) schwarz voll (SIA 400 B.8.3.1) | Christian 21.10. | klein | läuft (Sonnet) |
+| N21 | Schnitthöhe nach SIA 400 C.3.1.1: durch alle Tür- und Fensteröffnungen, je Geschoss gerechnet | Christian 21.10. | klein–mittel | läuft (Sonnet) |
