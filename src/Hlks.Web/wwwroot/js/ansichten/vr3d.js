@@ -20,7 +20,7 @@ const SCHREIB_ABSTAND_MS = 250;   // so oft schreibt das Bild die Prüfhilfe dat
 
 /**
  * o: { wurzel, renderer, kamera, szene, modell (Gruppe der Körper), begehen (begehen3d.js), standortAusKamera() → Standort, anfordern(), meldung?(text, art),
- *      beiBeendet?(), xr?() → navigator.xr (Vorgabe: navigator.xr), anbinden?(sitzung) → Promise }
+ *      vorRender?() (Schnittbereich vor jedem Bild), beiBeendet?(), xr?() → navigator.xr (Vorgabe: navigator.xr), anbinden?(sitzung) → Promise }
  * Rückgabe { knopf(), pruefen(), starten(standort?), beenden(), aktiv, kopf(), netzeAnwenden(), zustand(), api, zerstoeren() }
  */
 export function erzeugeVr(o) {
@@ -142,6 +142,8 @@ export function erzeugeVr(o) {
   }
 
   const controller = () => [renderer.xr.getController(0), renderer.xr.getController(1)];
+  api.controller = controller;   // Test-Naht: die beiden Controller-Objekte (Ereignisse selectstart/selectend einspeisen, Lage setzen)
+  api.modell = modell;           // Test-Naht: die Körpergruppe (Netze der IFC-Unterlage nachbilden)
   function steuerungBauen() {
     controller().forEach((c, i) => {
       const strahl = new THREE.Line(
@@ -226,10 +228,12 @@ export function erzeugeVr(o) {
     const t = jetzt();
     if (!erzwingen && t - letztesSchreiben < SCHREIB_ABSTAND_MS) return;
     letztesSchreiben = t;
-    const k = kopf();
+    const k = kopf(), kp = rig ? kopfLokal() : null;
     wurzel.dataset.vr = JSON.stringify({
       aktiv: true, rig: rig ? { x: rund(rig.x), y: rund(rig.y), z: rund(rig.z), gieren: rund(rig.gieren) } : null,
       kopf: k ? { x: rund(k.x), y: rund(k.y), z: rund(k.z) } : null,
+      blickGrad: rig && kp ? rund(blickGierenWelt(rig, kp.gieren) / (Math.PI / 180), 2) : null,
+      kamera: (() => { const p = tmp.setFromMatrixPosition(kamera.matrixWorld); return { x: rund(p.x), y: rund(p.y), z: rund(p.z) }; })(),
       haende: quellen.some((q) => !!q?.hand), steuerung: quellen.filter((q) => q && !q.hand).length,
       ifc: { sichtbar: ifcAn, dreiecke: Math.round(ifcDreiecke) }, bildMs: rund(zeit.mittel, 2), bilder: zeit.anzahl,
       aufrufe: renderer.info?.render?.calls ?? 0, dreieckeBild: renderer.info?.render?.triangles ?? 0,
@@ -243,6 +247,7 @@ export function erzeugeVr(o) {
     letzteZeit = zeitstempel ?? t0;
     const k = kopfLokal();
     if (k) {
+      if (api.kopfPose) { kamera.position.set(k.x, k.y, k.z); kamera.rotation.set(0, k.gieren - Math.PI / 2, 0); }   // Attrappe (Tests): sonst setzt die Brille die Kamera selbst
       if (ausrichten) {   // erster gültiger Kopf: an den Standpunkt und in die Blickrichtung des Begehens stellen
         ausrichten = false;
         rigSetzen(rigStart(startZustand, k));
@@ -272,6 +277,7 @@ export function erzeugeVr(o) {
     }
     if (marker) { marker.visible = !!ziel; if (ziel) marker.position.set(ziel.x, ziel.y + 0.01, ziel.z); }
     begehen.pruefenDurchgang();   // N22 mit der Kopfposition
+    o.vorRender?.();              // Schnittbereich (N13): hängt die Clipping-Ebenen an die Materialien bzw. nimmt sie weg (pausiert im Begehen) – sonst nur in zeichnen()
     renderer.render(szene, kamera);
     zeit.neu(jetzt() - t0);
     zustandSchreiben();

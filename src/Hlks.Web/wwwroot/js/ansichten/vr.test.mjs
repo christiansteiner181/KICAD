@@ -302,3 +302,26 @@ test('N22 in VR: Ende der Sitzung gibt die Darstellung zurück (Deckkraft, trans
   d.beenden();
   assert.deepEqual({ opacity: w.m.opacity, transparent: w.m.transparent, depthWrite: w.m.depthWrite }, orig);
 });
+
+// ------------------------------------------------------------------------------------------------ Rig im three-Szenegraph
+
+test('Rig im Szenegraphen (three): Kamera als Kind des Rigs steht am Standpunkt und schaut in die Blickrichtung – Vorzeichen von Gieren und rotation.y stimmen', async () => {
+  const THREE = await import(threeUrl);
+  for (const az of [0, 45, 90, 200, 300]) {
+    const z = L.zustandAusStandort(standort(az));
+    const kopf = { x: 0.2, y: 1.62, z: -0.1, gieren: 100 * GRAD };   // Pose, die die Brille liefert (lokal im Referenzraum)
+    const rg = rigStart(z, kopf);
+    const rigObj = new THREE.Group(); rigObj.position.set(rg.x, rg.y, rg.z); rigObj.rotation.set(0, rg.gieren, 0);
+    const cam = new THREE.PerspectiveCamera(); rigObj.add(cam);
+    cam.position.set(kopf.x, kopf.y, kopf.z); cam.rotation.set(0, kopf.gieren - Math.PI / 2, 0);   // wie updateUserCamera des WebXRManagers
+    rigObj.updateMatrixWorld(true);
+    const p = new THREE.Vector3().setFromMatrixPosition(cam.matrixWorld);
+    nah(p.x, z.x, 1e-9, `x bei ${az}°`); nah(p.z, z.z, 1e-9, `z bei ${az}°`); nah(p.y, z.boden + 1.62, 1e-9);
+    const d = new THREE.Vector3(0, 0, -1).transformDirection(cam.matrixWorld);
+    nah(wd(gierenVonRichtung({ x: d.x, z: d.z }), z.gieren), 0, 1e-9, `Blick bei ${az}°`);
+    // dieselbe Rechnung wie kopfWelt / blickGierenWelt
+    const w = kopfWelt(rg, kopf);
+    nah(w.x, p.x, 1e-9); nah(w.z, p.z, 1e-9); nah(w.y, p.y, 1e-9);
+    nah(wd(blickGierenWelt(rg, kopf.gieren), gierenVonRichtung({ x: d.x, z: d.z })), 0, 1e-9);
+  }
+});

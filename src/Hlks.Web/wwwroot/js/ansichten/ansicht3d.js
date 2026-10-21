@@ -174,6 +174,7 @@ function erstellen(behaelter, ansichtElement) {
       return standortAusKamera({ position: kamera.position, ziel: steuerung.target }, box.isEmpty() ? steuerung.target.y : box.min.y);
     },
     meldung: (text, art) => { import('../oberflaeche/dialoge.js').then(({ meldung }) => meldung(text, art)).catch(() => {}); },
+    vorRender: () => schnitt?.vorRender(),
     beiBeendet: () => groesseAnpassen(),
   });
   const vrKnopf = vr.knopf();
