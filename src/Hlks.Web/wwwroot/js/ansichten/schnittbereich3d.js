@@ -59,7 +59,9 @@ export function erzeugeSchnittbereich(o) {
 
   // ---------------------------------------------------------------------------------------------- Zustand
 
-  const aktiv = () => !!quader?.aktiv;
+  // N15 «Raum begehen»: für die Dauer abgeschaltet – kein Clipping, keine Griffe, alles wählbar; der gespeicherte Stand (quader) bleibt unberührt
+  let pausiert = false;
+  const aktiv = () => !pausiert && !!quader?.aktiv;
 
   function darstellungAktualisieren() {
     gruppe.visible = aktiv();
@@ -153,6 +155,16 @@ export function erzeugeSchnittbereich(o) {
     get ausstehend() { return ausstehend > 0 || !!wartend; },
     setzen,
     neueObjekte() { schmutzig = true; o.anfordern(); },
+    /** Schnittbereich zeitweise abschalten (Raum begehen, N15) bzw. wieder einschalten; ändert nichts am gespeicherten Stand. */
+    pausieren(an) {
+      if (zerstoert || pausiert === !!an) return;
+      pausiert = !!an;
+      schmutzig = true;
+      hover = -1;
+      darstellungAktualisieren();
+      o.anfordern();
+    },
+    get pausiert() { return pausiert; },
 
     /** Schnittbereich ein- oder ausschalten; beim ersten Einschalten umschliesst er das ganze Modell. */
     async schalten(an) {

@@ -8,6 +8,8 @@ import { registrieren } from './register.js';
 import { zeigen, meldung, eingabe, kontextmenue } from './dialoge.js';
 import { benutzerWert, benutzerSetzen } from './benutzer.js';
 import { RAND_RAUM, RAND_RAUM_SCHLUESSEL } from '../ansichten/schnittbereich-logik.js';
+import { AUGENHOEHE_SCHLUESSEL, AUGENHOEHE_VORGABE, AUGENHOEHE_MIN, AUGENHOEHE_MAX, augenhoeheLesen } from '../ansichten/begehen-logik.js';
+import { abfrage } from '../api.js';
 import { sende, ergebnisMelden } from './befehle.js';
 import { design, designUmschalten } from './design.js';
 import { einlageplanDialog } from './einlageplaene-dialog.js';
@@ -450,6 +452,44 @@ registrieren({
     const n = Number(String(eingegeben).replace(',', '.'));
     if (!Number.isFinite(n) || n < 0 || n > 100000) { meldung('Der Rand muss eine Zahl zwischen 0 und 100000 mm sein.', 'warnung'); return; }
     try { await benutzerSetzen(RAND_RAUM_SCHLUESSEL, n); meldung(`Rand für «Raum im 3D zeigen»: ${n} mm (gilt für alle Projekte und Rechner des Benutzers).`, 'ok'); }
+    catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); }
+  },
+});
+
+// N15: «Raum begehen» – Kontextmenü im Grundriss bei gewähltem Raum (grundriss.js) und Knopf im Register Ansicht. Die Abfrage raum_begehen rechnet den Standort
+// (Standpunkt, Augenhöhe, Blick; ändert nichts); danach öffnet die Oberfläche die zuletzt benutzte 3D-Ansicht (sonst legt sie eine an) und startet dort das Begehen
+// (ansichten/begehen3d.js, Instanz.begehen). Augenhöhe: Benutzereinstellung ansicht3d.augenhoehe (mm über OK Boden), Vorgabe 1700.
+const augenhoehe = () => augenhoeheLesen(benutzerWert(AUGENHOEHE_SCHLUESSEL, AUGENHOEHE_VORGABE));
+registrieren({
+  id: 'ansicht.raumBegehen', titel: 'Raum begehen', symbol: 'raumBegehen', kuerzel: null, register: 'ansicht', gruppe: '3D-Schnitt',
+  aktiv: (p) => raeumeVon(p).length > 0,
+  hinweis: 'Zuerst einen Raum wählen (im Grundriss anklicken).',
+  async ausfuehren(p) {
+    const raum = raeumeVon(p)[0];
+    let standort;
+    try { standort = await abfrage('raum_begehen', { raum, augenhoehe: augenhoehe() }); }
+    catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); return; }
+    let kz = ansicht3dFuerRaum()?.kennzeichen ?? null;
+    if (!kz) {
+      kz = freiesKennzeichen('AN-3D');
+      const r = await sende('element_anlegen', { klasse: 'Ansicht', kennzeichen: kz, name: freierName('3D-Ansicht', ansichten().map((a) => a.name || a.kennzeichen)), eigenschaften: { art: '3d' } });
+      if (!ergebnisMelden(r, `3D-Ansicht ${kz} angelegt.`)) return;
+      if (!(await aufElement(kz))) { meldung('Die neue 3D-Ansicht ist noch nicht eingetroffen.', 'warnung', { vorschlag: 'Im Projektbrowser nachsehen und «Raum begehen» noch einmal wählen.' }); return; }
+    }
+    const o = await fenster.ansichtOeffnen(kz);
+    letzte3d = kz;
+    try { o?.instanz?.begehen?.(standort); }
+    catch (e) { meldung(e.message ?? String(e), 'warnung'); }
+  },
+});
+registrieren({
+  id: 'ansicht.begehenAugenhoehe', titel: 'Augenhöhe für «Raum begehen» …', symbol: 'raumBegehen', kuerzel: null,
+  async ausfuehren() {
+    const eingegeben = await eingabe('Raum begehen', 'Augenhöhe über OK Boden in mm', String(augenhoehe()));
+    if (eingegeben === null || eingegeben === undefined) return;
+    const n = Number(String(eingegeben).replace(',', '.'));
+    if (!Number.isFinite(n) || n < AUGENHOEHE_MIN || n > AUGENHOEHE_MAX) { meldung(`Die Augenhöhe muss eine Zahl zwischen ${AUGENHOEHE_MIN} und ${AUGENHOEHE_MAX} mm sein.`, 'warnung'); return; }
+    try { await benutzerSetzen(AUGENHOEHE_SCHLUESSEL, n); meldung(`Augenhöhe für «Raum begehen»: ${n} mm (gilt für alle Projekte und Rechner des Benutzers).`, 'ok'); }
     catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); }
   },
 });

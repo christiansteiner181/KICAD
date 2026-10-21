@@ -51,6 +51,7 @@ public static class Tuer
                  ?? SanitaerAbfragen.Tuer(p, name, par)   // Modul 4 Teil A
                  ?? IfcExportAbfragen.Tuer(p, name, par)   // Modul 7 Teil B2: ifc_export
                  ?? PlanwinkelAbfragen.Tuer(p, name, par)   // N9: planwinkel
+                 ?? RaumBegehenAbfragen.Tuer(p, name, par)   // N15: raum_begehen
                  ?? throw new HlksFehler($"Abfrage «{name}» gibt es nicht.", "Abfragen: " + string.Join(", ", Abfragen.Liste.Select(x => x.Name))),
         };
     }

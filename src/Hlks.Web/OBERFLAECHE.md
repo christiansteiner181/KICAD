@@ -1582,3 +1582,58 @@ Ohne `ansicht`: die erste 3D-Ansicht nach Kennzeichen, sonst wird `AN-3D` angele
   `node src/Hlks.Web/wwwroot/js/ansichten/schnittbereich.browser.mjs` (Port 5480, CDP 9480; Prüfbilder `n13-*.png`, `n14-*.png` in `%TEMP%\HLKS_CAD\n13`).
 - **Offen / nicht geprüft:** IFC-Netze der Unterlagen sind im Code geclippt (gleiche Schleife über alle Materialien), in der Browser-Reihe aber nicht belegt (das Beispielprojekt hat keine IFC-Unterlage);
   Schnittflächen offen (siehe oben).
+
+## Nachbearbeitung N15: «Raum begehen» (Ich-Perspektive im 3D, `nachbearbeitung.md`)
+
+Christian, 21.10.2026: «gleicher Ablauf, Kontextm. "Raum begehen", Ansicht wechselt in Egoperspektive in den Raum. Position 1.7 m über Boden, Zentrum Raum. Position kann mittels Pfeiltaste geändert werden.»
+
+**Abfrage `raum_begehen { raum, augenhoehe? }`** (Kern `Plan/RaumBegehen.cs`; auch MCP-Werkzeug und KI, eingeordnet unter «Fachabfragen», nur lesend – sie ändert nichts am Modell; Werkzeugzahl 136):
+
+| Ergebnis | Inhalt |
+| --- | --- |
+| `standpunkt` | `{ x, y, z, art, abstandZumRand }` in mm: Schwerpunkt des Raumpolygons (`art` «schwerpunkt»); liegt er ausserhalb (L-, U-Form), der innerste Punkt (grösster Abstand zum Rand, Quadbaum-Verfahren «Pole of Inaccessibility», auf 10 mm genau; `art` «innerster Punkt»). `z` = `bodenOk` + Augenhöhe. |
+| `bodenOk`, `augenhoehe` | OK Boden nach derselben Regel wie N14 (tiefster Punkt des Polygons, sonst Kote des Geschosses); Augenhöhe Vorgabe 1700 mm (Parameter 300 … 5000). |
+| `blick` | waagrecht (`nickenGrad` 0), `azimutGrad` = 90° − `planwinkel` des Gebäudes (Gegenuhrzeigersinn ab Projekt-x; 90° = Projekt-Nord) = die Richtung «oben» des ausgerichteten Grundrisses = Gegenrichtung von «VORNE» des Navigationswürfels (N9/N11); dazu `richtung` [dx, dy, 0]. |
+| `raum`, `name`, `nummer`, `geschoss`, `geschossName` | für die Einblendung. |
+
+**Benutzereinstellung `ansicht3d.augenhoehe`** (mm über OK Boden, 300 … 5000, Vorgabe 1700; `BenutzerEinstellungen.cs`, wie `ansicht3d.raumrand`): gilt für alle Projekte und Rechner des Benutzers.
+
+| Funktion | Ort | Dateien |
+| --- | --- | --- |
+| **Raum begehen** | Grundriss › Rechtsklick auf einen Raum (direkt unter «Raum im 3D zeigen»); Ansicht › 3D-Schnitt (Symbol Figur im Raum, gesperrt ohne gewählten Raum) | `grundriss.js` (Kontextmenü), `aktionen-ansicht.js` (`ansicht.raumBegehen`) |
+| **Augenhöhe für «Raum begehen» …** | Grundriss › Kontextmenü; Aktion `ansicht.begehenAugenhoehe` | Benutzereinstellung `ansicht3d.augenhoehe` |
+
+**Ablauf der Aktion `ansicht.raumBegehen`:** Raum aus `p.raeume` oder der Auswahl → Abfrage `raum_begehen` mit der Augenhöhe aus der Benutzereinstellung → die zuletzt benutzte 3D-Ansicht (wie N14; fehlt jede, legt die Oberfläche
+`AN-3D` mit `element_anlegen` an) wird geöffnet bzw. nach vorn geholt → `instanz.begehen(standort)`. Das Begehen selbst ist **kein Modellzustand** (nichts im Verlauf, nichts gespeichert); es lebt nur in der Instanz der 3D-Ansicht.
+
+**Der Modus (`ansichten/begehen3d.js`, Rechenregeln rein in `ansichten/begehen-logik.js`):**
+- **Kamera:** perspektivisch, Öffnungswinkel 75°, Nahebene 5 cm; `OrbitControls` aus (`enabled = false`). Zustand = Standpunkt (x, z in m), OK Boden, Augenhöhe, Gieren (= Azimut des Kerns) und Nicken; die Kamera sitzt auf `boden + augen`,
+  das Ziel liegt 1 m voraus. Die Position der Steuerung (`target`) wird mitgeführt, damit der Navigationswürfel (liest `kamera − target`) mitdreht.
+- **Schnittbereich (N13):** `schnittbereich3d.js` hat dafür `pausieren(an)`: keine Clipping-Ebenen, keine Griffe, alles wählbar; der gespeicherte Stand (Quader, `aktiv`) und die Eigenschaft im Modell bleiben unverändert.
+  Beim Beenden gilt wieder alles wie vorher (Prüfung: Quader, Zahl der geclippten Materialien, gespeicherter Wert).
+- **Anzeige:** oben links Raumkennzeichen · Nummer · Name, Geschoss, «Augenhöhe n m über OK Boden» und die Tastenhilfe (`.d3-begehen`); die Bedienhilfe der Umlaufansicht unten links entfällt.
+- **Beenden:** Esc, Haus-Knopf des Würfels (nur beenden, keine Startansicht), Klick auf eine Würfelfläche (beendet und fährt dann zu dieser Fläche); stellt Kamera (Lage, Ziel, FOV, Schnittebenen), Steuerung und Schnittbereich wieder her.
+  War die Kamera vor dem Begehen noch nicht vom Benutzer bewegt (z. B. Ansicht erst dafür geöffnet), passt sie sich danach wieder dem Modell an. Ziehen am Würfel und am Kompass bewirkt beim Begehen nichts; «Startansicht festlegen» ist dann ohne Wirkung.
+- **Eingriffe in `ansicht3d.js` / `wuerfel.js` (schmal):** `erzeugeBegehen`, Option `begehen { aktiv, beenden }` am Würfel, `zoomAlles` tut beim Begehen nichts, mittlere Taste (Aufnahmephase) geht beim Begehen an `begehen3d.js`,
+  Instanz-Methoden `begehen(standort, augenhoeheMm?)`, `beendeBegehen()`, `begehenAktiv`; `data-kamera` enthält jetzt auch `fov`.
+
+**Bedienung – ANNAHMEN (Christian am Freitag bestätigen!):**
+
+| Taste / Maus | Wirkung |
+| --- | --- |
+| Pfeil hoch / runter | vor / zurück: ein Tastendruck = 100 mm, gehalten (ab 250 ms) flüssig mit 1.4 m/s; nur waagrecht, die Höhe über Boden bleibt |
+| Pfeil links / rechts | drehen: ein Tastendruck = 5°, gehalten 90°/s |
+| Umschalt | dreifach schneller (Schritt, Drehung, Höhe, flüssig) |
+| Bild auf / ab | Augenhöhe ± 100 mm (300 … 5000 mm; nur für das laufende Begehen, die Einstellung bleibt) |
+| Maus ziehen (links) | umsehen: 0.25° je Pixel, Ziehen nach rechts = nach rechts schauen, nach oben = nach oben; Nicken auf ±80° begrenzt |
+| Mitte ziehen | seitlich und hoch/runter verschieben wie Greifen (5 mm je Pixel): nach links ziehen = nach rechts, nach unten ziehen = höher |
+| Esc | beenden |
+| Keine Kollision | man geht durch Wände (wie Revit) |
+
+Tastenhilfe, Schrittweiten und «keine Kollision» sind Annahmen des Auftrags; zu klären bleibt ausserdem, ob der Klick auf eine Würfelfläche nach dem Beenden zur Fläche fährt (so umgesetzt) oder nur beendet.
+
+- **Prüfhilfen am DOM:** `.d3-wurzel[data-begehen]` (JSON `{ raum, x, y, z, augenhoehe, bodenOk, azimutGrad, nickenGrad, fov }` in Projekt-mm bzw. Grad; fehlt ausserhalb des Begehens), Klasse `d3-begehen-an`.
+- **Prüfen:** Kern `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~RaumBegehenTests` (11), Web `…Hlks.Web.Tests --filter FullyQualifiedName~BenutzerEinstellungen`; Node
+  `node --test src/Hlks.Web/wwwroot/js/ansichten/begehen.test.mjs` (19: Bewegungsrechnung, Tastenbelegung, Tastenverlauf, Einblendung); Browser
+  `node src/Hlks.Web/wwwroot/js/ansichten/begehen.browser.mjs` (Port 5540, CDP 9540; 79 Prüfungen; Prüfbilder `n15-*.png` in `%TEMP%\HLKS_CAD\n15`).
+- **Anleitung:** Kapitel «zb» in `berichte/anleitung/inventar.json`: `zb-n15-begehen`, `zb-n15-bewegen`, `zb-n15-augenhoehe`.
