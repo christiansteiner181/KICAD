@@ -139,16 +139,16 @@ test('Der Dialog setzt Server-Text nur maskiert in HTML (esc) und öffnet die Se
   assert.doesNotMatch(d, /fetch\(/, 'der Dialog geht nur über api.js');
 });
 
-test('Verdrahtung: Aktion im Register Ansicht, Symbol, Stilblatt, Link in der 3D-Ansicht, graue Taste öffnet den Dialog', () => {
+test('Verdrahtung: Aktion im Register Ansicht, Symbol, Stilblatt; der eine VR-Knopf geht ohne VR im Browser über die Brille', () => {
   assert.match(lies('aktionen-quest.js'), /id: 'ansicht\.questVerbinden'.*register: 'ansicht'.*gruppe: 'Fenster'/s);
   assert.match(lies('aktionen.js'), /import '\.\/aktionen-quest\.js'/);
   assert.match(lies('symbole.js'), /questVerbinden: '/);
   assert.match(lies('../../index.html'), /css\/quest\.css/);
   const vr = lies('../ansichten/vr3d.js');
   assert.match(vr, /import\('\.\.\/oberflaeche\/quest-dialog\.js'\)/);
-  assert.match(vr, /Quest im Browser der Brille nutzen …/);
-  assert.match(vr, /else questDialogOeffnen\(\)/);
-  assert.match(lies('../../css/ansichten.css'), /\.d3-vr\[data-vr-status="aus"\] \.d3-vr-quest \{ display: inline; \}/);
+  assert.doesNotMatch(vr, /Quest im Browser der Brille nutzen …/, 'der Link entfällt (Christian 21.10.2026: «nur noch diesen button anzeigen»)');
+  assert.match(vr, /m\.anBrilleSenden\(\)/);
+  assert.match(vr, /questDialogOeffnen\(\)/);
 });
 
 // ------------------------------------------------------------------------------------------ Brille automatisch verbinden (MAC statt IP)

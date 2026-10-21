@@ -66,15 +66,22 @@ export function erzeugeVr(o) {
   let letzterKopf = null;               // letzter Kopfstand der Sitzung { x, z, boden, gieren } für api.beiEnde
 
   // ---------------------------------------------------------------------------------------------- Knopf
+  // Christian 21.10.2026: «den button in VR anzeigen, so gestalten, dass er immer den neuen weg geht. nur noch diesen button anzeigen.» – Kann dieser Browser selbst
+  // keine VR-Sitzung (PC ohne Link), geht der Knopf über die Brille: VR-Auftrag mit Autostart (oberflaeche/vr-auftrag.js), Brille aufsetzen, die Begehung startet.
+  // Kann er es (Quest-Browser, PC mit Link), startet er die Sitzung direkt. Er ist nie ausgegraut; die Links «Quest im Browser …» und «An die Brille senden» entfallen.
+  const ueberBrille = () => !sitzung && !startet && unterstuetzt !== true;
   function knopfZeigen(k) {
     const z = knopfZustand({ xrVorhanden: !!xrQuelle(), unterstuetzt, aktiv: !!sitzung, startet });
+    const brille = ueberBrille();
     const b = k.querySelector('.d3-vr-knopf');
     b.textContent = z.text;
-    b.setAttribute('aria-disabled', z.deaktiviert ? 'true' : 'false');
-    b.classList.toggle('d3-vr-aus', z.deaktiviert);
-    b.title = z.hinweis || (sitzung ? 'Die VR-Sitzung beenden' : 'Den Raum mit der VR-Brille begehen');
-    k.querySelector('.d3-vr-hinweis').textContent = z.hinweis;
-    k.dataset.vrStatus = sitzung ? 'aktiv' : startet ? 'startet' : z.deaktiviert ? 'aus' : 'bereit';
+    const aus = z.deaktiviert && !brille;
+    b.setAttribute('aria-disabled', aus ? 'true' : 'false');
+    b.classList.toggle('d3-vr-aus', aus);
+    b.title = brille ? 'In VR begehen: Auftrag an die Brille – Brille aufsetzen, die Begehung startet automatisch'
+      : (aus ? z.hinweis : '') || (sitzung ? 'Die VR-Sitzung beenden' : 'Den Raum mit der VR-Brille begehen');
+    k.querySelector('.d3-vr-hinweis').textContent = brille ? '' : z.hinweis;
+    k.dataset.vrStatus = sitzung ? 'aktiv' : startet ? 'startet' : brille ? 'brille' : aus ? 'aus' : 'bereit';
   }
   function knoepfeAktualisieren() {
     for (const [k, eingehaengt] of [...knoepfe]) {
@@ -87,15 +94,15 @@ export function erzeugeVr(o) {
   function knopf() {
     const k = document.createElement('div');
     k.className = 'd3-vr';
-    k.innerHTML = '<button type="button" class="d3-vr-knopf"></button><span class="d3-vr-hinweis"></span>'
-      + '<button type="button" class="d3-vr-quest">Quest im Browser der Brille nutzen …</button>'
-      + '<button type="button" class="d3-vr-brille" title="Das Begehen (sonst die 3D-Gesamtansicht) als Auftrag an die Brille senden; in der Quest KICAD VR öffnen">An die Brille senden</button>';   // VR-Auftrag (VrAuftrag.cs)
-    k.querySelector('.d3-vr-brille').addEventListener('click', (e) => { e.stopPropagation(); import('../oberflaeche/vr-auftrag.js').then((m) => m.anBrilleSenden()).catch((x) => console.error('An die Brille senden', x)); });   // Modul XR: nur bei grauem Knopf sichtbar (CSS), öffnet «Quest verbinden»
-    k.querySelector('.d3-vr-quest').addEventListener('click', (e) => { e.stopPropagation(); questDialogOeffnen(); });
+    k.innerHTML = '<button type="button" class="d3-vr-knopf"></button><span class="d3-vr-hinweis"></span>';
     k.querySelector('.d3-vr-knopf').addEventListener('click', (e) => {
       e.stopPropagation();
       if (sitzung) { beenden(); return; }
-      if (k.dataset.vrStatus === 'aus') { pruefen().then((ok) => { if (ok) starten().catch(() => {}); else questDialogOeffnen(); }); return; }   // Brille inzwischen verbunden? sonst Hinweis und «Quest verbinden»
+      if (k.dataset.vrStatus === 'brille') {   // neuer Weg: Auftrag (Begehen an diesem Standpunkt bzw. Sitzungsraum) mit Autostart an die Brille
+        import('../oberflaeche/vr-auftrag.js').then((m) => m.anBrilleSenden()).catch((x) => { console.error('An die Brille senden', x); questDialogOeffnen(); });
+        return;
+      }
+      if (k.dataset.vrStatus === 'aus') return;
       starten().catch(() => {});
     });
     knoepfe.set(k, false);

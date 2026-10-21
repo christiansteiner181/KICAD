@@ -200,23 +200,17 @@ try {
   const leinB = await rechteckVon(`${AKTIV3D} .d3-leinwand`);
 
   // ================================================================== Knopf
-  abschnitt('N23 Knopf «In VR begehen» in der 3D-Ansicht: ohne Brille ausgegraut mit Hinweis');
+  abschnitt('N23 Knopf «In VR begehen» in der 3D-Ansicht: ohne VR im Browser geht er über die Brille (nie grau)');
   const k0 = await knopfZustand(HAUPT);
   pruef(k0 && k0.sichtbar, 'der Knopf steht in der 3D-Ansicht (unten rechts)', JSON.stringify(k0));
-  pruef(k0.status === 'aus' && k0.aus === 'true' && k0.text === 'In VR begehen', `ohne Brille ausgegraut (Status «${k0.status}»)`, JSON.stringify(k0));
-  pruef(k0.hinweis === 'Keine VR-Brille verbunden (Quest Link starten oder KICAD im Browser der Quest öffnen)' && k0.titel === k0.hinweis, `Hinweis: «${k0.hinweis}»`, JSON.stringify(k0));
-  const kStil = await ausw(`return Number(getComputedStyle(document.querySelector('${HAUPT} .d3-vr-knopf')).opacity);`);
-  pruef(kStil < 0.8, `optisch ausgegraut (Deckkraft ${kStil})`);
-  const bildAus = await speichern('n23-knopf-ausgegraut', { x: leinB.x + leinB.width - 330, y: leinB.y + leinB.height - 70, width: 330, height: 70 });
-  pruef(bildPruefen(bildAus), 'Prüfbild: ausgegrauter Knopf mit Hinweis');
+  pruef(k0.status === 'brille' && k0.aus === 'false' && k0.text === 'In VR begehen' && k0.hinweis === '', `ohne VR im Browser: Status «${k0.status}», frei, ohne Hinweis (Christian 21.10.2026: «immer den neuen weg»)`, JSON.stringify(k0));
+  pruef(/an die Brille/.test(k0.titel), `Titel nennt den Weg über die Brille: «${k0.titel}»`);
+  pruef((await ausw(`return document.querySelectorAll('${HAUPT} .d3-vr-quest, ${HAUPT} .d3-vr-brille').length;`)) === 0, 'nur noch dieser eine Knopf (keine Links «Quest im Browser …», «An die Brille senden»)');
+  const nr0 = await ausw(`const r = await fetch('/api/vr/auftrag'); return (await r.json())?.auftrag?.nr ?? 0;`);
   await klickKnopf(HAUPT);
-  await warte(300);
-  pruef((await anfragen()).length === 0 && !(await vrDaten()), 'ein Klick auf den ausgegrauten Knopf startet keine Sitzung');
-  // Modul XR: der Klick auf den grauen Knopf öffnet «Quest verbinden» (oberflaeche/quest-dialog.js) – prüfen und schliessen, sonst blockiert der Dialog die weitere Reihe
-  await warteBis(() => ausw(`return !!document.querySelector('#dialogschicht .dlg.quest-verbinden');`), 'Dialog «Quest verbinden» offen', 8000);
-  pruef(true, 'der Klick auf den ausgegrauten Knopf öffnet den Dialog «Quest verbinden»');
-  await ausw(`document.dispatchEvent(new KeyboardEvent('keydown', { key: 'Escape', bubbles: true })); return 1;`);
-  await warteBis(() => ausw(`return !document.querySelector('#dialogschicht .dlg.quest-verbinden');`), 'Dialog «Quest verbinden» zu', 5000);
+  await warteBis(async () => ((await ausw(`const r = await fetch('/api/vr/auftrag'); return (await r.json())?.auftrag?.nr ?? 0;`)) > nr0), 'Auftrag an die Brille gesetzt', 8000);
+  pruef((await anfragen()).length === 0 && !(await vrDaten()), 'der Klick setzt den VR-Auftrag für die Brille und startet hier keine Sitzung');
+  await ausw(`document.querySelectorAll('#meldungen > *').forEach((m) => m.remove()); return 1;`);   // die Meldung «Auftrag an die Brille …» liegt sonst über dem Knopf
 
   abschnitt('N23 Brille verbunden (Ereignis devicechange): der Knopf wird frei');
   await ausw(`window.__xr._unterstuetzt = true; window.__xr.dispatchEvent(new Event('devicechange')); return 1;`);
@@ -457,7 +451,7 @@ try {
   pruef(gestartet.aktiv === false && gestartet.startet === false && gestartet.begehen === false, 'nach dem Fehlschlag ist weder VR noch das Begehen aktiv', JSON.stringify(gestartet));
   pruef(!(await vrDaten()), 'data-vr fehlt');
   await ausw(`window.__xr.dispatchEvent(new Event('devicechange')); return 1;`);
-  await warteBis(async () => (await knopfZustand(HAUPT)).status === 'aus', 'Knopf wieder ausgegraut', 5000);
+  await warteBis(async () => (await knopfZustand(HAUPT)).status === 'brille', 'Knopf wieder über die Brille', 5000);
   pruef((await anfragen()).length >= 3, `die Seite hat die Sitzung angefragt (${(await anfragen()).length} Anfragen)`);
 
   // ================================================================== Schliessen der Ansicht in VR
