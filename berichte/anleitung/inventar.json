@@ -10450,6 +10450,91 @@
           "hinweis": "Ohne Gewähr: Belegung der Sticks, 30°-Schritte, 1.4 m/s, Teleport auf OK Boden und «keine Kollision» sind Annahmen des Auftrags und mit der Brille zu bestätigen. Ohne Brille geprüft mit einer Attrappe für navigator.xr (vr.browser.mjs)."
         },
         {
+          "id": "zb-xr-greifen",
+          "titel": "In VR greifen: Elemente und Leitungen verschieben (XR-B)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In VR (Meta Quest über Air Link): Hand mit Faust bzw. Grifftaste am Controller; Zeigestrahl für weit Entferntes"
+          },
+          "schritte": [
+            "In VR einen Raum begehen (siehe «In VR begehen»). Bei Handverfolgung die Hände vor sich halten; sonst die Controller nehmen.",
+            "Leitung: erst antippen (Zeigestrahl + Abzug bzw. Pinch auf die Leitung, oder einmal mit Faust/Grifftaste greifen: der erste Griff wählt nur).",
+            "Dann die Leitung mit Faust bzw. Grifftaste greifen (Hand höchstens 60 cm von der Leitung) und nach oben, unten, vor oder zurück bewegen: Die ganze Leitung bleibt parallel und geht in 1-cm-Schritten. Es erscheinen die Masse lotrecht zur Decke und zu den Wänden.",
+            "Loslassen (Hand öffnen bzw. Grifftaste lassen): KICAD verschiebt die Leitung mit einem Befehl. Rückgängig: Tablet «Rückgängig».",
+            "Anderes Element (Apparat, Formteil, Wand): greifen, bewegen, loslassen. Es folgt der Hand im 1-cm-Raster und fängt an Ecken und Anschlüssen anderer Elemente.",
+            "Weit Entferntes: mit dem Zeigestrahl auf das Element zielen und Abzug bzw. Pinch halten, es kommt zur Hand; Loslassen verschiebt es."
+          ],
+          "erwartung": "Ein gegriffenes Element folgt der Hand, beim Loslassen entsteht genau ein Paket im Modell (Rückgängig nimmt es zurück). Eine Leitung wird nur quer zur Längsachse verschoben, parallel und in 1-cm-Schritten; dabei stehen die Masse zu Decke und Wänden im Raum. Hat die Leitung Formteile, Abzweige oder Nachbarleitungen, erscheint beim Loslassen ein Hinweis und nichts wird verschoben (der Kern kann solche Leitungen noch nicht quer versetzen). Ein Element, das ein anderer gerade reserviert hat, lässt sich nicht greifen (Hinweis).",
+          "pruefpunkte": [
+            "Der erste Griff auf eine Leitung wählt sie nur (Hinweis «nochmals greifen»), der zweite greift.",
+            "Die Leitung geht nur quer zur Achse, in 1-cm-Schritten, parallel; die Bewegung entlang der Leitung zählt nicht.",
+            "Beim Greifen stehen die Masse zur Decke und zu den Wänden (Etiketten im Hologramm-Stil); sie stimmen mit einem Zollstock oder dem PC überein.",
+            "Loslassen ergibt genau einen Befehl: am PC erscheint ein Paket, Rückgängig nimmt es zurück.",
+            "Leitung mit Formteilen: Hinweis «Befehl leitung_versetzen fehlt», die Leitung bleibt an Ort.",
+            "Reserviert ein Kollege das Element: Hinweis, kein Greifen.",
+            "Ohne Handverfolgung: Grifftaste greift, Abzug auf Leitung wählt, Strahl + Abzug auf weit Entferntes holt es heran.",
+            "Faust und offene Hand werden zuverlässig erkannt (sonst die Schwellen in xr-greifen-logik.js anpassen und notieren)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Masse bei der Querverschiebung einer Leitung (Prüfbild xrb-masse-bei-greifen.png aus xr-b.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-greifen.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-greifen-logik.js (elementInReichweite, querVerschiebung, befehlsMasse)",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-mess-logik.js (deckeUndWaende, fangenPunkt)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt Modul XR)"
+          ],
+          "hinweis": "Ohne Gewähr: Reichweite 0.6 m, Faust-Schwelle, 1-cm-Raster und die Wahl «erst antippen» sind Vorgaben bzw. Annahmen und mit der Brille zu bestätigen. Ohne Brille geprüft mit Attrappen für Hand, Controller und navigator.xr (xr-b.browser.mjs). Verbundene Leitungen quer versetzen kann der Kern noch nicht."
+        },
+        {
+          "id": "zb-xr-tablet",
+          "titel": "Tablet an der linken Hand und Messen in VR (XR-C)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In VR: linke Hand offen, Handfläche zum Kopf; ersatzweise Taste Y am linken Controller"
+          },
+          "schritte": [
+            "Linke Hand öffnen und auf die Handfläche schauen: Über der Hand baut sich das Tablet auf. (Controller: Taste Y links drücken; nochmals drücken schliesst.)",
+            "Tippen: mit der Spitze des rechten Zeigefingers die Taste berühren bzw. mit dem rechten Zeigestrahl zielen und Abzug drücken. Die Taste leuchtet kurz auf.",
+            "Tasten: Rückgängig, Wiederholen, Augenhöhe + und −, Schnittbereich, IFC-Unterlage, VR beenden. «Familie platzieren», «Problem markieren» und «Raum wechseln» sind ausgegraut («folgt»).",
+            "Messen: «Messen» tippen. Mit dem rechten Zeigefinger (Pinch zum Setzen) bzw. mit Strahl und Abzug zwei Punkte setzen. Die Punkte fangen an Ecken, Kanten, Leitungsachsen, Anschlüssen und Flächen; das Fangsymbol zeigt, woran.",
+            "Anzeige: Abstand in mm und cm, dazu dx, dy, dz. «Lot zur Fläche»: lotrecht zu Decke, Wand oder Boden messen. Mehrere Messungen bleiben stehen; «Messungen löschen» räumt auf.",
+            "Hand schliessen oder wegdrehen: Das Tablet schliesst sich."
+          ],
+          "erwartung": "Das Tablet ist eine durchscheinende Hologramm-Fläche (dunkler Grund hinter der Schrift, Cyan-Linien, leuchtender Rand), 14 cm über der linken Hand, dem Kopf zugewandt. Es zeigt oben die Eigenschaften des gewählten bzw. gegriffenen Elements. Rückgängig und Wiederholen wirken wie am PC. Die Messungen ändern das Modell nicht.",
+          "pruefpunkte": [
+            "Das Tablet öffnet mit offener linker Hand und Handfläche zum Kopf, nicht bei Faust oder weggedrehter Hand.",
+            "Es baut sich von der Hand aus auf und schliesst sich beim Schliessen bzw. Wegdrehen.",
+            "Schrift und Tasten sind vor hellen und dunklen Wänden gut lesbar.",
+            "Antippen mit dem rechten Zeigefinger löst die Taste aus und sie leuchtet kurz auf; ebenso mit dem Strahl.",
+            "Rückgängig nimmt das zuletzt Verschobene zurück.",
+            "Messen: Fangsymbol und Name erscheinen am Leitungsende, an Ecken und auf Flächen; Abstand und dx/dy/dz stimmen mit dem PC überein.",
+            "Lot zur Fläche: Abstand zur Decke lotrecht, unabhängig davon, wo auf der Decke man den Punkt setzt.",
+            "Ohne Handverfolgung öffnet Taste Y links das Tablet."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt",
+            "zustand": "Tablet im Hologramm-Stil mit Messung (Prüfbilder xrb-tablet.png und xrb-messen.png aus xr-b.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-tablet.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-messen.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-holo.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-greifen-logik.js (tabletGeste, tabletLage, tabletLayout)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt Modul XR)"
+          ],
+          "hinweis": "Ohne Gewähr: Die Geste (Handfläche höchstens 60° neben dem Kopf), die Berührungstiefe und die Taste Y als Ersatz für die Menütaste (sie gehört dem System) sind Annahmen und mit der Brille zu bestätigen. Das Aussehen entspricht dem Wunsch «futuristisch, hologrammmässig»."
+        },
+        {
           "id": "zb-n17-treppe-grundriss",
           "titel": "Treppe im Grundriss: Stufen, Schnittlinie, Lauflinie, Beschriftung",
           "wo": {
