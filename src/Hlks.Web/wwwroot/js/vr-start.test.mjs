@@ -228,3 +228,56 @@ test('vr.webmanifest: Start auf /vr, eigenständig, Symbole 192 und 512 als PNG'
     assert.equal(b.readUInt32BE(16), Number(i.sizes.split('x')[0]));   // Breite im IHDR
   }
 });
+
+// ------------------------------------------------------------------------------------------ VR-Auftrag vom PC
+test('auftragPruefen: gültige Aufträge, alles andere null', () => {
+  assert.deepEqual(L.auftragPruefen({ modus: 'begehen', raum: ID, geschoss: null, nr: 3, zeit: '2026-10-21T10:00:00Z' }), { modus: 'begehen', raum: ID, geschoss: null, nr: 3, zeit: '2026-10-21T10:00:00Z' });
+  assert.equal(L.auftragPruefen({ modus: 'sitzungsraum', geschoss: '1.OG', nr: 1 }).geschoss, '1.OG');
+  for (const schlecht of [null, undefined, 'x', {}, { modus: 'fliegen', nr: 1 }, { modus: 'begehen', nr: 0 }, { modus: 'begehen', nr: 1.5 }, { modus: 'begehen', nr: '1' },
+    { modus: 'begehen', nr: 1, raum: '../x' }, { modus: 'sitzungsraum', nr: 1, geschoss: '<b>' }]) assert.equal(L.auftragPruefen(schlecht), null, JSON.stringify(schlecht));
+});
+
+test('auftragNeu: nur eine höhere Nummer als die verbrauchte ist neu', () => {
+  const a = { modus: 'begehen', raum: 'R-1', nr: 5 };
+  assert.equal(L.auftragNeu(a, 4), true);
+  assert.equal(L.auftragNeu(a, 5), false);
+  assert.equal(L.auftragNeu(a, 9), false);
+  assert.equal(L.auftragNeu(a, 0), true);
+  assert.equal(L.auftragNeu(a, undefined), true);
+  assert.equal(L.auftragNeu(null, 0), false);
+  assert.equal(L.auftragNeu({ modus: 'x', nr: 9 }, 0), false);
+});
+
+test('auftragSchritte: Begehen und Sitzungsraum, mit und ohne offenen Sitzungsraum', () => {
+  const beg = { modus: 'begehen', raum: 'R-2', nr: 1 }, sitz = { modus: 'sitzungsraum', geschoss: '1.OG', nr: 2 };
+  assert.deepEqual(L.auftragSchritte(beg, { imSitzungsraum: false }), ['standort']);
+  assert.deepEqual(L.auftragSchritte(beg, { imSitzungsraum: true }), ['verlassen', 'standort']);
+  assert.deepEqual(L.auftragSchritte(sitz, { imSitzungsraum: false }), ['betreten', 'etage']);
+  assert.deepEqual(L.auftragSchritte(sitz, { imSitzungsraum: true }), ['etage']);
+  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 3 }, { imSitzungsraum: false }), ['betreten']);
+  assert.deepEqual(L.auftragSchritte({ modus: 'sitzungsraum', nr: 3 }, { imSitzungsraum: true }), []);
+  assert.deepEqual(L.auftragSchritte({ modus: 'begehen', nr: 3 }, { imSitzungsraum: true }), ['verlassen']);
+  assert.deepEqual(L.auftragSchritte({ modus: 'begehen', nr: 3 }, { imSitzungsraum: false }), []);
+  assert.deepEqual(L.auftragSchritte(null), []);
+  assert.deepEqual(L.auftragSchritte({ modus: 'begehen', raum: '..', nr: 1 }), []);
+});
+
+test('auftragNachStart: nur der Sitzungsraum braucht nach dem Start noch Schritte (der Standort gilt schon beim Start)', () => {
+  assert.deepEqual(L.auftragNachStart({ modus: 'begehen', raum: 'R-1', nr: 1 }), []);
+  assert.deepEqual(L.auftragNachStart({ modus: 'sitzungsraum', geschoss: 'EG', nr: 1 }), ['betreten', 'etage']);
+  assert.deepEqual(L.auftragNachStart(null), []);
+});
+
+test('auftragText: «Begehen · EG · E.01 Wohnen/Küche» und «Sitzungsraum · 1.OG»', () => {
+  const st = { raum: 'R-1', nummer: 'E.01', name: 'Wohnen/Küche', geschoss: 'EG' };
+  assert.equal(L.auftragText({ modus: 'begehen', raum: 'R-1', nr: 1 }, st), 'Begehen · EG · E.01 Wohnen/Küche');
+  assert.equal(L.auftragText({ modus: 'begehen', raum: 'R-1', nr: 1 }, null), 'Begehen');
+  assert.equal(L.auftragText({ modus: 'sitzungsraum', geschoss: '1.OG', nr: 1 }, null, '1.OG'), 'Sitzungsraum · 1.OG');
+  assert.equal(L.auftragText({ modus: 'sitzungsraum', nr: 1 }), 'Sitzungsraum');
+  assert.equal(L.auftragText(null), '');
+});
+
+test('Takt des Auftrags: alle 2 s; der Auftrag steht als Quelle «auftrag» in der Anzeige', () => {
+  assert.equal(L.AUFTRAG_TAKT_MS, 2000);
+  assert.match(L.startAnzeige({ quelle: 'auftrag', standort: { name: 'x' } }).quelle, /Auftrag vom PC/);
+});

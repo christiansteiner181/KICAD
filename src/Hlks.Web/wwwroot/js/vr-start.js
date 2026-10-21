@@ -9,10 +9,13 @@
 // Test-Naht: import('/js/vr-start.js').then((m) => m.naht) → { instanz(), standort(), quelle(), gemerkt() }.
 
 import { holen, abfrage } from './api.js';
-import { zustand, modellLaden, nachladen, abonnieren, derKlasse } from './zustand.js';
+import { zustand, modellLaden, nachladen, abonnieren, derKlasse, element } from './zustand.js';
 import { benutzerLaden, benutzerWert, benutzerSetzen } from './oberflaeche/benutzer.js';
 import ansicht3d from './ansichten/ansicht3d.js';
-import { SCHLUESSEL, raumParameter, standpunktMerken, standortAusGemerkt, egRaeume, startpunktWaehlen, startAnzeige } from './vr-start-logik.js';
+import {
+  SCHLUESSEL, AUFTRAG_TAKT_MS, MODI, raumParameter, standpunktMerken, standortAusGemerkt, egRaeume, startpunktWaehlen, startAnzeige,
+  auftragPruefen, auftragNeu, auftragSchritte, auftragNachStart, auftragText,
+} from './vr-start-logik.js';
 
 const el = (id) => document.getElementById(id);
 const knopf = el('vr-eintreten');
@@ -27,6 +30,12 @@ let punkt = { quelle: '', standort: null };   // gewählter Startpunkt { quelle,
 let gemerkt = null;                           // zuletzt gemerkter Wert (Benutzereinstellung)
 let neuLaden = false;                         // der Server hat das Projekt gewechselt, während VR lief
 let projektName = '';
+let auftrag = null;                           // der Auftrag vom PC, der auf dem Knopf steht (geprüft) – verbraucht mit dem Tipp
+let gesehen = 0;                              // höchste Nummer eines schon angezeigten bzw. angewendeten Auftrags
+let taktLaeuft = false;
+const VERBRAUCHT_SCHLUESSEL = 'kicad.vr.auftragNr';   // localStorage dieses Browsers: der Auftrag, den ein Tipp schon ausgeführt hat, kommt nach dem Neuladen nicht noch einmal
+const verbrauchtNr = () => { try { return Number(localStorage.getItem(VERBRAUCHT_SCHLUESSEL)) || 0; } catch { return 0; } };
+const verbrauchen = (nr) => { try { localStorage.setItem(VERBRAUCHT_SCHLUESSEL, String(nr)); } catch { /* egal */ } };
 
 // ---------------------------------------------------------------------------------------------------- Anzeige
 function setzeStatus(status, hinweis = '') {
@@ -43,6 +52,11 @@ function anzeigen() {
   el('vr-raum').textContent = a.raum ? (punkt.standort ? `Raum: ${a.raum}` : a.raum) : '';
   el('vr-quelle').textContent = a.quelle ? `Startpunkt: ${a.quelle}` : '';
   knopf.dataset.startquelle = punkt.quelle;
+  const geschossKz = auftrag?.geschoss ? element(auftrag.geschoss)?.kennzeichen ?? '' : '';
+  const text = auftrag ? auftragText(auftrag, punkt.quelle === 'auftrag' ? punkt.standort : null, geschossKz) : '';
+  el('vr-auftrag').textContent = text ? `Auftrag vom PC: ${text}` : '';
+  knopf.dataset.auftrag = auftrag?.modus ?? '';
+  knopf.dataset.auftragNr = auftrag ? String(auftrag.nr) : '';
 }
 function ohneProjekt(text) {
   projektName = 'Kein Projekt offen';
@@ -107,20 +121,82 @@ function beiSitzungsEnde(ende) {
     benutzerSetzen(SCHLUESSEL, wert).catch((e) => console.warn('VR: Standpunkt nicht gemerkt', e?.message ?? e));
   }
   if (neuLaden) { location.reload(); return; }
+  auftrag = null;   // ein Auftrag ist mit der Sitzung verbraucht; ein neuerer erscheint beim nächsten Takt
   anzeigen();
   setzeStatus('bereit');
 }
 
+/** Wartet, bis die Sitzung Bilder liefert (Kopfpose da), höchstens 3 s. */
+async function sitzungBereit() {
+  const t0 = Date.now();
+  while (Date.now() - t0 < 3000 && (instanz.vr.zustand().bilder ?? 0) < 2) await new Promise((r) => setTimeout(r, PRUEF_TAKT_MS));
+}
+const geschossKennzeichen = (bezug) => (bezug ? element(bezug)?.kennzeichen ?? null : null);
+
+/** Führt Schritte von auftragSchritte/auftragNachStart in der laufenden Sitzung aus: Sitzungsraum (xr-sitzung.js über vr.api.sitzung), Standortwechsel (vr.versetzen). */
+async function schritteAusfuehren(a, schritte) {
+  const vr = instanz.vr;
+  for (const s of schritte) {
+    const sitz = vr.api.sitzung;
+    if (s === 'verlassen') sitz?.verlassen();
+    else if (s === 'standort') { const st = a.raum ? await raumStandort(a.raum) : null; if (st) vr.versetzen(st); }
+    else if (s === 'betreten') sitz?.betreten();
+    else if (s === 'etage') { const kz = geschossKennzeichen(a.geschoss); if (kz) sitz?.aktion(`g:${kz}`); }
+  }
+}
+
 function eintreten() {
   if (knopf.dataset.status !== 'bereit' || !instanz?.vr || instanz.vr.aktiv || instanz.vr.startet) return;
+  const a = auftrag;   // der Tipp führt genau diesen Auftrag aus
+  if (a) { verbrauchen(a.nr); gesehen = Math.max(gesehen, a.nr); }
   setzeStatus('startet');
   const lauf = instanz.vr.starten(punkt.standort);   // synchron bis requestSession: der Klick ist die Benutzeraktion
-  Promise.resolve(lauf).then(() => {
-    if (instanz.vr.aktiv) setzeStatus('aktiv');
-    else if (knopf.dataset.status === 'startet') setzeStatus('bereit', 'VR konnte nicht gestartet werden. Brille und Browser prüfen, dann erneut tippen.');
+  Promise.resolve(lauf).then(async () => {
+    if (instanz.vr.aktiv) {
+      setzeStatus('aktiv');
+      const nach = a ? auftragNachStart(a) : [];
+      if (nach.length) { await sitzungBereit(); await schritteAusfuehren(a, nach); }
+    } else if (knopf.dataset.status === 'startet') setzeStatus('bereit', 'VR konnte nicht gestartet werden. Brille und Browser prüfen, dann erneut tippen.');
   }).catch((e) => { console.warn('VR-Start', e); setzeStatus('bereit', 'VR konnte nicht gestartet werden.'); });
 }
 knopf.addEventListener('click', eintreten);
+
+// ---------------------------------------------------------------------------------------------------- Auftrag vom PC
+async function auftragLesen() {
+  try { return auftragPruefen((await holen('/api/vr/auftrag')).auftrag); } catch { return null; }
+}
+
+/** Ein neuer Auftrag, solange keine Sitzung läuft: auf den Knopf (Startpunkt wechselt bei «begehen» in den Raum des Auftrags). */
+async function auftragUebernehmen(a) {
+  auftrag = a;
+  if (a.modus === MODI.begehen && a.raum) {
+    const s = await raumStandort(a.raum);
+    if (s) punkt = { quelle: 'auftrag', standort: s };
+  }
+  anzeigen();
+}
+
+/** Ein neuer Auftrag mitten in der Sitzung: sofort anwenden, ohne neuen Tipp, mit kurzem Hinweis in VR. */
+async function auftragLive(a) {
+  const sitz = instanz.vr.api.sitzung;
+  await schritteAusfuehren(a, auftragSchritte(a, { imSitzungsraum: !!sitz?.aktiv }));
+  verbrauchen(a.nr);
+  instanz.vr.hinweisen('Neuer Auftrag vom PC');
+}
+
+/** Ein Takt: den Auftrag lesen und, wenn er neuer ist als alles Gesehene, anwenden (Sitzung läuft) bzw. anzeigen. Rückgabe true, wenn ein neuer Auftrag behandelt wurde. */
+async function takt() {
+  if (taktLaeuft || !instanz?.vr || instanz.vr.startet) return false;
+  taktLaeuft = true;
+  try {
+    const a = await auftragLesen();
+    if (!a || !auftragNeu(a, gesehen)) return false;
+    gesehen = a.nr;
+    if (instanz.vr.aktiv) await auftragLive(a); else await auftragUebernehmen(a);
+    return true;
+  } catch (e) { console.warn('VR-Auftrag', e?.message ?? e); return false; }
+  finally { taktLaeuft = false; }
+}
 
 // ---------------------------------------------------------------------------------------------------- Start
 async function start() {
@@ -151,9 +227,13 @@ async function start() {
     raeumeEg: egRaeume(derKlasse('Geschoss'), derKlasse('Raum')),
     raumStandort,
   });
+  const a0 = await auftragLesen();   // beim Laden: ein noch nicht ausgeführter Auftrag vom PC geht vor (Parameter ?raum= bleibt der Nebenweg)
+  gesehen = a0 ? a0.nr : 0;
+  if (a0 && auftragNeu(a0, verbrauchtNr())) await auftragUebernehmen(a0);
   await szeneAbwarten();
   anzeigen();
   setzeStatus('bereit');
+  setInterval(takt, AUFTRAG_TAKT_MS);
   const unterstuetzt = await instanz.vr.pruefen();   // nur ein Hinweis: der Tipp versucht es trotzdem
   if (!unterstuetzt && knopf.dataset.status === 'bereit') el('vr-hinweis').textContent = 'Keine VR-Brille erkannt: diese Seite im Browser der Meta Quest öffnen.';
 }
@@ -166,4 +246,4 @@ start().catch((e) => {
 });
 
 /** Kontrolle für Browser-Tests. */
-export const naht = { instanz: () => instanz, standort: () => punkt.standort, quelle: () => punkt.quelle, gemerkt: () => gemerkt };
+export const naht = { instanz: () => instanz, standort: () => punkt.standort, quelle: () => punkt.quelle, gemerkt: () => gemerkt, auftrag: () => auftrag, takt };

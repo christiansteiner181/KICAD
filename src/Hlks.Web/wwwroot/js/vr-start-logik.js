@@ -16,7 +16,7 @@ export const SCHLUESSEL = 'vr.letzter_standpunkt';
 /** So viele Räume des Erdgeschosses werden höchstens versucht, bis einer einen Standort liefert. */
 export const EG_VERSUCHE = 5;
 /** Die Quellen des Startpunkts (Anzeige und Prüfhilfe data-startquelle). */
-export const QUELLEN = Object.freeze({ parameter: 'parameter', gemerkt: 'gemerkt', eg: 'eg', gesamt: 'gesamt' });
+export const QUELLEN = Object.freeze({ auftrag: 'auftrag', parameter: 'parameter', gemerkt: 'gemerkt', eg: 'eg', gesamt: 'gesamt' });
 
 const ID_MUSTER = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;   // Element-Id des Kerns (Guid)
 const KENNZEICHEN_MUSTER = /^[A-Za-z0-9][A-Za-z0-9._-]{0,39}$/;                          // Kennzeichen eines Elements, z. B. R-1
@@ -117,6 +117,7 @@ export async function startpunktWaehlen({ parameter = null, gemerkt = null, raeu
 export function startAnzeige(punkt) {
   const s = punkt?.standort ?? null;
   const quelle = {
+    [QUELLEN.auftrag]: 'Auftrag vom PC',
     [QUELLEN.parameter]: 'Vom PC gewählter Raum',
     [QUELLEN.gemerkt]: 'Dein letzter Standpunkt in VR',
     [QUELLEN.eg]: 'Erster Raum im Erdgeschoss',
@@ -126,4 +127,51 @@ export function startAnzeige(punkt) {
   const geschoss = [s.geschossName, s.geschoss && s.geschoss !== s.geschossName ? `(${s.geschoss})` : ''].filter(Boolean).join(' ');
   const raum = [s.nummer, s.name].filter((t) => typeof t === 'string' && t !== '').join(' ') || s.raum || '';
   return { geschoss, raum, quelle };
+}
+
+// ---------------------------------------------------------------------------------------------------- VR-Auftrag vom PC
+// Der PC setzt einen Auftrag (POST /api/vr/auftrag, VrAuftrag.cs), die Seite liest ihn alle AUFTRAG_TAKT_MS. Hier steht nur «Auftrag → was tun».
+
+/** So oft liest die Seite den Auftrag (ms). */
+export const AUFTRAG_TAKT_MS = 2000;
+/** Die Modi des Auftrags. */
+export const MODI = Object.freeze({ begehen: 'begehen', sitzungsraum: 'sitzungsraum' });
+
+/** Prüft einen Auftrag des Servers; null bei allem, was nicht { modus, nr ≥ 1, raum?/geschoss? gültig } ist. */
+export function auftragPruefen(a) {
+  if (!a || typeof a !== 'object' || !Object.values(MODI).includes(a.modus)) return null;
+  if (!Number.isInteger(a.nr) || a.nr < 1) return null;
+  const roh = (t) => (t === null || t === undefined ? null : raumGueltig(t) ? t : false);
+  const raum = roh(a.raum), geschoss = roh(a.geschoss);
+  if (raum === false || geschoss === false) return null;
+  return { modus: a.modus, raum, geschoss, nr: a.nr, zeit: typeof a.zeit === 'string' ? a.zeit : null };
+}
+
+/** Ist der Auftrag neu gegenüber der zuletzt verbrauchten Nummer? */
+export const auftragNeu = (a, verbrauchtNr) => { const p = auftragPruefen(a); return !!p && p.nr > (Number.isInteger(verbrauchtNr) ? verbrauchtNr : 0); };
+
+/**
+ * Was tun, wenn der Auftrag mitten in der Sitzung kommt (ohne neuen Tipp)? Zustand { imSitzungsraum }. Rückgabe die Schritte in der Reihenfolge:
+ *   'verlassen' (Sitzungsraum zu), 'standort' (an den Raum des Auftrags wechseln), 'betreten' (Sitzungsraum auf), 'etage' (Etage des Auftrags im Sitzungsraum wählen).
+ */
+export function auftragSchritte(a, { imSitzungsraum = false } = {}) {
+  const p = auftragPruefen(a);
+  if (!p) return [];
+  if (p.modus === MODI.begehen) return [...(imSitzungsraum ? ['verlassen'] : []), ...(p.raum ? ['standort'] : [])];
+  return [...(imSitzungsraum ? [] : ['betreten']), ...(p.geschoss ? ['etage'] : [])];
+}
+
+/** Was nach dem Start durch den Tipp noch zu tun ist: bei «sitzungsraum» betreten und Etage wählen (der Standort des Begehens gilt schon beim Start). */
+export const auftragNachStart = (a) => (auftragPruefen(a)?.modus === MODI.sitzungsraum ? auftragSchritte(a, { imSitzungsraum: false }) : []);
+
+/**
+ * Text für den Knopf: «Begehen · EG · E.01 Wohnen/Küche» bzw. «Sitzungsraum · 1.OG». standort = Antwort von raum_begehen zum Raum (oder null), geschoss = Kennzeichen des Geschosses (oder '').
+ */
+export function auftragText(a, standort = null, geschoss = '') {
+  const p = auftragPruefen(a);
+  if (!p) return '';
+  if (p.modus === MODI.sitzungsraum) return ['Sitzungsraum', geschoss].filter(Boolean).join(' · ');
+  const s = standort ?? {};
+  const raum = [s.nummer, s.name].filter((t) => typeof t === 'string' && t !== '').join(' ') || s.raum || '';
+  return ['Begehen', s.geschoss || geschoss, raum].filter(Boolean).join(' · ');
 }

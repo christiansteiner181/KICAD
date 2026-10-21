@@ -238,6 +238,89 @@ try {
   await gehe();
   pruef((await knopfInfo()).quelle === 'eg' && (await naht('n.standort()?.raum')) === raum1.kennzeichen, 'ohne gemerkten Standpunkt: erster Raum im Erdgeschoss');
 
+  // ================================================================== VR-Auftrag vom PC
+  abschnitt('VR-Auftrag vom PC: /vr zeigt ihn, der Tipp führt ihn aus, ein neuer Auftrag wirkt in der Sitzung ohne Tipp');
+  const auftragPost = async (body) => { const r = await fetch(`${SERVER}/api/vr/auftrag`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(body) }); return { code: r.status, j: await r.json() }; };
+  const bad = await auftragPost({ modus: 'begehen', raum: '../../etc' });
+  pruef(bad.code === 400 && !!bad.j.fehler, 'eine ungültige Id wird abgelehnt (400)', JSON.stringify(bad));
+  pruef((await auftragPost({ modus: 'fliegen' })).code === 400, 'ein unbekannter Modus wird abgelehnt');
+  pruef((await holenJson('/api/vr/auftrag')).auftrag == null, 'nichts davon wurde gespeichert');
+  const nrPost = async (body) => (await auftragPost(body)).j.auftrag.nr;
+  const gOG = modell.elemente.find((e) => e.klasse === 'Geschoss' && e.kennzeichen === raumOG.geschoss);
+  const raum2 = raeumeEG[1];
+  const standortVon = async (kz) => (await fetch(`${SERVER}/api/abfrage/raum_begehen`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ raum: kz }) })).json();
+  const naehe = async () => {
+    await ausw(`window.__xr._unterstuetzt = true; window.__xr.dispatchEvent(new Event('devicechange')); return 1;`);
+    await naht(`(() => { const v = n.instanz().vr; v.api.anbinden = async () => {}; v.api.kopfPose = () => window.__kopf; v.api.eingabe = () => window.__eingabe; return true; })()`);
+  };
+  const begehenRaum = () => ausw(`const d = document.querySelector('.d3-wurzel')?.dataset.begehen; return d ? JSON.parse(d) : null;`);
+  const sitzungZ = () => naht('n.instanz().vr.api.sitzung?.zustand() ?? null');
+  const laeuft = () => warteBis(() => ausw(`const d = document.querySelector('.d3-wurzel')?.dataset.vr; return !!d && JSON.parse(d).kopf !== null;`), 'VR läuft', 20000);
+
+  // 1. Auftrag «begehen» im Obergeschoss: die Seite zeigt ihn, der Tipp beginnt dort
+  const nr1 = await nrPost({ modus: 'begehen', raum: raumOG.id });
+  pruef(nr1 === 1, `Auftrag 1 gesetzt (nr ${nr1})`);
+  await gehe();
+  const ka = await knopfInfo();
+  pruef(ka.quelle === 'auftrag' && /Begehen/.test(ka.text) && ka.text.includes('Auftrag vom PC') && ka.text.includes(raumOG.kennzeichen), `der Knopf zeigt den Auftrag: «${ka.text.slice(0, 160)}»`, JSON.stringify(ka));
+  const kaAuftrag = await ausw(`return document.getElementById('vr-auftrag').textContent;`);
+  pruef(kaAuftrag.startsWith('Auftrag vom PC: Begehen · ') && kaAuftrag.includes(raumOG.geschoss), `Zeile «${kaAuftrag}»`);
+  await speichern('vrstart-4-auftrag');
+  await naehe();
+  await klickAn(640, 400);
+  await laeuft();
+  pruef((await anfragen()).length === 1 && (await begehenRaum())?.raum === raumOG.kennzeichen, `der Tipp startet VR im Raum des Auftrags (${raumOG.kennzeichen})`);
+
+  // 2. Neuer Auftrag in der Sitzung: anderer Raum, ohne Tipp
+  const nr2 = await nrPost({ modus: 'begehen', raum: raum2.id });
+  pruef(await naht('n.takt()'), `Takt: neuer Auftrag (nr ${nr2}) erkannt`);
+  await warte(700);
+  const st2 = await standortVon(raum2.kennzeichen);
+  const b2 = await begehenRaum(), v2 = await ausw(`return JSON.parse(document.querySelector('.d3-wurzel').dataset.vr);`);
+  pruef(b2?.raum === raum2.kennzeichen && nahe(b2.x, st2.standpunkt.x, 1) && nahe(b2.y, st2.standpunkt.y, 1), `Standpunkt gewechselt: ${b2?.raum} (ohne neuen Tipp)`, JSON.stringify(b2));
+  pruef(nahe(v2.kopf.x, st2.standpunkt.x / 1000, 0.02) && nahe(v2.kopf.z, -st2.standpunkt.y / 1000, 0.02), 'der Kopf steht im neuen Raum', JSON.stringify(v2.kopf));
+  pruef((await anfragen()).length === 1, 'dabei keine neue Sitzungsanfrage');
+  pruef(await naht('n.instanz().vr.api.modell.parent.children.some((c) => c.isSprite)'), 'Hinweis «Neuer Auftrag vom PC» steht als Etikett in der Szene');
+  await warte(2400);
+  pruef(!(await naht('n.instanz().vr.api.modell.parent.children.some((c) => c.isSprite)')), 'das Etikett verschwindet nach etwa 2 s');
+  pruef(!(await naht('n.takt()')), 'derselbe Auftrag wird nicht noch einmal angewendet');
+
+  // 3. Sitzungsraum mit Etage, dann zurück ins Begehen
+  await nrPost({ modus: 'sitzungsraum', geschoss: gOG.id });
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.aktiv === true && (await sitzungZ())?.geschoss === gOG.kennzeichen, 'Sitzungsraum offen, Etage gesetzt', 8000);
+  pruef(true, `Sitzungsraum offen mit Etage ${gOG.kennzeichen}`);
+  await nrPost({ modus: 'begehen', raum: raeumeEG[0].id });
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.aktiv !== true && (await begehenRaum())?.raum === raeumeEG[0].kennzeichen, 'zurück im Begehen', 8000);
+  pruef(true, `Begehen statt Sitzungsraum, Raum ${raeumeEG[0].kennzeichen}`);
+  await nrPost({ modus: 'sitzungsraum' });   // nur wechseln, ohne Etage
+  await naht('n.takt()');
+  await warteBis(async () => (await sitzungZ())?.aktiv === true, 'Sitzungsraum ohne Etage', 8000);
+  pruef(true, 'Wechsel Begehen › Sitzungsraum ohne neuen Tipp');
+  await ausw(`await window.__xr.sitzung.end(); return 1;`);
+  await warteBis(() => ausw(`return document.querySelector('${KNOPF}').dataset.status === 'bereit';`), 'Startseite wieder da', 10000);
+
+  // 4. Ein verbrauchter Auftrag kommt nach dem Neuladen nicht wieder
+  await gehe();
+  const kn = await knopfInfo();
+  pruef(kn.quelle === 'gemerkt' && (await ausw(`return document.getElementById('vr-auftrag').textContent;`)) === '', 'nach dem Neuladen steht der verbrauchte Auftrag nicht mehr auf dem Knopf');
+
+  // 5. Auftrag «sitzungsraum» auf der ruhenden Startseite: Anzeige per Takt, der Tipp öffnet den Sitzungsraum mit der Etage
+  await nrPost({ modus: 'sitzungsraum', geschoss: gOG.id });
+  await naht('n.takt()');
+  const kz5 = await knopfInfo();
+  const t5 = await ausw(`return document.getElementById('vr-auftrag').textContent;`);
+  pruef(t5 === `Auftrag vom PC: Sitzungsraum · ${gOG.kennzeichen}`, `Anzeige «${t5}»`);
+  await naehe();
+  await klickAn(640, 400);
+  await laeuft();
+  await warteBis(async () => (await sitzungZ())?.aktiv === true && (await sitzungZ())?.geschoss === gOG.kennzeichen, 'Sitzungsraum mit Etage nach dem Tipp', 10000);
+  pruef(true, `der Tipp öffnet den Sitzungsraum mit Etage ${gOG.kennzeichen} (Funktion aus xr-sitzung.js)`);
+  await speichern('vrstart-5-sitzungsraum');
+  await ausw(`await window.__xr.sitzung.end(); return 1;`);
+  await warteBis(() => ausw(`return document.querySelector('${KNOPF}').dataset.status === 'bereit';`), 'Startseite wieder da', 10000);
+
   // ================================================================== Manifest und Symbole
   abschnitt('Manifest und Symbole');
   const man = await ausw(`const l = document.querySelector('link[rel="manifest"]'); const r = await fetch(l.href); const j = await r.json();

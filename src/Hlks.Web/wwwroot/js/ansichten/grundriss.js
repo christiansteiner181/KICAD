@@ -400,6 +400,8 @@ function erstellen(behaelter, ansichtElement) {
     kontextmenue(e.clientX, e.clientY, [
       { titel: 'Raum im 3D zeigen', aktion: () => ausfuehren('ansicht.raum3d', { raeume: [raum.kennzeichen] }) },
       { titel: 'Raum begehen', aktion: () => ausfuehren('ansicht.raumBegehen', { raeume: [raum.kennzeichen] }) },   // N15: Ich-Perspektive im 3D
+      { titel: 'In VR begehen (Brille)', aktion: () => ausfuehren('ansicht.vrBegehen', { raeume: [raum.kennzeichen] }) },   // Modul XR: Auftrag an die Quest (/vr)
+      { titel: 'Im Sitzungsraum zeigen (Brille)', aktion: () => ausfuehren('ansicht.vrSitzungsraum', { raeume: [raum.kennzeichen] }) },
       { trenner: true },
       { titel: 'Rand für «Raum im 3D zeigen» …', aktion: () => ausfuehren('ansicht.raum3dRand') },
       { titel: 'Augenhöhe für «Raum begehen» …', aktion: () => ausfuehren('ansicht.begehenAugenhoehe') },

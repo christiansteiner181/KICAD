@@ -19,6 +19,8 @@ html, body { margin: 0; height: 100%; background: #0b1220; color: #e6f7fb; font-
   margin-top: 2vmin; padding: 3vmin 12vmin; border-radius: 6vmin; background: #22d3ee; color: #062b33;
   font-size: 9vmin; font-weight: 700; box-shadow: 0 0 6vmin rgba(34, 211, 238, .45);
 }
+.vr-auftrag { font-size: 4vmin; font-weight: 600; color: #22d3ee; }
+#vr-eintreten > .vr-auftrag:empty { display: none; }
 .vr-hinweis { font-size: 3vmin; color: #fbbf77; }
 #vr-eintreten > .vr-hinweis:empty { display: none; }
 .vr-quelle { font-size: 2.6vmin; color: #7fa0a8; }
