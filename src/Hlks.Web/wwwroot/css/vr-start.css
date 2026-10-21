@@ -28,6 +28,7 @@ html, body { margin: 0; height: 100%; background: #0b1220; color: #e6f7fb; font-
 #vr-eintreten[data-status="laedt"] .vr-gross, #vr-eintreten[data-status="kein-projekt"] .vr-gross, #vr-eintreten[data-status="startet"] .vr-gross { background: #3b4a55; color: #9fb4bd; box-shadow: none; }
 #vr-eintreten[data-status="laedt"], #vr-eintreten[data-status="kein-projekt"] { cursor: default; }
 #vr-eintreten[data-status="aktiv"] { display: none; }   /* in der Sitzung sieht man die Seite ohnehin nicht; nach dem Ende ist sie sofort wieder da */
+#vr-zur-oberflaeche { position: fixed; right: 2vmin; top: 2vmin; z-index: 6; font-size: 2.6vmin; color: #7fa0a8; text-decoration: underline; padding: 1vmin; }
 #meldungen { position: fixed; left: 50%; bottom: 2vmin; transform: translateX(-50%); z-index: 5; display: flex; flex-direction: column; gap: 1vmin; max-width: 90vw; }
 #meldungen .meldung { padding: 1.4vmin 2.4vmin; border-radius: 1.2vmin; background: #1e293b; color: #e6f7fb; font-size: 2.8vmin; border: 1px solid #334155; }
 #meldungen .meldung.warnung, #meldungen .meldung.fehler { border-color: #f59e0b; }

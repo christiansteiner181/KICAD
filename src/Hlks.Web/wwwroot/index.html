@@ -4,6 +4,9 @@
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
   <title>HLKS-CAD</title>
+  <!-- Modul XR: im Browser der Meta Quest gleich die VR-Startseite (Christian 21.10.2026: «es bleibt ja immer die gleiche adresse auf localhost»).
+       Die PC-Oberfläche in der Brille gibt es mit ?oberflaeche=1 (Link unten rechts auf /vr). -->
+  <script>if (/OculusBrowser|\bQuest\b/.test(navigator.userAgent) && !/[?&]oberflaeche=1(&|$)/.test(location.search)) location.replace('/vr');</script>
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32'%3E%3Crect width='32' height='32' rx='6' fill='%232b6cb0'/%3E%3Cpath d='M7 22V10h3v5h5v-5h3v12h-3v-4h-5v4z' fill='white'/%3E%3Cpath d='M20 22l4-12h2l-4 12z' fill='%23f6ad55'/%3E%3C/svg%3E">
   <!-- Design (hell/dunkel) vor dem ersten Zeichnen setzen, damit nichts flackert -->
   <script src="js/oberflaeche/design-start.js"></script>
