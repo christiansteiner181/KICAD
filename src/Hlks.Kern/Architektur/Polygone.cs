@@ -109,18 +109,26 @@ public static class Polygone
 
     public static bool Innen(IEnumerable<double[]> ring, double x, double y) => Innen(Pfad(ring), x, y);
 
-    /// <summary>Flächenschwerpunkt eines Rings; bei Fläche 0 der Mittelwert der Punkte.</summary>
+    /// <summary>Flächenschwerpunkt eines Rings; bei Fläche 0 der Mittelwert der Punkte. «Fläche 0» heisst |2·Fläche| höchstens
+    /// 1e-6 · Diagonale² der Begrenzung (bzw. unter 1e-9 mm²). Gerechnet ab dem ersten Punkt: mit Koordinaten weit vom Ursprung
+    /// blieb sonst bei Fläche 0 (lotrechtes Profil im Grundriss) ein Rundungsrest als Fläche und der «Schwerpunkt» lag Meter
+    /// daneben (Nachbearbeitung N7, 21.10.2026).</summary>
     public static double[] Schwerpunkt(IReadOnlyList<double[]> ring)
     {
-        double a = 0, cx = 0, cy = 0;
+        if (ring.Count == 0) return [ring.Average(p => p[0]), ring.Average(p => p[1])];   // wie bisher: Ausnahme bei leerem Ring
+        double ox = ring[0][0], oy = ring[0][1];
+        double a = 0, cx = 0, cy = 0, x0 = 0, x1 = 0, y0 = 0, y1 = 0;
         for (int i = 0; i < ring.Count; i++)
         {
             var p = ring[i]; var q = ring[(i + 1) % ring.Count];
-            double f = p[0] * q[1] - q[0] * p[1];
-            a += f; cx += (p[0] + q[0]) * f; cy += (p[1] + q[1]) * f;
+            double px = p[0] - ox, py = p[1] - oy, qx = q[0] - ox, qy = q[1] - oy;
+            double f = px * qy - qx * py;
+            a += f; cx += (px + qx) * f; cy += (py + qy) * f;
+            x0 = Math.Min(x0, px); x1 = Math.Max(x1, px); y0 = Math.Min(y0, py); y1 = Math.Max(y1, py);
         }
-        if (Math.Abs(a) < 1e-9) return [ring.Average(p => p[0]), ring.Average(p => p[1])];
-        return [cx / (3 * a), cy / (3 * a)];
+        if (Math.Abs(a) < 1e-9 || Math.Abs(a) <= 1e-6 * ((x1 - x0) * (x1 - x0) + (y1 - y0) * (y1 - y0)))
+            return [ring.Average(p => p[0]), ring.Average(p => p[1])];
+        return [ox + cx / (3 * a), oy + cy / (3 * a)];
     }
 
     /// <summary>Punkt sicher im Inneren (für Stempel): Schwerpunkt, wenn er innen liegt, sonst die Mitte des breitesten
