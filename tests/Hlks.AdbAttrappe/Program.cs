@@ -12,7 +12,7 @@ var dir = AppContext.BaseDirectory;
 string P(string n) => Path.Combine(dir, n);
 string[] Zeilen(string n) => File.Exists(P(n)) ? File.ReadAllLines(P(n)).Where(z => z.Length > 0).ToArray() : [];
 var verhalten = Zeilen("verhalten.txt");
-File.AppendAllText(P("aufrufe.log"), string.Join(' ', args) + Environment.NewLine, Encoding.UTF8);
+File.AppendAllText(P("aufrufe.log"), string.Join(' ', args) + Environment.NewLine, new UTF8Encoding(false));
 
 var a = args.ToList();
 if (a.Count >= 2 && a[0] == "-s") a.RemoveRange(0, 2);   // die Seriennummer wird mitprotokolliert (aufrufe.log), sonst nicht gebraucht

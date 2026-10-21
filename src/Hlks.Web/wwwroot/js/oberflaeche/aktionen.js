@@ -25,6 +25,7 @@ import './aktionen-koordination.js';   // Register Koordination: Projektvorgaben
 import './aktionen-serienpdf.js';   // Serien-PDF: Plansätze je Gewerk, Gewerk eines Planblatts (entwurf/serien-pdf.md)
 import './aktionen-paletten.js';   // Register Ansicht › Paletten: je angemeldeter Palette ein Eintrag, Paletten zurücksetzen (W1)
 import './aktionen-ki.js';   // Palette «Claude» (KI-Gespräch, Änderungen zurücknehmen, Normensuche) und Kürzel KI (Modul 3c, Teil O)
+import './aktionen-quest.js';   // Register Ansicht › VR: «Quest verbinden …» (adb reverse für den Browser der Quest, Modul XR)
 import './aktionen-ifc.js';   // Register Datei › Ausgabe: «IFC exportieren …» mit Bericht und IDS-Ergebnis (Modul 7 Teil B2)
 
 export { aktionen, ausfuehren, registrieren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen, hinweis, hinweisSetzen, beiHinweis, familie, familieSetzen, beiFamilie } from './register.js';

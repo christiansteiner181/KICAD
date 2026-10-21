@@ -17,6 +17,8 @@ import {
 const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Date.now());
 const rund = (x, n = 3) => { const f = 10 ** n; return Math.round(x * f) / f; };
 const SCHREIB_ABSTAND_MS = 250;   // so oft schreibt das Bild die Prüfhilfe data-vr
+/** Modul XR: öffnet den Dialog «Quest verbinden» (oberflaeche/quest-dialog.js); dynamischer Import, damit vr3d.js ohne die Oberfläche ladbar bleibt. */
+const questDialogOeffnen = () => import('../oberflaeche/quest-dialog.js').then((m) => m.questDialog()).catch((e) => console.error('Quest verbinden', e));
 
 /**
  * o: { wurzel, renderer, kamera, szene, modell (Gruppe der Körper), begehen (begehen3d.js), standortAusKamera() → Standort, anfordern(), meldung?(text, art),
@@ -76,11 +78,13 @@ export function erzeugeVr(o) {
   function knopf() {
     const k = document.createElement('div');
     k.className = 'd3-vr';
-    k.innerHTML = '<button type="button" class="d3-vr-knopf"></button><span class="d3-vr-hinweis"></span>';
+    k.innerHTML = '<button type="button" class="d3-vr-knopf"></button><span class="d3-vr-hinweis"></span>'
+      + '<button type="button" class="d3-vr-quest">Quest im Browser der Brille nutzen …</button>';   // Modul XR: nur bei grauem Knopf sichtbar (CSS), öffnet «Quest verbinden»
+    k.querySelector('.d3-vr-quest').addEventListener('click', (e) => { e.stopPropagation(); questDialogOeffnen(); });
     k.querySelector('.d3-vr-knopf').addEventListener('click', (e) => {
       e.stopPropagation();
       if (sitzung) { beenden(); return; }
-      if (k.dataset.vrStatus === 'aus') { pruefen().then((ok) => { if (ok) starten().catch(() => {}); }); return; }   // Brille inzwischen verbunden? sonst bleibt der Hinweis
+      if (k.dataset.vrStatus === 'aus') { pruefen().then((ok) => { if (ok) starten().catch(() => {}); else questDialogOeffnen(); }); return; }   // Brille inzwischen verbunden? sonst Hinweis und «Quest verbinden»
       starten().catch(() => {});
     });
     knoepfe.set(k, false);

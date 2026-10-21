@@ -20,7 +20,7 @@ public static class QuestEndpunkte
 {
     public static WebApplication MapQuest(this WebApplication app, ProjektDienst dienst)
     {
-        var einst = app.Services.GetService<QuestEinstellungen>() ?? new QuestEinstellungen();
+        var einst = app.Services.GetService<QuestEinstellungen>() ?? QuestEinstellungen.Vorgabe();
         var quest = new QuestDienst(dienst.Benutzer, einst);
         var g = app.MapGroup("/api/quest");
 

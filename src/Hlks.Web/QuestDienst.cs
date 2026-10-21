@@ -36,6 +36,13 @@ public sealed record QuestEinstellungen
     public bool PfadDurchsuchen { get; init; } = true;
     /// <summary>Orte, an denen nach adb.exe gesucht wird (wie quest_verbinden.ps1); null = die bekannten Orte (QuestDienst.BekannteOrte).</summary>
     public IReadOnlyList<string>? Orte { get; init; }
+
+    /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
+    /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
+    /// ohne adb.exe, damit die Liste der Suchorte im Dialog nicht leer ist.</summary>
+    public static QuestEinstellungen Vorgabe() => FamilienBibliothekDienst.Testlauf()
+        ? new QuestEinstellungen { PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")] }
+        : new QuestEinstellungen();
 }
 
 /// <summary>Ein Gerät aus «adb devices».</summary>
