@@ -9,7 +9,20 @@ Der Ablauf ersetzt die bisherige Reihenfolge nach Modulnummern aus dem Factsheet
 bleiben. Neu ist, dass zuerst das Bestehende bereinigt wird, bevor neue Fachmodule kommen. Modul 5 (Heizung) bleibt pausiert, bis Phase 3
 beginnt.
 
+## Nutzung von KICAD (Stand 22.10.2026)
+Christian, 22.10.2026: «momentan gibt es nur testprojekte. die software wird nur durch uns zu entwicklungsprozess genutzt.»
+
+- KICAD ist nicht im produktiven Einsatz. Es gibt nur Testprojekte; genutzt wird es von Christian und vom Hauptlauf im
+  Entwicklungsprozess.
+- **Folgerung:** Datenmodell, Kataloge, Formate und Abläufe dürfen sich in Phase 0 und 1 ändern, auch grundlegend. Rücksicht auf fremde
+  Bestände oder Migrationen für Dritte ist nicht nötig.
+  - Die Testprojekte, allen voran «Test_praxis», hält der Hauptlauf lauffähig: entweder mit einer einfachen Nachführung oder indem er sie
+    neu aufbaut, nach Absprache mit Christian.
+- Die Schutzregeln bleiben: W: nur lesen für Agenten und Tests, echte Unterlagen (IFC, Pläne, Bilder) nur lokal, HKAP nur gegen die
+  Testkopie. «Test_praxis» liegt in der echten Ablagestruktur, und die IFC stammen aus echten Projekten.
+
 ## Grundsatz: Bauen parallel mit einem realen Projekt (seit 22.10.2026)
+«Real» heisst hier: ein Testprojekt mit echten Unterlagen und echter Grösse, nicht das Beispielprojekt.
 Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, wie ich bereits begonnen habe zu testen.»
 
 - **Reales Projekt:** das Projekt, mit dem Christian seit dem 21.10.2026 testet: «Test_praxis» unter
