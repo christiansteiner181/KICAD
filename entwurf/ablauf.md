@@ -13,8 +13,8 @@ beginnt.
 Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, wie ich bereits begonnen habe zu testen.»
 
 - **Reales Projekt:** das Projekt, mit dem Christian seit dem 21.10.2026 testet: «Test_praxis» unter
-  `W:\02_Projektdateien Objekte\Bolligen_HK_Intern\03_Pläne und Modelle`, mit Architekten-IFC als Unterlage. Ein Wechsel oder ein zweites
-  Projekt legt Christian fest.
+  `W:\02_Projektdateien Objekte\Bolligen_HK_Intern\03_Pläne und Modelle`, mit Architekten-IFC als Unterlage. Von Christian bestätigt am
+  22.10.2026. Ein Wechsel oder ein zweites Projekt legt Christian fest.
 - **Jede Bauaufgabe endet mit einer Prüfung am realen Projekt.** Grüne Tests mit Beispielprojekt und Attrappen reichen nicht mehr. Der
   Hauptlauf spielt die geänderte Funktion am realen Projekt durch (Desktop bzw. Brille) und hält das Ergebnis in `zuteilung.md` fest.
   - **«Fertig, wenn …»** gilt erst als erfüllt, wenn es auch am realen Projekt trägt.
@@ -23,7 +23,8 @@ Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, 
 - **Echte Daten bleiben geschützt:**
   - **Auf W: nur lesen:** Agenten, Tests und Prüfskripte schreiben nie auf W:.
   - **Lokale Kopie für automatische Echt-Tests:** Sie lesen einen schreibgeschützten Stand unter `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis`,
-    den der Hauptlauf bei Bedarf nachführt; nie Repo, nie OneDrive.
+    den der Hauptlauf bei Bedarf nachführt; nie Repo, nie OneDrive. Erste Kopie 22.10.2026 09:45: 99 Dateien, 230 MB, ohne
+    `sperren`; Stand in `test_praxis_STAND.txt` daneben.
   - **Bilder** aus dem Projekt bleiben lokal.
   - **Ändern im realen Projekt** tut nur Christian selbst über KICAD, oder der Hauptlauf auf ausdrücklichen Auftrag.
 - **Cloud-Sitzungen** sehen das reale Projekt nicht. Deren Ergebnisse prüft der Hauptlauf am PC am realen Projekt, bevor `geprueft` gesetzt
