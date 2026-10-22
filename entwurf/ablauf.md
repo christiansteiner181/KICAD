@@ -1,4 +1,4 @@
-# KICAD – Ablauf in drei Phasen
+# KICAD – Ablauf in Phasen (0 bis 3)
 
 Stand 22.10.2026 · Hauptlauf. Entscheid Christian Steiner, 22.10.2026:
 
@@ -8,6 +8,34 @@ Stand 22.10.2026 · Hauptlauf. Entscheid Christian Steiner, 22.10.2026:
 Der Ablauf ersetzt die bisherige Reihenfolge nach Modulnummern aus dem Factsheet vom 17.10.2026. Module, «Fertig, wenn …» und Abnahme
 bleiben. Neu ist, dass zuerst das Bestehende bereinigt wird, bevor neue Fachmodule kommen. Modul 5 (Heizung) bleibt pausiert, bis Phase 3
 beginnt.
+
+## Phase 0 – Gesamtschau und Plausibilisierung des Status quo
+Christian, 22.10.2026: «als 0. machen wir noch vor den grundlagen eine gesamtschau/plausibilisierung, des status-quo.»
+
+Ziel: ein ehrliches, überprüftes Bild dessen, was heute steht, bevor bereinigt wird. Vorschlag des Hauptlaufs:
+
+1. **Bestandsaufnahme je Modul** (0a bis 7A, Feilarbeiten, XR-Prototyp):
+   - was gebaut ist, gemessen an «Fertig, wenn …»;
+   - was abgenommen ist, was unter Vorbehalt, was nur gebaut;
+   - welche Tests es dazu gibt.
+   - Quellen: `inventar.json` (Anleitung), Testberichte, `zuteilung.md`, `nachbearbeitung.md`, `vorrat_freitag.md`, Kontrollliste.
+2. **Plausibilisierung am echten Projekt.** Jede Hauptfunktion einmal durchspielen, mit Test_praxis bzw. Bernstrasse 42 (nur lesend), statt nur
+   mit dem Beispielprojekt. Was mit der Attrappe grün ist, aber am echten Projekt nicht trägt, kommt auf die Liste. Lehre vom 21.10.2026:
+   Kopfpose und Schnittbereich fielen erst in der Brille auf.
+3. **Daten und Quellen:**
+   - Kataloge, Grundausstattung und Familien auf Widersprüche prüfen;
+   - jeder Normwert mit Quelle (Norm, Ausgabe, Ziffer, Seite);
+   - offene Konflikte auflisten.
+4. **Technik:**
+   - Architektur-Review (doppelte Wege, z. B. Browser-VR neben der App);
+   - Leistung mit grossen IFC;
+   - Sicherheit (Ports, Herkunftsschutz, KI-Einordnung, Fern-Debugging der Brille);
+   - Stand der Tests (was nur mit Attrappen geprüft ist).
+5. **Unabhängige Prüfung** durch `hlks-pruefer` (liest nur und schlägt vor) zu den Punkten 3 und 4.
+6. **Ergebnis:**
+   - **Gesamtschau-Bericht** (`berichte/gesamtschau-2026-10.md`): Stand je Modul, Befunde nach Schwere, Lücken zu «Fertig, wenn …», Risiken;
+   - nachgeführte Kontrollliste;
+   - **priorisierte Liste für Phase 1**, mit Christian festgelegt.
 
 ## Phase 1 – Grundmodule bereinigen
 Nutzung, Anzeigen, Verhalten, Logik, Familien. Was gebaut ist, soll sich so verhalten, wie Christian es von Revit und HKAP gewohnt ist.
