@@ -1,7 +1,59 @@
 # Modul XR – KICAD in der VR-Brille (Meta Quest)
 
-Stand 21.10.2026 · Hauptlauf · Christian: «wir fassen das zusammen als Modul XR». Hier sind die Ideen N23–N26 aus `vorrat_freitag.md`
-zusammengefasst; alle Aussagen von Christian vom 21.10.2026.
+Stand 22.10.2026 · Hauptlauf · Christian 21.10.2026: «wir fassen das zusammen als Modul XR». Hier sind die Ideen N23–N26 aus
+`vorrat_freitag.md` zusammengefasst.
+
+## Übertheme «Quest App» (Entscheid Christian 22.10.2026)
+Christian: «wir packen das vr thema zusammen, und behandeln das gesamtheitlich mit dem übertheme Quest App => App ist der weg.»
+
+- **Ziel:** eine eigene KICAD-App auf der Meta Quest, mit Icon in der App-Bibliothek.
+  - Sie verbindet sich mit dem KICAD am PC und zeigt Begehen und Sitzungsraum.
+  - Sie bedient Tablet, Greifen, Messen, Marker und Sprache.
+  - Ohne Quest-Browser, ohne Fernsteuerung des Browsers und ohne Pflicht-Tipp beim Start.
+- **Der Browser-Weg (Stand 22.10.2026) ist der Prototyp.**
+  - Er bleibt lauffähig, bis die App ihn ersetzt, und ist die Vorlage für Bedienung und Abläufe.
+  - Neue Funktionen gibt es dort nicht mehr, nur noch Fehlerbehebungen.
+- **Warum die App** (Erfahrungen aus dem Brillentest vom 21.10.2026):
+  - Der Browser startet VR nur nach einem Tipp in der Brille; der Autostart braucht dafür das Fern-Debugging des Browsers.
+  - adb über WLAN reisst im Ruhezustand ab. Nach einem Neustart der Quest ist es ganz weg, dann braucht es das Kabel.
+  - Christians PC kann kein Link (Intel-Grafik), alles rechnet die Quest. Der Browser ist dafür nicht die schnellste Laufzeit; die
+    IFC-Unterlage hat 840 000 Dreiecke.
+  - PC-Oberfläche und VR im selben Browser der Brille verwirren. Die App zeigt nur VR.
+- **Was bleibt:** Der KICAD-Server am PC ist die einzige Quelle für Modell, Befehle, Pakete, Rückgängig und Abgleich («eine Tür»). Die
+  App ist ein weiterer Client wie die Oberfläche am PC.
+
+### Grundsatzentscheide für Freitag
+1. **Technik der App.** Vorschlag des Hauptlaufs; Lizenzen und Reife vor dem Entscheid prüfen:
+
+   | Weg | Für | Gegen |
+   | --- | --- | --- |
+   | **StereoKit** (C#/.NET, MIT, OpenXR, Android-Build für Quest) | dieselbe Sprache wie der Kern; Hände, Fenster und Panels eingebaut; schlank | kleinere Gemeinschaft, weniger Grafik-Komfort |
+   | **Unity** mit OpenXR bzw. Meta XR SDK (C#) | am meisten verbreitet für Quest, beste Werkzeuge für Hände, Leistung und Passthrough | Lizenz: Unity Personal nur unter einer Umsatzgrenze, für H+K vermutlich Unity Pro mit Kosten je Platz |
+   | **Godot 4** (MIT, OpenXR) | frei, Quest-Unterstützung vorhanden | C#-Export für Android jünger |
+   | **verpackte Web-App** (PWA/TWA der heutigen `/vr`) | schnellstes Icon | dieselben Grenzen wie der Browser; höchstens Zwischenschritt |
+
+   - **Empfehlung:** StereoKit an einem kleinen Prototyp prüfen (Modell laden, Begehen, Hände), mit Unity als Gegenprobe bei Grafik und
+     Leistung. Die reinen Rechenregeln aus `vr-logik.js` und `xr-*-logik.js` lassen sich nach C# übertragen, Tests eingeschlossen.
+2. **Verbindung zwischen App und KICAD am PC:**
+   - Heute läuft sie über `localhost` mit `adb reverse`: sicher, aber an adb gebunden.
+   - Für die App: direkt im Büronetz (WLAN) mit einmaliger **Kopplung** (Code am PC bestätigen) und **TLS**. Sonst bleibt der Server nur
+     lokal erreichbar.
+   - Daten: kompaktes Binärformat je Geschoss (z. B. glTF/GLB) mit Zwischenspeicher in der App statt JSON.
+3. **Verteilung:** ohne Store.
+   - Entweder per adb bzw. Meta Quest Developer Hub (der Entwicklermodus bleibt nötig).
+   - Oder über die Geräteverwaltung von Meta für Firmen; Kosten und Konten prüfen.
+4. **Mehrbenutzer (XR-G)** von Anfang an mitdenken: Die App-Verbindung ist der Live-Kanal für Positionen, Zeigestrahl und gemeinsame
+   Etagenwahl.
+5. **Umfang der Version 1:**
+   - Verbinden und Kopplung, Auftrag vom PC und Autostart;
+   - Begehen (XR-A);
+   - Sitzungsraum mit Griffen, Etagen und Ausschnitt (XR-H);
+   - Tablet mit Messen (XR-C).
+   - Danach: Greifen (XR-B), Marker (XR-E), Sprache (XR-D), Skizze (XR-F), Mehrbenutzer (XR-G).
+
+### Pflichtenheft
+Die Abschnitte XR-A bis XR-H und «Start ohne Link-fähigen PC» unten beschreiben, was der Browser-Prototyp kann und was Christian beim
+Brillentest festgelegt hat. Sie gelten als Anforderungen an die App: Gesten, Masse, Schwellenwerte, Abläufe.
 
 ## Rahmen
 - **Gerät und Weg:** Meta Quest über **Air Link (WLAN)**. KICAD läuft in **Chrome am PC**; WebXR geht über die OpenXR-Schnittstelle der
@@ -170,7 +222,13 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
   Rechner gleichzeitig am Repository» gilt.
 
 ## Reihenfolge
-XR-A, dann XR-B mit XR-C, dann XR-E, dann XR-D. Jeder Teil wird mit der Brille an Christians PC abgenommen.
+Seit 22.10.2026 gilt das Übertheme «Quest App».
+1. Grundsatzentscheide (Technik, Verbindung, Verteilung).
+2. Prototyp der App.
+3. Version 1: Verbinden, Autostart, XR-A, XR-H, XR-C mit Messen.
+4. Danach XR-B, XR-E, XR-D, XR-F, XR-G.
+
+Jeder Teil wird mit der Brille an Christians PC abgenommen. Der Browser-Prototyp bekommt nur noch Fehlerbehebungen.
 
 ## Offen (Freitag bzw. erster Brillentest)
 - Hand-Tracking über Air Link in Chrome
