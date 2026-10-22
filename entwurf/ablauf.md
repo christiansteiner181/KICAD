@@ -9,6 +9,26 @@ Der Ablauf ersetzt die bisherige Reihenfolge nach Modulnummern aus dem Factsheet
 bleiben. Neu ist, dass zuerst das Bestehende bereinigt wird, bevor neue Fachmodule kommen. Modul 5 (Heizung) bleibt pausiert, bis Phase 3
 beginnt.
 
+## Grundsatz: Bauen parallel mit einem realen Projekt (seit 22.10.2026)
+Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, wie ich bereits begonnen habe zu testen.»
+
+- **Reales Projekt:** das Projekt, mit dem Christian seit dem 21.10.2026 testet: «Test_praxis» unter
+  `W:\02_Projektdateien Objekte\Bolligen_HK_Intern\03_Pläne und Modelle`, mit Architekten-IFC als Unterlage. Ein Wechsel oder ein zweites
+  Projekt legt Christian fest.
+- **Jede Bauaufgabe endet mit einer Prüfung am realen Projekt.** Grüne Tests mit Beispielprojekt und Attrappen reichen nicht mehr. Der
+  Hauptlauf spielt die geänderte Funktion am realen Projekt durch (Desktop bzw. Brille) und hält das Ergebnis in `zuteilung.md` fest.
+  - **«Fertig, wenn …»** gilt erst als erfüllt, wenn es auch am realen Projekt trägt.
+- **Befunde aus Christians Nutzung** gehen zuerst. Sie kommen in die Kontrollliste bzw. `nachbearbeitung.md` und werden vor neuen
+  Wünschen behoben.
+- **Echte Daten bleiben geschützt:**
+  - **Auf W: nur lesen:** Agenten, Tests und Prüfskripte schreiben nie auf W:.
+  - **Lokale Kopie für automatische Echt-Tests:** Sie lesen einen schreibgeschützten Stand unter `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis`,
+    den der Hauptlauf bei Bedarf nachführt; nie Repo, nie OneDrive.
+  - **Bilder** aus dem Projekt bleiben lokal.
+  - **Ändern im realen Projekt** tut nur Christian selbst über KICAD, oder der Hauptlauf auf ausdrücklichen Auftrag.
+- **Cloud-Sitzungen** sehen das reale Projekt nicht. Deren Ergebnisse prüft der Hauptlauf am PC am realen Projekt, bevor `geprueft` gesetzt
+  wird.
+
 ## Phase 0 – Gesamtschau und Plausibilisierung des Status quo
 Christian, 22.10.2026: «als 0. machen wir noch vor den grundlagen eine gesamtschau/plausibilisierung, des status-quo.»
 
