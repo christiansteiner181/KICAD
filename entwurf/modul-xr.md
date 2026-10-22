@@ -222,7 +222,7 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
   Rechner gleichzeitig am Repository» gilt.
 
 ## Reihenfolge
-Seit 22.10.2026 gilt das Übertheme «Quest App».
+Seit 22.10.2026 gilt das Übertheme «Quest App». Im Gesamtablauf (`entwurf/ablauf.md`) gehört die App in **Phase 1, Grundlagen** – Christian 22.10.2026: «dies nehmen wir in Grundlagen. alle anderen systeme bauen darauf auf.»
 1. Grundsatzentscheide (Technik, Verbindung, Verteilung).
 2. Prototyp der App.
 3. Version 1: Verbinden, Autostart, XR-A, XR-H, XR-C mit Messen.

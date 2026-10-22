@@ -21,7 +21,7 @@ Nutzung, Anzeigen, Verhalten, Logik, Familien. Was gebaut ist, soll sich so verh
 | Kollision, Aussparungen | 3b | Abnahme mit Christian |
 | KI-Palette | 3c | Abnahme mit Christian |
 | Ausgabe Planblatt | 7 Teil A | Abnahme mit Christian |
-| Bedienung in VR | Modul XR, Übertheme «Quest App» (`modul-xr.md`) | Grundsatzentscheide (Technik, Verbindung, Verteilung); Platz im Ablauf durch Christian zu bestätigen |
+| **Quest App (Grundlage)** | Modul XR, Übertheme «Quest App» (`modul-xr.md`) | **Entscheid Christian 22.10.2026: «dies nehmen wir in Grundlagen. alle anderen systeme bauen darauf auf.»** Zuerst die Grundsatzentscheide (Technik, Verbindung, Verteilung), dann ein Prototyp, dann Version 1. Die Fachmodule (Phase 3) bauen ihre VR-Teile auf die App auf, z. B. Darstellung von Systemen und Berechnungen |
 | Kern-Lücken aus XR-B | Kern | `leitung_versetzen` (verbundene Leitung quer versetzen, Verzüge mit Bögen der Serie); Reservierung beim Greifen |
 
 ## Phase 2 – Gebäudeerfassung und Auswertung
@@ -50,6 +50,5 @@ Spezielle Berechnungen, Systemerkennung, Darstellungen.
 | 11 | Monitoring | offen |
 
 ## Offen
-- Platz der Quest App im Ablauf; Vorschlag: Phase 1, Bereich «Anzeigen», beginnend mit den Grundsatzentscheiden.
 - Umfang der «Auswertung» in Phase 2.
 - Die Termine im Factsheet (Meilensteine M3–M5) nachführen, sobald die Phasen geschätzt sind.
