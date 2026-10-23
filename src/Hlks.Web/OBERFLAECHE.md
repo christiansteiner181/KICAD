@@ -2000,3 +2000,40 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
 - **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~Hlks.Web.Tests.Xr"` (Netzzugang echt mit TLS, aber nur auf 127.0.0.1 mit freien Ports).
   **Nur mit Brille und Büronetz prüfbar:** Erreichbarkeit über WLAN und Firewall, Broadcast im Büronetz, Pinning in der App, Dauerlast 30 Posen/s über WLAN.
   **Anleitung:** `zb-xr-zugang` in `berichte/anleitung/inventar.json`.
+## Modul XR, Quest App P2: Modell als GLB je Geschoss (`entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P2)
+
+Die native Quest App (StereoKit, `src/Hlks.Quest`) lädt das Modell nicht über `/api/koerper`, sondern als **glTF 2.0 binär (GLB) je Geschoss**, zusammengefasst je Material (Meta, Quest 3: höchstens
+1.5 Mio. Dreiecke und 200 Zeichenaufrufe je Bild). **Keine Bedienung am PC** – eine Schnittstelle für die App; die Bedienung folgt mit P4 (App) und P7 («Quest verbinden»), dann auch der Eintrag in der Anleitung.
+Kern: `Hlks.Kern/Xr/` (`XrModell`, `XrNetzbau`, `XrFarben`, `XrKoordinaten`, `GlbSchreiber`), Server: `XrModellEndpunkte.cs` (`app.MapXrModell(dienst)`).
+
+- **Quelle der Geometrie:** dieselben Körper wie die 3D-Ansicht (`Grafik.Koerper`, wie `GET /api/koerper`): Architektur (Wände, Decken, Dächer, Türen, Fenster, Stützen, Träger, Treppen, Räume), Haustechnik
+  (Leitungen, Formteile, Armaturen, Apparate, Geräte), Familien, Aussparungen, Kollisionsmarken. Teile `netz` (IFC-Unterlage) gehen in den eigenen Teil «unterlage»: der **Hintergrund** der Netzdatei (nicht übernommene
+  Produkte, ohne Öffnungen) wie `netzdatei.js` in der Darstellung «nachbau»; ausgeblendete Unterlagen (`anzeigen = false`) fehlen wie im 3D. Die App hat keine Ansicht: alle Gewerke und Klassen.
+- **Zerlegung:** Quader und Prismen mit Flächennormalen (Prismen über die Triangulierung des Kerns, mit Löchern), Zylinder und Kugeln mit **24 Strecken** je Vollkreis (3D-Ansicht 32; Kugel 24 × 12), allgemeine
+  Netze (Familien, IFC) mit Knick-Normalen (**20°** wie `koerper3d.js`). Die IFC-Netze werden je zusammenhängendem Stück gleich gerichtet (Normalen nach aussen). Entartete Dreiecke entfallen. Technische Annahmen, keine Normwerte.
+- **Netze:** je Geschoss und Teil **ein Netz je Gruppe, Farbe und Deckkraft** (Gruppen `architektur` = Wand, Decke, Öffnung · `raum` · `hlks` = Leitung, Formteil, Armatur, Apparat · `sonst` · `unterlage`), ein Knoten je Netz,
+  undurchsichtige zuerst. Farben wie die 3D-Ansicht im Design «hell» (Teil.Farbe, sonst `--d3-<material>`), Nachbau einer IFC-Unterlage mit `farbeNachbau`/`deckkraftNachbau` (N12). **Deckkraft in VR:** Wände und Decken
+  (Ebenen `wand`, `decke`) und die IFC-Unterlage undurchsichtig wie beim Begehen (N22, `vr3d.js`); die Deckkraft der 3D-Übersicht steht als `deckkraft3d` in den extras. Material: `baseColorFactor` linear (sRGB wie three r160),
+  `metallicFactor` 0, `roughnessFactor` 1, `alphaMode` OPAQUE bzw. BLEND, `doubleSided`. Indizes uint16, ab 65 536 Ecken uint32.
+- **Koordinaten:** glTF in Metern, y oben: `gx = (x − bx)/1000`, `gy = (z − bz)/1000`, `gz = −(y − by)/1000` (wie die 3D-Ansicht; eine Drehung, der Umlaufsinn bleibt). **Bezugspunkt** b = Projekt-Nullpunkt, ausser das
+  Modell liegt in einer Achse weiter als 5 km davon (dann die Mitte, auf Meter gerundet; float32 bleibt unter 1 mm genau). Ein Bezugspunkt für alle Geschosse und Teile: die GLB passen ohne Versatz übereinander.
+- **extras:** Szene `extras.kicad` = `{ fassung, teil, schluessel, projekt, geschoss: { id, kennzeichen, name, koteMm, hoeheMm }, bezugspunktMm, achsen, netze, dreiecke, elemente, hinweise }`; Netz `extras.kicad` =
+  `{ gruppe, farbe, deckkraft (VR), deckkraft3d, dreiecke, elemente: { ids, ab, anzahl, ebenen | entitaeten } }` – die **Zuordnung Dreieck → Element** als Spalten: Dreiecke `[ab, ab + anzahl)` gehören zu `ids[i]`
+  (Modell: Element-Id, Unterlage: GlobalId des IFC-Produkts; dazu `unterlage`, `kennzeichen`, `datei`). In der Datei statt daneben, damit Geometrie und Zuordnung einen Schlüssel haben und im Zwischenspeicher der App zusammenbleiben.
+  StereoKit reicht `extras` nicht durch: die App liest das JSON des ersten Chunks (ab Byte 20, Länge in Byte 12–15) selbst.
+- **Zuordnung zum Geschoss:** Element mit Geschoss dorthin; sonst (und jedes IFC-Produkt) nach der Höhe: Geschosskote der Netzdatei (±50 mm), sonst Unterkante → höchstes Geschoss mit Kote ≤ Höhe + 1 mm, darunter das unterste.
+  Ohne Geschosse im Projekt ein Geschoss `ohne-geschoss` mit allem.
+- **Versionsschlüssel** je Geschoss und Teil: SHA-256 (24 Zeichen) über Fassung, Projekt, Bezugspunkt, Geschoss und Inhalt (Modell: die Körper des Geschosses mit Farbe und Deckkraft; Unterlage: Netzdatei, Farbe,
+  Deckkraft und die zugeordneten Produkte). Ändert sich ein Element, ändert sich nur der Schlüssel seines Geschosses; nach Rückgängig ist er wieder der alte.
+- **Schnittstelle** (alles unter `/api`, also hinter dem Herkunftsschutz: nur localhost, nur GET):
+  `GET /api/xr/geschosse` → `{ fassung, projekt, bezugspunktMm, achsen, geschosse: [{ id, kennzeichen, name, koteMm, hoeheMm, modell: { schluessel, elemente, url }, unterlage: { schluessel, produkte, dreiecke, url } | null }], hinweise }`;
+  `GET /api/xr/geschoss/{id}.glb?teil=modell|unterlage` (Id oder Kennzeichen; ohne `teil` = modell) → `model/gltf-binary`, `ETag: "<schluessel>"`, `Cache-Control: no-cache`; `If-None-Match` mit diesem ETag (auch `W/…`, `*`) → **304**.
+  Fehler `{ fehler, vorschlag }`: 400 Teil unbekannt, 404 Geschoss unbekannt bzw. keine Unterlage, 409 kein Projekt. Erfasst wird unter der Sperre des Projekts, zerlegt und geschrieben ohne Sperre; fertige GLB bleiben je Schlüssel im
+  Speicher (höchstens 256 MB), gleichzeitige Anfragen rechnen einmal. **KI:** reine Rechner-Funktion `xr_modell` in `KiEinordnung.RechnerFunktionen` (für die KI verboten), kein MCP-Werkzeug.
+  Für P3 (Büronetz): die Antwortkomprimierung in `Program.cs` gilt nur für `application/octet-stream`; für die GLB dort `model/gltf-binary` ergänzen, falls über WLAN komprimiert werden soll.
+- **Für die App (P4):** StereoKit 0.3.11 lädt die GLB (geprüft im Offscreen-Modus mit Test_praxis: alle Netze, Ecken, Dreiecke, Transparenz, doppelseitig). Die Netze behalten die glTF-Koordinaten, StereoKit setzt aber
+  beim Laden eine **Drehung um 180° um die Hochachse** in die Knoten (`Model.Bounds`: x → −x, z → −z, `Mesh.Bounds` unverändert); die App muss die Knoten-Transformation zurücksetzen oder die Drehung beim Umrechnen
+  berücksichtigen. Räume (Gruppe `raum`, Deckkraft 0.15) blendet die App beim Begehen nach Bedarf aus.
+- **Prüfen:** Kern `--filter "FullyQualifiedName~Hlks.Kern.Tests.Xr"` (`XrGlbTests`: Schreiber, Koordinaten, Zerlegung; `XrModellTests`: Beispielprojekt und synthetische IFC; `XrModellEchtTests`: Test_praxis aus
+  `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis`, nur lesen, ohne die Daten übersprungen; Messwerte in der Testausgabe und `%TEMP%\HLKS_CAD\xr_p2_test_praxis.json`); Web `--filter "FullyQualifiedName~XrModellApiTests"`.
+  Jede GLB prüft der unabhängige Leser `tests/Hlks.Kern.Tests/GlbPruefer.cs` (Kopf, Chunks, Ausrichtung, min/max, Indizes, Normalen, Material). **Nur mit der Brille prüfbar:** Bildrate mit Test_praxis (K1).

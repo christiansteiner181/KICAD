@@ -98,6 +98,9 @@ public static class KiEinordnung
         new("xr_kanal", "Live-Kanal zur Quest App (Modul XR, Quest App P3, XrKanal.cs): liest Kopf- und Handpositionen der Brille (/api/xr/teilnehmer), sendet Stellschrauben an die " +
             "Brille (/api/xr/stellschraube) und schreibt Messprotokolle. Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
             "später eigens einzuordnen)."),
+        new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
+            "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +
+            "Ausgabe nicht; über den Zugang im Büronetz (P3) greift sie über den Rechner hinaus – darum kein Werkzeug der KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

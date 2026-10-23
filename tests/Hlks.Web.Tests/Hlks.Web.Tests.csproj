@@ -19,6 +19,8 @@
   <ItemGroup>
     <!-- T1: gemeinsames Hilfsmittel für Umgebungsvariablen -->
     <Compile Include="..\Hlks.Kern.Tests\TestUmgebung.cs" Link="TestUmgebung.cs" />
+    <!-- Quest App (Modul XR, P2): unabhängige Prüfung der GLB-Dateien, dieselbe wie in den Kern-Tests -->
+    <Compile Include="..\Hlks.Kern.Tests\GlbPruefer.cs" Link="GlbPruefer.cs" />
   </ItemGroup>
 
   <ItemGroup>
