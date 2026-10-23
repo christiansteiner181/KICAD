@@ -1947,7 +1947,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   Hauptservers mit der Marke `.XrImNetz()` und einem Muster unter `/api/xr/` – sonst 404 (keine Oberfläche, keine Dateien, kein übriges `/api`).
   **Pforte** (`XrPforte.Pruefen`, eine Stelle): Pfad ausserhalb `/api/xr` → 404; Absender gesperrt oder zu viele Anfragen → 429; Schlüssel fehlt oder falsch → 401
   (`WWW-Authenticate: Bearer`; ohne Schlüssel nur `kopplung/anfrage`, `kopplung/aufdecken` und `kopplung/abholen`); Endpunkt ohne Marke (alle PC-Endpunkte) → 404;
-  Körper > 64 KB → 413; nicht `application/json` → 415. Grenzen: 32 Verbindungen, Kopfzeilen 16 KB in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min (danach 429).
+  Körper > 64 KB → 413; nicht `application/json` → 415. Grenzen: 32 Verbindungen, Kopfzeilen 16 KB in 10 s, je IP 20 Anfragen/s (Vorrat 60), je IP 10 Fehlversuche (falscher oder fehlender Schlüssel) auf einmal, danach einer je Minute (sonst 429).
   **Freigegeben** sind `verbindung`, `kanal`, die drei Kopplungsschritte und das **Modell als GLB** (P2: `GET /api/xr/geschosse`, `GET /api/xr/geschoss/{id}.glb`, mit Schlüssel,
   ETag/304 wie auf localhost). **Neue Endpunkte für die Brille** unter `/api/xr/` anlegen und mit `.XrImNetz()` markieren; ohne Marke bleiben sie nur auf localhost.
   **Komprimierung:** nur `model/gltf-binary`, mit Brotli oder gzip je nach `Accept-Encoding` der App (schnellste Stufe); JSON – etwa das Paket mit dem Schlüssel – nie
@@ -1955,6 +1955,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
 - **Zertifikat** (`XrZertifikat.cs`): ECDSA P-256, selbst erzeugt, 10 Jahre, je PC in `%LOCALAPPDATA%\HLKS_CAD\xr\zertifikat.dpapi` (privater Schlüssel mit DPAPI
   für den Benutzer verschlüsselt; nie OneDrive, nie Repository). **Fingerabdruck** = SHA-256 über das Zertifikat (DER), 64 Kleinbuchstaben hex; Kurzform für den
   Menschen «AB12 CD34 EF56 7890». Wird es ersetzt (Datei unlesbar, Ablauf in < 30 Tagen), meldet `zertifikatErsetzt` es: Brillen neu koppeln.
+  Geladen legt Windows den Schlüssel als Datei unter `%APPDATA%\Microsoft\Crypto\Keys` ab (SChannel braucht das); KICAD gibt sie beim Beenden wieder frei (`XrNetzDienst.StopAsync`).
 - **Kopplung** (`XrKopplung.cs`, je Brille, höchstens 8; eine neue derselben Brille ersetzt die alte). Schlüssel: 32 Zufallsbyte, base64url (43 Zeichen); die App
   sendet `Authorization: Bearer <kopplung>.<schluessel>`. Gespeichert (`%LOCALAPPDATA%\HLKS_CAD\xr\kopplungen.json`) werden nur
   Prüfwert = HMAC-SHA256(Schlüssel, `hlks-xr-zugang`) und Suchschlüssel = HMAC-SHA256(Schlüssel, `hlks-xr-suche`) (DPAPI), nie der Schlüssel.

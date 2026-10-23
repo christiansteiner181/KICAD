@@ -29,8 +29,9 @@ builder.Services.AddSingleton(einstellungen);
 builder.Services.AddSingleton<ProjektDienst>();
 builder.Services.AddSingleton<KiLaeufe>();   // Modul 3c: höchstens ein KI-Lauf je Projekt (Gespräch der KI-Palette oder Auftrag)
 builder.Services.AddHostedService<AbgleichDienst>();
-// Modul XR (Quest App P3): zweiter Zugang im Büronetz – eigener HTTPS-Server neben diesem, nur /api/xr, nur gekoppelte Brillen; aus, solange die
-// Benutzereinstellung xr.zugang aus ist, und nur im KICAD auf Port 5130 (XrZugang.cs). Dieser Server bleibt unverändert nur auf localhost.
+// Modul XR (Quest App P3): zweiter Zugang im Büronetz – eigener HTTPS-Server neben diesem, nur /api/xr, nur gekoppelte Brillen; aus, solange der
+// Schalter dieses PCs aus ist (%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json, je PC), und nur im KICAD auf Port 5130 (XrZugang.cs). Dieser Server bleibt
+// unverändert nur auf localhost.
 builder.Services.AddXrZugang(port);
 // Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB;
 // model/gltf-binary = das Modell als GLB je Geschoss, XrModellEndpunkte.cs): gzip, wenn der Browser es annimmt und nicht auf demselben
