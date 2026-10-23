@@ -198,6 +198,8 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Die App schreibt alle 5 s eine Statuszeile «P0 Status …» ins Protokoll (`adb logcat`, Kennung DOTNET). Das ist die Grundlage für
     die Messung K1.
 
+**Stand P1 (23.10.2026):** Bibliothek `src/Hlks.Xr` (ohne StereoKit) mit den Regeln aus `vr-logik.js`, `begehen-logik.js` (Durchgang), `vr-start-logik.js`, `xr-mess-logik.js`, `xr-sitzung-logik.js`, `schnittbereich-logik.js` (Quader) und dem Hand-/Tablet-/Wischteil von `xr-greifen-logik.js`; 155 Tests (`tests/Hlks.Xr.Tests`, in `stand_pruefen.ps1` und `cloud/tests.sh`). Übersicht: `src/Hlks.Xr/LIESMICH.md`. Entscheid Hauptlauf: `Vec3` mit double (Koordinaten bis ~67 m, Toleranz 1e-9), Umrechnung auf float erst in der App; Gelenknamen von WebXR auf StereoKit bildet P4 ab; Schwellen als Stellschrauben bereitet P5 auf.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
