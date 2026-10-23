@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Quest App (Modul XR), Fassung für den PC: Simulator mit Maus-Händen und automatische Prüfung ohne Brille.
+	     Die Fassung für die Brille ist Projects\Android\Hlks.Quest.Android.csproj (gleiche Quellen).
+	     Bewusst nicht in HLKS_CAD.slnx: Der Android-Bau braucht die .NET-Workload «android». Aufbau nach der Vorlage
+	     StereoKit.Templates 0.10.0 (MIT). -->
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Hlks.Quest</RootNamespace>
+		<ApplicationIcon>Platforms\Net\App.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Android-Teile nur im Android-Projekt übersetzen. -->
+		<Compile Remove="**\*.Android.cs" />
+		<Compile Remove="Platforms\Android\**" />
+		<None Include="**\*.Android.cs" />
+		<None Include="Platforms\Android\**" />
+
+		<Compile Remove="Projects\**" />
+		<EmbeddedResource Remove="Projects\**" />
+		<None Remove="Projects\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Festgelegt auf 0.3.11 (Entscheid Quest App 23.10.2026, modul-xr.md). -->
+		<PackageReference Include="StereoKit" Version="0.3.11" />
+	</ItemGroup>
+</Project>

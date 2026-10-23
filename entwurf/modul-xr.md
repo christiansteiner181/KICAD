@@ -78,7 +78,10 @@ Folgen für das Pflichtenheft (XR-A bis XR-H):
   - MIT, C#, OpenXR; unterstützt die Meta Quest mit Hand-Tracking.
   - Letzte Version: v0.3.11 vom 28.06.2025 (Fehlerbehebung), davor v0.3.10 vom 22.02.2025. Die Version v0.4 mit grösseren Änderungen ist
     seit 2024 in Arbeit.
-  - Es gibt einen Hauptentwickler, etwa eine Version pro Jahr.
+  - Es gibt einen Hauptentwickler, und stabile Versionen erscheinen etwa einmal pro Jahr.
+  - **Korrektur 23.10.2026:** Auf NuGet erscheinen laufend Vorversionen von 0.4.0 (Stand 23.10.2026 bis `0.4.0-preview.3866`, Quelle
+    https://api.nuget.org/v3-flatcontainer/stereokit/index.json). Die Entwicklung ist also aktiv, nur stabile Versionen sind selten. Baut
+    0.3.11 nicht mit .NET 10, ist eine Vorversion von 0.4 der Ausweg.
   - Quellen: https://github.com/StereoKit/StereoKit/releases, https://stereokit.net.
   - Folge: Version auf 0.3.11 festlegen und die Logik getrennt halten. Ob StereoKit 0.3.11 mit .NET 10 für Android baut, prüft P0.
 - **Godot 4:**

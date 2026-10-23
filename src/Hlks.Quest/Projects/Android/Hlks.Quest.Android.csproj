@@ -1,0 +1,56 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Quest App (Modul XR), Fassung für die Meta Quest. Quellen aus ..\..\ (wie Hlks.Quest.csproj).
+	     Bau: dotnet build -c Release (APK im Bauordner unter %USERPROFILE%\HLKS_CAD_build\Hlks.Quest.Android).
+	     Android SDK und JDK: lokal unter %USERPROFILE%\HLKS_CAD_werkzeuge, sonst wie von der Workload gefunden. -->
+	<PropertyGroup>
+		<TargetFramework>net10.0-android</TargetFramework>
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+		<OutputType>Exe</OutputType>
+		<TargetType>Exe</TargetType> <!-- Einstieg über Program.Main wie am PC -->
+		<ApplicationId>ch.hkplanung.kicad.quest</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+		<RootNamespace>Hlks.Quest</RootNamespace>
+		<ReadOnlyProject>true</ReadOnlyProject>
+
+		<SKOpenXRLoader>Standard</SKOpenXRLoader>
+		<SKAssetFolder>..\..\Assets</SKAssetFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
+
+		<!-- XR-Geräte laufen auf älteren Android-Fassungen (targetSdkVersion 32). -->
+		<NoWarn>XA4211;XA1006;XA4301</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<HlksWerkzeuge>$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))\HLKS_CAD_werkzeuge</HlksWerkzeuge>
+		<AndroidSdkDirectory Condition="'$(AndroidSdkDirectory)' == '' and Exists('$(HlksWerkzeuge)\android-sdk')">$(HlksWerkzeuge)\android-sdk</AndroidSdkDirectory>
+		<JavaSdkDirectory Condition="'$(JavaSdkDirectory)' == '' and Exists('$(HlksWerkzeuge)\jdk-17')">$(HlksWerkzeuge)\jdk-17</JavaSdkDirectory>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="StereoKit" Version="0.3.11" />
+	</ItemGroup>
+
+	<!-- Android-Ordner auf Platforms\Android zeigen lassen, sonst sucht der Bau im Projektordner. -->
+	<PropertyGroup>
+		<AndroidManifest          >..\..\Platforms\Android\AndroidManifest.xml</AndroidManifest>
+		<MonoAndroidResourcePrefix>..\..\Platforms\Android\Resources</MonoAndroidResourcePrefix>
+		<MonoAndroidAssetsPrefix  >..\..\Platforms\Android\Assets</MonoAndroidAssetsPrefix>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Compile Include="..\..\**\*.cs" Exclude="..\..\obj\**;..\..\bin\**;..\..\Projects\**" />
+
+		<!-- Nur-PC-Teile nicht übersetzen. -->
+		<Compile Remove="..\..\**\*.Net.cs" />
+		<Compile Remove="..\..\Platforms\Net\**\*.cs" />
+
+		<Compile Update="..\..\**" Visible="false" />
+		<None    Update="..\..\**" Visible="false" />
+		<Content Update="..\..\**" Visible="false" />
+
+		<Compile Update="..\..\**\*.Android.cs" Visible="true" />
+		<Compile Update="..\..\Platforms\Android\**\*.cs" Visible="true" />
+	</ItemGroup>
+</Project>
