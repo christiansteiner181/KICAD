@@ -24,7 +24,8 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
 | `XrTabletRuhe` | `ansichten/xr-greifen-logik.js`, «Beruhigen des Tablets» | One-Euro-Filter, Totzone, Nachführen |
 | `XrWischLogik` | `ansichten/xr-greifen-logik.js`, «Wischgeste» | Wisch erkennen, Treffer auf Masslinien, Sperre |
 | `Vec3`, `Xz`, `Box3`, `Sortierung` | – | Grundbausteine (Vektor, Box, natürliche Sortierung) |
-| `HandBegehen`, `HandGelenke` | – (P4a, nach der Leitlinie «Hände zuerst») | Teleport mit Zeigen und Pinch, Drehen mit Pinch und Wisch; WebXR-Gelenknamen ↔ StereoKit |
+| `HandBegehen`, `HandGelenke` | – (P4a, nach der Leitlinie «Hände zuerst») | Teleport mit Zeigen und Pinch (Zeigestrahl des Systems, Ruhezeit 0.25 s, Abbruch beim Verlassen des Bodens), Drehen mit Pinch und Wisch; WebXR-Gelenknamen ↔ StereoKit |
+| `DrehenSchalter` | – (P4a-Nachtrag, Christian 23.10.2026) | Haltung aus der Kopfhöhe über dem Boden (sitzend/stehend mit Hysterese und Haltezeit), Drehen ein/aus, Schalter übersteuert bis zum nächsten Haltungswechsel |
 | `DreieckForm` (in `Durchgang`) | – (P4a) | Durchgang gegen Dreiecke aus der GLB (die App hat die Körper von `/api/koerper` nicht) |
 
 ## Konventionen
@@ -85,6 +86,8 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
 | `Modell/NetzDurchgang.cs` | `NetzDurchgang`, `DurchgangVerfolger` | Durchgang (500 mm) je Kopfposition; Netze in undurchsichtig und durchscheinend aufteilen |
 | `Modell/RaumStandort.cs` | `RaumStandort` | Standort im Format von `raum_begehen` aus dem Netz eines Raums (Schwerpunkt bzw. innerster Punkt, Boden, Blick) |
 | `Modell/AppStart.cs` | `AppStart` | Startpunkt nach `VrStartLogik` mit den Räumen der GLB und dem gemerkten Standpunkt der App |
+| `Modell/GeschossWahl.cs` | `GeschossWahl` | Geschoss am Standboden (Kote höchstens 0.3 m darüber), die App zeichnet nur dieses mit IFC-Unterlage |
+| `Modell/NetzBloecke.cs` | `NetzBloecke` | grosse Netze in Blöcke zu höchstens 20 000 Dreiecken (möglichst an Elementgrenzen); Bereiche je Block für den Durchgang |
 
 - **Pinning:** Die App nimmt nur das Zertifikat an, dessen SHA-256 über die DER-Bytes dem `fingerabdruck` des Pakets gleicht (Vergleich in fester Zeit);
   Fehler der Kette und des Namens zählen nicht. Gilt für HTTP und WebSocket.

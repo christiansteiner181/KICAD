@@ -66,6 +66,14 @@ sealed class QuestApp
     double hinweisBis;
     Pose anzeige = new(0, 1.2f, -0.6f, Quat.LookDir(0, 0, 1));
     bool anzeigeGesetzt;
+    ListenGeschoss? geschossAmStand;
+    /// <summary>Schwellen des Springens; Stellschrauben vom PC («begehen.ziel_ruhe_s» …) setzen sie (im Bild-Thread).</summary>
+    HandBegehenEinstellungen begehen = HandBegehenEinstellungen.Vorgabe;
+    /// <summary>Haltung und Schalter «Drehen» (Hlks.Xr.DrehenSchalter): sitzend ein, stehend aus, der Schalter übersteuert bis zum nächsten Haltungswechsel.
+    /// Nicht über den Neustart gemerkt. Schwellen: Stellschrauben «haltung.*».</summary>
+    readonly DrehenZustand drehen = new();
+    HaltungEinstellungen haltung = HaltungEinstellungen.Vorgabe;
+    bool ohneBodenGemeldet;
 
     // Status und Prüfung
     int bilder, gemessen;
@@ -85,6 +93,9 @@ sealed class QuestApp
         speicher = new GlbZwischenspeicher(privat);
         ablage = AppAblage.Laden(privat);
         geraet = string.IsNullOrWhiteSpace(Device.Name) ? "Meta Quest" : Device.Name;   // im Bild-Thread lesen (nach SK.Initialize)
+        // Nachtrag Brillentest 23.10.2026: nur EIN sichtbarer Zeigestrahl – den von StereoKit (Fernbedienung der Fenster) aus, die App zeichnet den Zeiger
+        // des Systems selbst (Rueckmeldung.Strahl). Die Anzeige wird nur mit dem Finger bedient (Schalter «Drehen»).
+        UI.EnableFarInteract = false;
     }
 
     readonly string geraet;
@@ -285,7 +296,17 @@ sealed class QuestApp
             if (w.TryGetProperty("auftrag", out var a) && a.ValueKind == JsonValueKind.Object) AuftragEmpfangen(a);
         };
         k.Auftrag += AuftragEmpfangen;
-        k.Stellschraube += (s, w) => Melden($"Stellschraube vom PC: {s} = {w.GetRawText()} (wirkt ab P5)");
+        k.Stellschraube += (s, w) =>
+        {
+            var wert = w.ValueKind == JsonValueKind.Undefined ? "null" : w.GetRawText();
+            var kopie = w.ValueKind == JsonValueKind.Undefined ? default : w.Clone();
+            amBild.Enqueue(() =>
+            {
+                if (begehen.MitStellschraube(s, kopie) is { } neu) { begehen = neu; Hinweis($"Stellschraube vom PC: {s} = {wert}"); }
+                else if (haltung.MitStellschraube(s, kopie) is { } h) { haltung = h; Hinweis($"Stellschraube vom PC: {s} = {wert}"); }
+                else Hinweis($"Stellschraube vom PC: {s} = {wert} (wirkt ab P5)");
+            });
+        };
         k.Fehler += m => Melden("Kanal: " + m);
         k.ZustandGeaendert += z =>
         {
@@ -394,19 +415,11 @@ sealed class QuestApp
     }
 
     /// <summary>
-    /// Geschoss, in dem man steht: das oberste, dessen Kote höchstens 0,3 m über dem Standboden liegt; darunter das unterste. Standboden = Höhe des
-    /// Rigs (steht auf OK Boden; Springen behält sie, ein Auftrag setzt sie auf den Boden des Raums) – nicht die Kopfhöhe: Brillentest 23.10.2026,
-    /// die abgelegte Brille (Kopf 0,37 m über Boden) liess die erste Fassung ins Geschoss darunter wechseln. Kote aus /api/xr/geschosse (KICAD-mm).
+    /// Geschoss, in dem man steht (Regel in Hlks.Xr.Modell.GeschossWahl: oberstes mit Kote höchstens 0,3 m über dem Standboden). Standboden = Höhe des
+    /// Rigs, nicht die Kopfhöhe (Brillentest 23.10.2026: die abgelegte Brille liess die erste Fassung ins Geschoss darunter wechseln).
     /// </summary>
-    string? GeschossAmStand()
-    {
-        var liste = stand?.Liste.Geschosse;
-        if (liste is null || liste.Count == 0) return null;
-        var bezugZ = szene?.Bezugspunkt is { Length: >= 3 } b ? b[2] : 0;
-        var fuesseMm = rig.Y * 1000 + bezugZ;
-        var sortiert = liste.OrderBy(g => g.KoteMm).ToList();
-        return (sortiert.LastOrDefault(g => g.KoteMm <= fuesseMm + 300) ?? sortiert[0]).Id;
-    }
+    ListenGeschoss? GeschossAmStand() =>
+        stand?.Liste.Geschosse is { Count: > 0 } liste ? GeschossWahl.AmStand(liste, GeschossWahl.StandbodenMm(rig.Y, szene?.Bezugspunkt)) : null;
 
     string Einblendung()
     {
@@ -429,12 +442,14 @@ sealed class QuestApp
         var kopfRefV = new XVec3(kopfRef.X, kopfRef.Y, kopfRef.Z);
         var kopfWelt = VrLogik.KopfWelt(rig, kopfRefV);
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
+        Haltung(kopf);
 
         if (darstellung is not null && szene is not null)
         {
             Haende(kopf, kopfRefV, kopfWelt, blickWelt);
             if (durchgang!.Pruefen(VrLogik.KopfWelt(rig, kopfRefV))) darstellung.DurchgangSetzen(durchgang.BereicheJeNetz());
-            darstellung.NurGeschoss = GeschossAmStand();
+            geschossAmStand = GeschossAmStand();
+            darstellung.NurGeschoss = geschossAmStand?.Id;
             darstellung.Zeichnen(Matrix4x4.Invert(RigMatrix, out var inv) ? inv : Matrix4x4.Identity);
             PoseSenden(kopf, kopfWelt);
             letzterKopf = (kopfWelt, blickWelt);
@@ -459,9 +474,31 @@ sealed class QuestApp
         var hz = bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0;
         return string.Create(CultureInfo.InvariantCulture,
             $"Gerät={Device.Name}, Bildrate={hz:0} Hz, Bildzeit={bildzeit.Mittel:0.0} ms (höchstens {bildzeit.Maximum:0.0}), Rechenzeit={rechenzeit.Mittel:0.00} ms, " +
-            $"Geschoss={darstellung?.NurGeschoss ?? "alle"}, Netze={darstellung?.GezeichnetNetze ?? 0} von {darstellung?.Netze ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, Durchgang={durchgang?.Nah.Count ?? 0}, Verbindung={verbindungText}, " +
+            $"Geschoss={geschossAmStand?.Kennzeichen ?? "alle"}, Netze={darstellung?.GezeichnetNetze ?? 0} von {darstellung?.Netze ?? 0}, " +
+            $"Aufrufe={darstellung?.GezeichnetAufrufe ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, " +
+            $"Durchgang={durchgang?.Nah.Count ?? 0} (Wechsel höchstens {darstellung?.DurchgangMaxMs ?? 0:0.0} ms), Haltung={drehen.Haltung}, Drehen={(drehen.Drehen ? "ein" : "aus")}, Hand={(drehen.VonHand is not null ? "ja" : "nein")}, " +
+            $"Strahl={(rechts.StrahlVomSystem || links.StrahlVomSystem ? "System" : "Schulter")}, Verbindung={verbindungText}, " +
             $"Modell={modellWeg}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}, " +
             $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}");
+    }
+
+    // --------------------------------------------------------------------------------------------------- Haltung und Drehen
+
+    /// <summary>
+    /// Haltung aus der echten Kopfhöhe über dem physischen Boden (Referenzraum der Brille, OriginMode.Floor bzw. Stage; nicht das Rig, nicht das Modell) und
+    /// daraus Drehen ein/aus (Hlks.Xr.DrehenSchalter). Ohne Bodenbezug gilt stehend; das steht einmal im Protokoll.
+    /// </summary>
+    void Haltung(Pose kopf)
+    {
+        var boden = World.OriginMode is OriginMode.Floor or OriginMode.Stage;
+        var vorher = (drehen.Sitzend, drehen.Drehen);
+        DrehenSchalter.Schritt(drehen, Time.Total, kopf.position.y, boden, haltung);
+        if (!boden && !ohneBodenGemeldet)
+        {
+            ohneBodenGemeldet = true;
+            Console.WriteLine($"{AppName}: Hinweis: kein Bodenbezug (OriginMode {World.OriginMode}) – Haltung «stehend», Drehen aus; der Schalter «Drehen» übersteuert.");
+        }
+        if (drehen.Sitzend != vorher.Sitzend) Hinweis($"Haltung erkannt: {drehen.Haltung} – Drehen {(drehen.Drehen ? "ein" : "aus")}.");
     }
 
     // --------------------------------------------------------------------------------------------------- Hände
@@ -472,7 +509,8 @@ sealed class QuestApp
         {
             var h = Input.Hand(handed);
             Dictionary<string, XVec3>? g = h.IsTracked ? HandGelenke.AusStereoKit((f, j) => Welt(h[f, j].position), Welt(h.wrist.position)) : null;
-            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y))
+            var aim = Zeiger(handed);
+            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehen, drehen.Drehen))
             {
                 switch (e.Art)
                 {
@@ -494,9 +532,24 @@ sealed class QuestApp
                         break;
                 }
             }
-            if (z.Pinch && !z.Gedreht && z.Strahl is { } s)
-                rueck.Ziel(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), z.Ziel is { } zz ? Sk(zz.Punkt) : null);
+            // der eine sichtbare Strahl: der Zeiger des Systems (bzw. der Rückfall), solange die Hand erkannt ist; beim Zielen bis zum Ziel
+            if (h.IsTracked && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
+                rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
         }
+    }
+
+    /// <summary>
+    /// Zeigestrahl des Systems für eine Hand in der Szene: der Zeiger von StereoKit (Input.Pointer, Quelle Hand), den StereoKit aus der Aim-Pose der Laufzeit
+    /// bildet – derselbe Strahl, den StereoKit sonst als feine weisse Linie zeigt (Brillentest 23.10.2026). null, wenn er nicht verfolgt wird (dann gilt in
+    /// HandBegehen der Rückfall über die Schulter).
+    /// </summary>
+    (XVec3 Ursprung, XVec3 Richtung)? Zeiger(Handed handed)
+    {
+        var quelle = handed == Handed.Left ? InputSource.HandLeft : InputSource.HandRight;
+        if (Input.PointerCount(quelle) == 0) return null;
+        var p = Input.Pointer(0, quelle);
+        if (!p.tracked.IsActive() || p.ray.direction.LengthSq < 1e-12f) return null;
+        return (Welt(p.ray.position), (XVec3)Vector3.TransformNormal(p.ray.direction, RigMatrix));
     }
 
     Matrix4x4 Inverse() => Matrix4x4.Invert(RigMatrix, out var inv) ? inv : Matrix4x4.Identity;
@@ -563,11 +616,25 @@ sealed class QuestApp
         UI.PopTint();
         var ort = Einblendung();
         if (ort.Length > 0) UI.Text(ort);
+        else if (geschossAmStand is not null) UI.Text($"Geschoss {geschossAmStand.Kennzeichen}");
         else if (darstellung is null) UI.Text("Modell wird geladen …");
         if (Time.Total < hinweisBis && hinweis.Length > 0) UI.Text(hinweis);
         if (darstellung is not null)
+        {
             UI.Text(string.Create(CultureInfo.InvariantCulture,
-                $"Pinch auf den Boden: springen · Pinch + Wisch: drehen\n{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
+                $"Pinch auf den Boden: springen{(drehen.Drehen ? " · Pinch + Wisch: drehen" : "")}\n{geschossAmStand?.Kennzeichen ?? "alle"} · " +
+                $"{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
+            // Schalter «Drehen» (Christian 23.10.2026: «der schalter soll drehen ein oder ausschalten», «damit kann die sitzposition übersteuert werden»):
+            // zeigt den wirksamen Zustand; Antippen mit dem Finger übersteuert die Automatik bis zum nächsten Haltungswechsel; nicht über den Neustart gemerkt
+            var ein = drehen.Drehen;
+            if (UI.Toggle("Drehen", ref ein))
+            {
+                DrehenSchalter.Umschalten(drehen, ein);
+                Hinweis(ein ? "Drehen ein (von Hand): Pinch + Wisch dreht um 30°." : "Drehen aus (von Hand).");
+            }
+            UI.SameLine();
+            UI.Text($"Drehen: {drehen.Text}");
+        }
         UI.WindowEnd();
         Hierarchy.Pop();
     }
@@ -596,8 +663,12 @@ sealed class QuestApp
         summeBild += Time.Stepf;
         summeRechnen += rechnen;
         if (gemessen < o.PruefBilder) return;
+        var jeGeschoss = darstellung.AufrufeJeGeschoss();
         var z = string.Create(CultureInfo.InvariantCulture,
-            $"Netze={darstellung.Netze}, Dreiecke={darstellung.Dreiecke}, mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
+            $"Geschoss={geschossAmStand?.Kennzeichen ?? "alle"}, gezeichnet Netze={darstellung.GezeichnetNetze}, Aufrufe={darstellung.GezeichnetAufrufe}, " +
+            $"Dreiecke={darstellung.GezeichnetDreiecke}; alle Geschosse Netze={darstellung.Netze}, Blöcke={darstellung.Bloecke} (grösster {darstellung.GroessterBlock} Dreiecke, " +
+            $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
+            $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
             $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}");
         Console.WriteLine("P4 Laden: " + ladeText);
@@ -616,15 +687,27 @@ sealed class QuestApp
         rig = VrLogik.RigDrehen(rig, kv, -VrLogik.SnapGrad);
         var gedreht = VrLogik.KopfWelt(rig, kv);
         var teleport = Math.Abs(nachher.X - ziel.X) < 1e-6 && Math.Abs(nachher.Z - ziel.Z) < 1e-6 && gedreht.Abstand(nachher) < 1e-6;
-        var wand = szene!.DurchgangsBauteile.FirstOrDefault();
+        // Durchgang an einer Wand im grössten Netz (Test_praxis: IFC-Unterlage EG): Dauer des Wechsels mit Blöcken (erster Wechsel legt die durchscheinenden Netze
+        // an, der zweite ist der übliche Fall), im Vergleich das Neuladen des ganzen Netzes – die Lage vor den Blöcken (Nachtrag Brillentest: 24 ms statt 13,9 ms)
+        var gross = szene!.Netze.Where(n => !Ausgeblendet.Contains(n.Daten.Gruppe)).MaxBy(n => n.Daten.Dreiecke);
+        var wand = szene.DurchgangsBauteile.FirstOrDefault(e => gross is not null && e.Bereiche.Any(b => b.Netz == gross.Nr)) ?? szene.DurchgangsBauteile.FirstOrDefault();
         var durch = "keine Wand";
         if (wand is not null)
         {
             var test = new DurchgangVerfolger(szene);
             test.Pruefen(XVec3.Mitte(wand.Box.Min, wand.Box.Max));
-            durch = test.Nah.Count > 0 ? "ja" : "nein";
-            darstellung!.DurchgangSetzen(test.BereicheJeNetz());
+            var je = test.BereicheJeNetz();
+            darstellung!.DurchgangSetzen(je);
+            var erster = darstellung.DurchgangMs;
             darstellung.DurchgangSetzen(new());
+            darstellung.DurchgangSetzen(je);
+            var (ein, bloecke) = (darstellung.DurchgangMs, darstellung.DurchgangBloecke);
+            darstellung.DurchgangSetzen(new());
+            var aus = darstellung.DurchgangMs;
+            var ganz = darstellung.GanzesNetzNeuLaden();
+            durch = string.Create(CultureInfo.InvariantCulture,
+                $"{(test.Nah.Count > 0 ? "ja" : "nein")} ({wand.Teil} {wand.Art}, {test.Nah.Count} Bauteile nah; Wechsel {ein:0.00} ms mit {bloecke} Blöcken neu, " +
+                $"zurück {aus:0.00} ms, erster Wechsel {erster:0.00} ms; ganzes Netz mit {ganz?.Dreiecke ?? 0} Dreiecken neu laden {ganz?.Ms ?? 0:0.00} ms)");
         }
         // Gegenprobe: dieselbe GLB mit dem Lader von StereoKit – dessen Hüllbox ist um die Hochachse gedreht (Befund P2); der eigene Leser nicht
         var teil = stand!.Teile.FirstOrDefault(t => t.Teil == GlbZwischenspeicher.TeilModell);
