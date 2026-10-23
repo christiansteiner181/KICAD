@@ -159,6 +159,32 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 | P7 | **KICAD «Quest verbinden»:** Knopf «App installieren/aktualisieren» mit Kopplung; 3D-Ansicht am PC zeigt die Brille (Figur mit Blickrichtung) | hlks-modul | P3 |
 | P8 | Tests ausführen, Testbericht | hlks-test | P1–P7 |
 
+**Stand P0 (23.10.2026, Hauptlauf):**
+- **Installiert** (Freigabe Christian 23.10.2026):
+  - .NET-Workload «android» 36.1.118 (Workload-Fassung 10.0.402.1) in `C:\Program Files\dotnet`, mit Administratorrechten.
+  - Microsoft OpenJDK 17.0.20.1 (SHA256 geprüft). Die Workload verlangt Java 17.0 bis 21.x.
+  - Android SDK mit Build-Tools 36.0.0, Plattform Android 36, Platform-Tools und Kommandozeilenwerkzeugen. Die Lizenz
+    «android-sdk-license» hat Christian angenommen.
+  - JDK (`jdk-17`) und SDK (`android-sdk`) liegen unter `%USERPROFILE%\HLKS_CAD_werkzeuge` (nicht im Repo, nicht auf OneDrive), die
+    Protokolle unter `logs`.
+- **App-Gerüst** `src/Hlks.Quest`:
+  - Aufbau nach der Vorlage StereoKit.Templates 0.10.0 (MIT). Sie zielt bereits auf .NET 10 mit StereoKit 0.3.11; damit ist die
+    Frage zur Verträglichkeit geklärt.
+  - Zwei Projekte mit denselben Quellen: `Hlks.Quest.csproj` (PC, Simulator) und `Projects/Android/Hlks.Quest.Android.csproj` (Brille).
+  - Daten der Brillen-Fassung: android-arm64, minSdk 29, targetSdk 32, App-Kennung `ch.hkplanung.kicad.quest`, Name «KICAD», Recht
+    INTERNET.
+  - Bewusst nicht in `HLKS_CAD.slnx`, damit Bauten ohne Android-Workload (Cloud, `stand_pruefen`) nicht brechen.
+- **Geprüft:**
+  - Beide Bauten laufen ohne Warnungen aus der Kommandozeile.
+  - Simulator am PC: `dotnet Hlks.Quest.dll --pruefen 120` meldet «P0 ok: Bilder=120, mittlere Bildzeit=17.5 ms, Gerät=Simulator».
+  - Die APK `ch.hkplanung.kicad.quest-Signed.apk` (5,5 MB, Testschlüssel) liegt unter
+    `%USERPROFILE%\HLKS_CAD_build\Hlks.Quest.Android\bin\Release\net10.0-android\publish`.
+  - Damit ist **K4 am PC erfüllt**.
+- **Fallstrick:** `DOTNET_ROOT` zeigt bei Christian dauerhaft auf `C:\Users\chris\.dotnet` (nur .NET 8). Die `.exe` der PC-Fassung findet
+  deshalb .NET 10 nicht. Start mit `"C:\Program Files\dotnet\dotnet.exe" Hlks.Quest.dll`.
+- **Offen in P0:** Installation auf der Quest und erster Start in der Brille (Hände, Darstellung, Bildrate). Nur nach Absprache mit
+  Christian.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
