@@ -1,6 +1,6 @@
 # Modul XR – KICAD in der VR-Brille (Meta Quest)
 
-Stand 22.10.2026 · Hauptlauf · Christian 21.10.2026: «wir fassen das zusammen als Modul XR». Hier sind die Ideen N23–N26 aus
+Stand 23.10.2026 · Sitzung Quest App · Christian 21.10.2026: «wir fassen das zusammen als Modul XR». Hier sind die Ideen N23–N26 aus
 `vorrat_freitag.md` zusammengefasst.
 
 ## Übertheme «Quest App» (Entscheid Christian 22.10.2026)
@@ -22,34 +22,148 @@ Christian: «wir packen das vr thema zusammen, und behandeln das gesamtheitlich 
 - **Was bleibt:** Der KICAD-Server am PC ist die einzige Quelle für Modell, Befehle, Pakete, Rückgängig und Abgleich («eine Tür»). Die
   App ist ein weiterer Client wie die Oberfläche am PC.
 
-### Grundsatzentscheide für Freitag
-1. **Technik der App.** Vorschlag des Hauptlaufs; Lizenzen und Reife vor dem Entscheid prüfen:
+### Grundsatzentscheide (Christian 23.10.2026)
+Gefällt im Fragefenster am 23.10.2026, nach der Prüfung mit Quellen weiter unten.
 
-   | Weg | Für | Gegen |
-   | --- | --- | --- |
-   | **StereoKit** (C#/.NET, MIT, OpenXR, Android-Build für Quest) | dieselbe Sprache wie der Kern; Hände, Fenster und Panels eingebaut; schlank | kleinere Gemeinschaft, weniger Grafik-Komfort |
-   | **Unity** mit OpenXR bzw. Meta XR SDK (C#) | am meisten verbreitet für Quest, beste Werkzeuge für Hände, Leistung und Passthrough | Lizenz: Unity Personal nur unter einer Umsatzgrenze, für H+K vermutlich Unity Pro mit Kosten je Platz |
-   | **Godot 4** (MIT, OpenXR) | frei, Quest-Unterstützung vorhanden | C#-Export für Android jünger |
-   | **verpackte Web-App** (PWA/TWA der heutigen `/vr`) | schnellstes Icon | dieselben Grenzen wie der Browser; höchstens Zwischenschritt |
+| Frage | Entscheid | Folge |
+| --- | --- | --- |
+| Technik | **StereoKit** (C#/.NET, MIT, OpenXR) | Unity entfällt als Gegenprobe (Pflicht zur Lizenz Unity Industry). Gegenprobe **Godot 4** nur, wenn der Prototyp die Prüfkriterien K1 oder K2 verfehlt. Die Rechenregeln liegen in einer eigenen C#-Bibliothek ohne StereoKit (`Hlks.Xr`); ein Wechsel der Technik trifft die Logik nicht. |
+| Verbindung | **Sofort WLAN mit Kopplung und TLS**, schon im Prototyp | adb nur noch für Installation und Notfall. KICAD bekommt einen zweiten Zugang im Büronetz nur für die App: eigener Port, HTTPS, nur gekoppelte Brillen, nur `/api/xr/…`. Alles andere bleibt auf localhost. Sicherheitsprüfung durch hlks-pruefer vor dem ersten Brillentest; Abgleich mit Phase 0 (Sicherheit). |
+| Verteilung | **KICAD installiert die App** per adb | Knopf «App installieren/aktualisieren» im Dialog «Quest verbinden». Der Entwicklermodus bleibt nötig. Kein Store; die Geräteverwaltung von Meta nimmt seit 20.02.2026 keine Neukunden mehr an. |
+| Mehrbenutzer | **Protokoll mehrbenutzerfähig, PC sieht die Brille** | Die Verbindung ist ein Live-Kanal mit Teilnehmern. Version 1: eine Brille; die 3D-Ansicht am PC zeigt Standort und Blickrichtung der Brille. Zweite Brille später (XR-G). |
+| Bedienung | **Hände zuerst** (Leitlinie unten), **Leitbild schwebende Apps mit Wischgesten** | Jede Hauptfunktion direkt mit den Händen. Christian, 23.10.2026: «meine vision ist es bsp auch eine art wischgesten zu verwenden. ev. nicht ein tablet sondern schwebende apps die ich berühren kann. so dass die prezision weniger ein thema wird.» Statt eines Tablets gibt es grosse, schwebende Apps, die man direkt berührt und mit Wischgesten bedient. Das Tablet läuft im Labor als Vergleichsvariante. Ton und Licht melden jeden Fang, Griff und jede Berührung. |
+| Umfang Version 1 | **Wie vorgeschlagen, plus Problem-Marker** | Verbinden und Kopplung, Auftrag vom PC und Autostart, Begehen (XR-A), Sitzungsraum (XR-H), Messen (XR-C), Problem-Marker (XR-E), PC sieht Brille. Danach XR-B, XR-D, XR-F, XR-G. |
+| Sitzungsraum | **Beides, Passthrough prüfen** | Der virtuelle Raum bleibt. Im Prototyp wird geprüft, ob das Modell per Passthrough auf dem echten Tisch stehen kann (Umschalter). Christian, 23.10.2026: «dein vorschlag mit dem pass habe ich mir auch gedacht. Bsp. raum in VR zeigen. Es der raum erscheint auf dem tisch.» → «Raum zeigen (VR)» stellt den Raumausschnitt auf den echten Tisch. |
+| Prüfung | **Kurz gemischt** | Die App misst jede Prüfaufgabe (Zeit, Fehlgriffe, Abbrüche). Danach am PC SUS, NASA-TLX und drei Fragen zu Komfort und Übelkeit (etwa 3 Minuten), dazu Christians Bemerkungen. Daraus entsteht eine Trendlinie je Version. Deutsche Fassungen der Fragebogen nur mit Quelle. |
 
-   - **Empfehlung:** StereoKit an einem kleinen Prototyp prüfen (Modell laden, Begehen, Hände), mit Unity als Gegenprobe bei Grafik und
-     Leistung. Die reinen Rechenregeln aus `vr-logik.js` und `xr-*-logik.js` lassen sich nach C# übertragen, Tests eingeschlossen.
-2. **Verbindung zwischen App und KICAD am PC:**
-   - Heute läuft sie über `localhost` mit `adb reverse`: sicher, aber an adb gebunden.
-   - Für die App: direkt im Büronetz (WLAN) mit einmaliger **Kopplung** (Code am PC bestätigen) und **TLS**. Sonst bleibt der Server nur
-     lokal erreichbar.
-   - Daten: kompaktes Binärformat je Geschoss (z. B. glTF/GLB) mit Zwischenspeicher in der App statt JSON.
-3. **Verteilung:** ohne Store.
-   - Entweder per adb bzw. Meta Quest Developer Hub (der Entwicklermodus bleibt nötig).
-   - Oder über die Geräteverwaltung von Meta für Firmen; Kosten und Konten prüfen.
-4. **Mehrbenutzer (XR-G)** von Anfang an mitdenken: Die App-Verbindung ist der Live-Kanal für Positionen, Zeigestrahl und gemeinsame
-   Etagenwahl.
-5. **Umfang der Version 1:**
-   - Verbinden und Kopplung, Auftrag vom PC und Autostart;
-   - Begehen (XR-A);
-   - Sitzungsraum mit Griffen, Etagen und Ausschnitt (XR-H);
-   - Tablet mit Messen (XR-C).
-   - Danach: Greifen (XR-B), Marker (XR-E), Sprache (XR-D), Skizze (XR-F), Mehrbenutzer (XR-G).
+### Leitlinie Bedienung (Christian 23.10.2026)
+Christian: «nehme dies als grundsätzliche leitlinie». Quelle: Hughes, C. L.; Karwowski, W.: *Evaluating interaction design and user
+experience in augmented reality: a systematic review.* Frontiers in Virtual Reality 6 (2025), doi:10.3389/frvir.2025.1710161
+(86 Studien 2013–2024, abgerufen 23.10.2026).
+
+Was daraus für die Quest App gilt:
+- **Natürlich vor WIMP** (Fenster, Symbole, Menüs, Zeiger): Bedient wird durch Zeigen, Greifen, Gehen und direktes Verschieben. Fenster
+  und Menüs (Tablet) gibt es nur als Hilfe, wo Genauigkeit, Erlernbarkeit oder ein Rückfallweg nötig sind (Abschnitte 7 und 8).
+- **Mischsysteme wirken über ihren natürlichen Teil:** Die Vorteile der häufigsten Mischsysteme kommen aus Geste, Sprache und Blick,
+  nicht aus dem Menü (Abschnitt 3.4).
+- **Mehrere Sinne:** Rückmeldung mit Ton und Licht, mit Controllern auch mit Vibration (Abschnitt 7).
+- **Auf den Zusammenhang bezogen:** Die Bedienung passt sich an Standort, Aufgabe und Umgebung an, z. B. die Eigenschaften des Elements,
+  auf das man zeigt, statt einer festen Liste (Abschnitt 7).
+- **Gemischt prüfen:** Fragebogen (SUS, NASA-TLX) zusammen mit gemessenen Aufgaben und Beobachtung. Komfort, Präsenz und
+  Zusammenarbeit gehören auch dazu (Abschnitte 3.6, 6, 8).
+- **Grenze:** Die Übersicht behandelt AR (vor allem HoloLens 2 und Handys). Für VR auf der Quest gilt sie sinngemäss; mit Passthrough ist
+  die Quest 3 selbst ein AR-Gerät.
+
+Folgen für das Pflichtenheft (XR-A bis XR-H):
+- Teleport mit Zeigen und Pinch.
+- Etage direkt am Modell wählen, z. B. mit einem Wisch nach oben oder unten.
+- Messen als Massband, das man zwischen zwei Punkten aufzieht.
+- Eigenschaften dort, wo man hinzeigt.
+- **Schwebende Apps statt Tablet** (Christians Leitbild):
+  - Grosse Kacheln schweben im Griffbereich und werden mit dem Finger berührt.
+  - Wischen blättert, wechselt und schliesst.
+  - Grosse Ziele und ein Fang zum nächsten Ziel machen Genauigkeit unnötig.
+  - Welche Apps es gibt (z. B. Etagen, Messen, Marker, Eigenschaften, Rückgängig), klärt das Labor.
+  - Das heutige Tablet (XR-C) bleibt Vergleichsvariante, bis das Labor entschieden hat.
+
+### Prüfung der Technik (23.10.2026, mit Quellen)
+- **Unity:**
+  - Firmen aus Architektur, Planung und Bau gelten als «Industry Customer». Ab 1 Mio. USD «Total Finances» ist Unity Industry Pflicht,
+    der Preis gibt es nur auf Anfrage.
+  - Unity Personal ist für solche Firmen ausgeschlossen.
+  - Quellen: Unity Support, «What is an Industry Customer»
+    (https://support.unity.com/hc/en-us/articles/32263121729172-What-is-an-Industry-Customer); Unity, «Changes to Unity subscription plans
+    and pricing» (https://unity.com/products/pricing-updates).
+- **StereoKit:**
+  - MIT, C#, OpenXR; unterstützt die Meta Quest mit Hand-Tracking.
+  - Letzte Version: v0.3.11 vom 28.06.2025 (Fehlerbehebung), davor v0.3.10 vom 22.02.2025. Die Version v0.4 mit grösseren Änderungen ist
+    seit 2024 in Arbeit.
+  - Es gibt einen Hauptentwickler, etwa eine Version pro Jahr.
+  - Quellen: https://github.com/StereoKit/StereoKit/releases, https://stereokit.net.
+  - Folge: Version auf 0.3.11 festlegen und die Logik getrennt halten. Ob StereoKit 0.3.11 mit .NET 10 für Android baut, prüft P0.
+- **Godot 4:**
+  - MIT; Quest mit Hand-Tracking und Passthrough über das OpenXR-Vendors-Plugin (Godot-Doku «Deploying to Android»,
+    https://docs.godotengine.org/en/4.1/tutorials/xr/deploying_to_android.html).
+  - Stand von C# auf Android: nicht geprüft.
+- **Leistung Quest 3:**
+  - Meta empfiehlt höchstens 1,5 Mio. Dreiecke und 200 Zeichenaufrufe je Bild, bei mindestens 72 Hz (empfohlen 90 Hz).
+  - Quelle: Meta, «Device optimization comparison» (https://developers.meta.com/horizon/resources/device-optimization-comparison/).
+  - Test_praxis (843 000 Dreiecke) passt hinein, wenn die Geometrie je Geschoss und Material zusammengefasst wird. Mit einem Netz je
+    Element sprengen die Zeichenaufrufe das Budget.
+- **Verteilung:**
+  - Meta verkauft seit 20.02.2026 keine «Horizon Managed Services» mehr und nimmt keine Neukunden an. Bestehende Kunden werden bis
+    04.01.2030 betreut.
+  - Quellen: heise (https://www.heise.de/en/news/Meta-Quest-Official-VR-office-app-and-B2B-program-discontinued-11144019.html);
+    SiliconANGLE, 16.01.2026
+    (https://siliconangle.com/2026/01/16/meta-stop-selling-quest-headsets-businesses-discontinue-multiple-vr-features/).
+- Alle Quellen abgerufen am 23.10.2026.
+
+### Prototyp: Interface-Labor (Entwurf zur Freigabe, 23.10.2026)
+Christian, 23.10.2026: «ich möchte vor eine art testumgebung für das optimieren des interfaces.» Der Prototyp wird deshalb als
+**Interface-Labor** gebaut. Es ist die erste Fassung der App, in der die Bedienung erprobt und verbessert wird, bevor die Funktionen der
+Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände; dazu das Labor.
+
+**Was das Labor kann:**
+- **Testraum mit Prüfaufgaben:** Die Aufgaben spielen an Test_praxis (ein Geschoss, mit IFC-Unterlage) und an einem neutralen Raum.
+  Den Katalog liefert KICAD als JSON. Beispiele:
+  - an eine Markierung teleportieren
+  - um 90° drehen
+  - das Modell greifen, drehen und auf einen Zielmassstab zoomen
+  - eine Etage wählen
+  - von Wand zu Wand messen
+  - auf dem Tablet einen Wert ablesen
+- **Schwebende Apps und Wischgesten** (Christians Leitbild) als Hauptvariante:
+  - Grosse Kacheln im Griffbereich, die man direkt berührt.
+  - Wischen nach links/rechts blättert, nach oben/unten wechselt die Etage, Wegwischen schliesst.
+  - Fang zum nächsten Ziel.
+  - Vergleich mit dem Tablet an der Hand aus dem Browser-Prototyp.
+- **Varianten je Bedienung, umschaltbar (A/B):** z. B. schwebende Apps oder Tablet; Teleport mit Zeigen und Pinch oder mit Stick; Etage
+  per Wisch am Modell oder per App; Messband aufziehen oder zwei Punkte setzen.
+- **Stellschrauben live vom PC:** Die Seite «XR-Labor» in KICAD zeigt die Grössen, die die Bedienung bestimmen, z. B.:
+  - Pinch-Schwelle und Fangradius
+  - Grösse, Abstand und Anordnung der schwebenden Apps, Schriftgrösse
+  - Wischgesten: Mindestweg, Mindesttempo und Richtungstoleranz
+  - Winkel beim Drehen in Schritten, Ton an/aus
+  - Änderungen wirken sofort in der Brille. Gute Werte werden als Profil gespeichert und gelten dann für die App.
+- **Messung:** Die App protokolliert jede Aufgabe mit Zeit, Fehlgriffen, Abbrüchen, Variante und Stellschrauben. Die Seite «XR-Labor»
+  vergleicht die Varianten und zeigt den Verlauf je Fassung. Nach dem Test folgt der Fragebogen am PC (Entscheid «Prüfung»).
+- **Simulator am PC:** Dieselbe App läuft am PC im Simulator von StereoKit mit Maus-Händen. Damit lässt sie sich ohne Brille prüfen, und
+  automatische Tests werden möglich. Laut StereoKit vorhanden; in P0 bestätigen.
+- **Passthrough-Probe:** Umschalter «echter Tisch» für den Sitzungsraum (Entscheid «Sitzungsraum»). Prüffall nach Christian: Am PC
+  «Raum zeigen (VR)» wählen, dann erscheint der Raumausschnitt auf dem echten Tisch vor der Brille.
+  - Die Tischhöhe wird durch einmaliges Antippen des Tisches mit der Hand festgelegt.
+  - Zu prüfen: Erkennt die Raumerkennung der Quest (Raumeinrichtung mit Tisch) den Tisch selbst?
+
+**Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
+
+| Nr. | Aufgabe | Wer | Hängt ab von |
+| --- | --- | --- | --- |
+| P0 | **Bauumgebung und Durchstich:** .NET-Workload für Android, JDK, Android SDK; StereoKit 0.3.11 mit .NET 10 (sonst die App allein auf einer älteren .NET-Version); leere App auf der Quest und im Simulator am PC; Bau aus der Kommandozeile. Downloads und SDK-Lizenz nur mit Christians Zustimmung; die Firewall-Regel legt Christian selbst an (Anleitung, nur Profil «Privat») | Hauptlauf | Zustimmung Christian |
+| P1 | **Logik `Hlks.Xr`** (net10.0, ohne StereoKit): Regeln aus `vr-logik.js`, `xr-mess-logik.js`, `xr-sitzung-logik.js` und den Teilen von `xr-greifen-logik.js` für Version 1 nach C#, mit den Tests aus den `*.test.mjs` | hlks-modul | – |
+| P2 | **Modell als GLB je Geschoss:** aus denselben Körpern wie die 3D-Ansicht, zusammengefasst je Material (Ziel: unter 200 Zeichenaufrufe), IFC-Unterlage als eigenes GLB, Versionsschlüssel für den Zwischenspeicher der App; Test mit Test_praxis (Dreiecke, Zeichenaufrufe, Grösse). Bibliothek SharpGLTF (Lizenz prüfen) oder ein eigener schlanker GLB-Schreiber | hlks-kern | – |
+| P3 | **Zugang im Büronetz:** eigener Port mit HTTPS (Zertifikat von KICAD), Kopplung (Schlüssel und Fingerabdruck des Zertifikats gelangen bei der Installation per adb in die App; Ersatzweg: Code am PC bestätigen), Suche des PCs im eigenen Netz, Live-Kanal (WebSocket) mit Teilnehmern, Kopf- und Handpositionen 20–30 je Sekunde, Aufträge, Stellschrauben | hlks-kern | – |
+| P3p | **Sicherheitsprüfung von P3** vor dem ersten Brillentest | hlks-pruefer | P3 |
+| P4 | **App-Gerüst:** verbinden, GLB laden und zwischenspeichern, Begehen mit Händen (Teleport mit Zeigen und Pinch, Drehen, Wände durchscheinend unter 500 mm), Rückmeldung mit Ton und Licht, Passthrough mit «Raum zeigen (VR)» auf dem echten Tisch | hlks-kern | P0, P1, P2, P3 |
+| P5 | **Labor in der App:** schwebende Apps mit Berühren und Wischgesten, Tablet als Vergleich, Prüfaufgaben, Varianten, Stellschrauben über den Kanal, Messprotokoll | hlks-kern | P4 |
+| P6 | **KICAD-Seite «XR-Labor»:** Stellschrauben, Profile, Auswertung der Aufgaben, Fragebogen (SUS, NASA-TLX, Komfort; deutsche Fassung mit Quelle) | hlks-modul | P3 |
+| P7 | **KICAD «Quest verbinden»:** Knopf «App installieren/aktualisieren» mit Kopplung; 3D-Ansicht am PC zeigt die Brille (Figur mit Blickrichtung) | hlks-modul | P3 |
+| P8 | Tests ausführen, Testbericht | hlks-test | P1–P7 |
+
+**Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
+- **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
+  Bildzeit-Protokoll der App.
+- **K2 Hände:** Teleport, Greifen und Pinch klappen zuverlässig. Massstab sind die Fehlgriffe in den Prüfaufgaben und Christians Urteil.
+- **K3 Verbindung:** Nach der Installation verbindet die App im WLAN ohne adb, auch nach einem Neustart der Brille ohne Kabel.
+- **K4 Bau:** Bau und Simulator laufen aus der Kommandozeile, damit Agenten bauen und testen können.
+
+**Abnahme an der Brille:** Der Hauptlauf und Christian an Christians PC mit Test_praxis. Christian löst die Prüfaufgaben, dann folgt der
+Fragebogen; die Befunde gehen in die Stellschrauben-Profile und ins Pflichtenheft. Erst danach geht es weiter mit Version 1.
+
+**Regeln:**
+- Die Quest nur nach Absprache benutzen, nie während Christian sie braucht.
+- Vor jedem Agenten das Kontingent prüfen (Grenze 95 %).
+- Der Code bleibt auf dem Zweig dieser Sitzung; zusammengeführt wird durch die Hauptsitzung mit Christians Zustimmung.
+- Echte Daten (Test_praxis) nur lokal; die Brille lädt sie über den Zugang im Büronetz, nie über die Cloud.
 
 ### Pflichtenheft
 Die Abschnitte XR-A bis XR-H und «Start ohne Link-fähigen PC» unten beschreiben, was der Browser-Prototyp kann und was Christian beim
@@ -223,16 +337,16 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
 
 ## Reihenfolge
 Seit 22.10.2026 gilt das Übertheme «Quest App». Im Gesamtablauf (`entwurf/ablauf.md`) gehört die App in **Phase 1, Grundlagen** – Christian 22.10.2026: «dies nehmen wir in Grundlagen. alle anderen systeme bauen darauf auf.»
-1. Grundsatzentscheide (Technik, Verbindung, Verteilung).
-2. Prototyp der App.
-3. Version 1: Verbinden, Autostart, XR-A, XR-H, XR-C mit Messen.
-4. Danach XR-B, XR-E, XR-D, XR-F, XR-G.
+1. Grundsatzentscheide – gefällt am 23.10.2026 (oben).
+2. Prototyp als Interface-Labor (P0–P8, oben), Abnahme an der Brille.
+3. Version 1: Verbinden und Kopplung, Auftrag vom PC und Autostart, XR-A, XR-H, Messen, XR-E, PC sieht Brille – mit der Bedienung, die
+   das Labor ergeben hat (schwebende Apps oder Tablet).
+4. Danach XR-B, XR-D, XR-F, XR-G.
 
 Jeder Teil wird mit der Brille an Christians PC abgenommen. Der Browser-Prototyp bekommt nur noch Fehlerbehebungen.
 
 ## Offen (Freitag bzw. erster Brillentest)
-- Hand-Tracking über Air Link in Chrome
-- Inhalt des Tablets
+- Welche schwebenden Apps es gibt und wie sie angeordnet sind (klärt das Labor)
 - lokale Spracherkennung
 - Marker als BCF
 - Tastenbelegung bzw. Gesten aus N15/N23 bestätigen
