@@ -260,6 +260,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
     fest.
   - Brille und PC lagen am 21.10. beide in 192.168.1.x; beim Test nochmals prüfen.
   - Messprotokolle höchstens 200 MB je Tag.
+- **Entscheid Christian 23.10.2026: «sicherheit im netzwerk ist kein problem.»** Das Büronetz gilt als vertrauenswürdig. Weitere Härtung des Zugangs (B1–B3, B5–B7, zusätzliche Sicherheitstests, Nachprüfung) entfällt; behoben werden nur B4 (liegengebliebene Schlüsseldateien) und die Texte H1/H2. TLS, Kopplung und Schalter bleiben, wie gebaut.
 - **Auflagen für den ersten Test:** Den Zugang nur während der Testsitzung einschalten. Das Firewall-Skript nur ausführen, wenn
   `-Liste` das Netz als «Privat» zeigt.
 
