@@ -98,7 +98,10 @@ Folgen für das Pflichtenheft (XR-A bis XR-H):
     (https://siliconangle.com/2026/01/16/meta-stop-selling-quest-headsets-businesses-discontinue-multiple-vr-features/).
 - Alle Quellen abgerufen am 23.10.2026.
 
-### Prototyp: Interface-Labor (Entwurf zur Freigabe, 23.10.2026)
+### Prototyp: Interface-Labor (freigegeben von Christian am 23.10.2026)
+Christian, 23.10.2026: «Plan Interface-Labor mit den Ergänzungen freigegeben. Start nach dem Kontingent-Reset mit P0; frag mich vor den
+Downloads nach Quelle und Grösse.»
+
 Christian, 23.10.2026: «ich möchte vor eine art testumgebung für das optimieren des interfaces.» Der Prototyp wird deshalb als
 **Interface-Labor** gebaut. Es ist die erste Fassung der App, in der die Bedienung erprobt und verbessert wird, bevor die Funktionen der
 Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände; dazu das Labor.
