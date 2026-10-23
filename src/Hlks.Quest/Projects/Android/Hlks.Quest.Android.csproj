@@ -32,6 +32,11 @@
 		<PackageReference Include="StereoKit" Version="0.3.11" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<!-- Rechenregeln und Netz-Teil ohne StereoKit (P1, P4a); net10.0, läuft unverändert auf Android. -->
+		<ProjectReference Include="..\..\..\Hlks.Xr\Hlks.Xr.csproj" />
+	</ItemGroup>
+
 	<!-- Android-Ordner auf Platforms\Android zeigen lassen, sonst sucht der Bau im Projektordner. -->
 	<PropertyGroup>
 		<AndroidManifest          >..\..\Platforms\Android\AndroidManifest.xml</AndroidManifest>

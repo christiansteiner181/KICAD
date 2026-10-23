@@ -1,0 +1,121 @@
+using StereoKit;
+
+namespace Hlks.Quest;
+
+/// <summary>
+/// Rückmeldung mit Ton und Licht (Leitlinie Bedienung, Christian 23.10.2026: «Ton und Licht melden jeden Fang, Griff und jede Berührung»):
+///   Pinch      – Klick von StereoKit und ein kurzes Aufleuchten am Pinch-Punkt (cyan);
+///   Ziel       – Strahl von der Hand und ein pulsierender Ring auf dem Boden (nur solange gezielt wird);
+///   Teleport   – aufsteigender Ton, kurzes Abblenden (Komfort: der Sprung ist nicht als Bewegung zu sehen) und ein Ring am Ziel, der sich öffnet;
+///   Drehen     – kurzer Doppelton und ein Aufleuchten an der Hand;
+///   Abbruch    – Klick beim Loslassen von StereoKit, ohne Licht.
+/// Dauer, Farben und Lautstärke sind Annahmen P4a (Stellschrauben im Labor P5). Alle Lagen im Raum von StereoKit.
+/// </summary>
+sealed class Rueckmeldung
+{
+    sealed record Licht(Vec3 Ort, float Start, float Dauer, Color Farbe, float Groesse, bool Ring);
+
+    readonly List<Licht> lichter = [];
+    readonly Sound sprung, dreh;
+    readonly Material leuchten, ring, blende;
+    readonly Mesh ringNetz = Mesh.GenerateCylinder(1, 0.004f, Vec3.Up, 48);
+    float blendeBis = -1, blendeDauer = 0.18f;
+
+    public static readonly Color Cyan = new(0.2f, 0.85f, 1f, 1f);
+    public static readonly Color Gruen = new(0.35f, 1f, 0.55f, 1f);
+
+    public int Ereignisse { get; private set; }
+
+    public Rueckmeldung()
+    {
+        // Teleport: 0.22 s von 440 auf 880 Hz, weich ein- und ausgeblendet
+        sprung = Sound.Generate(t =>
+        {
+            const float Dauer = 0.22f;
+            var huelle = MathF.Min(1, t / 0.02f) * MathF.Max(0, 1 - t / Dauer);
+            return 0.35f * huelle * MathF.Sin(2 * MathF.PI * (440 * t + 220 * t * t / Dauer));   // Frequenz 440 + 440·t/Dauer
+        }, 0.22f);
+        // Drehen: zwei kurze Töne 660 / 990 Hz
+        dreh = Sound.Generate(t =>
+        {
+            var f = t < 0.045f ? 660f : 990f;
+            var lokal = t < 0.045f ? t : t - 0.045f;
+            return 0.3f * MathF.Exp(-lokal * 60) * MathF.Sin(2 * MathF.PI * f * t);
+        }, 0.09f);
+        leuchten = Material.Unlit.Copy();
+        leuchten.Transparency = Transparency.Add;
+        leuchten.DepthWrite = false;
+        ring = leuchten.Copy();
+        ring.FaceCull = Cull.None;
+        blende = Material.Unlit.Copy();
+        blende.Transparency = Transparency.Blend;
+        blende.FaceCull = Cull.Front;           // von innen sichtbar
+        blende.DepthTest = DepthTest.Always;
+        blende.DepthWrite = false;
+        blende.QueueOffset = 100;
+    }
+
+    public void Pinch(Vec3 ort)
+    {
+        Sound.Click.Play(ort, 0.6f);
+        lichter.Add(new Licht(ort, Time.Totalf, 0.25f, Cyan, 0.025f, false));
+        Ereignisse++;
+    }
+
+    public void Abbruch(Vec3 ort)
+    {
+        Sound.Unclick.Play(ort, 0.5f);
+        Ereignisse++;
+    }
+
+    public void Teleport(Vec3 ziel, Vec3 kopf)
+    {
+        sprung.Play(kopf, 0.8f);
+        blendeBis = Time.Totalf + blendeDauer;
+        lichter.Add(new Licht(ziel, Time.Totalf, 0.5f, Gruen, 0.6f, true));
+        Ereignisse++;
+    }
+
+    public void Drehen(Vec3 hand, Vec3 kopf)
+    {
+        dreh.Play(kopf, 0.8f);
+        blendeBis = Time.Totalf + blendeDauer * 0.6f;
+        lichter.Add(new Licht(hand, Time.Totalf, 0.3f, Cyan, 0.05f, false));
+        Ereignisse++;
+    }
+
+    /// <summary>Strahl der zielenden Hand und Ring am Ziel (null = kein gültiges Ziel: kurzer grauer Strahl).</summary>
+    public void Ziel(Vec3 hand, Vec3 richtung, Vec3? ziel)
+    {
+        if (ziel is { } z)
+        {
+            Lines.Add(hand, z, new Color32(80, 220, 255, 200), 0.004f);
+            var puls = 0.22f + 0.03f * MathF.Sin(Time.Totalf * 10);
+            ringNetz.Draw(ring, Matrix.TS(z + Vec3.Up * 0.005f, new Vec3(puls, 1, puls)), new Color(0.2f, 0.8f, 1f, 0.8f));
+        }
+        else Lines.Add(hand, hand + richtung * 1.5f, new Color32(160, 160, 160, 120), 0.003f);
+    }
+
+    /// <summary>Lichter zeichnen und abgelaufene entfernen; die Blende um den Kopf.</summary>
+    public void Zeichnen(Pose kopf)
+    {
+        var jetzt = Time.Totalf;
+        lichter.RemoveAll(l => jetzt - l.Start > l.Dauer);
+        foreach (var l in lichter)
+        {
+            var anteil = (jetzt - l.Start) / l.Dauer;
+            var c = new Color(l.Farbe.r, l.Farbe.g, l.Farbe.b, 1) * (1 - anteil);
+            if (l.Ring)
+            {
+                var g = l.Groesse * (0.3f + anteil);
+                ringNetz.Draw(ring, Matrix.TS(l.Ort + Vec3.Up * 0.01f, new Vec3(g, 1, g)), c);
+            }
+            else Mesh.Sphere.Draw(leuchten, Matrix.TS(l.Ort, l.Groesse * (1 + anteil)), c);
+        }
+        if (jetzt < blendeBis)
+        {
+            var a = (blendeBis - jetzt) / blendeDauer;
+            Mesh.Sphere.Draw(blende, Matrix.TS(kopf.position, 0.6f), new Color(0, 0, 0, Math.Clamp(a, 0, 1)));
+        }
+    }
+}

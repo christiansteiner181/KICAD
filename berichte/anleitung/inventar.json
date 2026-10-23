@@ -10993,6 +10993,50 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Zugang im Büronetz für die Quest App»)"
           ],
           "hinweis": "Server-Teil der Quest App (P3); die Oberfläche (Knopf, Kopplung mit Code, Brille in der 3D-Ansicht) folgt mit P6/P7, die App-Seite mit P4. Zertifikat, Kopplungen und Messprotokolle liegen je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr (nie OneDrive, nie Repository). Nur mit Büronetz, Firewall und Brille zu prüfen; die automatischen Tests laufen auf 127.0.0.1. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_zugang, xr_kopplung, xr_kanal). Schalter je PC (Christian 23.10.2026 «Je PC»): %LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json mit an (Vorgabe aus), port (5140), suchPort (5141) – keine Benutzereinstellung. Über den Zugang holt die Brille auch das Modell als GLB je Geschoss (mit Brotli/gzip komprimiert). Ersatzkopplung ohne Kabel (Weg B, P7): Brille und PC zeigen denselben 6-stelligen Code; nur vergleichen und am PC bestätigen, in der Brille wird nichts eingetippt."
+        },
+        {
+          "id": "zb-quest-app-begehen",
+          "titel": "Quest App: mit KICAD verbinden, Modell laden und mit den Händen begehen (Modul XR, Quest App P4a)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille: App «KICAD» in der App-Bibliothek (Installation und Kopplung folgen mit P7 «Quest verbinden»). Am PC: KICAD auf Port 5130 mit eingeschaltetem Zugang im Büronetz (zb-xr-zugang)."
+          },
+          "schritte": [
+            "Am PC KICAD mit dem Projekt öffnen und den Zugang im Büronetz einschalten (zb-xr-zugang).",
+            "In der Brille die App «KICAD» starten. Die Anzeige unten vor dem Blick zeigt zuerst «Suche KICAD auf <PC> …», dann grün «Verbunden mit <PC>» und «Lade EG modell …».",
+            "Nach dem Laden steht man im Startpunkt: im Raum des letzten VR-Auftrags vom PC, sonst am zuletzt benutzten Standpunkt, sonst im grössten Raum des Erdgeschosses. Die Anzeige nennt Geschoss und Raum.",
+            "Springen: mit der Hand auf den Boden zeigen, Daumen und Zeigefinger zusammenführen und halten. Ein Strahl und ein Ring zeigen das Ziel; Loslassen springt dorthin (Ton, kurzes Abblenden, Ring am Ziel).",
+            "Drehen: Daumen und Zeigefinger zusammen halten und die Hand kurz und schnell nach rechts bzw. links wischen. Die Sicht dreht um 30° in diese Richtung (Doppelton).",
+            "Durch eine Wand gehen: Wände und Decken werden erst unter 50 cm zum Kopf durchscheinend.",
+            "Am PC einen Raum mit Rechtsklick › «In VR begehen (Brille)» wählen: die App setzt einen sofort in diesen Raum, ohne Tipp.",
+            "Ohne PC (PC aus oder ausser Reichweite): die App startet mit dem zuletzt geladenen Modell; die Anzeige ist orange «Ohne PC: Modell vom …». Sie sucht alle 30 s nach dem PC."
+          ],
+          "erwartung": "Die App verbindet ohne Kabel und ohne Eingabe mit dem gekoppelten PC und zeigt das ganze Gebäude mit IFC-Unterlage, ohne die Raumkörper. Ein zweiter Start lädt nur geänderte Geschosse (Versionsschlüssel, 304). Pinch, Sprung und Drehen melden sich mit Ton und Licht. Ein Auftrag vom PC wirkt sofort. Wird die Kopplung am PC widerrufen, zeigt die App rot «neu koppeln» und verbindet nicht mehr. Der PC sieht die Brille in GET /api/xr/teilnehmer (Kopf, Hände, Pinch).",
+          "pruefpunkte": [
+            "Erster Start mit PC: grün «Verbunden mit <PC>», das Modell erscheint, man steht in einem Raum (nicht in einer Wand), Blick waagrecht.",
+            "Springen: das Ziel folgt der Hand; Loslassen springt an die Stelle des Rings, nicht daneben. Ein kurzes Zucken der Finger springt nicht.",
+            "Drehen: ein schneller Wisch dreht genau einmal um 30°; langsames Zielen dreht nicht.",
+            "Vor einer Wand (unter 50 cm) wird sie durchscheinend, mit Abstand wieder undurchsichtig; auch die Wände der IFC-Unterlage.",
+            "Rechtsklick auf einen Raum am PC › «In VR begehen (Brille)»: die App springt in diesen Raum.",
+            "PC aus, App neu starten: orange «Ohne PC: Modell vom …», das Modell ist da; PC wieder an: nach höchstens 30 s grün.",
+            "Bildrate im Protokoll (adb logcat, «P4 Status») mit Test_praxis mindestens 72 Hz (K1).",
+            "Kopplung am PC widerrufen: rot «neu koppeln», keine weiteren Verbindungsversuche."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Sicht in der Brille bzw. im Simulator der PC-Fassung: Raum im EG mit Anzeige unten, Strahl und Ring beim Zielen",
+            "zustand": "Verbunden, Pinch gehalten, Ziel auf dem Boden sichtbar"
+          },
+          "quelle": [
+            "src/Hlks.Quest/QuestApp.cs, ModellDarstellung.cs, Rueckmeldung.cs, Plattform.*.cs",
+            "src/Hlks.Xr/Netz (Kopplung, Pinning, Suche, Kanal, Zwischenspeicher, Umrechnung), src/Hlks.Xr/Modell (GLB, Szene, Durchgang, Räume, Start), src/Hlks.Xr/HandBegehen.cs, HandGelenke.cs",
+            "werkzeuge/quest_pruefen.ps1",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4a»)"
+          ],
+          "hinweis": "Erste Fassung der App (P4a); Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b, Stellschrauben und Labor mit P5, Installation und Kopplung per Knopf mit P7. Alle Schwellen (Pinch, Wisch, Schulter, Verzögerung) sind Annahmen bis zum Brillentest. Am PC prüft werkzeuge\\quest_pruefen.ps1 die App im Simulator (mit und ohne PC). Nur mit der Brille zu prüfen: Hände, Bildrate, WLAN, Ton."
         }
       ]
     }

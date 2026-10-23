@@ -26,4 +26,9 @@
 		<!-- Festgelegt auf 0.3.11 (Entscheid Quest App 23.10.2026, modul-xr.md). -->
 		<PackageReference Include="StereoKit" Version="0.3.11" />
 	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Rechenregeln und Netz-Teil ohne StereoKit (P1, P4a). -->
+		<ProjectReference Include="..\Hlks.Xr\Hlks.Xr.csproj" />
+	</ItemGroup>
 </Project>

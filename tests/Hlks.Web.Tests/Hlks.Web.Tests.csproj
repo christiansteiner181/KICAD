@@ -31,6 +31,8 @@
     <ProjectReference Include="..\Hlks.ClaudeAttrappe\Hlks.ClaudeAttrappe.csproj" />
     <!-- Quest verbinden (Modul XR): die Attrappe statt adb.exe (nie ein echtes adb) -->
     <ProjectReference Include="..\Hlks.AdbAttrappe\Hlks.AdbAttrappe.csproj" />
+    <!-- Quest App P4a: der Netz-Teil der App (Hlks.Xr.Netz) im Integrationstest gegen den echten Netzzugang (XrAppKlientTests) -->
+    <ProjectReference Include="..\..\src\Hlks.Xr\Hlks.Xr.csproj" />
   </ItemGroup>
 
   <ItemGroup>
