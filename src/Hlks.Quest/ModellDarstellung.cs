@@ -44,6 +44,11 @@ sealed class ModellDarstellung
         public required Material DurchMaterial;
         public required bool Sichtbar;
         public required Color Farbe;
+        /// <summary>
+        /// Farbe für den Shader «schnitt» als Instanzfarbe. Mesh.Draw nimmt sie LINEAR, die Tönung des Materials (Material[ColorTint]) aber als GAMMA und rechnet sie
+        /// selbst in linear um. Damit «Schneidet» genau so hell ist wie «Innen», bekommt die Instanz dieselbe Umrechnung (P4b-Nachtrag, Brillentest 23.10.2026).
+        /// </summary>
+        public required Color FarbeLinear;
         public required bool Transparent;
     }
 
@@ -119,7 +124,8 @@ sealed class ModellDarstellung
                 bloecke.Add(new Block { Ab = b.Ab, Anzahl = b.Anzahl, Box = b.Box, Haupt = mesh, Indizes = b.Indizes, Positionen = b.Positionen, Normalen = b.Normalen });
             }
             var sichtbar = !ausgeblendet.Contains(d.Gruppe);
-            teile.Add(new Teil { Netz = sn, Bloecke = bloecke, Material = mat, DurchMaterial = durch, Sichtbar = sichtbar, Farbe = farbe, Transparent = transparent });
+            teile.Add(new Teil { Netz = sn, Bloecke = bloecke, Material = mat, DurchMaterial = durch, Sichtbar = sichtbar, Farbe = farbe, Transparent = transparent,
+                FarbeLinear = Linear(farbe) });
             if (sichtbar)
             {
                 Netze++;
@@ -224,6 +230,16 @@ sealed class ModellDarstellung
         return schnittDicht is null || schnittDurch is null ? null : (schnittDicht, schnittDurch);
     }
 
+    /// <summary>Gamma → linear wie StereoKit für die Tönung (Alpha bleibt).</summary>
+    static Color Linear(Color c)
+    {
+        var l = c.ToLinear();
+        return new Color(l.r, l.g, l.b, c.a);
+    }
+
+    /// <summary>Nur für die Prüfung am PC: alle Blöcke im Sitzungsraum mit dem Shader «schnitt» zeichnen (nichts verworfen), um die Helligkeit zu vergleichen.</summary>
+    public bool SchnittErzwingen { get; set; }
+
     /// <summary>Ist der Shader «schnitt» geladen (Protokoll und Prüfung)?</summary>
     public static bool SchnittShader => SchnittMaterialien() is not null;
 
@@ -252,20 +268,11 @@ sealed class ModellDarstellung
         AusschnittDreiecke = 0;
         if (q is null) return;
         var uhr = Stopwatch.StartNew();
-        var jeNetz = new Dictionary<int, List<uint>>();
-        foreach (var e in szene.Elemente.Values)
-        {
-            if (q.Lage(e.Box) == SchnittLage.Aussen) continue;
-            foreach (var (netz, ab, anzahl) in e.Bereiche)
-            {
-                if (!jeNetz.TryGetValue(netz, out var liste)) jeNetz[netz] = liste = [];
-                liste.AddRange(NetzBloecke.Indizes(szene.Netze[netz].Daten.Indizes, ab, anzahl));
-            }
-        }
+        var jeNetz = SitzungAuswahl.AusschnittIndizes(szene, q);   // ohne Räume, rein und getestet (SitzungAuswahlTests)
         foreach (var t in teile)
         {
-            if (!jeNetz.TryGetValue(t.Netz.Nr, out var ind) || ind.Count == 0) continue;
-            var (pos, nor, i2) = NetzDurchgang.Ausschnitt(t.Netz.Daten.Positionen, t.Netz.Daten.Normalen, [.. ind]);
+            if (!jeNetz.TryGetValue(t.Netz.Nr, out var ind) || ind.Length == 0) continue;
+            var (pos, nor, i2) = NetzDurchgang.Ausschnitt(t.Netz.Daten.Positionen, t.Netz.Daten.Normalen, ind);
             var m = new Mesh { KeepData = false };
             m.SetData(Ecken(pos, nor), i2);
             ausschnitt.Add(new AusschnittNetz(t, m, i2.Length / 3, Huelle(pos)));
@@ -282,8 +289,10 @@ sealed class ModellDarstellung
     {
         int netze = 0, aufrufe = 0, schnitt = 0;
         long dreiecke = 0;
-        var mats = ansicht.Schnitt is null ? null : SchnittMaterialien();
-        if (mats is { } m && ansicht.Schnitt is { } q)
+        // Prüfung (SchnittErzwingen): alles mit dem Shader «schnitt», ohne etwas zu verwerfen – zum Vergleich der Helligkeit gegen das gewöhnliche Material
+        var schnittQ = ansicht.Schnitt ?? (SchnittErzwingen ? SchnittQuader.Oben(SchnittQuader.Weit) : null);
+        var mats = schnittQ is null ? null : SchnittMaterialien();
+        if (mats is { } m && schnittQ is { } q)
         {
             var (u, v, y) = q.ShaderWerte();
             foreach (var mat in new[] { m.Dicht, m.Durch })
@@ -302,7 +311,7 @@ sealed class ModellDarstellung
                 if (!t.Sichtbar || (!unterlage && t.Netz.Teil == GlbZwischenspeicher.TeilUnterlage)) continue;
                 var lage = aq.Lage(a.Box);
                 if (lage == SchnittLage.Aussen) continue;
-                if (lage == SchnittLage.Schneidet && mats is { } mm) { a.Netz.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.Farbe); schnitt++; }
+                if (lage == SchnittLage.Schneidet && mats is { } mm) { a.Netz.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.FarbeLinear); schnitt++; }
                 else a.Netz.Draw(t.Material, welt);
                 aufrufe++;
                 netze++;
@@ -323,11 +332,12 @@ sealed class ModellDarstellung
             foreach (var b in t.Bloecke)
             {
                 if (b.HauptLeer) continue;
-                var lage = ansicht.Schnitt?.Lage(b.Box) ?? SchnittLage.Innen;
+                var lage = schnittQ?.Lage(b.Box) ?? SchnittLage.Innen;
+                if (SchnittErzwingen && lage == SchnittLage.Innen) lage = SchnittLage.Schneidet;
                 if (lage == SchnittLage.Aussen) continue;
                 if (lage == SchnittLage.Schneidet && mats is { } mm)
                 {
-                    b.Haupt.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.Farbe);
+                    b.Haupt.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.FarbeLinear);
                     schnitt++;
                 }
                 else b.Haupt.Draw(t.Material, welt);

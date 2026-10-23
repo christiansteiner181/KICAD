@@ -9,7 +9,8 @@
 //
 // ANNAHMEN (am Brillentest zu bestätigen; alle Werte sind benannt):
 //   Tisch 1.6 × 1.0 m, Plattenoberkante 0.75 m, Vorderkante 0.4 m vor dem Kopf (Mitte also 0.9 m vor dem Kopf); nutzbare Platte mit 0.1 m Rand.
-//   Massstab zu Beginn 1:50 (grösser, wenn das Modell sonst nicht auf die Platte passt, höchstens 1:200); Zoom von 1:200 bis 1:20.
+//   Massstab zu Beginn 1:50 (grösser, wenn das Modell sonst nicht auf die Platte passt, höchstens 1:200); Zoom von 1:200 bis 1:5 (MassstabMin; Prototyp 1:20,
+//   Brillentest Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»).
 //   Griffe (Christian 21.10.2026 nach dem Brillentest: «das ist nicht praktikabel. es braucht griffe. halten nur mit daumen und zeigefinger.»): zwei sichtbare Griffe links und
 //   rechts des Modells (GriffAbstandM ausserhalb der Modellbreite, GriffHoeheM über der Platte), sie wandern mit Lage, Drehung und Massstab des Modells. Gegriffen wird nur
 //   mit einem Pinch (Daumen- und Zeigefingerspitze) bzw. dem Abzug, der höchstens GriffFangM vom Griff entfernt beginnt (Controller auch mit dem Zielstrahl), und bis zum
@@ -98,7 +99,9 @@ public static class XrSitzungLogik
     public const double RaumHoehe = 3.2;
     public const double RaumHinten = 1.5;
     public const double MassstabStart = 50;
-    public const double MassstabMin = 20;
+    /// <summary>Feinster Massstab beim Zoomen (Nenner), die eine Stelle dafür. Prototyp 1:20; Brillentest Christian 23.10.2026: «die modellansichten sollten &gt;1:20 gezoomt werden
+    /// können» → 1:5 (Hauptlauf). Stellschraube im Labor P5.</summary>
+    public const double MassstabMin = 5;
     public const double MassstabMax = 200;
 
     public const double GriffAbstandM = 0.06;      // m: Abstand eines Griffs zur Modellbreite (aussen, in der Lage des Modells gemessen)
@@ -145,7 +148,7 @@ public static class XrSitzungLogik
 
     // ------------------------------------------------------------------------------------------------------ Massstab und Lage
 
-    /// <summary>xr-sitzung-logik.js massstabBegrenzen: Massstab auf 1:20 … 1:200; ungültige Werte fallen auf 1:50.</summary>
+    /// <summary>xr-sitzung-logik.js massstabBegrenzen: Massstab auf 1:MassstabMin (1:5) … 1:200; ungültige Werte fallen auf 1:50.</summary>
     public static double MassstabBegrenzen(double n) => Num.Ok(n) ? Klemme(n, MassstabMin, MassstabMax) : MassstabStart;
 
     /// <summary>xr-sitzung-logik.js massstabText.</summary>
@@ -361,7 +364,7 @@ public static class XrSitzungLogik
             new Xz((g.Min.X + g.Max.X) / 2, (g.Min.Z + g.Max.Z) / 2), g.Min.Y);
     }
 
-    /// <summary>xr-sitzung-logik.js ausschnittLage: Startlage für einen Ausschnitt: so gross wie möglich (Start 1:20, Grenze des Zoomens), gröber nur, wenn er sonst nicht auf die Platte passt.</summary>
+    /// <summary>xr-sitzung-logik.js ausschnittLage: Startlage für einen Ausschnitt: so gross wie möglich (Start MassstabMin, Grenze des Zoomens), gröber nur, wenn er sonst nicht auf die Platte passt.</summary>
     public static Einpassung AusschnittLage(ModellGroesse? groesse) => Einpassen(groesse, MassstabMin);
 
     /// <summary>xr-sitzung-logik.js ausschnittEbenen: die sechs Clipping-Ebenen des Quaders in den Koordinaten der 3D-Ansicht (m); leer ohne gültigen Quader.</summary>

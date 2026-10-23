@@ -10,8 +10,9 @@ namespace Hlks.Quest;
 /// OpenXR-Schnittstelle von StereoKit nach dem Muster «PassthroughFBExt» aus dem Repository von StereoKit (nachgebaut, Strukturen in Hlks.Xr.Sitzung.PassthroughFb):
 ///   1. vor SK.Initialize: Backend.OpenXR.RequestExt("XR_FB_passthrough") (<see cref="Anfordern"/>);
 ///   2. danach: Funktionen holen (GetFunction), Passthrough und Ebene anlegen – pausiert (<see cref="Anlegen"/>);
-///   3. ein: Passthrough und Ebene starten, Hintergrund durchsichtig (ClearColor mit Alpha 0, kein Himmel); je Bild die Ebene unter die Szene legen (AddCompositionLayer,
-///      Reihenfolge −1, Alpha der Szene mischt); aus: pausieren, Hintergrund zurück.
+///   3. ein: Passthrough und Ebene starten; je Bild die Ebene unter die Szene legen (AddCompositionLayer, Reihenfolge −1, Alpha der Szene mischt); aus: pausieren.
+///      Den Hintergrund des Renderers (durchsichtig, kein Himmel) setzt NICHT diese Klasse, sondern der Sitzungsraum über Hlks.Xr.Sitzung.HintergrundVerwalter – der
+///      eine Ort, der sich den alten Zustand merkt (P4b-Nachtrag 23.10.2026; vorher merkten sich beide Klassen je den Zustand der anderen).
 /// Ohne Erweiterung (Simulator am PC, andere Laufzeit) bleibt <see cref="Verfuegbar"/> falsch und die App zeigt den Schalter grau mit Hinweis.
 /// Die Brille braucht im Manifest com.oculus.feature.PASSTHROUGH (vorhanden, required=false).
 /// </summary>
@@ -21,8 +22,6 @@ sealed class Passthrough
     Fb.EbeneErzeugenFn? ebeneErzeugen;
     Fb.HandleFn? zerstoeren, starten, pausieren, ebeneZerstoeren, ebenePausieren, ebeneFortsetzen;
     ulong passthrough, ebene;
-    Color alteFarbe;
-    bool alterHimmel;
 
     public bool Verfuegbar { get; private set; }
     public bool Ein { get; private set; }
@@ -79,18 +78,12 @@ sealed class Passthrough
             var r = starten!(passthrough);
             if (r == Fb.Erfolg) r = ebeneFortsetzen!(ebene);
             if (r != Fb.Erfolg) { Grund = $"Passthrough startet nicht: {r}"; Log.Err(Grund); return Ein; }
-            alteFarbe = Renderer.ClearColor;
-            alterHimmel = Renderer.EnableSky;
-            Renderer.ClearColor = new Color(0, 0, 0, 0);
-            Renderer.EnableSky = false;
             Ein = true;
         }
         else
         {
             ebenePausieren!(ebene);
             pausieren!(passthrough);
-            Renderer.ClearColor = alteFarbe;
-            Renderer.EnableSky = alterHimmel;
             Ein = false;
         }
         return Ein;

@@ -127,6 +127,17 @@ sealed class QuestApp
         try
         {
             KopplungLaden();
+            if (o.Auftrag is { } at)
+            {
+                // nur PC (--auftrag): ein Auftrag wie vom PC beim Start, auch ohne PC (Prüfung des Sitzungsraums)
+                try
+                {
+                    using var d = JsonDocument.Parse(at);
+                    if (VrStartLogik.AuftragPruefen(d.RootElement) is { } a) lock (sperre) offenerAuftragHintergrund = a;
+                    else Melden("--auftrag ist kein gültiger VR-Auftrag.");
+                }
+                catch (JsonException) { Melden("--auftrag ist kein JSON."); }
+            }
             if (paket is not null && !o.OhnePc) await Verbinden();
             if (!istGeladen) OhnePcStarten();
             hintergrundFertig = true;
@@ -310,6 +321,7 @@ sealed class QuestApp
         var sz = ModellSzene.AusGlb(neu.Teile.Select(t => (t.Glb, t.Geschoss.Id, t.Teil, $"{t.Geschoss.Kennzeichen} {t.Teil}")));
         foreach (var h in sz.Hinweise) Melden(h);
         var vorbereitet = ModellDarstellung.Vorbereiten(sz);
+        _ = SitzungAuswahl.GebaeudeRahmen(sz, null);   // P4b-Nachtrag: Rechteck des Gebäudes für die Griffe im Hintergrund vorrechnen (je Geschoss zwischengespeichert)
         // Zahlen für das Protokoll (nur Zahlen, keine Geometrie): je Geschoss und Teil Holen (ms), Grösse, Dreiecke; Zwischenspeicher
         var je = neu.Teile.Select(t => string.Create(CultureInfo.InvariantCulture,
             $"{t.Geschoss.Kennzeichen} {t.Teil}: {t.Ms:0} ms, {t.Glb.Length / 1048576.0:0.00} MB, " +
@@ -943,6 +955,19 @@ sealed class QuestApp
             var name = SitzPhasen[sitzPhase].Replace(' ', '_');
             Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}.jpg"), Sk(0, 1.45, 0.1), ziel, 1280, 960, 70);
             Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}_oben.jpg"), Sk(0.6, 1.9, -0.2), ziel, 1280, 960, 60);
+            Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}_senkrecht.jpg"), Sk(0, 2.3, -0.75), ziel, 1280, 960, 45);   // Griffe gegen Gebäudeecken
+        }
+        // P4b-Nachtrag: Helligkeit «Schneidet» (Shader schnitt) gegen «Innen» (gewöhnliches Material) – dasselbe Bild zweimal, einmal alles mit dem Shader (PNG, verlustfrei;
+        // quest_pruefen.ps1 vergleicht die beiden Bilder)
+        if (sitzPhase == 1 && o.BildOrdner is { } vo && sitzBilder >= jePhase / 2 + 3 && sitzBilder <= jePhase / 2 + 5 && darstellung is { } dv)
+        {
+            var rl = sitzung.RaumLage;
+            Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
+            var ziel = Sk(XrSitzungLogik.TischMitte.X, XrSitzungLogik.TischHoehe + 0.05, XrSitzungLogik.TischMitte.Z);
+            var von = Sk(0.3, 1.5, -0.3);
+            if (sitzBilder == jePhase / 2 + 3) { Renderer.Screenshot(Path.Combine(vo, "vergleich_innen.png"), von, ziel, 800, 600, 40); dv.SchnittErzwingen = true; }
+            else if (sitzBilder == jePhase / 2 + 4) Renderer.Screenshot(Path.Combine(vo, "vergleich_schnitt.png"), von, ziel, 800, 600, 40);
+            else dv.SchnittErzwingen = false;
         }
         if (sitzBilder < jePhase) return;
         var d = darstellung!;
@@ -980,7 +1005,7 @@ sealed class QuestApp
         {
             var bezug = SitzungRaum.BezugAusBox(szene!.Box) ?? new SitzungBezug(new Xz(0, 0), 0, new ModellGroesse(10, 10, 3));
             var start = XrSitzungLogik.Einpassen(bezug.Groesse).Lage;
-            // Griffe fassen, Hände auseinander (doppelter Abstand) und um 30° drehen: Massstab halb so gross (Grenze 1:20), Drehung 30°
+            // Griffe fassen, Hände auseinander (doppelter Abstand) und um 30° drehen: Massstab halb so gross (Grenze MassstabMin), Drehung 30°
             var g = XrSitzungLogik.GriffPunkte(start, bezug.Groesse);
             var z0 = XrSitzungLogik.GestenNeu(start);
             GestenHand H(double x, double zz, int? nah) => new(true, nah, x, zz);

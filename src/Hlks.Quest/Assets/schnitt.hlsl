@@ -16,9 +16,13 @@ float4 schnitt_v;
 //--schnitt_y = -1000000,1000000,0,0
 float4 schnitt_y;
 
+// Eingang genau wie das Standardmaterial von StereoKit (Vertex: Position, Normale, UV, Farbe). P4b-Nachtrag (Brillentest 23.10.2026, «Raum in AR» schwarz):
+// Ohne «uv» vergab der Übersetzer für OpenGL ES der Farbe die Stelle 2 – dort liegen aber die UV-Koordinaten (0, 0) –, die Farbe wurde (0, 0, 0, 1) und alles,
+// was mit diesem Shader gezeichnet wurde, schwarz. Unter Direct3D (PC) passen die Eingänge über die Namen, deshalb fiel es am PC nicht auf.
 struct vsIn {
 	float4 pos  : SV_Position;
 	float3 norm : NORMAL0;
+	float2 uv   : TEXCOORD0;
 	float4 col  : COLOR0;
 };
 struct psIn {
