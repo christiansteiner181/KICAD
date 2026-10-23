@@ -71,19 +71,20 @@ if (-not (Test-Path "$Projekt\projekt.json")) { Aus "Kein Projekt in $Projekt"; 
 
 $tmp = Join-Path $env:TEMP 'hlks_brillentest'
 New-Item -ItemType Directory -Force "$tmp\benutzer", "$tmp\zuletzt" | Out-Null
-$env:HLKS_BENUTZER = "$tmp\benutzer"
-$env:HLKS_ZULETZT = "$tmp\zuletzt"
-$env:HLKS_WEBROOT = "$repo\src\Hlks.Web\wwwroot"
+# Server losgeloest starten (werkzeuge\losgeloest.ps1, WMI): sonst erbt er die Ausgabe dieses Skripts, und der Aufrufer wartet, bis der Server
+# endet (Befund Brillentest 23.10.2026). Umgebungsvariablen gehen ueber -Umgebung mit; die PID kommt danach vom Port.
 Aus "Starte KICAD-Server ($web) auf Port $port ..."
-$server = Start-Process -FilePath $dotnet -ArgumentList @("`"$web`"", '--port', "$port", '--geraet', 'brillentest', '--akteur', 'brillentest') `
-  -PassThru -WindowStyle Hidden -RedirectStandardOutput "$ablage\server.log" -RedirectStandardError "$ablage\server_fehler.log"
-foreach ($v in 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+$startSkript = "$ablage\server_start.ps1"
+Set-Content -Path $startSkript -Encoding ASCII -Value ("& '{0}' '{1}' --port {2} --geraet brillentest --akteur brillentest" -f $dotnet, $web, $port)
+$umgebung = "HLKS_BENUTZER=$tmp\benutzer;HLKS_ZULETZT=$tmp\zuletzt;HLKS_WEBROOT=$repo\src\Hlks.Web\wwwroot"
+& powershell -NoProfile -ExecutionPolicy Bypass -File "$PSScriptRoot\losgeloest.ps1" -Skript $startSkript -Log "$ablage\server.log" -Umgebung $umgebung | Out-Null
 $bis = (Get-Date).AddSeconds(90)
 while ($true) {
   try { Get '/api/status' | Out-Null; break } catch { }
-  if ((Get-Date) -gt $bis -or $server.HasExited) { Aus 'Der Server antwortet nicht.'; exit 2 }
+  if ((Get-Date) -gt $bis) { Aus "Der Server antwortet nicht (Protokoll: $ablage\server.log)."; exit 2 }
   Start-Sleep -Milliseconds 300
 }
+$server = [pscustomobject]@{ Id = (Get-NetTCPConnection -State Listen -LocalPort $port | Select-Object -First 1).OwningProcess }
 Post '/api/projekt/oeffnen' @{ ordner = $Projekt } | Out-Null
 Aus "Projekt geoeffnet: $Projekt"
 Post '/api/xr/zugang' @{ an = $true } | Out-Null
