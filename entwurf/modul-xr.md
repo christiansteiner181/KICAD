@@ -287,8 +287,22 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Automatik: sitzend → Drehen ein, stehend → Drehen aus.
   - Der Schalter «Drehen» ein/aus in der Box zeigt den wirksamen Zustand. Antippen übersteuert bis zum nächsten erkannten Haltungswechsel.
   - Annahme des Hauptlaufs: Die Dauer der Übersteuerung (bis zum Haltungswechsel) ist im Brillentest zu bestätigen. Umsetzung im P4a-Nachtrag.
+  - **Richtung und Sperre** (Christian, 23.10.2026, nach dem zweiten Brillentest: «sehr gut, für drehen die richtung umkehren und schnellaufeinanderfolgende drehungen nur in eine richtung zulassen»):
+    - Nach rechts gewischt dreht nach links; die Welt folgt der Hand.
+    - Innerhalb von 1,0 s nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (Stellschraube `begehen.drehen_sperre_s`).
+    - Umgesetzt vom Hauptlauf in `Hlks.Xr/HandBegehen.cs` mit Tests. Brillentest 23.10.2026 ~21:20: Christian «Das neue Drehen passt».
 - **Folge der Beschränkung:** Andere Geschosse sind beim Begehen unsichtbar; der Wechsel geht bis P5 per Auftrag vom PC, danach per
   Wisch hoch/runter.
+
+**Zweiter Brillentest P4a mit Nachtrag (23.10.2026, ~21:10–21:15, Kabel, Test_praxis):**
+- Zwei Minuten **72 Hz** (13,9 ms, höchstens 16,5 ms) im 2.UG. Der Abfall auf 9 Hz am Schluss kam vom Absetzen bzw. vom Quest-Menü
+  (Christian: «Ja, abgesetzt/Menü»).
+- Haltung viermal richtig erkannt (sitzend → Drehen ein, stehend → Drehen aus). Christian: «Passt».
+- Springen mit dem Systemzeiger (`Strahl=System`) und 0,25 s ruhigem Ziel: Christian: «Klappt gut».
+- **K1 erfüllt, K2 erfüllt.** K3 (WLAN) offen: WLAN «s-net 3» auf «Privat» stellen und `werkzeuge/xr_firewall.ps1` als
+  Administrator ausführen (Christian).
+- Brillentest-Skript: Der Server startet jetzt per `Start-Process` ohne Umleitung, das Skript kehrt zurück. `losgeloest.ps1` (WMI)
+  scheiterte hier mit Code 8.
 
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem

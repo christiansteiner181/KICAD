@@ -76,6 +76,22 @@ sealed class Rueckmeldung
         Ereignisse++;
     }
 
+    /// <summary>P4b: Tisch angetippt bzw. Griff gefasst im Sitzungsraum – Klick und ein kleiner grüner Ring am Ort (ohne Abblenden).</summary>
+    public void Antippen(Vec3 ort, float groesse = 0.12f)
+    {
+        Sound.Click.Play(ort, 0.8f);
+        lichter.Add(new Licht(ort, Time.Totalf, 0.45f, Gruen, groesse, true));
+        Ereignisse++;
+    }
+
+    /// <summary>P4b: Griff im Sitzungsraum gefasst (Klick und Aufleuchten) bzw. losgelassen (leiser Klick).</summary>
+    public void Griff(Vec3 ort, bool gefasst)
+    {
+        if (gefasst) { Sound.Click.Play(ort, 0.6f); lichter.Add(new Licht(ort, Time.Totalf, 0.25f, Cyan, 0.04f, false)); }
+        else Sound.Unclick.Play(ort, 0.4f);
+        Ereignisse++;
+    }
+
     public void Drehen(Vec3 hand, Vec3 kopf)
     {
         dreh.Play(kopf, 0.8f);

@@ -103,7 +103,7 @@ public class HandBegehenTests
     [Fact]
     public void Pinch_und_schneller_Wisch_dreht_in_30_Grad_Schritten()
     {
-        foreach (var (richtung, schritt) in new[] { (1.0, -1), (-1.0, 1) })
+        foreach (var (richtung, schritt) in new[] { (1.0, 1), (-1.0, -1) })
         {
             var z = new HandBegehenZustand();
             var bilder = new List<(double, Dictionary<string, Vec3>?)>();
@@ -112,7 +112,7 @@ public class HandBegehenTests
             bilder.Add((40 / 90.0, Hand(Zeigen + V(richtung * 0.25, 0, 0), 0.06)));
             var ev = Lauf(z, bilder);
             var d = Assert.Single(ev, e => e.Art == BegehenArt.Drehen);
-            Assert.Equal(schritt, d.Schritt);   // nach rechts gewischt = nach rechts drehen (−1, wie der rechte Stick)
+            Assert.Equal(schritt, d.Schritt);   // umgekehrt (Christian 23.10.2026): nach rechts gewischt = nach links drehen (+1), die Welt folgt der Hand
             Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Teleport or BegehenArt.Abbruch);   // nach dem Drehen springt dieser Pinch nicht
             Assert.Equal(BegehenArt.PinchAus, ev[^1].Art);
         }
@@ -123,6 +123,56 @@ public class HandBegehenTests
         var ev2 = Lauf(new HandBegehenZustand(), langsam);
         Assert.DoesNotContain(ev2, e => e.Art == BegehenArt.Drehen);
         Assert.Single(ev2, e => e.Art == BegehenArt.Teleport);
+    }
+
+    /// <summary>Ein Wisch über 0.2 s ab Zeit t0 (Pinch gehalten), 25 cm in Richtung richtung (+1 = nach rechts), Hand am Ende bei ende.</summary>
+    static IEnumerable<(double, Dictionary<string, Vec3>?)> Wisch(double t0, Vec3 start, double richtung) =>
+        Enumerable.Range(0, 19).Select(i => (t0 + i / 90.0, (Dictionary<string, Vec3>?)Hand(start + V(richtung * 0.25 * i / 18, 0, 0), 0.01)));
+
+    /// <summary>Pinch gehalten, Hand ruhig bei p, Bilder (90 Hz) von t0 bis vor t1.</summary>
+    static IEnumerable<(double, Dictionary<string, Vec3>?)> Ruhig(double t0, double t1, Vec3 p) =>
+        Enumerable.Range(0, (int)Math.Round((t1 - t0) * 90)).Select(i => (t0 + i / 90.0, (Dictionary<string, Vec3>?)Hand(p, 0.01)));
+
+    /// <summary>Wisch nach rechts, dann nach Pause «pause» (s) zurück nach links; Bilder lückenlos wie in der Brille.</summary>
+    static List<(double, Dictionary<string, Vec3>?)> HinUndZurueck(double pause)
+    {
+        var b = new List<(double, Dictionary<string, Vec3>?)>();
+        b.AddRange(Ruhig(0, 10 / 90.0, Zeigen));
+        b.AddRange(Wisch(10 / 90.0, Zeigen, 1));                              // nach rechts (endet bei ~0.31 s)
+        var zurueck = 10 / 90.0 + 0.2 + pause;
+        b.AddRange(Ruhig(29 / 90.0, zurueck, Zeigen + V(0.25, 0, 0)));
+        b.AddRange(Wisch(zurueck, Zeigen + V(0.25, 0, 0), -1));               // zurück nach links
+        b.AddRange(Ruhig(zurueck + 0.2, zurueck + 0.4, Zeigen));
+        b.Add((zurueck + 0.4, Hand(Zeigen, 0.06)));
+        return b;
+    }
+
+    [Fact]
+    public void Schnell_hintereinander_dreht_nur_eine_Richtung()
+    {
+        // Christian 23.10.2026: «schnellaufeinanderfolgende drehungen nur in eine richtung zulassen» – das Zurückholen der Hand dreht nicht zurück.
+        // Zurück nach 0.6 s Pause: nach der Wischpause von XrWischLogik (0.5 s), aber innerhalb der Richtungssperre (1.0 s ab der Drehung)
+        var ev = Lauf(new HandBegehenZustand(), HinUndZurueck(0.6));
+        Assert.Equal([1], ev.Where(e => e.Art == BegehenArt.Drehen).Select(e => e.Schritt));
+        Assert.DoesNotContain(ev, e => e.Art == BegehenArt.Teleport);
+
+        // Stellschraube «begehen.drehen_sperre_s» = 0: die Rückbewegung dreht zurück (der Wisch wird also erkannt, nur die Sperre hält ihn)
+        var ohne = new HandBegehenEinstellungen().MitStellschraube("begehen.drehen_sperre_s", System.Text.Json.JsonDocument.Parse("0").RootElement)!;
+        Assert.Equal(0, ohne.DrehenSperreS);
+        Assert.Equal([1, -1], Lauf(new HandBegehenZustand(), HinUndZurueck(0.6), einstellungen: ohne).Where(e => e.Art == BegehenArt.Drehen).Select(e => e.Schritt));
+
+        // nach Ablauf der Sperre geht die Gegenrichtung wieder
+        Assert.Equal([1, -1], Lauf(new HandBegehenZustand(), HinUndZurueck(1.2)).Where(e => e.Art == BegehenArt.Drehen).Select(e => e.Schritt));
+
+        // gleiche Richtung zweimal schnell hintereinander dreht beide Male
+        var z = new HandBegehenZustand();
+        var b = new List<(double, Dictionary<string, Vec3>?)>();
+        b.AddRange(Ruhig(0, 10 / 90.0, Zeigen));
+        b.AddRange(Wisch(10 / 90.0, Zeigen, 1));
+        b.AddRange(Ruhig(29 / 90.0, 0.9, Zeigen + V(0.25, 0, 0)));
+        b.AddRange(Wisch(0.9, Zeigen + V(0.25, 0, 0), 1));
+        b.Add((1.2, Hand(Zeigen + V(0.5, 0, 0), 0.06)));
+        Assert.Equal([1, 1], Lauf(z, b).Where(e => e.Art == BegehenArt.Drehen).Select(e => e.Schritt));
     }
 
     // ---------------------------------------------------------------------------------------------- Nachtrag Brillentest 23.10.2026: «Springt ungewollt»

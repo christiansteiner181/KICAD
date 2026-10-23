@@ -6,8 +6,12 @@
 //             Solange der Pinch hält, zeigt die App das Ziel (VrLogik.TeleportZiel auf den Boden, höchstens 15 m). Loslassen springt – aber nur, wenn das
 //             Ziel vor dem Loslassen ruhig auf gültigem Boden lag (siehe unten). Sonst Abbruch.
 //   Drehen:   mit gehaltenem Pinch kurz und schnell seitlich wischen (XrWischLogik.WischSchritt mit dem Pinch-Punkt: mindestens 15 cm in höchstens 0.4 s,
-//             0.8 m/s, überwiegend waagrecht). Nach rechts gewischt dreht um 30° nach rechts (VrLogik.SnapGrad), nach links nach links. Ein Wisch dreht
-//             einmal; mehrere Wische hintereinander drehen weiter. Nach einem Wisch springt dieser Pinch beim Loslassen nicht.
+//             0.8 m/s, überwiegend waagrecht). Nach rechts gewischt dreht um 30° nach LINKS (VrLogik.SnapGrad), nach links gewischt nach rechts – die
+//             Welt folgt der Hand (Christian 23.10.2026: «für drehen die richtung umkehren»). Ein Wisch dreht einmal; mehrere Wische hintereinander drehen
+//             weiter. Nach einem Wisch springt dieser Pinch beim Loslassen nicht.
+//             Richtungssperre (Christian 23.10.2026: «schnellaufeinanderfolgende drehungen nur in eine richtung zulassen»): Innerhalb DrehenSperreS
+//             (Stellschraube, Start 1.0 s) nach der letzten Drehung dieser Hand dreht ein Wisch in die Gegenrichtung nicht – so dreht das Zurückholen der
+//             Hand nicht zurück. Wische in dieselbe Richtung drehen weiter und verlängern die Sperre.
 //             Nur wenn Drehen wirkt (Parameter drehen = DrehenSchalter: sitzend ein, stehend aus, der Schalter in der Box übersteuert). Wirkt es nicht,
 //             dreht ein Wisch nicht, beendet aber trotzdem das Zielen (kein Sprung nach einem Wisch).
 //
@@ -46,12 +50,14 @@ public sealed record HandBegehenEinstellungen
     public double ZielVerzoegerungS { get; init; } = 0.1;
     /// <summary>Kürzester Pinch, der springt (s).</summary>
     public double PinchMinS { get; init; } = 0.15;
+    /// <summary>So lange nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (s). Stellschraube «begehen.drehen_sperre_s», Start 1.0.</summary>
+    public double DrehenSperreS { get; init; } = 1.0;
 
     public static readonly HandBegehenEinstellungen Vorgabe = new();
 
     /// <summary>
     /// Übernimmt eine Stellschraube vom PC (Kanal «stellschraube»): «begehen.ziel_ruhe_s» (0 … 2), «begehen.ziel_ruhe_radius_m» (0 … 5),
-    /// «begehen.ziel_verzoegerung_s» (0 … 0.5). Wert null setzt auf die Vorgabe zurück. Gibt null zurück, wenn der Schlüssel nicht hierher gehört oder der Wert
+    /// «begehen.ziel_verzoegerung_s» (0 … 0.5), «begehen.drehen_sperre_s» (0 … 5). Wert null setzt auf die Vorgabe zurück. Gibt null zurück, wenn der Schlüssel nicht hierher gehört oder der Wert
     /// ungültig ist.
     /// </summary>
     public HandBegehenEinstellungen? MitStellschraube(string schluessel, JsonElement wert)
@@ -66,6 +72,8 @@ public sealed record HandBegehenEinstellungen
                 return zurueck ? this with { ZielRuheRadiusM = Vorgabe.ZielRuheRadiusM } : Zahl(0, 5) is { } b ? this with { ZielRuheRadiusM = b } : null;
             case "begehen.ziel_verzoegerung_s":
                 return zurueck ? this with { ZielVerzoegerungS = Vorgabe.ZielVerzoegerungS } : Zahl(0, 0.5) is { } c ? this with { ZielVerzoegerungS = c } : null;
+            case "begehen.drehen_sperre_s":
+                return zurueck ? this with { DrehenSperreS = Vorgabe.DrehenSperreS } : Zahl(0, 5) is { } d ? this with { DrehenSperreS = d } : null;
             default:
                 return null;
         }
@@ -95,6 +103,9 @@ public sealed class HandBegehenZustand
     public bool StrahlVomSystem { get; internal set; }
     /// <summary>Pinch-Punkt (Mitte zwischen Daumen- und Zeigefingerspitze), wenn erkannt.</summary>
     public Vec3? PinchPunkt { get; internal set; }
+    /// <summary>Zeit und Schritt der letzten Drehung dieser Hand (Richtungssperre); bleiben über das Ende des Pinch hinaus.</summary>
+    internal double? LetzteDrehungT;
+    internal int LetzteDrehungSchritt;
 
     internal void Zuruecksetzen()
     {
@@ -168,8 +179,14 @@ public static class HandBegehen
             z.Gewischt = true;
             z.Ziel = null;
             z.Bereit = false;
-            var schritt = wisch.Richtung.Skalar(Rechts(blickGieren)) > 0 ? -1 : 1;   // nach rechts gewischt: nach rechts drehen (Schritt −1 wie VrLogik.SnapPruefen)
-            if (drehen) ev.Add(new BegehenEreignis(BegehenArt.Drehen, seite, punkt, schritt));
+            var schritt = wisch.Richtung.Skalar(Rechts(blickGieren)) > 0 ? 1 : -1;   // nach rechts gewischt: nach links drehen (+1), die Welt folgt der Hand
+            var gesperrt = z.LetzteDrehungT is { } lt && t - lt < e.DrehenSperreS && schritt != z.LetzteDrehungSchritt;
+            if (drehen && !gesperrt)
+            {
+                ev.Add(new BegehenEreignis(BegehenArt.Drehen, seite, punkt, schritt));
+                z.LetzteDrehungT = t;
+                z.LetzteDrehungSchritt = schritt;
+            }
         }
         if (pinch && !z.Gewischt && !z.Abgebrochen)
         {

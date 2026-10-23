@@ -1,4 +1,4 @@
-# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1 und P4a)
+# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1, P4a und P4b)
 
 Reine C#-Bibliothek (`net10.0`) ohne StereoKit, ASP.NET und Hlks.Kern. Sie enthält die Regeln, die im Browser-Prototyp als JavaScript mit
 Node-Tests stehen: Begehen, Start, Messen mit Fang, Sitzungsraum, Tablet, Wischgeste. Die App (`src/Hlks.Quest`) zeigt, die Bibliothek rechnet; ein Wechsel
@@ -101,6 +101,28 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
 - **Tests:** `tests/Hlks.Xr.Tests` (Netz*, GlbLeser*, ModellSzene*, HandBegehen*); gegen den echten Netzzugang `tests/Hlks.Web.Tests/XrAppKlientTests.cs`, mit
   Test_praxis `XrAppKlientEchtTests.cs` (ohne die Kopie übersprungen). Die App selbst im Simulator: `werkzeuge/quest_pruefen.ps1`.
 
+## Sitzungsraum, Passthrough und Ebenen der Fachmodule (P4b)
+
+Die Regeln des Tisches selbst (Masse, Massstab, Griffe, Gesten mit zwei Händen, Schnitthöhe, Ausschnitt) bleiben in `XrSitzungLogik` (aus `xr-sitzung-logik.js`). Neu ist, was
+die App zusätzlich braucht; die App selbst: `src/Hlks.Quest/Sitzungsraum.cs`, `Passthrough.cs`, `EbenenDarstellung.cs`, Shader `Assets/schnitt.hlsl`.
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Sitzung/SitzungRaum.cs` | `SitzungRaumLage`, `SitzungRaum`, `SitzungBezug`, `SchnittQuader`, `SchnittLage` | Raum-lokal ↔ Raum der Brille (virtuell vor dem Kopf; echter Tisch: Mitte der Platte auf dem angetippten Punkt), Modell auf dem Tisch (Regel `ModellZuRaum` und dieselbe Abbildung als `ModellMatrix`), Schnittquader (Etagenschnitt oben, Ausschnitt aus dem Schnittbereich) mit Lage einer Box (innen, schneidet, aussen) und Werten für den Shader |
+| `Sitzung/SitzungAuswahl.cs` | `SitzungAnsicht`, `SitzungAuswahl` | Geschosse mit Decken aus der Szene (Ebene «decke», IfcSlab), Etagenschnitt (nur das Geschoss und die darunter, 50 mm unter der Decke), «Alle Etagen», «Raum zeigen (VR)» (Raum ± 1.5 m, Achsen nach der längsten Kante), Startlage, Etage zu einem Auftrag |
+| `Sitzung/TischAntippen.cs` | `TischAntippen`, `TischAntippenZustand`, `TischAntippenEinstellungen`, `TischTreffer` | Tischhöhe aus der Spitze des Zeigefingers: nach unten (≥ 2 cm), dann 0.3 s ruhig (12 mm), 0.4 … 1.3 m, ≤ 1 m vom Kopf, kein Pinch; Höhe = Median − Radius der Fingerspitze |
+| `Sitzung/PassthroughFb.cs` | `PassthroughFb`, `EchterTisch` | Strukturen, Werte und Funktionsnamen von `XR_FB_passthrough` (64 Bit, geprüft in den Tests); Zustand des Schalters «Echter Tisch» (verfügbar, ein, wartet aufs Antippen) |
+| `Ebenen/XrEbene.cs` | `XrEbeneFormat`, `XrEbene`, `EbenenElement`, `EbenenListe`, `EbenenEintrag` | Format einer Ebene (`hlks-xr-ebene`, Fassung 1: linie, pfeil, punkte, partikel, flaeche; KICAD-mm absolut) lesen und prüfen, Grenzen, unbekannte Typen mit Hinweis |
+| `Ebenen/EbenenSzene.cs` | `EbenenSzene`, `EbenenTeil`, `EbenenStrich` | Ebene in der Szene: Striche (Pfeilspitze waagrecht), Partikel zur Zeit t, Flächen in Dreiecken (Ohrenschneiden), Hüllbox |
+| `Netz/EbenenLader.cs` | `EbenenLader`, `EbenenAblage`, `IEbenenQuelle`, `TextAntwort`, `EbenenStand` | Ebenen vom PC (`GET /api/xr/ebenen`, je Ebene mit `If-None-Match`), Ablage im privaten Speicher für den Start ohne PC; `ModellHttp` ist auch `IEbenenQuelle`, `PcZugang.Ebenen` |
+
+- **Annahmen P4b** (Stellschrauben im Labor P5, Christian beim Brillentest): Schwellen des Antippens, Ersatzhöhe 3000 mm für Geschosse ohne Höhe, IfcSlab als Decke, Achsen des
+  Ausschnitts nach der längsten Kante des Raums (der Kern nimmt den Planwinkel), Rand 1500 mm (die Benutzereinstellung `ansicht3d.raumrand` erreicht die App nicht), Aussehen der
+  Pfeile (Spitze 40 %, 6 × Breite, mindestens 8 cm).
+- **Tests:** `SitzungRaumTests` (Lage vor dem Kopf und am Tisch, Matrix gegen Regel, Punkt unter den Händen bleibt bei der Zweihandgeste, Quader gegen `SchnittbereichLogik`),
+  `SitzungAuswahlTests` (Decken, Etagenschnitt, Lage der Blöcke, Ausschnitt, Etage zum Auftrag), `TischAntippenTests` (Antippen, Zittern, in der Luft, Pinch, Grenzen, Speicherbild
+  XR_FB_passthrough), `XrEbeneTests` (Format, Szene, Laden mit 304 und Ablage); gegen den Server `tests/Hlks.Web.Tests/XrEbenenApiTests.cs`.
+
 ## Offene Punkte
 
 - Die Gelenknamen der WebXR-Hand-API bildet `HandGelenke` auf die 25 Gelenke von StereoKit ab (P4a).
@@ -109,3 +131,5 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
   noch feste `const`-Werte.
 - Der JSON-Zugang für `Koerper` (`/api/koerper`) fehlt weiter; die App rechnet den Durchgang mit `DreieckForm` aus der GLB. `Standort` (`raum_begehen`) ersetzt
   `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).
+- P4b: Den Tisch findet die App noch nicht selbst (`XR_EXT_spatial_plane_tracking`) und erkennt keine Marker (`XR_EXT_spatial_marker_tracking`); beides nur auf Machbarkeit
+  geprüft (Bericht P4b). Die Fliessrichtung der Probe-Ebene folgt der Reihenfolge der Leitungspunkte, nicht dem Netzdurchlauf (`netz_folgen`).

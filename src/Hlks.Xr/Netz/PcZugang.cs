@@ -3,6 +3,7 @@
 //   GET /api/xr/verbindung                       Probe mit Schlüssel → { ok, fassung, pc, kopplung{ id, brille, name }, zeit, teilnehmer }
 //   GET /api/xr/geschosse                        Liste der Geschosse mit Versionsschlüsseln und Adressen der GLB (P2)
 //   GET /api/xr/geschoss/{id}.glb?teil=…         GLB mit ETag; If-None-Match → 304 (P2)
+//   GET /api/xr/ebenen, /api/xr/ebene/{name}      Ebenen der Fachmodule mit ETag (P4b, EbenenLader)
 //
 // Jede Anfrage trägt Authorization: Bearer <kopplung>.<schluessel> und geht nur an das gepinnte Zertifikat (XrPinning). Die Modellteile laufen über
 // IModellQuelle, damit dieselbe Logik (Zwischenspeicher, Lader) im Test bzw. am PC auch über localhost laufen kann, solange der Netzzugang die
@@ -43,10 +44,22 @@ public interface IModellQuelle
     Task<GlbAntwort> Glb(string url, string? etag, CancellationToken abbruch);
 }
 
-/// <summary>Liste und GLB über einen HttpClient mit Basisadresse (Netzzugang oder localhost).</summary>
-public sealed class ModellHttp(HttpClient http, string name) : IModellQuelle
+/// <summary>Liste und GLB über einen HttpClient mit Basisadresse (Netzzugang oder localhost); seit P4b auch die Ebenen (IEbenenQuelle).</summary>
+public sealed class ModellHttp(HttpClient http, string name) : IModellQuelle, IEbenenQuelle
 {
     public string Name { get; } = name;
+
+    /// <summary>P4b: GET mit Text (Ebenen), etag = If-None-Match. Jeder Status kommt zurück (200 mit Text, 304, 404 …).</summary>
+    public async Task<TextAntwort> Text(string pfad, string? etag, CancellationToken abbruch)
+    {
+        using var r = new HttpRequestMessage(HttpMethod.Get, pfad.TrimStart('/'));
+        if (!string.IsNullOrEmpty(etag)) r.Headers.TryAddWithoutValidation("If-None-Match", etag);
+        using var a = await http.SendAsync(r, abbruch).ConfigureAwait(false);
+        var neu = a.Headers.ETag?.ToString();
+        if (a.StatusCode == HttpStatusCode.NotModified) return new TextAntwort(304, null, neu ?? etag);
+        var t = await a.Content.ReadAsStringAsync(abbruch).ConfigureAwait(false);
+        return new TextAntwort((int)a.StatusCode, a.StatusCode == HttpStatusCode.OK ? t : null, neu);
+    }
 
     public async Task<string> GeschosseText(CancellationToken abbruch)
     {
@@ -97,6 +110,8 @@ public sealed class PcZugang : IDisposable
     public PcAdresse Adresse { get; }
     /// <summary>Liste und GLB über den Netzzugang.</summary>
     public IModellQuelle Modell { get; }
+    /// <summary>Ebenen der Fachmodule über den Netzzugang (P4b).</summary>
+    public IEbenenQuelle Ebenen => (ModellHttp)Modell;
 
     /// <param name="handler">Nur für Tests; sonst ein Handler mit Pinning (<see cref="XrPinning.Handler"/>).</param>
     public PcZugang(PcAdresse adresse, Kopplungspaket paket, HttpMessageHandler? handler = null, TimeSpan? frist = null)
