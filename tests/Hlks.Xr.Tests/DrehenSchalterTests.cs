@@ -158,7 +158,7 @@ public class DrehenSchalterTests
     public void Drehen_ein_dreht_der_Wisch_um_30_Grad()
     {
         var ev = WischUndHalten(drehen: true);
-        Assert.Equal(-1, Assert.Single(ev, e => e.Art == BegehenArt.Drehen).Schritt);
+        Assert.Equal(1, Assert.Single(ev, e => e.Art == BegehenArt.Drehen).Schritt);   // nach rechts gewischt dreht nach links (umgekehrt, Christian 23.10.2026)
         Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Teleport or BegehenArt.Abbruch);
     }
 

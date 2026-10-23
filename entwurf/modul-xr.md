@@ -287,6 +287,10 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Automatik: sitzend → Drehen ein, stehend → Drehen aus.
   - Der Schalter «Drehen» ein/aus in der Box zeigt den wirksamen Zustand. Antippen übersteuert bis zum nächsten erkannten Haltungswechsel.
   - Annahme des Hauptlaufs: Die Dauer der Übersteuerung (bis zum Haltungswechsel) ist im Brillentest zu bestätigen. Umsetzung im P4a-Nachtrag.
+  - **Richtung und Sperre** (Christian, 23.10.2026, nach dem zweiten Brillentest: «sehr gut, für drehen die richtung umkehren und schnellaufeinanderfolgende drehungen nur in eine richtung zulassen»):
+    - Nach rechts gewischt dreht nach links; die Welt folgt der Hand.
+    - Innerhalb von 1,0 s nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (Stellschraube `begehen.drehen_sperre_s`).
+    - Umgesetzt vom Hauptlauf in `Hlks.Xr/HandBegehen.cs` mit Tests; Brillentest offen.
 - **Folge der Beschränkung:** Andere Geschosse sind beim Begehen unsichtbar; der Wechsel geht bis P5 per Auftrag vom PC, danach per
   Wisch hoch/runter.
 
