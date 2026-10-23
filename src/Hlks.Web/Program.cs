@@ -263,6 +263,7 @@ app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; 
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI
 app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2): IfcExportEndpunkte.cs – POST /api/ifc/export, Download aus ausgabe\ifc
+app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
 await app.RunAsync();

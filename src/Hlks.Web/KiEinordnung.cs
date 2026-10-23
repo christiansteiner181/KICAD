@@ -91,6 +91,9 @@ public static class KiEinordnung
             "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
         new("quest_autostart", "Steuert den Browser der VR-Brille (Modul XR, QuestStarter.cs, «Begehung beim Aufsetzen automatisch starten»): startet adb.exe, öffnet die VR-Startseite " +
             "im Browser der Brille und klickt dort über das Fern-Debugging (CDP) den Knopf «Eintreten» – nur auf eine Handlung des Menschen am Rechner, nie durch die KI."),
+        new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
+            "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +
+            "Ausgabe nicht; über den Zugang im Büronetz (P3) greift sie über den Rechner hinaus – darum kein Werkzeug der KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,
