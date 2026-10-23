@@ -184,7 +184,8 @@ pruef(/Entwicklermodus/.test(hinweise) && /Meta-Horizon-App/.test(hinweise) && /
 pruef(/Daten/.test(hinweise) && /USB-Debugging erlauben/.test(hinweise) && /Meta-ADB-Treiber/.test(hinweise) && /KICAD installiert den Treiber nicht selbst/.test(hinweise), 'Hinweise: Datenkabel, USB-Debugging erlauben, Meta-ADB-Treiber (nicht von KICAD)');
 pruef((await gesperrt('.qd-verbinden')) && (await gesperrt('.qd-wlan')) && (await gesperrt('.qd-trennen')) && (await gesperrt('.qd-ip-verbinden')), 'Knöpfe «Verbinden», «Auf WLAN umstellen», «Trennen», «Über WLAN verbinden» sind gesperrt');
 pruef((await text('.qd-url')) === `http://localhost:${PORT}/vr`, 'Die Adresse für die Quest steht im Dialog', await text('.qd-url'));
-pruef((await anrufe('/api/quest')).length === 1 && !(await anrufe('/api/quest/')).length, 'Beim Öffnen genügt ein lesender Aufruf von GET /api/quest', JSON.stringify(await anrufe('/api/quest')));
+// Quest App P7: der Teil «Quest App» liest zusätzlich GET /api/quest/app und /api/quest/app/netz (nur lesen); der Zustand von adb bleibt ein einziger Aufruf
+pruef((await anrufe('/api/quest')).filter((a) => a === 'GET /api/quest').length === 1 && !(await anrufe('/api/quest/')).filter((a) => !a.startsWith('GET /api/quest/app')).length, 'Beim Öffnen genügt ein lesender Aufruf von GET /api/quest (dazu die lesenden Aufrufe des Teils «Quest App»)', JSON.stringify(await anrufe('/api/quest')));
 pruef(aufrufe().length === 0, 'Es lief kein adb (kein Pfad eingestellt)', JSON.stringify(aufrufe()));
 await shot('02_ohne_adb');
 

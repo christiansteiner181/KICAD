@@ -37,7 +37,7 @@ public sealed class XrServer : IAsyncDisposable
     public XrEinstellungen Xr { get; }
     public IServiceProvider Dienste => fabrik.Services;
 
-    public XrServer(bool zugang = true, Func<XrEinstellungen, XrEinstellungen>? anpassen = null, XrTestUhr? uhr = null)
+    public XrServer(bool zugang = true, Func<XrEinstellungen, XrEinstellungen>? anpassen = null, XrTestUhr? uhr = null, Action<IServiceCollection>? dienste = null)
     {
         Directory.CreateDirectory(BenutzerOrdner);
         var e = new Einstellungen("Test", "testpc", Katalog.StandardOrdner(), null) { ZuletztMerken = false, BenutzerOrdner = BenutzerOrdner };
@@ -48,7 +48,7 @@ public sealed class XrServer : IAsyncDisposable
         };
         Xr = anpassen is null ? xr : anpassen(xr);
         if (zugang) SchalterSetzen(true);   // der Schalter dieses PCs (zugang.json im XR-Ordner), vor dem Start
-        fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(Xr); }));
+        fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(Xr); dienste?.Invoke(s); }));
         Lokal = fabrik.CreateClient();
     }
 

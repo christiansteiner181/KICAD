@@ -77,6 +77,7 @@ const S = {
   raum3d: '<path d="M4 20l12-6 12 6-12 6z"/><path d="M4 20V10l12-6 12 6v10M16 14v12"/><circle cx="16" cy="14" r="2.2"/>',
   raumBegehen: '<path d="M3 24l13-6 13 6-13 6z"/><circle cx="16" cy="5.5" r="2.6"/><path d="M16 8.5v8M12 12l4 2 4-2M16 16.5l-3 5M16 16.5l3 5"/>',   // N15: Raum begehen = Figur im Raum
   questVerbinden: '<path d="M3 9h26a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 29 20h-6.5l-2.5-4h-8l-2.5 4H3a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 3 9z"/><path d="M10 25h12M19 22l3 3-3 3"/>',   // Modul XR: VR-Brille mit Pfeil = Quest verbinden
+  brilleZeigen: '<path d="M2 12h20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-5l-2-3h-6l-2 3H2a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 2 12z"/><circle cx="27" cy="16" r="2.2"/><path d="M25 9l5-3M25 23l5 3M12 26v3"/>',   // Quest App P7: Brille als Figur in der 3D-Ansicht zeigen
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
   hkapVerbinden: '<rect x="3" y="5" width="9" height="9" rx="1"/><rect x="20" y="18" width="9" height="9" rx="1"/><path d="M12 9.5h5a3 3 0 013 3V18M16 22.5h-4M7.5 14v8.5H12"/>',
   hkapAbgleich: '<rect x="3" y="4" width="10" height="24" rx="1"/><rect x="19" y="4" width="10" height="24" rx="1"/><path d="M6 10h4M6 16h4M6 22h4M22 10h4M22 16h4M22 22h4M14 12h4M16 10l2 2-2 2M18 20h-4M16 18l-2 2 2 2"/>',

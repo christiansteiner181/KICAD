@@ -70,6 +70,10 @@ public sealed class BenutzerEinstellungen
         ["quest.brillen"] = QuestDienst.BrillenPruefen,
         // «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs): Ja/Nein, Vorgabe ja.
         ["quest.autostart"] = QuestDienst.AutomatikPruefen,
+        // Quest App (Quest App P7): Ordner mit der abgelegten APK und version.json (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app, werkzeuge/quest_app_bereitstellen.ps1); ein vollständiger lokaler Ordnerpfad.
+        ["quest.app_ablage"] = QuestDienst.AppAblagePruefen,
+        // Brillen der Quest App in der 3D-Ansicht am PC zeigen (Quest App P7, Register Ansicht): Ja/Nein, Vorgabe ja.
+        ["ansicht3d.brillen_zeigen"] = QuestDienst.AutomatikPruefen,
         // Der Zugang der Quest App im Büronetz (Modul XR, Quest App P3) ist bewusst KEINE Benutzereinstellung: er gilt je PC (Christian 23.10.2026),
         // Schalter und Ports stehen in %LOCALAPPDATA%\HLKS_CAD\xr\zugang.json (XrPcEinstellung in XrEinstellungen.cs).
     };

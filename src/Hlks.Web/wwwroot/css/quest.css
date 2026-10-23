@@ -5,6 +5,7 @@
 .qd [hidden] { display: none; }
 .qd-kopf { display: flex; align-items: center; gap: 10px; }
 .qd-kopf .dlg-knopf { margin-left: auto; }
+.qd-kopf .qd-zur-app { margin-left: 8px; }
 .qd-spinner { margin-left: 6px; }
 .qd-ampel { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
 .qd-punkt { display: grid; grid-template-columns: 14px 150px 1fr; gap: 8px; align-items: baseline; padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
@@ -25,8 +26,8 @@
 .qd-aktionen .dlg-knopf { padding: 0 12px; }
 .qd-zeile { display: grid; grid-template-columns: 150px 1fr auto; gap: 8px; align-items: center; }
 .qd-etikett { color: var(--text-leise); }
-.qd-ip, .qd-adb { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: var(--schrift-mono); }
-.qd-ip:focus, .qd-adb:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
+.qd-ip, .qd-adb, .qa-ordner { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: var(--schrift-mono); }
+.qd-ip:focus, .qd-adb:focus, .qa-ordner:focus { outline: 1px solid var(--akzent); outline-offset: -1px; }
 .qd-klein { font-size: 11px; }
 .qd-hinweise ul { margin: 4px 0 0; padding-left: 20px; display: flex; flex-direction: column; gap: 3px; }
 .qd-adresse { padding-top: 2px; }
@@ -44,3 +45,39 @@
 .sl-brille.gruen { color: var(--ok); }
 .sl-brille.gelb { color: var(--warnung); }
 .sl-brille.grau { color: var(--text-leise); }
+
+/* Teil «Quest App» im Dialog «Quest verbinden» (Quest App P7): Netzzugang, Fassungen, Installation, Kopplungen, Ersatzkopplung. */
+.qa { padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); display: flex; flex-direction: column; gap: 6px; }
+.qa [hidden] { display: none; }
+.qa-zugang { display: flex; flex-direction: column; gap: 4px; }
+.qa-zeile { display: grid; grid-template-columns: 14px 1fr auto; gap: 8px; align-items: center; padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.qa-zeile .qa-lampe { width: 10px; height: 10px; border-radius: 50%; background: var(--rand); }
+.qa-zeile[data-stufe="ok"] .qa-lampe { background: var(--ok); }
+.qa-zeile[data-stufe="schlecht"] .qa-lampe { background: var(--fehler); }
+.qa-zugang-text { overflow-wrap: anywhere; }
+.qa-hinweise { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 3px; }
+.qa-hinweise:empty { display: none; }
+.qa-hinweis { padding: 4px 8px; border: 1px solid var(--rand-leise); border-left-width: 4px; border-radius: var(--radius); overflow-wrap: anywhere; }
+.qa-hinweis.ok { border-left-color: var(--ok); }
+.qa-hinweis.warnung { border-left-color: var(--warnung); }
+.qa-hinweis.info { border-left-color: var(--rand); }
+.qa-fassungen { display: flex; flex-direction: column; gap: 2px; }
+.qa-fz { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: baseline; }
+.qa-abgelegt, .qa-installiert { overflow-wrap: anywhere; }
+.qa-installieren-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
+.qa-weg { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
+.qa-meldung.warnung { border-color: var(--warnung); }
+.qa-schritte { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 2px; }
+.qa-schritt.ok::marker { color: var(--ok); }
+.qa-schritt.schlecht { color: var(--fehler); }
+.qa-block { display: flex; flex-direction: column; gap: 4px; padding-top: 4px; border-top: 1px solid var(--rand-leise); }
+.qa-kopplung { display: grid; grid-template-columns: 14px 1fr auto auto; gap: 8px; align-items: center; }
+.qa-kopplung .qa-lampe { width: 10px; height: 10px; border-radius: 50%; background: var(--rand); }
+.qa-kopplung .qa-lampe.verbunden { background: var(--ok); }
+.qa-kopplung-text { overflow-wrap: anywhere; }
+.qa-anfrage { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid var(--warnung); border-radius: var(--radius); }
+.qa-code { font-family: var(--schrift-mono); font-size: 28px; font-weight: 700; letter-spacing: 4px; user-select: all; }
+.qa-anfrage-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+.qa-anfragen-warnung { margin-bottom: 2px; }
+.qa-ordner { font-family: var(--schrift-mono); }
+.qa-ablage { grid-template-columns: 110px 1fr auto; }

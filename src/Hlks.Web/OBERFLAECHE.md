@@ -2020,6 +2020,53 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   **Nur mit Brille und Büronetz prüfbar:** Erreichbarkeit über WLAN und Firewall, Broadcast im Büronetz, Pinning in der App, Dauerlast 30 Posen/s über WLAN.
   **Anleitung:** `zb-xr-zugang` in `berichte/anleitung/inventar.json`.
 
+## Modul XR: Quest App in KICAD (Quest App P7, `entwurf/modul-xr.md`, Zeile P7; Entscheide Christian 23.10.2026: «KICAD installiert die App», «PC sieht Brille»)
+
+Der Dialog **«Quest verbinden»** (Register **Ansicht › Gruppe Fenster › «Quest verbinden …»**) hat jetzt einen Teil **«Quest App»** (zwischen «Begehung beim Aufsetzen» und «Gut zu wissen»). Er ersetzt den Ablauf von Hand
+(`werkzeuge/quest_brillentest.ps1`) durch Knöpfe. Der Browser-Weg darüber bleibt unverändert. **Reine Rechner-Funktionen** (kein Befehl, keine Abfrage des Kerns, kein Paket im Modell), für die KI **verboten**
+(`KiEinordnung.RechnerFunktionen` › `quest_app`, `quest_app_netz`; die Anzeige der Brille am PC fällt unter `xr_kanal`), kein MCP-Werkzeug.
+
+- **Netzzugang ein/aus:** Zeile mit Lampe (grün = aktiv, rot = eingeschaltet aber nicht aktiv, grau = aus), Port, Fingerabdruck in Kurzform («AB12 CD34 EF56 7890») und den Adressen des PCs; Knopf **«Netzzugang einschalten/ausschalten»**
+  (`POST /api/xr/zugang { an }`, Schalter dieses PCs wie im Abschnitt «Zugang im Büronetz»). Der Zugang öffnet sich nur im KICAD auf Port 5130 (Desktop); sonst steht der Grund in der Zeile.
+- **Hinweise zu Netz und Firewall (nur lesen):** `GET /api/quest/app/netz`. KICAD liest mit einem **festen PowerShell-Skript** (`Get-NetConnectionProfile`, `Get-NetFirewallRule -Group 'KICAD XR'`, `Get-NetFirewallPortFilter`; kein Schreibbefehl,
+  Zeitgrenze 20 s, 30 s gemerkt, «?neu=1» liest neu) und bewertet (`QuestAppNetz.Bewerten`, getestet): **Warnung**, wenn ein Netz des PCs nicht «Privat» ist (Beispiel: «s-net 3» als «Öffentlich»; die Regeln gelten nur im Profil «Privat»),
+  wenn die Regeln der Gruppe «KICAD XR» fehlen oder TCP 5140 nicht erlaubt ist (mit Verweis auf `werkzeuge\xr_firewall.ps1`, das **Christian selbst als Administrator** ausführt – KICAD ändert nie etwas) bzw. wenn keine LAN-/WLAN-Karte mit privater
+  Adresse da ist; **Hinweis**, wenn nur UDP 5141 (Suche) fehlt oder Windows nicht lesbar war («über das Kabel geht es trotzdem»); **grün**, wenn alles in Ordnung ist. Im Testlauf wird Windows nicht befragt (`QuestAppSystemLeer`).
+- **App installieren/aktualisieren:** Auswahl **«über WLAN»** oder **«über Kabel»** (Vorgabe nach der Brille: am USB-Kabel «über Kabel») und der Knopf (heisst «App aktualisieren», wenn die App in der Brille schon steht). Er ist frei, wenn der Netzzugang
+  aktiv ist, die abgelegte App heil ist und eine Brille freigegeben ist; sonst steht darunter der Grund. `POST /api/quest/app/installieren { weg, name? }` (`QuestApp.cs`) macht in dieser Reihenfolge, jeder Schritt erscheint als Zeile:
+  1. **zugang** – Netzzugang aktiv? 2. **apk** – abgelegte App heil? 3. **brille** – freigegebene Brille wählen (bei Kabel bevorzugt USB, bei WLAN der WLAN-Weg), Modell (`getprop ro.product.model`) und Seriennummer (`getprop ro.serialno`; sie
+  ist auf beiden Wegen dieselbe und bestimmt die Kopplung: eine neue ersetzt die alte derselben Brille) lesen; 4. **installieren** – `adb install -r` der APK (Zeitgrenze 3 min, `QuestEinstellungen.InstallZeitlimit`; Meldungen wie
+  `INSTALL_FAILED_UPDATE_INCOMPATIBLE` werden übersetzt, z. B. «App in der Brille deinstallieren»); 5. **kabel** (nur über Kabel) – `adb reverse tcp:5140 tcp:5140`, im Paket steht 127.0.0.1 als erste Adresse (`QuestDienst.AdressenFuerWeg`);
+  6. **uebertragen** – Kopplungspaket (Weg A, mit Schlüssel) erzeugen und mit `adb push` nach `/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json` legen (die App übernimmt und löscht es); 7. **starten** – `resolve-activity` und `am start -n`.
+  **Das Paket mit dem Schlüssel liegt am PC höchstens für die Dauer von `adb push`** in einer Datei in einem eigenen Ordner unter `%TEMP%\HLKS_CAD\quest_app` (danach mit Nullen überschrieben und gelöscht, auch bei Fehlern), steht **in keiner Antwort,
+  keinem Protokoll und keiner Ausgabe**. Scheitert die Übertragung, wird die frisch angelegte Kopplung **widerrufen** (kein Schlüssel ohne Brille). Scheitert nur der Start, gilt die Installation (Schritt rot, Meldung «von Hand starten»).
+  Antwort immer Status 200: `{ ok, schritte[{ id, text, ok }], meldung?, fehler?, vorschlag?, weg, brille?, name? }`; 400 nur bei unbrauchbaren Eingaben (Weg, Name). Es startet nur `adb.exe` mit festen Argumenten (Regeln wie «Quest verbinden»).
+- **Installierte und abgelegte Fassung:** `GET /api/quest/app` zeigt **abgelegt** (`version.json`: Fassung, Commit, Bauzeit, Grösse, SHA-256; die APK wird dagegen geprüft: Datei da, Grösse, Prüfsumme – bei Abweichung steht der Grund da und die Installation ist gesperrt)
+  und **in der Brille** (`adb shell dumpsys package ch.hkplanung.kicad.quest`: `versionName`, `versionCode`, `lastUpdateTime`) mit einem Satz zum Vergleich (`nicht_installiert` | `andere_nummer` | `gleiche_nummer` | `unbekannt`;
+  gleiche Nummer sagt nichts über den Stand – das zeigt nur der Commit der abgelegten App).
+- **Ablage der App:** `werkzeuge\quest_app_bereitstellen.ps1` baut die APK (`dotnet publish src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj -c Release -f net10.0-android`, Bauordner `HLKS_BUILD`) und legt sie mit `version.json`
+  nach `%USERPROFILE%\HLKS_CAD_werkzeuge\quest_app\` (kein adb, nichts heruntergeladen; `-Ablage <Ordner>` und `-OhneBau` möglich). Ein anderer Ordner ist als Benutzereinstellung **`quest.app_ablage`** möglich (Feld «Ordner der App» im Dialog;
+  vollständiger lokaler Pfad, kein Netzpfad, kein `..`).
+- **Gekoppelte Brillen:** Liste aus `GET /api/xr/zugang` › `kopplungen` mit Name, «seit …», verbunden bzw. «zuletzt …» und **«Widerrufen»** (mit Rückfrage; `POST /api/xr/kopplung/widerrufen`, die Brille wird sofort getrennt).
+- **Ersatzkopplung (Weg B):** offene Anfragen aus `anfragen` (Name, Kennung, Absender-IP, **6-stelliger Code in Dreiergruppen**, Rest der Frist) mit **«Codes stimmen überein – koppeln»** (erst frei, wenn die Brille aufgedeckt hat und die Frist läuft) und
+  **«Ablehnen»**. Bei **mehr als einer offenen Anfrage** steht eine deutliche Warnung (nur bestätigen, wenn der Code genau dem in der eigenen Brille entspricht, im Zweifel alle ablehnen). Namen und Kennungen kommen aus dem Netz und gehen **nur über `esc()`** ins HTML.
+  Der Zustand wird alle 2 s gelesen, solange der Dialog offen ist.
+- **Aufträge an die App:** Die VR-Aufträge (Rechtsklick auf einen Raum: «In VR begehen (Brille)» usw., 3D-Ansicht: «An die Brille senden») gehen wie bisher an den Server (`POST /api/vr/auftrag`) und von dort **sofort über den Live-Kanal** an jede verbundene App.
+  Damit nichts doppelt läuft: Ist eine App im Kanal, antwortet der Server `autostart: "app"` und **startet keinen Browser in der Brille** (der Autostart über `adb am start` und CDP würde über die laufende App dieselbe Begehung ein zweites Mal öffnen);
+  die Meldung sagt «Auftrag an die App … die App führt ihn sofort aus». Ohne verbundene App gilt der Weg über den Browser unverändert («Brille aufsetzen, die Begehung startet» bzw. «App starten oder im Browser KICAD VR öffnen»);
+  eine später gestartete App holt den Auftrag beim Verbinden (`willkommen.auftrag`).
+- **PC sieht die Brille:** Die 3D-Ansicht zeigt jede verbundene Brille der App als einfache Figur an ihrer Pose aus `GET /api/xr/teilnehmer`: **Kopf** (Kugel) mit **Blickkegel und Blicklinie**, **Hände** als Punkte (Handgelenk, Zeigefingerspitze; bei Pinch grösser)
+  und der **Name** als Etikett (Farbe je Brille; ohne Pose seit 5 s blass mit «keine Pose seit … s»). Koordinaten: KICAD-mm, z oben, Drehung als Quaternion `[x, y, z, w]` – in three wie alle Körper (x, z, −y)/1000
+  (`ansichten/xr-teilnehmer-logik.js`, getestet; Blick ohne Drehung = Norden, wie `KicadUmrechnung`). Die Figuren hängen an der Szene, nicht am Modell: sie zählen nicht beim Einpassen, werden nicht angeklickt und nicht vom Schnittbereich beschnitten;
+  sie sind für das Auge auch hinter Wänden sichtbar und bleiben bei jedem Abstand erkennbar (Punktmarken und Etikett mit fester Bildschirmgrösse). In VR im Browser sind sie aus.
+  **Abfrage:** ein gemeinsamer Takt für alle offenen 3D-Ansichten – **mit Brille alle 200 ms**, ohne Brille nur alle 4 s ein winziger Blick auf die Liste, **ausgeschaltet oder bei verstecktem Fenster gar keine Anfrage**; ohne offene 3D-Ansicht läuft nichts.
+  **Ein/aus:** Register **Ansicht › Fenster › «Brille zeigen»** (Aktion `ansicht.brilleZeigen`, Schalter mit Symbol) und das Kästchen im Teil «Quest App»; Benutzereinstellung **`ansicht3d.brillen_zeigen`** (Ja/Nein, Vorgabe ja).
+- **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~QuestAppTests"` (Attrappe `tests/Hlks.AdbAttrappe` mit `install`, `push`, `getprop`, `dumpsys package`, `resolve-activity`, `am start -n`; der Netzzugang echt mit TLS auf 127.0.0.1; Windows-Abfrage als Attrappe);
+  Node `node --test src/Hlks.Web/wwwroot/js/oberflaeche/quest-app.test.mjs ansichten/xr-teilnehmer.test.mjs`; Browser `node src/Hlks.Web/wwwroot/js/oberflaeche/xr-app.browser.mjs` (Port 5740, CDP 9740; der Netzzugang öffnet sich nur auf Port 5130, darum
+  werden `/api/xr/zugang` und `/api/xr/teilnehmer` in der Seite nachgestellt). **Nur mit der Brille prüfbar:** die echte Installation per adb (Entwicklermodus, Freigabe, `install -r` einer 7,5 MB grossen APK über Kabel und WLAN, Scoped Storage beim `push` nach `Android/data`,
+  Start der App), Pinning und Verbindung der App nach dem Paket, die echte Firewall und das Netzprofil «Privat» im Büronetz, Genauigkeit und Ausrichtung der Figur gegenüber der echten Haltung (Blickrichtung, Hände), Verhalten bei zwei Brillen.
+  **Anleitung:** `zb-xr-quest-app-installieren`, `zb-xr-brille-am-pc`, `zb-xr-kopplungen` in `berichte/anleitung/inventar.json`.
+
 ## Modul XR, Quest App P2: Modell als GLB je Geschoss (`entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P2)
 
 Die native Quest App (StereoKit, `src/Hlks.Quest`) lädt das Modell nicht über `/api/koerper`, sondern als **glTF 2.0 binär (GLB) je Geschoss**, zusammengefasst je Material (Meta, Quest 3: höchstens

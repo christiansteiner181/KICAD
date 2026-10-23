@@ -35,11 +35,13 @@ export async function auftragSenden({ modus, raum = null, geschoss = null, aussc
   if (T.autostartAn(benutzerWert(T.AUTOSTART_SCHLUESSEL, true))) koerper.autostart = true;
   try {
     const antwort = await senden('/api/vr/auftrag', koerper);
-    if (antwort?.autostart === 'gestartet') {
+    if (antwort?.autostart === 'app') {   // Quest App P7: eine Brille mit der App ist verbunden; der Auftrag ging über den Live-Kanal an sie, KICAD startet keinen Browser
+      meldung(`Auftrag an die App in der Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – die App führt ihn sofort aus.`, 'ok');
+    } else if (antwort?.autostart === 'gestartet') {
       meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – Brille aufsetzen, die Begehung startet automatisch.`, 'ok');
       import('./quest-status.js').then((m) => m.autostartVerfolgen()).catch(() => { /* die Anzeige ist nur eine Zugabe */ });
     } else {
-      meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – in der Quest KICAD VR öffnen.`, 'ok');
+      meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – in der Quest die App «KICAD» starten (sie holt den Auftrag beim Verbinden) oder im Browser KICAD VR öffnen.`, 'ok');
     }
     return true;
   } catch (e) { meldung(e.message ?? String(e), 'warnung', { vorschlag: e.vorschlag }); return false; }
