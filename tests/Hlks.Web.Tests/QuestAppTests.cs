@@ -85,7 +85,7 @@ public class QuestAppTests
             {
                 Zeitlimit = TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero, WlanGrenze = TimeSpan.FromMilliseconds(500),
                 WlanAbstand = TimeSpan.FromMilliseconds(50), WeiterleitungGrenze = TimeSpan.FromMilliseconds(500),
-                AppAblage = AblageOrdner, PaketOrdner = PaketOrdner, InstallZeitlimit = TimeSpan.FromSeconds(30),
+                AppAblage = AblageOrdner, PaketOrdner = PaketOrdner, AppWegDatei = Path.Combine(Wurzel, "weg", "weg.json"), InstallZeitlimit = TimeSpan.FromSeconds(30),
             };
             Quest = anpassen is null ? q : anpassen(q);
             Xr = new XrServer(zugang, dienste: s => { s.AddSingleton(Quest); s.AddSingleton<IQuestAppSystem>(System); s.AddSingleton<IQuestNetz>(Lan); });
@@ -832,6 +832,150 @@ public class QuestAppTests
         var (c3, j3) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04" });
         Assert.Equal(HttpStatusCode.OK, c3);
         Assert.Equal("app", (string)j3!["autostart"]!);
+    }
+
+    // ---------------------------------------------------------------- Nachtrag P7: Kabelweg der App, Weiterleitung, App starten statt Browser
+
+    static bool HatReverse(Adb adb, int port) => (adb.Gelesen("reverse.txt") ?? "").Contains($"tcp:{port} tcp:{port}");
+
+    [Fact]
+    public async Task Im_Kabelweg_stellt_die_Automatik_nicht_auf_WLAN_adb_um_und_haelt_die_Weiterleitung_der_App()
+    {
+        await using var u = await Umgebung.Neu();
+        var (port, _, _) = await u.Xr.Aktiv();
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        Assert.True(HatReverse(u.Adb, port));
+        // adb in der Brille startet neu: die Weiterleitung ist weg
+        File.Delete(Path.Combine(u.Adb.Ordner, "reverse.txt"));
+        u.Adb.Datei("ip.txt", "    inet 192.168.1.50/24 brd 192.168.1.255 scope global wlan0");
+        var (code, j) = await u.Xr.LokalPost("/api/quest/automatik", new { anlass = "klick" });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal("bereit", (string)j!["status"]!);
+        Assert.Contains("keine Umstellung auf WLAN-adb", (string)j["meldung"]!);
+        Assert.DoesNotContain(u.Adb.Aufrufe(), a => a.Contains("tcpip") || a.StartsWith("connect "));
+        Assert.True(HatReverse(u.Adb, port), "die Weiterleitung tcp:<Port> der App ist wieder da");
+        Assert.Equal("kabel", (string)(await u.Get("/api/quest/app")).Json!["appWeg"]!);
+    }
+
+    [Fact]
+    public async Task Ohne_Kabelkopplung_stellt_die_Automatik_weiter_auf_WLAN_um()
+    {
+        await using var u = await Umgebung.Neu();
+        u.Adb.Datei("ip.txt", "    inet 192.168.1.50/24 brd 192.168.1.255 scope global wlan0");
+        var (_, j) = await u.Xr.LokalPost("/api/quest/automatik", new { anlass = "klick" });
+        Assert.Equal("bereit", (string)j!["status"]!);
+        Assert.Contains(u.Adb.Aufrufe(), a => a.Contains("tcpip 5555"));
+    }
+
+    [Fact]
+    public async Task Nach_dem_Widerruf_gilt_der_Kabelweg_nicht_mehr()
+    {
+        await using var u = await Umgebung.Neu();
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        var id = (string)(await u.Kopplungen()).Single()!["id"]!;
+        await u.Xr.LokalPost("/api/xr/kopplung/widerrufen", new { kopplung = id });
+        u.Adb.Datei("ip.txt", "    inet 192.168.1.50/24 brd 192.168.1.255 scope global wlan0");
+        var (_, j) = await u.Xr.LokalPost("/api/quest/automatik", new { anlass = "klick" });
+        Assert.Equal("bereit", (string)j!["status"]!);
+        Assert.Contains(u.Adb.Aufrufe(), a => a.Contains("tcpip 5555"));
+        var z = (await u.Get("/api/quest/app")).Json!;
+        Assert.Equal(Seriennummer, (string)z["brille"]!["kennung"]!);   // der Dialog vergleicht sie mit den Kopplungen und meldet «neu koppeln»
+        Assert.Empty(await u.Kopplungen());
+    }
+
+    [Fact]
+    public async Task Die_Weiterleitung_der_App_kommt_nach_Verbinden_und_Zustand_auf_den_USB_Weg_zurueck()
+    {
+        await using var u = await Umgebung.Neu(geraete: [Usb, Wlan()]);
+        u.Adb.Verhalten("je_weg");
+        var (port, _, _) = await u.Xr.Aktiv();
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        string Datei(string serie) => "reverse_" + serie.Replace(':', '_') + ".txt";
+        Assert.Contains($"tcp:{port}", u.Adb.Gelesen(Datei(Seriennummer)));
+        File.Delete(Path.Combine(u.Adb.Ordner, Datei(Seriennummer)));
+        await u.Get("/api/quest");   // der Dialog liest den Zustand
+        Assert.Contains($"tcp:{port}", u.Adb.Gelesen(Datei(Seriennummer)) ?? "");
+        Assert.Null(u.Adb.Gelesen(Datei(WlanWeg)));   // nicht doppelt auf dem WLAN-Weg
+        File.Delete(Path.Combine(u.Adb.Ordner, Datei(Seriennummer)));
+        var (code, _) = await u.Xr.LokalPost("/api/quest/verbinden", new { });   // Browser-Teil: reverse für den Browser-Port
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Contains($"tcp:{port}", u.Adb.Gelesen(Datei(Seriennummer)) ?? "");
+    }
+
+    [Fact]
+    public async Task Ohne_Kabelkopplung_aendert_der_Zustand_nichts_an_der_Weiterleitung()
+    {
+        await using var u = await Umgebung.Neu();
+        var (port, _, _) = await u.Xr.Aktiv();
+        await u.Get("/api/quest");
+        Assert.False(HatReverse(u.Adb, port));
+        Assert.DoesNotContain(u.Adb.Aufrufe(), a => a.Contains($"reverse tcp:{port}"));
+    }
+
+    [Fact]
+    public async Task VR_Auftrag_ohne_verbundene_App_startet_die_installierte_App_statt_des_Browsers()
+    {
+        await using var u = await Umgebung.Neu();
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        File.Delete(Path.Combine(u.Adb.Ordner, "app_start.log"));
+        File.Delete(Path.Combine(u.Adb.Ordner, "reverse.txt"));
+        var (port, _, _) = await u.Xr.Aktiv();
+        var (code, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04", autostart = true });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal("app_gestartet", (string)j!["autostart"]!);
+        Assert.Equal(["ch.hkplanung.kicad.quest/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
+        Assert.True(HatReverse(u.Adb, port), "vor dem Start ist die Weiterleitung wieder da");
+        Assert.DoesNotContain(u.Adb.Aufrufe(), a => a.Contains("android.intent.action.VIEW") || a.Contains("forward tcp:"));   // kein Browser, kein Fern-Debugging
+        // der Auftrag wartet im Server, bis die App verbindet (willkommen.auftrag)
+        var token = XrServer.Token((JsonObject)JsonNode.Parse(u.Adb.Gelesen("gepusht.txt")!)!);
+        var (p2, _, fp) = await u.Xr.Aktiv();
+        await using var app = await XrKlient.Verbinden(p2, fp, token);
+        var w = await app.Hallo("Quest 3");
+        Assert.Equal("R-1.04", (string)w["auftrag"]!["raum"]!);
+    }
+
+    [Fact]
+    public async Task VR_Auftrag_startet_keine_App_wenn_keine_installiert_oder_gekoppelt_ist_oder_der_Zugang_aus_ist()
+    {
+        // keine App installiert
+        await using (var u = await Umgebung.Neu())
+        {
+            var (_, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04" });
+            Assert.Equal("nicht_angefordert", (string)j!["autostart"]!);
+            Assert.Null(u.Adb.Gelesen("app_start.log"));
+        }
+        // widerrufen: die App würde «neu koppeln» melden
+        await using (var u = await Umgebung.Neu())
+        {
+            Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+            File.Delete(Path.Combine(u.Adb.Ordner, "app_start.log"));
+            await u.Xr.LokalPost("/api/xr/kopplung/widerrufen", new { kopplung = (string)(await u.Kopplungen()).Single()!["id"]! });
+            var (_, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04" });
+            Assert.NotEqual("app_gestartet", (string)j!["autostart"]!);
+            Assert.Null(u.Adb.Gelesen("app_start.log"));
+        }
+        // Netzzugang aus
+        await using (var u = await Umgebung.Neu(zugang: false))
+        {
+            u.Adb.Datei("app_installiert.txt", "0.1 1");
+            var (_, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04" });
+            Assert.Equal("nicht_angefordert", (string)j!["autostart"]!);
+            Assert.Null(u.Adb.Gelesen("app_start.log"));
+        }
+    }
+
+    [Fact]
+    public async Task Der_Weg_der_Installation_wird_je_PC_gemerkt_und_ist_nur_mit_Kopplung_wirksam()
+    {
+        await using var u = await Umgebung.Neu();
+        Assert.False(File.Exists(u.Quest.AppWegDatei!));
+        Assert.True((bool)(await u.Installieren("wlan"))["ok"]!);
+        var o = (JsonObject)JsonNode.Parse(File.ReadAllText(u.Quest.AppWegDatei!))!;
+        Assert.Equal("wlan", (string)o["weg"]!);
+        Assert.Equal(Seriennummer, (string)o["kennung"]!);
+        Assert.DoesNotContain("schluessel", File.ReadAllText(u.Quest.AppWegDatei!), StringComparison.OrdinalIgnoreCase);
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        Assert.Equal("kabel", (string)((JsonObject)JsonNode.Parse(File.ReadAllText(u.Quest.AppWegDatei!))!)["weg"]!);
     }
 
     [Fact]

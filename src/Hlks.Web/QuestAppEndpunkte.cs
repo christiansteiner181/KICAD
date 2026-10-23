@@ -25,6 +25,8 @@ public static class QuestAppEndpunkte
         var kopplungen = app.Services.GetRequiredService<XrKopplungen>();
         var system = app.Services.GetService<IQuestAppSystem>() ?? IQuestAppSystem.Vorgabe();
         var lan = app.Services.GetService<IQuestNetz>() ?? IQuestNetz.Vorgabe();
+        quest.KopplungBesteht = kennung => kopplungen.Liste().Any(k => string.Equals(k.Brille, kennung, StringComparison.OrdinalIgnoreCase));
+        quest.ZugangAktiv = () => netz.Aktiv;
         var g = app.MapGroup("/api/quest/app");
 
         var cacheSperre = new SemaphoreSlim(1, 1);

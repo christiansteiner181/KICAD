@@ -37,6 +37,8 @@ export async function auftragSenden({ modus, raum = null, geschoss = null, aussc
     const antwort = await senden('/api/vr/auftrag', koerper);
     if (antwort?.autostart === 'app') {   // Quest App P7: eine Brille mit der App ist verbunden; der Auftrag ging über den Live-Kanal an sie, KICAD startet keinen Browser
       meldung(`Auftrag an die App in der Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – die App führt ihn sofort aus.`, 'ok');
+    } else if (antwort?.autostart === 'app_gestartet') {   // P7 Nachtrag: die App war installiert und gekoppelt, aber nicht verbunden – KICAD hat sie in der Brille gestartet (kein Browser)
+      meldung(`Auftrag an die App: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – die App wurde in der Brille gestartet und holt den Auftrag beim Verbinden. Brille aufsetzen.`, 'ok');
     } else if (antwort?.autostart === 'gestartet') {
       meldung(`Auftrag an die Brille: ${auftragBeschreibung(modus, r, g ?? (r?.geschoss ? element(r.geschoss) : null), ausschnitt, an)} – Brille aufsetzen, die Begehung startet automatisch.`, 'ok');
       import('./quest-status.js').then((m) => m.autostartVerfolgen()).catch(() => { /* die Anzeige ist nur eine Zugabe */ });

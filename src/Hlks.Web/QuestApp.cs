@@ -46,6 +46,11 @@ public sealed partial class QuestDienst
     public const string AppEingang = "/sdcard/Android/data/" + AppPaket + "/files";
     public const string AppVersionDatei = "version.json";
 
+    /// <summary>Wird von MapQuestApp gesetzt: Besteht für diese Kennung der Brille eine Kopplung am Netzzugang? Ohne Setzen gilt «nein».</summary>
+    public Func<string, bool>? KopplungBesteht { get; set; }
+    /// <summary>Wird von MapQuestApp gesetzt: Ist der Netzzugang dieses PCs aktiv?</summary>
+    public Func<bool>? ZugangAktiv { get; set; }
+
     static readonly Regex AppDateiMuster = new(@"^[A-Za-z0-9][A-Za-z0-9._\-]{0,100}\.apk$", RegexOptions.CultureInvariant);
     static readonly Regex Hex64 = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant);
     static readonly Regex KurzText = new(@"^[A-Za-z0-9._:+\- ]{1,40}$", RegexOptions.CultureInvariant);
@@ -129,6 +134,106 @@ public sealed partial class QuestDienst
         return new QuestAppVersion(datei, Kurz("commit"), Kurz("zeit"), groesse, sha, Kurz("versionName"), code);
     }
 
+    // ---------------------------------------------------------------- Weg der App (je PC) und Weiterleitung
+
+    /// <summary>Der gemerkte Weg der Installation: Kennung der Brille, «kabel» oder «wlan», Port des Netzzugangs.</summary>
+    public sealed record AppWegStand(string Kennung, string Weg, int Port);
+
+    string AppWegPfad()
+    {
+        if (!string.IsNullOrWhiteSpace(einstellungen.AppWegDatei)) return einstellungen.AppWegDatei!;
+        if (FamilienBibliothekDienst.Testlauf()) return Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_app_weg_test", "weg.json");
+        return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HLKS_CAD", "xr", "quest_app_weg.json");
+    }
+
+    /// <summary>Liest den gemerkten Weg; null, wenn es ihn nicht gibt oder er unbrauchbar ist. Wirft nie.</summary>
+    public AppWegStand? AppWegLesen()
+    {
+        try
+        {
+            var p = AppWegPfad();
+            if (!File.Exists(p)) return null;
+            if (JsonNode.Parse(File.ReadAllText(p, Encoding.UTF8)) is not JsonObject o) return null;
+            var kennung = TextVon(o["kennung"]);
+            var weg = TextVon(o["weg"]);
+            if (kennung is null || !SerieMuster.IsMatch(kennung) || weg is not ("kabel" or "wlan")) return null;
+            return o["port"] is JsonValue pv && pv.TryGetValue<int>(out var port) && port is >= 1 and <= 65535 ? new AppWegStand(kennung, weg, port) : null;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or System.Text.Json.JsonException or InvalidOperationException) { return null; }
+    }
+
+    void AppWegSchreiben(AppWegStand s)
+    {
+        try
+        {
+            var p = AppWegPfad();
+            Directory.CreateDirectory(Path.GetDirectoryName(p)!);
+            File.WriteAllText(p, new JsonObject { ["kennung"] = s.Kennung, ["weg"] = s.Weg, ["port"] = s.Port }.ToJsonString(), new UTF8Encoding(false));
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { /* nur eine Zugabe: ohne die Datei gilt der Browser-Weg wie bisher */ }
+    }
+
+    /// <summary>Ist die Quest App im Kabelweg gekoppelt (zuletzt per Kabel installiert, die Kopplung besteht noch)? Dann darf nichts adb in der Brille neu starten (adb tcpip) und die
+    /// Weiterleitung tcp:&lt;Port&gt; muss nach jeder Änderung der adb-Verbindung wieder da sein. Ruft kein adb.</summary>
+    public bool AppKabelAktiv(out int port)
+    {
+        port = 0;
+        var s = AppWegLesen();
+        if (s is null || s.Weg != "kabel" || KopplungBesteht?.Invoke(s.Kennung) != true) return false;
+        port = s.Port;
+        return true;
+    }
+
+    /// <summary>Stellt die Weiterleitung der Quest App (adb reverse tcp:&lt;Port&gt;) wieder her, wenn die App im Kabelweg gekoppelt ist und adb sie verloren hat (Brillentest 23.10.2026:
+    /// nach «adb tcpip» war sie weg, die App getrennt). Gewählt wird der USB-Weg, sonst der WLAN-Weg; hat einer sie schon, geschieht nichts. Nur unter der Sperre aufrufen; scheitert still.</summary>
+    internal async Task AppWeiterleitungSicher(AdbFund adb)
+    {
+        try
+        {
+            if (!AppKabelAktiv(out var port)) return;
+            var wege = (await GeraeteListe(adb)).Where(g => g.Zustand == "device").OrderBy(g => g.Wlan ? 1 : 0).ToList();
+            if (wege.Count == 0) return;
+            foreach (var g in wege) if (await HatWeiterleitung(adb, g.Seriennummer, port)) return;
+            await WeiterleitungSetzen(adb, wege[0].Seriennummer, port, wiederholen: true);
+        }
+        catch (HlksFehler) { /* die Hauptsache (Verbinden) geht vor; der nächste Schritt versucht es wieder */ }
+    }
+
+    /// <summary>VR-Auftrag ohne verbundene App: Hat KICAD die App installiert und gekoppelt (gemerkter Weg, bestehende Kopplung) und ist der Netzzugang an, wird sie gestartet (am start, wie bei der Installation) – der Auftrag
+    /// kommt über den Kanal, sobald sie verbindet (willkommen.auftrag). true = App gestartet (dann startet KICAD keinen Browser); false = nicht möglich (keine App, keine Kopplung, kein adb …).</summary>
+    public async Task<bool> AppFuerAuftragStarten()
+    {
+        // Ohne den gemerkten Weg (KICAD hat die App nie installiert und gekoppelt), ohne Kopplung oder bei ausgeschaltetem Netzzugang gibt es nichts zu starten – und kein adb-Aufruf.
+        if (ZugangAktiv?.Invoke() != true) return false;
+        var stand = AppWegLesen();
+        if (stand is null || KopplungBesteht?.Invoke(stand.Kennung) != true) return false;   // widerrufen: die App würde «neu koppeln» melden und nicht verbinden
+        await sperre.WaitAsync();
+        try
+        {
+            var adb = AdbFinden(out _);
+            if (adb is null) return false;
+            List<QuestGeraet> geraete;
+            try { geraete = await GeraeteListe(adb); }
+            catch (HlksFehler) { return false; }
+            var g = AppGeraetWaehlen(geraete, stand.Weg);
+            if (g is null) return false;
+            await AppWeiterleitungSicher(adb);
+            return await AppStarten(adb, g.Seriennummer) is null;   // ist die App inzwischen deinstalliert, scheitert der Start: dann gilt der Browser-Weg
+        }
+        finally { sperre.Release(); }
+    }
+    /// <summary>Kennung der Brille für die Kopplung: ro.serialno (auf USB und WLAN gleich), sonst die Seriennummer von adb.</summary>
+    async Task<string> KennungVon(AdbFund adb, string serie)
+    {
+        var r = await Aufruf(adb, "-s", serie, "shell", "getprop", "ro.serialno");
+        if (!r.Zeitueberschreitung && r.Code == 0)
+        {
+            try { return XrKopplungen.BrillePruefen(r.Ausgabe); }
+            catch (HlksFehler) { /* unbrauchbar */ }
+        }
+        return serie;
+    }
+
     // ---------------------------------------------------------------- installierte Fassung (rein)
 
     static readonly Regex VersionNameMuster = new(@"\bversionName=([A-Za-z0-9._+\-]{1,30})", RegexOptions.CultureInvariant);
@@ -181,7 +286,8 @@ public sealed partial class QuestDienst
             return new
             {
                 paket = AppPaket, ablage, adbGefunden = true,
-                brille = new { seriennummer = g.Seriennummer, wlan = g.Wlan, modell, installiert = inst },
+                brille = new { seriennummer = g.Seriennummer, wlan = g.Wlan, modell, installiert = inst, kennung = await KennungVon(adb, g.Seriennummer) },
+                appWeg = AppKabelAktiv(out _) ? "kabel" : AppWegLesen()?.Weg,   // «kabel»: keine Umstellung auf WLAN-adb, KICAD hält die Weiterleitung
                 vergleich = FassungVergleich(inst, ablage.Version),
             };
         }
@@ -316,6 +422,7 @@ public sealed partial class QuestDienst
                     "Temporären Ordner und Rechte prüfen und erneut versuchen. Die Kopplung wurde zurückgenommen.", kennung, brillenName);
             }
             Erledigt("uebertragen", "Kopplungspaket in der Brille abgelegt (am PC gelöscht).");
+            AppWegSchreiben(new AppWegStand(kennung, w, info.Port));   // ab jetzt gilt der App-Weg: keine Umstellung auf WLAN-adb im Kabelweg, Weiterleitung wird wiederhergestellt
 
             // 6. App starten (ein Fehler hier macht die Installation nicht ungültig)
             var start = await AppStarten(adb, g.Seriennummer);

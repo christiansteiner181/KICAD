@@ -210,7 +210,10 @@ test('Das Werkzeug quest_app_bereitstellen.ps1: nur ASCII, baut und legt ab, kei
 
 test('Verdrahtung: Dialog, Takt, Endpunkte', () => {
   const d = lies('./quest-dialog.js');
-  assert.match(d, /qd-zur-app/, 'der Knopf «Zur Quest App» oben im Dialog springt zum Teil');
+  assert.match(d, /<details class="qd-browser" open>/, 'der Browser-Prototyp ist einklappbar');
+  assert.ok(d.indexOf('qd-app-platz') < d.indexOf('qd-browser'), 'die Quest App steht oben, der Browser-Prototyp darunter');
+  assert.doesNotMatch(d, /qd-zur-app/);
+  assert.match(d, /browserOffen\(app, z\)/);
   assert.match(d, /appTeil\.zustandNeu\(\)/, 'nach jedem Vorgang im Dialog liest der Teil adb, Brille und Fassung neu');
   assert.match(d, /import \{ questAppTeil \} from '\.\/quest-app-dialog\.js'/);
   assert.match(d, /qd-app-platz/);
@@ -225,4 +228,39 @@ test('Verdrahtung: Dialog, Takt, Endpunkte', () => {
   // keine Fachlogik in der Oberfläche: das Paket mit Schlüssel kommt nie hierher (der Server legt es selbst in die Brille)
   assert.doesNotMatch(t, /kopplung\/paket/);
   assert.doesNotMatch(t, /schluessel\b.*=.*ergebnis/);
+});
+
+test('Nach dem Widerruf: «neu koppeln» statt «aktualisieren» (Kennung der Brille gegen die Kopplungen)', () => {
+  const inst = { ...app, brille: { ...app.brille, kennung: '1WMHH000000000', installiert: { installiert: true, versionName: '0.1', versionCode: 1 } } };
+  const gekoppelt = { ...an, kopplungen: [{ id: 'a1b2c3d4e5f60718', brille: '1WMHH000000000', name: 'Quest 3' }] };
+  assert.equal(T.neuKoppeln(inst, gekoppelt), false);
+  assert.equal(T.neuKoppeln(inst, { ...an, kopplungen: [] }), true);
+  assert.equal(T.neuKoppeln(inst, { ...an, kopplungen: [{ brille: 'ANDERE' }] }), true);
+  assert.equal(T.neuKoppeln(inst, { ...an, kopplungen: [{ brille: '1wmhh000000000' }] }), false, 'Gross-/Kleinschreibung egal');
+  assert.equal(T.neuKoppeln(app, { ...an, kopplungen: [] }), false, 'nicht installiert: nichts neu zu koppeln');
+  assert.equal(T.neuKoppeln({ ...inst, brille: { ...inst.brille, kennung: null } }, an), false, 'ohne Kennung keine Aussage');
+  assert.equal(T.neuKoppeln(inst, null), false);
+  assert.equal(T.installierenTitel(inst, gekoppelt), 'App aktualisieren');
+  assert.equal(T.installierenTitel(inst, { ...an, kopplungen: [] }), 'App neu koppeln');
+  assert.equal(T.installierenTitel(app, an), 'App installieren');
+  assert.match(T.NEU_KOPPELN_HINWEIS, /neu koppeln/);
+});
+
+test('Kabelweg-Satz und Einklappen des Browser-Prototyps', () => {
+  assert.match(T.appWegText({ appWeg: 'kabel' }), /nicht auf WLAN-adb um/);
+  assert.equal(T.appWegText({ appWeg: 'wlan' }), '');
+  assert.equal(T.appWegText(null), '');
+  const inst = { ...app, brille: { ...app.brille, installiert: { installiert: true } } };
+  assert.equal(T.browserOffen(app, quest), true, 'App nicht installiert: Browser-Prototyp offen');
+  assert.equal(T.browserOffen(inst, quest), false, 'App installiert: eingeklappt');
+  assert.equal(T.browserOffen(inst, { ...quest, adbGefunden: false }), true, 'fehlt adb, steht die Einrichtung dort: offen');
+  assert.equal(T.browserOffen(null, null), true);
+  assert.equal(T.appInstalliert(inst), true);
+});
+
+test('Style: der Dialog passt in jedes Fenster', () => {
+  const css = lies('../../css/quest.css');
+  assert.match(css, /\.dlg\.quest-verbinden \{[^}]*max-height: calc\(100vh - 24px\)/);
+  assert.match(css, /\.dlg\.quest-verbinden \{[^}]*width: min\(640px, calc\(100vw - 16px\)\)/);
+  assert.match(css, /\.dlg\.quest-verbinden \.dlg-inhalt \{[^}]*overflow: auto/);
 });

@@ -17,7 +17,7 @@ const esc = T.esc;
  * Erzeugt den Teil. optionen: { quest: () => Zustand von GET /api/quest oder null, beiAenderung: () => void (der Dialog liest dann /api/quest neu) }.
  * Gibt { knoten, aktualisieren(), beenden(), zustandNeu() } zurück: aktualisieren() zeichnet mit dem aktuellen Zustand des Dialogs neu, beenden() hält den Takt an.
  */
-export function questAppTeil({ quest, beiAenderung = () => {} }) {
+export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () => {} }) {
   let zugang = null;      // GET /api/xr/zugang
   let app = null;         // GET /api/quest/app
   let netz = null;        // GET /api/quest/app/netz
@@ -44,12 +44,14 @@ export function questAppTeil({ quest, beiAenderung = () => {} }) {
       <div class="qa-fz"><span class="qa-etikett leise">In der Brille</span><span class="qa-installiert"></span></div>
       <div class="leise qd-klein qa-vergleich"></div>
     </div>
+    <div class="qa-box fehler qa-neukoppeln" role="alert" hidden><b>${esc(T.NEU_KOPPELN_HINWEIS)}</b></div>
+    <div class="leise qd-klein qa-wegtext"></div>
     <div class="qa-installieren-zeile">
       ${T.WEGE.map((x) => `<label class="qa-weg" title="${esc(x.hinweis)}"><input type="radio" name="qa-weg" value="${esc(x.id)}"${x.id === 'wlan' ? ' checked' : ''}> ${esc(x.titel)}</label>`).join('')}
       <button type="button" class="dlg-knopf primaer qa-installieren" title="Installiert die abgelegte App per adb, koppelt die Brille und startet die App">App installieren</button>
     </div>
     <div class="leise qd-klein qa-grund"></div>
-    <div class="qd-meldung qa-meldung" role="status" aria-live="polite" hidden></div>
+    <div class="qa-box qa-meldung" role="status" aria-live="polite" hidden></div>
     <ol class="qa-schritte" aria-label="Schritte der Installation" hidden></ol>
     <div class="qa-block"><b>Gekoppelte Brillen</b>
       <div class="qa-kopplungen" aria-label="Gekoppelte Brillen"></div></div>
@@ -89,13 +91,15 @@ export function questAppTeil({ quest, beiAenderung = () => {} }) {
     const k = T.installierenKnopf({ q: quest(), app, zugang, laeuft, weg });
     const knopf = q('.qa-installieren');
     knopf.disabled = !k.frei;
-    knopf.textContent = T.installierenTitel(app);
+    knopf.textContent = T.installierenTitel(app, zugang);
+    q('.qa-neukoppeln').hidden = !T.neuKoppeln(app, zugang);
+    q('.qa-wegtext').textContent = T.appWegText(app);
     q('.qa-grund').textContent = k.frei ? '' : k.grund;
     for (const r of w.querySelectorAll('input[name="qa-weg"]')) { r.disabled = laeuft; r.checked = r.value === weg; }
     const m = q('.qa-meldung');
     m.hidden = !meldungText;
     if (meldungText) {
-      m.className = `qd-meldung qa-meldung ${meldungText.art === 'fehler' ? 'fehler' : meldungText.art === 'warnung' ? 'warnung' : ''}`;
+      m.className = `qa-box qa-meldung ${meldungText.art === 'fehler' ? 'fehler' : meldungText.art === 'warnung' ? 'warnung' : ''}`;
       m.innerHTML = `<b>${esc(meldungText.text)}</b>${meldungText.vorschlag ? `<div class="qd-vorschlag">Vorschlag: ${esc(meldungText.vorschlag)}</div>` : ''}`;
     }
     const s = T.schritteListe(ergebnis);
@@ -117,7 +121,7 @@ export function questAppTeil({ quest, beiAenderung = () => {} }) {
         + `<span class="qa-kopplung-text">${esc(T.kopplungText(k))}</span><span class="leise qa-weg-art">${esc(k.weg)}</span>`
         + `<button type="button" class="dlg-knopf qa-widerrufen" data-id="${esc(k.id)}" data-name="${esc(k.name)}" title="Widerruft den Schlüssel dieser Brille; sie wird sofort getrennt und muss neu gekoppelt werden"${laeuft ? ' disabled' : ''}>Widerrufen</button></div>`).join('');
     const warnung = T.anfragenWarnung(anfragen);
-    q('.qa-anfragen').innerHTML = (warnung ? `<div class="qd-meldung fehler qa-anfragen-warnung" role="alert"><b>${esc(warnung)}</b></div>` : '')
+    q('.qa-anfragen').innerHTML = (warnung ? `<div class="qa-box fehler qa-anfragen-warnung" role="alert"><b>${esc(warnung)}</b></div>` : '')
       + (anfragen.length === 0 ? '<div class="leise qa-keine">Keine offene Anfrage.</div>'
         : anfragen.map((a) => `<div class="qa-anfrage" data-anfrage="${esc(a.anfrage)}" data-code="${esc(a.code ?? '')}">`
           + `<div class="qa-anfrage-kopf"><b class="qa-anfrage-name">${esc(a.name)}</b> <span class="leise">Kennung ${esc(a.brille)}${a.ip ? ` · von ${esc(a.ip)}` : ''}</span></div>`
@@ -156,6 +160,7 @@ export function questAppTeil({ quest, beiAenderung = () => {} }) {
     if (z) zugang = z;
     if (a) app = a;
     if (n) netz = n;
+    if (a) beiGelesen(app);
     if (!wegGewaehlt) weg = T.wegVorgabe(app?.brille);
     zeichne();
   }
@@ -202,7 +207,7 @@ export function questAppTeil({ quest, beiAenderung = () => {} }) {
         if (!ok) return;
         lauf(async () => {
           await senden('/api/xr/kopplung/widerrufen', { kopplung: id });
-          meldungText = { art: 'ok', text: `Die Kopplung von «${name}» ist widerrufen.` };
+          meldungText = { art: 'ok', text: `Die Kopplung von «${name}» ist widerrufen. Die App in der Brille meldet «neu koppeln» und verbindet nicht mehr: «App neu koppeln» koppelt sie wieder.` };
         });
       });
     } else if (t.matches('.qa-bestaetigen')) {
