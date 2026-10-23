@@ -511,7 +511,7 @@ sealed class QuestApp
         if (szene is null || stand is null) return null;
         if (w.Art == SitzungWunsch.Ausschnitt && w.Bezug is { } r)
         {
-            if (SitzungAuswahl.Ausschnitt(szene, r) is { } x) return x;
+            if (SitzungAuswahl.Ausschnitt(szene, r, stand.Liste) is { } x) return x;   // oben unter der Decke gekappt (Christian 23.10.2026)
             Hinweis($"Der Raum ({r}) ist nicht im Modell – das ganze Modell.");
         }
         if (w.Art == SitzungWunsch.Etage && w.Bezug is { } g)

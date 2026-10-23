@@ -304,6 +304,17 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Brillentest-Skript: Der Server startet jetzt per `Start-Process` ohne Umleitung, das Skript kehrt zurück. `losgeloest.ps1` (WMI)
   scheiterte hier mit Code 8.
 
+**Stand P4b (23.10.2026, zusammengeführt):**
+- **Sitzungsraum in der App:**
+  - Aufträge «Im Sitzungsraum zeigen» (Etagenschnitt im Geschoss des Raums) und «Raum zeigen (VR)» (Raum ±1,5 m, oben unter der Decke).
+  - Griffe mit zwei Händen, dunkler Raum mit Glastisch.
+- **Passthrough** «Echter Tisch» über `XR_FB_passthrough`; Tischhöhe durch Antippen.
+- **Probe-Ebene** `GET /api/xr/ebenen`, Format `hlks-xr-ebene` (Linie, Pfeil, Punkte, Partikel, Fläche); Test_praxis ohne Leitungen zeigt eine feste Probe.
+- **Machbarkeit Tisch- und Markererkennung:** nur mit eigener OpenXR-Anbindung (`XR_EXT_spatial_entity`) und Spezifikation, also mit Download; nicht gebaut.
+- **Tests:** Xr 295, Web 784 grün.
+- **Brillentest offen:** Passthrough, Antippen, Griffe, Bildrate bei «Alle Etagen».
+- **Fragen von P4b für den Brillentest:** «Im Sitzungsraum zeigen» schneidet im Geschoss des Raums statt «Alle Etagen»; die IFC-Unterlage ist im Sitzungsraum vorgabemässig ein.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
@@ -462,6 +473,16 @@ dieser etage ausgeblendet. Der raum soll aussehen wie in einer blackmirror folge
 - **Stand:** erste Fassung gebaut 21.10.2026 (hlks-modul), Brillentest offen. Annahmen: Schnitt unter der Decke (Unterkante der Decke, ohne Decke im Modell die Oberkante), Aussehen des Raums, Tischmasse, Gesten-Schwellen. Einzelheiten: `OBERFLAECHE.md`, Abschnitt «Modul XR, Teil XR-H». Nicht in dieser Fassung: «Hier hineingehen», Mehrbenutzer (XR-G).
 - **Ort:** Ein eigener virtueller Raum, kein Begehen. Er wird auf dem Tablet über «Sitzungsraum» bzw. «Begehen» gewechselt (XR-C).
   In der Mitte steht ein Tisch, darauf das ganze Modell verkleinert, zu Beginn 1:50 und auf die Tischplatte eingepasst.
+- **Räume nur bis unter die Decke** (Christian 23.10.2026, über die Hauptsitzung: «bei der anzeige von räumen in VR soll nur bis zur
+  unterkannte der Decke angezeigt werden. so dass in den Raum geschaut werden kann.»):
+  - Gilt für «Raum zeigen (VR)» und den Sitzungsraum, nicht fürs Begehen (Entscheid Christian 23.10.2026). Beim Begehen bleibt die
+    Decke über einem sichtbar.
+  - Der Ausschnitt eines Raums endet oben an der Unterkante der Decke des Raumgeschosses. Es gilt dieselbe Regel wie beim Etagenschnitt:
+    `SchnittHoeheMm`, 50 mm unter der Unterkante der Decke (`SCHNITT_TIEFER_MM`). Ohne Decke gilt die Kote des Geschosses darüber
+    minus 50 mm.
+  - Seitlich und nach unten bleibt der Rand von 1,5 m.
+  - Umgesetzt in der App (`SitzungAuswahl.Ausschnitt`, Test). Der Browser-Prototyp bleibt unverändert, da er nur noch
+    Fehlerbehebungen bekommt.
 - **Etagen:** Das Tablet listet die Geschosse aus dem Modell. Bei der Wahl z. B. «1. OG» wird alles oberhalb der Decke dieses Geschosses
   ausgeblendet. Die Technik ist dieselbe Schnittebene wie beim 3D-Schnittbereich (N13). Dazu gibt es «Alle Etagen».
   - Vorschlag: Der Schnitt liegt unter der Decke des gewählten Geschosses, damit man von oben hineinsieht; «Decke zeigen» schaltet um.

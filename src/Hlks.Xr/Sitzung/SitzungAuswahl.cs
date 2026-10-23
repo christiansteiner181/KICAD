@@ -123,15 +123,36 @@ public static class SitzungAuswahl
 
     /// <summary>
     /// «Raum zeigen (VR)»: der Raum (Element-Id der Szene, Gruppe «raum») plus Rand als Ausschnitt; alle Geschosse, nur was im Quader liegt. Null, wenn es den Raum nicht gibt.
+    /// Mit liste wird der Quader oben an der Unterkante der Decke des Raumgeschosses gekappt – gleiche Regel wie der Etagenschnitt (SchnittHoeheMm, 50 mm unter der
+    /// Decke, Spiel). Christian 23.10.2026: «bei der anzeige von räumen in VR soll nur bis zur unterkannte der Decke angezeigt werden. so dass in den Raum geschaut
+    /// werden kann.» Gilt für «Raum zeigen» und den Sitzungsraum, nicht fürs Begehen.
     /// </summary>
-    public static SitzungAnsicht? Ausschnitt(ModellSzene szene, string raum, double randMm = RandRaumMm)
+    public static SitzungAnsicht? Ausschnitt(ModellSzene szene, string raum, ModellListe? liste = null, double randMm = RandRaumMm)
     {
         var e = szene.Finde(raum);
         if (e is null || e.Gruppe != ModellSzene.GruppeRaum) return null;
         var roh = QuaderAusRaum([.. szene.Ecken(e)], randMm);
-        if (roh is null || XrSitzungLogik.AusschnittBezugAus(roh) is not { } ab || SchnittQuader.AusSchnittbereich(roh) is not { } q) return null;
-        var text = $"Raum + {Num.ToFixed(randMm / 1000, 1)} m";
+        if (roh is null) return null;
+        var unterDecke = false;
+        if (liste is not null && DeckenSchnittMm(liste, szene, e.GeschossId) is { } oben && roh.Min is { Count: 3 } min && roh.Max is { Count: 3 } max
+            && oben < max[2] && oben > min[2])
+        {
+            roh = roh with { Max = [max[0], max[1], oben] };
+            unterDecke = true;
+        }
+        if (XrSitzungLogik.AusschnittBezugAus(roh) is not { } ab || SchnittQuader.AusSchnittbereich(roh) is not { } q) return null;
+        var text = $"Raum + {Num.ToFixed(randMm / 1000, 1)} m" + (unterDecke ? " · unter der Decke" : "");
         return new SitzungAnsicht(null, q, SitzungRaum.BezugAusAusschnitt(ab), text, e.GeschossId, Ausschnitt: true);
+    }
+
+    /// <summary>Höhe des Schnitts unter der Decke eines Geschosses in Szenen-mm (relativ zum Bezugspunkt), wie beim Etagenschnitt; null, wenn es das Geschoss nicht gibt.</summary>
+    public static double? DeckenSchnittMm(ModellListe liste, ModellSzene szene, string geschossId)
+    {
+        var lg = liste.Geschosse.FirstOrDefault(g => g.Id == geschossId);
+        var sg = lg is null ? null : Geschosse(liste, szene).FirstOrDefault(g => g.Kennzeichen == lg.Kennzeichen);
+        if (sg is null) return null;
+        var bz = szene.Bezugspunkt.Length >= 3 ? szene.Bezugspunkt[2] : 0;
+        return XrSitzungLogik.SchnittHoeheMm(sg) - XrSitzungLogik.SpielMm - bz;
     }
 
     /// <summary>Startlage auf dem Tisch für eine Ansicht: ganzes Modell bzw. Etage 1:50 (XrSitzungLogik.Einpassen), Ausschnitt so gross wie möglich (AusschnittLage).</summary>

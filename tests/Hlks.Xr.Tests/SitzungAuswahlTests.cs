@@ -156,6 +156,26 @@ public class SitzungAuswahlTests
     }
 
     [Fact]
+    public void Ausschnitt_mit_Liste_endet_oben_unter_der_Decke_wie_der_Etagenschnitt()
+    {
+        // Christian 23.10.2026: «bei der anzeige von räumen in VR soll nur bis zur unterkannte der Decke angezeigt werden. so dass in den Raum geschaut werden kann.»
+        var (liste, szene) = Haus();
+        var a = SitzungAuswahl.Ausschnitt(szene, "r-1", liste)!;
+        var etage = SitzungAuswahl.Etage(liste, szene, "EG")!;
+        Nah(a.Schnitt!.YMax, etage.Schnitt!.YMax, 1e-9);   // gleiche Höhe: UK Decke 2750 − 50 − Spiel, relativ zum Bezugspunkt
+        Assert.False(a.Schnitt.Enthaelt(V(3, 2.3, -2.5)), "Decke (UK 2.25 m in der Szene) liegt über dem Schnitt");
+        Assert.True(a.Schnitt.Enthaelt(V(3, 2.1, -2.5)), "der Raum darunter bleibt");
+        Assert.True(a.Schnitt.Enthaelt(V(-0.4, 1, -2.5)), "Rand seitlich bleibt 1.5 m");
+        Assert.Contains("unter der Decke", a.Text);
+        Nah(a.Bezug.Groesse.H, (etage.Schnitt.YMax - (-0.5 - 1.5)), 1e-6);   // Höhe von UK Raum − Rand bis zum Schnitt
+        // ohne Decke: Kote des Geschosses darüber − 50 mm
+        var (l2, s2) = Haus(deckeEg: false);
+        Nah(SitzungAuswahl.Ausschnitt(s2, "r-1", l2)!.Schnitt!.YMax, (3000 - S.SchnittTieferMm - S.SpielMm - 500) / 1000, 1e-9);
+        // ohne Liste wie bisher: Raum + 1.5 m auch nach oben
+        Assert.True(SitzungAuswahl.Ausschnitt(szene, "r-1")!.Schnitt!.Enthaelt(V(3, 2.3, -2.5)));
+    }
+
+    [Fact]
     public void EtageZumAuftrag_Geschoss_sonst_das_Geschoss_des_Raums_ausser_bei_Ausschnitt()
     {
         var (_, szene) = Haus();
