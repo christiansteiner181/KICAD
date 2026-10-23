@@ -38,6 +38,7 @@ class Program
 		int    bilder      = 0;
 		double summeZeit   = 0;
 		float  mittelZeit  = 0;
+		double letzterStatus = 0;
 
 		SK.Run(() =>
 		{
@@ -58,6 +59,14 @@ class Program
 
 			UI.Handle("Würfel", ref wuerfelPose, wuerfel.Bounds);
 			wuerfel.Draw(wuerfelPose.ToMatrix());
+
+			// Statuszeile alle 5 s (auf der Brille im Protokoll, adb logcat): Messwerte für K1/K2 ohne Vorlesen.
+			if (Time.Total - letzterStatus >= 5)
+			{
+				letzterStatus = Time.Total;
+				Console.WriteLine($"P0 Status: Gerät={Device.Name}, Laufzeit={Device.Runtime}, Darstellung={Device.DisplayBlend}, " +
+					$"Bildrate={(mittelZeit > 0 ? 1 / mittelZeit : 0):0} Hz, Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}");
+			}
 
 			if (pruefBilder > 0 && bilder >= pruefBilder)
 			{

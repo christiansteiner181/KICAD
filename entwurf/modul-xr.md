@@ -182,8 +182,21 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Damit ist **K4 am PC erfüllt**.
 - **Fallstrick:** `DOTNET_ROOT` zeigt bei Christian dauerhaft auf `C:\Users\chris\.dotnet` (nur .NET 8). Die `.exe` der PC-Fassung findet
   deshalb .NET 10 nicht. Start mit `"C:\Program Files\dotnet\dotnet.exe" Hlks.Quest.dll`.
-- **Offen in P0:** Installation auf der Quest und erster Start in der Brille (Hände, Darstellung, Bildrate). Nur nach Absprache mit
-  Christian.
+- **In der Brille (23.10.2026 ~17:59, Quest 3, Android 14, per USB-adb installiert):**
+  - Die App startet als «KICAD» mit StereoKit v0.3.11 (Android ARM64, Adreno 740, OpenGL ES 3.2, XR-Modus).
+  - Statuszeilen im Protokoll: «Gerät=Meta Quest 3, Laufzeit=Oculus, Darstellung=Opaque, Bildrate=72 Hz, Hände links=True,
+    rechts=True».
+  - Hand-Tracking ist aktiv (`XR_EXT_hand_tracking`, `XR_EXT_hand_interaction`).
+  - Christian: Hände sichtbar, Würfel mit Pinch greifbar und verschiebbar («Ja, klappt gut»); Bild und Text «ruhig und lesbar».
+  - **P0 abgeschlossen.**
+- **Laufzeit der Quest bietet zusätzlich an** (für P4/P5 und die Ideen):
+  - `XR_FB_passthrough` (Passthrough; StereoKit 0.3.11 schaltet es nicht selbst ein, das kommt in P4)
+  - `XR_FB_display_refresh_rate` (90 Hz anfordern)
+  - `XR_EXT_spatial_plane_tracking` (Tisch erkennen)
+  - `XR_EXT_spatial_marker_tracking` (Marker am Tisch)
+  - `XR_META_spatial_entity_room_mesh` (Raumscan, Idee «Bestand mit der Brille»)
+  - Die App schreibt alle 5 s eine Statuszeile «P0 Status …» ins Protokoll (`adb logcat`, Kennung DOTNET). Das ist die Grundlage für
+    die Messung K1.
 
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
