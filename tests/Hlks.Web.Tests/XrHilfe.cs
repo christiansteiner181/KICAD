@@ -128,8 +128,12 @@ public sealed class XrServer : IAsyncDisposable
         return (new HttpClient(h) { BaseAddress = new Uri($"https://127.0.0.1:{port}"), Timeout = TimeSpan.FromSeconds(20) }, () => fp);
     }
 
+    bool entsorgt;
+
     public async ValueTask DisposeAsync()
     {
+        if (entsorgt) return;
+        entsorgt = true;
         try { await Lokal.PostAsync("/api/projekt/schliessen", new StringContent("{}", Encoding.UTF8, "application/json")); } catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException) { }
         Lokal.Dispose();
         await fabrik.DisposeAsync();

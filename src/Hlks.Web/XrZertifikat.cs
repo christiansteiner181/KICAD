@@ -12,6 +12,10 @@
 // «*.defekt-<Zeit>» liegen und NeuErzeugt meldet es (die Brillen müssen dann neu gekoppelt werden, weil sie den alten Fingerabdruck pinnen).
 // Zwei KICAD-Prozesse auf demselben PC: das Schreiben ist atomar (temporäre Datei, dann ohne Überschreiben verschieben); wer verliert, lädt die Datei
 // des anderen.
+//
+// Schlüsselcontainer (P3p, B4): Unter Windows legt das Laden des PKCS#12 den privaten Schlüssel als Datei unter %APPDATA%\Microsoft\Crypto\Keys ab
+// (der TLS-Server von Windows, SChannel, braucht einen solchen Schlüssel; «flüchtig» geht nicht). Die Datei verschwindet erst mit Dispose. Darum ist
+// XrZertifikat IDisposable: XrNetzDienst.StopAsync gibt es frei (zusätzlich der Dienstcontainer beim Beenden), Tests mit «using».
 
 using System.Runtime.InteropServices;
 using System.Security.Cryptography;
@@ -20,7 +24,7 @@ using System.Text;
 
 namespace Hlks.Web;
 
-public sealed class XrZertifikat(XrEinstellungen einstellungen)
+public sealed class XrZertifikat(XrEinstellungen einstellungen) : IDisposable
 {
     const string ServerAuth = "1.3.6.1.5.5.7.3.1";
     static readonly TimeSpan Gueltigkeit = TimeSpan.FromDays(3652);
@@ -28,6 +32,8 @@ public sealed class XrZertifikat(XrEinstellungen einstellungen)
 
     readonly object sperre = new();
     X509Certificate2? zertifikat;
+    string? fingerabdruck;      // bleiben nach Dispose gültig: Auskunft ohne neues Laden (und ohne neue Schlüsseldatei)
+    DateTimeOffset gueltigBis;
 
     /// <summary>true, wenn in diesem Lauf ein neues Zertifikat erzeugt wurde, obwohl schon eine (unbrauchbare) Datei da war.</summary>
     public bool Ersetzt { get; private set; }
@@ -36,7 +42,7 @@ public sealed class XrZertifikat(XrEinstellungen einstellungen)
 
     public string DateiPfad => Path.Combine(einstellungen.OrdnerPfad(), XrSchutz.Aktiv ? "zertifikat.dpapi" : "zertifikat.pfx");
 
-    /// <summary>Das Zertifikat mit privatem Schlüssel; beim ersten Aufruf geladen oder erzeugt.</summary>
+    /// <summary>Das Zertifikat mit privatem Schlüssel; beim ersten Aufruf (bzw. nach Dispose) geladen oder erzeugt.</summary>
     public X509Certificate2 Holen()
     {
         lock (sperre)
@@ -44,22 +50,39 @@ public sealed class XrZertifikat(XrEinstellungen einstellungen)
             if (zertifikat is not null) return zertifikat;
             var jetzt = einstellungen.Jetzt();
             var pfad = DateiPfad;
+            X509Certificate2? z = null;
             if (File.Exists(pfad))
             {
-                var geladen = Laden(pfad, jetzt);
-                if (geladen is not null) return zertifikat = geladen;
-                Beiseitelegen(pfad, jetzt);
-                Ersetzt = true;
+                z = Laden(pfad, jetzt);
+                if (z is null)
+                {
+                    Beiseitelegen(pfad, jetzt);
+                    Ersetzt = true;
+                }
             }
-            return zertifikat = Erzeugen(pfad, jetzt);
+            z ??= Erzeugen(pfad, jetzt);
+            fingerabdruck = FingerabdruckVon(z);
+            gueltigBis = new DateTimeOffset(z.NotAfter.ToUniversalTime());
+            return zertifikat = z;
         }
     }
 
-    /// <summary>SHA-256-Fingerabdruck des Zertifikats (64 Kleinbuchstaben hex).</summary>
-    public string Fingerabdruck => FingerabdruckVon(Holen());
+    /// <summary>SHA-256-Fingerabdruck des Zertifikats (64 Kleinbuchstaben hex). Lädt nur, wenn er noch nicht bekannt ist.</summary>
+    public string Fingerabdruck { get { lock (sperre) { if (fingerabdruck is null) Holen(); return fingerabdruck!; } } }
 
     /// <summary>Ablaufdatum (UTC).</summary>
-    public DateTimeOffset GueltigBis => new(Holen().NotAfter.ToUniversalTime());
+    public DateTimeOffset GueltigBis { get { lock (sperre) { if (fingerabdruck is null) Holen(); return gueltigBis; } } }
+
+    /// <summary>Gibt das geladene Zertifikat frei; unter Windows löscht das die Schlüsseldatei unter %APPDATA%\Microsoft\Crypto\Keys (B4).
+    /// Mehrfach aufrufbar; ein späteres Holen lädt neu.</summary>
+    public void Dispose()
+    {
+        lock (sperre)
+        {
+            zertifikat?.Dispose();
+            zertifikat = null;
+        }
+    }
 
     public static string FingerabdruckVon(X509Certificate2 z) => Convert.ToHexStringLower(SHA256.HashData(z.RawData));
 

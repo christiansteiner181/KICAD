@@ -1,6 +1,7 @@
 using System.Net;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using Microsoft.Extensions.DependencyInjection;
 
 namespace Hlks.Web.Tests;
 
@@ -17,7 +18,7 @@ public class XrZertifikatTests
         try
         {
             var e = new XrEinstellungen { Ordner = o };
-            var a = new XrZertifikat(e);
+            using var a = new XrZertifikat(e);
             var z = a.Holen();
             Assert.True(a.NeuErzeugt);
             Assert.False(a.Ersetzt);
@@ -27,7 +28,7 @@ public class XrZertifikatTests
             Assert.Matches("^[0-9a-f]{64}$", a.Fingerabdruck);
             Assert.Same(z, a.Holen());   // im selben Lauf dasselbe Objekt
 
-            var b = new XrZertifikat(e);
+            using var b = new XrZertifikat(e);
             Assert.Equal(a.Fingerabdruck, b.Fingerabdruck);
             Assert.False(b.NeuErzeugt);
             Assert.True(b.Holen().HasPrivateKey);
@@ -60,7 +61,7 @@ public class XrZertifikatTests
         var o = NeuerOrdner();
         try
         {
-            var a = new XrZertifikat(new XrEinstellungen { Ordner = o });
+            using var a = new XrZertifikat(new XrEinstellungen { Ordner = o });
             a.Holen();
             var roh = File.ReadAllBytes(a.DateiPfad);
             if (OperatingSystem.IsWindows())
@@ -86,15 +87,17 @@ public class XrZertifikatTests
         try
         {
             var e = new XrEinstellungen { Ordner = o };
-            var pfad = new XrZertifikat(e).DateiPfad;
+            string pfad;
+            using (var leer = new XrZertifikat(e)) pfad = leer.DateiPfad;
             Directory.CreateDirectory(o);
             File.WriteAllBytes(pfad, [1, 2, 3, 4, 5]);
-            var a = new XrZertifikat(e);
+            using var a = new XrZertifikat(e);
             Assert.True(a.Holen().HasPrivateKey);
             Assert.True(a.Ersetzt);
             Assert.True(a.NeuErzeugt);
             Assert.Single(Directory.GetFiles(o, Path.GetFileName(pfad) + ".defekt-*"));
-            Assert.Equal(a.Fingerabdruck, new XrZertifikat(e).Fingerabdruck);   // das neue gilt danach
+            using var b = new XrZertifikat(e);
+            Assert.Equal(a.Fingerabdruck, b.Fingerabdruck);   // das neue gilt danach
         }
         finally { Weg(o); }
     }
@@ -106,13 +109,73 @@ public class XrZertifikatTests
         try
         {
             var jetzt = DateTimeOffset.UtcNow;
-            var alt = new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt }).Fingerabdruck;
-            Assert.Equal(alt, new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt.AddDays(3000) }).Fingerabdruck);
-            var spaeter = new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt.AddDays(3640) });
+            using var erst = new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt });
+            var alt = erst.Fingerabdruck;
+            using var noch = new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt.AddDays(3000) });
+            Assert.Equal(alt, noch.Fingerabdruck);
+            using var spaeter = new XrZertifikat(new XrEinstellungen { Ordner = o, Uhr = () => jetzt.AddDays(3640) });
             Assert.NotEqual(alt, spaeter.Fingerabdruck);
             Assert.True(spaeter.Ersetzt);
         }
         finally { Weg(o); }
+    }
+
+    // ---------------------------------------------------------------- Schlüsseldatei unter %APPDATA%\Microsoft\Crypto\Keys (P3p, B4)
+
+    /// <summary>Die Datei des privaten Schlüssels im Benutzerprofil (Windows, CNG-Software-Anbieter: Name = UniqueName des Schlüssels); sonst null.</summary>
+    internal static string? Schluesseldatei(X509Certificate2 z)
+    {
+        if (!OperatingSystem.IsWindows()) return null;
+        using var k = z.GetECDsaPrivateKey();
+        if (k is not ECDsaCng cng) return null;
+        using var schluessel = cng.Key;
+        var name = schluessel.UniqueName;
+        return name is null ? null : Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Microsoft", "Crypto", "Keys", name);
+    }
+
+    [Fact]
+    public void Dispose_loescht_die_Schluesseldatei_und_der_Fingerabdruck_bleibt_ohne_neues_Laden()
+    {
+        if (!OperatingSystem.IsWindows()) return;   // nur Windows legt die Datei an
+        var o = NeuerOrdner();
+        try
+        {
+            var a = new XrZertifikat(new XrEinstellungen { Ordner = o });
+            var datei = Schluesseldatei(a.Holen());
+            Assert.NotNull(datei);
+            Assert.True(File.Exists(datei), datei);
+            var fp = a.Fingerabdruck;
+            a.Dispose();
+            Assert.False(File.Exists(datei), datei);
+            Assert.Equal(fp, a.Fingerabdruck);   // aus dem Speicher, ohne neues Laden
+            a.Dispose();   // mehrfach erlaubt
+            // ein neues Laden legt wieder eine an, Dispose löscht sie wieder
+            var datei2 = Schluesseldatei(a.Holen());
+            Assert.True(File.Exists(datei2));
+            a.Dispose();
+            Assert.False(File.Exists(datei2));
+        }
+        finally { Weg(o); }
+    }
+
+    [Fact]
+    public async Task Nach_StopAsync_bleibt_keine_Schluesseldatei_zurueck()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        await using var s = new XrServer();
+        await s.Aktiv();
+        var zert = s.Dienste.GetRequiredService<XrZertifikat>();
+        var datei = Schluesseldatei(zert.Holen());   // dasselbe Objekt, das der Netzzugang benutzt
+        Assert.True(File.Exists(datei), datei);
+        var dienst = s.Dienste.GetRequiredService<XrNetzDienst>();
+        await dienst.StopAsync(CancellationToken.None);
+        Assert.False(dienst.Aktiv);
+        Assert.False(File.Exists(datei), datei);
+        // auch die Datei eines unbenutzten Ladens: der Dienstcontainer gibt das Zertifikat beim Beenden frei
+        var datei2 = Schluesseldatei(zert.Holen());
+        Assert.True(File.Exists(datei2));
+        await s.DisposeAsync();
+        Assert.False(File.Exists(datei2), datei2);
     }
 
     [Fact]

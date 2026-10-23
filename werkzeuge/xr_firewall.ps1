@@ -1,5 +1,5 @@
 # Firewall-Regeln fuer den XR-Zugang der Quest App (Modul XR, Quest App P3; Entscheid Christian 23.10.2026: "Sofort WLAN mit Kopplung und TLS").
-# KICAD oeffnet den Zugang nur, wenn die Benutzereinstellung xr.zugang an ist (Vorgabe aus) und nur im KICAD auf Port 5130 (Desktop):
+# KICAD oeffnet den Zugang nur, wenn der Schalter dieses PCs an ist (%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json, Vorgabe aus; je PC, nicht ueber OneDrive) und nur im KICAD auf Port 5130 (Desktop):
 #   - TCP 5140  HTTPS, nur /api/xr, nur gekoppelte Brillen (src/Hlks.Web/XrZugang.cs)
 #   - UDP 5141  Suche des PCs im Bueronetz; Antwort nur auf signierte Anfragen gekoppelter Brillen (src/Hlks.Web/XrSuche.cs)
 # Dieses Skript legt dafuer zwei eingehende Regeln an: nur Profil "Privat", nur aus dem eigenen Subnetz (LocalSubnet). Gruppe "KICAD XR".

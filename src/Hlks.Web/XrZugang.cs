@@ -11,7 +11,7 @@
 //       keine Dateien, kein anderes /api. Alles andere ergibt 404. Freigegeben sind heute: verbindung, kanal, kopplung/anfrage, kopplung/aufdecken,
 //       kopplung/abholen (XrEndpunkte.cs) sowie geschosse und geschoss/{id}.glb (XrModellEndpunkte.cs, P2).
 //     - Vor jedem Endpunkt steht die Pforte (XrPforte.Pruefen, EINE Stelle für Pfadsperre und Schlüssel), danach WebSockets und die Komprimierung (nur GLB).
-//     - Grenzen: 32 Verbindungen, 64 KB Körper, 16 KB Kopfzeilen, Kopfzeilen in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min.
+//     - Grenzen: 32 Verbindungen, 64 KB Körper, 16 KB Kopfzeilen, Kopfzeilen in 10 s, je IP 20 Anfragen/s (Vorrat 60), je IP 10 Fehlversuche auf einmal, danach einer je Minute (sonst 429).
 //   Daneben die Suche (UDP 5141, zugang.json «suchPort»; XrSuche.cs). Ein- und Ausschalten wirkt ohne Neustart (POST /api/xr/zugang, sonst alle 10 s
 //   nachgelesen; geänderte Ports starten den Zugang neu). Ist ein Port belegt, bleibt der Netzzugang aus und GET /api/xr/zugang meldet es; der
 //   localhost-Server läuft weiter.
@@ -153,7 +153,12 @@ public sealed class XrNetzDienst : IHostedService
     {
         if (takt is not null) await takt.DisposeAsync();
         await sperre.WaitAsync(CancellationToken.None);
-        try { beendet = true; await Stoppen(); }
+        try
+        {
+            beendet = true;
+            await Stoppen();
+            zertifikat.Dispose();   // P3p, B4: sonst bleibt die Schlüsseldatei unter %APPDATA%\Microsoft\Crypto\Keys liegen
+        }
         finally { sperre.Release(); }
     }
 

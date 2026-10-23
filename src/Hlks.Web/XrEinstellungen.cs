@@ -56,7 +56,8 @@ public sealed record XrEinstellungen
     public double AnfragenJeSekunde { get; init; } = 20;
     /// <summary>… mit so vielen auf einmal (Vorrat).</summary>
     public int AnfragenVorrat { get; init; } = 60;
-    /// <summary>Falsche oder fehlende Schlüssel je Absender im Fenster; danach 429 bis zum Ablauf des Fensters.</summary>
+    /// <summary>Falsche oder fehlende Schlüssel je Absender: so viele auf einmal (Vorrat); danach 429, und es kommt nur ein Versuch je
+    /// FehlversucheFenster / FehlversucheMax dazu (Vorgabe: 10 auf einmal, danach einer je Minute).</summary>
     public int FehlversucheMax { get; init; } = 10;
     public TimeSpan FehlversucheFenster { get; init; } = TimeSpan.FromMinutes(10);
     /// <summary>Grösster Anfragekörper im Netzzugang (Bytes).</summary>
