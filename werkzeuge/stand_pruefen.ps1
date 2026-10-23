@@ -58,7 +58,7 @@ try {
   # 2./3. .NET-Tests
   $gruen = $true
   $zusammen = @()
-  foreach ($p in 'Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests') {
+  foreach ($p in 'Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests') {
     $trx = "$erg\$p.trx"; Remove-Item $trx -ErrorAction SilentlyContinue
     $uhr = [System.Diagnostics.Stopwatch]::StartNew()
     & $dotnet test "$wt\tests\$p" --nologo -v q --logger "trx;LogFileName=$p.trx" --results-directory $erg 2>&1 | Out-Null

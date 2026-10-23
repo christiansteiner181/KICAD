@@ -4,7 +4,7 @@
 # Browserreihen (*.browser.mjs) und die PowerShell-Werkzeuge laufen hier nicht; Echt-Tests überspringen sich ohne echte Dateien.
 #
 # Aufruf:
-#   bash werkzeuge/cloud/tests.sh                         alles (kern, mcp, web, node)
+#   bash werkzeuge/cloud/tests.sh                         alles (kern, mcp, web, xr, node)
 #   bash werkzeuge/cloud/tests.sh kern node               nur diese Teile
 #   bash werkzeuge/cloud/tests.sh kern -- --filter "FullyQualifiedName~Stuetze"    weitere Argumente an dotnet test
 # Exit 0 = grün, 1 = rot, 2 = Aufruffehler. Ergebnisse (trx) unter $HLKS_BUILD/ergebnisse.
@@ -22,7 +22,7 @@ teile=(); extra=()
 while [ $# -gt 0 ]; do
   case "$1" in --) shift; extra=("$@"); break ;; *) teile+=("$1"); shift ;; esac
 done
-[ ${#teile[@]} -eq 0 ] && teile=(kern mcp web node)
+[ ${#teile[@]} -eq 0 ] && teile=(kern mcp web xr node)
 erg="$HLKS_BUILD/ergebnisse"; mkdir -p "$erg"
 rot=0
 for t in "${teile[@]}"; do
@@ -30,6 +30,7 @@ for t in "${teile[@]}"; do
     kern) p=Hlks.Kern.Tests ;;
     mcp) p=Hlks.Mcp.Tests ;;
     web) p=Hlks.Web.Tests ;;
+    xr) p=Hlks.Xr.Tests ;;
     node)
       mapfile -t dateien < <(find "$repo/src/Hlks.Web/wwwroot/js" -name '*.test.mjs' | sort)
       echo "== Node (${#dateien[@]} Dateien)"
@@ -38,7 +39,7 @@ for t in "${teile[@]}"; do
       echo "$aus" | grep -E '^# (tests|pass|fail|skipped) '
       echo "$aus" | grep -qE '^# fail 0$' || rot=1
       continue ;;
-    *) echo "Unbekannter Teil: $t (kern | mcp | web | node)"; exit 2 ;;
+    *) echo "Unbekannter Teil: $t (kern | mcp | web | xr | node)"; exit 2 ;;
   esac
   echo "== $p"
   dotnet test "$repo/tests/$p" --nologo --logger "trx;LogFileName=$p.trx" --results-directory "$erg" "${extra[@]}" || rot=1

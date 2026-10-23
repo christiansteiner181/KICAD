@@ -3,6 +3,7 @@
     <Project Path="src/Hlks.Kern/Hlks.Kern.csproj" />
     <Project Path="src/Hlks.Mcp/Hlks.Mcp.csproj" />
     <Project Path="src/Hlks.Web/Hlks.Web.csproj" />
+    <Project Path="src/Hlks.Xr/Hlks.Xr.csproj" />
   </Folder>
   <Folder Name="/tests/">
     <Project Path="tests/Hlks.AdbAttrappe/Hlks.AdbAttrappe.csproj" />
@@ -10,5 +11,6 @@
     <Project Path="tests/Hlks.Kern.Tests/Hlks.Kern.Tests.csproj" />
     <Project Path="tests/Hlks.Mcp.Tests/Hlks.Mcp.Tests.csproj" />
     <Project Path="tests/Hlks.Web.Tests/Hlks.Web.Tests.csproj" />
+    <Project Path="tests/Hlks.Xr.Tests/Hlks.Xr.Tests.csproj" />
   </Folder>
 </Solution>
