@@ -147,8 +147,8 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 | P2 | **Modell als GLB je Geschoss:** aus denselben Körpern wie die 3D-Ansicht, zusammengefasst je Material (Ziel: unter 200 Zeichenaufrufe), IFC-Unterlage als eigenes GLB, Versionsschlüssel für den Zwischenspeicher der App; Test mit Test_praxis (Dreiecke, Zeichenaufrufe, Grösse). Bibliothek SharpGLTF (Lizenz prüfen) oder ein eigener schlanker GLB-Schreiber | hlks-kern | – |
 | P3 | **Zugang im Büronetz:** eigener Port mit HTTPS (Zertifikat von KICAD), Kopplung (Schlüssel und Fingerabdruck des Zertifikats gelangen bei der Installation per adb in die App; Ersatzweg: Code am PC bestätigen), Suche des PCs im eigenen Netz, Live-Kanal (WebSocket) mit Teilnehmern, Kopf- und Handpositionen 20–30 je Sekunde, Aufträge, Stellschrauben | hlks-kern | – |
 | P3p | **Sicherheitsprüfung von P3** vor dem ersten Brillentest | hlks-pruefer | P3 |
-| P4 | **App-Gerüst:** verbinden, GLB laden und zwischenspeichern, Begehen mit Händen (Teleport mit Zeigen und Pinch, Drehen, Wände durchscheinend unter 500 mm), Rückmeldung mit Ton und Licht, Passthrough mit «Raum zeigen (VR)» auf dem echten Tisch | hlks-kern | P0, P1, P2, P3 |
-| P5 | **Labor in der App:** schwebende Apps mit Berühren und Wischgesten, Tablet als Vergleich, Prüfaufgaben, Varianten, Stellschrauben über den Kanal, Messprotokoll | hlks-kern | P4 |
+| P4 | **App-Gerüst:** verbinden, GLB laden und zwischenspeichern, Begehen mit Händen (Teleport mit Zeigen und Pinch, Drehen, Wände durchscheinend unter 500 mm), Rückmeldung mit Ton und Licht, Passthrough mit «Raum zeigen (VR)» auf dem echten Tisch; Start ohne PC aus dem Zwischenspeicher; Schnittstelle für Fachmodul-Ebenen mit einer Probe-Ebene | hlks-kern | P0, P1, P2, P3 |
+| P5 | **Labor in der App:** schwebende Apps mit Berühren und Wischgesten, Tablet als Vergleich, feste Gestenbedeutungen mit Geisterhänden, Schnitt mit flacher Hand, Röntgen-Hand, Komfort-Stellschrauben, Prüfaufgaben, Varianten, Stellschrauben über den Kanal, Messprotokoll | hlks-kern | P4 |
 | P6 | **KICAD-Seite «XR-Labor»:** Stellschrauben, Profile, Auswertung der Aufgaben, Fragebogen (SUS, NASA-TLX, Komfort; deutsche Fassung mit Quelle) | hlks-modul | P3 |
 | P7 | **KICAD «Quest verbinden»:** Knopf «App installieren/aktualisieren» mit Kopplung; 3D-Ansicht am PC zeigt die Brille (Figur mit Blickrichtung) | hlks-modul | P3 |
 | P8 | Tests ausführen, Testbericht | hlks-test | P1–P7 |
@@ -168,6 +168,37 @@ Fragebogen; die Befunde gehen in die Stellschrauben-Profile und ins Pflichtenhef
 - Vor jedem Agenten das Kontingent prüfen (Grenze 95 %).
 - Der Code bleibt auf dem Zweig dieser Sitzung; zusammengeführt wird durch die Hauptsitzung mit Christians Zustimmung.
 - Echte Daten (Test_praxis) nur lokal; die Brille lädt sie über den Zugang im Büronetz, nie über die Cloud.
+
+### Ergänzungen (Vorschlag Sitzung Quest App, von Christian alle übernommen am 23.10.2026)
+**Ins Interface-Labor (P5):**
+- **Feste Gestenbedeutungen:** Jede Geste bedeutet in allen Apps dasselbe: Wisch links/rechts blättert, hoch/runter wechselt die Etage,
+  Wegwischen schliesst, Pinch wählt, Faust greift, zwei Hände ändern den Massstab. Zögert man, zeigen Geisterhände die passende Geste.
+  Die Bedeutungen stehen als Tabelle in der Hilfe (`/hilfe/`).
+- **Schnitt mit der flachen Hand:** Im Sitzungsraum hält man die Hand waagrecht über das Modell, und der Schnitt folgt ihr. Senkrecht
+  gehalten gibt sie einen Vertikalschnitt. Ergänzt die Etagenwahl.
+- **Röntgen-Hand:** Wohin die offene Hand zeigt, werden Wände und Decken durchsichtig, dahinter erscheinen die Leitungen.
+- **Komfort-Stellschrauben:** Beim Gehen engt sich das Blickfeld leicht ein (Stärke einstellbar), dazu ein Sitz- und ein Stehmodus.
+
+**Von Anfang an mitdenken (Architektur, P2/P4):**
+- **Brille ohne PC (Baustelle):** Die App startet auch ohne Verbindung aus dem Zwischenspeicher, mit dem zuletzt geladenen Modell.
+  - Vor Ort wird das Modell per Marker oder über zwei angetippte Punkte an der echten Wand ausgerichtet.
+  - Damit lassen sich Soll gegen Ist und die Aussparungen kontrollieren.
+  - Marker und Notizen von der Baustelle gleicht die App ab, sobald sie wieder mit dem PC verbunden ist.
+  - Zum Prototyp gehört davon nur der Zwischenspeicher, der ohne PC startet.
+- **Schnittstelle für Fachmodule:** Fachmodule legen eigene Ebenen in die Szene, z. B. animierte Fliessrichtung, Luftströmung als Partikel
+  (10a/10b) oder Temperaturfelder. Der Inhalt kommt vom Server; die App zeigt Linien, Pfeile, Partikel und Farbflächen. Im Prototyp
+  genügt eine Probe-Ebene.
+- **Claude sieht mit (XR-D):** «Hey Claude» bekommt Standpunkt, Blickrichtung und das Element, auf das man zeigt. Fragen wie «Was ist
+  das hier?» beziehen sich darauf. Der Kanal (P3) überträgt dafür das gezeigte Element.
+
+**Vorrat nach Version 1:**
+- **System verfolgen:** Eine Leitung antippen, dann leuchtet der ganze Strang und die Fliessrichtung läuft mit. Mit dem Finger der
+  Leitung entlangfahren. Der Kern kennt den Netzdurchlauf schon (`NetzSchritt`).
+- **Kollisionen begehen:** Die Liste aus Modul 3b in VR. Ein Wisch springt zur nächsten Kollision, der Status wird per Geste gesetzt,
+  das Ergebnis geht als BCF hinaus. Freiräume für die Wartung vor Armaturen und Geräten werden als eigene Körper geprüft.
+- **Führung für Bauherr und Architekt:** vorbereitete Standpunkte, per Wisch durchblättert; ein Gast folgt mit (XR-G).
+- **Bestand mit der Brille erfassen:** Die Raumeinrichtung der Quest 3 vermisst Wände und Möbel; als grobe Bestandsgrundlage für
+  Phase 2 (Gebäudeerfassung). Die Genauigkeit ist unbekannt und zuerst zu prüfen.
 
 ### Pflichtenheft
 Die Abschnitte XR-A bis XR-H und «Start ohne Link-fähigen PC» unten beschreiben, was der Browser-Prototyp kann und was Christian beim
@@ -345,7 +376,8 @@ Seit 22.10.2026 gilt das Übertheme «Quest App». Im Gesamtablauf (`entwurf/abl
 2. Prototyp als Interface-Labor (P0–P8, oben), Abnahme an der Brille.
 3. Version 1: Verbinden und Kopplung, Auftrag vom PC und Autostart, XR-A, XR-H, Messen, XR-E, PC sieht Brille – mit der Bedienung, die
    das Labor ergeben hat (schwebende Apps oder Tablet).
-4. Danach XR-B, XR-D, XR-F, XR-G.
+4. Danach XR-B, XR-D (mit «Claude sieht mit»), XR-F, XR-G; Vorrat: System verfolgen, Kollisionen begehen, Führung, Bestand mit der Brille
+   (Abschnitt «Ergänzungen»).
 
 Jeder Teil wird mit der Brille an Christians PC abgenommen. Der Browser-Prototyp bekommt nur noch Fehlerbehebungen.
 
