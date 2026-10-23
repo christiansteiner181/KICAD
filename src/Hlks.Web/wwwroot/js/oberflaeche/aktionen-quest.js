@@ -27,3 +27,11 @@ registrieren({
     meldung(an ? 'Verbundene Brillen werden in der 3D-Ansicht gezeigt.' : 'Die Brillen werden in der 3D-Ansicht nicht mehr gezeigt.', 'info');
   },
 });
+
+// Quest App P6: «XR-Labor …» – die Werkbank für das Interface-Labor der App (Stellschrauben live, Profile, Varianten, Prüfaufgaben, Auswertung, Fragebogen). Öffnet den Dialog
+// (xr-labor-dialog.js, erst beim Klick geladen); alles läuft über /api/xr/… (XrEndpunkte.cs, XrLaborEndpunkte.cs). Reine Rechner-Funktion, für die KI nicht freigegeben
+// (KiEinordnung.RechnerFunktionen «xr_labor»). Immer verfügbar (auch ohne offenes Projekt).
+registrieren({
+  id: 'ansicht.xrLabor', titel: 'XR-Labor …', symbol: 'xrLabor', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  ausfuehren: async () => (await import('./xr-labor-dialog.js')).xrLaborDialogOeffnen(),
+});

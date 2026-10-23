@@ -89,3 +89,89 @@
 .qa-anfragen-warnung { margin-bottom: 2px; }
 .qa-ordner { font-family: var(--schrift-mono); }
 .qa-ablage { grid-template-columns: 110px 1fr auto; }
+
+/* Dialog «XR-Labor» (Modul XR, Quest App P6): Reiter, Stellschrauben, Profile, Varianten, Aufgaben, Auswertung, Fragebogen. Farben nur über die Variablen aus hlks.css. */
+/* Der Dialog passt in jedes Fenster: Höhe und Breite folgen dem Fenster, der Inhalt scrollt, Titel und «Schliessen» bleiben stehen. */
+.dlg.xr-labor { width: min(760px, calc(100vw - 16px)); height: min(820px, calc(100vh - 24px)); max-height: calc(100vh - 24px); }
+.dlg.xr-labor .dlg-inhalt { overflow: auto; overflow-x: hidden; min-height: 0; scroll-padding-top: 48px; }   /* die Reiter bleiben oben stehen: angesprungene Zeilen liegen nie darunter */
+.xl { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.xl [hidden] { display: none; }
+.xl-klein { font-size: 11px; }
+.xl-kopf { display: flex; align-items: center; gap: 8px; padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.xl-lampe { width: 10px; height: 10px; flex: none; border-radius: 50%; background: var(--rand); }
+.xl-lampe[data-stufe="ok"] { background: var(--ok); }
+.xl-brillen { overflow-wrap: anywhere; }
+.xl-meldung { padding: 6px 8px; border: 1px solid var(--ok); border-radius: var(--radius); overflow-wrap: anywhere; }
+.xl-meldung.fehler, .xl-fehler, .xl-box.fehler { border: 1px solid var(--fehler); background: var(--ob-fehler-flaeche); color: var(--fehler); padding: 6px 8px; border-radius: var(--radius); }
+.xl-meldung.warnung, .xl-box.warnung { border-color: var(--warnung); }
+.xl-meldung .qd-vorschlag, .xl-fehler .qd-vorschlag { color: var(--text); margin-top: 2px; }
+.xl-box { padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); overflow-wrap: anywhere; }
+.xl-reiter { display: flex; flex-wrap: wrap; gap: 4px; position: sticky; top: 0; z-index: 1; background: var(--hintergrund, var(--flaeche)); padding-bottom: 2px; }
+.xl-reiter-knopf { border: 1px solid var(--rand-leise); background: var(--flaeche); color: var(--text); padding: 3px 10px; border-radius: var(--radius); cursor: pointer; }
+.xl-reiter-knopf:hover { background: var(--ob-hover); }
+.xl-reiter-knopf.aktiv { border-color: var(--akzent); color: var(--akzent); font-weight: 600; }
+.xl-bereich { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.xl .dlg-knopf:disabled { opacity: .5; cursor: default; }
+/* Stellschrauben */
+.xl-liste { display: flex; flex-direction: column; gap: 10px; }
+.xl-gruppe { display: flex; flex-direction: column; gap: 4px; }
+.xl-gruppe-titel { margin: 6px 0 2px; font-size: 13px; }
+.xl-zeile { display: flex; flex-direction: column; gap: 2px; padding: 5px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.xl-zeile[data-gesetzt="1"] { border-left: 4px solid var(--akzent); }
+.xl-zeile[data-status="folgt_p5"] .xl-titel { color: var(--text-leise); }
+.xl-zeile-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.xl-titel { font-weight: 600; }
+.xl-schluessel { font-size: 11px; overflow-wrap: anywhere; }
+.xl-marke { font-size: 11px; padding: 0 6px; border: 1px solid var(--warnung); border-radius: 8px; white-space: nowrap; }
+.xl-marke.xl-gilt { border-color: var(--ok); }
+.xl-beschreibung, .xl-herkunft { font-size: 11px; overflow-wrap: anywhere; }
+.xl-steuerung { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.xl-regler { flex: 1 1 160px; min-width: 120px; }
+.xl-zahl { width: 84px; box-sizing: border-box; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: var(--schrift-mono); }
+.xl-auswahl { padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); max-width: 100%; }
+.xl-einheit { min-width: 28px; color: var(--text-leise); }
+.xl-schalter { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.xl-wert { font-size: 11px; overflow-wrap: anywhere; }
+/* Profile, Varianten, Aufgaben */
+.xl-zeile-eingabe { display: grid; grid-template-columns: 60px 1fr auto; gap: 8px; align-items: center; }
+.xl-profilname, .xl-fb-name, .xl-fb-app { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+.xl-profile, .xl-varianten, .xl-aufgaben { display: flex; flex-direction: column; gap: 6px; }
+.xl-profil { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 6px; padding: 5px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.xl-profil[data-aktiv="1"] { border-color: var(--ok); }
+.xl-profil-knoepfe, .xl-aufgabe-knoepfe, .xl-fb-knoepfe { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.xl-variante { margin: 0; padding: 5px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); min-width: 0; }
+.xl-optionen { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 4px; }
+.xl-option { display: inline-flex; align-items: center; gap: 6px; cursor: pointer; }
+.xl-aufgabe { display: flex; flex-direction: column; gap: 3px; padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.xl-aufgabe[data-status="gestartet"] { border-color: var(--warnung); }
+.xl-aufgabe[data-status="gemessen"] { border-left: 4px solid var(--ok); }
+.xl-aufgabe[data-status="folgt"] { opacity: .75; }
+.xl-aufgabe-kopf { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px; }
+.xl-status { margin-left: auto; font-size: 11px; color: var(--text-leise); }
+.xl-aufgabe-anleitung { overflow-wrap: anywhere; }
+.xl-aufgaben-kopf { display: flex; align-items: center; gap: 10px; }
+.xl-keine { padding: 4px 0; }
+/* Auswertung */
+.xl-leer { padding: 10px 12px; border: 1px dashed var(--rand); border-radius: var(--radius); overflow-wrap: anywhere; }
+.xl-auswertung { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.xl-auswertung-aufgabe { border: 1px solid var(--rand-leise); border-radius: var(--radius); padding: 4px 8px; background: var(--flaeche); }
+.xl-auswertung-aufgabe > summary { cursor: pointer; }
+.xl-tabelle { border-collapse: collapse; width: 100%; font-size: 12px; margin: 4px 0; }
+.xl-tabelle th, .xl-tabelle td { border-bottom: 1px solid var(--rand-leise); padding: 2px 6px; text-align: right; vertical-align: top; overflow-wrap: anywhere; }
+.xl-tabelle th[scope="col"] { color: var(--text-leise); font-weight: 600; }
+.xl-tabelle th[scope="row"], .xl-tabelle th:first-child { text-align: left; font-weight: 600; }
+/* Fragebogen */
+.xl-fragebogen { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.xl-fb-kopf { display: flex; flex-direction: column; gap: 4px; }
+.xl-fb-zeile { display: grid; grid-template-columns: 130px 1fr; gap: 8px; align-items: center; }
+.xl-teil { margin: 0; padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+.xl-teil:disabled { opacity: .7; }
+.xl-frage { display: flex; flex-direction: column; gap: 3px; padding-bottom: 4px; border-bottom: 1px solid var(--rand-leise); }
+.xl-frage-text { overflow-wrap: anywhere; }
+.xl-platzhalter { color: var(--text-leise); }
+.xl-skala { display: flex; flex-wrap: wrap; gap: 4px; }
+.xl-punkt { display: inline-flex; flex-direction: column; align-items: center; min-width: 28px; cursor: pointer; font-size: 12px; }
+.xl-skala-ende { display: flex; justify-content: space-between; gap: 8px; }
+.xl-text { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: inherit; resize: vertical; }
+.xl-tlx { width: 84px; box-sizing: border-box; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
+@media (max-width: 640px) { .xl-zeile-eingabe, .xl-fb-zeile { grid-template-columns: 1fr; } .xl-status { margin-left: 0; } }

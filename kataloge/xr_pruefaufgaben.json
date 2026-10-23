@@ -1,0 +1,68 @@
+{
+  "art": "hlks-xr-pruefaufgaben",
+  "fassung": 1,
+  "beschreibung": "Prüfaufgaben des Interface-Labors (Modul XR, Quest App P6): Die App spielt sie im Testraum (Test_praxis, ein Geschoss, oder ein neutraler Raum) ab und misst jede (Zeit, Fehlgriffe, Abbrüche). KICAD startet eine Aufgabe mit der Stellschraube «labor.aufgabe» = Id; die App meldet das Ergebnis als Nachricht «messprotokoll» (aufgabe = Id). Erfolgskriterien und Zahlen darin sind Annahmen P6 für den ersten Brillentest, keine Norm.",
+  "messgroessen": [
+    { "id": "zeit", "titel": "Zeit", "einheit": "ms", "beschreibung": "Vom Start der Aufgabe bis zum Erfolg oder Abbruch (Feld zeitMs)." },
+    { "id": "fehlgriffe", "titel": "Fehlgriffe", "einheit": "", "beschreibung": "Greifen, Berühren oder Springen daneben bzw. ungewollt (Feld fehlgriffe)." },
+    { "id": "abbrueche", "titel": "Abbrüche", "einheit": "", "beschreibung": "Wie oft die Person die Aufgabe abgebrochen oder neu begonnen hat (Feld abbrueche)." }
+  ],
+  "aufgaben": [
+    {
+      "id": "teleport-markierung", "titel": "An eine Markierung springen", "status": "p5",
+      "anleitung": "Spring auf die leuchtende Markierung am Boden und bleib dort stehen.",
+      "ort": "Test_praxis, ein Geschoss, oder neutraler Raum", "varianten": ["teleport"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Du stehst am Ende höchstens 0.5 m neben der Mitte der Markierung (Annahme P6).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (an eine Markierung teleportieren)"
+    },
+    {
+      "id": "drehen-90", "titel": "Um 90° drehen", "status": "p5",
+      "anleitung": "Dreh dich um eine Vierteldrehung nach links und danach nach rechts, bis du wieder in die Ausgangsrichtung blickst.",
+      "ort": "neutraler Raum", "varianten": ["teleport"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Die Blickrichtung weicht nach der Vierteldrehung höchstens 15° von 90° ab (Annahme P6).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (um 90° drehen); Drehschritt 30° (Brillentest 23.10.2026)"
+    },
+    {
+      "id": "etage-wechseln", "titel": "Etage wechseln", "status": "p5",
+      "anleitung": "Wechsle in das Geschoss darüber und danach wieder zurück.",
+      "ort": "Test_praxis, mehrere Geschosse", "varianten": ["etage", "bedienung"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Du stehst im verlangten Geschoss (zuerst darüber, dann das Ausgangsgeschoss).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (eine Etage wählen)"
+    },
+    {
+      "id": "modell-greifen-zoomen", "titel": "Modell greifen, drehen und zoomen", "status": "p5",
+      "anleitung": "Greife das Modell auf dem Sitzungstisch, dreh es um eine Vierteldrehung und zoome auf den angezeigten Zielmassstab.",
+      "ort": "Sitzungsraum mit Modell auf dem Tisch", "varianten": ["bedienung"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Der Massstab weicht höchstens 10 % vom Zielmassstab ab und das Modell ist um eine Vierteldrehung gedreht, mit höchstens 15° Abweichung (Annahme P6).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (das Modell greifen, drehen und auf einen Zielmassstab zoomen); Zoom 1:20 bis 1:200 (XrSitzungLogik.cs)"
+    },
+    {
+      "id": "raum-ar-oeffnen", "titel": "Raum in AR öffnen", "status": "p5",
+      "anleitung": "Öffne den markierten Raum so, dass er auf dem echten Tisch vor dir steht (Passthrough).",
+      "ort": "Sitzungsraum mit Passthrough, echter Tisch", "varianten": ["bedienung"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Der Raumausschnitt steht auf der Tischplatte und der verlangte Raum ist sichtbar.",
+      "herkunft": "modul-xr.md «Sitzungsraum» und «Passthrough-Probe» (Raum zeigen (VR) auf den echten Tisch)"
+    },
+    {
+      "id": "tablet-wert-ablesen", "titel": "Auf dem Tablet einen Wert ablesen", "status": "p5",
+      "anleitung": "Öffne das Tablet (bzw. die App «Eigenschaften») und lies den verlangten Wert des markierten Bauteils ab.",
+      "ort": "Test_praxis, ein Geschoss", "varianten": ["bedienung"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Der abgelesene Wert stimmt mit dem Sollwert überein (die App prüft die Antwort).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (auf dem Tablet einen Wert ablesen)"
+    },
+    {
+      "id": "messen-wand-wand", "titel": "Von Wand zu Wand messen", "status": "folgt_v1",
+      "anleitung": "Miss den Abstand zwischen den beiden markierten Wänden.",
+      "ort": "Test_praxis, ein Geschoss", "varianten": ["messen"],
+      "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
+      "erfolgskriterium": "Das gemessene Mass weicht höchstens 2 cm vom Sollmass ab (Annahme P6).",
+      "herkunft": "modul-xr.md «Was das Labor kann» (von Wand zu Wand messen); Messen kommt mit Version 1 (XR-C)"
+    }
+  ]
+}

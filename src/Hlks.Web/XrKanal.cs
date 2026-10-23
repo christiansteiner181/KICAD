@@ -310,7 +310,7 @@ public sealed class XrKanal
                 {
                     zeit = einstellungen.Jetzt().ToString("o"), teilnehmer = t.Id, name = t.Hallo.Name, geraet = t.Hallo.Geraet, app = t.Hallo.App,
                     kopplung = t.Kopplung.Id, brille = t.Kopplung.Brille, nr = t.ProtokollNr + 1,
-                    aufgabe = m.Aufgabe, variante = m.Variante, zeitMs = m.ZeitMs, fehlgriffe = m.Fehlgriffe, abbrueche = m.Abbrueche, erfolg = m.Erfolg,
+                    aufgabe = m.Aufgabe, variante = m.Variante, varianten = m.Varianten, zeitMs = m.ZeitMs, fehlgriffe = m.Fehlgriffe, abbrueche = m.Abbrueche, erfolg = m.Erfolg,
                     stellschrauben = m.Stellschrauben, notiz = m.Notiz,
                 }) + "\n";
                 var bytes = Encoding.UTF8.GetByteCount(zeile);

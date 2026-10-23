@@ -11268,6 +11268,200 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P5a»)"
           ],
           "hinweis": "Grundfassung P5a; alle Masse und Schwellen (Platz 50° links, Brusthöhe, Druckebene 5 mm, Fang 3 cm, Zögern 1.5 s, Tunnel) sind Annahmen bis zum Brillentest und als Stellschrauben einstellbar, wo der Katalog es vorsieht. Gewischt wird immer mit gehaltenem Pinch (Entscheid P5a); ein Wisch nach vorn dreht seit P5a nicht mehr. Prüfaufgaben und Messprotokoll des Labors folgen mit P5b. Schnitt mit flacher Hand und Röntgen-Hand sind noch nicht gebaut."
+        },
+        {
+          "id": "zb-xr-labor-stellschrauben",
+          "titel": "XR-Labor: Stellschrauben der Quest App live von KICAD aus einstellen (Modul XR, Quest App P6)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Register Ansicht › Gruppe Fenster › «XR-Labor …», Reiter «Stellschrauben». Öffnen geht auch ohne Projekt."
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Fenster › «XR-Labor …» klicken. Der Dialog öffnet; oben steht, welche Brille verbunden ist (oder «Keine Brille verbunden»).",
+            "Im Reiter «Stellschrauben» eine Zeile suchen. Die Zeilen sind nach Gruppen geordnet (Begehen, Haltung, Anzeige, Schwebende Apps, Wischgesten, Pinch und Fang, Komfort, Sitzungsraum). Jede nennt Titel, Schlüssel, Beschreibung, Vorgabe und Herkunft des Werts.",
+            "Den Regler ziehen oder anklicken, mit den Pfeiltasten verstellen oder eine Zahl in das Feld eintragen (Tab bestätigt); Schalter anklicken; bei einer Auswahl den Eintrag wählen. Jede Änderung geht sofort an die Brille.",
+            "Mit «Vorgabe» setzt man die Stellschraube auf die Vorgabe zurück (sie ist nur frei, wenn der Wert abweicht).",
+            "Steht neben dem Titel «folgt P5», versteht die App den Wert erst ab P5 (Labor in der App); KICAD sendet ihn trotzdem schon."
+          ],
+          "erwartung": "Jede Stellschraube des Katalogs erscheint mit Regler (bzw. Schalter oder Auswahl), Zahlenfeld, Einheit und der Zeile «Gesetzt/Nicht gesetzt: … · Vorgabe: …». Die Grenzen (min, max, Schritt) stammen aus dem Katalog; eine Zahl ausserhalb wird nicht gesendet, die Meldung nennt den erlaubten Bereich und das Feld springt zurück. Ist keine Brille verbunden, merkt KICAD die Werte und sendet sie bei der nächsten Verbindung (solange KICAD läuft). Der Dialog passt sich dem Fenster an, der Inhalt scrollt, die Reiter bleiben oben stehen.",
+          "pruefpunkte": [
+            "Der Knopf «XR-Labor …» steht im Register Ansicht in der Gruppe Fenster.",
+            "Der Dialog liegt auch in einem kleinen Fenster (z. B. 900 × 560) ganz sichtbar, «Schliessen» bleibt erreichbar.",
+            "Eine Zahl eintragen: die Zeile zeigt «Gesetzt: …», «Vorgabe» wird frei.",
+            "Eine Zahl ausserhalb der Grenzen eintragen: Meldung mit dem erlaubten Bereich, nichts wird gesendet.",
+            "Regler anklicken und mit den Pfeiltasten verstellen: der Wert ändert sich schrittweise.",
+            "«Vorgabe» drücken: die Zeile steht wieder auf der Vorgabe, «Nicht gesetzt».",
+            "Mit verbundener Brille: der Kopf nennt Name, Gerät und Fassung der App; die Werte erscheinen als gesetzt, sobald sie die Brille erreicht haben.",
+            "Die Stellschrauben mit «folgt P5» sind sichtbar und gekennzeichnet."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «XR-Labor», Reiter Stellschrauben, kleines Fenster",
+            "zustand": "Dialog offen, einige Werte gesetzt (Prüfbild xrlabor-03_stellschrauben.png aus xr-labor.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor-dialog.js und xr-labor-text.js (Dialog und Hilfen), aktionen-quest.js (ansicht.xrLabor)",
+            "src/Hlks.Web/XrLaborEndpunkte.cs, XrLaborKatalog.cs, XrLaborAuswertung.cs, XrFragebogen.cs (/api/xr/labor/…)",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
+          ],
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+        },
+        {
+          "id": "zb-xr-labor-profile",
+          "titel": "XR-Labor: Profile speichern, laden und für die App festlegen (Modul XR, Quest App P6)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Reiter «Profile». Gespeichert wird je Benutzer in den Benutzereinstellungen («labor.profil.<kennung>»)."
+          },
+          "schritte": [
+            "Stellschrauben und Varianten so einstellen, wie sie gelten sollen.",
+            "Im Reiter «Profile» einen Namen eintragen (z. B. «Sitzung sitzend») und «Aktuellen Satz speichern» klicken. Das Profil enthält alle Stellschrauben und Varianten (gesetzter Wert oder Vorgabe). Ein gleicher Name fragt vor dem Überschreiben zurück.",
+            "«Laden» sendet alle Werte eines Profils an die Brille und stellt die Regler entsprechend.",
+            "«Für die App festlegen» markiert das Profil mit «gilt für die App»: die App holt es beim Verbinden mit dem Katalog (GET /api/xr/labor/katalog, Feld «profil»). Der Satz der App gilt in dieser Reihenfolge: Vorgabe des Katalogs, dann das Profil, dann die live gesetzten Werte. «Nicht mehr für die App» nimmt die Markierung weg.",
+            "«Löschen» entfernt ein Profil nach einer Rückfrage."
+          ],
+          "erwartung": "Die Profile erscheinen als Liste mit Name und Zahl der Werte; höchstens eines trägt die Marke «gilt für die App». Die Profile liegen in den Benutzereinstellungen und gelten auf allen Rechnern des Benutzers. Ein Name, aus dem keine Kennung entsteht (nur Zeichen ohne Buchstaben und Ziffern), wird abgelehnt. Werte, die der Katalog nicht mehr kennt, lässt das Laden und der Katalog für die App aus.",
+          "pruefpunkte": [
+            "Ohne Profil steht ein klarer Hinweis, wie man eines anlegt.",
+            "Nach dem Speichern erscheint das Profil mit dem eingegebenen Namen (auch ein Name mit Sonderzeichen wie <b> erscheint als Text).",
+            "Gleicher Name noch einmal: Rückfrage «gibt es schon».",
+            "«Laden» nach einer Änderung stellt die Werte des Profils wieder her.",
+            "«Für die App festlegen»: die Marke erscheint; der Katalog für die App enthält das Profil.",
+            "«Nicht mehr für die App»: der Katalog liefert kein Profil mehr.",
+            "«Löschen» fragt zurück und entfernt das Profil."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «XR-Labor», Reiter Profile",
+            "zustand": "ein Profil mit der Marke «gilt für die App» (Prüfbild xrlabor-04_profile.png aus xr-labor.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor-dialog.js und xr-labor-text.js (Dialog und Hilfen), aktionen-quest.js (ansicht.xrLabor)",
+            "src/Hlks.Web/XrLaborEndpunkte.cs, XrLaborKatalog.cs, XrLaborAuswertung.cs, XrFragebogen.cs (/api/xr/labor/…)",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
+          ],
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+        },
+        {
+          "id": "zb-xr-labor-varianten-aufgaben",
+          "titel": "XR-Labor: Varianten umschalten und Prüfaufgaben in der Brille starten (Modul XR, Quest App P6)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Reiter «Varianten» und «Prüfaufgaben»."
+          },
+          "schritte": [
+            "Reiter «Varianten»: je Bedienung die Option A oder B wählen (Bedienung: schwebende Apps oder Tablet; Teleport: Zeigen und Pinch oder Stick; Etage: Wisch am Modell oder App; Messen: Messband oder zwei Punkte). KICAD sendet die Wahl als Stellschraube «labor.variante.<name>» und sendet sie bei jeder neuen Verbindung wieder.",
+            "Reiter «Prüfaufgaben»: die Liste zeigt je Aufgabe Titel, Anleitung, Ort, Erfolgskriterium und einen Status aus den Messprotokollen.",
+            "Bei verbundener Brille «Aufgabe starten» klicken. Die Aufgabe geht als Stellschraube «labor.aufgabe» an die Brille; der Status wechselt auf «Gestartet – wartet auf die Messung der Brille».",
+            "Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status zeigt dann «n Läufe · x von y erfolgreich · zuletzt …». «Aufgabe beenden» bricht die laufende Aufgabe ab."
+          ],
+          "erwartung": "Die Wahl einer Variante geht sofort an die Brille und bleibt bei jedem Takt erhalten. «Aufgabe starten» ist nur frei, wenn eine Brille verbunden ist und die Aufgabe schon in der App ist; «Von Wand zu Wand messen» ist bis Version 1 gesperrt («folgt mit Version 1»). Eine Aufgabe wird nur an die verbundenen Brillen geschickt und von KICAD nicht gemerkt: eine neu verbundene Brille startet nichts von selbst.",
+          "pruefpunkte": [
+            "Vier Varianten mit je zwei Optionen; die Vorgabe ist gewählt.",
+            "Eine andere Option anklicken: Meldung «… gesendet», die Wahl bleibt.",
+            "Ohne Brille sind alle «Aufgabe starten»-Knöpfe gesperrt, der Grund steht dabei.",
+            "Mit Brille: «Aufgabe starten» sendet; der Status wechselt auf «Gestartet».",
+            "Nach der Messung der Brille steht der Status «1 Lauf …».",
+            "«Aufgabe beenden» sendet das Ende an die Brille."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «XR-Labor», Reiter Prüfaufgaben",
+            "zustand": "Aufgabenliste mit Status (Prüfbild xrlabor-06_aufgaben.png aus xr-labor.browser.mjs; Brille nachgestellt)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor-dialog.js und xr-labor-text.js (Dialog und Hilfen), aktionen-quest.js (ansicht.xrLabor)",
+            "src/Hlks.Web/XrLaborEndpunkte.cs, XrLaborKatalog.cs, XrLaborAuswertung.cs, XrFragebogen.cs (/api/xr/labor/…)",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
+          ],
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5). Aufgabe und Messung brauchen die App ab P5."
+        },
+        {
+          "id": "zb-xr-labor-auswertung",
+          "titel": "XR-Labor: Messprotokolle auswerten – je Aufgabe, Variante und Fassung der App (Modul XR, Quest App P6)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Reiter «Auswertung». Gelesen werden die Messprotokolle der Brille in %LOCALAPPDATA%\\HLKS_CAD\\xr\\messprotokolle."
+          },
+          "schritte": [
+            "Reiter «Auswertung» öffnen; «Neu lesen» liest die Messprotokolle und Fragebogen nochmals (der Reiter liest alle paar Sekunden von selbst).",
+            "Je Aufgabe mit Läufen steht ein Block mit zwei Tabellen: je Variante und je Fassung der App (Läufe, mittlere Zeit, Fehlgriffe, Abbrüche, Erfolg).",
+            "Darunter zeigt «Verlauf je Fassung der App» die Trendlinie über alle Aufgaben, zusammen mit den Mittelwerten der Fragebogen (SUS, TLX, Übelkeit).",
+            "Ganz unten stehen die gespeicherten Fragebogen."
+          ],
+          "erwartung": "Ohne Messprotokolle steht ein klarer Hinweis (Leerzustand). Mit Protokollen erscheinen die Zahlen je Aufgabe, Variante und Fassung der App (Fassung = die Angabe «app» der Brille beim Anmelden, z. B. «0.1+abc1234»). Die Variante steht als «name=option, …»; Läufe ohne Angabe heissen «ohne Angabe». Ungültige Zeilen werden übersprungen und gezählt; bei sehr vielen Dateien gelten die neuesten.",
+          "pruefpunkte": [
+            "Ohne Protokolle: Hinweis «Noch keine Messprotokolle …».",
+            "Mit Protokollen: Anzahl der Läufe und Dateien stimmt, Aufgabentitel stehen da.",
+            "Die Tabelle je Variante nennt Läufe, mittlere Zeit, Fehlgriffe, Abbrüche und Erfolg.",
+            "Die Tabelle je Fassung der App ordnet die Fassungen nach erster Verwendung.",
+            "Eine kaputte Zeile im Protokoll bricht nichts ab und erscheint nicht."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «XR-Labor», Reiter Auswertung",
+            "zustand": "Beispielprotokolle mit zwei Fassungen (Prüfbild xrlabor-07_auswertung.png aus xr-labor.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor-dialog.js und xr-labor-text.js (Dialog und Hilfen), aktionen-quest.js (ansicht.xrLabor)",
+            "src/Hlks.Web/XrLaborEndpunkte.cs, XrLaborKatalog.cs, XrLaborAuswertung.cs, XrFragebogen.cs (/api/xr/labor/…)",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
+          ],
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+        },
+        {
+          "id": "zb-xr-labor-fragebogen",
+          "titel": "XR-Labor: Fragebogen nach dem Test – Komfort, SUS und NASA-TLX (Modul XR, Quest App P6)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Reiter «Fragebogen». Gespeichert wird je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr\\fragebogen (eine JSON-Datei je Fragebogen)."
+          },
+          "schritte": [
+            "Nach dem Test den Reiter «Fragebogen» öffnen und den Namen der Testperson eintragen. Die Fassung der App kommt aus der verbundenen Brille (sonst von Hand eintragen); die gewählten Varianten werden mitgespeichert.",
+            "Komfort beantworten: Übelkeit, Belastung der Augen und «Wie natürlich fühlte sich die Bedienung an?» je 0 bis 10, dazu eine Bemerkung.",
+            "SUS und NASA-TLX: solange kein Wortlaut mit Quelle in kataloge/xr_fragebogen.json steht, zeigt der Dialog «SUS und NASA-TLX noch ohne Wortlaut», die Fragen sind Platzhalter («Wortlaut fehlt – Quelle durch Christian») und es werden dazu keine Antworten angenommen. Mit Wortlaut und Quelle bewertet KICAD sie selbst (SUS: ungerade Aussagen Wert − 1, gerade 5 − Wert, Summe × 2.5; NASA-TLX Raw: Mittel der sechs Skalen 0–100; Quellen: Brooke 1996 bzw. Hart & Staveland 1988, «Quelle prüfen»).",
+            "«Fragebogen speichern» klicken. Die Meldung nennt die Punkte; das Formular leert sich (der Name bleibt).",
+            "In der «Auswertung» erscheint der Fragebogen mit Fassung der App; je Fassung stehen die Mittelwerte."
+          ],
+          "erwartung": "Der Komfortteil funktioniert immer. SUS und NASA-TLX sind gesperrt, bis der Katalog einen deutschen Wortlaut mit Quelle enthält (Entscheid Christian: «Deutsche Fassungen der Fragebogen nur mit Quelle»). Ohne Namen oder ohne Antwort speichert KICAD nicht und sagt warum. Die Datei heisst JJJJMMTT-hhmmss_<name>.json.",
+          "pruefpunkte": [
+            "Der Hinweis «SUS und NASA-TLX noch ohne Wortlaut» ist sichtbar; die Platzhalter nennen die Quelle durch Christian.",
+            "Komfort: drei Skalenfragen mit Wortlaut und eine Bemerkung.",
+            "Ohne Namen: Meldung; ohne Antwort: Meldung «mindestens eine Frage».",
+            "Nach dem Speichern steht eine Datei im Ordner …\\xr\\fragebogen mit den Antworten, dem Namen und der Fassung der App.",
+            "Die Auswertung zeigt den Fragebogen und den Mittelwert je Fassung."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «XR-Labor», Reiter Fragebogen",
+            "zustand": "Komfortfragen beantwortet, SUS gesperrt (Prüfbild xrlabor-08_fragebogen.png aus xr-labor.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor-dialog.js und xr-labor-text.js (Dialog und Hilfen), aktionen-quest.js (ansicht.xrLabor)",
+            "src/Hlks.Web/XrLaborEndpunkte.cs, XrLaborKatalog.cs, XrLaborAuswertung.cs, XrFragebogen.cs (/api/xr/labor/…)",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
+          ],
+          "hinweis": "Offen: Wortlaut und Quelle der deutschen Fassungen von SUS und NASA-TLX durch Christian. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
         }
       ]
     }

@@ -20,6 +20,7 @@
 //   POST /api/xr/kopplung/aufdecken     { anfrage, zufallBrille }  Weg B, ohne Schlüssel → 200 { status: vergleichen } | 400 | 403 falsch | 404 | 409 | 410
 //   POST /api/xr/kopplung/abholen       { anfrage }  Weg B, ohne Schlüssel → 200 { status: gekoppelt, paket } | 202 { status: wartet } | 403 abgelehnt | 404 | 409 | 410
 //   GET  /api/xr/geschosse, /api/xr/geschoss/{id}.glb   Modell als GLB (XrModellEndpunkte.cs, P2), mit Schlüssel
+//   GET  /api/xr/labor/katalog          Stellschrauben, Prüfaufgaben und Varianten des Interface-Labors mit ETag (XrLaborEndpunkte.cs, P6), mit Schlüssel; Auswertung, Fragebogen, Variante, Aufgabe nur am PC
 // Fehler: { fehler, vorschlag } (400 Eingabe, 401 Schlüssel, 404, 409, 429 Bremse, 503 Ablage).
 
 using System.Text.Json.Nodes;
