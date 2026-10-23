@@ -141,6 +141,23 @@ try {
     $a3 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
     $sitzungOk = ($a3 -match 'Sitzungsraum=ja') -and ($a3 -match 'Auftrag=Nr 2 Sitzungsraum')
     if (-not $sitzungOk) { Aus 'Lauf 3: die App war nicht im Sitzungsraum des Auftrags.' }
+    # P4b-Nachtrag: dasselbe Bild mit gewoehnlichem Material und ganz mit dem Shader "schnitt" - die hellen Pixel (Modell) muessen gleich hell sein
+    $vi = ''; $vs = ''
+    if ($Pruefbilder) { $vi = Join-Path $Pruefbilder 'vergleich_innen.png'; $vs = Join-Path $Pruefbilder 'vergleich_schnitt.png' }
+    if ($Pruefbilder -and (Test-Path $vi) -and (Test-Path $vs)) {
+      Add-Type -AssemblyName System.Drawing
+      $ba = [Drawing.Bitmap]::FromFile($vi); $bb = [Drawing.Bitmap]::FromFile($vs)
+      $ha = 0.0; $hb = 0.0; $nh = 0
+      for ($y = 0; $y -lt $ba.Height; $y += 2) { for ($x = 0; $x -lt $ba.Width; $x += 2) {
+        $p = $ba.GetPixel($x, $y); $q = $bb.GetPixel($x, $y); $la = ($p.R + $p.G + $p.B) / 3.0
+        if ($la -gt 60) { $ha += $la; $hb += ($q.R + $q.G + $q.B) / 3.0; $nh++ } } }
+      $ba.Dispose(); $bb.Dispose()
+      if ($nh -gt 0) {
+        $hellOk = [Math]::Abs($ha / $nh - $hb / $nh) -le 3
+        Aus ("Lauf 3: Helligkeit Modell gewoehnlich {0:0.0}, mit Shader schnitt {1:0.0} ({2} Pixel) - {3}" -f ($ha / $nh), ($hb / $nh), $nh, @('ABWEICHUNG', 'gleich')[[int]$hellOk])
+        if (-not $hellOk) { $sitzungOk = $false }
+      }
+    }
   }
   $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk) { 0 } else { 1 }
 } catch {

@@ -13,8 +13,9 @@ namespace Hlks.Quest;
 ///     in der Mitte ein Tisch (1.6 × 1.0 m, Platte 0.75 m, Vorderkante 0.4 m vor dem Kopf) mit dunkler Glasplatte und leuchtender Cyan-Kante; keine Effekte
 ///     (XR-H «Aussehen»: «ohne Aufwand für Effekte»);
 ///   - darauf das Modell verkleinert (zu Beginn 1:50 eingepasst; Ausschnitt so gross wie möglich), Etagenschnitt bzw. Ausschnitt nach der Ansicht;
-///   - zwei Griffe links und rechts des Modells: mit Daumen und Zeigefinger beide fassen, dann drehen um die Hochachse, verschieben und zoomen um die Mitte zwischen den
-///     Händen (1:200 … 1:20); das Modell bleibt waagrecht (XrSitzungLogik.GestenSchritt);
+///   - zwei Griffe an den vorderen Ecken des sichtbaren Gebäudes (SitzungRaum.GriffPunkte, P4b-Nachtrag): mit Daumen und Zeigefinger beide fassen, dann drehen um die
+///     Hochachse, verschieben (auch in der Höhe) und zoomen um die Mitte zwischen den
+///     Händen (1:200 … 1:5); das Modell bleibt waagrecht (XrSitzungLogik.GestenSchritt);
 ///   - «Echter Tisch» (Passthrough): kein virtueller Raum, das Kamerabild zeigt den echten Raum; einmal mit dem Zeigefinger auf die Tischplatte tippen (TischAntippen),
 ///     dann steht das Modell dort.
 /// Alles im Raum der Brille (StereoKit, Boden y = 0); das Raum-lokale System der Regeln bildet <see cref="RaumLage"/> ab.
@@ -28,8 +29,8 @@ sealed class Sitzungsraum
     SitzungRaumLage raum = new(XVec3.Null, 0);
     SitzungRaumLage? tischRaum;
     bool pinchL, pinchR;
-    Color alteFarbe;
-    bool alterHimmel;
+    /// <summary>Der eine Ort für Löschfarbe und Himmel des Renderers (Sitzungsraum und Passthrough), P4b-Nachtrag.</summary>
+    readonly HintergrundVerwalter hintergrund = new();
     readonly bool[] hover = new bool[2];
 
     readonly Material wand, boden, raster, platte, fuss, griff, schein;
@@ -38,7 +39,7 @@ sealed class Sitzungsraum
     readonly Mesh platteNetz = Mesh.GenerateRoundedCube(new Vec3((float)XrSitzungLogik.TischBreite, 0.025f, (float)XrSitzungLogik.TischTiefe), 0.008f);
     readonly Mesh fussNetz = Mesh.GenerateCylinder(0.18f, (float)XrSitzungLogik.TischHoehe - 0.03f, Vec3.Up, 24);
 
-    public static readonly Color Dunkel = new(0.012f, 0.016f, 0.024f, 1);
+    public static readonly Color Dunkel = new(Hintergrund.Dunkel.R, Hintergrund.Dunkel.G, Hintergrund.Dunkel.B, Hintergrund.Dunkel.A);
     public static readonly Color32 KanteCyan = new(60, 220, 255, 255);
 
     public EchterTisch Echt { get; } = new();
@@ -87,22 +88,22 @@ sealed class Sitzungsraum
     public void Betreten(Pose kopf, SitzungAnsicht ansicht)
     {
         raum = SitzungRaum.VorKopf(new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), BlickGieren(kopf));
-        if (!Aktiv)
-        {
-            alteFarbe = Renderer.ClearColor;
-            alterHimmel = Renderer.EnableSky;
-        }
         Aktiv = true;
         Ansicht = null;
         AnsichtSetzen(ansicht);
-        HintergrundSetzen();
+        HintergrundAnwenden();
     }
 
-    void HintergrundSetzen()
+    /// <summary>
+    /// Löschfarbe und Himmel nach dem Zustand (Hlks.Xr.Sitzung.HintergrundVerwalter): Passthrough ein → durchsichtig, sonst Sitzungsraum → dunkel, sonst der Zustand vor dem
+    /// Betreten. Nach jedem Wechsel von Sitzungsraum oder Passthrough aufrufen. Licht, Materialien und Tönung bleiben unberührt.
+    /// </summary>
+    void HintergrundAnwenden()
     {
-        if (passthrough.Ein) return;   // Passthrough setzt den Hintergrund selbst (durchsichtig)
-        Renderer.ClearColor = Dunkel;
-        Renderer.EnableSky = false;
+        var c = Renderer.ClearColor;
+        var soll = hintergrund.Setzen(new Hintergrund(c.r, c.g, c.b, c.a, Renderer.EnableSky), Aktiv, passthrough.Ein);
+        Renderer.ClearColor = new Color(soll.R, soll.G, soll.B, soll.A);
+        Renderer.EnableSky = soll.Himmel;
     }
 
     /// <summary>
@@ -129,11 +130,10 @@ sealed class Sitzungsraum
     {
         if (!Aktiv) return;
         if (Echt.Ein) EchterTischSchalten(false);
-        Renderer.ClearColor = alteFarbe;
-        Renderer.EnableSky = alterHimmel;
         Aktiv = false;
         Ansicht = null;
         tischRaum = null;
+        HintergrundAnwenden();
     }
 
     /// <summary>Schalter «Echter Tisch»: Passthrough ein/aus; ein wartet aufs Antippen der Platte. Rückgabe: wirksamer Zustand.</summary>
@@ -145,7 +145,7 @@ sealed class Sitzungsraum
         tischRaum = null;
         tippLinks.Zuruecksetzen();
         tippRechts.Zuruecksetzen();
-        if (!wirksam && Aktiv) HintergrundSetzen();
+        HintergrundAnwenden();
         return wirksam;
     }
 
@@ -186,7 +186,7 @@ sealed class Sitzungsraum
             }
             return;
         }
-        var griffe = XrSitzungLogik.GriffPunkte(Lage, Ansicht.Bezug.Groesse);
+        var griffe = SitzungRaum.GriffPunkte(Lage, Ansicht.Bezug, Ansicht.Sichtbar);   // vordere Ecken des sichtbaren Gebäudes (P4b-Nachtrag)
         var rl = RaumLage;
         // eine Hand: Pinch (Daumen- und Zeigefingerspitze, mit Hysterese), Pinch-Punkt (Raum-lokal) und der Griff in Fangreichweite
         (GestenHand? Hand, XVec3? Punkt) Hand(Handed handed, ref bool vorher)
@@ -256,7 +256,7 @@ sealed class Sitzungsraum
         d?.ZeichnenSitzung(welt, Ansicht, Unterlage);
         ebenen?.Zeichnen(welt, Lage.Massstab, Ansicht.Geschosse, Ansicht.Schnitt, zeit);
         // Griffe (XR-H: kleine Cyan-Kugel mit Schein; näher als 5 cm heller, gehalten weiss)
-        var griffe = XrSitzungLogik.GriffPunkte(Lage, Ansicht.Bezug.Groesse);
+        var griffe = SitzungRaum.GriffPunkte(Lage, Ansicht.Bezug, Ansicht.Sichtbar);   // vordere Ecken des sichtbaren Gebäudes (P4b-Nachtrag)
         for (int i = 0; i < griffe.Count; i++)
         {
             var p = (Vec3)(Vector3)rl.ZuRef(new XVec3(griffe[i].X, griffe[i].Y, griffe[i].Z));

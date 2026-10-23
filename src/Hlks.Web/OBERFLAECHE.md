@@ -2202,22 +2202,39 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
 - **In den Sitzungsraum** (Auftrag vom PC, sofort über den Kanal; Regeln `VrStartLogik.AuftragSchritte`, `SitzungAuswahl`):
   - Rechtsklick Raum › **«Modell am Sitzungstisch»** (`modus: sitzungsraum`, Raum): das ganze Modell auf dem Tisch mit **Etagenschnitt im Geschoss des Raums**
     (Ergänzung P4b; der Prototyp zeigte hier «Alle Etagen»). Mit `geschoss` im Auftrag (`POST /api/vr/auftrag`) gilt dieses Geschoss – **Etagenwahl bis P5 nur so**.
-  - Rechtsklick Raum › **«Raum in AR»** (`ausschnitt: true`): nur der **Raum ± 1.5 m** (Quader wie «Raum im 3D zeigen», N14) als Ausschnitt, so gross wie möglich (1:20).
+  - Rechtsklick Raum › **«Raum in AR»** (`ausschnitt: true`): nur der **Raum ± 1.5 m** (Quader wie «Raum im 3D zeigen», N14), oben unter der Decke, als Ausschnitt so gross wie
+    möglich, passend auf die Platte (ab 1:5).
   - `modus: sitzungsraum` ohne Raum: **alle Etagen**. Eine 3D-Ansicht (`ansicht`) auf dem Tisch kommt später (Hinweis, dann das ganze Modell).
   - In der Box beim Begehen: Knopf **«Sitzungsraum»** – Etagenschnitt im Geschoss, in dem man steht.
   - **Zurück ins Begehen:** Auftrag `modus: begehen` (mit Raum: in diesen Raum) oder Knopf **«Begehen»** in der Box; Standpunkt wie vorher.
 - **Tisch und Modell** (Masse und Regeln aus dem Prototyp, `XrSitzungLogik`): Tisch 1.6 × 1.0 m, Platte 0.75 m, Vorderkante 0.4 m vor dem Kopf beim Betreten; das Modell zu Beginn
-  **1:50** auf die Mitte der Platte eingepasst (grösser nur, wenn es sonst nicht passt, höchstens 1:200), Unterkante auf der Platte. Die Wahl einer Etage behält Lage, Massstab und
-  Drehung; ein Ausschnitt passt neu ein. Massstab und Ansicht stehen an der Tischkante rechts vorn.
+  **1:50** auf die Mitte der Platte eingepasst (grösser nur, wenn es sonst nicht passt, höchstens 1:200), Unterkante auf der Platte. Eingepasst wird **das Gebäude**
+  (`SitzungAuswahl.Gebaeude`: Grundriss der Decken bzw. Platten, Höhe aller Bauteile; P4b-Nachtrag), nicht die Box aller Netze – in Test_praxis reichte sie mit einem
+  Proxy im Projekt-Nullpunkt und Geländern 40 m vor das Gebäude (vorher 1:99, jetzt 1:50). Die Wahl einer Etage behält Lage, Massstab und Drehung; ein Ausschnitt passt neu
+  ein. Massstab und Ansicht stehen an der Tischkante rechts vorn.
 - **Etagenschnitt:** gezeichnet werden nur das gewählte Geschoss und die darunter; der Schnitt liegt **50 mm unter der Unterkante der Decke** (`SCHNITT_TIEFER_MM`, Christian
   21.10.2026), ohne Decke 50 mm unter der Kote des Geschosses darüber. Decken: Klasse Decke des Modells und – Ergänzung P4b – IfcSlab der IFC-Unterlage, wenn ihre Oberkante auf
   ±2 mm auf dieser Kote liegt. Fehlt die Höhe eines Geschosses in der Liste: Abstand zum Geschoss darüber, beim obersten 3000 mm (Annahme).
 - **Nur zeichnen, was im Ausschnitt bzw. unter dem Schnitt liegt:** je Block (≤ 20 000 Dreiecke) die Hüllbox – ganz innen gewöhnlich, schneidet er den Quader mit dem Shader
   **«schnitt»** (`Assets/schnitt.hlsl`, verwirft alles ausserhalb), ganz aussen gar nicht. Für «Raum zeigen» stellt die App je Netz ein eigenes Netz nur aus den Elementen im
   Quader zusammen (Test_praxis: 45 688 statt 861 291 Dreiecke, 8 ms am PC). Schnittflächen bleiben offen (kein Deckel).
-- **Griffe:** zwei Cyan-Kugeln links und rechts des Modells (6 cm ausserhalb, 5 cm über der Platte). **Beide mit Daumen und Zeigefinger fassen** (Pinch höchstens 5 cm vom Griff),
-  dann: **drehen** um die Hochachse (Richtung der Hände), **verschieben** (Mitte der Hände), **zoomen** um die Mitte zwischen den Händen (Abstand, 1:200 … 1:20). Ein Griff allein
-  bewegt nichts. Das Modell bleibt **waagrecht**. Nahe Hand: Griff heller; gehalten: weiss. Klick beim Fassen und Loslassen. **«Zurücksetzen»** in der Box: Startlage.
+- **Griffe:** zwei Cyan-Kugeln an den **vorderen Ecken des sichtbar gezeichneten Gebäudes** (P4b-Nachtrag, Christian 23.10.2026: «die beiden greiffpunkte sollten an einer
+  gebäudeecke sein», «griffe passen immer noch nicht»), je 6 cm schräg nach aussen, 5 cm über der Platte (`SitzungRaum.GriffPunkte`). «Sichtbar» ist ein Rechteck in den
+  **Achsen des Gebäudes** (`SichtbarRahmen`; Ausrichtung aus den Kanten der Raumgrundrisse – Test_praxis steht um 43° gedreht, die Ecken einer achsparallelen Box lagen im
+  Leeren): bei «Alle Etagen» und Etage die Platten der gezeichneten Geschosse (ohne Platten alle Bauteile; freistehende Wände zählen dann nicht), bei «Raum in AR» die
+  Elemente im Quader, auf den Quader begrenzt. Vorne ist die Seite, die (in der Lage des Modells) am meisten zum Menschen zeigt. Die Griffe folgen Massstab, Drehung,
+  Verschiebung und Höhe. **Beide mit Daumen und Zeigefinger fassen** (Pinch höchstens 5 cm vom Griff), dann: **drehen** um die Hochachse (Richtung der Hände), **verschieben**
+  in Breite, Tiefe und **Höhe** (Mitte der Hände), **zoomen** um die Mitte zwischen den Händen (Abstand, **1:200 … 1:5**; `XrSitzungLogik.MassstabMin`, Christian
+  23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»). Ein Griff allein bewegt nichts. Das Modell bleibt **waagrecht**. Nahe Hand: Griff heller; gehalten:
+  weiss. Klick beim Fassen und Loslassen. **«Zurücksetzen»** in der Box: Startlage.
+- **Shader «schnitt» und Farbe** (P4b-Nachtrag, Brillentest 23.10.2026: «Raum in AR» schwarz, «nur die oberste etage schwarz»): Der Shader las die Vertexfarbe unter OpenGL ES
+  (Quest) von der Stelle 2 – dort liegen bei StereoKit die UV-Koordinaten (0, 0) –, weil seinem Eingang das Feld `uv : TEXCOORD0` fehlte; die Farbe wurde (0, 0, 0, 1), alles mit
+  dem Shader schwarz. Unter Direct3D (PC) passen die Eingänge über die Namen, deshalb nicht im Simulator. Jetzt hat der Eingang den Vertex von StereoKit in seiner Reihenfolge
+  (Position, Normale, UV, Farbe; im übersetzten GLSL Farbe an Stelle 3, Test `HintergrundUndShaderTests`). Zudem nimmt `Mesh.Draw` die Instanzfarbe **linear**, die Tönung des
+  Materials aber als **Gamma**: die App rechnet die Instanzfarbe für den Shader jetzt gleich um. Prüfbild am PC (Test_praxis, gleiches Bild einmal ganz mit dem Shader): helle
+  Pixel 135.9 gegen 135.8 (vorher 135.1 gegen 176.1).
+- **Hintergrund** (P4b-Nachtrag): Löschfarbe und Himmel setzt nur noch `Hlks.Xr.Sitzung.HintergrundVerwalter` (Sitzungsraum dunkel, Passthrough durchsichtig, sonst der Zustand vor
+  dem ersten Wechsel, genau einmal gemerkt); vorher merkten sich Sitzungsraum und Passthrough je den Zustand des anderen. Licht, Materialien und Tönung bleiben unberührt.
 - **Aussehen** (XR-H, schlicht): dunkler Raum 8 × 6 m, 3.2 m hoch, mattschwarze Wände, dunkler Boden mit feinem Cyan-Raster, weisse Lichtlinien an Decke und Ecken, dunkle
   Glasplatte mit **leuchtender Cyan-Kante**, keine Effekte (kein Nebel, keine Spiegelung).
 - **Schalter «Echter Tisch»** (Passthrough, `Passthrough.cs`; Entscheid Christian 23.10.2026 «Beides, Passthrough prüfen»): ein = Kamerabild der Quest statt des virtuellen
@@ -2252,8 +2269,11 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
 - **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` hat einen **Lauf 3 «Sitzungsraum»**: Auftrag «Geschoss im Sitzungsraum zeigen» für den ersten Raum, dann drei Abschnitte (Etagenschnitt des
   Auftrags, alle Etagen, «Raum zeigen») mit Bildzeit, Netzen, Aufrufen, Blöcken mit Schnitt, Dreiecken und Ebenen; dazu die Regeln in der App (Griffe 1:50 → 1:25 und 30°,
   Tisch antippen 0.742 m, Modell auf dem Punkt, Passthrough im Simulator «nicht verfügbar» und Schalter aus, Shader geladen). `-Pruefbilder <ordner>` legt je Abschnitt zwei
-  JPEG ab (nur lokal), `-OhneSitzungsraum` lässt den Lauf weg. Tests: Xr `tests/Hlks.Xr.Tests` (`SitzungRaumTests`, `SitzungAuswahlTests`, `TischAntippenTests` mit dem
-  Speicherbild von XR_FB_passthrough, `XrEbeneTests`), Web `--filter "FullyQualifiedName~XrEbenenApiTests"`.
+  JPEG ab (nur lokal; dazu «senkrecht» von oben für die Griffe) und vergleicht zwei PNG desselben Bilds (gewöhnliches Material gegen Shader «schnitt», helle Pixel höchstens
+  3 Stufen auseinander), `-OhneSitzungsraum` lässt den Lauf weg. Ist Port 5130 belegt (Brillentest): die App ohne PC aus einem Zwischenspeicher mit
+  `--ohne-pc --speicher <ordner> --auftrag "{…}"` (nur PC; ein VR-Auftrag wie vom PC beim Start). Tests: Xr `tests/Hlks.Xr.Tests` (`SitzungRaumTests`, `SitzungAuswahlTests`
+  mit Gebäudehülle, gedrehtem Gebäude, Griffen und den Netzen des Ausschnitts, `TischAntippenTests` mit dem Speicherbild von XR_FB_passthrough, `HintergrundUndShaderTests`,
+  `XrEbeneTests`), Web `--filter "FullyQualifiedName~XrEbenenApiTests"`.
 - **Nur mit der Brille prüfbar:** Passthrough (ob das Kamerabild unter der Szene erscheint und die Szene mit Alpha darüber liegt), Antippen des echten Tisches (Schwellen, Höhe),
   Griffe mit echten Händen, Bildrate im Sitzungsraum (Test_praxis «Alle Etagen» 861 291 Dreiecke in 73 Aufrufen – am PC nicht aussagekräftig), ob der Shader «schnitt» auf der
   Quest lädt, Lesbarkeit der Schrift am Tisch, Aussehen des Raums.

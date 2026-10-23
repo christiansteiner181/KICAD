@@ -92,6 +92,33 @@ public static class SitzungRaum
             * Matrix4x4.CreateTranslation((float)m.X, (float)(XrSitzungLogik.TischHoehe + lage.Hoehe), (float)m.Z);
     }
 
+    /// <summary>
+    /// Griffe an den vorderen Ecken des sichtbar gezeichneten Gebäudes (P4b-Nachtrag, Brillentest Christian 23.10.2026: «die beiden greiffpunkte sollten an einer gebäudeecke
+    /// sein», «griffe sind generell verschoben (weit vor dem Modell)», «griffe passen immer noch nicht»). sichtbar = Rechteck des Gezeichneten in den Achsen des Gebäudes
+    /// (<see cref="SichtbarRahmen"/>; Test_praxis steht um 43° gedreht im Plan – die Ecken einer achsparallelen Box lagen im Leeren vor dem Gebäude).
+    /// Vorne = die Seite des Rechtecks, deren Aussenrichtung in der Szene am meisten nach +z zeigt (Süden, zum Menschen bei Drehung 0 des Modells); ihre beiden Ecken tragen
+    /// die Griffe, links (Index 0) die mit kleinerem x. Umgerechnet mit <see cref="ModellZuRaum"/> – folgen also Massstab, Drehung, Verschiebung und Höhe –, dann
+    /// <see cref="XrSitzungLogik.GriffAbstandM"/> schräg nach aussen (halb aus der Seite, halb entlang der Seite) und <see cref="XrSitzungLogik.GriffHoeheM"/> über der
+    /// Unterkante des Modells. Liegen die Ecken näher als 2 × GriffMinHalbM beieinander, rücken sie entlang der Seite auseinander. Ohne Rechteck: XrSitzungLogik.GriffPunkte.
+    /// </summary>
+    public static IReadOnlyList<GriffPunkt> GriffPunkte(SitzungLage lage, SitzungBezug bezug, SichtbarRahmen? sichtbar)
+    {
+        if (sichtbar is null || !sichtbar.Gueltig) return XrSitzungLogik.GriffPunkte(lage, bezug.Groesse);
+        var (e0, e1, aussen) = sichtbar.Vorderseite();
+        if (e1.X < e0.X) (e0, e1) = (e1, e0);
+        var links = ModellZuRaum(new Vec3(e0.X, bezug.Unten, e0.Z), lage, bezug);
+        var rechts = ModellZuRaum(new Vec3(e1.X, bezug.Unten, e1.Z), lage, bezug);
+        var entlang = XrSitzungLogik.DreheXZ(new Xz(e1.X - e0.X, e1.Z - e0.Z), lage.Drehung);   // Richtung links → rechts im Raum
+        var l = Math.Sqrt(entlang.X * entlang.X + entlang.Z * entlang.Z);
+        var t = l > 1e-12 ? new Xz(entlang.X / l, entlang.Z / l) : XrSitzungLogik.DreheXZ(new Xz(1, 0), lage.Drehung);
+        var n = XrSitzungLogik.DreheXZ(aussen, lage.Drehung);
+        var mitte = Vec3.Mitte(links, rechts);
+        var halb = Math.Max(links.Abstand(rechts) / 2, XrSitzungLogik.GriffMinHalbM);
+        var a = XrSitzungLogik.GriffAbstandM / Math.Sqrt(2);
+        var y = XrSitzungLogik.TischHoehe + lage.Hoehe + XrSitzungLogik.GriffHoeheM;
+        return new[] { (Index: 0, Seite: "links", Vz: -1), (Index: 1, Seite: "rechts", Vz: 1) }.Select(g =>
+            new GriffPunkt(g.Index, g.Seite, mitte.X + t.X * g.Vz * (halb + a) + n.X * a, y, mitte.Z + t.Z * g.Vz * (halb + a) + n.Z * a)).ToList();
+    }
     /// <summary>Matrix Szene → Referenzraum der Brille.</summary>
     public static Matrix4x4 ModellMatrix(SitzungLage lage, SitzungBezug bezug, SitzungRaumLage raum) => ModellMatrix(lage, bezug) * raum.Matrix;
 }
@@ -159,4 +186,60 @@ public sealed record SchnittQuader(double Ux, double Uz, double UMin, double UMa
     public (Vector4 U, Vector4 V, Vector4 Y) ShaderWerte() =>
         (new Vector4((float)Ux, (float)Uz, (float)UMin, (float)UMax), new Vector4((float)Vx, (float)Vz, (float)VMin, (float)VMax),
          new Vector4((float)YMin, (float)YMax, 0, 0));
+}
+
+/// <summary>
+/// Rechteck in eigenen waagrechten Achsen (Szene, m): U = (Ux, Uz) Einheitsvektor, V = (−Uz, Ux); ein Punkt p liegt bei u = p·U, v = p·V. Für die Griffe an den Ecken des
+/// sichtbar gezeichneten Gebäudes (P4b-Nachtrag) – das Gebäude steht oft gedreht im Plan, eine achsparallele Box träfe seine Ecken nicht.
+/// </summary>
+public sealed record SichtbarRahmen(double Ux, double Uz, double UMin, double UMax, double VMin, double VMax)
+{
+    public bool Gueltig => double.IsFinite(UMin) && double.IsFinite(UMax) && double.IsFinite(VMin) && double.IsFinite(VMax) && UMax >= UMin && VMax >= VMin;
+
+    /// <summary>Achsparallel (U = x, V = z) aus einer Box.</summary>
+    public static SichtbarRahmen? AusBox(Box3 b) => b.IstLeer ? null : new SichtbarRahmen(1, 0, b.Min.X, b.Max.X, b.Min.Z, b.Max.Z);
+
+    /// <summary>Leeres Rechteck in diesen Achsen (zum Erweitern mit <see cref="Plus"/>).</summary>
+    public static SichtbarRahmen Leer(double ux, double uz) =>
+        new(ux, uz, double.PositiveInfinity, double.NegativeInfinity, double.PositiveInfinity, double.NegativeInfinity);
+
+    public double U(double x, double z) => x * Ux + z * Uz;
+    public double V(double x, double z) => -x * Uz + z * Ux;
+
+    public SichtbarRahmen Plus(double x, double z)
+    {
+        double u = U(x, z), v = V(x, z);
+        return this with { UMin = Math.Min(UMin, u), UMax = Math.Max(UMax, u), VMin = Math.Min(VMin, v), VMax = Math.Max(VMax, v) };
+    }
+
+    public SichtbarRahmen Vereinigt(SichtbarRahmen r) =>
+        this with { UMin = Math.Min(UMin, r.UMin), UMax = Math.Max(UMax, r.UMax), VMin = Math.Min(VMin, r.VMin), VMax = Math.Max(VMax, r.VMax) };
+
+    /// <summary>Begrenzt auf die Grenzen eines anderen Bereichs in denselben Achsen.</summary>
+    public SichtbarRahmen Begrenzt(double uMin, double uMax, double vMin, double vMax) =>
+        this with { UMin = Math.Max(UMin, uMin), UMax = Math.Min(UMax, uMax), VMin = Math.Max(VMin, vMin), VMax = Math.Min(VMax, vMax) };
+
+    /// <summary>Punkt (x, z) der Szene zu (u, v).</summary>
+    public Xz Punkt(double u, double v) => new(u * Ux - v * Uz, u * Uz + v * Ux);
+
+    /// <summary>Die vier Ecken (u, v): (min, min), (max, min), (max, max), (min, max).</summary>
+    public IReadOnlyList<Xz> Ecken() => [Punkt(UMin, VMin), Punkt(UMax, VMin), Punkt(UMax, VMax), Punkt(UMin, VMax)];
+
+    /// <summary>
+    /// Die Seite, deren Aussenrichtung am meisten nach +z der Szene zeigt (bei Gleichstand die erste in der Reihenfolge +V, +U, −U, −V): ihre beiden Ecken und die
+    /// Aussenrichtung (Einheitsvektor in x, z).
+    /// </summary>
+    public (Xz A, Xz B, Xz Aussen) Vorderseite()
+    {
+        var seiten = new (Xz N, double U0, double V0, double U1, double V1)[]
+        {
+            (new Xz(-Uz, Ux), UMin, VMax, UMax, VMax),     // +V
+            (new Xz(Ux, Uz), UMax, VMin, UMax, VMax),      // +U
+            (new Xz(-Ux, -Uz), UMin, VMin, UMin, VMax),    // −U
+            (new Xz(Uz, -Ux), UMin, VMin, UMax, VMin),     // −V
+        };
+        var best = seiten[0];
+        foreach (var s in seiten.Skip(1)) if (s.N.Z > best.N.Z + 1e-9) best = s;
+        return (Punkt(best.U0, best.V0), Punkt(best.U1, best.V1), best.N);
+    }
 }

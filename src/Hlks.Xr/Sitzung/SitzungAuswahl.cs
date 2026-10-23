@@ -21,7 +21,9 @@ using Hlks.Xr.Netz;
 namespace Hlks.Xr.Sitzung;
 
 /// <summary>Was gezeichnet wird: Geschosse (Ids; null = alle), Schnitt (null = keiner), Bezug für das Einpassen, Text für die Anzeige, gewähltes Geschoss.</summary>
-public sealed record SitzungAnsicht(IReadOnlySet<string>? Geschosse, SchnittQuader? Schnitt, SitzungBezug Bezug, string Text, string? Geschoss = null, bool Ausschnitt = false)
+/// Sichtbar = Rechteck des sichtbar Gezeichneten in den Achsen des Gebäudes bzw. des Ausschnitts, für die Griffe an den Gebäudeecken (P4b-Nachtrag; null = Box des Bezugs).
+public sealed record SitzungAnsicht(IReadOnlySet<string>? Geschosse, SchnittQuader? Schnitt, SitzungBezug Bezug, string Text, string? Geschoss = null, bool Ausschnitt = false,
+    SichtbarRahmen? Sichtbar = null)
 {
     /// <summary>Wird ein Netz bzw. Block dieses Geschosses mit dieser Hüllbox gezeichnet, und wie (ohne Schnitt, mit Schnitt)?</summary>
     public SchnittLage Lage(string geschossId, Box3 box)
@@ -74,9 +76,43 @@ public static class SitzungAuswahl
         return b;
     }
 
-    /// <summary>«Alle Etagen»: das ganze Modell, kein Schnitt; Bezug = Hüllbox aller Netze ohne Räume.</summary>
-    public static SitzungAnsicht? Alle(ModellSzene szene) =>
-        SitzungRaum.BezugAusBox(szene.Box) is { } bezug ? new SitzungAnsicht(null, null, bezug, "Alle Etagen") : null;
+    /// <summary>
+    /// Hülle des Gebäudes (P4b-Nachtrag, Brillentest Christian 23.10.2026: «griffe sind generell verschoben (weit vor dem Modell)»): die Bauteile des Durchgangs
+    /// (Wände und Decken des Modells, IfcWall, IfcSlab, IfcColumn, IfcBeam, IfcRoof, IfcCurtainWall der Unterlage) der genannten Geschosse (null = alle). Einzelne
+    /// Gegenstände weit ausserhalb (Test_praxis: ein IfcBuildingElementProxy im Projekt-Nullpunkt 40 m vor dem Gebäude, Geländer bis 16 m davor) zählen nicht. Ohne solche
+    /// Bauteile die Hülle aller Netze ohne Räume.
+    /// </summary>
+    public static Box3 Gebaeude(ModellSzene szene, IReadOnlySet<string>? geschosse)
+    {
+        Box3 platten = Box3.Leer, alle = Box3.Leer;
+        foreach (var e in szene.DurchgangsBauteile)
+        {
+            if (geschosse is not null && !geschosse.Contains(e.GeschossId)) continue;
+            alle = alle.Vereinigt(e.Box);
+            if (IstPlatte(e)) platten = platten.Vereinigt(e.Box);
+        }
+        if (alle.IstLeer) return Huelle(szene, geschosse);
+        // Grundriss aus den Platten, Höhe aus allen Bauteilen (Wände reichen unter die Bodenplatte bzw. über die Decke)
+        return platten.IstLeer ? alle : new Box3(new Vec3(platten.Min.X, alle.Min.Y, platten.Min.Z), new Vec3(platten.Max.X, alle.Max.Y, platten.Max.Z));
+    }
+
+    /// <summary>
+    /// Decken, Böden und Dächer (Ebene «decke» des Modells; IfcSlab, IfcRoof der Unterlage) – sie geben den Umriss des Gebäudes am verlässlichsten. Freistehende Wände
+    /// (Test_praxis: zwei 9.5 m lange Wände, die aus dem Gebäude ragen) zählen dann nicht; ohne Platten zählen alle Bauteile.
+    /// </summary>
+    public static bool IstPlatte(SzenenElement e) =>
+        e.Teil == GlbZwischenspeicher.TeilModell ? e.Art == "decke"
+            : e.Art is { } a && (a.StartsWith(IfcDecke, StringComparison.OrdinalIgnoreCase) || a.StartsWith("IfcRoof", StringComparison.OrdinalIgnoreCase));
+
+    /// <summary>
+    /// «Alle Etagen»: das ganze Modell, kein Schnitt. Bezug (Mitte, Unterkante, Grösse zum Einpassen) = Hülle des Gebäudes (<see cref="Gebaeude"/>; vorher die Hüllbox
+    /// aller Netze, mit Ausreissern), die Griffe an deren vorderen Ecken.
+    /// </summary>
+    public static SitzungAnsicht? Alle(ModellSzene szene)
+    {
+        var g = Gebaeude(szene, null);
+        return SitzungRaum.BezugAusBox(g) is { } bezug ? new SitzungAnsicht(null, null, bezug, "Alle Etagen", Sichtbar: GebaeudeRahmen(szene, null)) : null;
+    }
 
     /// <summary>
     /// Etagenschnitt für das Geschoss mit dem Kennzeichen (bzw. der Id) bezug: nur dieses und die darunter, Schnitt unter der Decke (siehe Dateikopf). Der Bezug für das
@@ -85,7 +121,7 @@ public static class SitzungAuswahl
     public static SitzungAnsicht? Etage(ModellListe liste, ModellSzene szene, string bezug, bool deckeZeigen = false)
     {
         var lg = liste.Geschosse.FirstOrDefault(g => g.Id == bezug) ?? liste.Geschosse.FirstOrDefault(g => string.Equals(g.Kennzeichen, bezug, StringComparison.OrdinalIgnoreCase));
-        if (lg is null || SitzungRaum.BezugAusBox(szene.Box) is not { } ganz) return null;
+        if (lg is null || SitzungRaum.BezugAusBox(Gebaeude(szene, null)) is not { } ganz) return null;
         var sg = Geschosse(liste, szene).FirstOrDefault(g => g.Kennzeichen == lg.Kennzeichen);
         if (sg is null) return null;
         var ids = liste.Geschosse.Where(g => g.KoteMm <= lg.KoteMm + 1).Select(g => g.Id).ToHashSet(StringComparer.Ordinal);
@@ -93,7 +129,8 @@ public static class SitzungAuswahl
         var mm = XrSitzungLogik.SchnittHoeheMm(sg, deckeZeigen);
         var y = (mm + (deckeZeigen ? XrSitzungLogik.SpielMm : -XrSitzungLogik.SpielMm) - bz) / 1000;
         var kopf = XrSitzungLogik.KopfZeilen(new SitzungLage(XrSitzungLogik.MassstabStart, 0, 0, 0), new SitzungWahl(sg.Kennzeichen, deckeZeigen), [sg]);
-        return new SitzungAnsicht(ids, SchnittQuader.Oben(y), ganz, kopf.Count > 1 ? kopf[1] : sg.Kennzeichen, lg.Id);
+        // Griffe an den vorderen Ecken der gezeichneten Geschosse (Gebäude der Geschosse bis zu diesem)
+        return new SitzungAnsicht(ids, SchnittQuader.Oben(y), ganz, kopf.Count > 1 ? kopf[1] : sg.Kennzeichen, lg.Id, Sichtbar: GebaeudeRahmen(szene, ids));
     }
 
     /// <summary>
@@ -142,7 +179,113 @@ public static class SitzungAuswahl
         }
         if (XrSitzungLogik.AusschnittBezugAus(roh) is not { } ab || SchnittQuader.AusSchnittbereich(roh) is not { } q) return null;
         var text = $"Raum + {Num.ToFixed(randMm / 1000, 1)} m" + (unterDecke ? " · unter der Decke" : "");
-        return new SitzungAnsicht(null, q, SitzungRaum.BezugAusAusschnitt(ab), text, e.GeschossId, Ausschnitt: true);
+        return new SitzungAnsicht(null, q, SitzungRaum.BezugAusAusschnitt(ab), text, e.GeschossId, Ausschnitt: true, Sichtbar: AusschnittRahmen(szene, q));
+    }
+
+    /// <summary>
+    /// Griffe beim Ausschnitt: Rechteck der Ecken der Elemente im Quader, in den Achsen des Quaders und auf ihn begrenzt (die Rahmen-Achse V zeigt gegen die V-Achse des
+    /// Quaders, daher die Vorzeichen). Ohne Elemente der Quader selbst.
+    /// </summary>
+    public static SichtbarRahmen AusschnittRahmen(ModellSzene szene, SchnittQuader q)
+    {
+        double umin = double.PositiveInfinity, umax = double.NegativeInfinity, vmin = double.PositiveInfinity, vmax = double.NegativeInfinity;
+        var r0 = SichtbarRahmen.Leer(q.Ux, q.Uz);
+        foreach (var e in ImQuader(szene, q))
+            foreach (var p in szene.Ecken(e))
+            {
+                if (p.Y < q.YMin || p.Y > q.YMax) continue;
+                double u = r0.U(p.X, p.Z), v = r0.V(p.X, p.Z);
+                umin = Math.Min(umin, u); umax = Math.Max(umax, u); vmin = Math.Min(vmin, v); vmax = Math.Max(vmax, v);
+            }
+        var r = r0 with { UMin = umin, UMax = umax, VMin = vmin, VMax = vmax };
+        return (r.Gueltig ? r : r0 with { UMin = q.UMin, UMax = q.UMax, VMin = -q.VMax, VMax = -q.VMin }).Begrenzt(q.UMin, q.UMax, -q.VMax, -q.VMin);
+    }
+
+    /// <summary>
+    /// Ausrichtung des Gebäudes im Plan: Richtung U (x, z der Szene) aus den Kanten der Raumgrundrisse, längengewichtet und auf 90° gefaltet (Mittel des vierfachen
+    /// Winkels). Test_praxis: etwa 43°. Ohne Räume (1, 0).
+    /// </summary>
+    public static Xz Ausrichtung(ModellSzene szene)
+    {
+        double s = 0, c = 0;
+        foreach (var r in szene.Raeume)
+            if (RaumStandort.Grundriss([.. szene.Ecken(r)]) is { } g)
+                foreach (var (a, b) in g.Rand)
+                {
+                    double dx = b.X - a.X, dz = b.Z - a.Z, l = Math.Sqrt(dx * dx + dz * dz);
+                    if (l < 1e-6) continue;
+                    var th = Math.Atan2(dz, dx);
+                    s += l * Math.Sin(4 * th);
+                    c += l * Math.Cos(4 * th);
+                }
+        if (Math.Abs(s) + Math.Abs(c) < 1e-9) return new Xz(1, 0);
+        var w = Math.Atan2(s, c) / 4;
+        return new Xz(Math.Cos(w), Math.Sin(w));
+    }
+
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<ModellSzene, Dictionary<string, (SichtbarRahmen? Platten, SichtbarRahmen Alle)>> rahmenJeGeschoss = new();
+
+    /// <summary>
+    /// Rechteck des Gebäudes in seinen Achsen (<see cref="Ausrichtung"/>) für die genannten Geschosse (null = alle): die Ecken der Platten (<see cref="IstPlatte"/>), ohne
+    /// Platten die aller Bauteile des Durchgangs (siehe <see cref="Gebaeude"/>); je Geschoss einmal gerechnet und zwischengespeichert. Ohne Bauteile die achsparallele Hülle
+    /// aller Netze ohne Räume.
+    /// </summary>
+    public static SichtbarRahmen? GebaeudeRahmen(ModellSzene szene, IReadOnlySet<string>? geschosse)
+    {
+        var je = rahmenJeGeschoss.GetValue(szene, s =>
+        {
+            var ax = Ausrichtung(s);
+            var r0 = SichtbarRahmen.Leer(ax.X, ax.Z);
+            // je Geschoss: [0..3] Grenzen der Platten, [4..7] Grenzen aller Bauteile (u min, u max, v min, v max)
+            var grenzen = new Dictionary<string, double[]>(StringComparer.Ordinal);
+            foreach (var e in s.DurchgangsBauteile)
+            {
+                if (!grenzen.TryGetValue(e.GeschossId, out var g))
+                    grenzen[e.GeschossId] = g = [.. Enumerable.Repeat(new[] { double.PositiveInfinity, double.NegativeInfinity }, 4).SelectMany(x => x)];
+                var platte = IstPlatte(e);
+                foreach (var p in s.Ecken(e))
+                {
+                    double u = r0.U(p.X, p.Z), v = r0.V(p.X, p.Z);
+                    g[4] = Math.Min(g[4], u); g[5] = Math.Max(g[5], u); g[6] = Math.Min(g[6], v); g[7] = Math.Max(g[7], v);
+                    if (!platte) continue;
+                    g[0] = Math.Min(g[0], u); g[1] = Math.Max(g[1], u); g[2] = Math.Min(g[2], v); g[3] = Math.Max(g[3], v);
+                }
+            }
+            return grenzen.ToDictionary(x => x.Key, x =>
+            {
+                var p = r0 with { UMin = x.Value[0], UMax = x.Value[1], VMin = x.Value[2], VMax = x.Value[3] };
+                return (p.Gueltig ? p : null, r0 with { UMin = x.Value[4], UMax = x.Value[5], VMin = x.Value[6], VMax = x.Value[7] });
+            }, StringComparer.Ordinal);
+        });
+        SichtbarRahmen? platten = null, alle = null;
+        foreach (var (g, (rp, ra)) in je)
+        {
+            if (geschosse is not null && !geschosse.Contains(g)) continue;
+            if (rp is not null) platten = platten is null ? rp : platten.Vereinigt(rp);
+            alle = alle is null ? ra : alle.Vereinigt(ra);
+        }
+        var r = platten ?? alle;
+        return r is { Gueltig: true } ? r : SichtbarRahmen.AusBox(Huelle(szene, geschosse));
+    }
+
+    /// <summary>Elemente der Szene (ohne Räume), deren Hüllbox den Quader berührt – sie zeichnet «Raum zeigen».</summary>
+    public static IEnumerable<SzenenElement> ImQuader(ModellSzene szene, SchnittQuader q) =>
+        szene.Elemente.Values.Where(e => e.Gruppe != ModellSzene.GruppeRaum && q.Lage(e.Box) != SchnittLage.Aussen);
+
+    /// <summary>
+    /// «Raum zeigen»: je Netz der Szene (Nummer) die Indizes der Dreiecke der Elemente im Quader, in der Reihenfolge der Elemente. Daraus baut die App eigene kleine Netze
+    /// (NetzDurchgang.Ausschnitt), statt die grossen Blöcke ganz zu zeichnen.
+    /// </summary>
+    public static Dictionary<int, uint[]> AusschnittIndizes(ModellSzene szene, SchnittQuader q)
+    {
+        var je = new Dictionary<int, List<uint>>();
+        foreach (var e in ImQuader(szene, q).OrderBy(x => x.Schluessel, StringComparer.Ordinal))
+            foreach (var (netz, ab, anzahl) in e.Bereiche)
+            {
+                if (!je.TryGetValue(netz, out var l)) je[netz] = l = [];
+                l.AddRange(NetzBloecke.Indizes(szene.Netze[netz].Daten.Indizes, ab, anzahl));
+            }
+        return je.ToDictionary(x => x.Key, x => x.Value.ToArray());
     }
 
     /// <summary>Höhe des Schnitts unter der Decke eines Geschosses in Szenen-mm (relativ zum Bezugspunkt), wie beim Etagenschnitt; null, wenn es das Geschoss nicht gibt.</summary>

@@ -46,15 +46,18 @@ public class XrSitzungLogikTests
     }
 
     [Fact]
-    public void Zoomgrenzen_1_20_bis_1_200_ungueltige_Werte_fallen_auf_1_50()
+    public void Zoomgrenzen_1_5_bis_1_200_ungueltige_Werte_fallen_auf_1_50()
     {
-        Assert.Equal(20, S.MassstabBegrenzen(5));
+        // Brillentest Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können» – Grenze jetzt 1:5 (Prototyp 1:20)
+        Assert.Equal(5, S.MassstabMin);
+        Assert.Equal(5, S.MassstabBegrenzen(2));
+        Assert.Equal(10, S.MassstabBegrenzen(10));
         Assert.Equal(200, S.MassstabBegrenzen(1000));
         Assert.Equal(80, S.MassstabBegrenzen(80));
         Assert.Equal(50, S.MassstabBegrenzen(double.NaN));
         Assert.Equal("1:50", S.MassstabText(50));
         Assert.Equal("1:50", S.MassstabText(49.6));
-        Assert.Equal("1:20", S.MassstabText(3));
+        Assert.Equal("1:5", S.MassstabText(3));
         // Die Mitte des Modells bleibt auf der Platte
         var l = S.LageBegrenzen(new SitzungLage(50, 0, 5, -5));
         Nah(l.X, S.TischBreite / 2 - S.TischHalt);
@@ -241,7 +244,8 @@ public class XrSitzungLogikTests
         // zusammenschieben → kleiner (1:100)
         Nah(S.ZweihandSchritt(g, new Xz(-0.2, -0.9), new Xz(0, -0.9)).Massstab, 100, 1e-9);
         // Grenzen
-        Assert.Equal(20, S.ZweihandSchritt(g, new Xz(-2, -0.9), new Xz(2, -0.9)).Massstab);   // mindestens 1:20
+        Assert.Equal(10, S.ZweihandSchritt(g, new Xz(-1, -0.9), new Xz(1, -0.9)).Massstab, 9);   // feiner als 1:20 (Brillentest 23.10.2026)
+        Assert.Equal(S.MassstabMin, S.ZweihandSchritt(g, new Xz(-4, -0.9), new Xz(4, -0.9)).Massstab);   // mindestens 1:5
         Assert.Equal(200, S.ZweihandSchritt(g, new Xz(-0.101, -0.9), new Xz(-0.099, -0.9)).Massstab);   // höchstens 1:200
         // Mittelpunkt wandert → das Modell wandert mit (ohne Zoom, ohne Drehung)
         var v = S.ZweihandSchritt(g, new Xz(-0.2, -0.8), new Xz(0.2, -0.8));
@@ -550,14 +554,14 @@ public class XrSitzungLogikTests
     }
 
     [Fact]
-    public void Ausschnitt_der_Massstab_passt_den_Ausschnitt_auf_die_Platte_so_fein_wie_moeglich_1_20_groeber_nur_wenn_noetig_hoechstens_1_200()
+    public void Ausschnitt_der_Massstab_passt_den_Ausschnitt_auf_die_Platte_so_fein_wie_moeglich_ab_1_5_groeber_nur_wenn_noetig_hoechstens_1_200()
     {
-        Assert.Equal(20, S.AusschnittLage(new ModellGroesse(10, 8, 3)).Lage.Massstab);   // Raum plus 1.5 m: 1:20 genügt
+        Assert.Equal(10, S.AusschnittLage(new ModellGroesse(10, 8, 3)).Lage.Massstab);   // Raum plus 1.5 m: 8 m Tiefe auf 0.8 m Platte → 1:10
         Assert.Equal(38, S.AusschnittLage(new ModellGroesse(40, 30, 9)).Lage.Massstab);   // gross: nächster ganzer Massstab, der noch auf die Platte (1.4 × 0.8 m) passt
         Assert.True(40.0 / 38 <= 1.4 + 1e-9 && 30.0 / 38 <= 0.8 + 1e-9);
         Assert.Equal(200, S.AusschnittLage(new ModellGroesse(400, 300, 9)).Lage.Massstab);
         Assert.False(S.AusschnittLage(new ModellGroesse(400, 300, 9)).Passt);
-        Assert.Equal(20, S.AusschnittLage(new ModellGroesse(1, 1, 1)).Lage.Massstab);   // ein kleiner Ausschnitt wird nicht über 1:20 hinaus vergrössert
+        Assert.Equal(S.MassstabMin, S.AusschnittLage(new ModellGroesse(1, 1, 1)).Lage.Massstab);   // ein kleiner Ausschnitt wird nicht über 1:5 hinaus vergrössert
         Assert.Equal(50, S.Einpassen(new ModellGroesse(10, 8, 3)).Lage.Massstab);   // zum Vergleich: das ganze Modell beginnt bei 1:50
         var z = S.AusschnittLage(new ModellGroesse(10, 8, 3)).Lage;
         Assert.True(z.X == 0 && z.Z == 0 && z.Drehung == 0, "Mitte der Platte, nicht gedreht");
