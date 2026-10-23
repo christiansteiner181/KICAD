@@ -1,0 +1,49 @@
+{
+  "art": "hlks-xr-fragebogen",
+  "fassung": 1,
+  "beschreibung": "Fragebogen nach einem Test im Interface-Labor (Modul XR, Quest App P6; Entscheid «Prüfung: kurz gemischt» 23.10.2026). Der Komfortteil sind eigene Fragen (keine Quelle nötig). Für SUS und NASA-TLX gilt der Entscheid Christians: «Deutsche Fassungen der Fragebogen nur mit Quelle». Die Wortlaute stehen deshalb NICHT hier (wortlaut = null, Platzhalter); die Bewertungsregeln stehen im Code (XrFragebogen.cs). Trägt Christian einen Wortlaut ein, muss «wortlautQuelle» des Teils die Quelle der deutschen Fassung nennen, sonst lehnt KICAD den Katalog ab.",
+  "teile": [
+    {
+      "id": "komfort", "titel": "Komfort und Übelkeit", "bewertung": "einzeln",
+      "quelle": "eigene Fragen (Sitzung Quest App, 23.10.2026); keine Fremdquelle nötig",
+      "fragen": [
+        { "id": "uebelkeit", "art": "skala", "wortlaut": "Wie stark war die Übelkeit während des Tests?", "skala": { "min": 0, "max": 10, "von": "gar nicht", "bis": "sehr stark" } },
+        { "id": "augen", "art": "skala", "wortlaut": "Wie stark waren die Augen belastet (Flimmern, Druck, Ermüdung)?", "skala": { "min": 0, "max": 10, "von": "gar nicht", "bis": "sehr stark" } },
+        { "id": "natuerlich", "art": "skala", "wortlaut": "Wie natürlich fühlte sich die Bedienung an?", "skala": { "min": 0, "max": 10, "von": "gar nicht natürlich", "bis": "völlig natürlich" } },
+        { "id": "text", "art": "text", "wortlaut": "Bemerkungen (was war gut, was störte?)" }
+      ]
+    },
+    {
+      "id": "sus", "titel": "System Usability Scale (SUS)", "bewertung": "sus",
+      "quelle": "Brooke, J. (1996): SUS – a «quick and dirty» usability scale. In: Jordan, P. W. et al. (Hrsg.): Usability Evaluation in Industry. London: Taylor & Francis, S. 189–194. Quelle prüfen.",
+      "wortlautQuelle": null,
+      "skala": { "min": 1, "max": 5, "von": "stimme gar nicht zu", "bis": "stimme voll zu" },
+      "fragen": [
+        { "id": "sus1", "art": "skala", "polaritaet": "positiv", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus2", "art": "skala", "polaritaet": "negativ", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus3", "art": "skala", "polaritaet": "positiv", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus4", "art": "skala", "polaritaet": "negativ", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus5", "art": "skala", "polaritaet": "positiv", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus6", "art": "skala", "polaritaet": "negativ", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus7", "art": "skala", "polaritaet": "positiv", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus8", "art": "skala", "polaritaet": "negativ", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus9", "art": "skala", "polaritaet": "positiv", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "sus10", "art": "skala", "polaritaet": "negativ", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" }
+      ]
+    },
+    {
+      "id": "nasa_tlx", "titel": "NASA-TLX (Raw TLX)", "bewertung": "tlx",
+      "quelle": "Hart, S. G.; Staveland, L. E. (1988): Development of NASA-TLX (Task Load Index): Results of empirical and theoretical research. In: Hancock, P. A.; Meshkati, N. (Hrsg.): Human Mental Workload. Amsterdam: North-Holland, S. 139–183. Quelle prüfen (auch die Raw-TLX-Regel: ungewichtetes Mittel der sechs Skalen).",
+      "wortlautQuelle": null,
+      "skala": { "min": 0, "max": 100 },
+      "fragen": [
+        { "id": "mental", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "physical", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "temporal", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "performance", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "effort", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" },
+        { "id": "frustration", "art": "skala", "wortlaut": null, "platzhalter": "Wortlaut fehlt – Quelle durch Christian" }
+      ]
+    }
+  ]
+}

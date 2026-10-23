@@ -2,7 +2,7 @@
 // Jede Nachricht hat «typ» und «fassung» (heute 1). Beschreibung für Menschen: src/Hlks.Web/OBERFLAECHE.md, Abschnitt «Modul XR: Zugang im Büronetz».
 //
 // Brille → PC:   hallo { name, geraet, app? }   tschuess {}   pose { kopf, links?, rechts?, modus?, massstab? }   zeigen { element?, punkt? }
-//                messprotokoll { aufgabe, variante?, zeitMs, fehlgriffe, abbrueche, erfolg?, stellschrauben?, notiz? }
+//                messprotokoll { aufgabe, variante?, varianten?{ name: option }, zeitMs, fehlgriffe, abbrueche, erfolg?, stellschrauben?, notiz? }   (Auswertung: XrLaborAuswertung.cs)
 // PC → Brille:   willkommen { id, teilnehmer[], auftrag?, stellschrauben{} }   hallo { id, name, geraet }   tschuess { id }
 //                pose { von, … , zeit }   zeigen { von, element?, punkt?, zeit }   auftrag { auftrag }   stellschraube { schluessel, wert }
 //                quittung { bezug, nr }   fehler { meldung, bezug? }
@@ -31,7 +31,7 @@ public sealed record XrPose(XrLage Kopf, XrHand? Links, XrHand? Rechts, string? 
 public sealed record XrZeigen(string? Element, double[]? Punkt);
 
 /// <summary>Messung einer Prüfaufgabe im Interface-Labor.</summary>
-public sealed record XrMessprotokoll(string Aufgabe, string? Variante, double ZeitMs, int Fehlgriffe, int Abbrueche, bool? Erfolg, JsonObject? Stellschrauben, string? Notiz);
+public sealed record XrMessprotokoll(string Aufgabe, string? Variante, double ZeitMs, int Fehlgriffe, int Abbrueche, bool? Erfolg, JsonObject? Stellschrauben, string? Notiz, JsonObject? Varianten = null);
 
 /// <summary>Anmeldung eines Teilnehmers.</summary>
 public sealed record XrHallo(string Name, string Geraet, string? App);
@@ -53,6 +53,9 @@ public static class XrNachrichten
     public const double PosMax = 10_000_000;
     static readonly Regex SchluesselMuster = new(@"^[a-z][a-z0-9_.\-]{0,63}$", RegexOptions.CultureInvariant);
     const int StellschraubenMax = 64;
+    const int VariantenMax = 12;
+    static readonly Regex VarianteNameMuster = new(@"^[a-z][a-z0-9_]{0,31}$", RegexOptions.CultureInvariant);
+    static readonly Regex VarianteOptionMuster = new(@"^[a-z][a-z0-9_]{0,39}$", RegexOptions.CultureInvariant);
 
     // ---------------------------------------------------------------- Lesen
 
@@ -116,7 +119,20 @@ public static class XrNachrichten
                 schrauben[k] = w?.DeepClone();
             }
         }
-        return new XrMessprotokoll(aufgabe, variante, zeit, fehlgriffe, abbrueche, erfolg, schrauben, Text(o, "notiz", 500, false));
+        JsonObject? varianten = null;
+        if (o["varianten"] is { } vn)
+        {
+            if (vn is not JsonObject vo) throw new XrNachrichtFehler("«varianten» muss ein Objekt { Name: Option } sein.");
+            if (vo.Count > VariantenMax) throw new XrNachrichtFehler($"Höchstens {VariantenMax} Varianten.");
+            varianten = [];
+            foreach (var (k, w) in vo)
+            {
+                if (!VarianteNameMuster.IsMatch(k)) throw new XrNachrichtFehler($"Variante «{Kuerzen(k)}»: ungültiger Name.");
+                if (w is not JsonValue wv || !wv.TryGetValue<string>(out var option) || !VarianteOptionMuster.IsMatch(option)) throw new XrNachrichtFehler($"Variante «{k}»: ungültige Option.");
+                varianten[k] = option;
+            }
+        }
+        return new XrMessprotokoll(aufgabe, variante, zeit, fehlgriffe, abbrueche, erfolg, schrauben, Text(o, "notiz", 500, false), varianten);
     }
 
     // ---------------------------------------------------------------- Stellschrauben (PC → Brille)

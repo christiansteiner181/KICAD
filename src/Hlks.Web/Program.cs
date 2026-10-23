@@ -272,6 +272,7 @@ app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2):
 app.MapXr();   // Quest App P3: /api/xr – Zugang, Kopplung, Live-Kanal (XrEndpunkte.cs); im Büronetz nur Endpunkte mit .XrImNetz()
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
 app.MapXrEbenen(dienst);   // Quest App P4b: XrEbenenEndpunkte.cs – Ebenen der Fachmodule (/api/xr/ebenen, /api/xr/ebene/{name}); reine Rechner-Funktion, nicht für die KI
+app.MapXrLabor(dienst);   // Quest App P6: XrLaborEndpunkte.cs – Interface-Labor: Katalog für die App, Auswertung, Fragebogen (/api/xr/labor/…); reine Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
 await app.RunAsync();

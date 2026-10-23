@@ -1,0 +1,47 @@
+{
+  "art": "hlks-xr-varianten",
+  "fassung": 1,
+  "beschreibung": "Umschaltbare Varianten (A/B) je Bedienung im Interface-Labor (Modul XR, Quest App P6). KICAD sendet die Wahl als Stellschraube «labor.variante.<name>» mit der Id der Option als Wert. Die App setzt die Variante um (P5) und trägt sie bei jedem Messprotokoll in «varianten» ein.",
+  "varianten": [
+    {
+      "name": "bedienung", "titel": "Bedienung",
+      "beschreibung": "Wie die Funktionen bedient werden: schwebende Apps mit Wischgesten (Leitbild Christian 23.10.2026) oder das Tablet an der Hand (Browser-Prototyp).",
+      "optionen": [
+        { "id": "apps", "titel": "Schwebende Apps" },
+        { "id": "tablet", "titel": "Tablet an der Hand" }
+      ],
+      "vorgabe": "apps",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»: Leitbild Christian 23.10.2026, Tablet als Vergleichsvariante"
+    },
+    {
+      "name": "teleport", "titel": "Teleport",
+      "beschreibung": "Wie man springt: mit der Hand zeigen und Pinch oder mit dem Stick (Controller).",
+      "optionen": [
+        { "id": "zeigen_pinch", "titel": "Zeigen und Pinch" },
+        { "id": "stick", "titel": "Stick" }
+      ],
+      "vorgabe": "zeigen_pinch",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Teleport mit Zeigen und Pinch"
+    },
+    {
+      "name": "etage", "titel": "Etage wählen",
+      "beschreibung": "Wie man das Geschoss wechselt: mit einem Wisch am Modell oder in einer App.",
+      "optionen": [
+        { "id": "wisch_modell", "titel": "Wisch am Modell" },
+        { "id": "app", "titel": "App" }
+      ],
+      "vorgabe": "wisch_modell",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Etage direkt am Modell wählen"
+    },
+    {
+      "name": "messen", "titel": "Messen",
+      "beschreibung": "Wie man misst: ein Messband zwischen zwei Punkten aufziehen oder zwei Punkte setzen.",
+      "optionen": [
+        { "id": "messband", "titel": "Messband aufziehen" },
+        { "id": "zwei_punkte", "titel": "Zwei Punkte setzen" }
+      ],
+      "vorgabe": "messband",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Messen als Massband"
+    }
+  ]
+}

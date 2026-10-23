@@ -108,6 +108,9 @@ public static class KiEinordnung
         new("xr_ebenen", "Liefert Ebenen der Fachmodule (Linien, Pfeile, Partikel, Farbflächen; Probe «fliessrichtung») an die Quest App (Modul XR, P4b, XrEbenenEndpunkte.cs: " +
             "GET /api/xr/ebenen und /api/xr/ebene/{name}): eine Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket – wie xr_modell; über " +
             "den Zugang im Büronetz greift sie über den Rechner hinaus, darum kein Werkzeug der KI."),
+        new("xr_labor", "Interface-Labor der Quest App (Modul XR, P6, XrLaborEndpunkte.cs: GET /api/xr/labor/katalog, /auswertung, /fragebogen, POST /fragebogen, /variante, /aufgabe): " +
+            "liefert der App den Katalog der Stellschrauben, Prüfaufgaben und Varianten, wertet die Messprotokolle der Brille aus, speichert Fragebogen und startet eine Prüfaufgabe bzw. stellt eine Variante " +
+            "in der Brille des Menschen ein – steuert ein Gerät des Menschen und liest dessen Bewegungen und Antworten, ohne Kern-Befehl und ohne Paket; nicht für die KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

@@ -21,6 +21,8 @@ export async function benutzerLaden() {
 }
 
 export const benutzerGeladen = () => geladen;
+/** Alle Einstellungen als Objekt (Kopie), z. B. für die Profile des XR-Labors (Schlüssel «labor.profil.<kennung>»). */
+export const benutzerAlle = () => ({ ...werte });
 export const benutzerWert = (schluessel, vorgabe) => (schluessel in werte && werte[schluessel] !== null ? werte[schluessel] : vorgabe);
 
 /** Schreibt eine Einstellung (wert null setzt sie zurück). Wirft ApiFehler mit Meldung und Vorschlag, wenn der Server ablehnt. */
