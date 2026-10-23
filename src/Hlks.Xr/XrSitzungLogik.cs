@@ -21,7 +21,8 @@
 namespace Hlks.Xr;
 
 /// <summary>Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Mitte relativ zur Tischmitte (m).</summary>
-public sealed record SitzungLage(double Massstab, double Drehung, double X, double Z);
+/// <summary>Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Verschiebung X, Z (m) und – Brillentest Christian 23.10.2026 – Höhe über der Platte (m).</summary>
+public sealed record SitzungLage(double Massstab, double Drehung, double X, double Z, double Hoehe = 0);
 
 /// <summary>Startlage mit der Angabe, ob das Modell so auf die Platte passt (xr-sitzung-logik.js einpassen).</summary>
 public sealed record Einpassung(SitzungLage Lage, bool Passt);
@@ -45,10 +46,10 @@ public sealed record HandXz(double X, double Z, double? Gieren = null);
 public sealed record EinhandGriff(SitzungLage Lage0, Xz H0, double? G0);
 
 /// <summary>Bezug für das Greifen mit zwei Händen (xr-sitzung-logik.js zweihandStart).</summary>
-public sealed record ZweihandGriff(SitzungLage Lage0, double Abstand0, double? Phi0, Xz Q0);
+public sealed record ZweihandGriff(SitzungLage Lage0, double Abstand0, double? Phi0, Xz Q0, double Y0 = 0);
 
 /// <summary>Eine Hand in der Gestenerkennung: Griff = Pinch bzw. Abzug gesetzt (die Faust zählt nicht), Nah = Index des Griffs in Fangreichweite, X, Z = Pinch-Punkt.</summary>
-public sealed record GestenHand(bool Griff, int? Nah, double X, double Z);
+public sealed record GestenHand(bool Griff, int? Nah, double X, double Z, double Y = 0);
 
 /// <summary>Beide Hände (null = Hand nicht verfolgt).</summary>
 public sealed record GestenHaende(GestenHand? Links, GestenHand? Rechts);
@@ -106,6 +107,8 @@ public static class XrSitzungLogik
     public const double GriffFangM = 0.05;         // m: so nah am Griff muss ein Pinch beginnen, damit er den Griff fasst
     public const double GriffHoverM = 0.05;        // m: so nah an einem freien Griff leuchtet er heller (Annäherung)
     public const double GriffMinHalbM = 0.02;      // m: kleinster Abstand der Griffe von der Modellmitte (winziges Modell)
+    public const double HoeheMinM = -0.6;         // m: tiefste Lage des Modells unter der Platte (Brillentest 23.10.2026: «in der höhe … verschoben»), ANNAHME
+    public const double HoeheMaxM = 0.9;          // m: höchste Lage über der Platte, ANNAHME
     public const double MinHandabstand = 0.03;     // m: kleinster Abstand zweier Hände, der noch zählt (gegen Teilen durch fast null)
     public const double MinRichtung = 0.03;        // m: kürzere Vektoren (Hand, Verbindungslinie) liefern keine Richtung
     public const double SpielMm = 0.5;             // mm: Flächen genau auf der Schnittebene bleiben/entfallen sicher
@@ -173,7 +176,7 @@ public static class XrSitzungLogik
     public static SitzungLage LageBegrenzen(SitzungLage lage)
     {
         double gx = TischBreite / 2 - TischHalt, gz = TischTiefe / 2 - TischHalt;
-        return lage with { Massstab = MassstabBegrenzen(lage.Massstab), X = Klemme(lage.X, -gx, gx), Z = Klemme(lage.Z, -gz, gz) };
+        return lage with { Massstab = MassstabBegrenzen(lage.Massstab), X = Klemme(lage.X, -gx, gx), Z = Klemme(lage.Z, -gz, gz), Hoehe = Klemme(double.IsFinite(lage.Hoehe) ? lage.Hoehe : 0, HoeheMinM, HoeheMaxM) };
     }
 
     /// <summary>xr-sitzung-logik.js zuruecksetzen: Zurücksetzen = Startlage (neu eingepasst).</summary>
@@ -199,7 +202,7 @@ public static class XrSitzungLogik
         return new[] { (Index: 0, Seite: "links", Vz: -1), (Index: 1, Seite: "rechts", Vz: 1) }.Select(g =>
         {
             var d = DreheXZ(new Xz(g.Vz * halbB, halbT), lage.Drehung);
-            return new GriffPunkt(g.Index, g.Seite, m.X + d.X, TischHoehe + GriffHoeheM, m.Z + d.Z);
+            return new GriffPunkt(g.Index, g.Seite, m.X + d.X, TischHoehe + lage.Hoehe + GriffHoeheM, m.Z + d.Z);
         }).ToList();
     }
 
@@ -265,19 +268,23 @@ public static class XrSitzungLogik
         return LageBegrenzen(g.Lage0 with { Drehung = g.Lage0.Drehung + dphi, X = m.X - TischMitte.X, Z = m.Z - TischMitte.Z });
     }
 
-    /// <summary>xr-sitzung-logik.js zweihandStart: zwei Hände greifen (a, b Raum-lokal).</summary>
-    public static ZweihandGriff ZweihandStart(SitzungLage lage, Xz a, Xz b)
+    /// <summary>xr-sitzung-logik.js zweihandStart: zwei Hände greifen (a, b Raum-lokal); ya, yb = Höhe der Hände (für das Verschieben in der Höhe).</summary>
+    public static ZweihandGriff ZweihandStart(SitzungLage lage, Xz a, Xz b, double ya = 0, double yb = 0)
     {
         var mitte = new Xz((a.X + b.X) / 2, (a.Z + b.Z) / 2);
         var m0 = ModellMitte(lage);
         var q = DreheXZ(new Xz(mitte.X - m0.X, mitte.Z - m0.Z), -lage.Drehung);   // Punkt des Modells unter dem Mittelpunkt der Hände (verkleinert)
         var d = new Xz(b.X - a.X, b.Z - a.Z);
         var l = Num.Hypot(d.X, d.Z);
-        return new ZweihandGriff(lage, Math.Max(l, MinHandabstand), l >= MinRichtung ? GierenVon(d) : null, new Xz(q.X * lage.Massstab, q.Z * lage.Massstab));
+        return new ZweihandGriff(lage, Math.Max(l, MinHandabstand), l >= MinRichtung ? GierenVon(d) : null, new Xz(q.X * lage.Massstab, q.Z * lage.Massstab), (ya + yb) / 2);
     }
 
-    /// <summary>xr-sitzung-logik.js zweihandSchritt: neue Lage aus dem Abstand (Zoom), der Richtung (Drehung) und dem Mittelpunkt (Verschieben) der Hände.</summary>
-    public static SitzungLage ZweihandSchritt(ZweihandGriff g, Xz a, Xz b)
+    /// <summary>
+    /// xr-sitzung-logik.js zweihandSchritt: neue Lage aus dem Abstand (Zoom), der Richtung (Drehung) und dem Mittelpunkt (Verschieben in Breite und Tiefe) der Hände;
+    /// dazu die Höhe: das Modell folgt der Höhe der Handmitte (Brillentest Christian 23.10.2026: «durch greiffen der punkte soll das modell auch gedreht, in der
+    /// höhe und tiefe verschoben werden können»), begrenzt auf HoeheMinM … HoeheMaxM.
+    /// </summary>
+    public static SitzungLage ZweihandSchritt(ZweihandGriff g, Xz a, Xz b, double ya = 0, double yb = 0)
     {
         var d = new Xz(b.X - a.X, b.Z - a.Z);
         var l = Num.Hypot(d.X, d.Z);
@@ -287,7 +294,8 @@ public static class XrSitzungLogik
         var theta = g.Lage0.Drehung + (phi is { } p && g.Phi0 is { } p0 ? WinkelDiff(p, p0) : 0);
         var mitte = new Xz((a.X + b.X) / 2, (a.Z + b.Z) / 2);
         var q = DreheXZ(new Xz(g.Q0.X / n, g.Q0.Z / n), theta);
-        return LageBegrenzen(new SitzungLage(n, theta, mitte.X - q.X - TischMitte.X, mitte.Z - q.Z - TischMitte.Z));
+        var hoehe = g.Lage0.Hoehe + (ya + yb) / 2 - g.Y0;
+        return LageBegrenzen(new SitzungLage(n, theta, mitte.X - q.X - TischMitte.X, mitte.Z - q.Z - TischMitte.Z, hoehe));
     }
 
     /// <summary>xr-sitzung-logik.js gestenNeu: Anfangszustand der Gestenerkennung.</summary>
@@ -330,8 +338,8 @@ public static class XrSitzungLogik
             // a = die Hand am Griff 0 (links am Modell), b = die Hand am Griff 1: die Richtung a → b ist die Richtung der Verbindungslinie der Griffe
             var a = bl == 0 ? haende!.Links! : haende!.Rechts!;
             var b = bl == 0 ? haende.Rechts! : haende.Links!;
-            if (!gleich || griff is null) griff = ZweihandStart(lage, new Xz(a.X, a.Z), new Xz(b.X, b.Z));
-            else lage = ZweihandSchritt(griff, new Xz(a.X, a.Z), new Xz(b.X, b.Z));
+            if (!gleich || griff is null) griff = ZweihandStart(lage, new Xz(a.X, a.Z), new Xz(b.X, b.Z), a.Y, b.Y);
+            else lage = ZweihandSchritt(griff, new Xz(a.X, a.Z), new Xz(b.X, b.Z), a.Y, b.Y);
         }
         return new GestenZustand(lage, modus, griff, besitzt, vorher);
     }

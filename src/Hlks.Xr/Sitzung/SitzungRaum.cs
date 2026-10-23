@@ -79,7 +79,7 @@ public static class SitzungRaum
         var n = lage.Massstab;
         var d = XrSitzungLogik.DreheXZ(new Xz((p.X - bezug.Anker.X) / n, (p.Z - bezug.Anker.Z) / n), lage.Drehung);
         var m = XrSitzungLogik.ModellMitte(lage);
-        return new Vec3(m.X + d.X, XrSitzungLogik.TischHoehe + (p.Y - bezug.Unten) / n, m.Z + d.Z);
+        return new Vec3(m.X + d.X, XrSitzungLogik.TischHoehe + lage.Hoehe + (p.Y - bezug.Unten) / n, m.Z + d.Z);
     }
 
     /// <summary>Matrix Szene → Raum-lokal (dieselbe Abbildung wie <see cref="ModellZuRaum"/>).</summary>
@@ -89,7 +89,7 @@ public static class SitzungRaum
         return Matrix4x4.CreateTranslation((float)-bezug.Anker.X, (float)-bezug.Unten, (float)-bezug.Anker.Z)
             * Matrix4x4.CreateScale((float)(1 / lage.Massstab))
             * Matrix4x4.CreateRotationY((float)lage.Drehung)
-            * Matrix4x4.CreateTranslation((float)m.X, (float)XrSitzungLogik.TischHoehe, (float)m.Z);
+            * Matrix4x4.CreateTranslation((float)m.X, (float)(XrSitzungLogik.TischHoehe + lage.Hoehe), (float)m.Z);
     }
 
     /// <summary>Matrix Szene → Referenzraum der Brille.</summary>

@@ -198,7 +198,7 @@ sealed class Sitzungsraum
             vorher = pinch;
             if (!g.TryGetValue("thumb-tip", out var d) || !g.TryGetValue("index-finger-tip", out var zf)) return (null, null);
             var p = XVec3.Mitte(d, zf);
-            return (new GestenHand(pinch, XrSitzungLogik.GriffTreffer(p, null, griffe), p.X, p.Z), p);
+            return (new GestenHand(pinch, XrSitzungLogik.GriffTreffer(p, null, griffe), p.X, p.Z, p.Y), p);
         }
         var (links, pl) = Hand(Handed.Left, ref pinchL);
         var (rechts, pr) = Hand(Handed.Right, ref pinchR);

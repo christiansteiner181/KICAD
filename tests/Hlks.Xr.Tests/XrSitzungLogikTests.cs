@@ -123,6 +123,36 @@ public class XrSitzungLogikTests
     }
 
     [Fact]
+    public void Zwei_Haende_verschieben_das_Modell_auch_in_der_Hoehe_begrenzt_Griffe_folgen()
+    {
+        // Brillentest Christian 23.10.2026: «durch greiffen der punkte soll das modell auch gedreht, in der höhe und tiefe verschoben werden können.»
+        var G = new ModellGroesse(12, 8, 9);
+        var l0 = S.Einpassen(G).Lage;
+        Assert.Equal(0, l0.Hoehe);
+        Xz a = new(-0.2, -0.8), b = new(0.2, -0.8);
+        var griff = S.ZweihandStart(l0, a, b, 0.80, 0.80);
+        // beide Hände 0.2 m höher und 0.1 m nach hinten (Tiefe): Modell 0.2 m höher, Z −0.1
+        var l1 = S.ZweihandSchritt(griff, new Xz(a.X, a.Z - 0.1), new Xz(b.X, b.Z - 0.1), 1.00, 1.00);
+        Nah(l1.Hoehe, 0.2, 1e-9);
+        Nah(l1.Z, l0.Z - 0.1, 1e-9);
+        Nah(l1.Massstab, l0.Massstab, 1e-9);
+        // Griffe und Modell folgen der Höhe
+        Nah(S.GriffPunkte(l1, G)[0].Y, S.TischHoehe + 0.2 + S.GriffHoeheM, 1e-9);
+        var bezug = new Hlks.Xr.Sitzung.SitzungBezug(new Xz(0, 0), 0, G);
+        Nah(Hlks.Xr.Sitzung.SitzungRaum.ModellZuRaum(V(0, 0, 0), l1, bezug).Y, S.TischHoehe + 0.2, 1e-9);
+        Nah(System.Numerics.Vector3.Transform(System.Numerics.Vector3.Zero, Hlks.Xr.Sitzung.SitzungRaum.ModellMatrix(l1, bezug)).Y, S.TischHoehe + 0.2, 1e-6);
+        // Begrenzung: nicht über HoeheMaxM, nicht unter HoeheMinM
+        Nah(S.ZweihandSchritt(griff, a, b, 3, 3).Hoehe, S.HoeheMaxM, 1e-9);
+        Nah(S.ZweihandSchritt(griff, a, b, -2, -2).Hoehe, S.HoeheMinM, 1e-9);
+        // Gestenerkennung reicht die Höhe der Hände durch
+        var gp = S.GriffPunkte(l0, G);
+        var g = S.GestenNeu(l0);
+        g = S.GestenSchritt(g, new GestenHaende(new GestenHand(true, 0, gp[0].X, gp[0].Z, 0.8), new GestenHand(true, 1, gp[1].X, gp[1].Z, 0.8)));
+        g = S.GestenSchritt(g, new GestenHaende(new GestenHand(true, 0, gp[0].X, gp[0].Z, 0.9), new GestenHand(true, 1, gp[1].X, gp[1].Z, 0.9)));
+        Nah(g.Lage.Hoehe, 0.1, 1e-9);
+    }
+
+    [Fact]
     public void GriffTreffer_ein_Pinch_in_hoechstens_5_cm_fasst_den_naechsten_Griff_weiter_weg_nichts_Controller_zielen_mit_dem_Strahl()
     {
         var G = new ModellGroesse(12, 8, 9);
