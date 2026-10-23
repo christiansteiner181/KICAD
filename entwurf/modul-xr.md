@@ -241,6 +241,28 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Kopplungen liegen je PC in `%LOCALAPPDATA%`.
   - Posen gehen im Kanal in KICAD-Koordinaten (mm, z nach oben) als gemeinsamer Bezug; die App rechnet um.
 
+- **Nachtrag P3 (b696833):**
+  - Der Schalter liegt je PC in `%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json`.
+  - Ersatzkopplung mit Verpflichtung und Vergleichscode, keine Eingabe in der Brille.
+  - GLB über den Netzzugang erreichbar, nur GLB mit Brotli/gzip komprimiert.
+- **Sicherheitsprüfung P3p (hlks-pruefer, 23.10.2026, Stand 9ea6459):** Urteil **«Ja, mit Auflagen»**, keine kritischen oder hohen
+  Befunde.
+  - Pfad-Tricks, falsche Methoden, Schlüssel im Query, TLS 1.1 und Klartext werden abgewiesen. Die Ersatzkopplung ist korrekt
+    (Trefferchance 1 : 10⁶ je Anfrage). Die KI hat keinen Weg zum Zugang.
+  - Mittel, alle zur Verfügbarkeit (Aussperren im WLAN): B1 «Ablehnen» gibt den Platz nicht frei; B2 Stundengrenze für Weg B
+    global; B3 untätige Verbindungen sperren die Brille aus.
+  - Gering: B4 Schlüsseldateien unter `%APPDATA%\Microsoft\Crypto\Keys`; B5 Suche bremst vor der Prüfung; B6 Format-Zeichen in
+    Namen; B7 Messprotokolle ohne Gesamtgrenze.
+  - Die Nacharbeit läuft beim P3-Agenten; danach prüft hlks-pruefer die geänderten Stellen nochmals.
+- **Entscheide Hauptlauf zu den Fragen des Prüfers:**
+  - Erster Brillentest mit Kopplung per Kabel (Weg A).
+  - Firewall-Regel zusätzlich nur für `C:\Program Files\dotnet\dotnet.exe`. Der Desktop startet KICAD darüber, der Pfad ist also
+    fest.
+  - Brille und PC lagen am 21.10. beide in 192.168.1.x; beim Test nochmals prüfen.
+  - Messprotokolle höchstens 200 MB je Tag.
+- **Auflagen für den ersten Test:** Den Zugang nur während der Testsitzung einschalten. Das Firewall-Skript nur ausführen, wenn
+  `-Liste` das Netz als «Privat» zeigt.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
