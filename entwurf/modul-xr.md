@@ -200,6 +200,25 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 
 **Stand P1 (23.10.2026):** Bibliothek `src/Hlks.Xr` (ohne StereoKit) mit den Regeln aus `vr-logik.js`, `begehen-logik.js` (Durchgang), `vr-start-logik.js`, `xr-mess-logik.js`, `xr-sitzung-logik.js`, `schnittbereich-logik.js` (Quader) und dem Hand-/Tablet-/Wischteil von `xr-greifen-logik.js`; 155 Tests (`tests/Hlks.Xr.Tests`, in `stand_pruefen.ps1` und `cloud/tests.sh`). Übersicht: `src/Hlks.Xr/LIESMICH.md`. Entscheid Hauptlauf: `Vec3` mit double (Koordinaten bis ~67 m, Toleranz 1e-9), Umrechnung auf float erst in der App; Gelenknamen von WebXR auf StereoKit bildet P4 ab; Schwellen als Stellschrauben bereitet P5 auf.
 
+**Stand P3 (23.10.2026):**
+- **Aufbau:**
+  - Ein zweiter HTTPS-Server auf Port 5140. Er bedient nur Endpunkte unter `/api/xr`, die mit `.XrImNetz()` markiert sind.
+  - Eine einzige Prüfstelle: `XrPforte.Pruefen`.
+  - Zertifikat (ECDSA P-256) und Kopplungen je PC unter `%LOCALAPPDATA%\HLKS_CAD\xr`, geschützt mit DPAPI. Die Schlüssel liegen
+    nur als HMAC-Prüfwert vor.
+  - Suche über UDP 5141; KICAD antwortet nur auf signierte Anfragen.
+  - Live-Kanal `/api/xr/kanal` mit den Nachrichten hallo, pose (höchstens 30 je Sekunde), zeigen, auftrag, stellschraube und
+    messprotokoll.
+  - Firewall-Skript `werkzeuge/xr_firewall.ps1`; Christian führt es selbst aus.
+  - Einzelheiten: `OBERFLAECHE.md`, «Modul XR: Zugang im Büronetz».
+- **Entscheide Christian 23.10.2026:**
+  - `xr.zugang` gilt **je PC**.
+  - Ersatzkopplung ohne Kabel: Den Code an Brille und PC **nur vergleichen** und am PC bestätigen. Der Hauptweg bleibt die
+    Kopplung bei der Installation per Kabel.
+- **Entscheide Hauptlauf:**
+  - Kopplungen liegen je PC in `%LOCALAPPDATA%`.
+  - Posen gehen im Kanal in KICAD-Koordinaten (mm, z nach oben) als gemeinsamer Bezug; die App rechnet um.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
