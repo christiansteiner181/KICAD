@@ -142,7 +142,8 @@ public sealed partial class QuestDienst
     string AppWegPfad()
     {
         if (!string.IsNullOrWhiteSpace(einstellungen.AppWegDatei)) return einstellungen.AppWegDatei!;
-        if (FamilienBibliothekDienst.Testlauf()) return Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_app_weg_test", "weg.json");
+        // im Testlauf je Prozess eine eigene Datei: gleichzeitige Testläufe (z. B. parallele Agenten) teilten sonst den gemerkten Weg (Befund 24.10.2026)
+        if (FamilienBibliothekDienst.Testlauf()) return Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_app_weg_test", Environment.ProcessId.ToString(), "weg.json");
         return Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "HLKS_CAD", "xr", "quest_app_weg.json");
     }
 
