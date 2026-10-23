@@ -290,7 +290,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - **Richtung und Sperre** (Christian, 23.10.2026, nach dem zweiten Brillentest: «sehr gut, für drehen die richtung umkehren und schnellaufeinanderfolgende drehungen nur in eine richtung zulassen»):
     - Nach rechts gewischt dreht nach links; die Welt folgt der Hand.
     - Innerhalb von 1,0 s nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (Stellschraube `begehen.drehen_sperre_s`).
-    - Umgesetzt vom Hauptlauf in `Hlks.Xr/HandBegehen.cs` mit Tests; Brillentest offen.
+    - Umgesetzt vom Hauptlauf in `Hlks.Xr/HandBegehen.cs` mit Tests. Brillentest 23.10.2026 ~21:20: Christian «Das neue Drehen passt».
 - **Folge der Beschränkung:** Andere Geschosse sind beim Begehen unsichtbar; der Wechsel geht bis P5 per Auftrag vom PC, danach per
   Wisch hoch/runter.
 
