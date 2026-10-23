@@ -159,7 +159,7 @@ public static class SitzungAuswahl
     public static Einpassung Startlage(SitzungAnsicht a) => a.Ausschnitt ? XrSitzungLogik.AusschnittLage(a.Bezug.Groesse) : XrSitzungLogik.Einpassen(a.Bezug.Groesse);
 
     /// <summary>
-    /// Etage zu einem Auftrag «sitzungsraum» (P4b): das Geschoss des Auftrags; sonst – bei «Im Sitzungsraum zeigen» mit Raum, ohne Ausschnitt – das Geschoss des Raums
+    /// Etage zu einem Auftrag «sitzungsraum» (P4b): das Geschoss des Auftrags; sonst – bei «Geschoss im Sitzungsraum zeigen» mit Raum, ohne Ausschnitt – das Geschoss des Raums
     /// (ERGÄNZUNG P4b: «das ganze Modell mit Etagenschnitt»; der Prototyp zeigte dann «Alle Etagen»). Null = keine Etage («Alle Etagen» bzw. Ausschnitt).
     /// </summary>
     public static string? EtageZumAuftrag(VrAuftrag a, ModellSzene? szene)

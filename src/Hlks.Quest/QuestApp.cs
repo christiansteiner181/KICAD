@@ -449,7 +449,7 @@ sealed class QuestApp
 
     /// <summary>
     /// Auftrag vom PC anwenden (VrStartLogik.AuftragSchritte): «sitzungsraum» betritt den Sitzungsraum bzw. wechselt seine Ansicht – mit Ausschnitt «Raum zeigen (VR)» nur der
-    /// Raum ± 1.5 m, mit Geschoss dessen Etagenschnitt, mit Raum (ohne Ausschnitt, «Im Sitzungsraum zeigen») der Etagenschnitt im Geschoss des Raums, sonst alle Etagen;
+    /// Raum ± 1.5 m, mit Geschoss dessen Etagenschnitt, mit Raum (ohne Ausschnitt, «Geschoss im Sitzungsraum zeigen») der Etagenschnitt im Geschoss des Raums, sonst alle Etagen;
     /// «begehen» verlässt den Sitzungsraum und setzt einen, mit Raum, in diesen Raum.
     /// </summary>
     void AuftragAnwenden(VrAuftrag a)

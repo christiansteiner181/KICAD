@@ -181,7 +181,7 @@ public class SitzungAuswahlTests
         var (_, szene) = Haus();
         VrAuftrag A(string? raum = null, string? geschoss = null, bool ausschnitt = false, string modus = Modi.Sitzungsraum) => new(modus, raum, geschoss, ausschnitt, null, 1, null);
         Assert.Equal("g-og", SitzungAuswahl.EtageZumAuftrag(A(raum: "r-1", geschoss: "g-og"), szene));
-        Assert.Equal("g-eg", SitzungAuswahl.EtageZumAuftrag(A(raum: "r-1"), szene));   // «Im Sitzungsraum zeigen»
+        Assert.Equal("g-eg", SitzungAuswahl.EtageZumAuftrag(A(raum: "r-1"), szene));   // «Geschoss im Sitzungsraum zeigen»
         Assert.Null(SitzungAuswahl.EtageZumAuftrag(A(raum: "r-1", ausschnitt: true), szene));   // «Raum zeigen (VR)»
         Assert.Null(SitzungAuswahl.EtageZumAuftrag(A(), szene));   // alle Etagen
         Assert.Null(SitzungAuswahl.EtageZumAuftrag(A(raum: "r-1", modus: Modi.Begehen), szene));

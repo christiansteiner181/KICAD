@@ -1861,7 +1861,7 @@ Keine Fachlogik in der Oberfläche: die Seite lädt das **aktuell offene Projekt
   3. **Erster Raum des untersten oberirdischen Geschosses** (Kote ab ±0.00, in der Regel das EG), Räume nach Kennzeichen geordnet, bis zu fünf Versuche.
   4. **Standpunkt der 3D-Gesamtansicht** (die 3D-Ansicht mit «Gesamt» im Namen, sonst `AN-3D`, sonst die erste).
 - **VR-Auftrag vom PC** (Hauptweg; Christian 21.10.2026: «die am pc eingestellten befehle … vom VR gerät aufrufen, es bleibt ja immer die gleiche adresse auf localhost»): Der PC setzt einen Auftrag, die Brille holt ihn. Er geht vor dem gemerkten Standpunkt und vor `?raum=`.
-  - **Am PC:** Grundriss › Rechtsklick auf einen Raum › **«In VR begehen (Brille)»** (Auftrag `begehen` mit dem Raum) und **«Im Sitzungsraum zeigen (Brille)»** (Auftrag `sitzungsraum` mit dem Geschoss des Raums); in der 3D-Ansicht der Link **«An die Brille senden»** unter dem Knopf «In VR begehen» (und in der Einblendung des Begehens):
+  - **Am PC:** Grundriss › Rechtsklick auf einen Raum › **«In VR begehen (Brille)»** (Auftrag `begehen` mit dem Raum) und **«Geschoss im Sitzungsraum zeigen (Brille)»** (Auftrag `sitzungsraum` mit dem Geschoss des Raums); in der 3D-Ansicht der Link **«An die Brille senden»** unter dem Knopf «In VR begehen» (und in der Einblendung des Begehens):
     läuft das Begehen, geht dessen Raum an die Brille (`begehen`), sonst die 3D-Gesamtansicht als `sitzungsraum`. Danach die Meldung «Auftrag an die Brille: Begehen · EG · E.01 Wohnen/Küche – in der Quest KICAD VR öffnen.» (`oberflaeche/vr-auftrag.js`, `aktionen-vr-auftrag.js`).
   - **«Raum zeigen (VR)»** (Christian 21.10.2026: «Raum Zeigen ebenfalls als VR funktion im Kontextmenue»): im selben Kontextmenü, das Gegenstück zu «Raum im 3D zeigen» (N14) für die Brille. Auftrag `{ modus: "sitzungsraum", raum, ausschnitt: true }` mit Autostart. In der Brille zeigt der Sitzungsraum auf dem Tisch **nur den Raum plus Rand** (Vorgabe 1.5 m wie in N14, Benutzereinstellung `ansicht3d.raumrand`): derselbe Quader, vom Kern berechnet – die Abfrage `raum_begehen` liefert mit dem Parameter `rand` zusätzlich `bereich` (`{ aktiv, min, max, winkel }`, dieselbe Rechnung wie `ansicht_raum_zeigen`, ändert **keine** Ansicht). Massstab passt den Ausschnitt auf die Platte (1:20, bei Bedarf gröber); die Etagenwahl auf dem Tablet ist aus, «Alle Etagen» zeigt wieder das ganze Modell.
   - **3D-Ansicht in VR** (Christian 21.10.2026: «die 3dAnzeige fenster auch in VR möglich machen»): der Knopf **«In VR begehen»** in einer 3D-Ansicht sendet, wenn dort **kein Begehen läuft**, den Auftrag `{ modus: "sitzungsraum", ansicht: <3D-Ansicht> }` mit Autostart (läuft das Begehen, wie bisher dessen Raum). Die Brille stellt die Szene auf diese Ansicht um (**Filter**: Gewerke und ausgeblendete Klassen der Ansicht) und zeigt auf dem Tisch den **Schnittbereich** der Ansicht (N13-Quader, falls aktiv) als Ausschnitt – dieselbe Technik wie «Raum zeigen (VR)»; ohne aktiven Schnittbereich das ganze Modell mit den Filtern der Ansicht. Ein späterer Auftrag «Sitzungsraum» ohne Ansicht stellt Gesamtansicht und ganzes Modell wieder her.
@@ -1888,7 +1888,7 @@ Keine Fachlogik in der Oberfläche: die Seite lädt das **aktuell offene Projekt
 
 ## Modul XR: Autostart (Begehung beim Aufsetzen; Christian Steiner 21.10.2026: «ich möchte nach dem klick am pc nur noch die brille anziehen, und dann startet die begehung direkt»)
 
-Nach dem Klick am PC (Kontextmenü «In VR begehen (Brille)» bzw. «Im Sitzungsraum zeigen (Brille)», 3D «An die Brille senden») öffnet KICAD die VR-Startseite im Browser der Quest und klickt dort selbst auf «Eintreten», sobald die Brille aufgesetzt ist.
+Nach dem Klick am PC (Kontextmenü «In VR begehen (Brille)» bzw. «Geschoss im Sitzungsraum zeigen (Brille)», 3D «An die Brille senden») öffnet KICAD die VR-Startseite im Browser der Quest und klickt dort selbst auf «Eintreten», sobald die Brille aufgesetzt ist.
 Keine Logik in der Oberfläche: alles macht der Server (`QuestStarter.cs`); die Oberfläche setzt den Auftrag mit `autostart: true` und zeigt den Zustand.
 
 - **Einstellung** `quest.autostart` (Ja/Nein, **Vorgabe ja**). Im Dialog «Quest verbinden» der Schalter **«Begehung beim Aufsetzen automatisch starten»** mit dem Hinweis auf die einmalige Bestätigung. Ist die Einstellung aus, geschieht nichts (der Auftrag wird trotzdem gesetzt; die Brille holt ihn mit dem Tipp wie bisher).
@@ -2182,7 +2182,7 @@ Die App «KICAD» (`src/Hlks.Quest`) zeigt das Modell jetzt auch **auf einem Tis
 Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsraum und Etage kommen über den VR-Auftrag (Kontextmenü eines Raums), P7 baut parallel «Quest verbinden».
 
 - **In den Sitzungsraum** (Auftrag vom PC, sofort über den Kanal; Regeln `VrStartLogik.AuftragSchritte`, `SitzungAuswahl`):
-  - Rechtsklick Raum › **«Im Sitzungsraum zeigen (VR)»** (`modus: sitzungsraum`, Raum): das ganze Modell auf dem Tisch mit **Etagenschnitt im Geschoss des Raums**
+  - Rechtsklick Raum › **«Geschoss im Sitzungsraum zeigen (VR)»** (`modus: sitzungsraum`, Raum): das ganze Modell auf dem Tisch mit **Etagenschnitt im Geschoss des Raums**
     (Ergänzung P4b; der Prototyp zeigte hier «Alle Etagen»). Mit `geschoss` im Auftrag (`POST /api/vr/auftrag`) gilt dieses Geschoss – **Etagenwahl bis P5 nur so**.
   - Rechtsklick Raum › **«Raum zeigen (VR)»** (`ausschnitt: true`): nur der **Raum ± 1.5 m** (Quader wie «Raum im 3D zeigen», N14) als Ausschnitt, so gross wie möglich (1:20).
   - `modus: sitzungsraum` ohne Raum: **alle Etagen**. Eine 3D-Ansicht (`ansicht`) auf dem Tisch kommt später (Hinweis, dann das ganze Modell).
@@ -2231,7 +2231,7 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
   Knöpfe «Zurücksetzen», «Tisch neu antippen», «Begehen»; die Ebenen.
 - **Protokoll** «P4 Status» zusätzlich: `Modus=begehen|sitzungsraum (Massstab, Ansicht, Schnitt-Blöcke, Griffe, IFC)`, `Passthrough=ein|bereit|nicht verfügbar (Tisch … m)`,
   `Ebenen=… (gezeichnet … Striche, … Kugeln)`; beim Start «Shader schnitt: geladen|fehlt».
-- **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` hat einen **Lauf 3 «Sitzungsraum»**: Auftrag «Im Sitzungsraum zeigen» für den ersten Raum, dann drei Abschnitte (Etagenschnitt des
+- **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` hat einen **Lauf 3 «Sitzungsraum»**: Auftrag «Geschoss im Sitzungsraum zeigen» für den ersten Raum, dann drei Abschnitte (Etagenschnitt des
   Auftrags, alle Etagen, «Raum zeigen») mit Bildzeit, Netzen, Aufrufen, Blöcken mit Schnitt, Dreiecken und Ebenen; dazu die Regeln in der App (Griffe 1:50 → 1:25 und 30°,
   Tisch antippen 0.742 m, Modell auf dem Punkt, Passthrough im Simulator «nicht verfügbar» und Schalter aus, Shader geladen). `-Pruefbilder <ordner>` legt je Abschnitt zwei
   JPEG ab (nur lokal), `-OhneSitzungsraum` lässt den Lauf weg. Tests: Xr `tests/Hlks.Xr.Tests` (`SitzungRaumTests`, `SitzungAuswahlTests`, `TischAntippenTests` mit dem
