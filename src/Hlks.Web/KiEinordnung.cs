@@ -101,6 +101,9 @@ public static class KiEinordnung
         new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
             "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +
             "Ausgabe nicht; über den Zugang im Büronetz (P3) greift sie über den Rechner hinaus – darum kein Werkzeug der KI."),
+        new("xr_ebenen", "Liefert Ebenen der Fachmodule (Linien, Pfeile, Partikel, Farbflächen; Probe «fliessrichtung») an die Quest App (Modul XR, P4b, XrEbenenEndpunkte.cs: " +
+            "GET /api/xr/ebenen und /api/xr/ebene/{name}): eine Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket – wie xr_modell; über " +
+            "den Zugang im Büronetz greift sie über den Rechner hinaus, darum kein Werkzeug der KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

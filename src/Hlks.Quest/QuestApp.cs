@@ -4,8 +4,10 @@ using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
 using Hlks.Xr;
+using Hlks.Xr.Ebenen;
 using Hlks.Xr.Modell;
 using Hlks.Xr.Netz;
+using Hlks.Xr.Sitzung;
 using StereoKit;
 using Vec3 = StereoKit.Vec3;
 using XVec3 = Hlks.Xr.Vec3;
@@ -14,6 +16,8 @@ namespace Hlks.Quest;
 
 /// <summary>
 /// Quest App P4a (entwurf/modul-xr.md, «Prototyp: Interface-Labor», Zeile P4): verbinden, Modell laden und zwischenspeichern, Begehen mit den Händen.
+/// P4b: Sitzungsraum (XR-H, <see cref="Sitzungsraum"/>) mit Etagenschnitt, Ausschnitt «Raum zeigen (VR)», Griffen und «Echter Tisch» (Passthrough, <see cref="Passthrough"/>);
+/// Ebenen der Fachmodule (<see cref="EbenenDarstellung"/>, Probe «fliessrichtung»). Aufträge vom PC wechseln zwischen Begehen und Sitzungsraum.
 ///
 /// Ablauf (im Hintergrund, die Ergebnisse gehen über eine Warteschlange ans Bild):
 ///   1. Kopplungspaket: am PC --kopplung, auf der Brille aus dem privaten Speicher (vorher aus dem Eingang übernommen, KopplungAblage).
@@ -28,7 +32,7 @@ namespace Hlks.Quest;
 /// </summary>
 sealed class QuestApp
 {
-    const string AppName = "KICAD Quest P4a";
+    const string AppName = "KICAD Quest P4b";
     static readonly IReadOnlySet<string> Ausgeblendet = new HashSet<string> { ModellSzene.GruppeRaum };   // «Räume ausgeblendet»
 
     readonly Optionen o;
@@ -75,6 +79,14 @@ sealed class QuestApp
     HaltungEinstellungen haltung = HaltungEinstellungen.Vorgabe;
     bool ohneBodenGemeldet;
 
+    // P4b: Sitzungsraum, Passthrough, Ebenen
+    readonly Passthrough passthrough = new();
+    readonly Sitzungsraum sitzung;
+    readonly EbenenDarstellung ebenen = new();
+    readonly EbenenAblage ebenenAblage;
+    volatile string ebenenText = "–";
+    string? ebenenSchluessel;
+
     // Status und Prüfung
     int bilder, gemessen;
     double summeBild, summeRechnen, letzterStatus, letztesMerken, modellAb = -1;
@@ -96,6 +108,12 @@ sealed class QuestApp
         // Nachtrag Brillentest 23.10.2026: nur EIN sichtbarer Zeigestrahl – den von StereoKit (Fernbedienung der Fenster) aus, die App zeichnet den Zeiger
         // des Systems selbst (Rueckmeldung.Strahl). Die Anzeige wird nur mit dem Finger bedient (Schalter «Drehen»).
         UI.EnableFarInteract = false;
+        // P4b: Passthrough (XR_FB_passthrough, vor SK.Initialize angefordert in Program.cs) anlegen; im Simulator nicht verfügbar
+        passthrough.Anlegen();
+        Console.WriteLine($"{AppName}: {passthrough.Grund} Shader schnitt: {(ModellDarstellung.SchnittShader ? "geladen" : "fehlt (Sitzungsraum ohne Schnitt)")}.");
+        sitzung = new Sitzungsraum(rueck, passthrough);
+        sitzung.Echt.VerfuegbarSetzen(passthrough.Verfuegbar, passthrough.Grund);
+        ebenenAblage = new EbenenAblage(privat);
     }
 
     readonly string geraet;
@@ -187,6 +205,7 @@ sealed class QuestApp
             foreach (var h in neu.Hinweise) Melden(h);
             if (Schluessel(neu) != standSchluessel) Uebernehmen(neu);
             Melden($"Modell vom PC geladen ({neu.Teile.Count} Teile, {neu.Bytes / 1048576.0:0.0} MB).");
+            await EbenenVomPc(neu.Liste);
         }
         catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or GlbFehler)
         {
@@ -210,9 +229,12 @@ sealed class QuestApp
         try
         {
             var neu = await ModellLader.VomPc(q, speicher, new ModellLadeOptionen { Unterlage = o.Unterlage, Pc = adresse?.Pc }, ende.Token);
-            if (Schluessel(neu) == standSchluessel) return;
-            Uebernehmen(neu);
-            Melden("Das Modell am PC hat sich geändert – neu geladen.");
+            if (Schluessel(neu) != standSchluessel)
+            {
+                Uebernehmen(neu);
+                Melden("Das Modell am PC hat sich geändert – neu geladen.");
+            }
+            await EbenenVomPc(neu.Liste);
         }
         catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or GlbFehler or TaskCanceledException && !ende.IsCancellationRequested)
         {
@@ -247,6 +269,38 @@ sealed class QuestApp
         modellWeg = "zwischenspeicher";
         Status(zustand == Zustand.Fehler ? Zustand.Fehler : Zustand.OhnePc, s.Hinweise[0]);
         Uebernehmen(s);
+        EbenenUebernehmen(EbenenLader.AusAblage(ebenenAblage, s.Liste.Projekt), s.Liste.Bezugspunkt);
+        EbenenFertig();
+    }
+
+    /// <summary>P4b: Ebenen der Fachmodule vom PC (bedingt, mit Ablage für den Start ohne PC); Fehler stören das Modell nicht.</summary>
+    async Task EbenenVomPc(ModellListe liste)
+    {
+        try
+        {
+            if (aktiveQuelle is IEbenenQuelle q) EbenenUebernehmen(await EbenenLader.VomPc(q, liste.Projekt, ebenenAblage, ende.Token), liste.Bezugspunkt);
+        }
+        catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or TaskCanceledException && !ende.IsCancellationRequested)
+        {
+            Melden("Ebenen: " + ex.Message);
+        }
+        finally { EbenenFertig(); }
+    }
+
+    /// <summary>Die Ebenen sind (nach dem Modell) geladen oder fehlen endgültig – im Bild nach ihrer Übernahme gemeldet (Prüflauf wartet darauf).</summary>
+    void EbenenFertig() => amBild.Enqueue(() => ebenenFertig = true);
+
+    /// <summary>Ebenen in die Szene rechnen (Hintergrund) und im Bild übernehmen, wenn sich ein Schlüssel geändert hat.</summary>
+    void EbenenUebernehmen(EbenenStand st, double[] bezug)
+    {
+        var schluessel = string.Join(",", st.Ebenen.Select(e => $"{e.Name}:{e.Schluessel}"));
+        foreach (var h in st.Hinweise) Melden(h);
+        if (schluessel == ebenenSchluessel) return;
+        ebenenSchluessel = schluessel;
+        var szenen = st.Ebenen.Select(e => EbenenSzene.Bauen(e, bezug)).ToList();
+        ebenenText = szenen.Count == 0 ? "keine" : string.Join(", ", szenen.Select(s => $"{s.Name} ({s.Teile.Count} Teile, {s.Striche} Striche)")) + $" [{st.Quelle}]";
+        Console.WriteLine($"{AppName}: Ebenen {ebenenText}");
+        amBild.Enqueue(() => ebenen.Setzen(szenen));
     }
 
     /// <summary>GLB lesen, Szene und Start rechnen (Hintergrund), dann im Bild zeigen.</summary>
@@ -373,6 +427,7 @@ sealed class QuestApp
         stand = neu;
         szene = sz;
         darstellung = new ModellDarstellung(vorbereitet, Ausgeblendet);
+        ausschnittGesetzt = null;   // die neue Darstellung hat noch keinen Ausschnitt
         durchgang = new DurchgangVerfolger(sz);
         modellAb = Time.Total;
         if (!rigGesetzt || erstes)
@@ -383,18 +438,37 @@ sealed class QuestApp
             startText = $"{start.Anzeige.Quelle}: {Einblendung()}";
             if (auftrag is not null && start.Punkt.Quelle == Startquellen.Auftrag) { AuftragVerbraucht(auftrag); auftragText = $"Nr {auftrag.Nr} beim Start"; }
             Console.WriteLine($"{AppName}: Start {start.Punkt.Quelle} – {startText}");
+            // P4b: ein Auftrag «sitzungsraum» beim Start – das Begehen steht bereit (Startpunkt wie sonst), dann gleich in den Sitzungsraum
+            if (auftrag is { Modus: Modi.Sitzungsraum }) AuftragAnwenden(auftrag);
         }
+        else if (sitzung.Aktiv && SitzungAnsichtBauen(sitzungWunsch) is { } neuAnsicht) sitzung.AnsichtSetzen(neuAnsicht);   // Modell neu geladen: Ansicht neu rechnen
         if (offenerAuftrag is { } a) { offenerAuftrag = null; AuftragAnwenden(a); }
         Console.WriteLine($"{AppName}: Modell {neu.Liste.Projekt} ({neu.Quelle}, {modellWeg}): {darstellung.Netze} Netze, {darstellung.Dreiecke} Dreiecke sichtbar, " +
             $"{sz.Raeume.Count} Räume, {sz.DurchgangsBauteile.Count} Bauteile für den Durchgang");
     }
 
+    /// <summary>
+    /// Auftrag vom PC anwenden (VrStartLogik.AuftragSchritte): «sitzungsraum» betritt den Sitzungsraum bzw. wechselt seine Ansicht – mit Ausschnitt «Raum zeigen (VR)» nur der
+    /// Raum ± 1.5 m, mit Geschoss dessen Etagenschnitt, mit Raum (ohne Ausschnitt, «Im Sitzungsraum zeigen») der Etagenschnitt im Geschoss des Raums, sonst alle Etagen;
+    /// «begehen» verlässt den Sitzungsraum und setzt einen, mit Raum, in diesen Raum.
+    /// </summary>
     void AuftragAnwenden(VrAuftrag a)
     {
         if (szene is null || stand is null) { offenerAuftrag = a; return; }
         AuftragVerbraucht(a);
-        if (a.Modus == Modi.Sitzungsraum) { auftragText = $"Nr {a.Nr} Sitzungsraum (P5)"; Hinweis("Auftrag vom PC: Sitzungsraum – kommt mit P5."); return; }
-        if (!VrStartLogik.AuftragSchritte(a).Contains(AuftragSchritt.Standort)) { Hinweis("Auftrag vom PC ohne Raum."); return; }
+        auftragRaum = a.Raum ?? auftragRaum;
+        var schritte = VrStartLogik.AuftragSchritte(a, sitzung.Aktiv);
+        if (a.Modus == Modi.Sitzungsraum)
+        {
+            var wunsch = WunschZumAuftrag(a);
+            if (SitzungAnsichtBauen(wunsch) is not { } ansicht) { auftragText = $"Nr {a.Nr} Sitzungsraum ohne Modell"; Hinweis("Auftrag vom PC: kein Modell für den Sitzungsraum."); return; }
+            SitzungZeigen(wunsch, ansicht);
+            auftragText = $"Nr {a.Nr} Sitzungsraum {ansicht.Text}";
+            Hinweis($"Auftrag vom PC: Sitzungsraum · {ansicht.Text}");
+            return;
+        }
+        if (schritte.Contains(AuftragSchritt.Verlassen)) SitzungVerlassen();
+        if (!schritte.Contains(AuftragSchritt.Standort)) { auftragText = $"Nr {a.Nr} Begehen"; Hinweis("Auftrag vom PC: Begehen."); return; }
         var st = AppStart.RaumStandortVon(szene, stand.Liste, a.Raum!);
         if (st is null) { auftragText = $"Nr {a.Nr} ohne Raum im Modell"; Hinweis($"Der Raum des Auftrags ({a.Raum}) ist nicht im Modell."); return; }
         var z = KicadUmrechnung.ZustandAusStandort(st, szene.Bezugspunkt);
@@ -413,6 +487,71 @@ sealed class QuestApp
         hinweisBis = Time.Total + 8;
         Console.WriteLine($"{AppName}: {text}");
     }
+
+    // --------------------------------------------------------------------------------------------------- Sitzungsraum (P4b)
+
+    /// <summary>Was im Sitzungsraum auf dem Tisch stehen soll (bleibt, wenn das Modell neu geladen wird): alle Etagen, Etage (Id) oder Ausschnitt um einen Raum (Id).</summary>
+    sealed record SitzungWunsch(string Art, string? Bezug = null)
+    {
+        public const string Alle = "alle", Etage = "etage", Ausschnitt = "ausschnitt";
+    }
+
+    SitzungWunsch sitzungWunsch = new(SitzungWunsch.Alle);
+
+    SitzungWunsch WunschZumAuftrag(VrAuftrag a)
+    {
+        if (a.Ausschnitt && a.Raum is not null) return new SitzungWunsch(SitzungWunsch.Ausschnitt, a.Raum);
+        if (a.Ansicht is not null) Hinweis("Eine 3D-Ansicht auf dem Tisch kommt später – das ganze Modell.");
+        return SitzungAuswahl.EtageZumAuftrag(a, szene) is { } g ? new SitzungWunsch(SitzungWunsch.Etage, g) : new SitzungWunsch(SitzungWunsch.Alle);
+    }
+
+    /// <summary>Ansicht zum Wunsch mit dem geladenen Modell; fehlt der Raum bzw. das Geschoss, das ganze Modell (mit Hinweis).</summary>
+    SitzungAnsicht? SitzungAnsichtBauen(SitzungWunsch w)
+    {
+        if (szene is null || stand is null) return null;
+        if (w.Art == SitzungWunsch.Ausschnitt && w.Bezug is { } r)
+        {
+            if (SitzungAuswahl.Ausschnitt(szene, r) is { } x) return x;
+            Hinweis($"Der Raum ({r}) ist nicht im Modell – das ganze Modell.");
+        }
+        if (w.Art == SitzungWunsch.Etage && w.Bezug is { } g)
+        {
+            if (SitzungAuswahl.Etage(stand.Liste, szene, g) is { } e) return e;
+            Hinweis($"Das Geschoss ({g}) ist nicht im Modell – alle Etagen.");
+        }
+        return SitzungAuswahl.Alle(szene);
+    }
+
+    /// <summary>Sitzungsraum betreten bzw. die Ansicht wechseln. Beim Betreten ruht das Begehen (Durchgang zurückgesetzt, das Rig bleibt).</summary>
+    void SitzungZeigen(SitzungWunsch wunsch, SitzungAnsicht ansicht)
+    {
+        sitzungWunsch = wunsch;
+        if (sitzung.Aktiv) { sitzung.AnsichtSetzen(ansicht); return; }
+        darstellung?.DurchgangSetzen(new());
+        sitzung.Betreten(Input.Head, ansicht);
+        rueck.Griff(Input.Head.position, true);   // Klick beim Betreten (Ton; das Licht liegt im Kopf und ist nicht zu sehen)
+    }
+
+    /// <summary>Zurück ins Begehen: Standpunkt wie vorher, Durchgang neu bewerten, Passthrough aus.</summary>
+    void SitzungVerlassen()
+    {
+        if (!sitzung.Aktiv) return;
+        sitzung.Verlassen();
+        if (szene is not null) durchgang = new DurchgangVerfolger(szene);
+        Hinweis("Zurück im Begehen.");
+    }
+
+    /// <summary>Knopf «Sitzungsraum» in der Box: Etagenschnitt im Geschoss am Stand, sonst alle Etagen.</summary>
+    void SitzungAusBegehen()
+    {
+        var w = geschossAmStand is { } g ? new SitzungWunsch(SitzungWunsch.Etage, g.Id) : new SitzungWunsch(SitzungWunsch.Alle);
+        if (SitzungAnsichtBauen(w) is { } a) { SitzungZeigen(w, a); Hinweis($"Sitzungsraum · {a.Text}"); }
+    }
+
+    /// <summary>Raum der Brille → Szene im aktuellen Modus (für Posen an den PC).</summary>
+    XVec3 SzeneVonSk(Vec3 p) => sitzung.Aktiv
+        ? Vector3.Transform(p, Matrix4x4.Invert(sitzung.ModellMatrix, out var inv) ? inv : Matrix4x4.Identity)
+        : Welt(p);
 
     /// <summary>
     /// Geschoss, in dem man steht (Regel in Hlks.Xr.Modell.GeschossWahl: oberstes mit Kote höchstens 0,3 m über dem Standboden). Standboden = Höhe des
@@ -444,14 +583,34 @@ sealed class QuestApp
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
         Haltung(kopf);
 
-        if (darstellung is not null && szene is not null)
+        if (darstellung is not null && szene is not null && sitzung.Aktiv)
+        {
+            // P4b: Sitzungsraum – das Begehen ruht (keine Sprünge, kein Durchgang), das Rig bleibt für die Rückkehr
+            var aq = sitzung.Ansicht is { Ausschnitt: true } an ? an.Schnitt : null;
+            if (aq != ausschnittGesetzt)
+            {
+                ausschnittGesetzt = aq;
+                darstellung.AusschnittSetzen(szene, aq);
+                if (aq is not null) Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
+                    $"{AppName}: Ausschnitt {darstellung.AusschnittDreiecke} Dreiecke in {darstellung.AusschnittMs:0.0} ms zusammengestellt"));
+            }
+            sitzung.Schritt(Time.Total, kopf);
+            sitzung.Zeichnen(darstellung, ebenen, Time.Total, sitzung.Ansicht?.Text);
+            passthrough.Bild();
+            PoseSenden(kopf);
+        }
+        else if (darstellung is not null && szene is not null)
         {
             Haende(kopf, kopfRefV, kopfWelt, blickWelt);
             if (durchgang!.Pruefen(VrLogik.KopfWelt(rig, kopfRefV))) darstellung.DurchgangSetzen(durchgang.BereicheJeNetz());
             geschossAmStand = GeschossAmStand();
             darstellung.NurGeschoss = geschossAmStand?.Id;
-            darstellung.Zeichnen(Matrix4x4.Invert(RigMatrix, out var inv) ? inv : Matrix4x4.Identity);
-            PoseSenden(kopf, kopfWelt);
+            var inv = Inverse();
+            darstellung.Zeichnen(inv);
+            if (standGeschosse?.Contains(geschossAmStand?.Id ?? "") != true)
+                standGeschosse = geschossAmStand is { } gs ? new HashSet<string>(StringComparer.Ordinal) { gs.Id } : null;
+            ebenen.Zeichnen(inv, 1, standGeschosse, null, Time.Total);
+            PoseSenden(kopf);
             letzterKopf = (kopfWelt, blickWelt);
             if (Time.Total - letztesMerken >= 10) { letztesMerken = Time.Total; Merken(kopfWelt, blickWelt, sofort: false); }
         }
@@ -478,6 +637,9 @@ sealed class QuestApp
             $"Aufrufe={darstellung?.GezeichnetAufrufe ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, " +
             $"Durchgang={durchgang?.Nah.Count ?? 0} (Wechsel höchstens {darstellung?.DurchgangMaxMs ?? 0:0.0} ms), Haltung={drehen.Haltung}, Drehen={(drehen.Drehen ? "ein" : "aus")}, Hand={(drehen.VonHand is not null ? "ja" : "nein")}, " +
             $"Strahl={(rechts.StrahlVomSystem || links.StrahlVomSystem ? "System" : "Schulter")}, Verbindung={verbindungText}, " +
+            $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe}, IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
+            $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
+            $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
             $"Modell={modellWeg}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}, " +
             $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}");
     }
@@ -556,22 +718,33 @@ sealed class QuestApp
 
     // --------------------------------------------------------------------------------------------------- Kanal und Merken
 
-    void PoseSenden(Pose kopf, XVec3 kopfWelt)
+    /// <summary>
+    /// Pose an den PC (KICAD-mm). Begehen: Kopf und Hände in der Szene über das Rig. P4b, Sitzungsraum: dieselben Lagen über die Umkehrung des Tisches – also der Punkt des
+    /// Modells, über dem Kopf bzw. Hand stehen (im Massstab vergrössert), mit modus «sitzungsraum» und massstab = Nenner (50 = 1:50).
+    /// </summary>
+    void PoseSenden(Pose kopf)
     {
         if (kanal is not { Zustand: KanalZustand.Verbunden } k || szene is null) return;
         var bezug = szene.Bezugspunkt;
-        var rigQ = rig.ZuQuaternion();
-        double[] Dreh(Quat q) => KicadUmrechnung.DrehungZuKicad(Quaternion.Concatenate(q, rigQ));
+        var drehQ = sitzung.Aktiv
+            ? Quaternion.CreateFromAxisAngle(Vector3.UnitY, -(float)(sitzung.RaumLage.Drehung + sitzung.Lage.Drehung))
+            : rig.ZuQuaternion();
+        double[] Dreh(Quat q) => KicadUmrechnung.DrehungZuKicad(Quaternion.Concatenate(q, drehQ));
         KicadHand? Hand(Handed seite, HandBegehenZustand z)
         {
             var h = Input.Hand(seite);
             if (!h.IsTracked) return null;
-            return new KicadHand(new KicadLage(KicadUmrechnung.PunktZuKicad(Welt(h.wrist.position), bezug), Dreh(h.wrist.orientation)),
-                KicadUmrechnung.PunktZuKicad(Welt(h[FingerId.Index, JointId.Tip].position), bezug), z.Pinch, h.pinchActivation);
+            return new KicadHand(new KicadLage(KicadUmrechnung.PunktZuKicad(SzeneVonSk(h.wrist.position), bezug), Dreh(h.wrist.orientation)),
+                KicadUmrechnung.PunktZuKicad(SzeneVonSk(h[FingerId.Index, JointId.Tip].position), bezug), sitzung.Aktiv ? h.IsPinched : z.Pinch, h.pinchActivation);
         }
-        k.PoseSetzen(new KicadPose(new KicadLage(KicadUmrechnung.PunktZuKicad(kopfWelt, bezug), Dreh(kopf.orientation)),
-            Hand(Handed.Left, links), Hand(Handed.Right, rechts)));
+        k.PoseSetzen(new KicadPose(new KicadLage(KicadUmrechnung.PunktZuKicad(SzeneVonSk(kopf.position), bezug), Dreh(kopf.orientation)),
+            Hand(Handed.Left, links), Hand(Handed.Right, rechts),
+            sitzung.Aktiv ? Modi.Sitzungsraum : Modi.Begehen, sitzung.Aktiv ? sitzung.Lage.Massstab : 1));
     }
+
+    HashSet<string>? standGeschosse;
+    /// <summary>Quader, für den die Netze des Ausschnitts zusammengestellt sind (neues Modell: Zeigen setzt ihn zurück).</summary>
+    SchnittQuader? ausschnittGesetzt;
 
     (XVec3 Kopf, double Blick)? letzterKopf;
 
@@ -591,11 +764,12 @@ sealed class QuestApp
 
     void Anzeige(Pose kopf)
     {
-        // folgt dem Kopf träge: unten vor dem Blick, zum Kopf gedreht
+        // folgt dem Kopf träge: unten vor dem Blick, zum Kopf gedreht; im Sitzungsraum 40° nach links und höher, damit der Tisch frei bleibt (P4b, Annahme)
         var f = kopf.Forward;
         var waagrecht = new Vec3(f.x, 0, f.z);
         waagrecht = waagrecht.Length > 1e-3f ? waagrecht.Normalized : new Vec3(0, 0, -1);
-        var ziel = kopf.position + waagrecht * 0.55f + new Vec3(0, -0.28f, 0);
+        if (sitzung.Aktiv) waagrecht = Quat.FromAngles(0, 40, 0) * waagrecht;
+        var ziel = kopf.position + waagrecht * 0.55f + new Vec3(0, sitzung.Aktiv ? -0.12f : -0.28f, 0);
         if (!anzeigeGesetzt || Vec3.Distance(anzeige.position, ziel) > 0.6f) { anzeige.position = ziel; anzeigeGesetzt = true; }
         else anzeige.position = Vec3.Lerp(anzeige.position, ziel, Math.Min(1, Time.Stepf * 2.5f));
         anzeige.orientation = Quat.LookAt(anzeige.position, kopf.position);
@@ -614,6 +788,13 @@ sealed class QuestApp
         });
         UI.Text("● " + (zustand == Zustand.OhnePc ? "Ohne PC · " : "") + verbindungText);
         UI.PopTint();
+        if (sitzung.Aktiv && darstellung is not null)
+        {
+            AnzeigeSitzung();
+            UI.WindowEnd();
+            Hierarchy.Pop();
+            return;
+        }
         var ort = Einblendung();
         if (ort.Length > 0) UI.Text(ort);
         else if (geschossAmStand is not null) UI.Text($"Geschoss {geschossAmStand.Kennzeichen}");
@@ -634,9 +815,57 @@ sealed class QuestApp
             }
             UI.SameLine();
             UI.Text($"Drehen: {drehen.Text}");
+            // P4b: in den Sitzungsraum (Etagenschnitt im Geschoss am Stand) und die Ebenen der Fachmodule
+            if (UI.Button("Sitzungsraum")) SitzungAusBegehen();
+            EbenenSchalter();
         }
         UI.WindowEnd();
         Hierarchy.Pop();
+    }
+
+    /// <summary>Box im Sitzungsraum: Massstab und Ansicht, Hinweis zur Bedienung, Zahlen, Schalter «Echter Tisch», «IFC-Unterlage», Ebenen, «Zurücksetzen», «Begehen».</summary>
+    void AnzeigeSitzung()
+    {
+        var a = sitzung.Ansicht;
+        UI.Text($"Sitzungsraum · Massstab {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab)}{(sitzung.Passt ? "" : " (passt nicht ganz auf den Tisch)")}\n{a?.Text ?? ""}");
+        if (Time.Total < hinweisBis && hinweis.Length > 0) UI.Text(hinweis);
+        if (sitzung.Echt.WartetAufTisch) UI.Text("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
+        else UI.Text(sitzung.Modus switch
+        {
+            "zwei" => "Beide Griffe gehalten: drehen, verschieben, zoomen.",
+            "wartet" => "Ein Griff gehalten – den zweiten mit der anderen Hand fassen.",
+            _ => "Die beiden Griffe mit Daumen und Zeigefinger fassen: drehen, verschieben, zoomen.",
+        });
+        UI.Text(string.Create(CultureInfo.InvariantCulture,
+            $"{darstellung!.GezeichnetNetze} Netze · {darstellung.GezeichnetAufrufe} Aufrufe · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
+        // «Echter Tisch» (Passthrough): grau mit Hinweis, wenn die Laufzeit es nicht anbietet
+        var echt = sitzung.Echt.Ein;
+        UI.PushEnabled(sitzung.Echt.Verfuegbar, HierarchyParent.Inherit);
+        if (UI.Toggle("Echter Tisch", ref echt))
+        {
+            var wirksam = sitzung.EchterTischSchalten(echt);
+            Hinweis(wirksam ? "Passthrough ein: mit dem Zeigefinger kurz auf die Tischplatte tippen." : "Virtueller Raum.");
+        }
+        UI.PopEnabled();
+        UI.SameLine();
+        var ifc = sitzung.Unterlage;
+        if (UI.Toggle("IFC-Unterlage", ref ifc)) sitzung.Unterlage = ifc;
+        if (!sitzung.Echt.Verfuegbar) UI.Text($"Echter Tisch nicht verfügbar: {sitzung.Echt.Grund}");
+        if (UI.Button("Zurücksetzen")) { sitzung.Zuruecksetzen(); Hinweis("Lage, Massstab und Drehung zurückgesetzt."); }
+        if (sitzung.Echt.Ein && !sitzung.Echt.WartetAufTisch) { UI.SameLine(); if (UI.Button("Tisch neu antippen")) sitzung.TischNeuAntippen(); }
+        UI.SameLine();
+        if (UI.Button("Begehen")) SitzungVerlassen();
+        EbenenSchalter();
+    }
+
+    /// <summary>Je Ebene der Fachmodule ein Schalter (Vorgabe aus).</summary>
+    void EbenenSchalter()
+    {
+        foreach (var (name, titel, an, teile) in ebenen.Liste)
+        {
+            var ein = an;
+            if (UI.Toggle($"Ebene {titel}", ref ein)) { ebenen.Schalten(name, ein); Hinweis($"Ebene {titel} {(ein ? "ein" : "aus")} ({teile} Elemente)."); }
+        }
     }
 
     const float AnzeigeSkala = 1.35f;
@@ -658,7 +887,9 @@ sealed class QuestApp
             else if (Time.Total > 180) Ende(false, "kein Modell nach 180 s: " + verbindungText);
             return;
         }
-        if (!pruefAktionen) { pruefAktionen = true; pruefText = PruefAktionen(); return; }   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
+        if (!ebenenFertig && Time.Total - modellAb < 60) return;   // P4b: die Ebenen kommen nach dem Modell; mitmessen
+        if (!pruefAktionen) { pruefAktionen = true; pruefText = PruefAktionen(); pruefP4b = PruefP4bRegeln(); return; }   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
+        if (sitzung.Aktiv || sitzPhase >= 0) { SitzungPruefen(rechnen); return; }
         gemessen++;
         summeBild += Time.Stepf;
         summeRechnen += rechnen;
@@ -670,9 +901,133 @@ sealed class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}");
         Console.WriteLine("P4 Laden: " + ladeText);
-        Ende(true, z);
+        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal), z);
+    }
+
+    // --------------------------------------------------------------------------------------------------- Prüfen P4b (Sitzungsraum)
+
+    volatile bool ebenenFertig;
+    string pruefP4b = "";
+    int sitzPhase = -1, sitzBilder;
+    double sitzSumme, sitzRechnen;
+    readonly List<string> sitzErgebnisse = [];
+    static readonly string[] SitzPhasen = ["auftrag", "alle Etagen", "Raum zeigen"];
+
+    /// <summary>
+    /// Prüflauf im Sitzungsraum (Auftrag «sitzungsraum» vom PC beim Start, werkzeuge/quest_pruefen.ps1 Lauf 3): drei gleich lange Abschnitte – die Ansicht des Auftrags,
+    /// «Alle Etagen» (das ganze Modell) und «Raum zeigen (VR)» (Ausschnitt um den Raum des Auftrags bzw. den ersten Raum) – je mit mittlerer Bildzeit, gezeichneten Dreiecken,
+    /// Aufrufen und Blöcken mit Schnitt. Alle Ebenen sind dabei eingeschaltet.
+    /// </summary>
+    void SitzungPruefen(double rechnen)
+    {
+        int jePhase = Math.Max(30, o.PruefBilder / SitzPhasen.Length);
+        if (sitzPhase < 0)
+        {
+            foreach (var (name, _, _, _) in ebenen.Liste) ebenen.Schalten(name, true);
+            sitzPhase = 0;
+            sitzBilder = 0; sitzSumme = 0; sitzRechnen = 0;
+            return;
+        }
+        sitzBilder++;
+        sitzSumme += Time.Stepf;
+        sitzRechnen += rechnen;
+        if (sitzBilder == jePhase / 2 && o.BildOrdner is { } ordner)
+        {
+            // Prüfbild (--bilder): vom Platz am Tisch auf das Modell, dazu eines schräg von oben
+            Directory.CreateDirectory(ordner);
+            var rl = sitzung.RaumLage;
+            Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
+            var ziel = Sk(XrSitzungLogik.TischMitte.X, XrSitzungLogik.TischHoehe + 0.05, XrSitzungLogik.TischMitte.Z);
+            var name = SitzPhasen[sitzPhase].Replace(' ', '_');
+            Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}.jpg"), Sk(0, 1.45, 0.1), ziel, 1280, 960, 70);
+            Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}_oben.jpg"), Sk(0.6, 1.9, -0.2), ziel, 1280, 960, 60);
+        }
+        if (sitzBilder < jePhase) return;
+        var d = darstellung!;
+        sitzErgebnisse.Add(string.Create(CultureInfo.InvariantCulture,
+            $"{SitzPhasen[sitzPhase]} [{sitzung.Ansicht?.Text}, {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab)}]: Bildzeit {sitzSumme / sitzBilder * 1000:0.0} ms, " +
+            $"Rechenzeit {sitzRechnen / sitzBilder:0.00} ms, Netze {d.GezeichnetNetze}, Aufrufe {d.GezeichnetAufrufe} (Schnitt {d.GezeichnetMitSchnitt}), Dreiecke {d.GezeichnetDreiecke}, " +
+            $"Ebenen {ebenen.Gezeichnet} Striche + {ebenen.Kugeln} Kugeln"));
+        sitzPhase++;
+        sitzBilder = 0; sitzSumme = 0; sitzRechnen = 0;
+        if (sitzPhase == 1 && SitzungAnsichtBauen(new SitzungWunsch(SitzungWunsch.Alle)) is { } alle) SitzungZeigen(new SitzungWunsch(SitzungWunsch.Alle), alle);
+        else if (sitzPhase == 2)
+        {
+            var raum = auftragRaum ?? szene!.Raeume.FirstOrDefault()?.Id;
+            var w = new SitzungWunsch(SitzungWunsch.Ausschnitt, raum);
+            if (raum is not null && SitzungAnsichtBauen(w) is { } x) SitzungZeigen(w, x);
+        }
+        if (sitzPhase < SitzPhasen.Length) return;
+        var z = string.Create(CultureInfo.InvariantCulture,
+            $"Sitzungsraum=ja; {string.Join("; ", sitzErgebnisse)}; alle Geschosse Dreiecke={d.Dreiecke}; Auftrag={auftragText}; Verbindung={verbindungText}, " +
+            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}");
+        Console.WriteLine("P4 Laden: " + ladeText);
+        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal), z);
+    }
+
+    string? auftragRaum;
+
+    /// <summary>
+    /// Einmal im Prüflauf (P4b): die Regeln des Sitzungsraums in der App – Griffe und Zoom mit zwei Händen, Lage des Modells auf dem Tisch (Matrix gegen die Regel), Tisch antippen
+    /// (gedachte Fingerspitze), Passthrough (im Simulator nicht verfügbar, Schalter bleibt aus), Shader «schnitt», Ebenen. «FEHLER» lässt den Lauf scheitern.
+    /// </summary>
+    string PruefP4bRegeln()
+    {
+        var teile = new List<string>();
+        try
+        {
+            var bezug = SitzungRaum.BezugAusBox(szene!.Box) ?? new SitzungBezug(new Xz(0, 0), 0, new ModellGroesse(10, 10, 3));
+            var start = XrSitzungLogik.Einpassen(bezug.Groesse).Lage;
+            // Griffe fassen, Hände auseinander (doppelter Abstand) und um 30° drehen: Massstab halb so gross (Grenze 1:20), Drehung 30°
+            var g = XrSitzungLogik.GriffPunkte(start, bezug.Groesse);
+            var z0 = XrSitzungLogik.GestenNeu(start);
+            GestenHand H(double x, double zz, int? nah) => new(true, nah, x, zz);
+            var z1 = XrSitzungLogik.GestenSchritt(z0, new GestenHaende(H(g[0].X, g[0].Z, 0), H(g[1].X, g[1].Z, 1)));
+            var m = XrSitzungLogik.ModellMitte(start);
+            Xz Um(double fx, double fz, double grad, double faktor)
+            {
+                var v = XrSitzungLogik.DreheXZ(new Xz((fx - m.X) * faktor, (fz - m.Z) * faktor), grad * Math.PI / 180);
+                return new Xz(m.X + v.X, m.Z + v.Z);
+            }
+            var a = Um(g[0].X, g[0].Z, 30, 2);
+            var b = Um(g[1].X, g[1].Z, 30, 2);
+            var z2 = XrSitzungLogik.GestenSchritt(z1, new GestenHaende(H(a.X, a.Z, null), H(b.X, b.Z, null)));
+            var gestenOk = z1.Modus == "zwei" && Math.Abs(z2.Lage.Massstab - Math.Max(XrSitzungLogik.MassstabMin, start.Massstab / 2)) < 1e-6
+                && Math.Abs(XrSitzungLogik.WinkelDiff(z2.Lage.Drehung, 30 * Math.PI / 180)) < 1e-6;
+            teile.Add($"Gesten={(gestenOk ? "ok" : "FEHLER")} (1:{start.Massstab:0} → 1:{z2.Lage.Massstab:0}, {z2.Lage.Drehung * 180 / Math.PI:0}°)");
+            // Tisch antippen: Finger 0.79 → 0.75 m in 0.2 s, dann 0.4 s ruhig, 0.5 m vor dem Kopf
+            var kopf = new XVec3(0, 1.2, 0);
+            var tz = new TischAntippenZustand();
+            TischTreffer? treffer = null;
+            for (int i = 0; i <= 60 && treffer is null; i++)
+            {
+                var t = i / 72.0;
+                var y = t < 0.2 ? 0.79 - 0.2 * t : 0.75;
+                treffer = TischAntippen.Schritt(tz, t, new XVec3(0.05, y, -0.5), kopf, false, 0.008);
+            }
+            var tischOk = treffer is { } tr && Math.Abs(tr.Hoehe - 0.742) < 1e-6;
+            // Modell auf dem angetippten Tisch: der Anker liegt in der Mitte der Platte, also auf dem Punkt
+            var raumTisch = treffer is null ? null : SitzungRaum.AufTisch(treffer.Punkt, kopf, Math.PI / 2);
+            var mm = raumTisch is null ? Matrix4x4.Identity : SitzungRaum.ModellMatrix(start, bezug, raumTisch);
+            var anker = Vector3.Transform(new Vector3((float)bezug.Anker.X, (float)bezug.Unten, (float)bezug.Anker.Z), mm);
+            var lageOk = treffer is not null && Math.Abs(anker.X - treffer.Punkt.X) < 1e-3 && Math.Abs(anker.Y - treffer.Punkt.Y) < 1e-3 && Math.Abs(anker.Z - treffer.Punkt.Z) < 1e-3;
+            teile.Add($"Tisch antippen={(tischOk && lageOk ? "ok" : "FEHLER")} (Höhe {treffer?.Hoehe:0.000} m, Modell auf dem Punkt {(lageOk ? "ja" : "nein")})");
+            // Passthrough: im Simulator nicht verfügbar, der Schalter bleibt aus
+            var vorher = sitzung.Echt.Ein;
+            var wirksam = sitzung.Aktiv && sitzung.EchterTischSchalten(true);
+            if (wirksam && !vorher) sitzung.EchterTischSchalten(false);
+            var ptOk = passthrough.Verfuegbar || (!wirksam && !sitzung.Echt.Verfuegbar);
+            teile.Add($"Passthrough={(passthrough.Verfuegbar ? "verfügbar" : "nicht verfügbar")} ({passthrough.Grund}; Schalter {(ptOk ? "ok" : "FEHLER")})");
+            teile.Add($"Schnitt-Shader={(ModellDarstellung.SchnittShader ? "ja" : "FEHLER")}");
+            if (sitzung.Ansicht is { } an) teile.Add($"Ansicht beim Start={an.Text}");
+        }
+        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NullReferenceException)
+        {
+            teile.Add("Regeln P4b: FEHLER " + ex.Message);
+        }
+        return string.Join(", ", teile);
     }
 
     /// <summary>Einmal im Prüflauf: Teleport und Drehen über die Regeln, Durchgang an einer Wand, Gegenprobe zum Lader von StereoKit (180°-Drehung).</summary>
@@ -742,6 +1097,7 @@ sealed class QuestApp
     public void Beenden()
     {
         ende.Cancel();
+        passthrough.Beenden();
         try { kanal?.Beenden().Wait(TimeSpan.FromSeconds(2)); }
         catch (AggregateException) { }
         if (letzterKopf is { } k) Merken(k.Kopf, k.Blick, sofort: true);

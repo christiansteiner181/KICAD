@@ -1,6 +1,10 @@
 using System.Diagnostics;
 using Hlks.Xr.Modell;
+using Hlks.Xr.Netz;
+using Hlks.Xr.Sitzung;
 using StereoKit;
+using Box3 = Hlks.Xr.Box3;
+using XVec3 = Hlks.Xr.Vec3;
 
 namespace Hlks.Quest;
 
@@ -12,6 +16,8 @@ namespace Hlks.Quest;
 /// IFC-Unterlage EG – 378 000 Dreiecke – neu geladen wurde). Ein Zeichenaufruf je Block. Ausgeblendete Gruppen (Räume) werden gebaut, aber nicht gezeichnet.
 /// Im Durchgang (Wände und Decken unter 500 mm zum Kopf) kommen die Dreiecke der nahen Elemente in ein eigenes, durchscheinendes Netz je Block
 /// (Hlks.Xr.Modell.NetzDurchgang); neu geladen werden nur die betroffenen Blöcke.
+/// P4b, Sitzungsraum (<see cref="ZeichnenSitzung"/>): je Block die Hüllbox in der Szene; Blöcke ausserhalb der Geschosse bzw. des Schnittquaders fallen weg, Blöcke ganz innen
+/// zeichnen mit dem gewöhnlichen Material, Blöcke, die den Quader schneiden, mit dem Shader «schnitt» (Assets/schnitt.hlsl), der alles ausserhalb verwirft.
 /// </summary>
 sealed class ModellDarstellung
 {
@@ -19,6 +25,7 @@ sealed class ModellDarstellung
     {
         public required int Ab;
         public required int Anzahl;
+        public required Box3 Box;
         public required Mesh Haupt;
         /// <summary>Indizes des Blocks auf seine eigenen Ecken (Dreieck k = Dreieck Ab + k des Netzes der GLB).</summary>
         public required uint[] Indizes;
@@ -36,10 +43,12 @@ sealed class ModellDarstellung
         public required Material Material;
         public required Material DurchMaterial;
         public required bool Sichtbar;
+        public required Color Farbe;
+        public required bool Transparent;
     }
 
-    /// <summary>Ein Block eines Netzes, im Hintergrund vorbereitet (eigene Ecken, Indizes darauf, Ecken für StereoKit).</summary>
-    public sealed record VorBlock(int Ab, int Anzahl, float[] Positionen, float[] Normalen, uint[] Indizes, Vertex[] Ecken);
+    /// <summary>Ein Block eines Netzes, im Hintergrund vorbereitet (eigene Ecken, Indizes darauf, Ecken für StereoKit, Hüllbox in der Szene).</summary>
+    public sealed record VorBlock(int Ab, int Anzahl, float[] Positionen, float[] Normalen, uint[] Indizes, Vertex[] Ecken, Box3 Box);
 
     /// <summary>Ein Netz der Szene mit seinen Blöcken (im Hintergrund vorbereitet).</summary>
     public sealed record Vorbereitet(SzenenNetz Netz, IReadOnlyList<VorBlock> Bloecke);
@@ -66,9 +75,16 @@ sealed class ModellDarstellung
             [.. NetzBloecke.Teilen(n.Daten.Dreiecke, n.Daten.Bereiche, blockDreiecke).Select(b =>
             {
                 var (pos, nor, ind) = NetzDurchgang.Ausschnitt(n.Daten.Positionen, n.Daten.Normalen, NetzBloecke.Indizes(n.Daten.Indizes, b.Ab, b.Anzahl));
-                return new VorBlock(b.Ab, b.Anzahl, pos, nor, ind, Ecken(pos, nor));
+                return new VorBlock(b.Ab, b.Anzahl, pos, nor, ind, Ecken(pos, nor), Huelle(pos));
             })])),
     ];
+
+    static Box3 Huelle(float[] p)
+    {
+        var b = Box3.Leer;
+        for (int i = 0; i + 2 < p.Length; i += 3) b = b.Plus(new XVec3(p[i], p[i + 1], p[i + 2]));
+        return b;
+    }
 
     static Vertex[] Ecken(float[] p, float[] n)
     {
@@ -100,10 +116,10 @@ sealed class ModellDarstellung
             {
                 var mesh = new Mesh { KeepData = false };
                 mesh.SetData(b.Ecken, b.Indizes);
-                bloecke.Add(new Block { Ab = b.Ab, Anzahl = b.Anzahl, Haupt = mesh, Indizes = b.Indizes, Positionen = b.Positionen, Normalen = b.Normalen });
+                bloecke.Add(new Block { Ab = b.Ab, Anzahl = b.Anzahl, Box = b.Box, Haupt = mesh, Indizes = b.Indizes, Positionen = b.Positionen, Normalen = b.Normalen });
             }
             var sichtbar = !ausgeblendet.Contains(d.Gruppe);
-            teile.Add(new Teil { Netz = sn, Bloecke = bloecke, Material = mat, DurchMaterial = durch, Sichtbar = sichtbar });
+            teile.Add(new Teil { Netz = sn, Bloecke = bloecke, Material = mat, DurchMaterial = durch, Sichtbar = sichtbar, Farbe = farbe, Transparent = transparent });
             if (sichtbar)
             {
                 Netze++;
@@ -185,6 +201,152 @@ sealed class ModellDarstellung
         GezeichnetAufrufe = aufrufe;
         GezeichnetDreiecke = dreiecke;
     }
+
+    // ------------------------------------------------------------------------------------------------ Sitzungsraum (P4b)
+
+    static Material? schnittDicht, schnittDurch;
+    static bool schnittGeladen;
+
+    /// <summary>Materialien mit dem Shader «schnitt» (undurchsichtig, durchscheinend); null, wenn der Shader fehlt (dann wird ohne Schnitt gezeichnet).</summary>
+    static (Material Dicht, Material Durch)? SchnittMaterialien()
+    {
+        if (!schnittGeladen)
+        {
+            schnittGeladen = true;
+            var shader = Shader.FromFile("schnitt.hlsl");
+            if (shader is not null)
+            {
+                schnittDicht = new Material(shader) { FaceCull = Cull.None };
+                schnittDurch = new Material(shader) { FaceCull = Cull.None, Transparency = Transparency.Blend, DepthWrite = false };
+            }
+            else Log.Warn("Shader schnitt.hlsl fehlt – der Sitzungsraum zeichnet ohne Schnitt.");
+        }
+        return schnittDicht is null || schnittDurch is null ? null : (schnittDicht, schnittDurch);
+    }
+
+    /// <summary>Ist der Shader «schnitt» geladen (Protokoll und Prüfung)?</summary>
+    public static bool SchnittShader => SchnittMaterialien() is not null;
+
+    /// <summary>Im letzten Bild des Sitzungsraums: Blöcke mit Schnitt-Shader.</summary>
+    public int GezeichnetMitSchnitt { get; private set; }
+
+    /// <summary>Ein Netz nur mit den Elementen im Ausschnitt («Raum zeigen (VR)»): eigene Ecken und Indizes, Hüllbox.</summary>
+    sealed record AusschnittNetz(Teil Teil, Mesh Netz, int Dreiecke, Box3 Box);
+
+    readonly List<AusschnittNetz> ausschnitt = [];
+    SchnittQuader? ausschnittQuader;
+
+    /// <summary>Dreiecke im Ausschnitt und wie lange das Zusammenstellen dauerte (ms).</summary>
+    public long AusschnittDreiecke { get; private set; }
+    public double AusschnittMs { get; private set; }
+
+    /// <summary>
+    /// «Raum zeigen (VR)»: stellt je Netz ein eigenes Netz nur aus den Elementen zusammen, deren Hüllbox den Quader berührt (die Blöcke liegen nach Element-Id, nicht
+    /// räumlich, und reichen meist über das ganze Geschoss). Der Shader «schnitt» schneidet dann genau am Quader. Nur bei einem neuen Quader; null gibt die Netze frei.
+    /// </summary>
+    public void AusschnittSetzen(ModellSzene szene, SchnittQuader? q)
+    {
+        if (q == ausschnittQuader) return;
+        ausschnitt.Clear();
+        ausschnittQuader = q;
+        AusschnittDreiecke = 0;
+        if (q is null) return;
+        var uhr = Stopwatch.StartNew();
+        var jeNetz = new Dictionary<int, List<uint>>();
+        foreach (var e in szene.Elemente.Values)
+        {
+            if (q.Lage(e.Box) == SchnittLage.Aussen) continue;
+            foreach (var (netz, ab, anzahl) in e.Bereiche)
+            {
+                if (!jeNetz.TryGetValue(netz, out var liste)) jeNetz[netz] = liste = [];
+                liste.AddRange(NetzBloecke.Indizes(szene.Netze[netz].Daten.Indizes, ab, anzahl));
+            }
+        }
+        foreach (var t in teile)
+        {
+            if (!jeNetz.TryGetValue(t.Netz.Nr, out var ind) || ind.Count == 0) continue;
+            var (pos, nor, i2) = NetzDurchgang.Ausschnitt(t.Netz.Daten.Positionen, t.Netz.Daten.Normalen, [.. ind]);
+            var m = new Mesh { KeepData = false };
+            m.SetData(Ecken(pos, nor), i2);
+            ausschnitt.Add(new AusschnittNetz(t, m, i2.Length / 3, Huelle(pos)));
+            AusschnittDreiecke += i2.Length / 3;
+        }
+        AusschnittMs = uhr.Elapsed.TotalMilliseconds;
+    }
+
+    /// <summary>
+    /// Zeichnet die Szene auf dem Tisch: welt = Szene → Raum der Brille (Tisch, Massstab, Drehung); ansicht = Geschosse und Schnitt (Hlks.Xr.Sitzung.SitzungAnsicht);
+    /// unterlage = IFC-Unterlage zeigen. Räume (ausgeblendete Gruppen) nie. Der Durchgang gilt hier nicht (die App setzt ihn beim Betreten zurück).
+    /// </summary>
+    public void ZeichnenSitzung(Matrix welt, SitzungAnsicht ansicht, bool unterlage)
+    {
+        int netze = 0, aufrufe = 0, schnitt = 0;
+        long dreiecke = 0;
+        var mats = ansicht.Schnitt is null ? null : SchnittMaterialien();
+        if (mats is { } m && ansicht.Schnitt is { } q)
+        {
+            var (u, v, y) = q.ShaderWerte();
+            foreach (var mat in new[] { m.Dicht, m.Durch })
+            {
+                mat.SetVector("schnitt_u", new Vec4(u.X, u.Y, u.Z, u.W));
+                mat.SetVector("schnitt_v", new Vec4(v.X, v.Y, v.Z, v.W));
+                mat.SetVector("schnitt_y", new Vec4(y.X, y.Y, y.Z, y.W));
+            }
+        }
+        if (ansicht.Ausschnitt && ansicht.Schnitt is { } aq && aq == ausschnittQuader)
+        {
+            // «Raum zeigen (VR)»: nur die zusammengestellten Netze der Elemente im Ausschnitt
+            foreach (var a in ausschnitt)
+            {
+                var t = a.Teil;
+                if (!t.Sichtbar || (!unterlage && t.Netz.Teil == GlbZwischenspeicher.TeilUnterlage)) continue;
+                var lage = aq.Lage(a.Box);
+                if (lage == SchnittLage.Aussen) continue;
+                if (lage == SchnittLage.Schneidet && mats is { } mm) { a.Netz.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.Farbe); schnitt++; }
+                else a.Netz.Draw(t.Material, welt);
+                aufrufe++;
+                netze++;
+                dreiecke += a.Dreiecke;
+            }
+            GezeichnetNetze = netze;
+            GezeichnetAufrufe = aufrufe;
+            GezeichnetDreiecke = dreiecke;
+            GezeichnetMitSchnitt = schnitt;
+            return;
+        }
+        foreach (var t in teile)
+        {
+            if (!t.Sichtbar) continue;
+            if (!unterlage && t.Netz.Teil == GlbZwischenspeicher.TeilUnterlage) continue;
+            if (ansicht.Geschosse is { } gs && !gs.Contains(t.Netz.GeschossId)) continue;
+            bool gezeichnet = false;
+            foreach (var b in t.Bloecke)
+            {
+                if (b.HauptLeer) continue;
+                var lage = ansicht.Schnitt?.Lage(b.Box) ?? SchnittLage.Innen;
+                if (lage == SchnittLage.Aussen) continue;
+                if (lage == SchnittLage.Schneidet && mats is { } mm)
+                {
+                    b.Haupt.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.Farbe);
+                    schnitt++;
+                }
+                else b.Haupt.Draw(t.Material, welt);
+                aufrufe++;
+                dreiecke += b.Anzahl;
+                gezeichnet = true;
+            }
+            if (gezeichnet) netze++;
+        }
+        GezeichnetNetze = netze;
+        GezeichnetAufrufe = aufrufe;
+        GezeichnetDreiecke = dreiecke;
+        GezeichnetMitSchnitt = schnitt;
+    }
+
+    /// <summary>Dreiecke, die <see cref="ZeichnenSitzung"/> mit dieser Ansicht zeichnen würde (ohne Grafikkarte; für Messung und Prüfung).</summary>
+    public long DreieckeSitzung(SitzungAnsicht ansicht, bool unterlage) =>
+        teile.Where(t => t.Sichtbar && (unterlage || t.Netz.Teil != GlbZwischenspeicher.TeilUnterlage) && (ansicht.Geschosse is null || ansicht.Geschosse.Contains(t.Netz.GeschossId)))
+            .SelectMany(t => t.Bloecke).Where(b => (ansicht.Schnitt?.Lage(b.Box) ?? SchnittLage.Innen) != SchnittLage.Aussen).Sum(b => (long)b.Anzahl);
 
     /// <summary>Zeichenaufrufe je Geschoss (alle Blöcke der sichtbaren Netze, ohne Durchgang), für die Messung.</summary>
     public IReadOnlyDictionary<string, int> AufrufeJeGeschoss() =>

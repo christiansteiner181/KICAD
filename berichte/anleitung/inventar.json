@@ -11039,6 +11039,50 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4a»)"
           ],
           "hinweis": "Erste Fassung der App (P4a); Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b, Stellschrauben und Labor mit P5, Installation und Kopplung per Knopf mit P7. Alle Schwellen (Pinch, Wisch, Schulter, Verzögerung) sind Annahmen bis zum Brillentest. Am PC prüft werkzeuge\\quest_pruefen.ps1 die App im Simulator (mit und ohne PC). Nur mit der Brille zu prüfen: Hände, Bildrate, WLAN, Ton."
+        },
+        {
+          "id": "zb-quest-app-sitzungsraum",
+          "titel": "Quest App: Sitzungsraum mit Modell auf dem Tisch, «Echter Tisch» (Passthrough) und Ebenen der Fachmodule (Modul XR, Quest App P4b)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Am PC: Rechtsklick auf einen Raum im Grundriss › «Im Sitzungsraum zeigen (VR)» bzw. «Raum zeigen (VR)» (VR-Auftrag, geht sofort an die App). In der Brille: Box unten vor dem Blick, Knopf «Sitzungsraum» (Begehen) bzw. «Begehen» (Sitzungsraum), Schalter «Echter Tisch», «IFC-Unterlage», «Ebene …»."
+          },
+          "schritte": [
+            "Am PC einen Raum mit Rechtsklick › «Im Sitzungsraum zeigen (VR)» wählen: die App wechselt ohne Tipp in den Sitzungsraum. Auf dem Tisch steht das ganze Modell 1:50, geschnitten 5 cm unter der Decke des Geschosses dieses Raums; Geschosse darüber fehlen. Die Box nennt Massstab und Schnitt, die Tischkante rechts vorn ebenso.",
+            "«Raum zeigen (VR)» statt dessen: nur der Raum mit 1.5 m Rand rundum, so gross wie möglich (meist 1:20).",
+            "Modell bewegen: die beiden Cyan-Kugeln links und rechts des Modells mit Daumen und Zeigefinger fassen (eine pro Hand; die Kugel wird heller, wenn die Hand nah ist, weiss, wenn sie gehalten ist, dazu ein Klick). Mit beiden gehalten: Hände drehen dreht das Modell um die Senkrechte, Hände verschieben verschiebt es, Hände auseinander zoomt hinein (bis 1:20), zusammen hinaus (bis 1:200). Das Modell bleibt waagrecht. «Zurücksetzen» stellt die Startlage her.",
+            "Andere Etage: am PC einen Raum dieser Etage › «Im Sitzungsraum zeigen (VR)» (bis P5 gibt es die Etagenwahl nur so). Lage, Massstab und Drehung bleiben.",
+            "Echter Tisch: in der Box «Echter Tisch» antippen. Der virtuelle Raum verschwindet, man sieht den echten Raum (Passthrough). Mit dem Zeigefinger kurz von oben auf die Tischplatte tippen und den Finger einen Augenblick liegen lassen – Klick und ein grüner Ring; das Modell steht jetzt mitten auf dem angetippten Punkt in Tischhöhe, ein feiner Rahmen zeigt die gedachte Platte. «Tisch neu antippen» wiederholt das. Erneut «Echter Tisch» antippen: zurück in den virtuellen Raum.",
+            "Ebenen: in der Box «Ebene Fliessrichtung» einschalten. Über den Leitungen erscheinen Pfeile in Fliessrichtung und laufende Punkte in der Farbe des Mediums; ohne Leitungen im Modell (z. B. nur IFC) ein Umlauf aus Probe-Pfeilen um die Räume jedes Geschosses. Das geht auch beim Begehen.",
+            "IFC-Unterlage im Sitzungsraum aus- und einschalten (Vorgabe ein).",
+            "Zurück: «Begehen» in der Box bzw. am PC Rechtsklick › «In VR begehen (Brille)» – man steht wieder am Standpunkt von vorher bzw. im gewählten Raum."
+          ],
+          "erwartung": "Der Sitzungsraum ist dunkel und schlicht (mattschwarze Wände, feines Cyan-Raster am Boden, weisse Lichtlinien an der Decke, dunkle Glasplatte mit leuchtender Cyan-Kante). Gezeichnet wird nur, was unter dem Schnitt bzw. im Ausschnitt liegt; die Schnittflächen sind offen. Die Griffe folgen dem Modell. Mit «Echter Tisch» steht das Modell auf dem echten Tisch; ohne Passthrough (z. B. am PC im Simulator) ist der Schalter grau mit Hinweis. Die Ebenen kommen vom PC und bleiben für den Start ohne PC gespeichert.",
+          "pruefpunkte": [
+            "«Im Sitzungsraum zeigen (VR)» am PC: die App wechselt sofort in den Sitzungsraum, das Modell steht 1:50 auf dem Tisch vor einem, geschnitten unter der Decke des Geschosses des Raums.",
+            "«Raum zeigen (VR)»: nur der Raum mit Rand, grösser (1:20); nichts ausserhalb des Quaders.",
+            "Beide Griffe fassen und drehen, verschieben, zoomen: das Modell folgt ruhig, bleibt waagrecht, und die Stelle zwischen den Händen bleibt unter den Händen; ein Griff allein bewegt nichts.",
+            "Echter Tisch: Passthrough erscheint, ein kurzes Antippen der Platte setzt das Modell genau auf die Platte (nicht darüber schwebend, nicht darin versunken); Tischhöhe im Protokoll «P4 Status» (Passthrough=ein (Tisch … m)).",
+            "Ebene Fliessrichtung ein: Pfeile und Punkte erscheinen über den Leitungen bzw. als Probe-Umlauf, aus: weg.",
+            "Bildrate im Sitzungsraum mit Test_praxis (Protokoll «P4 Status»), auch bei «Alle Etagen» (861 291 Dreiecke).",
+            "«Begehen» in der Box: zurück am alten Standpunkt, Passthrough aus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Sicht in der Brille bzw. Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): Sitzungsraum mit Tisch, Modell 1:50 mit Etagenschnitt, Griffe, Box links",
+            "zustand": "Sitzungsraum nach «Im Sitzungsraum zeigen (VR)», Ebene Fliessrichtung ein"
+          },
+          "quelle": [
+            "src/Hlks.Quest/Sitzungsraum.cs, Passthrough.cs, EbenenDarstellung.cs, ModellDarstellung.cs (ZeichnenSitzung, AusschnittSetzen), QuestApp.cs, Assets/schnitt.hlsl",
+            "src/Hlks.Xr/Sitzung (SitzungRaum, SitzungAuswahl, TischAntippen, PassthroughFb), src/Hlks.Xr/Ebenen (XrEbene, EbenenSzene), src/Hlks.Xr/Netz/EbenenLader.cs, src/Hlks.Xr/XrSitzungLogik.cs",
+            "src/Hlks.Web/XrEbenenEndpunkte.cs (GET /api/xr/ebenen, /api/xr/ebene/{name}, Probe «fliessrichtung»)",
+            "werkzeuge/quest_pruefen.ps1 (Lauf 3 «Sitzungsraum»)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4b»)"
+          ],
+          "hinweis": "Grundfassung P4b; schwebende Apps, Etagenwahl per Wisch und Stellschrauben kommen mit P5. Schwellen des Antippens, Ersatzwerte und Aussehen sind Annahmen bis zum Brillentest. Passthrough nutzt XR_FB_passthrough über die OpenXR-Schnittstelle von StereoKit 0.3.11; ob es in der Brille erscheint, ist erst dort zu sehen. Die Probe-Ebene «fliessrichtung» nimmt die Reihenfolge der Leitungspunkte als Fliessrichtung (Annahme). Reine Rechner-Funktion xr_ebenen, für die KI verboten."
         }
       ]
     }

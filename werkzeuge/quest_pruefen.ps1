@@ -7,15 +7,21 @@
 #   - Projekt: das Beispielprojekt "MFH Musterweg" (Vorgabe) oder mit -Projekt eine KOPIE des angegebenen Projektordners unter %TEMP% (das Original
 #     wird nur gelesen; z. B. %USERPROFILE%\HLKS_CAD_testdaten\test_praxis). Echte Daten bleiben lokal, die App schreibt nur Zahlen.
 #   - Die GLB holt die App ueber den Netzzugang; gibt er sie (noch) nicht frei (404), ueber http://localhost:<Port> (--modell-lokal).
+# P4b: Lauf 3 "Sitzungsraum" - VR-Auftrag "Im Sitzungsraum zeigen" (modus sitzungsraum, Raum) vom PC; die App startet im Sitzungsraum und misst drei
+# Abschnitte (Etagenschnitt des Auftrags, alle Etagen, Raum zeigen) mit Bildzeit, Dreiecken und Aufrufen; dazu die Regeln (Griffe, Tisch antippen,
+# Passthrough im Simulator nicht verfuegbar, Shader "schnitt") und die Ebenen (Probe "fliessrichtung"). -OhneSitzungsraum laesst ihn weg; -Pruefbilder <ordner>
+# legt je Abschnitt zwei JPEG des Sitzungsraums ab (nur lokal, nie ins Repository - bei echten Projekten zeigen sie echte Daten).
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage]
-# Exit 0 = beide Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
+# Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
   [int]$Bilder = 300,
   [string]$Projekt = '',
   [switch]$OhneBau,
-  [switch]$OhneUnterlage
+  [switch]$OhneUnterlage,
+  [switch]$OhneSitzungsraum,
+  [string]$Pruefbilder = ''
 )
 
 $ErrorActionPreference = 'Continue'
@@ -108,7 +114,7 @@ try {
 
   $zusatz = @()
   if ($OhneUnterlage) { $zusatz += '--ohne-unterlage' }
-  $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC'
+  $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough'
   Aus "Lauf 1: mit PC ($Bilder Bilder) ..."
   $a1 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz 2>&1
   $c1 = $LASTEXITCODE
@@ -121,7 +127,22 @@ try {
   $a2 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
   $auftragOk = (-not $treffer.Success) -or ($a1 -match 'Auftrag=Nr 1 ')
   if (-not $auftragOk) { Aus 'Lauf 1: der VR-Auftrag vom PC wurde nicht angewandt.' }
-  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $auftragOk) { 0 } else { 1 }
+  $c3 = 0
+  $sitzungOk = $true
+  if (-not $OhneSitzungsraum -and $treffer.Success) {
+    # P4b: "Im Sitzungsraum zeigen (VR)" wie aus dem Kontextmenue eines Raums: modus sitzungsraum mit Raum (Etagenschnitt im Geschoss des Raums)
+    Post '/api/vr/auftrag' @{ modus = 'sitzungsraum'; raum = $treffer.Groups[1].Value } | Out-Null
+    Aus "Lauf 3: Sitzungsraum mit PC ($Bilder Bilder, Auftrag sitzungsraum) ..."
+    $bildArg = @()
+    if ($Pruefbilder) { $bildArg = @('--bilder', $Pruefbilder) }
+    $a3 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bildArg 2>&1
+    $c3 = $LASTEXITCODE
+    $a3 | Out-File -FilePath "$logs\lauf3.log" -Encoding utf8
+    $a3 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
+    $sitzungOk = ($a3 -match 'Sitzungsraum=ja') -and ($a3 -match 'Auftrag=Nr 2 Sitzungsraum')
+    if (-not $sitzungOk) { Aus 'Lauf 3: die App war nicht im Sitzungsraum des Auftrags.' }
+  }
+  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk) { 0 } else { 1 }
 } catch {
   Aus ('Fehler: ' + $_.Exception.Message)
   $ergebnis = 2
