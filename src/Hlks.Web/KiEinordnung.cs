@@ -96,8 +96,12 @@ public static class KiEinordnung
         new("xr_kopplung", "Koppelt eine VR-Brille mit diesem PC: erzeugt den Schlüssel und das Kopplungspaket, bestätigt oder lehnt einen Code ab, widerruft Kopplungen " +
             "(Modul XR, Quest App P3, XrKopplung.cs, /api/xr/kopplung/…). Wer koppelt, gibt einem Gerät Zugang zum PC – nur der Mensch am Rechner."),
         new("xr_kanal", "Live-Kanal zur Quest App (Modul XR, Quest App P3, XrKanal.cs): liest Kopf- und Handpositionen der Brille (/api/xr/teilnehmer), sendet Stellschrauben an die " +
-            "Brille (/api/xr/stellschraube) und schreibt Messprotokolle. Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
+            "Brille (/api/xr/stellschraube) und schreibt Messprotokolle; ab P7 zeigt die 3D-Ansicht am PC die Brille aus /api/xr/teilnehmer (ansichten/xr-teilnehmer.js). Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
             "später eigens einzuordnen)."),
+        new("quest_app", "Installiert die Quest App per adb.exe in der VR-Brille, erzeugt dafür das Kopplungspaket mit Schlüssel (Weg A) und legt es in die Brille, startet die App " +
+            "und zeigt die installierte Fassung (Modul XR, Quest App P7, QuestApp.cs, /api/quest/app/…) – startet ein Programm auf dem PC und gibt einem Gerät Zugang zu diesem PC; nur der Mensch am Rechner."),
+        new("quest_app_netz", "Liest Netzprofil und Firewall-Regeln der Gruppe «KICAD XR» mit PowerShell, nur lesend (Modul XR, Quest App P7, QuestAppNetz.cs, /api/quest/app/netz), " +
+            "um dem Menschen zu zeigen, warum die Brille den PC im WLAN nicht erreicht – Auskunft über den Rechner, nicht für die KI."),
         new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
             "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +
             "Ausgabe nicht; über den Zugang im Büronetz (P3) greift sie über den Rechner hinaus – darum kein Werkzeug der KI."),

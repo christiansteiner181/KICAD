@@ -15,6 +15,13 @@
 //   vorne.txt      Autostart: Paket der Vordergrund-App in «shell dumpsys activity activities», Vorgabe com.oculus.browser
 //   am_start.log   (die Attrappe schreibt) die Adresse jedes «shell am start -a android.intent.action.VIEW -d <Adresse> com.oculus.browser»
 //   forward.txt    (die Attrappe schreibt) die Weiterleitungen «forward tcp:A localabstract:chrome_devtools_remote»; «forward --remove tcp:A» entfernt sie
+//   Quest App installieren (QuestApp.cs, Quest App P7):
+//   model.txt      Modell für «shell getprop ro.product.model» (Vorgabe «Quest 3»); serialno.txt für «ro.serialno» (Vorgabe: Seriennummer des ersten USB-Wegs)
+//   install_fehler.txt   Text nach «Failure [» für «install» (z. B. INSTALL_FAILED_UPDATE_INCOMPATIBLE); sonst gelingt es und merkt die App als installiert (app_installiert.txt)
+//   install_version.txt  «<versionName> <versionCode>» der installierten App (Vorgabe «0.1 1»); app_installiert.txt gibt es, sobald «install» gelungen ist (der Test kann sie vorab anlegen)
+//   verhalten.txt  zusätzlich: install_haengt, push_fehler, mkdir_fehler, start_fehler, aktivitaet_fehler
+//   gepusht.txt    (die Attrappe schreibt) Inhalt der zuletzt mit «push» übertragenen Datei; push_ziel.txt das Ziel; push_quelle.txt der Pfad am PC und ob die Datei da war
+//   app_start.log  (die Attrappe schreibt) jede Aktivität, die «am start -n» bekam
 //   aufrufe.log    jeder Aufruf mit seinen Argumenten, eine Zeile (die Attrappe schreibt)
 // Bekannte Aufrufe (optional mit «-s <Seriennummer>» davor): start-server, devices, reverse tcp:A tcp:B, reverse --list, reverse --remove tcp:A,
 // shell ip -f inet addr show wlan0, tcpip 5555, connect <Adresse>. Alles andere meldet «unknown command» mit Code 1.
@@ -133,6 +140,55 @@ switch (a[0])
         File.WriteAllLines(P("forward.txt"), restF);
         return 0;
     }
+    // Quest App installieren (QuestApp.cs)
+    case "shell" when string.Join(' ', a.Skip(1)) == "getprop ro.product.model":
+        if (WegFehler() is { } g1) return g1;
+        return Ende(File.Exists(P("model.txt")) ? File.ReadAllText(P("model.txt")).Trim() : "Quest 3");
+    case "shell" when string.Join(' ', a.Skip(1)) == "getprop ro.serialno":
+        if (WegFehler() is { } g2) return g2;
+        return Ende(File.Exists(P("serialno.txt")) ? File.ReadAllText(P("serialno.txt")).Trim()
+            : Zeilen("geraete.txt").Select(z => z.Split('\t')[0]).FirstOrDefault(z => !z.Contains(':')) ?? "");
+    case "install" when a.Count == 3 && a[1] == "-r":
+    {
+        if (WegFehler() is { } g3) return g3;
+        if (verhalten.Contains("install_haengt")) Thread.Sleep(TimeSpan.FromSeconds(60));
+        if (!File.Exists(a[2])) return Ende($"adb: failed to stat {a[2]}: No such file or directory", 1);
+        if (File.Exists(P("install_fehler.txt")))
+            return Ende("Performing Streamed Install\nadb: failed to install " + a[2] + ": Failure [" + File.ReadAllText(P("install_fehler.txt")).Trim() + "]", 1);
+        File.AppendAllText(P("installiert.log"), a[2] + Environment.NewLine);
+        File.WriteAllText(P("app_installiert.txt"), File.Exists(P("install_version.txt")) ? File.ReadAllText(P("install_version.txt")).Trim() : "0.1 1");
+        return Ende("Performing Streamed Install\nSuccess");
+    }
+    case "shell" when string.Join(' ', a.Skip(1)).StartsWith("mkdir -p /sdcard/Android/data/ch.hkplanung.kicad.quest/files"):
+        if (WegFehler() is { } g4) return g4;
+        return verhalten.Contains("mkdir_fehler") ? Ende("mkdir: '/sdcard/Android/data/ch.hkplanung.kicad.quest/files': Permission denied", 1) : 0;
+    case "push" when a.Count == 3 && a[2] == "/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json":
+    {
+        if (WegFehler() is { } g5) return g5;
+        if (verhalten.Contains("push_fehler")) return Ende("adb: error: failed to copy '" + a[1] + "' to '" + a[2] + "': remote couldn't create file: Permission denied", 1);
+        File.AppendAllText(P("push_quelle.txt"), a[1] + " da=" + File.Exists(a[1]) + Environment.NewLine);
+        if (!File.Exists(a[1])) return Ende("adb: error: cannot stat '" + a[1] + "': No such file or directory", 1);
+        File.WriteAllText(P("gepusht.txt"), File.ReadAllText(a[1]));
+        File.AppendAllText(P("push_ziel.txt"), a[2] + Environment.NewLine);
+        return Ende(a[1] + ": 1 file pushed, 0 skipped. 0.1 MB/s (600 bytes in 0.005s)");
+    }
+    case "shell" when string.Join(' ', a.Skip(1)) == "dumpsys package ch.hkplanung.kicad.quest":
+    {
+        if (WegFehler() is { } g6) return g6;
+        if (!File.Exists(P("app_installiert.txt"))) return Ende("Unable to find package: ch.hkplanung.kicad.quest");
+        var v = File.ReadAllText(P("app_installiert.txt")).Trim().Split(' ');
+        return Ende("Packages:\n  Package [ch.hkplanung.kicad.quest] (a1b2c3):\n    userId=10234\n    versionCode=" + v.ElementAtOrDefault(1) + " minSdk=29 targetSdk=32\n    versionName=" + v[0]
+            + "\n    firstInstallTime=2026-10-23 17:59:10\n    lastUpdateTime=2026-10-23 21:15:42\n    installerPackageName=null");
+    }
+    case "shell" when string.Join(' ', a.Skip(1)) == "cmd package resolve-activity --brief ch.hkplanung.kicad.quest":
+        if (WegFehler() is { } g7) return g7;
+        if (verhalten.Contains("aktivitaet_fehler")) return Ende("No activity found", 1);
+        return Ende("priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\nch.hkplanung.kicad.quest/crc6412ab34cd.MainActivity");
+    case "shell" when a.Count == 5 && a[1] == "am" && a[2] == "start" && a[3] == "-n" && a[4].StartsWith("ch.hkplanung.kicad.quest/"):
+        if (WegFehler() is { } g8) return g8;
+        if (verhalten.Contains("start_fehler")) return Ende("Starting: Intent { cmp=" + a[4] + " }\nError type 3\nError: Activity class {" + a[4] + "} does not exist.");
+        File.AppendAllText(P("app_start.log"), a[4] + Environment.NewLine);
+        return Ende("Starting: Intent { cmp=" + a[4] + " }");
     case "tcpip" when a.Count == 2 && a[1] == "5555":
         if (verhalten.Contains("tcpip_fehler")) return Ende("error: closed", 1);
         if (JeWeg && serie is not null && File.Exists(P(ReverseDatei()))) File.Delete(P(ReverseDatei()));   // adbd startet neu: Weiterleitungen dieses Weges sind weg

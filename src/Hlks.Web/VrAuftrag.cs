@@ -3,14 +3,14 @@
 // und führt ihn aus (neuer Auftrag während der Sitzung: sofort, ohne neuen Tipp).
 //
 //   GET  /api/vr/auftrag   { auftrag: { modus, raum?, geschoss?, ausschnitt, ansicht?, nr, zeit } | null }
-//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar };
+//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar | app };
 //                          autostart: true startet nach dem Speichern «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs), wenn die Einstellung quest.autostart an ist; nr zählt bei jedem Setzen hoch (vom Server vergeben, ein nr im Körper zählt nicht)
 //
 // Gespeichert im Speicher des Servers und zusätzlich in den BenutzerEinstellungen (Schlüssel vr.auftrag), damit er einen Neustart übersteht; die Ablage ist nur eine
 // Zugabe (im Testlauf ohne Umleitung nach %TEMP% wird sie abgelehnt, der Speicher gilt trotzdem). Keine Fachlogik: der Auftrag ist nur eine Anweisung für die Anzeige,
 // ändert weder Modell noch Rechner; ob eine Id ein Raum ist, entscheidet die Seite mit der Kern-Abfrage raum_begehen. Hinter dem Herkunftsschutz wie alle /api.
 // KI: kein MCP-Werkzeug, siehe KiEinordnung.Oberflaechenfunktionen.
-// Quest App (P3): Ein neuer Auftrag geht zusätzlich sofort über den Live-Kanal an die App (Ereignis Gesetzt → XrKanal.AuftragSenden); die Abfrage alle 2 s
+// Quest App (P3): Ein neuer Auftrag geht zusätzlich sofort über den Live-Kanal an die App (Ereignis Gesetzt → XrKanal.AuftragSenden); P7: ist eine App verbunden, meldet die Antwort autostart «app» und KICAD startet keinen Browser in der Brille; die Abfrage alle 2 s
 // bleibt für die VR-Startseite im Browser.
 
 using System.Text.Json.Nodes;
@@ -130,7 +130,10 @@ public static class VrAuftragEndpunkte
             });
             // Autostart (QuestStarter.cs): nur auf Wunsch des Menschen (autostart: true im Körper) und nur mit eingeschalteter Einstellung quest.autostart. Der Port ist der des Servers.
             var gewuenscht = p["autostart"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-            var autostart = !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
+            // Quest App (P7): Ist eine Brille mit der App im Live-Kanal, ging der Auftrag schon über den Kanal an sie (Ereignis Gesetzt). Dann startet KICAD keinen Browser in der Brille
+            // (der Autostart würde den Browser über die laufende App legen und dieselbe Begehung ein zweites Mal öffnen). Antwort «app»; ohne App gilt der Weg über den Browser wie bisher.
+            var appVerbunden = (app.Services.GetService<XrKanal>()?.Anzahl ?? 0) > 0;
+            var autostart = appVerbunden ? "app" : !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
             return Antwort(new { auftrag = VrAuftragSpeicher.Zuobjekt(a), autostart });
         }));
         return app;

@@ -16,6 +16,7 @@ import { knoten } from './werkzeug.js';
 import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import * as T from './quest-text.js';
 import { questStatusAktualisieren } from './quest-status.js';
+import { questAppTeil } from './quest-app-dialog.js';
 
 const esc = T.esc;
 
@@ -32,7 +33,7 @@ export function questDialog() {
   let brillenZahl = null;     // Zahl der gemerkten Brillen beim letzten Lesen (null = noch nicht gelesen)
 
   const w = knoten(`<div class="qd">
-    <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
+    <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-zur-app" title="Springt zum Teil «Quest App» weiter unten: Netzzugang, App installieren, gekoppelte Brillen">Zur Quest App ↓</button><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
     <ul class="qd-ampel" aria-label="Zustand"></ul>
     <div class="qd-meldung" role="status" aria-live="polite" hidden></div>
     <div class="qd-naechste leise"></div>
@@ -66,11 +67,15 @@ export function questDialog() {
       <label class="qd-schalter"><input type="checkbox" class="qd-autostart" aria-label="Begehung beim Aufsetzen automatisch starten"> Begehung beim Aufsetzen automatisch starten</label>
       <div class="leise qd-klein">${esc(T.AUTOSTART_HINWEIS)}</div>
     </section>
+    <div class="qd-app-platz"></div>
     <section class="qd-hinweise"><b>Gut zu wissen</b>
       <ul>${T.HINWEISE.map((h) => `<li>${esc(h)}</li>`).join('')}</ul></section>
     <div class="qd-adresse"></div>
   </div>`);
   const q = (s) => w.querySelector(s);
+  // Quest App (P7): Netzzugang, App installieren, gekoppelte Brillen, Ersatzkopplung – eigener Teil (quest-app-dialog.js), liest den Zustand von adb aus diesem Dialog
+  const appTeil = questAppTeil({ quest: () => z, beiAenderung: () => neuPruefen() });
+  q('.qd-app-platz').replaceWith(appTeil.knoten);
   const qa = (s) => [...w.querySelectorAll(s)];
 
   // ------------------------------------------------------------------------------------------ Anzeige
@@ -102,6 +107,7 @@ export function questDialog() {
       : brillen.map((b) => `<div class="qd-brille-zeile" data-mac="${esc(b.mac)}"><span class="qd-brille-text">${esc(T.brilleText(b))}</span>`
         + `<button type="button" class="dlg-knopf qd-vergessen" data-mac="${esc(b.mac)}" title="Vergisst diese Brille (die Automatik sucht sie dann nicht mehr)"${laeuft ? ' disabled' : ''}>Vergessen</button></div>`).join('');
     q('.qd-spinner').hidden = !laeuft;
+    appTeil.aktualisieren();
     const m = q('.qd-meldung');
     m.hidden = !letzteMeldung;
     if (letzteMeldung) {
@@ -130,7 +136,7 @@ export function questDialog() {
       try { z = await holen('/api/quest'); } catch { /* der Fehler oben genügt */ }
     } finally {
       laeuft = false;
-      if (offen) zeigeAmpel();
+      if (offen) { zeigeAmpel(); appTeil.zustandNeu(); }   // Quest App (P7): adb, Brille oder Pfad haben sich geändert – installierte Fassung und Weg neu lesen
       // eine Brille wurde gemerkt (oder vergessen): die Statusanzeige in der Statusleiste zieht nach
       const n = T.brillenListe(z?.brillen).length;
       if (brillenZahl !== null && n !== brillenZahl) questStatusAktualisieren();
@@ -143,7 +149,8 @@ export function questDialog() {
   w.addEventListener('click', (e) => {
     const t = e.target.closest?.('button');
     if (!t || t.disabled) return;
-    if (t.matches('.qd-neu')) neuPruefen();
+    if (t.matches('.qd-zur-app')) appTeil.knoten.scrollIntoView({ block: 'start' });
+    else if (t.matches('.qd-neu')) neuPruefen();
     else if (t.matches('.qd-verbinden')) lauf(() => senden('/api/quest/verbinden'));
     else if (t.matches('.qd-wlan')) lauf(() => senden('/api/quest/wlan'));
     else if (t.matches('.qd-trennen')) lauf(() => senden('/api/quest/trennen'));
@@ -195,7 +202,7 @@ export function questDialog() {
       neuPruefen();
     },
     knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }],
-  }).then((wert) => { offen = false; offenerDialog = null; return wert; });
+  }).then((wert) => { offen = false; offenerDialog = null; appTeil.beenden(); return wert; });
   offenerDialog = geschlossen;
   return geschlossen;
 }

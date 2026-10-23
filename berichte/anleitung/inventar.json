@@ -10961,15 +10961,15 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Noch ohne Knopf (folgt mit P7 «Quest verbinden»): Schalter dieses PCs (%LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json) über POST /api/xr/zugang; Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
+            "sonst": "Der Schalter steht im Dialog «Quest verbinden» (Register Ansicht › Fenster) im Teil «Quest App»: «Netzzugang einschalten/ausschalten»; er schreibt den Schalter dieses PCs (%LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json). Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
           },
           "schritte": [
             "PowerShell als Administrator öffnen, in den Ordner HLKS_CAD wechseln und «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» ausführen. Das Skript legt zwei eingehende Regeln an (TCP 5140 und UDP 5141, nur Profil «Privat», nur aus dem eigenen Subnetz) und zeigt das Profil des Netzes.",
             "Steht beim Büronetz nicht «Private», das Netz in den Windows-Einstellungen als privates Netz einstufen; sonst greifen die Regeln nicht.",
-            "Den Zugang einschalten. Bis der Knopf in «Quest verbinden» kommt (P7), in PowerShell: Invoke-RestMethod -Method Post -Uri http://localhost:5130/api/xr/zugang -ContentType application/json -Body '{\"an\":true}'. Der Schalter gilt nur für diesen PC (nicht über OneDrive für die anderen Rechner).",
+            "Den Zugang einschalten: Register Ansicht › Gruppe Fenster › «Quest verbinden …» › Teil «Quest App» › «Netzzugang einschalten». Die Zeile wird grün und nennt Port, Fingerabdruck in Kurzform und die Adressen des PCs; darunter lesen die Hinweise Netzprofil und Firewall (nur gelesen) und sagen, was fehlt. Der Schalter gilt nur für diesen PC (nicht über OneDrive für die anderen Rechner).",
             "Fragt Windows «Zugriff zulassen?» für dotnet.exe, nur «Private Netzwerke» wählen («Abbrechen» sperrt KICAD; «xr_firewall.ps1 -Liste» zeigt solche Sperren).",
-            "Den Zustand ansehen: http://localhost:5130/api/xr/zugang im Browser des PCs (aktiv, Port, IP-Adressen, Fingerabdruck in Kurzform, gekoppelte Brillen, offene Anfragen mit Code).",
-            "Zum Ausschalten «{\"an\":false}» senden. Die Firewall-Regeln entfernt «xr_firewall.ps1 -Entfernen»."
+            "Den Zustand ansehen: im Teil «Quest App» stehen Zugang, gekoppelte Brillen und offene Anfragen mit Code; ausführlicher (JSON) unter http://localhost:5130/api/xr/zugang im Browser des PC.",
+            "Zum Ausschalten «Netzzugang ausschalten» klicken. Die Firewall-Regeln entfernt «xr_firewall.ps1 -Entfernen»."
           ],
           "erwartung": "Mit ausgeschaltetem Zugang (Vorgabe, je PC) ist KICAD nur auf localhost erreichbar. Eingeschaltet meldet /api/xr/zugang «aktiv: true», Port 5140 und die IP-Adressen des PCs; von einem anderen Gerät im Büronetz antwortet https://<IP>:5140/ mit 404 und https://<IP>:5140/api/xr/verbindung ohne Schlüssel mit 401. Nur das KICAD auf Port 5130 öffnet den Zugang; Abnahme- und Testserver nennen im Feld «fehler» den Grund. Ein- und Ausschalten wirkt ohne Neustart. Die KI kann die Funktion nicht benutzen.",
           "pruefpunkte": [
@@ -10995,6 +10995,132 @@
           "hinweis": "Server-Teil der Quest App (P3); die Oberfläche (Knopf, Kopplung mit Code, Brille in der 3D-Ansicht) folgt mit P6/P7, die App-Seite mit P4. Zertifikat, Kopplungen und Messprotokolle liegen je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr (nie OneDrive, nie Repository). Nur mit Büronetz, Firewall und Brille zu prüfen; die automatischen Tests laufen auf 127.0.0.1. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_zugang, xr_kopplung, xr_kanal). Schalter je PC (Christian 23.10.2026 «Je PC»): %LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json mit an (Vorgabe aus), port (5140), suchPort (5141) – keine Benutzereinstellung. Über den Zugang holt die Brille auch das Modell als GLB je Geschoss (mit Brotli/gzip komprimiert). Ersatzkopplung ohne Kabel (Weg B, P7): Brille und PC zeigen denselben 6-stelligen Code; nur vergleichen und am PC bestätigen, in der Brille wird nichts eingetippt."
         },
         {
+          "id": "zb-xr-quest-app-installieren",
+          "titel": "Quest App installieren oder aktualisieren: ein Klick in «Quest verbinden» (Modul XR, Quest App P7)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Quest verbinden … › Teil «Quest App» › «App installieren» bzw. «App aktualisieren»",
+            "kuerzel": "",
+            "sonst": "Der Teil «Quest App» steht im Dialog unten; der Knopf «Zur Quest App ↓» oben im Dialog springt hin. Vorher einmal: werkzeuge\\quest_app_bereitstellen.ps1 (baut die APK und legt sie ab)"
+          },
+          "schritte": [
+            "APK bereitstellen (einmal je neuem Stand der App): in PowerShell im Ordner HLKS_CAD «powershell -ExecutionPolicy Bypass -File werkzeuge\\quest_app_bereitstellen.ps1» ausführen. Das Skript baut die App und legt sie mit einer Versionsdatei (Commit, Zeit, Grösse, Prüfsumme) nach %USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app. Es ruft kein adb auf und lädt nichts herunter.",
+            "Die Brille vorbereiten wie für «Quest verbinden»: Entwicklermodus, Datenkabel, in der Brille «USB-Debugging erlauben», im Dialog oben «Erneut prüfen» (Punkte «adb gefunden», «Quest verbunden», «Freigegeben» grün).",
+            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» öffnen und im Teil «Quest App» schauen: «Abgelegte App» nennt Fassung, Commit, Bauzeit und Grösse; «In der Brille» nennt die installierte Fassung oder «Nicht installiert». Liegt die App woanders, den Ordner im Feld «Ordner der App» eintragen und «Speichern» klicken.",
+            "«Netzzugang einschalten» klicken. Die Zeile wird grün und nennt Port, Fingerabdruck in Kurzform und die Adresse des PCs. Der Zugang gilt nur für diesen PC und öffnet sich nur im KICAD auf Port 5130; am besten nur für die Dauer des Tests einschalten.",
+            "Die Hinweise darunter lesen (nur gelesen, KICAD ändert nichts): Steht dort, das Netz sei «Öffentlich» oder die Firewall-Regeln der Gruppe «KICAD XR» fehlten, erreicht die Brille den PC im WLAN nicht. Dann «über Kabel» wählen oder Christian führt werkzeuge\\xr_firewall.ps1 als Administrator aus.",
+            "Den Weg wählen: «über Kabel» (Brille steckt am USB-Kabel; die Brille erreicht den PC über adb reverse) oder «über WLAN».",
+            "«App installieren» (bzw. «App aktualisieren») klicken und warten (bis etwa 3 Minuten). Darunter erscheinen die Schritte: Netzzugang, abgelegte App, Brille, installieren, (Kabel), Kopplungspaket in die Brille legen, App starten. Der Schlüssel liegt am PC nur während der Übertragung in einer Datei, danach ist sie gelöscht.",
+            "Brille aufsetzen: Die App «KICAD» startet und verbindet sich von selbst mit dem PC (Teil «Gekoppelte Brillen»: grüne Lampe, «verbunden»)."
+          ],
+          "erwartung": "Nach dem Klick steht die App in der Brille, die Brille ist mit dem PC gekoppelt (Teil «Gekoppelte Brillen» zeigt sie) und die App startet. Jeder Schritt erscheint als eigene Zeile; scheitert einer, steht der Grund mit einem Vorschlag im Dialog und nichts Halbes bleibt zurück (keine Kopplung ohne Brille). Ist der Netzzugang aus, die abgelegte App nicht heil (Prüfsumme) oder keine Brille freigegeben, bleibt der Knopf gesperrt und der Grund steht darunter. Das Kopplungspaket mit dem Schlüssel steht in keiner Meldung. Es startet nur adb.exe mit festen Befehlen; die KI kann die Funktion nicht benutzen.",
+          "pruefpunkte": [
+            "Ohne abgelegte App zeigt «Abgelegte App» den Hinweis auf werkzeuge\\quest_app_bereitstellen.ps1 und «App installieren» ist gesperrt.",
+            "Eine veränderte APK im Ablageordner wird erkannt («Prüfsumme passt nicht zu version.json») und nie installiert.",
+            "Ist der Netzzugang aus, bleibt «App installieren» gesperrt («Zuerst den Netzzugang einschalten»).",
+            "Mit Kabel, Netzzugang an und abgelegter App: «App installieren» zeigt sieben grüne Schritte, die Meldung «installiert und gekoppelt» und die App startet in der Brille.",
+            "Nach der Installation steht «In der Brille» auf der Fassung der App (z. B. «Fassung 0.1 (1)»), der Knopf heisst «App aktualisieren».",
+            "Ein zweiter Klick ersetzt die Kopplung derselben Brille (es bleibt eine Kopplung in der Liste).",
+            "Über WLAN (Netz «Privat», Firewall-Regeln da): derselbe Ablauf ohne den Schritt «Kabel»; die App verbindet sich über die Adresse des PCs.",
+            "Ist die App mit einem anderen Schlüssel installiert, meldet KICAD «Die App in der Brille ist mit einem anderen Schlüssel signiert» und nennt das Deinstallieren als Vorschlag.",
+            "Am PC bleibt nach der Installation keine Datei mit dem Schlüssel (Ordner %TEMP%\\HLKS_CAD\\quest_app ist leer)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Quest verbinden», Teil «Quest App»",
+            "zustand": "Netzzugang an (grün), Hinweise zu Netz und Firewall, Brille per Kabel, sieben grüne Schritte nach «App installieren» (Prüfbild xrapp-05_installiert.png aus xr-app.browser.mjs, dort nachgestellt)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-app-dialog.js, quest-app-text.js, quest-dialog.js",
+            "src/Hlks.Web/QuestApp.cs, QuestAppNetz.cs, QuestAppEndpunkte.cs (POST /api/quest/app/installieren, GET /api/quest/app, /api/quest/app/netz)",
+            "werkzeuge/quest_app_bereitstellen.ps1",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Quest App in KICAD»)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen: die echte Installation per adb (Entwicklermodus, Freigabe, install -r über Kabel und WLAN, push nach Android/data, Start der App). Die Reihe xr-app.browser.mjs stellt den Netzzugang nach, weil er sich nur auf Port 5130 öffnet; die echte Installation prüfen die Web-Tests mit der adb-Attrappe. Reine Rechner-Funktion, für die KI verboten (KiEinordnung quest_app, quest_app_netz)."
+        },
+        {
+          "id": "zb-xr-kopplungen",
+          "titel": "Gekoppelte Brillen ansehen und widerrufen, Ersatzkopplung mit Code bestätigen (Modul XR, Quest App P7)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Quest verbinden … › Teil «Quest App» › «Gekoppelte Brillen» und «Ersatzkopplung (ohne Kabel)»",
+            "kuerzel": "",
+            "sonst": "Der Zustand wird alle 2 Sekunden gelesen, solange der Dialog offen ist"
+          },
+          "schritte": [
+            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» öffnen, im Teil «Quest App» nach unten zu «Gekoppelte Brillen» gehen.",
+            "Die Liste zeigt je Brille Name, seit wann sie gekoppelt ist und ob sie verbunden ist (grüne Lampe) bzw. wann sie zuletzt da war; «Paket» heisst: gekoppelt bei der Installation, «Code»: gekoppelt mit dem Vergleichscode.",
+            "Eine Brille nicht mehr zuzulassen: «Widerrufen» klicken und die Rückfrage bestätigen. Der Schlüssel gilt sofort nicht mehr, eine verbundene App wird getrennt; neu koppeln geht mit «App installieren».",
+            "Ersatzkopplung (nur wenn die Kopplung bei der Installation nicht möglich war): Die App bittet in der Brille um eine Kopplung. Unter «Ersatzkopplung (ohne Kabel)» erscheint die Anfrage mit Name und Kennung der Brille und einem 6-stelligen Code (zuerst «Die Brille hat noch nicht aufgedeckt»).",
+            "Den Code am PC mit dem Code in der Brille vergleichen. Stimmen beide genau überein, «Codes stimmen überein – koppeln» klicken; sonst «Ablehnen». In der Brille wird nichts eingetippt.",
+            "Stehen mehr als eine Anfrage da, warnt KICAD deutlich: nur bestätigen, was zur eigenen Brille gehört, im Zweifel alle ablehnen und neu anfangen."
+          ],
+          "erwartung": "Gekoppelte Brillen und offene Anfragen stehen aktuell im Dialog. Namen und Kennungen kommen aus dem Netz und erscheinen immer als Text, nie als Markup. «Codes stimmen überein – koppeln» ist erst frei, wenn die Brille den Code aufgedeckt hat und die Frist (5 Minuten) läuft. Widerrufen trennt die Brille sofort. Bei mehr als einer offenen Anfrage steht eine deutliche Warnung. Die KI kann die Funktion nicht benutzen.",
+          "pruefpunkte": [
+            "Nach «App installieren» steht die Brille in der Liste, mit grüner Lampe, sobald die App verbunden ist.",
+            "«Widerrufen» fragt nach; danach ist die Brille aus der Liste weg und die App wird getrennt.",
+            "Eine Anfrage ohne Code zeigt «Die Brille hat noch nicht aufgedeckt», «Codes stimmen überein – koppeln» ist gesperrt.",
+            "Mit Code steht er gross in Dreiergruppen (z. B. «123 456») und «Codes stimmen überein – koppeln» ist frei; die Restzeit der Frist läuft herunter.",
+            "Zeigt die Brille einen anderen Code, «Ablehnen» klicken: die Anfrage verschwindet, die Brille bleibt ungekoppelt.",
+            "Bei zwei offenen Anfragen erscheint die rote Warnung; mit einer Anfrage verschwindet sie.",
+            "Ein Brillenname mit Sonderzeichen (z. B. «<b>x</b>») erscheint unverändert als Text."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Quest verbinden», Teil «Quest App», Ersatzkopplung",
+            "zustand": "Anfrage mit Code «123 456»; zwei Anfragen mit Warnung (Prüfbilder xrapp-06_anfrage_mit_code.png und xrapp-07_zwei_anfragen_warnung.png aus xr-app.browser.mjs)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/quest-app-dialog.js, quest-app-text.js (kopplungsListe, anfragenListe, anfragenWarnung)",
+            "src/Hlks.Web/XrEndpunkte.cs und XrKopplung.cs (/api/xr/zugang, /api/xr/kopplung/widerrufen | bestaetigen | ablehnen)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitte «Modul XR: Quest App in KICAD» und «Zugang im Büronetz»)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen: Ersatzkopplung im WLAN mit der echten App (Vergleich der Codes in der Brille und am PC) – die App-Seite der Ersatzkopplung ist Sache von P4b. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_kopplung)."
+        },
+        {
+          "id": "zb-xr-brille-am-pc",
+          "titel": "Die Brille in der 3D-Ansicht am PC sehen: Kopf mit Blickrichtung, Hände, Name (Modul XR, Quest App P7)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Brille zeigen",
+            "kuerzel": "",
+            "sonst": "Dasselbe Kästchen steht im Dialog «Quest verbinden» (Teil «Quest App»: «Verbundene Brillen in der 3D-Ansicht zeigen»)"
+          },
+          "schritte": [
+            "Die App in der Brille starten und mit KICAD verbinden (siehe «Quest App installieren»); Netzzugang am PC an.",
+            "Am PC eine 3D-Ansicht öffnen (Projektbrowser › 3D-Ansichten, oder Register Ansicht › «3D-Ansicht»).",
+            "Sobald die Brille Posen sendet, erscheint dort eine Figur: Kugel für den Kopf mit Blickkegel und einer Linie in Blickrichtung, kleine Kugeln für die Hände (bei Pinch grösser) und der Name der Brille als Schild.",
+            "Beim Gehen mit der Brille wandert die Figur im Modell mit; Blick und Hände folgen.",
+            "Ausschalten: Register Ansicht › Gruppe Fenster › «Brille zeigen» (ist gedrückt, solange die Anzeige an ist) oder das Kästchen im Dialog «Quest verbinden». Dann fragt die 3D-Ansicht auch nicht mehr nach der Brille."
+          ],
+          "erwartung": "Mit einer verbundenen Brille zeigt die 3D-Ansicht an ihrer Stelle eine einfache Figur mit Namen, Blickrichtung und Händen, auch hinter Wänden sichtbar und aus jedem Abstand erkennbar. Ohne Brille ändert sich im Bild nichts und es entsteht kaum Last (nur ein seltener, winziger Blick auf die Liste; mit Brille etwa fünfmal je Sekunde). Ausgeschaltet oder ohne offene 3D-Ansicht fragt KICAD gar nicht. Sendet die Brille seit 5 Sekunden keine Pose mehr, wird die Figur blass. Die Figuren verändern das Modell nicht, werden nicht angeklickt und nicht vom Schnittbereich beschnitten.",
+          "pruefpunkte": [
+            "Ohne Brille: keine Figur in der 3D-Ansicht.",
+            "Mit Brille: eine Figur mit dem Namen der Brille an der Stelle, an der man in der Brille steht.",
+            "Die Blickrichtung der Figur stimmt mit dem Blick in der Brille überein (Norden/Osten im Modell nach dem Planwinkel prüfen).",
+            "Die Hände erscheinen und folgen den echten Händen; bei Pinch werden sie grösser.",
+            "Setzt man die Brille ab oder beendet die App, verschwindet die Figur bzw. wird nach 5 Sekunden blass.",
+            "«Brille zeigen» aus: die Figur verschwindet sofort; wieder ein: sie erscheint wieder.",
+            "Mit zwei offenen 3D-Ansichten erscheint die Figur in beiden.",
+            "In VR im Browser (Prototyp) bleibt die Figur aus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D Gesamt mit der Figur einer Brille",
+            "zustand": "Brille im Modell mit Namensschild und Blicklinie (Prüfbild xrapp-08_brille_in_3d.png aus xr-app.browser.mjs, Pose dort nachgestellt)"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/ansichten/xr-teilnehmer.js, xr-teilnehmer-logik.js, ansicht3d.js (erzeugeBrillen)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-quest.js (ansicht.brilleZeigen)",
+            "src/Hlks.Web/XrKanal.cs und XrEndpunkte.cs (GET /api/xr/teilnehmer)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Quest App in KICAD»)"
+          ],
+          "hinweis": "Von Christian mit der Brille zu testen: Lage und Blickrichtung der Figur gegenüber der echten Haltung (Umrechnung KICAD-Koordinaten ↔ StereoKit), Hände, Verhalten bei zwei Brillen. Die Reihe xr-app.browser.mjs stellt die Antwort des Kanals nach (Prüfung der Umrechnung am Beispiel «Blick nach Osten»). Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_kanal)."
+        },
+        {
           "id": "zb-quest-app-begehen",
           "titel": "Quest App: mit KICAD verbinden, Modell laden und mit den Händen begehen (Modul XR, Quest App P4a)",
           "wo": {
@@ -11002,7 +11128,7 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "In der Brille: App «KICAD» in der App-Bibliothek (Installation und Kopplung folgen mit P7 «Quest verbinden»). Am PC: KICAD auf Port 5130 mit eingeschaltetem Zugang im Büronetz (zb-xr-zugang)."
+            "sonst": "In der Brille: App «KICAD» in der App-Bibliothek (Installation und Kopplung: Dialog «Quest verbinden», Teil «Quest App», siehe zb-xr-quest-app-installieren). Am PC: KICAD auf Port 5130 mit eingeschaltetem Zugang im Büronetz (zb-xr-zugang)."
           },
           "schritte": [
             "Am PC KICAD mit dem Projekt öffnen und den Zugang im Büronetz einschalten (zb-xr-zugang).",

@@ -63,6 +63,12 @@ public sealed record QuestEinstellungen
     public TimeSpan KlickGrenze { get; init; } = TimeSpan.FromSeconds(10);
     /// <summary>Naht für Tests: der lokale Port des Fern-Debuggings; null = KICAD wählt selbst einen freien Port (nur 127.0.0.1).</summary>
     public Func<int>? CdpPortWahl { get; init; }
+    /// <summary>Quest App (QuestApp.cs): Zeitgrenze für «adb install» und «adb push» (die APK ist einige MB gross, das WLAN ist langsam).</summary>
+    public TimeSpan InstallZeitlimit { get; init; } = TimeSpan.FromMinutes(3);
+    /// <summary>Quest App: Ordner mit der APK und version.json, wenn die Benutzereinstellung quest.app_ablage fehlt; null = %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app (werkzeuge/quest_app_bereitstellen.ps1).</summary>
+    public string? AppAblage { get; init; }
+    /// <summary>Quest App: Ordner, in dem das Kopplungspaket für «adb push» höchstens einen Augenblick liegt; null = %TEMP%\HLKS_CAD\quest_app.</summary>
+    public string? PaketOrdner { get; init; }
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
@@ -71,6 +77,7 @@ public sealed record QuestEinstellungen
         ? new QuestEinstellungen
         {
             PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")],
+            AppAblage = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_app"),
             WlanGrenze = TimeSpan.FromSeconds(3), WlanAbstand = TimeSpan.FromMilliseconds(300), WeiterleitungGrenze = TimeSpan.FromSeconds(2),   // Browserreihen warten nicht 15 s auf einen absichtlichen Fehlschlag
         }
         : new QuestEinstellungen();
@@ -82,7 +89,7 @@ public sealed record QuestGeraet(string Seriennummer, string Zustand, bool Wlan)
 /// <summary>Eine gemerkte Brille (Benutzereinstellung «quest.brillen»): Seriennummer, WLAN-MAC, zuletzt gesehene IP und Zeitpunkt (UTC, ISO).</summary>
 public sealed record QuestBrille(string Seriennummer, string Mac, string? LetzteIp, string? Zuletzt);
 
-public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen, IQuestNetz? netzNaht = null)
+public sealed partial class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen, IQuestNetz? netzNaht = null)
 {
     /// <summary>Schlüssel der Benutzereinstellung mit dem Pfad zur adb.exe.</summary>
     public const string AdbSchluessel = "quest.adb";
@@ -415,7 +422,10 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     /// <summary>Wie Aufruf, aber mit grösserer Ausgabegrenze (nur für «dumpsys activity activities», QuestStarter.cs).</summary>
     internal Task<AdbErgebnis> AufrufGross(AdbFund adb, params string[] argumente) => AufrufBegrenzt(adb, 1024 * 1024, argumente);
 
-    async Task<AdbErgebnis> AufrufBegrenzt(AdbFund adb, int ausgabeMax, string[] argumente)
+    /// <summary>Wie Aufruf, aber mit eigener Zeitgrenze (Installation und Übertragung der App, QuestApp.cs).</summary>
+    internal Task<AdbErgebnis> AufrufLang(AdbFund adb, TimeSpan grenzzeit, params string[] argumente) => AufrufBegrenzt(adb, AusgabeMax, argumente, grenzzeit);
+
+    async Task<AdbErgebnis> AufrufBegrenzt(AdbFund adb, int ausgabeMax, string[] argumente, TimeSpan? grenzzeit = null)
     {
         if (AdbPfadFehler(adb.Pfad) is { } fehler) throw new HlksFehler($"adb wird nicht gestartet: {fehler}", "Den Pfad zur adb.exe prüfen.");
         var psi = new ProcessStartInfo(adb.Pfad)
@@ -436,7 +446,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             var aus = Lesen(p.StandardOutput, ausgabeMax);
             var err = Lesen(p.StandardError, ausgabeMax);
             bool zeit = false;
-            using (var grenze = new CancellationTokenSource(einstellungen.Zeitlimit))
+            using (var grenze = new CancellationTokenSource(grenzzeit ?? einstellungen.Zeitlimit))
             {
                 try { await p.WaitForExitAsync(grenze.Token); }
                 catch (OperationCanceledException)
