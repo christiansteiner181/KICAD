@@ -133,6 +133,10 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   «Raum zeigen (VR)» wählen, dann erscheint der Raumausschnitt auf dem echten Tisch vor der Brille.
   - Die Tischhöhe wird durch einmaliges Antippen des Tisches mit der Hand festgelegt.
   - Zu prüfen: Erkennt die Raumerkennung der Quest (Raumeinrichtung mit Tisch) den Tisch selbst?
+  - **Marker am Tisch** (Christian, 23.10.2026: «beim tisch sind auch marker denkbar»): Ein gedrucktes Zeichen auf dem echten Tisch legt
+    Lage und Drehung des Modells fest, statt es anzutippen. Die Leitlinie nennt physische Marker als noch wenig genutzten Weg
+    (Abschnitt 6).
+  - Zu prüfen: Dürfen Apps auf der Quest 3 die Kamerabilder dafür nutzen? Wie genau ist das?
 
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
