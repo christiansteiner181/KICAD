@@ -3,20 +3,24 @@
 //
 // AUFBAU
 //   Der bisherige Server (Program.cs) bleibt unverändert: nur http://localhost:<Port>, Herkunftsschutz vor /api, /hilfe, /vr.
-//   XrNetzDienst startet daneben einen EIGENEN, kleinen Kestrel-Server – nur wenn die Benutzereinstellung xr.zugang an ist (Vorgabe aus) und dieses KICAD
-//   auf dem Desktop-Port 5130 läuft (Abnahme- und Testserver öffnen nie etwas im Netz):
-//     - HTTPS auf allen IPv4-Adressen, Port 5140 (Einstellung xr.port), TLS 1.2 oder 1.3, Zertifikat von KICAD (XrZertifikat.cs), nur HTTP/1.1.
+//   XrNetzDienst startet daneben einen EIGENEN, kleinen Kestrel-Server – nur wenn der Schalter DIESES PCs an ist (XrPcEinstellung: zugang.json in
+//   %LOCALAPPDATA%\HLKS_CAD\xr, Vorgabe aus; Entscheid Christian 23.10.2026 «Je PC») und dieses KICAD auf dem Desktop-Port 5130 läuft (Abnahme- und
+//   Testserver auf demselben PC öffnen nie etwas im Netz):
+//     - HTTPS auf allen IPv4-Adressen, Port 5140 (zugang.json «port»), TLS 1.2 oder 1.3, Zertifikat von KICAD (XrZertifikat.cs), nur HTTP/1.1.
 //     - Er kennt NUR die Endpunkte des Hauptservers mit der Marke XrImNetz() und einem Muster unter /api/xr/ (XrPforte.Freigegeben) – keine Oberfläche,
-//       keine Dateien, kein anderes /api. Alles andere ergibt 404.
-//     - Vor jedem Endpunkt steht die Pforte (XrPforte.Pruefen, EINE Stelle für Pfadsperre und Schlüssel), danach die WebSocket-Middleware.
+//       keine Dateien, kein anderes /api. Alles andere ergibt 404. Freigegeben sind heute: verbindung, kanal, kopplung/anfrage, kopplung/aufdecken,
+//       kopplung/abholen (XrEndpunkte.cs) sowie geschosse und geschoss/{id}.glb (XrModellEndpunkte.cs, P2).
+//     - Vor jedem Endpunkt steht die Pforte (XrPforte.Pruefen, EINE Stelle für Pfadsperre und Schlüssel), danach WebSockets und die Komprimierung (nur GLB).
 //     - Grenzen: 32 Verbindungen, 64 KB Körper, 16 KB Kopfzeilen, Kopfzeilen in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min.
-//   Daneben die Suche (UDP 5141, Einstellung xr.suchport; XrSuche.cs). Ein- und Ausschalten wirkt ohne Neustart (POST /api/xr/zugang, sonst alle 10 s
-//   nachgelesen). Ist ein Port belegt, bleibt der Netzzugang aus und GET /api/xr/zugang meldet es; der localhost-Server läuft weiter.
+//   Daneben die Suche (UDP 5141, zugang.json «suchPort»; XrSuche.cs). Ein- und Ausschalten wirkt ohne Neustart (POST /api/xr/zugang, sonst alle 10 s
+//   nachgelesen; geänderte Ports starten den Zugang neu). Ist ein Port belegt, bleibt der Netzzugang aus und GET /api/xr/zugang meldet es; der
+//   localhost-Server läuft weiter.
 //
 // PFORTE (XrPforte.Pruefen), in dieser Reihenfolge:
 //   1. Pfad nicht unter /api/xr                                    → 404
 //   2. Absender gesperrt (Fehlversuche) oder zu viele Anfragen     → 429
-//   3. Schlüssel fehlt oder falsch (ausser Endpunkte mit XrImNetz(ohneSchluessel: true): nur «kopplung/anfrage» und «kopplung/abholen») → 401
+//   3. Schlüssel fehlt oder falsch (ausser Endpunkte mit XrImNetz(ohneSchluessel: true): nur «kopplung/anfrage», «kopplung/aufdecken» und
+//      «kopplung/abholen») → 401
 //   4. Endpunkt unbekannt oder ohne Marke XrImNetz (z. B. die PC-Endpunkte /api/xr/zugang, /teilnehmer, /stellschraube, /kopplung/paket) → 404
 //   5. Körper grösser als 64 KB                                    → 413 (ohne Längenangabe begrenzt Kestrel beim Lesen, ebenfalls 413)
 //   6. Körper nicht application/json                               → 415
@@ -32,13 +36,14 @@ using System.Text.Json.Nodes;
 using Hlks.Kern;
 using Microsoft.AspNetCore.Hosting.Server;
 using Microsoft.AspNetCore.Hosting.Server.Features;
+using Microsoft.AspNetCore.ResponseCompression;
 using Microsoft.AspNetCore.Server.Kestrel.Core;
 using Microsoft.AspNetCore.Server.Kestrel.Https;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Hlks.Web;
 
-/// <summary>Marke: der Endpunkt ist über den Netzzugang erreichbar. OhneSchluessel nur für die beiden Schritte der Kopplung (Weg B).</summary>
+/// <summary>Marke: der Endpunkt ist über den Netzzugang erreichbar. OhneSchluessel nur für die drei Schritte der Ersatzkopplung (Weg B).</summary>
 public sealed record XrNetzFreigabe(bool OhneSchluessel = false);
 
 /// <summary>Die von der Pforte geprüfte Kopplung einer Anfrage über den Netzzugang.</summary>
@@ -94,13 +99,13 @@ public static class XrPforte
     }
 }
 
-/// <summary>Startet und beendet den Netzzugang (HTTPS) und die Suche (UDP) nach der Einstellung xr.zugang.</summary>
+/// <summary>Startet und beendet den Netzzugang (HTTPS) und die Suche (UDP) nach dem Schalter dieses PCs (XrPcEinstellung, zugang.json).</summary>
 public sealed class XrNetzDienst : IHostedService
 {
     readonly IServiceProvider dienste;
     readonly XrEinstellungen einstellungen;
     readonly XrHauptPort haupt;
-    readonly BenutzerEinstellungen benutzer;
+    readonly XrPcEinstellung pc;
     readonly XrZertifikat zertifikat;
     readonly XrKopplungen kopplungen;
     readonly XrKanal kanal;
@@ -112,16 +117,17 @@ public sealed class XrNetzDienst : IHostedService
     Timer? takt;
     bool beendet;
     int? port, suchPort;
+    (int Port, int SuchPort)? gestartetMit;   // eingestellte Ports beim Start (ändern sie sich, startet der Zugang neu)
     string? fehler, sucheFehler;
     DateTimeOffset? seit;
 
-    public XrNetzDienst(IServiceProvider dienste, XrEinstellungen einstellungen, XrHauptPort haupt, ProjektDienst projekt, XrZertifikat zertifikat,
+    public XrNetzDienst(IServiceProvider dienste, XrEinstellungen einstellungen, XrHauptPort haupt, XrPcEinstellung pc, XrZertifikat zertifikat,
         XrKopplungen kopplungen, XrKanal kanal, IHostApplicationLifetime lebenszeit)
     {
         this.dienste = dienste;
         this.einstellungen = einstellungen;
         this.haupt = haupt;
-        benutzer = projekt.Benutzer;
+        this.pc = pc;
         this.zertifikat = zertifikat;
         this.kopplungen = kopplungen;
         this.kanal = kanal;
@@ -139,7 +145,7 @@ public sealed class XrNetzDienst : IHostedService
     {
         // erst nach dem Start des Hauptservers: dann stehen dessen Endpunkte fest
         lebenszeit.ApplicationStarted.Register(() => _ = Task.Run(() => Abgleichen()));
-        takt = new Timer(_ => _ = Abgleichen(), null, einstellungen.PruefAbstand, einstellungen.PruefAbstand);   // Änderung an einem anderen Rechner oder in den Einstellungen
+        takt = new Timer(_ => _ = Abgleichen(), null, einstellungen.PruefAbstand, einstellungen.PruefAbstand);   // Änderung durch einen anderen KICAD-Prozess auf diesem PC
         return Task.CompletedTask;
     }
 
@@ -151,7 +157,7 @@ public sealed class XrNetzDienst : IHostedService
         finally { sperre.Release(); }
     }
 
-    /// <summary>Bringt den Netzzugang in den Zustand der Einstellung (starten bzw. beenden).</summary>
+    /// <summary>Bringt den Netzzugang in den Zustand des Schalters dieses PCs (starten, beenden, bei geänderten Ports neu starten).</summary>
     public async Task Abgleichen()
     {
         await sperre.WaitAsync();
@@ -163,8 +169,10 @@ public sealed class XrNetzDienst : IHostedService
             {
                 await Stoppen();
                 fehler = hindernis;
+                return;
             }
-            else if (server is null) await Starten();
+            if (server is not null && gestartetMit != (KonfigPort, KonfigSuchPort)) await Stoppen();
+            if (server is null) await Starten();
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException or CryptographicException)
         {
@@ -173,20 +181,19 @@ public sealed class XrNetzDienst : IHostedService
         finally { sperre.Release(); }
     }
 
-    /// <summary>Einstellung xr.zugang setzen und sofort abgleichen (POST /api/xr/zugang, nur localhost). Wirft HlksFehler, wenn die Einstellung nicht gespeichert wird.</summary>
-    public async Task Schalten(bool an)
+    /// <summary>Schalter dieses PCs setzen (zugang.json; Ports null = unverändert) und sofort abgleichen (POST /api/xr/zugang, nur localhost).
+    /// Wirft HlksFehler bei ungültigem Port oder wenn die Datei nicht geschrieben wird.</summary>
+    public async Task Schalten(bool an, int? port = null, int? suchPort = null)
     {
-        benutzer.Setzen(XrEinstellungen.ZugangSchluessel, JsonValue.Create(an));
+        pc.Setzen(an, port, suchPort);
         await Abgleichen();
     }
 
-    public bool EinstellungAn() => benutzer.Hole(XrEinstellungen.ZugangSchluessel) is JsonValue v && v.TryGetValue<bool>(out var an) && an;
+    /// <summary>Ist der Schalter dieses PCs an?</summary>
+    public bool EinstellungAn() => pc.Lesen().An;
 
-    int PortAusEinstellung(int? fest, string schluessel, int vorgabe) =>
-        fest ?? (benutzer.Hole(schluessel) is JsonValue v && v.TryGetValue<int>(out var p) && p is >= 1024 and <= 65535 ? p : vorgabe);
-
-    int KonfigPort => PortAusEinstellung(einstellungen.Port, XrEinstellungen.PortSchluessel, XrEinstellungen.PortVorgabe);
-    int KonfigSuchPort => PortAusEinstellung(einstellungen.SuchPort, XrEinstellungen.SuchPortSchluessel, XrEinstellungen.SuchPortVorgabe);
+    int KonfigPort => einstellungen.Port ?? pc.Lesen().Port ?? XrEinstellungen.PortVorgabe;
+    int KonfigSuchPort => einstellungen.SuchPort ?? pc.Lesen().SuchPort ?? XrEinstellungen.SuchPortVorgabe;
 
     /// <summary>Soll der Zugang laufen, und was steht dem entgegen (null = nichts)?</summary>
     string? Hindernis(out bool soll)
@@ -210,6 +217,7 @@ public sealed class XrNetzDienst : IHostedService
             return;
         }
         var p = KonfigPort;
+        gestartetMit = (p, KonfigSuchPort);
         WebApplication? app = null;
         try
         {
@@ -258,6 +266,7 @@ public sealed class XrNetzDienst : IHostedService
         server = null;
         port = null;
         seit = null;
+        gestartetMit = null;
     }
 
     static int? GebundenerPort(WebApplication app)
@@ -277,6 +286,18 @@ public sealed class XrNetzDienst : IHostedService
         b.WebHost.UseSetting(WebHostDefaults.ServerUrlsKey, "");
         b.WebHost.UseSetting(WebHostDefaults.HttpPortsKey, "");
         b.WebHost.UseSetting(WebHostDefaults.HttpsPortsKey, "");
+        // Antwortkomprimierung (Brotli, gzip; schnellste Stufe) NUR für die GLB des Modells: sie enthalten keine Geheimnisse und keinen Text des Absenders.
+        // Darum ist sie über HTTPS unbedenklich (BREACH braucht beides in derselben Antwort). JSON-Antworten – z. B. das Kopplungspaket mit dem Schlüssel –
+        // bleiben unkomprimiert.
+        b.Services.AddResponseCompression(o =>
+        {
+            o.EnableForHttps = true;
+            o.MimeTypes = [XrModellEndpunkte.Medientyp];
+            o.Providers.Add<BrotliCompressionProvider>();
+            o.Providers.Add<GzipCompressionProvider>();
+        });
+        b.Services.Configure<BrotliCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
+        b.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
         b.WebHost.ConfigureKestrel(k =>
         {
             k.Configure(new ConfigurationBuilder().Build(), reloadOnChange: false);
@@ -326,6 +347,8 @@ public sealed class XrNetzDienst : IHostedService
             await weiter(ctx);
         });
         app.UseWebSockets(new WebSocketOptions { KeepAliveInterval = TimeSpan.FromSeconds(15), KeepAliveTimeout = TimeSpan.FromSeconds(45) });
+        // Komprimierung nur der GLB (model/gltf-binary, siehe Dienste oben), nie beim Live-Kanal
+        app.UseWhen(ctx => !ctx.WebSockets.IsWebSocketRequest, a => a.UseResponseCompression());
         ((IEndpointRouteBuilder)app).DataSources.Add(new DefaultEndpointDataSource(XrPforte.Freigegeben(hauptEndpunkte.Endpoints)));
         return app;
     }
@@ -357,6 +380,7 @@ public sealed class XrNetzDienst : IHostedService
         return new JsonObject
         {
             ["an"] = EinstellungAn(),
+            ["schalter"] = pc.DateiPfad,   // je PC, nicht in den Benutzereinstellungen
             ["aktiv"] = server is not null,
             ["adresse"] = einstellungen.Adresse.ToString(),
             ["port"] = port ?? KonfigPort,
@@ -393,6 +417,7 @@ public static class XrZugangDienste
     {
         s.TryAddSingleton(XrEinstellungen.Vorgabe());   // Tests registrieren eine eigene Fassung (ConfigureTestServices), die dann gilt
         s.AddSingleton(new XrHauptPort(hauptPort));
+        s.AddSingleton<XrPcEinstellung>();   // Schalter und Ports je PC (zugang.json)
         s.TryAddSingleton(sp => new VrAuftragSpeicher(sp.GetRequiredService<ProjektDienst>().Benutzer));
         s.AddSingleton<XrZertifikat>();
         s.AddSingleton<XrKopplungen>();

@@ -4,7 +4,7 @@ using Hlks.Kern;
 
 namespace Hlks.Web.Tests;
 
-/// <summary>Kopplung (Quest App P3, XrKopplung.cs): Weg A (Paket), Weg B (Code am PC) mit Zeitlimit und Versuchsgrenze, Widerruf, nur gehasht gespeichert.</summary>
+/// <summary>Kopplung (Quest App P3, XrKopplung.cs): Weg A (Paket), Weg B (Vergleichscode an Brille und PC, Bestätigung am PC) mit Zeitlimit und Versuchsgrenze, Widerruf, nur gehasht gespeichert.</summary>
 public class XrKopplungTests
 {
     static readonly XrZugangInfo Info = new("PC-TEST", ["192.168.1.20"], 5140, 5141, new string('a', 64));
@@ -142,7 +142,7 @@ public class XrKopplungTests
         Assert.Throws<HlksFehler>(() => u.Kopplungen.PaketErzeugen(new string('A', 65), null, Info));
         Assert.Throws<HlksFehler>(() => u.Kopplungen.PaketErzeugen("QUEST-A", new string('n', 61), Info));
         Assert.Throws<HlksFehler>(() => u.Kopplungen.PaketErzeugen("QUEST-A", "Zeile\nzwei", Info));
-        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("", null, "10.0.0.5"));
+        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("", null, new XrTestBrille().Verpflichtung, "10.0.0.5"));
         Assert.Empty(u.Kopplungen.Liste());
     }
 
@@ -170,60 +170,114 @@ public class XrKopplungTests
         Assert.Empty(new XrKopplungen(u.Einstellungen).Liste());
     }
 
-    // ---------------------------------------------------------------- Weg B
+    // ---------------------------------------------------------------- Weg B: Vergleichscode (nur vergleichen, Christian 23.10.2026)
+
+    const string Fp = "ab12cd34ef567890ab12cd34ef567890ab12cd34ef567890ab12cd34ef567890";
+    const string Ip = "10.0.0.5";
+
+    /// <summary>Anfrage und Aufdecken wie die Brille; gibt Anfrage, Brille und den Code zurück, den die Brille selbst rechnet.</summary>
+    static (XrAnfrageStand Anfrage, XrTestBrille Brille, string CodeBrille) Aufgedeckt(Umgebung u, string brille = "QUEST-B", string? name = null, string ip = Ip, string fpBrille = Fp)
+    {
+        var b = new XrTestBrille();
+        var a = u.Kopplungen.Anfragen(brille, name, b.Verpflichtung, ip);
+        var e = u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, ip, () => Fp);
+        Assert.Equal((200, "vergleichen"), (e.Status, e.Zustand));
+        return (a, b, XrTestBrille.Code(fpBrille, b.ZufallText, a.ZufallPc));
+    }
+
+    static string? CodeAmPc(Umgebung u, string anfrage) => u.Kopplungen.OffeneAnfragen().Single(x => x.Anfrage == anfrage).Code;
 
     [Fact]
-    public void Weg_B_Code_am_PC_bestaetigen_dann_abholen()
+    public void Weg_B_Brille_und_PC_zeigen_denselben_Code_nach_Bestaetigung_am_PC_gibt_es_das_Paket()
     {
         using var u = new Umgebung();
-        var a = u.Kopplungen.Anfragen("QUEST-B", "Quest Gast", "10.0.0.5");
-        Assert.Matches("^[0-9]{6}$", a.Code);
+        var b = new XrTestBrille();
+        var a = u.Kopplungen.Anfragen("QUEST-B", "Quest Gast", b.Verpflichtung, Ip);
         Assert.Matches("^[A-Za-z0-9_-]{22}$", a.Anfrage);
+        Assert.Matches("^[A-Za-z0-9_-]{43}$", a.ZufallPc);
         Assert.Equal(u.Uhr.Jetzt + TimeSpan.FromMinutes(5), a.Bis);
-        var offen = Assert.Single(u.Kopplungen.OffeneAnfragen());
-        Assert.Equal(a.Code, offen.Code);
+        Assert.Null(CodeAmPc(u, a.Anfrage));   // vor dem Aufdecken gibt es keinen Code
 
-        var falsch = a.Code == "000000" ? "000001" : "000000";
-        var e1 = u.Kopplungen.Abholen(a.Anfrage, falsch, "10.0.0.5", () => Info);
-        Assert.Equal((403, "falsch", 4), (e1.Status, e1.Zustand, e1.VersucheUebrig));
-        Assert.Null(e1.Paket);
+        Assert.Equal(409, u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info).Status);   // erst aufdecken
+        Assert.Equal(409, Assert.Throws<XrFehler>(() => u.Kopplungen.Bestaetigen(a.Anfrage)).Status);   // nichts zu vergleichen
 
-        var e2 = u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info);   // Code richtig, aber am PC noch nicht bestätigt
-        Assert.Equal((202, "wartet"), (e2.Status, e2.Zustand));
-        Assert.Null(e2.Paket);
+        var e = u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, Ip, () => Fp);
+        Assert.Equal((200, "vergleichen"), (e.Status, e.Zustand));
+        Assert.Null(e.Paket);
+        var amPc = CodeAmPc(u, a.Anfrage);
+        Assert.Matches("^[0-9]{6}$", amPc!);
+        Assert.Equal(XrTestBrille.Code(Fp, b.ZufallText, a.ZufallPc), amPc);   // die Brille rechnet unabhängig denselben Code
+        Assert.Equal(XrKopplungen.Vergleichscode(Fp, b.ZufallText, a.ZufallPc), amPc);
+        Assert.Equal(409, u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, Ip, () => Fp).Status);   // nur einmal
+
+        var w = u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info);   // vor der Bestätigung am PC: warten
+        Assert.Equal((202, "wartet"), (w.Status, w.Zustand));
+        Assert.Null(w.Paket);
         Assert.Empty(u.Kopplungen.Liste());
 
-        var e0 = u.Kopplungen.Abholen(a.Anfrage, null, "10.0.0.5", () => Info);   // ohne Code: zählt nicht als Versuch
-        Assert.Equal(400, e0.Status);
-        Assert.Equal(1, Assert.Single(u.Kopplungen.OffeneAnfragen()).Versuche);
-
         Assert.True(u.Kopplungen.Bestaetigen(a.Anfrage).Bestaetigt);
-        var e3 = u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info);
-        Assert.Equal((200, "gekoppelt"), (e3.Status, e3.Zustand));
-        Assert.Equal("QUEST-B", e3.Paket!.Brille);
-        Assert.Equal("Quest Gast", e3.Paket.Name);
-        Assert.Equal("code", u.Kopplungen.Pruefen(Bearer(e3.Paket))!.Weg);
+        var g = u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info);
+        Assert.Equal((200, "gekoppelt"), (g.Status, g.Zustand));
+        Assert.Equal("QUEST-B", g.Paket!.Brille);
+        Assert.Equal("Quest Gast", g.Paket.Name);
+        Assert.Equal(Info.Fingerabdruck, g.Paket.Fingerabdruck);
+        Assert.Equal("code", u.Kopplungen.Pruefen(Bearer(g.Paket))!.Weg);
         Assert.Empty(u.Kopplungen.OffeneAnfragen());
-
-        var e4 = u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info);   // nur einmal
-        Assert.Equal(404, e4.Status);
+        Assert.Equal(404, u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info).Status);   // nur einmal
     }
 
     [Fact]
-    public void Weg_B_Versuchsgrenze_sperrt_die_Anfrage()
+    public void Vergleichscode_haengt_von_Fingerabdruck_und_beiden_Zufallszahlen_ab()
+    {
+        var zb = System.Buffers.Text.Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
+        var zp = System.Buffers.Text.Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32));
+        var code = XrKopplungen.Vergleichscode(Fp, zb, zp);
+        Assert.Matches("^[0-9]{6}$", code);
+        Assert.Equal(code, XrKopplungen.Vergleichscode(Fp, zb, zp));
+        Assert.Equal(code, XrTestBrille.Code(Fp, zb, zp));
+        // anderer Fingerabdruck (jemand dazwischen), andere Zufallszahl der Brille bzw. des PCs: anderer Code
+        Assert.NotEqual(code, XrKopplungen.Vergleichscode(new string('0', 64), zb, zp));
+        Assert.NotEqual(code, XrKopplungen.Vergleichscode(Fp, System.Buffers.Text.Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32)), zp));
+        Assert.NotEqual(code, XrKopplungen.Vergleichscode(Fp, zb, System.Buffers.Text.Base64Url.EncodeToString(RandomNumberGenerator.GetBytes(32))));
+        Assert.NotEqual(code, XrKopplungen.Vergleichscode(Fp, zp, zb));   // Reihenfolge zählt
+        // feste Werte (Gegenprobe für die App): SHA-256 von "hlks-xr-vergleich|1|<fp>|AAAA…|BBBB…"
+        Assert.Equal(XrTestBrille.Code(Fp, new string('A', 43), new string('B', 43)), XrKopplungen.Vergleichscode(Fp, new string('A', 43), new string('B', 43)));
+    }
+
+    [Fact]
+    public void Weg_B_jemand_dazwischen_sieht_einen_anderen_Code()
     {
         using var u = new Umgebung();
-        var a = u.Kopplungen.Anfragen("QUEST-B", null, "10.0.0.5");
-        u.Kopplungen.Bestaetigen(a.Anfrage);
-        var falsch = a.Code == "999999" ? "999998" : "999999";
+        // die Brille sieht das Zertifikat des Angreifers, KICAD rechnet mit dem eigenen
+        var (a, _, codeBrille) = Aufgedeckt(u, fpBrille: "ff" + Fp[2..]);
+        Assert.NotEqual(CodeAmPc(u, a.Anfrage), codeBrille);
+        // dieselbe Brille mit dem echten Zertifikat sähe den Code des PCs
+        var (a2, b2, codeEcht) = Aufgedeckt(u, ip: "10.0.0.9");
+        Assert.Equal(CodeAmPc(u, a2.Anfrage), codeEcht);
+        // die Codes zweier Anfragen sind verschieden (eigene Zufallszahlen)
+        Assert.NotEqual(CodeAmPc(u, a.Anfrage), CodeAmPc(u, a2.Anfrage));
+        Assert.NotEqual(a.ZufallPc, a2.ZufallPc);
+        Assert.NotNull(b2);
+    }
+
+    [Fact]
+    public void Weg_B_falsche_Zufallszahl_zaehlt_als_Versuch_und_sperrt_nach_fuenf()
+    {
+        using var u = new Umgebung();
+        var b = new XrTestBrille();
+        var a = u.Kopplungen.Anfragen("QUEST-B", null, b.Verpflichtung, Ip);
+        var fremd = new XrTestBrille().ZufallText;   // passt nicht zur Verpflichtung
         for (int i = 1; i <= 4; i++)
         {
-            var e = u.Kopplungen.Abholen(a.Anfrage, falsch, "10.0.0.5", () => Info);
-            Assert.Equal((403, 5 - i), (e.Status, e.VersucheUebrig));
+            var e = u.Kopplungen.Aufdecken(a.Anfrage, fremd, Ip, () => Fp);
+            Assert.Equal((403, "falsch", 5 - i), (e.Status, e.Zustand, e.VersucheUebrig));
+            Assert.Null(CodeAmPc(u, a.Anfrage));
         }
-        var letzte = u.Kopplungen.Abholen(a.Anfrage, falsch, "10.0.0.5", () => Info);
+        Assert.Equal(400, u.Kopplungen.Aufdecken(a.Anfrage, "kurz", Ip, () => Fp).Status);   // ungültig: zählt nicht
+        var letzte = u.Kopplungen.Aufdecken(a.Anfrage, fremd, Ip, () => Fp);
         Assert.Equal((410, "gesperrt"), (letzte.Status, letzte.Zustand));
-        Assert.Equal(404, u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info).Status);   // auch der richtige Code hilft nicht mehr
+        Assert.Equal(404, u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, Ip, () => Fp).Status);   // auch die richtige hilft nicht mehr
+        Assert.Empty(u.Kopplungen.OffeneAnfragen());
         Assert.Empty(u.Kopplungen.Liste());
     }
 
@@ -231,58 +285,78 @@ public class XrKopplungTests
     public void Weg_B_Zeitlimit()
     {
         using var u = new Umgebung();
-        var a = u.Kopplungen.Anfragen("QUEST-B", null, "10.0.0.5");
+        var (a, _, _) = Aufgedeckt(u);
         u.Uhr.Vor(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
         Assert.Equal(404, Assert.Throws<XrFehler>(() => u.Kopplungen.Bestaetigen(a.Anfrage)).Status);
-        var e = u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info);
-        Assert.Equal(404, e.Status);   // abgelaufene Anfragen sind schon aufgeräumt
+        Assert.Equal(404, u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info).Status);   // abgelaufene Anfragen sind schon aufgeräumt
         Assert.Empty(u.Kopplungen.OffeneAnfragen());
 
-        var b = u.Kopplungen.Anfragen("QUEST-B", null, "10.0.0.5");
+        var (b, _, _) = Aufgedeckt(u);
         u.Kopplungen.Bestaetigen(b.Anfrage);
         u.Uhr.Vor(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
-        var eb = u.Kopplungen.Abholen(b.Anfrage, b.Code, "10.0.0.5", () => Info);
+        var eb = u.Kopplungen.Abholen(b.Anfrage, Ip, () => Info);
         Assert.Equal((410, "abgelaufen"), (eb.Status, eb.Zustand));
         Assert.Empty(u.Kopplungen.Liste());
+
+        var c = u.Kopplungen.Anfragen("QUEST-C", null, new XrTestBrille().Verpflichtung, Ip);
+        u.Uhr.Vor(TimeSpan.FromMinutes(5) + TimeSpan.FromSeconds(1));
+        Assert.Equal(410, u.Kopplungen.Aufdecken(c.Anfrage, new string('A', 43), Ip, () => Fp).Status);
     }
 
     [Fact]
     public void Weg_B_abgelehnt_oder_von_anderer_Adresse()
     {
         using var u = new Umgebung();
-        var a = u.Kopplungen.Anfragen("QUEST-B", null, "10.0.0.5");
-        Assert.Equal(404, u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.6", () => Info).Status);   // andere IP-Adresse
-        u.Kopplungen.Ablehnen(a.Anfrage);
-        var e = u.Kopplungen.Abholen(a.Anfrage, a.Code, "10.0.0.5", () => Info);
+        var b = new XrTestBrille();
+        var a = u.Kopplungen.Anfragen("QUEST-B", null, b.Verpflichtung, Ip);
+        Assert.Equal(404, u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, "10.0.0.6", () => Fp).Status);   // andere IP-Adresse
+        Assert.Equal(200, u.Kopplungen.Aufdecken(a.Anfrage, b.ZufallText, Ip, () => Fp).Status);
+        Assert.Equal(404, u.Kopplungen.Abholen(a.Anfrage, "10.0.0.6", () => Info).Status);
+        u.Kopplungen.Ablehnen(a.Anfrage);   // z. B. weil die Codes verschieden sind
+        Assert.Equal(409, Assert.Throws<XrFehler>(() => u.Kopplungen.Bestaetigen(a.Anfrage)).Status);
+        var e = u.Kopplungen.Abholen(a.Anfrage, Ip, () => Info);
         Assert.Equal((403, "abgelehnt"), (e.Status, e.Zustand));
         Assert.Empty(u.Kopplungen.OffeneAnfragen());
-        Assert.Equal(404, u.Kopplungen.Abholen("nicht-da", "123456", "10.0.0.5", () => Info).Status);
-        Assert.Equal(404, u.Kopplungen.Abholen(null, "123456", "10.0.0.5", () => Info).Status);
+        Assert.Empty(u.Kopplungen.Liste());
+        Assert.Equal(404, u.Kopplungen.Abholen("nicht-da", Ip, () => Info).Status);
+        Assert.Equal(404, u.Kopplungen.Abholen(null, Ip, () => Info).Status);
+    }
+
+    [Fact]
+    public void Weg_B_Verpflichtung_muss_32_Byte_sein()
+    {
+        using var u = new Umgebung();
+        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("QUEST-B", null, null, Ip));
+        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("QUEST-B", null, "abc", Ip));
+        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("QUEST-B", null, new string('B', 43), Ip));   // nicht kanonisch
+        Assert.Throws<HlksFehler>(() => u.Kopplungen.Anfragen("QUEST-B", null, new string('A', 44), Ip));
+        Assert.Empty(u.Kopplungen.OffeneAnfragen());
     }
 
     [Fact]
     public void Weg_B_hoechstens_drei_offene_Anfragen()
     {
         using var u = new Umgebung();
-        u.Kopplungen.Anfragen("Q1", null, "10.0.0.1");
-        u.Kopplungen.Anfragen("Q2", null, "10.0.0.2");
-        var c = u.Kopplungen.Anfragen("Q3", null, "10.0.0.3");
-        Assert.Equal(429, Assert.Throws<XrFehler>(() => u.Kopplungen.Anfragen("Q4", null, "10.0.0.4")).Status);
+        string V() => new XrTestBrille().Verpflichtung;
+        u.Kopplungen.Anfragen("Q1", null, V(), "10.0.0.1");
+        u.Kopplungen.Anfragen("Q2", null, V(), "10.0.0.2");
+        var c = u.Kopplungen.Anfragen("Q3", null, V(), "10.0.0.3");
+        Assert.Equal(429, Assert.Throws<XrFehler>(() => u.Kopplungen.Anfragen("Q4", null, V(), "10.0.0.4")).Status);
         // dieselbe Adresse ersetzt ihre offene Anfrage
-        var c2 = u.Kopplungen.Anfragen("Q3", null, "10.0.0.3");
+        var c2 = u.Kopplungen.Anfragen("Q3", null, V(), "10.0.0.3");
         Assert.NotEqual(c.Anfrage, c2.Anfrage);
         Assert.Equal(3, u.Kopplungen.OffeneAnfragen().Count);
-        Assert.Equal(404, u.Kopplungen.Abholen(c.Anfrage, c.Code, "10.0.0.3", () => Info).Status);
+        Assert.Equal(404, u.Kopplungen.Abholen(c.Anfrage, "10.0.0.3", () => Info).Status);
     }
 
     [Fact]
     public void Weg_B_hoechstens_zwanzig_neue_Anfragen_je_Stunde()
     {
         using var u = new Umgebung();
-        for (int i = 0; i < 20; i++) u.Kopplungen.Anfragen($"Q{i}", null, "10.0.2.1");   // gleiche Adresse: ersetzt, es bleibt eine offene
+        for (int i = 0; i < 20; i++) u.Kopplungen.Anfragen($"Q{i}", null, new XrTestBrille().Verpflichtung, "10.0.2.1");   // gleiche Adresse: ersetzt, es bleibt eine offene
         Assert.Single(u.Kopplungen.OffeneAnfragen());
-        Assert.Equal(429, Assert.Throws<XrFehler>(() => u.Kopplungen.Anfragen("Q21", null, "10.0.2.2")).Status);
+        Assert.Equal(429, Assert.Throws<XrFehler>(() => u.Kopplungen.Anfragen("Q21", null, new XrTestBrille().Verpflichtung, "10.0.2.2")).Status);
         u.Uhr.Vor(TimeSpan.FromHours(1));
-        u.Kopplungen.Anfragen("Q22", null, "10.0.2.2");
+        u.Kopplungen.Anfragen("Q22", null, new XrTestBrille().Verpflichtung, "10.0.2.2");
     }
 }

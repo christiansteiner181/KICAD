@@ -67,8 +67,27 @@ public class XrZugangTests
     public async Task Vorgabe_ist_aus()
     {
         await using var s = new XrServer(zugang: false);
-        Assert.False((bool)(await s.Zugang())["an"]!);
-        Assert.Null(s.Dienste.GetRequiredService<ProjektDienst>().Benutzer.Hole("xr.zugang"));
+        var z = await s.Zugang();
+        Assert.False((bool)z["an"]!);
+        Assert.Equal(Path.Combine(s.XrOrdner, "zugang.json"), (string)z["schalter"]!);
+        Assert.False(File.Exists(Path.Combine(s.XrOrdner, "zugang.json")));
+    }
+
+    [Fact]
+    public async Task Eine_Benutzereinstellung_xr_zugang_oeffnet_nichts_der_Schalter_gilt_je_PC()
+    {
+        // Christian 23.10.2026 «Je PC»: die Benutzereinstellungen gelten über OneDrive auf allen Rechnern – sie dürfen den Zugang nicht öffnen
+        await using var s = new XrServer(zugang: false);
+        s.BenutzerEinstellungSetzen("xr.zugang", JsonValue.Create(true));
+        await s.Dienste.GetRequiredService<XrNetzDienst>().Abgleichen();
+        var z = await s.Zugang();
+        Assert.False((bool)z["an"]!);
+        Assert.False((bool)z["aktiv"]!);
+        // Schalten schreibt nur die Datei dieses PCs, nie die Benutzereinstellungen
+        await s.LokalPost("/api/xr/zugang", new { an = true });
+        Assert.True(File.Exists(Path.Combine(s.XrOrdner, "zugang.json")));
+        Assert.DoesNotContain(Directory.GetFiles(s.BenutzerOrdner, "*.json").Select(File.ReadAllText), t => t.Contains("\"an\"", StringComparison.Ordinal));
+        Assert.True((bool)(await s.Zugang())["aktiv"]!);
     }
 
     [Fact]
@@ -208,22 +227,42 @@ public class XrZugangTests
         Assert.True((bool)j1["aktiv"]!);
         Assert.Equal(port, (int)j1["port"]!);
         Assert.True(await Erreichbar(port));
-        Assert.Equal(true, (bool?)s.Dienste.GetRequiredService<ProjektDienst>().Benutzer.Hole("xr.zugang"));
+        Assert.True(new XrPcEinstellung(s.Xr).Lesen().An);   // in der Datei dieses PCs
+        Assert.Null(s.Dienste.GetRequiredService<ProjektDienst>().Benutzer.Hole("xr.zugang"));   // nicht in den Benutzereinstellungen
 
         var (_, j2) = await s.LokalPost("/api/xr/zugang", new { an = false });
         Assert.False((bool)j2!["aktiv"]!);
         Assert.False(await Erreichbar(port));
+        Assert.False(new XrPcEinstellung(s.Xr).Lesen().An);
         Assert.Equal(HttpStatusCode.BadRequest, (await s.LokalPost("/api/xr/zugang", new { an = "ja" })).Code);
     }
 
     [Fact]
-    public async Task Abgleich_nach_Aenderung_der_Einstellung_an_anderer_Stelle()
+    public async Task Ports_aus_dem_Schalter_dieses_PCs_geaenderte_Ports_starten_neu()
+    {
+        int p1 = FreierPort(), s1 = FreierPort(), p2 = FreierPort();
+        await using var s = new XrServer(zugang: false, anpassen: x => x with { Port = null, SuchPort = null });
+        var (c1, j1) = await s.LokalPost("/api/xr/zugang", new { an = true, port = p1, suchPort = s1 });
+        Assert.Equal(HttpStatusCode.OK, c1);
+        Assert.Equal((p1, s1), ((int)j1!["port"]!, (int)j1["suchPort"]!));
+        Assert.True(await Erreichbar(p1));
+        var (_, j2) = await s.LokalPost("/api/xr/zugang", new { an = true, port = p2 });   // Suchport bleibt
+        Assert.Equal((p2, s1), ((int)j2!["port"]!, (int)j2["suchPort"]!));
+        Assert.True(await Erreichbar(p2));
+        Assert.False(await Erreichbar(p1));
+        Assert.Equal(HttpStatusCode.BadRequest, (await s.LokalPost("/api/xr/zugang", new { an = true, port = 80 })).Code);
+        Assert.Equal(HttpStatusCode.BadRequest, (await s.LokalPost("/api/xr/zugang", new { an = true, suchPort = "x" })).Code);
+        await s.LokalPost("/api/xr/zugang", new { an = false });
+    }
+
+    [Fact]
+    public async Task Abgleich_nach_Aenderung_durch_einen_anderen_KICAD_Prozess_auf_diesem_PC()
     {
         await using var s = new XrServer(zugang: false);
-        s.EinstellungSetzen("xr.zugang", JsonValue.Create(true));   // z. B. an einem anderen Rechner gesetzt
+        s.SchalterSetzen(true);   // z. B. das Desktop-KICAD hat geschaltet; dieser Prozess liest dieselbe Datei
         await s.Dienste.GetRequiredService<XrNetzDienst>().Abgleichen();   // sonst im Takt von 10 s
         await s.Aktiv();
-        s.EinstellungSetzen("xr.zugang", JsonValue.Create(false));
+        s.SchalterSetzen(false);
         await s.Dienste.GetRequiredService<XrNetzDienst>().Abgleichen();
         Assert.False((bool)(await s.Zugang())["aktiv"]!);
     }
@@ -304,39 +343,53 @@ public class XrZugangTests
         Assert.Equal(HttpStatusCode.BadRequest, (await s.Lokal.SendAsync(mit)).StatusCode);   // kein WebSocket auf localhost
     }
 
-    // ---------------------------------------------------------------- Kopplung über das Netz
+    // ---------------------------------------------------------------- Ersatzkopplung über das Netz (Weg B: Codes vergleichen, nur am PC bestätigen)
+
+    /// <summary>Schritte 1 und 2 wie die App beim ersten Kontakt: anfrage mit Verpflichtung, aufdecken; der Code wird aus dem in TLS gesehenen Zertifikat gerechnet.</summary>
+    static async Task<(string Anfrage, string CodeBrille, string ZufallPc, string ZufallBrille)> AnfragenUndAufdecken(HttpClient brille, Func<string?> gesehen, string kennung = "QUEST-B", string? name = null)
+    {
+        var b = new XrTestBrille();
+        var (c1, j1, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/anfrage", Hlks.Kern.Json.Text(new { brille = kennung, name, verpflichtung = b.Verpflichtung }));
+        Assert.Equal(HttpStatusCode.OK, c1);
+        var anfrage = (string)j1!["anfrage"]!;
+        var zufallPc = (string)j1["zufallPc"]!;
+        Assert.Equal(5, (int)j1["versucheMax"]!);
+        Assert.Null(j1["code"]);
+        var (c2, j2, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/aufdecken", Hlks.Kern.Json.Text(new { anfrage, zufallBrille = b.ZufallText }));
+        Assert.Equal(HttpStatusCode.OK, c2);
+        Assert.Equal("vergleichen", (string)j2!["status"]!);
+        Assert.Null(j2["code"]);   // der Code geht nie an die Brille
+        return (anfrage, XrTestBrille.Code(gesehen()!, b.ZufallText, zufallPc), zufallPc, b.ZufallText);
+    }
 
     [Fact]
-    public async Task Weg_B_ueber_das_Netz_bis_zum_Widerruf()
+    public async Task Weg_B_ueber_das_Netz_gleicher_Code_auf_beiden_Seiten_Paket_erst_nach_Bestaetigung_bis_zum_Widerruf()
     {
         await using var s = new XrServer();
         var (port, _, fp) = await s.Aktiv();
-        using var brille = XrServer.Netz(port, fp);
-        var (c1, j1, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/anfrage", "{\"brille\":\"QUEST-B\",\"name\":\"Quest Gast\"}");
-        Assert.Equal(HttpStatusCode.OK, c1);
-        var anfrage = (string)j1!["anfrage"]!;
-        Assert.Equal(5, (int)j1["versucheMax"]!);
-        Assert.Null(j1["code"]);   // den Code gibt es nur am PC
+        var (brille, gesehen) = XrServer.NetzErstkontakt(port);
+        using var _b = brille;
+        var (anfrage, codeBrille, _, _) = await AnfragenUndAufdecken(brille, gesehen, name: "Quest Gast");
+        Assert.Equal(fp, gesehen());   // ohne jemanden dazwischen sieht die Brille das Zertifikat von KICAD
 
-        var offen = Assert.Single((await s.Zugang())["anfragen"]!.AsArray());
-        Assert.Equal("127.0.0.1", (string)offen!["ip"]!);
-        var code = (string)offen["code"]!;
-        var falsch = code == "123456" ? "654321" : "123456";
+        var offen = Assert.Single((await s.Zugang())["anfragen"]!.AsArray())!;
+        Assert.Equal("127.0.0.1", (string)offen["ip"]!);
+        Assert.Equal(codeBrille, (string)offen["code"]!);   // derselbe Code in der Brille und am PC
 
-        var (c2, j2, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage, code = falsch }));
-        Assert.Equal(HttpStatusCode.Forbidden, c2);
-        Assert.Equal(4, (int)j2!["versucheUebrig"]!);
-        var (c3, j3, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage, code }));
-        Assert.Equal(HttpStatusCode.Accepted, c3);
+        var (c3, j3, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage }));
+        Assert.Equal(HttpStatusCode.Accepted, c3);   // erst nach der Bestätigung am PC
         Assert.Equal("wartet", (string)j3!["status"]!);
+        Assert.Null(j3["paket"]);
 
         Assert.Equal(HttpStatusCode.OK, (await s.LokalPost("/api/xr/kopplung/bestaetigen", new { anfrage })).Code);
-        var (c4, j4, a4) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage, code }));
+        var (c4, j4, a4) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage }));
         Assert.Equal(HttpStatusCode.OK, c4);
         Assert.Equal("no-store", a4.Headers.CacheControl?.ToString());
         var paket = (JsonObject)j4!["paket"]!;
-        Assert.Equal(fp, (string)paket["fingerabdruck"]!);
+        Assert.Equal(fp, (string)paket["fingerabdruck"]!);   // die App prüft: gleich dem in TLS gesehenen, dann pinnen
         Assert.Equal("QUEST-B", (string)paket["brille"]!);
+        Assert.Equal("Quest Gast", (string)paket["name"]!);
+        Assert.Equal(HttpStatusCode.NotFound, (await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage }))).Code);   // nur einmal
 
         using var mit = XrServer.Netz(port, fp, XrServer.Token(paket));
         Assert.Equal(HttpStatusCode.OK, (await Holen(mit, HttpMethod.Get, "/api/xr/verbindung")).Code);
@@ -347,20 +400,50 @@ public class XrZugangTests
     }
 
     [Fact]
-    public async Task Weg_B_ablehnen_am_PC()
+    public async Task Weg_B_bestaetigen_erst_mit_Code_und_ablehnen_am_PC()
     {
         await using var s = new XrServer();
-        var (port, _, fp) = await s.Aktiv();
-        using var brille = XrServer.Netz(port, fp);
-        var (_, j1, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/anfrage", "{\"brille\":\"QUEST-B\"}");
+        var (port, _, _) = await s.Aktiv();
+        var (brille, gesehen) = XrServer.NetzErstkontakt(port);
+        using var _b = brille;
+        // nur angefragt, noch nicht aufgedeckt: kein Code am PC, Bestätigen geht nicht, Abholen verlangt das Aufdecken
+        var b = new XrTestBrille();
+        var (_, j1, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/anfrage", Hlks.Kern.Json.Text(new { brille = "QUEST-B", verpflichtung = b.Verpflichtung }));
         var anfrage = (string)j1!["anfrage"]!;
-        var code = (string)Assert.Single((await s.Zugang())["anfragen"]!.AsArray())!["code"]!;
+        Assert.Null(Assert.Single((await s.Zugang())["anfragen"]!.AsArray())!["code"]);
+        Assert.Equal(HttpStatusCode.Conflict, (await s.LokalPost("/api/xr/kopplung/bestaetigen", new { anfrage })).Code);
+        Assert.Equal(HttpStatusCode.Conflict, (await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage }))).Code);
+        // falsche Zufallszahl: 403 mit Restversuchen
+        var (cf, jf, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/aufdecken", Hlks.Kern.Json.Text(new { anfrage, zufallBrille = new XrTestBrille().ZufallText }));
+        Assert.Equal(HttpStatusCode.Forbidden, cf);
+        Assert.Equal(4, (int)jf!["versucheUebrig"]!);
+        Assert.Equal(HttpStatusCode.OK, (await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/aufdecken", Hlks.Kern.Json.Text(new { anfrage, zufallBrille = b.ZufallText }))).Code);
+        // der Mensch sieht verschiedene Codes und lehnt ab
         Assert.Equal(HttpStatusCode.OK, (await s.LokalPost("/api/xr/kopplung/ablehnen", new { anfrage })).Code);
-        var (c, j, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage, code }));
+        var (c, j, _) = await Holen(brille, HttpMethod.Post, "/api/xr/kopplung/abholen", Hlks.Kern.Json.Text(new { anfrage }));
         Assert.Equal(HttpStatusCode.Forbidden, c);
         Assert.Equal("abgelehnt", (string)j!["status"]!);
         Assert.Equal(HttpStatusCode.NotFound, (await s.LokalPost("/api/xr/kopplung/bestaetigen", new { anfrage })).Code);
         Assert.Empty((await s.Zugang())["kopplungen"]!.AsArray());
+        Assert.NotNull(gesehen());
+    }
+
+    [Fact]
+    public async Task Weg_B_mit_anderem_Zertifikat_dazwischen_zeigt_die_Brille_einen_anderen_Code()
+    {
+        // Wer dazwischen sitzt, kann der Brille nur ein eigenes Zertifikat zeigen: die Brille rechnet mit dessen Fingerabdruck und sieht einen anderen Code als der PC.
+        await using var s = new XrServer();
+        var (port, _, fp) = await s.Aktiv();
+        var (brille, _) = XrServer.NetzErstkontakt(port);
+        using var _b = brille;
+        using var fremd = XrZertifikat.Neu("ANGREIFER", DateTimeOffset.UtcNow);
+        var fpFremd = XrZertifikat.FingerabdruckVon(fremd);
+        Assert.NotEqual(fp, fpFremd);
+        var (anfrage, codeEcht, zufallPc, zufallBrille) = await AnfragenUndAufdecken(brille, () => fp);
+        var amPc = (string)(await s.Zugang())["anfragen"]!.AsArray().Single(a => (string)a!["anfrage"]! == anfrage)!["code"]!;
+        Assert.Equal(amPc, codeEcht);
+        // dieselben Zufallszahlen, aber das Zertifikat dessen dazwischen: anderer Code in der Brille → der Mensch lehnt ab
+        Assert.NotEqual(amPc, XrTestBrille.Code(fpFremd, zufallBrille, zufallPc));
     }
 
     // ---------------------------------------------------------------- Pfadsperre und Freigabe (rein)
@@ -385,11 +468,13 @@ public class XrZugangTests
         await s.Lokal.GetAsync("/api/status");   // Endpunkte stehen fest
         var alle = s.Dienste.GetRequiredService<EndpointDataSource>().Endpoints;
         var frei = XrPforte.Freigegeben(alle).OfType<RouteEndpoint>()
-            .Select(e => $"{string.Join(",", e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? [])} {e.RoutePattern.RawText}").OrderBy(x => x).ToList();
-        Assert.Equal(["GET /api/xr/kanal", "GET /api/xr/verbindung", "POST /api/xr/kopplung/abholen", "POST /api/xr/kopplung/anfrage"], frei);
-        // ohne Schlüssel nur die zwei Schritte der Kopplung
-        var ohne = XrPforte.Freigegeben(alle).Where(e => e.Metadata.GetMetadata<XrNetzFreigabe>()!.OhneSchluessel).OfType<RouteEndpoint>().Select(e => e.RoutePattern.RawText).OrderBy(x => x);
-        Assert.Equal(["/api/xr/kopplung/abholen", "/api/xr/kopplung/anfrage"], ohne);
+            .Select(e => $"{string.Join(",", e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? [])} {e.RoutePattern.RawText}").OrderBy(x => x, StringComparer.Ordinal).ToList();
+        Assert.Equal(["GET /api/xr/geschoss/{id}.glb", "GET /api/xr/geschosse", "GET /api/xr/kanal", "GET /api/xr/verbindung",
+            "POST /api/xr/kopplung/abholen", "POST /api/xr/kopplung/anfrage", "POST /api/xr/kopplung/aufdecken"], frei);
+        // ohne Schlüssel nur die drei Schritte der Ersatzkopplung
+        var ohne = XrPforte.Freigegeben(alle).Where(e => e.Metadata.GetMetadata<XrNetzFreigabe>()!.OhneSchluessel).OfType<RouteEndpoint>()
+            .Select(e => e.RoutePattern.RawText).OrderBy(x => x, StringComparer.Ordinal);
+        Assert.Equal(["/api/xr/kopplung/abholen", "/api/xr/kopplung/anfrage", "/api/xr/kopplung/aufdecken"], ohne);
         // eine Marke ausserhalb /api/xr zählt nicht
         var fremd = new RouteEndpoint(_ => Task.CompletedTask, Microsoft.AspNetCore.Routing.Patterns.RoutePatternFactory.Parse("/api/status"), 0,
             new EndpointMetadataCollection(new XrNetzFreigabe()), "fremd");

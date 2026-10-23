@@ -13,8 +13,9 @@
 //
 // Einordnung: reine Rechner-Funktion – Datenlieferung an ein Gerät des Menschen, nur lesend, kein Kern-Befehl, keine Kern-Abfrage, kein Paket; für die KI nicht
 // nötig und nicht freigegeben (KiEinordnung.RechnerFunktionen «xr_modell», kein MCP-Werkzeug). Herkunftsschutz wie alle /api (nur localhost, nur GET).
-// Hinweis für den Zugang im Büronetz (P3): die Antwortkomprimierung in Program.cs gilt nur für application/octet-stream; für die GLB dort
-// «model/gltf-binary» ergänzen, falls über WLAN komprimiert werden soll.
+// Zugang im Büronetz (P3-Nachtrag, 23.10.2026): beide Endpunkte tragen die Marke .XrImNetz() – die Brille holt sie über HTTPS mit ihrem Schlüssel (XrZugang.cs);
+// dort werden die GLB mit Brotli bzw. gzip komprimiert, wenn die App es anbietet (Accept-Encoding). Auf dem localhost-Server gilt die Komprimierung aus
+// Program.cs (gzip, nur für Anfragen von einem anderen Rechner).
 
 using Hlks.Kern;
 using Microsoft.Net.Http.Headers;
@@ -88,7 +89,7 @@ public static class XrModellEndpunkte
             var erfassung = await dienst.Mit(XrModell.Erfassen);
             var stand = await Task.Run(() => XrModell.Stand(erfassung));
             return Antwort(XrModell.Liste(stand, Url));
-        }));
+        })).XrImNetz();   // auch im Büronetz (mit Schlüssel)
 
         g.MapGet("/geschoss/{id}.glb", (string id, string? teil, HttpContext ctx) => Gesichert(async () =>
         {
@@ -110,7 +111,7 @@ public static class XrModellEndpunkte
             if (Passt(ctx.Request, etag)) return Results.StatusCode(StatusCodes.Status304NotModified);
             var daten = await speicher.Holen($"{stand.ProjektId}|{gs.Geschoss.Id}|{teil}|{schluessel}", () => XrModell.Glb(stand, gs.Geschoss.Id, teil));
             return Results.Bytes(daten, Medientyp);
-        }));
+        })).XrImNetz();   // auch im Büronetz (mit Schlüssel)
         return app;
     }
 

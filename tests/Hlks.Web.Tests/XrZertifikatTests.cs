@@ -157,14 +157,46 @@ public class XrZertifikatTests
     }
 
     [Fact]
-    public void Benutzereinstellungen_xr_werden_geprueft()
+    public void Schalter_je_PC_in_einer_Datei_neben_Zertifikat_und_Kopplungen()
     {
-        BenutzerEinstellungen.Pruefen("xr.zugang", System.Text.Json.Nodes.JsonValue.Create(true));
-        BenutzerEinstellungen.Pruefen("xr.port", System.Text.Json.Nodes.JsonValue.Create(5140));
-        BenutzerEinstellungen.Pruefen("xr.suchport", System.Text.Json.Nodes.JsonValue.Create(65535));
-        Assert.Throws<Hlks.Kern.HlksFehler>(() => BenutzerEinstellungen.Pruefen("xr.zugang", System.Text.Json.Nodes.JsonValue.Create("ja")));
-        Assert.Throws<Hlks.Kern.HlksFehler>(() => BenutzerEinstellungen.Pruefen("xr.port", System.Text.Json.Nodes.JsonValue.Create(80)));
-        Assert.Throws<Hlks.Kern.HlksFehler>(() => BenutzerEinstellungen.Pruefen("xr.suchport", System.Text.Json.Nodes.JsonValue.Create(70000)));
-        Assert.Throws<Hlks.Kern.HlksFehler>(() => BenutzerEinstellungen.Pruefen("xr.port", System.Text.Json.Nodes.JsonValue.Create(5140.5)));
+        var o = NeuerOrdner();
+        try
+        {
+            var e = new XrEinstellungen { Ordner = o };
+            var pc = new XrPcEinstellung(e);
+            Assert.Equal(Path.Combine(Path.GetFullPath(o), "zugang.json"), pc.DateiPfad);
+            Assert.Equal(new XrPcStand(false, null, null, null), pc.Lesen());   // ohne Datei: aus
+            Assert.False(File.Exists(pc.DateiPfad));
+
+            var s = pc.Setzen(true, 5240, 5241);
+            Assert.True(s.An);
+            Assert.Equal((5240, 5241), (s.Port, s.SuchPort));
+            var gelesen = new XrPcEinstellung(e).Lesen();   // ein anderer KICAD-Prozess auf diesem PC sieht dasselbe
+            Assert.True(gelesen.An);
+            Assert.Equal((5240, 5241), (gelesen.Port, gelesen.SuchPort));
+            Assert.Contains(Environment.MachineName, File.ReadAllText(pc.DateiPfad));
+
+            var aus = pc.Setzen(false);   // Ports bleiben
+            Assert.False(aus.An);
+            Assert.Equal((5240, 5241), (pc.Lesen().Port, pc.Lesen().SuchPort));
+
+            Assert.Throws<Hlks.Kern.HlksFehler>(() => pc.Setzen(true, 80));
+            Assert.Throws<Hlks.Kern.HlksFehler>(() => pc.Setzen(true, null, 70000));
+            Assert.False(pc.Lesen().An);   // nichts geändert
+
+            File.WriteAllText(pc.DateiPfad, "{ kaputt");
+            Assert.False(pc.Lesen().An);   // unlesbar: aus
+            File.WriteAllText(pc.DateiPfad, "{\"format\":1,\"an\":true,\"port\":80,\"suchPort\":99999}");
+            Assert.Equal(new XrPcStand(true, null, null, null), pc.Lesen() with { Zeit = null });   // ungültige Ports gelten als nicht gesetzt
+            File.WriteAllText(pc.DateiPfad, "{\"format\":2,\"an\":true}");
+            Assert.False(pc.Lesen().An);   // unbekanntes Format: aus
+        }
+        finally { Weg(o); }
+    }
+
+    [Fact]
+    public void Der_Zugang_ist_keine_Benutzereinstellung_mehr()
+    {
+        Assert.DoesNotContain(BenutzerEinstellungen.Bekannt.Keys, k => k.StartsWith("xr.", StringComparison.Ordinal));
     }
 }

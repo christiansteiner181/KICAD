@@ -32,12 +32,13 @@ builder.Services.AddHostedService<AbgleichDienst>();
 // Modul XR (Quest App P3): zweiter Zugang im Büronetz – eigener HTTPS-Server neben diesem, nur /api/xr, nur gekoppelte Brillen; aus, solange die
 // Benutzereinstellung xr.zugang aus ist, und nur im KICAD auf Port 5130 (XrZugang.cs). Dieser Server bleibt unverändert nur auf localhost.
 builder.Services.AddXrZugang(port);
-// Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB):
-// gzip, wenn der Browser es annimmt und nicht auf demselben Rechner läuft (siehe UseWhen unten). Alles andere (JSON,
-// Oberfläche, Bilder, SSE) bleibt unkomprimiert.
+// Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB;
+// model/gltf-binary = das Modell als GLB je Geschoss, XrModellEndpunkte.cs): gzip, wenn der Browser es annimmt und nicht auf demselben
+// Rechner läuft (siehe UseWhen unten). Alles andere (JSON, Oberfläche, Bilder, SSE) bleibt unkomprimiert. Der Zugang im Büronetz
+// (XrZugang.cs) hat eine eigene Komprimierung (Brotli und gzip, nur GLB).
 builder.Services.AddResponseCompression(o =>
 {
-    o.MimeTypes = ["application/octet-stream"];
+    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp];
     o.Providers.Add<GzipCompressionProvider>();
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);

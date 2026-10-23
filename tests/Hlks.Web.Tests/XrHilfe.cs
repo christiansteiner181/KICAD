@@ -40,7 +40,6 @@ public sealed class XrServer : IAsyncDisposable
     public XrServer(bool zugang = true, Func<XrEinstellungen, XrEinstellungen>? anpassen = null, XrTestUhr? uhr = null)
     {
         Directory.CreateDirectory(BenutzerOrdner);
-        if (zugang) EinstellungSetzen(XrEinstellungen.ZugangSchluessel, JsonValue.Create(true));
         var e = new Einstellungen("Test", "testpc", Katalog.StandardOrdner(), null) { ZuletztMerken = false, BenutzerOrdner = BenutzerOrdner };
         var xr = new XrEinstellungen
         {
@@ -48,12 +47,26 @@ public sealed class XrServer : IAsyncDisposable
             Uhr = uhr is null ? null : () => uhr.Jetzt,
         };
         Xr = anpassen is null ? xr : anpassen(xr);
+        if (zugang) SchalterSetzen(true);   // der Schalter dieses PCs (zugang.json im XR-Ordner), vor dem Start
         fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(Xr); }));
         Lokal = fabrik.CreateClient();
     }
 
-    public void EinstellungSetzen(string schluessel, JsonNode? wert) =>
+    /// <summary>Schalter dieses PCs direkt in die Datei schreiben (wie ein anderer KICAD-Prozess auf demselben PC).</summary>
+    public void SchalterSetzen(bool an, int? port = null, int? suchPort = null) => new XrPcEinstellung(Xr).Setzen(an, port, suchPort);
+
+    /// <summary>Eine Benutzereinstellung setzen (gilt über OneDrive für alle Rechner des Benutzers).</summary>
+    public void BenutzerEinstellungSetzen(string schluessel, JsonNode? wert) =>
         new BenutzerEinstellungen(new RechnerAblage(BenutzerOrdner, "testpc", true, "einstellungen.json", "Umleitung")).Setzen(schluessel, wert);
+
+    public string ProjektOrdner => Path.Combine(Ordner, "projekt", "c_Pläne und Modelle", "e_KICAD");
+
+    /// <summary>Beispielprojekt «MFH Musterweg» anlegen und öffnen (für die GLB je Geschoss).</summary>
+    public async Task ProjektAnlegen()
+    {
+        var (code, j) = await LokalPost("/api/projekt/anlegen", new { ordner = ProjektOrdner, name = "MFH Musterweg", beispiel = true });
+        Assert.True(code == HttpStatusCode.OK, j?.ToJsonString());
+    }
 
     public async Task<JsonObject> Zugang() => (JsonObject)JsonNode.Parse(await Lokal.GetStringAsync("/api/xr/zugang"))!;
 
@@ -101,12 +114,51 @@ public sealed class XrServer : IAsyncDisposable
         return c;
     }
 
+    /// <summary>HTTP-Client wie die App beim ersten Kontakt (Weg B): nimmt das Zertifikat an und merkt sich dessen SHA-256 (gesehen()).</summary>
+    public static (HttpClient Client, Func<string?> Gesehen) NetzErstkontakt(int port)
+    {
+        string? fp = null;
+        var h = new SocketsHttpHandler { PooledConnectionLifetime = TimeSpan.FromSeconds(30) };
+        h.SslOptions.RemoteCertificateValidationCallback = (_, z, _, _) =>
+        {
+            if (z is null) return false;
+            fp = Convert.ToHexStringLower(SHA256.HashData(z.GetRawCertData()));
+            return true;
+        };
+        return (new HttpClient(h) { BaseAddress = new Uri($"https://127.0.0.1:{port}"), Timeout = TimeSpan.FromSeconds(20) }, () => fp);
+    }
+
     public async ValueTask DisposeAsync()
     {
+        try { await Lokal.PostAsync("/api/projekt/schliessen", new StringContent("{}", Encoding.UTF8, "application/json")); } catch (Exception ex) when (ex is HttpRequestException or InvalidOperationException) { }
         Lokal.Dispose();
         await fabrik.DisposeAsync();
         await basis.DisposeAsync();
-        try { if (Directory.Exists(Ordner)) Directory.Delete(Ordner, true); } catch (IOException) { } catch (UnauthorizedAccessException) { }
+        for (int i = 0; i < 5; i++)
+        {
+            try { if (Directory.Exists(Ordner)) Directory.Delete(Ordner, true); return; }
+            catch (IOException) { await Task.Delay(200); }
+            catch (UnauthorizedAccessException) { await Task.Delay(200); }
+        }
+    }
+}
+
+/// <summary>
+/// Die Brille bei der Ersatzkopplung (Weg B) – unabhängig vom Server gerechnet, genau wie in XrKopplung.cs beschrieben: Zufallszahl (32 Byte),
+/// Verpflichtung = base64url(SHA-256(Zufallszahl)), Vergleichscode = SHA-256("hlks-xr-vergleich|1|fp|zufallBrille|zufallPc"), erste 8 Byte big-endian mod 1 000 000.
+/// </summary>
+public sealed class XrTestBrille
+{
+    public byte[] Zufall { get; } = RandomNumberGenerator.GetBytes(32);
+    public string ZufallText => System.Buffers.Text.Base64Url.EncodeToString(Zufall);
+    public string Verpflichtung => System.Buffers.Text.Base64Url.EncodeToString(SHA256.HashData(Zufall));
+
+    public static string Code(string fingerabdruck, string zufallBrille, string zufallPc)
+    {
+        var h = SHA256.HashData(Encoding.UTF8.GetBytes("hlks-xr-vergleich|1|" + fingerabdruck + "|" + zufallBrille + "|" + zufallPc));
+        ulong z = 0;
+        for (int i = 0; i < 8; i++) z = (z << 8) | h[i];
+        return (z % 1_000_000).ToString("000000");
     }
 }
 

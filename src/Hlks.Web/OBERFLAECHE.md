@@ -1938,16 +1938,20 @@ bisherigen Server einen eigenen kleinen HTTPS-Server. Der bisherige Server bleib
 Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App installieren mit Kopplung, Brille in der 3D-Ansicht); hier steht die Schnittstelle.
 **KI:** reine Rechner-Funktionen, verboten (`KiEinordnung.RechnerFunktionen` › `xr_zugang`, `xr_kopplung`, `xr_kanal`), kein MCP-Werkzeug.
 
-- **Ein/Aus:** Benutzereinstellung **`xr.zugang`** (Ja/Nein, **Vorgabe aus**), dazu `xr.port` (Vorgabe 5140) und `xr.suchport` (Vorgabe 5141), je 1024–65535.
-  Nur das KICAD auf dem **Desktop-Port 5130** öffnet den Zugang; Abnahmeserver (5150–5153) und Testserver (5131) nie, auch wenn die Einstellung an ist
-  (die Benutzereinstellungen gelten für alle KICAD des Benutzers). Schalten wirkt ohne Neustart (`POST /api/xr/zugang`; sonst wird die Einstellung alle 10 s nachgelesen).
-  Ist ein Port belegt, bleibt der Zugang aus und `GET /api/xr/zugang` nennt den Grund; die Oberfläche läuft weiter.
+- **Ein/Aus je PC** (Christian 23.10.2026: «Je PC»): Schalter **`an`** (Ja/Nein, **Vorgabe aus**), dazu `port` (Vorgabe 5140) und `suchPort` (Vorgabe 5141), je 1024–65535,
+  in der Datei **`%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json`** dieses PCs (`XrPcEinstellung`) – **keine Benutzereinstellung** (die gilt über OneDrive auf allen Rechnern).
+  Gesetzt mit `POST /api/xr/zugang { an, port?, suchPort? }`; fehlt oder klemmt die Datei, ist der Zugang aus. Nur das KICAD auf dem **Desktop-Port 5130** öffnet den Zugang;
+  Abnahmeserver (5150–5153) und Testserver (5131) auf demselben PC nie, auch wenn der Schalter an ist. Schalten wirkt ohne Neustart (sonst wird die Datei alle 10 s
+  nachgelesen; geänderte Ports starten den Zugang neu). Ist ein Port belegt, bleibt der Zugang aus und `GET /api/xr/zugang` nennt den Grund; die Oberfläche läuft weiter.
 - **Netzzugang** (`XrZugang.cs`): HTTPS auf allen IPv4-Adressen, Port 5140, TLS 1.2/1.3, nur HTTP/1.1, Zertifikat von KICAD. Er kennt **nur** Endpunkte des
   Hauptservers mit der Marke `.XrImNetz()` und einem Muster unter `/api/xr/` – sonst 404 (keine Oberfläche, keine Dateien, kein übriges `/api`).
   **Pforte** (`XrPforte.Pruefen`, eine Stelle): Pfad ausserhalb `/api/xr` → 404; Absender gesperrt oder zu viele Anfragen → 429; Schlüssel fehlt oder falsch → 401
-  (`WWW-Authenticate: Bearer`; ohne Schlüssel nur `kopplung/anfrage` und `kopplung/abholen`); Endpunkt ohne Marke (alle PC-Endpunkte) → 404; Körper > 64 KB → 413;
-  nicht `application/json` → 415. Grenzen: 32 Verbindungen, Kopfzeilen 16 KB in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min (danach 429).
-  **Neue Endpunkte für die Brille** (z. B. GLB je Geschoss) unter `/api/xr/` anlegen und mit `.XrImNetz()` markieren; ohne Marke bleiben sie nur auf localhost.
+  (`WWW-Authenticate: Bearer`; ohne Schlüssel nur `kopplung/anfrage`, `kopplung/aufdecken` und `kopplung/abholen`); Endpunkt ohne Marke (alle PC-Endpunkte) → 404;
+  Körper > 64 KB → 413; nicht `application/json` → 415. Grenzen: 32 Verbindungen, Kopfzeilen 16 KB in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min (danach 429).
+  **Freigegeben** sind `verbindung`, `kanal`, die drei Kopplungsschritte und das **Modell als GLB** (P2: `GET /api/xr/geschosse`, `GET /api/xr/geschoss/{id}.glb`, mit Schlüssel,
+  ETag/304 wie auf localhost). **Neue Endpunkte für die Brille** unter `/api/xr/` anlegen und mit `.XrImNetz()` markieren; ohne Marke bleiben sie nur auf localhost.
+  **Komprimierung:** nur `model/gltf-binary`, mit Brotli oder gzip je nach `Accept-Encoding` der App (schnellste Stufe); JSON – etwa das Paket mit dem Schlüssel – nie
+  (über HTTPS unbedenklich, weil die GLB weder Geheimnisse noch Text des Absenders enthalten). Der localhost-Server komprimiert GLB wie IFC-Netze mit gzip (nur für fremde Rechner).
 - **Zertifikat** (`XrZertifikat.cs`): ECDSA P-256, selbst erzeugt, 10 Jahre, je PC in `%LOCALAPPDATA%\HLKS_CAD\xr\zertifikat.dpapi` (privater Schlüssel mit DPAPI
   für den Benutzer verschlüsselt; nie OneDrive, nie Repository). **Fingerabdruck** = SHA-256 über das Zertifikat (DER), 64 Kleinbuchstaben hex; Kurzform für den
   Menschen «AB12 CD34 EF56 7890». Wird es ersetzt (Datei unlesbar, Ablauf in < 30 Tagen), meldet `zertifikatErsetzt` es: Brillen neu koppeln.
@@ -1956,11 +1960,21 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   Prüfwert = HMAC-SHA256(Schlüssel, `hlks-xr-zugang`) und Suchschlüssel = HMAC-SHA256(Schlüssel, `hlks-xr-suche`) (DPAPI), nie der Schlüssel.
   - **Weg A** (bei der Installation per Kabel, Knopf in P7): `POST /api/xr/kopplung/paket { brille, name? }` → `{ paket: { art: "hlks-xr-kopplung", fassung: 1, pc, ips[],
     port, suchPort, fingerabdruck, kopplung, schluessel, brille, name, angelegt } }` (`Cache-Control: no-store`; nur einmal ausgeben, per adb in die App, nie speichern).
-  - **Weg B** (Ersatz ohne Kabel): Brille `POST /api/xr/kopplung/anfrage { brille, name? }` → `{ anfrage, bis, versucheMax }`. KICAD zeigt am PC einen **6-stelligen Code**
-    (`GET /api/xr/zugang` › `anfragen[].code`). Der Mensch tippt den Code in der Brille ein **und** bestätigt am PC (`POST /api/xr/kopplung/bestaetigen { anfrage }`;
-    ablehnen: `…/ablehnen`). Brille `POST /api/xr/kopplung/abholen { anfrage, code }` → 200 `{ status: "gekoppelt", paket }` | 202 `wartet` (Code richtig, PC noch nicht
-    bestätigt) | 403 `falsch` (mit `versucheUebrig`) bzw. `abgelehnt` | 404 `unbekannt` | 410 `abgelaufen` bzw. `gesperrt`. Frist 5 min, 5 falsche Codes, höchstens 3 offene
-    und 20 neue Anfragen je Stunde, abholen nur von der anfragenden IP-Adresse. Am PC neben dem Code die Kurzform des Fingerabdrucks zeigen, die App zeigt die ihre (Vergleich).
+  - **Weg B** (Ersatz ohne Kabel; Christian 23.10.2026: «Nur vergleichen»): Brille und PC zeigen denselben **6-stelligen Vergleichscode**; in der Brille wird nichts
+    eingetippt, der Mensch vergleicht und **bestätigt nur am PC**. Der Code entsteht aus dem Fingerabdruck des Zertifikats und je einer Zufallszahl von Brille und PC
+    (Short Authentication String); wer dazwischen sitzt, kann der Brille nur ein anderes Zertifikat zeigen, sie sieht also einen anderen Code.
+    1. Brille `POST /api/xr/kopplung/anfrage { brille, name?, verpflichtung }` mit verpflichtung = base64url(SHA-256(zufallBrille)), zufallBrille = 32 Zufallsbyte
+       → `{ anfrage, zufallPc, bis, versucheMax }` (zufallPc: 32 Byte, base64url).
+    2. Brille `POST /api/xr/kopplung/aufdecken { anfrage, zufallBrille }` → 200 `{ status: "vergleichen" }` | 403 `falsch` (passt nicht zur Verpflichtung, mit `versucheUebrig`)
+       | 409 `schon_aufgedeckt` | 410 `gesperrt`. Der Code steht nie in einer Antwort an die Brille.
+    3. **Code** = SHA-256 über `hlks-xr-vergleich|1|<fingerabdruck>|<zufallBrille>|<zufallPc>` (UTF-8, Zufallszahlen als base64url), die ersten 8 Byte big-endian als
+       vorzeichenlose Zahl modulo 1 000 000, sechsstellig. Die Brille setzt den SHA-256 des Zertifikats ein, das **sie** in TLS sieht; KICAD den eigenen
+       (`XrKopplungen.Vergleichscode`). Der PC zeigt den Code ab dem Aufdecken (`GET /api/xr/zugang` › `anfragen[].code`, vorher null), daneben der Name der Brille.
+    4. Am PC `POST /api/xr/kopplung/bestaetigen { anfrage }` (erst wenn ein Code da ist, sonst 409) bzw. bei verschiedenen Codes `…/ablehnen`.
+    5. Brille `POST /api/xr/kopplung/abholen { anfrage }` → 202 `wartet` | 200 `{ status: "gekoppelt", paket }` (einmal) | 403 `abgelehnt` | 404 `unbekannt` |
+       409 `aufdecken` | 410 `abgelaufen`. Die App prüft, dass `paket.fingerabdruck` dem in TLS gesehenen gleicht, und pinnt ihn ab dann.
+    Frist 5 min, 5 falsche Aufdeckungen, höchstens 3 offene und 20 neue Anfragen je Stunde; aufdecken und abholen nur von der anfragenden IP-Adresse. Die Verpflichtung
+    vor dem Aufdecken verhindert, dass jemand dazwischen die Zufallszahlen so wählt, dass beide Codes gleich werden (Trefferchance 1 : 1 000 000 je Anfrage).
   - **Widerruf:** `POST /api/xr/kopplung/widerrufen { kopplung }` → `{ widerrufen }`; der Kanal dieser Brille wird sofort getrennt (Code 4001).
 - **Suche** (`XrSuche.cs`, UDP 5141, nur bei eingeschaltetem Zugang): Die Brille ruft per Broadcast `{ typ: "suche", fassung: 1, kopplung, zeit (Unix-ms), zufall (base64url,
   16 Byte), signatur }` mit signatur = HMAC-SHA256(Suchschlüssel, `hlks-xr-suche|1|<kopplung>|<zeit>|<zufall>`), base64url. KICAD antwortet nur bei gültiger Signatur,
@@ -1986,20 +2000,25 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   Grenzen: eine Verbindung je Kopplung (neue ersetzt alte: Code **4002**), höchstens 8 Teilnehmer (1013), Nachricht ≤ 16 KB (1009), nur Text (1003), 60 Nachrichten/s,
   bei Flut oder > 100 ungültigen getrennt (1008), Sendeschlange 256 (zu langsam: **4003**), Widerruf **4001**, Zugang aus **1001**. Der Server reicht nie Rohtext weiter,
   nur geprüfte, neu gebaute Nachrichten. **Messprotokolle:** je Verbindung eine Datei JSON-Zeilen `%LOCALAPPDATA%\HLKS_CAD\xr\messprotokolle\<JJJJMMTT-hhmmss>_<Teilnehmer>.jsonl` (≤ 5 MB).
-- **Für den PC** (nur localhost, Herkunftsschutz): `GET /api/xr/zugang` → `{ an, aktiv, adresse, port, suchPort, sucheAktiv, seit?, pc, ips[], fingerabdruck, fingerabdruckKurz,
-  zertifikatBis, zertifikatErsetzt, fehler?, hinweis?, kopplungen[{ id, brille, name, weg, angelegt, zuletzt?, verbunden }], anfragen[{ anfrage, brille, name, ip?, code, bis,
-  bestaetigt, abgelehnt, versuche }], teilnehmer }`; `POST /api/xr/zugang { an }`; `GET /api/xr/teilnehmer` → `{ teilnehmer[{ id, name, geraet, app?, kopplung, brille,
+- **Für den PC** (nur localhost, Herkunftsschutz): `GET /api/xr/zugang` → `{ an, schalter (Pfad von zugang.json), aktiv, adresse, port, suchPort, sucheAktiv, seit?, pc, ips[],
+  fingerabdruck, fingerabdruckKurz, zertifikatBis, zertifikatErsetzt, fehler?, hinweis?, kopplungen[{ id, brille, name, weg, angelegt, zuletzt?, verbunden }],
+  anfragen[{ anfrage, brille, name, ip?, code (null bis aufgedeckt), bis, bestaetigt, abgelehnt, versuche }], teilnehmer }`; `POST /api/xr/zugang { an, port?, suchPort? }`;
+  `GET /api/xr/teilnehmer` → `{ teilnehmer[{ id, name, geraet, app?, kopplung, brille,
   brillenName, seit, pose?, poseZeit?, zeigen?, zeigenZeit?, posen, weitergereicht, verworfen }], stellschrauben{} }` (P7: Brille als Figur, etwa 5–10 Abfragen je Sekunde);
   `POST /api/xr/stellschraube { schluessel, wert, teilnehmer? }` → `{ gesendet, stellschrauben }` (ohne `teilnehmer`: an alle und für neue gemerkt).
   Für die Brille zusätzlich `GET /api/xr/verbindung` (Probe mit Schlüssel → `{ ok, fassung, pc, kopplung, zeit, teilnehmer }`).
 - **Was die App tun muss** (P4): Paket speichern (Schlüssel im Android-Keystore bzw. privat im App-Ordner); jede Verbindung nur annehmen, wenn SHA-256 des Serverzertifikats
   gleich `fingerabdruck` ist (`ServerCertificateCustomValidationCallback` bzw. `RemoteCertificateValidationCallback`, keine Kette); PC suchen: zuerst die gespeicherten
   `ips`, sonst Broadcast an `suchPort` und die Antwort mit dem Suchschlüssel prüfen; Kanal öffnen, `hallo`, Posen 20–30 je Sekunde; nach 4001/4002 nicht neu verbinden.
+  Weg B: beim ersten Kontakt das Zertifikat vorläufig annehmen und seinen SHA-256 merken, Zufallszahl erzeugen, anfragen, aufdecken, den Code selbst rechnen und gross
+  zeigen («Am PC denselben Code bestätigen»), abholen bis 200; nur übernehmen, wenn `paket.fingerabdruck` gleich dem gemerkten ist. GLB mit `Accept-Encoding: br, gzip`
+  und `If-None-Match` holen.
 - **Firewall:** KICAD ändert nichts. `werkzeuge/xr_firewall.ps1` (als Administrator, von Christian) legt zwei eingehende Regeln an: TCP 5140 und UDP 5141, nur Profil
   «Privat», nur aus dem eigenen Subnetz; `-Entfernen` nimmt sie weg, `-Liste` zeigt Regeln, Netzprofil und Sperren für dotnet.exe.
 - **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~Hlks.Web.Tests.Xr"` (Netzzugang echt mit TLS, aber nur auf 127.0.0.1 mit freien Ports).
   **Nur mit Brille und Büronetz prüfbar:** Erreichbarkeit über WLAN und Firewall, Broadcast im Büronetz, Pinning in der App, Dauerlast 30 Posen/s über WLAN.
   **Anleitung:** `zb-xr-zugang` in `berichte/anleitung/inventar.json`.
+
 ## Modul XR, Quest App P2: Modell als GLB je Geschoss (`entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P2)
 
 Die native Quest App (StereoKit, `src/Hlks.Quest`) lädt das Modell nicht über `/api/koerper`, sondern als **glTF 2.0 binär (GLB) je Geschoss**, zusammengefasst je Material (Meta, Quest 3: höchstens
@@ -2030,7 +2049,8 @@ Kern: `Hlks.Kern/Xr/` (`XrModell`, `XrNetzbau`, `XrFarben`, `XrKoordinaten`, `Gl
   `GET /api/xr/geschoss/{id}.glb?teil=modell|unterlage` (Id oder Kennzeichen; ohne `teil` = modell) → `model/gltf-binary`, `ETag: "<schluessel>"`, `Cache-Control: no-cache`; `If-None-Match` mit diesem ETag (auch `W/…`, `*`) → **304**.
   Fehler `{ fehler, vorschlag }`: 400 Teil unbekannt, 404 Geschoss unbekannt bzw. keine Unterlage, 409 kein Projekt. Erfasst wird unter der Sperre des Projekts, zerlegt und geschrieben ohne Sperre; fertige GLB bleiben je Schlüssel im
   Speicher (höchstens 256 MB), gleichzeitige Anfragen rechnen einmal. **KI:** reine Rechner-Funktion `xr_modell` in `KiEinordnung.RechnerFunktionen` (für die KI verboten), kein MCP-Werkzeug.
-  Für P3 (Büronetz): die Antwortkomprimierung in `Program.cs` gilt nur für `application/octet-stream`; für die GLB dort `model/gltf-binary` ergänzen, falls über WLAN komprimiert werden soll.
+  **Büronetz (P3-Nachtrag, 23.10.2026):** beide Endpunkte tragen `.XrImNetz()` und sind über den Zugang im Büronetz mit Schlüssel erreichbar (sonst 401); dort werden
+  die GLB mit Brotli oder gzip komprimiert. `Program.cs` komprimiert `model/gltf-binary` wie `application/octet-stream` (gzip, nur für fremde Rechner). Abschnitt «Modul XR: Zugang im Büronetz».
 - **Für die App (P4):** StereoKit 0.3.11 lädt die GLB (geprüft im Offscreen-Modus mit Test_praxis: alle Netze, Ecken, Dreiecke, Transparenz, doppelseitig). Die Netze behalten die glTF-Koordinaten, StereoKit setzt aber
   beim Laden eine **Drehung um 180° um die Hochachse** in die Knoten (`Model.Bounds`: x → −x, z → −z, `Mesh.Bounds` unverändert); die App muss die Knoten-Transformation zurücksetzen oder die Drehung beim Umrechnen
   berücksichtigen. Räume (Gruppe `raum`, Deckkraft 0.15) blendet die App beim Begehen nach Bedarf aus.

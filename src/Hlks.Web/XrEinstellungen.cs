@@ -1,48 +1,42 @@
 // Einstellungen des XR-Zugangs im Büronetz (Modul XR, Quest App P3; Entscheid Christian 23.10.2026: «sofort WLAN mit Kopplung und TLS»).
 //
 // Zwei Ebenen:
-//   1. Benutzereinstellungen (BenutzerEinstellungen.Bekannt, gleich auf allen Rechnern des Benutzers):
-//        xr.zugang    Ja/Nein, Vorgabe NEIN – nur wenn an, öffnet KICAD den Netzzugang (HTTPS) und die Suche (UDP)
-//        xr.port      TCP-Port des Netzzugangs (HTTPS), Vorgabe 5140
-//        xr.suchport  UDP-Port der Suche im Netz, Vorgabe 5141
+//   1. Schalter und Ports JE PC (Entscheid Christian 23.10.2026: «Je PC»; XrPcEinstellung unten): Datei <Ordner>\zugang.json, Vorgabe
+//      %LOCALAPPDATA%\HLKS_CAD\xr\zugang.json neben Zertifikat und Kopplungen – NICHT in den Benutzereinstellungen (die gelten über OneDrive auf allen
+//      Rechnern des Benutzers). Inhalt: an (Ja/Nein, Vorgabe NEIN – nur wenn an, öffnet KICAD den Netzzugang und die Suche), port (TCP, HTTPS,
+//      Vorgabe 5140), suchPort (UDP, Vorgabe 5141). Geschrieben nur über POST /api/xr/zugang (localhost).
 //   2. XrEinstellungen (dieser Datensatz): Adresse, Grenzen, Fristen, Ordner. Vorgabe für den Betrieb; Tests registrieren eine eigene Fassung im
 //      Dienstcontainer (ConfigureTestServices), wie bei QuestEinstellungen.
 //
-// Zusätzliche Sperre (DesktopPort): Die Benutzereinstellungen gelten für ALLE KICAD-Server des Benutzers (OneDrive). Damit Abnahmeserver (5150–5153)
-// und Testserver (5131) auch bei eingeschaltetem xr.zugang nie im Netz offen sind, öffnet nur das KICAD auf dem Desktop-Port (5130) den Zugang.
+// Zusätzliche Sperre (DesktopPort): Alle KICAD-Server auf diesem PC lesen dieselbe Datei. Damit Abnahmeserver (5150–5153) und Testserver (5131) auch bei
+// eingeschaltetem Zugang nie im Netz offen sind, öffnet nur das KICAD auf dem Desktop-Port (5130) den Zugang.
 //
 // Im Testlauf (HLKS_TEST oder Testrunner) bindet die Vorgabe nur 127.0.0.1 mit freien Ports und schreibt nur unter %TEMP% – nie ins Netz, nie nach
 // %LOCALAPPDATA%.
 
 using System.Net;
-using System.Text.Json.Nodes;
+using System.Text.Json;
 using Hlks.Kern;
 
 namespace Hlks.Web;
 
 public sealed record XrEinstellungen
 {
-    /// <summary>Benutzereinstellung (Ja/Nein, Vorgabe nein): Netzzugang für die Quest App öffnen.</summary>
-    public const string ZugangSchluessel = "xr.zugang";
-    /// <summary>Benutzereinstellung: TCP-Port des Netzzugangs (HTTPS), Vorgabe 5140.</summary>
-    public const string PortSchluessel = "xr.port";
-    /// <summary>Benutzereinstellung: UDP-Port der Suche, Vorgabe 5141.</summary>
-    public const string SuchPortSchluessel = "xr.suchport";
     public const int PortVorgabe = 5140;
     public const int SuchPortVorgabe = 5141;
     public const int DesktopPortVorgabe = 5130;
 
     /// <summary>Adresse, auf der der Netzzugang und die Suche lauschen. Betrieb: alle IPv4-Adressen (0.0.0.0); Tests: 127.0.0.1.</summary>
     public IPAddress Adresse { get; init; } = IPAddress.Any;
-    /// <summary>Port des Netzzugangs; null = Benutzereinstellung xr.port bzw. 5140; 0 = frei wählen (nur Tests).</summary>
+    /// <summary>Port des Netzzugangs; null = Einstellung dieses PCs (zugang.json, «port») bzw. 5140; 0 = frei wählen (nur Tests).</summary>
     public int? Port { get; init; }
-    /// <summary>Port der Suche; null = Benutzereinstellung xr.suchport bzw. 5141; 0 = frei wählen (nur Tests).</summary>
+    /// <summary>Port der Suche; null = Einstellung dieses PCs (zugang.json, «suchPort») bzw. 5141; 0 = frei wählen (nur Tests).</summary>
     public int? SuchPort { get; init; }
     /// <summary>Nur der KICAD-Server auf diesem Port öffnet den Zugang (Desktop); null = jeder (nur Tests).</summary>
     public int? DesktopPort { get; init; } = DesktopPortVorgabe;
-    /// <summary>Ordner für Zertifikat, Kopplungen und Messprotokolle; null = %LOCALAPPDATA%\HLKS_CAD\xr (nie OneDrive, nie das Repository).</summary>
+    /// <summary>Ordner für Schalter (zugang.json), Zertifikat, Kopplungen und Messprotokolle; null = %LOCALAPPDATA%\HLKS_CAD\xr (je PC; nie OneDrive, nie das Repository).</summary>
     public string? Ordner { get; init; }
-    /// <summary>So oft wird die Einstellung xr.zugang nachgelesen (Änderung an einem anderen Rechner oder in der Oberfläche).</summary>
+    /// <summary>So oft wird der Schalter (zugang.json) nachgelesen, z. B. wenn ein anderer KICAD-Prozess auf diesem PC ihn geändert hat.</summary>
     public TimeSpan PruefAbstand { get; init; } = TimeSpan.FromSeconds(10);
 
     // ---------------------------------------------------------------- Kopplung
@@ -109,7 +103,7 @@ public sealed record XrEinstellungen
         return Path.Combine(lokal, "HLKS_CAD", "xr");
     }
 
-    /// <summary>Die Werte für den Betrieb (alle IPv4-Adressen, Ports aus den Benutzereinstellungen, nur Desktop-Port 5130).</summary>
+    /// <summary>Die Werte für den Betrieb (alle IPv4-Adressen, Ports aus der Einstellung dieses PCs, nur Desktop-Port 5130).</summary>
     public static XrEinstellungen Betrieb() => new();
 
     /// <summary>Vorgabe: im Testlauf nur 127.0.0.1, freie Ports, Ordner unter %TEMP%; sonst Betrieb.</summary>
@@ -117,14 +111,71 @@ public sealed record XrEinstellungen
         ? new XrEinstellungen { Adresse = IPAddress.Loopback, Port = 0, SuchPort = 0, Ordner = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "xr_test") }
         : Betrieb();
 
-    // ---------------------------------------------------------------- Prüfung der Benutzereinstellungen (BenutzerEinstellungen.Bekannt)
-
-    public static string? JaNeinPruefen(JsonNode w) =>
-        w is JsonValue v && v.TryGetValue<bool>(out _) ? null : "Erlaubt sind true und false.";
-
-    public static string? PortPruefen(JsonNode w) =>
-        w is JsonValue v && v.TryGetValue<int>(out var p) && p is >= 1024 and <= 65535 ? null : "Der Port muss eine ganze Zahl von 1024 bis 65535 sein.";
+    /// <summary>Ein Port für Zugang oder Suche: 1024 bis 65535.</summary>
+    public static bool PortGueltig(int? p) => p is >= 1024 and <= 65535;
 }
 
 /// <summary>Der Port, auf dem dieser KICAD-Server die Oberfläche anbietet (localhost); für die Sperre DesktopPort.</summary>
 public sealed record XrHauptPort(int Port);
+
+/// <summary>Stand des Schalters dieses PCs. Port und SuchPort null = Vorgabe (5140, 5141).</summary>
+public sealed record XrPcStand(bool An, int? Port, int? SuchPort, DateTimeOffset? Zeit);
+
+/// <summary>
+/// Schalter und Ports des XR-Zugangs JE PC (Christian 23.10.2026: «Je PC»): Datei &lt;Ordner&gt;\zugang.json (Vorgabe %LOCALAPPDATA%\HLKS_CAD\xr), nie OneDrive.
+/// Format { format: 1, an, port?, suchPort?, zeit, rechner }. Fehlt die Datei oder ist sie unlesbar, ist der Zugang AUS (lieber zu streng).
+/// </summary>
+public sealed class XrPcEinstellung(XrEinstellungen einstellungen)
+{
+    sealed class Datei
+    {
+        public int Format { get; set; } = 1;
+        public bool An { get; set; }
+        public int? Port { get; set; }
+        public int? SuchPort { get; set; }
+        public DateTimeOffset? Zeit { get; set; }
+        public string? Rechner { get; set; }
+    }
+
+    readonly object sperre = new();
+
+    public string DateiPfad => Path.Combine(einstellungen.OrdnerPfad(), "zugang.json");
+
+    /// <summary>Liest den Schalter; fehlt oder klemmt die Datei: aus. Ungültige Ports gelten als nicht gesetzt.</summary>
+    public XrPcStand Lesen()
+    {
+        try
+        {
+            if (!File.Exists(DateiPfad)) return new(false, null, null, null);
+            var d = JsonSerializer.Deserialize<Datei>(File.ReadAllText(DateiPfad), Json.Optionen);
+            if (d is null || d.Format != 1) return new(false, null, null, null);
+            return new(d.An, XrEinstellungen.PortGueltig(d.Port) ? d.Port : null, XrEinstellungen.PortGueltig(d.SuchPort) ? d.SuchPort : null, d.Zeit);
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or JsonException) { return new(false, null, null, null); }
+    }
+
+    /// <summary>Setzt den Schalter (Ports null = bisherigen Wert behalten). Wirft HlksFehler bei ungültigem Port oder wenn die Datei nicht geschrieben werden kann.</summary>
+    public XrPcStand Setzen(bool an, int? port = null, int? suchPort = null)
+    {
+        if (port is not null && !XrEinstellungen.PortGueltig(port)) throw new HlksFehler("Der Port muss eine ganze Zahl von 1024 bis 65535 sein.", "Vorgabe: 5140 (HTTPS).");
+        if (suchPort is not null && !XrEinstellungen.PortGueltig(suchPort)) throw new HlksFehler("Der Suchport muss eine ganze Zahl von 1024 bis 65535 sein.", "Vorgabe: 5141 (UDP).");
+        lock (sperre)
+        {
+            var alt = Lesen();
+            var d = new Datei { An = an, Port = port ?? alt.Port, SuchPort = suchPort ?? alt.SuchPort, Zeit = einstellungen.Jetzt(), Rechner = Environment.MachineName };
+            try
+            {
+                XrSchutz.OrdnerAnlegen(einstellungen.OrdnerPfad());
+                var temp = DateiPfad + "." + Guid.NewGuid().ToString("N")[..8] + ".tmp";
+                File.WriteAllText(temp, Json.Text(d, true));
+                XrSchutz.NurBenutzer(temp);
+                File.Move(temp, DateiPfad, true);
+            }
+            catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
+            {
+                throw new HlksFehler($"Der Schalter des XR-Zugangs konnte nicht gespeichert werden ({DateiPfad}): {ex.Message}", "Schreibrechte im Ordner prüfen und erneut versuchen.");
+            }
+            return new(d.An, d.Port, d.SuchPort, d.Zeit);
+        }
+    }
+}

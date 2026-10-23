@@ -10961,22 +10961,23 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Noch ohne Knopf (folgt mit P7 «Quest verbinden»): Benutzereinstellung xr.zugang bzw. POST /api/xr/zugang; Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
+            "sonst": "Noch ohne Knopf (folgt mit P7 «Quest verbinden»): Schalter dieses PCs (%LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json) über POST /api/xr/zugang; Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
           },
           "schritte": [
             "PowerShell als Administrator öffnen, in den Ordner HLKS_CAD wechseln und «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» ausführen. Das Skript legt zwei eingehende Regeln an (TCP 5140 und UDP 5141, nur Profil «Privat», nur aus dem eigenen Subnetz) und zeigt das Profil des Netzes.",
             "Steht beim Büronetz nicht «Private», das Netz in den Windows-Einstellungen als privates Netz einstufen; sonst greifen die Regeln nicht.",
-            "Den Zugang einschalten. Bis der Knopf in «Quest verbinden» kommt (P7), in PowerShell: Invoke-RestMethod -Method Post -Uri http://localhost:5130/api/xr/zugang -ContentType application/json -Body '{\"an\":true}'.",
+            "Den Zugang einschalten. Bis der Knopf in «Quest verbinden» kommt (P7), in PowerShell: Invoke-RestMethod -Method Post -Uri http://localhost:5130/api/xr/zugang -ContentType application/json -Body '{\"an\":true}'. Der Schalter gilt nur für diesen PC (nicht über OneDrive für die anderen Rechner).",
             "Fragt Windows «Zugriff zulassen?» für dotnet.exe, nur «Private Netzwerke» wählen («Abbrechen» sperrt KICAD; «xr_firewall.ps1 -Liste» zeigt solche Sperren).",
             "Den Zustand ansehen: http://localhost:5130/api/xr/zugang im Browser des PCs (aktiv, Port, IP-Adressen, Fingerabdruck in Kurzform, gekoppelte Brillen, offene Anfragen mit Code).",
             "Zum Ausschalten «{\"an\":false}» senden. Die Firewall-Regeln entfernt «xr_firewall.ps1 -Entfernen»."
           ],
-          "erwartung": "Mit xr.zugang aus (Vorgabe) ist KICAD nur auf localhost erreichbar. Eingeschaltet meldet /api/xr/zugang «aktiv: true», Port 5140 und die IP-Adressen des PCs; von einem anderen Gerät im Büronetz antwortet https://<IP>:5140/ mit 404 und https://<IP>:5140/api/xr/verbindung ohne Schlüssel mit 401. Nur das KICAD auf Port 5130 öffnet den Zugang; Abnahme- und Testserver nennen im Feld «fehler» den Grund. Ein- und Ausschalten wirkt ohne Neustart. Die KI kann die Funktion nicht benutzen.",
+          "erwartung": "Mit ausgeschaltetem Zugang (Vorgabe, je PC) ist KICAD nur auf localhost erreichbar. Eingeschaltet meldet /api/xr/zugang «aktiv: true», Port 5140 und die IP-Adressen des PCs; von einem anderen Gerät im Büronetz antwortet https://<IP>:5140/ mit 404 und https://<IP>:5140/api/xr/verbindung ohne Schlüssel mit 401. Nur das KICAD auf Port 5130 öffnet den Zugang; Abnahme- und Testserver nennen im Feld «fehler» den Grund. Ein- und Ausschalten wirkt ohne Neustart. Die KI kann die Funktion nicht benutzen.",
           "pruefpunkte": [
             "xr_firewall.ps1 ohne Administratorrechte bricht mit einer Meldung ab und ändert nichts.",
             "Nach dem Skript zeigt «xr_firewall.ps1 -Liste» zwei Regeln der Gruppe «KICAD XR» mit Profil Private und RemoteAddress LocalSubnet.",
-            "xr.zugang aus: /api/xr/zugang meldet «aktiv: false»; Port 5140 ist nicht offen (Test-NetConnection <IP> -Port 5140 scheitert).",
-            "xr.zugang an: «aktiv: true» innert Sekunden, ohne Neustart; der Fingerabdruck bleibt nach einem Neustart von KICAD gleich.",
+            "Schalter aus: /api/xr/zugang meldet «aktiv: false»; Port 5140 ist nicht offen (Test-NetConnection <IP> -Port 5140 scheitert).",
+            "Schalter an: «aktiv: true» innert Sekunden, ohne Neustart; der Fingerabdruck bleibt nach einem Neustart von KICAD gleich.",
+            "Je PC: Auf einem zweiten Rechner desselben Benutzers bleibt der Zugang aus, obwohl er auf dem ersten an ist; ein Abnahmeserver (5150–5153) auf demselben PC öffnet nichts.",
             "Von einem Handy im Büro-WLAN: https://<IP>:5140/ ergibt nach der Zertifikatswarnung 404, https://<IP>:5140/api/xr/verbindung ergibt 401.",
             "Ausschalten: Port 5140 ist sofort zu; eine verbundene Brille wird getrennt."
           ],
@@ -10991,7 +10992,7 @@
             "werkzeuge/xr_firewall.ps1",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: Zugang im Büronetz für die Quest App»)"
           ],
-          "hinweis": "Server-Teil der Quest App (P3); die Oberfläche (Knopf, Kopplung mit Code, Brille in der 3D-Ansicht) folgt mit P6/P7, die App-Seite mit P4. Zertifikat, Kopplungen und Messprotokolle liegen je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr (nie OneDrive, nie Repository). Nur mit Büronetz, Firewall und Brille zu prüfen; die automatischen Tests laufen auf 127.0.0.1. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_zugang, xr_kopplung, xr_kanal). Einstellungen: xr.zugang (Ja/Nein, Vorgabe aus), xr.port (5140), xr.suchport (5141)."
+          "hinweis": "Server-Teil der Quest App (P3); die Oberfläche (Knopf, Kopplung mit Code, Brille in der 3D-Ansicht) folgt mit P6/P7, die App-Seite mit P4. Zertifikat, Kopplungen und Messprotokolle liegen je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr (nie OneDrive, nie Repository). Nur mit Büronetz, Firewall und Brille zu prüfen; die automatischen Tests laufen auf 127.0.0.1. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_zugang, xr_kopplung, xr_kanal). Schalter je PC (Christian 23.10.2026 «Je PC»): %LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json mit an (Vorgabe aus), port (5140), suchPort (5141) – keine Benutzereinstellung. Über den Zugang holt die Brille auch das Modell als GLB je Geschoss (mit Brotli/gzip komprimiert). Ersatzkopplung ohne Kabel (Weg B, P7): Brille und PC zeigen denselben 6-stelligen Code; nur vergleichen und am PC bestätigen, in der Brille wird nichts eingetippt."
         }
       ]
     }
