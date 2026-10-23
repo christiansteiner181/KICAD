@@ -393,6 +393,21 @@ sealed class QuestApp
         Console.WriteLine($"{AppName}: {text}");
     }
 
+    /// <summary>
+    /// Geschoss, in dem man steht: das oberste, dessen Kote höchstens 0,3 m über dem Standboden liegt; darunter das unterste. Standboden = Höhe des
+    /// Rigs (steht auf OK Boden; Springen behält sie, ein Auftrag setzt sie auf den Boden des Raums) – nicht die Kopfhöhe: Brillentest 23.10.2026,
+    /// die abgelegte Brille (Kopf 0,37 m über Boden) liess die erste Fassung ins Geschoss darunter wechseln. Kote aus /api/xr/geschosse (KICAD-mm).
+    /// </summary>
+    string? GeschossAmStand()
+    {
+        var liste = stand?.Liste.Geschosse;
+        if (liste is null || liste.Count == 0) return null;
+        var bezugZ = szene?.Bezugspunkt is { Length: >= 3 } b ? b[2] : 0;
+        var fuesseMm = rig.Y * 1000 + bezugZ;
+        var sortiert = liste.OrderBy(g => g.KoteMm).ToList();
+        return (sortiert.LastOrDefault(g => g.KoteMm <= fuesseMm + 300) ?? sortiert[0]).Id;
+    }
+
     string Einblendung()
     {
         if (standort is null) return "";
@@ -419,6 +434,7 @@ sealed class QuestApp
         {
             Haende(kopf, kopfRefV, kopfWelt, blickWelt);
             if (durchgang!.Pruefen(VrLogik.KopfWelt(rig, kopfRefV))) darstellung.DurchgangSetzen(durchgang.BereicheJeNetz());
+            darstellung.NurGeschoss = GeschossAmStand();
             darstellung.Zeichnen(Matrix4x4.Invert(RigMatrix, out var inv) ? inv : Matrix4x4.Identity);
             PoseSenden(kopf, kopfWelt);
             letzterKopf = (kopfWelt, blickWelt);
@@ -443,7 +459,7 @@ sealed class QuestApp
         var hz = bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0;
         return string.Create(CultureInfo.InvariantCulture,
             $"Gerät={Device.Name}, Bildrate={hz:0} Hz, Bildzeit={bildzeit.Mittel:0.0} ms (höchstens {bildzeit.Maximum:0.0}), Rechenzeit={rechenzeit.Mittel:0.00} ms, " +
-            $"Netze={darstellung?.Netze ?? 0}, Dreiecke={darstellung?.Dreiecke ?? 0}, Durchgang={durchgang?.Nah.Count ?? 0}, Verbindung={verbindungText}, " +
+            $"Geschoss={darstellung?.NurGeschoss ?? "alle"}, Netze={darstellung?.GezeichnetNetze ?? 0} von {darstellung?.Netze ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, Durchgang={durchgang?.Nah.Count ?? 0}, Verbindung={verbindungText}, " +
             $"Modell={modellWeg}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}, " +
             $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}");
     }
@@ -531,7 +547,11 @@ sealed class QuestApp
         else anzeige.position = Vec3.Lerp(anzeige.position, ziel, Math.Min(1, Time.Stepf * 2.5f));
         anzeige.orientation = Quat.LookAt(anzeige.position, kopf.position);
 
-        UI.WindowBegin("KICAD", ref anzeige, new Vec2(0.30f, 0), UIWin.Body, UIMove.None);
+        // Brillentest Christian 23.10.2026: «text geht über box hinaus, text und box eher etwas klein» → Box samt Text skaliert (AnzeigeSkala),
+        // Zeilen mit Umbruch (UI.Text statt UI.Label). Die Skala wird im Labor (P5) zur Stellschraube.
+        Hierarchy.Push(Matrix.TRS(anzeige.position, anzeige.orientation, AnzeigeSkala));
+        Pose lokal = Pose.Identity;
+        UI.WindowBegin("KICAD", ref lokal, new Vec2(0.32f, 0), UIWin.Body, UIMove.None);
         UI.PushTint(zustand switch
         {
             Zustand.Verbunden => new Color(0.4f, 1f, 0.5f, 1),
@@ -539,18 +559,20 @@ sealed class QuestApp
             Zustand.Fehler => new Color(1f, 0.4f, 0.4f, 1),
             _ => new Color(0.8f, 0.8f, 0.8f, 1),
         });
-        UI.Label("● " + (zustand == Zustand.OhnePc ? "Ohne PC · " : "") + verbindungText, false);
+        UI.Text("● " + (zustand == Zustand.OhnePc ? "Ohne PC · " : "") + verbindungText);
         UI.PopTint();
         var ort = Einblendung();
-        if (ort.Length > 0) UI.Label(ort, false);
-        else if (darstellung is null) UI.Label("Modell wird geladen …", false);
-        if (Time.Total < hinweisBis && hinweis.Length > 0) UI.Label(hinweis, false);
+        if (ort.Length > 0) UI.Text(ort);
+        else if (darstellung is null) UI.Text("Modell wird geladen …");
+        if (Time.Total < hinweisBis && hinweis.Length > 0) UI.Text(hinweis);
         if (darstellung is not null)
-            UI.Label(string.Create(CultureInfo.InvariantCulture,
-                $"Pinch auf den Boden: springen · Pinch + Wisch: drehen\n{darstellung.Netze} Netze · {darstellung.Dreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"),
-                false);
+            UI.Text(string.Create(CultureInfo.InvariantCulture,
+                $"Pinch auf den Boden: springen · Pinch + Wisch: drehen\n{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
         UI.WindowEnd();
+        Hierarchy.Pop();
     }
+
+    const float AnzeigeSkala = 1.35f;
 
     // --------------------------------------------------------------------------------------------------- Prüfen (--pruefen)
 

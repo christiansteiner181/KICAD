@@ -13,8 +13,11 @@
 param(
   [string]$Projekt = '',
   [switch]$OhneAuftrag,
+  [switch]$Kabel,
   [switch]$Beenden
 )
+# -Kabel: ohne WLAN-Zugang ueber die Firewall (Netz "Oeffentlich" oder Regeln fehlen) - adb reverse leitet den HTTPS-Port der Brille ueber das
+# Kabel auf diesen PC, und das Paket nennt 127.0.0.1 als erste Adresse (Christian 23.10.2026: "Jetzt ueber Kabel"). K3 (WLAN) bleibt offen.
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
@@ -42,6 +45,7 @@ if ($Beenden) {
     try { Post '/api/xr/kopplung/widerrufen' @{ kopplung = $s.kopplung } | Out-Null; Aus 'Kopplung widerrufen.' } catch { Aus 'Widerruf nicht moeglich (Server weg?).' }
     try { Post '/api/xr/zugang' @{ an = $false } | Out-Null; Aus 'Netzzugang aus.' } catch { }
     if ($s.serverPid) { Stop-Process -Id $s.serverPid -Force -ErrorAction SilentlyContinue; Aus "Server $($s.serverPid) beendet." }
+    if ($s.serie) { & $adb -s $s.serie reverse --remove-all 2>$null | Out-Null }
     Remove-Item $zustand -Force
   } else { Aus 'Kein laufender Brillentest.' }
   exit 0
@@ -91,6 +95,13 @@ while (-not (Get '/api/xr/zugang').aktiv) {
 $z = Get '/api/xr/zugang'
 Aus "Netzzugang aktiv: HTTPS Port $($z.port), Suche UDP $($z.suchPort), Fingerabdruck $($z.fingerabdruckKurz)"
 $inhalt = Post '/api/xr/kopplung/paket' @{ brille = $serie; name = "$modell Brillentest" }
+if ($Kabel) {
+  & $adb -s $serie reverse "tcp:$($z.port)" "tcp:$($z.port)" | Out-Null
+  $o = $inhalt | ConvertFrom-Json
+  $o.paket.ips = @('127.0.0.1') + @($o.paket.ips | Where-Object { $_ -ne '127.0.0.1' })
+  $inhalt = $o | ConvertTo-Json -Depth 10 -Compress
+  Aus "Kabel: adb reverse tcp:$($z.port), 127.0.0.1 als erste Adresse im Paket."
+}
 $kopplung = ($inhalt | ConvertFrom-Json).paket.kopplung
 Aus ('Paket fuer IPs: ' + ((($inhalt | ConvertFrom-Json).paket.ips) -join ', '))
 @{ serverPid = $server.Id; kopplung = $kopplung; serie = $serie } | ConvertTo-Json | Set-Content -Path $zustand -Encoding UTF8

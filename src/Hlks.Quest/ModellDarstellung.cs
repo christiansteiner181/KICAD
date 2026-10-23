@@ -97,14 +97,31 @@ sealed class ModellDarstellung
         ImDurchgang = anzahl;
     }
 
+    /// <summary>
+    /// Nur dieses Geschoss zeichnen – seine eigenen Bauteile und seine IFC-Unterlage; null = alle Geschosse. Brillentest Christian 23.10.2026 (Test_praxis
+    /// zeitweise 54–60 Hz statt 72 Hz, die Grafik ist der Engpass): «beschränken auf eigenes und IFC».
+    /// </summary>
+    public string? NurGeschoss { get; set; }
+
+    /// <summary>Im letzten Bild gezeichnete Netze bzw. Dreiecke (nach NurGeschoss und ausgeblendeten Gruppen).</summary>
+    public int GezeichnetNetze { get; private set; }
+    public long GezeichnetDreiecke { get; private set; }
+
     /// <summary>Zeichnet die Szene; welt = Matrix von der Szene in den Raum von StereoKit (Umkehrung des Rigs).</summary>
     public void Zeichnen(Matrix welt)
     {
+        int netze = 0;
+        long dreiecke = 0;
         foreach (var t in teile)
         {
             if (!t.Sichtbar) continue;
+            if (NurGeschoss is not null && t.Netz.GeschossId != NurGeschoss) continue;
             if (!t.HauptLeer) t.Haupt.Draw(t.Material, welt);
             if (t.DurchAktiv) t.Durch!.Draw(t.DurchMaterial, welt);
+            netze++;
+            dreiecke += t.Netz.Daten.Dreiecke;
         }
+        GezeichnetNetze = netze;
+        GezeichnetDreiecke = dreiecke;
     }
 }
