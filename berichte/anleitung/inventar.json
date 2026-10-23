@@ -11144,7 +11144,7 @@
             "Nach dem Laden steht man im Startpunkt: im Raum des letzten VR-Auftrags vom PC, sonst am zuletzt benutzten Standpunkt, sonst im grössten Raum des Erdgeschosses. Die Anzeige nennt Geschoss und Raum.",
             "Springen: mit der Hand auf den Boden zeigen (der feine weisse Strahl ist der Zeiger der Hand), Daumen und Zeigefinger zusammenführen und halten. Strahl und Ring zeigen das Ziel, cyan beim Zielen; sobald das Ziel einen Moment ruhig liegt, werden sie grün – jetzt springt Loslassen dorthin (Ton, kurzes Abblenden, Ring am Ziel). Zeigt man beim Halten vom Boden weg, ist der Sprung abgebrochen (Klick).",
             "Drehen: Pinch halten und schnell seitlich wischen – die Welt folgt der Hand (nach rechts gewischt dreht nach links, 30°). Schnell hintereinander geht es nur in eine Richtung: das Zurückholen der Hand dreht nicht zurück. Drehen wirkt im Sitzen von selbst (die App erkennt es an der Kopfhöhe), im Stehen nicht – wer steht, dreht sich selbst. Der Schalter «Drehen» in der Box zeigt den Zustand («Drehen: ein (sitzend)», «aus (stehend)»); mit dem Finger antippen übersteuert ihn bis zum nächsten Hinsetzen bzw. Aufstehen. Wirkt Drehen: Daumen und Zeigefinger zusammen halten und die Hand kurz und schnell nach rechts bzw. links wischen; die Sicht dreht um 30° in diese Richtung (Doppelton).",
-            "Es wird nur das Geschoss gezeichnet, in dem man steht (mit seiner IFC-Unterlage); die Anzeige nennt es (z. B. «EG»). Ein anderes Geschoss bis P5 über den Auftrag vom PC.",
+            "Es wird nur das Geschoss gezeichnet, in dem man steht (mit seiner IFC-Unterlage); die Anzeige nennt es (z. B. «EG»). Ein anderes Geschoss: seit P5a mit Pinch + Wisch hoch/runter bzw. der App «Etagen» (zb-quest-app-bedienung), weiter auch über den Auftrag vom PC.",
             "Durch eine Wand gehen: Wände und Decken werden erst unter 50 cm zum Kopf durchscheinend.",
             "Am PC einen Raum mit Rechtsklick › «In VR begehen (Brille)» wählen: die App setzt einen sofort in diesen Raum, ohne Tipp.",
             "Ohne PC (PC aus oder ausser Reichweite): die App startet mit dem zuletzt geladenen Modell; die Anzeige ist orange «Ohne PC: Modell vom …». Sie sucht alle 30 s nach dem PC."
@@ -11172,7 +11172,7 @@
             "werkzeuge/quest_pruefen.ps1",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4a»)"
           ],
-          "hinweis": "Erste Fassung der App (P4a); Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b, Stellschrauben und Labor mit P5, Installation und Kopplung per Knopf mit P7. Alle Schwellen (Pinch, Wisch, Schulter, Verzögerung) sind Annahmen bis zum Brillentest. Am PC prüft werkzeuge\\quest_pruefen.ps1 die App im Simulator (mit und ohne PC). Nur mit der Brille zu prüfen: Hände, Bildrate, WLAN, Ton."
+          "hinweis": "Erste Fassung der App (P4a); Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b, Stellschrauben und Labor mit P5, Installation und Kopplung per Knopf mit P7. Seit P5a ersetzen schwebende Apps die Box (zb-quest-app-bedienung): Verbindung, Geschoss und der Schalter «Drehen» stehen dann auf den Kacheln «Status» und «Drehen», Hinweise in einer Zeile unten vor dem Blick; die Box gibt es weiter in der Variante «tablet». Alle Schwellen (Pinch, Wisch, Schulter, Verzögerung) sind Annahmen bis zum Brillentest. Am PC prüft werkzeuge\\quest_pruefen.ps1 die App im Simulator (mit und ohne PC). Nur mit der Brille zu prüfen: Hände, Bildrate, WLAN, Ton."
         },
         {
           "id": "zb-quest-app-sitzungsraum",
@@ -11218,7 +11218,56 @@
             "werkzeuge/quest_pruefen.ps1 (Lauf 3 «Sitzungsraum»)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4b»)"
           ],
-          "hinweis": "Grundfassung P4b; schwebende Apps, Etagenwahl per Wisch und Stellschrauben kommen mit P5. Schwellen des Antippens, Ersatzwerte und Aussehen sind Annahmen bis zum Brillentest. Passthrough nutzt XR_FB_passthrough über die OpenXR-Schnittstelle von StereoKit 0.3.11; ob es in der Brille erscheint, ist erst dort zu sehen. Die Probe-Ebene «fliessrichtung» nimmt die Reihenfolge der Leitungspunkte als Fliessrichtung (Annahme). Reine Rechner-Funktion xr_ebenen, für die KI verboten."
+          "hinweis": "Grundfassung P4b; schwebende Apps, Etagenwahl per Wisch und Stellschrauben seit P5a (zb-quest-app-bedienung): die Box mit «Echter Tisch», «IFC-Unterlage», «Zurücksetzen» und «Tisch neu antippen» ist jetzt die App «Tisch» (in der Variante «tablet» weiter die Box). Schwellen des Antippens, Ersatzwerte und Aussehen sind Annahmen bis zum Brillentest. Passthrough nutzt XR_FB_passthrough über die OpenXR-Schnittstelle von StereoKit 0.3.11; ob es in der Brille erscheint, ist erst dort zu sehen. Die Probe-Ebene «fliessrichtung» nimmt die Reihenfolge der Leitungspunkte als Fliessrichtung (Annahme). Reine Rechner-Funktion xr_ebenen, für die KI verboten."
+        },
+        {
+          "id": "zb-quest-app-bedienung",
+          "titel": "Quest App: schwebende Apps, feste Gesten, Etagen per Wisch, Geisterhände und Tunnelblick (Modul XR, Quest App P5a)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille, App «KICAD»: Kacheln im Bogen auf Brusthöhe links neben dem Blick (Status, Etagen, Drehen bzw. Tisch, Sitzungsraum bzw. Begehen, Ebenen). Linke Handfläche zum Gesicht drehen holt sie; Pinch + Wisch nach vorn blendet sie aus. Stellschrauben am PC: Seite «XR-Labor» (P6)."
+          },
+          "schritte": [
+            "App starten wie gewohnt (zb-quest-app-begehen). Links neben dem Blick, etwa 45 cm vor der Brust, schweben fünf grosse Kacheln: «Verbunden» (grüner Punkt; Geschoss, Raum, Hz), «Etagen», «Drehen», «Sitzungsraum», «Ebenen». Sie folgen dem Blick erst, wenn man sich deutlich (über 30°) wegdreht, und stehen still, solange eine Hand an ihnen ist.",
+            "Eine Kachel antippen: den Zeigefinger von vorn in die Kachel stossen. Beim Annähern wird der Rand heller (ab 10 cm), beim Fang ein leiser Klick; beim Auslösen Klick und Aufleuchten. Alternativ an der Kachel Daumen und Zeigefinger zusammen und wieder lösen (Pinch wählt).",
+            "«Etagen» antippen: in der Mitte öffnet sich die App mit den Geschossen (oberstes zuerst, das aktuelle grün). Ein Geschoss antippen: man steht im gleichen Punkt in diesem Geschoss, sonst im grössten Raum (Ton, kurzes Abblenden, Tunnelblick, Hinweis «Etage … – gleicher Punkt.» unten vor dem Blick).",
+            "Ohne App: Daumen und Zeigefinger zusammen halten und die Hand schnell nach oben ziehen (Wisch hoch) – ein Geschoss höher; nach unten ziehen – ein Geschoss tiefer. Das geht auch am Sitzungstisch (Etagenschnitt; über dem obersten «Alle Etagen»).",
+            "Wegwischen: Pinch halten und die Hand schnell nach vorn (vom Körper weg) ziehen. Mit offener App schliesst das die App, sonst blendet es die Apps aus. Zurück holt sie die linke Handfläche, zum Gesicht gedreht und kurz gehalten.",
+            "Blättern: in einer App mit mehreren Seiten (Titel «Seite 1/2») Pinch halten und nach links ziehen – nächste Seite, nach rechts – vorherige. Beim Begehen ohne offene App dreht derselbe Seitenwisch wie bisher um 30° (nur wenn «Drehen» wirkt).",
+            "Zögern: die Hand ruhig über einer Kachel halten, ohne anzutippen. Nach 1.5 s zeigt eine halbdurchsichtige Hand die Geste (Antippen; über der offenen App Blättern bzw. Wegwischen; am Tisch nahe einem Griff das Greifen).",
+            "Sitzungsraum: die Kachel «Tisch» öffnet «Echter Tisch», «IFC-Unterlage», «Zurücksetzen» und «Tisch neu antippen». «Begehen» führt zurück.",
+            "«Verbunden» (Status) antippen: Verbindung, Modell, Ort, Leistung, letzter Hinweis und die Tabelle der Gesten.",
+            "Am PC (Seite «XR-Labor», P6) eine Stellschraube ändern, z. B. «anzeige.skala» 1.6 oder «apps.anordnung» «reihe»: die Brille übernimmt sie sofort und meldet sie unten vor dem Blick. «labor.variante.bedienung» = «tablet» zeigt statt der Apps die Box aus P4."
+          ],
+          "erwartung": "Die Kacheln sind gross, gut lesbar (Schrift mit «anzeige.skala») und lassen sich ohne Zielen treffen; der Blick nach vorn und das Modell auf dem Tisch bleiben frei. Eine App, die sich unter dem Finger öffnet, löst nicht gleich ihren ersten Eintrag aus. Wisch hoch/runter wechselt genau ein Geschoss; das Zurückholen der Hand innerhalb 1 s wechselt nicht zurück. Beim Springen, Drehen und Etagenwechsel engt sich das Blickfeld kurz und weich ein (Tunnelblick, abschaltbar). Am PC meldet «P4 Status» Bedienung, letzte Geste, Etagenwechsel, Geisterhände und Tunnel.",
+          "pruefpunkte": [
+            "Die Kacheln stehen links neben dem Blick auf Brusthöhe im Griffbereich und weichen beim Antippen nicht aus.",
+            "Antippen mit dem Zeigefinger trifft beim ersten Versuch; Fang, Leuchten und Klick sind zu sehen bzw. zu hören.",
+            "«Etagen» öffnet die Liste; ein anderes Geschoss antippen setzt einen über denselben Punkt bzw. in den grössten Raum; das neue Geschoss ist gezeichnet.",
+            "Pinch + Wisch hoch bzw. runter wechselt beim Begehen und am Tisch genau ein Geschoss, ohne ungewollten Sprung; beim Zielen auf den Boden löst kein Etagenwechsel aus.",
+            "Pinch + Wisch nach vorn schliesst die offene App bzw. blendet die Apps aus; die linke Handfläche holt sie zurück.",
+            "Zögern über einer Kachel zeigt nach etwa 1.5 s die Geisterhand mit der richtigen Geste.",
+            "Tunnelblick beim Springen und Drehen kurz und weich; «komfort.tunnelblick» false am PC schaltet ihn ab.",
+            "Stellschrauben vom PC (z. B. «anzeige.skala», «apps.groesse_m», «wisch.mindestweg_m», «sitzung.zoom_min») wirken sofort; ein ungültiger Wert bleibt unbeachtet («ungültig»).",
+            "Variante «tablet»: die Box erscheint wie in P4b, die Gesten gelten weiter.",
+            "Am PC: werkzeuge\\quest_pruefen.ps1 meldet in jedem Lauf «P5a: Stellschrauben=ok …, Apps=ok …, Etage=ok …»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): apps_begehen.jpg (Kacheln beim Begehen), apps_etagen.jpg (offene App «Etagen» im Sitzungsraum), begehen_blick.jpg (Blick nach vorn, Apps links)",
+            "zustand": "Begehen im EG nach einem Etagenwechsel bzw. Sitzungsraum mit offener App «Etagen»"
+          },
+          "quelle": [
+            "src/Hlks.Quest/SchwebendeApps.cs (Apps, Geisterhand, Tunnel), QuestApp.cs (Kacheln, Gesten, Etagen, Stellschrauben, Prüfung P5a), Sitzungsraum.cs, Rueckmeldung.cs",
+            "src/Hlks.Xr/XrGesten.cs (Wisch, Gestenbedeutung), src/Hlks.Xr/Bedienung (XrBedienEinstellungen, AppBogen, AppBeruehrung, Geisterhand, Tunnelblick), src/Hlks.Xr/Modell/EtagenWechsel.cs, HandBegehen.cs, XrSitzungLogik.cs (ZoomGrenzen)",
+            "tests/Hlks.Xr.Tests/BedienungTests.cs, EtagenWechselTests.cs, HandBegehenTests.cs",
+            "werkzeuge/quest_pruefen.ps1 (Zeile P5a, Prüfbilder der Apps)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P5a»)"
+          ],
+          "hinweis": "Grundfassung P5a; alle Masse und Schwellen (Platz 50° links, Brusthöhe, Druckebene 5 mm, Fang 3 cm, Zögern 1.5 s, Tunnel) sind Annahmen bis zum Brillentest und als Stellschrauben einstellbar, wo der Katalog es vorsieht. Gewischt wird immer mit gehaltenem Pinch (Entscheid P5a); ein Wisch nach vorn dreht seit P5a nicht mehr. Prüfaufgaben und Messprotokoll des Labors folgen mit P5b. Schnitt mit flacher Hand und Röntgen-Hand sind noch nicht gebaut."
         }
       ]
     }

@@ -10,13 +10,15 @@ namespace Hlks.Quest;
 ///   Drehen     – kurzer Doppelton und ein Aufleuchten an der Hand;
 ///   Abbruch    – Klick beim Loslassen von StereoKit, ohne Licht.
 /// Dauer, Farben und Lautstärke sind Annahmen P4a (Stellschrauben im Labor P5). Alle Lagen im Raum von StereoKit.
+/// P5a: Fang an einer Kachel (leiser Klick), Kachel ausgelöst (Klick und Aufleuchten), Etagenwechsel (Ton steigend bzw. fallend, Abblenden); Ton an/aus
+/// (Stellschraube «komfort.ton», das Licht bleibt); mit Tunnelblick («komfort.tunnelblick») entfällt beim Drehen das Abblenden (die App zeichnet den Tunnel).
 /// </summary>
 sealed class Rueckmeldung
 {
     sealed record Licht(Vec3 Ort, float Start, float Dauer, Color Farbe, float Groesse, bool Ring);
 
     readonly List<Licht> lichter = [];
-    readonly Sound sprung, dreh;
+    readonly Sound sprung, dreh, runter;
     readonly Material leuchten, ring, blende;
     readonly Mesh ringNetz = Mesh.GenerateCylinder(1, 0.004f, Vec3.Up, 48);
     float blendeBis = -1, blendeDauer = 0.18f;
@@ -25,6 +27,12 @@ sealed class Rueckmeldung
     public static readonly Color Gruen = new(0.35f, 1f, 0.55f, 1f);
 
     public int Ereignisse { get; private set; }
+    /// <summary>Ton an (Stellschraube «komfort.ton»).</summary>
+    public bool Ton { get; set; } = true;
+    /// <summary>Tunnelblick ein: beim Drehen kein Abblenden (die App zeichnet den Tunnel).</summary>
+    public bool Tunnel { get; set; }
+
+    void Spielen(Sound s, Vec3 ort, float laut) { if (Ton) s.Play(ort, laut); }
 
     public Rueckmeldung()
     {
@@ -42,6 +50,13 @@ sealed class Rueckmeldung
             var lokal = t < 0.045f ? t : t - 0.045f;
             return 0.3f * MathF.Exp(-lokal * 60) * MathF.Sin(2 * MathF.PI * f * t);
         }, 0.09f);
+        // P5a, Etage nach unten: 0.22 s von 880 auf 440 Hz (der Sprung-Ton rückwärts)
+        runter = Sound.Generate(t =>
+        {
+            const float Dauer = 0.22f;
+            var huelle = MathF.Min(1, t / 0.02f) * MathF.Max(0, 1 - t / Dauer);
+            return 0.35f * huelle * MathF.Sin(2 * MathF.PI * (880 * t - 220 * t * t / Dauer));   // Frequenz 880 − 440·t/Dauer
+        }, 0.22f);
         leuchten = Material.Unlit.Copy();
         leuchten.Transparency = Transparency.Add;
         leuchten.DepthWrite = false;
@@ -57,20 +72,20 @@ sealed class Rueckmeldung
 
     public void Pinch(Vec3 ort)
     {
-        Sound.Click.Play(ort, 0.6f);
+        Spielen(Sound.Click, ort, 0.6f);
         lichter.Add(new Licht(ort, Time.Totalf, 0.25f, Cyan, 0.025f, false));
         Ereignisse++;
     }
 
     public void Abbruch(Vec3 ort)
     {
-        Sound.Unclick.Play(ort, 0.5f);
+        Spielen(Sound.Unclick, ort, 0.5f);
         Ereignisse++;
     }
 
     public void Teleport(Vec3 ziel, Vec3 kopf)
     {
-        sprung.Play(kopf, 0.8f);
+        Spielen(sprung, kopf, 0.8f);
         blendeBis = Time.Totalf + blendeDauer;
         lichter.Add(new Licht(ziel, Time.Totalf, 0.5f, Gruen, 0.6f, true));
         Ereignisse++;
@@ -79,7 +94,7 @@ sealed class Rueckmeldung
     /// <summary>P4b: Tisch angetippt bzw. Griff gefasst im Sitzungsraum – Klick und ein kleiner grüner Ring am Ort (ohne Abblenden).</summary>
     public void Antippen(Vec3 ort, float groesse = 0.12f)
     {
-        Sound.Click.Play(ort, 0.8f);
+        Spielen(Sound.Click, ort, 0.8f);
         lichter.Add(new Licht(ort, Time.Totalf, 0.45f, Gruen, groesse, true));
         Ereignisse++;
     }
@@ -87,16 +102,46 @@ sealed class Rueckmeldung
     /// <summary>P4b: Griff im Sitzungsraum gefasst (Klick und Aufleuchten) bzw. losgelassen (leiser Klick).</summary>
     public void Griff(Vec3 ort, bool gefasst)
     {
-        if (gefasst) { Sound.Click.Play(ort, 0.6f); lichter.Add(new Licht(ort, Time.Totalf, 0.25f, Cyan, 0.04f, false)); }
-        else Sound.Unclick.Play(ort, 0.4f);
+        if (gefasst) { Spielen(Sound.Click, ort, 0.6f); lichter.Add(new Licht(ort, Time.Totalf, 0.25f, Cyan, 0.04f, false)); }
+        else Spielen(Sound.Unclick, ort, 0.4f);
         Ereignisse++;
     }
 
     public void Drehen(Vec3 hand, Vec3 kopf)
     {
-        dreh.Play(kopf, 0.8f);
-        blendeBis = Time.Totalf + blendeDauer * 0.6f;
+        Spielen(dreh, kopf, 0.8f);
+        if (!Tunnel) blendeBis = Time.Totalf + blendeDauer * 0.6f;
         lichter.Add(new Licht(hand, Time.Totalf, 0.3f, Cyan, 0.05f, false));
+        Ereignisse++;
+    }
+
+    /// <summary>P5a: eine Kachel ist im Fang (leiser Klick; das Leuchten zeichnet die Kachel selbst) bzw. die Apps kommen (leise=false).</summary>
+    public void Fang(Vec3 ort, bool leise = false)
+    {
+        Spielen(Sound.Click, ort, leise ? 0.15f : 0.4f);
+        Ereignisse++;
+    }
+
+    /// <summary>P5a: Kachel bzw. Eintrag ausgelöst – Klick und ein kurzes cyanfarbenes Aufleuchten an der Kachel.</summary>
+    public void Kachel(Vec3 ort)
+    {
+        Spielen(Sound.Click, ort, 0.8f);
+        lichter.Add(new Licht(ort, Time.Totalf, 0.3f, Cyan, 0.05f, false));
+        Ereignisse++;
+    }
+
+    /// <summary>P5a: Etagenwechsel beim Begehen – Ton steigend (hoch) bzw. fallend (runter), kurzes Abblenden wie beim Sprung.</summary>
+    public void Etage(Vec3 kopf, bool hoch)
+    {
+        Spielen(hoch ? sprung : runter, kopf, 0.8f);
+        blendeBis = Time.Totalf + blendeDauer;
+        Ereignisse++;
+    }
+
+    /// <summary>P5a: eine Geste ohne Wirkung (z. B. über dem obersten Geschoss) – leiser Klick.</summary>
+    public void Leer(Vec3 ort)
+    {
+        Spielen(Sound.Unclick, ort, 0.3f);
         Ereignisse++;
     }
 

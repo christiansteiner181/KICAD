@@ -216,8 +216,9 @@ public class HandBegehenTests
     [Fact]
     public void Unruhiges_Ziel_springt_nicht()
     {
-        // die Hand wippt schnell auf und ab (kein Wisch, der ist waagrecht): das Ziel springt über mehr als den Umkreis
-        var bilder = Enumerable.Range(0, 60).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(Zeigen + V(0, 0.08 * Math.Sin(2 * Math.PI * 3 * i / 90.0), 0), 0.01)))
+        // die Hand wippt schnell auf und ab: das Ziel springt über mehr als den Umkreis. P5a: Seit Wische auch senkrecht zählen (Etage), wippt sie nur 12 cm
+        // (unter dem Mindestweg von 15 cm) – mit 16 cm wäre es ein Wisch hoch/runter (siehe Pinch_und_Wisch_hoch_runter_wechselt_die_Etage).
+        var bilder = Enumerable.Range(0, 60).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(Zeigen + V(0, 0.06 * Math.Sin(2 * Math.PI * 3 * i / 90.0), 0), 0.01)))
             .Append((60 / 90.0, Hand(Zeigen, 0.06)));
         var ev = Lauf(new HandBegehenZustand(), bilder);
         Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Teleport or BegehenArt.Drehen);
@@ -279,6 +280,107 @@ public class HandBegehenTests
         var ev = Lauf(new HandBegehenZustand(), Halten(18), einstellungen: e with { ZielRuheS = 0 });
         Assert.Single(ev, x => x.Art == BegehenArt.Teleport);
         Assert.DoesNotContain(Lauf(new HandBegehenZustand(), Halten(18)), x => x.Art == BegehenArt.Teleport);
+    }
+
+    // ---------------------------------------------------------------------------------------------- P5a: feste Gestenbedeutungen
+
+    /// <summary>Pinch gehalten, 0.1 s ruhig, dann 25 cm in 0.2 s in Richtung d, dann loslassen.</summary>
+    static List<(double, Dictionary<string, Vec3>?)> WischIn(Vec3 d)
+    {
+        var b = new List<(double, Dictionary<string, Vec3>?)>();
+        b.AddRange(Ruhig(0, 10 / 90.0, Zeigen));
+        for (int i = 0; i <= 18; i++) b.Add(((10 + i) / 90.0, Hand(Zeigen + d * (0.25 * i / 18), 0.01)));
+        b.Add((40 / 90.0, Hand(Zeigen + d * 0.25, 0.06)));
+        return b;
+    }
+
+    [Fact]
+    public void Pinch_und_Wisch_hoch_runter_wechselt_die_Etage()
+    {
+        foreach (var (d, richtung) in new[] { (V(0, 1, 0), WischRichtung.Hoch), (V(0, -1, 0), WischRichtung.Runter) })
+        {
+            var ev = Lauf(new HandBegehenZustand(), WischIn(d));
+            var w = Assert.Single(ev, e => e.Art == BegehenArt.Wisch);
+            Assert.Equal(richtung, w.Richtung);
+            Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Drehen or BegehenArt.Teleport or BegehenArt.Abbruch);   // kein Drehen, kein Sprung
+        }
+        // die alte Wipp-Bewegung mit 16 cm (8 cm Ausschlag) ist jetzt ein Wisch (Mindestweg 15 cm)
+        var wippen = Enumerable.Range(0, 60).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(Zeigen + V(0, 0.08 * Math.Sin(2 * Math.PI * 3 * i / 90.0), 0), 0.01)))
+            .Append((60 / 90.0, Hand(Zeigen, 0.06)));
+        Assert.Contains(Lauf(new HandBegehenZustand(), wippen), e => e.Art == BegehenArt.Wisch && e.Richtung is WischRichtung.Runter or WischRichtung.Hoch);
+    }
+
+    [Fact]
+    public void Seitlicher_Wisch_meldet_Richtung_und_dreht_wie_bisher()
+    {
+        var ev = Lauf(new HandBegehenZustand(), WischIn(V(1, 0, 0)));
+        Assert.Equal(WischRichtung.Rechts, Assert.Single(ev, e => e.Art == BegehenArt.Wisch).Richtung);
+        Assert.Equal(1, Assert.Single(ev, e => e.Art == BegehenArt.Drehen).Schritt);
+        // schräg (30° aus der Seitenrichtung nach vorn) zählt noch seitlich und dreht
+        var schraeg = Lauf(new HandBegehenZustand(), WischIn(V(Math.Cos(30 * Grad), 0, -Math.Sin(30 * Grad))));
+        Assert.Equal(1, Assert.Single(schraeg, e => e.Art == BegehenArt.Drehen).Schritt);
+    }
+
+    [Fact]
+    public void Wisch_nach_vorn_heisst_wegwischen_und_dreht_nicht()
+    {
+        var ev = Lauf(new HandBegehenZustand(), WischIn(V(0, 0, -1)));   // Blick nach −z: vom Körper weg
+        Assert.Equal(WischRichtung.Vor, Assert.Single(ev, e => e.Art == BegehenArt.Wisch).Richtung);
+        Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Drehen or BegehenArt.Teleport);
+        var zurueck = Lauf(new HandBegehenZustand(), WischIn(V(0, 0, 1)));
+        Assert.Equal(WischRichtung.Zurueck, Assert.Single(zurueck, e => e.Art == BegehenArt.Wisch).Richtung);
+    }
+
+    [Fact]
+    public void Mit_offener_App_dreht_der_Wisch_nicht_meldet_aber_die_Richtung()
+    {
+        var alle = new List<BegehenEreignis>();
+        var z = new HandBegehenZustand();
+        foreach (var (t, g) in WischIn(V(-1, 0, 0))) alle.AddRange(HandBegehen.Schritt(z, t, "right", g, Kopf, Gieren, 0, null, null, drehen: false));
+        Assert.Equal(WischRichtung.Links, Assert.Single(alle, e => e.Art == BegehenArt.Wisch).Richtung);
+        Assert.DoesNotContain(alle, e => e.Art == BegehenArt.Drehen);
+    }
+
+    [Fact]
+    public void An_den_Apps_zielt_der_Pinch_nicht()
+    {
+        var z = new HandBegehenZustand();
+        var alle = new List<BegehenEreignis>();
+        foreach (var (t, g) in Halten(45)) alle.AddRange(HandBegehen.Schritt(z, t, "right", g, Kopf, Gieren, 0, null, null, springen: false));
+        Assert.Contains(alle, e => e.Art == BegehenArt.PinchAn);
+        Assert.Contains(alle, e => e.Art == BegehenArt.PinchAus);
+        Assert.DoesNotContain(alle, e => e.Art is BegehenArt.Ziel or BegehenArt.Teleport or BegehenArt.Abbruch);
+        // der nächste Pinch (weg von den Apps) zielt wieder
+        Assert.Single(Lauf(z, Halten(45).Select(b => (b.Item1 + 2, b.Item2))), e => e.Art == BegehenArt.Teleport);
+    }
+
+    [Fact]
+    public void Pinch_und_Wisch_Schwellen_aus_den_Stellschrauben()
+    {
+        // Pinch an erst unter 5 mm: ein Spalt von 1 cm ist kein Pinch
+        var eng = new HandBegehenEinstellungen { Pinch = new PinchEinstellungen { AnM = 0.005, AusM = 0.02 } };
+        Assert.DoesNotContain(Lauf(new HandBegehenZustand(), Halten(45), einstellungen: eng), e => e.Art == BegehenArt.PinchAn);
+        // Mindestweg 30 cm: der Wisch über 25 cm dreht nicht mehr (er springt aber auch nicht: das Ziel wandert)
+        var lang = new HandBegehenEinstellungen { Wisch = new WischEinstellungen { MindestwegM = 0.3 } };
+        Assert.DoesNotContain(Lauf(new HandBegehenZustand(), WischIn(V(1, 0, 0)), einstellungen: lang), e => e.Art is BegehenArt.Drehen or BegehenArt.Wisch);
+        // Mindesttempo 2 m/s: 1.25 m/s reicht nicht
+        var schnell = new HandBegehenEinstellungen { Wisch = new WischEinstellungen { MindesttempoMs = 2 } };
+        Assert.DoesNotContain(Lauf(new HandBegehenZustand(), WischIn(V(1, 0, 0)), einstellungen: schnell), e => e.Art == BegehenArt.Wisch);
+    }
+
+    [Fact]
+    public void Gegenrichtung_ist_auch_beim_Etagenwisch_gesperrt()
+    {
+        // hoch, dann nach 0.6 s zurück nach unten (die Hand holt aus): innerhalb der Sperre von 1 s zählt nur «hoch»
+        var b = new List<(double, Dictionary<string, Vec3>?)>();
+        b.AddRange(Ruhig(0, 10 / 90.0, Zeigen));
+        for (int i = 0; i <= 18; i++) b.Add(((10 + i) / 90.0, Hand(Zeigen + V(0, 0.25 * i / 18, 0), 0.01)));
+        var zurueck = 10 / 90.0 + 0.2 + 0.6;
+        b.AddRange(Ruhig(29 / 90.0, zurueck, Zeigen + V(0, 0.25, 0)));
+        for (int i = 0; i <= 18; i++) b.Add((zurueck + i / 90.0, Hand(Zeigen + V(0, 0.25 - 0.25 * i / 18, 0), 0.01)));
+        b.Add((zurueck + 0.4, Hand(Zeigen, 0.06)));
+        var ev = Lauf(new HandBegehenZustand(), b);
+        Assert.Equal([WischRichtung.Hoch], ev.Where(e => e.Art == BegehenArt.Wisch).Select(e => e.Richtung!.Value));
     }
 
     [Fact]

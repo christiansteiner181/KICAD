@@ -25,6 +25,15 @@ namespace Hlks.Xr;
 /// <summary>Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Verschiebung X, Z (m) und – Brillentest Christian 23.10.2026 – Höhe über der Platte (m).</summary>
 public sealed record SitzungLage(double Massstab, double Drehung, double X, double Z, double Hoehe = 0);
 
+/// <summary>
+/// P5a: Grenzen des Zoomens am Sitzungstisch als Nenner (Min = stärkster Zoom 1:Min, Max = schwächster 1:Max). Stellschrauben «sitzung.zoom_min», «sitzung.zoom_max»;
+/// Vorgabe 1:5 … 1:200 (<see cref="XrSitzungLogik.MassstabMin"/>, <see cref="XrSitzungLogik.MassstabMax"/>).
+/// </summary>
+public sealed record ZoomGrenzen(double Min, double Max)
+{
+    public static readonly ZoomGrenzen Vorgabe = new(XrSitzungLogik.MassstabMin, XrSitzungLogik.MassstabMax);
+}
+
 /// <summary>Startlage mit der Angabe, ob das Modell so auf die Platte passt (xr-sitzung-logik.js einpassen).</summary>
 public sealed record Einpassung(SitzungLage Lage, bool Passt);
 
@@ -149,10 +158,15 @@ public static class XrSitzungLogik
     // ------------------------------------------------------------------------------------------------------ Massstab und Lage
 
     /// <summary>xr-sitzung-logik.js massstabBegrenzen: Massstab auf 1:MassstabMin (1:5) … 1:200; ungültige Werte fallen auf 1:50.</summary>
-    public static double MassstabBegrenzen(double n) => Num.Ok(n) ? Klemme(n, MassstabMin, MassstabMax) : MassstabStart;
+    /// P5a: mit den Grenzen der Stellschrauben (ohne Angabe <see cref="ZoomGrenzen.Vorgabe"/>).
+    public static double MassstabBegrenzen(double n, ZoomGrenzen? grenzen = null)
+    {
+        var z = grenzen ?? ZoomGrenzen.Vorgabe;
+        return Klemme(Num.Ok(n) ? n : MassstabStart, z.Min, z.Max);
+    }
 
     /// <summary>xr-sitzung-logik.js massstabText.</summary>
-    public static string MassstabText(double n) => $"1:{Num.Text(Num.Round(MassstabBegrenzen(n)))}";
+    public static string MassstabText(double n, ZoomGrenzen? grenzen = null) => $"1:{Num.Text(Num.Round(MassstabBegrenzen(n, grenzen)))}";
 
     /// <summary>xr-sitzung-logik.js platte: nutzbare Platte (m).</summary>
     public static (double B, double T) Platte() => (TischBreite - 2 * TischRand, TischTiefe - 2 * TischRand);
@@ -161,8 +175,9 @@ public static class XrSitzungLogik
     /// xr-sitzung-logik.js einpassen: Startlage: 1:50 auf der Mitte der Platte; passt das Modell (Grundfläche b × t in m) so nicht auf die nutzbare Platte, wird der
     /// Massstab aufgerundet (höchstens 1:200, dann passt = false). Ungültige Grössen: 1:50.
     /// </summary>
-    public static Einpassung Einpassen(ModellGroesse? groesse, double start = MassstabStart)
+    public static Einpassung Einpassen(ModellGroesse? groesse, double start = MassstabStart, ZoomGrenzen? grenzen = null)
     {
+        var zg = grenzen ?? ZoomGrenzen.Vorgabe;
         var n = start;
         var passt = true;
         if (groesse is not null && groesse.B > 0 && groesse.T > 0)
@@ -170,16 +185,16 @@ public static class XrSitzungLogik
             var p = Platte();
             var noetig = Math.Max(groesse.B / p.B, groesse.T / p.T);
             if (noetig > n) n = Math.Ceiling(noetig);
-            if (n > MassstabMax) { n = MassstabMax; passt = noetig <= n; }
+            if (n > zg.Max) { n = zg.Max; passt = noetig <= n; }
         }
-        return new Einpassung(new SitzungLage(MassstabBegrenzen(n), 0, 0, 0), passt);
+        return new Einpassung(new SitzungLage(MassstabBegrenzen(n, zg), 0, 0, 0), passt);
     }
 
-    /// <summary>xr-sitzung-logik.js lageBegrenzen: Mitte des Modells bleibt auf der Platte (halt = Abstand zum Rand).</summary>
-    public static SitzungLage LageBegrenzen(SitzungLage lage)
+    /// <summary>xr-sitzung-logik.js lageBegrenzen: Mitte des Modells bleibt auf der Platte (halt = Abstand zum Rand). P5a: Massstab in den Grenzen der Stellschrauben.</summary>
+    public static SitzungLage LageBegrenzen(SitzungLage lage, ZoomGrenzen? grenzen = null)
     {
         double gx = TischBreite / 2 - TischHalt, gz = TischTiefe / 2 - TischHalt;
-        return lage with { Massstab = MassstabBegrenzen(lage.Massstab), X = Klemme(lage.X, -gx, gx), Z = Klemme(lage.Z, -gz, gz), Hoehe = Klemme(double.IsFinite(lage.Hoehe) ? lage.Hoehe : 0, HoeheMinM, HoeheMaxM) };
+        return lage with { Massstab = MassstabBegrenzen(lage.Massstab, grenzen), X = Klemme(lage.X, -gx, gx), Z = Klemme(lage.Z, -gz, gz), Hoehe = Klemme(double.IsFinite(lage.Hoehe) ? lage.Hoehe : 0, HoeheMinM, HoeheMaxM) };
     }
 
     /// <summary>xr-sitzung-logik.js zuruecksetzen: Zurücksetzen = Startlage (neu eingepasst).</summary>
@@ -287,18 +302,18 @@ public static class XrSitzungLogik
     /// dazu die Höhe: das Modell folgt der Höhe der Handmitte (Brillentest Christian 23.10.2026: «durch greiffen der punkte soll das modell auch gedreht, in der
     /// höhe und tiefe verschoben werden können»), begrenzt auf HoeheMinM … HoeheMaxM.
     /// </summary>
-    public static SitzungLage ZweihandSchritt(ZweihandGriff g, Xz a, Xz b, double ya = 0, double yb = 0)
+    public static SitzungLage ZweihandSchritt(ZweihandGriff g, Xz a, Xz b, double ya = 0, double yb = 0, ZoomGrenzen? grenzen = null)
     {
         var d = new Xz(b.X - a.X, b.Z - a.Z);
         var l = Num.Hypot(d.X, d.Z);
         var abstand = Math.Max(l, MinHandabstand);
-        var n = MassstabBegrenzen(g.Lage0.Massstab * g.Abstand0 / abstand);
+        var n = MassstabBegrenzen(g.Lage0.Massstab * g.Abstand0 / abstand, grenzen);
         double? phi = l >= MinRichtung ? GierenVon(d) : null;
         var theta = g.Lage0.Drehung + (phi is { } p && g.Phi0 is { } p0 ? WinkelDiff(p, p0) : 0);
         var mitte = new Xz((a.X + b.X) / 2, (a.Z + b.Z) / 2);
         var q = DreheXZ(new Xz(g.Q0.X / n, g.Q0.Z / n), theta);
         var hoehe = g.Lage0.Hoehe + (ya + yb) / 2 - g.Y0;
-        return LageBegrenzen(new SitzungLage(n, theta, mitte.X - q.X - TischMitte.X, mitte.Z - q.Z - TischMitte.Z, hoehe));
+        return LageBegrenzen(new SitzungLage(n, theta, mitte.X - q.X - TischMitte.X, mitte.Z - q.Z - TischMitte.Z, hoehe), grenzen);
     }
 
     /// <summary>xr-sitzung-logik.js gestenNeu: Anfangszustand der Gestenerkennung.</summary>
@@ -309,7 +324,7 @@ public static class XrSitzungLogik
     /// Griff ist frei) – und bis sie loslässt. Bewegt wird das Modell **nur, solange beide Griffe gehalten sind** (verschieben, drehen, zoomen); hält nur eine Hand, ruht
     /// es (Modus «wartet»). Jeder Wechsel setzt einen neuen Bezug, damit nichts springt.
     /// </summary>
-    public static GestenZustand GestenSchritt(GestenZustand g, GestenHaende haende)
+    public static GestenZustand GestenSchritt(GestenZustand g, GestenHaende haende, ZoomGrenzen? grenzen = null)
     {
         int? bl = null, br = null;
         bool vl, vr;
@@ -342,7 +357,7 @@ public static class XrSitzungLogik
             var a = bl == 0 ? haende!.Links! : haende!.Rechts!;
             var b = bl == 0 ? haende.Rechts! : haende.Links!;
             if (!gleich || griff is null) griff = ZweihandStart(lage, new Xz(a.X, a.Z), new Xz(b.X, b.Z), a.Y, b.Y);
-            else lage = ZweihandSchritt(griff, new Xz(a.X, a.Z), new Xz(b.X, b.Z), a.Y, b.Y);
+            else lage = ZweihandSchritt(griff, new Xz(a.X, a.Z), new Xz(b.X, b.Z), a.Y, b.Y, grenzen);
         }
         return new GestenZustand(lage, modus, griff, besitzt, vorher);
     }
@@ -365,7 +380,7 @@ public static class XrSitzungLogik
     }
 
     /// <summary>xr-sitzung-logik.js ausschnittLage: Startlage für einen Ausschnitt: so gross wie möglich (Start MassstabMin, Grenze des Zoomens), gröber nur, wenn er sonst nicht auf die Platte passt.</summary>
-    public static Einpassung AusschnittLage(ModellGroesse? groesse) => Einpassen(groesse, MassstabMin);
+    public static Einpassung AusschnittLage(ModellGroesse? groesse, ZoomGrenzen? grenzen = null) => Einpassen(groesse, (grenzen ?? ZoomGrenzen.Vorgabe).Min, grenzen);
 
     /// <summary>xr-sitzung-logik.js ausschnittEbenen: die sechs Clipping-Ebenen des Quaders in den Koordinaten der 3D-Ansicht (m); leer ohne gültigen Quader.</summary>
     public static IReadOnlyList<Clipebene> AusschnittEbenen(SchnittbereichRoh? roh)

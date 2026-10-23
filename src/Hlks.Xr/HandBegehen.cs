@@ -26,16 +26,23 @@
 //   - verlässt der Strahl den Boden länger als ZielVerzoegerungS (das Öffnen der Finger beim Loslassen darf ihn kurz verreissen), ist der Pinch abgebrochen
 //     (Ereignis Abbruch sofort, Loslassen springt nicht mehr).
 // ANNAHMEN P4a (Stellschrauben im Labor P5, Christian beim Brillentest): alle Werte in HandBegehenEinstellungen.
+//
+// P5a (feste Gestenbedeutungen, XrGesten): Der Wisch mit gehaltenem Pinch wird in allen Richtungen erkannt (Schwellen «wisch.*» in Wisch) und zum Blick
+// eingeordnet. Jeder anerkannte Wisch gibt ein Ereignis «Wisch» mit der Richtung (die App wechselt bei hoch/runter die Etage, schliesst bei vor die App bzw.
+// blättert in einer offenen App); gedreht wird nur bei einem Wisch nach links oder rechts. Ein Wisch nach vorn oder hinten (innerhalb der Richtungstoleranz)
+// dreht nicht mehr (in P4a drehte jeder waagrechte Wisch). Die Richtungssperre gilt für alle Wische (XrGesten.PinchWischSchritt). Pinch-Schwellen aus Pinch
+// («pinch.*»). springen = false (die Hand ist an den schwebenden Apps): ein neuer Pinch zielt nicht und springt nicht, wischen geht weiter.
 // Konventionen: Szene (m, y oben); Gieren wie in VrLogik (Bogenmass, gegen den Uhrzeigersinn ab +x); Seite «left»/«right» wie WebXR.
 
 using System.Text.Json;
 
 namespace Hlks.Xr;
 
-public enum BegehenArt { PinchAn, Ziel, Teleport, Drehen, Abbruch, PinchAus }
+public enum BegehenArt { PinchAn, Ziel, Teleport, Drehen, Abbruch, PinchAus, Wisch }
 
-/// <summary>Ereignis einer Hand: Art, Seite, Punkt (Pinch-Punkt bzw. Ziel auf dem Boden) und Schritt beim Drehen (+1 links, −1 rechts).</summary>
-public sealed record BegehenEreignis(BegehenArt Art, string Seite, Vec3? Punkt = null, int Schritt = 0);
+/// <summary>Ereignis einer Hand: Art, Seite, Punkt (Pinch-Punkt bzw. Ziel auf dem Boden), Schritt beim Drehen (+1 links, −1 rechts) und – P5a, Art Wisch – die
+/// Richtung des Wischs.</summary>
+public sealed record BegehenEreignis(BegehenArt Art, string Seite, Vec3? Punkt = null, int Schritt = 0, WischRichtung? Richtung = null);
 
 /// <summary>Schwellen des Begehens mit Händen (Annahmen P4a, Stellschrauben; Schlüssel siehe <see cref="MitStellschraube"/>).</summary>
 public sealed record HandBegehenEinstellungen
@@ -50,8 +57,13 @@ public sealed record HandBegehenEinstellungen
     public double ZielVerzoegerungS { get; init; } = 0.1;
     /// <summary>Kürzester Pinch, der springt (s).</summary>
     public double PinchMinS { get; init; } = 0.15;
-    /// <summary>So lange nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (s). Stellschraube «begehen.drehen_sperre_s», Start 1.0.</summary>
+    /// <summary>So lange nach einer Drehung dreht ein Wisch in die Gegenrichtung nicht (s). Stellschraube «begehen.drehen_sperre_s», Start 1.0.
+    /// P5a: gilt für alle Wische (auch hoch/runter, vor/zurück).</summary>
     public double DrehenSperreS { get; init; } = 1.0;
+    /// <summary>P5a: Schwellen des Wischs (Stellschrauben «wisch.*», geführt in XrBedienEinstellungen; die App setzt sie hier ein).</summary>
+    public WischEinstellungen Wisch { get; init; } = WischEinstellungen.Vorgabe;
+    /// <summary>P5a: Pinch-Schwellen (Stellschrauben «pinch.*», geführt in XrBedienEinstellungen).</summary>
+    public PinchEinstellungen Pinch { get; init; } = PinchEinstellungen.Vorgabe;
 
     public static readonly HandBegehenEinstellungen Vorgabe = new();
 
@@ -89,7 +101,11 @@ public sealed class HandBegehenZustand
     public bool Gewischt { get; internal set; }
     /// <summary>Der Strahl hat den Boden verlassen; dieser Pinch springt nicht mehr.</summary>
     public bool Abgebrochen { get; internal set; }
-    public Wischer Wischer { get; } = XrWischLogik.NeuerWischer();
+    /// <summary>P5a: Dieser Pinch begann an den schwebenden Apps (springen = false): er zielt nicht und springt nicht.</summary>
+    public bool OhneZiel { get; internal set; }
+    /// <summary>P5a: Wisch mit gehaltenem Pinch samt Richtungssperre (XrGesten.PinchWischSchritt).</summary>
+    public PinchWischZustand Wisch { get; } = new();
+    public Wischer Wischer => Wisch.Wischer;
     internal List<(double T, TeleportTreffer? Ziel)> Ziele { get; } = [];
     internal bool WarGueltig;
     internal double? VerlassenSeit;
@@ -103,13 +119,9 @@ public sealed class HandBegehenZustand
     public bool StrahlVomSystem { get; internal set; }
     /// <summary>Pinch-Punkt (Mitte zwischen Daumen- und Zeigefingerspitze), wenn erkannt.</summary>
     public Vec3? PinchPunkt { get; internal set; }
-    /// <summary>Zeit und Schritt der letzten Drehung dieser Hand (Richtungssperre); bleiben über das Ende des Pinch hinaus.</summary>
-    internal double? LetzteDrehungT;
-    internal int LetzteDrehungSchritt;
-
     internal void Zuruecksetzen()
     {
-        Pinch = false; Gewischt = false; Abgebrochen = false; Ziel = null; Bereit = false; Ziele.Clear(); WarGueltig = false; VerlassenSeit = null;
+        Pinch = false; Gewischt = false; Abgebrochen = false; OhneZiel = false; Ziel = null; Bereit = false; Ziele.Clear(); WarGueltig = false; VerlassenSeit = null;
     }
 }
 
@@ -141,54 +153,51 @@ public static class HandBegehen
     /// <summary>
     /// Ein Schritt je Bild und Hand (siehe Dateikopf). t = Zeit (s), gelenke = WebXR-Gelenke in der Szene (null = Hand nicht erkannt), kopf und blickGieren
     /// in der Szene, boden = Höhe des Bodens (Rig), zeigestrahl = Aim-Pose der Hand in der Szene (null = Rückfall über die Schulter). Gibt die Ereignisse dieses
-    /// Bildes zurück.
+    /// Bildes zurück. P5a: drehen = der Schalter «Drehen» wirkt und keine App ist offen; springen = false, wenn die Hand an den schwebenden Apps ist (ein neuer Pinch
+    /// zielt dann nicht).
     /// </summary>
     public static IReadOnlyList<BegehenEreignis> Schritt(HandBegehenZustand z, double t, string seite, IReadOnlyDictionary<string, Vec3>? gelenke, Vec3 kopf,
         double blickGieren, double boden, (Vec3 Ursprung, Vec3 Richtung)? zeigestrahl = null, HandBegehenEinstellungen? einstellungen = null,
-        bool drehen = true)
+        bool drehen = true, bool springen = true)
     {
         var e = einstellungen ?? HandBegehenEinstellungen.Vorgabe;
         var ev = new List<BegehenEreignis>();
         if (gelenke is null || !gelenke.TryGetValue("thumb-tip", out var daumen) || !gelenke.TryGetValue("index-finger-tip", out var zeige)
             || !gelenke.TryGetValue("index-finger-phalanx-proximal", out var knoechel) || !daumen.IstEndlich || !zeige.IstEndlich || !knoechel.IstEndlich)
         {
-            if (z.Pinch && !z.Gewischt && !z.Abgebrochen) ev.Add(new BegehenEreignis(BegehenArt.Abbruch, seite));
+            if (z.Pinch && !z.Gewischt && !z.Abgebrochen && !z.OhneZiel) ev.Add(new BegehenEreignis(BegehenArt.Abbruch, seite));
             z.Zuruecksetzen();
             z.Strahl = null;
             z.PinchPunkt = null;
-            XrWischLogik.WischSchritt(z.Wischer, t, null, false);
+            XrGesten.PinchWischSchritt(z.Wisch, t, null, false, blickGieren, e.Wisch, e.DrehenSperreS);
             return ev;
         }
-        var pinch = XrTabletLogik.IstPinch(gelenke, z.Pinch);
+        var pinch = XrTabletLogik.IstPinch(gelenke, z.Pinch, e.Pinch);
         var punkt = Vec3.Mitte(daumen, zeige);
         z.PinchPunkt = punkt;
         var vomSystem = zeigestrahl is { } zs && zs.Ursprung.IstEndlich && zs.Richtung.IstEndlich && zs.Richtung.Laenge > 1e-9;
         z.Strahl = vomSystem ? (zeigestrahl!.Value.Ursprung, zeigestrahl.Value.Richtung.Einheit()) : Strahl(kopf, blickGieren, knoechel, seite);
         z.StrahlVomSystem = vomSystem;
-        var wisch = XrWischLogik.WischSchritt(z.Wischer, t, punkt, pinch);
+        var wisch = XrGesten.PinchWischSchritt(z.Wisch, t, punkt, pinch, blickGieren, e.Wisch, e.DrehenSperreS);
 
         if (pinch && !z.Pinch)
         {
             z.Zuruecksetzen();
             z.PinchSeit = t;
+            z.OhneZiel = !springen;
             ev.Add(new BegehenEreignis(BegehenArt.PinchAn, seite, punkt));
         }
-        if (pinch && wisch is { Neu: true })
+        if (pinch && wisch is { } richtung)
         {
-            // ein Wisch beendet das Zielen dieses Pinch (kein Sprung beim Loslassen); gedreht wird nur mit eingeschaltetem Schalter «Drehen»
+            // ein Wisch beendet das Zielen dieses Pinch (kein Sprung beim Loslassen); gedreht wird nur seitlich und mit eingeschaltetem Schalter «Drehen»
             z.Gewischt = true;
             z.Ziel = null;
             z.Bereit = false;
-            var schritt = wisch.Richtung.Skalar(Rechts(blickGieren)) > 0 ? 1 : -1;   // nach rechts gewischt: nach links drehen (+1), die Welt folgt der Hand
-            var gesperrt = z.LetzteDrehungT is { } lt && t - lt < e.DrehenSperreS && schritt != z.LetzteDrehungSchritt;
-            if (drehen && !gesperrt)
-            {
-                ev.Add(new BegehenEreignis(BegehenArt.Drehen, seite, punkt, schritt));
-                z.LetzteDrehungT = t;
-                z.LetzteDrehungSchritt = schritt;
-            }
+            ev.Add(new BegehenEreignis(BegehenArt.Wisch, seite, punkt, 0, richtung));
+            if (drehen && richtung is WischRichtung.Links or WischRichtung.Rechts)
+                ev.Add(new BegehenEreignis(BegehenArt.Drehen, seite, punkt, richtung == WischRichtung.Rechts ? 1 : -1));   // nach rechts gewischt: nach links drehen (+1), die Welt folgt der Hand
         }
-        if (pinch && !z.Gewischt && !z.Abgebrochen)
+        if (pinch && !z.Gewischt && !z.Abgebrochen && !z.OhneZiel)
         {
             var ziel = z.Strahl is { } s ? VrLogik.TeleportZiel(s.Ursprung, s.Richtung, boden) : null;
             z.Ziel = ziel;
@@ -214,7 +223,7 @@ public static class HandBegehen
         }
         if (!pinch && z.Pinch)
         {
-            if (!z.Gewischt && !z.Abgebrochen)
+            if (!z.Gewischt && !z.Abgebrochen && !z.OhneZiel)
             {
                 var ziel = t - z.PinchSeit >= e.PinchMinS ? Ruhig(z, t - e.ZielVerzoegerungS, e) : null;
                 ev.Add(ziel is { } zz ? new BegehenEreignis(BegehenArt.Teleport, seite, zz.Punkt) : new BegehenEreignis(BegehenArt.Abbruch, seite));

@@ -2137,7 +2137,7 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
   UDP-Broadcast an den `suchPort` (Antwort mit HMAC geprüft). Jede Verbindung nur mit dem gepinnten `fingerabdruck`. 401 oder ein anderer Fingerabdruck in der Suche:
   «neu koppeln» (rot), keine weiteren Versuche. Ohne PC wird alle 30 s neu gesucht. Dann der **Live-Kanal**: `hallo` (Name aus dem Paket, Gerät, «KICAD Quest P4b» seit P4b),
   Posen 25 je Sekunde (Kopf, Handgelenke, Zeigefingerspitzen, Pinch und `pinchStaerke`, `modus: begehen`, in KICAD-mm), Empfang von `auftrag` und `stellschraube`
-  (die Stellschrauben zeigt die App bis P5 nur an). Wiederverbinden nach 1, 2, 4, 8, 15, dann 30 s; nach 4001 (widerrufen) und 4002 (ersetzt) nicht.
+  (Stellschrauben: P4a `begehen.*` und `haltung.*`, seit P5a alle der Bedienung, Abschnitt «Quest App P5a»). Wiederverbinden nach 1, 2, 4, 8, 15, dann 30 s; nach 4001 (widerrufen) und 4002 (ersetzt) nicht.
 - **Modell:** `GET /api/xr/geschosse`, dann alle Geschosse, Teil `modell` und `unterlage`. Der **Zwischenspeicher** in der App hält je Geschoss und Teil die GLB mit
   ihrem Versionsschlüssel: gleicher Schlüssel in der Liste = keine Anfrage, sonst `If-None-Match` (304 = gilt weiter). Verbunden fragt die App alle 30 s die Liste
   und lädt geänderte Geschosse nach (der Standpunkt bleibt). **Ohne PC** startet die App mit dem zuletzt
@@ -2145,7 +2145,7 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
   von StereoKit – die 180°-Drehung aus P2 entsteht so nicht (der Prüflauf bestätigt sie beim Lader von StereoKit als Gegenprobe). Räume ausgeblendet, Unterlage ein.
   **Nur das Geschoss am Stand** wird gezeichnet, mit seinen Bauteilen und seiner IFC-Unterlage (Brillentest 23.10.2026, Christian: «beschränken auf eigenes und IFC»;
   mit allen Geschossen zeitweise 54–60 Hz, nur EG stabil 72 Hz). Geschoss am Stand (`GeschossWahl`): das oberste, dessen Kote höchstens 0.3 m über dem Standboden
-  liegt, darunter das unterste; Standboden = Höhe des Rigs, nicht die Kopfhöhe. Ein anderes Geschoss erreicht man bis P5 (Wisch hoch/runter) über den Auftrag vom PC.
+  liegt, darunter das unterste; Standboden = Höhe des Rigs, nicht die Kopfhöhe. Ein anderes Geschoss erreicht man seit P5a mit Pinch + Wisch hoch/runter bzw. der App «Etagen» (Abschnitt «Quest App P5a»), weiter auch über den Auftrag vom PC.
   Grosse Netze sind in **Blöcke** von höchstens 20 000 Dreiecken geteilt (`NetzBloecke`, möglichst an Elementgrenzen); der Durchgang lädt nur die betroffenen Blöcke
   neu (vorher ein Bild mit 24 ms beim Wechsel). Test_praxis: höchstens 25 Zeichenaufrufe je Geschoss (EG).
   Am PC gibt es `--modell-lokal <port>`: Liste und GLB über `http://localhost:<port>`, wenn der Netzzugang 404 meldet (vor dem Nachtrag P3; seither nicht mehr nötig).
@@ -2201,7 +2201,7 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
 
 - **In den Sitzungsraum** (Auftrag vom PC, sofort über den Kanal; Regeln `VrStartLogik.AuftragSchritte`, `SitzungAuswahl`):
   - Rechtsklick Raum › **«Modell am Sitzungstisch»** (`modus: sitzungsraum`, Raum): das ganze Modell auf dem Tisch mit **Etagenschnitt im Geschoss des Raums**
-    (Ergänzung P4b; der Prototyp zeigte hier «Alle Etagen»). Mit `geschoss` im Auftrag (`POST /api/vr/auftrag`) gilt dieses Geschoss – **Etagenwahl bis P5 nur so**.
+    (Ergänzung P4b; der Prototyp zeigte hier «Alle Etagen»). Mit `geschoss` im Auftrag (`POST /api/vr/auftrag`) gilt dieses Geschoss; seit P5a wählt man die Etage auch in der Brille (Wisch hoch/runter, App «Etagen»).
   - Rechtsklick Raum › **«Raum in AR»** (`ausschnitt: true`): nur der **Raum ± 1.5 m** (Quader wie «Raum im 3D zeigen», N14), oben unter der Decke, als Ausschnitt so gross wie
     möglich, passend auf die Platte (ab 1:5).
   - `modus: sitzungsraum` ohne Raum: **alle Etagen**. Eine 3D-Ansicht (`ansicht`) auf dem Tisch kommt später (Hinweis, dann das ganze Modell).
@@ -2278,3 +2278,114 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
   Griffe mit echten Händen, Bildrate im Sitzungsraum (Test_praxis «Alle Etagen» 861 291 Dreiecke in 73 Aufrufen – am PC nicht aussagekräftig), ob der Shader «schnitt» auf der
   Quest lädt, Lesbarkeit der Schrift am Tisch, Aussehen des Raums.
 - **Anleitung:** `zb-quest-app-sitzungsraum` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App P5a: Bedienung mit schwebenden Apps, festen Gesten, Etagen per Wisch und Komfort (`entwurf/modul-xr.md`, Grundsatzentscheid «Bedienung», «Leitlinie Bedienung», «Ergänzungen», Interface-Labor Zeile P5)
+
+Die App «KICAD» bedient man jetzt mit **schwebenden Apps** statt der Box (Christian 23.10.2026: «ev. nicht ein tablet sondern schwebende apps die ich berühren kann. so dass
+die prezision weniger ein thema wird»), mit **festen Gestenbedeutungen** und **Geisterhänden**; der Geschosswechsel geht ohne PC (Wisch hoch/runter bzw. App «Etagen»).
+Regeln ohne StereoKit in `src/Hlks.Xr` (`XrGesten.cs`, `Bedienung/`, `Modell/EtagenWechsel.cs`; Übersicht `src/Hlks.Xr/LIESMICH.md`), die App in
+`src/Hlks.Quest/SchwebendeApps.cs` (Apps, Geisterhand, Tunnel), `QuestApp.cs`, `Sitzungsraum.cs`, `Rueckmeldung.cs`. **Am PC keine neue Oberfläche:** die Stellschrauben
+kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben und Messprotokoll folgen mit P5b.
+
+- **Wo die Apps stehen** (Annahmen P5a, im Brillentest einzustellen): grosse Kacheln (18 cm, `apps.groesse_m`) im **Bogen auf Brusthöhe** (30 cm unter den Augen), 45 cm vor der
+  Brust (`apps.abstand_m`, Griffbereich), höchstens 4 je Reihe (5 Kacheln: 3 + 2), die **Mitte 50° links neben dem Blick** – so zeigt die rechte Hand frei nach vorn zum
+  Springen, und das Modell auf dem Tisch bleibt frei (erstes Prüfbild: mitten vor dem Körper lagen die Kacheln genau dort, wo die Hand zum Springen zeigt, und über dem
+  Tisch). Jede Kachel ist zum Auge gedreht. Sie **folgen dem Blick träge** (erst ab 30° bzw. 15 cm, dann weich) und **stehen still, solange eine Hand an ihnen ist**.
+  `apps.anordnung`: `bogen` (Vorgabe), `reihe` (gerade Reihe vor der Brust), `an_hand` (halb so gross über der linken Handfläche, solange sie zum Gesicht zeigt).
+- **Ein- und ausblenden – Entscheid P5a:** fester Platz plus Geste. Beim Start sind die Apps da. **Wegwischen** (Pinch + Wisch nach vorn) blendet sie aus; **linke Handfläche
+  zum Gesicht drehen** (0.4 s halten) holt sie wieder an ihren Platz. Begründung: Einen festen Platz am Körper findet man ohne Suchen, und beide Hände bleiben frei zum
+  Antippen (beim Tablet trägt eine Hand die Bedienung); die Handfläche kennt Christian vom Tablet des Prototyps (XR-C), und Wegwischen ist die feste Bedeutung «schliessen».
+  Nach dem Ausblenden erinnert eine Zeile unten vor dem Blick 6 s lang daran.
+- **Kacheln** (was die Box konnte, dazu «Etagen»):
+  - Begehen: **Status** (Ampel grün verbunden / orange ohne PC / rot Fehler, Geschoss und Raum, Hz), **Etagen**, **Drehen** (Schalter, zeigt den wirksamen Zustand wie
+    bisher), **Sitzungsraum**, **Ebenen** (wenn es welche gibt).
+  - Sitzungsraum: Status (Massstab, Hz), Etagen, **Tisch** (öffnet: «Echter Tisch» ein/aus bzw. «nicht verfügbar», «IFC-Unterlage» ein/aus, «Zurücksetzen», «Tisch neu
+    antippen»), **Begehen**, Ebenen. Mit «Echter Tisch» ein bzw. «Tisch neu antippen» schliesst die App, damit die Hand frei zum Antippen des Tisches ist.
+  - Kacheln mit «›» öffnen ihre App in der Mitte: Einträge in 2 Spalten × bis 4 Zeilen, oben der Titel (mit «Seite 1/2», wenn es mehr Seiten gibt) und «×». **Etagen**:
+    oberstes Geschoss zuerst, mit Name und Kote, das aktuelle grün (im Sitzungsraum zuerst «Alle Etagen»); Antippen wechselt die Etage (Regeln unten). **Ebenen**: je Ebene
+    ein Schalter. **Status**: Verbindung, Modell, Ort, Netze/Dreiecke/Hz, letzter Hinweis und die Tabelle der Gesten.
+- **Bedienen** (Regeln `Bedienung/AppBeruehrung.cs`, Annahmen P5a): **Antippen** = Zeigefingerspitze von vorn in die Kachel (sie löst aus, wenn sie 5 mm vor der Fläche
+  ankommt; wer schon dahinter ist oder von der Seite kommt, löst nichts aus). **Fang** zum nächsten Ziel bis 3 cm neben der Kachel (`fang.radius_m`). **Leuchten**: ab
+  10 cm vor der Kachel wird der Rand heller und dicker, beim Fang ein leiser Klick; beim Auslösen Klick und Aufleuchten. Nach dem Auslösen ist die Hand gesperrt, bis sie
+  2.5 cm zurückgezogen ist (eine App, die sich unter dem Finger öffnet, löst nicht gleich ihren ersten Eintrag aus). **Pinch an einer Kachel** wählt beim Loslassen, wenn
+  die Hand dabei höchstens 4 cm wanderte (sonst ist es ein Wisch). Eine Hand an den Apps zielt nicht zum Springen und greift am Tisch nicht.
+- **Hinweise** (z. B. «Etage 1.OG – gleicher Punkt.», Stellschraube vom PC): eine Zeile unten vor dem Blick (8 s), über den Apps, solange man mit ihnen arbeitet.
+- **Variante «tablet»** (`labor.variante.bedienung` = `tablet`): die Box aus P4a/P4b unverändert (Schalter und Knöpfe mit dem Finger), Grösse mit `anzeige.skala`. Die
+  festen Gesten gelten in beiden Varianten.
+
+**Feste Gestenbedeutungen** (Ergänzung «Ins Interface-Labor», Christian 23.10.2026; Regel `Hlks.Xr.Gestenbedeutung`, dieselbe Tabelle steht in der App «Status»):
+
+| Geste | Bedeutung |
+| --- | --- |
+| Antippen (Zeigefinger in die Kachel) | wählt bzw. schaltet (Kachel, Eintrag einer App) |
+| Pinch (Daumen + Zeigefinger) | wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen |
+| Pinch + Wisch links/rechts | blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt) |
+| Pinch + Wisch hoch/runter | Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen») |
+| Pinch + Wisch nach vorn (wegwischen) | schliesst die offene App, sonst blendet es die Apps aus |
+| Linke Handfläche zum Gesicht drehen | holt die Apps (blendet sie ein) |
+| Faust | greift (noch keine Funktion; Greifen kommt mit XR-B) |
+| Zwei Hände an den Griffen | Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben |
+| Zögern über einer App | eine Geisterhand zeigt die passende Geste |
+
+- **Wisch** (Regeln `XrGesten`): mit **gehaltenem Pinch** schnell ziehen – mindestens 15 cm (`wisch.mindestweg_m`) mit mindestens 0.8 m/s (`wisch.mindesttempo_ms`) in
+  höchstens 0.4 s, überwiegend waagrecht oder senkrecht (Abweichung höchstens ≈ 37°, `wisch.richtung_toleranz_grad`; Vorgabe genau «80 % waagrecht» des Prototyps).
+  Eingeordnet zum Blick: senkrecht = hoch/runter; waagrecht innerhalb der Toleranz um die Blickrichtung = vor (wegwischen) bzw. zurück (noch ohne Bedeutung); sonst
+  links/rechts. **Richtungssperre:** innerhalb 1 s (`begehen.drehen_sperre_s`) nach einem Wisch zählt die Gegenrichtung nicht (das Zurückholen der Hand löst nichts aus) –
+  wie beim Drehen (Christian 23.10.2026), jetzt für alle Wische.
+  **Entscheid P5a:** überall mit Pinch, wie das abgenommene Drehen (Christian 23.10.2026: «Das neue Drehen passt»); ein Wisch mit offener Hand würde beim Senken des Arms
+  leicht ungewollt die Etage wechseln. **Änderung zu P4a:** ein Wisch nach vorn oder hinten dreht nicht mehr (er ist «wegwischen»).
+- **Etage per Wisch hoch/runter bzw. App «Etagen»** (Regeln `Modell/EtagenWechsel`; Variante `labor.variante.etage` = `app`: nur über die App):
+  - Begehen: nächstes Geschoss mit höherer bzw. tieferer Kote (gleiche Kote ±1 mm zählt nicht als anderes). Man landet **über demselben Punkt**, wenn er im Grundriss eines
+    Raums dieses Geschosses liegt (auf dessen Boden), **sonst im grössten Raum** (Schwerpunkt bzw. innerster Punkt), ohne Räume über demselben Punkt auf der Kote. Die
+    Blickrichtung bleibt. Liegt ein Raumboden so tief, dass man nach der Regel «Geschoss am Stand» (Kote höchstens 0.3 m darüber) im Geschoss darunter stünde, gilt die
+    Kote. Steigender bzw. fallender Ton, kurzes Abblenden, Tunnelblick; über dem obersten bzw. unter dem untersten ein leiser Klick und ein Hinweis.
+  - Sitzungstisch: Etagenschnitt des Geschosses darüber bzw. darunter (Lage, Massstab und Drehung bleiben); über dem obersten folgt «Alle Etagen», von dort nach unten das
+    oberste; aus «Raum in AR» das Geschoss über bzw. unter dem Raum.
+- **Geisterhände** (Regeln `Bedienung/Geisterhand`): liegt die Fingerspitze 1.5 s ruhig (Umkreis 3 cm) über einer Kachel, einem Eintrag, der offenen App oder nahe an
+  einem Griff am Tisch, ohne dass etwas ausgelöst wird, führt eine halbdurchsichtige Hand (aus der Form der eigenen Hand) die Geste zweimal vor (1.8 s): **Antippen**
+  (Kachel, Eintrag), **Blättern** (über der offenen App mit mehreren Seiten), **Wegwischen** (offene App mit einer Seite), **Greifen** (Griff). Dieselbe über demselben
+  Ziel frühestens nach 6 s wieder.
+- **Komfort, Tunnelblick** (`komfort.tunnelblick`, `komfort.tunnelblick_staerke`; Regeln `Bedienung/Tunnelblick`): beim Springen, Drehen und Etagenwechsel engt sich das
+  Blickfeld kurz und weich ein (0.08 s ein, 0.12 s halten, 0.35 s aus); frei bleibt der Blick bis 60° (Stärke 0) bzw. 15° (Stärke 1) um die Blickachse, dann ein weicher
+  Rand von 18°, aussen dunkel. **Entscheid P5a:** mit Tunnel entfällt beim Drehen das kurze Abblenden aus P4a; beim Springen bleibt es (es verdeckt den Schnitt). Ohne
+  Tunnel gilt P4a unverändert.
+- **Stellschrauben, die die App jetzt versteht** (live über den Kanal; die am PC gemerkten gelten schon beim Verbinden aus «willkommen», Paare in jeder Reihenfolge; Wert
+  `null` setzt zurück; ungültige Werte bleiben unbeachtet, die App meldet «ungültig»). Pinch-Schwellen und Fangradius sind an einer Stelle geführt (`XrBedienEinstellungen`)
+  und gelten für Begehen, Sitzungsraum und Apps.
+
+  | Schlüssel | Bereich | Vorgabe | Wirkung |
+  | --- | --- | --- | --- |
+  | `anzeige.skala` | 0.5 … 3 | 1.35 | Schrift der Apps und Hinweise, Grösse der Box (Variante «tablet») |
+  | `apps.groesse_m` | 0.08 … 0.4 | 0.18 | Kantenlänge einer Kachel (m) |
+  | `apps.abstand_m` | 0.25 … 0.9 | 0.45 | Abstand der Kacheln von der Brust (m) |
+  | `apps.anordnung` | `bogen`, `reihe`, `an_hand` | `bogen` | Anordnung |
+  | `wisch.mindestweg_m` | 0.05 … 0.5 | 0.15 | kürzester Wisch (m) |
+  | `wisch.mindesttempo_ms` | 0.2 … 3 | 0.8 | langsamster Wisch (m/s) |
+  | `wisch.richtung_toleranz_grad` | 5 … 80 | ≈ 36.87 | Abweichung von der Hauptachse (Grad) |
+  | `pinch.schwelle_an_m` | 0.01 … 0.06, kleiner als «aus» | 0.025 | Pinch an (Fingerabstand, m) |
+  | `pinch.schwelle_aus_m` | 0.015 … 0.08, grösser als «an» | 0.04 | Pinch gelöst (m) |
+  | `fang.radius_m` | 0.005 … 0.15 | 0.03 | Fang an den Kacheln (m) |
+  | `komfort.tunnelblick` | true/false | true | Tunnelblick |
+  | `komfort.tunnelblick_staerke` | 0 … 1 | 0.3 | wie eng |
+  | `komfort.ton` | true/false | true | Ton bei Fang, Griff, Berührung, Sprung (das Licht bleibt) |
+  | `begehen.drehwinkel_grad` | 5 … 90 | 30 | Winkel je Drehschritt |
+  | `sitzung.zoom_min` | 5 … 100, kleiner als «max» | 5 | stärkster Zoom am Tisch (1:n) |
+  | `sitzung.zoom_max` | 50 … 1000, grösser als «min» | 200 | schwächster Zoom am Tisch (1:n); auch das Einpassen nutzt ihn |
+  | `labor.variante.bedienung` | `apps`, `tablet` | `apps` | schwebende Apps bzw. die Box |
+  | `labor.variante.etage` | `wisch_modell`, `app` | `wisch_modell` | Etage per Wisch hoch/runter bzw. nur über die App |
+
+  Dazu weiter `begehen.ziel_ruhe_s`, `begehen.ziel_ruhe_radius_m`, `begehen.ziel_verzoegerung_s`, `begehen.drehen_sperre_s` (P4a) und `haltung.*` (P4a-Nachtrag).
+  **Hinweis an P6:** Der Katalog `kataloge/xr_stellschrauben.json` (Stand P6) nennt für `sitzung.zoom_min` die Vorgabe 20; die App nimmt seit dem P4b-Nachtrag 1:5
+  (`XrSitzungLogik.MassstabMin`, Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»).
+- **Protokoll** «P4 Status» zusätzlich: `Bedienung=apps|tablet (Apps sichtbar|aus, offen …, Anordnung), Geste=…, Etagenwechsel=n (…), Geisterhände=n, Tunnel=n Bilder`;
+  die App heisst im Kanal «KICAD Quest P5a».
+- **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` prüft in jedem Lauf zusätzlich die Bedienung, in der Zeile «P4 ok» als «P5a: Stellschrauben=ok (18 Schlüssel der
+  Bedienung), Apps=ok (Kacheln …; Etagen n Einträge; Wegwischen schliesst ja, blendet aus ja), Etage=ok (EG → 1.OG (gleicher Punkt) → EG; Tunnel ja)» im Begehen bzw.
+  «Etage=ok (EG · Schnitt … → UG · Schnitt … → EG · Schnitt …)» im Sitzungsraum; «FEHLER» lässt den Lauf scheitern. Mit `-Pruefbilder <ordner>` dazu
+  `begehen_blick.jpg`, `apps_begehen.jpg`, `apps_sitzung.jpg`, `apps_etagen.jpg` (nur lokal). Tests: Xr `tests/Hlks.Xr.Tests` (`BedienungTests`: Wisch in allen
+  Richtungen, Gestenbedeutung, Stellschrauben, Lage der Apps, Nachführen, Einblenden, Blättern, Antippen, Fang, Pinch, Zögern, Geisterhand, Tunnelblick, Zoomgrenzen;
+  `EtagenWechselTests`; `HandBegehenTests` mit Wisch hoch/runter/vor, Apps und Schwellen).
+- **Nur mit der Brille prüfbar:** ob man die Kacheln mit echten Händen trifft (Druckebene, Fang, Sperre nach dem Auslösen), Lesbarkeit mit 1.35, Platz der Apps (50° links,
+  Brusthöhe) im Stehen und Sitzen, ob die Handfläche die Apps zuverlässig holt, Wisch hoch/runter ohne Fehlauslösung beim Zielen, das Wegwischen, Etagenwechsel
+  (Landepunkt, Blickrichtung), Geisterhände (Zeitpunkt, Aussehen), Tunnelblick (Stärke 0.3 spürbar?), Ton und Licht, die Variante «tablet» im Vergleich.
+- **Anleitung:** `zb-quest-app-bedienung` in `berichte/anleitung/inventar.json`.

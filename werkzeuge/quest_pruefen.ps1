@@ -11,6 +11,8 @@
 # Abschnitte (Etagenschnitt des Auftrags, alle Etagen, Raum zeigen) mit Bildzeit, Dreiecken und Aufrufen; dazu die Regeln (Griffe, Tisch antippen,
 # Passthrough im Simulator nicht verfuegbar, Shader "schnitt") und die Ebenen (Probe "fliessrichtung"). -OhneSitzungsraum laesst ihn weg; -Pruefbilder <ordner>
 # legt je Abschnitt zwei JPEG des Sitzungsraums ab (nur lokal, nie ins Repository - bei echten Projekten zeigen sie echte Daten).
+# P5a: jeder Lauf prueft dazu die Bedienung (Zeile "P5a: Stellschrauben, Apps, Etage" in "P4 ok"); -Pruefbilder legt auch Bilder der schwebenden Apps ab
+# (begehen_blick.jpg, apps_begehen.jpg, apps_sitzung.jpg, apps_etagen.jpg).
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
 # Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
@@ -116,7 +118,10 @@ try {
   if ($OhneUnterlage) { $zusatz += '--ohne-unterlage' }
   $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough'
   Aus "Lauf 1: mit PC ($Bilder Bilder) ..."
-  $a1 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz 2>&1
+  # P5a: mit -Pruefbilder auch zwei Bilder beim Begehen (Blick nach vorn, die schwebenden Apps)
+  $bild1 = @()
+  if ($Pruefbilder) { $bild1 = @('--bilder', $Pruefbilder) }
+  $a1 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bild1 2>&1
   $c1 = $LASTEXITCODE
   $a1 | Out-File -FilePath "$logs\lauf1.log" -Encoding utf8
   $a1 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }

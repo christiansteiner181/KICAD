@@ -1,4 +1,4 @@
-# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1, P4a und P4b)
+# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1, P4a, P4b und P5a)
 
 Reine C#-Bibliothek (`net10.0`) ohne StereoKit, ASP.NET und Hlks.Kern. Sie enthält die Regeln, die im Browser-Prototyp als JavaScript mit
 Node-Tests stehen: Begehen, Start, Messen mit Fang, Sitzungsraum, Tablet, Wischgeste. Die App (`src/Hlks.Quest`) zeigt, die Bibliothek rechnet; ein Wechsel
@@ -124,12 +124,41 @@ die App zusätzlich braucht; die App selbst: `src/Hlks.Quest/Sitzungsraum.cs`, `
   `SitzungAuswahlTests` (Decken, Etagenschnitt, Lage der Blöcke, Ausschnitt, Etage zum Auftrag), `TischAntippenTests` (Antippen, Zittern, in der Luft, Pinch, Grenzen, Speicherbild
   XR_FB_passthrough), `XrEbeneTests` (Format, Szene, Laden mit 304 und Ablage); gegen den Server `tests/Hlks.Web.Tests/XrEbenenApiTests.cs`.
 
+## Bedienung: schwebende Apps, feste Gesten, Etagen, Komfort (P5a)
+
+Regeln der Bedienung nach der Leitlinie (Christians Leitbild «schwebende Apps mit Wischgesten», feste Gestenbedeutungen mit Geisterhänden, Komfort-Stellschrauben;
+`entwurf/modul-xr.md`). Die App: `src/Hlks.Quest/SchwebendeApps.cs`, `QuestApp.cs`, `Sitzungsraum.cs`; Bedienung und Tabelle der Gesten in `src/Hlks.Web/OBERFLAECHE.md`,
+Abschnitt «Modul XR, Quest App P5a».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `XrGesten.cs` | `WischRichtung`, `WischEinstellungen`, `PinchEinstellungen`, `XrGesten`, `PinchWischZustand`, `GestenAktion`, `GestenKontext`, `Gestenbedeutung` | Wisch in allen Richtungen (waagrecht genau wie der Prototyp, neu senkrecht), Einordnen zum Blick (links, rechts, vor, zurück, hoch, runter), Wisch mit gehaltenem Pinch mit Sperre der Gegenrichtung, Bedeutung eines Wischs im Zusammenhang, Tabelle der Gesten |
+| `Bedienung/XrBedienEinstellungen.cs` | `XrBedienEinstellungen`, `AppEinstellungen`, `KomfortEinstellungen`, `Anordnungen`, `Varianten` | alle Stellschrauben der Bedienung (Schlüssel wie im Katalog von P6) mit Grenzen, Paarbedingungen (Pinch an &lt; aus, Zoom min &lt; max), Zurücksetzen mit `null`, mehrere auf einmal in zwei Durchgängen («willkommen») |
+| `Bedienung/AppBogen.cs` | `Kachel`, `KachelArt`, `ListenEintrag`, `AppAnker`, `AnkerZustand`, `EinblendZustand`, `AppLayout`, `AppListe` | Lage der Kacheln (Bogen, Reihe, an der Hand), offene App mit Einträgen und «×», träges Nachführen zum Blick (Totzone, still bei Hand an den Apps), Einblenden mit der linken Handfläche, Blättern |
+| `Bedienung/AppBeruehrung.cs` | `AppBeruehrung`, `BeruehrHand`, `BeruehrErgebnis` | Antippen (Druckebene von vorn), Fang zum nächsten Ziel, Leuchten nach der Nähe, Pinch wählt beim Loslassen, Sperre bis zum Zurückziehen |
+| `Bedienung/Geisterhand.cs` | `Geisterhand`, `GeisterGeste`, `ZoegernZustand`, `GeisterBild` | Zögern erkennen, Geisterhand (Antippen, Blättern, Wegwischen, Greifen) aus der Form der eigenen Hand, Knochen zum Zeichnen |
+| `Bedienung/Tunnelblick.cs` | `Tunnelblick`, `TunnelZustand`, `TunnelForm` | Tunnelblick beim Springen, Drehen und Etagenwechsel: Verlauf (weich ein, halten, weich aus), Öffnung nach der Stärke |
+| `Modell/EtagenWechsel.cs` | `EtagenWechsel`, `EtagenZiel`, `SitzungEtagenZiel` | Geschoss darüber/darunter nach der Kote; Begehen: gleicher Punkt im Raum, sonst grösster Raum, ohne Räume auf der Kote (mit Probe gegen `GeschossWahl`); Sitzungstisch: Etagen und «Alle Etagen» |
+
+- **Geändert für P5a:** `XrWischLogik.WischSchritt` nimmt optional `WischEinstellungen` (dann alle Richtungen; ohne bleibt es der Prototyp für die Masslinien);
+  `XrTabletLogik.IstPinch` nimmt optional `PinchEinstellungen`; `HandBegehen` meldet jeden Wisch (`BegehenArt.Wisch` mit Richtung), dreht nur seitlich (ein Wisch nach
+  vorn oder hinten dreht nicht mehr), die Richtungssperre gilt für alle Wische, `springen = false` an den Apps, Pinch- und Wischschwellen aus `HandBegehenEinstellungen.Pinch`
+  bzw. `.Wisch`; `XrSitzungLogik` mit `ZoomGrenzen` (Stellschrauben `sitzung.zoom_min/max`) in `MassstabBegrenzen`, `LageBegrenzen`, `Einpassen`, `AusschnittLage`,
+  `ZweihandSchritt`, `GestenSchritt`, `MassstabText` und `SitzungAuswahl.Startlage` (ohne Angabe 1:5 … 1:200 wie bisher).
+- **Annahmen P5a** (Stellschrauben, wo der Katalog sie vorsieht; sonst benannte Konstanten): Kachel 18 cm, 45 cm vor der Brust, Brusthöhe 30 cm unter den Augen, Mitte 50° links
+  vom Blick, 4 je Reihe, Reihenabstand 1.4 × Kachel, Totzone 30° / 15 cm, Folgezeit 0.35 s, Handfläche 0.4 s; Druckebene 5 mm, Leuchten ab 10 cm, Loslassen 2.5 cm, Fang 3 cm,
+  Pinch wählt bis 4 cm Weg; Zögern 1.5 s in 3 cm, Wiederholung nach 6 s, Vorführung 1.8 s; Tunnel 0.08 / 0.12 / 0.35 s, Öffnung 60° … 15°, Rand 18°.
+- **Tests:** `BedienungTests` (Wisch, Gestenbedeutung, Stellschrauben und Paare, Pinch an einer Stelle, Zoomgrenzen, Bogen und Reihe und an der Hand, offene App, Blättern,
+  Nachführen, Einblenden, Antippen, Fang, Pinch wählt, Sperre nach dem Öffnen, Zögern, Geisterhand, Tunnelblick), `EtagenWechselTests`, `HandBegehenTests` (Wisch hoch/runter,
+  seitlich, vor, offene App, an den Apps, Schwellen, Sperre beim Etagenwisch). Die App selbst: `werkzeuge/quest_pruefen.ps1` (Zeile «P5a»).
+
 ## Offene Punkte
 
 - Die Gelenknamen der WebXR-Hand-API bildet `HandGelenke` auf die 25 Gelenke von StereoKit ab (P4a).
-- Die Schwellen (Pinch, Faust, Wisch, Totzone, Griffe, Tisch, Schnitt, Schulter des Zeigestrahls, Verzögerung des Teleports) sind die **Annahmen des Prototyps
-  bzw. von P4a** und stehen in den Kommentaren der Konstanten; sie werden im Interface-Labor (P5) an der Brille nachgestellt. Als Stellschrauben sind sie hier
-  noch feste `const`-Werte.
+- Die Schwellen (Faust, Totzone des Tablets, Griffe, Tisch, Schnitt, Schulter des Zeigestrahls) sind die **Annahmen des Prototyps bzw. von P4a/P4b** und stehen in den
+  Kommentaren der Konstanten. Seit P5a sind Pinch, Fang, Wisch, Zoom, Drehwinkel, Komfort und die Apps Stellschrauben (`XrBedienEinstellungen`), dazu Springen und
+  Haltung (P4a); die übrigen bleiben feste `const`-Werte, bis das Labor sie braucht.
+- P5a nicht gebaut: Schnitt mit der flachen Hand, Röntgen-Hand (Ergänzungen), Faust greift (XR-B); Prüfaufgaben und Messprotokoll (P5b).
 - Der JSON-Zugang für `Koerper` (`/api/koerper`) fehlt weiter; die App rechnet den Durchgang mit `DreieckForm` aus der GLB. `Standort` (`raum_begehen`) ersetzt
   `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).
 - P4b: Den Tisch findet die App noch nicht selbst (`XR_EXT_spatial_plane_tracking`) und erkennt keine Marker (`XR_EXT_spatial_marker_tracking`); beides nur auf Machbarkeit

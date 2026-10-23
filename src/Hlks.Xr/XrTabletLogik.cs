@@ -77,12 +77,13 @@ public static class XrTabletLogik
     /// <summary>xr-greifen-logik.js istOffen.</summary>
     public static bool IstOffen(IReadOnlyDictionary<string, Vec3>? g) => FaustVerhaeltnis(g) is { } v && v > OffenAb;
 
-    /// <summary>xr-greifen-logik.js istPinch: Pinch (Daumen- und Zeigefingerspitze) mit Hysterese.</summary>
-    public static bool IstPinch(IReadOnlyDictionary<string, Vec3>? g, bool vorher = false)
+    /// <summary>xr-greifen-logik.js istPinch: Pinch (Daumen- und Zeigefingerspitze) mit Hysterese. P5a: Schwellen aus <paramref name="schwellen"/> (Stellschrauben
+    /// «pinch.schwelle_an_m», «pinch.schwelle_aus_m», an einer Stelle geführt), ohne Angabe <see cref="PinchAn"/> / <see cref="PinchLos"/>.</summary>
+    public static bool IstPinch(IReadOnlyDictionary<string, Vec3>? g, bool vorher = false, PinchEinstellungen? schwellen = null)
     {
         if (!Hat(g, "thumb-tip") || !Hat(g, "index-finger-tip")) return false;
         var d = g!["thumb-tip"].Abstand(g["index-finger-tip"]);
-        return vorher ? d < PinchLos : d < PinchAn;
+        return vorher ? d < (schwellen?.AusM ?? PinchLos) : d < (schwellen?.AnM ?? PinchAn);
     }
 
     /// <summary>xr-greifen-logik.js handflaechenMitte.</summary>

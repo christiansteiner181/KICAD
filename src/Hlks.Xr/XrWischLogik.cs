@@ -126,8 +126,10 @@ public static class XrWischLogik
     /// xr-greifen-logik.js wischSchritt: ein Schritt je Bild und Hand. t = Zeit (s), ort = Handflächenmitte, erlaubt = Hand offen, nicht am Greifen/Pinchen/Tablet.
     /// Der Wisch gilt, solange die Bewegung die Schwellen erfüllt (so trifft er auch eine Linie am Ende des Strichs); danach gilt die Sperre <see cref="WischSperreS"/>.
     /// Rückgabe null oder der Wisch (<see cref="WischErgebnis.Neu"/> = erstes Bild dieses Wischs).
+    /// P5a: mit <paramref name="alle"/> erkennt der Schritt Wische in allen Richtungen mit diesen Schwellen (XrGesten.WischErkennen, Stellschrauben «wisch.*»);
+    /// ohne (null) wie im Prototyp nur waagrechte (<see cref="WischErkennen"/>).
     /// </summary>
-    public static WischErgebnis? WischSchritt(Wischer z, double t, Vec3? ort, bool erlaubt)
+    public static WischErgebnis? WischSchritt(Wischer z, double t, Vec3? ort, bool erlaubt, WischEinstellungen? alle = null)
     {
         WischErgebnis? Beenden()
         {
@@ -148,7 +150,7 @@ public static class XrWischLogik
         }
         z.Verlauf.Add(new WischProbe(t, o));
         while (z.Verlauf.Count > 2 && t - z.Verlauf[0].T > WischVerlaufS) z.Verlauf.RemoveAt(0);
-        var w = WischErkennen(z.Verlauf);
+        var w = alle is null ? WischErkennen(z.Verlauf) : XrGesten.WischErkennen(z.Verlauf, alle);
         if (w is null) return z.Aktiv ? Beenden() : null;   // noch kein Wisch: Verlauf weitersammeln
         var neu = !z.Aktiv;
         z.Aktiv = true;

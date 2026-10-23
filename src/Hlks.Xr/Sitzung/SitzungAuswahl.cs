@@ -299,7 +299,9 @@ public static class SitzungAuswahl
     }
 
     /// <summary>Startlage auf dem Tisch für eine Ansicht: ganzes Modell bzw. Etage 1:50 (XrSitzungLogik.Einpassen), Ausschnitt so gross wie möglich (AusschnittLage).</summary>
-    public static Einpassung Startlage(SitzungAnsicht a) => a.Ausschnitt ? XrSitzungLogik.AusschnittLage(a.Bezug.Groesse) : XrSitzungLogik.Einpassen(a.Bezug.Groesse);
+    /// P5a: mit den Grenzen des Zoomens der Stellschrauben «sitzung.zoom_min/max» (ohne Angabe 1:5 … 1:200).
+    public static Einpassung Startlage(SitzungAnsicht a, ZoomGrenzen? grenzen = null) =>
+        a.Ausschnitt ? XrSitzungLogik.AusschnittLage(a.Bezug.Groesse, grenzen) : XrSitzungLogik.Einpassen(a.Bezug.Groesse, XrSitzungLogik.MassstabStart, grenzen);
 
     /// <summary>
     /// Etage zu einem Auftrag «sitzungsraum» (P4b): das Geschoss des Auftrags; sonst – bei «Geschoss im Sitzungsraum zeigen» mit Raum, ohne Ausschnitt – das Geschoss des Raums
