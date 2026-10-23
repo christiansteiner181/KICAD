@@ -264,6 +264,27 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - **Auflagen für den ersten Test:** Den Zugang nur während der Testsitzung einschalten. Das Firewall-Skript nur ausführen, wenn
   `-Liste` das Netz als «Privat» zeigt.
 
+**Erster Brillentest P4a (23.10.2026, ~20:15–20:40, Christian, Quest 3, Test_praxis-Arbeitskopie, `werkzeuge/quest_brillentest.ps1 -Kabel`):**
+- **Verbindung:**
+  - Gepinntes TLS zum Netzzugang, Modell über den Netzzugang, Live-Kanal mit Posen und VR-Auftrag vom PC, alles über das Kabel
+    (adb reverse, 127.0.0.1 im Paket).
+  - Das WLAN «s-net 3» ist in Windows «Öffentlich», und die Firewall-Regeln fehlten (Skript ohne Administratorrechte). Christian:
+    «Jetzt über Kabel». **K3 (WLAN) ist offen.**
+- **K1 Leistung:**
+  - Mit allen Geschossen meist 72 Hz, zeitweise 54–60 Hz. Die Grafik ist der Engpass; die App rechnet 0,4 ms je Bild.
+  - Christian: «beschränken auf eigenes und IFC» → es wird nur das Geschoss gezeichnet, in dem man steht, mit eigenen Bauteilen und
+    IFC. Das Geschoss kommt aus dem Standboden, nicht aus der Kopfhöhe.
+  - Danach im EG (382 055 Dreiecke, 5 Netze) eine Minute **stabil 72 Hz** (13,9 ms); ein Ausreisser von 24 ms beim Wechsel in den
+    Durchgang. **K1 erfüllt.**
+- **K2 Hände:**
+  - Drehen (Pinch und Wisch) «klappt gut».
+  - Springen «klappt, aber hakt»: «der strahl korrespondiert nicht mit dem feinen weissen basisstrahl», zielt schlecht, springt
+    ungewollt → P4a-Nachtrag (Aim-Pose des Systems als Zielstrahl, keine Sprünge nach Drehgeste, Mindestruhe des Ziels).
+- **Anzeige:** «text geht über box hinaus, text und box eher etwas klein». Box und Text sind jetzt um den Faktor 1,35 grösser, der
+  Text bricht um. Christian: «Ja, passt».
+- **Folge der Beschränkung:** Andere Geschosse sind beim Begehen unsichtbar; der Wechsel geht bis P5 per Auftrag vom PC, danach per
+  Wisch hoch/runter.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
