@@ -2062,7 +2062,7 @@ Kern: `Hlks.Kern/Xr/` (`XrModell`, `XrNetzbau`, `XrFarben`, `XrKoordinaten`, `Gl
 ## Modul XR, Quest App P4a: die App verbindet, lädt das Modell und startet das Begehen (`entwurf/modul-xr.md`, Interface-Labor, Zeile P4)
 
 Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit dem Netz-Teil und dem Modell in `src/Hlks.Xr` (`Netz/`, `Modell/`, Übersicht `src/Hlks.Xr/LIESMICH.md`).
-**Keine neue Bedienung am PC:** die App benutzt den Zugang im Büronetz (P3) und die GLB je Geschoss (P2). Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b.
+**Keine neue Bedienung am PC:** die App benutzt den Zugang im Büronetz (P3) und die GLB je Geschoss (P2). Sitzungsraum, Passthrough «Echter Tisch» und die Probe-Ebene: P4b (nächster Abschnitt).
 
 - **Kopplung:** Die App liest das Kopplungspaket (wie `POST /api/xr/kopplung/paket`, auch die ganze Antwort `{ paket }`) nur aus ihrem privaten Speicher
   (`/data/user/0/ch.hkplanung.kicad.quest/files/kopplung.json`). P7 legt die Datei bei der Installation per adb in den Eingang
@@ -2070,7 +2070,7 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
   «Nicht gekoppelt» und startet, wenn vorhanden, ohne PC. Keine Sicherung der App-Daten (`allowBackup` aus). Am PC: `--kopplung <datei>`.
 - **Verbinden:** zuerst die zuletzt erfolgreichen Adressen und die `ips` des Pakets (Probe `GET /api/xr/verbindung`, gleichzeitig, Frist 2.5 s), sonst die Suche per
   UDP-Broadcast an den `suchPort` (Antwort mit HMAC geprüft). Jede Verbindung nur mit dem gepinnten `fingerabdruck`. 401 oder ein anderer Fingerabdruck in der Suche:
-  «neu koppeln» (rot), keine weiteren Versuche. Ohne PC wird alle 30 s neu gesucht. Dann der **Live-Kanal**: `hallo` (Name aus dem Paket, Gerät, «KICAD Quest P4a»),
+  «neu koppeln» (rot), keine weiteren Versuche. Ohne PC wird alle 30 s neu gesucht. Dann der **Live-Kanal**: `hallo` (Name aus dem Paket, Gerät, «KICAD Quest P4b» seit P4b),
   Posen 25 je Sekunde (Kopf, Handgelenke, Zeigefingerspitzen, Pinch und `pinchStaerke`, `modus: begehen`, in KICAD-mm), Empfang von `auftrag` und `stellschraube`
   (die Stellschrauben zeigt die App bis P5 nur an). Wiederverbinden nach 1, 2, 4, 8, 15, dann 30 s; nach 4001 (widerrufen) und 4002 (ersetzt) nicht.
 - **Modell:** `GET /api/xr/geschosse`, dann alle Geschosse, Teil `modell` und `unterlage`. Der **Zwischenspeicher** in der App hält je Geschoss und Teil die GLB mit
@@ -2087,7 +2087,7 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
 - **Startpunkt** (`VrStartLogik`): Raum aus dem VR-Auftrag des PCs (`willkommen` bzw. `auftrag`, nur neue Nummern; Modus «begehen»), sonst der zuletzt in der App
   benutzte Standpunkt dieses Projekts (alle 10 s und beim Beenden gemerkt), sonst der grösste Raum des untersten Geschosses mit Kote ≥ 0, sonst 5 m vor der Südseite
   des Modells. Den Standort eines Raums rechnet die App aus seinem Netz (Schwerpunkt bzw. innerster Punkt, Boden, Augenhöhe 1700 mm, Blick nach der längsten Kante)
-  – `raum_begehen` erreicht sie im Büronetz nicht. Ein neuer Auftrag während des Begehens setzt sie ohne Tipp in den Raum. Aufträge «Sitzungsraum» folgen mit P5.
+  – `raum_begehen` erreicht sie im Büronetz nicht. Ein neuer Auftrag während des Begehens setzt sie ohne Tipp in den Raum. Aufträge «Sitzungsraum»: siehe P4b (nächster Abschnitt).
 - **Begehen mit Händen** (Leitlinie «Hände zuerst»; Schwellen sind Annahmen, Stellschrauben in P5):
   - *Strahl:* der Zeigestrahl des Systems (Zeiger der Hand von StereoKit aus der Aim-Pose der Laufzeit). Es ist nur ein Strahl sichtbar: der von StereoKit ist aus
     (`UI.EnableFarInteract`), die App zeichnet denselben – ohne Pinch fein und weiss, beim Zielen bis zum Ziel (cyan, grün sobald Loslassen springt). Nur ohne Zeiger
@@ -2127,3 +2127,69 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
   sitzend/stehend und der Schalter, Dauer des Wechsels im Durchgang mit Blöcken, Verbinden im WLAN ohne Kabel (K3, Broadcast und Firewall), Ton und Licht, Übernahme
   der Kopplung aus dem Eingang.
 - **Anleitung:** `zb-quest-app-begehen` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App P4b: Sitzungsraum, Passthrough «Echter Tisch» und Ebenen der Fachmodule (`entwurf/modul-xr.md`, XR-H, Interface-Labor Zeile P4, «Ergänzungen»)
+
+Die App «KICAD» (`src/Hlks.Quest`) zeigt das Modell jetzt auch **auf einem Tisch** (XR-H) – im eigenen virtuellen Raum oder per Passthrough auf dem echten Tisch – und legt
+**Ebenen der Fachmodule** in die Szene. Regeln in `src/Hlks.Xr` (`XrSitzungLogik` aus dem Prototyp, neu `Sitzung/` und `Ebenen/`, Übersicht `src/Hlks.Xr/LIESMICH.md`),
+Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsraum und Etage kommen über den VR-Auftrag (Kontextmenü eines Raums), P7 baut parallel «Quest verbinden».
+
+- **In den Sitzungsraum** (Auftrag vom PC, sofort über den Kanal; Regeln `VrStartLogik.AuftragSchritte`, `SitzungAuswahl`):
+  - Rechtsklick Raum › **«Im Sitzungsraum zeigen (VR)»** (`modus: sitzungsraum`, Raum): das ganze Modell auf dem Tisch mit **Etagenschnitt im Geschoss des Raums**
+    (Ergänzung P4b; der Prototyp zeigte hier «Alle Etagen»). Mit `geschoss` im Auftrag (`POST /api/vr/auftrag`) gilt dieses Geschoss – **Etagenwahl bis P5 nur so**.
+  - Rechtsklick Raum › **«Raum zeigen (VR)»** (`ausschnitt: true`): nur der **Raum ± 1.5 m** (Quader wie «Raum im 3D zeigen», N14) als Ausschnitt, so gross wie möglich (1:20).
+  - `modus: sitzungsraum` ohne Raum: **alle Etagen**. Eine 3D-Ansicht (`ansicht`) auf dem Tisch kommt später (Hinweis, dann das ganze Modell).
+  - In der Box beim Begehen: Knopf **«Sitzungsraum»** – Etagenschnitt im Geschoss, in dem man steht.
+  - **Zurück ins Begehen:** Auftrag `modus: begehen` (mit Raum: in diesen Raum) oder Knopf **«Begehen»** in der Box; Standpunkt wie vorher.
+- **Tisch und Modell** (Masse und Regeln aus dem Prototyp, `XrSitzungLogik`): Tisch 1.6 × 1.0 m, Platte 0.75 m, Vorderkante 0.4 m vor dem Kopf beim Betreten; das Modell zu Beginn
+  **1:50** auf die Mitte der Platte eingepasst (grösser nur, wenn es sonst nicht passt, höchstens 1:200), Unterkante auf der Platte. Die Wahl einer Etage behält Lage, Massstab und
+  Drehung; ein Ausschnitt passt neu ein. Massstab und Ansicht stehen an der Tischkante rechts vorn.
+- **Etagenschnitt:** gezeichnet werden nur das gewählte Geschoss und die darunter; der Schnitt liegt **50 mm unter der Unterkante der Decke** (`SCHNITT_TIEFER_MM`, Christian
+  21.10.2026), ohne Decke 50 mm unter der Kote des Geschosses darüber. Decken: Klasse Decke des Modells und – Ergänzung P4b – IfcSlab der IFC-Unterlage, wenn ihre Oberkante auf
+  ±2 mm auf dieser Kote liegt. Fehlt die Höhe eines Geschosses in der Liste: Abstand zum Geschoss darüber, beim obersten 3000 mm (Annahme).
+- **Nur zeichnen, was im Ausschnitt bzw. unter dem Schnitt liegt:** je Block (≤ 20 000 Dreiecke) die Hüllbox – ganz innen gewöhnlich, schneidet er den Quader mit dem Shader
+  **«schnitt»** (`Assets/schnitt.hlsl`, verwirft alles ausserhalb), ganz aussen gar nicht. Für «Raum zeigen» stellt die App je Netz ein eigenes Netz nur aus den Elementen im
+  Quader zusammen (Test_praxis: 45 688 statt 861 291 Dreiecke, 8 ms am PC). Schnittflächen bleiben offen (kein Deckel).
+- **Griffe:** zwei Cyan-Kugeln links und rechts des Modells (6 cm ausserhalb, 5 cm über der Platte). **Beide mit Daumen und Zeigefinger fassen** (Pinch höchstens 5 cm vom Griff),
+  dann: **drehen** um die Hochachse (Richtung der Hände), **verschieben** (Mitte der Hände), **zoomen** um die Mitte zwischen den Händen (Abstand, 1:200 … 1:20). Ein Griff allein
+  bewegt nichts. Das Modell bleibt **waagrecht**. Nahe Hand: Griff heller; gehalten: weiss. Klick beim Fassen und Loslassen. **«Zurücksetzen»** in der Box: Startlage.
+- **Aussehen** (XR-H, schlicht): dunkler Raum 8 × 6 m, 3.2 m hoch, mattschwarze Wände, dunkler Boden mit feinem Cyan-Raster, weisse Lichtlinien an Decke und Ecken, dunkle
+  Glasplatte mit **leuchtender Cyan-Kante**, keine Effekte (kein Nebel, keine Spiegelung).
+- **Schalter «Echter Tisch»** (Passthrough, `Passthrough.cs`; Entscheid Christian 23.10.2026 «Beides, Passthrough prüfen»): ein = Kamerabild der Quest statt des virtuellen
+  Raums (OpenXR `XR_FB_passthrough` über die Schnittstelle von StereoKit 0.3.11, Ebene unter der Szene). Dann **mit dem Zeigefinger kurz auf die Tischplatte tippen**: die
+  Fingerspitze bewegt sich nach unten (≥ 2 cm) und liegt 0.3 s ruhig (Umkreis 12 mm), 0.4 … 1.3 m über dem Boden, höchstens 1 m vom Kopf, kein Pinch
+  (`TischAntippen`, Annahmen). Die Mitte der Platte liegt dann auf dem angetippten Punkt, Blick vom Kopf dorthin; das Modell steht dort, ein feiner Rahmen zeigt die Platte.
+  Bis zum Antippen ist das Modell ausgeblendet und die Box bittet darum. **«Tisch neu antippen»** wiederholt es. Ohne Passthrough (Simulator, andere Laufzeit) ist der Schalter
+  **grau mit Hinweis**.
+- **IFC-Unterlage** (Schalter in der Box, Vorgabe **ein**, weil Test_praxis fast nur aus der Unterlage besteht).
+- **Ebenen der Fachmodule** («Ergänzungen»: Schnittstelle für Fachmodule): je Ebene ein Schalter **«Ebene …»** in der Box (Begehen und Sitzungsraum, Vorgabe aus). Sichtbar ist,
+  was zum gezeichneten Geschoss gehört (im Sitzungsraum auch nur im Quader); Breiten folgen dem Massstab, mindestens 1.5 mm. Linien und Pfeile als Linien, Punkte und laufende
+  Partikel als Kugeln, Flächen durchscheinend.
+  - **Server** (`XrEbenenEndpunkte.cs`, in `Program.cs` eine Zeile `app.MapXrEbenen(dienst)`):
+    `GET /api/xr/ebenen` → `{ fassung: 1, projekt, ebenen: [{ name, titel, beschreibung, url, schluessel, elemente }] }`;
+    `GET /api/xr/ebene/{name}` → `{ art: "hlks-xr-ebene", fassung: 1, name, titel, quelle, projekt, schluessel, einheit: "mm", elemente, hinweise }` mit `ETag`/304 wie die GLB;
+    Element `{ typ: linie | pfeil | punkte | partikel | flaeche, geschoss (Id) | null, element (Id) | null, farbe "#rrggbb", deckkraft?, breite? (mm), groesse? (mm), tempo? (mm/s),
+    abstand? (mm), punkte: [[x, y, z], …] }` in **KICAD-mm absolut** (wie die Posen im Kanal). Fehler `{ fehler, vorschlag }`: 404 Ebene unbekannt, 409 kein Projekt. Beide mit
+    `.XrImNetz()` (Büronetz mit Schlüssel, sonst 401). Ein Fachmodul trägt sich als `XrEbenenAnbieter` in `XrEbenen.Anbieter` ein (liest nur, unter der Sperre des Projekts).
+  - **Probe «fliessrichtung»:** je gerader Strecke einer Leitung (ab 200 mm) ein Pfeil in der Mitte (60 %, höchstens 500 mm, 15 mm breit) und je Leitung laufende Partikel
+    (30 mm, 500 mm/s, alle 1 m). Richtung = Reihenfolge der Punkte (`klassen.json`, Leitung: «Fliessrichtung von anfang nach ende»), Farbe = Medium des Systems
+    (`medien.json` farbeHex), über der Leitung (halbe Grösse + Dämmung + 50 mm; senkrechte seitlich) – Annahmen P4b. **Ohne Leitungen** (z. B. Test_praxis, nur IFC) eine
+    **feste Probe**: je Geschoss ein Umlauf aus vier Pfeilen und Partikeln um die Räume, 2.4 m über der Kote (steht in `quelle` und `hinweise`).
+  - Die App lädt die Ebenen nach dem Modell (bedingt mit ETag) und legt sie für den Start ohne PC ab (`EbenenLader`, `EbenenAblage`).
+  - **KI:** reine Rechner-Funktion `xr_ebenen` (`KiEinordnung.RechnerFunktionen`, verboten), kein MCP-Werkzeug.
+- **Posen an den PC:** im Sitzungsraum `modus: sitzungsraum`, `massstab` = Nenner (50 = 1:50); Kopf und Hände über die Umkehrung des Tisches, also der Punkt des Modells, über
+  dem sie stehen (für die Figur am PC, P7).
+- **Box im Sitzungsraum** (40° links vom Blick, etwas höher, damit der Tisch frei bleibt): Verbindung; «Sitzungsraum · Massstab 1:50» und die Ansicht (z. B. «EG · Schnitt unter
+  der Decke (2.85 m)», «Alle Etagen», «Raum + 1.5 m»); Bedienhinweis zu den Griffen bzw. zum Antippen; Netze, Aufrufe, Dreiecke, Hz; Schalter «Echter Tisch», «IFC-Unterlage»,
+  Knöpfe «Zurücksetzen», «Tisch neu antippen», «Begehen»; die Ebenen.
+- **Protokoll** «P4 Status» zusätzlich: `Modus=begehen|sitzungsraum (Massstab, Ansicht, Schnitt-Blöcke, Griffe, IFC)`, `Passthrough=ein|bereit|nicht verfügbar (Tisch … m)`,
+  `Ebenen=… (gezeichnet … Striche, … Kugeln)`; beim Start «Shader schnitt: geladen|fehlt».
+- **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` hat einen **Lauf 3 «Sitzungsraum»**: Auftrag «Im Sitzungsraum zeigen» für den ersten Raum, dann drei Abschnitte (Etagenschnitt des
+  Auftrags, alle Etagen, «Raum zeigen») mit Bildzeit, Netzen, Aufrufen, Blöcken mit Schnitt, Dreiecken und Ebenen; dazu die Regeln in der App (Griffe 1:50 → 1:25 und 30°,
+  Tisch antippen 0.742 m, Modell auf dem Punkt, Passthrough im Simulator «nicht verfügbar» und Schalter aus, Shader geladen). `-Pruefbilder <ordner>` legt je Abschnitt zwei
+  JPEG ab (nur lokal), `-OhneSitzungsraum` lässt den Lauf weg. Tests: Xr `tests/Hlks.Xr.Tests` (`SitzungRaumTests`, `SitzungAuswahlTests`, `TischAntippenTests` mit dem
+  Speicherbild von XR_FB_passthrough, `XrEbeneTests`), Web `--filter "FullyQualifiedName~XrEbenenApiTests"`.
+- **Nur mit der Brille prüfbar:** Passthrough (ob das Kamerabild unter der Szene erscheint und die Szene mit Alpha darüber liegt), Antippen des echten Tisches (Schwellen, Höhe),
+  Griffe mit echten Händen, Bildrate im Sitzungsraum (Test_praxis «Alle Etagen» 861 291 Dreiecke in 73 Aufrufen – am PC nicht aussagekräftig), ob der Shader «schnitt» auf der
+  Quest lädt, Lesbarkeit der Schrift am Tisch, Aussehen des Raums.
+- **Anleitung:** `zb-quest-app-sitzungsraum` in `berichte/anleitung/inventar.json`.

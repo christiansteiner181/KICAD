@@ -469,7 +469,8 @@ public class XrZugangTests
         var alle = s.Dienste.GetRequiredService<EndpointDataSource>().Endpoints;
         var frei = XrPforte.Freigegeben(alle).OfType<RouteEndpoint>()
             .Select(e => $"{string.Join(",", e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? [])} {e.RoutePattern.RawText}").OrderBy(x => x, StringComparer.Ordinal).ToList();
-        Assert.Equal(["GET /api/xr/geschoss/{id}.glb", "GET /api/xr/geschosse", "GET /api/xr/kanal", "GET /api/xr/verbindung",
+        Assert.Equal(["GET /api/xr/ebene/{name}", "GET /api/xr/ebenen",   // P4b: Ebenen der Fachmodule (XrEbenenEndpunkte.cs)
+            "GET /api/xr/geschoss/{id}.glb", "GET /api/xr/geschosse", "GET /api/xr/kanal", "GET /api/xr/verbindung",
             "POST /api/xr/kopplung/abholen", "POST /api/xr/kopplung/anfrage", "POST /api/xr/kopplung/aufdecken"], frei);
         // ohne Schlüssel nur die drei Schritte der Ersatzkopplung
         var ohne = XrPforte.Freigegeben(alle).Where(e => e.Metadata.GetMetadata<XrNetzFreigabe>()!.OhneSchluessel).OfType<RouteEndpoint>()
