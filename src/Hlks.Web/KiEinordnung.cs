@@ -91,6 +91,13 @@ public static class KiEinordnung
             "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
         new("quest_autostart", "Steuert den Browser der VR-Brille (Modul XR, QuestStarter.cs, «Begehung beim Aufsetzen automatisch starten»): startet adb.exe, öffnet die VR-Startseite " +
             "im Browser der Brille und klickt dort über das Fern-Debugging (CDP) den Knopf «Eintreten» – nur auf eine Handlung des Menschen am Rechner, nie durch die KI."),
+        new("xr_zugang", "Öffnet einen zweiten Zugang zu diesem PC im Büronetz (HTTPS-Port 5140, Suche über UDP 5141) und erzeugt dafür ein Zertifikat (Modul XR, Quest App P3, " +
+            "XrZugang.cs, /api/xr/zugang) – greift über das Modell hinaus ins Netz; nur der Mensch am Rechner schaltet es ein oder aus."),
+        new("xr_kopplung", "Koppelt eine VR-Brille mit diesem PC: erzeugt den Schlüssel und das Kopplungspaket, bestätigt oder lehnt einen Code ab, widerruft Kopplungen " +
+            "(Modul XR, Quest App P3, XrKopplung.cs, /api/xr/kopplung/…). Wer koppelt, gibt einem Gerät Zugang zum PC – nur der Mensch am Rechner."),
+        new("xr_kanal", "Live-Kanal zur Quest App (Modul XR, Quest App P3, XrKanal.cs): liest Kopf- und Handpositionen der Brille (/api/xr/teilnehmer), sendet Stellschrauben an die " +
+            "Brille (/api/xr/stellschraube) und schreibt Messprotokolle. Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
+            "später eigens einzuordnen)."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,
