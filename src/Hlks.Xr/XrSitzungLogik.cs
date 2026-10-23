@@ -185,16 +185,20 @@ public static class XrSitzungLogik
     // ------------------------------------------------------------------------------------------------------ Griffe
 
     /// <summary>
-    /// xr-sitzung-logik.js griffPunkte: Lage der beiden Griffe (Raum-lokal, m): links (Index 0) und rechts (Index 1) der Modellmitte, in der Drehung des Modells,
-    /// <see cref="GriffAbstandM"/> ausserhalb der halben Modellbreite (groesse.B, unverkleinert), <see cref="GriffHoeheM"/> über der Platte. Beim Zoomen und Drehen wandern sie mit.
+    /// Lage der beiden Griffe (Raum-lokal, m): an den beiden vorderen Gebäudeecken – Ecken der Modellbox (groesse.B × groesse.T, verkleinert) auf der dem Benutzer
+    /// zugewandten Seite (+z in der Lage des Modells), links (Index 0) und rechts (Index 1), je <see cref="GriffAbstandM"/> schräg nach aussen, <see cref="GriffHoeheM"/>
+    /// über der Platte, in der Drehung des Modells. Beim Zoomen und Drehen wandern sie mit. Brillentest Christian 23.10.2026: «die beiden greiffpunkte sollten an einer
+    /// gebäudeecke sein.» (Prototyp xr-sitzung-logik.js griffPunkte: links und rechts der Modellmitte.)
     /// </summary>
     public static IReadOnlyList<GriffPunkt> GriffPunkte(SitzungLage lage, ModellGroesse? groesse)
     {
-        var halb = Math.Max((groesse is not null && Num.Ok(groesse.B) ? groesse.B : 0) / lage.Massstab / 2, GriffMinHalbM) + GriffAbstandM;
+        var a = GriffAbstandM / Math.Sqrt(2);   // schräg nach aussen, zusammen GriffAbstandM
+        var halbB = Math.Max((groesse is not null && Num.Ok(groesse.B) ? groesse.B : 0) / lage.Massstab / 2, GriffMinHalbM) + a;
+        var halbT = Math.Max((groesse is not null && Num.Ok(groesse.T) ? groesse.T : 0) / lage.Massstab / 2, 0) + a;
         var m = ModellMitte(lage);
         return new[] { (Index: 0, Seite: "links", Vz: -1), (Index: 1, Seite: "rechts", Vz: 1) }.Select(g =>
         {
-            var d = DreheXZ(new Xz(g.Vz * halb, 0), lage.Drehung);
+            var d = DreheXZ(new Xz(g.Vz * halbB, halbT), lage.Drehung);
             return new GriffPunkt(g.Index, g.Seite, m.X + d.X, TischHoehe + GriffHoeheM, m.Z + d.Z);
         }).ToList();
     }

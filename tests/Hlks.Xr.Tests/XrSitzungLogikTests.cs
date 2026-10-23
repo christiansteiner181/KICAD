@@ -71,8 +71,9 @@ public class XrSitzungLogikTests
     // ------------------------------------------------------------------------------------------------ Griffe
 
     [Fact]
-    public void Griffe_links_und_rechts_der_Modellmitte_GRIFF_ABSTAND_ausserhalb_der_Modellbreite_folgen_Lage_Drehung_und_Massstab()
+    public void Griffe_an_den_vorderen_Gebaeudeecken_GRIFF_ABSTAND_schraeg_ausserhalb_folgen_Lage_Drehung_und_Massstab()
     {
+        // Brillentest Christian 23.10.2026: «die beiden greiffpunkte sollten an einer gebäudeecke sein.»
         var G = new ModellGroesse(12, 8, 9);
         var l = S.Einpassen(G).Lage;   // 1:50, Mitte der Platte
         var m = S.ModellMitte(l);
@@ -80,11 +81,13 @@ public class XrSitzungLogikTests
         Assert.Equal(2, p.Count);
         Assert.Equal("links", p[0].Seite);
         Assert.Equal("rechts", p[1].Seite);
-        var halb = 12.0 / 50 / 2 + S.GriffAbstandM;
+        var a = S.GriffAbstandM / Math.Sqrt(2);
+        var halb = 12.0 / 50 / 2 + a;
+        var vorn = 8.0 / 50 / 2 + a;
         Nah(p[0].X, m.X - halb);
         Nah(p[1].X, m.X + halb);
-        Nah(p[0].Z, m.Z);
-        Nah(p[1].Z, m.Z);
+        Nah(p[0].Z, m.Z + vorn);   // vordere Ecke (zum Benutzer, +z)
+        Nah(p[1].Z, m.Z + vorn);
         Nah(p[0].Y, S.TischHoehe + S.GriffHoeheM);
         Nah(p[1].Y, S.TischHoehe + S.GriffHoeheM);
         Assert.Equal(0.06, S.GriffAbstandM);
@@ -92,25 +95,30 @@ public class XrSitzungLogikTests
         Assert.Equal(0.05, S.GriffFangM);
         Assert.Equal(0.05, S.GriffHoverM);
         Assert.Equal(0.025, S.GriffDurchmesserM);
-        // Zoom auf 1:25: die Modellbreite verdoppelt sich, die Griffe rücken mit (der Abstand von 6 cm bleibt)
+        // Zoom auf 1:25: die Modellbox verdoppelt sich, die Griffe rücken mit (der Abstand schräg nach aussen bleibt)
         p = S.GriffPunkte(l with { Massstab = 25 }, G);
-        Nah(p[1].X - S.ModellMitte(l).X, 12.0 / 25 / 2 + S.GriffAbstandM);
+        Nah(p[1].X - S.ModellMitte(l).X, 12.0 / 25 / 2 + a);
+        Nah(p[1].Z - S.ModellMitte(l).Z, 8.0 / 25 / 2 + a);
         // Verschiebung: die Griffe folgen der Modellmitte
         p = S.GriffPunkte(l with { X = 0.1, Z = -0.05 }, G);
         Nah((p[0].X + p[1].X) / 2, m.X + 0.1);
-        Nah((p[0].Z + p[1].Z) / 2, m.Z - 0.05);
-        // Drehung um 90° (gegen den Uhrzeigersinn von oben): der rechte Griff liegt bei −z, der linke bei +z; die Höhe bleibt
+        Nah((p[0].Z + p[1].Z) / 2, m.Z - 0.05 + vorn);
+        // Drehung um 90° (gegen den Uhrzeigersinn von oben): die Ecken drehen mit (DreheXZ); die Höhe bleibt
         p = S.GriffPunkte(l with { Drehung = 90 * Grad }, G);
-        Nah(p[1].X, m.X, 1e-9);
-        Nah(p[1].Z, m.Z - halb, 1e-9);
-        Nah(p[0].Z, m.Z + halb, 1e-9);
+        var r = S.DreheXZ(new Xz(halb, vorn), 90 * Grad);
+        Nah(p[1].X, m.X + r.X, 1e-9);
+        Nah(p[1].Z, m.Z + r.Z, 1e-9);
+        var li = S.DreheXZ(new Xz(-halb, vorn), 90 * Grad);
+        Nah(p[0].X, m.X + li.X, 1e-9);
+        Nah(p[0].Z, m.Z + li.Z, 1e-9);
         Nah(p[1].Y, S.TischHoehe + S.GriffHoeheM);
         // winziges oder unbekanntes Modell: Mindestabstand, keine NaN
         foreach (var u in new ModellGroesse?[] { null, new(0, 0), new(double.NaN, 0) })
         {
             var q = S.GriffPunkte(l, u);
-            Assert.True(q.All(x => double.IsFinite(x.X)), "endlich");
-            Nah(q[1].X - m.X, S.GriffMinHalbM + S.GriffAbstandM);
+            Assert.True(q.All(x => double.IsFinite(x.X) && double.IsFinite(x.Z)), "endlich");
+            Nah(q[1].X - m.X, S.GriffMinHalbM + a);
+            Nah(q[1].Z - m.Z, a);
         }
     }
 
