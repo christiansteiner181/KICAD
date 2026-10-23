@@ -70,6 +70,10 @@ public sealed class BenutzerEinstellungen
         ["quest.brillen"] = QuestDienst.BrillenPruefen,
         // «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs): Ja/Nein, Vorgabe ja.
         ["quest.autostart"] = QuestDienst.AutomatikPruefen,
+        // Zugang der Quest App im Büronetz (Modul XR, Quest App P3, XrZugang.cs): Ja/Nein, Vorgabe nein; Ports (1024–65535) des Zugangs (HTTPS, Vorgabe 5140) und der Suche (UDP, Vorgabe 5141).
+        [XrEinstellungen.ZugangSchluessel] = XrEinstellungen.JaNeinPruefen,
+        [XrEinstellungen.PortSchluessel] = XrEinstellungen.PortPruefen,
+        [XrEinstellungen.SuchPortSchluessel] = XrEinstellungen.PortPruefen,
     };
 
     static string? AugenhoeheDaten(JsonNode w) =>

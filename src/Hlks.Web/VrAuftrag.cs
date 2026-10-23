@@ -10,6 +10,8 @@
 // Zugabe (im Testlauf ohne Umleitung nach %TEMP% wird sie abgelehnt, der Speicher gilt trotzdem). Keine Fachlogik: der Auftrag ist nur eine Anweisung für die Anzeige,
 // ändert weder Modell noch Rechner; ob eine Id ein Raum ist, entscheidet die Seite mit der Kern-Abfrage raum_begehen. Hinter dem Herkunftsschutz wie alle /api.
 // KI: kein MCP-Werkzeug, siehe KiEinordnung.Oberflaechenfunktionen.
+// Quest App (P3): Ein neuer Auftrag geht zusätzlich sofort über den Live-Kanal an die App (Ereignis Gesetzt → XrKanal.AuftragSenden); die Abfrage alle 2 s
+// bleibt für die VR-Startseite im Browser.
 
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -36,6 +38,8 @@ public sealed class VrAuftragSpeicher
     VrAuftragWert? aktuell;
     bool geladen;
     public Func<DateTimeOffset> Uhr { get; set; } = () => DateTimeOffset.UtcNow;
+    /// <summary>Ein neuer Auftrag ist gesetzt (nach dem Speichern). Der Live-Kanal der Quest App (XrKanal.cs) schickt ihn damit sofort an die Brille.</summary>
+    public event Action<VrAuftragWert>? Gesetzt;
 
     public VrAuftragSpeicher(BenutzerEinstellungen benutzer) { this.benutzer = benutzer; }
 
@@ -85,15 +89,18 @@ public sealed class VrAuftragSpeicher
     {
         var t = Pruefen(p);
         if (t.Ansicht is not null) ansichtPruefen?.Invoke(t.Ansicht);   // Klasse Ansicht mit art 3d (nur wenn ein Projekt offen ist)
+        VrAuftragWert neu;
         lock (sperre)
         {
             Laden();
-            var neu = new VrAuftragWert(t.Modus, t.Raum, t.Geschoss, (aktuell?.Nr ?? 0) + 1, Uhr(), t.Ausschnitt, t.Ansicht);
+            neu = new VrAuftragWert(t.Modus, t.Raum, t.Geschoss, (aktuell?.Nr ?? 0) + 1, Uhr(), t.Ausschnitt, t.Ansicht);
             aktuell = neu;
             try { benutzer.Setzen(Schluessel, Zuobjekt(neu)); }
             catch (Exception ex) when (ex is HlksFehler or IOException or UnauthorizedAccessException) { /* nur eine Zugabe: der Speicher des Servers gilt */ }
-            return neu;
         }
+        try { Gesetzt?.Invoke(neu); }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { /* Weitergabe an die Brille ist eine Zugabe; der Auftrag gilt */ }
+        return neu;
     }
 
     public static JsonObject Zuobjekt(VrAuftragWert a) => new()
@@ -106,7 +113,8 @@ public static class VrAuftragEndpunkte
 {
     public static WebApplication MapVrAuftrag(this WebApplication app, ProjektDienst dienst, QuestStarter? starter = null)
     {
-        var speicher = new VrAuftragSpeicher(dienst.Benutzer);
+        // derselbe Speicher wie der Live-Kanal der Quest App (XrZugangDienste.AddXrZugang), damit ein neuer Auftrag sofort an die Brille geht
+        var speicher = app.Services.GetService<VrAuftragSpeicher>() ?? new VrAuftragSpeicher(dienst.Benutzer);
         var g = app.MapGroup("/api/vr");
         g.MapGet("/auftrag", () => Gesichert(() => Task.FromResult(Antwort(new { auftrag = speicher.Lesen() is { } a ? VrAuftragSpeicher.Zuobjekt(a) : null }))));
         g.MapPost("/auftrag", (HttpRequest r) => Gesichert(async () =>

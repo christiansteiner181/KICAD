@@ -1930,3 +1930,73 @@ Auch dies ist eine reine Rechner-Funktion: **für die KI verboten** (`KiEinordnu
 - **Prüfen:** Web `--filter "FullyQualifiedName~QuestTests"` (Netz-Attrappe für Tabelle und Pings, `Hlks.AdbAttrappe` mit `mac.txt` und `verbindbar.txt`: MAC gemerkt, ungültige MAC verworfen, Tabelle → verbunden, Ping nur auf Anlass und einmal je 2 min, USB → WLAN, Einstellung aus, VPN/TAP ausgelassen);
   Node `quest.test.mjs` (Statuslogik); Browser `quest.browser.mjs` (Statusanzeige, Schalter, Vergessen). **Nur mit echter Brille und echtem Netz prüfbar:** die echte Nachbartabelle (`GetIpNetTable2`), der Ping-Durchlauf im Büronetz, `ip link show wlan0` der Quest, `adb connect` nach einem Neustart.
   **Anleitung:** `zb-xr-quest-automatisch` in `berichte/anleitung/inventar.json`.
+
+## Modul XR: Zugang im Büronetz für die Quest App (Quest App P3; Entscheid Christian 23.10.2026: «Sofort WLAN mit Kopplung und TLS»)
+
+Die native Quest App (`src/Hlks.Quest`) verbindet sich direkt über das Büro-WLAN mit KICAD am PC, ohne adb. Dafür startet KICAD **neben** dem
+bisherigen Server einen eigenen kleinen HTTPS-Server. Der bisherige Server bleibt unverändert nur auf `http://localhost:<Port>` mit Herkunftsschutz.
+Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App installieren mit Kopplung, Brille in der 3D-Ansicht); hier steht die Schnittstelle.
+**KI:** reine Rechner-Funktionen, verboten (`KiEinordnung.RechnerFunktionen` › `xr_zugang`, `xr_kopplung`, `xr_kanal`), kein MCP-Werkzeug.
+
+- **Ein/Aus:** Benutzereinstellung **`xr.zugang`** (Ja/Nein, **Vorgabe aus**), dazu `xr.port` (Vorgabe 5140) und `xr.suchport` (Vorgabe 5141), je 1024–65535.
+  Nur das KICAD auf dem **Desktop-Port 5130** öffnet den Zugang; Abnahmeserver (5150–5153) und Testserver (5131) nie, auch wenn die Einstellung an ist
+  (die Benutzereinstellungen gelten für alle KICAD des Benutzers). Schalten wirkt ohne Neustart (`POST /api/xr/zugang`; sonst wird die Einstellung alle 10 s nachgelesen).
+  Ist ein Port belegt, bleibt der Zugang aus und `GET /api/xr/zugang` nennt den Grund; die Oberfläche läuft weiter.
+- **Netzzugang** (`XrZugang.cs`): HTTPS auf allen IPv4-Adressen, Port 5140, TLS 1.2/1.3, nur HTTP/1.1, Zertifikat von KICAD. Er kennt **nur** Endpunkte des
+  Hauptservers mit der Marke `.XrImNetz()` und einem Muster unter `/api/xr/` – sonst 404 (keine Oberfläche, keine Dateien, kein übriges `/api`).
+  **Pforte** (`XrPforte.Pruefen`, eine Stelle): Pfad ausserhalb `/api/xr` → 404; Absender gesperrt oder zu viele Anfragen → 429; Schlüssel fehlt oder falsch → 401
+  (`WWW-Authenticate: Bearer`; ohne Schlüssel nur `kopplung/anfrage` und `kopplung/abholen`); Endpunkt ohne Marke (alle PC-Endpunkte) → 404; Körper > 64 KB → 413;
+  nicht `application/json` → 415. Grenzen: 32 Verbindungen, Kopfzeilen 16 KB in 10 s, je IP 20 Anfragen/s (Vorrat 60), 10 Fehlversuche je 10 min (danach 429).
+  **Neue Endpunkte für die Brille** (z. B. GLB je Geschoss) unter `/api/xr/` anlegen und mit `.XrImNetz()` markieren; ohne Marke bleiben sie nur auf localhost.
+- **Zertifikat** (`XrZertifikat.cs`): ECDSA P-256, selbst erzeugt, 10 Jahre, je PC in `%LOCALAPPDATA%\HLKS_CAD\xr\zertifikat.dpapi` (privater Schlüssel mit DPAPI
+  für den Benutzer verschlüsselt; nie OneDrive, nie Repository). **Fingerabdruck** = SHA-256 über das Zertifikat (DER), 64 Kleinbuchstaben hex; Kurzform für den
+  Menschen «AB12 CD34 EF56 7890». Wird es ersetzt (Datei unlesbar, Ablauf in < 30 Tagen), meldet `zertifikatErsetzt` es: Brillen neu koppeln.
+- **Kopplung** (`XrKopplung.cs`, je Brille, höchstens 8; eine neue derselben Brille ersetzt die alte). Schlüssel: 32 Zufallsbyte, base64url (43 Zeichen); die App
+  sendet `Authorization: Bearer <kopplung>.<schluessel>`. Gespeichert (`%LOCALAPPDATA%\HLKS_CAD\xr\kopplungen.json`) werden nur
+  Prüfwert = HMAC-SHA256(Schlüssel, `hlks-xr-zugang`) und Suchschlüssel = HMAC-SHA256(Schlüssel, `hlks-xr-suche`) (DPAPI), nie der Schlüssel.
+  - **Weg A** (bei der Installation per Kabel, Knopf in P7): `POST /api/xr/kopplung/paket { brille, name? }` → `{ paket: { art: "hlks-xr-kopplung", fassung: 1, pc, ips[],
+    port, suchPort, fingerabdruck, kopplung, schluessel, brille, name, angelegt } }` (`Cache-Control: no-store`; nur einmal ausgeben, per adb in die App, nie speichern).
+  - **Weg B** (Ersatz ohne Kabel): Brille `POST /api/xr/kopplung/anfrage { brille, name? }` → `{ anfrage, bis, versucheMax }`. KICAD zeigt am PC einen **6-stelligen Code**
+    (`GET /api/xr/zugang` › `anfragen[].code`). Der Mensch tippt den Code in der Brille ein **und** bestätigt am PC (`POST /api/xr/kopplung/bestaetigen { anfrage }`;
+    ablehnen: `…/ablehnen`). Brille `POST /api/xr/kopplung/abholen { anfrage, code }` → 200 `{ status: "gekoppelt", paket }` | 202 `wartet` (Code richtig, PC noch nicht
+    bestätigt) | 403 `falsch` (mit `versucheUebrig`) bzw. `abgelehnt` | 404 `unbekannt` | 410 `abgelaufen` bzw. `gesperrt`. Frist 5 min, 5 falsche Codes, höchstens 3 offene
+    und 20 neue Anfragen je Stunde, abholen nur von der anfragenden IP-Adresse. Am PC neben dem Code die Kurzform des Fingerabdrucks zeigen, die App zeigt die ihre (Vergleich).
+  - **Widerruf:** `POST /api/xr/kopplung/widerrufen { kopplung }` → `{ widerrufen }`; der Kanal dieser Brille wird sofort getrennt (Code 4001).
+- **Suche** (`XrSuche.cs`, UDP 5141, nur bei eingeschaltetem Zugang): Die Brille ruft per Broadcast `{ typ: "suche", fassung: 1, kopplung, zeit (Unix-ms), zufall (base64url,
+  16 Byte), signatur }` mit signatur = HMAC-SHA256(Suchschlüssel, `hlks-xr-suche|1|<kopplung>|<zeit>|<zufall>`), base64url. KICAD antwortet nur bei gültiger Signatur,
+  Zeit ±60 s, neuem `zufall`, höchstens 10 je Absender (dann 1/s), und nur an den Absender: `{ typ: "gefunden", fassung: 1, pc, ips[], port, fingerabdruck, zufall, signatur }`,
+  signatur = HMAC-SHA256(Suchschlüssel, `hlks-xr-gefunden|1|<zufall>|<pc>|<port>|<fingerabdruck>|<ips mit Komma>`). KICAD sendet nie von selbst.
+- **Live-Kanal** (`XrKanal.cs`, Schema `XrNachrichten.cs`): `wss://<PC>:5140/api/xr/kanal` mit Schlüssel; Textnachrichten, je ein JSON-Objekt mit `typ` und `fassung` (1).
+  Positionen in **mm im Koordinatensystem des KICAD-Modells** (x, y waagrecht, z oben), Drehungen als Quaternion `[x, y, z, w]` im selben System; die App rechnet um.
+
+  | Richtung | typ | Inhalt |
+  | --- | --- | --- |
+  | Brille → PC | `hallo` | `name`, `geraet` (je ≤ 40), `app?` – zuerst, innert 10 s |
+  | PC → Brille | `willkommen` | `id` (Teilnehmer-Id «t…»), `teilnehmer[{ id, name, geraet }]`, `auftrag` (aktueller VR-Auftrag oder null), `stellschrauben{}` |
+  | PC → andere | `hallo` / `tschuess` | `id`, `name`, `geraet` / `id` |
+  | Brille → PC | `pose` | `kopf{ pos[3], rot[4] }`, `links?`/`rechts?{ gelenk{ pos, rot }, zeigefinger[3], pinch, pinchStaerke? }`, `modus?` (begehen \| sitzungsraum), `massstab?` |
+  | PC → andere | `pose` | wie oben plus `von`, `zeit` (Unix-ms); höchstens 30 je Sekunde und Teilnehmer weitergereicht (die letzte gilt für den PC) |
+  | Brille → PC | `zeigen` | `element` (Id oder Kennzeichen, null = nichts), `punkt?[3]` – für «Claude sieht mit»; an die anderen mit `von`, `zeit` |
+  | Brille → PC | `messprotokoll` | `aufgabe`, `variante?`, `zeitMs`, `fehlgriffe`, `abbrueche`, `erfolg?`, `stellschrauben?{}`, `notiz?` → Antwort `quittung { bezug, nr }` |
+  | PC → Brille | `auftrag` | `auftrag{ modus, raum?, geschoss?, ausschnitt, ansicht?, nr, zeit }` – sofort, wenn `POST /api/vr/auftrag` ihn setzt |
+  | PC → Brille | `stellschraube` | `schluessel`, `wert` (Zahl, Ja/Nein, Text ≤ 200; null = zurückgesetzt) |
+  | PC → Brille | `fehler` | `meldung`, `bezug?` – ungültige Nachricht; die Verbindung bleibt |
+  | Brille → PC | `tschuess` | – Verbindung endet (1000) |
+
+  Grenzen: eine Verbindung je Kopplung (neue ersetzt alte: Code **4002**), höchstens 8 Teilnehmer (1013), Nachricht ≤ 16 KB (1009), nur Text (1003), 60 Nachrichten/s,
+  bei Flut oder > 100 ungültigen getrennt (1008), Sendeschlange 256 (zu langsam: **4003**), Widerruf **4001**, Zugang aus **1001**. Der Server reicht nie Rohtext weiter,
+  nur geprüfte, neu gebaute Nachrichten. **Messprotokolle:** je Verbindung eine Datei JSON-Zeilen `%LOCALAPPDATA%\HLKS_CAD\xr\messprotokolle\<JJJJMMTT-hhmmss>_<Teilnehmer>.jsonl` (≤ 5 MB).
+- **Für den PC** (nur localhost, Herkunftsschutz): `GET /api/xr/zugang` → `{ an, aktiv, adresse, port, suchPort, sucheAktiv, seit?, pc, ips[], fingerabdruck, fingerabdruckKurz,
+  zertifikatBis, zertifikatErsetzt, fehler?, hinweis?, kopplungen[{ id, brille, name, weg, angelegt, zuletzt?, verbunden }], anfragen[{ anfrage, brille, name, ip?, code, bis,
+  bestaetigt, abgelehnt, versuche }], teilnehmer }`; `POST /api/xr/zugang { an }`; `GET /api/xr/teilnehmer` → `{ teilnehmer[{ id, name, geraet, app?, kopplung, brille,
+  brillenName, seit, pose?, poseZeit?, zeigen?, zeigenZeit?, posen, weitergereicht, verworfen }], stellschrauben{} }` (P7: Brille als Figur, etwa 5–10 Abfragen je Sekunde);
+  `POST /api/xr/stellschraube { schluessel, wert, teilnehmer? }` → `{ gesendet, stellschrauben }` (ohne `teilnehmer`: an alle und für neue gemerkt).
+  Für die Brille zusätzlich `GET /api/xr/verbindung` (Probe mit Schlüssel → `{ ok, fassung, pc, kopplung, zeit, teilnehmer }`).
+- **Was die App tun muss** (P4): Paket speichern (Schlüssel im Android-Keystore bzw. privat im App-Ordner); jede Verbindung nur annehmen, wenn SHA-256 des Serverzertifikats
+  gleich `fingerabdruck` ist (`ServerCertificateCustomValidationCallback` bzw. `RemoteCertificateValidationCallback`, keine Kette); PC suchen: zuerst die gespeicherten
+  `ips`, sonst Broadcast an `suchPort` und die Antwort mit dem Suchschlüssel prüfen; Kanal öffnen, `hallo`, Posen 20–30 je Sekunde; nach 4001/4002 nicht neu verbinden.
+- **Firewall:** KICAD ändert nichts. `werkzeuge/xr_firewall.ps1` (als Administrator, von Christian) legt zwei eingehende Regeln an: TCP 5140 und UDP 5141, nur Profil
+  «Privat», nur aus dem eigenen Subnetz; `-Entfernen` nimmt sie weg, `-Liste` zeigt Regeln, Netzprofil und Sperren für dotnet.exe.
+- **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~Hlks.Web.Tests.Xr"` (Netzzugang echt mit TLS, aber nur auf 127.0.0.1 mit freien Ports).
+  **Nur mit Brille und Büronetz prüfbar:** Erreichbarkeit über WLAN und Firewall, Broadcast im Büronetz, Pinning in der App, Dauerlast 30 Posen/s über WLAN.
+  **Anleitung:** `zb-xr-zugang` in `berichte/anleitung/inventar.json`.
