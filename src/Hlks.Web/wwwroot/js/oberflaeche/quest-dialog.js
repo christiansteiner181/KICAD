@@ -15,6 +15,7 @@ import { zeigen, meldung } from './dialoge.js';
 import { knoten } from './werkzeug.js';
 import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import * as T from './quest-text.js';
+import * as TA from './quest-app-text.js';
 import { questStatusAktualisieren } from './quest-status.js';
 import { questAppTeil } from './quest-app-dialog.js';
 
@@ -33,7 +34,11 @@ export function questDialog() {
   let brillenZahl = null;     // Zahl der gemerkten Brillen beim letzten Lesen (null = noch nicht gelesen)
 
   const w = knoten(`<div class="qd">
-    <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-zur-app" title="Springt zum Teil «Quest App» weiter unten: Netzzugang, App installieren, gekoppelte Brillen">Zur Quest App ↓</button><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
+    <div class="qd-app-platz"></div>
+    <details class="qd-browser" open>
+    <summary class="qd-browser-kopf"><b>Browser-Prototyp</b> <span class="leise">älterer Weg: KICAD im Browser der Brille (adb reverse, Autostart); mit der Quest App nicht nötig</span></summary>
+    <div class="qd-browser-inhalt">
+    <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
     <ul class="qd-ampel" aria-label="Zustand"></ul>
     <div class="qd-meldung" role="status" aria-live="polite" hidden></div>
     <div class="qd-naechste leise"></div>
@@ -67,14 +72,24 @@ export function questDialog() {
       <label class="qd-schalter"><input type="checkbox" class="qd-autostart" aria-label="Begehung beim Aufsetzen automatisch starten"> Begehung beim Aufsetzen automatisch starten</label>
       <div class="leise qd-klein">${esc(T.AUTOSTART_HINWEIS)}</div>
     </section>
-    <div class="qd-app-platz"></div>
     <section class="qd-hinweise"><b>Gut zu wissen</b>
       <ul>${T.HINWEISE.map((h) => `<li>${esc(h)}</li>`).join('')}</ul></section>
     <div class="qd-adresse"></div>
+    </div>
+    </details>
   </div>`);
   const q = (s) => w.querySelector(s);
   // Quest App (P7): Netzzugang, App installieren, gekoppelte Brillen, Ersatzkopplung – eigener Teil (quest-app-dialog.js), liest den Zustand von adb aus diesem Dialog
-  const appTeil = questAppTeil({ quest: () => z, beiAenderung: () => neuPruefen() });
+  // Der Browser-Prototyp klappt von selbst ein, sobald die App in der Brille installiert ist (der Mensch kann ihn aufklappen; das gilt dann bis zum Schliessen)
+  const browser = w.querySelector('.qd-browser');
+  let browserVomMenschen = false;
+  browser.querySelector('summary').addEventListener('click', () => { browserVomMenschen = true; });   // nur ein Klick des Menschen zählt (das Ereignis «toggle» kommt auch beim Aufbau)
+  function browserEinstellen(app) {
+    if (browserVomMenschen) return;
+    const soll = TA.browserOffen(app, z);
+    if (browser.open !== soll) browser.open = soll;
+  }
+  const appTeil = questAppTeil({ quest: () => z, beiAenderung: () => neuPruefen(), beiGelesen: browserEinstellen });
   q('.qd-app-platz').replaceWith(appTeil.knoten);
   const qa = (s) => [...w.querySelectorAll(s)];
 
@@ -149,8 +164,7 @@ export function questDialog() {
   w.addEventListener('click', (e) => {
     const t = e.target.closest?.('button');
     if (!t || t.disabled) return;
-    if (t.matches('.qd-zur-app')) appTeil.knoten.scrollIntoView({ block: 'start' });
-    else if (t.matches('.qd-neu')) neuPruefen();
+    if (t.matches('.qd-neu')) neuPruefen();
     else if (t.matches('.qd-verbinden')) lauf(() => senden('/api/quest/verbinden'));
     else if (t.matches('.qd-wlan')) lauf(() => senden('/api/quest/wlan'));
     else if (t.matches('.qd-trennen')) lauf(() => senden('/api/quest/trennen'));

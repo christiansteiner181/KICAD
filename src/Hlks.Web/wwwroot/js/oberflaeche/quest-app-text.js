@@ -124,10 +124,36 @@ export function installierenKnopf({ q, app, zugang, laeuft = false, weg = 'wlan'
   return { frei: true, grund: '' };
 }
 
-/** Beschriftung des Installationsknopfs: «App installieren» bzw. «App aktualisieren» (je nach Zustand der Brille). */
-export function installierenTitel(app) {
+/**
+ * Ist die App in der Brille installiert, aber ohne Kopplung am PC (z. B. nach «Widerrufen»)? Dann meldet die App «neu koppeln» und verbindet nicht mehr.
+ * Verglichen wird die Kennung der Brille (Seriennummer) mit den Kopplungen von GET /api/xr/zugang. Ohne bekannte Kennung oder Kopplungsliste: false.
+ */
+export function neuKoppeln(app, zugang) {
+  const kennung = app?.brille?.kennung;
+  if (!kennung || !zugang || !app?.brille?.installiert?.installiert) return false;
+  return !(zugang.kopplungen ?? []).some((k) => String(k?.brille ?? '').toLowerCase() === String(kennung).toLowerCase());
+}
+
+export const NEU_KOPPELN_HINWEIS = 'Die App ist in der Brille installiert, aber nicht (mehr) mit diesem PC gekoppelt – zum Beispiel nach «Widerrufen». Sie meldet «neu koppeln» und verbindet nicht. «App neu koppeln» legt ein neues Paket in die Brille.';
+
+/** Beschriftung des Installationsknopfs: «App installieren», «App aktualisieren» oder – installiert, aber nicht gekoppelt – «App neu koppeln». */
+export function installierenTitel(app, zugang = null) {
+  if (neuKoppeln(app, zugang)) return 'App neu koppeln';
   return app?.brille?.installiert?.installiert ? 'App aktualisieren' : 'App installieren';
 }
+
+/** Satz zum Weg der App: Im Kabelweg stellt KICAD nie auf WLAN-adb um und hält die Weiterleitung. */
+export function appWegText(app) {
+  return app?.appWeg === 'kabel'
+    ? 'Kabelweg: Die App ist per Kabel gekoppelt. KICAD stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.'
+    : '';
+}
+
+/** Ist die App in der Brille installiert? (steuert, ob der Browser-Prototyp eingeklappt ist) */
+export const appInstalliert = (app) => app?.brille?.installiert?.installiert === true;
+
+/** Soll der Browser-Prototyp im Dialog aufgeklappt sein? Ja, solange die App nicht installiert ist oder adb fehlt (die Einrichtung steht dort). */
+export const browserOffen = (app, q) => !appInstalliert(app) || q?.adbGefunden === false;
 
 /** Schritte der Installation als Liste für die Anzeige: [{ id, text, ok }]; fehlende oder falsche Einträge fallen weg. */
 export function schritteListe(ergebnis) {

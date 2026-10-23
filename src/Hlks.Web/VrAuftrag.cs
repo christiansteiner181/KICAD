@@ -3,7 +3,7 @@
 // und führt ihn aus (neuer Auftrag während der Sitzung: sofort, ohne neuen Tipp).
 //
 //   GET  /api/vr/auftrag   { auftrag: { modus, raum?, geschoss?, ausschnitt, ansicht?, nr, zeit } | null }
-//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar | app };
+//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar | app | app_gestartet };
 //                          autostart: true startet nach dem Speichern «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs), wenn die Einstellung quest.autostart an ist; nr zählt bei jedem Setzen hoch (vom Server vergeben, ein nr im Körper zählt nicht)
 //
 // Gespeichert im Speicher des Servers und zusätzlich in den BenutzerEinstellungen (Schlüssel vr.auftrag), damit er einen Neustart übersteht; die Ablage ist nur eine
@@ -133,7 +133,10 @@ public static class VrAuftragEndpunkte
             // Quest App (P7): Ist eine Brille mit der App im Live-Kanal, ging der Auftrag schon über den Kanal an sie (Ereignis Gesetzt). Dann startet KICAD keinen Browser in der Brille
             // (der Autostart würde den Browser über die laufende App legen und dieselbe Begehung ein zweites Mal öffnen). Antwort «app»; ohne App gilt der Weg über den Browser wie bisher.
             var appVerbunden = (app.Services.GetService<XrKanal>()?.Anzahl ?? 0) > 0;
-            var autostart = appVerbunden ? "app" : !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
+            // Ist die App installiert und gekoppelt, aber gerade nicht verbunden (Brille sleept, App beendet), wird sie gestartet statt des Browsers; der Auftrag kommt über den Kanal,
+            // sobald sie verbindet (willkommen.auftrag). Browser-Autostart nur noch, wenn keine App da ist.
+            var appGestartet = !appVerbunden && starter is not null && await starter.Quest.AppFuerAuftragStarten();
+            var autostart = appVerbunden ? "app" : appGestartet ? "app_gestartet" : !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
             return Antwort(new { auftrag = VrAuftragSpeicher.Zuobjekt(a), autostart });
         }));
         return app;

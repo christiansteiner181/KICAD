@@ -315,6 +315,33 @@ await klick('#dialogschicht .dlg:not(.quest-verbinden) .dlg-fuss .dlg-knopf.prim
 await warteBis(async () => (await anzahl('.qa-kopplung')) === 1, 'Kopplung weg', 8000);
 pruef((await anrufe('/api/xr/kopplung/widerrufen')).some((a) => a === 'POST /api/xr/kopplung/widerrufen {"kopplung":"0011223344556677"}'), 'POST /api/xr/kopplung/widerrufen mit der Id der Kopplung', JSON.stringify(await anrufe('/api/xr/kopplung/widerrufen')));
 
+// ================================================================== 6b. Browser-Prototyp einklappen, «neu koppeln»
+abschnitt('Installierte App: Browser-Prototyp klappt ein, nach dem Widerruf «App neu koppeln»');
+pruef(await ausw(`return document.querySelector('.qd-browser').open;`), 'Ohne installierte App ist der Browser-Prototyp aufgeklappt');
+pruef((await ausw(`return document.querySelector('.qd-app-platz') === null && document.querySelector('.qa').compareDocumentPosition(document.querySelector('.qd-browser')) & Node.DOCUMENT_POSITION_FOLLOWING;`)), 'Die Quest App steht oben, der Browser-Prototyp darunter');
+pruef(/Browser-Prototyp/.test(await text('.qd-browser > summary')), 'Die Zusammenfassung heisst «Browser-Prototyp»');
+adbDatei('app_installiert.txt', ['0.1 1']);
+await klick('.qd-kopf .qd-neu');
+await warteBis(async () => !(await ausw(`return document.querySelector('.qd-browser').open;`)), 'Browser-Prototyp eingeklappt', 15000);
+pruef(/Fassung 0\.1 \(1\)/.test(await text('.qa-installiert')) && !(await ausw(`return document.querySelector('.qd-browser').open;`)), 'App installiert: der Browser-Prototyp ist eingeklappt (Inhalt nicht angezeigt)', await text('.qa-installiert'));
+pruef((await sichtbar('.qa-installieren')) && (await text('.qa-installieren')) === 'App aktualisieren', 'Die Quest App bleibt sichtbar: «App aktualisieren»');
+await klick('.qd-browser > summary');
+await warteBis(() => ausw(`return document.querySelector('.qd-browser').open;`), 'aufgeklappt', 4000);
+pruef(await ausw(`return document.querySelector('.qd-browser').open && document.querySelector('.qd-ampel').getBoundingClientRect().height > 0;`), 'Der Mensch kann den Browser-Prototyp aufklappen');
+await klick('.qd-kopf .qd-neu');
+await warte(1500);
+pruef(await ausw(`return document.querySelector('.qd-browser').open;`), 'Eine spätere Prüfung klappt ihn nicht wieder zu (die Wahl des Menschen gilt)');
+await ausw(`window.__xr.zugang.kopplungen = []; return 1;`);
+await warteBis(() => sichtbar('.qa-neukoppeln'), 'Hinweis neu koppeln', 8000);
+pruef(/neu koppeln/.test(await text('.qa-neukoppeln')) && /Widerrufen/.test(await text('.qa-neukoppeln')), 'Ohne Kopplung meldet der Dialog: installiert, aber nicht gekoppelt (nach «Widerrufen» meldet die App «neu koppeln»)', await text('.qa-neukoppeln'));
+pruef((await text('.qa-installieren')) === 'App neu koppeln', 'Der Knopf heisst «App neu koppeln»', await text('.qa-installieren'));
+await shot('06b_neu_koppeln');
+await ausw(`window.__xr.zugang.kopplungen = [{ id: 'a1b2c3d4e5f60718', brille: '${SERIE}', name: 'Quest 3', weg: 'paket', angelegt: new Date().toISOString(), verbunden: false }]; return 1;`);
+await warteBis(async () => !(await sichtbar('.qa-neukoppeln')), 'Hinweis weg', 8000);
+pruef((await text('.qa-installieren')) === 'App aktualisieren', 'Mit Kopplung verschwindet der Hinweis');
+adbDatei('app_installiert.txt', []);
+try { rmSync(path.join(ADB_ORDNER, 'app_installiert.txt')); } catch { /* egal */ }
+
 // ================================================================== 7. Ersatzkopplung
 abschnitt('Ersatzkopplung: Anfrage ohne Code, mit Code, Warnung bei zwei, Bestätigen, Ablehnen');
 const bis = new Date(Date.now() + 240000).toISOString();
@@ -352,6 +379,36 @@ await warte(300);
 const n0 = await anrufeZahl('/api/xr/zugang');
 await warte(4500);
 pruef((await anrufeZahl('/api/xr/zugang')) === n0, 'Nach dem Schliessen fragt der Dialog nicht mehr nach dem Zugang', `${n0} → ${await anrufeZahl('/api/xr/zugang')}`);
+
+// ================================================================== 8b. Kleine Fenster
+abschnitt('Dialog in kleinen Fenstern: passt hinein, scrollt, Knöpfe erreichbar (auch mit zu grosser gemerkter Lage)');
+const fensterGroessen = [[1280, 720], [1024, 600], [800, 500]];
+for (const [fb, fh] of fensterGroessen) {
+  await send('Emulation.setDeviceMetricsOverride', { width: fb, height: fh, deviceScaleFactor: 1, mobile: false });
+  // gemerkte Lage und Grösse eines früheren, grösseren Fensters
+  await ausw(`const z = await import('/js/zustand.js'); z.merken.schreiben('dialoge', { 'quest verbinden': { x: 1500, y: 900, b: 900, h: 1300 } }); return 1;`);
+  await warte(300);
+  await register('Ansicht');
+  await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
+  await warteBis(dialogOffen, 'Dialog offen', 8000);
+  await warteBis(() => sichtbar(`${DLG} .qa`), 'Teil Quest App', 8000);
+  await warte(600);
+  const g = await ausw(`const d = document.querySelector(${JSON.stringify(DLG)}); const r = d.getBoundingClientRect(); const c = d.querySelector('.dlg-inhalt'); const f = [...d.querySelectorAll('.dlg-fuss .dlg-knopf')].find((b) => b.textContent.trim() === 'Schliessen')?.getBoundingClientRect(); const k = d.querySelector('.dlg-kopf').getBoundingClientRect();
+    return { x: r.left, y: r.top, r: r.right, u: r.bottom, kopfOben: k.top, schliessen: f ? { o: f.top, u: f.bottom, l: f.left, r: f.right } : null, scrollbar: c.scrollHeight > c.clientHeight, breiteUeber: c.scrollWidth > c.clientWidth + 1, inhaltH: c.clientHeight };`);
+  const drin = g.x >= -0.5 && g.y >= -0.5 && g.r <= fb + 0.5 && g.u <= fh + 0.5;
+  pruef(drin, `${fb}×${fh}: der Dialog liegt ganz im Fenster`, JSON.stringify(g));
+  pruef(g.kopfOben >= 0 && g.schliessen && g.schliessen.u <= fh + 0.5 && g.schliessen.l >= 0 && g.schliessen.r <= fb + 0.5, `${fb}×${fh}: Titelleiste und «Schliessen» sind sichtbar`, JSON.stringify(g));
+  pruef(g.scrollbar && g.inhaltH > 80, `${fb}×${fh}: der Inhalt scrollt (Höhe ${Math.round(g.inhaltH)} px)`, JSON.stringify(g));
+  pruef(!g.breiteUeber, `${fb}×${fh}: kein waagrechtes Scrollen`, JSON.stringify(g));
+  // der Teil «Quest App» ist erreichbar: Knopf scrollt in den Inhalt und lässt sich klicken
+  const erreichbar = await ausw(`const d = document.querySelector(${JSON.stringify(DLG)}); const b = d.querySelector('.qa-schalter'); b.scrollIntoView({ block: 'center' }); const r = b.getBoundingClientRect(); const c = d.querySelector('.dlg-inhalt').getBoundingClientRect(); const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return r.top >= c.top - 1 && r.bottom <= c.bottom + 1 && (t === b || b.contains(t));`);
+  pruef(erreichbar, `${fb}×${fh}: «Netzzugang einschalten» ist erreichbar und nicht verdeckt`);
+  if (fb === 1280) await shot('10_kleines_fenster');
+  await dialogZu();
+}
+await ausw(`const z = await import('/js/zustand.js'); z.merken.entfernen('dialoge'); return 1;`);
+await send('Emulation.setDeviceMetricsOverride', { width: 1600, height: 950, deviceScaleFactor: 1, mobile: false });
+await warte(400);
 
 // ================================================================== 9. 3D-Ansicht: PC sieht die Brille
 abschnitt('3D-Ansicht: Brille als Figur');
@@ -429,8 +486,8 @@ pruef(eigene.length === 0, 'keine Konsolenfehler', eigene.slice(0, 3).join(' | '
 pruef(!aufrufe().some((a) => !/^(devices|start-server|(-s [A-Za-z0-9][A-Za-z0-9._:-]* )?(reverse|tcpip|shell|connect|install|push).*)$/.test(a)), 'Alle adb-Aufrufe der Reihe waren feste Befehle', JSON.stringify(aufrufe().slice(-6)));
 pruef(!aufrufe().some((a) => / install | push /.test(a)), 'Es lief nie ein adb install oder push (die Installation ist in dieser Reihe nachgestellt)');
 } catch (e) {
-  schlecht++; console.log('  FEHL  Abbruch:', e.message);
-  try { await shot('abbruch'); } catch { /* egal */ }
+  schlecht++; console.log('  FEHL  Abbruch:', e.message); console.log('   letzte adb-Aufrufe:', JSON.stringify(aufrufe().slice(-14))); if (fehler.length) console.log('   Ausnahmen:', fehler.slice(0, 3).join(' | ').slice(0, 1500)); if (konsole.length) console.log('   Konsole:', konsole.slice(0, 3).join(' | ').slice(0, 600));
+  try { console.log('   Diagnose:', JSON.stringify(await ausw(`return { nk: !!document.querySelector('.qa-neukoppeln'), qa: document.querySelectorAll('.qa').length, platz: document.querySelectorAll('.qd-app-platz').length, html: (document.querySelector('.qa')?.innerHTML ?? '').slice(0, 300) };`))); await shot('abbruch'); } catch { /* egal */ }
 }
 console.log(`\n${ok} Prüfungen ok, ${schlecht} fehlgeschlagen`);
 await aufraeumen(schlecht > 0 ? 1 : 0);

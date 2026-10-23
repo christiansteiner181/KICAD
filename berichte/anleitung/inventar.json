@@ -10779,7 +10779,7 @@
             "gruppe": "Fenster",
             "knopf": "Quest verbinden …",
             "kuerzel": "",
-            "sonst": "3D-Ansicht: grauer Knopf «In VR begehen» (Klick) und Link «Quest im Browser der Brille nutzen …»"
+            "sonst": "3D-Ansicht: grauer Knopf «In VR begehen» (Klick) und Link «Quest im Browser der Brille nutzen …». Seit der Quest App ist dieser Teil im Dialog unter «Browser-Prototyp» einklappbar (klappt bei installierter App von selbst ein)"
           },
           "schritte": [
             "Register Ansicht › Gruppe Fenster › «Quest verbinden …» klicken (oder in einer 3D-Ansicht den Link «Quest im Browser der Brille nutzen …» bzw. den grauen Knopf «In VR begehen»). Der Dialog zeigt oben vier Punkte: adb gefunden, Quest verbunden, Freigegeben, Weiterleitung aktiv.",
@@ -11002,7 +11002,7 @@
             "gruppe": "Fenster",
             "knopf": "Quest verbinden … › Teil «Quest App» › «App installieren» bzw. «App aktualisieren»",
             "kuerzel": "",
-            "sonst": "Der Teil «Quest App» steht im Dialog unten; der Knopf «Zur Quest App ↓» oben im Dialog springt hin. Vorher einmal: werkzeuge\\quest_app_bereitstellen.ps1 (baut die APK und legt sie ab)"
+            "sonst": "Der Teil «Quest App» steht oben im Dialog; darunter der einklappbare «Browser-Prototyp». Vorher einmal: werkzeuge\\quest_app_bereitstellen.ps1 (baut die APK und legt sie ab)"
           },
           "schritte": [
             "APK bereitstellen (einmal je neuem Stand der App): in PowerShell im Ordner HLKS_CAD «powershell -ExecutionPolicy Bypass -File werkzeuge\\quest_app_bereitstellen.ps1» ausführen. Das Skript baut die App und legt sie mit einer Versionsdatei (Commit, Zeit, Grösse, Prüfsumme) nach %USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app. Es ruft kein adb auf und lädt nichts herunter.",
@@ -11012,7 +11012,8 @@
             "Die Hinweise darunter lesen (nur gelesen, KICAD ändert nichts): Steht dort, das Netz sei «Öffentlich» oder die Firewall-Regeln der Gruppe «KICAD XR» fehlten, erreicht die Brille den PC im WLAN nicht. Dann «über Kabel» wählen oder Christian führt werkzeuge\\xr_firewall.ps1 als Administrator aus.",
             "Den Weg wählen: «über Kabel» (Brille steckt am USB-Kabel; die Brille erreicht den PC über adb reverse) oder «über WLAN».",
             "«App installieren» (bzw. «App aktualisieren») klicken und warten (bis etwa 3 Minuten). Darunter erscheinen die Schritte: Netzzugang, abgelegte App, Brille, installieren, (Kabel), Kopplungspaket in die Brille legen, App starten. Der Schlüssel liegt am PC nur während der Übertragung in einer Datei, danach ist sie gelöscht.",
-            "Brille aufsetzen: Die App «KICAD» startet und verbindet sich von selbst mit dem PC (Teil «Gekoppelte Brillen»: grüne Lampe, «verbunden»)."
+            "Brille aufsetzen: Die App «KICAD» startet und verbindet sich von selbst mit dem PC (Teil «Gekoppelte Brillen»: grüne Lampe, «verbunden»).",
+            "Ab jetzt gilt der Kabelweg: Solange die App per Kabel gekoppelt ist, stellt KICAD die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her. Der «Browser-Prototyp» im Dialog klappt ein, sobald die App installiert ist; ein Klick auf seine Überschrift klappt ihn wieder auf."
           ],
           "erwartung": "Nach dem Klick steht die App in der Brille, die Brille ist mit dem PC gekoppelt (Teil «Gekoppelte Brillen» zeigt sie) und die App startet. Jeder Schritt erscheint als eigene Zeile; scheitert einer, steht der Grund mit einem Vorschlag im Dialog und nichts Halbes bleibt zurück (keine Kopplung ohne Brille). Ist der Netzzugang aus, die abgelegte App nicht heil (Prüfsumme) oder keine Brille freigegeben, bleibt der Knopf gesperrt und der Grund steht darunter. Das Kopplungspaket mit dem Schlüssel steht in keiner Meldung. Es startet nur adb.exe mit festen Befehlen; die KI kann die Funktion nicht benutzen.",
           "pruefpunkte": [
@@ -11024,7 +11025,12 @@
             "Ein zweiter Klick ersetzt die Kopplung derselben Brille (es bleibt eine Kopplung in der Liste).",
             "Über WLAN (Netz «Privat», Firewall-Regeln da): derselbe Ablauf ohne den Schritt «Kabel»; die App verbindet sich über die Adresse des PCs.",
             "Ist die App mit einem anderen Schlüssel installiert, meldet KICAD «Die App in der Brille ist mit einem anderen Schlüssel signiert» und nennt das Deinstallieren als Vorschlag.",
-            "Am PC bleibt nach der Installation keine Datei mit dem Schlüssel (Ordner %TEMP%\\HLKS_CAD\\quest_app ist leer)."
+            "Am PC bleibt nach der Installation keine Datei mit dem Schlüssel (Ordner %TEMP%\\HLKS_CAD\\quest_app ist leer).",
+            "Der Dialog passt in jedes Fenster (auch 1280×720 und kleiner): Inhalt scrollt, Titelleiste und «Schliessen» bleiben sichtbar, die Quest App steht oben.",
+            "Nach der Installation klappt der «Browser-Prototyp» ein; mit installierter App bleibt das so, auch nach «Erneut prüfen».",
+            "Im Kabelweg: «Brille automatisch verbinden» oder «Verbinden» im Browser-Prototyp trennen die App nicht (adb devices zeigt nur die USB-Brille, kein 192.168.…:5555; «adb reverse --list» zeigt tcp:5140).",
+            "Steckt man das Kabel aus und wieder ein oder startet adb neu, ist die Weiterleitung tcp:5140 nach dem nächsten Lesen des Dialogs bzw. Schritt der Automatik wieder da.",
+            "Ein VR-Auftrag (Rechtsklick auf einen Raum › «Raum begehen in VR» bzw. 3D-Ansicht › «An die Brille senden») startet bei installierter und gekoppelter App die App in der Brille (Meldung «die App wurde in der Brille gestartet») und öffnet keinen Browser; der Auftrag wird ausgeführt, sobald die App verbunden ist."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -11055,7 +11061,8 @@
             "Eine Brille nicht mehr zuzulassen: «Widerrufen» klicken und die Rückfrage bestätigen. Der Schlüssel gilt sofort nicht mehr, eine verbundene App wird getrennt; neu koppeln geht mit «App installieren».",
             "Ersatzkopplung (nur wenn die Kopplung bei der Installation nicht möglich war): Die App bittet in der Brille um eine Kopplung. Unter «Ersatzkopplung (ohne Kabel)» erscheint die Anfrage mit Name und Kennung der Brille und einem 6-stelligen Code (zuerst «Die Brille hat noch nicht aufgedeckt»).",
             "Den Code am PC mit dem Code in der Brille vergleichen. Stimmen beide genau überein, «Codes stimmen überein – koppeln» klicken; sonst «Ablehnen». In der Brille wird nichts eingetippt.",
-            "Stehen mehr als eine Anfrage da, warnt KICAD deutlich: nur bestätigen, was zur eigenen Brille gehört, im Zweifel alle ablehnen und neu anfangen."
+            "Stehen mehr als eine Anfrage da, warnt KICAD deutlich: nur bestätigen, was zur eigenen Brille gehört, im Zweifel alle ablehnen und neu anfangen.",
+            "Nach dem Widerruf meldet die App in der Brille «neu koppeln» und verbindet nicht mehr. Der Teil «Quest App» zeigt dann eine rote Meldung, und der Knopf heisst «App neu koppeln»; ein Klick legt ein neues Paket in die Brille."
           ],
           "erwartung": "Gekoppelte Brillen und offene Anfragen stehen aktuell im Dialog. Namen und Kennungen kommen aus dem Netz und erscheinen immer als Text, nie als Markup. «Codes stimmen überein – koppeln» ist erst frei, wenn die Brille den Code aufgedeckt hat und die Frist (5 Minuten) läuft. Widerrufen trennt die Brille sofort. Bei mehr als einer offenen Anfrage steht eine deutliche Warnung. Die KI kann die Funktion nicht benutzen.",
           "pruefpunkte": [
@@ -11065,7 +11072,8 @@
             "Mit Code steht er gross in Dreiergruppen (z. B. «123 456») und «Codes stimmen überein – koppeln» ist frei; die Restzeit der Frist läuft herunter.",
             "Zeigt die Brille einen anderen Code, «Ablehnen» klicken: die Anfrage verschwindet, die Brille bleibt ungekoppelt.",
             "Bei zwei offenen Anfragen erscheint die rote Warnung; mit einer Anfrage verschwindet sie.",
-            "Ein Brillenname mit Sonderzeichen (z. B. «<b>x</b>») erscheint unverändert als Text."
+            "Ein Brillenname mit Sonderzeichen (z. B. «<b>x</b>») erscheint unverändert als Text.",
+            "Nach «Widerrufen» der Brille, die am Kabel steckt: rote Meldung «installiert, aber nicht (mehr) gekoppelt» und Knopf «App neu koppeln»; nach dem Klick ist sie wieder verbunden und die Meldung weg."
           ],
           "bild": {
             "projekt": "beispiel",

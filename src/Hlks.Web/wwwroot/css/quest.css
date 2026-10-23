@@ -1,7 +1,12 @@
 /* Dialog «Quest verbinden» (Modul XR): Ampel, Einrichtung, Knöpfe, Felder. Farben und Grössen nur über die Variablen aus hlks.css (hell und dunkel). */
-.dlg.quest-verbinden { width: min(640px, 96vw); }
-.dlg.quest-verbinden .dlg-inhalt { overflow: auto; }
-.qd { display: flex; flex-direction: column; gap: 8px; min-height: 0; }
+/* Der Dialog passt in jedes Fenster (Brillentest 23.10.2026: «der dialog ist ausserhalb des blickfeldes»): Höhe und Breite folgen dem Fenster, der Inhalt scrollt, Titel und «Schliessen» bleiben stehen. */
+.dlg.quest-verbinden { width: min(640px, calc(100vw - 16px)); height: min(760px, calc(100vh - 24px)); max-height: calc(100vh - 24px); }
+.dlg.quest-verbinden .dlg-inhalt { overflow: auto; overflow-x: hidden; min-height: 0; }
+.qd { display: flex; flex-direction: column; gap: 8px; min-height: 0; min-width: 0; }
+.qd-browser > summary { cursor: pointer; padding: 4px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); }
+.qd-browser[open] > summary { margin-bottom: 8px; }
+.qd-browser-inhalt { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
+@media (max-width: 640px) { .qd-zeile, .qa-ablage, .qa-fz { grid-template-columns: 1fr; } .qd-punkt { grid-template-columns: 14px 1fr; } .qd-punkt .qd-text { grid-column: 2; } }
 .qd [hidden] { display: none; }
 .qd-kopf { display: flex; align-items: center; gap: 10px; }
 .qd-kopf .dlg-knopf { margin-left: auto; }
@@ -66,7 +71,10 @@
 .qa-abgelegt, .qa-installiert { overflow-wrap: anywhere; }
 .qa-installieren-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 12px; }
 .qa-weg { display: inline-flex; align-items: center; gap: 4px; cursor: pointer; }
-.qa-meldung.warnung { border-color: var(--warnung); }
+.qa-box { padding: 6px 8px; border: 1px solid var(--ok); border-radius: var(--radius); }
+.qa-box.fehler { border-color: var(--fehler); background: var(--ob-fehler-flaeche); color: var(--fehler); }
+.qa-box.fehler .qd-vorschlag { color: var(--text); margin-top: 2px; }
+.qa-box.warnung { border-color: var(--warnung); }
 .qa-schritte { margin: 0; padding-left: 22px; display: flex; flex-direction: column; gap: 2px; }
 .qa-schritt.ok::marker { color: var(--ok); }
 .qa-schritt.schlecht { color: var(--fehler); }
