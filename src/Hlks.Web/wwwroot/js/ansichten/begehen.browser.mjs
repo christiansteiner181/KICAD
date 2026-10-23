@@ -243,7 +243,7 @@ try {
     return ausw(`return [...document.querySelectorAll('.kmenu button')].map((b) => b.textContent);`);
   };
   const eintraege = await raumMenue(raum1);
-  pruef(eintraege.includes('Raum begehen') && eintraege.includes('Raum im 3D zeigen'), 'Kontextmenü: «Raum begehen» neben «Raum im 3D zeigen»', eintraege.join(' | '));
+  pruef(eintraege.includes('Raum begehen') && eintraege.includes('Raum in 3D'), 'Kontextmenü: «Raum begehen» neben «Raum in 3D»', eintraege.join(' | '));
   pruef(eintraege.includes('Augenhöhe für «Raum begehen» …'), 'und die Augenhöhe ist einstellbar', eintraege.join(' | '));
   pruef(eintraege.indexOf('Raum begehen') === eintraege.indexOf('Raum im 3D zeigen') + 1, 'Reihenfolge: «Raum begehen» direkt nach «Raum im 3D zeigen»');
   const pak0 = await pakete();

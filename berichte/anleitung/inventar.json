@@ -10554,7 +10554,7 @@
             "Etage wählen: Auf dem Tablet erscheinen «Alle Etagen» und die Geschosse des Modells. Ein Geschoss antippen: alles oberhalb wird weggeschnitten, man sieht von oben hinein. «Decke zeigen» legt den Schnitt über die Decke. «Alle Etagen» zeigt wieder alles.",
             "Griffe: Links und rechts des Modells schweben zwei leuchtende Kugeln (Griffe). Mit Daumen und Zeigefinger (Pinch) einen Griff fassen: Der Pinch muss höchstens 5 cm vom Griff beginnen. Nähert sich die Hand, wird der Griff heller; gehalten leuchtet er deutlich. Controller: Abzug am Griff (Nähe oder Zielstrahl). Eine Faust greift nichts.",
             "Modell bewegen, drehen und zoomen: Beide Griffe gleichzeitig halten (mit jeder Hand einen). Die Hände gemeinsam bewegen: das Modell wandert mit. Die Verbindungslinie der Hände drehen: das Modell dreht sich um die Senkrechte. Die Hände auseinanderziehen (grösser) oder zusammenschieben (kleiner): gezoomt wird um den Mittelpunkt zwischen den Händen, von 1:200 bis 1:20. Wird nur ein Griff gehalten, ruht das Modell. Der Massstab steht als Hologramm-Schrift an der Tischkante.",
-            "Ausschnitt (Aufträge «Raum zeigen (VR)» bzw. 3D-Ansicht in VR vom PC): Der Tisch zeigt nur den Raum plus 1,5 m Rand bzw. den Schnittbereich der 3D-Ansicht, im Massstab, der den Ausschnitt auf die Platte passt (meist 1:20). Auf dem Tablet steht «Alle Etagen» dann nicht auf Ein; antippen zeigt wieder das ganze Modell, eine Etage ersetzt den Ausschnitt.",
+            "Ausschnitt (Aufträge «Raum in AR» bzw. 3D-Ansicht in VR vom PC): Der Tisch zeigt nur den Raum plus 1,5 m Rand bzw. den Schnittbereich der 3D-Ansicht, im Massstab, der den Ausschnitt auf die Platte passt (meist 1:20). Auf dem Tablet steht «Alle Etagen» dann nicht auf Ein; antippen zeigt wieder das ganze Modell, eine Etage ersetzt den Ausschnitt.",
             "«IFC-Unterlage» schaltet die IFC-Unterlage zu (vorgabemässig aus). «Zurücksetzen» stellt Massstab, Lage und Drehung des Modells wieder auf den Anfang.",
             "Zurück: «Begehen» tippen. Man steht wieder am alten Standpunkt, die Darstellung ist wie vorher. «VR beenden» im Sitzungsraum beendet die Sitzung."
           ],
@@ -10567,7 +10567,7 @@
             "Zwei sichtbare Griffe stehen links und rechts des Modells (6 cm ausserhalb, 5 cm über der Platte) und wandern beim Verschieben, Drehen und Zoomen mit.",
             "Griffe: Ein Pinch (Daumen und Zeigefinger) in höchstens 5 cm Abstand hält den Griff; er leuchtet deutlich, vorher beim Annähern heller. Eine Faust greift nichts; ein Pinch weit weg vom Griff greift nichts.",
             "Ein gehaltener Griff allein bewegt das Modell nicht. Mit beiden Griffen: Verschieben, Drehen um die Senkrechte, und Auseinanderziehen vergrössert bis 1:20, Zusammenschieben verkleinert bis 1:200; die Stelle zwischen den Händen bleibt dort. Der Massstab an der Tischkante stimmt.",
-            "«Raum zeigen (VR)» (Grundriss, Rechtsklick auf einen Raum): Der Sitzungsraum zeigt nur den Raum plus 1,5 m; alles andere ist weggeschnitten, der Massstab passt den Ausschnitt auf die Platte. «Alle Etagen» zeigt wieder das ganze Modell.",
+            "«Raum in AR» (Grundriss, Rechtsklick auf einen Raum): Der Sitzungsraum zeigt nur den Raum plus 1,5 m; alles andere ist weggeschnitten, der Massstab passt den Ausschnitt auf die Platte. «Alle Etagen» zeigt wieder das ganze Modell.",
             "«In VR begehen» in einer 3D-Ansicht ohne laufendes Begehen: Der Tisch zeigt das Modell mit den Filtern und dem Schnittbereich dieser Ansicht.",
             "Nach «Begehen» bzw. dem Ende der VR-Sitzung ist der Schnittbereich der 3D-Ansicht wieder wie vorher: im Begehen ist er pausiert (kein Schwarz, auch wenn der Standpunkt ausserhalb des Quaders liegt), nach der Sitzung wirkt er wieder.",
             "«Zurücksetzen» bringt das Modell auf 1:50, ungedreht in die Mitte der Platte.",
@@ -11174,13 +11174,13 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Am PC: Rechtsklick auf einen Raum im Grundriss › «Geschoss im Sitzungsraum zeigen (VR)» bzw. «Raum zeigen (VR)» (VR-Auftrag, geht sofort an die App). In der Brille: Box unten vor dem Blick, Knopf «Sitzungsraum» (Begehen) bzw. «Begehen» (Sitzungsraum), Schalter «Echter Tisch», «IFC-Unterlage», «Ebene …»."
+            "sonst": "Am PC: Rechtsklick auf einen Raum im Grundriss › «Modell am Sitzungstisch» bzw. «Raum in AR» (VR-Auftrag, geht sofort an die App). In der Brille: Box unten vor dem Blick, Knopf «Sitzungsraum» (Begehen) bzw. «Begehen» (Sitzungsraum), Schalter «Echter Tisch», «IFC-Unterlage», «Ebene …»."
           },
           "schritte": [
-            "Am PC einen Raum mit Rechtsklick › «Geschoss im Sitzungsraum zeigen (VR)» wählen: die App wechselt ohne Tipp in den Sitzungsraum. Auf dem Tisch steht das ganze Modell 1:50, geschnitten 5 cm unter der Decke des Geschosses dieses Raums; Geschosse darüber fehlen. Die Box nennt Massstab und Schnitt, die Tischkante rechts vorn ebenso.",
-            "«Raum zeigen (VR)» statt dessen: nur der Raum mit 1.5 m Rand rundum, so gross wie möglich (meist 1:20).",
+            "Am PC einen Raum mit Rechtsklick › «Modell am Sitzungstisch» wählen: die App wechselt ohne Tipp in den Sitzungsraum. Auf dem Tisch steht das ganze Modell 1:50, geschnitten 5 cm unter der Decke des Geschosses dieses Raums; Geschosse darüber fehlen. Die Box nennt Massstab und Schnitt, die Tischkante rechts vorn ebenso.",
+            "«Raum in AR» statt dessen: nur der Raum mit 1.5 m Rand rundum, so gross wie möglich (meist 1:20).",
             "Modell bewegen: die beiden Cyan-Kugeln links und rechts des Modells mit Daumen und Zeigefinger fassen (eine pro Hand; die Kugel wird heller, wenn die Hand nah ist, weiss, wenn sie gehalten ist, dazu ein Klick). Mit beiden gehalten: Hände drehen dreht das Modell um die Senkrechte, Hände verschieben verschiebt es, Hände auseinander zoomt hinein (bis 1:20), zusammen hinaus (bis 1:200). Das Modell bleibt waagrecht. «Zurücksetzen» stellt die Startlage her.",
-            "Andere Etage: am PC einen Raum dieser Etage › «Geschoss im Sitzungsraum zeigen (VR)» (bis P5 gibt es die Etagenwahl nur so). Lage, Massstab und Drehung bleiben.",
+            "Andere Etage: am PC einen Raum dieser Etage › «Modell am Sitzungstisch» (bis P5 gibt es die Etagenwahl nur so). Lage, Massstab und Drehung bleiben.",
             "Echter Tisch: in der Box «Echter Tisch» antippen. Der virtuelle Raum verschwindet, man sieht den echten Raum (Passthrough). Mit dem Zeigefinger kurz von oben auf die Tischplatte tippen und den Finger einen Augenblick liegen lassen – Klick und ein grüner Ring; das Modell steht jetzt mitten auf dem angetippten Punkt in Tischhöhe, ein feiner Rahmen zeigt die gedachte Platte. «Tisch neu antippen» wiederholt das. Erneut «Echter Tisch» antippen: zurück in den virtuellen Raum.",
             "Ebenen: in der Box «Ebene Fliessrichtung» einschalten. Über den Leitungen erscheinen Pfeile in Fliessrichtung und laufende Punkte in der Farbe des Mediums; ohne Leitungen im Modell (z. B. nur IFC) ein Umlauf aus Probe-Pfeilen um die Räume jedes Geschosses. Das geht auch beim Begehen.",
             "IFC-Unterlage im Sitzungsraum aus- und einschalten (Vorgabe ein).",
@@ -11188,8 +11188,8 @@
           ],
           "erwartung": "Der Sitzungsraum ist dunkel und schlicht (mattschwarze Wände, feines Cyan-Raster am Boden, weisse Lichtlinien an der Decke, dunkle Glasplatte mit leuchtender Cyan-Kante). Gezeichnet wird nur, was unter dem Schnitt bzw. im Ausschnitt liegt; die Schnittflächen sind offen. Die Griffe folgen dem Modell. Mit «Echter Tisch» steht das Modell auf dem echten Tisch; ohne Passthrough (z. B. am PC im Simulator) ist der Schalter grau mit Hinweis. Die Ebenen kommen vom PC und bleiben für den Start ohne PC gespeichert.",
           "pruefpunkte": [
-            "«Geschoss im Sitzungsraum zeigen (VR)» am PC: die App wechselt sofort in den Sitzungsraum, das Modell steht 1:50 auf dem Tisch vor einem, geschnitten unter der Decke des Geschosses des Raums.",
-            "«Raum zeigen (VR)»: nur der Raum mit Rand, grösser (1:20); nichts ausserhalb des Quaders.",
+            "«Modell am Sitzungstisch» am PC: die App wechselt sofort in den Sitzungsraum, das Modell steht 1:50 auf dem Tisch vor einem, geschnitten unter der Decke des Geschosses des Raums.",
+            "«Raum in AR»: nur der Raum mit Rand, grösser (1:20); nichts ausserhalb des Quaders.",
             "Beide Griffe fassen und drehen, verschieben, zoomen: das Modell folgt ruhig, bleibt waagrecht, und die Stelle zwischen den Händen bleibt unter den Händen; ein Griff allein bewegt nichts.",
             "Echter Tisch: Passthrough erscheint, ein kurzes Antippen der Platte setzt das Modell genau auf die Platte (nicht darüber schwebend, nicht darin versunken); Tischhöhe im Protokoll «P4 Status» (Passthrough=ein (Tisch … m)).",
             "Ebene Fliessrichtung ein: Pfeile und Punkte erscheinen über den Leitungen bzw. als Probe-Umlauf, aus: weg.",
@@ -11199,7 +11199,7 @@
           "bild": {
             "projekt": "beispiel",
             "ansicht": "Sicht in der Brille bzw. Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): Sitzungsraum mit Tisch, Modell 1:50 mit Etagenschnitt, Griffe, Box links",
-            "zustand": "Sitzungsraum nach «Geschoss im Sitzungsraum zeigen (VR)», Ebene Fliessrichtung ein"
+            "zustand": "Sitzungsraum nach «Modell am Sitzungstisch», Ebene Fliessrichtung ein"
           },
           "quelle": [
             "src/Hlks.Quest/Sitzungsraum.cs, Passthrough.cs, EbenenDarstellung.cs, ModellDarstellung.cs (ZeichnenSitzung, AusschnittSetzen), QuestApp.cs, Assets/schnitt.hlsl",

@@ -363,10 +363,10 @@ try {
   await klickAn({ x: bild.x, y: bild.y }, 'rechts');
   await warteBis(() => gibt('.kmenu'), 'Kontextmenü im Grundriss', 5000);
   const menue = await ausw(`return [...document.querySelectorAll('.kmenu button')].map((b) => b.textContent);`);
-  pruef(menue.includes('Raum im 3D zeigen'), 'Rechtsklick auf den Raum: Kontextmenü mit «Raum im 3D zeigen»', menue.join(' | '));
+  pruef(menue.includes('Raum in 3D'), 'Rechtsklick auf den Raum: Kontextmenü mit «Raum in 3D»', menue.join(' | '));
   pruef((await ausw(`const z = await import('/js/zustand.js'); return z.zustand.auswahl;`)) === raum1.id, `der Raum ${raum1.kz} ist dabei gewählt`);
   const pakN14 = await pakete();
-  await ausw(`[...document.querySelectorAll('.kmenu button')].find((b) => b.textContent === 'Raum im 3D zeigen').click(); return 1;`);
+  await ausw(`[...document.querySelectorAll('.kmenu button')].find((b) => b.textContent === 'Raum in 3D').click(); return 1;`);
   await warteBis(async () => (await sbDaten())?.aktiv === true, 'Schnittbereich auf dem Raum', 15000);
   await warteBis(() => ausw(`const z = await import('/js/zustand.js'); return z.zustand.aktiveAnsicht === 'AN-3D';`), '3D-Ansicht aktiv', 8000);
   await warte(900);
