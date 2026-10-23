@@ -282,7 +282,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
     ungewollt → P4a-Nachtrag (Aim-Pose des Systems als Zielstrahl, keine Sprünge nach Drehgeste, Mindestruhe des Ziels).
 - **Anzeige:** «text geht über box hinaus, text und box eher etwas klein». Box und Text sind jetzt um den Faktor 1,35 grösser, der
   Text bricht um. Christian: «Ja, passt».
-- **Drehen nur im Sitzen** (Christian, 23.10.2026: «drehen sollte nur beim sitzuen aktiviert sein.»): Die Drehgeste wirkt nur im Sitzmodus. Der Sitzmodus wird automatisch aus der echten Kopfhöhe über dem Boden erkannt (Start: unter 1,30 m während 2 s, Hysterese 0,15 m). Schwelle und fester Modus (automatisch, sitzend, stehend) werden Stellschrauben im Labor. Umsetzung im P4a-Nachtrag.
+- **Drehen per Schalter** (Christian, 23.10.2026: «drehen sollte nur beim sitzuen aktiviert sein.», dann: «der schalter soll drehen ein oder ausschalten. nicht sitzen oder stehen.»): In der Box der App gibt es einen Schalter «Drehen» ein/aus, Vorgabe aus; die App merkt sich den Zustand. Ist er ein, wirkt die Drehgeste. Es gibt keine Sitzerkennung. Später ist der Schalter auch als Stellschraube vom PC setzbar. Umsetzung im P4a-Nachtrag.
 - **Folge der Beschränkung:** Andere Geschosse sind beim Begehen unsichtbar; der Wechsel geht bis P5 per Auftrag vom PC, danach per
   Wisch hoch/runter.
 
