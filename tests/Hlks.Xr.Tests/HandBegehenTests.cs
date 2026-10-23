@@ -19,12 +19,18 @@ public class HandBegehenTests
         ["thumb-tip"] = p + V(spalt, -0.02, -0.05),
     };
 
-    static List<BegehenEreignis> Lauf(HandBegehenZustand z, IEnumerable<(double T, Dictionary<string, Vec3>? G)> bilder, double boden = 0)
+    static List<BegehenEreignis> Lauf(HandBegehenZustand z, IEnumerable<(double T, Dictionary<string, Vec3>? G)> bilder, double boden = 0,
+        Func<double, (Vec3, Vec3)?>? zeigestrahl = null, HandBegehenEinstellungen? einstellungen = null)
     {
         var alle = new List<BegehenEreignis>();
-        foreach (var (t, g) in bilder) alle.AddRange(HandBegehen.Schritt(z, t, "right", g, Kopf, Gieren, boden));
+        foreach (var (t, g) in bilder) alle.AddRange(HandBegehen.Schritt(z, t, "right", g, Kopf, Gieren, boden, zeigestrahl?.Invoke(t), einstellungen));
         return alle;
     }
+
+    /// <summary>Pinch über «bilder» Bilder (90 Hz) an derselben Stelle, dann Loslassen.</summary>
+    static IEnumerable<(double, Dictionary<string, Vec3>?)> Halten(int bilder, Vec3? hand = null) =>
+        Enumerable.Range(0, bilder).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(hand ?? Zeigen, 0.01)))
+            .Append((bilder / 90.0, Hand(hand ?? Zeigen, 0.06)));
 
     static readonly Vec3 Zeigen = V(0.2, 1.2, -0.4);   // Hand vor dem Körper, nach unten vorn
 
@@ -47,12 +53,11 @@ public class HandBegehenTests
     public void Teleport_Pinch_halten_zeigt_das_Ziel_Loslassen_springt()
     {
         var z = new HandBegehenZustand();
-        var bilder = Enumerable.Range(0, 30).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(Zeigen, 0.01)))
-            .Append((30 / 90.0, Hand(Zeigen, 0.06)));
+        var bilder = Halten(45).ToList();   // 0.5 s: Ruhezeit 0.25 s vor «Loslassen − 0.1 s» ist abgedeckt
         var ev = Lauf(z, bilder);
         Assert.Equal(BegehenArt.PinchAn, ev[0].Art);
         var ziele = ev.Where(e => e.Art == BegehenArt.Ziel).ToList();
-        Assert.Equal(30, ziele.Count);
+        Assert.Equal(45, ziele.Count);
         var ziel = ziele[^1].Punkt!.Value;
         Assert.Equal(0, ziel.Y);
         Assert.True(ziel.Z < -1.5 && ziel.Z > -2.2, $"{ziel}");   // vorn auf dem Boden
@@ -118,6 +123,112 @@ public class HandBegehenTests
         var ev2 = Lauf(new HandBegehenZustand(), langsam);
         Assert.DoesNotContain(ev2, e => e.Art == BegehenArt.Drehen);
         Assert.Single(ev2, e => e.Art == BegehenArt.Teleport);
+    }
+
+    // ---------------------------------------------------------------------------------------------- Nachtrag Brillentest 23.10.2026: «Springt ungewollt»
+
+    [Fact]
+    public void Nach_dem_Drehen_springt_auch_ruhiges_Halten_nicht()
+    {
+        var z = new HandBegehenZustand();
+        var bilder = new List<(double, Dictionary<string, Vec3>?)>();
+        for (int i = 0; i < 10; i++) bilder.Add((i / 90.0, Hand(Zeigen, 0.01)));
+        for (int i = 0; i <= 18; i++) bilder.Add(((10 + i) / 90.0, Hand(Zeigen + V(0.25 * i / 18, 0, 0), 0.01)));
+        for (int i = 29; i < 90; i++) bilder.Add((i / 90.0, Hand(Zeigen + V(0.25, 0, 0), 0.01)));   // danach 0.7 s ruhig auf den Boden gezeigt
+        bilder.Add((1.0, Hand(Zeigen + V(0.25, 0, 0), 0.06)));
+        var ev = Lauf(z, bilder);
+        Assert.Single(ev, e => e.Art == BegehenArt.Drehen);
+        Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Teleport or BegehenArt.Abbruch);
+    }
+
+    [Fact]
+    public void Gesprungen_wird_nur_nach_der_Ruhezeit_auf_gueltigem_Boden()
+    {
+        var oben = V(0.2, 1.9, -0.4);
+        IEnumerable<(double, Dictionary<string, Vec3>?)> Erst_oben_dann_unten(int obenBilder, int untenBilder) =>
+            Enumerable.Range(0, obenBilder + untenBilder).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(i < obenBilder ? oben : Zeigen, 0.01)))
+                .Append(((obenBilder + untenBilder) / 90.0, Hand(Zeigen, 0.06)));
+        // 0.2 s auf dem Boden (Auswertung 0.1 s vor dem Loslassen: nur 0.1 s gültig) – kein Sprung
+        var kurz = Lauf(new HandBegehenZustand(), Erst_oben_dann_unten(27, 18));
+        Assert.DoesNotContain(kurz, e => e.Art == BegehenArt.Teleport);
+        Assert.Equal(BegehenArt.Abbruch, kurz[^2].Art);
+        // 0.5 s auf dem Boden – Sprung
+        var lang = Lauf(new HandBegehenZustand(), Erst_oben_dann_unten(18, 45));
+        Assert.Single(lang, e => e.Art == BegehenArt.Teleport);
+        // die Anzeige weiss, ab wann Loslassen springt
+        var z = new HandBegehenZustand();
+        var bereit = new List<(double T, bool Bereit)>();
+        foreach (var (t, g) in Halten(60).SkipLast(1)) { HandBegehen.Schritt(z, t, "right", g, Kopf, Gieren, 0); bereit.Add((t, z.Bereit)); }
+        Assert.False(bereit.First(b => b.T < 0.2).Bereit);
+        Assert.True(bereit.Where(b => b.T >= 0.26).All(b => b.Bereit));
+    }
+
+    [Fact]
+    public void Unruhiges_Ziel_springt_nicht()
+    {
+        // die Hand wippt schnell auf und ab (kein Wisch, der ist waagrecht): das Ziel springt über mehr als den Umkreis
+        var bilder = Enumerable.Range(0, 60).Select(i => (i / 90.0, (Dictionary<string, Vec3>?)Hand(Zeigen + V(0, 0.08 * Math.Sin(2 * Math.PI * 3 * i / 90.0), 0), 0.01)))
+            .Append((60 / 90.0, Hand(Zeigen, 0.06)));
+        var ev = Lauf(new HandBegehenZustand(), bilder);
+        Assert.DoesNotContain(ev, e => e.Art is BegehenArt.Teleport or BegehenArt.Drehen);
+        Assert.Contains(ev, e => e.Art == BegehenArt.Abbruch);
+    }
+
+    [Fact]
+    public void Verlaesst_der_Strahl_den_Boden_ist_der_Pinch_abgebrochen()
+    {
+        var z = new HandBegehenZustand();
+        var oben = V(0.2, 1.9, -0.4);
+        var bilder = new List<(double, Dictionary<string, Vec3>?)>();
+        for (int i = 0; i < 45; i++) bilder.Add((i / 90.0, Hand(Zeigen, 0.01)));       // 0.5 s auf dem Boden
+        for (int i = 45; i < 63; i++) bilder.Add((i / 90.0, Hand(oben, 0.01)));         // 0.2 s nach oben (länger als 0.1 s)
+        for (int i = 63; i < 120; i++) bilder.Add((i / 90.0, Hand(Zeigen, 0.01)));      // wieder ruhig auf den Boden
+        bilder.Add((120 / 90.0, Hand(Zeigen, 0.06)));
+        var ev = Lauf(z, bilder);
+        var abbruch = ev.FindIndex(e => e.Art == BegehenArt.Abbruch);
+        Assert.True(abbruch > 0);
+        Assert.Single(ev, e => e.Art == BegehenArt.Abbruch);                                // sofort gemeldet, nicht noch einmal beim Loslassen
+        Assert.DoesNotContain(ev.Skip(abbruch), e => e.Art is BegehenArt.Ziel or BegehenArt.Teleport);
+        Assert.Equal(BegehenArt.PinchAus, ev[^1].Art);
+        // kürzer als die Verzögerung (Öffnen der Finger) bricht nicht ab: siehe Beim_Loslassen_gilt_das_Ziel_von_0_1_s_vorher
+    }
+
+    [Fact]
+    public void Der_Zeigestrahl_des_Systems_bestimmt_das_Ziel()
+    {
+        var z = new HandBegehenZustand();
+        (Vec3, Vec3)? Aim(double _) => (V(1, 1.2, -1), V(0, -2, 0));   // senkrecht nach unten, nicht normiert
+        var ev = Lauf(z, Halten(45).ToList(), zeigestrahl: Aim);
+        var tp = Assert.Single(ev, e => e.Art == BegehenArt.Teleport).Punkt!.Value;
+        Nah(tp.X, 1); Nah(tp.Y, 0); Nah(tp.Z, -1);   // unabhängig vom Grundgelenk des Zeigefingers
+        HandBegehen.Schritt(z, 2, "right", Hand(Zeigen, 0.06), Kopf, Gieren, 0, Aim(2));
+        Assert.True(z.StrahlVomSystem);
+        Nah(z.Strahl!.Value.Richtung.Y, -1);
+        HandBegehen.Schritt(z, 2.1, "right", Hand(Zeigen, 0.06), Kopf, Gieren, 0);
+        Assert.False(z.StrahlVomSystem);   // ohne Zeigestrahl: Rückfall über die Schulter
+        HandBegehen.Schritt(z, 2.2, "right", Hand(Zeigen, 0.06), Kopf, Gieren, 0, (V(0, 1, 0), V(0, 0, 0)));
+        Assert.False(z.StrahlVomSystem);   // Richtung null: Rückfall
+    }
+
+    [Fact]
+    public void Schwellen_als_Stellschrauben()
+    {
+        var e = HandBegehenEinstellungen.Vorgabe;
+        Assert.Equal(0.25, e.ZielRuheS);
+        Assert.Equal(HandBegehen.ZielRuheS, e.ZielRuheS);
+        Assert.Equal(HandBegehen.ZielVerzoegerungS, e.ZielVerzoegerungS);
+        System.Text.Json.JsonElement W(string json) => System.Text.Json.JsonDocument.Parse(json).RootElement;
+        Assert.Equal(0.4, e.MitStellschraube("begehen.ziel_ruhe_s", W("0.4"))!.ZielRuheS);
+        Assert.Equal(1.0, e.MitStellschraube("begehen.ziel_ruhe_radius_m", W("1"))!.ZielRuheRadiusM);
+        Assert.Equal(0.05, e.MitStellschraube("begehen.ziel_verzoegerung_s", W("0.05"))!.ZielVerzoegerungS);
+        Assert.Equal(0.25, (e with { ZielRuheS = 1 }).MitStellschraube("begehen.ziel_ruhe_s", W("null"))!.ZielRuheS);   // null: zurück auf die Vorgabe
+        Assert.Null(e.MitStellschraube("begehen.ziel_ruhe_s", W("5")));     // ausserhalb 0 … 2
+        Assert.Null(e.MitStellschraube("begehen.ziel_ruhe_s", W("\"x\"")));
+        Assert.Null(e.MitStellschraube("pinch.schwelle", W("0.02")));       // gehört nicht hierher
+        // ohne Ruhezeit springt schon ein Pinch von 0.2 s
+        var ev = Lauf(new HandBegehenZustand(), Halten(18), einstellungen: e with { ZielRuheS = 0 });
+        Assert.Single(ev, x => x.Art == BegehenArt.Teleport);
+        Assert.DoesNotContain(Lauf(new HandBegehenZustand(), Halten(18)), x => x.Art == BegehenArt.Teleport);
     }
 
     [Fact]

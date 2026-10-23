@@ -2078,34 +2078,52 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
   und lädt geänderte Geschosse nach (der Standpunkt bleibt). **Ohne PC** startet die App mit dem zuletzt
   geladenen Modell; die Anzeige sagt «Ohne PC: Modell vom …». Die App liest die GLB selbst (extras, Zuordnung Dreieck → Element) und baut die Netze ohne den Lader
   von StereoKit – die 180°-Drehung aus P2 entsteht so nicht (der Prüflauf bestätigt sie beim Lader von StereoKit als Gegenprobe). Räume ausgeblendet, Unterlage ein.
-  Am PC gibt es bis zum Nachtrag P3 (GLB im Büronetz) `--modell-lokal <port>`: Liste und GLB über `http://localhost:<port>`, wenn der Netzzugang 404 meldet.
+  **Nur das Geschoss am Stand** wird gezeichnet, mit seinen Bauteilen und seiner IFC-Unterlage (Brillentest 23.10.2026, Christian: «beschränken auf eigenes und IFC»;
+  mit allen Geschossen zeitweise 54–60 Hz, nur EG stabil 72 Hz). Geschoss am Stand (`GeschossWahl`): das oberste, dessen Kote höchstens 0.3 m über dem Standboden
+  liegt, darunter das unterste; Standboden = Höhe des Rigs, nicht die Kopfhöhe. Ein anderes Geschoss erreicht man bis P5 (Wisch hoch/runter) über den Auftrag vom PC.
+  Grosse Netze sind in **Blöcke** von höchstens 20 000 Dreiecken geteilt (`NetzBloecke`, möglichst an Elementgrenzen); der Durchgang lädt nur die betroffenen Blöcke
+  neu (vorher ein Bild mit 24 ms beim Wechsel). Test_praxis: höchstens 25 Zeichenaufrufe je Geschoss (EG).
+  Am PC gibt es `--modell-lokal <port>`: Liste und GLB über `http://localhost:<port>`, wenn der Netzzugang 404 meldet (vor dem Nachtrag P3; seither nicht mehr nötig).
 - **Startpunkt** (`VrStartLogik`): Raum aus dem VR-Auftrag des PCs (`willkommen` bzw. `auftrag`, nur neue Nummern; Modus «begehen»), sonst der zuletzt in der App
   benutzte Standpunkt dieses Projekts (alle 10 s und beim Beenden gemerkt), sonst der grösste Raum des untersten Geschosses mit Kote ≥ 0, sonst 5 m vor der Südseite
   des Modells. Den Standort eines Raums rechnet die App aus seinem Netz (Schwerpunkt bzw. innerster Punkt, Boden, Augenhöhe 1700 mm, Blick nach der längsten Kante)
   – `raum_begehen` erreicht sie im Büronetz nicht. Ein neuer Auftrag während des Begehens setzt sie ohne Tipp in den Raum. Aufträge «Sitzungsraum» folgen mit P5.
 - **Begehen mit Händen** (Leitlinie «Hände zuerst»; Schwellen sind Annahmen, Stellschrauben in P5):
+  - *Strahl:* der Zeigestrahl des Systems (Zeiger der Hand von StereoKit aus der Aim-Pose der Laufzeit). Es ist nur ein Strahl sichtbar: der von StereoKit ist aus
+    (`UI.EnableFarInteract`), die App zeichnet denselben – ohne Pinch fein und weiss, beim Zielen bis zum Ziel (cyan, grün sobald Loslassen springt). Nur ohne Zeiger
+    des Systems gilt der Rückfall von der Schulter (15 cm unter und 17 cm neben dem Kopf) durch das Grundgelenk des Zeigefingers (Statuszeile `Strahl=System|Schulter`).
   - *Springen:* mit der Hand auf den Boden zeigen, Daumen und Zeigefinger zusammen (Pinch an unter 2.5 cm, los über 4 cm) und halten – Strahl und Ring zeigen das
-    Ziel (bis 15 m) –, loslassen springt. Es gilt das Ziel 0.1 s vor dem Loslassen; ein Pinch unter 0.15 s springt nicht. Strahl: von der Schulter (15 cm unter und
-    17 cm neben dem Kopf) durch das Grundgelenk des Zeigefingers.
-  - *Drehen:* mit gehaltenem Pinch kurz und schnell seitlich wischen (mindestens 15 cm, 0.8 m/s, höchstens 0.4 s, überwiegend waagrecht): 30° in Wischrichtung.
+    Ziel (bis 15 m) –, loslassen springt. Gegen ungewollte Sprünge (Brillentest 23.10.2026): gesprungen wird nur, wenn das Ziel 0.1 s vor dem Loslassen seit mindestens
+    0.25 s ununterbrochen und ruhig auf gültigem Boden lag (im Umkreis 0.3 m + 10 % der Entfernung); verlässt der Strahl den Boden länger als 0.1 s, ist der Pinch
+    abgebrochen (Klick); nach einem Wisch springt der Pinch nie. Stellschrauben vom PC: `begehen.ziel_ruhe_s`, `begehen.ziel_ruhe_radius_m`, `begehen.ziel_verzoegerung_s`.
+  - *Drehen:* mit gehaltenem Pinch kurz und schnell seitlich wischen (mindestens 15 cm, 0.8 m/s, höchstens 0.4 s, überwiegend waagrecht): 30° in Wischrichtung –
+    nur wenn **Drehen** wirkt (Christian 23.10.2026: «drehen sollte nur beim sitzen aktiviert sein», «damit kann die sitzposition übersteuert werden»): Die App erkennt
+    die Haltung aus der echten Kopfhöhe über dem Boden (sitzend nach 2 s unter 1.30 m, stehend nach 2 s über 1.45 m; ohne Bodenbezug stehend) – sitzend Drehen ein,
+    stehend aus. Der Schalter **«Drehen»** in der Box zeigt den wirksamen Zustand; Antippen mit dem Finger übersteuert bis zum nächsten erkannten Haltungswechsel.
+    Nichts davon wird über einen Neustart gemerkt. Stellschrauben `haltung.schwelle_m`, `haltung.hysterese_m`, `haltung.haltezeit_s`.
   - *Durchgang:* Wände und Decken werden nur unter 500 mm zum Kopf durchscheinend (Deckkraft 0.3), auch die Wände, Decken, Stützen, Träger und Dächer der
     IFC-Unterlage (Annahme P4a, im Prototyp nicht).
   - *Ton und Licht:* Pinch = Klick und Aufleuchten an den Fingern; Sprung = steigender Ton, kurzes Abblenden, Ring am Ziel; Drehen = Doppelton und Abblenden;
     Abbruch = Klick beim Loslassen.
-- **Anzeige** unten vor dem Blick (folgt dem Kopf träge): grüner Punkt «Verbunden mit <PC>», orange «Ohne PC: Modell vom …», rot bei Kopplungsfehlern, grau bei der
-  Suche; darunter Geschoss und Raum, Meldungen und «Pinch auf den Boden: springen · Pinch + Wisch: drehen» mit Netzen, Dreiecken und Bildrate.
-- **Protokoll** (`adb logcat`, Kennung DOTNET): alle 5 s «P4 Status: Gerät, Bildrate, Bildzeit (Mittel und höchstens), Rechenzeit der App, Netze, Dreiecke,
-  Durchgang, Verbindung, Modell, Kanal, Posen, Hände» – die Grundlage für K1.
+- **Anzeige** unten vor dem Blick (folgt dem Kopf träge, um 1.35 vergrössert, Text mit Umbruch): grüner Punkt «Verbunden mit <PC>», orange «Ohne PC: Modell vom …»,
+  rot bei Kopplungsfehlern, grau bei der Suche; darunter Geschoss und Raum (nach einem Sprung das Kennzeichen des Geschosses), Meldungen, «Pinch auf den Boden:
+  springen» (dazu «· Pinch + Wisch: drehen», wenn Drehen wirkt) mit Geschoss, Netzen, Dreiecken und Bildrate, und der Schalter «Drehen» mit «Drehen: ein (sitzend)»,
+  «aus (stehend)» bzw. «ein/aus (von Hand)».
+- **Protokoll** (`adb logcat`, Kennung DOTNET): alle 5 s «P4 Status: Gerät, Bildrate, Bildzeit (Mittel und höchstens), Rechenzeit der App, Geschoss (Kennzeichen),
+  Netze und Aufrufe, Dreiecke (gezeichnet von allen), Durchgang (mit längstem Wechsel), Haltung=sitzend|stehend, Drehen=ein|aus, Hand=ja|nein, Strahl, Verbindung,
+  Modell, Kanal, Posen, Hände» – die Grundlage für K1. Ohne Bodenbezug steht einmal ein Hinweis darin.
 - **Prüfen am PC:** `powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>]` startet einen KICAD-Testserver auf
   Port 5130 (Testlauf, alles unter `%TEMP%`; Abbruch, wenn KICAD läuft), legt das Beispielprojekt an bzw. öffnet eine Kopie des Projekts, erzeugt ein Paket und lässt
   die PC-Fassung zweimal laufen: mit PC (vorher ein VR-Auftrag für den ersten Raum, die App muss dort starten) und ohne PC (Start am gemerkten Standpunkt). Ergebnis
-  je Lauf «P4 Laden: je Geschoss und Teil ms, MB, Dreiecke; Zwischenspeicher» und «P4 ok: Netze, Dreiecke, mittlere Bildzeit, Rechenzeit, Modell nach, Auftrag, …».
+  je Lauf «P4 Laden: je Geschoss und Teil ms, MB, Dreiecke; Zwischenspeicher» und «P4 ok: Geschoss, gezeichnete Netze, Aufrufe, Dreiecke, Blöcke, Haltung und
+  Drehen, mittlere Bildzeit, Rechenzeit, Modell nach, Auftrag, Durchgang (Wechsel an einer Wand des grössten Netzes im Vergleich zum Neuladen des ganzen Netzes), …».
   Einzeln: `dotnet Hlks.Quest.dll --pruefen <bilder> --kopplung <datei> [--speicher <ordner>] [--modell-lokal 5130] [--ohne-pc]`. Für Messungen am echten Projekt
   `-Projekt %USERPROFILE%\HLKS_CAD_testdaten\test_praxis` (Christian 23.10.2026). Tests: Xr `tests/Hlks.Xr.Tests`, Web `--filter "FullyQualifiedName~XrAppKlient"`
   (`XrAppKlientTests`: koppeln, finden, GLB mit 304, ohne PC, Kanal mit Pose, Auftrag, Stellschraube, 1001, 4001, 4002, 401; `XrAppKlientEchtTests`: Test_praxis
   mit Unterlage, Zeiten je Geschoss, Budget der Quest 3, Durchgang beim Gehen, Zahlen in `%TEMP%\HLKS_CAD\xr_p4a_test_praxis.json`; ohne die Kopie übersprungen).
 - **Bau:** PC `dotnet build src\Hlks.Quest\Hlks.Quest.csproj -c Release`; Brille `dotnet publish src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj -c Release
   -f net10.0-android` → `<Build>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.kicad.quest-Signed.apk` (Testschlüssel). Installieren macht P7.
-- **Nur mit der Brille prüfbar:** Bildrate mit Test_praxis (K1), Hände (K2: Treffsicherheit des Strahls, Pinch, Wisch zum Drehen), Verbinden im WLAN ohne Kabel (K3,
-  Broadcast und Firewall), Ton und Licht, Übernahme der Kopplung aus dem Eingang.
+- **Nur mit der Brille prüfbar:** Bildrate mit Test_praxis (K1), Hände (K2: Strahl gleich dem Zeiger des Systems, Ruhezeit, Pinch, Wisch zum Drehen), Haltung
+  sitzend/stehend und der Schalter, Dauer des Wechsels im Durchgang mit Blöcken, Verbinden im WLAN ohne Kabel (K3, Broadcast und Firewall), Ton und Licht, Übernahme
+  der Kopplung aus dem Eingang.
 - **Anleitung:** `zb-quest-app-begehen` in `berichte/anleitung/inventar.json`.

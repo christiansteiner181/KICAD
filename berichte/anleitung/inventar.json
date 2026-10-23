@@ -11008,17 +11008,19 @@
             "Am PC KICAD mit dem Projekt öffnen und den Zugang im Büronetz einschalten (zb-xr-zugang).",
             "In der Brille die App «KICAD» starten. Die Anzeige unten vor dem Blick zeigt zuerst «Suche KICAD auf <PC> …», dann grün «Verbunden mit <PC>» und «Lade EG modell …».",
             "Nach dem Laden steht man im Startpunkt: im Raum des letzten VR-Auftrags vom PC, sonst am zuletzt benutzten Standpunkt, sonst im grössten Raum des Erdgeschosses. Die Anzeige nennt Geschoss und Raum.",
-            "Springen: mit der Hand auf den Boden zeigen, Daumen und Zeigefinger zusammenführen und halten. Ein Strahl und ein Ring zeigen das Ziel; Loslassen springt dorthin (Ton, kurzes Abblenden, Ring am Ziel).",
-            "Drehen: Daumen und Zeigefinger zusammen halten und die Hand kurz und schnell nach rechts bzw. links wischen. Die Sicht dreht um 30° in diese Richtung (Doppelton).",
+            "Springen: mit der Hand auf den Boden zeigen (der feine weisse Strahl ist der Zeiger der Hand), Daumen und Zeigefinger zusammenführen und halten. Strahl und Ring zeigen das Ziel, cyan beim Zielen; sobald das Ziel einen Moment ruhig liegt, werden sie grün – jetzt springt Loslassen dorthin (Ton, kurzes Abblenden, Ring am Ziel). Zeigt man beim Halten vom Boden weg, ist der Sprung abgebrochen (Klick).",
+            "Drehen: wirkt im Sitzen von selbst (die App erkennt es an der Kopfhöhe), im Stehen nicht – wer steht, dreht sich selbst. Der Schalter «Drehen» in der Box zeigt den Zustand («Drehen: ein (sitzend)», «aus (stehend)»); mit dem Finger antippen übersteuert ihn bis zum nächsten Hinsetzen bzw. Aufstehen. Wirkt Drehen: Daumen und Zeigefinger zusammen halten und die Hand kurz und schnell nach rechts bzw. links wischen; die Sicht dreht um 30° in diese Richtung (Doppelton).",
+            "Es wird nur das Geschoss gezeichnet, in dem man steht (mit seiner IFC-Unterlage); die Anzeige nennt es (z. B. «EG»). Ein anderes Geschoss bis P5 über den Auftrag vom PC.",
             "Durch eine Wand gehen: Wände und Decken werden erst unter 50 cm zum Kopf durchscheinend.",
             "Am PC einen Raum mit Rechtsklick › «In VR begehen (Brille)» wählen: die App setzt einen sofort in diesen Raum, ohne Tipp.",
             "Ohne PC (PC aus oder ausser Reichweite): die App startet mit dem zuletzt geladenen Modell; die Anzeige ist orange «Ohne PC: Modell vom …». Sie sucht alle 30 s nach dem PC."
           ],
-          "erwartung": "Die App verbindet ohne Kabel und ohne Eingabe mit dem gekoppelten PC und zeigt das ganze Gebäude mit IFC-Unterlage, ohne die Raumkörper. Ein zweiter Start lädt nur geänderte Geschosse (Versionsschlüssel, 304). Pinch, Sprung und Drehen melden sich mit Ton und Licht. Ein Auftrag vom PC wirkt sofort. Wird die Kopplung am PC widerrufen, zeigt die App rot «neu koppeln» und verbindet nicht mehr. Der PC sieht die Brille in GET /api/xr/teilnehmer (Kopf, Hände, Pinch).",
+          "erwartung": "Die App verbindet ohne Kabel und ohne Eingabe mit dem gekoppelten PC, lädt alle Geschosse und zeigt das Geschoss, in dem man steht, mit IFC-Unterlage, ohne die Raumkörper. Ein zweiter Start lädt nur geänderte Geschosse (Versionsschlüssel, 304). Pinch, Sprung und Drehen melden sich mit Ton und Licht. Ein Auftrag vom PC wirkt sofort. Wird die Kopplung am PC widerrufen, zeigt die App rot «neu koppeln» und verbindet nicht mehr. Der PC sieht die Brille in GET /api/xr/teilnehmer (Kopf, Hände, Pinch).",
           "pruefpunkte": [
             "Erster Start mit PC: grün «Verbunden mit <PC>», das Modell erscheint, man steht in einem Raum (nicht in einer Wand), Blick waagrecht.",
-            "Springen: das Ziel folgt der Hand; Loslassen springt an die Stelle des Rings, nicht daneben. Ein kurzes Zucken der Finger springt nicht.",
-            "Drehen: ein schneller Wisch dreht genau einmal um 30°; langsames Zielen dreht nicht.",
+            "Springen: es ist nur ein Strahl zu sehen, und er liegt auf dem Zeiger der Hand; das Ziel folgt der Hand; Loslassen springt an die Stelle des grünen Rings, nicht daneben. Ein kurzes Zucken der Finger, ein unruhiges Ziel oder ein Wisch springen nicht.",
+            "Drehen: sitzend zeigt der Schalter «Drehen: ein (sitzend)», ein schneller Wisch dreht genau einmal um 30°; stehend «aus (stehend)», der Wisch dreht nicht. Antippen übersteuert («von Hand»), nach dem nächsten Aufstehen bzw. Hinsetzen gilt wieder die Automatik.",
+            "Beim Wechsel einer Wand in den Durchgang ruckelt das Bild nicht (Protokoll «P4 Status»: Wechsel höchstens wenige ms).",
             "Vor einer Wand (unter 50 cm) wird sie durchscheinend, mit Abstand wieder undurchsichtig; auch die Wände der IFC-Unterlage.",
             "Rechtsklick auf einen Raum am PC › «In VR begehen (Brille)»: die App springt in diesen Raum.",
             "PC aus, App neu starten: orange «Ohne PC: Modell vom …», das Modell ist da; PC wieder an: nach höchstens 30 s grün.",
@@ -11032,7 +11034,7 @@
           },
           "quelle": [
             "src/Hlks.Quest/QuestApp.cs, ModellDarstellung.cs, Rueckmeldung.cs, Plattform.*.cs",
-            "src/Hlks.Xr/Netz (Kopplung, Pinning, Suche, Kanal, Zwischenspeicher, Umrechnung), src/Hlks.Xr/Modell (GLB, Szene, Durchgang, Räume, Start), src/Hlks.Xr/HandBegehen.cs, HandGelenke.cs",
+            "src/Hlks.Xr/Netz (Kopplung, Pinning, Suche, Kanal, Zwischenspeicher, Umrechnung), src/Hlks.Xr/Modell (GLB, Szene, Durchgang, Blöcke, Geschoss am Stand, Räume, Start), src/Hlks.Xr/HandBegehen.cs, DrehenSchalter.cs, HandGelenke.cs",
             "werkzeuge/quest_pruefen.ps1",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4a»)"
           ],

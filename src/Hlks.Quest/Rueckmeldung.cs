@@ -5,7 +5,7 @@ namespace Hlks.Quest;
 /// <summary>
 /// Rückmeldung mit Ton und Licht (Leitlinie Bedienung, Christian 23.10.2026: «Ton und Licht melden jeden Fang, Griff und jede Berührung»):
 ///   Pinch      – Klick von StereoKit und ein kurzes Aufleuchten am Pinch-Punkt (cyan);
-///   Ziel       – Strahl von der Hand und ein pulsierender Ring auf dem Boden (nur solange gezielt wird);
+///   Ziel       – Strahl von der Hand (der Zeiger des Systems) und ein pulsierender Ring auf dem Boden, grün sobald Loslassen springt;
 ///   Teleport   – aufsteigender Ton, kurzes Abblenden (Komfort: der Sprung ist nicht als Bewegung zu sehen) und ein Ring am Ziel, der sich öffnet;
 ///   Drehen     – kurzer Doppelton und ein Aufleuchten an der Hand;
 ///   Abbruch    – Klick beim Loslassen von StereoKit, ohne Licht.
@@ -84,14 +84,19 @@ sealed class Rueckmeldung
         Ereignisse++;
     }
 
-    /// <summary>Strahl der zielenden Hand und Ring am Ziel (null = kein gültiges Ziel: kurzer grauer Strahl).</summary>
-    public void Ziel(Vec3 hand, Vec3 richtung, Vec3? ziel)
+    /// <summary>
+    /// Der eine sichtbare Zeigestrahl (Nachtrag Brillentest 23.10.2026: der Strahl von StereoKit ist aus, dieser liegt genau auf dem Zeiger des Systems).
+    /// Ohne Pinch: dünn und weiss wie der Strahl des Systems. Mit Pinch: bis zum Ziel, cyan solange gezielt wird, grün sobald Loslassen springt (Ruhezeit
+    /// erreicht), dazu der Ring am Ziel; ohne gültiges Ziel kurz und grau.
+    /// </summary>
+    public void Strahl(Vec3 hand, Vec3 richtung, bool pinch, Vec3? ziel, bool bereit)
     {
+        if (!pinch) { Lines.Add(hand, hand + richtung * 1.2f, new Color32(255, 255, 255, 110), 0.002f); return; }
         if (ziel is { } z)
         {
-            Lines.Add(hand, z, new Color32(80, 220, 255, 200), 0.004f);
+            Lines.Add(hand, z, bereit ? new Color32(90, 255, 140, 220) : new Color32(80, 220, 255, 200), 0.004f);
             var puls = 0.22f + 0.03f * MathF.Sin(Time.Totalf * 10);
-            ringNetz.Draw(ring, Matrix.TS(z + Vec3.Up * 0.005f, new Vec3(puls, 1, puls)), new Color(0.2f, 0.8f, 1f, 0.8f));
+            ringNetz.Draw(ring, Matrix.TS(z + Vec3.Up * 0.005f, new Vec3(puls, 1, puls)), bereit ? new Color(0.35f, 1f, 0.55f, 0.9f) : new Color(0.2f, 0.8f, 1f, 0.8f));
         }
         else Lines.Add(hand, hand + richtung * 1.5f, new Color32(160, 160, 160, 120), 0.003f);
     }

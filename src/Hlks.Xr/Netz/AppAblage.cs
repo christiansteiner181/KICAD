@@ -5,6 +5,7 @@
 //   - standpunkt: der zuletzt benutzte Standpunkt (Format der Benutzereinstellung vr.letzter_standpunkt des Prototyps, VrStartLogik.GemerktStandpunkt),
 //               Startquelle «gemerkt». Der Prototyp merkt ihn in den Benutzereinstellungen am PC; die App kann diese über den Netzzugang nicht lesen
 //               und merkt ihn deshalb selbst (gilt nur im selben Projekt, ort = Projekt-Id).
+// Der Schalter «Drehen» wird bewusst NICHT gemerkt (Christian 23.10.2026): beim Start gilt die Automatik aus der Haltung (DrehenSchalter).
 // Ohne Reflexion gelesen und geschrieben (JsonNode), damit der Android-Bau ohne Trimm-Warnungen bleibt.
 
 using System.Globalization;
