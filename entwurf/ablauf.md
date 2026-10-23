@@ -33,7 +33,14 @@ Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, 
   - **«Fertig, wenn …»** gilt erst als erfüllt, wenn es auch am realen Projekt trägt.
 - **Befunde aus Christians Nutzung** gehen zuerst. Sie kommen in die Kontrollliste bzw. `nachbearbeitung.md` und werden vor neuen
   Wünschen behoben.
-- **Echte Daten bleiben geschützt:**
+- **Ausnahme Test_praxis (Christian, 23.10.2026: «dies ist nur ein testprojekt. es kann ohne einschränkung genutzt werden.»):** Für
+  Test_praxis gelten die Schutzregeln unten nicht.
+  - Lesen und Schreiben sind erlaubt, auch im Projektordner auf W:.
+  - Arbeitskopien und Änderungen sind erlaubt.
+  - Zahlen, Geometrie und Bilder dürfen in Testausgaben stehen.
+  - Nicht ins Repository (es geht nach GitHub, und es braucht die Dateien nicht).
+  - Andere Projekte, z. B. die Bernstrasse, bleiben geschützt.
+- **Echte Daten bleiben geschützt** (alle Projekte ausser Test_praxis):
   - **Auf W: nur lesen:** Agenten, Tests und Prüfskripte schreiben nie auf W:.
   - **Lokale Kopie für automatische Echt-Tests:** Sie lesen einen schreibgeschützten Stand unter `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis`,
     den der Hauptlauf bei Bedarf nachführt; nie Repo, nie OneDrive. Erste Kopie 22.10.2026 09:45: 99 Dateien, 230 MB, ohne
