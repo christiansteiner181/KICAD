@@ -315,6 +315,17 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - **Brillentest offen:** Passthrough, Antippen, Griffe, Bildrate bei «Alle Etagen».
 - **Fragen von P4b für den Brillentest:** «Im Sitzungsraum zeigen» schneidet im Geschoss des Raums statt «Alle Etagen»; die IFC-Unterlage ist im Sitzungsraum vorgabemässig ein.
 
+**Stand P7 (23.10.2026, zusammengeführt):**
+- **Dialog «Quest verbinden» › Teil «Quest App»:**
+  - Netzzugang ein/aus mit Hinweisen zu Netzprofil und Firewall (nur gelesen).
+  - «App installieren/aktualisieren» über WLAN oder Kabel; Kopplung Weg A per adb, Schlüssel nie auf der Platte.
+  - Gekoppelte Brillen mit Widerruf; Ersatzkopplung mit Codevergleich.
+- **Ablage der APK:** `%USERPROFILE%HLKS_CAD_werkzeugequest_app`, befüllt von `werkzeuge/quest_app_bereitstellen.ps1` (Hauptlauf).
+- **«Brille zeigen»** (Register Ansicht › Fenster): Figur der Brille in der 3D-Ansicht; im Sitzungsraum nicht im Modell.
+- **VR-Auftrag:** Ist eine App verbunden, startet KICAD keinen Browser in der Brille mehr.
+- **Tests:** Web 844, Node 1247 (0 Fehler), Browser `xr-app` 77/77.
+- **Offen:** echte Installation an der Brille; Frage des Agenten, ob KICAD sich den installierten Commit je Brille merken soll.
+
 **Prüfkriterien für StereoKit** (bei K1 oder K2 rot: Gegenprobe Godot):
 - **K1 Leistung:** Test_praxis mit IFC-Unterlage läuft auf der Quest 3 stabil mit mindestens 72 Hz (Meta-Minimum). Gemessen wird mit dem
   Bildzeit-Protokoll der App.
