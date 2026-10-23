@@ -200,6 +200,28 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 
 **Stand P1 (23.10.2026):** Bibliothek `src/Hlks.Xr` (ohne StereoKit) mit den Regeln aus `vr-logik.js`, `begehen-logik.js` (Durchgang), `vr-start-logik.js`, `xr-mess-logik.js`, `xr-sitzung-logik.js`, `schnittbereich-logik.js` (Quader) und dem Hand-/Tablet-/Wischteil von `xr-greifen-logik.js`; 155 Tests (`tests/Hlks.Xr.Tests`, in `stand_pruefen.ps1` und `cloud/tests.sh`). Übersicht: `src/Hlks.Xr/LIESMICH.md`. Entscheid Hauptlauf: `Vec3` mit double (Koordinaten bis ~67 m, Toleranz 1e-9), Umrechnung auf float erst in der App; Gelenknamen von WebXR auf StereoKit bildet P4 ab; Schwellen als Stellschrauben bereitet P5 auf.
 
+**Stand P2 (23.10.2026):**
+- **Geometrie:** die Körper der 3D-Ansicht (`GET /api/koerper`, `Grafik.Koerper`).
+  - Teile «netz» (IFC-Unterlage, nur Hintergrund wie `netzdatei.js`) bilden die GLB «unterlage», alles andere die GLB «modell».
+  - Eigener schlanker GLB-Schreiber (`src/Hlks.Kern/Xr/GlbSchreiber.cs`), ohne Paket; geprüft von einem unabhängigen Leser in den Tests.
+- **Netze:** je Gruppe (architektur, raum, hlks, sonst, unterlage), Farbe und Deckkraft.
+  - Die Zuordnung Dreieck → Element-Id (bei der Unterlage die IFC-GlobalId) steht in `mesh.extras.kicad.elemente`.
+  - Koordinaten wie die 3D-Ansicht: `(x, z, −y)/1000` relativ zum Projekt-Nullpunkt (`scene.extras.kicad.bezugspunktMm`).
+  - Versionsschlüssel SHA-256 je Geschoss und Teil; ETag/304.
+- **Endpunkte:** `GET /api/xr/geschosse`, `GET /api/xr/geschoss/{id}.glb?teil=modell|unterlage`; für die KI verboten (`xr_modell`).
+- **Test_praxis** (lokale Kopie, nur gelesen):
+  - alle 7 Geschosse zusammen 36 Netze, 863 223 Dreiecke, 27,9 MB
+  - grösstes Geschoss EG: Unterlage 377 795 Dreiecke, 11,3 MB
+  - Damit liegt das ganze Gebäude unter dem Quest-3-Budget (200 Zeichenaufrufe, 1,5 Mio. Dreiecke). K1 in der Brille ist noch zu
+    messen.
+- **Hinweise für P4:**
+  - StereoKit dreht die GLB beim Laden um 180° um die Hochachse; die App muss das zurücksetzen.
+  - Die extras liest die App selbst aus dem JSON-Chunk.
+  - Räume sind mit Deckkraft 0,15 enthalten.
+  - Kanten (Linien) sind nicht enthalten.
+- **Nebenbefund Kern:** `FamilienNetz.GeschlossenFehler` nutzt dieselbe schwache Art von Kantenschlüssel (`Dictionary<long, …>`), die
+  in P2 das EG von 30 s auf unter 1 s gebracht hat, als sie ersetzt wurde. Kommt in die Liste für Phase 1, Kern.
+
 **Stand P3 (23.10.2026):**
 - **Aufbau:**
   - Ein zweiter HTTPS-Server auf Port 5140. Er bedient nur Endpunkte unter `/api/xr`, die mit `.XrImNetz()` markiert sind.
