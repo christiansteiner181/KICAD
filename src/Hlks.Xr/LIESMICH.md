@@ -1,8 +1,10 @@
-# Hlks.Xr – Rechenregeln der Quest App (Modul XR, P1)
+# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1 und P4a)
 
 Reine C#-Bibliothek (`net10.0`) ohne StereoKit, ASP.NET und Hlks.Kern. Sie enthält die Regeln, die im Browser-Prototyp als JavaScript mit
 Node-Tests stehen: Begehen, Start, Messen mit Fang, Sitzungsraum, Tablet, Wischgeste. Die App (`src/Hlks.Quest`) zeigt, die Bibliothek rechnet; ein Wechsel
-der Technik der App trifft die Regeln nicht (Entscheid Christian 23.10.2026, `entwurf/modul-xr.md`).
+der Technik der App trifft die Regeln nicht (Entscheid Christian 23.10.2026, `entwurf/modul-xr.md`). Seit P4a dazu der Netz-Teil der App (`Netz/`: Kopplung,
+Pinning, Suche, Live-Kanal, Zwischenspeicher, Umrechnung) und das Modell aus den GLB (`Modell/`: Lesen, Szene, Durchgang auf Netzen, Räume, Start),
+damit beides am PC getestet werden kann (siehe «Netz-Teil und Modell der App (P4a)» unten).
 
 Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht im Kommentar die Quelle (`datei.js`, Funktionsname). Tests:
 `tests/Hlks.Xr.Tests` (aus den `*.test.mjs` mit denselben Erwartungswerten; `bash werkzeuge/cloud/tests.sh xr`).
@@ -22,6 +24,8 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
 | `XrTabletRuhe` | `ansichten/xr-greifen-logik.js`, «Beruhigen des Tablets» | One-Euro-Filter, Totzone, Nachführen |
 | `XrWischLogik` | `ansichten/xr-greifen-logik.js`, «Wischgeste» | Wisch erkennen, Treffer auf Masslinien, Sperre |
 | `Vec3`, `Xz`, `Box3`, `Sortierung` | – | Grundbausteine (Vektor, Box, natürliche Sortierung) |
+| `HandBegehen`, `HandGelenke` | – (P4a, nach der Leitlinie «Hände zuerst») | Teleport mit Zeigen und Pinch, Drehen mit Pinch und Wisch; WebXR-Gelenknamen ↔ StereoKit |
+| `DreieckForm` (in `Durchgang`) | – (P4a) | Durchgang gegen Dreiecke aus der GLB (die App hat die Körper von `/api/koerper` nicht) |
 
 ## Konventionen
 
@@ -63,9 +67,42 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
   Tests dazu (`vr.html`, Manifest, `quest-text.js`, Material-Umschalten, Leistung mit 5000 Bauteilen) und die Browserreihen (`*.browser.mjs`).
 - **Sprache der Oberfläche:** Texte der Knöpfe und Zeilen (`VrText`, Tablet-Tasten, Kopfzeilen) sind übernommen, weil sie Teil der Regeln und der Tests sind.
 
+## Netz-Teil und Modell der App (P4a)
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Netz/Kopplungspaket.cs` | `Kopplungspaket`, `KopplungAblage`, `XrNetzFehler` | Paket wie von `POST /api/xr/kopplung/paket` lesen und prüfen (auch `{ paket: … }`), Bearer, Suchschlüssel; Übernahme aus dem Eingang in den privaten Speicher |
+| `Netz/XrPinning.cs` | `XrPinning` | TLS nur mit dem gepinnten SHA-256-Fingerabdruck (keine Kette); Handler für HTTP, Prüfung für den Kanal |
+| `Netz/PcZugang.cs` | `PcZugang`, `PcAdresse`, `IModellQuelle`, `ModellHttp` | HTTPS zum Netzzugang: Probe `GET /api/xr/verbindung`, Liste und GLB (auch über localhost für Tests) |
+| `Netz/PcSuche.cs` | `PcSuche`, `SucheOptionen`, `PcFund` | PC finden: gespeicherte Adressen, Adressen des Pakets, sonst UDP-Broadcast mit HMAC; Antwort prüfen |
+| `Netz/KanalVerbindung.cs` | `KanalVerbindung`, `KanalText`, `KanalRegeln`, `PosenTakt`, `KicadPose` | Live-Kanal: hallo/willkommen, Posen im Takt, Auftrag, Stellschraube, Wiederverbinden (nicht nach 4001/4002/401) |
+| `Netz/KicadUmrechnung.cs` | `KicadUmrechnung` | Szene der App (m, y oben, relativ zum Bezugspunkt) ↔ KICAD (mm, z oben); Quaternionen; Standorte |
+| `Netz/GlbZwischenspeicher.cs` | `GlbZwischenspeicher`, `ModellListe` | GLB je Geschoss und Teil nach Versionsschlüssel, `If-None-Match`/304, zuletzt geladenes Projekt, Aufräumen |
+| `Netz/ModellLader.cs` | `ModellLader`, `ModellStand` | Modell vom PC (mit Zwischenspeicher) bzw. ohne PC aus dem Zwischenspeicher |
+| `Netz/AppAblage.cs` | `AppAblage` | Was die App behält: Adressen des PCs, verbrauchte Auftragsnummer, gemerkter Standpunkt |
+| `Modell/GlbLeser.cs` | `GlbLeser`, `GlbDatei`, `GlbNetzDaten`, `ElementBereich` | GLB von KICAD lesen, mit extras (Gruppe, Bereiche je Element, Bezugspunkt); ohne die 180°-Drehung des Laders von StereoKit |
+| `Modell/ModellSzene.cs` | `ModellSzene`, `SzenenElement` | alle GLB zusammen: Elemente mit Hüllbox, Räume, Bauteile für den Durchgang |
+| `Modell/NetzDurchgang.cs` | `NetzDurchgang`, `DurchgangVerfolger` | Durchgang (500 mm) je Kopfposition; Netze in undurchsichtig und durchscheinend aufteilen |
+| `Modell/RaumStandort.cs` | `RaumStandort` | Standort im Format von `raum_begehen` aus dem Netz eines Raums (Schwerpunkt bzw. innerster Punkt, Boden, Blick) |
+| `Modell/AppStart.cs` | `AppStart` | Startpunkt nach `VrStartLogik` mit den Räumen der GLB und dem gemerkten Standpunkt der App |
+
+- **Pinning:** Die App nimmt nur das Zertifikat an, dessen SHA-256 über die DER-Bytes dem `fingerabdruck` des Pakets gleicht (Vergleich in fester Zeit);
+  Fehler der Kette und des Namens zählen nicht. Gilt für HTTP und WebSocket.
+- **Suche:** Zuerst alle bekannten Adressen gleichzeitig mit `GET /api/xr/verbindung` (Frist 2.5 s). Antwortet keine, zwei UDP-Anfragen im Abstand von 1.5 s an
+  255.255.255.255 und die Broadcast-Adressen der eigenen Netze; gültig ist nur eine Antwort mit eigenem Zufall, richtiger HMAC-Signatur und dem gepinnten
+  Fingerabdruck. 401 heisst «neu koppeln» (dann nicht weiter probieren, der PC sperrt nach 10 Fehlversuchen).
+- **Kanal:** hallo (Name, Gerät, App), willkommen abwarten, Posen höchstens 25 je Sekunde und nur neue; Wiederverbinden nach 1, 2, 4, 8, 15, dann 30 s, vor
+  jedem Versuch die Adresse neu bestimmen; nicht nach 4001 (widerrufen), 4002 (ersetzt) und 401.
+- **Zwischenspeicher:** Steht der Schlüssel der Liste schon im Speicher, gilt die Datei ohne Anfrage; sonst `If-None-Match` mit dem gespeicherten ETag
+  (304: Datei gilt weiter, 200: ersetzen). Fällt das Netz aus, gilt die ältere Fassung. Höchstens drei Projekte, je Geschoss und Teil nur die neueste.
+- **Tests:** `tests/Hlks.Xr.Tests` (Netz*, GlbLeser*, ModellSzene*, HandBegehen*); gegen den echten Netzzugang `tests/Hlks.Web.Tests/XrAppKlientTests.cs`, mit
+  Test_praxis `XrAppKlientEchtTests.cs` (ohne die Kopie übersprungen). Die App selbst im Simulator: `werkzeuge/quest_pruefen.ps1`.
+
 ## Offene Punkte
 
-- Die Gelenknamen sind die der WebXR-Hand-API; StereoKit liefert 25 Gelenke in anderer Schreibweise. Die Abbildung gehört in die App (P4/P5).
-- Die Schwellen (Pinch, Faust, Wisch, Totzone, Griffe, Tisch, Schnitt) sind die **Annahmen des Prototyps** und stehen in den Kommentaren der Konstanten; sie werden im Interface-Labor
-  (P5) an der Brille nachgestellt. Als Stellschrauben sind sie hier noch feste `const`-Werte.
-- Der JSON-Zugang für `Koerper` (`/api/koerper`) und `Standort` (`raum_begehen`) fehlt; er entsteht mit dem Modellformat (P2/P3).
+- Die Gelenknamen der WebXR-Hand-API bildet `HandGelenke` auf die 25 Gelenke von StereoKit ab (P4a).
+- Die Schwellen (Pinch, Faust, Wisch, Totzone, Griffe, Tisch, Schnitt, Schulter des Zeigestrahls, Verzögerung des Teleports) sind die **Annahmen des Prototyps
+  bzw. von P4a** und stehen in den Kommentaren der Konstanten; sie werden im Interface-Labor (P5) an der Brille nachgestellt. Als Stellschrauben sind sie hier
+  noch feste `const`-Werte.
+- Der JSON-Zugang für `Koerper` (`/api/koerper`) fehlt weiter; die App rechnet den Durchgang mit `DreieckForm` aus der GLB. `Standort` (`raum_begehen`) ersetzt
+  `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).

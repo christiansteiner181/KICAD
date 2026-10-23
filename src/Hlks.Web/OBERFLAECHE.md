@@ -2037,3 +2037,54 @@ Kern: `Hlks.Kern/Xr/` (`XrModell`, `XrNetzbau`, `XrFarben`, `XrKoordinaten`, `Gl
 - **Prüfen:** Kern `--filter "FullyQualifiedName~Hlks.Kern.Tests.Xr"` (`XrGlbTests`: Schreiber, Koordinaten, Zerlegung; `XrModellTests`: Beispielprojekt und synthetische IFC; `XrModellEchtTests`: Test_praxis aus
   `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis`, nur lesen, ohne die Daten übersprungen; Messwerte in der Testausgabe und `%TEMP%\HLKS_CAD\xr_p2_test_praxis.json`); Web `--filter "FullyQualifiedName~XrModellApiTests"`.
   Jede GLB prüft der unabhängige Leser `tests/Hlks.Kern.Tests/GlbPruefer.cs` (Kopf, Chunks, Ausrichtung, min/max, Indizes, Normalen, Material). **Nur mit der Brille prüfbar:** Bildrate mit Test_praxis (K1).
+
+## Modul XR, Quest App P4a: die App verbindet, lädt das Modell und startet das Begehen (`entwurf/modul-xr.md`, Interface-Labor, Zeile P4)
+
+Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit dem Netz-Teil und dem Modell in `src/Hlks.Xr` (`Netz/`, `Modell/`, Übersicht `src/Hlks.Xr/LIESMICH.md`).
+**Keine neue Bedienung am PC:** die App benutzt den Zugang im Büronetz (P3) und die GLB je Geschoss (P2). Passthrough, «Raum zeigen» auf dem echten Tisch und die Probe-Ebene folgen mit P4b.
+
+- **Kopplung:** Die App liest das Kopplungspaket (wie `POST /api/xr/kopplung/paket`, auch die ganze Antwort `{ paket }`) nur aus ihrem privaten Speicher
+  (`/data/user/0/ch.hkplanung.kicad.quest/files/kopplung.json`). P7 legt die Datei bei der Installation per adb in den Eingang
+  `/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json`; die App übernimmt sie beim Start und löscht sie dort (auch eine ungültige). Ohne Paket zeigt sie
+  «Nicht gekoppelt» und startet, wenn vorhanden, ohne PC. Keine Sicherung der App-Daten (`allowBackup` aus). Am PC: `--kopplung <datei>`.
+- **Verbinden:** zuerst die zuletzt erfolgreichen Adressen und die `ips` des Pakets (Probe `GET /api/xr/verbindung`, gleichzeitig, Frist 2.5 s), sonst die Suche per
+  UDP-Broadcast an den `suchPort` (Antwort mit HMAC geprüft). Jede Verbindung nur mit dem gepinnten `fingerabdruck`. 401 oder ein anderer Fingerabdruck in der Suche:
+  «neu koppeln» (rot), keine weiteren Versuche. Ohne PC wird alle 30 s neu gesucht. Dann der **Live-Kanal**: `hallo` (Name aus dem Paket, Gerät, «KICAD Quest P4a»),
+  Posen 25 je Sekunde (Kopf, Handgelenke, Zeigefingerspitzen, Pinch und `pinchStaerke`, `modus: begehen`, in KICAD-mm), Empfang von `auftrag` und `stellschraube`
+  (die Stellschrauben zeigt die App bis P5 nur an). Wiederverbinden nach 1, 2, 4, 8, 15, dann 30 s; nach 4001 (widerrufen) und 4002 (ersetzt) nicht.
+- **Modell:** `GET /api/xr/geschosse`, dann alle Geschosse, Teil `modell` und `unterlage`. Der **Zwischenspeicher** in der App hält je Geschoss und Teil die GLB mit
+  ihrem Versionsschlüssel: gleicher Schlüssel in der Liste = keine Anfrage, sonst `If-None-Match` (304 = gilt weiter). Verbunden fragt die App alle 30 s die Liste
+  und lädt geänderte Geschosse nach (der Standpunkt bleibt). **Ohne PC** startet die App mit dem zuletzt
+  geladenen Modell; die Anzeige sagt «Ohne PC: Modell vom …». Die App liest die GLB selbst (extras, Zuordnung Dreieck → Element) und baut die Netze ohne den Lader
+  von StereoKit – die 180°-Drehung aus P2 entsteht so nicht (der Prüflauf bestätigt sie beim Lader von StereoKit als Gegenprobe). Räume ausgeblendet, Unterlage ein.
+  Am PC gibt es bis zum Nachtrag P3 (GLB im Büronetz) `--modell-lokal <port>`: Liste und GLB über `http://localhost:<port>`, wenn der Netzzugang 404 meldet.
+- **Startpunkt** (`VrStartLogik`): Raum aus dem VR-Auftrag des PCs (`willkommen` bzw. `auftrag`, nur neue Nummern; Modus «begehen»), sonst der zuletzt in der App
+  benutzte Standpunkt dieses Projekts (alle 10 s und beim Beenden gemerkt), sonst der grösste Raum des untersten Geschosses mit Kote ≥ 0, sonst 5 m vor der Südseite
+  des Modells. Den Standort eines Raums rechnet die App aus seinem Netz (Schwerpunkt bzw. innerster Punkt, Boden, Augenhöhe 1700 mm, Blick nach der längsten Kante)
+  – `raum_begehen` erreicht sie im Büronetz nicht. Ein neuer Auftrag während des Begehens setzt sie ohne Tipp in den Raum. Aufträge «Sitzungsraum» folgen mit P5.
+- **Begehen mit Händen** (Leitlinie «Hände zuerst»; Schwellen sind Annahmen, Stellschrauben in P5):
+  - *Springen:* mit der Hand auf den Boden zeigen, Daumen und Zeigefinger zusammen (Pinch an unter 2.5 cm, los über 4 cm) und halten – Strahl und Ring zeigen das
+    Ziel (bis 15 m) –, loslassen springt. Es gilt das Ziel 0.1 s vor dem Loslassen; ein Pinch unter 0.15 s springt nicht. Strahl: von der Schulter (15 cm unter und
+    17 cm neben dem Kopf) durch das Grundgelenk des Zeigefingers.
+  - *Drehen:* mit gehaltenem Pinch kurz und schnell seitlich wischen (mindestens 15 cm, 0.8 m/s, höchstens 0.4 s, überwiegend waagrecht): 30° in Wischrichtung.
+  - *Durchgang:* Wände und Decken werden nur unter 500 mm zum Kopf durchscheinend (Deckkraft 0.3), auch die Wände, Decken, Stützen, Träger und Dächer der
+    IFC-Unterlage (Annahme P4a, im Prototyp nicht).
+  - *Ton und Licht:* Pinch = Klick und Aufleuchten an den Fingern; Sprung = steigender Ton, kurzes Abblenden, Ring am Ziel; Drehen = Doppelton und Abblenden;
+    Abbruch = Klick beim Loslassen.
+- **Anzeige** unten vor dem Blick (folgt dem Kopf träge): grüner Punkt «Verbunden mit <PC>», orange «Ohne PC: Modell vom …», rot bei Kopplungsfehlern, grau bei der
+  Suche; darunter Geschoss und Raum, Meldungen und «Pinch auf den Boden: springen · Pinch + Wisch: drehen» mit Netzen, Dreiecken und Bildrate.
+- **Protokoll** (`adb logcat`, Kennung DOTNET): alle 5 s «P4 Status: Gerät, Bildrate, Bildzeit (Mittel und höchstens), Rechenzeit der App, Netze, Dreiecke,
+  Durchgang, Verbindung, Modell, Kanal, Posen, Hände» – die Grundlage für K1.
+- **Prüfen am PC:** `powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>]` startet einen KICAD-Testserver auf
+  Port 5130 (Testlauf, alles unter `%TEMP%`; Abbruch, wenn KICAD läuft), legt das Beispielprojekt an bzw. öffnet eine Kopie des Projekts, erzeugt ein Paket und lässt
+  die PC-Fassung zweimal laufen: mit PC (vorher ein VR-Auftrag für den ersten Raum, die App muss dort starten) und ohne PC (Start am gemerkten Standpunkt). Ergebnis
+  je Lauf «P4 Laden: je Geschoss und Teil ms, MB, Dreiecke; Zwischenspeicher» und «P4 ok: Netze, Dreiecke, mittlere Bildzeit, Rechenzeit, Modell nach, Auftrag, …».
+  Einzeln: `dotnet Hlks.Quest.dll --pruefen <bilder> --kopplung <datei> [--speicher <ordner>] [--modell-lokal 5130] [--ohne-pc]`. Für Messungen am echten Projekt
+  `-Projekt %USERPROFILE%\HLKS_CAD_testdaten\test_praxis` (Christian 23.10.2026). Tests: Xr `tests/Hlks.Xr.Tests`, Web `--filter "FullyQualifiedName~XrAppKlient"`
+  (`XrAppKlientTests`: koppeln, finden, GLB mit 304, ohne PC, Kanal mit Pose, Auftrag, Stellschraube, 1001, 4001, 4002, 401; `XrAppKlientEchtTests`: Test_praxis
+  mit Unterlage, Zeiten je Geschoss, Budget der Quest 3, Durchgang beim Gehen, Zahlen in `%TEMP%\HLKS_CAD\xr_p4a_test_praxis.json`; ohne die Kopie übersprungen).
+- **Bau:** PC `dotnet build src\Hlks.Quest\Hlks.Quest.csproj -c Release`; Brille `dotnet publish src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj -c Release
+  -f net10.0-android` → `<Build>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.kicad.quest-Signed.apk` (Testschlüssel). Installieren macht P7.
+- **Nur mit der Brille prüfbar:** Bildrate mit Test_praxis (K1), Hände (K2: Treffsicherheit des Strahls, Pinch, Wisch zum Drehen), Verbinden im WLAN ohne Kabel (K3,
+  Broadcast und Firewall), Ton und Licht, Übernahme der Kopplung aus dem Eingang.
+- **Anleitung:** `zb-quest-app-begehen` in `berichte/anleitung/inventar.json`.

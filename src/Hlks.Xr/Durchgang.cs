@@ -41,6 +41,23 @@ public sealed record ZylForm(Vec3 A, Vec3 B, double R, Box3 Box) : Form(Box);
 public sealed record KugelForm(Vec3 C, double R, Box3 Box) : Form(Box);
 /// <summary>Netzkörper: nur die Hüllbox der Ecken.</summary>
 public sealed record BoxForm(Box3 Box) : Form(Box);
+/// <summary>
+/// Dreiecke (je drei Ecken hintereinander, Szenenmeter) – ein Element, wie die Quest App es aus der GLB kennt (P4a; die App hat die Körper von /api/koerper
+/// nicht). Gemessen wird zur nächsten Fläche; innen in einem dicken Bauteil ist das der Abstand zur nächsten Oberfläche (bei Wänden und Decken unter
+/// 1 m Dicke also unter 500 mm, die Regel bleibt gleich).
+/// </summary>
+public sealed record DreieckForm(Vec3[] Ecken, Box3 Box) : Form(Box)
+{
+    /// <summary>Form aus Ecken (Anzahl ein Vielfaches von 3, sonst wird der Rest übergangen); null ohne Dreieck.</summary>
+    public static DreieckForm? Aus(IReadOnlyList<Vec3> ecken)
+    {
+        var n = ecken.Count / 3 * 3;
+        if (n == 0) return null;
+        var e = new Vec3[n];
+        for (int i = 0; i < n; i++) e[i] = ecken[i];
+        return new DreieckForm(e, Box3.Von(e));
+    }
+}
 
 public static class Durchgang
 {
@@ -169,6 +186,35 @@ public static class Durchgang
         return Math.Min(AbstandRand(x, z, ring), loecher.Select(l => AbstandRand(x, z, l)).DefaultIfEmpty(double.PositiveInfinity).Min());
     }
 
+    /// <summary>
+    /// Nächster Punkt eines Dreiecks zu p (P4a, für <see cref="DreieckForm"/>). Verfahren nach Ericson, «Real-Time Collision Detection» (2005), Abschnitt 5.1.5:
+    /// Lage von p zu den Ecken- und Kantenbereichen über baryzentrische Koordinaten, sonst die Projektion auf die Ebene. Entartete Dreiecke ergeben einen
+    /// Punkt auf ihren Kanten.
+    /// </summary>
+    public static Vec3 NaechsterPunktImDreieck(Vec3 p, Vec3 a, Vec3 b, Vec3 c)
+    {
+        var ab = b - a; var ac = c - a; var ap = p - a;
+        double d1 = ab.Skalar(ap), d2 = ac.Skalar(ap);
+        if (d1 <= 0 && d2 <= 0) return a;
+        var bp = p - b;
+        double d3 = ab.Skalar(bp), d4 = ac.Skalar(bp);
+        if (d3 >= 0 && d4 <= d3) return b;
+        var vc = d1 * d4 - d3 * d2;
+        if (vc <= 0 && d1 >= 0 && d3 <= 0) return a + ab * (d1 - d3 == 0 ? 0 : d1 / (d1 - d3));
+        var cp = p - c;
+        double d5 = ab.Skalar(cp), d6 = ac.Skalar(cp);
+        if (d6 >= 0 && d5 <= d6) return c;
+        var vb = d5 * d2 - d1 * d6;
+        if (vb <= 0 && d2 >= 0 && d6 <= 0) return a + ac * (d2 - d6 == 0 ? 0 : d2 / (d2 - d6));
+        var va = d3 * d6 - d5 * d4;
+        if (va <= 0 && d4 - d3 >= 0 && d5 - d6 >= 0) return b + (c - b) * ((d4 - d3) + (d5 - d6) == 0 ? 0 : (d4 - d3) / ((d4 - d3) + (d5 - d6)));
+        var summe = va + vb + vc;
+        if (summe == 0) return a;
+        var v = vb / summe;
+        var w = vc / summe;
+        return a + ab * v + ac * w;
+    }
+
     /// <summary>begehen-logik.js abstandZurForm: Abstand eines Punktes (Szenenmeter) zu einer Form, in m (0 innen).</summary>
     public static double AbstandZurForm(Vec3 p, Form f)
     {
@@ -189,6 +235,13 @@ public static class Durchgang
             }
             case KugelForm k:
                 return Math.Max(Num.Hypot(p.X - k.C.X, p.Y - k.C.Y, p.Z - k.C.Z) - k.R, 0);
+            case DreieckForm d:
+            {
+                var min = double.PositiveInfinity;
+                for (int i = 0; i + 2 < d.Ecken.Length; i += 3)
+                    min = Math.Min(min, p.Abstand(NaechsterPunktImDreieck(p, d.Ecken[i], d.Ecken[i + 1], d.Ecken[i + 2])));
+                return min;
+            }
             default:
                 return AbstandZurBox(p, f.Box);
         }

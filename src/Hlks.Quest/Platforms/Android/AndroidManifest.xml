@@ -2,7 +2,8 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
 	<uses-sdk android:minSdkVersion="29" android:targetSdkVersion="32" />
 	
-	<application android:allowBackup="true" android:icon="@mipmap/appicon" android:label="@string/app_name" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
+	<!-- KICAD P4a: keine Sicherung der App-Daten (der private Speicher enthält den Schlüssel der Kopplung und den Zwischenspeicher des Modells). -->
+	<application android:allowBackup="false" android:icon="@mipmap/appicon" android:label="@string/app_name" android:roundIcon="@mipmap/appicon_round" android:supportsRtl="true">
 		<!-- Oculus -->
 		<meta-data android:name="com.oculus.supportedDevices" android:value="quest|quest2|quest3|quest3s|questpro"/>
 		<meta-data android:name="com.oculus.handtracking.version" android:value="V2.0"/>
