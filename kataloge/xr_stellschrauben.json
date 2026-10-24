@@ -298,7 +298,7 @@
     {
       "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand des Symbolfelds", "status": "app",
       "beschreibung": "So weit vor den Augen steht das Feld der App-Symbole, waagrecht in Körperrichtung gemessen (Bezug: Mitte zwischen den Augen).",
-      "art": "zahl", "einheit": "m", "min": 0.3, "max": 1.0, "schritt": 0.01, "vorgabe": 0.6,
+      "art": "zahl", "einheit": "m", "min": 0.3, "max": 1.0, "schritt": 0.01, "vorgabe": 0.5,
       "herkunft": "Christian 24.10.2026: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm … verteilt sein»"
     },
     {

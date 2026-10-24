@@ -287,7 +287,7 @@ public class V1aSymboleTests
     public void Symbolfeld_frontal_60_cm_vor_den_Augen_über_60_cm_Höhe_in_höchstens_drei_versetzten_Reihen_jedes_Mal_gleich()
     {
         var e = new SymbolEinstellungen();
-        Assert.Equal(0.6, e.AbstandM);
+        Assert.Equal(0.5, e.AbstandM);                                     // seit 25.10.2026 (vorher 0.6)
         Assert.Equal(0.6, e.FeldHoeheM);
         Assert.Equal(3, e.Reihen);
         var p = AppSymbole.Plaetze(Ids, Auge, Blick, e, M);
@@ -300,7 +300,7 @@ public class V1aSymboleTests
         Nah(AppSymbole.Plaetze(["tisch"], Auge, Blick, e, M)[0].Lage.Mitte.Abstand(p.Single(x => x.Id == "ort").Lage.Mitte), 0, 1e-12);   // Tisch = Platz von Ort
         foreach (var s in p)
         {
-            Nah(-s.Lage.Mitte.Z, 0.6, 0.031);                                          // 0.6 m vor den Augen (Bezug: Mitte der Augen, waagrecht in Körperrichtung)
+            Nah(-s.Lage.Mitte.Z, e.AbstandM, 0.031);                                         // 0.6 m vor den Augen (Bezug: Mitte der Augen, waagrecht in Körperrichtung)
             Assert.InRange(s.Lage.Mitte.X, -0.25, 0.25);                               // frontal
             Assert.True(s.Lage.Mitte.Y <= Auge.Y + 0.08 + 1e-9);                       // V1d: die oberste Reihe höchstens 8 cm über den Augen (Feld 0.10 m höher)
             Nah(s.Lage.Normale.Skalar((Auge - s.Lage.Mitte).Einheit()), 1, 1e-9);     // zum Kopf gewandt
@@ -332,7 +332,7 @@ public class V1aSymboleTests
         }
         // frontal heisst Gieren beim Holen: gedreht schaut das Feld mit
         var gedreht = AppSymbole.Plaetze(Ids, Auge, 0, e, M);   // Blick nach +x
-        Assert.All(gedreht, s => Nah(s.Lage.Mitte.X, 0.6, 0.031));
+        Assert.All(gedreht, s => Nah(s.Lage.Mitte.X, e.AbstandM, 0.031));
         // Stellschrauben: Reihen, Höhe, Abstand
         var zwei = AppSymbole.Plaetze(Ids, Auge, Blick, e with { Reihen = 2 }, M);
         Assert.True(zwei.Select(x => Math.Round(x.Lage.Mitte.Y, 1)).Distinct().Count() <= 2 + 1);
@@ -398,7 +398,7 @@ public class V1aSymboleTests
     {
         // Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» – kein Symbol überlappt Fenster oder Ornamente, alles bleibt in
         // Griffweite; «dahinter» bleibt als Vergleich
-        var e = new SymbolEinstellungen();
+        var e = new SymbolEinstellungen { AbstandM = 0.6 };   // Geometrie der V1a-Regel bei 0.6 m (Vorgabe seit 25.10.2026 0.5 m; seitlich gilt seit V1e der Bogen symbole.radius_seitlich_m)
         Assert.Equal(Varianten.FeldSeitlich, e.FeldBeiApp);
         var b = XrBedienEinstellungen.Vorgabe;
         Assert.Equal(Varianten.FeldSeitlich, b.Variante("feld_bei_app"));
@@ -452,7 +452,7 @@ public class V1aSymboleTests
         Assert.Equal(Varianten.SymbolwahlAusblenden, new SymbolEinstellungen().NachWahl);
         Assert.Equal(0, e.WartezeitS);   // kein selbsttätiges Ausblenden
         var f = AppSymbole.FensterVorFeld(Auge, Blick, e);
-        Nah(-f.Z, 0.6 - AppSymbole.AppVorM, 1e-9);   // frontal, etwas näher als das Feld
+        Nah(-f.Z, e.AbstandM - AppSymbole.AppVorM, 1e-9);   // frontal, etwas näher als das Feld
         Nah(f.X, 0, 1e-9);
         Nah(f.Y, Auge.Y - e.HoeheM, 1e-9);
         var p = V(0.1, 1.3, -0.6);
@@ -688,7 +688,7 @@ public class V1aSymboleTests
         var e = XrBedienEinstellungen.Vorgabe;
         Assert.Equal(HebeEinstellungen.Vorgabe, e.Hebe);
         Assert.Equal(0.15, e.Hebe.WegM);
-        Assert.Equal(0.6, e.Symbole.AbstandM);
+        Assert.Equal(0.5, e.Symbole.AbstandM);
         Assert.Equal(4, e.Apps.HinweisDauerS);
         Assert.Equal(Varianten.SymboleVerteilt, e.Variante("symbole"));
         Assert.Equal(Varianten.SymbolwahlAusblenden, e.Variante("symbolwahl"));   // V1g

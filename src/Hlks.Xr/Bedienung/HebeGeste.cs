@@ -47,8 +47,8 @@ public sealed record HebeEinstellungen
 public sealed record SymbolEinstellungen
 {
     /// <summary>«symbole.abstand_m»: das Feld steht so weit vor den Augen, waagrecht in Körperrichtung gemessen (Christian 24.10.2026: «in einem abstand von ca.
-    /// 60cm»).</summary>
-    public double AbstandM { get; init; } = 0.6;
+    /// 60cm»; Brillentest 25.10.2026: «appsmbole bitte noch etwas näher» → 0.50 m).</summary>
+    public double AbstandM { get; init; } = 0.5;
     /// <summary>«symbole.hoehe_m»: die senkrechte Mitte des Felds liegt so weit unter den Augen (Begehen bzw. ohne Tisch). V1a 0.32 m (die oberste Reihe 2 cm unter den
     /// Augen); V1d 0.22 m (Brillentest V1, Christian 24.10.2026: «die apps solten beim hochwischen etwas weiter oben sein» – Annahme «etwas» = 0.10 m; bei 0.6 m
     /// Feldhöhe liegt die oberste Reihe damit 8 cm über den Augen).</summary>

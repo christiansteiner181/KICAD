@@ -2747,7 +2747,7 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 | `labor.variante.umgebung` | hell | hell, tron | Umgebung des Sitzungsraums |
 | `hebe.weg_m`, `hebe.zeit_s`, `hebe.handflaeche_grad`, `hebe.gleichzeitig_s` | 0.15 m, 0.9 s, 45°, 0.35 s | 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Hebegeste |
 | `wegwischen.weg_m`, `wegwischen.zeit_s`, `wegwischen.handflaeche_grad`, `wegwischen.richtung_grad` | 0.18 m, 0.6 s, 50°, 35° | 0.05 … 0.6, 0.2 … 2, 10 … 80, 5 … 80 | Wegwischen (ersetzt `schieben.*`) |
-| `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.feldhoehe_m`, `symbole.reihen` | 0.6 m, 0.32 m, 0.6 m, 3 | 0.3 … 1, 0 … 0.8, 0.2 … 1, 1 … 3 | Symbolfeld frontal |
+| `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.feldhoehe_m`, `symbole.reihen` | 0.5 m (seit 25.10.2026, vorher 0.6), 0.32 m, 0.6 m, 3 | 0.3 … 1, 0 … 0.8, 0.2 … 1, 1 … 3 | Symbolfeld frontal |
 | `symbole.streuung`, `symbole.wartezeit_s` | 1, 0 s (nie) | 0.6 … 1.6, 0 … 120 | Spaltenabstand × Faktor; selbsttätig ausblenden |
 | `symbole.beruehr_rand_m`, `symbole.beruehr_sperre_s` | 0.01 m, 0.6 s | 0 … 0.05, 0 … 3 | Berührung mit der ganzen Hand |
 | `zeiger.tooltip_s` | 0.6 s | 0 … 3 | Verzögerung des Tooltips |
