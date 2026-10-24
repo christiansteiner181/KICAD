@@ -162,6 +162,13 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Anwahl durch Berührung mit der Fingerspitze (Leuchten, Ton), dann öffnet die Glas-App; der Zeigefinger zeigt beim Annähern einen Zeiger, das Symbol hebt sich, der Name erscheint als Tooltip.
 - Die senkrechte Registerleiste entfällt (Christian, 24.10.2026: «Ja, die Registerleiste fällt weg; gewechselt wird über die Hebegeste und die Symbole.»). Ausblenden ohne Wahl per Gegenbewegung bzw. Wartezeit (Annahme).
 
+**Gestenlabor** (Christian, 24.10.2026: «ev. im Labor einen bereich für gestenerkennung machen. so dass ich dort eine geste für eine funktion vorzeigen kann.»):
+- In der App eine Labor-App «Gesten»: Funktion wählen, Geste 3- bis 5-mal vorzeigen (Start per Knopf mit Countdown und Ton, Ende bei ruhigen Händen), Güte und Verwechslungsgefahr mit anderen Gesten sehen, live testen, übernehmen.
+- In KICAD im Dialog «XR-Labor» ein Register «Gesten»: Liste mit Funktion, Beispielen, Güte, Konflikten; löschen, umbenennen, aktivieren, als JSON aus- und einlesen.
+- Weiterhin eine Geste je Funktion in der ganzen App (feste Gestenbedeutungen): Eine vorgezeigte Geste ersetzt die bisherige dieser Funktion, sobald die Labor-Variante «eigene Gesten» aktiv ist.
+- Erkennung ohne Training eines Netzes: Merkmale je Bild (Handflächenlage und -richtung im Körperbezug, Fingerkrümmung, Pinch, Abstand der Hände), Vergleich mit den Beispielen über Dynamic Time Warping, Ablehnung über eine Schwelle aus den Beispielen, Konfliktprüfung gegen andere und gegen die festen Gesten. Startwerte sind Annahmen und Stellschrauben.
+- Bau in zwei Schritten: V1b-1 Erkennerkern in `Hlks.Xr/Gesten` mit Tests (parallel zu V1a, nur neue Dateien); V1b-2 App und KICAD-Register nach V1a.
+
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
 | Nr. | Aufgabe | Wer | Hängt ab von |
