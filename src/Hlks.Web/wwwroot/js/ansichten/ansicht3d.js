@@ -682,6 +682,18 @@ function erstellen(behaelter, ansichtElement) {
     auswahlGeaendert: hervorhebenId,
     zoomAlles: () => zoomAlles(),
     zeigeBereich,
+    /** Quest App V1a (Problem-Marker): Kamera an position mit Blick auf ziel (Szene der 3D-Ansicht, m; problemmarker-text.js kamera); beendet ein Begehen. */
+    blickpunkt({ position, ziel } = {}) {
+      if (zerstoert || !Array.isArray(position) || !Array.isArray(ziel)) return false;
+      if (begehen.aktiv) begehenEnde();
+      kamera.position.set(position[0], position[1], position[2]);
+      steuerung.target.set(ziel[0], ziel[1], ziel[2]);
+      steuerung.update();
+      benutzt = true;
+      hatGezoomt = true;
+      anfordern();
+      return true;
+    },
     get schnittbereich() { return schnitt; },
     /** N15: Raum begehen – standort = Antwort der Abfrage raum_begehen; augenhoeheMm übersteuert deren Augenhöhe. */
     begehen: (standort, augenhoeheMm = null) => begehen.starten(standort, augenhoeheMm),
