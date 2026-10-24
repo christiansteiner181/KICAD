@@ -29,6 +29,7 @@ export const WAHL_TEXT = {
   koordinationskoerper: 'Koordinationskörper aufeinander',
   'erste Datei': 'Erste Datei: sie setzt den Projektbezug',
   ausdruecklich: 'Ausdrücklich vorgegebener Bezug',
+  einpassen: 'Eingepasst über Wände und Raumkanten',
   offen: 'noch nicht gewählt',
 };
 
@@ -44,15 +45,19 @@ export function anteilText(anteil) {
 }
 
 /**
- * Wahl der Ausrichtung: drei Möglichkeiten mit je einem erklärenden Satz. moeglich = false (mit grund), wenn der Kern die Wahl
- * nicht rechnen kann (Koordinationskörper fehlt in der Datei oder im Projekt). anteil: Inhaltsvergleich des Kerns (lage.inhaltJeWahl,
- * 0…1) oder null (Koordinationskörper, erste Datei, ältere Unterlage); empfohlen: lage.empfehlung nennt diese Wahl. Vorgewählt wird nie.
+ * Wahl der Ausrichtung: vier Möglichkeiten mit je einem erklärenden Satz. moeglich = false (mit grund), wenn der Kern die Wahl
+ * nicht rechnen kann (Koordinationskörper fehlt in der Datei oder im Projekt; Einpassen: das Projekt hat weder Wände noch Räume).
+ * anteil: Inhaltsvergleich des Kerns (lage.inhaltJeWahl, 0…1) oder null (Koordinationskörper, erste Datei, ältere Unterlage);
+ * empfohlen: lage.empfehlung nennt diese Wahl. Vorgewählt wird nie.
+ * projekt: Anzahl { waende, raeume } im Projekt (Einpassen braucht eines davon) oder null, wenn unbekannt (dann gilt Einpassen als möglich).
+ * sofort (nur Einpassen): auch wählbar, wenn die anderen gesperrt sind – erste Datei, bei der der Kern das Einpassen gerechnet hat.
  */
-export function ausrichtungOptionen(lage, bezugProjekt) {
+export function ausrichtungOptionen(lage, bezugProjekt, projekt = null) {
   const kkDatei = !!lage?.koordinationskoerper;
   const kkProjekt = !!bezugProjekt?.koordinationskoerper;
   const anteil = (w) => (istZahl(lage?.inhaltJeWahl?.[w]) ? lage.inhaltJeWahl[w] : null);
   const empfohlen = (w) => lage?.empfehlung === w;
+  const einpassenMoeglich = !projekt || (Number(projekt.waende) || 0) + (Number(projekt.raeume) || 0) > 0;
   return [
     { wert: 'projekt', titel: 'Projektbezug', moeglich: true, anteil: anteil('projekt'), empfohlen: empfohlen('projekt'),
       satz: 'Die Weltkoordinaten der Datei gelten, wie sie sind: nichts wird gegen den Projektbezug verschoben.' },
@@ -61,6 +66,10 @@ export function ausrichtungOptionen(lage, bezugProjekt) {
     { wert: 'koordinationskoerper', titel: 'Koordinationskörper', moeglich: kkDatei && kkProjekt, anteil: null, empfohlen: empfohlen('koordinationskoerper'),
       grund: !kkDatei ? 'Die Datei hat keinen Koordinationskörper.' : !kkProjekt ? 'Das Projekt hat noch keinen Koordinationskörper.' : '',
       satz: 'Der Koordinationskörper der Datei wird auf den Koordinationskörper des Projekts gelegt (Lage und Drehung).' },
+    { wert: 'einpassen', titel: 'Einpassen (automatisch)', moeglich: einpassenMoeglich, anteil: anteil('einpassen'), empfohlen: empfohlen('einpassen'),
+      sofort: !!lage?.einpassen && lage?.bewertung === 'erster',
+      grund: einpassenMoeglich ? '' : 'Das Projekt hat noch keine Wände oder Räume, auf die sich einpassen liesse.',
+      satz: 'KICAD sucht Drehung und Verschiebung selbst: Wände und Raumkanten der Datei werden auf Wände und Räume des Projekts gelegt. Übernommen wird nur bei eindeutiger Lage.' },
   ];
 }
 
@@ -80,7 +89,7 @@ export const wahlMoeglich = (lage) => lage?.bewertung === 'abweichung' || lage?.
 /** Vorbelegung der Wahl: eine frühere Wahl gilt weiter (bewertung = gewaehlt), sonst keine. */
 export function vorgabeWahl(lage) {
   const w = lage?.bewertung === 'gewaehlt' ? lage?.ausrichtung : null;
-  return w && ['projekt', 'gebaeude', 'koordinationskoerper'].includes(w) ? w : null;
+  return w && ['projekt', 'gebaeude', 'koordinationskoerper', 'einpassen'].includes(w) ? w : null;
 }
 
 // ---------------------------------------------------------------------------------------------- Lagebericht
@@ -141,6 +150,119 @@ export function abweichungZahlen(a) {
   return `Ost ${v(a.dx)} · Nord ${v(a.dy)} · Höhe ${v(a.dz)} m · Drehung ${istZahl(a.drehung) ? (a.drehung >= 0 ? '+' : '') + a.drehung.toFixed(3) : '–'}°`;
 }
 
+// ---------------------------------------------------------------------------------------------- Einpassen (lage.einpassen)
+
+const mitVorzeichen = (x, stellen = 3) => (istZahl(x) ? (x >= 0 ? '+' : '') + x.toFixed(stellen) : '–');
+const ERGEBNIS_TEXT = {
+  eindeutig: 'eindeutig',
+  unsicher: 'unsicher – nicht eindeutig, es wird nichts übernommen',
+  'keine Merkmale': 'keine Merkmale – es gibt nichts zum Einpassen, es wird nichts übernommen',
+};
+
+/** Ist das Einpassen gerechnet, aber nicht eindeutig (unsicher oder keine Merkmale)? */
+export const einpassenUnsicher = (e) => !!e && e.ergebnis !== 'eindeutig';
+
+/** Empfiehlt der Kern «einpassen»? (Feld empfehlung oder der Satz «Empfehlung: ausrichtung = einpassen» im Kerntext) */
+export const einpassenEmpfohlen = (lage) => lage?.empfehlung === 'einpassen' || /Empfehlung: ausrichtung = einpassen/.test(lage?.text ?? '');
+
+/** Verschiebung [x, y] in mm als «Ost +0.030 · Nord +0.016 m». */
+function verschiebungText(v) {
+  return Array.isArray(v) ? `Ost ${mitVorzeichen(v[0] / 1000)} · Nord ${mitVorzeichen(v[1] / 1000)} m` : '–';
+}
+
+const merkmaleText = (m) => (m && typeof m === 'object'
+  ? `${m.waende ?? 0} Wände, ${m.raeume ?? 0} Räume, ${m.kanten ?? 0} Kanten` : '–');
+
+/** Treffer als «50 mm: 61 % · 100 mm: 81 % · 150 mm: 88 % · Median 21.4 mm · 3469 Proben»; leer, wenn der Bericht keine hat. */
+export function trefferText(e) {
+  const a = e?.anteil ?? {};
+  const t = [['50', a.mm50], ['100', a.mm100], ['150', a.mm150]].filter(([, x]) => prozent(x)).map(([mm, x]) => `${mm} mm: ${prozent(x)}`);
+  if (istZahl(e?.medianMm)) t.push(`Median ${zahl(e.medianMm, 1)} mm`);
+  if (istZahl(e?.proben)) t.push(`${e.proben} Proben`);
+  return t.join(' · ');
+}
+
+/**
+ * Zeilen des Abschnitts «Einpassen» aus lage.einpassen: [{ label, wert, klasse?, tipp? }]. Nur Zahlen des Kerns, gerundet.
+ * klasse = 'schwere-fehler' beim Ergebnis, wenn es nicht eindeutig ist.
+ */
+export function einpassenZeilen(e) {
+  if (!e || typeof e !== 'object') return [];
+  const z = [];
+  const ok = e.ergebnis === 'eindeutig';
+  z.push({ label: 'Ergebnis', wert: ERGEBNIS_TEXT[e.ergebnis] ?? String(e.ergebnis ?? '–'), klasse: ok ? '' : 'schwere-fehler' });
+  if (e.text) z.push({ label: 'Text', wert: e.text });
+  if (e.paarung) z.push({ label: 'Paarung', wert: e.paarung });
+  const abb = 'Abbildung von der Lage «Gebäudeursprung» ins Projekt';
+  if (istZahl(e.drehung)) z.push({ label: 'Drehung', wert: `${mitVorzeichen(e.drehung)}°`, tipp: abb });
+  if (Array.isArray(e.verschiebungMm)) z.push({ label: 'Verschiebung', wert: verschiebungText(e.verschiebungMm), tipp: abb });
+  if (e.bezug && istZahl(e.bezug.x)) z.push({ label: ok ? 'Bezug' : 'Bezug (Vorschlag, nicht übernommen)', wert: bezugText(e.bezug), tipp: 'Diesen Bezug verwendet ifc_uebernehmen für die Datei' });
+  const treffer = trefferText(e);
+  if (treffer) z.push({ label: 'Treffer', wert: treffer, tipp: 'Anteil der Proben auf den Kanten der Datei, die innert 50, 100 bzw. 150 mm an einer Kante des Projekts liegen' });
+  const zw = e.zweitbester;
+  z.push({
+    label: 'Nächstbeste Lage',
+    wert: zw
+      ? `Drehung ${mitVorzeichen(zw.drehung)}° · ${verschiebungText(zw.verschiebungMm)}${prozent(zw.anteil150) ? ` · ${prozent(zw.anteil150)} innert 150 mm` : ''}`
+      : 'keine andere Lage gefunden',
+    tipp: 'Eindeutig heisst: die nächstbeste Lage erreicht höchstens 70 % des Anteils der besten',
+  });
+  if (e.merkmale?.datei || e.merkmale?.projekt)
+    z.push({ label: 'Merkmale', wert: `Datei: ${merkmaleText(e.merkmale.datei)} · Projekt: ${merkmaleText(e.merkmale.projekt)}` });
+  const ue = anteilText(e.ueberdeckung);
+  if (ue) z.push({ label: 'Gegenprobe', wert: `${ue} (mit dem eingepassten Bezug)` });
+  return z;
+}
+
+/** Kurzfassung für Listen (Koordinaten): «eindeutig · Drehung −42.718° · 88 % innert 150 mm» oder ''. */
+export function einpassenKurz(e) {
+  if (!e || typeof e !== 'object') return '';
+  const t = [e.ergebnis ?? '–'];
+  if (istZahl(e.drehung)) t.push(`Drehung ${mitVorzeichen(e.drehung)}°`);
+  if (prozent(e.anteil?.mm150)) t.push(`${prozent(e.anteil.mm150)} innert 150 mm`);
+  return t.join(' · ');
+}
+
+/** HTML des Abschnitts «Einpassen»: Tabelle der Zeilen und – wenn vorhanden – Tabelle je Geschoss. Leer ohne lage.einpassen. */
+export function einpassenHtml(e) {
+  const zeilen = einpassenZeilen(e);
+  if (zeilen.length === 0) return '';
+  let h = `<div class="lage-einpassen${einpassenUnsicher(e) ? ' unsicher' : ''}"><h4>Einpassen</h4>`
+    + `<table class="wtab lage-tab"><tbody>${zeilen.map((r) => `<tr${r.tipp ? ` title="${esc(r.tipp)}"` : ''}><th>${esc(r.label)}</th><td${r.klasse ? ` class="${r.klasse}"` : ''}>${esc(r.wert)}</td></tr>`).join('')}</tbody></table>`;
+  if (Array.isArray(e.geschosse)) {
+    h += e.geschosse.length === 0
+      ? '<p class="leise">Alle Merkmale wurden zusammen verglichen (nicht nach Geschossen getrennt).</p>'
+      : '<table class="tab kompakt einpassen-geschosse"><thead><tr><th>Geschoss</th><th class="zahl">Kote</th><th class="zahl">Proben</th><th class="zahl">Innert 150 mm</th><th class="zahl">Median [mm]</th></tr></thead><tbody>'
+        + e.geschosse.map((g) => `<tr><td>${esc(g.geschoss ?? '–')}</td><td class="zahl">${esc(zahl(g.kote, 2))}</td><td class="zahl">${esc(istZahl(g.proben) ? g.proben : '–')}</td>`
+          + `<td class="zahl">${esc(prozent(g.anteil150) ?? '–')}</td><td class="zahl">${esc(istZahl(g.medianMm) ? zahl(g.medianMm, 1) : '–')}</td></tr>`).join('')
+        + '</tbody></table>';
+  }
+  return h + '</div>';
+}
+
+/** Anzahl Wände und Räume im Projekt aus einer Elementliste: { waende, raeume } (Einpassen braucht eines davon). */
+export function projektMerkmale(elemente) {
+  let waende = 0, raeume = 0;
+  for (const e of elemente ?? []) { if (e?.klasse === 'Wand') waende++; else if (e?.klasse === 'Raum') raeume++; }
+  return { waende, raeume };
+}
+
+/**
+ * Lagebericht «Einpassen» aus dem Ergebnis eines (Trocken-)Laufs von ifc_uebernehmen. Der Kern legt ihn in lage.einpassen ab
+ * (die Eigenschaft «lage» der Unterlage); die Oberfläche liest auch ein Feld einpassen auf oberster Ebene. Fehlt beides: null
+ * (dann stehen die Zahlen nur in den Hinweisen des Kerns).
+ */
+export function einpassenAusErgebnis(r) {
+  const e = r?.lage?.einpassen ?? r?.einpassen ?? null;
+  return e && typeof e === 'object' ? e : null;
+}
+
+/** Hinweis im roten Kasten, wenn der Kern «einpassen» empfiehlt: nennt die Wahl und – wenn bekannt – den Anteil. */
+export function einpassenHinweis(lage) {
+  const a = prozent(lage?.inhaltJeWahl?.einpassen) ?? prozent(lage?.einpassen?.ueberdeckung);
+  return `Empfehlung: Ausrichtung «Einpassen (automatisch)» wählen${a ? ` – damit liegen ${a} der Bauteile im bestehenden Modell` : ''}. KICAD übernimmt nur bei eindeutiger Lage.`;
+}
+
 const WARNDREIECK = '<svg class="lage-abw-sym" viewBox="0 0 32 32" width="28" height="28" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 4l13 23H3z"/><path d="M16 13v7M16 23.5v.5"/></svg>';
 
 /** Roter Kasten «Lage weicht ab» mit Warnsymbol, dem Text und den Zahlen des Kerns (Schrift bleibt bei der Designvorgabe 12 px; gross wirkt der Kasten durch Rand, Fläche und Symbol). */
@@ -155,17 +277,20 @@ export function abweichungKasten(lage) {
     ? (text.replace(/^ACHTUNG Inhalt:\s*/, '').split(/\s(?=Inhalt mit «|Keine der beiden Lagen|Empfehlung:|Ohne ausdrückliche Wahl)/)[0] || (abw?.text ?? text))
     : (abw?.text ?? text);
   const je = lage?.inhaltJeWahl;
-  const zeilen = [['Projektbezug', je?.projekt], ['Gebäudeursprung', je?.gebaeude]].filter(([, a]) => prozent(a));
+  const zeilen = [['Projektbezug', je?.projekt], ['Gebäudeursprung', je?.gebaeude], ['Eingepasst', je?.einpassen]].filter(([, a]) => prozent(a));
   // Trifft keine Wahl das Modell, steht der Hinweis im Kerntext; ohne Kerntext gleichwertig aus den Anteilen (nicht berechenbare Wahl zählt als nicht treffend)
   const keineTreffer = prozent(je?.projekt) && je.projekt < 0.1 && (!prozent(je?.gebaeude) || je.gebaeude < 0.1);
   const keineSatz = /Keine der beiden Lagen[^.]*\./.exec(text)?.[0];
-  const keine = keineSatz ?? (keineTreffer
+  const empfehlungEinpassen = einpassenEmpfohlen(lage);
+  const keine = keineSatz ?? (keineTreffer && !empfehlungEinpassen
     ? 'Keine der beiden Lagen trifft das bestehende Modell – Koordinationskörper in beiden Modellen setzen oder den Bezug ausdrücklich angeben.' : '');
   return `<div class="lage-abweichung gross" role="alert">${WARNDREIECK}<div class="lage-abw-inhalt"><div class="lage-abw-titel">${titel}</div>`
     + `<div class="lage-abw-text">${esc(haupt)}</div>`
     + (abw ? `<div class="lage-abw-zahlen">${esc(abweichungZahlen(abw))}</div>` : '')
     + zeilen.map(([name, a]) => `<div class="lage-abw-text lage-abw-anteil">${esc(name)}: ${esc(anteilText(a))}</div>`).join('')
     + (keine ? `<div class="lage-abw-text">${esc(keine)}</div>` : '')
+    + (empfehlungEinpassen ? `<div class="lage-abw-text lage-abw-einpassen">${esc(einpassenHinweis(lage))}</div>`
+      : einpassenUnsicher(lage?.einpassen) ? '<div class="lage-abw-text lage-abw-einpassen">Automatisches Einpassen ist hier nicht eindeutig (siehe Abschnitt «Einpassen» im Lagebericht).</div>' : '')
     + (lage?.geaendert ? `<div class="lage-abw-text">${esc(lage.geaendert)}</div>` : '')
     + '<div class="lage-abw-text">Ohne ausdrückliche Wahl der Ausrichtung wird nichts übernommen.</div></div></div>';
 }
@@ -191,7 +316,8 @@ export function lageHtml(lage, bezugProjekt, opt = {}) {
   if (gewaehlt) h += `<tr><th>Ausrichtung</th><td>${esc(gewaehlt)}</td></tr>`;
   h += '</tbody></table>';
   if (lage.text && !rot) h += `<p class="lage-text">${esc(lage.text)}</p>`;
-  if (lage.hinweis) h += `<p class="leise lage-hinweis">${esc(lage.hinweis)}</p>`;
+  h += einpassenHtml(lage.einpassen);
+  if (lage.hinweis) h +=`<p class="leise lage-hinweis">${esc(lage.hinweis)}</p>`;
   return h;
 }
 

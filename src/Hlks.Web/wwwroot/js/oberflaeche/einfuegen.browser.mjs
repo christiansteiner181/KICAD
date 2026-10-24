@@ -160,9 +160,9 @@ const kasten = await ausw(`const k = document.querySelector('.lage-abweichung.gr
 console.log('   Kasten:', JSON.stringify(kasten));
 pruef(!!kasten && /Gebäudeursprung.*1\.250 m Ost/.test(kasten.text), 'roter Kasten nennt die Abweichung in Zahlen (−/+1.250 m Ost)', kasten?.text);
 pruef(!!kasten && parseFloat(kasten.rand.split(' ').at(-1)) >= 2 && /^rgb\(2[0-9]{2}, /.test(kasten.farbe) && await ausw(`return !!document.querySelector('.lage-abweichung .lage-abw-sym');`), 'Abweichung als roter Kasten: dicker Rand (≥ 2 px), rote Schrift, Warnsymbol', JSON.stringify(kasten));
-pruef(await ausw(`return [...document.querySelectorAll('input[name=ausrichtung]')].filter(r => !r.disabled).length === 2;`), 'Wahl aktiv: Projektbezug und Gebäudeursprung (Koordinationskörper fehlt in der Datei)');
+pruef(await ausw(`const frei = [...document.querySelectorAll('input[name=ausrichtung]')].filter(r => !r.disabled).map(r => r.value); return frei.includes('projekt') && frei.includes('gebaeude') && !frei.includes('koordinationskoerper');`), 'Wahl aktiv: Projektbezug und Gebäudeursprung (Koordinationskörper fehlt in der Datei; Einpassen je nach Wänden und Räumen im Projekt)');
 pruef(/Die Datei hat keinen Koordinationskörper/.test(t), 'Grund für die gesperrte Koordinationskörper-Wahl steht da');
-pruef(await ausw(`return document.querySelectorAll('label.wahl').length === 3 && [...document.querySelectorAll('label.wahl')].every(l => l.innerText.length > 60);`), 'drei Optionen mit erklärendem Satz');
+pruef(await ausw(`return document.querySelectorAll('label.wahl').length === 4 && [...document.querySelectorAll('label.wahl')].every(l => l.innerText.length > 60);`), 'vier Optionen mit erklärendem Satz');
 const optInfo = await ausw(`return [...document.querySelectorAll('label.wahl')].map(l => ({ wert: l.querySelector('input').value, text: l.innerText.replace(/\\s+/g, ' '), vorgewaehlt: l.querySelector('input').checked, empfohlen: !!l.querySelector('.empfohlen') }));`);
 console.log('   Optionen:', JSON.stringify(optInfo));
 pruef(optInfo.every((o) => !o.vorgewaehlt), 'C3: keine Option vorgewählt (ausdrückliche Wahl)');
@@ -394,7 +394,7 @@ const o4 = await ausw("return [...document.querySelectorAll('label.wahl')].map(l
 console.log('   Kasten:', JSON.stringify(k4));
 console.log('   Optionen:', JSON.stringify(o4));
 pruef(!!k4 && /Lage weicht vom Projektbezug ab/i.test(k4) && /Projektbezug: 100 %/.test(k4) && /Gebäudeursprung: 0 %/.test(k4) && !/Keine der beiden/.test(k4), 'C3: Kasten mit 100 % / 0 %, ohne Hinweis «Keine der beiden»', k4);
-pruef(o4[0].empfohlen && !o4[1].empfohlen && !o4[2].empfohlen && /^Projektbezug empfohlen/.test(o4[0].text), 'C3: nur «Projektbezug» trägt den Vermerk «empfohlen»', JSON.stringify(o4));
+pruef(o4[0].empfohlen && !o4[1].empfohlen && !o4[2].empfohlen && !o4[3].empfohlen && /^Projektbezug empfohlen/.test(o4[0].text), 'C3: nur «Projektbezug» trägt den Vermerk «empfohlen»', JSON.stringify(o4));
 pruef(o4.every((o) => !o.vorgewaehlt) && o4[0].text.includes('100 %') && o4[1].text.includes('0 %'), 'C3: trotz Empfehlung nichts vorgewählt; Anteile neben den Optionen', JSON.stringify(o4));
 await ausw("document.querySelector('.lage-abweichung').scrollIntoView(); return true;");
 await shot('17-ifc-empfehlung');
