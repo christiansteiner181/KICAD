@@ -28,16 +28,45 @@ sealed partial class QuestApp
     readonly FangErgebnis?[] messFang = new FangErgebnis?[2];
     readonly Wischer[] messWischer = [new(), new()];
     readonly bool[] messPinch = new bool[2];
-    int messungenGeloescht, messFangMessungen;
-    double messFangMaxMs, messFangSummeMs;
+    int messungenGeloescht;
     int? messHervor;
     double messHervorBis;
 
     /// <summary>Messen ist an (der Pinch misst statt zu springen).</summary>
     bool MessenAn => messen.An && darstellung is not null;
 
-    /// <summary>Neue Szene: Fang neu (die Messungen bleiben – sie liegen in Modellkoordinaten).</summary>
-    void MessenSzene(ModellSzene sz) => szenenFang = new SzenenFang(sz);
+    /// <summary>
+    /// Neue Szene: Fang neu (die Messungen bleiben – sie liegen in Modellkoordinaten). V1d: der räumliche Index entsteht einmal je Modell im Hintergrund
+    /// (SzenenFang.Aufbauen); bis er steht, fängt nichts (Hinweis), es wartet nie ein Bild darauf.
+    /// </summary>
+    void MessenSzene(ModellSzene sz)
+    {
+        var f = new SzenenFang(sz);
+        szenenFang = f;
+        fangHinten = new FangImHintergrund(f);
+        fangGestellt[0] = fangGestellt[1] = null;
+        fangSchluessel = null;
+        Task.Run(() =>
+        {
+            try
+            {
+                f.Aufbauen();
+                var (st, pu, sr) = f.Umfang;
+                Console.WriteLine(string.Create(CultureInfo.InvariantCulture, $"{AppName}: Fang-Index {f.AufbauMs:0} ms ({st} Stücke, {pu} Punkte, {sr} Strecken, {f.Aufbereitet} Elemente)"));
+            }
+            catch (Exception ex) { Console.Error.WriteLine($"{AppName}: Fang-Index: {ex}"); }
+        });
+    }
+
+    /// <summary>V1d: Schlüssel des gesetzten Filters (der Filter wird nur bei einer Änderung neu gesetzt; der Index rechnet ihn dann einmal je Element).</summary>
+    string? fangSchluessel;
+    /// <summary>V1d: Fang der Hände im Hintergrund (Hlks.Xr.Messen.FangImHintergrund), die zuletzt gestellte Anfrage und ihr Bild je Hand, Zähler; Zeit im Bild.</summary>
+    FangImHintergrund? fangHinten;
+    readonly FangAnfrage?[] fangGestellt = new FangAnfrage?[2];
+    readonly int[] fangGestelltBild = [-1, -1];
+    int fangGespart, fangWartet, fangImBild;
+    bool fangWartetGemeldet;
+    double fangImBildMaxMs, fangImBildSummeMs;
 
     /// <summary>Messen ein/aus (App «Messen», Werkzeugleiste).</summary>
     void MessenSchalten(bool an)
@@ -63,44 +92,73 @@ sealed partial class QuestApp
     void FangFilterSetzen()
     {
         if (szenenFang is null) return;
+        // V1d: nur bei einer Änderung neu setzen (der Index rechnet den Filter dann einmal je Element statt je Abfrage)
+        string schluessel;
         if (sitzung.Aktiv && sitzung.Ansicht is { } an)
         {
+            var q = sitzung.WirksamerSchnitt;
+            schluessel = $"s|{(an.Geschosse is null ? "*" : string.Join(",", an.Geschosse.Order(StringComparer.Ordinal)))}|{sitzung.Unterlage}|{q}";
+            if (schluessel == fangSchluessel) return;
             var unterlage = sitzung.Unterlage;
             szenenFang.Filter = e => (an.Geschosse is null || an.Geschosse.Contains(e.GeschossId)) && (unterlage || e.Teil != GlbZwischenspeicher.TeilUnterlage);
-            var q = sitzung.WirksamerSchnitt;
             szenenFang.Sichtbar = q is null ? null : p => q.Enthaelt(p);
         }
         else
         {
             var g = geschossAmStand?.Id;
+            schluessel = $"b|{g}|{o.Unterlage}";
+            if (schluessel == fangSchluessel) return;
             szenenFang.Filter = e => (g is null || e.GeschossId == g) && (o.Unterlage || e.Teil != GlbZwischenspeicher.TeilUnterlage);
             szenenFang.Sichtbar = null;
         }
+        fangSchluessel = schluessel;
     }
 
-    /// <summary>Fang einer Hand: Finger (Pinch-Punkt) im Radius, sonst der Zielstrahl; null ohne Hand bzw. an den Apps.</summary>
+    /// <summary>
+    /// Fang einer Hand: Finger (Pinch-Punkt) im Radius, sonst der Zielstrahl; null ohne Hand bzw. an den Apps. V1d (Befund Brillentest V1: im Mittel 12 ms, einmal 1 s auf
+    /// der Quest, im Bild): nur mit fertigem Index und im Hintergrund – das Bild stellt die Anfrage und nimmt das letzte fertige Ergebnis (in der Regel ein Bild alt),
+    /// es wartet nie. Höchstens eine Anfrage je Bild und Hand (Messen und Marker zusammen); hat sich die Hand (Pinch-Punkt 2 mm, Strahl 2 mm bzw. 0.3°, am Tisch
+    /// mal Massstab) und der Filter nicht geändert, fragt es nicht neu.
+    /// </summary>
     FangErgebnis? HandFang(Handed handed)
     {
-        if (szenenFang is null) return null;
+        if (szenenFang is null || fangHinten is null) return null;
+        var i = handed == Handed.Left ? 0 : 1;
         var h = Input.Hand(handed);
-        if (!h.IsTracked || AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed)) return null;
-        var m = MessMassstab;
-        var punkt = (h[FingerId.Thumb, JointId.Tip].position + h[FingerId.Index, JointId.Tip].position) * 0.5f;
-        var uhr = Stopwatch.StartNew();
-        var f = szenenFang.Punkt(SzeneVonSk(punkt), XrMessLogik.FangRadiusFinger * m);
-        if (f.Art == Fangart.Frei)
+        if (!h.IsTracked || AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed))
         {
-            var quelle = handed == Handed.Left ? InputSource.HandLeft : InputSource.HandRight;
-            if (Input.PointerCount(quelle) > 0 && Input.Pointer(0, quelle) is { } zp && zp.tracked.IsActive() && zp.ray.direction.LengthSq > 1e-12f)
-                f = szenenFang.Strahl(SzeneVonSk(zp.ray.position), SzeneRichtung(zp.ray.direction), XrMessLogik.FangRadiusStrahl * m, XrMessLogik.FangRadiusJeMeter,
-                    (sitzung.Aktiv ? 4 : 30) * m);   // am Tisch reicht der Strahl 4 m (im Raum der Brille) – das Modell liegt davor, der Fang bleibt billig
-            else f = f with { P = null };   // ohne Strahl kein Punkt in der Luft
+            if (fangGestellt[i] is not null) { fangHinten.Vergessen(i); fangGestellt[i] = null; }
+            return null;
         }
+        if (!szenenFang.Bereit)
+        {
+            fangWartet++;
+            if (!fangWartetGemeldet) { fangWartetGemeldet = true; Hinweis("Fang wird vorbereitet …"); }
+            return null;
+        }
+        var uhr = Stopwatch.StartNew();
+        var m = MessMassstab;
+        var punkt = SzeneVonSk((h[FingerId.Thumb, JointId.Tip].position + h[FingerId.Index, JointId.Tip].position) * 0.5f);
+        var quelle = handed == Handed.Left ? InputSource.HandLeft : InputSource.HandRight;
+        (XVec3 U, XVec3 R)? strahl = Input.PointerCount(quelle) > 0 && Input.Pointer(0, quelle) is { } zp && zp.tracked.IsActive() && zp.ray.direction.LengthSq > 1e-12f
+            ? (SzeneVonSk(zp.ray.position), SzeneRichtung(zp.ray.direction)) : null;
+        // am Tisch reicht der Strahl 4 m (im Raum der Brille) – das Modell liegt davor, der Fang bleibt billig; Radien in Szenenmassen (mal Massstab)
+        var a = new FangAnfrage(punkt, XrMessLogik.FangRadiusFinger * m, strahl?.U, strahl?.R, XrMessLogik.FangRadiusStrahl * m, XrMessLogik.FangRadiusJeMeter,
+            (sitzung.Aktiv ? 4 : 30) * m, fangSchluessel, m);
+        if (fangGestellt[i] is { } alt && FangAnfrage.Unveraendert(alt, a)) fangGespart++;
+        else if (fangGestelltBild[i] != bilder)
+        {
+            fangHinten.Anfragen(i, a);
+            fangGestellt[i] = a;
+            fangGestelltBild[i] = bilder;
+        }
+        var l = fangHinten.Letztes(i);
         var ms = uhr.Elapsed.TotalMilliseconds;
-        messFangMessungen++;
-        messFangSummeMs += ms;
-        messFangMaxMs = Math.Max(messFangMaxMs, ms);
-        return f;
+        fangImBild++;
+        fangImBildSummeMs += ms;
+        fangImBildMaxMs = Math.Max(fangImBildMaxMs, ms);
+        // ein Ergebnis zu einem anderen Filter (Geschoss, Schnitt, Unterlage) zählt nicht
+        return l is { } x && x.Anfrage.Filter == fangSchluessel ? x.Ergebnis : null;
     }
 
     /// <summary>Ein Bild: Fang je Hand, Messband, Wischgeste zum Löschen, Zeichnen (auch wenn Messen aus ist: die stehenden Messungen).</summary>
@@ -117,7 +175,7 @@ sealed partial class QuestApp
                 var amApp = AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed);   // am Tisch: eine Hand am Griff misst nicht
                 var pinch = h.IsTracked && !amApp && XrTabletLogik.IstPinch(HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                     new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), messPinch[i], bedien.Pinch);
-                messFang[i] = h.IsTracked && !amApp ? (FangFrisch(i, seite, pinch != messPinch[i], messFang[i]) ? HandFang(handed) : messFang[i]) : null;
+                messFang[i] = h.IsTracked && !amApp ? HandFang(handed) : null;   // V1d: im Hintergrund, wartet nie
                 messPinch[i] = pinch;
                 var raum = h.IsTracked ? (XVec3?)new XVec3(h[FingerId.Index, JointId.Tip].position.x, h[FingerId.Index, JointId.Tip].position.y, h[FingerId.Index, JointId.Tip].position.z) : null;
                 foreach (var e in Messband.Schritt(messen, Time.Total, seite, messPinch[i], raum, messFang[i], modus))
@@ -128,14 +186,6 @@ sealed partial class QuestApp
         MessungenWischen();
         MessungenZeichnen(kopf);
     }
-
-    /// <summary>
-    /// Fang dieser Hand in diesem Bild neu rechnen? Höchstens ein Strahl je Bild (Befund Prüflauf 24.10.2026: am Tisch 2.5 ms je Strahl am PC, auf der Brille mehr):
-    /// die Hand, die ein Messband aufzieht, jedes Bild, sonst die Hände abwechselnd; immer neu, wenn der Pinch der Hand wechselt (Anfang und Ende genau) bzw. noch kein
-    /// Fang da ist.
-    /// </summary>
-    bool FangFrisch(int i, string seite, bool pinchWechsel, FangErgebnis? letzter) =>
-        pinchWechsel || letzter is null || (messen.Hand is { } mh ? mh == seite : (bilder + i) % 2 == 0);
 
     void MessEreignis(MessEreignis e, Pose kopf)
     {
@@ -268,5 +318,5 @@ sealed partial class QuestApp
 
     /// <summary>Kurzer Stand für das Protokoll «P4 Status».</summary>
     string MessenKurz() => string.Create(CultureInfo.InvariantCulture,
-        $"{(messen.An ? "ein" : "aus")} ({messen.Variante}{(messen.Lot ? ", Lot" : "")}, {messen.Liste.Count} Messungen, gelöscht {messungenGeloescht}, Fang {messFangMessungen}× ⌀ {(messFangMessungen > 0 ? messFangSummeMs / messFangMessungen : 0):0.00} ms, höchstens {messFangMaxMs:0.0} ms)");
+        $"{(messen.An ? "ein" : "aus")} ({messen.Variante}{(messen.Lot ? ", Lot" : "")}, {messen.Liste.Count} Messungen, gelöscht {messungenGeloescht}, Fang im Hintergrund {fangHinten?.Abfragen ?? 0}× ⌀ {(fangHinten is { Abfragen: > 0 } fh ? fh.SummeMs / fh.Abfragen : 0):0.000} ms, höchstens {fangHinten?.MaxMs ?? 0:0.00} ms{(fangHinten?.Fehler is { } fe ? $" (Fehler «{fe}»)" : "")}, im Bild ⌀ {(fangImBild > 0 ? fangImBildSummeMs / fangImBild : 0):0.000} ms, höchstens {fangImBildMaxMs:0.000} ms, unverändert {fangGespart}×, ersetzt {fangHinten?.Ersetzt ?? 0}×, Index {(szenenFang?.Bereit == true ? $"{szenenFang.AufbauMs:0} ms" : "im Aufbau")}{(fangWartet > 0 ? $" (gewartet {fangWartet}×)" : "")})");
 }

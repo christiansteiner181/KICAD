@@ -266,6 +266,26 @@ public static class Glas
         return true;
     }
 
+    /// <summary>
+    /// V1d: träges Nachführen der Tafel (<see cref="Tafel.Nachfuehren"/>) auf den Anker anwenden: dreht man sich weiter als «tafel.nachfuehren_grad» weg, rückt das Fenster
+    /// ruhig in die Blickmitte (platz = <see cref="Tafel.Platz"/> für den Blick jetzt); am Griff gehalten bleibt es, wo man es hinstellt.
+    /// </summary>
+    public static void Nachfuehren(GlasAnker a, TafelFolgen z, Vec3 auge, double blickGieren, double dt, Vec3 platz, TafelEinstellungen e, bool handAn)
+    {
+        if (a.Mitte is not { } m) return;
+        a.Mitte = Tafel.Nachfuehren(z, m, auge, blickGieren, dt, platz, e, handAn, a.Gezogen);
+    }
+
+    /// <summary>V1d: so weit (m) reichen Fenster, Werkzeugleiste, Griff und Schliessen unter die Mitte des Fensters (für die Höhe der Tafel am Tisch).</summary>
+    public static double UnterhalbM(GlasMasse m, int ornament)
+    {
+        var f = new TabletPose(Vec3.Null, new Vec3(0, 0, 1), new Vec3(1, 0, 0), new Vec3(0, 1, 0), m.FensterB, m.FensterH);
+        var r = Rahmen(f, m, 0, 0, ornament);
+        var teile = new List<TabletPose> { r.Fenster, r.Griff, r.Schliessen };
+        if (r.Ornament is { } o) teile.Add(o);
+        return -teile.Min(t => t.Mitte.Y - t.H / 2);
+    }
+
     /// <summary>Griff fassen (Pinch an der Fensterleiste): die Hand führt das Fenster.</summary>
     public static void Fassen(GlasAnker a, Vec3 hand)
     {

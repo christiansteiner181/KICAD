@@ -12,8 +12,9 @@
     { "id": "komfort", "titel": "Komfort" },
     { "id": "sitzung", "titel": "Sitzungsraum" },
     { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
-    { "id": "wegwischen", "titel": "Wegwischen (schliessen und wegschicken: rechte Hand von rechts nach links)" },
+    { "id": "wegwischen", "titel": "Wegwischen (schliessen: rechte oder linke Hand von rechts nach links)" },
     { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" },
+    { "id": "tafel", "titel": "Tafel (Fenster einer App): Lage, Nachführen, Blättern" },
     { "id": "desktop", "titel": "Desktop in der Brille (Hineinziehen, Bildschirm, Übertragung)" }
   ],
   "muster": [
@@ -252,8 +253,8 @@
       "herkunft": "Annahme V1a"
     },
     {
-      "schluessel": "wegwischen.handflaeche_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Handfläche nach links", "status": "app",
-      "beschreibung": "Die Handfläche zeigt höchstens so weit neben waagrecht nach links.",
+      "schluessel": "wegwischen.handflaeche_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Handfläche seitlich", "status": "app",
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben waagrecht nach links (rechte Hand) bzw. seitlich in eine der beiden Richtungen (linke Hand, seit V1d); gilt auch für das Hineinziehen.",
       "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 50,
       "herkunft": "Annahme V1a"
     },
@@ -271,9 +272,9 @@
     },
     {
       "schluessel": "symbole.hoehe_m", "gruppe": "symbole", "titel": "Mitte des Symbolfelds", "status": "app",
-      "beschreibung": "So weit unter den Augen liegt die senkrechte Mitte des Felds (zwischen Brust und Augenhöhe; die oberste Reihe bleibt unter Augenhöhe).",
-      "art": "zahl", "einheit": "m", "min": 0, "max": 0.8, "schritt": 0.01, "vorgabe": 0.32,
-      "herkunft": "Annahme V1a (bei 0.6 m Feldhöhe die oberste Reihe 2 cm unter den Augen); Christian 24.10.2026: die Mitte als Stellschraube"
+      "beschreibung": "Beim Begehen bzw. ohne Tisch liegt die senkrechte Mitte des Felds so weit unter den Augen (bei 0.6 m Feldhöhe die oberste Reihe 8 cm über den Augen).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.8, "schritt": 0.01, "vorgabe": 0.22,
+      "herkunft": "Annahme V1a 0.32 m; V1d 0.22 m nach dem Brillentest V1, Christian 24.10.2026: «die apps solten beim hochwischen etwas weiter oben sein» (Annahme: «etwas» = 0.10 m)"
     },
     {
       "schluessel": "symbole.feldhoehe_m", "gruppe": "symbole", "titel": "Höhe des Symbolfelds", "status": "app",
@@ -364,6 +365,66 @@
       "beschreibung": "Ändert sich am Bildschirm des PCs 2 s lang nichts, erfasst der PC nur noch so oft (spart Rechenzeit am PC); bei der ersten Änderung sofort wieder mit voller Rate.",
       "art": "zahl", "einheit": "1/s", "min": 0.5, "max": 30, "schritt": 0.5, "vorgabe": 2.5,
       "herkunft": "Auftrag V1c, Nachtrag 24.10.2026 («nach 2 s ohne Änderung nur noch 2–3 Bilder/s»); Vorgabe Annahme V1c"
+    },
+    {
+      "schluessel": "symbole.hoehe_sitzend_m", "gruppe": "symbole", "titel": "Symbolfeld sitzend höher", "status": "app",
+      "beschreibung": "Ist die Haltung «sitzend» erkannt, liegt das Symbolfeld beim Begehen so viel höher (am Sitzungstisch gilt die Mitte am Tisch).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.4, "schritt": 0.01, "vorgabe": 0.08,
+      "herkunft": "Annahme V1d; Christian 24.10.2026: «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein»"
+    },
+    {
+      "schluessel": "symbole.hoehe_tisch_m", "gruppe": "symbole", "titel": "Mitte des Symbolfelds am Tisch", "status": "app",
+      "beschreibung": "Am Sitzungstisch liegt die senkrechte Mitte des Felds so weit unter den Augen; die Tischregel hebt nur die unterste Reihe über die Platte (das Feld wird dafür gestaucht).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 1, "schritt": 0.01, "vorgabe": 0.52,
+      "herkunft": "Annahme V1d (0.32 + 0.20 m); Christian 24.10.2026 am Tisch: «apps sind nun ca. 20cm zu hoch», bestätigt «am Sitzungstisch rund 20 cm tiefer»"
+    },
+    {
+      "schluessel": "symbole.wahl_frei_s", "gruppe": "symbole", "titel": "Sperre nach der Wahl einer App", "status": "app",
+      "beschreibung": "Nach der Wahl einer App zählt keine Berührung, bis das Symbolfeld zur Ruhe gekommen ist und die Hand alle Symbole so lange verlassen hat.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 2, "schritt": 0.05, "vorgabe": 0.3,
+      "herkunft": "Annahme V1d; Christian 24.10.2026: «nach tippen einer App sollte erneutes auswählen gesperrt sein, dass beim neuanordnen der apps nicht gleich ein nächstes gewählt wird»"
+    },
+    {
+      "schluessel": "tafel.hoehe_m", "gruppe": "tafel", "titel": "Höhe der Tafel", "status": "app",
+      "beschreibung": "Die Mitte des Fensters einer App liegt so weit unter den Augen (es öffnet mittig in der Blickrichtung, im Abstand «apps.abstand_m»); am Tisch mindestens über der Platte.",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.6, "schritt": 0.01, "vorgabe": 0.15,
+      "herkunft": "Annahme V1d (bequeme Höhe, in 0.45 m etwa 18° unter dem Blick); Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein»"
+    },
+    {
+      "schluessel": "tafel.nachfuehren_grad", "gruppe": "tafel", "titel": "Tafel rückt nach ab", "status": "app",
+      "beschreibung": "Dreht man sich weiter als so viel von der Tafel (bzw. dem PC-Bildschirm) weg, rückt sie ruhig wieder in die Mitte (Variante «tafel_nachfuehren» = «träge»).",
+      "art": "zahl", "einheit": "°", "min": 5, "max": 90, "schritt": 1, "vorgabe": 25,
+      "herkunft": "Annahme V1d (wie die frei schwebenden Hinweise); Christian 24.10.2026: «immer zentrisch»"
+    },
+    {
+      "schluessel": "tafel.blaettern_abstand_m", "gruppe": "tafel", "titel": "Blättern: Hand auf der Tafel", "status": "app",
+      "beschreibung": "Ein Wisch blättert, wenn die Hand beim Beginn höchstens so weit vor der Fläche der aktiven App liegt; weiter weg bleibt es Wegwischen bzw. Hineinziehen.",
+      "art": "zahl", "einheit": "m", "min": 0.01, "max": 0.2, "schritt": 0.01, "vorgabe": 0.05,
+      "herkunft": "Annahme V1d; Christian 24.10.2026: «eine swap bewegung mit der rechten oder linken hand soll in einem aktiven fenster blättern»"
+    },
+    {
+      "schluessel": "tafel.blaettern_weg_m", "gruppe": "tafel", "titel": "Blättern: Mindestweg", "status": "app",
+      "beschreibung": "So weit muss die Hand auf der Tafel wischen, damit es blättert; kürzer ist es ein Antippen.",
+      "art": "zahl", "einheit": "m", "min": 0.03, "max": 0.3, "schritt": 0.01, "vorgabe": 0.08,
+      "herkunft": "Annahme V1d"
+    },
+    {
+      "schluessel": "sitzung.drehknopf_grad", "gruppe": "sitzung", "titel": "Drehknopf: Rollen je Verdoppelung", "status": "app",
+      "beschreibung": "Variante «zoom_ein_griff» = «drehknopf»: so weit das Handgelenk am Griff rollen für den doppelten (im Uhrzeigersinn) bzw. halben Massstab.",
+      "art": "zahl", "einheit": "°", "min": 20, "max": 180, "schritt": 5, "vorgabe": 60,
+      "herkunft": "Annahme V1d; Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»"
+    },
+    {
+      "schluessel": "sitzung.vereinfachen_mm", "gruppe": "sitzung", "titel": "Vereinfachte Unterlage: Zelle auf dem Tisch", "status": "app",
+      "beschreibung": "Am Tisch zeichnet die App die IFC-Unterlage vereinfacht (Ecken auf ein Gitter von 1, 2 bzw. 4 cm zusammengefasst), solange eine Zelle auf dem Tisch höchstens so gross ist; 0 = nur das Dreiecksbudget entscheidet.",
+      "art": "zahl", "einheit": "mm", "min": 0, "max": 5, "schritt": 0.1, "vorgabe": 1,
+      "herkunft": "Annahme V1d (in 0.6 m Abstand etwa 0.1°); Befund Brillentest V1: «Alle Etagen» 600–740 Tsd. Dreiecke, 46–56 Hz"
+    },
+    {
+      "schluessel": "sitzung.dreiecke_max", "gruppe": "sitzung", "titel": "Dreiecke am Tisch höchstens", "status": "app",
+      "beschreibung": "Zeichnet der Tisch mehr Dreiecke, nimmt die App die nächstgröbere Stufe der vereinfachten Unterlage (die eigenen Bauteile von KICAD bleiben).",
+      "art": "zahl", "einheit": "Dreiecke", "min": 50000, "max": 2000000, "schritt": 10000, "vorgabe": 350000,
+      "herkunft": "Annahme V1d; Brillentest P4a 23.10.2026: das EG mit 382 000 Dreiecken lief stabil mit 72 Hz, am Tisch kommt Passthrough dazu"
     }
   ]
 }

@@ -223,6 +223,36 @@ public class V1dTests(ITestOutputHelper aus)
         Assert.NotEqual(m2, Tafel.Nachfuehren(z2, m2, auge, blick, 1 / 72.0, Tafel.Platz(auge, blick, a, e), e, false, false));
     }
 
+    [Fact]
+    public void Der_PC_Bildschirm_oeffnet_frontal_und_rueckt_ebenso_traege_nach()
+    {
+        var e = DesktopEinstellungen.Vorgabe;
+        var a = new DesktopAnsicht();
+        var auge = V(0, 1.6, 0);
+        a.Einblenden(0, auge, Blick, e);
+        for (int i = 1; i <= 60; i++) a.Schritt(i / 72.0, 1 / 72.0, auge, Blick, SeitenWischStand.Nichts, e);
+        Assert.Equal(DesktopPhase.Da, a.Phase);
+        Nah(Wd(GierenZu(a.Lage!.Mitte, auge), Blick), 0, 1e-9);
+        // 20° gedreht: bleibt; 60° gedreht: rückt träge nach und steht am Ende wieder frontal (zum Kopf gedreht)
+        for (int i = 0; i < 72; i++) a.Nachfuehren(auge, Blick + 20 * Grad, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        Nah(Wd(GierenZu(a.Lage!.Mitte, auge), Blick), 0, 1e-9);
+        var blick = Blick - 60 * Grad;
+        a.Nachfuehren(auge, blick, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        Assert.True(a.Nachfuehrung.Folgt);
+        Assert.True(Math.Abs(Wd(GierenZu(a.Lage!.Mitte, auge), blick)) > 50 * Grad);   // nicht sprunghaft
+        for (int i = 0; i < 4 * 72; i++) a.Nachfuehren(auge, blick, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        Assert.True(Math.Abs(Wd(GierenZu(a.Lage!.Mitte, auge), blick)) <= Tafel.RestGrad * Grad + 1e-9);
+        Nah(Wd(a.Lage!.Gieren, blick), 0, Tafel.RestGrad * Grad + 1e-9);   // die Fläche schaut wieder zum Kopf
+        Nah(a.Lage!.Mitte.Abstand(auge with { Y = a.Lage.Mitte.Y }), e.AbstandM, 0.01);
+        // Variante «fest»: kein Nachrücken
+        var f = new DesktopAnsicht();
+        f.Einblenden(0, auge, Blick, e);
+        for (int i = 1; i <= 60; i++) f.Schritt(i / 72.0, 1 / 72.0, auge, Blick, SeitenWischStand.Nichts, e);
+        var vor = f.Lage!.Mitte;
+        for (int i = 0; i < 72; i++) f.Nachfuehren(auge, blick, 1 / 72.0, e, TafelEinstellungen.Vorgabe with { Nachfuehren = Varianten.TafelFest }, false);
+        Assert.Equal(vor, f.Lage!.Mitte);
+    }
+
     // ================================================================================================ 4. Ein Griff am Sitzungstisch
 
     static readonly SitzungBezug Bezug = new(new Xz(0, 0), 0, new ModellGroesse(20, 10, 6));
@@ -706,6 +736,93 @@ public class V1dTests(ITestOutputHelper aus)
             }
         }
         Assert.Equal(sz.Elemente.Count, f.Aufbereitet);
+    }
+
+    [Fact]
+    public void Fang_im_Hintergrund_rechnet_die_neueste_Anfrage_je_Hand_und_das_Bild_wartet_nie()
+    {
+        var sz = FangSzene();
+        var f = new SzenenFang(sz);
+        f.Aufbauen();
+        var schlange = new Queue<Action>();
+        var h = new FangImHintergrund(f, schlange.Enqueue);
+        var a1 = new FangAnfrage(V(1, 1, -1), 0.03, V(-0.5, 1.2, 0.5), V(1, 0, -1));
+        var a2 = new FangAnfrage(V(2, 1, -2), 0.03, V(-0.5, 1.2, 0.5), V(1, 0.1, -1));
+        var b = new FangAnfrage(V(0.4, 1.0, -2), 0.3);
+        h.Anfragen(1, a1);
+        Assert.Null(h.Letztes(1));   // noch nicht gerechnet: das Bild bekommt nichts, wartet aber nicht
+        Assert.True(h.Wartet(1) && h.Laeuft);
+        h.Anfragen(1, a2);   // ersetzt a1 (nur die neueste zählt)
+        h.Anfragen(0, b);
+        Assert.Single(schlange);   // eine Arbeit zur Zeit
+        schlange.Dequeue()();
+        Assert.Empty(schlange);
+        Assert.Equal(2, h.Abfragen);
+        Assert.Equal(1, h.Ersetzt);
+        Assert.False(h.Laeuft || h.Wartet(0) || h.Wartet(1));
+        Assert.Same(a2, h.Letztes(1)!.Value.Anfrage);
+        Gleich(a2.Rechnen(f), h.Letztes(1)!.Value.Ergebnis, "rechts");
+        Assert.Same(b, h.Letztes(0)!.Value.Anfrage);
+        Gleich(b.Rechnen(f), h.Letztes(0)!.Value.Ergebnis, "links");
+        // die Hand geht weg, während ihre Abfrage läuft (der Filter ruft hier Vergessen): das Ergebnis von davor zählt nicht
+        var einmal = true;
+        f.Filter = e => { if (einmal) { einmal = false; h.Vergessen(0); } return true; };
+        h.Anfragen(0, b);
+        schlange.Dequeue()();
+        Assert.Null(h.Letztes(0));
+        Assert.Same(a2, h.Letztes(1)!.Value.Anfrage);
+        // ohne Strahl und ohne Treffer: frei ohne Punkt (kein Punkt in der Luft)
+        var leer = new FangAnfrage(V(20, 20, 20), 0.03);
+        Assert.Equal(Fangart.Frei, leer.Rechnen(f).Art);
+        Assert.Null(leer.Rechnen(f).P);
+    }
+
+    [Fact]
+    public void Fang_Anfrage_gilt_als_unveraendert_bis_2_mm_mal_Massstab_und_0_3_Grad_bei_gleichem_Filter()
+    {
+        var a = new FangAnfrage(V(1, 1, 1), 0.03, V(0, 1, 0), V(0, 0, -1), Filter: "b|eg|False");
+        Assert.True(FangAnfrage.Unveraendert(a, a with { Punkt = V(1.0015, 1, 1) }));
+        Assert.False(FangAnfrage.Unveraendert(a, a with { Punkt = V(1.003, 1, 1) }));
+        Assert.False(FangAnfrage.Unveraendert(a, a with { StrahlU = V(0, 1.003, 0) }));
+        var w = 0.2 * Math.PI / 180;
+        Assert.True(FangAnfrage.Unveraendert(a, a with { StrahlR = V(Math.Sin(w), 0, -Math.Cos(w)) }));
+        w = 0.5 * Math.PI / 180;
+        Assert.False(FangAnfrage.Unveraendert(a, a with { StrahlR = V(Math.Sin(w), 0, -Math.Cos(w)) }));
+        Assert.True(FangAnfrage.Unveraendert(a, a with { StrahlR = V(0, 0, -3) }));   // Länge der Richtung zählt nicht
+        Assert.False(FangAnfrage.Unveraendert(a, a with { Filter = "b|og|False" }));
+        Assert.False(FangAnfrage.Unveraendert(a, a with { StrahlU = null, StrahlR = null }));
+        // am Tisch 1:50: 2 mm im Raum der Brille = 0.1 m in der Szene
+        var t = a with { Massstab = 50, RadiusFinger = 1.5 };
+        Assert.True(FangAnfrage.Unveraendert(t, t with { Punkt = V(1.09, 1, 1) }));
+        Assert.False(FangAnfrage.Unveraendert(t, t with { Punkt = V(1.11, 1, 1) }));
+        Assert.False(FangAnfrage.Unveraendert(a, t));
+    }
+
+    [Fact]
+    public void Fang_im_Hintergrund_auf_dem_Pool_gleich_wie_im_Bild_auch_mit_Abfragen_daneben()
+    {
+        var sz = FangSzene();
+        var f = new SzenenFang(sz);
+        f.Aufbauen();
+        var h = new FangImHintergrund(f);
+        var zufall = new Random(23);
+        for (int i = 0; i < 200; i++)
+        {
+            var a = new FangAnfrage(V(zufall.NextDouble() * 4, zufall.NextDouble() * 2.5, -zufall.NextDouble() * 4), 0.05, V(2, 1.2, 1),
+                V(zufall.NextDouble() - 0.5, zufall.NextDouble() - 0.5, -1));
+            var hand = i % 2;
+            h.Anfragen(hand, a);
+            var direkt = a.Rechnen(f);   // daneben im «Bild» (so fragt die Prüfung)
+            var uhr = System.Diagnostics.Stopwatch.StartNew();
+            while ((h.Wartet(hand) || h.Laeuft) && uhr.ElapsedMilliseconds < 5000) Thread.Yield();
+            var l = h.Letztes(hand);
+            Assert.NotNull(l);
+            Assert.Same(a, l.Value.Anfrage);
+            Gleich(direkt, l.Value.Ergebnis, $"Abfrage {i}");
+        }
+        Assert.Equal(200, h.Abfragen);
+        Assert.Null(h.Fehler);
+        aus.WriteLine($"im Hintergrund ⌀ {h.SummeMs / h.Abfragen:0.000} ms, höchstens {h.MaxMs:0.000} ms");
     }
 
     [Fact]

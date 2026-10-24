@@ -79,8 +79,8 @@ public class XrLaborTests
         foreach (var a in aufgaben) Assert.True(k.AufgabeBekannt(a), a);
         Assert.Equal("p5", k.AufgabeStatusVon("messen-wand-wand"));   // V1a: Messen in der App
         Assert.Equal("p5", k.AufgabeStatusVon("drehen-90"));
-        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app" }) Assert.Contains(n, k.VariantenNamen);   // V1a: umgebung, symbole, symbolwahl, feld_bei_app
-        Assert.Equal(8, k.VariantenNamen.Count);
+        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app", "tafel_nachfuehren", "zoom_ein_griff" }) Assert.Contains(n, k.VariantenNamen);   // V1a: umgebung, symbole, symbolwahl, feld_bei_app; V1d: tafel_nachfuehren, zoom_ein_griff
+        Assert.Equal(10, k.VariantenNamen.Count);
         Assert.True(k.VarianteBekannt("bedienung", "apps"));
         Assert.True(k.VarianteBekannt("bedienung", "tablet"));
         Assert.False(k.VarianteBekannt("bedienung", "stick"));
@@ -127,6 +127,11 @@ public class XrLaborTests
             ["sitzung.zoom_min"] = b.Zoom.Min, ["sitzung.zoom_max"] = b.Zoom.Max,
             ["roentgen.winkel_grad"] = b.Roentgen.WinkelGrad, ["roentgen.reichweite_m"] = b.Roentgen.ReichweiteM,
             ["sitzung.schnitt_ruhe_s"] = b.FlacheHand.RuheS, ["sitzung.schnitt_toleranz_grad"] = b.FlacheHand.ToleranzGrad,
+            // V1d
+            ["symbole.hoehe_m"] = b.Symbole.HoeheM, ["symbole.hoehe_sitzend_m"] = b.Symbole.HoeheSitzendM, ["symbole.hoehe_tisch_m"] = b.Symbole.HoeheTischM,
+            ["symbole.wahl_frei_s"] = b.Symbole.WahlFreiS, ["tafel.hoehe_m"] = b.Tafel.HoeheM, ["tafel.nachfuehren_grad"] = b.Tafel.NachfuehrenGrad,
+            ["tafel.blaettern_abstand_m"] = b.Tafel.BlaetternAbstandM, ["tafel.blaettern_weg_m"] = b.Tafel.BlaetternWegM, ["sitzung.drehknopf_grad"] = b.Griff.DrehknopfGrad,
+            ["sitzung.vereinfachen_mm"] = b.Tisch.VereinfachenMm, ["sitzung.dreiecke_max"] = b.Tisch.DreieckeMax,
         };
         foreach (var (key, soll) in vorgaben)
         {
@@ -360,10 +365,11 @@ public class XrLaborTests
         Schlecht("labor.profil.test_1", Json_("{ \"name\": \"" + new string('n', 41) + "\", \"werte\": {} }"), "Name");
         Schlecht("labor.profil_aktiv", JsonValue.Create("Gross Schrift"), "Kennung");
         Schlecht("labor.profil_aktiv", JsonValue.Create(5), "Kennung");
-        // mehr als 64 Werte
+        // mehr als 96 Werte (V1d; bis V1c 64)
         var viele = new JsonObject();
-        for (int i = 0; i < 65; i++) viele["k" + i] = i;
-        Schlecht("labor.profil.test_1", new JsonObject { ["name"] = "x", ["werte"] = viele }, "Höchstens 64");
+        for (int i = 0; i < XrLaborProfil.WerteMax + 1; i++) viele["k" + i] = i;
+        Assert.Equal(96, XrLaborProfil.WerteMax);
+        Schlecht("labor.profil.test_1", new JsonObject { ["name"] = "x", ["werte"] = viele }, "Höchstens 96");
         // der Schlüssel liegt nicht unter «xr.» (das verbietet ein anderer Test)
         Assert.DoesNotContain(BenutzerEinstellungen.Bekannt.Keys, k => k.StartsWith("xr.", StringComparison.Ordinal));
         Assert.Contains("labor.profil_aktiv", BenutzerEinstellungen.Bekannt.Keys);
@@ -410,7 +416,7 @@ public class XrLaborTests
         Assert.Equal(1, (int)lokal["fassung"]!);
         Assert.Equal(Echt().Stellschrauben.Count, lokal["stellschrauben"]!.AsArray().Count);
         Assert.Equal(7, lokal["aufgaben"]!.AsArray().Count);
-        Assert.Equal(8, lokal["varianten"]!.AsArray().Count);   // V1a: «umgebung», «symbole», «symbolwahl», «feld_bei_app»
+        Assert.Equal(10, lokal["varianten"]!.AsArray().Count);   // V1a: «umgebung», «symbole», «symbolwahl», «feld_bei_app»; V1d: «tafel_nachfuehren», «zoom_ein_griff»
         Assert.Equal(2, lokal["muster"]!.AsArray().Count);
         Assert.Null(lokal["profil"]);
         var etag = l.Headers.ETag?.ToString();

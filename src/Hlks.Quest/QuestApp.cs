@@ -183,6 +183,8 @@ sealed partial class QuestApp
         sitzung.Zoom = bedien.Zoom;
         sitzung.Pinch = bedien.Pinch;
         sitzung.FlacheHand = bedien.FlacheHand;
+        sitzung.Griff = bedien.Griff;   // V1d: ein Griff, Zoom mit zweiter Hand bzw. Drehknopf
+        sitzung.Tisch = bedien.Tisch;   // V1d: vereinfachte Unterlage am Tisch
         rueck.Ton = bedien.Komfort.Ton;
         rueck.Tunnel = bedien.Komfort.Tunnelblick && bedien.Komfort.Staerke > 0;
         sitzung.Hell = bedien.UmgebungHell;   // V1a: Variante «umgebung»
@@ -451,6 +453,8 @@ sealed partial class QuestApp
 
     VrAuftrag? offenerAuftragHintergrund;
     volatile string ladeText = "";
+    /// <summary>V1d: Dauer und Dreiecke der vereinfachten Unterlage je Stufe (Protokoll).</summary>
+    volatile string stufenText = "";
 
     // =================================================================================================== Kanal
 
@@ -582,6 +586,21 @@ sealed partial class QuestApp
         szene = sz;
         darstellung = new ModellDarstellung(vorbereitet, Ausgeblendet);
         ausschnittGesetzt = null;   // die neue Darstellung hat noch keinen Ausschnitt
+        // V1d: vereinfachte Unterlage für den Tisch im Hintergrund vorbereiten, dann nach und nach an die Grafikkarte (das Modell erscheint ohne zu warten)
+        var dneu = darstellung;
+        Task.Run(() =>
+        {
+            try
+            {
+                var uhrStufen = Stopwatch.StartNew();
+                var st = ModellDarstellung.StufenVorbereiten(sz);
+                stufenText = string.Create(CultureInfo.InvariantCulture,
+                    $"{uhrStufen.Elapsed.TotalMilliseconds:0} ms, {string.Join(" / ", Enumerable.Range(0, TischStufe.ZellenM.Count).Select(k => sz.Netze.Where(n => n.Daten.Gruppe != ModellSzene.GruppeRaum).Sum(n => k == 0 || !TischStufe.Vereinfacht(n.Teil) ? (long)n.Daten.Dreiecke : st.FirstOrDefault(x => x.NetzNr == n.Nr)?.Stufen[k - 1].Sum(b => (long)b.Anzahl) ?? n.Daten.Dreiecke)))} Dreiecke");
+                Console.WriteLine($"{AppName}: Tischstufen {stufenText}");
+                amBild.Enqueue(() => { if (ReferenceEquals(darstellung, dneu)) dneu.StufenSetzen(st); });
+            }
+            catch (Exception ex) { Console.Error.WriteLine($"{AppName}: Tischstufen: {ex}"); }
+        });
         durchgang = new DurchgangVerfolger(sz);
         roentgen = new RoentgenVerfolger(sz);
         MessenSzene(sz);   // V1a: Fang auf der neuen Szene (die Messungen bleiben)
@@ -742,6 +761,7 @@ sealed partial class QuestApp
     {
         uhr.Restart();
         while (amBild.TryDequeue(out var aktion)) aktion();
+        darstellung?.StufenHochladen();   // V1d: vereinfachte Unterlage nach und nach an die Grafikkarte
         bilder++;
         bildzeit.Neu(Time.Stepf * 1000);
         var kopf = Input.Head;
@@ -769,8 +789,14 @@ sealed partial class QuestApp
             if (sitzung.RaumLage != appsRaumLage) { appsRaumLage = sitzung.RaumLage; AppsVersetzen(); }   // V1a: Tisch neu (echter Tisch): das Fenster neben den Tisch
             foreach (var (r, hand) in sitzung.Schritt(Time.Total, kopf, h => AnApps(h) || DesktopSperrt, bedien.Wisch, begehen.DrehenSperreS))   // V1c: Bildschirm des PCs da – keine Griffe, kein Antippen
                 WischAnwenden(r, kopf.position + kopf.Forward * 0.4f, hand == Handed.Left ? "left" : "right");
-            if (sitzung.Zoegern is { } zg)   // P5a: gezögert an einem Griff: Geisterhand «Greifen»
-                geister.Starten(GeisterGeste.Greifen, Time.Total, zg.Form, XrTabletLogik.TabletLageAus(new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z), new XVec3(0, 1, 0)));
+            if (sitzung.Zoegern is { } zg)   // P5a: gezögert am Griff: Geisterhand «Greifen»; V1d am gehaltenen Griff «Zoomen» (zweite Hand) bzw. «Drehknopf»
+            {
+                var gp = new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z);
+                var ziel = zg.Geste == GeisterGeste.Zoomen && zg.Rechts.Laenge > 0.5
+                    ? new TabletPose(gp, new XVec3(0, 1, 0), zg.Rechts, new XVec3(0, 1, 0).Kreuz(zg.Rechts).Einheit(), 0.05, 0.05)
+                    : XrTabletLogik.TabletLageAus(gp, new XVec3(0, 1, 0));
+                geister.Starten(zg.Geste, Time.Total, zg.Form, ziel);
+            }
             sitzung.Zeichnen(darstellung, ebenen, Time.Total, sitzung.Ansicht?.Text);
             passthrough.Bild();
             PoseSenden(kopf);
@@ -824,10 +850,10 @@ sealed partial class QuestApp
             $"Aufrufe={darstellung?.GezeichnetAufrufe ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, " +
             $"Durchgang={durchgang?.Nah.Count ?? 0} (Wechsel höchstens {darstellung?.DurchgangMaxMs ?? 0:0.0} ms), Haltung={drehen.Haltung}, Drehen={(drehen.Drehen ? "ein" : "aus")}, Hand={(drehen.VonHand is not null ? "ja" : "nein")}, " +
             $"Strahl={(rechts.StrahlVomSystem || links.StrahlVomSystem ? "System" : "Schulter")}, Verbindung={verbindungText}, " +
-            $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe}, IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
+            $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe} (gefasst {sitzung.Gefasst}×, gezoomt {sitzung.Gezoomt}×, {bedien.Griff.Zoom}), Tischstufe={darstellung?.GezeichnetStufe ?? 0} ({stufenText}), IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
-            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt, Geste={letzteGeste}, " +
+            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt (zuletzt {wegwisch.Hand ?? "–"}), Tafel nachgerückt {apps.Folgen.Nachgerueckt}×, auf der Tafel geblättert {tafelGeblaettert}×, Geste={letzteGeste}, " +
             $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
@@ -1061,9 +1087,10 @@ sealed partial class QuestApp
         if (sitzung.Echt.WartetAufTisch) UI.Text("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
         else UI.Text(sitzung.Modus switch
         {
-            "zwei" => "Beide Griffe gehalten: drehen, verschieben, zoomen.",
-            "wartet" => "Ein Griff gehalten – den zweiten mit der anderen Hand fassen.",
-            _ => "Die beiden Griffe mit Daumen und Zeigefinger fassen: drehen, verschieben, zoomen.",
+            "zoomt" => "Die zweite Hand zoomt: auseinander grösser, zusammen kleiner.",
+            "gehalten" => bedien.Griff.Zoom == Varianten.ZoomDrehknopf ? "Griff gehalten: verschieben, mit der Hand drehen, Handgelenk rollen zoomt."
+                : "Griff gehalten: verschieben, mit der Hand drehen; Pinch der anderen Hand zoomt.",
+            _ => "Den Griff vorn am Modell mit Daumen und Zeigefinger fassen: verschieben, drehen, zoomen.",
         });
         UI.Text(string.Create(CultureInfo.InvariantCulture,
             $"{darstellung!.GezeichnetNetze} Netze · {darstellung.GezeichnetAufrufe} Aufrufe · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
@@ -1224,7 +1251,9 @@ sealed partial class QuestApp
         // V1a: Hebegeste, Symbole, Zeiger mit Tooltip, Wahl durch Berührung, Hinweis frei schwebend (gescriptet; der Lauf wartet, bis die Folge fertig ist)
         if (gemessen == o.PruefBilder / 2 + 9) PruefSymbolFolgeStarten();
         PruefSymbolFolge(o.BildOrdner);
-        if (gemessen < o.PruefBilder || PruefSymbolFolgeLaeuft) return;
+        if (symbolFolge == 0) PruefV1dStarten();   // V1d: Symbolfeld höher, Sperre nach der Wahl, Tafel mittig, Blättern (QuestApp.PruefenV1d.cs)
+        PruefV1dFolge(o.BildOrdner);
+        if (gemessen < o.PruefBilder || PruefSymbolFolgeLaeuft || PruefV1dLaeuft) return;
         var jeGeschoss = darstellung.AufrufeJeGeschoss();
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Geschoss={geschossAmStand?.Kennzeichen ?? "alle"}, gezeichnet Netze={darstellung.GezeichnetNetze}, Aufrufe={darstellung.GezeichnetAufrufe}, " +
@@ -1232,10 +1261,10 @@ sealed partial class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; {pruefV1d}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
-            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal), z);
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1d.Contains("FEHLER", StringComparison.Ordinal), z);
     }
 
     string pruefP5a = "";
@@ -1371,6 +1400,7 @@ sealed partial class QuestApp
     {
         int jePhase = Math.Max(30, o.PruefBilder / SitzPhasen.Length);
         var phaseLaenge = sitzPhase == 0 && o.BildOrdner is not null ? Math.Max(jePhase, jePhase / 2 + 95) : jePhase;   // V1a: Platz für die Bilder der Symbole und Farben
+        if (sitzPhase == 1) phaseLaenge = Math.Max(jePhase, jePhase / 2 + 10 + V1dTischBilder);   // V1d: Leistung, ein Griff, Fang am Tisch (QuestApp.PruefenV1d.cs)
         if (sitzPhase < 0)
         {
             foreach (var (name, _, _, _) in ebenen.Liste) ebenen.Schalten(name, true);
@@ -1473,6 +1503,8 @@ sealed partial class QuestApp
             else if (sitzBilder == jePhase / 2 + 4) Renderer.Screenshot(Path.Combine(vo, "vergleich_schnitt.png"), von, ziel, 800, 600, 40);
             else dv.SchnittErzwingen = false;
         }
+        // V1d: die Folge am Tisch nach der Prüfung der Helligkeit (die zwingt den Shader «schnitt»)
+        if (sitzPhase == 1 && sitzBilder >= jePhase / 2 + 10 && sitzBilder < jePhase / 2 + 10 + V1dTischBilder) PruefV1dTisch(sitzBilder - (jePhase / 2 + 10), o.BildOrdner);
         if (sitzBilder < phaseLaenge) return;
         var d = darstellung!;
         sitzErgebnisse.Add(string.Create(CultureInfo.InvariantCulture,
@@ -1491,10 +1523,10 @@ sealed partial class QuestApp
         if (sitzPhase < SitzPhasen.Length) return;
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Sitzungsraum=ja; {string.Join("; ", sitzErgebnisse)}; alle Geschosse Dreiecke={d.Dreiecke}; Auftrag={auftragText}; Verbindung={verbindungText}, " +
-            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefV1dTisch}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
-            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal), z);
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1dTisch.Contains("FEHLER", StringComparison.Ordinal) && pruefV1dTisch.Length > 0, z);
     }
 
     string? auftragRaum;
@@ -1510,23 +1542,22 @@ sealed partial class QuestApp
         {
             var bezug = SitzungRaum.BezugAusBox(szene!.Box) ?? new SitzungBezug(new Xz(0, 0), 0, new ModellGroesse(10, 10, 3));
             var start = XrSitzungLogik.Einpassen(bezug.Groesse).Lage;
-            // Griffe fassen, Hände auseinander (doppelter Abstand) und um 30° drehen: Massstab halb so gross (Grenze MassstabMin), Drehung 30°
-            var g = XrSitzungLogik.GriffPunkte(start, bezug.Groesse);
-            var z0 = XrSitzungLogik.GestenNeu(start);
-            GestenHand H(double x, double zz, int? nah) => new(true, nah, x, zz);
-            var z1 = XrSitzungLogik.GestenSchritt(z0, new GestenHaende(H(g[0].X, g[0].Z, 0), H(g[1].X, g[1].Z, 1)));
-            var m = XrSitzungLogik.ModellMitte(start);
-            Xz Um(double fx, double fz, double grad, double faktor)
-            {
-                var v = XrSitzungLogik.DreheXZ(new Xz((fx - m.X) * faktor, (fz - m.Z) * faktor), grad * Math.PI / 180);
-                return new Xz(m.X + v.X, m.Z + v.Z);
-            }
-            var a = Um(g[0].X, g[0].Z, 30, 2);
-            var b = Um(g[1].X, g[1].Z, 30, 2);
-            var z2 = XrSitzungLogik.GestenSchritt(z1, new GestenHaende(H(a.X, a.Z, null), H(b.X, b.Z, null)));
-            var gestenOk = z1.Modus == "zwei" && Math.Abs(z2.Lage.Massstab - Math.Max(XrSitzungLogik.MassstabMin, start.Massstab / 2)) < 1e-6
-                && Math.Abs(XrSitzungLogik.WinkelDiff(z2.Lage.Drehung, 30 * Math.PI / 180)) < 1e-6;
-            teile.Add($"Gesten={(gestenOk ? "ok" : "FEHLER")} (1:{start.Massstab:0} → 1:{z2.Lage.Massstab:0}, {z2.Lage.Drehung * 180 / Math.PI:0}°)");
+            // V1d: EIN Griff mitten an der vorderen Kante fassen, 5 cm anheben und mit der Hand um 32° drehen (2° Totzone), dann mit der zweiten Hand von 10 auf 20 cm
+            // auseinander: Massstab halb so gross (Grenze MassstabMin), Drehung 30°, Höhe 5 cm; loslassen
+            var g = EinGriff.GriffPunkt(start, bezug, null);
+            var z0 = EinGriff.Neu(start);
+            EinGriffHand Hd(XVec3 p, double gieren = 0, bool pinch = true) => new(pinch, p, gieren, 0);
+            var e0 = EinGriff.Schritt(z0, null, Hd(g), g);
+            var gh = g + new XVec3(0, 0.05, 0);
+            EinGriff.Schritt(z0, null, Hd(gh, 32 * Math.PI / 180), g);
+            var e1 = EinGriff.Schritt(z0, Hd(gh + new XVec3(-0.1, 0, 0)), Hd(gh, 32 * Math.PI / 180), g);
+            EinGriff.Schritt(z0, Hd(gh + new XVec3(-0.2, 0, 0)), Hd(gh, 32 * Math.PI / 180), g);
+            var lageZ = z0.Lage;
+            var e2 = EinGriff.Schritt(z0, null, Hd(gh, 32 * Math.PI / 180, pinch: false), g);
+            var gestenOk = e0 == EinGriffEreignis.Gefasst && e1 == EinGriffEreignis.ZoomBeginnt && e2 == EinGriffEreignis.Losgelassen
+                && Math.Abs(lageZ.Massstab - Math.Max(XrSitzungLogik.MassstabMin, start.Massstab / 2)) < 1e-6
+                && Math.Abs(XrSitzungLogik.WinkelDiff(lageZ.Drehung, 30 * Math.PI / 180)) < 1e-6 && Math.Abs(lageZ.Hoehe - 0.05) < 1e-6;
+            teile.Add($"Griff={(gestenOk ? "ok" : "FEHLER")} (ein Griff, 1:{start.Massstab:0} → 1:{lageZ.Massstab:0}, {lageZ.Drehung * 180 / Math.PI:0}°, Höhe {lageZ.Hoehe * 100:0} cm)");
             // Tisch antippen: Finger 0.79 → 0.75 m in 0.2 s, dann 0.4 s ruhig, 0.5 m vor dem Kopf
             var kopf = new XVec3(0, 1.2, 0);
             var tz = new TischAntippenZustand();

@@ -77,6 +77,9 @@ public sealed class PruefLauf
 
 public static class PruefAufgaben
 {
+    /// <summary>Höchstens so viele Stellschrauben trägt ein Messprotokoll (Grenze des Kanals am PC, XrNachrichten.StellschraubenMax; V1d 96 statt 64).</summary>
+    public const int StellschraubenMax = 96;
+
     public const string TeleportMarkierung = "teleport-markierung", Drehen90 = "drehen-90", EtageWechseln = "etage-wechseln",
         ModellGreifenZoomen = "modell-greifen-zoomen", RaumArOeffnen = "raum-ar-oeffnen", TabletWertAblesen = "tablet-wert-ablesen", MessenWandWand = "messen-wand-wand";
 
@@ -476,7 +479,7 @@ public static class PruefAufgaben
         if (stellschrauben is { Count: > 0 })
         {
             var s = new JsonObject();
-            foreach (var (k, w) in stellschrauben.Take(64)) s[k] = w?.DeepClone();
+            foreach (var (k, w) in stellschrauben.Take(StellschraubenMax)) s[k] = w?.DeepClone();
             o["stellschrauben"] = s;
         }
         if (l.FehlgriffGruende.Count > 0)

@@ -137,7 +137,7 @@ sealed class DesktopBildschirm : IWegwischbar
     /// Verbindung (ohne Kopplung zeigt der Bildschirm nur einen Hinweis). Gibt true zurück, wenn er in diesem Bild hereingezogen wurde.
     /// </summary>
     public bool Bild(Pose kopf, double t, double dt, DesktopEinstellungen einstellungen, PinchEinstellungen pinchEinstellungen, WegwischEinstellungen wegwischEinstellungen,
-        bool rechtsFrei, Kopplungspaket? paket, Func<CancellationToken, Task<Uri?>> adresse)
+        bool rechtsFrei, Kopplungspaket? paket, Func<CancellationToken, Task<Uri?>> adresse, bool linksFrei = true, TafelEinstellungen? tafel = null)
     {
         e = einstellungen;
         pinch = pinchEinstellungen;
@@ -149,8 +149,11 @@ sealed class DesktopBildschirm : IWegwischbar
         var gieren = VrLogik.GierenVonRichtung(new Xz(f.x, f.z));
         var h = Haende?.Invoke() ?? EchteHaende(t, gieren);
         var vorher = ansicht.Phase;
-        letzter = gesten.Schritt(h, erlaubt: ansicht.HineinMoeglich && rechtsFrei);
+        // V1d: beide Hände ziehen herein (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen»)
+        letzter = gesten.Schritt(h, erlaubt: ansicht.HineinMoeglich && rechtsFrei, erlaubtLinks: ansicht.HineinMoeglich && linksFrei);
         var herein = ansicht.Schritt(t, dt, auge, gieren, letzter, e);
+        // V1d: träge in die Blickmitte nachführen (wie die Tafel einer App)
+        ansicht.Nachfuehren(auge, gieren, dt, e, tafel ?? TafelEinstellungen.Vorgabe, bedienStand.GriffNah || bedienStand.SchliessenNah || bedienStand.MonitorNah);
         if (herein)
         {
             Eingeblendet++;

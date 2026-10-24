@@ -40,6 +40,8 @@ public sealed class XrStellschraubeDef
 public sealed class XrLaborKatalog
 {
     public const int Fassung = 1;
+    /// <summary>Höchstens so viele Stellschrauben im Katalog (V1a 54, V1c 56, V1d 80).</summary>
+    public const int StellschraubenMax = 80;
     public const string DateiStellschrauben = "xr_stellschrauben.json";
     public const string DateiAufgaben = "xr_pruefaufgaben.json";
     public const string DateiVarianten = "xr_varianten.json";
@@ -204,8 +206,10 @@ public sealed class XrLaborKatalog
             }
             liste.Add(new XrStellschraubeDef { Schluessel = key, Gruppe = gruppe, Art = art, Status = status, Min = min, Max = max, Schritt = schritt, Auswahl = auswahl, Vorgabe = vorgabe.DeepClone(), Roh = (JsonObject)s.DeepClone() });
         }
-        // V1a 54, V1c 56 statt 48 (V1a und V1c zusammen 55); die Grenze des Kanals (64 mit Varianten und Aufgabe: heute 55 + 8 + 1) prüft die Zeile weiter unten
-        if (liste.Count > 56) throw Fehler(d, "Höchstens 56 Stellschrauben (der Kanal merkt höchstens 64 Werte, dazu kommen Varianten und Aufgabe).");
+        // V1a 54, V1c 56 statt 48, V1d 80 (V1d zusammen 65); die Grenze des Kanals (XrNachrichten.StellschraubenMax 96 mit Varianten und Aufgabe: heute 65 + 10 + 1)
+        // prüft die Zeile weiter unten
+        if (liste.Count > StellschraubenMax)
+            throw Fehler(d, $"Höchstens {StellschraubenMax} Stellschrauben (der Kanal merkt höchstens {XrNachrichten.StellschraubenMax} Werte, dazu kommen Varianten und Aufgabe).");
         // jede Gruppe wird gebraucht (eine leere Gruppe wäre ein Tippfehler)
         foreach (var g in gruppenIds)
             if (liste.All(x => x.Gruppe != g)) throw Fehler(d, $"gruppen.id «{g}» hat keine Stellschraube.");
@@ -300,7 +304,8 @@ public sealed class XrLaborKatalog
         foreach (var a in aufgabeNachId.Values)
             foreach (var v in (JsonArray)a["varianten"]!)
                 if (!varianteNachName.ContainsKey((string)v!)) throw Fehler(DateiAufgaben, $"aufgaben.{(string?)a["id"]}.varianten: die Variante «{(string)v!}» steht nicht in {DateiVarianten}.");
-        if (Stellschrauben.Count + varianteNachName.Count + 1 > 64) throw Fehler(DateiStellschrauben, "Zusammen mit Varianten und Aufgabe mehr als 64 Stellschrauben (Grenze des Kanals).");
+        if (Stellschrauben.Count + varianteNachName.Count + 1 > XrNachrichten.StellschraubenMax)
+            throw Fehler(DateiStellschrauben, $"Zusammen mit Varianten und Aufgabe mehr als {XrNachrichten.StellschraubenMax} Stellschrauben (Grenze des Kanals).");
     }
 
     // ---------------------------------------------------------------- Werte prüfen
@@ -374,7 +379,8 @@ public static class XrLaborProfil
     public const string Vorsatz = "labor.profil.";
     public const string AktivSchluessel = "labor.profil_aktiv";
     static readonly Regex KennungMuster = new(@"^[a-z0-9][a-z0-9_]{0,23}$", RegexOptions.CultureInvariant);
-    public const int WerteMax = 64;
+    /// <summary>Höchstens so viele Werte je Profil – wie der Kanal (V1d 96 statt 64).</summary>
+    public const int WerteMax = XrNachrichten.StellschraubenMax;
 
     public static bool KennungGueltig(string? s) => s is not null && KennungMuster.IsMatch(s);
 

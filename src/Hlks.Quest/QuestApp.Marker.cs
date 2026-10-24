@@ -72,8 +72,8 @@ sealed partial class QuestApp
                 var g = frei ? HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                     new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)) : null;
                 var p = g is not null && XrTabletLogik.IstPinch(g, markerPinch[i], bedien.Pinch);
-                // höchstens ein Strahl je Bild (wie beim Messen): abwechselnd, neu beim Wechsel des Pinch
-                markerFang[i] = frei ? (p != markerPinch[i] || markerFang[i] is null || (bilder + i) % 2 == 0 ? HandFang(handed) : markerFang[i]) : null;
+                // V1d: der Fang läuft im Hintergrund (HandFang wartet nie; höchstens eine Anfrage je Bild und Hand)
+                markerFang[i] = frei ? HandFang(handed) : null;
                 if (p && !markerPinch[i]) markerPinchSeit[i] = Time.Total;
                 if (!p && markerPinch[i] && Time.Total - markerPinchSeit[i] <= Messband.KlickMaxS)
                 {

@@ -62,6 +62,8 @@ public sealed class SzenenFang
     readonly ModellSzene szene;
     readonly SzenenElement[] elemente;
     readonly object sperre = new();
+    // V1d: eine Abfrage zur Zeit (Maske, Stempel; die App fragt im Hintergrund, die Prüfung im Bild)
+    readonly object abfrageSperre = new();
     volatile Index? index;
 
     /// <summary>Der räumliche Index (V1d): Fangdaten je Element, Stücke, Punkte und Strecken mit fester Nummer, je ein BoxBaum.</summary>
@@ -72,7 +74,9 @@ public sealed class SzenenFang
         public required (int Element, int Netz, int Ab, int Anzahl)[] Stuecke;
         public required (int Element, FangPunkt P)[] Punkte;
         public required (int Element, FangStrecke S)[] Strecken;
-        public required BoxBaum BaumStuecke, BaumPunkte, BaumStrecken;
+        /// <summary>Punkte nach Art getrennt (Anschluss vor Ecke): Nummern in <see cref="Punkte"/>, je ein Baum.</summary>
+        public required int[] Anschluesse, Ecken;
+        public required BoxBaum BaumStuecke, BaumAnschluesse, BaumEcken, BaumStrecken;
         public double GroessterRadius;
     }
 
@@ -141,10 +145,13 @@ public sealed class SzenenFang
                     streckenBoxen.Add(Box3.Leer.Plus(s.A).Plus(s.B) is var b && r > 0 ? new Box3(b.Min - new Vec3(r, r, r), b.Max + new Vec3(r, r, r)) : Box3.Leer.Plus(s.A).Plus(s.B));
                 }
             }
+            int[] anschluesse = [.. Enumerable.Range(0, punkte.Count).Where(k => punkte[k].Item2.Art == Fangart.Anschluss)];
+            int[] ecken = [.. Enumerable.Range(0, punkte.Count).Where(k => punkte[k].Item2.Art != Fangart.Anschluss)];
             var neu = new Index
             {
-                Fang = fang, Nummer = nummer, Stuecke = [.. stuecke], Punkte = [.. punkte], Strecken = [.. strecken],
-                BaumStuecke = new BoxBaum(stueckBoxen), BaumPunkte = new BoxBaum(punktBoxen), BaumStrecken = new BoxBaum(streckenBoxen), GroessterRadius = radius,
+                Fang = fang, Nummer = nummer, Stuecke = [.. stuecke], Punkte = [.. punkte], Strecken = [.. strecken], Anschluesse = anschluesse, Ecken = ecken,
+                BaumStuecke = new BoxBaum(stueckBoxen), BaumAnschluesse = new BoxBaum([.. anschluesse.Select(k => punktBoxen[k])]),
+                BaumEcken = new BoxBaum([.. ecken.Select(k => punktBoxen[k])]), BaumStrecken = new BoxBaum(streckenBoxen), GroessterRadius = radius,
             };
             eintritt = new double[elemente.Length];
             stempel = new int[elemente.Length];
@@ -162,10 +169,11 @@ public sealed class SzenenFang
 
     bool[] Maske(Index ix)
     {
-        if (maskeGesetzt && ReferenceEquals(maskeFuer, Filter) && maske.Length == elemente.Length) return maske;
+        var filter = Filter;   // einmal lesen: die App kann ihn im Bild neu setzen, während der Hintergrund fragt
+        if (maskeGesetzt && ReferenceEquals(maskeFuer, filter) && maske.Length == elemente.Length) return maske;
         if (maske.Length != elemente.Length) maske = new bool[elemente.Length];
-        for (int i = 0; i < elemente.Length; i++) maske[i] = Filter?.Invoke(elemente[i]) ?? true;
-        maskeFuer = Filter;
+        for (int i = 0; i < elemente.Length; i++) maske[i] = filter?.Invoke(elemente[i]) ?? true;
+        maskeFuer = filter;
         maskeGesetzt = true;
         return maske;
     }
@@ -181,21 +189,34 @@ public sealed class SzenenFang
     public FangErgebnis Punkt(Vec3 p, double radius = XrMessLogik.FangRadiusFinger)
     {
         var ix = Sicher();
+        lock (abfrageSperre) return Punkt(ix, p, radius);
+    }
+
+    FangErgebnis Punkt(Index ix, Vec3 p, double radius)
+    {
         var zaehlt = Maske(ix);
         var R = radius;
-        // Punkte (Anschluss vor Ecke, dann der nähere; bei Gleichstand der frühere)
-        int bP = -1; var bPd = R; var bPrio = 99;
-        ix.BaumPunkte.Nahe(p, R, k =>
+        // Punkte: ein Anschluss geht jeder Ecke vor (der nähere; bei Gleichstand der frühere) – gibt es einen, ist er das Ergebnis; sonst die nächste Ecke (der Umkreis
+        // schrumpft mit dem besten Treffer). Was ein Punkt ist, geht allem anderen vor (Rangfolge wie bis V1a): dann bleiben Strecken und Flächen ungefragt.
+        int bP = -1; var bPd = R;
+        double Punkte(BoxBaum baum, int[] nummern)
         {
-            var (e, q) = ix.Punkte[k];
-            if (!zaehlt[e]) return double.PositiveInfinity;
-            var d = p.Abstand(q.P);
-            var prio = q.Art == Fangart.Anschluss ? 0 : 1;
-            if (d <= R && (prio < bPrio || (prio == bPrio && (d < bPd || (d == bPd && k < bP)))) && Zeigt(q.P)) { bP = k; bPd = d; bPrio = prio; }
-            return double.PositiveInfinity;
-        });
-        // Strecken: Mitte einer Kante und der nächste Punkt (bei Gleichstand der spätere, wie bis V1a)
-        int bM = -1; var bMd = R; Vec3 bMp = default;
+            baum.Nahe(p, R, j =>
+            {
+                var k = nummern[j];
+                var (e, q) = ix.Punkte[k];
+                if (!zaehlt[e]) return double.PositiveInfinity;
+                var d = p.Abstand(q.P);
+                if (d <= R && (bP < 0 || d < bPd || (d == bPd && k < bP)) && Zeigt(q.P)) { bP = k; bPd = d; }
+                return bP >= 0 ? bPd : double.PositiveInfinity;
+            });
+            return bPd;
+        }
+        Punkte(ix.BaumAnschluesse, ix.Anschluesse);
+        if (bP < 0) Punkte(ix.BaumEcken, ix.Ecken);
+        if (bP >= 0) return Ergebnis(ix.Punkte[bP].P.Art, ix.Punkte[bP].P.P, elemente[ix.Punkte[bP].Element].Schluessel);
+        // Strecken: Mitte einer Kante (zählt nur bis zum halben Radius) und der nächste Punkt (bei Gleichstand der spätere, wie bis V1a); der Umkreis schrumpft
+        int bM = -1; var bMd = R * 0.5; Vec3 bMp = default;
         int bS = -1; var bSd = R; Vec3 bSp = default;
         ix.BaumStrecken.Nahe(p, R, k =>
         {
@@ -207,8 +228,10 @@ public sealed class SzenenFang
             var n = XrMessLogik.NaechsterAufStrecke3(p, s.A, s.B);
             var dEff = Math.Max(0, p.Abstand(n.P) - (s.Radius ?? 0));
             if ((dEff < bSd || (dEff == bSd && k > bS)) && Zeigt(n.P)) { bS = k; bSd = dEff; bSp = n.P; }
-            return double.PositiveInfinity;
+            return Math.Max(bMd, bSd);
         });
+        if (bM >= 0) return Ergebnis(Fangart.Mitte, bMp, elemente[ix.Strecken[bM].Element].Schluessel);
+        if (bS >= 0) return Ergebnis(ix.Strecken[bS].S.Art, bSp, elemente[ix.Strecken[bS].Element].Schluessel);
         // Flächen: Fusspunkt im Dreieck (bei Gleichstand der spätere)
         long bF = -1; var bFd = R; Vec3 bFp = default, bFn = default; var bFe = -1;
         ix.BaumStuecke.Nahe(p, R, k =>
@@ -224,9 +247,6 @@ public sealed class SzenenFang
             }
             return bFd;
         });
-        if (bP >= 0) return Ergebnis(ix.Punkte[bP].P.Art, ix.Punkte[bP].P.P, elemente[ix.Punkte[bP].Element].Schluessel);
-        if (bM >= 0 && bMd <= R * 0.5) return Ergebnis(Fangart.Mitte, bMp, elemente[ix.Strecken[bM].Element].Schluessel);
-        if (bS >= 0) return Ergebnis(ix.Strecken[bS].S.Art, bSp, elemente[ix.Strecken[bS].Element].Schluessel);
         if (bF >= 0)
         {
             var n = (p - bFp).Skalar(bFn) < 0 ? -bFn : bFn;   // Normale zur Seite des Fingers
@@ -246,6 +266,11 @@ public sealed class SzenenFang
         var r = r0.Einheit();
         if (r.Laenge < 0.5) return Ergebnis(Fangart.Frei, null, null);
         var ix = Sicher();
+        lock (abfrageSperre) return Strahl(ix, u, r, radius0, jeMeter, reichweite);
+    }
+
+    FangErgebnis Strahl(Index ix, Vec3 u, Vec3 r, double radius0, double jeMeter, double reichweite)
+    {
         var zaehlt = Maske(ix);
         // 1. erster Treffer auf einem Dreieck (bei Gleichstand der frühere)
         double? tTreffer = null; Vec3 nTreffer = default; var eTreffer = -1; long nrTreffer = long.MaxValue;
@@ -277,9 +302,22 @@ public sealed class SzenenFang
             if (stempel[e] != abfrage) { stempel[e] = abfrage; eintritt[e] = BoxStrahl(elemente[e].Box, u, r, dehnung) ?? double.PositiveInfinity; }
             return eintritt[e] <= bis;
         }
-        int bP = -1; double bPt = 0; var bPrio = 99; var bPd = double.PositiveInfinity;
-        ix.BaumPunkte.Strahl(u, r, bis, dehnung, (k, _) =>
+        // Punkte nahe am Strahl: ein Anschluss vor jeder Ecke (der nähere, bei Gleichstand der frühere); ein Punkt geht den Kanten vor – dann bleiben sie ungefragt
+        int bP = -1; double bPt = 0; var bPd = double.PositiveInfinity;
+        // Gesucht wird stufenweise von innen nach aussen (Dehnung radius0, doppelt, … bis zur vollen): der beste Treffer (kleinster Abstand zum Strahl) liegt innerhalb
+        // jeder Dehnung, die mindestens so gross ist wie sein Abstand – findet eine enge Stufe einen gültigen, ist es derselbe wie mit der vollen Dehnung, nur ohne die
+        // vielen Kandidaten im weiten Kegel (am Tisch 1.5 m + 3 % des Wegs in der Szene). Innerhalb einer Stufe schrumpft die Dehnung auf den besten Abstand.
+        void Stufenweise(Action<double> suche, Func<double, bool> gefunden, double voll)
         {
+            for (var d = Math.Min(voll, radius0 + 0.01); ; d = Math.Min(voll, d * 2))
+            {
+                suche(d);
+                if (gefunden(d) || d >= voll) return;   // gefunden heisst: der beste liegt höchstens d vom Strahl (dann ist er sicher der beste)
+            }
+        }
+        void Punkte(BoxBaum baum, int[] nummern) => Stufenweise(dd => baum.StrahlNahe(u, r, bis, dd, j =>
+        {
+            var k = nummern[j];
             var (e, q) = ix.Punkte[k];
             if (!zaehlt[e] || !Erreicht(e)) return double.PositiveInfinity;
             var w = q.P - u;
@@ -287,12 +325,14 @@ public sealed class SzenenFang
             if (t <= 0 || t > bis) return double.PositiveInfinity;
             var d = (w - r * t).Laenge;
             var tol = radius0 + jeMeter * t;
-            var prio = q.Art == Fangart.Anschluss ? 0 : 1;
-            if (d <= tol && (prio < bPrio || (prio == bPrio && (d < bPd || (d == bPd && k < bP)))) && Zeigt(q.P)) { bP = k; bPt = t; bPrio = prio; bPd = d; }
-            return double.PositiveInfinity;
-        });
+            if (d <= tol && (bP < 0 || d < bPd || (d == bPd && k < bP)) && Zeigt(q.P)) { bP = k; bPt = t; bPd = d; }
+            return bP >= 0 ? bPd : double.PositiveInfinity;
+        }, radius0 + 1e-9, jeMeter), d => bP >= 0 && bPd <= d, dehnung);
+        Punkte(ix.BaumAnschluesse, ix.Anschluesse);
+        if (bP < 0) Punkte(ix.BaumEcken, ix.Ecken);
+        if (bP >= 0) return Ergebnis(ix.Punkte[bP].P.Art, ix.Punkte[bP].P.P, elemente[ix.Punkte[bP].Element].Schluessel, t: bPt);
         int bS = -1; Vec3 bSp = default; double bSt = 0; var bSd = double.PositiveInfinity;
-        ix.BaumStrecken.Strahl(u, r, bis + ix.GroessterRadius, dehnung, (k, _) =>
+        Stufenweise(dd => ix.BaumStrecken.StrahlNahe(u, r, bis + ix.GroessterRadius, dd, k =>
         {
             var (e, s) = ix.Strecken[k];
             if (!zaehlt[e] || !Erreicht(e)) return double.PositiveInfinity;
@@ -300,9 +340,8 @@ public sealed class SzenenFang
             if (h.TStrahl <= 0 || h.TStrahl > bis + (s.Radius ?? 0)) return double.PositiveInfinity;   // die Achse liegt um den Radius hinter der eigenen Oberfläche
             var tol = radius0 + jeMeter * h.TStrahl + (s.Radius ?? 0);
             if (h.Abstand <= tol && (h.Abstand < bSd || (h.Abstand == bSd && k < bS)) && Zeigt(h.PunktStrecke)) { bS = k; bSp = h.PunktStrecke; bSt = h.TStrahl; bSd = h.Abstand; }
-            return double.PositiveInfinity;
-        });
-        if (bP >= 0) return Ergebnis(ix.Punkte[bP].P.Art, ix.Punkte[bP].P.P, elemente[ix.Punkte[bP].Element].Schluessel, t: bPt);
+            return bS >= 0 ? bSd : double.PositiveInfinity;   // weiter weg vom Strahl ist keine Strecke besser
+        }, radius0 + 1e-9, jeMeter), d => bS >= 0 && bSd <= d, dehnung + jeMeter * ix.GroessterRadius);
         if (bS >= 0) return Ergebnis(ix.Strecken[bS].S.Art, bSp, elemente[ix.Strecken[bS].Element].Schluessel, t: bSt);
         if (tTreffer is { } th)
         {

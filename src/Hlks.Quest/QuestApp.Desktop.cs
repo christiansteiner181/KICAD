@@ -41,8 +41,9 @@ sealed partial class QuestApp
     void DesktopBild(Pose kopf)
     {
         var d = DesktopTeil;
-        if (d.Bild(kopf, Time.Total, Time.Step, werte.Desktop, bedien.Pinch, bedien.Wegwischen, !AnApps(Handed.Right) || d.Haende is not null, paket,
-                _ => Task.FromResult(adresse is { } a ? DesktopRegeln.Adresse(a) : (Uri?)null)))
+        // V1d: eine Hand auf der Tafel (Blättern) zieht den Bildschirm nicht herein; die linke Hand zieht ebenso herein
+        if (d.Bild(kopf, Time.Total, Time.Step, werte.Desktop, bedien.Pinch, bedien.Wegwischen, (!AnApps(Handed.Right) && !apps.AnTafel(Handed.Right)) || d.Haende is not null, paket,
+                _ => Task.FromResult(adresse is { } a ? DesktopRegeln.Adresse(a) : (Uri?)null), !AnApps(Handed.Left) && !apps.AnTafel(Handed.Left), bedien.Tafel))
             DesktopGeoeffnet();
     }
 

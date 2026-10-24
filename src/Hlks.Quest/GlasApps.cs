@@ -48,8 +48,25 @@ sealed class GlasApps : IWegwischbar
 
     public sealed record Ereignis(string Art, string Id)
     {
-        public const string Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben";
+        /// <summary>V1d: «blaettern» – ein Wisch auf der Tafel (Id = Richtung, Hlks.Xr.WischRichtung).</summary>
+        public const string Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben", Blaettern = "blaettern";
     }
+
+    // ---------------------------------------------------------------- V1d: Tafel mittig, träge nachgeführt; Blättern auf der Tafel
+    readonly TafelFolgen folgen = new();
+    readonly TafelBlaetternZustand[] blaettern = [new(), new()];
+    readonly BlaetternStand[] blaetternStand = new BlaetternStand[2];
+    /// <summary>V1d: Nachrücken der Tafel (Protokoll, Prüfung).</summary>
+    public TafelFolgen Folgen => folgen;
+    /// <summary>V1d: liegt diese Hand auf der Tafel bzw. blättert sie (dann zählt sie weder für das Wegwischen noch für das Hineinziehen)?</summary>
+    public bool AnTafel(Handed h) => Sichtbar && blaetternStand[(int)h].AnTafel;
+    /// <summary>V1d: Versatz der Seite beim Blättern im letzten Bild (Prüfung).</summary>
+    public XVec3 SeitenVersatz { get; private set; }
+    /// <summary>V1d, Prüfung am PC: gedachte Hand (Gelenke) für das Blättern statt der rechten Hand; null = echte Hände.</summary>
+    public IReadOnlyDictionary<string, XVec3>? PruefBlaetterHand { get; set; }
+    bool pruefBlaetterVorher;
+    /// <summary>Prüflauf am PC (V1d-Folge): die Maus-Hände des Simulators zählen am Fenster nicht (ihre Lage hängt von der Maus ab; nur die gedachten Hände).</summary>
+    public bool OhneEchteHaende { get; set; }
 
     readonly Rueckmeldung rueck;
     readonly GlasZeichner z;
@@ -117,6 +134,7 @@ sealed class GlasApps : IWegwischbar
         weggewischtSeit = null;
         wischWeg = wischZiel = 0;
         Glas.Holen(anker, platz, t);
+        folgen.Geoeffnet();   // V1d: wieder träge nachführen (auch nach einem Verschieben am Griff)
     }
 
     public void Ausblenden(double t)
@@ -168,11 +186,17 @@ sealed class GlasApps : IWegwischbar
         if (weggewischtSeit is { } ws0 && t - ws0 >= WegS) Ausblenden(t);   // weggewischt und aus dem Bild geglitten
         if (!Sichtbar || (anHand && handLage is null))
         {
-            for (int i = 0; i < 2; i++) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); }
-            Rahmen = null; Ziele = []; Belegt.Clear(); Tooltip = null;
+            for (int i = 0; i < 2; i++)
+            {
+                nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false);
+                blaetternStand[i] = TafelBlaettern.Schritt(blaettern[i], t, null, false, null);
+            }
+            Rahmen = null; Ziele = []; Belegt.Clear(); Tooltip = null; SeitenVersatz = XVec3.Null;
             return aus;
         }
         if (!anHand) Glas.Pruefen(anker, auge, platz, t);
+        // V1d (Christian 24.10.2026: «die tafel … sollte immer zentrisch sein»): träge in die Blickmitte nachführen (Variante «tafel_nachfuehren»)
+        if (!anHand) Glas.Nachfuehren(anker, folgen, auge, VrLogik.GierenVonRichtung(new Xz(kopf.Forward.x, kopf.Forward.z)), dt, platz, e.Tafel, nah[0] || nah[1]);
         // Lage: verankert (bzw. an der Hand), zurückweichen bei einer Karte, Aufbauen nach dem Holen
         zurueck = GlasStil.Folgen(zurueck, karte ? GlasStil.ZurueckM : 0, dt, GlasStil.ZurueckS / 3);
         var (deck, groesse) = GlasStil.Aufbau(t - anker.Seit);
@@ -200,10 +224,31 @@ sealed class GlasApps : IWegwischbar
         Belegt.AddRange(flaechen);
         var hover = new int?[2];
         var naehe = new double[2];
+        SeitenVersatz = XVec3.Null;
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
             var h = Input.Hand(handed);
-            if (!h.IsTracked) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
+            // V1d (Christian 24.10.2026: «eine swap bewegung mit der rechten oder linken hand soll in einem aktiven fenster blättern»): ein Wisch ohne Pinch, der auf der Tafel
+            // beginnt, blättert (Hlks.Xr.Bedienung.TafelBlaettern); solange er läuft, tippt die Hand keine Knöpfe an, die Seite gleitet mit
+            var sim = i == 1 ? PruefBlaetterHand : null;
+            // Prüflauf: kommt bzw. geht die gedachte Hand, beginnt die Hand neu (sonst gälte der Sprung von der Hand des Simulators als Wisch im freien Raum)
+            if (i == 1 && (sim is not null) != pruefBlaetterVorher) { TafelBlaettern.Schritt(blaettern[i], t, null, false, null); pruefBlaetterVorher = sim is not null; }
+            if (!anHand && (sim is not null || (h.IsTracked && !OhneEchteHaende)))
+            {
+                var gb = sim ?? HandGelenke.AusStereoKit((f, j) => X(h[f, j].position), X(h.wrist.position));
+                var pb = sim is null && XrTabletLogik.IstPinch(gb, pinch[i], e.Pinch);
+                var bs = TafelBlaettern.Schritt(blaettern[i], t, gb, pb, fenster, e.Tafel);
+                blaetternStand[i] = bs;
+                if (bs.Ereignis is { } br) aus.Add(new Ereignis(Ereignis.Blaettern, br.ToString()));
+                if (bs.Laeuft)
+                {
+                    SeitenVersatz = fenster.Rechts * bs.VersatzX + fenster.Oben * bs.VersatzY;
+                    nah[i] = true; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false);
+                    continue;
+                }
+            }
+            else blaetternStand[i] = TafelBlaettern.Schritt(blaettern[i], t, null, false, null);
+            if (!h.IsTracked || OhneEchteHaende) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
             var g = HandGelenke.AusStereoKit((f, j) => X(h[f, j].position), X(h.wrist.position));
             // V1a: Zeiger mit Tooltip wie bei den Symbolen (gestreckter Zeigefinger nahe an einem Knopf, sonst der Zielstrahl)
             var spitzeZ = X(h[FingerId.Index, JointId.Tip].position);
@@ -269,8 +314,8 @@ sealed class GlasApps : IWegwischbar
         double Blitz(string art, string id) => blitz.TryGetValue($"{art}:{id}", out var tb) ? Math.Max(0, 1 - (t - tb) / 0.25) : 0;
         // Fenster
         z.Flaeche(r.Fenster, m.M(GlasStil.EckenPt), glasFarbe, groesse);
-        // Inhalt
-        var p = r.Inhalt;
+        // Inhalt (V1d: beim Blättern gleitet die Seite mit der Hand mit)
+        var p = r.Inhalt with { Mitte = r.Inhalt.Mitte + SeitenVersatz };
         foreach (var el in inhalt.Elemente)
         {
             var k = el.Ziel ? ziele.FindIndex(x => x.Art == GlasApps.Ereignis.Element && x.Id == el.Id) : -1;

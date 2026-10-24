@@ -82,6 +82,26 @@
       ],
       "vorgabe": "seitlich",
       "herkunft": "Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» (nach den Prüfbildern 03: das Fenster verdeckte das Feld fast ganz); «dahinter» bleibt als Vergleich"
+    },
+    {
+      "name": "tafel_nachfuehren", "titel": "Tafel nachführen",
+      "beschreibung": "Das Fenster einer App (auch der PC-Bildschirm) öffnet mittig in der Blickrichtung. «träge»: dreht man sich weiter als «tafel.nachfuehren_grad» weg, rückt es ruhig wieder in die Mitte (nie starr am Kopf; still, solange eine Hand daran ist, und nicht mehr, wenn man es am Griff hingestellt hat). «fest»: es bleibt nach dem Öffnen im Raum stehen.",
+      "optionen": [
+        { "id": "traege", "titel": "träge" },
+        { "id": "fest", "titel": "fest" }
+      ],
+      "vorgabe": "traege",
+      "herkunft": "Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein»; Annahme V1d: «immer» = beim Öffnen und träge nachgeführt"
+    },
+    {
+      "name": "zoom_ein_griff", "titel": "Zoomen am einen Griff",
+      "beschreibung": "Am Sitzungstisch bewegt und dreht ein Griff an der vorderen Gebäudekante das Modell. Zoomen: «zweite Hand» – hält eine Hand den Griff, zoomt ein Pinch der anderen Hand über den Abstand der Hände; «Drehknopf» – Rollen des Handgelenks am Griff (im Uhrzeigersinn grösser).",
+      "optionen": [
+        { "id": "zweite_hand", "titel": "Zweite Hand" },
+        { "id": "drehknopf", "titel": "Drehknopf" }
+      ],
+      "vorgabe": "zweite_hand",
+      "herkunft": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»; die zwei Arten des Zoomens Auftrag V1d"
     }
   ]
 }

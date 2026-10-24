@@ -163,6 +163,58 @@ public sealed class BoxBaum
         }
     }
 
+    /// <summary>
+    /// Strahl u + t·r (r Einheit) auf [0, tMax] mit schrumpfender Dehnung: ruft besuch(eintrag) für jeden Eintrag eines Blatts, dessen Box (um dehnung vergrössert) der
+    /// Strahl trifft. besuch gibt die neue Dehnung zurück (kleiner = nur noch Einträge, die so nah am Strahl liegen können; double.PositiveInfinity = wie bisher). Die
+    /// Knoten werden beim Besuch mit der Dehnung von dann geprüft, nahe Knoten zuerst.
+    /// </summary>
+    public void StrahlNahe(Vec3 u, Vec3 r, double tMax, double dehnung, Func<int, double> besuch, double kegel0 = double.PositiveInfinity, double kegelJe = 0)
+    {
+        if (knoten == 0) return;
+        var invR = new Vec3(Math.Abs(r.X) < 1e-12 ? double.PositiveInfinity : 1 / r.X, Math.Abs(r.Y) < 1e-12 ? double.PositiveInfinity : 1 / r.Y,
+            Math.Abs(r.Z) < 1e-12 ? double.PositiveInfinity : 1 / r.Z);
+        // Kegel (optional): ein Eintrag zählt nur bis kegel0 + kegelJe × t vom Strahl – für einen Knoten genügt die Dehnung bei seinem fernsten t
+        double D(int k)
+        {
+            if (double.IsPositiveInfinity(kegel0)) return dehnung;
+            double c = 0, h = 0;
+            for (int a = 0; a < 3; a++)
+            {
+                var ra = a == 0 ? r.X : a == 1 ? r.Y : r.Z;
+                var ua = a == 0 ? u.X : a == 1 ? u.Y : u.Z;
+                c += ((min[3 * k + a] + max[3 * k + a]) / 2 - ua) * ra;
+                h += (max[3 * k + a] - min[3 * k + a]) / 2 * Math.Abs(ra);
+            }
+            return Math.Min(dehnung, kegel0 + kegelJe * Math.Max(0, Math.Min(tMax, c + h)));
+        }
+        if (double.IsNaN(Eintritt(0, u, invR, D(0), tMax))) return;
+        int sp = 0;
+        stapel[sp++] = 0;
+        while (sp > 0)
+        {
+            var k = stapel[--sp];
+            if (double.IsNaN(Eintritt(k, u, invR, D(k), tMax))) continue;   // mit der Dehnung von jetzt
+            if (links[k] < 0)
+            {
+                for (int i = ab[k]; i < ab[k] + anzahl[k]; i++)
+                {
+                    var neu = besuch(reihe[i]);
+                    if (neu < dehnung) dehnung = neu;
+                }
+                continue;
+            }
+            double ta = Eintritt(links[k], u, invR, D(links[k]), tMax), tb = Eintritt(rechts[k], u, invR, D(rechts[k]), tMax);
+            Platz(sp + 2);
+            if (!double.IsNaN(ta) && !double.IsNaN(tb))
+            {
+                if (ta <= tb) { stapel[sp++] = rechts[k]; stapel[sp++] = links[k]; }
+                else { stapel[sp++] = links[k]; stapel[sp++] = rechts[k]; }
+            }
+            else if (!double.IsNaN(ta)) stapel[sp++] = links[k];
+            else if (!double.IsNaN(tb)) stapel[sp++] = rechts[k];
+        }
+    }
+
     double Abstand(int k, in Vec3 p)
     {
         double dx = Math.Max(0, Math.Max(min[3 * k] - p.X, p.X - max[3 * k]));
@@ -193,9 +245,11 @@ public sealed class BoxBaum
                 }
                 continue;
             }
+            // der nähere zuerst (er wird zuletzt auf den Stapel gelegt): ein guter Treffer schrumpft den Umkreis früh
             Platz(sp + 2);
-            stapel[sp++] = links[k];
-            stapel[sp++] = rechts[k];
+            double dl = Abstand(links[k], p), dr = Abstand(rechts[k], p);
+            if (dl <= dr) { if (dr <= radius) stapel[sp++] = rechts[k]; if (dl <= radius) stapel[sp++] = links[k]; }
+            else { if (dl <= radius) stapel[sp++] = links[k]; if (dr <= radius) stapel[sp++] = rechts[k]; }
         }
     }
 }
