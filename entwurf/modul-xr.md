@@ -164,7 +164,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 
 **Ganze Hand, Pastellfarben, Symbole wie im CAD** (Christian, 24.10.2026, nach den Bildern V1a/02: «die app berührung soll mit der ganzen hand erfolgen und nicht nur mit einem finger. das grau ist nicht so ansprechend. verwende unsere pastelfarben. nutze die gleiche symbolsprache wie im cad.»):
 - App-Symbole wählt jeder Teil der Hand (Handfläche, Finger), nicht nur die Zeigefingerspitze; keine Wahl während Hebe- und Wegschiebegeste. Knöpfe in den Glas-Apps bleiben Fingerspitze (Annahme, eng beieinander).
-- Statt Grau die Pastelltöne aus `kataloge/gewerke.json` (pastell, Akzent koordination) wie im Projektbrowser; Farben nur aus dem Katalog, dunkle Schrift auf hellem Pastell.
+- Statt Grau eine eigene App-Pastellreihe (Christian, 24.10.2026: «gewerke werden nur für gewerkeunterschiede gebraucht»; gewählt «Neue App-Reihe»): Etagen #D6E6F5, Messen #D9F0E6, Marker #F8E0D2, Tisch #E6DDF3, Begehen #F3ECD6, KICAD #DDE7EE; Akzent eine dunklere Stufe desselben Tons, Schrift dunkel. Nur im Katalog `kataloge/xr_farben.json`, nie im Code; Gewerkfarben nicht für Apps. Vorschlag, Christian beurteilt an den Bildern.
 - Symbole aus derselben Quelle wie KICAD (`oberflaeche/symbole.js`, Revit-Fassung `symbole-revit.js` nach Einstellung); fehlende im gleichen Stil dort ergänzen.
 - Diese Vorgaben gehen dem visionOS-Stil vor, wo sie sich widersprechen (Farbe, Symbole); Form, Glas und Abstände bleiben.
 
