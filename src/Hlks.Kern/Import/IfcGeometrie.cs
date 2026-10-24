@@ -244,6 +244,22 @@ public sealed partial class IfcGeometrie
         return gemerkt.Remove(entityLabel, out var n) ? n : null;
     }
 
+    /// <summary>Zähler (nicht ausgewertete Entitäten, vereinfachte Körper) sichern – eine Auswertung neben dem Übertrag (IFC einpassen)
+    /// soll die Hinweise des Übertrags nicht doppelt zählen.</summary>
+    internal (Dictionary<string, int> Unbekannt, HashSet<int> Vereinfacht) ZaehlerSichern() => (new(Unbekannt), new(vereinfacht));
+
+    /// <summary>Setzt die Zähler zurück und vergisst die seither gemerkten Körper – sonst stünde ein gemerkter vereinfachter Körper ohne
+    /// seine Marke «vereinfacht» da (gleicher Bezug beim Übertrag).</summary>
+    internal void ZaehlerZuruecksetzen((Dictionary<string, int> Unbekannt, HashSet<int> Vereinfacht) z)
+    {
+        Unbekannt.Clear();
+        foreach (var (k, v) in z.Unbekannt) Unbekannt[k] = v;
+        vereinfacht.Clear();
+        vereinfacht.UnionWith(z.Vereinfacht);
+        gemerkt.Clear();
+        gemerktBezug = null;
+    }
+
     /// <summary>Vergisst alle gemerkten Netze und Abbildungsquellen.</summary>
     public void Leeren()
     {

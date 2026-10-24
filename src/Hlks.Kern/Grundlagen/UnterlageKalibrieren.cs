@@ -42,7 +42,7 @@ public sealed class UnterlageKalibrieren : IBefehl
             throw new HlksFehler($"{ul.Kennzeichen} ist eine Herstellerunterlage einer Familie und hat keine Lage im Projekt.", "Nur Unterlagen mit zweck «plan» (Grundlagen im Grundriss) werden kalibriert.");
         if (art == "ifc")
             throw new HlksFehler($"{ul.Kennzeichen} ist ein IFC; IFC-Dateien werden nicht kalibriert.",
-                "Die Ausrichtung eines IFC steht in ifc_uebernehmen (ausrichtung: projekt | gebaeude | koordinationskoerper) und im Lagebericht von ifc_pruefen.");
+                "Die Ausrichtung eines IFC steht in ifc_uebernehmen (ausrichtung: projekt | gebaeude | koordinationskoerper | einpassen) und im Lagebericht von ifc_pruefen.");
         bool raster = UnterlagenLage.IstRaster(art);
         bool nurVerschieben = Param.Bool(p, "nurVerschieben");
         var von = Paare(p, "von", raster);

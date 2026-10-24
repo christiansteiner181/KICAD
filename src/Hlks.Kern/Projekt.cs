@@ -27,6 +27,9 @@ public sealed class BefehlsErgebnis
     public string? Ablehnung { get; init; }
     /// <summary>Nur bei paket_zuruecknehmen: spätere Pakete, die dieselben Elemente oder Verbindungen berührt haben (sonst null).</summary>
     public List<SpaeteresPaket>? SpaeterePakete { get; init; }
+    /// <summary>Nur bei ifc_uebernehmen: Lagebericht der Ausrichtung (wie Unterlage.lage, bei ausrichtung = einpassen mit «einpassen»), auch im
+    /// Trockenlauf und bei Ablehnung nach der Ausrichtung (sonst null, wird dann nicht ausgegeben). Nachtrag Hauptlauf 24.10.2026.</summary>
+    public System.Text.Json.Nodes.JsonObject? Lage { get; set; }
 }
 
 /// <summary>Ein späteres Paket, das ein gezieltes Zurücknehmen verhindert (paket_zuruecknehmen).</summary>
@@ -136,12 +139,14 @@ public sealed class Projekt
             b.Ausfuehren(k, parameter ?? new JsonObject());
             Nachfuehrungen.Ausfuehren(k);   // Folgeänderungen (z. B. Öffnungen mit ihrer Wand) im selben Paket
         }
-        catch (HlksFehler f) { return Abgelehnt(b.Name, trockenlauf, f); }
+        catch (HlksFehler f) { var a = Abgelehnt(b.Name, trockenlauf, f); a.Lage = k.Lage; return a; }
         catch (Exception ex) when (ex is FormatException or InvalidOperationException or System.Text.Json.JsonException or KeyNotFoundException)
         { return Abgelehnt(b.Name, trockenlauf, new HlksFehler("Parameter ungültig: " + ex.Message)); }
         if (k.Operationen.Count == 0)
-            return new BefehlsErgebnis { Angenommen = true, Befehl = b.Name, Trockenlauf = trockenlauf, Meldung = "Keine Änderung.", Hinweise = k.Hinweise };
-        return Uebernehmen(b.Name, parameter, k.Operationen, k.Arbeit, k.Hinweise, trockenlauf, null, "lokal");
+            return new BefehlsErgebnis { Angenommen = true, Befehl = b.Name, Trockenlauf = trockenlauf, Meldung = "Keine Änderung.", Hinweise = k.Hinweise, Lage = k.Lage };
+        var r = Uebernehmen(b.Name, parameter, k.Operationen, k.Arbeit, k.Hinweise, trockenlauf, null, "lokal");
+        r.Lage = k.Lage;
+        return r;
     }
 
     static BefehlsErgebnis Abgelehnt(string befehl, bool trockenlauf, HlksFehler f) => new()

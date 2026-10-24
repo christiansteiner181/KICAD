@@ -155,6 +155,13 @@ sealed class IfcRaeumeLauf(IfcLauf lauf)
         hinweise.Schreiben(lauf.Hinweise, "Räume");
     }
 
+    /// <summary>Nur Räume aus IfcSpace planen (keine Räume aus Wänden), ohne Hinweise – Merkmale für IFC einpassen
+    /// (IfcEinpassen.DateiMerkmale).</summary>
+    public void NurIfcSpace(List<IIfcSpace> raeume)
+    {
+        if (raeume.Count > 0) AusIfcSpace(raeume);
+    }
+
     // ------------------------------------------------------------------ IfcSpace
 
     void AusIfcSpace(List<IIfcSpace> raeume)

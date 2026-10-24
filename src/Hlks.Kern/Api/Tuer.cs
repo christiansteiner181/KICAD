@@ -35,7 +35,7 @@ public static class Tuer
             "datenpunkte" => a.Datenpunkte(T("element")),
             "zeitreihe" => a.Zeitreihe(T("datenpunkt", true)!, T("von", true)!, T("bis", true)!, Param.Zahl(par, "aufloesungMinuten") ?? 60),
             "plan_pdf" => Planausgabe.PdfDatei(p, T("planblatt", true)!, T("datei")),
-            "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!),
+            "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),
             "huelle_pruefen" => HuelleAbfragen.HuellePruefen(p),

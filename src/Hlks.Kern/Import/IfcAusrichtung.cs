@@ -11,6 +11,12 @@
 // verlangt eine ausdrückliche Wahl (Parameter ausrichtung): projekt (Weltkoordinaten der Datei wie sie sind),
 // gebaeude (Gebäudeursprung der Datei auf den Projektursprung), koordinationskoerper (Koordinationskörper aufeinander).
 // Die gewählte Lage steht in der Unterlage (Eigenschaft lage) – mit allen Zahlen, auch für den späteren Export (Modul 7).
+//
+// Vierte Wahl «einpassen» (entwurf/ifc-einpassen.md, Auftrag Christian 24.10.2026): Drehung und Verschiebung über Wände und Raumkanten
+// (IfcEinpassen). Ausdrückliche Wahl; übernommen wird nur bei eindeutiger Lage, sonst Bewertung «nicht eindeutig» mit Lagebericht
+// (ifc_uebernehmen bricht ab, auch im Trockenlauf). ifc_pruefen rechnet das Einpassen auch, wenn keine andere Wahl das bestehende Modell
+// trifft, und empfiehlt es bei eindeutiger Lage mit Überdeckung ≥ 0.8. Erste Datei in einem Projekt mit Inhalt: einpassen setzt den
+// Projektbezug. Neue Fassung derselben Unterlage mit unveränderter Abweichung: der gespeicherte eingepasste Bezug gilt ohne neue Rechnung.
 
 using System.Text.Json.Nodes;
 
@@ -22,19 +28,49 @@ public static class IfcAusrichtung
 {
     public const double ToleranzMm = 10;
     public const double ToleranzGrad = 0.01;
-    public static readonly string[] Arten = ["projekt", "gebaeude", "koordinationskoerper"];
+    public static readonly string[] Arten = ["projekt", "gebaeude", "koordinationskoerper", "einpassen"];
+
+    /// <summary>Bewertung, wenn das gewählte Einpassen keine eindeutige Lage findet: nichts übernehmen.</summary>
+    public const string NichtEindeutig = "nicht eindeutig";
+
+    /// <summary>Überdeckung, ab der ifc_pruefen das Einpassen empfiehlt (wie bei projekt und gebaeude).</summary>
+    public const double EmpfehlungAb = 0.8;
+
+    /// <summary>Vorschlag, wenn das Einpassen nicht eindeutig ist.</summary>
+    public const string VorschlagEinpassen =
+        "Einpassen braucht eine eindeutige Lage. Sonst: Koordinationskörper in beiden Modellen setzen (ausrichtung = koordinationskoerper) oder den Bezug " +
+        "ausdrücklich angeben (bezug = {x, y, z, drehung}); ifc_pruefen mit einpassen = true zeigt den Lagebericht mit allen Zahlen.";
 
     /// <summary>Bestimmt den Bezug für diese Datei. projektBezug = ifcBezug der Projektinformation (oder null beim ersten IFC),
     /// unterlageLage = gespeicherte Lage einer früheren Fassung derselben Unterlage, wahl = Parameter ausrichtung,
     /// vorgabe = Parameter bezug (ausdrücklicher Bezug), bestehend = Begrenzung des bestehenden Modells (Inhaltsvergleich,
-    /// siehe <see cref="ModellBegrenzung"/>).</summary>
+    /// siehe <see cref="ModellBegrenzung"/>), einpassen = Projektseite und Art des Einpassens (<see cref="IfcEinpassQuelle"/>).</summary>
     public static IfcAusrichtungsErgebnis Bestimmen(IfcDatei d, JsonObject? projektBezug, JsonObject? unterlageLage, string? wahl, JsonNode? vorgabe, string? kkName,
-        double[]? bestehend = null)
+        double[]? bestehend = null, IfcEinpassQuelle? einpassen = null)
+    {
+        IfcEinpassAusgang? gerechnet = null;
+        IfcEinpassAusgang Einpassen() => gerechnet ??= IfcEinpassen.Ausfuehren(d, einpassen ?? throw new HlksFehler(
+            "Einpassen braucht das Projekt (Wände und Räume).", "ifc_uebernehmen bzw. ifc_pruefen verwenden."), bestehend);
+        var aus = BestimmenOhneAnhang(d, projektBezug, unterlageLage, wahl, vorgabe, kkName, bestehend, einpassen, Einpassen);
+        // ifc_pruefen mit einpassen = true: Lagebericht des Einpassens immer dabei
+        if (einpassen?.Modus == IfcEinpassQuelle.Immer && aus.Bericht["einpassen"] is null)
+        {
+            var e = Einpassen();
+            aus.Bericht["einpassen"] = e.Bericht;
+            if (aus.Bericht["inhaltJeWahl"] is not JsonObject je) aus.Bericht["inhaltJeWahl"] = je = new JsonObject();
+            je["einpassen"] = e.Ueberdeckung is double u ? Math.Round(u, 2) : null;
+        }
+        return aus;
+    }
+
+    static IfcAusrichtungsErgebnis BestimmenOhneAnhang(IfcDatei d, JsonObject? projektBezug, JsonObject? unterlageLage, string? wahl, JsonNode? vorgabe, string? kkName,
+        double[]? bestehend, IfcEinpassQuelle? einpassen, Func<IfcEinpassAusgang> Einpassen)
     {
         var lage = d.Lage(kkName);
         var eigener = d.BezugVorschlag();
         var bericht = Bericht(d, lage, eigener);
         if (wahl is not null && !Arten.Contains(wahl)) throw new HlksFehler($"Ausrichtung «{wahl}» gibt es nicht.", "ausrichtung: " + string.Join(" | ", Arten));
+        bool pruefen = einpassen?.Modus is IfcEinpassQuelle.Pruefen or IfcEinpassQuelle.Immer;
 
         // Ausdrücklicher Bezug geht allem vor
         if (IfcBezug.Aus(vorgabe) is { } ausdruecklich)
@@ -46,14 +82,37 @@ public static class IfcAusrichtung
         var proj = IfcBezug.Aus(projektBezug);
         if (proj is null)
         {
+            // Erste Datei in einem Projekt mit schon gezeichnetem Inhalt, Wahl «einpassen»: der eingepasste Bezug wird der Projektbezug
+            if (wahl == "einpassen")
+            {
+                var e = Einpassen();
+                bericht["ausrichtung"] = "einpassen";
+                bericht["einpassen"] = e.Bericht;
+                if (!e.IstEindeutig) return NichtEindeutigEnde(d, eigener, e, bericht);
+                var bez = e.Bezug!;
+                if (bestehend is not null && Inhalt(d, bez, bestehend) is { } ie) bericht["inhalt"] = ie;
+                // Abweichung gegen den neuen Projektbezug festhalten: eine neue Fassung mit gleicher Lage übernimmt den Bezug wieder
+                var (g0, x0, y0, z0, r0) = Abweichung(d, lage, eigener, bez, ProjektBezug(d, bez, kkName));
+                bericht["abweichung"] = AbweichungJson(g0, x0, y0, z0, r0);
+                return Ende(d, bez, "gewaehlt", $"Erste IFC-Datei, ins gezeichnete Modell eingepasst – sie setzt den Projektbezug. {e.Text}", bericht, true);
+            }
             bericht["ausrichtung"] = "erste Datei";
-            // Projekt mit schon gezeichnetem Inhalt: nur warnen – die erste Datei setzt den Bezug, eine andere Wahl gibt es nicht
+            // Projekt mit schon gezeichnetem Inhalt: nur warnen – die erste Datei setzt den Bezug, ausser mit Wahl «einpassen»
             var erste = bestehend is null ? null : Inhalt(d, eigener, bestehend);
             if (erste is not null) bericht["inhalt"] = erste;
+            bool ersteDaneben = erste is not null && (Json.Zahl(erste["ueberdeckung"]) ?? 1) < MindestUeberdeckung;
+            string empfehlung = "";
+            if (pruefen && ersteDaneben)
+            {
+                var e = Einpassen();
+                bericht["einpassen"] = e.Bericht;
+                bericht["inhaltJeWahl"] = new JsonObject { ["gebaeude"] = erste!["ueberdeckung"]?.DeepClone(), ["einpassen"] = e.Ueberdeckung is double u ? Math.Round(u, 2) : null };
+                empfehlung = EinpassEmpfehlung(e, bericht);
+            }
             return Ende(d, eigener, "erster", $"Erste IFC-Datei: Projektbezug = Gebäudeursprung und ±0.00 dieser Datei {Text(eigener)}." +
-                (erste is null ? "" : (Json.Zahl(erste["ueberdeckung"]) ?? 1) < MindestUeberdeckung
-                    ? $" ACHTUNG: Der Inhalt liegt neben dem schon gezeichneten Modell ({InhaltText(erste)}) – mit bezug = {{x, y, z, drehung}} ausdrücklich einpassen."
-                    : $" Inhalt: {InhaltText(erste)}."), bericht, true);
+                (erste is null ? "" : ersteDaneben
+                    ? $" ACHTUNG: Der Inhalt liegt neben dem schon gezeichneten Modell ({InhaltText(erste)}) – mit ausrichtung = einpassen oder bezug = {{x, y, z, drehung}} ausdrücklich einpassen."
+                    : $" Inhalt: {InhaltText(erste)}.") + empfehlung, bericht, true);
         }
         // Genau die Datei, aus der der Projektbezug stammt (gleiche Prüfsumme im Namen): sie ist der Bezug
         if (projektBezug!["quelle"] is JsonValue qv && qv.TryGetValue<string>(out var q) && q.StartsWith(Path.GetFileName(d.Pfad) + " ", StringComparison.OrdinalIgnoreCase))
@@ -66,20 +125,17 @@ public static class IfcAusrichtung
         var (grundlage, dx, dy, dz, dr) = Abweichung(d, lage, eigener, proj, projektBezug!);
 
         // Frühere Fassung derselben Unterlage: dieselbe Wahl gilt wieder, solange die Abweichung gleich geblieben ist
+        bool vonFrueher = false;
         if (wahl is null && unterlageLage?["ausrichtung"] is JsonValue fv && fv.TryGetValue<string>(out var frueher) && Arten.Contains(frueher))
         {
             var fa = unterlageLage["abweichung"] as JsonObject;
             bool gleich = fa is not null && Json.Zahl(fa["dx"]) is double fx && Json.Zahl(fa["dy"]) is double fy && Json.Zahl(fa["dz"]) is double fz
                           && Math.Sqrt((fx - dx) * (fx - dx) + (fy - dy) * (fy - dy) + (fz - dz) * (fz - dz)) <= ToleranzMm
                           && Math.Abs((Json.Zahl(fa["drehung"]) ?? 0) - dr) <= ToleranzGrad;
-            if (gleich) wahl = frueher;
+            if (gleich) { wahl = frueher; vonFrueher = true; }
             else bericht["geaendert"] = "Die Lage dieser Datei hat sich seit der letzten Fassung geändert – Ausrichtung neu wählen.";
         }
-        bericht["abweichung"] = new JsonObject
-        {
-            ["grundlage"] = grundlage, ["dx"] = R(dx), ["dy"] = R(dy), ["dz"] = R(dz), ["drehung"] = Math.Round(dr, 4),
-            ["text"] = $"{Beschreibung(grundlage)}: {dx / 1000:+0.000;-0.000;0.000} m Ost, {dy / 1000:+0.000;-0.000;0.000} m Nord, {dz / 1000:+0.000;-0.000;0.000} m Höhe, {dr:+0.000;-0.000;0.000}° gegen den Projektbezug",
-        };
+        bericht["abweichung"] = AbweichungJson(grundlage, dx, dy, dz, dr);
         bool passt = Math.Sqrt(dx * dx + dy * dy + dz * dz) <= ToleranzMm && Math.Abs(dr) <= ToleranzGrad;
 
         // Inhaltsvergleich: liegt der Inhalt der Datei mit dem Projektbezug im bestehenden Modell? Ablehnen nur, wenn die Lage
@@ -114,6 +170,14 @@ public static class IfcAusrichtung
                              : "");
                 if (up >= 0.8 && ug < MindestUeberdeckung) bericht["empfehlung"] = "projekt";
                 else if (ug >= 0.8 && up < MindestUeberdeckung) bericht["empfehlung"] = "gebaeude";
+                // Keine der Lagen trifft: ifc_pruefen rechnet das Einpassen und empfiehlt es bei eindeutiger Lage
+                if (pruefen && up < MindestUeberdeckung && ug < MindestUeberdeckung)
+                {
+                    var e = Einpassen();
+                    bericht["einpassen"] = e.Bericht;
+                    ((JsonObject)bericht["inhaltJeWahl"]!)["einpassen"] = e.Ueberdeckung is double u ? Math.Round(u, 2) : null;
+                    inhalt += EinpassEmpfehlung(e, bericht);
+                }
             }
             var t = (passt && daneben
                         ? "ACHTUNG Inhalt: Der Gebäudeursprung passt, der Inhalt liegt aber neben dem bestehenden Modell."
@@ -123,13 +187,33 @@ public static class IfcAusrichtung
             return new IfcAusrichtungsErgebnis(proj, "abweichung", t, bericht, false);
         }
 
+        if (wahl == "einpassen")
+        {
+            bericht["ausrichtung"] = "einpassen";
+            // Frühere Fassung mit unveränderter Abweichung: gespeicherter Bezug, ohne neue Rechnung
+            if (vonFrueher && IfcBezug.Aus(unterlageLage!["bezug"]) is { } gespeichert)
+            {
+                if (unterlageLage["einpassen"]?.DeepClone() is JsonObject alt) { alt["frueher"] = true; bericht["einpassen"] = alt; }
+                var ig = bestehend is null ? null : Inhalt(d, gespeichert, bestehend);
+                if (ig is not null) bericht["inhalt"] = ig;
+                return Ende(d, gespeichert, "gewaehlt", $"Ausrichtung «einpassen» der früheren Fassung gilt wieder (Abweichung gegen den Projektbezug unverändert): " +
+                    $"gespeicherter Bezug {Text(gespeichert)}, ohne neue Rechnung." + (ig is null ? "" : $" Inhalt: {InhaltText(ig)}."), bericht, false);
+            }
+            var e = Einpassen();
+            bericht["einpassen"] = e.Bericht;
+            if (!e.IstEindeutig) return NichtEindeutigEnde(d, proj, e, bericht);
+            var ie = bestehend is null ? null : Inhalt(d, e.Bezug!, bestehend);
+            if (ie is not null) bericht["inhalt"] = ie;
+            return Ende(d, e.Bezug!, "gewaehlt", $"{e.Text} (Projektbezug {Text(proj)}.)", bericht, false);
+        }
+
         IfcBezug bezug = wahl switch
         {
             "projekt" => proj,
             "gebaeude" => eigener,
             _ => NachKoordinationskoerper(lage, projektBezug!) ?? throw new HlksFehler(
                 "Ausrichtung nach Koordinationskörper geht nicht: " + (lage.KoordinationskoerperWelt is null ? "die Datei hat keinen." : "das Projekt hat noch keinen (erste Datei ohne Koordinationskörper)."),
-                "Koordinationskörper in beiden Modellen platzieren (gleicher Name, z. B. «Koordinationskörper») oder ausrichtung = projekt | gebaeude wählen."),
+                "Koordinationskörper in beiden Modellen platzieren (gleicher Name, z. B. «Koordinationskörper») oder ausrichtung = projekt | gebaeude | einpassen wählen."),
         };
         bericht["ausrichtung"] = wahl;
         var gewaehlt = bestehend is null ? null : Inhalt(d, bezug, bestehend);
@@ -228,6 +312,32 @@ public static class IfcAusrichtung
                                          && (ohneUnterlage is null || e.Kennungen?.GetValueOrDefault("quelle") != ohneUnterlage))
             .SelectMany(e => e.Geometrie!.Punkte));
 
+    static JsonObject AbweichungJson(string grundlage, double dx, double dy, double dz, double dr) => new()
+    {
+        ["grundlage"] = grundlage, ["dx"] = R(dx), ["dy"] = R(dy), ["dz"] = R(dz), ["drehung"] = Math.Round(dr, 4),
+        ["text"] = $"{Beschreibung(grundlage)}: {dx / 1000:+0.000;-0.000;0.000} m Ost, {dy / 1000:+0.000;-0.000;0.000} m Nord, {dz / 1000:+0.000;-0.000;0.000} m Höhe, {dr:+0.000;-0.000;0.000}° gegen den Projektbezug",
+    };
+
+    /// <summary>Gewähltes Einpassen ohne eindeutige Lage: Bewertung «nicht eindeutig», Bezug zum Vergleich (Projektbezug bzw. Gebäudeursprung),
+    /// Text = Lagebericht des Einpassens. ifc_uebernehmen bricht damit ab (auch im Trockenlauf).</summary>
+    static IfcAusrichtungsErgebnis NichtEindeutigEnde(IfcDatei d, IfcBezug vergleich, IfcEinpassAusgang e, JsonObject bericht) =>
+        Ende(d, vergleich, NichtEindeutig, e.Text + " Ohne eindeutige Lage wird nichts übernommen.", bericht, false);
+
+    /// <summary>Empfehlung «einpassen» (ifc_pruefen, keine andere Wahl trifft): bei eindeutiger Lage und Überdeckung ≥ 0.8 setzt sie
+    /// lage.empfehlung und gibt den Satz für den Text zurück, sonst einen Satz mit dem Grund.</summary>
+    static string EinpassEmpfehlung(IfcEinpassAusgang e, JsonObject bericht)
+    {
+        string anteil = $"{e.Ergebnis.Anteil150 * 100:0} % der Kanten innert {IfcEinpassen.Grenze:0} mm";
+        if (e.IstEindeutig && e.Ueberdeckung is double u && u >= EmpfehlungAb)
+        {
+            bericht["empfehlung"] = "einpassen";
+            return $" Empfehlung: ausrichtung = einpassen (eindeutig: {anteil}, {u * 100:0} % der Bauteile dann im bestehenden Modell; Bezug {Text(e.Bezug!)}).";
+        }
+        return e.Ergebnis.Ergebnis == IfcEinpassen.KeineMerkmale ? $" Einpassen nicht möglich: {e.Ergebnis.Grund}"
+            : e.IstEindeutig ? $" Einpassen eindeutig ({anteil}), aber nur {(e.Ueberdeckung ?? 0) * 100:0} % der Bauteile dann im bestehenden Modell – keine Empfehlung."
+            : $" Einpassen nicht eindeutig ({e.Ergebnis.Grund}) – keine Empfehlung.";
+    }
+
     static IfcAusrichtungsErgebnis Ende(IfcDatei d, IfcBezug bezug, string bewertung, string text, JsonObject bericht, bool neu)
     {
         bericht["bezug"] = bezug.AlsJson();
@@ -237,7 +347,7 @@ public static class IfcAusrichtung
     }
 
     /// <summary>Abweichung dieser Datei gegen den Projektbezug in Projektkoordinaten (mm, Grad).</summary>
-    static (string Grundlage, double Dx, double Dy, double Dz, double Dr) Abweichung(IfcDatei d, IfcLage lage, IfcBezug eigener, IfcBezug proj, JsonObject projektBezug)
+    internal static (string Grundlage, double Dx, double Dy, double Dz, double Dr) Abweichung(IfcDatei d, IfcLage lage, IfcBezug eigener, IfcBezug proj, JsonObject projektBezug)
     {
         var alt = d.Bezug;
         d.Bezug = proj;

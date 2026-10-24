@@ -28,6 +28,13 @@ public static class IfcImport
     /// <summary>Bereiche in der Reihenfolge des Übertrags (Räume nach den Wänden, HLKS zuletzt: braucht Räume).</summary>
     public static readonly string[] Bereiche = ["architektur", "raeume", "hlks"];
 
+    /// <summary>Beschreibung der Abfrage ifc_pruefen und ihres Parameters einpassen (gleich im MCP-Werkzeug).</summary>
+    public const string PruefenBeschreibung = "Liest ein IFC (IFC4 oder IFC2x3) ohne etwas zu ändern: Fassung, Programm, Einheit, Geschosse, Räume, welche Katalogklassen " +
+        "übernommen würden, was ohne Klasse bliebe, Koordinatenbezug mit Lagebericht (trifft keine Wahl das bestehende Modell, auch das Einpassen über Wände und " +
+        "Raumkanten mit Empfehlung). Vor ifc_uebernehmen aufrufen.";
+    public const string ParEinpassen = "Einpassen über Wände und Raumkanten immer rechnen und im Lagebericht zeigen (lage.einpassen); Vorgabe false: nur, wenn keine " +
+        "andere Wahl das bestehende Modell trifft";
+
     public static IReadOnlyList<IIfcUebertrag> Uebertrager => uebertrager.Value;
     public static IIfcGrundlage? Grundlage => grundlage.Value;
 
@@ -41,15 +48,17 @@ public static class IfcImport
         return File.Exists(voll) ? voll : Unterlagen.Pfad(p, datei);
     }
 
-    /// <summary>Abfrage ifc_pruefen: was steht in der Datei, was würde übernommen – ohne etwas zu ändern.</summary>
-    public static JsonObject Pruefen(Projekt p, string datei)
+    /// <summary>Abfrage ifc_pruefen: was steht in der Datei, was würde übernommen – ohne etwas zu ändern. einpassen = das Einpassen über
+    /// Wände und Raumkanten immer rechnen (sonst nur, wenn keine andere Wahl das bestehende Modell trifft).</summary>
+    public static JsonObject Pruefen(Projekt p, string datei, bool einpassen = false)
     {
         using var d = IfcDatei.Oeffnen(Dateipfad(p, datei));
         var projektBezug = p.Modell.DerKlasse("Projektinformation").FirstOrDefault()?.Eigenschaft("ifcBezug")?.Inhalt as JsonObject;
         var frueher = p.Modell.DerKlasse("Unterlage").FirstOrDefault(u => u.Text("art") == "ifc"
             && Unterlagen.OriginalName(u.Text("original") ?? "").Equals(Unterlagen.OriginalName(datei), StringComparison.OrdinalIgnoreCase));
         var aus = IfcAusrichtung.Bestimmen(d, projektBezug, frueher?.Eigenschaft("lage")?.Inhalt as JsonObject, null, null, null,
-            IfcAusrichtung.ModellBegrenzung(p.Modell, p.Katalog, frueher?.Id));
+            IfcAusrichtung.ModellBegrenzung(p.Modell, p.Katalog, frueher?.Id),
+            new IfcEinpassQuelle(p, p.Modell, frueher?.Id, einpassen ? IfcEinpassQuelle.Immer : IfcEinpassQuelle.Pruefen));
         d.Bezug = aus.Bezug;
         var abb = p.Katalog.Ifc;
         var zuordnung = new SortedDictionary<string, int>();
@@ -90,6 +99,11 @@ public static class IfcImport
 
 public sealed class IfcUebernehmen : IBefehl
 {
+    /// <summary>Beschreibung des Parameters ausrichtung (gleich im MCP-Werkzeug).</summary>
+    public const string ParAusrichtung = "Nur nötig, wenn die Datei nicht zum Projektbezug passt (ifc_pruefen zeigt die Abweichung): projekt = Weltkoordinaten der Datei wie sie sind | " +
+        "gebaeude = Gebäudeursprung der Datei auf den Projektursprung | koordinationskoerper = Koordinationskörper aufeinander | einpassen = Drehung und Verschiebung " +
+        "automatisch über Wände und Raumkanten (übernommen nur bei eindeutiger Lage, sonst Abbruch mit Lagebericht; auch für die erste Datei in einem Projekt mit Inhalt)";
+
     public string Name => "ifc_uebernehmen";
     public string Beschreibung => "Übernimmt ein IFC (IFC4 oder IFC2x3) als eigene, bearbeitbare Elemente: Geschosse, Räume, Wände, Decken, Türen, Fenster, " +
         "Leitungen, Formteile, Armaturen, Apparate und Systeme mit Anschlüssen und Verbindungen. Jedes Element behält die GlobalId; dieselbe Datei " +
@@ -102,7 +116,7 @@ public sealed class IfcUebernehmen : IBefehl
         new("geschosse", "liste", false, "Nur diese Geschosse (Kennzeichen oder Name des Geschosses im Projekt bzw. im IFC, oder Kote in m wie \"3.06\"); Vorgabe alle"),
         new("grundlage", "bool", false, "Nicht übernommene Objekte als Hintergrund zeigen (Vorgabe true)"),
         new("bezug", "objekt", false, "IFC-Weltpunkt { x, y, z } in mm und drehung in Grad, der im Projekt Ursprung und ±0.00 ist; Vorgabe: Bezug des Projekts, beim ersten IFC aus dem Gebäude der Datei"),
-        new("ausrichtung", "text", false, "Nur nötig, wenn die Datei nicht zum Projektbezug passt (ifc_pruefen zeigt die Abweichung): projekt = Weltkoordinaten der Datei wie sie sind | gebaeude = Gebäudeursprung der Datei auf den Projektursprung | koordinationskoerper = Koordinationskörper aufeinander"),
+        new("ausrichtung", "text", false, ParAusrichtung),
         new("koordinationskoerper", "text", false, "Name des Koordinationskörpers, falls er nicht «Koordinationskörper» heisst"),
         new("konflikte", "text", false, "kicad (Vorgabe): seit dem letzten Übertrag in KICAD geänderte Elemente behalten | ifc: neue IFC-Fassung übernehmen"),
     ];
@@ -130,20 +144,31 @@ public sealed class IfcUebernehmen : IBefehl
         var info = k.Arbeit.DerKlasse("Projektinformation").FirstOrDefault();
         var aus = IfcAusrichtung.Bestimmen(d, info?.Eigenschaft("ifcBezug")?.Inhalt as JsonObject, unterlage.Eigenschaft("lage")?.Inhalt as JsonObject,
             Param.Text(p, "ausrichtung")?.ToLowerInvariant(), p["bezug"], Param.Text(p, "koordinationskoerper"),
-            IfcAusrichtung.ModellBegrenzung(k.Arbeit, k.Katalog, unterlage.Id));
+            IfcAusrichtung.ModellBegrenzung(k.Arbeit, k.Katalog, unterlage.Id),
+            new IfcEinpassQuelle(k.Projekt, k.Arbeit, unterlage.Id));
+        k.Lage = (JsonObject)aus.Bericht.DeepClone();   // Lagebericht ins Ergebnis des Befehls (auch Trockenlauf und Ablehnung)
+        if (aus.Bewertung == IfcAusrichtung.NichtEindeutig) throw new HlksFehler(aus.Text, IfcAusrichtung.VorschlagEinpassen);   // auch im Trockenlauf
         if (aus.Bewertung == "abweichung")
         {
             if (!k.Trockenlauf)
                 throw new HlksFehler(aus.Text,
                     "Ausrichtung ausdrücklich wählen: ausrichtung = projekt (Weltkoordinaten der Datei wie sie sind), gebaeude (Gebäudeursprung der Datei auf den " +
-                    "Projektursprung) oder koordinationskoerper (Koordinationskörper aufeinander). ifc_pruefen zeigt alle Lagen. Revit-Export: «Gemeinsame Koordinaten» prüfen.");
+                    "Projektursprung), koordinationskoerper (Koordinationskörper aufeinander) oder einpassen (automatisch über Wände und Raumkanten, nur bei " +
+                    "eindeutiger Lage). ifc_pruefen zeigt alle Lagen. Revit-Export: «Gemeinsame Koordinaten» prüfen.");
             k.Hinweise.Add(aus.Text + " (Trockenlauf mit dem Projektbezug gerechnet.)");
         }
         d.Bezug = aus.Bezug;
         if (aus.Neu && aus.Bewertung != "abweichung")
         {
+            bool eingepasst = aus.Bericht["ausrichtung"]?.GetValue<string>() == "einpassen";
             var e = info?.Kopie() ?? new Element { Id = Guid.NewGuid().ToString(), Kennzeichen = k.NaechstesKennzeichen("PI"), Klasse = "Projektinformation", Name = "Projektinformation" };
-            e.Eigenschaften["ifcBezug"] = new Wert { Inhalt = IfcAusrichtung.ProjektBezug(d, aus.Bezug, Param.Text(p, "koordinationskoerper")),Herkunft = k.Herkunft with { Art = "ifc", Befehl = Name, Quelle = $"{original}: Gebäudeursprung und ±0.00" } };
+            var bezugJson = IfcAusrichtung.ProjektBezug(d, aus.Bezug, Param.Text(p, "koordinationskoerper"));
+            if (eingepasst) { bezugJson["quelle"] = bezugJson["quelle"]!.GetValue<string>() + ", eingepasst"; bezugJson["eingepasst"] = true; }
+            e.Eigenschaften["ifcBezug"] = new Wert
+            {
+                Inhalt = bezugJson,
+                Herkunft = k.Herkunft with { Art = "ifc", Befehl = Name, Quelle = eingepasst ? $"{original}: eingepasst über Wände und Raumkanten" : $"{original}: Gebäudeursprung und ±0.00" },
+            };
             k.Setzen(e);
         }
         k.Hinweise.Add(aus.Text);

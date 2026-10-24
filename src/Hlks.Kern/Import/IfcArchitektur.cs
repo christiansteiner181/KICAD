@@ -184,6 +184,17 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         hinweise.Schreiben(lauf.Hinweise, "Architektur");
     }
 
+    /// <summary>Nur die Wände planen (Achse in Wandmitte, Dicke, Anschlüsse wie beim Übertrag), ohne Hinweise – Merkmale für IFC einpassen
+    /// (IfcEinpassen.DateiMerkmale). auswahl = welche Wände (Stichprobe grosser Dateien).</summary>
+    public void NurWaende(Func<IIfcWall, bool> auswahl)
+    {
+        Vorbereiten();
+        foreach (var w in d.Modell.Instances.OfType<IIfcWall>().OrderBy(x => x.EntityLabel))
+            if (auswahl(w) && lauf.ImFilter(w)) Wand(w);
+        Anschluesse();
+        foreach (var s in waende.Values.SelectMany(x => x)) WandSchreiben(s);
+    }
+
     void Vorbereiten()
     {
         foreach (var r in d.Modell.Instances.OfType<IIfcRelAggregates>())

@@ -29,6 +29,9 @@ public sealed class Kontext(Projekt projekt, Modell arbeit, Herkunft herkunft)
     public List<string> Hinweise { get; } = [];
     /// <summary>Nur Auswirkungen zeigen: teure Nebenarbeiten (z. B. Hintergrund-Netz eines IFC) darf ein Befehl auslassen.</summary>
     public bool Trockenlauf { get; init; }
+    /// <summary>Lagebericht für das Ergebnis des Befehls (ifc_uebernehmen: Ausrichtung mit allen Zahlen, auch im Trockenlauf und bei Ablehnung);
+    /// null = keiner.</summary>
+    public System.Text.Json.Nodes.JsonObject? Lage { get; set; }
 
     public Element Setzen(Element neu)
     {

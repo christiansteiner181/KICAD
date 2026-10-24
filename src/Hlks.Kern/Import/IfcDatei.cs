@@ -72,6 +72,7 @@ public sealed class IfcDatei : IDisposable
     Dictionary<int, IIfcTypeObject>? typen;
     Dictionary<int, List<IIfcPropertySetDefinition>>? psets;
     List<IfcGeschoss>? geschosse;
+    double geschosseZ;
 
     IfcDatei(IfcStore modell, string pfad)
     {
@@ -250,10 +251,12 @@ public sealed class IfcDatei : IDisposable
 
     // ------------------------------------------------------------------ Gliederung
 
-    /// <summary>Geschosse der Datei, gleich hohe (±10 mm) zusammengefasst, aufsteigend; Kote in Projektkoordinaten.</summary>
+    /// <summary>Geschosse der Datei, gleich hohe (±10 mm) zusammengefasst, aufsteigend; Kote in Projektkoordinaten. Zwischengespeichert für
+    /// das z des Bezugs, mit dem sie gerechnet sind (IFC einpassen liest die Datei vorher in der Lage «Gebäudeursprung»).</summary>
     public IReadOnlyList<IfcGeschoss> Geschosse()
     {
-        if (geschosse is not null) return geschosse;
+        if (geschosse is not null && geschosseZ == Bezug.Z) return geschosse;
+        geschosseZ = Bezug.Z;
         var liste = new List<(IIfcBuildingStorey S, double Kote)>();
         foreach (var s in Modell.Instances.OfType<IIfcBuildingStorey>())
         {
