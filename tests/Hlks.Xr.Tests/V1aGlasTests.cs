@@ -88,9 +88,11 @@ public class V1aGlasTests
         Nah((r.Schliessen.Mitte - r.Griff.Mitte).Skalar(f.Oben), 0, 1e-9);
         Assert.True((r.Schliessen.Mitte - r.Griff.Mitte).Skalar(f.Rechts) < 0);
         Nah(r.Schliessen.B, r.Schliessen.H, 1e-12);
-        // Ornament an der Unterkante, vor dem Glas
+        // Ornament an der Unterkante (ragt 10 pt hinauf, deckt die Fusszeile nicht), vor dem Glas; Griff und Schliessen darunter
         Assert.NotNull(r.Ornament);
-        Nah((r.Ornament!.Mitte - f.Mitte).Skalar(f.Oben), -f.H / 2, 1e-9);
+        Nah((r.Ornament!.Mitte - f.Mitte).Skalar(f.Oben) + r.Ornament.H / 2, -f.H / 2 + M.M(GlasStil.OrnamentUeberlappPt), 1e-9);
+        Assert.True((r.Ornament.Mitte - f.Mitte).Skalar(f.Oben) + r.Ornament.H / 2 < (r.Fuss.Mitte - f.Mitte).Skalar(f.Oben) - r.Fuss.H / 2);
+        Assert.True((r.Griff.Mitte - f.Mitte).Skalar(f.Oben) + r.Griff.H / 2 < (r.Ornament.Mitte - f.Mitte).Skalar(f.Oben) - r.Ornament.H / 2);
         Assert.True((r.Ornament.Mitte - f.Mitte).Skalar(f.Normale) > 0.01);
         Assert.Equal(2, r.OrnamentKnoepfe.Count);
         Assert.Equal(5 + 2 + 2, r.Rand().Count());

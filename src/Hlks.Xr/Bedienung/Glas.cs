@@ -53,8 +53,11 @@ public static class GlasStil
     public const double RegisterKreisPt = 56, RegisterMittePt = 64, RegisterLueckePt = 12, RegisterInnenPt = 8, RegisterAufPt = 150;
     /// <summary>Fensterleiste: Kapsel-Griff 120 × 20 pt, 14 pt unter dem Fenster; Schliessen-Kreis 36 pt links daneben.</summary>
     public const double GriffBreitePt = 120, GriffHoehePt = 20, GriffAbstandPt = 14, SchliessenPt = 36;
-    /// <summary>Werkzeugleiste (Ornament) an der Unterkante: Kreise 52 pt, 12 mm vor dem Fenster.</summary>
-    public const double OrnamentKreisPt = 52, OrnamentInnenPt = 8;
+    /// <summary>
+    /// Werkzeugleiste (Ornament) an der Unterkante: Kreise 52 pt, 12 mm vor dem Fenster, ragt 10 pt über die Unterkante (deckt die Fusszeile nicht; Befund Prüfbild
+    /// 24.10.2026: mittig auf der Kante verdeckte sie den Hinweis). Griff und Schliessen stehen darunter.
+    /// </summary>
+    public const double OrnamentKreisPt = 52, OrnamentInnenPt = 8, OrnamentUeberlappPt = 10;
     public const double OrnamentVorM = 0.012;
     /// <summary>Schrift (pt, ohne Fingerfaktor): Titel 22, Text 17, klein 15 (HIG «Typography», visionOS-Stufen als Annahme).</summary>
     public const double TitelPt = 22, TextPt = 17, KleinPt = 15;
@@ -295,22 +298,25 @@ public static class Glas
             var b = leisteB - 2 * innen;
             reg.Add(Teil(f, leisteX, y, b, kreis, 0.006));
         }
-        // Fensterleiste unter dem Fenster
-        double gb = m.M(GlasStil.GriffBreitePt), gh = m.M(GlasStil.GriffHoehePt), ga = m.M(GlasStil.GriffAbstandPt), s = m.M(GlasStil.SchliessenPt);
-        var gy = -f.H / 2 - ga - Math.Max(gh, s) / 2;
-        var griff = Teil(f, 0, gy, gb, gh, 0);
-        var schliessen = Teil(f, -gb / 2 - m.M(14) - s / 2, gy, s, s, 0);
-        // Werkzeugleiste (Ornament) an der Unterkante, leicht davor
+        // Werkzeugleiste (Ornament) an der Unterkante, leicht davor; ragt nur OrnamentUeberlappPt über die Kante (die Fusszeile bleibt frei)
         TabletPose? orn = null;
         var ok = new List<TabletPose>();
+        var unten = -f.H / 2;   // Unterkante von Fenster bzw. Werkzeugleiste
         if (ornament > 0)
         {
             double ok0 = m.M(GlasStil.OrnamentKreisPt), oi = m.M(GlasStil.OrnamentInnenPt), oabst = m.M(GlasStil.ZeilenMittePt);
             var ob = (ornament - 1) * oabst + ok0 + 2 * oi;
             var oh = ok0 + 2 * oi;
-            orn = Teil(f, 0, -f.H / 2, ob, oh, GlasStil.OrnamentVorM);
-            for (int i = 0; i < ornament; i++) ok.Add(Teil(f, (i - (ornament - 1) / 2.0) * oabst, -f.H / 2, ok0, ok0, GlasStil.OrnamentVorM + 0.002));
+            var oy = -f.H / 2 + m.M(GlasStil.OrnamentUeberlappPt) - oh / 2;
+            orn = Teil(f, 0, oy, ob, oh, GlasStil.OrnamentVorM);
+            for (int i = 0; i < ornament; i++) ok.Add(Teil(f, (i - (ornament - 1) / 2.0) * oabst, oy, ok0, ok0, GlasStil.OrnamentVorM + 0.002));
+            unten = oy - oh / 2;
         }
+        // Fensterleiste darunter: Griff (Kapsel) und links daneben Schliessen (Kreis)
+        double gb = m.M(GlasStil.GriffBreitePt), gh = m.M(GlasStil.GriffHoehePt), ga = m.M(GlasStil.GriffAbstandPt), s = m.M(GlasStil.SchliessenPt);
+        var gy = unten - ga - Math.Max(gh, s) / 2;
+        var griff = Teil(f, 0, gy, gb, gh, 0);
+        var schliessen = Teil(f, -gb / 2 - m.M(14) - s / 2, gy, s, s, 0);
         return new GlasRahmen(f, inhalt, fussLage, leiste, reg, griff, schliessen, orn, ok);
     }
 

@@ -54,6 +54,23 @@ public class V1aLaborTests
     }
 
     [Fact]
+    public void Sollmass_von_der_sichtbaren_Fläche_auch_wenn_eine_Wand_im_Grundriss_liegt()
+    {
+        // Befund Prüflauf Test_praxis 24.10.2026: der Grundriss liegt auf der Aussenseite einer 25 cm dicken Wand im Raum (x = 0 … 0.25); man sieht und misst ab x = 0.25
+        var raum = ModellHilfen.RaumNetz("r", [new(0, 0), new(4, 0), new(4, -3), new(0, -3)], 0, 2.6);
+        var waende = ModellHilfen.Quadernetz("architektur",
+            ("wi", "wand", V(0, 0, -3), V(0.25, 2.6, 0)), ("wr", "wand", V(4, 0, -3.2), V(4.2, 2.6, 0.2)), ("wl", "wand", V(-0.2, 0, -3.2), V(0, 2.6, 0.2)));
+        var paar = WandPaare.Waehlen(V1aMessenTests.Szene(raum, waende), "g", 0, V(2, 1.6, -1.5), 0)!;
+        Nah(paar.SollMm, 3750, 0.05);
+        var xs = new[] { paar.A.Punkt.X, paar.B.Punkt.X }.Order().ToArray();
+        Nah(xs[0], 0.25, 1e-6);
+        Nah(xs[1], 4, 1e-6);
+        // eine Messung zwischen den sichtbaren Flächen gelingt, eine bis zur Kante des Grundrisses nicht (25 cm daneben)
+        Assert.Null(WandPaare.Pruefen(paar, M(V(0.25, 1.2, -1.5), V(4, 1.2, -1.5))));
+        Assert.NotNull(WandPaare.Pruefen(paar, M(V(0, 1.2, -1.5), V(4, 1.2, -1.5))));
+    }
+
+    [Fact]
     public void Kanten_werden_unabhängig_von_der_Richtung_verbunden()
     {
         var k = WandPaare.Kanten([(new Xz(0, 0), new Xz(1, 0)), (new Xz(2, 0), new Xz(1, 0)), (new Xz(2, 0), new Xz(2, 1))]);

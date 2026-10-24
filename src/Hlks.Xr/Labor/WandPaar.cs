@@ -5,8 +5,9 @@
 // Wahl des Paars: der Raum am Stand (sonst der, in dem ein Punkt 2 m vor dem Blick liegt, sonst der nächste im Geschoss); im Grundriss des Raums zwei parallele
 // Randkanten (±ParallelGrad), die sich gegenüberliegen (die Mitte zwischen ihnen liegt im Raum), mindestens AbstandMinM auseinander und mindestens UeberlappMinM
 // nebeneinander. Bevorzugt das Paar, über das man blickt (Normale nahe der Blickrichtung), dann die längere Überlappung. Sollmass: der Raumgrundriss liegt nicht
-// immer genau auf den Wandflächen (Putz, Toleranz der Erkennung) – deshalb sucht die App je Kante die Fläche einer Wand (Ebene «wand» bzw. IfcWall… der
-// Unterlage), die parallel ist (±ParallelGrad) und höchstens FlaecheSucheM von der Kante liegt, und nimmt die nächste; ohne Wandfläche gilt die Kante.
+// immer genau auf den Wandflächen (Putz, Toleranz der Erkennung, eine Wand im Raum) – deshalb sucht die App je Kante mit Strahlen aus der Mitte des Raums die
+// Fläche einer Wand (Ebene «wand» bzw. IfcWall… der Unterlage), die man von dort sieht (parallel ±ParallelGrad, höchstens FlaecheSucheM hinter der Kante); ohne
+// Wandfläche gilt die Kante.
 // ANNAHMEN V1a (Brillentest): ParallelGrad 3°, AbstandMinM 0.8 m, UeberlappMinM 0.5 m, FlaecheSucheM 0.25 m, Punkte höchstens PunktWandM = 5 cm neben der Wand,
 // Markierung 2.2 m hoch.
 
@@ -97,8 +98,9 @@ public static class WandPaare
         var bBasis = new Xz(k0.X + nn.X * dist, k0.Z + nn.Z * dist);
         var bVon = Auf(bBasis, ulo, 0, nA);
         var bBis = Auf(bBasis, uhi, 0, nA);
-        var wA = Flaeche(szene, geschossId, aVon, aBis, nA, g.Boden);
-        var wB = Flaeche(szene, geschossId, bVon, bBis, -nA, g.Boden);
+        var halb = Math.Abs(dist) / 2;
+        var wA = Flaeche(szene, geschossId, aVon, aBis, nA, g.Boden, halb);
+        var wB = Flaeche(szene, geschossId, bVon, bBis, -nA, g.Boden, halb);
         var a = new WandMarke(aVon + nA * wA, nA, aVon + nA * wA, aBis + nA * wA, g.Boden, MarkeHoeheM);
         var bm = new WandMarke(bVon - nA * wB, -nA, bVon - nA * wB, bBis - nA * wB, g.Boden, MarkeHoeheM);
         var soll = Math.Abs((bm.Punkt - a.Punkt).Skalar(nA)) * 1000;
@@ -106,20 +108,29 @@ public static class WandPaare
     }
 
     /// <summary>
-    /// Versatz (m, in Richtung der Normale in den Raum) der nächsten Wandfläche zur Kante von–bis: Dreiecke der Wände des Geschosses, parallel (±ParallelGrad),
-    /// höchstens FlaecheSucheM von der Kante, die die Kante seitlich überlappen und in der Höhe 0.3 … 2 m über dem Boden liegen; 0 ohne Treffer.
+    /// Versatz (m, in Richtung der Normale in den Raum) der Wandfläche, die man vom Raum aus sieht und an der man misst: Strahlen aus dem Raum (tiefe m vor der Kante
+    /// von–bis, also aus der Mitte zwischen den beiden Kanten) gegen die Normale auf die Dreiecke der Wände des Geschosses (parallel ±ParallelGrad) – an fünf Stellen
+    /// entlang der Kante (15 … 85 %) auf 0.8, 1.2 und 1.6 m über dem Boden; der Median der ersten Treffer. Ein Treffer zählt bis FlaecheSucheM hinter der Kante. Ohne
+    /// Treffer 0 (die Kante). Befund Prüflauf Test_praxis 24.10.2026: lag der Grundriss auf der Aussenseite einer Wand im Raum, galt vorher die Fläche an der Kante
+    /// (hinter der Wand, 250 mm zu weit) statt der sichtbaren.
     /// </summary>
-    public static double Flaeche(ModellSzene szene, string? geschossId, Vec3 von, Vec3 bis, Vec3 normale, double boden)
+    public static double Flaeche(ModellSzene szene, string? geschossId, Vec3 von, Vec3 bis, Vec3 normale, double boden, double tiefe)
     {
         var d = bis - von;
         var l = d.Laenge;
-        if (l < 1e-9) return 0;
+        if (l < 1e-9 || tiefe <= 0) return 0;
         var dir = d * (1 / l);
         var cosPar = Math.Cos(ParallelGrad * Math.PI / 180);
-        double? best = null, raumseitig = null;
+        // Band, in dem die Treffer liegen können (von FlaecheSucheM hinter der Kante bis zur Mitte), als Hüllbox für die Vorauswahl der Wände
+        var band = Box3.Leer;
+        foreach (var p in new[] { von, bis })
+            foreach (var v in new[] { -FlaecheSucheM, tiefe })
+                foreach (var h in new[] { 0.7, 1.7 })
+                    band = band.Plus(p + normale * v + new Vec3(0, h, 0));
+        var dreiecke = new List<(Vec3 A, Vec3 B, Vec3 C)>();
         foreach (var e in szene.Elemente.Values)
         {
-            if (!IstWand(e) || (geschossId is not null && e.GeschossId != geschossId)) continue;
+            if (!IstWand(e) || (geschossId is not null && e.GeschossId != geschossId) || !Ueberlappt(e.Box, band)) continue;
             foreach (var (nr, ab, anzahl) in e.Bereiche)
             {
                 var nd = szene.Netze[nr].Daten;
@@ -129,24 +140,30 @@ public static class WandPaare
                     var b = nd.Ecke(nd.Indizes[3 * t + 1]);
                     var c = nd.Ecke(nd.Indizes[3 * t + 2]);
                     var n = (b - a).Kreuz(c - a);
-                    if (n.Laenge < 1e-12) continue;
-                    n = n.Einheit();
-                    if (Math.Abs(n.Skalar(normale)) < cosPar) continue;
-                    var versatz = (a - von).Skalar(normale);
-                    if (Math.Abs(versatz) > FlaecheSucheM) continue;
-                    double smin = Math.Min((a - von).Skalar(dir), Math.Min((b - von).Skalar(dir), (c - von).Skalar(dir)));
-                    double smax = Math.Max((a - von).Skalar(dir), Math.Max((b - von).Skalar(dir), (c - von).Skalar(dir)));
-                    if (smax < 0.05 || smin > l - 0.05) continue;
-                    double ymin = Math.Min(a.Y, Math.Min(b.Y, c.Y)), ymax = Math.Max(a.Y, Math.Max(b.Y, c.Y));
-                    if (ymax < boden + 0.3 || ymin > boden + 2) continue;
-                    // auf der Seite des Raums (bzw. an der Kante) zuerst die nächste – liegt der Grundriss in der Wandachse, gilt die Fläche zum Raum hin
-                    if (versatz >= -0.01) { if (raumseitig is null || versatz < raumseitig) raumseitig = versatz; }
-                    else if (best is null || Math.Abs(versatz) < Math.Abs(best.Value)) best = versatz;
+                    if (n.Laenge < 1e-12 || Math.Abs(n.Einheit().Skalar(normale)) < cosPar) continue;
+                    dreiecke.Add((a, b, c));
                 }
             }
         }
-        return raumseitig ?? best ?? 0;
+        if (dreiecke.Count == 0) return 0;
+        var treffer = new List<double>();
+        var r = normale * -1;
+        foreach (var s in new[] { 0.15, 0.325, 0.5, 0.675, 0.85 })
+            foreach (var h in new[] { 0.8, 1.2, 1.6 })
+            {
+                var u = von + dir * (l * s) + normale * tiefe + new Vec3(0, boden + h - von.Y, 0);
+                double? erster = null;
+                foreach (var (a, b, c) in dreiecke)
+                    if (SzenenFang.StrahlDreieck(u, r, a, b, c) is { } t && t <= tiefe + FlaecheSucheM && (erster is null || t < erster)) erster = t;
+                if (erster is { } te) treffer.Add(tiefe - te);
+            }
+        if (treffer.Count == 0) return 0;
+        treffer.Sort();
+        return treffer[treffer.Count / 2];
     }
+
+    static bool Ueberlappt(Box3 a, Box3 b) =>
+        !a.IstLeer && !b.IstLeer && a.Min.X <= b.Max.X && a.Max.X >= b.Min.X && a.Min.Y <= b.Max.Y && a.Max.Y >= b.Min.Y && a.Min.Z <= b.Max.Z && a.Max.Z >= b.Min.Z;
 
     /// <summary>Randkanten des Grundrisses zu geraden Kanten verbunden (Stücke mit gemeinsamem Ende in gleicher Richtung, ±1°; die Richtung der Stücke ist egal).</summary>
     public static List<(Xz A, Xz B)> Kanten(IReadOnlyList<(Xz A, Xz B)> rand)

@@ -55,4 +55,26 @@ public class V1aSitzungTests
         var (_, dach) = Haus(true, "IfcRoof");
         Nah(SitzungAuswahl.DeckeUeberRaumM(dach, dach.Finde("r")!)!.Value, 2.7, 1e-6);
     }
+
+    [Fact]
+    public void Heller_Sitzungsraum_hat_die_Farbe_des_Horizonts_Passthrough_bleibt_durchsichtig_Begehen_der_Ursprung()
+    {
+        var ursprung = new Hintergrund(0.1f, 0.2f, 0.3f, 1, true);
+        var v = new HintergrundVerwalter();
+        Assert.Equal(Hintergrund.Hell, v.Setzen(ursprung, sitzung: true, passthrough: false, hell: true));
+        Assert.False(Hintergrund.Hell.Himmel);
+        Assert.True(Hintergrund.Hell.R > 0.8f && Hintergrund.Hell.A == 1);   // hell und deckend (visionOS: ruhige, helle Umgebung)
+        Assert.Equal(Hintergrund.Dunkel, v.Setzen(Hintergrund.Hell, sitzung: true, passthrough: false, hell: false));   // Variante «umgebung» = «tron»
+        Assert.Equal(Hintergrund.Durchsichtig, v.Setzen(Hintergrund.Dunkel, sitzung: true, passthrough: true, hell: true));   // Passthrough geht vor
+        Assert.Equal(ursprung, v.Setzen(Hintergrund.Durchsichtig, sitzung: false, passthrough: false, hell: true));   // zurück ins Begehen: der Ursprung
+        Assert.Null(v.Ursprung);
+    }
+
+    [Fact]
+    public void Gestentabelle_nennt_Messband_Loeschen_Marker_und_den_Griff_des_Fensters()
+    {
+        var text = string.Join(" ", Hlks.Xr.Gestenbedeutung.Tabelle.Select(x => x.Geste + " " + x.Bedeutung));
+        foreach (var s in new[] { "Messband", "Messlinie", "Problem-Marker", "Griff unter dem Fenster", "Fenster" }) Assert.Contains(s, text);
+        Assert.DoesNotContain("Kachel", text);   // V1a: keine Kacheln mehr
+    }
 }

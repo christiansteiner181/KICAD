@@ -7,6 +7,7 @@ using Hlks.Xr;
 using Hlks.Xr.Bedienung;
 using Hlks.Xr.Ebenen;
 using Hlks.Xr.Labor;
+using Hlks.Xr.Messen;
 using Hlks.Xr.Modell;
 using Hlks.Xr.Netz;
 using Hlks.Xr.Sitzung;
@@ -32,7 +33,7 @@ namespace Hlks.Quest;
 /// Räume: Szene (m, y oben, relativ zum Bezugspunkt) = «Welt» der Regeln in Hlks.Xr. StereoKit läuft im Referenzraum der Brille (Boden y = 0, OriginMode.Floor).
 /// Das Rig (VrLogik) bildet den Referenzraum in die Welt ab; gezeichnet wird die Welt mit der Umkehrung des Rigs (die Kamera bleibt, die Welt bewegt sich).
 ///
-/// P5a (Bedienung nach der Leitlinie, entwurf/modul-xr.md): schwebende Apps statt der Box (<see cref="SchwebendeApps"/>; die Box bleibt als Variante
+/// P5a (Bedienung nach der Leitlinie, entwurf/modul-xr.md): schwebende Apps statt der Box (seit V1a das Glas-Fenster <see cref="GlasApps"/>; die Box bleibt als Variante
 /// «labor.variante.bedienung» = «tablet»), feste Gestenbedeutungen (Pinch + Wisch: links/rechts blättert bzw. dreht, hoch/runter wechselt die Etage – auch ohne
 /// PC –, nach vorn wischt weg), Geisterhände beim Zögern, Tunnelblick beim Springen, Drehen und Etagenwechsel, alle Stellschrauben der Bedienung live über den Kanal
 /// (Hlks.Xr.Bedienung.XrBedienEinstellungen, auch die gemerkten aus «willkommen»).
@@ -40,10 +41,14 @@ namespace Hlks.Quest;
 /// P5b (Labor in der App, QuestApp.Labor.cs): der Katalog des Labors vom PC (GET /api/xr/labor/katalog, Zwischenspeicher mit ETag; ohne PC der abgelegte) gibt
 /// Vorgaben, Grenzen und Profil der Stellschrauben (Hlks.Xr.Labor.LaborWerte); Prüfaufgaben («labor.aufgabe») mit schwebender Karte und Messprotokoll; Varianten
 /// «teleport» (Stick), «etage», «messen»; Schnitt mit der flachen Hand (Sitzungsraum) und Röntgen-Hand (Begehen); «hallo.app» = Fassung und Commit (AppFassung).
+///
+/// V1a: Messen (XR-C, QuestApp.Messen.cs) und Problem-Marker (XR-E, QuestApp.Marker.cs); die Apps im Stil von visionOS (Christian 24.10.2026, Apple HIG): ein Fenster
+/// aus Glas mit Registern statt der Kacheln (GlasApps, QuestApp.Apps.cs, GlasZeichner, Assets/glas.hlsl), im Raum verankert, am Tisch neben dem Tisch; Hinweise auf dem
+/// Glas; die helle Umgebung des Sitzungsraums (Umgebung.cs; Variante «umgebung» = «tron» die frühere).
 /// </summary>
 sealed partial class QuestApp
 {
-    const string AppName = "KICAD Quest P5b";
+    const string AppName = "KICAD Quest V1a";
     static readonly IReadOnlySet<string> Ausgeblendet = new HashSet<string> { ModellSzene.GruppeRaum };   // «Räume ausgeblendet»
 
     readonly Optionen o;
@@ -98,7 +103,9 @@ sealed partial class QuestApp
     /// <summary>Schwellen des Begehens mit den Wisch- und Pinch-Schwellen der Bedienung (an einer Stelle geführt, EinstellungenAnwenden).</summary>
     HandBegehenEinstellungen begehenWirksam = HandBegehenEinstellungen.Vorgabe;
     readonly GeisterHand geister = new();
-    readonly SchwebendeApps apps;
+    /// <summary>V1a: die Apps als Glas-Fenster (Stil visionOS) und der Zeichner für alles Glas (Fenster, Karte, Hinweise, Messwerte, Marker).</summary>
+    readonly GlasApps apps;
+    readonly GlasZeichner glas;
     readonly TunnelAnzeige tunnelAnzeige = new();
     readonly TunnelZustand tunnel = new();
     int etagenWechsel;
@@ -136,11 +143,14 @@ sealed partial class QuestApp
         // P4b: Passthrough (XR_FB_passthrough, vor SK.Initialize angefordert in Program.cs) anlegen; im Simulator nicht verfügbar
         passthrough.Anlegen();
         Console.WriteLine($"{AppName}: {passthrough.Grund} Shader schnitt: {(ModellDarstellung.SchnittShader ? "geladen" : "fehlt (Sitzungsraum ohne Schnitt)")}.");
-        sitzung = new Sitzungsraum(rueck, passthrough);
+        glas = new GlasZeichner();
+        Console.WriteLine($"{AppName}: Shader glas: {(glas.MitShader ? "geladen" : "fehlt (Apps ohne Glas)")}.");
+        sitzung = new Sitzungsraum(rueck, passthrough, glas);
         sitzung.Echt.VerfuegbarSetzen(passthrough.Verfuegbar, passthrough.Grund);
         ebenenAblage = new EbenenAblage(privat);
-        apps = new SchwebendeApps(rueck, geister);
-        karte = new AufgabenKarte(rueck);
+        apps = new GlasApps(rueck, glas);
+        karte = new AufgabenKarte(rueck, glas);
+        MarkerStarten();
         sitzung.FlacheHandGeaendert += FlacheHandMelden;
         // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei)
         katalogAblage = new LaborKatalogAblage(privat);
@@ -168,7 +178,8 @@ sealed partial class QuestApp
         sitzung.FlacheHand = bedien.FlacheHand;
         rueck.Ton = bedien.Komfort.Ton;
         rueck.Tunnel = bedien.Komfort.Tunnelblick && bedien.Komfort.Staerke > 0;
-        if (vorherApps != bedien.MitApps) apps.Schliessen();
+        sitzung.Hell = bedien.UmgebungHell;   // V1a: Variante «umgebung»
+        if (!vorherApps && bedien.MitApps && darstellung is not null) AppsHolen();
     }
 
     /// <summary>
@@ -183,7 +194,11 @@ sealed partial class QuestApp
         var r = werte.Setzen(s, wert);
         if (r != LaborWerte.Ok) return r;
         EinstellungenAnwenden();
-        if (vorher.Messen != bedien.Messen) Hinweis("Variante «Messen»: Messen folgt mit Version 1 – die Wahl ist gemerkt.");
+        if (vorher.Messen != bedien.Messen)
+        {
+            Messband.VarianteSetzen(messen, bedien.Messen);   // V1a: die Variante vom PC gilt sofort (die App «Messen» kann sie auch umschalten)
+            Hinweis($"Variante «Messen»: {(bedien.Messen == Varianten.ZweiPunkte ? "zwei Punkte setzen" : "Messband aufziehen")}.");
+        }
         if (vorher.Teleport != bedien.Teleport)
             Hinweis(bedien.MitStick ? "Variante Teleport «Stick»: Stick nach vorn zielen, loslassen springt (Zeigen und Pinch springt nicht)." : "Variante Teleport «Zeigen und Pinch».");
         return r;
@@ -293,6 +308,8 @@ sealed partial class QuestApp
             if (Schluessel(neu) != standSchluessel) Uebernehmen(neu);
             Melden($"Modell vom PC geladen ({neu.Teile.Count} Teile, {neu.Bytes / 1048576.0:0.0} MB).");
             await EbenenVomPc(neu.Liste);
+            await MarkerSenden();   // V1a: wartende Problem-Marker (ohne Verbindung gesetzt), dann die Liste
+            await MarkerHolen();
         }
         catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or GlbFehler)
         {
@@ -323,6 +340,8 @@ sealed partial class QuestApp
                 Melden("Das Modell am PC hat sich geändert – neu geladen.");
             }
             await EbenenVomPc(neu.Liste);
+            await MarkerSenden();   // V1a: Problem-Marker abgleichen (ETag, meist 304)
+            await MarkerHolen();
         }
         catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or GlbFehler or TaskCanceledException && !ende.IsCancellationRequested)
         {
@@ -359,6 +378,7 @@ sealed partial class QuestApp
         Uebernehmen(s);
         EbenenUebernehmen(EbenenLader.AusAblage(ebenenAblage, s.Liste.Projekt), s.Liste.Bezugspunkt);
         EbenenFertig();
+        amBild.Enqueue(() => MarkerAusAblage(s.Liste.Projekt));   // V1a: die zuletzt geholten Problem-Marker
     }
 
     /// <summary>P4b: Ebenen der Fachmodule vom PC (bedingt, mit Ablage für den Start ohne PC); Fehler stören das Modell nicht.</summary>
@@ -411,6 +431,7 @@ sealed partial class QuestApp
         lock (sperre) { auftrag = offenerAuftragHintergrund; offenerAuftragHintergrund = null; gemerkt = ablage.Standpunkt; }
         var start = AppStart.Waehlen(auftrag, gemerkt, sz, neu.Liste).GetAwaiter().GetResult();   // rein, ohne Warten
         standSchluessel = Schluessel(neu);
+        markerProjekt = neu.Liste.Projekt;   // V1a: Ablage der Liste der Problem-Marker je Projekt
         istGeladen = true;
         amBild.Enqueue(() => Zeigen(neu, sz, vorbereitet, start, auftrag));
     }
@@ -442,6 +463,7 @@ sealed partial class QuestApp
         k.Willkommen += w =>
         {
             amBild.Enqueue(ProtokolleNachsenden);   // P5b: Messprotokolle, die ohne Verbindung entstanden
+            if (istGeladen) _ = Task.Run(MarkerSenden);   // V1a: Problem-Marker, die ohne Verbindung gesetzt wurden
             if (w.TryGetProperty("auftrag", out var a) && a.ValueKind == JsonValueKind.Object) AuftragEmpfangen(a);
             // P5a: die am PC gemerkten Stellschrauben gelten sofort (z. B. ein Profil des XR-Labors); in zwei Durchgängen, damit Paare in jeder Reihenfolge gelten
             if (w.TryGetProperty("stellschrauben", out var st) && st.ValueKind == JsonValueKind.Object)
@@ -543,6 +565,7 @@ sealed partial class QuestApp
         ausschnittGesetzt = null;   // die neue Darstellung hat noch keinen Ausschnitt
         durchgang = new DurchgangVerfolger(sz);
         roentgen = new RoentgenVerfolger(sz);
+        MessenSzene(sz);   // V1a: Fang auf der neuen Szene (die Messungen bleiben)
         modellAb = Time.Total;
         if (!rigGesetzt || erstes)
         {
@@ -643,8 +666,13 @@ sealed partial class QuestApp
         if (sitzung.Aktiv) { sitzung.AnsichtSetzen(ansicht); return; }
         darstellung?.DurchgangSetzen(new());
         sitzung.Betreten(Input.Head, ansicht);
+        appsRaumLage = sitzung.RaumLage;
+        AppsVersetzen();   // V1a: das Fenster neben den Tisch (Befund Prüfbild 24.10.2026: nicht über dem Modell)
         rueck.Griff(Input.Head.position, true);   // Klick beim Betreten (Ton; das Licht liegt im Kopf und ist nicht zu sehen)
     }
+
+    /// <summary>V1a: Lage des Raums, für die das Fenster der Apps neben den Tisch gestellt wurde (ändert sie sich – echter Tisch angetippt –, kommt es neu).</summary>
+    SitzungRaumLage? appsRaumLage;
 
     /// <summary>Zurück ins Begehen: Standpunkt wie vorher, Durchgang neu bewerten, Passthrough aus.</summary>
     void SitzungVerlassen()
@@ -652,6 +680,8 @@ sealed partial class QuestApp
         if (!sitzung.Aktiv) return;
         sitzung.Verlassen();
         if (szene is not null) { durchgang = new DurchgangVerfolger(szene); roentgen = new RoentgenVerfolger(szene); }
+        appsRaumLage = null;
+        AppsVersetzen();   // V1a: das Fenster wieder vor den Blick
         Hinweis("Zurück im Begehen.");
     }
 
@@ -710,8 +740,9 @@ sealed partial class QuestApp
                 if (aq is not null) Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                     $"{AppName}: Ausschnitt {darstellung.AusschnittDreiecke} Dreiecke in {darstellung.AusschnittMs:0.0} ms zusammengestellt"));
             }
-            foreach (var r in sitzung.Schritt(Time.Total, kopf, AnApps, bedien.Wisch, begehen.DrehenSperreS))
-                WischAnwenden(r, kopf.position + kopf.Forward * 0.4f);
+            if (sitzung.RaumLage != appsRaumLage) { appsRaumLage = sitzung.RaumLage; AppsVersetzen(); }   // V1a: Tisch neu (echter Tisch): das Fenster neben den Tisch
+            foreach (var (r, hand) in sitzung.Schritt(Time.Total, kopf, AnApps, bedien.Wisch, begehen.DrehenSperreS))
+                WischAnwenden(r, kopf.position + kopf.Forward * 0.4f, hand == Handed.Left ? "left" : "right");
             if (sitzung.Zoegern is { } zg)   // P5a: gezögert an einem Griff: Geisterhand «Greifen»
                 geister.Starten(GeisterGeste.Greifen, Time.Total, zg.Form, XrTabletLogik.TabletLageAus(new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z), new XVec3(0, 1, 0)));
             sitzung.Zeichnen(darstellung, ebenen, Time.Total, sitzung.Ansicht?.Text);
@@ -738,6 +769,8 @@ sealed partial class QuestApp
             if (Time.Total - letztesMerken >= 10) { letztesMerken = Time.Total; Merken(kopfWelt, blickWelt, sofort: false); }
         }
         else Lines.Add(new Vec3(-0.5f, 0, -1), new Vec3(0.5f, 0, -1), new Color32(80, 220, 255, 255), 0.005f);   // Bodenmarke, solange kein Modell da ist
+        MessenBild(kopf);    // V1a: Messen (Fang, Messband, stehende Messungen) – beim Begehen und am Tisch
+        MarkerBild(kopf);    // V1a: Problem-Marker (setzen, Stecknadeln)
         AufgabeBild(kopf);   // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung)
         rueck.Zeichnen(kopf);
         geister.Zeichnen(Time.Total);
@@ -766,7 +799,8 @@ sealed partial class QuestApp
             $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe}, IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
-            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}{(apps.Offen is { } ao ? ", offen " + ao : "")}, {bedien.Apps.Anordnung}), Geste={letzteGeste}, " +
+            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Geste={letzteGeste}, " +
+            $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
             $"Teleport={bedien.Teleport}, Röntgen={roentgenText}, Schnitt Hand={SchnittHandText()}, " +
@@ -805,11 +839,14 @@ sealed partial class QuestApp
             // P5a: an den Apps zielt ein Pinch nicht (er wählt dort); mit offener App blättert ein Seitenwisch statt zu drehen. P5b: ebenso an der Karte einer Aufgabe;
             // in der Variante «teleport» = «stick» springt der Pinch nicht (der Stick springt, StickSchritt)
             var anApps = AnApps(handed) || karte.HandNah;
-            var drehenWirkt = drehen.Drehen && !(bedien.MitApps && apps.Sichtbar && apps.Offen is not null);
-            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehenWirksam, drehenWirkt, springen: !anApps && !bedien.MitStick))
-                BegehenEreignisAnwenden(e, kopf, kopfRef, anApps);
+            // V1a: an den Apps blättert ein Seitenwisch statt zu drehen; die Hand, die ein Messband aufzieht, dreht nicht; mit Messen bzw. Marker setzen springt der
+            // Pinch nicht (er misst bzw. markiert)
+            var drehenWirkt = drehen.Drehen && !anApps && messen.Hand != seite;
+            var werkzeug = MessenAn || markerSetzen;
+            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehenWirksam, drehenWirkt, springen: !anApps && !bedien.MitStick && !werkzeug))
+                BegehenEreignisAnwenden(e, kopf, kopfRef, anApps || werkzeug);   // mit Werkzeug klingt der Pinch dort (Messband, Marker)
             // der eine sichtbare Strahl: der Zeiger des Systems (bzw. der Rückfall), solange die Hand erkannt ist; beim Zielen bis zum Ziel; nicht an den Apps
-            if (h.IsTracked && !anApps && !bedien.MitStick && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
+            if (h.IsTracked && !anApps && !bedien.MitStick && !werkzeug && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
                 rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
         }
         StickSchritt(kopf, kopfRef);   // P5b: Variante «teleport» = «stick»
@@ -841,7 +878,7 @@ sealed partial class QuestApp
                 if (lauf is { } la) PruefAufgaben.SprungAbgebrochen(la);
                 break;
             case BegehenArt.Wisch when e.Richtung is { } r:
-                WischAnwenden(r, e.Punkt is { } wp ? Sk(wp) : kopf.position + kopf.Forward * 0.4f);
+                WischAnwenden(r, e.Punkt is { } wp ? Sk(wp) : kopf.position + kopf.Forward * 0.4f, e.Seite);
                 break;
         }
     }
@@ -918,11 +955,10 @@ sealed partial class QuestApp
 
     // --------------------------------------------------------------------------------------------------- Anzeige
 
-    /// <summary>P5a: mit schwebenden Apps nur eine Hinweiszeile (die Apps zeigen den Rest); in der Variante «tablet» die Box aus P4.</summary>
+    /// <summary>P5a: in der Variante «tablet» die Box aus P4; mit den Apps nichts (V1a: die Hinweise stehen auf dem Glas, AppsBild).</summary>
     void Anzeige(Pose kopf)
     {
-        if (bedien.MitApps) HinweisZeile(kopf);
-        else Box(kopf);
+        if (!bedien.MitApps) Box(kopf);
     }
 
     /// <summary>Variante «tablet» (labor.variante.bedienung): die Box aus P4a/P4b unten vor dem Blick, Grösse mit «anzeige.skala».</summary>
@@ -1030,250 +1066,7 @@ sealed partial class QuestApp
         }
     }
 
-    // --------------------------------------------------------------------------------------------------- P5a: schwebende Apps, Gesten, Etagen
-
-    /// <summary>Ist diese Hand an den schwebenden Apps (nur in der Variante «apps»)?</summary>
-    bool AnApps(Handed h) => bedien.MitApps && apps.HandNah(h);
-
-    /// <summary>Ein Bild der schwebenden Apps: Kacheln nach Modus, offene App, Ereignisse ausführen.</summary>
-    void AppsBild(Pose kopf)
-    {
-        if (!bedien.MitApps) return;
-        var gieren = KopfRef(kopf).Gieren + AppLayout.SeitlichGrad * Math.PI / 180;   // links neben dem Blick: die rechte Hand zeigt frei nach vorn, der Tisch bleibt frei
-        var kacheln = KachelnBauen();
-        var offen = apps.Offen is { } id ? OffeneAppBauen(id) : null;
-        foreach (var e in apps.Bild(kopf, gieren, Time.Total, Time.Step, kacheln, offen, bedien)) AppEreignis(e);
-    }
-
-    /// <summary>Ampel und kurzer Text der Verbindung für die Kachel «Status».</summary>
-    (int Ampel, string Text) VerbindungKurz() => zustand switch
-    {
-        Zustand.Verbunden => (1, "Verbunden"),
-        Zustand.OhnePc => (2, "Ohne PC"),
-        Zustand.Fehler => (3, "Fehler"),
-        _ => (0, "Suche PC …"),
-    };
-
-    double Hz => bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0;
-
-    /// <summary>
-    /// Die Kacheln (was heute die Box kann, P5a): Status, Etagen (neu), Drehen bzw. Tisch (App mit Echter Tisch, IFC-Unterlage, Zurücksetzen, Tisch neu antippen),
-    /// Sitzungsraum bzw. Begehen, Ebenen. Ohne Modell nur «Status». Höchstens 5 Kacheln, damit der Bogen links neben dem Blick bleibt (AppLayout.SeitlichGrad).
-    /// </summary>
-    List<Kachel> KachelnBauen()
-    {
-        var (ampel, kurz) = VerbindungKurz();
-        var liste = new List<Kachel>();
-        static string Z(FormattableString f) => FormattableString.Invariant(f);
-        if (darstellung is null || szene is null)
-        {
-            liste.Add(new Kachel("status", kurz, "Modell wird geladen …", KachelArt.Liste, Ampel: ampel));
-            return liste;
-        }
-        if (sitzung.Aktiv)
-        {
-            var a = sitzung.Ansicht;
-            liste.Add(new Kachel("status", kurz, Z($"Massstab {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)} · {Hz:0} Hz"), KachelArt.Liste, Ampel: ampel));
-            liste.Add(new Kachel("etagen", "Etagen", a?.Text ?? "", KachelArt.Liste));
-            liste.Add(new Kachel("tisch", "Tisch",
-                $"{(sitzung.Echt.WartetAufTisch ? "Tisch antippen" : sitzung.Echt.Ein ? "Echter Tisch" : "virtueller Raum")} · IFC {(sitzung.Unterlage ? "ein" : "aus")}", KachelArt.Liste));
-            liste.Add(new Kachel("begehen", "Begehen", "zurück zum Standpunkt", KachelArt.Knopf));
-        }
-        else
-        {
-            var ort = Einblendung();
-            liste.Add(new Kachel("status", kurz, Z($"{(ort.Length > 0 ? ort : geschossAmStand?.Kennzeichen ?? "")} · {Hz:0} Hz"), KachelArt.Liste, Ampel: ampel));
-            liste.Add(new Kachel("etagen", "Etagen", geschossAmStand is { } g ? $"{g.Kennzeichen} · Wisch ↑↓" : "", KachelArt.Liste));
-            liste.Add(new Kachel("drehen", "Drehen", drehen.Text, KachelArt.Schalter, drehen.Drehen));
-            liste.Add(new Kachel("sitzungsraum", "Sitzungsraum", "Modell am Tisch", KachelArt.Knopf));
-        }
-        if (ebenen.Liste.Count > 0)
-            liste.Add(new Kachel("ebenen", "Ebenen", $"{ebenen.Liste.Count(e => e.An)} von {ebenen.Liste.Count} ein", KachelArt.Liste));
-        return liste;
-    }
-
-    /// <summary>Einträge der Etagen: Begehen oben das oberste Geschoss; Sitzungsraum zuerst «Alle Etagen». Aktuell = das Geschoss am Stand bzw. der Ansicht.</summary>
-    List<ListenEintrag> EtagenEintraege()
-    {
-        var aus = new List<ListenEintrag>();
-        if (stand is null) return aus;
-        var a = sitzung.Ansicht;
-        var aktuell = sitzung.Aktiv ? (a is { Ausschnitt: false } ? a.Geschoss : null) : geschossAmStand?.Id;
-        if (sitzung.Aktiv) aus.Add(new ListenEintrag("alle", "Alle Etagen", "das ganze Modell", Aktuell: a is { Ausschnitt: false, Geschoss: null }));
-        foreach (var g in stand.Liste.Geschosse.Where(x => double.IsFinite(x.KoteMm)).OrderByDescending(x => x.KoteMm))
-            aus.Add(new ListenEintrag(g.Id, g.Kennzeichen, string.Create(CultureInfo.InvariantCulture, $"{(g.Name is { Length: > 0 } n && n != g.Kennzeichen ? n + " · " : "")}{g.KoteMm / 1000:+0.00;-0.00} m"),
-                Aktuell: g.Id == aktuell));
-        return aus;
-    }
-
-    /// <summary>Inhalt der offenen App: Etagen, Ebenen oder Status (Verbindung, Modell, Ort, Leistung, Hinweis und die Tabelle der Gesten).</summary>
-    SchwebendeApps.OffeneApp? OffeneAppBauen(string id)
-    {
-        switch (id)
-        {
-            case "etagen":
-                return new SchwebendeApps.OffeneApp("Etagen", EtagenEintraege());
-            case "ebenen":
-                return new SchwebendeApps.OffeneApp("Ebenen", [.. ebenen.Liste.Select(e => new ListenEintrag(e.Name, e.Titel, $"{e.Teile} Elemente", Schalter: true, Ein: e.An))]);
-            case "tisch":
-                var t = new List<ListenEintrag>
-                {
-                    new("echter_tisch", "Echter Tisch", !sitzung.Echt.Verfuegbar ? "nicht verfügbar" : sitzung.Echt.WartetAufTisch ? "Tisch antippen" : "Passthrough",
-                        Schalter: true, Ein: sitzung.Echt.Ein),
-                    new("ifc", "IFC-Unterlage", null, Schalter: true, Ein: sitzung.Unterlage),
-                    new("zuruecksetzen", "Zurücksetzen", sitzung.SchnittHand is null ? "Lage und Massstab" : "Lage, Massstab, Schnitt der Hand"),
-                };
-                if (sitzung.Echt.Ein && !sitzung.Echt.WartetAufTisch) t.Add(new("tisch_antippen", "Tisch neu antippen", null));
-                // P5b: Ausschnitt des markierten Raums (Prüfaufgabe «raum-ar-oeffnen») bzw. des Raums, in dem man stand
-                if (RaumZumZeigen() is { } rz)
-                    t.Add(new("raum_zeigen", "Raum zeigen", lauf is { Id: PruefAufgaben.RaumArOeffnen } ? "markierter Raum" : "Raum am Standort",
-                        Aktuell: sitzung.Ansicht is { Ausschnitt: true } && sitzungWunsch.Bezug == rz));
-                return sitzung.Aktiv ? new SchwebendeApps.OffeneApp("Tisch", t) : null;
-            case "status":
-                var z = new List<string> { verbindungText };
-                if (stand is not null) z.Add($"Modell {stand.Liste.Projekt} ({modellWeg})");
-                if (sitzung.Aktiv) z.Add($"Sitzungsraum · {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)} · {sitzung.Ansicht?.Text}");
-                else if (Einblendung() is { Length: > 0 } ort) z.Add(ort);
-                else if (geschossAmStand is not null) z.Add($"Geschoss {geschossAmStand.Kennzeichen}");
-                if (darstellung is not null)
-                    z.Add(string.Create(CultureInfo.InvariantCulture, $"{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {Hz:0} Hz"));
-                if (Time.Total < hinweisBis && hinweis.Length > 0) z.Add(hinweis);
-                z.Add("");
-                z.Add("Gesten:");
-                z.AddRange(Gestenbedeutung.Tabelle.Select(x => $"{x.Geste}: {x.Bedeutung}"));
-                return new SchwebendeApps.OffeneApp("Status", [], z);
-            default:
-                return null;
-        }
-    }
-
-    /// <summary>Eine Kachel bzw. ein Eintrag wurde angetippt (oder mit Pinch gewählt).</summary>
-    void AppEreignis(SchwebendeApps.Ereignis e)
-    {
-        letzteGeste = $"{e.Art} {e.Id}{(e.Eintrag is null ? "" : " " + e.Eintrag)}";
-        switch (e.Art)
-        {
-            case SchwebendeApps.Ereignis.Daneben:   // P5b: Antippen daneben – Fehlgriff der laufenden Prüfaufgabe
-                if (lauf is { } l) PruefAufgaben.Daneben(l);
-                return;
-            case SchwebendeApps.Ereignis.Schliessen:
-                apps.Schliessen();
-                return;
-            case SchwebendeApps.Ereignis.Eintrag_ when e.Id == "etagen" && e.Eintrag is { } g:
-                EtageWaehlen(g);
-                return;
-            case SchwebendeApps.Ereignis.Eintrag_ when e.Id == "ebenen" && e.Eintrag is { } name:
-                var an = ebenen.Liste.FirstOrDefault(x => x.Name == name);
-                if (an.Name is null) return;
-                ebenen.Schalten(name, !an.An);
-                Hinweis($"Ebene {an.Titel} {(!an.An ? "ein" : "aus")} ({an.Teile} Elemente).");
-                return;
-            case SchwebendeApps.Ereignis.Eintrag_ when e.Id == "tisch" && e.Eintrag is { } was:
-                if (was == "echter_tisch" && !sitzung.Echt.Verfuegbar) { Hinweis($"Echter Tisch nicht verfügbar: {sitzung.Echt.Grund}"); return; }
-                TischAktion(was);
-                return;
-            case SchwebendeApps.Ereignis.Eintrag_:
-                return;
-        }
-        switch (e.Id)
-        {
-            case "status" or "etagen" or "ebenen" or "tisch":
-                var seite = e.Id == "etagen" ? Math.Max(0, AppListe.SeiteVon(EtagenEintraege().FindIndex(x => x.Aktuell))) : 0;
-                apps.Oeffnen(e.Id, seite);
-                break;
-            case "drehen":
-                var ein = !drehen.Drehen;
-                DrehenSchalter.Umschalten(drehen, ein);
-                Hinweis(ein ? "Drehen ein (von Hand): Pinch + Wisch dreht." : "Drehen aus (von Hand).");
-                break;
-            case "sitzungsraum":
-                SitzungAusBegehen();
-                break;
-            case "begehen":
-                apps.Schliessen();
-                SitzungVerlassen();
-                break;
-        }
-    }
-
-    /// <summary>Die App «Tisch» im Sitzungsraum: Echter Tisch (Passthrough), IFC-Unterlage, Zurücksetzen, Tisch neu antippen – wie die Box in P4b.</summary>
-    void TischAktion(string was)
-    {
-        switch (was)
-        {
-            case "echter_tisch":
-                var warEin = sitzung.Echt.Ein;
-                var wirksam = sitzung.EchterTischSchalten(!sitzung.Echt.Ein);
-                Hinweis(wirksam ? "Passthrough ein: mit dem Zeigefinger kurz auf die Tischplatte tippen." : "Virtueller Raum.");
-                if (wirksam) apps.Schliessen();   // die Hände sind frei zum Antippen des Tisches
-                if (warEin && !wirksam && lauf is { } l1) PruefAufgaben.RaumRueckschritt(l1, "Echter Tisch aus");
-                break;
-            case "ifc":
-                sitzung.Unterlage = !sitzung.Unterlage;
-                Hinweis($"IFC-Unterlage {(sitzung.Unterlage ? "ein" : "aus")}.");
-                break;
-            case "zuruecksetzen":
-                sitzung.Zuruecksetzen();
-                Hinweis("Lage, Massstab, Drehung und Schnitt der Hand zurückgesetzt.");
-                if (lauf is { } l2) PruefAufgaben.RaumRueckschritt(l2, "Zurücksetzen");
-                break;
-            case "tisch_antippen":
-                sitzung.TischNeuAntippen();
-                apps.Schliessen();
-                Hinweis("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
-                if (lauf is { } l3) PruefAufgaben.RaumRueckschritt(l3, "Tisch neu antippen");
-                break;
-            case "raum_zeigen":   // P5b: Ausschnitt «Raum zeigen» des markierten Raums (Aufgabe) bzw. des Raums, in dem man vor dem Sitzungsraum stand
-                if (RaumZumZeigen() is not { } raum) { Hinweis("Kein Raum bekannt – im Begehen in einem Raum stehen bzw. am PC «Raum zeigen (VR)»."); break; }
-                var w = new SitzungWunsch(SitzungWunsch.Ausschnitt, raum);
-                if (SitzungAnsichtBauen(w) is { } an) { SitzungZeigen(w, an); apps.Schliessen(); Hinweis($"Sitzungsraum · {an.Text}"); }
-                break;
-        }
-    }
-
-    /// <summary>
-    /// Ein Wisch (Pinch gehalten) nach den festen Gestenbedeutungen (Hlks.Xr.Gestenbedeutung): blättern, Etage, App schliessen bzw. Apps ausblenden. Das Drehen
-    /// selbst kommt als eigenes Ereignis von HandBegehen.
-    /// </summary>
-    void WischAnwenden(WischRichtung r, Vec3 ort)
-    {
-        var mitApps = bedien.MitApps && apps.Sichtbar;
-        var aufgabeOffen = lauf is { Fertig: false };
-        var aktion = Gestenbedeutung.Wisch(r, new GestenKontext(sitzung.Aktiv, mitApps && apps.Offen is not null, mitApps, bedien.EtageMitWisch, aufgabeOffen));
-        letzteGeste = $"Wisch {r} → {aktion}";
-        switch (aktion)
-        {
-            case GestenAktion.AufgabeAbbrechen:   // P5b: Wegwischen der Karte bricht die Prüfaufgabe ab (Messprotokoll mit erfolg = false)
-                rueck.Fang(ort);
-                AufgabeBeenden("Wegwischen");
-                break;
-            case GestenAktion.Nichts when r is WischRichtung.Hoch or WischRichtung.Runter && !bedien.EtageMitWisch:
-                // P5b, Variante «etage» = «app»: der Wisch wechselt nicht – Hinweis und (in der Aufgabe) ein Fehlgriff
-                rueck.Leer(ort);
-                Hinweis("Variante «Etage per App»: das Geschoss in der App «Etagen» wählen.");
-                if (lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
-                break;
-            case GestenAktion.SeiteVor or GestenAktion.SeiteZurueck:
-                var anzahl = apps.Offen is { } id && OffeneAppBauen(id) is { } o ? o.Eintraege.Count : 0;
-                if (apps.Blaettern(r, anzahl)) rueck.Kachel(ort); else rueck.Leer(ort);
-                break;
-            case GestenAktion.EtageHoch:
-                EtageWechseln(1);
-                break;
-            case GestenAktion.EtageRunter:
-                EtageWechseln(-1);
-                break;
-            case GestenAktion.AppSchliessen:
-                apps.Schliessen();
-                rueck.Fang(ort);
-                break;
-            case GestenAktion.AppsAusblenden:
-                apps.Ausblenden(Time.Total);
-                rueck.Fang(ort);
-                Hinweis("Apps ausgeblendet – linke Handfläche zum Gesicht drehen holt sie zurück.");
-                break;
-        }
-    }
+    // --------------------------------------------------------------------------------------------------- P5a: Etagen (die Apps: QuestApp.Apps.cs)
 
     /// <summary>Etage darüber (+1) bzw. darunter (−1): beim Begehen über dem gleichen Punkt (sonst im grössten Raum), am Sitzungstisch der Etagenschnitt bzw. «Alle Etagen».</summary>
     void EtageWechseln(int richtung)
@@ -1350,52 +1143,6 @@ sealed partial class QuestApp
         EtageBegehen(g, g.KoteMm > (aktuell?.KoteMm ?? double.NegativeInfinity));
     }
 
-    Pose hinweisPose = new(0, 1.2f, -0.6f, Quat.Identity);
-    bool hinweisGesetzt;
-
-    /// <summary>
-    /// P5a, Variante «apps»: Hinweise (8 s), die Bitte, den echten Tisch anzutippen, ein Fehler der Verbindung und nach dem Ausblenden, wie die Apps zurückkommen – über
-    /// den Apps bzw. (ausgeblendet) unten vor dem Blick.
-    /// </summary>
-    void HinweisZeile(Pose kopf)
-    {
-        var zeilen = new List<string>();
-        if (Time.Total < hinweisBis && hinweis.Length > 0) zeilen.Add(hinweis);
-        if (sitzung.Aktiv && sitzung.Echt.WartetAufTisch) zeilen.Add("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
-        if (zustand == Zustand.Fehler && !apps.Sichtbar) zeilen.Add("● " + verbindungText);
-        if (!apps.Sichtbar && Time.Total - apps.AusgeblendetSeit < 6 && !zeilen.Any(z => z.StartsWith("Apps ausgeblendet", StringComparison.Ordinal)))
-            zeilen.Add("Apps: linke Handfläche zum Gesicht drehen.");
-        if (zeilen.Count == 0) return;
-        var skala = (float)bedien.Apps.Skala;
-        Vec3 ziel;
-        // über den Apps, solange man mit ihnen arbeitet (App offen oder Hand an ihnen), sonst unten vor dem Blick (die Apps stehen links daneben)
-        var anDenApps = apps.Sichtbar && (apps.Offen is not null || apps.HandNah(Handed.Left) || apps.HandNah(Handed.Right));
-        if (anDenApps && apps.PanelLage is { } p) ziel = new Vec3((float)p.Mitte.X, (float)(p.Mitte.Y + p.H / 2 + 0.04), (float)p.Mitte.Z);
-        else if (anDenApps && apps.Lagen.Count > 0)
-        {
-            var oben = apps.Lagen.Max(l => l.Mitte.Y + l.H / 2);
-            ziel = new Vec3((float)apps.Lagen.Average(l => l.Mitte.X), (float)(oben + 0.04), (float)apps.Lagen.Average(l => l.Mitte.Z));
-        }
-        else
-        {
-            var f = kopf.Forward;
-            var w = new Vec3(f.x, 0, f.z);
-            w = w.Length > 1e-3f ? w.Normalized : new Vec3(0, 0, -1);
-            ziel = kopf.position + w * 0.55f + new Vec3(0, -0.22f, 0);
-        }
-        if (!hinweisGesetzt || Vec3.Distance(hinweisPose.position, ziel) > 0.6f) { hinweisPose.position = ziel; hinweisGesetzt = true; }
-        else hinweisPose.position = Vec3.Lerp(hinweisPose.position, ziel, Math.Min(1, Time.Stepf * 4f));
-        hinweisPose.orientation = Quat.LookAt(hinweisPose.position, kopf.position);
-        var farbe = zustand == Zustand.Fehler && !apps.Sichtbar ? new Color(1f, 0.5f, 0.5f, 1) : new Color(0.75f, 0.95f, 1f, 1);
-        hinweisStil ??= Text.MakeStyle(Default.Font, 0.0105f, new Color(1, 1, 1, 1));
-        // P5b: selbst umbrechen (Text.Add verkleinert lange Zeilen sonst auf eine Zeile, Befund am Prüfbild)
-        var text = Textumbruch.Umbrechen(string.Join("\n", zeilen), Textumbruch.ZeichenJeZeile(0.5, 0.0105));
-        Text.Add(text, Matrix.TRS(hinweisPose.position, hinweisPose.orientation, 0.75f * skala), new Vec2(0.5f, 0.12f), TextFit.Wrap | TextFit.Squeeze,
-            hinweisStil.Value, farbe, TextAlign.BottomCenter, TextAlign.BottomCenter);
-    }
-
-    TextStyle? hinweisStil;
-
     // --------------------------------------------------------------------------------------------------- Prüfen (--pruefen)
 
     void Pruefen(double rechnen)
@@ -1414,7 +1161,7 @@ sealed partial class QuestApp
             return;
         }
         if (!ebenenFertig && Time.Total - modellAb < 60) return;   // P4b: die Ebenen kommen nach dem Modell; mitmessen
-        if (!pruefAktionen) { pruefAktionen = true; pruefText = PruefAktionen(); pruefP4b = PruefP4bRegeln(); pruefP5a = PruefP5aRegeln(); pruefP5b = PruefP5bRegeln(); return; }   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
+        if (!pruefAktionen) { pruefAktionen = true; pruefText = PruefAktionen(); pruefP4b = PruefP4bRegeln(); pruefP5a = PruefP5aRegeln(); pruefP5b = PruefP5bRegeln(); pruefV1a = PruefV1aRegeln(); return; }   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
         if (o.BildOrdner is { } pb5) PruefBilderP5b(pb5, sitzung.Aktiv || sitzPhase >= 0);   // P5b: Karte, Röntgen-Hand, flache Hand
         if (sitzung.Aktiv || sitzPhase >= 0) { SitzungPruefen(rechnen); return; }
         gemessen++;
@@ -1426,11 +1173,15 @@ sealed partial class QuestApp
             Directory.CreateDirectory(bo);
             var k = Input.Head;
             Renderer.Screenshot(Path.Combine(bo, "begehen_blick.jpg"), k.position, k.position + k.Forward + new Vec3(0, -0.35f, 0), 1280, 960, 90);
-            if (apps.Lagen.Count > 0)
-            {
-                var mitte = new Vec3((float)apps.Lagen.Average(l => l.Mitte.X), (float)apps.Lagen.Average(l => l.Mitte.Y), (float)apps.Lagen.Average(l => l.Mitte.Z));
-                Renderer.Screenshot(Path.Combine(bo, "apps_begehen.jpg"), k.position, mitte, 1280, 960, 80);
-            }
+            if (apps.Rahmen is { } ra)   // V1a: das Glas-Fenster (Register, Inhalt, Werkzeugleiste, Griff)
+                Renderer.Screenshot(Path.Combine(bo, "apps_begehen.jpg"), k.position, (Vec3)(Vector3)ra.Fenster.Mitte, 1280, 960, 80);
+        }
+        if (gemessen == o.PruefBilder / 2 + 2 && o.BildOrdner is not null) apps.RegisterWaehlen("messen");   // V1a: App «Messen» zeigen, dann die Bilder
+        if (gemessen == o.PruefBilder / 2 + 4 && o.BildOrdner is { } bv2) { PruefBilderV1a(bv2); apps.RegisterWaehlen("marker"); }
+        if (gemessen == o.PruefBilder / 2 + 6 && o.BildOrdner is { } bv3)
+        {
+            if (apps.Rahmen is { } rm) Renderer.Screenshot(Path.Combine(bv3, "glas_marker.jpg"), Input.Head.position, (Vec3)(Vector3)rm.Fenster.Mitte, 1280, 960, 55);
+            apps.RegisterWaehlen("status");
         }
         if (gemessen < o.PruefBilder) return;
         var jeGeschoss = darstellung.AufrufeJeGeschoss();
@@ -1440,16 +1191,17 @@ sealed partial class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}, Quittungen={quittungen}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
-        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal), z);
+        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal), z);
     }
 
     string pruefP5a = "";
 
     /// <summary>
-    /// Einmal im Prüflauf (P5a): Stellschrauben (setzen, Grenzen, zurücksetzen), schwebende Apps (Kachel «Etagen» mit einer gedachten Fingerspitze antippen, App
-    /// «Etagen» offen, Wegwischen schliesst und blendet aus, Handfläche holt zurück), Etagenwechsel per Wisch hoch/runter (Begehen: anderes Geschoss und zurück, Tunnel;
+    /// Einmal im Prüflauf (P5a): Stellschrauben (setzen, Grenzen, zurücksetzen), Apps (V1a: Register «Etagen» des Glas-Fensters mit einer gedachten Fingerspitze antippen,
+    /// Inhalt «Etagen», Wegwischen blendet aus, Handfläche holt zurück), Etagenwechsel per Wisch hoch/runter (Begehen: anderes Geschoss und zurück, Tunnel;
     /// Sitzungsraum: andere Etage und zurück zum Auftrag). «FEHLER» lässt den Lauf scheitern.
     /// </summary>
     string PruefP5aRegeln()
@@ -1470,33 +1222,37 @@ sealed partial class QuestApp
             var zurueck = bedien == XrBedienEinstellungen.Vorgabe && sitzung.Zoom == ZoomGrenzen.Vorgabe && begehenWirksam.Wisch == WischEinstellungen.Vorgabe;
             teile.Add($"Stellschrauben={(gesetzt && ungueltig && zurueck ? "ok" : "FEHLER")} ({XrBedienEinstellungen.Schluessel.Count} Schlüssel der Bedienung)");
 
-            // Apps: «Etagen» antippen (gedachte Fingerspitze fährt in die Kachel), App offen, Wegwischen schliesst, nochmals blendet aus, Handfläche holt zurück
-            var kacheln = KachelnBauen();
-            var lagen = AppLayout.Kacheln(kacheln.Count, new AppAnker(new XVec3(0, 1.6, 0), Math.PI / 2), bedien.Apps);
-            var i = kacheln.FindIndex(k => k.Id == "etagen");
+            // Apps (V1a, Glas-Fenster): das Register «Etagen» mit einer gedachten Fingerspitze antippen (Ziele des letzten Bilds), Inhalt «Etagen», Wegwischen blendet
+            // das Fenster aus, Holen (Handfläche) zeigt es wieder
+            var ziele = apps.Ziele.ToList();
+            var i = ziele.FindIndex(z => z.Art == GlasApps.Ereignis.RegisterArt && z.Id == "etagen");
+            var lagen = ziele.Select(z => z.Lage).ToList();
             var hand = new BeruehrHand();
             int? ausgeloest = null;
             for (int s = 0; i >= 0 && s <= 10 && ausgeloest is null; s++)
                 ausgeloest = AppBeruehrung.Schritt(hand, lagen[i].Mitte + lagen[i].Normale * (0.06 - 0.007 * s), false, lagen, bedien.Pinch).Ausgeloest;
-            if (ausgeloest is int a) AppEreignis(new SchwebendeApps.Ereignis(SchwebendeApps.Ereignis.Kachel, kacheln[a].Id));
-            var offen = apps.Offen == "etagen";
-            var eintraege = OffeneAppBauen("etagen")?.Eintraege.Count ?? 0;
+            if (ausgeloest is int a) { apps.RegisterWaehlen(ziele[a].Id); AppEreignis(new GlasApps.Ereignis(ziele[a].Art, ziele[a].Id)); }
+            var offen = apps.Aktiv == "etagen";
+            var inhalt = InhaltBauen();
+            var zeilen = inhalt.Elemente.Count(e => e.Art == GlasArt.Zeile);
+            var eintraege = EtagenEintraege().Count;
             var kopf = Input.Head;
             WischAnwenden(WischRichtung.Vor, kopf.position);
-            var zu = apps.Offen is null && apps.Sichtbar;
-            WischAnwenden(WischRichtung.Vor, kopf.position);
             var aus = !apps.Sichtbar;
-            apps.Holen(kopf, KopfRef(kopf).Gieren);
-            var appsOk = ausgeloest == i && offen && zu && aus && apps.Sichtbar && eintraege == stand!.Liste.Geschosse.Count + (sitzung.Aktiv ? 1 : 0);
-            // Geisterhand: aus einer gedachten Hand vor der Kachel «Etagen» – die folgenden Bilder zeichnen sie (Prüfung der Darstellung ohne Hände im Simulator)
+            AppsHolen();
+            var register = RegisterBauen();
+            var appsOk = ausgeloest == i && offen && zeilen > 0 && aus && apps.Sichtbar && eintraege == stand!.Liste.Geschosse.Count + (sitzung.Aktiv ? 1 : 0)
+                && register.Any(x => x.Id == "messen") && register.Any(x => x.Id == "marker");
+            // Geisterhand: aus einer gedachten Hand vor dem Register «Etagen» – die folgenden Bilder zeichnen sie (Prüfung der Darstellung ohne Hände im Simulator)
             if (i >= 0)
             {
                 var w0 = lagen[i].Mitte + lagen[i].Normale * 0.12;
                 var form = HandGelenke.WebXr.Select((n, k) => (n, p: w0 + new XVec3((k % 5) * 0.015 - 0.03, (k / 5) * 0.02, -(k / 5) * 0.01))).ToDictionary(x => x.n, x => x.p);
                 geister.Starten(GeisterGeste.Antippen, Time.Total, form, lagen[i]);
             }
-            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} ({kacheln.Count} Kacheln: {string.Join(" ", kacheln.Select(k => k.Id))}; Etagen {eintraege} Einträge; " +
-                $"Wegwischen schliesst {(zu ? "ja" : "nein")}, blendet aus {(aus ? "ja" : "nein")}; Geisterhand {(geister.Gezeigt > 0 ? "gestartet" : "nein")})");
+            apps.RegisterWaehlen("status");
+            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} (Glas-Fenster, Register {string.Join(" ", register.Select(x => x.Id))}; Etagen {eintraege} Einträge, {zeilen} auf der ersten Seite; " +
+                $"{ziele.Count} Ziele; Wegwischen blendet aus {(aus ? "ja" : "nein")}; Geisterhand {(geister.Gezeigt > 0 ? "gestartet" : "nein")})");
 
             // Etage per Wisch hoch/runter und zurück
             var liste = stand!.Liste.Geschosse;
@@ -1573,18 +1329,25 @@ sealed partial class QuestApp
             Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}.jpg"), Sk(0, 1.45, 0.1), ziel, 1280, 960, 70);
             Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}_oben.jpg"), Sk(0.6, 1.9, -0.2), ziel, 1280, 960, 60);
             Renderer.Screenshot(Path.Combine(ordner, $"sitzung_{sitzPhase}_{name}_senkrecht.jpg"), Sk(0, 2.3, -0.75), ziel, 1280, 960, 45);   // Griffe gegen Gebäudeecken
-            // P5a: die schwebenden Apps vom Kopf aus (im Sitzungsraum 40° links); im ersten Abschnitt zusätzlich die offene App «Etagen»
-            if (apps.Lagen.Count > 0 && sitzPhase == 0)
+            if (sitzPhase == 0)
             {
-                var mitte = new Vec3((float)apps.Lagen.Average(l => l.Mitte.X), (float)apps.Lagen.Average(l => l.Mitte.Y), (float)apps.Lagen.Average(l => l.Mitte.Z));
-                Renderer.Screenshot(Path.Combine(ordner, "apps_sitzung.jpg"), Input.Head.position, mitte, 1280, 960, 70);
-                AppEreignis(new SchwebendeApps.Ereignis(SchwebendeApps.Ereignis.Kachel, "etagen"));
+                // V1a: die Umgebung von hinten (Kuppel, Boden, Tisch) und vom Platz aus Tisch und Fenster zusammen (das Fenster steht neben dem Tisch)
+                Renderer.Screenshot(Path.Combine(ordner, "sitzung_umgebung.jpg"), Sk(-0.4, 1.75, 1.6), ziel, 1280, 960, 85);
+                if (apps.Rahmen is { } ra)
+                    Renderer.Screenshot(Path.Combine(ordner, "apps_sitzung.jpg"), Input.Head.position, (ziel + (Vec3)(Vector3)ra.Fenster.Mitte) * 0.5f, 1280, 960, 90);
+                apps.RegisterWaehlen("etagen");
             }
         }
-        if (sitzPhase == 0 && sitzBilder == jePhase / 2 + 2 && o.BildOrdner is { } ao && apps.PanelLage is { } pl)
+        if (sitzPhase == 0 && sitzBilder == jePhase / 2 + 2 && o.BildOrdner is { } ao)
         {
-            Renderer.Screenshot(Path.Combine(ao, "apps_etagen.jpg"), Input.Head.position, new Vec3((float)pl.Mitte.X, (float)pl.Mitte.Y, (float)pl.Mitte.Z), 1280, 960, 70);
-            apps.Schliessen();
+            if (apps.Rahmen is { } re) Renderer.Screenshot(Path.Combine(ao, "apps_etagen.jpg"), Input.Head.position, (Vec3)(Vector3)re.Fenster.Mitte, 1280, 960, 60);
+            PruefBilderV1a(ao);   // Marker am Tisch
+            apps.RegisterWaehlen("tisch");
+        }
+        if (sitzPhase == 0 && sitzBilder == jePhase / 2 + 4 && o.BildOrdner is { } at)
+        {
+            if (apps.Rahmen is { } rt) Renderer.Screenshot(Path.Combine(at, "glas_tisch.jpg"), Input.Head.position, (Vec3)(Vector3)rt.Fenster.Mitte, 1280, 960, 60);
+            apps.RegisterWaehlen("status");
         }
         // P4b-Nachtrag: Helligkeit «Schneidet» (Shader schnitt) gegen «Innen» (gewöhnliches Material) – dasselbe Bild zweimal, einmal alles mit dem Shader (PNG, verlustfrei;
         // quest_pruefen.ps1 vergleicht die beiden Bilder)
@@ -1616,9 +1379,10 @@ sealed partial class QuestApp
         if (sitzPhase < SitzPhasen.Length) return;
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Sitzungsraum=ja; {string.Join("; ", sitzErgebnisse)}; alle Geschosse Dreiecke={d.Dreiecke}; Auftrag={auftragText}; Verbindung={verbindungText}, " +
-            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}, Quittungen={quittungen}");
+            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
-        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal), z);
+        Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal), z);
     }
 
     string? auftragRaum;

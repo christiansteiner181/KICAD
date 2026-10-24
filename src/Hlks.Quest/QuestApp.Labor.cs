@@ -5,6 +5,7 @@ using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hlks.Xr;
 using Hlks.Xr.Labor;
+using Hlks.Xr.Messen;
 using Hlks.Xr.Modell;
 using Hlks.Xr.Netz;
 using Hlks.Xr.Sitzung;
@@ -21,7 +22,9 @@ namespace Hlks.Quest;
 ///   - Katalog: beim Verbinden GET /api/xr/labor/katalog (Ablage im privaten Speicher, If-None-Match/304; alle 30 s nachgefragt); ohne PC der abgelegte.
 ///   - Prüfaufgaben: «labor.aufgabe» = Id startet (dieselbe Id nochmals = neu begonnen, eine andere = die laufende bricht ab), null beendet. Die App stellt den Ort
 ///     her (Begehen bzw. Sitzungsraum), zeigt die Karte (AufgabenKarte), misst und sendet bei Erfolg bzw. Abbruch das Messprotokoll (ohne Verbindung später).
-///   - Varianten: «teleport» = «stick» (StickSchritt), «etage» = «app» (QuestApp.WischAnwenden), «messen» (folgt V1, nur gemerkt).
+///   - Varianten: «teleport» = «stick» (StickSchritt), «etage» = «app» (QuestApp.WischAnwenden), «messen» (V1a: Messband bzw. zwei Punkte, QuestApp.Messen.cs),
+///     «umgebung» (V1a: hell bzw. tron, Sitzungsraum).
+///   - V1a: «messen-wand-wand» markiert zwei gegenüberliegende Wände (Hlks.Xr.Labor.WandPaare) und schaltet Messen ein; die Messung entscheidet.
 ///   - Röntgen-Hand beim Begehen (RoentgenSchritt), Schnitt mit der flachen Hand am Tisch (Sitzungsraum).
 /// </summary>
 sealed partial class QuestApp
@@ -39,6 +42,7 @@ sealed partial class QuestApp
     string? raumFuerAufgabe, raumAmStand;
     SzenenElement? markiertesBauteil;
     int pinchOhneGriffVorher;
+    double wandSucheAb;
     JsonObject? letztesProtokoll;
     readonly List<string> protokollWarten = [];
     int protokolleGesendet, quittungen;
@@ -123,6 +127,7 @@ sealed partial class QuestApp
         laufEnde = null;
         markiertesBauteil = null;
         raumFuerAufgabe = null;
+        wandSucheAb = 0;
         Hinweis(lauf.Zustand == LaufZustand.Gesperrt ? $"Aufgabe «{Titel(lauf)}»: {lauf.Grund}" : $"Aufgabe vom PC: «{Titel(lauf)}».");
         return LaborWerte.Ok;
     }
@@ -196,7 +201,7 @@ sealed partial class QuestApp
     {
         if (szene is null || stand is null || darstellung is null) { PruefAufgaben.Warten(l, "Wartet auf das Modell …"); return; }
         var ort = PruefAufgaben.Ort(l.Id);
-        if (ort == AufgabeOrt.Begehen && sitzung.Aktiv) { apps.Schliessen(); SitzungVerlassen(); }
+        if (ort == AufgabeOrt.Begehen && sitzung.Aktiv) SitzungVerlassen();
         if (ort == AufgabeOrt.Sitzungsraum && !sitzung.Aktiv) { raumFuerAufgabe ??= RaumAmStand(); SitzungAusBegehen(); }
         if (ort == AufgabeOrt.Sitzungsraum && !sitzung.Aktiv) { PruefAufgaben.Warten(l, "Der Sitzungsraum lässt sich nicht öffnen."); return; }
         var kr = KopfRef(Input.Head);
@@ -231,6 +236,12 @@ sealed partial class QuestApp
                 PruefAufgaben.TabletVorbereiten(l, e is null ? null : PruefAufgaben.FrageZu(e));
                 markiertesBauteil = e;
                 if (e is null && !neustart) return;
+                break;
+            case PruefAufgaben.MessenWandWand:   // V1a: zwei gegenüberliegende Wände des Raums markieren; Messen ein
+                if (t < wandSucheAb && !neustart) return;   // ohne Raum höchstens zweimal je Sekunde neu suchen
+                wandSucheAb = t + 0.5;
+                if (!PruefAufgaben.MessenVorbereiten(l, WandPaare.Waehlen(szene, GeschossAmStand()?.Id, rig.Y, kw, blick)) && !neustart) return;
+                if (!messen.An) MessenSchalten(true);
                 break;
         }
         if (neustart) return;
@@ -269,7 +280,8 @@ sealed partial class QuestApp
         if (l.Fertig) Abschliessen(l, t);
         if (l.Zustand == LaufZustand.Gesperrt) laufEnde ??= t;
         var anleitung = l.Def?.Anleitung ?? "";
-        var r = karte.Bild(kopf, KopfRef(kopf).Gieren, t, Time.Step, l, Titel(l), anleitung, PruefAufgaben.Zeile(l, t), !l.Fertig && l.Zustand != LaufZustand.Gesperrt, bedien);
+        var r = karte.Bild(kopf, KopfRef(kopf).Gieren, t, Time.Step, l, Titel(l), anleitung, PruefAufgaben.Zeile(l, t), !l.Fertig && l.Zustand != LaufZustand.Gesperrt, bedien,
+            bedien.MitApps && apps.Sichtbar ? apps.Rahmen?.Fenster : null);   // V1a: als Blatt über dem Fenster (sonst rechts neben dem Blick)
         if (r == "beenden") AufgabeBeenden("Aufgabe beenden");
         else if (r == "daneben") PruefAufgaben.Daneben(l);
         MarkierungZeichnen(l, t);
@@ -302,6 +314,21 @@ sealed partial class QuestApp
         }
         else if (!sitzung.Aktiv && l.Id == PruefAufgaben.TabletWertAblesen && markiertesBauteil is { } b)
             Kiste(b.Box, v => Sk(v), farbe);
+        else if (!sitzung.Aktiv && l.Id == PruefAufgaben.MessenWandWand && l.Waende is { } w)
+        {
+            // V1a: die beiden Wände als Rahmen 1 cm vor der Fläche, mit drei waagrechten Linien (gut zu sehen, ohne die Fläche zu verdecken)
+            foreach (var wm in new[] { w.A, w.B })
+            {
+                var vor = wm.Normale * 0.01;
+                XVec3 P(XVec3 basis, double h) => basis + vor + new XVec3(0, h, 0);
+                Lines.Add(Sk(P(wm.Von, 0.02)), Sk(P(wm.Bis, 0.02)), farbe, 0.012f);
+                Lines.Add(Sk(P(wm.Von, wm.Hoehe)), Sk(P(wm.Bis, wm.Hoehe)), farbe, 0.012f);
+                Lines.Add(Sk(P(wm.Von, 0.02)), Sk(P(wm.Von, wm.Hoehe)), farbe, 0.012f);
+                Lines.Add(Sk(P(wm.Bis, 0.02)), Sk(P(wm.Bis, wm.Hoehe)), farbe, 0.012f);
+                var schwach = new Color32(farbe.r, farbe.g, farbe.b, 110);
+                foreach (var h in new[] { 0.55, 1.1, 1.65 }) Lines.Add(Sk(P(wm.Von, h)), Sk(P(wm.Bis, h)), schwach, 0.005f);
+            }
+        }
         else if (sitzung.Aktiv && l.Id == PruefAufgaben.RaumArOeffnen && l.Raum is { } rid && szene?.Elemente.TryGetValue("modell:" + rid, out var re) == true)
         {
             var mm = sitzung.ModellMatrix;
@@ -467,7 +494,7 @@ sealed partial class QuestApp
 
     /// <summary>
     /// Einmal im Prüflauf (P5b): Fassung, Katalog (mit PC vom PC, ohne PC aus der Ablage), Grenzen und Vorgaben aus dem Katalog, Prüfaufgaben – beim Begehen
-    /// «messen-wand-wand» (gesperrt), «drehen-90» (abgebrochen) und «teleport-markierung» (ein Sprung daneben, einer hinein: Erfolg, Messprotokoll), im Sitzungsraum
+    /// «messen-wand-wand» (V1a: eine Messung daneben, eine von Wand zu Wand: Erfolg), «drehen-90» (abgebrochen) und «teleport-markierung» (ein Sprung daneben, einer hinein: Erfolg, Messprotokoll), im Sitzungsraum
     /// «modell-greifen-zoomen» –, die Röntgen-Hand (Kegel vom Kopf nach vorn) bzw. der Schnitt mit der flachen Hand (gedachte Hand über dem Modell). «FEHLER» lässt
     /// den Lauf scheitern.
     /// </summary>
@@ -505,7 +532,7 @@ sealed partial class QuestApp
         return "P5b: " + string.Join(", ", teile);
     }
 
-    /// <summary>Beim Begehen: messen-wand-wand gesperrt, drehen-90 abgebrochen (Protokoll erfolg = false), teleport-markierung mit Erfolg (Protokoll).</summary>
+    /// <summary>Beim Begehen: messen-wand-wand mit Erfolg (V1a), drehen-90 abgebrochen (Protokoll erfolg = false), teleport-markierung mit Erfolg (Protokoll).</summary>
     string PruefAufgabenBegehen()
     {
         var rigVorher = rig;
@@ -513,9 +540,8 @@ sealed partial class QuestApp
         var kopf = Input.Head;
         var kr = KopfRef(kopf);
         var kv = new XVec3(kr.X, kr.Y, kr.Z);
-        // gesperrt
-        StellschraubeAnwenden("labor.aufgabe", J("\"messen-wand-wand\""));
-        var gesperrt = lauf is { Zustand: LaufZustand.Gesperrt };
+        // V1a: messen-wand-wand (vorher gesperrt) – Wände markieren, eine Messung daneben, dann von Wand zu Wand über den Fang der Szene
+        var (wandOk, wandText) = PruefMessenWandWand(kopf);
         // drehen-90: starten, ein Drehschritt in die falsche Richtung, abbrechen
         StellschraubeAnwenden("labor.aufgabe", J("\"drehen-90\""));
         AufgabeBild(kopf);
@@ -540,9 +566,9 @@ sealed partial class QuestApp
             && (int?)p["fehlgriffe"] == 1 && (int?)p["abbrueche"] == 0 && (string?)p["varianten"]?["teleport"] == bedien.Teleport && p["stellschrauben"] is JsonObject;
         rig = rigVorher;
         standort = standortVorher;
-        var ok = gesperrt && abbruchOk && teleportOk;
+        var ok = wandOk && abbruchOk && teleportOk;
         return string.Create(CultureInfo.InvariantCulture,
-            $"Aufgaben={(ok ? "ok" : "FEHLER")} (messen-wand-wand gesperrt {(gesperrt ? "ja" : "nein")}; drehen-90 abgebrochen {(abbruchOk ? "ja" : "nein")}; " +
+            $"Aufgaben={(ok ? "ok" : "FEHLER")} ({wandText}; drehen-90 abgebrochen {(abbruchOk ? "ja" : "nein")}; " +
             $"teleport-markierung Markierung ({m.X:0.00}, {m.Z:0.00}) {(teleportOk ? "Erfolg" : "nein")}, Protokolle gesendet {protokolleGesendet}, wartend {protokollWarten.Count}; " +
             $"Protokoll {p?.ToJsonString().Length ?? 0} Zeichen)");
     }

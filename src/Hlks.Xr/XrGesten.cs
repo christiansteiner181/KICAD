@@ -166,7 +166,8 @@ public static class Gestenbedeutung
     /// Bedeutung eines Wischs (mit gehaltenem Pinch): links/rechts blättert in einer offenen App (nach links = nächste Seite, der Inhalt folgt der Hand), sonst dreht
     /// er beim Begehen (wenn der Schalter «Drehen» wirkt, HandBegehen); hoch/runter wechselt die Etage (Begehen und Sitzungstisch; nicht in der Variante
     /// «etage» = «app»); vor (vom Körper weg) = Wegwischen: schliesst das Vorderste – die offene App, sonst (P5b) die Karte einer laufenden Prüfaufgabe (Abbruch),
-    /// sonst blendet es die Apps aus; zurück: (noch) nichts.
+    /// sonst blendet es die Apps aus; zurück: (noch) nichts. V1a: «AppOffen» heisst jetzt «die Hand ist am Fenster der Apps» (es gibt keine einzeln offene App mehr);
+    /// wegwischen blendet dann das Fenster aus.
     /// </summary>
     public static GestenAktion Wisch(WischRichtung r, GestenKontext k) => r switch
     {
@@ -182,16 +183,20 @@ public static class Gestenbedeutung
     /// <summary>Die Gesten und ihre Bedeutung (Geste, Bedeutung) – dieselbe Tabelle steht in OBERFLAECHE.md und in der App «Status» in der Brille.</summary>
     public static readonly IReadOnlyList<(string Geste, string Bedeutung)> Tabelle =
     [
-        ("Antippen (Zeigefinger in die Kachel)", "wählt bzw. schaltet (Kachel, Eintrag einer Liste)"),
-        ("Pinch (Daumen + Zeigefinger)", "wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen"),
-        ("Pinch + Wisch links/rechts", "blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt)"),
+        ("Antippen (Zeigefinger auf einen Knopf)", "wählt bzw. schaltet (Register, Knopf, Eintrag einer Liste im Fenster der Apps)"),
+        ("Pinch (Daumen + Zeigefinger)", "wählt: mit dem Strahl auf einen Knopf des Fensters zeigen und Pinch wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen"),
+        ("Pinch + Wisch links/rechts", "blättert in der App, wenn die Hand am Fenster ist (links = nächste Seite); beim Begehen sonst drehen um 30° (nur wenn «Drehen» wirkt)"),
         ("Pinch + Wisch hoch/runter", "Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen»)"),
-        ("Pinch + Wisch nach vorn (wegwischen)", "schliesst die offene App, sonst bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus"),
-        ("Linke Handfläche zum Gesicht drehen", "holt die Apps vor den Blick (blendet sie ein)"),
+        ("Pinch + Wisch nach vorn (wegwischen)", "blendet das Fenster aus, wenn die Hand an ihm ist, sonst bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus"),
+        ("Linke Handfläche zum Gesicht drehen", "holt das Fenster der Apps vor den Blick (blendet es ein; am Sitzungstisch neben den Tisch)"),
         ("Flache Hand über dem Modell (kurz ruhig)", "Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht gehalten = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf"),
         ("Offene Hand, Handfläche nach vorn", "Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend"),
         ("Faust", "greift (noch keine Funktion; Greifen kommt mit XR-B)"),
         ("Zwei Hände an den Griffen", "Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben"),
-        ("Zögern über einer App", "eine Geisterhand zeigt die passende Geste"),
+        ("Zögern an einem Griff", "eine Geisterhand zeigt die passende Geste"),
+        ("Pinch halten, ziehen, loslassen (Messen ein)", "V1a: Messband aufziehen – Anfang beim Pinch, Ende beim Loslassen; Variante «zwei Punkte»: je ein kurzer Pinch"),
+        ("Offene Hand schnell quer über eine Messlinie", "V1a: löscht diese Messung (wie an der Wandtafel)"),
+        ("Pinch auf eine Stelle (Marker setzen)", "V1a: setzt einen Problem-Marker an die Stelle, auf die man zeigt"),
+        ("Pinch am Griff unter dem Fenster", "V1a: das Fenster verschieben; der runde Knopf links daneben schliesst es"),
     ];
 }

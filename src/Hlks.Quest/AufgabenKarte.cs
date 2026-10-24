@@ -8,39 +8,29 @@ using XVec3 = Hlks.Xr.Vec3;
 namespace Hlks.Quest;
 
 /// <summary>
-/// Quest App P5b: die schwebende Karte einer Prüfaufgabe des Labors (Regeln und Lage in Hlks.Xr.Labor.PruefAufgaben). Sie steht rechts neben dem Blick, etwas unter den
-/// Augen (die schwebenden Apps stehen links), folgt dem Blick träge wie die Apps (AppLayout.Nachfuehren) und zeigt Titel, Anleitung aus dem Katalog, den Abschnitt bzw.
-/// das Ergebnis mit Zeit und Fehlgriffen und den Knopf «Aufgabe beenden» (Antippen oder Pinch, AppBeruehrung). Pinch + Wisch nach vorn bricht ebenfalls ab
-/// (Gestenbedeutung, QuestApp.WischAnwenden). Alles im Raum der Brille.
+/// Quest App P5b, seit V1a im Stil von visionOS: die Karte einer Prüfaufgabe des Labors (Regeln und Lage in Hlks.Xr.Labor.PruefAufgaben). V1a: Glas wie die Apps
+/// (GlasZeichner); steht das Fenster der Apps, liegt die Karte als «Blatt» über seiner Oberkante, leicht davor, und das Fenster weicht etwas zurück (Apple HIG «Spatial
+/// layout»: «when a sheet appears over a window, the window recedes»); sonst rechts neben dem Blick wie in P5b. So liegt sie am Sitzungstisch neben dem Tisch wie das
+/// Fenster (Befund Prüfbild 24.10.2026: die Karte stand über dem Modell). Titel, Anleitung, Abschnitt bzw. Ergebnis (auch «Geschafft …») stehen auf dem Glas; der
+/// Knopf «Aufgabe beenden» ist eine Kapsel (Antippen oder Pinch); Pinch + Wisch nach vorn bricht ebenfalls ab. Alles im Raum der Brille.
 /// </summary>
 sealed class AufgabenKarte
 {
     readonly Rueckmeldung rueck;
+    readonly GlasZeichner glas;
     readonly AnkerZustand anker = new();
     readonly BeruehrHand[] beruehr = [new(), new()];
     readonly bool[] pinch = new bool[2];
-    readonly Material flaeche, rand;
-    Mesh? netz, knopfNetz;
-    double netzB, netzH;
-    TextStyle titel, text, klein;
-    double stilSkala = -1;
     double knopfBlitz = double.NegativeInfinity;
 
     /// <summary>Lage der Karte bzw. des Knopfs im letzten Bild (Prüfung, Hinweiszeile).</summary>
     public TabletPose? Lage { get; private set; }
     public TabletPose? Knopf { get; private set; }
 
-    public AufgabenKarte(Rueckmeldung rueck)
+    public AufgabenKarte(Rueckmeldung rueck, GlasZeichner glas)
     {
         this.rueck = rueck;
-        flaeche = Material.Unlit.Copy();
-        flaeche.Transparency = Transparency.Blend;
-        flaeche.DepthWrite = false;
-        flaeche.QueueOffset = 12;
-        rand = Material.Unlit.Copy();
-        rand.Transparency = Transparency.Add;
-        rand.DepthWrite = false;
-        rand.QueueOffset = 13;
+        this.glas = glas;
     }
 
     static XVec3 X(Vec3 v) => new(v.x, v.y, v.z);
@@ -49,16 +39,28 @@ sealed class AufgabenKarte
     /// <summary>Ist eine Hand an der Karte (dann stehen Karte und Apps still, ihr Pinch zielt nicht)?</summary>
     public bool HandNah { get; private set; }
 
+    /// <summary>Lage über der Oberkante des Fensters (Blatt), 1.5 cm Luft, 2 cm davor; zum Auge gedreht wie das Fenster (Befund Prüfbild 24.10.2026: überlappend
+    /// verdeckte die Karte den Titel der App).</summary>
+    public static TabletPose UeberFenster(TabletPose fenster, double b, double h) =>
+        fenster with { Mitte = fenster.Mitte + fenster.Oben * (fenster.H / 2 + h / 2 + 0.015) + fenster.Normale * 0.02, B = b, H = h };
+
     /// <summary>
-    /// Ein Bild: Lage (träge zum Blick), Hände am Knopf, Zeichnen. lauf = der Lauf (Titel und Anleitung aus dem Katalog, sonst Id); knopf = «Aufgabe beenden» zeigen.
-    /// Rückgabe: «beenden» (Knopf ausgelöst), «daneben» (Antippen neben den Knopf) bzw. null.
+    /// Ein Bild: Lage (über dem Fenster bzw. träge zum Blick), Hände am Knopf, Zeichnen. Rückgabe: «beenden» (Knopf ausgelöst), «daneben» (Antippen neben den Knopf) bzw.
+    /// null.
     /// </summary>
-    public string? Bild(Pose kopf, double blickGieren, double t, double dt, PruefLauf lauf, string titelText, string anleitung, string zeile, bool knopf, XrBedienEinstellungen e)
+    public string? Bild(Pose kopf, double blickGieren, double t, double dt, PruefLauf lauf, string titelText, string anleitung, string zeile, bool knopf, XrBedienEinstellungen e,
+        TabletPose? fenster)
     {
-        var skala = e.Apps.Skala / 1.35;   // die Vorgabe 1.35 ist die Grösse der Karte
-        var a = AppLayout.Nachfuehren(anker, X(kopf.position), blickGieren, dt, HandNah);
-        var k = PruefAufgaben.KarteLage(a.Auge, a.Gieren, skala);
-        var kn = knopf ? PruefAufgaben.KnopfLage(k, skala) : null;
+        var skala = e.Apps.Skala / 1.35;
+        var m = GlasMasse.Fuer(e.Apps);
+        TabletPose k;
+        if (fenster is not null) k = UeberFenster(fenster, fenster.B * 1.04, PruefAufgaben.KarteH * skala * 1.15);
+        else
+        {
+            var a = AppLayout.Nachfuehren(anker, X(kopf.position), blickGieren, dt, HandNah);
+            k = PruefAufgaben.KarteLage(a.Auge, a.Gieren, skala);
+        }
+        var kn = knopf ? k with { Mitte = k.Mitte - k.Oben * (k.H / 2 - m.M(GlasStil.ZeilePt) * 0.5 - m.M(12)) + k.Normale * 0.002, B = m.M(200), H = m.M(GlasStil.ZeilePt) } : null;
         Lage = k;
         Knopf = kn;
         string? ergebnis = null;
@@ -78,69 +80,36 @@ sealed class AufgabenKarte
             if (r.Ausgeloest is not null) { ergebnis = "beenden"; knopfBlitz = t; rueck.Kachel(S(kn.Mitte)); }
             else if (r.Daneben) ergebnis ??= "daneben";
         }
-        Zeichnen(k, kn, titelText, anleitung, zeile, lauf.Zustand, naehe, XrTabletLogik.Aufleuchten(t - knopfBlitz), skala);
+        Zeichnen(k, kn, titelText, anleitung, zeile, lauf.Zustand, naehe, t, m, e);
         return ergebnis;
     }
 
-    /// <summary>Zeichenhöhen (m bei Skala 1) von Titel, Text und kleiner Zeile.</summary>
-    const double TitelHoehe = 0.0125, TextHoehe = 0.0095, KleinHoehe = 0.0085;
-
-    void Stile(double skala)
+    void Zeichnen(TabletPose k, TabletPose? kn, string titelText, string anleitung, string zeile, LaufZustand zustand, double naehe, double t, GlasMasse m, XrBedienEinstellungen e)
     {
-        if (Math.Abs(skala - stilSkala) < 1e-6) return;
-        stilSkala = skala;
-        var s = (float)skala;
-        titel = Text.MakeStyle(Default.Font, (float)TitelHoehe * s, new Color(0.85f, 0.97f, 1f, 1));
-        text = Text.MakeStyle(Default.Font, (float)TextHoehe * s, new Color(0.75f, 0.92f, 1f, 1));
-        klein = Text.MakeStyle(Default.Font, (float)KleinHoehe * s, new Color(0.62f, 0.86f, 0.95f, 1));
-    }
-
-    static Quat Drehung(TabletPose p) => Quat.LookAt(S(p.Mitte), S(p.Mitte + p.Normale), S(p.Oben));
-
-    void Zeichnen(TabletPose k, TabletPose? kn, string titelText, string anleitung, string zeile, LaufZustand zustand, double naehe, double blitz, double skala)
-    {
-        Stile(skala);
-        if (netz is null || Math.Abs(netzB - k.B) > 1e-4 || Math.Abs(netzH - k.H) > 1e-4)
-        {
-            netz = Mesh.GenerateRoundedCube(new Vec3((float)k.B, (float)k.H, 0.006f), 0.012f);
-            knopfNetz = kn is null ? null : Mesh.GenerateRoundedCube(new Vec3((float)kn.B, (float)kn.H, 0.006f), 0.01f);
-            (netzB, netzH) = (k.B, k.H);
-        }
-        // Farbe nach dem Zustand: läuft blau, Erfolg grün, abgebrochen bzw. gesperrt grau (Gamma; Mesh.Draw nimmt linear)
+        // Glas; Erfolg mit einem grünen Hauch, abgebrochen bzw. gesperrt etwas gedämpft
         var farbe = zustand switch
         {
-            LaufZustand.Erfolg => new Color(0.05f, 0.25f, 0.12f, 0.9f),
-            LaufZustand.Abgebrochen or LaufZustand.Gesperrt => new Color(0.12f, 0.12f, 0.13f, 0.88f),
-            _ => new Color(0.03f, 0.08f, 0.13f, 0.9f),
+            LaufZustand.Erfolg => new GlasFarbe(0.40, 0.66, 0.48, e.Apps.GlasDeckkraft),
+            LaufZustand.Abgebrochen or LaufZustand.Gesperrt => GlasStil.Glas with { A = e.Apps.GlasDeckkraft * 0.8 },
+            _ => GlasStil.Glas with { A = e.Apps.GlasDeckkraft },
         };
-        netz.Draw(flaeche, Matrix.TR(S(k.Mitte - k.Normale * 0.004), Drehung(k)), farbe.ToLinear());
-        Rahmen(k, zustand == LaufZustand.Erfolg ? new Color32(110, 255, 160, 200) : new Color32(60, 200, 255, 170), 0.0018f);
-        Schrift(titelText, k, new Vec2((float)(k.B * 0.92), (float)(k.H * 0.2)), (float)(k.H / 2 - k.H * 0.06), titel, TitelHoehe);
-        Schrift(anleitung, k, new Vec2((float)(k.B * 0.92), (float)(k.H * 0.36)), (float)(k.H / 2 - k.H * 0.27), text, TextHoehe);
-        Schrift(zeile, k, new Vec2((float)(k.B * 0.92), (float)(k.H * 0.16)), -(float)(k.H * 0.12), klein, KleinHoehe);
-        if (kn is not null && knopfNetz is not null)
+        glas.Flaeche(k, m.M(GlasStil.EckenPt), farbe);
+        double rand = m.M(16), b = k.B - 2 * rand, oben = k.H / 2 - rand * 0.7;
+        double tTitel = m.Schrift(GlasStil.TitelPt), tText = m.Schrift(GlasStil.TextPt), tKlein = m.Schrift(GlasStil.KleinPt);
+        glas.Schrift(titelText, k, 0, oben, b, tTitel * 1.4, tTitel, GlasStil.TextPrimaer, TextAlign.TopCenter);
+        oben -= tTitel * 1.5;
+        var zeilenAnleitung = Math.Max(1, Math.Min(4, (int)Math.Ceiling(anleitung.Length / Math.Max(1.0, Textumbruch.ZeichenJeZeile(b, tText)))));
+        glas.Schrift(anleitung, k, 0, oben, b, tText * 1.35 * zeilenAnleitung, tText, GlasStil.TextSekundaer, TextAlign.TopCenter);
+        oben -= tText * 1.35 * zeilenAnleitung + m.M(6);
+        glas.Schrift(zeile, k, 0, oben, b, tKlein * 1.4 * 2, tKlein, zustand == LaufZustand.Erfolg ? GlasStil.TextPrimaer : GlasStil.TextSekundaer, TextAlign.TopCenter);
+        if (kn is not null)
         {
-            var b = (float)Math.Max(0, blitz);
-            var kf = new Color(0.08f + 0.5f * b, 0.18f + 0.6f * b, 0.26f + 0.6f * b, 0.92f);
-            knopfNetz.Draw(flaeche, Matrix.TR(S(kn.Mitte - kn.Normale * 0.002), Drehung(kn)), kf.ToLinear());
-            Rahmen(kn, new Color32(60, 210, 255, (byte)Math.Clamp(90 + 165 * Math.Max(naehe, b), 0, 255)), 0.0012f + 0.002f * (float)naehe);
-            Schrift("Aufgabe beenden", kn, new Vec2((float)(kn.B * 0.9), (float)(kn.H * 0.8)), (float)(kn.H * 0.25), text, TextHoehe);
+            var blitz = Math.Max(0, 1 - (t - knopfBlitz) / 0.25);
+            var lift = GlasStil.AnhebenM * naehe;
+            var lage = kn with { Mitte = kn.Mitte + kn.Normale * lift };
+            glas.Knopf(lage, GlasForm.Kapsel, naehe > 0 || blitz > 0 ? GlasStil.DuennNah : GlasStil.Duenn, m.Pt);
+            glas.Schrift("Aufgabe beenden", lage, 0, tText * 0.62, lage.B, lage.H, tText, GlasStil.TextPrimaer, TextAlign.TopCenter);
         }
-        else Schrift("Pinch + Wisch nach vorn: abbrechen", k, new Vec2((float)(k.B * 0.92), (float)(k.H * 0.12)), -(float)(k.H / 2 - k.H * 0.14), klein, KleinHoehe);
-    }
-
-    static void Rahmen(TabletPose p, Color32 farbe, float dicke)
-    {
-        XVec3 E(double u, double v) => p.Mitte + p.Rechts * (u * p.B / 2) + p.Oben * (v * p.H / 2) + p.Normale * 0.001;
-        var ecken = new[] { E(-1, 1), E(1, 1), E(1, -1), E(-1, -1) };
-        for (int i = 0; i < 4; i++) Lines.Add(S(ecken[i]), S(ecken[(i + 1) % 4]), farbe, dicke);
-    }
-
-    /// <summary>Text auf der Karte; umgebrochen an Wortgrenzen nach der Breite (Textumbruch – StereoKit bricht mit Squeeze nicht selbst um), dann höchstens verkleinert.</summary>
-    void Schrift(string t, TabletPose p, Vec2 groesse, float y, TextStyle stil, double zeichenHoehe)
-    {
-        var umbruch = Textumbruch.Umbrechen(t, Textumbruch.ZeichenJeZeile(groesse.x, zeichenHoehe * stilSkala));
-        var ort = p.Mitte + p.Oben * y + p.Normale * 0.003;
-        Text.Add(umbruch, Matrix.TR(S(ort), Drehung(p)), groesse, TextFit.Wrap | TextFit.Squeeze, stil, TextAlign.TopCenter, TextAlign.TopCenter);
+        else glas.Schrift("Pinch + Wisch nach vorn: abbrechen", k, 0, -k.H / 2 + rand + tKlein, b, tKlein * 1.4, tKlein, GlasStil.TextTertiaer, TextAlign.TopCenter);
     }
 }
