@@ -126,6 +126,8 @@ public static class XrModell
         foreach (var k in Grafik.Koerper(p).OrderBy(k => k.Id, StringComparer.Ordinal))
         {
             var e = m.Finde(k.Id);
+            // Quest App V1a: Problem-Marker zeichnet die App selbst (GET /api/xr/marker) – nicht in der GLB, sonst änderte jeder Marker den Schlüssel des Geschosses
+            if (e is not null && p.Katalog.IstArt(e, ProblemMarkerGrafik.Klasse)) continue;
             var nachbau = e is null ? null : IfcDarstellung.UnterlageVon(m, e);
             string? farbeNachbau = nachbau is null ? null : IfcDarstellung.Farbe(nachbau, "farbeNachbau");
             double? deckNachbau = nachbau is null ? null : IfcDarstellung.Deckkraft(nachbau, "deckkraftNachbau");

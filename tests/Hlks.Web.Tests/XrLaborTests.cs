@@ -410,7 +410,7 @@ public class XrLaborTests
         Assert.Equal(1, (int)lokal["fassung"]!);
         Assert.Equal(Echt().Stellschrauben.Count, lokal["stellschrauben"]!.AsArray().Count);
         Assert.Equal(7, lokal["aufgaben"]!.AsArray().Count);
-        Assert.Equal(4, lokal["varianten"]!.AsArray().Count);
+        Assert.Equal(5, lokal["varianten"]!.AsArray().Count);   // V1a: «umgebung»
         Assert.Equal(2, lokal["muster"]!.AsArray().Count);
         Assert.Null(lokal["profil"]);
         var etag = l.Headers.ETag?.ToString();
