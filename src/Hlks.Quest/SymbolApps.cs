@@ -56,10 +56,22 @@ sealed class SymbolApps : IWegwischbar
     public IReadOnlyDictionary<string, XVec3>? SimHand { get; set; }
     /// <summary>Tiefste Höhe einer Symbolmitte (Raum der Brille), z. B. über der Tischplatte am Sitzungstisch; null = keine. Gilt beim nächsten Erscheinen.</summary>
     public double? Untergrenze { get; set; }
+    /// <summary>V1d: Haltung «sitzend» erkannt (das Feld liegt beim Begehen höher, «symbole.hoehe_sitzend_m»). Gilt beim nächsten Erscheinen.</summary>
+    public bool Sitzend { get; set; }
+    bool sitzendAnker;
+    /// <summary>V1d: Mitten der Symbole im letzten Bild (Neuanordnung erkennen) und ob sich das Feld gerade bewegt.</summary>
+    List<XVec3> mittenVorher = [];
+    public bool FeldBewegt { get; private set; }
+    /// <summary>V1d: ist die Wahl gerade gesperrt (nach einer Wahl, bis Feld und Hand frei sind; Prüfung)?</summary>
+    public bool WahlGesperrt => beruehr.WahlGesperrt;
     /// <summary>Sind die Symbole zu sehen (auch beim Hineinheben und Ausblenden)?</summary>
     public bool Sichtbar => phase != Phase.Weg;
     /// <summary>Stehen sie ganz (nach der Geste, vor dem Ausblenden)?</summary>
     public bool Da => phase == Phase.Da;
+    /// <summary>Blenden die Symbole gerade aus (ein neues Holen ankert neu)?</summary>
+    public bool Geht => phase == Phase.Geht;
+    /// <summary>Prüflauf am PC (V1d-Folge): die Maus-Hände des Simulators zählen nicht (ihre Lage hängt von der Maus ab; nur die gedachte Hand).</summary>
+    public bool OhneEchteHaende { get; set; }
     /// <summary>Mitte der Plätze (dort öffnet sich die gewählte App).</summary>
     public XVec3? Mitte => Plaetze.Count == 0 ? null : AppSymbole.Mitte(Plaetze);
 
@@ -145,6 +157,7 @@ sealed class SymbolApps : IWegwischbar
         auge = X(kopf.position);
         gieren = VrLogik.GierenVonRichtung(new Xz(kopf.Forward.x, kopf.Forward.z));   // nur Gieren: frontal in Körperrichtung, ohne Nicken
         untergrenzeAnker = Untergrenze;
+        sitzendAnker = Sitzend;
     }
 
     /// <summary>
@@ -186,7 +199,7 @@ sealed class SymbolApps : IWegwischbar
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
             var h = Input.Hand(handed);
-            if (h.IsTracked)
+            if (h.IsTracked && !OhneEchteHaende)
             {
                 var g = HandGelenke.AusStereoKit((fi, j) => X(h[fi, j].position), X(h.wrist.position));
                 haende[i] = g;
@@ -198,7 +211,7 @@ sealed class SymbolApps : IWegwischbar
         }
         if (phase == Phase.Weg)
         {
-            Plaetze = []; lagenZuletzt = []; wischWeg = wischZiel = 0; nah[0] = nah[1] = false;
+            Plaetze = []; lagenZuletzt = []; wischWeg = wischZiel = 0; nah[0] = nah[1] = false; mittenVorher = []; FeldBewegt = false;
             HandBeruehrung.Schritt(beruehr, t, haende, [], gesteLaeuft: true, e.Symbole);   // was beim Erscheinen schon berührt, zählt nicht
             return null;
         }
@@ -208,7 +221,7 @@ sealed class SymbolApps : IWegwischbar
         wischZiel = 0;
         hinten = GlasStil.Folgen(hinten, Hinten ? 1 : 0, dt, 0.1);   // weich zurück bzw. wieder nach vorn
         var ids = symbole.Select(s => s.Id).ToList();
-        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m, untergrenzeAnker);
+        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m, untergrenzeAnker, sitzendAnker);
         Plaetze = plaetze;
         var gehen = phase == Phase.Geht ? GlasStil.Weich((t - gehtSeit) / AusDauer) : 0;
         var rechts = HebeGeste.Rechts(gieren);
@@ -246,7 +259,12 @@ sealed class SymbolApps : IWegwischbar
         string? ergebnis = null;
         var gesteLaeuft = phase != Phase.Da || f < 0.9 || stand.Fortschritt > 0.05 || wischLaeuft;
         var kugeln = plaetze.Select((p, i) => new BeruehrKugel(p.Id, lagen[i].Mitte, lagen[i].H / 2)).ToList();
-        var b = HandBeruehrung.Schritt(beruehr, t, haende, kugeln, gesteLaeuft, e.Symbole);
+        // V1d (Christian 24.10.2026: «nach tippen einer App sollte erneutes auswählen gesperrt sein, dass beim neuanordnen der apps nicht gleich ein nächstes gewählt
+        // wird»): ordnet sich das Feld neu (weicht aus, kehrt zurück, gleitet), zählt nach einer Wahl keine Berührung, bis es ruht und die Hand 0.3 s frei ist
+        var mittenJetzt = lagen.Select(x => x.Mitte).ToList();
+        FeldBewegt = mittenVorher.Count > 0 && AppSymbole.Bewegt(mittenVorher, mittenJetzt, dt);
+        mittenVorher = mittenJetzt;
+        var b = HandBeruehrung.Schritt(beruehr, t, haende, kugeln, gesteLaeuft, e.Symbole, FeldBewegt);
         Beruehrt = b.Beruehrt;
         if (b.Gewaehlt is { } wahl && phase == Phase.Da)
         {

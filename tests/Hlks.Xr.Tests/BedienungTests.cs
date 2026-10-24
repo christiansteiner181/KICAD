@@ -137,7 +137,7 @@ public class BedienungTests
         Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, begehen with { AppsSichtbar = false }));
         // die Tabelle nennt alle festen Gesten
         var text = string.Join(" ", Gestenbedeutung.Tabelle.Select(x => x.Geste));
-        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "Wegwischen", "Handfläche", "Faust", "Zwei Hände", "Zögern" }) Assert.Contains(g, text);
+        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "Wegwischen", "Handfläche", "Faust", "Griff", "Zögern" }) Assert.Contains(g, text);   // V1d: ein Griff statt zwei
     }
 
     // ------------------------------------------------------------------------------------------------ Stellschrauben
@@ -535,10 +535,11 @@ public class BedienungTests
         // die Form bleibt: das Handgelenk wandert mit der Spitze
         Nah((a1.Gelenke["wrist"] - a1.Gelenke["index-finger-tip"]).Abstand(hand["wrist"] - hand["index-finger-tip"]), 0, 1e-9);
         Assert.Null(Geisterhand.Bild(GeisterGeste.Antippen, Geisterhand.DauerS + 0.01, hand, Kachel));
-        // Blättern: Pinch (Daumen an der Spitze), von rechts nach links vor der Fläche
+        // Blättern (V1d: Wisch auf der Tafel ohne Pinch): die Spitze knapp vor der Fläche, von rechts nach links
         var b0 = Geisterhand.Bild(GeisterGeste.Blaettern, 0.01, hand, Kachel)!;
         var b1 = Geisterhand.Bild(GeisterGeste.Blaettern, Geisterhand.DauerS / 2 * 0.6, hand, Kachel)!;
-        Assert.True(b0.Gelenke["thumb-tip"].Abstand(b0.Gelenke["index-finger-tip"]) < 0.01);
+        Assert.True(b0.Gelenke["thumb-tip"].Abstand(b0.Gelenke["index-finger-tip"]) > 0.02);
+        Nah((b0.Gelenke["index-finger-tip"] - Kachel.Mitte).Skalar(Kachel.Normale), Geisterhand.BlaetternVorM, 1e-9);
         Assert.True(b1.Gelenke["index-finger-tip"].X < b0.Gelenke["index-finger-tip"].X - 0.15);
         // Wegwischen (V1a): die offene Hand wandert in Richtung «Rechts» des Ziels (die App setzt es nach links), kein Pinch
         var w0 = Geisterhand.Bild(GeisterGeste.Wegwischen, 0.01, hand, Kachel)!;

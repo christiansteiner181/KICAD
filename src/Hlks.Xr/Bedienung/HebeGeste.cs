@@ -30,9 +30,21 @@ public sealed record SymbolEinstellungen
     /// <summary>«symbole.abstand_m»: das Feld steht so weit vor den Augen, waagrecht in Körperrichtung gemessen (Christian 24.10.2026: «in einem abstand von ca.
     /// 60cm»).</summary>
     public double AbstandM { get; init; } = 0.6;
-    /// <summary>«symbole.hoehe_m»: die senkrechte Mitte des Felds liegt so weit unter den Augen – zwischen Brust und Augenhöhe, so dass die oberste Reihe nicht über
-    /// Augenhöhe liegt (Annahme V1a 0.32 m: bei 0.6 m Feldhöhe die oberste Reihe 2 cm unter den Augen).</summary>
-    public double HoeheM { get; init; } = 0.32;
+    /// <summary>«symbole.hoehe_m»: die senkrechte Mitte des Felds liegt so weit unter den Augen (Begehen bzw. ohne Tisch). V1a 0.32 m (die oberste Reihe 2 cm unter den
+    /// Augen); V1d 0.22 m (Brillentest V1, Christian 24.10.2026: «die apps solten beim hochwischen etwas weiter oben sein» – Annahme «etwas» = 0.10 m; bei 0.6 m
+    /// Feldhöhe liegt die oberste Reihe damit 8 cm über den Augen).</summary>
+    public double HoeheM { get; init; } = 0.22;
+    /// <summary>V1d, «symbole.hoehe_sitzend_m»: ist die Haltung «sitzend» erkannt (DrehenSchalter), liegt das Feld beim Begehen so viel (m) höher (Christian 24.10.2026:
+    /// «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein»; Annahme V1d 0.08 m). Am Sitzungstisch gilt <see cref="HoeheTischM"/>.</summary>
+    public double HoeheSitzendM { get; init; } = 0.08;
+    /// <summary>V1d, «symbole.hoehe_tisch_m»: am Sitzungstisch liegt die senkrechte Mitte des Felds so weit unter den Augen (Christian 24.10.2026 am Tisch: «apps sind nun
+    /// ca. 20cm zu hoch», bestätigt «am Sitzungstisch rund 20 cm tiefer»: 0.32 + 0.20 = 0.52 m, Annahme V1d). Die Tischregel (<see cref="TischAbstandM"/>) hebt nur
+    /// die unterste Reihe über die Platte und staucht das Feld dafür.</summary>
+    public double HoeheTischM { get; init; } = 0.52;
+    /// <summary>V1d, «symbole.wahl_frei_s»: nach der Wahl einer App zählt keine Berührung, bis das Feld zur Ruhe gekommen ist und die Hand alle Symbole so lange (s)
+    /// verlassen hat (Christian 24.10.2026: «nach tippen einer App sollte erneutes auswählen gesperrt sein, dass beim neuanordnen der apps nicht gleich ein nächstes
+    /// gewählt wird»; Annahme V1d 0.3 s).</summary>
+    public double WahlFreiS { get; init; } = 0.3;
     /// <summary>«symbole.feldhoehe_m»: so hoch ist das Feld von der obersten zur untersten Reihe (Christian 24.10.2026: «über eine höhe von ca. 0.6m verteilt»).</summary>
     public double FeldHoeheM { get; init; } = 0.6;
     /// <summary>«symbole.reihen»: höchstens so viele Reihen (Christian 24.10.2026: «vorzugsweise maximal 3 reihig»).</summary>

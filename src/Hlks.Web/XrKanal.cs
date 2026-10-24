@@ -381,8 +381,8 @@ public sealed class XrKanal
             if (wert is null) stellschrauben.Remove(schluessel!);
             else
             {
-                if (!stellschrauben.ContainsKey(schluessel!) && stellschrauben.Count >= 64)
-                    throw new HlksFehler("Es gibt schon 64 Stellschrauben.", "Nicht mehr gebrauchte mit wert null zurücksetzen.");
+                if (!stellschrauben.ContainsKey(schluessel!) && stellschrauben.Count >= XrNachrichten.StellschraubenMax)
+                    throw new HlksFehler($"Es gibt schon {XrNachrichten.StellschraubenMax} Stellschrauben.", "Nicht mehr gebrauchte mit wert null zurücksetzen.");
                 stellschrauben[schluessel!] = wert.DeepClone();
             }
             foreach (var x in teilnehmer.Values) Einreihen(x, text);

@@ -1,7 +1,8 @@
 // Tests der Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): Hineinziehen (rechte Hand offen, Handfläche nach links, links → rechts) zusammen mit dem
 // gemeinsamen Wegwischen der App (V1a, Hlks.Xr.Bedienung.Wegwischen; dieselbe Haltung, rechts → links) so verdrahtet wie in der App (QuestApp: erst das Wegwischen,
 // dann das Hineinziehen; Gegensperren über DesktopGesten.WegwischenRuht und NachWegwischen), mit dem synthetischen Generator des Gestenlabors (GestenGenerator,
-// erfundene Hände). Geprüft: Auslösen, Folgen der Hand, Fehlauslösungen (Ausholen, Zurückholen in beide Richtungen, langsam, kurz, zwei Hände, linke Hand, Pinch,
+// erfundene Hände; seit V1d mit beiden Händen für beide Gesten verdrahtet wie in der App, die linke Hand im Einzelnen in V1dTests).
+// Geprüft: Auslösen, Folgen der Hand, Fehlauslösungen (Ausholen, Zurückholen in beide Richtungen, langsam, kurz, zwei Hände, linke Hand, Pinch,
 // Hebegeste, Wegschieben mit zwei Händen, Röntgen-Hand, Zufall) und umgekehrt, dass die beiden Gesten weder Pinch + Wisch noch die Hebegeste bzw. das Wegschieben
 // (Gestenlabor) auslösen.
 
@@ -45,8 +46,11 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         foreach (var b in a.Bilder)
         {
             var h = Haende(b);
-            var rechts = g.WegwischenRuht(b.T) ? null : HandBeobachtung.Aus(h.Rechts, "right");
-            var ws = Wegwischen.Schritt(wz, b.T, rechts, b.Gieren, w);
+            // V1d: beide Hände wischen weg (QuestApp.WegwischenBild), beide ziehen herein (DesktopGesten)
+            var ruht = g.WegwischenRuht(b.T);
+            var rechts = ruht ? null : HandBeobachtung.Aus(h.Rechts, "right");
+            var links = ruht ? null : HandBeobachtung.Aus(h.Links, "left");
+            var ws = Wegwischen.Schritt(wz, b.T, rechts, links, b.Gieren, w);
             if (ws.Ereignis) { we.Add(b.T); g.NachWegwischen(b.T); }
             mw = Math.Max(mw, ws.Weg);
             var s = g.Schritt(h, erlaubt: true);
@@ -174,11 +178,12 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         // beide Hände wischen gemeinsam nach rechts (die linke bewegt sich mit)
         GestenBewegung beide = u => (new Haltung(G.V(-0.35 + 0.35 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)), Hinein(u).Rechts);
         Assert.Empty(Abspielen(Vorzeigen(beide)).Hinein);
-        // dieselbe Geste mit der linken Hand (gespiegelt): nur die rechte Hand zählt
+        // dieselbe Geste mit der linken Hand gespiegelt (also von rechts nach links, Handfläche nach rechts): seit V1d (Christian 24.10.2026: «wisch mit der linken
+        // hand von rechts nach links soll in wieder raus schieben») ist das das Wegwischen der linken Hand – herein zieht sie nicht
         var links = G.Erzeugen(Hinein, new Vorfuehrung { DauerS = 0.45, Gespiegelt = true });
         var rl = Abspielen(links);
         Assert.Empty(rl.Hinein);
-        Assert.Empty(rl.Weg);
+        Assert.Single(rl.Weg);
         // Pinch gehalten (das ist Pinch + Wisch: Drehen bzw. Blättern)
         GestenBewegung pinch = u => (null, new Haltung(G.V(-0.10 + 0.35 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), [0.3, 0.35, 0.7, 0.8, 0.8], 1));
         Assert.Empty(Abspielen(Vorzeigen(pinch)).Hinein);

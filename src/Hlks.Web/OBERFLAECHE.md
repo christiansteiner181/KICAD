@@ -2228,7 +2228,8 @@ Server neu `XrEbenenEndpunkte.cs`. **Am PC keine neue Oberfläche:** Sitzungsrau
   Verschiebung und Höhe. **Beide mit Daumen und Zeigefinger fassen** (Pinch höchstens 5 cm vom Griff), dann: **drehen** um die Hochachse (Richtung der Hände), **verschieben**
   in Breite, Tiefe und **Höhe** (Mitte der Hände), **zoomen** um die Mitte zwischen den Händen (Abstand, **1:200 … 1:5**; `XrSitzungLogik.MassstabMin`, Christian
   23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»). Ein Griff allein bewegt nichts. Das Modell bleibt **waagrecht**. Nahe Hand: Griff heller; gehalten:
-  weiss. Klick beim Fassen und Loslassen. **«Zurücksetzen»** in der Box: Startlage.
+  weiss. Klick beim Fassen und Loslassen. **«Zurücksetzen»** in der Box: Startlage. **Seit V1d ein Griff** in der Mitte der vorderen Gebäudekante (siehe Abschnitt
+  «Quest App V1d»); die zwei Griffe bleiben nur als Regel des Prototyps.
 - **Shader «schnitt» und Farbe** (P4b-Nachtrag, Brillentest 23.10.2026: «Raum in AR» schwarz, «nur die oberste etage schwarz»): Der Shader las die Vertexfarbe unter OpenGL ES
   (Quest) von der Stelle 2 – dort liegen bei StereoKit die UV-Koordinaten (0, 0) –, weil seinem Eingang das Feld `uv : TEXCOORD0` fehlte; die Farbe wurde (0, 0, 0, 1), alles mit
   dem Shader schwarz. Unter Direct3D (PC) passen die Eingänge über die Namen, deshalb nicht im Simulator. Jetzt hat der Eingang den Vertex von StereoKit in seiner Reihenfolge
@@ -2329,8 +2330,10 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben, Messproto
 | Flache Hand über dem Modell, kurz ruhig (P5b) | Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf |
 | Offene Hand, Handfläche nach vorn (P5b) | Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend |
 | Faust | greift (noch keine Funktion; Greifen kommt mit XR-B) |
-| Zwei Hände an den Griffen | Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben |
+| Zwei Hände an den Griffen – **seit V1d ein Griff** (Abschnitt «Quest App V1d») | Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben |
 | Zögern über einer App | eine Geisterhand zeigt die passende Geste |
+
+Die aktuelle Tabelle (mit Wegwischen, Hineinziehen, Blättern auf der Tafel und dem einen Griff) steht in `Hlks.Xr.Gestenbedeutung.Tabelle` und in der App «Gesten».
 
 - **Wisch** (Regeln `XrGesten`): mit **gehaltenem Pinch** schnell ziehen – mindestens 15 cm (`wisch.mindestweg_m`) mit mindestens 0.8 m/s (`wisch.mindesttempo_ms`) in
   höchstens 0.4 s, überwiegend waagrecht oder senkrecht (Abweichung höchstens ≈ 37°, `wisch.richtung_toleranz_grad`; Vorgabe genau «80 % waagrecht» des Prototyps).
@@ -2444,7 +2447,7 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   | `teleport-markierung` | Begehen | Leuchtender Ring am Boden (Radius 0.5 m = Erfolgskriterium) mit Lichtsäule, 2 … 4.5 m vor einem in einem Raum des Geschosses (sonst 3.5 m geradeaus). Gelingt mit einem Sprung höchstens 0.5 m neben die Mitte. | Sprung weiter daneben, abgebrochener Sprung (Pinch bzw. Stick losgelassen ohne Ziel, Strahl vom Boden), Antippen daneben |
   | `drehen-90` | Begehen | Pfeil am Boden in die verlangte Richtung. Zuerst 90° nach links (±15°, 0.5 s halten), dann zurück in die Ausgangsrichtung (±15°, 0.5 s) – körperlich oder per Drehschritt. | Drehschritt, der vom Ziel des Abschnitts wegführt; ungewollter Sprung; Antippen daneben |
   | `etage-wechseln` | Begehen | Die Karte nennt das Ziel: das Geschoss darüber (im obersten: darunter), dann zurück. Mit nur einem Geschoss wartet die Aufgabe (Hinweis). | Wechsel in ein falsches Geschoss; Wisch hoch/runter ohne Wirkung (Variante «app» bzw. kein Geschoss mehr); Antippen daneben |
-  | `modell-greifen-zoomen` | Sitzungsraum | Ziel «1:n und eine Vierteldrehung»: der runde Massstab nahe der halben Startgrösse (z. B. 1:50 → 1:25, 1:137 → 1:75). Gelingt, wenn beide Griffe losgelassen sind, der Massstab höchstens 10 % daneben liegt und das Modell 90° (±15°) gedreht ist, in beide Richtungen. | Pinch am Tisch ohne Griff in Reichweite; Antippen daneben |
+  | `modell-greifen-zoomen` | Sitzungsraum | Ziel «1:n und eine Vierteldrehung»: der runde Massstab nahe der halben Startgrösse (z. B. 1:50 → 1:25, 1:137 → 1:75). Seit V1d mit dem einen Griff (drehen mit der Hand, zoomen mit der zweiten Hand bzw. als Drehknopf; Varianten `bedienung`, `zoom_ein_griff`). Gelingt, wenn der Griff losgelassen ist, der Massstab höchstens 10 % daneben liegt und das Modell 90° (±15°) gedreht ist, in beide Richtungen. | Pinch am Tisch ohne Griff in Reichweite; Antippen daneben |
   | `raum-ar-oeffnen` | Sitzungsraum | Der markierte Raum (der Raum, in dem man vor dem Sitzungsraum stand, sonst der des Auftrags, sonst der grösste des Geschosses) als Kiste auf dem Modell. Schritte (auf der Karte): App «Tisch» › **«Raum zeigen»** → «Echter Tisch» → auf die Tischplatte tippen. Ohne Passthrough (Simulator) genügt der Ausschnitt. | Rückschritt: «Echter Tisch» aus, «Tisch neu antippen», «Zurücksetzen», eine Etage statt des Raums; Antippen daneben |
   | `tablet-wert-ablesen` | Begehen, Variante «tablet» | Das markierte Bauteil (Wand bzw. Decke etwa 2 m vor dem Blick, höchstens 6 m weg) als Kiste; die Box (Tablet) zeigt Art, Höhe und Hüllbox und vier Antworten zur Frage «Welche Höhe hat das markierte Bauteil?». Gelingt mit der richtigen Antwort. In der Variante «apps» wartet die Aufgabe (Karte: «Nur in der Variante «Tablet an der Hand» …», die Zeit läuft nicht) und beginnt, sobald am PC «Tablet» gewählt ist. | falsche Antwort; Antippen daneben |
   | `messen-wand-wand` | Begehen (seit V1a) | Zwei gegenüberliegende Wände des Raums sind markiert (Rahmen 1 cm vor der Fläche), Messen ist eingeschaltet. Gelingt mit einer Messung von der einen zur anderen Wand (je höchstens 5 cm neben der Fläche), höchstens 2 cm neben dem Sollmass. Details im Abschnitt «Quest App V1a». | Messung nicht von Wand zu Wand bzw. mehr als 2 cm daneben; Messband ohne Ziel bzw. zu kurz; Antippen daneben |
@@ -2544,7 +2547,8 @@ in einer leiste sondern verteilt»; «Ja, die Registerleiste fällt weg; gewechs
   danach ruhig; ab dann stehen sie **fest im Raum** (nicht am Kopf), **zum Kopf gewandt**.
 - **Anordnung: ein Feld frontal** (Christian 24.10.2026: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm und über eine höhe von ca. 0.6m
   verteilt sein. vorzugsweise maximal 3 reihig»): zentriert in Körperrichtung (Gierwinkel des Kopfs beim Auslösen, ohne Nicken), `symbole.abstand_m` (0.6 m) vor den
-  Augen – **Bezugspunkt die Mitte zwischen den Augen, waagrecht gemessen** –, senkrechte Mitte `symbole.hoehe_m` (0.32 m) unter den Augen, von der obersten zur untersten
+  Augen – **Bezugspunkt die Mitte zwischen den Augen, waagrecht gemessen** –, senkrechte Mitte `symbole.hoehe_m` (0.32 m; **seit V1d 0.22 m**, sitzend und am Tisch
+  eigene Werte, siehe Abschnitt «Quest App V1d») unter den Augen, von der obersten zur untersten
   Reihe `symbole.feldhoehe_m` (0.6 m; die oberste Reihe bleibt 2 cm unter Augenhöhe), höchstens `symbole.reihen` (3) Reihen. Die Reihen sind **locker gegeneinander
   versetzt**, jedes Symbol leicht in Höhe und Tiefe verschoben (keine Leiste, keine starre Matrix); Spaltenabstand 0.2 m × `symbole.streuung`. **Je App immer derselbe
   Platz** (oben Etagen und Ort/Tisch, in der Mitte Messen und Marker, unten KICAD und Ebenen). **Am Sitzungstisch** liegt die Unterkante der untersten Symbole mindestens
@@ -2632,10 +2636,11 @@ Wegwischen geschlossen; Pinch + Wisch nach vorn entfällt.»
   der Schrift getönt, Revit mit eigenen Farben (auf hellem Glas der helle, auf dunklem der dunkle Satz).
 - **Bedienen:** Antippen mit dem Zeigefinger oder mit dem Strahl zeigen und Pinch (wählt beim Loslassen auf demselben Ziel). Nähert sich Finger bzw. Strahl, hebt sich das
   Ziel leicht an und hellt auf (statt des Blicks der Vision Pro), mit Zeiger wie bei den Symbolen; jeder Knopf klickt. Listen blättern mit Pinch + Wisch links/rechts,
-  solange die Hand am Fenster ist (Seitenzahl im Titel, z. B. «Etagen · 1/2»).
+  solange die Hand am Fenster ist (Seitenzahl im Titel, z. B. «Etagen · 1/2»); **seit V1d auch mit einem Wisch ohne Pinch auf der Tafel** (Abschnitt «Quest App V1d»).
 - **Lage:** im Raum verankert (folgt dem Kopf nicht); kommt nur nach, wenn man weiter als 1.4 m weggeht. Beim Start steht es `apps.seitlich_grad` (30°) links neben dem
   Blick auf Brusthöhe mit «KICAD» (Status); über ein Symbol geöffnet dort, wo die Symbole standen; **am Sitzungstisch neben dem Tisch**, nie über der Platte (Befund
-  Prüfbild 24.10.2026). Wechsel Begehen ↔ Sitzungsraum bzw. ein neu angetippter echter Tisch stellt ein sichtbares Fenster an den neuen Platz.
+  Prüfbild 24.10.2026). Wechsel Begehen ↔ Sitzungsraum bzw. ein neu angetippter echter Tisch stellt ein sichtbares Fenster an den neuen Platz. **Seit V1d** öffnet es
+  immer **mittig** in der Blickrichtung (auch am Tisch, über der Platte) und rückt träge nach (Abschnitt «Quest App V1d»).
 - **Glas nach der Umgebung** (HIG «Materials»: «Glass is an adaptive material … to provide contrast»): Fassung (hell/dunkel) und Deckkraft richten sich nach dem
   Hintergrund: die helle Fassung wirkt über ihm mindestens 0.72 hell, die dunkle höchstens `anzeige.glas_helligkeit` (0.42); die Deckkraft ist mindestens
   `anzeige.glas_deckkraft` (0.75) und höchstens 0.95. Die Hintergründe je Umgebung sind Annahmen V1a (heller Sitzungsraum 0.88, Modell beim Begehen 0.55, echter Raum 0.6,
@@ -2681,7 +2686,8 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 - **Löschen:** offene Hand **schnell quer über eine Messlinie** wischen (wie der Prototyp) löscht diese Messung; «Messungen löschen» im Register löscht alle. Höchstens 50
   Messungen (die älteste fällt weg).
 - **Kosten:** höchstens ein Strahl je Bild (die aufziehende Hand jedes Bild, sonst die Hände abwechselnd; neu beim Wechsel des Pinch). Am PC mit Test_praxis: beim
-  Begehen 0.1 ms je Strahl, am Tisch 2.5 ms (der erste bis 23 ms, er bereitet die Elemente auf); am Tisch reicht der Strahl 4 m.
+  Begehen 0.1 ms je Strahl, am Tisch 2.5 ms (der erste bis 23 ms, er bereitet die Elemente auf); am Tisch reicht der Strahl 4 m. **Seit V1d** mit räumlichem Index
+  und im Hintergrund (Abschnitt «Quest App V1d», «Fang»).
 
 ### Problem-Marker
 - **In der Brille:** Register **Marker** › «Problem markieren» (bzw. Werkzeugleiste), wahlweise vorher eine **Kurznotiz** (Kollision, Fehlt, Prüfen, Zu eng), dann auf die
@@ -2952,7 +2958,8 @@ in die App einblenden; die Ansicht ist darum in der App nachgebaut. Regeln ohne 
 `hineinziehen.weg_m` 0.2, `hineinziehen.tempo_ms` 0.45, `desktop.breite_m` 1.4, `desktop.abstand_m` 1.1, `desktop.bildrate` 12, `desktop.ruhe_bildrate` 2.5. Das Wegwischen
 stellt V1a ein (`wegwischen.*`, nur einmal im Katalog); die Lage der Handfläche gilt für beide Richtungen (`wegwischen.handflaeche_grad`). Feste Werte (Annahmen V1c,
 `DesktopEinstellungen`): Radius 2.0 m, Zeitfenster 0.7 s, andere Hand 8 cm, Gegensperre 1 s, Ruhe nach 2 s, Höhe −0.10 m, grösste Breite 1920 Punkte, Mipmaps aus,
-Trennen nach 60 s, 2 Felder je Bild. Grenze des Katalogs 56 Stellschrauben (mit V1a und V1c 55; mit 8 Varianten und der Aufgabe 64 = Grenze des Kanals).
+Trennen nach 60 s, 2 Felder je Bild. Grenze des Katalogs 56 Stellschrauben (mit V1a und V1c 55; mit 8 Varianten und der Aufgabe 64 = Grenze des Kanals; seit V1d 80 bzw.
+96, Abschnitt «Quest App V1d»).
 
 **KI:** reine Rechner-Funktion, verboten (`KiEinordnung.RechnerFunktionen` › `xr_desktop`), kein MCP-Werkzeug.
 
@@ -2968,3 +2975,131 @@ Trennen nach 60 s, 2 Felder je Bild. Grenze des Katalogs 56 Stellschrauben (mit 
   `desktop_8_leiste_nah.jpg` und `desktop_7_anzeige_pc.png` (KICAD im Edge über CDP, `werkzeuge/seitenbild.mjs`).
 - **Nur mit der Brille zu prüfen:** WLAN-Bandbreite, Lesbarkeit der Schrift, 72 Hz mit Bildschirm, wie sich Hineinziehen und Wegwischen anfühlen, ob der Ton «Desktop»
   neben den übrigen Apps passt.
+
+## Modul XR, Quest App V1d: Befunde des ersten Brillentests (Christian 24.10.2026: «das ist schon sehr gut. die apps solten beim hochwischen etwas weiter oben sein. die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein. das modell soll nur mit einem griff bewegt und gezoomt werden. nach tippen einer App sollte erneutes auswählen gesperrt sein, dass beim neuanordnen der apps nicht gleich ein nächstes gewählt wird.»)
+
+Dazu aus demselben Test: «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», «wisch mit der linken hand von links nach rechts soll auch den monitor
+reinziehen. und wisch mit der linken hand von rechts nach links soll in wieder raus schieben. apps sind nun ca. 20cm zu hoch.» (bestätigt: «Ja: beim Begehen etwas höher,
+am Sitzungstisch rund 20 cm tiefer.»), «eine swap bewegung mit der rechten oder linken hand soll in einem aktiven fenster blättern.» Regeln ohne StereoKit in `src/Hlks.Xr`
+(`Bedienung/AppSymbole.cs`, `HandBeruehrung.cs`, `Tafel.cs`, `TafelBlaettern.cs`, `Wegwischen.cs`, `Desktop/DesktopGeste.cs`, `Sitzung/EinGriff.cs`,
+`Modell/TischStufe.cs`, `Messen/BoxBaum.cs`, `Messen/SzenenFang.cs`, `Messen/FangImHintergrund.cs`), die App in `src/Hlks.Quest` (`SymbolApps.cs`, `GlasApps.cs`,
+`QuestApp.Apps.cs`, `QuestApp.Desktop.cs`, `DesktopBildschirm.cs`, `Sitzungsraum.cs`, `ModellDarstellung.cs`, `QuestApp.Messen.cs`, `QuestApp.PruefenV1d.cs`). **Keine
+Normwerte:** alle Zahlen sind Einstellungen der Bedienung bzw. Annahmen V1d (Stellschrauben im XR-Labor).
+
+### Symbolfeld höher, sitzend höher, am Sitzungstisch tiefer
+- **Begehen** (bzw. ohne Tisch): die senkrechte Mitte des Felds liegt `symbole.hoehe_m` = **0.22 m** unter den Augen (bis V1d 0.32 m; Annahme «etwas» = 0.10 m). Die
+  oberste Reihe liegt damit rund 8 cm **über** Augenhöhe (erlaubt: «darf leicht über Augenhöhe liegen»).
+- **Sitzend** (Haltung «sitzend» aus der bestehenden Erkennung, `haltung.*`): zusätzlich `symbole.hoehe_sitzend_m` = **0.08 m** höher.
+- **Am Sitzungstisch:** Mitte `symbole.hoehe_tisch_m` = **0.52 m** unter den Augen (0.32 + 0.20 m). Die Tischregel greift nur noch, wenn die unterste Reihe in die Platte
+  ragte: sie hebt dann die unterste Reihe auf `symbole.tisch_abstand_m` (6 cm) über die Platte und staucht das Feld (höchstens bis 0.24 m Feldhöhe).
+- **Feldhöhen gegen das Auge** (Mitten der Symbole mit der leichten Verschiebung je Platz; Test `V1dTests`, Prüflauf «V1d»):
+
+  | Lage | Auge | oberste Reihe | unterste Reihe | Mitte |
+  | --- | --- | --- | --- | --- |
+  | Begehen stehend | 1.65 m | +0.07 m (Prüflauf +0.08) | −0.55 m | −0.24 m |
+  | Begehen sitzend | 1.20 m | +0.15 m (Prüflauf +0.16) | −0.47 m | −0.16 m |
+  | Sitzungstisch virtuell (Platte 0.75 m) | 1.20 m | −0.12 m | −0.35 m | −0.23 m |
+  | Sitzungstisch echt (Platte 0.639 m, Brillentest) | 1.20 m | −0.23 m | −0.46 m | −0.34 m |
+
+  Am echten Tisch des Brillentests liegt das Feld damit rund 0.20 m tiefer als in V1a (Stand d5a8df6); am virtuellen Tisch (Platte 0.75 m) nur rund 0.09 m, weil dort die
+  Platte die unterste Reihe hält.
+
+### Nach der Wahl einer App gesperrt
+- Nach dem Berühren eines Symbols zählt **keine Berührung**, bis die Neuanordnung des Felds fertig ist (die Symbole bewegen sich nicht mehr) **und** die Hand alle
+  Symbole mindestens `symbole.wahl_frei_s` = **0.3 s** verlassen hat. Bleibt die Hand im Feld, gleitet das Feld unter ihr durch, ohne dass etwas gewählt wird. Gilt
+  ebenso für das Symbol «Bildschirm».
+
+### Tafel immer mittig (Glas-Fenster, PC-Bildschirm, Auswahltafeln)
+- Jede Tafel öffnet **mittig in der aktuellen Blickrichtung** (Gierwinkel des Kopfs, ohne Nicken) im Abstand `apps.abstand_m`, die Mitte `tafel.hoehe_m` = **0.15 m**
+  unter den Augen; am Tisch mindestens mit Werkzeugleiste, Griff und Schliessen über der Platte. Auch am Sitzungstisch mittig (bis V1d neben dem Tisch).
+- **Träges Nachführen** (Variante `labor.variante.tafel_nachfuehren` = `traege`, Vorgabe): dreht man sich weiter als `tafel.nachfuehren_grad` = **25°** weg, rückt die
+  Tafel ruhig in die Blickmitte zurück (in etwa 0.35 s, bis 2° daneben); nie starr am Kopf. Still, solange eine Hand an der Tafel ist; nicht mehr, wenn man sie am Griff
+  hingestellt hat (bis zum nächsten Öffnen). `fest`: sie bleibt nach dem Öffnen stehen. Der PC-Bildschirm folgt derselben Regel.
+- Das Symbolfeld weicht weiter seitlich aus; die Karte einer Prüfaufgabe bleibt über der Tafel.
+
+### Ein Griff am Sitzungstisch
+- **Ein Griff** (Kugel) in der **Mitte der vorderen Kante** des sichtbar gezeichneten Gebäudes (Hülle in den Achsen des Gebäudes wie P4b), 6 cm nach aussen, 5 cm über der
+  Unterkante. Vorne ist die Seite, die in der Lage des Modells am meisten zum Menschen zeigt – nach einer Drehung kommt der Griff wieder nach vorn.
+- **Fassen** mit Pinch (höchstens 5 cm vom Griff): das Modell folgt der Hand **in allen Richtungen, auch in der Höhe**, und **dreht mit dem Gierwinkel der Hand**
+  (Handgelenk → Mittelfinger; Zittern unter 2° zählt nicht). Der Punkt unter der Hand bleibt unter der Hand.
+- **Zoomen** (Variante `labor.variante.zoom_ein_griff`): `zweite_hand` (Vorgabe) – hält eine Hand den Griff, zoomt ein Pinch der anderen Hand über den Abstand der Hände
+  (auseinander = grösser) um die Griffhand; `drehknopf` – das Handgelenk am Griff rollen, im Uhrzeigersinn grösser, `sitzung.drehknopf_grad` = **60°** je Verdoppelung
+  (unter 3° nichts). Grenzen **1:5 … 1:200** (`sitzung.zoom_min/max`). Die Zweihandgeste mit zwei Griffen entfällt.
+- **Geisterhand:** gezögert am Griff zeigt sie das Fassen, das Zoomen mit der zweiten Hand bzw. den Drehknopf (je nach Variante). **Prüfaufgabe**
+  «Modell greifen, drehen und zoomen» mit dem einen Griff.
+
+### Wegwischen und Hineinziehen mit beiden Händen
+- **Linke Hand:** von links nach rechts **zieht den PC-Bildschirm herein**, von rechts nach links **wischt weg** (gemeinsames Wegwischen für alle Ziele). Die Handfläche
+  der linken Hand darf **seitlich in beide Richtungen** zeigen (`wegwischen.handflaeche_grad`), die Richtung des Wischs entscheidet. Die rechte Hand wie bisher.
+- Ohne Pinch; Ausholen löst die Gegengeste nicht aus; die Sperren gelten wie bisher und für beide Hände gemeinsam (zwei Hände zugleich lösen einmal aus). Beim
+  Hineinziehen muss die andere Hand ruhen; beim Wegwischen darf sie sich nicht **gegenläufig** bewegen (mehr als 8 cm nach rechts: das ist das Wegschieben mit zwei
+  Händen auseinander bzw. das Zusammenführen, kein Wegwischen). Kein Konflikt mit Pinch + Wisch, Drehen, Teleport und Hebegeste (Tests).
+
+### Blättern auf der Tafel
+- Ein **Wisch ohne Pinch, der auf der Tafel beginnt** (ein Teil der Hand höchstens `tafel.blaettern_abstand_m` = **5 cm** vor der Fläche bzw. 3 cm dahinter, im Umriss),
+  **blättert** – rechte oder linke Hand: nach links bzw. oben die nächste Seite, nach rechts bzw. unten die vorige (Listen blättern seitenweise). Ab
+  `tafel.blaettern_weg_m` = **8 cm** in höchstens 0.8 s ist es ein Wisch; kürzer bleibt es ein Antippen. Ein Strich, der auf der Tafel begann, bleibt Blättern bis zum
+  Ende (Fang); ein Wisch, der im freien Raum begann, behält seine Bedeutung (Wegwischen, Hineinziehen), auch wenn er über die Tafel streicht.
+- **Rückmeldung:** die Seite gleitet mit der Hand (halb so weit, höchstens ein Zehntel der Breite, und blendet dabei aus) und es klickt; die Gegenrichtung zählt 0.8 s
+  nicht (das Zurückholen blättert nicht zurück). Der **PC-Bildschirm** blättert nicht (Maus und Tastatur am PC).
+- **Pinch + Wisch** blättert vorerst weiter wie in P5a (nicht geändert).
+
+### Leistung am Tisch: vereinfachte Unterlage («Tischstufe»)
+- Befund Brillentest: «Alle Etagen» mit IFC-Unterlage 600–740 Tsd. Dreiecke, 46–56 Hz. Die Last tragen wenige grosse Netze der Unterlage (Möbel, Geländer), nicht viele
+  kleine – ein Weglassen nach Grösse hilft darum kaum. Die App rechnet für die **IFC-Unterlage** im Hintergrund drei **vereinfachte Stufen** (Ecken auf ein Gitter von 1,
+  2 bzw. 4 cm zusammengefasst, je Richtung der Normalen getrennt, damit Kanten bleiben) und zeichnet am Tisch die gröbste Stufe, deren Zelle auf dem Tisch höchstens
+  `sitzung.vereinfachen_mm` = **1 mm** gross ist, gröber, solange mehr als `sitzung.dreiecke_max` = **350 000** Dreiecke gezeichnet würden (Hysterese 15 %). Die eigenen
+  Bauteile von KICAD bleiben unvereinfacht; beim Begehen gilt das volle Netz. Die Stufen entstehen aus dem Zwischenspeicher der App (auch ohne PC) und werden je Bild
+  einzeln hochgeladen.
+- **Gemessen** (Test_praxis «Alle Etagen» mit Unterlage, PC-Simulator, Prüflauf «V1d Tisch»): vorher **861 291 Dreiecke in 73 Aufrufen** bei jedem Massstab; nachher
+  1:19 **341 122 / 43**, 1:50 und 1:200 **153 989 / 34**. Die Bildzeit am PC (7 ms) sagt nichts über die Quest; das EG mit 382 000 Dreiecken lief im Brillentest P4a mit
+  72 Hz.
+
+### Fang beim Messen und Zeigen
+- **Wer auslöst:** Messen (ein) und «Problem markieren» (bis gesetzt), je Hand der Pinch-Punkt (3 cm) und sonst der Zielstrahl; bis V1d im Bild, jede Hand abwechselnd.
+- **Räumlicher Index:** einmal je Modell im Hintergrund (Fangdaten aller Elemente, Hüllkörper-Bäume für Stücke, Anschlüsse, Ecken und Strecken); bis er steht: «Fang wird
+  vorbereitet …». **Im Hintergrund:** das Bild stellt höchstens eine Anfrage je Hand und nimmt das letzte fertige Ergebnis (in der Regel ein Bild alt); hat sich die
+  Hand kaum bewegt (2 mm × Massstab, 0.3°), fragt es nicht neu. Gleiche Ergebnisse wie bis V1a (Test gegen die alte Suche).
+- **Gemessen am PC** (Test_praxis, `XrV1dEchtTests`, 150 Abfragen je Art): am Tisch 1:50 je Strahl vorher ⌀ 40.9 ms (99 % unter 229 ms), mit Index ⌀ 0.17 ms
+  (99 % unter 0.71 ms, warm ⌀ 0.12 ms, 99 % unter 0.50 ms); Finger am Tisch 2.5 → 0.03 ms; Strahl beim Begehen 1.07 → 0.08 ms; Index 1.0 s. Im Bild bleibt nur das
+  Stellen der Anfrage (Prüflauf: ⌀ 0.006 ms).
+
+### Stellschrauben und Varianten (neu bzw. geändert)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `symbole.hoehe_m` | 0.22 m (bis V1d 0.32) | 0 … 0.8 | Mitte des Felds unter den Augen beim Begehen |
+| `symbole.hoehe_sitzend_m` | 0.08 m | 0 … 0.4 | sitzend so viel höher |
+| `symbole.hoehe_tisch_m` | 0.52 m | 0 … 1 | Mitte unter den Augen am Sitzungstisch |
+| `symbole.wahl_frei_s` | 0.3 s | 0 … 2 | Sperre nach der Wahl: so lange muss die Hand die Symbole verlassen haben |
+| `tafel.hoehe_m` | 0.15 m | 0 … 0.6 | Mitte der Tafel unter den Augen |
+| `tafel.nachfuehren_grad` | 25° | 5 … 90 | ab so viel Wegdrehen rückt die Tafel nach |
+| `tafel.blaettern_abstand_m` | 0.05 m | 0.01 … 0.2 | Hand höchstens so weit vor der Tafel: Blättern |
+| `tafel.blaettern_weg_m` | 0.08 m | 0.03 … 0.3 | Mindestweg des Blätterns (kürzer = Antippen) |
+| `sitzung.drehknopf_grad` | 60° | 20 … 180 | Rollen je Verdoppelung (Variante «drehknopf») |
+| `sitzung.vereinfachen_mm` | 1 mm | 0 … 5 | grösste Zelle der vereinfachten Unterlage auf dem Tisch |
+| `sitzung.dreiecke_max` | 350 000 | 50 000 … 2 000 000 | Dreiecke am Tisch höchstens (sonst gröbere Stufe) |
+| `labor.variante.tafel_nachfuehren` | traege | traege, fest | Tafel träge nachführen bzw. stehen lassen |
+| `labor.variante.zoom_ein_griff` | zweite_hand | zweite_hand, drehknopf | Zoomen am einen Griff |
+
+Feste Werte (Annahmen V1d): Feld mindestens 0.24 m hoch; Tafel folgt in 0.35 s bis 2°; Blättern ab 2 cm «läuft», 0.8 s Zeitfenster, Ende nach 0.35 s Ruhe bzw. 15 cm von
+der Fläche, Gegenrichtung 0.8 s gesperrt, im freien Raum begonnen ab 3 cm seitlich im Vorlauf von 0.2 s; Griff Drehen-Totzone 2°, Rollen-Totzone 3°; Wegwischen
+gegenläufige Hand 8 cm. Grenzen: Katalog höchstens **80** Stellschrauben (65 belegt), Kanal und Profil **96** Werte (mit 10 Varianten und der Aufgabe 76).
+
+### Prüfen
+- **Tests:** Xr `V1dTests` (Feldhöhen mit Tabelle, Sperre auch mit der Hand im gleitenden Feld, Tafel mittig und träge, PC-Bildschirm, Griff an der vorderen Kante, ein
+  Griff bewegt und dreht, Zoom mit der zweiten Hand und als Drehknopf, linke Hand für Wegwischen und Hineinziehen, gegenläufige Hand, Blättern mit beiden Händen und
+  gegen Antippen, Gestentabelle, Tischstufe, Fang mit Index gleich wie bis V1a, Fang im Hintergrund, Stellschrauben, Geisterhand), `DesktopGesteTests` (beide Hände
+  verdrahtet wie in der App); Web `XrV1dEchtTests` (Test_praxis: Tischstufe unter dem Budget, Fang vorher/nachher), `XrLaborTests` (Grenzen 96, Vorgaben V1d).
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 -Projekt <Test_praxis> -Pruefbilder <ordner>` meldet in Lauf 1 und 2 «V1d=ok (Feld: oberste Reihe stehend …, sitzend …;
+  Sperre nach der Wahl ja, Feld bewegt sich ja, kein zweites unter der Hand ja, danach frei ja; Tafel beim Öffnen 0.0° neben der Mitte, nach 50° Drehung 2.0° …; Blättern
+  auf der Tafel ja …)» und in Lauf 3 «V1d Tisch=ok (ohne/mit Tischstufe je Massstab: Stufe, Dreiecke, Aufrufe, Bildzeit; ein Griff: fassen, heben, drehen ja, zweite Hand
+  zoomt ja, Drehknopf ja; Fang am Tisch … im Hintergrund 100 gleich …)». In der V1d-Folge zählen nur die gedachten Hände (die Maus-Hand des Simulators liegt, wo die
+  Maus ist). Prüfbilder `v1d_feld_stehend(_seite).jpg`, `v1d_feld_sitzend(_seite).jpg` (rote Linie = Augenhöhe), `symbole_sitzung(_seite).jpg` (sitzend am Tisch),
+  `v1d_tafel_offen.jpg`, `v1d_tafel_folgt.jpg`, `v1d_tafel_mittig_nach_drehen.jpg`, `v1d_blaettern_halb.jpg`, `v1d_griff_gefasst_gedreht.jpg`,
+  `v1d_griff_zoom_zweite_hand.jpg`, `v1d_griff_drehknopf.jpg`, `v1d_geist_zoomen.jpg`, `v1d_geist_drehknopf.jpg`, `v1d_alle_etagen_vorher|nachher_1zu19|1zu50.jpg`
+  (nur lokal).
+- **Nur mit der Brille prüfbar:** ob die neuen Höhen passen (stehend, sitzend, am echten und am virtuellen Tisch), ob die Sperre nach der Wahl sich natürlich anfühlt,
+  das träge Nachführen (Schwelle 25°), der eine Griff mit echten Händen (Gierwinkel der Hand, Zittern, Drehknopf gegen zweite Hand), Blättern gegen Antippen und gegen
+  Wegwischen mit echten Händen, die linke Hand (Handfläche seitlich), 72 Hz bei «Alle Etagen» mit der vereinfachten Unterlage und Passthrough, die Zeit des Fangs
+  auf der Quest (Index im Hintergrund, Anfrage je Bild).
+- **Anleitung:** `zb-quest-v1d-feld`, `zb-quest-v1d-tafel`, `zb-quest-v1d-griff`, `zb-quest-v1d-haende` in `berichte/anleitung/inventar.json`.

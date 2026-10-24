@@ -60,14 +60,16 @@ sealed partial class QuestApp
             .Select(rl.ZuRef)];
     }
 
-    /// <summary>Platz des Fensters beim Holen: vor dem Blick (seitlich nach apps.seitlich_grad), am Sitzungstisch neben dem Tisch.</summary>
+    /// <summary>
+    /// Platz des Fensters (der Tafel): V1d mittig in der aktuellen Blickrichtung auf bequemer Höhe («tafel.hoehe_m»; Christian 24.10.2026: «die tafel … sollte immer
+    /// zentrisch sein»), am Sitzungstisch mindestens so hoch, dass Fenster und Leiste über der Platte bleiben (bis V1d 30° links bzw. neben dem Tisch).
+    /// </summary>
     XVec3 AppPlatz(Pose kopf)
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var blick = KopfRef(kopf).Gieren;
-        return sitzung.Aktiv && !sitzung.Echt.WartetAufTisch
-            ? Glas.NebenTisch(auge, blick, bedien.Apps, GlasMasse.Fuer(bedien.Apps), TischEcken())
-            : Glas.Platz(auge, blick, bedien.Apps);
+        double? tisch = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y : null;
+        return Tafel.Platz(auge, blick, bedien.Apps, bedien.Tafel, tisch, Glas.UnterhalbM(GlasMasse.Fuer(bedien.Apps), 2), bedien.Symbole.TischAbstandM);
     }
 
     /// <summary>Fenster an seinen Platz holen (Start, Wechsel Begehen ↔ Sitzungsraum).</summary>
@@ -86,14 +88,32 @@ sealed partial class QuestApp
         if (desktop is { Ansicht.Sichtbar: true } d) d.Ausblenden(Time.Total);
         apps.RegisterWaehlen(id);
         statusGesten = false;
-        var platz = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? AppPlatz(Input.Head) : platzSymbole ?? symbole.Mitte ?? AppPlatz(Input.Head);
-        apps.Holen(platz, Time.Total);
+        // V1d: immer mittig in der Blickrichtung von jetzt (bis V1d vor dem Feld bzw. dort, wo die Symbole standen)
+        apps.Holen(AppPlatz(pruefKopf ?? Input.Head), Time.Total);
         letzteGeste = $"Symbol {id}";
         // bei der ersten App: wie man sie schliesst (Christian 24.10.2026: «Nach links wischen: schliessen»)
         if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Nach links wischen: schliessen (rechte Hand offen)."); }
     }
 
     bool wischHinweisGezeigt;
+
+    /// <summary>V1d, Prüflauf am PC: gedachte Haltung für das Symbolfeld (sitzend), sonst null.</summary>
+    bool? pruefSitzend;
+    /// <summary>V1d: so oft auf der Tafel geblättert (Protokoll).</summary>
+    int tafelGeblaettert;
+
+    /// <summary>
+    /// V1d: ein Wisch auf der Tafel (Christian 24.10.2026: «eine swap bewegung … soll in einem aktiven fenster blättern»): links bzw. hoch = nächste Seite, rechts bzw. runter
+    /// = vorige; mit Ton. Gibt es keine weitere Seite, ein leiser Klick.
+    /// </summary>
+    void BlaetternAufTafel(WischRichtung r)
+    {
+        var ort = apps.Rahmen is { } ra ? (Vec3)(Vector3)ra.Fenster.Mitte : Input.Head.position + Input.Head.Forward * 0.45f;
+        var neu = Math.Clamp(apps.Seite + TafelBlaettern.SeitenSchritt(r), 0, Math.Max(0, appSeiten - 1));
+        tafelGeblaettert++;
+        letzteGeste = $"Blättern {r}";
+        if (neu != apps.Seite) { apps.Seite = neu; rueck.Kachel(ort); } else rueck.Leer(ort);
+    }
 
     /// <summary>Gewählte App, die sich öffnet, sobald die Symbole ausgeblendet sind (Variante «ausblenden»; Befund Bilder 02: Symbole und Leuchten lagen über dem neuen
     /// Fenster), mit dem Platz der Symbole.</summary>
@@ -107,8 +127,7 @@ sealed partial class QuestApp
     void SymbolGewaehlt(string id)
     {
         if (bedien.Symbole.NachWahl == Varianten.SymbolwahlAusblenden) { appWahl = (id, symbole.Mitte); return; }
-        var (auge, gieren) = symbole.Anker;
-        AppOeffnen(id, AppSymbole.FensterVorFeld(auge, gieren, bedien.Symbole));
+        AppOeffnen(id);   // V1d: mittig in der Blickrichtung (Tafel.Platz); das Feld weicht seitlich aus
     }
 
     /// <summary>Die Farben des Fensters: die gewählte App, «Gesten» in der Gestenübersicht von KICAD (Status).</summary>
@@ -298,6 +317,7 @@ sealed partial class QuestApp
             if (Input.PointerCount(q) > 0 && Input.Pointer(0, q) is { } p && p.tracked.IsActive() && p.ray.direction.LengthSq > 1e-12f)
                 strahlen[i] = (new XVec3(p.ray.position.x, p.ray.position.y, p.ray.position.z), new XVec3(p.ray.direction.x, p.ray.direction.y, p.ray.direction.z).Einheit());
         }
+        if (symbole.OhneEchteHaende) strahlen = new (XVec3, XVec3)?[2];   // V1d-Folge im Prüflauf: auch der Mausstrahl des Simulators zählt nicht
         // Hebegeste aus beiden Händen (Raum der Brille); im Prüflauf am PC ein gedachter Fortschritt bzw. das Ereignis
         HandBeobachtung? Beobachtung(Handed hd, string seite)
         {
@@ -307,13 +327,18 @@ sealed partial class QuestApp
                 new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), seite, bedien.Pinch);
         }
         var rechteHand = Beobachtung(Handed.Right, "right");
+        var linkeHand = Beobachtung(Handed.Left, "left");
         if (desktop?.Haende is { } ph && ph().Rechts is { } prh) rechteHand = HandBeobachtung.Aus(prh, "right", bedien.Pinch);   // V1c-Prüflauf: die gedachte Hand
-        hebeStand = HebeGeste.Schritt(hebe, Time.Total, Beobachtung(Handed.Left, "left"), rechteHand, KopfRef(kopf).Gieren, bedien.Hebe);
+        if (desktop?.Haende is { } ph2 && ph2().Links is { } plh) linkeHand = HandBeobachtung.Aus(plh, "left", bedien.Pinch);   // V1d-Prüflauf: die linke Hand
+        hebeStand = HebeGeste.Schritt(hebe, Time.Total, linkeHand, rechteHand, KopfRef(kopf).Gieren, bedien.Hebe);
         var kopfSymbole = pruefKopf ?? kopf;   // Prüflauf: gedachter Kopf (sitzend am Tisch)
+        // vor dem Ereignis der Hebegeste setzen: das Feld nimmt Untergrenze und Haltung beim Ankern (bei «Zeigen» schon im Bild des Ereignisses)
+        if (!symbole.Sichtbar || symbole.Geht) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte (V1d: und liegt dort tiefer, «symbole.hoehe_tisch_m»)
+        symbole.Sitzend = pruefSitzend ?? drehen.Sitzend;   // V1d: sitzend höher («symbole.hoehe_sitzend_m»)
         if (pruefHebe is { } pf) hebeStand = new HebeStand(pruefHebeEreignis, pf, kopfSymbole.position.y - bedien.Symbole.HoeheM, false);
         pruefHebeEreignis = null;
         if (hebeStand.Ereignis is { } art) HebeEreignis(art, kopfSymbole);
-        WegwischenBild(kopf, rechteHand);
+        WegwischenBild(kopf, rechteHand, linkeHand);
         // gezögert: die Geisterhände führen die Hebegeste vor (nicht im Prüflauf am PC – dort stehen die Hände des Simulators still und «zögern» immer)
         if (hebeStand.Zoegert && !symbole.Sichtbar && o.PruefBilder <= 0) GeisterHeben(kopf);
         // stehen die Symbole schon eine Weile ohne Wahl: die Geisterhand zeigt einmal, wie man sie wegwischt
@@ -322,7 +347,6 @@ sealed partial class QuestApp
             wischGeistGezeigt = true;
             GeisterWegwischen(kopf);
         }
-        if (!symbole.Sichtbar) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte
         // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld seitlich aus (bzw. «dahinter» zurück); schliesst sie, kehrt es frontal zurück.
         // V1c (Auftrag Punkt 4 und 5a): der Bildschirm des PCs zählt wie eine offene App; wird die App bzw. der Bildschirm weggewischt, kehrt das Feld schon zu
         // Beginn der Geste frontal zurück (statt unter dem gleitenden Fenster zu stehen).
@@ -346,7 +370,8 @@ sealed partial class QuestApp
         var ornament = darstellung is null ? new List<(string, string, bool)>()
             : [("orn_messen", GlasSymbole.Messen, messen.An), ("orn_marker", GlasSymbole.Marker, markerSetzen)];
         const bool karteOffen = false;   // die Karte einer Aufgabe ist ein Ornament über dem Fenster (deckt es nicht) – kein Zurückweichen
-        foreach (var e in apps.Bild(kopf, Time.Total, Time.Step, inhalt, ornament, karteOffen, AppPlatz(kopf), bedien, strahlen, FarbId))
+        // Prüflauf: der gedachte Kopf gilt auch für die Tafel (V1d: mittig und träge nachgeführt, wenn er sich dreht)
+        foreach (var e in apps.Bild(kopfSymbole, Time.Total, Time.Step, inhalt, ornament, karteOffen, AppPlatz(kopfSymbole), bedien, strahlen, FarbId))
             AppEreignis(e);
     }
 
@@ -366,13 +391,17 @@ sealed partial class QuestApp
     /// Hand offen, Handfläche nach links, von rechts nach links. Ziel unter den eingehängten (<see cref="WegwischZiele"/>): was die Hand überstreicht, sonst das
     /// zuletzt Eingeblendete; es läuft mit der Hand nach links mit und geht beim Ereignis aus dem Bild (mit Ton). Im Prüflauf ein gedachter Weg bzw. das Ereignis.
     /// </summary>
-    void WegwischenBild(Pose kopf, HandBeobachtung? rechteHand)
+    void WegwischenBild(Pose kopf, HandBeobachtung? rechteHand, HandBeobachtung? linkeHand)
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var gieren = KopfRef(kopf).Gieren;
         // V1c: kurz nach dem Hineinziehen ruht das Wegwischen (das Zurückholen der Hand nach links wischt nichts weg; DesktopGesten)
-        if (desktop?.WegwischenRuht(Time.Total) == true) rechteHand = null;
-        wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, gieren, bedien.Wegwischen);
+        if (desktop?.WegwischenRuht(Time.Total) == true) rechteHand = linkeHand = null;
+        // V1d: eine Hand auf der Tafel blättert – sie wischt nichts weg (Christian 24.10.2026: Blättern im aktiven Fenster; der Ort entscheidet)
+        if (apps.AnTafel(Handed.Right)) rechteHand = null;
+        if (apps.AnTafel(Handed.Left)) linkeHand = null;
+        // V1d: auch die linke Hand wischt weg (Christian 24.10.2026: «wisch mit der linken hand von rechts nach links soll in wieder raus schieben»)
+        wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, linkeHand, gieren, bedien.Wegwischen);
         if (pruefWisch is { } pw)
         {
             // gedachte Hand vor dem Symbolfeld, um pw nach links gewischt
@@ -453,6 +482,9 @@ sealed partial class QuestApp
             case GlasApps.Ereignis.Ornament:
                 if (e.Id == "orn_messen") { MessenSchalten(!messen.An); apps.RegisterWaehlen("messen"); }
                 else if (e.Id == "orn_marker") { MarkerSetzenSchalten(!markerSetzen); apps.RegisterWaehlen("marker"); }
+                return;
+            case GlasApps.Ereignis.Blaettern:
+                if (Enum.TryParse<WischRichtung>(e.Id, out var wr)) BlaetternAufTafel(wr);
                 return;
         }
         var id = e.Id;

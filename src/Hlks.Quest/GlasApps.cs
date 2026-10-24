@@ -48,8 +48,25 @@ sealed class GlasApps : IWegwischbar
 
     public sealed record Ereignis(string Art, string Id)
     {
-        public const string Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben";
+        /// <summary>V1d: «blaettern» – ein Wisch auf der Tafel (Id = Richtung, Hlks.Xr.WischRichtung).</summary>
+        public const string Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben", Blaettern = "blaettern";
     }
+
+    // ---------------------------------------------------------------- V1d: Tafel mittig, träge nachgeführt; Blättern auf der Tafel
+    readonly TafelFolgen folgen = new();
+    readonly TafelBlaetternZustand[] blaettern = [new(), new()];
+    readonly BlaetternStand[] blaetternStand = new BlaetternStand[2];
+    /// <summary>V1d: Nachrücken der Tafel (Protokoll, Prüfung).</summary>
+    public TafelFolgen Folgen => folgen;
+    /// <summary>V1d: liegt diese Hand auf der Tafel bzw. blättert sie (dann zählt sie weder für das Wegwischen noch für das Hineinziehen)?</summary>
+    public bool AnTafel(Handed h) => Sichtbar && blaetternStand[(int)h].AnTafel;
+    /// <summary>V1d: Versatz der Seite beim Blättern im letzten Bild (Prüfung).</summary>
+    public XVec3 SeitenVersatz { get; private set; }
+    /// <summary>V1d, Prüfung am PC: gedachte Hand (Gelenke) für das Blättern statt der rechten Hand; null = echte Hände.</summary>
+    public IReadOnlyDictionary<string, XVec3>? PruefBlaetterHand { get; set; }
+    bool pruefBlaetterVorher;
+    /// <summary>Prüflauf am PC (V1d-Folge): die Maus-Hände des Simulators zählen am Fenster nicht (ihre Lage hängt von der Maus ab; nur die gedachten Hände).</summary>
+    public bool OhneEchteHaende { get; set; }
 
     readonly Rueckmeldung rueck;
     readonly GlasZeichner z;
@@ -117,6 +134,7 @@ sealed class GlasApps : IWegwischbar
         weggewischtSeit = null;
         wischWeg = wischZiel = 0;
         Glas.Holen(anker, platz, t);
+        folgen.Geoeffnet();   // V1d: wieder träge nachführen (auch nach einem Verschieben am Griff)
     }
 
     public void Ausblenden(double t)
@@ -168,11 +186,17 @@ sealed class GlasApps : IWegwischbar
         if (weggewischtSeit is { } ws0 && t - ws0 >= WegS) Ausblenden(t);   // weggewischt und aus dem Bild geglitten
         if (!Sichtbar || (anHand && handLage is null))
         {
-            for (int i = 0; i < 2; i++) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); }
-            Rahmen = null; Ziele = []; Belegt.Clear(); Tooltip = null;
+            for (int i = 0; i < 2; i++)
+            {
+                nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false);
+                blaetternStand[i] = TafelBlaettern.Schritt(blaettern[i], t, null, false, null);
+            }
+            Rahmen = null; Ziele = []; Belegt.Clear(); Tooltip = null; SeitenVersatz = XVec3.Null;
             return aus;
         }
         if (!anHand) Glas.Pruefen(anker, auge, platz, t);
+        // V1d (Christian 24.10.2026: «die tafel … sollte immer zentrisch sein»): träge in die Blickmitte nachführen (Variante «tafel_nachfuehren»)
+        if (!anHand) Glas.Nachfuehren(anker, folgen, auge, VrLogik.GierenVonRichtung(new Xz(kopf.Forward.x, kopf.Forward.z)), dt, platz, e.Tafel, nah[0] || nah[1]);
         // Lage: verankert (bzw. an der Hand), zurückweichen bei einer Karte, Aufbauen nach dem Holen
         zurueck = GlasStil.Folgen(zurueck, karte ? GlasStil.ZurueckM : 0, dt, GlasStil.ZurueckS / 3);
         var (deck, groesse) = GlasStil.Aufbau(t - anker.Seit);
@@ -200,10 +224,31 @@ sealed class GlasApps : IWegwischbar
         Belegt.AddRange(flaechen);
         var hover = new int?[2];
         var naehe = new double[2];
+        SeitenVersatz = XVec3.Null;
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
             var h = Input.Hand(handed);
-            if (!h.IsTracked) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
+            // V1d (Christian 24.10.2026: «eine swap bewegung mit der rechten oder linken hand soll in einem aktiven fenster blättern»): ein Wisch ohne Pinch, der auf der Tafel
+            // beginnt, blättert (Hlks.Xr.Bedienung.TafelBlaettern); solange er läuft, tippt die Hand keine Knöpfe an, die Seite gleitet mit
+            var sim = i == 1 ? PruefBlaetterHand : null;
+            // Prüflauf: kommt bzw. geht die gedachte Hand, beginnt die Hand neu (sonst gälte der Sprung von der Hand des Simulators als Wisch im freien Raum)
+            if (i == 1 && (sim is not null) != pruefBlaetterVorher) { TafelBlaettern.Schritt(blaettern[i], t, null, false, null); pruefBlaetterVorher = sim is not null; }
+            if (!anHand && (sim is not null || (h.IsTracked && !OhneEchteHaende)))
+            {
+                var gb = sim ?? HandGelenke.AusStereoKit((f, j) => X(h[f, j].position), X(h.wrist.position));
+                var pb = sim is null && XrTabletLogik.IstPinch(gb, pinch[i], e.Pinch);
+                var bs = TafelBlaettern.Schritt(blaettern[i], t, gb, pb, fenster, e.Tafel);
+                blaetternStand[i] = bs;
+                if (bs.Ereignis is { } br) aus.Add(new Ereignis(Ereignis.Blaettern, br.ToString()));
+                if (bs.Laeuft)
+                {
+                    SeitenVersatz = fenster.Rechts * bs.VersatzX + fenster.Oben * bs.VersatzY;
+                    nah[i] = true; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false);
+                    continue;
+                }
+            }
+            else blaetternStand[i] = TafelBlaettern.Schritt(blaettern[i], t, null, false, null);
+            if (!h.IsTracked || OhneEchteHaende) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
             var g = HandGelenke.AusStereoKit((f, j) => X(h[f, j].position), X(h.wrist.position));
             // V1a: Zeiger mit Tooltip wie bei den Symbolen (gestreckter Zeigefinger nahe an einem Knopf, sonst der Zielstrahl)
             var spitzeZ = X(h[FingerId.Index, JointId.Tip].position);
@@ -269,8 +314,14 @@ sealed class GlasApps : IWegwischbar
         double Blitz(string art, string id) => blitz.TryGetValue($"{art}:{id}", out var tb) ? Math.Max(0, 1 - (t - tb) / 0.25) : 0;
         // Fenster
         z.Flaeche(r.Fenster, m.M(GlasStil.EckenPt), glasFarbe, groesse);
-        // Inhalt
-        var p = r.Inhalt;
+        // Inhalt (V1d: beim Blättern gleitet die Seite mit der Hand mit – halb so weit wie die Hand, höchstens ein Zehntel der Breite – und blendet dabei bis auf
+        // ein Viertel aus; so bleibt sie im Fenster, der Inhalt wird nicht beschnitten. Befund Prüfbild «v1d_blaettern_halb»: mit dem ganzen Weg lief sie aus dem Glas)
+        var weit = SeitenVersatz.Laenge;
+        var spiel = 0.1 * r.Fenster.B;
+        var gleiten = Math.Min(weit * 0.5, spiel);
+        var inhaltDeck = 1 - 0.75 * (spiel > 0 ? gleiten / spiel : 0);
+        GlasFarbe MalI(GlasFarbe f) => f with { A = f.A * deck * inhaltDeck };
+        var p = r.Inhalt with { Mitte = r.Inhalt.Mitte + (weit > 1e-9 ? SeitenVersatz * (gleiten / weit) : XVec3.Null) };
         foreach (var el in inhalt.Elemente)
         {
             var k = el.Ziel ? ziele.FindIndex(x => x.Art == GlasApps.Ereignis.Element && x.Id == el.Id) : -1;
@@ -286,24 +337,24 @@ sealed class GlasApps : IWegwischbar
                 // Titel mittig, Text linksbündig (Befund Prüfbild 24.10.2026: links ausgerichtet ab der Mitte lief der Text über den rechten Rand)
                 if (el.Stufe == 0)
                 {
-                    z.Schrift(el.Titel ?? "", lage, 0, el.H / 2, el.B, el.H, hoehe, Mal(farbe), TextAlign.TopCenter);
+                    z.Schrift(el.Titel ?? "", lage, 0, el.H / 2, el.B, el.H, hoehe, MalI(farbe), TextAlign.TopCenter);
                     // schmaler Akzent der App unter dem Titel (wie der Streifen im Projektbrowser)
                     var strich = lage with { Mitte = lage.Mitte - lage.Oben * (el.H / 2 - m.M(2)) + lage.Normale * 0.001, B = m.M(34), H = m.M(4) };
-                    z.Knopf(strich, GlasForm.Kapsel, Mal(s0.Akzent), m.Pt);
+                    z.Knopf(strich, GlasForm.Kapsel, MalI(s0.Akzent), m.Pt);
                 }
-                else z.Schrift(el.Titel ?? "", lage, -el.B / 2, el.H / 2, el.B, el.H, hoehe, Mal(farbe), TextAlign.TopLeft);
+                else z.Schrift(el.Titel ?? "", lage, -el.B / 2, el.H / 2, el.B, el.H, hoehe, MalI(farbe), TextAlign.TopLeft);
                 continue;
             }
             var an = el.Ein && el.Art is GlasArt.Segment or GlasArt.Knopf;
             var grund = !el.Aktiv ? s0.Duenn with { A = s0.Duenn.A * 0.5 } : an ? s0.Ein
                 : (k >= 0 && Hover(k) > 0) || Blitz(GlasApps.Ereignis.Element, el.Id!) > 0 ? s0.DuennNah : el.Aktuell || el.Primaer ? s0.DuennGedrueckt : s0.Duenn;
-            z.Knopf(lage, el.Form, Mal(grund), m.Pt);
+            z.Knopf(lage, el.Form, MalI(grund), m.Pt);
             var text = !el.Aktiv ? s0.TextTertiaer : an ? s0.TextAufEin : s0.Text;
             var th = m.Schrift(GlasStil.TextPt);
             var links = -el.B / 2 + m.M(14);
             if (el.Symbol is { } sy)
             {
-                z.Symbol(sy, lage, el.H * 0.5, Mal(text), s0.Hell != an, links + el.H * 0.25, 0);
+                z.Symbol(sy, lage, el.H * 0.5, MalI(text), s0.Hell != an, links + el.H * 0.25, 0);
                 links += el.H * 0.55;
             }
             if (el.Art == GlasArt.Schalter)
@@ -311,26 +362,26 @@ sealed class GlasApps : IWegwischbar
                 // Schalter rechts: Kapsel, ein = Akzent der App mit Knopf rechts
                 var sb = m.M(46); var sh = m.M(26);
                 var sl = lage with { Mitte = lage.Mitte + lage.Rechts * (el.B / 2 - m.M(14) - sb / 2) + lage.Normale * 0.001, B = sb, H = sh };
-                z.Knopf(sl, GlasForm.Kapsel, Mal(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt, stufe: 1);
+                z.Knopf(sl, GlasForm.Kapsel, MalI(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt, stufe: 1);
                 var kn = sl with { Mitte = sl.Mitte + sl.Rechts * ((el.Ein ? 1 : -1) * (sb / 2 - sh / 2)) + sl.Normale * 0.001, B = sh * 0.84, H = sh * 0.84 };
-                z.Knopf(kn, GlasForm.Kreis, Mal(GlasStil.Ein), m.Pt, stufe: 2);
+                z.Knopf(kn, GlasForm.Kreis, MalI(GlasStil.Ein), m.Pt, stufe: 2);
             }
             var zeile = el.Zeile is { Length: > 0 };
             var breite = el.B - (links + el.B / 2) - m.M(14) - (el.Art == GlasArt.Schalter ? m.M(60) : 0);
             var mittig = el.Form == GlasForm.Kapsel;
             if (mittig)
-                z.Schrift(el.Titel ?? "", lage, el.Symbol is null ? 0 : el.H * 0.25, th * 0.62, el.B - m.M(20) - (el.Symbol is null ? 0 : el.H * 0.5), el.H, th, Mal(text), TextAlign.TopCenter,
+                z.Schrift(el.Titel ?? "", lage, el.Symbol is null ? 0 : el.H * 0.25, th * 0.62, el.B - m.M(20) - (el.Symbol is null ? 0 : el.H * 0.5), el.H, th, MalI(text), TextAlign.TopCenter,
                     umbrechen: false);   // ein Wort je Kapsel nie trennen (Befund Prüfbild: «Kollisio-n»), zu lang wird kleiner
             else
             {
-                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.3 : th * 0.62, breite, th * 1.4, th, Mal(text), TextAlign.TopCenter);
-                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.22, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), Mal(an ? s0.TextAufEin : s0.TextSekundaer), TextAlign.TopCenter);
+                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.3 : th * 0.62, breite, th * 1.4, th, MalI(text), TextAlign.TopCenter);
+                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.22, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), MalI(an ? s0.TextAufEin : s0.TextSekundaer), TextAlign.TopCenter);
             }
-            if (el.Aktuell) z.Symbol(GlasSymbole.Haken, lage, el.H * 0.42, Mal(s0.Akzent), s0.Hell, el.B / 2 - m.M(14) - el.H * 0.2, 0);
+            if (el.Aktuell) z.Symbol(GlasSymbole.Haken, lage, el.H * 0.42, MalI(s0.Akzent), s0.Hell, el.B / 2 - m.M(14) - el.H * 0.2, 0);
             if (el.Ampel > 0)
             {
                 var c = el.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
-                z.Punkt(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003, 0.008, c with { A = deck });
+                z.Punkt(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003, 0.008, c with { A = deck * inhaltDeck });
             }
         }
         // Werkzeugleiste (Ornament)

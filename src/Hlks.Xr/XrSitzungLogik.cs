@@ -16,6 +16,9 @@
 //   mit einem Pinch (Daumen- und Zeigefingerspitze) bzw. dem Abzug, der höchstens GriffFangM vom Griff entfernt beginnt (Controller auch mit dem Zielstrahl), und bis zum
 //   Loslassen. Bewegt wird das Modell nur, solange BEIDE Griffe gehalten sind (verschieben, drehen, zoomen um den Mittelpunkt der beiden Pinch-Punkte); ein Griff allein: Ruhe.
 //   Die Faust greift nichts. Zoom: der Abstand der Hände, Drehung: die Richtung der Verbindungslinie, Verschieben: der Mittelpunkt.
+//   V1d (Brillentest V1, Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»): die App nutzt am Tisch EINEN Griff
+//   (Sitzung/EinGriff.cs, Mitte der vorderen Gebäudekante); die zwei Griffe und GestenSchritt bleiben hier als Regel des Prototyps (Tests), Abstand, Höhe und Fang
+//   eines Griffs (GriffAbstandM, GriffHoeheM, GriffFangM) gelten auch für den einen.
 //   Schnitt: unter der Decke des gewählten Geschosses = Unterkante der Decke (Oberkante der Decke minus Dicke), «Decke zeigen» = Oberkante der Decke. Oberkante der Decke
 //   über einem Geschoss = Kote des Geschosses darüber, sonst Kote + Geschosshöhe (Regel von decke_erzeugen, Kern). Gibt es keine Decke im Modell, gilt deren Oberkante.
 

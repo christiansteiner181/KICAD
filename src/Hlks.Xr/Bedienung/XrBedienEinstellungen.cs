@@ -9,6 +9,9 @@
 //   symbole.* und zeiger.tooltip_s (App-Symbole: Feld frontal mit Abstand, Mitte, Höhe und Reihen; Berührung mit der ganzen Hand; Zeiger),
 //   labor.variante.symbole (verteilt | bogen), labor.variante.symbolwahl (stehen | ausblenden), labor.variante.feld_bei_app (seitlich | dahinter),
 //   symbole.tisch_abstand_m (am Sitzungstisch: Luft unter der untersten Symbolreihe).
+// V1d: symbole.hoehe_sitzend_m, symbole.hoehe_tisch_m, symbole.wahl_frei_s (Symbolfeld höher bzw. am Tisch tiefer, Sperre nach der Wahl), tafel.* (Tafel mittig,
+//   träges Nachführen, Blättern auf der Tafel), labor.variante.tafel_nachfuehren (traege | fest), sitzung.drehknopf_grad und labor.variante.zoom_ein_griff
+//   (zweite_hand | drehknopf; ein Griff am Tisch), sitzung.vereinfachen_mm und sitzung.dreiecke_max (vereinfachte Unterlage am Tisch, Hlks.Xr.Modell.TischStufe).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -58,13 +61,19 @@ public static class Varianten
     /// <summary>V1a, «labor.variante.feld_bei_app»: ist eine App offen, weicht das Symbolfeld seitlich neben das Fenster aus (Vorgabe; Christian 24.10.2026: «Das
     /// Symbolfeld weicht bei offener App seitlich neben das Fenster aus.») bzw. zum Vergleich dahinter zurück (die frühere Auslegung).</summary>
     public const string FeldSeitlich = "seitlich", FeldDahinter = "dahinter";
+    /// <summary>V1d, «labor.variante.tafel_nachfuehren»: die Tafel (Glas-App, PC-Bildschirm) rückt träge in die Blickmitte nach (Vorgabe) bzw. bleibt nach dem Öffnen
+    /// fest im Raum (Christian 24.10.2026: «die tafel … sollte immer zentrisch sein»; Annahme: «immer» = beim Öffnen und träge nachgeführt).</summary>
+    public const string TafelTraege = "traege", TafelFest = "fest";
+    /// <summary>V1d, «labor.variante.zoom_ein_griff»: am einen Griff zoomt ein Pinch der zweiten Hand über den Abstand der Hände (Vorgabe) bzw. das Rollen des
+    /// Handgelenks (Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»).</summary>
+    public const string ZoomZweiteHand = "zweite_hand", ZoomDrehknopf = "drehknopf";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
         ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
-        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter],
+        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelTraege, TafelFest], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
     };
 }
 
@@ -141,6 +150,12 @@ public sealed record XrBedienEinstellungen
     public WegwischEinstellungen Wegwischen { get; init; } = WegwischEinstellungen.Vorgabe;
     /// <summary>V1a: App-Symbole und Zeiger («symbole.*», «zeiger.tooltip_s», Variante «symbole»).</summary>
     public SymbolEinstellungen Symbole { get; init; } = new();
+    /// <summary>V1d: die Tafel – Platz mittig, träges Nachführen, Blättern auf der Tafel («tafel.*», Variante «tafel_nachfuehren»).</summary>
+    public TafelEinstellungen Tafel { get; init; } = TafelEinstellungen.Vorgabe;
+    /// <summary>V1d: der eine Griff am Sitzungstisch («sitzung.drehknopf_grad», Variante «zoom_ein_griff»).</summary>
+    public EinGriffEinstellungen Griff { get; init; } = EinGriffEinstellungen.Vorgabe;
+    /// <summary>V1d: die vereinfachte Unterlage am Tisch («sitzung.vereinfachen_mm», «sitzung.dreiecke_max»).</summary>
+    public TischStufeEinstellungen Tisch { get; init; } = TischStufeEinstellungen.Vorgabe;
 
     public static readonly XrBedienEinstellungen Vorgabe = new();
 
@@ -155,7 +170,7 @@ public sealed record XrBedienEinstellungen
     public string? Variante(string name) => name switch
     {
         "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
-        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, _ => null,
+        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, "tafel_nachfuehren" => Tafel.Nachfuehren, "zoom_ein_griff" => Griff.Zoom, _ => null,
     };
 
     /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
@@ -203,6 +218,17 @@ public sealed record XrBedienEinstellungen
         ["wegwischen.zeit_s"] = (0.2, 2),
         ["wegwischen.handflaeche_grad"] = (10, 80),
         ["wegwischen.richtung_grad"] = (5, 80),
+        // V1d
+        ["symbole.hoehe_sitzend_m"] = (0, 0.4),
+        ["symbole.hoehe_tisch_m"] = (0, 1.0),
+        ["symbole.wahl_frei_s"] = (0, 2),
+        ["tafel.hoehe_m"] = (0, 0.6),
+        ["tafel.nachfuehren_grad"] = (5, 90),
+        ["tafel.blaettern_abstand_m"] = (0.01, 0.2),
+        ["tafel.blaettern_weg_m"] = (0.03, 0.3),
+        ["sitzung.drehknopf_grad"] = (20, 180),
+        ["sitzung.vereinfachen_mm"] = (0, 5),
+        ["sitzung.dreiecke_max"] = (50_000, 2_000_000),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -222,6 +248,10 @@ public sealed record XrBedienEinstellungen
         "symbole.feldhoehe_m", "symbole.reihen", "symbole.beruehr_rand_m", "symbole.beruehr_sperre_s", "labor.variante.symbolwahl",
         "wegwischen.weg_m", "wegwischen.zeit_s", "wegwischen.handflaeche_grad", "wegwischen.richtung_grad",
         "symbole.tisch_abstand_m", "labor.variante.feld_bei_app",
+        // V1d
+        "symbole.hoehe_sitzend_m", "symbole.hoehe_tisch_m", "symbole.wahl_frei_s", "tafel.hoehe_m", "tafel.nachfuehren_grad", "tafel.blaettern_abstand_m",
+        "tafel.blaettern_weg_m", "labor.variante.tafel_nachfuehren", "sitzung.drehknopf_grad", "labor.variante.zoom_ein_griff", "sitzung.vereinfachen_mm",
+        "sitzung.dreiecke_max",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -348,6 +378,42 @@ public sealed record XrBedienEinstellungen
             case "symbole.tisch_abstand_m":
                 return zurueck ? this with { Symbole = Symbole with { TischAbstandM = v.Symbole.TischAbstandM } }
                     : Zahl() is { } s13 ? this with { Symbole = Symbole with { TischAbstandM = s13 } } : null;
+            // V1d
+            case "symbole.hoehe_sitzend_m":
+                return zurueck ? this with { Symbole = Symbole with { HoeheSitzendM = v.Symbole.HoeheSitzendM } }
+                    : Zahl() is { } d1 ? this with { Symbole = Symbole with { HoeheSitzendM = d1 } } : null;
+            case "symbole.hoehe_tisch_m":
+                return zurueck ? this with { Symbole = Symbole with { HoeheTischM = v.Symbole.HoeheTischM } }
+                    : Zahl() is { } d2 ? this with { Symbole = Symbole with { HoeheTischM = d2 } } : null;
+            case "symbole.wahl_frei_s":
+                return zurueck ? this with { Symbole = Symbole with { WahlFreiS = v.Symbole.WahlFreiS } }
+                    : Zahl() is { } d3 ? this with { Symbole = Symbole with { WahlFreiS = d3 } } : null;
+            case "tafel.hoehe_m":
+                return zurueck ? this with { Tafel = Tafel with { HoeheM = v.Tafel.HoeheM } } : Zahl() is { } d4 ? this with { Tafel = Tafel with { HoeheM = d4 } } : null;
+            case "tafel.nachfuehren_grad":
+                return zurueck ? this with { Tafel = Tafel with { NachfuehrenGrad = v.Tafel.NachfuehrenGrad } }
+                    : Zahl() is { } d5 ? this with { Tafel = Tafel with { NachfuehrenGrad = d5 } } : null;
+            case "tafel.blaettern_abstand_m":
+                return zurueck ? this with { Tafel = Tafel with { BlaetternAbstandM = v.Tafel.BlaetternAbstandM } }
+                    : Zahl() is { } d6 ? this with { Tafel = Tafel with { BlaetternAbstandM = d6 } } : null;
+            case "tafel.blaettern_weg_m":
+                return zurueck ? this with { Tafel = Tafel with { BlaetternWegM = v.Tafel.BlaetternWegM } }
+                    : Zahl() is { } d7 ? this with { Tafel = Tafel with { BlaetternWegM = d7 } } : null;
+            case "labor.variante.tafel_nachfuehren":
+                return zurueck ? this with { Tafel = Tafel with { Nachfuehren = v.Tafel.Nachfuehren } }
+                    : Wahl(Varianten.TafelTraege, Varianten.TafelFest) is { } d8 ? this with { Tafel = Tafel with { Nachfuehren = d8 } } : null;
+            case "sitzung.drehknopf_grad":
+                return zurueck ? this with { Griff = Griff with { DrehknopfGrad = v.Griff.DrehknopfGrad } }
+                    : Zahl() is { } d9 ? this with { Griff = Griff with { DrehknopfGrad = d9 } } : null;
+            case "labor.variante.zoom_ein_griff":
+                return zurueck ? this with { Griff = Griff with { Zoom = v.Griff.Zoom } }
+                    : Wahl(Varianten.ZoomZweiteHand, Varianten.ZoomDrehknopf) is { } d10 ? this with { Griff = Griff with { Zoom = d10 } } : null;
+            case "sitzung.vereinfachen_mm":
+                return zurueck ? this with { Tisch = Tisch with { VereinfachenMm = v.Tisch.VereinfachenMm } }
+                    : Zahl() is { } d11 ? this with { Tisch = Tisch with { VereinfachenMm = d11 } } : null;
+            case "sitzung.dreiecke_max":
+                return zurueck ? this with { Tisch = Tisch with { DreieckeMax = v.Tisch.DreieckeMax } }
+                    : Zahl() is { } d12 ? this with { Tisch = Tisch with { DreieckeMax = d12 } } : null;
             default:
                 return null;
         }

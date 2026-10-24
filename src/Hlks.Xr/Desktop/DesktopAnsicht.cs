@@ -294,6 +294,25 @@ public sealed class DesktopAnsicht
         von = Anteil;
         abT = t;
         EingeblendetT = t;
+        Nachfuehrung.Geoeffnet();
+    }
+
+    /// <summary>V1d: Zustand des trägen Nachführens (wie die Tafel einer App, Hlks.Xr.Bedienung.Tafel).</summary>
+    public TafelFolgen Nachfuehrung { get; } = new();
+
+    /// <summary>
+    /// V1d (Christian 24.10.2026: «die tafel … sollte immer zentrisch sein» – auch der PC-Bildschirm): öffnet frontal (Platz) und rückt, wenn man sich weiter als
+    /// «tafel.nachfuehren_grad» wegdreht, ruhig wieder in die Blickmitte – um die Augen gedreht, wieder frontal zum Kopf; am Griff verschoben bleibt er, wo man ihn
+    /// hinstellt (bis zum nächsten Hineinziehen). Nur, wenn er da ist. handAn = eine Hand ist an Griff oder Knöpfen.
+    /// </summary>
+    public void Nachfuehren(Vec3 auge, double blickGieren, double dt, DesktopEinstellungen e, TafelEinstellungen tafel, bool handAn)
+    {
+        if (Phase != DesktopPhase.Da || Lage is not { } l) return;
+        var platz = Platz(auge, blickGieren, e).Mitte;
+        var neu = Tafel.Nachfuehren(Nachfuehrung, l.Mitte, auge, blickGieren, dt, platz, tafel, handAn, griff);
+        if (neu.Abstand(l.Mitte) < 1e-12) return;
+        var h = neu - auge;
+        Lage = new DesktopLage(auge, VrLogik.GierenVonRichtung(new Xz(h.X, h.Z)), neu);
     }
 
     /// <summary>Sofort einblenden (Prüfung bzw. Auftrag): Platz frontal, dann weich an den Platz.</summary>

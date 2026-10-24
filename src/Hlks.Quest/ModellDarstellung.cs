@@ -40,6 +40,10 @@ sealed class ModellDarstellung
     {
         public required SzenenNetz Netz;
         public required List<Block> Bloecke;
+        /// <summary>V1d: vereinfachte Stufen für den Tisch (Index = Stufe von TischStufe.ZellenM; [0] bleibt leer – das sind die Blöcke), null = keine bzw. noch nicht da.</summary>
+        public List<Block>?[] Stufen = [];
+        /// <summary>V1d: Dreiecke je Stufe (Stufe 0 = das Netz).</summary>
+        public long[] StufenDreiecke = [];
         public required Material Material;
         public required Material DurchMaterial;
         public required bool Sichtbar;
@@ -98,6 +102,79 @@ sealed class ModellDarstellung
             v[i] = new Vertex(new Vec3(p[3 * i], p[3 * i + 1], p[3 * i + 2]), new Vec3(n[3 * i], n[3 * i + 1], n[3 * i + 2]), Vec2.Zero, Color32.White);
         return v;
     }
+
+    // ------------------------------------------------------------------------------------------------ V1d: vereinfachte Unterlage am Tisch (Hlks.Xr.Modell.TischStufe)
+
+    /// <summary>Die Stufen eines Netzes (im Hintergrund vorbereitet): Netz-Nummer, je Stufe 1 … n die Blöcke.</summary>
+    public sealed record VorStufen(int NetzNr, IReadOnlyList<IReadOnlyList<VorBlock>> Stufen);
+
+    /// <summary>
+    /// Vereinfachte Stufen der IFC-Unterlage für den Tisch (rein, ohne Grafikkarte; im Hintergrund): je Netz der Unterlage und Zelle aus TischStufe.ZellenM (ausser 0)
+    /// das zusammengefasste Netz, in Blöcke von höchstens NetzBloecke.BlockDreiecke geteilt. Dauer am PC mit Test_praxis etwa 0.4 s.
+    /// </summary>
+    public static List<VorStufen> StufenVorbereiten(ModellSzene s)
+    {
+        var aus = new List<VorStufen>();
+        foreach (var n in s.Netze.Where(n => n.Daten.Dreiecke > 0 && TischStufe.Vereinfacht(n.Teil) && n.Daten.Gruppe != ModellSzene.GruppeRaum))
+        {
+            var stufen = new List<IReadOnlyList<VorBlock>>();
+            foreach (var zelle in TischStufe.ZellenM.Skip(1))
+            {
+                var v = TischStufe.Vereinfachen(n.Daten.Positionen, n.Daten.Normalen, n.Daten.Indizes, zelle);
+                stufen.Add([.. NetzBloecke.Teilen(v.Dreiecke, [], NetzBloecke.BlockDreiecke).Select(b =>
+                {
+                    var (pos, nor, ind) = NetzDurchgang.Ausschnitt(v.Positionen, v.Normalen, NetzBloecke.Indizes(v.Indizes, b.Ab, b.Anzahl));
+                    return new VorBlock(b.Ab, b.Anzahl, pos, nor, ind, Ecken(pos, nor), Huelle(pos));
+                })]);
+            }
+            aus.Add(new VorStufen(n.Nr, stufen));
+        }
+        return aus;
+    }
+
+    readonly Queue<(Teil Teil, int Stufe, IReadOnlyList<VorBlock> Bloecke)> stufenWarten = new();
+
+    /// <summary>V1d: die vorbereiteten Stufen übernehmen (im Bild-Thread); die Netze für die Grafikkarte entstehen danach nach und nach (<see cref="StufenHochladen"/>).</summary>
+    public void StufenSetzen(IEnumerable<VorStufen> stufen)
+    {
+        foreach (var s in stufen)
+        {
+            var t = teile.FirstOrDefault(x => x.Netz.Nr == s.NetzNr);
+            if (t is null) continue;
+            t.Stufen = new List<Block>?[s.Stufen.Count + 1];
+            t.StufenDreiecke = new long[s.Stufen.Count + 1];
+            t.StufenDreiecke[0] = t.Netz.Daten.Dreiecke;
+            for (int k = 0; k < s.Stufen.Count; k++)
+            {
+                t.StufenDreiecke[k + 1] = s.Stufen[k].Sum(b => (long)b.Anzahl);
+                stufenWarten.Enqueue((t, k + 1, s.Stufen[k]));
+            }
+        }
+    }
+
+    /// <summary>V1d: höchstens so viele Stufen (eines Netzes) je Bild an die Grafikkarte geben – kein Stoss im Bildtakt.</summary>
+    public void StufenHochladen(int jeBild = 1)
+    {
+        for (int n = 0; n < jeBild && stufenWarten.TryDequeue(out var w); n++)
+        {
+            var bloecke = new List<Block>();
+            foreach (var b in w.Bloecke)
+            {
+                var mesh = new Mesh { KeepData = false };
+                mesh.SetData(b.Ecken, b.Indizes);
+                bloecke.Add(new Block { Ab = b.Ab, Anzahl = b.Anzahl, Box = b.Box, Haupt = mesh, Indizes = b.Indizes, Positionen = [], Normalen = [] });
+            }
+            w.Teil.Stufen[w.Stufe] = bloecke;
+        }
+    }
+
+    /// <summary>V1d: sind alle Stufen auf der Grafikkarte?</summary>
+    public bool StufenBereit => stufenWarten.Count == 0 && teile.Any(t => t.Stufen.Length > 1);
+
+    /// <summary>V1d: im letzten Bild am Tisch gezeichnete Stufe (0 = volle Unterlage) und die Dreiecke je Stufe der sichtbaren Netze.</summary>
+    public int GezeichnetStufe { get; private set; }
+    public IReadOnlyList<long> StufenDreieckeSichtbar { get; private set; } = [];
+    int stufeBisher;
 
     /// <summary>Netze anlegen (im Bild-Thread). ausgeblendet = Gruppen, die nicht gezeichnet werden.</summary>
     public ModellDarstellung(IEnumerable<Vorbereitet> netze, IReadOnlySet<string> ausgeblendet)
@@ -286,7 +363,9 @@ sealed class ModellDarstellung
     /// unterlage = IFC-Unterlage zeigen. Räume (ausgeblendete Gruppen) nie. Der Durchgang gilt hier nicht (die App setzt ihn beim Betreten zurück).
     /// P5b: wirksam = der Quader für den Shader samt Schnitt der flachen Hand (Sitzungsraum.WirksamerSchnitt); ohne Angabe der Schnitt der Ansicht.
     /// </summary>
-    public void ZeichnenSitzung(Matrix welt, SitzungAnsicht ansicht, bool unterlage, SchnittQuader? wirksam = null)
+    /// V1d: massstab (Nenner) und tisch (Stellschrauben «sitzung.vereinfachen_mm», «sitzung.dreiecke_max») wählen die Stufe der vereinfachten Unterlage
+    /// (TischStufe.StufeWaehlen; massstab 0 = immer die volle Unterlage, wie bis V1d).
+    public void ZeichnenSitzung(Matrix welt, SitzungAnsicht ansicht, bool unterlage, SchnittQuader? wirksam = null, double massstab = 0, TischStufeEinstellungen? tisch = null)
     {
         int netze = 0, aufrufe = 0, schnitt = 0;
         long dreiecke = 0;
@@ -325,13 +404,31 @@ sealed class ModellDarstellung
             GezeichnetMitSchnitt = schnitt;
             return;
         }
+        // V1d: Stufe der vereinfachten Unterlage nach Massstab und Dreiecksbudget (Dreiecke je Stufe über die sichtbaren Netze und Blöcke, die nicht ganz ausserhalb liegen)
+        bool Zeigt(Teil t) => t.Sichtbar && (unterlage || t.Netz.Teil != GlbZwischenspeicher.TeilUnterlage) && (ansicht.Geschosse is not { } g0 || g0.Contains(t.Netz.GeschossId));
+        List<Block> BloeckeDer(Teil t, int k) => k > 0 && k < t.Stufen.Length && t.Stufen[k] is { } sb ? sb : t.Bloecke;
+        var stufe = 0;
+        if (massstab > 0 && !SchnittErzwingen)
+        {
+            var n = TischStufe.ZellenM.Count;
+            var je = new long[n];
+            for (int k = 0; k < n; k++)
+                foreach (var t in teile)
+                    if (Zeigt(t))
+                        foreach (var b in BloeckeDer(t, k))
+                            if (!b.HauptLeer && (schnittQ?.Lage(b.Box) ?? SchnittLage.Innen) != SchnittLage.Aussen) je[k] += b.Anzahl;
+            // eine Stufe zählt nur, wenn alle ihre Netze schon auf der Grafikkarte sind
+            var bereit = Enumerable.Range(0, n).Count(k => k == 0 || teile.All(t => !Zeigt(t) || t.Stufen.Length == 0 || (k < t.Stufen.Length && t.Stufen[k] is not null)));
+            stufe = bereit > 1 ? TischStufe.StufeWaehlen([.. je.Take(bereit)], massstab, tisch, null, stufeBisher) : 0;
+            StufenDreieckeSichtbar = je;
+        }
+        stufeBisher = stufe;
+        GezeichnetStufe = stufe;
         foreach (var t in teile)
         {
-            if (!t.Sichtbar) continue;
-            if (!unterlage && t.Netz.Teil == GlbZwischenspeicher.TeilUnterlage) continue;
-            if (ansicht.Geschosse is { } gs && !gs.Contains(t.Netz.GeschossId)) continue;
+            if (!Zeigt(t)) continue;
             bool gezeichnet = false;
-            foreach (var b in t.Bloecke)
+            foreach (var b in BloeckeDer(t, stufe))
             {
                 if (b.HauptLeer) continue;
                 var lage = schnittQ?.Lage(b.Box) ?? SchnittLage.Innen;

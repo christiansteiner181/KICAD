@@ -145,18 +145,22 @@ sealed partial class QuestApp
                 mitte = auge;
             }
             FangErgebnis Fang((XVec3 U, XVec3 R) s) => szenenFang!.Strahl(s.U, s.R, XrMessLogik.FangRadiusStrahl * m0, XrMessLogik.FangRadiusJeMeter, (sitzung.Aktiv ? 4 : 30) * m0);
+            // V1d: der Index entsteht im Hintergrund; hier wartet die Prüfung darauf (die App fragt erst, wenn er steht)
+            var uhrIndex = Stopwatch.StartNew();
+            szenenFang!.Aufbauen();
+            var indexWarten = uhrIndex.Elapsed.TotalMilliseconds;
             var uhr = Stopwatch.StartNew();
             var fa = Fang(strahlen[0]);
             var fb = Fang(strahlen[1]);
             var ms = uhr.Elapsed.TotalMilliseconds / 2;
             uhr.Restart();
-            Fang(strahlen[0]);
-            Fang(strahlen[1]);
-            var warmMs = uhr.Elapsed.TotalMilliseconds / 2;
+            for (int k = 0; k < 10; k++) { Fang(strahlen[0]); Fang(strahlen[1]); }
+            var warmMs = uhr.Elapsed.TotalMilliseconds / 20;
             if (sitzung.Aktiv && fa.P is { } pm) mitte = pm;
             var fangOk = fa.P is not null && fb.P is not null;
+            var (st, pu, sr) = szenenFang.Umfang;
             teile.Add(string.Create(CultureInfo.InvariantCulture,
-                $"Fang={(fangOk ? "ok" : "FEHLER")} ({fa.Name}/{fb.Name}, erster Strahl {ms:0.0} ms, danach {warmMs:0.00} ms je Strahl, {szenenFang?.Aufbereitet ?? 0} Elemente aufbereitet)"));
+                $"Fang={(fangOk ? "ok" : "FEHLER")} ({fa.Name}/{fb.Name}, erster Strahl {ms:0.00} ms, danach {warmMs:0.000} ms je Strahl, Index {szenenFang.AufbauMs:0} ms im Hintergrund (gewartet {indexWarten:0} ms; {st} Stücke, {pu} Punkte, {sr} Strecken), {szenenFang.Aufbereitet} Elemente aufbereitet)"));
             if (fangOk)
             {
                 var vorher = (messen.An, messen.Variante, messen.Lot);
@@ -232,13 +236,18 @@ sealed partial class QuestApp
             }
             if (sitzung.Aktiv)
             {
-                // das Fenster steht neben dem Tisch, nicht über der Platte (Befund Prüfbild 24.10.2026)
+                // V1d (Christian 24.10.2026: «die tafel … sollte immer zentrisch sein»): das Fenster steht auch am Tisch mittig vor dem Blick (bis V1d neben dem Tisch) und
+                // mit Werkzeugleiste, Griff und Schliessen über der Platte («symbole.tisch_abstand_m»)
                 AppsHolen();
-                var f = Glas.Fenster(apps.Mitte ?? AppPlatz(kopf), new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), GlasMasse.Fuer(bedien.Apps));
-                var tisch = TischEcken().Select(p => new Xz(p.X, p.Z)).ToList();
-                var ueber = Glas.UeberTisch(f, tisch, 0.02);
+                var auge0 = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
+                var mf = apps.Mitte ?? AppPlatz(kopf);
+                var f = Glas.Fenster(mf, auge0, GlasMasse.Fuer(bedien.Apps));
+                var platte = sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y;
+                var unterkante = mf.Y - Glas.UnterhalbM(GlasMasse.Fuer(bedien.Apps), 2);
+                var mittig = Math.Abs(Tafel.Abweichung(mf, auge0, KopfRef(kopf).Gieren)) < 0.5 * Math.PI / 180;
+                var ueber = unterkante >= platte + bedien.Symbole.TischAbstandM - 1e-6;
                 teile.Add(string.Create(CultureInfo.InvariantCulture,
-                    $"Fenster am Tisch={(ueber ? "FEHLER über dem Tisch" : "ok")} (Mitte {f.Mitte.X:0.00}/{f.Mitte.Y:0.00}/{f.Mitte.Z:0.00} m, apps.seitlich_grad {bedien.Apps.SeitlichGrad:0})"));
+                    $"Fenster am Tisch={(mittig && ueber ? "ok" : "FEHLER")} (mittig {(mittig ? "ja" : "nein")}, Unterkante {unterkante - platte:0.000} m über der Platte, Mitte {f.Mitte.X:0.00}/{f.Mitte.Y:0.00}/{f.Mitte.Z:0.00} m)"));
                 // Decke über dem Raum: der Ausschnitt endet unter der Unterseite der Decke (Befund «Raum in AR»: dunkle Platte oben)
                 var raumId = auftragRaum ?? szene!.Raeume.FirstOrDefault()?.Id;
                 if (raumId is not null && szene!.Elemente.TryGetValue("modell:" + raumId, out var re) && SitzungAuswahl.Ausschnitt(szene, raumId, stand!.Liste) is { Schnitt: { } q })

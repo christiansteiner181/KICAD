@@ -18,7 +18,10 @@
 //   Fortschritt (für das Folgen der Hand): (Weg − 20 % WegM) / (80 % WegM), 0 … 1; Läuft, sobald 20 % erreicht sind.
 // Gegensperre (DesktopGesten): nach dem Hineinziehen ruht das Wegwischen SperreS lang (WegwischenRuht: das Zurückholen der Hand schiebt den Bildschirm nicht gleich
 // wieder hinaus und wischt auch nichts anderes weg); nach jedem Wegwischen (NachWegwischen) ruht das Hineinziehen ebenso lang.
-// Warum Hebegeste, Pinch + Wisch, Röntgen-Hand, zwei Hände nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände – die linke bewegt
+// V1d (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links
+// soll in wieder raus schieben»): dieselbe Regel auch für die linke Hand (eigene Spur; Handfläche seitlich in einer der beiden Richtungen, die Richtung des Wischs
+// entscheidet; die rechte Hand muss dabei ruhen). Löst eine Hand aus, sperrt sie die andere mit – zwei Hände zugleich lösen höchstens einmal aus.
+// Warum Hebegeste, Pinch + Wisch, Röntgen-Hand, zwei Hände nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände – die andere bewegt
 // sich mit; Pinch + Wisch – Pinch; Röntgen-Hand – Handfläche nach vorn. Ausholen vor dem Wisch: zu kurz bzw. zu langsam, und Hineinziehen und Wegwischen schauen in
 // entgegengesetzte Richtungen; das Zurückholen der Hand nach der Geste fällt in die Gegensperre.
 
@@ -61,12 +64,14 @@ public static class SeitenWisch
     /// Ein Schritt je Bild (Regel im Dateikopf): Wisch der rechten Hand nach rechts. rechts/links = Gelenke der rechten bzw. linken Hand (WebXR-Namen, Raum der
     /// Brille; null = nicht erkannt), blickGieren wie VrLogik, erlaubt = die Hand darf (nicht an Apps, nicht am Griff, nicht in einer Gegensperre).
     /// </summary>
+    /// V1d (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen»): seite = «left» – dann ist rechts die LINKE Hand
+    /// (die wischende) und links die rechte (die andere); ihre Handfläche darf seitlich in einer der beiden Richtungen zeigen, die Richtung des Wischs entscheidet.
     public static SeitenWischStand Schritt(SeitenWischZustand z, double t, IReadOnlyDictionary<string, Vec3>? rechts, IReadOnlyDictionary<string, Vec3>? links,
-        double blickGieren, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true)
+        double blickGieren, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true, string seite = "right")
     {
         e ??= SeitenWischEinstellungen.Vorgabe;
         var behalten = e.ZeitS + 0.2;
-        // linke Hand: Spur der Handfläche, solange erkannt (für «die andere Hand ruhig»)
+        // die andere Hand: Spur der Handfläche, solange erkannt (für «die andere Hand ruhig»)
         if (XrTabletLogik.HandflaechenMitte(links) is { } lm) z.Andere.Add((t, lm));
         else z.Andere.Clear();
         while (z.Andere.Count > 0 && z.Andere[0].T < t - behalten) z.Andere.RemoveAt(0);
@@ -76,9 +81,10 @@ public static class SeitenWisch
         var pinchJetzt = rechts is not null && XrTabletLogik.IstPinch(rechts, z.PinchVorher, pinch);
         z.PinchVorher = pinchJetzt;
         var mitte = XrTabletLogik.HandflaechenMitte(rechts);
-        var normale = XrTabletLogik.HandflaechenNormale(rechts, "right");
+        var normale = XrTabletLogik.HandflaechenNormale(rechts, seite);
+        var seitlich = normale is { } nn ? (seite == "left" ? Math.Abs(nn.Skalar(linksRichtung)) : nn.Skalar(linksRichtung)) : -1;
         var haltung = erlaubt && mitte is not null && normale is not null && !pinchJetzt && XrTabletLogik.IstOffen(rechts)
-            && normale.Value.Skalar(linksRichtung) >= Math.Cos(e.HandflaecheGrad * Num.Grad);
+            && seitlich >= Math.Cos(e.HandflaecheGrad * Num.Grad);
         if (!haltung) { z.Punkte.Clear(); return SeitenWischStand.Nichts; }
         z.Punkte.Add((t, mitte!.Value));
         while (z.Punkte.Count > 0 && z.Punkte[0].T < t - behalten) z.Punkte.RemoveAt(0);
@@ -132,21 +138,40 @@ public sealed record DesktopHaende(double T, IReadOnlyDictionary<string, Vec3>? 
 /// </summary>
 public sealed class DesktopGesten(Func<DesktopEinstellungen> einstellungen, Func<PinchEinstellungen?>? pinch = null, Func<WegwischEinstellungen?>? wegwischen = null)
 {
-    readonly SeitenWischZustand hinein = new();
+    readonly SeitenWischZustand hinein = new(), hineinLinks = new();
     double wegGesperrtBis = double.NegativeInfinity;
 
-    /// <summary>Ein Bild; erlaubt = der Bildschirm ist aus bzw. kommt, und die rechte Hand ist frei.</summary>
-    public SeitenWischStand Schritt(DesktopHaende h, bool erlaubt)
+    /// <summary>V1d: welche Hand zuletzt hereingezogen hat bzw. gerade zieht («right», «left»), sonst null.</summary>
+    public string? Hand { get; private set; }
+
+    /// <summary>
+    /// Ein Bild; erlaubt = der Bildschirm ist aus bzw. kommt, und die rechte Hand ist frei; erlaubtLinks (V1d) = die linke Hand ist frei (ohne Angabe wie erlaubt).
+    /// V1d: beide Hände ziehen herein (je eine Spur, die andere Hand ruhig); löst eine aus, sperrt sie die andere mit – zwei Hände zugleich lösen einmal aus.
+    /// </summary>
+    public SeitenWischStand Schritt(DesktopHaende h, bool erlaubt, bool? erlaubtLinks = null)
     {
         var e = einstellungen();
-        var s = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, e.HineinMit(wegwischen?.Invoke()), pinch?.Invoke(), erlaubt);
-        if (s.Ausgeloest) wegGesperrtBis = h.T + e.Hinein.SperreS;
+        var ein = e.HineinMit(wegwischen?.Invoke());
+        var r = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, ein, pinch?.Invoke(), erlaubt);
+        var l = SeitenWisch.Schritt(hineinLinks, h.T, h.Links, h.Rechts, h.BlickGieren, ein, pinch?.Invoke(), erlaubtLinks ?? erlaubt, "left");
+        var wer = r.Ausgeloest ? "right" : l.Ausgeloest ? "left" : l.Fortschritt > r.Fortschritt ? "left" : "right";
+        var s = wer == "left" ? l : r;
+        Hand = s.Laeuft || s.Ausgeloest ? wer : null;
+        if (r.Ausgeloest || l.Ausgeloest)
+        {
+            wegGesperrtBis = h.T + e.Hinein.SperreS;
+            (r.Ausgeloest ? hineinLinks : hinein).Sperren(h.T + e.Hinein.SperreS);   // die andere Hand löst nicht gleich noch einmal aus
+        }
         return s;
     }
 
     /// <summary>Ruht das gemeinsame Wegwischen gerade (kurz nach dem Hineinziehen)?</summary>
     public bool WegwischenRuht(double t) => t < wegGesperrtBis;
 
-    /// <summary>Ein Wegwischen hat ausgelöst (gleich welches Ziel): das Hineinziehen ruht SperreS lang, eine laufende Bewegung zählt nicht weiter.</summary>
-    public void NachWegwischen(double t) => hinein.Sperren(t + einstellungen().Hinein.SperreS);
+    /// <summary>Ein Wegwischen hat ausgelöst (gleich welches Ziel, gleich welche Hand): das Hineinziehen ruht SperreS lang, eine laufende Bewegung zählt nicht weiter.</summary>
+    public void NachWegwischen(double t)
+    {
+        hinein.Sperren(t + einstellungen().Hinein.SperreS);
+        hineinLinks.Sperren(t + einstellungen().Hinein.SperreS);
+    }
 }
