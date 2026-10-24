@@ -119,7 +119,7 @@ public class LaborKatalogTests
         Assert.True(w.Bedien.MitStick);
         Assert.Equal(LaborWerte.Ok, w.Setzen("labor.variante.messen", W("\"zwei_punkte\"")));
         Assert.Equal(LaborWerte.Ungueltig, w.Setzen("labor.variante.messen", W("\"laser\"")));
-        Assert.Equal(new Dictionary<string, string> { ["bedienung"] = "apps", ["teleport"] = "stick", ["etage"] = "wisch_modell", ["messen"] = "zwei_punkte", ["umgebung"] = "hell",
+        Assert.Equal(new Dictionary<string, string> { ["bedienung"] = "apps", ["teleport"] = "stick", ["etage"] = "app", ["messen"] = "zwei_punkte", ["umgebung"] = "hell",
             ["symbole"] = "verteilt", ["symbolwahl"] = "stehen", ["feld_bei_app"] = "seitlich", ["tafel_nachfuehren"] = "traege", ["zoom_ein_griff"] = "zweite_hand" },
             w.Varianten());
         Assert.Equal(new Dictionary<string, string> { ["teleport"] = "stick" }, w.Varianten(["teleport"]));

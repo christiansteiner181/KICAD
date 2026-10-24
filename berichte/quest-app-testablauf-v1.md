@@ -39,7 +39,7 @@ Annahmen und im XR-Labor einstellbar.
 - [ ] Die Brille hält dabei ruhig 72 Hz (keine Ruckler); die Verzögerung ist erträglich.
 
 ## 4. Bisheriges (Kurzprüfung)
-- [ ] Springen mit dem Strahl, Drehen im Sitzen (Gegenrichtung 1 s gesperrt), Pinch + Wisch hoch/runter wechselt die Etage.
+- [ ] Springen mit dem Strahl, Drehen im Sitzen (Gegenrichtung 1 s gesperrt); die Etage wechselt nur in der App «Etagen» (Pinch + Wisch hoch/runter tut nichts).
 - [ ] «Modell am Sitzungstisch» und «Raum in AR» hell, Griffe an den Ecken, zoomen bis 1:5.
 - [ ] XR-Labor: Stellschrauben wirken sofort; Prüfaufgabe und Messprotokoll.
 

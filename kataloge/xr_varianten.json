@@ -30,8 +30,8 @@
         { "id": "wisch_modell", "titel": "Wisch am Modell" },
         { "id": "app", "titel": "App" }
       ],
-      "vorgabe": "wisch_modell",
-      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Etage direkt am Modell wählen"
+      "vorgabe": "app",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Etage direkt am Modell wählen; Vorgabe «app» seit dem Brillentest 24.10.2026 (Christian: «der etagenwechsel mit geste ist unpraktisch.»)"
     },
     {
       "name": "messen", "titel": "Messen",

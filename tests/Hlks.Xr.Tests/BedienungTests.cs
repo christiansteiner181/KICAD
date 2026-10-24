@@ -155,7 +155,7 @@ public class BedienungTests
         Assert.True(e.Komfort.Tunnelblick);
         Assert.Equal(new ZoomGrenzen(5, 200), e.Zoom);
         Assert.True(e.MitApps);
-        Assert.True(e.EtageMitWisch);
+        Assert.False(e.EtageMitWisch);                       // seit dem Brillentest 24.10.2026: Etage nur in der App
 
         Assert.Equal(1.6, e.MitStellschraube("anzeige.skala", W("1.6"))!.Apps.Skala);
         Assert.Null(e.MitStellschraube("anzeige.skala", W("4")));                      // über 3

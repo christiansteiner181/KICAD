@@ -44,7 +44,7 @@ public static class Varianten
 {
     /// <summary>«labor.variante.bedienung»: schwebende Apps (Vorgabe) bzw. das Tablet – in der App die Box vor dem Blick (P4).</summary>
     public const string Apps = "apps", Tablet = "tablet";
-    /// <summary>«labor.variante.etage»: Etage per Wisch hoch/runter (Vorgabe) bzw. nur in der App «Etagen».</summary>
+    /// <summary>«labor.variante.etage»: Etage per Wisch hoch/runter bzw. nur in der App «Etagen» (Vorgabe seit dem Brillentest 24.10.2026: Geste unpraktisch).</summary>
     public const string EtageWisch = "wisch_modell", EtageApp = "app";
     /// <summary>P5b, «labor.variante.teleport»: springen mit Zeigen und Pinch (Vorgabe) bzw. mit dem Stick eines Controllers.</summary>
     public const string ZeigenPinch = "zeigen_pinch", Stick = "stick";
@@ -71,7 +71,7 @@ public static class Varianten
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
-        ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
+        ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageApp, EtageWisch], ["messen"] = [Messband, ZweiPunkte],
         ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
         ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelTraege, TafelFest], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
     };
@@ -132,8 +132,8 @@ public sealed record XrBedienEinstellungen
     public double DrehwinkelGrad { get; init; } = VrLogik.SnapGrad;
     /// <summary>«labor.variante.bedienung»: <see cref="Varianten.Apps"/> (Vorgabe) oder <see cref="Varianten.Tablet"/>.</summary>
     public string Bedienung { get; init; } = Varianten.Apps;
-    /// <summary>«labor.variante.etage»: <see cref="Varianten.EtageWisch"/> (Vorgabe) oder <see cref="Varianten.EtageApp"/>.</summary>
-    public string Etage { get; init; } = Varianten.EtageWisch;
+    /// <summary>«labor.variante.etage»: <see cref="Varianten.EtageApp"/> (Vorgabe) oder <see cref="Varianten.EtageWisch"/>.</summary>
+    public string Etage { get; init; } = Varianten.EtageApp;
     /// <summary>P5b, «labor.variante.teleport»: <see cref="Varianten.ZeigenPinch"/> (Vorgabe) oder <see cref="Varianten.Stick"/>.</summary>
     public string Teleport { get; init; } = Varianten.ZeigenPinch;
     /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (V1a: App «Messen»).</summary>

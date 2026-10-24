@@ -2380,7 +2380,7 @@ Die aktuelle Tabelle (mit Wegwischen, Hineinziehen, Blättern auf der Tafel und 
   | `sitzung.zoom_min` | 5 … 100, kleiner als «max» | 5 | stärkster Zoom am Tisch (1:n) |
   | `sitzung.zoom_max` | 50 … 1000, grösser als «min» | 200 | schwächster Zoom am Tisch (1:n); auch das Einpassen nutzt ihn |
   | `labor.variante.bedienung` | `apps`, `tablet` | `apps` | schwebende Apps bzw. die Box |
-  | `labor.variante.etage` | `wisch_modell`, `app` | `wisch_modell` | Etage per Wisch hoch/runter bzw. nur über die App |
+  | `labor.variante.etage` | `wisch_modell`, `app` | `app` (seit Brillentest 24.10.2026) | Etage per Wisch hoch/runter bzw. nur über die App |
 
   Dazu weiter `begehen.ziel_ruhe_s`, `begehen.ziel_ruhe_radius_m`, `begehen.ziel_verzoegerung_s`, `begehen.drehen_sperre_s` (P4a) und `haltung.*` (P4a-Nachtrag).
   Seit P5b kommen Vorgaben und Grenzen aus dem Katalog (Abschnitt «Quest App P5b»); `sitzung.zoom_min` steht dort jetzt auf 5 (wie die App seit dem P4b-Nachtrag,
@@ -2460,7 +2460,7 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   des Controllers (Ring und Strahl wie beim Pinch), **loslassen** (unter 0.3) springt auf das letzte gültige Ziel, wenn es höchstens `begehen.ziel_verzoegerung_s` (0.1 s)
   alt ist; **seitlich** dreht in Schritten (`begehen.drehwinkel_grad`, Stick rechts = nach rechts wie der Prototyp), nur wenn «Drehen» wirkt. In dieser Variante springt der
   Pinch nicht. Ohne Controller alle 20 s der Hinweis «einen Controller in die Hand nehmen».
-- **`labor.variante.etage`:** `wisch_modell` (Vorgabe, P5a) | `app`: Pinch + Wisch hoch/runter wechselt nicht (leiser Klick, Hinweis «… das Geschoss in der App «Etagen»
+- **`labor.variante.etage`:** `app` (Vorgabe seit dem Brillentest 24.10.2026, Christian: «der etagenwechsel mit geste ist unpraktisch.») | `wisch_modell` (Vorgabe P5a bis V1d) | `app`: Pinch + Wisch hoch/runter wechselt nicht (leiser Klick, Hinweis «… das Geschoss in der App «Etagen»
   wählen»), nur die App «Etagen».
 - **`labor.variante.messen`:** `messband` | `zwei_punkte` – seit V1a wirksam (Abschnitt «Quest App V1a»); die App trägt die Wahl ins Messprotokoll ein.
 - **`labor.variante.bedienung`:** `apps` | `tablet` wie P5a.
