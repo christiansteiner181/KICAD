@@ -11235,7 +11235,7 @@
             "Eine Kachel antippen: den Zeigefinger von vorn in die Kachel stossen. Beim Annähern wird der Rand heller (ab 10 cm), beim Fang ein leiser Klick; beim Auslösen Klick und Aufleuchten. Alternativ an der Kachel Daumen und Zeigefinger zusammen und wieder lösen (Pinch wählt).",
             "«Etagen» antippen: in der Mitte öffnet sich die App mit den Geschossen (oberstes zuerst, das aktuelle grün). Ein Geschoss antippen: man steht im gleichen Punkt in diesem Geschoss, sonst im grössten Raum (Ton, kurzes Abblenden, Tunnelblick, Hinweis «Etage … – gleicher Punkt.» unten vor dem Blick).",
             "Ohne App: Daumen und Zeigefinger zusammen halten und die Hand schnell nach oben ziehen (Wisch hoch) – ein Geschoss höher; nach unten ziehen – ein Geschoss tiefer. Das geht auch am Sitzungstisch (Etagenschnitt; über dem obersten «Alle Etagen»).",
-            "Wegwischen: Pinch halten und die Hand schnell nach vorn (vom Körper weg) ziehen. Mit offener App schliesst das die App, sonst blendet es die Apps aus. Zurück holt sie die linke Handfläche, zum Gesicht gedreht und kurz gehalten.",
+            "Wegwischen: seit V1a die rechte Hand offen, Handfläche nach links, von rechts nach links über das, was weg soll (zb-quest-v1a-symbole); bis V1a Pinch halten und die Hand schnell nach vorn ziehen. Zurück holt die Apps seit V1a die Hebegeste (bis V1a die linke Handfläche zum Gesicht).",
             "Blättern: in einer App mit mehreren Seiten (Titel «Seite 1/2») Pinch halten und nach links ziehen – nächste Seite, nach rechts – vorherige. Beim Begehen ohne offene App dreht derselbe Seitenwisch wie bisher um 30° (nur wenn «Drehen» wirkt).",
             "Zögern: die Hand ruhig über einer Kachel halten, ohne anzutippen. Nach 1.5 s zeigt eine halbdurchsichtige Hand die Geste (Antippen; über der offenen App Blättern bzw. Wegwischen; am Tisch nahe einem Griff das Greifen).",
             "Sitzungsraum: die Kachel «Tisch» öffnet «Echter Tisch», «IFC-Unterlage», «Zurücksetzen» und «Tisch neu antippen». «Begehen» führt zurück.",
@@ -11248,7 +11248,7 @@
             "Antippen mit dem Zeigefinger trifft beim ersten Versuch; Fang, Leuchten und Klick sind zu sehen bzw. zu hören.",
             "«Etagen» öffnet die Liste; ein anderes Geschoss antippen setzt einen über denselben Punkt bzw. in den grössten Raum; das neue Geschoss ist gezeichnet.",
             "Pinch + Wisch hoch bzw. runter wechselt beim Begehen und am Tisch genau ein Geschoss, ohne ungewollten Sprung; beim Zielen auf den Boden löst kein Etagenwechsel aus.",
-            "Pinch + Wisch nach vorn schliesst die offene App bzw. blendet die Apps aus; die linke Handfläche holt sie zurück.",
+            "Seit V1a: Pinch + Wisch nach vorn löst nichts aus; das Wegwischen mit der offenen rechten Hand nach links schliesst die offene App bzw. blendet die Symbole aus (zb-quest-v1a-symbole).",
             "Zögern über einer Kachel zeigt nach etwa 1.5 s die Geisterhand mit der richtigen Geste.",
             "Tunnelblick beim Springen und Drehen kurz und weich; «komfort.tunnelblick» false am PC schaltet ihn ab.",
             "Stellschrauben vom PC (z. B. «anzeige.skala», «apps.groesse_m», «wisch.mindestweg_m», «sitzung.zoom_min») wirken sofort; ein ungültiger Wert bleibt unbeachtet («ungültig»).",
@@ -11285,7 +11285,7 @@
             "In der Brille erscheint rechts neben dem Blick eine Karte mit Titel und Anleitung, darunter «Ziel: die leuchtende Markierung · Zeit · Fehlgriffe» und der Knopf «Aufgabe beenden». Am Boden leuchtet ein Ring mit einer Lichtsäule.",
             "Mit Zeigen und Pinch auf den Ring springen. Ein Sprung daneben zählt als Fehlgriff. Landet man im Ring, wird die Karte grün («Geschafft · Zeit · Fehlgriffe») und die App sendet das Messprotokoll an KICAD.",
             "Am PC zeigt der Reiter «Prüfaufgaben» bei der Aufgabe «1 Lauf · 1 von 1 erfolgreich …», der Reiter «Auswertung» Zeit, Fehlgriffe und Abbrüche je Variante und je Fassung der App (z. B. «0.1+680f9af»).",
-            "Abbrechen: auf der Karte «Aufgabe beenden» antippen oder Pinch + Wisch nach vorn (wenn keine App offen ist); am PC «Aufgabe beenden». Dieselbe Aufgabe nochmals starten heisst «neu begonnen» und zählt als Abbruch.",
+            "Abbrechen: auf der Karte «Aufgabe beenden» antippen oder die Karte wegwischen (rechte Hand offen, Handfläche nach links, von rechts nach links über die Karte; seit V1a, vorher Pinch + Wisch nach vorn); am PC «Aufgabe beenden». Dieselbe Aufgabe nochmals starten heisst «neu begonnen» und zählt als Abbruch.",
             "Die übrigen Aufgaben: «Um 90° drehen» (Pfeil am Boden), «Etage wechseln», «Modell greifen, drehen und zoomen» (die App wechselt selbst in den Sitzungsraum; Zielmassstab auf der Karte; Griffe loslassen), «Raum in AR öffnen» (App «Tisch» › «Raum zeigen», dann «Echter Tisch» und auf die Tischplatte tippen), «Auf dem Tablet einen Wert ablesen» (nur mit der Variante Bedienung «Tablet»: die Box zeigt die Höhe des markierten Bauteils und vier Antworten).",
             "Reiter «Varianten»: Teleport «Stick» – mit einem Controller den Stick nach vorn drücken zielt, loslassen springt, seitlich dreht (Zeigen und Pinch springt dann nicht); Etage «App» – Pinch + Wisch hoch/runter wechselt nicht mehr, nur die App «Etagen»; Messen folgt mit Version 1.",
             "Schnitt mit der flachen Hand: im Sitzungsraum die Hand flach mit der Handfläche nach unten über das Modell halten und kurz ruhig lassen – der Schnitt folgt der Hand nach oben und unten. Senkrecht gehalten (Handfläche zur Seite) gibt sie einen Vertikalschnitt; die Seite zum Kopf fällt weg. Hand weg behält den Schnitt; App «Tisch» › «Zurücksetzen» hebt ihn auf.",
@@ -11297,7 +11297,7 @@
             "«P4 Status» nennt «Katalog=pc …» (mit PC) bzw. «zwischenspeicher …» (ohne PC) und «Fassung=0.1+<Commit>».",
             "«Aufgabe starten» zeigt die Karte rechts neben dem Blick; Titel und Anleitung stimmen mit dem Katalog überein.",
             "Markierung: ein Sprung daneben zählt einen Fehlgriff, ein Sprung hinein macht die Karte grün; am PC steht danach «1 Lauf».",
-            "«Aufgabe beenden» und Pinch + Wisch nach vorn brechen ab; der Lauf steht am PC als nicht erfolgreich mit einem Abbruch.",
+            "«Aufgabe beenden» und das Wegwischen der Karte brechen ab; der Lauf steht am PC als nicht erfolgreich mit einem Abbruch. Pinch + Wisch nach vorn bricht nicht ab (seit V1a).",
             "«Modell greifen, drehen und zoomen» wechselt in den Sitzungsraum; Zielmassstab und Vierteldrehung erreichen und loslassen ergibt «Geschafft».",
             "«Auf dem Tablet einen Wert ablesen» wartet in der Variante «apps» mit Hinweis und beginnt, sobald am PC «Tablet» gewählt ist.",
             "Variante Teleport «Stick»: mit Controller springen und drehen; ohne Controller erscheint der Hinweis.",
@@ -11323,47 +11323,54 @@
         },
         {
           "id": "zb-quest-v1a-symbole",
-          "titel": "Quest App: Apps mit der Hebegeste holen, Symbol antippen, wegschieben; Zeiger, Tooltip und schwebende Hinweise (Modul XR, Quest App V1a)",
+          "titel": "Quest App: Apps mit der Hebegeste holen, Symbol mit der Hand berühren, wegwischen; Pastellfarben, Symbole wie in KICAD, Zeiger, Tooltip und schwebende Hinweise (Modul XR, Quest App V1a)",
           "wo": {
             "register": "",
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "In der Brille mit den Händen: Hebegeste (beide Handflächen nach oben anheben), dann die frei schwebenden App-Symbole in Griffweite; die gewählte App erscheint als Glas-Fenster mit Werkzeugleiste (Messen, Marker), Griff und Schliessen-Knopf."
+            "sonst": "In der Brille mit den Händen: die Hebegeste (beide Handflächen nach oben anheben) holt das Feld der App-Symbole frontal vor den Kopf; ein Symbol mit der Hand berühren öffnet die App als Glas-Fenster; Wegwischen (rechte Hand offen, Handfläche nach links, von rechts nach links) schliesst. Farben: kataloge/xr_farben.json; die Symbole sind die von KICAD (Einstellung «oberflaeche.symbole»)."
           },
           "schritte": [
             "Beide Hände offen vor den Körper halten, die Handflächen nach oben, und beide deutlich (etwa 15 cm) und gleichzeitig nach oben streichen – wie wenn man etwas von unten anhebt.",
-            "Die App-Symbole steigen von unten ein und folgen dabei den Händen: runde Glas-Symbole ohne Fenster, locker verteilt vor dem Körper (KICAD, Etagen, Messen, Marker, Ort bzw. am Tisch Tisch, Ebenen). Jede App steht immer am selben Platz.",
-            "Mit gestrecktem Zeigefinger auf ein Symbol zeigen: ein kleiner Punkt erscheint auf dem Symbol mit einer feinen Linie von der Fingerspitze, das Symbol hebt sich leicht; nach etwa einer halben Sekunde steht der Name als Tooltip darunter.",
-            "Das Symbol mit der Fingerspitze antippen: es leuchtet auf und klickt, die App öffnet sich als Glas-Fenster dort, wo die Symbole standen (am Sitzungstisch neben dem Tisch), die Symbole verschwinden.",
-            "Symbole ohne Wahl wegschieben: beide Hände nahe der Mitte vor dem Körper, die Handflächen nach aussen drehen (links nach links, rechts nach rechts) und mit beiden Armen gleichzeitig deutlich zur Seite wischen. Die Symbole laufen mit – die linken nach links, die rechten nach rechts – und gleiten mit einem Klick aus dem Bild. Sonst gehen sie nach 10 Sekunden von selbst.",
-            "Im Fenster: Knöpfe antippen oder mit dem Strahl zeigen und Pinch; die Werkzeugleiste unten schaltet Messen und Marker; der Griff darunter verschiebt das Fenster (Pinch daran und ziehen), der runde Knopf links daneben blendet es aus. Pinch + Wisch nach vorn blendet es ebenfalls aus.",
-            "Hinweise erscheinen frei schwebend ohne Kasten: allgemeine ruhig unter der Blickmitte, Meldungen zu Marker und Messung bei der Stelle, Gestenhinweise bei der Hand; sie blenden nach etwa 4 Sekunden aus.",
-            "Zögert man mit beiden Handflächen oben, zeigen zwei Geisterhände die Hebegeste; stehen die Symbole eine Weile ohne Wahl, zeigen sie einmal das Wegschieben."
+            "Die App-Symbole steigen von unten ein und folgen dabei den Händen. Sie stehen frontal vor dem Kopf, etwa 60 cm vor den Augen, über etwa 60 cm Höhe in höchstens drei lose versetzten Reihen; die oberste Reihe liegt nicht über Augenhöhe. Jede App hat ihren Pastellton und das Symbol wie in KICAD (Status «Info», Etagen «Geschoss», Messen «Bemassung», Marker «Problem-Marker», Begehen «Raum begehen», am Tisch «Sitzungstisch», Ebenen «Sichtbarkeit») und steht immer am selben Platz. Am Sitzungstisch gilt dasselbe im Sitzen.",
+            "Die Symbole bleiben stehen, bis man sie wegwischt – auch wenn man den Kopf dreht oder eine Weile nichts wählt.",
+            "Mit gestrecktem Zeigefinger auf ein Symbol zeigen: ein kleiner Punkt erscheint auf dem Symbol mit einer feinen Linie von der Fingerspitze, das Symbol hebt sich leicht; nach etwa einer halben Sekunde steht der Name als Tooltip darüber.",
+            "Ein Symbol mit der Hand berühren – Handfläche, Handrücken oder ein beliebiger Finger: es leuchtet auf und klickt, die App öffnet sich als Glas-Fenster frontal etwas näher vor dem Feld; das Feld weicht dahinter zurück und wird blasser. Schliesst die App, kommt das Feld wieder nach vorn. (Variante «symbolwahl» = «ausblenden» im XR-Labor: die Symbole verschwinden nach der Wahl.)",
+            "Wegwischen – eine Geste für alles: die rechte Hand offen, die Handfläche nach links, und von rechts nach links über das wischen, was weg soll. Ein offenes Fenster gleitet mit der Hand nach links und schliesst mit einem Klick; das Symbolfeld gleitet ebenso aus dem Bild. Ohne etwas zu überstreichen geht zuerst das Vorderste bzw. zuletzt Geöffnete (Fenster oder Karte einer Prüfaufgabe), beim nächsten Wisch das Symbolfeld. Das Ausholen nach rechts löst nichts aus, Pinch + Wisch nach vorn auch nicht mehr.",
+            "Läuft eine Prüfaufgabe, lässt sich ihre Karte wegwischen: das bricht die Aufgabe ab (am PC ein Abbruch).",
+            "Im Fenster: Knöpfe mit der Fingerspitze antippen oder mit dem Strahl zeigen und Pinch; die Werkzeugleiste unten schaltet Messen und Marker; der Griff darunter verschiebt das Fenster (Pinch daran und ziehen), der runde Knopf links daneben schliesst es. Jedes Fenster trägt den Pastellton seiner App mit dunkler Schrift und einem kräftigeren Strich unter dem Titel; in dunkler Umgebung die dunkle Fassung mit heller Schrift.",
+            "Hinweise erscheinen frei schwebend ohne Kasten: allgemeine ruhig unter der Blickmitte, Meldungen zu Marker und Messung bei der Stelle, Gestenhinweise bei der Hand; sie blenden nach etwa 4 Sekunden aus. Bei der ersten offenen App steht einmal «Nach links wischen: schliessen (rechte Hand offen).»",
+            "Zögert man mit beiden Handflächen oben, zeigen zwei Geisterhände die Hebegeste; bei der ersten offenen App zeigt eine Geisterhand einmal das Wegwischen."
           ],
-          "erwartung": "Die Hebegeste löst nur mit beiden Händen, offen, Handflächen oben und deutlich nach oben aus – nie beim Zeigen, Pinch, Wischen oder Springen. Die Symbole stehen fest im Raum, in Griffweite auf Brust- bis Schulterhöhe, ohne gemeinsame Grundlinie; Symbole und Tooltips überdecken sich nie. Das Wegschieben löst nur mit beiden Armen aus der Mitte nach aussen aus, nicht mit einem einhändigen Wisch und nicht mit der Hebegeste. Das Glas ist im hellen Sitzungsraum dunkler getönt als beim Begehen, die weisse Schrift bleibt lesbar; Marker und Linien hinter dem Fenster scheinen nur schwach durch. Hinweise stehen nie über dem Fenster, den Symbolen, den Tooltips oder der Karte einer Aufgabe.",
+          "erwartung": "Die Hebegeste löst nur mit beiden Händen, offen, Handflächen oben und deutlich nach oben aus – nie beim Zeigen, Pinch, Wischen oder Springen. Das Feld steht frontal in der Blickrichtung beim Heben fest im Raum; Symbole und Tooltips überdecken sich nie. Ein Symbol wählt die Hand, die am tiefsten eindringt; während Hebegeste und Wegwischen und 0.6 s danach wählt keine Berührung. Das Wegwischen löst nur mit der offenen rechten Hand, Handfläche nach links, von rechts nach links aus – nicht mit Pinch, nicht beim Drehen, Springen oder mit der Hebegeste; was die Hand zu Beginn überstreicht, bleibt das Ziel bis zum Ende der Geste. Jede App ist an ihrem Pastellton erkennbar, die Schrift bleibt hell wie dunkel gut lesbar. Hinweise stehen nie über einem Fenster, den Symbolen, den Tooltips, der Karte einer Aufgabe oder einer Geisterhand, am Tisch nicht über dem Modell.",
           "pruefpunkte": [
-            "Beide Handflächen nach oben und anheben: die Symbole steigen mit den Händen und bleiben danach stehen, auch wenn man den Kopf dreht.",
+            "Beide Handflächen nach oben und anheben: die Symbole steigen mit den Händen frontal vor dem Kopf auf, etwa 60 cm vor den Augen, höchstens drei Reihen, die oberste nicht über Augenhöhe; sie bleiben stehen, auch wenn man den Kopf dreht.",
             "Nur eine Hand, eine Faust oder ein Pinch beim Anheben: keine Symbole.",
-            "Zeigefinger vor ein Symbol: Punkt, feine Linie, nach kurzer Zeit der Name darunter.",
-            "Antippen öffnet die App in Griffweite, die Symbole sind weg; am Sitzungstisch steht das Fenster neben dem Tisch.",
-            "Wegschieben mit beiden Armen: die Symbole gleiten beidseitig aus dem Bild; ein einhändiger Wisch schiebt sie nicht weg.",
-            "Ein Hinweis (z. B. nach einem Etagenwechsel) steht unter der Blickmitte, ohne Kasten, und ist vor hellen und dunklen Flächen lesbar.",
-            "Am PC: werkzeuge\\quest_pruefen.ps1 meldet «Apps=ok (Symbole …)» und «Symbole=ok (… Tooltip …, Berührung öffnet «Messen» ja, Wegschieben: laufen mit ja, weg ja …)»."
+            "Zeigefinger vor ein Symbol: Punkt, feine Linie, nach kurzer Zeit der Name darüber.",
+            "Ein Symbol mit der Handfläche (bzw. dem Handrücken, einem Finger) berühren öffnet die App frontal vor dem Feld; das Feld weicht zurück und wird blasser.",
+            "Das offene Fenster nach links wegwischen: es gleitet mit der Hand und schliesst; das Feld kommt wieder nach vorn.",
+            "Das Symbolfeld nach links wegwischen: die Symbole gleiten nach links aus dem Bild. Das Ausholen nach rechts und Pinch + Wisch nach vorn lösen nichts aus.",
+            "Während einer Prüfaufgabe die Karte wegwischen: die Aufgabe ist abgebrochen, am PC steht ein Abbruch.",
+            "Jede App hat ihren Pastellton (Etagen hellblau, Messen mint, Marker apricot, Tisch lavendel, Begehen sand, Status graublau), die Schrift ist dunkel und gut lesbar; in dunkler Umgebung die dunkle Fassung, ebenfalls lesbar.",
+            "Die Symbole sind dieselben wie in KICAD; mit «oberflaeche.symbole» = «revit» erscheinen die farbigen Revit-Symbole.",
+            "Ein Hinweis (z. B. nach einem Etagenwechsel) steht unter der Blickmitte, ohne Kasten, nie über Fenster, Symbolen oder Geisterhänden, und ist vor hellen und dunklen Flächen lesbar.",
+            "Am PC: werkzeuge\\quest_pruefen.ps1 meldet «Apps=ok (… Pinch + Wisch nach vorn ohne Wirkung ja; Wegwischen schliesst die App ja …)» und «Symbole=ok (… Handfläche an «Messen» berührt, App «Messen» offen und Feld dahinter ja; Wegwischen: App läuft mit ja, App weg und Feld vorn ja, Symbole laufen mit ja, weg ja …)»."
           ],
           "bild": {
             "projekt": "beispiel",
-            "ansicht": "Prüfbilder der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): hebe_halb.jpg, symbole.jpg, symbol_tooltip.jpg, app_nach_wahl.jpg, wegschieben_halb.jpg, hinweis_begehen.jpg, hinweis_sitzung.jpg, symbole_sitzung.jpg, sitzung_umgebung.jpg",
-            "zustand": "Begehen: Hebegeste halb, Symbole ganz da, Finger vor «Messen» mit Tooltip, App «Messen» nach der Wahl, Wegschieben halb; Sitzungsraum hell mit Symbolen und Hinweis"
+            "ansicht": "Prüfbilder der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): hebe_halb.jpg, symbole.jpg, symbole_revit.jpg, symbol_tooltip.jpg, symbol_hand.jpg, app_nach_wahl.jpg, app_wegwischen_halb.jpg, wegwischen_halb.jpg, glas_marker.jpg, glas_tisch.jpg, farben_dunkel_symbole.jpg, farben_dunkel_etagen.jpg, farben_dunkel_tisch.jpg, hinweis_begehen.jpg, hinweis_sitzung.jpg, symbole_sitzung.jpg, sitzung_umgebung.jpg",
+            "zustand": "Begehen stehend: Hebegeste halb, Symbolfeld ganz da, Finger vor «Messen» mit Tooltip, Handfläche an «Messen», App «Messen» offen mit dem Feld dahinter, App bzw. Symbole halb weggewischt; Fenster «Problem-Marker» und «Tisch»; dunkle Fassung; Sitzungsraum sitzend mit Symbolfeld über dem Tisch"
           },
           "quelle": [
-            "src/Hlks.Xr/Bedienung/HebeGeste.cs (Hebegeste, Wegschieben), AppSymbole.cs (Lage, Hineinheben, Zeiger, Tooltip), Hinweise.cs (schwebende Hinweise), Glas.cs (Glas, Tönung), Geisterhand.cs",
-            "src/Hlks.Quest/SymbolApps.cs, GlasApps.cs, GlasZeichner.cs (Schein), QuestApp.Apps.cs, QuestApp.Hinweise.cs, AufgabenKarte.cs",
-            "kataloge/xr_stellschrauben.json (hebe.*, schieben.*, symbole.*, zeiger.tooltip_s, hinweis.dauer_s, anzeige.glas_*), xr_varianten.json (symbole, umgebung)",
-            "tests/Hlks.Xr.Tests/V1aSymboleTests.cs, V1aGlasTests.cs",
+            "src/Hlks.Xr/Bedienung/HebeGeste.cs (Hebegeste, Stellschrauben des Felds), Wegwischen.cs (Geste und Ziel), HandBeruehrung.cs (Berührung mit der Hand), AppSymbole.cs (Feld, Hineinheben, Zurückweichen, Zeiger, Tooltip), AppFarben.cs (Pastellreihe), GlasSymbole.cs (Symbole aus KICAD), Hinweise.cs (schwebende Hinweise), Glas.cs, Geisterhand.cs",
+            "src/Hlks.Quest/SymbolApps.cs, GlasApps.cs, GlasZeichner.cs, Wegwischbar.cs (Einhängepunkt, auch für den PC-Bildschirm V1c), QuestApp.Apps.cs, QuestApp.Hinweise.cs, QuestApp.Labor.cs (Karte wegwischen), AufgabenKarte.cs, Assets/symbole (Texturen)",
+            "kataloge/xr_farben.json (App-Pastellreihe), xr_stellschrauben.json (hebe.*, wegwischen.*, symbole.*, zeiger.tooltip_s, hinweis.dauer_s, anzeige.glas_*), xr_varianten.json (symbole, symbolwahl, umgebung)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/symbole.js, symbole-revit.js (Quelle der Symbole), werkzeuge/quest_symbole.mjs (Texturen mit Edge)",
+            "tests/Hlks.Xr.Tests/V1aSymboleTests.cs, V1aFarbenTests.cs, V1aGlasTests.cs, P5bBedienungTests.cs; src/Hlks.Web/wwwroot/js/oberflaeche/quest-symbole.test.mjs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1a»)"
           ],
-          "hinweis": "Vorgaben Christian 24.10.2026 (Hebegeste, Symbole verteilt, Registerleiste entfällt, Wegschieben, Hinweise frei schwebend). Alle Schwellen und Masse (15 cm, 0.9 s, 45°, Symbole 0.42 m vor und 0.32 m unter den Augen, Tooltip nach 0.6 s, Hinweise 4 s) sind Annahmen V1a und Stellschrauben im XR-Labor. Nur mit der Brille zu prüfen: ob die Gesten zuverlässig und ohne Fehlauslösung erkannt werden, Griffweite der Symbole, Lesbarkeit von Glas und Hinweisen."
+          "hinweis": "Vorgaben Christian 24.10.2026 (Hebegeste; Symbolfeld frontal 60 cm vor den Augen, 0.6 m hoch, höchstens 3 Reihen; Apps bleiben stehen; Berührung mit der ganzen Hand; App-Pastellreihe; Symbolsprache wie im CAD; eine Wegwisch-Geste von rechts nach links, auch für offene Glas-Apps; Pinch + Wisch nach vorn entfällt; Hinweise frei schwebend). Die Pastelltöne für Ebenen, Gesten, Labor und Vorgabe sowie die dunkle Fassung sind Vorschläge. Alle Schwellen und Masse (Hebegeste 15 cm in 0.9 s, Wegwischen 18 cm in 0.6 s, Feldmitte 0.32 m unter den Augen, Berührungsrand 1 cm, Sperre 0.6 s, Tooltip nach 0.6 s, Hinweise 4 s) sind Annahmen V1a und Stellschrauben im XR-Labor. Die Knöpfe im Fenster bleiben bei der Fingerspitze (Annahme). Nur mit der Brille zu prüfen: ob die Gesten zuverlässig und ohne Fehlauslösung erkannt werden, Griffweite des Felds, Lesbarkeit von Glas, Farben und Hinweisen."
         },
         {
           "id": "zb-quest-v1a-messen",

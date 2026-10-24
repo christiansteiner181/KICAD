@@ -43,6 +43,16 @@ public sealed class VrAuftragSpeicher
 
     public VrAuftragSpeicher(BenutzerEinstellungen benutzer) { this.benutzer = benutzer; }
 
+    /// <summary>
+    /// Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): der Symbolsatz des Benutzers (Benutzereinstellung «oberflaeche.symbole»,
+    /// «strich» oder «revit»); der Live-Kanal schickt ihn mit «willkommen», damit die App dieselben Symbole zeigt wie KICAD. Unlesbar oder unbekannt: «strich».
+    /// </summary>
+    public string Symbolsatz()
+    {
+        try { return benutzer.Hole("oberflaeche.symbole") is JsonValue v && v.TryGetValue<string>(out var s) && s == "revit" ? "revit" : "strich"; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return "strich"; }
+    }
+
     /// <summary>Id (Guid) oder Kennzeichen eines Elements; sonst Fehler.</summary>
     public static bool IdGueltig(string? t) => t is not null && (IdMuster.IsMatch(t) || KennzeichenMuster.IsMatch(t));
 

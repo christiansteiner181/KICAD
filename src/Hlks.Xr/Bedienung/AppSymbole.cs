@@ -1,13 +1,18 @@
-// Quest App V1a, Vorgabe Christian 24.10.2026 (nach den Prüfbildern 01): frei schwebende App-Symbole – «die symbole müssen in griff weite sein. angewählt werden sie
-// durch berührung. finger zeigen den pointer mit tooltip»; «symbole nicht in einer leiste sondern verteilt». Rein, ohne StereoKit; die Gesten in HebeGeste.cs, gezeichnet
-// in src/Hlks.Quest/SymbolApps.cs.
-//   - Lage der Symbole (AppSymbole.Plaetze): locker verteilt vor dem Körper in Griffweite, verschiedene Höhen, leicht gestaffelte Tiefe, keine gemeinsame Grundlinie;
-//     je App immer derselbe Platz (Muskelgedächtnis). Mindestabstand: Symbole und Tooltips überlappen nie (Mitten weit über 60 pt, Apple HIG «Buttons»: «at least
-//     60 pts apart»). Variante «symbole» = «verteilt» (Vorgabe) | «bogen» (zum Vergleich im Labor). Im Raum fest, nicht am Kopf.
+// Quest App V1a, Vorgaben Christian 24.10.2026: frei schwebende App-Symbole – «angewählt werden sie durch berührung. finger zeigen den pointer mit tooltip»;
+// «symbole nicht in einer leiste sondern verteilt»; nach den Bildern 02: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm und über eine höhe
+// von ca. 0.6m verteilt sein. vorzugsweise maximal 3 reihig.» Rein, ohne StereoKit; die Gesten in HebeGeste.cs, die Berührung mit der ganzen Hand in
+// HandBeruehrung.cs, gezeichnet in src/Hlks.Quest/SymbolApps.cs.
+//   - Lage (AppSymbole.Plaetze): ein Feld frontal in Körperrichtung (Gierwinkel des Kopfs beim Auslösen, ohne Nicken), «symbole.abstand_m» vor den Augen (Bezugspunkt:
+//     Mitte zwischen den Augen, waagrecht gemessen), senkrechte Mitte «symbole.hoehe_m» unter den Augen, von der obersten zur untersten Reihe «symbole.feldhoehe_m»,
+//     höchstens «symbole.reihen» Reihen. Die Reihen sind locker gegeneinander versetzt, jedes Symbol leicht in Höhe und Tiefe verschoben (keine Leiste, keine starre
+//     Matrix). Je App immer derselbe Platz im Feld (Muskelgedächtnis). Die Breite folgt aus der Zahl der Apps und dem Spaltenabstand. Ist eine Untergrenze gesetzt
+//     (Tischplatte am Sitzungstisch), rückt die unterste Reihe darüber und das Feld wird niedriger. Im Raum fest, zum Kopf gewandt.
+//     Variante «symbole» = «verteilt» (Vorgabe) | «bogen» (eine Reihe im Bogen, zum Vergleich im Labor).
 //   - Zeiger mit Tooltip (Zeiger): ein gestreckter Zeigefinger nahe an einem Symbol bzw. Knopf zeigt einen Punkt darauf und eine feine Linie von der Fingerspitze;
-//     nach einer Verweilzeit der Name als Tooltip unter dem Ziel. Apple HIG «Buttons» (visionOS): «the system displays a tooltip after people hover over a button for
-//     a moment»; «Eyes»: «like when a tooltip appears below a button, a slightly longer delay can work well» (abgerufen 24.10.2026).
-// Alle Zahlen sind Annahmen V1a (Stellschrauben symbole.*, zeiger.tooltip_s), keine Normwerte.
+//     nach einer Verweilzeit der Name als Tooltip. Apple HIG «Buttons» (visionOS): «the system displays a tooltip after people hover over a button for a moment»
+//     (abgerufen 24.10.2026). Der Tooltip steht ÜBER dem Ziel (Befund Prüfbilder 02: darunter verdeckte ihn die zeigende Hand; HIG «Eyes» nennt «below» für den Blick,
+//     mit der Hand zeigt man von unten).
+// Alle Zahlen sind Annahmen V1a bzw. Christians Werte (Stellschrauben symbole.*, zeiger.tooltip_s), keine Normwerte.
 
 namespace Hlks.Xr.Bedienung;
 
@@ -16,63 +21,97 @@ public sealed record SymbolPlatz(string Id, TabletPose Lage);
 
 public static class AppSymbole
 {
-    /// <summary>Durchmesser eines Symbols (pt), Annahme V1a: grosse runde Ziele für den Finger (visionOS-Startseite; Fingerziele grösser als 60 pt).</summary>
-    public const double DurchmesserPt = 72;
+    /// <summary>Durchmesser eines Symbols (pt), Annahme V1a: grosse runde Ziele für die Hand (visionOS-Startseite; im Feld 0.6 m vor den Augen etwa 8.6 cm, gut 8°).</summary>
+    public const double DurchmesserPt = 96;
     /// <summary>So weit unter ihrem Platz beginnen die Symbole beim Hineinheben (m).</summary>
     public const double HubM = 0.28;
-    /// <summary>Tooltip: Höhe und Lücke unter dem Symbol (pt).</summary>
+    /// <summary>Tooltip: Höhe und Lücke über dem Symbol (pt).</summary>
     public const double TooltipHoehePt = 30, TooltipLueckePt = 8;
     /// <summary>Ausblenden (s).</summary>
     public const double AusblendenS = 0.25;
 
     /// <summary>
-    /// Plätze «verteilt» in m bei Streuung 1 (seitlich nach rechts, hoch, zum Auge hin) um die Mitte; je App fest. «ort» (Begehen) und «tisch» (Sitzungsraum) teilen
-    /// sich einen Platz. Kleinster Mittenabstand 0.14 m (Durchmesser 6.5 cm, Tooltip darunter).
+    /// Feste Reihenfolge der Plätze im Feld (Zeile für Zeile von oben links): gleiche App immer am gleichen Platz. «ort» (Begehen) und «tisch» (Sitzungsraum) teilen
+    /// sich einen Platz. Apps, die hier fehlen, bekommen Reserveplätze in einer Spalte rechts daneben.
     /// </summary>
-    public static readonly IReadOnlyDictionary<string, Vec3> Verteilt = new Dictionary<string, Vec3>(StringComparer.Ordinal)
-    {
-        ["status"] = new(-0.21, 0.07, 0.03),
-        ["etagen"] = new(-0.08, 0.15, 0.0),
-        ["messen"] = new(0.07, 0.08, -0.03),
-        ["marker"] = new(0.20, 0.14, 0.02),
-        ["ort"] = new(-0.13, -0.08, -0.02),
-        ["tisch"] = new(-0.13, -0.08, -0.02),
-        ["ebenen"] = new(0.14, -0.06, 0.01),
-    };
+    public static IReadOnlyList<string> Reihenfolge => reihenfolge;
+    static readonly string[] reihenfolge = ["etagen", "ort", "messen", "marker", "status", "ebenen"];
 
-    /// <summary>Reserveplätze für Apps ohne festen Platz (in dieser Reihenfolge).</summary>
-    static readonly Vec3[] Reserve = [new(0.0, -0.02, 0.04), new(0.29, 0.03, -0.02), new(-0.30, -0.04, 0.0)];
+    /// <summary>Waagrechter Abstand der Spalten (m, × Streuung), Annahme V1a: Symbole (6.5 cm) und Tooltips (darüber) überlappen nie, und eine flache Hand (8 cm)
+    /// berührt nicht zwei Nachbarn zugleich tief.</summary>
+    public const double SpalteM = 0.2;
+    /// <summary>Lockerer Versatz der Reihen (Anteil des Spaltenabstands, je Reihe von oben) – keine starre Matrix.</summary>
+    static readonly double[] ReiheVersatz = [-0.18, 0.32, -0.05];
+    /// <summary>Leichte Verschiebung je Platz in der Höhe (m, nie über die Reihe hinaus nach oben in der obersten Reihe) und Tiefe (m, zum Auge hin).</summary>
+    static readonly (double Hoch, double Vor)[] Wackeln = [(-0.012, 0.02), (-0.03, -0.015), (0.022, 0.0), (-0.018, 0.025), (0.015, -0.02), (-0.025, 0.012)];
+    /// <summary>Kleinste Feldhöhe (m), wenn eine Untergrenze (Tischplatte) das Feld zusammenschiebt.</summary>
+    public const double FeldMinM = 0.2;
 
     /// <summary>Durchmesser in m.</summary>
     public static double Durchmesser(GlasMasse m) => m.M(DurchmesserPt);
 
+    /// <summary>Platz im Feld je Id: (Reihe von oben, Spalte, Spalten insgesamt) bei r Reihen; Reserve rechts daneben in der Reihenfolge der Ids.</summary>
+    public static Dictionary<string, (int Reihe, int Spalte)> Raster(IReadOnlyList<string> ids, int reihen, out int spalten)
+    {
+        var r = Math.Clamp(reihen, 1, 3);
+        var feste = (reihenfolge.Length + r - 1) / r;
+        var aus = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
+        var reserve = 0;
+        foreach (var id in ids)
+        {
+            var k = Array.IndexOf(reihenfolge, id == "tisch" ? "ort" : id);
+            if (k >= 0) aus[id] = (k / feste, k % feste);
+            else { aus[id] = (reserve % r, feste + reserve / r); reserve++; }
+        }
+        spalten = feste + (reserve + r - 1) / r;
+        return aus;
+    }
+
     /// <summary>
-    /// Plätze der Symbole: Mitte <see cref="SymbolEinstellungen.AbstandM"/> vor dem Auge (waagrecht in Blickrichtung) und <see cref="SymbolEinstellungen.HoeheM"/>
-    /// darunter; «verteilt» nach der Tabelle oben (× Streuung), «bogen» in einer Reihe im Bogen um das Auge (Mitten 0.15 m × Streuung). Jedes Symbol ist zum Auge gedreht.
+    /// Plätze der Symbole (siehe Dateikopf): Feld frontal in Blickrichtung blickGieren (nur Gieren), <see cref="SymbolEinstellungen.AbstandM"/> vor dem Auge, senkrechte
+    /// Mitte <see cref="SymbolEinstellungen.HoeheM"/> darunter, Höhe <see cref="SymbolEinstellungen.FeldHoeheM"/>, <see cref="SymbolEinstellungen.Reihen"/> Reihen;
+    /// untergrenze = tiefste Höhe einer Symbolmitte (z. B. über der Tischplatte) oder null. «bogen»: eine Reihe im Bogen auf der Höhe der Mitte. Jedes Symbol ist zum
+    /// Auge gedreht.
     /// </summary>
-    public static List<SymbolPlatz> Plaetze(IReadOnlyList<string> ids, Vec3 auge, double blickGieren, SymbolEinstellungen e, GlasMasse m)
+    public static List<SymbolPlatz> Plaetze(IReadOnlyList<string> ids, Vec3 auge, double blickGieren, SymbolEinstellungen e, GlasMasse m, double? untergrenze = null)
     {
         var vor = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
         var rechts = HebeGeste.Rechts(blickGieren);   // rechts vom Blick (Blick −z → rechts +x)
-        var mitte = auge + vor * e.AbstandM + new Vec3(0, -e.HoeheM, 0);
         var d = Durchmesser(m);
+        var spalte = SpalteM * e.Streuung;
         var aus = new List<SymbolPlatz>();
-        int reserve = 0;
-        for (int i = 0; i < ids.Count; i++)
+        if (e.Verteilung == Varianten.SymboleBogen)
         {
-            Vec3 p;
-            if (e.Verteilung == Varianten.SymboleBogen)
+            for (int i = 0; i < ids.Count; i++)
             {
-                var w = (i - (ids.Count - 1) / 2.0) * 0.15 * e.Streuung / Math.Max(0.1, e.AbstandM);
+                var w = (i - (ids.Count - 1) / 2.0) * spalte / Math.Max(0.1, e.AbstandM);
                 var r = new Vec3(Math.Cos(blickGieren - w), 0, -Math.Sin(blickGieren - w));
-                p = auge + r * e.AbstandM + new Vec3(0, -e.HoeheM, 0);
+                var p = auge + r * e.AbstandM + new Vec3(0, -e.HoeheM, 0);
+                aus.Add(new SymbolPlatz(ids[i], XrTabletLogik.TabletLageAus(p, auge - p) with { B = d, H = d }));
             }
-            else
-            {
-                var v = Verteilt.TryGetValue(ids[i], out var f) ? f : Reserve[Math.Min(reserve++, Reserve.Length - 1)];
-                p = mitte + (rechts * v.X + new Vec3(0, v.Y, 0) - vor * v.Z) * e.Streuung;
-            }
-            aus.Add(new SymbolPlatz(ids[i], XrTabletLogik.TabletLageAus(p, auge - p) with { B = d, H = d }));
+            return aus;
+        }
+        var reihen = Math.Clamp(e.Reihen, 1, 3);
+        var raster = Raster(ids, reihen, out var spalten);
+        // Höhe der obersten und untersten Reihe; eine Untergrenze schiebt das Feld zusammen (nie unter FeldMinM)
+        var oben = auge.Y - e.HoeheM + (reihen > 1 ? e.FeldHoeheM / 2 : 0);
+        var unten = auge.Y - e.HoeheM - (reihen > 1 ? e.FeldHoeheM / 2 : 0);
+        if (untergrenze is { } u && unten < u)
+        {
+            unten = u;
+            oben = Math.Max(oben, unten + (reihen > 1 ? FeldMinM : 0));
+        }
+        var mitte = auge + vor * e.AbstandM;
+        foreach (var id in ids)
+        {
+            var (reihe, sp) = raster[id];
+            var platz = reihe * 3 + sp;   // Index für die feste Verschiebung (unabhängig von Reserven: gleiche App, gleicher Platz)
+            var (hoch, nachVorn) = Wackeln[platz % Wackeln.Length];
+            if (reihe == 0) hoch = Math.Min(0, hoch);   // die oberste Reihe nie höher
+            var y = reihen > 1 ? oben - (oben - unten) * reihe / (reihen - 1) : oben;
+            var x = (sp - (spalten - 1) / 2.0 + ReiheVersatz[reihe % ReiheVersatz.Length]) * spalte;
+            var p = new Vec3(mitte.X, y + hoch, mitte.Z) + rechts * x + vor * -nachVorn;
+            aus.Add(new SymbolPlatz(id, XrTabletLogik.TabletLageAus(p, auge - p) with { B = d, H = d }));
         }
         return aus;
     }
@@ -80,6 +119,32 @@ public static class AppSymbole
     /// <summary>Mitte der Plätze (dort öffnet sich die gewählte App).</summary>
     public static Vec3 Mitte(IReadOnlyList<SymbolPlatz> p) =>
         p.Count == 0 ? Vec3.Null : p.Aggregate(Vec3.Null, (s, x) => s + x.Lage.Mitte) * (1.0 / p.Count);
+
+    // ---------------------------------------------------------------------------------------------------- Nach der Wahl (Variante «symbolwahl» = «stehen»)
+    // Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen.» Auslegung Hauptlauf (Christian kann berichtigen): die gewählte App öffnet frontal etwas
+    // näher, das Symbolfeld weicht dahinter leicht in die Tiefe zurück und wird gedämpft (visionOS: der Hintergrund weicht zurück); schliesst die App, kommt es wieder nach
+    // vorn. Annahmen V1a.
+
+    /// <summary>Die App steht so viel (m) näher als das Feld; das Feld weicht so weit (m) zurück und wird so gedämpft (Deckkraft).</summary>
+    public const double AppVorM = 0.15, ZurueckM = 0.12, GedaempftDeckkraft = 0.45;
+
+    /// <summary>
+    /// Platz der gewählten App vor dem Feld: frontal in Richtung des Felds (Gieren beim Holen), <see cref="AppVorM"/> näher als das Feld, Mitte auf der Höhe der
+    /// senkrechten Mitte des Felds.
+    /// </summary>
+    public static Vec3 FensterVorFeld(Vec3 auge, double blickGieren, SymbolEinstellungen e) =>
+        auge + new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren)) * Math.Max(0.3, e.AbstandM - AppVorM) + new Vec3(0, -e.HoeheM, 0);
+
+    /// <summary>Ein Symbol weicht um k (0 … 1) × <see cref="ZurueckM"/> entlang der Sichtlinie vom Auge zurück (im Blick an derselben Stelle, nur kleiner).</summary>
+    public static Vec3 Zurueck(Vec3 p, Vec3 auge, double k)
+    {
+        var d = p - auge;
+        var l = d.Laenge;
+        return l < 1e-6 ? p : auge + d * ((l + ZurueckM * Math.Clamp(k, 0, 1)) / l);
+    }
+
+    /// <summary>Deckkraft des Felds, wenn es um k (0 … 1) zurückgewichen ist.</summary>
+    public static double Gedaempft(double k) => 1 - (1 - GedaempftDeckkraft) * Math.Clamp(k, 0, 1);
 
     /// <summary>
     /// Hineinheben: Fortschritt f (0 … 1) der Geste bzw. der Bewegung danach → Versatz nach unten (m, positiv = tiefer) und Deckkraft je Symbol; jedes steigt etwas
@@ -92,29 +157,28 @@ public static class AppSymbole
         return ((1 - k) * HubM, k);
     }
 
-    /// <summary>Beim Wegschieben laufen die Symbole mit so viel des Wegs der Hand zur Seite (mehr als die Hand: sie «fliegen» aus dem Bild), Annahme V1a.</summary>
-    public const double SchiebenFaktor = 1.4;
-    /// <summary>Nach dem Wegschieben gleiten sie noch so weit (m) nach aussen; ab so viel (m) seitlich sind sie ganz verblasst.</summary>
-    public const double WegschiebenM = 0.6, VerblasstM = 0.7;
+    /// <summary>Beim Wegwischen laufen die Symbole mit so viel des Wegs der Hand nach links (mehr als die Hand: sie «fliegen» aus dem Bild), Annahme V1a.</summary>
+    public const double WischFaktor = 1.4;
+    /// <summary>Nach dem Wegwischen gleiten sie noch so weit (m) nach links; ab so viel (m) seitlich sind sie ganz verblasst.</summary>
+    public const double NachWischM = 0.6, VerblasstM = 0.7;
 
     /// <summary>
-    /// Versatz eines Symbols zur Seite beim Wegschieben (m, positiv = nach rechts): links der Mitte (x &lt; 0) mit dem Weg der linken Hand nach links, rechts der Mitte
-    /// mit dem der rechten nach rechts; nach dem Ereignis (danach 0 … 1) gleiten sie zusätzlich <see cref="WegschiebenM"/> weiter.
+    /// Versatz der Symbole nach links beim Wegwischen (m, positiv = nach links; Christian 24.10.2026: «wischbewegung von rechts nach links»): mit dem Weg der Hand nach
+    /// links (× <see cref="WischFaktor"/>), nach dem Ereignis (danach 0 … 1) zusätzlich <see cref="NachWischM"/> weiter.
     /// </summary>
-    public static double Seitlich(double x, double wegLinks, double wegRechts, double danach) =>
-        x < 0 ? -(wegLinks * SchiebenFaktor + WegschiebenM * danach) : wegRechts * SchiebenFaktor + WegschiebenM * danach;
+    public static double NachLinks(double wegHand, double danach) => Math.Max(0, wegHand) * WischFaktor + NachWischM * Math.Clamp(danach, 0, 1);
 
-    /// <summary>Deckkraft nach dem Versatz zur Seite (1 = am Platz, 0 = ganz aus dem Bild geschoben).</summary>
+    /// <summary>Deckkraft nach dem Versatz zur Seite (1 = am Platz, 0 = ganz aus dem Bild gewischt).</summary>
     public static double SeitlichDeckkraft(double seitlich) => 1 - Math.Clamp(Math.Abs(seitlich) / VerblasstM, 0, 1);
 
     /// <summary>Breite eines Tooltips (m) für den Text (Schrift «klein», Rand je Seite 12 pt).</summary>
     public static double TooltipBreite(string text, GlasMasse m) => text.Length * m.Schrift(GlasStil.KleinPt) * 0.6 + m.M(24);
 
-    /// <summary>Lage des Tooltips unter dem Ziel (HIG «Eyes»: «a tooltip appears below a button»), 4 mm davor.</summary>
+    /// <summary>Lage des Tooltips über dem Ziel, 4 mm davor (Befund Prüfbilder 02: unter dem Ziel verdeckte ihn die zeigende Hand).</summary>
     public static TabletPose TooltipLage(TabletPose ziel, string text, GlasMasse m)
     {
         double h = m.M(TooltipHoehePt), b = TooltipBreite(text, m);
-        return ziel with { Mitte = ziel.Mitte - ziel.Oben * (ziel.H / 2 + m.M(TooltipLueckePt) + h / 2) + ziel.Normale * 0.004, B = b, H = h };
+        return ziel with { Mitte = ziel.Mitte + ziel.Oben * (ziel.H / 2 + m.M(TooltipLueckePt) + h / 2) + ziel.Normale * 0.004, B = b, H = h };
     }
 }
 

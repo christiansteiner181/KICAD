@@ -21,6 +21,10 @@ internal static class T
 
     public static Vec3 V(double x, double y, double z) => new(x, y, z);
 
+    /// <summary>Wurzel des Repositorys aus dem Pfad der aufrufenden Quelldatei beim Übersetzen (tests/Hlks.Xr.Tests/*.cs) – die Bauausgabe liegt oft ausserhalb.</summary>
+    public static string Repo([System.Runtime.CompilerServices.CallerFilePath] string datei = "") =>
+        Path.GetFullPath(Path.Combine(Path.GetDirectoryName(datei)!, "..", ".."));
+
     /// <summary>Gleiche Elemente in gleicher Reihenfolge (wie deepEqual auf Listen).</summary>
     public static void Gleich<TT>(IEnumerable<TT> erwartet, IEnumerable<TT> ist) => Assert.Equal(erwartet.ToArray(), ist.ToArray());
 

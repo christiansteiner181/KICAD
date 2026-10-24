@@ -11,7 +11,8 @@
     { "id": "pinch", "titel": "Pinch und Fang" },
     { "id": "komfort", "titel": "Komfort" },
     { "id": "sitzung", "titel": "Sitzungsraum" },
-    { "id": "hebe", "titel": "Hebegeste und Wegschieben (App-Symbole holen und wegschicken)" },
+    { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
+    { "id": "wegwischen", "titel": "Wegwischen (schliessen und wegschicken: rechte Hand von rechts nach links)" },
     { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" }
   ],
   "muster": [
@@ -238,62 +239,80 @@
       "herkunft": "Annahme V1a"
     },
     {
-      "schluessel": "schieben.startabstand_m", "gruppe": "hebe", "titel": "Wegschieben: Hände am Anfang", "status": "app",
-      "beschreibung": "Beim Wegschieben der Symbole beginnen beide Hände nahe der Mitte vor dem Körper – höchstens so weit auseinander (quer zum Blick).",
-      "art": "zahl", "einheit": "m", "min": 0.1, "max": 0.6, "schritt": 0.01, "vorgabe": 0.3,
-      "herkunft": "Annahme V1a; Christian 24.10.2026: «aus der mitte heraus seitwärtswischen mit beiden armen und nach aussen gedrehten händen schiebt die symbole beidseitig aus dem bild»"
+      "schluessel": "wegwischen.weg_m", "gruppe": "wegwischen", "titel": "Wegwischen: Weg nach links", "status": "app",
+      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links) von rechts nach links wischen. Sie schliesst die offene App bzw. die Karte einer Prüfaufgabe (Abbruch), sonst schickt sie die App-Symbole weg.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.18,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»"
     },
     {
-      "schluessel": "schieben.weg_m", "gruppe": "hebe", "titel": "Wegschieben: Weg", "status": "app",
-      "beschreibung": "So weit muss jede Hand nach aussen wischen, damit die Symbole beidseitig aus dem Bild gehen.",
-      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.5, "schritt": 0.01, "vorgabe": 0.15,
-      "herkunft": "Annahme V1a (gleich wie der Mindestweg eines Wischs)"
-    },
-    {
-      "schluessel": "schieben.zeit_s", "gruppe": "hebe", "titel": "Wegschieben: Zeit", "status": "app",
-      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein.",
-      "art": "zahl", "einheit": "s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.8,
+      "schluessel": "wegwischen.zeit_s", "gruppe": "wegwischen", "titel": "Wegwischen: Zeit", "status": "app",
+      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein (ein Wischen, kein Schieben).",
+      "art": "zahl", "einheit": "s", "min": 0.2, "max": 2, "schritt": 0.05, "vorgabe": 0.6,
       "herkunft": "Annahme V1a"
     },
     {
-      "schluessel": "schieben.handflaeche_grad", "gruppe": "hebe", "titel": "Wegschieben: Handflächen nach aussen", "status": "app",
-      "beschreibung": "Die Handflächen zeigen höchstens so weit neben waagrecht nach aussen (links nach links, rechts nach rechts).",
+      "schluessel": "wegwischen.handflaeche_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Handfläche nach links", "status": "app",
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben waagrecht nach links.",
       "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 50,
       "herkunft": "Annahme V1a"
     },
     {
-      "schluessel": "schieben.gleichzeitig_s", "gruppe": "hebe", "titel": "Wegschieben: beide Arme gleichzeitig", "status": "app",
-      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander nach aussen zu wischen.",
-      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.35,
+      "schluessel": "wegwischen.richtung_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Richtung", "status": "app",
+      "beschreibung": "Die Bewegung weicht höchstens so weit von «nach links» ab (nicht nach oben, unten oder vorn). Ausholen nach rechts löst nichts aus.",
+      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 1, "vorgabe": 35,
       "herkunft": "Annahme V1a"
     },
     {
-      "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand der Symbole", "status": "app",
-      "beschreibung": "So weit vor den Augen stehen die App-Symbole (Mitte), in Griffweite.",
-      "art": "zahl", "einheit": "m", "min": 0.25, "max": 0.7, "schritt": 0.01, "vorgabe": 0.42,
-      "herkunft": "Annahme V1a; Christian 24.10.2026: «die symbole müssen in griff weite sein»"
+      "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand des Symbolfelds", "status": "app",
+      "beschreibung": "So weit vor den Augen steht das Feld der App-Symbole, waagrecht in Körperrichtung gemessen (Bezug: Mitte zwischen den Augen).",
+      "art": "zahl", "einheit": "m", "min": 0.3, "max": 1.0, "schritt": 0.01, "vorgabe": 0.6,
+      "herkunft": "Christian 24.10.2026: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm … verteilt sein»"
     },
     {
-      "schluessel": "symbole.hoehe_m", "gruppe": "symbole", "titel": "Höhe der Symbole", "status": "app",
-      "beschreibung": "So weit unter den Augen steht die Mitte der Symbole (Brust bis Schulter).",
-      "art": "zahl", "einheit": "m", "min": 0.1, "max": 0.6, "schritt": 0.01, "vorgabe": 0.32,
-      "herkunft": "Annahme V1a"
+      "schluessel": "symbole.hoehe_m", "gruppe": "symbole", "titel": "Mitte des Symbolfelds", "status": "app",
+      "beschreibung": "So weit unter den Augen liegt die senkrechte Mitte des Felds (zwischen Brust und Augenhöhe; die oberste Reihe bleibt unter Augenhöhe).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.8, "schritt": 0.01, "vorgabe": 0.32,
+      "herkunft": "Annahme V1a (bei 0.6 m Feldhöhe die oberste Reihe 2 cm unter den Augen); Christian 24.10.2026: die Mitte als Stellschraube"
     },
     {
-      "schluessel": "symbole.streuung", "gruppe": "symbole", "titel": "Verteilung der Symbole", "status": "app",
-      "beschreibung": "Faktor für die Abstände zwischen den Symbolen (1 = wie vorgesehen, grösser = weiter auseinander). Jede App steht immer am selben Platz.",
+      "schluessel": "symbole.feldhoehe_m", "gruppe": "symbole", "titel": "Höhe des Symbolfelds", "status": "app",
+      "beschreibung": "So hoch ist das Feld von der obersten bis zur untersten Reihe (am Sitzungstisch höchstens bis knapp über die Tischplatte).",
+      "art": "zahl", "einheit": "m", "min": 0.2, "max": 1.0, "schritt": 0.01, "vorgabe": 0.6,
+      "herkunft": "Christian 24.10.2026: «über eine höhe von ca. 0.6m verteilt»"
+    },
+    {
+      "schluessel": "symbole.reihen", "gruppe": "symbole", "titel": "Reihen des Symbolfelds", "status": "app",
+      "beschreibung": "Höchstens so viele Reihen; die Reihen sind locker gegeneinander versetzt (keine Leiste, keine starre Matrix).",
+      "art": "zahl", "einheit": "", "min": 1, "max": 3, "schritt": 1, "vorgabe": 3,
+      "herkunft": "Christian 24.10.2026: «vorzugsweise maximal 3 reihig»"
+    },
+    {
+      "schluessel": "symbole.streuung", "gruppe": "symbole", "titel": "Waagrechter Abstand der Symbole", "status": "app",
+      "beschreibung": "Faktor für den Abstand der Spalten (1 = 0.2 m, grösser = weiter auseinander). Jede App steht immer am selben Platz.",
       "art": "zahl", "einheit": "", "min": 0.6, "max": 1.6, "schritt": 0.05, "vorgabe": 1,
       "herkunft": "Annahme V1a; Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt»"
     },
     {
       "schluessel": "symbole.wartezeit_s", "gruppe": "symbole", "titel": "Symbole ohne Wahl ausblenden", "status": "app",
-      "beschreibung": "Wählt man keine App, gehen die Symbole nach so vielen Sekunden von selbst.",
-      "art": "zahl", "einheit": "s", "min": 2, "max": 60, "schritt": 1, "vorgabe": 10,
-      "herkunft": "Annahme V1a"
+      "beschreibung": "Wählt man keine App, gehen die Symbole nach so vielen Sekunden von selbst; 0 = nie (sie bleiben stehen, bis man sie wegwischt).",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 120, "schritt": 1, "vorgabe": 0,
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»"
+    },
+    {
+      "schluessel": "symbole.beruehr_rand_m", "gruppe": "symbole", "titel": "Berührung: Rand um ein Symbol", "status": "app",
+      "beschreibung": "Die Hand (Handfläche, Handrücken oder ein Finger) berührt ein Symbol schon so weit ausserhalb seiner Kugel.",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.05, "schritt": 0.005, "vorgabe": 0.01,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «die app berührung soll mit der ganzen hand erfolgen und nicht nur mit einem finger»"
+    },
+    {
+      "schluessel": "symbole.beruehr_sperre_s", "gruppe": "symbole", "titel": "Berührung: Sperre nach einer Geste", "status": "app",
+      "beschreibung": "Während Hebegeste und Wegwischen und so lange danach zählt keine Berührung (Schutz vor Fehlwahl); was dabei berührt wurde, zählt erst nach dem Loslassen.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1a (Schutz vor Fehlwahl, Auftrag Hauptlauf 24.10.2026)"
     },
     {
       "schluessel": "zeiger.tooltip_s", "gruppe": "symbole", "titel": "Verzögerung des Tooltips", "status": "app",
-      "beschreibung": "So lange zeigt der Finger auf ein Symbol bzw. einen Knopf, bis der Name als Tooltip darunter erscheint.",
+      "beschreibung": "So lange zeigt der Finger auf ein Symbol bzw. einen Knopf, bis der Name als Tooltip darüber erscheint.",
       "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
       "herkunft": "Annahme V1a nach Apple HIG «Buttons» («tooltip after people hover over a button for a moment») und «Eyes» («a slightly longer delay»)"
     },

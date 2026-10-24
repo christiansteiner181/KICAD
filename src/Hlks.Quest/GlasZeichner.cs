@@ -1,3 +1,4 @@
+using System.Numerics;
 using Hlks.Xr;
 using Hlks.Xr.Bedienung;
 using StereoKit;
@@ -8,9 +9,13 @@ namespace Hlks.Quest;
 
 /// <summary>
 /// Quest App V1a: zeichnet Glas im Stil von visionOS (Regeln, Farben und Masse in Hlks.Xr.Bedienung.Glas/GlasStil; Shader Assets/glas.hlsl): Flächen (Fenster, Karte,
-/// Hinweis), dünnes Material für Knöpfe, weiche Schatten, Leuchten am Rand (Bodenplatte am Tisch), Schrift in drei Stufen (weiss; mittlerer Schnitt der Systemschrift,
-/// keine SF-Schrift), eigene Linien-Symbole (GlasSymbole). Ohne Shader (fehlende Datei) zeichnet es abgerundete Würfel wie P5a – die Bedienung bleibt gleich.
-/// Kosten: je Fläche ein Zeichenaufruf mit 4 Ecken (Netze je Grösse zwischengespeichert); Text über Text.Add (gesammelt von StereoKit).
+/// Hinweis), dünnes Material für Knöpfe, weiche Schatten, Leuchten am Rand (Bodenplatte am Tisch), Schrift in drei Stufen (mittlerer Schnitt der Systemschrift, keine
+/// SF-Schrift). Ohne Shader (fehlende Datei) zeichnet es abgerundete Würfel wie P5a – die Bedienung bleibt gleich.
+/// Farben (Christian 24.10.2026, nach den Bildern 02: «das grau ist nicht so ansprechend. verwende unsere pastelfarben»): je App aus dem Katalog kataloge/xr_farben.json
+/// (mitgeliefert, Hlks.Xr.Bedienung.AppFarben), Deckkraft nach der Umgebung (<see cref="Umgebung"/>, je Bild gesetzt).
+/// Symbole (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): die Symbole von KICAD als Texturen (Assets/symbole, werkzeuge/quest_symbole.mjs), Strich
+/// in der Farbe der Schrift getönt, Revit mit eigenen Farben (Benutzereinstellung «oberflaeche.symbole» über «willkommen», <see cref="SymbolEinstellung"/>).
+/// Kosten: je Fläche ein Zeichenaufruf mit 4 Ecken (Netze je Grösse zwischengespeichert); je Symbol ein Viereck mit Textur; Text über Text.Add (gesammelt von StereoKit).
 /// </summary>
 sealed class GlasZeichner
 {
@@ -18,13 +23,23 @@ sealed class GlasZeichner
     readonly Material ersatz;
     readonly Dictionary<(int, int, int, int), Mesh> netze = [];
     readonly Dictionary<(int, int, int), TextStyle> stile = [];
+    readonly Dictionary<string, Material> symbolMaterial = new(StringComparer.Ordinal);
+    readonly Mesh symbolViereck;
     readonly Font? schrift;
     public bool MitShader { get; }
     /// <summary>Gezeichnete Flächen im letzten Bild (Protokoll: Aufrufe).</summary>
     public int Flaechen { get; private set; }
-    /// <summary>Tönung des Glases in diesem Bild (GlasStil.Toenung nach der Umgebung; die App setzt sie je Bild).</summary>
-    public GlasFarbe Ton { get; set; } = GlasStil.Glas;
-    int flaechenBild;
+    /// <summary>Gezeichnete Symbole im letzten Bild (Protokoll).</summary>
+    public int Symbole { get; private set; }
+    int flaechenBild, symboleBild;
+    /// <summary>Die Farben der Apps (Katalog, mitgeliefert); null, wenn er fehlt (dann neutrales Glas wie GlasStil).</summary>
+    public AppFarben? Farben { get; }
+    /// <summary>Fehler beim Lesen des Katalogs (für das Protokoll), sonst null.</summary>
+    public string? FarbenFehler { get; }
+    /// <summary>Benutzereinstellung «oberflaeche.symbole» vom PC (strich | revit); ohne PC «strich».</summary>
+    public string SymbolEinstellung { get; set; } = GlasSymbole.SatzStrich;
+    double hintergrund = GlasStil.HintergrundModell, deckkraft = GlasStil.Glas.A, zielDunkel = 0.42;
+    readonly Dictionary<string, GlasSatz> saetze = new(StringComparer.Ordinal);
 
     public GlasZeichner()
     {
@@ -55,10 +70,49 @@ sealed class GlasZeichner
             try { if (File.Exists(datei) && Font.FromFile(datei) is { } f) { schrift = f; break; } }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException) { }
         }
+        // Farben aus dem Katalog (eingebettet, Hlks.Quest.csproj)
+        try
+        {
+            using var datei = typeof(GlasZeichner).Assembly.GetManifestResourceStream("xr_farben.json");
+            if (datei is null) FarbenFehler = "xr_farben.json fehlt in der App";
+            else { using var r = new StreamReader(datei); Farben = AppFarben.Lesen(r.ReadToEnd()); }
+        }
+        catch (Exception ex) when (ex is FormatException or System.Text.Json.JsonException or IOException or InvalidOperationException) { FarbenFehler = ex.Message; }
+        if (FarbenFehler is not null) Log.Warn("Farben der App: " + FarbenFehler);
+        // Viereck für die Symbole: x nach rechts, y nach oben, Textur oben links bei (−0.5, 0.5)
+        Vertex E(float x, float y, float u, float v) => new(new Vec3(x, y, 0), new Vec3(0, 0, 1), new Vec2(u, v), Color32.White);
+        symbolViereck = new Mesh();
+        symbolViereck.SetData([E(-0.5f, 0.5f, 0, 0), E(0.5f, 0.5f, 1, 0), E(0.5f, -0.5f, 1, 1), E(-0.5f, -0.5f, 0, 1)], [0, 1, 2, 0, 2, 3]);
     }
 
     /// <summary>Zu Beginn eines Bildes (Zähler).</summary>
     public void BildBeginn() { Flaechen = flaechenBild; flaechenBild = 0; }
+
+    /// <summary>Zu Beginn eines Bildes: die Umgebung (Helligkeit des Hintergrunds, GlasStil.HintergrundFuer) und die Stellschrauben der Deckkraft und Helligkeit.</summary>
+    public void Umgebung(double hintergrund, double deckkraft, double zielDunkel)
+    {
+        if (hintergrund != this.hintergrund || deckkraft != this.deckkraft || zielDunkel != this.zielDunkel) saetze.Clear();
+        this.hintergrund = hintergrund;
+        this.deckkraft = deckkraft;
+        this.zielDunkel = zielDunkel;
+        Symbole = symboleBild;
+        symboleBild = 0;
+    }
+
+    /// <summary>Gilt die helle Fassung (dunkle Schrift)?</summary>
+    public bool Hell => Farben?.IstHell(hintergrund) ?? false;
+
+    /// <summary>Die Farben dieses Bildes für die App id (Katalog; ohne Katalog neutral wie GlasStil).</summary>
+    public GlasSatz Satz(string? id)
+    {
+        var k = id ?? AppFarben.VorgabeId;
+        if (saetze.TryGetValue(k, out var s)) return s;
+        s = Farben?.Satz(id, hintergrund, deckkraft, zielDunkel)
+            ?? new GlasSatz(GlasStil.Glas, GlasStil.Ein, GlasStil.TextPrimaer, GlasStil.TextSekundaer, GlasStil.TextTertiaer, GlasStil.Duenn, GlasStil.DuennNah,
+                GlasStil.DuennGedrueckt, GlasStil.Ein, GlasStil.TextAufEin, false);
+        saetze[k] = s;
+        return s;
+    }
 
     static Vec3 S(XVec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
     static Quat Drehung(TabletPose p) => Quat.LookAt(S(p.Mitte), S(p.Mitte + p.Normale), S(p.Oben));
@@ -139,10 +193,11 @@ sealed class GlasZeichner
     /// 7 % und 14 % der Schrifthöhe) leicht versetzt und 1 mm dahinter. Höchstens zwei Zeilen (SchwebeHinweise.Kurz); zum Auge gedreht. Kosten: 17 Textaufrufe je
     /// Hinweis (StereoKit sammelt sie in einem Durchgang).
     /// </summary>
-    public void Schein(string text, XVec3 ort, XVec3 auge, double hoehe, double deckkraft, TextAlign wo = TextAlign.Center)
+    public void Schein(string text, XVec3 ort, XVec3 auge, double hoehe, double deckkraft, TextAlign wo = TextAlign.Center,
+        int zeichenJeZeile = SchwebeHinweise.ZeichenJeZeileVorgabe + 1)
     {
         if (deckkraft <= 0.01 || string.IsNullOrEmpty(text)) return;
-        var zeilen = Textumbruch.Umbrechen(text, SchwebeHinweise.ZeichenMax / 2 + 1);
+        var zeilen = Textumbruch.Umbrechen(text, zeichenJeZeile);
         var anzahl = zeilen.Count(c => c == '\n') + 1;
         var laengste = zeilen.Split('\n').Max(z => z.Length);
         var p = XrTabletLogik.TabletLageAus(ort, auge - ort);
@@ -161,16 +216,36 @@ sealed class GlasZeichner
         Text.Add(zeilen, Matrix.TR(S(ort), q), groesse, TextFit.Squeeze, Stil(hoehe, GlasStil.TextPrimaer with { A = deckkraft }), wo, wo);
     }
 
-    /// <summary>Symbol (GlasSymbole) in der Fläche p, Kantenlänge groesse (m), Farbe, um (x, y) versetzt.</summary>
-    public void Symbol(string? name, TabletPose p, double groesse, GlasFarbe farbe, double x = 0, double y = 0)
+    /// <summary>Material mit der Textur eines Symbols (zwischengespeichert); die Textur lädt StereoKit aus Assets (am PC neben der DLL, auf der Brille aus der APK).</summary>
+    Material SymbolMaterial(string datei)
     {
-        var linien = GlasSymbole.Linien(name);
-        if (linien.Count == 0) return;
-        var c = new Color32((byte)(farbe.R * 255), (byte)(farbe.G * 255), (byte)(farbe.B * 255), (byte)(Math.Clamp(farbe.A, 0, 1) * 255));
-        var dicke = (float)Math.Max(0.0012, groesse * 0.07);
-        var basis = p.Mitte + p.Rechts * x + p.Oben * y + p.Normale * 0.003;
-        foreach (var l in linien)
-            for (int i = 0; i + 1 < l.Length; i++)
-                Lines.Add(S(basis + p.Rechts * (l[i].X * groesse) + p.Oben * (l[i].Y * groesse)), S(basis + p.Rechts * (l[i + 1].X * groesse) + p.Oben * (l[i + 1].Y * groesse)), c, dicke);
+        if (symbolMaterial.TryGetValue(datei, out var m)) return m;
+        var tex = Tex.FromFile(datei);
+        tex.AddressMode = TexAddress.Clamp;
+        m = Material.Unlit.Copy();
+        m[MatParamName.DiffuseTex] = tex;
+        m.Transparency = Transparency.Blend;
+        m.DepthWrite = false;
+        m.FaceCull = Cull.None;
+        m.QueueOffset = 12;   // nach dem Glas (10) und den Knöpfen (11)
+        symbolMaterial[datei] = m;
+        return m;
+    }
+
+    /// <summary>
+    /// Symbol von KICAD (GlasSymbole, Textur) in der Fläche p, Kantenlänge groesse (m), um (x, y) versetzt. Strich: in der Farbe farbe getönt; Revit (Einstellung
+    /// «revit»): eigene Farben, Satz nach hell (helle bzw. dunkle Fassung), nur die Deckkraft von farbe.
+    /// </summary>
+    public void Symbol(string? name, TabletPose p, double groesse, GlasFarbe farbe, bool hell, double x = 0, double y = 0)
+    {
+        if (name is null || farbe.A <= 0.01) return;
+        var satz = GlasSymbole.Satz(SymbolEinstellung, hell);
+        var tint = satz == GlasSymbole.SatzStrich ? farbe : new GlasFarbe(1, 1, 1, farbe.A);
+        var o = p.Mitte + p.Rechts * x + p.Oben * y + p.Normale * 0.003;
+        var g = (float)groesse;
+        Matrix4x4 t = new((float)p.Rechts.X * g, (float)p.Rechts.Y * g, (float)p.Rechts.Z * g, 0, (float)p.Oben.X * g, (float)p.Oben.Y * g, (float)p.Oben.Z * g, 0,
+            (float)p.Normale.X, (float)p.Normale.Y, (float)p.Normale.Z, 0, (float)o.X, (float)o.Y, (float)o.Z, 1);
+        symbolViereck.Draw(SymbolMaterial(GlasSymbole.Datei(name, satz)), t, Farbe(tint));
+        symboleBild++;
     }
 }

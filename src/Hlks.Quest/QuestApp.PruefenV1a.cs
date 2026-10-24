@@ -272,8 +272,10 @@ sealed partial class QuestApp
     bool PruefSymbolFolgeLaeuft => symbolFolge > 0;
 
     /// <summary>
-    /// Gescriptete Zustände im Simulator (keine Hände): Geste halb (die Symbole steigen mit gedachten Händen, Geisterhände zeigen die Hebegeste), Symbole ganz da, eine
-    /// gedachte Fingerspitze vor «Messen» mit Zeiger und Tooltip, Berührung → die App «Messen» öffnet, dazu ein Hinweis frei schwebend. Mit Bildern, wenn ordner gesetzt.
+    /// Gescriptete Zustände im Simulator (keine Hände): Geste halb (die Symbole steigen mit gedachten Händen, Geisterhände zeigen die Hebegeste), Symbolfeld ganz da
+    /// (frontal, Strich und einmal im Satz «revit»), eine gedachte Fingerspitze vor «Messen» mit Zeiger und Tooltip, dann berührt eine gedachte flache Hand «Messen» mit der
+    /// Handfläche (Christian 24.10.2026: «mit der ganzen hand») → die Symbole blenden aus, danach öffnet die App «Messen», dazu ein Hinweis frei schwebend. Mit Bildern,
+    /// wenn ordner gesetzt.
     /// </summary>
     void PruefSymbolFolge(string? ordner)
     {
@@ -288,62 +290,88 @@ sealed partial class QuestApp
         }
         if (n == 1) { apps.Ausblenden(Time.Total); pruefHebe = 0; GeisterHeben(k); }
         if (n <= 30) pruefHebe = n / 30.0 * 0.999;
-        if (n == 15) Bild("hebe_halb.jpg", symbole.Mitte, 75);
+        if (n == 15) Bild("hebe_halb.jpg", symbole.Mitte, 80);
         if (n == 31) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
         if (n == 33) pruefHebe = null;
-        if (n == 60) Bild("symbole.jpg", symbole.Mitte, 75);
+        if (n == 60) { symbolAnzahl = symbole.Plaetze.Count; Bild("symbole.jpg", symbole.Mitte, 80); glas.SymbolEinstellung = "revit"; }
+        if (n == 62) { Bild("symbole_revit.jpg", symbole.Mitte, 80); }
+        if (n == 63) glas.SymbolEinstellung = GlasSymbole.SatzStrich;
         var messenPlatz = symbole.Plaetze.FirstOrDefault(p => p.Id == "messen")?.Lage;
-        if (n == 61 && messenPlatz is { } mp) { symbole.SimFinger = mp.Mitte + mp.Normale * 0.06 + mp.Rechts * 0.008; symbolTooltipStart = Time.Total; }
-        // die gedachte Hand am Zeiger zeichnen (Geisterhand-Form), solange der Finger da ist
+        if (n == 64 && messenPlatz is { } mp) { symbole.SimFinger = mp.Mitte + mp.Normale * 0.06 + mp.Rechts * 0.008; symbolTooltipStart = Time.Total; }
+        // die gedachte Hand am Zeiger bzw. die flache Hand zeichnen (Geisterhand-Form), solange sie da ist
         if (symbole.SimFinger is { } sf && messenPlatz is { } mz) geister.Form(Geisterhand.Vorlage(sf, mz, links: false), 0.45);
-        if (n > 61 && symbolTooltipBild < 0 && symbole.Tooltip is { Id: "messen", Deckkraft: > 0.99 })
+        if (symbole.SimHand is { } sh) geister.Form(sh, 0.5);
+        if (n > 64 && symbolTooltipBild < 0 && symbole.Tooltip is { Id: "messen", Deckkraft: > 0.99 })
         {
             symbolTooltipBild = n;
             symbolTooltipNachS = Time.Total - symbolTooltipStart;
             Bild("symbol_tooltip.jpg", messenPlatz?.Mitte, 50);
         }
-        // Berührung: die Spitze fährt durch die Druckebene
+        // Berührung mit der ganzen Hand: eine flache Hand nähert sich «Messen» mit der Handfläche voran, bis sie das Symbol berührt
         if (symbolTooltipBild > 0 && symbolGewaehltBild < 0 && messenPlatz is { } mb && n >= symbolTooltipBild + 2)
-            symbole.SimFinger = mb.Mitte + mb.Normale * Math.Max(-0.02, 0.06 - 0.008 * (n - symbolTooltipBild - 2));
+        {
+            symbole.SimFinger = null;
+            Dictionary<string, XVec3> Hand(int schritt) =>
+                Geisterhand.VorlageFlach(mb.Mitte + mb.Normale * Math.Max(-0.02, 0.14 - 0.01 * schritt) - mb.Oben * 0.02, mb.Normale * -1, mb.Oben, links: false);
+            var s = n - symbolTooltipBild - 2;
+            symbole.SimHand = Hand(s);
+            // das Bild im letzten Bild VOR der Berührung (die Hand liegt dann knapp am Symbol; im Bild der Berührung öffnet die App schon)
+            if (symbolHandBild < 0 && HandBeruehrung.Eindringen(Hand(s + 1), mb.Mitte, mb.H / 2 + bedien.Symbole.BeruehrRandM) > 0)
+            {
+                symbolHandBild = n;
+                Bild("symbol_hand.jpg", messenPlatz?.Mitte, 60);
+            }
+        }
         if (symbolGewaehltBild < 0 && apps.Sichtbar && apps.Aktiv == "messen" && symbolTooltipBild > 0)
         {
             symbolGewaehltBild = n;
             symbole.SimFinger = null;
+            symbole.SimHand = null;
             Hinweis("App «Messen» geöffnet.");
         }
+        // nach der Wahl (Variante «stehen», Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»): die App frontal davor, das Feld dahinter
         if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 30)
         {
-            Bild("app_nach_wahl.jpg", apps.Rahmen?.Fenster.Mitte, 60);
+            Bild("app_nach_wahl.jpg", apps.Rahmen?.Fenster.Mitte, 75);
             Bild("hinweis_begehen.jpg", letzterHinweisOrt, 55);
         }
-        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 31) symbolAppOffen = apps.Aktiv == "messen" && apps.Sichtbar && !symbole.Da;
-        // Wegschieben (Christian 24.10.2026): die Symbole nochmals holen, die Geisterhände zeigen das Wegschieben, gedachte Hände schieben auseinander
+        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 31)
+            symbolAppOffen = apps.Aktiv == "messen" && apps.Sichtbar && symbole.Da == (bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen) && symbole.HintenAnteil > 0.5;
+        // Wegwischen (Christian 24.10.2026: rechte Hand offen, von rechts nach links): zuerst die App (das Vorderste), dann das Symbolfeld; dazwischen die Geisterhand
         var g0 = symbolGewaehltBild;
         if (g0 > 0)
         {
-            if (n == g0 + 32) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
-            if (n == g0 + 34) pruefHebe = null;
-            if (n == g0 + 50) GeisterSchieben(k);
-            if (n >= g0 + 60 && n <= g0 + 90) pruefSchieben = 0.25 * (n - g0 - 60) / 30.0;
-            if (n == g0 + 75) { symbolSchiebtHalb = symbole.Schiebt; Bild("wegschieben_halb.jpg", symbole.Mitte, 80); }
-            if (n == g0 + 91) { pruefSchieben = 0.25; pruefHebeEreignis = HebeArt.Wegschieben; }
-            if (n == g0 + 93) pruefSchieben = null;
+            if (n >= g0 + 32 && n <= g0 + 52) pruefWisch = 0.2 * (n - g0 - 32) / 20.0;
+            if (n == g0 + 42) { symbolAppWischtHalb = apps.Sichtbar && wischZielId == "app"; Bild("app_wegwischen_halb.jpg", apps.Rahmen?.Fenster.Mitte, 75); }
+            if (n == g0 + 53) { pruefWisch = 0.2; pruefWischEreignis = true; }
+            if (n == g0 + 54) pruefWisch = null;
+            if (n == g0 + 120) symbolAppWeg = !apps.Sichtbar && symbole.Da && symbole.HintenAnteil < 0.5;   // die App ist weg, das Feld kam wieder nach vorn
+            if (n == g0 + 122) GeisterWegwischen(k);
+            if (n >= g0 + 130 && n <= g0 + 160) pruefWisch = 0.2 * (n - g0 - 130) / 30.0;
+            if (n == g0 + 145) { symbolWischtHalb = symbole.Wischt && wischZielId == "symbole"; Bild("wegwischen_halb.jpg", symbole.Mitte, 80); }
+            if (n == g0 + 161) { pruefWisch = 0.2; pruefWischEreignis = true; }
+            if (n == g0 + 162) pruefWisch = null;
         }
-        if (g0 > 0 && n >= g0 + 160 || n > 1200)
+        if (g0 > 0 && n >= g0 + 230 || n > 1400)
         {
             var weg = !symbole.Sichtbar;
-            var ok = symbolTooltipBild > 0 && g0 > 0 && symbolAppOffen && symbolSchiebtHalb && weg;
+            var ok = symbolTooltipBild > 0 && symbolHandBild > 0 && g0 > 0 && symbolAppOffen && symbolAppWischtHalb && symbolAppWeg && symbolWischtHalb && weg && symbolAnzahl > 0
+                && glas.Farben is not null;
             pruefSymbole = string.Create(CultureInfo.InvariantCulture,
-                $"Symbole={(ok ? "ok" : "FEHLER")} (Hebegeste gedacht → {symbole.Plaetze.Count} Symbole, Tooltip «Messen» nach {symbolTooltipNachS:0.00} s, " +
-                $"Berührung öffnet «Messen» {(symbolAppOffen ? "ja" : "nein")}, Wegschieben: laufen mit {(symbolSchiebtHalb ? "ja" : "nein")}, weg {(weg ? "ja" : "nein")}; " +
-                $"Hinweise frei schwebend {hinweisGezeichnet})");
+                $"Symbole={(ok ? "ok" : "FEHLER")} (Hebegeste gedacht: {symbolAnzahl} Symbole im Feld, Tooltip «Messen» nach {symbolTooltipNachS:0.00} s, " +
+                $"Handfläche an «Messen» {(symbolHandBild > 0 ? "berührt" : "nicht berührt")}, App «Messen» offen und Feld dahinter {(symbolAppOffen ? "ja" : "nein")}; " +
+                $"Wegwischen: App läuft mit {(symbolAppWischtHalb ? "ja" : "nein")}, App weg und Feld vorn {(symbolAppWeg ? "ja" : "nein")}, Symbole laufen mit " +
+                $"{(symbolWischtHalb ? "ja" : "nein")}, weg {(weg ? "ja" : "nein")}; Hinweise frei schwebend {hinweisGezeichnet}; " +
+                $"Farben {(glas.Farben is null ? "FEHLER " + glas.FarbenFehler : "aus dem Katalog")}, Symbole als Textur {glas.Symbole} im letzten Bild)");
             symbole.SimFinger = null;
-            pruefSchieben = null;
+            symbole.SimHand = null;
+            pruefWisch = null;
             symbolFolge = 0;
         }
     }
 
-    bool symbolAppOffen, symbolSchiebtHalb;
+    bool symbolAppOffen, symbolAppWischtHalb, symbolAppWeg, symbolWischtHalb;
+    int symbolAnzahl, symbolHandBild = -1;
 
     /// <summary>Ein Bild lang die Apps nicht zeichnen (Prüfbilder der Messungen und Marker im Raum: der Blick dorthin geht sonst oft durch das Fenster).</summary>
     bool appsBildAus;

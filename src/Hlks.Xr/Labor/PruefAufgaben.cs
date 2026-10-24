@@ -1,11 +1,11 @@
 // Quest App P5b (Modul XR, Interface-Labor, entwurf/modul-xr.md «Was das Labor kann»; Katalog kataloge/xr_pruefaufgaben.json): die Prüfaufgaben in der App.
 // KICAD startet eine Aufgabe mit der Stellschraube «labor.aufgabe» = Id (null beendet sie); die App zeigt eine schwebende Karte mit Titel und Anleitung aus dem
-// Katalog, misst Zeit, Fehlgriffe und Abbrüche und sendet bei Erfolg bzw. Abbruch («Aufgabe beenden» auf der Karte oder Pinch + Wisch nach vorn) die Nachricht
+// Katalog, misst Zeit, Fehlgriffe und Abbrüche und sendet bei Erfolg bzw. Abbruch («Aufgabe beenden» auf der Karte oder – seit V1a – Wegwischen der Karte) die Nachricht
 // «messprotokoll» mit den Varianten, die für die Aufgabe zählen. Rein, ohne StereoKit: die App meldet Ereignisse (Sprung, Drehschritt, Etagenwechsel, Griffe …)
 // und fragt je Bild den Fortschritt ab; Lage der Karte ebenfalls hier.
 //
 // Messgrössen (Katalog «messgroessen»): Zeit = vom Start (sobald der Ort hergestellt ist und die Variante passt) bis Erfolg bzw. Abbruch; Abbrüche = abgebrochen
-// (Karte, Wisch nach vorn, «Aufgabe beenden» bzw. eine andere Aufgabe am PC) oder neu begonnen (dieselbe Aufgabe nochmals gestartet: die Zeit läuft weiter, der
+// (Karte weggewischt, «Aufgabe beenden» bzw. eine andere Aufgabe am PC) oder neu begonnen (dieselbe Aufgabe nochmals gestartet: die Zeit läuft weiter, der
 // Ablauf beginnt von vorn); Fehlgriffe je Aufgabe wie im Katalog («fehlgriff»), dazu bei allen ein Antippen neben eine Kachel (AppBeruehrung, «daneben»).
 // Erfolg (Katalog «erfolgskriterium»; Zahlen = Annahmen P6, hier als Konstanten):
 //   teleport-markierung   Sprung höchstens MarkierungRadiusM = 0.5 m neben die Mitte der Markierung (Markierung 2 … 4.5 m vor einem, im Raum des Geschosses).

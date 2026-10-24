@@ -153,6 +153,10 @@ sealed partial class QuestApp
         apps = new GlasApps(rueck, glas);
         symbole = new SymbolApps(rueck, glas);
         karte = new AufgabenKarte(rueck, glas);
+        // V1a: Ziele des Wegwischens (Einhängepunkt; V1c hängt den PC-Bildschirm an): die offene App, die Karte einer Prüfaufgabe, die App-Symbole
+        WegwischZiele.Add(apps);
+        WegwischZiele.Add(new WischZiel(KarteKandidat, w => karte.WischVersatz = AppSymbole.NachLinks(w, 0), KarteWegwischen));
+        WegwischZiele.Add(symbole);
         MarkerStarten();
         sitzung.FlacheHandGeaendert += FlacheHandMelden;
         // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei)
@@ -211,7 +215,13 @@ sealed partial class QuestApp
 
     // =================================================================================================== Hintergrund
 
-    public void Starten() => Task.Run(Hintergrund);
+    public void Starten()
+    {
+        // V1a, Prüflauf am PC: die Maus-Hände des Simulators nicht zeichnen (Befund Bilder 02: die weisse Hand lag über Werkzeugleiste und Griff); gedachte Hände
+        // zeichnet der Prüflauf selbst als Geisterhand
+        if (o.PruefBilder > 0) Input.HandVisible(Handed.Max, false);
+        Task.Run(Hintergrund);
+    }
 
     async Task Hintergrund()
     {
@@ -468,6 +478,12 @@ sealed partial class QuestApp
             amBild.Enqueue(ProtokolleNachsenden);   // P5b: Messprotokolle, die ohne Verbindung entstanden
             if (istGeladen) _ = Task.Run(MarkerSenden);   // V1a: Problem-Marker, die ohne Verbindung gesetzt wurden
             if (w.TryGetProperty("auftrag", out var a) && a.ValueKind == JsonValueKind.Object) AuftragEmpfangen(a);
+            // V1a: Symbolsatz des Benutzers wie in KICAD (oberflaeche.symbole: strich | revit); ohne PC bleibt der Strich
+            if (w.TryGetProperty("symbole", out var sy) && sy.ValueKind == JsonValueKind.String)
+            {
+                var satz = sy.GetString() == "revit" ? "revit" : GlasSymbole.SatzStrich;
+                amBild.Enqueue(() => glas.SymbolEinstellung = satz);
+            }
             // P5a: die am PC gemerkten Stellschrauben gelten sofort (z. B. ein Profil des XR-Labors); in zwei Durchgängen, damit Paare in jeder Reihenfolge gelten
             if (w.TryGetProperty("stellschrauben", out var st) && st.ValueKind == JsonValueKind.Object)
             {
@@ -669,6 +685,7 @@ sealed partial class QuestApp
     {
         sitzungWunsch = wunsch;
         if (sitzung.Aktiv) { sitzung.AnsichtSetzen(ansicht); return; }
+        hinweise.Leeren();   // V1a: was beim Begehen stand, gilt am Tisch nicht mehr (Befund Prüfbilder 02)
         darstellung?.DurchgangSetzen(new());
         sitzung.Betreten(Input.Head, ansicht);
         appsRaumLage = sitzung.RaumLage;
@@ -684,6 +701,7 @@ sealed partial class QuestApp
     {
         if (!sitzung.Aktiv) return;
         sitzung.Verlassen();
+        hinweise.Leeren();   // V1a: was am Tisch stand, gilt beim Begehen nicht mehr
         if (szene is not null) { durchgang = new DurchgangVerfolger(szene); roentgen = new RoentgenVerfolger(szene); }
         appsRaumLage = null;
         AppsVersetzen();   // V1a: das Fenster wieder vor den Blick
@@ -732,8 +750,8 @@ sealed partial class QuestApp
         var kopfWelt = VrLogik.KopfWelt(rig, kopfRefV);
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
         Haltung(kopf);
-        // V1a: Glas nach der Umgebung tönen (Apple HIG «Materials»: «Glass is an adaptive material»; im hellen Sitzungsraum dunkler)
-        glas.Ton = GlasStil.Toenung(GlasStil.HintergrundFuer(sitzung.Aktiv, passthrough.Ein, sitzung.Hell), bedien.Apps.GlasDeckkraft, bedien.Apps.GlasHelligkeit);
+        // V1a: Farben der Apps aus dem Katalog (kataloge/xr_farben.json), Fassung und Deckkraft nach der Umgebung (Apple HIG «Materials»: «Glass is an adaptive material»)
+        glas.Umgebung(GlasStil.HintergrundFuer(sitzung.Aktiv, passthrough.Ein, sitzung.Hell), bedien.Apps.GlasDeckkraft, bedien.Apps.GlasHelligkeit);
         AppsBild(kopf);   // P5a: zuerst die Apps – sie bestimmen, welche Hand an ihnen ist (deren Pinch zielt nicht, greift nicht)
 
         if (darstellung is not null && szene is not null && sitzung.Aktiv)
@@ -808,7 +826,7 @@ sealed partial class QuestApp
             $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe}, IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
-            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {schiebenGezaehlt}× weggeschoben, Geste={letzteGeste}, " +
+            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt, Geste={letzteGeste}, " +
             $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
@@ -1170,7 +1188,13 @@ sealed partial class QuestApp
             return;
         }
         if (!ebenenFertig && Time.Total - modellAb < 60) return;   // P4b: die Ebenen kommen nach dem Modell; mitmessen
-        if (!pruefAktionen) { pruefAktionen = true; pruefText = PruefAktionen(); pruefP4b = PruefP4bRegeln(); pruefP5a = PruefP5aRegeln(); pruefP5b = PruefP5bRegeln(); pruefV1a = PruefV1aRegeln(); return; }   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
+        if (!pruefAktionen)
+        {
+            pruefAktionen = true; pruefText = PruefAktionen(); pruefP4b = PruefP4bRegeln(); pruefP5a = PruefP5aRegeln(); pruefP5b = PruefP5bRegeln(); pruefV1a = PruefV1aRegeln();
+            // V1a: Hinweise und Geisterhände der gescripteten Prüfungen gehören nicht in die folgenden Prüfbilder (Befund Bilder 02: «Lot braucht eine Fläche» am Tisch)
+            hinweise.Leeren(); geister.Stoppen(); geister2.Stoppen();
+            return;   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
+        }
         if (o.BildOrdner is { } pb5) PruefBilderP5b(pb5, sitzung.Aktiv || sitzPhase >= 0);   // P5b: Karte, Röntgen-Hand, flache Hand
         if (sitzung.Aktiv || sitzPhase >= 0) { SitzungPruefen(rechnen); return; }
         gemessen++;
@@ -1236,40 +1260,57 @@ sealed partial class QuestApp
             var zurueck = bedien == XrBedienEinstellungen.Vorgabe && sitzung.Zoom == ZoomGrenzen.Vorgabe && begehenWirksam.Wisch == WischEinstellungen.Vorgabe;
             teile.Add($"Stellschrauben={(gesetzt && ungueltig && zurueck ? "ok" : "FEHLER")} ({XrBedienEinstellungen.Schluessel.Count} Schlüssel der Bedienung)");
 
-            // Apps (V1a, Christian 24.10.2026): Hebegeste → die Symbole stehen; das Symbol «Etagen» mit einer gedachten Fingerspitze berühren → die App «Etagen» öffnet in
-            // Griffweite (wo die Symbole standen, am Tisch neben dem Tisch), die Symbole gehen; Wegwischen blendet das Fenster aus; neu geholte Symbole schickt die
-            // Gegenbewegung ohne Wahl weg
+            // Apps (V1a, Christian 24.10.2026): Hebegeste → die Symbole stehen; das Symbol «Etagen» mit der Handfläche einer gedachten Hand berühren («mit der ganzen
+            // hand») → die App «Etagen» öffnet in Griffweite (wo die Symbole standen, am Tisch neben dem Tisch), die Symbole gehen; Wegwischen blendet das Fenster aus;
+            // neu geholte Symbole schickt das Wegwischen ohne Wahl weg
             var kopf = Input.Head;
             HebeEreignis(HebeArt.Heben, kopf);
             var symbolListe = SymboleBauen();
             var ids = symbolListe.Select(x => x.Id).ToList();
-            var plaetze = AppSymbole.Plaetze(ids, new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), KopfRef(kopf).Gieren, bedien.Symbole, GlasMasse.Fuer(bedien.Apps));
-            var lagen = plaetze.Select(x => x.Lage).ToList();
+            var plaetze = AppSymbole.Plaetze(ids, new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), KopfRef(kopf).Gieren, bedien.Symbole, GlasMasse.Fuer(bedien.Apps),
+                SymbolUntergrenze());
             var i = ids.IndexOf("etagen");
-            var hand = new BeruehrHand();
-            int? ausgeloest = null;
-            for (int s = 0; i >= 0 && s <= 10 && ausgeloest is null; s++)
-                ausgeloest = AppBeruehrung.Schritt(hand, lagen[i].Mitte + lagen[i].Normale * (0.06 - 0.007 * s), false, lagen, bedien.Pinch).Ausgeloest;
+            var hz = new HandBeruehrZustand();
+            var kugeln = plaetze.Select(p => new BeruehrKugel(p.Id, p.Lage.Mitte, p.Lage.H / 2)).ToList();
+            string? beruehrt = null;
+            for (int s = 0; i >= 0 && s <= 12 && beruehrt is null; s++)
+            {
+                var l = plaetze[i].Lage;
+                var flach = Geisterhand.VorlageFlach(l.Mitte + l.Normale * (0.1 - 0.01 * s), l.Normale * -1, l.Oben, links: false);
+                beruehrt = HandBeruehrung.Schritt(hz, 10 + s / 72.0, [null, flach], kugeln, gesteLaeuft: false, bedien.Symbole).Gewaehlt;
+            }
             var symboleDa = symbole.Da;
-            if (ausgeloest is int a) { AppOeffnen(ids[a]); symbole.Ausblenden(Time.Total); }
-            var offen = apps.Aktiv == "etagen" && apps.Sichtbar && !symbole.Da;
+            int? ausgeloest = beruehrt is null ? null : ids.IndexOf(beruehrt);
+            if (ausgeloest is int a) SymbolGewaehlt(ids[a]);
+            // Variante «stehen» (Vorgabe): die App ist offen, die Symbole bleiben stehen (Christian 24.10.2026); «ausblenden»: sie gehen, dann öffnet die App
+            var stehen = bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+            if (!stehen && appWahl is { } aw) { symbole.Ausblenden(Time.Total); appWahl = null; AppOeffnen(aw.Id, aw.Platz); }
+            var offen = apps.Aktiv == "etagen" && apps.Sichtbar && symbole.Da == stehen;
             var inhalt = InhaltBauen();
             var zeilen = inhalt.Elemente.Count(e => e.Art == GlasArt.Zeile);
             var eintraege = EtagenEintraege().Count;
+            // Pinch + Wisch nach vorn löst nichts mehr aus (Christian 24.10.2026: «Pinch + Wisch nach vorn entfällt»)
             WischAnwenden(WischRichtung.Vor, kopf.position);
-            var aus = !apps.Sichtbar;
+            var vorNichts = apps.Sichtbar;
+            // Wegwischen über die Einhängepunkte (die Wahl des Ziels prüft Hlks.Xr): zuerst die App (gleitet hinaus), die Symbole bleiben; dann die Symbole
+            apps.Wegwischen(Time.Total);
+            var aus = apps.Weggewischt && WegwischZiele.Contains(apps);
+            apps.Ausblenden(Time.Total);   // das Hinausgleiten (0.3 s) hier nicht abwarten
+            var bleiben = symbole.Da == stehen;
             HebeEreignis(HebeArt.Heben, kopf);
             var wieder = symbole.Da;
-            HebeEreignis(HebeArt.Wegschieben, kopf);
-            var weg = !symbole.Da && !apps.Sichtbar;
+            symbole.Wegwischen(Time.Total);
+            var weg = !symbole.Da && !apps.Sichtbar && WegwischZiele.Contains(symbole);
             AppsHolen();
-            var appsOk = symboleDa && ausgeloest == i && offen && zeilen > 0 && aus && wieder && weg && apps.Sichtbar
+            var appsOk = symboleDa && ausgeloest == i && offen && zeilen > 0 && vorNichts && aus && bleiben && wieder && weg && apps.Sichtbar
                 && eintraege == stand!.Liste.Geschosse.Count + (sitzung.Aktiv ? 1 : 0) && ids.Contains("messen") && ids.Contains("marker");
             // Geisterhände: die Hebegeste vor dem Körper (die folgenden Bilder zeichnen sie; Prüfung der Darstellung ohne Hände im Simulator)
             GeisterHeben(kopf);
             apps.RegisterWaehlen("status");
-            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} (Symbole {string.Join(" ", ids)}; Berührung «Etagen» öffnet die App {(offen ? "ja" : "nein")}, {eintraege} Einträge, " +
-                $"{zeilen} auf der ersten Seite; Wegwischen blendet aus {(aus ? "ja" : "nein")}; Gegenbewegung schickt die Symbole weg {(weg ? "ja" : "nein")}; " +
+            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} (Symbole {string.Join(" ", ids)}; Handfläche an «Etagen» öffnet die App {(offen ? "ja" : "nein")} " +
+                $"(nach der Wahl: {bedien.Symbole.NachWahl}), {eintraege} Einträge, {zeilen} auf der ersten Seite; Pinch + Wisch nach vorn ohne Wirkung {(vorNichts ? "ja" : "nein")}; " +
+                $"Wegwischen schliesst die App {(aus ? "ja" : "nein")}, " +
+                $"Symbole bleiben {(bleiben ? "ja" : "nein")}; Wegwischen schickt die Symbole weg {(weg ? "ja" : "nein")}; " +
                 $"Geisterhände {(geister.Gezeigt > 0 && geister2.Gezeigt > 0 ? "gestartet" : "nein")})");
 
             // Etage per Wisch hoch/runter und zurück
@@ -1326,6 +1367,7 @@ sealed partial class QuestApp
     void SitzungPruefen(double rechnen)
     {
         int jePhase = Math.Max(30, o.PruefBilder / SitzPhasen.Length);
+        var phaseLaenge = sitzPhase == 0 && o.BildOrdner is not null ? Math.Max(jePhase, jePhase / 2 + 95) : jePhase;   // V1a: Platz für die Bilder der Symbole und Farben
         if (sitzPhase < 0)
         {
             foreach (var (name, _, _, _) in ebenen.Liste) ebenen.Schalten(name, true);
@@ -1368,16 +1410,42 @@ sealed partial class QuestApp
             if (apps.Rahmen is { } rt) Renderer.Screenshot(Path.Combine(at, "glas_tisch.jpg"), Input.Head.position, (Vec3)(Vector3)rt.Fenster.Mitte, 1280, 960, 60);
             apps.RegisterWaehlen("status");
         }
-        // V1a: die App-Symbole am Tisch (gedachte Hebegeste) und ein Hinweis frei schwebend vor dem hellen Raum
+        // V1a: die App-Symbole am Tisch (gedachte Hebegeste, SITZEND: Augen 1.2 m über dem Boden am Platz vor dem Tisch, Annahme) und ein Hinweis frei schwebend vor dem
+        // hellen Raum; dann dieselben Symbole und zwei Apps in der dunklen Umgebung («tron»: dunkle Fassung der Farben)
         if (sitzPhase == 0 && o.BildOrdner is { } sy)
         {
-            if (sitzBilder == jePhase / 2 + 6) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; Hinweis($"Sitzungsraum · {sitzung.Ansicht?.Text}"); }
-            if (sitzBilder == jePhase / 2 + 8) pruefHebe = null;
-            if (sitzBilder == jePhase / 2 + 40)
+            var rl = sitzung.RaumLage;
+            Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
+            var sitzAuge = Sk(0, 1.2, 0);
+            var b0 = jePhase / 2 + 6;
+            if (sitzBilder == b0)
             {
-                if (symbole.Mitte is { } sm) Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung.jpg"), Input.Head.position, (Vec3)(Vector3)sm, 1280, 960, 75);
-                if (letzterHinweisOrt is { } ho) Renderer.Screenshot(Path.Combine(sy, "hinweis_sitzung.jpg"), Input.Head.position, (Vec3)(Vector3)ho, 1280, 960, 55);
+                pruefKopf = new Pose(sitzAuge, Quat.LookAt(sitzAuge, Sk(0, 1.2, -1)));
+                apps.Ausblenden(Time.Total);
+                pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben;
+                Hinweis($"Sitzungsraum · {sitzung.Ansicht?.Text}");
+            }
+            if (sitzBilder == b0 + 2) pruefHebe = null;
+            if (sitzBilder == b0 + 34)
+            {
+                if (symbole.Mitte is { } sm) Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung.jpg"), sitzAuge, (Vec3)(Vector3)sm, 1280, 960, 80);
+                if (letzterHinweisOrt is { } ho) Renderer.Screenshot(Path.Combine(sy, "hinweis_sitzung.jpg"), sitzAuge, (Vec3)(Vector3)ho, 1280, 960, 55);
+                StellschraubeAnwenden("labor.variante.umgebung", JsonDocument.Parse("\"tron\"").RootElement.Clone());   // dunkle Umgebung: dunkle Fassung
+            }
+            if (sitzBilder == b0 + 38 && symbole.Mitte is { } sd) Renderer.Screenshot(Path.Combine(sy, "farben_dunkel_symbole.jpg"), sitzAuge, (Vec3)(Vector3)sd, 1280, 960, 80);
+            if (sitzBilder == b0 + 39) SymbolGewaehlt("etagen");
+            if (sitzBilder == b0 + 75)   // nach dem Aufbauen des Fensters (0.22 s)
+            {
+                if (apps.Rahmen is { } r1) Renderer.Screenshot(Path.Combine(sy, "farben_dunkel_etagen.jpg"), Input.Head.position, (Vec3)(Vector3)r1.Fenster.Mitte, 1280, 960, 60);
+                apps.RegisterWaehlen("tisch");
+            }
+            if (sitzBilder == b0 + 78 && apps.Rahmen is { } r2) Renderer.Screenshot(Path.Combine(sy, "farben_dunkel_tisch.jpg"), Input.Head.position, (Vec3)(Vector3)r2.Fenster.Mitte, 1280, 960, 60);
+            if (sitzBilder == b0 + 79)
+            {
+                StellschraubeAnwenden("labor.variante.umgebung", JsonDocument.Parse("null").RootElement.Clone());
                 symbole.Ausblenden(Time.Total);
+                pruefKopf = null;
+                apps.RegisterWaehlen("status");
                 AppsHolen();
             }
         }
@@ -1393,7 +1461,7 @@ sealed partial class QuestApp
             else if (sitzBilder == jePhase / 2 + 4) Renderer.Screenshot(Path.Combine(vo, "vergleich_schnitt.png"), von, ziel, 800, 600, 40);
             else dv.SchnittErzwingen = false;
         }
-        if (sitzBilder < jePhase) return;
+        if (sitzBilder < phaseLaenge) return;
         var d = darstellung!;
         sitzErgebnisse.Add(string.Create(CultureInfo.InvariantCulture,
             $"{SitzPhasen[sitzPhase]} [{sitzung.Ansicht?.Text}, {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}]: Bildzeit {sitzSumme / sitzBilder * 1000:0.0} ms, " +

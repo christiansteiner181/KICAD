@@ -4,12 +4,12 @@
 // Tisch, Hinweiszeile, Inhalt (Knöpfe, Zeilen) und die kurzen Bewegungen. Gezeichnet wird in src/Hlks.Quest/GlasApps.cs mit dem Shader Assets/glas.hlsl.
 //
 // Was aus den HIG übernommen ist (und wie):
-//   - Glas: «windows generally use … glass», «Prefer translucency to opaque colors» → durchscheinende, neutral hellgraue Fläche (nicht farbig), stark gerundete
+//   - Glas: «windows generally use … glass», «Prefer translucency to opaque colors» → durchscheinende Fläche (seit den Bildern 02 im Pastellton der App, AppFarben), stark gerundete
 //     Ecken, feiner Glanz an der Oberkante, weicher Schatten. Echte Weichzeichnung des Hintergrunds gibt es nicht (StereoKit 0.3.11 hat keinen Zugriff auf das Bild
 //     hinter der Fläche; ein eigener Durchgang kostete auf der Quest mindestens die doppelte Füllrate) – angenähert durch die Tönung (Stellschraube anzeige.glas_deckkraft).
-//     «Glass is an adaptive material» → die Tönung richtet sich nach der Umgebung (GlasStil.Toenung, Stellschraube anzeige.glas_helligkeit); die Fläche verdeckt
+//     «Glass is an adaptive material» → Fassung und Deckkraft richten sich nach der Umgebung (AppFarben.Satz, Stellschraube anzeige.glas_helligkeit); die Fläche verdeckt
 //     Weltobjekte dahinter (die App schreibt die Tiefe des Glases; Befund Prüfbild 24.10.2026: der Stift eines Markers schien durch das Fenster).
-//   - Schrift: «label, secondaryLabel, tertiaryLabel» → weiss in drei Stufen (TextPrimaer, TextSekundaer, TextTertiaer); kein Text über der Fläche (alles liegt auf Glas).
+//   - Schrift: «label, secondaryLabel, tertiaryLabel» → drei Stufen (GlasSatz: Text, TextSekundaer, TextTertiaer; dunkel auf hellem Pastell, hell auf der dunklen Fassung).
 //   - Knöpfe: «icon-only button uses a circle shape … text … capsule … roundedRectangle … in a vertical stack»; «thin material as the button’s background» → Grund
 //     Duenn; «white background fill and black text … reserves … toggled state» → Ein; «hit region … in visionOS, 60x60 pt»; «centers … at least 60 pts apart»; jeder
 //     Knopf mit Ton (die App: Rueckmeldung.Kachel).
@@ -23,7 +23,7 @@
 //     beim Holen seitlich nach apps.seitlich_grad (Annahme V1a 30°; P5a: 50°), kommt nur nach, wenn man weiter als NachholenM weggeht.
 //   - Massstab: «1 pt» ist in visionOS ein Winkel; ein Fenster mit 1280 × 720 pt erscheint in rund 2 m Abstand etwa 3 m breit → 1 pt ≈ 1.2 mm je Meter Abstand
 //     (eigene Rechnung, Annahme). Für das Fenster im Griffbereich (0.5 m) und Fingerziele × 1.5 (Annahme V1a): PtM = 0.9 mm.
-// Nicht verwendet: Apple-Logos, SF-Schriften, SF Symbols (Lizenz nur für Apple-Plattformen); die Symbole sind eigene einfache Linien (GlasSymbole).
+// Nicht verwendet: Apple-Logos, SF-Schriften, SF Symbols (Lizenz nur für Apple-Plattformen); die Symbole sind die von KICAD (GlasSymbole, Texturen).
 
 namespace Hlks.Xr.Bedienung;
 
@@ -66,7 +66,7 @@ public static class GlasStil
     public const double TitelPt = 22, TextPt = 17, KleinPt = 15;
 
     // ---------------------------------------------------------------------------------------------------- Farben (neutral, nicht farbig)
-    /// <summary>Glas ohne Anpassung: neutral hellgrau (die App tönt es nach der Umgebung, <see cref="Toenung"/>; Deckkraft aus anzeige.glas_deckkraft).</summary>
+    /// <summary>Glas ohne Katalog der Farben: neutral hellgrau (Rückfall; sonst der Pastellton der App, AppFarben; Deckkraft aus anzeige.glas_deckkraft).</summary>
     public static readonly GlasFarbe Glas = new(0.56, 0.58, 0.61, 0.75);
     /// <summary>Feiner Glanz an der Oberkante (Deckkraft).</summary>
     public const double Glanz = 0.35;
@@ -81,39 +81,19 @@ public static class GlasStil
     /// <summary>Ampel (nur als kleiner Punkt): verbunden, ohne PC, Fehler.</summary>
     public static readonly GlasFarbe Gruen = new(0.30, 0.85, 0.45, 1), Orange = new(1.0, 0.70, 0.25, 1), Rot = new(1.0, 0.36, 0.33, 1);
 
-    // ---------------------------------------------------------------------------------------------------- Tönung nach der Umgebung
+    // ---------------------------------------------------------------------------------------------------- Umgebung (für die Tönung, AppFarben)
     // Apple HIG «Materials», visionOS (abgerufen 24.10.2026): «Glass is an adaptive material that limits the range of background color information so a window can
-    // continue to provide contrast for app content while becoming brighter or darker depending on people’s physical surroundings». Befund Prüfbild 24.10.2026: im
-    // hellen Sitzungsraum war das hellgraue Glas mit weisser Schrift zu hell. Umsetzung: die Fläche über dem Hintergrund soll so hell wirken wie die Stellschraube
-    // «anzeige.glas_helligkeit» (Mischung a·g + (1 − a)·Hintergrund, sRGB); im hellen Raum wird das Glas dunkler (und deckt bei Bedarf mehr), im dunklen heller.
-    // Die Helligkeit des Hintergrunds kennt die App nicht aus dem Bild (kein Zugriff auf das Kamerabild bzw. den Bildpuffer) – sie gilt je Umgebung (Annahmen V1a).
+    // continue to provide contrast for app content while becoming brighter or darker depending on people’s physical surroundings». Seit den Bildern 02 trägt das Glas
+    // den Pastellton der App (kataloge/xr_farben.json); Fassung (hell/dunkel) und Deckkraft richten sich nach der Umgebung (AppFarben.Satz). Die Helligkeit des
+    // Hintergrunds kennt die App nicht aus dem Bild (kein Zugriff auf das Kamerabild bzw. den Bildpuffer) – sie gilt je Umgebung (Annahmen V1a).
 
     /// <summary>Hintergrund (sRGB, grau) je Umgebung, Annahmen V1a: heller Sitzungsraum (Farbe des Horizonts), dunkler («tron»), Modell beim Begehen (Wände
     /// mittelgrau), echter Raum (Passthrough, unbekannt – eher hell).</summary>
     public const double HintergrundHell = 0.88, HintergrundDunkel = 0.03, HintergrundModell = 0.55, HintergrundEcht = 0.6;
-    /// <summary>Grenzen der Tönung (sRGB): nie schwarz, nie heller als das Glas ohne Anpassung.</summary>
-    public const double GlasMin = 0.14, GlasMax = 0.62;
 
     /// <summary>Hintergrund der Umgebung (Begehen bzw. Sitzungsraum hell/dunkel bzw. Passthrough).</summary>
     public static double HintergrundFuer(bool sitzung, bool passthrough, bool hell) =>
         passthrough ? HintergrundEcht : !sitzung ? HintergrundModell : hell ? HintergrundHell : HintergrundDunkel;
-
-    /// <summary>
-    /// Tönung des Glases: Grau g und Deckkraft a so, dass a·g + (1 − a)·hintergrund = ziel (sRGB). Reicht das dunkelste Glas (GlasMin) bei der Deckkraft der Stellschraube
-    /// nicht, deckt es mehr (höchstens 0.95); ist der Hintergrund dunkel, wird das Glas höchstens GlasMax hell. Leicht kühl wie das Glas ohne Anpassung.
-    /// </summary>
-    public static GlasFarbe Toenung(double hintergrund, double deckkraft, double ziel)
-    {
-        var bg = Math.Clamp(hintergrund, 0, 1);
-        var a = Math.Clamp(deckkraft, 0.3, 1);
-        var g = (ziel - (1 - a) * bg) / a;
-        if (g < GlasMin && bg > ziel) a = Math.Clamp((bg - ziel) / Math.Max(1e-6, bg - GlasMin), a, 0.95);
-        g = Math.Clamp((ziel - (1 - a) * bg) / a, GlasMin, GlasMax);
-        return new GlasFarbe(g - 0.02, g, g + 0.03, a);
-    }
-
-    /// <summary>So hell wirkt eine Glasfläche (Grau, sRGB) über dem Hintergrund.</summary>
-    public static double Wirkt(GlasFarbe f, double hintergrund) => f.A * f.G + (1 - f.A) * hintergrund;
 
     // ---------------------------------------------------------------------------------------------------- Bewegungen (ruhig und kurz)
     /// <summary>Aufbauen beim Holen (s), Zurückweichen bei einer Karte (s, m), Anheben beim Annähern (m), Register aufklappen (s).</summary>
@@ -453,6 +433,66 @@ public static class Glas
         var x = Math.Abs(d.Skalar(a.Rechts));
         var y = Math.Abs(d.Skalar(a.Oben));
         return x < (a.B + b.B) / 2 && y < (a.H + b.H) / 2;
+    }
+
+    // ---------------------------------------------------------------------------------------------------- Überdecken im Blick (V1a, Befund Prüfbilder 02)
+    // Hinweise in verschiedener Tiefe überlagerten sich, weil «Ueberdeckt» nur Flächen in ähnlicher Tiefe vergleicht. Im Blick zählt der Winkel: die Ecken der einen
+    // Fläche werden vom Auge aus auf die Ebene der anderen projiziert (Zentralprojektion) und dort verglichen – auch für Modell und Hände (Hülle im Blick).
+
+    /// <summary>Fläche b × h an p, zum Auge gedreht (Hinweis, Tooltip).</summary>
+    public static TabletPose ImBlick(Vec3 p, Vec3 auge, double b, double h) => XrTabletLogik.TabletLageAus(p, auge - p) with { B = b, H = h };
+
+    /// <summary>Punkt p vom Auge aus auf die Ebene der Fläche projiziert; null, wenn er nicht vor dem Auge liegt (in Richtung der Ebene).</summary>
+    public static Vec3? AufEbene(Vec3 p, Vec3 auge, TabletPose ebene)
+    {
+        var weg = ebene.Normale * -1;   // die Normale zeigt zum Auge
+        var abstand = (ebene.Mitte - auge).Skalar(weg);
+        var d = p - auge;
+        var nenner = d.Skalar(weg);
+        if (abstand <= 1e-6 || nenner <= 1e-4) return null;
+        return auge + d * (abstand / nenner);
+    }
+
+    static (double X0, double X1, double Y0, double Y1)? Spanne(IEnumerable<Vec3> punkte, Vec3 auge, TabletPose ebene)
+    {
+        double x0 = double.PositiveInfinity, x1 = double.NegativeInfinity, y0 = double.PositiveInfinity, y1 = double.NegativeInfinity;
+        foreach (var p in punkte)
+        {
+            if (AufEbene(p, auge, ebene) is not { } q) continue;
+            var w = q - ebene.Mitte;
+            double x = w.Skalar(ebene.Rechts), y = w.Skalar(ebene.Oben);
+            x0 = Math.Min(x0, x); x1 = Math.Max(x1, x); y0 = Math.Min(y0, y); y1 = Math.Max(y1, y);
+        }
+        return double.IsPositiveInfinity(x0) ? null : (x0, x1, y0, y1);
+    }
+
+    /// <summary>Die vier Ecken einer Fläche.</summary>
+    public static Vec3[] Ecken(TabletPose f) =>
+    [
+        f.Mitte - f.Rechts * (f.B / 2) - f.Oben * (f.H / 2), f.Mitte + f.Rechts * (f.B / 2) - f.Oben * (f.H / 2),
+        f.Mitte + f.Rechts * (f.B / 2) + f.Oben * (f.H / 2), f.Mitte - f.Rechts * (f.B / 2) + f.Oben * (f.H / 2),
+    ];
+
+    /// <summary>Überdecken sich a und b im Blick vom Auge (Winkel statt Tiefe; luft = Abstand in der Ebene von a, m)? Was hinter dem Auge liegt, zählt nicht.</summary>
+    public static bool UeberdecktImBlick(TabletPose a, TabletPose b, Vec3 auge, double luft = 0)
+    {
+        if (Spanne(Ecken(b), auge, a) is not { } s) return false;
+        return s.X0 < a.B / 2 + luft && s.X1 > -a.B / 2 - luft && s.Y0 < a.H / 2 + luft && s.Y1 > -a.H / 2 - luft;
+    }
+
+    /// <summary>
+    /// Hülle von Punkten im Blick (Modell auf dem Tisch, Hand): Rechteck senkrecht zum Blick durch die Mitte der Punkte, das alle Punkte vom Auge aus gesehen umfasst,
+    /// plus rand (m); null, wenn kein Punkt vor dem Auge liegt.
+    /// </summary>
+    public static TabletPose? HuelleImBlick(IReadOnlyCollection<Vec3> punkte, Vec3 auge, double rand = 0)
+    {
+        var gueltig = punkte.Where(p => p.IstEndlich).ToList();
+        if (gueltig.Count == 0) return null;
+        var mitte = gueltig.Aggregate(Vec3.Null, (s, p) => s + p) * (1.0 / gueltig.Count);
+        if ((mitte - auge).Laenge < 1e-6) return null;
+        var ebene = XrTabletLogik.TabletLageAus(mitte, auge - mitte);
+        if (Spanne(gueltig, auge, ebene) is not { } s) return null;
+        return ebene with { Mitte = mitte + ebene.Rechts * ((s.X0 + s.X1) / 2) + ebene.Oben * ((s.Y0 + s.Y1) / 2), B = s.X1 - s.X0 + 2 * rand, H = s.Y1 - s.Y0 + 2 * rand };
     }
 
     /// <summary>Höchstens so viele Zeilen je Seite einer Liste, wenn vorher schon belegt Zeilen stehen (mindestens 1).</summary>

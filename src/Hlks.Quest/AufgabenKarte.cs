@@ -9,11 +9,11 @@ namespace Hlks.Quest;
 
 /// <summary>
 /// Quest App P5b, seit V1a im Stil von visionOS: die Karte einer Prüfaufgabe des Labors (Regeln und Lage in Hlks.Xr.Labor.PruefAufgaben). Befund Durchsicht
-/// 24.10.2026 («Aufgabenkarte ist kein Glas»: grosser, deckend grüner Kasten, oben abgeschnitten): jetzt Glas wie die App, nach der Umgebung getönt (GlasZeichner.Ton),
-/// so klein wie der Text es erlaubt, Farbe nur als Akzent – ein Punkt vor dem Titel (läuft weiss, wartet orange, abgebrochen grau) bzw. ein grüner Haken bei Erfolg.
+/// 24.10.2026 («Aufgabenkarte ist kein Glas»: grosser, deckend grüner Kasten, oben abgeschnitten): jetzt Glas wie die App im Ton des Labors (kataloge/xr_farben.json, «labor»),
+/// so klein wie der Text es erlaubt, Farbe nur als Akzent – ein Punkt vor dem Titel (läuft im Akzent, wartet orange, abgebrochen blass) bzw. ein Haken bei Erfolg.
 /// Steht das Fenster der Apps, ist die Karte ein Ornament über seiner Oberkante (Apple HIG «Ornaments»: über dem Fenster, leicht davor; sie deckt die App nicht, man
 /// kann während der Aufgabe weiter bedienen); sonst steht sie rechts neben dem Blick wie in P5b. Der Knopf «Aufgabe beenden» ist eine Kapsel unten rechts (Antippen
-/// oder Pinch); Pinch + Wisch nach vorn bricht ebenfalls ab – dieser Hinweis steht frei schwebend über der Karte. Alles im Raum der Brille.
+/// oder Pinch); Wegwischen (rechte Hand offen, von rechts nach links) bricht ebenfalls ab – dieser Hinweis steht frei schwebend über der Karte. Alles im Raum der Brille.
 /// </summary>
 sealed class AufgabenKarte
 {
@@ -39,6 +39,8 @@ sealed class AufgabenKarte
 
     /// <summary>Ist eine Hand an der Karte (dann stehen Karte und Apps still, ihr Pinch zielt nicht)?</summary>
     public bool HandNah { get; private set; }
+    /// <summary>V1a, Wegwischen: so weit (m) nach links läuft die Karte gerade mit der Hand mit (die Anwendung setzt es je Bild).</summary>
+    public double WischVersatz { get; set; }
 
     /// <summary>Lage als Ornament über der Oberkante des Fensters: 1.5 cm Luft, 1.2 cm davor, zum Auge gedreht wie das Fenster.</summary>
     public static TabletPose UeberFenster(TabletPose fenster, double b, double h) =>
@@ -77,6 +79,7 @@ sealed class AufgabenKarte
             var a = AppLayout.Nachfuehren(anker, X(kopf.position), blickGieren, dt, HandNah);
             k = PruefAufgaben.KarteLage(a.Auge, a.Gieren, e.Apps.Skala / 1.35) with { B = b, H = ms.H };
         }
+        if (WischVersatz > 0) k = k with { Mitte = k.Mitte - k.Rechts * WischVersatz };   // V1a: die Hand wischt die Karte weg – sie läuft nach links mit
         var kn = knopf ? k with { Mitte = k.Mitte + k.Rechts * (b / 2 - ms.Rand - ms.KnopfB / 2) - k.Oben * (ms.H / 2 - ms.Rand * 0.8 - ms.KnopfH / 2) + k.Normale * 0.002,
             B = ms.KnopfB, H = ms.KnopfH } : null;
         Lage = k;
@@ -105,40 +108,41 @@ sealed class AufgabenKarte
     void Zeichnen(TabletPose k, TabletPose? kn, string titelText, string anleitung, string zeile, LaufZustand zustand, double naehe, double t, GlasMasse m, Masse ms,
         XVec3 auge)
     {
-        // Glas wie die App (nach der Umgebung getönt); abgebrochen bzw. gesperrt etwas zurückhaltender
-        var ton = glas.Ton;
+        // Glas im Ton des Labors (kataloge/xr_farben.json, «labor»; Deckkraft nach der Umgebung); abgebrochen bzw. gesperrt etwas zurückhaltender
+        var s = glas.Satz("labor");
+        var ton = s.Glas;
         glas.Flaeche(k, m.M(GlasStil.EckenPt) * 0.8, zustand is LaufZustand.Abgebrochen or LaufZustand.Gesperrt ? ton with { A = ton.A * 0.85 } : ton);
         double rand = ms.Rand, innen = k.B - 2 * rand, links = -k.B / 2 + rand, oben = k.H / 2 - rand;
-        // Akzent vor dem Titel: Punkt (läuft weiss, wartet orange, abgebrochen grau, gesperrt rot) bzw. grüner Haken bei Erfolg
+        // Akzent vor dem Titel: Punkt (läuft im Akzent, wartet orange, abgebrochen blass, gesperrt rot) bzw. Haken bei Erfolg
         var punkt = m.M(12);
         var akzent = k with { Mitte = k.Mitte + k.Rechts * (links + punkt / 2) + k.Oben * (oben - ms.Titel * 0.62) + k.Normale * 0.003, B = punkt, H = punkt };
-        if (zustand == LaufZustand.Erfolg) glas.Symbol(GlasSymbole.Haken, akzent, punkt * 1.6, GlasStil.Gruen);
+        if (zustand == LaufZustand.Erfolg) glas.Symbol(GlasSymbole.Haken, akzent, punkt * 1.6, s.Akzent, s.Hell);
         else
             glas.Knopf(akzent, GlasForm.Kreis, zustand switch
             {
                 LaufZustand.Wartet => GlasStil.Orange,
-                LaufZustand.Abgebrochen => GlasStil.TextTertiaer,
+                LaufZustand.Abgebrochen => s.TextTertiaer,
                 LaufZustand.Gesperrt => GlasStil.Rot,
-                _ => GlasStil.TextPrimaer,
+                _ => s.Akzent,
             }, m.Pt);
         var tx = links + punkt + m.M(8);
-        glas.Schrift(titelText, k, tx, oben, innen - punkt - m.M(8), ms.Titel * 1.4, ms.Titel, GlasStil.TextPrimaer, TextAlign.TopLeft);
+        glas.Schrift(titelText, k, tx, oben, innen - punkt - m.M(8), ms.Titel * 1.4, ms.Titel, s.Text, TextAlign.TopLeft);
         oben -= ms.Titel * 1.5;
         if (ms.Anleitung > 0)
         {
-            glas.Schrift(anleitung, k, links, oben, innen, ms.Klein * 1.45 * ms.Anleitung, ms.Klein, GlasStil.TextSekundaer, TextAlign.TopLeft);
+            glas.Schrift(anleitung, k, links, oben, innen, ms.Klein * 1.45 * ms.Anleitung, ms.Klein, s.TextSekundaer, TextAlign.TopLeft);
             oben -= ms.Klein * 1.45 * ms.Anleitung + m.M(6);
         }
         if (ms.Stand > 0)
-            glas.Schrift(zeile, k, links, oben, innen, ms.Klein * 1.45 * ms.Stand, ms.Klein, GlasStil.TextPrimaer, TextAlign.TopLeft);
+            glas.Schrift(zeile, k, links, oben, innen, ms.Klein * 1.45 * ms.Stand, ms.Klein, s.Text, TextAlign.TopLeft);
         if (kn is not null)
         {
             var blitz = Math.Max(0, 1 - (t - knopfBlitz) / 0.25);
             var lage = kn with { Mitte = kn.Mitte + kn.Normale * (GlasStil.AnhebenM * naehe) };
-            glas.Knopf(lage, GlasForm.Kapsel, naehe > 0 || blitz > 0 ? GlasStil.DuennNah : GlasStil.Duenn, m.Pt);
-            glas.Schrift("Aufgabe beenden", lage, 0, ms.Klein * 0.62, lage.B - m.M(16), lage.H, ms.Klein, GlasStil.TextPrimaer, TextAlign.TopCenter, umbrechen: false);
+            glas.Knopf(lage, GlasForm.Kapsel, naehe > 0 || blitz > 0 ? s.DuennNah : s.Duenn, m.Pt);
+            glas.Schrift("Aufgabe beenden", lage, 0, ms.Klein * 0.62, lage.B - m.M(16), lage.H, ms.Klein, s.Text, TextAlign.TopCenter, umbrechen: false);
             // die Geste als Hinweis frei schwebend über der Karte (Christian 24.10.2026: «hinweistexte frei schwebend»; die Karte selbst bleibt Glas)
-            glas.Schein("Pinch + Wisch nach vorn: abbrechen", k.Mitte + k.Oben * (k.H / 2 + ms.Klein * 1.6) + k.Normale * 0.004, auge, ms.Klein, 0.9);
+            glas.Schein("Nach links wischen: abbrechen", k.Mitte + k.Oben * (k.H / 2 + ms.Klein * 1.6) + k.Normale * 0.004, auge, ms.Klein, 0.9);
         }
     }
 }

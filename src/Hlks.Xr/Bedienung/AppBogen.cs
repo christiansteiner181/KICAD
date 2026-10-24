@@ -10,7 +10,7 @@
 //   - Die Apps stehen an einem festen Platz zum Körper: im Bogen auf Brusthöhe links neben dem Blick (SeitlichGrad), sie folgen dem Blick träge (erst ab 30°
 //     bzw. 15 cm, dann weich). So findet man sie immer am selben Ort; beide Hände bleiben frei zum Antippen (anders als das Tablet an der Hand), die rechte Hand
 //     zeigt frei nach vorn zum Springen, der Tisch im Sitzungsraum bleibt frei.
-//   - Beim Start sind sie da. Wegwischen (Pinch + Wisch nach vorn, feste Gestenbedeutung) blendet sie aus.
+//   - Beim Start sind sie da. Wegwischen (P5a: Pinch + Wisch nach vorn; seit V1a die offene rechte Hand von rechts nach links) blendet sie aus.
 //   - Die linke Handfläche zum Gesicht drehen (0.4 s halten) holt sie wieder – sofort vor den Blick. Die Geste kennt Christian vom Tablet des Prototyps (XR-C).
 //   - In der Anordnung «an_hand» (Labor) erscheinen sie stattdessen klein über der linken Handfläche, solange sie zum Gesicht zeigt.
 // Masse (Brusthöhe 30 cm unter den Augen, Lücke 15 % der Kachel, 4 Kacheln je Reihe, Mitte 50° links vom Blick) sind Annahmen P5a.

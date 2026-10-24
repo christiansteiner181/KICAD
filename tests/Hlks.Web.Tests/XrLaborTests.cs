@@ -79,8 +79,8 @@ public class XrLaborTests
         foreach (var a in aufgaben) Assert.True(k.AufgabeBekannt(a), a);
         Assert.Equal("p5", k.AufgabeStatusVon("messen-wand-wand"));   // V1a: Messen in der App
         Assert.Equal("p5", k.AufgabeStatusVon("drehen-90"));
-        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung", "symbole" }) Assert.Contains(n, k.VariantenNamen);   // V1a: umgebung, symbole
-        Assert.Equal(6, k.VariantenNamen.Count);
+        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl" }) Assert.Contains(n, k.VariantenNamen);   // V1a: umgebung, symbole, symbolwahl
+        Assert.Equal(7, k.VariantenNamen.Count);
         Assert.True(k.VarianteBekannt("bedienung", "apps"));
         Assert.True(k.VarianteBekannt("bedienung", "tablet"));
         Assert.False(k.VarianteBekannt("bedienung", "stick"));
@@ -410,7 +410,7 @@ public class XrLaborTests
         Assert.Equal(1, (int)lokal["fassung"]!);
         Assert.Equal(Echt().Stellschrauben.Count, lokal["stellschrauben"]!.AsArray().Count);
         Assert.Equal(7, lokal["aufgaben"]!.AsArray().Count);
-        Assert.Equal(6, lokal["varianten"]!.AsArray().Count);   // V1a: «umgebung», «symbole»
+        Assert.Equal(7, lokal["varianten"]!.AsArray().Count);   // V1a: «umgebung», «symbole», «symbolwahl»
         Assert.Equal(2, lokal["muster"]!.AsArray().Count);
         Assert.Null(lokal["profil"]);
         var etag = l.Headers.ETag?.ToString();

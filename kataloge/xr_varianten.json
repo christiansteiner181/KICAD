@@ -61,7 +61,17 @@
         { "id": "bogen", "titel": "Im Bogen (Reihe)" }
       ],
       "vorgabe": "verteilt",
-      "herkunft": "Christian 24.10.2026: «frei schwebende Appsymbole … in griff weite», «symbole nicht in einer leiste sondern verteilt»"
+      "herkunft": "Christian 24.10.2026: «frei schwebende Appsymbole … in griff weite», «symbole nicht in einer leiste sondern verteilt»; nach den Bildern 02: «frontal des nutzers in einem abstand von ca. 60cm und über eine höhe von ca. 0.6m verteilt … maximal 3 reihig»"
+    },
+    {
+      "name": "symbolwahl", "titel": "App-Symbole nach der Wahl",
+      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: stehen bleiben (die App öffnet frontal etwas näher, das Symbolfeld weicht dahinter zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) oder ausblenden (die App öffnet, sobald die Symbole weg sind).",
+      "optionen": [
+        { "id": "stehen", "titel": "Stehen bleiben" },
+        { "id": "ausblenden", "titel": "Ausblenden" }
+      ],
+      "vorgabe": "stehen",
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück), als Variante zum Vergleich"
     }
   ]
 }

@@ -32,6 +32,11 @@
 		<ProjectReference Include="..\Hlks.Xr\Hlks.Xr.csproj" />
 	</ItemGroup>
 
+	<ItemGroup>
+		<!-- V1a: Farben der App aus dem Katalog (App-Pastellreihe, Christian 24.10.2026), mitgeliefert – keine Farbwerte im Code. -->
+		<EmbeddedResource Include="..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
+	</ItemGroup>
+
 	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle). -->
 	<Import Project="Fassung.targets" />
 </Project>

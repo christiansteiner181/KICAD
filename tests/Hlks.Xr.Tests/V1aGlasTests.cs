@@ -204,28 +204,10 @@ public class V1aGlasTests
     }
 
     [Fact]
-    public void Glas_tönt_sich_nach_der_Umgebung_im_hellen_Raum_dunkler()
+    public void Umgebung_der_App_für_Fassung_und_Deckkraft_des_Glases()
     {
-        // Befund Prüfbild 24.10.2026: im hellen Sitzungsraum war das Glas zu hell für weisse Schrift
-        var ziel = 0.42;
-        var hell = GlasStil.Toenung(GlasStil.HintergrundHell, 0.75, ziel);
-        var modell = GlasStil.Toenung(GlasStil.HintergrundModell, 0.75, ziel);
-        var dunkel = GlasStil.Toenung(GlasStil.HintergrundDunkel, 0.75, ziel);
-        Assert.True(hell.G < modell.G && modell.G < dunkel.G);   // im hellen Raum dunkleres Glas
-        foreach (var (f, bg) in new[] { (hell, GlasStil.HintergrundHell), (modell, GlasStil.HintergrundModell), (dunkel, GlasStil.HintergrundDunkel) })
-        {
-            Nah(GlasStil.Wirkt(f, bg), ziel, 1e-9);   // wirkt überall gleich hell
-            Assert.True(f.G >= GlasStil.GlasMin && f.G <= GlasStil.GlasMax);
-            Assert.True(f.B > f.R);   // leicht kühl, neutral
-        }
-        Nah(hell.A, 0.75, 1e-12);
-        // sehr durchscheinend im hellen Raum: das dunkelste Glas reicht nicht – es deckt mehr (höchstens 0.95)
-        var duenn = GlasStil.Toenung(GlasStil.HintergrundHell, 0.3, ziel);
-        Assert.True(duenn.A > 0.3 && duenn.A <= 0.95);
-        Nah(GlasStil.Wirkt(duenn, GlasStil.HintergrundHell), ziel, 1e-6);
-        // sehr dunkler Hintergrund mit hellem Ziel: nie heller als GlasMax
-        Nah(GlasStil.Toenung(0, 0.75, 0.6).G, GlasStil.GlasMax, 1e-12);
-        // Umgebung der App: Passthrough geht vor, dann Begehen (Modell), Sitzungsraum hell bzw. dunkel
+        // die Tönung selbst prüft V1aFarbenTests (Pastellton der App, Deckkraft nach der Umgebung); hier die Umgebung: Passthrough geht vor, dann Begehen (Modell),
+        // Sitzungsraum hell bzw. dunkel
         Assert.Equal(GlasStil.HintergrundEcht, GlasStil.HintergrundFuer(true, true, true));
         Assert.Equal(GlasStil.HintergrundModell, GlasStil.HintergrundFuer(false, false, true));
         Assert.Equal(GlasStil.HintergrundHell, GlasStil.HintergrundFuer(true, false, true));
@@ -262,13 +244,12 @@ public class V1aGlasTests
         Assert.True(GlasStil.TextSekundaer.A < GlasStil.TextPrimaer.A && GlasStil.TextTertiaer.A < GlasStil.TextSekundaer.A);
         Assert.True(Math.Abs(GlasStil.Glas.R - GlasStil.Glas.B) < 0.1);   // neutral, nicht farbig
         Assert.Equal(new GlasFarbe(0.5, 0.5, 0.5, 1).Heller(1), new GlasFarbe(1, 1, 1, 1));
-        foreach (var s in GlasSymbole.Alle)
-        {
-            var l = GlasSymbole.Linien(s);
-            Assert.NotEmpty(l);
-            Assert.All(l.SelectMany(x => x), p => Assert.True(Math.Abs(p.X) <= 0.5 + 1e-9 && Math.Abs(p.Y) <= 0.5 + 1e-9, s));
-        }
-        Assert.Empty(GlasSymbole.Linien("gibtsnicht"));
+        // die Symbole sind die von KICAD (Texturen aus symbole.js, V1aFarbenTests prüft Dateien und Prüfsummen)
+        Assert.Equal("symbole/strich/geschoss.png", GlasSymbole.Datei(GlasSymbole.Etagen, GlasSymbole.SatzStrich));
+        Assert.Equal(GlasSymbole.SatzRevitHell, GlasSymbole.Satz("revit", hell: true));
+        Assert.Equal(GlasSymbole.SatzRevitDunkel, GlasSymbole.Satz("revit", hell: false));
+        Assert.Equal(GlasSymbole.SatzStrich, GlasSymbole.Satz("strich", hell: true));
+        Assert.Equal(GlasSymbole.SatzStrich, GlasSymbole.Satz(null, hell: false));
         // neue Stellschrauben V1a
         static JsonElement W(string j) => JsonDocument.Parse(j).RootElement.Clone();
         var e = XrBedienEinstellungen.Vorgabe;

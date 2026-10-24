@@ -4,6 +4,7 @@ using System.Numerics;
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hlks.Xr;
+using Hlks.Xr.Bedienung;
 using Hlks.Xr.Labor;
 using Hlks.Xr.Messen;
 using Hlks.Xr.Modell;
@@ -123,6 +124,7 @@ sealed partial class QuestApp
         }
         if (lauf is { Fertig: false }) AufgabeBeenden("andere Aufgabe am PC");
         lauf = PruefAufgaben.Starten(id, werte.Katalog?.Aufgabe(id));
+        karteSeit = Time.Total;
         laufAbgeschlossen = false;
         laufEnde = null;
         markiertesBauteil = null;
@@ -130,6 +132,25 @@ sealed partial class QuestApp
         wandSucheAb = 0;
         Hinweis(lauf.Zustand == LaufZustand.Gesperrt ? $"Aufgabe «{Titel(lauf)}»: {lauf.Grund}" : $"Aufgabe vom PC: «{Titel(lauf)}».");
         return LaborWerte.Ok;
+    }
+
+    /// <summary>Seit wann die Karte der Aufgabe steht (für die Reihenfolge des Wegwischens).</summary>
+    double karteSeit;
+
+    /// <summary>V1a: die Karte als Ziel des Wegwischens, solange sie steht (Christian 24.10.2026: die Karte wegwischen = Aufgabe abbrechen).</summary>
+    WegwischKandidat? KarteKandidat(XVec3 auge) =>
+        lauf is not null && karte.Lage is { } k ? new WegwischKandidat("karte", Glas.ImBlick(k.Mitte, auge, k.B, k.H), karteSeit) : null;
+
+    /// <summary>
+    /// V1a: die Karte weggewischt – eine laufende Aufgabe bricht ab (Messprotokoll mit «abbrueche» wie bisher, sofort gesendet), eine fertige Karte geht einfach weg.
+    /// </summary>
+    void KarteWegwischen(double t)
+    {
+        karte.WischVersatz = 0;
+        if (lauf is not { } l) return;
+        if (!l.Fertig) AufgabeBeenden("Wegwischen");
+        if (l.Fertig) Abschliessen(l, t);
+        lauf = null; laufEnde = null; markiertesBauteil = null;
     }
 
     /// <summary>Abbruch (Knopf, Wegwischen, PC): Messprotokoll mit erfolg = false, wenn die Zeit schon lief.</summary>

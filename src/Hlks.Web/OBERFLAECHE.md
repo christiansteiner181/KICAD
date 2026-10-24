@@ -2000,7 +2000,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   | Richtung | typ | Inhalt |
   | --- | --- | --- |
   | Brille → PC | `hallo` | `name`, `geraet` (je ≤ 40), `app?` – zuerst, innert 10 s |
-  | PC → Brille | `willkommen` | `id` (Teilnehmer-Id «t…»), `teilnehmer[{ id, name, geraet }]`, `auftrag` (aktueller VR-Auftrag oder null), `stellschrauben{}` |
+  | PC → Brille | `willkommen` | `id` (Teilnehmer-Id «t…»), `teilnehmer[{ id, name, geraet }]`, `auftrag` (aktueller VR-Auftrag oder null), `stellschrauben{}`, `symbole` (V1a: Symbolsatz des Benutzers, `strich` oder `revit`, aus `oberflaeche.symbole`) |
   | PC → andere | `hallo` / `tschuess` | `id`, `name`, `geraet` / `id` |
   | Brille → PC | `pose` | `kopf{ pos[3], rot[4] }`, `links?`/`rechts?{ gelenk{ pos, rot }, zeigefinger[3], pinch, pinchStaerke? }`, `modus?` (begehen \| sitzungsraum), `massstab?` |
   | PC → andere | `pose` | wie oben plus `von`, `zeit` (Unix-ms); höchstens 30 je Sekunde und Teilnehmer weitergereicht (die letzte gilt für den PC) |
@@ -2177,8 +2177,10 @@ Die native App «KICAD» auf der Quest (`src/Hlks.Quest`, StereoKit 0.3.11) mit 
 - **Protokoll** (`adb logcat`, Kennung DOTNET): alle 5 s «P4 Status: Gerät, Bildrate, Bildzeit (Mittel und höchstens), Rechenzeit der App, Geschoss (Kennzeichen),
   Netze und Aufrufe, Dreiecke (gezeichnet von allen), Durchgang (mit längstem Wechsel), Haltung=sitzend|stehend, Drehen=ein|aus, Hand=ja|nein, Strahl, Verbindung,
   Modell, Kanal, Posen, Hände» – die Grundlage für K1. Ohne Bodenbezug steht einmal ein Hinweis darin.
-- **Prüfen am PC:** `powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>]` startet einen KICAD-Testserver auf
-  Port 5130 (Testlauf, alles unter `%TEMP%`; Abbruch, wenn KICAD läuft), legt das Beispielprojekt an bzw. öffnet eine Kopie des Projekts, erzeugt ein Paket und lässt
+- **Prüfen am PC:** `powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-Port <n>]` startet einen KICAD-Testserver auf
+  Port 5130 (Testlauf, alles unter `%TEMP%`). Läuft das Desktop-KICAD (5130 belegt), nimmt er seit V1a selbständig den ersten freien Port von 5139 abwärts und öffnet
+  den Netzzugang dort (Umgebungsvariable `HLKS_XR_DESKTOP_PORT`, wirkt nur im Testlauf, nur 127.0.0.1); Schalter, Kopplungen und Zertifikat des Desktop-KICAD bleiben
+  unberührt, es muss nicht beendet werden. Er legt das Beispielprojekt an bzw. öffnet eine Kopie des Projekts, erzeugt ein Paket und lässt
   die PC-Fassung zweimal laufen: mit PC (vorher ein VR-Auftrag für den ersten Raum, die App muss dort starten) und ohne PC (Start am gemerkten Standpunkt). Ergebnis
   je Lauf «P4 Laden: je Geschoss und Teil ms, MB, Dreiecke; Zwischenspeicher» und «P4 ok: Geschoss, gezeichnete Netze, Aufrufe, Dreiecke, Blöcke, Haltung und
   Drehen, mittlere Bildzeit, Rechenzeit, Modell nach, Auftrag, Durchgang (Wechsel an einer Wand des grössten Netzes im Vergleich zum Neuladen des ganzen Netzes), …».
@@ -2295,7 +2297,8 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben, Messproto
 - **Ein- und ausblenden – Entscheid P5a:** fester Platz plus Geste. Beim Start sind die Apps da. **Wegwischen** (Pinch + Wisch nach vorn) blendet sie aus; **linke Handfläche
   zum Gesicht drehen** (0.4 s halten) holt sie wieder an ihren Platz. Begründung: Einen festen Platz am Körper findet man ohne Suchen, und beide Hände bleiben frei zum
   Antippen (beim Tablet trägt eine Hand die Bedienung); die Handfläche kennt Christian vom Tablet des Prototyps (XR-C), und Wegwischen ist die feste Bedeutung «schliessen».
-  Nach dem Ausblenden erinnert eine Zeile unten vor dem Blick 6 s lang daran.
+  Nach dem Ausblenden erinnert eine Zeile unten vor dem Blick 6 s lang daran. **Seit V1a abgelöst:** die Hebegeste holt die Apps, Wegwischen ist die offene rechte Hand
+  von rechts nach links, Pinch + Wisch nach vorn entfällt (Abschnitt «Quest App V1a»).
 - **Kacheln** (was die Box konnte, dazu «Etagen»):
   - Begehen: **Status** (Ampel grün verbunden / orange ohne PC / rot Fehler, Geschoss und Raum, Hz), **Etagen**, **Drehen** (Schalter, zeigt den wirksamen Zustand wie
     bisher), **Sitzungsraum**, **Ebenen** (wenn es welche gibt).
@@ -2321,7 +2324,7 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben, Messproto
 | Pinch (Daumen + Zeigefinger) | wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen |
 | Pinch + Wisch links/rechts | blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt) |
 | Pinch + Wisch hoch/runter | Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen») |
-| Pinch + Wisch nach vorn (wegwischen) | schliesst die offene App, sonst (P5b) bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus |
+| Pinch + Wisch nach vorn (wegwischen) – **seit V1a entfallen**, ersetzt durch das Wegwischen nach links | schloss die offene App, sonst (P5b) brach es eine laufende Prüfaufgabe ab, sonst blendete es die Apps aus |
 | Linke Handfläche zum Gesicht drehen | holt die Apps (blendet sie ein) |
 | Flache Hand über dem Modell, kurz ruhig (P5b) | Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf |
 | Offene Hand, Handfläche nach vorn (P5b) | Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend |
@@ -2331,11 +2334,11 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben, Messproto
 
 - **Wisch** (Regeln `XrGesten`): mit **gehaltenem Pinch** schnell ziehen – mindestens 15 cm (`wisch.mindestweg_m`) mit mindestens 0.8 m/s (`wisch.mindesttempo_ms`) in
   höchstens 0.4 s, überwiegend waagrecht oder senkrecht (Abweichung höchstens ≈ 37°, `wisch.richtung_toleranz_grad`; Vorgabe genau «80 % waagrecht» des Prototyps).
-  Eingeordnet zum Blick: senkrecht = hoch/runter; waagrecht innerhalb der Toleranz um die Blickrichtung = vor (wegwischen) bzw. zurück (noch ohne Bedeutung); sonst
+  Eingeordnet zum Blick: senkrecht = hoch/runter; waagrecht innerhalb der Toleranz um die Blickrichtung = vor (bis V1a wegwischen, seither ohne Bedeutung) bzw. zurück (ohne Bedeutung); sonst
   links/rechts. **Richtungssperre:** innerhalb 1 s (`begehen.drehen_sperre_s`) nach einem Wisch zählt die Gegenrichtung nicht (das Zurückholen der Hand löst nichts aus) –
   wie beim Drehen (Christian 23.10.2026), jetzt für alle Wische.
   **Entscheid P5a:** überall mit Pinch, wie das abgenommene Drehen (Christian 23.10.2026: «Das neue Drehen passt»); ein Wisch mit offener Hand würde beim Senken des Arms
-  leicht ungewollt die Etage wechseln. **Änderung zu P4a:** ein Wisch nach vorn oder hinten dreht nicht mehr (er ist «wegwischen»).
+  leicht ungewollt die Etage wechseln. **Änderung zu P4a:** ein Wisch nach vorn oder hinten dreht nicht mehr (er war «wegwischen»; seit V1a löst er nichts aus).
 - **Etage per Wisch hoch/runter bzw. App «Etagen»** (Regeln `Modell/EtagenWechsel`; Variante `labor.variante.etage` = `app`: nur über die App):
   - Begehen: nächstes Geschoss mit höherer bzw. tieferer Kote (gleiche Kote ±1 mm zählt nicht als anderes). Man landet **über demselben Punkt**, wenn er im Grundriss eines
     Raums dieses Geschosses liegt (auf dessen Boden), **sonst im grössten Raum** (Schwerpunkt bzw. innerster Punkt), ohne Räume über demselben Punkt auf der Kote. Die
@@ -2426,8 +2429,8 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
 - **Karte:** rechts neben dem Blick (28°; die Apps stehen links), 60 cm vor dem Auge, 8 cm unter den Augen, zum Auge gedreht, folgt dem Blick träge wie die Apps. Sie zeigt
   den **Titel** und die **Anleitung** aus dem Katalog, darunter den Abschnitt bzw. das Ziel mit Zeit und Fehlgriffen und den Knopf **«Aufgabe beenden»** (Antippen oder
   Pinch). Schrift nach `anzeige.skala`. Erfolg: Karte grün «Geschafft · Zeit · Fehlgriffe» (5 s), Klick. Abgebrochen: grau (5 s).
-- **Ende:** Erfolg nach dem Kriterium unten; **Abbruch** mit «Aufgabe beenden», mit **Pinch + Wisch nach vorn** (Wegwischen schliesst das Vorderste: eine offene App,
-  sonst die Karte), am PC mit «Aufgabe beenden» (`null`) bzw. einer anderen Aufgabe. Dieselbe Aufgabe nochmals gestartet = **neu begonnen** (Abbrüche + 1, die Zeit läuft
+- **Ende:** Erfolg nach dem Kriterium unten; **Abbruch** mit «Aufgabe beenden», mit dem **Wegwischen** (seit V1a die offene rechte Hand von rechts nach links über die
+  Karte bzw. ohne Ziel das Vorderste: eine offene App, sonst die Karte; bis V1a Pinch + Wisch nach vorn), am PC mit «Aufgabe beenden» (`null`) bzw. einer anderen Aufgabe. Dieselbe Aufgabe nochmals gestartet = **neu begonnen** (Abbrüche + 1, die Zeit läuft
   weiter, der Ablauf beginnt von vorn).
 - **Messprotokoll** (Nachricht `messprotokoll`): `aufgabe`, `zeitMs` (vom Beginn bis Erfolg bzw. Abbruch), `fehlgriffe`, `abbrueche`, `erfolg`, `varianten` (die Varianten,
   die für die Aufgabe zählen – Katalog `aufgaben[].varianten`; ohne Katalog alle), `stellschrauben` (die wirksamen Werte aller Stellschrauben und Varianten aus Katalog,
@@ -2487,7 +2490,8 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
 ### Weiteres
 - App **«Tisch»** (Sitzungsraum): neuer Eintrag **«Raum zeigen»** (Ausschnitt des markierten bzw. des Raums am Standort vor dem Sitzungsraum); in der Variante «tablet» ein
   Knopf in der Box.
-- **Gesten** (Tabelle in der App «Status» und oben bei P5a): Pinch + Wisch nach vorn bricht eine laufende Prüfaufgabe ab (nach der offenen App, vor dem Ausblenden); neu
+- **Gesten** (Tabelle in der App «Status» und oben bei P5a): Pinch + Wisch nach vorn brach eine laufende Prüfaufgabe ab (nach der offenen App, vor dem Ausblenden; seit
+  V1a das Wegwischen nach links); neu
   «Flache Hand über dem Modell» und «Offene Hand, Handfläche nach vorn».
 - **Texte in der Brille** (Karte, Hinweiszeile) bricht die App selbst um (`Bedienung/Textumbruch`; Befund am Prüfbild: StereoKit verkleinerte lange Zeilen sonst auf eine
   Zeile).
@@ -2519,7 +2523,9 @@ apps und funktionen nach der vision»; Quelle Apple Human Interface Guidelines, 
 `ProblemMarker` (`kataloge/klassen.json`), `Kollision/BcfMarker.cs` und die Palette `problemmarker-panel.js`. **Keine Normwerte:** alle Zahlen sind Einstellungen der
 Bedienung bzw. Annahmen V1a. Nach den Prüfbildern 01 kamen am selben Tag dazu (Christian 24.10.2026): **Hebegeste und frei schwebende App-Symbole** statt der
 Registerleiste, **Zeiger mit Tooltip**, **Hinweise frei schwebend** (Regeln `Bedienung/AppSymbole.cs`, `Bedienung/Hinweise.cs`; App `SymbolApps.cs`,
-`QuestApp.Hinweise.cs`).
+`QuestApp.Hinweise.cs`); nach den Prüfbildern 02: **Symbolfeld frontal**, **Berührung mit der ganzen Hand** (`Bedienung/HandBeruehrung.cs`), **Symbole bleiben stehen**,
+**eine Geste Wegwischen** für alles (`Bedienung/Wegwischen.cs`, Einhängepunkt `Wegwischbar.cs`; Pinch + Wisch nach vorn entfällt), **App-Pastellreihe**
+(`kataloge/xr_farben.json`, `Bedienung/AppFarben.cs`) und die **Symbole von KICAD** als Texturen (`werkzeuge/quest_symbole.mjs`, `Assets/symbole`).
 
 ### Apps holen: Hebegeste und App-Symbole
 Christian 24.10.2026: «wird mit beiden handflächen nach oben eine deutliches nach obenstreichen gezeigt, soll dies frei schwebende Appsymbole von unten her einblenden. so wie
@@ -2529,62 +2535,116 @@ in einer leiste sondern verteilt»; «Ja, die Registerleiste fällt weg; gewechs
   höchstens `hebe.zeit_s` (0.9 s), Handfläche höchstens `hebe.handflaeche_grad` (45°) neben oben, die Hände beginnen höchstens `hebe.gleichzeitig_s` (0.35 s) auseinander,
   seitlich höchstens 60 % des Wegs. Alle Werte sind **Annahmen V1a** (Stellschrauben im XR-Labor). Ohne Pinch – die Geste löst weder Pinch + Wisch (Etage) noch einen
   Sprung aus. Nach einem Heben zählt die Geste 0.8 s nicht. Ersetzt «linke Handfläche zum Gesicht» (P5a; nur die Anordnung «an der Hand» im Labor nutzt sie noch).
-- **Die Symbole:** runde Glas-Symbole ohne Fenster dahinter, eines je App – **KICAD** (Status, mit Ampel der Verbindung), **Etagen**, **Messen**, **Marker**, **Ort**
-  (Begehen: Drehen, Sitzungsraum) bzw. **Tisch** (Sitzungsraum: Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen), **Ebenen** (wenn es welche gibt).
-  Sie **steigen von unten ein**, folgen während der Geste der Höhe der Hände (jedes ein wenig nach dem vorigen) und setzen sich danach ruhig; ab dann stehen sie **fest im
-  Raum** (nicht am Kopf).
-- **Anordnung** (Variante `labor.variante.symbole` = `verteilt`, Vorgabe): **locker verteilt** vor dem Körper in Griffweite – Mitte `symbole.abstand_m` (0.42 m) vor den
-  Augen und `symbole.hoehe_m` (0.32 m) darunter, Brust bis Schulter –, verschiedene Höhen, leicht gestaffelte Tiefe, keine gemeinsame Grundlinie, kein Träger. **Je App
-  immer derselbe Platz** (Muskelgedächtnis; «Ort» und «Tisch» teilen sich einen). Symbol 72 pt (6.5 cm), Mitten mindestens 0.14 m auseinander, der Tooltip darunter
-  überdeckt nie ein anderes Symbol oder einen anderen Tooltip (Test). `symbole.streuung` (1) zieht die Verteilung auseinander bzw. zusammen; `bogen` = alle in einer Reihe
-  im Bogen (zum Vergleich).
-- **Wählen durch Berührung:** die Fingerspitze berührt das Symbol (kein Pinch) – Leuchten am Rand und Klick, dann öffnet die **Glas-App dieser App dort, wo die Symbole
-  standen** (in Griffweite; am Sitzungstisch neben dem Tisch), die Symbole blenden aus. Kommen die Symbole, macht ein offenes Fenster Platz.
-- **Wegschieben** (Christian 24.10.2026: «aus der mitte heraus seitwärtswischen mit beiden armen und nach aussen gedrehten händen schiebt die symbole beidseitig aus dem
-  bild»): beide Hände offen, **nahe der Mitte vor dem Körper** (höchstens `schieben.startabstand_m` = 0.3 m auseinander), **Handflächen nach aussen** gedreht (links nach
-  links, rechts nach rechts; höchstens `schieben.handflaeche_grad` = 50° daneben), beide **gleichzeitig** (`schieben.gleichzeitig_s` = 0.35 s) **deutlich nach aussen**
-  (je `schieben.weg_m` = 0.15 m in höchstens `schieben.zeit_s` = 0.8 s; quer höchstens 60 % des Wegs) – alles **Annahmen V1a**. Die Symbole **laufen mit**: die links der
-  Mitte mit der linken Hand nach links, die rechts mit der rechten nach rechts (1.4 × der Weg der Hand); ist die Geste vollständig, gleiten sie mit einem Klick ganz aus
-  dem Bild und verblassen; bricht sie ab, gleiten sie zurück. Ohne Pinch – weder Pinch + Wisch (Blättern, Drehen, Etage) noch der Sprung lösen aus; ein einhändiger Wisch
-  bzw. die Hebegeste lösen es nicht aus (Tests); solange beide Arme in der Haltung sind, löscht der Wisch mit offener Hand keine Messung. Ohne Wahl gehen die Symbole
-  ausserdem mit Pinch + Wisch nach vorn bzw. nach `symbole.wartezeit_s` (10 s).
-- **Geisterhände:** gezögert (beide Handflächen oben, 1.5 s ruhig) – zwei Geisterhände führen die Hebegeste vor, dazu «Beide Handflächen nach oben – und deutlich
-  anheben» bei den Händen; stehen die Symbole 4 s ohne Wahl, zeigen sie einmal das Wegschieben («Wegschieben: beide Hände aus der Mitte nach aussen wischen»).
+- **Die Symbole:** runde Glas-Symbole ohne Fenster dahinter, eines je App, **im Pastellton der App** mit schmalem Ring im Akzent und dem **Symbol aus KICAD** –
+  **KICAD** (Status, `info`, mit Ampel der Verbindung), **Etagen** (`geschoss`), **Messen** (`bemassung`), **Marker** (`problemMarker`), **Ort** (Begehen: Drehen,
+  Sitzungsraum; `raumBegehen`) bzw. **Tisch** (Sitzungsraum: Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen; `sitzungstisch`), **Ebenen**
+  (`sichtbarkeit`, wenn es welche gibt). Sie **steigen von unten ein**, folgen während der Geste der Höhe der Hände (jedes ein wenig nach dem vorigen) und setzen sich
+  danach ruhig; ab dann stehen sie **fest im Raum** (nicht am Kopf), **zum Kopf gewandt**.
+- **Anordnung: ein Feld frontal** (Christian 24.10.2026: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm und über eine höhe von ca. 0.6m
+  verteilt sein. vorzugsweise maximal 3 reihig»): zentriert in Körperrichtung (Gierwinkel des Kopfs beim Auslösen, ohne Nicken), `symbole.abstand_m` (0.6 m) vor den
+  Augen – **Bezugspunkt die Mitte zwischen den Augen, waagrecht gemessen** –, senkrechte Mitte `symbole.hoehe_m` (0.32 m) unter den Augen, von der obersten zur untersten
+  Reihe `symbole.feldhoehe_m` (0.6 m; die oberste Reihe bleibt 2 cm unter Augenhöhe), höchstens `symbole.reihen` (3) Reihen. Die Reihen sind **locker gegeneinander
+  versetzt**, jedes Symbol leicht in Höhe und Tiefe verschoben (keine Leiste, keine starre Matrix); Spaltenabstand 0.2 m × `symbole.streuung`. **Je App immer derselbe
+  Platz** (oben Etagen und Ort/Tisch, in der Mitte Messen und Marker, unten KICAD und Ebenen). **Am Sitzungstisch** rückt die unterste Reihe über die Tischplatte (5 cm
+  plus halber Durchmesser), das Feld wird so niedriger (sitzend mit Augen auf 1.2 m: etwa 0.35 m statt 0.6 m; Annahme V1a). Variante `labor.variante.symbole`:
+  `verteilt` (Vorgabe) | `bogen` (eine Reihe im Bogen, zum Vergleich).
+- **Wählen durch Berührung mit der ganzen Hand** (Christian 24.10.2026: «die app berührung soll mit der ganzen hand erfolgen und nicht nur mit einem finger»): ein
+  Symbol gilt als gewählt, sobald **irgendein Teil einer Hand** es berührt – Handfläche, Handrücken oder ein Finger (die Hand als Kapseln um die Knochen und eine Kugel
+  um die Handfläche; das Symbol als Kugel plus `symbole.beruehr_rand_m` = 1 cm). **Schutz vor Fehlwahl:** während Hebegeste und Wegwischen und
+  `symbole.beruehr_sperre_s` (0.6 s) danach zählt keine Berührung, und was dabei berührt wurde, erst nach dem Loslassen; streift die Hand mehrere Symbole zugleich, gilt
+  das am **tiefsten** berührte; nach einer Wahl wählt nichts mehr, bis die Hand frei ist. Leuchten im Akzent und Klick. Die **Knöpfe in den Glas-Apps** bleiben bei der
+  Fingerspitze (sie stehen eng beieinander; Annahme Hauptlauf 24.10.2026).
+- **Nach der Wahl bleiben die Symbole stehen** (Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf): die gewählte **App öffnet
+  frontal etwas näher** (0.15 m vor dem Feld, auf der Höhe seiner Mitte; am Sitzungstisch neben dem Tisch), das **Symbolfeld weicht dahinter 0.12 m zurück und wird
+  gedämpft** (Deckkraft 45 %; visionOS: der Hintergrund weicht in der Tiefe zurück); schliesst die App, kommt es wieder nach vorn. Variante `labor.variante.symbolwahl`:
+  `stehen` (Vorgabe) | `ausblenden` (die Symbole blenden schnell aus, dann öffnet die App). Ein selbsttätiges Ausblenden gibt es nicht mehr (`symbole.wartezeit_s` = 0;
+  ein Wert über 0 schaltet es wieder ein). Die Hebegeste bei offener App blendet die App aus und holt das Feld nach vorn.
+- **Geisterhände:** gezögert (beide Handflächen oben, 1.5 s ruhig) – zwei Geisterhände führen die Hebegeste vor dem Körper vor (0.4 m vor den Augen, links und rechts),
+  der Hinweis «Beide Handflächen nach oben – und deutlich anheben» steht **zwischen den Händen** in zwei Zeilen (Befund Bilder 02: der Text lief durch die Hände). Stehen
+  die Symbole 4 s ohne Wahl (und ist keine App offen), zeigt eine Geisterhand einmal das Wegwischen, der Hinweis «Nach links wischen: schliessen (rechte Hand offen)»
+  **unter der Hand**.
 - **Zeiger mit Tooltip:** nähert sich ein **gestreckter Zeigefinger** einem Symbol bzw. einem Knopf der App (höchstens 12 cm davor) – oder zeigt der Zielstrahl darauf –,
-  erscheint ein kleiner **Punkt** auf dem Ziel und eine **feine Linie** von der Fingerspitze; das Ziel hebt sich leicht. Nach `zeiger.tooltip_s` (0.6 s, Annahme nach HIG
-  «Buttons»: «tooltip after people hover over a button for a moment», «Eyes»: «a slightly longer delay») erscheint der **Name als Tooltip darunter** (kleine Glas-Kapsel).
-  In der App bekommen nur Knöpfe ohne Text einen Tooltip (Werkzeugleiste «Messen ein/aus», «Problem markieren», Schliessen «Ausblenden»).
+  erscheint ein kleiner **Punkt** auf dem Ziel und eine **feine Linie** von der Fingerspitze (im Akzent der App); das Ziel hebt sich leicht. Nach `zeiger.tooltip_s` (0.6 s,
+  Annahme nach HIG «Buttons»: «tooltip after people hover over a button for a moment») erscheint der **Name als Tooltip über dem Ziel** (Befund Bilder 02: darunter
+  verdeckte ihn die zeigende Hand). In der App bekommen nur Knöpfe ohne Text einen Tooltip (Werkzeugleiste «Messen ein/aus», «Problem markieren», Schliessen
+  «Ausblenden»).
+
+### Wegwischen: eine Geste für alles
+Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»; «Ja, auch offene Glas-Apps werden mit dem
+Wegwischen geschlossen; Pinch + Wisch nach vorn entfällt.»
+- **Geste:** die **rechte Hand offen, Handfläche nach links** (höchstens `wegwischen.handflaeche_grad` = 50° daneben), **von rechts nach links** wischen – mindestens
+  `wegwischen.weg_m` (0.18 m) in höchstens `wegwischen.zeit_s` (0.6 s), die Bewegung höchstens `wegwischen.richtung_grad` (35°) neben «nach links». Gemessen ab dem am
+  weitesten rechts liegenden Punkt: **Ausholen nach rechts löst nichts aus**. Ohne Pinch – weder Pinch + Wisch (Blättern, Drehen, Etage) noch der Sprung noch die
+  Hebegeste lösen aus (Tests); solange die Hand über ein Ziel wischt, löscht sie keine Messung. Nach dem Ereignis zählt die Geste 0.8 s nicht. Alle Werte **Annahmen V1a**.
+- **Ziel**, wenn mehreres sichtbar ist: was die Hand beim Wischen **überstreicht bzw. vor dem sie wischt** (im Blick vom Auge); sonst das **zuletzt Eingeblendete**. So
+  geht zuerst das Vorderste – die **offene App** bzw. die **Karte einer Prüfaufgabe** (= Aufgabe abbrechen, Messprotokoll mit «abbrueche» wie bisher) –, beim nächsten
+  Wischen das **Symbolfeld**, ebenso der **PC-Bildschirm** (V1c) nach seinem Einblendzeitpunkt. Die Ziele hängen sich über einen Einhängepunkt an (`IWegwischbar`,
+  `QuestApp.WegwischZiele`).
+- **Wirkung:** das Ziel **läuft mit der Hand nach links mit** (1.4 × der Weg) und gleitet nach dem Ereignis mit einem Klick nach links aus dem Bild; bricht die Geste ab,
+  gleitet es zurück. **Pinch + Wisch nach vorn löst nichts mehr aus.** Bei der ersten App steht einmal «Nach links wischen: schliessen (rechte Hand offen).»
 
 ### Die App: ein Fenster aus Glas
-- **Ein Fenster** (statt der Kacheln aus P5a): Glas, durchscheinend und neutral grau, stark gerundete Ecken, feiner Glanz an der Oberkante, weicher Schatten. Schrift weiss
-  in drei Stufen, Titel mittig (Name der App), Text linksbündig. Masse in pt wie visionOS (1 pt ≈ 1.2 mm je Meter Abstand, eigene Rechnung; im Griffbereich mit
-  Fingerfaktor 1.5: 0.9 mm), Knöpfe 52 pt hoch, Mitten 60 pt auseinander. **Keine Registerleiste** – gewechselt wird über die Hebegeste und die Symbole.
-- **Werkzeugleiste** (Ornament) an der Unterkante, leicht davor: **Messen** und **Marker** ein/aus (eingeschaltet weiss mit dunklem Symbol). Darunter der **Griff**
-  (Kapsel: Pinch daran und ziehen verschiebt das Fenster) und links daneben der runde **Schliessen**-Knopf (blendet aus).
+- **Ein Fenster** (statt der Kacheln aus P5a): Glas, durchscheinend **im Pastellton der App** (siehe «Farben»), stark gerundete Ecken, feiner Glanz an der Oberkante,
+  weicher Schatten. Schrift in drei Stufen (dunkel auf hellem Pastell), Titel mittig (Name der App) mit schmalem Strich im Akzent darunter, Text linksbündig. Masse in pt
+  wie visionOS (1 pt ≈ 1.2 mm je Meter Abstand, eigene Rechnung; im Griffbereich mit Fingerfaktor 1.5: 0.9 mm), Knöpfe 52 pt hoch, Mitten 60 pt auseinander.
+  **Keine Registerleiste** – gewechselt wird über die Hebegeste und die Symbole.
+- **Werkzeugleiste** (Ornament) an der Unterkante, leicht davor: **Messen** und **Marker** ein/aus (eingeschaltet im Akzent der App). Darunter der **Griff** (Kapsel:
+  Pinch daran und ziehen verschiebt das Fenster) und links daneben der runde **Schliessen**-Knopf (blendet aus). Schliessen geht auch mit dem **Wegwischen**.
+- **Farben** (Christian 24.10.2026: «das grau ist nicht so ansprechend. verwende unsere pastelfarben»; eigener Katalog, getrennt von den Gewerkfarben – «gewerke werden nur
+  für gewerkeunterschiede gebraucht»): `kataloge/xr_farben.json` (App-Pastellreihe; die App liefert ihn mit, keine Farbwerte im Code). Je App ein Ton plus Akzent (eine
+  dunklere Stufe desselben Tons, einmal berechnet und eingetragen), **hell** (Fläche im Pastellton, Schrift #1F1F1F) und **dunkel** (wie im Projektbrowser: der Ton mit
+  Deckkraft 0.22 über dem dunklen Grund #3E4452, Schrift #F5F5F5, Akzent = der Pastellton). Hell gilt ab einer Helligkeit der Umgebung von 0.3 (Begehen, Passthrough,
+  heller Sitzungsraum), dunkel im Sitzungsraum «tron». Kontrast der Schrift über dem Glas vor jedem Hintergrund mindestens 4.5 (WCAG, Test).
+
+  | App | Ton hell | Akzent | Ton dunkel | Quelle |
+  | --- | --- | --- | --- | --- |
+  | KICAD (Status) | #DDE7EE | #3E5B6F | #616874 | Christian 24.10.2026, App-Pastellreihe |
+  | Etagen | #D6E6F5 | #32587C | #5F6876 | Christian 24.10.2026, App-Pastellreihe |
+  | Messen | #D9F0E6 | #3C715A | #606A73 | Christian 24.10.2026, App-Pastellreihe |
+  | Marker | #F8E0D2 | #824B2B | #67666E | Christian 24.10.2026, App-Pastellreihe |
+  | Tisch | #E6DDF3 | #513A74 | #636675 | Christian 24.10.2026, App-Pastellreihe |
+  | Begehen (Ort) | #F3ECD6 | #786835 | #66696F | Christian 24.10.2026, App-Pastellreihe |
+  | Ebenen | #DCEBD9 | #476F3E | #616970 | Vorschlag V1a (salbei), zu bestätigen |
+  | Gesten | #E9E3EE | #593E6F | #646774 | Vorschlag V1a (flieder), zu bestätigen |
+  | Labor (Aufgabenkarte) | #F1E6EC | #6F3E59 | #656874 | Vorschlag V1a (rosé), zu bestätigen |
+  | Übrige (Vorgabe) | #E4E7EB | #3E536F | #636874 | Vorschlag V1a (neutral), zu bestätigen |
+- **Symbole wie in KICAD** (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): eine Quelle – `wwwroot/js/oberflaeche/symbole.js` (Strich) bzw.
+  `symbole-revit.js` mit `css/symbole-revit.css` (mehrfarbig, hell und dunkel), dazu `werkzeuge/symbole.js`. `node werkzeuge/quest_symbole.mjs` setzt sie mit Edge headless
+  in Texturen um (`src/Hlks.Quest/Assets/symbole/<strich|revit_hell|revit_dunkel>/<name>.png`, 128 px, mit Prüfsumme der Quelle in `symbole.json`); der Node-Test
+  `quest-symbole.test.mjs` meldet, wenn ein Symbol in KICAD geändert wurde und die Texturen neu zu bauen sind. Bestehende Schlüssel: `info`, `geschoss`, `bemassung`,
+  `problemMarker`, `raumBegehen`, `sichtbarkeit`, `schliessen`, `loeschen`; neu gezeichnet (Strich und Revit): `sitzungstisch`, `gesten`, `haken`; Revit-Fassungen neu für
+  `problemMarker` und `raumBegehen`. Die App folgt der Benutzereinstellung `oberflaeche.symbole` (der PC schickt sie mit «willkommen»; ohne PC Strich): Strich in der Farbe
+  der Schrift getönt, Revit mit eigenen Farben (auf hellem Glas der helle, auf dunklem der dunkle Satz).
 - **Bedienen:** Antippen mit dem Zeigefinger oder mit dem Strahl zeigen und Pinch (wählt beim Loslassen auf demselben Ziel). Nähert sich Finger bzw. Strahl, hebt sich das
   Ziel leicht an und hellt auf (statt des Blicks der Vision Pro), mit Zeiger wie bei den Symbolen; jeder Knopf klickt. Listen blättern mit Pinch + Wisch links/rechts,
   solange die Hand am Fenster ist (Seitenzahl im Titel, z. B. «Etagen · 1/2»).
 - **Lage:** im Raum verankert (folgt dem Kopf nicht); kommt nur nach, wenn man weiter als 1.4 m weggeht. Beim Start steht es `apps.seitlich_grad` (30°) links neben dem
   Blick auf Brusthöhe mit «KICAD» (Status); über ein Symbol geöffnet dort, wo die Symbole standen; **am Sitzungstisch neben dem Tisch**, nie über der Platte (Befund
   Prüfbild 24.10.2026). Wechsel Begehen ↔ Sitzungsraum bzw. ein neu angetippter echter Tisch stellt ein sichtbares Fenster an den neuen Platz.
-- **Glas nach der Umgebung** (HIG «Materials»: «Glass is an adaptive material … to provide contrast»): die App tönt das Glas so, dass es über dem Hintergrund gleich hell
-  wirkt (`anzeige.glas_helligkeit`, Vorgabe 0.42) – im hellen Sitzungsraum dunkler, im dunklen heller; die Hintergründe je Umgebung sind Annahmen V1a (heller
-  Sitzungsraum 0.88, Modell beim Begehen 0.55, echter Raum 0.6, «tron» 0.03). Die Glasfläche **verdeckt Weltobjekte** dahinter (sie schreibt die Tiefe; Deckkraft
-  `anzeige.glas_deckkraft`, Vorgabe 0.75): Marker, Linien und Beschriftungen hinter dem Fenster scheinen nur schwach durch (Befund Durchsicht 24.10.2026).
+- **Glas nach der Umgebung** (HIG «Materials»: «Glass is an adaptive material … to provide contrast»): Fassung (hell/dunkel) und Deckkraft richten sich nach dem
+  Hintergrund: die helle Fassung wirkt über ihm mindestens 0.72 hell, die dunkle höchstens `anzeige.glas_helligkeit` (0.42); die Deckkraft ist mindestens
+  `anzeige.glas_deckkraft` (0.75) und höchstens 0.95. Die Hintergründe je Umgebung sind Annahmen V1a (heller Sitzungsraum 0.88, Modell beim Begehen 0.55, echter Raum 0.6,
+  «tron» 0.03). Die Glasfläche **verdeckt Weltobjekte** dahinter (sie schreibt die Tiefe): Marker, Linien und Beschriftungen hinter dem Fenster scheinen nur schwach durch
+  (Befund Durchsicht 24.10.2026).
   Weichzeichnung des Hintergrunds gibt es nicht (StereoKit 0.3.11 hat das Bild dahinter nicht; ein eigener Durchgang kostete auf der Quest zu viel Füllrate).
 - **Variante «tablet»** (`labor.variante.bedienung`): die Box aus P4 wie bisher (mit den Hinweisen in der Box).
 
 ### Hinweise frei schwebend
 Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Statusmeldungen stehen frei im Raum – nicht auf dem Glas, nicht in Kästen:
-- **Allgemein** (Status, «Etage 2.OG …», «App ausgeblendet …»): ruhig **unterhalb der Blickmitte in Griffweite** (0.55 m vor dem Auge, 0.24 m tiefer), im Raum verankert;
+- **Allgemein** (Status, «Etage 2.OG …», «App geschlossen …»): ruhig **unterhalb der Blickmitte in Griffweite** (0.55 m vor dem Auge, 0.24 m tiefer), im Raum verankert;
   er gleitet erst nach, wenn man sich mehr als 25° wegdreht. Immer nur einer.
-- **Bei der Hand** (Gestenhinweise, Geisterhand) knapp über der Hand; **beim Objekt** («Problem-Marker gesetzt («Prüfen»).», «Messung 3: 1300 mm …») knapp über der Stelle.
+- **Bei einer Geste der Geisterhände** neben bzw. unter den Händen in zwei schmalen Zeilen (Befund Bilder 02: der Text lief durch die Hände); **beim Objekt** («Problem-Marker
+  gesetzt («Prüfen»).» über dem Kennzeichen der Nadel, «Messung 3: …») knapp über der Stelle. **Am Sitzungstisch** wird eine Meldung, die auf dem Modell stünde, ein
+  allgemeiner Hinweis; am Objekt bleiben nur die kurzen Beschriftungen (Messwert, Kennzeichen der Marker).
 - **Lesbar ohne Kasten:** weisse Schrift mit weichem dunklem Schein hinter den Buchstaben (die Schrift dunkel in zwei Ringen leicht versetzt) – vor dem hellen Sitzungsraum
-  und vor dunklen Wänden; ebenso die Werte an den Messlinien, die Kennzeichen der Marker und die Namen der Fangsymbole.
+  und vor dunklen Wänden; ebenso die Werte an den Messlinien, die Kennzeichen der Marker (im Blick über dem Kopf der Nadel) und die Namen der Fangsymbole. **Im Blick
+  gleich gross** (Schrifthöhe mit dem Abstand) und **mindestens 0.3 m vor dem Auge** (Befund Bilder 02: «Messung 3» lag riesig auf der Treppe).
 - **Kurz** (höchstens zwei Zeilen, länger wird an einer Wortgrenze gekürzt), **sanft ein- und ausblenden**, nach `hinweis.dauer_s` (4 s) weg. **Nie über Apps, Symbolen,
-  Tooltips oder der Karte einer Aufgabe:** ein Hinweis, der sie überdecken würde, rückt darüber (solange unter der Blickmitte) bzw. darunter, sonst daneben.
+  Tooltips, der Karte einer Aufgabe, dem Weg laufender Geisterhände und am Tisch dem Modell** – geprüft **im Blick** (Winkel vom Auge, nicht nur in gleicher Tiefe;
+  Befund Bilder 02: Hinweise in verschiedener Tiefe überlagerten sich): ein Hinweis rückt darüber (solange unter der Blickmitte) bzw. darunter, sonst seitlich daneben.
+  Beim Wechsel Begehen ↔ Sitzungsraum fallen die alten Hinweise weg.
 - **Dauerhinweise:** «Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.» über dem Tisch, solange er wartet; ein Fehler der Verbindung, solange die App
-  ausgeblendet ist. Die **Karte einer Prüfaufgabe** bleibt eine kleine Glaskarte; nur ihr Gestenhinweis «Pinch + Wisch nach vorn: abbrechen» schwebt frei darüber.
+  ausgeblendet ist. Die **Karte einer Prüfaufgabe** bleibt eine kleine Glaskarte (Ton «Labor»); nur ihr Gestenhinweis «Nach links wischen: abbrechen» schwebt frei darüber.
 
 ### Messen in der Brille
 - **Einschalten:** App **Messen** (Symbol) › Schalter «Messen» oder in der Werkzeugleiste das Massband. Solange Messen an ist, springt der Pinch nicht (er misst) und kein
@@ -2644,49 +2704,63 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
   Strahlen auf Platten, Decken, Dächer; vorher nur, wenn die Oberkante der Platte genau auf der Kote des Geschosses darüber lag).
 
 ### Karte der Prüfaufgaben, Geisterhand, Gesten
-- **Karte** (Befund Durchsicht 24.10.2026): Glas wie die App, so klein wie der Text, Farbe nur als Akzent (Punkt vor dem Titel: läuft weiss, wartet orange, abgebrochen grau;
-  grüner Haken bei Erfolg). Mit Fenster steht sie als **Ornament über dem Fenster** (deckt die App nicht), sonst rechts neben dem Blick. Knopf «Aufgabe beenden» unten
-  rechts; der Gestenhinweis «Pinch + Wisch nach vorn: abbrechen» schwebt frei über der Karte.
-- **Geisterhand** führt Gesten neben den Bedienelementen vor, nie über ihnen (Befund Durchsicht 24.10.2026; Regel `Geisterhand.Neben`), dazu die Hebegeste und das
-  Wegschieben (zwei Hände).
+- **Karte** (Befund Durchsicht 24.10.2026): Glas im Ton «Labor», so klein wie der Text, Farbe nur als Akzent (Punkt vor dem Titel: läuft im Akzent, wartet orange,
+  abgebrochen blass; Haken bei Erfolg). Mit Fenster steht sie als **Ornament über dem Fenster** (deckt die App nicht), sonst rechts neben dem Blick. Knopf «Aufgabe
+  beenden» unten rechts; **Wegwischen** der Karte bricht ebenfalls ab (Messprotokoll mit «abbrueche»); der Hinweis «Nach links wischen: abbrechen» schwebt frei darüber.
+- **Geisterhand** führt Gesten neben den Bedienelementen vor, nie über ihnen (Befund Durchsicht 24.10.2026; Regel `Geisterhand.Neben`), dazu die Hebegeste (zwei Hände)
+  und das Wegwischen (rechte Hand, Handfläche nach links). Im Prüflauf am PC zeichnet die App die Maus-Hände des Simulators nicht (Befund Bilder 02: die weisse Hand über
+  Werkzeugleiste und Griff war die Simulatorhand) und führt beim «Zögern» keine Hebegeste vor (die Simulatorhände stehen still).
 - **Gesten** (Tabelle in der App KICAD › «Gesten»): neu «Pinch halten, ziehen, loslassen (Messen ein)», «Offene Hand schnell quer über eine Messlinie», «Pinch auf eine
   Stelle (Marker setzen)», «Pinch am Griff unter dem Fenster», «Beide Handflächen nach oben, deutlich anheben» (holt die Symbole; ersetzt «Linke Handfläche zum
-  Gesicht drehen»), «Beide Hände aus der Mitte nach aussen wischen (Handflächen aussen)» (schiebt die Symbole weg); Pinch + Wisch links/rechts blättert, wenn die Hand am
-  Fenster ist; Wegwischen blendet das Fenster aus.
+  Gesicht drehen»), «Wegwischen: rechte Hand offen, Handfläche nach links, von rechts nach links» (schliesst das Vorderste); Pinch + Wisch links/rechts blättert, wenn die
+  Hand am Fenster ist; **Pinch + Wisch nach vorn entfällt**.
 
 ### Stellschrauben und Varianten (neu bzw. geändert)
 | Schlüssel | Vorgabe | Bereich | Wirkung |
 | --- | --- | --- | --- |
 | `apps.seitlich_grad` | 30° | 0 … 90 | so weit links neben dem Blick erscheint das Fenster beim Holen |
 | `anzeige.glas_deckkraft` | 0.75 | 0.3 … 1 | Deckkraft des Glases (im hellen Raum deckt es bei Bedarf mehr) |
-| `anzeige.glas_helligkeit` | 0.42 | 0.2 … 0.6 | so hell wirkt das Glas über dem Hintergrund (Tönung nach der Umgebung) |
+| `anzeige.glas_helligkeit` | 0.42 | 0.2 … 0.6 | so hell wirkt das Glas der dunklen Fassung höchstens über dem Hintergrund |
 | `labor.variante.messen` | messband | messband, zwei_punkte | seit V1a wirksam |
 | `labor.variante.umgebung` | hell | hell, tron | Umgebung des Sitzungsraums |
 | `hebe.weg_m`, `hebe.zeit_s`, `hebe.handflaeche_grad`, `hebe.gleichzeitig_s` | 0.15 m, 0.9 s, 45°, 0.35 s | 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Hebegeste |
-| `schieben.startabstand_m`, `schieben.weg_m`, `schieben.zeit_s`, `schieben.handflaeche_grad`, `schieben.gleichzeitig_s` | 0.3 m, 0.15 m, 0.8 s, 50°, 0.35 s | 0.1 … 0.6, 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Wegschieben |
-| `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.streuung`, `symbole.wartezeit_s` | 0.42 m, 0.32 m, 1, 10 s | 0.25 … 0.7, 0.1 … 0.6, 0.6 … 1.6, 2 … 60 | App-Symbole |
+| `wegwischen.weg_m`, `wegwischen.zeit_s`, `wegwischen.handflaeche_grad`, `wegwischen.richtung_grad` | 0.18 m, 0.6 s, 50°, 35° | 0.05 … 0.6, 0.2 … 2, 10 … 80, 5 … 80 | Wegwischen (ersetzt `schieben.*`) |
+| `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.feldhoehe_m`, `symbole.reihen` | 0.6 m, 0.32 m, 0.6 m, 3 | 0.3 … 1, 0 … 0.8, 0.2 … 1, 1 … 3 | Symbolfeld frontal |
+| `symbole.streuung`, `symbole.wartezeit_s` | 1, 0 s (nie) | 0.6 … 1.6, 0 … 120 | Spaltenabstand × Faktor; selbsttätig ausblenden |
+| `symbole.beruehr_rand_m`, `symbole.beruehr_sperre_s` | 0.01 m, 0.6 s | 0 … 0.05, 0 … 3 | Berührung mit der ganzen Hand |
 | `zeiger.tooltip_s` | 0.6 s | 0 … 3 | Verzögerung des Tooltips |
 | `hinweis.dauer_s` | 4 s | 1 … 15 | so lange steht ein schwebender Hinweis |
 | `labor.variante.symbole` | verteilt | verteilt, bogen | Anordnung der Symbole |
+| `labor.variante.symbolwahl` | stehen | stehen, ausblenden | was die Symbole nach der Wahl einer App tun |
 
 ### Prüfen
 - **Am PC:** `werkzeuge\quest_pruefen.ps1 [-Projekt <Test_praxis>] [-Pruefbilder <ordner>]` meldet in jeder Zeile «P4 ok» zusätzlich «V1a: Glas=ok, Umgebung=ok, Fang=ok
   (…, ms je Strahl), Messen=ok (zwei Punkte, Lot, Wisch löscht), Marker=ok (…)» und am Tisch «Fenster am Tisch=ok», «Decke über dem Raum=ok (Schnitt oben …, Unterseite
   der Decke …)»; Lauf 1 spielt «messen-wand-wand» (eine Messung daneben, eine von Wand zu Wand) und gescriptet die Symbole: Hebegeste mit gedachten Händen, eine gedachte
-  Fingerspitze vor «Messen» (Zeiger, Tooltip), Berührung öffnet die App, Wegschieben – Zeile «Symbole=ok (…)»; «Apps=ok (Symbole …)» prüft die Wahl über die Regeln. Das Skript prüft mit `GET /api/xr/marker`, dass die Marker von Lauf 1,
-  der wartende aus Lauf 2 (ohne PC) und der am Tisch aus Lauf 3 im Projekt angekommen sind. Mit `-Pruefbilder` dazu `glas_apps.jpg`, `glas_marker.jpg`, `messen.jpg`,
-  `marker.jpg` (Bild ohne Apps), `hebe_halb.jpg`, `symbole.jpg`, `symbol_tooltip.jpg`, `app_nach_wahl.jpg`, `wegschieben_halb.jpg`, `hinweis_begehen.jpg`,
-  `glas_apps_sitzung.jpg`, `glas_tisch.jpg`, `marker_sitzung.jpg`, `symbole_sitzung.jpg`, `hinweis_sitzung.jpg`, `sitzung_umgebung.jpg` (nur lokal).
+  Fingerspitze vor «Messen» (Zeiger, Tooltip), eine gedachte flache Hand berührt «Messen» mit der Handfläche, die App öffnet vor dem Feld, Wegwischen der App (das Feld
+  kommt nach vorn), dann der Symbole – Zeile «Symbole=ok (…)»; «Apps=ok (Symbole …)» prüft die Wahl über die Regeln, dass Pinch + Wisch nach vorn nichts mehr auslöst und
+  das Wegwischen über die Einhängepunkte. Das Skript prüft mit `GET /api/xr/marker`, dass die Marker von Lauf 1, der wartende aus Lauf 2 (ohne PC) und der am Tisch aus
+  Lauf 3 im Projekt angekommen sind. **Port:** ist 5130 belegt (Desktop-KICAD), nimmt der Prüfserver selbständig den ersten freien Port von 5139 abwärts und öffnet den
+  Netzzugang dort (`HLKS_XR_DESKTOP_PORT`, nur im Testlauf; Schalter, Kopplungen und Zertifikat des Desktops bleiben unberührt). Mit `-Pruefbilder` dazu
+  `glas_apps.jpg`, `glas_marker.jpg`, `messen.jpg`, `marker.jpg` (Bild ohne Apps), `hebe_halb.jpg`, `symbole.jpg` (Feld frontal, stehend), `symbole_revit.jpg` (Satz
+  «revit»), `symbol_tooltip.jpg`, `symbol_hand.jpg` (Handfläche am Symbol), `app_nach_wahl.jpg` (App offen, Feld dahinter), `app_wegwischen_halb.jpg`,
+  `wegwischen_halb.jpg` (Symbole gleiten nach links), `hinweis_begehen.jpg`, `glas_apps_sitzung.jpg`, `glas_tisch.jpg`, `marker_sitzung.jpg`, `symbole_sitzung.jpg`
+  (Feld am Tisch, sitzend), `hinweis_sitzung.jpg`, `farben_dunkel_symbole.jpg`, `farben_dunkel_etagen.jpg`, `farben_dunkel_tisch.jpg` (dunkle Fassung im Sitzungsraum
+  «tron»), `sitzung_umgebung.jpg` (nur lokal).
 - **Tests:** Xr `V1aMessenTests` (Fang: Ecke, Kante, Mitte, Achse von Rohr und Kanal, Fläche, Strahl, Sichtbarkeit; Messband und zwei Punkte, Lot, Löschen), `V1aLaborTests`
   (Wandpaar, Sollmass von der sichtbaren Fläche, Prüfung, Lauf), `V1aMarkerTests` (Format, Ablage, Liste), `V1aGlasTests` (Masse, Inhalt, Fensterteile, Verankerung,
-  neben dem Tisch, Hinweise, Strahl, Tönung nach der Umgebung, Geisterhand neben der Leiste, Stellschrauben), `V1aSymboleTests` (Hebegeste, Wegschieben, Fehlauslösungen,
-  weder Pinch + Wisch noch Sprung, Lage der Symbole, Tooltip, Zeiger, Hinweise frei schwebend, Stellschrauben), `V1aSitzungTests` (Decke über dem Raum, heller Hintergrund,
-  Gestentabelle); Kern `ProblemMarkerTests` (Klasse, Grafik, BCF mit Schemaprüfung); Web `XrMarkerTests` (POST/GET, ETag, Kennung doppelt, ungültige Werte, Netzzugang,
-  KI-Einordnung); Node `problemmarker.test.mjs` (Liste, Filter, Zeilen, Frist, BCF-Parameter, Kamera).
+  neben dem Tisch, Hinweise, Strahl, Umgebung, Geisterhand neben der Leiste, Stellschrauben), `V1aSymboleTests` (Hebegeste, Wegwischen und sein Ziel, Fehlauslösungen,
+  weder Pinch + Wisch noch Drehen noch Sprung, Symbolfeld frontal, am Tisch über der Platte, nach der Wahl, Berührung mit der ganzen Hand, Tooltip über dem Ziel, Zeiger,
+  Überdecken im Blick, Hinweise, Stellschrauben), `V1aFarbenTests` (Katalog der App-Farben, Kontrast, Fassung und Deckkraft nach der Umgebung, Texturen der Symbole),
+  `V1aSitzungTests` (Decke über dem Raum, heller Hintergrund, Gestentabelle); Kern `ProblemMarkerTests` (Klasse, Grafik, BCF mit Schemaprüfung); Web `XrMarkerTests`
+  (POST/GET, ETag, Kennung doppelt, ungültige Werte, Netzzugang, KI-Einordnung), `XrKanalTests` («willkommen» mit Symbolsatz), `XrZertifikatTests` (Port des
+  Prüfservers); Node `problemmarker.test.mjs` (Liste, Filter, Zeilen, Frist, BCF-Parameter, Kamera), `quest-symbole.test.mjs` (Texturen passen zur Quelle),
+  `symbole-revit.test.mjs` (neue Revit-Fassungen).
 - **Nur mit der Brille prüfbar:** wie sich das Messband mit echten Händen anfühlt (Pinch halten, Zugweg 2 cm, Klick 0.8 s), ob der Fang am Strahl genug trifft (3 cm + 3 cm/m)
-  und das Fangsymbol lesbar ist; die Wischgeste über eine Messlinie; Marker setzen mit kurzem Pinch; Lesbarkeit und Kontrast des Glases im echten Raum (Passthrough) und
-  im hellen Sitzungsraum; Lage des Fensters (30°) und der Karte über dem Fenster; die Kosten des Fangs auf der Quest (am PC 2.5 ms je Strahl am Tisch) und die Bildrate
-  mit Glas und Umgebung; die Hebegeste und das Wegschieben mit echten Händen (Schwellen, Fehlauslösungen), Griffweite der Symbole, Lesbarkeit der Hinweise ohne Kasten.
+  und das Fangsymbol lesbar ist; die Wischgeste über eine Messlinie; Marker setzen mit kurzem Pinch; Lesbarkeit und Kontrast des Glases und der Pastelltöne im echten Raum
+  (Passthrough), im hellen und im dunklen Sitzungsraum; Lage des Fensters (30°) und der Karte über dem Fenster; die Kosten des Fangs auf der Quest (am PC 2.5 ms je Strahl
+  am Tisch) und die Bildrate mit Glas, Texturen und Umgebung; die Hebegeste, die Berührung mit der ganzen Hand (Fehlwahl beim Hineinheben?) und das Wegwischen mit echten
+  Händen (Schwellen, Fehlauslösungen, Ausholen), ob das Feld in 0.6 m Abstand und 0.6 m Höhe gut erreichbar ist (oberste Reihe), Lesbarkeit der Hinweise ohne Kasten.
 - **Anleitung:** `zb-quest-v1a-symbole`, `zb-quest-v1a-messen`, `zb-quest-v1a-marker`, `zb-problemmarker-palette` in `berichte/anleitung/inventar.json`.
 
 ## Modul XR: XR-Labor (Quest App P6, `entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P6; Entscheid Christian 23.10.2026: «Prüfung: kurz gemischt», «Deutsche Fassungen der Fragebogen nur mit Quelle»)

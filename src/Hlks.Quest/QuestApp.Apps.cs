@@ -14,25 +14,37 @@ using XVec3 = Hlks.Xr.Vec3;
 namespace Hlks.Quest;
 
 /// <summary>
-/// Quest App V1a: die Apps – frei schwebende App-Symbole (SymbolApps; Christian 24.10.2026: Hebegeste, verteilt in Griffweite, Anwahl durch Berührung) und das
-/// Glas-Fenster der gewählten App (GlasApps, Stil visionOS). Apps: KICAD (Status), Etagen, Messen, Marker, Ort (Begehen: Drehen, Sitzungsraum) bzw. Tisch (Sitzungsraum:
-/// Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen) und Ebenen. Werkzeugleiste des Fensters: Messen und Marker. Keine Registerleiste mehr. Die Hebegeste
-/// (beide Handflächen nach oben, deutlich nach oben) holt die Symbole, die Gegenbewegung schickt sie (bzw. das Fenster) weg; die gewählte App öffnet sich dort, wo die
-/// Symbole standen, am Sitzungstisch neben dem Tisch (Glas.NebenTisch; Befund Prüfbild 24.10.2026).
+/// Quest App V1a: die Apps – frei schwebende App-Symbole (SymbolApps; Christian 24.10.2026: Hebegeste, Feld frontal etwa 0.6 m vor den Augen über etwa 0.6 m Höhe,
+/// Anwahl durch Berührung mit der ganzen Hand) und das Glas-Fenster der gewählten App (GlasApps, Stil visionOS, Farben der App aus kataloge/xr_farben.json). Apps: KICAD
+/// (Status), Etagen, Messen, Marker, Ort (Begehen: Drehen, Sitzungsraum) bzw. Tisch (Sitzungsraum: Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen) und
+/// Ebenen. Werkzeugleiste des Fensters: Messen und Marker. Keine Registerleiste mehr. Die Hebegeste (beide Handflächen nach oben, deutlich nach oben) holt die Symbole,
+/// das Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links) schickt sie weg; die gewählte App öffnet sich, sobald die Symbole ausgeblendet sind, dort, wo sie standen, am
+/// Sitzungstisch neben dem Tisch (Glas.NebenTisch; Befund Prüfbild 24.10.2026).
 /// </summary>
 sealed partial class QuestApp
 {
     bool statusGesten;
     readonly HebeZustand hebe = new();
     HebeStand hebeStand = new(null, 0, 0, false);
-    int hebenGezaehlt, schiebenGezaehlt;
+    int hebenGezaehlt, wischGezaehlt;
     /// <summary>Prüflauf am PC (ohne Hände): gedachter Fortschritt der Hebegeste bzw. das Ereignis.</summary>
     double? pruefHebe;
     HebeArt? pruefHebeEreignis;
-    /// <summary>Prüflauf am PC: gedachter Weg der Hände beim Wegschieben (m).</summary>
-    double? pruefSchieben;
-    /// <summary>Die Geisterhände für das Wegschieben schon gezeigt (einmal je Erscheinen der Symbole)?</summary>
-    bool schiebenGeistGezeigt;
+    /// <summary>V1a: Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste»).</summary>
+    readonly WegwischZustand wegwisch = new();
+    WegwischStand wischStand = new(false, 0, false, []);
+    /// <summary>Prüflauf am PC: gedachter Weg der rechten Hand nach links (m) bzw. das Ereignis.</summary>
+    double? pruefWisch;
+    /// <summary>Prüflauf am PC: gedachter Kopf für die Symbole (sitzend am Tisch), sonst null.</summary>
+    Pose? pruefKopf;
+    bool pruefWischEreignis;
+    /// <summary>Ziel des laufenden Wegwischens (Wegwischen.ZielFuehren) im letzten Bild, sonst null.</summary>
+    string? wischZielId;
+    readonly WegwischZielZustand wischZielZustand = new();
+    /// <summary>Einhängepunkt: alles, was das Wegwischen aus dem Bild schieben kann (IWegwischbar) – die App-Symbole; V1c hängt hier den PC-Bildschirm ein.</summary>
+    internal List<IWegwischbar> WegwischZiele { get; } = [];
+    /// <summary>Die Geisterhand für das Wegwischen schon gezeigt (einmal je Erscheinen der Symbole)?</summary>
+    bool wischGeistGezeigt;
 
     /// <summary>Ist diese Hand an den Apps (Fenster, Werkzeugleiste, App-Symbole; Finger oder Strahl) – dann zielt ihr Pinch nicht und greift nicht.</summary>
     bool AnApps(Handed h) => bedien.MitApps && (apps.HandNah(h) || symbole.HandNah(h));
@@ -66,14 +78,42 @@ sealed partial class QuestApp
     /// <summary>
     /// Eine App über ihr Symbol öffnen: das Fenster mit dieser App dort, wo die Symbole standen (in Griffweite vor dem Körper), am Sitzungstisch neben dem Tisch.
     /// </summary>
-    void AppOeffnen(string id)
+    void AppOeffnen(string id, XVec3? platzSymbole = null)
     {
         apps.RegisterWaehlen(id);
         statusGesten = false;
-        var platz = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? AppPlatz(Input.Head) : symbole.Mitte ?? AppPlatz(Input.Head);
+        var platz = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? AppPlatz(Input.Head) : platzSymbole ?? symbole.Mitte ?? AppPlatz(Input.Head);
         apps.Holen(platz, Time.Total);
         letzteGeste = $"Symbol {id}";
+        // bei der ersten App: wie man sie schliesst (Christian 24.10.2026: «Nach links wischen: schliessen»)
+        if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Nach links wischen: schliessen (rechte Hand offen)."); }
     }
+
+    bool wischHinweisGezeigt;
+
+    /// <summary>Gewählte App, die sich öffnet, sobald die Symbole ausgeblendet sind (Variante «ausblenden»; Befund Bilder 02: Symbole und Leuchten lagen über dem neuen
+    /// Fenster), mit dem Platz der Symbole.</summary>
+    (string Id, XVec3? Platz)? appWahl;
+
+    /// <summary>
+    /// Ein Symbol wurde berührt. «stehen» (Vorgabe; Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf): die App öffnet
+    /// frontal etwas näher vor dem Feld (AppSymbole.FensterVorFeld; am Tisch neben dem Tisch), das Feld bleibt und weicht dahinter zurück. «ausblenden»: die App öffnet,
+    /// sobald die Symbole ausgeblendet sind.
+    /// </summary>
+    void SymbolGewaehlt(string id)
+    {
+        if (bedien.Symbole.NachWahl == Varianten.SymbolwahlAusblenden) { appWahl = (id, symbole.Mitte); return; }
+        var (auge, gieren) = symbole.Anker;
+        AppOeffnen(id, AppSymbole.FensterVorFeld(auge, gieren, bedien.Symbole));
+    }
+
+    /// <summary>Die Farben des Fensters: die gewählte App, «Gesten» in der Gestenübersicht von KICAD (Status).</summary>
+    string FarbId => apps.Aktiv == "status" && statusGesten ? "gesten" : apps.Aktiv;
+
+    /// <summary>V1a: tiefste Höhe einer Symbolmitte am Sitzungstisch (über der Tischplatte, Raum der Brille), sonst null.</summary>
+    double? SymbolUntergrenze() => sitzung.Aktiv && !sitzung.Echt.WartetAufTisch
+        ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y + AppSymbole.Durchmesser(GlasMasse.Fuer(bedien.Apps)) / 2 + 0.05
+        : null;
 
     (int Ampel, string Text) VerbindungKurz() => zustand switch
     {
@@ -259,68 +299,102 @@ sealed partial class QuestApp
             return HandBeobachtung.Aus(HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                 new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), seite, bedien.Pinch);
         }
-        hebeStand = HebeGeste.Schritt(hebe, Time.Total, Beobachtung(Handed.Left, "left"), Beobachtung(Handed.Right, "right"), KopfRef(kopf).Gieren, bedien.Hebe, bedien.Schieben);
-        if (pruefHebe is { } pf) hebeStand = new HebeStand(pruefHebeEreignis, pf, kopf.position.y - bedien.Symbole.HoeheM, false);
-        if (pruefSchieben is { } ps) hebeStand = new HebeStand(pruefHebeEreignis, 0, 0, false, ps, ps) { SchiebenLaeuft = pruefHebeEreignis is null };
+        var rechteHand = Beobachtung(Handed.Right, "right");
+        hebeStand = HebeGeste.Schritt(hebe, Time.Total, Beobachtung(Handed.Left, "left"), rechteHand, KopfRef(kopf).Gieren, bedien.Hebe);
+        var kopfSymbole = pruefKopf ?? kopf;   // Prüflauf: gedachter Kopf (sitzend am Tisch)
+        if (pruefHebe is { } pf) hebeStand = new HebeStand(pruefHebeEreignis, pf, kopfSymbole.position.y - bedien.Symbole.HoeheM, false);
         pruefHebeEreignis = null;
-        if (hebeStand.Ereignis is { } art) HebeEreignis(art, kopf);
-        if (hebeStand.Zoegert && !symbole.Sichtbar) GeisterHeben(kopf);
-        // stehen die Symbole schon eine Weile ohne Wahl: die Geisterhände zeigen einmal, wie man sie wegschiebt
-        if (symbole.Da && symbole.SeitS(Time.Total) > 4 && !schiebenGeistGezeigt && !symbole.HandNah(Handed.Left) && !symbole.HandNah(Handed.Right))
+        if (hebeStand.Ereignis is { } art) HebeEreignis(art, kopfSymbole);
+        WegwischenBild(kopf, rechteHand);
+        // gezögert: die Geisterhände führen die Hebegeste vor (nicht im Prüflauf am PC – dort stehen die Hände des Simulators still und «zögern» immer)
+        if (hebeStand.Zoegert && !symbole.Sichtbar && o.PruefBilder <= 0) GeisterHeben(kopf);
+        // stehen die Symbole schon eine Weile ohne Wahl: die Geisterhand zeigt einmal, wie man sie wegwischt
+        if (symbole.Da && symbole.SeitS(Time.Total) > 4 && !wischGeistGezeigt && !apps.Sichtbar && !symbole.HandNah(Handed.Left) && !symbole.HandNah(Handed.Right))
         {
-            schiebenGeistGezeigt = true;
-            GeisterSchieben(kopf);
+            wischGeistGezeigt = true;
+            GeisterWegwischen(kopf);
         }
-        if (symbole.Bild(kopf, Time.Total, Time.Step, symbolListe, hebeStand, bedien, strahlen) is { } gewaehlt) AppOeffnen(gewaehlt);
+        if (!symbole.Sichtbar) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte
+        // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld dahinter zurück und wird gedämpft; schliesst sie, kommt es wieder nach vorn
+        symbole.Hinten = apps.Sichtbar && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+        if (symbole.Bild(kopfSymbole, Time.Total, Time.Step, symbolListe, hebeStand, bedien, strahlen) is { } gewaehlt) SymbolGewaehlt(gewaehlt);
+        // Variante «ausblenden»: die gewählte App öffnet sich, sobald die Symbole ausgeblendet sind
+        if (appWahl is { } wahl && !symbole.Sichtbar) { appWahl = null; AppOeffnen(wahl.Id, wahl.Platz); }
         var inhalt = InhaltBauen();
         var ornament = darstellung is null ? new List<(string, string, bool)>()
             : [("orn_messen", GlasSymbole.Messen, messen.An), ("orn_marker", GlasSymbole.Marker, markerSetzen)];
         const bool karteOffen = false;   // die Karte einer Aufgabe ist ein Ornament über dem Fenster (deckt es nicht) – kein Zurückweichen
-        foreach (var e in apps.Bild(kopf, Time.Total, Time.Step, inhalt, ornament, karteOffen, AppPlatz(kopf), bedien, strahlen))
+        foreach (var e in apps.Bild(kopf, Time.Total, Time.Step, inhalt, ornament, karteOffen, AppPlatz(kopf), bedien, strahlen, FarbId))
             AppEreignis(e);
     }
 
-    /// <summary>
-    /// Gesten der Symbole: Heben holt sie (ein offenes Fenster macht Platz); Wegschieben schiebt sie beidseitig aus dem Bild (Christian 24.10.2026), mit Ton.
-    /// </summary>
+    /// <summary>Hebegeste: holt die Symbole (ein offenes Fenster macht Platz), mit Ton.</summary>
     void HebeEreignis(HebeArt art, Pose kopf)
     {
-        if (art == HebeArt.Heben)
-        {
-            hebenGezaehlt++;
-            if (apps.Sichtbar) apps.Ausblenden(Time.Total);
-            symbole.Zeigen(kopf, Time.Total);
-            schiebenGeistGezeigt = false;
-            rueck.Fang(kopf.position + kopf.Forward * 0.4f);
-            return;
-        }
-        schiebenGezaehlt++;
-        if (!symbole.Sichtbar) return;
-        symbole.Ausblenden(Time.Total, auseinander: true);
+        if (art != HebeArt.Heben) return;
+        hebenGezaehlt++;
+        if (apps.Sichtbar) apps.Ausblenden(Time.Total);
+        symbole.Zeigen(kopf, Time.Total);
+        wischGeistGezeigt = false;
         rueck.Fang(kopf.position + kopf.Forward * 0.4f);
     }
 
-    /// <summary>Zwei Geisterhände zeigen das Wegschieben: aus der Mitte vor dem Körper, Handflächen nach aussen, beide Arme seitwärts; dazu ein Hinweis bei den Händen.</summary>
-    void GeisterSchieben(Pose kopf)
+    /// <summary>
+    /// Ein Bild des Wegwischens (Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste … von rechts nach links»; Regeln Hlks.Xr.Bedienung.Wegwischen): die rechte
+    /// Hand offen, Handfläche nach links, von rechts nach links. Ziel unter den eingehängten (<see cref="WegwischZiele"/>): was die Hand überstreicht, sonst das
+    /// zuletzt Eingeblendete; es läuft mit der Hand nach links mit und geht beim Ereignis aus dem Bild (mit Ton). Im Prüflauf ein gedachter Weg bzw. das Ereignis.
+    /// </summary>
+    void WegwischenBild(Pose kopf, HandBeobachtung? rechteHand)
+    {
+        var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
+        var gieren = KopfRef(kopf).Gieren;
+        wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, gieren, bedien.Wegwischen);
+        if (pruefWisch is { } pw)
+        {
+            // gedachte Hand vor dem Symbolfeld, um pw nach links gewischt
+            var start = symbole.Mitte ?? auge + new XVec3(Math.Cos(gieren), 0, -Math.Sin(gieren)) * 0.5;
+            wischStand = new WegwischStand(pruefWischEreignis, pw, !pruefWischEreignis, [start, start + Wegwischen.Links(gieren) * pw]);
+            pruefWischEreignis = false;
+        }
+        var kandidaten = WegwischZiele.Select(z => (Ziel: z, Kandidat: z.Kandidat(auge))).Where(x => x.Kandidat is not null).ToList();
+        wischZielId = Wegwischen.ZielFuehren(wischZielZustand, wischStand, [.. kandidaten.Select(x => x.Kandidat!)], auge);   // das Ziel bleibt über die ganze Geste
+        foreach (var (ziel, kandidat) in kandidaten)
+        {
+            var istZiel = kandidat!.Id == wischZielId;
+            ziel.Mitlaufen(istZiel && wischStand.Laeuft ? wischStand.Weg : 0);
+            if (!istZiel || !wischStand.Ereignis) continue;
+            wischGezaehlt++;
+            ziel.Wegwischen(Time.Total);
+            rueck.Fang(kopf.position + kopf.Forward * 0.4f);
+        }
+    }
+
+    /// <summary>Die Geisterhände der Gesten stehen so weit vor den Augen (m, waagrecht) – dort, wo die eigenen Hände sie ausführen (Annahme V1a).</summary>
+    const double GeisterVorM = 0.4;
+
+    /// <summary>
+    /// Die Geisterhand zeigt das Wegwischen: die rechte Hand offen, Handfläche nach links, vor dem Körper auf der Höhe des Symbolfelds von rechts nach links; dazu ein
+    /// Hinweis bei der Geste UNTER der Hand (Befund Bilder 02: «neben bzw. unter den Händen, nicht durch sie»), schmal in zwei Zeilen.
+    /// </summary>
+    void GeisterWegwischen(Pose kopf)
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var gieren = KopfRef(kopf).Gieren;
         var vor = new XVec3(Math.Cos(gieren), 0, -Math.Sin(gieren));
-        var rechts = HebeGeste.Rechts(gieren);
-        var mitte = auge + vor * (bedien.Symbole.AbstandM - 0.1) + new XVec3(0, -bedien.Symbole.HoeheM - 0.12, 0);
-        foreach (var (g, links) in new[] { (geister2, true), (geister, false) })
-        {
-            var p = mitte + rechts * (links ? -0.06 : 0.06);
-            var aussen = rechts * (links ? -1 : 1);
-            // Ziel: Mitte = Start, «Rechts» des Ziels = nach aussen (Geisterhand.Bild, Wegschieben)
-            var ziel = new TabletPose(p, vor * -1, aussen, new XVec3(0, 1, 0), 0.1, 0.1);
-            g.Starten(GeisterGeste.Wegschieben, Time.Total, Geisterhand.VorlageSeitlich(p, vor), ziel);
-        }
-        HinweisBei("Wegschieben: beide Hände aus der Mitte nach aussen wischen", (Vec3)(Vector3)(mitte + new XVec3(0, 0.1, 0)), HinweisArt.Hand);
+        var links = Wegwischen.Links(gieren);
+        var mitte = auge + vor * GeisterVorM + new XVec3(0, -bedien.Symbole.HoeheM, 0);
+        var p = mitte - links * 0.12;   // Anlauf rechts der Mitte
+        // Ziel: Mitte = Start, «Rechts» des Ziels = Richtung des Wischs (nach links; Geisterhand.Bild, Wegwischen)
+        var ziel = new TabletPose(p, vor * -1, links, new XVec3(0, 1, 0), 0.1, 0.1);
+        geister.Starten(GeisterGeste.Wegwischen, Time.Total, Geisterhand.VorlageFlach(p, links, new XVec3(0, 1, 0), links: false), ziel);
+        // die Hand reicht von 7 cm unter bis 11 cm über ihre Mitte: der Hinweis darunter
+        HinweisBei("Nach links wischen: schliessen (rechte Hand offen)", (Vec3)(Vector3)(mitte - new XVec3(0, 0.13, 0)), HinweisArt.Geste,
+            SchwebeHinweise.ZeichenJeZeileGeste);
     }
 
     /// <summary>
-    /// Gezögert (beide Handflächen oben, ruhig): zwei Geisterhände führen die Hebegeste vor – neben den eigenen Händen bzw. vor dem Körper –, dazu ein Hinweis bei der Hand.
+    /// Gezögert (beide Handflächen oben, ruhig): zwei Geisterhände führen die Hebegeste vor dem Körper vor, links und rechts; dazu ein Hinweis bei der Geste ZWISCHEN den
+    /// Händen auf halber Höhe ihres Wegs (Befund Bilder 02: der Text lief durch die Geisterhände), schmal in zwei Zeilen.
     /// </summary>
     void GeisterHeben(Pose kopf)
     {
@@ -328,14 +402,15 @@ sealed partial class QuestApp
         var gieren = KopfRef(kopf).Gieren;
         var vor = new XVec3(Math.Cos(gieren), 0, -Math.Sin(gieren));
         var rechts = HebeGeste.Rechts(gieren);
-        var mitte = auge + vor * bedien.Symbole.AbstandM + new XVec3(0, -bedien.Symbole.HoeheM, 0);
+        var mitte = auge + vor * GeisterVorM + new XVec3(0, -bedien.Symbole.HoeheM - 0.12, 0);
         foreach (var (g, links) in new[] { (geister2, true), (geister, false) })
         {
-            var p = mitte + rechts * (links ? -0.2 : 0.2);
+            var p = mitte + rechts * (links ? -0.25 : 0.25);
             var ziel = XrTabletLogik.TabletLageAus(p, auge - p);
             g.Starten(GeisterGeste.Heben, Time.Total, Geisterhand.VorlageOffen(p - new XVec3(0, AppSymbole.HubM * 0.8, 0), vor, links), ziel);
         }
-        HinweisBei("Beide Handflächen nach oben – und deutlich anheben", (Vec3)(Vector3)(mitte + new XVec3(0, 0.08, 0)), HinweisArt.Hand);
+        HinweisBei("Beide Handflächen nach oben – und deutlich anheben", (Vec3)(Vector3)(mitte - new XVec3(0, AppSymbole.HubM * 0.4, 0)), HinweisArt.Geste,
+            SchwebeHinweise.ZeichenJeZeileGeste);
     }
 
     /// <summary>Ein Ziel des Fensters wurde gewählt (Antippen oder Strahl + Pinch).</summary>
@@ -348,7 +423,7 @@ sealed partial class QuestApp
                 if (lauf is { } l) PruefAufgaben.Daneben(l);
                 return;
             case GlasApps.Ereignis.Schliessen:
-                Hinweis("App ausgeblendet – beide Handflächen nach oben anheben holt die Symbole.");
+                Hinweis(symbole.Sichtbar ? "App geschlossen." : "App geschlossen – beide Handflächen nach oben anheben holt die Symbole.");
                 return;
             case GlasApps.Ereignis.Ornament:
                 if (e.Id == "orn_messen") { MessenSchalten(!messen.An); apps.RegisterWaehlen("messen"); }
@@ -428,8 +503,8 @@ sealed partial class QuestApp
     }
 
     /// <summary>
-    /// Ein Wisch (Pinch gehalten) nach den festen Gestenbedeutungen: blättert in der App (Hand an den Apps), wechselt die Etage, schliesst bzw. blendet aus, bricht eine
-    /// Prüfaufgabe ab. Beim Messband zieht die Hand – ihr Wisch zählt nicht.
+    /// Ein Wisch (Pinch gehalten) nach den festen Gestenbedeutungen: blättert in der App (Hand an den Apps), wechselt die Etage. Schliessen und Abbrechen gehen seit V1a
+    /// nur mit dem Wegwischen (Christian 24.10.2026: «Pinch + Wisch nach vorn entfällt»; <see cref="WegwischenBild"/>). Beim Messband zieht die Hand – ihr Wisch zählt nicht.
     /// </summary>
     void WischAnwenden(WischRichtung r, Vec3 ort, string? hand = null)
     {
@@ -441,10 +516,6 @@ sealed partial class QuestApp
         letzteGeste = $"Wisch {r} → {aktion}";
         switch (aktion)
         {
-            case GestenAktion.AufgabeAbbrechen:
-                rueck.Fang(ort);
-                AufgabeBeenden("Wegwischen");
-                break;
             case GestenAktion.Nichts when r is WischRichtung.Hoch or WischRichtung.Runter && !bedien.EtageMitWisch:
                 rueck.Leer(ort);
                 Hinweis("Variante «Etage per App»: das Geschoss in der App «Etagen» wählen.");
@@ -456,12 +527,6 @@ sealed partial class QuestApp
                 break;
             case GestenAktion.EtageHoch: EtageWechseln(1); break;
             case GestenAktion.EtageRunter: EtageWechseln(-1); break;
-            case GestenAktion.AppSchliessen or GestenAktion.AppsAusblenden:
-                if (symbole.Sichtbar) symbole.Ausblenden(Time.Total);
-                apps.Ausblenden(Time.Total);
-                rueck.Fang(ort);
-                Hinweis("App ausgeblendet – beide Handflächen nach oben anheben holt die Symbole.");
-                break;
         }
     }
 }

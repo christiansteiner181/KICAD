@@ -6,7 +6,8 @@
 // P5b: roentgen.winkel_grad, roentgen.reichweite_m (Röntgen-Hand), sitzung.schnitt_ruhe_s, sitzung.schnitt_toleranz_grad (Schnitt mit flacher Hand),
 //   labor.variante.teleport (zeigen_pinch | stick), labor.variante.messen (messband | zwei_punkte; seit V1a wirksam).
 // V1a: apps.seitlich_grad, anzeige.glas_deckkraft, anzeige.glas_helligkeit, labor.variante.umgebung (hell | tron), hinweis.dauer_s, hebe.* (Hebegeste),
-//   symbole.* und zeiger.tooltip_s (App-Symbole, Zeiger), labor.variante.symbole (verteilt | bogen).
+//   symbole.* und zeiger.tooltip_s (App-Symbole: Feld frontal mit Abstand, Mitte, Höhe und Reihen; Berührung mit der ganzen Hand; Zeiger),
+//   labor.variante.symbole (verteilt | bogen), labor.variante.symbolwahl (stehen | ausblenden).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -50,12 +51,15 @@ public static class Varianten
     /// <summary>V1a, «labor.variante.symbole»: die App-Symbole locker verteilt (Vorgabe, Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt») bzw.
     /// im Bogen (zum Vergleich).</summary>
     public const string SymboleVerteilt = "verteilt", SymboleBogen = "bogen";
+    /// <summary>V1a, «labor.variante.symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (Vorgabe; Christian 24.10.2026:
+    /// «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf) bzw. blenden aus (wie zuvor).</summary>
+    public const string SymbolwahlStehen = "stehen", SymbolwahlAusblenden = "ausblenden";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
-        ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen],
+        ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
     };
 }
 
@@ -80,8 +84,9 @@ public sealed record AppEinstellungen
     /// Apple HIG «Materials»; Befund Prüfbild 24.10.2026: mit 0.55 schienen Marker und Linien durch das Fenster).</summary>
     public double GlasDeckkraft { get; init; } = 0.75;
     /// <summary>
-    /// V1a, «anzeige.glas_helligkeit»: so hell soll das Glas über dem Hintergrund wirken (sRGB 0.2 … 0.6; Annahme V1a 0.42 – weisse Schrift bleibt in jeder Umgebung gut
-    /// lesbar). Das Glas tönt sich danach (GlasStil.Toenung): im hellen Sitzungsraum dunkler, im dunklen heller (Apple HIG «Materials»: «Glass is an adaptive material»).
+    /// V1a, «anzeige.glas_helligkeit»: so hell darf das Glas der dunklen Fassung über dem Hintergrund höchstens wirken (sRGB 0.2 … 0.6; Annahme V1a 0.42 – helle Schrift
+    /// bleibt lesbar); die helle Fassung wirkt mindestens AppFarben.HellMindestens hell. Die Deckkraft richtet sich danach (AppFarben.Deckkraft; Apple HIG «Materials»:
+    /// «Glass is an adaptive material»).
     /// </summary>
     public double GlasHelligkeit { get; init; } = 0.42;
     /// <summary>V1a, «hinweis.dauer_s»: so lange steht ein schwebender Hinweis (s), dann blendet er aus (Annahme V1a 4 s; Christian 24.10.2026: «hinweistexte frei
@@ -127,8 +132,8 @@ public sealed record XrBedienEinstellungen
     public FlacheHandEinstellungen FlacheHand { get; init; } = FlacheHandEinstellungen.Vorgabe;
     /// <summary>V1a: Hebegeste («hebe.*»).</summary>
     public HebeEinstellungen Hebe { get; init; } = HebeEinstellungen.Vorgabe;
-    /// <summary>V1a: Wegschieben der Symbole («schieben.*»).</summary>
-    public SchiebeEinstellungen Schieben { get; init; } = SchiebeEinstellungen.Vorgabe;
+    /// <summary>V1a: Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; «wegwischen.*»).</summary>
+    public WegwischEinstellungen Wegwischen { get; init; } = WegwischEinstellungen.Vorgabe;
     /// <summary>V1a: App-Symbole und Zeiger («symbole.*», «zeiger.tooltip_s», Variante «symbole»).</summary>
     public SymbolEinstellungen Symbole { get; init; } = new();
 
@@ -144,7 +149,8 @@ public sealed record XrBedienEinstellungen
     /// <summary>P5b: Wert einer Variante nach ihrem Namen (bedienung, teleport, etage, messen); null für eine Variante, die die App nicht kennt.</summary>
     public string? Variante(string name) => name switch
     {
-        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung, _ => null,
+        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
+        "symbolwahl" => Symbole.NachWahl, _ => null,
     };
 
     /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
@@ -178,16 +184,19 @@ public sealed record XrBedienEinstellungen
         ["hebe.zeit_s"] = (0.2, 3),
         ["hebe.handflaeche_grad"] = (10, 80),
         ["hebe.gleichzeitig_s"] = (0.05, 1.5),
-        ["symbole.abstand_m"] = (0.25, 0.7),
-        ["symbole.hoehe_m"] = (0.1, 0.6),
+        ["symbole.abstand_m"] = (0.3, 1.0),
+        ["symbole.hoehe_m"] = (0, 0.8),
+        ["symbole.feldhoehe_m"] = (0.2, 1.0),
+        ["symbole.reihen"] = (1, 3),
+        ["symbole.beruehr_rand_m"] = (0, 0.05),
+        ["symbole.beruehr_sperre_s"] = (0, 3),
         ["symbole.streuung"] = (0.6, 1.6),
-        ["symbole.wartezeit_s"] = (2, 60),
+        ["symbole.wartezeit_s"] = (0, 120),
         ["zeiger.tooltip_s"] = (0, 3),
-        ["schieben.startabstand_m"] = (0.1, 0.6),
-        ["schieben.weg_m"] = (0.05, 0.5),
-        ["schieben.zeit_s"] = (0.2, 3),
-        ["schieben.handflaeche_grad"] = (10, 80),
-        ["schieben.gleichzeitig_s"] = (0.05, 1.5),
+        ["wegwischen.weg_m"] = (0.05, 0.6),
+        ["wegwischen.zeit_s"] = (0.2, 2),
+        ["wegwischen.handflaeche_grad"] = (10, 80),
+        ["wegwischen.richtung_grad"] = (5, 80),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -204,7 +213,8 @@ public sealed record XrBedienEinstellungen
         "apps.seitlich_grad", "anzeige.glas_deckkraft", "labor.variante.umgebung", "anzeige.glas_helligkeit",
         "hinweis.dauer_s", "hebe.weg_m", "hebe.zeit_s", "hebe.handflaeche_grad", "hebe.gleichzeitig_s",
         "symbole.abstand_m", "symbole.hoehe_m", "symbole.streuung", "symbole.wartezeit_s", "zeiger.tooltip_s", "labor.variante.symbole",
-        "schieben.startabstand_m", "schieben.weg_m", "schieben.zeit_s", "schieben.handflaeche_grad", "schieben.gleichzeitig_s",
+        "symbole.feldhoehe_m", "symbole.reihen", "symbole.beruehr_rand_m", "symbole.beruehr_sperre_s", "labor.variante.symbolwahl",
+        "wegwischen.weg_m", "wegwischen.zeit_s", "wegwischen.handflaeche_grad", "wegwischen.richtung_grad",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -300,22 +310,31 @@ public sealed record XrBedienEinstellungen
                 return zurueck ? this with { Symbole = Symbole with { WartezeitS = v.Symbole.WartezeitS } } : Zahl() is { } s4 ? this with { Symbole = Symbole with { WartezeitS = s4 } } : null;
             case "zeiger.tooltip_s":
                 return zurueck ? this with { Symbole = Symbole with { TooltipS = v.Symbole.TooltipS } } : Zahl() is { } s5 ? this with { Symbole = Symbole with { TooltipS = s5 } } : null;
-            case "schieben.startabstand_m":
-                return zurueck ? this with { Schieben = Schieben with { StartabstandM = v.Schieben.StartabstandM } }
-                    : Zahl() is { } w1 ? this with { Schieben = Schieben with { StartabstandM = w1 } } : null;
-            case "schieben.weg_m":
-                return zurueck ? this with { Schieben = Schieben with { WegM = v.Schieben.WegM } } : Zahl() is { } w2 ? this with { Schieben = Schieben with { WegM = w2 } } : null;
-            case "schieben.zeit_s":
-                return zurueck ? this with { Schieben = Schieben with { ZeitS = v.Schieben.ZeitS } } : Zahl() is { } w3 ? this with { Schieben = Schieben with { ZeitS = w3 } } : null;
-            case "schieben.handflaeche_grad":
-                return zurueck ? this with { Schieben = Schieben with { HandflaecheGrad = v.Schieben.HandflaecheGrad } }
-                    : Zahl() is { } w4 ? this with { Schieben = Schieben with { HandflaecheGrad = w4 } } : null;
-            case "schieben.gleichzeitig_s":
-                return zurueck ? this with { Schieben = Schieben with { GleichzeitigS = v.Schieben.GleichzeitigS } }
-                    : Zahl() is { } w5 ? this with { Schieben = Schieben with { GleichzeitigS = w5 } } : null;
+            case "symbole.feldhoehe_m":
+                return zurueck ? this with { Symbole = Symbole with { FeldHoeheM = v.Symbole.FeldHoeheM } } : Zahl() is { } s7 ? this with { Symbole = Symbole with { FeldHoeheM = s7 } } : null;
+            case "symbole.reihen":
+                return zurueck ? this with { Symbole = Symbole with { Reihen = v.Symbole.Reihen } }
+                    : Zahl() is { } s8 && Math.Abs(s8 - Math.Round(s8)) < 1e-9 ? this with { Symbole = Symbole with { Reihen = (int)Math.Round(s8) } } : null;
+            case "symbole.beruehr_rand_m":
+                return zurueck ? this with { Symbole = Symbole with { BeruehrRandM = v.Symbole.BeruehrRandM } } : Zahl() is { } s9 ? this with { Symbole = Symbole with { BeruehrRandM = s9 } } : null;
+            case "symbole.beruehr_sperre_s":
+                return zurueck ? this with { Symbole = Symbole with { BeruehrSperreS = v.Symbole.BeruehrSperreS } } : Zahl() is { } s10 ? this with { Symbole = Symbole with { BeruehrSperreS = s10 } } : null;
+            case "wegwischen.weg_m":
+                return zurueck ? this with { Wegwischen = Wegwischen with { WegM = v.Wegwischen.WegM } } : Zahl() is { } w2 ? this with { Wegwischen = Wegwischen with { WegM = w2 } } : null;
+            case "wegwischen.zeit_s":
+                return zurueck ? this with { Wegwischen = Wegwischen with { ZeitS = v.Wegwischen.ZeitS } } : Zahl() is { } w3 ? this with { Wegwischen = Wegwischen with { ZeitS = w3 } } : null;
+            case "wegwischen.handflaeche_grad":
+                return zurueck ? this with { Wegwischen = Wegwischen with { HandflaecheGrad = v.Wegwischen.HandflaecheGrad } }
+                    : Zahl() is { } w4 ? this with { Wegwischen = Wegwischen with { HandflaecheGrad = w4 } } : null;
+            case "wegwischen.richtung_grad":
+                return zurueck ? this with { Wegwischen = Wegwischen with { RichtungGrad = v.Wegwischen.RichtungGrad } }
+                    : Zahl() is { } w5 ? this with { Wegwischen = Wegwischen with { RichtungGrad = w5 } } : null;
             case "labor.variante.symbole":
                 return zurueck ? this with { Symbole = Symbole with { Verteilung = v.Symbole.Verteilung } }
                     : Wahl(Varianten.SymboleVerteilt, Varianten.SymboleBogen) is { } s6 ? this with { Symbole = Symbole with { Verteilung = s6 } } : null;
+            case "labor.variante.symbolwahl":
+                return zurueck ? this with { Symbole = Symbole with { NachWahl = v.Symbole.NachWahl } }
+                    : Wahl(Varianten.SymbolwahlStehen, Varianten.SymbolwahlAusblenden) is { } s11 ? this with { Symbole = Symbole with { NachWahl = s11 } } : null;
             default:
                 return null;
         }

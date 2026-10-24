@@ -107,19 +107,32 @@ sealed partial class QuestApp
         return VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z)).Abstand(p) < 20;
     }
 
+    /// <summary>Grösse der Stecknadel (Faktor) an diesem Ort: am Tisch klein, beim Begehen mit dem Abstand wachsend.</summary>
+    float StecknadelMass(Vec3 ort, Pose kopf, float groesse = 1) => (sitzung.Aktiv ? 0.35f : Math.Clamp(Vec3.Distance(ort, kopf.position) / 2.5f, 0.8f, 3f)) * groesse;
+
+    /// <summary>
+    /// Ort des Kennzeichens über dem Kopf der Stecknadel: im Blick darüber (entlang «oben» der zum Auge gedrehten Ebene), mit Abstand zum Kopf (Befund Prüfbilder 02:
+    /// «PM-1» lag teils unter dem Kopf der Nadel).
+    /// </summary>
+    static XVec3 KennzeichenOrt(Vec3 kopfP, Pose kopf, float s)
+    {
+        var kp = new XVec3(kopfP.x, kopfP.y, kopfP.z);
+        var oben = XrTabletLogik.TabletLageAus(kp, new XVec3(kopf.position.x, kopf.position.y, kopf.position.z) - kp).Oben;
+        return kp + oben * ((0.0225 + 0.006 + 0.012) * s);   // Radius des Kopfs + halbe Schrifthöhe + Lücke
+    }
+
     /// <summary>Stecknadel: Linie von der Stelle nach oben, Kopf (offen orange, erledigt grau), Kennzeichen frei schwebend (weiss mit dunklem Schein).</summary>
     void Stecknadel(Vec3 ort, Pose kopf, bool offen, string? kennzeichen, float groesse)
     {
-        var s = (sitzung.Aktiv ? 0.35f : Math.Clamp(Vec3.Distance(ort, kopf.position) / 2.5f, 0.8f, 3f)) * groesse;
+        var s = StecknadelMass(ort, kopf, groesse);
         var kopfP = ort + Vec3.Up * (0.16f * s);
         var c = offen ? new Color(1f, 0.55f, 0.15f, 1) : new Color(0.62f, 0.62f, 0.64f, 1);
         Lines.Add(ort, kopfP, new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), 230), 0.004f * s);
         Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(kopfP, 0.045f * s), c.ToLinear());
         Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(ort, 0.012f * s), c.ToLinear());
         if (kennzeichen is null || Vec3.Distance(kopfP, kopf.position) > (sitzung.Aktiv ? 2.5f : 12)) return;
-        var lp = new XVec3(kopfP.x, kopfP.y + 0.05 * s, kopfP.z);
         var kp = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
-        glas.Schein(kennzeichen, lp, kp, 0.012 * s, 1);   // Kennzeichen frei schwebend mit dunklem Schein (kein Kasten)
+        glas.Schein(kennzeichen, KennzeichenOrt(kopfP, kopf, s), kp, 0.012 * s, 1);   // Kennzeichen frei schwebend mit dunklem Schein (kein Kasten)
     }
 
     /// <summary>Marker setzen: Ort, Blickpunkt (Kopf), Element, Geschoss; wartet bis zur Sendung im privaten Speicher.</summary>
@@ -138,7 +151,12 @@ sealed partial class QuestApp
         markerGesetzt++;
         markerSetzen = false;
         rueck.Antippen(SkVonSzene(ort), sitzung.Aktiv ? 0.05f : 0.25f);
-        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : " – geht mit der nächsten Verbindung an KICAD")}.", SkVonSzene(ort), Hlks.Xr.Bedienung.HinweisArt.Objekt);   // beim Objekt (frei schwebend)
+        // beim Objekt (frei schwebend), über dem Kennzeichen der Nadel – nicht über dem Stift (Befund Prüfbilder 02); am Tisch über dem Modell allgemein (HinweisBei)
+        var nadel = SkVonSzene(ort);
+        var sn = StecknadelMass(nadel, kopf);
+        var ueber = KennzeichenOrt(nadel + Vec3.Up * (0.16f * sn), kopf, sn) + new XVec3(0, 0.02 * sn, 0);
+        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : " – geht mit der nächsten Verbindung an KICAD")}.",
+            (Vec3)(Vector3)ueber, Hlks.Xr.Bedienung.HinweisArt.Objekt);
         Task.Run(MarkerSenden);
     }
 

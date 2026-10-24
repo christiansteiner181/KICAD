@@ -7,23 +7,30 @@ using XVec3 = Hlks.Xr.Vec3;
 namespace Hlks.Quest;
 
 /// <summary>
-/// Quest App V1a, Vorgabe Christian 24.10.2026: frei schwebende App-Symbole (Regeln in Hlks.Xr.Bedienung.AppSymbole, HebeGeste, Zeiger). Runde Glas-Symbole ohne Fenster
-/// dahinter, eines je App, locker verteilt vor dem Körper in Griffweite (je App immer am selben Platz). Mit der Hebegeste steigen sie von unten ein und folgen dabei der
-/// Höhe der Hände; nach der Geste setzen sie sich ruhig und bleiben im Raum stehen. Anwahl durch Berührung mit der Fingerspitze (kein Pinch): Leuchten und Ton, dann
-/// öffnet die App (die Anwendung fragt <see cref="Bild"/> nach der Wahl), die Symbole blenden aus. Ohne Wahl: Gegenbewegung oder Wartezeit. Ein gestreckter Zeigefinger
-/// nahe an einem Symbol zeigt einen Punkt darauf und eine feine Linie von der Fingerspitze, das Symbol hebt sich leicht, nach «zeiger.tooltip_s» erscheint der Name als
-/// Tooltip darunter.
+/// Quest App V1a, Vorgaben Christian 24.10.2026: frei schwebende App-Symbole (Regeln in Hlks.Xr.Bedienung.AppSymbole, HebeGeste, HandBeruehrung, Zeiger). Runde
+/// Glas-Symbole ohne Fenster dahinter, eines je App, im Ton der App (kataloge/xr_farben.json) mit dem Symbol aus KICAD (Textur), in einem Feld frontal in Körperrichtung
+/// (etwa 0.6 m vor den Augen, über etwa 0.6 m Höhe in höchstens drei locker versetzten Reihen; je App immer am selben Platz). Mit der Hebegeste steigen sie von unten
+/// ein; nach der Geste bleiben sie im Raum stehen. Anwahl durch Berührung mit der GANZEN Hand («die app berührung soll mit der ganzen hand erfolgen und nicht nur mit
+/// einem finger»): Handfläche, Handrücken oder ein Finger; während Hebegeste und Wegwischen und kurz danach zählt keine Berührung; bei mehreren gilt das am tiefsten
+/// berührte. Dann Leuchten und Ton, und die Anwendung öffnet die App (sie fragt <see cref="Bild"/> nach der Wahl). Danach (Christian 24.10.2026: «werden die aps
+/// hineingehoben bleiben diese stehen»; Variante «symbolwahl»): «stehen» (Vorgabe) – die App öffnet frontal etwas näher, das Feld weicht dahinter zurück und wird
+/// gedämpft (<see cref="Hinten"/>), schliesst die App, kommt es wieder nach vorn; «ausblenden» – die Symbole blenden schnell aus und die App öffnet sich danach.
+/// Ausgeblendet werden sie sonst nur durch das Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; Wartezeit «symbole.wartezeit_s» Vorgabe 0 = aus). Ein gestreckter Zeigefinger nahe an einem Symbol zeigt
+/// einen Punkt darauf und eine feine Linie von der Fingerspitze, das Symbol hebt sich leicht, nach «zeiger.tooltip_s» erscheint der Name als Tooltip darüber.
 /// </summary>
-sealed class SymbolApps
+sealed class SymbolApps : IWegwischbar
 {
-    /// <summary>Ein Symbol: Id der App, Name (Tooltip), Bild (GlasSymbole), Ampel (nur Status).</summary>
+    /// <summary>Ein Symbol: Id der App, Name (Tooltip), Symbol von KICAD (GlasSymbole), Ampel (nur Status).</summary>
     public sealed record Symbol(string Id, string Titel, string Bild, int Ampel = 0);
 
     enum Phase { Weg, Hebt, Da, Geht }
 
+    /// <summary>Ausblenden nach einer Wahl (s): schnell, damit die App erst danach erscheint.</summary>
+    public const double NachWahlS = 0.12;
+
     readonly Rueckmeldung rueck;
     readonly GlasZeichner z;
-    readonly BeruehrHand[] beruehr = [new(), new()];
+    readonly HandBeruehrZustand beruehr = new();
     readonly ZeigerZustand[] zeiger = [new(), new()];
     readonly bool[] nah = new bool[2];
     readonly Dictionary<string, double> anheben = new(StringComparer.Ordinal);
@@ -31,6 +38,7 @@ sealed class SymbolApps
     double f, seit, gehtSeit;
     XVec3 auge;
     double gieren;
+    double? untergrenzeAnker;
     string? gewaehlt;
     double gewaehltT = double.NegativeInfinity;
 
@@ -40,8 +48,14 @@ sealed class SymbolApps
     public List<TabletPose> Flaechen { get; } = [];
     /// <summary>Tooltip im letzten Bild: Id und Deckkraft (Prüfung).</summary>
     public (string Id, double Deckkraft)? Tooltip { get; private set; }
-    /// <summary>Gedachte Fingerspitze (Prüflauf am PC ohne Hände): ersetzt die rechte Hand.</summary>
+    /// <summary>Berührt im letzten Bild (tiefste Eindringung; Prüfung).</summary>
+    public string? Beruehrt { get; private set; }
+    /// <summary>Gedachte Fingerspitze (Prüflauf am PC ohne Hände): ersetzt den Zeigefinger der rechten Hand (Zeiger, Tooltip).</summary>
     public XVec3? SimFinger { get; set; }
+    /// <summary>Gedachte ganze Hand (Prüflauf am PC): ersetzt die rechte Hand für die Berührung.</summary>
+    public IReadOnlyDictionary<string, XVec3>? SimHand { get; set; }
+    /// <summary>Tiefste Höhe einer Symbolmitte (Raum der Brille), z. B. über der Tischplatte am Sitzungstisch; null = keine. Gilt beim nächsten Erscheinen.</summary>
+    public double? Untergrenze { get; set; }
     /// <summary>Sind die Symbole zu sehen (auch beim Hineinheben und Ausblenden)?</summary>
     public bool Sichtbar => phase != Phase.Weg;
     /// <summary>Stehen sie ganz (nach der Geste, vor dem Ausblenden)?</summary>
@@ -70,43 +84,71 @@ sealed class SymbolApps
         phase = Phase.Da;
         seit = t;
         gewaehlt = null;
+        weggewischt = false;
     }
 
     /// <summary>
-    /// Ausblenden: nach der Wahl bzw. nach der Wartezeit (sinken und verblassen) oder – auseinander = true – mit dem Wegschieben (Christian 24.10.2026: «schiebt die
-    /// symbole beidseitig aus dem bild»): die Symbole links der Mitte gleiten weiter nach links, rechts nach rechts, und verblassen.
+    /// Ausblenden: nach der Wahl (Variante «ausblenden», schnell, <see cref="NachWahlS"/>) bzw. nach einer Wartezeit (sinken und verblassen) oder – weggewischt = true –
+    /// mit dem Wegwischen (Christian 24.10.2026: «wischbewegung von rechts nach links»): die Symbole gleiten weiter nach links aus dem Bild und verblassen.
     /// </summary>
-    public void Ausblenden(double t, bool auseinander = false)
+    public void Ausblenden(double t, bool weggewischt = false)
     {
         if (phase is Phase.Weg or Phase.Geht) return;
         phase = Phase.Geht;
         gehtSeit = t;
-        this.auseinander = auseinander;
+        this.weggewischt = weggewischt;
     }
 
-    /// <summary>Weg nach aussen (m), mit dem die Symbole gerade mitlaufen (links, rechts); Zustand des Wegschiebens.</summary>
-    double schiebenL, schiebenR;
-    bool auseinander;
+    /// <summary>Weg der Hand nach links (m), mit dem die Symbole gerade mitlaufen (Einhängepunkt <see cref="IWegwischbar"/>); Ziel und geglätteter Wert.</summary>
+    double wischZiel, wischWeg;
+    bool weggewischt;
 
-    /// <summary>Dauer des Ausblendens (s): beim Wegschieben etwas länger, damit die Symbole sichtbar zur Seite gleiten.</summary>
-    double AusDauer => auseinander ? 0.4 : AppSymbole.AusblendenS;
+    /// <summary>Dauer des Ausblendens (s): nach einer Wahl kurz, beim Wegwischen etwas länger, damit die Symbole sichtbar nach links gleiten.</summary>
+    double AusDauer => weggewischt ? 0.4 : gewaehlt is not null ? NachWahlS : AppSymbole.AusblendenS;
 
-    /// <summary>Wegschieben im letzten Bild (Prüfung): die Symbole laufen gerade zur Seite mit bzw. gleiten weg.</summary>
-    public bool Schiebt => Sichtbar && (schiebenL + schiebenR > 0.01 || phase == Phase.Geht && auseinander);
+    // ---------------------------------------------------------------- Einhängepunkt Wegwischen
+
+    /// <summary>Kandidat für das Wegwischen, solange die Symbole stehen: Hülle des Felds im Blick, eingeblendet seit dem Holen.</summary>
+    public WegwischKandidat? Kandidat(XVec3 auge) =>
+        phase == Phase.Da && Plaetze.Count > 0 && Glas.HuelleImBlick([.. Plaetze.SelectMany(p => Glas.Ecken(p.Lage))], auge, 0.02) is { } h
+            ? new WegwischKandidat("symbole", h, seit) : null;
+
+    /// <summary>Die Hand wischt über die Symbole: sie laufen nach links mit.</summary>
+    public void Mitlaufen(double wegM) => wischZiel = Math.Max(0, wegM);
+
+    /// <summary>Weggewischt: die Symbole gleiten nach links aus dem Bild.</summary>
+    public void Wegwischen(double t) { wischZiel = 0; Ausblenden(t, weggewischt: true); }
+
+    /// <summary>
+    /// Variante «stehen» (Vorgabe): eine App ist offen – das Feld weicht hinter sie zurück und wird gedämpft (AppSymbole.Zurueck, Gedaempft); schliesst sie, kommt es
+    /// wieder nach vorn. Die Anwendung setzt es je Bild.
+    /// </summary>
+    public bool Hinten { get; set; }
+    double hinten;
+    /// <summary>Wie weit das Feld gerade zurückgewichen ist (0 … 1; Prüfung).</summary>
+    public double HintenAnteil => hinten;
+    /// <summary>Auge und Gieren beim Holen (für den Platz der gewählten App vor dem Feld).</summary>
+    public (XVec3 Auge, double Gieren) Anker => (auge, gieren);
+
+    /// <summary>Wegwischen im letzten Bild (Prüfung): die Symbole laufen gerade nach links mit bzw. gleiten weg.</summary>
+    public bool Wischt => Sichtbar && (wischWeg > 0.01 || phase == Phase.Geht && weggewischt);
 
     void Ankern(Pose kopf)
     {
         auge = X(kopf.position);
-        gieren = VrLogik.GierenVonRichtung(new Xz(kopf.Forward.x, kopf.Forward.z));
+        gieren = VrLogik.GierenVonRichtung(new Xz(kopf.Forward.x, kopf.Forward.z));   // nur Gieren: frontal in Körperrichtung, ohne Nicken
+        untergrenzeAnker = Untergrenze;
     }
 
     /// <summary>
-    /// Ein Bild: Hineinheben nach dem Fortschritt der Geste (stand), Berührung und Zeiger je Hand, Zeichnen. Rückgabe: die Id der gewählten App (einmal) bzw. null.
+    /// Ein Bild: Hineinheben nach dem Fortschritt der Geste (stand), Berührung mit der ganzen Hand, Zeiger je Hand, Zeichnen. Rückgabe: die Id der gewählten App (einmal)
+    /// bzw. null.
     /// </summary>
     public string? Bild(Pose kopf, double t, double dt, IReadOnlyList<Symbol> symbole, HebeStand stand, XrBedienEinstellungen e, (XVec3 U, XVec3 R)?[] strahlen)
     {
         Flaechen.Clear();
         Tooltip = null;
+        Beruehrt = null;
         var m = GlasMasse.Fuer(e.Apps);
         // Phase: die Geste läuft (Fortschritt) → Hineinheben, Platz folgt noch dem Kopf; endet sie ohne Ereignis, sinken die Symbole wieder
         switch (phase)
@@ -123,116 +165,143 @@ sealed class SymbolApps
                 break;
             case Phase.Da:
                 f = GlasStil.Folgen(f, 1, dt, 0.08);
-                if (t - seit > e.Symbole.WartezeitS && !nah[0] && !nah[1]) Ausblenden(t);
+                if (e.Symbole.WartezeitS > 0 && t - seit > e.Symbole.WartezeitS && !nah[0] && !nah[1]) Ausblenden(t);   // Vorgabe 0: bleiben stehen
                 break;
             case Phase.Geht when t - gehtSeit > AusDauer:
                 phase = Phase.Weg;
                 f = 0;
                 break;
         }
-        if (phase == Phase.Weg) { Plaetze = []; schiebenL = schiebenR = 0; for (int i = 0; i < 2; i++) { nah[i] = false; AppBeruehrung.Schritt(beruehr[i], null, false, []); } return null; }
-        // Wegschieben: solange beide Hände in der Haltung sind, laufen die Symbole mit dem Weg der Hände zur Seite; bricht die Geste ab, gleiten sie zurück
-        if (phase != Phase.Geht)
+        // Hände (Gelenke) für Berührung und Zeiger; im Prüflauf ersetzen die gedachte Hand bzw. Fingerspitze die rechte
+        var haende = new IReadOnlyDictionary<string, XVec3>?[2];
+        var spitzen = new XVec3?[2];
+        var gestreckt = new bool[2];
+        foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
-            schiebenL = stand.SchiebenLaeuft ? stand.SchiebenLinks : GlasStil.Folgen(schiebenL, 0, dt, 0.1);
-            schiebenR = stand.SchiebenLaeuft ? stand.SchiebenRechts : GlasStil.Folgen(schiebenR, 0, dt, 0.1);
+            var h = Input.Hand(handed);
+            if (h.IsTracked)
+            {
+                var g = HandGelenke.AusStereoKit((fi, j) => X(h[fi, j].position), X(h.wrist.position));
+                haende[i] = g;
+                spitzen[i] = X(h[FingerId.Index, JointId.Tip].position);
+                gestreckt[i] = Zeiger.ZeigefingerGestreckt(g);
+            }
+            if (i == 1 && SimHand is { } sh) { haende[i] = sh; spitzen[i] = sh.TryGetValue("index-finger-tip", out var st) ? st : null; gestreckt[i] = false; }
+            if (i == 1 && SimFinger is { } sf) { spitzen[i] = sf; gestreckt[i] = true; }
         }
+        if (phase == Phase.Weg)
+        {
+            Plaetze = []; wischWeg = wischZiel = 0; nah[0] = nah[1] = false;
+            HandBeruehrung.Schritt(beruehr, t, haende, [], gesteLaeuft: true, e.Symbole);   // was beim Erscheinen schon berührt, zählt nicht
+            return null;
+        }
+        // Wegwischen: solange die Hand über die Symbole wischt, laufen sie mit nach links; bricht die Geste ab, gleiten sie zurück (Mitlaufen setzt das Ziel je Bild)
+        if (phase != Phase.Geht) wischWeg = wischZiel > wischWeg ? wischZiel : GlasStil.Folgen(wischWeg, wischZiel, dt, 0.1);
+        var wischLaeuft = wischZiel > 0;
+        wischZiel = 0;
+        hinten = GlasStil.Folgen(hinten, Hinten ? 1 : 0, dt, 0.1);   // weich zurück bzw. wieder nach vorn
         var ids = symbole.Select(s => s.Id).ToList();
-        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m);
+        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m, untergrenzeAnker);
         Plaetze = plaetze;
         var gehen = phase == Phase.Geht ? GlasStil.Weich((t - gehtSeit) / AusDauer) : 0;
-        var mitte = AppSymbole.Mitte(plaetze);
         var rechts = HebeGeste.Rechts(gieren);
-        // Lage je Symbol: von unten hineingehoben (Fortschritt f, gestaffelt), beim Gehen leicht sinkend und blasser (beim Wegschieben zur Seite), beim Annähern leicht
-        // angehoben
+        var links = AppSymbole.NachLinks(wischWeg, weggewischt ? gehen : 0);
+        // Lage je Symbol: von unten hineingehoben (Fortschritt f, gestaffelt), beim Gehen leicht sinkend und blasser (beim Wegwischen nach links)
         var lagen = new List<TabletPose>();
         var deck = new List<double>();
         for (int i = 0; i < plaetze.Count; i++)
         {
             var (unten, d) = AppSymbole.Hineinheben(f, i, plaetze.Count);
             var lage = plaetze[i].Lage;
-            var seitlich = AppSymbole.Seitlich((lage.Mitte - mitte).Skalar(rechts), schiebenL, schiebenR, auseinander ? gehen : 0);
-            lage = lage with { Mitte = lage.Mitte - new XVec3(0, unten + (auseinander ? 0 : 0.05 * gehen), 0) + rechts * seitlich };
+            lage = lage with { Mitte = AppSymbole.Zurueck(lage.Mitte - new XVec3(0, unten + (weggewischt ? 0 : 0.05 * gehen), 0) - rechts * links, auge, hinten) };
             lagen.Add(lage);
-            deck.Add(d * (1 - gehen) * AppSymbole.SeitlichDeckkraft(seitlich));
+            deck.Add(d * (weggewischt ? 1 : 1 - gehen) * AppSymbole.SeitlichDeckkraft(links) * AppSymbole.Gedaempft(hinten));
         }
-        // Hände: Berührung (nur wenn die Symbole stehen) und Zeiger
+        // Berührung mit der ganzen Hand (nur wenn die Symbole stehen; während der Gesten und kurz danach gesperrt)
         string? ergebnis = null;
-        var zeigerBilder = new ZeigerBild?[2];
-        foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
+        var gesteLaeuft = phase != Phase.Da || f < 0.9 || stand.Fortschritt > 0.05 || wischLaeuft;
+        var kugeln = plaetze.Select((p, i) => new BeruehrKugel(p.Id, lagen[i].Mitte, lagen[i].H / 2)).ToList();
+        var b = HandBeruehrung.Schritt(beruehr, t, haende, kugeln, gesteLaeuft, e.Symbole);
+        Beruehrt = b.Beruehrt;
+        if (b.Gewaehlt is { } wahl && phase == Phase.Da)
         {
-            XVec3? spitze = null;
-            var gestreckt = false;
-            var h = Input.Hand(handed);
-            if (i == 1 && SimFinger is { } sim) { spitze = sim; gestreckt = true; }
-            else if (h.IsTracked)
-            {
-                var g = HandGelenke.AusStereoKit((fi, j) => X(h[fi, j].position), X(h.wrist.position));
-                spitze = X(h[FingerId.Index, JointId.Tip].position);
-                gestreckt = Zeiger.ZeigefingerGestreckt(g);
-            }
-            nah[i] = spitze is { } sp && AppBeruehrung.Naechste(lagen, sp, Zeiger.NaeheM) is not null;
-            if (phase == Phase.Da && f > 0.9 && spitze is { } s)
-            {
-                var b = AppBeruehrung.Schritt(beruehr[i], s, false, lagen, e.Pinch);   // nur Berührung, kein Pinch (Christian: «angewählt werden sie durch berührung»)
-                if (b.HoverNeu && b.Hover is int hv) rueck.Fang(S(lagen[hv].Mitte), leise: true);
-                if (b.Ausgeloest is int a && ergebnis is null)
-                {
-                    ergebnis = gewaehlt = ids[a];
-                    gewaehltT = t;
-                    rueck.Kachel(S(lagen[a].Mitte));
-                }
-            }
-            else AppBeruehrung.Schritt(beruehr[i], null, false, []);
-            var strahl = i == 1 && SimFinger is not null ? null : strahlen[i];   // aus der Ferne: der Zielstrahl des Systems
-            zeigerBilder[i] = phase == Phase.Da ? Zeiger.Schritt(zeiger[i], t, spitze, gestreckt, lagen, e.Symbole.TooltipS, strahl) : null;
+            var k = ids.IndexOf(wahl);
+            ergebnis = gewaehlt = wahl;
+            gewaehltT = t;
+            rueck.Kachel(S(lagen[k].Mitte));
         }
-        if (ergebnis is not null) Ausblenden(t);
-        Zeichnen(symbole, lagen, deck, zeigerBilder, t, dt, m);
+        // Zeiger je Hand (gestreckter Zeigefinger nah, sonst der Zielstrahl des Systems)
+        var zeigerBilder = new ZeigerBild?[2];
+        for (int i = 0; i < 2; i++)
+        {
+            nah[i] = haende[i] is { } hh && kugeln.Any(k => HandBeruehrung.Eindringen(hh, k.Mitte, k.Radius + e.Symbole.BeruehrRandM) > -Zeiger.NaeheM);
+            var strahl = i == 1 && (SimFinger is not null || SimHand is not null) ? null : strahlen[i];
+            zeigerBilder[i] = phase == Phase.Da ? Zeiger.Schritt(zeiger[i], t, spitzen[i], gestreckt[i], lagen, e.Symbole.TooltipS, strahl) : null;
+        }
+        if (ergebnis is not null && e.Symbole.NachWahl == Varianten.SymbolwahlAusblenden) Ausblenden(t);   // Vorgabe «stehen»: sie bleiben (Christian 24.10.2026)
+        Zeichnen(symbole, lagen, deck, zeigerBilder, b.Naehe, t, dt, m);
         return ergebnis;
     }
 
-    void Zeichnen(IReadOnlyList<Symbol> symbole, List<TabletPose> lagen, List<double> deck, ZeigerBild?[] zeigerBilder, double t, double dt, GlasMasse m)
+    void Zeichnen(IReadOnlyList<Symbol> symbole, List<TabletPose> lagen, List<double> deck, ZeigerBild?[] zeigerBilder, IReadOnlyDictionary<string, double> handNaehe,
+        double t, double dt, GlasMasse m)
     {
-        var ton = z.Ton;
         for (int i = 0; i < lagen.Count; i++)
         {
             if (deck[i] <= 0.01) continue;
-            var naehe = Math.Max(zeigerBilder[0]?.Index == i ? zeigerBilder[0]!.Naehe : 0, zeigerBilder[1]?.Index == i ? zeigerBilder[1]!.Naehe : 0);
-            var alt = anheben.TryGetValue(symbole[i].Id, out var a0) ? a0 : 0;
+            var sym = symbole[i];
+            var s = z.Satz(sym.Id);   // Ton der App (kataloge/xr_farben.json)
+            var zeigerNah = Math.Max(zeigerBilder[0]?.Index == i ? zeigerBilder[0]!.Naehe : 0, zeigerBilder[1]?.Index == i ? zeigerBilder[1]!.Naehe : 0);
+            var naehe = Math.Max(zeigerNah, handNaehe.TryGetValue(sym.Id, out var hn) ? hn : 0);
+            var alt = anheben.TryGetValue(sym.Id, out var a0) ? a0 : 0;
             var lift = GlasStil.Folgen(alt, GlasStil.AnhebenM * 1.5 * naehe, dt, 0.04);
-            anheben[symbole[i].Id] = lift;
+            anheben[sym.Id] = lift;
             var lage = lagen[i] with { Mitte = lagen[i].Mitte + lagen[i].Normale * lift };
             var r = lage.H / 2;
-            var gew = symbole[i].Id == gewaehlt ? Math.Max(0, 1 - (t - gewaehltT) / 0.4) : 0;
-            // Glas-Kreis (wie die App getönt), beim Annähern etwas heller; gewählt: Leuchten am Rand
-            z.Flaeche(lage, r, ton with { A = ton.A * deck[i] }, mitSchatten: true);
-            if (naehe > 0) z.Knopf(lage with { Mitte = lage.Mitte + lage.Normale * 0.001 }, GlasForm.Kreis, GlasStil.DuennNah with { A = GlasStil.DuennNah.A * deck[i] * naehe }, m.Pt);
-            if (gew > 0) z.Leuchten(lage, r, new GlasFarbe(0.9, 0.97, 1, 0.9 * gew));
-            z.Symbol(symbole[i].Bild, lage, lage.H * 0.46, GlasStil.TextPrimaer with { A = deck[i] });
-            if (symbole[i].Ampel > 0)
+            var gew = sym.Id == gewaehlt ? Math.Max(0, 1 - (t - gewaehltT) / 0.4) : 0;
+            // Glas-Kreis im Ton der App, beim Annähern etwas kräftiger; schmaler Ring im Akzent; gewählt: Leuchten am Rand
+            z.Flaeche(lage, r, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1 * naehe) * deck[i] }, mitSchatten: true);
+            Ring(lage, r * 0.97, s.Akzent with { A = (0.55 + 0.45 * naehe) * deck[i] }, naehe > 0 ? 0.0022f : 0.0014f);
+            if (gew > 0) z.Leuchten(lage, r, s.Akzent with { A = 0.8 * gew });
+            z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
+            if (sym.Ampel > 0)
             {
-                var c = symbole[i].Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
+                var c = sym.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
                 Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(lage.Mitte + lage.Rechts * (r * 0.62) + lage.Oben * (r * 0.62) + lage.Normale * 0.004), 0.008f),
                     GlasZeichner.Farbe(c with { A = deck[i] }));
             }
             Flaechen.Add(lage);
         }
-        // Zeiger: Punkt auf dem Symbol, feine Linie von der Fingerspitze; Tooltip mit dem Namen darunter nach der Verzögerung
+        // Zeiger: Punkt auf dem Symbol, feine Linie von der Fingerspitze (im Akzent der App); Tooltip mit dem Namen darüber nach der Verzögerung
         foreach (var zb in zeigerBilder)
         {
             if (zb is null || zb.Index >= lagen.Count) continue;
-            var c = new Color32(255, 255, 255, (byte)(200 * deck[zb.Index]));
-            Lines.Add(S(zb.Von), S(zb.Punkt), c, 0.0015f);
-            Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(zb.Punkt), 0.006f), new Color(1, 1, 1, (float)deck[zb.Index]));
+            var s = z.Satz(symbole[zb.Index].Id);
+            var a = s.Akzent;
+            Lines.Add(S(zb.Von), S(zb.Punkt), new Color32((byte)(a.R * 255), (byte)(a.G * 255), (byte)(a.B * 255), (byte)(220 * deck[zb.Index])), 0.0015f);
+            Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(zb.Punkt), 0.006f), GlasZeichner.Farbe(a with { A = deck[zb.Index] }));
             if (zb.Tooltip <= 0.01) continue;
             var name = symbole[zb.Index].Titel;
             var tl = AppSymbole.TooltipLage(lagen[zb.Index], name, m);
-            z.Flaeche(tl, tl.H / 2, z.Ton with { A = z.Ton.A * zb.Tooltip }, mitSchatten: false);
-            z.Schrift(name, tl, 0, m.Schrift(GlasStil.KleinPt) * 0.65, tl.B, tl.H, m.Schrift(GlasStil.KleinPt), GlasStil.TextPrimaer with { A = zb.Tooltip }, TextAlign.TopCenter,
+            z.Flaeche(tl, tl.H / 2, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1) * zb.Tooltip }, mitSchatten: false);
+            z.Schrift(name, tl, 0, m.Schrift(GlasStil.KleinPt) * 0.65, tl.B, tl.H, m.Schrift(GlasStil.KleinPt), s.Text with { A = zb.Tooltip }, TextAlign.TopCenter,
                 umbrechen: false);
             Flaechen.Add(tl);
             Tooltip = (symbole[zb.Index].Id, zb.Tooltip);
+        }
+    }
+
+    /// <summary>Schmaler Ring (Linienzug) um die Mitte der Fläche.</summary>
+    static void Ring(TabletPose p, double r, GlasFarbe f, float dicke)
+    {
+        if (f.A <= 0.01) return;
+        var c = new Color32((byte)(f.R * 255), (byte)(f.G * 255), (byte)(f.B * 255), (byte)(Math.Clamp(f.A, 0, 1) * 255));
+        var basis = p.Mitte + p.Normale * 0.0025;
+        const int n = 40;
+        for (int k = 0; k < n; k++)
+        {
+            double w0 = 2 * Math.PI * k / n, w1 = 2 * Math.PI * (k + 1) / n;
+            Lines.Add(S(basis + p.Rechts * (Math.Cos(w0) * r) + p.Oben * (Math.Sin(w0) * r)), S(basis + p.Rechts * (Math.Cos(w1) * r) + p.Oben * (Math.Sin(w1) * r)), c, dicke);
         }
     }
 }

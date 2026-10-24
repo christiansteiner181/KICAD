@@ -33,11 +33,21 @@ sealed class GeisterHand
         aktuell = (geste, t, new Dictionary<string, XVec3>(form, StringComparer.Ordinal), ziel);
         Gezeigt++;
         Letzte = geste;
+        // V1a: der ganze Weg der Vorführung (Gelenke in mehreren Zeitpunkten) – über ihm steht kein Hinweis (Befund Bilder 02: Text durch die Geisterhände)
+        var weg = new List<XVec3>();
+        for (int k = 0; k <= 8; k++)
+            if (Geisterhand.Bild(geste, Geisterhand.DauerS / 2 * k / 8.0, form, ziel) is { } b) weg.AddRange(b.Gelenke.Values);
+        Bereich = weg;
     }
+
+    /// <summary>Die Vorführung beenden (Prüflauf: nicht in die folgenden Prüfbilder ziehen).</summary>
+    public void Stoppen() { aktuell = null; Mitte = null; Bereich = []; }
 
     /// <summary>Läuft gerade eine Vorführung? Wo steht die Hand (Mitte der Gelenke; für den Hinweis bei der Hand)?</summary>
     public bool Laeuft(double t) => aktuell is { } a && t - a.Start <= Geisterhand.DauerS;
     public XVec3? Mitte { get; private set; }
+    /// <summary>Alle Gelenke auf dem Weg der laufenden Vorführung (für das Ausweichen der Hinweise).</summary>
+    public IReadOnlyList<XVec3> Bereich { get; private set; } = [];
 
     public void Zeichnen(double t)
     {

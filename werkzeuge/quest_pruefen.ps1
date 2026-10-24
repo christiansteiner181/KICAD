@@ -2,8 +2,11 @@
 # zweimal mit --pruefen - einmal mit PC (verbinden, Modell laden, Kanal) und einmal ohne PC (Start aus dem Zwischenspeicher).
 #   - Server: Hlks.Web aus dem Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build), im Testlauf (HLKS_TEST=1): Benutzereinstellungen, Liste
 #     "zuletzt" und XR-Ablage nur unter %TEMP%, Netzzugang nur auf 127.0.0.1 mit freiem Port. Der Netzzugang oeffnet sich nur im KICAD auf dem
-#     Desktop-Port 5130 (XrEinstellungen.DesktopPort) - deshalb laeuft der Testserver auf 5130; ist der Port belegt (Desktop-KICAD laeuft), bricht
-#     das Skript ab.
+#     Desktop-Port (XrEinstellungen.DesktopPort, 5130). Der Testserver laeuft auf 5130, wenn der Port frei ist. Ist er belegt (Desktop-KICAD laeuft),
+#     nimmt das Skript selbstaendig den ersten freien Port von 5139 abwaerts bis 5132 (nie 5131, 5140/5141 Zugang und Suche des Desktops, 5149-5153
+#     Abnahme) und setzt fuer den Testserver HLKS_XR_DESKTOP_PORT auf diesen Port: im Testlauf (HLKS_TEST=1) oeffnet sich der Zugang dann dort, nur auf
+#     127.0.0.1 und mit der Ablage unter %TEMP% - zugang.json, Kopplungen und Zertifikat des Desktop-KICAD (%LOCALAPPDATA%\HLKS_CAD\xr) bleiben unberuehrt,
+#     das Desktop-KICAD laeuft weiter. -Port <n> waehlt den Port fest (belegt = Abbruch).
 #   - Projekt: das Beispielprojekt "MFH Musterweg" (Vorgabe) oder mit -Projekt eine KOPIE des angegebenen Projektordners unter %TEMP% (das Original
 #     wird nur gelesen; z. B. %USERPROFILE%\HLKS_CAD_testdaten\test_praxis). Echte Daten bleiben lokal, die App schreibt nur Zahlen.
 #   - Die GLB holt die App ueber den Netzzugang; gibt er sie (noch) nicht frei (404), ueber http://localhost:<Port> (--modell-lokal).
@@ -23,7 +26,7 @@
 # dass danach 3 Marker mehr im Projekt sind. -Pruefbilder legt zusaetzlich glas_apps.jpg, glas_marker.jpg, messen.jpg, marker.jpg, glas_apps_sitzung.jpg,
 # glas_tisch.jpg, marker_sitzung.jpg und sitzung_umgebung.jpg ab.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>] [-Port <n>]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
@@ -32,22 +35,32 @@ param(
   [switch]$OhneBau,
   [switch]$OhneUnterlage,
   [switch]$OhneSitzungsraum,
-  [string]$Pruefbilder = ''
+  [string]$Pruefbilder = '',
+  [int]$port = 0
 )
 
 $ErrorActionPreference = 'Continue'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
-$port = 5130
 if (-not $env:HLKS_BUILD) { $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build" }
 $bau = $env:HLKS_BUILD
 $logs = "$bau\quest_pruefen"
 New-Item -ItemType Directory -Force $logs | Out-Null
 function Aus([string]$t) { $z = "{0:HH:mm:ss} {1}" -f (Get-Date), $t; Write-Host $z; Add-Content -Path "$logs\protokoll.log" -Value $z -Encoding UTF8 }
+function Belegt([int]$p) { [bool](Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue) }
 
-if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) {
-  Aus "Port $port ist belegt (laeuft das Desktop-KICAD?). Der Netzzugang oeffnet sich nur auf diesem Port - zuerst KICAD beenden."
-  exit 2
+# Port des Testservers ($port, in PowerShell dieselbe Variable wie der Parameter -Port): 5130, wenn frei; sonst der erste freie Ersatzport (das Desktop-KICAD
+# laeuft weiter); mit -Port fest
+$gesperrt = @(5013, 5098, 5131, 5140, 5141, 5149, 5150, 5151, 5152, 5153)
+if ($port -ne 0) {
+  if ($gesperrt -contains $port -or $port -lt 1024 -or $port -gt 65535) { Aus "Port $port ist fuer den Pruefserver nicht erlaubt."; exit 2 }
+  if (Belegt $port) { Aus "Port $port ist belegt."; exit 2 }
+} elseif (-not (Belegt 5130)) {
+  $port = 5130
+} else {
+  foreach ($p in 5139, 5138, 5137, 5136, 5135, 5134, 5133, 5132) { if (-not (Belegt $p)) { $port = $p; break } }
+  if ($port -eq 0) { Aus 'Port 5130 ist belegt (Desktop-KICAD) und kein Ersatzport 5132-5139 ist frei.'; exit 2 }
+  Aus "Port 5130 ist belegt (Desktop-KICAD laeuft weiter) - der Pruefserver nimmt Port $port."
 }
 if ($Projekt -and -not (Test-Path (Join-Path $Projekt 'projekt.json'))) { Aus "Kein Projekt in $Projekt (projekt.json fehlt)."; exit 2 }
 
@@ -69,6 +82,8 @@ $env:HLKS_BENUTZER = "$tmp\benutzer"
 $env:HLKS_ZULETZT = "$tmp\zuletzt"
 $env:HLKS_WEBROOT = "$repo\src\Hlks.Web\wwwroot"
 $env:HLKS_KATALOG = "$repo\kataloge"
+# Netzzugang auf dem Port des Pruefservers (wirkt nur im Testlauf; XrEinstellungen.DesktopPortVariable)
+$env:HLKS_XR_DESKTOP_PORT = "$port"
 $basis = "http://localhost:$port"
 $utf8 = New-Object System.Text.UTF8Encoding $false
 
@@ -214,7 +229,7 @@ try {
   if ($kopplung) { try { Post '/api/xr/kopplung/widerrufen' @{ kopplung = $kopplung } | Out-Null } catch { } }
   if ($server -and -not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500 }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT', 'HLKS_KATALOG') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT', 'HLKS_KATALOG', 'HLKS_XR_DESKTOP_PORT') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
 }
 Aus ("Ergebnis: " + @('ok', 'nicht ok', 'Fehler im Ablauf')[$ergebnis] + " (Protokolle: $logs)")
 exit $ergebnis

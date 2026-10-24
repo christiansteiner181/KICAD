@@ -1,0 +1,66 @@
+{
+  "beschreibung": "Texturen der App-Symbole aus src/Hlks.Web/wwwroot/js/oberflaeche/symbole.js bzw. symbole-revit.js (werkzeuge/quest_symbole.mjs). Nicht von Hand ändern.",
+  "groesse": 128,
+  "saetze": [
+    "strich",
+    "revit_hell",
+    "revit_dunkel"
+  ],
+  "symbole": {
+    "info": {
+      "strich": "ff22600d50b6f4a5",
+      "revit_hell": "6169c1b43c17ed9a",
+      "revit_dunkel": "11f9db0ff9e5b0d0"
+    },
+    "geschoss": {
+      "strich": "9c323e42c2c713b6",
+      "revit_hell": "ed08e596291c416c",
+      "revit_dunkel": "caf16c725f2a4b37"
+    },
+    "bemassung": {
+      "strich": "1a028ac058930e6b",
+      "revit_hell": "5ce0502517e0693f",
+      "revit_dunkel": "a49d6a15cc402fc6"
+    },
+    "problemMarker": {
+      "strich": "49514b1558edd367",
+      "revit_hell": "f02aaec97a004fc2",
+      "revit_dunkel": "d7a934c8c2bbee84"
+    },
+    "raumBegehen": {
+      "strich": "9bd95c8ed1ae5877",
+      "revit_hell": "5777cf59d9c27fa3",
+      "revit_dunkel": "2594287662297252"
+    },
+    "sitzungstisch": {
+      "strich": "c5e1f6125f809358",
+      "revit_hell": "42b7f76d854296f0",
+      "revit_dunkel": "1344ddc96726b0b1"
+    },
+    "sichtbarkeit": {
+      "strich": "5a3c9860d241cc8c",
+      "revit_hell": "30c30c62a04f0b46",
+      "revit_dunkel": "f5f76d0470fab6b7"
+    },
+    "schliessen": {
+      "strich": "4b15ca0a3899e39a",
+      "revit_hell": "5a7f57c849bf4763",
+      "revit_dunkel": "47c2ad788f37baa0"
+    },
+    "loeschen": {
+      "strich": "07f026e2b1970a9c",
+      "revit_hell": "09bf301cf50fbe34",
+      "revit_dunkel": "a7c64eee5a8dfe1e"
+    },
+    "gesten": {
+      "strich": "608c7e267d624b55",
+      "revit_hell": "d650d2d04ea632f2",
+      "revit_dunkel": "030c940cf4c25eae"
+    },
+    "haken": {
+      "strich": "249068d8576fce36",
+      "revit_hell": "d82574d9c6d58b6e",
+      "revit_dunkel": "21ba2ef27bf1da8c"
+    }
+  }
+}

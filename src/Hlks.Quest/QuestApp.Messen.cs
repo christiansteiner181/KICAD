@@ -172,7 +172,7 @@ sealed partial class QuestApp
         {
             var h = Input.Hand(handed);
             var offen = h.IsTracked && !h.IsPinched && !h.IsGripped && !AnApps(handed) && !messPinch[i] && messen.Hand is null
-                && !hebeStand.SchiebenLaeuft;   // beim Wegschieben der Symbole (beide Arme) löscht kein Wisch eine Messung
+                && !(wischStand.Laeuft && wischZielId is not null);   // wischt die Hand gerade Symbole (bzw. ein anderes Ziel) weg, löscht der Wisch keine Messung
             var w = XrWischLogik.WischSchritt(messWischer[i], Time.Total, offen ? new XVec3(h.palm.position.x, h.palm.position.y, h.palm.position.z) : null, offen);
             if (w is not { Neu: true }) continue;
             var linien = messen.Liste.Select(m => (m.Nr, (XVec3)(Vector3)SkVonSzene(m.A.P), (XVec3)(Vector3)SkVonSzene(m.B.P))).ToList();

@@ -19,7 +19,7 @@ const eintrag = (k) => katalog.stellschrauben.find((s) => s.schluessel === k);
 
 test('Gruppen: in der Reihenfolge des Katalogs, jede Stellschraube genau einmal', () => {
   const g = T.gruppen(katalog);
-  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung', 'hebe', 'symbole']);   // V1a: hebe, symbole
+  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung', 'hebe', 'wegwischen', 'symbole']);   // V1a: hebe, wegwischen, symbole
   assert.equal(g.flatMap((x) => x.eintraege).length, katalog.stellschrauben.length);
   assert.deepEqual(g.find((x) => x.id === 'begehen').eintraege.map((s) => s.schluessel).slice(0, 4),
     ['begehen.ziel_ruhe_s', 'begehen.ziel_ruhe_radius_m', 'begehen.ziel_verzoegerung_s', 'begehen.drehen_sperre_s']);
@@ -172,7 +172,7 @@ test('Varianten: Wahl aus den gesetzten Werten oder die Vorgabe', () => {
   assert.equal(T.varianteWahl(v, {}), 'apps');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'tablet' }), 'tablet');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'unbekannt' }), 'apps');
-  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband', umgebung: 'hell', symbole: 'verteilt' });
+  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband', umgebung: 'hell', symbole: 'verteilt', symbolwahl: 'stehen' });
   assert.equal(T.varianteTitel(v, 'tablet'), 'Tablet an der Hand');
   assert.equal(T.varianteTitel(v, 'x'), 'x');
 });
