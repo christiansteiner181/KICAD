@@ -145,14 +145,15 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
   - Zu prüfen: Dürfen Apps auf der Quest 3 die Kamerabilder dafür nutzen? Wie genau ist das?
 
 **Darstellung im Stil der Apple Vision Pro** (Christian, 24.10.2026: «richte dich bei der Darstellung der apps und funktionen nach der vision.» – «sorry meine apple vision pro»):
-- Quelle: Apple Human Interface Guidelines, Abschnitte visionOS der Seiten materials, windows, buttons, tab-bars, ornaments, eyes, spatial-layout (developer.apple.com/design/human-interface-guidelines, abgerufen 24.10.2026).
+- Quelle: Apple Human Interface Guidelines, Abschnitte visionOS der Seiten materials, windows, buttons, tab-bars, ornaments, eyes, spatial-layout, immersive-experiences (developer.apple.com/design/human-interface-guidelines, abgerufen 24.10.2026).
 - Apps als aufrechte Glasflächen: durchscheinend, neutral getönt, stark gerundet, feiner Glanz und weicher Schatten. Schrift weiss in drei Stufen, nicht dünn, ohne Tiefe.
 - Knöpfe als Kreis (Symbol), Kapsel (Text bzw. Symbol und Text) oder abgerundetes Rechteck im senkrechten Stapel. Mitten ≥ 60 pt auseinander bzw. 16 pt Rand. Weiss gefüllt nur für «eingeschaltet». Ton beim Antippen.
 - Hover: Apple nutzt den Blick; die Quest 3 hat keine Augenverfolgung, darum Hervorheben bei Annäherung von Finger bzw. Strahl.
 - Fensterteile: Kapsel-Griff unter der App, runder Schliessen-Knopf daneben, Werkzeugleisten als Ornament an der Unterkante, Register senkrecht am linken Rand.
 - Tiefe sparsam, ruhige Bewegungen, im Raum verankert, Wichtiges in der Mitte des Blickfelds. Das Modell am Tisch wie ein «Volume» mit leuchtendem Rand der Bodenplatte.
 - Massstab: 1 pt ist in visionOS ein Winkel (Fenster 1280 × 720 pt in rund 2 m etwa 3 m breit); abgeleitet ≈ 1,2 mm je Meter Abstand (eigene Rechnung, Annahme).
-- Bleibt: Hände zuerst, Berühren und Wischgesten (Grundsatzentscheid «Bedienung»). Die Tron-Optik betrifft nur die Umgebung des Sitzungsraums (Annahme, Christian kann berichtigen).
+- Bleibt: Hände zuerst, Berühren und Wischgesten (Grundsatzentscheid «Bedienung»).
+- Sitzungsraum ebenfalls im visionOS-Stil (Christian, 24.10.2026: «ruhige, helle Umgebung»); die Tron-Optik (XR-H) entfällt. Nach HIG «Immersive experiences» (Creating an environment): wenig Kontrast und Bewegung, weit statt eng, immer eine Bodenfläche, weiches Licht aus Formen statt 360°-Bild, Passthrough nur dezent tönen. Die alte Umgebung höchstens als Labor-Variante zum Vergleich.
 - Ersetzt den Hologramm-Stil des Tablets (XR-C «Aussehen») und die grauen Textkacheln aus P5a. Keine Apple-Logos, SF-Schriften oder SF Symbols (Lizenz nur für Apple-Plattformen). Umsetzung mit V1a.
 
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
