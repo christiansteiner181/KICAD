@@ -579,6 +579,18 @@ public sealed class GlasStrahlHand
 public static class GlasStrahl
 {
     /// <summary>
+    /// V1f, Pistolengeste: hover = Ziel unter dem Strahl; das Abdrücken wählt sofort das Ziel unter dem Strahl beim Abzug (von kurz davor, Pistole.StrahlVorS), sonst nichts.
+    /// </summary>
+    public static int? Abzug(GlasStrahlHand z, IReadOnlyList<TabletPose> ziele, (Vec3 U, Vec3 R)? strahl, bool abgedrueckt, (Vec3 U, Vec3 R)? strahlBeimAbzug)
+    {
+        z.Hover = strahl is { } s ? Glas.Strahl(ziele, s.U, s.R)?.Index : null;
+        z.Pinch = false;
+        z.Gedrueckt = null;
+        if (!abgedrueckt || (strahlBeimAbzug ?? strahl) is not { } a) return null;
+        return Glas.Strahl(ziele, a.U, a.R)?.Index;
+    }
+
+    /// <summary>
     /// Ein Schritt: hover = Ziel unter dem Strahl; ein Pinch, der auf einem Ziel beginnt und auf demselben endet, wählt es (Rückgabe). Ohne Strahl (null) nichts.
     /// </summary>
     public static int? Schritt(GlasStrahlHand z, IReadOnlyList<TabletPose> ziele, (Vec3 U, Vec3 R)? strahl, bool pinch)

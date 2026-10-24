@@ -74,6 +74,8 @@ sealed class GlasApps : IWegwischbar
     readonly EinblendZustand einblenden = new();
     readonly BeruehrHand[] beruehr = [new(), new()];
     readonly GlasStrahlHand[] strahl = [new(), new()];
+    /// <summary>V1f: Stand der Pistolengeste je Hand (Variante «ausloeser» = «pistole»): das Abdrücken wählt den Knopf unter dem Strahl; null = Pinch wie bis V1e.</summary>
+    public PistoleStand[]? Pistolen { get; set; }
     readonly bool[] pinch = new bool[2], nah = new bool[2];
     readonly int?[] griffHand = new int?[1];
     readonly Dictionary<string, double> anheben = new(StringComparer.Ordinal), blitz = new(StringComparer.Ordinal);
@@ -281,7 +283,9 @@ sealed class GlasApps : IWegwischbar
             if (!fingerNah && strahlen[i] is { } s)
             {
                 strahlTrifft = Glas.Strahl(flaechen, s.U, s.R, 0.01) is not null;
-                var gewaehlt = GlasStrahl.Schritt(strahl[i], lagen, strahlTrifft ? s : null, pinch[i]);
+                var gewaehlt = Pistolen is { } ps   // V1f: mit der Pistolengeste wählt das Abdrücken (Strahl von kurz davor)
+                    ? GlasStrahl.Abzug(strahl[i], lagen, strahlTrifft ? s : null, ps[i].Abgedrueckt, ps[i].StrahlBeimAbzug)
+                    : GlasStrahl.Schritt(strahl[i], lagen, strahlTrifft ? s : null, pinch[i]);
                 if (strahl[i].Hover is int sh) { hover[i] = sh; naehe[i] = 1; }
                 ausgeloest ??= gewaehlt;
             }

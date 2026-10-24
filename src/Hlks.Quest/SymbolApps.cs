@@ -164,6 +164,9 @@ sealed class SymbolApps : IWegwischbar
     /// Ein Bild: Hineinheben nach dem Fortschritt der Geste (stand), Berührung mit der ganzen Hand, Zeiger je Hand, Zeichnen. Rückgabe: die Id der gewählten App (einmal)
     /// bzw. null.
     /// </summary>
+    /// <summary>V1f: Stand der Pistolengeste je Hand (Variante «ausloeser» = «pistole»): abdrücken auf ein Symbol wählt es auf Distanz; null = nur Berühren.</summary>
+    public PistoleStand[]? Pistolen { get; set; }
+
     public string? Bild(Pose kopf, double t, double dt, IReadOnlyList<Symbol> symbole, HebeStand stand, XrBedienEinstellungen e, (XVec3 U, XVec3 R)?[] strahlen)
     {
         Flaechen.Clear();
@@ -274,6 +277,15 @@ sealed class SymbolApps : IWegwischbar
             gewaehltT = t;
             rueck.Kachel(S(lagen[k].Mitte));
         }
+        // V1f: auf Distanz – mit der Pistolengeste auf ein Symbol zielen und abdrücken (der Strahl von kurz vor dem Abzug); nicht während Geste und Sperre
+        else if (Pistolen is { } ps && phase == Phase.Da && !gesteLaeuft && !WahlGesperrt)
+            for (int i = 0; i < 2 && ergebnis is null; i++)
+                if (ps[i] is { Abgedrueckt: true } p && (p.StrahlBeimAbzug ?? p.Strahl) is { } sa && Glas.Strahl(lagen, sa.U, sa.R) is { } tr)
+                {
+                    ergebnis = gewaehlt = ids[tr.Index];
+                    gewaehltT = t;
+                    rueck.Kachel(S(lagen[tr.Index].Mitte));
+                }
         // Zeiger je Hand (gestreckter Zeigefinger nah, sonst der Zielstrahl des Systems)
         var zeigerBilder = new ZeigerBild?[2];
         for (int i = 0; i < 2; i++)

@@ -154,8 +154,11 @@ public class V1eTests(ITestOutputHelper aus)
         // Pinch bzw. Faust: nichts
         Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), [0.3, 0.35, 0.7, 0.8, 0.8], 1)), 0.15));
         Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.9))), 0.15));
-        // nur halb offen (gekrümmte Finger, Verhältnis unter OffenAb): beim Anstoss nicht, die ganze Bewegung wie bisher schon
-        Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.42))), 0.15));
+        // nur halb offen (gekrümmte Finger, Verhältnis unter 1.75): V1e beim Anstoss nicht; V1f (lockere Hand, Christian 24.10.2026) löst es aus – V1fTests
+        Assert.Equal(1, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.42))), 0.15));
+        // mit dem Satz von V1e weiterhin nicht
+        Assert.Equal(0, Abspielen(G.Erzeugen(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.42))),
+            new Vorfuehrung { DauerS = 0.15, RuheVorS = 0.3, RuheNachS = 0.5 }), AnstossEinstellungen.V1e).Weg);
         // Hebegeste: nur eine Hand hebt kurz an
         Assert.Equal(0, Ereignisse(u => (new Haltung(G.V(-0.2, -0.5, 0.35), G.V(0, 0, 1), G.V(0, 1, 0), G.Kr(0.1)),
             new Haltung(G.V(0.2, -0.5 + 0.09 * u, 0.35), G.V(0, 0, 1), G.V(0, 1, 0), G.Kr(0.1))), 0.15));

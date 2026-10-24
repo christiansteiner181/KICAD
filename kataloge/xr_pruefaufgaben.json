@@ -10,11 +10,11 @@
   "aufgaben": [
     {
       "id": "teleport-markierung", "titel": "An eine Markierung springen", "status": "p5",
-      "anleitung": "Spring auf die leuchtende Markierung am Boden und bleib dort stehen.",
-      "ort": "Test_praxis, ein Geschoss, oder neutraler Raum", "varianten": ["teleport"],
+      "anleitung": "Spring auf die leuchtende Markierung am Boden und bleib dort stehen (Pistolengeste: mit dem Zeigefinger auf die Markierung zielen, Daumen oben, dann den Daumen an die Hand klappen).",
+      "ort": "Test_praxis, ein Geschoss, oder neutraler Raum", "varianten": ["teleport", "ausloeser"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
       "erfolgskriterium": "Du stehst am Ende höchstens 0.5 m neben der Mitte der Markierung (Annahme P6).",
-      "fehlgriff": "Ein Sprung, der weiter als 0.5 m neben der Mitte der Markierung landet, ein abgebrochener Sprung (Pinch bzw. Stick losgelassen ohne gültiges Ziel, Strahl vom Boden) und ein Antippen neben eine Kachel.",
+      "fehlgriff": "Ein Sprung, der weiter als 0.5 m neben der Mitte der Markierung landet, ein abgebrochener Sprung (abgedrückt ohne gültiges Ziel bzw. Pinch oder Stick losgelassen ohne gültiges Ziel, Strahl vom Boden) und ein Antippen neben eine Kachel.",
       "herkunft": "modul-xr.md «Was das Labor kann» (an eine Markierung teleportieren)"
     },
     {
@@ -37,20 +37,20 @@
     },
     {
       "id": "modell-greifen-zoomen", "titel": "Modell greifen, drehen und zoomen", "status": "p5",
-      "anleitung": "Fasse den roten Punkt «Drehen und Vergrössern» vorn rechts, führe die Hand um das Modell (Vierteldrehung) und weiter weg bzw. näher, bis der Zielmassstab erreicht ist, dann lass los. (Variante «ein Griff»: den Griff vorn fassen, mit der Hand drehen, mit der zweiten Hand zoomen.)",
-      "ort": "Sitzungsraum mit Modell auf dem Tisch", "varianten": ["bedienung", "griffe_tisch", "zoom_ein_griff"],
+      "anleitung": "Greif mit der Faust (bzw. Pinch) den roten Punkt «Drehen und Vergrössern» vorn rechts, führe die Hand um das Modell (Vierteldrehung) und weiter weg bzw. näher, bis der Zielmassstab erreicht ist, dann öffne die Hand. (Variante «ein Griff»: den Griff vorn fassen.)",
+      "ort": "Sitzungsraum mit Modell auf dem Tisch", "varianten": ["bedienung", "griffe_tisch", "zoom_ein_griff", "ausloeser"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
       "erfolgskriterium": "Der Massstab weicht höchstens 10 % vom Zielmassstab ab und das Modell ist um eine Vierteldrehung gedreht, mit höchstens 15° Abweichung (Annahme P6).",
-      "fehlgriff": "Ein Pinch am Tisch ohne Punkt bzw. Griff in Reichweite (der Pinch der zweiten Hand zum Zoomen am einen Griff zählt nicht) und ein Antippen neben eine Kachel.",
+      "fehlgriff": "Ein Zugreifen (Faust bzw. Pinch) am Tisch ohne Punkt bzw. Griff in Reichweite (der Pinch der zweiten Hand zum Zoomen am einen Griff zählt nicht) und ein Antippen neben eine Kachel.",
       "herkunft": "modul-xr.md «Was das Labor kann» (das Modell greifen, drehen und auf einen Zielmassstab zoomen); Zoom 1:5 bis 1:200 (XrSitzungLogik.cs, P4b-Nachtrag); V1d ein Griff (Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»); V1e zwei Punkte (Christian 24.10.2026: «einen verschieben punkt …, und einen punkt für drehen und vergrössern»)"
     },
     {
       "id": "raum-ar-oeffnen", "titel": "Raum in AR öffnen", "status": "p5",
-      "anleitung": "Öffne den markierten Raum so, dass er auf dem echten Tisch vor dir steht: App «Tisch» › «Raum zeigen», dann «Echter Tisch» einschalten und auf die Tischplatte tippen.",
+      "anleitung": "Öffne den markierten Raum so, dass er auf dem echten Tisch vor dir steht: App «Tisch» › «Raum zeigen», dann mit dem Zeigefinger auf die Tischplatte tippen (falls nötig zuerst «Auf echten Tisch» einschalten).",
       "ort": "Sitzungsraum mit Passthrough, echter Tisch", "varianten": ["bedienung"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
       "erfolgskriterium": "Der Raumausschnitt steht auf der Tischplatte und der verlangte Raum ist sichtbar.",
-      "fehlgriff": "Ein Rückschritt («Echter Tisch» wieder aus, «Tisch neu antippen», «Zurücksetzen» oder eine Etage statt des Raums gewählt) und ein Antippen neben eine Kachel.",
+      "fehlgriff": "Ein Rückschritt («Auf echten Tisch» wieder aus, «Tisch neu antippen», «Zurücksetzen» oder eine Etage statt des Raums gewählt) und ein Antippen neben eine Kachel.",
       "herkunft": "modul-xr.md «Sitzungsraum» und «Passthrough-Probe» (Raum zeigen (VR) auf den echten Tisch)"
     },
     {
@@ -64,11 +64,11 @@
     },
     {
       "id": "messen-wand-wand", "titel": "Von Wand zu Wand messen", "status": "p5",
-      "anleitung": "Miss den Abstand zwischen den beiden markierten Wänden: App «Messen» einschalten, dann das Messband von der einen Wand zur anderen aufziehen (bzw. zwei Punkte setzen).",
-      "ort": "Test_praxis, ein Geschoss", "varianten": ["messen"],
+      "anleitung": "Miss den Abstand zwischen den beiden markierten Wänden: App «Messen» einschalten, auf die eine Wand zielen und abdrücken, gedrückt halten, auf die andere zielen, Daumen hoch (bzw. Pinch; bzw. zwei Punkte setzen).",
+      "ort": "Test_praxis, ein Geschoss", "varianten": ["messen", "ausloeser"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
       "erfolgskriterium": "Eine Messung geht von der einen markierten Wand zur anderen (beide Punkte höchstens 5 cm neben der Wandfläche) und weicht höchstens 2 cm vom Sollmass ab (Annahme P6; Sollmass = Abstand der Wandflächen aus dem Modell).",
-      "fehlgriff": "Eine Messung, die nicht von Wand zu Wand geht oder mehr als 2 cm vom Sollmass abweicht, ein abgebrochenes Messband (zu kurz, ohne Ziel losgelassen, Lot ohne Fläche), ein Pinch ohne Ziel und ein Antippen neben eine Kachel.",
+      "fehlgriff": "Eine Messung, die nicht von Wand zu Wand geht oder mehr als 2 cm vom Sollmass abweicht, ein abgebrochenes Messband (zu kurz, ohne Ziel losgelassen, Lot ohne Fläche), ein Abdrücken bzw. Pinch ohne Ziel und ein Antippen neben eine Kachel.",
       "herkunft": "modul-xr.md «Was das Labor kann» (von Wand zu Wand messen); Messen in der App seit V1a (XR-C)"
     }
   ]

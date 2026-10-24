@@ -7,6 +7,8 @@
 //     starr am Kopf. Still, solange eine Hand an der Tafel ist; nach einem Verschieben am Griff bleibt sie, wo man sie hingestellt hat, bis zum nächsten Öffnen.
 //     «fest»: öffnet mittig und bleibt im Raum stehen (bis V1a).
 //   - Annahme V1d: «immer zentrisch» heisst beim Öffnen und mit trägem Nachführen (Christian kann berichtigen). Alle Zahlen sind Annahmen V1d (Stellschrauben).
+//   - V1f (Christian 24.10.2026: «zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.»): Vorgabe «fest» – die Tafel öffnet mittig in der
+//     Blickrichtung und bleibt stehen; «traege» bleibt als Variante zum Vergleich.
 
 namespace Hlks.Xr.Bedienung;
 
@@ -18,8 +20,8 @@ public sealed record TafelEinstellungen
     public double HoeheM { get; init; } = 0.15;
     /// <summary>«tafel.nachfuehren_grad»: ab so viel Winkel (Grad) zwischen Blick und Tafel rückt sie nach (Annahme V1d 25°, wie die freien Hinweise).</summary>
     public double NachfuehrenGrad { get; init; } = 25;
-    /// <summary>Variante «tafel_nachfuehren»: <see cref="Varianten.TafelTraege"/> (Vorgabe) | <see cref="Varianten.TafelFest"/>.</summary>
-    public string Nachfuehren { get; init; } = Varianten.TafelTraege;
+    /// <summary>Variante «tafel_nachfuehren»: <see cref="Varianten.TafelFest"/> (Vorgabe seit V1f) | <see cref="Varianten.TafelTraege"/> (Vorgabe V1d, V1e).</summary>
+    public string Nachfuehren { get; init; } = Varianten.TafelFest;
     /// <summary>«tafel.blaettern_abstand_m»: eine Hand gilt als «auf der Tafel», wenn sie höchstens so weit (m) vor ihrer Fläche liegt (Annahme V1d 0.05 m).</summary>
     public double BlaetternAbstandM { get; init; } = 0.05;
     /// <summary>«tafel.blaettern_weg_m»: Mindestweg eines Wischs auf der Tafel (m); kürzer ist es ein Antippen (Annahme V1d 0.08 m).</summary>

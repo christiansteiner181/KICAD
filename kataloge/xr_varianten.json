@@ -15,7 +15,7 @@
     },
     {
       "name": "teleport", "titel": "Teleport",
-      "beschreibung": "Wie man springt: mit der Hand zeigen und Pinch oder mit dem Stick eines Controllers (nach vorn drücken zielt, loslassen springt; seitlich dreht). Ohne Controller zeigt die App in der Variante «Stick» einen Hinweis.",
+      "beschreibung": "Wie man springt: mit der Hand zeigen und auslösen (V1f: Pistolengeste bzw. Pinch, Variante «Auslöser») oder mit dem Stick eines Controllers (nach vorn drücken zielt, loslassen springt; seitlich dreht). Ohne Controller zeigt die App in der Variante «Stick» einen Hinweis.",
       "optionen": [
         { "id": "zeigen_pinch", "titel": "Zeigen und Pinch" },
         { "id": "stick", "titel": "Stick" }
@@ -45,13 +45,13 @@
     },
     {
       "name": "umgebung", "titel": "Umgebung des Sitzungsraums",
-      "beschreibung": "Wie der virtuelle Sitzungsraum aussieht: hell und weit im Stil von visionOS (ruhiger Boden, heller Tisch, weiches Licht) oder die frühere dunkle Fassung mit Raster und Leuchtlinien («Tron») zum Vergleich.",
+      "beschreibung": "Seit V1f ohne Wirkung: am Sitzungstisch gilt immer Passthrough (ohne Passthrough, z. B. im Simulator, ein heller Ersatzhintergrund), ein virtueller Raum bzw. Tisch wird nicht mehr gezeichnet. Bis V1e: hell und weit im Stil von visionOS oder die frühere dunkle Fassung mit Raster und Leuchtlinien («Tron»).",
       "optionen": [
         { "id": "hell", "titel": "Hell (visionOS)" },
         { "id": "tron", "titel": "Dunkel mit Leuchtlinien (früher)" }
       ],
       "vorgabe": "hell",
-      "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026)"
+      "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026); V1f, Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)»"
     },
     {
       "name": "symbole", "titel": "Anordnung der App-Symbole",
@@ -85,13 +85,13 @@
     },
     {
       "name": "tafel_nachfuehren", "titel": "Tafel nachführen",
-      "beschreibung": "Das Fenster einer App (auch der PC-Bildschirm) öffnet mittig in der Blickrichtung. «träge»: dreht man sich weiter als «tafel.nachfuehren_grad» weg, rückt es ruhig wieder in die Mitte (nie starr am Kopf; still, solange eine Hand daran ist, und nicht mehr, wenn man es am Griff hingestellt hat). «fest»: es bleibt nach dem Öffnen im Raum stehen.",
+      "beschreibung": "Das Fenster einer App (auch der PC-Bildschirm) öffnet mittig in der Blickrichtung. «fest» (Vorgabe seit V1f): es bleibt danach im Raum stehen. «träge»: dreht man sich weiter als «tafel.nachfuehren_grad» weg, rückt es ruhig wieder in die Mitte (nie starr am Kopf; still, solange eine Hand daran ist, und nicht mehr, wenn man es am Griff hingestellt hat).",
       "optionen": [
-        { "id": "traege", "titel": "träge" },
-        { "id": "fest", "titel": "fest" }
+        { "id": "fest", "titel": "fest" },
+        { "id": "traege", "titel": "träge" }
       ],
-      "vorgabe": "traege",
-      "herkunft": "Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein»; Annahme V1d: «immer» = beim Öffnen und träge nachgeführt"
+      "vorgabe": "fest",
+      "herkunft": "Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein»; V1d träge nachgeführt; V1f, Christian 24.10.2026: «zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.»"
     },
     {
       "name": "zoom_ein_griff", "titel": "Zoomen am einen Griff",
@@ -112,6 +112,16 @@
       ],
       "vorgabe": "zwei_punkte",
       "herkunft": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum»"
+    },
+    {
+      "name": "ausloeser", "titel": "Auslöser beim Zeigen",
+      "beschreibung": "Womit man beim Zeigen auslöst (Springen, Messen, Marker setzen, Knopf- und Symbolwahl auf Distanz). «Pistolengeste»: Zeigefinger gestreckt, übrige Finger eingerollt, Daumen oben – der Strahl geht vom Zeigefinger; den Daumen an die Hand klappen drückt ab; die zwei Punkte am Sitzungstisch fasst die Faust (mit der ganzen Hand zugreifen). «Pinch»: wie bis V1e mit Daumen und Zeigefinger.",
+      "optionen": [
+        { "id": "pistole", "titel": "Pistolengeste" },
+        { "id": "pinch", "titel": "Pinch (bis V1e)" }
+      ],
+      "vorgabe": "pistole",
+      "herkunft": "Christian 24.10.2026: «pich ist zu sensibel.. hier braucht es eine andere geste. bsp. pistolengeste.»; Faustgriff an den Punkten: Vorschlag V1f"
     }
   ]
 }

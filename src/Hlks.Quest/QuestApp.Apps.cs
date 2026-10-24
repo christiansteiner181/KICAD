@@ -68,7 +68,7 @@ sealed partial class QuestApp
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var blick = KopfRef(kopf).Gieren;
-        double? tisch = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y : null;
+        double? tisch = sitzung.Aktiv ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y : null;   // V1f: die echte bzw. angenommene Platte
         return Tafel.Platz(auge, blick, bedien.Apps, bedien.Tafel, tisch, Glas.UnterhalbM(apps.Aktiv == "etagen" ? apps.Masse : GlasMasse.Fuer(bedien.Apps), 2), bedien.Symbole.TischAbstandM);
     }
 
@@ -93,7 +93,7 @@ sealed partial class QuestApp
         apps.Holen(AppPlatz(pruefKopf ?? Input.Head), Time.Total);
         letzteGeste = $"Symbol {id}";
         // bei der ersten App: wie man sie schliesst (Christian 24.10.2026: «Nach links wischen: schliessen»)
-        if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Kurz nach links wischen: schliessen (offene Hand)."); }
+        if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Kurz nach links wischen: schliessen (offene oder lockere Hand)."); }
     }
 
     bool wischHinweisGezeigt;
@@ -142,7 +142,7 @@ sealed partial class QuestApp
     string FarbId => apps.Aktiv == "status" && statusGesten ? "gesten" : apps.Aktiv;
 
     /// <summary>V1a: tiefste Höhe einer Symbolmitte am Sitzungstisch (über der Tischplatte, Raum der Brille), sonst null.</summary>
-    double? SymbolUntergrenze() => sitzung.Aktiv && !sitzung.Echt.WartetAufTisch
+    double? SymbolUntergrenze() => sitzung.Aktiv   // V1f: über der echten bzw. angenommenen Platte
         ? AppSymbole.Untergrenze(sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y, bedien.Symbole, GlasMasse.Fuer(bedien.Apps))   // Stellschraube symbole.tisch_abstand_m
         : null;
 
@@ -223,7 +223,7 @@ sealed partial class QuestApp
             case "messen":
             {
                 c.Titel("Messen");
-                c.Schalter("messen_an", "Messen", messen.An, messen.An ? messen.Hinweis : "Pinch misst statt zu springen");
+                c.Schalter("messen_an", "Messen", messen.An, messen.An ? MitAusloeser(messen.Hinweis) : bedien.MitPistole ? "Abdrücken misst statt zu springen" : "Pinch misst statt zu springen");
                 // Variante und Lot in einer Reihe (Befund Prüfbild 24.10.2026: mit eigener Zeile für das Lot reichte der Platz nicht für Liste und Knopf)
                 c.Reihe([("v_messband", "Messband", messen.Variante == Varianten.Messband), ("v_zwei", "Zwei Punkte", messen.Variante == Varianten.ZweiPunkte),
                     ("messen_lot", "Lot", messen.Lot)]);
@@ -245,7 +245,7 @@ sealed partial class QuestApp
             case "marker":
             {
                 c.Titel("Problem-Marker");
-                c.Knopf("marker_setzen", markerSetzen ? "Zeigen und Pinch …" : "Problem markieren", GlasSymbole.Marker, primaer: true, ein: markerSetzen);
+                c.Knopf("marker_setzen", markerSetzen ? (bedien.MitPistole ? "Zielen und abdrücken …" : "Zeigen und Pinch …") : "Problem markieren", GlasSymbole.Marker, primaer: true, ein: markerSetzen);
                 c.Reihe([.. ProblemMarker.Kurznotizen.Select(k => ($"notiz:{k}", k, markerNotiz == k))]);
                 var alle = MarkerAlle().OrderByDescending(m => m.Offen).ThenByDescending(m => m.Zeit, StringComparer.Ordinal).ToList();
                 var (ab, n, s) = ListenSeite(alle.Count, c.FreieZeilen);
@@ -264,8 +264,9 @@ sealed partial class QuestApp
                 break;
             case "tisch" when sitzung.Aktiv:
                 c.Titel(Z($"Tisch · {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}"));
-                c.Schalter("echter_tisch", "Echter Tisch", sitzung.Echt.Ein, !sitzung.Echt.Verfuegbar ? "nicht verfügbar" : sitzung.Echt.WartetAufTisch ? "Tisch antippen" : "Passthrough",
-                    aktiv: sitzung.Echt.Verfuegbar);
+                // V1f: immer Passthrough; «Auf echten Tisch» ist der Normalfall (beim Betreten ein), aus steht das Modell frei auf der angenommenen Höhe
+                c.Schalter("echter_tisch", "Auf echten Tisch", sitzung.Echt.Ein, !sitzung.Echt.Verfuegbar ? "ohne Passthrough" : sitzung.Echt.WartetAufTisch ? "Platte antippen"
+                    : sitzung.Echt.Ein ? "steht darauf" : Z($"frei, {sitzung.TischHoeheM:0.00} m"), aktiv: sitzung.Echt.Verfuegbar);
                 c.Schalter("ifc", "IFC-Unterlage", sitzung.Unterlage);
                 var reihe = new List<(string, string, bool)> { ("zuruecksetzen", "Zurücksetzen", false) };
                 if (RaumZumZeigen() is { } rz) reihe.Add(("raum_zeigen", "Raum zeigen", sitzung.Ansicht is { Ausschnitt: true } && sitzungWunsch.Bezug == rz));
@@ -330,6 +331,8 @@ sealed partial class QuestApp
             if (Input.PointerCount(q) > 0 && Input.Pointer(0, q) is { } p && p.tracked.IsActive() && p.ray.direction.LengthSq > 1e-12f)
                 strahlen[i] = (new XVec3(p.ray.position.x, p.ray.position.y, p.ray.position.z), new XVec3(p.ray.direction.x, p.ray.direction.y, p.ray.direction.z).Einheit());
         }
+        if (bedien.MitPistole) strahlen = PistolenStrahlen();   // V1f: mit der Pistolengeste zielt der Strahl vom Zeigefinger (nur in der Haltung)
+        apps.Pistolen = symbole.Pistolen = bedien.MitPistole ? pistole : null;
         if (symbole.OhneEchteHaende) strahlen = new (XVec3, XVec3)?[2];   // V1d-Folge im Prüflauf: auch der Mausstrahl des Simulators zählt nicht
         // Hebegeste aus beiden Händen (Raum der Brille); im Prüflauf am PC ein gedachter Fortschritt bzw. das Ereignis
         HandBeobachtung? Beobachtung(Handed hd, string seite)
@@ -344,6 +347,8 @@ sealed partial class QuestApp
         if (desktop?.Haende is { } ph && ph().Rechts is { } prh) rechteHand = HandBeobachtung.Aus(prh, "right", bedien.Pinch);   // V1c-Prüflauf: die gedachte Hand
         if (desktop?.Haende is { } ph2 && ph2().Links is { } plh) linkeHand = HandBeobachtung.Aus(plh, "left", bedien.Pinch);   // V1d-Prüflauf: die linke Hand
         hebeStand = HebeGeste.Schritt(hebe, Time.Total, linkeHand, rechteHand, KopfRef(kopf).Gieren, bedien.Hebe);
+        // V1f (Befund Brillentest V1e: die Hebegeste klappte weniger gut): warum ein Ansatz verworfen wurde, ins Protokoll (einmal je Ansatz, gedrosselt)
+        if (hebeStand.Verworfen is { } hv) Console.WriteLine($"{AppName}: Hebe verworfen: {hv}");
         var kopfSymbole = pruefKopf ?? kopf;   // Prüflauf: gedachter Kopf (sitzend am Tisch)
         // vor dem Ereignis der Hebegeste setzen: das Feld nimmt Untergrenze und Haltung beim Ankern (bei «Zeigen» schon im Bild des Ereignisses)
         if (!symbole.Sichtbar || symbole.Geht) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte (V1d: und liegt dort tiefer, «symbole.hoehe_tisch_m»)
@@ -544,11 +549,12 @@ sealed partial class QuestApp
         switch (was)
         {
             case "echter_tisch":
-                if (!sitzung.Echt.Verfuegbar) { Hinweis($"Echter Tisch nicht verfügbar: {sitzung.Echt.Grund}"); break; }
+                if (!sitzung.Echt.Verfuegbar) { Hinweis($"Ohne Passthrough kein echter Tisch: {sitzung.Echt.Grund}"); break; }
                 var warEin = sitzung.Echt.Ein;
                 var wirksam = sitzung.EchterTischSchalten(!sitzung.Echt.Ein);
-                Hinweis(wirksam ? "Passthrough ein: mit dem Zeigefinger kurz auf die Tischplatte tippen." : "Virtueller Raum.");
-                if (warEin && !wirksam && lauf is { } l1) PruefAufgaben.RaumRueckschritt(l1, "Echter Tisch aus");
+                Hinweis(wirksam ? "Mit dem Zeigefinger kurz auf die Tischplatte tippen – das Modell stellt sich dorthin."
+                    : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Ohne echten Tisch: das Modell steht frei auf {sitzung.TischHoeheM:0.00} m."));
+                if (warEin && !wirksam && lauf is { } l1) PruefAufgaben.RaumRueckschritt(l1, "Auf echten Tisch aus");
                 break;
             case "ifc":
                 sitzung.Unterlage = !sitzung.Unterlage;
@@ -561,7 +567,7 @@ sealed partial class QuestApp
                 break;
             case "tisch_antippen":
                 sitzung.TischNeuAntippen();
-                Hinweis("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
+                Hinweis("Mit dem Zeigefinger kurz auf die Tischplatte tippen.");
                 if (lauf is { } l3) PruefAufgaben.RaumRueckschritt(l3, "Tisch neu antippen");
                 break;
             case "raum_zeigen":

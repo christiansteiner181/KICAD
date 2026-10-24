@@ -33,6 +33,11 @@
 // dreht nicht mehr (in P4a drehte jeder waagrechte Wisch). Die Richtungssperre gilt für alle Wische (XrGesten.PinchWischSchritt). Pinch-Schwellen aus Pinch
 // («pinch.*»). springen = false (die Hand ist an den schwebenden Apps): ein neuer Pinch zielt nicht und springt nicht, wischen geht weiter.
 // Konventionen: Szene (m, y oben); Gieren wie in VrLogik (Bogenmass, gegen den Uhrzeigersinn ab +x); Seite «left»/«right» wie WebXR.
+//
+// V1f (Christian 24.10.2026: «pich ist zu sensibel.. hier braucht es eine andere geste. bsp. pistolengeste.»): Variante «ausloeser» = «pistole» (Vorgabe) – die App gibt den
+// Stand der Pistolengeste mit (Bedienung.Pistole, Strahl in der Szene). Dann zielt NUR die Pistole: in der Haltung zeigt der Strahl vom Zeigefinger das Ziel auf dem Boden
+// (Ereignis Ziel; bereit, wenn es ZielRuheS ruhig auf gültigem Boden lag), Abdrücken springt auf das Ziel von kurz vor dem Abzug (Pistole.StrahlVorS) – sonst Abbruch.
+// Senken der Hand bricht nichts ab (es war kein Sprung angefangen). Der Pinch zielt und springt dann nicht; Pinch + Wisch (Drehen, Etage, Blättern) bleibt.
 
 using System.Text.Json;
 
@@ -123,6 +128,8 @@ public sealed class HandBegehenZustand
     public bool StrahlVomSystem { get; internal set; }
     /// <summary>Pinch-Punkt (Mitte zwischen Daumen- und Zeigefingerspitze), wenn erkannt.</summary>
     public Vec3? PinchPunkt { get; internal set; }
+    /// <summary>V1f: die Hand hält die Pistolengeste und zielt (Variante «ausloeser» = «pistole»).</summary>
+    public bool Zielt { get; internal set; }
     internal void Zuruecksetzen()
     {
         Pinch = false; Gewischt = false; Abgebrochen = false; OhneZiel = false; Ziel = null; Bereit = false; Ziele.Clear(); WarGueltig = false; VerlassenSeit = null;
@@ -162,9 +169,10 @@ public static class HandBegehen
     /// </summary>
     public static IReadOnlyList<BegehenEreignis> Schritt(HandBegehenZustand z, double t, string seite, IReadOnlyDictionary<string, Vec3>? gelenke, Vec3 kopf,
         double blickGieren, double boden, (Vec3 Ursprung, Vec3 Richtung)? zeigestrahl = null, HandBegehenEinstellungen? einstellungen = null,
-        bool drehen = true, bool springen = true)
+        bool drehen = true, bool springen = true, Bedienung.PistoleStand? pistole = null)
     {
         var e = einstellungen ?? HandBegehenEinstellungen.Vorgabe;
+        if (pistole is { } ps) return MitPistole(z, t, seite, gelenke, blickGieren, boden, e, drehen, springen, ps);
         var ev = new List<BegehenEreignis>();
         if (gelenke is null || !gelenke.TryGetValue("thumb-tip", out var daumen) || !gelenke.TryGetValue("index-finger-tip", out var zeige)
             || !gelenke.TryGetValue("index-finger-phalanx-proximal", out var knoechel) || !daumen.IstEndlich || !zeige.IstEndlich || !knoechel.IstEndlich)
@@ -237,6 +245,73 @@ public static class HandBegehen
             return ev;
         }
         z.Pinch = pinch;
+        return ev;
+    }
+
+    /// <summary>
+    /// V1f: ein Schritt mit der Pistolengeste (siehe Dateikopf): p = Stand der Pistole dieser Hand (Strahl in der Szene). Der Pinch wischt und dreht weiter, zielt aber
+    /// nicht; springen = false (Hand an den Apps, Messen, Marker): die Pistole zielt hier nicht.
+    /// </summary>
+    static IReadOnlyList<BegehenEreignis> MitPistole(HandBegehenZustand z, double t, string seite, IReadOnlyDictionary<string, Vec3>? gelenke, double blickGieren,
+        double boden, HandBegehenEinstellungen e, bool drehen, bool springen, Bedienung.PistoleStand p)
+    {
+        var ev = new List<BegehenEreignis>();
+        Vec3? daumen = gelenke is not null && gelenke.TryGetValue("thumb-tip", out var d) && d.IstEndlich ? d : null;
+        Vec3? zeige = gelenke is not null && gelenke.TryGetValue("index-finger-tip", out var s) && s.IstEndlich ? s : null;
+        if (daumen is null || zeige is null)
+        {
+            if (z.Pinch) ev.Add(new BegehenEreignis(BegehenArt.PinchAus, seite, z.PinchPunkt));
+            z.Zuruecksetzen();
+            z.Zielt = false;
+            z.Strahl = null;
+            z.PinchPunkt = null;
+            XrGesten.PinchWischSchritt(z.Wisch, t, null, false, blickGieren, e.Wisch, e.DrehenSperreS);
+            return ev;
+        }
+        // Pinch: nur noch Wisch und Drehen (kein Zielen, kein Sprung)
+        var pinch = XrTabletLogik.IstPinch(gelenke, z.Pinch, e.Pinch);
+        var punkt = Vec3.Mitte(daumen.Value, zeige.Value);
+        z.PinchPunkt = punkt;
+        var wisch = XrGesten.PinchWischSchritt(z.Wisch, t, punkt, pinch, blickGieren, e.Wisch, e.DrehenSperreS);
+        if (pinch && !z.Pinch) { z.PinchSeit = t; z.Gewischt = false; ev.Add(new BegehenEreignis(BegehenArt.PinchAn, seite, punkt)); }
+        if (pinch && wisch is { } richtung)
+        {
+            z.Gewischt = true;
+            ev.Add(new BegehenEreignis(BegehenArt.Wisch, seite, punkt, 0, richtung));
+            if (drehen && richtung is WischRichtung.Links or WischRichtung.Rechts)
+                ev.Add(new BegehenEreignis(BegehenArt.Drehen, seite, punkt, richtung == WischRichtung.Rechts ? 1 : -1));
+        }
+        if (!pinch && z.Pinch) ev.Add(new BegehenEreignis(BegehenArt.PinchAus, seite, punkt));
+        z.Pinch = pinch;
+        // Pistole: zielen in der Haltung, abdrücken springt
+        if (!springen || !p.Haltung || p.Strahl is not { } st)
+        {
+            z.Zielt = false;
+            z.Ziel = null;
+            z.Bereit = false;
+            z.Ziele.Clear();
+            z.Strahl = springen ? null : p.Strahl;
+            z.StrahlVomSystem = false;
+            return ev;
+        }
+        z.Zielt = true;
+        z.Strahl = st;
+        z.StrahlVomSystem = false;
+        var ziel = VrLogik.TeleportZiel(st.U, st.R, boden);
+        z.Ziel = ziel;
+        z.Ziele.Add((t, ziel));
+        while (z.Ziele.Count > 2 && t - z.Ziele[0].T > 3) z.Ziele.RemoveAt(0);
+        z.Bereit = Ruhig(z, t, e) is not null;
+        if (p.Abgedrueckt)
+        {
+            var sprung = Ruhig(z, t - Bedienung.Pistole.StrahlVorS, e);
+            ev.Add(sprung is { } sz ? new BegehenEreignis(BegehenArt.Teleport, seite, sz.Punkt) : new BegehenEreignis(BegehenArt.Abbruch, seite));
+            z.Ziele.Clear();
+            z.Ziel = null;
+            z.Bereit = false;
+            return ev;
+        }
+        ev.Add(new BegehenEreignis(BegehenArt.Ziel, seite, ziel?.Punkt));
         return ev;
     }
 
