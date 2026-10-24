@@ -1,17 +1,20 @@
 // Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): der virtuelle Bildschirm im Raum – Form, Platz, Ein- und Ausblenden, Griff und Knöpfe. Rein, ohne
 // StereoKit; alles im Raum der Brille (Referenzraum, Boden y = 0), nicht in der Szene: der Bildschirm gehört zum Körper, die VR-Szene bleibt starr.
 //
-// Form (DesktopFlaeche): ein Ausschnitt eines senkrechten Zylinders, Radius desktop.radius_m (Annahme 2.0 m), Bogenlänge desktop.breite_m (1.4 m), Höhe nach dem
+// Form (DesktopFlaeche): ein Ausschnitt eines senkrechten Zylinders, Radius DesktopEinstellungen.RadiusM (Annahme 2.0 m), Bogenlänge desktop.breite_m (1.4 m), Höhe nach dem
 // Seitenverhältnis des Monitors. Lokaler Raum: x rechts, y oben, z zum Betrachter, Mitte des Bildschirms im Ursprung; die Achse des Zylinders liegt bei
 // (0, ·, R) – vor dem Bildschirm, hinter dem Kopf (R > Abstand): «leicht gebogen» (Christian, Desktop-Ansicht von Meta).
 // Platz: frontal zum Blick beim Hineinziehen (nur Gieren, Nicken zählt nicht), desktop.abstand_m (1.1 m) vor den Augen, Mitte HoeheM (−0.10 m) unter Augenhöhe.
 // Danach im Raum verankert (folgt dem Kopf nicht); am Griff verschiebbar – dann dreht er sich zum Kopf (wie Fenster in visionOS).
 // Ein- und Ausblenden (DesktopAnsicht.Schritt): Der Bildschirm kommt von LINKS (Drehung um die Hochachse durch die Augen, AusGrad = 95° ganz draussen) und folgt
-// dem Fortschritt der Hand (Hineinziehen), nach der Auslösung setzt er sich weich (SetzenS); Wegwischen schiebt ihn nach links hinaus (RausS). Bricht die Hand
-// ab, gleitet er zurück. Alles Annahmen V1c.
+// dem Fortschritt der Hand (Hineinziehen), nach der Auslösung setzt er sich weich (SetzenS). Das gemeinsame Wegwischen (V1a) führt ihn: solange die Hand über ihn
+// wischt, läuft er nach links mit (Mitlaufen: so weit im Blick wie das Symbolfeld, AppSymbole.NachLinks), beim Ereignis gleitet er nach links hinaus (RausS).
+// Bricht die Hand ab, gleitet er zurück. Alles Annahmen V1c.
 // Bedienen: Kapsel-Griff unter dem Bildschirm (Pinch fasst, verschiebt), links daneben ein runder Schliessen-Knopf (Fingerspitze), rechts – nur bei mehreren
 // Monitoren – ein runder Knopf für den nächsten Monitor (Fensterteile wie V1a nach den HIG von visionOS).
-// Wegwischbares Ziel (für V1a's gemeinsames Wegwischen): DesktopAnsicht.Ziel gibt Lage (Fläche), Zeit des Einblendens und Id «desktop».
+// Wegwischbares Ziel (für V1a's gemeinsames Wegwischen): DesktopAnsicht.Kandidat gibt Id «desktop», Lage (Fläche im Blick) und Zeit des Einblendens.
+
+using Hlks.Xr.Bedienung;
 
 namespace Hlks.Xr.Desktop;
 
@@ -105,6 +108,38 @@ public static class DesktopFlaeche
     }
 
     /// <summary>
+    /// V1c, Glas-Stil von V1a: Netz des Glasrahmens für den Glas-Shader (GlasZeichner.FlaecheNetz) – ein gebogenes Rechteck rand (m) breiter als der Bildschirm,
+    /// aussen (m) weiter für den Saum des Shaders (Schatten, Kante), tiefe (m) hinter der Fläche. Wie die Rechtecke von V1a: uv = Lage im Rechteck (Bogen s, Höhe v
+    /// in m, Mitte 0) und – statt der Normalen – die Masse (halbe Breite, halbe Höhe, Eckenradius) je Ecke; der Shader rundet die Ecken im Raum der uv.
+    /// </summary>
+    public static DesktopNetz Glasnetz(DesktopMasse m, double rand, double eckRadius, double tiefe, double aussen)
+    {
+        double hb = m.BreiteM / 2 + rand, hh = m.HoeheM / 2 + rand, eb = hb + aussen, eh = hh + aussen;
+        var k = Math.Max(1, (int)Math.Ceiling(2 * eb * SegmenteJeMeter));
+        var pos = new Vec3[2 * (k + 1)];
+        var mass = new Vec3[pos.Length];
+        var uv = new (double, double)[pos.Length];
+        var masse = new Vec3(hb, hh, Math.Clamp(eckRadius, 0, Math.Min(hb, hh)));
+        for (int i = 0; i <= k; i++)
+        {
+            var s = -eb + 2 * eb * i / k;
+            var n = Normale(s, m.RadiusM);
+            pos[i] = Punkt(s, eh, m.RadiusM) - n * tiefe;
+            pos[k + 1 + i] = Punkt(s, -eh, m.RadiusM) - n * tiefe;
+            mass[i] = mass[k + 1 + i] = masse;
+            uv[i] = (s, eh);
+            uv[k + 1 + i] = (s, -eh);
+        }
+        var ind = new List<int>(k * 6);
+        for (int i = 0; i < k; i++)
+        {
+            int a = i, b = i + 1, c = k + 1 + i, d = k + 2 + i;
+            ind.AddRange([a, c, d, a, d, b]);
+        }
+        return new DesktopNetz(pos, mass, uv, [.. ind]);
+    }
+
+    /// <summary>
     /// Glasrahmen hinter dem Bildschirm: dieselbe Krümmung, rand (m) breiter als der Bildschirm, Ecken mit eckRadius gerundet (Ecken des Rasters auf den Kreisbogen
     /// gezogen), tiefe (m) hinter der Fläche. Ein Netz aus spalten × zeilen Zellen.
     /// </summary>
@@ -144,9 +179,6 @@ public enum DesktopPhase { Aus, Kommt, Setzt, Da, Geht, Raus }
 
 /// <summary>Verankerung: Augen beim Platzieren (Drehpunkt des Ein- und Ausblendens), Gieren des Bildschirms, Mitte am Platz (Raum der Brille).</summary>
 public sealed record DesktopLage(Vec3 Auge, double Gieren, Vec3 Mitte);
-
-/// <summary>Ein wegwischbares Ziel für die gemeinsame Wegwisch-Geste (V1a): Id, Fläche (Mitte, Normale zum Betrachter, Breite der Sehne, Höhe), Zeit des Einblendens.</summary>
-public sealed record WegwischZiel(string Id, TabletPose Flaeche, double EingeblendetT);
 
 /// <summary>Was die Hände am Bildschirm in diesem Bild getan haben.</summary>
 public readonly record struct DesktopBedienStand(bool GriffNah, bool GriffGehalten, bool SchliessenNah, bool Schliessen, bool MonitorNah, bool MonitorWechseln);
@@ -208,28 +240,28 @@ public sealed class DesktopAnsicht
     public (Vec3 Mitte, double Gieren)? Jetzt => Lage is { } l && Sichtbar ? Pose(l, Anteil) : null;
 
     /// <summary>
-    /// Ein Bild: Gesten (DesktopGesten) anwenden, Anteil führen. auge/blickGieren = Kopf jetzt (Platz beim Hineinziehen, Drehpunkt beim Hinausschieben).
+    /// Ein Bild: Hineinziehen (DesktopGesten) und Mitlaufen beim Wegwischen anwenden, Anteil führen. auge/blickGieren = Kopf jetzt (Platz beim Hineinziehen).
     /// Gibt true zurück, wenn der Bildschirm in diesem Bild eingeblendet (ausgelöst) wurde.
     /// </summary>
-    public bool Schritt(double t, double dt, Vec3 auge, double blickGieren, DesktopGestenStand g, DesktopEinstellungen e)
+    public bool Schritt(double t, double dt, Vec3 auge, double blickGieren, SeitenWischStand hinein, DesktopEinstellungen e)
     {
         var eingeblendet = false;
         switch (Phase)
         {
             case DesktopPhase.Aus:
                 Anteil = 0;
-                if (g.Hinein.Ausgeloest || g.Hinein.Laeuft)
+                if (hinein.Ausgeloest || hinein.Laeuft)
                 {
                     Lage = Platz(auge, blickGieren, e);
                     Phase = DesktopPhase.Kommt;
-                    if (g.Hinein.Ausgeloest) { Setzen(t); eingeblendet = true; }
-                    else Folgen(g.Hinein.Fortschritt, dt);
+                    if (hinein.Ausgeloest) { Setzen(t); eingeblendet = true; }
+                    else Folgen(hinein.Fortschritt, dt);
                 }
                 break;
             case DesktopPhase.Kommt:
-                if (g.Hinein.Ausgeloest) { Setzen(t); eingeblendet = true; break; }
-                Folgen(g.Hinein.Laeuft ? g.Hinein.Fortschritt : 0, dt);
-                if (!g.Hinein.Laeuft && Anteil <= 0.002) { Anteil = 0; Phase = DesktopPhase.Aus; }
+                if (hinein.Ausgeloest) { Setzen(t); eingeblendet = true; break; }
+                Folgen(hinein.Laeuft ? hinein.Fortschritt : 0, dt);
+                if (!hinein.Laeuft && Anteil <= 0.002) { Anteil = 0; Phase = DesktopPhase.Aus; }
                 break;
             case DesktopPhase.Setzt:
                 Anteil = von + (1 - von) * Weich((t - abT) / SetzenS);
@@ -237,14 +269,14 @@ public sealed class DesktopAnsicht
                 break;
             case DesktopPhase.Da:
             case DesktopPhase.Geht:
-                if (griff) { Anteil = 1; break; }
-                if (g.Weg.Ausgeloest) { Ausblenden(t, auge); break; }
-                if (g.Weg.Laeuft) { Phase = DesktopPhase.Geht; Folgen(1 - g.Weg.Fortschritt, dt); }
+                if (griff) { Anteil = 1; mitlaufM = 0; break; }
+                if (mitlaufM > 0) { Phase = DesktopPhase.Geht; Folgen(1 - MitlaufAnteil(mitlaufM), dt); }
                 else
                 {
                     Folgen(1, dt);
                     if (Anteil >= 0.998) { Anteil = 1; Phase = DesktopPhase.Da; }
                 }
+                mitlaufM = 0;   // gilt nur für das Bild, in dem die Geste ihn gemeldet hat
                 break;
             case DesktopPhase.Raus:
                 Anteil = von * (1 - Weich((t - abT) / RausS));
@@ -289,13 +321,59 @@ public sealed class DesktopAnsicht
         AusgeblendetT = t;
     }
 
-    /// <summary>Als wegwischbares Ziel (für das gemeinsame Wegwischen von V1a): nur wenn der Bildschirm da ist.</summary>
-    public WegwischZiel? Ziel(DesktopMasse m)
+    /// <summary>Id des Bildschirms als Ziel des gemeinsamen Wegwischens.</summary>
+    public const string ZielId = "desktop";
+    /// <summary>
+    /// Beim Mitlaufen dreht sich der Bildschirm um die Augen so weit nach links, wie das Symbolfeld in diesem Abstand verschoben würde (gleicher Winkel im Blick;
+    /// Feld etwa 0.6 m vor den Augen, V1a). Annahme V1c.
+    /// </summary>
+    public const double MitlaufBezugM = 0.6;
+    double mitlaufM;
+
+    /// <summary>Als wegwischbares Ziel (für das gemeinsame Wegwischen von V1a): nur wenn der Bildschirm da ist und nicht am Griff gehalten wird.</summary>
+    public WegwischKandidat? Kandidat(DesktopMasse m)
     {
-        if (!Da || Jetzt is not { } j) return null;
+        if (!Da || griff || Jetzt is not { } j) return null;
         var normale = XrGesten.Vorn(j.Gieren) * -1;
         var mitte = j.Mitte + normale * (m.Tiefe / 2);
-        return new WegwischZiel("desktop", new TabletPose(mitte, normale, XrGesten.Rechts(j.Gieren), Vec3.Hoch, m.Sehne, m.HoeheM), EingeblendetT);
+        return new WegwischKandidat(ZielId, new TabletPose(mitte, normale, XrGesten.Rechts(j.Gieren), Vec3.Hoch, m.Sehne, m.HoeheM), EingeblendetT);
+    }
+
+    /// <summary>Die Hand wischt über den Bildschirm (gemeinsames Wegwischen): Weg nach links (m; 0 = nicht mehr). Gilt für das nächste <see cref="Schritt"/>.</summary>
+    public void Mitlaufen(double wegM) => mitlaufM = Math.Max(0, wegM);
+
+    /// <summary>Anteil, um den der Bildschirm beim Weg wegM der Hand nach links gedreht ist (0 … 1 von AusGrad).</summary>
+    public static double MitlaufAnteil(double wegM) =>
+        Math.Clamp(Math.Atan2(AppSymbole.NachLinks(wegM, 0), MitlaufBezugM) / (AusGrad * Num.Grad), 0, 1);
+
+    /// <summary>Glasrahmen: so viel breiter als das Bild je Seite (m), Eckenradius (m), so weit hinter dem Bild (m). Annahmen V1c (wie die Fenster von V1a: deutlich gerundet).</summary>
+    public const double RahmenRandM = 0.018, RahmenEckM = 0.035, RahmenTiefeM = 0.004;
+
+    /// <summary>Fläche eines Teils (Griff, Knopf) im Raum der Brille: lokaler Ort auf dem Bogen, b × h (m), zum Betrachter gerichtet wie die Fläche dort.</summary>
+    public static TabletPose TeilLage(Vec3 lokal, Vec3 mitte, double gieren, double b, double h, double radius)
+    {
+        var (s, _, _) = DesktopFlaeche.AufFlaeche(lokal, radius);
+        var n = DesktopFlaeche.Normale(s, radius);
+        var normale = XrGesten.Rechts(gieren) * n.X + XrGesten.Vorn(gieren) * -n.Z;
+        var rechts = Vec3.Hoch.Kreuz(normale).Einheit();
+        return new TabletPose(DesktopFlaeche.Welt(lokal, mitte, gieren), normale, rechts, Vec3.Hoch, b, h);
+    }
+
+    /// <summary>
+    /// Flächen, die der Bildschirm im Blick belegt (Bild mit Rahmen, darunter die Leiste aus Griff und Knöpfen), solange er sichtbar ist: über ihnen stehen weder
+    /// Hinweise noch das Symbolfeld (es weicht seitlich aus wie bei einer offenen App, V1a). Das Bild als ebenes Rechteck in der Tiefe seiner Ränder (die zum Betrachter
+    /// kommen): so deckt es im Blick mindestens den Bogen.
+    /// </summary>
+    public IReadOnlyList<TabletPose> Belegt(DesktopMasse m)
+    {
+        if (Jetzt is not { } j) return [];
+        var normale = XrGesten.Vorn(j.Gieren) * -1;
+        var rechts = XrGesten.Rechts(j.Gieren);
+        var bild = new TabletPose(j.Mitte + normale * m.Tiefe, normale, rechts, Vec3.Hoch, m.Sehne + 2 * RahmenRandM, m.HoeheM + 2 * RahmenRandM);
+        var (griff, _, _) = Teile(m);
+        var leiste = new TabletPose(DesktopFlaeche.Welt(griff, j.Mitte, j.Gieren), normale, rechts, Vec3.Hoch,
+            GriffB + 2 * (KnopfAbstand + 2 * KnopfRadius) + 0.02, 2 * KnopfRadius + 0.01);
+        return [bild, leiste];
     }
 
     /// <summary>Lage von Griff, Schliessen-Knopf und Monitor-Knopf (lokal; unter dem Bildschirm, in der Mitte).</summary>

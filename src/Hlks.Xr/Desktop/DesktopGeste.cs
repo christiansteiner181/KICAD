@@ -1,34 +1,38 @@
-// Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): die Gesten zum Bildschirm des PCs. Rein, ohne StereoKit; Hände und Kopf im Raum der Brille.
+// Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): das Hineinziehen des Bildschirms des PCs. Rein, ohne StereoKit; Hände und Kopf im Raum der Brille.
 //
 // Christian, 24.10.2026 (mit Berichtigung und Ergänzung desselben Tages):
 //   - Hineinziehen: rechte Hand offen, Handfläche nach links, Wisch von LINKS nach RECHTS. Die Handfläche «zieht» den Bildschirm mit: er kommt von links ins Bild,
 //     folgt der Hand und setzt sich frontal.
-//   - Hinausschieben = die gemeinsame Wegwisch-Geste der ganzen App: dieselbe Haltung, Wisch von RECHTS nach LINKS. Die Erkennung legt V1a als gemeinsame Geste in
-//     src/Hlks.Xr/Bedienung/Wegwischen.cs an; hier ist sie vorerst hinter IWegwischErkennung gekapselt (DesktopWegwischen). EINHÄNGEPUNKT für die Zusammenführung:
-//     DesktopGesten(IWegwischErkennung? weg) – dort V1a's Wegwischen als IWegwischErkennung übergeben, sonst nichts ändern.
-//   - Die VR-Szene bleibt in beiden Fällen starr (kein Drehen, Blättern, Springen, Etagenwechsel; das sperrt die App, solange der Bildschirm da ist).
+//   - Hinausschieben = die gemeinsame Wegwisch-Geste der ganzen App (V1a, src/Hlks.Xr/Bedienung/Wegwischen.cs): dieselbe Haltung, Wisch von RECHTS nach LINKS.
+//     Der Bildschirm meldet sich dort als wegwischbares Ziel an (Id «desktop», DesktopAnsicht.Kandidat); hier steht nur die Gegensperre (DesktopGesten).
+//   - Die VR-Szene bleibt starr (kein Drehen, Blättern, Springen, Etagenwechsel; das sperrt die App, solange der Bildschirm da ist).
 //
 // Regel (SeitenWisch.Schritt, je Bild):
 //   Haltung: rechte Hand erkannt und offen (XrTabletLogik.IstOffen), kein Pinch (mit Hysterese), Normale der Handfläche höchstens HandflaecheGrad neben waagrecht
-//   nach links (zum Blick); dazu «erlaubt» (die Hand ist nicht an Apps oder am Griff). Passt die Haltung nicht, beginnt alles neu.
-//   Bewegung in Richtung r (Hineinziehen: nach rechts, Wegwischen: nach links), im Zeitfenster ZeitS: Weg = Lage jetzt minus tiefster Stand in r; Beginn = der
-//   letzte Punkt am tiefsten Stand (1 cm Spiel); quer dazu höchstens 0.6 × Weg (wie V1a, HebeGeste.SeitlichAnteil).
+//   nach links (zum Blick; gleich wie «wegwischen.handflaeche_grad»); dazu «erlaubt» (die Hand ist nicht an Apps oder am Griff). Passt die Haltung nicht, beginnt
+//   alles neu.
+//   Bewegung nach rechts im Zeitfenster ZeitS: Weg = Lage jetzt minus am weitesten links; Beginn = der letzte Punkt dort (1 cm Spiel); quer dazu höchstens
+//   0.6 × Weg (wie V1a, HebeGeste.SeitlichAnteil).
 //   Ausgelöst: Weg ≥ WegM, mittleres Tempo seit dem Beginn ≥ TempoMs (oder über die letzten WegM: halb ziehen, kurz halten, zügig weiterziehen zählt), die linke
-//   Hand seit dem Beginn höchstens AndereHandM bewegt (oder nicht erkannt), nicht in der Sperre. Danach SperreS lang nichts (beide Gesten, DesktopGesten).
+//   Hand seit dem Beginn höchstens AndereHandM bewegt (oder nicht erkannt), nicht in der Sperre.
 //   Fortschritt (für das Folgen der Hand): (Weg − 20 % WegM) / (80 % WegM), 0 … 1; Läuft, sobald 20 % erreicht sind.
-// Warum Hebegeste, Wegschieben mit zwei Händen, Pinch + Wisch, Röntgen-Hand nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände –
-// die linke bewegt sich mit; Pinch + Wisch – Pinch; Röntgen-Hand – Handfläche nach vorn. Ausholen vor dem Wisch: zu kurz bzw. zu langsam, und Hineinziehen
-// und Wegwischen schauen in entgegengesetzte Richtungen; das Zurückholen der Hand nach der Geste fällt in die Sperre.
+// Gegensperre (DesktopGesten): nach dem Hineinziehen ruht das Wegwischen SperreS lang (WegwischenRuht: das Zurückholen der Hand schiebt den Bildschirm nicht gleich
+// wieder hinaus und wischt auch nichts anderes weg); nach jedem Wegwischen (NachWegwischen) ruht das Hineinziehen ebenso lang.
+// Warum Hebegeste, Pinch + Wisch, Röntgen-Hand, zwei Hände nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände – die linke bewegt
+// sich mit; Pinch + Wisch – Pinch; Röntgen-Hand – Handfläche nach vorn. Ausholen vor dem Wisch: zu kurz bzw. zu langsam, und Hineinziehen und Wegwischen schauen in
+// entgegengesetzte Richtungen; das Zurückholen der Hand nach der Geste fällt in die Gegensperre.
+
+using Hlks.Xr.Bedienung;
 
 namespace Hlks.Xr.Desktop;
 
-/// <summary>Stand eines Seitenwischs in einem Bild: ausgelöst (nur in diesem Bild), Fortschritt 0 … 1, läuft (Hand folgt), Weg in m.</summary>
+/// <summary>Stand des Hineinziehens in einem Bild: ausgelöst (nur in diesem Bild), Fortschritt 0 … 1, läuft (Bildschirm folgt der Hand), Weg in m.</summary>
 public readonly record struct SeitenWischStand(bool Ausgeloest, double Fortschritt, bool Laeuft, double WegM)
 {
     public static readonly SeitenWischStand Nichts = new(false, 0, false, 0);
 }
 
-/// <summary>Zustand eines Seitenwischs (Punkte der rechten Hand, solange die Haltung passt; Spur der linken Hand; Pinch vorher; Sperre).</summary>
+/// <summary>Zustand des Hineinziehens (Punkte der rechten Hand, solange die Haltung passt; Spur der linken Hand; Pinch vorher; Sperre).</summary>
 public sealed class SeitenWischZustand
 {
     internal readonly List<(double T, Vec3 P)> Punkte = [];
@@ -54,11 +58,11 @@ public static class SeitenWisch
     public const double BeginnSpielM = 0.01;
 
     /// <summary>
-    /// Ein Schritt je Bild (Regel im Dateikopf). rechts/links = Gelenke der rechten bzw. linken Hand (WebXR-Namen, Raum der Brille; null = nicht erkannt),
-    /// blickGieren wie VrLogik, nachRechts = Hineinziehen (sonst Wegwischen), erlaubt = die Hand darf (nicht an Apps, nicht am Griff, nicht in einer Gegensperre).
+    /// Ein Schritt je Bild (Regel im Dateikopf): Wisch der rechten Hand nach rechts. rechts/links = Gelenke der rechten bzw. linken Hand (WebXR-Namen, Raum der
+    /// Brille; null = nicht erkannt), blickGieren wie VrLogik, erlaubt = die Hand darf (nicht an Apps, nicht am Griff, nicht in einer Gegensperre).
     /// </summary>
     public static SeitenWischStand Schritt(SeitenWischZustand z, double t, IReadOnlyDictionary<string, Vec3>? rechts, IReadOnlyDictionary<string, Vec3>? links,
-        double blickGieren, bool nachRechts, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true)
+        double blickGieren, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true)
     {
         e ??= SeitenWischEinstellungen.Vorgabe;
         var behalten = e.ZeitS + 0.2;
@@ -68,8 +72,7 @@ public static class SeitenWisch
         while (z.Andere.Count > 0 && z.Andere[0].T < t - behalten) z.Andere.RemoveAt(0);
 
         var r = XrGesten.Rechts(blickGieren);
-        if (!nachRechts) r = r * -1;
-        var linksRichtung = XrGesten.Rechts(blickGieren) * -1;
+        var linksRichtung = r * -1;
         var pinchJetzt = rechts is not null && XrTabletLogik.IstPinch(rechts, z.PinchVorher, pinch);
         z.PinchVorher = pinchJetzt;
         var mitte = XrTabletLogik.HandflaechenMitte(rechts);
@@ -124,61 +127,26 @@ public static class SeitenWisch
 public sealed record DesktopHaende(double T, IReadOnlyDictionary<string, Vec3>? Rechts, IReadOnlyDictionary<string, Vec3>? Links, double BlickGieren);
 
 /// <summary>
-/// Erkennung des Wegwischens (rechte Hand offen, Handfläche nach links, Wisch rechts → links). Einhängepunkt für die gemeinsame Geste von V1a
-/// (src/Hlks.Xr/Bedienung/Wegwischen.cs): beim Zusammenführen dort einen Adapter übergeben (DesktopGesten).
+/// Das Hineinziehen mit der Gegensperre zum gemeinsamen Wegwischen (V1a): nach dem Hineinziehen ruht das Wegwischen SperreS lang (<see cref="WegwischenRuht"/>),
+/// nach jedem Wegwischen das Hineinziehen (<see cref="NachWegwischen"/>). Die Lage der Handfläche nimmt es vom Wegwischen (dieselbe Haltung).
 /// </summary>
-public interface IWegwischErkennung
-{
-    /// <summary>Ein Bild; erlaubt = false heisst: die Bewegung zählt nicht (z. B. Sperre nach dem Hineinziehen).</summary>
-    SeitenWischStand Schritt(DesktopHaende h, bool erlaubt);
-}
-
-/// <summary>Vorläufige eigene Erkennung des Wegwischens (bis V1a's gemeinsame Geste zusammengeführt ist): SeitenWisch nach links mit «gesten.wegwischen.*».</summary>
-public sealed class DesktopWegwischen(Func<SeitenWischEinstellungen> einstellungen, Func<PinchEinstellungen?>? pinch = null) : IWegwischErkennung
-{
-    readonly SeitenWischZustand z = new();
-    public SeitenWischZustand Zustand => z;
-
-    public SeitenWischStand Schritt(DesktopHaende h, bool erlaubt) =>
-        SeitenWisch.Schritt(z, h.T, h.Rechts, h.Links, h.BlickGieren, nachRechts: false, einstellungen(), pinch?.Invoke(), erlaubt);
-}
-
-/// <summary>Stand beider Gesten in einem Bild.</summary>
-public readonly record struct DesktopGestenStand(SeitenWischStand Hinein, SeitenWischStand Weg)
-{
-    /// <summary>Läuft gerade eine der beiden (die App wertet dann keinen anderen einhändigen Wisch aus, z. B. über Masslinien).</summary>
-    public bool Laeuft => Hinein.Laeuft || Weg.Laeuft || Hinein.Ausgeloest || Weg.Ausgeloest;
-}
-
-/// <summary>
-/// Beide Gesten mit gegenseitiger Sperre: nach dem Hineinziehen zählt das Wegwischen SperreS lang nicht (das Zurückholen der Hand schiebt den Bildschirm nicht
-/// gleich wieder hinaus) und umgekehrt. hineinErlaubt = der Bildschirm ist aus (bzw. kommt); wegErlaubt = er ist da (bzw. geht).
-/// </summary>
-public sealed class DesktopGesten
+public sealed class DesktopGesten(Func<DesktopEinstellungen> einstellungen, Func<PinchEinstellungen?>? pinch = null, Func<WegwischEinstellungen?>? wegwischen = null)
 {
     readonly SeitenWischZustand hinein = new();
-    readonly IWegwischErkennung weg;
-    double hineinGesperrtBis = double.NegativeInfinity, wegGesperrtBis = double.NegativeInfinity;
+    double wegGesperrtBis = double.NegativeInfinity;
 
-    /// <param name="weg">Erkennung des Wegwischens; null = die vorläufige eigene (DesktopWegwischen). EINHÄNGEPUNKT für V1a's Wegwischen.</param>
-    public DesktopGesten(Func<DesktopEinstellungen> einstellungen, Func<PinchEinstellungen?>? pinch = null, IWegwischErkennung? weg = null)
+    /// <summary>Ein Bild; erlaubt = der Bildschirm ist aus bzw. kommt, und die rechte Hand ist frei.</summary>
+    public SeitenWischStand Schritt(DesktopHaende h, bool erlaubt)
     {
-        Einstellungen = einstellungen;
-        Pinch = pinch;
-        this.weg = weg ?? new DesktopWegwischen(() => einstellungen().Weg, pinch);
+        var e = einstellungen();
+        var s = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, e.HineinMit(wegwischen?.Invoke()), pinch?.Invoke(), erlaubt);
+        if (s.Ausgeloest) wegGesperrtBis = h.T + e.Hinein.SperreS;
+        return s;
     }
 
-    Func<DesktopEinstellungen> Einstellungen { get; }
-    Func<PinchEinstellungen?>? Pinch { get; }
-    public IWegwischErkennung Wegwischen => weg;
+    /// <summary>Ruht das gemeinsame Wegwischen gerade (kurz nach dem Hineinziehen)?</summary>
+    public bool WegwischenRuht(double t) => t < wegGesperrtBis;
 
-    public DesktopGestenStand Schritt(DesktopHaende h, bool hineinErlaubt, bool wegErlaubt)
-    {
-        var e = Einstellungen();
-        var hi = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, nachRechts: true, e.Hinein, Pinch?.Invoke(), hineinErlaubt && h.T >= hineinGesperrtBis);
-        var we = weg.Schritt(h, wegErlaubt && h.T >= wegGesperrtBis);
-        if (hi.Ausgeloest) wegGesperrtBis = h.T + e.Hinein.SperreS;
-        if (we.Ausgeloest) { hineinGesperrtBis = h.T + e.Weg.SperreS; hinein.Sperren(hineinGesperrtBis); }
-        return new DesktopGestenStand(hi, we);
-    }
+    /// <summary>Ein Wegwischen hat ausgelöst (gleich welches Ziel): das Hineinziehen ruht SperreS lang, eine laufende Bewegung zählt nicht weiter.</summary>
+    public void NachWegwischen(double t) => hinein.Sperren(t + einstellungen().Hinein.SperreS);
 }

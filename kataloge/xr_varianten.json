@@ -35,13 +35,53 @@
     },
     {
       "name": "messen", "titel": "Messen",
-      "beschreibung": "Wie man misst: ein Messband zwischen zwei Punkten aufziehen oder zwei Punkte setzen. Messen folgt mit Version 1; bis dahin merkt die App die Wahl nur und trägt sie ins Messprotokoll ein.",
+      "beschreibung": "Wie man misst (App «Messen», seit V1a): ein Messband zwischen zwei Punkten aufziehen (Pinch halten, ziehen, loslassen) oder zwei Punkte mit je einem Pinch setzen. Die App «Messen» kann die Variante auch selbst umschalten.",
       "optionen": [
         { "id": "messband", "titel": "Messband aufziehen" },
         { "id": "zwei_punkte", "titel": "Zwei Punkte setzen" }
       ],
       "vorgabe": "messband",
       "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Messen als Massband"
+    },
+    {
+      "name": "umgebung", "titel": "Umgebung des Sitzungsraums",
+      "beschreibung": "Wie der virtuelle Sitzungsraum aussieht: hell und weit im Stil von visionOS (ruhiger Boden, heller Tisch, weiches Licht) oder die frühere dunkle Fassung mit Raster und Leuchtlinien («Tron») zum Vergleich.",
+      "optionen": [
+        { "id": "hell", "titel": "Hell (visionOS)" },
+        { "id": "tron", "titel": "Dunkel mit Leuchtlinien (früher)" }
+      ],
+      "vorgabe": "hell",
+      "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026)"
+    },
+    {
+      "name": "symbole", "titel": "Anordnung der App-Symbole",
+      "beschreibung": "Wie die App-Symbole nach der Hebegeste vor dem Körper stehen: locker verteilt (verschiedene Höhen, leicht gestaffelt, je App immer am selben Platz) oder in einer Reihe im Bogen zum Vergleich.",
+      "optionen": [
+        { "id": "verteilt", "titel": "Locker verteilt" },
+        { "id": "bogen", "titel": "Im Bogen (Reihe)" }
+      ],
+      "vorgabe": "verteilt",
+      "herkunft": "Christian 24.10.2026: «frei schwebende Appsymbole … in griff weite», «symbole nicht in einer leiste sondern verteilt»; nach den Bildern 02: «frontal des nutzers in einem abstand von ca. 60cm und über eine höhe von ca. 0.6m verteilt … maximal 3 reihig»"
+    },
+    {
+      "name": "symbolwahl", "titel": "App-Symbole nach der Wahl",
+      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: stehen bleiben (die App öffnet frontal etwas näher, das Symbolfeld weicht dahinter zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) oder ausblenden (die App öffnet, sobald die Symbole weg sind).",
+      "optionen": [
+        { "id": "stehen", "titel": "Stehen bleiben" },
+        { "id": "ausblenden", "titel": "Ausblenden" }
+      ],
+      "vorgabe": "stehen",
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück), als Variante zum Vergleich"
+    },
+    {
+      "name": "feld_bei_app", "titel": "Symbolfeld bei offener App",
+      "beschreibung": "Wo das Feld der App-Symbole steht, solange eine App offen ist (Variante «symbolwahl» = «stehen»): seitlich (es weicht links und rechts neben das Fenster und seine Ornamente aus, im selben Abstand zum Auge, also in Griffweite; schliesst die App, kehrt es frontal zurück) oder zum Vergleich dahinter (es weicht in die Tiefe zurück und wird gedämpft).",
+      "optionen": [
+        { "id": "seitlich", "titel": "Neben dem Fenster" },
+        { "id": "dahinter", "titel": "Hinter dem Fenster" }
+      ],
+      "vorgabe": "seitlich",
+      "herkunft": "Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» (nach den Prüfbildern 03: das Fenster verdeckte das Feld fast ganz); «dahinter» bleibt als Vergleich"
     }
   ]
 }

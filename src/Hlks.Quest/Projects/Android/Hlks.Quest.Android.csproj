@@ -57,6 +57,9 @@
 
 		<Compile Update="..\..\**\*.Android.cs" Visible="true" />
 		<Compile Update="..\..\Platforms\Android\**\*.cs" Visible="true" />
+
+		<!-- V1a: Farben der App aus dem Katalog, mitgeliefert (wie Hlks.Quest.csproj). -->
+		<EmbeddedResource Include="..\..\..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
 	</ItemGroup>
 
 	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle); dieselbe Fassung wie ApplicationDisplayVersion. -->

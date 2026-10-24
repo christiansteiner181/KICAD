@@ -204,7 +204,7 @@ public sealed class XrLaborKatalog
             }
             liste.Add(new XrStellschraubeDef { Schluessel = key, Gruppe = gruppe, Art = art, Status = status, Min = min, Max = max, Schritt = schritt, Auswahl = auswahl, Vorgabe = vorgabe.DeepClone(), Roh = (JsonObject)s.DeepClone() });
         }
-        // V1c: 56 statt 48 (V1a und V1c bringen zusammen über 50); die Grenze des Kanals (64 mit Varianten und Aufgabe) prüft die Zeile weiter unten
+        // V1a 54, V1c 56 statt 48 (V1a und V1c zusammen 55); die Grenze des Kanals (64 mit Varianten und Aufgabe: heute 55 + 8 + 1) prüft die Zeile weiter unten
         if (liste.Count > 56) throw Fehler(d, "Höchstens 56 Stellschrauben (der Kanal merkt höchstens 64 Werte, dazu kommen Varianten und Aufgabe).");
         // jede Gruppe wird gebraucht (eine leere Gruppe wäre ein Tippfehler)
         foreach (var g in gruppenIds)

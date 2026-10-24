@@ -1,8 +1,10 @@
-// Tests der Quest App V1c (Modul XR, XR-I): der virtuelle Bildschirm im Raum (Form, Platz frontal, Kommen von links und der Hand folgen, Setzen, Hinausgleiten,
-// verankert, Griff, Schliessen, Monitor, wegwischbares Ziel) und das Format der Bilder in der App (Raster, Kopf, Puffer). Rein, ohne StereoKit.
+// Tests der Quest App V1c (Modul XR, XR-I): der virtuelle Bildschirm im Raum (Form, Glasnetz, Platz frontal, Kommen von links und der Hand folgen, Setzen,
+// Mitlaufen beim gemeinsamen Wegwischen und Hinausgleiten, verankert, Griff, Schliessen, Monitor, wegwischbares Ziel, belegte Flächen) und das Format der Bilder
+// in der App (Raster, Kopf, Puffer). Rein, ohne StereoKit.
 
 using System.Buffers.Binary;
 using System.IO.Compression;
+using Hlks.Xr.Bedienung;
 using Hlks.Xr.Desktop;
 
 namespace Hlks.Xr.Tests;
@@ -13,7 +15,7 @@ public class DesktopAnsichtTests
     static readonly Vec3 Auge = new(0.5, 1.6, 2.0);
     const double Nord = Math.PI / 2;   // Blick nach −z
 
-    static DesktopGestenStand Stand(SeitenWischStand hinein = default, SeitenWischStand weg = default) => new(hinein, weg);
+    static SeitenWischStand Stand(SeitenWischStand hinein = default) => hinein;
     static SeitenWischStand Laeuft(double f) => new(false, f, true, 0.1);
     static readonly SeitenWischStand Ausgeloest = new(true, 1, false, 0.25);
 
@@ -127,12 +129,17 @@ public class DesktopAnsichtTests
         a.Einblenden(t, Auge, Nord, E);
         for (int i = 0; i < 40; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }
         Assert.Equal(DesktopPhase.Da, a.Phase);
-        for (int i = 0; i < 20; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(weg: Laeuft(0.6)), E); }
+        // gemeinsames Wegwischen (V1a): die Geste meldet je Bild den Weg der Hand nach links (Mitlaufen), er dreht sich so weit nach links wie das Symbolfeld
+        for (int i = 0; i < 20; i++) { t += 1 / 72.0; a.Mitlaufen(0.15); a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }
         Assert.Equal(DesktopPhase.Geht, a.Phase);
-        Assert.InRange(a.Anteil, 0.39, 0.41);
-        Assert.True(a.Jetzt!.Value.Mitte.X < Auge.X - 0.5, "nach links unterwegs");
+        var soll = 1 - DesktopAnsicht.MitlaufAnteil(0.15);
+        Assert.InRange(a.Anteil, soll - 0.01, soll + 0.01);
+        Assert.InRange(soll, 0.7, 0.85);   // 0.15 m × 1.4 = 0.21 m in 0.6 m: 19° von 95°
+        Assert.True(a.Jetzt!.Value.Mitte.X < Auge.X - 0.2, "nach links unterwegs");
+        // Ereignis (DesktopBildschirm.Wegwischen): gleitet um den Kopf von jetzt hinaus
         t += 1 / 72.0;
-        a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(weg: Ausgeloest), E);
+        a.Ausblenden(t, Auge);
+        a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E);
         Assert.Equal(DesktopPhase.Raus, a.Phase);
         var vorher = a.Jetzt!.Value.Mitte;
         t += 1 / 72.0;
@@ -143,9 +150,15 @@ public class DesktopAnsichtTests
         // ein Wegwischen, das abbricht, lässt ihn zurückkommen
         a.Einblenden(t, Auge, Nord, E);
         for (int i = 0; i < 40; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }
-        for (int i = 0; i < 10; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(weg: Laeuft(0.3)), E); }
-        for (int i = 0; i < 60; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }
+        for (int i = 0; i < 10; i++) { t += 1 / 72.0; a.Mitlaufen(0.08); a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }
+        Assert.Equal(DesktopPhase.Geht, a.Phase);
+        for (int i = 0; i < 60; i++) { t += 1 / 72.0; a.Schritt(t, 1 / 72.0, Auge, Nord, Stand(), E); }   // ohne Mitlaufen: zurück
         Assert.Equal(DesktopPhase.Da, a.Phase);
+        // Mitlaufen: mit dem Weg der Hand monoton, begrenzt; 0 ohne Weg
+        Assert.Equal(0, DesktopAnsicht.MitlaufAnteil(0), 12);
+        Assert.Equal(0, DesktopAnsicht.MitlaufAnteil(-0.1), 12);
+        Assert.True(DesktopAnsicht.MitlaufAnteil(0.05) < DesktopAnsicht.MitlaufAnteil(0.1) && DesktopAnsicht.MitlaufAnteil(0.1) < DesktopAnsicht.MitlaufAnteil(0.18));
+        Assert.True(DesktopAnsicht.MitlaufAnteil(100) <= 1);
     }
 
     [Fact]
@@ -199,18 +212,81 @@ public class DesktopAnsichtTests
     {
         var a = new DesktopAnsicht();
         var m = DesktopMasse.Aus(E);
-        Assert.Null(a.Ziel(m));
+        Assert.Null(a.Kandidat(m));
         a.Einblenden(2.0, Auge, Nord, E);
-        Assert.Null(a.Ziel(m));   // setzt sich noch
+        Assert.Null(a.Kandidat(m));   // setzt sich noch
         for (int i = 1; i <= 40; i++) a.Schritt(2.0 + i / 72.0, 1 / 72.0, Auge, Nord, Stand(), E);
-        var z = a.Ziel(m)!;
+        var z = a.Kandidat(m)!;
+        Assert.Equal(DesktopAnsicht.ZielId, z.Id);
         Assert.Equal("desktop", z.Id);
-        Assert.Equal(2.0, z.EingeblendetT);
+        Assert.Equal(2.0, z.EingeblendetSeit);
         Assert.Equal(m.Sehne, z.Flaeche.B, 9);
         Assert.True(z.Flaeche.Normale.Skalar(new Vec3(0, 0, 1)) > 0.999, "Normale zum Betrachter (Süden)");
         Assert.True(z.Flaeche.Mitte.Z > a.Lage!.Mitte.Z, "Fläche zwischen Mitte und Rändern");
-        a.Ausblenden(3);
-        Assert.Null(a.Ziel(m));
+        // V1a wählt ihn: die Hand wischt vor ihm (im Blick) – auch neben einem älteren Ziel; ohne Treffer das zuletzt eingeblendete
+        var pfad = new List<Vec3> { Auge + new Vec3(0.2, -0.2, -0.45), Auge + new Vec3(0.0, -0.2, -0.45) };
+        var symbole = new WegwischKandidat("symbole", XrTabletLogik.TabletLageAus(Auge + new Vec3(1.5, 0, -0.6), new Vec3(-1, 0, 1)) with { B = 0.3, H = 0.3 }, 1.0);
+        Assert.Equal("desktop", Wegwischen.Ziel([symbole, z], pfad, Auge));
+        Assert.Equal("desktop", Wegwischen.Ziel([symbole, z], [Auge + new Vec3(0, 3, 0)], Auge));
+        // am Griff gehalten: kein Ziel (das Verschieben wischt ihn nicht weg)
+        var (griff, _, _) = DesktopAnsicht.Teile(m);
+        var j = a.Jetzt!.Value;
+        a.Bedienen(3.0, Auge, DesktopFlaeche.Welt(griff, j.Mitte, j.Gieren), true, null, m, false);
+        Assert.True(a.GriffGehalten);
+        Assert.Null(a.Kandidat(m));
+        a.Bedienen(3.1, Auge, null, false, null, m, false);
+        Assert.NotNull(a.Kandidat(m));
+        a.Ausblenden(3.2);
+        Assert.Null(a.Kandidat(m));
+    }
+
+    [Fact]
+    public void Belegte_Flaechen_decken_den_Bildschirm_im_Blick_Teile_zum_Betrachter_Glasnetz_fuer_den_Shader()
+    {
+        var a = new DesktopAnsicht();
+        var m = DesktopMasse.Aus(E);
+        Assert.Empty(a.Belegt(m));
+        a.Einblenden(0, Auge, Nord, E);
+        for (int i = 1; i <= 40; i++) a.Schritt(i / 72.0, 1 / 72.0, Auge, Nord, Stand(), E);
+        var b = a.Belegt(m);
+        Assert.Equal(2, b.Count);
+        var (mitte, gieren) = a.Jetzt!.Value;
+        // jeder Punkt des Bildes (auch die Ränder, die zum Betrachter kommen) liegt im Blick innerhalb des ersten Rechtecks
+        foreach (var s in new[] { -0.7, -0.35, 0, 0.35, 0.7 })
+            foreach (var v in new[] { -m.HoeheM / 2, 0, m.HoeheM / 2 })
+            {
+                var p = DesktopFlaeche.Welt(DesktopFlaeche.Punkt(s, v, m.RadiusM), mitte, gieren);
+                var q = Glas.AufEbene(p, Auge, b[0])!.Value - b[0].Mitte;
+                Assert.True(Math.Abs(q.Skalar(b[0].Rechts)) <= b[0].B / 2 + 1e-9 && Math.Abs(q.Skalar(b[0].Oben)) <= b[0].H / 2 + 1e-9, $"{s}/{v}");
+            }
+        // ein Hinweis unter der Blickmitte in Griffweite läge vor dem Bildschirm, einer weiter unten nicht (Hinweise weichen aus, SchwebeHinweise.Ausweichen)
+        var hinweis = SchwebeHinweise.Allgemein(Auge, Nord);
+        Assert.Contains(b, f => Glas.UeberdecktImBlick(Glas.ImBlick(hinweis, Auge, 0.2, 0.03), f, Auge));
+        var frei = SchwebeHinweise.Ausweichen(hinweis, Auge, 0.2, 0.03, b);
+        Assert.DoesNotContain(b, f => Glas.UeberdecktImBlick(Glas.ImBlick(frei, Auge, 0.2, 0.03), f, Auge));
+        // das Symbolfeld weicht seitlich aus (wie bei einer offenen App): kein Symbol im Blick über dem Bildschirm
+        var se = new SymbolEinstellungen();
+        var plaetze = AppSymbole.Plaetze(["etagen", "ort", "messen", "marker", "status", "ebenen", "desktop"], Auge, Nord, se, GlasMasse.Fuer(new AppEinstellungen()));
+        var seitlich = AppSymbole.Seitlich([.. plaetze.Select(p => p.Lage.Mitte)], Auge, Nord, b, AppSymbole.Durchmesser(GlasMasse.Fuer(new AppEinstellungen())) / 2, 1);
+        foreach (var p in seitlich)
+        {
+            var l = XrTabletLogik.TabletLageAus(p, Auge - p) with { B = 0.065, H = 0.065 };
+            Assert.False(Glas.UeberdecktImBlick(l, b[0], Auge), $"Symbol bei {p}");
+        }
+        // Teile: Griff und Knöpfe zum Betrachter, auf der Fläche
+        var (griff, schliessen, _) = DesktopAnsicht.Teile(m);
+        var gl = DesktopAnsicht.TeilLage(griff, mitte, gieren, DesktopAnsicht.GriffB, DesktopAnsicht.GriffH, m.RadiusM);
+        Assert.True(gl.Normale.Skalar(new Vec3(0, 0, 1)) > 0.999);
+        Assert.True(gl.Rechts.Skalar(new Vec3(1, 0, 0)) > 0.999);
+        var kl = DesktopAnsicht.TeilLage(schliessen, mitte, gieren, 0.044, 0.044, m.RadiusM);
+        Assert.True(kl.Normale.Skalar(Auge - kl.Mitte) > 0, "der Knopf schaut zum Betrachter");
+        // Glasnetz: gebogen wie das Bild, uv in m um die Mitte, die Masse (halbe Breite, halbe Höhe, Ecke) in jeder Ecke
+        var n = DesktopFlaeche.Glasnetz(m, 0.018, 0.035, 0.004, 0.003);
+        Assert.All(n.Normalen, x => Assert.Equal(new Vec3(m.BreiteM / 2 + 0.018, m.HoeheM / 2 + 0.018, 0.035), x));
+        Assert.Equal(m.BreiteM / 2 + 0.021, n.Uv.Max(x => x.U), 9);
+        Assert.Equal(-(m.HoeheM / 2 + 0.021), n.Uv.Min(x => x.V), 9);
+        Assert.All(n.Positionen.Zip(n.Uv), x => Assert.Equal(-0.004, DesktopFlaeche.AufFlaeche(x.First, m.RadiusM).Tiefe, 9));   // 4 mm hinter dem Bild
+        Assert.Equal(0, n.Indizes.Length % 3);
     }
 
     // ------------------------------------------------------------------------------------------------ Format in der App

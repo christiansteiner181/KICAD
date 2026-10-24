@@ -9,6 +9,7 @@
 //   KoordinationGrafik Darstellung «koordination» (Modul 7 Teil B1): Koordinationsplan in Gewerkefarben, Architektur grau (für kein Element zuständig;
 //                      Weiche ImPlan wie bei den Einlageplänen); die Aussparungsboxen in Fachplänen liefert AussparungGrafik (Option aussparungsboxen)
 //   KollisionGrafik    Kollisionsmarken (Modul 3b, B4a): Kreis mit Kreuz, nur Bildschirm; Kugel für 3D
+//   ProblemMarkerGrafik Problem-Marker (Modul XR, XR-E, Quest App V1a): Kreis mit «!», nur Bildschirm; Kugel für 3D (nicht in der GLB der App)
 //   EinlageGrafik      Darstellungen «einlagen» und «grundleitungen» (Modul 3, B10) und der Grundriss-Filter für Einlagen und Grundleitungen
 //                      (für kein Element zuständig; Weiche ImPlan und Sichtbarkeit wie der Aussparungsplan)
 // Schnitt und Ansicht entstehen aus den Körpern (Schnittgrafik), Grundrisse aus den Quellen direkt.
@@ -69,7 +70,7 @@ public static class Grafik
     // Die Unterlagen stehen vor HlksGrafik, weil diese als letzte Quelle für alles Übrige zuständig ist (Befund B3-1).
     // FamilienGrafik (Modul 2) zeichnet die familienfähigen Elemente mit bezuege.familie und steht deshalb ebenfalls vor
     // HlksGrafik (ihre Elemente sind von denen der Architektur und der Unterlagen verschieden).
-    public static readonly IReadOnlyList<IGrafikquelle> Quellen = [new BeschriftungGrafik(), new ArchitekturGrafik(), new FamilienGrafik(), new EinlageGrafik(), new GrundlagenGrafik(), new HuelleGrafik(), new AussparungGrafik(), new KollisionGrafik(), new HlksGrafik()];
+    public static readonly IReadOnlyList<IGrafikquelle> Quellen = [new BeschriftungGrafik(), new ArchitekturGrafik(), new FamilienGrafik(), new EinlageGrafik(), new GrundlagenGrafik(), new HuelleGrafik(), new AussparungGrafik(), new KollisionGrafik(), new ProblemMarkerGrafik(), new HlksGrafik()];
 
     static readonly HashSet<string> NieGrafisch = ["ansicht", "funktion"];
     static readonly HashSet<string> Gliederung = ["Gebaeude", "Geschoss", "Anlage", "System", "Strang", "Zone"];

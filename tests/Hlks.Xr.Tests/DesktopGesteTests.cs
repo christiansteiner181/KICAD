@@ -1,8 +1,11 @@
-// Tests der Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): Gesten Hineinziehen (rechte Hand offen, Handfläche nach links, links → rechts) und Wegwischen
-// (dieselbe Haltung, rechts → links; gemeinsame Geste der App, vorläufig DesktopWegwischen) mit dem synthetischen Generator des Gestenlabors (GestenGenerator,
-// erfundene Hände). Geprüft: Auslösen, Folgen der Hand, Fehlauslösungen (Ausholen, Zurückholen, langsam, kurz, zwei Hände, linke Hand, Pinch, Hebegeste, Wegschieben
-// mit zwei Händen, Röntgen-Hand, Zufall) und umgekehrt, dass die beiden Gesten weder Pinch + Wisch noch die Hebegeste bzw. das Wegschieben (Gestenlabor) auslösen.
+// Tests der Quest App V1c (Modul XR, XR-I «Desktop in der Brille»): Hineinziehen (rechte Hand offen, Handfläche nach links, links → rechts) zusammen mit dem
+// gemeinsamen Wegwischen der App (V1a, Hlks.Xr.Bedienung.Wegwischen; dieselbe Haltung, rechts → links) so verdrahtet wie in der App (QuestApp: erst das Wegwischen,
+// dann das Hineinziehen; Gegensperren über DesktopGesten.WegwischenRuht und NachWegwischen), mit dem synthetischen Generator des Gestenlabors (GestenGenerator,
+// erfundene Hände). Geprüft: Auslösen, Folgen der Hand, Fehlauslösungen (Ausholen, Zurückholen in beide Richtungen, langsam, kurz, zwei Hände, linke Hand, Pinch,
+// Hebegeste, Wegschieben mit zwei Händen, Röntgen-Hand, Zufall) und umgekehrt, dass die beiden Gesten weder Pinch + Wisch noch die Hebegeste bzw. das Wegschieben
+// (Gestenlabor) auslösen.
 
+using Hlks.Xr.Bedienung;
 using Hlks.Xr.Desktop;
 using Hlks.Xr.Gesten;
 using Xunit.Abstractions;
@@ -27,20 +30,28 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     static DesktopHaende Haende(GestenBild b) =>
         new(b.T, b.Rechts.Verfolgt ? b.Rechts.GelenkeMitNamen() : null, b.Links.Verfolgt ? b.Links.GelenkeMitNamen() : null, b.Gieren);
 
-    /// <summary>Beide Gesten über eine Aufnahme (ohne Sperre durch den Zustand des Bildschirms): Zeiten der Auslösungen, grösster Fortschritt.</summary>
-    static (List<double> Hinein, List<double> Weg, double MaxHinein, double MaxWeg) Abspielen(Aufnahme a, DesktopEinstellungen? e = null)
+    /// <summary>
+    /// Beide Gesten über eine Aufnahme wie in der App (ohne Sperre durch den Zustand des Bildschirms): je Bild erst das gemeinsame Wegwischen (die rechte Hand zählt
+    /// nicht, solange es nach dem Hineinziehen ruht; nach einem Ereignis ruht das Hineinziehen), dann das Hineinziehen. Zeiten der Auslösungen, grösster Fortschritt
+    /// des Hineinziehens, grösster Weg des Wegwischens.
+    /// </summary>
+    static (List<double> Hinein, List<double> Weg, double MaxHinein, double MaxWeg) Abspielen(Aufnahme a, DesktopEinstellungen? e = null, WegwischEinstellungen? w = null)
     {
-        var g = new DesktopGesten(() => e ?? DesktopEinstellungen.Vorgabe);
+        var g = new DesktopGesten(() => e ?? DesktopEinstellungen.Vorgabe, null, () => w ?? WegwischEinstellungen.Vorgabe);
+        var wz = new WegwischZustand();
         var hi = new List<double>();
         var we = new List<double>();
         double mh = 0, mw = 0;
         foreach (var b in a.Bilder)
         {
-            var s = g.Schritt(Haende(b), hineinErlaubt: true, wegErlaubt: true);
-            if (s.Hinein.Ausgeloest) hi.Add(b.T);
-            if (s.Weg.Ausgeloest) we.Add(b.T);
-            mh = Math.Max(mh, s.Hinein.Fortschritt);
-            mw = Math.Max(mw, s.Weg.Fortschritt);
+            var h = Haende(b);
+            var rechts = g.WegwischenRuht(b.T) ? null : HandBeobachtung.Aus(h.Rechts, "right");
+            var ws = Wegwischen.Schritt(wz, b.T, rechts, b.Gieren, w);
+            if (ws.Ereignis) { we.Add(b.T); g.NachWegwischen(b.T); }
+            mw = Math.Max(mw, ws.Weg);
+            var s = g.Schritt(h, erlaubt: true);
+            if (s.Ausgeloest) hi.Add(b.T);
+            mh = Math.Max(mh, s.Fortschritt);
         }
         return (hi, we, mh, mw);
     }
@@ -82,7 +93,7 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         GestenBewegung halb = u => (null, new Haltung(G.V(-0.10 + 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         var a = Vorzeigen(halb, dauer: 0.25, ruhe: 1.0);
         var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
-        var verlauf = a.Bilder.Select(b => (b.T, S: g.Schritt(Haende(b), true, true).Hinein)).ToList();
+        var verlauf = a.Bilder.Select(b => (b.T, S: g.Schritt(Haende(b), true))).ToList();
         Assert.DoesNotContain(verlauf, x => x.S.Ausgeloest);
         var max = verlauf.Max(x => x.S.Fortschritt);
         aus.WriteLine($"halber Wisch: grösster Fortschritt {max:0.00}");
@@ -140,6 +151,21 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         Assert.Single(r2.Hinein);
         Assert.Single(r2.Weg);
         Assert.True(r2.Weg[0] > r2.Hinein[0] + 1.0);
+    }
+
+    [Fact]
+    public void Zurueckholen_der_Hand_nach_dem_Wegwischen_zieht_nicht_gleich_wieder_herein()
+    {
+        // nach dem Wegwischen die Hand sofort und zügig zurück nach rechts (30 cm in 0.5 s, schneller als das Mindesttempo): fällt in die Gegensperre
+        GestenBewegung zurueck = u => (null, new Haltung(G.V(-0.10 + 0.30 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
+        var (a, _) = G.Strom([(Weg, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.4, RuheNachS = 0.05 }), (zurueck, new Vorfuehrung { DauerS = 0.5, RuheVorS = 0.05, RuheNachS = 0.6 })],
+            uebergangS: 0.05);
+        var r = Abspielen(a);
+        Assert.Single(r.Weg);
+        Assert.Empty(r.Hinein);
+        // ohne die Gegensperre hätte dieselbe Bewegung hereingezogen (die Sperre wirkt, nicht die Schwellen)
+        var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
+        Assert.Contains(a.Bilder, b => g.Schritt(Haende(b), true).Ausgeloest);
     }
 
     [Fact]
@@ -222,21 +248,36 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     [Fact]
     public void Gedachte_Hand_des_Pruefjaufs_zieht_halb_dann_ganz_herein_und_wischt_weg()
     {
-        // wie QuestApp.Desktop.cs: 12 cm in 0.25 s, 0.2 s halten (Prüfbild «Geste halb»), dann 23 cm in 0.3 s; später zurück
+        // wie QuestApp.Desktop.cs: 12 cm in 0.25 s, 0.2 s halten (Prüfbild «Geste halb»), dann 23 cm in 0.3 s; später zurück – verdrahtet wie in der App
+        // (WegwischenBild mit dem Bildschirm als einzigem Ziel, dann DesktopBildschirm.Bild)
         static double W(double u) { u = Math.Clamp(u, 0, 1); return u * u * u * (10 - 15 * u + 6 * u * u); }
         var kopf = new Vec3(0.2, 1.55, 0.4);
         var gieren = Math.PI / 2 + 0.3;
-        var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
+        var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe, null, () => WegwischEinstellungen.Vorgabe);
         var a = new DesktopAnsicht();
         var e = DesktopEinstellungen.Vorgabe;
-        double t = 0, halb = -1;
+        var m = DesktopMasse.Aus(e);
+        var wz = new WegwischZustand();
+        var zz = new WegwischZielZustand();
+        double t = 0, halb = -1, wegHalb = -1;
         int hinein = 0, weg = 0;
         void Bild(double x, bool hand = true)
         {
             var h = new DesktopHaende(t, hand ? PruefHand.RechtsHandflaecheLinks(kopf, gieren, x) : null, null, gieren);
-            var s = g.Schritt(h, a.HineinMoeglich, a.Da);
-            if (s.Hinein.Ausgeloest) hinein++;
-            if (s.Weg.Ausgeloest) weg++;
+            // QuestApp.WegwischenBild
+            var rechts = g.WegwischenRuht(t) ? null : HandBeobachtung.Aus(h.Rechts, "right");
+            var ws = Wegwischen.Schritt(wz, t, rechts, gieren);
+            if (ws.Ereignis) g.NachWegwischen(t);
+            var k = a.Kandidat(m);
+            var ziel = Wegwischen.ZielFuehren(zz, ws, k is null ? [] : [k], kopf);
+            if (ziel == DesktopAnsicht.ZielId)
+            {
+                a.Mitlaufen(ws.Laeuft ? ws.Weg : 0);
+                if (ws.Ereignis) { weg++; a.Ausblenden(t, kopf); }
+            }
+            // DesktopBildschirm.Bild
+            var s = g.Schritt(h, a.HineinMoeglich);
+            if (s.Ausgeloest) hinein++;
             a.Schritt(t, 1 / 72.0, kopf, gieren, s, e);
             t += 1 / 72.0;
         }
@@ -253,8 +294,16 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         Assert.InRange(halb, 0.3, 0.75);
         // Wegwischen nach der Sperre: halb, dann ganz
         t0 = t;
-        while (t - t0 < 1.3) { var tt = t - t0; Bild(tt < 0.45 ? 0.25 - 0.12 * W(tt / 0.25) : 0.13 - 0.23 * W((tt - 0.45) / 0.3), hand: tt <= 0.8); }
+        while (t - t0 < 1.3)
+        {
+            var tt = t - t0;
+            Bild(tt < 0.45 ? 0.25 - 0.12 * W(tt / 0.25) : 0.13 - 0.23 * W((tt - 0.45) / 0.3), hand: tt <= 0.8);
+            if (wegHalb < 0 && t - t0 >= 0.45) wegHalb = a.Anteil;
+        }
+        aus.WriteLine($"gedachte Hand: Wegwischen halb {wegHalb:0.00}");
         Assert.Equal(1, weg);
+        Assert.Equal(1, hinein);
+        Assert.InRange(wegHalb, 0.6, 0.95);   // läuft mit der Hand nach links mit (gleicher Winkel wie das Symbolfeld)
         Assert.Equal(DesktopPhase.Aus, a.Phase);
         // die Hand ist offen, ohne Pinch, Handfläche nach links
         var hand = PruefHand.RechtsHandflaecheLinks(kopf, gieren, 0);
@@ -269,11 +318,20 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         var a = Vorzeigen(Hinein);
         var z = new SeitenWischZustand();
         // nicht erlaubt (Hand an den Apps bzw. am Griff): nichts
-        Assert.DoesNotContain(a.Bilder, b => SeitenWisch.Schritt(z, b.T, b.Rechts.GelenkeMitNamen(), null, b.Gieren, true, erlaubt: false).Ausgeloest);
+        Assert.DoesNotContain(a.Bilder, b => SeitenWisch.Schritt(z, b.T, b.Rechts.GelenkeMitNamen(), null, b.Gieren, erlaubt: false).Ausgeloest);
         // gesperrt bis nach der Bewegung: nichts, auch nicht verspätet
         var z2 = new SeitenWischZustand();
         z2.Sperren(a.Bilder[^1].T - 0.3);
-        Assert.DoesNotContain(a.Bilder, b => SeitenWisch.Schritt(z2, b.T, b.Rechts.GelenkeMitNamen(), null, b.Gieren, true).Ausgeloest);
+        Assert.DoesNotContain(a.Bilder, b => SeitenWisch.Schritt(z2, b.T, b.Rechts.GelenkeMitNamen(), null, b.Gieren).Ausgeloest);
+        // NachWegwischen sperrt das Hineinziehen; WegwischenRuht nur nach dem Hineinziehen
+        var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
+        g.NachWegwischen(a.Bilder[^1].T - 0.3);
+        Assert.DoesNotContain(a.Bilder, b => g.Schritt(Haende(b), true).Ausgeloest);
+        Assert.False(g.WegwischenRuht(a.Bilder[^1].T));
+        var g2 = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
+        var bei = a.Bilder.First(b => g2.Schritt(Haende(b), true).Ausgeloest).T;
+        Assert.True(g2.WegwischenRuht(bei + 0.9));
+        Assert.False(g2.WegwischenRuht(bei + 1.01));
     }
 
     [Fact]
@@ -283,10 +341,14 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         GestenBewegung kurz = u => (null, new Haltung(G.V(-0.10 + 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         var e = DesktopEinstellungen.Vorgabe with { Hinein = SeitenWischEinstellungen.Vorgabe with { WegM = 0.12 } };
         Assert.Single(Abspielen(Vorzeigen(kurz, dauer: 0.25), e).Hinein);
-        // Handfläche 60° schräg nach vorn-links (Finger nach oben): mit 45° nicht, mit 70° schon
+        // Handfläche 60° schräg nach vorn-links (Finger nach oben): mit der Vorgabe 50° (wegwischen.handflaeche_grad) nicht, mit 70° schon – dieselbe Haltung für
+        // beide Richtungen
         GestenBewegung schraeg = u => (null, new Haltung(G.V(-0.10 + 0.35 * u, -0.25, 0.4), G.V(0, 1, 0), G.N(-0.5, 0, 0.866), G.Kr(0.1)));
+        Assert.Equal(50, WegwischEinstellungen.Vorgabe.HandflaecheGrad);
+        Assert.Equal(WegwischEinstellungen.Vorgabe.HandflaecheGrad, DesktopEinstellungen.Vorgabe.Hinein.HandflaecheGrad);
         Assert.Empty(Abspielen(Vorzeigen(schraeg)).Hinein);
-        Assert.Single(Abspielen(Vorzeigen(schraeg), DesktopEinstellungen.Vorgabe with { Hinein = SeitenWischEinstellungen.Vorgabe with { HandflaecheGrad = 70 } }).Hinein);
+        Assert.Single(Abspielen(Vorzeigen(schraeg), null, WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 70 }).Hinein);
+        Assert.Equal(70, DesktopEinstellungen.Vorgabe.HineinMit(WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 70 }).HandflaecheGrad);
     }
 
     [Fact]
@@ -294,7 +356,11 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     {
         static System.Text.Json.JsonElement W(string j) => System.Text.Json.JsonDocument.Parse(j).RootElement.Clone();
         var e = DesktopEinstellungen.Vorgabe;
-        Assert.Equal(10, DesktopEinstellungen.Schluessel.Count);
+        Assert.Equal(6, DesktopEinstellungen.Schluessel.Count);
+        Assert.Equal(["hineinziehen.weg_m", "hineinziehen.tempo_ms", "desktop.breite_m", "desktop.abstand_m", "desktop.bildrate", "desktop.ruhe_bildrate"], DesktopEinstellungen.Schluessel);
+        // das Wegwischen gehört V1a (wegwischen.*), nicht hierher; keine doppelten Schlüssel
+        Assert.DoesNotContain(DesktopEinstellungen.Schluessel, s => s.StartsWith("wegwischen.", StringComparison.Ordinal) || s.StartsWith("gesten.", StringComparison.Ordinal));
+        Assert.Equal(Labor.LaborWerte.Schluessel.Count, Labor.LaborWerte.Schluessel.Distinct().Count());
         Assert.All(DesktopEinstellungen.Schluessel, s => Assert.True(DesktopEinstellungen.Kennt(s)));
         Assert.All(DesktopEinstellungen.Schluessel, s => Assert.True(Labor.LaborWerte.Kennt(s), s));
         var n = e.MitStellschraube("desktop.breite_m", W("2.0"))!;
@@ -303,8 +369,13 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         Assert.Null(e.MitStellschraube("desktop.breite_m", W("\"x\"")));    // kein Zahl
         Assert.Null(e.MitStellschraube("anzeige.skala", W("1")));           // gehört nicht hierher
         Assert.Equal(1.4, n.MitStellschraube("desktop.breite_m", W("null"))!.BreiteM);
-        Assert.Equal(0.3, e.MitStellschraube("gesten.wegwischen.weg_m", W("0.3"))!.Weg.WegM);
-        Assert.Equal(0.2, e.MitStellschraube("gesten.wegwischen.weg_m", W("0.3"))!.Hinein.WegM);
+        Assert.Equal(0.3, e.MitStellschraube("hineinziehen.weg_m", W("0.3"))!.Hinein.WegM);
+        Assert.Equal(0.6, e.MitStellschraube("hineinziehen.tempo_ms", W("0.6"))!.Hinein.TempoMs);
+        Assert.Null(e.MitStellschraube("wegwischen.weg_m", W("0.3")));          // gehört dem gemeinsamen Wegwischen (V1a)
+        Assert.Null(e.MitStellschraube("gesten.wegwischen.weg_m", W("0.3")));   // alte Namen gibt es nicht mehr
+        Assert.Equal(2.5, e.RuheBildrate);
+        Assert.Equal(1.0, e.MitStellschraube("desktop.ruhe_bildrate", W("1"))!.RuheBildrate);
+        Assert.Null(e.MitStellschraube("desktop.ruhe_bildrate", W("0.2")));
         // Grenzen aus dem Katalog gehen vor
         Assert.Null(e.MitStellschraube("desktop.bildrate", W("20"), new Dictionary<string, (double, double)> { ["desktop.bildrate"] = (1, 15) }));
         // über LaborWerte (live)

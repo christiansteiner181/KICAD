@@ -11,8 +11,10 @@
     { "id": "pinch", "titel": "Pinch und Fang" },
     { "id": "komfort", "titel": "Komfort" },
     { "id": "sitzung", "titel": "Sitzungsraum" },
-    { "id": "gesten", "titel": "Gesten: Hineinziehen und Wegwischen (rechte Hand, Handfläche nach links)" },
-    { "id": "desktop", "titel": "Desktop in der Brille" }
+    { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
+    { "id": "wegwischen", "titel": "Wegwischen (schliessen und wegschicken: rechte Hand von rechts nach links)" },
+    { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" },
+    { "id": "desktop", "titel": "Desktop in der Brille (Hineinziehen, Bildschirm, Übertragung)" }
   ],
   "muster": [
     {
@@ -96,8 +98,8 @@
       "herkunft": "Brillentest 23.10.2026: «text und box eher etwas klein» → 1.35; Christian: «Ja, passt» (AppEinstellungen.Skala)"
     },
     {
-      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse einer App-Kachel", "status": "app",
-      "beschreibung": "Kantenlänge der schwebenden Kacheln. Grosse Ziele machen Genauigkeit unnötig (Leitbild Christian 23.10.2026).",
+      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse der Apps", "status": "app",
+      "beschreibung": "Grösse der schwebenden Apps. Seit V1a (Stil visionOS) ein Fenster mit Registern: Breite des Fensters = 1.8 × dieser Wert, alle Knöpfe wachsen mit. Grosse Ziele machen Genauigkeit unnötig (Leitbild Christian 23.10.2026).",
       "art": "zahl", "einheit": "m", "min": 0.08, "max": 0.4, "schritt": 0.01, "vorgabe": 0.18,
       "herkunft": "Annahme P6, in P5a übernommen (AppEinstellungen.GroesseM, 18 cm); Brillentest folgt"
     },
@@ -109,13 +111,31 @@
     },
     {
       "schluessel": "apps.anordnung", "gruppe": "apps", "titel": "Anordnung der Apps", "status": "app",
-      "beschreibung": "Wie die Kacheln im Griffbereich stehen.",
+      "beschreibung": "Wo die Apps stehen. Seit V1a: «bogen» und «reihe» = ein Fenster im Raum verankert (Griffbereich, seitlich nach «apps.seitlich_grad», am Tisch neben dem Tisch); «an_hand» = halb so gross über der linken Handfläche, solange sie zum Gesicht zeigt.",
       "art": "auswahl", "auswahl": [
-        { "wert": "bogen", "titel": "Im Bogen um den Körper" },
-        { "wert": "reihe", "titel": "In einer Reihe vor dem Körper" },
+        { "wert": "bogen", "titel": "Im Raum verankert" },
+        { "wert": "reihe", "titel": "Im Raum verankert (wie bogen)" },
         { "wert": "an_hand", "titel": "An der Hand" }
       ], "vorgabe": "bogen",
-      "herkunft": "Entscheid P5a (Anordnungen: bogen auf Brusthöhe links neben dem Blick, reihe, an_hand); Leitbild Christian 23.10.2026: schwebende Apps"
+      "herkunft": "Entscheid P5a (Anordnungen: bogen auf Brusthöhe links neben dem Blick, reihe, an_hand); Leitbild Christian 23.10.2026: schwebende Apps; V1a Stil visionOS (Apple HIG «Windows», «Spatial layout»)"
+    },
+    {
+      "schluessel": "apps.seitlich_grad", "gruppe": "apps", "titel": "Fenster neben dem Blick", "status": "app",
+      "beschreibung": "So weit links neben dem Blick erscheint das Fenster der Apps, wenn man es holt (linke Handfläche). Danach bleibt es im Raum stehen. Am Sitzungstisch steht es neben dem Tisch.",
+      "art": "zahl", "einheit": "°", "min": 0, "max": 90, "schritt": 1, "vorgabe": 30,
+      "herkunft": "Annahme V1a nach Apple HIG «Spatial layout» (wichtige Inhalte in der Mitte des Blickfelds); P5a stand die Mitte der Kacheln 50° links (AppLayout.SeitlichGrad)"
+    },
+    {
+      "schluessel": "anzeige.glas_deckkraft", "gruppe": "anzeige", "titel": "Deckkraft des Glases", "status": "app",
+      "beschreibung": "Wie stark die Glasfläche der Apps, Karten und Hinweise deckt: 0.3 = sehr durchscheinend, 1 = deckend. Schrift und Knöpfe bleiben voll. Im hellen Raum deckt das Glas bei Bedarf mehr, damit es nicht zu hell wirkt.",
+      "art": "zahl", "einheit": "", "min": 0.3, "max": 1, "schritt": 0.05, "vorgabe": 0.75,
+      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Prefer translucency to opaque colors in windows»); Befund Prüfbild 24.10.2026: mit 0.55 schienen Marker und Linien durch das Fenster"
+    },
+    {
+      "schluessel": "anzeige.glas_helligkeit", "gruppe": "anzeige", "titel": "Helligkeit des Glases", "status": "app",
+      "beschreibung": "So hell soll das Glas über dem Hintergrund wirken (0.2 = dunkel, 0.6 = hell). Das Glas tönt sich danach: im hellen Sitzungsraum dunkler, im dunklen heller – die weisse Schrift bleibt überall gut lesbar.",
+      "art": "zahl", "einheit": "", "min": 0.2, "max": 0.6, "schritt": 0.02, "vorgabe": 0.42,
+      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Glass is an adaptive material … to provide contrast for app content»); Befund Prüfbild 24.10.2026: Glas im hellen Sitzungsraum zu hell"
     },
     {
       "schluessel": "wisch.mindestweg_m", "gruppe": "wisch", "titel": "Mindestweg eines Wischs", "status": "app",
@@ -196,40 +216,130 @@
       "herkunft": "Annahme P5b (FlacheHandEinstellungen.ToleranzGrad)"
     },
     {
-      "schluessel": "gesten.hineinziehen.weg_m", "gruppe": "gesten", "titel": "Hineinziehen: Weg der Hand", "status": "app",
-      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links) von links nach rechts wischen, bis der Bildschirm des PCs hereinkommt; vorher folgt er der Hand.",
+      "schluessel": "hebe.weg_m", "gruppe": "hebe", "titel": "Weg der Hebegeste", "status": "app",
+      "beschreibung": "So weit muss jede Hand mit der Handfläche nach oben nach oben streichen, damit die App-Symbole kommen.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.5, "schritt": 0.01, "vorgabe": 0.15,
+      "herkunft": "Annahme V1a (gleich wie der Mindestweg eines Wischs); Christian 24.10.2026: «mit beiden handflächen nach oben eine deutliches nach obenstreichen»"
+    },
+    {
+      "schluessel": "hebe.zeit_s", "gruppe": "hebe", "titel": "Zeit der Hebegeste", "status": "app",
+      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein (langsames Heben zählt nicht).",
+      "art": "zahl", "einheit": "s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.9,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "hebe.handflaeche_grad", "gruppe": "hebe", "titel": "Handfläche nach oben", "status": "app",
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben senkrecht nach oben.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "hebe.gleichzeitig_s", "gruppe": "hebe", "titel": "Beide Hände gleichzeitig", "status": "app",
+      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander zu steigen.",
+      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.35,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "wegwischen.weg_m", "gruppe": "wegwischen", "titel": "Wegwischen: Weg nach links", "status": "app",
+      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links) von rechts nach links wischen. Sie schliesst die offene App bzw. die Karte einer Prüfaufgabe (Abbruch), sonst schickt sie die App-Symbole weg.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.18,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»"
+    },
+    {
+      "schluessel": "wegwischen.zeit_s", "gruppe": "wegwischen", "titel": "Wegwischen: Zeit", "status": "app",
+      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein (ein Wischen, kein Schieben).",
+      "art": "zahl", "einheit": "s", "min": 0.2, "max": 2, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "wegwischen.handflaeche_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Handfläche nach links", "status": "app",
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben waagrecht nach links.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 50,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "wegwischen.richtung_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Richtung", "status": "app",
+      "beschreibung": "Die Bewegung weicht höchstens so weit von «nach links» ab (nicht nach oben, unten oder vorn). Ausholen nach rechts löst nichts aus.",
+      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 1, "vorgabe": 35,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand des Symbolfelds", "status": "app",
+      "beschreibung": "So weit vor den Augen steht das Feld der App-Symbole, waagrecht in Körperrichtung gemessen (Bezug: Mitte zwischen den Augen).",
+      "art": "zahl", "einheit": "m", "min": 0.3, "max": 1.0, "schritt": 0.01, "vorgabe": 0.6,
+      "herkunft": "Christian 24.10.2026: «die appsymbole sollen frontal des nutzers in einem abstand von ca. 60cm … verteilt sein»"
+    },
+    {
+      "schluessel": "symbole.hoehe_m", "gruppe": "symbole", "titel": "Mitte des Symbolfelds", "status": "app",
+      "beschreibung": "So weit unter den Augen liegt die senkrechte Mitte des Felds (zwischen Brust und Augenhöhe; die oberste Reihe bleibt unter Augenhöhe).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.8, "schritt": 0.01, "vorgabe": 0.32,
+      "herkunft": "Annahme V1a (bei 0.6 m Feldhöhe die oberste Reihe 2 cm unter den Augen); Christian 24.10.2026: die Mitte als Stellschraube"
+    },
+    {
+      "schluessel": "symbole.feldhoehe_m", "gruppe": "symbole", "titel": "Höhe des Symbolfelds", "status": "app",
+      "beschreibung": "So hoch ist das Feld von der obersten bis zur untersten Reihe (am Sitzungstisch höchstens bis knapp über die Tischplatte).",
+      "art": "zahl", "einheit": "m", "min": 0.2, "max": 1.0, "schritt": 0.01, "vorgabe": 0.6,
+      "herkunft": "Christian 24.10.2026: «über eine höhe von ca. 0.6m verteilt»"
+    },
+    {
+      "schluessel": "symbole.tisch_abstand_m", "gruppe": "symbole", "titel": "Symbolfeld am Tisch: Luft über der Platte", "status": "app",
+      "beschreibung": "Am Sitzungstisch liegt die Unterkante der untersten Symbole mindestens so weit über der Tischplatte; das Feld wird dort entsprechend niedriger (die oberste Reihe bleibt unter Augenhöhe).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.3, "schritt": 0.01, "vorgabe": 0.06,
+      "herkunft": "Annahme V1a; Prüfbilder 03 (Hauptlauf 24.10.2026): «Die unterste Symbolreihe sitzt mindestens einige Zentimeter über der Tischplatte»"
+    },
+    {
+      "schluessel": "symbole.reihen", "gruppe": "symbole", "titel": "Reihen des Symbolfelds", "status": "app",
+      "beschreibung": "Höchstens so viele Reihen; die Reihen sind locker gegeneinander versetzt (keine Leiste, keine starre Matrix).",
+      "art": "zahl", "einheit": "", "min": 1, "max": 3, "schritt": 1, "vorgabe": 3,
+      "herkunft": "Christian 24.10.2026: «vorzugsweise maximal 3 reihig»"
+    },
+    {
+      "schluessel": "symbole.streuung", "gruppe": "symbole", "titel": "Waagrechter Abstand der Symbole", "status": "app",
+      "beschreibung": "Faktor für den Abstand der Spalten (1 = 0.2 m, grösser = weiter auseinander). Jede App steht immer am selben Platz.",
+      "art": "zahl", "einheit": "", "min": 0.6, "max": 1.6, "schritt": 0.05, "vorgabe": 1,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt»"
+    },
+    {
+      "schluessel": "symbole.wartezeit_s", "gruppe": "symbole", "titel": "Symbole ohne Wahl ausblenden", "status": "app",
+      "beschreibung": "Wählt man keine App, gehen die Symbole nach so vielen Sekunden von selbst; 0 = nie (sie bleiben stehen, bis man sie wegwischt).",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 120, "schritt": 1, "vorgabe": 0,
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»"
+    },
+    {
+      "schluessel": "symbole.beruehr_rand_m", "gruppe": "symbole", "titel": "Berührung: Rand um ein Symbol", "status": "app",
+      "beschreibung": "Die Hand (Handfläche, Handrücken oder ein Finger) berührt ein Symbol schon so weit ausserhalb seiner Kugel.",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.05, "schritt": 0.005, "vorgabe": 0.01,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «die app berührung soll mit der ganzen hand erfolgen und nicht nur mit einem finger»"
+    },
+    {
+      "schluessel": "symbole.beruehr_sperre_s", "gruppe": "symbole", "titel": "Berührung: Sperre nach einer Geste", "status": "app",
+      "beschreibung": "Während Hebegeste und Wegwischen und so lange danach zählt keine Berührung (Schutz vor Fehlwahl); was dabei berührt wurde, zählt erst nach dem Loslassen.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1a (Schutz vor Fehlwahl, Auftrag Hauptlauf 24.10.2026)"
+    },
+    {
+      "schluessel": "zeiger.tooltip_s", "gruppe": "symbole", "titel": "Verzögerung des Tooltips", "status": "app",
+      "beschreibung": "So lange zeigt der Finger auf ein Symbol bzw. einen Knopf, bis der Name als Tooltip darüber erscheint.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1a nach Apple HIG «Buttons» («tooltip after people hover over a button for a moment») und «Eyes» («a slightly longer delay»)"
+    },
+    {
+      "schluessel": "hinweis.dauer_s", "gruppe": "symbole", "titel": "Dauer eines Hinweises", "status": "app",
+      "beschreibung": "So lange steht ein schwebender Hinweis (z. B. «Problem-Marker gesetzt»), dann blendet er sanft aus.",
+      "art": "zahl", "einheit": "s", "min": 1, "max": 15, "schritt": 0.5, "vorgabe": 4,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «hinweistexte frei schwebend»"
+    },
+    {
+      "schluessel": "hineinziehen.weg_m", "gruppe": "desktop", "titel": "Hineinziehen: Weg der Hand", "status": "app",
+      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links, Lage wie wegwischen.handflaeche_grad) von links nach rechts wischen, bis der Bildschirm des PCs hereinkommt; vorher folgt er der Hand. Hinaus geht er mit dem gemeinsamen Wegwischen (wegwischen.*).",
       "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.2,
       "herkunft": "Christian 24.10.2026 (XR-I, mit Berichtigung: «von links nach rechts»); Vorgabe Annahme V1c (DesktopEinstellungen.Hinein.WegM)"
     },
     {
-      "schluessel": "gesten.hineinziehen.tempo_ms", "gruppe": "gesten", "titel": "Hineinziehen: Mindesttempo", "status": "app",
-      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung; ein langsames Ausholen zieht den Bildschirm nicht herein.",
+      "schluessel": "hineinziehen.tempo_ms", "gruppe": "desktop", "titel": "Hineinziehen: Mindesttempo", "status": "app",
+      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung (oder über die letzten Zentimeter des Wegs); ein langsames Ausholen zieht den Bildschirm nicht herein.",
       "art": "zahl", "einheit": "m/s", "min": 0.1, "max": 3, "schritt": 0.05, "vorgabe": 0.45,
       "herkunft": "Annahme V1c (DesktopEinstellungen.Hinein.TempoMs)"
-    },
-    {
-      "schluessel": "gesten.hineinziehen.handflaeche_grad", "gruppe": "gesten", "titel": "Hineinziehen: Lage der Handfläche", "status": "app",
-      "beschreibung": "So weit darf die Handfläche der rechten Hand von «nach links» abweichen (Röntgen-Hand: Handfläche nach vorn).",
-      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
-      "herkunft": "Annahme V1c (DesktopEinstellungen.Hinein.HandflaecheGrad)"
-    },
-    {
-      "schluessel": "gesten.wegwischen.weg_m", "gruppe": "gesten", "titel": "Wegwischen: Weg der Hand", "status": "app",
-      "beschreibung": "Gemeinsame Wegwisch-Geste der App (rechte Hand offen, Handfläche nach links, von rechts nach links): so weit muss die Hand wischen; der Bildschirm des PCs folgt ihr hinaus.",
-      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.2,
-      "herkunft": "Christian 24.10.2026 («wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»); Vorgabe Annahme V1c (DesktopEinstellungen.Weg.WegM), mit V1a abzugleichen"
-    },
-    {
-      "schluessel": "gesten.wegwischen.tempo_ms", "gruppe": "gesten", "titel": "Wegwischen: Mindesttempo", "status": "app",
-      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung; ein langsames Ausholen wischt nichts weg.",
-      "art": "zahl", "einheit": "m/s", "min": 0.1, "max": 3, "schritt": 0.05, "vorgabe": 0.45,
-      "herkunft": "Annahme V1c (DesktopEinstellungen.Weg.TempoMs), mit V1a abzugleichen"
-    },
-    {
-      "schluessel": "gesten.wegwischen.handflaeche_grad", "gruppe": "gesten", "titel": "Wegwischen: Lage der Handfläche", "status": "app",
-      "beschreibung": "So weit darf die Handfläche der rechten Hand von «nach links» abweichen.",
-      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
-      "herkunft": "Annahme V1c (DesktopEinstellungen.Weg.HandflaecheGrad), mit V1a abzugleichen"
     },
     {
       "schluessel": "desktop.breite_m", "gruppe": "desktop", "titel": "Breite des Bildschirms", "status": "app",
@@ -244,16 +354,16 @@
       "herkunft": "Auftrag V1c (Startwert etwa 1.1 m, Annahme)"
     },
     {
-      "schluessel": "desktop.radius_m", "gruppe": "desktop", "titel": "Krümmung des Bildschirms (Radius)", "status": "app",
-      "beschreibung": "Radius des Bogens: klein = stark gebogen, gross = fast flach.",
-      "art": "zahl", "einheit": "m", "min": 0.8, "max": 20, "schritt": 0.1, "vorgabe": 2.0,
-      "herkunft": "Christian 24.10.2026 («ansicht von der metafunktion»: leicht gebogen); Vorgabe Annahme V1c"
-    },
-    {
       "schluessel": "desktop.bildrate", "gruppe": "desktop", "titel": "Bilder je Sekunde", "status": "app",
-      "beschreibung": "Ziel der Bilder je Sekunde; der PC sendet nur Geändertes und nie mehr als zwei Bilder ohne Quittung der Brille, die Rate passt sich also dem WLAN an.",
+      "beschreibung": "Ziel der Bilder je Sekunde, solange sich am PC etwas ändert; der PC sendet nur Geändertes und nie mehr als zwei Bilder ohne Quittung der Brille, die Rate passt sich also dem WLAN an.",
       "art": "zahl", "einheit": "1/s", "min": 1, "max": 30, "schritt": 1, "vorgabe": 12,
       "herkunft": "Auftrag V1c (Ziel 10–15 Bilder/s); Vorgabe Annahme V1c"
+    },
+    {
+      "schluessel": "desktop.ruhe_bildrate", "gruppe": "desktop", "titel": "Bilder je Sekunde bei ruhigem Bildschirm", "status": "app",
+      "beschreibung": "Ändert sich am Bildschirm des PCs 2 s lang nichts, erfasst der PC nur noch so oft (spart Rechenzeit am PC); bei der ersten Änderung sofort wieder mit voller Rate.",
+      "art": "zahl", "einheit": "1/s", "min": 0.5, "max": 30, "schritt": 0.5, "vorgabe": 2.5,
+      "herkunft": "Auftrag V1c, Nachtrag 24.10.2026 («nach 2 s ohne Änderung nur noch 2–3 Bilder/s»); Vorgabe Annahme V1c"
     }
   ]
 }

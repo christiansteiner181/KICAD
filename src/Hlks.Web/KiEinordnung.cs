@@ -114,6 +114,10 @@ public static class KiEinordnung
         new("xr_desktop", "Desktop in der Brille (Modul XR, XR-I, Quest App V1c, XrDesktop.cs: GET /api/xr/desktop, /api/xr/desktop/zustand, POST /api/xr/desktop/beenden): " +
             "erfasst den ganzen Bildschirm des PCs und schickt ihn live an die gekoppelte Brille – greift über das Modell hinaus auf den Rechner und zeigt alles, was am " +
             "Bildschirm steht; nur auf Anforderung der Brille des Menschen, beenden kann es der Mensch am PC. Nicht für die KI."),
+        new("xr_marker", "Problem-Marker aus der Quest App (Modul XR, XR-E, V1a, XrMarkerEndpunkte.cs: GET/POST /api/xr/marker): die Schnittstelle, über die die Brille des Menschen " +
+            "Marker setzt (Element ProblemMarker über element_anlegen, ein Paket) und ihre Liste holt – ein Weg eines Geräts des Menschen über den Zugang im Büronetz, wie " +
+            "xr_modell nicht für die KI. Die Marker selbst sind Projektdaten: die KI liest sie wie jedes Element (elemente_suchen klasse ProblemMarker) und exportiert sie " +
+            "nicht (bcf_export ist verboten)."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

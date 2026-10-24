@@ -1,7 +1,8 @@
 // Anzeige «Brille sieht den Bildschirm» (Modul XR, XR-I «Desktop in der Brille», Quest App V1c; Auftrag: «Solange die Brille mitsieht, zeigt KICAD das deutlich …
 // mit Knopf ‹Beenden›»). Reine Regeln ohne DOM; die Verdrahtung steht in xr-desktop-status.js, der Server in XrDesktop.cs.
 // Zustand = Antwort von GET /api/xr/desktop/zustand: { erfassung, bildschirme[], verbunden, aktiv, stroeme[{ id, brille, name, gestartet, pausiert, monitor,
-// monitorName, breite, hoehe, bildrate, bilderJeSekunde, kbitJeSekunde, … }] }.
+// monitorName, breite, hoehe, bildrate, ruheBildrate, ruhig, bilderJeSekunde, kbitJeSekunde, … }] }. «ruhig»: am PC hat sich 2 s nichts geändert, KICAD erfasst nur
+// noch mit der Ruhe-Bildrate (Nachtrag V1c).
 
 export const TAKT_MS = 2000;
 export const ZUSTAND = '/api/xr/desktop/zustand';
@@ -30,7 +31,8 @@ export function desktopAnzeige(z) {
     return {
       stufe: 'aktiv',
       text: aktiv.length === 1 ? 'Brille sieht den Bildschirm' : `${aktiv.length} Brillen sehen den Bildschirm`,
-      titel: `${wer} ${aktiv.length === 1 ? 'sieht' : 'sehen'} diesen Bildschirm live (${monitor}; ${zahl(s.bilderJeSekunde)} Bilder/s, ${zahl(s.kbitJeSekunde)} kbit/s). ` +
+      titel: `${wer} ${aktiv.length === 1 ? 'sieht' : 'sehen'} diesen Bildschirm live (${monitor}; ${zahl(s.bilderJeSekunde)} Bilder/s, ${zahl(s.kbitJeSekunde)} kbit/s` +
+        `${s.ruhig ? `; ruhig – nur ${zahl(s.ruheBildrate)} Erfassungen/s` : ''}). ` +
         'Bedient wird nur hier mit Maus und Tastatur. «Beenden» trennt die Übertragung.',
       knopf: 'Beenden',
     };

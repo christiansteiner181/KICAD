@@ -4,16 +4,21 @@
 //
 //   GET  /api/xr/desktop               WebSocket, nur über den Netzzugang (TLS, Pforte, Kopplung; Marke XrImNetz) – ohne gültigen Schlüssel 401, ohne WebSocket 400.
 //   GET  /api/xr/desktop/zustand       nur am PC (localhost): { erfassung, bildschirme[], verbunden, aktiv, stroeme[{ id, kopplung, brille, name, seit, monitor,
-//                                      monitorName, breite, hoehe, pausiert, bildrate, bilderJeSekunde, kbitJeSekunde, bilder, bytes, erfassMs, kodierMs }] }
+//                                      monitorName, breite, hoehe, pausiert, bildrate, ruheBildrate, ruhig, bilderJeSekunde, kbitJeSekunde, bilder, bytes, erfassungen,
+//                                      erfassMs, kodierMs }] }
 //   POST /api/xr/desktop/beenden       nur am PC: beendet alle Übertragungen (Schluss 4010 «am PC beendet»; die Brille verbindet erst nach dem nächsten Hineinziehen
 //                                      wieder) → { beendet, zustand }
 // Nachrichten (Text, je ein JSON-Objekt mit typ und fassung 1):
-//   Brille → PC: start { bildrate?, maxBreite?, monitor?, pausiert? } (innert 10 s), pause, weiter, quittung { nr }, monitor { id }, bildrate { wert }, neu, tschuess
+//   Brille → PC: start { bildrate?, ruheBildrate?, maxBreite?, monitor?, pausiert? } (innert 10 s), pause, weiter, quittung { nr }, monitor { id },
+//                bildrate { wert, ruhe? }, neu, tschuess
 //   PC → Brille: bildschirm { monitore[{ id, name, breite, hoehe, haupt }], monitor, breite, hoehe, kachel, bildrate }, fehler { meldung }; binär die Bilder
 //                (Format src/Hlks.Xr/Desktop/DesktopFormat.cs, Kodierung XrDesktopKodierung.cs).
 // Ablauf je Verbindung: erst «start», dann im Takt der Bildrate (1 … 30, Vorgabe der App 12) erfassen, mit dem zuletzt gesendeten Bild vergleichen und nur
 // geänderte Kacheln senden; nie mehr als ImFlugMax (2) Bilder ohne Quittung – so passt sich die Bildrate an WLAN und Brille an. «pause» (Bildschirm in der Brille
-// ausgeblendet): nichts erfassen. Trennung: Ende. Eine neue Verbindung derselben Kopplung ersetzt die alte (4002); Widerruf der Kopplung trennt (4001); höchstens
+// ausgeblendet): nichts erfassen. Ruhiger Bildschirm (Nachtrag V1c 24.10.2026: «Ändert sich nichts, erfasst sie seltener: z. B. nach 2 s ohne Änderung nur noch
+// 2–3 Bilder/s, bei Änderung sofort wieder voll»): RuheNach (2 s) ohne geänderte Kachel → nur noch mit der Ruhe-Bildrate erfassen (Stellschraube der App
+// desktop.ruhe_bildrate, Vorgabe 2.5); die erste Änderung sendet sofort und stellt den vollen Takt wieder her (Takt). GDI bleibt (DXGI Desktop Duplication: Vorrat).
+// Trennung: Ende. Eine neue Verbindung derselben Kopplung ersetzt die alte (4002); Widerruf der Kopplung trennt (4001); höchstens
 // StroemeMax Brillen zugleich (sonst 1013). Nichts wird aufgezeichnet: nur das zuletzt gesendete Bild steht im Speicher (für den Vergleich).
 // Anzeige am PC: Statusleiste «Brille sieht den Bildschirm» mit «Beenden» (wwwroot/js/oberflaeche/xr-desktop-status.js). Für die KI verboten (KiEinordnung
 // «xr_desktop»), kein MCP-Werkzeug.
@@ -32,6 +37,11 @@ public sealed record XrDesktopEinstellungen
 {
     public double BildrateVorgabe { get; init; } = 12;
     public double BildrateMax { get; init; } = 30;
+    /// <summary>Bilder je Sekunde bei ruhigem Bildschirm, wenn die Brille nichts angibt (wie desktop.ruhe_bildrate); Untergrenze 0.5.</summary>
+    public double RuheBildrateVorgabe { get; init; } = 2.5;
+    public double RuheBildrateMin { get; init; } = 0.5;
+    /// <summary>So lange ohne geänderte Kachel, bis nur noch mit der Ruhe-Bildrate erfasst wird (Nachtrag V1c: «nach 2 s ohne Änderung»).</summary>
+    public TimeSpan RuheNach { get; init; } = TimeSpan.FromSeconds(2);
     public int MaxBreiteVorgabe { get; init; } = 1920;
     public int MaxBreiteMin { get; init; } = 320;
     public int MaxBreiteMax { get; init; } = 3840;
@@ -70,8 +80,9 @@ public sealed class XrDesktopDienst
         public volatile bool Pausiert, Neu, MonitorGewechselt;
         public string? Monitor, MonitorName;
         public int Breite, Hoehe, MaxBreite, ImFlug;
-        public double Bildrate;
-        public long Bilder, Bytes, Kacheln;
+        public double Bildrate, RuheBildrate, LetzteAenderung;
+        public volatile bool Ruhig;
+        public long Bilder, Bytes, Kacheln, Erfassungen;
         public double ErfassMs, KodierMs;
         public (WebSocketCloseStatus Status, string Grund)? Schluss;
     }
@@ -99,7 +110,7 @@ public sealed class XrDesktopDienst
     public async Task Bedienen(HttpContext ctx, XrKopplung kopplung)
     {
         using var ws = await ctx.WebSockets.AcceptWebSocketAsync();
-        var s = new Strom { Id = "d" + Guid.NewGuid().ToString("N")[..8], Kopplung = kopplung, Seit = DateTimeOffset.UtcNow, Ws = ws, Bildrate = e.BildrateVorgabe, MaxBreite = e.MaxBreiteVorgabe };
+        var s = new Strom { Id = "d" + Guid.NewGuid().ToString("N")[..8], Kopplung = kopplung, Seit = DateTimeOffset.UtcNow, Ws = ws, Bildrate = e.BildrateVorgabe, RuheBildrate = e.RuheBildrateVorgabe, MaxBreite = e.MaxBreiteVorgabe };
         Strom? alt;
         bool voll;
         lock (sperre)
@@ -214,6 +225,7 @@ public sealed class XrDesktopDienst
             {
                 case "start":
                     if (Zahl(o, "bildrate") is { } br) s.Bildrate = Math.Clamp(br, 1, e.BildrateMax);
+                    if (Zahl(o, "ruheBildrate") is { } rb) s.RuheBildrate = Math.Clamp(rb, e.RuheBildrateMin, e.BildrateMax);
                     if (Zahl(o, "maxBreite") is { } mb) s.MaxBreite = (int)Math.Clamp(mb, e.MaxBreiteMin, e.MaxBreiteMax);
                     if (o["monitor"] is JsonValue mv && mv.TryGetValue<string>(out var mid) && mid.Length <= 64) s.Monitor = mid;
                     if (o["pausiert"] is JsonValue pv && pv.TryGetValue<bool>(out var p)) s.Pausiert = p;
@@ -230,6 +242,7 @@ public sealed class XrDesktopDienst
                     break;
                 case "bildrate":
                     s.Bildrate = Zahl(o, "wert") is { } w ? Math.Clamp(w, 1, e.BildrateMax) : throw new XrNachrichtFehler("«wert» fehlt.");
+                    if (Zahl(o, "ruhe") is { } ru) s.RuheBildrate = Math.Clamp(ru, e.RuheBildrateMin, e.BildrateMax);
                     break;
                 case "neu": s.Neu = true; break;
                 case "tschuess": Schliessen(s, WebSocketCloseStatus.NormalClosure, "tschuess"); break;
@@ -238,6 +251,16 @@ public sealed class XrDesktopDienst
             s.Signal.Release();
         }
         catch (XrNachrichtFehler f) { await TextSenden(s, XrNachrichten.Bauen("fehler", new JsonObject { ["meldung"] = f.Message })); }
+    }
+
+    /// <summary>
+    /// Abstand bis zur nächsten Erfassung (s): voller Takt (bildrate), bei ruhigem Bildschirm (ruhig = RuheNach ohne Änderung) der Ruhe-Takt – nie schneller als der
+    /// volle; beide auf 1/max begrenzt.
+    /// </summary>
+    public static double Takt(double bildrate, double ruheBildrate, bool ruhig, double max)
+    {
+        var voll = Math.Clamp(bildrate, 1, max);
+        return 1 / (ruhig ? Math.Min(voll, Math.Clamp(ruheBildrate, 0.01, max)) : voll);
     }
 
     static double? Zahl(JsonObject o, string name) => o[name] is JsonValue v && v.TryGetValue<double>(out var d) && double.IsFinite(d) ? d : null;
@@ -250,6 +273,7 @@ public sealed class XrDesktopDienst
         BildschirmInfo? m = null;
         byte[] puffer = [];
         double naechste = 0, geprueft = double.NegativeInfinity;
+        s.LetzteAenderung = uhr.Elapsed.TotalSeconds;   // die ersten RuheNach nach dem Start: voller Takt
         bool fehlerGemeldet = false;
         while (!s.Abbruch.IsCancellationRequested)
         {
@@ -273,17 +297,26 @@ public sealed class XrDesktopDienst
                     puffer = new byte[zb * zh * 4];
                     kodierer.Zuruecksetzen();
                     s.MonitorGewechselt = false;
+                    s.LetzteAenderung = jetzt;
                     await TextSenden(s, Bildschirm(liste, m, zb, zh, s.Bildrate, kodierer.Kachel));
                 }
             }
-            if (s.Pausiert || Volatile.Read(ref s.ImFlug) >= e.ImFlugMax) { await Warten(s, TimeSpan.FromMilliseconds(500)); continue; }
-            var abstand = 1 / Math.Clamp(s.Bildrate, 1, e.BildrateMax);
+            if (s.Pausiert || Volatile.Read(ref s.ImFlug) >= e.ImFlugMax)
+            {
+                if (s.Pausiert) s.LetzteAenderung = jetzt;   // nach «weiter» zuerst im vollen Takt
+                await Warten(s, TimeSpan.FromMilliseconds(500));
+                continue;
+            }
+            var ruhig = jetzt - s.LetzteAenderung >= e.RuheNach.TotalSeconds;
+            s.Ruhig = ruhig;
+            var abstand = Takt(s.Bildrate, s.RuheBildrate, ruhig, e.BildrateMax);
             if (jetzt < naechste) { await Warten(s, TimeSpan.FromSeconds(Math.Min(naechste - jetzt, 1))); continue; }
             naechste = jetzt - naechste < abstand ? naechste + abstand : jetzt + abstand;   // im Takt bleiben, nach einer Pause nicht aufholen
-            if (s.Neu) { s.Neu = false; kodierer.Zuruecksetzen(); }
+            if (s.Neu) { s.Neu = false; kodierer.Zuruecksetzen(); s.LetzteAenderung = jetzt; }
             var t0 = Stopwatch.GetTimestamp();
             var ok = Quelle.Erfassen(m.Id, s.Breite, s.Hoehe, puffer);
             var erfassMs = Stopwatch.GetElapsedTime(t0).TotalMilliseconds;
+            Interlocked.Increment(ref s.Erfassungen);
             if (!ok)
             {
                 if (!fehlerGemeldet) await TextSenden(s, XrNachrichten.Bauen("fehler", new JsonObject { ["meldung"] = "Der Bildschirm lässt sich gerade nicht erfassen (gesperrt oder abgemeldet?)." }));
@@ -293,6 +326,10 @@ public sealed class XrDesktopDienst
             fehlerGemeldet = false;
             var bild = kodierer.Kodieren(puffer, s.Breite, s.Hoehe, DateTimeOffset.UtcNow.ToUnixTimeMilliseconds());
             if (bild is null) continue;
+            // geändert: sofort senden, und war der Bildschirm ruhig, gleich wieder im vollen Takt weiter
+            var nun = uhr.Elapsed.TotalSeconds;
+            s.LetzteAenderung = nun;
+            if (ruhig) { s.Ruhig = false; naechste = nun + Takt(s.Bildrate, s.RuheBildrate, false, e.BildrateMax); }
             Interlocked.Increment(ref s.ImFlug);
             await Senden(s, bild.Daten, WebSocketMessageType.Binary, verbindung);
             lock (sperre)
@@ -353,7 +390,8 @@ public sealed class XrDesktopDienst
                 {
                     ["id"] = s.Id, ["kopplung"] = s.Kopplung.Id, ["brille"] = s.Kopplung.Brille, ["name"] = s.Kopplung.Name, ["seit"] = s.Seit.ToString("o"),
                     ["gestartet"] = s.Start.Task.IsCompleted, ["pausiert"] = s.Pausiert, ["monitor"] = s.Monitor, ["monitorName"] = s.MonitorName,
-                    ["breite"] = s.Breite, ["hoehe"] = s.Hoehe, ["bildrate"] = s.Bildrate,
+                    ["breite"] = s.Breite, ["hoehe"] = s.Hoehe, ["bildrate"] = s.Bildrate, ["ruheBildrate"] = s.RuheBildrate, ["ruhig"] = s.Ruhig,
+                    ["erfassungen"] = Interlocked.Read(ref s.Erfassungen),
                     ["bilderJeSekunde"] = Math.Round(s.Zuletzt.Count / 2.0, 1), ["kbitJeSekunde"] = Math.Round(s.Zuletzt.Sum(x => x.Bytes) * 8 / 2.0 / 1000, 1),
                     ["bilder"] = s.Bilder, ["bytes"] = s.Bytes, ["kacheln"] = s.Kacheln, ["erfassMs"] = Math.Round(s.ErfassMs, 2), ["kodierMs"] = Math.Round(s.KodierMs, 2),
                 });

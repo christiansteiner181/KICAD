@@ -36,7 +36,7 @@ public sealed class LaborWerte
     public XrBedienEinstellungen Bedien { get; private set; } = XrBedienEinstellungen.Vorgabe;
     public HandBegehenEinstellungen Begehen { get; private set; } = HandBegehenEinstellungen.Vorgabe;
     public HaltungEinstellungen Haltung { get; private set; } = HaltungEinstellungen.Vorgabe;
-    /// <summary>V1c: Gesten und Bildschirm von «Desktop in der Brille» (gesten.hineinziehen.*, gesten.wegwischen.*, desktop.*).</summary>
+    /// <summary>V1c: Hineinziehen und Bildschirm von «Desktop in der Brille» (hineinziehen.*, desktop.*; das Wegwischen gehört V1a, wegwischen.*).</summary>
     public DesktopEinstellungen Desktop { get; private set; } = DesktopEinstellungen.Vorgabe;
     public LaborKatalog? Katalog => katalog;
     /// <summary>Werte von Katalog und Profil, die die App nicht übernehmen konnte («Schlüssel (Herkunft)»), z. B. eine widersprüchliche Paarung.</summary>

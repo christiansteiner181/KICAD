@@ -4,7 +4,8 @@
 //
 // Regel (rein, ohne StereoKit):
 //   Passthrough ein                  → durchsichtig (Löschfarbe 0, 0, 0, 0), kein Himmel – das Kamerabild liegt unter der Szene
-//   sonst Sitzungsraum aktiv         → dunkel (Raum des Sitzungsraums), kein Himmel
+//   sonst Sitzungsraum aktiv         → hell (V1a, Umgebung im Stil von visionOS: Löschfarbe = Farbe des Horizonts, Christian 24.10.2026) bzw. dunkel (Variante
+//                                      «umgebung» = «tron», die frühere Fassung), kein Himmel
 //   sonst (Begehen)                  → der Zustand vor dem ersten Wechsel (Ursprung), danach ist nichts mehr gemerkt
 // Der Ursprung wird nur beim Verlassen des neutralen Zustands gemerkt, nie aus einem Zustand, den diese Regel selbst gesetzt hat. Licht (Renderer.SkyLight), Materialien und
 // Tönung verstellt sie nicht.
@@ -16,6 +17,8 @@ public readonly record struct Hintergrund(float R, float G, float B, float A, bo
 {
     /// <summary>Dunkler Raum des Sitzungsraums.</summary>
     public static readonly Hintergrund Dunkel = new(0.012f, 0.016f, 0.024f, 1, false);
+    /// <summary>V1a: helle Umgebung des Sitzungsraums (Farbe des Horizonts der Kuppel, Hlks.Quest HelleUmgebung.Horizont).</summary>
+    public static readonly Hintergrund Hell = new(0.86f, 0.88f, 0.90f, 1, false);
     /// <summary>Passthrough: durchsichtig, damit das Kamerabild unter der Szene erscheint.</summary>
     public static readonly Hintergrund Durchsichtig = new(0, 0, 0, 0, false);
 }
@@ -31,13 +34,13 @@ public sealed class HintergrundVerwalter
     public Hintergrund? Ursprung => ursprung;
 
     /// <summary>Neuer Zustand; aktuell = was der Renderer gerade hat. Rückgabe: was der Renderer jetzt haben soll.</summary>
-    public Hintergrund Setzen(Hintergrund aktuell, bool sitzung, bool passthrough)
+    public Hintergrund Setzen(Hintergrund aktuell, bool sitzung, bool passthrough, bool hell = false)
     {
         if (ursprung is null && (sitzung || passthrough)) ursprung = aktuell;   // nur beim Verlassen des neutralen Zustands
         Sitzung = sitzung;
         Passthrough = passthrough;
         if (passthrough) return Hintergrund.Durchsichtig;
-        if (sitzung) return Hintergrund.Dunkel;
+        if (sitzung) return hell ? Hintergrund.Hell : Hintergrund.Dunkel;
         var zurueck = ursprung ?? aktuell;
         ursprung = null;
         return zurueck;

@@ -55,6 +55,20 @@ public class XrKanalTests
         Assert.Equal("begehen", (string)t2["pose"]!["modus"]!);
         Assert.Equal("R-1.04", (string)t2["zeigen"]!["element"]!);
         Assert.Equal(1, (long)t2["posen"]!);
+        Assert.Equal("strich", (string)w["symbole"]!);   // V1a: ohne Benutzereinstellung die Strichsymbole
+    }
+
+    [Fact]
+    public async Task Willkommen_nennt_den_Symbolsatz_des_Benutzers_wie_in_KICAD()
+    {
+        // Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): oberflaeche.symbole = revit gilt auch in der Brille
+        await using var s = new XrServer();
+        s.BenutzerEinstellungSetzen("oberflaeche.symbole", JsonValue.Create("revit"));
+        var (port, _, fp) = await s.Aktiv();
+        var paket = await s.Paket("QUEST-1", "Quest Christian");
+        await using var a = await XrKlient.Verbinden(port, fp, XrServer.Token(paket));
+        var w = await a.Hallo();
+        Assert.Equal("revit", (string)w["symbole"]!);
     }
 
     [Fact]

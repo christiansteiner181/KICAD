@@ -1,0 +1,20 @@
+{
+  "art": "hlks-xr-farben",
+  "fassung": 1,
+  "beschreibung": "Farben der Quest App (V1a): je App ein Pastellton für Glas und Symbol plus Akzent, hell und dunkel. Eigener Katalog, getrennt von den Gewerkfarben (kataloge/gewerke.json; Christian 24.10.2026: «gewerke werden nur für gewerkeunterschiede gebraucht»). Hell = Fläche im Pastellton (halbtransparent), Akzent eine dunklere Stufe desselben Tons (einmal berechnet: gleicher Farbton, Sättigung 0.7 × der des Tons, begrenzt auf 0.28 … 0.5, Helligkeit 0.34; Kontrast der hellen Schrift #F5F5F5 auf dem Akzent mindestens 5), Schrift dunkel. Dunkel (dunkle Umgebung, z. B. Sitzungsraum «tron»): ein kräftiger dunkler Ton der App – der helle Akzent mit Deckkraft 0.75 über dem dunklen Grund #3E4452 (KICAD «--browser», dunkles Design; einmal berechnet; Befund Prüfbilder 03: mit 0.22 Pastell war dunkel alles grau) –, Akzent = der Pastellton, Schrift hell. Die App-Symbole bleiben auch dunkel in der hellen Fassung (Pastell-Scheibe mit dunklem Symbol). Die Deckkraft des Glases richtet die App weiter nach der Umgebung (Stellschrauben anzeige.glas_deckkraft, anzeige.glas_helligkeit). Hell gilt ab einer Helligkeit der Umgebung von «hellAb» (sRGB 0 … 1).",
+  "hellAb": 0.3,
+  "schrift": { "hell": "#1F1F1F", "dunkel": "#F5F5F5" },
+  "apps": [
+    { "id": "status", "titel": "KICAD (Status)", "hell": { "ton": "#DDE7EE", "akzent": "#3E5B6F" }, "dunkel": { "ton": "#3E5568", "akzent": "#DDE7EE" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "etagen", "titel": "Etagen", "hell": { "ton": "#D6E6F5", "akzent": "#32587C" }, "dunkel": { "ton": "#355372", "akzent": "#D6E6F5" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "messen", "titel": "Messen", "hell": { "ton": "#D9F0E6", "akzent": "#3C715A" }, "dunkel": { "ton": "#3D6658", "akzent": "#D9F0E6" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "marker", "titel": "Marker", "hell": { "ton": "#F8E0D2", "akzent": "#824B2B" }, "dunkel": { "ton": "#714935", "akzent": "#F8E0D2" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "tisch", "titel": "Tisch", "hell": { "ton": "#E6DDF3", "akzent": "#513A74" }, "dunkel": { "ton": "#4C3D6C", "akzent": "#E6DDF3" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "ort", "titel": "Begehen (Ort)", "hell": { "ton": "#F3ECD6", "akzent": "#786835" }, "dunkel": { "ton": "#6A5F3C", "akzent": "#F3ECD6" }, "quelle": "Christian 24.10.2026, App-Pastellreihe" },
+    { "id": "ebenen", "titel": "Ebenen", "hell": { "ton": "#DCEBD9", "akzent": "#476F3E" }, "dunkel": { "ton": "#456443", "akzent": "#DCEBD9" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (salbei), zu bestätigen" },
+    { "id": "gesten", "titel": "Gesten", "hell": { "ton": "#E9E3EE", "akzent": "#593E6F" }, "dunkel": { "ton": "#524068", "akzent": "#E9E3EE" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (flieder), zu bestätigen" },
+    { "id": "labor", "titel": "Labor (Aufgabenkarte)", "hell": { "ton": "#F1E6EC", "akzent": "#6F3E59" }, "dunkel": { "ton": "#634057", "akzent": "#F1E6EC" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (rosé), zu bestätigen" },
+    { "id": "desktop", "titel": "Desktop in der Brille (Bildschirm des PCs)", "hell": { "ton": "#D5ECEC", "akzent": "#3E6F6F" }, "dunkel": { "ton": "#3E6468", "akzent": "#D5ECEC" }, "quelle": "Vorschlag V1c nach der Regel von V1a (petrol, Farbton 180° in der Lücke zwischen Messen und KICAD), zu bestätigen" },
+    { "id": "vorgabe", "titel": "Übrige (Schliessen, Griff, Apps ohne eigenen Ton)", "hell": { "ton": "#E4E7EB", "akzent": "#3E536F" }, "dunkel": { "ton": "#3E4F68", "akzent": "#E4E7EB" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (neutral), zu bestätigen" }
+  ]
+}

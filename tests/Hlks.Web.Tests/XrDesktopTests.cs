@@ -412,6 +412,62 @@ public class XrDesktopTests(ITestOutputHelper aus)
     }
 
     [Fact]
+    public void Takt_voll_bzw_bei_ruhigem_Bildschirm_die_Ruhe_Bildrate_nie_schneller_als_voll()
+    {
+        Assert.Equal(1 / 12.0, XrDesktopDienst.Takt(12, 2.5, false, 30), 12);
+        Assert.Equal(1 / 2.5, XrDesktopDienst.Takt(12, 2.5, true, 30), 12);
+        Assert.Equal(1 / 2.0, XrDesktopDienst.Takt(2, 5, true, 30), 12);     // Ruhe-Bildrate höher als die volle: die volle gilt
+        Assert.Equal(1 / 30.0, XrDesktopDienst.Takt(99, 2.5, false, 30), 12); // begrenzt
+        var e = new XrDesktopEinstellungen();
+        Assert.Equal(TimeSpan.FromSeconds(2), e.RuheNach);                  // Nachtrag V1c: «nach 2 s ohne Änderung»
+        Assert.Equal(DesktopEinstellungen.Vorgabe.RuheBildrate, e.RuheBildrateVorgabe);
+        Assert.Equal(DesktopEinstellungen.RuheNachS, e.RuheNach.TotalSeconds);
+    }
+
+    [Fact]
+    public async Task Ruhiger_Bildschirm_wird_seltener_erfasst_bei_einer_Aenderung_sofort_wieder_im_vollen_Takt()
+    {
+        var q = new SteuerQuelle();
+        await using var s = Server(q, new XrDesktopEinstellungen { RuheNach = TimeSpan.FromMilliseconds(600) });
+        var (port, _, fp) = await s.Aktiv();
+        await using var k = await DesktopRohKlient.Verbinden(port, fp, XrServer.Token(await s.Paket("QUEST-RUHE")));
+        await k.Senden("start", new JsonObject { ["bildrate"] = 20, ["ruheBildrate"] = 2 });
+        await k.Text("bildschirm");
+        var voll = await k.Binaer();
+        await k.Senden("quittung", new JsonObject { ["nr"] = DesktopFormat.KopfLesen(voll).Nr });
+        var st = (await Zustand(s))["stroeme"]![0]!;
+        Assert.Equal(2.0, (double)st["ruheBildrate"]!);
+        // gleich nach dem Start: voller Takt (20/s)
+        var e0 = q.Erfasst;
+        await Task.Delay(400);
+        var vollTakt = q.Erfasst - e0;
+        // ohne Änderung: nach 0.6 s nur noch 2/s
+        await Warte(async () => (bool)(await Zustand(s))["stroeme"]![0]!["ruhig"]!, "wird nicht ruhig");
+        var e1 = q.Erfasst;
+        await Task.Delay(1500);
+        var ruheTakt = q.Erfasst - e1;
+        aus.WriteLine($"Erfassungen: voll {vollTakt} in 0.4 s, ruhig {ruheTakt} in 1.5 s");
+        Assert.InRange(vollTakt, 5, 10);
+        Assert.InRange(ruheTakt, 1, 5);
+        // Änderung: kommt beim nächsten Ruhe-Takt (höchstens 0.5 s), danach sofort wieder 20/s
+        var t0 = Stopwatch.StartNew();
+        q.Setzen("A", 10, 10, 255, 255, 0);
+        var teil = await k.Binaer(TimeSpan.FromSeconds(2));
+        var bis = t0.Elapsed.TotalSeconds;
+        Assert.False(DesktopFormat.KopfLesen(teil).Voll);
+        Assert.True(bis < 0.8, $"Änderung erst nach {bis:0.00} s");
+        await k.Senden("quittung", new JsonObject { ["nr"] = DesktopFormat.KopfLesen(teil).Nr });
+        var e2 = q.Erfasst;
+        await Task.Delay(400);
+        Assert.InRange(q.Erfasst - e2, 5, 10);
+        Assert.False((bool)(await Zustand(s))["stroeme"]![0]!["ruhig"]!);
+        // die App ändert die Ruhe-Bildrate («bildrate» mit «ruhe»); Unsinn wird begrenzt
+        await k.Senden("bildrate", new JsonObject { ["wert"] = 15, ["ruhe"] = 0.01 });
+        await Warte(async () => (double)(await Zustand(s))["stroeme"]![0]!["ruheBildrate"]! == 0.5, "Ruhe-Bildrate nicht begrenzt");
+        Assert.Equal(15.0, (double)(await Zustand(s))["stroeme"]![0]!["bildrate"]!);
+    }
+
+    [Fact]
     public async Task Monitor_wechseln_neu_verlangen_Fehler_und_kein_start_trennt()
     {
         var q = new SteuerQuelle();
@@ -503,7 +559,7 @@ public class XrDesktopTests(ITestOutputHelper aus)
         var paket = Kopplungspaket.Lesen(new JsonObject { ["paket"] = (await s.Paket("QUEST-APP", "Quest App")).DeepClone() }.ToJsonString());
         var adresse = new PcAdresse("127.0.0.1", port, "pc", "test");
         await using var v = new DesktopVerbindung(paket, _ => Task.FromResult<Uri?>(DesktopRegeln.Adresse(adresse)),
-            new DesktopOptionen { Bildrate = 10, Wartezeit = _ => TimeSpan.FromMilliseconds(100) });
+            new DesktopOptionen { Bildrate = 10, RuheBildrate = 3, Wartezeit = _ => TimeSpan.FromMilliseconds(100) });
         v.Starten();
         await Warte(() => Task.FromResult(v.Puffer is { HatVollbild: true }), "kein Vollbild in der App");
         Assert.Equal(DesktopZustand.Laeuft, v.Zustand);
@@ -523,6 +579,10 @@ public class XrDesktopTests(ITestOutputHelper aus)
             Assert.InRange(n, 12, 24);
             var z = await Zustand(s);
             aus.WriteLine($"PC: {z["stroeme"]![0]!.ToJsonString()}");
+            Assert.Equal(3.0, (double)z["stroeme"]![0]!["ruheBildrate"]!);   // «start» trägt die Ruhe-Bildrate der App
+            Assert.False((bool)z["stroeme"]![0]!["ruhig"]!);                 // das Testbild ändert sich laufend
+            v.BildrateSetzen(10, 1.5);
+            await Warte(async () => (double)(await Zustand(s))["stroeme"]![0]!["ruheBildrate"]! == 1.5, "Ruhe-Bildrate nicht übernommen");
             // Pause: keine Bilder mehr; der PC zeigt «pausiert»
             v.Pausieren();
             await Warte(async () => (bool)(await Zustand(s))["stroeme"]![0]!["pausiert"]!, "PC zeigt nicht pausiert");
@@ -637,5 +697,63 @@ public class XrDesktopTests(ITestOutputHelper aus)
         aus.WriteLine($"Vergleich: BitBlt in voller Grösse {tv.Skip(1).Average():0.0} ms, im Programm verkleinern {tk.Skip(1).Average():0.0} ms");
         Array.Clear(puffer);
         Array.Clear(voll);
+    }
+
+    [Fact]
+    public async Task Echt_GDI_Prozessorlast_mit_und_ohne_Ruhe_Bildrate_nur_auf_ausdruecklichen_Wunsch()
+    {
+        // Nachtrag V1c: «Die Prozessorlast vorher/nachher messen und berichten.» Nur mit HLKS_XR_DESKTOP_ECHT=1 unter Windows: der echte Bildschirm (GDI) über den
+        // Netzzugang auf 127.0.0.1, je 8 s gemessen nach 3 s Anlauf – «vorher» = immer 12 Bilder/s (Ruhe-Bildrate 12), «nachher» = 12/s, ruhig 2.5/s. Die Brille
+        // quittiert jedes Bild (wie die App). Nichts wird gespeichert; aus gibt nur Zahlen. Der Bildschirm soll dabei ruhig sein (keine Eingaben, kein Video).
+        if (Environment.GetEnvironmentVariable("HLKS_XR_DESKTOP_ECHT") != "1" || !OperatingSystem.IsWindows()) { aus.WriteLine("Echt-Test übersprungen (HLKS_XR_DESKTOP_ECHT=1 setzen)."); return; }
+        using var gdi = new XrDesktopGdi();
+        await using var s = Server(gdi);
+        var (port, _, fp) = await s.Aktiv();
+        var token = XrServer.Token(await s.Paket("QUEST-CPU"));
+        var proc = Process.GetCurrentProcess();
+        async Task<(double Kern, long Erfasst, double Ruhig, double Bilder)> Messen(double ruhe)
+        {
+            await using var k = await DesktopRohKlient.Verbinden(port, fp, token);
+            await k.Senden("start", new JsonObject { ["bildrate"] = 12, ["ruheBildrate"] = ruhe });
+            using var ende = new CancellationTokenSource();
+            long bilder = 0;
+            var quittieren = Task.Run(async () =>
+            {
+                while (!ende.IsCancellationRequested)
+                {
+                    var n = await k.Naechste(TimeSpan.FromMilliseconds(200));
+                    if (n is { Typ: WebSocketMessageType.Binary } b) { Interlocked.Increment(ref bilder); await k.Senden("quittung", new JsonObject { ["nr"] = DesktopFormat.KopfLesen(b.Daten).Nr }); }
+                }
+            });
+            await Task.Delay(3000);
+            var z0 = (long)(await Zustand(s))["stroeme"]![0]!["erfassungen"]!;
+            var b0 = Interlocked.Read(ref bilder);
+            proc.Refresh();
+            var cpu0 = proc.TotalProcessorTime;
+            var uhr = Stopwatch.StartNew();
+            int ruhig = 0, proben = 0;
+            while (uhr.Elapsed < TimeSpan.FromSeconds(8))
+            {
+                await Task.Delay(250);
+                proben++;
+                if ((bool)(await Zustand(s))["stroeme"]![0]!["ruhig"]!) ruhig++;
+            }
+            proc.Refresh();
+            var kern = (proc.TotalProcessorTime - cpu0).TotalSeconds / uhr.Elapsed.TotalSeconds * 100;
+            var z1 = (long)(await Zustand(s))["stroeme"]![0]!["erfassungen"]!;
+            var b1 = Interlocked.Read(ref bilder);
+            ende.Cancel();
+            await quittieren;
+            return (kern, z1 - z0, (double)ruhig / Math.Max(1, proben), (b1 - b0) / uhr.Elapsed.TotalSeconds);
+        }
+        var vorher = await Messen(12);
+        await Task.Delay(500);
+        var nachher = await Messen(2.5);
+        var m = gdi.Bildschirme().First(x => x.Haupt);
+        aus.WriteLine($"Hauptbildschirm {m.Breite} × {m.Hoehe}, {Environment.ProcessorCount} logische Kerne; Prozessorzeit des Testprozesses in % eines Kerns:");
+        aus.WriteLine($"  vorher  (immer 12/s): {vorher.Kern:0.0} %, {vorher.Erfasst / 8.0:0.0} Erfassungen/s, {vorher.Bilder:0.0} gesendete Bilder/s, ruhig {vorher.Ruhig:P0} der Zeit");
+        aus.WriteLine($"  nachher (ruhig 2.5/s): {nachher.Kern:0.0} %, {nachher.Erfasst / 8.0:0.0} Erfassungen/s, {nachher.Bilder:0.0} gesendete Bilder/s, ruhig {nachher.Ruhig:P0} der Zeit");
+        Assert.True(vorher.Erfasst > 0 && nachher.Erfasst > 0);
+        if (nachher.Ruhig > 0.8) Assert.True(nachher.Erfasst < vorher.Erfasst, "ruhig, aber nicht seltener erfasst");
     }
 }

@@ -183,6 +183,7 @@ public sealed class XrKanal
     {
         Teilnehmer? alt;
         Teilnehmer neu;
+        var symbolsatz = auftraege.Symbolsatz();   // liest die Benutzereinstellungen, darum vor der Sperre
         lock (sperre)
         {
             alt = teilnehmer.Values.FirstOrDefault(x => x.Kopplung.Id == kopplung.Id);
@@ -205,7 +206,11 @@ public sealed class XrKanal
             var schrauben = new JsonObject();
             foreach (var (k, w) in stellschrauben) schrauben[k] = w.DeepClone();
             var auftrag = auftraege.Lesen() is { } a ? VrAuftragSpeicher.Zuobjekt(a) : null;
-            neu.Schlange.Writer.TryWrite(XrNachrichten.Bauen("willkommen", new JsonObject { ["id"] = neu.Id, ["teilnehmer"] = andere, ["auftrag"] = auftrag, ["stellschrauben"] = schrauben }));
+            // V1a: «symbole» = Symbolsatz des Benutzers (oberflaeche.symbole), damit die App dieselben Symbole zeigt wie KICAD
+            neu.Schlange.Writer.TryWrite(XrNachrichten.Bauen("willkommen", new JsonObject
+            {
+                ["id"] = neu.Id, ["teilnehmer"] = andere, ["auftrag"] = auftrag, ["stellschrauben"] = schrauben, ["symbole"] = symbolsatz,
+            }));
             AnAndereUnterSperre(neu, XrNachrichten.Bauen("hallo", XrNachrichten.TeilnehmerKnoten(Info(neu))));
             teilnehmer[neu.Id] = neu;
         }

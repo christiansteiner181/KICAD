@@ -2,8 +2,11 @@
 # zweimal mit --pruefen - einmal mit PC (verbinden, Modell laden, Kanal) und einmal ohne PC (Start aus dem Zwischenspeicher).
 #   - Server: Hlks.Web aus dem Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build), im Testlauf (HLKS_TEST=1): Benutzereinstellungen, Liste
 #     "zuletzt" und XR-Ablage nur unter %TEMP%, Netzzugang nur auf 127.0.0.1 mit freiem Port. Der Netzzugang oeffnet sich nur im KICAD auf dem
-#     Desktop-Port 5130 (XrEinstellungen.DesktopPort) - deshalb laeuft der Testserver auf 5130; ist der Port belegt (Desktop-KICAD laeuft), bricht
-#     das Skript ab.
+#     Desktop-Port (XrEinstellungen.DesktopPort, 5130). Der Testserver laeuft auf 5130, wenn der Port frei ist. Ist er belegt (Desktop-KICAD laeuft),
+#     nimmt das Skript selbstaendig den ersten freien Port von 5139 abwaerts bis 5132 (nie 5131, 5140/5141 Zugang und Suche des Desktops, 5149-5153
+#     Abnahme) und setzt fuer den Testserver HLKS_XR_DESKTOP_PORT auf diesen Port: im Testlauf (HLKS_TEST=1) oeffnet sich der Zugang dann dort, nur auf
+#     127.0.0.1 und mit der Ablage unter %TEMP% - zugang.json, Kopplungen und Zertifikat des Desktop-KICAD (%LOCALAPPDATA%\HLKS_CAD\xr) bleiben unberuehrt,
+#     das Desktop-KICAD laeuft weiter. -Port <n> waehlt den Port fest (belegt = Abbruch).
 #   - Projekt: das Beispielprojekt "MFH Musterweg" (Vorgabe) oder mit -Projekt eine KOPIE des angegebenen Projektordners unter %TEMP% (das Original
 #     wird nur gelesen; z. B. %USERPROFILE%\HLKS_CAD_testdaten\test_praxis). Echte Daten bleiben lokal, die App schreibt nur Zahlen.
 #   - Die GLB holt die App ueber den Netzzugang; gibt er sie (noch) nicht frei (404), ueber http://localhost:<Port> (--modell-lokal).
@@ -18,13 +21,17 @@
 # "teleport-markierung" (Erfolg), Lauf 2 nimmt den abgelegten Katalog, Lauf 3 spielt "modell-greifen-zoomen". Das Skript prueft am PC (GET
 # /api/xr/labor/auswertung), dass die Messprotokolle von Lauf 1 und 3 angekommen sind. -Pruefbilder legt zusaetzlich aufgabe_karte.jpg, roentgen.jpg und
 # sitzung_flache_hand.jpg ab.
+# V1a: jeder Lauf prueft dazu Glas, Umgebung, Fang, Messen und Marker (Zeile "V1a: ..." in "P4 ok"), Lauf 1 auch "messen-wand-wand" (Erfolg). Lauf 1 setzt einen
+# Problem-Marker (mit PC), Lauf 2 einen ohne PC (er wartet), Lauf 3 sendet den wartenden und setzt einen am Tisch: das Skript prueft am PC (GET /api/xr/marker),
+# dass danach 3 Marker mehr im Projekt sind. -Pruefbilder legt zusaetzlich glas_apps.jpg, glas_marker.jpg, messen.jpg, marker.jpg, glas_apps_sitzung.jpg,
+# glas_tisch.jpg, marker_sitzung.jpg und sitzung_umgebung.jpg ab.
 # V1c: Lauf 4 "Desktop in der Brille" (--desktop): die App zieht mit einer gedachten Hand den Bildschirm des PCs herein (der Testserver erfasst im Testlauf nur das
 # Testbild, nie den echten Bildschirm), misst Bildzeit, Hochladen und Dekodieren und wischt ihn wieder weg (Zeile "P4 ok: Desktop: ..."). Das Skript prueft am PC
-# (GET /api/xr/desktop/zustand), dass KICAD die mitsehende Brille angezeigt hat. -Pruefbilder legt desktop_1_geste_halb.jpg, desktop_2_eingeblendet.jpg,
-# desktop_3_nah_zeiger.jpg, desktop_4_nah_schrift.jpg, desktop_5_wegwischen_halb.jpg und desktop_6_anzeige_pc.png (KICAD im Edge, solange die Brille mitsieht) ab.
-# -NurDesktop: nur Lauf 4; -OhneDesktop: ohne Lauf 4.
+# (GET /api/xr/desktop/zustand), dass KICAD die mitsehende Brille angezeigt hat. -Pruefbilder legt desktop_*.jpg (Geste halb, eingeblendet mit Glasrahmen, nah,
+# Symbolfeld seitlich daneben, Wegwischen halb) und desktop_7_anzeige_pc.png (KICAD im Edge, solange die Brille mitsieht) ab. -NurDesktop: nur Lauf 4;
+# -OhneDesktop: ohne Lauf 4.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>] [-NurDesktop] [-OhneDesktop]
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>] [-Port <n>] [-NurDesktop] [-OhneDesktop]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
@@ -34,6 +41,7 @@ param(
   [switch]$OhneUnterlage,
   [switch]$OhneSitzungsraum,
   [string]$Pruefbilder = '',
+  [int]$port = 0,
   [switch]$NurDesktop,
   [switch]$OhneDesktop
 )
@@ -41,16 +49,25 @@ param(
 $ErrorActionPreference = 'Continue'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
-$port = 5130
 if (-not $env:HLKS_BUILD) { $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build" }
 $bau = $env:HLKS_BUILD
 $logs = "$bau\quest_pruefen"
 New-Item -ItemType Directory -Force $logs | Out-Null
 function Aus([string]$t) { $z = "{0:HH:mm:ss} {1}" -f (Get-Date), $t; Write-Host $z; Add-Content -Path "$logs\protokoll.log" -Value $z -Encoding UTF8 }
+function Belegt([int]$p) { [bool](Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue) }
 
-if (Get-NetTCPConnection -State Listen -LocalPort $port -ErrorAction SilentlyContinue) {
-  Aus "Port $port ist belegt (laeuft das Desktop-KICAD?). Der Netzzugang oeffnet sich nur auf diesem Port - zuerst KICAD beenden."
-  exit 2
+# Port des Testservers ($port, in PowerShell dieselbe Variable wie der Parameter -Port): 5130, wenn frei; sonst der erste freie Ersatzport (das Desktop-KICAD
+# laeuft weiter); mit -Port fest
+$gesperrt = @(5013, 5098, 5131, 5140, 5141, 5149, 5150, 5151, 5152, 5153)
+if ($port -ne 0) {
+  if ($gesperrt -contains $port -or $port -lt 1024 -or $port -gt 65535) { Aus "Port $port ist fuer den Pruefserver nicht erlaubt."; exit 2 }
+  if (Belegt $port) { Aus "Port $port ist belegt."; exit 2 }
+} elseif (-not (Belegt 5130)) {
+  $port = 5130
+} else {
+  foreach ($p in 5139, 5138, 5137, 5136, 5135, 5134, 5133, 5132) { if (-not (Belegt $p)) { $port = $p; break } }
+  if ($port -eq 0) { Aus 'Port 5130 ist belegt (Desktop-KICAD) und kein Ersatzport 5132-5139 ist frei.'; exit 2 }
+  Aus "Port 5130 ist belegt (Desktop-KICAD laeuft weiter) - der Pruefserver nimmt Port $port."
 }
 if ($Projekt -and -not (Test-Path (Join-Path $Projekt 'projekt.json'))) { Aus "Kein Projekt in $Projekt (projekt.json fehlt)."; exit 2 }
 
@@ -72,6 +89,8 @@ $env:HLKS_BENUTZER = "$tmp\benutzer"
 $env:HLKS_ZULETZT = "$tmp\zuletzt"
 $env:HLKS_WEBROOT = "$repo\src\Hlks.Web\wwwroot"
 $env:HLKS_KATALOG = "$repo\kataloge"
+# Netzzugang auf dem Port des Pruefservers (wirkt nur im Testlauf; XrEinstellungen.DesktopPortVariable)
+$env:HLKS_XR_DESKTOP_PORT = "$port"
 $basis = "http://localhost:$port"
 $utf8 = New-Object System.Text.UTF8Encoding $false
 
@@ -84,6 +103,11 @@ function Get([string]$pfad) { (Invoke-WebRequest -UseBasicParsing -Uri "$basis$p
 # P5b: Laeufe einer Pruefaufgabe in den Messprotokollen am PC (0, wenn keine)
 function Laeufe([string]$id) {
   try { $a = Get '/api/xr/labor/auswertung'; $z = $a.aufgaben | Where-Object { $_.aufgabe -eq $id } | Select-Object -First 1; if ($z -and $z.laeufe) { return [int]$z.laeufe } } catch { }
+  return 0
+}
+# V1a: Problem-Marker im Projekt am PC (0, wenn keine)
+function MarkerZahl {
+  try { $a = Get '/api/xr/marker'; if ($a.marker) { return @($a.marker).Count } } catch { }
   return 0
 }
 
@@ -100,7 +124,7 @@ function DesktopLauf {
     try { $dz = Get '/api/xr/desktop/zustand'; if ($dz.aktiv -ge 1 -and -not $gesehen) { $gesehen = $dz } } catch { }
     if ($gesehen -and $Pruefbilder -and -not $foto -and (Test-Path $edge)) {
       $foto = $true
-      $bild = Join-Path $Pruefbilder 'desktop_6_anzeige_pc.png'
+      $bild = Join-Path $Pruefbilder 'desktop_7_anzeige_pc.png'
       $ep = Start-Process -FilePath $edge -ArgumentList @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=1600,950', "--user-data-dir=`"$tmp\edge`"",
         '--virtual-time-budget=5000', "--screenshot=`"$bild`"", "$basis/") -PassThru -WindowStyle Hidden
       if (-not $ep.WaitForExit(40000)) { Stop-Process -Id $ep.Id -Force -ErrorAction SilentlyContinue }
@@ -112,7 +136,7 @@ function DesktopLauf {
   $a4 | Where-Object { "$_" -match '^P4 (ok|Fehler|Laden)' } | ForEach-Object { Aus "  $_" }
   if ($gesehen) {
     $s = @($gesehen.stroeme)[0]
-    Aus ("Lauf 4: Anzeige am PC: Brille {0} sieht {1} ({2} x {3}), {4} Bilder/s, {5} kbit/s, erfassen {6} ms, kodieren {7} ms - ok" -f $s.name, $s.monitorName, $s.breite, $s.hoehe, $s.bilderJeSekunde, $s.kbitJeSekunde, $s.erfassMs, $s.kodierMs)
+    Aus ("Lauf 4: Anzeige am PC: Brille {0} sieht {1} ({2} x {3}), {4} Bilder/s, {5} kbit/s, erfassen {6} ms, kodieren {7} ms, Bildrate {8} / ruhig {9} - ok" -f $s.name, $s.monitorName, $s.breite, $s.hoehe, $s.bilderJeSekunde, $s.kbitJeSekunde, $s.erfassMs, $s.kodierMs, $s.bildrate, $s.ruheBildrate)
   } else { Aus 'Lauf 4: KICAD hat keine mitsehende Brille angezeigt (GET /api/xr/desktop/zustand) - FEHLT' }
   return ($ap.ExitCode -eq 0) -and [bool]$gesehen
 }
@@ -166,7 +190,7 @@ try {
   $zusatz = @()
   if ($OhneUnterlage) { $zusatz += '--ohne-unterlage' }
   $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough|Katalog des Labors|Messprotokoll '
-  $t0 = Laeufe 'teleport-markierung'; $d0 = Laeufe 'drehen-90'; $z0 = Laeufe 'modell-greifen-zoomen'
+  $t0 = Laeufe 'teleport-markierung'; $d0 = Laeufe 'drehen-90'; $z0 = Laeufe 'modell-greifen-zoomen'; $w0 = Laeufe 'messen-wand-wand'; $m0 = MarkerZahl
   Aus "Lauf 1: mit PC ($Bilder Bilder) ..."
   # P5a: mit -Pruefbilder auch zwei Bilder beim Begehen (Blick nach vorn, die schwebenden Apps)
   $bild1 = @()
@@ -176,9 +200,16 @@ try {
   $a1 | Out-File -FilePath "$logs\lauf1.log" -Encoding utf8
   $a1 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
   # P5b: die Messprotokolle der Pruefaufgaben von Lauf 1 sind am PC angekommen
-  $t1 = Laeufe 'teleport-markierung'; $d1 = Laeufe 'drehen-90'
+  $t1 = Laeufe 'teleport-markierung'; $d1 = Laeufe 'drehen-90'; $w1 = Laeufe 'messen-wand-wand'
   $laborOk = ($t1 -ge $t0 + 1) -and ($d1 -ge $d0 + 1)
-  Aus ("Lauf 1: Messprotokolle am PC: teleport-markierung {0} -> {1}, drehen-90 {2} -> {3} - {4}" -f $t0, $t1, $d0, $d1, @('FEHLT', 'ok')[[int]$laborOk])
+  Aus ("Lauf 1: Messprotokolle am PC: teleport-markierung {0} -> {1}, drehen-90 {2} -> {3}, messen-wand-wand {4} -> {5} - {6}" -f $t0, $t1, $d0, $d1, $w0, $w1, @('FEHLT', 'ok')[[int]$laborOk])
+  # V1a: der Problem-Marker von Lauf 1 ist im Projekt am PC (Element ProblemMarker)
+  $m1 = MarkerZahl
+  $markerOk = $m1 -ge $m0 + 1
+  Aus ("Lauf 1: Problem-Marker am PC: {0} -> {1} - {2}" -f $m0, $m1, @('FEHLT', 'ok')[[int]$markerOk])
+  $v1aOk = [bool]($a1 -match '^P4 ok: .*V1a: Glas=ok')
+  if (-not $v1aOk) { Aus 'Lauf 1: die Zeile "V1a" fehlt.' }
+  if ($a1 -match 'messen-wand-wand ohne Wandpaar') { Aus 'Lauf 1: messen-wand-wand ohne Wandpaar (am Startpunkt kein Raum mit zwei gegenueberliegenden Waenden) - nicht geprueft.' }
   Aus "Lauf 2: ohne PC, Start aus dem Zwischenspeicher ($Bilder Bilder) ..."
   $a2 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --ohne-pc @zusatz 2>&1
   $c2 = $LASTEXITCODE
@@ -205,6 +236,11 @@ try {
     $zoomOk = $z1 -ge $z0 + 1
     Aus ("Lauf 3: Messprotokolle am PC: modell-greifen-zoomen {0} -> {1} - {2}" -f $z0, $z1, @('FEHLT', 'ok')[[int]$zoomOk])
     if (-not $zoomOk) { $laborOk = $false }
+    # V1a: der wartende Marker aus Lauf 2 (ohne PC) und der am Tisch aus Lauf 3 sind angekommen
+    $m3 = MarkerZahl
+    $marker3Ok = $m3 -ge $m1 + 2
+    Aus ("Lauf 3: Problem-Marker am PC: {0} -> {1} (wartender aus Lauf 2 und einer am Tisch) - {2}" -f $m1, $m3, @('FEHLT', 'ok')[[int]$marker3Ok])
+    if (-not $marker3Ok) { $markerOk = $false }
     # P4b-Nachtrag: dasselbe Bild mit gewoehnlichem Material und ganz mit dem Shader "schnitt" - die hellen Pixel (Modell) muessen gleich hell sein
     $vi = ''; $vs = ''
     if ($Pruefbilder) { $vi = Join-Path $Pruefbilder 'vergleich_innen.png'; $vs = Join-Path $Pruefbilder 'vergleich_schnitt.png' }
@@ -223,7 +259,7 @@ try {
       }
     }
   }
-  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk) { 0 } else { 1 }
+  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk -and $markerOk -and $v1aOk) { 0 } else { 1 }
   if (-not $OhneDesktop -and -not (DesktopLauf)) { $ergebnis = 1 }   # V1c: Lauf 4
   }   # V1c: Ende von "nicht nur Lauf 4"
 } catch {
@@ -233,7 +269,7 @@ try {
   if ($kopplung) { try { Post '/api/xr/kopplung/widerrufen' @{ kopplung = $kopplung } | Out-Null } catch { } }
   if ($server -and -not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500 }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT', 'HLKS_KATALOG') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT', 'HLKS_KATALOG', 'HLKS_XR_DESKTOP_PORT') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
 }
 Aus ("Ergebnis: " + @('ok', 'nicht ok', 'Fehler im Ablauf')[$ergebnis] + " (Protokolle: $logs)")
 exit $ergebnis

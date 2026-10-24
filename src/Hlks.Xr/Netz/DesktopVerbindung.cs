@@ -7,7 +7,9 @@
 //   PC → App: Text «bildschirm» { monitore[{ id, name, breite, hoehe, haupt }], monitor, breite, hoehe, kachel, bildrate } (beim Start und nach jedem Wechsel),
 //             Text «fehler» { meldung }, binär ein Bild (DesktopFormat).
 //   App → PC: «quittung» { nr } nach dem Dekodieren (der PC hat höchstens zwei Bilder unterwegs – so passt sich die Bildrate an Netz und Brille an), «pause» und
-//             «weiter» (ausgeblendet: der PC erfasst nichts), «monitor» { id }, «bildrate» { wert }, «neu» (Vollbild verlangen, z. B. nach einem Fehler).
+//             «weiter» (ausgeblendet: der PC erfasst nichts), «monitor» { id }, «bildrate» { wert, ruhe }, «neu» (Vollbild verlangen, z. B. nach einem Fehler).
+//   «start» und «bildrate» tragen dazu die Ruhe-Bildrate («ruheBildrate» bzw. «ruhe»; Stellschraube desktop.ruhe_bildrate): ändert sich am PC 2 s lang nichts, erfasst
+//   er nur noch so oft (Nachtrag V1c 24.10.2026).
 // Schluss: 4010 = am PC beendet (nicht neu verbinden, erst wieder nach dem nächsten Hineinziehen), 4001 widerrufen, 4002 durch eine neue Verbindung derselben
 // Brille ersetzt, 401 nicht gekoppelt – dann nicht neu verbinden; sonst (Netz weg) nach 1, 2, 4 … s neu, solange der Bildschirm gewünscht ist.
 // Nichts geht auf die Platte: die Bilder stehen nur im Speicher (DesktopPuffer).
@@ -32,6 +34,8 @@ public sealed record DesktopMonitor(string Id, string Name, int Breite, int Hoeh
 public sealed record DesktopOptionen
 {
     public double Bildrate { get; init; } = DesktopEinstellungen.Vorgabe.Bildrate;
+    /// <summary>Bilder je Sekunde, solange sich am PC nichts ändert (desktop.ruhe_bildrate).</summary>
+    public double RuheBildrate { get; init; } = DesktopEinstellungen.Vorgabe.RuheBildrate;
     public int MaxBreite { get; init; } = DesktopEinstellungen.Vorgabe.MaxBreitePx;
     /// <summary>Gewünschter Monitor (Id des PCs); null = Hauptbildschirm.</summary>
     public string? Monitor { get; init; }
@@ -53,9 +57,10 @@ public static class DesktopRegeln
     /// <summary>Adresse des Bildschirms beim PC.</summary>
     public static Uri Adresse(PcAdresse a) => new($"wss://{a.Ip}:{a.Port}/api/xr/desktop");
 
-    public static string Start(double bildrate, int maxBreite, string? monitor, bool pausiert)
+    public static string Start(double bildrate, int maxBreite, string? monitor, bool pausiert, double? ruheBildrate = null)
     {
         var o = new JsonObject { ["typ"] = "start", ["fassung"] = KanalText.Fassung, ["bildrate"] = Math.Round(bildrate, 2), ["maxBreite"] = maxBreite, ["pausiert"] = pausiert };
+        if (ruheBildrate is { } r) o["ruheBildrate"] = Math.Round(r, 2);
         if (monitor is not null) o["monitor"] = monitor;
         return o.ToJsonString();
     }
@@ -84,7 +89,7 @@ public sealed class DesktopVerbindung : IAsyncDisposable
     volatile DesktopZustand zustand = DesktopZustand.Aus;
     volatile bool pausiert;
     volatile DesktopPuffer? puffer;
-    double bildrate;
+    double bildrate, ruheBildrate;
     string? monitor;
     double dekodierSumme;
     int beendet;
@@ -95,6 +100,7 @@ public sealed class DesktopVerbindung : IAsyncDisposable
         this.adresse = adresse;
         this.optionen = optionen ?? new DesktopOptionen();
         bildrate = this.optionen.Bildrate;
+        ruheBildrate = this.optionen.RuheBildrate;
         monitor = this.optionen.Monitor;
     }
 
@@ -160,11 +166,14 @@ public sealed class DesktopVerbindung : IAsyncDisposable
         _ = Senden(DesktopRegeln.Einfach("monitor", "id", id));
     }
 
-    public void BildrateSetzen(double wert)
+    /// <summary>Bildrate (und Ruhe-Bildrate) ändern; gesendet nur bei einer Änderung.</summary>
+    public void BildrateSetzen(double wert, double? ruhe = null)
     {
-        if (Math.Abs(wert - bildrate) < 1e-9) return;
+        var r = ruhe ?? ruheBildrate;
+        if (Math.Abs(wert - bildrate) < 1e-9 && Math.Abs(r - ruheBildrate) < 1e-9) return;
         bildrate = wert;
-        _ = Senden(DesktopRegeln.Einfach("bildrate", "wert", Math.Round(wert, 2)));
+        ruheBildrate = r;
+        _ = Senden(new JsonObject { ["typ"] = "bildrate", ["fassung"] = KanalText.Fassung, ["wert"] = Math.Round(wert, 2), ["ruhe"] = Math.Round(r, 2) }.ToJsonString());
     }
 
     async Task Schleife(CancellationToken ende)
@@ -223,7 +232,7 @@ public sealed class DesktopVerbindung : IAsyncDisposable
         var dekodieren = Task.Run(() => Dekodieren(ws, eingang.Reader, verbindung.Token));
         try
         {
-            await SendenRoh(ws, DesktopRegeln.Start(bildrate, optionen.MaxBreite, monitor, pausiert), verbindung.Token).ConfigureAwait(false);
+            await SendenRoh(ws, DesktopRegeln.Start(bildrate, optionen.MaxBreite, monitor, pausiert, ruheBildrate), verbindung.Token).ConfigureAwait(false);
             while (true)
             {
                 var (typ, daten) = await Empfangen(ws, verbindung.Token).ConfigureAwait(false);

@@ -220,6 +220,32 @@ public class XrZertifikatTests
     }
 
     [Fact]
+    public void Testserver_Desktop_Port_aus_der_Umgebungsvariablen_nur_im_Testlauf()
+    {
+        // Quest App V1a: quest_pruefen.ps1 nimmt einen anderen Port (z. B. 5139), wenn das Desktop-KICAD 5130 belegt; HLKS_XR_DESKTOP_PORT öffnet den Zugang dort
+        Func<string, string?> Mit(string? wert) => n => n == XrEinstellungen.DesktopPortVariable ? wert : null;
+        Assert.Equal("HLKS_XR_DESKTOP_PORT", XrEinstellungen.DesktopPortVariable);
+        var t = XrEinstellungen.Vorgabe(true, Mit("5139"));
+        Assert.Equal(5139, t.DesktopPort);
+        // sonst wie im Testlauf ohne Variable: nur 127.0.0.1, freie Ports, Ablage unter %TEMP% (zugang.json, Kopplungen und Zertifikat des Desktops unberührt)
+        Assert.Equal(IPAddress.Loopback, t.Adresse);
+        Assert.Equal(0, t.Port);
+        Assert.Equal(0, t.SuchPort);
+        Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()), t.OrdnerPfad());
+        Assert.NotEqual(XrEinstellungen.StandardOrdner(), t.OrdnerPfad());
+        // ohne Variable bzw. ungültig: wie bisher 5130
+        Assert.Equal(5130, XrEinstellungen.Vorgabe(true, Mit(null)).DesktopPort);
+        foreach (var w in new[] { "", " ", "abc", "80", "1023", "70000", "-5139", "5139.0", "+5139" })
+            Assert.Equal(5130, XrEinstellungen.Vorgabe(true, Mit(w)).DesktopPort);
+        Assert.Equal(5139, XrEinstellungen.TestDesktopPort(" 5139 "));
+        // im Betrieb wirkt sie nicht: immer 5130, alle Adressen, Ablage je PC
+        var b = XrEinstellungen.Vorgabe(false, Mit("5139"));
+        Assert.Equal(5130, b.DesktopPort);
+        Assert.Equal(IPAddress.Any, b.Adresse);
+        Assert.Equal(XrEinstellungen.StandardOrdner(), b.OrdnerPfad());
+    }
+
+    [Fact]
     public void Schalter_je_PC_in_einer_Datei_neben_Zertifikat_und_Kopplungen()
     {
         var o = NeuerOrdner();

@@ -32,6 +32,9 @@ test('eine Brille sieht mit: rot mit Name, Monitor, Rate und Beenden', () => {
   assert.match(a.titel, /Maus und Tastatur/);
   // ohne Namen die Kennung der Brille
   assert.match(T.desktopAnzeige(z(strom({ name: '' }))).titel, /«QUEST-1»/);
+  // ruhiger Bildschirm (nach 2 s ohne Änderung erfasst KICAD seltener): steht im Titel, sonst nicht
+  assert.doesNotMatch(a.titel, /ruhig/);
+  assert.match(T.desktopAnzeige(z(strom({ ruhig: true, ruheBildrate: 2.5 }))).titel, /ruhig – nur 2\.5 Erfassungen\/s/);
 });
 
 test('zwei Brillen, eine pausiert: aktiv zählt nur die mitsehenden', () => {

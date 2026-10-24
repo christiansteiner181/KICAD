@@ -31,7 +31,7 @@ using System.Xml.Linq;
 
 namespace Hlks.Kern;
 
-public static class BcfExport
+public static partial class BcfExport
 {
     public const double Sichtfeld = 60;                 // Grad, vertikal (ANNAHME)
     public const double Seitenverhaeltnis = 16.0 / 9;   // Breite/Höhe (ANNAHME)
@@ -87,6 +87,12 @@ public static class BcfExport
         try { pfad = Path.GetFullPath(datei); }
         catch (Exception ex) when (ex is ArgumentException or NotSupportedException or PathTooLongException)
         { throw new HlksFehler($"Der Pfad «{datei}» ist ungültig: {ex.Message}", "Vollständigen Pfad mit Endung .bcf angeben."); }
+
+        // Quest App V1a (XR-E): Problem-Marker als BCF-Themen (BcfMarker.cs); Vorgabe die Kollisionen
+        var klasse = Param.Text(par, "klasse")?.Trim();
+        if (klasse is { Length: > 0 } && klasse.Equals("ProblemMarker", StringComparison.OrdinalIgnoreCase)) return MarkerSchreiben(p, par, pfad);
+        if (klasse is { Length: > 0 } && !klasse.Equals("Kollision", StringComparison.OrdinalIgnoreCase))
+            throw new HlksFehler($"klasse «{klasse}» gibt es für bcf_export nicht.", "klasse: Kollision (Vorgabe) | ProblemMarker");
 
         var m = p.Modell; var kat = p.Katalog;
         var auswahl = Auswahl(p, par);

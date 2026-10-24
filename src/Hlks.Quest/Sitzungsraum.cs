@@ -1,5 +1,6 @@
 using System.Numerics;
 using Hlks.Xr;
+using Hlks.Xr.Bedienung;
 using Hlks.Xr.Sitzung;
 using StereoKit;
 using Vec3 = StereoKit.Vec3;
@@ -24,11 +25,28 @@ namespace Hlks.Quest;
 /// P5b: Schnitt mit der flachen Hand (Regeln Hlks.Xr.Sitzung.FlacheHand): waagrecht über dem Modell, kurz ruhig, folgt der Schnitt der Hand, senkrecht gehalten ein
 /// Vertikalschnitt; Hand weg behält ihn, «Zurücksetzen» hebt ihn auf. Zusammen mit dem Schnitt der Ansicht ergibt er den Quader für den Shader «schnitt»
 /// (<see cref="WirksamerSchnitt"/>). Dazu zählt die App einen Pinch am Tisch ohne Griff (Fehlgriff der Prüfaufgabe «modell-greifen-zoomen»).
+/// V1a: die helle Umgebung im Stil von visionOS (HelleUmgebung, Vorgabe; der dunkle Raum oben bleibt als Variante «umgebung» = «tron»), unter dem Modell eine Bodenplatte
+/// aus Glas wie bei einem «Volume», die sanft leuchtet, wenn eine Hand nahe ist bzw. einen Griff hält.
 /// </summary>
 sealed class Sitzungsraum
 {
     readonly Rueckmeldung rueck;
     readonly Passthrough passthrough;
+    readonly GlasZeichner glas;
+    readonly HelleUmgebung hell = new();
+    double leuchten;
+    /// <summary>
+    /// V1a: helle Umgebung im Stil von visionOS (Vorgabe; Variante «umgebung» = «hell») bzw. die frühere dunkle mit Raster und Leuchtlinien («tron», zum Vergleich im Labor).
+    /// Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)».
+    /// </summary>
+    public bool Hell
+    {
+        get => hellAn;
+        set { if (value == hellAn) return; hellAn = value; if (Aktiv) HintergrundAnwenden(); }
+    }
+    bool hellAn = true;
+    /// <summary>Dreiecke der hellen Umgebung (Protokoll).</summary>
+    public int UmgebungDreiecke => hell.Dreiecke;
     readonly TischAntippenZustand tippLinks = new(), tippRechts = new();
     readonly PinchWischZustand wischL = new(), wischR = new();
     readonly Hlks.Xr.Bedienung.ZoegernZustand[] zoegern = [new(), new()];
@@ -82,6 +100,10 @@ sealed class Sitzungsraum
     /// <summary>Der eine Ort für Löschfarbe und Himmel des Renderers (Sitzungsraum und Passthrough), P4b-Nachtrag.</summary>
     readonly HintergrundVerwalter hintergrund = new();
     readonly bool[] hover = new bool[2];
+    readonly bool[] amGriff = new bool[2];
+
+    /// <summary>V1a: hält diese Hand einen Griff bzw. ist ihr Pinch-Punkt in seiner Reichweite (letztes Bild)? Dann misst und markiert sie nicht.</summary>
+    public bool AmGriff(Handed h) => Aktiv && amGriff[h == Handed.Left ? 0 : 1];
 
     readonly Material wand, boden, raster, platte, fuss, griff, schein;
     readonly Mesh raumNetz = Mesh.GenerateCube(new Vec3((float)XrSitzungLogik.RaumBreite, (float)XrSitzungLogik.RaumHoehe, (float)XrSitzungLogik.RaumTiefe));
@@ -104,10 +126,11 @@ sealed class Sitzungsraum
     /// <summary>Lage des Raum-lokalen Systems: beim echten Tisch der angetippte Tisch, sonst der virtuelle Raum.</summary>
     public SitzungRaumLage RaumLage => Echt.Ein && tischRaum is not null ? tischRaum : raum;
 
-    public Sitzungsraum(Rueckmeldung rueck, Passthrough passthrough)
+    public Sitzungsraum(Rueckmeldung rueck, Passthrough passthrough, GlasZeichner glas)
     {
         this.rueck = rueck;
         this.passthrough = passthrough;
+        this.glas = glas;
         wand = Material.Unlit.Copy();
         wand[MatParamName.ColorTint] = new Color(0.028f, 0.032f, 0.042f, 1);
         wand.FaceCull = Cull.Front;   // von innen sichtbar
@@ -145,13 +168,13 @@ sealed class Sitzungsraum
     }
 
     /// <summary>
-    /// Löschfarbe und Himmel nach dem Zustand (Hlks.Xr.Sitzung.HintergrundVerwalter): Passthrough ein → durchsichtig, sonst Sitzungsraum → dunkel, sonst der Zustand vor dem
+    /// Löschfarbe und Himmel nach dem Zustand (Hlks.Xr.Sitzung.HintergrundVerwalter): Passthrough ein → durchsichtig, sonst Sitzungsraum → hell (V1a) bzw. dunkel («tron»), sonst der Zustand vor dem
     /// Betreten. Nach jedem Wechsel von Sitzungsraum oder Passthrough aufrufen. Licht, Materialien und Tönung bleiben unberührt.
     /// </summary>
     void HintergrundAnwenden()
     {
         var c = Renderer.ClearColor;
-        var soll = hintergrund.Setzen(new Hintergrund(c.r, c.g, c.b, c.a, Renderer.EnableSky), Aktiv, passthrough.Ein);
+        var soll = hintergrund.Setzen(new Hintergrund(c.r, c.g, c.b, c.a, Renderer.EnableSky), Aktiv, passthrough.Ein, hellAn);
         Renderer.ClearColor = new Color(soll.R, soll.G, soll.B, soll.A);
         Renderer.EnableSky = soll.Himmel;
     }
@@ -218,9 +241,10 @@ sealed class Sitzungsraum
     /// Je Bild: Tisch antippen (echter Tisch, wartend) bzw. Griffe und Gesten. P5a: anApps = die Hand ist an den schwebenden Apps (dann tippt, greift und wischt
     /// sie hier nicht); gibt die Wische (Pinch gehalten, nicht an einem Griff) dieses Bildes zurück.
     /// </summary>
-    public List<WischRichtung> Schritt(double zeit, Pose kopf, Func<Handed, bool>? anApps = null, WischEinstellungen? wisch = null, double sperreS = 1.0)
+    public List<(WischRichtung Richtung, Handed Hand)> Schritt(double zeit, Pose kopf, Func<Handed, bool>? anApps = null, WischEinstellungen? wisch = null, double sperreS = 1.0)
     {
-        var wische = new List<WischRichtung>();
+        var wische = new List<(WischRichtung, Handed)>();
+        amGriff[0] = amGriff[1] = false;
         Zoegern = null;
         if (!Aktiv || Ansicht is null) return wische;
         anApps ??= _ => false;
@@ -274,7 +298,8 @@ sealed class Sitzungsraum
         {
             var h = Input.Hand(handed);
             XVec3? punkt = gh is not null ? Xv((h[FingerId.Thumb, JointId.Tip].position + h[FingerId.Index, JointId.Tip].position) * 0.5f) : null;
-            if (XrGesten.PinchWischSchritt(wz, zeit, punkt, gh is { Griff: true } && besitz is null, blick, wisch, sperreS) is { } r) wische.Add(r);
+            if (XrGesten.PinchWischSchritt(wz, zeit, punkt, gh is { Griff: true } && besitz is null, blick, wisch, sperreS) is { } r) wische.Add((r, handed));
+            amGriff[i] = besitz is not null || gh is { Nah: not null };   // V1a: diese Hand ist an einem Griff (sie misst und markiert nicht)
             // Zögern: Spitze ruhig nahe an einem freien Griff, ohne zu fassen
             string? ziel = gh is { Griff: false, Nah: int n } ? $"griff:{n}" : null;
             var spitze = gh is null ? (XVec3?)null : Xv(h[FingerId.Index, JointId.Tip].position);
@@ -330,7 +355,8 @@ sealed class Sitzungsraum
         if (!Aktiv || Ansicht is null) return;
         var rl = RaumLage;
         Matrix4x4 R(Matrix4x4 lokal) => lokal * rl.Matrix;
-        if (!passthrough.Ein)
+        if (!passthrough.Ein && hellAn) hell.Zeichnen(rl);   // V1a: helle Umgebung im Stil von visionOS (Umgebung.cs)
+        else if (!passthrough.Ein)
         {
             var mitteZ = (float)(XrSitzungLogik.RaumHinten - XrSitzungLogik.RaumTiefe / 2);
             raumNetz.Draw(wand, R(Matrix4x4.CreateTranslation(0, (float)XrSitzungLogik.RaumHoehe / 2, mitteZ)));
@@ -343,7 +369,8 @@ sealed class Sitzungsraum
             Kante(rl, 0.005f, KanteCyan);
             Kante(rl, 0.02f, new Color32(60, 220, 255, 60));
         }
-        else if (!Echt.WartetAufTisch) Kante(rl, 0.002f, new Color32(60, 220, 255, 140));   // echter Tisch: nur ein feiner Rahmen der Platte zur Orientierung
+        // echter Tisch: nur ein feiner Rahmen der Platte zur Orientierung – V1a dezent weiss («Passthrough nur dezent tönen, keine kräftigen Farben»)
+        else if (!Echt.WartetAufTisch) Kante(rl, 0.002f, hellAn ? new Color32(255, 255, 255, 90) : new Color32(60, 220, 255, 140));
         if (Echt.WartetAufTisch)
         {
             // Hinweis an den Fingerspitzen: hier antippen
@@ -356,6 +383,7 @@ sealed class Sitzungsraum
         }
         var welt = ModellMatrix;
         var schnitt = WirksamerSchnitt;   // P5b: mit dem Schnitt der flachen Hand
+        Bodenplatte(welt, zeit);
         d?.ZeichnenSitzung(welt, Ansicht, Unterlage, schnitt);
         ebenen?.Zeichnen(welt, Lage.Massstab, Ansicht.Geschosse, schnitt, zeit);
         // P5b: Rahmen der Schnittfläche der flachen Hand (heller, solange er der Hand folgt)
@@ -371,7 +399,7 @@ sealed class Sitzungsraum
         {
             var p = (Vec3)(Vector3)rl.ZuRef(new XVec3(griffe[i].X, griffe[i].Y, griffe[i].Z));
             var gehalten = gesten.Besitzt.Links == i || gesten.Besitzt.Rechts == i;
-            var farbe = gehalten ? new Color(1, 1, 1, 1) : hover[i] ? new Color(0.6f, 0.95f, 1, 1) : new Color(0.2f, 0.8f, 1, 1);
+            var farbe = gehalten ? new Color(1, 1, 1, 1) : hover[i] ? (hellAn ? new Color(0.95f, 0.97f, 1, 1) : new Color(0.6f, 0.95f, 1, 1)) : hellAn ? new Color(0.82f, 0.84f, 0.88f, 1) : new Color(0.2f, 0.8f, 1, 1);
             Mesh.Sphere.Draw(griff, Matrix.TS(p, (float)XrSitzungLogik.GriffDurchmesserM), farbe);
             Mesh.Sphere.Draw(schein, Matrix.TS(p, (float)XrSitzungLogik.GriffDurchmesserM * (gehalten ? 3.2f : hover[i] ? 2.4f : 1.8f)), farbe * (gehalten ? 0.5f : 0.25f));
         }
@@ -381,7 +409,38 @@ sealed class Sitzungsraum
         var ort = new XVec3(XrSitzungLogik.TischBreite / 2 - 0.25, XrSitzungLogik.TischHoehe + 0.004, -(XrSitzungLogik.TischVorderkante + 0.07));
         var p0 = (Vec3)(Vector3)rl.ZuRef(ort);
         var blick = (Vec3)(Vector3)rl.ZuRef(ort + new XVec3(0, Math.Sin(60 * Math.PI / 180), Math.Cos(60 * Math.PI / 180)));
-        Text.Add(text, Matrix.TRS(p0, Quat.LookAt(p0, blick), 0.7f), new Color(0.45f, 0.9f, 1, 1), TextAlign.Center, TextAlign.Center, 0, 0, 0);
+        Text.Add(text, Matrix.TRS(p0, Quat.LookAt(p0, blick), 0.7f), hellAn && !passthrough.Ein ? new Color(0.22f, 0.24f, 0.28f, 1) : new Color(0.45f, 0.9f, 1, 1), TextAlign.Center, TextAlign.Center, 0, 0, 0);
+    }
+
+    /// <summary>
+    /// V1a: das Modell am Tisch wie ein «Volume» von visionOS (HIG «Windows», visionOS volumes: «baseplate … gentle glow around its border when people look at it»): eine
+    /// Bodenplatte unter dem Grundriss des Modells, deren Rand sanft leuchtet, wenn eine Hand nahe kommt (15 cm) bzw. einen Griff hält – statt des Blicks der Vision Pro.
+    /// </summary>
+    void Bodenplatte(Matrix4x4 welt, double zeit)
+    {
+        var box = ModellBox;
+        if (box.IstLeer) return;
+        var y = box.Min.Y;
+        var ecken = new[] { new XVec3(box.Min.X, y, box.Min.Z), new XVec3(box.Max.X, y, box.Min.Z), new XVec3(box.Max.X, y, box.Max.Z), new XVec3(box.Min.X, y, box.Max.Z) }
+            .Select(p => (XVec3)Vector3.Transform((Vector3)p, welt)).ToArray();
+        var mitte = XVec3.Mitte(ecken[0], ecken[2]) + new XVec3(0, 0.002, 0);
+        var b = ecken[0].Abstand(ecken[1]);
+        var t = ecken[1].Abstand(ecken[2]);
+        var rechts = (ecken[1] - ecken[0]).Einheit();
+        var vorn = (ecken[2] - ecken[1]).Einheit();
+        var nah = Griffe > 0;
+        foreach (var handed in new[] { Handed.Left, Handed.Right })
+        {
+            var h = Input.Hand(handed);
+            if (!h.IsTracked) continue;
+            var w = Xv(h[FingerId.Index, JointId.Tip].position) - mitte;
+            if (Math.Abs(w.Skalar(rechts)) < b / 2 + 0.15 && Math.Abs(w.Skalar(vorn)) < t / 2 + 0.15 && w.Y > -0.05 && w.Y < 0.4) nah = true;
+        }
+        leuchten = GlasStil.Folgen(leuchten, nah ? 1 : 0, Time.Step, 0.12);
+        // Platte: Normale nach oben, «Oben» = vorn (die Platte liegt waagrecht)
+        var p = new TabletPose(mitte, new XVec3(0, 1, 0), rechts, vorn, b + 0.02, t + 0.02);
+        glas.Flaeche(p, 0.012, new Hlks.Xr.Bedienung.GlasFarbe(0.85, 0.87, 0.9, hellAn ? 0.25 : 0.12), mitSchatten: false);
+        if (leuchten > 0.02) glas.Leuchten(p, 0.012, new Hlks.Xr.Bedienung.GlasFarbe(0.85, 0.95, 1, 0.55 * leuchten));
     }
 
     void Kante(SitzungRaumLage rl, float dicke, Color32 farbe)
