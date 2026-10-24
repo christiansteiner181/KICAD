@@ -323,3 +323,27 @@ kleinerem Bogen. Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul X
   Verschieben #D4DBF7/#2C3D81, Drehen #F6D5DD/#7E2F43 (zu bestätigen).
 - **Tests:** `V1eTests` (siehe OBERFLAECHE.md, Abschnitt V1e «Prüfen»); angepasst `V1aSymboleTests`, `DesktopGesteTests`, `BedienungTests`, `P5bBedienungTests`,
   `LaborKatalogTests`.
+
+## Befunde des dritten Brillentests (V1f)
+
+Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell) pich ist zu sensibel.. hier braucht es eine andere geste.
+bsp. pistolengeste. zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.», «wisch geste soll auch gehen wenn die finger nicht voll gestrekt sind.»,
+«die app hineinheben geste scheint im letzten test weniger gut zu klappen.» Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1f».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Bedienung/Pistole.cs` | `PistoleEinstellungen`, `PistoleStand`, `PistoleZustand`, `Pistole`, `Verlauf<T>` | Pistolengeste: Haltung (Zeigefinger gestreckt, übrige eingerollt, kein Pinch), Zielen mit dem Daumen oben, Abdrücken (Daumen an die Seite der Hand) mit Hysterese, Ruhezeit, ruhigem Strahl und Sperre; Strahl vom Zeigefinger, beim Abzug der von kurz davor; Spreizung der Finger; kurzer Verlauf eines Werts (Fang beim Abzug) |
+
+- **Geändert für V1f:** `HandBegehen.cs` (Springen mit der Pistole: zielen in der Haltung, abdrücken springt, der Pinch wischt und dreht nur noch; `HandBegehenZustand.Zielt`),
+  `Bedienung/Glas.cs` (`GlasStrahl.Abzug`: Wahl auf Distanz beim Abdrücken), `Sitzung/ZweiPunkte.cs` (Faustgriff: `ZweiPunkteEinstellungen.Faust`, `ZweiPunkte.Faust`,
+  `FaustPunkt`, Fang 8 cm), `Bedienung/Anstoss.cs` (lockere Hand `LockereHand`, `gesten.offen_ab`, Form der Hand bleibt `FormSpiel`, Finger gleich gekrümmt
+  `SpreizungMax`, Gründe `AnstossStand.Grund`, Satz `V1e` für Vergleiche), `Bedienung/HebeGeste.cs` (eigene Schwellen, Anstoss je Hand gemerkt, verworfene Ansätze mit
+  Grund `HebeStand.Verworfen`; `HandBeobachtung.Pistole`, `Spreizung`; `Offen` heisst seither «keine Faust»), `Bedienung/Wegwischen.cs` und `Desktop/DesktopGeste.cs`
+  (lockere Hand; Spuren mit der Form der Hand), `Bedienung/Tafel.cs` (Vorgabe «fest»), `Sitzung/SitzungRaum.cs` (`VorKopf` mit angenommener Tischhöhe),
+  `Bedienung/Geisterhand.cs` (`Pistole`, `Faust`, `FaustKreisen`, `VorlagePistole`, `DaumenAngelegt`, `ZurFaust`), `Bedienung/XrBedienEinstellungen.cs` (Variante
+  «ausloeser», Stellschrauben V1f), `XrGesten.cs` (Tabelle), `Labor/PruefAufgaben.cs` (Hinweis «Auf echten Tisch»).
+- **Annahmen V1f:** Pistole an 2.5 cm, aus 4 cm, Ruhezeit 0.15 s, Strahl ruhig 20°, Sperre 0.3 s, Strahl 0.08 s vor dem Abzug, Zeigefinger gestreckt ab 0.85, übrige
+  eingerollt bis 0.7; Faust fängt 8 cm; Tischhöhe 0.75 m; lockere Hand ab 1.40, Form höchstens 0.15, Spreizung höchstens 0.25 (bei weniger als 1.65); Hebegeste
+  Handfläche 60°, Drehung 45°, Haltung vorher 0 s, Gleichlauf 0.5 s, ohne Grenze für die Form; Ansatz 5 cm in 0.35 s, Meldung höchstens jede Sekunde.
+- **Tests:** `V1fTests` (siehe OBERFLAECHE.md, Abschnitt V1f «Prüfen»); angepasst `V1eTests`, `V1dTests`, `P5bBedienungTests`, `LaborKatalogTests`, Generator
+  (`Haltung.Abzug`).

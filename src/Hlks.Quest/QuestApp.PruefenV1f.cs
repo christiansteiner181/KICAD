@@ -29,13 +29,14 @@ sealed partial class QuestApp
     bool PruefV1fLaeuft => v1fFolge > 0;
     bool V1fBei(double s) => v1fVorher < s && v1fJetzt >= s;
 
-    /// <summary>Die gedachte rechte Hand in der Pistolengeste vor dem Kopf (Raum der Brille): zielt schräg nach vorn unten; abzug 0 … 1 legt den Daumen an.</summary>
+    /// <summary>Die gedachte rechte Hand in der Pistolengeste vor dem Kopf (Raum der Brille): zielt steil nach vorn unten (60°, das Ziel liegt noch im Raum vor einem);
+    /// abzug 0 … 1 legt den Daumen an.</summary>
     Dictionary<string, XVec3> PruefPistole(Pose kopf, double abzug)
     {
         var f = new Vec3(kopf.Forward.x, 0, kopf.Forward.z).Normalized;
         var r = new Vec3(-f.z, 0, f.x);
         var spitze = kopf.position + f * 0.45f + r * 0.12f - Vec3.Up * 0.25f;
-        var vor = (f * 0.8f - Vec3.Up * 0.6f).Normalized;
+        var vor = (f * 0.5f - Vec3.Up * 0.866f).Normalized;
         var h = Geisterhand.VorlagePistole(new XVec3(spitze.x, spitze.y, spitze.z), new XVec3(vor.x, vor.y, vor.z), new XVec3(0, 1, 0), links: false);
         if (abzug > 0 && Geisterhand.DaumenAngelegt(h) is { } an)
         {
@@ -66,12 +67,22 @@ sealed partial class QuestApp
         {
             v1fZielt = rechts.Zielt && rechts.Ziel is not null && rechts.Bereit;
             v1fZielText = rechts.Ziel is { } zz ? string.Create(CultureInfo.InvariantCulture, $"Ziel {zz.Distanz:0.0} m vor, bereit {(rechts.Bereit ? "ja" : "nein")}") : "kein Ziel";
-            var nach = rechts.Ziel is { } z2 ? Sk(z2.Punkt) : k.position + k.Forward;
-            V1dBild(ordner, "v1f_pistole_zielen.jpg", k.position + Vec3.Up * 0.05f, nach, 80);
+            // von oben hinter dem Kopf: die Hand, der Strahl vom Zeigefinger und der Ring am Ziel
+            var f0 = new Vec3(k.Forward.x, 0, k.Forward.z).Normalized;
+            var hand = pruefPistolenHand is { } ph0 ? (Vec3)(Vector3)ph0["index-finger-tip"] : k.position + f0 * 0.45f;
+            var nach = rechts.Ziel is { } z2 ? Sk(z2.Punkt) : hand + f0;
+            V1dBild(ordner, "v1f_pistole_zielen.jpg", k.position + Vec3.Up * 0.3f - f0 * 0.35f + new Vec3(-f0.z, 0, f0.x) * 0.25f, nach, 70);
         }
         // 2. abdrücken: der Daumen klappt in 0.05 s an die Hand – ein Sprung auf das Ziel von kurz davor
         if (v1fJetzt >= 0.9 && v1fJetzt < 1.3) pruefPistolenHand = PruefPistole(k, Math.Clamp((v1fJetzt - 0.9) / 0.05, 0, 1));
-        if (V1fBei(0.97)) V1dBild(ordner, "v1f_pistole_abdruecken.jpg", k.position + Vec3.Up * 0.05f, k.position + k.Forward + new Vec3(0, -0.45f, 0), 85);
+        // abgedrückt (der Daumen liegt an der Hand; der Sprung ist schon geschehen, die Hand hängt am Kopf): von rechts neben der Hand
+        if (V1fBei(0.97) && pruefPistolenHand is { } ph1)
+        {
+            var f1 = new Vec3(k.Forward.x, 0, k.Forward.z).Normalized;
+            var r1 = new Vec3(-f1.z, 0, f1.x);
+            var mitte = (Vec3)(Vector3)ph1["index-finger-phalanx-proximal"];
+            V1dBild(ordner, "v1f_pistole_abdruecken.jpg", mitte + r1 * 0.22f + Vec3.Up * 0.06f - f1 * 0.08f, mitte + f1 * 0.03f, 60);
+        }
         if (v1fJetzt >= 0.9 && rig != v1fRig) v1fSprung = true;
         if (V1fBei(1.3)) pruefPistolenHand = PruefPistole(k, 0);
         if (V1fBei(1.45)) { pruefPistolenHand = null; geister.Stoppen(); }

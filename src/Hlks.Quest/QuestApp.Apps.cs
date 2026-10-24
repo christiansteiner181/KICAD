@@ -223,7 +223,7 @@ sealed partial class QuestApp
             case "messen":
             {
                 c.Titel("Messen");
-                c.Schalter("messen_an", "Messen", messen.An, messen.An ? messen.Hinweis : "Pinch misst statt zu springen");
+                c.Schalter("messen_an", "Messen", messen.An, messen.An ? MitAusloeser(messen.Hinweis) : bedien.MitPistole ? "Abdrücken misst statt zu springen" : "Pinch misst statt zu springen");
                 // Variante und Lot in einer Reihe (Befund Prüfbild 24.10.2026: mit eigener Zeile für das Lot reichte der Platz nicht für Liste und Knopf)
                 c.Reihe([("v_messband", "Messband", messen.Variante == Varianten.Messband), ("v_zwei", "Zwei Punkte", messen.Variante == Varianten.ZweiPunkte),
                     ("messen_lot", "Lot", messen.Lot)]);
@@ -245,7 +245,7 @@ sealed partial class QuestApp
             case "marker":
             {
                 c.Titel("Problem-Marker");
-                c.Knopf("marker_setzen", markerSetzen ? "Zeigen und Pinch …" : "Problem markieren", GlasSymbole.Marker, primaer: true, ein: markerSetzen);
+                c.Knopf("marker_setzen", markerSetzen ? (bedien.MitPistole ? "Zielen und abdrücken …" : "Zeigen und Pinch …") : "Problem markieren", GlasSymbole.Marker, primaer: true, ein: markerSetzen);
                 c.Reihe([.. ProblemMarker.Kurznotizen.Select(k => ($"notiz:{k}", k, markerNotiz == k))]);
                 var alle = MarkerAlle().OrderByDescending(m => m.Offen).ThenByDescending(m => m.Zeit, StringComparer.Ordinal).ToList();
                 var (ab, n, s) = ListenSeite(alle.Count, c.FreieZeilen);

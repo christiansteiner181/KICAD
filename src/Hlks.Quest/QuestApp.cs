@@ -1066,7 +1066,7 @@ sealed partial class QuestApp
         if (darstellung is not null)
         {
             UI.Text(string.Create(CultureInfo.InvariantCulture,
-                $"Pinch auf den Boden: springen{(drehen.Drehen ? " · Pinch + Wisch: drehen" : "")}\n{geschossAmStand?.Kennzeichen ?? "alle"} · " +
+                $"{(bedien.MitPistole ? "Auf den Boden zielen, abdrücken: springen" : "Pinch auf den Boden: springen")}{(drehen.Drehen ? " · Pinch + Wisch: drehen" : "")}\n{geschossAmStand?.Kennzeichen ?? "alle"} · " +
                 $"{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));
             // Schalter «Drehen» (Christian 23.10.2026: «der schalter soll drehen ein oder ausschalten», «damit kann die sitzposition übersteuert werden»):
             // zeigt den wirksamen Zustand; Antippen mit dem Finger übersteuert die Automatik bis zum nächsten Haltungswechsel; nicht über den Neustart gemerkt
@@ -1099,7 +1099,9 @@ sealed partial class QuestApp
             "zoomt" => "Die zweite Hand zoomt: auseinander grösser, zusammen kleiner.",
             "gehalten" => bedien.Griff.Zoom == Varianten.ZoomDrehknopf ? "Griff gehalten: verschieben, mit der Hand drehen, Handgelenk rollen zoomt."
                 : "Griff gehalten: verschieben, mit der Hand drehen; Pinch der anderen Hand zoomt.",
-            _ => "Den Griff vorn am Modell mit Daumen und Zeigefinger fassen: verschieben, drehen, zoomen.",
+            _ => bedien.Punkte.MitZweiPunkten ? (bedien.MitPistole ? "Einen Punkt am Modell mit der Faust greifen: blau verschieben, rot drehen und vergrössern."
+                    : "Einen Punkt am Modell mit Daumen und Zeigefinger fassen: blau verschieben, rot drehen und vergrössern.")
+                : "Den Griff vorn am Modell mit Daumen und Zeigefinger fassen: verschieben, drehen, zoomen.",
         });
         UI.Text(string.Create(CultureInfo.InvariantCulture,
             $"{darstellung!.GezeichnetNetze} Netze · {darstellung.GezeichnetAufrufe} Aufrufe · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {(bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0):0} Hz"));

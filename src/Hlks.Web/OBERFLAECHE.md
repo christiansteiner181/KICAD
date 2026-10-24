@@ -3191,3 +3191,90 @@ Grenzen: Katalog 73 von 80 Stellschrauben, mit 11 Varianten und der Aufgabe 85 v
   Offenheit 1.75), ob die hohe Etagentafel angenehm ist, Handhabung und Sichtbarkeit der zwei Punkte (auch mit Passthrough), ob 10 cm Abstand und der Bogen von 0.5 m
   passen, wie der Glanz im echten Raum wirkt.
 - **Anleitung:** `zb-quest-v1e-anstoss`, `zb-quest-v1e-punkte`, `zb-quest-v1e-tafel` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1f: Befunde des dritten Brillentests (Christian 24.10.2026)
+
+Christian: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell) pich ist zu sensibel.. hier braucht es eine andere geste. bsp.
+pistolengeste. zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.» – «wisch geste soll auch gehen wenn die finger nicht voll gestrekt sind.» –
+«die app hineinheben geste scheint im letzten test weniger gut zu klappen.» Regeln in `src/Hlks.Xr` (`Bedienung/Pistole.cs`, `HandBegehen.cs`, `Bedienung/Anstoss.cs`,
+`Bedienung/HebeGeste.cs`, `Bedienung/Wegwischen.cs`, `Desktop/DesktopGeste.cs`, `Bedienung/Tafel.cs`, `Sitzung/ZweiPunkte.cs`, `Sitzung/SitzungRaum.cs`,
+`Bedienung/Geisterhand.cs`), die App in `src/Hlks.Quest` (`QuestApp.Pistole.cs`, `Sitzungsraum.cs`, `QuestApp.Apps.cs`, `QuestApp.Messen.cs`, `QuestApp.Marker.cs`,
+`GlasApps.cs`, `SymbolApps.cs`, `QuestApp.PruefenV1f.cs`). **Keine Normwerte**, alle Zahlen sind Annahmen V1f (Stellschrauben im XR-Labor).
+
+### Pistolengeste statt Pinch (Variante `labor.variante.ausloeser` = `pistole`, Vorgabe | `pinch` – wie bis V1e)
+- **Haltung:** Zeigefinger gestreckt, Mittel-, Ring- und kleiner Finger eingerollt (die Daumenspitze nicht an der Zeigefingerspitze – das wäre ein Pinch). **Zielen:**
+  der Daumen steht oben; der Strahl geht vom Grundgelenk des Zeigefingers durch die Spitze. **Abdrücken:** der Daumen klappt an die Seite der Hand – die Daumenspitze
+  näher als `pistole.abzug_an_m` = **2.5 cm** an Zeigefinger (Mittelhand, Grundglied) bzw. Mittelfinger (Grund-, Mittelglied); gelöst erst über `pistole.abzug_aus_m` =
+  **4 cm** (Hysterese).
+- **Gegen Zittern und blosses Zeigen:** ein Abzug zählt nur, wenn der Daumen vorher `pistole.ruhe_s` = **0.15 s** oben stand und der Strahl dabei ruhig war (höchstens
+  20°); danach ruht die Geste 0.3 s. Es gilt der Strahl bzw. Fang von **0.08 s vor dem Abzug** (das Zucken des Daumens verreisst das Ziel nicht). Zeigen mit locker
+  anliegendem Daumen löst nie aus (der Daumen stand nie oben).
+- **Wirkung:** **Springen** (zielen zeigt Strahl und Ring am Boden – grün, sobald das Ziel ruhig liegt; abdrücken springt, ohne gültiges Ziel Abbruch); **Messen**
+  (Messband: abdrücken und halten, zum zweiten Punkt zielen, Daumen hoch; «zwei Punkte»: je ein Schuss; der Strahl zum Fang wird als feine Linie gezeigt); **Marker
+  setzen** (zielen, abdrücken); **Wahl auf Distanz** (ein Knopf der Tafel bzw. ein App-Symbol unter dem Strahl). Antippen mit dem Finger bleibt. Der Pinch zielt und
+  springt nicht mehr; **Pinch + Wisch** (Drehen, Blättern, Etage) und der Griff unter dem Fenster bleiben beim Pinch.
+- **Hilfe:** die Geisterhand «Pistole» (Daumen oben, klappt an, geht wieder hoch) mit Hinweis beim ersten Messen bzw. Marker setzen und wenn jemand wie bisher mit
+  gehaltenem Pinch (0.6 s) zu zielen versucht (höchstens alle 20 s). Hinweise und Prüfaufgaben (`teleport-markierung`, `messen-wand-wand`, `modell-greifen-zoomen`)
+  nennen die Pistolengeste; die Aufgaben tragen die Variante «ausloeser» im Messprotokoll.
+
+### Sitzungsraum: immer Passthrough, nur das Modell
+- Im Sitzungsraum ist **Passthrough immer ein**; der virtuelle Raum, Tisch, Boden und die Tischkante werden **nie** gezeichnet – nur das Modell mit seiner Bodenplatte
+  (Schatten). Ohne Passthrough (Simulator am PC) erscheint ein **heller Ersatzhintergrund**. Die Variante «umgebung» gilt am Tisch nicht mehr.
+- **«Auf echten Tisch» ist der Normalfall** (App «Tisch», bis V1e «Echter Tisch»): beim Betreten wartet die App aufs Antippen – mit dem Zeigefinger kurz auf die
+  Platte tippen, das Modell stellt sich dorthin («Neu antippen» wie bisher). Das Modell ist schon vorher sichtbar. Ohne echten Tisch (Schalter aus) steht es frei auf
+  `sitzung.tisch_hoehe_m` = **0.75 m** über dem Boden (wie bisher der virtuelle Tisch), 0.9 m vor dem Kopf. Die Tischregel der App-Symbole und der Tafel bezieht sich auf
+  die echte bzw. angenommene Platte.
+- **Faustgriff** (Vorschlag V1f, mit der Pistolengeste): die zwei Punkte fasst die **ganze Hand** – Hand an den Punkt, Faust schliessen (innen in der Faust höchstens 8 cm
+  vom Punkt), führen, Hand öffnen. Die Pistole (Zeigefinger gestreckt) greift nicht. Geisterhand «Faust» bzw. «Faust kreisen». Mit der Variante «pinch» wie bis V1e.
+
+### Tafel fest (Variante `labor.variante.tafel_nachfuehren` = `fest`, Vorgabe | `traege`)
+- Die Tafel (Glas-App, PC-Bildschirm) öffnet **mittig in der Blickrichtung und bleibt stehen**, auch wenn man den Kopf dreht; «träge» (V1d) bleibt als Variante.
+
+### Wischgesten mit lockerer Hand, Hebegeste natürlicher
+- **Lockere Hand:** Wegwischen, Hineinziehen und Hebegeste lösen auch mit halb gekrümmten Fingern aus – die Hand gilt ab `gesten.offen_ab` = **1.40** als offen
+  (mittlerer Abstand der Fingerspitzen zum Handgelenk in Handgrössen; flache Hand rund 1.9, halb gekrümmt rund 1.45, Faust rund 1.0; bis V1e 1.65 bzw. 1.75 beim
+  Anstoss). **Nie:** Faust, Pistolengeste, Pinch. Gegen Fehlauslösungen (feste Annahmen V1f): die **Form der Hand bleibt** während der Geste (höchstens 0.15 Änderung),
+  die vier Finger sind bei einer lockeren Hand etwa **gleich gekrümmt** (Streckung höchstens 0.25 auseinander). Blättern auf der Tafel verlangte nie eine offene Hand.
+- **Hebegeste** (Befund: mit echten Händen schlechter seit V1e) mit eigenen Schwellen: Handfläche bis `hebe.handflaeche_grad` = **60°** neben oben (bis V1e 45°), Drehung
+  beim Anstoss bis `hebe.dreh_grad` = **45°** (sonst 25°), Haltung vorher `hebe.vorhalte_s` = **0 s** (die Hände drehen sich beim Anheben erst in die Haltung; sonst
+  0.1 s), Gleichlauf `hebe.gleichzeitig_s` = **0.5 s** (bis V1e 0.35 s; der Anstoss der ersten Hand bleibt so lange gemerkt), dazu die lockere Hand.
+- **Protokoll:** steigen beide Hände deutlich (5 cm in 0.35 s) und die Hebegeste löst nicht aus, steht einmal je Ansatz eine Zeile «Hebe verworfen: <Grund>» im
+  Protokoll der Brille (höchstens jede Sekunde), z. B. «Handfläche links 72° (höchstens 60)», «Hand rechts: zu geschlossen (1.32, ab 1.40)», «links: Tempo 0.38 m/s
+  (mind. 0.50)», «Hände 0.62 s auseinander (höchstens 0.50)»; im Status «Hebe verworfen n×».
+- **Gemessen** (Test `V1fTests`, Generator des Gestenlabors: 900 Zufallsbewegungen, 10 × 3 s ruhige Hände, 84 Testgesten): Fehlauslösungen vorher (Satz V1e)
+  Hebegeste 0, Wegwischen 0, Hineinziehen 1 – nachher (V1f) **0, 0, 1**. Gegenprobe mit 1800 weiteren Zufallsbewegungen (andere Saat, nicht im Test): V1e 0/4/1, V1f
+  0/5/2 – zwei mehr, beide mit fast offener, gleichmässiger Hand am Rand der Schwelle. Lockere Hand (Krümmung 0.4/0.45/0.5, Verhältnis 1.61/1.54/1.46): V1f je 50 von 50
+  kurzen Anstössen erkannt, V1e 0 von 50. Natürliches Anheben (Handflächen drehen mit, locker, bis 0.35 s versetzt, ohne Halten davor): V1f 54 von 54, V1e 3 von 54.
+  Pistolengeste: 0 Abzüge in 1018 Bewegungen ohne Pistole.
+
+### Stellschrauben und Varianten (neu bzw. geändert)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `labor.variante.ausloeser` | pistole | pistole, pinch | Auslöser der Zeige-Aktionen; Faustgriff an den Punkten |
+| `pistole.abzug_an_m` | 0.025 m | 0.01 … 0.06 | Daumen an der Hand = abgedrückt |
+| `pistole.abzug_aus_m` | 0.04 m | 0.015 … 0.1 | Daumen oben bzw. gelöst |
+| `pistole.ruhe_s` | 0.15 s | 0 … 1 | so lange Daumen oben und ruhig gezielt vor dem Abzug |
+| `sitzung.tisch_hoehe_m` | 0.75 m | 0.4 … 1.3 | Höhe des Modells ohne echten Tisch |
+| `gesten.offen_ab` | 1.40 | 1.1 … 1.9 | ab so viel gilt die Hand als offen (Wischgesten) |
+| `hebe.vorhalte_s` | 0 s | 0 … 0.5 | Haltung vor dem Anstoss der Hebegeste |
+| `hebe.dreh_grad` | 45° | 10 … 90 | Drehung der Handfläche beim Anstoss der Hebegeste |
+| `hebe.handflaeche_grad` | 60° (bis V1e 45°) | 10 … 80 | Handfläche neben oben |
+| `hebe.gleichzeitig_s` | 0.5 s (bis V1e 0.35 s) | 0.05 … 1.5 | Gleichlauf der Hände |
+| `labor.variante.tafel_nachfuehren` | fest (bis V1e träge) | fest, traege | Tafel bleibt stehen bzw. rückt nach |
+
+Grenzen: Katalog 80 von 80 Stellschrauben, mit 12 Varianten und der Aufgabe 93 von 96 Werten im Kanal.
+
+### Prüfen
+- **Tests:** Xr `V1fTests` (Pistole: Haltung, Abzug und Strahl aus den Gelenken, zielen und abdrücken in jeder Körperrichtung, zweimal, Strahl von kurz davor; kein
+  Abzug beim Zeigen, Bewegen, mit anliegendem Daumen, zu früh, beim Schwenk; Hysterese; Fehlauslösungen über 1018 Bewegungen; Springen, Pinch zielt nicht, Pinch + Wisch
+  dreht; Wahl auf Distanz; Variante und Stellschrauben; Faustgriff und Geisterhand; Tischhöhe und Hintergrund; Tafel fest; lockere Hand mit Fehlauslösungen vorher/
+  nachher; Faust, Pistole, Pinch wischen nicht; Blättern locker; natürliches Anheben; verworfene Ansätze mit Grund und gedrosselt), angepasst `V1eTests`, `V1dTests`,
+  `P5bBedienungTests`, `LaborKatalogTests`; Web `XrLaborTests`; Node `xr-labor.test.mjs`.
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 -Projekt <Test_praxis> -Pruefbilder <ordner>`: Lauf 1 «V1f=ok (Auslöser pistole; Pistolengeste beim Begehen: zielen ja (Ziel
+  1.4 m vor, bereit ja), blosses Zielen springt nicht ja, abgedrückt 1×, gesprungen ja; Tafel fest; …)» und «V1d=ok (… nach 50° Drehung 50.0° (nachgerückt 0×) …)»,
+  Lauf 3 «V1f Tisch=ok (kein virtueller Tisch, Platte angenommen auf 0.750 m, Hintergrund heller Ersatz ja, Faustgriff ja)». Prüfbilder `v1f_pistole_zielen.jpg`,
+  `v1f_pistole_abdruecken.jpg`, `v1f_sitzung_ohne_tisch.jpg`, `v1f_geist_faust_kreisen.jpg`, `v1f_tafel_bleibt_nach_drehen.jpg` (nur lokal).
+- **Nur mit der Brille prüfbar:** ob die Pistolengeste mit echten Händen sicher erkannt wird (Daumen oben bzw. angelegt, 2.5/4 cm, 0.15 s) und nichts ungewollt
+  auslöst, der Faustgriff an den Punkten, Passthrough im Sitzungszimmer mit dem Antippen des echten Tischs, die lockere Hand beim Wischen und das natürliche Anheben
+  (die Zeilen «Hebe verworfen: …» im Protokoll zeigen die Gründe).
+- **Anleitung:** `zb-quest-v1f-pistole`, `zb-quest-v1f-sitzung`, `zb-quest-v1f-gesten` in `berichte/anleitung/inventar.json`.
