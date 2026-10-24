@@ -1347,7 +1347,9 @@ sealed partial class QuestApp
                 $"Symbole bleiben {(bleiben ? "ja" : "nein")}; Wegwischen schickt die Symbole weg {(weg ? "ja" : "nein")}; " +
                 $"Geisterhände {(geister.Gezeigt > 0 && geister2.Gezeigt > 0 ? "gestartet" : "nein")})");
 
-            // Etage per Wisch hoch/runter und zurück
+            // Etage per Wisch hoch/runter und zurück – seit dem Brillentest V1d ist das die Variante «wisch_modell» (Vorgabe «app»): für die Prüfung kurz einschalten
+            var bedienVorher = bedien;
+            bedien = bedien with { Etage = Varianten.EtageWisch };
             var liste = stand!.Liste.Geschosse;
             if (liste.Count < 2) teile.Add("Etage=nicht geprüft (ein Geschoss)");
             else if (sitzung.Aktiv)
@@ -1376,6 +1378,7 @@ sealed partial class QuestApp
                 var ok = g0 is not null && g1?.Id != g0.Id && g2?.Id == g0.Id && tunnelOk;
                 teile.Add($"Etage={(ok ? "ok" : "FEHLER")} ({g0?.Kennzeichen} → {art} → {g2?.Kennzeichen}; Tunnel {(tunnelOk ? "ja" : "nein")})");
             }
+            bedien = bedienVorher;
         }
         catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NullReferenceException or JsonException)
         {

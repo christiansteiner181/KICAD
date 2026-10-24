@@ -172,7 +172,7 @@ sealed partial class QuestApp
     static readonly double[] V1dMassstaebe = [19, 50, 200];
 
     /// <summary>So viele Bilder braucht die Folge am Tisch (der Abschnitt «alle Etagen» wird so lang).</summary>
-    const int V1dTischBilder = 6 * 60 + 360;   // V1e: dazu die zwei Punkte und die Etagenliste (PruefV1eTisch)
+    const int V1dTischBilder = 6 * 60 + 400;   // V1e: dazu die zwei Punkte und die Etagenliste (PruefV1eTisch)
 
     /// <summary>
     /// Ein Bild der Folge am Tisch (b = Bild im Abschnitt «alle Etagen» ab dem Beginn der Folge): Leistung (je 60 Bilder ohne und mit vereinfachter Unterlage bei 1:19,
@@ -395,7 +395,7 @@ sealed partial class QuestApp
         if (g == 330) V1dBild(ordner, "v1e_geist_kreisen.jpg", Sk(0.25, 1.3, 0.05), (Vec3)(Vector3)rl.ZuRef(v1eP.Drehen), 65);
         // Etagenliste am Tisch: alle Geschosse und «Alle Etagen» auf einer Seite (die Tafel wird höher), das aktuelle hervorgehoben
         if (g == 335) { AppOeffnen("etagen"); }
-        if (g == 345)
+        if (g == 385)   // nach dem Aufbauen des Fensters (Bilder am PC sind kurz)
         {
             var e = EtagenEintraege();
             var zeilen = apps.Ziele.Count(x => x.Art == GlasApps.Ereignis.Element);
@@ -404,7 +404,7 @@ sealed partial class QuestApp
                 $"Etagen am Tisch {zeilen} von {e.Count} Einträgen auf einer Seite (Tafel {etagenAnordnung.MehrZeilen} Zeilen höher, rollt {(etagenAnordnung.Rollt ? "ja" : "nein")}) {(v1eEtagenOk ? "ja" : "nein")}");
             if (apps.Rahmen is { } ra) V1dBild(ordner, "v1e_etagen_tisch.jpg", (Vec3)(Vector3)(ra.Fenster.Mitte + ra.Fenster.Normale * 0.75), (Vec3)(Vector3)ra.Fenster.Mitte, 70);
         }
-        if (g == 350) apps.Ausblenden(Time.Total);
+        if (g == 390) apps.Ausblenden(Time.Total);
     }
 
     XVec3 v1dGriffStart;

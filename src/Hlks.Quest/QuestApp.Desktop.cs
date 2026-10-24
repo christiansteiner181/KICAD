@@ -71,7 +71,7 @@ sealed partial class QuestApp
     double dTs, dT0, dOhneSumme, dMitSumme, dMitMax, dRechnen, dHandX = -0.10, dHalb, dHalbWeg, dHalb2, dStart = -1, dErstesBild = -1, dWegHalb = -1;
     bool dHandDa, dBild5, dPausiert, dFeldSeitlich, dHinweisFrei, dAppWeg, dDesktopWeg, dSymbolDa;
     /// <summary>V1e: im zweiten Durchgang kommt und geht der Bildschirm mit nur einem Anstoss.</summary>
-    bool dBildAnstoss, dAnstossHinein, dAnstossWeg;
+    bool dBildAnstoss, dBildAnstossWeg, dAnstossHinein, dAnstossWeg;
     int dSymbole;
     Rig? dRig;
     string? dFehler;
@@ -258,7 +258,7 @@ sealed partial class QuestApp
                 {
                     var ta = t - dT0 - 0.2;   // erst 0.2 s die Hand stellen, dann der Schub
                     dHandX = 0.25 - 0.08 * Weich(ta / 0.15);
-                    if (ta >= 0.3 && !dBild5) { dBild5 = true; DesktopFotoLinks("desktop_10_anstoss_weg.jpg", kopf); }
+                    if (ta >= 0.3 && !dBildAnstossWeg) { dBildAnstossWeg = true; DesktopFotoLinks("desktop_10_anstoss_weg.jpg", kopf); }
                     if (ta > 0.45) dHandDa = false;
                     if (d.Ansicht.Phase == DesktopPhase.Aus && ta > 1.0) { dAnstossWeg = true; dEnde = 0; dPhase = 6; dT0 = t; }
                     else if (ta > 6) { dFehler = $"der Anstoss schob den Bildschirm nicht hinaus ({d.Ansicht.Phase})"; dPhase = 7; dT0 = t; }
