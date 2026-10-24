@@ -160,7 +160,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Geste: beide Handflächen nach oben, deutlich nach oben streichen; ersetzt «linke Handfläche zum Gesicht». Löst weder Etage (Pinch+Wisch) noch Teleport aus. Grenzwerte als Stellschrauben (Startwerte Annahme).
 - Runde Glas-Symbole ohne Fenster, eines je App, steigen von unten an ihren Platz; locker im Raum verteilt (verschiedene Höhen, leicht gestaffelt, keine Leiste), in Griffweite, im Raum verankert, gleiche Lage bei jedem Öffnen.
 - Anwahl durch Berührung mit der Fingerspitze (Leuchten, Ton), dann öffnet die Glas-App; der Zeigefinger zeigt beim Annähern einen Zeiger, das Symbol hebt sich, der Name erscheint als Tooltip.
-- Annahme (offen bei Christian): Die senkrechte Registerleiste entfällt; gewechselt wird über Geste und Symbol. Ausblenden ohne Wahl per Gegenbewegung bzw. Wartezeit.
+- Die senkrechte Registerleiste entfällt (Christian, 24.10.2026: «Ja, die Registerleiste fällt weg; gewechselt wird über die Hebegeste und die Symbole.»). Ausblenden ohne Wahl per Gegenbewegung bzw. Wartezeit (Annahme).
 
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
