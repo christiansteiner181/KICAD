@@ -69,7 +69,7 @@ sealed partial class QuestApp
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var blick = KopfRef(kopf).Gieren;
         double? tisch = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y : null;
-        return Tafel.Platz(auge, blick, bedien.Apps, bedien.Tafel, tisch, Glas.UnterhalbM(GlasMasse.Fuer(bedien.Apps), 2), bedien.Symbole.TischAbstandM);
+        return Tafel.Platz(auge, blick, bedien.Apps, bedien.Tafel, tisch, Glas.UnterhalbM(apps.Aktiv == "etagen" ? apps.Masse : GlasMasse.Fuer(bedien.Apps), 2), bedien.Symbole.TischAbstandM);
     }
 
     /// <summary>Fenster an seinen Platz holen (Start, Wechsel Begehen ↔ Sitzungsraum).</summary>
@@ -87,12 +87,13 @@ sealed partial class QuestApp
         if (id == DesktopBildschirm.FarbId) { DesktopOeffnen(); return; }
         if (desktop is { Ansicht.Sichtbar: true } d) d.Ausblenden(Time.Total);
         apps.RegisterWaehlen(id);
+        if (id == "etagen") apps.Rollen = null;   // V1e: beim Öffnen das aktuelle Geschoss sichtbar
         statusGesten = false;
         // V1d: immer mittig in der Blickrichtung von jetzt (bis V1d vor dem Feld bzw. dort, wo die Symbole standen)
         apps.Holen(AppPlatz(pruefKopf ?? Input.Head), Time.Total);
         letzteGeste = $"Symbol {id}";
         // bei der ersten App: wie man sie schliesst (Christian 24.10.2026: «Nach links wischen: schliessen»)
-        if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Nach links wischen: schliessen (rechte Hand offen)."); }
+        if (!wischHinweisGezeigt) { wischHinweisGezeigt = true; Hinweis("Kurz nach links wischen: schliessen (offene Hand)."); }
     }
 
     bool wischHinweisGezeigt;
@@ -109,9 +110,16 @@ sealed partial class QuestApp
     void BlaetternAufTafel(WischRichtung r)
     {
         var ort = apps.Rahmen is { } ra ? (Vec3)(Vector3)ra.Fenster.Mitte : Input.Head.position + Input.Head.Forward * 0.45f;
-        var neu = Math.Clamp(apps.Seite + TafelBlaettern.SeitenSchritt(r), 0, Math.Max(0, appSeiten - 1));
         tafelGeblaettert++;
         letzteGeste = $"Blättern {r}";
+        // V1e: die rollende Etagenliste rollt mit dem Wisch hoch/runter (keine Seiten)
+        if (apps.Aktiv == "etagen" && etagenAnordnung.Rollt && r is WischRichtung.Hoch or WischRichtung.Runter)
+        {
+            var ab = EtagenListe.Rollen(etagenAnordnung, EtagenEintraege().Count, r);
+            if (ab != etagenAnordnung.Ab) { apps.Rollen = ab; rueck.Kachel(ort); } else rueck.Leer(ort);
+            return;
+        }
+        var neu = Math.Clamp(apps.Seite + TafelBlaettern.SeitenSchritt(r), 0, Math.Max(0, appSeiten - 1));
         if (neu != apps.Seite) { apps.Seite = neu; rueck.Kachel(ort); } else rueck.Leer(ort);
     }
 
@@ -187,6 +195,8 @@ sealed partial class QuestApp
     }
 
     int appSeiten = 1;
+    /// <summary>V1e: Anordnung der Etagenliste im letzten Bild (höhere Tafel, rollt).</summary>
+    EtagenAnordnung etagenAnordnung;
 
     /// <summary>Den Inhalt der gewählten App bauen (Titel, Knöpfe, Listen mit Seiten).</summary>
     GlasInhalt InhaltBauen()
@@ -194,17 +204,20 @@ sealed partial class QuestApp
         var c = apps.NeuerInhalt(bedien);
         appSeiten = 1;
         static string Z(FormattableString f) => FormattableString.Invariant(f);
-        string Seiten(string titel, int seiten) => seiten > 1 ? $"{titel} · {apps.Seite + 1}/{seiten}" : titel;
         switch (darstellung is null ? "status" : apps.Aktiv)
         {
             case "etagen":
             {
+                // V1e (Christian 24.10.2026: «die etagen auswahl geht über mehrere seiten da wäre besser die liste zu vergrössern»): alle auf einer Seite, die Tafel wird
+                // höher; erst über «etagen.zeilen_max» rollt die Liste (Wisch hoch/runter auf der Tafel). Das aktuelle Geschoss ist beim Öffnen sichtbar.
                 var e = EtagenEintraege();
                 c.Titel("Etagen");
-                var (ab, n, s) = ListenSeite(e.Count, c.FreieZeilen);
-                appSeiten = s;
-                if (s > 1) c = NeuMitTitel(c, Seiten("Etagen", s));
-                foreach (var x in e.Skip(ab).Take(n)) c.Zeile(x.Id, x.Titel, x.Zeile, GlasSymbole.Etagen, x.Aktuell);
+                var a = EtagenListe.Anordnen(e.Count, c.FreieZeilen, bedien.Apps.EtagenZeilenMax, e.FindIndex(x => x.Aktuell), apps.Rollen);
+                etagenAnordnung = a;
+                apps.Rollen = a.Ab;
+                c = apps.NeuerInhalt(bedien, a.MehrZeilen);
+                c.Titel(a.Rollt ? $"Etagen · {a.Ab + 1}–{a.Ab + a.Sichtbar} von {e.Count}" : "Etagen");
+                foreach (var x in e.Skip(a.Ab).Take(a.Sichtbar)) c.Zeile(x.Id, x.Titel, x.Zeile, GlasSymbole.Etagen, x.Aktuell);
                 break;
             }
             case "messen":
@@ -442,7 +455,7 @@ sealed partial class QuestApp
         var ziel = new TabletPose(p, vor * -1, links, new XVec3(0, 1, 0), 0.1, 0.1);
         geister.Starten(GeisterGeste.Wegwischen, Time.Total, Geisterhand.VorlageWisch(p, links, vor), ziel);   // schräg zum Blick (nicht auf der Kante)
         // die Hand reicht von 7 cm unter bis 11 cm über ihre Mitte: der Hinweis darunter
-        HinweisBei("Nach links wischen: schliessen (rechte Hand offen)", (Vec3)(Vector3)(mitte - new XVec3(0, 0.13, 0)), HinweisArt.Geste,
+        HinweisBei("Kurz nach links wischen: schliessen (offene Hand)", (Vec3)(Vector3)(mitte - new XVec3(0, 0.13, 0)), HinweisArt.Geste,
             SchwebeHinweise.ZeichenJeZeileGeste);
     }
 
@@ -463,7 +476,7 @@ sealed partial class QuestApp
             var ziel = XrTabletLogik.TabletLageAus(p, auge - p);
             g.Starten(GeisterGeste.Heben, Time.Total, Geisterhand.VorlageOffen(p - new XVec3(0, AppSymbole.HubM * 0.8, 0), vor, links), ziel);
         }
-        HinweisBei("Beide Handflächen nach oben – und deutlich anheben", (Vec3)(Vector3)(mitte - new XVec3(0, AppSymbole.HubM * 0.4, 0)), HinweisArt.Geste,
+        HinweisBei("Beide Handflächen nach oben – kurz anheben", (Vec3)(Vector3)(mitte - new XVec3(0, AppSymbole.HubM * 0.4, 0)), HinweisArt.Geste,
             SchwebeHinweise.ZeichenJeZeileGeste);
     }
 

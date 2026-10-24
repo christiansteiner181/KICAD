@@ -172,7 +172,7 @@ sealed partial class QuestApp
     static readonly double[] V1dMassstaebe = [19, 50, 200];
 
     /// <summary>So viele Bilder braucht die Folge am Tisch (der Abschnitt «alle Etagen» wird so lang).</summary>
-    const int V1dTischBilder = 6 * 60 + 260;
+    const int V1dTischBilder = 6 * 60 + 400;   // V1e: dazu die zwei Punkte und die Etagenliste (PruefV1eTisch)
 
     /// <summary>
     /// Ein Bild der Folge am Tisch (b = Bild im Abschnitt «alle Etagen» ab dem Beginn der Folge): Leistung (je 60 Bilder ohne und mit vereinfachter Unterlage bei 1:19,
@@ -207,7 +207,14 @@ sealed partial class QuestApp
         }
         // 2. Ein Griff (gedachte Hände im Raum-lokalen System des Tisches)
         var g = b - 6 * 60;
-        if (g == 0) { sitzung.LageSetzen(v1dStart!); v1dGriffStart = sitzung.GriffPunkt(); v1dN0 = sitzung.Lage.Massstab; }
+        // V1e: der eine Griff ist seither die Variante «ein_griff» (Vorgabe: zwei Punkte, Teil 5 unten)
+        if (g == 0)
+        {
+            StellschraubeAnwenden("labor.variante.griffe_tisch", JsonDocument.Parse("\"ein_griff\"").RootElement.Clone());
+            sitzung.LageSetzen(v1dStart!);
+            v1dGriffStart = sitzung.GriffPunkt();
+            v1dN0 = sitzung.Lage.Massstab;
+        }
         var gp = v1dGriffStart;
         EinGriffHand H(XVec3 p, bool pinch = true, double gieren = 0, double rollen = 0) => new(pinch, p, gieren, rollen);
         void Zeigen(XVec3 rechts, XVec3? links)
@@ -306,13 +313,98 @@ sealed partial class QuestApp
                 $"Fang am Tisch (Punkt, sonst Strahl; 100 Abfragen): ⌀ {zeiten.Average():0.000} ms, höchstens {zeiten.Max():0.000} ms, {getroffen} mit Punkt, Index {sf.AufbauMs:0} ms; " +
                 $"im Hintergrund {gleich} gleich, im Bild ⌀ {imBild.Average():0.0000} ms, höchstens {imBild.Max():0.000} ms");
         }
+        // 5. V1e: zwei Punkte (Vorgabe) – Verschieben, Drehen und Vergrössern um das Zentrum, Geisterhand «Kreisen», Etagenliste am Tisch auf einer Seite
+        PruefV1eTisch(g, ordner, Zeigen);
         if (g < V1dTischBilder - 6 * 60 - 1) return;
         sitzung.PruefHaende = null;
         sitzung.LageSetzen(v1dStart!);
-        var ok = v1dGriffOk && v1dZoomOk && v1dKnopfOk && v1dLeistung.Count == 6 && (szenenFang is null || v1dFangOk);
+        var ok = v1dGriffOk && v1dZoomOk && v1dKnopfOk && v1dLeistung.Count == 6 && (szenenFang is null || v1dFangOk) && v1eVerschiebenOk && v1eDrehenOk && v1eEtagenOk;
         pruefV1dTisch = string.Create(CultureInfo.InvariantCulture,
-            $"V1d Tisch={(ok ? "ok" : "FEHLER")} ({string.Join("; ", v1dLeistung)}; Tischstufen {stufenText}; ein Griff: fassen, heben, drehen {(v1dGriffOk ? "ja" : "nein")}, " +
-            $"zweite Hand zoomt 1:{v1dN0:0} → 1:{v1dN0 / 2:0} {(v1dZoomOk ? "ja" : "nein")}, Drehknopf {(v1dKnopfOk ? "ja" : "nein")}; {v1dFangText})");
+            $"V1d Tisch={(ok ? "ok" : "FEHLER")} ({string.Join("; ", v1dLeistung)}; Tischstufen {stufenText}; ein Griff (Variante): fassen, heben, drehen {(v1dGriffOk ? "ja" : "nein")}, " +
+            $"zweite Hand zoomt 1:{v1dN0:0} → 1:{v1dN0 / 2:0} {(v1dZoomOk ? "ja" : "nein")}, Drehknopf {(v1dKnopfOk ? "ja" : "nein")}; {v1dFangText}; " +
+            $"V1e zwei Punkte: verschieben ohne Drehen {(v1eVerschiebenOk ? "ja" : "nein")}, {v1eDrehenText}; {v1eEtagenText})");
+    }
+
+    bool v1eVerschiebenOk, v1eDrehenOk, v1eEtagenOk;
+    string v1eDrehenText = "", v1eEtagenText = "";
+    ZweiPunkteLage v1eP;
+
+    /// <summary>V1e am Tisch (Bild g der Folge nach dem Fang): die zwei Punkte mit gedachten Händen, die Geisterhand «Kreisen», die Etagenliste auf einer Seite.</summary>
+    void PruefV1eTisch(int g, string? ordner, Action<XVec3, XVec3?> zeigen)
+    {
+        if (sitzung.Ansicht is not { } an) return;
+        var rl = sitzung.RaumLage;
+        Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
+        EinGriffHand H(XVec3 p, bool pinch = true) => new(pinch, p, 0, 0);
+        if (g == 215)
+        {
+            sitzung.PruefHaende = () => (null, null);
+            StellschraubeAnwenden("labor.variante.griffe_tisch", JsonDocument.Parse("null").RootElement.Clone());
+            sitzung.LageSetzen(v1dStart!);
+            v1eP = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar);
+        }
+        if (g == 218) V1dBild(ordner, "v1e_punkte_beide.jpg", Sk(0.15, 1.3, 0.0), (Vec3)(Vector3)rl.ZuRef(v1eP.Zentrum), 60);
+        // Verschieben: die rechte Hand fasst den blauen Punkt und zieht 10 cm nach rechts und 4 cm hoch
+        if (g >= 220 && g <= 250)
+        {
+            var u = GlasStil.Weich((g - 222) / 24.0);
+            var hand = v1eP.Verschieben + new XVec3(0.10 * Math.Max(0, u), 0.04 * Math.Max(0, u), 0);
+            sitzung.PruefHaende = () => (null, H(hand));
+            zeigen(hand, null);
+            if (g == 248) V1dBild(ordner, "v1e_verschieben_gefasst.jpg", Sk(0.2, 1.25, 0.05), (Vec3)(Vector3)rl.ZuRef(hand), 60);
+            if (g == 250)
+                v1eVerschiebenOk = sitzung.GehaltenerPunkt == TischPunkt.Verschieben && Math.Abs(sitzung.Lage.X - v1dStart!.X - 0.10) < 0.002
+                    && Math.Abs(sitzung.Lage.Hoehe - v1dStart.Hoehe - 0.04) < 0.002 && Math.Abs(sitzung.Lage.Drehung - v1dStart.Drehung) < 1e-9 && Math.Abs(sitzung.Lage.Massstab - v1dStart.Massstab) < 1e-9;
+        }
+        if (g == 252) { sitzung.PruefHaende = () => (null, null); }
+        if (g == 254) { sitzung.LageSetzen(v1dStart!); v1eP = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar); }
+        // Drehen und Vergrössern: der rote Punkt um 40° um das Zentrum und 1.3-mal so weit weg
+        if (g >= 256 && g <= 300)
+        {
+            var u = Math.Max(0, GlasStil.Weich((g - 258) / 38.0));
+            var c = v1eP.Zentrum;
+            var d = XrSitzungLogik.DreheXZ(new Xz((v1eP.Drehen.X - c.X) * (1 + 0.3 * u), (v1eP.Drehen.Z - c.Z) * (1 + 0.3 * u)), 40 * Grad1 * u);
+            var hand = new XVec3(c.X + d.X, v1eP.Drehen.Y, c.Z + d.Z);
+            sitzung.PruefHaende = () => (null, H(hand));
+            zeigen(hand, null);
+            if (g == 298) V1dBild(ordner, "v1e_drehen_gefasst.jpg", Sk(0.2, 1.3, 0.05), (Vec3)(Vector3)rl.ZuRef(c), 65);
+            if (g == 300)
+            {
+                var z1 = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar).Zentrum;
+                var dreh = XrSitzungLogik.WinkelDiff(sitzung.Lage.Drehung, v1dStart!.Drehung) / Grad1;
+                var soll = v1dStart.Massstab / (1.3 / 1.05);
+                var nOk = Math.Abs(sitzung.Lage.Massstab - XrSitzungLogik.MassstabBegrenzen(soll, bedien.Zoom)) < 0.05;
+                v1eDrehenOk = sitzung.GehaltenerPunkt == TischPunkt.Drehen && Math.Abs(dreh - 37) < 0.5 && nOk && z1.Abstand(v1eP.Zentrum) < 0.002;
+                v1eDrehenText = string.Create(CultureInfo.InvariantCulture,
+                    $"drehen um das Zentrum {dreh:0.0}° (Hand 40°, Totzone 3°), 1:{v1dStart.Massstab:0} → 1:{sitzung.Lage.Massstab:0.0} (Hand 1.3-mal so weit), Zentrum versetzt {z1.Abstand(v1eP.Zentrum) * 1000:0.0} mm {(v1eDrehenOk ? "ja" : "nein")}");
+            }
+        }
+        if (g == 302) { sitzung.PruefHaende = () => (null, null); }
+        if (g == 304)
+        {
+            sitzung.PruefHaende = null;
+            sitzung.LageSetzen(v1dStart!);
+            v1eP = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar);
+            // Geisterhand «Kreisen» am roten Punkt: Bogen um das Zentrum (gegen den Uhrzeigersinn von oben), etwas nach aussen
+            var r = rl.ZuRef(v1eP.Drehen);
+            var radial = (rl.ZuRef(v1eP.Drehen + (v1eP.Drehen - v1eP.Zentrum with { Y = v1eP.Drehen.Y }).Einheit()) - r).Einheit();
+            var tangente = radial.Kreuz(new XVec3(0, 1, 0)).Einheit();
+            geister.Starten(GeisterGeste.Kreisen, Time.Total, Geisterhand.Vorlage(r, XrTabletLogik.TabletLageAus(r, new XVec3(0, 1, 0)), links: false),
+                new TabletPose(r, new XVec3(0, 1, 0), tangente, new XVec3(0, 1, 0).Kreuz(tangente).Einheit(), 0.05, 0.05));
+        }
+        if (g == 330) V1dBild(ordner, "v1e_geist_kreisen.jpg", Sk(0.25, 1.3, 0.05), (Vec3)(Vector3)rl.ZuRef(v1eP.Drehen), 65);
+        // Etagenliste am Tisch: alle Geschosse und «Alle Etagen» auf einer Seite (die Tafel wird höher), das aktuelle hervorgehoben
+        if (g == 335) { AppOeffnen("etagen"); }
+        if (g == 385)   // nach dem Aufbauen des Fensters (Bilder am PC sind kurz)
+        {
+            var e = EtagenEintraege();
+            var zeilen = apps.Ziele.Count(x => x.Art == GlasApps.Ereignis.Element);
+            v1eEtagenOk = apps.Sichtbar && apps.Aktiv == "etagen" && (e.Count <= bedien.Apps.EtagenZeilenMax ? zeilen == e.Count && !etagenAnordnung.Rollt : etagenAnordnung.Rollt);
+            v1eEtagenText = string.Create(CultureInfo.InvariantCulture,
+                $"Etagen am Tisch {zeilen} von {e.Count} Einträgen auf einer Seite (Tafel {etagenAnordnung.MehrZeilen} Zeilen höher, rollt {(etagenAnordnung.Rollt ? "ja" : "nein")}) {(v1eEtagenOk ? "ja" : "nein")}");
+            if (apps.Rahmen is { } ra) V1dBild(ordner, "v1e_etagen_tisch.jpg", (Vec3)(Vector3)(ra.Fenster.Mitte + ra.Fenster.Normale * 0.75), (Vec3)(Vector3)ra.Fenster.Mitte, 70);
+        }
+        if (g == 390) apps.Ausblenden(Time.Total);
     }
 
     XVec3 v1dGriffStart;

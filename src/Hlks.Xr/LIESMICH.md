@@ -301,3 +301,25 @@ App: `src/Hlks.Quest/SymbolApps.cs`, `GlasApps.cs`, `QuestApp.Apps.cs`, `QuestAp
   mit zweiter Hand und Drehknopf, linke Hand für beide Gesten, gegenläufige Hand, Blättern mit beiden Händen und gegen Antippen, Gestentabelle, Tischstufe, Fang
   mit Index gleich wie bis V1a, Fang im Hintergrund, Stellschrauben, Geisterhand); `DesktopGesteTests` mit beiden Händen verdrahtet wie in der App; gegen
   Test_praxis `tests/Hlks.Web.Tests/XrV1dEchtTests.cs` (nur lokal). Die App selbst: `werkzeuge/quest_pruefen.ps1` (Zeilen «V1d» und «V1d Tisch»).
+
+## Befunde des zweiten Brillentests (V1e)
+
+Christian 24.10.2026: Anstoss statt ganzer Bewegung, Etagenliste auf einer Seite, zwei Punkte am Sitzungstisch, mehr Glanz, mehr Abstand der Symbole zur Tafel auf
+kleinerem Bogen. Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1e».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Bedienung/Anstoss.cs` | `AnstossEinstellungen`, `AnstossStand`, `Anstoss` | kurzer, deutlicher Schub in Richtung der Geste auf einer Spur (Zeit, Mitte, Normale der Handfläche): Weg und Tempo innert 0.2 s, Haltung vorher, Drehung, Offenheit, quer |
+| `Bedienung/EtagenListe.cs` | `EtagenAnordnung`, `EtagenListe` | Etagen auf einer Seite (Fenster um Zeilen höher), über «etagen.zeilen_max» rollen mit dem Wisch hoch/runter, das Aktuelle beim Öffnen sichtbar |
+| `Sitzung/ZweiPunkte.cs` | `ZweiPunkteEinstellungen`, `ZweiPunkteLage`, `TischPunkt`, `ZweiPunkteZustand`, `ZweiPunkteEreignis`, `ZweiPunkte` | Punkte «Verschieben» (vorn Mitte) und «Drehen und Vergrössern» (vorn rechts): verschieben ohne Drehen; drehen um das Zentrum mit dem Winkel der Hand, Massstab aus dem Abstandsverhältnis, Totzonen; nur ein Punkt zur Zeit |
+
+- **Geändert für V1e:** `HebeGeste.cs`, `Wegwischen.cs`, `Desktop/DesktopGeste.cs` (Anstoss; Spuren mit Normale; Hand mit Offenheit, `HandBeobachtung.Offenheit`;
+  gegenläufige bzw. ruhige zweite Hand beim Anstoss schon ab der Hälfte des eigenen Wegs), `DesktopEinstellungen.HineinMit` (Anstoss vom Wegwischen),
+  `AppSymbole.Seitlich` (Abstand zur Tafel im Blick und im Raum, kleinerer Bogen um den Kopf), `Glas.cs` (`GlasMasse.MehrZeilen`), `Geisterhand.cs` (Anstoss, Geste
+  `Kreisen`), `GlasSymbole.cs` (`verschieben`, `drehen`), `AppFarben.Pflicht` (Farben `verschieben`, `drehen`), `XrBedienEinstellungen.cs` (Stellschrauben und Variante
+  V1e), `XrGesten.cs` (Tabelle: Anstoss, zwei Punkte).
+- **Annahmen V1e:** Anstoss 6 cm, 0.5 m/s, innert 0.2 s, Haltung 0.1 s vorher, Drehung höchstens 25°, Offenheit ab 1.75, quer 0.4, andere Hand höchstens die Hälfte
+  des eigenen Wegs (mindestens 2 cm); Etagen bis 12 auf einer Seite; Punkte: Totzonen 3° und 5 %; Symbole neben der Tafel 10 cm Luft, Bogen 0.5 m; Glanz 0.6; Farben
+  Verschieben #D4DBF7/#2C3D81, Drehen #F6D5DD/#7E2F43 (zu bestätigen).
+- **Tests:** `V1eTests` (siehe OBERFLAECHE.md, Abschnitt V1e «Prüfen»); angepasst `V1aSymboleTests`, `DesktopGesteTests`, `BedienungTests`, `P5bBedienungTests`,
+  `LaborKatalogTests`.

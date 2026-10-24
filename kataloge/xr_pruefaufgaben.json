@@ -37,12 +37,12 @@
     },
     {
       "id": "modell-greifen-zoomen", "titel": "Modell greifen, drehen und zoomen", "status": "p5",
-      "anleitung": "Fasse den Griff vorn am Modell, dreh es mit der Hand um eine Vierteldrehung und zoome auf den angezeigten Zielmassstab (zweite Hand bzw. Handgelenk rollen), dann lass den Griff los.",
-      "ort": "Sitzungsraum mit Modell auf dem Tisch", "varianten": ["bedienung", "zoom_ein_griff"],
+      "anleitung": "Fasse den roten Punkt «Drehen und Vergrössern» vorn rechts, führe die Hand um das Modell (Vierteldrehung) und weiter weg bzw. näher, bis der Zielmassstab erreicht ist, dann lass los. (Variante «ein Griff»: den Griff vorn fassen, mit der Hand drehen, mit der zweiten Hand zoomen.)",
+      "ort": "Sitzungsraum mit Modell auf dem Tisch", "varianten": ["bedienung", "griffe_tisch", "zoom_ein_griff"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
       "erfolgskriterium": "Der Massstab weicht höchstens 10 % vom Zielmassstab ab und das Modell ist um eine Vierteldrehung gedreht, mit höchstens 15° Abweichung (Annahme P6).",
-      "fehlgriff": "Ein Pinch am Tisch ohne Griff in Reichweite (der Pinch der zweiten Hand zum Zoomen zählt nicht) und ein Antippen neben eine Kachel.",
-      "herkunft": "modul-xr.md «Was das Labor kann» (das Modell greifen, drehen und auf einen Zielmassstab zoomen); Zoom 1:5 bis 1:200 (XrSitzungLogik.cs, P4b-Nachtrag); V1d ein Griff (Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»)"
+      "fehlgriff": "Ein Pinch am Tisch ohne Punkt bzw. Griff in Reichweite (der Pinch der zweiten Hand zum Zoomen am einen Griff zählt nicht) und ein Antippen neben eine Kachel.",
+      "herkunft": "modul-xr.md «Was das Labor kann» (das Modell greifen, drehen und auf einen Zielmassstab zoomen); Zoom 1:5 bis 1:200 (XrSitzungLogik.cs, P4b-Nachtrag); V1d ein Griff (Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»); V1e zwei Punkte (Christian 24.10.2026: «einen verschieben punkt …, und einen punkt für drehen und vergrössern»)"
     },
     {
       "id": "raum-ar-oeffnen", "titel": "Raum in AR öffnen", "status": "p5",

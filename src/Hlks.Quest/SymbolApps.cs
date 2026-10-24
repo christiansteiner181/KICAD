@@ -239,7 +239,8 @@ sealed class SymbolApps : IWegwischbar
             deck.Add(d * (weggewischt ? 1 : 1 - gehen) * AppSymbole.SeitlichDeckkraft(links) * (seitlich ? 1 : AppSymbole.Gedaempft(hinten)));
         }
         // offene App: seitlich neben Fenster und Ornamente (je Seite gemeinsam um das Auge gedreht, Abstand bleibt) bzw. dahinter (zurück entlang der Sichtlinie)
-        if (seitlich) mitten = AppSymbole.Seitlich(mitten, auge, gieren, letzteFlaechen!, AppSymbole.Durchmesser(m) / 2, hinten);
+        // V1e: mit Abstand zur Tafel («symbole.abstand_tafel_m») auf dem kleineren Bogen um den Kopf («symbole.radius_seitlich_m»)
+        if (seitlich) mitten = AppSymbole.Seitlich(mitten, auge, gieren, letzteFlaechen!, AppSymbole.Durchmesser(m) / 2, hinten, e.Symbole.AbstandTafelM, e.Symbole.RadiusSeitlichM);
         for (int i = 0; i < plaetze.Count; i++)
         {
             var p = seitlich ? mitten[i] : AppSymbole.Zurueck(mitten[i], auge, hinten);

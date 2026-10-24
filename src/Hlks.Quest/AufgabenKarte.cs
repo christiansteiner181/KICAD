@@ -145,7 +145,7 @@ sealed class AufgabenKarte
             glas.Knopf(lage, GlasForm.Kapsel, naehe > 0 || blitz > 0 ? s.DuennNah : s.Duenn, m.Pt);
             glas.Schrift("Aufgabe beenden", lage, 0, ms.Klein * 0.62, lage.B - m.M(16), lage.H, ms.Klein, s.Text, TextAlign.TopCenter, umbrechen: false);
             // die Geste als Hinweis frei schwebend über der Karte (Christian 24.10.2026: «hinweistexte frei schwebend»; die Karte selbst bleibt Glas)
-            glas.Schein("Nach links wischen: abbrechen", k.Mitte + k.Oben * (k.H / 2 + ms.Klein * 1.6) + k.Normale * 0.004, auge, ms.Klein, 0.9);
+            glas.Schein("Kurz nach links wischen: abbrechen", k.Mitte + k.Oben * (k.H / 2 + ms.Klein * 1.6) + k.Normale * 0.004, auge, ms.Klein, 0.9);
         }
     }
 }

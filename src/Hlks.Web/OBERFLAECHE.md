@@ -3103,3 +3103,91 @@ gegenläufige Hand 8 cm. Grenzen: Katalog höchstens **80** Stellschrauben (65 b
   Wegwischen mit echten Händen, die linke Hand (Handfläche seitlich), 72 Hz bei «Alle Etagen» mit der vereinfachten Unterlage und Passthrough, die Zeit des Fangs
   auf der Quest (Index im Hintergrund, Anfrage je Bild).
 - **Anleitung:** `zb-quest-v1d-feld`, `zb-quest-v1d-tafel`, `zb-quest-v1d-griff`, `zb-quest-v1d-haende` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1e: Befunde des zweiten Brillentests (Christian 24.10.2026)
+
+Christian: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen. momentan brechen einblenden von apps und monitor, sowie der apps oft ab. weil die instinktive
+bewegung zu kurz ist.» – «die etagen auswahl geht über mehrere seiten da wäre besser die liste zu vergrössern.» – «modell auf tisch soll einen verschieben punkt erhalten,
+und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum. beide punkte sollen farblich unterschiedlich sein, und ein kleines symbol beim
+greiffen erhalten.» – «apps sollen etwas mehr glanz erhalten.» – «apps mit mehr abstand zu den popup tafeln», «die apps bei grösseren abständen in einem kleineren radius
+um den betrachter anornen». Regeln in `src/Hlks.Xr` (`Bedienung/Anstoss.cs`, `Bedienung/EtagenListe.cs`, `Sitzung/ZweiPunkte.cs`, `Bedienung/AppSymbole.cs`,
+`Bedienung/Geisterhand.cs`), die App in `src/Hlks.Quest` (`Sitzungsraum.cs`, `QuestApp.Apps.cs`, `GlasApps.cs`, `GlasZeichner.cs`, `Assets/glas.hlsl`,
+`QuestApp.PruefenV1d.cs`, `QuestApp.Desktop.cs`). **Keine Normwerte**, alle Zahlen sind Annahmen V1e (Stellschrauben im XR-Labor).
+
+### Anstoss statt ganzer Bewegung (Hebegeste, Hineinziehen, Wegwischen)
+- Ein **kurzer, deutlicher Anstoss** in die Richtung der Geste löst aus: Haltung wie bisher, mindestens `gesten.anstoss_weg_m` = **6 cm** innert 0.2 s mit einem
+  mittleren Tempo von mindestens `gesten.anstoss_tempo_ms` = **0.5 m/s** (6 cm in höchstens 0.12 s bzw. 10 cm in 0.2 s); bei der Hebegeste beide Hände etwa gleichzeitig.
+  Die ganze Bewegung wie bis V1d löst weiter aus.
+- **Ablauf:** ist der Anstoss erkannt, gilt die Geste als ausgelöst – die Symbole steigen auf, der Bildschirm gleitet herein, das Fenster gleitet hinaus, mit Schwung
+  zu Ende, auch wenn die Hand stehen bleibt oder zurückgeht. Bis dahin folgt die Bewegung der Hand; abbrechen nur vor dem Auslösen. Ton beim Auslösen wie bisher.
+- **Gegen Fehlauslösungen** (feste Annahmen V1e): die Haltung steht schon 0.1 s vor dem Schub, die Handfläche dreht sich dabei höchstens 25°, die Hand ist deutlich
+  offen (Verhältnis der Fingerspitzen ab 1.75; eine flache Hand rund 1.9), quer höchstens 40 % des Wegs; die andere Hand darf sich beim Anstoss höchstens halb so weit
+  (mindestens 2 cm) gegenläufig bzw. überhaupt bewegen. Sperren, Ausholen, Pinch, Drehen, Teleport und Blättern auf der Tafel wie bisher.
+- **Gemessen** (Test `V1eTests`, Generator des Gestenlabors: 900 Zufallsbewegungen, 10 × 3 s ruhige Hände, 84 Testgesten, zusammen 37 min): Fehlauslösungen vorher
+  (ganze Bewegung) Hebegeste 0, Wegwischen 0, Hineinziehen 1 – nachher (mit Anstoss) 0, 0, 1 (dieselbe schnelle Zufallsbewegung, die schon die ganze Bewegung
+  auslöst). Kurze Anstösse (6.5–12 cm in 0.1–0.25 s, rechte und linke Hand, Hebegeste): erkannt 115 von 120, mit der ganzen Bewegung bis V1d 0 von 120.
+- **Geisterhand und Hinweise** zeigen den kurzen Anstoss («Kurz nach links wischen: schliessen», «Beide Handflächen nach oben – kurz anheben»): erst die Hand stellen,
+  dann 9 cm schnell, dann steht sie.
+
+### Etagenliste auf einer Seite
+- Die App «Etagen» zeigt alle Geschosse (am Tisch dazu «Alle Etagen») auf **einer Seite**: die Tafel wird um so viele Zeilen höher, die Zeilen bleiben gleich gross und
+  gleich weit auseinander (52 pt, Mitten 60 pt – mit der ganzen Hand bzw. Fingerspitze treffbar). Test_praxis: 7 Geschosse beim Begehen (3 Zeilen höher), 8 Einträge am
+  Tisch (4 Zeilen höher).
+- Erst über `etagen.zeilen_max` = **12** rollt die Liste: 12 Zeilen sichtbar, ein **Wisch auf der Tafel nach oben bzw. unten** rollt um 11 weiter bzw. zurück – keine Seiten.
+- Das **aktuelle Geschoss** ist hervorgehoben (Haken, gedrückt) und beim Öffnen sichtbar (in der Mitte, wenn die Liste rollt).
+
+### Zwei Punkte am Sitzungstisch (Variante `labor.variante.griffe_tisch` = `zwei_punkte`, Vorgabe | `ein_griff` – der Griff von V1d)
+- **Punkt «Verschieben»** (blau, `verschieben` in `kataloge/xr_farben.json`): Mitte der vorderen Gebäudekante. Gefasst (Pinch) folgt das Modell der Hand in allen
+  Richtungen, auch in der Höhe – **ohne** Drehen und ohne Massstab.
+- **Punkt «Drehen und Vergrössern»** (himbeerrot, `drehen`): rechte vordere Ecke, schräg nach aussen. Das Modell dreht **immer um sein Zentrum** (Mitte des sichtbaren
+  Rechtecks, beim Fassen festgehalten), nie um den Griff: der **Winkel der Hand um das Zentrum** in der Tischebene ergibt die Drehung, das **Verhältnis der Abstände**
+  Hand ↔ Zentrum (jetzt zu beim Fassen) den Massstab (1:5 … 1:200). Kleine Ausschläge zählen nicht: `sitzung.dreh_totzone_grad` = **3°**, `sitzung.zoom_totzone` =
+  **5 %** (weich abgezogen, ohne Sprung). Die Höhe bleibt.
+- Es wirkt **immer nur ein Punkt**; eine Hand fasst nie beide. Nach dem Loslassen sitzen beide wieder an ihrem Platz am Modell (vorn bzw. vorn rechts).
+- **Darstellung:** die Kugel im Akzent der App-Farbe, mit hellem Saum im Pastellton (gut sichtbar im hellen Raum und mit Passthrough); beim Annähern grösser und heller,
+  beim Greifen das **Symbol** der Werkzeuge von KICAD darüber («Verschieben» Pfeilkreuz, «Drehen» Kreispfeil; Strich- und Revit-Fassung, Texturen mit
+  `werkzeuge/quest_symbole.mjs`). Farben (Vorschlag V1e nach der Regel von V1a, zu bestätigen): Verschieben Ton **#D4DBF7**, Akzent **#2C3D81**; Drehen Ton **#F6D5DD**,
+  Akzent **#7E2F43**.
+- **Geisterhand:** gezögert an einem Punkt «Greifen»; am gehaltenen Punkt «Drehen» das «Kreisen» (auf dem Bogen um das Zentrum, etwas nach aussen). Prüfaufgabe
+  «Modell greifen, drehen und zoomen» mit dem roten Punkt.
+
+### Symbolfeld neben der Tafel: mehr Abstand, kleinerer Bogen
+- Weicht das Feld neben eine offene Tafel aus (Glas-App, PC-Bildschirm, Karte), bleibt `symbole.abstand_tafel_m` = **10 cm** Luft (im Blick und als kleinster Raumabstand;
+  bis V1d 3 cm im Blick) zu Tafel, Werkzeugleiste, Griff und Schliessen. Die Symbole stehen dabei auf einem Bogen mit `symbole.radius_seitlich_m` = **0.50 m** um den Kopf
+  (waagrecht; das frontale Feld 0.6 m) – näher, in Griffweite, zum Kopf gewandt. Ohne offene Tafel bleibt das frontale Feld wie bisher.
+
+### Mehr Glanz
+- Glas-Apps, App-Symbole (Scheiben) und Aufgabenkarte: ein **Lichtsaum am ganzen Rand** (oben kräftiger, bei den runden Scheiben stärker), ein **weicher heller Schein
+  oben**, der sich leicht mit dem Blickwinkel verschiebt. Aufgehellt im «Screen»-Verfahren (helles Pastell überstrahlt nicht, die dunkle Schrift bleibt lesbar).
+  Stellschraube `anzeige.glanz` = **0.6** (0 = wie bis V1d). Kosten: einige Rechenschritte je Pixel im Shader `glas.hlsl`, keine Textur, kein Zeichenaufruf mehr – am
+  PC ohne messbaren Unterschied der Bildzeit (Begehen 7.5 bzw. 7.3 ms, V1d 7.5 bzw. 7.4 ms; am PC durch den Bildtakt begrenzt, auf der Quest nur an der Brille messbar).
+
+### Stellschrauben und Varianten (neu)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `gesten.anstoss_weg_m` | 0.06 m | 0.02 … 0.2 | Weg des Anstosses (Hebegeste, Hineinziehen, Wegwischen) |
+| `gesten.anstoss_tempo_ms` | 0.5 m/s | 0.2 … 3 | mittleres Tempo des Anstosses |
+| `etagen.zeilen_max` | 12 | 4 … 30 | bis so viele Etagen auf einer Seite, darüber rollt die Liste |
+| `sitzung.dreh_totzone_grad` | 3° | 0 … 20 | Punkt «Drehen»: so viel Drehung zählt nicht |
+| `sitzung.zoom_totzone` | 0.05 | 0 … 0.3 | Punkt «Drehen»: so viel Abstandsänderung zählt nicht |
+| `symbole.abstand_tafel_m` | 0.10 m | 0.02 … 0.4 | Luft zwischen Symbolen und Tafel |
+| `symbole.radius_seitlich_m` | 0.50 m | 0.3 … 1 | Bogen der Symbole neben der Tafel |
+| `anzeige.glanz` | 0.6 | 0 … 1 | Glanz der Apps |
+| `labor.variante.griffe_tisch` | zwei_punkte | zwei_punkte, ein_griff | Griffe am Sitzungstisch (`zoom_ein_griff` gilt nur für «ein Griff») |
+
+Grenzen: Katalog 73 von 80 Stellschrauben, mit 11 Varianten und der Aufgabe 85 von 96 Werten im Kanal.
+
+### Prüfen
+- **Tests:** Xr `V1eTests` (Fehlauslösungen vorher/nachher, Anstoss je Geste, kein Anstoss bei langsam/kurz/Schwenk/Pinch/Faust/halb offen/einhändig/ohne Stellen,
+  Ausholen und Zurückholen, gegenläufige Hand, Abgrenzung Pinch + Wisch, Sprung und Tafel, Stellschrauben; Etagenliste; zwei Punkte: Lage, Verschieben ohne Drehen,
+  Drehen um das Zentrum mit Totzone, Massstab aus dem Abstand in den Grenzen, nur ein Punkt, Variante und Farben; Symbolfeld neben der Tafel; Geisterhand, Symbole,
+  Glanz), angepasst `V1aSymboleTests`, `DesktopGesteTests`, `BedienungTests`; Web `XrLaborTests`; Node `xr-labor.test.mjs`, `quest-symbole.test.mjs`.
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 -Projekt <Test_praxis> -Pruefbilder <ordner>`: Lauf 3 «V1d Tisch=ok (…; V1e zwei Punkte: verschieben ohne Drehen ja, drehen um
+  das Zentrum 37.0° (Hand 40°, Totzone 3°), 1:50 → 1:40.4 …; Etagen am Tisch 8 von 8 Einträgen auf einer Seite …)», Lauf 4 «Desktop: ok; … Anstoss 8 cm herein ja, Anstoss
+  hinaus ja». Prüfbilder `v1e_punkte_beide.jpg`, `v1e_verschieben_gefasst.jpg`, `v1e_drehen_gefasst.jpg`, `v1e_geist_kreisen.jpg`, `v1e_etagen_tisch.jpg`,
+  `desktop_1_anstoss_halb.jpg`, `desktop_9_anstoss_ausgeloest.jpg`, `desktop_10_anstoss_weg.jpg`, dazu für Glanz und Abstand `glas_apps.jpg`, `app_nach_wahl.jpg`,
+  `glas_apps_sitzung.jpg`, `farben_dunkel_*.jpg` (nur lokal).
+- **Nur mit der Brille prüfbar:** ob der Anstoss mit echten Händen zuverlässig auslöst und nichts ungewollt (Tempo 0.5 m/s, Haltung 0.1 s vorher, Drehung 25°,
+  Offenheit 1.75), ob die hohe Etagentafel angenehm ist, Handhabung und Sichtbarkeit der zwei Punkte (auch mit Passthrough), ob 10 cm Abstand und der Bogen von 0.5 m
+  passen, wie der Glanz im echten Raum wirkt.
+- **Anleitung:** `zb-quest-v1e-anstoss`, `zb-quest-v1e-punkte`, `zb-quest-v1e-tafel` in `berichte/anleitung/inventar.json`.

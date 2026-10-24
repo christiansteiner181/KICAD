@@ -544,7 +544,7 @@ public class BedienungTests
         // Wegwischen (V1a): die offene Hand wandert in Richtung «Rechts» des Ziels (die App setzt es nach links), kein Pinch
         var w0 = Geisterhand.Bild(GeisterGeste.Wegwischen, 0.01, hand, Kachel)!;
         var w1 = Geisterhand.Bild(GeisterGeste.Wegwischen, Geisterhand.DauerS / 2 * 0.6, hand, Kachel)!;
-        Assert.True((w1.Gelenke["wrist"] - w0.Gelenke["wrist"]).Skalar(Kachel.Rechts) > 0.15);
+        Assert.True((w1.Gelenke["wrist"] - w0.Gelenke["wrist"]).Skalar(Kachel.Rechts) > Geisterhand.AnstossM - 1e-6);   // V1e: nur der kurze Anstoss
         Assert.True(w1.Gelenke["thumb-tip"].Abstand(w1.Gelenke["index-finger-tip"]) > 0.02);
         // Greifen: Daumen schliesst sich zur Hälfte des Durchgangs
         var g0 = Geisterhand.Bild(GeisterGeste.Greifen, 0.01, hand, Kachel)!;

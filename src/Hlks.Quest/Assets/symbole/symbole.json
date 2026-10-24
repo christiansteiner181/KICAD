@@ -66,6 +66,16 @@
       "strich": "b4f337dfe5ab3ec8",
       "revit_hell": "660b7dd85e89d596",
       "revit_dunkel": "ab220ba6585a1bcf"
+    },
+    "verschieben": {
+      "strich": "5ae432b3f442a385",
+      "revit_hell": "dc5045e8a3fc9656",
+      "revit_dunkel": "d7416af02427535c"
+    },
+    "drehen": {
+      "strich": "b70056d9775dc29a",
+      "revit_hell": "5437d12eb2bd9bc3",
+      "revit_dunkel": "3b7574cbb1ee73ef"
     }
   }
 }

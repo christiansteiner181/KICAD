@@ -35,7 +35,7 @@ public sealed class AppFarben
     /// <summary>Eintrag für alles ohne eigenen Ton (Schliessen, Tooltips ohne App, unbekannte Apps).</summary>
     public const string VorgabeId = "vorgabe";
     /// <summary>Die Einträge, die der Katalog haben muss (Apps der Symbole, Gesten, Labor, V1c Desktop in der Brille, Vorgabe).</summary>
-    public static readonly IReadOnlyList<string> Pflicht = ["status", "etagen", "messen", "marker", "tisch", "ort", "ebenen", "gesten", "labor", "desktop", VorgabeId];
+    public static readonly IReadOnlyList<string> Pflicht = ["status", "etagen", "messen", "marker", "tisch", "ort", "ebenen", "gesten", "labor", "desktop", "verschieben", "drehen", VorgabeId];
 
     /// <summary>Helles Glas wirkt mindestens so hell (sRGB), damit dunkle Schrift lesbar bleibt, Annahme V1a.</summary>
     public const double HellMindestens = 0.72;

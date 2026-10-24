@@ -23,7 +23,7 @@ public class V1aSymboleTests
 
     /// <summary>Bilder mit 72 Hz: beide Hände steigen von y0 um weg in dauer s (rechts mit Versatz s später); gibt die Ereignisse und den Stand jedes Bildes.</summary>
     static List<HebeStand> Geste(HebeZustand z, double t0, double dauer, double weg, double versatz = 0, double ny = 1, bool offen = true, bool pinch = false,
-        double seitlich = 0, bool nurLinks = false, double t1 = 1.4)
+        double seitlich = 0, bool nurLinks = false, double t1 = 1.4, HebeEinstellungen? e = null)
     {
         var aus = new List<HebeStand>();
         for (double t = 0; t <= t1 + 1e-9; t += 1 / 72.0)
@@ -32,7 +32,7 @@ public class V1aSymboleTests
             double X(double v) => seitlich * GlasStil.Weich(Math.Clamp((t - v) / dauer, 0, 1));
             var l = H(-0.2 - X(0), Y(0), ny, offen, pinch);
             var r = nurLinks ? H(0.2, 1.0, ny, offen, pinch) : H(0.2 + X(versatz), Y(versatz), ny, offen, pinch);
-            aus.Add(HebeGeste.Schritt(z, t0 + t, l, r, Blick));
+            aus.Add(HebeGeste.Schritt(z, t0 + t, l, r, Blick, e));
         }
         return aus;
     }
@@ -42,8 +42,10 @@ public class V1aSymboleTests
     [Fact]
     public void Hebegeste_beide_Handflächen_oben_deutlich_nach_oben_holt_die_Symbole_einmal()
     {
+        // die ganze Bewegung (V1a; seit V1e löst schon ein kurzer Anstoss aus – hier ohne, V1eTests prüft ihn)
+        var ohneAnstoss = HebeEinstellungen.Vorgabe with { Anstoss = AnstossEinstellungen.Aus };
         var z = new HebeZustand();
-        var s = Geste(z, 10, 0.5, 0.22);
+        var s = Geste(z, 10, 0.5, 0.22, e: ohneAnstoss);
         Assert.Equal(1, s.Count(x => x.Ereignis == HebeArt.Heben));
         // der Fortschritt steigt mit den Händen (für das Hineinheben der Symbole), vor dem Ereignis
         var vor = s.TakeWhile(x => x.Ereignis is null).ToList();
@@ -54,7 +56,7 @@ public class V1aSymboleTests
         Assert.True(vor[^1].Hoehe > 1.1);
         // Stellschrauben: ein längerer Weg verlangt mehr
         var lang = new HebeZustand();
-        var e = HebeEinstellungen.Vorgabe with { WegM = 0.3 };
+        var e = ohneAnstoss with { WegM = 0.3 };
         var ereignisse = 0;
         for (double t = 0; t <= 1.4; t += 1 / 72.0)
         {
@@ -188,7 +190,7 @@ public class V1aSymboleTests
         Assert.Equal(1, W(Wischen(zs, 0.25, 0.3, t1: 0.4)));
         Assert.Equal(0, W(Wischen(zs, 0.25, 0.3, t1: 0.3, t0: 0.42)));
         // Stellschrauben: ein längerer Weg verlangt mehr
-        Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.3, e: WegwischEinstellungen.Vorgabe with { WegM = 0.4 })));
+        Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.3, e: WegwischEinstellungen.Vorgabe with { WegM = 0.4, Anstoss = AnstossEinstellungen.Aus })));   // V1e: ohne Anstoss
     }
 
     [Fact]
@@ -218,7 +220,7 @@ public class V1aSymboleTests
         var hand = Geisterhand.VorlageFlach(V(0.12, 1.2, -0.4), V(-1, 0, 0), V(0, 1, 0), links: false);
         var b0 = Geisterhand.Bild(GeisterGeste.Wegwischen, 0, hand, ziel)!;
         var b1 = Geisterhand.Bild(GeisterGeste.Wegwischen, Geisterhand.DauerS / 2 * 0.6, hand, ziel)!;
-        Assert.True(b1.Gelenke["wrist"].X < b0.Gelenke["wrist"].X - 0.15);
+        Assert.True(b1.Gelenke["wrist"].X < b0.Gelenke["wrist"].X - (Geisterhand.AnstossM - 1e-6));   // V1e: nur der kurze Anstoss
     }
 
     [Fact]

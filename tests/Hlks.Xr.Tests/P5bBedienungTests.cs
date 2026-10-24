@@ -77,8 +77,8 @@ public class P5bBedienungTests
         Assert.Equal("zwei_punkte", e.MitStellschraube("labor.variante.messen", W("\"zwei_punkte\""))!.Messen);
         Assert.Equal("stick", (e with { Teleport = Varianten.Stick }).Variante("teleport"));
         Assert.Null(e.Variante("greifen"));
-        Assert.Equal(["bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app", "tafel_nachfuehren", "zoom_ein_griff"],
-            Varianten.Bekannt.Keys);   // V1a: «umgebung», «symbole», «symbolwahl», «feld_bei_app»; V1d: «tafel_nachfuehren», «zoom_ein_griff»
+        Assert.Equal(["bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app", "tafel_nachfuehren", "zoom_ein_griff", "griffe_tisch"],
+            Varianten.Bekannt.Keys);   // V1a: «umgebung», «symbole», «symbolwahl», «feld_bei_app»; V1d: «tafel_nachfuehren», «zoom_ein_griff»; V1e: «griffe_tisch»
         Assert.Equal(XrBedienEinstellungen.Vorgabe, (e with { Roentgen = e.Roentgen with { WinkelGrad = 90 } }).MitStellschraube("roentgen.winkel_grad", W("null")));
         foreach (var k in XrBedienEinstellungen.Schluessel) Assert.NotNull(e.MitStellschraube(k, W("null")));
         Nah(e.MitStellschrauben([new("roentgen.winkel_grad", W("30")), new("x.y", W("1"))]).Satz.Roentgen.WinkelGrad, 30);

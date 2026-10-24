@@ -95,13 +95,23 @@
     },
     {
       "name": "zoom_ein_griff", "titel": "Zoomen am einen Griff",
-      "beschreibung": "Am Sitzungstisch bewegt und dreht ein Griff an der vorderen Gebäudekante das Modell. Zoomen: «zweite Hand» – hält eine Hand den Griff, zoomt ein Pinch der anderen Hand über den Abstand der Hände; «Drehknopf» – Rollen des Handgelenks am Griff (im Uhrzeigersinn grösser).",
+      "beschreibung": "Nur mit «griffe_tisch» = «ein Griff» (V1d): am Sitzungstisch bewegt und dreht ein Griff an der vorderen Gebäudekante das Modell. Zoomen: «zweite Hand» – hält eine Hand den Griff, zoomt ein Pinch der anderen Hand über den Abstand der Hände; «Drehknopf» – Rollen des Handgelenks am Griff (im Uhrzeigersinn grösser).",
       "optionen": [
         { "id": "zweite_hand", "titel": "Zweite Hand" },
         { "id": "drehknopf", "titel": "Drehknopf" }
       ],
       "vorgabe": "zweite_hand",
       "herkunft": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»; die zwei Arten des Zoomens Auftrag V1d"
+    },
+    {
+      "name": "griffe_tisch", "titel": "Griffe am Sitzungstisch",
+      "beschreibung": "«zwei Punkte»: ein Punkt «Verschieben» (Mitte der vorderen Gebäudekante; verschiebt in allen Richtungen, ohne Drehen und Zoomen) und ein Punkt «Drehen und Vergrössern» (rechte vordere Ecke; dreht um das Zentrum des Modells, der Abstand zum Zentrum ergibt den Massstab), farblich verschieden, mit Symbol beim Greifen. «ein Griff»: der eine Griff von V1d (Variante «zoom_ein_griff»).",
+      "optionen": [
+        { "id": "zwei_punkte", "titel": "Zwei Punkte" },
+        { "id": "ein_griff", "titel": "Ein Griff (V1d)" }
+      ],
+      "vorgabe": "zwei_punkte",
+      "herkunft": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum»"
     }
   ]
 }

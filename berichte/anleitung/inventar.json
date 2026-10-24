@@ -11801,7 +11801,7 @@
             "tests/Hlks.Xr.Tests/V1dTests.cs, V1aSymboleTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
           ],
-          "hinweis": "Befund Brillentest V1 (Christian 24.10.2026): «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», «nach tippen einer App sollte erneutes auswählen gesperrt sein». Alle Werte sind Annahmen V1d (Mitte 0.22 m, sitzend +0.08 m, am Tisch 0.52 m, Sperre 0.3 s) und als Stellschrauben einstellbar. Am virtuellen Tisch (Platte 0.75 m) hält die Platte die unterste Reihe – dort liegt das Feld nur rund 9 cm tiefer als bis V1d."
+          "hinweis": "Befund Brillentest V1 (Christian 24.10.2026): «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», «nach tippen einer App sollte erneutes auswählen gesperrt sein». Alle Werte sind Annahmen V1d (Mitte 0.22 m, sitzend +0.08 m, am Tisch 0.52 m, Sperre 0.3 s) und als Stellschrauben einstellbar. Am virtuellen Tisch (Platte 0.75 m) hält die Platte die unterste Reihe – dort liegt das Feld nur rund 9 cm tiefer als bis V1d. Seit V1e genügt für die Hebegeste ein kurzer Anstoss (zb-quest-v1e-anstoss); neben einer offenen App mehr Abstand (zb-quest-v1e-tafel)."
         },
         {
           "id": "zb-quest-v1d-tafel",
@@ -11883,7 +11883,7 @@
             "tests/Hlks.Xr.Tests/V1dTests.cs; tests/Hlks.Web.Tests/XrV1dEchtTests.cs (Test_praxis, nur lokal)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
           ],
-          "hinweis": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden». Ersetzt die zwei Griffe an den vorderen Ecken (P4b). Annahmen V1d: Drehknopf 60° je Verdoppelung, Totzonen 2° bzw. 3°, Zelle höchstens 1 mm auf dem Tisch, höchstens 350 000 Dreiecke. Die Bildrate auf der Quest ist nur an der Brille zu prüfen (am PC 7 ms je Bild, nicht aussagekräftig)."
+          "hinweis": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden». Ersetzt die zwei Griffe an den vorderen Ecken (P4b). Annahmen V1d: Drehknopf 60° je Verdoppelung, Totzonen 2° bzw. 3°, Zelle höchstens 1 mm auf dem Tisch, höchstens 350 000 Dreiecke. Die Bildrate auf der Quest ist nur an der Brille zu prüfen (am PC 7 ms je Bild, nicht aussagekräftig). Seit V1e ist der eine Griff die Variante «ein_griff»; Vorgabe sind zwei Punkte: zb-quest-v1e-punkte."
         },
         {
           "id": "zb-quest-v1d-haende",
@@ -11920,7 +11920,112 @@
             "tests/Hlks.Xr.Tests/V1dTests.cs, DesktopGesteTests.cs, FangReferenz.cs; tests/Hlks.Web.Tests/XrV1dEchtTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
           ],
-          "hinweis": "Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links soll in wieder raus schieben.» Fang: Befund Brillentest V1 (im Mittel 12 ms, einmal 1 s auf der Quest); am PC mit Test_praxis am Tisch je Strahl vorher ⌀ 41 ms, mit Index ⌀ 0.17 ms, im Bild nur noch das Stellen der Anfrage. Annahme V1d: gegenläufige Hand höchstens 8 cm."
+          "hinweis": "Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links soll in wieder raus schieben.» Fang: Befund Brillentest V1 (im Mittel 12 ms, einmal 1 s auf der Quest); am PC mit Test_praxis am Tisch je Strahl vorher ⌀ 41 ms, mit Index ⌀ 0.17 ms, im Bild nur noch das Stellen der Anfrage. Annahme V1d: gegenläufige Hand höchstens 8 cm. Seit V1e genügt ein kurzer Anstoss: zb-quest-v1e-anstoss."
+        },
+        {
+          "id": "zb-quest-v1e-anstoss",
+          "titel": "Quest App: Apps, Bildschirm und Wegwischen mit einem kurzen Anstoss (Modul XR, Quest App V1e)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit den Händen: Hebegeste (beide Handflächen oben), Hineinziehen des PC-Bildschirms (Handfläche seitlich, nach rechts) und Wegwischen (nach links). Im XR-Labor: gesten.anstoss_weg_m, gesten.anstoss_tempo_ms."
+          },
+          "schritte": [
+            "Die Hand in die Haltung der Geste stellen (z. B. Handfläche seitlich nach links) – einen Augenblick halten.",
+            "Dann ein kurzer, zügiger Schub in die Richtung der Geste: gut 6 cm genügen.",
+            "Die Bewegung läuft von selbst mit Schwung zu Ende: die Symbole steigen auf, der Bildschirm gleitet herein bzw. das Fenster gleitet hinaus – auch wenn die Hand stehen bleibt. Es klickt beim Auslösen.",
+            "Die ganze Bewegung wie bisher löst weiter aus."
+          ],
+          "erwartung": "Ein kurzer, deutlicher Schub löst aus; ein langsames Bewegen, ein Schwenk der Hand während des Schubs, eine halb geschlossene Hand, ein Pinch oder zwei gegenläufige Hände nicht. Vor dem Auslösen folgt die Bewegung der Hand, danach läuft sie zu Ende. Geisterhand und Hinweise zeigen den kurzen Anstoss.",
+          "pruefpunkte": [
+            "Hebegeste mit kurzem Anstoss beider Hände holt die Symbole.",
+            "Kurzer Anstoss nach rechts zieht den PC-Bildschirm herein, kurzer Anstoss nach links wischt das Vorderste weg.",
+            "Beim normalen Hantieren (Zeigen, Greifen, Hand senken) löst nichts ungewollt aus.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 4 «Anstoss 8 cm herein ja, Anstoss hinaus ja»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 4): desktop_1_anstoss_halb.jpg, desktop_9_anstoss_ausgeloest.jpg",
+            "zustand": "Begehen, der Bildschirm gleitet nach einem kurzen Anstoss herein"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/Anstoss.cs, HebeGeste.cs, Wegwischen.cs, Desktop/DesktopGeste.cs",
+            "tests/Hlks.Xr.Tests/V1eTests.cs (Fehlauslösungen vorher/nachher)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1e»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen». Annahmen V1e: 6 cm, 0.5 m/s innert 0.2 s, Haltung 0.1 s vorher, Drehung höchstens 25°, Hand deutlich offen. Fehlauslösungen über 900 Zufallsbewegungen gleich wie vorher (Test)."
+        },
+        {
+          "id": "zb-quest-v1e-punkte",
+          "titel": "Quest App: Sitzungstisch mit zwei Punkten – Verschieben sowie Drehen und Vergrössern um das Zentrum (Modul XR, Quest App V1e)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille am Sitzungstisch: blauer Punkt vorn in der Mitte (Verschieben), roter Punkt vorn rechts (Drehen und Vergrössern). Im XR-Labor: Variante «griffe_tisch», sitzung.dreh_totzone_grad, sitzung.zoom_totzone."
+          },
+          "schritte": [
+            "Den blauen Punkt mit Daumen und Zeigefinger fassen und ziehen: das Modell folgt in alle Richtungen, auch in der Höhe; es dreht und vergrössert sich dabei nicht. Über dem Punkt erscheint das Symbol «Verschieben».",
+            "Den roten Punkt fassen und die Hand um das Modell führen: es dreht sich um sein Zentrum. Die Hand weiter weg führen vergrössert, näher verkleinert (1:5 … 1:200). Über dem Punkt erscheint das Symbol «Drehen».",
+            "Loslassen: beide Punkte sitzen wieder an ihrem Platz am Modell."
+          ],
+          "erwartung": "Immer wirkt nur ein Punkt; kleine Ausschläge (3°, 5 %) zählen nicht, damit Drehen nicht ungewollt zoomt und umgekehrt. Beim Annähern werden die Punkte grösser und heller. Zögert man, zeigt eine Geisterhand das Greifen bzw. das Kreisen.",
+          "pruefpunkte": [
+            "Blauer Punkt verschiebt ohne Drehen und ohne Massstab.",
+            "Roter Punkt dreht um das Zentrum (das Zentrum bleibt stehen) und ändert den Massstab mit dem Abstand der Hand.",
+            "Beide Punkte gut sichtbar im hellen Raum und mit Passthrough, farblich deutlich verschieden.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 3 «V1e zwei Punkte: verschieben ohne Drehen ja, drehen um das Zentrum … ja»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 3): v1e_punkte_beide.jpg, v1e_verschieben_gefasst.jpg, v1e_drehen_gefasst.jpg, v1e_geist_kreisen.jpg",
+            "zustand": "Sitzungstisch «Alle Etagen»"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Sitzung/ZweiPunkte.cs; src/Hlks.Quest/Sitzungsraum.cs",
+            "kataloge/xr_farben.json («verschieben», «drehen»), kataloge/xr_varianten.json («griffe_tisch»)",
+            "tests/Hlks.Xr.Tests/V1eTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1e»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum». Ersetzt als Vorgabe den einen Griff von V1d (Variante «ein_griff»). Farben sind Vorschläge V1e, zu bestätigen."
+        },
+        {
+          "id": "zb-quest-v1e-tafel",
+          "titel": "Quest App: Etagen auf einer Seite, Symbole mit mehr Abstand neben der Tafel, mehr Glanz (Modul XR, Quest App V1e)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille: App «Etagen», Symbolfeld neben einer offenen App, alle Glas-Apps. Im XR-Labor: etagen.zeilen_max, symbole.abstand_tafel_m, symbole.radius_seitlich_m, anzeige.glanz."
+          },
+          "schritte": [
+            "App «Etagen» öffnen: alle Geschosse stehen auf einer Seite, die Tafel ist dafür höher; das aktuelle Geschoss ist hervorgehoben. Erst über 12 Einträgen rollt die Liste mit einem Wisch hoch/runter auf der Tafel.",
+            "Eine App öffnen, während die Symbole stehen: die Symbole weichen mit rund 10 cm Luft neben die Tafel aus und stehen dabei näher am Kopf (Bogen 0.5 m).",
+            "Glas-Apps, Symbole und Karte zeigen einen feinen Lichtsaum am Rand und einen weichen Schein oben, der beim Bewegen des Kopfs leicht wandert."
+          ],
+          "erwartung": "Keine Seiten mehr bei den Etagen; die Zeilen bleiben gleich gross und gut treffbar. Die Symbole überdecken die Tafel nicht und bleiben in Griffweite. Der Glanz ist dezent, die Schrift bleibt lesbar, auch im hellen Sitzungsraum und mit Passthrough.",
+          "pruefpunkte": [
+            "Etagen: alle auf einer Seite, das aktuelle hervorgehoben und sichtbar.",
+            "Symbole neben der Tafel mit deutlich mehr Abstand, gut erreichbar.",
+            "Mehr Glanz sichtbar, nicht überstrahlt.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 3 «Etagen am Tisch 8 von 8 Einträgen auf einer Seite … ja»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): v1e_etagen_tisch.jpg, app_nach_wahl.jpg, glas_apps.jpg (vorher/nachher)",
+            "zustand": "Begehen und Sitzungstisch mit offener App"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/EtagenListe.cs, AppSymbole.cs (Seitlich), Glas.cs (GlasMasse.MehrZeilen)",
+            "src/Hlks.Quest/QuestApp.Apps.cs, GlasApps.cs, GlasZeichner.cs, Assets/glas.hlsl",
+            "tests/Hlks.Xr.Tests/V1eTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1e»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «die etagen auswahl geht über mehrere seiten da wäre besser die liste zu vergrössern», «apps mit mehr abstand zu den popup tafeln», «die apps bei grösseren abständen in einem kleineren radius um den betrachter anornen», «apps sollen etwas mehr glanz erhalten». Annahmen V1e: 12 Etagen, 10 cm, 0.5 m, Glanz 0.6."
         }
       ]
     }
