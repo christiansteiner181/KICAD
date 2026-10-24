@@ -80,7 +80,7 @@ public class XrLaborTests
         Assert.Equal("p5", k.AufgabeStatusVon("messen-wand-wand"));   // V1a: Messen in der App
         Assert.Equal("p5", k.AufgabeStatusVon("drehen-90"));
         foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app", "tafel_nachfuehren", "zoom_ein_griff", "griffe_tisch" }) Assert.Contains(n, k.VariantenNamen);   // V1a: umgebung, symbole, symbolwahl, feld_bei_app; V1d: tafel_nachfuehren, zoom_ein_griff; V1e: griffe_tisch
-        Assert.Equal(10, k.VariantenNamen.Count);
+        Assert.Equal(11, k.VariantenNamen.Count);   // V1e: griffe_tisch
         Assert.True(k.VarianteBekannt("bedienung", "apps"));
         Assert.True(k.VarianteBekannt("bedienung", "tablet"));
         Assert.False(k.VarianteBekannt("bedienung", "stick"));

@@ -56,6 +56,25 @@ sealed class GlasZeichner
     public GlasSchicht Schicht { get; set; } = GlasSchicht.Welt;
     int L => (int)Schicht;
     public bool MitShader { get; }
+    /// <summary>
+    /// V1e, «anzeige.glanz» (Christian 24.10.2026: «apps sollen etwas mehr glanz erhalten»): Stärke von Lichtsaum und Schein im Shader (glas.hlsl, Parameter «schimmer»);
+    /// auf den Knöpfen im Fenster (dünnes Material) halb so stark.
+    /// </summary>
+    public double Glanz
+    {
+        get => glanzWert;
+        set
+        {
+            if (Math.Abs(value - glanzWert) < 1e-6) return;
+            glanzWert = value;
+            for (int l = 0; l < Schichten; l++)
+            {
+                glas[l]?.SetVector("schimmer", new Vec4((float)value, 0, 0, 0));
+                for (int k = 0; k < 3; k++) duenn[l, k]?.SetVector("schimmer", new Vec4((float)value * 0.5f, 0, 0, 0));
+            }
+        }
+    }
+    double glanzWert = -1;
     /// <summary>Gezeichnete Flächen im letzten Bild (Protokoll: Aufrufe).</summary>
     public int Flaechen { get; private set; }
     /// <summary>Gezeichnete Symbole im letzten Bild (Protokoll).</summary>
@@ -113,6 +132,7 @@ sealed class GlasZeichner
             }
         }
         if (s is null) Log.Warn("Shader glas.hlsl fehlt – die Apps zeichnen ohne Glas.");
+        Glanz = new AppEinstellungen().Glanz;   // V1e: Vorgabe, bis die Stellschrauben kommen
         // die Hände zeichnen nach der Bedienung: sonst übermalte das Glas (ohne Tiefentest gegen das Modell) eine Hand davor
         var hand = Default.MaterialHand.Copy();
         hand.QueueOffset = HandReihe;

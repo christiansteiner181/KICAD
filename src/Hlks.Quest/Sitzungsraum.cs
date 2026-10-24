@@ -58,12 +58,44 @@ sealed class Sitzungsraum
         {
             if (value == zoom) return;   // eine andere Stellschraube unterbricht keinen Griff
             zoom = value;
-            griffZ = EinGriff.Neu(XrSitzungLogik.LageBegrenzen(griffZ.Lage, value));
+            NeueLage(XrSitzungLogik.LageBegrenzen(Lage, value));
         }
     }
     ZoomGrenzen zoom = ZoomGrenzen.Vorgabe;
     /// <summary>V1d: der eine Griff (Variante «zoom_ein_griff», «sitzung.drehknopf_grad»).</summary>
     public EinGriffEinstellungen Griff { get; set; } = EinGriffEinstellungen.Vorgabe;
+    /// <summary>V1e: zwei Punkte am Tisch (Variante «griffe_tisch», Vorgabe) bzw. der eine Griff; Totzonen «sitzung.dreh_totzone_grad», «sitzung.zoom_totzone».</summary>
+    public ZweiPunkteEinstellungen Punkte
+    {
+        get => punkteE;
+        set
+        {
+            if (value.MitZweiPunkten != punkteE.MitZweiPunkten) { var l = Lage; punkteE = value; NeueLage(l); }   // Wechsel der Variante: die Lage bleibt
+            else punkteE = value;
+        }
+    }
+    ZweiPunkteEinstellungen punkteE = ZweiPunkteEinstellungen.Vorgabe;
+    /// <summary>V1e: die zwei Punkte (Hlks.Xr.Sitzung.ZweiPunkte); welcher Satz wirkt, sagt <see cref="Punkte"/>.</summary>
+    ZweiPunkteZustand punkteZ = ZweiPunkte.Neu(new SitzungLage(XrSitzungLogik.MassstabStart, 0, 0, 0));
+    /// <summary>V1e: Lage der Punkte im letzten Bild (Raum-lokal; beim Halten an der Hand) und ob eine Hand nah ist.</summary>
+    XVec3 punktV, punktD;
+    bool nahV, nahD;
+    /// <summary>V1e: die Punkte im Raum der Brille (Prüfung, Prüfbilder) und der gehaltene.</summary>
+    public (Vec3 Verschieben, Vec3 Drehen) PunkteImRaum => ((Vec3)(Vector3)RaumLage.ZuRef(punktV), (Vec3)(Vector3)RaumLage.ZuRef(punktD));
+    public TischPunkt GehaltenerPunkt => punkteE.MitZweiPunkten ? punkteZ.Punkt : TischPunkt.Keiner;
+    /// <summary>V1e: Drehung (rad) und Faktor seit dem Fassen am Punkt «Drehen» (Prüfung).</summary>
+    public (double Drehung, double Faktor) PunktDrehung => (punkteZ.Drehung, punkteZ.Faktor);
+
+    /// <summary>Beide Zustände auf eine Lage (Startlage, Zurücksetzen, Grenzen, Wechsel der Variante).</summary>
+    void NeueLage(SitzungLage lage)
+    {
+        griffZ = EinGriff.Neu(lage);
+        punkteZ = ZweiPunkte.Neu(lage);
+    }
+
+    /// <summary>Hält bzw. benutzt diese Hand («links», «rechts») gerade einen Griff bzw. Punkt?</summary>
+    bool HandHaelt(string seite) => punkteE.MitZweiPunkten ? ZweiPunkte.HandAmPunkt(punkteZ, seite) : EinGriff.HandAmGriff(griffZ, seite);
+    bool Gehalten => punkteE.MitZweiPunkten ? punkteZ.Gehalten : griffZ.Gehalten;
     /// <summary>V1d: vereinfachte Unterlage am Tisch («sitzung.vereinfachen_mm», «sitzung.dreiecke_max»); TischStufeAn = false zeichnet immer die volle Unterlage (Messung vorher).</summary>
     public Hlks.Xr.Modell.TischStufeEinstellungen Tisch { get; set; } = Hlks.Xr.Modell.TischStufeEinstellungen.Vorgabe;
     public bool TischStufeAn { get; set; } = true;
@@ -136,14 +168,15 @@ sealed class Sitzungsraum
     public EchterTisch Echt { get; } = new();
     public bool Aktiv { get; private set; }
     public SitzungAnsicht? Ansicht { get; private set; }
-    public SitzungLage Lage => griffZ.Lage;
+    public SitzungLage Lage => punkteE.MitZweiPunkten ? punkteZ.Lage : griffZ.Lage;
     public bool Passt { get; private set; } = true;
     /// <summary>IFC-Unterlage auf dem Tisch zeigen (Schalter in der Box; Vorgabe ein – Test_praxis ist fast nur Unterlage).</summary>
     public bool Unterlage { get; set; } = true;
     /// <summary>V1d: null (frei), «gehalten» (eine Hand hält den Griff) bzw. «zoomt» (die zweite Hand zoomt).</summary>
-    public string? Modus => griffZ.Gehalten ? (griffZ.ZweiteHand ? "zoomt" : "gehalten") : null;
-    /// <summary>Gehaltene Griffe (V1d: 0 oder 1).</summary>
-    public int Griffe => griffZ.Gehalten ? 1 : 0;
+    public string? Modus => punkteE.MitZweiPunkten ? (punkteZ.Gehalten ? (punkteZ.Punkt == TischPunkt.Verschieben ? "verschieben" : "drehen") : null)
+        : griffZ.Gehalten ? (griffZ.ZweiteHand ? "zoomt" : "gehalten") : null;
+    /// <summary>Gehaltene Griffe bzw. Punkte (V1d, V1e: 0 oder 1).</summary>
+    public int Griffe => Gehalten ? 1 : 0;
     /// <summary>Lage des Raum-lokalen Systems: beim echten Tisch der angetippte Tisch, sonst der virtuelle Raum.</summary>
     public SitzungRaumLage RaumLage => Echt.Ein && tischRaum is not null ? tischRaum : raum;
 
@@ -218,7 +251,7 @@ sealed class Sitzungsraum
         if (Ansicht is null) return;
         var e = SitzungAuswahl.Startlage(Ansicht, zoom);
         Passt = e.Passt;
-        griffZ = EinGriff.Neu(e.Lage);
+        NeueLage(e.Lage);
     }
 
     public void Verlassen()
@@ -254,7 +287,7 @@ sealed class Sitzungsraum
     public Matrix4x4 ModellMatrix => Ansicht is null ? Matrix4x4.Identity : SitzungRaum.ModellMatrix(Lage, Ansicht.Bezug, RaumLage);
 
     /// <summary>Prüfung am PC: eine Lage von aussen setzen (die Regeln laufen sonst über die Hände).</summary>
-    public void LageSetzen(SitzungLage lage) => griffZ = EinGriff.Neu(XrSitzungLogik.LageBegrenzen(lage, zoom));
+    public void LageSetzen(SitzungLage lage) => NeueLage(XrSitzungLogik.LageBegrenzen(lage, zoom));
 
     /// <summary>V1d, Prüfung am PC: gedachte Hände (Raum-lokal: Pinch, Punkt, Gierwinkel, Rollen) statt der echten für den einen Griff; null = echte Hände.</summary>
     public Func<(EinGriffHand? Links, EinGriffHand? Rechts)>? PruefHaende { get; set; }
@@ -313,6 +346,12 @@ sealed class Sitzungsraum
         var (links, gl) = Hand(Handed.Left, ref pinchL);
         var (rechts, gr) = Hand(Handed.Right, ref pinchR);
         if (PruefHaende is { } ph) (links, rechts) = ph();   // Prüfung am PC: gedachte Hände
+        if (punkteE.MitZweiPunkten)
+        {
+            SchrittZweiPunkte(zeit, kopf, links, rechts, gl, gr, vorL, vorR, wische, wisch, sperreS);
+            FlacheHandSchritt(zeit, kopf, anApps);
+            return wische;
+        }
         // P5b: ein neuer Pinch ohne Griff in Reichweite, solange niemand den Griff hält – Fehlgriff der Prüfaufgabe «modell-greifen-zoomen» (V1d: der Pinch der zweiten Hand
         // zum Zoomen zählt nicht)
         var gehaltenVorher = griffZ.Gehalten;
@@ -367,6 +406,66 @@ sealed class Sitzungsraum
     }
 
     /// <summary>
+    /// V1e (Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern»): die zwei Punkte statt des einen
+    /// Griffs (Regeln Hlks.Xr.Sitzung.ZweiPunkte). Fehlgriff, Ton, Wische (nicht an einem Punkt) und Zögern wie beim Griff: frei – «Greifen» am nahen Punkt; am Punkt
+    /// «Drehen» gehalten – «Kreisen» (auf dem Bogen um das Zentrum und etwas nach aussen).
+    /// </summary>
+    void SchrittZweiPunkte(double zeit, Pose kopf, EinGriffHand? links, EinGriffHand? rechts, Dictionary<string, XVec3>? gl, Dictionary<string, XVec3>? gr,
+        bool vorL, bool vorR, List<(WischRichtung, Handed)> wische, WischEinstellungen? wisch, double sperreS)
+    {
+        var rl = RaumLage;
+        var p = ZweiPunkte.Punkte(Lage, Ansicht!.Bezug, Ansicht.Sichtbar);
+        double Naechster(XVec3 q) => Math.Min(q.Abstand(p.Verschieben), q.Abstand(p.Drehen));
+        if (!punkteZ.Gehalten)
+            foreach (var (h, vor) in new[] { (links, vorL), (rechts, vorR) })
+                if (h is { Pinch: true, Frei: true } && !vor && Naechster(h.Punkt) > XrSitzungLogik.GriffFangM) PinchOhneGriff++;
+        var ereignis = ZweiPunkte.Schritt(punkteZ, links, rechts, p, punkteE, zoom);
+        if (ereignis == ZweiPunkteEreignis.Gefasst) Gefasst++;
+        // die Punkte im Bild: der gehaltene an der Hand, die übrigen an ihrem Platz nach der neuen Lage
+        var neu = ZweiPunkte.Punkte(Lage, Ansicht.Bezug, Ansicht.Sichtbar);
+        var halt = punkteZ.Hand == "links" ? links : punkteZ.Hand == "rechts" ? rechts : null;
+        punktV = punkteZ.Punkt == TischPunkt.Verschieben && halt is not null ? halt.Punkt : neu.Verschieben;
+        punktD = punkteZ.Punkt == TischPunkt.Drehen && halt is not null ? halt.Punkt : neu.Drehen;
+        nahV = punkteZ.Punkt == TischPunkt.Verschieben || new[] { links, rechts }.Any(h => h is not null && h.Punkt.Abstand(punktV) <= XrSitzungLogik.GriffHoverM);
+        nahD = punkteZ.Punkt == TischPunkt.Drehen || new[] { links, rechts }.Any(h => h is not null && h.Punkt.Abstand(punktD) <= XrSitzungLogik.GriffHoverM);
+        griffJetzt = punkteZ.Punkt == TischPunkt.Drehen ? punktD : punktV;
+        griffNah = nahV || nahD;
+        hover[0] = griffNah;
+        if (ereignis is ZweiPunkteEreignis.Gefasst or ZweiPunkteEreignis.Losgelassen) rueck.Griff((Vec3)(Vector3)rl.ZuRef(halt?.Punkt ?? griffJetzt), ereignis == ZweiPunkteEreignis.Gefasst);
+        var blick = BlickGieren(kopf);
+        foreach (var (handed, i, gh, wz, seite) in new[] { (Handed.Left, 0, links, wischL, "links"), (Handed.Right, 1, rechts, wischR, "rechts") })
+        {
+            var h = Input.Hand(handed);
+            var nahAmPunkt = gh is not null && Naechster(gh.Punkt) <= XrSitzungLogik.GriffFangM;
+            var haelt = ZweiPunkte.HandAmPunkt(punkteZ, seite);
+            XVec3? punkt = gh is not null && h.IsTracked ? Xv((h[FingerId.Thumb, JointId.Tip].position + h[FingerId.Index, JointId.Tip].position) * 0.5f) : null;
+            if (XrGesten.PinchWischSchritt(wz, zeit, punkt, gh is { Pinch: true } && !punkteZ.Gehalten && !nahAmPunkt, blick, wisch, sperreS) is { } r) wische.Add((r, handed));
+            amGriff[i] = haelt || nahAmPunkt;
+            if (!h.IsTracked || gh is null) { Hlks.Xr.Bedienung.Geisterhand.Zoegern(zoegern[i], zeit, null, null, false); continue; }
+            var amDrehen = haelt && punkteZ.Punkt == TischPunkt.Drehen;
+            string? ziel = !punkteZ.Gehalten && nahAmPunkt && !gh.Pinch ? "punkt" : amDrehen ? "punkt:drehen" : null;
+            var spitze = Xv(h[FingerId.Index, JointId.Tip].position);
+            if (Hlks.Xr.Bedienung.Geisterhand.Zoegern(zoegern[i], zeit, spitze, ziel, !amDrehen && gh.Pinch) is null) continue;
+            var formHand = HandGelenke.AusStereoKit((f, j) => Xv(h[f, j].position), Xv(h.wrist.position));
+            if (!amDrehen)
+            {
+                var an = gh.Punkt.Abstand(p.Verschieben) <= gh.Punkt.Abstand(p.Drehen) ? p.Verschieben : p.Drehen;
+                Zoegern = (handed, (Vec3)(Vector3)rl.ZuRef(an), formHand, Hlks.Xr.Bedienung.GeisterGeste.Greifen, XVec3.Null);
+            }
+            else
+            {
+                // auf dem Bogen um das Zentrum (gegen den Uhrzeigersinn von oben) und etwas nach aussen; Richtungen im Raum der Brille
+                var c = new XVec3(p.Zentrum.X, punktD.Y, p.Zentrum.Z);
+                var radial = (punktD - c) with { Y = 0 };
+                if (radial.Laenge < 1e-6) continue;
+                var rw = rl.ZuRef(punktD + radial.Einheit()) - rl.ZuRef(punktD);
+                var tangente = rw.Kreuz(new XVec3(0, 1, 0)).Einheit();
+                Zoegern = (handed, (Vec3)(Vector3)rl.ZuRef(punktD), formHand, Hlks.Xr.Bedienung.GeisterGeste.Kreisen, tangente);
+            }
+        }
+    }
+
+    /// <summary>
     /// P5b: Schnitt mit der flachen Hand (Hlks.Xr.Sitzung.FlacheHand) je Hand: nicht an den Apps, nicht mit einem gehaltenen Griff. Beginnt bzw. folgt er, gilt der
     /// Schnitt dieser Hand; Hand weg bzw. nicht mehr flach behält ihn. Gelenke im Raum der Brille; das Modell über <see cref="ModellMatrix"/>.
     /// </summary>
@@ -376,7 +475,7 @@ sealed class Sitzungsraum
         var box = ModellBox;
         var mm = ModellMatrix;
         var k = Xv(kopf.position);
-        foreach (var (handed, i, seite, besitz) in new[] { (Handed.Left, 0, "left", EinGriff.HandAmGriff(griffZ, "links")), (Handed.Right, 1, "right", EinGriff.HandAmGriff(griffZ, "rechts")) })
+        foreach (var (handed, i, seite, besitz) in new[] { (Handed.Left, 0, "left", HandHaelt("links")), (Handed.Right, 1, "right", HandHaelt("rechts")) })
         {
             if (besitz) griffBis[i] = zeit + Hlks.Xr.Sitzung.FlacheHand.SperreNachGriffS;   // kurz nach einem Griff (auch dem Zoomen mit der zweiten Hand) zählt die Hand nicht
             var h = Input.Hand(handed);
@@ -437,7 +536,11 @@ sealed class Sitzungsraum
             var c = SchnittFolgt ? new Color32(120, 240, 255, 230) : new Color32(60, 220, 255, 160);
             for (int i = 0; i < 4; i++) Lines.Add(ecken[i], ecken[(i + 1) % 4], c, SchnittFolgt ? 0.003f : 0.002f);
         }
+        // V1e: zwei Punkte in eigenen Farben (kataloge/xr_farben.json, «verschieben» blau, «drehen» himbeerrot): die Kugel im Akzent, nah mit hellem Saum im
+        // Pastellton, gehalten grösser und mit dem Symbol der Werkzeuge von KICAD («Verschieben» bzw. «Drehen») darüber
+        if (punkteE.MitZweiPunkten) PunkteZeichnen(rl);
         // V1d: der eine Griff (kleine Kugel mit Schein mitten an der vorderen Gebäudekante; nah heller, gehalten weiss und an der Hand)
+        else
         {
             var p = (Vec3)(Vector3)rl.ZuRef(griffZ.Gehalten ? griffJetzt : GriffPunkt());
             var gehalten = griffZ.Gehalten;
@@ -456,6 +559,33 @@ sealed class Sitzungsraum
         var p0 = (Vec3)(Vector3)rl.ZuRef(ort);
         var blick = (Vec3)(Vector3)rl.ZuRef(ort + new XVec3(0, Math.Sin(60 * Math.PI / 180), Math.Cos(60 * Math.PI / 180)));
         Text.Add(text, Matrix.TRS(p0, Quat.LookAt(p0, blick), 0.7f), hellAn && !passthrough.Ein ? new Color(0.22f, 0.24f, 0.28f, 1) : new Color(0.45f, 0.9f, 1, 1), TextAlign.Center, TextAlign.Center, 0, 0, 0);
+    }
+
+    /// <summary>V1e: die zwei Punkte zeichnen (siehe Zeichnen); Farben aus dem Katalog der App (Akzent = Kugel, Ton = Saum).</summary>
+    void PunkteZeichnen(SitzungRaumLage rl)
+    {
+        var kopf = Input.Head;
+        foreach (var (wer, ort, nah, symbol) in new[] { (TischPunkt.Verschieben, punktV, nahV, Hlks.Xr.Bedienung.GlasSymbole.Verschieben),
+            (TischPunkt.Drehen, punktD, nahD, Hlks.Xr.Bedienung.GlasSymbole.Drehen) })
+        {
+            var id = wer == TischPunkt.Verschieben ? "verschieben" : "drehen";
+            var f = glas.Farben?.Fuer(id).Hell;
+            var akzent = f is { } ff ? new Color((float)ff.Akzent.R, (float)ff.Akzent.G, (float)ff.Akzent.B, 1) : wer == TischPunkt.Verschieben ? new Color(0.17f, 0.24f, 0.5f, 1) : new Color(0.5f, 0.18f, 0.26f, 1);
+            var ton = f is { } ft ? new Color((float)ft.Ton.R, (float)ft.Ton.G, (float)ft.Ton.B, 1) : new Color(0.9f, 0.9f, 0.95f, 1);
+            var gehalten = punkteZ.Punkt == wer;
+            var p = (Vec3)(Vector3)rl.ZuRef(ort);
+            var dg = (float)XrSitzungLogik.GriffDurchmesserM * (gehalten ? 1.5f : nah ? 1.35f : 1.2f);
+            Mesh.Sphere.Draw(griff, Matrix.TS(p, dg), akzent);
+            // heller Saum im Pastellton (gut sichtbar im hellen Raum und mit Passthrough), nah bzw. gehalten kräftiger
+            Mesh.Sphere.Draw(schein, Matrix.TS(p, dg * (gehalten ? 2.6f : nah ? 2.2f : 1.7f)), ton * (gehalten ? 0.55f : nah ? 0.4f : 0.22f));
+            if (!gehalten && !nah) continue;
+            // das Symbol über dem Punkt (beim Annähern blass, gehalten ganz), zum Kopf gedreht
+            var oben = p + new Vec3(0, dg * 0.5f + 0.035f, 0);
+            var lage = Hlks.Xr.Bedienung.Glas.ImBlick(new XVec3(oben.x, oben.y, oben.z), new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), 0.04, 0.04);
+            var sc = f is { } fs ? fs.Akzent with { A = gehalten ? 1 : 0.6 } : new Hlks.Xr.Bedienung.GlasFarbe(0.2, 0.2, 0.3, gehalten ? 1 : 0.6);
+            glas.Punkt(lage.Mitte - lage.Normale * 0.001, gehalten ? 0.042 : 0.036, (f?.Ton ?? new Hlks.Xr.Bedienung.GlasFarbe(1, 1, 1, 1)) with { A = gehalten ? 0.92 : 0.6 });
+            glas.Symbol(symbol, lage, 0.028, sc, true);
+        }
     }
 
     /// <summary>

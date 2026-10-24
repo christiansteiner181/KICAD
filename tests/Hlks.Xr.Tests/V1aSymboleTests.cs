@@ -220,7 +220,7 @@ public class V1aSymboleTests
         var hand = Geisterhand.VorlageFlach(V(0.12, 1.2, -0.4), V(-1, 0, 0), V(0, 1, 0), links: false);
         var b0 = Geisterhand.Bild(GeisterGeste.Wegwischen, 0, hand, ziel)!;
         var b1 = Geisterhand.Bild(GeisterGeste.Wegwischen, Geisterhand.DauerS / 2 * 0.6, hand, ziel)!;
-        Assert.True(b1.Gelenke["wrist"].X < b0.Gelenke["wrist"].X - 0.15);
+        Assert.True(b1.Gelenke["wrist"].X < b0.Gelenke["wrist"].X - (Geisterhand.AnstossM - 1e-6));   // V1e: nur der kurze Anstoss
     }
 
     [Fact]

@@ -128,7 +128,9 @@ public sealed record GlasMasse(double Pt, double SchriftPt)
     public double M(double pt) => pt * Pt;
     public double Schrift(double pt) => pt * SchriftPt;
     public double FensterB => M(GlasStil.FensterBreitePt);
-    public double FensterH => M(GlasStil.FensterHoehePt);
+    /// <summary>V1e: so viele Zeilen (je 60 pt) ist das Fenster höher als gewöhnlich (die Etagenliste auf einer Seite, EtagenListe).</summary>
+    public int MehrZeilen { get; init; }
+    public double FensterH => M(GlasStil.FensterHoehePt + MehrZeilen * GlasStil.ZeilenMittePt);
 }
 
 /// <summary>Die Teile eines Fensters im Raum der Brille (alle als TabletPose, Normale zum Auge).</summary>

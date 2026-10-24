@@ -174,7 +174,7 @@ sealed partial class QuestApp
                     dHandX = -0.10 + 0.08 * Weich(ta / 0.15);
                     if (ta >= 0.07 && !dBildAnstoss) { dBildAnstoss = true; dHalb2 = d.Ansicht.Anteil; DesktopFotoLinks("desktop_1_anstoss_halb.jpg", kopf); }
                     if (ta < 0.4) return;
-                    dAnstossHinein = d.Ansicht.Phase is DesktopPhase.Kommt or DesktopPhase.Setzt or DesktopPhase.Da && d.Gesten.Hand is null;
+                    dAnstossHinein = d.Ansicht.Phase is DesktopPhase.Kommt or DesktopPhase.Setzt or DesktopPhase.Da;
                     DesktopFotoLinks("desktop_9_anstoss_ausgeloest.jpg", kopf);
                     dHandDa = false;
                     dPhase = 3;

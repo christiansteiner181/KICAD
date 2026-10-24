@@ -184,6 +184,8 @@ sealed partial class QuestApp
         sitzung.Pinch = bedien.Pinch;
         sitzung.FlacheHand = bedien.FlacheHand;
         sitzung.Griff = bedien.Griff;   // V1d: ein Griff, Zoom mit zweiter Hand bzw. Drehknopf
+        sitzung.Punkte = bedien.Punkte;   // V1e: zwei Punkte (Vorgabe) bzw. ein Griff
+        glas.Glanz = bedien.Apps.Glanz;   // V1e: mehr Glanz («anzeige.glanz»)
         sitzung.Tisch = bedien.Tisch;   // V1d: vereinfachte Unterlage am Tisch
         rueck.Ton = bedien.Komfort.Ton;
         rueck.Tunnel = bedien.Komfort.Tunnelblick && bedien.Komfort.Staerke > 0;
@@ -792,7 +794,7 @@ sealed partial class QuestApp
             if (sitzung.Zoegern is { } zg)   // P5a: gezögert am Griff: Geisterhand «Greifen»; V1d am gehaltenen Griff «Zoomen» (zweite Hand) bzw. «Drehknopf»
             {
                 var gp = new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z);
-                var ziel = zg.Geste == GeisterGeste.Zoomen && zg.Rechts.Laenge > 0.5
+                var ziel = zg.Geste is GeisterGeste.Zoomen or GeisterGeste.Kreisen && zg.Rechts.Laenge > 0.5   // V1e: «Kreisen» am Punkt «Drehen» (Bogen, nach aussen)
                     ? new TabletPose(gp, new XVec3(0, 1, 0), zg.Rechts, new XVec3(0, 1, 0).Kreuz(zg.Rechts).Einheit(), 0.05, 0.05)
                     : XrTabletLogik.TabletLageAus(gp, new XVec3(0, 1, 0));
                 geister.Starten(zg.Geste, Time.Total, zg.Form, ziel);
@@ -850,7 +852,7 @@ sealed partial class QuestApp
             $"Aufrufe={darstellung?.GezeichnetAufrufe ?? 0}, Dreiecke={darstellung?.GezeichnetDreiecke ?? 0} von {darstellung?.Dreiecke ?? 0}, " +
             $"Durchgang={durchgang?.Nah.Count ?? 0} (Wechsel höchstens {darstellung?.DurchgangMaxMs ?? 0:0.0} ms), Haltung={drehen.Haltung}, Drehen={(drehen.Drehen ? "ein" : "aus")}, Hand={(drehen.VonHand is not null ? "ja" : "nein")}, " +
             $"Strahl={(rechts.StrahlVomSystem || links.StrahlVomSystem ? "System" : "Schulter")}, Verbindung={verbindungText}, " +
-            $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe} (gefasst {sitzung.Gefasst}×, gezoomt {sitzung.Gezoomt}×, {bedien.Griff.Zoom}), Tischstufe={darstellung?.GezeichnetStufe ?? 0} ({stufenText}), IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
+            $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe} (gefasst {sitzung.Gefasst}×, gezoomt {sitzung.Gezoomt}×, {bedien.Punkte.Variante}, {bedien.Griff.Zoom}), Tischstufe={darstellung?.GezeichnetStufe ?? 0} ({stufenText}), IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
             $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt (zuletzt {wegwisch.Hand ?? "–"}), Tafel nachgerückt {apps.Folgen.Nachgerueckt}×, auf der Tafel geblättert {tafelGeblaettert}×, Geste={letzteGeste}, " +

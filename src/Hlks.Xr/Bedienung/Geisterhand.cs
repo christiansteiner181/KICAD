@@ -9,7 +9,7 @@
 namespace Hlks.Xr.Bedienung;
 
 /// <summary>Geste, die eine Geisterhand vorführt.</summary>
-public enum GeisterGeste { Antippen, Blaettern, Wegwischen, Greifen, Heben, Zoomen, Drehknopf }
+public enum GeisterGeste { Antippen, Blaettern, Wegwischen, Greifen, Heben, Zoomen, Drehknopf, Kreisen }
 
 /// <summary>Zustand der Zögern-Erkennung einer Hand.</summary>
 public sealed class ZoegernZustand
@@ -44,6 +44,9 @@ public static class Geisterhand
     public const double VorFlaecheM = 0.07;
     /// <summary>V1d: Blättern auf der Tafel (ohne Pinch) läuft so weit vor der Fläche (m), innerhalb von «tafel.blaettern_abstand_m».</summary>
     public const double BlaetternVorM = 0.02;
+    /// <summary>V1e: Hebegeste und Wegwischen zeigen nur den kurzen Anstoss (Christian 24.10.2026: «nur einen anstoss»): erst stellen (AnstossVor des Durchgangs), dann so weit (m) in AnstossAnteil,
+    /// dann steht die Hand (über «gesten.anstoss_weg_m» 6 cm).</summary>
+    public const double AnstossM = 0.09, AnstossVor = 0.15, AnstossAnteil = 0.15;
 
     /// <summary>Vektor v um die Achse a (Einheit) um den Winkel w (rad, rechte Hand) drehen (Rodrigues).</summary>
     static Vec3 Drehen(Vec3 v, Vec3 a, double w)
@@ -273,19 +276,27 @@ public static class Geisterhand
             case GeisterGeste.Wegwischen:
             {
                 // V1a, Wegwischen (Christian 24.10.2026: «wischbewegung von rechts nach links»): die offene rechte Hand, Handfläche nach links, wischt vom Ziel aus in
-                // Richtung «Rechts» des Ziels (die App setzt es nach links), dann kurz stehen
-                var s = Glatt(u / 0.55);
+                // Richtung «Rechts» des Ziels (die App setzt es nach links). V1e: nur ein kurzer Anstoss (AnstossM schnell), dann steht die Hand
+                var s = Glatt((u - AnstossVor) / AnstossAnteil);
                 var mitte = XrTabletLogik.HandflaechenMitte(hand) ?? pinchPunkt;
-                var soll = ziel.Mitte + ziel.Rechts * (WegM * s);
-                return new GeisterBild(Verschoben(mitte, soll, false), deck * (1 - 0.5 * s));
+                var soll = ziel.Mitte + ziel.Rechts * (AnstossM * s);
+                return new GeisterBild(Verschoben(mitte, soll, false), deck * (1 - 0.3 * s));
             }
             case GeisterGeste.Heben:
             {
-                // V1a, Hebegeste: die offene Hand, Handfläche nach oben, steigt von HubM unter dem Ziel zum Ziel (in jedem Durchgang), dann kurz stehen
-                var s = Glatt(u / 0.6);
+                // V1a, Hebegeste: die offene Hand, Handfläche nach oben, hebt zum Ziel. V1e: nur ein kurzer Anstoss nach oben (AnstossM schnell), dann steht sie
+                var s = Glatt((u - AnstossVor) / AnstossAnteil);
                 var mitte = XrTabletLogik.HandflaechenMitte(hand) ?? pinchPunkt;
-                var soll = ziel.Mitte - ziel.Oben * (AppSymbole.HubM * 0.8 * (1 - s));
+                var soll = ziel.Mitte - ziel.Oben * (AnstossM * (1 - s));
                 return new GeisterBild(Verschoben(mitte, soll, false), deck);
+            }
+            case GeisterGeste.Kreisen:
+            {
+                // V1e, Punkt «Drehen und Vergrössern»: die Hand pincht am Punkt (ziel.Mitte) und führt ihn auf einem Bogen um das Zentrum (ziel.Rechts = Richtung des
+                // Bogens) etwas nach aussen (ziel.Oben = vom Zentrum weg): Drehen und Vergrössern zugleich
+                var s = Glatt(u / 0.6);
+                var soll = ziel.Mitte + ziel.Rechts * (0.10 * s) + ziel.Oben * (0.04 * s);
+                return new GeisterBild(Verschoben(pinchPunkt, soll, true), deck);
             }
             default:
             {

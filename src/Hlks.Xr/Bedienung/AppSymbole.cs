@@ -198,28 +198,66 @@ public static class AppSymbole
     /// zum Auge – das Feld bleibt in Griffweite wie vorher –, ebenso die Höhe und die Anordnung je Seite. Kein Symbol überdeckt im Blick eine der Flächen.
     /// mitten = Symbolmitten, radius = halber Durchmesser, k = 0 … 1 (weich hin und zurück; Gieren beim Holen = Richtung des Felds).
     /// </summary>
-    public static List<Vec3> Seitlich(IReadOnlyList<Vec3> mitten, Vec3 auge, double blickGieren, IReadOnlyList<TabletPose> flaechen, double radius, double k)
+    public static List<Vec3> Seitlich(IReadOnlyList<Vec3> mitten, Vec3 auge, double blickGieren, IReadOnlyList<TabletPose> flaechen, double radius, double k,
+        double abstandM = SeitlichRandM, double? radiusSeitlichM = null)
     {
         if (flaechen.Count == 0 || mitten.Count == 0) return [.. mitten];
         var vor = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
         var rechts = HebeGeste.Rechts(blickGieren);
         double Winkel(Vec3 p) { var v = p - auge; return Math.Atan2(v.Skalar(rechts), v.Skalar(vor)); }   // waagrecht im Blick, rechts positiv
+        // V1e (Christian 24.10.2026: «die apps bei grösseren abständen in einem kleineren radius um den betrachter anornen»): erst auf den kleineren Bogen um den Kopf
+        // (waagrecht, Höhe und Richtung bleiben), dann zur Seite drehen
+        var basis = radiusSeitlichM is { } rs ? mitten.Select(p => AufBogen(p, auge, rs)).ToList() : [.. mitten];
         double links0 = double.PositiveInfinity, rechts0 = double.NegativeInfinity;
         foreach (var e in flaechen.SelectMany(Glas.Ecken)) { var w = Winkel(e); links0 = Math.Min(links0, w); rechts0 = Math.Max(rechts0, w); }
         var mitte = (links0 + rechts0) / 2;
         double nachLinks = 0, nachRechts = 0;
-        var seite = new int[mitten.Count];
-        for (int i = 0; i < mitten.Count; i++)
+        var seite = new int[basis.Count];
+        for (int i = 0; i < basis.Count; i++)
         {
-            var v = mitten[i] - auge;
+            var v = basis[i] - auge;
             var waag = Math.Sqrt(v.X * v.X + v.Z * v.Z);
-            var rand = Math.Asin(Math.Clamp((radius + SeitlichRandM) / Math.Max(0.1, waag), 0, 1));   // Rand als Winkel in diesem Abstand
-            var w = Winkel(mitten[i]);
+            var rand = Math.Asin(Math.Clamp((radius + abstandM) / Math.Max(0.1, waag), 0, 1));   // Rand als Winkel in diesem Abstand
+            var w = Winkel(basis[i]);
             if (w < mitte) { seite[i] = -1; nachLinks = Math.Max(nachLinks, w - (links0 - rand)); }
             else { seite[i] = 1; nachRechts = Math.Max(nachRechts, rechts0 + rand - w); }
         }
+        if (radiusSeitlichM is not null)
+        {
+            // V1e: auch der kleinste Raumabstand zu Tafel und Ornamenten (die Symbole stehen näher als die Tafel) – sonst je Seite weiter drehen
+            double Kleinster(int s, double winkel)
+            {
+                var min = double.PositiveInfinity;
+                for (int i = 0; i < basis.Count; i++)
+                    if (seite[i] == s)
+                    {
+                        var p = DrehenUmAuge(basis[i], auge, winkel);
+                        foreach (var f in flaechen) min = Math.Min(min, AbstandZuFlaeche(p, f) - radius);
+                    }
+                return min;
+            }
+            for (int n = 0; n < 180 && Kleinster(-1, -nachLinks) < abstandM - 1e-9; n++) nachLinks += 0.5 * Num.Grad;
+            for (int n = 0; n < 180 && Kleinster(1, nachRechts) < abstandM - 1e-9; n++) nachRechts += 0.5 * Num.Grad;
+        }
         var kk = Math.Clamp(k, 0, 1);
-        return [.. mitten.Select((p, i) => DrehenUmAuge(p, auge, (seite[i] < 0 ? -nachLinks : nachRechts) * kk))];
+        return [.. mitten.Select((p, i) => DrehenUmAuge(p + (basis[i] - p) * kk, auge, (seite[i] < 0 ? -nachLinks : nachRechts) * kk))];
+    }
+
+    /// <summary>V1e: Punkt auf den Bogen mit Radius r um das Auge (waagrecht gemessen; Höhe und Richtung bleiben).</summary>
+    static Vec3 AufBogen(Vec3 p, Vec3 auge, double r)
+    {
+        var v = p - auge;
+        var waag = Math.Sqrt(v.X * v.X + v.Z * v.Z);
+        return waag < 1e-9 ? p : auge + new Vec3(v.X * r / waag, v.Y, v.Z * r / waag);
+    }
+
+    /// <summary>V1e: kleinster Abstand (m) eines Punkts zu einer rechteckigen Fläche (Glas-Fenster, Ornament, Griff) im Raum.</summary>
+    public static double AbstandZuFlaeche(Vec3 p, TabletPose f)
+    {
+        var d = p - f.Mitte;
+        var x = Math.Clamp(d.Skalar(f.Rechts), -f.B / 2, f.B / 2);
+        var y = Math.Clamp(d.Skalar(f.Oben), -f.H / 2, f.H / 2);
+        return p.Abstand(f.Mitte + f.Rechts * x + f.Oben * y);
     }
 
     /// <summary>Punkt p um die senkrechte Achse durch das Auge drehen (Winkel im Bogenmass, positiv = im Blick nach rechts, d. h. im Uhrzeigersinn von oben).</summary>

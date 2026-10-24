@@ -101,6 +101,8 @@ sealed class GlasApps : IWegwischbar
     public bool Sichtbar { get; private set; } = true;
     public string Aktiv { get; set; } = "status";
     public int Seite { get; set; }
+    /// <summary>V1e: erste sichtbare Zeile einer rollenden Liste (Etagen über «etagen.zeilen_max»); null = beim nächsten Bauen das Aktuelle sichtbar machen.</summary>
+    public int? Rollen { get; set; }
     public double AusgeblendetSeit { get; private set; } = double.NegativeInfinity;
     public GlasRahmen? Rahmen { get; private set; }
     public IReadOnlyList<(string Art, string Id, TabletPose Lage)> Ziele { get; private set; } = [];
@@ -121,9 +123,9 @@ sealed class GlasApps : IWegwischbar
     public bool HandNah(Handed h) => Sichtbar && nah[(int)h];
 
     /// <summary>Leerer Inhalt in der Grösse des Fensters (für den Aufbau der gewählten App).</summary>
-    public GlasInhalt NeuerInhalt(XrBedienEinstellungen e)
+    public GlasInhalt NeuerInhalt(XrBedienEinstellungen e, int mehrZeilen = 0)
     {
-        Masse = GlasMasse.Fuer(e.Apps);
+        Masse = GlasMasse.Fuer(e.Apps) with { MehrZeilen = mehrZeilen };   // V1e: die Etagenliste auf einer Seite (höhere Tafel)
         var m = Masse;
         return new GlasInhalt(m, m.FensterB - 2 * m.M(GlasStil.RandPt), m.FensterH - 2 * m.M(GlasStil.RandPt) - m.M(GlasStil.FussPt));
     }
