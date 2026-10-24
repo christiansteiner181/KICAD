@@ -52,8 +52,9 @@ public static class XrNachrichten
     /// <summary>Grenze für Koordinaten (mm): 10 km.</summary>
     public const double PosMax = 10_000_000;
     static readonly Regex SchluesselMuster = new(@"^[a-z][a-z0-9_.\-]{0,63}$", RegexOptions.CultureInvariant);
-    /// <summary>So viele Stellschrauben (mit Varianten und Aufgabe) merkt bzw. trägt der Kanal höchstens; V1d 96 statt 64 (mit V1d 65 Stellschrauben, 10 Varianten, Aufgabe).</summary>
-    public const int StellschraubenMax = 96;
+    /// <summary>So viele Stellschrauben (mit Varianten und Aufgabe) merkt bzw. trägt der Kanal höchstens; V1d 96 statt 64 (mit V1d 65 Stellschrauben, 10 Varianten, Aufgabe);
+    /// V1g 128 (83 Stellschrauben, 12 Varianten, Aufgabe = 96).</summary>
+    public const int StellschraubenMax = 128;
     const int VariantenMax = 12;
     static readonly Regex VarianteNameMuster = new(@"^[a-z][a-z0-9_]{0,31}$", RegexOptions.CultureInvariant);
     static readonly Regex VarianteOptionMuster = new(@"^[a-z][a-z0-9_]{0,39}$", RegexOptions.CultureInvariant);

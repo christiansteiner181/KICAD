@@ -172,7 +172,7 @@ test('Varianten: Wahl aus den gesetzten Werten oder die Vorgabe', () => {
   assert.equal(T.varianteWahl(v, {}), 'apps');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'tablet' }), 'tablet');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'unbekannt' }), 'apps');
-  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband', umgebung: 'hell', symbole: 'verteilt', symbolwahl: 'stehen', feld_bei_app: 'seitlich',
+  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband', umgebung: 'hell', symbole: 'verteilt', symbolwahl: 'ausblenden', feld_bei_app: 'seitlich',
     tafel_nachfuehren: 'fest', zoom_ein_griff: 'zweite_hand', griffe_tisch: 'zwei_punkte', ausloeser: 'pistole' });   // V1d: tafel_nachfuehren, zoom_ein_griff; V1e: griffe_tisch; V1f: ausloeser, Tafel «fest»
   assert.equal(T.varianteTitel(v, 'tablet'), 'Tablet an der Hand');
   assert.equal(T.varianteTitel(v, 'x'), 'x');

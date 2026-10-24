@@ -73,9 +73,13 @@ public sealed record SymbolEinstellungen
     /// <summary>«symbole.wartezeit_s»: ohne Wahl gehen die Symbole nach so vielen Sekunden; 0 = nie (Vorgabe; Christian 24.10.2026: «werden die aps hineingehoben
     /// bleiben diese stehen» – nur das Wegwischen blendet sie aus).</summary>
     public double WartezeitS { get; init; }
-    /// <summary>Variante «symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (<see cref="Varianten.SymbolwahlStehen"/>,
-    /// Vorgabe) bzw. blenden aus (<see cref="Varianten.SymbolwahlAusblenden"/>).</summary>
-    public string NachWahl { get; init; } = Varianten.SymbolwahlStehen;
+    /// <summary>Variante «symbolwahl»: nach der Wahl einer App blenden die Symbole aus (<see cref="Varianten.SymbolwahlAusblenden"/>, Vorgabe seit V1g; nach dem Schliessen
+    /// der Tafel kommen sie nicht zurück – neu holt sie die Hebegeste) bzw. bleiben stehen und weichen hinter bzw. neben die App (<see cref="Varianten.SymbolwahlStehen"/>,
+    /// Vorgabe bis V1f).</summary>
+    public string NachWahl { get; init; } = Varianten.SymbolwahlAusblenden;
+    /// <summary>V1g, «symbole.sperre_schliessen_s»: nach dem Schliessen einer Tafel (Wegwischen, «×», PC-Bildschirm hinaus) zählt so lange (s) keine Berührung eines Symbols
+    /// (Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen»; Annahme V1g 0.5 s).</summary>
+    public double SperreSchliessenS { get; init; } = 0.5;
     /// <summary>«zeiger.tooltip_s»: der Name erscheint nach so viel Verweilen am Ziel (Annahme V1a 0.6 s; HIG: «after … a moment», «slightly longer delay»).</summary>
     public double TooltipS { get; init; } = 0.6;
     /// <summary>Variante «symbole»: <see cref="Varianten.SymboleVerteilt"/> (Vorgabe) oder <see cref="Varianten.SymboleBogen"/>.</summary>

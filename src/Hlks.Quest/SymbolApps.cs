@@ -64,6 +64,10 @@ sealed class SymbolApps : IWegwischbar
     public bool FeldBewegt { get; private set; }
     /// <summary>V1d: ist die Wahl gerade gesperrt (nach einer Wahl, bis Feld und Hand frei sind; Prüfung)?</summary>
     public bool WahlGesperrt => beruehr.WahlGesperrt;
+    /// <summary>V1g: nach dem Schliessen einer Tafel zählt bis zur Zeit bis keine Berührung eines Symbols («symbole.sperre_schliessen_s»).</summary>
+    public void BeruehrungSperren(double bis) => beruehr.Sperren(bis);
+    /// <summary>V1g: ist die Berührung zur Zeit t gesperrt?</summary>
+    public bool BeruehrungGesperrt(double t) => beruehr.IstGesperrt(t);
     /// <summary>Sind die Symbole zu sehen (auch beim Hineinheben und Ausblenden)?</summary>
     public bool Sichtbar => phase != Phase.Weg;
     /// <summary>Stehen sie ganz (nach der Geste, vor dem Ausblenden)?</summary>
@@ -278,7 +282,7 @@ sealed class SymbolApps : IWegwischbar
             rueck.Kachel(S(lagen[k].Mitte));
         }
         // V1f: auf Distanz – mit der Pistolengeste auf ein Symbol zielen und abdrücken (der Strahl von kurz vor dem Abzug); nicht während Geste und Sperre
-        else if (Pistolen is { } ps && phase == Phase.Da && !gesteLaeuft && !WahlGesperrt)
+        else if (Pistolen is { } ps && phase == Phase.Da && !gesteLaeuft && !WahlGesperrt && !beruehr.IstGesperrt(t))
             for (int i = 0; i < 2 && ergebnis is null; i++)
                 if (ps[i] is { Abgedrueckt: true } p && (p.StrahlBeimAbzug ?? p.Strahl) is { } sa && Glas.Strahl(lagen, sa.U, sa.R) is { } tr)
                 {

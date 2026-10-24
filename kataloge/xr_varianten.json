@@ -65,17 +65,17 @@
     },
     {
       "name": "symbolwahl", "titel": "App-Symbole nach der Wahl",
-      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: stehen bleiben (die App öffnet frontal etwas näher, das Symbolfeld weicht dahinter zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) oder ausblenden (die App öffnet, sobald die Symbole weg sind).",
+      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: ausblenden (Vorgabe seit V1g; die App öffnet, sobald die Symbole weg sind, und schliesst man die Tafel, kommen sie nicht zurück – neu holt sie die Hebegeste) oder zum Vergleich stehen bleiben (die App öffnet frontal etwas näher, das Symbolfeld weicht dahinter zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) – nur dann weicht das Feld nach «feld_bei_app» aus. Nach jedem Schliessen einer Tafel zählt «symbole.sperre_schliessen_s» lang keine Berührung.",
       "optionen": [
-        { "id": "stehen", "titel": "Stehen bleiben" },
-        { "id": "ausblenden", "titel": "Ausblenden" }
+        { "id": "ausblenden", "titel": "Ausblenden" },
+        { "id": "stehen", "titel": "Stehen bleiben" }
       ],
-      "vorgabe": "stehen",
-      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück), als Variante zum Vergleich"
+      "vorgabe": "ausblenden",
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück); V1g, Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen. (app ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.»"
     },
     {
       "name": "feld_bei_app", "titel": "Symbolfeld bei offener App",
-      "beschreibung": "Wo das Feld der App-Symbole steht, solange eine App offen ist (Variante «symbolwahl» = «stehen»): seitlich (es weicht links und rechts neben das Fenster und seine Ornamente aus, im selben Abstand zum Auge, also in Griffweite; schliesst die App, kehrt es frontal zurück) oder zum Vergleich dahinter (es weicht in die Tiefe zurück und wird gedämpft).",
+      "beschreibung": "Nur mit «symbolwahl» = «stehen» (seit V1g nicht mehr die Vorgabe): wo das Feld der App-Symbole steht, solange eine App offen ist: seitlich (es weicht links und rechts neben das Fenster und seine Ornamente aus, im selben Abstand zum Auge, also in Griffweite; schliesst die App, kehrt es frontal zurück) oder zum Vergleich dahinter (es weicht in die Tiefe zurück und wird gedämpft).",
       "optionen": [
         { "id": "seitlich", "titel": "Neben dem Fenster" },
         { "id": "dahinter", "titel": "Hinter dem Fenster" }

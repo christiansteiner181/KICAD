@@ -347,3 +347,19 @@ bsp. pistolengeste. zudem soll die tafel nicht mit dem blick wandern. dies soll 
   Handfläche 60°, Drehung 45°, Haltung vorher 0 s, Gleichlauf 0.5 s, ohne Grenze für die Form; Ansatz 5 cm in 0.35 s, Meldung höchstens jede Sekunde.
 - **Tests:** `V1fTests` (siehe OBERFLAECHE.md, Abschnitt V1f «Prüfen»); angepasst `V1eTests`, `V1dTests`, `P5bBedienungTests`, `LaborKatalogTests`, Generator
   (`Haltung.Abzug`).
+
+## Kippen, Symbole ausblenden, keine Bodenplatte (V1g)
+
+Christian 24.10.2026: Kippen am roten Punkt, Symbole blenden nach der Wahl aus und kehren nach dem Schliessen einer Tafel nicht zurück, keine Fläche unter dem Modell.
+Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1g».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Sitzung/Kippen.cs` | `SitzungKippung`, `Kippen` | Kippung um eine waagrechte Achse durch das Zentrum (Raum-lokal, nach der Drehung): Drehen (Rodrigues), Drehpunkt, Anwenden, Matrix, Grundfläche, Anheben (die tiefste Ecke bleibt auf der Unterkante) |
+
+- **Geändert für V1g:** `XrSitzungLogik.cs` (`SitzungLage.Kippung`), `Sitzung/SitzungRaum.cs` (`ModellZuRaum` und `ModellMatrix` mit der Kippung, `ModellZuRaumOhneKippung`),
+  `Sitzung/ZweiPunkte.cs` (Kippen aus der Höhe der Hand am Punkt «Drehen», Achse quer zur Richtung Kopf → Zentrum, `KippMaxGrad`, Doppeltipp `NeigungZurueck`,
+  `ZweiPunkteLage.ZentrumSzene`, die Punkte kippen mit), `Bedienung/HandBeruehrung.cs` (`Sperren`, `IstGesperrt`), `Bedienung/HebeGeste.cs` (`SymbolEinstellungen.NachWahl`
+  Vorgabe «ausblenden», `SperreSchliessenS`), `Bedienung/XrBedienEinstellungen.cs` (Stellschrauben V1g, `Umriss`), `Labor/PruefAufgaben.cs` (Grenze 128).
+- **Annahmen V1g:** Kippen höchstens 60°, Totzone wie die Drehung (3°), Doppeltipp 0.4 s / 0.5 s / 3 cm bzw. 6 cm; Sperre nach dem Schliessen 0.5 s; Umriss aus.
+- **Tests:** `V1gTests`; angepasst `V1aSymboleTests`, `LaborKatalogTests`.

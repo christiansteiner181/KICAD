@@ -18,6 +18,8 @@
 // V1f: labor.variante.ausloeser (pistole | pinch; Pistolengeste statt Pinch für die Zeige-Aktionen, Faustgriff an den zwei Punkten), pistole.abzug_an_m, pistole.abzug_aus_m,
 //   pistole.ruhe_s (Pistolengeste), sitzung.tisch_hoehe_m (angenommene Tischhöhe ohne echten Tisch), gesten.offen_ab (lockere Hand für die Wischgesten), hebe.vorhalte_s und
 //   hebe.dreh_grad (eigene Schwellen der Hebegeste); Vorgabe der Variante tafel_nachfuehren neu «fest».
+// V1g: sitzung.kipp_max_grad (Kippen am Punkt «Drehen»), symbole.sperre_schliessen_s (Sperre der Symbole nach dem Schliessen einer Tafel), sitzung.umriss (dezenter Umriss
+//   der Grundfläche beim Greifen; die Bodenplatte entfällt); Vorgabe der Variante symbolwahl neu «ausblenden».
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -61,8 +63,9 @@ public static class Varianten
     /// <summary>V1a, «labor.variante.symbole»: die App-Symbole locker verteilt (Vorgabe, Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt») bzw.
     /// im Bogen (zum Vergleich).</summary>
     public const string SymboleVerteilt = "verteilt", SymboleBogen = "bogen";
-    /// <summary>V1a, «labor.variante.symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (Vorgabe; Christian 24.10.2026:
-    /// «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf) bzw. blenden aus (wie zuvor).</summary>
+    /// <summary>V1a, «labor.variante.symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (Vorgabe bis V1f; Christian 24.10.2026:
+    /// «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf) bzw. blenden aus (Vorgabe seit V1g, Christian 24.10.2026: «bei schliessen der tafel soll die
+    /// hand keine app wählen. (app ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.»).</summary>
     public const string SymbolwahlStehen = "stehen", SymbolwahlAusblenden = "ausblenden";
     /// <summary>V1a, «labor.variante.feld_bei_app»: ist eine App offen, weicht das Symbolfeld seitlich neben das Fenster aus (Vorgabe; Christian 24.10.2026: «Das
     /// Symbolfeld weicht bei offener App seitlich neben das Fenster aus.») bzw. zum Vergleich dahinter zurück (die frühere Auslegung).</summary>
@@ -84,7 +87,7 @@ public static class Varianten
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageApp, EtageWisch], ["messen"] = [Messband, ZweiPunkte],
-        ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
+        ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlAusblenden, SymbolwahlStehen],
         ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelFest, TafelTraege], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
         ["griffe_tisch"] = [GriffeZweiPunkte, GriffeEinGriff], ["ausloeser"] = [AusloeserPistole, AusloeserPinch],
     };
@@ -186,6 +189,9 @@ public sealed record XrBedienEinstellungen
     /// <summary>V1f, «sitzung.tisch_hoehe_m»: ohne echten Tisch steht das Modell auf dieser Höhe über dem Boden (m; Annahme V1f 0.75 m wie bisher der virtuelle Tisch,
     /// eine übliche Höhe eines Sitzungstischs).</summary>
     public double TischHoeheM { get; init; } = XrSitzungLogik.TischHoehe;
+    /// <summary>V1g, «sitzung.umriss»: beim Annähern an einen Punkt bzw. beim Greifen deutet ein dünner Umriss die Grundfläche an (Vorgabe aus; Christian 24.10.2026: «die
+    /// weisse fläche unter dem modell stört immer noch» – die Bodenplatte entfällt).</summary>
+    public bool Umriss { get; init; }
     /// <summary>V1f: die Pistolengeste löst aus (Variante «ausloeser»).</summary>
     public bool MitPistole => Ausloeser != Varianten.AusloeserPinch;
 
@@ -279,6 +285,9 @@ public sealed record XrBedienEinstellungen
         ["gesten.offen_ab"] = (1.1, 1.9),
         ["hebe.vorhalte_s"] = (0, 0.5),
         ["hebe.dreh_grad"] = (10, 90),
+        // V1g
+        ["sitzung.kipp_max_grad"] = (0, 85),
+        ["symbole.sperre_schliessen_s"] = (0, 3),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -307,6 +316,8 @@ public sealed record XrBedienEinstellungen
         "symbole.abstand_tafel_m", "symbole.radius_seitlich_m", "anzeige.glanz",
         // V1f
         "labor.variante.ausloeser", "pistole.abzug_an_m", "pistole.abzug_aus_m", "pistole.ruhe_s", "sitzung.tisch_hoehe_m", "gesten.offen_ab", "hebe.vorhalte_s", "hebe.dreh_grad",
+        // V1g
+        "sitzung.kipp_max_grad", "symbole.sperre_schliessen_s", "sitzung.umriss",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -428,7 +439,7 @@ public sealed record XrBedienEinstellungen
                     : Wahl(Varianten.SymboleVerteilt, Varianten.SymboleBogen) is { } s6 ? this with { Symbole = Symbole with { Verteilung = s6 } } : null;
             case "labor.variante.symbolwahl":
                 return zurueck ? this with { Symbole = Symbole with { NachWahl = v.Symbole.NachWahl } }
-                    : Wahl(Varianten.SymbolwahlStehen, Varianten.SymbolwahlAusblenden) is { } s11 ? this with { Symbole = Symbole with { NachWahl = s11 } } : null;
+                    : Wahl(Varianten.SymbolwahlAusblenden, Varianten.SymbolwahlStehen) is { } s11 ? this with { Symbole = Symbole with { NachWahl = s11 } } : null;
             case "labor.variante.feld_bei_app":
                 return zurueck ? this with { Symbole = Symbole with { FeldBeiApp = v.Symbole.FeldBeiApp } }
                     : Wahl(Varianten.FeldSeitlich, Varianten.FeldDahinter) is { } s12 ? this with { Symbole = Symbole with { FeldBeiApp = s12 } } : null;
@@ -513,6 +524,13 @@ public sealed record XrBedienEinstellungen
                 return (zurueck ? v.Hebe.VorhalteS : Zahl()) is { } f7 ? this with { Hebe = Hebe with { VorhalteS = f7 } } : null;
             case "hebe.dreh_grad":
                 return (zurueck ? v.Hebe.DrehGrad : Zahl()) is { } f8 ? this with { Hebe = Hebe with { DrehGrad = f8 } } : null;
+            // V1g
+            case "sitzung.kipp_max_grad":
+                return (zurueck ? v.Punkte.KippMaxGrad : Zahl()) is { } g1 ? this with { Punkte = Punkte with { KippMaxGrad = g1 } } : null;
+            case "symbole.sperre_schliessen_s":
+                return (zurueck ? v.Symbole.SperreSchliessenS : Zahl()) is { } g2 ? this with { Symbole = Symbole with { SperreSchliessenS = g2 } } : null;
+            case "sitzung.umriss":
+                return (zurueck ? v.Umriss : JaNein()) is { } g3 ? this with { Umriss = g3 } : null;
             default:
                 return null;
         }

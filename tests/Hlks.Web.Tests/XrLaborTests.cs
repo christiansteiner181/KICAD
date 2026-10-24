@@ -365,11 +365,11 @@ public class XrLaborTests
         Schlecht("labor.profil.test_1", Json_("{ \"name\": \"" + new string('n', 41) + "\", \"werte\": {} }"), "Name");
         Schlecht("labor.profil_aktiv", JsonValue.Create("Gross Schrift"), "Kennung");
         Schlecht("labor.profil_aktiv", JsonValue.Create(5), "Kennung");
-        // mehr als 96 Werte (V1d; bis V1c 64)
+        // mehr als 128 Werte (V1g; V1d 96, bis V1c 64)
         var viele = new JsonObject();
         for (int i = 0; i < XrLaborProfil.WerteMax + 1; i++) viele["k" + i] = i;
-        Assert.Equal(96, XrLaborProfil.WerteMax);
-        Schlecht("labor.profil.test_1", new JsonObject { ["name"] = "x", ["werte"] = viele }, "Höchstens 96");
+        Assert.Equal(128, XrLaborProfil.WerteMax);
+        Schlecht("labor.profil.test_1", new JsonObject { ["name"] = "x", ["werte"] = viele }, "Höchstens 128");
         // der Schlüssel liegt nicht unter «xr.» (das verbietet ein anderer Test)
         Assert.DoesNotContain(BenutzerEinstellungen.Bekannt.Keys, k => k.StartsWith("xr.", StringComparison.Ordinal));
         Assert.Contains("labor.profil_aktiv", BenutzerEinstellungen.Bekannt.Keys);

@@ -27,6 +27,11 @@ public sealed class HandBeruehrZustand
     internal double? FreiSeit;
     /// <summary>V1d: ist die Wahl gerade gesperrt (nach einer Wahl, bis Feld und Hand frei sind)?</summary>
     public bool WahlGesperrt => NachWahl;
+
+    /// <summary>V1g: bis zur Zeit bis zählt keine Berührung (nach dem Schliessen einer Tafel, «symbole.sperre_schliessen_s»).</summary>
+    public void Sperren(double bis) => SperreBis = Math.Max(SperreBis, bis);
+    /// <summary>V1g: ist die Berührung zur Zeit t gesperrt (Geste bzw. Schliessen einer Tafel)?</summary>
+    public bool IstGesperrt(double t) => t < SperreBis;
 }
 
 /// <summary>Ergebnis eines Schritts: gewähltes Symbol (einmal) bzw. null; Nähe je Symbol (0 … 1, für Leuchten); berührt (tiefste Eindringung) bzw. null; gesperrt.</summary>

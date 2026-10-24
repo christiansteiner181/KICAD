@@ -77,8 +77,8 @@ public sealed class PruefLauf
 
 public static class PruefAufgaben
 {
-    /// <summary>Höchstens so viele Stellschrauben trägt ein Messprotokoll (Grenze des Kanals am PC, XrNachrichten.StellschraubenMax; V1d 96 statt 64).</summary>
-    public const int StellschraubenMax = 96;
+    /// <summary>Höchstens so viele Stellschrauben trägt ein Messprotokoll (Grenze des Kanals am PC, XrNachrichten.StellschraubenMax; V1d 96 statt 64, V1g 128).</summary>
+    public const int StellschraubenMax = 128;
 
     public const string TeleportMarkierung = "teleport-markierung", Drehen90 = "drehen-90", EtageWechseln = "etage-wechseln",
         ModellGreifenZoomen = "modell-greifen-zoomen", RaumArOeffnen = "raum-ar-oeffnen", TabletWertAblesen = "tablet-wert-ablesen", MessenWandWand = "messen-wand-wand";

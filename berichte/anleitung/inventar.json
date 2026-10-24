@@ -11801,7 +11801,7 @@
             "tests/Hlks.Xr.Tests/V1dTests.cs, V1aSymboleTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
           ],
-          "hinweis": "Befund Brillentest V1 (Christian 24.10.2026): «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», «nach tippen einer App sollte erneutes auswählen gesperrt sein». Alle Werte sind Annahmen V1d (Mitte 0.22 m, sitzend +0.08 m, am Tisch 0.52 m, Sperre 0.3 s) und als Stellschrauben einstellbar. Am virtuellen Tisch (Platte 0.75 m) hält die Platte die unterste Reihe – dort liegt das Feld nur rund 9 cm tiefer als bis V1d. Seit V1e genügt für die Hebegeste ein kurzer Anstoss (zb-quest-v1e-anstoss); neben einer offenen App mehr Abstand (zb-quest-v1e-tafel)."
+          "hinweis": "Befund Brillentest V1 (Christian 24.10.2026): «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», «nach tippen einer App sollte erneutes auswählen gesperrt sein». Alle Werte sind Annahmen V1d (Mitte 0.22 m, sitzend +0.08 m, am Tisch 0.52 m, Sperre 0.3 s) und als Stellschrauben einstellbar. Am virtuellen Tisch (Platte 0.75 m) hält die Platte die unterste Reihe – dort liegt das Feld nur rund 9 cm tiefer als bis V1d. Seit V1e genügt für die Hebegeste ein kurzer Anstoss (zb-quest-v1e-anstoss); neben einer offenen App mehr Abstand (zb-quest-v1e-tafel). Seit V1g blenden die Symbole nach der Wahl aus (Variante «stehen» zum Vergleich): zb-quest-v1g-kippen."
         },
         {
           "id": "zb-quest-v1d-tafel",
@@ -11990,7 +11990,7 @@
             "tests/Hlks.Xr.Tests/V1eTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1e»)"
           ],
-          "hinweis": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum». Ersetzt als Vorgabe den einen Griff von V1d (Variante «ein_griff»). Farben sind Vorschläge V1e, zu bestätigen. Seit V1f fasst mit der Pistolengeste die Faust die Punkte: zb-quest-v1f-sitzung."
+          "hinweis": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum». Ersetzt als Vorgabe den einen Griff von V1d (Variante «ein_griff»). Farben sind Vorschläge V1e, zu bestätigen. Seit V1f fasst mit der Pistolengeste die Faust die Punkte: zb-quest-v1f-sitzung. Seit V1g kippt der rote Punkt das Modell auch (Höhe der Hand): zb-quest-v1g-kippen."
         },
         {
           "id": "zb-quest-v1e-tafel",
@@ -12096,7 +12096,7 @@
             "tests/Hlks.Xr.Tests/V1fTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1f»)"
           ],
-          "hinweis": "Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)». Faustgriff: Vorschlag V1f (mit der Variante «pinch» wie bis V1e). Annahmen V1f: Tischhöhe 0.75 m, Faust fängt 8 cm. Die Variante «umgebung» gilt am Tisch nicht mehr."
+          "hinweis": "Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)». Faustgriff: Vorschlag V1f (mit der Variante «pinch» wie bis V1e). Annahmen V1f: Tischhöhe 0.75 m, Faust fängt 8 cm. Die Variante «umgebung» gilt am Tisch nicht mehr. Seit V1g ohne Fläche unter dem Modell (Bodenplatte entfällt): zb-quest-v1g-kippen."
         },
         {
           "id": "zb-quest-v1f-gesten",
@@ -12131,6 +12131,42 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1f»)"
           ],
           "hinweis": "Christian 24.10.2026: «wisch geste soll auch gehen wenn die finger nicht voll gestrekt sind.», «die app hineinheben geste scheint im letzten test weniger gut zu klappen.», «zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.» Annahmen V1f: lockere Hand ab 1.40, Hebegeste 60°/45°/0 s/0.5 s; Tafel «fest» (träge als Variante)."
+        },
+        {
+          "id": "zb-quest-v1g-kippen",
+          "titel": "Quest App: Modell am roten Punkt kippen; Symbole blenden nach der Wahl aus; keine Fläche unter dem Modell (Modul XR, Quest App V1g)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille am Sitzungstisch: roter Punkt «Drehen und Vergrössern» vorn rechts; App «Tisch» › «Zurücksetzen»; die App-Symbole. Im XR-Labor: sitzung.kipp_max_grad, symbole.sperre_schliessen_s, sitzung.umriss, Variante «symbolwahl»."
+          },
+          "schritte": [
+            "Den roten Punkt greifen (Faust bzw. Pinch) und die Hand heben: das Modell kippt um eine waagrechte Achse durch sein Zentrum, die Seite zu einem hebt sich; die Hand senken kippt es zurück bzw. nach vorn. Links/rechts dreht weiter, nach aussen/innen zoomt.",
+            "Zweimal kurz hintereinander am roten Punkt greifen (Doppeltipp): das Modell steht wieder waagrecht. «Tisch» › «Zurücksetzen» stellt alles zurück.",
+            "Eine App über ihr Symbol wählen: die Symbole blenden aus, die App öffnet. Nach dem Schliessen der Tafel bleiben die Symbole weg – eine andere App mit der Hebegeste holen."
+          ],
+          "erwartung": "Das Modell kippt höchstens 60° und taucht nie in den Tisch (es hebt sich, so weit nötig). Drehung und Massstab bleiben beim Kippen. Unter dem Modell liegt keine Fläche mehr. Beim Schliessen einer Tafel wählt die Hand keine App.",
+          "pruefpunkte": [
+            "Kippen mit der Höhe der Hand, Drehen und Zoomen wie bisher.",
+            "Doppeltipp am roten Punkt stellt die Neigung auf 0.",
+            "Keine weisse Fläche unter dem Modell, auch mit Passthrough.",
+            "Nach der Wahl einer App und nach dem Schliessen der Tafel stehen keine Symbole im Weg.",
+            "werkzeuge\\quest_pruefen.ps1 meldet «V1g Tisch=ok (gekippt 30.0° …; Doppeltipp Neigung 0 ja; Grenze 60° ja …)»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 3): v1g_gekippt.jpg, v1g_gekippt_seite.jpg, v1g_tisch_ohne_flaeche.jpg; Lauf 1: v1g_app_nach_wahl.jpg",
+            "zustand": "Sitzungstisch «Alle Etagen», der rote Punkt gegriffen und gehoben"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Sitzung/Kippen.cs, ZweiPunkte.cs, SitzungRaum.cs",
+            "src/Hlks.Quest/Sitzungsraum.cs, QuestApp.Apps.cs, SymbolApps.cs",
+            "tests/Hlks.Xr.Tests/V1gTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1g»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «durch oben unten des roten punkte soll das modell auch rotieren.» (Kippen), «bei schliessen der tafel soll die hand keine app wählen. (app ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.», «die weisse fläche unter dem modell stört immer noch.» Annahmen V1g: höchstens 60°, Sperre 0.5 s, Umriss aus."
         }
       ]
     }

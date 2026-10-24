@@ -24,9 +24,15 @@
 
 namespace Hlks.Xr;
 
-/// <summary>Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Mitte relativ zur Tischmitte (m).</summary>
-/// <summary>Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Verschiebung X, Z (m) und – Brillentest Christian 23.10.2026 – Höhe über der Platte (m).</summary>
-public sealed record SitzungLage(double Massstab, double Drehung, double X, double Z, double Hoehe = 0);
+/// <summary>
+/// Lage des Modells auf dem Tisch: Massstab (Nenner), Drehung (rad), Verschiebung X, Z (m) und – Brillentest Christian 23.10.2026 – Höhe über der Platte (m); V1g: die
+/// Kippung um eine waagrechte Achse durch das Zentrum (null = waagrecht; Sitzung/Kippen.cs).
+/// </summary>
+public sealed record SitzungLage(double Massstab, double Drehung, double X, double Z, double Hoehe = 0)
+{
+    /// <summary>V1g: Kippung am Punkt «Drehen und Vergrössern» (Christian 24.10.2026: «durch oben unten des roten punkte soll das modell auch rotieren»), sonst null.</summary>
+    public Sitzung.SitzungKippung? Kippung { get; init; }
+}
 
 /// <summary>
 /// P5a: Grenzen des Zoomens am Sitzungstisch als Nenner (Min = stärkster Zoom 1:Min, Max = schwächster 1:Max). Stellschrauben «sitzung.zoom_min», «sitzung.zoom_max»;

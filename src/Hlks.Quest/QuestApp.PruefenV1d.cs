@@ -66,7 +66,8 @@ sealed partial class QuestApp
         var f0 = new Vec3((float)Math.Cos(gieren), 0, -(float)Math.Sin(gieren));
         var r0 = new Vec3(-f0.z, 0, f0.x);   // rechts vom Blick (Blick −z → rechts +x)
         // 1. Symbolfeld stehend (Augen 1.65 m) und sitzend (1.20 m, Haltung «sitzend»): Bild von vorn und von der Seite mit der Augenhöhe als rote Linie
-        if (Bei(0)) { PruefbildVorbereiten(); apps.Ausblenden(Time.Total); symbole.Ausblenden(Time.Total); }
+        // V1g: die Folge prüft die Variante «stehen» (Sperre nach der Wahl, Feld weicht aus); die Vorgabe ist seit V1g «ausblenden»
+        if (Bei(0)) { PruefbildVorbereiten(); apps.Ausblenden(Time.Total); symbole.Ausblenden(Time.Total); StellschraubeAnwenden("labor.variante.symbolwahl", JsonDocument.Parse("\"stehen\"").RootElement.Clone()); }
         if (Bei(0.1)) { pruefKopf = v1dKopf0 = KopfAuf(new Vec3(k.position.x, 1.65f, k.position.z), gieren); pruefSitzend = false; pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
         if (Bei(0.13)) pruefHebe = null;
         if (Zwischen(0.75, 0.80) && pruefKopf is { } kp1) AugenLinie(kp1);
@@ -145,6 +146,7 @@ sealed partial class QuestApp
         v1dVorher = v1dJetzt;
         if (v1dJetzt < 8.5) return;
         apps.OhneEchteHaende = symbole.OhneEchteHaende = false;
+        StellschraubeAnwenden("labor.variante.symbolwahl", JsonDocument.Parse("null").RootElement.Clone());
         var appNachher = $"{apps.Aktiv}{(apps.Sichtbar ? "" : ", ausgeblendet")}";
         pruefKopf = null;
         pruefSitzend = null;
@@ -174,7 +176,7 @@ sealed partial class QuestApp
     static readonly double[] V1dMassstaebe = [19, 50, 200];
 
     /// <summary>So viele Bilder braucht die Folge am Tisch (der Abschnitt «alle Etagen» wird so lang).</summary>
-    const int V1dTischBilder = 6 * 60 + 400;   // V1e: dazu die zwei Punkte und die Etagenliste (PruefV1eTisch)
+    const int V1dTischBilder = 6 * 60 + 500;   // V1e: dazu die zwei Punkte und die Etagenliste (PruefV1eTisch); V1g: das Kippen (PruefV1gTisch)
 
     /// <summary>
     /// Ein Bild der Folge am Tisch (b = Bild im Abschnitt «alle Etagen» ab dem Beginn der Folge): Leistung (je 60 Bilder ohne und mit vereinfachter Unterlage bei 1:19,
@@ -318,15 +320,16 @@ sealed partial class QuestApp
         }
         // 5. V1e: zwei Punkte (Vorgabe) – Verschieben, Drehen und Vergrössern um das Zentrum, Geisterhand «Kreisen», Etagenliste am Tisch auf einer Seite
         PruefV1eTisch(g, ordner, Zeigen);
+        PruefV1gTisch(g, ordner);   // V1g: Kippen am roten Punkt, Doppeltipp, Grenze (QuestApp.PruefenV1f.cs)
         if (g < V1dTischBilder - 6 * 60 - 1) return;
         sitzung.PruefHaende = null;
         sitzung.LageSetzen(v1dStart!);
         var ok = v1dGriffOk && v1dZoomOk && v1dKnopfOk && v1dLeistung.Count == 6 && (szenenFang is null || v1dFangOk) && v1eVerschiebenOk && v1eDrehenOk && v1eEtagenOk
-            && !pruefV1fTisch.Contains("FEHLER", StringComparison.Ordinal);
+            && !pruefV1fTisch.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1gTisch.Contains("FEHLER", StringComparison.Ordinal);
         pruefV1dTisch = string.Create(CultureInfo.InvariantCulture,
             $"V1d Tisch={(ok ? "ok" : "FEHLER")} ({string.Join("; ", v1dLeistung)}; Tischstufen {stufenText}; ein Griff (Variante): fassen, heben, drehen {(v1dGriffOk ? "ja" : "nein")}, " +
             $"zweite Hand zoomt 1:{v1dN0:0} → 1:{v1dN0 / 2:0} {(v1dZoomOk ? "ja" : "nein")}, Drehknopf {(v1dKnopfOk ? "ja" : "nein")}; {v1dFangText}; " +
-            $"V1e zwei Punkte: verschieben ohne Drehen {(v1eVerschiebenOk ? "ja" : "nein")}, {v1eDrehenText}; {v1eEtagenText}; {pruefV1fTisch})");
+            $"V1e zwei Punkte: verschieben ohne Drehen {(v1eVerschiebenOk ? "ja" : "nein")}, {v1eDrehenText}; {v1eEtagenText}; {pruefV1fTisch}; {pruefV1gTisch})");
     }
 
     bool v1eVerschiebenOk, v1eDrehenOk, v1eEtagenOk;

@@ -448,8 +448,8 @@ public class V1aSymboleTests
     [Fact]
     public void Nach_der_Wahl_bleiben_die_Symbole_die_App_davor_das_Feld_weicht_zurück()
     {
-        var e = new SymbolEinstellungen();
-        Assert.Equal(Varianten.SymbolwahlStehen, e.NachWahl);
+        var e = new SymbolEinstellungen { NachWahl = Varianten.SymbolwahlStehen };   // V1g: Vorgabe «ausblenden» (V1gTests), hier die Variante «stehen»
+        Assert.Equal(Varianten.SymbolwahlAusblenden, new SymbolEinstellungen().NachWahl);
         Assert.Equal(0, e.WartezeitS);   // kein selbsttätiges Ausblenden
         var f = AppSymbole.FensterVorFeld(Auge, Blick, e);
         Nah(-f.Z, 0.6 - AppSymbole.AppVorM, 1e-9);   // frontal, etwas näher als das Feld
@@ -691,7 +691,7 @@ public class V1aSymboleTests
         Assert.Equal(0.6, e.Symbole.AbstandM);
         Assert.Equal(4, e.Apps.HinweisDauerS);
         Assert.Equal(Varianten.SymboleVerteilt, e.Variante("symbole"));
-        Assert.Equal(Varianten.SymbolwahlStehen, e.Variante("symbolwahl"));
+        Assert.Equal(Varianten.SymbolwahlAusblenden, e.Variante("symbolwahl"));   // V1g
         Assert.Equal(0.2, e.MitStellschraube("hebe.weg_m", W("0.2"))!.Hebe.WegM);
         Assert.Null(e.MitStellschraube("hebe.weg_m", W("0.9")));
         Assert.Equal(1.2, e.MitStellschraube("hebe.zeit_s", W("1.2"))!.Hebe.ZeitS);
@@ -715,7 +715,7 @@ public class V1aSymboleTests
         Assert.Equal(Varianten.SymboleBogen, bogen.Symbole.Verteilung);
         Assert.Null(e.MitStellschraube("labor.variante.symbole", W("\"kreis\"")));
         Assert.Equal(e, bogen.MitStellschraube("labor.variante.symbole", W("null")));
-        Assert.Equal(Varianten.SymbolwahlAusblenden, e.MitStellschraube("labor.variante.symbolwahl", W("\"ausblenden\""))!.Symbole.NachWahl);
+        Assert.Equal(Varianten.SymbolwahlStehen, e.MitStellschraube("labor.variante.symbolwahl", W("\"stehen\""))!.Symbole.NachWahl);
         Assert.Null(e.MitStellschraube("labor.variante.symbolwahl", W("\"weg\"")));
         // Wegwischen
         Assert.Equal(WegwischEinstellungen.Vorgabe, e.Wegwischen);
