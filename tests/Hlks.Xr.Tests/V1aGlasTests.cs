@@ -204,6 +204,55 @@ public class V1aGlasTests
     }
 
     [Fact]
+    public void Glas_tönt_sich_nach_der_Umgebung_im_hellen_Raum_dunkler()
+    {
+        // Befund Prüfbild 24.10.2026: im hellen Sitzungsraum war das Glas zu hell für weisse Schrift
+        var ziel = 0.42;
+        var hell = GlasStil.Toenung(GlasStil.HintergrundHell, 0.75, ziel);
+        var modell = GlasStil.Toenung(GlasStil.HintergrundModell, 0.75, ziel);
+        var dunkel = GlasStil.Toenung(GlasStil.HintergrundDunkel, 0.75, ziel);
+        Assert.True(hell.G < modell.G && modell.G < dunkel.G);   // im hellen Raum dunkleres Glas
+        foreach (var (f, bg) in new[] { (hell, GlasStil.HintergrundHell), (modell, GlasStil.HintergrundModell), (dunkel, GlasStil.HintergrundDunkel) })
+        {
+            Nah(GlasStil.Wirkt(f, bg), ziel, 1e-9);   // wirkt überall gleich hell
+            Assert.True(f.G >= GlasStil.GlasMin && f.G <= GlasStil.GlasMax);
+            Assert.True(f.B > f.R);   // leicht kühl, neutral
+        }
+        Nah(hell.A, 0.75, 1e-12);
+        // sehr durchscheinend im hellen Raum: das dunkelste Glas reicht nicht – es deckt mehr (höchstens 0.95)
+        var duenn = GlasStil.Toenung(GlasStil.HintergrundHell, 0.3, ziel);
+        Assert.True(duenn.A > 0.3 && duenn.A <= 0.95);
+        Nah(GlasStil.Wirkt(duenn, GlasStil.HintergrundHell), ziel, 1e-6);
+        // sehr dunkler Hintergrund mit hellem Ziel: nie heller als GlasMax
+        Nah(GlasStil.Toenung(0, 0.75, 0.6).G, GlasStil.GlasMax, 1e-12);
+        // Umgebung der App: Passthrough geht vor, dann Begehen (Modell), Sitzungsraum hell bzw. dunkel
+        Assert.Equal(GlasStil.HintergrundEcht, GlasStil.HintergrundFuer(true, true, true));
+        Assert.Equal(GlasStil.HintergrundModell, GlasStil.HintergrundFuer(false, false, true));
+        Assert.Equal(GlasStil.HintergrundHell, GlasStil.HintergrundFuer(true, false, true));
+        Assert.Equal(GlasStil.HintergrundDunkel, GlasStil.HintergrundFuer(true, false, false));
+    }
+
+    [Fact]
+    public void Geisterhand_führt_neben_der_Registerleiste_vor_nie_über_ihr()
+    {
+        // Befund Prüfbild 24.10.2026: die Geisterhand lag über der Registerleiste
+        var auge = V(0, 1.6, 0);
+        var f = Glas.Fenster(V(0, 1.32, -0.45), auge, M);
+        var r = Glas.Rahmen(f, M, 6, 0, 2);
+        var ziel = Geisterhand.Neben(r.Register[1], r.RegisterLeiste);
+        var hand = Geisterhand.Vorlage(ziel.Mitte + ziel.Normale * Geisterhand.AnlaufM, ziel);
+        Assert.Equal(25, hand.Count);
+        Assert.True(HandGelenke.WebXr.All(hand.ContainsKey));
+        var linkerRand = (r.RegisterLeiste.Mitte - f.Mitte).Skalar(f.Rechts) - r.RegisterLeiste.B / 2;
+        Nah((ziel.Mitte - f.Mitte).Skalar(f.Oben), (r.Register[1].Mitte - f.Mitte).Skalar(f.Oben), 1e-9);   // gleiche Höhe wie das Register
+        foreach (var t in new[] { 0.0, Geisterhand.DauerS / 4, Geisterhand.DauerS / 2 - 0.01 })
+        {
+            var b = Geisterhand.Bild(GeisterGeste.Antippen, t, hand, ziel)!;
+            Assert.All(b.Gelenke.Values, p => Assert.True((p - f.Mitte).Skalar(f.Rechts) < linkerRand, "ein Gelenk liegt über der Leiste"));
+        }
+    }
+
+    [Fact]
     public void Folgen_Farben_Symbole_und_Stellschrauben()
     {
         Nah(GlasStil.Folgen(0, 1, 1e9, 0.25), 1, 1e-9);
@@ -224,7 +273,11 @@ public class V1aGlasTests
         static JsonElement W(string j) => JsonDocument.Parse(j).RootElement.Clone();
         var e = XrBedienEinstellungen.Vorgabe;
         Assert.Equal(30, e.Apps.SeitlichGrad);
-        Assert.Equal(0.55, e.Apps.GlasDeckkraft);
+        Assert.Equal(0.75, e.Apps.GlasDeckkraft);
+        Assert.Equal(0.42, e.Apps.GlasHelligkeit);
+        Assert.Equal(0.3, e.MitStellschraube("anzeige.glas_helligkeit", W("0.3"))!.Apps.GlasHelligkeit);
+        Assert.Null(e.MitStellschraube("anzeige.glas_helligkeit", W("0.9")));
+        Assert.Equal(e, e.MitStellschraube("anzeige.glas_helligkeit", W("0.3"))!.MitStellschraube("anzeige.glas_helligkeit", W("null")));
         Assert.Equal(50, e.MitStellschraube("apps.seitlich_grad", W("50"))!.Apps.SeitlichGrad);
         Assert.Null(e.MitStellschraube("apps.seitlich_grad", W("120")));
         Assert.Equal(0.8, e.MitStellschraube("anzeige.glas_deckkraft", W("0.8"))!.Apps.GlasDeckkraft);

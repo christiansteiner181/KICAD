@@ -12,21 +12,19 @@ namespace Hlks.Quest;
 /// Hlks.Xr.Bedienung.Glas). Statt der Kacheln aus P5a:
 ///   - ein Fenster aus Glas, im Raum verankert (folgt dem Kopf nicht; kommt nur nach, wenn man weggeht), beim Holen seitlich nach «apps.seitlich_grad», am Sitzungstisch
 ///     neben dem Tisch (Befund Prüfbild 24.10.2026);
-///   - links die Register (Apps: Status, Etagen, Messen, Marker, Ort bzw. Tisch, Ebenen) als runde Knöpfe in einer senkrechten Leiste; die Beschriftung klappt auf, wenn
-///     sich Finger oder Strahl nähern;
-///   - im Fenster der Inhalt der gewählten App (GlasInhalt: Knöpfe als Kapsel, Schalter, Listen als Stapel abgerundeter Rechtecke), unten die Fusszeile für Hinweise
-///     (Befund Prüfbild: nie frei im Raum);
+///   - im Fenster der Inhalt der gewählten App (GlasInhalt: Knöpfe als Kapsel, Schalter, Listen als Stapel abgerundeter Rechtecke);
 ///   - an der Unterkante die Werkzeugleiste (Ornament) mit Messen und Marker; darunter der Griff zum Verschieben und links daneben der runde Schliessen-Knopf.
+/// Keine Registerleiste mehr (Christian 24.10.2026: «Ja, die Registerleiste fällt weg; gewechselt wird über die Hebegeste und die Symbole», SymbolApps). Hinweise
+/// stehen nicht auf dem Glas, sondern frei schwebend (Christian 24.10.2026: «hinweistexte frei schwebend», QuestApp.Hinweise).
 /// Bedienung: Antippen mit dem Zeigefinger (AppBeruehrung: Druckebene, Fang, Sperre) oder Zeigen mit dem Strahl und Pinch (GlasStrahl: wählt beim Loslassen auf demselben
-/// Ziel). Hover: das Ziel hebt sich leicht an und hellt auf (statt des Blicks der Vision Pro). Jeder Knopf klickt. Öffnet sich die Karte einer Prüfaufgabe, weicht das
-/// Fenster etwas zurück. Linke Handfläche zum Gesicht holt das Fenster (wie P5a), Wegwischen bzw. Schliessen blendet es aus.
+/// Ziel). Hover: das Ziel hebt sich leicht an und hellt auf (statt des Blicks der Vision Pro); ein gestreckter Zeigefinger zeigt einen Punkt auf dem Ziel und eine feine
+/// Linie, Knöpfe ohne Text bekommen nach der Verzögerung einen Tooltip (Zeiger). Jeder Knopf klickt. Wegwischen bzw. Schliessen blendet das Fenster aus.
 /// </summary>
 sealed class GlasApps
 {
-    public sealed record Register(string Id, string Titel, string Symbol, int Ampel = 0);
     public sealed record Ereignis(string Art, string Id)
     {
-        public const string RegisterArt = "register", Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben";
+        public const string Element = "element", Schliessen = "schliessen", Ornament = "ornament", Daneben = "daneben";
     }
 
     readonly Rueckmeldung rueck;
@@ -38,9 +36,25 @@ sealed class GlasApps
     readonly bool[] pinch = new bool[2], nah = new bool[2];
     readonly int?[] griffHand = new int?[1];
     readonly Dictionary<string, double> anheben = new(StringComparer.Ordinal), blitz = new(StringComparer.Ordinal);
-    double aufgeklappt, zurueck;
+    double zurueck;
     readonly TabletZustand handRuhe = XrTabletRuhe.NeuerTabletZustand();
     TabletPose? handLage, vorherHand;
+    readonly ZeigerZustand[] zeiger = [new(), new()];
+    readonly ZeigerBild?[] zeigerBild = new ZeigerBild?[2];
+
+    /// <summary>V1a: Flächen des Fensters im letzten Bild (Fenster, Werkzeugleiste, Griff, Schliessen, Tooltip) – über ihnen steht nie ein Hinweis.</summary>
+    public List<TabletPose> Belegt { get; } = [];
+    /// <summary>V1a: Tooltip im letzten Bild (Name, Deckkraft), für die Prüfung.</summary>
+    public (string Name, double Deckkraft)? Tooltip { get; private set; }
+
+    /// <summary>Tooltip eines Ziels: nur für Knöpfe ohne Text (Werkzeugleiste, Schliessen); Textknöpfe tragen ihren Namen schon.</summary>
+    static string? TooltipText(string art, string id) => (art, id) switch
+    {
+        (Ereignis.Ornament, "orn_messen") => "Messen ein/aus",
+        (Ereignis.Ornament, "orn_marker") => "Problem markieren",
+        (Ereignis.Schliessen, _) => "Ausblenden",
+        _ => null,
+    };
 
     public bool Sichtbar { get; private set; } = true;
     public string Aktiv { get; set; } = "status";
@@ -93,11 +107,11 @@ sealed class GlasApps
     }
 
     /// <summary>
-    /// Ein Bild: Einblenden mit der linken Handfläche, Verankerung, Hände (Antippen, Strahl, Griff), Zeichnen. platz = wohin das Fenster beim Holen kommt (vor dem Blick
-    /// bzw. neben dem Tisch); karte = eine Karte steht über dem Fenster (es weicht zurück); hinweis = Text der Fusszeile.
+    /// Ein Bild: Verankerung, Hände (Antippen, Strahl, Griff, Zeiger), Zeichnen. platz = wohin das Fenster kommt, wenn es noch keins gibt bzw. man weit weggegangen ist
+    /// (vor dem Blick bzw. neben dem Tisch); karte = ein Blatt steht über dem Fenster (es weicht zurück).
     /// </summary>
-    public List<Ereignis> Bild(Pose kopf, double t, double dt, IReadOnlyList<Register> register, GlasInhalt inhalt, IReadOnlyList<(string Id, string Symbol, bool Ein)> ornament,
-        string? hinweis, bool karte, XVec3 platz, XrBedienEinstellungen e, (XVec3 U, XVec3 R)?[] strahlen)
+    public List<Ereignis> Bild(Pose kopf, double t, double dt, GlasInhalt inhalt, IReadOnlyList<(string Id, string Symbol, bool Ein)> ornament,
+        bool karte, XVec3 platz, XrBedienEinstellungen e, (XVec3 U, XVec3 R)?[] strahlen)
     {
         z.BildBeginn();
         var aus = new List<Ereignis>();
@@ -107,7 +121,9 @@ sealed class GlasApps
         var gl = links.IsTracked ? HandGelenke.AusStereoKit((f, j) => X(links[f, j].position), X(links.wrist.position)) : null;
         // an der Hand (Labor): halb so gross über der linken Handfläche, solange sie zum Gesicht zeigt
         var anHand = app.Anordnung == Anordnungen.AnHand;
-        if (AppLayout.Einblenden(einblenden, t, gl, auge) && !anHand) { Holen(platz, t); rueck.Fang(kopf.position + kopf.Forward * 0.4f); }
+        // V1a (Christian 24.10.2026): die linke Handfläche holt das Fenster nicht mehr – das tun die Hebegeste und die App-Symbole (SymbolApps); nur «an der Hand»
+        // (Labor) zeigt die Handfläche zum Gesicht das Fenster weiter über der Hand
+        AppLayout.Einblenden(einblenden, t, gl, auge);
         handLage = null;
         if (anHand && einblenden.Geste && gl is not null && XrTabletLogik.HandflaechenMitte(gl) is { } hm && XrTabletLogik.HandflaechenNormale(gl, "left") is { } hn)
         {
@@ -118,8 +134,8 @@ sealed class GlasApps
         vorherHand = handLage;
         if (!Sichtbar || (anHand && handLage is null))
         {
-            for (int i = 0; i < 2; i++) { nah[i] = false; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); }
-            Rahmen = null; Ziele = [];
+            for (int i = 0; i < 2; i++) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); }
+            Rahmen = null; Ziele = []; Belegt.Clear(); Tooltip = null;
             return aus;
         }
         if (!anHand) Glas.Pruefen(anker, auge, platz, t);
@@ -128,26 +144,30 @@ sealed class GlasApps
         var (deck, groesse) = GlasStil.Aufbau(t - anker.Seit);
         var m = Masse;
         var fenster = anHand ? handLage! with { B = m.FensterB, H = m.FensterH } : Glas.Fenster(anker.Mitte!.Value, auge, m, zurueck);
-        var r = Glas.Rahmen(fenster, m, register.Count, aufgeklappt, anHand ? 0 : ornament.Count);
+        var r = Glas.Rahmen(fenster, m, 0, 0, anHand ? 0 : ornament.Count);   // ohne Registerleiste (Christian 24.10.2026: «die Registerleiste fällt weg»)
         Rahmen = r;
-        // Ziele: Register, Inhalt, Ornament, Schliessen (der Griff zieht, er löst nichts aus)
+        // Ziele: Inhalt, Ornament, Schliessen (der Griff zieht, er löst nichts aus)
         var ziele = new List<(string Art, string Id, TabletPose Lage)>();
-        for (int i = 0; i < register.Count; i++) ziele.Add((Ereignis.RegisterArt, register[i].Id, r.Register[i]));
         foreach (var el in inhalt.Elemente.Where(x => x.Ziel && x.Aktiv)) ziele.Add((Ereignis.Element, el.Id!, Glas.Lage(r.Inhalt, el)));
         for (int i = 0; i < r.OrnamentKnoepfe.Count; i++) ziele.Add((Ereignis.Ornament, ornament[i].Id, r.OrnamentKnoepfe[i]));
         if (!anHand) ziele.Add((Ereignis.Schliessen, "schliessen", r.Schliessen));
         Ziele = ziele;
         var lagen = ziele.Select(x => x.Lage).ToList();
-        var flaechen = new List<TabletPose> { fenster, r.RegisterLeiste, r.Griff, r.Schliessen };
+        var flaechen = new List<TabletPose> { fenster, r.Griff, r.Schliessen };
         if (r.Ornament is { } o) flaechen.Add(o);
+        Belegt.Clear();
+        Belegt.AddRange(flaechen);
         var hover = new int?[2];
         var naehe = new double[2];
-        var leisteNah = false;
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
             var h = Input.Hand(handed);
-            if (!h.IsTracked) { nah[i] = false; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
+            if (!h.IsTracked) { nah[i] = false; zeigerBild[i] = null; AppBeruehrung.Schritt(beruehr[i], null, false, []); GlasStrahl.Schritt(strahl[i], [], null, false); continue; }
             var g = HandGelenke.AusStereoKit((f, j) => X(h[f, j].position), X(h.wrist.position));
+            // V1a: Zeiger mit Tooltip wie bei den Symbolen (gestreckter Zeigefinger nahe an einem Knopf, sonst der Zielstrahl)
+            var spitzeZ = X(h[FingerId.Index, JointId.Tip].position);
+            var fingerAnFlaeche = AppBeruehrung.Naechste(flaechen, spitzeZ, Zeiger.NaeheM) is not null;
+            zeigerBild[i] = Zeiger.Schritt(zeiger[i], t, spitzeZ, Zeiger.ZeigefingerGestreckt(g), lagen, e.Symbole.TooltipS, fingerAnFlaeche ? null : strahlen[i]);
             pinch[i] = XrTabletLogik.IstPinch(g, pinch[i], e.Pinch);
             var spitze = X(h[FingerId.Index, JointId.Tip].position);
             var pinchPunkt = XVec3.Mitte(X(h[FingerId.Thumb, JointId.Tip].position), spitze);
@@ -179,7 +199,6 @@ sealed class GlasApps
             }
             else GlasStrahl.Schritt(strahl[i], [], null, false);
             nah[i] = fingerNah || strahlTrifft;
-            if (AppBeruehrung.Naechste([r.RegisterLeiste], spitze, 0.06) is not null || (strahl[i].Hover is int rh && rh < register.Count)) leisteNah = true;
             if (b.HoverNeu && b.Hover is int hn2) rueck.Fang(S(lagen[hn2].Mitte), leise: true);
             if (b.Daneben) aus.Add(new Ereignis(Ereignis.Daneben, Aktiv));
             if (ausgeloest is int a)
@@ -187,50 +206,24 @@ sealed class GlasApps
                 var (art, id, lage) = ziele[a];
                 blitz[$"{art}:{id}"] = t;
                 rueck.Kachel(S(lage.Mitte));   // jeder Knopf klickt (HIG «Buttons»: «plays sound»)
-                if (art == Ereignis.RegisterArt) RegisterWaehlen(id);
                 if (art == Ereignis.Schliessen) Ausblenden(t);
                 aus.Add(new Ereignis(art, id));
             }
         }
-        aufgeklappt = GlasStil.Folgen(aufgeklappt, leisteNah ? 1 : 0, dt, GlasStil.AufklappenS / 3);
-        Zeichnen(r, register, inhalt, ornament, hinweis, ziele, hover, naehe, t, dt, deck, groesse, e);
+        Zeichnen(r, inhalt, ornament, ziele, hover, naehe, t, dt, deck, groesse, e);
         return aus;
     }
 
-    void Zeichnen(GlasRahmen r, IReadOnlyList<Register> register, GlasInhalt inhalt, IReadOnlyList<(string Id, string Symbol, bool Ein)> ornament, string? hinweis,
+    void Zeichnen(GlasRahmen r, GlasInhalt inhalt, IReadOnlyList<(string Id, string Symbol, bool Ein)> ornament,
         List<(string Art, string Id, TabletPose Lage)> ziele, int?[] hover, double[] naehe, double t, double dt, double deck, double groesse, XrBedienEinstellungen e)
     {
         var m = Masse;
-        var glasFarbe = GlasStil.Glas with { A = e.Apps.GlasDeckkraft * deck };
+        var glasFarbe = z.Ton with { A = z.Ton.A * deck };   // nach der Umgebung getönt (GlasStil.Toenung)
         GlasFarbe Mal(GlasFarbe f) => f with { A = f.A * deck };
         double Hover(int k) => hover[0] == k ? naehe[0] : hover[1] == k ? naehe[1] : 0;
         double Blitz(string art, string id) => blitz.TryGetValue($"{art}:{id}", out var tb) ? Math.Max(0, 1 - (t - tb) / 0.25) : 0;
         // Fenster
         z.Flaeche(r.Fenster, m.M(GlasStil.EckenPt), glasFarbe, groesse);
-        // Register (senkrechte Leiste am linken Rand, Glas), Kreise; aufgeklappt mit Beschriftung
-        z.Flaeche(r.RegisterLeiste, r.RegisterLeiste.B / 2 > r.RegisterLeiste.H / 2 ? r.RegisterLeiste.H / 2 : r.RegisterLeiste.B / 2, glasFarbe, groesse);
-        var sym = m.M(GlasStil.RegisterKreisPt) * 0.42;
-        for (int i = 0; i < register.Count && i < r.Register.Count; i++)
-        {
-            var k = ziele.FindIndex(x => x.Art == GlasApps.Ereignis.RegisterArt && x.Id == register[i].Id);
-            var lift = Anheben($"reg:{register[i].Id}", Hover(k), dt);
-            var lage = r.Register[i] with { Mitte = r.Register[i].Mitte + r.Register[i].Normale * lift };
-            var gewaehlt = register[i].Id == Aktiv;
-            var grund = gewaehlt ? GlasStil.DuennGedrueckt : Hover(k) > 0 || Blitz(GlasApps.Ereignis.RegisterArt, register[i].Id) > 0 ? GlasStil.DuennNah : GlasStil.Duenn;
-            var kreis = lage with { B = Math.Max(lage.H, lage.B), H = lage.H };
-            z.Knopf(kreis, lage.B > lage.H * 1.2 ? GlasForm.Kapsel : GlasForm.Kreis, Mal(grund), m.Pt);
-            var sx = -lage.B / 2 + lage.H / 2;
-            z.Symbol(register[i].Symbol, lage, sym, Mal(GlasStil.TextPrimaer), sx, 0);
-            if (register[i].Ampel > 0)
-            {
-                var c = register[i].Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
-                Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(lage.Mitte + lage.Rechts * (sx + lage.H * 0.28) + lage.Oben * (lage.H * 0.28) + lage.Normale * 0.004), 0.007f),
-                    GlasZeichner.Farbe(c with { A = deck }));
-            }
-            if (aufgeklappt > 0.3)
-                z.Schrift(register[i].Titel, lage, sx + lage.H * 0.6 + (lage.B - lage.H) / 2 - lage.H * 0.1, m.Schrift(GlasStil.TextPt) * 0.6, lage.B - lage.H, lage.H,
-                    m.Schrift(GlasStil.TextPt), Mal(GlasStil.TextPrimaer with { A = Math.Clamp((aufgeklappt - 0.3) / 0.7, 0, 1) }), TextAlign.TopCenter);
-        }
         // Inhalt
         var p = r.Inhalt;
         foreach (var el in inhalt.Elemente)
@@ -279,8 +272,8 @@ sealed class GlasApps
                     umbrechen: false);   // ein Wort je Kapsel nie trennen (Befund Prüfbild: «Kollisio-n»), zu lang wird kleiner
             else
             {
-                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.2 : th * 0.62, breite, th * 1.4, th, Mal(text), TextAlign.TopCenter);
-                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.15, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), Mal(an ? GlasStil.TextAufEin : GlasStil.TextSekundaer), TextAlign.TopCenter);
+                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.3 : th * 0.62, breite, th * 1.4, th, Mal(text), TextAlign.TopCenter);
+                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.22, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), Mal(an ? GlasStil.TextAufEin : GlasStil.TextSekundaer), TextAlign.TopCenter);
             }
             if (el.Aktuell) z.Symbol(GlasSymbole.Haken, lage, el.H * 0.36, Mal(GlasStil.TextPrimaer), el.B / 2 - m.M(14) - el.H * 0.2, 0);
             if (el.Ampel > 0)
@@ -289,9 +282,6 @@ sealed class GlasApps
                 Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003), 0.008f), GlasZeichner.Farbe(c with { A = deck }));
             }
         }
-        // Fusszeile: Hinweis (sekundär), auf dem Glas
-        if (hinweis is { Length: > 0 })
-            z.Schrift(hinweis, r.Fuss, 0, r.Fuss.H / 2, r.Fuss.B, r.Fuss.H, m.Schrift(GlasStil.KleinPt), Mal(GlasStil.TextSekundaer), TextAlign.TopCenter);
         // Werkzeugleiste (Ornament)
         if (r.Ornament is { } orn)
         {
@@ -315,6 +305,21 @@ sealed class GlasApps
             var ls = r.Schliessen with { Mitte = r.Schliessen.Mitte + r.Schliessen.Normale * Anheben("schliessen", Hover(ks), dt) };
             z.Flaeche(ls, ls.H / 2, glasFarbe, groesse, mitSchatten: false);
             z.Symbol(GlasSymbole.Schliessen, ls, ls.H * 0.45, Mal(GlasStil.TextPrimaer));
+        }
+        // V1a: Zeiger (Punkt auf dem Ziel, feine Linie von der Fingerspitze bzw. vom Strahl) und Tooltip unter Knöpfen ohne Text
+        Tooltip = null;
+        foreach (var zb in zeigerBild)
+        {
+            if (zb is null || zb.Index >= ziele.Count) continue;
+            Lines.Add(S(zb.Von), S(zb.Punkt), new Color32(255, 255, 255, (byte)(200 * deck)), 0.0015f);
+            Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(zb.Punkt), 0.005f), new Color(1, 1, 1, (float)deck));
+            if (zb.Tooltip <= 0.01 || TooltipText(ziele[zb.Index].Art, ziele[zb.Index].Id) is not { } name) continue;
+            var tl = AppSymbole.TooltipLage(ziele[zb.Index].Lage, name, m);
+            z.Flaeche(tl, tl.H / 2, z.Ton with { A = z.Ton.A * zb.Tooltip }, mitSchatten: false);
+            z.Schrift(name, tl, 0, m.Schrift(GlasStil.KleinPt) * 0.65, tl.B, tl.H, m.Schrift(GlasStil.KleinPt), GlasStil.TextPrimaer with { A = zb.Tooltip }, TextAlign.TopCenter,
+                umbrechen: false);
+            Belegt.Add(tl);
+            Tooltip = (name, zb.Tooltip);
         }
     }
 

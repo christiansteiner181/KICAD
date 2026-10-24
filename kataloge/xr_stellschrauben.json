@@ -10,7 +10,9 @@
     { "id": "wisch", "titel": "Wischgesten" },
     { "id": "pinch", "titel": "Pinch und Fang" },
     { "id": "komfort", "titel": "Komfort" },
-    { "id": "sitzung", "titel": "Sitzungsraum" }
+    { "id": "sitzung", "titel": "Sitzungsraum" },
+    { "id": "hebe", "titel": "Hebegeste und Wegschieben (App-Symbole holen und wegschicken)" },
+    { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" }
   ],
   "muster": [
     {
@@ -123,9 +125,15 @@
     },
     {
       "schluessel": "anzeige.glas_deckkraft", "gruppe": "anzeige", "titel": "Deckkraft des Glases", "status": "app",
-      "beschreibung": "Wie stark die Glasfläche der Apps, Karten und Hinweise deckt: 0.3 = sehr durchscheinend, 1 = deckend. Schrift und Knöpfe bleiben voll.",
-      "art": "zahl", "einheit": "", "min": 0.3, "max": 1, "schritt": 0.05, "vorgabe": 0.55,
-      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Prefer translucency to opaque colors in windows»)"
+      "beschreibung": "Wie stark die Glasfläche der Apps, Karten und Hinweise deckt: 0.3 = sehr durchscheinend, 1 = deckend. Schrift und Knöpfe bleiben voll. Im hellen Raum deckt das Glas bei Bedarf mehr, damit es nicht zu hell wirkt.",
+      "art": "zahl", "einheit": "", "min": 0.3, "max": 1, "schritt": 0.05, "vorgabe": 0.75,
+      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Prefer translucency to opaque colors in windows»); Befund Prüfbild 24.10.2026: mit 0.55 schienen Marker und Linien durch das Fenster"
+    },
+    {
+      "schluessel": "anzeige.glas_helligkeit", "gruppe": "anzeige", "titel": "Helligkeit des Glases", "status": "app",
+      "beschreibung": "So hell soll das Glas über dem Hintergrund wirken (0.2 = dunkel, 0.6 = hell). Das Glas tönt sich danach: im hellen Sitzungsraum dunkler, im dunklen heller – die weisse Schrift bleibt überall gut lesbar.",
+      "art": "zahl", "einheit": "", "min": 0.2, "max": 0.6, "schritt": 0.02, "vorgabe": 0.42,
+      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Glass is an adaptive material … to provide contrast for app content»); Befund Prüfbild 24.10.2026: Glas im hellen Sitzungsraum zu hell"
     },
     {
       "schluessel": "wisch.mindestweg_m", "gruppe": "wisch", "titel": "Mindestweg eines Wischs", "status": "app",
@@ -204,6 +212,96 @@
       "beschreibung": "So weit darf die Handfläche von waagrecht (Schnitt auf Höhe der Hand) bzw. senkrecht (Vertikalschnitt) abweichen.",
       "art": "zahl", "einheit": "°", "min": 5, "max": 45, "schritt": 1, "vorgabe": 25,
       "herkunft": "Annahme P5b (FlacheHandEinstellungen.ToleranzGrad)"
+    },
+    {
+      "schluessel": "hebe.weg_m", "gruppe": "hebe", "titel": "Weg der Hebegeste", "status": "app",
+      "beschreibung": "So weit muss jede Hand mit der Handfläche nach oben nach oben streichen, damit die App-Symbole kommen.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.5, "schritt": 0.01, "vorgabe": 0.15,
+      "herkunft": "Annahme V1a (gleich wie der Mindestweg eines Wischs); Christian 24.10.2026: «mit beiden handflächen nach oben eine deutliches nach obenstreichen»"
+    },
+    {
+      "schluessel": "hebe.zeit_s", "gruppe": "hebe", "titel": "Zeit der Hebegeste", "status": "app",
+      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein (langsames Heben zählt nicht).",
+      "art": "zahl", "einheit": "s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.9,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "hebe.handflaeche_grad", "gruppe": "hebe", "titel": "Handfläche nach oben", "status": "app",
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben senkrecht nach oben.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "hebe.gleichzeitig_s", "gruppe": "hebe", "titel": "Beide Hände gleichzeitig", "status": "app",
+      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander zu steigen.",
+      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.35,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "schieben.startabstand_m", "gruppe": "hebe", "titel": "Wegschieben: Hände am Anfang", "status": "app",
+      "beschreibung": "Beim Wegschieben der Symbole beginnen beide Hände nahe der Mitte vor dem Körper – höchstens so weit auseinander (quer zum Blick).",
+      "art": "zahl", "einheit": "m", "min": 0.1, "max": 0.6, "schritt": 0.01, "vorgabe": 0.3,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «aus der mitte heraus seitwärtswischen mit beiden armen und nach aussen gedrehten händen schiebt die symbole beidseitig aus dem bild»"
+    },
+    {
+      "schluessel": "schieben.weg_m", "gruppe": "hebe", "titel": "Wegschieben: Weg", "status": "app",
+      "beschreibung": "So weit muss jede Hand nach aussen wischen, damit die Symbole beidseitig aus dem Bild gehen.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.5, "schritt": 0.01, "vorgabe": 0.15,
+      "herkunft": "Annahme V1a (gleich wie der Mindestweg eines Wischs)"
+    },
+    {
+      "schluessel": "schieben.zeit_s", "gruppe": "hebe", "titel": "Wegschieben: Zeit", "status": "app",
+      "beschreibung": "In höchstens so viel Zeit muss der Weg geschafft sein.",
+      "art": "zahl", "einheit": "s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.8,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "schieben.handflaeche_grad", "gruppe": "hebe", "titel": "Wegschieben: Handflächen nach aussen", "status": "app",
+      "beschreibung": "Die Handflächen zeigen höchstens so weit neben waagrecht nach aussen (links nach links, rechts nach rechts).",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 50,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "schieben.gleichzeitig_s", "gruppe": "hebe", "titel": "Wegschieben: beide Arme gleichzeitig", "status": "app",
+      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander nach aussen zu wischen.",
+      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.35,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand der Symbole", "status": "app",
+      "beschreibung": "So weit vor den Augen stehen die App-Symbole (Mitte), in Griffweite.",
+      "art": "zahl", "einheit": "m", "min": 0.25, "max": 0.7, "schritt": 0.01, "vorgabe": 0.42,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «die symbole müssen in griff weite sein»"
+    },
+    {
+      "schluessel": "symbole.hoehe_m", "gruppe": "symbole", "titel": "Höhe der Symbole", "status": "app",
+      "beschreibung": "So weit unter den Augen steht die Mitte der Symbole (Brust bis Schulter).",
+      "art": "zahl", "einheit": "m", "min": 0.1, "max": 0.6, "schritt": 0.01, "vorgabe": 0.32,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "symbole.streuung", "gruppe": "symbole", "titel": "Verteilung der Symbole", "status": "app",
+      "beschreibung": "Faktor für die Abstände zwischen den Symbolen (1 = wie vorgesehen, grösser = weiter auseinander). Jede App steht immer am selben Platz.",
+      "art": "zahl", "einheit": "", "min": 0.6, "max": 1.6, "schritt": 0.05, "vorgabe": 1,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt»"
+    },
+    {
+      "schluessel": "symbole.wartezeit_s", "gruppe": "symbole", "titel": "Symbole ohne Wahl ausblenden", "status": "app",
+      "beschreibung": "Wählt man keine App, gehen die Symbole nach so vielen Sekunden von selbst.",
+      "art": "zahl", "einheit": "s", "min": 2, "max": 60, "schritt": 1, "vorgabe": 10,
+      "herkunft": "Annahme V1a"
+    },
+    {
+      "schluessel": "zeiger.tooltip_s", "gruppe": "symbole", "titel": "Verzögerung des Tooltips", "status": "app",
+      "beschreibung": "So lange zeigt der Finger auf ein Symbol bzw. einen Knopf, bis der Name als Tooltip darunter erscheint.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1a nach Apple HIG «Buttons» («tooltip after people hover over a button for a moment») und «Eyes» («a slightly longer delay»)"
+    },
+    {
+      "schluessel": "hinweis.dauer_s", "gruppe": "symbole", "titel": "Dauer eines Hinweises", "status": "app",
+      "beschreibung": "So lange steht ein schwebender Hinweis (z. B. «Problem-Marker gesetzt»), dann blendet er sanft aus.",
+      "art": "zahl", "einheit": "s", "min": 1, "max": 15, "schritt": 0.5, "vorgabe": 4,
+      "herkunft": "Annahme V1a; Christian 24.10.2026: «hinweistexte frei schwebend»"
     }
   ]
 }

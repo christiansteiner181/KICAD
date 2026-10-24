@@ -19,7 +19,7 @@ const eintrag = (k) => katalog.stellschrauben.find((s) => s.schluessel === k);
 
 test('Gruppen: in der Reihenfolge des Katalogs, jede Stellschraube genau einmal', () => {
   const g = T.gruppen(katalog);
-  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung']);
+  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung', 'hebe', 'symbole']);   // V1a: hebe, symbole
   assert.equal(g.flatMap((x) => x.eintraege).length, katalog.stellschrauben.length);
   assert.deepEqual(g.find((x) => x.id === 'begehen').eintraege.map((s) => s.schluessel).slice(0, 4),
     ['begehen.ziel_ruhe_s', 'begehen.ziel_ruhe_radius_m', 'begehen.ziel_verzoegerung_s', 'begehen.drehen_sperre_s']);
@@ -58,7 +58,7 @@ test('Werte als Text mit Einheit', () => {
   assert.equal(T.wertText(eintrag('komfort.tunnelblick_staerke'), 0.3), '0.30');   // ohne Einheit
   assert.equal(T.wertText(eintrag('komfort.tunnelblick'), true), 'ein');
   assert.equal(T.wertText(eintrag('komfort.tunnelblick'), false), 'aus');
-  assert.equal(T.wertText(eintrag('apps.anordnung'), 'reihe'), 'In einer Reihe vor dem Körper');
+  assert.equal(T.wertText(eintrag('apps.anordnung'), 'reihe'), 'Im Raum verankert (wie bogen)');   // V1a: ein Fenster im Raum
   assert.equal(T.wertText(eintrag('apps.anordnung'), 'unbekannt'), 'unbekannt');
   assert.equal(T.wertText(eintrag('begehen.ziel_ruhe_s'), NaN), '–');
   assert.equal(T.nachkommastellen(0.05), 2);
@@ -172,14 +172,15 @@ test('Varianten: Wahl aus den gesetzten Werten oder die Vorgabe', () => {
   assert.equal(T.varianteWahl(v, {}), 'apps');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'tablet' }), 'tablet');
   assert.equal(T.varianteWahl(v, { 'labor.variante.bedienung': 'unbekannt' }), 'apps');
-  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband' });
+  assert.deepEqual(T.variantenWahl(katalog, { 'labor.variante.etage': 'app' }), { bedienung: 'apps', teleport: 'zeigen_pinch', etage: 'app', messen: 'messband', umgebung: 'hell', symbole: 'verteilt' });
   assert.equal(T.varianteTitel(v, 'tablet'), 'Tablet an der Hand');
   assert.equal(T.varianteTitel(v, 'x'), 'x');
 });
 
 test('Prüfaufgaben: Knopf und Status', () => {
   const a = katalog.aufgaben.find((x) => x.id === 'drehen-90');
-  const v1 = katalog.aufgaben.find((x) => x.id === 'messen-wand-wand');
+  // V1a: «messen-wand-wand» ist spielbar (p5); die Regel für «folgt_v1» prüft eine gedachte Aufgabe mit diesem Status
+  const v1 = { ...katalog.aufgaben.find((x) => x.id === 'messen-wand-wand'), status: 'folgt_v1' };
   const mit = { anzahl: 1 };
   const ohne = { anzahl: 0 };
   assert.deepEqual(T.aufgabeKnopf({ aufgabe: a, brillen: mit }), { frei: true, grund: '' });

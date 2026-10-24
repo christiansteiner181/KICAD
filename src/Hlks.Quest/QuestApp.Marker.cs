@@ -107,7 +107,7 @@ sealed partial class QuestApp
         return VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z)).Abstand(p) < 20;
     }
 
-    /// <summary>Stecknadel: Linie von der Stelle nach oben, Kopf (offen orange, erledigt grau), Kennzeichen auf einer kleinen Glas-Kapsel.</summary>
+    /// <summary>Stecknadel: Linie von der Stelle nach oben, Kopf (offen orange, erledigt grau), Kennzeichen frei schwebend (weiss mit dunklem Schein).</summary>
     void Stecknadel(Vec3 ort, Pose kopf, bool offen, string? kennzeichen, float groesse)
     {
         var s = (sitzung.Aktiv ? 0.35f : Math.Clamp(Vec3.Distance(ort, kopf.position) / 2.5f, 0.8f, 3f)) * groesse;
@@ -119,9 +119,7 @@ sealed partial class QuestApp
         if (kennzeichen is null || Vec3.Distance(kopfP, kopf.position) > (sitzung.Aktiv ? 2.5f : 12)) return;
         var lp = new XVec3(kopfP.x, kopfP.y + 0.05 * s, kopfP.z);
         var kp = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
-        var pose = XrTabletLogik.TabletLageAus(lp, kp - lp) with { B = 0.075 * s, H = 0.026 * s };
-        glas.Flaeche(pose, pose.H / 2, GlasStil.Glas with { A = Math.Max(0.6, bedien.Apps.GlasDeckkraft) }, mitSchatten: false);
-        glas.Schrift(kennzeichen, pose, 0, pose.H * 0.32, pose.B, pose.H, 0.012 * s, GlasStil.TextPrimaer, TextAlign.TopCenter);
+        glas.Schein(kennzeichen, lp, kp, 0.012 * s, 1);   // Kennzeichen frei schwebend mit dunklem Schein (kein Kasten)
     }
 
     /// <summary>Marker setzen: Ort, Blickpunkt (Kopf), Element, Geschoss; wartet bis zur Sendung im privaten Speicher.</summary>
@@ -140,7 +138,7 @@ sealed partial class QuestApp
         markerGesetzt++;
         markerSetzen = false;
         rueck.Antippen(SkVonSzene(ort), sitzung.Aktiv ? 0.05f : 0.25f);
-        Hinweis($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : " – geht mit der nächsten Verbindung an KICAD")}.");
+        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : " – geht mit der nächsten Verbindung an KICAD")}.", SkVonSzene(ort), Hlks.Xr.Bedienung.HinweisArt.Objekt);   // beim Objekt (frei schwebend)
         Task.Run(MarkerSenden);
     }
 

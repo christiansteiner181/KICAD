@@ -14,17 +14,28 @@ using XVec3 = Hlks.Xr.Vec3;
 namespace Hlks.Quest;
 
 /// <summary>
-/// Quest App V1a: der Inhalt der Apps im Glas-Fenster (GlasApps, Stil visionOS) – statt der Kacheln aus P5a. Register: Status, Etagen, Messen, Marker, Ort (Begehen:
-/// Drehen, Sitzungsraum) bzw. Tisch (Sitzungsraum: Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen) und Ebenen. Werkzeugleiste: Messen und Marker.
-/// Hinweise stehen in der Fusszeile des Fensters bzw. – ist es ausgeblendet – auf einer eigenen kleinen Glas-Kapsel unter dem Blick, die nichts überdeckt (Befund
-/// Prüfbild 24.10.2026). Am Sitzungstisch steht das Fenster neben dem Tisch (Glas.NebenTisch; Befund Prüfbild 24.10.2026).
+/// Quest App V1a: die Apps – frei schwebende App-Symbole (SymbolApps; Christian 24.10.2026: Hebegeste, verteilt in Griffweite, Anwahl durch Berührung) und das
+/// Glas-Fenster der gewählten App (GlasApps, Stil visionOS). Apps: KICAD (Status), Etagen, Messen, Marker, Ort (Begehen: Drehen, Sitzungsraum) bzw. Tisch (Sitzungsraum:
+/// Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen) und Ebenen. Werkzeugleiste des Fensters: Messen und Marker. Keine Registerleiste mehr. Die Hebegeste
+/// (beide Handflächen nach oben, deutlich nach oben) holt die Symbole, die Gegenbewegung schickt sie (bzw. das Fenster) weg; die gewählte App öffnet sich dort, wo die
+/// Symbole standen, am Sitzungstisch neben dem Tisch (Glas.NebenTisch; Befund Prüfbild 24.10.2026).
 /// </summary>
 sealed partial class QuestApp
 {
     bool statusGesten;
+    readonly HebeZustand hebe = new();
+    HebeStand hebeStand = new(null, 0, 0, false);
+    int hebenGezaehlt, schiebenGezaehlt;
+    /// <summary>Prüflauf am PC (ohne Hände): gedachter Fortschritt der Hebegeste bzw. das Ereignis.</summary>
+    double? pruefHebe;
+    HebeArt? pruefHebeEreignis;
+    /// <summary>Prüflauf am PC: gedachter Weg der Hände beim Wegschieben (m).</summary>
+    double? pruefSchieben;
+    /// <summary>Die Geisterhände für das Wegschieben schon gezeigt (einmal je Erscheinen der Symbole)?</summary>
+    bool schiebenGeistGezeigt;
 
-    /// <summary>Ist diese Hand an den Apps (Fenster, Register, Werkzeugleiste; Finger oder Strahl) – dann zielt ihr Pinch nicht und greift nicht.</summary>
-    bool AnApps(Handed h) => bedien.MitApps && apps.HandNah(h);
+    /// <summary>Ist diese Hand an den Apps (Fenster, Werkzeugleiste, App-Symbole; Finger oder Strahl) – dann zielt ihr Pinch nicht und greift nicht.</summary>
+    bool AnApps(Handed h) => bedien.MitApps && (apps.HandNah(h) || symbole.HandNah(h));
 
     /// <summary>Die vier Ecken der Tischplatte im Raum der Brille.</summary>
     List<XVec3> TischEcken()
@@ -46,11 +57,23 @@ sealed partial class QuestApp
             : Glas.Platz(auge, blick, bedien.Apps);
     }
 
-    /// <summary>Fenster an seinen Platz holen (Start, Wechsel Begehen ↔ Sitzungsraum, linke Handfläche).</summary>
+    /// <summary>Fenster an seinen Platz holen (Start, Wechsel Begehen ↔ Sitzungsraum).</summary>
     void AppsHolen() { if (bedien.MitApps) apps.Holen(AppPlatz(Input.Head), Time.Total); }
 
-    /// <summary>Ein sichtbares Fenster an den neuen Platz stellen (Wechsel Begehen ↔ Sitzungsraum, Tisch angetippt); ein ausgeblendetes bleibt aus (die Handfläche holt es).</summary>
+    /// <summary>Ein sichtbares Fenster an den neuen Platz stellen (Wechsel Begehen ↔ Sitzungsraum, Tisch angetippt); ein ausgeblendetes bleibt aus (die Symbole holen es).</summary>
     void AppsVersetzen() { if (bedien.MitApps && apps.Sichtbar) AppsHolen(); }
+
+    /// <summary>
+    /// Eine App über ihr Symbol öffnen: das Fenster mit dieser App dort, wo die Symbole standen (in Griffweite vor dem Körper), am Sitzungstisch neben dem Tisch.
+    /// </summary>
+    void AppOeffnen(string id)
+    {
+        apps.RegisterWaehlen(id);
+        statusGesten = false;
+        var platz = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? AppPlatz(Input.Head) : symbole.Mitte ?? AppPlatz(Input.Head);
+        apps.Holen(platz, Time.Total);
+        letzteGeste = $"Symbol {id}";
+    }
 
     (int Ampel, string Text) VerbindungKurz() => zustand switch
     {
@@ -62,11 +85,11 @@ sealed partial class QuestApp
 
     double Hz => bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0;
 
-    /// <summary>Die Register (Apps) nach dem Modus; ohne Modell nur Status.</summary>
-    List<GlasApps.Register> RegisterBauen()
+    /// <summary>Die Apps (Symbole) nach dem Modus; ohne Modell nur KICAD (Status).</summary>
+    List<SymbolApps.Symbol> SymboleBauen()
     {
         var (ampel, _) = VerbindungKurz();
-        var l = new List<GlasApps.Register> { new("status", "Status", GlasSymbole.Status, ampel) };
+        var l = new List<SymbolApps.Symbol> { new("status", "KICAD", GlasSymbole.Status, ampel) };
         if (darstellung is null || szene is null) return l;
         l.Add(new("etagen", "Etagen", GlasSymbole.Etagen));
         l.Add(new("messen", "Messen", GlasSymbole.Messen));
@@ -212,15 +235,15 @@ sealed partial class QuestApp
         return c;
     }
 
-    /// <summary>Ein Bild der Apps: Register, Inhalt, Werkzeugleiste, Hinweis in der Fusszeile; Ereignisse ausführen.</summary>
+    /// <summary>
+    /// Ein Bild der Apps: Hebegeste (Symbole holen bzw. wegschicken), App-Symbole (Hineinheben, Berührung, Zeiger, Tooltip), das Fenster der gewählten App;
+    /// Ereignisse ausführen. Die Hinweise zeichnet <see cref="HinweiseZeichnen"/> (frei schwebend).
+    /// </summary>
     void AppsBild(Pose kopf)
     {
-        if (!bedien.MitApps) return;
-        var register = RegisterBauen();
-        if (!register.Any(r => r.Id == apps.Aktiv)) apps.RegisterWaehlen("status");
-        var inhalt = InhaltBauen();
-        var ornament = darstellung is null ? new List<(string, string, bool)>()
-            : [("orn_messen", GlasSymbole.Messen, messen.An), ("orn_marker", GlasSymbole.Marker, markerSetzen)];
+        if (!bedien.MitApps || appsBildAus) return;   // appsBildAus: ein Prüfbild ohne Apps
+        var symbolListe = SymboleBauen();
+        if (!symbolListe.Any(r => r.Id == apps.Aktiv)) apps.RegisterWaehlen("status");
         var strahlen = new (XVec3, XVec3)?[2];
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
@@ -228,40 +251,92 @@ sealed partial class QuestApp
             if (Input.PointerCount(q) > 0 && Input.Pointer(0, q) is { } p && p.tracked.IsActive() && p.ray.direction.LengthSq > 1e-12f)
                 strahlen[i] = (new XVec3(p.ray.position.x, p.ray.position.y, p.ray.position.z), new XVec3(p.ray.direction.x, p.ray.direction.y, p.ray.direction.z).Einheit());
         }
-        var hinweisText = HinweisText();
-        var karteOffen = lauf is not null;
-        foreach (var e in apps.Bild(kopf, Time.Total, Time.Step, register, inhalt, ornament, apps.Sichtbar ? hinweisText : null, karteOffen, AppPlatz(kopf), bedien, strahlen))
+        // Hebegeste aus beiden Händen (Raum der Brille); im Prüflauf am PC ein gedachter Fortschritt bzw. das Ereignis
+        HandBeobachtung? Beobachtung(Handed hd, string seite)
+        {
+            var h = Input.Hand(hd);
+            if (!h.IsTracked) return null;
+            return HandBeobachtung.Aus(HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
+                new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), seite, bedien.Pinch);
+        }
+        hebeStand = HebeGeste.Schritt(hebe, Time.Total, Beobachtung(Handed.Left, "left"), Beobachtung(Handed.Right, "right"), KopfRef(kopf).Gieren, bedien.Hebe, bedien.Schieben);
+        if (pruefHebe is { } pf) hebeStand = new HebeStand(pruefHebeEreignis, pf, kopf.position.y - bedien.Symbole.HoeheM, false);
+        if (pruefSchieben is { } ps) hebeStand = new HebeStand(pruefHebeEreignis, 0, 0, false, ps, ps) { SchiebenLaeuft = pruefHebeEreignis is null };
+        pruefHebeEreignis = null;
+        if (hebeStand.Ereignis is { } art) HebeEreignis(art, kopf);
+        if (hebeStand.Zoegert && !symbole.Sichtbar) GeisterHeben(kopf);
+        // stehen die Symbole schon eine Weile ohne Wahl: die Geisterhände zeigen einmal, wie man sie wegschiebt
+        if (symbole.Da && symbole.SeitS(Time.Total) > 4 && !schiebenGeistGezeigt && !symbole.HandNah(Handed.Left) && !symbole.HandNah(Handed.Right))
+        {
+            schiebenGeistGezeigt = true;
+            GeisterSchieben(kopf);
+        }
+        if (symbole.Bild(kopf, Time.Total, Time.Step, symbolListe, hebeStand, bedien, strahlen) is { } gewaehlt) AppOeffnen(gewaehlt);
+        var inhalt = InhaltBauen();
+        var ornament = darstellung is null ? new List<(string, string, bool)>()
+            : [("orn_messen", GlasSymbole.Messen, messen.An), ("orn_marker", GlasSymbole.Marker, markerSetzen)];
+        const bool karteOffen = false;   // die Karte einer Aufgabe ist ein Ornament über dem Fenster (deckt es nicht) – kein Zurückweichen
+        foreach (var e in apps.Bild(kopf, Time.Total, Time.Step, inhalt, ornament, karteOffen, AppPlatz(kopf), bedien, strahlen))
             AppEreignis(e);
-        if (!apps.Sichtbar) HinweisKapsel(kopf, hinweisText);
     }
 
-    /// <summary>Der Hinweis (8 s), die Bitte, den Tisch anzutippen, ein Fehler der Verbindung bzw. wie die Apps zurückkommen.</summary>
-    string? HinweisText()
+    /// <summary>
+    /// Gesten der Symbole: Heben holt sie (ein offenes Fenster macht Platz); Wegschieben schiebt sie beidseitig aus dem Bild (Christian 24.10.2026), mit Ton.
+    /// </summary>
+    void HebeEreignis(HebeArt art, Pose kopf)
     {
-        var zeilen = new List<string>();
-        if (Time.Total < hinweisBis && hinweis.Length > 0) zeilen.Add(hinweis);
-        if (sitzung.Aktiv && sitzung.Echt.WartetAufTisch) zeilen.Add("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
-        if (zustand == Zustand.Fehler && !apps.Sichtbar) zeilen.Add("● " + verbindungText);
-        if (!apps.Sichtbar && Time.Total - apps.AusgeblendetSeit < 6) zeilen.Add("Apps: linke Handfläche zum Gesicht drehen.");
-        if (zeilen.Count == 0 && apps.Sichtbar && apps.Aktiv == "messen" && messen.An) zeilen.Add(messen.Hinweis);
-        return zeilen.Count == 0 ? null : string.Join("\n", zeilen.Distinct());
+        if (art == HebeArt.Heben)
+        {
+            hebenGezaehlt++;
+            if (apps.Sichtbar) apps.Ausblenden(Time.Total);
+            symbole.Zeigen(kopf, Time.Total);
+            schiebenGeistGezeigt = false;
+            rueck.Fang(kopf.position + kopf.Forward * 0.4f);
+            return;
+        }
+        schiebenGezaehlt++;
+        if (!symbole.Sichtbar) return;
+        symbole.Ausblenden(Time.Total, auseinander: true);
+        rueck.Fang(kopf.position + kopf.Forward * 0.4f);
     }
 
-    /// <summary>Hinweis ohne Fenster: eigene Glas-Kapsel unten vor dem Blick, unter der Karte, nie frei im Raum (Befund Prüfbild 24.10.2026).</summary>
-    void HinweisKapsel(Pose kopf, string? text)
+    /// <summary>Zwei Geisterhände zeigen das Wegschieben: aus der Mitte vor dem Körper, Handflächen nach aussen, beide Arme seitwärts; dazu ein Hinweis bei den Händen.</summary>
+    void GeisterSchieben(Pose kopf)
     {
-        if (string.IsNullOrEmpty(text)) return;
-        var m = GlasMasse.Fuer(bedien.Apps);
-        var andere = karte.Lage is { } kl ? new List<TabletPose> { kl } : [];
-        var (lage, _) = Glas.HinweisLage(null, new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), KopfRef(kopf).Gieren, m, andere, m.FensterB);
-        var zeilen = text.Count(c => c == '\n') + 1 + text.Length / 60;
-        lage = lage with { H = Math.Max(lage.H, m.Schrift(GlasStil.KleinPt) * 1.4 * zeilen + m.M(14)) };
-        hinweisLage = lage;
-        glas.Flaeche(lage, Math.Min(lage.H / 2, m.M(GlasStil.EckenPt)), GlasStil.Glas with { A = bedien.Apps.GlasDeckkraft }, mitSchatten: false);
-        glas.Schrift(text, lage, 0, lage.H / 2 - m.M(6), lage.B - m.M(20), lage.H - m.M(10), m.Schrift(GlasStil.KleinPt), zustand == Zustand.Fehler ? GlasStil.Rot : GlasStil.TextPrimaer, TextAlign.TopCenter);
+        var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
+        var gieren = KopfRef(kopf).Gieren;
+        var vor = new XVec3(Math.Cos(gieren), 0, -Math.Sin(gieren));
+        var rechts = HebeGeste.Rechts(gieren);
+        var mitte = auge + vor * (bedien.Symbole.AbstandM - 0.1) + new XVec3(0, -bedien.Symbole.HoeheM - 0.12, 0);
+        foreach (var (g, links) in new[] { (geister2, true), (geister, false) })
+        {
+            var p = mitte + rechts * (links ? -0.06 : 0.06);
+            var aussen = rechts * (links ? -1 : 1);
+            // Ziel: Mitte = Start, «Rechts» des Ziels = nach aussen (Geisterhand.Bild, Wegschieben)
+            var ziel = new TabletPose(p, vor * -1, aussen, new XVec3(0, 1, 0), 0.1, 0.1);
+            g.Starten(GeisterGeste.Wegschieben, Time.Total, Geisterhand.VorlageSeitlich(p, vor), ziel);
+        }
+        HinweisBei("Wegschieben: beide Hände aus der Mitte nach aussen wischen", (Vec3)(Vector3)(mitte + new XVec3(0, 0.1, 0)), HinweisArt.Hand);
     }
 
-    TabletPose? hinweisLage;
+    /// <summary>
+    /// Gezögert (beide Handflächen oben, ruhig): zwei Geisterhände führen die Hebegeste vor – neben den eigenen Händen bzw. vor dem Körper –, dazu ein Hinweis bei der Hand.
+    /// </summary>
+    void GeisterHeben(Pose kopf)
+    {
+        var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
+        var gieren = KopfRef(kopf).Gieren;
+        var vor = new XVec3(Math.Cos(gieren), 0, -Math.Sin(gieren));
+        var rechts = HebeGeste.Rechts(gieren);
+        var mitte = auge + vor * bedien.Symbole.AbstandM + new XVec3(0, -bedien.Symbole.HoeheM, 0);
+        foreach (var (g, links) in new[] { (geister2, true), (geister, false) })
+        {
+            var p = mitte + rechts * (links ? -0.2 : 0.2);
+            var ziel = XrTabletLogik.TabletLageAus(p, auge - p);
+            g.Starten(GeisterGeste.Heben, Time.Total, Geisterhand.VorlageOffen(p - new XVec3(0, AppSymbole.HubM * 0.8, 0), vor, links), ziel);
+        }
+        HinweisBei("Beide Handflächen nach oben – und deutlich anheben", (Vec3)(Vector3)(mitte + new XVec3(0, 0.08, 0)), HinweisArt.Hand);
+    }
 
     /// <summary>Ein Ziel des Fensters wurde gewählt (Antippen oder Strahl + Pinch).</summary>
     void AppEreignis(GlasApps.Ereignis e)
@@ -272,11 +347,8 @@ sealed partial class QuestApp
             case GlasApps.Ereignis.Daneben:
                 if (lauf is { } l) PruefAufgaben.Daneben(l);
                 return;
-            case GlasApps.Ereignis.RegisterArt:
-                statusGesten = false;
-                return;
             case GlasApps.Ereignis.Schliessen:
-                Hinweis("Apps ausgeblendet – linke Handfläche zum Gesicht drehen holt sie zurück.");
+                Hinweis("App ausgeblendet – beide Handflächen nach oben anheben holt die Symbole.");
                 return;
             case GlasApps.Ereignis.Ornament:
                 if (e.Id == "orn_messen") { MessenSchalten(!messen.An); apps.RegisterWaehlen("messen"); }
@@ -385,9 +457,10 @@ sealed partial class QuestApp
             case GestenAktion.EtageHoch: EtageWechseln(1); break;
             case GestenAktion.EtageRunter: EtageWechseln(-1); break;
             case GestenAktion.AppSchliessen or GestenAktion.AppsAusblenden:
+                if (symbole.Sichtbar) symbole.Ausblenden(Time.Total);
                 apps.Ausblenden(Time.Total);
                 rueck.Fang(ort);
-                Hinweis("Apps ausgeblendet – linke Handfläche zum Gesicht drehen holt sie zurück.");
+                Hinweis("App ausgeblendet – beide Handflächen nach oben anheben holt die Symbole.");
                 break;
         }
     }

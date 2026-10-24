@@ -17,11 +17,13 @@ sealed class GlasZeichner
     readonly Material? glas, duenn, schatten, leuchten;
     readonly Material ersatz;
     readonly Dictionary<(int, int, int, int), Mesh> netze = [];
-    readonly Dictionary<(int, int), TextStyle> stile = [];
+    readonly Dictionary<(int, int, int), TextStyle> stile = [];
     readonly Font? schrift;
     public bool MitShader { get; }
     /// <summary>Gezeichnete Flächen im letzten Bild (Protokoll: Aufrufe).</summary>
     public int Flaechen { get; private set; }
+    /// <summary>Tönung des Glases in diesem Bild (GlasStil.Toenung nach der Umgebung; die App setzt sie je Bild).</summary>
+    public GlasFarbe Ton { get; set; } = GlasStil.Glas;
     int flaechenBild;
 
     public GlasZeichner()
@@ -31,6 +33,7 @@ sealed class GlasZeichner
         Material M(int queue, float art, float glanz, float weich, float rand)
         {
             var m = new Material(s!) { Transparency = Transparency.Blend, DepthWrite = false, FaceCull = Cull.None, QueueOffset = queue };
+            if (art == 0 && queue == 10) m.DepthWrite = true;   // die Glasfläche verdeckt Weltobjekte dahinter (Befund Prüfbild 24.10.2026); aussen verwirft der Shader
             m.SetVector("art", new Vec4(art, glanz, weich, rand));
             return m;
         }
@@ -84,7 +87,7 @@ sealed class GlasZeichner
         {
             // weicher Schatten etwas tiefer und dahinter
             var ts = Matrix.TRS(S(p.Mitte - p.Oben * 0.01 - p.Normale * 0.004), Drehung(p), (float)skala);
-            Netz(p.B, p.H, r, 0.03).Draw(schatten, ts, Farbe(GlasStil.Schatten with { A = GlasStil.Schatten.A * farbe.A / Math.Max(0.01, GlasStil.Glas.A) }));
+            Netz(p.B, p.H, r, 0.03).Draw(schatten, ts, Farbe(GlasStil.Schatten with { A = GlasStil.Schatten.A * Math.Min(1, farbe.A / Math.Max(0.01, GlasStil.Glas.A)) }));
             flaechenBild++;
         }
         Netz(p.B, p.H, r, 0.003).Draw(glas, t, Farbe(farbe));
@@ -111,7 +114,7 @@ sealed class GlasZeichner
 
     TextStyle Stil(double hoehe, GlasFarbe f)
     {
-        var k = ((int)Math.Round(hoehe * 10000), (int)Math.Round(f.A * 100 + (f.R < 0.5 ? 1000 : 0)));
+        var k = ((int)Math.Round(hoehe * 10000), (int)Math.Round(f.A * 100), ((int)(f.R * 255) << 16) | ((int)(f.G * 255) << 8) | (int)(f.B * 255));   // Farbe ganz im Schlüssel
         if (!stile.TryGetValue(k, out var s))
             stile[k] = s = Text.MakeStyle(schrift ?? Default.Font, (float)hoehe, new Color((float)f.R, (float)f.G, (float)f.B, (float)f.A));
         return s;
@@ -128,6 +131,34 @@ sealed class GlasZeichner
         var umbruch = umbrechen ? Textumbruch.Umbrechen(text, Textumbruch.ZeichenJeZeile(b, hoehe)) : text;
         var ort = p.Mitte + p.Rechts * x + p.Oben * y + p.Normale * vor;
         Text.Add(umbruch, Matrix.TR(S(ort), Drehung(p)), new Vec2((float)b, (float)h), umbrechen ? TextFit.Wrap | TextFit.Squeeze : TextFit.Squeeze, Stil(hoehe, farbe), wo, wo);
+    }
+
+    /// <summary>
+    /// V1a: frei schwebender Text ohne Kasten (Christian 24.10.2026: «hinweistexte frei schwebend»): weisse Schrift mit weichem dunklem Schein hinter den Buchstaben,
+    /// lesbar vor dem hellen Sitzungsraum und vor dunklen Wänden. Der Schein ist die Schrift selbst, dunkel und durchscheinend, in zwei Ringen (je acht Richtungen,
+    /// 7 % und 14 % der Schrifthöhe) leicht versetzt und 1 mm dahinter. Höchstens zwei Zeilen (SchwebeHinweise.Kurz); zum Auge gedreht. Kosten: 17 Textaufrufe je
+    /// Hinweis (StereoKit sammelt sie in einem Durchgang).
+    /// </summary>
+    public void Schein(string text, XVec3 ort, XVec3 auge, double hoehe, double deckkraft, TextAlign wo = TextAlign.Center)
+    {
+        if (deckkraft <= 0.01 || string.IsNullOrEmpty(text)) return;
+        var zeilen = Textumbruch.Umbrechen(text, SchwebeHinweise.ZeichenMax / 2 + 1);
+        var anzahl = zeilen.Count(c => c == '\n') + 1;
+        var laengste = zeilen.Split('\n').Max(z => z.Length);
+        var p = XrTabletLogik.TabletLageAus(ort, auge - ort);
+        var q = Drehung(p);
+        var groesse = new Vec2((float)(laengste * hoehe * 0.62 + hoehe), (float)(anzahl * hoehe * 1.45));
+        foreach (var (r, a) in new[] { (0.07, 0.42), (0.14, 0.2) })
+        {
+            var stil = Stil(hoehe, new GlasFarbe(0.02, 0.03, 0.05, a * deckkraft));
+            for (int k = 0; k < 8; k++)
+            {
+                var w = k * Math.PI / 4;
+                var o = ort + p.Rechts * (Math.Cos(w) * r * hoehe) + p.Oben * (Math.Sin(w) * r * hoehe) - p.Normale * 0.001;
+                Text.Add(zeilen, Matrix.TR(S(o), q), groesse, TextFit.Squeeze, stil, wo, wo);
+            }
+        }
+        Text.Add(zeilen, Matrix.TR(S(ort), q), groesse, TextFit.Squeeze, Stil(hoehe, GlasStil.TextPrimaer with { A = deckkraft }), wo, wo);
     }
 
     /// <summary>Symbol (GlasSymbole) in der Fläche p, Kantenlänge groesse (m), Farbe, um (x, y) versetzt.</summary>

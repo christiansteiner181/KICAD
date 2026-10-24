@@ -52,6 +52,16 @@
       ],
       "vorgabe": "hell",
       "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026)"
+    },
+    {
+      "name": "symbole", "titel": "Anordnung der App-Symbole",
+      "beschreibung": "Wie die App-Symbole nach der Hebegeste vor dem Körper stehen: locker verteilt (verschiedene Höhen, leicht gestaffelt, je App immer am selben Platz) oder in einer Reihe im Bogen zum Vergleich.",
+      "optionen": [
+        { "id": "verteilt", "titel": "Locker verteilt" },
+        { "id": "bogen", "titel": "Im Bogen (Reihe)" }
+      ],
+      "vorgabe": "verteilt",
+      "herkunft": "Christian 24.10.2026: «frei schwebende Appsymbole … in griff weite», «symbole nicht in einer leiste sondern verteilt»"
     }
   ]
 }

@@ -18,7 +18,7 @@ namespace Hlks.Quest;
 /// Messband). Gemessen wird beim Begehen und am Sitzungstisch – am Tisch in Modellkoordinaten (die Hand wird über die Umkehrung des Tisches in die Szene gerechnet,
 /// die Fangradien im Massstab). Je Hand: zuerst der Finger (Pinch-Punkt, 3 cm), sonst der Zielstrahl des Systems (3 cm + 3 cm je Meter); das Fangsymbol zeigt Ecke,
 /// Mitte, Kante, Leitungsachse, Anschluss oder Fläche. Variante «messband»: Pinch halten, aufziehen, loslassen; «zwei_punkte»: zwei kurze Pinch. Lot auf Wunsch.
-/// Messungen bleiben stehen (Linie, Endpunkte, Wert auf einer kleinen Glas-Kapsel an der Linie; die neueste mit dx/dy/dz); die Wischgeste mit offener Hand quer
+/// Messungen bleiben stehen (Linie, Endpunkte, Wert frei schwebend an der Linie, weiss mit dunklem Schein; die neueste mit dx/dy/dz); die Wischgeste mit offener Hand quer
 /// über eine Linie löscht sie (wie der Prototyp); «Messungen löschen» in der App «Messen». Solange Messen an ist, springt der Pinch nicht.
 /// </summary>
 sealed partial class QuestApp
@@ -147,7 +147,7 @@ sealed partial class QuestApp
                 break;
             case MessEreignisArt.Fertig when e.Messung is { } m:
                 rueck.Kachel(SkVonSzene(m.B.P));
-                Hinweis($"Messung {m.Nr}: {m.Text} · {m.Unterschiede}");
+                HinweisBei($"Messung {m.Nr}: {m.Text}", SkVonSzene(Hlks.Xr.Vec3.Mitte(m.A.P, m.B.P)), HinweisArt.Objekt);   // bei der Messung (frei schwebend)
                 messHervor = m.Nr;
                 messHervorBis = Time.Total + 3;
                 if (lauf is { } l) PruefAufgaben.Gemessen(l, Time.Total, m);
@@ -171,7 +171,8 @@ sealed partial class QuestApp
         foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
         {
             var h = Input.Hand(handed);
-            var offen = h.IsTracked && !h.IsPinched && !h.IsGripped && !AnApps(handed) && !messPinch[i] && messen.Hand is null;
+            var offen = h.IsTracked && !h.IsPinched && !h.IsGripped && !AnApps(handed) && !messPinch[i] && messen.Hand is null
+                && !hebeStand.SchiebenLaeuft;   // beim Wegschieben der Symbole (beide Arme) löscht kein Wisch eine Messung
             var w = XrWischLogik.WischSchritt(messWischer[i], Time.Total, offen ? new XVec3(h.palm.position.x, h.palm.position.y, h.palm.position.z) : null, offen);
             if (w is not { Neu: true }) continue;
             var linien = messen.Liste.Select(m => (m.Nr, (XVec3)(Vector3)SkVonSzene(m.A.P), (XVec3)(Vector3)SkVonSzene(m.B.P))).ToList();
@@ -223,20 +224,18 @@ sealed partial class QuestApp
             if (messFang[i] is { P: { } p } f) FangSymbol(SkVonSzene(p), f.Art, f.Name, kopf);
     }
 
-    /// <summary>Wert an der Linie: kleine Glas-Kapsel, zum Kopf gedreht, 3 cm über der Mitte; Hauptzahl primär, dx/dy/dz sekundär.</summary>
+    /// <summary>
+    /// Wert an der Linie, frei schwebend wie die Hinweise (Christian 24.10.2026: «hinweistexte frei schwebend»; weisse Schrift mit dunklem Schein, kein Kasten), zum Kopf
+    /// gedreht, 3 cm über der Mitte; darunter dx/dy/dz etwas kleiner.
+    /// </summary>
     void MessWert(Vec3 mitte, Pose kopf, string wert, string? unterschiede, bool lot)
     {
         var skala = sitzung.Aktiv ? 0.6 : Math.Clamp(Vec3.Distance(mitte, kopf.position) / 1.5, 0.7, 2.2);
-        var h = (unterschiede is null ? 0.026 : 0.044) * skala;
-        var b = (unterschiede is null ? 0.11 : 0.26) * skala;
+        var th = 0.012 * skala;
         var ort = new XVec3(mitte.x, mitte.y + 0.03 * skala, mitte.z);
         var kp = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
-        var p = XrTabletLogik.TabletLageAus(ort, kp - ort) with { B = b, H = h };
-        glas.Flaeche(p, h / 2, GlasStil.Glas with { A = Math.Max(0.6, bedien.Apps.GlasDeckkraft) }, mitSchatten: false);
-        var th = 0.012 * skala;
-        glas.Schrift((lot ? "Lot " : "") + wert, p, 0, unterschiede is null ? th * 0.62 : h / 2 - 0.004 * skala, b, th * 1.4, th, GlasStil.TextPrimaer, TextAlign.TopCenter);
-        if (unterschiede is not null)
-            glas.Schrift(unterschiede, p, 0, -0.001 * skala, b * 0.96, th * 1.4, th * 0.8, GlasStil.TextSekundaer, TextAlign.TopCenter);
+        glas.Schein((lot ? "Lot " : "") + wert, ort, kp, th, 1);
+        if (unterschiede is not null) glas.Schein(unterschiede, ort - new XVec3(0, th * 1.5, 0), kp, th * 0.8, 0.85);
     }
 
     /// <summary>Fangsymbol (Leitlinie: «mit sichtbarem Fangsymbol»): Anschluss Ring mit Punkt, Ecke Quadrat, Mitte Dreieck, Kante und Achse Raute, Fläche Kreuz; Name darunter.</summary>
@@ -264,8 +263,7 @@ sealed partial class QuestApp
         }
         var lp = new XVec3(p.x, p.y, p.z) - new XVec3(ob.x, ob.y, ob.z) * (s * 2.2);
         var kp = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
-        var pose = XrTabletLogik.TabletLageAus(lp, kp - lp) with { B = s * 9, H = s * 2.4 };
-        glas.Schrift(name, pose, 0, pose.H / 2, pose.B, pose.H, s * 1.6, GlasStil.TextPrimaer, TextAlign.TopCenter);
+        glas.Schein(name, lp, kp, s * 1.6, 0.95);   // frei schwebend mit dunklem Schein, lesbar vor hellen und dunklen Flächen
     }
 
     /// <summary>Kurzer Stand für das Protokoll «P4 Status».</summary>

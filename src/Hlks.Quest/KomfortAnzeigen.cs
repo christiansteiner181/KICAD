@@ -35,17 +35,28 @@ sealed class GeisterHand
         Letzte = geste;
     }
 
+    /// <summary>Läuft gerade eine Vorführung? Wo steht die Hand (Mitte der Gelenke; für den Hinweis bei der Hand)?</summary>
+    public bool Laeuft(double t) => aktuell is { } a && t - a.Start <= Geisterhand.DauerS;
+    public XVec3? Mitte { get; private set; }
+
     public void Zeichnen(double t)
     {
         if (aktuell is not { } a) return;
         var bild = Geisterhand.Bild(a.Geste, t - a.Start, a.Form, a.Ziel);
-        if (bild is null) { if (t - a.Start > Geisterhand.DauerS) aktuell = null; return; }
-        var alpha = (float)bild.Deckkraft;
+        if (bild is null) { if (t - a.Start > Geisterhand.DauerS) { aktuell = null; Mitte = null; } return; }
+        Form(bild.Gelenke, bild.Deckkraft);
+        Mitte = bild.Gelenke.Values.Aggregate(XVec3.Null, (s, p) => s + p) * (1.0 / Math.Max(1, bild.Gelenke.Count));
+    }
+
+    /// <summary>Eine Hand einmal zeichnen (Gelenke als Kugeln, Knochen als Linien), z. B. die gedachte Hand des Prüflaufs am Zeiger.</summary>
+    public void Form(IReadOnlyDictionary<string, XVec3> gelenke, double deckkraft)
+    {
+        var alpha = (float)deckkraft;
         static Vec3 S(XVec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
-        foreach (var p in bild.Gelenke.Values) Mesh.Sphere.Draw(material, Matrix.TS(S(p), 0.011f), new Color(0.75f, 0.95f, 1f, alpha));
+        foreach (var p in gelenke.Values) Mesh.Sphere.Draw(material, Matrix.TS(S(p), 0.011f), new Color(0.75f, 0.95f, 1f, alpha));
         var c = new Color32(190, 240, 255, (byte)(255 * alpha));
         foreach (var (x, y) in Geisterhand.Knochen)
-            if (bild.Gelenke.TryGetValue(x, out var pa) && bild.Gelenke.TryGetValue(y, out var pb)) Lines.Add(S(pa), S(pb), c, 0.006f);
+            if (gelenke.TryGetValue(x, out var pa) && gelenke.TryGetValue(y, out var pb)) Lines.Add(S(pa), S(pb), c, 0.006f);
     }
 }
 

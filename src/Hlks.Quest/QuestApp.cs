@@ -102,10 +102,12 @@ sealed partial class QuestApp
     XrBedienEinstellungen bedien = XrBedienEinstellungen.Vorgabe;
     /// <summary>Schwellen des Begehens mit den Wisch- und Pinch-Schwellen der Bedienung (an einer Stelle geführt, EinstellungenAnwenden).</summary>
     HandBegehenEinstellungen begehenWirksam = HandBegehenEinstellungen.Vorgabe;
-    readonly GeisterHand geister = new();
+    readonly GeisterHand geister = new(), geister2 = new();   // V1a: zwei Hände für die Hebegeste
     /// <summary>V1a: die Apps als Glas-Fenster (Stil visionOS) und der Zeichner für alles Glas (Fenster, Karte, Hinweise, Messwerte, Marker).</summary>
     readonly GlasApps apps;
     readonly GlasZeichner glas;
+    /// <summary>V1a: die frei schwebenden App-Symbole (Hebegeste; Christian 24.10.2026).</summary>
+    readonly SymbolApps symbole;
     readonly TunnelAnzeige tunnelAnzeige = new();
     readonly TunnelZustand tunnel = new();
     int etagenWechsel;
@@ -149,6 +151,7 @@ sealed partial class QuestApp
         sitzung.Echt.VerfuegbarSetzen(passthrough.Verfuegbar, passthrough.Grund);
         ebenenAblage = new EbenenAblage(privat);
         apps = new GlasApps(rueck, glas);
+        symbole = new SymbolApps(rueck, glas);
         karte = new AufgabenKarte(rueck, glas);
         MarkerStarten();
         sitzung.FlacheHandGeaendert += FlacheHandMelden;
@@ -257,7 +260,7 @@ sealed partial class QuestApp
     void Melden(string text)
     {
         Console.WriteLine($"{AppName}: {text}");
-        amBild.Enqueue(() => { hinweis = text; hinweisBis = Time.Total + 8; });
+        amBild.Enqueue(() => { hinweis = text; hinweisBis = Time.Total + 8; hinweise.Neu(text, Time.Total, bedien.Apps.HinweisDauerS); });
     }
 
     void KopplungLaden()
@@ -618,10 +621,12 @@ sealed partial class QuestApp
         Hinweis($"Auftrag vom PC: {Einblendung()}");
     }
 
+    /// <summary>Allgemeiner Hinweis: frei schwebend unter der Blickmitte (V1a, QuestApp.Hinweise.cs) bzw. in der Box (Variante «tablet»).</summary>
     void Hinweis(string text)
     {
         hinweis = text;
         hinweisBis = Time.Total + 8;
+        hinweise.Neu(text, Time.Total, bedien.Apps.HinweisDauerS);
         Console.WriteLine($"{AppName}: {text}");
     }
 
@@ -727,6 +732,8 @@ sealed partial class QuestApp
         var kopfWelt = VrLogik.KopfWelt(rig, kopfRefV);
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
         Haltung(kopf);
+        // V1a: Glas nach der Umgebung tönen (Apple HIG «Materials»: «Glass is an adaptive material»; im hellen Sitzungsraum dunkler)
+        glas.Ton = GlasStil.Toenung(GlasStil.HintergrundFuer(sitzung.Aktiv, passthrough.Ein, sitzung.Hell), bedien.Apps.GlasDeckkraft, bedien.Apps.GlasHelligkeit);
         AppsBild(kopf);   // P5a: zuerst die Apps – sie bestimmen, welche Hand an ihnen ist (deren Pinch zielt nicht, greift nicht)
 
         if (darstellung is not null && szene is not null && sitzung.Aktiv)
@@ -772,8 +779,10 @@ sealed partial class QuestApp
         MessenBild(kopf);    // V1a: Messen (Fang, Messband, stehende Messungen) – beim Begehen und am Tisch
         MarkerBild(kopf);    // V1a: Problem-Marker (setzen, Stecknadeln)
         AufgabeBild(kopf);   // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung)
+        HinweiseZeichnen(kopf);   // V1a: Hinweise frei schwebend (nach Apps und Karte, die sie nie überdecken)
         rueck.Zeichnen(kopf);
         geister.Zeichnen(Time.Total);
+        geister2.Zeichnen(Time.Total);
         tunnelAnzeige.Zeichnen(kopf, Tunnelblick.Form(tunnel, Time.Total));
         Anzeige(kopf);
 
@@ -799,7 +808,7 @@ sealed partial class QuestApp
             $"Modus={(sitzung.Aktiv ? "sitzungsraum" : "begehen")}{(sitzung.Aktiv ? $" ({XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}, {sitzung.Ansicht?.Text}, Schnitt-Blöcke={darstellung?.GezeichnetMitSchnitt ?? 0}, Griffe={sitzung.Griffe}, IFC={(sitzung.Unterlage ? "ein" : "aus")})" : "")}, " +
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
-            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Geste={letzteGeste}, " +
+            $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {schiebenGezaehlt}× weggeschoben, Geste={letzteGeste}, " +
             $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
@@ -1177,13 +1186,18 @@ sealed partial class QuestApp
                 Renderer.Screenshot(Path.Combine(bo, "apps_begehen.jpg"), k.position, (Vec3)(Vector3)ra.Fenster.Mitte, 1280, 960, 80);
         }
         if (gemessen == o.PruefBilder / 2 + 2 && o.BildOrdner is not null) apps.RegisterWaehlen("messen");   // V1a: App «Messen» zeigen, dann die Bilder
-        if (gemessen == o.PruefBilder / 2 + 4 && o.BildOrdner is { } bv2) { PruefBilderV1a(bv2); apps.RegisterWaehlen("marker"); }
+        if (gemessen == o.PruefBilder / 2 + 4 && o.BildOrdner is { } bv2) { PruefBildFenster(bv2); apps.RegisterWaehlen("marker"); }
         if (gemessen == o.PruefBilder / 2 + 6 && o.BildOrdner is { } bv3)
         {
             if (apps.Rahmen is { } rm) Renderer.Screenshot(Path.Combine(bv3, "glas_marker.jpg"), Input.Head.position, (Vec3)(Vector3)rm.Fenster.Mitte, 1280, 960, 55);
             apps.RegisterWaehlen("status");
+            appsBildAus = true;   // das nächste Bild ohne Apps: Messungen und Marker im Raum
         }
-        if (gemessen < o.PruefBilder) return;
+        if (gemessen == o.PruefBilder / 2 + 7 && o.BildOrdner is { } bv4) { PruefBilderWelt(bv4); appsBildAus = false; }
+        // V1a: Hebegeste, Symbole, Zeiger mit Tooltip, Wahl durch Berührung, Hinweis frei schwebend (gescriptet; der Lauf wartet, bis die Folge fertig ist)
+        if (gemessen == o.PruefBilder / 2 + 9) PruefSymbolFolgeStarten();
+        PruefSymbolFolge(o.BildOrdner);
+        if (gemessen < o.PruefBilder || PruefSymbolFolgeLaeuft) return;
         var jeGeschoss = darstellung.AufrufeJeGeschoss();
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Geschoss={geschossAmStand?.Kennzeichen ?? "alle"}, gezeichnet Netze={darstellung.GezeichnetNetze}, Aufrufe={darstellung.GezeichnetAufrufe}, " +
@@ -1191,10 +1205,10 @@ sealed partial class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
-            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal), z);
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal), z);
     }
 
     string pruefP5a = "";
@@ -1222,37 +1236,41 @@ sealed partial class QuestApp
             var zurueck = bedien == XrBedienEinstellungen.Vorgabe && sitzung.Zoom == ZoomGrenzen.Vorgabe && begehenWirksam.Wisch == WischEinstellungen.Vorgabe;
             teile.Add($"Stellschrauben={(gesetzt && ungueltig && zurueck ? "ok" : "FEHLER")} ({XrBedienEinstellungen.Schluessel.Count} Schlüssel der Bedienung)");
 
-            // Apps (V1a, Glas-Fenster): das Register «Etagen» mit einer gedachten Fingerspitze antippen (Ziele des letzten Bilds), Inhalt «Etagen», Wegwischen blendet
-            // das Fenster aus, Holen (Handfläche) zeigt es wieder
-            var ziele = apps.Ziele.ToList();
-            var i = ziele.FindIndex(z => z.Art == GlasApps.Ereignis.RegisterArt && z.Id == "etagen");
-            var lagen = ziele.Select(z => z.Lage).ToList();
+            // Apps (V1a, Christian 24.10.2026): Hebegeste → die Symbole stehen; das Symbol «Etagen» mit einer gedachten Fingerspitze berühren → die App «Etagen» öffnet in
+            // Griffweite (wo die Symbole standen, am Tisch neben dem Tisch), die Symbole gehen; Wegwischen blendet das Fenster aus; neu geholte Symbole schickt die
+            // Gegenbewegung ohne Wahl weg
+            var kopf = Input.Head;
+            HebeEreignis(HebeArt.Heben, kopf);
+            var symbolListe = SymboleBauen();
+            var ids = symbolListe.Select(x => x.Id).ToList();
+            var plaetze = AppSymbole.Plaetze(ids, new XVec3(kopf.position.x, kopf.position.y, kopf.position.z), KopfRef(kopf).Gieren, bedien.Symbole, GlasMasse.Fuer(bedien.Apps));
+            var lagen = plaetze.Select(x => x.Lage).ToList();
+            var i = ids.IndexOf("etagen");
             var hand = new BeruehrHand();
             int? ausgeloest = null;
             for (int s = 0; i >= 0 && s <= 10 && ausgeloest is null; s++)
                 ausgeloest = AppBeruehrung.Schritt(hand, lagen[i].Mitte + lagen[i].Normale * (0.06 - 0.007 * s), false, lagen, bedien.Pinch).Ausgeloest;
-            if (ausgeloest is int a) { apps.RegisterWaehlen(ziele[a].Id); AppEreignis(new GlasApps.Ereignis(ziele[a].Art, ziele[a].Id)); }
-            var offen = apps.Aktiv == "etagen";
+            var symboleDa = symbole.Da;
+            if (ausgeloest is int a) { AppOeffnen(ids[a]); symbole.Ausblenden(Time.Total); }
+            var offen = apps.Aktiv == "etagen" && apps.Sichtbar && !symbole.Da;
             var inhalt = InhaltBauen();
             var zeilen = inhalt.Elemente.Count(e => e.Art == GlasArt.Zeile);
             var eintraege = EtagenEintraege().Count;
-            var kopf = Input.Head;
             WischAnwenden(WischRichtung.Vor, kopf.position);
             var aus = !apps.Sichtbar;
+            HebeEreignis(HebeArt.Heben, kopf);
+            var wieder = symbole.Da;
+            HebeEreignis(HebeArt.Wegschieben, kopf);
+            var weg = !symbole.Da && !apps.Sichtbar;
             AppsHolen();
-            var register = RegisterBauen();
-            var appsOk = ausgeloest == i && offen && zeilen > 0 && aus && apps.Sichtbar && eintraege == stand!.Liste.Geschosse.Count + (sitzung.Aktiv ? 1 : 0)
-                && register.Any(x => x.Id == "messen") && register.Any(x => x.Id == "marker");
-            // Geisterhand: aus einer gedachten Hand vor dem Register «Etagen» – die folgenden Bilder zeichnen sie (Prüfung der Darstellung ohne Hände im Simulator)
-            if (i >= 0)
-            {
-                var w0 = lagen[i].Mitte + lagen[i].Normale * 0.12;
-                var form = HandGelenke.WebXr.Select((n, k) => (n, p: w0 + new XVec3((k % 5) * 0.015 - 0.03, (k / 5) * 0.02, -(k / 5) * 0.01))).ToDictionary(x => x.n, x => x.p);
-                geister.Starten(GeisterGeste.Antippen, Time.Total, form, lagen[i]);
-            }
+            var appsOk = symboleDa && ausgeloest == i && offen && zeilen > 0 && aus && wieder && weg && apps.Sichtbar
+                && eintraege == stand!.Liste.Geschosse.Count + (sitzung.Aktiv ? 1 : 0) && ids.Contains("messen") && ids.Contains("marker");
+            // Geisterhände: die Hebegeste vor dem Körper (die folgenden Bilder zeichnen sie; Prüfung der Darstellung ohne Hände im Simulator)
+            GeisterHeben(kopf);
             apps.RegisterWaehlen("status");
-            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} (Glas-Fenster, Register {string.Join(" ", register.Select(x => x.Id))}; Etagen {eintraege} Einträge, {zeilen} auf der ersten Seite; " +
-                $"{ziele.Count} Ziele; Wegwischen blendet aus {(aus ? "ja" : "nein")}; Geisterhand {(geister.Gezeigt > 0 ? "gestartet" : "nein")})");
+            teile.Add($"Apps={(appsOk ? "ok" : "FEHLER")} (Symbole {string.Join(" ", ids)}; Berührung «Etagen» öffnet die App {(offen ? "ja" : "nein")}, {eintraege} Einträge, " +
+                $"{zeilen} auf der ersten Seite; Wegwischen blendet aus {(aus ? "ja" : "nein")}; Gegenbewegung schickt die Symbole weg {(weg ? "ja" : "nein")}; " +
+                $"Geisterhände {(geister.Gezeigt > 0 && geister2.Gezeigt > 0 ? "gestartet" : "nein")})");
 
             // Etage per Wisch hoch/runter und zurück
             var liste = stand!.Liste.Geschosse;
@@ -1341,13 +1359,27 @@ sealed partial class QuestApp
         if (sitzPhase == 0 && sitzBilder == jePhase / 2 + 2 && o.BildOrdner is { } ao)
         {
             if (apps.Rahmen is { } re) Renderer.Screenshot(Path.Combine(ao, "apps_etagen.jpg"), Input.Head.position, (Vec3)(Vector3)re.Fenster.Mitte, 1280, 960, 60);
-            PruefBilderV1a(ao);   // Marker am Tisch
+            PruefBildFenster(ao);   // V1a: Fenster und Marker am Tisch (das Fenster steht neben dem Tisch)
+            PruefBilderWelt(ao);
             apps.RegisterWaehlen("tisch");
         }
         if (sitzPhase == 0 && sitzBilder == jePhase / 2 + 4 && o.BildOrdner is { } at)
         {
             if (apps.Rahmen is { } rt) Renderer.Screenshot(Path.Combine(at, "glas_tisch.jpg"), Input.Head.position, (Vec3)(Vector3)rt.Fenster.Mitte, 1280, 960, 60);
             apps.RegisterWaehlen("status");
+        }
+        // V1a: die App-Symbole am Tisch (gedachte Hebegeste) und ein Hinweis frei schwebend vor dem hellen Raum
+        if (sitzPhase == 0 && o.BildOrdner is { } sy)
+        {
+            if (sitzBilder == jePhase / 2 + 6) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; Hinweis($"Sitzungsraum · {sitzung.Ansicht?.Text}"); }
+            if (sitzBilder == jePhase / 2 + 8) pruefHebe = null;
+            if (sitzBilder == jePhase / 2 + 40)
+            {
+                if (symbole.Mitte is { } sm) Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung.jpg"), Input.Head.position, (Vec3)(Vector3)sm, 1280, 960, 75);
+                if (letzterHinweisOrt is { } ho) Renderer.Screenshot(Path.Combine(sy, "hinweis_sitzung.jpg"), Input.Head.position, (Vec3)(Vector3)ho, 1280, 960, 55);
+                symbole.Ausblenden(Time.Total);
+                AppsHolen();
+            }
         }
         // P4b-Nachtrag: Helligkeit «Schneidet» (Shader schnitt) gegen «Innen» (gewöhnliches Material) – dasselbe Bild zweimal, einmal alles mit dem Shader (PNG, verlustfrei;
         // quest_pruefen.ps1 vergleicht die beiden Bilder)

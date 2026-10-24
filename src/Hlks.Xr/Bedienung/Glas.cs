@@ -7,6 +7,8 @@
 //   - Glas: «windows generally use … glass», «Prefer translucency to opaque colors» → durchscheinende, neutral hellgraue Fläche (nicht farbig), stark gerundete
 //     Ecken, feiner Glanz an der Oberkante, weicher Schatten. Echte Weichzeichnung des Hintergrunds gibt es nicht (StereoKit 0.3.11 hat keinen Zugriff auf das Bild
 //     hinter der Fläche; ein eigener Durchgang kostete auf der Quest mindestens die doppelte Füllrate) – angenähert durch die Tönung (Stellschraube anzeige.glas_deckkraft).
+//     «Glass is an adaptive material» → die Tönung richtet sich nach der Umgebung (GlasStil.Toenung, Stellschraube anzeige.glas_helligkeit); die Fläche verdeckt
+//     Weltobjekte dahinter (die App schreibt die Tiefe des Glases; Befund Prüfbild 24.10.2026: der Stift eines Markers schien durch das Fenster).
 //   - Schrift: «label, secondaryLabel, tertiaryLabel» → weiss in drei Stufen (TextPrimaer, TextSekundaer, TextTertiaer); kein Text über der Fläche (alles liegt auf Glas).
 //   - Knöpfe: «icon-only button uses a circle shape … text … capsule … roundedRectangle … in a vertical stack»; «thin material as the button’s background» → Grund
 //     Duenn; «white background fill and black text … reserves … toggled state» → Ein; «hit region … in visionOS, 60x60 pt»; «centers … at least 60 pts apart»; jeder
@@ -15,7 +17,8 @@
 //   - Fenster: «window bar … close button» → unter dem Fenster ein Kapsel-Griff zum Verschieben, links daneben ein runder Schliessen-Knopf; «tab bar is always
 //     vertical … leading side … symbol always visible … reveals tab labels» → Register links, Beschriftung klappt bei Annäherung auf; «ornament … parallel … slightly in
 //     front» → Werkzeugleiste an der Unterkante, leicht davor.
-//   - Tiefe sparsam: «when a sheet appears over a window, the window recedes» → öffnet sich die Karte einer Prüfaufgabe, weicht das Fenster ZurueckM zurück.
+//   - Tiefe sparsam: «when a sheet appears over a window, the window recedes» → GlasStil.ZurueckM für ein Blatt über dem Fenster. Die Karte einer Prüfaufgabe ist
+//     seit dem Befund 24.10.2026 ein kleines Ornament über dem Fenster (deckt die App nicht) – das Fenster weicht dann nicht zurück.
 //   - Lage: «Avoid anchoring content to the wearer’s head», «Center important content within the field of view» → im Raum verankert (folgt dem Kopf nicht), erscheint
 //     beim Holen seitlich nach apps.seitlich_grad (Annahme V1a 30°; P5a: 50°), kommt nur nach, wenn man weiter als NachholenM weggeht.
 //   - Massstab: «1 pt» ist in visionOS ein Winkel; ein Fenster mit 1280 × 720 pt erscheint in rund 2 m Abstand etwa 3 m breit → 1 pt ≈ 1.2 mm je Meter Abstand
@@ -63,8 +66,8 @@ public static class GlasStil
     public const double TitelPt = 22, TextPt = 17, KleinPt = 15;
 
     // ---------------------------------------------------------------------------------------------------- Farben (neutral, nicht farbig)
-    /// <summary>Glas: neutral hellgrau, Deckkraft aus der Stellschraube anzeige.glas_deckkraft.</summary>
-    public static readonly GlasFarbe Glas = new(0.56, 0.58, 0.61, 0.55);
+    /// <summary>Glas ohne Anpassung: neutral hellgrau (die App tönt es nach der Umgebung, <see cref="Toenung"/>; Deckkraft aus anzeige.glas_deckkraft).</summary>
+    public static readonly GlasFarbe Glas = new(0.56, 0.58, 0.61, 0.75);
     /// <summary>Feiner Glanz an der Oberkante (Deckkraft).</summary>
     public const double Glanz = 0.35;
     /// <summary>Weicher Schatten unter dem Fenster.</summary>
@@ -77,6 +80,40 @@ public static class GlasStil
     public static readonly GlasFarbe TextPrimaer = new(1, 1, 1, 1), TextSekundaer = new(1, 1, 1, 0.62), TextTertiaer = new(1, 1, 1, 0.36);
     /// <summary>Ampel (nur als kleiner Punkt): verbunden, ohne PC, Fehler.</summary>
     public static readonly GlasFarbe Gruen = new(0.30, 0.85, 0.45, 1), Orange = new(1.0, 0.70, 0.25, 1), Rot = new(1.0, 0.36, 0.33, 1);
+
+    // ---------------------------------------------------------------------------------------------------- Tönung nach der Umgebung
+    // Apple HIG «Materials», visionOS (abgerufen 24.10.2026): «Glass is an adaptive material that limits the range of background color information so a window can
+    // continue to provide contrast for app content while becoming brighter or darker depending on people’s physical surroundings». Befund Prüfbild 24.10.2026: im
+    // hellen Sitzungsraum war das hellgraue Glas mit weisser Schrift zu hell. Umsetzung: die Fläche über dem Hintergrund soll so hell wirken wie die Stellschraube
+    // «anzeige.glas_helligkeit» (Mischung a·g + (1 − a)·Hintergrund, sRGB); im hellen Raum wird das Glas dunkler (und deckt bei Bedarf mehr), im dunklen heller.
+    // Die Helligkeit des Hintergrunds kennt die App nicht aus dem Bild (kein Zugriff auf das Kamerabild bzw. den Bildpuffer) – sie gilt je Umgebung (Annahmen V1a).
+
+    /// <summary>Hintergrund (sRGB, grau) je Umgebung, Annahmen V1a: heller Sitzungsraum (Farbe des Horizonts), dunkler («tron»), Modell beim Begehen (Wände
+    /// mittelgrau), echter Raum (Passthrough, unbekannt – eher hell).</summary>
+    public const double HintergrundHell = 0.88, HintergrundDunkel = 0.03, HintergrundModell = 0.55, HintergrundEcht = 0.6;
+    /// <summary>Grenzen der Tönung (sRGB): nie schwarz, nie heller als das Glas ohne Anpassung.</summary>
+    public const double GlasMin = 0.14, GlasMax = 0.62;
+
+    /// <summary>Hintergrund der Umgebung (Begehen bzw. Sitzungsraum hell/dunkel bzw. Passthrough).</summary>
+    public static double HintergrundFuer(bool sitzung, bool passthrough, bool hell) =>
+        passthrough ? HintergrundEcht : !sitzung ? HintergrundModell : hell ? HintergrundHell : HintergrundDunkel;
+
+    /// <summary>
+    /// Tönung des Glases: Grau g und Deckkraft a so, dass a·g + (1 − a)·hintergrund = ziel (sRGB). Reicht das dunkelste Glas (GlasMin) bei der Deckkraft der Stellschraube
+    /// nicht, deckt es mehr (höchstens 0.95); ist der Hintergrund dunkel, wird das Glas höchstens GlasMax hell. Leicht kühl wie das Glas ohne Anpassung.
+    /// </summary>
+    public static GlasFarbe Toenung(double hintergrund, double deckkraft, double ziel)
+    {
+        var bg = Math.Clamp(hintergrund, 0, 1);
+        var a = Math.Clamp(deckkraft, 0.3, 1);
+        var g = (ziel - (1 - a) * bg) / a;
+        if (g < GlasMin && bg > ziel) a = Math.Clamp((bg - ziel) / Math.Max(1e-6, bg - GlasMin), a, 0.95);
+        g = Math.Clamp((ziel - (1 - a) * bg) / a, GlasMin, GlasMax);
+        return new GlasFarbe(g - 0.02, g, g + 0.03, a);
+    }
+
+    /// <summary>So hell wirkt eine Glasfläche (Grau, sRGB) über dem Hintergrund.</summary>
+    public static double Wirkt(GlasFarbe f, double hintergrund) => f.A * f.G + (1 - f.A) * hintergrund;
 
     // ---------------------------------------------------------------------------------------------------- Bewegungen (ruhig und kurz)
     /// <summary>Aufbauen beim Holen (s), Zurückweichen bei einer Karte (s, m), Anheben beim Annähern (m), Register aufklappen (s).</summary>

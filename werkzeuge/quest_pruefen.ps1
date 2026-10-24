@@ -18,6 +18,10 @@
 # "teleport-markierung" (Erfolg), Lauf 2 nimmt den abgelegten Katalog, Lauf 3 spielt "modell-greifen-zoomen". Das Skript prueft am PC (GET
 # /api/xr/labor/auswertung), dass die Messprotokolle von Lauf 1 und 3 angekommen sind. -Pruefbilder legt zusaetzlich aufgabe_karte.jpg, roentgen.jpg und
 # sitzung_flache_hand.jpg ab.
+# V1a: jeder Lauf prueft dazu Glas, Umgebung, Fang, Messen und Marker (Zeile "V1a: ..." in "P4 ok"), Lauf 1 auch "messen-wand-wand" (Erfolg). Lauf 1 setzt einen
+# Problem-Marker (mit PC), Lauf 2 einen ohne PC (er wartet), Lauf 3 sendet den wartenden und setzt einen am Tisch: das Skript prueft am PC (GET /api/xr/marker),
+# dass danach 3 Marker mehr im Projekt sind. -Pruefbilder legt zusaetzlich glas_apps.jpg, glas_marker.jpg, messen.jpg, marker.jpg, glas_apps_sitzung.jpg,
+# glas_tisch.jpg, marker_sitzung.jpg und sitzung_umgebung.jpg ab.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
 # Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
@@ -79,6 +83,11 @@ function Laeufe([string]$id) {
   try { $a = Get '/api/xr/labor/auswertung'; $z = $a.aufgaben | Where-Object { $_.aufgabe -eq $id } | Select-Object -First 1; if ($z -and $z.laeufe) { return [int]$z.laeufe } } catch { }
   return 0
 }
+# V1a: Problem-Marker im Projekt am PC (0, wenn keine)
+function MarkerZahl {
+  try { $a = Get '/api/xr/marker'; if ($a.marker) { return @($a.marker).Count } } catch { }
+  return 0
+}
 
 $server = $null
 $ergebnis = 2
@@ -128,7 +137,7 @@ try {
   $zusatz = @()
   if ($OhneUnterlage) { $zusatz += '--ohne-unterlage' }
   $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough|Katalog des Labors|Messprotokoll '
-  $t0 = Laeufe 'teleport-markierung'; $d0 = Laeufe 'drehen-90'; $z0 = Laeufe 'modell-greifen-zoomen'
+  $t0 = Laeufe 'teleport-markierung'; $d0 = Laeufe 'drehen-90'; $z0 = Laeufe 'modell-greifen-zoomen'; $w0 = Laeufe 'messen-wand-wand'; $m0 = MarkerZahl
   Aus "Lauf 1: mit PC ($Bilder Bilder) ..."
   # P5a: mit -Pruefbilder auch zwei Bilder beim Begehen (Blick nach vorn, die schwebenden Apps)
   $bild1 = @()
@@ -138,9 +147,16 @@ try {
   $a1 | Out-File -FilePath "$logs\lauf1.log" -Encoding utf8
   $a1 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
   # P5b: die Messprotokolle der Pruefaufgaben von Lauf 1 sind am PC angekommen
-  $t1 = Laeufe 'teleport-markierung'; $d1 = Laeufe 'drehen-90'
+  $t1 = Laeufe 'teleport-markierung'; $d1 = Laeufe 'drehen-90'; $w1 = Laeufe 'messen-wand-wand'
   $laborOk = ($t1 -ge $t0 + 1) -and ($d1 -ge $d0 + 1)
-  Aus ("Lauf 1: Messprotokolle am PC: teleport-markierung {0} -> {1}, drehen-90 {2} -> {3} - {4}" -f $t0, $t1, $d0, $d1, @('FEHLT', 'ok')[[int]$laborOk])
+  Aus ("Lauf 1: Messprotokolle am PC: teleport-markierung {0} -> {1}, drehen-90 {2} -> {3}, messen-wand-wand {4} -> {5} - {6}" -f $t0, $t1, $d0, $d1, $w0, $w1, @('FEHLT', 'ok')[[int]$laborOk])
+  # V1a: der Problem-Marker von Lauf 1 ist im Projekt am PC (Element ProblemMarker)
+  $m1 = MarkerZahl
+  $markerOk = $m1 -ge $m0 + 1
+  Aus ("Lauf 1: Problem-Marker am PC: {0} -> {1} - {2}" -f $m0, $m1, @('FEHLT', 'ok')[[int]$markerOk])
+  $v1aOk = [bool]($a1 -match '^P4 ok: .*V1a: Glas=ok')
+  if (-not $v1aOk) { Aus 'Lauf 1: die Zeile "V1a" fehlt.' }
+  if ($a1 -match 'messen-wand-wand ohne Wandpaar') { Aus 'Lauf 1: messen-wand-wand ohne Wandpaar (am Startpunkt kein Raum mit zwei gegenueberliegenden Waenden) - nicht geprueft.' }
   Aus "Lauf 2: ohne PC, Start aus dem Zwischenspeicher ($Bilder Bilder) ..."
   $a2 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --ohne-pc @zusatz 2>&1
   $c2 = $LASTEXITCODE
@@ -167,6 +183,11 @@ try {
     $zoomOk = $z1 -ge $z0 + 1
     Aus ("Lauf 3: Messprotokolle am PC: modell-greifen-zoomen {0} -> {1} - {2}" -f $z0, $z1, @('FEHLT', 'ok')[[int]$zoomOk])
     if (-not $zoomOk) { $laborOk = $false }
+    # V1a: der wartende Marker aus Lauf 2 (ohne PC) und der am Tisch aus Lauf 3 sind angekommen
+    $m3 = MarkerZahl
+    $marker3Ok = $m3 -ge $m1 + 2
+    Aus ("Lauf 3: Problem-Marker am PC: {0} -> {1} (wartender aus Lauf 2 und einer am Tisch) - {2}" -f $m1, $m3, @('FEHLT', 'ok')[[int]$marker3Ok])
+    if (-not $marker3Ok) { $markerOk = $false }
     # P4b-Nachtrag: dasselbe Bild mit gewoehnlichem Material und ganz mit dem Shader "schnitt" - die hellen Pixel (Modell) muessen gleich hell sein
     $vi = ''; $vs = ''
     if ($Pruefbilder) { $vi = Join-Path $Pruefbilder 'vergleich_innen.png'; $vs = Join-Path $Pruefbilder 'vergleich_schnitt.png' }
@@ -185,7 +206,7 @@ try {
       }
     }
   }
-  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk) { 0 } else { 1 }
+  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk -and $markerOk -and $v1aOk) { 0 } else { 1 }
 } catch {
   Aus ('Fehler: ' + $_.Exception.Message)
   $ergebnis = 2

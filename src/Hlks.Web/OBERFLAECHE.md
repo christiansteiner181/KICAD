@@ -2444,7 +2444,7 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   | `modell-greifen-zoomen` | Sitzungsraum | Ziel «1:n und eine Vierteldrehung»: der runde Massstab nahe der halben Startgrösse (z. B. 1:50 → 1:25, 1:137 → 1:75). Gelingt, wenn beide Griffe losgelassen sind, der Massstab höchstens 10 % daneben liegt und das Modell 90° (±15°) gedreht ist, in beide Richtungen. | Pinch am Tisch ohne Griff in Reichweite; Antippen daneben |
   | `raum-ar-oeffnen` | Sitzungsraum | Der markierte Raum (der Raum, in dem man vor dem Sitzungsraum stand, sonst der des Auftrags, sonst der grösste des Geschosses) als Kiste auf dem Modell. Schritte (auf der Karte): App «Tisch» › **«Raum zeigen»** → «Echter Tisch» → auf die Tischplatte tippen. Ohne Passthrough (Simulator) genügt der Ausschnitt. | Rückschritt: «Echter Tisch» aus, «Tisch neu antippen», «Zurücksetzen», eine Etage statt des Raums; Antippen daneben |
   | `tablet-wert-ablesen` | Begehen, Variante «tablet» | Das markierte Bauteil (Wand bzw. Decke etwa 2 m vor dem Blick, höchstens 6 m weg) als Kiste; die Box (Tablet) zeigt Art, Höhe und Hüllbox und vier Antworten zur Frage «Welche Höhe hat das markierte Bauteil?». Gelingt mit der richtigen Antwort. In der Variante «apps» wartet die Aufgabe (Karte: «Nur in der Variante «Tablet an der Hand» …», die Zeit läuft nicht) und beginnt, sobald am PC «Tablet» gewählt ist. | falsche Antwort; Antippen daneben |
-  | `messen-wand-wand` | – | Karte «Diese Aufgabe folgt mit Version 1 (Messen).» (8 s), kein Messprotokoll. | – |
+  | `messen-wand-wand` | Begehen (seit V1a) | Zwei gegenüberliegende Wände des Raums sind markiert (Rahmen 1 cm vor der Fläche), Messen ist eingeschaltet. Gelingt mit einer Messung von der einen zur anderen Wand (je höchstens 5 cm neben der Fläche), höchstens 2 cm neben dem Sollmass. Details im Abschnitt «Quest App V1a». | Messung nicht von Wand zu Wand bzw. mehr als 2 cm daneben; Messband ohne Ziel bzw. zu kurz; Antippen daneben |
 
   **Antippen daneben** (`Bedienung/AppBeruehrung`, alle Aufgaben): die Fingerspitze geht von vorn durch die Druckebene einer Kachel, eines Eintrags bzw. des Knopfs, liegt
   aber 3 … 9 cm neben ihr (ausserhalb des Fangs `fang.radius_m`, höchstens 6 cm weiter).
@@ -2456,7 +2456,7 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   Pinch nicht. Ohne Controller alle 20 s der Hinweis «einen Controller in die Hand nehmen».
 - **`labor.variante.etage`:** `wisch_modell` (Vorgabe, P5a) | `app`: Pinch + Wisch hoch/runter wechselt nicht (leiser Klick, Hinweis «… das Geschoss in der App «Etagen»
   wählen»), nur die App «Etagen».
-- **`labor.variante.messen`:** `messband` | `zwei_punkte` – Messen folgt mit Version 1; die App merkt die Wahl (Hinweis) und trägt sie ins Messprotokoll ein.
+- **`labor.variante.messen`:** `messband` | `zwei_punkte` – seit V1a wirksam (Abschnitt «Quest App V1a»); die App trägt die Wahl ins Messprotokoll ein.
 - **`labor.variante.bedienung`:** `apps` | `tablet` wie P5a.
 
 ### Schnitt mit der flachen Hand (Sitzungsraum; Regeln `Sitzung/FlacheHand`)
@@ -2508,6 +2508,181 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   `stick.y`, Zielstrahl); Antippen daneben (6 cm) als Mass für Fehlgriffe; Passthrough in «raum-ar-oeffnen»; Ton und Licht beim Start und Erfolg.
 - **Anleitung:** `zb-quest-app-labor` in `berichte/anleitung/inventar.json`.
 
+## Modul XR, Quest App V1a: Messen, Problem-Marker und die Apps im Stil von visionOS (`entwurf/modul-xr.md`, XR-C, XR-E; Christian 24.10.2026)
+
+V1a bringt zwei Werkzeuge in die App – **Messen** (XR-C, nach der Leitlinie «Hände zuerst»: ein Massband, das man zwischen zwei Punkten aufzieht) und
+**Problem-Marker** (XR-E, mit einer Liste am PC) – und stellt die Apps auf den Stil der Apple Vision Pro um (Christian 24.10.2026: «richte dich bei der Darstellung der
+apps und funktionen nach der vision»; Quelle Apple Human Interface Guidelines, visionOS-Abschnitte «Materials», «Windows», «Buttons», «Tab bars», «Ornaments», «Eyes»,
+«Spatial layout», «Immersive experiences», abgerufen 24.10.2026). Regeln ohne StereoKit in `src/Hlks.Xr` (`Messen/SzenenFang.cs`, `Messen/Messband.cs`,
+`Marker/ProblemMarker.cs`, `Labor/WandPaar.cs`, `Bedienung/Glas.cs`, `Bedienung/GlasSymbole.cs`), die App in `src/Hlks.Quest` (`GlasApps.cs`, `GlasZeichner.cs`,
+`Assets/glas.hlsl`, `QuestApp.Apps.cs`, `QuestApp.Messen.cs`, `QuestApp.Marker.cs`, `Umgebung.cs`, `AufgabenKarte.cs`), am PC `XrMarkerEndpunkte.cs`, die Klasse
+`ProblemMarker` (`kataloge/klassen.json`), `Kollision/BcfMarker.cs` und die Palette `problemmarker-panel.js`. **Keine Normwerte:** alle Zahlen sind Einstellungen der
+Bedienung bzw. Annahmen V1a. Nach den Prüfbildern 01 kamen am selben Tag dazu (Christian 24.10.2026): **Hebegeste und frei schwebende App-Symbole** statt der
+Registerleiste, **Zeiger mit Tooltip**, **Hinweise frei schwebend** (Regeln `Bedienung/AppSymbole.cs`, `Bedienung/Hinweise.cs`; App `SymbolApps.cs`,
+`QuestApp.Hinweise.cs`).
+
+### Apps holen: Hebegeste und App-Symbole
+Christian 24.10.2026: «wird mit beiden handflächen nach oben eine deutliches nach obenstreichen gezeigt, soll dies frei schwebende Appsymbole von unten her einblenden. so wie
+ich sie von unten hinein heben würde. die symbole müssen in griff weite sein. angewählt werden sie durch berührung. finger zeigen den pointer mit tooltip»; «symbole nicht
+in einer leiste sondern verteilt»; «Ja, die Registerleiste fällt weg; gewechselt wird über die Hebegeste und die Symbole».
+- **Hebegeste:** beide Hände offen, **Handflächen nach oben**, beide **deutlich und etwa gleichzeitig nach oben** streichen – je Hand mindestens `hebe.weg_m` (0.15 m) in
+  höchstens `hebe.zeit_s` (0.9 s), Handfläche höchstens `hebe.handflaeche_grad` (45°) neben oben, die Hände beginnen höchstens `hebe.gleichzeitig_s` (0.35 s) auseinander,
+  seitlich höchstens 60 % des Wegs. Alle Werte sind **Annahmen V1a** (Stellschrauben im XR-Labor). Ohne Pinch – die Geste löst weder Pinch + Wisch (Etage) noch einen
+  Sprung aus. Nach einem Heben zählt die Geste 0.8 s nicht. Ersetzt «linke Handfläche zum Gesicht» (P5a; nur die Anordnung «an der Hand» im Labor nutzt sie noch).
+- **Die Symbole:** runde Glas-Symbole ohne Fenster dahinter, eines je App – **KICAD** (Status, mit Ampel der Verbindung), **Etagen**, **Messen**, **Marker**, **Ort**
+  (Begehen: Drehen, Sitzungsraum) bzw. **Tisch** (Sitzungsraum: Echter Tisch, IFC-Unterlage, Zurücksetzen, Raum zeigen, Begehen), **Ebenen** (wenn es welche gibt).
+  Sie **steigen von unten ein**, folgen während der Geste der Höhe der Hände (jedes ein wenig nach dem vorigen) und setzen sich danach ruhig; ab dann stehen sie **fest im
+  Raum** (nicht am Kopf).
+- **Anordnung** (Variante `labor.variante.symbole` = `verteilt`, Vorgabe): **locker verteilt** vor dem Körper in Griffweite – Mitte `symbole.abstand_m` (0.42 m) vor den
+  Augen und `symbole.hoehe_m` (0.32 m) darunter, Brust bis Schulter –, verschiedene Höhen, leicht gestaffelte Tiefe, keine gemeinsame Grundlinie, kein Träger. **Je App
+  immer derselbe Platz** (Muskelgedächtnis; «Ort» und «Tisch» teilen sich einen). Symbol 72 pt (6.5 cm), Mitten mindestens 0.14 m auseinander, der Tooltip darunter
+  überdeckt nie ein anderes Symbol oder einen anderen Tooltip (Test). `symbole.streuung` (1) zieht die Verteilung auseinander bzw. zusammen; `bogen` = alle in einer Reihe
+  im Bogen (zum Vergleich).
+- **Wählen durch Berührung:** die Fingerspitze berührt das Symbol (kein Pinch) – Leuchten am Rand und Klick, dann öffnet die **Glas-App dieser App dort, wo die Symbole
+  standen** (in Griffweite; am Sitzungstisch neben dem Tisch), die Symbole blenden aus. Kommen die Symbole, macht ein offenes Fenster Platz.
+- **Wegschieben** (Christian 24.10.2026: «aus der mitte heraus seitwärtswischen mit beiden armen und nach aussen gedrehten händen schiebt die symbole beidseitig aus dem
+  bild»): beide Hände offen, **nahe der Mitte vor dem Körper** (höchstens `schieben.startabstand_m` = 0.3 m auseinander), **Handflächen nach aussen** gedreht (links nach
+  links, rechts nach rechts; höchstens `schieben.handflaeche_grad` = 50° daneben), beide **gleichzeitig** (`schieben.gleichzeitig_s` = 0.35 s) **deutlich nach aussen**
+  (je `schieben.weg_m` = 0.15 m in höchstens `schieben.zeit_s` = 0.8 s; quer höchstens 60 % des Wegs) – alles **Annahmen V1a**. Die Symbole **laufen mit**: die links der
+  Mitte mit der linken Hand nach links, die rechts mit der rechten nach rechts (1.4 × der Weg der Hand); ist die Geste vollständig, gleiten sie mit einem Klick ganz aus
+  dem Bild und verblassen; bricht sie ab, gleiten sie zurück. Ohne Pinch – weder Pinch + Wisch (Blättern, Drehen, Etage) noch der Sprung lösen aus; ein einhändiger Wisch
+  bzw. die Hebegeste lösen es nicht aus (Tests); solange beide Arme in der Haltung sind, löscht der Wisch mit offener Hand keine Messung. Ohne Wahl gehen die Symbole
+  ausserdem mit Pinch + Wisch nach vorn bzw. nach `symbole.wartezeit_s` (10 s).
+- **Geisterhände:** gezögert (beide Handflächen oben, 1.5 s ruhig) – zwei Geisterhände führen die Hebegeste vor, dazu «Beide Handflächen nach oben – und deutlich
+  anheben» bei den Händen; stehen die Symbole 4 s ohne Wahl, zeigen sie einmal das Wegschieben («Wegschieben: beide Hände aus der Mitte nach aussen wischen»).
+- **Zeiger mit Tooltip:** nähert sich ein **gestreckter Zeigefinger** einem Symbol bzw. einem Knopf der App (höchstens 12 cm davor) – oder zeigt der Zielstrahl darauf –,
+  erscheint ein kleiner **Punkt** auf dem Ziel und eine **feine Linie** von der Fingerspitze; das Ziel hebt sich leicht. Nach `zeiger.tooltip_s` (0.6 s, Annahme nach HIG
+  «Buttons»: «tooltip after people hover over a button for a moment», «Eyes»: «a slightly longer delay») erscheint der **Name als Tooltip darunter** (kleine Glas-Kapsel).
+  In der App bekommen nur Knöpfe ohne Text einen Tooltip (Werkzeugleiste «Messen ein/aus», «Problem markieren», Schliessen «Ausblenden»).
+
+### Die App: ein Fenster aus Glas
+- **Ein Fenster** (statt der Kacheln aus P5a): Glas, durchscheinend und neutral grau, stark gerundete Ecken, feiner Glanz an der Oberkante, weicher Schatten. Schrift weiss
+  in drei Stufen, Titel mittig (Name der App), Text linksbündig. Masse in pt wie visionOS (1 pt ≈ 1.2 mm je Meter Abstand, eigene Rechnung; im Griffbereich mit
+  Fingerfaktor 1.5: 0.9 mm), Knöpfe 52 pt hoch, Mitten 60 pt auseinander. **Keine Registerleiste** – gewechselt wird über die Hebegeste und die Symbole.
+- **Werkzeugleiste** (Ornament) an der Unterkante, leicht davor: **Messen** und **Marker** ein/aus (eingeschaltet weiss mit dunklem Symbol). Darunter der **Griff**
+  (Kapsel: Pinch daran und ziehen verschiebt das Fenster) und links daneben der runde **Schliessen**-Knopf (blendet aus).
+- **Bedienen:** Antippen mit dem Zeigefinger oder mit dem Strahl zeigen und Pinch (wählt beim Loslassen auf demselben Ziel). Nähert sich Finger bzw. Strahl, hebt sich das
+  Ziel leicht an und hellt auf (statt des Blicks der Vision Pro), mit Zeiger wie bei den Symbolen; jeder Knopf klickt. Listen blättern mit Pinch + Wisch links/rechts,
+  solange die Hand am Fenster ist (Seitenzahl im Titel, z. B. «Etagen · 1/2»).
+- **Lage:** im Raum verankert (folgt dem Kopf nicht); kommt nur nach, wenn man weiter als 1.4 m weggeht. Beim Start steht es `apps.seitlich_grad` (30°) links neben dem
+  Blick auf Brusthöhe mit «KICAD» (Status); über ein Symbol geöffnet dort, wo die Symbole standen; **am Sitzungstisch neben dem Tisch**, nie über der Platte (Befund
+  Prüfbild 24.10.2026). Wechsel Begehen ↔ Sitzungsraum bzw. ein neu angetippter echter Tisch stellt ein sichtbares Fenster an den neuen Platz.
+- **Glas nach der Umgebung** (HIG «Materials»: «Glass is an adaptive material … to provide contrast»): die App tönt das Glas so, dass es über dem Hintergrund gleich hell
+  wirkt (`anzeige.glas_helligkeit`, Vorgabe 0.42) – im hellen Sitzungsraum dunkler, im dunklen heller; die Hintergründe je Umgebung sind Annahmen V1a (heller
+  Sitzungsraum 0.88, Modell beim Begehen 0.55, echter Raum 0.6, «tron» 0.03). Die Glasfläche **verdeckt Weltobjekte** dahinter (sie schreibt die Tiefe; Deckkraft
+  `anzeige.glas_deckkraft`, Vorgabe 0.75): Marker, Linien und Beschriftungen hinter dem Fenster scheinen nur schwach durch (Befund Durchsicht 24.10.2026).
+  Weichzeichnung des Hintergrunds gibt es nicht (StereoKit 0.3.11 hat das Bild dahinter nicht; ein eigener Durchgang kostete auf der Quest zu viel Füllrate).
+- **Variante «tablet»** (`labor.variante.bedienung`): die Box aus P4 wie bisher (mit den Hinweisen in der Box).
+
+### Hinweise frei schwebend
+Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Statusmeldungen stehen frei im Raum – nicht auf dem Glas, nicht in Kästen:
+- **Allgemein** (Status, «Etage 2.OG …», «App ausgeblendet …»): ruhig **unterhalb der Blickmitte in Griffweite** (0.55 m vor dem Auge, 0.24 m tiefer), im Raum verankert;
+  er gleitet erst nach, wenn man sich mehr als 25° wegdreht. Immer nur einer.
+- **Bei der Hand** (Gestenhinweise, Geisterhand) knapp über der Hand; **beim Objekt** («Problem-Marker gesetzt («Prüfen»).», «Messung 3: 1300 mm …») knapp über der Stelle.
+- **Lesbar ohne Kasten:** weisse Schrift mit weichem dunklem Schein hinter den Buchstaben (die Schrift dunkel in zwei Ringen leicht versetzt) – vor dem hellen Sitzungsraum
+  und vor dunklen Wänden; ebenso die Werte an den Messlinien, die Kennzeichen der Marker und die Namen der Fangsymbole.
+- **Kurz** (höchstens zwei Zeilen, länger wird an einer Wortgrenze gekürzt), **sanft ein- und ausblenden**, nach `hinweis.dauer_s` (4 s) weg. **Nie über Apps, Symbolen,
+  Tooltips oder der Karte einer Aufgabe:** ein Hinweis, der sie überdecken würde, rückt darüber (solange unter der Blickmitte) bzw. darunter, sonst daneben.
+- **Dauerhinweise:** «Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.» über dem Tisch, solange er wartet; ein Fehler der Verbindung, solange die App
+  ausgeblendet ist. Die **Karte einer Prüfaufgabe** bleibt eine kleine Glaskarte; nur ihr Gestenhinweis «Pinch + Wisch nach vorn: abbrechen» schwebt frei darüber.
+
+### Messen in der Brille
+- **Einschalten:** App **Messen** (Symbol) › Schalter «Messen» oder in der Werkzeugleiste das Massband. Solange Messen an ist, springt der Pinch nicht (er misst) und kein
+  Zielstrahl zum Springen erscheint.
+- **Variante `messband`** (Vorgabe): auf den Anfangspunkt zeigen bzw. ihn mit den Fingern berühren, **Pinch halten, aufziehen, loslassen** am Endpunkt (mindestens 0.15 s
+  und 2 cm Weg). **`zwei_punkte`:** je ein kurzer Pinch (höchstens 0.8 s, 4 cm Bewegung) auf Anfang und Ende. Die Variante wählt man im Register (Messband | Zwei Punkte)
+  oder am PC (`labor.variante.messen`).
+- **Lot:** Knopf «Lot» im Register: gemessen wird lotrecht zur Fläche des Endpunkts (sonst des Anfangs) – Abstand zu Decke, Wand oder Boden. Ohne Fläche: «Lot braucht
+  eine Fläche (Decke, Wand, Boden)».
+- **Fang** (Regeln `Messen/SzenenFang`, auf der Geometrie der GLB): zuerst der Finger (Pinch-Punkt, 3 cm), sonst der Zielstrahl des Systems (3 cm + 3 cm je Meter). Ecken,
+  Mitten von Kanten, Kanten, Achsen von Rohren und Formstücken (Zylinder mit mindestens 12 Ecken), Kanäle (Mittelachse), Flächen. Ein **Fangsymbol** zeigt, was gefangen
+  ist (Ecke Quadrat, Mitte Dreieck, Kante Raute, Achse Raute mit Strich, Fläche Kreuz), mit dem Namen darunter. Gefangen wird nur, was zu sehen ist: beim Begehen das
+  Geschoss am Stand (die IFC-Unterlage, wenn sie geladen ist), am Tisch die gezeigten Geschosse im Schnitt.
+- **Am Sitzungstisch** misst man im Modell: die Hand wird über die Lage des Tisches in die Szene gerechnet, Fangradien im Massstab; Werte in echten Millimetern. Eine Hand an
+  einem Griff misst nicht.
+- **Anzeige:** jede Messung bleibt als Linie mit Endpunkten stehen, der Wert auf einer kleinen Glas-Kapsel über der Mitte (zum Kopf gedreht), bei der neuesten mit
+  dx/dy/dz. Die Liste im Register zeigt die Messungen (neueste oben, Nummer, Mass, dx/dy/dz).
+- **Löschen:** offene Hand **schnell quer über eine Messlinie** wischen (wie der Prototyp) löscht diese Messung; «Messungen löschen» im Register löscht alle. Höchstens 50
+  Messungen (die älteste fällt weg).
+- **Kosten:** höchstens ein Strahl je Bild (die aufziehende Hand jedes Bild, sonst die Hände abwechselnd; neu beim Wechsel des Pinch). Am PC mit Test_praxis: beim
+  Begehen 0.1 ms je Strahl, am Tisch 2.5 ms (der erste bis 23 ms, er bereitet die Elemente auf); am Tisch reicht der Strahl 4 m.
+
+### Problem-Marker
+- **In der Brille:** Register **Marker** › «Problem markieren» (bzw. Werkzeugleiste), wahlweise vorher eine **Kurznotiz** (Kollision, Fehlt, Prüfen, Zu eng), dann auf die
+  Stelle zeigen bzw. sie berühren und **kurz Pinch**. Der Marker steht dort als **Stecknadel** (offen orange, erledigt grau) mit Kennzeichen; Hinweis «Problem-Marker
+  gesetzt». Die Liste im Register zeigt alle Marker des Projekts (offen zuerst, Zuständig, Frist).
+- **Was gespeichert wird:** Ort (KICAD-mm), Blickpunkt (Kopf und Blickrichtung in KICAD-mm, Modus begehen bzw. sitzungsraum, Massstab), das getroffene Element (Id, GLB-Teil,
+  Art), Geschoss, Zeit, Notiz; KICAD ergänzt Benutzer (Name der Kopplung) und Brille.
+- **Ablage im Projekt:** KICAD legt je Marker ein Element der Klasse **`ProblemMarker`** an (`POST /api/xr/marker`, Kürzel PM, Schicht Prüfung; mit Paket, Rückgängig und
+  Abgleich wie jede Änderung) – alle KICAD-Plätze sehen ihn, im Grundriss als Kreis mit «!» (nur am Bildschirm), in 3D als Kugel. Ohne Verbindung wartet der Marker in der
+  Brille (`marker/wartend.jsonl`, höchstens 100) und geht mit der nächsten Verbindung; dieselbe Kennung legt keinen zweiten an. Die App holt die Liste mit
+  `GET /api/xr/marker` (ETag, alle 30 s) und legt sie je Projekt ab (Start ohne PC). In den GLB der App stehen die Marker nicht (die App zeichnet sie selbst).
+- **Am PC:** Register **Koordination › Gruppe Kollisionen › «Problem-Marker»** öffnet die Palette rechts: Filter (Alle, Offen, Erledigt), Zahl offen/erledigt/überfällig,
+  die Liste (Kennzeichen, Status, Notiz, Geschoss, gesetzt von, Zuständig, Frist; überfällige Fristen hervorgehoben). **Klick auf einen Marker** wählt ihn und öffnet die
+  3D-Ansicht **am Blickpunkt der Brille** (Kamera am Kopf, Blick auf die Stelle). Darunter Status, Zuständig, Frist und Notiz ändern («Speichern», ein Befehl
+  `element_aendern`), «In 3D zeigen», «Löschen» (mit Rückfrage, Rückgängig möglich).
+- **BCF:** «Als BCF exportieren …» schreibt die Marker des Filters als **BCF 3.0** (Befehl `bcf_export` mit `klasse: ProblemMarker`, wahlweise `marker: [Kennzeichen]`):
+  je Marker ein Topic (Typ «Problem», Status Offen/Erledigt, Titel aus Kennzeichen und erster Zeile der Notiz, Zuständig, Frist, Beschreibung) mit Viewpoint am Blickpunkt
+  der Brille und dem betroffenen Element ausgewählt; die Guid bleibt je Marker gleich. Schemaprüfung wie bei den Kollisionen. **Bilder** (Snapshots) enthält das BCF
+  nicht – ein Bild der 3D-Ansicht vom Blickpunkt ist ein Vorschlag für später.
+- **KI:** `/api/xr/marker` ist eine Rechner-Funktion (`KiEinordnung` › `xr_marker`, kein MCP-Werkzeug); die Marker selbst sind Projektdaten (`elemente_suchen` mit
+  `klasse: ProblemMarker`).
+
+### Prüfaufgabe «messen-wand-wand»
+- Die App wählt im Raum am Stand (sonst dem 2 m vor dem Blick, sonst dem nächsten) zwei **gegenüberliegende, parallele Wände** (±3°, mindestens 0.8 m auseinander, 0.5 m
+  nebeneinander; bevorzugt quer zum Blick), markiert sie mit einem Rahmen und schaltet Messen ein. Das **Sollmass** gilt zwischen den Flächen, die man vom Raum aus sieht:
+  Strahlen aus der Mitte des Raums auf die Wände (Befund Prüflauf Test_praxis: lag der Grundriss auf der Aussenseite einer Wand im Raum, war das Mass vorher 250 mm zu
+  gross). Gelingt mit einer Messung von Wand zu Wand (je höchstens 5 cm neben der Fläche) höchstens 2 cm neben dem Sollmass (Katalog, Annahme P6).
+
+### Sitzungsraum hell
+- Statt des dunklen Raums eine **ruhige, helle Umgebung** (HIG «Immersive experiences»): Kuppel (40 m) mit Verlauf vom hellen Horizont zu einem leicht bläulichen Zenit,
+  immer eine Bodenfläche, ein heller Tisch mit weichem Kontaktschatten; Licht in den Farben der Netze, keine Bewegung. Unter dem Modell eine **Bodenplatte aus Glas** wie bei
+  einem «Volume», die sanft leuchtet, wenn eine Hand nahe ist bzw. einen Griff hält. Kosten: gut 1 400 Dreiecke, 5 Zeichenaufrufe. Mit Passthrough nur ein dezenter heller
+  Rahmen.
+- **Variante `labor.variante.umgebung`:** `hell` (Vorgabe) | `tron` (die frühere dunkle Fassung zum Vergleich).
+- **Befund «Raum in AR»** (dunkle Platte oben): der Ausschnitt «Raum zeigen» schneidet jetzt unter der Unterseite der Decke über dem Raum, aus der Geometrie (senkrechte
+  Strahlen auf Platten, Decken, Dächer; vorher nur, wenn die Oberkante der Platte genau auf der Kote des Geschosses darüber lag).
+
+### Karte der Prüfaufgaben, Geisterhand, Gesten
+- **Karte** (Befund Durchsicht 24.10.2026): Glas wie die App, so klein wie der Text, Farbe nur als Akzent (Punkt vor dem Titel: läuft weiss, wartet orange, abgebrochen grau;
+  grüner Haken bei Erfolg). Mit Fenster steht sie als **Ornament über dem Fenster** (deckt die App nicht), sonst rechts neben dem Blick. Knopf «Aufgabe beenden» unten
+  rechts, daneben «oder wegwischen».
+- **Geisterhand** führt Gesten neben den Bedienelementen vor, nie über ihnen (Prüflauf: Antippen links neben der Registerleiste).
+- **Gesten** (Tabelle im Register Status › «Gesten»): neu «Pinch halten, ziehen, loslassen (Messen ein)», «Offene Hand schnell quer über eine Messlinie», «Pinch auf eine
+  Stelle (Marker setzen)», «Pinch am Griff unter dem Fenster»; Pinch + Wisch links/rechts blättert, wenn die Hand am Fenster ist; Wegwischen blendet das Fenster aus.
+
+### Stellschrauben und Varianten (neu bzw. geändert)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `apps.seitlich_grad` | 30° | 0 … 90 | so weit links neben dem Blick erscheint das Fenster beim Holen |
+| `anzeige.glas_deckkraft` | 0.75 | 0.3 … 1 | Deckkraft des Glases (im hellen Raum deckt es bei Bedarf mehr) |
+| `anzeige.glas_helligkeit` | 0.42 | 0.2 … 0.6 | so hell wirkt das Glas über dem Hintergrund (Tönung nach der Umgebung) |
+| `labor.variante.messen` | messband | messband, zwei_punkte | seit V1a wirksam |
+| `labor.variante.umgebung` | hell | hell, tron | Umgebung des Sitzungsraums |
+| `hebe.weg_m`, `hebe.zeit_s`, `hebe.handflaeche_grad`, `hebe.gleichzeitig_s` | 0.15 m, 0.9 s, 45°, 0.35 s | 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Hebegeste |
+| `schieben.startabstand_m`, `schieben.weg_m`, `schieben.zeit_s`, `schieben.handflaeche_grad`, `schieben.gleichzeitig_s` | 0.3 m, 0.15 m, 0.8 s, 50°, 0.35 s | 0.1 … 0.6, 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Wegschieben |
+| `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.streuung`, `symbole.wartezeit_s` | 0.42 m, 0.32 m, 1, 10 s | 0.25 … 0.7, 0.1 … 0.6, 0.6 … 1.6, 2 … 60 | App-Symbole |
+| `zeiger.tooltip_s` | 0.6 s | 0 … 3 | Verzögerung des Tooltips |
+| `hinweis.dauer_s` | 4 s | 1 … 15 | so lange steht ein schwebender Hinweis |
+| `labor.variante.symbole` | verteilt | verteilt, bogen | Anordnung der Symbole |
+
+### Prüfen
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 [-Projekt <Test_praxis>] [-Pruefbilder <ordner>]` meldet in jeder Zeile «P4 ok» zusätzlich «V1a: Glas=ok, Umgebung=ok, Fang=ok
+  (…, ms je Strahl), Messen=ok (zwei Punkte, Lot, Wisch löscht), Marker=ok (…)» und am Tisch «Fenster am Tisch=ok», «Decke über dem Raum=ok (Schnitt oben …, Unterseite
+  der Decke …)»; Lauf 1 spielt «messen-wand-wand» (eine Messung daneben, eine von Wand zu Wand). Das Skript prüft mit `GET /api/xr/marker`, dass die Marker von Lauf 1,
+  der wartende aus Lauf 2 (ohne PC) und der am Tisch aus Lauf 3 im Projekt angekommen sind. Mit `-Pruefbilder` dazu `glas_apps.jpg`, `glas_marker.jpg`, `messen.jpg`,
+  `marker.jpg` (Bild ohne Apps), `glas_apps_sitzung.jpg`, `glas_tisch.jpg`, `marker_sitzung.jpg`, `sitzung_umgebung.jpg` (nur lokal).
+- **Tests:** Xr `V1aMessenTests` (Fang: Ecke, Kante, Mitte, Achse von Rohr und Kanal, Fläche, Strahl, Sichtbarkeit; Messband und zwei Punkte, Lot, Löschen), `V1aLaborTests`
+  (Wandpaar, Sollmass von der sichtbaren Fläche, Prüfung, Lauf), `V1aMarkerTests` (Format, Ablage, Liste), `V1aGlasTests` (Masse, Inhalt, Fensterteile, Verankerung,
+  neben dem Tisch, Hinweise, Strahl, Tönung nach der Umgebung, Geisterhand neben der Leiste, Stellschrauben), `V1aSitzungTests` (Decke über dem Raum, heller Hintergrund,
+  Gestentabelle); Kern `ProblemMarkerTests` (Klasse, Grafik, BCF mit Schemaprüfung); Web `XrMarkerTests` (POST/GET, ETag, Kennung doppelt, ungültige Werte, Netzzugang,
+  KI-Einordnung); Node `problemmarker.test.mjs` (Liste, Filter, Zeilen, Frist, BCF-Parameter, Kamera).
+- **Nur mit der Brille prüfbar:** wie sich das Messband mit echten Händen anfühlt (Pinch halten, Zugweg 2 cm, Klick 0.8 s), ob der Fang am Strahl genug trifft (3 cm + 3 cm/m)
+  und das Fangsymbol lesbar ist; die Wischgeste über eine Messlinie; Marker setzen mit kurzem Pinch; Lesbarkeit und Kontrast des Glases im echten Raum (Passthrough) und
+  im hellen Sitzungsraum; Lage des Fensters (30°) und der Karte über dem Fenster; die Kosten des Fangs auf der Quest (am PC 2.5 ms je Strahl am Tisch) und die Bildrate
+  mit Glas und Umgebung.
+- **Anleitung:** `zb-quest-v1a-messen`, `zb-quest-v1a-marker`, `zb-quest-v1a-glas`, `zb-problemmarker-palette` in `berichte/anleitung/inventar.json`.
+
 ## Modul XR: XR-Labor (Quest App P6, `entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P6; Entscheid Christian 23.10.2026: «Prüfung: kurz gemischt», «Deutsche Fassungen der Fragebogen nur mit Quelle»)
 
 Der Dialog **«XR-Labor …»** (Register **Ansicht › Gruppe Fenster**, Aktion `ansicht.xrLabor`, Symbol `xrLabor`, immer verfügbar) ist die Werkbank für das Interface-Labor der Quest App: Er stellt die Bedienung der App live von KICAD aus ein, startet
@@ -2530,8 +2705,9 @@ zwischen Aufgaben und Varianten, Länge der Anleitung …) und wirft einen `Hlks
   Ein Wert `null` in der Nachricht `stellschraube` bedeutet: zurück auf die Vorgabe.
 - **`xr_pruefaufgaben.json`** – `messgroessen[{ id: zeit | fehlgriffe | abbrueche, titel, einheit, beschreibung }]` und `aufgaben[]`: `id` (`^[a-z][a-z0-9-]{0,39}$`: `teleport-markierung`, `drehen-90`, `etage-wechseln`, `modell-greifen-zoomen`,
   `raum-ar-oeffnen`, `tablet-wert-ablesen`, `messen-wand-wand`), `titel`, `anleitung` (höchstens 300 Zeichen, für die Brille), `ort`, `varianten[]` (welche Varianten für die Aufgabe zählen), `messgroessen[]`, `erfolgskriterium` (Zahlen darin sind Annahmen P6), `fehlgriff` (P5b, optional, höchstens 300 Zeichen: was die App als Fehlgriff zählt),
-  `herkunft`, `status` (`p5`: die App spielt sie ab; `folgt_v1`: gesperrt, heute nur `messen-wand-wand`).
-- **`xr_varianten.json`** – `varianten[{ name, titel, beschreibung, optionen[{ id, titel }] (mindestens zwei, A/B), vorgabe, herkunft }]`: `bedienung` (`apps` | `tablet`), `teleport` (`zeigen_pinch` | `stick`), `etage` (`wisch_modell` | `app`), `messen` (`messband` | `zwei_punkte`).
+  `herkunft`, `status` (`p5`: die App spielt sie ab; `folgt_v1`: gesperrt – seit V1a keine mehr, `messen-wand-wand` ist `p5`).
+- **`xr_varianten.json`** – `varianten[{ name, titel, beschreibung, optionen[{ id, titel }] (mindestens zwei, A/B), vorgabe, herkunft }]`: `bedienung` (`apps` | `tablet`), `teleport` (`zeigen_pinch` | `stick`), `etage` (`wisch_modell` | `app`), `messen` (`messband` | `zwei_punkte`),
+  seit V1a `umgebung` (`hell` | `tron`, Sitzungsraum).
 - **`xr_fragebogen.json`** – nur am PC (die App braucht ihn nicht): Teile `komfort` (eigene Fragen mit Wortlaut), `sus` (10 Aussagen, `polaritaet` abwechselnd positiv/negativ) und `nasa_tlx` (6 Skalen `mental`, `physical`, `temporal`, `performance`, `effort`, `frustration`).
   Bei SUS und TLX ist `wortlaut` **null** und `platzhalter` «Wortlaut fehlt – Quelle durch Christian»; trägt jemand einen Wortlaut ein, verlangt der Katalog `wortlautQuelle` (sonst Fehler) und für **alle** Fragen des Teils einen Wortlaut.
 
