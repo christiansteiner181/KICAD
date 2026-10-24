@@ -101,7 +101,10 @@ sealed class AufgabenKarte
             if (r.Ausgeloest is not null) { ergebnis = "beenden"; knopfBlitz = t; rueck.Kachel(S(kn.Mitte)); }
             else if (r.Daneben) ergebnis ??= "daneben";
         }
-        Zeichnen(k, kn, titelText, anleitung, zeile, lauf.Zustand, naehe, t, m, ms, X(kopf.position));
+        // Schicht «Vorn» wie die Fenster: Wände schneiden die Karte nicht an (Befund Prüfbilder 03, «app_wegwischen_halb»)
+        glas.Schicht = GlasZeichner.GlasSchicht.Vorn;
+        try { Zeichnen(k, kn, titelText, anleitung, zeile, lauf.Zustand, naehe, t, m, ms, X(kopf.position)); }
+        finally { glas.Schicht = GlasZeichner.GlasSchicht.Welt; }
         return ergebnis;
     }
 

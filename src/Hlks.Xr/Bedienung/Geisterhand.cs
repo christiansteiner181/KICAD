@@ -184,6 +184,25 @@ public static class Geisterhand
     }
 
     /// <summary>
+    /// Die Geisterhand des Wegwischens ist so weit (Grad) aus «Handfläche nach links» zum Blick hin gedreht (die Handfläche zeigt nach links und etwas vom Auge weg):
+    /// genau nach links stünde sie auf der Kante und wäre nur ein Strich (Befund Prüfbilder 03). Kleiner als «wegwischen.handflaeche_grad» (50°), damit die Vorführung
+    /// eine gültige Geste zeigt; Annahme V1a.
+    /// </summary>
+    public const double WischSchraegGrad = 35;
+
+    /// <summary>
+    /// V1a: die offene rechte Hand für die Vorführung des Wegwischens: wie <see cref="VorlageFlach"/>, Finger nach oben, die Handfläche nach links (links = Richtung
+    /// des Wischs) und um <see cref="WischSchraegGrad"/> nach vorn (vor = Blickrichtung) gedreht, so dass man schräg auf den Handrücken sieht.
+    /// </summary>
+    public static Dictionary<string, Vec3> VorlageWisch(Vec3 mitte, Vec3 links, Vec3 vor)
+    {
+        var l = new Vec3(links.X, 0, links.Z).Einheit();
+        var v = new Vec3(vor.X, 0, vor.Z).Einheit();
+        var w = WischSchraegGrad * Math.PI / 180;
+        return VorlageFlach(mitte, l * Math.Cos(w) + v * Math.Sin(w), new Vec3(0, 1, 0), links: false);
+    }
+
+    /// <summary>
     /// Die Geisterhand zur Zeit t (s seit Beginn der Vorführung) aus der Form der eigenen Hand (Gelenke im Raum der Brille) für das Ziel (Kachel bzw. offene App;
     /// beim Greifen die Lage des Griffs als Mitte). null ausserhalb der Vorführung oder wenn der Hand die Zeigefinger- bzw. Daumenspitze fehlt.
     /// </summary>

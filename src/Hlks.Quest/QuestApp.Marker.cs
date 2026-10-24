@@ -82,16 +82,32 @@ sealed partial class QuestApp
                     Hinweis("Kein Ziel – auf eine Wand, einen Boden oder ein Bauteil zeigen.");
                 }
                 markerPinch[i] = p;
-                if (markerFang[i]?.P is { } q) Stecknadel(SkVonSzene(q), kopf, true, null, 0.6f);
+                if (markerFang[i]?.P is { } q) Stecknadel(SkVonSzene(q), kopf, true, null, 0.6f, BedienFlaechen());
             }
         }
+        var vorn = BedienFlaechen();
         foreach (var m in MarkerAlle())
         {
             var p = ProblemMarker.OrtSzene(m, szene.Bezugspunkt);
             if (!MarkerSichtbar(m, p)) continue;
-            Stecknadel(SkVonSzene(p), kopf, m.Offen, m.Kennzeichen, m.Id == markerHervor && Time.Total < markerHervorBis ? 1.6f : 1);
+            Stecknadel(SkVonSzene(p), kopf, m.Offen, m.Kennzeichen, m.Id == markerHervor && Time.Total < markerHervorBis ? 1.6f : 1, vorn);
         }
     }
+
+    /// <summary>
+    /// Die Flächen der Bedienung vor dem Modell: Fenster (mit Werkzeugleiste, Griff, Schliessen) und Karte, solange sie stehen. Was im Modell dahinter liegt, tritt
+    /// zurück (Glas.HinterBedienung; Befund Prüfbilder 03: der Kopf eines Markers hinter dem Fenster leuchtete in der Lücke zwischen Karte und Fenster bzw. über der
+    /// Kante, der Stiel schien durch das Glas).
+    /// </summary>
+    List<TabletPose> BedienFlaechen()
+    {
+        var l = new List<TabletPose>();
+        if (apps.Sichtbar) l.AddRange(apps.Belegt);
+        if (lauf is not null && karte.Lage is { } kl) l.Add(kl);
+        return l;
+    }
+
+    Material? nadelDurch;
 
     /// <summary>Beim Begehen nur im Geschoss am Stand (bzw. ohne Geschoss in 20 m), am Tisch nur in den gezeigten Geschossen und im Schnitt.</summary>
     bool MarkerSichtbar(MarkerEintrag m, XVec3 p)
@@ -121,18 +137,32 @@ sealed partial class QuestApp
         return kp + oben * ((0.0225 + 0.006 + 0.012) * s);   // Radius des Kopfs + halbe Schrifthöhe + Lücke
     }
 
-    /// <summary>Stecknadel: Linie von der Stelle nach oben, Kopf (offen orange, erledigt grau), Kennzeichen frei schwebend (weiss mit dunklem Schein).</summary>
-    void Stecknadel(Vec3 ort, Pose kopf, bool offen, string? kennzeichen, float groesse)
+    /// <summary>
+    /// Stecknadel: Linie von der Stelle nach oben, Kopf (offen orange, erledigt grau), Kennzeichen frei schwebend (weiss mit dunklem Schein). Liegt der Kopf im Blick
+    /// hinter Fenster oder Karte (vorn = ihre Flächen; auch knapp über der Kante bzw. in der Lücke dazwischen), tritt die ganze Nadel blass zurück.
+    /// </summary>
+    void Stecknadel(Vec3 ort, Pose kopf, bool offen, string? kennzeichen, float groesse, IReadOnlyList<TabletPose>? vorn = null)
     {
         var s = StecknadelMass(ort, kopf, groesse);
         var kopfP = ort + Vec3.Up * (0.16f * s);
-        var c = offen ? new Color(1f, 0.55f, 0.15f, 1) : new Color(0.62f, 0.62f, 0.64f, 1);
-        Lines.Add(ort, kopfP, new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), 230), 0.004f * s);
-        Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(kopfP, 0.045f * s), c.ToLinear());
-        Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(ort, 0.012f * s), c.ToLinear());
-        if (kennzeichen is null || Vec3.Distance(kopfP, kopf.position) > (sitzung.Aktiv ? 2.5f : 12)) return;
         var kp = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
-        glas.Schein(kennzeichen, KennzeichenOrt(kopfP, kopf, s), kp, 0.012 * s, 1);   // Kennzeichen frei schwebend mit dunklem Schein (kein Kasten)
+        var hinten = vorn is { Count: > 0 } v && Glas.HinterBedienung(new XVec3(kopfP.x, kopfP.y, kopfP.z), kp, v, 0.045 * s / 2 + 0.01);   // Kopfradius + 1 cm
+        nadelGezeichnet++;
+        if (hinten) nadelBlass++;
+        var a = hinten ? 0.18f : 1f;
+        var c = offen ? new Color(1f, 0.55f, 0.15f, 1) : new Color(0.62f, 0.62f, 0.64f, 1);
+        Lines.Add(ort, kopfP, new Color32((byte)(c.r * 255), (byte)(c.g * 255), (byte)(c.b * 255), (byte)(230 * a)), 0.004f * s);
+        var mat = Material.Unlit;
+        if (hinten)
+        {
+            if (nadelDurch is null) { nadelDurch = Material.Unlit.Copy(); nadelDurch.Transparency = Transparency.Blend; nadelDurch.DepthWrite = false; }
+            mat = nadelDurch;
+        }
+        var cl = c.ToLinear();
+        Mesh.Sphere.Draw(mat, Matrix.TS(kopfP, 0.045f * s), new Color(cl.r, cl.g, cl.b, a));
+        Mesh.Sphere.Draw(mat, Matrix.TS(ort, 0.012f * s), new Color(cl.r, cl.g, cl.b, a));
+        if (kennzeichen is null || Vec3.Distance(kopfP, kopf.position) > (sitzung.Aktiv ? 2.5f : 12)) return;
+        glas.Schein(kennzeichen, KennzeichenOrt(kopfP, kopf, s), kp, 0.012 * s, hinten ? 0.25 : 1);   // Kennzeichen frei schwebend mit dunklem Schein (kein Kasten)
     }
 
     /// <summary>Marker setzen: Ort, Blickpunkt (Kopf), Element, Geschoss; wartet bis zur Sendung im privaten Speicher.</summary>
@@ -227,5 +257,7 @@ sealed partial class QuestApp
     }
 
     string MarkerKurz() => string.Create(CultureInfo.InvariantCulture,
-        $"{(markerSetzen ? "setzen" : "aus")}, {MarkerAlle().Count} gezeigt ({markerText}), gesetzt {markerGesetzt}, gesendet {markerGesendet}, wartend {markerWartend.Count}");
+        $"{(markerSetzen ? "setzen" : "aus")}, {MarkerAlle().Count} gezeigt ({markerText}), gesetzt {markerGesetzt}, gesendet {markerGesendet}, wartend {markerWartend.Count}, " +
+        $"Nadeln gezeichnet {nadelGezeichnet}, davon blass hinter Fenster bzw. Karte {nadelBlass}");
+    int nadelGezeichnet, nadelBlass;
 }

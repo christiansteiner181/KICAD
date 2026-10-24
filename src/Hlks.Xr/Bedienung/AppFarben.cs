@@ -2,6 +2,8 @@
 // nur für gewerkeunterschiede gebraucht» – die App hat einen eigenen Katalog kataloge/xr_farben.json (App-Pastellreihe, Christian 24.10.2026), keine Farbwerte im Code.
 // Je App ein Ton plus Akzent, hell und dunkel; Schrift dunkel auf hellem Pastell (wie KICAD), hell auf der dunklen Fassung.
 //   - Welche Fassung: hell, wenn die Umgebung mindestens «hellAb» hell ist (Begehen im Modell, Passthrough, heller Sitzungsraum), sonst dunkel (Sitzungsraum «tron»).
+//     Die App-Symbole bleiben auch dunkel in der hellen Fassung (Pastell-Scheibe, dunkles Symbol); die Fenster der dunklen Fassung tragen einen kräftigen dunklen
+//     Ton der App (Akzent mit Deckkraft 0.75 über dem dunklen Grund) und den Pastellton als Akzent (Befund Prüfbilder 03: mit 22 % Pastell war dunkel alles grau).
 //   - Glas: der Ton der Fassung, halbtransparent; die Deckkraft richtet sich weiter nach der Umgebung (Apple HIG «Materials»: «Glass is an adaptive material …»).
 //     Hell: das Glas wirkt mindestens HellMindestens hell (dunkle Schrift bleibt lesbar), dunkel: höchstens so hell wie die Stellschraube «anzeige.glas_helligkeit».
 //     Deckkraft mindestens «anzeige.glas_deckkraft», höchstens 0.95 (Mischung a·Ton + (1 − a)·Umgebung, sRGB).
@@ -130,10 +132,13 @@ public sealed class AppFarben
         return Math.Clamp(a, 0.3, DeckkraftMax);
     }
 
-    /// <summary>Die Farben eines Bildes für die App id bei dieser Umgebung und diesen Stellschrauben (siehe Dateikopf).</summary>
-    public GlasSatz Satz(string? id, double hintergrund, double deckkraft, double zielDunkel)
+    /// <summary>
+    /// Die Farben eines Bildes für die App id bei dieser Umgebung und diesen Stellschrauben (siehe Dateikopf). immerHell: die helle Fassung auch in dunkler Umgebung
+    /// (die App-Symbole: helle Pastell-Scheibe mit dunklem Symbol, damit die Farbe der App erkennbar bleibt – Befund Prüfbilder 03, dunkel war alles grau).
+    /// </summary>
+    public GlasSatz Satz(string? id, double hintergrund, double deckkraft, double zielDunkel, bool immerHell = false)
     {
-        var hell = IstHell(hintergrund);
+        var hell = immerHell || IstHell(hintergrund);
         var f = hell ? Fuer(id).Hell : Fuer(id).Dunkel;
         var glas = f.Ton with { A = Deckkraft(f.Ton, hell, hintergrund, deckkraft, zielDunkel) };
         var s = f.Schrift;

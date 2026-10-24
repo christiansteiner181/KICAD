@@ -203,11 +203,12 @@ V1a». Die App: `src/Hlks.Quest/QuestApp.Messen.cs`, `QuestApp.Marker.cs`, `Ques
 | `Bedienung/HebeGeste.cs` | `HebeGeste`, `HebeEinstellungen`, `SymbolEinstellungen`, `HandBeobachtung`, `HebeStand` | Hebegeste (beide Handflächen oben, nach oben); Fortschritt für die mitlaufenden Symbole; Zögern; Stellschrauben des Symbolfelds |
 | `Bedienung/Wegwischen.cs` | `Wegwischen`, `WegwischEinstellungen`, `WegwischStand`, `WegwischKandidat` | eine Geste für alles: rechte Hand offen, Handfläche nach links, von rechts nach links; Ziel = was die Hand überstreicht, sonst das zuletzt Gezeigte; Ziel bleibt während der Geste |
 | `Bedienung/HandBeruehrung.cs` | `HandBeruehrung`, `BeruehrKugel`, `HandBeruehrErgebnis` | Berührung eines App-Symbols mit der ganzen Hand (Finger als Kapseln, Handfläche, Handmitte), tiefstes Eindringen gewinnt, Sperre während und nach Hebegeste und Wegwischen |
-| `Bedienung/AppSymbole.cs` | `AppSymbole`, `SymbolPlatz`, `Zeiger`, `ZeigerBild` | Symbolfeld frontal vor dem Kopf (Raster bis 3 Reihen, lose versetzt, je App fest), Hineinheben, Zurückweichen hinter eine offene App, Wegwischen nach links, Tooltip über dem Ziel, Zeiger (gestreckter Zeigefinger bzw. Strahl, Verweilzeit) |
+| `Bedienung/AppSymbole.cs` | `AppSymbole`, `SymbolPlatz`, `Zeiger`, `ZeigerBild` | Symbolfeld frontal vor dem Kopf (Raster bis 3 Reihen, lose versetzt, je App fest), Untergrenze über der Tischplatte, Hineinheben, bei offener App seitlich neben Fenster und Ornamente (um das Auge gedreht, Griffweite bleibt; Vorgabe, Christian 24.10.2026) bzw. dahinter zurück, Wegwischen nach links, Tooltip über dem Ziel, Zeiger (gestreckter Zeigefinger bzw. Strahl, Verweilzeit) |
 | `Bedienung/Hinweise.cs` | `HinweisListe`, `SchwebeHinweis`, `SchwebeHinweise` | Hinweise frei schwebend: kürzen, ein- und ausblenden, Platz (unter der Blickmitte, bei der Hand, beim Objekt, bei einer Geisterhand), Schriftgrösse nach Abstand, im Blickwinkel Flächen ausweichen |
 
 - **Geändert für V1a:** `XrBedienEinstellungen` mit `apps.seitlich_grad`, `anzeige.glas_deckkraft`, `anzeige.glas_helligkeit`, `hinweis.dauer_s`, `hebe.*`,
-  `wegwischen.*`, `symbole.*`, `zeiger.tooltip_s` und den Varianten `umgebung`, `symbole`, `symbolwahl`; `Geisterhand` mit `Vorlage`, `VorlageOffen`, `VorlageFlach`,
+  `wegwischen.*`, `symbole.*`, `zeiger.tooltip_s` und den Varianten `umgebung`, `symbole`, `symbolwahl`, `feld_bei_app`; `Geisterhand` mit `Vorlage`, `VorlageOffen`,
+  `VorlageFlach`, `VorlageWisch`,
   `Neben`, Gesten `Heben` und `Wegwischen`; `Gestenbedeutung` (Pinch + Wisch nach vorn ohne Bedeutung; Tabelle mit Messband, Löschen, Marker, Griff, Fenster, Hebegeste,
   Wegwischen); `PruefAufgaben` (messen-wand-wand spielbar); `SitzungAuswahl.DeckeUeberRaumM` (Ausschnitt unter der Unterseite der Decke über dem Raum);
   `Hintergrund.Hell`.
@@ -216,7 +217,9 @@ V1a». Die App: `src/Hlks.Quest/QuestApp.Messen.cs`, `QuestApp.Marker.cs`, `Ques
   Hintergründe 0.88/0.55/0.6/0.03; Hebegeste 0.15 m in 0.9 s, 45°, 0.35 s; Wegwischen 0.18 m in 0.6 s, Handfläche 50°, Richtung 35°, Sperre 0.8 s; Symbolfeld 0.6 m
   vor den Augen (waagrecht), Mitte 0.32 m darunter, 0.6 m hoch, 3 Reihen, 96 pt, ohne Wartezeit, Tooltip 0.6 s; Berührung Finger 9 mm, Handfläche 14 mm, Handmitte 35 mm,
   Rand 1 cm, Sperre 0.6 s; Hinweise 4 s, höchstens zwei Zeilen. Zusätzliche Pastelltöne (Ebenen, Gesten, Labor, Vorgabe) sind Vorschläge, ebenso die dunkle Fassung
-  (22 % Ton über #3E4452).
+  (Akzent mit Deckkraft 0.75 über #3E4452; die Symbole bleiben hell). Nach den Prüfbildern 03: am Tisch 6 cm Luft unter den Symbolen (`symbole.tisch_abstand_m`),
+  Variante `feld_bei_app` (`seitlich` – Entscheid Christian 24.10.2026 – | `dahinter`, 3 cm Rand), Geisterhand des Wegwischens 35° schräg (`Geisterhand.VorlageWisch`), Marker hinter dem Fenster blass
+  (`Glas.HinterFlaeche`, `Glas.HinterBedienung`).
 - **Tests:** `V1aMessenTests`, `V1aLaborTests`, `V1aMarkerTests`, `V1aGlasTests`, `V1aSitzungTests`, `V1aSymboleTests` (Feld, Berührung mit der Hand, Wegwischen und
   Ziel, auch Fehlauslösungen der Gesten und dass sie weder Pinch + Wisch noch den Sprung auslösen), `V1aFarbenTests` (Katalog, Kontraste, Farbsatz). Die Symbole:
   `src/Hlks.Web/wwwroot/js/oberflaeche/quest-symbole.test.mjs` (Texturen und Prüfsummen gleich wie `werkzeuge/quest_symbole.mjs` aus `symbole.js`). Die App selbst:

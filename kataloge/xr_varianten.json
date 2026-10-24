@@ -72,6 +72,16 @@
       ],
       "vorgabe": "stehen",
       "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück), als Variante zum Vergleich"
+    },
+    {
+      "name": "feld_bei_app", "titel": "Symbolfeld bei offener App",
+      "beschreibung": "Wo das Feld der App-Symbole steht, solange eine App offen ist (Variante «symbolwahl» = «stehen»): seitlich (es weicht links und rechts neben das Fenster und seine Ornamente aus, im selben Abstand zum Auge, also in Griffweite; schliesst die App, kehrt es frontal zurück) oder zum Vergleich dahinter (es weicht in die Tiefe zurück und wird gedämpft).",
+      "optionen": [
+        { "id": "seitlich", "titel": "Neben dem Fenster" },
+        { "id": "dahinter", "titel": "Hinter dem Fenster" }
+      ],
+      "vorgabe": "seitlich",
+      "herkunft": "Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» (nach den Prüfbildern 03: das Fenster verdeckte das Feld fast ganz); «dahinter» bleibt als Vergleich"
     }
   ]
 }

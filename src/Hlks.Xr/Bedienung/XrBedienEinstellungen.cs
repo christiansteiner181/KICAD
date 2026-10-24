@@ -7,7 +7,8 @@
 //   labor.variante.teleport (zeigen_pinch | stick), labor.variante.messen (messband | zwei_punkte; seit V1a wirksam).
 // V1a: apps.seitlich_grad, anzeige.glas_deckkraft, anzeige.glas_helligkeit, labor.variante.umgebung (hell | tron), hinweis.dauer_s, hebe.* (Hebegeste),
 //   symbole.* und zeiger.tooltip_s (App-Symbole: Feld frontal mit Abstand, Mitte, Höhe und Reihen; Berührung mit der ganzen Hand; Zeiger),
-//   labor.variante.symbole (verteilt | bogen), labor.variante.symbolwahl (stehen | ausblenden).
+//   labor.variante.symbole (verteilt | bogen), labor.variante.symbolwahl (stehen | ausblenden), labor.variante.feld_bei_app (seitlich | dahinter),
+//   symbole.tisch_abstand_m (am Sitzungstisch: Luft unter der untersten Symbolreihe).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -54,12 +55,16 @@ public static class Varianten
     /// <summary>V1a, «labor.variante.symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (Vorgabe; Christian 24.10.2026:
     /// «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf) bzw. blenden aus (wie zuvor).</summary>
     public const string SymbolwahlStehen = "stehen", SymbolwahlAusblenden = "ausblenden";
+    /// <summary>V1a, «labor.variante.feld_bei_app»: ist eine App offen, weicht das Symbolfeld seitlich neben das Fenster aus (Vorgabe; Christian 24.10.2026: «Das
+    /// Symbolfeld weicht bei offener App seitlich neben das Fenster aus.») bzw. zum Vergleich dahinter zurück (die frühere Auslegung).</summary>
+    public const string FeldSeitlich = "seitlich", FeldDahinter = "dahinter";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
         ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
+        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter],
     };
 }
 
@@ -150,7 +155,7 @@ public sealed record XrBedienEinstellungen
     public string? Variante(string name) => name switch
     {
         "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
-        "symbolwahl" => Symbole.NachWahl, _ => null,
+        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, _ => null,
     };
 
     /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
@@ -190,6 +195,7 @@ public sealed record XrBedienEinstellungen
         ["symbole.reihen"] = (1, 3),
         ["symbole.beruehr_rand_m"] = (0, 0.05),
         ["symbole.beruehr_sperre_s"] = (0, 3),
+        ["symbole.tisch_abstand_m"] = (0, 0.3),
         ["symbole.streuung"] = (0.6, 1.6),
         ["symbole.wartezeit_s"] = (0, 120),
         ["zeiger.tooltip_s"] = (0, 3),
@@ -215,6 +221,7 @@ public sealed record XrBedienEinstellungen
         "symbole.abstand_m", "symbole.hoehe_m", "symbole.streuung", "symbole.wartezeit_s", "zeiger.tooltip_s", "labor.variante.symbole",
         "symbole.feldhoehe_m", "symbole.reihen", "symbole.beruehr_rand_m", "symbole.beruehr_sperre_s", "labor.variante.symbolwahl",
         "wegwischen.weg_m", "wegwischen.zeit_s", "wegwischen.handflaeche_grad", "wegwischen.richtung_grad",
+        "symbole.tisch_abstand_m", "labor.variante.feld_bei_app",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -335,6 +342,12 @@ public sealed record XrBedienEinstellungen
             case "labor.variante.symbolwahl":
                 return zurueck ? this with { Symbole = Symbole with { NachWahl = v.Symbole.NachWahl } }
                     : Wahl(Varianten.SymbolwahlStehen, Varianten.SymbolwahlAusblenden) is { } s11 ? this with { Symbole = Symbole with { NachWahl = s11 } } : null;
+            case "labor.variante.feld_bei_app":
+                return zurueck ? this with { Symbole = Symbole with { FeldBeiApp = v.Symbole.FeldBeiApp } }
+                    : Wahl(Varianten.FeldSeitlich, Varianten.FeldDahinter) is { } s12 ? this with { Symbole = Symbole with { FeldBeiApp = s12 } } : null;
+            case "symbole.tisch_abstand_m":
+                return zurueck ? this with { Symbole = Symbole with { TischAbstandM = v.Symbole.TischAbstandM } }
+                    : Zahl() is { } s13 ? this with { Symbole = Symbole with { TischAbstandM = s13 } } : null;
             default:
                 return null;
         }

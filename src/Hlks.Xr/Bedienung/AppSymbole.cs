@@ -6,7 +6,10 @@
 //     Mitte zwischen den Augen, waagrecht gemessen), senkrechte Mitte «symbole.hoehe_m» unter den Augen, von der obersten zur untersten Reihe «symbole.feldhoehe_m»,
 //     höchstens «symbole.reihen» Reihen. Die Reihen sind locker gegeneinander versetzt, jedes Symbol leicht in Höhe und Tiefe verschoben (keine Leiste, keine starre
 //     Matrix). Je App immer derselbe Platz im Feld (Muskelgedächtnis). Die Breite folgt aus der Zahl der Apps und dem Spaltenabstand. Ist eine Untergrenze gesetzt
-//     (Tischplatte am Sitzungstisch), rückt die unterste Reihe darüber und das Feld wird niedriger. Im Raum fest, zum Kopf gewandt.
+//     (Tischplatte am Sitzungstisch, AppSymbole.Untergrenze mit «symbole.tisch_abstand_m»), rückt die unterste Reihe darüber und das Feld wird niedriger. Im Raum
+//     fest, zum Kopf gewandt.
+//   - Ist eine App offen (Variante «feld_bei_app»): das Feld weicht seitlich neben Fenster und Ornamente aus (Vorgabe; Christian 24.10.2026: «Das Symbolfeld weicht bei
+//     offener App seitlich neben das Fenster aus.»; Seitlich) bzw. zum Vergleich dahinter zurück (Zurueck/Gedaempft).
 //     Variante «symbole» = «verteilt» (Vorgabe) | «bogen» (eine Reihe im Bogen, zum Vergleich im Labor).
 //   - Zeiger mit Tooltip (Zeiger): ein gestreckter Zeigefinger nahe an einem Symbol bzw. Knopf zeigt einen Punkt darauf und eine feine Linie von der Fingerspitze;
 //     nach einer Verweilzeit der Name als Tooltip. Apple HIG «Buttons» (visionOS): «the system displays a tooltip after people hover over a button for a moment»
@@ -49,6 +52,12 @@ public static class AppSymbole
 
     /// <summary>Durchmesser in m.</summary>
     public static double Durchmesser(GlasMasse m) => m.M(DurchmesserPt);
+
+    /// <summary>
+    /// Untergrenze der Symbolmitten am Sitzungstisch: Tischplatte (Oberkante, m) + <see cref="SymbolEinstellungen.TischAbstandM"/> + halber Durchmesser – die
+    /// Unterkante jedes Symbols liegt mindestens um den Abstand über der Platte (auch mit der leichten Verschiebung je Platz).
+    /// </summary>
+    public static double Untergrenze(double tischOben, SymbolEinstellungen e, GlasMasse m) => tischOben + Math.Max(0, e.TischAbstandM) + Durchmesser(m) / 2;
 
     /// <summary>Platz im Feld je Id: (Reihe von oben, Spalte, Spalten insgesamt) bei r Reihen; Reserve rechts daneben in der Reihenfolge der Ids.</summary>
     public static Dictionary<string, (int Reihe, int Spalte)> Raster(IReadOnlyList<string> ids, int reihen, out int spalten)
@@ -109,6 +118,7 @@ public static class AppSymbole
             var (hoch, nachVorn) = Wackeln[platz % Wackeln.Length];
             if (reihe == 0) hoch = Math.Min(0, hoch);   // die oberste Reihe nie höher
             var y = reihen > 1 ? oben - (oben - unten) * reihe / (reihen - 1) : oben;
+            if (untergrenze is { } ug) hoch = Math.Max(hoch, ug - y);   // die Verschiebung je Platz nie unter die Untergrenze (Tischplatte)
             var x = (sp - (spalten - 1) / 2.0 + ReiheVersatz[reihe % ReiheVersatz.Length]) * spalte;
             var p = new Vec3(mitte.X, y + hoch, mitte.Z) + rechts * x + vor * -nachVorn;
             aus.Add(new SymbolPlatz(id, XrTabletLogik.TabletLageAus(p, auge - p) with { B = d, H = d }));
@@ -122,7 +132,7 @@ public static class AppSymbole
 
     // ---------------------------------------------------------------------------------------------------- Nach der Wahl (Variante «symbolwahl» = «stehen»)
     // Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen.» Auslegung Hauptlauf (Christian kann berichtigen): die gewählte App öffnet frontal etwas
-    // näher, das Symbolfeld weicht dahinter leicht in die Tiefe zurück und wird gedämpft (visionOS: der Hintergrund weicht zurück); schliesst die App, kommt es wieder nach
+    // näher; das Symbolfeld weicht seitlich aus (Seitlich, Vorgabe) bzw. – Variante «dahinter» – leicht in die Tiefe zurück und wird gedämpft (visionOS: der Hintergrund weicht zurück); schliesst die App, kommt es wieder nach
     // vorn. Annahmen V1a.
 
     /// <summary>Die App steht so viel (m) näher als das Feld; das Feld weicht so weit (m) zurück und wird so gedämpft (Deckkraft).</summary>
@@ -145,6 +155,51 @@ public static class AppSymbole
 
     /// <summary>Deckkraft des Felds, wenn es um k (0 … 1) zurückgewichen ist.</summary>
     public static double Gedaempft(double k) => 1 - (1 - GedaempftDeckkraft) * Math.Clamp(k, 0, 1);
+
+    /// <summary>Variante «seitlich»: so viel Luft (m) bleibt zwischen dem Rand des Fensters (im Blick) und dem Rand eines Symbols, Annahme V1a.</summary>
+    public const double SeitlichRandM = 0.03;
+
+    /// <summary>
+    /// Variante «feld_bei_app» = «seitlich» (Vorgabe; Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.»): ist eine App
+    /// offen, weicht das Feld links und rechts neben das Fenster und seine Ornamente aus (flaechen: Fenster, Werkzeugleiste, Griff, Schliessen, Karte), statt dahinter
+    /// zurückzuweichen. Die Symbole links der Mitte dieser Flächen (im Blick vom Auge) drehen gemeinsam um die senkrechte Achse durch das Auge nach links, die übrigen
+    /// nach rechts, je so weit, dass das innerste im Blick <see cref="SeitlichRandM"/> neben der äussersten Kante steht. Weil sie um das Auge drehen, bleibt ihr Abstand
+    /// zum Auge – das Feld bleibt in Griffweite wie vorher –, ebenso die Höhe und die Anordnung je Seite. Kein Symbol überdeckt im Blick eine der Flächen.
+    /// mitten = Symbolmitten, radius = halber Durchmesser, k = 0 … 1 (weich hin und zurück; Gieren beim Holen = Richtung des Felds).
+    /// </summary>
+    public static List<Vec3> Seitlich(IReadOnlyList<Vec3> mitten, Vec3 auge, double blickGieren, IReadOnlyList<TabletPose> flaechen, double radius, double k)
+    {
+        if (flaechen.Count == 0 || mitten.Count == 0) return [.. mitten];
+        var vor = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
+        var rechts = HebeGeste.Rechts(blickGieren);
+        double Winkel(Vec3 p) { var v = p - auge; return Math.Atan2(v.Skalar(rechts), v.Skalar(vor)); }   // waagrecht im Blick, rechts positiv
+        double links0 = double.PositiveInfinity, rechts0 = double.NegativeInfinity;
+        foreach (var e in flaechen.SelectMany(Glas.Ecken)) { var w = Winkel(e); links0 = Math.Min(links0, w); rechts0 = Math.Max(rechts0, w); }
+        var mitte = (links0 + rechts0) / 2;
+        double nachLinks = 0, nachRechts = 0;
+        var seite = new int[mitten.Count];
+        for (int i = 0; i < mitten.Count; i++)
+        {
+            var v = mitten[i] - auge;
+            var waag = Math.Sqrt(v.X * v.X + v.Z * v.Z);
+            var rand = Math.Asin(Math.Clamp((radius + SeitlichRandM) / Math.Max(0.1, waag), 0, 1));   // Rand als Winkel in diesem Abstand
+            var w = Winkel(mitten[i]);
+            if (w < mitte) { seite[i] = -1; nachLinks = Math.Max(nachLinks, w - (links0 - rand)); }
+            else { seite[i] = 1; nachRechts = Math.Max(nachRechts, rechts0 + rand - w); }
+        }
+        var kk = Math.Clamp(k, 0, 1);
+        return [.. mitten.Select((p, i) => DrehenUmAuge(p, auge, (seite[i] < 0 ? -nachLinks : nachRechts) * kk))];
+    }
+
+    /// <summary>Punkt p um die senkrechte Achse durch das Auge drehen (Winkel im Bogenmass, positiv = im Blick nach rechts, d. h. im Uhrzeigersinn von oben).</summary>
+    static Vec3 DrehenUmAuge(Vec3 p, Vec3 auge, double winkel)
+    {
+        if (Math.Abs(winkel) < 1e-12) return p;
+        var v = p - auge;
+        double c = Math.Cos(winkel), s = Math.Sin(winkel);
+        // Blick −z → rechts +x: eine Drehung nach rechts (im Uhrzeigersinn von oben) bringt −z nach +x
+        return auge + new Vec3(v.X * c - v.Z * s, v.Y, v.X * s + v.Z * c);
+    }
 
     /// <summary>
     /// Hineinheben: Fortschritt f (0 … 1) der Geste bzw. der Bewegung danach → Versatz nach unten (m, positiv = tiefer) und Deckkraft je Symbol; jedes steigt etwas

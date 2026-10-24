@@ -97,7 +97,7 @@ sealed partial class QuestApp
 
     /// <summary>
     /// Ein Symbol wurde berührt. «stehen» (Vorgabe; Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf): die App öffnet
-    /// frontal etwas näher vor dem Feld (AppSymbole.FensterVorFeld; am Tisch neben dem Tisch), das Feld bleibt und weicht dahinter zurück. «ausblenden»: die App öffnet,
+    /// frontal etwas näher vor dem Feld (AppSymbole.FensterVorFeld; am Tisch neben dem Tisch), das Feld bleibt und weicht seitlich neben das Fenster aus (Variante «feld_bei_app»; «dahinter» zum Vergleich). «ausblenden»: die App öffnet,
     /// sobald die Symbole ausgeblendet sind.
     /// </summary>
     void SymbolGewaehlt(string id)
@@ -112,7 +112,7 @@ sealed partial class QuestApp
 
     /// <summary>V1a: tiefste Höhe einer Symbolmitte am Sitzungstisch (über der Tischplatte, Raum der Brille), sonst null.</summary>
     double? SymbolUntergrenze() => sitzung.Aktiv && !sitzung.Echt.WartetAufTisch
-        ? sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y + AppSymbole.Durchmesser(GlasMasse.Fuer(bedien.Apps)) / 2 + 0.05
+        ? AppSymbole.Untergrenze(sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y, bedien.Symbole, GlasMasse.Fuer(bedien.Apps))   // Stellschraube symbole.tisch_abstand_m
         : null;
 
     (int Ampel, string Text) VerbindungKurz() => zustand switch
@@ -255,7 +255,9 @@ sealed partial class QuestApp
                     break;
                 }
                 var (_, kurz) = VerbindungKurz();
-                c.Text($"{kurz} · {verbindungText}", 1, 2);
+                // nicht doppelt (Befund Prüfbilder 03: «Verbunden · Verbunden mit …»)
+                var vt = verbindungText;
+                c.Text(vt.StartsWith(kurz, StringComparison.OrdinalIgnoreCase) ? vt : $"{kurz} · {vt}", 1, 2);
                 if (stand is not null) c.Text(sitzung.Aktiv ? $"Sitzungsraum · {sitzung.Ansicht?.Text}" : Einblendung() is { Length: > 0 } o2 ? o2 : $"Geschoss {geschossAmStand?.Kennzeichen}", 2);
                 if (darstellung is not null)
                     c.Text(Z($"{darstellung.GezeichnetNetze} Netze · {darstellung.GezeichnetDreiecke:N0} Dreiecke · {Hz:0} Hz"), 3);
@@ -315,8 +317,18 @@ sealed partial class QuestApp
             GeisterWegwischen(kopf);
         }
         if (!symbole.Sichtbar) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte
-        // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld dahinter zurück und wird gedämpft; schliesst sie, kommt es wieder nach vorn
+        // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld seitlich aus (bzw. «dahinter» zurück); schliesst sie, kehrt es frontal zurück
         symbole.Hinten = apps.Sichtbar && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+        // Variante «feld_bei_app» = «seitlich» (Vorgabe, Christian 24.10.2026): das Feld weicht neben Fenster und Ornamente aus. Während das Fenster weggewischt wird,
+        // bleibt die Lage von vorher (sonst schöbe das nach links gleitende Fenster die linken Symbole weiter); danach kehrt das Feld frontal zurück.
+        if (!apps.Sichtbar) symbole.AppFlaechen = null;
+        else if (!apps.Weggewischt && !(wischStand.Laeuft && wischZielId == "app") && apps.Rahmen is { } ar)
+        {
+            var fl = new List<TabletPose> { ar.Fenster, ar.Griff, ar.Schliessen };
+            if (ar.Ornament is { } orn) fl.Add(orn);
+            if (lauf is not null && karte.Lage is { } kl) fl.Add(kl);
+            symbole.AppFlaechen = fl;
+        }
         if (symbole.Bild(kopfSymbole, Time.Total, Time.Step, symbolListe, hebeStand, bedien, strahlen) is { } gewaehlt) SymbolGewaehlt(gewaehlt);
         // Variante «ausblenden»: die gewählte App öffnet sich, sobald die Symbole ausgeblendet sind
         if (appWahl is { } wahl && !symbole.Sichtbar) { appWahl = null; AppOeffnen(wahl.Id, wahl.Platz); }
@@ -386,7 +398,7 @@ sealed partial class QuestApp
         var p = mitte - links * 0.12;   // Anlauf rechts der Mitte
         // Ziel: Mitte = Start, «Rechts» des Ziels = Richtung des Wischs (nach links; Geisterhand.Bild, Wegwischen)
         var ziel = new TabletPose(p, vor * -1, links, new XVec3(0, 1, 0), 0.1, 0.1);
-        geister.Starten(GeisterGeste.Wegwischen, Time.Total, Geisterhand.VorlageFlach(p, links, new XVec3(0, 1, 0), links: false), ziel);
+        geister.Starten(GeisterGeste.Wegwischen, Time.Total, Geisterhand.VorlageWisch(p, links, vor), ziel);   // schräg zum Blick (nicht auf der Kante)
         // die Hand reicht von 7 cm unter bis 11 cm über ihre Mitte: der Hinweis darunter
         HinweisBei("Nach links wischen: schliessen (rechte Hand offen)", (Vec3)(Vector3)(mitte - new XVec3(0, 0.13, 0)), HinweisArt.Geste,
             SchwebeHinweise.ZeichenJeZeileGeste);

@@ -1200,6 +1200,7 @@ sealed partial class QuestApp
         gemessen++;
         summeBild += Time.Stepf;
         summeRechnen += rechnen;
+        if (gemessen == o.PruefBilder / 2 - 3 && o.BildOrdner is not null) PruefbildVorbereiten();   // V1a: ohne Reste der gescripteten Schritte (Befund Prüfbilder 03)
         if (gemessen == o.PruefBilder / 2 && o.BildOrdner is { } bo)
         {
             // P5a: Prüfbilder beim Begehen – Blick nach vorn (die Apps stehen links daneben) und auf die Apps
@@ -1378,6 +1379,7 @@ sealed partial class QuestApp
         sitzBilder++;
         sitzSumme += Time.Stepf;
         sitzRechnen += rechnen;
+        if (sitzPhase == 0 && (sitzBilder == jePhase / 2 - 3 || sitzBilder == jePhase / 2 + 3) && o.BildOrdner is not null) PruefbildVorbereiten();   // V1a (Befund Prüfbilder 03)
         if (sitzBilder == jePhase / 2 && o.BildOrdner is { } ordner)
         {
             // Prüfbild (--bilder): vom Platz am Tisch auf das Modell, dazu eines schräg von oben
@@ -1428,7 +1430,15 @@ sealed partial class QuestApp
             if (sitzBilder == b0 + 2) pruefHebe = null;
             if (sitzBilder == b0 + 34)
             {
-                if (symbole.Mitte is { } sm) Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung.jpg"), sitzAuge, (Vec3)(Vector3)sm, 1280, 960, 80);
+                if (symbole.Mitte is { } sm)
+                {
+                    Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung.jpg"), sitzAuge, (Vec3)(Vector3)sm, 1280, 960, 80);
+                    // von der Seite, knapp über der Tischplatte waagrecht: die Luft zwischen den untersten Symbolen und der Platte (Befund Prüfbilder 03)
+                    var tischY = sitzung.RaumLage.ZuRef(XrSitzungLogik.TischMitte).Y;
+                    var seite = new XVec3(sm.X, tischY + 0.015, sm.Z);
+                    var rechtsS = HebeGeste.Rechts(symbole.Anker.Gieren);
+                    Renderer.Screenshot(Path.Combine(sy, "symbole_sitzung_seite.jpg"), (Vec3)(Vector3)(seite + rechtsS * 0.9), (Vec3)(Vector3)(seite + new XVec3(0, 0.12, 0)), 1280, 960, 40);
+                }
                 if (letzterHinweisOrt is { } ho) Renderer.Screenshot(Path.Combine(sy, "hinweis_sitzung.jpg"), sitzAuge, (Vec3)(Vector3)ho, 1280, 960, 55);
                 StellschraubeAnwenden("labor.variante.umgebung", JsonDocument.Parse("\"tron\"").RootElement.Clone());   // dunkle Umgebung: dunkle Fassung
             }

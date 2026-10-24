@@ -1,6 +1,7 @@
 using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
+using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hlks.Xr;
 using Hlks.Xr.Bedienung;
@@ -288,11 +289,12 @@ sealed partial class QuestApp
             Directory.CreateDirectory(ordner);
             Renderer.Screenshot(Path.Combine(ordner, name), k.position, (Vec3)(Vector3)z, 1280, 960, fov);
         }
-        if (n == 1) { apps.Ausblenden(Time.Total); pruefHebe = 0; GeisterHeben(k); }
+        if (n == 1) { PruefbildVorbereiten(); apps.Ausblenden(Time.Total); pruefHebe = 0; GeisterHeben(k); }
         if (n <= 30) pruefHebe = n / 30.0 * 0.999;
         if (n == 15) Bild("hebe_halb.jpg", symbole.Mitte, 80);
         if (n == 31) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
         if (n == 33) pruefHebe = null;
+        if (n == 56) PruefbildVorbereiten();   // die Geisterhände der Hebegeste und ihr Hinweis gehören nicht in die folgenden Bilder (Befund Prüfbilder 03)
         if (n == 60) { symbolAnzahl = symbole.Plaetze.Count; Bild("symbole.jpg", symbole.Mitte, 80); glas.SymbolEinstellung = "revit"; }
         if (n == 62) { Bild("symbole_revit.jpg", symbole.Mitte, 80); }
         if (n == 63) glas.SymbolEinstellung = GlasSymbole.SatzStrich;
@@ -329,39 +331,65 @@ sealed partial class QuestApp
             symbole.SimHand = null;
             Hinweis("App «Messen» geöffnet.");
         }
-        // nach der Wahl (Variante «stehen», Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»): die App frontal davor, das Feld dahinter
-        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 30)
+        // nach der Wahl (Variante «stehen», Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»): die App frontal, das Feld weicht seitlich neben
+        // Fenster und Ornamente aus (Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.»)
+        // (die Zeiten in Bildern; bei 7 ms je Bild sind 60 Bilder gut 0.4 s – das Feld ist dann ganz zur Seite gewichen)
+        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 60)
         {
-            Bild("app_nach_wahl.jpg", apps.Rahmen?.Fenster.Mitte, 75);
+            Bild("app_nach_wahl.jpg", apps.Rahmen?.Fenster.Mitte, 90);
             Bild("hinweis_begehen.jpg", letzterHinweisOrt, 55);
         }
-        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 31)
+        if (symbolGewaehltBild > 0 && n == symbolGewaehltBild + 61)
+        {
             symbolAppOffen = apps.Aktiv == "messen" && apps.Sichtbar && symbole.Da == (bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen) && symbole.HintenAnteil > 0.5;
+            feldSeitlich = bedien.Symbole.FeldBeiApp == Varianten.FeldSeitlich && FeldNebenDerApp(new XVec3(k.position.x, k.position.y, k.position.z));
+        }
         // Wegwischen (Christian 24.10.2026: rechte Hand offen, von rechts nach links): zuerst die App (das Vorderste), dann das Symbolfeld; dazwischen die Geisterhand
         var g0 = symbolGewaehltBild;
         if (g0 > 0)
         {
-            if (n >= g0 + 32 && n <= g0 + 52) pruefWisch = 0.2 * (n - g0 - 32) / 20.0;
-            if (n == g0 + 42) { symbolAppWischtHalb = apps.Sichtbar && wischZielId == "app"; Bild("app_wegwischen_halb.jpg", apps.Rahmen?.Fenster.Mitte, 75); }
-            if (n == g0 + 53) { pruefWisch = 0.2; pruefWischEreignis = true; }
-            if (n == g0 + 54) pruefWisch = null;
-            if (n == g0 + 120) symbolAppWeg = !apps.Sichtbar && symbole.Da && symbole.HintenAnteil < 0.5;   // die App ist weg, das Feld kam wieder nach vorn
-            if (n == g0 + 122) GeisterWegwischen(k);
-            if (n >= g0 + 130 && n <= g0 + 160) pruefWisch = 0.2 * (n - g0 - 130) / 30.0;
-            if (n == g0 + 145) { symbolWischtHalb = symbole.Wischt && wischZielId == "symbole"; Bild("wegwischen_halb.jpg", symbole.Mitte, 80); }
-            if (n == g0 + 161) { pruefWisch = 0.2; pruefWischEreignis = true; }
-            if (n == g0 + 162) pruefWisch = null;
+            if (n >= g0 + 62 && n <= g0 + 82) pruefWisch = 0.2 * (n - g0 - 62) / 20.0;
+            if (n == g0 + 72) { symbolAppWischtHalb = apps.Sichtbar && wischZielId == "app"; Bild("app_wegwischen_halb.jpg", apps.Rahmen?.Fenster.Mitte, 90); }
+            if (n == g0 + 83) { pruefWisch = 0.2; pruefWischEreignis = true; }
+            if (n == g0 + 84) pruefWisch = null;
+            if (n == g0 + 150) symbolAppWeg = !apps.Sichtbar && symbole.Da && symbole.HintenAnteil < 0.5;   // die App ist weg, das Feld kehrte frontal zurück
+            if (n == g0 + 152) GeisterWegwischen(k);
+            if (n >= g0 + 160 && n <= g0 + 190) pruefWisch = 0.2 * (n - g0 - 160) / 30.0;
+            if (n == g0 + 175) { symbolWischtHalb = symbole.Wischt && wischZielId == "symbole"; Bild("wegwischen_halb.jpg", symbole.Mitte, 80); }
+            if (n == g0 + 191) { pruefWisch = 0.2; pruefWischEreignis = true; }
+            if (n == g0 + 192) pruefWisch = null;
+            if (n > g0 + 192 && n < g0 + 290 && !symbole.Sichtbar) symbolWeg = true;   // weggewischt (gleitet 0.4 s nach links aus dem Bild)
+            // Variante «feld_bei_app» = «dahinter» (zum Vergleich): Symbole wieder holen, «Messen» wählen – das Feld weicht hinter das Fenster zurück
+            if (n == g0 + 290) { PruefbildVorbereiten(); StellschraubeAnwenden("labor.variante.feld_bei_app", JsonDocument.Parse("\"dahinter\"").RootElement.Clone()); }
+            if (n == g0 + 291) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
+            if (n == g0 + 293) pruefHebe = null;
+            if (n == g0 + 330) SymbolGewaehlt("messen");
+            if (n == g0 + 400)
+            {
+                hinweise.Leeren();
+                var auge = new XVec3(k.position.x, k.position.y, k.position.z);
+                var anzahl = symbole.Plaetze.Count;
+                feldDahinter = symbole.HintenAnteil > 0.9 && anzahl > 0 && symbole.Flaechen.Count >= anzahl
+                    && Enumerable.Range(0, anzahl).All(i => symbole.Flaechen[i].Mitte.Abstand(auge) >= symbole.Plaetze[i].Lage.Mitte.Abstand(auge) + 0.9 * AppSymbole.ZurueckM);
+                Bild("feld_dahinter.jpg", apps.Rahmen?.Fenster.Mitte, 90);
+            }
+            if (n == g0 + 401)
+            {
+                StellschraubeAnwenden("labor.variante.feld_bei_app", JsonDocument.Parse("null").RootElement.Clone());
+                apps.Ausblenden(Time.Total);
+                symbole.Ausblenden(Time.Total);
+            }
         }
-        if (g0 > 0 && n >= g0 + 230 || n > 1400)
+        if (g0 > 0 && n >= g0 + 440 || n > 1800)
         {
-            var weg = !symbole.Sichtbar;
-            var ok = symbolTooltipBild > 0 && symbolHandBild > 0 && g0 > 0 && symbolAppOffen && symbolAppWischtHalb && symbolAppWeg && symbolWischtHalb && weg && symbolAnzahl > 0
-                && glas.Farben is not null;
+            var ok = symbolTooltipBild > 0 && symbolHandBild > 0 && g0 > 0 && symbolAppOffen && symbolAppWischtHalb && symbolAppWeg && symbolWischtHalb && symbolWeg && symbolAnzahl > 0
+                && glas.Farben is not null && feldSeitlich && feldDahinter;
             pruefSymbole = string.Create(CultureInfo.InvariantCulture,
                 $"Symbole={(ok ? "ok" : "FEHLER")} (Hebegeste gedacht: {symbolAnzahl} Symbole im Feld, Tooltip «Messen» nach {symbolTooltipNachS:0.00} s, " +
-                $"Handfläche an «Messen» {(symbolHandBild > 0 ? "berührt" : "nicht berührt")}, App «Messen» offen und Feld dahinter {(symbolAppOffen ? "ja" : "nein")}; " +
+                $"Handfläche an «Messen» {(symbolHandBild > 0 ? "berührt" : "nicht berührt")}, App «Messen» offen {(symbolAppOffen ? "ja" : "nein")}, Feld seitlich neben App und Ornamenten {(feldSeitlich ? "ja" : "nein")}; " +
                 $"Wegwischen: App läuft mit {(symbolAppWischtHalb ? "ja" : "nein")}, App weg und Feld vorn {(symbolAppWeg ? "ja" : "nein")}, Symbole laufen mit " +
-                $"{(symbolWischtHalb ? "ja" : "nein")}, weg {(weg ? "ja" : "nein")}; Hinweise frei schwebend {hinweisGezeichnet}; " +
+                $"{(symbolWischtHalb ? "ja" : "nein")}, weg {(symbolWeg ? "ja" : "nein")}; Variante «dahinter»: Feld zurückgewichen {(feldDahinter ? "ja" : "nein")}; " +
+                $"Hinweise frei schwebend {hinweisGezeichnet}; " +
                 $"Farben {(glas.Farben is null ? "FEHLER " + glas.FarbenFehler : "aus dem Katalog")}, Symbole als Textur {glas.Symbole} im letzten Bild)");
             symbole.SimFinger = null;
             symbole.SimHand = null;
@@ -370,8 +398,33 @@ sealed partial class QuestApp
         }
     }
 
-    bool symbolAppOffen, symbolAppWischtHalb, symbolAppWeg, symbolWischtHalb;
+    bool symbolAppOffen, symbolAppWischtHalb, symbolAppWeg, symbolWischtHalb, symbolWeg, feldSeitlich, feldDahinter;
+
+    /// <summary>
+    /// Steht jedes Symbol im Blick waagrecht neben allen Flächen der App (Fenster, Werkzeugleiste, Griff, Schliessen, Karte)? Je Fläche: die Mitte des Symbols vom Auge
+    /// auf ihre Ebene projiziert liegt mindestens um seinen (projizierten) Radius neben ihr (UeberdecktImBlick vergleicht Hüllrechtecke und meldet bei schräg
+    /// stehenden Scheiben zu viel).
+    /// </summary>
+    bool FeldNebenDerApp(XVec3 auge)
+    {
+        if (symbole.AppFlaechen is not { Count: > 0 } fl || symbole.HintenAnteil < 0.9 || symbole.Plaetze.Count == 0 || symbole.Flaechen.Count < symbole.Plaetze.Count) return false;
+        bool Neben(TabletPose s, TabletPose f) => Glas.AufEbene(s.Mitte, auge, f) is not { } q
+            || Math.Abs((q - f.Mitte).Skalar(f.Rechts)) >= f.B / 2 + s.H / 2 * (q - auge).Laenge / (s.Mitte - auge).Laenge - 0.002;
+        return symbole.Flaechen.Take(symbole.Plaetze.Count).All(s => fl.All(f => Neben(s, f)));
+    }
     int symbolAnzahl, symbolHandBild = -1;
+
+    /// <summary>
+    /// Vor Prüfbildern (Befund Prüfbilder 03): Hinweise, Geisterhände und die Karte einer fertigen Prüfaufgabe aus den gescripteten Schritten davor wegräumen – sie gehören
+    /// nicht in die folgenden Bilder. Eine laufende Aufgabe bleibt.
+    /// </summary>
+    void PruefbildVorbereiten()
+    {
+        hinweise.Leeren();
+        geister.Stoppen();
+        geister2.Stoppen();
+        if (lauf is { Fertig: true } l) { Abschliessen(l, Time.Total); lauf = null; laufEnde = null; markiertesBauteil = null; }   // Messprotokoll einmal (wie nach 5 s)
+    }
 
     /// <summary>Ein Bild lang die Apps nicht zeichnen (Prüfbilder der Messungen und Marker im Raum: der Blick dorthin geht sonst oft durch das Fenster).</summary>
     bool appsBildAus;

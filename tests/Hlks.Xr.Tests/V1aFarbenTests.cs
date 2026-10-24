@@ -75,6 +75,48 @@ public class V1aFarbenTests
         Assert.Equal(k.Apps[AppFarben.VorgabeId], k.Fuer(null));
     }
 
+    static double Abstand(GlasFarbe a, GlasFarbe b) => Math.Sqrt((a.R - b.R) * (a.R - b.R) + (a.G - b.G) * (a.G - b.G) + (a.B - b.B) * (a.B - b.B));
+    static double Buntheit(GlasFarbe f) => Math.Max(f.R, Math.Max(f.G, f.B)) - Math.Min(f.R, Math.Min(f.G, f.B));
+
+    [Fact]
+    public void Dunkle_Fassung_trägt_den_Ton_der_App_und_die_Symbole_bleiben_hell()
+    {
+        // Befund Prüfbilder 03 (Hauptlauf 24.10.2026): «Die Pastelltöne gehen verloren … Die App-Farbe muss auch dunkel erkennbar bleiben.»
+        var k = Katalog();
+        var grund = AppFarben.Hex("#3E4452");
+        foreach (var a in k.Apps.Values)
+        {
+            // Ton dunkel = der helle Akzent mit Deckkraft 0.75 über dem dunklen Grund (einmal berechnet, auf 1/255 gerundet); Akzent dunkel = der Pastellton
+            var t = a.Dunkel.Ton;
+            Nah(t.R, 0.75 * a.Hell.Akzent.R + 0.25 * grund.R, 0.6 / 255);
+            Nah(t.G, 0.75 * a.Hell.Akzent.G + 0.25 * grund.G, 0.6 / 255);
+            Nah(t.B, 0.75 * a.Hell.Akzent.B + 0.25 * grund.B, 0.6 / 255);
+            Assert.Equal(a.Hell.Ton, a.Dunkel.Akzent);
+            Assert.True(Buntheit(t) >= 0.12, $"{a.Id}: Buntheit {Buntheit(t):0.000}");   // farbig (vorher 22 % Pastell: höchstens 0.08)
+        }
+        // die Apps des Felds sind dunkel mindestens so gut zu unterscheiden wie hell
+        var feld = new[] { "status", "etagen", "messen", "marker", "tisch", "ort" };
+        for (int i = 0; i < feld.Length; i++)
+            for (int j = i + 1; j < feld.Length; j++)
+            {
+                FarbFassung Hh(string id) => k.Apps[id].Hell;
+                FarbFassung Dd(string id) => k.Apps[id].Dunkel;
+                Assert.True(Abstand(Dd(feld[i]).Ton, Dd(feld[j]).Ton) >= Abstand(Hh(feld[i]).Ton, Hh(feld[j]).Ton), $"{feld[i]}/{feld[j]}");
+            }
+        // die Symbole: helle Fassung auch in dunkler Umgebung (Pastell-Scheibe, dunkles Symbol), lesbar
+        foreach (var id in feld)
+        {
+            var s = k.Satz(id, GlasStil.HintergrundDunkel, 0.75, 0.42, immerHell: true);
+            Assert.True(s.Hell, id);
+            Assert.Equal(k.Apps[id].Hell.Ton with { A = s.Glas.A }, s.Glas);
+            var wirkt = AppFarben.Ueber(s.Glas, GlasStil.HintergrundDunkel);
+            Assert.True(AppFarben.Kontrast(wirkt, s.Text) >= 4.5, id);
+            Assert.True((wirkt.R + wirkt.G + wirkt.B) / 3 >= AppFarben.HellMindestens - 1e-9, id);              // wirkt hell …
+            Assert.True(Buntheit(wirkt) >= 0.7 * Buntheit(k.Apps[id].Hell.Ton), id);                           // … und im Ton der App, nicht grau
+            Assert.False(k.Satz(id, GlasStil.HintergrundDunkel, 0.75, 0.42).Hell);   // ohne: die Fenster in der dunklen Fassung
+        }
+    }
+
     [Fact]
     public void Katalog_wird_streng_gelesen()
     {

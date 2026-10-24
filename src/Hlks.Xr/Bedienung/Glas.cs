@@ -495,6 +495,34 @@ public static class Glas
         return ebene with { Mitte = mitte + ebene.Rechts * ((s.X0 + s.X1) / 2) + ebene.Oben * ((s.Y0 + s.Y1) / 2), B = s.X1 - s.X0 + 2 * rand, H = s.Y1 - s.Y0 + 2 * rand };
     }
 
+    /// <summary>
+    /// Liegt p vom Auge aus gesehen HINTER der Fläche f (innerhalb ihres Umrisses plus rand, weiter weg als ihre Ebene)? Für Dinge im Modell hinter einem Fenster bzw.
+    /// der Karte: sie treten zurück (Befund Prüfbilder 03: der Kopf eines Problem-Markers hinter dem Fenster leuchtete in der Lücke zwischen Karte und Fenster).
+    /// </summary>
+    public static bool HinterFlaeche(Vec3 p, Vec3 auge, TabletPose f, double rand = 0)
+    {
+        if (AufEbene(p, auge, f) is not { } q) return false;
+        if ((p - auge).Laenge <= (q - auge).Laenge) return false;   // vor der Fläche (oder auf ihr)
+        var w = q - f.Mitte;
+        return Math.Abs(w.Skalar(f.Rechts)) <= f.B / 2 + rand && Math.Abs(w.Skalar(f.Oben)) <= f.H / 2 + rand;
+    }
+
+    /// <summary>
+    /// Liegt p im Blick hinter der Bedienung (Fenster mit Leiste, Griff, Schliessen; Karte)? Hinter einer der Flächen (mit rand, m, in ihrer Ebene) oder im Blick
+    /// innerhalb der Hülle aller Flächen und weiter weg als jede ihrer Ecken – so zählt auch die Lücke zwischen Karte und Fenster (Befund Prüfbilder 03). Die Hülle
+    /// allein genügt nicht: sie steht senkrecht zum Blick auf ihre Mitte und liegt am Rand weiter weg als das Fenster.
+    /// </summary>
+    public static bool HinterBedienung(Vec3 p, Vec3 auge, IReadOnlyList<TabletPose> flaechen, double rand = 0.02)
+    {
+        if (flaechen.Count == 0) return false;
+        foreach (var f in flaechen) if (HinterFlaeche(p, auge, f, rand)) return true;
+        var ecken = flaechen.SelectMany(Ecken).ToList();
+        if ((p - auge).Laenge <= ecken.Max(e => (e - auge).Laenge)) return false;
+        if (HuelleImBlick(ecken, auge) is not { } h || AufEbene(p, auge, h) is not { } q) return false;
+        var w = q - h.Mitte;
+        return Math.Abs(w.Skalar(h.Rechts)) <= h.B / 2 && Math.Abs(w.Skalar(h.Oben)) <= h.H / 2;
+    }
+
     /// <summary>Höchstens so viele Zeilen je Seite einer Liste, wenn vorher schon belegt Zeilen stehen (mindestens 1).</summary>
     public static int JeSeite(int frei) => Math.Max(1, frei);
 

@@ -16,16 +16,35 @@ namespace Hlks.Quest;
 /// Symbole (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): die Symbole von KICAD als Texturen (Assets/symbole, werkzeuge/quest_symbole.mjs), Strich
 /// in der Farbe der Schrift getönt, Revit mit eigenen Farben (Benutzereinstellung «oberflaeche.symbole» über «willkommen», <see cref="SymbolEinstellung"/>).
 /// Kosten: je Fläche ein Zeichenaufruf mit 4 Ecken (Netze je Grösse zwischengespeichert); je Symbol ein Viereck mit Textur; Text über Text.Add (gesammelt von StereoKit).
+/// Schichten (<see cref="Schicht"/>; Befund Prüfbilder 03: Wände schnitten Symbole und die Karte an): die Bedienung (Symbolfeld, Fenster, Karte, Tooltips) zeichnet
+/// ohne Tiefentest gegen das Modell, in fester Reihenfolge – erst das Feld, dann Fenster und Karte, dann die Tooltips, danach die Hände (Tiefentest gegen die Bedienung,
+/// <see cref="HandReihe"/>); innerhalb einer Schicht Schatten, Leuchten, Glas, Knöpfe (drei Stufen übereinander), Zeichen, Schrift. Das Glas schreibt die Tiefe, so
+/// verdeckt es die Hände dahinter. Die Welt (Bodenplatte am Tisch, Beschriftungen im Modell) zeichnet wie bisher mit Tiefentest.
 /// </summary>
 sealed class GlasZeichner
 {
-    readonly Material? glas, duenn, schatten, leuchten;
-    readonly Material ersatz;
+    /// <summary>Wo gezeichnet wird: im Modell (mit Tiefentest) bzw. als Bedienung über dem Modell (ohne Tiefentest gegen das Modell) in dieser Reihenfolge.</summary>
+    public enum GlasSchicht { Welt, Feld, Vorn, Oben }
+
+    // Reihenfolge (QueueOffset) je Schicht: Schatten, Leuchten, Glas, Knopf (Stufe 0, 1, 2), Zeichen (Symbol, Punkt, Linie, Ring), Schrift (Welt: Vorgabe von StereoKit)
+    static readonly int[][] Reihe = [[8, 9, 10, 11, 11, 11, 12, 0], [1, 2, 3, 4, 4, 4, 5, 6], [13, 14, 15, 16, 17, 18, 19, 20], [21, 21, 22, 23, 23, 23, 24, 25]];
+    /// <summary>Die Hände zeichnen nach der Bedienung (Tiefentest gegen ihr Glas); die Geisterhände danach (KomfortAnzeigen).</summary>
+    public const int HandReihe = 27, GeisterReihe = 28;
+
+    readonly Material?[] glas = new Material?[4], schatten = new Material?[4], leuchten = new Material?[4];
+    readonly Material?[,] duenn = new Material?[4, 3];
+    readonly Material[] ersatz = new Material[4], punkt = new Material[4];
+    readonly Material?[] schriftMaterial = new Material?[4];
     readonly Dictionary<(int, int, int, int), Mesh> netze = [];
-    readonly Dictionary<(int, int, int), TextStyle> stile = [];
-    readonly Dictionary<string, Material> symbolMaterial = new(StringComparer.Ordinal);
+    readonly Dictionary<(int, int, int, int), TextStyle> stile = [];
+    readonly Dictionary<(string, int), Material> symbolMaterial = [];
+    readonly Dictionary<string, Tex> texturen = new(StringComparer.Ordinal);
+    readonly Dictionary<int, Mesh> ringe = [];
     readonly Mesh symbolViereck;
     readonly Font? schrift;
+    /// <summary>Die Schicht, in die gerade gezeichnet wird (die Aufrufer setzen sie und stellen danach <see cref="GlasSchicht.Welt"/> wieder her).</summary>
+    public GlasSchicht Schicht { get; set; } = GlasSchicht.Welt;
+    int L => (int)Schicht;
     public bool MitShader { get; }
     /// <summary>Gezeichnete Flächen im letzten Bild (Protokoll: Aufrufe).</summary>
     public int Flaechen { get; private set; }
@@ -45,25 +64,49 @@ sealed class GlasZeichner
     {
         var s = Shader.FromFile("glas.hlsl");
         MitShader = s is not null;
-        Material M(int queue, float art, float glanz, float weich, float rand)
+        Material M(int queue, float art, float glanz, float weich, float rand, bool flaeche, bool immer)
         {
             var m = new Material(s!) { Transparency = Transparency.Blend, DepthWrite = false, FaceCull = Cull.None, QueueOffset = queue };
-            if (art == 0 && queue == 10) m.DepthWrite = true;   // die Glasfläche verdeckt Weltobjekte dahinter (Befund Prüfbild 24.10.2026); aussen verwirft der Shader
+            if (flaeche) m.DepthWrite = true;   // die Glasfläche verdeckt Weltobjekte bzw. Hände dahinter (Befund Prüfbild 24.10.2026); aussen verwirft der Shader
+            if (immer) m.DepthTest = DepthTest.Always;
             m.SetVector("art", new Vec4(art, glanz, weich, rand));
             return m;
         }
-        if (s is not null)
+        for (int l = 0; l < 4; l++)
         {
-            schatten = M(8, 1, 0, 0.025f, 0);
-            glas = M(10, 0, (float)GlasStil.Glanz, 0, 0.06f);
-            duenn = M(11, 0, 0.12f, 0, 0.04f);
-            leuchten = M(9, 2, 0, 0.012f, 0);
+            var q = Reihe[l];
+            var immer = l != (int)GlasSchicht.Welt;
+            if (s is not null)
+            {
+                schatten[l] = M(q[0], 1, 0, 0.025f, 0, false, immer);
+                leuchten[l] = M(q[1], 2, 0, 0.012f, 0, false, immer);
+                glas[l] = M(q[2], 0, (float)GlasStil.Glanz, 0, 0.06f, true, immer);
+                for (int k = 0; k < 3; k++) duenn[l, k] = M(q[3 + k], 0, 0.12f, 0, 0.04f, false, immer);
+            }
+            ersatz[l] = Material.Unlit.Copy();
+            ersatz[l].Transparency = Transparency.Blend;
+            ersatz[l].DepthWrite = false;
+            ersatz[l].QueueOffset = q[2];
+            punkt[l] = Material.Unlit.Copy();
+            punkt[l].Transparency = Transparency.Blend;
+            punkt[l].DepthWrite = false;
+            punkt[l].FaceCull = Cull.None;
+            punkt[l].QueueOffset = q[6];
+            if (immer)
+            {
+                ersatz[l].DepthTest = DepthTest.Always;
+                punkt[l].DepthTest = DepthTest.Always;
+                var f = Default.MaterialFont.Copy();
+                f.DepthTest = DepthTest.Always;
+                f.QueueOffset = q[7];
+                schriftMaterial[l] = f;
+            }
         }
-        else Log.Warn("Shader glas.hlsl fehlt – die Apps zeichnen ohne Glas.");
-        ersatz = Material.Unlit.Copy();
-        ersatz.Transparency = Transparency.Blend;
-        ersatz.DepthWrite = false;
-        ersatz.QueueOffset = 10;
+        if (s is null) Log.Warn("Shader glas.hlsl fehlt – die Apps zeichnen ohne Glas.");
+        // die Hände zeichnen nach der Bedienung: sonst übermalte das Glas (ohne Tiefentest gegen das Modell) eine Hand davor
+        var hand = Default.MaterialHand.Copy();
+        hand.QueueOffset = HandReihe;
+        Input.HandMaterial(Handed.Max, hand);
         // mittlerer Schnitt der Systemschrift (HIG: «mittlere bis halbfette Schnitte, nie dünn»): Windows Segoe UI Semibold, Android Roboto Medium; sonst die Vorgabe
         foreach (var datei in new[] { @"C:\Windows\Fonts\segoeuisb.ttf", "/system/fonts/Roboto-Medium.ttf", "/system/fonts/NotoSans-Medium.ttf" })
         {
@@ -102,12 +145,12 @@ sealed class GlasZeichner
     /// <summary>Gilt die helle Fassung (dunkle Schrift)?</summary>
     public bool Hell => Farben?.IstHell(hintergrund) ?? false;
 
-    /// <summary>Die Farben dieses Bildes für die App id (Katalog; ohne Katalog neutral wie GlasStil).</summary>
-    public GlasSatz Satz(string? id)
+    /// <summary>Die Farben dieses Bildes für die App id (Katalog; ohne Katalog neutral wie GlasStil); immerHell: die helle Fassung auch in dunkler Umgebung (Symbole).</summary>
+    public GlasSatz Satz(string? id, bool immerHell = false)
     {
-        var k = id ?? AppFarben.VorgabeId;
+        var k = (id ?? AppFarben.VorgabeId) + (immerHell ? "|hell" : "");
         if (saetze.TryGetValue(k, out var s)) return s;
-        s = Farben?.Satz(id, hintergrund, deckkraft, zielDunkel)
+        s = Farben?.Satz(id, hintergrund, deckkraft, zielDunkel, immerHell)
             ?? new GlasSatz(GlasStil.Glas, GlasStil.Ein, GlasStil.TextPrimaer, GlasStil.TextSekundaer, GlasStil.TextTertiaer, GlasStil.Duenn, GlasStil.DuennNah,
                 GlasStil.DuennGedrueckt, GlasStil.Ein, GlasStil.TextAufEin, false);
         saetze[k] = s;
@@ -136,41 +179,91 @@ sealed class GlasZeichner
     public void Flaeche(TabletPose p, double r, GlasFarbe farbe, double skala = 1, bool mitSchatten = true)
     {
         var t = Matrix.TRS(S(p.Mitte), Drehung(p), (float)skala);
-        if (glas is null) { Mesh.GenerateRoundedCube(new Vec3((float)p.B, (float)p.H, 0.004f), (float)Math.Min(r, Math.Min(p.B, p.H) / 2)).Draw(ersatz, t, Farbe(farbe)); flaechenBild++; return; }
-        if (mitSchatten && schatten is not null)
+        if (glas[L] is not { } g) { Mesh.GenerateRoundedCube(new Vec3((float)p.B, (float)p.H, 0.004f), (float)Math.Min(r, Math.Min(p.B, p.H) / 2)).Draw(ersatz[L], t, Farbe(farbe)); flaechenBild++; return; }
+        if (mitSchatten && schatten[L] is { } sm)
         {
             // weicher Schatten etwas tiefer und dahinter
             var ts = Matrix.TRS(S(p.Mitte - p.Oben * 0.01 - p.Normale * 0.004), Drehung(p), (float)skala);
-            Netz(p.B, p.H, r, 0.03).Draw(schatten, ts, Farbe(GlasStil.Schatten with { A = GlasStil.Schatten.A * Math.Min(1, farbe.A / Math.Max(0.01, GlasStil.Glas.A)) }));
+            Netz(p.B, p.H, r, 0.03).Draw(sm, ts, Farbe(GlasStil.Schatten with { A = GlasStil.Schatten.A * Math.Min(1, farbe.A / Math.Max(0.01, GlasStil.Glas.A)) }));
             flaechenBild++;
         }
-        Netz(p.B, p.H, r, 0.003).Draw(glas, t, Farbe(farbe));
+        Netz(p.B, p.H, r, 0.003).Draw(g, t, Farbe(farbe));
         flaechenBild++;
     }
 
-    /// <summary>Knopf auf dem Glas («thin material»): Form Kreis, Kapsel (Radius halbe Höhe) bzw. abgerundetes Rechteck (12 pt).</summary>
-    public void Knopf(TabletPose p, GlasForm form, GlasFarbe farbe, double ptM, double skala = 1)
+    /// <summary>
+    /// Knopf auf dem Glas («thin material»): Form Kreis, Kapsel (Radius halbe Höhe) bzw. abgerundetes Rechteck (12 pt). stufe 0 … 2: übereinanderliegende Knöpfe
+    /// (Eintrag, darauf der Schalter, darauf sein Knopf) in dieser Reihenfolge.
+    /// </summary>
+    public void Knopf(TabletPose p, GlasForm form, GlasFarbe farbe, double ptM, double skala = 1, int stufe = 0)
     {
         var r = form == GlasForm.Rechteck ? 12 * ptM : Math.Min(p.B, p.H) / 2;
         var t = Matrix.TRS(S(p.Mitte), Drehung(p), (float)skala);
-        if (duenn is null) { Mesh.GenerateRoundedCube(new Vec3((float)p.B, (float)p.H, 0.003f), (float)r).Draw(ersatz, t, Farbe(farbe)); flaechenBild++; return; }
-        Netz(p.B, p.H, r, 0.002).Draw(duenn, t, Farbe(farbe));
+        if (duenn[L, Math.Clamp(stufe, 0, 2)] is not { } d) { Mesh.GenerateRoundedCube(new Vec3((float)p.B, (float)p.H, 0.003f), (float)r).Draw(ersatz[L], t, Farbe(farbe)); flaechenBild++; return; }
+        Netz(p.B, p.H, r, 0.002).Draw(d, t, Farbe(farbe));
         flaechenBild++;
     }
 
     /// <summary>Leuchten am Rand eines Rechtecks (Bodenplatte des Modells am Tisch, «gentle glow … when people look at it»).</summary>
     public void Leuchten(TabletPose p, double r, GlasFarbe farbe)
     {
-        if (leuchten is null) return;
-        Netz(p.B, p.H, r, 0.04).Draw(leuchten, Matrix.TR(S(p.Mitte), Drehung(p)), Farbe(farbe));
+        if (leuchten[L] is not { } l) return;
+        Netz(p.B, p.H, r, 0.04).Draw(l, Matrix.TR(S(p.Mitte), Drehung(p)), Farbe(farbe));
         flaechenBild++;
+    }
+
+    /// <summary>Punkt (Kugel, Durchmesser m) in der Schicht, z. B. Ampel oder Zeiger auf einem Knopf.</summary>
+    public void Punkt(XVec3 ort, double durchmesser, GlasFarbe farbe) => Mesh.Sphere.Draw(punkt[L], Matrix.TS(S(ort), (float)durchmesser), Farbe(farbe));
+
+    /// <summary>Feine Linie (schmaler Quader, Dicke m) in der Schicht, z. B. der Zeiger von der Fingerspitze zum Ziel.</summary>
+    public void Linie(XVec3 von, XVec3 bis, double dicke, GlasFarbe farbe)
+    {
+        var d = bis - von;
+        var l = d.Laenge;
+        if (l < 1e-5 || farbe.A <= 0.01) return;
+        var m = XVec3.Mitte(von, bis);
+        Mesh.Cube.Draw(punkt[L], Matrix.TRS(S(m), Quat.LookDir(S(d * (1 / l))), new Vec3((float)dicke, (float)dicke, (float)l)), Farbe(farbe));
+    }
+
+    /// <summary>Schmaler Ring um die Mitte der Fläche (Radius r, Dicke m), 2.5 mm vor ihr, in der Schicht.</summary>
+    public void Ring(TabletPose p, double r, double dicke, GlasFarbe farbe)
+    {
+        if (farbe.A <= 0.01 || r <= 0) return;
+        var innen = Math.Clamp(1 - dicke / r, 0.5, 0.995);
+        var k = (int)Math.Round(innen * 1000);
+        if (!ringe.TryGetValue(k, out var netz))
+        {
+            const int n = 48;
+            var ecken = new Vertex[2 * n];
+            var ind = new uint[6 * n];
+            for (int i = 0; i < n; i++)
+            {
+                var w = 2 * Math.PI * i / n;
+                float c = (float)Math.Cos(w), s = (float)Math.Sin(w);
+                ecken[2 * i] = new Vertex(new Vec3(c, s, 0), new Vec3(0, 0, 1), Vec2.Zero, Color32.White);
+                ecken[2 * i + 1] = new Vertex(new Vec3(c * (float)innen, s * (float)innen, 0), new Vec3(0, 0, 1), Vec2.Zero, Color32.White);
+                uint a = (uint)(2 * i), b = (uint)(2 * i + 1), a2 = (uint)((2 * i + 2) % (2 * n)), b2 = (uint)((2 * i + 3) % (2 * n));
+                ind[6 * i] = a; ind[6 * i + 1] = b; ind[6 * i + 2] = a2; ind[6 * i + 3] = a2; ind[6 * i + 4] = b; ind[6 * i + 5] = b2;
+            }
+            netz = new Mesh();
+            netz.SetData(ecken, ind);
+            ringe[k] = netz;
+        }
+        var o = p.Mitte + p.Normale * 0.0025;
+        var g = (float)r;
+        Matrix4x4 t = new((float)p.Rechts.X * g, (float)p.Rechts.Y * g, (float)p.Rechts.Z * g, 0, (float)p.Oben.X * g, (float)p.Oben.Y * g, (float)p.Oben.Z * g, 0,
+            (float)p.Normale.X, (float)p.Normale.Y, (float)p.Normale.Z, 0, (float)o.X, (float)o.Y, (float)o.Z, 1);
+        netz.Draw(punkt[L], t, Farbe(farbe));
     }
 
     TextStyle Stil(double hoehe, GlasFarbe f)
     {
-        var k = ((int)Math.Round(hoehe * 10000), (int)Math.Round(f.A * 100), ((int)(f.R * 255) << 16) | ((int)(f.G * 255) << 8) | (int)(f.B * 255));   // Farbe ganz im Schlüssel
+        var k = (L, (int)Math.Round(hoehe * 10000), (int)Math.Round(f.A * 100), ((int)(f.R * 255) << 16) | ((int)(f.G * 255) << 8) | (int)(f.B * 255));   // Farbe ganz im Schlüssel
         if (!stile.TryGetValue(k, out var s))
-            stile[k] = s = Text.MakeStyle(schrift ?? Default.Font, (float)hoehe, new Color((float)f.R, (float)f.G, (float)f.B, (float)f.A));
+        {
+            var c = new Color((float)f.R, (float)f.G, (float)f.B, (float)f.A);
+            stile[k] = s = schriftMaterial[L] is { } mat ? Text.MakeStyle(schrift ?? Default.Font, (float)hoehe, mat, c) : Text.MakeStyle(schrift ?? Default.Font, (float)hoehe, c);
+        }
         return s;
     }
 
@@ -219,16 +312,21 @@ sealed class GlasZeichner
     /// <summary>Material mit der Textur eines Symbols (zwischengespeichert); die Textur lädt StereoKit aus Assets (am PC neben der DLL, auf der Brille aus der APK).</summary>
     Material SymbolMaterial(string datei)
     {
-        if (symbolMaterial.TryGetValue(datei, out var m)) return m;
-        var tex = Tex.FromFile(datei);
-        tex.AddressMode = TexAddress.Clamp;
+        if (symbolMaterial.TryGetValue((datei, L), out var m)) return m;
+        if (!texturen.TryGetValue(datei, out var tex))
+        {
+            tex = Tex.FromFile(datei);
+            tex.AddressMode = TexAddress.Clamp;
+            texturen[datei] = tex;
+        }
         m = Material.Unlit.Copy();
         m[MatParamName.DiffuseTex] = tex;
         m.Transparency = Transparency.Blend;
         m.DepthWrite = false;
         m.FaceCull = Cull.None;
-        m.QueueOffset = 12;   // nach dem Glas (10) und den Knöpfen (11)
-        symbolMaterial[datei] = m;
+        m.QueueOffset = Reihe[L][6];   // nach dem Glas und den Knöpfen der Schicht
+        if (Schicht != GlasSchicht.Welt) m.DepthTest = DepthTest.Always;
+        symbolMaterial[(datei, L)] = m;
         return m;
     }
 

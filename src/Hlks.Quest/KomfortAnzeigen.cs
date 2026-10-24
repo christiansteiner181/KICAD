@@ -25,7 +25,7 @@ sealed class GeisterHand
         material = Material.Unlit.Copy();
         material.Transparency = Transparency.Blend;
         material.DepthWrite = false;
-        material.QueueOffset = 20;
+        material.QueueOffset = GlasZeichner.GeisterReihe;   // nach der Bedienung (GlasZeichner, ohne Tiefentest gegen das Modell) und den Händen
     }
 
     public void Starten(GeisterGeste geste, double t, IReadOnlyDictionary<string, XVec3> form, TabletPose ziel)
@@ -58,15 +58,19 @@ sealed class GeisterHand
         Mitte = bild.Gelenke.Values.Aggregate(XVec3.Null, (s, p) => s + p) * (1.0 / Math.Max(1, bild.Gelenke.Count));
     }
 
-    /// <summary>Eine Hand einmal zeichnen (Gelenke als Kugeln, Knochen als Linien), z. B. die gedachte Hand des Prüflaufs am Zeiger.</summary>
+    /// <summary>
+    /// Eine Hand einmal zeichnen (Gelenke als Kugeln, Knochen als schmale Quader), z. B. die gedachte Hand des Prüflaufs am Zeiger. Die Knochen sind Netze statt Linien,
+    /// damit sie in derselben Reihenfolge nach der Bedienung zeichnen (Linien übermalte das Glas, GlasZeichner.Schicht).
+    /// </summary>
     public void Form(IReadOnlyDictionary<string, XVec3> gelenke, double deckkraft)
     {
         var alpha = (float)deckkraft;
         static Vec3 S(XVec3 v) => new((float)v.X, (float)v.Y, (float)v.Z);
         foreach (var p in gelenke.Values) Mesh.Sphere.Draw(material, Matrix.TS(S(p), 0.011f), new Color(0.75f, 0.95f, 1f, alpha));
-        var c = new Color32(190, 240, 255, (byte)(255 * alpha));
+        var c = new Color(0.75f, 0.95f, 1f, alpha * 0.9f);   // wie die Gelenke
         foreach (var (x, y) in Geisterhand.Knochen)
-            if (gelenke.TryGetValue(x, out var pa) && gelenke.TryGetValue(y, out var pb)) Lines.Add(S(pa), S(pb), c, 0.006f);
+            if (gelenke.TryGetValue(x, out var pa) && gelenke.TryGetValue(y, out var pb) && pa.Abstand(pb) > 1e-4)
+                Mesh.Cube.Draw(material, Matrix.TRS(S(XVec3.Mitte(pa, pb)), Quat.LookDir(S((pb - pa).Einheit())), new Vec3(0.005f, 0.005f, (float)pa.Abstand(pb))), c);
     }
 }
 

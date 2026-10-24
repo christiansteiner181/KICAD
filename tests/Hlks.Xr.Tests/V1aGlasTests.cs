@@ -270,4 +270,33 @@ public class V1aGlasTests
         Assert.Null(e.MitStellschraube("labor.variante.umgebung", W("\"wald\"")));
         Assert.Equal(e, tron.MitStellschraube("labor.variante.umgebung", W("null")));
     }
+
+    [Fact]
+    public void Was_im_Blick_hinter_einem_Fenster_liegt_tritt_zurück()
+    {
+        // Befund Prüfbilder 03: der Kopf eines Problem-Markers hinter dem Fenster leuchtete in der Lücke zwischen Karte und Fenster
+        var auge = V(0, 1.6, 0);
+        var fenster = Glas.ImBlick(V(0, 1.4, -0.45), auge, 0.32, 0.4);
+        Assert.True(Glas.HinterFlaeche(V(0, 1.2, -2), auge, fenster));                 // dahinter, im Umriss (im Blick)
+        Assert.True(Glas.HinterFlaeche(V(0.3, 1.0, -1.5), auge, fenster));
+        Assert.False(Glas.HinterFlaeche(V(0, 1.45, -0.3), auge, fenster));             // davor
+        Assert.False(Glas.HinterFlaeche(V(1.5, 1.4, -2), auge, fenster));              // daneben
+        Assert.False(Glas.HinterFlaeche(V(0, 1.4, 1), auge, fenster));                 // hinter dem Auge
+        Assert.True(Glas.HinterFlaeche(V(0.66, 1.4, -2), auge, fenster, 0.02));        // knapp neben dem Rand (im Blick 1 cm): mit Rand dahinter
+        Assert.False(Glas.HinterFlaeche(V(0.66, 1.4, -2), auge, fenster));
+        // Fenster und Karte darüber mit einer Lücke: in der Lücke dahinter zählt, davor nicht; knapp über der Kante (mit Rand) zählt; weit daneben nicht
+        var karte = Glas.ImBlick(V(0, 1.4 + 0.2 + 0.015 + 0.06, -0.45), auge, 0.32, 0.12);
+        var bedienung = new[] { fenster, karte };
+        var oben = fenster.Mitte + fenster.Oben * (fenster.H / 2);                 // Oberkante des Fensters
+        var luecke = Vec3.Mitte(oben, karte.Mitte - karte.Oben * (karte.H / 2));   // zwischen Fenster und Karte
+        var hinterLuecke = auge + (luecke - auge) * 3;
+        Assert.False(Glas.HinterFlaeche(hinterLuecke, auge, fenster) || Glas.HinterFlaeche(hinterLuecke, auge, karte));   // keine einzelne Fläche …
+        Assert.True(Glas.HinterBedienung(hinterLuecke, auge, bedienung, 0));                                               // … aber die Bedienung als Ganzes
+        Assert.False(Glas.HinterBedienung(auge + (luecke - auge) * 0.8, auge, bedienung, 0));                               // davor
+        var ueberKante = auge + (oben + fenster.Oben * 0.01 - auge) * 1.4;
+        Assert.True(Glas.HinterBedienung(ueberKante, auge, [fenster], 0.02));                                              // knapp über der Kante, dahinter
+        Assert.False(Glas.HinterBedienung(ueberKante, auge, [fenster], 0));
+        Assert.False(Glas.HinterBedienung(V(1.5, 1.4, -2), auge, bedienung));
+        Assert.False(Glas.HinterBedienung(V(0, 1.2, -2), auge, []));
+    }
 }

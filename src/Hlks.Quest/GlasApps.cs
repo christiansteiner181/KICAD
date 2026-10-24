@@ -251,7 +251,10 @@ sealed class GlasApps : IWegwischbar
                 aus.Add(new Ereignis(art, id));
             }
         }
-        Zeichnen(r, inhalt, ornament, ziele, hover, naehe, t, dt, deck, groesse, e);
+        // Schicht «Vorn»: vor dem Modell und dem Symbolfeld (Wände schneiden das Fenster nicht an, Befund Prüfbilder 03); Tooltips «Oben»
+        z.Schicht = GlasZeichner.GlasSchicht.Vorn;
+        try { Zeichnen(r, inhalt, ornament, ziele, hover, naehe, t, dt, deck, groesse, e); }
+        finally { z.Schicht = GlasZeichner.GlasSchicht.Welt; }
         return aus;
     }
 
@@ -308,9 +311,9 @@ sealed class GlasApps : IWegwischbar
                 // Schalter rechts: Kapsel, ein = Akzent der App mit Knopf rechts
                 var sb = m.M(46); var sh = m.M(26);
                 var sl = lage with { Mitte = lage.Mitte + lage.Rechts * (el.B / 2 - m.M(14) - sb / 2) + lage.Normale * 0.001, B = sb, H = sh };
-                z.Knopf(sl, GlasForm.Kapsel, Mal(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt);
+                z.Knopf(sl, GlasForm.Kapsel, Mal(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt, stufe: 1);
                 var kn = sl with { Mitte = sl.Mitte + sl.Rechts * ((el.Ein ? 1 : -1) * (sb / 2 - sh / 2)) + sl.Normale * 0.001, B = sh * 0.84, H = sh * 0.84 };
-                z.Knopf(kn, GlasForm.Kreis, Mal(GlasStil.Ein), m.Pt);
+                z.Knopf(kn, GlasForm.Kreis, Mal(GlasStil.Ein), m.Pt, stufe: 2);
             }
             var zeile = el.Zeile is { Length: > 0 };
             var breite = el.B - (links + el.B / 2) - m.M(14) - (el.Art == GlasArt.Schalter ? m.M(60) : 0);
@@ -327,7 +330,7 @@ sealed class GlasApps : IWegwischbar
             if (el.Ampel > 0)
             {
                 var c = el.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
-                Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003), 0.008f), GlasZeichner.Farbe(c with { A = deck }));
+                z.Punkt(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003, 0.008, c with { A = deck });
             }
         }
         // Werkzeugleiste (Ornament)
@@ -360,13 +363,15 @@ sealed class GlasApps : IWegwischbar
         foreach (var zb in zeigerBild)
         {
             if (zb is null || zb.Index >= ziele.Count) continue;
-            Lines.Add(S(zb.Von), S(zb.Punkt), new Color32((byte)(zf.R * 255), (byte)(zf.G * 255), (byte)(zf.B * 255), (byte)(200 * deck)), 0.0015f);
-            Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(zb.Punkt), 0.005f), GlasZeichner.Farbe(zf with { A = deck }));
+            z.Linie(zb.Von, zb.Punkt, 0.0015, zf with { A = 0.78 * deck });
+            z.Punkt(zb.Punkt, 0.005, zf with { A = deck });
             if (zb.Tooltip <= 0.01 || TooltipText(ziele[zb.Index].Art, ziele[zb.Index].Id) is not { } name) continue;
             var tl = AppSymbole.TooltipLage(ziele[zb.Index].Lage, name, m);
+            z.Schicht = GlasZeichner.GlasSchicht.Oben;
             z.Flaeche(tl, tl.H / 2, s0.Glas with { A = Math.Min(1, s0.Glas.A + 0.1) * zb.Tooltip }, mitSchatten: false);
             z.Schrift(name, tl, 0, m.Schrift(GlasStil.KleinPt) * 0.65, tl.B, tl.H, m.Schrift(GlasStil.KleinPt), s0.Text with { A = zb.Tooltip }, TextAlign.TopCenter,
                 umbrechen: false);
+            z.Schicht = GlasZeichner.GlasSchicht.Vorn;
             Belegt.Add(tl);
             Tooltip = (name, zb.Tooltip);
         }

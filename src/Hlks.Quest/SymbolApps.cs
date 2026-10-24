@@ -13,8 +13,8 @@ namespace Hlks.Quest;
 /// ein; nach der Geste bleiben sie im Raum stehen. Anwahl durch Berührung mit der GANZEN Hand («die app berührung soll mit der ganzen hand erfolgen und nicht nur mit
 /// einem finger»): Handfläche, Handrücken oder ein Finger; während Hebegeste und Wegwischen und kurz danach zählt keine Berührung; bei mehreren gilt das am tiefsten
 /// berührte. Dann Leuchten und Ton, und die Anwendung öffnet die App (sie fragt <see cref="Bild"/> nach der Wahl). Danach (Christian 24.10.2026: «werden die aps
-/// hineingehoben bleiben diese stehen»; Variante «symbolwahl»): «stehen» (Vorgabe) – die App öffnet frontal etwas näher, das Feld weicht dahinter zurück und wird
-/// gedämpft (<see cref="Hinten"/>), schliesst die App, kommt es wieder nach vorn; «ausblenden» – die Symbole blenden schnell aus und die App öffnet sich danach.
+/// hineingehoben bleiben diese stehen»; Variante «symbolwahl»): «stehen» (Vorgabe) – die App öffnet frontal etwas näher, das Feld weicht seitlich neben sie aus (Variante «feld_bei_app»; zum Vergleich dahinter zurück und
+/// gedämpft; <see cref="Hinten"/>), schliesst die App, kehrt es frontal zurück; «ausblenden» – die Symbole blenden schnell aus und die App öffnet sich danach.
 /// Ausgeblendet werden sie sonst nur durch das Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; Wartezeit «symbole.wartezeit_s» Vorgabe 0 = aus). Ein gestreckter Zeigefinger nahe an einem Symbol zeigt
 /// einen Punkt darauf und eine feine Linie von der Fingerspitze, das Symbol hebt sich leicht, nach «zeiger.tooltip_s» erscheint der Name als Tooltip darüber.
 /// </summary>
@@ -110,8 +110,10 @@ sealed class SymbolApps : IWegwischbar
 
     /// <summary>Kandidat für das Wegwischen, solange die Symbole stehen: Hülle des Felds im Blick, eingeblendet seit dem Holen.</summary>
     public WegwischKandidat? Kandidat(XVec3 auge) =>
-        phase == Phase.Da && Plaetze.Count > 0 && Glas.HuelleImBlick([.. Plaetze.SelectMany(p => Glas.Ecken(p.Lage))], auge, 0.02) is { } h
+        phase == Phase.Da && lagenZuletzt.Count > 0 && Glas.HuelleImBlick([.. lagenZuletzt.SelectMany(Glas.Ecken)], auge, 0.02) is { } h
             ? new WegwischKandidat("symbole", h, seit) : null;
+    /// <summary>Die Lagen der Symbole im letzten Bild (nach Zurückweichen bzw. seitlich), für das Ziel des Wegwischens.</summary>
+    List<TabletPose> lagenZuletzt = [];
 
     /// <summary>Die Hand wischt über die Symbole: sie laufen nach links mit.</summary>
     public void Mitlaufen(double wegM) => wischZiel = Math.Max(0, wegM);
@@ -120,10 +122,15 @@ sealed class SymbolApps : IWegwischbar
     public void Wegwischen(double t) { wischZiel = 0; Ausblenden(t, weggewischt: true); }
 
     /// <summary>
-    /// Variante «stehen» (Vorgabe): eine App ist offen – das Feld weicht hinter sie zurück und wird gedämpft (AppSymbole.Zurueck, Gedaempft); schliesst sie, kommt es
-    /// wieder nach vorn. Die Anwendung setzt es je Bild.
+    /// Variante «stehen» (Vorgabe): eine App ist offen – das Feld weicht hinter sie zurück und wird gedämpft (AppSymbole.Zurueck, Gedaempft) bzw. – Variante
+    /// «feld_bei_app» = «seitlich» (Vorgabe, Christian 24.10.2026) – weicht seitlich neben das Fenster und seine Ornamente aus (AppSymbole.Seitlich,
+    /// <see cref="AppFlaechen"/>); schliesst sie, kommt es wieder nach vorn bzw.
+    /// zusammen. Die Anwendung setzt es je Bild.
     /// </summary>
     public bool Hinten { get; set; }
+    /// <summary>Fenster der offenen App mit Werkzeugleiste, Griff, Schliessen und Karte (für «seitlich» und «dahinter»; die Anwendung setzt es je Bild, null = keins).</summary>
+    public IReadOnlyList<TabletPose>? AppFlaechen { get; set; }
+    IReadOnlyList<TabletPose>? letzteFlaechen;
     double hinten;
     /// <summary>Wie weit das Feld gerade zurückgewichen ist (0 … 1; Prüfung).</summary>
     public double HintenAnteil => hinten;
@@ -191,7 +198,7 @@ sealed class SymbolApps : IWegwischbar
         }
         if (phase == Phase.Weg)
         {
-            Plaetze = []; wischWeg = wischZiel = 0; nah[0] = nah[1] = false;
+            Plaetze = []; lagenZuletzt = []; wischWeg = wischZiel = 0; nah[0] = nah[1] = false;
             HandBeruehrung.Schritt(beruehr, t, haende, [], gesteLaeuft: true, e.Symbole);   // was beim Erscheinen schon berührt, zählt nicht
             return null;
         }
@@ -209,13 +216,31 @@ sealed class SymbolApps : IWegwischbar
         // Lage je Symbol: von unten hineingehoben (Fortschritt f, gestaffelt), beim Gehen leicht sinkend und blasser (beim Wegwischen nach links)
         var lagen = new List<TabletPose>();
         var deck = new List<double>();
+        if (AppFlaechen is { Count: > 0 } fe) letzteFlaechen = fe;
+        var seitlich = e.Symbole.FeldBeiApp == Varianten.FeldSeitlich && letzteFlaechen is not null;
+        var mitten = new List<XVec3>();
         for (int i = 0; i < plaetze.Count; i++)
         {
             var (unten, d) = AppSymbole.Hineinheben(f, i, plaetze.Count);
-            var lage = plaetze[i].Lage;
-            lage = lage with { Mitte = AppSymbole.Zurueck(lage.Mitte - new XVec3(0, unten + (weggewischt ? 0 : 0.05 * gehen), 0) - rechts * links, auge, hinten) };
-            lagen.Add(lage);
-            deck.Add(d * (weggewischt ? 1 : 1 - gehen) * AppSymbole.SeitlichDeckkraft(links) * AppSymbole.Gedaempft(hinten));
+            mitten.Add(plaetze[i].Lage.Mitte - new XVec3(0, unten + (weggewischt ? 0 : 0.05 * gehen), 0) - rechts * links);
+            deck.Add(d * (weggewischt ? 1 : 1 - gehen) * AppSymbole.SeitlichDeckkraft(links) * (seitlich ? 1 : AppSymbole.Gedaempft(hinten)));
+        }
+        // offene App: seitlich neben Fenster und Ornamente (je Seite gemeinsam um das Auge gedreht, Abstand bleibt) bzw. dahinter (zurück entlang der Sichtlinie)
+        if (seitlich) mitten = AppSymbole.Seitlich(mitten, auge, gieren, letzteFlaechen!, AppSymbole.Durchmesser(m) / 2, hinten);
+        for (int i = 0; i < plaetze.Count; i++)
+        {
+            var p = seitlich ? mitten[i] : AppSymbole.Zurueck(mitten[i], auge, hinten);
+            lagen.Add(seitlich ? XrTabletLogik.TabletLageAus(p, auge - p) with { B = plaetze[i].Lage.B, H = plaetze[i].Lage.H } : plaetze[i].Lage with { Mitte = p });
+        }
+        if (hinten < 0.01 && !Hinten) letzteFlaechen = null;
+        lagenZuletzt = lagen;
+        // «dahinter»: ein Symbol, dessen Mitte im Blick hinter dem Fenster liegt, tritt ganz zurück – es schiene sonst als blasser Kreis durch das Glas (die Symbole
+        // zeichnen vor dem Modell, das Fenster danach); was am Rand hervorschaut, bleibt
+        if (!seitlich && letzteFlaechen is { } fw && hinten > 0.01)
+        {
+            var a = X(kopf.position);
+            for (int i = 0; i < lagen.Count; i++)
+                if (Glas.HinterBedienung(lagen[i].Mitte, a, fw, 0)) deck[i] *= 1 - 0.9 * hinten;
         }
         // Berührung mit der ganzen Hand (nur wenn die Symbole stehen; während der Gesten und kurz danach gesperrt)
         string? ergebnis = null;
@@ -246,11 +271,21 @@ sealed class SymbolApps : IWegwischbar
     void Zeichnen(IReadOnlyList<Symbol> symbole, List<TabletPose> lagen, List<double> deck, ZeigerBild?[] zeigerBilder, IReadOnlyDictionary<string, double> handNaehe,
         double t, double dt, GlasMasse m)
     {
+        // Schicht «Feld»: vor dem Modell (Wände schneiden die Symbole nicht an, Befund Prüfbilder 03), hinter Fenster und Karte; Tooltips in der Schicht «Oben»
+        z.Schicht = GlasZeichner.GlasSchicht.Feld;
+        try { ZeichnenFeld(symbole, lagen, deck, zeigerBilder, handNaehe, t, dt, m); }
+        finally { z.Schicht = GlasZeichner.GlasSchicht.Welt; }
+    }
+
+    void ZeichnenFeld(IReadOnlyList<Symbol> symbole, List<TabletPose> lagen, List<double> deck, ZeigerBild?[] zeigerBilder, IReadOnlyDictionary<string, double> handNaehe,
+        double t, double dt, GlasMasse m)
+    {
         for (int i = 0; i < lagen.Count; i++)
         {
             if (deck[i] <= 0.01) continue;
             var sym = symbole[i];
-            var s = z.Satz(sym.Id);   // Ton der App (kataloge/xr_farben.json)
+            // Ton der App (kataloge/xr_farben.json), immer die helle Fassung: Pastell-Scheibe mit dunklem Symbol, auch in dunkler Umgebung (Befund Prüfbilder 03)
+            var s = z.Satz(sym.Id, immerHell: true);
             var zeigerNah = Math.Max(zeigerBilder[0]?.Index == i ? zeigerBilder[0]!.Naehe : 0, zeigerBilder[1]?.Index == i ? zeigerBilder[1]!.Naehe : 0);
             var naehe = Math.Max(zeigerNah, handNaehe.TryGetValue(sym.Id, out var hn) ? hn : 0);
             var alt = anheben.TryGetValue(sym.Id, out var a0) ? a0 : 0;
@@ -261,14 +296,13 @@ sealed class SymbolApps : IWegwischbar
             var gew = sym.Id == gewaehlt ? Math.Max(0, 1 - (t - gewaehltT) / 0.4) : 0;
             // Glas-Kreis im Ton der App, beim Annähern etwas kräftiger; schmaler Ring im Akzent; gewählt: Leuchten am Rand
             z.Flaeche(lage, r, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1 * naehe) * deck[i] }, mitSchatten: true);
-            Ring(lage, r * 0.97, s.Akzent with { A = (0.55 + 0.45 * naehe) * deck[i] }, naehe > 0 ? 0.0022f : 0.0014f);
+            z.Ring(lage, r * 0.97, naehe > 0 ? 0.0022 : 0.0014, s.Akzent with { A = (0.55 + 0.45 * naehe) * deck[i] });
             if (gew > 0) z.Leuchten(lage, r, s.Akzent with { A = 0.8 * gew });
             z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
             if (sym.Ampel > 0)
             {
                 var c = sym.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
-                Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(lage.Mitte + lage.Rechts * (r * 0.62) + lage.Oben * (r * 0.62) + lage.Normale * 0.004), 0.008f),
-                    GlasZeichner.Farbe(c with { A = deck[i] }));
+                z.Punkt(lage.Mitte + lage.Rechts * (r * 0.62) + lage.Oben * (r * 0.62) + lage.Normale * 0.004, 0.008, c with { A = deck[i] });
             }
             Flaechen.Add(lage);
         }
@@ -276,32 +310,20 @@ sealed class SymbolApps : IWegwischbar
         foreach (var zb in zeigerBilder)
         {
             if (zb is null || zb.Index >= lagen.Count) continue;
-            var s = z.Satz(symbole[zb.Index].Id);
+            var s = z.Satz(symbole[zb.Index].Id, immerHell: true);
             var a = s.Akzent;
-            Lines.Add(S(zb.Von), S(zb.Punkt), new Color32((byte)(a.R * 255), (byte)(a.G * 255), (byte)(a.B * 255), (byte)(220 * deck[zb.Index])), 0.0015f);
-            Mesh.Sphere.Draw(Material.Unlit, Matrix.TS(S(zb.Punkt), 0.006f), GlasZeichner.Farbe(a with { A = deck[zb.Index] }));
+            z.Linie(zb.Von, zb.Punkt, 0.0015, a with { A = 0.86 * deck[zb.Index] });
+            z.Punkt(zb.Punkt, 0.006, a with { A = deck[zb.Index] });
             if (zb.Tooltip <= 0.01) continue;
             var name = symbole[zb.Index].Titel;
             var tl = AppSymbole.TooltipLage(lagen[zb.Index], name, m);
+            z.Schicht = GlasZeichner.GlasSchicht.Oben;
             z.Flaeche(tl, tl.H / 2, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1) * zb.Tooltip }, mitSchatten: false);
             z.Schrift(name, tl, 0, m.Schrift(GlasStil.KleinPt) * 0.65, tl.B, tl.H, m.Schrift(GlasStil.KleinPt), s.Text with { A = zb.Tooltip }, TextAlign.TopCenter,
                 umbrechen: false);
+            z.Schicht = GlasZeichner.GlasSchicht.Feld;
             Flaechen.Add(tl);
             Tooltip = (symbole[zb.Index].Id, zb.Tooltip);
-        }
-    }
-
-    /// <summary>Schmaler Ring (Linienzug) um die Mitte der Fläche.</summary>
-    static void Ring(TabletPose p, double r, GlasFarbe f, float dicke)
-    {
-        if (f.A <= 0.01) return;
-        var c = new Color32((byte)(f.R * 255), (byte)(f.G * 255), (byte)(f.B * 255), (byte)(Math.Clamp(f.A, 0, 1) * 255));
-        var basis = p.Mitte + p.Normale * 0.0025;
-        const int n = 40;
-        for (int k = 0; k < n; k++)
-        {
-            double w0 = 2 * Math.PI * k / n, w1 = 2 * Math.PI * (k + 1) / n;
-            Lines.Add(S(basis + p.Rechts * (Math.Cos(w0) * r) + p.Oben * (Math.Sin(w0) * r)), S(basis + p.Rechts * (Math.Cos(w1) * r) + p.Oben * (Math.Sin(w1) * r)), c, dicke);
         }
     }
 }

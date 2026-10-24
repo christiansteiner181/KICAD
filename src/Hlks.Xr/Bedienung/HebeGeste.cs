@@ -53,6 +53,12 @@ public sealed record SymbolEinstellungen
     public double BeruehrRandM { get; init; } = 0.01;
     /// <summary>«symbole.beruehr_sperre_s»: während Hebegeste und Wegwischen und so lange (s) danach zählt keine Berührung (Schutz vor Fehlwahl; Annahme V1a 0.6 s).</summary>
     public double BeruehrSperreS { get; init; } = 0.6;
+    /// <summary>Variante «feld_bei_app»: ist eine App offen, weicht das Feld seitlich neben das Fenster aus (<see cref="Varianten.FeldSeitlich"/>, Vorgabe; Christian
+    /// 24.10.2026) bzw. zum Vergleich dahinter zurück (<see cref="Varianten.FeldDahinter"/>).</summary>
+    public string FeldBeiApp { get; init; } = Varianten.FeldSeitlich;
+    /// <summary>«symbole.tisch_abstand_m»: am Sitzungstisch liegt die Unterkante der untersten Symbole mindestens so weit (m) über der Tischplatte; das Feld wird dort
+    /// entsprechend niedriger (Auftrag Hauptlauf 24.10.2026 nach den Prüfbildern 03: «mindestens einige Zentimeter»; Annahme V1a 0.06 m).</summary>
+    public double TischAbstandM { get; init; } = 0.06;
 }
 
 /// <summary>Was eine Hand für die Gesten zeigt: Mitte und Normale der Handfläche (Normale aus der Handfläche heraus), offen, Pinch.</summary>

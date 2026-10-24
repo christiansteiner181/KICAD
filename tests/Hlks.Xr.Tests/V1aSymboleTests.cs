@@ -14,6 +14,7 @@ public class V1aSymboleTests
 {
     static readonly GlasMasse M = GlasMasse.Fuer(new AppEinstellungen());
     static readonly Vec3 Auge = V(0, 1.6, 0);
+    static JsonElement Wert(string j) => JsonDocument.Parse(j).RootElement.Clone();
     const double Blick = Math.PI / 2;   // nach −z
 
     /// <summary>Eine Hand (Handflächenmitte, Normale) als Beobachtung.</summary>
@@ -220,6 +221,28 @@ public class V1aSymboleTests
         Assert.True(b1.Gelenke["wrist"].X < b0.Gelenke["wrist"].X - 0.15);
     }
 
+    [Fact]
+    public void Geisterhand_des_Wegwischens_schräg_zum_Blick_und_eine_gültige_Geste()
+    {
+        // Befund Prüfbilder 03: genau «Handfläche nach links» stand die Geisterhand auf der Kante (nur ein Strich). Jetzt schräg: man sieht auf den Handrücken.
+        var links = Wegwischen.Links(Blick);
+        var vor = V(0, 0, -1);
+        var hand = Geisterhand.VorlageWisch(V(0.12, 1.28, -0.45), links, vor);
+        var b = HandBeobachtung.Aus(hand, "right")!.Value;
+        Assert.True(b is { Offen: true, Pinch: false });
+        var nachLinks = Math.Acos(Math.Clamp(b.Normale.Skalar(links.Einheit()), -1, 1)) * 180 / Math.PI;
+        Nah(nachLinks, Geisterhand.WischSchraegGrad, 3);                              // um 35° aus «nach links» gedreht …
+        Assert.True(nachLinks < WegwischEinstellungen.Vorgabe.HandflaecheGrad);       // … innerhalb der Toleranz der Geste
+        Assert.True(b.Normale.Skalar(vor) > Math.Sin(25 * Math.PI / 180));            // vom Auge weg: man sieht schräg auf den Handrücken, nicht auf die Kante
+        // die Vorführung (Geisterhand.Bild) ist eine Geste, die das Wegwischen erkennt
+        var ziel = new TabletPose(V(0.12, 1.28, -0.45), vor * -1, links, V(0, 1, 0), 0.1, 0.1);
+        var z = new WegwischZustand();
+        var n = 0;
+        for (double t = 0; t <= Geisterhand.DauerS / 2; t += 1 / 72.0)
+            if (Geisterhand.Bild(GeisterGeste.Wegwischen, t, hand, ziel) is { } g && Wegwischen.Schritt(z, t, HandBeobachtung.Aus(g.Gelenke, "right"), Blick).Ereignis) n++;
+        Assert.Equal(1, n);
+    }
+
     static TabletPose Flaeche(double x, double y, double z, double b, double h) => Glas.ImBlick(V(x, y, z), Auge, b, h);
 
     [Fact]
@@ -341,6 +364,83 @@ public class V1aSymboleTests
         // stehend am Tisch genügt der Platz: keine Änderung
         var stehend = AppSymbole.Plaetze(Ids, Auge, Blick, e, M, untergrenze: 0.83);
         Assert.All(stehend, s => Nah(s.Lage.Mitte.Abstand(AppSymbole.Plaetze(Ids, Auge, Blick, e, M).Single(x => x.Id == s.Id).Lage.Mitte), 0, 1e-12));
+    }
+
+    [Fact]
+    public void Am_Sitzungstisch_liegt_die_unterste_Reihe_einige_Zentimeter_über_der_Tischplatte_Stellschraube()
+    {
+        // Befund Prüfbilder 03 (Hauptlauf 24.10.2026): «Die unterste Symbolreihe sitzt mindestens einige Zentimeter über der Tischplatte» – auch mit der leichten
+        // Verschiebung je Platz (vorher bis 3 cm darunter)
+        var sitz = V(0, 1.2, 0);
+        const double tisch = 0.75;
+        var e = new SymbolEinstellungen();
+        Assert.Equal(0.06, e.TischAbstandM);
+        var r = AppSymbole.Durchmesser(M) / 2;
+        Nah(AppSymbole.Untergrenze(tisch, e, M), tisch + 0.06 + r, 1e-12);
+        foreach (var abstand in new[] { 0.0, 0.06, 0.12 })
+        {
+            var es = e with { TischAbstandM = abstand };
+            var p = AppSymbole.Plaetze(Ids, sitz, Blick, es, M, AppSymbole.Untergrenze(tisch, es, M));
+            Assert.All(p, s => Assert.True(s.Lage.Mitte.Y - r >= tisch + abstand - 1e-9, $"{s.Id}: Unterkante {s.Lage.Mitte.Y - r:0.000} m"));
+            Assert.True(p.Max(x => x.Lage.Mitte.Y) <= sitz.Y - 0.019);   // die oberste Reihe bleibt unter Augenhöhe – das Feld wird niedriger
+        }
+        // als Stellschraube vom PC (Grenzen 0 … 0.3 m)
+        var b = XrBedienEinstellungen.Vorgabe;
+        Assert.Equal(0.1, b.MitStellschraube("symbole.tisch_abstand_m", Wert("0.1"))!.Symbole.TischAbstandM);
+        Assert.Null(b.MitStellschraube("symbole.tisch_abstand_m", Wert("0.5")));
+        Assert.Equal(0.06, b.MitStellschraube("symbole.tisch_abstand_m", Wert("0.1"))!.MitStellschraube("symbole.tisch_abstand_m", Wert("null"))!.Symbole.TischAbstandM);
+    }
+
+    [Fact]
+    public void Bei_offener_App_weicht_das_Feld_seitlich_neben_Fenster_und_Ornamente_aus_in_Griffweite()
+    {
+        // Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» – kein Symbol überlappt Fenster oder Ornamente, alles bleibt in
+        // Griffweite; «dahinter» bleibt als Vergleich
+        var e = new SymbolEinstellungen();
+        Assert.Equal(Varianten.FeldSeitlich, e.FeldBeiApp);
+        var b = XrBedienEinstellungen.Vorgabe;
+        Assert.Equal(Varianten.FeldSeitlich, b.Variante("feld_bei_app"));
+        Assert.Equal(Varianten.FeldDahinter, b.MitStellschraube("labor.variante.feld_bei_app", Wert("\"dahinter\""))!.Symbole.FeldBeiApp);
+        Assert.Null(b.MitStellschraube("labor.variante.feld_bei_app", Wert("\"oben\"")));
+        Assert.Equal([Varianten.FeldSeitlich, Varianten.FeldDahinter], Varianten.Bekannt["feld_bei_app"]);
+        // das Fenster frontal vor dem Feld wie in der App (Rahmen mit Werkzeugleiste, Griff, Schliessen), dazu die Karte darüber
+        var p = AppSymbole.Plaetze(Ids, Auge, Blick, e, M);
+        var mitten = p.Select(x => x.Lage.Mitte).ToList();
+        var fenster = Glas.Fenster(AppSymbole.FensterVorFeld(Auge, Blick, e), Auge, M, 0);
+        var rahmen = Glas.Rahmen(fenster, M, 0, 0, 2);
+        var karte = fenster with { Mitte = fenster.Mitte + fenster.Oben * (fenster.H / 2 + 0.06), H = 0.09 };
+        var flaechen = new List<TabletPose> { rahmen.Fenster, rahmen.Griff, rahmen.Schliessen, rahmen.Ornament!, karte };
+        var r = AppSymbole.Durchmesser(M) / 2;
+        bool Ueberdeckt(Vec3 m) => flaechen.Any(f => Glas.HinterBedienung(m, Auge, [f], 0) || Glas.UeberdecktImBlick(f, Glas.ImBlick(m, Auge, 2 * r, 2 * r), Auge));
+        Assert.Contains(mitten, Ueberdeckt);                                                  // ohne Ausweichen überdeckt das Fenster die Mitte des Felds
+        var neben = AppSymbole.Seitlich(mitten, Auge, Blick, flaechen, r, 1);
+        Assert.DoesNotContain(neben, Ueberdeckt);                                              // danach keines mehr
+        // in Griffweite: der Abstand zum Auge und die Höhe bleiben (gedreht um die senkrechte Achse durch das Auge); nicht weiter als 50° zur Seite
+        for (int i = 0; i < mitten.Count; i++)
+        {
+            Nah(neben[i].Abstand(Auge), mitten[i].Abstand(Auge), 1e-9);
+            Nah(neben[i].Y, mitten[i].Y, 1e-12);
+            Assert.Equal(Math.Sign(mitten[i].X), Math.Sign(neben[i].X));                       // die linken nach links, die rechten nach rechts
+            Assert.True(Math.Abs(Math.Atan2(neben[i].X, -neben[i].Z)) < 50 * Math.PI / 180, $"{p[i].Id}");
+        }
+        // je Seite um denselben Winkel (Anordnung bleibt), nicht weiter als nötig: das innerste steht am Rand
+        double W(Vec3 m) => Math.Atan2(m.X, -m.Z);
+        Assert.Single(mitten.Zip(neben).Where(x => x.First.X < 0).Select(x => Math.Round(W(x.Second) - W(x.First), 9)).Distinct());
+        Assert.Single(mitten.Zip(neben).Where(x => x.First.X >= 0).Select(x => Math.Round(W(x.Second) - W(x.First), 9)).Distinct());
+        var kante = flaechen.SelectMany(Glas.Ecken).Min(W);
+        Assert.Contains(neben.Where(m => m.X < 0), m => Math.Abs(W(m) - (kante - Math.Asin((r + AppSymbole.SeitlichRandM) / Math.Sqrt(m.X * m.X + m.Z * m.Z)))) < 1e-9);
+        // k = 0: am Platz; halb: halber Winkel; ohne Flächen: am Platz
+        Assert.All(AppSymbole.Seitlich(mitten, Auge, Blick, flaechen, r, 0).Zip(mitten), x => Nah(x.First.Abstand(x.Second), 0, 1e-12));
+        var halb = AppSymbole.Seitlich(mitten, Auge, Blick, flaechen, r, 0.5);
+        for (int i = 0; i < mitten.Count; i++) Nah(W(halb[i]) - W(mitten[i]), (W(neben[i]) - W(mitten[i])) / 2, 1e-9);
+        Assert.All(AppSymbole.Seitlich(mitten, Auge, Blick, [], r, 1).Zip(mitten), x => Nah(x.First.Abstand(x.Second), 0, 1e-12));
+        // ein verschobenes Fenster (rechts): die Seiten richten sich nach seiner Mitte, auch dann überdeckt keines
+        var rechts = Glas.ImBlick(V(0.3, 1.28, -0.45), Auge, 0.4, 0.3);
+        Assert.DoesNotContain(AppSymbole.Seitlich(mitten, Auge, Blick, [rechts], r, 1), m => Glas.HinterBedienung(m, Auge, [rechts], r));
+        // gedreht (Blick nach +x): dieselbe Regel
+        var pg = AppSymbole.Plaetze(Ids, Auge, 0, e, M).Select(x => x.Lage.Mitte).ToList();
+        var fg = Glas.Fenster(AppSymbole.FensterVorFeld(Auge, 0, e), Auge, M, 0);
+        Assert.DoesNotContain(AppSymbole.Seitlich(pg, Auge, 0, [fg], r, 1), m => Glas.HinterBedienung(m, Auge, [fg], r));
     }
 
     [Fact]
