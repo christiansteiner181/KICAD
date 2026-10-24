@@ -66,8 +66,8 @@ sealed partial class QuestApp
 
     // =================================================================================================== Prüflauf (--desktop)
 
-    int dPhase = -1, dOhne, dMit, dEnde, dAufrufe, dDurchgang, dSchritt;
-    double dT0, dOhneSumme, dMitSumme, dMitMax, dRechnen, dHandX = -0.10, dHalb, dHalbWeg, dHalb2, dStart = -1, dErstesBild = -1, dWegHalb = -1;
+    int dPhase = -1, dOhne, dMit, dGezaehlt, dEnde, dAufrufe, dDurchgang, dSchritt;
+    double dTs, dT0, dOhneSumme, dMitSumme, dMitMax, dRechnen, dHandX = -0.10, dHalb, dHalbWeg, dHalb2, dStart = -1, dErstesBild = -1, dWegHalb = -1;
     bool dHandDa, dBild5, dPausiert, dFeldSeitlich, dHinweisFrei, dAppWeg, dDesktopWeg, dSymbolDa;
     int dSymbole;
     Rig? dRig;
@@ -175,7 +175,7 @@ sealed partial class QuestApp
             case 3:   // setzen, erstes Vollbild, alle Felder hochgeladen (höchstens 20 s)
                 if (d.Ansicht.Phase == DesktopPhase.Da && d.AllesHochgeladen)
                 {
-                    if (dDurchgang == 0) { dPhase = 4; dMit = 0; }
+                    if (dDurchgang == 0) { dPhase = 4; dMit = 0; dT0 = t; }
                     else if (t - dT0 > 1.2) Strich(5);   // nach der Gegensperre von 1 s (das Zurückholen der Hand wischt nicht weg)
                     return;
                 }
@@ -184,8 +184,9 @@ sealed partial class QuestApp
             case 4:   // mindestens 150 Bilder (--pruefen) mit Bildschirm (das Testbild ändert sich laufend: Zähler, Uhr, Zeiger); die Bilder um die Prüfbilder zählen nicht
                 dMit++;
                 dAufrufe = Math.Max(dAufrufe, d.Aufrufe);
-                if (dMit is < 60 or > 135)
+                if (dMit < 60 || dSchritt >= 5)   // die Bilder um die Prüfbilder und Prüfschritte zählen nicht
                 {
+                    dGezaehlt++;
                     dMitSumme += Time.Stepf;
                     dMitMax = Math.Max(dMitMax, Time.Stepf);
                     dRechnen += rechnen;
@@ -201,22 +202,39 @@ sealed partial class QuestApp
                     var (p, n) = AufDesktop(330, 165);   // Schrift 1:1 und 2:1 im Fenster des Testbilds
                     DesktopFoto("desktop_4_nah_schrift.jpg", p + n * 0.3f, p, 40);
                 }
-                // die App-Symbole holen (gedachte Hebegeste): das Feld weicht seitlich neben den Bildschirm aus
-                if (dMit == 66) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
+                if (dMit == 65)
+                {
+                    // Leiste unter dem Bildschirm (Griff, «×», «1/2») von nahem
+                    var (griff, _, _) = DesktopAnsicht.Teile(d.Masse);
+                    var (jm, jg) = d.Ansicht.Jetzt!.Value;
+                    var gl = DesktopAnsicht.TeilLage(griff, jm, jg, DesktopAnsicht.GriffB, DesktopAnsicht.GriffH, d.Masse.RadiusM);
+                    var p = new Vec3((float)gl.Mitte.X, (float)gl.Mitte.Y, (float)gl.Mitte.Z);
+                    var n = new Vec3((float)gl.Normale.X, (float)gl.Normale.Y, (float)gl.Normale.Z);
+                    DesktopFoto("desktop_8_leiste_nah.jpg", p + n * 0.35f + new Vec3(0, 0.08f, 0), p, 45);
+                }
+                // die App-Symbole holen (gedachte Hebegeste): das Feld weicht seitlich neben den Bildschirm aus; nach der Zeit, nicht nach Bildern (schnelle Bilder
+                // am PC: das Feld braucht etwa 0.5 s, bis es ganz ausgewichen ist)
+                if (dMit == 66) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; dSchritt = 1; dTs = t; }
                 if (dMit == 68) pruefHebe = null;
-                if (dMit == 100)
+                if (dSchritt == 1 && t - dTs >= 1.0)
                 {
                     dSymbole = symbole.Flaechen.Count;
                     dSymbolDa = symbole.Plaetze.Any(p => p.Id == DesktopBildschirm.FarbId);
                     dFeldSeitlich = symbole.HintenAnteil > 0.9 && dSymbole >= symbole.Plaetze.Count && NichtVorDemBildschirm(symbole.Flaechen, auge);
                     DesktopFoto("desktop_6_feld_seitlich.jpg", kopf.position, kopf.position + kopf.Forward, 95);
+                    dSchritt = 2;
+                    dTs = t;
                 }
-                if (dMit == 104) symbole.Ausblenden(t);
+                if (dSchritt == 2 && t - dTs >= 0.1) { symbole.Ausblenden(t); dSchritt = 3; dTs = t; }
                 // ein allgemeiner Hinweis steht nie vor dem Bildschirm
-                if (dMit == 110) Hinweis("Prüfung: ein Hinweis steht neben dem Bildschirm.");
-                if (dMit == 118)
+                if (dSchritt == 3 && t - dTs >= 0.6) { Hinweis("Prüfung: ein Hinweis steht neben dem Bildschirm."); dSchritt = 4; dTs = t; }
+                if (dSchritt == 4 && t - dTs >= 0.5)
+                {
                     dHinweisFrei = letzterHinweisOrt is { } ho && NichtVorDemBildschirm([Glas.ImBlick(ho, auge, 0.02, 0.02)], auge);
-                if (dMit < Math.Max(150, o.PruefBilder)) return;
+                    dSchritt = 5;
+                }
+                // mindestens 10 s eingeblendet: quest_pruefen.ps1 fotografiert währenddessen die Anzeige am PC (KICAD im Edge)
+                if (dGezaehlt < Math.Max(150, o.PruefBilder) - 60 || dSchritt < 5 || t - dT0 < 10) return;
                 Strich(5);
                 return;
             case 5:   // Wegwischen (gemeinsame Geste, V1a): halb (Prüfbild im ersten Durchgang), dann ganz
@@ -274,8 +292,8 @@ sealed partial class QuestApp
                     $"Desktop: {(ok ? "ok" : "FEHLER")}{(dFehler is null ? "" : " " + dFehler)}; Geste halb Anteil {dHalb:0.00} bzw. {dHalb2:0.00} (Weg {dHalbWeg:0.000} m), " +
                     $"Wegwischen halb Anteil {dWegHalb:0.00}, eingeblendet {d.Eingeblendet}× (2 Gesten, 1 Symbol), " +
                     $"erstes Bild {dErstesBild:0.00} s nach Beginn der Geste, {v?.Puffer?.Raster.Breite}×{v?.Puffer?.Raster.Hoehe} in {v?.Puffer?.Raster.Felder} Feldern; " +
-                    $"Bildzeit ohne Bildschirm {dOhneSumme / Math.Max(1, dOhne) * 1000:0.0} ms, mit Bildschirm {dMitSumme / Math.Max(1, dMit - 76) * 1000:0.0} ms (höchstens {dMitMax * 1000:0.0}), " +
-                    $"Rechenzeit {dRechnen / Math.Max(1, dMit - 76):0.00} ms; hochladen {d.HochladenMsMittel:0.00} ms je Bild mit Upload (höchstens {d.HochladenMsMax:0.0}), " +
+                    $"Bildzeit ohne Bildschirm {dOhneSumme / Math.Max(1, dOhne) * 1000:0.0} ms, mit Bildschirm {dMitSumme / Math.Max(1, dGezaehlt) * 1000:0.0} ms (höchstens {dMitMax * 1000:0.0}), " +
+                    $"Rechenzeit {dRechnen / Math.Max(1, dGezaehlt):0.00} ms ({dGezaehlt} Bilder); hochladen {d.HochladenMsMittel:0.00} ms je Bild mit Upload (höchstens {d.HochladenMsMax:0.0}), " +
                     $"dekodieren {v?.DekodierMsMittel ?? 0:0.0} ms (höchstens {v?.DekodierMsMax ?? 0:0.0}, das erste Vollbild), {v?.Bilder ?? 0} Bilder, {(v?.Bytes ?? 0) / 1024.0:0} KB; " +
                     $"Zeichenaufrufe Bildschirm höchstens {dAufrufe}, Szene {darstellung?.GezeichnetAufrufe ?? 0}; Symbol «Desktop» im Feld {(dSymbolDa ? "ja" : "nein")}, " +
                     $"Feld seitlich daneben {(dFeldSeitlich ? "ja" : "nein")} ({dSymbole} Symbole), Hinweis nicht davor {(dHinweisFrei ? "ja" : "nein")}, " +

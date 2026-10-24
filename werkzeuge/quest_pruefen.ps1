@@ -28,8 +28,8 @@
 # V1c: Lauf 4 "Desktop in der Brille" (--desktop): die App zieht mit einer gedachten Hand den Bildschirm des PCs herein (der Testserver erfasst im Testlauf nur das
 # Testbild, nie den echten Bildschirm), misst Bildzeit, Hochladen und Dekodieren und wischt ihn wieder weg (Zeile "P4 ok: Desktop: ..."). Das Skript prueft am PC
 # (GET /api/xr/desktop/zustand), dass KICAD die mitsehende Brille angezeigt hat. -Pruefbilder legt desktop_*.jpg (Geste halb, eingeblendet mit Glasrahmen, nah,
-# Symbolfeld seitlich daneben, Wegwischen halb) und desktop_7_anzeige_pc.png (KICAD im Edge, solange die Brille mitsieht) ab. -NurDesktop: nur Lauf 4;
-# -OhneDesktop: ohne Lauf 4.
+# Leiste nah, Symbolfeld seitlich daneben, Wegwischen halb) und desktop_7_anzeige_pc.png (KICAD im Edge ueber CDP, werkzeuge\seitenbild.mjs, solange die Brille
+# mitsieht) ab. -NurDesktop: nur Lauf 4; -OhneDesktop: ohne Lauf 4.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
 # Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>] [-Port <n>] [-NurDesktop] [-OhneDesktop]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
@@ -118,16 +118,25 @@ function DesktopLauf {
   if ($OhneUnterlage) { $dArg += '--ohne-unterlage' }
   if ($Pruefbilder) { New-Item -ItemType Directory -Force $Pruefbilder | Out-Null; $dArg += @('--bilder', "`"$Pruefbilder`"") }
   $ap = Start-Process -FilePath $dotnet -ArgumentList $dArg -PassThru -NoNewWindow -RedirectStandardOutput "$logs\lauf4.log" -RedirectStandardError "$logs\lauf4_fehler.log"
+  $null = $ap.Handle   # sonst liefert ExitCode in PowerShell 5.1 nach dem Ende nichts
   $edge = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
-  $gesehen = $null; $foto = $false
+  $gesehen = $null; $foto = $false; $seit = $null
   while (-not $ap.HasExited) {
-    try { $dz = Get '/api/xr/desktop/zustand'; if ($dz.aktiv -ge 1 -and -not $gesehen) { $gesehen = $dz } } catch { }
-    if ($gesehen -and $Pruefbilder -and -not $foto -and (Test-Path $edge)) {
+    try {
+      $dz = Get '/api/xr/desktop/zustand'
+      if ($dz.aktiv -ge 1) {
+        if (-not $seit) { $seit = Get-Date }
+        # die Anzeige mit den meisten Bildern behalten (gleich nach dem Verbinden zeigt sie noch 0 Bilder/s)
+        if (-not $gesehen -or [long]@($dz.stroeme)[0].bilder -ge [long]@($gesehen.stroeme)[0].bilder) { $gesehen = $dz }
+      }
+    } catch { }
+    if ($seit -and ((Get-Date) - $seit).TotalSeconds -ge 2 -and $Pruefbilder -and -not $foto -and (Test-Path $edge)) {
+      # KICAD im Edge (CDP, werkzeuge/seitenbild.mjs): "msedge --screenshot --virtual-time-budget" schrieb hier kein Bild, die Oberflaeche fragt laufend den Server
       $foto = $true
       $bild = Join-Path $Pruefbilder 'desktop_7_anzeige_pc.png'
-      $ep = Start-Process -FilePath $edge -ArgumentList @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=1600,950', "--user-data-dir=`"$tmp\edge`"",
-        '--virtual-time-budget=5000', "--screenshot=`"$bild`"", "$basis/") -PassThru -WindowStyle Hidden
+      $ep = Start-Process -FilePath 'node' -ArgumentList @("`"$repo\werkzeuge\seitenbild.mjs`"", "$basis/", "`"$bild`"", '6000', '1600', '950') -PassThru -WindowStyle Hidden
       if (-not $ep.WaitForExit(40000)) { Stop-Process -Id $ep.Id -Force -ErrorAction SilentlyContinue }
+      if (-not (Test-Path $bild)) { Aus 'Lauf 4: kein Bild der Anzeige am PC (werkzeuge/seitenbild.mjs).' }
     }
     Start-Sleep -Milliseconds 250
   }
@@ -138,6 +147,7 @@ function DesktopLauf {
     $s = @($gesehen.stroeme)[0]
     Aus ("Lauf 4: Anzeige am PC: Brille {0} sieht {1} ({2} x {3}), {4} Bilder/s, {5} kbit/s, erfassen {6} ms, kodieren {7} ms, Bildrate {8} / ruhig {9} - ok" -f $s.name, $s.monitorName, $s.breite, $s.hoehe, $s.bilderJeSekunde, $s.kbitJeSekunde, $s.erfassMs, $s.kodierMs, $s.bildrate, $s.ruheBildrate)
   } else { Aus 'Lauf 4: KICAD hat keine mitsehende Brille angezeigt (GET /api/xr/desktop/zustand) - FEHLT' }
+  if ($ap.ExitCode -ne 0) { Aus "Lauf 4: die App endete mit $($ap.ExitCode)." }
   return ($ap.ExitCode -eq 0) -and [bool]$gesehen
 }
 

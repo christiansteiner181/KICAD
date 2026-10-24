@@ -17,7 +17,8 @@ namespace Hlks.Quest;
 /// in der Farbe der Schrift getönt, Revit mit eigenen Farben (Benutzereinstellung «oberflaeche.symbole» über «willkommen», <see cref="SymbolEinstellung"/>).
 /// Kosten: je Fläche ein Zeichenaufruf mit 4 Ecken (Netze je Grösse zwischengespeichert); je Symbol ein Viereck mit Textur; Text über Text.Add (gesammelt von StereoKit).
 /// Schichten (<see cref="Schicht"/>; Befund Prüfbilder 03: Wände schnitten Symbole und die Karte an): die Bedienung (Symbolfeld, Fenster, Karte, Tooltips) zeichnet
-/// ohne Tiefentest gegen das Modell, in fester Reihenfolge – erst das Feld, dann Fenster und Karte, dann die Tooltips, danach die Hände (Tiefentest gegen die Bedienung,
+/// ohne Tiefentest gegen das Modell, in fester Reihenfolge – V1c: zuerst der Bildschirm des PCs (Schicht «Hinten»), dann das Feld, dann Fenster und Karte, dann die
+/// Tooltips, danach die Hände (Tiefentest gegen die Bedienung,
 /// <see cref="HandReihe"/>); innerhalb einer Schicht Schatten, Leuchten, Glas, Knöpfe (drei Stufen übereinander), Zeichen, Schrift. Das Glas schreibt die Tiefe, so
 /// verdeckt es die Hände dahinter. Die Welt (Bodenplatte am Tisch, Beschriftungen im Modell) zeichnet wie bisher mit Tiefentest.
 /// </summary>
@@ -29,14 +30,16 @@ sealed class GlasZeichner
     /// </summary>
     public enum GlasSchicht { Welt, Feld, Vorn, Oben, Hinten }
 
-    // Reihenfolge (QueueOffset) je Schicht: Schatten, Leuchten, Glas, Knopf (Stufe 0, 1, 2), Zeichen (Symbol, Punkt, Linie, Ring), Schrift (Welt: Vorgabe von StereoKit)
-    static readonly int[][] Reihe = [[8, 9, 10, 11, 11, 11, 12, 0], [1, 2, 3, 4, 4, 4, 5, 6], [13, 14, 15, 16, 17, 18, 19, 20], [21, 21, 22, 23, 23, 23, 24, 25],
-        [-9, -8, -7, -5, -5, -5, -4, -3]];
+    // Reihenfolge (QueueOffset) je Schicht: Schatten, Leuchten, Glas, Knopf (Stufe 0, 1, 2), Zeichen (Symbol, Punkt, Linie, Ring), Schrift (Welt: Vorgabe von StereoKit).
+    // V1c: die Schichten von V1a um 6 nach hinten verschoben (Reihenfolge unter ihnen unverändert), damit «Hinten» (der PC-Bildschirm) nach den durchscheinenden Teilen
+    // des Modells (Reihe 0) und vor dem Symbolfeld zeichnet – Befund Prüfbild V1c 24.10.2026: ein durchscheinender Schacht des Modells lag sonst über dem Bildschirm.
+    static readonly int[][] Reihe = [[14, 15, 16, 17, 17, 17, 18, 0], [7, 8, 9, 10, 10, 10, 11, 12], [19, 20, 21, 22, 23, 24, 25, 26], [27, 27, 28, 29, 29, 29, 30, 31],
+        [1, 2, 3, 5, 5, 5, 6, 6]];
     /// <summary>V1c: das Bild des PC-Bildschirms (Texturen je Feld) zeichnet in der Schicht «Hinten» zwischen dem Glas des Rahmens und den Knöpfen.</summary>
-    public const int BildReihe = -6;
+    public const int BildReihe = 4;
     const int Schichten = 5;
     /// <summary>Die Hände zeichnen nach der Bedienung (Tiefentest gegen ihr Glas); die Geisterhände danach (KomfortAnzeigen).</summary>
-    public const int HandReihe = 27, GeisterReihe = 28;
+    public const int HandReihe = 33, GeisterReihe = 34;
 
     readonly Material?[] glas = new Material?[Schichten], schatten = new Material?[Schichten], leuchten = new Material?[Schichten];
     readonly Material?[,] duenn = new Material?[Schichten, 3];
