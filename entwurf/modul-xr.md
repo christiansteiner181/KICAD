@@ -156,6 +156,12 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Sitzungsraum ebenfalls im visionOS-Stil (Christian, 24.10.2026: «ruhige, helle Umgebung»); die Tron-Optik (XR-H) entfällt. Nach HIG «Immersive experiences» (Creating an environment): wenig Kontrast und Bewegung, weit statt eng, immer eine Bodenfläche, weiches Licht aus Formen statt 360°-Bild, Passthrough nur dezent tönen. Die alte Umgebung höchstens als Labor-Variante zum Vergleich.
 - Ersetzt den Hologramm-Stil des Tablets (XR-C «Aussehen») und die grauen Textkacheln aus P5a. Keine Apple-Logos, SF-Schriften oder SF Symbols (Lizenz nur für Apple-Plattformen). Umsetzung mit V1a.
 
+**App-Symbole per Hebegeste** (Christian, 24.10.2026, nach den Bildern V1a/01: «wird mit beiden handflächen nach oben eine eine deutliches nach obenstreichen gezeigt, soll dies frei schwebende Appsymbole von unten her einblenden. so wie ich sie von unten hinein heben würde. die symbole müssen in griff weite sein. angewählt werden sie durch berührung. finger zeigen den pointer mit tooltip» – «symbole nicht in einer leiste sondern verteilt.»):
+- Geste: beide Handflächen nach oben, deutlich nach oben streichen; ersetzt «linke Handfläche zum Gesicht». Löst weder Etage (Pinch+Wisch) noch Teleport aus. Grenzwerte als Stellschrauben (Startwerte Annahme).
+- Runde Glas-Symbole ohne Fenster, eines je App, steigen von unten an ihren Platz; locker im Raum verteilt (verschiedene Höhen, leicht gestaffelt, keine Leiste), in Griffweite, im Raum verankert, gleiche Lage bei jedem Öffnen.
+- Anwahl durch Berührung mit der Fingerspitze (Leuchten, Ton), dann öffnet die Glas-App; der Zeigefinger zeigt beim Annähern einen Zeiger, das Symbol hebt sich, der Name erscheint als Tooltip.
+- Annahme (offen bei Christian): Die senkrechte Registerleiste entfällt; gewechselt wird über Geste und Symbol. Ausblenden ohne Wahl per Gegenbewegung bzw. Wartezeit.
+
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
 | Nr. | Aufgabe | Wer | Hängt ab von |
