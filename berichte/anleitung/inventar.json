@@ -3644,12 +3644,12 @@
             "Nach der ersten Datei (Architekt) die Datei %USERPROFILE%\\HLKS_CAD_testdaten\\bernstrasse42\\hlks_hk_2026-02-10.ifc übernehmen wollen: Dialog öffnen.",
             "Den Lagebericht lesen (Tabelle: Gelände, ±0.00, Landeskoordinaten, Koordinationskörper, Projektbezug).",
             "Den roten Kasten «Achtung: Inhalt liegt neben dem bestehenden Modell» lesen.",
-            "Die drei Optionen der Ausrichtung ansehen (Projektbezug, Gebäudeursprung, Koordinationskörper)."
+            "Die vier Optionen der Ausrichtung ansehen (Projektbezug, Gebäudeursprung, Koordinationskörper, Einpassen (automatisch))."
           ],
           "erwartung": "Jede Datei hat einen Lagebericht; bei Abweichung steht ein grosser roter Kasten mit den Zahlen des Kerns. Die Ausrichtung ist nie vorgewählt; die empfohlene Option trägt den Vermerk «empfohlen», darunter steht der Inhaltsanteil. «Übernehmen» ohne Wahl lehnt die Oberfläche ab.",
           "pruefpunkte": [
             "Roter Kasten mit Titel «Achtung: Inhalt liegt neben …» bei Bernstrasse.",
-            "Drei Optionen, keine vorgewählt.",
+            "Vier Optionen, keine vorgewählt.",
             "Anteil «Projektbezug: 0 % der Bauteile im bestehenden Modell».",
             "Übernehmen ohne Wahl wird abgelehnt."
           ],
@@ -3663,6 +3663,45 @@
             "berichte/modul-1b-testbericht.md:21 (Befund)"
           ],
           "hinweis": "Für Bernstrasse fehlt ein gemeinsamer Bezug (Koordinationskörper); das Ausrichten über Punktpaare steht auf der Nachbearbeitungsliste (N1, nicht gebaut). Mit Wahl «projekt» lässt sich die Datei trotzdem zum Prüfen übernehmen. Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+        },
+        {
+          "id": "m1b-ifc-einpassen",
+          "titel": "IFC einpassen (automatische Ausrichtung)",
+          "wo": {
+            "register": "Einfügen",
+            "gruppe": "Verknüpfen / Übernehmen",
+            "knopf": "IFC übernehmen (Wahl «Einpassen (automatisch)»)",
+            "kuerzel": "",
+            "sonst": "Lagebericht auch unter Verwalten › Koordinaten und im Kontextmenü einer Unterlage (Lagebericht zeigen)"
+          },
+          "schritte": [
+            "In einem Projekt mit übernommener Architekten-Datei (architekt_3d.ifc) «IFC übernehmen» klicken und die H+K-Datei %USERPROFILE%\\HLKS_CAD_testdaten\\bernstrasse42\\hlks_hk_2025-05-01.ifc wählen (Revit-IFC, gegenüber dem Archicad-Modell um den Gebäudeursprung gedreht).",
+            "Im Lagebericht lesen: roter Kasten, darin der Hinweis «Empfehlung: Ausrichtung «Einpassen (automatisch)» wählen …» und der Anteil «Eingepasst: … % der Bauteile im bestehenden Modell».",
+            "Darunter im Abschnitt «Einpassen» Ergebnis, Drehung, Verschiebung, Bezug, Treffer (50/100/150 mm, Median), nächstbeste Lage, Merkmale und die Tabelle je Geschoss ansehen.",
+            "Bei der Ausrichtung die Wahl «Einpassen (automatisch)» anklicken (sie ist nie vorgewählt) und auf «Vorschau» klicken.",
+            "Die Vorschau (Trockenlauf) lesen: Abschnitt «Einpassen» und Hinweis des Kerns «Eingepasst über … : Drehung …°, Verschiebung … m; … Bezug …». Dann «Übernehmen» klicken.",
+            "Register Verwalten › Koordinaten öffnen und in der Zeile der Datei die Ausrichtung «Eingepasst über Wände und Raumkanten» mit der Kurzfassung ansehen; ein Klick auf die Zeile zeigt den ganzen Lagebericht."
+          ],
+          "erwartung": "KICAD sucht Drehung und Verschiebung selbst: Wände und Raumkanten der Datei werden auf Wände und Räume des Projekts gelegt. Übernommen wird nur bei eindeutiger Lage; sonst lehnt der Kern ab (auch in der Vorschau), und der rote Fehlerkasten im Dialog nennt Lagebericht und Vorschlag (Koordinationskörper oder ausdrücklicher Bezug). Der Referenzfall Bernstrasse 42 liegt nach dem Einpassen bei rund 88 % der Raumkanten innert 150 mm (Median rund 21 mm) und einer Drehung von rund 42.72°.",
+          "pruefpunkte": [
+            "Vierte Option «Einpassen (automatisch)» mit erklärendem Satz; keine Option vorgewählt.",
+            "Option gesperrt mit Begründung, wenn das Projekt weder Wände noch Räume hat.",
+            "Die empfohlene Option trägt den Vermerk «empfohlen» und den Anteil; im roten Kasten steht der Hinweis auf «Einpassen».",
+            "Abschnitt «Einpassen» im Lagebericht mit Ergebnis, Drehung, Verschiebung, Bezug, Treffer, nächstbester Lage, Merkmalen und Geschosstabelle.",
+            "Ergebnis «unsicher» oder «keine Merkmale» erscheint rot, mit «es wird nichts übernommen».",
+            "Vorschau mit Wahl «Einpassen» zeigt den Lagebericht und ändert nichts; bei nicht eindeutiger Lage steht der Kernfehler mit Vorschlag im Dialog.",
+            "Verwalten › Koordinaten nennt die Ausrichtung «Eingepasst über Wände und Raumkanten» mit Drehung und Treffer."
+          ],
+          "bild": {
+            "projekt": "bernstrasse",
+            "ansicht": "Dialog «IFC übernehmen» (Wahl Einpassen)",
+            "zustand": "Dialog mit hlks_hk_2025-05-01.ifc, roter Kasten mit Empfehlung, Abschnitt «Einpassen» und vierte Option"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md (Register Einfügen, Abschnitt «Einpassen (automatisch)»)",
+            "entwurf/ifc-einpassen.md (Oberfläche, Schnittstelle)"
+          ],
+          "hinweis": "Die Rechnung macht der Kern (ifc_pruefen, ifc_uebernehmen mit ausrichtung = einpassen); die Oberfläche zeigt nur seine Zahlen. Das Bild folgt, sobald das Einpassen im Abnahmestand läuft."
         },
         {
           "id": "m1b-ifc-uebernehmen",

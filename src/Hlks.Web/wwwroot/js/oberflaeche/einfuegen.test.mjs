@@ -90,9 +90,9 @@ test('Abweichung als Zahlen in m mit Vorzeichen', () => {
 
 // ============================================================================================== Wahl der Ausrichtung
 
-test('Ausrichtung: drei Optionen mit je einem Satz; Koordinationskörper nur, wenn beide einen haben', () => {
+test('Ausrichtung: vier Optionen mit je einem Satz; Koordinationskörper nur, wenn beide einen haben', () => {
   const o = T.ausrichtungOptionen(lageGeo, bezugProjekt);
-  assert.deepEqual(o.map((x) => x.wert), ['projekt', 'gebaeude', 'koordinationskoerper']);
+  assert.deepEqual(o.map((x) => x.wert), ['projekt', 'gebaeude', 'koordinationskoerper', 'einpassen']);
   assert.ok(o.every((x) => x.satz.length > 30 && x.satz.endsWith('.')));
   assert.ok(o.every((x) => x.moeglich));
   const keinKkDatei = T.ausrichtungOptionen(lageErste, bezugProjekt)[2];
@@ -184,13 +184,13 @@ test('Inhalt: Fehlen die Felder, bleibt der Kasten wie bisher', () => {
 
 test('Inhalt: Optionen tragen Anteil und Empfehlung, nichts wird vorgewählt', () => {
   const o = T.ausrichtungOptionen(lageEmpfehlung, bezugProjekt);
-  assert.deepEqual(o.map((x) => x.anteil), [0.97, 0.03, null]);
-  assert.deepEqual(o.map((x) => x.empfohlen), [true, false, false]);
+  assert.deepEqual(o.map((x) => x.anteil), [0.97, 0.03, null, null]);
+  assert.deepEqual(o.map((x) => x.empfohlen), [true, false, false, false]);
   assert.equal(T.vorgabeWahl(lageEmpfehlung), null, 'Christian verlangt eine ausdrückliche Wahl');
   const g = T.ausrichtungOptionen({ ...lageEmpfehlung, inhaltJeWahl: { projekt: 0.02, gebaeude: 0.9 }, empfehlung: 'gebaeude' }, bezugProjekt);
-  assert.deepEqual(g.map((x) => x.empfohlen), [false, true, false]);
+  assert.deepEqual(g.map((x) => x.empfohlen), [false, true, false, false]);
   const keine = T.ausrichtungOptionen(lageInhalt, bezugProjekt);
-  assert.deepEqual(keine.map((x) => x.anteil), [0, 0, null], '0 % ist ein Anteil, kein fehlender');
+  assert.deepEqual(keine.map((x) => x.anteil), [0, 0, null, null], '0 % ist ein Anteil, kein fehlender');
   assert.ok(keine.every((x) => !x.empfohlen));
   // gebaeude = null (nicht berechenbar) und fehlende Felder
   assert.equal(T.ausrichtungOptionen({ ...lageEmpfehlung, inhaltJeWahl: { projekt: 0.4, gebaeude: null } }, bezugProjekt)[1].anteil, null);
@@ -220,6 +220,187 @@ test('Inhalt: ohne Felder (erste Datei, ältere Unterlage) keine Zeile Inhalt', 
   assert.ok(!T.lageZeilen(lageAbweichung, bezugProjekt).some((r) => r.label === 'Inhalt'));
   assert.ok(!T.lageZeilen({ ...lageGeo, inhalt: {} }, bezugProjekt).some((r) => r.label === 'Inhalt'));
   assert.ok(!T.lageZeilen({ ...lageGeo, inhalt: { ueberdeckung: 'x' } }, bezugProjekt).some((r) => r.label === 'Inhalt'));
+});
+
+// ============================================================================================== Einpassen (automatisch)
+
+const einpassenEindeutig = {
+  ergebnis: 'eindeutig',
+  bezug: { x: -11.3, y: -32.3, z: 583690, drehung: 42.7182 },
+  drehung: -42.7182, verschiebungMm: [30.2, 16.1],
+  merkmale: { datei: { waende: 0, raeume: 37, kanten: 410 }, projekt: { waende: 406, raeume: 49, kanten: 1200 } },
+  paarung: 'Raumkanten der Datei auf Wandflächen und Raumkanten des Projekts',
+  geschosse: [{ geschoss: 'EG', kote: 0.0, proben: 820, anteil150: 0.9, medianMm: 18 }, { geschoss: '1.OG', kote: 2.9, proben: 700, anteil150: 0.86, medianMm: 25.04 }],
+  anteil: { mm50: 0.61, mm100: 0.81, mm150: 0.88 }, medianMm: 21.4, proben: 3469,
+  zweitbester: { drehung: 137.32, verschiebungMm: [9800, -99700], anteil150: 0.35 },
+  ueberdeckung: 0.97, dauerMs: 1800,
+  text: 'Eingepasst über 345 Raumkanten der Datei auf 406 Wände und 49 Räume des Projekts: Drehung −42.718°.',
+};
+const einpassenUnsicherBericht = {
+  ...einpassenEindeutig, ergebnis: 'unsicher', anteil: { mm50: 0.2, mm100: 0.3, mm150: 0.42 },
+  zweitbester: { drehung: 42.7, verschiebungMm: [100, 200], anteil150: 0.4 }, text: 'Nicht eindeutig: nächstbeste Lage 40 %.',
+};
+const einpassenKeine = { ergebnis: 'keine Merkmale', merkmale: { datei: { waende: 0, raeume: 0, kanten: 0 }, projekt: { waende: 0, raeume: 0, kanten: 0 } }, text: 'Datei und Projekt haben keine Wände oder Räume.' };
+const lageEinpassen = {
+  ...lageInhalt, inhaltJeWahl: { projekt: 0, gebaeude: 0, einpassen: 0.97 }, empfehlung: 'einpassen', einpassen: einpassenEindeutig,
+  text: lageInhalt.text.replace(' Ohne ausdrückliche Wahl', ' Empfehlung: ausrichtung = einpassen (97 % der Bauteile im bestehenden Modell). Ohne ausdrückliche Wahl'),
+};
+
+test('Einpassen: vierte Option mit Satz, Anteil, Empfehlung; nie vorgewählt', () => {
+  const o = T.ausrichtungOptionen(lageEinpassen, bezugProjekt, { waende: 12, raeume: 3 });
+  assert.equal(o.length, 4);
+  const e = o[3];
+  assert.equal(e.wert, 'einpassen');
+  assert.equal(e.titel, 'Einpassen (automatisch)');
+  assert.equal(e.satz, 'KICAD sucht Drehung und Verschiebung selbst: Wände und Raumkanten der Datei werden auf Wände und Räume des Projekts gelegt. Übernommen wird nur bei eindeutiger Lage.');
+  assert.equal(e.moeglich, true);
+  assert.equal(e.anteil, 0.97);
+  assert.equal(e.empfohlen, true);
+  assert.deepEqual(o.map((x) => x.empfohlen), [false, false, false, true]);
+  assert.deepEqual(o.map((x) => x.anteil), [0, 0, null, 0.97]);
+  assert.equal(T.vorgabeWahl(lageEinpassen), null, 'ausdrückliche Wahl, auch bei Empfehlung');
+  assert.equal(T.anteilText(e.anteil), '97 % der Bauteile im bestehenden Modell');
+});
+
+test('Einpassen: Bedingung – das Projekt braucht Wände oder Räume; unbekannte Zahl zählt als möglich', () => {
+  const moeglich = (projekt) => T.ausrichtungOptionen(lageAbweichung, bezugProjekt, projekt)[3];
+  assert.equal(moeglich(undefined).moeglich, true);
+  assert.equal(moeglich(null).moeglich, true);
+  assert.equal(moeglich({ waende: 0, raeume: 5 }).moeglich, true);
+  assert.equal(moeglich({ waende: 5, raeume: 0 }).moeglich, true);
+  const leer = moeglich({ waende: 0, raeume: 0 });
+  assert.equal(leer.moeglich, false);
+  assert.match(leer.grund, /keine Wände oder Räume/);
+  // Wahl bleibt an wahlMoeglich gebunden; nur bei der ersten Datei mit gerechnetem Einpassen ist sie sofort frei
+  assert.equal(T.ausrichtungOptionen(lageErste, bezugProjekt)[3].sofort, false);
+  assert.equal(T.ausrichtungOptionen({ ...lageErste, einpassen: einpassenEindeutig }, bezugProjekt)[3].sofort, true);
+  assert.equal(T.ausrichtungOptionen({ ...lageAbweichung, einpassen: einpassenEindeutig }, bezugProjekt)[3].sofort, false);
+  assert.deepEqual(T.projektMerkmale([{ klasse: 'Wand' }, { klasse: 'Wand' }, { klasse: 'Raum' }, { klasse: 'Tuer' }, null]), { waende: 2, raeume: 1 });
+  assert.deepEqual(T.projektMerkmale(undefined), { waende: 0, raeume: 0 });
+});
+
+test('Einpassen: frühere Wahl gilt weiter, Text der Wahl', () => {
+  assert.equal(T.vorgabeWahl({ bewertung: 'gewaehlt', ausrichtung: 'einpassen' }), 'einpassen');
+  assert.equal(T.vorgabeWahl({ bewertung: 'abweichung', ausrichtung: 'einpassen' }), null);
+  assert.equal(T.WAHL_TEXT.einpassen, 'Eingepasst über Wände und Raumkanten');
+  const h = T.lageHtml({ ...lageGeo, bewertung: 'gewaehlt', ausrichtung: 'einpassen', einpassen: einpassenEindeutig }, bezugProjekt);
+  assert.match(h, /<th>Ausrichtung<\/th><td>Eingepasst über Wände und Raumkanten<\/td>/);
+});
+
+test('Einpassen: Lageberichtzeilen bei eindeutigem Ergebnis', () => {
+  const z = T.einpassenZeilen(einpassenEindeutig);
+  const wert = (l) => z.find((r) => r.label === l)?.wert;
+  assert.equal(wert('Ergebnis'), 'eindeutig');
+  assert.equal(z.find((r) => r.label === 'Ergebnis').klasse, '');
+  assert.equal(wert('Text'), einpassenEindeutig.text);
+  assert.equal(wert('Paarung'), einpassenEindeutig.paarung);
+  assert.equal(wert('Drehung'), '-42.718°');
+  assert.equal(wert('Verschiebung'), 'Ost +0.030 · Nord +0.016 m');
+  assert.equal(wert('Bezug'), 'Ost -0.011 · Nord -0.032 · Höhe 583.690 m · Drehung 42.7182°');
+  assert.equal(wert('Treffer'), '50 mm: 61 % · 100 mm: 81 % · 150 mm: 88 % · Median 21.4 mm · 3469 Proben');
+  assert.equal(wert('Nächstbeste Lage'), 'Drehung +137.320° · Ost +9.800 · Nord -99.700 m · 35 % innert 150 mm');
+  assert.equal(wert('Merkmale'), 'Datei: 0 Wände, 37 Räume, 410 Kanten · Projekt: 406 Wände, 49 Räume, 1200 Kanten');
+  assert.equal(wert('Gegenprobe'), '97 % der Bauteile im bestehenden Modell (mit dem eingepassten Bezug)');
+  assert.equal(T.einpassenKurz(einpassenEindeutig), 'eindeutig · Drehung -42.718° · 88 % innert 150 mm');
+});
+
+test('Einpassen: unsicher ist rot und nennt den Bezug nur als Vorschlag', () => {
+  const z = T.einpassenZeilen(einpassenUnsicherBericht);
+  assert.equal(z.find((r) => r.label === 'Ergebnis').klasse, 'schwere-fehler');
+  assert.match(z.find((r) => r.label === 'Ergebnis').wert, /^unsicher – nicht eindeutig, es wird nichts übernommen/);
+  assert.ok(z.some((r) => r.label === 'Bezug (Vorschlag, nicht übernommen)'));
+  assert.ok(!z.some((r) => r.label === 'Bezug'));
+  const h = T.einpassenHtml(einpassenUnsicherBericht);
+  assert.match(h, /class="lage-einpassen unsicher"/);
+  assert.match(h, /<td class="schwere-fehler">unsicher/);
+  assert.doesNotMatch(T.einpassenHtml(einpassenEindeutig), /schwere-fehler|unsicher/);
+  assert.equal(T.einpassenUnsicher(einpassenUnsicherBericht), true);
+  assert.equal(T.einpassenUnsicher(einpassenEindeutig), false);
+  assert.equal(T.einpassenUnsicher(undefined), false);
+});
+
+test('Einpassen: keine Merkmale – nur Ergebnis, Text und Merkmale, ohne Bezug, Drehung, Verschiebung', () => {
+  const z = T.einpassenZeilen(einpassenKeine);
+  const labels = z.map((r) => r.label);
+  assert.deepEqual(labels, ['Ergebnis', 'Text', 'Nächstbeste Lage', 'Merkmale']);
+  assert.equal(z[0].klasse, 'schwere-fehler');
+  assert.match(z[0].wert, /^keine Merkmale/);
+  assert.equal(z.find((r) => r.label === 'Nächstbeste Lage').wert, 'keine andere Lage gefunden');
+  assert.equal(T.einpassenKurz(einpassenKeine), 'keine Merkmale');
+  const h = T.einpassenHtml(einpassenKeine);
+  assert.doesNotMatch(h, /Drehung|Verschiebung/);
+});
+
+test('Einpassen: Tabelle je Geschoss, leere Liste sagt es, fehlende Liste nichts', () => {
+  const h = T.einpassenHtml(einpassenEindeutig);
+  assert.match(h, /<h4>Einpassen<\/h4>/);
+  assert.match(h, /<th>Geschoss<\/th><th class="zahl">Kote<\/th><th class="zahl">Proben<\/th><th class="zahl">Innert 150 mm<\/th><th class="zahl">Median \[mm\]<\/th>/);
+  assert.match(h, /<td>EG<\/td><td class="zahl">0\.00<\/td><td class="zahl">820<\/td><td class="zahl">90 %<\/td><td class="zahl">18\.0<\/td>/);
+  assert.match(h, /<td>1\.OG<\/td><td class="zahl">2\.90<\/td><td class="zahl">700<\/td><td class="zahl">86 %<\/td><td class="zahl">25\.0<\/td>/);
+  assert.match(T.einpassenHtml({ ...einpassenEindeutig, geschosse: [] }), /Alle Merkmale wurden zusammen verglichen/);
+  const ohne = { ...einpassenEindeutig }; delete ohne.geschosse;
+  assert.doesNotMatch(T.einpassenHtml(ohne), /einpassen-geschosse|zusammen verglichen/);
+  assert.equal(T.einpassenHtml(undefined), '');
+  assert.equal(T.einpassenHtml(null), '');
+  assert.deepEqual(T.einpassenZeilen(null), []);
+});
+
+test('Einpassen: Lagebericht und Dialog zeigen den Abschnitt; Texte aus dem Kern werden maskiert', () => {
+  const h = T.lageHtml(lageEinpassen, bezugProjekt, { ohneKasten: true });
+  assert.match(h, /<h4>Einpassen<\/h4>/);
+  assert.match(h, /Eingepasst über 345 Raumkanten/);
+  assert.doesNotMatch(T.lageHtml(lageInhalt, bezugProjekt), /<h4>Einpassen/);
+  const boese = T.einpassenHtml({ ...einpassenEindeutig, text: '<img src=x onerror=alert(1)>', paarung: '<b>x</b>', geschosse: [{ geschoss: '<i>EG</i>' }] });
+  assert.doesNotMatch(boese, /<img|<b>x|<i>/);
+  assert.match(boese, /&lt;img/);
+  // Teilweise Berichte (ältere oder künftige Felder) brechen nichts
+  assert.doesNotThrow(() => T.einpassenHtml({ ergebnis: 'eindeutig' }));
+  assert.match(T.einpassenHtml({ ergebnis: 'eindeutig', anteil: {}, geschosse: [{}] }), /<td>–<\/td>/);
+});
+
+test('Einpassen: roter Kasten trägt bei Empfehlung den Hinweis und den Anteil «Eingepasst»', () => {
+  const k = T.abweichungKasten(lageEinpassen);
+  assert.match(k, /Empfehlung: Ausrichtung «Einpassen \(automatisch\)» wählen – damit liegen 97 % der Bauteile im bestehenden Modell\. KICAD übernimmt nur bei eindeutiger Lage\./);
+  assert.match(k, /Eingepasst: 97 % der Bauteile im bestehenden Modell/);
+  assert.doesNotMatch(k, /ACHTUNG Inhalt/);
+  assert.doesNotMatch(k, /Empfehlung: ausrichtung = einpassen/, 'der Satz des Kerns steht nicht doppelt im Haupttext');
+  assert.match(k, /Ohne ausdrückliche Wahl/);
+  // Empfehlung nur im Kerntext (ohne Feld) genügt ebenfalls
+  const nurText = T.abweichungKasten({ ...lageEinpassen, empfehlung: undefined, einpassen: undefined, inhaltJeWahl: { projekt: 0, gebaeude: 0 } });
+  assert.match(nurText, /Empfehlung: Ausrichtung «Einpassen \(automatisch\)» wählen\. KICAD/);
+  // ohne Empfehlung und ohne Einpassen: Kasten wie vorher
+  assert.doesNotMatch(T.abweichungKasten(lageInhalt), /Einpassen/);
+  // unsicher: Hinweis auf den Abschnitt, keine Empfehlung
+  const u = T.abweichungKasten({ ...lageInhalt, einpassen: einpassenUnsicherBericht, inhaltJeWahl: { projekt: 0, gebaeude: 0, einpassen: 0.1 } });
+  assert.match(u, /Automatisches Einpassen ist hier nicht eindeutig/);
+  assert.doesNotMatch(u, /Empfehlung: Ausrichtung/);
+  assert.match(u, /Keine der beiden Lagen trifft das bestehende Modell/);
+});
+
+test('Einpassen: Ergebnis des Trockenlaufs – Lagebericht aus lage.einpassen oder Feld einpassen, sonst nichts', () => {
+  assert.equal(T.einpassenAusErgebnis({ lage: { einpassen: einpassenEindeutig } }), einpassenEindeutig);
+  assert.equal(T.einpassenAusErgebnis({ einpassen: einpassenEindeutig }), einpassenEindeutig);
+  assert.equal(T.einpassenAusErgebnis({ hinweise: ['x'] }), null);
+  assert.equal(T.einpassenAusErgebnis(null), null);
+  assert.equal(T.einpassenAusErgebnis({ lage: { einpassen: 'text' } }), null);
+});
+
+test('Einpassen: Parameter ausrichtung = einpassen; Übernehmen ohne Wahl bei Abweichung bleibt abgelehnt', () => {
+  const alle = { datei: 'abc_a.ifc', bereiche: ['architektur', 'raeume', 'hlks'], alleBereiche: ['architektur', 'raeume', 'hlks'], geschosse: ['EG'], alleGeschosse: ['EG'] };
+  assert.deepEqual(T.uebernahmeParameter({ ...alle, ausrichtung: 'einpassen' }), { datei: 'abc_a.ifc', ausrichtung: 'einpassen' });
+  assert.deepEqual(T.uebernahmeParameter({ ...alle, bereiche: ['architektur', 'raeume'], ausrichtung: 'einpassen', konflikte: 'ifc' }),
+    { datei: 'abc_a.ifc', bereiche: ['architektur', 'raeume'], ausrichtung: 'einpassen', konflikte: 'ifc' });
+  const ok = { bereiche: ['architektur'], geschosse: ['EG'], lage: lageEinpassen, ausrichtung: 'einpassen' };
+  assert.equal(T.uebernahmePruefen(ok), true);
+  assert.match(T.uebernahmePruefen({ ...ok, ausrichtung: null }), /Ausrichtung ausdrücklich wählen/);
+});
+
+test('Koordinaten: Lagebericht der Unterlage mit einpassen zeigt Abschnitt und Wahltext', () => {
+  const gespeichert = { ...lageGeo, bewertung: 'gewaehlt', ausrichtung: 'einpassen', einpassen: einpassenEindeutig, inhalt: { ueberdeckung: 0.97, bauteile: 80 } };
+  const h = T.lageHtml(gespeichert, bezugProjekt);
+  assert.match(h, /Eingepasst über Wände und Raumkanten/);
+  assert.match(h, /Treffer<\/th><td>50 mm: 61 %/);
+  assert.match(h, /<th>Inhalt<\/th><td>97 % der Bauteile im bestehenden Modell<\/td>/);
 });
 
 test('Geschossnamen: eindeutig oder doppelt (Archicad: zweimal OG)', () => {

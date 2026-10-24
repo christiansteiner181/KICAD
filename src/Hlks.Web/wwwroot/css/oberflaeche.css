@@ -338,6 +338,11 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 .lage-tab td { overflow-wrap: anywhere; }
 .lage-text { margin: 6px 0 2px; }
 .lage-hinweis { margin: 4px 0; }
+.lage-einpassen { margin: 8px 0; }
+.lage-einpassen h4 { margin: 0 0 4px; }
+.lage-einpassen.unsicher h4 { color: var(--fehler); }
+.lage-einpassen .einpassen-geschosse { margin-top: 6px; }
+.lage-abw-einpassen { font-weight: 600; }
 fieldset.ausrichtung { margin: 8px 0; }
 fieldset.ausrichtung:disabled { opacity: .75; }
 label.wahl, label.bereich { display: grid; grid-template-columns: 18px 1fr; gap: 4px; align-items: start; padding: 3px 4px; border-radius: var(--radius); cursor: pointer; }

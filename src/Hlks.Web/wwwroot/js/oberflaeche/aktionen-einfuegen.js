@@ -61,7 +61,8 @@ export function hochladen(datei, fortschritt = null) {
 }
 
 const spinner = (text) => `<div class="lauf"><span class="spinner" aria-hidden="true"></span><span class="lauf-text">${esc(text)}</span></div>`;
-const fehlerKasten = (r) => `<div class="fehlerkasten" role="alert"><b>${esc(r.fehler || r.meldung || 'Abgelehnt.')}</b>${r.vorschlag ? `<div>Vorschlag: ${esc(r.vorschlag)}</div>` : ''}</div>`;
+// Der Kern nennt bei «nicht eindeutig» den Lagebericht als Text (mehrere Zeilen) und einen Vorschlag: Zeilenumbrüche bleiben
+const fehlerKasten = (r) => `<div class="fehlerkasten" role="alert"><b style="white-space:pre-line">${esc(r.fehler || r.meldung || 'Abgelehnt.')}</b>${r.vorschlag ? `<div style="white-space:pre-line">Vorschlag: ${esc(r.vorschlag)}</div>` : ''}</div>`;
 
 // ---------------------------------------------------------------------------------------------- IFC übernehmen
 
@@ -108,9 +109,11 @@ async function ifcDialog(datei) {
     const lage = pruefung.lage, bezug = pruefung.bezugProjekt;
     const frueher = derKlasse('Unterlage').find((u) => u.werte?.art === 'ifc' && ohnePruefsumme(String(u.werte?.original ?? '').split(/[\\/]/).pop()) === datei.name);
     const geschosse = [...(pruefung.geschosse ?? [])].sort((a, b) => (b.kote ?? 0) - (a.kote ?? 0));
-    const optionen = T.ausrichtungOptionen(lage, bezug);
+    const optionen = T.ausrichtungOptionen(lage, bezug, T.projektMerkmale(alleElemente()));
     const eindeutig = T.geschossNamenEindeutig(geschosse);
     const darf = T.wahlMoeglich(lage);
+    // Einpassen ist auch bei der ersten Datei wählbar, wenn der Kern es gerechnet hat (Projekt mit schon gezeichnetem Inhalt); die anderen Wahlen nicht
+    const frei = (o) => o.moeglich && (darf || o.sofort);
     const vorwahl = T.vorgabeWahl(lage);
     const keineWahl = lage?.bewertung === 'erster' ? 'Erste IFC-Datei: sie legt den Projektbezug fest. Eine Wahl ist nicht nötig.'
       : lage?.bewertung === 'passt' ? 'Die Lage passt zum Projektbezug (Toleranz 10 mm, 0.01°). Eine Wahl ist nicht nötig.'
@@ -142,10 +145,10 @@ async function ifcDialog(datei) {
       ${lage?.bewertung === 'abweichung' ? T.abweichungKasten(lage) : ''}
       <h3>Lagebericht und Ausrichtung</h3>
       ${T.lageHtml(lage, bezug, { ohneKasten: true })}
-      <fieldset class="ausrichtung"${darf ? '' : ' disabled'}><legend>Ausrichtung wählen</legend>
+      <fieldset class="ausrichtung"${optionen.some(frei) ? '' : ' disabled'}><legend>Ausrichtung wählen</legend>
         ${keineWahl ? `<p class="leise">${esc(keineWahl)}</p>` : ''}
         ${lage?.bewertung === 'gewaehlt' ? '<p class="leise">Eine frühere Wahl gilt weiter, solange die Abweichung gleich bleibt.</p>' : ''}
-        ${optionen.map((o) => `<label class="wahl${darf && o.moeglich ? '' : ' aus'}"><input type="radio" name="ausrichtung" value="${o.wert}"${darf && o.moeglich ? '' : ' disabled'}${vorwahl === o.wert ? ' checked' : ''}><span><b>${esc(o.titel)}</b>${o.empfohlen ? ' <span class="empfohlen">empfohlen</span>' : ''}<br><span class="leise">${esc(o.satz)}${o.moeglich ? '' : ' ' + esc(o.grund)}</span>${T.anteilText(o.anteil) ? `<br><span class="leise wahl-anteil">${esc(T.anteilText(o.anteil))}</span>` : ''}</span></label>`).join('')}
+        ${optionen.map((o) => `<label class="wahl${frei(o) ? '' : ' aus'}"><input type="radio" name="ausrichtung" value="${o.wert}"${frei(o) ? '' : ' disabled'}${vorwahl === o.wert ? ' checked' : ''}><span><b>${esc(o.titel)}</b>${o.empfohlen ? ' <span class="empfohlen">empfohlen</span>' : ''}<br><span class="leise">${esc(o.satz)}${o.moeglich ? '' : ' ' + esc(o.grund)}</span>${T.anteilText(o.anteil) ? `<br><span class="leise wahl-anteil">${esc(T.anteilText(o.anteil))}</span>` : ''}</span></label>`).join('')}
       </fieldset>`;
     const rest = `
       <details class="ifc-weitere"><summary>Weitere Optionen</summary>
@@ -168,14 +171,15 @@ async function ifcDialog(datei) {
   async function vorschau(ctrl) {
     const f = pruefen(false);
     if (f !== true) { ctrl.fehler(f); return; }
-    vorschauFeld().innerHTML = spinner('Trockenlauf läuft … bei grossen Dateien kann das einige Minuten dauern.');
-    hinweisSetzen('IFC-Vorschau wird gerechnet …');
+    const einpassen = lesen().ausrichtung === 'einpassen';
+    vorschauFeld().innerHTML = spinner(einpassen ? 'Einpassen und Trockenlauf laufen … bei grossen Modellen einige Sekunden bis Minuten.' : 'Trockenlauf läuft … bei grossen Dateien kann das einige Minuten dauern.');
+    hinweisSetzen(einpassen ? 'IFC wird eingepasst, Vorschau wird gerechnet …' : 'IFC-Vorschau wird gerechnet …');
     let r;
     try { r = await sende('ifc_uebernehmen', parameter(), { trockenlauf: true }); }
     finally { hinweisSetzen(''); }
     if (!r.angenommen) { vorschauFeld().innerHTML = fehlerKasten(r); return; }
     const befunde = (r.neueBefunde ?? []).length;
-    vorschauFeld().innerHTML = `<p class="leise">Trockenlauf – es wurde nichts geändert.</p>${T.aenderungenTabelle(r.aenderungen)}`
+    vorschauFeld().innerHTML = `<p class="leise">Trockenlauf – es wurde nichts geändert.</p>${T.einpassenHtml(T.einpassenAusErgebnis(r))}${T.aenderungenTabelle(r.aenderungen)}`
       + (befunde ? `<p class="warnung">Neue Prüfbefunde nach der Übernahme: ${befunde}</p>` : '')
       + T.hinweiseHtml(r.hinweise);
     vorschauFeld().scrollIntoView({ block: 'nearest' });
@@ -226,7 +230,12 @@ async function ifcDialog(datei) {
 
 /** Ergebnis einer Übernahme: Änderungen je Klasse und alle Hinweise des Kerns. */
 async function ergebnisDialog(r, dateiname) {
+  // Lagebericht «Einpassen»: aus dem Ergebnis, sonst aus der gespeicherten Lage der Unterlage (falls das Modell sie schon kennt)
+  const gespeichert = () => derKlasse('Unterlage').find((u) => u.werte?.art === 'ifc' && u.werte?.lage?.ausrichtung === 'einpassen'
+    && ohnePruefsumme(String(u.werte?.original ?? '').split(/[\\/]/).pop()) === dateiname)?.werte?.lage?.einpassen ?? null;
+  const einpassen = T.einpassenAusErgebnis(r) ?? gespeichert();
   const w = knoten(`<div><p class="dlg-text"><b>${esc(dateiname)}</b> ist übernommen. Rückgängig geht mit Strg+Z (ein Paket).</p>
+    ${T.einpassenHtml(einpassen)}
     ${T.aenderungenTabelle(r.aenderungen)}
     ${(r.neueBefunde ?? []).length ? `<p class="warnung">Neue Prüfbefunde: ${r.neueBefunde.length} (Register Verwalten → Prüfbefunde).</p>` : ''}
     <h4>Hinweise</h4>${T.hinweiseHtml(r.hinweise) || '<p class="leise">Keine.</p>'}</div>`);
@@ -331,7 +340,8 @@ async function koordinatenZeigen() {
       const l = u.werte?.lage ?? {};
       const abw = l.abweichung;
       const ausr = l.ausrichtung ? (T.WAHL_TEXT[l.ausrichtung] ?? l.ausrichtung) : '–';
-      return `<tr data-kz="${esc(u.kennzeichen)}" title="Klick: Lagebericht"><td>${esc(unterlagenText(u))}</td><td>${esc([u.werte?.ifcSchema, u.werte?.ifcProgramm].filter(Boolean).join(', ') || '–')}</td><td>${esc(ausr)}</td>`
+      const kurz = l.ausrichtung === 'einpassen' ? T.einpassenKurz(l.einpassen) : '';   // Zahlen des Kerns: Ergebnis, Drehung, Treffer
+      return `<tr data-kz="${esc(u.kennzeichen)}" title="Klick: Lagebericht"><td>${esc(unterlagenText(u))}</td><td>${esc([u.werte?.ifcSchema, u.werte?.ifcProgramm].filter(Boolean).join(', ') || '–')}</td><td>${esc(ausr)}${kurz ? `<br><span class="leise">${esc(kurz)}</span>` : ''}</td>`
         + `<td class="${l.bewertung === 'abweichung' ? 'schwere-fehler' : ''}">${abw ? esc(abw.text ?? '') + '<br><span class="leise">' + esc(T.abweichungZahlen(abw)) + '</span>' : l.bewertung === 'erster' ? 'keine (setzt den Projektbezug)' : '–'}</td></tr>`;
     }).join('')}</tbody></table>`}
     <p class="leise">Zahlen in m, Winkel in Grad. Ein Klick auf eine Zeile zeigt den ganzen Lagebericht der Datei.</p></div>`);
