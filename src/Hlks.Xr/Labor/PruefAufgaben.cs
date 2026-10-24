@@ -12,7 +12,7 @@
 //   drehen-90             zuerst 90° nach links (±15°), dann zurück in die Ausgangsrichtung (±15°), je HaltenS = 0.5 s gehalten.
 //   etage-wechseln        ins Geschoss darüber (ohne: darunter), dann zurück ins Ausgangsgeschoss.
 //   modell-greifen-zoomen Griffe losgelassen (seit V1d der eine Griff), Massstab höchstens 10 % neben dem Zielmassstab, Drehung 90° (±15°) gegen den Start, in beide Richtungen.
-//   raum-ar-oeffnen       Ausschnitt des markierten Raums auf dem Tisch, mit «Echter Tisch» angetippt (ist Passthrough nicht verfügbar – Simulator –, genügt der
+//   raum-ar-oeffnen       Ausschnitt des markierten Raums auf dem Tisch, auf dem echten Tisch angetippt (V1f: «Auf echten Tisch» ist beim Betreten ein) (ist Passthrough nicht verfügbar – Simulator –, genügt der
 //                         Ausschnitt; die Karte sagt es).
 //   tablet-wert-ablesen   die richtige Höhe des markierten Bauteils auf dem Tablet gewählt; nur in der Variante «bedienung» = «tablet», sonst wartet die Aufgabe.
 //   messen-wand-wand      V1a: eine Messung von der einen markierten Wand zur anderen, höchstens 2 cm neben dem Sollmass (WandPaare: Wahl, Sollmass aus der Geometrie,
@@ -449,7 +449,7 @@ public static class PruefAufgaben
             Drehen90 => l.Phase == 0 ? "Jetzt: 90° nach links" : "Jetzt: zurück in die Ausgangsrichtung",
             EtageWechseln => l.Phase == 0 ? $"Jetzt: ins {l.ZielGeschoss?.Kennzeichen}" : $"Jetzt: zurück ins {l.StartGeschoss?.Kennzeichen}",
             ModellGreifenZoomen => Z($"Ziel 1:{l.ZielMassstab:0} und eine Vierteldrehung"),
-            RaumArOeffnen => l.Phase switch { 0 => "Jetzt: App «Tisch» › «Raum zeigen»", 1 => "Jetzt: «Echter Tisch» einschalten", _ => "Jetzt: auf die Tischplatte tippen" },
+            RaumArOeffnen => l.Phase switch { 0 => "Jetzt: App «Tisch» › «Raum zeigen»", 1 => "Jetzt: App «Tisch» › «Auf echten Tisch»", _ => "Jetzt: auf die Tischplatte tippen" },
             TabletWertAblesen => l.Frage?.Text ?? "",
             MessenWandWand => "Jetzt: von der einen markierten Wand zur anderen messen",
             _ => "",

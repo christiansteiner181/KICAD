@@ -115,12 +115,14 @@ sealed partial class QuestApp
         }
         if (Zwischen(4.8, 5.1) && v1dKopf0 is { } kd)
             pruefKopf = KopfAuf(kd.position, KopfRef(kd).Gieren - 50 * Grad1 * GlasStil.Weich((v1dJetzt - 4.8) / 0.25));
-        if (Bei(5.3) && pruefKopf is { } kh) V1dBild(ordner, "v1d_tafel_folgt.jpg", kh.position, kh.position + kh.Forward, 95);
+        if (Bei(5.3) && pruefKopf is { } kh && bedien.Tafel.Nachfuehren != Varianten.TafelFest) V1dBild(ordner, "v1d_tafel_folgt.jpg", kh.position, kh.position + kh.Forward, 95);
         if (Bei(7.8) && pruefKopf is { } ke && apps.Rahmen is { } ra1)
         {
             v1dTafelRest = Math.Abs(Tafel.Abweichung(ra1.Fenster.Mitte, new XVec3(ke.position.x, ke.position.y, ke.position.z), KopfRef(ke).Gieren)) / Grad1;
-            v1dTafelMittig = v1dTafelRest <= Tafel.RestGrad + 0.5 && apps.Folgen.Nachgerueckt >= 1;
-            V1dBild(ordner, "v1d_tafel_mittig_nach_drehen.jpg", ke.position, ke.position + ke.Forward, 95);
+            // V1f: Vorgabe «fest» – die Tafel bleibt stehen (rund 50° neben dem Blick, nie nachgerückt); «traege» rückt nach
+            var fest = bedien.Tafel.Nachfuehren == Varianten.TafelFest;
+            v1dTafelMittig = fest ? apps.Folgen.Nachgerueckt == 0 && v1dTafelRest > 40 : v1dTafelRest <= Tafel.RestGrad + 0.5 && apps.Folgen.Nachgerueckt >= 1;
+            V1dBild(ordner, fest ? "v1f_tafel_bleibt_nach_drehen.jpg" : "v1d_tafel_mittig_nach_drehen.jpg", ke.position, ke.position + ke.Forward, 95);
             v1dSeite0 = apps.Seite;
         }
         // 4. Blättern auf der Tafel: die gedachte Hand wischt 2 cm vor der Fläche von rechts nach links (die Etagen haben meist zwei Seiten)
@@ -185,6 +187,7 @@ sealed partial class QuestApp
         Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
         var ziel = Sk(XrSitzungLogik.TischMitte.X, XrSitzungLogik.TischHoehe + 0.1, XrSitzungLogik.TischMitte.Z);
         if (b == 0) { v1dStart = sitzung.Lage; PruefbildVorbereiten(); apps.Ausblenden(Time.Total); }
+        if (b == 5) PruefV1fTisch(ordner);   // V1f: ohne Tisch, nur das Modell (QuestApp.PruefenV1f.cs)
         // 1. Leistung
         if (b < 6 * 60)
         {
@@ -318,11 +321,12 @@ sealed partial class QuestApp
         if (g < V1dTischBilder - 6 * 60 - 1) return;
         sitzung.PruefHaende = null;
         sitzung.LageSetzen(v1dStart!);
-        var ok = v1dGriffOk && v1dZoomOk && v1dKnopfOk && v1dLeistung.Count == 6 && (szenenFang is null || v1dFangOk) && v1eVerschiebenOk && v1eDrehenOk && v1eEtagenOk;
+        var ok = v1dGriffOk && v1dZoomOk && v1dKnopfOk && v1dLeistung.Count == 6 && (szenenFang is null || v1dFangOk) && v1eVerschiebenOk && v1eDrehenOk && v1eEtagenOk
+            && !pruefV1fTisch.Contains("FEHLER", StringComparison.Ordinal);
         pruefV1dTisch = string.Create(CultureInfo.InvariantCulture,
             $"V1d Tisch={(ok ? "ok" : "FEHLER")} ({string.Join("; ", v1dLeistung)}; Tischstufen {stufenText}; ein Griff (Variante): fassen, heben, drehen {(v1dGriffOk ? "ja" : "nein")}, " +
             $"zweite Hand zoomt 1:{v1dN0:0} → 1:{v1dN0 / 2:0} {(v1dZoomOk ? "ja" : "nein")}, Drehknopf {(v1dKnopfOk ? "ja" : "nein")}; {v1dFangText}; " +
-            $"V1e zwei Punkte: verschieben ohne Drehen {(v1eVerschiebenOk ? "ja" : "nein")}, {v1eDrehenText}; {v1eEtagenText})");
+            $"V1e zwei Punkte: verschieben ohne Drehen {(v1eVerschiebenOk ? "ja" : "nein")}, {v1eDrehenText}; {v1eEtagenText}; {pruefV1fTisch})");
     }
 
     bool v1eVerschiebenOk, v1eDrehenOk, v1eEtagenOk;
@@ -389,10 +393,13 @@ sealed partial class QuestApp
             var r = rl.ZuRef(v1eP.Drehen);
             var radial = (rl.ZuRef(v1eP.Drehen + (v1eP.Drehen - v1eP.Zentrum with { Y = v1eP.Drehen.Y }).Einheit()) - r).Einheit();
             var tangente = radial.Kreuz(new XVec3(0, 1, 0)).Einheit();
-            geister.Starten(GeisterGeste.Kreisen, Time.Total, Geisterhand.Vorlage(r, XrTabletLogik.TabletLageAus(r, new XVec3(0, 1, 0)), links: false),
+            // V1f: mit der Pistolengeste fasst die Faust – die Geisterhand «FaustKreisen» (aus einer offenen Hand mit der Handfläche nach unten)
+            var form = bedien.MitPistole ? Geisterhand.VorlageFlach(r + new XVec3(0, 0.04, 0), new XVec3(0, -1, 0), tangente.Kreuz(new XVec3(0, 1, 0)) * -1, links: false)
+                : Geisterhand.Vorlage(r, XrTabletLogik.TabletLageAus(r, new XVec3(0, 1, 0)), links: false);
+            geister.Starten(bedien.MitPistole ? GeisterGeste.FaustKreisen : GeisterGeste.Kreisen, Time.Total, form,
                 new TabletPose(r, new XVec3(0, 1, 0), tangente, new XVec3(0, 1, 0).Kreuz(tangente).Einheit(), 0.05, 0.05));
         }
-        if (g == 330) V1dBild(ordner, "v1e_geist_kreisen.jpg", Sk(0.25, 1.3, 0.05), (Vec3)(Vector3)rl.ZuRef(v1eP.Drehen), 65);
+        if (g == 330) V1dBild(ordner, bedien.MitPistole ? "v1f_geist_faust_kreisen.jpg" : "v1e_geist_kreisen.jpg", Sk(0.25, 1.3, 0.05), (Vec3)(Vector3)rl.ZuRef(v1eP.Drehen), 65);
         // Etagenliste am Tisch: alle Geschosse und «Alle Etagen» auf einer Seite (die Tafel wird höher), das aktuelle hervorgehoben
         if (g == 335) { AppOeffnen("etagen"); }
         if (g == 385)   // nach dem Aufbauen des Fensters (Bilder am PC sind kurz)

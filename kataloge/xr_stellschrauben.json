@@ -8,12 +8,12 @@
     { "id": "anzeige", "titel": "Anzeige" },
     { "id": "apps", "titel": "Schwebende Apps" },
     { "id": "wisch", "titel": "Wischgesten" },
-    { "id": "pinch", "titel": "Pinch und Fang" },
+    { "id": "pinch", "titel": "Auslöser (Pistolengeste, Pinch) und Fang" },
     { "id": "komfort", "titel": "Komfort" },
     { "id": "sitzung", "titel": "Sitzungsraum" },
     { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
     { "id": "wegwischen", "titel": "Wegwischen (schliessen: rechte oder linke Hand von rechts nach links)" },
-    { "id": "gesten", "titel": "Anstoss (Hebegeste, Hineinziehen, Wegwischen)" },
+    { "id": "gesten", "titel": "Anstoss und lockere Hand (Hebegeste, Hineinziehen, Wegwischen)" },
     { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" },
     { "id": "tafel", "titel": "Tafel (Fenster einer App): Lage, Nachführen, Blättern" },
     { "id": "desktop", "titel": "Desktop in der Brille (Hineinziehen, Bildschirm, Übertragung)" }
@@ -176,6 +176,24 @@
       "herkunft": "Annahme Brillentest 21.10.2026 (XrMessLogik.cs: Fangradius am Finger 3 cm; PinchEinstellungen.FangRadiusM)"
     },
     {
+      "schluessel": "pistole.abzug_an_m", "gruppe": "pinch", "titel": "Pistolengeste: Abdrücken", "status": "app",
+      "beschreibung": "Zielen mit gestrecktem Zeigefinger, die übrigen Finger eingerollt, Daumen oben; abgedrückt ist, wenn die Daumenspitze näher als dieser Abstand an der Seite der Hand liegt (Zeigefinger bzw. Mittelfinger). Löst Springen, Messen, Marker setzen und die Wahl auf Distanz aus (Variante «Auslöser» = «Pistolengeste»).",
+      "art": "zahl", "einheit": "m", "min": 0.01, "max": 0.06, "schritt": 0.001, "vorgabe": 0.025,
+      "herkunft": "Annahme V1f (anliegend rund 1–2 cm); Christian 24.10.2026: «pich ist zu sensibel.. hier braucht es eine andere geste. bsp. pistolengeste.»"
+    },
+    {
+      "schluessel": "pistole.abzug_aus_m", "gruppe": "pinch", "titel": "Pistolengeste: Daumen oben", "status": "app",
+      "beschreibung": "Erst über diesem Abstand steht der Daumen wieder oben bzw. ist der Abzug gelöst (Hysterese gegen Zittern).",
+      "art": "zahl", "einheit": "m", "min": 0.015, "max": 0.1, "schritt": 0.001, "vorgabe": 0.04,
+      "herkunft": "Annahme V1f"
+    },
+    {
+      "schluessel": "pistole.ruhe_s", "gruppe": "pinch", "titel": "Pistolengeste: Ruhezeit", "status": "app",
+      "beschreibung": "So lange muss der Daumen vor dem Abdrücken oben stehen, ruhig gezielt; blosses Zeigen und das Formen der Hand lösen so nichts aus.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 1, "schritt": 0.05, "vorgabe": 0.15,
+      "herkunft": "Annahme V1f"
+    },
+    {
       "schluessel": "komfort.tunnelblick", "gruppe": "komfort", "titel": "Tunnelblick beim Springen, Drehen und Etagenwechsel", "status": "app",
       "beschreibung": "Das Blickfeld engt sich beim Springen, Drehen und Etagenwechsel kurz und weich ein (gegen Übelkeit).",
       "art": "ja_nein", "vorgabe": true,
@@ -231,15 +249,27 @@
     },
     {
       "schluessel": "hebe.handflaeche_grad", "gruppe": "hebe", "titel": "Handfläche nach oben", "status": "app",
-      "beschreibung": "Die Handfläche zeigt höchstens so weit neben senkrecht nach oben.",
-      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
-      "herkunft": "Annahme V1a"
+      "beschreibung": "Die Handfläche zeigt höchstens so weit neben senkrecht nach oben (beim natürlichen Anheben sind die Handflächen oft zueinander bzw. zum Körper gekippt).",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 60,
+      "herkunft": "Annahme V1a 45°, V1f 60°; Christian 24.10.2026: «die app hineinheben geste scheint im letzten test weniger gut zu klappen.»"
     },
     {
       "schluessel": "hebe.gleichzeitig_s", "gruppe": "hebe", "titel": "Beide Hände gleichzeitig", "status": "app",
-      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander zu steigen.",
-      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.35,
-      "herkunft": "Annahme V1a"
+      "beschreibung": "Die beiden Hände beginnen höchstens so weit auseinander zu steigen (der Anstoss der ersten Hand bleibt so lange gemerkt).",
+      "art": "zahl", "einheit": "s", "min": 0.05, "max": 1.5, "schritt": 0.05, "vorgabe": 0.5,
+      "herkunft": "Annahme V1a 0.35 s, V1f 0.5 s"
+    },
+    {
+      "schluessel": "hebe.vorhalte_s", "gruppe": "hebe", "titel": "Hebegeste: Haltung vorher", "status": "app",
+      "beschreibung": "So lange stehen die Handflächen oben, bevor der Anstoss nach oben zählt (die übrigen Gesten 0.1 s). 0 = die Hände dürfen sich erst beim Anheben in die Haltung drehen.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 0.5, "schritt": 0.05, "vorgabe": 0,
+      "herkunft": "Annahme V1f; Befund Brillentest V1e: die Hebegeste löste mit echten Händen schlechter aus"
+    },
+    {
+      "schluessel": "hebe.dreh_grad", "gruppe": "hebe", "titel": "Hebegeste: Drehung beim Anheben", "status": "app",
+      "beschreibung": "So weit darf sich die Handfläche während des Anstosses nach oben drehen (die übrigen Gesten 25°).",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 90, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1f; Befund Brillentest V1e"
     },
     {
       "schluessel": "wegwischen.weg_m", "gruppe": "wegwischen", "titel": "Wegwischen: Weg nach links", "status": "app",
@@ -440,6 +470,12 @@
       "herkunft": "Annahme V1e; Christian 24.10.2026: «weil die instinktive bewegung zu kurz ist»"
     },
     {
+      "schluessel": "gesten.offen_ab", "gruppe": "gesten", "titel": "Lockere Hand: offen ab", "status": "app",
+      "beschreibung": "Ab so viel gilt die Hand für Wegwischen, Hineinziehen und Hebegeste als offen (mittlerer Abstand der Fingerspitzen zum Handgelenk in Handgrössen: flache Hand rund 1.9, halb gekrümmt rund 1.45, Faust rund 1.0). Faust, Pistolengeste und Pinch zählen nie; die Form der Hand bleibt während der Geste.",
+      "art": "zahl", "einheit": "", "min": 1.1, "max": 1.9, "schritt": 0.05, "vorgabe": 1.4,
+      "herkunft": "Annahme V1f (bis V1e 1.65 bzw. 1.75 beim Anstoss); Christian 24.10.2026: «wisch geste soll auch gehen wenn die finger nicht voll gestrekt sind.»"
+    },
+    {
       "schluessel": "etagen.zeilen_max", "gruppe": "tafel", "titel": "Etagen auf einer Seite", "status": "app",
       "beschreibung": "Bis zu so vielen Geschossen zeigt die App «Etagen» alle auf einer Seite (die Tafel wird höher); darüber rollt die Liste mit einem Wisch hoch/runter auf der Tafel.",
       "art": "zahl", "einheit": "", "min": 4, "max": 30, "schritt": 1, "vorgabe": 12,
@@ -456,6 +492,12 @@
       "beschreibung": "So viel Änderung des Abstands der Hand zum Zentrum (Anteil) zählt nicht (damit Drehen nicht ungewollt zoomt).",
       "art": "zahl", "einheit": "", "min": 0, "max": 0.3, "schritt": 0.01, "vorgabe": 0.05,
       "herkunft": "Annahme V1e; Auftrag V1e: «Kleine Ausschläge um den Startpunkt dämpfen»"
+    },
+    {
+      "schluessel": "sitzung.tisch_hoehe_m", "gruppe": "sitzung", "titel": "Tischhöhe ohne echten Tisch", "status": "app",
+      "beschreibung": "Am Sitzungstisch steht das Modell immer im echten Raum (Passthrough, kein virtueller Tisch). Ist kein echter Tisch angetippt, steht es auf dieser Höhe über dem Boden.",
+      "art": "zahl", "einheit": "m", "min": 0.4, "max": 1.3, "schritt": 0.01, "vorgabe": 0.75,
+      "herkunft": "Annahme V1f (wie bisher der virtuelle Tisch); Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)»"
     },
     {
       "schluessel": "symbole.abstand_tafel_m", "gruppe": "symbole", "titel": "Abstand der Symbole zur Tafel", "status": "app",

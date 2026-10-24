@@ -15,8 +15,8 @@ namespace Hlks.Quest;
 /// zwei Zeilen, im Blick gleich gross (Schrifthöhe mit dem Abstand), mindestens 0.3 m vor dem Auge, sanft ein- und ausblenden, nach «hinweis.dauer_s» weg; nie über
 /// Apps, Symbolen, Tooltips, Geisterhänden oder der Karte einer Aufgabe – geprüft im Blick (Winkel). Am Sitzungstisch auch nie über dem Modell (Befund Hauptlauf
 /// 24.10.2026, Bilder 02): Meldungen, die beim Objekt auf dem Modell stünden, werden allgemeine Hinweise; nur die kurzen Beschriftungen (Messwert, Marker-Kennzeichen)
-/// bleiben am Objekt. Beim Wechsel Begehen ↔ Sitzungsraum fallen die alten Hinweise weg. Dazu Dauerhinweise, solange sie gelten: «Echter Tisch: … tippen» über dem
-/// Tisch, ein Fehler der Verbindung (allgemein). In der Variante «tablet» zeigt die Box die Hinweise wie bisher.
+/// bleiben am Objekt. Beim Wechsel Begehen ↔ Sitzungsraum fallen die alten Hinweise weg. Dazu Dauerhinweise, solange sie gelten: «Auf den echten Tisch tippen …»
+/// (V1f allgemein), ein Fehler der Verbindung (allgemein). In der Variante «tablet» zeigt die Box die Hinweise wie bisher.
 /// </summary>
 sealed partial class QuestApp
 {
@@ -81,12 +81,10 @@ sealed partial class QuestApp
         var stehen = new List<(string Text, HinweisArt Art, XVec3? Ort, double Deckkraft, int Zeile)>();
         foreach (var (h, d) in hinweise.Sichtbar(Time.Total)) stehen.Add((h.Text, h.Art, h.Ort, d, h.ZeichenJeZeile));
         // Dauerhinweise, solange sie gelten
+        // V1f: das Modell steht schon (auf der angenommenen Höhe) – der Hinweis steht allgemein, nicht über dem Modell
         if (sitzung.Aktiv && sitzung.Echt.WartetAufTisch)
-        {
-            var tm = XrSitzungLogik.TischMitte;
-            stehen.Add(("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.", HinweisArt.Objekt,
-                sitzung.RaumLage.ZuRef(new XVec3(tm.X, XrSitzungLogik.TischHoehe + 0.05, tm.Z)), 1, SchwebeHinweise.ZeichenJeZeileVorgabe));
-        }
+            stehen.Add(("Auf den echten Tisch tippen: das Modell stellt sich dorthin (ohne Tisch: App «Tisch» › «Auf echten Tisch» aus).", HinweisArt.Allgemein, null, 1,
+                SchwebeHinweise.ZeichenJeZeileVorgabe));
         if (zustand == Zustand.Fehler && !apps.Sichtbar && !stehen.Any(s => s.Art == HinweisArt.Allgemein))
             stehen.Add((verbindungText, HinweisArt.Allgemein, null, 1, SchwebeHinweise.ZeichenJeZeileVorgabe));
         var allgemein = stehen.Any(s => s.Art == HinweisArt.Allgemein);

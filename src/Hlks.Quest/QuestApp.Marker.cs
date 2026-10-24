@@ -55,7 +55,9 @@ sealed partial class QuestApp
     {
         markerSetzen = an;
         if (an && messen.An) Messband.AnSetzen(messen, false);
-        Hinweis(an ? $"Auf die Stelle zeigen und kurz Pinch{(markerNotiz is null ? "" : $" – Notiz «{markerNotiz}»")}." : "Marker setzen beendet.");
+        var wie = bedien.MitPistole ? "Auf die Stelle zielen und abdrücken" : "Auf die Stelle zeigen und kurz Pinch";   // V1f: Pistolengeste
+        Hinweis(an ? $"{wie}{(markerNotiz is null ? "" : $" – Notiz «{markerNotiz}»")}." : "Marker setzen beendet.");
+        if (an) PistoleWerkzeugHilfe(false, true);
     }
 
     /// <summary>Ein Bild: beim Setzen der Fang je Hand und das Setzen mit einem kurzen Pinch; die Marker zeichnen.</summary>
@@ -74,6 +76,21 @@ sealed partial class QuestApp
                 var p = g is not null && XrTabletLogik.IstPinch(g, markerPinch[i], bedien.Pinch);
                 // V1d: der Fang läuft im Hintergrund (HandFang wartet nie; höchstens eine Anfrage je Bild und Hand)
                 markerFang[i] = frei ? HandFang(handed) : null;
+                fangVerlauf[i].Neu(Time.Total, markerFang[i]);
+                if (bedien.MitPistole)
+                {
+                    // V1f: Pistolengeste – abdrücken setzt den Marker am Fang von kurz vor dem Abzug
+                    PistolenStrahlZeichnen(i, markerFang[i]?.P is { } zp ? SkVonSzene(zp) : null);
+                    if (frei && pistole[i].Abgedrueckt)
+                    {
+                        if (fangVerlauf[i].Zu(Time.Total - Pistole.StrahlVorS) is { P: { } ortP } fp) { MarkerSetzen(ortP, fp.Id, kopf); return; }
+                        rueck.Leer(kopf.position + kopf.Forward * 0.5f);
+                        Hinweis("Kein Ziel – auf eine Wand, einen Boden oder ein Bauteil zielen.");
+                    }
+                    if (markerFang[i]?.P is { } qp) Stecknadel(SkVonSzene(qp), kopf, true, null, 0.6f, BedienFlaechen());
+                    markerPinch[i] = false;
+                    continue;
+                }
                 if (p && !markerPinch[i]) markerPinchSeit[i] = Time.Total;
                 if (!p && markerPinch[i] && Time.Total - markerPinchSeit[i] <= Messband.KlickMaxS)
                 {

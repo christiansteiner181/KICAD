@@ -17,7 +17,7 @@ public readonly record struct Hintergrund(float R, float G, float B, float A, bo
 {
     /// <summary>Dunkler Raum des Sitzungsraums.</summary>
     public static readonly Hintergrund Dunkel = new(0.012f, 0.016f, 0.024f, 1, false);
-    /// <summary>V1a: helle Umgebung des Sitzungsraums (Farbe des Horizonts der Kuppel, Hlks.Quest HelleUmgebung.Horizont).</summary>
+    /// <summary>V1a: helle Umgebung des Sitzungsraums (bis V1e die Farbe des Horizonts der hellen Kuppel); V1f: der helle Ersatzhintergrund am Tisch ohne Passthrough (Simulator).</summary>
     public static readonly Hintergrund Hell = new(0.86f, 0.88f, 0.90f, 1, false);
     /// <summary>Passthrough: durchsichtig, damit das Kamerabild unter der Szene erscheint.</summary>
     public static readonly Hintergrund Durchsichtig = new(0, 0, 0, 0, false);

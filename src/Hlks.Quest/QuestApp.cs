@@ -44,7 +44,7 @@ namespace Hlks.Quest;
 ///
 /// V1a: Messen (XR-C, QuestApp.Messen.cs) und Problem-Marker (XR-E, QuestApp.Marker.cs); die Apps im Stil von visionOS (Christian 24.10.2026, Apple HIG): ein Fenster
 /// aus Glas mit Registern statt der Kacheln (GlasApps, QuestApp.Apps.cs, GlasZeichner, Assets/glas.hlsl), im Raum verankert, am Tisch neben dem Tisch; Hinweise auf dem
-/// Glas; die helle Umgebung des Sitzungsraums (Umgebung.cs; Variante «umgebung» = «tron» die frühere).
+/// Glas; V1f: der Sitzungsraum ohne virtuellen Raum und Tisch (immer Passthrough, sonst der helle Ersatzhintergrund; bis V1e Umgebung.cs bzw. Variante «umgebung»).
 /// </summary>
 sealed partial class QuestApp
 {
@@ -184,12 +184,13 @@ sealed partial class QuestApp
         sitzung.Pinch = bedien.Pinch;
         sitzung.FlacheHand = bedien.FlacheHand;
         sitzung.Griff = bedien.Griff;   // V1d: ein Griff, Zoom mit zweiter Hand bzw. Drehknopf
-        sitzung.Punkte = bedien.Punkte;   // V1e: zwei Punkte (Vorgabe) bzw. ein Griff
+        sitzung.Punkte = bedien.Punkte with { Faust = bedien.MitPistole };   // V1e: zwei Punkte (Vorgabe) bzw. ein Griff; V1f: mit der Pistolengeste fasst die Faust
+        sitzung.TischHoeheM = bedien.TischHoeheM;   // V1f: ohne echten Tisch auf dieser Höhe («sitzung.tisch_hoehe_m»)
         glas.Glanz = bedien.Apps.Glanz;   // V1e: mehr Glanz («anzeige.glanz»)
         sitzung.Tisch = bedien.Tisch;   // V1d: vereinfachte Unterlage am Tisch
         rueck.Ton = bedien.Komfort.Ton;
         rueck.Tunnel = bedien.Komfort.Tunnelblick && bedien.Komfort.Staerke > 0;
-        sitzung.Hell = bedien.UmgebungHell;   // V1a: Variante «umgebung»
+        sitzung.Hell = true;   // V1f: am Tisch immer Passthrough bzw. der helle Ersatzhintergrund – die Variante «umgebung» gilt dort nicht mehr
         if (!vorherApps && bedien.MitApps && darstellung is not null) AppsHolen();
     }
 
@@ -772,6 +773,7 @@ sealed partial class QuestApp
         var kopfWelt = VrLogik.KopfWelt(rig, kopfRefV);
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
         Haltung(kopf);
+        PistoleBild();   // V1f: die Pistolengeste je Hand (Variante «ausloeser»; QuestApp.Pistole.cs)
         // V1a: Farben der Apps aus dem Katalog (kataloge/xr_farben.json), Fassung und Deckkraft nach der Umgebung (Apple HIG «Materials»: «Glass is an adaptive material»)
         glas.Umgebung(GlasStil.HintergrundFuer(sitzung.Aktiv, passthrough.Ein, sitzung.Hell), bedien.Apps.GlasDeckkraft, bedien.Apps.GlasHelligkeit);
         AppsBild(kopf);   // P5a: zuerst die Apps – sie bestimmen, welche Hand an ihnen ist (deren Pinch zielt nicht, greift nicht)
@@ -794,7 +796,7 @@ sealed partial class QuestApp
             if (sitzung.Zoegern is { } zg)   // P5a: gezögert am Griff: Geisterhand «Greifen»; V1d am gehaltenen Griff «Zoomen» (zweite Hand) bzw. «Drehknopf»
             {
                 var gp = new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z);
-                var ziel = zg.Geste is GeisterGeste.Zoomen or GeisterGeste.Kreisen && zg.Rechts.Laenge > 0.5   // V1e: «Kreisen» am Punkt «Drehen» (Bogen, nach aussen)
+                var ziel = zg.Geste is GeisterGeste.Zoomen or GeisterGeste.Kreisen or GeisterGeste.FaustKreisen && zg.Rechts.Laenge > 0.5   // V1e: «Kreisen» am Punkt «Drehen» (Bogen, nach aussen)
                     ? new TabletPose(gp, new XVec3(0, 1, 0), zg.Rechts, new XVec3(0, 1, 0).Kreuz(zg.Rechts).Einheit(), 0.05, 0.05)
                     : XrTabletLogik.TabletLageAus(gp, new XVec3(0, 1, 0));
                 geister.Starten(zg.Geste, Time.Total, zg.Form, ziel);
@@ -856,7 +858,7 @@ sealed partial class QuestApp
             $"Passthrough={(passthrough.Ein ? "ein" : passthrough.Verfuegbar ? "bereit" : "nicht verfügbar")}{(sitzung.Echt.Ein ? (sitzung.Echt.WartetAufTisch ? " (wartet aufs Antippen)" : $" (Tisch {sitzung.Echt.Tisch!.Hoehe:0.000} m)") : "")}, " +
             $"Ebenen={ebenenText} (gezeichnet {ebenen.Gezeichnet} Striche, {ebenen.Kugeln} Kugeln), " +
             $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt (zuletzt {wegwisch.Hand ?? "–"}), Tafel nachgerückt {apps.Folgen.Nachgerueckt}×, auf der Tafel geblättert {tafelGeblaettert}×, Geste={letzteGeste}, " +
-            $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, " +
+            $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, Auslöser={bedien.Ausloeser} (abgedrückt {pistoleZ[0].Abzuege}/{pistoleZ[1].Abzuege}), Hebe verworfen {hebe.Verworfen}×, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
             $"Teleport={bedien.Teleport}, Röntgen={roentgenText}, Schnitt Hand={SchnittHandText()}, " +
@@ -891,6 +893,9 @@ sealed partial class QuestApp
         {
             var h = Input.Hand(handed);
             Dictionary<string, XVec3>? g = h.IsTracked ? HandGelenke.AusStereoKit((f, j) => Welt(h[f, j].position), Welt(h.wrist.position)) : null;
+            var i = handed == Handed.Left ? 0 : 1;
+            if (i == 1 && pruefPistolenHand is { } ph) g = ph.ToDictionary(x => x.Key, x => Welt((Vec3)(Vector3)x.Value), StringComparer.Ordinal);   // V1f-Prüflauf: die gedachte Hand
+            var getrackt = h.IsTracked || g is not null;
             var aim = Zeiger(handed);
             // P5a: an den Apps zielt ein Pinch nicht (er wählt dort); mit offener App blättert ein Seitenwisch statt zu drehen. P5b: ebenso an der Karte einer Aufgabe;
             // in der Variante «teleport» = «stick» springt der Pinch nicht (der Stick springt, StickSchritt)
@@ -899,11 +904,13 @@ sealed partial class QuestApp
             // Pinch nicht (er misst bzw. markiert)
             var drehenWirkt = drehen.Drehen && !anApps && messen.Hand != seite;   // V1c: anApps enthält DesktopSperrt (die VR-Szene bleibt starr)
             var werkzeug = MessenAn || markerSetzen;
-            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehenWirksam, drehenWirkt, springen: !anApps && !bedien.MitStick && !werkzeug))
+            foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehenWirksam, drehenWirkt, springen: !anApps && !bedien.MitStick && !werkzeug,
+                pistole: PistoleSzene(i)))   // V1f: mit der Pistolengeste zielt und springt nur sie
                 BegehenEreignisAnwenden(e, kopf, kopfRef, anApps || werkzeug);   // mit Werkzeug klingt der Pinch dort (Messband, Marker)
+            PinchGewohnheit(i, z, kopf, !anApps && !bedien.MitStick && !werkzeug);   // V1f: wer wie bisher mit dem Pinch zielt, sieht die Pistolengeste
             // der eine sichtbare Strahl: der Zeiger des Systems (bzw. der Rückfall), solange die Hand erkannt ist; beim Zielen bis zum Ziel; nicht an den Apps
-            if (h.IsTracked && !anApps && !bedien.MitStick && !werkzeug && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
-                rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
+            if (getrackt && !anApps && !bedien.MitStick && !werkzeug && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
+                rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), bedien.MitPistole ? z.Zielt : z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
         }
         if (!DesktopSperrt) StickSchritt(kopf, kopfRef);   // P5b: Variante «teleport» = «stick»; V1c: nicht, solange der Bildschirm des PCs da ist
     }
@@ -1086,7 +1093,7 @@ sealed partial class QuestApp
         var a = sitzung.Ansicht;
         UI.Text($"Sitzungsraum · Massstab {XrSitzungLogik.MassstabText(sitzung.Lage.Massstab, bedien.Zoom)}{(sitzung.Passt ? "" : " (passt nicht ganz auf den Tisch)")}\n{a?.Text ?? ""}");
         if (Time.Total < hinweisBis && hinweis.Length > 0) UI.Text(hinweis);
-        if (sitzung.Echt.WartetAufTisch) UI.Text("Echter Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
+        if (sitzung.Echt.WartetAufTisch) UI.Text("Auf echten Tisch: mit dem Zeigefinger kurz auf die Tischplatte tippen.");
         else UI.Text(sitzung.Modus switch
         {
             "zoomt" => "Die zweite Hand zoomt: auseinander grösser, zusammen kleiner.",
@@ -1099,12 +1106,12 @@ sealed partial class QuestApp
         // «Echter Tisch» (Passthrough): grau mit Hinweis, wenn die Laufzeit es nicht anbietet
         var echt = sitzung.Echt.Ein;
         UI.PushEnabled(sitzung.Echt.Verfuegbar, HierarchyParent.Inherit);
-        if (UI.Toggle("Echter Tisch", ref echt) && echt != sitzung.Echt.Ein) TischAktion("echter_tisch");
+        if (UI.Toggle("Auf echten Tisch", ref echt) && echt != sitzung.Echt.Ein) TischAktion("echter_tisch");
         UI.PopEnabled();
         UI.SameLine();
         var ifc = sitzung.Unterlage;
         if (UI.Toggle("IFC-Unterlage", ref ifc)) sitzung.Unterlage = ifc;
-        if (!sitzung.Echt.Verfuegbar) UI.Text($"Echter Tisch nicht verfügbar: {sitzung.Echt.Grund}");
+        if (!sitzung.Echt.Verfuegbar) UI.Text($"Ohne Passthrough (Modell auf {sitzung.TischHoeheM:0.00} m): {sitzung.Echt.Grund}");
         if (UI.Button("Zurücksetzen")) TischAktion("zuruecksetzen");
         if (sitzung.Echt.Ein && !sitzung.Echt.WartetAufTisch) { UI.SameLine(); if (UI.Button("Tisch neu antippen")) TischAktion("tisch_antippen"); }
         if (RaumZumZeigen() is not null) { UI.SameLine(); if (UI.Button("Raum zeigen")) TischAktion("raum_zeigen"); }   // P5b
@@ -1255,7 +1262,9 @@ sealed partial class QuestApp
         PruefSymbolFolge(o.BildOrdner);
         if (symbolFolge == 0) PruefV1dStarten();   // V1d: Symbolfeld höher, Sperre nach der Wahl, Tafel mittig, Blättern (QuestApp.PruefenV1d.cs)
         PruefV1dFolge(o.BildOrdner);
-        if (gemessen < o.PruefBilder || PruefSymbolFolgeLaeuft || PruefV1dLaeuft) return;
+        if (v1dFolge == 0) PruefV1fStarten();   // V1f: Pistolengeste zielen und abdrücken (QuestApp.PruefenV1f.cs)
+        PruefV1fFolge(o.BildOrdner);
+        if (gemessen < o.PruefBilder || PruefSymbolFolgeLaeuft || PruefV1dLaeuft || PruefV1fLaeuft) return;
         var jeGeschoss = darstellung.AufrufeJeGeschoss();
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Geschoss={geschossAmStand?.Kennzeichen ?? "alle"}, gezeichnet Netze={darstellung.GezeichnetNetze}, Aufrufe={darstellung.GezeichnetAufrufe}, " +
@@ -1263,10 +1272,11 @@ sealed partial class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; {pruefV1d}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; {pruefV1d}; {pruefV1f}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
-            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1d.Contains("FEHLER", StringComparison.Ordinal), z);
+            && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1d.Contains("FEHLER", StringComparison.Ordinal)
+            && !pruefV1f.Contains("FEHLER", StringComparison.Ordinal), z);
     }
 
     string pruefP5a = "";

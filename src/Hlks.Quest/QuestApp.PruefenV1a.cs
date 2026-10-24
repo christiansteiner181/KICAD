@@ -122,7 +122,7 @@ sealed partial class QuestApp
         try
         {
             teile.Add($"Glas={(glas.MitShader ? "ok" : "FEHLER")} (Shader glas {(glas.MitShader ? "geladen" : "fehlt")}, {glas.Flaechen} Flächen im letzten Bild)");
-            teile.Add($"Umgebung={(sitzung.Hell == bedien.UmgebungHell ? "ok" : "FEHLER")} ({(sitzung.Hell ? "hell" : "tron")}, {sitzung.UmgebungDreiecke} Dreiecke)");
+            teile.Add($"Umgebung={(sitzung.Hell ? "ok" : "FEHLER")} (V1f: am Tisch Passthrough bzw. heller Ersatzhintergrund, kein virtueller Raum)");
             // Fang mit zwei Strahlen: beim Begehen von der Mitte zwischen den Wänden der Aufgabe zu beiden Wänden (sonst vom Kopf 3 m vor den Blick und senkrecht nach
             // unten), am Tisch vom Kopf zur Mitte des Modells und senkrecht von oben in den Schnitt; zweimal – der erste Strahl bereitet die Elemente auf
             FangFilterSetzen();

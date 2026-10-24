@@ -74,7 +74,8 @@ sealed partial class QuestApp
         if (an && markerSetzen) markerSetzen = false;
         Messband.AnSetzen(messen, an);
         Messband.VarianteSetzen(messen, bedien.Messen);
-        Hinweis(an ? $"Messen ein: {messen.Hinweis}." : "Messen aus – die Messungen bleiben stehen.");
+        Hinweis(an ? $"Messen ein: {MitAusloeser(messen.Hinweis)}." : "Messen aus – die Messungen bleiben stehen.");
+        if (an) PistoleWerkzeugHilfe(true, false);   // V1f: die Geisterhand zeigt die Pistolengeste
     }
 
     /// <summary>Szene ↔ Raum der Brille im aktuellen Modus (Begehen: Rig; Sitzungsraum: Tisch).</summary>
@@ -142,6 +143,12 @@ sealed partial class QuestApp
         var quelle = handed == Handed.Left ? InputSource.HandLeft : InputSource.HandRight;
         (XVec3 U, XVec3 R)? strahl = Input.PointerCount(quelle) > 0 && Input.Pointer(0, quelle) is { } zp && zp.tracked.IsActive() && zp.ray.direction.LengthSq > 1e-12f
             ? (SzeneVonSk(zp.ray.position), SzeneRichtung(zp.ray.direction)) : null;
+        if (bedien.MitPistole)
+        {
+            // V1f: Pistolengeste – der Finger ist die Spitze des Zeigefingers, der Strahl der vom Zeigefinger (nur in der Haltung)
+            punkt = SzeneVonSk(h[FingerId.Index, JointId.Tip].position);
+            strahl = pistole[i] is { Haltung: true, Strahl: { } ps } ? (SzeneVonSk((Vec3)(Vector3)ps.U), SzeneRichtung((Vec3)(Vector3)ps.R)) : null;
+        }
         // am Tisch reicht der Strahl 4 m (im Raum der Brille) – das Modell liegt davor, der Fang bleibt billig; Radien in Szenenmassen (mal Massstab)
         var a = new FangAnfrage(punkt, XrMessLogik.FangRadiusFinger * m, strahl?.U, strahl?.R, XrMessLogik.FangRadiusStrahl * m, XrMessLogik.FangRadiusJeMeter,
             (sitzung.Aktiv ? 4 : 30) * m, fangSchluessel, m);
@@ -175,11 +182,16 @@ sealed partial class QuestApp
                 var amApp = AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed);   // am Tisch: eine Hand am Griff misst nicht
                 var pinch = h.IsTracked && !amApp && XrTabletLogik.IstPinch(HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                     new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), messPinch[i], bedien.Pinch);
+                // V1f: mit der Pistolengeste hält das Abdrücken das Messband (zwei Punkte: je ein Schuss); es gilt der Fang von kurz vor dem Abzug bzw. dem Lösen
+                if (bedien.MitPistole) pinch = h.IsTracked && !amApp && (messen.Variante == Varianten.ZweiPunkte ? pistole[i].Abgedrueckt : pistole[i].Gedrueckt);
                 messFang[i] = h.IsTracked && !amApp ? HandFang(handed) : null;   // V1d: im Hintergrund, wartet nie
+                fangVerlauf[i].Neu(Time.Total, messFang[i]);
+                var fang = bedien.MitPistole ? fangVerlauf[i].Zu(Time.Total - Pistole.StrahlVorS) : messFang[i];
                 messPinch[i] = pinch;
-                var raum = h.IsTracked ? (XVec3?)new XVec3(h[FingerId.Index, JointId.Tip].position.x, h[FingerId.Index, JointId.Tip].position.y, h[FingerId.Index, JointId.Tip].position.z) : null;
-                foreach (var e in Messband.Schritt(messen, Time.Total, seite, messPinch[i], raum, messFang[i], modus))
+                var raum = h.IsTracked && !bedien.MitPistole ? (XVec3?)new XVec3(h[FingerId.Index, JointId.Tip].position.x, h[FingerId.Index, JointId.Tip].position.y, h[FingerId.Index, JointId.Tip].position.z) : null;
+                foreach (var e in Messband.Schritt(messen, Time.Total, seite, messPinch[i], raum, fang, modus))
                     MessEreignis(e, kopf);
+                PistolenStrahlZeichnen(i, messFang[i]?.P is { } fp ? SkVonSzene(fp) : null);
             }
         }
         else { messFang[0] = messFang[1] = null; }
@@ -204,7 +216,7 @@ sealed partial class QuestApp
                 break;
             case MessEreignisArt.Abgebrochen:
                 rueck.Leer(ort);
-                if (e.Grund is { } g) Hinweis(g == Messband.TextLotBraucht ? g + "." : $"{g} – nochmals: {messen.Hinweis}.");
+                if (e.Grund is { } g) Hinweis(g == Messband.TextLotBraucht ? g + "." : $"{g} – nochmals: {MitAusloeser(messen.Hinweis)}.");
                 if (lauf is { } l2) PruefAufgaben.MessenDaneben(l2, e.Grund ?? "Messband abgebrochen");
                 break;
             case MessEreignisArt.OhneZiel:
