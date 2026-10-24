@@ -50,7 +50,7 @@ public class BedienungTests
     public void Waagrecht_genau_wie_der_Prototyp()
     {
         // die Vorgabe der Toleranz ist «mindestens 80 % waagrecht» (XrWischLogik.WischWaagrecht)
-        Nah(WischEinstellungen.ToleranzVorgabe, Math.Acos(0.8) / Grad);
+        Nah(WischEinstellungen.ToleranzVorgabe, Math.Acos(0.8) / Grad, 0.005);   // P5b: auf 0.01° gerundet (Katalog), die Regel bleibt genau 0.8
         Assert.Equal(0.8, WischEinstellungen.Vorgabe.CosToleranz);
         foreach (var d in new[] { V(0.25, 0.1, 0), V(0.25, 0.2, 0), V(0.2, 0, 0.1), V(0.12, 0, 0) })
         {

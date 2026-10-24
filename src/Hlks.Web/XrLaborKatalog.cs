@@ -3,7 +3,8 @@
 // Vier Dateien in kataloge/ (Ordner Einstellungen.KatalogOrdner), beim Laden streng geprüft (Fehler → HlksFehler mit Datei und Stelle, nie stilles Weglassen):
 //   xr_stellschrauben.json  Stellschrauben mit Gruppe, Titel, Beschreibung, Einheit, min, max, Schritt, Vorgabe, Herkunft, Status (app | folgt_p5);
 //                           dazu «muster» (labor.variante.<name>, labor.aufgabe) für Schlüssel, die nicht einzeln aufgeführt sind
-//   xr_pruefaufgaben.json   Prüfaufgaben: Id, Titel, Anleitung (kurz, für die Brille), Messgrössen, Erfolgskriterium, Status (p5 | folgt_v1)
+//   xr_pruefaufgaben.json   Prüfaufgaben: Id, Titel, Anleitung (kurz, für die Brille), Messgrössen, Erfolgskriterium, Fehlgriff (optional, P5b: was die App zählt),
+//                           Status (p5 | folgt_v1)
 //   xr_varianten.json       Varianten (A/B) je Bedienung: Name, Optionen (Id, Titel), Vorgabe
 //   xr_fragebogen.json      Fragen: Komfort (eigene Wortlaute), SUS und NASA-TLX (Wortlaut nur mit Quelle, heute Platzhalter)
 //
@@ -240,6 +241,7 @@ public sealed class XrLaborKatalog
             Text(d, a["titel"], $"{wo}.titel", 80);
             Text(d, a["anleitung"], $"{wo}.anleitung", 300);   // kurz: sie steht in der Brille
             Text(d, a["erfolgskriterium"], $"{wo}.erfolgskriterium");
+            if (a["fehlgriff"] is not null) Text(d, a["fehlgriff"], $"{wo}.fehlgriff", 300);   // P5b, optional: was die App als Fehlgriff zählt
             Text(d, a["ort"], $"{wo}.ort", 120);
             Text(d, a["herkunft"], $"{wo}.herkunft");
             var st = Text(d, a["status"], $"{wo}.status", 20);

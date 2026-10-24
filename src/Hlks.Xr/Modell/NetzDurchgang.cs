@@ -110,12 +110,18 @@ public sealed class DurchgangVerfolger(ModellSzene szene, double grenzeMm = Durc
     }
 
     /// <summary>Je Netz die Bereiche der nahen Elemente (für Aufteilen).</summary>
-    public Dictionary<int, List<(int Ab, int Anzahl)>> BereicheJeNetz()
+    public Dictionary<int, List<(int Ab, int Anzahl)>> BereicheJeNetz() => BereicheJeNetz(szene, nah);
+
+    /// <summary>
+    /// Je Netz die Bereiche der Elemente mit diesen Schlüsseln (für Aufteilen); P5b: auch für die Röntgen-Hand bzw. Durchgang und Röntgen-Hand zusammen
+    /// (jedes Element einmal).
+    /// </summary>
+    public static Dictionary<int, List<(int Ab, int Anzahl)>> BereicheJeNetz(ModellSzene modell, IEnumerable<string> schluessel)
     {
         var aus = new Dictionary<int, List<(int, int)>>();
-        foreach (var s in nah)
+        foreach (var s in schluessel.Distinct(StringComparer.Ordinal))
         {
-            if (!szene.Elemente.TryGetValue(s, out var e)) continue;
+            if (!modell.Elemente.TryGetValue(s, out var e)) continue;
             foreach (var (netz, ab, anzahl) in e.Bereiche)
             {
                 if (!aus.TryGetValue(netz, out var l)) aus[netz] = l = [];

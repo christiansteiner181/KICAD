@@ -64,15 +64,18 @@ public class XrLaborTests
             "haltung.schwelle_m", "haltung.hysterese_m", "haltung.haltezeit_s",
             "anzeige.skala", "apps.groesse_m", "apps.abstand_m", "apps.anordnung", "wisch.mindestweg_m", "wisch.mindesttempo_ms", "wisch.richtung_toleranz_grad",
             "pinch.schwelle_an_m", "pinch.schwelle_aus_m", "fang.radius_m", "komfort.tunnelblick", "komfort.tunnelblick_staerke", "sitzung.zoom_min", "sitzung.zoom_max",
+            // P5b: Röntgen-Hand und Schnitt mit der flachen Hand
+            "roentgen.winkel_grad", "roentgen.reichweite_m", "sitzung.schnitt_ruhe_s", "sitzung.schnitt_toleranz_grad",
         ];
         foreach (var s in vereinbart) Assert.Contains(s, schluessel);
         Assert.Equal(schluessel.Count, schluessel.Distinct().Count());
-        // die sieben, die die App heute versteht, sind «app», alle übrigen «folgt_p5»
-        string[] heute = [.. vereinbart.Take(7)];
-        foreach (var s in k.Stellschrauben) Assert.Equal(heute.Contains(s.Schluessel) ? "app" : "folgt_p5", s.Status);
+        // P5b: die App versteht alle Stellschrauben und beide Muster – überall «app»
+        Assert.All(k.Stellschrauben, s => Assert.Equal("app", s.Status));
+        Assert.All(k.Zusammen(null, null)["muster"]!.AsArray(), m => Assert.Equal("app", (string)m!["status"]!));
         Assert.Equal(1.35, (double)k.Stellschraube("anzeige.skala")!.Vorgabe.GetValue<double>());
+        Assert.Equal(5, (double)k.Stellschraube("sitzung.zoom_min")!.Vorgabe.GetValue<double>());   // Zoom über 1:20 hinaus, seit P4b 1:5
 
-        string[] aufgaben = ["teleport-markierung", "drehen-90", "etage-wechseln", "modell-greifen-zoomen", "raum-ar-oeffnen", "messen-wand-wand"];
+        string[] aufgaben = ["teleport-markierung", "drehen-90", "etage-wechseln", "modell-greifen-zoomen", "raum-ar-oeffnen", "tablet-wert-ablesen", "messen-wand-wand"];
         foreach (var a in aufgaben) Assert.True(k.AufgabeBekannt(a), a);
         Assert.Equal("folgt_v1", k.AufgabeStatusVon("messen-wand-wand"));
         Assert.Equal("p5", k.AufgabeStatusVon("drehen-90"));
@@ -107,6 +110,76 @@ public class XrLaborTests
             foreach (var w in innen) Assert.True((begehen.MitStellschraube(key, w) ?? (object?)haltung.MitStellschraube(key, w)) is not null, $"{key} = {w}");
             foreach (var w in aussen) Assert.True(begehen.MitStellschraube(key, w) is null && haltung.MitStellschraube(key, w) is null, $"{key} = {w} ausserhalb");
         }
+    }
+
+    [Fact]
+    public void P5b_alle_Stellschrauben_Varianten_und_Aufgaben_des_Katalogs_gleichen_dem_Code_der_App()
+    {
+        var k = Echt();
+        var b = Hlks.Xr.Bedienung.XrBedienEinstellungen.Vorgabe;
+        // Zahlen: Vorgabe und Grenzen wie XrBedienEinstellungen (die Grenzen von begehen.* und haltung.* prüft der Test oben)
+        var vorgaben = new Dictionary<string, double>
+        {
+            ["anzeige.skala"] = b.Apps.Skala, ["apps.groesse_m"] = b.Apps.GroesseM, ["apps.abstand_m"] = b.Apps.AbstandM,
+            ["wisch.mindestweg_m"] = b.Wisch.MindestwegM, ["wisch.mindesttempo_ms"] = b.Wisch.MindesttempoMs, ["wisch.richtung_toleranz_grad"] = b.Wisch.RichtungToleranzGrad,
+            ["pinch.schwelle_an_m"] = b.Pinch.AnM, ["pinch.schwelle_aus_m"] = b.Pinch.AusM, ["fang.radius_m"] = b.Pinch.FangRadiusM,
+            ["komfort.tunnelblick_staerke"] = b.Komfort.Staerke, ["begehen.drehwinkel_grad"] = b.DrehwinkelGrad,
+            ["sitzung.zoom_min"] = b.Zoom.Min, ["sitzung.zoom_max"] = b.Zoom.Max,
+            ["roentgen.winkel_grad"] = b.Roentgen.WinkelGrad, ["roentgen.reichweite_m"] = b.Roentgen.ReichweiteM,
+            ["sitzung.schnitt_ruhe_s"] = b.FlacheHand.RuheS, ["sitzung.schnitt_toleranz_grad"] = b.FlacheHand.ToleranzGrad,
+        };
+        foreach (var (key, soll) in vorgaben)
+        {
+            var s = k.Stellschraube(key)!;
+            Assert.True(s is not null, key);
+            Assert.Equal(soll, s!.Vorgabe.GetValue<double>(), 12);
+            Assert.Equal(Hlks.Xr.Bedienung.XrBedienEinstellungen.Grenzen[key], (s.Min, s.Max));
+        }
+        Assert.Equal(b.Komfort.Tunnelblick, k.Stellschraube("komfort.tunnelblick")!.Vorgabe.GetValue<bool>());
+        Assert.Equal(b.Komfort.Ton, k.Stellschraube("komfort.ton")!.Vorgabe.GetValue<bool>());
+        Assert.Equal(Hlks.Xr.Bedienung.Anordnungen.Alle, k.Stellschraube("apps.anordnung")!.Auswahl);
+        Assert.Equal(b.Apps.Anordnung, k.Stellschraube("apps.anordnung")!.Vorgabe.GetValue<string>());
+        // jede Stellschraube des Katalogs versteht die App, und jede der App steht im Katalog (ausser den Varianten, die im Variantenkatalog stehen)
+        foreach (var s in k.Stellschrauben) Assert.True(Hlks.Xr.Labor.LaborWerte.Kennt(s.Schluessel), s.Schluessel);
+        foreach (var s in Hlks.Xr.Labor.LaborWerte.Schluessel.Where(x => !x.StartsWith(XrLaborKatalog.VarianteVorsatz, StringComparison.Ordinal)))
+            Assert.True(k.Stellschraube(s) is not null, s);
+        // Varianten: dieselben Namen, Optionen und Vorgaben (die erste Option der App ist ihre Vorgabe)
+        Assert.Equal(Hlks.Xr.Bedienung.Varianten.Bekannt.Keys.Order(), k.VariantenNamen.Order());
+        foreach (var (name, optionen) in Hlks.Xr.Bedienung.Varianten.Bekannt)
+        {
+            foreach (var o in optionen) Assert.True(k.VarianteBekannt(name, o), $"{name}={o}");
+            Assert.Equal(optionen[0], k.VarianteVorgabe(name));
+        }
+        // Aufgaben: die App spielt genau die mit Status p5; jede nennt, was als Fehlgriff zählt
+        foreach (var id in k.AufgabenIds)
+        {
+            Assert.Equal(k.AufgabeStatusVon(id) == "p5", Hlks.Xr.Labor.PruefAufgaben.Spielbar.Contains(id));
+            Assert.False(string.IsNullOrWhiteSpace((string?)k.Zusammen(null, null)["aufgaben"]!.AsArray().Single(a => (string)a!["id"]! == id)!["fehlgriff"]), id);
+        }
+        foreach (var id in Hlks.Xr.Labor.PruefAufgaben.Spielbar) Assert.True(k.AufgabeBekannt(id), id);
+        // durchgehend: der Katalog, wie die App ihn bekommt, ergibt genau die Vorgaben des Codes (auch die Toleranz des Wischs, arccos 0.8, auf die letzte Stelle)
+        var katalog = Hlks.Xr.Labor.LaborKatalog.Lesen(k.Zusammen(null, null).ToJsonString());
+        Assert.Empty(katalog.Hinweise);
+        var w = new Hlks.Xr.Labor.LaborWerte();
+        Assert.Empty(w.KatalogSetzen(katalog));
+        Assert.Empty(w.Abgewiesen);
+        Assert.Equal(b, w.Bedien);
+        Assert.Equal(HandBegehenEinstellungen.Vorgabe, w.Begehen);
+        Assert.Equal(HaltungEinstellungen.Vorgabe, w.Haltung);
+        Assert.Equal(Hlks.Xr.WischEinstellungen.ToleranzVorgabe, w.Bedien.Wisch.RichtungToleranzGrad);
+        // eine Grenze aus dem Katalog gilt in der App: knapp darüber «ungültig»
+        Assert.Equal(Hlks.Xr.Labor.LaborWerte.Ungueltig, w.Setzen("roentgen.reichweite_m", JsonDocument.Parse("20.5").RootElement));
+        Assert.Equal(Hlks.Xr.Labor.LaborWerte.Ok, w.Setzen("roentgen.reichweite_m", JsonDocument.Parse("20").RootElement));
+    }
+
+    [Fact]
+    public void Fehlgriff_der_Aufgaben_ist_kurz_und_optional()
+    {
+        static JsonObject Erste(JsonObject o) => (JsonObject)((JsonArray)o["aufgaben"]!)[0]!;
+        Assert.Contains("fehlgriff", LadenFehler(XrLaborKatalog.DateiAufgaben, o => Erste(o)["fehlgriff"] = new string('x', 301)).Message);
+        Assert.Contains("fehlgriff", LadenFehler(XrLaborKatalog.DateiAufgaben, o => Erste(o)["fehlgriff"] = 3).Message);
+        using var t = new TempKatalog(XrLaborKatalog.DateiAufgaben, o => Erste(o).Remove("fehlgriff"));
+        Assert.True(XrLaborKatalog.Laden(t.Ordner).AufgabeBekannt("teleport-markierung"));   // ohne «fehlgriff» gültig (ältere Kataloge)
     }
 
     [Fact]

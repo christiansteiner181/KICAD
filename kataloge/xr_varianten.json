@@ -15,7 +15,7 @@
     },
     {
       "name": "teleport", "titel": "Teleport",
-      "beschreibung": "Wie man springt: mit der Hand zeigen und Pinch oder mit dem Stick (Controller).",
+      "beschreibung": "Wie man springt: mit der Hand zeigen und Pinch oder mit dem Stick eines Controllers (nach vorn drücken zielt, loslassen springt; seitlich dreht). Ohne Controller zeigt die App in der Variante «Stick» einen Hinweis.",
       "optionen": [
         { "id": "zeigen_pinch", "titel": "Zeigen und Pinch" },
         { "id": "stick", "titel": "Stick" }
@@ -25,7 +25,7 @@
     },
     {
       "name": "etage", "titel": "Etage wählen",
-      "beschreibung": "Wie man das Geschoss wechselt: mit einem Wisch am Modell oder in einer App.",
+      "beschreibung": "Wie man das Geschoss wechselt: mit einem Wisch hoch/runter (beim Begehen und am Tisch) oder nur in der App «Etagen» (der Wisch wechselt dann nicht).",
       "optionen": [
         { "id": "wisch_modell", "titel": "Wisch am Modell" },
         { "id": "app", "titel": "App" }
@@ -35,7 +35,7 @@
     },
     {
       "name": "messen", "titel": "Messen",
-      "beschreibung": "Wie man misst: ein Messband zwischen zwei Punkten aufziehen oder zwei Punkte setzen.",
+      "beschreibung": "Wie man misst: ein Messband zwischen zwei Punkten aufziehen oder zwei Punkte setzen. Messen folgt mit Version 1; bis dahin merkt die App die Wahl nur und trägt sie ins Messprotokoll ein.",
       "optionen": [
         { "id": "messband", "titel": "Messband aufziehen" },
         { "id": "zwei_punkte", "titel": "Zwei Punkte setzen" }

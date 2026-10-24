@@ -12,6 +12,8 @@
 //     damit ein Pinch + Wisch über einer Liste blättert statt zu wählen).
 //   - Nach dem Auslösen ist die Hand gesperrt, bis sie zurückgezogen ist (LoslassTiefeM vor der Fläche oder weg von den Kacheln) und kein Pinch hält – so löst
 //     eine App, die sich unter dem Finger öffnet, nicht gleich ihren ersten Eintrag aus.
+//   - P5b, daneben: geht die Spitze von vorn durch die Druckebene einer Kachel, liegt aber ausserhalb des Fangs (höchstens DanebenM weiter), meldet der Schritt
+//     «Daneben» – ein Fehlgriff der Prüfaufgaben.
 
 namespace Hlks.Xr.Bedienung;
 
@@ -27,8 +29,9 @@ public sealed class BeruehrHand
     internal Vec3? PinchStart;
 }
 
-/// <summary>Ergebnis eines Schritts: Kachel im Fang, Nähe (0 … 1), ausgelöste Kachel, neu im Fang (Ton), durch Pinch gewählt.</summary>
-public readonly record struct BeruehrErgebnis(int? Hover, double Naehe, int? Ausgeloest, bool HoverNeu, bool PerPinch);
+/// <summary>Ergebnis eines Schritts: Kachel im Fang, Nähe (0 … 1), ausgelöste Kachel, neu im Fang (Ton), durch Pinch gewählt; P5b: ein Antippen daneben (Fehlgriff
+/// in den Prüfaufgaben).</summary>
+public readonly record struct BeruehrErgebnis(int? Hover, double Naehe, int? Ausgeloest, bool HoverNeu, bool PerPinch, bool Daneben = false);
 
 public static class AppBeruehrung
 {
@@ -46,6 +49,11 @@ public static class AppBeruehrung
     public const double PinchWegM = 0.04;
     /// <summary>Vorzug der bisherigen Kachel im Fang (m), gegen Flackern zwischen Nachbarn.</summary>
     public const double HoverVorzugM = 0.005;
+    /// <summary>
+    /// P5b, «Antippen daneben»: geht die Spitze von vorn durch die Druckebene einer Kachel, liegt dabei aber ausserhalb des Fangs und höchstens so weit (m) neben ihm,
+    /// zählt das als Fehlgriff der Prüfaufgaben (Annahme P5b; weiter weg ist es keine Absicht, die Kachel zu treffen).
+    /// </summary>
+    public const double DanebenM = 0.06;
 
     /// <summary>Lage eines Punkts zur Kachel: Abstand zum Rechteck in der Ebene (0 = darüber) und Tiefe vor der Fläche (&gt; 0 = davor).</summary>
     public static (double Aussen, double Tiefe) Lage(TabletPose k, Vec3 p)
@@ -101,6 +109,15 @@ public static class AppBeruehrung
             z.PinchStart = null;
         }
         else if (pinch && z.PinchStart is { } start && start.Abstand(s) > PinchWegM) z.PinchKachel = null;   // gewandert: wischt, wählt nicht
+        // P5b: Antippen daneben – durch die Druckebene einer Kachel, aber knapp neben ihrem Fang (siehe DanebenM)
+        var daneben = false;
+        if (n is null && !z.Gesperrt && !pinch && !z.PinchVorher && z.LetzteSpitze is { } vor && vor.Abstand(s) <= SprungM)
+            for (int i = 0; i < ziele.Count && !daneben; i++)
+            {
+                var (aussen, tiefe) = Lage(ziele[i], s);
+                if (aussen <= fang || aussen > fang + DanebenM || tiefe > DruckTiefeM || tiefe < -HinterM) continue;
+                daneben = Lage(ziele[i], vor).Tiefe > DruckTiefeM;
+            }
         if (ausgeloest is not null) z.Gesperrt = true;
         else if (z.Gesperrt && !pinch && (n is null || n.Value.Tiefe > LoslassTiefeM)) z.Gesperrt = false;
         var hoverNeu = n is not null && n.Value.Index != z.Hover;
@@ -108,6 +125,6 @@ public static class AppBeruehrung
         z.LetzteSpitze = s;
         z.PinchVorher = pinch;
         var naehe = n is { } q ? Math.Clamp(1 - Math.Max(0, q.Tiefe) / NaeheM, 0, 1) : 0;
-        return new BeruehrErgebnis(n?.Index, naehe, ausgeloest, hoverNeu, perPinch);
+        return new BeruehrErgebnis(n?.Index, naehe, ausgeloest, hoverNeu, perPinch, daneben);
     }
 }

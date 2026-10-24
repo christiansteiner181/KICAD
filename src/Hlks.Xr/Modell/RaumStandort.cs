@@ -23,6 +23,30 @@ public static class RaumStandort
     /// <summary>Toleranz für «auf der Unterseite» (m).</summary>
     const double BodenToleranz = 0.002;
 
+    /// <summary>
+    /// P5b: der Raum (Id) eines Geschosses, in dessen Grundriss der Punkt (Szene x, z) liegt – bei mehreren der mit dem Boden am nächsten an boden (Szene y); null,
+    /// wenn keiner. Für «Raum zeigen» in der App «Tisch» (der Raum, in dem man vor dem Sitzungsraum stand).
+    /// </summary>
+    public static string? RaumBei(ModellSzene szene, string? geschossId, Xz punkt, double boden)
+    {
+        string? beste = null;
+        var abstand = double.PositiveInfinity;
+        foreach (var r in szene.Raeume.Where(r => geschossId is null || r.GeschossId == geschossId))
+        {
+            if (r.Box.IstLeer || punkt.X < r.Box.Min.X || punkt.X > r.Box.Max.X || punkt.Z < r.Box.Min.Z || punkt.Z > r.Box.Max.Z) continue;
+            if (Grundriss([.. szene.Ecken(r)]) is not { } g || !Innen(g, punkt)) continue;
+            var d = Math.Abs(g.Boden - boden);
+            if (d < abstand) { abstand = d; beste = r.Id; }
+        }
+        return beste;
+    }
+
+    /// <summary>P5b: der grösste Raum (Fläche des Grundrisses) eines Geschosses (null = alle), bei gleicher Fläche nach Id; null ohne Räume.</summary>
+    public static string? GroessterRaum(ModellSzene szene, string? geschossId) =>
+        szene.Raeume.Where(r => geschossId is null || r.GeschossId == geschossId)
+            .Select(r => (r.Id, G: Grundriss([.. szene.Ecken(r)])))
+            .Where(x => x.G is not null).OrderByDescending(x => x.G!.Flaeche).ThenBy(x => x.Id, StringComparer.Ordinal).Select(x => x.Id).FirstOrDefault();
+
     /// <summary>Grundriss aus den Ecken (je drei ein Dreieck, Szene); null ohne waagrechte Unterseite.</summary>
     public static RaumGrundriss? Grundriss(IReadOnlyList<Vec3> ecken)
     {

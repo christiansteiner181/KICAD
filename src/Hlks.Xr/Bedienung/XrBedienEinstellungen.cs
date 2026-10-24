@@ -3,6 +3,10 @@
 //   anzeige.skala, apps.groesse_m, apps.abstand_m, apps.anordnung, wisch.mindestweg_m, wisch.mindesttempo_ms, wisch.richtung_toleranz_grad,
 //   pinch.schwelle_an_m, pinch.schwelle_aus_m, fang.radius_m, komfort.tunnelblick, komfort.tunnelblick_staerke, komfort.ton, begehen.drehwinkel_grad,
 //   sitzung.zoom_min, sitzung.zoom_max, labor.variante.bedienung (apps | tablet), labor.variante.etage (wisch_modell | app).
+// P5b: roentgen.winkel_grad, roentgen.reichweite_m (Röntgen-Hand), sitzung.schnitt_ruhe_s, sitzung.schnitt_toleranz_grad (Schnitt mit flacher Hand),
+//   labor.variante.teleport (zeigen_pinch | stick), labor.variante.messen (messband | zwei_punkte; Messen folgt mit V1, die App merkt die Wahl nur).
+//   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
+//   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
 // Wert null setzt auf die Vorgabe zurück. Ein Wert ausserhalb der Grenzen, vom falschen Typ oder einer, der eine Paarbedingung verletzt (Pinch an < aus,
 // Zoom min < max), wird abgewiesen (MitStellschraube gibt null zurück, die App meldet «ungültig»).
@@ -10,6 +14,8 @@
 // Grenzen wie im Katalog von P6 (min/max), damit die Seite «XR-Labor» und die App dasselbe annehmen.
 
 using System.Text.Json;
+using Hlks.Xr.Modell;
+using Hlks.Xr.Sitzung;
 
 namespace Hlks.Xr.Bedienung;
 
@@ -33,6 +39,16 @@ public static class Varianten
     public const string Apps = "apps", Tablet = "tablet";
     /// <summary>«labor.variante.etage»: Etage per Wisch hoch/runter (Vorgabe) bzw. nur in der App «Etagen».</summary>
     public const string EtageWisch = "wisch_modell", EtageApp = "app";
+    /// <summary>P5b, «labor.variante.teleport»: springen mit Zeigen und Pinch (Vorgabe) bzw. mit dem Stick eines Controllers.</summary>
+    public const string ZeigenPinch = "zeigen_pinch", Stick = "stick";
+    /// <summary>P5b, «labor.variante.messen»: Messband aufziehen (Vorgabe) bzw. zwei Punkte setzen – Messen folgt mit Version 1, die App merkt die Wahl nur.</summary>
+    public const string Messband = "messband", ZweiPunkte = "zwei_punkte";
+
+    /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
+    public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
+    {
+        ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
+    };
 }
 
 /// <summary>Grösse, Abstand und Anordnung der schwebenden Apps und die Grösse der Schrift.</summary>
@@ -74,6 +90,14 @@ public sealed record XrBedienEinstellungen
     public string Bedienung { get; init; } = Varianten.Apps;
     /// <summary>«labor.variante.etage»: <see cref="Varianten.EtageWisch"/> (Vorgabe) oder <see cref="Varianten.EtageApp"/>.</summary>
     public string Etage { get; init; } = Varianten.EtageWisch;
+    /// <summary>P5b, «labor.variante.teleport»: <see cref="Varianten.ZeigenPinch"/> (Vorgabe) oder <see cref="Varianten.Stick"/>.</summary>
+    public string Teleport { get; init; } = Varianten.ZeigenPinch;
+    /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (folgt V1, ohne Wirkung).</summary>
+    public string Messen { get; init; } = Varianten.Messband;
+    /// <summary>P5b: Röntgen-Hand beim Begehen («roentgen.*»).</summary>
+    public RoentgenEinstellungen Roentgen { get; init; } = RoentgenEinstellungen.Vorgabe;
+    /// <summary>P5b: Schnitt mit der flachen Hand am Sitzungstisch («sitzung.schnitt_*»).</summary>
+    public FlacheHandEinstellungen FlacheHand { get; init; } = FlacheHandEinstellungen.Vorgabe;
 
     public static readonly XrBedienEinstellungen Vorgabe = new();
 
@@ -81,6 +105,14 @@ public sealed record XrBedienEinstellungen
     public bool EtageMitWisch => Etage != Varianten.EtageApp;
     /// <summary>Schwebende Apps statt der Box (Variante «bedienung»).</summary>
     public bool MitApps => Bedienung != Varianten.Tablet;
+    /// <summary>P5b: springen mit dem Stick statt mit Zeigen und Pinch (Variante «teleport»).</summary>
+    public bool MitStick => Teleport == Varianten.Stick;
+
+    /// <summary>P5b: Wert einer Variante nach ihrem Namen (bedienung, teleport, etage, messen); null für eine Variante, die die App nicht kennt.</summary>
+    public string? Variante(string name) => name switch
+    {
+        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, _ => null,
+    };
 
     /// <summary>Grenzen der Zahlen (min, max) je Schlüssel – wie im Katalog von P6.</summary>
     public static readonly IReadOnlyDictionary<string, (double Min, double Max)> Grenzen = new Dictionary<string, (double, double)>(StringComparer.Ordinal)
@@ -98,6 +130,10 @@ public sealed record XrBedienEinstellungen
         ["begehen.drehwinkel_grad"] = (5, 90),
         ["sitzung.zoom_min"] = (5, 100),
         ["sitzung.zoom_max"] = (50, 1000),
+        ["roentgen.winkel_grad"] = (10, 120),
+        ["roentgen.reichweite_m"] = (1, 20),
+        ["sitzung.schnitt_ruhe_s"] = (0, 2),
+        ["sitzung.schnitt_toleranz_grad"] = (5, 45),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -109,6 +145,8 @@ public sealed record XrBedienEinstellungen
         "komfort.tunnelblick", "komfort.tunnelblick_staerke", "komfort.ton",
         "begehen.drehwinkel_grad", "sitzung.zoom_min", "sitzung.zoom_max",
         "labor.variante.bedienung", "labor.variante.etage",
+        "roentgen.winkel_grad", "roentgen.reichweite_m", "sitzung.schnitt_ruhe_s", "sitzung.schnitt_toleranz_grad",
+        "labor.variante.teleport", "labor.variante.messen",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -117,14 +155,15 @@ public sealed record XrBedienEinstellungen
     /// <summary>
     /// Übernimmt eine Stellschraube vom PC. Gibt den neuen Satz zurück, oder null, wenn der Schlüssel nicht hierher gehört (siehe <see cref="Kennt"/>) bzw. der Wert
     /// ungültig ist (Typ, Grenzen, Paarbedingung). Wert null (bzw. fehlend) setzt auf die Vorgabe zurück – bei Paaren nur, wenn die Bedingung danach gilt.
+    /// P5b: grenzen = min/max je Schlüssel aus dem Katalog; sie gelten vor <see cref="Grenzen"/> (Schlüssel, die dort fehlen, nach <see cref="Grenzen"/>).
     /// </summary>
-    public XrBedienEinstellungen? MitStellschraube(string schluessel, JsonElement wert)
+    public XrBedienEinstellungen? MitStellschraube(string schluessel, JsonElement wert, IReadOnlyDictionary<string, (double Min, double Max)>? grenzen = null)
     {
         var zurueck = wert.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined;
         double? Zahl()
         {
             if (wert.ValueKind != JsonValueKind.Number || !wert.TryGetDouble(out var d) || !double.IsFinite(d)) return null;
-            var (min, max) = Grenzen[schluessel];
+            var (min, max) = grenzen is not null && grenzen.TryGetValue(schluessel, out var g) ? g : Grenzen[schluessel];
             return d >= min && d <= max ? d : null;
         }
         bool? JaNein() => wert.ValueKind switch { JsonValueKind.True => true, JsonValueKind.False => false, _ => null };
@@ -159,6 +198,22 @@ public sealed record XrBedienEinstellungen
                 return zurueck ? this with { Bedienung = v.Bedienung } : Wahl(Varianten.Apps, Varianten.Tablet) is { } p ? this with { Bedienung = p } : null;
             case "labor.variante.etage":
                 return zurueck ? this with { Etage = v.Etage } : Wahl(Varianten.EtageWisch, Varianten.EtageApp) is { } q ? this with { Etage = q } : null;
+            case "labor.variante.teleport":
+                return zurueck ? this with { Teleport = v.Teleport } : Wahl(Varianten.ZeigenPinch, Varianten.Stick) is { } r ? this with { Teleport = r } : null;
+            case "labor.variante.messen":
+                return zurueck ? this with { Messen = v.Messen } : Wahl(Varianten.Messband, Varianten.ZweiPunkte) is { } s ? this with { Messen = s } : null;
+            case "roentgen.winkel_grad":
+                return zurueck ? this with { Roentgen = Roentgen with { WinkelGrad = v.Roentgen.WinkelGrad } }
+                    : Zahl() is { } t ? this with { Roentgen = Roentgen with { WinkelGrad = t } } : null;
+            case "roentgen.reichweite_m":
+                return zurueck ? this with { Roentgen = Roentgen with { ReichweiteM = v.Roentgen.ReichweiteM } }
+                    : Zahl() is { } u ? this with { Roentgen = Roentgen with { ReichweiteM = u } } : null;
+            case "sitzung.schnitt_ruhe_s":
+                return zurueck ? this with { FlacheHand = FlacheHand with { RuheS = v.FlacheHand.RuheS } }
+                    : Zahl() is { } w ? this with { FlacheHand = FlacheHand with { RuheS = w } } : null;
+            case "sitzung.schnitt_toleranz_grad":
+                return zurueck ? this with { FlacheHand = FlacheHand with { ToleranzGrad = v.FlacheHand.ToleranzGrad } }
+                    : Zahl() is { } x ? this with { FlacheHand = FlacheHand with { ToleranzGrad = x } } : null;
             default:
                 return null;
         }
@@ -168,7 +223,8 @@ public sealed record XrBedienEinstellungen
     /// Mehrere Stellschrauben auf einmal (z. B. die gemerkten aus «willkommen»): in zwei Durchgängen, damit Paare (Pinch an/aus, Zoom min/max) in jeder Reihenfolge
     /// gelten. Gibt den neuen Satz und die Schlüssel zurück, die abgewiesen wurden (nur bekannte Schlüssel; fremde werden übergangen).
     /// </summary>
-    public (XrBedienEinstellungen Satz, IReadOnlyList<string> Abgewiesen) MitStellschrauben(IEnumerable<KeyValuePair<string, JsonElement>> werte)
+    public (XrBedienEinstellungen Satz, IReadOnlyList<string> Abgewiesen) MitStellschrauben(IEnumerable<KeyValuePair<string, JsonElement>> werte,
+        IReadOnlyDictionary<string, (double Min, double Max)>? grenzen = null)
     {
         var offen = werte.Where(w => Kennt(w.Key)).ToList();
         var satz = this;
@@ -176,7 +232,7 @@ public sealed record XrBedienEinstellungen
         {
             var rest = new List<KeyValuePair<string, JsonElement>>();
             foreach (var w in offen)
-                if (satz.MitStellschraube(w.Key, w.Value) is { } neu) satz = neu;
+                if (satz.MitStellschraube(w.Key, w.Value, grenzen) is { } neu) satz = neu;
                 else rest.Add(w);
             offen = rest;
         }

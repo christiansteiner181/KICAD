@@ -1,0 +1,44 @@
+<Project>
+	<!-- Quest App P5b: Fassung und Commit der App beim Bau einbetten. Die App meldet sie in «hallo.app» als «<Fassung>+<Commit>» (höchstens 40 Zeichen), KICAD
+	     schreibt sie in jedes Messprotokoll und wertet je Fassung aus (Seite «XR-Labor»).
+	     - Fassung: HlksAppFassung (Vorgabe 0.1, wie ApplicationDisplayVersion der Brillen-Fassung).
+	     - Commit: ohne Netz aus «git rev-parse» (kurze Form von HEAD) im Repository bzw. der Arbeitskopie; ohne Git oder ausserhalb eines Repositorys «unbekannt».
+	       Von aussen vorgeben: -p:HlksCommit=abc1234.
+	     Ergebnis: $(IntermediateOutputPath)AppFassung.g.cs mit der Klasse Hlks.Quest.AppFassung (Fassung, Commit, Text). Eingebunden von Hlks.Quest.csproj und
+	     Projects\Android\Hlks.Quest.Android.csproj. -->
+	<PropertyGroup>
+		<HlksAppFassung Condition="'$(HlksAppFassung)' == ''">0.1</HlksAppFassung>
+	</PropertyGroup>
+
+	<Target Name="HlksAppFassungSchreiben" BeforeTargets="BeforeCompile">
+		<Exec Condition="'$(HlksCommit)' == ''" Command="git rev-parse --short HEAD" WorkingDirectory="$(MSBuildThisFileDirectory)" ConsoleToMSBuild="true"
+		      IgnoreExitCode="true" IgnoreStandardErrorWarningFormat="true" StandardOutputImportance="low" StandardErrorImportance="low" EchoOff="true">
+			<Output TaskParameter="ConsoleOutput" PropertyName="_HlksCommitRoh" />
+			<Output TaskParameter="ExitCode" PropertyName="_HlksCommitCode" />
+		</Exec>
+		<PropertyGroup>
+			<_HlksCommit Condition="'$(HlksCommit)' != ''">$(HlksCommit)</_HlksCommit>
+			<_HlksCommit Condition="'$(HlksCommit)' == '' and '$(_HlksCommitCode)' == '0'">$([System.String]::Copy('$(_HlksCommitRoh)').Trim())</_HlksCommit>
+			<_HlksCommit Condition="'$([System.Text.RegularExpressions.Regex]::IsMatch(`$(_HlksCommit)`, `^[0-9a-f]{4,40}$`))' != 'True'">unbekannt</_HlksCommit>
+			<_HlksFassungDatei>$(IntermediateOutputPath)AppFassung.g.cs</_HlksFassungDatei>
+			<_HlksFassungText>// Erzeugt beim Bau (src/Hlks.Quest/Fassung.targets) – nicht von Hand ändern.
+namespace Hlks.Quest%3B
+
+/// &lt;summary&gt;Fassung und Commit dieser App (hallo.app im Live-Kanal, Messprotokolle des Labors).&lt;/summary&gt;
+static class AppFassung
+{
+    public const string Fassung = "$(HlksAppFassung)"%3B
+    public const string Commit = "$(_HlksCommit)"%3B
+    /// &lt;summary&gt;«Fassung+Commit», z. B. «0.1+680f9af».&lt;/summary&gt;
+    public const string Text = Fassung + "+" + Commit%3B
+}
+</_HlksFassungText>
+		</PropertyGroup>
+		<WriteLinesToFile File="$(_HlksFassungDatei)" Lines="$(_HlksFassungText)" Overwrite="true" WriteOnlyWhenDifferent="true" Encoding="UTF-8" />
+		<ItemGroup>
+			<Compile Include="$(_HlksFassungDatei)" />
+			<FileWrites Include="$(_HlksFassungDatei)" />
+		</ItemGroup>
+		<Message Importance="normal" Text="Quest App: Fassung $(HlksAppFassung)+$(_HlksCommit)" />
+	</Target>
+</Project>

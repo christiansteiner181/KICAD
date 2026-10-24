@@ -70,11 +70,15 @@ public sealed record HandBegehenEinstellungen
     /// <summary>
     /// Übernimmt eine Stellschraube vom PC (Kanal «stellschraube»): «begehen.ziel_ruhe_s» (0 … 2), «begehen.ziel_ruhe_radius_m» (0 … 5),
     /// «begehen.ziel_verzoegerung_s» (0 … 0.5), «begehen.drehen_sperre_s» (0 … 5). Wert null setzt auf die Vorgabe zurück. Gibt null zurück, wenn der Schlüssel nicht hierher gehört oder der Wert
-    /// ungültig ist.
+    /// ungültig ist. P5b: grenzen = min/max aus dem Katalog des Labors (gelten vor den Grenzen hier).
     /// </summary>
-    public HandBegehenEinstellungen? MitStellschraube(string schluessel, JsonElement wert)
+    public HandBegehenEinstellungen? MitStellschraube(string schluessel, JsonElement wert, IReadOnlyDictionary<string, (double Min, double Max)>? grenzen = null)
     {
-        double? Zahl(double min, double max) => wert.ValueKind == JsonValueKind.Number && wert.TryGetDouble(out var d) && d >= min && d <= max ? d : null;
+        double? Zahl(double min, double max)
+        {
+            if (grenzen is not null && grenzen.TryGetValue(schluessel, out var g)) (min, max) = g;
+            return wert.ValueKind == JsonValueKind.Number && wert.TryGetDouble(out var d) && double.IsFinite(d) && d >= min && d <= max ? d : null;
+        }
         var zurueck = wert.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined;
         switch (schluessel)
         {

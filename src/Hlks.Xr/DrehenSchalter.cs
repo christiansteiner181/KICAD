@@ -29,10 +29,15 @@ public sealed record HaltungEinstellungen
     public static readonly HaltungEinstellungen Vorgabe = new();
 
     /// <summary>Stellschraube vom PC: «haltung.schwelle_m» (0.5 … 2.5), «haltung.hysterese_m» (0 … 0.5), «haltung.haltezeit_s» (0 … 10). Wert null setzt
-    /// zurück. null, wenn der Schlüssel nicht hierher gehört oder der Wert ungültig ist.</summary>
-    public HaltungEinstellungen? MitStellschraube(string schluessel, JsonElement wert)
+    /// zurück. null, wenn der Schlüssel nicht hierher gehört oder der Wert ungültig ist. P5b: grenzen = min/max aus dem Katalog des Labors (gelten vor den
+    /// Grenzen hier).</summary>
+    public HaltungEinstellungen? MitStellschraube(string schluessel, JsonElement wert, IReadOnlyDictionary<string, (double Min, double Max)>? grenzen = null)
     {
-        double? Zahl(double min, double max) => wert.ValueKind == JsonValueKind.Number && wert.TryGetDouble(out var d) && d >= min && d <= max ? d : null;
+        double? Zahl(double min, double max)
+        {
+            if (grenzen is not null && grenzen.TryGetValue(schluessel, out var g)) (min, max) = g;
+            return wert.ValueKind == JsonValueKind.Number && wert.TryGetDouble(out var d) && double.IsFinite(d) && d >= min && d <= max ? d : null;
+        }
         var zurueck = wert.ValueKind is JsonValueKind.Null or JsonValueKind.Undefined;
         return schluessel switch
         {
