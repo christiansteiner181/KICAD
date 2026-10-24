@@ -166,6 +166,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Protokoll der Brille: Hebegeste 19×, Wegwischen 26×, 33 Etagenwechsel, ein Marker gesetzt und am PC angekommen, Sitzungstisch mit echtem Tisch (Passthrough).
 - Befund Leistung: am Sitzungstisch mit «Alle Etagen» 600–740 Tsd. Dreiecke und 52–63 Aufrufe → 46–56 Hz (mit eigenem Geschoss 72 Hz). Fang beim Messen bzw. Zeigen im Mittel 12 ms, einmal 1 s → Ruckler.
 - Nachtrag Christian: «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein.» → im Sitzen zusätzlich höher (eigene Stellschraube).
+- Nachtrag Christian: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links soll in wieder raus schieben. apps sind nun ca. 20cm zu hoch.» → Hineinziehen und Wegwischen mit beiden Händen; am Sitzungstisch Feld rund 0,20 m tiefer (die ersten Bemerkungen galten vermutlich dem Begehen im Sitzen).
 - Umsetzung V1d: Symbolfeld höher, App-Tafel immer mittig, ein Griff am Tisch, Sperre nach der Wahl einer App, Leistung (Tisch «Alle Etagen», Fang).
 
 **XR-I – Desktop in der Brille** (Christian, 24.10.2026: «ein wisch mit der rechten hand mit der handfläche nach links gerichtet, zieht den verbundenen Desktop in das bild. vr bleibt starr im hintergrund.»; Inhalt: «Ganzer Bildschirm»; Bedienung: «ich habe an die ansicht von der metafunktion gedacht.»):
