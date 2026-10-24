@@ -49,8 +49,12 @@ public static class SitzungRaum
     /// <summary>Unter so viel waagrechtem Abstand zwischen Kopf und angetipptem Punkt gilt die Blickrichtung statt der Richtung zum Punkt (m).</summary>
     public const double RichtungMinM = 0.15;
 
-    /// <summary>Virtueller Raum: Ursprung auf dem Boden (y = 0) unter dem Kopf, −z in der waagrechten Blickrichtung (Gieren wie VrLogik: ab +x gegen den Uhrzeigersinn).</summary>
-    public static SitzungRaumLage VorKopf(Vec3 kopf, double blickGieren) => new(new Vec3(kopf.X, 0, kopf.Z), blickGieren - Math.PI / 2);
+    /// <summary>
+    /// Virtueller Raum: Ursprung auf dem Boden (y = 0) unter dem Kopf, −z in der waagrechten Blickrichtung (Gieren wie VrLogik: ab +x gegen den Uhrzeigersinn). V1f (ohne
+    /// echten Tisch, «sitzung.tisch_hoehe_m»): die Platte liegt auf tischHoeheM über dem Boden – der Ursprung liegt dann tischHoeheM − TischHoehe über dem Boden.
+    /// </summary>
+    public static SitzungRaumLage VorKopf(Vec3 kopf, double blickGieren, double tischHoeheM = XrSitzungLogik.TischHoehe) =>
+        new(new Vec3(kopf.X, tischHoeheM - XrSitzungLogik.TischHoehe, kopf.Z), blickGieren - Math.PI / 2);
 
     /// <summary>
     /// Echter Tisch: die Mitte der Tischplatte (XrSitzungLogik.TischMitte, Höhe TischHoehe) liegt auf dem angetippten Punkt; −z zeigt waagrecht vom Kopf zum Punkt

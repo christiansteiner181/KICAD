@@ -10,6 +10,8 @@
 //     «sitzung.zoom_totzone»), damit Drehen nicht ungewollt zoomt und umgekehrt. Die Höhe bleibt.
 //   - Es wirkt immer nur ein Punkt (der zuerst gefasste); eine Hand fasst nie beide. Nach dem Loslassen sitzt jeder Punkt wieder an seinem Platz am Modell.
 // Jede Lage wird aus dem Anfang des Griffs gerechnet (kein Aufsummieren). Alle Zahlen sind Annahmen V1e, keine Normwerte.
+// V1f (Vorschlag zum Auftrag «Pistolengeste statt Pinch»): mit der Variante «ausloeser» = «pistole» fasst die FAUST – mit der ganzen Hand zugreifen (die App meldet die
+// geschlossene Hand als «Pinch» der EinGriffHand, Punkt = Innenseite der Faust); weil die Hand grösser ist als die Fingerspitzen, fängt sie im Umkreis FaustFangM (Annahme V1f).
 
 namespace Hlks.Xr.Sitzung;
 
@@ -22,6 +24,8 @@ public sealed record ZweiPunkteEinstellungen
     public double DrehTotzoneGrad { get; init; } = 3;
     /// <summary>«sitzung.zoom_totzone»: so viel Änderung des Abstands zum Zentrum (Anteil) zählt nicht (Annahme V1e 0.05 = 5 %).</summary>
     public double ZoomTotzone { get; init; } = 0.05;
+    /// <summary>V1f: die Punkte fasst die Faust statt des Pinch (die App setzt es aus der Variante «ausloeser»).</summary>
+    public bool Faust { get; init; }
 
     public bool MitZweiPunkten => Variante != Bedienung.Varianten.GriffeEinGriff;
 
@@ -61,6 +65,19 @@ public enum ZweiPunkteEreignis { Nichts, Gefasst, Losgelassen }
 
 public static class ZweiPunkte
 {
+    /// <summary>V1f: so nah (m) an einem Punkt muss die Faust beim Zugreifen sein (Annahme V1f; der Pinch: XrSitzungLogik.GriffFangM 0.05 m).</summary>
+    public const double FaustFangM = 0.08;
+
+    /// <summary>
+    /// V1f: hält die Hand eine Faust zum Zugreifen? vorher = sie hielt schon (Hysterese XrTabletLogik.FaustAn / FaustLos). Die Pistolengeste (Zeigefinger gestreckt) ist keine
+    /// neue Faust – sie zielt.
+    /// </summary>
+    public static bool Faust(IReadOnlyDictionary<string, Vec3>? g, bool vorher) => XrTabletLogik.IstFaust(g, vorher) && (vorher || !Bedienung.Pistole.Haltung(g));
+
+    /// <summary>V1f: der Punkt der Faust – die Mitte zwischen Handfläche und Mittelgelenk des Mittelfingers (innen in der geschlossenen Hand); null ohne Gelenke.</summary>
+    public static Vec3? FaustPunkt(IReadOnlyDictionary<string, Vec3>? g) =>
+        XrTabletLogik.HandflaechenMitte(g) is { } m && g!.TryGetValue("middle-finger-phalanx-intermediate", out var p) && p.IstEndlich ? Vec3.Mitte(m, p) : null;
+
     /// <summary>Weich abgezogene Totzone: |x| − tz mit dem Vorzeichen von x, darunter 0.</summary>
     static double Totzone(double x, double tz) => Math.Abs(x) <= tz ? 0 : x - Math.Sign(x) * tz;
 
@@ -128,7 +145,7 @@ public static class ZweiPunkte
             var l = neuL && links!.Frei ? Naechster(links) : (TischPunkt.Keiner, double.PositiveInfinity);
             var r = neuR && rechts!.Frei ? Naechster(rechts) : (TischPunkt.Keiner, double.PositiveInfinity);
             var (wer, p, d) = l.Item2 <= r.Item2 ? ("links", l.Item1, l.Item2) : ("rechts", r.Item1, r.Item2);
-            if (d > XrSitzungLogik.GriffFangM) return ZweiPunkteEreignis.Nichts;
+            if (d > (e.Faust ? FaustFangM : XrSitzungLogik.GriffFangM)) return ZweiPunkteEreignis.Nichts;
             var h = wer == "links" ? links! : rechts!;
             z.Hand = wer;
             z.Punkt = p;

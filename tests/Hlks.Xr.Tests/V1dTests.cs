@@ -183,7 +183,7 @@ public class V1dTests(ITestOutputHelper aus)
     public void Tafel_rueckt_traege_nach_ab_der_Schwelle_sonst_bleibt_sie_stehen()
     {
         var a = new AppEinstellungen();
-        var e = TafelEinstellungen.Vorgabe;
+        var e = TafelEinstellungen.Vorgabe with { Nachfuehren = Varianten.TafelTraege };   // V1f: Vorgabe «fest» (V1fTests), hier die Variante «traege»
         var auge = V(0, 1.6, 0);
         var mitte = Tafel.Platz(auge, Blick, a, e);
         var z = new TafelFolgen();
@@ -227,6 +227,7 @@ public class V1dTests(ITestOutputHelper aus)
     public void Der_PC_Bildschirm_oeffnet_frontal_und_rueckt_ebenso_traege_nach()
     {
         var e = DesktopEinstellungen.Vorgabe;
+        var traege = TafelEinstellungen.Vorgabe with { Nachfuehren = Varianten.TafelTraege };   // V1f: Vorgabe «fest», hier die Variante «traege»
         var a = new DesktopAnsicht();
         var auge = V(0, 1.6, 0);
         a.Einblenden(0, auge, Blick, e);
@@ -234,13 +235,13 @@ public class V1dTests(ITestOutputHelper aus)
         Assert.Equal(DesktopPhase.Da, a.Phase);
         Nah(Wd(GierenZu(a.Lage!.Mitte, auge), Blick), 0, 1e-9);
         // 20° gedreht: bleibt; 60° gedreht: rückt träge nach und steht am Ende wieder frontal (zum Kopf gedreht)
-        for (int i = 0; i < 72; i++) a.Nachfuehren(auge, Blick + 20 * Grad, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        for (int i = 0; i < 72; i++) a.Nachfuehren(auge, Blick + 20 * Grad, 1 / 72.0, e, traege, false);
         Nah(Wd(GierenZu(a.Lage!.Mitte, auge), Blick), 0, 1e-9);
         var blick = Blick - 60 * Grad;
-        a.Nachfuehren(auge, blick, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        a.Nachfuehren(auge, blick, 1 / 72.0, e, traege, false);
         Assert.True(a.Nachfuehrung.Folgt);
         Assert.True(Math.Abs(Wd(GierenZu(a.Lage!.Mitte, auge), blick)) > 50 * Grad);   // nicht sprunghaft
-        for (int i = 0; i < 4 * 72; i++) a.Nachfuehren(auge, blick, 1 / 72.0, e, TafelEinstellungen.Vorgabe, false);
+        for (int i = 0; i < 4 * 72; i++) a.Nachfuehren(auge, blick, 1 / 72.0, e, traege, false);
         Assert.True(Math.Abs(Wd(GierenZu(a.Lage!.Mitte, auge), blick)) <= Tafel.RestGrad * Grad + 1e-9);
         Nah(Wd(a.Lage!.Gieren, blick), 0, Tafel.RestGrad * Grad + 1e-9);   // die Fläche schaut wieder zum Kopf
         Nah(a.Lage!.Mitte.Abstand(auge with { Y = a.Lage.Mitte.Y }), e.AbstandM, 0.01);
@@ -909,10 +910,10 @@ public class V1dTests(ITestOutputHelper aus)
         Assert.Equal(40, e.MitStellschraube("tafel.nachfuehren_grad", W("40"))!.Tafel.NachfuehrenGrad);
         Assert.Equal(500_000, e.MitStellschraube("sitzung.dreiecke_max", W("500000"))!.Tisch.DreieckeMax);
         Assert.Equal(90, e.MitStellschraube("sitzung.drehknopf_grad", W("90"))!.Griff.DrehknopfGrad);
-        Assert.Equal(Varianten.TafelFest, e.MitStellschraube("labor.variante.tafel_nachfuehren", W("\"fest\""))!.Variante("tafel_nachfuehren"));
+        Assert.Equal(Varianten.TafelTraege, e.MitStellschraube("labor.variante.tafel_nachfuehren", W("\"traege\""))!.Variante("tafel_nachfuehren"));
         Assert.Equal(Varianten.ZoomDrehknopf, e.MitStellschraube("labor.variante.zoom_ein_griff", W("\"drehknopf\""))!.Griff.Zoom);
         Assert.Null(e.MitStellschraube("labor.variante.zoom_ein_griff", W("\"zwei_griffe\"")));
-        Assert.Equal("traege", e.Variante("tafel_nachfuehren"));
+        Assert.Equal("fest", e.Variante("tafel_nachfuehren"));   // V1f: Vorgabe «fest» (Christian 24.10.2026: «die tafel nicht mit dem blick wandern»)
         Assert.Equal("zweite_hand", e.Variante("zoom_ein_griff"));
     }
 

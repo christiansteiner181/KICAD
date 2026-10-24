@@ -38,7 +38,7 @@ public readonly record struct SeitenWischStand(bool Ausgeloest, double Fortschri
 /// <summary>Zustand des Hineinziehens (Punkte der rechten Hand, solange die Haltung passt; Spur der linken Hand; Pinch vorher; Sperre).</summary>
 public sealed class SeitenWischZustand
 {
-    internal readonly List<(double T, Vec3 P, Vec3 N)> Punkte = [];
+    internal readonly List<(double T, Vec3 P, Vec3 N, double O)> Punkte = [];
     internal readonly List<(double T, Vec3 P)> Andere = [];
     internal bool PinchVorher;
     internal double SperreBis = double.NegativeInfinity;
@@ -85,10 +85,11 @@ public static class SeitenWisch
         var mitte = XrTabletLogik.HandflaechenMitte(rechts);
         var normale = XrTabletLogik.HandflaechenNormale(rechts, seite);
         var seitlich = normale is { } nn ? (seite == "left" ? Math.Abs(nn.Skalar(linksRichtung)) : nn.Skalar(linksRichtung)) : -1;
-        var haltung = erlaubt && mitte is not null && normale is not null && !pinchJetzt && XrTabletLogik.IstOffen(rechts)
+        // V1f: die lockere Hand zählt (Bedienung.LockereHand: keine Faust, kein Pinch, keine Pistolengeste, «gesten.offen_ab»; bis V1e XrTabletLogik.IstOffen)
+        var haltung = erlaubt && mitte is not null && normale is not null && Bedienung.LockereHand.Passt(rechts, pinchJetzt, e.Anstoss)
             && seitlich >= Math.Cos(e.HandflaecheGrad * Num.Grad);
         if (!haltung) { z.Punkte.Clear(); return SeitenWischStand.Nichts; }
-        z.Punkte.Add((t, mitte!.Value, normale!.Value));
+        z.Punkte.Add((t, mitte!.Value, normale!.Value, XrTabletLogik.FaustVerhaeltnis(rechts) ?? 0));
         while (z.Punkte.Count > 0 && z.Punkte[0].T < t - behalten) z.Punkte.RemoveAt(0);
         if (t < z.SperreBis)
         {
@@ -112,7 +113,8 @@ public static class SeitenWisch
         if (tempo < e.TempoMs && weg >= e.WegM)
             for (int i = fenster.Count - 2; i >= 0; i--)
                 if ((jetzt - fenster[i].P).Skalar(r) >= e.WegM) { tempo = Math.Max(tempo, e.WegM / Math.Max(1e-3, t - fenster[i].T)); break; }
-        var voll = weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig;
+        // V1f: mit gleich bleibender Form der Hand (AnstossEinstellungen.FormSpiel)
+        var voll = weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig && Bedienung.Anstoss.FormAenderung(z.Punkte, beginn.T) <= e.Anstoss.FormSpiel + 1e-9;
         // V1e: oder ein kurzer, deutlicher Anstoss nach rechts (Christian 24.10.2026: «nur einen anstoss»); die andere Hand ruht seit seinem Anlauf
         var a = Bedienung.Anstoss.Pruefen(z.Punkte, t, r, SeitlichAnteil, e.Anstoss, XrTabletLogik.FaustVerhaeltnis(rechts) ?? 0);
         z.Anstoss = a;

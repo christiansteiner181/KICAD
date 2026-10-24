@@ -43,8 +43,8 @@ public sealed record WegwischStand(bool Ereignis, double Weg, bool Laeuft, IRead
 /// <summary>Zustand des Wegwischens (Punkte der rechten bzw. – V1d – linken Hand, solange sie in der Haltung ist; eine Sperre für beide).</summary>
 public sealed class WegwischZustand
 {
-    internal readonly List<(double T, Vec3 P, Vec3 N)> Punkte = [];
-    internal readonly List<(double T, Vec3 P, Vec3 N)> PunkteLinks = [];
+    internal readonly List<(double T, Vec3 P, Vec3 N, double O)> Punkte = [];
+    internal readonly List<(double T, Vec3 P, Vec3 N, double O)> PunkteLinks = [];
     // V1d: Weg beider Hände im Zeitfenster, gleich in welcher Haltung (gegenläufige zweite Hand erkennen)
     internal readonly List<(double T, Vec3 P)> VerlaufRechts = [];
     internal readonly List<(double T, Vec3 P)> VerlaufLinks = [];
@@ -87,8 +87,9 @@ public static class Wegwischen
         e ??= WegwischEinstellungen.Vorgabe;
         var nachLinks = Links(blickGieren);
         var cos = Math.Cos(e.HandflaecheGrad * Math.PI / 180);
-        var r = Spur(z.Punkte, t, rechts is { Offen: true, Pinch: false } hr && hr.Normale.Skalar(nachLinks) >= cos ? hr : null, nachLinks, e, z.SperreBis);
-        var l = Spur(z.PunkteLinks, t, links is { Offen: true, Pinch: false } hl && Math.Abs(hl.Normale.Skalar(nachLinks)) >= cos ? hl : null, nachLinks, e, z.SperreBis);
+        // V1f: die lockere Hand zählt (LockereHand: keine Faust, kein Pinch, keine Pistolengeste, «gesten.offen_ab»)
+        var r = Spur(z.Punkte, t, rechts is { } hr && LockereHand.Passt(hr, e.Anstoss) && hr.Normale.Skalar(nachLinks) >= cos ? hr : null, nachLinks, e, z.SperreBis);
+        var l = Spur(z.PunkteLinks, t, links is { } hl && LockereHand.Passt(hl, e.Anstoss) && Math.Abs(hl.Normale.Skalar(nachLinks)) >= cos ? hl : null, nachLinks, e, z.SperreBis);
         // V1d: bewegt sich die andere Hand zugleich gegenläufig (nach rechts), ist es kein Wegwischen – z. B. das Wegschieben mit zwei Händen (auseinander) bzw. das
         // Zusammenführen; die Spur dieser Hand beginnt neu
         Verlauf(z.VerlaufRechts, t, rechts?.Mitte, e);
@@ -127,7 +128,7 @@ public static class Wegwischen
     /// Ist die andere Hand im Zeitfenster mehr als GegenM nach rechts gegangen (vom am weitesten links liegenden Punkt bis jetzt), zählt der Strich nicht. V1e: beim Anstoss
     /// im Fenster des Anstosses und schon ab der Hälfte des eigenen Wegs (mindestens GegenMinM) – er ist kurz, die andere Hand ist dann auch erst ein Stück weit.
     /// </summary>
-    static WegwischStand Gegenlaeufig(List<(double T, Vec3 P)> andere, double t, Vec3 links, WegwischStand s, List<(double T, Vec3 P, Vec3 N)> spur, WegwischEinstellungen e)
+    static WegwischStand Gegenlaeufig(List<(double T, Vec3 P)> andere, double t, Vec3 links, WegwischStand s, List<(double T, Vec3 P, Vec3 N, double O)> spur, WegwischEinstellungen e)
     {
         var seit = s.DurchAnstoss ? t - Anstoss.ZeitS : t - e.ZeitS;
         var teil = andere.Where(x => x.T >= seit - 1e-9).ToList();
@@ -139,10 +140,10 @@ public static class Wegwischen
         return new WegwischStand(false, 0, false, []);
     }
 
-    static WegwischStand Spur(List<(double T, Vec3 P, Vec3 N)> punkte, double t, HandBeobachtung? hand, Vec3 links, WegwischEinstellungen e, double sperreBis)
+    static WegwischStand Spur(List<(double T, Vec3 P, Vec3 N, double O)> punkte, double t, HandBeobachtung? hand, Vec3 links, WegwischEinstellungen e, double sperreBis)
     {
         if (hand is not { } h) { punkte.Clear(); return new WegwischStand(false, 0, false, []); }
-        punkte.Add((t, h.Mitte, h.Normale));
+        punkte.Add((t, h.Mitte, h.Normale, h.Offenheit));
         while (punkte.Count > 0 && punkte[0].T < t - e.ZeitS - 1e-9) punkte.RemoveAt(0);
         if (t < sperreBis) { punkte.Clear(); return new WegwischStand(false, 0, false, []); }   // in der Sperre beginnt nichts
         // Anlauf: der am weitesten rechts liegende Punkt im Fenster (der letzte dort, 1 cm Spiel); Ausholen nach rechts verschiebt nur den Anlauf
@@ -154,7 +155,8 @@ public static class Wegwischen
         var weg = Math.Max(0, jetzt.Skalar(links) - rechtest);
         var richtungOk = d.Laenge < 1e-6 || d.Skalar(links) >= Math.Cos(e.RichtungGrad * Math.PI / 180) * d.Laenge;
         var pfad = punkte.Skip(anlauf).Select(x => x.P).ToList();
-        if (weg >= e.WegM && richtungOk) return new WegwischStand(true, weg, false, pfad);
+        // V1f: die ganze Bewegung mit gleich bleibender Form der Hand (AnstossEinstellungen.FormSpiel)
+        if (weg >= e.WegM && richtungOk && Anstoss.FormAenderung(punkte, punkte[anlauf].T) <= e.Anstoss.FormSpiel + 1e-9) return new WegwischStand(true, weg, false, pfad);
         // V1e: oder ein kurzer, deutlicher Anstoss nach links (quer höchstens so viel, wie die Richtung erlaubt)
         var a = Anstoss.Pruefen(punkte, t, links, Math.Tan(Math.Min(80, e.RichtungGrad) * Math.PI / 180), e.Anstoss, h.Offenheit);
         if (a.Ausgeloest) return new WegwischStand(true, Math.Max(weg, a.Weg), false, pfad, true);

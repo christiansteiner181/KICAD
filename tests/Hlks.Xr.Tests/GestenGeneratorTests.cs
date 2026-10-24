@@ -11,8 +11,9 @@ using Hlks.Xr.Gesten;
 
 namespace Hlks.Xr.Tests;
 
-/// <summary>Haltung einer Hand im Körperbezug: Mitte der Handfläche, Fingerrichtung, Normale (aus der Handfläche heraus), Krümmung (Daumen zuerst), Pinch.</summary>
-internal sealed record Haltung(Vec3 Mitte, Vec3 Finger, Vec3 Normale, double[] Kruemmung, double Pinch = 0);
+/// <summary>Haltung einer Hand im Körperbezug: Mitte der Handfläche, Fingerrichtung, Normale (aus der Handfläche heraus), Krümmung (Daumen zuerst), Pinch; V1f: Abzug 0 … 1
+/// (die Daumenspitze an die Seite des Mittelfingers, Pistolengeste).</summary>
+internal sealed record Haltung(Vec3 Mitte, Vec3 Finger, Vec3 Normale, double[] Kruemmung, double Pinch = 0, double Abzug = 0);
 
 /// <summary>Bewegung: Haltung beider Hände zum Fortschritt u (0 … 1); null = Hand nicht verfolgt.</summary>
 internal delegate (Haltung? Links, Haltung? Rechts) GestenBewegung(double u);
@@ -61,7 +62,7 @@ internal static class GestenGenerator
     static Vec3 Lerp(Vec3 a, Vec3 b, double t) => a + (b - a) * t;
 
     /// <summary>Die 25 WebXR-Gelenke einer Hand in der Welt (siehe Dateikopf).</summary>
-    public static Dictionary<string, Vec3> Hand(HandSeite seite, Vec3 mitte, Vec3 finger, Vec3 normale, IReadOnlyList<double> kr, double pinch)
+    public static Dictionary<string, Vec3> Hand(HandSeite seite, Vec3 mitte, Vec3 finger, Vec3 normale, IReadOnlyList<double> kr, double pinch, double abzug = 0)
     {
         var f = finger.Einheit();
         var n = (normale - f * normale.Skalar(f)).Einheit();
@@ -101,6 +102,14 @@ internal static class GestenGenerator
             t4 = Lerp(t4, ziel, pz);
             t3 = Lerp(t3, Vec3.Mitte(t2, ziel) + n * 0.01, pz * 0.7);
         }
+        var az = Math.Clamp(abzug, 0, 1);
+        if (az > 0)
+        {
+            // V1f: Daumen an die Seite des Mittelfingers (zum Zeigefinger hin), wie Geisterhand.DaumenAngelegt
+            var an = Vec3.Mitte(g["middle-finger-phalanx-proximal"], g["middle-finger-phalanx-intermediate"]) + (g["index-finger-phalanx-proximal"] - g["middle-finger-phalanx-proximal"]) * 0.5;
+            t4 = Lerp(t4, an, az);
+            t3 = Lerp(t3, Vec3.Mitte(t2, an), az * 0.6);
+        }
         g["thumb-metacarpal"] = t1;
         g["thumb-phalanx-proximal"] = t2;
         g["thumb-phalanx-distal"] = t3;
@@ -130,7 +139,7 @@ internal static class GestenGenerator
 
     /// <summary>Haltung zwischen a und b (Anteil t): Lagen linear, Richtungen normiert linear, Krümmung und Pinch linear.</summary>
     public static Haltung Mischen(Haltung a, Haltung b, double t) => new(Lerp(a.Mitte, b.Mitte, t), Lerp(a.Finger, b.Finger, t).Einheit(),
-        Lerp(a.Normale, b.Normale, t).Einheit(), [.. a.Kruemmung.Zip(b.Kruemmung, (x, y) => x + (y - x) * t)], a.Pinch + (b.Pinch - a.Pinch) * t);
+        Lerp(a.Normale, b.Normale, t).Einheit(), [.. a.Kruemmung.Zip(b.Kruemmung, (x, y) => x + (y - x) * t)], a.Pinch + (b.Pinch - a.Pinch) * t, a.Abzug + (b.Abzug - a.Abzug) * t);
 
     /// <summary>Zeitverlauf eines Stücks (Ruhe, Bewegung, Ruhe) als Haltung zur Zeit ab Beginn des Stücks; Länge des Stücks.</summary>
     public static (Func<double, (Haltung? L, Haltung? R)> Verlauf, double Laenge) Stueck(GestenBewegung b, Vorfuehrung v)
@@ -173,7 +182,7 @@ internal static class GestenGenerator
             HandBild Bild(HandSeite s, Haltung? h)
             {
                 if (h is null) return HandBild.Fehlt;
-                var g = Hand(s, KopfLage + Welt(h.Mitte), Welt(h.Finger), Welt(h.Normale), h.Kruemmung, h.Pinch);
+                var g = Hand(s, KopfLage + Welt(h.Mitte), Welt(h.Finger), Welt(h.Normale), h.Kruemmung, h.Pinch, h.Abzug);
                 var versatz = GaussV(r, sigma);
                 foreach (var name in g.Keys.ToList()) g[name] = g[name] + versatz + GaussV(r, rauschenM * 0.2);
                 return HandBild.AusGelenken(s, g);

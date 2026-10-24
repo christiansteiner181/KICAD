@@ -15,6 +15,9 @@
 // V1e: gesten.anstoss_weg_m, gesten.anstoss_tempo_ms (Anstoss statt ganzer Bewegung), etagen.zeilen_max (Etagenliste auf einer Seite), labor.variante.griffe_tisch
 //   (zwei_punkte | ein_griff), sitzung.dreh_totzone_grad und sitzung.zoom_totzone (zwei Punkte am Tisch), symbole.abstand_tafel_m und symbole.radius_seitlich_m (Feld
 //   neben der Tafel), anzeige.glanz (Glanz der Apps).
+// V1f: labor.variante.ausloeser (pistole | pinch; Pistolengeste statt Pinch für die Zeige-Aktionen, Faustgriff an den zwei Punkten), pistole.abzug_an_m, pistole.abzug_aus_m,
+//   pistole.ruhe_s (Pistolengeste), sitzung.tisch_hoehe_m (angenommene Tischhöhe ohne echten Tisch), gesten.offen_ab (lockere Hand für die Wischgesten), hebe.vorhalte_s und
+//   hebe.dreh_grad (eigene Schwellen der Hebegeste); Vorgabe der Variante tafel_nachfuehren neu «fest».
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -73,14 +76,17 @@ public static class Varianten
     /// <summary>V1e, «labor.variante.griffe_tisch»: am Sitzungstisch zwei Punkte – Verschieben und Drehen/Vergrössern um das Zentrum (Vorgabe; Christian 24.10.2026:
     /// «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern») bzw. der eine Griff von V1d.</summary>
     public const string GriffeZweiPunkte = "zwei_punkte", GriffeEinGriff = "ein_griff";
+    /// <summary>V1f, «labor.variante.ausloeser»: die Zeige-Aktionen (Springen, Messen, Marker setzen, Wahl auf Distanz) löst die Pistolengeste aus (Vorgabe; Christian
+    /// 24.10.2026: «pich ist zu sensibel.. hier braucht es eine andere geste. bsp. pistolengeste.»), die Punkte am Tisch fasst die Faust – bzw. wie bis V1e der Pinch.</summary>
+    public const string AusloeserPistole = "pistole", AusloeserPinch = "pinch";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageApp, EtageWisch], ["messen"] = [Messband, ZweiPunkte],
         ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
-        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelTraege, TafelFest], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
-        ["griffe_tisch"] = [GriffeZweiPunkte, GriffeEinGriff],
+        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelFest, TafelTraege], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
+        ["griffe_tisch"] = [GriffeZweiPunkte, GriffeEinGriff], ["ausloeser"] = [AusloeserPistole, AusloeserPinch],
     };
 }
 
@@ -173,6 +179,15 @@ public sealed record XrBedienEinstellungen
     public ZweiPunkteEinstellungen Punkte { get; init; } = ZweiPunkteEinstellungen.Vorgabe;
     /// <summary>V1e: der Anstoss der Gesten («gesten.anstoss_*»; gilt für Hebegeste, Wegwischen und – über DesktopEinstellungen.HineinMit – das Hineinziehen).</summary>
     public AnstossEinstellungen Anstoss => Wegwischen.Anstoss;
+    /// <summary>V1f, «labor.variante.ausloeser»: <see cref="Varianten.AusloeserPistole"/> (Vorgabe) | <see cref="Varianten.AusloeserPinch"/>.</summary>
+    public string Ausloeser { get; init; } = Varianten.AusloeserPistole;
+    /// <summary>V1f: Schwellen der Pistolengeste («pistole.*»).</summary>
+    public PistoleEinstellungen Pistole { get; init; } = PistoleEinstellungen.Vorgabe;
+    /// <summary>V1f, «sitzung.tisch_hoehe_m»: ohne echten Tisch steht das Modell auf dieser Höhe über dem Boden (m; Annahme V1f 0.75 m wie bisher der virtuelle Tisch,
+    /// eine übliche Höhe eines Sitzungstischs).</summary>
+    public double TischHoeheM { get; init; } = XrSitzungLogik.TischHoehe;
+    /// <summary>V1f: die Pistolengeste löst aus (Variante «ausloeser»).</summary>
+    public bool MitPistole => Ausloeser != Varianten.AusloeserPinch;
 
     public static readonly XrBedienEinstellungen Vorgabe = new();
 
@@ -187,7 +202,8 @@ public sealed record XrBedienEinstellungen
     public string? Variante(string name) => name switch
     {
         "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
-        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, "tafel_nachfuehren" => Tafel.Nachfuehren, "zoom_ein_griff" => Griff.Zoom, "griffe_tisch" => Punkte.Variante, _ => null,
+        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, "tafel_nachfuehren" => Tafel.Nachfuehren, "zoom_ein_griff" => Griff.Zoom, "griffe_tisch" => Punkte.Variante,
+        "ausloeser" => Ausloeser, _ => null,
     };
 
     /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
@@ -255,6 +271,14 @@ public sealed record XrBedienEinstellungen
         ["symbole.abstand_tafel_m"] = (0.02, 0.4),
         ["symbole.radius_seitlich_m"] = (0.3, 1.0),
         ["anzeige.glanz"] = (0, 1),
+        // V1f
+        ["pistole.abzug_an_m"] = (0.01, 0.06),
+        ["pistole.abzug_aus_m"] = (0.015, 0.1),
+        ["pistole.ruhe_s"] = (0, 1),
+        ["sitzung.tisch_hoehe_m"] = (0.4, 1.3),
+        ["gesten.offen_ab"] = (1.1, 1.9),
+        ["hebe.vorhalte_s"] = (0, 0.5),
+        ["hebe.dreh_grad"] = (10, 90),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -281,6 +305,8 @@ public sealed record XrBedienEinstellungen
         // V1e
         "gesten.anstoss_weg_m", "gesten.anstoss_tempo_ms", "etagen.zeilen_max", "labor.variante.griffe_tisch", "sitzung.dreh_totzone_grad", "sitzung.zoom_totzone",
         "symbole.abstand_tafel_m", "symbole.radius_seitlich_m", "anzeige.glanz",
+        // V1f
+        "labor.variante.ausloeser", "pistole.abzug_an_m", "pistole.abzug_aus_m", "pistole.ruhe_s", "sitzung.tisch_hoehe_m", "gesten.offen_ab", "hebe.vorhalte_s", "hebe.dreh_grad",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -307,6 +333,7 @@ public sealed record XrBedienEinstellungen
         XrBedienEinstellungen? MitPinch(PinchEinstellungen p) => p.AnM < p.AusM ? this with { Pinch = p } : null;
         XrBedienEinstellungen? MitZoom(ZoomGrenzen z) => z.Min < z.Max ? this with { Zoom = z } : null;
         XrBedienEinstellungen MitAnstoss(AnstossEinstellungen a) => this with { Hebe = Hebe with { Anstoss = a }, Wegwischen = Wegwischen with { Anstoss = a } };
+        XrBedienEinstellungen? MitPistoleSatz(PistoleEinstellungen p) => p.AbzugAnM < p.AbzugAusM ? this with { Pistole = p } : null;
         switch (schluessel)
         {
             case "anzeige.skala": return zurueck ? this with { Apps = Apps with { Skala = v.Apps.Skala } } : Zahl() is { } a ? this with { Apps = Apps with { Skala = a } } : null;
@@ -431,7 +458,7 @@ public sealed record XrBedienEinstellungen
                     : Zahl() is { } d7 ? this with { Tafel = Tafel with { BlaetternWegM = d7 } } : null;
             case "labor.variante.tafel_nachfuehren":
                 return zurueck ? this with { Tafel = Tafel with { Nachfuehren = v.Tafel.Nachfuehren } }
-                    : Wahl(Varianten.TafelTraege, Varianten.TafelFest) is { } d8 ? this with { Tafel = Tafel with { Nachfuehren = d8 } } : null;
+                    : Wahl(Varianten.TafelFest, Varianten.TafelTraege) is { } d8 ? this with { Tafel = Tafel with { Nachfuehren = d8 } } : null;
             case "sitzung.drehknopf_grad":
                 return zurueck ? this with { Griff = Griff with { DrehknopfGrad = v.Griff.DrehknopfGrad } }
                     : Zahl() is { } d9 ? this with { Griff = Griff with { DrehknopfGrad = d9 } } : null;
@@ -469,6 +496,23 @@ public sealed record XrBedienEinstellungen
                     : Zahl() is { } e8 ? this with { Symbole = Symbole with { RadiusSeitlichM = e8 } } : null;
             case "anzeige.glanz":
                 return zurueck ? this with { Apps = Apps with { Glanz = v.Apps.Glanz } } : Zahl() is { } e9 ? this with { Apps = Apps with { Glanz = e9 } } : null;
+            // V1f
+            case "labor.variante.ausloeser":
+                return zurueck ? this with { Ausloeser = v.Ausloeser } : Wahl(Varianten.AusloeserPistole, Varianten.AusloeserPinch) is { } f1 ? this with { Ausloeser = f1 } : null;
+            case "pistole.abzug_an_m":
+                return (zurueck ? v.Pistole.AbzugAnM : Zahl()) is { } f2 ? MitPistoleSatz(Pistole with { AbzugAnM = f2 }) : null;
+            case "pistole.abzug_aus_m":
+                return (zurueck ? v.Pistole.AbzugAusM : Zahl()) is { } f3 ? MitPistoleSatz(Pistole with { AbzugAusM = f3 }) : null;
+            case "pistole.ruhe_s":
+                return (zurueck ? v.Pistole.RuheS : Zahl()) is { } f4 ? this with { Pistole = Pistole with { RuheS = f4 } } : null;
+            case "sitzung.tisch_hoehe_m":
+                return (zurueck ? v.TischHoeheM : Zahl()) is { } f5 ? this with { TischHoeheM = f5 } : null;
+            case "gesten.offen_ab":
+                return (zurueck ? v.Anstoss.OffenAb : Zahl()) is { } f6 ? MitAnstoss(Anstoss with { OffenAb = f6, HaltungOffenAb = f6 }) : null;
+            case "hebe.vorhalte_s":
+                return (zurueck ? v.Hebe.VorhalteS : Zahl()) is { } f7 ? this with { Hebe = Hebe with { VorhalteS = f7 } } : null;
+            case "hebe.dreh_grad":
+                return (zurueck ? v.Hebe.DrehGrad : Zahl()) is { } f8 ? this with { Hebe = Hebe with { DrehGrad = f8 } } : null;
             default:
                 return null;
         }

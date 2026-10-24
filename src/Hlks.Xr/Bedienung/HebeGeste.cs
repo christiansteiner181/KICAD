@@ -6,24 +6,41 @@
 //     beidhändige Wegschieben aus der Mitte entfällt.
 // Ohne Pinch: weder Pinch + Wisch (Etage, Blättern, Drehen) noch der Sprung lösen aus – sie brauchen den Pinch; das Wegwischen (eine Hand, Handfläche nach links) löst die
 // Hebegeste nicht aus und umgekehrt (Tests). Rein, ohne StereoKit. Alle Schwellen sind Annahmen V1a (Stellschrauben hebe.*).
+// V1f (Christian 24.10.2026: «die app hineinheben geste scheint im letzten test weniger gut zu klappen.»): beim natürlichen Anheben drehen sich die Handflächen mit, die Hände
+// sind nicht ganz offen und stehen nicht still, bevor sie steigen. Die Hebegeste hat darum eigene, lockerere Schwellen: Handfläche bis «hebe.handflaeche_grad» (V1f 60°,
+// bis V1e 45°), Drehung beim Anstoss bis «hebe.dreh_grad» (V1f 45°, sonst 25°), Haltung vor dem Schub «hebe.vorhalte_s» (V1f 0 s, sonst 0.1 s), Gleichlauf der Hände
+// «hebe.gleichzeitig_s» (V1f 0.5 s, bis V1e 0.35 s); dazu die lockere Hand (LockereHand, «gesten.offen_ab»). Verworfene Ansätze (beide Hände steigen deutlich, aber nichts
+// löst aus) meldet HebeStand.Verworfen mit dem Grund – höchstens einmal je Ansatz und höchstens alle MeldungAbstandS (die App schreibt es ins Protokoll).
 
 namespace Hlks.Xr.Bedienung;
 
-/// <summary>Schwellen der Hebegeste (Stellschrauben «hebe.*», Annahmen V1a).</summary>
+/// <summary>Schwellen der Hebegeste (Stellschrauben «hebe.*», Annahmen V1a bzw. V1f).</summary>
 public sealed record HebeEinstellungen
 {
     /// <summary>«hebe.weg_m»: so weit muss jede Hand nach oben – «deutlich» (Annahme V1a 0.15 m, gleich wie der Mindestweg eines Wischs).</summary>
     public double WegM { get; init; } = 0.15;
     /// <summary>«hebe.zeit_s»: in höchstens so viel Zeit (Annahme V1a 0.9 s).</summary>
     public double ZeitS { get; init; } = 0.9;
-    /// <summary>«hebe.handflaeche_grad»: die Handfläche zeigt höchstens so weit neben senkrecht nach oben, Annahme V1a 45°.</summary>
-    public double HandflaecheGrad { get; init; } = 45;
-    /// <summary>«hebe.gleichzeitig_s»: die beiden Hände beginnen höchstens so weit auseinander (Annahme V1a 0.35 s).</summary>
-    public double GleichzeitigS { get; init; } = 0.35;
+    /// <summary>«hebe.handflaeche_grad»: die Handfläche zeigt höchstens so weit neben senkrecht nach oben (Annahme V1a 45°; V1f 60° – beim natürlichen Anheben sind die
+    /// Handflächen oft zueinander bzw. zum Körper gekippt).</summary>
+    public double HandflaecheGrad { get; init; } = 60;
+    /// <summary>«hebe.gleichzeitig_s»: die beiden Hände beginnen höchstens so weit auseinander (Annahme V1a 0.35 s; V1f 0.5 s).</summary>
+    public double GleichzeitigS { get; init; } = 0.5;
+    /// <summary>V1f, «hebe.vorhalte_s»: so lange (s) steht die Haltung vor dem Anstoss der Hebegeste (die übrigen Gesten 0.1 s; Annahme V1f 0 – die Hände drehen sich beim
+    /// Anheben erst in die Haltung).</summary>
+    public double VorhalteS { get; init; }
+    /// <summary>V1f, «hebe.dreh_grad»: so viel (Grad) darf sich die Handfläche beim Anstoss der Hebegeste drehen (die übrigen Gesten 25°; Annahme V1f 45°).</summary>
+    public double DrehGrad { get; init; } = 45;
     /// <summary>V1e: der Anstoss (Stellschrauben «gesten.anstoss_*», gemeinsam für Hebegeste, Hineinziehen und Wegwischen).</summary>
     public AnstossEinstellungen Anstoss { get; init; } = AnstossEinstellungen.Vorgabe;
 
     public static readonly HebeEinstellungen Vorgabe = new();
+    /// <summary>V1f: der Satz von V1e (für den Vergleich der Fehlauslösungen).</summary>
+    public static readonly HebeEinstellungen V1e = new() { HandflaecheGrad = 45, GleichzeitigS = 0.35, VorhalteS = 0.1, DrehGrad = 25, Anstoss = AnstossEinstellungen.V1e };
+
+    /// <summary>Der Anstoss mit den Schwellen der Hebegeste (Vorhaltezeit, Drehung); ohne Grenze für die Form der Hand (beim Anheben öffnen sich die Hände oft; die
+    /// Hebegeste braucht ohnehin beide Hände).</summary>
+    public AnstossEinstellungen AnstossHebe => Anstoss with { HaltungVorS = VorhalteS, DrehMaxGrad = DrehGrad, FormSpiel = double.PositiveInfinity };
 }
 
 /// <summary>Lage der App-Symbole und Zeiten (Stellschrauben «symbole.*», «zeiger.tooltip_s», Variante «symbole»; Annahmen V1a).</summary>
@@ -82,15 +99,20 @@ public sealed record SymbolEinstellungen
     public double RadiusSeitlichM { get; init; } = 0.50;
 }
 
-/// <summary>Was eine Hand für die Gesten zeigt: Mitte und Normale der Handfläche (Normale aus der Handfläche heraus), offen, Pinch; V1e: wie weit offen (Verhältnis der
-/// Fingerspitzen zum Handgelenk, XrTabletLogik.FaustVerhaeltnis; ohne Angabe ganz offen).</summary>
-public readonly record struct HandBeobachtung(Vec3 Mitte, Vec3 Normale, bool Offen, bool Pinch, double Offenheit = 2.0)
+/// <summary>
+/// Was eine Hand für die Gesten zeigt: Mitte und Normale der Handfläche (Normale aus der Handfläche heraus), offen (V1f: keine Faust – wie weit offen sie sein muss, sagt
+/// Offenheit gegen «gesten.offen_ab», LockereHand), Pinch; V1e: wie weit offen (Verhältnis der Fingerspitzen zum Handgelenk, XrTabletLogik.FaustVerhaeltnis; ohne Angabe ganz
+/// offen); V1f: hält die Hand die Pistolengeste (Pistole.Haltung)? Wie ungleich sind die vier Finger gekrümmt (Pistole.Spreizung)?
+/// </summary>
+public readonly record struct HandBeobachtung(Vec3 Mitte, Vec3 Normale, bool Offen, bool Pinch, double Offenheit = 2.0, bool Pistole = false, double Spreizung = 0)
 {
     /// <summary>Aus den Gelenken (WebXR-Namen); seite «left» bzw. «right». null, wenn Gelenke fehlen.</summary>
     public static HandBeobachtung? Aus(IReadOnlyDictionary<string, Vec3>? g, string seite, PinchEinstellungen? pinch = null)
     {
         if (XrTabletLogik.HandflaechenMitte(g) is not { } m || XrTabletLogik.HandflaechenNormale(g, seite) is not { } n) return null;
-        return new HandBeobachtung(m, n, XrTabletLogik.IstOffen(g), XrTabletLogik.IstPinch(g, false, pinch), XrTabletLogik.FaustVerhaeltnis(g) ?? 0);
+        var v = XrTabletLogik.FaustVerhaeltnis(g) ?? 0;
+        return new HandBeobachtung(m, n, v >= XrTabletLogik.FaustAn, XrTabletLogik.IstPinch(g, false, pinch), v, global::Hlks.Xr.Bedienung.Pistole.Haltung(g),
+            global::Hlks.Xr.Bedienung.Pistole.Spreizung(g));
     }
 }
 
@@ -98,16 +120,27 @@ public readonly record struct HandBeobachtung(Vec3 Mitte, Vec3 Normale, bool Off
 public enum HebeArt { Heben }
 
 /// <summary>
-/// Stand eines Bildes: Ereignis (oder null); Fortschritt des Hebens 0 … 1 (beide Handflächen oben) und mittlere Höhe der Handflächen; gezögert (Hebegeste).
+/// Stand eines Bildes: Ereignis (oder null); Fortschritt des Hebens 0 … 1 (beide Handflächen oben) und mittlere Höhe der Handflächen; gezögert (Hebegeste); V1f: ein
+/// verworfener Ansatz mit dem Grund (nur in diesem Bild, gedrosselt), sonst null.
 /// </summary>
-public sealed record HebeStand(HebeArt? Ereignis, double Fortschritt, double Hoehe, bool Zoegert, bool DurchAnstoss = false);
+public sealed record HebeStand(HebeArt? Ereignis, double Fortschritt, double Hoehe, bool Zoegert, bool DurchAnstoss = false, string? Verworfen = null);
 
 /// <summary>Zustand der Gesten (je Hand die Punkte, solange die Hand passt).</summary>
 public sealed class HebeZustand
 {
-    internal readonly List<(double T, Vec3 P, Vec3 N)>[] Hoch = [[], []];
+    internal readonly List<(double T, Vec3 P, Vec3 N, double O)>[] Hoch = [[], []];
+    // V1f: der Anstoss jeder Hand wird bis GleichzeitigS gemerkt (die zweite Hand darf etwas später anheben): Beginn und wann erkannt
+    internal readonly (double Beginn, double Erkannt)?[] AnstossBei = new (double, double)?[2];
     internal double SperreBis = double.NegativeInfinity;
     internal bool ZoegernGemeldet;
+    // V1f: Ansatz (beide Hände steigen deutlich, gleich in welcher Haltung) und sein Grund
+    internal readonly List<(double T, double Y)>[] Roh = [[], []];
+    internal bool Ansatz;
+    internal string? Grund;
+    internal bool GrundHaltung;
+    internal double GemeldetT = double.NegativeInfinity;
+    /// <summary>V1f: so viele Ansätze wurden verworfen (Protokoll).</summary>
+    public int Verworfen { get; internal set; }
 }
 
 public static class HebeGeste
@@ -118,6 +151,10 @@ public static class HebeGeste
     public const double SperreS = 0.8;
     /// <summary>Beide Handflächen oben, aber ruhig (Umkreis RuheM) so lange: gezögert – Geisterhände zeigen das Anheben (Annahme V1a wie P5a).</summary>
     public const double ZoegernS = 1.5, RuheM = 0.04;
+    /// <summary>V1f: ein Ansatz – beide Hände sind in den letzten AnsatzS um mindestens AnsatzM gestiegen (gleich in welcher Haltung); Annahme V1f.</summary>
+    public const double AnsatzM = 0.05, AnsatzS = 0.35;
+    /// <summary>V1f: ein verworfener Ansatz wird höchstens so oft gemeldet (s; Protokoll gedrosselt).</summary>
+    public const double MeldungAbstandS = 1.0;
 
     /// <summary>Waagrecht nach rechts zum Blick (Gieren wie VrLogik: 90° = Blick nach −z).</summary>
     public static Vec3 Rechts(double blickGieren) => new(Math.Sin(blickGieren), 0, Math.Cos(blickGieren));
@@ -137,7 +174,11 @@ public static class HebeGeste
         for (int i = 0; i < 2; i++)
         {
             var h = haende[i];
-            Fuehren(z.Hoch[i], h is { Offen: true, Pinch: false } && h.Value.Normale.Skalar(oben) >= cosHeben, h, t, behalten);
+            // V1f: die lockere Hand (keine Faust, kein Pinch, keine Pistolengeste, «gesten.offen_ab»)
+            Fuehren(z.Hoch[i], h is { } hb && LockereHand.Passt(hb, e.Anstoss) && hb.Normale.Skalar(oben) >= cosHeben, h, t, behalten);
+            // V1f: die Höhe der Hand in jeder Haltung (Ansatz erkennen)
+            if (h is { } hr) { z.Roh[i].Add((t, hr.Mitte.Y)); while (z.Roh[i].Count > 0 && z.Roh[i][0].T < t - AnsatzS - 1e-9) z.Roh[i].RemoveAt(0); }
+            else z.Roh[i].Clear();
         }
         // Heben: Fortschritt (der kleinere Anstieg der beiden im Verhältnis zum Weg) und Höhe
         double fortschritt = 0, hoehe = 0;
@@ -155,32 +196,86 @@ public static class HebeGeste
         {
             // in der Sperre beginnt nichts: eine Bewegung, die hier anfängt, zählt nach der Sperre nicht (sonst löste sie verspätet ein zweites Mal aus)
             foreach (var l in z.Hoch) l.Clear();
+            z.AnstossBei[0] = z.AnstossBei[1] = null;
+            z.Ansatz = false;
+            z.Grund = null;
             return new HebeStand(null, 0, hoehe, false);
+        }
+        string? grund = null;
+        var grundHaltung = false;
+        var ci = System.Globalization.CultureInfo.InvariantCulture;
+        // V1e: ein kurzer, deutlicher Anstoss beider Hände nach oben, etwa gleichzeitig (Christian 24.10.2026: «nur einen anstoss»); V1f mit den Schwellen der Hebegeste, und
+        // der Anstoss der ersten Hand bleibt GleichzeitigS gemerkt (natürlich angehoben beginnt die zweite Hand oft etwas später)
+        var ah = e.AnstossHebe;
+        var st = new AnstossStand[2];
+        for (int i = 0; i < 2; i++)
+        {
+            st[i] = z.Hoch[i].Count > 0 ? Anstoss.Pruefen(z.Hoch[i], t, oben, SeitlichAnteil, ah, haende[i]?.Offenheit ?? 0) : AnstossStand.Nichts;
+            if (st[i].Ausgeloest) z.AnstossBei[i] = (st[i].Beginn, t);
+            else if (z.Hoch[i].Count == 0 || (z.AnstossBei[i] is { } m && t - m.Erkannt > e.GleichzeitigS + 1e-9)) z.AnstossBei[i] = null;
         }
         if (beideOben)
         {
             var a = Weg(z.Hoch[0], t, e.ZeitS, oben);
             var b = Weg(z.Hoch[1], t, e.ZeitS, oben);
             var voll = a.Weg >= e.WegM && b.Weg >= e.WegM && a.Quer <= SeitlichAnteil * a.Weg && b.Quer <= SeitlichAnteil * b.Weg && Math.Abs(a.Beginn - b.Beginn) <= e.GleichzeitigS + 1e-9;
-            // V1e: oder ein kurzer, deutlicher Anstoss beider Hände nach oben, etwa gleichzeitig (Christian 24.10.2026: «nur einen anstoss»)
-            var sa = Anstoss.Pruefen(z.Hoch[0], t, oben, SeitlichAnteil, e.Anstoss, links?.Offenheit ?? 0);
-            var sb = Anstoss.Pruefen(z.Hoch[1], t, oben, SeitlichAnteil, e.Anstoss, rechts?.Offenheit ?? 0);
-            var anstoss = sa.Ausgeloest && sb.Ausgeloest && Math.Abs(sa.Beginn - sb.Beginn) <= e.GleichzeitigS + 1e-9;
+            var auseinander = z.AnstossBei[0] is { } a0 && z.AnstossBei[1] is { } a1 ? Math.Abs(a0.Beginn - a1.Beginn) : double.PositiveInfinity;
+            var anstoss = auseinander <= e.GleichzeitigS + 1e-9;
             if (voll || anstoss)
             {
                 z.SperreBis = t + SperreS;
                 foreach (var l in z.Hoch) l.Clear();
+                z.AnstossBei[0] = z.AnstossBei[1] = null;
                 z.ZoegernGemeldet = true;
+                z.Ansatz = false;
+                z.Grund = null;
                 return new HebeStand(HebeArt.Heben, 1, hoehe, false, !voll);
             }
+            grund = z.AnstossBei[0] is null ? $"links: {st[0].Grund}" : z.AnstossBei[1] is null ? $"rechts: {st[1].Grund}"
+                : string.Create(ci, $"Hände {auseinander:0.00} s auseinander (höchstens {e.GleichzeitigS:0.00})");
         }
-        return new HebeStand(null, fortschritt, hoehe, zoegert);
+        else
+        {
+            // V1f: welche Hand nicht in der Haltung ist (für das Protokoll)
+            for (int i = 0; i < 2 && grund is null; i++)
+            {
+                var seite = i == 0 ? "links" : "rechts";
+                if (haende[i] is not { } h) grund = $"Hand {seite} nicht erkannt";
+                else if (LockereHand.Grund(h, e.Anstoss) is { } g) grund = $"Hand {seite}: {g}";
+                else if (h.Normale.Skalar(oben) < cosHeben)
+                    grund = string.Create(ci, $"Handfläche {seite} {Math.Acos(Math.Clamp(h.Normale.Skalar(oben), -1, 1)) * 180 / Math.PI:0}° (höchstens {e.HandflaecheGrad:0})");
+            }
+            grundHaltung = grund is not null;
+        }
+        // V1f: Ansatz – beide Hände steigen deutlich; endet er, ohne dass die Geste auslöst, wird er einmal mit dem Grund gemeldet (die Haltung geht dem Anstoss vor)
+        string? verworfen = null;
+        var ansatz = Gestiegen(z.Roh[0]) >= AnsatzM && Gestiegen(z.Roh[1]) >= AnsatzM;
+        if (ansatz)
+        {
+            if (!z.Ansatz) { z.Ansatz = true; z.Grund = null; z.GrundHaltung = false; }
+            if (grund is not null && (z.Grund is null || (grundHaltung && !z.GrundHaltung))) { z.Grund = grund; z.GrundHaltung = grundHaltung; }
+        }
+        else if (z.Ansatz)
+        {
+            z.Ansatz = false;
+            if (z.Grund is { } g && t - z.GemeldetT >= MeldungAbstandS - 1e-9)
+            {
+                verworfen = g;
+                z.GemeldetT = t;
+                z.Verworfen++;
+            }
+            z.Grund = null;
+        }
+        return new HebeStand(null, fortschritt, hoehe, zoegert, false, verworfen);
     }
 
-    static void Fuehren(List<(double T, Vec3 P, Vec3 N)> l, bool passt, HandBeobachtung? h, double t, double behalten)
+    /// <summary>V1f: wie weit (m) die Hand im Fenster vom tiefsten Punkt bis jetzt gestiegen ist.</summary>
+    static double Gestiegen(List<(double T, double Y)> l) => l.Count < 2 ? 0 : l[^1].Y - l.Min(x => x.Y);
+
+    static void Fuehren(List<(double T, Vec3 P, Vec3 N, double O)> l, bool passt, HandBeobachtung? h, double t, double behalten)
     {
         if (!passt) { l.Clear(); return; }
-        l.Add((t, h!.Value.Mitte, h.Value.Normale));
+        l.Add((t, h!.Value.Mitte, h.Value.Normale, h.Value.Offenheit));
         while (l.Count > 0 && l[0].T < t - behalten) l.RemoveAt(0);
     }
 
@@ -188,7 +283,7 @@ public static class HebeGeste
     /// Weg in Richtung r (Einheit) vom kleinsten Stand im Zeitfenster bis jetzt, der Weg quer dazu, die Zeit des Beginns (der letzte Punkt am kleinsten Stand, 1 cm Spiel –
     /// nicht der erste, sonst gälte eine ruhende Hand als «gleichzeitig») und der Punkt dort.
     /// </summary>
-    static (double Weg, double Quer, double Beginn, Vec3 Start) Weg(List<(double T, Vec3 P, Vec3 N)> l, double t, double fenster, Vec3 r)
+    static (double Weg, double Quer, double Beginn, Vec3 Start) Weg(List<(double T, Vec3 P, Vec3 N, double O)> l, double t, double fenster, Vec3 r)
     {
         var jetzt = l[^1].P;
         var kleinst = l.Where(x => x.T >= t - fenster - 1e-9).Min(x => x.P.Skalar(r));
@@ -199,7 +294,7 @@ public static class HebeGeste
         return (weg, quer, beginn.T, beginn.P);
     }
 
-    static bool Ruhig(List<(double T, Vec3 P, Vec3 N)> l, double t)
+    static bool Ruhig(List<(double T, Vec3 P, Vec3 N, double O)> l, double t)
     {
         if (l.Count == 0 || l[0].T > t - ZoegernS + 1e-9) return false;
         var jetzt = l[^1].P;
