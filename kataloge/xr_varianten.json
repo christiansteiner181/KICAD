@@ -35,13 +35,23 @@
     },
     {
       "name": "messen", "titel": "Messen",
-      "beschreibung": "Wie man misst: ein Messband zwischen zwei Punkten aufziehen oder zwei Punkte setzen. Messen folgt mit Version 1; bis dahin merkt die App die Wahl nur und trägt sie ins Messprotokoll ein.",
+      "beschreibung": "Wie man misst (App «Messen», seit V1a): ein Messband zwischen zwei Punkten aufziehen (Pinch halten, ziehen, loslassen) oder zwei Punkte mit je einem Pinch setzen. Die App «Messen» kann die Variante auch selbst umschalten.",
       "optionen": [
         { "id": "messband", "titel": "Messband aufziehen" },
         { "id": "zwei_punkte", "titel": "Zwei Punkte setzen" }
       ],
       "vorgabe": "messband",
       "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Messen als Massband"
+    },
+    {
+      "name": "umgebung", "titel": "Umgebung des Sitzungsraums",
+      "beschreibung": "Wie der virtuelle Sitzungsraum aussieht: hell und weit im Stil von visionOS (ruhiger Boden, heller Tisch, weiches Licht) oder die frühere dunkle Fassung mit Raster und Leuchtlinien («Tron») zum Vergleich.",
+      "optionen": [
+        { "id": "hell", "titel": "Hell (visionOS)" },
+        { "id": "tron", "titel": "Dunkel mit Leuchtlinien (früher)" }
+      ],
+      "vorgabe": "hell",
+      "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026)"
     }
   ]
 }

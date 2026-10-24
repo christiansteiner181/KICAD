@@ -77,10 +77,10 @@ public class XrLaborTests
 
         string[] aufgaben = ["teleport-markierung", "drehen-90", "etage-wechseln", "modell-greifen-zoomen", "raum-ar-oeffnen", "tablet-wert-ablesen", "messen-wand-wand"];
         foreach (var a in aufgaben) Assert.True(k.AufgabeBekannt(a), a);
-        Assert.Equal("folgt_v1", k.AufgabeStatusVon("messen-wand-wand"));
+        Assert.Equal("p5", k.AufgabeStatusVon("messen-wand-wand"));   // V1a: Messen in der App
         Assert.Equal("p5", k.AufgabeStatusVon("drehen-90"));
-        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen" }) Assert.Contains(n, k.VariantenNamen);
-        Assert.Equal(4, k.VariantenNamen.Count);
+        foreach (var n in new[] { "bedienung", "teleport", "etage", "messen", "umgebung" }) Assert.Contains(n, k.VariantenNamen);
+        Assert.Equal(5, k.VariantenNamen.Count);
         Assert.True(k.VarianteBekannt("bedienung", "apps"));
         Assert.True(k.VarianteBekannt("bedienung", "tablet"));
         Assert.False(k.VarianteBekannt("bedienung", "stick"));
@@ -545,13 +545,15 @@ public class XrLaborTests
         Assert.Equal("teleport-markierung", (string)n["wert"]!);
         Assert.Null(((JsonObject)(await Lokal(s, "/api/xr/teilnehmer")).Json!)["stellschrauben"]!["labor.aufgabe"]);   // nicht gemerkt: eine neue Verbindung startet nichts
 
-        foreach (var schlecht in new object[] { new { aufgabe = "gibtsnicht" }, new { aufgabe = "messen-wand-wand" } })
+        foreach (var schlecht in new object[] { new { aufgabe = "gibtsnicht" } })
         {
             var (c, f) = await s.LokalPost("/api/xr/labor/aufgabe", schlecht);
             Assert.Equal(HttpStatusCode.BadRequest, c);
             Assert.False(string.IsNullOrEmpty((string?)f!["fehler"]));
         }
-        Assert.Contains("Version 1", (string)(await s.LokalPost("/api/xr/labor/aufgabe", new { aufgabe = "messen-wand-wand" })).Json!["fehler"]!);
+        // V1a: «messen-wand-wand» geht an die Brille
+        Assert.Equal(HttpStatusCode.OK, (await s.LokalPost("/api/xr/labor/aufgabe", new { aufgabe = "messen-wand-wand" })).Code);
+        Assert.Equal("messen-wand-wand", (string)(await a.Warten("stellschraube"))["wert"]!);
 
         // beenden: null an die Brille
         Assert.Equal(HttpStatusCode.OK, (await s.LokalPost("/api/xr/labor/aufgabe", new { aufgabe = (string?)null })).Code);
@@ -618,7 +620,7 @@ public class XrLaborTests
         var aufgaben = j["aufgaben"]!.AsArray();
         Assert.Equal(7, aufgaben.Count);
         Assert.All(aufgaben, a => Assert.Equal(0, (int)a!["laeufe"]!));
-        Assert.Equal("folgt_v1", (string)aufgaben.Single(a => (string)a!["aufgabe"]! == "messen-wand-wand")!["status"]!);
+        Assert.Equal("p5", (string)aufgaben.Single(a => (string)a!["aufgabe"]! == "messen-wand-wand")!["status"]!);   // V1a
     }
 
     [Fact]

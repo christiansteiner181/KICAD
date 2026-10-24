@@ -41,13 +41,16 @@ public static class Varianten
     public const string EtageWisch = "wisch_modell", EtageApp = "app";
     /// <summary>P5b, «labor.variante.teleport»: springen mit Zeigen und Pinch (Vorgabe) bzw. mit dem Stick eines Controllers.</summary>
     public const string ZeigenPinch = "zeigen_pinch", Stick = "stick";
-    /// <summary>P5b, «labor.variante.messen»: Messband aufziehen (Vorgabe) bzw. zwei Punkte setzen – Messen folgt mit Version 1, die App merkt die Wahl nur.</summary>
+    /// <summary>P5b, «labor.variante.messen»: Messband aufziehen (Vorgabe) bzw. zwei Punkte setzen (V1a: App «Messen»).</summary>
     public const string Messband = "messband", ZweiPunkte = "zwei_punkte";
+    /// <summary>V1a, «labor.variante.umgebung»: der Sitzungsraum hell im Stil von visionOS (Vorgabe, Christian 24.10.2026) bzw. die frühere dunkle Fassung zum Vergleich.</summary>
+    public const string UmgebungHell = "hell", UmgebungTron = "tron";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
+        ["umgebung"] = [UmgebungHell, UmgebungTron],
     };
 }
 
@@ -62,6 +65,14 @@ public sealed record AppEinstellungen
     public double AbstandM { get; init; } = 0.45;
     /// <summary>«apps.anordnung»: <see cref="Anordnungen"/>.</summary>
     public string Anordnung { get; init; } = Anordnungen.Bogen;
+    /// <summary>
+    /// V1a, «apps.seitlich_grad»: so weit links neben dem Blick erscheint das Fenster der App beim Holen (Grad). P5a stand die Mitte der Kacheln 50° links (AppLayout.SeitlichGrad);
+    /// nach Apple HIG «Spatial layout» («Center important content within the field of view») näher an die Mitte: Annahme V1a 30° – die rechte Hand zeigt weiterhin frei
+    /// nach vorn zum Springen. Am Sitzungstisch steht das Fenster neben dem Tisch (Glas.NebenTisch).
+    /// </summary>
+    public double SeitlichGrad { get; init; } = 30;
+    /// <summary>V1a, «anzeige.glas_deckkraft»: Deckkraft der Glasfläche der Apps (0.3 … 1; Annahme V1a 0.55 – durchscheinend statt deckend, Apple HIG «Materials»).</summary>
+    public double GlasDeckkraft { get; init; } = 0.55;
 }
 
 /// <summary>Komfort: Tunnelblick beim Springen und Drehen, Ton an/aus.</summary>
@@ -92,8 +103,10 @@ public sealed record XrBedienEinstellungen
     public string Etage { get; init; } = Varianten.EtageWisch;
     /// <summary>P5b, «labor.variante.teleport»: <see cref="Varianten.ZeigenPinch"/> (Vorgabe) oder <see cref="Varianten.Stick"/>.</summary>
     public string Teleport { get; init; } = Varianten.ZeigenPinch;
-    /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (folgt V1, ohne Wirkung).</summary>
+    /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (V1a: App «Messen»).</summary>
     public string Messen { get; init; } = Varianten.Messband;
+    /// <summary>V1a, «labor.variante.umgebung»: <see cref="Varianten.UmgebungHell"/> (Vorgabe) oder <see cref="Varianten.UmgebungTron"/>.</summary>
+    public string Umgebung { get; init; } = Varianten.UmgebungHell;
     /// <summary>P5b: Röntgen-Hand beim Begehen («roentgen.*»).</summary>
     public RoentgenEinstellungen Roentgen { get; init; } = RoentgenEinstellungen.Vorgabe;
     /// <summary>P5b: Schnitt mit der flachen Hand am Sitzungstisch («sitzung.schnitt_*»).</summary>
@@ -111,8 +124,11 @@ public sealed record XrBedienEinstellungen
     /// <summary>P5b: Wert einer Variante nach ihrem Namen (bedienung, teleport, etage, messen); null für eine Variante, die die App nicht kennt.</summary>
     public string? Variante(string name) => name switch
     {
-        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, _ => null,
+        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, _ => null,
     };
+
+    /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
+    public bool UmgebungHell => Umgebung != Varianten.UmgebungTron;
 
     /// <summary>Grenzen der Zahlen (min, max) je Schlüssel – wie im Katalog von P6.</summary>
     public static readonly IReadOnlyDictionary<string, (double Min, double Max)> Grenzen = new Dictionary<string, (double, double)>(StringComparer.Ordinal)
@@ -134,6 +150,8 @@ public sealed record XrBedienEinstellungen
         ["roentgen.reichweite_m"] = (1, 20),
         ["sitzung.schnitt_ruhe_s"] = (0, 2),
         ["sitzung.schnitt_toleranz_grad"] = (5, 45),
+        ["apps.seitlich_grad"] = (0, 90),
+        ["anzeige.glas_deckkraft"] = (0.3, 1),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -147,6 +165,7 @@ public sealed record XrBedienEinstellungen
         "labor.variante.bedienung", "labor.variante.etage",
         "roentgen.winkel_grad", "roentgen.reichweite_m", "sitzung.schnitt_ruhe_s", "sitzung.schnitt_toleranz_grad",
         "labor.variante.teleport", "labor.variante.messen",
+        "apps.seitlich_grad", "anzeige.glas_deckkraft", "labor.variante.umgebung",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -214,6 +233,12 @@ public sealed record XrBedienEinstellungen
             case "sitzung.schnitt_toleranz_grad":
                 return zurueck ? this with { FlacheHand = FlacheHand with { ToleranzGrad = v.FlacheHand.ToleranzGrad } }
                     : Zahl() is { } x ? this with { FlacheHand = FlacheHand with { ToleranzGrad = x } } : null;
+            case "apps.seitlich_grad":
+                return zurueck ? this with { Apps = Apps with { SeitlichGrad = v.Apps.SeitlichGrad } } : Zahl() is { } y ? this with { Apps = Apps with { SeitlichGrad = y } } : null;
+            case "anzeige.glas_deckkraft":
+                return zurueck ? this with { Apps = Apps with { GlasDeckkraft = v.Apps.GlasDeckkraft } } : Zahl() is { } z ? this with { Apps = Apps with { GlasDeckkraft = z } } : null;
+            case "labor.variante.umgebung":
+                return zurueck ? this with { Umgebung = v.Umgebung } : Wahl(Varianten.UmgebungHell, Varianten.UmgebungTron) is { } u2 ? this with { Umgebung = u2 } : null;
             default:
                 return null;
         }

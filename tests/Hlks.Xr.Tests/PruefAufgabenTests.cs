@@ -32,8 +32,9 @@ public class PruefAufgabenTests
     [Fact]
     public void Start_gesperrt_wartet_laeuft_und_Abbruch()
     {
-        Assert.Equal(LaufZustand.Gesperrt, P.Starten(P.MessenWandWand, Def(P.MessenWandWand, "folgt_v1")).Zustand);
-        Assert.Contains("Version 1", P.Starten(P.MessenWandWand, null).Grund);
+        Assert.Equal(LaufZustand.Gesperrt, P.Starten(P.MessenWandWand, Def(P.MessenWandWand, "folgt_v1")).Zustand);   // der Katalog sperrt noch
+        Assert.Equal(LaufZustand.Wartet, P.Starten(P.MessenWandWand, Def(P.MessenWandWand)).Zustand);                // V1a: spielbar
+        Assert.Equal(LaufZustand.Wartet, P.Starten(P.MessenWandWand, null).Zustand);
         Assert.Equal(LaufZustand.Gesperrt, P.Starten("neue-aufgabe", Def("neue-aufgabe")).Zustand);   // die App kennt sie nicht
         var ohneKatalog = P.Starten(P.Drehen90, null);
         Assert.Equal(LaufZustand.Wartet, ohneKatalog.Zustand);                    // ohne Katalog spielt die App sie mit ihren Texten

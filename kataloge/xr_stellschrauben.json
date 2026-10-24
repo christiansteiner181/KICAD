@@ -94,8 +94,8 @@
       "herkunft": "Brillentest 23.10.2026: «text und box eher etwas klein» → 1.35; Christian: «Ja, passt» (AppEinstellungen.Skala)"
     },
     {
-      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse einer App-Kachel", "status": "app",
-      "beschreibung": "Kantenlänge der schwebenden Kacheln. Grosse Ziele machen Genauigkeit unnötig (Leitbild Christian 23.10.2026).",
+      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse der Apps", "status": "app",
+      "beschreibung": "Grösse der schwebenden Apps. Seit V1a (Stil visionOS) ein Fenster mit Registern: Breite des Fensters = 1.8 × dieser Wert, alle Knöpfe wachsen mit. Grosse Ziele machen Genauigkeit unnötig (Leitbild Christian 23.10.2026).",
       "art": "zahl", "einheit": "m", "min": 0.08, "max": 0.4, "schritt": 0.01, "vorgabe": 0.18,
       "herkunft": "Annahme P6, in P5a übernommen (AppEinstellungen.GroesseM, 18 cm); Brillentest folgt"
     },
@@ -107,13 +107,25 @@
     },
     {
       "schluessel": "apps.anordnung", "gruppe": "apps", "titel": "Anordnung der Apps", "status": "app",
-      "beschreibung": "Wie die Kacheln im Griffbereich stehen.",
+      "beschreibung": "Wo die Apps stehen. Seit V1a: «bogen» und «reihe» = ein Fenster im Raum verankert (Griffbereich, seitlich nach «apps.seitlich_grad», am Tisch neben dem Tisch); «an_hand» = halb so gross über der linken Handfläche, solange sie zum Gesicht zeigt.",
       "art": "auswahl", "auswahl": [
-        { "wert": "bogen", "titel": "Im Bogen um den Körper" },
-        { "wert": "reihe", "titel": "In einer Reihe vor dem Körper" },
+        { "wert": "bogen", "titel": "Im Raum verankert" },
+        { "wert": "reihe", "titel": "Im Raum verankert (wie bogen)" },
         { "wert": "an_hand", "titel": "An der Hand" }
       ], "vorgabe": "bogen",
-      "herkunft": "Entscheid P5a (Anordnungen: bogen auf Brusthöhe links neben dem Blick, reihe, an_hand); Leitbild Christian 23.10.2026: schwebende Apps"
+      "herkunft": "Entscheid P5a (Anordnungen: bogen auf Brusthöhe links neben dem Blick, reihe, an_hand); Leitbild Christian 23.10.2026: schwebende Apps; V1a Stil visionOS (Apple HIG «Windows», «Spatial layout»)"
+    },
+    {
+      "schluessel": "apps.seitlich_grad", "gruppe": "apps", "titel": "Fenster neben dem Blick", "status": "app",
+      "beschreibung": "So weit links neben dem Blick erscheint das Fenster der Apps, wenn man es holt (linke Handfläche). Danach bleibt es im Raum stehen. Am Sitzungstisch steht es neben dem Tisch.",
+      "art": "zahl", "einheit": "°", "min": 0, "max": 90, "schritt": 1, "vorgabe": 30,
+      "herkunft": "Annahme V1a nach Apple HIG «Spatial layout» (wichtige Inhalte in der Mitte des Blickfelds); P5a stand die Mitte der Kacheln 50° links (AppLayout.SeitlichGrad)"
+    },
+    {
+      "schluessel": "anzeige.glas_deckkraft", "gruppe": "anzeige", "titel": "Deckkraft des Glases", "status": "app",
+      "beschreibung": "Wie stark die Glasfläche der Apps, Karten und Hinweise deckt: 0.3 = sehr durchscheinend, 1 = deckend. Schrift und Knöpfe bleiben voll.",
+      "art": "zahl", "einheit": "", "min": 0.3, "max": 1, "schritt": 0.05, "vorgabe": 0.55,
+      "herkunft": "Annahme V1a nach Apple HIG «Materials», visionOS («Prefer translucency to opaque colors in windows»)"
     },
     {
       "schluessel": "wisch.mindestweg_m", "gruppe": "wisch", "titel": "Mindestweg eines Wischs", "status": "app",

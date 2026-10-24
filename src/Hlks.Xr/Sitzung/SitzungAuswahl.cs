@@ -171,10 +171,18 @@ public static class SitzungAuswahl
         var roh = QuaderAusRaum([.. szene.Ecken(e)], randMm);
         if (roh is null) return null;
         var unterDecke = false;
-        if (liste is not null && DeckenSchnittMm(liste, szene, e.GeschossId) is { } oben && roh.Min is { Count: 3 } min && roh.Max is { Count: 3 } max
-            && oben < max[2] && oben > min[2])
+        // V1a (Befund Prüfbild 24.10.2026, «Raum in AR»: oben eine dunkle Platte trotz «unter der Decke»): die Regel des Geschosses findet eine Decke nur, wenn ihre
+        // Oberkante auf ±2 mm auf der Kote des Geschosses darüber liegt; liegt die Rohdecke tiefer (Bodenaufbau), schnitt sie über der Platte. Deshalb zählt zusätzlich
+        // die Unterkante der Decke über dem Raum aus der Geometrie (DeckeUeberRaumM) – es gilt der tiefere der beiden Schnitte.
+        double? oben = liste is not null ? DeckenSchnittMm(liste, szene, e.GeschossId) : null;
+        if (liste is not null && DeckeUeberRaumM(szene, e) is { } uk)
         {
-            roh = roh with { Max = [max[0], max[1], oben] };
+            var geo = uk * 1000 - XrSitzungLogik.SchnittTieferMm - XrSitzungLogik.SpielMm;
+            if (oben is null || geo < oben) oben = geo;
+        }
+        if (oben is { } o && roh.Min is { Count: 3 } min && roh.Max is { Count: 3 } max && o < max[2] && o > min[2])
+        {
+            roh = roh with { Max = [max[0], max[1], o] };
             unterDecke = true;
         }
         if (XrSitzungLogik.AusschnittBezugAus(roh) is not { } ab || SchnittQuader.AusSchnittbereich(roh) is not { } q) return null;
@@ -286,6 +294,42 @@ public static class SitzungAuswahl
                 l.AddRange(NetzBloecke.Indizes(szene.Netze[netz].Daten.Indizes, ab, anzahl));
             }
         return je.ToDictionary(x => x.Key, x => x.Value.ToArray());
+    }
+
+    /// <summary>Mindesthöhe über dem Boden des Raums (m), ab der eine Platte als Decke des Raums zählt (darunter: der eigene Boden), Annahme V1a.</summary>
+    public const double DeckeUeberBodenMinM = 1.5;
+
+    /// <summary>
+    /// V1a: Unterkante der Decke über einem Raum aus der Geometrie (Szene, m): ein senkrechter Strahl je Probepunkt im Grundriss des Raums (Schwerpunkt bzw. innerster
+    /// Punkt und die Mitten zu den Ecken) ab <see cref="DeckeUeberBodenMinM"/> über dem Boden nach oben gegen die Dreiecke der Platten (<see cref="IstPlatte"/>: Decke des
+    /// Modells, IfcSlab, IfcRoof); es gilt der tiefste Treffer. null ohne Grundriss oder ohne Platte darüber.
+    /// </summary>
+    public static double? DeckeUeberRaumM(ModellSzene szene, SzenenElement raum)
+    {
+        var g = RaumStandort.Grundriss([.. szene.Ecken(raum)]);
+        if (g is null) return null;
+        var proben = new List<Xz> { RaumStandort.Standpunkt(g).Punkt };
+        foreach (var (a, _) in g.Rand.Take(32)) proben.Add(new Xz((a.X + proben[0].X) / 2, (a.Z + proben[0].Z) / 2));
+        var y0 = g.Boden + DeckeUeberBodenMinM;
+        double? tief = null;
+        var hoch = new Vec3(0, 1, 0);
+        foreach (var e in szene.Elemente.Values)
+        {
+            if (!IstPlatte(e) || e.Box.IstLeer || e.Box.Max.Y < y0) continue;
+            foreach (var p in proben)
+            {
+                if (p.X < e.Box.Min.X || p.X > e.Box.Max.X || p.Z < e.Box.Min.Z || p.Z > e.Box.Max.Z) continue;
+                var u = new Vec3(p.X, y0, p.Z);
+                foreach (var (nr, ab, anzahl) in e.Bereiche)
+                {
+                    var d = szene.Netze[nr].Daten;
+                    for (int t = ab; t < ab + anzahl; t++)
+                        if (Messen.SzenenFang.StrahlDreieck(u, hoch, d.Ecke(d.Indizes[3 * t]), d.Ecke(d.Indizes[3 * t + 1]), d.Ecke(d.Indizes[3 * t + 2])) is { } h
+                            && (tief is null || y0 + h < tief)) tief = y0 + h;
+                }
+            }
+        }
+        return tief;
     }
 
     /// <summary>Höhe des Schnitts unter der Decke eines Geschosses in Szenen-mm (relativ zum Bezugspunkt), wie beim Etagenschnitt; null, wenn es das Geschoss nicht gibt.</summary>
