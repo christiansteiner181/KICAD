@@ -177,7 +177,8 @@ async function ifcDialog(datei) {
     let r;
     try { r = await sende('ifc_uebernehmen', parameter(), { trockenlauf: true }); }
     finally { hinweisSetzen(''); }
-    if (!r.angenommen) { vorschauFeld().innerHTML = fehlerKasten(r); return; }
+    // Nicht eindeutig eingepasst: der Kern gibt den Lagebericht auch bei Ablehnung mit (r.lage.einpassen)
+    if (!r.angenommen) { vorschauFeld().innerHTML = fehlerKasten(r) + T.einpassenHtml(T.einpassenAusErgebnis(r)); return; }
     const befunde = (r.neueBefunde ?? []).length;
     vorschauFeld().innerHTML = `<p class="leise">Trockenlauf – es wurde nichts geändert.</p>${T.einpassenHtml(T.einpassenAusErgebnis(r))}${T.aenderungenTabelle(r.aenderungen)}`
       + (befunde ? `<p class="warnung">Neue Prüfbefunde nach der Übernahme: ${befunde}</p>` : '')
@@ -194,7 +195,7 @@ async function ifcDialog(datei) {
     try { r = await sende('ifc_uebernehmen', parameter()); }
     finally { hinweisSetzen(''); }
     if (!r.angenommen) {
-      vorschauFeld().innerHTML = fehlerKasten(r);
+      vorschauFeld().innerHTML = fehlerKasten(r) + T.einpassenHtml(T.einpassenAusErgebnis(r));
       if (zu) meldung(r.fehler || 'Die IFC-Übernahme wurde abgelehnt.', 'warnung', { vorschlag: r.vorschlag });
       return;
     }
