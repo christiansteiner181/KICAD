@@ -144,11 +144,16 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
     (Abschnitt 6).
   - Zu prüfen: Dürfen Apps auf der Quest 3 die Kamerabilder dafür nutzen? Wie genau ist das?
 
-**Darstellung nach der Vision** (Christian, 24.10.2026, nach den Prüfbildern: «richte dich bei der Darstellung der apps und funktionen nach der vision.»):
-- Alle Apps, Karten und Hinweise erscheinen in einem einheitlichen Hologramm-Stil (XR-C «Aussehen»): durchscheinend mit leichtem Leuchten, Cyan/Blau, feines Raster bzw. Scanlinien, weicher Rand, Aufbauen beim Öffnen, Leuchten beim Antippen, lesbar vor jeder Wand.
-- Der Sitzungsraum hat die «Tron-Optik» (XR-H).
-- Nach der Leitlinie: Inhalte im Raum und am Objekt statt Textlisten (Etagen als Scheiben, Messwert an der Linie, Marker als Symbol), wenig Text, Ton und Licht.
-- Die grauen Textkacheln der ersten Fassung (P5a) gelten als überholt; die Umsetzung läuft mit V1a.
+**Darstellung im Stil der Apple Vision Pro** (Christian, 24.10.2026: «richte dich bei der Darstellung der apps und funktionen nach der vision.» – «sorry meine apple vision pro»):
+- Quelle: Apple Human Interface Guidelines, Abschnitte visionOS der Seiten materials, windows, buttons, tab-bars, ornaments, eyes, spatial-layout (developer.apple.com/design/human-interface-guidelines, abgerufen 24.10.2026).
+- Apps als aufrechte Glasflächen: durchscheinend, neutral getönt, stark gerundet, feiner Glanz und weicher Schatten. Schrift weiss in drei Stufen, nicht dünn, ohne Tiefe.
+- Knöpfe als Kreis (Symbol), Kapsel (Text bzw. Symbol und Text) oder abgerundetes Rechteck im senkrechten Stapel. Mitten ≥ 60 pt auseinander bzw. 16 pt Rand. Weiss gefüllt nur für «eingeschaltet». Ton beim Antippen.
+- Hover: Apple nutzt den Blick; die Quest 3 hat keine Augenverfolgung, darum Hervorheben bei Annäherung von Finger bzw. Strahl.
+- Fensterteile: Kapsel-Griff unter der App, runder Schliessen-Knopf daneben, Werkzeugleisten als Ornament an der Unterkante, Register senkrecht am linken Rand.
+- Tiefe sparsam, ruhige Bewegungen, im Raum verankert, Wichtiges in der Mitte des Blickfelds. Das Modell am Tisch wie ein «Volume» mit leuchtendem Rand der Bodenplatte.
+- Massstab: 1 pt ist in visionOS ein Winkel (Fenster 1280 × 720 pt in rund 2 m etwa 3 m breit); abgeleitet ≈ 1,2 mm je Meter Abstand (eigene Rechnung, Annahme).
+- Bleibt: Hände zuerst, Berühren und Wischgesten (Grundsatzentscheid «Bedienung»). Die Tron-Optik betrifft nur die Umgebung des Sitzungsraums (Annahme, Christian kann berichtigen).
+- Ersetzt den Hologramm-Stil des Tablets (XR-C «Aussehen») und die grauen Textkacheln aus P5a. Keine Apple-Logos, SF-Schriften oder SF Symbols (Lizenz nur für Apple-Plattformen). Umsetzung mit V1a.
 
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
