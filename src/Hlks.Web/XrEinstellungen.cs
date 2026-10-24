@@ -13,6 +13,11 @@
 //
 // Im Testlauf (HLKS_TEST oder Testrunner) bindet die Vorgabe nur 127.0.0.1 mit freien Ports und schreibt nur unter %TEMP% – nie ins Netz, nie nach
 // %LOCALAPPDATA%.
+//
+// Testserver auf einem anderen Port (Quest App V1a, 24.10.2026, damit das Desktop-KICAD für Prüfbilder nicht beendet werden muss): Im Testlauf übersteuert die
+// Umgebungsvariable HLKS_XR_DESKTOP_PORT (DesktopPortVariable) den Desktop-Port, z. B. quest_pruefen.ps1 auf 5139, wenn 5130 belegt ist. Sie wirkt nur, wenn
+// gesetzt und ein gültiger Port (1024–65535), und nur im Testlauf – dort bindet der Zugang ohnehin nur 127.0.0.1 und Schalter, Zertifikat und Kopplungen liegen
+// unter %TEMP%; zugang.json, Kopplungen und Zertifikat des echten Desktops (%LOCALAPPDATA%) bleiben unberührt. Im Betrieb wird sie nicht gelesen.
 
 using System.Net;
 using System.Text.Json;
@@ -107,10 +112,24 @@ public sealed record XrEinstellungen
     /// <summary>Die Werte für den Betrieb (alle IPv4-Adressen, Ports aus der Einstellung dieses PCs, nur Desktop-Port 5130).</summary>
     public static XrEinstellungen Betrieb() => new();
 
-    /// <summary>Vorgabe: im Testlauf nur 127.0.0.1, freie Ports, Ordner unter %TEMP%; sonst Betrieb.</summary>
-    public static XrEinstellungen Vorgabe() => FamilienBibliothekDienst.Testlauf()
-        ? new XrEinstellungen { Adresse = IPAddress.Loopback, Port = 0, SuchPort = 0, Ordner = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "xr_test") }
+    /// <summary>Umgebungsvariable nur für Testserver: übersteuert im Testlauf den Desktop-Port (siehe Kopf der Datei).</summary>
+    public const string DesktopPortVariable = "HLKS_XR_DESKTOP_PORT";
+
+    /// <summary>Vorgabe: im Testlauf nur 127.0.0.1, freie Ports, Ordner unter %TEMP%, Desktop-Port 5130 bzw. HLKS_XR_DESKTOP_PORT; sonst Betrieb.</summary>
+    public static XrEinstellungen Vorgabe() => Vorgabe(FamilienBibliothekDienst.Testlauf(), Environment.GetEnvironmentVariable);
+
+    /// <summary>Vorgabe für testlauf (ja/nein) mit diesen Umgebungsvariablen (Tests setzen eigene, statt die des Prozesses zu ändern).</summary>
+    internal static XrEinstellungen Vorgabe(bool testlauf, Func<string, string?> umgebung) => testlauf
+        ? new XrEinstellungen
+        {
+            Adresse = IPAddress.Loopback, Port = 0, SuchPort = 0, Ordner = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "xr_test"),
+            DesktopPort = TestDesktopPort(umgebung(DesktopPortVariable)),
+        }
         : Betrieb();
+
+    /// <summary>Desktop-Port eines Testservers: der Wert der Variablen, wenn er ein gültiger Port ist (1024–65535), sonst 5130 (wie ohne Variable).</summary>
+    public static int TestDesktopPort(string? wert) =>
+        int.TryParse(wert?.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var p) && PortGueltig(p) ? p : DesktopPortVorgabe;
 
     /// <summary>Ein Port für Zugang oder Suche: 1024 bis 65535.</summary>
     public static bool PortGueltig(int? p) => p is >= 1024 and <= 65535;

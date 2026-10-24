@@ -79,6 +79,12 @@ const S = {
   questVerbinden: '<path d="M3 9h26a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 29 20h-6.5l-2.5-4h-8l-2.5 4H3a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 3 9z"/><path d="M10 25h12M19 22l3 3-3 3"/>',   // Modul XR: VR-Brille mit Pfeil = Quest verbinden
   brilleZeigen: '<path d="M2 12h20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-5l-2-3h-6l-2 3H2a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 2 12z"/><circle cx="27" cy="16" r="2.2"/><path d="M25 9l5-3M25 23l5 3M12 26v3"/>',   // Quest App P7: Brille als Figur in der 3D-Ansicht zeigen
   xrLabor: '<path d="M12 3h8M13.5 3v8L6 25a2.5 2.5 0 0 0 2.2 3.6h15.6A2.5 2.5 0 0 0 26 25l-7.5-14V3"/><path d="M9.5 19h13M14 23h.01M18.5 22h.01"/>',   // Quest App P6: Messkolben = XR-Labor
+  problemMarker: '<path d="M16 29s-8-8.2-8-14.5A8 8 0 0 1 24 14.5C24 20.8 16 29 16 29z"/><path d="M16 9v6.5M16 19h.01"/>',   // Quest App V1a: Stecknadel mit «!» = Problem-Marker
+  // Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): App «Tisch» = Sitzungstisch mit Modellwürfel, «Gesten» = offene Hand,
+  // «erledigt» = Haken; eigene Zeichnungen. Die App nimmt diese Symbole als Texturen (werkzeuge/quest_symbole.mjs).
+  sitzungstisch: '<path d="M3 17h26M7 17v10M25 17v10"/><path d="M11 17v-6l5-3 5 3v6M11 11l5 3 5-3M16 14v3"/>',
+  gesten: '<path d="M11.5 16V7.5a1.5 1.5 0 0 1 3 0V15M14.5 14V5.5a1.5 1.5 0 0 1 3 0V14M17.5 14.5V7a1.5 1.5 0 0 1 3 0v8.5M20.5 16v-5a1.5 1.5 0 0 1 3 0v8c0 5-3.2 8.5-7.5 8.5c-3 0-4.8-1.6-6.5-4l-3.2-4.6a1.5 1.5 0 0 1 2.5-1.7l2.7 3.3V16"/>',
+  haken: '<path d="M7 17l6 6 12-14"/>',
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
   hkapVerbinden: '<rect x="3" y="5" width="9" height="9" rx="1"/><rect x="20" y="18" width="9" height="9" rx="1"/><path d="M12 9.5h5a3 3 0 013 3V18M16 22.5h-4M7.5 14v8.5H12"/>',
   hkapAbgleich: '<rect x="3" y="4" width="10" height="24" rx="1"/><rect x="19" y="4" width="10" height="24" rx="1"/><path d="M6 10h4M6 16h4M6 22h4M22 10h4M22 16h4M22 22h4M14 12h4M16 10l2 2-2 2M18 20h-4M16 18l-2 2 2 2"/>',

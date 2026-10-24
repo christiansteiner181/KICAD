@@ -175,3 +175,23 @@
 .xl-text { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: inherit; resize: vertical; }
 .xl-tlx { width: 84px; box-sizing: border-box; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
 @media (max-width: 640px) { .xl-zeile-eingabe, .xl-fb-zeile { grid-template-columns: 1fr; } .xl-status { margin-left: 0; } }
+
+/* Quest App V1a: Palette «Problem-Marker» (problemmarker-panel.js) – Liste mit Status, Formular für den gewählten Marker */
+.pm-panel { display: flex; flex-direction: column; gap: 6px; padding: 6px; font-size: 12px; min-width: 0; }
+.pm-kopf { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+.pm-kopf .pm-bcf { margin-left: auto; }
+.pm-liste { display: flex; flex-direction: column; gap: 3px; }
+.pm-zeile { display: grid; grid-template-columns: auto auto 1fr; gap: 1px 8px; padding: 4px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); cursor: pointer; min-width: 0; }
+.pm-zeile:hover, .pm-zeile:focus { border-color: var(--rand); outline: none; }
+.pm-zeile.gewaehlt { border-color: var(--auswahl, #1e90ff); }
+.pm-zeile .pm-kz { font-weight: 600; }
+.pm-zeile .pm-status { font-size: 11px; padding: 0 6px; border-radius: 8px; background: #f08a24; color: #fff; align-self: center; }
+.pm-zeile.pm-erledigt .pm-status { background: #9a9a9a; }
+.pm-zeile .pm-notiz { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.pm-zeile .pm-info, .pm-zeile .pm-frist { grid-column: 1 / -1; overflow-wrap: anywhere; }
+.pm-zeile .pm-frist.ueberfaellig { color: var(--fehler, #c0392b); font-weight: 600; }
+.pm-detail h4 { margin: 6px 0 4px; }
+.pm-detail .fz { display: grid; grid-template-columns: 70px 1fr; align-items: center; gap: 6px; margin: 3px 0; }
+.pm-detail input, .pm-detail select, .pm-detail textarea { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: inherit; }
+.pm-detail textarea { resize: vertical; }
+.pm-knoepfe { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }

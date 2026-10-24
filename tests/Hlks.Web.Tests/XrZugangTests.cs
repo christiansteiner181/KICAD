@@ -472,8 +472,10 @@ public class XrZugangTests
         Assert.Equal(["GET /api/xr/ebene/{name}", "GET /api/xr/ebenen",   // P4b: Ebenen der Fachmodule (XrEbenenEndpunkte.cs)
             "GET /api/xr/geschoss/{id}.glb", "GET /api/xr/geschosse", "GET /api/xr/kanal",
             "GET /api/xr/labor/katalog",   // P6: Katalog des Interface-Labors für die App (XrLaborEndpunkte.cs); Auswertung, Fragebogen, Variante und Aufgabe bleiben am PC
+            "GET /api/xr/marker",          // V1a: Problem-Marker der Brille (XrMarkerEndpunkte.cs)
             "GET /api/xr/verbindung",
-            "POST /api/xr/kopplung/abholen", "POST /api/xr/kopplung/anfrage", "POST /api/xr/kopplung/aufdecken"], frei);
+            "POST /api/xr/kopplung/abholen", "POST /api/xr/kopplung/anfrage", "POST /api/xr/kopplung/aufdecken",
+            "POST /api/xr/marker"], frei);
         // ohne Schlüssel nur die drei Schritte der Ersatzkopplung
         var ohne = XrPforte.Freigegeben(alle).Where(e => e.Metadata.GetMetadata<XrNetzFreigabe>()!.OhneSchluessel).OfType<RouteEndpoint>()
             .Select(e => e.RoutePattern.RawText).OrderBy(x => x, StringComparer.Ordinal);

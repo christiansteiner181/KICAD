@@ -44,10 +44,30 @@ public interface IModellQuelle
     Task<GlbAntwort> Glb(string url, string? etag, CancellationToken abbruch);
 }
 
-/// <summary>Liste und GLB über einen HttpClient mit Basisadresse (Netzzugang oder localhost); seit P4b auch die Ebenen (IEbenenQuelle).</summary>
-public sealed class ModellHttp(HttpClient http, string name) : IModellQuelle, IEbenenQuelle
+/// <summary>V1a: Problem-Marker an KICAD senden bzw. die Liste holen (POST/GET /api/xr/marker; Hlks.Xr.Marker.ProblemMarker).</summary>
+public interface IMarkerQuelle
+{
+    /// <summary>POST /api/xr/marker mit dem JSON eines neuen Markers; jeder Status kommt zurück (201, 200, 400 …). Wirft bei Netzfehlern.</summary>
+    Task<TextAntwort> MarkerSenden(string json, CancellationToken abbruch);
+    /// <summary>GET /api/xr/marker (If-None-Match = etag); 200 mit Text bzw. 304. Wirft bei Netzfehlern.</summary>
+    Task<TextAntwort> MarkerListe(string? etag, CancellationToken abbruch);
+}
+
+/// <summary>Liste und GLB über einen HttpClient mit Basisadresse (Netzzugang oder localhost); seit P4b auch die Ebenen (IEbenenQuelle), seit V1a die Marker.</summary>
+public sealed class ModellHttp(HttpClient http, string name) : IModellQuelle, IEbenenQuelle, IMarkerQuelle
 {
     public string Name { get; } = name;
+
+    /// <summary>V1a: POST /api/xr/marker.</summary>
+    public async Task<TextAntwort> MarkerSenden(string json, CancellationToken abbruch)
+    {
+        using var inhalt = new StringContent(json, System.Text.Encoding.UTF8, "application/json");
+        using var a = await http.PostAsync("api/xr/marker", inhalt, abbruch).ConfigureAwait(false);
+        return new TextAntwort((int)a.StatusCode, await a.Content.ReadAsStringAsync(abbruch).ConfigureAwait(false), null);
+    }
+
+    /// <summary>V1a: GET /api/xr/marker.</summary>
+    public Task<TextAntwort> MarkerListe(string? etag, CancellationToken abbruch) => Text("api/xr/marker", etag, abbruch);
 
     /// <summary>P4b: GET mit Text (Ebenen), etag = If-None-Match. Jeder Status kommt zurück (200 mit Text, 304, 404 …).</summary>
     public async Task<TextAntwort> Text(string pfad, string? etag, CancellationToken abbruch)
@@ -112,6 +132,8 @@ public sealed class PcZugang : IDisposable
     public IModellQuelle Modell { get; }
     /// <summary>Ebenen der Fachmodule über den Netzzugang (P4b).</summary>
     public IEbenenQuelle Ebenen => (ModellHttp)Modell;
+    /// <summary>V1a: Problem-Marker über den Netzzugang.</summary>
+    public IMarkerQuelle Marker => (ModellHttp)Modell;
 
     /// <param name="handler">Nur für Tests; sonst ein Handler mit Pinning (<see cref="XrPinning.Handler"/>).</param>
     public PcZugang(PcAdresse adresse, Kopplungspaket paket, HttpMessageHandler? handler = null, TimeSpan? frist = null)

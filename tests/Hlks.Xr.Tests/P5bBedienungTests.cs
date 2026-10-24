@@ -1,4 +1,4 @@
-// Quest App P5b: Ergänzungen der Bedienung – Wegwischen bricht eine laufende Prüfaufgabe ab (nach der offenen App, vor dem Ausblenden), «Antippen daneben» als
+// Quest App P5b: Ergänzungen der Bedienung – Wegwischen bricht eine laufende Prüfaufgabe ab (seit V1a die eigene Geste Wegwischen, V1aSymboleTests), «Antippen daneben» als
 // Fehlgriff, die neuen Stellschrauben (Röntgen-Hand, flache Hand) und Varianten (teleport, messen), die Tabelle der Gesten.
 
 using System.Text.Json;
@@ -12,13 +12,14 @@ public class P5bBedienungTests
     static JsonElement W(string json) => JsonDocument.Parse(json).RootElement;
 
     [Fact]
-    public void Wegwischen_schliesst_das_Vorderste_App_dann_Aufgabe_dann_Apps()
+    public void Pinch_Wisch_nach_vorn_löst_seit_V1a_nichts_mehr_aus_das_Wegwischen_schliesst()
     {
-        Assert.Equal(GestenAktion.AppSchliessen, Gestenbedeutung.Wisch(WischRichtung.Vor, new GestenKontext(false, true, true, true, AufgabeOffen: true)));
-        Assert.Equal(GestenAktion.AufgabeAbbrechen, Gestenbedeutung.Wisch(WischRichtung.Vor, new GestenKontext(false, false, true, true, AufgabeOffen: true)));
-        Assert.Equal(GestenAktion.AufgabeAbbrechen, Gestenbedeutung.Wisch(WischRichtung.Vor, new GestenKontext(true, false, false, true, AufgabeOffen: true)));   // Variante «tablet»
-        Assert.Equal(GestenAktion.AppsAusblenden, Gestenbedeutung.Wisch(WischRichtung.Vor, new GestenKontext(false, false, true)));
+        // V1a (Christian 24.10.2026: «Ja, auch offene Glas-Apps werden mit dem Wegwischen geschlossen; Pinch + Wisch nach vorn entfällt»): weder App noch Aufgabe noch Apps
+        foreach (var k in new[] { new GestenKontext(false, true, true, true, AufgabeOffen: true), new GestenKontext(false, false, true, true, AufgabeOffen: true),
+            new GestenKontext(true, false, false, true, AufgabeOffen: true), new GestenKontext(false, false, true) })
+            Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, k));
         Assert.Equal(GestenAktion.EtageHoch, Gestenbedeutung.Wisch(WischRichtung.Hoch, new GestenKontext(false, false, true, true, AufgabeOffen: true)));   // sonst unverändert
+        Assert.DoesNotContain(Gestenbedeutung.Tabelle, x => x.Geste.Contains("Wisch nach vorn", StringComparison.Ordinal));
         var text = string.Join(" ", Gestenbedeutung.Tabelle.Select(x => x.Geste + " " + x.Bedeutung));
         Assert.Contains("Flache Hand", text);
         Assert.Contains("Röntgen-Hand", text);
@@ -76,7 +77,7 @@ public class P5bBedienungTests
         Assert.Equal("zwei_punkte", e.MitStellschraube("labor.variante.messen", W("\"zwei_punkte\""))!.Messen);
         Assert.Equal("stick", (e with { Teleport = Varianten.Stick }).Variante("teleport"));
         Assert.Null(e.Variante("greifen"));
-        Assert.Equal(["bedienung", "teleport", "etage", "messen"], Varianten.Bekannt.Keys);
+        Assert.Equal(["bedienung", "teleport", "etage", "messen", "umgebung", "symbole", "symbolwahl", "feld_bei_app"], Varianten.Bekannt.Keys);   // V1a: «umgebung», «symbole», «symbolwahl», «feld_bei_app»
         Assert.Equal(XrBedienEinstellungen.Vorgabe, (e with { Roentgen = e.Roentgen with { WinkelGrad = 90 } }).MitStellschraube("roentgen.winkel_grad", W("null")));
         foreach (var k in XrBedienEinstellungen.Schluessel) Assert.NotNull(e.MitStellschraube(k, W("null")));
         Nah(e.MitStellschrauben([new("roentgen.winkel_grad", W("30")), new("x.y", W("1"))]).Satz.Roentgen.WinkelGrad, 30);

@@ -273,6 +273,7 @@ app.MapXr();   // Quest App P3: /api/xr – Zugang, Kopplung, Live-Kanal (XrEndp
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
 app.MapXrEbenen(dienst);   // Quest App P4b: XrEbenenEndpunkte.cs – Ebenen der Fachmodule (/api/xr/ebenen, /api/xr/ebene/{name}); reine Rechner-Funktion, nicht für die KI
 app.MapXrLabor(dienst);   // Quest App P6: XrLaborEndpunkte.cs – Interface-Labor: Katalog für die App, Auswertung, Fragebogen (/api/xr/labor/…); reine Rechner-Funktion, nicht für die KI
+app.MapXrMarker(dienst);   // Quest App V1a: XrMarkerEndpunkte.cs – Problem-Marker aus der Brille (/api/xr/marker; Elemente ProblemMarker im Projekt); Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
 await app.RunAsync();

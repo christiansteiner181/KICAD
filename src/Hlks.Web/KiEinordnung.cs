@@ -111,6 +111,10 @@ public static class KiEinordnung
         new("xr_labor", "Interface-Labor der Quest App (Modul XR, P6, XrLaborEndpunkte.cs: GET /api/xr/labor/katalog, /auswertung, /fragebogen, POST /fragebogen, /variante, /aufgabe): " +
             "liefert der App den Katalog der Stellschrauben, Prüfaufgaben und Varianten, wertet die Messprotokolle der Brille aus, speichert Fragebogen und startet eine Prüfaufgabe bzw. stellt eine Variante " +
             "in der Brille des Menschen ein – steuert ein Gerät des Menschen und liest dessen Bewegungen und Antworten, ohne Kern-Befehl und ohne Paket; nicht für die KI."),
+        new("xr_marker", "Problem-Marker aus der Quest App (Modul XR, XR-E, V1a, XrMarkerEndpunkte.cs: GET/POST /api/xr/marker): die Schnittstelle, über die die Brille des Menschen " +
+            "Marker setzt (Element ProblemMarker über element_anlegen, ein Paket) und ihre Liste holt – ein Weg eines Geräts des Menschen über den Zugang im Büronetz, wie " +
+            "xr_modell nicht für die KI. Die Marker selbst sind Projektdaten: die KI liest sie wie jedes Element (elemente_suchen klasse ProblemMarker) und exportiert sie " +
+            "nicht (bcf_export ist verboten)."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

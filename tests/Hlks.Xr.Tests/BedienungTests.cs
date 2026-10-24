@@ -131,12 +131,13 @@ public class BedienungTests
             Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Hoch, k with { EtageMitWisch = false }));   // Variante «etage» = «app»
             Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Zurueck, k));
         }
-        Assert.Equal(GestenAktion.AppSchliessen, Gestenbedeutung.Wisch(WischRichtung.Vor, app));
-        Assert.Equal(GestenAktion.AppsAusblenden, Gestenbedeutung.Wisch(WischRichtung.Vor, begehen));
+        // V1a: Pinch + Wisch nach vorn löst nichts mehr aus (Schliessen geht mit dem Wegwischen, Christian 24.10.2026)
+        Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, app));
+        Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, begehen));
         Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, begehen with { AppsSichtbar = false }));
         // die Tabelle nennt alle festen Gesten
         var text = string.Join(" ", Gestenbedeutung.Tabelle.Select(x => x.Geste));
-        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "vorn", "Handfläche", "Faust", "Zwei Hände", "Zögern" }) Assert.Contains(g, text);
+        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "Wegwischen", "Handfläche", "Faust", "Zwei Hände", "Zögern" }) Assert.Contains(g, text);
     }
 
     // ------------------------------------------------------------------------------------------------ Stellschrauben
@@ -539,10 +540,11 @@ public class BedienungTests
         var b1 = Geisterhand.Bild(GeisterGeste.Blaettern, Geisterhand.DauerS / 2 * 0.6, hand, Kachel)!;
         Assert.True(b0.Gelenke["thumb-tip"].Abstand(b0.Gelenke["index-finger-tip"]) < 0.01);
         Assert.True(b1.Gelenke["index-finger-tip"].X < b0.Gelenke["index-finger-tip"].X - 0.15);
-        // Wegwischen: vom Körper weg (gegen die Normale)
+        // Wegwischen (V1a): die offene Hand wandert in Richtung «Rechts» des Ziels (die App setzt es nach links), kein Pinch
         var w0 = Geisterhand.Bild(GeisterGeste.Wegwischen, 0.01, hand, Kachel)!;
         var w1 = Geisterhand.Bild(GeisterGeste.Wegwischen, Geisterhand.DauerS / 2 * 0.6, hand, Kachel)!;
-        Assert.True(w1.Gelenke["index-finger-tip"].Z < w0.Gelenke["index-finger-tip"].Z - 0.15);
+        Assert.True((w1.Gelenke["wrist"] - w0.Gelenke["wrist"]).Skalar(Kachel.Rechts) > 0.15);
+        Assert.True(w1.Gelenke["thumb-tip"].Abstand(w1.Gelenke["index-finger-tip"]) > 0.02);
         // Greifen: Daumen schliesst sich zur Hälfte des Durchgangs
         var g0 = Geisterhand.Bild(GeisterGeste.Greifen, 0.01, hand, Kachel)!;
         var g1 = Geisterhand.Bild(GeisterGeste.Greifen, Geisterhand.DauerS / 4, hand, Kachel)!;

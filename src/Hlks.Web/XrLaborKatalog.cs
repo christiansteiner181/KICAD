@@ -204,7 +204,8 @@ public sealed class XrLaborKatalog
             }
             liste.Add(new XrStellschraubeDef { Schluessel = key, Gruppe = gruppe, Art = art, Status = status, Min = min, Max = max, Schritt = schritt, Auswahl = auswahl, Vorgabe = vorgabe.DeepClone(), Roh = (JsonObject)s.DeepClone() });
         }
-        if (liste.Count > 48) throw Fehler(d, "Höchstens 48 Stellschrauben (der Kanal merkt höchstens 64 Werte, dazu kommen Varianten und Aufgabe).");
+        // V1a: 54 statt 48 (Quest App V1a: symbole.tisch_abstand_m; 64 Werte des Kanals − 8 Varianten − Aufgabe − 1 Reserve); genau prüft es Laden mit den Varianten
+        if (liste.Count > 54) throw Fehler(d, "Höchstens 54 Stellschrauben (der Kanal merkt höchstens 64 Werte, dazu kommen Varianten und Aufgabe).");
         // jede Gruppe wird gebraucht (eine leere Gruppe wäre ein Tippfehler)
         foreach (var g in gruppenIds)
             if (liste.All(x => x.Gruppe != g)) throw Fehler(d, $"gruppen.id «{g}» hat keine Stellschraube.");

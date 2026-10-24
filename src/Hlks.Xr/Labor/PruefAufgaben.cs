@@ -1,11 +1,11 @@
 // Quest App P5b (Modul XR, Interface-Labor, entwurf/modul-xr.md «Was das Labor kann»; Katalog kataloge/xr_pruefaufgaben.json): die Prüfaufgaben in der App.
 // KICAD startet eine Aufgabe mit der Stellschraube «labor.aufgabe» = Id (null beendet sie); die App zeigt eine schwebende Karte mit Titel und Anleitung aus dem
-// Katalog, misst Zeit, Fehlgriffe und Abbrüche und sendet bei Erfolg bzw. Abbruch («Aufgabe beenden» auf der Karte oder Pinch + Wisch nach vorn) die Nachricht
+// Katalog, misst Zeit, Fehlgriffe und Abbrüche und sendet bei Erfolg bzw. Abbruch («Aufgabe beenden» auf der Karte oder – seit V1a – Wegwischen der Karte) die Nachricht
 // «messprotokoll» mit den Varianten, die für die Aufgabe zählen. Rein, ohne StereoKit: die App meldet Ereignisse (Sprung, Drehschritt, Etagenwechsel, Griffe …)
 // und fragt je Bild den Fortschritt ab; Lage der Karte ebenfalls hier.
 //
 // Messgrössen (Katalog «messgroessen»): Zeit = vom Start (sobald der Ort hergestellt ist und die Variante passt) bis Erfolg bzw. Abbruch; Abbrüche = abgebrochen
-// (Karte, Wisch nach vorn, «Aufgabe beenden» bzw. eine andere Aufgabe am PC) oder neu begonnen (dieselbe Aufgabe nochmals gestartet: die Zeit läuft weiter, der
+// (Karte weggewischt, «Aufgabe beenden» bzw. eine andere Aufgabe am PC) oder neu begonnen (dieselbe Aufgabe nochmals gestartet: die Zeit läuft weiter, der
 // Ablauf beginnt von vorn); Fehlgriffe je Aufgabe wie im Katalog («fehlgriff»), dazu bei allen ein Antippen neben eine Kachel (AppBeruehrung, «daneben»).
 // Erfolg (Katalog «erfolgskriterium»; Zahlen = Annahmen P6, hier als Konstanten):
 //   teleport-markierung   Sprung höchstens MarkierungRadiusM = 0.5 m neben die Mitte der Markierung (Markierung 2 … 4.5 m vor einem, im Raum des Geschosses).
@@ -15,9 +15,11 @@
 //   raum-ar-oeffnen       Ausschnitt des markierten Raums auf dem Tisch, mit «Echter Tisch» angetippt (ist Passthrough nicht verfügbar – Simulator –, genügt der
 //                         Ausschnitt; die Karte sagt es).
 //   tablet-wert-ablesen   die richtige Höhe des markierten Bauteils auf dem Tablet gewählt; nur in der Variante «bedienung» = «tablet», sonst wartet die Aufgabe.
-//   messen-wand-wand      folgt mit Version 1 (gesperrt, nur ein Hinweis, kein Messprotokoll).
+//   messen-wand-wand      V1a: eine Messung von der einen markierten Wand zur anderen, höchstens 2 cm neben dem Sollmass (WandPaare: Wahl, Sollmass aus der Geometrie,
+//                         Prüfung); Fehlgriffe: Messung nicht von Wand zu Wand bzw. Mass daneben, Messband abgebrochen bzw. Punkt ohne Ziel.
 
 using System.Text.Json.Nodes;
+using Hlks.Xr.Messen;
 using Hlks.Xr.Modell;
 using Hlks.Xr.Netz;
 
@@ -63,6 +65,8 @@ public sealed class PruefLauf
     public double ZielMassstab { get; internal set; }
     public string? Raum { get; internal set; }
     public TabletFrage? Frage { get; internal set; }
+    /// <summary>V1a, messen-wand-wand: die markierten Wände und das Sollmass.</summary>
+    public WandPaar? Waende { get; internal set; }
     internal double? HaltenSeit;
 
     public bool Fertig => Zustand is LaufZustand.Erfolg or LaufZustand.Abgebrochen;
@@ -77,7 +81,7 @@ public static class PruefAufgaben
         ModellGreifenZoomen = "modell-greifen-zoomen", RaumArOeffnen = "raum-ar-oeffnen", TabletWertAblesen = "tablet-wert-ablesen", MessenWandWand = "messen-wand-wand";
 
     /// <summary>Die Aufgaben, die die App abspielen kann.</summary>
-    public static readonly IReadOnlyList<string> Spielbar = [TeleportMarkierung, Drehen90, EtageWechseln, ModellGreifenZoomen, RaumArOeffnen, TabletWertAblesen];
+    public static readonly IReadOnlyList<string> Spielbar = [TeleportMarkierung, Drehen90, EtageWechseln, ModellGreifenZoomen, RaumArOeffnen, TabletWertAblesen, MessenWandWand];
 
     /// <summary>Erfolgskriterium teleport-markierung: höchstens so weit neben der Mitte (m), Katalog «0.5 m (Annahme P6)».</summary>
     public const double MarkierungRadiusM = 0.5;
@@ -96,19 +100,19 @@ public static class PruefAufgaben
     public static AufgabeOrt Ort(string id) => id switch
     {
         ModellGreifenZoomen or RaumArOeffnen => AufgabeOrt.Sitzungsraum,
-        TeleportMarkierung or Drehen90 or EtageWechseln or TabletWertAblesen => AufgabeOrt.Begehen,
+        TeleportMarkierung or Drehen90 or EtageWechseln or TabletWertAblesen or MessenWandWand => AufgabeOrt.Begehen,
         _ => AufgabeOrt.Egal,
     };
 
     /// <summary>
     /// Neuer Lauf für die Id (labor.aufgabe). def = Eintrag des Katalogs (null ohne Katalog bzw. unbekannt). Gesperrt ist ein Lauf, wenn der Katalog die Aufgabe als
-    /// «folgt_v1» führt, die App sie nicht kennt oder der Katalog sie nicht kennt (dann nur ein Hinweis, kein Messprotokoll). Sonst wartet er, bis die App den Ort
-    /// hergestellt und die Aufgabe vorbereitet hat (<see cref="Beginnen"/>).
+    /// «folgt_v1» führt oder die App sie nicht kennt (dann nur ein Hinweis, kein Messprotokoll). Sonst wartet er, bis die App den Ort hergestellt und die Aufgabe
+    /// vorbereitet hat (<see cref="Beginnen"/>). V1a: «messen-wand-wand» ist spielbar.
     /// </summary>
     public static PruefLauf Starten(string id, LaborAufgabeDef? def)
     {
         var lauf = new PruefLauf { Id = id, Def = def };
-        if (def is { Spielbar: false } || id == MessenWandWand) { lauf.Zustand = LaufZustand.Gesperrt; lauf.Grund = "Diese Aufgabe folgt mit Version 1 (Messen)."; }
+        if (def is { Spielbar: false }) { lauf.Zustand = LaufZustand.Gesperrt; lauf.Grund = "Diese Aufgabe folgt mit einer späteren Fassung der App."; }
         else if (!Spielbar.Contains(id)) { lauf.Zustand = LaufZustand.Gesperrt; lauf.Grund = $"Die App kennt die Aufgabe «{id}» nicht – die App aktualisieren."; }
         else if (def is null) lauf.Grund = "Ohne Katalog des Labors – die Aufgabe läuft mit den Texten der App.";
         return lauf;
@@ -387,6 +391,31 @@ public static class PruefAufgaben
         else Fehlgriff(l, "falsche Antwort");
     }
 
+    // ------------------------------------------------------------------------------------------------ messen-wand-wand (V1a)
+
+    /// <summary>Markierte Wände und Sollmass (WandPaare.Waehlen); false ohne passenden Raum (der Lauf wartet mit Grund).</summary>
+    public static bool MessenVorbereiten(PruefLauf l, WandPaar? paar)
+    {
+        l.Waende = paar;
+        l.Phase = 0;
+        if (paar is null) { l.Grund = "Kein Raum mit zwei gegenüberliegenden Wänden in der Nähe – in einen Raum springen und die Aufgabe neu starten."; return false; }
+        return true;
+    }
+
+    /// <summary>Eine fertige Messung: von Wand zu Wand und höchstens 2 cm neben dem Sollmass = Erfolg, sonst Fehlgriff mit Grund.</summary>
+    public static void Gemessen(PruefLauf l, double t, Messung m)
+    {
+        if (!l.Laeuft || l.Id != MessenWandWand || l.Waende is not { } w) return;
+        if (WandPaare.Pruefen(w, m) is { } grund) Fehlgriff(l, grund);
+        else Geschafft(l, t);
+    }
+
+    /// <summary>Ein Messband ohne Messung bzw. ein Pinch ohne Ziel (messen-wand-wand).</summary>
+    public static void MessenDaneben(PruefLauf l, string grund)
+    {
+        if (l.Id == MessenWandWand) Fehlgriff(l, grund);
+    }
+
     // ------------------------------------------------------------------------------------------------ allgemein
 
     /// <summary>Ein Antippen neben eine Kachel bzw. einen Eintrag (AppBeruehrung «daneben»): Fehlgriff bei jeder laufenden Aufgabe.</summary>
@@ -419,6 +448,7 @@ public static class PruefAufgaben
             ModellGreifenZoomen => Z($"Ziel 1:{l.ZielMassstab:0} und eine Vierteldrehung"),
             RaumArOeffnen => l.Phase switch { 0 => "Jetzt: App «Tisch» › «Raum zeigen»", 1 => "Jetzt: «Echter Tisch» einschalten", _ => "Jetzt: auf die Tischplatte tippen" },
             TabletWertAblesen => l.Frage?.Text ?? "",
+            MessenWandWand => "Jetzt: von der einen markierten Wand zur anderen messen",
             _ => "",
         };
     }

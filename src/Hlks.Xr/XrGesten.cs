@@ -2,7 +2,8 @@
 // «Jede Geste bedeutet in allen Apps dasselbe: Wisch links/rechts blättert, hoch/runter wechselt die Etage, Wegwischen schliesst, Pinch wählt, Faust greift,
 // zwei Hände ändern den Massstab.» Hier stehen die Regeln dazu, rein und ohne StereoKit:
 //   - Wisch in allen Richtungen (XrWischLogik erkennt im Prototyp nur waagrechte Wische) mit den Schwellen als Stellschrauben «wisch.*»;
-//   - Einordnen der Richtung zum Blick: links, rechts, vor (weg vom Körper = «Wegwischen»), zurück, hoch, runter;
+//   - Einordnen der Richtung zum Blick: links, rechts, vor, zurück, hoch, runter (vor und zurück lösen seit V1a nichts aus; Wegwischen ist eine eigene Geste mit
+//     offener Hand, Bedienung/Wegwischen.cs – Christian 24.10.2026);
 //   - Wisch mit gehaltenem Pinch (PinchWisch) mit Richtungssperre: Die Gegenrichtung zählt kurz nach einem Wisch nicht, so löst das Zurückholen der Hand
 //     nichts aus (Regel aus dem Drehen, Christian 23.10.2026: «schnellaufeinanderfolgende drehungen nur in eine richtung zulassen»);
 //   - die Bedeutung eines Wischs im Zusammenhang (Gestenbedeutung.Wisch) und die Tabelle der Gesten (für die Hilfe in der Brille und OBERFLAECHE.md).
@@ -58,8 +59,8 @@ public sealed record PinchEinstellungen
     public static readonly PinchEinstellungen Vorgabe = new();
 }
 
-/// <summary>Was ein Wisch im Zusammenhang auslöst (Gestenbedeutung.Wisch). P5b: AufgabeAbbrechen (Wegwischen der Karte einer Prüfaufgabe).</summary>
-public enum GestenAktion { Nichts, Drehen, SeiteVor, SeiteZurueck, EtageHoch, EtageRunter, AppSchliessen, AppsAusblenden, AufgabeAbbrechen }
+/// <summary>Was ein Wisch mit Pinch im Zusammenhang auslöst (Gestenbedeutung.Wisch). Schliessen und Abbrechen gehen seit V1a nur mit dem Wegwischen (Wegwischen.cs).</summary>
+public enum GestenAktion { Nichts, Drehen, SeiteVor, SeiteZurueck, EtageHoch, EtageRunter }
 
 /// <summary>Zusammenhang einer Geste: Sitzungsraum oder Begehen, eine App (Liste) offen, die Apps sichtbar, Etage per Wisch erlaubt (Variante «etage»);
 /// P5b: eine Prüfaufgabe läuft (ihre Karte steht vor einem).</summary>
@@ -165,8 +166,9 @@ public static class Gestenbedeutung
     /// <summary>
     /// Bedeutung eines Wischs (mit gehaltenem Pinch): links/rechts blättert in einer offenen App (nach links = nächste Seite, der Inhalt folgt der Hand), sonst dreht
     /// er beim Begehen (wenn der Schalter «Drehen» wirkt, HandBegehen); hoch/runter wechselt die Etage (Begehen und Sitzungstisch; nicht in der Variante
-    /// «etage» = «app»); vor (vom Körper weg) = Wegwischen: schliesst das Vorderste – die offene App, sonst (P5b) die Karte einer laufenden Prüfaufgabe (Abbruch),
-    /// sonst blendet es die Apps aus; zurück: (noch) nichts.
+    /// «etage» = «app»); vor und zurück: nichts. V1a (Christian 24.10.2026: «Ja, auch offene Glas-Apps werden mit dem Wegwischen geschlossen; Pinch + Wisch nach vorn
+    /// entfällt»): geschlossen bzw. abgebrochen wird nur noch mit dem Wegwischen (offene rechte Hand, von rechts nach links; Hlks.Xr.Bedienung.Wegwischen) –
+    /// die offene App, die Karte einer Prüfaufgabe (Abbruch), die App-Symbole.
     /// </summary>
     public static GestenAktion Wisch(WischRichtung r, GestenKontext k) => r switch
     {
@@ -174,24 +176,26 @@ public static class Gestenbedeutung
         WischRichtung.Rechts => k.AppOffen ? GestenAktion.SeiteZurueck : k.Sitzungsraum ? GestenAktion.Nichts : GestenAktion.Drehen,
         WischRichtung.Hoch => k.EtageMitWisch ? GestenAktion.EtageHoch : GestenAktion.Nichts,
         WischRichtung.Runter => k.EtageMitWisch ? GestenAktion.EtageRunter : GestenAktion.Nichts,
-        WischRichtung.Vor => k.AppOffen ? GestenAktion.AppSchliessen : k.AufgabeOffen ? GestenAktion.AufgabeAbbrechen
-            : k.AppsSichtbar ? GestenAktion.AppsAusblenden : GestenAktion.Nichts,
         _ => GestenAktion.Nichts,
     };
 
     /// <summary>Die Gesten und ihre Bedeutung (Geste, Bedeutung) – dieselbe Tabelle steht in OBERFLAECHE.md und in der App «Status» in der Brille.</summary>
     public static readonly IReadOnlyList<(string Geste, string Bedeutung)> Tabelle =
     [
-        ("Antippen (Zeigefinger in die Kachel)", "wählt bzw. schaltet (Kachel, Eintrag einer Liste)"),
-        ("Pinch (Daumen + Zeigefinger)", "wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen"),
-        ("Pinch + Wisch links/rechts", "blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt)"),
+        ("Antippen (Zeigefinger auf einen Knopf)", "wählt bzw. schaltet (Register, Knopf, Eintrag einer Liste im Fenster der Apps)"),
+        ("Pinch (Daumen + Zeigefinger)", "wählt: mit dem Strahl auf einen Knopf des Fensters zeigen und Pinch wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen"),
+        ("Pinch + Wisch links/rechts", "blättert in der App, wenn die Hand am Fenster ist (links = nächste Seite); beim Begehen sonst drehen um 30° (nur wenn «Drehen» wirkt)"),
         ("Pinch + Wisch hoch/runter", "Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen»)"),
-        ("Pinch + Wisch nach vorn (wegwischen)", "schliesst die offene App, sonst bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus"),
-        ("Linke Handfläche zum Gesicht drehen", "holt die Apps vor den Blick (blendet sie ein)"),
+        ("Beide Handflächen nach oben, deutlich anheben", "V1a: holt die App-Symbole von unten in ein Feld vor dem Körper; ein Symbol mit der Hand berühren öffnet seine App"),
+        ("Wegwischen: rechte Hand offen, Handfläche nach links, von rechts nach links", "V1a: schliesst, was die Hand überstreicht, sonst das Vorderste – die offene App bzw. die Karte einer Prüfaufgabe (Abbruch), beim nächsten Mal die App-Symbole; es gleitet nach links aus dem Bild"),
         ("Flache Hand über dem Modell (kurz ruhig)", "Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht gehalten = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf"),
         ("Offene Hand, Handfläche nach vorn", "Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend"),
         ("Faust", "greift (noch keine Funktion; Greifen kommt mit XR-B)"),
         ("Zwei Hände an den Griffen", "Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben"),
-        ("Zögern über einer App", "eine Geisterhand zeigt die passende Geste"),
+        ("Zögern an einem Griff", "eine Geisterhand zeigt die passende Geste"),
+        ("Pinch halten, ziehen, loslassen (Messen ein)", "V1a: Messband aufziehen – Anfang beim Pinch, Ende beim Loslassen; Variante «zwei Punkte»: je ein kurzer Pinch"),
+        ("Offene Hand schnell quer über eine Messlinie", "V1a: löscht diese Messung (wie an der Wandtafel)"),
+        ("Pinch auf eine Stelle (Marker setzen)", "V1a: setzt einen Problem-Marker an die Stelle, auf die man zeigt"),
+        ("Pinch am Griff unter dem Fenster", "V1a: das Fenster verschieben; der runde Knopf links daneben schliesst es"),
     ];
 }

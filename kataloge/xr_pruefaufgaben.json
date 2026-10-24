@@ -63,13 +63,13 @@
       "herkunft": "modul-xr.md «Was das Labor kann» (auf dem Tablet einen Wert ablesen)"
     },
     {
-      "id": "messen-wand-wand", "titel": "Von Wand zu Wand messen", "status": "folgt_v1",
-      "anleitung": "Miss den Abstand zwischen den beiden markierten Wänden.",
+      "id": "messen-wand-wand", "titel": "Von Wand zu Wand messen", "status": "p5",
+      "anleitung": "Miss den Abstand zwischen den beiden markierten Wänden: App «Messen» einschalten, dann das Messband von der einen Wand zur anderen aufziehen (bzw. zwei Punkte setzen).",
       "ort": "Test_praxis, ein Geschoss", "varianten": ["messen"],
       "messgroessen": ["zeit", "fehlgriffe", "abbrueche"],
-      "erfolgskriterium": "Das gemessene Mass weicht höchstens 2 cm vom Sollmass ab (Annahme P6).",
-      "fehlgriff": "Folgt mit Version 1 (Messen).",
-      "herkunft": "modul-xr.md «Was das Labor kann» (von Wand zu Wand messen); Messen kommt mit Version 1 (XR-C)"
+      "erfolgskriterium": "Eine Messung geht von der einen markierten Wand zur anderen (beide Punkte höchstens 5 cm neben der Wandfläche) und weicht höchstens 2 cm vom Sollmass ab (Annahme P6; Sollmass = Abstand der Wandflächen aus dem Modell).",
+      "fehlgriff": "Eine Messung, die nicht von Wand zu Wand geht oder mehr als 2 cm vom Sollmass abweicht, ein abgebrochenes Messband (zu kurz, ohne Ziel losgelassen, Lot ohne Fläche), ein Pinch ohne Ziel und ein Antippen neben eine Kachel.",
+      "herkunft": "modul-xr.md «Was das Labor kann» (von Wand zu Wand messen); Messen in der App seit V1a (XR-C)"
     }
   ]
 }

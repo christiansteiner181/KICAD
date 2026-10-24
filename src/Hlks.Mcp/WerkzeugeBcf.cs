@@ -20,9 +20,11 @@ public sealed partial class Werkzeuge
         [Description(BcfTexte.ParStatus)] JsonElement? status = null,
         [Description(BcfTexte.ParArt)] string? art = null,
         [Description(BcfTexte.ParAutor)] string? autor = null,
-        [Description(BcfTexte.ParKoordinaten)] string? koordinaten = null) =>
+        [Description(BcfTexte.ParKoordinaten)] string? koordinaten = null,
+        [Description(BcfTexte.ParKlasse)] string? klasse = null,
+        [Description(BcfTexte.ParMarker)] JsonElement? marker = null) =>
         Lauf(() => Antwort(BcfExport.Schreiben(projekt, Parameter(("datei", datei), ("kollisionen", kollisionen), ("status", status),
-            ("art", art), ("autor", autor), ("koordinaten", koordinaten)))));
+            ("art", art), ("autor", autor), ("koordinaten", koordinaten), ("klasse", klasse), ("marker", marker)))));   // V1a: auch Problem-Marker
 
     [McpServerTool(Name = "bcf_lesen"), Description(BcfTexte.Lesen)]
     public string BcfLesenWerkzeug([Description(BcfTexte.ParDateiLesen)] string datei) =>

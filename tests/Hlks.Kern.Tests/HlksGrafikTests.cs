@@ -374,10 +374,11 @@ public class HlksGrafikTests
         Assert.Empty(new HlksGrafik().Plan(ctx, E(p, "SW")));   // System: keine Geometrie
         Assert.True(new HlksGrafik().Zustaendig(Kat, E(p, "WC-1.02")));
         Assert.IsType<HlksGrafik>(Grafik.Quellen[^1]);   // letzte Quelle (für alles Übrige zuständig)
-        Assert.IsType<KollisionGrafik>(Grafik.Quellen[^2]);    // Kollisionsmarken davor (Modul 3b, B4a)
-        Assert.IsType<AussparungGrafik>(Grafik.Quellen[^3]);   // Aussparungen davor (Modul 3b, B4a)
-        Assert.IsType<HuelleGrafik>(Grafik.Quellen[^4]);       // Darstellung Hülle davor (Modul 1c, C1b; für kein Element zuständig)
-        Assert.IsType<GrundlagenGrafik>(Grafik.Quellen[^5]);   // Unterlagen davor (Modul 1b, Befund B3-1)
+        Assert.IsType<ProblemMarkerGrafik>(Grafik.Quellen[^2]);   // Problem-Marker davor (Modul XR, Quest App V1a)
+        Assert.IsType<KollisionGrafik>(Grafik.Quellen[^3]);    // Kollisionsmarken davor (Modul 3b, B4a)
+        Assert.IsType<AussparungGrafik>(Grafik.Quellen[^4]);   // Aussparungen davor (Modul 3b, B4a)
+        Assert.IsType<HuelleGrafik>(Grafik.Quellen[^5]);       // Darstellung Hülle davor (Modul 1c, C1b; für kein Element zuständig)
+        Assert.IsType<GrundlagenGrafik>(Grafik.Quellen[^6]);   // Unterlagen davor (Modul 1b, Befund B3-1)
     }
 
     // ------------------------------------------------------------------ Körper

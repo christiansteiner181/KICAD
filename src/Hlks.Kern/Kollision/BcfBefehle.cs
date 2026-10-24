@@ -29,6 +29,9 @@ public static class BcfTexte
     public const string ParAutor = "Autor im BCF (Topics, eigene Kommentare), z. B. die E-Mail-Adresse; Vorgabe der Bearbeiter, der die Kollision angelegt bzw. geändert hat";
     public const string ParKoordinaten = "ifc (Vorgabe, wenn das Projekt einen Projektbezug hat: IFC-Weltkoordinaten über den Projektbezug, damit die Kamera im Modell des Partners stimmt) | " +
         "projekt (Projektkoordinaten von KICAD; Vorgabe ohne Projektbezug); immer in m";
+    public const string ParKlasse = "Kollision (Vorgabe) | ProblemMarker (Modul XR: Problem-Marker aus der Quest App als Topics mit Typ «Problem», Status Offen/Erledigt, " +
+        "Zuständig, Frist und dem Blickpunkt der Brille als Kamera); status filtert dann offen | erledigt";
+    public const string ParMarker = "Nur bei klasse ProblemMarker: nur diese Marker (Kennzeichen oder Id), z. B. [\"PM-1\"]; Vorgabe alle";
 }
 
 public static class BcfAbfragen
@@ -43,6 +46,8 @@ public static class BcfAbfragen
             new("art", "text", false, BcfTexte.ParArt),
             new("autor", "text", false, BcfTexte.ParAutor),
             new("koordinaten", "text", false, BcfTexte.ParKoordinaten),
+            new("klasse", "text", false, BcfTexte.ParKlasse),
+            new("marker", "liste", false, BcfTexte.ParMarker),
         ]),
         new("bcf_lesen", BcfTexte.Lesen, [new("datei", "text", true, BcfTexte.ParDateiLesen)]),
     ];

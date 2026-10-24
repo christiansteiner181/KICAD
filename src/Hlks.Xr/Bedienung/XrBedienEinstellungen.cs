@@ -4,7 +4,11 @@
 //   pinch.schwelle_an_m, pinch.schwelle_aus_m, fang.radius_m, komfort.tunnelblick, komfort.tunnelblick_staerke, komfort.ton, begehen.drehwinkel_grad,
 //   sitzung.zoom_min, sitzung.zoom_max, labor.variante.bedienung (apps | tablet), labor.variante.etage (wisch_modell | app).
 // P5b: roentgen.winkel_grad, roentgen.reichweite_m (Röntgen-Hand), sitzung.schnitt_ruhe_s, sitzung.schnitt_toleranz_grad (Schnitt mit flacher Hand),
-//   labor.variante.teleport (zeigen_pinch | stick), labor.variante.messen (messband | zwei_punkte; Messen folgt mit V1, die App merkt die Wahl nur).
+//   labor.variante.teleport (zeigen_pinch | stick), labor.variante.messen (messband | zwei_punkte; seit V1a wirksam).
+// V1a: apps.seitlich_grad, anzeige.glas_deckkraft, anzeige.glas_helligkeit, labor.variante.umgebung (hell | tron), hinweis.dauer_s, hebe.* (Hebegeste),
+//   symbole.* und zeiger.tooltip_s (App-Symbole: Feld frontal mit Abstand, Mitte, Höhe und Reihen; Berührung mit der ganzen Hand; Zeiger),
+//   labor.variante.symbole (verteilt | bogen), labor.variante.symbolwahl (stehen | ausblenden), labor.variante.feld_bei_app (seitlich | dahinter),
+//   symbole.tisch_abstand_m (am Sitzungstisch: Luft unter der untersten Symbolreihe).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -41,13 +45,26 @@ public static class Varianten
     public const string EtageWisch = "wisch_modell", EtageApp = "app";
     /// <summary>P5b, «labor.variante.teleport»: springen mit Zeigen und Pinch (Vorgabe) bzw. mit dem Stick eines Controllers.</summary>
     public const string ZeigenPinch = "zeigen_pinch", Stick = "stick";
-    /// <summary>P5b, «labor.variante.messen»: Messband aufziehen (Vorgabe) bzw. zwei Punkte setzen – Messen folgt mit Version 1, die App merkt die Wahl nur.</summary>
+    /// <summary>P5b, «labor.variante.messen»: Messband aufziehen (Vorgabe) bzw. zwei Punkte setzen (V1a: App «Messen»).</summary>
     public const string Messband = "messband", ZweiPunkte = "zwei_punkte";
+    /// <summary>V1a, «labor.variante.umgebung»: der Sitzungsraum hell im Stil von visionOS (Vorgabe, Christian 24.10.2026) bzw. die frühere dunkle Fassung zum Vergleich.</summary>
+    public const string UmgebungHell = "hell", UmgebungTron = "tron";
+    /// <summary>V1a, «labor.variante.symbole»: die App-Symbole locker verteilt (Vorgabe, Christian 24.10.2026: «symbole nicht in einer leiste sondern verteilt») bzw.
+    /// im Bogen (zum Vergleich).</summary>
+    public const string SymboleVerteilt = "verteilt", SymboleBogen = "bogen";
+    /// <summary>V1a, «labor.variante.symbolwahl»: nach der Wahl einer App bleiben die Symbole stehen und weichen hinter die App zurück (Vorgabe; Christian 24.10.2026:
+    /// «werden die aps hineingehoben bleiben diese stehen», Auslegung Hauptlauf) bzw. blenden aus (wie zuvor).</summary>
+    public const string SymbolwahlStehen = "stehen", SymbolwahlAusblenden = "ausblenden";
+    /// <summary>V1a, «labor.variante.feld_bei_app»: ist eine App offen, weicht das Symbolfeld seitlich neben das Fenster aus (Vorgabe; Christian 24.10.2026: «Das
+    /// Symbolfeld weicht bei offener App seitlich neben das Fenster aus.») bzw. zum Vergleich dahinter zurück (die frühere Auslegung).</summary>
+    public const string FeldSeitlich = "seitlich", FeldDahinter = "dahinter";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
     {
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageWisch, EtageApp], ["messen"] = [Messband, ZweiPunkte],
+        ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
+        ["feld_bei_app"] = [FeldSeitlich, FeldDahinter],
     };
 }
 
@@ -62,6 +79,24 @@ public sealed record AppEinstellungen
     public double AbstandM { get; init; } = 0.45;
     /// <summary>«apps.anordnung»: <see cref="Anordnungen"/>.</summary>
     public string Anordnung { get; init; } = Anordnungen.Bogen;
+    /// <summary>
+    /// V1a, «apps.seitlich_grad»: so weit links neben dem Blick erscheint das Fenster der App beim Holen (Grad). P5a stand die Mitte der Kacheln 50° links (AppLayout.SeitlichGrad);
+    /// nach Apple HIG «Spatial layout» («Center important content within the field of view») näher an die Mitte: Annahme V1a 30° – die rechte Hand zeigt weiterhin frei
+    /// nach vorn zum Springen. Am Sitzungstisch steht das Fenster neben dem Tisch (Glas.NebenTisch).
+    /// </summary>
+    public double SeitlichGrad { get; init; } = 30;
+    /// <summary>V1a, «anzeige.glas_deckkraft»: Deckkraft der Glasfläche der Apps (0.3 … 1; Annahme V1a 0.75 – durchscheinend, deckt aber Weltobjekte dahinter weitgehend,
+    /// Apple HIG «Materials»; Befund Prüfbild 24.10.2026: mit 0.55 schienen Marker und Linien durch das Fenster).</summary>
+    public double GlasDeckkraft { get; init; } = 0.75;
+    /// <summary>
+    /// V1a, «anzeige.glas_helligkeit»: so hell darf das Glas der dunklen Fassung über dem Hintergrund höchstens wirken (sRGB 0.2 … 0.6; Annahme V1a 0.42 – helle Schrift
+    /// bleibt lesbar); die helle Fassung wirkt mindestens AppFarben.HellMindestens hell. Die Deckkraft richtet sich danach (AppFarben.Deckkraft; Apple HIG «Materials»:
+    /// «Glass is an adaptive material»).
+    /// </summary>
+    public double GlasHelligkeit { get; init; } = 0.42;
+    /// <summary>V1a, «hinweis.dauer_s»: so lange steht ein schwebender Hinweis (s), dann blendet er aus (Annahme V1a 4 s; Christian 24.10.2026: «hinweistexte frei
+    /// schwebend»).</summary>
+    public double HinweisDauerS { get; init; } = 4;
 }
 
 /// <summary>Komfort: Tunnelblick beim Springen und Drehen, Ton an/aus.</summary>
@@ -92,12 +127,20 @@ public sealed record XrBedienEinstellungen
     public string Etage { get; init; } = Varianten.EtageWisch;
     /// <summary>P5b, «labor.variante.teleport»: <see cref="Varianten.ZeigenPinch"/> (Vorgabe) oder <see cref="Varianten.Stick"/>.</summary>
     public string Teleport { get; init; } = Varianten.ZeigenPinch;
-    /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (folgt V1, ohne Wirkung).</summary>
+    /// <summary>P5b, «labor.variante.messen»: <see cref="Varianten.Messband"/> (Vorgabe) oder <see cref="Varianten.ZweiPunkte"/> (V1a: App «Messen»).</summary>
     public string Messen { get; init; } = Varianten.Messband;
+    /// <summary>V1a, «labor.variante.umgebung»: <see cref="Varianten.UmgebungHell"/> (Vorgabe) oder <see cref="Varianten.UmgebungTron"/>.</summary>
+    public string Umgebung { get; init; } = Varianten.UmgebungHell;
     /// <summary>P5b: Röntgen-Hand beim Begehen («roentgen.*»).</summary>
     public RoentgenEinstellungen Roentgen { get; init; } = RoentgenEinstellungen.Vorgabe;
     /// <summary>P5b: Schnitt mit der flachen Hand am Sitzungstisch («sitzung.schnitt_*»).</summary>
     public FlacheHandEinstellungen FlacheHand { get; init; } = FlacheHandEinstellungen.Vorgabe;
+    /// <summary>V1a: Hebegeste («hebe.*»).</summary>
+    public HebeEinstellungen Hebe { get; init; } = HebeEinstellungen.Vorgabe;
+    /// <summary>V1a: Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; «wegwischen.*»).</summary>
+    public WegwischEinstellungen Wegwischen { get; init; } = WegwischEinstellungen.Vorgabe;
+    /// <summary>V1a: App-Symbole und Zeiger («symbole.*», «zeiger.tooltip_s», Variante «symbole»).</summary>
+    public SymbolEinstellungen Symbole { get; init; } = new();
 
     public static readonly XrBedienEinstellungen Vorgabe = new();
 
@@ -111,8 +154,12 @@ public sealed record XrBedienEinstellungen
     /// <summary>P5b: Wert einer Variante nach ihrem Namen (bedienung, teleport, etage, messen); null für eine Variante, die die App nicht kennt.</summary>
     public string? Variante(string name) => name switch
     {
-        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, _ => null,
+        "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
+        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, _ => null,
     };
+
+    /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
+    public bool UmgebungHell => Umgebung != Varianten.UmgebungTron;
 
     /// <summary>Grenzen der Zahlen (min, max) je Schlüssel – wie im Katalog von P6.</summary>
     public static readonly IReadOnlyDictionary<string, (double Min, double Max)> Grenzen = new Dictionary<string, (double, double)>(StringComparer.Ordinal)
@@ -134,6 +181,28 @@ public sealed record XrBedienEinstellungen
         ["roentgen.reichweite_m"] = (1, 20),
         ["sitzung.schnitt_ruhe_s"] = (0, 2),
         ["sitzung.schnitt_toleranz_grad"] = (5, 45),
+        ["apps.seitlich_grad"] = (0, 90),
+        ["anzeige.glas_deckkraft"] = (0.3, 1),
+        ["anzeige.glas_helligkeit"] = (0.2, 0.6),
+        ["hinweis.dauer_s"] = (1, 15),
+        ["hebe.weg_m"] = (0.05, 0.5),
+        ["hebe.zeit_s"] = (0.2, 3),
+        ["hebe.handflaeche_grad"] = (10, 80),
+        ["hebe.gleichzeitig_s"] = (0.05, 1.5),
+        ["symbole.abstand_m"] = (0.3, 1.0),
+        ["symbole.hoehe_m"] = (0, 0.8),
+        ["symbole.feldhoehe_m"] = (0.2, 1.0),
+        ["symbole.reihen"] = (1, 3),
+        ["symbole.beruehr_rand_m"] = (0, 0.05),
+        ["symbole.beruehr_sperre_s"] = (0, 3),
+        ["symbole.tisch_abstand_m"] = (0, 0.3),
+        ["symbole.streuung"] = (0.6, 1.6),
+        ["symbole.wartezeit_s"] = (0, 120),
+        ["zeiger.tooltip_s"] = (0, 3),
+        ["wegwischen.weg_m"] = (0.05, 0.6),
+        ["wegwischen.zeit_s"] = (0.2, 2),
+        ["wegwischen.handflaeche_grad"] = (10, 80),
+        ["wegwischen.richtung_grad"] = (5, 80),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -147,6 +216,12 @@ public sealed record XrBedienEinstellungen
         "labor.variante.bedienung", "labor.variante.etage",
         "roentgen.winkel_grad", "roentgen.reichweite_m", "sitzung.schnitt_ruhe_s", "sitzung.schnitt_toleranz_grad",
         "labor.variante.teleport", "labor.variante.messen",
+        "apps.seitlich_grad", "anzeige.glas_deckkraft", "labor.variante.umgebung", "anzeige.glas_helligkeit",
+        "hinweis.dauer_s", "hebe.weg_m", "hebe.zeit_s", "hebe.handflaeche_grad", "hebe.gleichzeitig_s",
+        "symbole.abstand_m", "symbole.hoehe_m", "symbole.streuung", "symbole.wartezeit_s", "zeiger.tooltip_s", "labor.variante.symbole",
+        "symbole.feldhoehe_m", "symbole.reihen", "symbole.beruehr_rand_m", "symbole.beruehr_sperre_s", "labor.variante.symbolwahl",
+        "wegwischen.weg_m", "wegwischen.zeit_s", "wegwischen.handflaeche_grad", "wegwischen.richtung_grad",
+        "symbole.tisch_abstand_m", "labor.variante.feld_bei_app",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -214,6 +289,65 @@ public sealed record XrBedienEinstellungen
             case "sitzung.schnitt_toleranz_grad":
                 return zurueck ? this with { FlacheHand = FlacheHand with { ToleranzGrad = v.FlacheHand.ToleranzGrad } }
                     : Zahl() is { } x ? this with { FlacheHand = FlacheHand with { ToleranzGrad = x } } : null;
+            case "apps.seitlich_grad":
+                return zurueck ? this with { Apps = Apps with { SeitlichGrad = v.Apps.SeitlichGrad } } : Zahl() is { } y ? this with { Apps = Apps with { SeitlichGrad = y } } : null;
+            case "anzeige.glas_deckkraft":
+                return zurueck ? this with { Apps = Apps with { GlasDeckkraft = v.Apps.GlasDeckkraft } } : Zahl() is { } z ? this with { Apps = Apps with { GlasDeckkraft = z } } : null;
+            case "anzeige.glas_helligkeit":
+                return zurueck ? this with { Apps = Apps with { GlasHelligkeit = v.Apps.GlasHelligkeit } } : Zahl() is { } gh ? this with { Apps = Apps with { GlasHelligkeit = gh } } : null;
+            case "labor.variante.umgebung":
+                return zurueck ? this with { Umgebung = v.Umgebung } : Wahl(Varianten.UmgebungHell, Varianten.UmgebungTron) is { } u2 ? this with { Umgebung = u2 } : null;
+            case "hinweis.dauer_s":
+                return zurueck ? this with { Apps = Apps with { HinweisDauerS = v.Apps.HinweisDauerS } } : Zahl() is { } hd ? this with { Apps = Apps with { HinweisDauerS = hd } } : null;
+            case "hebe.weg_m":
+                return zurueck ? this with { Hebe = Hebe with { WegM = v.Hebe.WegM } } : Zahl() is { } h1 ? this with { Hebe = Hebe with { WegM = h1 } } : null;
+            case "hebe.zeit_s":
+                return zurueck ? this with { Hebe = Hebe with { ZeitS = v.Hebe.ZeitS } } : Zahl() is { } h2 ? this with { Hebe = Hebe with { ZeitS = h2 } } : null;
+            case "hebe.handflaeche_grad":
+                return zurueck ? this with { Hebe = Hebe with { HandflaecheGrad = v.Hebe.HandflaecheGrad } } : Zahl() is { } h3 ? this with { Hebe = Hebe with { HandflaecheGrad = h3 } } : null;
+            case "hebe.gleichzeitig_s":
+                return zurueck ? this with { Hebe = Hebe with { GleichzeitigS = v.Hebe.GleichzeitigS } } : Zahl() is { } h4 ? this with { Hebe = Hebe with { GleichzeitigS = h4 } } : null;
+            case "symbole.abstand_m":
+                return zurueck ? this with { Symbole = Symbole with { AbstandM = v.Symbole.AbstandM } } : Zahl() is { } s1 ? this with { Symbole = Symbole with { AbstandM = s1 } } : null;
+            case "symbole.hoehe_m":
+                return zurueck ? this with { Symbole = Symbole with { HoeheM = v.Symbole.HoeheM } } : Zahl() is { } s2 ? this with { Symbole = Symbole with { HoeheM = s2 } } : null;
+            case "symbole.streuung":
+                return zurueck ? this with { Symbole = Symbole with { Streuung = v.Symbole.Streuung } } : Zahl() is { } s3 ? this with { Symbole = Symbole with { Streuung = s3 } } : null;
+            case "symbole.wartezeit_s":
+                return zurueck ? this with { Symbole = Symbole with { WartezeitS = v.Symbole.WartezeitS } } : Zahl() is { } s4 ? this with { Symbole = Symbole with { WartezeitS = s4 } } : null;
+            case "zeiger.tooltip_s":
+                return zurueck ? this with { Symbole = Symbole with { TooltipS = v.Symbole.TooltipS } } : Zahl() is { } s5 ? this with { Symbole = Symbole with { TooltipS = s5 } } : null;
+            case "symbole.feldhoehe_m":
+                return zurueck ? this with { Symbole = Symbole with { FeldHoeheM = v.Symbole.FeldHoeheM } } : Zahl() is { } s7 ? this with { Symbole = Symbole with { FeldHoeheM = s7 } } : null;
+            case "symbole.reihen":
+                return zurueck ? this with { Symbole = Symbole with { Reihen = v.Symbole.Reihen } }
+                    : Zahl() is { } s8 && Math.Abs(s8 - Math.Round(s8)) < 1e-9 ? this with { Symbole = Symbole with { Reihen = (int)Math.Round(s8) } } : null;
+            case "symbole.beruehr_rand_m":
+                return zurueck ? this with { Symbole = Symbole with { BeruehrRandM = v.Symbole.BeruehrRandM } } : Zahl() is { } s9 ? this with { Symbole = Symbole with { BeruehrRandM = s9 } } : null;
+            case "symbole.beruehr_sperre_s":
+                return zurueck ? this with { Symbole = Symbole with { BeruehrSperreS = v.Symbole.BeruehrSperreS } } : Zahl() is { } s10 ? this with { Symbole = Symbole with { BeruehrSperreS = s10 } } : null;
+            case "wegwischen.weg_m":
+                return zurueck ? this with { Wegwischen = Wegwischen with { WegM = v.Wegwischen.WegM } } : Zahl() is { } w2 ? this with { Wegwischen = Wegwischen with { WegM = w2 } } : null;
+            case "wegwischen.zeit_s":
+                return zurueck ? this with { Wegwischen = Wegwischen with { ZeitS = v.Wegwischen.ZeitS } } : Zahl() is { } w3 ? this with { Wegwischen = Wegwischen with { ZeitS = w3 } } : null;
+            case "wegwischen.handflaeche_grad":
+                return zurueck ? this with { Wegwischen = Wegwischen with { HandflaecheGrad = v.Wegwischen.HandflaecheGrad } }
+                    : Zahl() is { } w4 ? this with { Wegwischen = Wegwischen with { HandflaecheGrad = w4 } } : null;
+            case "wegwischen.richtung_grad":
+                return zurueck ? this with { Wegwischen = Wegwischen with { RichtungGrad = v.Wegwischen.RichtungGrad } }
+                    : Zahl() is { } w5 ? this with { Wegwischen = Wegwischen with { RichtungGrad = w5 } } : null;
+            case "labor.variante.symbole":
+                return zurueck ? this with { Symbole = Symbole with { Verteilung = v.Symbole.Verteilung } }
+                    : Wahl(Varianten.SymboleVerteilt, Varianten.SymboleBogen) is { } s6 ? this with { Symbole = Symbole with { Verteilung = s6 } } : null;
+            case "labor.variante.symbolwahl":
+                return zurueck ? this with { Symbole = Symbole with { NachWahl = v.Symbole.NachWahl } }
+                    : Wahl(Varianten.SymbolwahlStehen, Varianten.SymbolwahlAusblenden) is { } s11 ? this with { Symbole = Symbole with { NachWahl = s11 } } : null;
+            case "labor.variante.feld_bei_app":
+                return zurueck ? this with { Symbole = Symbole with { FeldBeiApp = v.Symbole.FeldBeiApp } }
+                    : Wahl(Varianten.FeldSeitlich, Varianten.FeldDahinter) is { } s12 ? this with { Symbole = Symbole with { FeldBeiApp = s12 } } : null;
+            case "symbole.tisch_abstand_m":
+                return zurueck ? this with { Symbole = Symbole with { TischAbstandM = v.Symbole.TischAbstandM } }
+                    : Zahl() is { } s13 ? this with { Symbole = Symbole with { TischAbstandM = s13 } } : null;
             default:
                 return null;
         }
