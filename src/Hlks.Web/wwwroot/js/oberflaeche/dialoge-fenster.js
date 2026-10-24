@@ -10,6 +10,8 @@ import { begrenzen, mindestGroesse } from './fenstergeometrie.js';
 import { bereinigen, setzen, positionVergessen, SCHLUESSEL } from './dialog-merken.js';
 import { sichtbereich, rechteck, rechteckSetzen, griffeAnlegen, groesseZiehen, bewegenZiehen } from './fensterbewegung.js';
 
+const MIN_SICHT = 120;     // px: kleinerer Sichtbereich gilt als verdeckt (Fenster minimiert, Bereich ausgeblendet) – dann nicht einpassen
+const MIN_GEMERKT = 120;   // px: kleinere Grössen werden weder gemerkt noch übernommen
 const karte = () => bereinigen(merken.lesen(SCHLUESSEL, {}));
 const speichern = (neu) => merken.schreiben(SCHLUESSEL, neu);
 
@@ -53,6 +55,9 @@ export function fensterAnbinden(fenster, { art }) {
   /** Holt das Fenster ganz in den sichtbaren Bereich (nach dem Öffnen, beim Verkleinern des Browserfensters, wenn der Inhalt wächst). */
   function einpassen() {
     const sicht = sichtbereich();
+    // Befund 24.10.2026: war das Browserfenster kurz verdeckt (Sichtbereich 0 × 0), wurde der Dialog auf 0 × 0 px begrenzt und blieb unsichtbar
+    if (sicht.b < MIN_SICHT || sicht.h < MIN_SICHT) return;
+    if (fenster.style.width === '0px' || fenster.style.height === '0px') { fenster.style.width = ''; fenster.style.height = ''; eigeneGroesse = false; }
     const r = rechteck(fenster);
     if (r.b === 0 && r.h === 0) return;
     const z = begrenzen(r, sicht, eigeneGroesse && !eingeklappt ? mindest() : { b: 0, h: 0 });
@@ -66,14 +71,14 @@ export function fensterAnbinden(fenster, { art }) {
 
   function lageMerken(r) {
     const teil = { x: Math.round(r.x), y: Math.round(r.y) };
-    if (eigeneGroesse && !eingeklappt) { teil.b = Math.round(r.b); teil.h = Math.round(r.h); }
+    if (eigeneGroesse && !eingeklappt && r.b >= MIN_GEMERKT && r.h >= MIN_GEMERKT) { teil.b = Math.round(r.b); teil.h = Math.round(r.h); }
     speichern(setzen(karte(), art, teil));
   }
 
   // gemerkte Lage und Grösse anwenden
   const gemerkt = karte()[art];
   if (gemerkt) {
-    if (gemerkt.b !== undefined) {
+    if (gemerkt.b !== undefined && gemerkt.b >= MIN_GEMERKT && gemerkt.h >= MIN_GEMERKT) {   // winzige gemerkte Grössen (z. B. 0 × 0) nicht übernehmen
       fenster.style.width = gemerkt.b + 'px';
       fenster.style.height = gemerkt.h + 'px';
       fenster.style.maxHeight = 'none';
