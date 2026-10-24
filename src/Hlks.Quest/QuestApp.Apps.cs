@@ -37,6 +37,9 @@ sealed partial class QuestApp
     /// <summary>V1a: Wegwischen (rechte Hand, Handfläche nach links, von rechts nach links; Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste»).</summary>
     readonly WegwischZustand wegwisch = new();
     WegwischStand wischStand = new(false, 0, false, []);
+    /// <summary>V1h: Körperrichtung (der Blick träge nachgeführt) für die Körpermitte der Wischgesten; einmal je Bild nachgeführt (<see cref="KoerperJetzt"/>).</summary>
+    readonly KoerperRichtung koerper = new();
+    double koerperT = double.NaN;
     /// <summary>Prüflauf am PC: gedachter Weg der rechten Hand nach links (m) bzw. das Ereignis.</summary>
     double? pruefWisch;
     /// <summary>Prüflauf am PC: gedachter Kopf für die Symbole (sitzend am Tisch), sonst null.</summary>
@@ -421,6 +424,21 @@ sealed partial class QuestApp
         rueck.Fang(kopf.position + kopf.Forward * 0.4f);
     }
 
+    /// <summary>V1h: die Körperrichtung (Gierwinkel) – einmal je Bild nachgeführt, bei jedem weiteren Aufruf im selben Bild derselbe Wert.</summary>
+    double KoerperJetzt(Pose kopf)
+    {
+        var t = Time.Total;
+        if (t != koerperT)
+        {
+            koerper.Schritt(double.IsNaN(koerperT) ? 0 : t - koerperT, KopfRef(kopf).Gieren);
+            koerperT = t;
+        }
+        return koerper.Gieren ?? KopfRef(kopf).Gieren;
+    }
+
+    /// <summary>V1h: Neigung des Blicks (Bogenmass, positiv nach oben).</summary>
+    static double BlickNicken(Pose kopf) => Math.Asin(Math.Clamp(kopf.Forward.y, -1f, 1f));
+
     /// <summary>
     /// Ein Bild des Wegwischens (Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste … von rechts nach links»; Regeln Hlks.Xr.Bedienung.Wegwischen): die rechte
     /// Hand offen, Handfläche nach links, von rechts nach links. Ziel unter den eingehängten (<see cref="WegwischZiele"/>): was die Hand überstreicht, sonst das
@@ -430,13 +448,15 @@ sealed partial class QuestApp
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var gieren = KopfRef(kopf).Gieren;
+        var koerperGieren = KoerperJetzt(kopf);
         // V1c: kurz nach dem Hineinziehen ruht das Wegwischen (das Zurückholen der Hand nach links wischt nichts weg; DesktopGesten)
         if (desktop?.WegwischenRuht(Time.Total) == true) rechteHand = linkeHand = null;
         // V1d: eine Hand auf der Tafel blättert – sie wischt nichts weg (Christian 24.10.2026: Blättern im aktiven Fenster; der Ort entscheidet)
         if (apps.AnTafel(Handed.Right)) rechteHand = null;
         if (apps.AnTafel(Handed.Left)) linkeHand = null;
         // V1d: auch die linke Hand wischt weg (Christian 24.10.2026: «wisch mit der linken hand von rechts nach links soll in wieder raus schieben»)
-        wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, linkeHand, gieren, bedien.Wegwischen);
+        // V1h: mit Kopf, Körperrichtung und Neigung des Blicks (Rand, Körpermitte, «unter dem Blick»: Anstoss.AussenGesperrt, Anstoss.UntenGesperrt)
+        wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, linkeHand, gieren, bedien.Wegwischen, auge, koerperGieren, BlickNicken(kopf));
         if (pruefWisch is { } pw)
         {
             // gedachte Hand vor dem Symbolfeld, um pw nach links gewischt

@@ -363,3 +363,18 @@ Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1g�
   Vorgabe «ausblenden», `SperreSchliessenS`), `Bedienung/XrBedienEinstellungen.cs` (Stellschrauben V1g, `Umriss`), `Labor/PruefAufgaben.cs` (Grenze 128).
 - **Annahmen V1g:** Kippen höchstens 60°, Totzone wie die Drehung (3°), Doppeltipp 0.4 s / 0.5 s / 3 cm bzw. 6 cm; Sperre nach dem Schliessen 0.5 s; Umriss aus.
 - **Tests:** `V1gTests`; angepasst `V1aSymboleTests`, `LaborKatalogTests`.
+
+## Wischgesten leichter, Striche nach aussen, unter dem Blick (V1h)
+
+Christian 25.10.2026 (Brillentest V1g): die live gelockerten Werte als Vorgabe; linke Hand nach links am linken bzw. rechte Hand nach rechts am rechten Rand nicht
+beachten, «oder im normbereich der jeweiligen hand». Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1h».
+
+- **Geändert für V1h:** `Bedienung/Anstoss.cs` (Vorgaben 4.5 cm und 0.35 m/s, `RandGrad`, `MitteToleranzM`, `UntenGrad`; `SeitenWinkel`, `AussenGesperrt`,
+  `UnterBlick`, `UntenGesperrt`; `KoerperRichtung` – der Blick träge nachgeführt), `Bedienung/Wegwischen.cs` (Handfläche 60°, Richtung 45°; `Schritt` mit Kopf,
+  Körperrichtung und Neigung des Blicks: linke Hand nach aussen bzw. beide Hände unter dem Blick gesperrt, für den Anstoss und die ganze Bewegung),
+  `Desktop/DesktopGeste.cs` (`SeitenWisch.Schritt` und `DesktopHaende` mit Kopf, Körperrichtung und Neigung: rechte Hand nach aussen bzw. unter dem Blick gesperrt),
+  `Bedienung/XrBedienEinstellungen.cs` (Stellschrauben `gesten.randwinkel_grad`, `gesten.mitte_toleranz_m`, `gesten.unten_grad`). Ohne Kopf gelten die neuen Regeln
+  nicht (Aufrufe wie bis V1g).
+- **Annahmen V1h:** Rand 25° (Auftrag), Körpermitte 5 cm (Auftrag), unter dem Blick 45° (Gegenregel; die Ruhelage der Testhand rund 51°, die Wische rund 30°),
+  Körperrichtung mit Zeitkonstante 1 s.
+- **Tests:** `V1hTests`; angepasst `V1eTests`, `V1fTests` (mit Kopf und Körperrichtung wie in der App), `V1aSymboleTests`, `DesktopGesteTests`.

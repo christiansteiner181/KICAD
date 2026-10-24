@@ -2589,8 +2589,8 @@ in einer leiste sondern verteilt»; «Ja, die Registerleiste fällt weg; gewechs
 ### Wegwischen: eine Geste für alles
 Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»; «Ja, auch offene Glas-Apps werden mit dem
 Wegwischen geschlossen; Pinch + Wisch nach vorn entfällt.»
-- **Geste:** die **rechte Hand offen, Handfläche nach links** (höchstens `wegwischen.handflaeche_grad` = 50° daneben), **von rechts nach links** wischen – mindestens
-  `wegwischen.weg_m` (0.18 m) in höchstens `wegwischen.zeit_s` (0.6 s), die Bewegung höchstens `wegwischen.richtung_grad` (35°) neben «nach links». Gemessen ab dem am
+- **Geste:** die **rechte Hand offen, Handfläche nach links** (höchstens `wegwischen.handflaeche_grad` = 50° daneben; seit V1h 60°), **von rechts nach links** wischen – mindestens
+  `wegwischen.weg_m` (0.18 m) in höchstens `wegwischen.zeit_s` (0.6 s), die Bewegung höchstens `wegwischen.richtung_grad` (35°; seit V1h 45°) neben «nach links». Gemessen ab dem am
   weitesten rechts liegenden Punkt: **Ausholen nach rechts löst nichts aus**. Ohne Pinch – weder Pinch + Wisch (Blättern, Drehen, Etage) noch der Sprung noch die
   Hebegeste lösen aus (Tests); solange die Hand über ein Ziel wischt, löscht sie keine Messung. Nach dem Ereignis zählt die Geste 0.8 s nicht. Alle Werte **Annahmen V1a**.
 - **Ziel**, wenn mehreres sichtbar ist: was die Hand beim Wischen **überstreicht bzw. vor dem sie wischt** (im Blick vom Auge); sonst das **zuletzt Eingeblendete**. So
@@ -2746,7 +2746,7 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 | `labor.variante.messen` | messband | messband, zwei_punkte | seit V1a wirksam |
 | `labor.variante.umgebung` | hell | hell, tron | Umgebung des Sitzungsraums |
 | `hebe.weg_m`, `hebe.zeit_s`, `hebe.handflaeche_grad`, `hebe.gleichzeitig_s` | 0.15 m, 0.9 s, 45°, 0.35 s | 0.05 … 0.5, 0.2 … 3, 10 … 80, 0.05 … 1.5 | Hebegeste |
-| `wegwischen.weg_m`, `wegwischen.zeit_s`, `wegwischen.handflaeche_grad`, `wegwischen.richtung_grad` | 0.18 m, 0.6 s, 50°, 35° | 0.05 … 0.6, 0.2 … 2, 10 … 80, 5 … 80 | Wegwischen (ersetzt `schieben.*`) |
+| `wegwischen.weg_m`, `wegwischen.zeit_s`, `wegwischen.handflaeche_grad`, `wegwischen.richtung_grad` | 0.18 m, 0.6 s, 50°, 35° (seit V1h 60°, 45°) | 0.05 … 0.6, 0.2 … 2, 10 … 80, 5 … 80 | Wegwischen (ersetzt `schieben.*`) |
 | `symbole.abstand_m`, `symbole.hoehe_m`, `symbole.feldhoehe_m`, `symbole.reihen` | 0.5 m (seit 25.10.2026, vorher 0.6), 0.32 m, 0.6 m, 3 | 0.3 … 1, 0 … 0.8, 0.2 … 1, 1 … 3 | Symbolfeld frontal |
 | `symbole.streuung`, `symbole.wartezeit_s` | 1, 0 s (nie) | 0.6 … 1.6, 0 … 120 | Spaltenabstand × Faktor; selbsttätig ausblenden |
 | `symbole.beruehr_rand_m`, `symbole.beruehr_sperre_s` | 0.01 m, 0.6 s | 0 … 0.05, 0 … 3 | Berührung mit der ganzen Hand |
@@ -2883,7 +2883,7 @@ in die App einblenden; die Ansicht ist darum in der App nachgebaut. Regeln ohne 
 | **Kapsel-Griff** unter dem Bildschirm (Pinch fassen) | Verschieben; der Bildschirm dreht sich dabei zum Kopf. Losgelassen bleibt er im Raum stehen. |
 | **Runder Knopf «1/2»** rechts neben dem Griff (nur bei mehreren Monitoren) | nächster Monitor des PCs |
 
-- **Regel Hineinziehen** (`DesktopGeste.cs`): Hand offen, kein Pinch, Normale der Handfläche höchstens `wegwischen.handflaeche_grad` (50°, dieselbe Haltung wie das
+- **Regel Hineinziehen** (`DesktopGeste.cs`): Hand offen, kein Pinch, Normale der Handfläche höchstens `wegwischen.handflaeche_grad` (50°, seit V1h 60°; dieselbe Haltung wie das
   Wegwischen) neben «nach links»; Weg nach rechts mindestens `hineinziehen.weg_m` (0.20 m) in höchstens 0.7 s, mittleres Tempo mindestens `hineinziehen.tempo_ms`
   (0.45 m/s; oder über die letzten 0.20 m – wer halb zieht, kurz hält und zügig weiterzieht, löst aus), quer höchstens 60 % des Wegs, die **linke Hand** bewegt sich
   währenddessen höchstens 8 cm. Der Bildschirm folgt der Hand ab 20 % des Wegs.
@@ -3165,8 +3165,8 @@ um den betrachter anornen». Regeln in `src/Hlks.Xr` (`Bedienung/Anstoss.cs`, `B
 ### Stellschrauben und Varianten (neu)
 | Schlüssel | Vorgabe | Bereich | Wirkung |
 | --- | --- | --- | --- |
-| `gesten.anstoss_weg_m` | 0.06 m | 0.02 … 0.2 | Weg des Anstosses (Hebegeste, Hineinziehen, Wegwischen) |
-| `gesten.anstoss_tempo_ms` | 0.5 m/s | 0.2 … 3 | mittleres Tempo des Anstosses |
+| `gesten.anstoss_weg_m` | 0.06 m (seit V1h 0.045 m) | 0.02 … 0.2 | Weg des Anstosses (Hebegeste, Hineinziehen, Wegwischen) |
+| `gesten.anstoss_tempo_ms` | 0.5 m/s (seit V1h 0.35 m/s) | 0.2 … 3 | mittleres Tempo des Anstosses |
 | `etagen.zeilen_max` | 12 | 4 … 30 | bis so viele Etagen auf einer Seite, darüber rollt die Liste |
 | `sitzung.dreh_totzone_grad` | 3° | 0 … 20 | Punkt «Drehen»: so viel Drehung zählt nicht |
 | `sitzung.zoom_totzone` | 0.05 | 0 … 0.3 | Punkt «Drehen»: so viel Abstandsänderung zählt nicht |
@@ -3331,3 +3331,62 @@ Grenzen: Katalog 83 von 96 Stellschrauben (bis V1f 80), mit 12 Varianten und der
 - **Nur mit der Brille prüfbar:** wie sich das Kippen mit der Faust bzw. dem Pinch anfühlt (Winkel, Grenze, Anheben über dem echten Tisch), ob der Doppeltipp
   zuverlässig ist, ob das Ausblenden der Symbole und die Sperre nach dem Schliessen passen.
 - **Anleitung:** `zb-quest-v1g-kippen` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1h: Wischgesten leichter, Striche nach aussen und unter dem Blick (Christian 25.10.2026)
+
+Christian (Brillentest V1g, die Werte live gelockert): «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.» – «rechts nach links gesten mit der
+linken hand am linken bildrand nicht beachten. ebenso rechte hand links nach rechts gesten am rechten rand nicht beachten.» – «oder im normbereich der jeweiligen hand.»
+Regeln in `src/Hlks.Xr` (`Bedienung/Anstoss.cs`, `Bedienung/Wegwischen.cs`, `Desktop/DesktopGeste.cs`, `Bedienung/XrBedienEinstellungen.cs`), die App in
+`src/Hlks.Quest` (`QuestApp.Apps.cs`, `QuestApp.Desktop.cs`, `DesktopBildschirm.cs`). **Keine Normwerte**, alle Zahlen sind Annahmen bzw. Werte des Brillentests.
+
+### Neue Vorgaben (für Hebegeste, Hineinziehen und Wegwischen)
+- Anstoss `gesten.anstoss_weg_m` = **4.5 cm** (bis V1g 6 cm) mit `gesten.anstoss_tempo_ms` = **0.35 m/s** (bis V1g 0.5 m/s), innert 0.2 s; Handfläche
+  `wegwischen.handflaeche_grad` = **60°** (bis V1g 50°; gilt auch für das Hineinziehen), Richtung `wegwischen.richtung_grad` = **45°** (bis V1g 35°).
+- Folge: auch ein gemächlicheres Ausholen in der Haltung gilt als Anstoss – erst unter rund 12 cm in 0.8 s (bis V1g 0.45 s) bleibt es unter dem Tempo.
+
+### Striche nach aussen: nicht vom Rand, nicht von der eigenen Seite
+- **Linke Hand nach links** (Wegwischen) bzw. **rechte Hand nach rechts** (Hineinziehen) zählt nicht, wenn der Strich beginnt
+  - am **Rand des Blicks**: mehr als `gesten.randwinkel_grad` = **25°** neben der Blickrichtung auf der Seite der Hand (das Zurücknehmen bzw. Ausschwingen des Arms), oder
+  - auf der **eigenen Körperseite**: mehr als `gesten.mitte_toleranz_m` = **5 cm** neben der Körpermitte (linke Hand links, rechte Hand rechts). Die Körpermitte ist die
+    senkrechte Ebene durch den Kopf in der Körperrichtung; diese folgt dem Blick träge (Zeitkonstante 1 s), ein kurzer Blick zur Seite verschiebt sie nicht.
+- **Unverändert:** Striche aus der Mitte bzw. von der Gegenseite (auch die linke Hand nach links, wenn sie rechts der Mitte beginnt) und alle Striche nach innen
+  (rechte Hand nach links, linke Hand nach rechts) – auch vom Rand. Es gilt für den Anstoss und für die ganze Bewegung.
+- **Folge für absichtliche Wische:** mit der linken Hand nach links lässt sich das Symbolfeld nicht aus seiner linken Spalte bzw. die Tafel nicht von ihrer linken
+  Hälfte wegwischen (Startpunkte frei: 4 von 7 Symbolen am Tisch bzw. mit 10° Neigung des Kopfs, 4 von 6 Punkten der Tafel); mit der rechten Hand bzw. aus der Mitte schon.
+
+### Kein Wisch unter dem Blick (Gegenregel)
+- Mit den lockereren Werten lösten zufällige Bewegungen aus der **Ruhelage am Körper** (Hand tief, Handfläche zum Körper) Wegwischen und Hineinziehen häufiger aus.
+  Darum zählt ein Wisch quer zum Blick nicht, wenn er mehr als `gesten.unten_grad` = **45°** unter der Blickrichtung beginnt (die Neigung des Kopfs zählt mit). Die
+  Hebegeste beginnt unten und ist ausgenommen.
+- **Absichtliche Wische** vor Symbolfeld und Tafel bleiben frei: Tafel und Symbolfeld am Tisch liegen höchstens 34° unter dem waagrechten Blick, das Symbolfeld beim
+  Begehen bis 47° (bei waagrechtem Kopf liegen 2 von 7 Symbolen der untersten Reihe darunter) – mit 10° Neigung des Kopfs alle innerhalb.
+
+### Gemessen (Test `V1hTests`, Generator des Gestenlabors)
+- **Fehlauslösungen** über je 900 Zufallsbewegungen mit drei Saaten, 10 × 3 s ruhige Hände und 84 Testgesten (2982 Bewegungen; Hebegeste / Wegwischen / Hineinziehen):
+  V1g **0 / 5 / 3** – mit den neuen Werten ohne Regeln 0 / 34 / 22 – mit Rand und Körpermitte 0 / 29 / 2 – mit «unter dem Blick» (Vorgabe V1h) **0 / 4 / 0**.
+- **Leichtes Auslösen:** leichte Anstösse (4.5–6.5 cm, 0.38–0.5 m/s, alle drei Gesten) V1g 13 von 60, V1h **60 von 60**; die deutlichen von V1e (6.5–12 cm) V1g 117,
+  V1h 119 von 120 (der eine: linke Hand nach links, 5 cm links der Mitte begonnen – an der Grenze der Körpermitte).
+
+### Stellschrauben (neu bzw. geändert)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `gesten.anstoss_weg_m` | 0.045 m (bis V1g 0.06 m) | 0.02 … 0.2 | Weg des Anstosses |
+| `gesten.anstoss_tempo_ms` | 0.35 m/s (bis V1g 0.5 m/s) | 0.2 … 3 | mittleres Tempo des Anstosses |
+| `wegwischen.handflaeche_grad` | 60° (bis V1g 50°) | 10 … 80 | Handfläche seitlich (Wegwischen, Hineinziehen) |
+| `wegwischen.richtung_grad` | 45° (bis V1g 35°) | 5 … 80 | Richtung des Wischs |
+| `gesten.randwinkel_grad` | 25° | 5 … 90 | Strich nach aussen: nicht vom Rand des Blicks (90 = ohne) |
+| `gesten.mitte_toleranz_m` | 0.05 m | 0 … 0.5 | Strich nach aussen: nur ab der Körpermitte |
+| `gesten.unten_grad` | 45° | 10 … 90 | kein Wisch, der so weit unter dem Blick beginnt (90 = ohne) |
+
+Grenzen: Katalog 86 von 96 Stellschrauben, mit 12 Varianten und der Aufgabe 99 von 128 Werten im Kanal.
+
+### Prüfen
+- **Tests:** Xr `V1hTests` (Vorgaben in Code und Katalog, für alle drei Gesten; Rand und Körpermitte beider Hände: Rand, eigene Seite, Mitte, Gegenseite, nach innen,
+  Körperrichtung; die ganze Bewegung; unter dem Blick mit und ohne Neigung, Hebegeste ausgenommen; Startpunkte vor Symbolfeld und Tafel; leichte und deutliche
+  Anstösse; Fehlauslösungen vorher/nachher), angepasst `V1eTests`, `V1fTests`, `V1aSymboleTests`, `DesktopGesteTests` (die Schwellen: «zu kurz», «langsam»,
+  «gemächliches Ausholen» auf die neuen Werte); Web `XrLaborTests`; Node `xr-labor.test.mjs`, `quest-symbole.test.mjs`.
+- **Am PC:** `werkzeuge\quest_pruefen.ps1` wie bisher – der Prüflauf des Desktops zieht mit der gedachten Hand (Kopf, Körperrichtung und Neigung wie in der App)
+  herein und wischt hinaus; neue Prüfbilder braucht es nicht (nichts Sichtbares geändert).
+- **Nur mit der Brille prüfbar:** ob die neuen Vorgaben mit echten Händen leicht genug und ohne Fehlauslösungen sind, ob 25° und 5 cm für die Striche nach aussen
+  passen, ob «unter dem Blick» (45°) keinen gewollten Wisch verschluckt (z. B. tief vor der untersten Symbolreihe bei waagrechtem Kopf).
+- **Anleitung:** `zb-quest-v1h-wischen` in `berichte/anleitung/inventar.json`.

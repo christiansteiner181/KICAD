@@ -132,6 +132,10 @@ public class XrLaborTests
             ["symbole.wahl_frei_s"] = b.Symbole.WahlFreiS, ["tafel.hoehe_m"] = b.Tafel.HoeheM, ["tafel.nachfuehren_grad"] = b.Tafel.NachfuehrenGrad,
             ["tafel.blaettern_abstand_m"] = b.Tafel.BlaetternAbstandM, ["tafel.blaettern_weg_m"] = b.Tafel.BlaetternWegM, ["sitzung.drehknopf_grad"] = b.Griff.DrehknopfGrad,
             ["sitzung.vereinfachen_mm"] = b.Tisch.VereinfachenMm, ["sitzung.dreiecke_max"] = b.Tisch.DreieckeMax,
+            // V1h: Vorgaben des Brillentests 25.10.2026 und die Regeln der Striche nach aussen bzw. unter dem Blick
+            ["gesten.anstoss_weg_m"] = b.Anstoss.WegM, ["gesten.anstoss_tempo_ms"] = b.Anstoss.TempoMs, ["wegwischen.handflaeche_grad"] = b.Wegwischen.HandflaecheGrad,
+            ["wegwischen.richtung_grad"] = b.Wegwischen.RichtungGrad, ["gesten.randwinkel_grad"] = b.Anstoss.RandGrad, ["gesten.mitte_toleranz_m"] = b.Anstoss.MitteToleranzM,
+            ["gesten.unten_grad"] = b.Anstoss.UntenGrad,
         };
         foreach (var (key, soll) in vorgaben)
         {

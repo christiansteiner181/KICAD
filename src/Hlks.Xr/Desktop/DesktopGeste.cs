@@ -69,7 +69,8 @@ public static class SeitenWisch
     /// V1d (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen»): seite = «left» – dann ist rechts die LINKE Hand
     /// (die wischende) und links die rechte (die andere); ihre Handfläche darf seitlich in einer der beiden Richtungen zeigen, die Richtung des Wischs entscheidet.
     public static SeitenWischStand Schritt(SeitenWischZustand z, double t, IReadOnlyDictionary<string, Vec3>? rechts, IReadOnlyDictionary<string, Vec3>? links,
-        double blickGieren, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true, string seite = "right")
+        double blickGieren, SeitenWischEinstellungen? e = null, PinchEinstellungen? pinch = null, bool erlaubt = true, string seite = "right", Vec3? kopf = null, double? koerperGieren = null,
+        double blickNicken = 0)
     {
         e ??= SeitenWischEinstellungen.Vorgabe;
         var behalten = e.ZeitS + 0.2;
@@ -114,11 +115,16 @@ public static class SeitenWisch
             for (int i = fenster.Count - 2; i >= 0; i--)
                 if ((jetzt - fenster[i].P).Skalar(r) >= e.WegM) { tempo = Math.Max(tempo, e.WegM / Math.Max(1e-3, t - fenster[i].T)); break; }
         // V1f: mit gleich bleibender Form der Hand (AnstossEinstellungen.FormSpiel)
-        var voll = weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig && Bedienung.Anstoss.FormAenderung(z.Punkte, beginn.T) <= e.Anstoss.FormSpiel + 1e-9;
+        // V1h (Christian 25.10.2026: «rechte hand links nach rechts gesten am rechten rand nicht beachten», «oder im normbereich der jeweiligen hand»): beginnt der Strich
+        // der rechten Hand am rechten Rand bzw. rechts der Körpermitte, zählt er nicht; ebenso (beide Hände) ein Strich, der unter dem Blick beginnt (Anstoss.UntenGesperrt)
+        bool AmRand(Vec3 p) => (seite == "right" && Bedienung.Anstoss.AussenGesperrt(p, false, kopf, blickGieren, e.Anstoss, koerperGieren))
+            || Bedienung.Anstoss.UntenGesperrt(p, kopf, blickNicken, e.Anstoss);
+        var voll = weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig && Bedienung.Anstoss.FormAenderung(z.Punkte, beginn.T) <= e.Anstoss.FormSpiel + 1e-9
+            && !AmRand(beginn.P);
         // V1e: oder ein kurzer, deutlicher Anstoss nach rechts (Christian 24.10.2026: «nur einen anstoss»); die andere Hand ruht seit seinem Anlauf
         var a = Bedienung.Anstoss.Pruefen(z.Punkte, t, r, SeitlichAnteil, e.Anstoss, XrTabletLogik.FaustVerhaeltnis(rechts) ?? 0);
         z.Anstoss = a;
-        var anstoss = a.Ausgeloest && AndereRuhig(z, a.Beginn, Math.Max(Bedienung.Wegwischen.GegenMinM, Math.Min(e.AndereHandM, Bedienung.Wegwischen.GegenAnteil * a.Weg)));
+        var anstoss = a.Ausgeloest && !(z.Punkte.FirstOrDefault(x => x.T >= a.Beginn - 1e-9) is { } ab && AmRand(ab.P)) && AndereRuhig(z, a.Beginn, Math.Max(Bedienung.Wegwischen.GegenMinM, Math.Min(e.AndereHandM, Bedienung.Wegwischen.GegenAnteil * a.Weg)));
         if (voll || anstoss)
         {
             z.SperreBis = t + e.SperreS;
@@ -138,8 +144,10 @@ public static class SeitenWisch
     }
 }
 
-/// <summary>Hände und Kopf eines Bildes für die Gesten (Raum der Brille): Zeit, Gelenke der rechten und linken Hand (null = nicht erkannt), Gierwinkel des Blicks.</summary>
-public sealed record DesktopHaende(double T, IReadOnlyDictionary<string, Vec3>? Rechts, IReadOnlyDictionary<string, Vec3>? Links, double BlickGieren);
+/// <summary>Hände und Kopf eines Bildes für die Gesten (Raum der Brille): Zeit, Gelenke der rechten und linken Hand (null = nicht erkannt), Gierwinkel des Blicks; V1h:
+/// Lage des Kopfs, Körperrichtung (Gierwinkel, KoerperRichtung) und Neigung des Blicks (Bogenmass, positiv nach oben) für Rand, Körpermitte und «unter dem Blick».</summary>
+public sealed record DesktopHaende(double T, IReadOnlyDictionary<string, Vec3>? Rechts, IReadOnlyDictionary<string, Vec3>? Links, double BlickGieren, Vec3? Kopf = null,
+    double? KoerperGieren = null, double BlickNicken = 0);
 
 /// <summary>
 /// Das Hineinziehen mit der Gegensperre zum gemeinsamen Wegwischen (V1a): nach dem Hineinziehen ruht das Wegwischen SperreS lang (<see cref="WegwischenRuht"/>),
@@ -161,8 +169,8 @@ public sealed class DesktopGesten(Func<DesktopEinstellungen> einstellungen, Func
     {
         var e = einstellungen();
         var ein = e.HineinMit(wegwischen?.Invoke());
-        var r = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, ein, pinch?.Invoke(), erlaubt);
-        var l = SeitenWisch.Schritt(hineinLinks, h.T, h.Links, h.Rechts, h.BlickGieren, ein, pinch?.Invoke(), erlaubtLinks ?? erlaubt, "left");
+        var r = SeitenWisch.Schritt(hinein, h.T, h.Rechts, h.Links, h.BlickGieren, ein, pinch?.Invoke(), erlaubt, kopf: h.Kopf, koerperGieren: h.KoerperGieren, blickNicken: h.BlickNicken);
+        var l = SeitenWisch.Schritt(hineinLinks, h.T, h.Links, h.Rechts, h.BlickGieren, ein, pinch?.Invoke(), erlaubtLinks ?? erlaubt, "left", h.Kopf, h.KoerperGieren, h.BlickNicken);
         var wer = r.Ausgeloest ? "right" : l.Ausgeloest ? "left" : l.Fortschritt > r.Fortschritt ? "left" : "right";
         var s = wer == "left" ? l : r;
         Hand = s.Laeuft || s.Ausgeloest ? wer : null;

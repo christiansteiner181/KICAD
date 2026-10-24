@@ -20,6 +20,8 @@
 //   hebe.dreh_grad (eigene Schwellen der Hebegeste); Vorgabe der Variante tafel_nachfuehren neu «fest».
 // V1g: sitzung.kipp_max_grad (Kippen am Punkt «Drehen»), symbole.sperre_schliessen_s (Sperre der Symbole nach dem Schliessen einer Tafel), sitzung.umriss (dezenter Umriss
 //   der Grundfläche beim Greifen; die Bodenplatte entfällt); Vorgabe der Variante symbolwahl neu «ausblenden».
+// V1h: gesten.randwinkel_grad, gesten.mitte_toleranz_m (Striche nach aussen am Rand bzw. auf der eigenen Körperseite zählen nicht), gesten.unten_grad (kein Wisch unter
+//   dem Blick); Vorgaben gesten.anstoss_weg_m 0.045, gesten.anstoss_tempo_ms 0.35, wegwischen.handflaeche_grad 60, wegwischen.richtung_grad 45 (Brillentest 25.10.2026).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -288,6 +290,10 @@ public sealed record XrBedienEinstellungen
         // V1g
         ["sitzung.kipp_max_grad"] = (0, 85),
         ["symbole.sperre_schliessen_s"] = (0, 3),
+        // V1h
+        ["gesten.randwinkel_grad"] = (5, 90),
+        ["gesten.mitte_toleranz_m"] = (0, 0.5),
+        ["gesten.unten_grad"] = (10, 90),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -318,6 +324,8 @@ public sealed record XrBedienEinstellungen
         "labor.variante.ausloeser", "pistole.abzug_an_m", "pistole.abzug_aus_m", "pistole.ruhe_s", "sitzung.tisch_hoehe_m", "gesten.offen_ab", "hebe.vorhalte_s", "hebe.dreh_grad",
         // V1g
         "sitzung.kipp_max_grad", "symbole.sperre_schliessen_s", "sitzung.umriss",
+        // V1h
+        "gesten.randwinkel_grad", "gesten.mitte_toleranz_m", "gesten.unten_grad",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -531,6 +539,13 @@ public sealed record XrBedienEinstellungen
                 return (zurueck ? v.Symbole.SperreSchliessenS : Zahl()) is { } g2 ? this with { Symbole = Symbole with { SperreSchliessenS = g2 } } : null;
             case "sitzung.umriss":
                 return (zurueck ? v.Umriss : JaNein()) is { } g3 ? this with { Umriss = g3 } : null;
+            // V1h: Rand, Körpermitte und «unter dem Blick» der Wischgesten (gemeinsam mit dem Anstoss)
+            case "gesten.randwinkel_grad":
+                return (zurueck ? v.Anstoss.RandGrad : Zahl()) is { } k1 ? MitAnstoss(Anstoss with { RandGrad = k1 }) : null;
+            case "gesten.mitte_toleranz_m":
+                return (zurueck ? v.Anstoss.MitteToleranzM : Zahl()) is { } k2 ? MitAnstoss(Anstoss with { MitteToleranzM = k2 }) : null;
+            case "gesten.unten_grad":
+                return (zurueck ? v.Anstoss.UntenGrad : Zahl()) is { } k3 ? MitAnstoss(Anstoss with { UntenGrad = k3 }) : null;
             default:
                 return null;
         }

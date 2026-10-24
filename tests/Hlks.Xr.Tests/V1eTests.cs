@@ -38,9 +38,10 @@ public class V1eTests(ITestOutputHelper aus)
             var hs = HebeGeste.Schritt(hz, b.T, hl, hr, b.Gieren, he);
             if (hs.Ereignis is not null) { hebe++; if (hs.DurchAnstoss) durch++; }
             var ruht = g.WegwischenRuht(b.T);
-            var ws = Wegwischen.Schritt(wz, b.T, ruht ? null : hr, ruht ? null : hl, b.Gieren, w);
+            // V1h: mit Kopf und Körperrichtung wie in der App (Rand des Blicks, Körpermitte)
+            var ws = Wegwischen.Schritt(wz, b.T, ruht ? null : hr, ruht ? null : hl, b.Gieren, w, b.Kopf, b.Gieren);
             if (ws.Ereignis) { weg++; g.NachWegwischen(b.T); if (ws.DurchAnstoss) durch++; }
-            var s = g.Schritt(new DesktopHaende(b.T, r, l, b.Gieren), true);
+            var s = g.Schritt(new DesktopHaende(b.T, r, l, b.Gieren, b.Kopf, b.Gieren), true);
             if (s.Ausgeloest) { hinein++; if (s.DurchAnstoss) durch++; }
         }
         return (hebe, weg, hinein, durch);
@@ -144,9 +145,9 @@ public class V1eTests(ITestOutputHelper aus)
     {
         int Ereignisse(GestenBewegung b, double dauer, double ruhe = 0.3) =>
             Abspielen(G.Erzeugen(b, new Vorfuehrung { DauerS = dauer, RuheVorS = ruhe, RuheNachS = 0.5 }), AnstossEinstellungen.Vorgabe) is var r ? r.Hebe + r.Weg + r.Hinein : -1;
-        // 8 cm in 0.4 s (0.2 m/s): zu langsam; 4 cm in 0.08 s: zu kurz
-        Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.08 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), 0.4));
-        Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.04 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), 0.08));
+        // 8 cm in 0.6 s (0.13 m/s im Mittel): zu langsam; 3 cm in 0.06 s: zu kurz (V1h: Weg 4.5 cm, Tempo 0.35 m/s; bis V1g 8 cm in 0.4 s bzw. 4 cm in 0.08 s)
+        Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.08 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), 0.6));
+        Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.03 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), 0.06));
         // die Handfläche dreht erst während des Schubs nach links (Schwenk um die Fingerachse, 46° → 0°): kein Anstoss
         Assert.Equal(0, Ereignisse(u => (null, new Haltung(G.V(0.15 - 0.09 * u, -0.25, 0.4), VornHoch, G.N(-Math.Cos((1 - u) * 0.8), -Math.Sin((1 - u) * 0.8), 0), G.Kr(0.1))), 0.15));
         // dieselbe Bewegung ohne Schwenk löst aus (Gegenprobe)
@@ -177,10 +178,10 @@ public class V1eTests(ITestOutputHelper aus)
     [Fact]
     public void Ausholen_Zurueckholen_und_gegenlaeufige_Hand_loesen_mit_Anstoss_nichts_Falsches_aus()
     {
-        // gemächliches Ausholen nach rechts (12 cm in 0.45 s) mit der Handfläche nach links, dann ein Anstoss nach links: nur das Wegwischen
+        // gemächliches Ausholen nach rechts (12 cm in 0.8 s; V1h mit 0.35 m/s – bis V1g 0.45 s) mit der Handfläche nach links, dann ein Anstoss nach links: nur das Wegwischen
         GestenBewegung ausholen = u => (null, new Haltung(G.V(0.02 + 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         GestenBewegung anstoss = u => (null, new Haltung(G.V(0.14 - 0.09 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        var (a1, _) = G.Strom([(ausholen, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.4, RuheNachS = 0.12 }), (anstoss, new Vorfuehrung { DauerS = 0.15, RuheVorS = 0.0, RuheNachS = 0.5 })],
+        var (a1, _) = G.Strom([(ausholen, new Vorfuehrung { DauerS = 0.8, RuheVorS = 0.4, RuheNachS = 0.12 }), (anstoss, new Vorfuehrung { DauerS = 0.15, RuheVorS = 0.0, RuheNachS = 0.5 })],
             uebergangS: 0.05);
         Assert.Equal((0, 1, 0), Ohne(Abspielen(a1, AnstossEinstellungen.Vorgabe)));
         // Anstoss nach rechts (herein), dann die Hand zügig zurück nach links: der Bildschirm kommt, das Zurückholen wischt nichts weg (Gegensperre)
@@ -548,8 +549,9 @@ public class V1eTests(ITestOutputHelper aus)
     {
         static System.Text.Json.JsonElement W(string j) => System.Text.Json.JsonDocument.Parse(j).RootElement.Clone();
         var e = XrBedienEinstellungen.Vorgabe;
-        Assert.Equal(0.06, e.Anstoss.WegM);
-        Assert.Equal(0.5, e.Anstoss.TempoMs);
+        // V1h (Brillentest 25.10.2026): 4.5 cm und 0.35 m/s (bis V1g 6 cm und 0.5 m/s)
+        Assert.Equal(0.045, e.Anstoss.WegM);
+        Assert.Equal(0.35, e.Anstoss.TempoMs);
         var n = e.MitStellschraube("gesten.anstoss_weg_m", W("0.09"))!;
         Assert.Equal(0.09, n.Hebe.Anstoss.WegM);
         Assert.Equal(0.09, n.Wegwischen.Anstoss.WegM);
@@ -557,7 +559,7 @@ public class V1eTests(ITestOutputHelper aus)
         Assert.Equal(0.8, n.MitStellschraube("gesten.anstoss_tempo_ms", W("0.8"))!.Anstoss.TempoMs);
         Assert.Null(e.MitStellschraube("gesten.anstoss_weg_m", W("0.5")));
         Assert.Null(e.MitStellschraube("gesten.anstoss_tempo_ms", W("0.1")));
-        Assert.Equal(0.06, n.MitStellschraube("gesten.anstoss_weg_m", W("null"))!.Anstoss.WegM);
+        Assert.Equal(0.045, n.MitStellschraube("gesten.anstoss_weg_m", W("null"))!.Anstoss.WegM);
         // mit grösserem Weg löst der kurze Schub (8 cm) nicht mehr aus
         var a = G.Erzeugen(u => (null, new Haltung(G.V(0.15 - 0.08 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), new Vorfuehrung { DauerS = 0.15, RuheVorS = 0.3 });
         Assert.Equal(1, Abspielen(a, n.Anstoss with { WegM = 0.06 }).Weg);
