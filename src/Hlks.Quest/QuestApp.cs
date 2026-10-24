@@ -698,6 +698,7 @@ sealed partial class QuestApp
         var blickWelt = VrLogik.BlickGierenWelt(rig, kopfRef.Gieren);
         Haltung(kopf);
         AppsBild(kopf);   // P5a: zuerst die Apps – sie bestimmen, welche Hand an ihnen ist (deren Pinch zielt nicht, greift nicht)
+        DesktopBild(kopf);   // V1c: Bildschirm des PCs (QuestApp.Desktop.cs); solange er da ist, bleibt die Szene starr (DesktopSperrt)
 
         if (darstellung is not null && szene is not null && sitzung.Aktiv)
         {
@@ -710,7 +711,7 @@ sealed partial class QuestApp
                 if (aq is not null) Console.WriteLine(string.Create(CultureInfo.InvariantCulture,
                     $"{AppName}: Ausschnitt {darstellung.AusschnittDreiecke} Dreiecke in {darstellung.AusschnittMs:0.0} ms zusammengestellt"));
             }
-            foreach (var r in sitzung.Schritt(Time.Total, kopf, AnApps, bedien.Wisch, begehen.DrehenSperreS))
+            foreach (var r in sitzung.Schritt(Time.Total, kopf, h => AnApps(h) || DesktopSperrt, bedien.Wisch, begehen.DrehenSperreS))
                 WischAnwenden(r, kopf.position + kopf.Forward * 0.4f);
             if (sitzung.Zoegern is { } zg)   // P5a: gezögert an einem Griff: Geisterhand «Greifen»
                 geister.Starten(GeisterGeste.Greifen, Time.Total, zg.Form, XrTabletLogik.TabletLageAus(new XVec3(zg.Griff.x, zg.Griff.y, zg.Griff.z), new XVec3(0, 1, 0)));
@@ -771,7 +772,7 @@ sealed partial class QuestApp
             $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
             $"Teleport={bedien.Teleport}, Röntgen={roentgenText}, Schnitt Hand={SchnittHandText()}, " +
             $"Modell={modellWeg}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}, " +
-            $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}");
+            $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}, Desktop={DesktopKennzahlen()}");
     }
 
     // --------------------------------------------------------------------------------------------------- Haltung und Drehen
@@ -804,15 +805,15 @@ sealed partial class QuestApp
             var aim = Zeiger(handed);
             // P5a: an den Apps zielt ein Pinch nicht (er wählt dort); mit offener App blättert ein Seitenwisch statt zu drehen. P5b: ebenso an der Karte einer Aufgabe;
             // in der Variante «teleport» = «stick» springt der Pinch nicht (der Stick springt, StickSchritt)
-            var anApps = AnApps(handed) || karte.HandNah;
-            var drehenWirkt = drehen.Drehen && !(bedien.MitApps && apps.Sichtbar && apps.Offen is not null);
+            var anApps = AnApps(handed) || karte.HandNah || DesktopSperrt;   // V1c: Bildschirm des PCs da – nicht springen, kein Strahl
+            var drehenWirkt = drehen.Drehen && !(bedien.MitApps && apps.Sichtbar && apps.Offen is not null) && !DesktopSperrt;
             foreach (var e in HandBegehen.Schritt(z, Time.Total, seite, g, kopfWelt, blickWelt, rig.Y, aim, begehenWirksam, drehenWirkt, springen: !anApps && !bedien.MitStick))
                 BegehenEreignisAnwenden(e, kopf, kopfRef, anApps);
             // der eine sichtbare Strahl: der Zeiger des Systems (bzw. der Rückfall), solange die Hand erkannt ist; beim Zielen bis zum Ziel; nicht an den Apps
             if (h.IsTracked && !anApps && !bedien.MitStick && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
                 rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
         }
-        StickSchritt(kopf, kopfRef);   // P5b: Variante «teleport» = «stick»
+        if (!DesktopSperrt) StickSchritt(kopf, kopfRef);   // P5b: Variante «teleport» = «stick»; V1c: nicht, solange der Bildschirm des PCs da ist
     }
 
     /// <summary>
@@ -1237,6 +1238,7 @@ sealed partial class QuestApp
     /// </summary>
     void WischAnwenden(WischRichtung r, Vec3 ort)
     {
+        if (DesktopSperrt) return;   // V1c: die VR-Szene bleibt starr, solange der Bildschirm des PCs da ist (kein Blättern, kein Etagenwechsel)
         var mitApps = bedien.MitApps && apps.Sichtbar;
         var aufgabeOffen = lauf is { Fertig: false };
         var aktion = Gestenbedeutung.Wisch(r, new GestenKontext(sitzung.Aktiv, mitApps && apps.Offen is not null, mitApps, bedien.EtageMitWisch, aufgabeOffen));
@@ -1401,6 +1403,7 @@ sealed partial class QuestApp
     void Pruefen(double rechnen)
     {
         if (o.PruefBilder <= 0) return;
+        if (o.DesktopPruefen) { DesktopPruefen(rechnen); return; }   // V1c: eigener Prüflauf des Bildschirms des PCs (QuestApp.Desktop.cs)
         if (o.Kopplung is null && !o.OhnePc)
         {
             summeBild += Time.Stepf;
@@ -1752,6 +1755,7 @@ sealed partial class QuestApp
     {
         ende.Cancel();
         passthrough.Beenden();
+        DesktopBeenden();   // V1c
         try { kanal?.Beenden().Wait(TimeSpan.FromSeconds(2)); }
         catch (AggregateException) { }
         if (letzterKopf is { } k) Merken(k.Kopf, k.Blick, sofort: true);

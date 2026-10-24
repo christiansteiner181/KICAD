@@ -469,7 +469,9 @@ public class XrZugangTests
         var alle = s.Dienste.GetRequiredService<EndpointDataSource>().Endpoints;
         var frei = XrPforte.Freigegeben(alle).OfType<RouteEndpoint>()
             .Select(e => $"{string.Join(",", e.Metadata.GetMetadata<IHttpMethodMetadata>()?.HttpMethods ?? [])} {e.RoutePattern.RawText}").OrderBy(x => x, StringComparer.Ordinal).ToList();
-        Assert.Equal(["GET /api/xr/ebene/{name}", "GET /api/xr/ebenen",   // P4b: Ebenen der Fachmodule (XrEbenenEndpunkte.cs)
+        Assert.Equal([
+            "GET /api/xr/desktop",   // V1c: Bildschirm des PCs in der Brille (WebSocket, XrDesktop.cs); Zustand und Beenden bleiben am PC
+            "GET /api/xr/ebene/{name}", "GET /api/xr/ebenen",   // P4b: Ebenen der Fachmodule (XrEbenenEndpunkte.cs)
             "GET /api/xr/geschoss/{id}.glb", "GET /api/xr/geschosse", "GET /api/xr/kanal",
             "GET /api/xr/labor/katalog",   // P6: Katalog des Interface-Labors für die App (XrLaborEndpunkte.cs); Auswertung, Fragebogen, Variante und Aufgabe bleiben am PC
             "GET /api/xr/verbindung",

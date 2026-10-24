@@ -18,8 +18,13 @@
 # "teleport-markierung" (Erfolg), Lauf 2 nimmt den abgelegten Katalog, Lauf 3 spielt "modell-greifen-zoomen". Das Skript prueft am PC (GET
 # /api/xr/labor/auswertung), dass die Messprotokolle von Lauf 1 und 3 angekommen sind. -Pruefbilder legt zusaetzlich aufgabe_karte.jpg, roentgen.jpg und
 # sitzung_flache_hand.jpg ab.
+# V1c: Lauf 4 "Desktop in der Brille" (--desktop): die App zieht mit einer gedachten Hand den Bildschirm des PCs herein (der Testserver erfasst im Testlauf nur das
+# Testbild, nie den echten Bildschirm), misst Bildzeit, Hochladen und Dekodieren und wischt ihn wieder weg (Zeile "P4 ok: Desktop: ..."). Das Skript prueft am PC
+# (GET /api/xr/desktop/zustand), dass KICAD die mitsehende Brille angezeigt hat. -Pruefbilder legt desktop_1_geste_halb.jpg, desktop_2_eingeblendet.jpg,
+# desktop_3_nah_zeiger.jpg, desktop_4_nah_schrift.jpg, desktop_5_wegwischen_halb.jpg und desktop_6_anzeige_pc.png (KICAD im Edge, solange die Brille mitsieht) ab.
+# -NurDesktop: nur Lauf 4; -OhneDesktop: ohne Lauf 4.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>] [-NurDesktop] [-OhneDesktop]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
@@ -28,7 +33,9 @@ param(
   [switch]$OhneBau,
   [switch]$OhneUnterlage,
   [switch]$OhneSitzungsraum,
-  [string]$Pruefbilder = ''
+  [string]$Pruefbilder = '',
+  [switch]$NurDesktop,
+  [switch]$OhneDesktop
 )
 
 $ErrorActionPreference = 'Continue'
@@ -80,6 +87,36 @@ function Laeufe([string]$id) {
   return 0
 }
 
+# V1c: Lauf 4 "Desktop in der Brille" - die App laeuft im Hintergrund, das Skript liest waehrenddessen die Anzeige am PC (und fotografiert KICAD im Edge)
+function DesktopLauf {
+  Aus "Lauf 4: Desktop in der Brille (Testbild des Servers) ..."
+  $dArg = @("`"$quest`"", '--pruefen', [Math]::Max($Bilder, 600), '--desktop', '--kopplung', "`"$tmp\kopplung.json`"", '--speicher', "`"$tmp\app`"", '--modell-lokal', "$port")
+  if ($OhneUnterlage) { $dArg += '--ohne-unterlage' }
+  if ($Pruefbilder) { New-Item -ItemType Directory -Force $Pruefbilder | Out-Null; $dArg += @('--bilder', "`"$Pruefbilder`"") }
+  $ap = Start-Process -FilePath $dotnet -ArgumentList $dArg -PassThru -NoNewWindow -RedirectStandardOutput "$logs\lauf4.log" -RedirectStandardError "$logs\lauf4_fehler.log"
+  $edge = 'C:\Program Files (x86)\Microsoft\Edge\Application\msedge.exe'
+  $gesehen = $null; $foto = $false
+  while (-not $ap.HasExited) {
+    try { $dz = Get '/api/xr/desktop/zustand'; if ($dz.aktiv -ge 1 -and -not $gesehen) { $gesehen = $dz } } catch { }
+    if ($gesehen -and $Pruefbilder -and -not $foto -and (Test-Path $edge)) {
+      $foto = $true
+      $bild = Join-Path $Pruefbilder 'desktop_6_anzeige_pc.png'
+      $ep = Start-Process -FilePath $edge -ArgumentList @('--headless=new', '--disable-gpu', '--hide-scrollbars', '--window-size=1600,950', "--user-data-dir=`"$tmp\edge`"",
+        '--virtual-time-budget=5000', "--screenshot=`"$bild`"", "$basis/") -PassThru -WindowStyle Hidden
+      if (-not $ep.WaitForExit(40000)) { Stop-Process -Id $ep.Id -Force -ErrorAction SilentlyContinue }
+    }
+    Start-Sleep -Milliseconds 250
+  }
+  $ap.WaitForExit()
+  $a4 = Get-Content "$logs\lauf4.log" -Encoding UTF8
+  $a4 | Where-Object { "$_" -match '^P4 (ok|Fehler|Laden)' } | ForEach-Object { Aus "  $_" }
+  if ($gesehen) {
+    $s = @($gesehen.stroeme)[0]
+    Aus ("Lauf 4: Anzeige am PC: Brille {0} sieht {1} ({2} x {3}), {4} Bilder/s, {5} kbit/s, erfassen {6} ms, kodieren {7} ms - ok" -f $s.name, $s.monitorName, $s.breite, $s.hoehe, $s.bilderJeSekunde, $s.kbitJeSekunde, $s.erfassMs, $s.kodierMs)
+  } else { Aus 'Lauf 4: KICAD hat keine mitsehende Brille angezeigt (GET /api/xr/desktop/zustand) - FEHLT' }
+  return ($ap.ExitCode -eq 0) -and [bool]$gesehen
+}
+
 $server = $null
 $ergebnis = 2
 $kopplung = $null
@@ -116,6 +153,7 @@ try {
   $inhalt = Post '/api/xr/kopplung/paket' @{ brille = 'PC-PRUEFUNG'; name = 'Pruefung am PC' }
   $kopplung = ($inhalt | ConvertFrom-Json).paket.kopplung
   [IO.File]::WriteAllText("$tmp\kopplung.json", $inhalt, $utf8)
+  if ($NurDesktop) { $ergebnis = if (DesktopLauf) { 0 } else { 1 } } else {   # V1c: nur Lauf 4
 
   # VR-Auftrag wie aus dem Kontextmenue eines Raums (Id des ersten Raumkoerpers): Lauf 1 muss in diesem Raum starten (Auftrag=Nr 1 ...)
   $koerper = (Invoke-WebRequest -UseBasicParsing -Uri "$basis/api/koerper" -TimeoutSec 300).Content
@@ -186,6 +224,8 @@ try {
     }
   }
   $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk) { 0 } else { 1 }
+  if (-not $OhneDesktop -and -not (DesktopLauf)) { $ergebnis = 1 }   # V1c: Lauf 4
+  }   # V1c: Ende von "nicht nur Lauf 4"
 } catch {
   Aus ('Fehler: ' + $_.Exception.Message)
   $ergebnis = 2

@@ -111,6 +111,9 @@ public static class KiEinordnung
         new("xr_labor", "Interface-Labor der Quest App (Modul XR, P6, XrLaborEndpunkte.cs: GET /api/xr/labor/katalog, /auswertung, /fragebogen, POST /fragebogen, /variante, /aufgabe): " +
             "liefert der App den Katalog der Stellschrauben, Prüfaufgaben und Varianten, wertet die Messprotokolle der Brille aus, speichert Fragebogen und startet eine Prüfaufgabe bzw. stellt eine Variante " +
             "in der Brille des Menschen ein – steuert ein Gerät des Menschen und liest dessen Bewegungen und Antworten, ohne Kern-Befehl und ohne Paket; nicht für die KI."),
+        new("xr_desktop", "Desktop in der Brille (Modul XR, XR-I, Quest App V1c, XrDesktop.cs: GET /api/xr/desktop, /api/xr/desktop/zustand, POST /api/xr/desktop/beenden): " +
+            "erfasst den ganzen Bildschirm des PCs und schickt ihn live an die gekoppelte Brille – greift über das Modell hinaus auf den Rechner und zeigt alles, was am " +
+            "Bildschirm steht; nur auf Anforderung der Brille des Menschen, beenden kann es der Mensch am PC. Nicht für die KI."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

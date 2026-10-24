@@ -10,7 +10,9 @@
     { "id": "wisch", "titel": "Wischgesten" },
     { "id": "pinch", "titel": "Pinch und Fang" },
     { "id": "komfort", "titel": "Komfort" },
-    { "id": "sitzung", "titel": "Sitzungsraum" }
+    { "id": "sitzung", "titel": "Sitzungsraum" },
+    { "id": "gesten", "titel": "Gesten: Hineinziehen und Wegwischen (rechte Hand, Handfläche nach links)" },
+    { "id": "desktop", "titel": "Desktop in der Brille" }
   ],
   "muster": [
     {
@@ -192,6 +194,66 @@
       "beschreibung": "So weit darf die Handfläche von waagrecht (Schnitt auf Höhe der Hand) bzw. senkrecht (Vertikalschnitt) abweichen.",
       "art": "zahl", "einheit": "°", "min": 5, "max": 45, "schritt": 1, "vorgabe": 25,
       "herkunft": "Annahme P5b (FlacheHandEinstellungen.ToleranzGrad)"
+    },
+    {
+      "schluessel": "gesten.hineinziehen.weg_m", "gruppe": "gesten", "titel": "Hineinziehen: Weg der Hand", "status": "app",
+      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links) von links nach rechts wischen, bis der Bildschirm des PCs hereinkommt; vorher folgt er der Hand.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.2,
+      "herkunft": "Christian 24.10.2026 (XR-I, mit Berichtigung: «von links nach rechts»); Vorgabe Annahme V1c (DesktopEinstellungen.Hinein.WegM)"
+    },
+    {
+      "schluessel": "gesten.hineinziehen.tempo_ms", "gruppe": "gesten", "titel": "Hineinziehen: Mindesttempo", "status": "app",
+      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung; ein langsames Ausholen zieht den Bildschirm nicht herein.",
+      "art": "zahl", "einheit": "m/s", "min": 0.1, "max": 3, "schritt": 0.05, "vorgabe": 0.45,
+      "herkunft": "Annahme V1c (DesktopEinstellungen.Hinein.TempoMs)"
+    },
+    {
+      "schluessel": "gesten.hineinziehen.handflaeche_grad", "gruppe": "gesten", "titel": "Hineinziehen: Lage der Handfläche", "status": "app",
+      "beschreibung": "So weit darf die Handfläche der rechten Hand von «nach links» abweichen (Röntgen-Hand: Handfläche nach vorn).",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1c (DesktopEinstellungen.Hinein.HandflaecheGrad)"
+    },
+    {
+      "schluessel": "gesten.wegwischen.weg_m", "gruppe": "gesten", "titel": "Wegwischen: Weg der Hand", "status": "app",
+      "beschreibung": "Gemeinsame Wegwisch-Geste der App (rechte Hand offen, Handfläche nach links, von rechts nach links): so weit muss die Hand wischen; der Bildschirm des PCs folgt ihr hinaus.",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.2,
+      "herkunft": "Christian 24.10.2026 («wir vereinheitlichen die wegwisch geste. auch da nutzen wir die wischbewegung von rechts nach links»); Vorgabe Annahme V1c (DesktopEinstellungen.Weg.WegM), mit V1a abzugleichen"
+    },
+    {
+      "schluessel": "gesten.wegwischen.tempo_ms", "gruppe": "gesten", "titel": "Wegwischen: Mindesttempo", "status": "app",
+      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung; ein langsames Ausholen wischt nichts weg.",
+      "art": "zahl", "einheit": "m/s", "min": 0.1, "max": 3, "schritt": 0.05, "vorgabe": 0.45,
+      "herkunft": "Annahme V1c (DesktopEinstellungen.Weg.TempoMs), mit V1a abzugleichen"
+    },
+    {
+      "schluessel": "gesten.wegwischen.handflaeche_grad", "gruppe": "gesten", "titel": "Wegwischen: Lage der Handfläche", "status": "app",
+      "beschreibung": "So weit darf die Handfläche der rechten Hand von «nach links» abweichen.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1c (DesktopEinstellungen.Weg.HandflaecheGrad), mit V1a abzugleichen"
+    },
+    {
+      "schluessel": "desktop.breite_m", "gruppe": "desktop", "titel": "Breite des Bildschirms", "status": "app",
+      "beschreibung": "Breite des virtuellen Bildschirms (entlang des Bogens); die Höhe folgt dem Seitenverhältnis des Monitors.",
+      "art": "zahl", "einheit": "m", "min": 0.5, "max": 4, "schritt": 0.05, "vorgabe": 1.4,
+      "herkunft": "Auftrag V1c (Startwert etwa 1.4 m, Annahme)"
+    },
+    {
+      "schluessel": "desktop.abstand_m", "gruppe": "desktop", "titel": "Abstand des Bildschirms", "status": "app",
+      "beschreibung": "So weit vor den Augen setzt sich der Bildschirm beim Hineinziehen (frontal zum Blick).",
+      "art": "zahl", "einheit": "m", "min": 0.4, "max": 4, "schritt": 0.05, "vorgabe": 1.1,
+      "herkunft": "Auftrag V1c (Startwert etwa 1.1 m, Annahme)"
+    },
+    {
+      "schluessel": "desktop.radius_m", "gruppe": "desktop", "titel": "Krümmung des Bildschirms (Radius)", "status": "app",
+      "beschreibung": "Radius des Bogens: klein = stark gebogen, gross = fast flach.",
+      "art": "zahl", "einheit": "m", "min": 0.8, "max": 20, "schritt": 0.1, "vorgabe": 2.0,
+      "herkunft": "Christian 24.10.2026 («ansicht von der metafunktion»: leicht gebogen); Vorgabe Annahme V1c"
+    },
+    {
+      "schluessel": "desktop.bildrate", "gruppe": "desktop", "titel": "Bilder je Sekunde", "status": "app",
+      "beschreibung": "Ziel der Bilder je Sekunde; der PC sendet nur Geändertes und nie mehr als zwei Bilder ohne Quittung der Brille, die Rate passt sich also dem WLAN an.",
+      "art": "zahl", "einheit": "1/s", "min": 1, "max": 30, "schritt": 1, "vorgabe": 12,
+      "herkunft": "Auftrag V1c (Ziel 10–15 Bilder/s); Vorgabe Annahme V1c"
     }
   ]
 }

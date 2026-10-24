@@ -12,9 +12,10 @@ namespace Hlks.Quest;
 ///   --bilder &lt;ordner&gt;       P4b, nur mit --pruefen: Prüfbilder des Sitzungsraums (je Abschnitt ein JPEG) in diesen Ordner (nie ins Repository: echte Projekte)
 ///   --auftrag &lt;json&gt;        P4b-Nachtrag, nur PC: ein VR-Auftrag wie vom PC beim Start, z. B. {"modus":"sitzungsraum","raum":"&lt;Id&gt;","ausschnitt":true,"nr":1}
 ///                            – damit lässt sich der Sitzungsraum auch mit --ohne-pc prüfen (Port 5130 belegt)
+///   --desktop                V1c, nur mit --pruefen: Prüflauf «Desktop in der Brille» (Gesten mit gedachter Hand, Bildschirm des PCs, Bildzeit, Prüfbilder desktop_*.jpg)
 /// </summary>
 sealed record Optionen(bool Simulator, int PruefBilder, string? Kopplung, string? Speicher, int? ModellLokal, bool Unterlage, bool OhnePc, string? BildOrdner = null,
-    string? Auftrag = null)
+    string? Auftrag = null, bool DesktopPruefen = false)
 {
     public static Optionen Lesen(string[] args)
     {
@@ -27,6 +28,6 @@ sealed record Optionen(bool Simulator, int PruefBilder, string? Kopplung, string
         if (args.Contains("--pruefen")) pruefen = int.TryParse(Wert("--pruefen"), out int n) && n > 0 ? n : 120;
         int? lokal = int.TryParse(Wert("--modell-lokal"), out int p) && p is >= 1 and <= 65535 ? p : null;
         return new Optionen(args.Contains("--simulator"), pruefen, Wert("--kopplung"), Wert("--speicher"), lokal, !args.Contains("--ohne-unterlage"),
-            args.Contains("--ohne-pc"), Wert("--bilder"), OperatingSystem.IsAndroid() ? null : Wert("--auftrag"));
+            args.Contains("--ohne-pc"), Wert("--bilder"), OperatingSystem.IsAndroid() ? null : Wert("--auftrag"), pruefen > 0 && args.Contains("--desktop"));
     }
 }

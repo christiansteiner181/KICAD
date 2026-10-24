@@ -175,3 +175,13 @@
 .xl-text { box-sizing: border-box; width: 100%; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); font-family: inherit; resize: vertical; }
 .xl-tlx { width: 84px; box-sizing: border-box; padding: 3px 4px; border: 1px solid var(--eingabe-rand); background: var(--eingabe); color: var(--text); border-radius: var(--radius); }
 @media (max-width: 640px) { .xl-zeile-eingabe, .xl-fb-zeile { grid-template-columns: 1fr; } .xl-status { margin-left: 0; } }
+/* Modul XR, XR-I «Desktop in der Brille» (Quest App V1c): Statusleiste und roter Rand, solange eine Brille den Bildschirm sieht (xr-desktop-status.js) */
+.sl-desktop { display: inline-flex; align-items: center; gap: 6px; padding: 0 4px 0 6px; border-radius: var(--radius); white-space: nowrap; }
+.sl-desktop[hidden] { display: none; }
+.sl-desktop.aktiv { background: color-mix(in srgb, var(--fehler) 18%, transparent); color: var(--fehler); font-weight: 600; }
+.sl-desktop.pausiert { color: var(--text-leise); }
+.sl-desktop.aktiv .sl-desktop-punkt { animation: sl-desktop-puls 1.2s ease-in-out infinite; }
+.sl-desktop-beenden { border: 1px solid currentColor; background: none; color: inherit; border-radius: var(--radius); padding: 0 6px; cursor: pointer; font: inherit; font-weight: 600; }
+.sl-desktop-beenden:hover { background: var(--ob-hover); }
+@keyframes sl-desktop-puls { 0%, 100% { opacity: 1; } 50% { opacity: .25; } }
+html.xr-desktop-aktiv body::after { content: ''; position: fixed; inset: 0; border: 3px solid var(--fehler); pointer-events: none; z-index: 2147483000; }

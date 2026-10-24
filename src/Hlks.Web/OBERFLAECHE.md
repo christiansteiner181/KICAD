@@ -2580,3 +2580,88 @@ Der Dialog passt sich dem Fenster an (`width: min(760px, 100vw − 16px)`, `max-
 - **Nur mit Brille und App (P5) prüfbar:** ob die App die Stellschrauben, Varianten und Aufgaben versteht und die Messprotokolle mit `app`, `varianten`, `erfolg` sendet; wie sich die Werte anfühlen (die Vorgaben der Gruppen «Schwebende Apps» und «Komfort» sind Annahmen).
   Seit P5b prüft `werkzeuge\quest_pruefen.ps1` am PC, dass die App den Katalog nimmt, Aufgaben abspielt und die Messprotokolle mit `app`, `varianten`, `erfolg` ankommen (Abschnitt «Quest App P5b»); das Gefühl bleibt Sache der Brille.
 - **Anleitung:** `zb-xr-labor-stellschrauben`, `zb-xr-labor-profile`, `zb-xr-labor-varianten-aufgaben`, `zb-xr-labor-auswertung`, `zb-xr-labor-fragebogen` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1c: Desktop in der Brille (XR-I; Christian 24.10.2026: «ein wisch mit der rechten hand mit der handfläche nach links gerichtet, zieht den verbundenen Desktop in das bild. vr bleibt starr im hintergrund.», «ich habe an die ansicht von der metafunktion gedacht.», «bedienung erfolgt über maus und tastatur des pc's»)
+
+Wie die Desktop-Ansicht von Meta: Der **ganze Bildschirm** des gekoppelten PCs erscheint in der Brille live als grosser, leicht gebogener Bildschirm. **Bedient wird mit
+Maus und Tastatur am PC**; die Brille zeigt nur an, der Mauszeiger ist im Bild. **Aus der Brille gehen keine Eingaben an den PC.** Meta-eigene Apps lassen sich nicht
+in die App einblenden; die Ansicht ist darum in der App nachgebaut. Regeln ohne StereoKit in `src/Hlks.Xr/Desktop` (`DesktopGeste.cs`, `DesktopAnsicht.cs`,
+`DesktopFormat.cs`, `DesktopEinstellungen.cs`, `PruefHand.cs`) und `src/Hlks.Xr/Netz/DesktopVerbindung.cs`; die App in `src/Hlks.Quest/DesktopBildschirm.cs` und
+`QuestApp.Desktop.cs`; am PC `src/Hlks.Web/XrDesktop.cs`, `XrDesktopErfassung.cs`, `XrDesktopKodierung.cs`, Anzeige `wwwroot/js/oberflaeche/xr-desktop-status.js`
+(Regeln `xr-desktop-text.js`). Keine Normwerte – alle Zahlen sind Einstellungen der Bedienung (Annahmen V1c).
+
+### Gesten (Berichtigung Christian 24.10.2026: «die wischbewegung natürlich von links nach rechts. heraus schieben von rechts nach links.»)
+| Geste | Wirkung |
+| --- | --- |
+| **Rechte Hand offen, Handfläche nach links, Wisch von links nach rechts** (Hineinziehen) | Die Handfläche «zieht» den Bildschirm mit: er kommt von **links** ins Bild, folgt der Hand und setzt sich **frontal** vor den Blick (Abstand `desktop.abstand_m`, 1.1 m; Mitte 10 cm unter Augenhöhe). Bricht die Hand ab, gleitet er zurück. |
+| **Dieselbe Haltung, Wisch von rechts nach links** (Wegwischen – die gemeinsame Wegwisch-Geste der App, Christian 24.10.2026: «wir vereinheitlichen die wegwisch geste») | Die Handfläche schiebt den Bildschirm nach links aus dem Bild; die Übertragung pausiert. |
+| **Runder Knopf «×»** links neben dem Griff (Fingerspitze) | wie Wegwischen |
+| **Kapsel-Griff** unter dem Bildschirm (Pinch fassen) | Verschieben; der Bildschirm dreht sich dabei zum Kopf. Losgelassen bleibt er im Raum stehen. |
+| **Runder Knopf «1/2»** rechts neben dem Griff (nur bei mehreren Monitoren) | nächster Monitor des PCs |
+
+- **Regel** (`DesktopGeste.cs`): Hand offen, kein Pinch, Normale der Handfläche höchstens `gesten.hineinziehen.handflaeche_grad` (45°) neben «nach links»; Weg in
+  Wischrichtung mindestens `…weg_m` (0.20 m) in höchstens 0.7 s, mittleres Tempo mindestens `…tempo_ms` (0.45 m/s; oder über die letzten 0.20 m – wer halb zieht, kurz
+  hält und zügig weiterzieht, löst aus), quer höchstens 60 % des Wegs, die **linke Hand** bewegt sich währenddessen höchstens 8 cm. Der Bildschirm folgt der Hand ab 20 %
+  des Wegs. Nach einer Auslösung zählt 1 s lang keine der beiden Gesten (das Zurückholen der Hand schiebt ihn nicht gleich wieder hinaus). Dasselbe mit
+  `gesten.wegwischen.*` für das Wegwischen.
+- **Lösen nicht aus** (Tests `tests/Hlks.Xr.Tests/DesktopGesteTests.cs`): Ausholen vor dem Wisch, langsam oder kurz, beide Hände zugleich, die linke Hand, Pinch + Wisch
+  (Drehen, Blättern, Etage), Röntgen-Hand (Handfläche nach vorn), Faust, die Hebegeste (beide Handflächen hoch) und das Wegschieben mit zwei Händen, die Testgesten des
+  Gestenlabors, 80 Zufallsbewegungen. Umgekehrt lösen Hineinziehen und Wegwischen weder Pinch + Wisch noch (im Gestenlabor) Hebegeste und Wegschieben aus.
+- **Die VR-Szene bleibt starr**, solange der Bildschirm da ist, kommt oder geht und während der Geste: kein Springen (auch kein Strahl), kein Drehen, kein Stick, keine Wische
+  (Blättern, Etage, Wegwischen der Apps), am Sitzungstisch keine Griffe und kein Antippen. Die schwebenden Apps bleiben bedienbar.
+- **Stand V1a:** Die gemeinsame Wegwisch-Geste baut V1a in `src/Hlks.Xr/Bedienung/Wegwischen.cs`. Bis zur Zusammenführung erkennt V1c sie selbst
+  (`DesktopWegwischen`, hinter `IWegwischErkennung`; Einhängepunkt `DesktopGesten(…, weg: …)`). Der Bildschirm meldet sich als **wegwischbares Ziel**
+  (`DesktopAnsicht.Ziel`: Id «desktop», Fläche, Zeit des Einblendens).
+
+### Der Bildschirm in der Brille
+- **Form:** Bogenlänge `desktop.breite_m` (1.4 m), Höhe nach dem Seitenverhältnis des Monitors, Ausschnitt eines Zylinders mit Radius `desktop.radius_m` (2.0 m; der
+  Mittelpunkt liegt hinter dem Kopf – «leicht gebogen»). Glasrand (neutral, durchscheinend, gerundete Ecken), darunter Griff und Knöpfe wie die Fensterteile von V1a.
+- **Im Raum verankert**, nicht am Kopf. Beim nächsten Hineinziehen setzt er sich wieder frontal.
+- **Schärfe:** breitere Monitore verkleinert der PC auf 1920 Punkte Breite (GDI HALFTONE); ohne Mipmaps, linear gefiltert – auf 1.4 m in 1.1 m wird ein 1920 breites
+  Bild nur etwa 1.2-fach verkleinert (Annahme V1c, an der Brille zu prüfen).
+- **Texturen:** je 512 × 512 Punkte eine Textur («Feld»; 1920 × 1080 = 12 Felder = 12 Zeichenaufrufe, dazu Rahmen, Griff und Knöpfe). Dekodiert wird im Hintergrund;
+  je Bild lädt die App höchstens 2 geänderte Felder hoch, der Rest folgt im nächsten Bild.
+- **Hinweise:** «Verbinde mit dem Bildschirm des PCs …», «PC nicht erreichbar – neuer Versuch …», «Nicht mit einem PC gekoppelt» auf der Fläche; «Der Bildschirm wurde
+  am PC beendet. Zum neuen Verbinden wieder hineinziehen.» als Hinweiszeile.
+
+### Übertragung (`XrDesktop.cs`; nur über den Netzzugang)
+- `GET /api/xr/desktop` – WebSocket, **nur über den Netzzugang** (TLS, Pforte, Kopplung, Marke `XrImNetz`); ohne gültigen Schlüssel 401, ohne WebSocket 400. Die App
+  verbindet erst beim Hineinziehen und sendet `start { bildrate, maxBreite, monitor?, pausiert? }` (innert 10 s, sonst getrennt).
+- **Nachrichten** (Text, `typ` und `fassung` 1): Brille → PC `start`, `pause`, `weiter`, `quittung { nr }`, `monitor { id }`, `bildrate { wert }`, `neu`, `tschuess`;
+  PC → Brille `bildschirm { monitore[{ id, name, breite, hoehe, haupt }], monitor, breite, hoehe, kachel, bildrate }`, `fehler { meldung }`, binär die Bilder.
+- **Bilder** (Format «HXD1», `src/Hlks.Xr/Desktop/DesktopFormat.cs`): Kacheln 64 × 64; gesendet werden nur Kacheln, die sich seit dem letzten gesendeten Bild geändert
+  haben (das erste Bild und nach einem Monitorwechsel alle), je Kachel BGR mit Vorfilter «Sub», alles zusammen mit Deflate gepackt (Bordmittel, kein Paket).
+- **Bildrate:** `desktop.bildrate` (12, Ziel 10–15), höchstens 30. Höchstens **2 Bilder ohne Quittung** unterwegs – so passt sich die Rate an WLAN und Brille an. Steht
+  der Bildschirm still, geht nichts über das Netz.
+- **Pause:** ausgeblendet `pause` – der PC erfasst nichts mehr; nach 60 s ohne Bildschirm trennt die App. **Ende** bei Trennung. **Ersetzen:** eine neue Verbindung derselben
+  Brille ersetzt die alte (4002); höchstens 2 Brillen zugleich (sonst 1013); Widerruf der Kopplung trennt (4001); Netzzugang aus trennt (1001).
+- **Erfassung** (`XrDesktopErfassung.cs`, hinter `IBildschirmQuelle`): unter Windows GDI (BitBlt bzw. StretchBlt in eine DIB-Section), DPI-bewusst je Monitor, Monitore
+  über EnumDisplayMonitors (Hauptbildschirm zuerst), Mauszeiger mit DrawIconEx eingezeichnet. **Im Testlauf (`HLKS_TEST`) und mit `HLKS_XR_DESKTOP=testbild` nur ein
+  Testbild** (Fenster, Schrift in drei Grössen, Linienmuster, Farbfelder, Zähler, Uhr, kreisender Zeiger; zwei Monitore). Auf Linux kein Bildschirm.
+  Gemessen am 24.10.2026 an einem Notebook mit 2880 × 1800 (200 %): eine Erfassung mit Verkleinern auf 1920 × 1200 dauert rund 60 ms (BitBlt in voller Grösse allein
+  40 ms) – bei 12 Bildern/s gut die Hälfte eines Prozessorkerns. Schneller und mit geänderten Rechtecken ginge es mit «DXGI Desktop Duplication» (ohne Paket, über COM; offen).
+- **Keine Aufzeichnung:** nichts geht auf die Platte; nur das zuletzt gesendete Bild steht im Speicher (für den Vergleich).
+
+### Anzeige am PC
+- **Statusleiste:** solange eine Brille mitsieht, **rot «● Brille sieht den Bildschirm»** mit pulsierendem Punkt, Knopf **«Beenden»** und ein **roter Rand** ums ganze
+  Fenster; Tooltip mit Brille, Monitor, Bildern/s und kbit/s. Ausgeblendet in der Brille: grau «Bildschirm in der Brille pausiert» (kein Rand). Ohne Brille: nichts.
+- **«Beenden»** → `POST /api/xr/desktop/beenden` (nur am PC): trennt alle Übertragungen mit 4010 «am PC beendet»; die Brille schiebt den Bildschirm hinaus und verbindet
+  erst nach dem nächsten Hineinziehen wieder. Meldung «Übertragung an die Brille beendet.».
+- `GET /api/xr/desktop/zustand` (nur am PC): `{ erfassung, bildschirme[], verbunden, aktiv, stroeme[{ id, kopplung, brille, name, seit, gestartet, pausiert, monitor,
+  monitorName, breite, hoehe, bildrate, bilderJeSekunde, kbitJeSekunde, bilder, bytes, kacheln, erfassMs, kodierMs }] }`. Die Statusleiste fragt alle 2 s.
+
+### Stellschrauben (Katalog `kataloge/xr_stellschrauben.json`, Gruppen «gesten» und «desktop»; im Dialog «XR-Labor»)
+`gesten.hineinziehen.weg_m` 0.2, `.tempo_ms` 0.45, `.handflaeche_grad` 45; `gesten.wegwischen.weg_m` 0.2, `.tempo_ms` 0.45, `.handflaeche_grad` 45 (Namen wie V1a);
+`desktop.breite_m` 1.4, `desktop.abstand_m` 1.1, `desktop.radius_m` 2.0, `desktop.bildrate` 12. Feste Werte (Annahmen V1c, `DesktopEinstellungen`): Zeitfenster 0.7 s,
+andere Hand 8 cm, Sperre 1 s, Höhe −0.10 m, grösste Breite 1920 Punkte, Mipmaps aus, Trennen nach 60 s, 2 Felder je Bild. Die Grenze des Katalogs ist seit V1c
+56 Stellschrauben (vorher 48; mit Varianten und Aufgabe höchstens 64 – Grenze des Kanals).
+
+**KI:** reine Rechner-Funktion, verboten (`KiEinordnung.RechnerFunktionen` › `xr_desktop`), kein MCP-Werkzeug.
+
+### Prüfen
+- `tests/Hlks.Xr.Tests/DesktopGesteTests.cs`, `DesktopAnsichtTests.cs` (Gesten, Lage, Griff, Knöpfe, Ziel, Format in der App); `tests/Hlks.Web.Tests/XrDesktopTests.cs`
+  (Kodierung hin und zurück, nur Geänderte, Testbild, ohne Kopplung kein Bild, Flusskontrolle, Pause, Ende, Monitor, Ersetzen, Widerruf, Beenden, Ausschalten, App-Verbindung,
+  Katalog, KI; Echt-Test der GDI-Erfassung nur mit `HLKS_XR_DESKTOP_ECHT=1`); Node `xr-desktop.test.mjs`; Browser `xr-desktop.browser.mjs` (Anzeige und «Beenden»).
+- `werkzeuge/quest_pruefen.ps1` Lauf 4 (`-NurDesktop` bzw. `-OhneDesktop`): Prüflauf der App mit gedachter Hand (`--desktop`) gegen das Testbild des Servers, Zeile
+  «P4 ok: Desktop: …» mit Bildzeit ohne und mit Bildschirm, Hochladen, Dekodieren, Bildern/s, kbit/s; dazu prüft das Skript die Anzeige am PC. Prüfbilder `desktop_*.jpg`.
+- **Nur mit der Brille zu prüfen:** WLAN-Bandbreite, Lesbarkeit der Schrift, 72 Hz mit Bildschirm, wie sich Hineinziehen und Wegwischen anfühlen.

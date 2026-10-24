@@ -197,3 +197,27 @@ Das Interface-Labor in der App (`entwurf/modul-xr.md`, Zeile P5, «Ergänzungen�
   `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).
 - P4b: Den Tisch findet die App noch nicht selbst (`XR_EXT_spatial_plane_tracking`) und erkennt keine Marker (`XR_EXT_spatial_marker_tracking`); beides nur auf Machbarkeit
   geprüft (Bericht P4b). Die Fliessrichtung der Probe-Ebene folgt der Reihenfolge der Leitungspunkte, nicht dem Netzdurchlauf (`netz_folgen`).
+
+## Desktop in der Brille (XR-I, V1c)
+
+Der Bildschirm des gekoppelten PCs als grosser, leicht gebogener Bildschirm im Raum, wie die Desktop-Ansicht von Meta (Christian 24.10.2026; `entwurf/modul-xr.md`,
+«XR-I – Desktop in der Brille»). Bedient wird mit Maus und Tastatur am PC, die Brille zeigt nur an. Die App: `src/Hlks.Quest/DesktopBildschirm.cs`,
+`QuestApp.Desktop.cs`; am PC `src/Hlks.Web/XrDesktop.cs` (Server), `XrDesktopKodierung.cs` (eigene Umsetzung des Formats), `XrDesktopErfassung.cs`; Bedienung
+in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1c».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Desktop/DesktopGeste.cs` | `SeitenWisch`, `SeitenWischZustand`, `SeitenWischStand`, `DesktopHaende`, `IWegwischErkennung`, `DesktopWegwischen`, `DesktopGesten`, `DesktopGestenStand` | Hineinziehen (rechte Hand offen, Handfläche nach links, links → rechts) und Wegwischen (dieselbe Haltung, rechts → links) mit Fortschritt (der Bildschirm folgt der Hand), andere Hand ruhig, Sperre und Gegensperre. **Einhängepunkt** für V1a's gemeinsames Wegwischen: `IWegwischErkennung` (Parameter `weg` von `DesktopGesten`) |
+| `Desktop/DesktopAnsicht.cs` | `DesktopMasse`, `DesktopFlaeche`, `DesktopNetz`, `DesktopPhase`, `DesktopLage`, `DesktopAnsicht`, `WegwischZiel`, `DesktopBedienStand` | Zylinderausschnitt (Bogen, Höhe, Radius), Netze je Feld und Glasrahmen mit gerundeten Ecken, Platz frontal, Kommen von links und Hinausgleiten nach links (Drehung um die Augen), Setzen, verankert, Griff (verschieben, zum Kopf drehen), Schliessen- und Monitor-Knopf, wegwischbares Ziel |
+| `Desktop/DesktopFormat.cs` | `DesktopFormat`, `DesktopKopf`, `DesktopRaster`, `DesktopPuffer`, `DesktopFormatFehler` | Bild «HXD1» (Kopf 32 Byte, Kacheln 64 px, BGR mit Vorfilter «Sub», Deflate) lesen und in Felder RGBA (512 px, je eine Textur) schreiben; Stand je Feld, Sperre je Feld |
+| `Desktop/DesktopEinstellungen.cs` | `DesktopEinstellungen`, `SeitenWischEinstellungen` | Stellschrauben `gesten.hineinziehen.*`, `gesten.wegwischen.*`, `desktop.*` mit Grenzen; feste Werte (Zeitfenster, andere Hand, Sperre, Höhe, Breite in Punkten, Mipmaps, Trennen, Hochladen) |
+| `Desktop/PruefHand.cs` | `PruefHand` | gedachte offene Hand für den Prüflauf am PC (`--desktop`) |
+| `Netz/DesktopVerbindung.cs` | `DesktopVerbindung`, `DesktopZustand`, `DesktopMonitor`, `DesktopOptionen`, `DesktopRegeln` | WebSocket `/api/xr/desktop` mit Pinning und Schlüssel: start, Pause/weiter, Quittung nach dem Dekodieren (Flusskontrolle), Monitor, Bildrate, neu; Dekodieren im Hintergrund; Wiederverbinden, nicht nach 4010 (am PC beendet), 4001, 4002, 401 |
+
+- **Geändert für V1c:** `Labor/LaborWerte.cs` kennt die Schlüssel von `DesktopEinstellungen` (vierter Satz `Desktop`, Schichten Katalog › Profil › live wie die übrigen).
+- **Annahmen V1c** (Stellschrauben, wo der Katalog sie führt; sonst benannte Konstanten): Weg 0.20 m, Tempo 0.45 m/s, Handfläche 45°, Zeitfenster 0.7 s, andere Hand
+  8 cm, Sperre 1 s, Folgen ab 20 % des Wegs; Bildschirm 1.4 m breit, 1.1 m vor den Augen, 10 cm unter Augenhöhe, Radius 2.0 m, ganz draussen 95° links, Setzen 0.35 s,
+  Hinausgleiten 0.3 s; Griff 16 × 2.2 cm, Knöpfe Radius 2.2 cm; 12 Bilder/s, höchstens 1920 Punkte breit, ohne Mipmaps, 2 Felder je Bild, Trennen nach 60 s.
+- **Tests:** `DesktopGesteTests` (Auslösen in jeder Körperrichtung, Folgen, Abbruch, Ausholen, Zurückholen, zwei Hände, linke Hand, Pinch, Handlagen, Hebegeste und
+  Wegschieben, Testgesten des Labors, 80 Zufallsbewegungen, umgekehrt Pinch + Wisch und Gestenlabor, gedachte Hand des Prüflaufs, Stellschrauben), `DesktopAnsichtTests`
+  (Form, Netze, Platz, Kommen und Gehen, Griff, Knöpfe, Ziel, Format und Puffer); gegen den Server `tests/Hlks.Web.Tests/XrDesktopTests.cs`.
