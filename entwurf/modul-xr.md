@@ -162,6 +162,8 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 - Anwahl durch Berührung mit der Fingerspitze (Leuchten, Ton), dann öffnet die Glas-App; der Zeigefinger zeigt beim Annähern einen Zeiger, das Symbol hebt sich, der Name erscheint als Tooltip.
 - Die senkrechte Registerleiste entfällt (Christian, 24.10.2026: «Ja, die Registerleiste fällt weg; gewechselt wird über die Hebegeste und die Symbole.»). Ausblenden ohne Wahl per Gegenbewegung bzw. Wartezeit (Annahme).
 
+**Hinweistexte frei schwebend** (Christian, 24.10.2026: «hinweistexte frei schwebend.»): Hinweise und Statusmeldungen ohne Kasten oder Glas im Raum, dort, wo sie hingehören (Gestenhinweis bei der Hand, Meldung beim Objekt, Status unter dem Blickzentrum), lesbar durch weichen dunklen Schein hinter der Schrift, kurz, sanft ein- und ausgeblendet, nie über Apps oder Symbolen. Annahme: Die Aufgabenkarte bleibt eine kleine Glaskarte, nur ihre Hinweiszeile schwebt frei.
+
 **Gestenlabor** (Christian, 24.10.2026: «ev. im Labor einen bereich für gestenerkennung machen. so dass ich dort eine geste für eine funktion vorzeigen kann.»):
 - In der App eine Labor-App «Gesten»: Funktion wählen, Geste 3- bis 5-mal vorzeigen (Start per Knopf mit Countdown und Ton, Ende bei ruhigen Händen), Güte und Verwechslungsgefahr mit anderen Gesten sehen, live testen, übernehmen.
 - In KICAD im Dialog «XR-Labor» ein Register «Gesten»: Liste mit Funktion, Beispielen, Güte, Konflikten; löschen, umbenennen, aktivieren, als JSON aus- und einlesen.
