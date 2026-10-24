@@ -165,6 +165,7 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
 **Brillentest V1 (24.10.2026, Stand d5a8df6, Test_praxis, Kabel)** – Christian: «das ist schon sehr gut. die apps solten beim hochwischen etwas weiter oben sein. die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein. das modell soll nur mit einem griff bewegt und gezoomt werden. nach tippen einer App sollte erneutes auswählen gesperrt sein, dass beim neuanordnen der apps nicht gleich ein nächstes gewählt wird.»
 - Protokoll der Brille: Hebegeste 19×, Wegwischen 26×, 33 Etagenwechsel, ein Marker gesetzt und am PC angekommen, Sitzungstisch mit echtem Tisch (Passthrough).
 - Befund Leistung: am Sitzungstisch mit «Alle Etagen» 600–740 Tsd. Dreiecke und 52–63 Aufrufe → 46–56 Hz (mit eigenem Geschoss 72 Hz). Fang beim Messen bzw. Zeigen im Mittel 12 ms, einmal 1 s → Ruckler.
+- Nachtrag Christian: «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein.» → im Sitzen zusätzlich höher (eigene Stellschraube).
 - Umsetzung V1d: Symbolfeld höher, App-Tafel immer mittig, ein Griff am Tisch, Sperre nach der Wahl einer App, Leistung (Tisch «Alle Etagen», Fang).
 
 **XR-I – Desktop in der Brille** (Christian, 24.10.2026: «ein wisch mit der rechten hand mit der handfläche nach links gerichtet, zieht den verbundenen Desktop in das bild. vr bleibt starr im hintergrund.»; Inhalt: «Ganzer Bildschirm»; Bedienung: «ich habe an die ansicht von der metafunktion gedacht.»):
