@@ -21,8 +21,12 @@ public sealed class HandBeruehrZustand
     internal double SperreBis = double.NegativeInfinity;
     internal readonly HashSet<string> Vorher = new(StringComparer.Ordinal);
     internal readonly HashSet<string> Gesperrt = new(StringComparer.Ordinal);
-    /// <summary>Nach einer Wahl: nichts wählt mehr, bis keine Berührung mehr besteht.</summary>
+    /// <summary>Nach einer Wahl: nichts wählt mehr, bis das Feld ruht und keine Berührung mehr besteht (V1d: seit «symbole.wahl_frei_s»).</summary>
     internal bool NachWahl;
+    /// <summary>V1d: seit wann (s) nach einer Wahl keine Berührung mehr besteht und das Feld ruht; null = noch nicht.</summary>
+    internal double? FreiSeit;
+    /// <summary>V1d: ist die Wahl gerade gesperrt (nach einer Wahl, bis Feld und Hand frei sind)?</summary>
+    public bool WahlGesperrt => NachWahl;
 }
 
 /// <summary>Ergebnis eines Schritts: gewähltes Symbol (einmal) bzw. null; Nähe je Symbol (0 … 1, für Leuchten); berührt (tiefste Eindringung) bzw. null; gesperrt.</summary>
@@ -73,8 +77,10 @@ public static class HandBeruehrung
     /// Ein Schritt je Bild: haende = Gelenke der linken und rechten Hand (null = nicht erkannt), kugeln = die Symbole, gesteLaeuft = Hebegeste bzw. Wegwischen
     /// läuft in diesem Bild (sperrt bis <see cref="SymbolEinstellungen.BeruehrSperreS"/> danach), e = Stellschrauben. Siehe Dateikopf.
     /// </summary>
+    /// V1d: feldBewegt = das Feld ordnet sich gerade neu (weicht aus, kehrt zurück; <see cref="AppSymbole.Bewegt"/>) – nach einer Wahl zählt keine Berührung, bis das
+    /// Feld ruht UND die Hand alle Symbole mindestens <see cref="SymbolEinstellungen.WahlFreiS"/> verlassen hat (auch wenn das Feld unter der ruhenden Hand durchgleitet).
     public static HandBeruehrErgebnis Schritt(HandBeruehrZustand z, double t, IReadOnlyList<IReadOnlyDictionary<string, Vec3>?> haende, IReadOnlyList<BeruehrKugel> kugeln,
-        bool gesteLaeuft, SymbolEinstellungen? e = null)
+        bool gesteLaeuft, SymbolEinstellungen? e = null, bool feldBewegt = false)
     {
         e ??= new SymbolEinstellungen();
         if (gesteLaeuft) z.SperreBis = Math.Max(z.SperreBis, t + e.BeruehrSperreS);
@@ -91,7 +97,16 @@ public static class HandBeruehrung
         }
         // gesperrte Berührungen lösen sich, wenn die Hand das Symbol losgelassen hat
         z.Gesperrt.RemoveWhere(id => !tiefe.ContainsKey(id));
-        if (z.NachWahl && tiefe.Count == 0) z.NachWahl = false;
+        if (z.NachWahl)
+        {
+            // V1d: frei erst, wenn das Feld ruht und keine Berührung mehr besteht – und das seit «symbole.wahl_frei_s»
+            if (feldBewegt || tiefe.Count > 0) z.FreiSeit = null;
+            else
+            {
+                z.FreiSeit ??= t;
+                if (t - z.FreiSeit.Value >= e.WahlFreiS - 1e-9) { z.NachWahl = false; z.FreiSeit = null; }
+            }
+        }
         string? gewaehlt = null;
         if (gesperrt || z.NachWahl) z.Gesperrt.UnionWith(tiefe.Keys);
         else
@@ -101,6 +116,7 @@ public static class HandBeruehrung
             {
                 gewaehlt = frei.OrderByDescending(x => x.Value).ThenBy(x => x.Key, StringComparer.Ordinal).First().Key;
                 z.NachWahl = true;
+                z.FreiSeit = null;
                 z.Gesperrt.UnionWith(tiefe.Keys);
             }
         }

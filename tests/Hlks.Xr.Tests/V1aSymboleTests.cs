@@ -300,15 +300,15 @@ public class V1aSymboleTests
         {
             Nah(-s.Lage.Mitte.Z, 0.6, 0.031);                                          // 0.6 m vor den Augen (Bezug: Mitte der Augen, waagrecht in Körperrichtung)
             Assert.InRange(s.Lage.Mitte.X, -0.25, 0.25);                               // frontal
-            Assert.True(s.Lage.Mitte.Y <= Auge.Y - 0.019);                             // die oberste Reihe nicht über Augenhöhe
+            Assert.True(s.Lage.Mitte.Y <= Auge.Y + 0.08 + 1e-9);                       // V1d: die oberste Reihe höchstens 8 cm über den Augen (Feld 0.10 m höher)
             Nah(s.Lage.Normale.Skalar((Auge - s.Lage.Mitte).Einheit()), 1, 1e-9);     // zum Kopf gewandt
         }
         Nah(p.Average(x => x.Lage.Mitte.X), 0, 0.03);                                  // zentriert
         var hoehen = p.Select(x => x.Lage.Mitte.Y).ToList();
         Assert.InRange(hoehen.Max() - hoehen.Min(), 0.55, 0.65);                        // über etwa 0.6 m verteilt
-        Nah((hoehen.Max() + hoehen.Min()) / 2, Auge.Y - 0.32, 0.03);                   // senkrechte Mitte (Stellschraube)
+        Nah((hoehen.Max() + hoehen.Min()) / 2, Auge.Y - 0.22, 0.03);                   // senkrechte Mitte (Stellschraube; V1d 0.22 statt 0.32 m)
         // höchstens drei Reihen, locker: keine gemeinsame Grundlinie, Reihen gegeneinander versetzt, Tiefe gestaffelt
-        var reihen = p.GroupBy(x => Math.Round((x.Lage.Mitte.Y - (Auge.Y - 0.62)) / 0.3)).ToList();
+        var reihen = p.GroupBy(x => Math.Round((x.Lage.Mitte.Y - (Auge.Y - 0.52)) / 0.3)).ToList();
         Assert.True(reihen.Count <= 3);
         Assert.True(hoehen.Select(h => Math.Round(h, 3)).Distinct().Count() >= 4);
         Assert.True(p.Select(x => Math.Round(x.Lage.Mitte.Z, 3)).Distinct().Count() >= 3);
@@ -361,9 +361,9 @@ public class V1aSymboleTests
         for (int i = 0; i < mit.Count; i++)
             for (int j = i + 1; j < mit.Count; j++)
                 Assert.True(mit[i].Lage.Mitte.Abstand(mit[j].Lage.Mitte) >= 0.12, $"{mit[i].Id}/{mit[j].Id}");
-        // stehend am Tisch genügt der Platz: keine Änderung
-        var stehend = AppSymbole.Plaetze(Ids, Auge, Blick, e, M, untergrenze: 0.83);
-        Assert.All(stehend, s => Nah(s.Lage.Mitte.Abstand(AppSymbole.Plaetze(Ids, Auge, Blick, e, M).Single(x => x.Id == s.Id).Lage.Mitte), 0, 1e-12));
+        // stehend am Tisch (V1d: Mitte «symbole.hoehe_tisch_m» unter den Augen): genügt der Platz, ist es das Feld ohne Untergrenze mit dieser Mitte
+        var stehend = AppSymbole.Plaetze(Ids, Auge, Blick, e, M, untergrenze: 0.5);
+        Assert.All(stehend, s => Nah(s.Lage.Mitte.Abstand(AppSymbole.Plaetze(Ids, Auge, Blick, e with { HoeheM = e.HoeheTischM }, M).Single(x => x.Id == s.Id).Lage.Mitte), 0, 1e-12));
     }
 
     [Fact]

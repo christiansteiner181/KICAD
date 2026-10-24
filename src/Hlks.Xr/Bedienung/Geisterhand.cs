@@ -9,7 +9,7 @@
 namespace Hlks.Xr.Bedienung;
 
 /// <summary>Geste, die eine Geisterhand vorführt.</summary>
-public enum GeisterGeste { Antippen, Blaettern, Wegwischen, Greifen, Heben }
+public enum GeisterGeste { Antippen, Blaettern, Wegwischen, Greifen, Heben, Zoomen, Drehknopf }
 
 /// <summary>Zustand der Zögern-Erkennung einer Hand.</summary>
 public sealed class ZoegernZustand
@@ -40,8 +40,17 @@ public static class Geisterhand
     public const double AnlaufM = 0.08;
     /// <summary>Blättern und Wegwischen: Weg der Hand (m), über dem Mindestweg eines Wischs.</summary>
     public const double WegM = 0.22;
-    /// <summary>Blättern läuft so weit vor der Fläche (m).</summary>
+    /// <summary>Blättern läuft so weit vor der Fläche (m) – bis V1d mit Pinch.</summary>
     public const double VorFlaecheM = 0.07;
+    /// <summary>V1d: Blättern auf der Tafel (ohne Pinch) läuft so weit vor der Fläche (m), innerhalb von «tafel.blaettern_abstand_m».</summary>
+    public const double BlaetternVorM = 0.02;
+
+    /// <summary>Vektor v um die Achse a (Einheit) um den Winkel w (rad, rechte Hand) drehen (Rodrigues).</summary>
+    static Vec3 Drehen(Vec3 v, Vec3 a, double w)
+    {
+        double c = Math.Cos(w), s = Math.Sin(w);
+        return v * c + a.Kreuz(v) * s + a * (a.Skalar(v) * (1 - c));
+    }
 
     /// <summary>
     /// Ein Schritt je Bild und Hand: ort = Fingerspitze, ziel = Schlüssel des Ziels unter der Hand (null = keines), aktion = in diesem Bild ausgelöst oder Pinch.
@@ -237,10 +246,29 @@ public static class Geisterhand
             }
             case GeisterGeste.Blaettern:
             {
-                // Pinch vor der Fläche, schnell von rechts nach links (nächste Seite), dann kurz stehen
+                // V1d (Christian 24.10.2026: «eine swap bewegung … soll in einem aktiven fenster blättern»): die Hand ohne Pinch knapp vor der Fläche (BlaetternVorM),
+                // schnell von rechts nach links (nächste Seite), dann kurz stehen – wie auf einem Tablet (bis V1d Pinch + Wisch 7 cm davor)
                 var s = Glatt(u / 0.55);
-                var soll = ziel.Mitte + ziel.Normale * VorFlaecheM + ziel.Rechts * (WegM / 2 - WegM * s);
+                var soll = ziel.Mitte + ziel.Normale * BlaetternVorM + ziel.Rechts * (WegM / 2 - WegM * s);
+                return new GeisterBild(Verschoben(spitze, soll, false), deck);
+            }
+            case GeisterGeste.Zoomen:
+            {
+                // V1d, ein Griff, Variante «zweite_hand»: die andere Hand pincht neben der Griffhand (ziel.Mitte) und zieht waagrecht auseinander (ziel.Rechts), dann stehen
+                var s = Glatt(u / 0.6);
+                var soll = ziel.Mitte + ziel.Rechts * (0.08 + 0.14 * s);
                 return new GeisterBild(Verschoben(pinchPunkt, soll, true), deck);
+            }
+            case GeisterGeste.Drehknopf:
+            {
+                // V1d, ein Griff, Variante «drehknopf»: die Hand am Griff rollt um ihre Achse (Handgelenk → Mittelfinger) bis 60° im Uhrzeigersinn und zurück
+                var s = u < 0.5 ? Glatt(u / 0.5) : 1 - Glatt((u - 0.5) / 0.5);
+                var bild = Verschoben(pinchPunkt, ziel.Mitte, true);
+                if (!bild.TryGetValue("wrist", out var w) || !bild.TryGetValue("middle-finger-phalanx-proximal", out var m)) return new GeisterBild(bild, deck);
+                var achse = (m - w).Einheit();
+                var winkel = 60 * Num.Grad * s;   // um die Achse vom Menschen weg rechtsdrehend = im Uhrzeigersinn aus seiner Sicht (EinGriff.Rollen positiv: grösser)
+                var gedreht = bild.ToDictionary(x => x.Key, x => Drehen(x.Value - w, achse, winkel) + w, StringComparer.Ordinal);
+                return new GeisterBild(gedreht, deck);
             }
             case GeisterGeste.Wegwischen:
             {

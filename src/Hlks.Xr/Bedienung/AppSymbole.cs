@@ -47,8 +47,9 @@ public static class AppSymbole
     static readonly double[] ReiheVersatz = [-0.18, 0.32, -0.05];
     /// <summary>Leichte Verschiebung je Platz in der Höhe (m, nie über die Reihe hinaus nach oben in der obersten Reihe) und Tiefe (m, zum Auge hin).</summary>
     static readonly (double Hoch, double Vor)[] Wackeln = [(-0.012, 0.02), (-0.03, -0.015), (0.022, 0.0), (-0.018, 0.025), (0.015, -0.02), (-0.025, 0.012)];
-    /// <summary>Kleinste Feldhöhe (m), wenn eine Untergrenze (Tischplatte) das Feld zusammenschiebt.</summary>
-    public const double FeldMinM = 0.2;
+    /// <summary>Kleinste Feldhöhe (m), wenn eine Untergrenze (Tischplatte) das Feld zusammenschiebt. V1a 0.2 m; V1d 0.24 m – am Tisch liegt das Feld 0.20 m tiefer
+    /// und wird öfter gestaucht, die Reihen bleiben so mindestens 12 cm auseinander (Mitten mindestens 10 cm, Symbole 8.6 cm).</summary>
+    public const double FeldMinM = 0.24;
 
     /// <summary>Durchmesser in m.</summary>
     public static double Durchmesser(GlasMasse m) => m.M(DurchmesserPt);
@@ -82,20 +83,23 @@ public static class AppSymbole
     /// untergrenze = tiefste Höhe einer Symbolmitte (z. B. über der Tischplatte) oder null. «bogen»: eine Reihe im Bogen auf der Höhe der Mitte. Jedes Symbol ist zum
     /// Auge gedreht.
     /// </summary>
-    public static List<SymbolPlatz> Plaetze(IReadOnlyList<string> ids, Vec3 auge, double blickGieren, SymbolEinstellungen e, GlasMasse m, double? untergrenze = null)
+    public static List<SymbolPlatz> Plaetze(IReadOnlyList<string> ids, Vec3 auge, double blickGieren, SymbolEinstellungen e, GlasMasse m, double? untergrenze = null,
+        bool sitzend = false)
     {
         var vor = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
         var rechts = HebeGeste.Rechts(blickGieren);   // rechts vom Blick (Blick −z → rechts +x)
         var d = Durchmesser(m);
         var spalte = SpalteM * e.Streuung;
         var aus = new List<SymbolPlatz>();
+        var mitteUnten = MitteUnterAuge(e, untergrenze is not null, sitzend);
         if (e.Verteilung == Varianten.SymboleBogen)
         {
             for (int i = 0; i < ids.Count; i++)
             {
                 var w = (i - (ids.Count - 1) / 2.0) * spalte / Math.Max(0.1, e.AbstandM);
                 var r = new Vec3(Math.Cos(blickGieren - w), 0, -Math.Sin(blickGieren - w));
-                var p = auge + r * e.AbstandM + new Vec3(0, -e.HoeheM, 0);
+                var p = auge + r * e.AbstandM + new Vec3(0, -mitteUnten, 0);
+                if (untergrenze is { } ub && p.Y < ub) p = p with { Y = ub };
                 aus.Add(new SymbolPlatz(ids[i], XrTabletLogik.TabletLageAus(p, auge - p) with { B = d, H = d }));
             }
             return aus;
@@ -103,8 +107,8 @@ public static class AppSymbole
         var reihen = Math.Clamp(e.Reihen, 1, 3);
         var raster = Raster(ids, reihen, out var spalten);
         // Höhe der obersten und untersten Reihe; eine Untergrenze schiebt das Feld zusammen (nie unter FeldMinM)
-        var oben = auge.Y - e.HoeheM + (reihen > 1 ? e.FeldHoeheM / 2 : 0);
-        var unten = auge.Y - e.HoeheM - (reihen > 1 ? e.FeldHoeheM / 2 : 0);
+        var oben = auge.Y - mitteUnten + (reihen > 1 ? e.FeldHoeheM / 2 : 0);
+        var unten = auge.Y - mitteUnten - (reihen > 1 ? e.FeldHoeheM / 2 : 0);
         if (untergrenze is { } u && unten < u)
         {
             unten = u;
@@ -126,9 +130,31 @@ public static class AppSymbole
         return aus;
     }
 
+    /// <summary>
+    /// V1d: so weit (m) liegt die senkrechte Mitte des Felds (vor der Tischregel) unter den Augen: am Sitzungstisch <see cref="SymbolEinstellungen.HoeheTischM"/>, sonst
+    /// <see cref="SymbolEinstellungen.HoeheM"/>, sitzend um <see cref="SymbolEinstellungen.HoeheSitzendM"/> höher (Brillentest V1, Christian 24.10.2026).
+    /// </summary>
+    public static double MitteUnterAuge(SymbolEinstellungen e, bool amTisch, bool sitzend) =>
+        amTisch ? e.HoeheTischM : e.HoeheM - (sitzend ? e.HoeheSitzendM : 0);
+
     /// <summary>Mitte der Plätze (dort öffnet sich die gewählte App).</summary>
     public static Vec3 Mitte(IReadOnlyList<SymbolPlatz> p) =>
         p.Count == 0 ? Vec3.Null : p.Aggregate(Vec3.Null, (s, x) => s + x.Lage.Mitte) * (1.0 / p.Count);
+
+    /// <summary>V1d: so schnell (m/s) darf sich ein Symbol höchstens bewegen, damit das Feld als «in Ruhe» gilt (Ende der Neuanordnung), Annahme V1d.</summary>
+    public const double RuheTempoMs = 0.03;
+
+    /// <summary>
+    /// V1d: bewegt sich das Feld (Neuanordnung: Ausweichen neben die App, Zurückkehren, Hineinheben, Mitlaufen beim Wegwischen)? Wahr, wenn sich ein Symbol zwischen
+    /// zwei Bildern schneller als <see cref="RuheTempoMs"/> bewegt hat oder sich die Zahl der Symbole geändert hat.
+    /// </summary>
+    public static bool Bewegt(IReadOnlyList<Vec3> vorher, IReadOnlyList<Vec3> jetzt, double dt)
+    {
+        if (vorher.Count != jetzt.Count) return true;
+        var weg = RuheTempoMs * Math.Max(1e-3, dt);
+        for (int i = 0; i < jetzt.Count; i++) if (vorher[i].Abstand(jetzt[i]) > weg) return true;
+        return false;
+    }
 
     // ---------------------------------------------------------------------------------------------------- Nach der Wahl (Variante «symbolwahl» = «stehen»)
     // Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen.» Auslegung Hauptlauf (Christian kann berichtigen): die gewählte App öffnet frontal etwas
