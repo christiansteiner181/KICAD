@@ -21,7 +21,7 @@ export const ZIEL = path.resolve(hier, '../src/Hlks.Quest/Assets/symbole');
 /** Kantenlänge der Texturen (px). Auf der Brille misst ein Symbol etwa 3.5° (128 px reichen bei etwa 25 px je Grad). */
 export const PX = 128;
 /** Die Symbole der App (Hlks.Xr.Bedienung.GlasSymbole.Alle). */
-export const NAMEN = ['info', 'geschoss', 'bemassung', 'problemMarker', 'raumBegehen', 'sitzungstisch', 'sichtbarkeit', 'schliessen', 'loeschen', 'gesten', 'haken'];
+export const NAMEN = ['info', 'geschoss', 'bemassung', 'problemMarker', 'raumBegehen', 'sitzungstisch', 'sichtbarkeit', 'schliessen', 'loeschen', 'gesten', 'haken', 'bildschirm'];
 export const SAETZE = ['strich', 'revit_hell', 'revit_dunkel'];
 
 const imp = (p) => import(pathToFileURL(path.join(WWW, p)).href);

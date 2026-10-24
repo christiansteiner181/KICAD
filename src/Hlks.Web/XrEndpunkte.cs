@@ -128,6 +128,7 @@ public static class XrEndpunkte
             return Antwort(new { status = e.Zustand, meldung = e.Meldung, versucheUebrig = e.VersucheUebrig, paket = e.Paket }, e.Status);
         })).XrImNetz(ohneSchluessel: true);
 
+        app.MapXrDesktop();   // V1c: GET /api/xr/desktop (WebSocket, im Netz), /desktop/zustand und /desktop/beenden (nur PC) – XrDesktop.cs
         return app;
     }
 

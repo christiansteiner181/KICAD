@@ -11679,6 +11679,89 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
           "hinweis": "Offen: Wortlaut und Quelle der deutschen Fassungen von SUS und NASA-TLX durch Christian. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest."
+        },
+        {
+          "id": "zb-quest-app-desktop",
+          "titel": "Quest App: Desktop in der Brille – den Bildschirm des PCs mit einem Wisch hereinziehen (Modul XR, XR-I, Quest App V1c)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit der rechten Hand (offen, Handfläche nach links); am PC nur Maus und Tastatur. Voraussetzung: Zugang im Büronetz an (zb-xr-zugang) und die Brille gekoppelt (zb-xr-quest-app-installieren)."
+          },
+          "schritte": [
+            "Die Quest App verbinden (zb-quest-app-begehen); KICAD läuft am PC, der Zugang im Büronetz ist an.",
+            "In der Brille die rechte Hand offen halten, die Handfläche nach links, und zügig von links nach rechts wischen (gut 20 cm). Der Bildschirm des PCs kommt von links ins Bild, folgt der Hand und setzt sich frontal etwa 1.1 m vor einen; das Modell dahinter bleibt stehen.",
+            "Am PC mit Maus und Tastatur arbeiten: Fenster, Mauszeiger und Schrift erscheinen live auf dem gebogenen Bildschirm in der Brille. Aus der Brille gibt es keine Eingaben an den PC.",
+            "Verschieben: den Kapsel-Griff unter dem Bildschirm mit Daumen und Zeigefinger fassen und ziehen; der Bildschirm dreht sich zum Kopf und bleibt beim Loslassen im Raum stehen.",
+            "Mehrere Monitore: den runden Knopf «1/2» rechts neben dem Griff antippen – der nächste Monitor erscheint.",
+            "Wie eine App: mit der Hebegeste die App-Symbole holen und das Symbol «Desktop» (Bildschirm auf dem Fuss, petrol) berühren – der Bildschirm kommt frontal. Steht das Symbolfeld, weicht es seitlich neben den Bildschirm aus; eine offene Glas-App geht, sobald der Bildschirm kommt, und öffnet man eine Glas-App, gleitet der Bildschirm hinaus.",
+            "Wegwischen (die gemeinsame Geste der App): dieselbe Haltung (rechte Hand offen, Handfläche nach links), von rechts nach links wischen – der Bildschirm läuft mit der Hand mit und gleitet nach links hinaus. Ebenso mit dem runden Knopf «×» links neben dem Griff. Ausgeblendet überträgt der PC nichts mehr.",
+            "Am PC zeigt die Statusleiste, solange die Brille mitsieht, rot «● Brille sieht den Bildschirm» und um das ganze Fenster einen roten Rand; mit «Beenden» ist die Übertragung sofort zu Ende, die Brille schiebt den Bildschirm hinaus."
+          ],
+          "erwartung": "Der Bildschirm folgt der Hand schon beim Wischen und setzt sich dann ruhig; ein abgebrochener Wisch lässt ihn zurückgleiten. Solange er da ist, springt, dreht und wechselt die VR-Szene nicht (kein Strahl, keine Wische, am Tisch keine Griffe). Er steht im Raum, nicht am Kopf, ist leicht gebogen (1.4 m breit, Radius 2 m) und hat einen Glasrahmen im Ton der App «Desktop» wie die Fenster der Glas-Apps. Glas-Apps und Hinweise stehen nie davor. Kurz nach dem Hineinziehen wischt das Zurückholen der Hand nichts weg, kurz nach dem Wegwischen zieht es nichts herein. Der PC sendet nur geänderte Kacheln und nie mehr als zwei Bilder ohne Quittung (Ziel 12 Bilder je Sekunde); steht der Bildschirm 2 s still, erfasst er nur noch 2.5-mal je Sekunde und bei einer Änderung sofort wieder voll. Nichts wird aufgezeichnet.",
+          "pruefpunkte": [
+            "Wisch links → rechts mit der rechten Hand (Handfläche nach links) holt den Bildschirm; ein langsames oder kurzes Ausholen nicht.",
+            "Der Bildschirm kommt von links, folgt der Hand und steht danach frontal und ruhig im Glasrahmen; das Modell dahinter bleibt stehen.",
+            "Mauszeiger und Schrift des PCs sind in der Brille lesbar; Änderungen am PC erscheinen ohne merkliche Verzögerung, auch nach einer ruhigen Pause.",
+            "Griff fassen verschiebt den Bildschirm; «1/2» wechselt den Monitor (nur mit mehreren).",
+            "Symbol «Desktop» im Feld holt den Bildschirm; das Feld weicht seitlich aus und steht nicht davor; eine Glas-App schiebt den Bildschirm hinaus.",
+            "Wisch rechts → links bzw. «×» schiebt ihn nach links hinaus, das Symbolfeld kehrt schon beim Wischen nach vorn; am PC wechselt die Anzeige auf grau «pausiert».",
+            "Am PC: rote Anzeige mit rotem Rand, solange die Brille mitsieht; «Beenden» trennt, die Anzeige verschwindet.",
+            "Pinch + Wisch (Drehen, Etage), Hebegeste und Röntgen-Hand holen den Bildschirm nicht; das Zurückholen der Hand nach einem Wisch löst die Gegengeste nicht aus.",
+            "werkzeuge\\quest_pruefen.ps1 -NurDesktop meldet «P4 ok: Desktop: ok …» und «Anzeige am PC: … ok»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 4 «Desktop»): desktop_1_geste_halb.jpg, desktop_2_eingeblendet.jpg, desktop_4_nah_schrift.jpg, desktop_5_wegwischen_halb.jpg, desktop_6_feld_seitlich.jpg – mit dem Testbild des Servers, nie dem echten Bildschirm",
+            "zustand": "Begehen mit eingeblendetem Bildschirm des PCs (Testbild mit Mauszeiger)"
+          },
+          "quelle": [
+            "src/Hlks.Quest/DesktopBildschirm.cs, QuestApp.Desktop.cs (Einbindung, Prüflauf --desktop), QuestApp.Apps.cs (Symbol, Feld, Wegwischen)",
+            "src/Hlks.Xr/Desktop (DesktopGeste, DesktopAnsicht, DesktopFormat, DesktopEinstellungen, PruefHand), Netz/DesktopVerbindung.cs; Bedienung/Wegwischen.cs (V1a)",
+            "src/Hlks.Web/XrDesktop.cs, XrDesktopErfassung.cs, XrDesktopKodierung.cs (/api/xr/desktop)",
+            "kataloge/xr_stellschrauben.json (Gruppe «desktop»), kataloge/xr_farben.json (Eintrag «desktop»), symbole.js und symbole-revit.js («bildschirm»)",
+            "tests/Hlks.Xr.Tests/DesktopGesteTests.cs, DesktopAnsichtTests.cs, DesktopGlasTests.cs; tests/Hlks.Web.Tests/XrDesktopTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1c: Desktop in der Brille»)"
+          ],
+          "hinweis": "V1c mit V1a zusammengeführt. Alle Schwellen (Weg 0.20 m, Tempo 0.45 m/s, andere Hand 8 cm, Gegensperre 1 s), Grösse, Abstand, Krümmung und die Ruhe-Bildrate sind Annahmen bis zum Brillentest; Stellschrauben: hineinziehen.weg_m, hineinziehen.tempo_ms, desktop.breite_m, desktop.abstand_m, desktop.bildrate, desktop.ruhe_bildrate; das Wegwischen und die Lage der Handfläche stellt V1a ein (wegwischen.*). Der Ton «Desktop» (#D5ECEC) ist ein Vorschlag nach der Regel von V1a, zu bestätigen. Nur mit der Brille zu prüfen: WLAN-Bandbreite, Lesbarkeit, 72 Hz, wie sich die Gesten anfühlen. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_desktop)."
+        },
+        {
+          "id": "zb-xr-desktop-anzeige",
+          "titel": "Anzeige am PC: «Brille sieht den Bildschirm» mit «Beenden» (Modul XR, XR-I, Quest App V1c)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "Beenden",
+            "kuerzel": "",
+            "sonst": "Statusleiste unten, Mitte (neben «Brille»); erscheint nur, solange eine gekoppelte Brille mit dem Bildschirm verbunden ist."
+          },
+          "schritte": [
+            "In der Brille den Bildschirm des PCs hereinziehen (zb-quest-app-desktop).",
+            "Am PC erscheint in der Statusleiste rot «● Brille sieht den Bildschirm» mit pulsierendem Punkt, dazu ein roter Rand um das ganze KICAD-Fenster. Der Tooltip nennt die Brille, den Monitor, Bilder je Sekunde und kbit/s; steht der Bildschirm still, dazu «ruhig – nur 2.5 Erfassungen/s».",
+            "Wischt man den Bildschirm in der Brille weg, wird die Anzeige grau: «Bildschirm in der Brille pausiert» (kein Rand; es wird nichts übertragen).",
+            "«Beenden» klicken: die Übertragung ist sofort zu Ende, die Meldung lautet «Übertragung an die Brille beendet.», die Anzeige und der Rand verschwinden; die Brille verbindet erst nach dem nächsten Hineinziehen wieder."
+          ],
+          "erwartung": "Die Anzeige ist nur da, solange eine Brille verbunden ist, und rot nur, solange sie mitsieht. «Beenden» trennt alle Brillen. Der rote Rand nimmt keine Klicks.",
+          "pruefpunkte": [
+            "Ohne Brille keine Anzeige und kein Rand.",
+            "Mitsehen: rot mit pulsierendem Punkt, roter Rand ums Fenster, Tooltip mit Brille, Monitor und Rate.",
+            "Pausiert: grau, ohne Rand.",
+            "«Beenden»: Meldung, Anzeige weg, in der Brille gleitet der Bildschirm hinaus.",
+            "Browserreihe xr-desktop.browser.mjs: alle Prüfungen ok."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Statusleiste mit roter Anzeige und rotem Rand (xr-desktop.browser.mjs: xr-desktop-1-aktiv.png, xr-desktop-2-statusleiste.png)",
+            "zustand": "Eine Brille sieht den Bildschirm"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-desktop-status.js, xr-desktop-text.js, statusleiste.js; css/quest.css",
+            "src/Hlks.Web/XrDesktop.cs (/api/xr/desktop/zustand, /api/xr/desktop/beenden)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/xr-desktop.test.mjs, xr-desktop.browser.mjs"
+          ],
+          "hinweis": "Die Anzeige fragt den Server alle 2 s. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_desktop)."
         }
       ]
     }

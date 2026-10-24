@@ -13,7 +13,8 @@
     { "id": "sitzung", "titel": "Sitzungsraum" },
     { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
     { "id": "wegwischen", "titel": "Wegwischen (schliessen und wegschicken: rechte Hand von rechts nach links)" },
-    { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" }
+    { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" },
+    { "id": "desktop", "titel": "Desktop in der Brille (Hineinziehen, Bildschirm, Übertragung)" }
   ],
   "muster": [
     {
@@ -327,6 +328,42 @@
       "beschreibung": "So lange steht ein schwebender Hinweis (z. B. «Problem-Marker gesetzt»), dann blendet er sanft aus.",
       "art": "zahl", "einheit": "s", "min": 1, "max": 15, "schritt": 0.5, "vorgabe": 4,
       "herkunft": "Annahme V1a; Christian 24.10.2026: «hinweistexte frei schwebend»"
+    },
+    {
+      "schluessel": "hineinziehen.weg_m", "gruppe": "desktop", "titel": "Hineinziehen: Weg der Hand", "status": "app",
+      "beschreibung": "So weit muss die rechte Hand (offen, Handfläche nach links, Lage wie wegwischen.handflaeche_grad) von links nach rechts wischen, bis der Bildschirm des PCs hereinkommt; vorher folgt er der Hand. Hinaus geht er mit dem gemeinsamen Wegwischen (wegwischen.*).",
+      "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.6, "schritt": 0.01, "vorgabe": 0.2,
+      "herkunft": "Christian 24.10.2026 (XR-I, mit Berichtigung: «von links nach rechts»); Vorgabe Annahme V1c (DesktopEinstellungen.Hinein.WegM)"
+    },
+    {
+      "schluessel": "hineinziehen.tempo_ms", "gruppe": "desktop", "titel": "Hineinziehen: Mindesttempo", "status": "app",
+      "beschreibung": "Mittleres Tempo der Hand vom Beginn der Bewegung bis zur Auslösung (oder über die letzten Zentimeter des Wegs); ein langsames Ausholen zieht den Bildschirm nicht herein.",
+      "art": "zahl", "einheit": "m/s", "min": 0.1, "max": 3, "schritt": 0.05, "vorgabe": 0.45,
+      "herkunft": "Annahme V1c (DesktopEinstellungen.Hinein.TempoMs)"
+    },
+    {
+      "schluessel": "desktop.breite_m", "gruppe": "desktop", "titel": "Breite des Bildschirms", "status": "app",
+      "beschreibung": "Breite des virtuellen Bildschirms (entlang des Bogens); die Höhe folgt dem Seitenverhältnis des Monitors.",
+      "art": "zahl", "einheit": "m", "min": 0.5, "max": 4, "schritt": 0.05, "vorgabe": 1.4,
+      "herkunft": "Auftrag V1c (Startwert etwa 1.4 m, Annahme)"
+    },
+    {
+      "schluessel": "desktop.abstand_m", "gruppe": "desktop", "titel": "Abstand des Bildschirms", "status": "app",
+      "beschreibung": "So weit vor den Augen setzt sich der Bildschirm beim Hineinziehen (frontal zum Blick).",
+      "art": "zahl", "einheit": "m", "min": 0.4, "max": 4, "schritt": 0.05, "vorgabe": 1.1,
+      "herkunft": "Auftrag V1c (Startwert etwa 1.1 m, Annahme)"
+    },
+    {
+      "schluessel": "desktop.bildrate", "gruppe": "desktop", "titel": "Bilder je Sekunde", "status": "app",
+      "beschreibung": "Ziel der Bilder je Sekunde, solange sich am PC etwas ändert; der PC sendet nur Geändertes und nie mehr als zwei Bilder ohne Quittung der Brille, die Rate passt sich also dem WLAN an.",
+      "art": "zahl", "einheit": "1/s", "min": 1, "max": 30, "schritt": 1, "vorgabe": 12,
+      "herkunft": "Auftrag V1c (Ziel 10–15 Bilder/s); Vorgabe Annahme V1c"
+    },
+    {
+      "schluessel": "desktop.ruhe_bildrate", "gruppe": "desktop", "titel": "Bilder je Sekunde bei ruhigem Bildschirm", "status": "app",
+      "beschreibung": "Ändert sich am Bildschirm des PCs 2 s lang nichts, erfasst der PC nur noch so oft (spart Rechenzeit am PC); bei der ersten Änderung sofort wieder mit voller Rate.",
+      "art": "zahl", "einheit": "1/s", "min": 0.5, "max": 30, "schritt": 0.5, "vorgabe": 2.5,
+      "herkunft": "Auftrag V1c, Nachtrag 24.10.2026 («nach 2 s ohne Änderung nur noch 2–3 Bilder/s»); Vorgabe Annahme V1c"
     }
   ]
 }

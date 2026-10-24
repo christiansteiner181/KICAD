@@ -238,3 +238,31 @@ V1a». Die App: `src/Hlks.Quest/QuestApp.Messen.cs`, `QuestApp.Marker.cs`, `Ques
   `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).
 - P4b: Den Tisch findet die App noch nicht selbst (`XR_EXT_spatial_plane_tracking`) und erkennt keine Marker (`XR_EXT_spatial_marker_tracking`); beides nur auf Machbarkeit
   geprüft (Bericht P4b). Die Fliessrichtung der Probe-Ebene folgt der Reihenfolge der Leitungspunkte, nicht dem Netzdurchlauf (`netz_folgen`).
+
+## Desktop in der Brille (XR-I, V1c)
+
+Der Bildschirm des gekoppelten PCs als grosser, leicht gebogener Bildschirm im Raum, wie die Desktop-Ansicht von Meta (Christian 24.10.2026; `entwurf/modul-xr.md`,
+«XR-I – Desktop in der Brille»). Bedient wird mit Maus und Tastatur am PC, die Brille zeigt nur an. Die App: `src/Hlks.Quest/DesktopBildschirm.cs`,
+`QuestApp.Desktop.cs`; am PC `src/Hlks.Web/XrDesktop.cs` (Server), `XrDesktopKodierung.cs` (eigene Umsetzung des Formats), `XrDesktopErfassung.cs`; Bedienung
+in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1c».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Desktop/DesktopGeste.cs` | `SeitenWisch`, `SeitenWischZustand`, `SeitenWischStand`, `DesktopHaende`, `DesktopGesten` | Hineinziehen (rechte Hand offen, Handfläche nach links, links → rechts) mit Fortschritt (der Bildschirm folgt der Hand), andere Hand ruhig, Sperre; Gegensperren zum gemeinsamen Wegwischen von V1a (`WegwischenRuht` nach dem Hineinziehen, `NachWegwischen` nach jedem Wegwischen). Das Hinausschieben ist V1a's `Bedienung/Wegwischen.cs` |
+| `Desktop/DesktopAnsicht.cs` | `DesktopMasse`, `DesktopFlaeche`, `DesktopNetz`, `DesktopPhase`, `DesktopLage`, `DesktopAnsicht`, `DesktopBedienStand` | Zylinderausschnitt (Bogen, Höhe, Radius), Netze je Feld, Glasnetz für den Glas-Shader von V1a (gebogen, uv in m, Masse je Ecke) und Rahmen mit gerundeten Ecken, Platz frontal, Kommen von links, Mitlaufen beim Wegwischen (gleicher Winkel wie das Symbolfeld) und Hinausgleiten nach links (Drehung um die Augen), Setzen, verankert, Griff (verschieben, zum Kopf drehen), Schliessen- und Monitor-Knopf (`TeilLage`), wegwischbares Ziel (`Kandidat`, Id «desktop»), belegte Flächen im Blick (`Belegt`: Hinweise und Symbolfeld weichen aus) |
+| `Desktop/DesktopFormat.cs` | `DesktopFormat`, `DesktopKopf`, `DesktopRaster`, `DesktopPuffer`, `DesktopFormatFehler` | Bild «HXD1» (Kopf 32 Byte, Kacheln 64 px, BGR mit Vorfilter «Sub», Deflate) lesen und in Felder RGBA (512 px, je eine Textur) schreiben; Stand je Feld, Sperre je Feld |
+| `Desktop/DesktopEinstellungen.cs` | `DesktopEinstellungen`, `SeitenWischEinstellungen` | Stellschrauben `hineinziehen.weg_m`, `hineinziehen.tempo_ms`, `desktop.breite_m`, `desktop.abstand_m`, `desktop.bildrate`, `desktop.ruhe_bildrate` mit Grenzen; Handfläche aus `wegwischen.handflaeche_grad` (`HineinMit`); feste Werte (Radius, Zeitfenster, andere Hand, Sperre, Ruhe nach 2 s, Höhe, Breite in Punkten, Mipmaps, Trennen, Hochladen) |
+| `Desktop/PruefHand.cs` | `PruefHand` | gedachte offene Hand für den Prüflauf am PC (`--desktop`) |
+| `Netz/DesktopVerbindung.cs` | `DesktopVerbindung`, `DesktopZustand`, `DesktopMonitor`, `DesktopOptionen`, `DesktopRegeln` | WebSocket `/api/xr/desktop` mit Pinning und Schlüssel: start (mit Ruhe-Bildrate), Pause/weiter, Quittung nach dem Dekodieren (Flusskontrolle), Monitor, Bildrate, neu; Dekodieren im Hintergrund; Wiederverbinden, nicht nach 4010 (am PC beendet), 4001, 4002, 401 |
+
+- **Geändert für V1c:** `Labor/LaborWerte.cs` kennt die Schlüssel von `DesktopEinstellungen` (vierter Satz `Desktop`, Schichten Katalog › Profil › live wie die übrigen);
+  `Bedienung/AppFarben.cs` verlangt den Eintrag «desktop», `Bedienung/GlasSymbole.cs` kennt «bildschirm», `Bedienung/Hinweise.cs` hat `ScheinRinge` (kräftigerer Schein
+  vor hellem Grund), `XrGesten.cs` nennt das Hineinziehen in der Gestenübersicht.
+- **Annahmen V1c** (Stellschrauben, wo der Katalog sie führt; sonst benannte Konstanten): Weg 0.20 m, Tempo 0.45 m/s, Zeitfenster 0.7 s, andere Hand 8 cm, Gegensperre 1 s,
+  Folgen ab 20 % des Wegs; Bildschirm 1.4 m breit, 1.1 m vor den Augen, 10 cm unter Augenhöhe, Radius 2.0 m, ganz draussen 95° links, Setzen 0.35 s, Hinausgleiten 0.3 s,
+  Mitlaufen wie das Symbolfeld in 0.6 m; Griff 16 × 2.2 cm, Knöpfe Radius 2.2 cm, Glasrahmen 1.8 cm breiter, Ecken 3.5 cm; 12 Bilder/s, ruhig 2.5/s nach 2 s, höchstens
+  1920 Punkte breit, ohne Mipmaps, 2 Felder je Bild, Trennen nach 60 s; Ton «desktop» #D5ECEC (zu bestätigen).
+- **Tests:** `DesktopGesteTests` (Hineinziehen mit dem gemeinsamen Wegwischen wie in der App verdrahtet: Auslösen in jeder Körperrichtung, Folgen, Abbruch, Ausholen,
+  Zurückholen in beide Richtungen, zwei Hände, linke Hand, Pinch, Handlagen, Hebegeste und Wegschieben, Testgesten des Labors, 80 Zufallsbewegungen, umgekehrt Pinch + Wisch
+  und Gestenlabor, gedachte Hand des Prüflaufs, Stellschrauben), `DesktopAnsichtTests` (Form, Netze, Glasnetz, Platz, Kommen, Mitlaufen und Gehen, Griff, Knöpfe, Ziel,
+  belegte Flächen, Format und Puffer), `DesktopGlasTests` (Farbe, Symbol, Schein, kein alter Hinweis); gegen den Server `tests/Hlks.Web.Tests/XrDesktopTests.cs`.

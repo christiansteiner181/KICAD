@@ -160,6 +160,34 @@ public static class SchwebeHinweise
         return p + ebene.Rechts * rechts;
     }
 
+    /// <summary>Der dunkle Schein hinter der Schrift: Ringe (Versatz als Anteil der Schrifthöhe, Deckkraft) wie V1a vor dunklem und mittlerem Grund.</summary>
+    public static readonly IReadOnlyList<(double Radius, double Deckkraft)> ScheinVorgabe = [(0.07, 0.42), (0.14, 0.2)];
+    /// <summary>Vor sehr hellem Grund (heller Sitzungsraum, GlasStil.HintergrundHell): deckender, mit einem dritten, weiteren Ring. Annahme V1c.</summary>
+    public static readonly IReadOnlyList<(double Radius, double Deckkraft)> ScheinHell = [(0.07, 0.62), (0.14, 0.4), (0.22, 0.2)];
+    /// <summary>Ab dieser Helligkeit des Grunds wird der Schein kräftiger (bis HintergrundHell ganz); darunter wie V1a (Passthrough 0.6, Modell 0.55).</summary>
+    public const double ScheinKraeftigAb = 0.6;
+
+    /// <summary>
+    /// V1c (Auftrag Punkt 5b: «frei schwebende Hinweise vor sehr hellem Grund sind schwach – den dunklen Schein dort kräftiger machen, ohne Kasten»): die Ringe des
+    /// Scheins für die Helligkeit des Grunds (sRGB 0 … 1), zwischen <see cref="ScheinKraeftigAb"/> und GlasStil.HintergrundHell stufenlos; der dritte Ring nur, wo er
+    /// sichtbar beiträgt (Deckkraft über 0.01).
+    /// </summary>
+    public static List<(double Radius, double Deckkraft)> ScheinRinge(double hintergrund)
+    {
+        var k = Math.Clamp((hintergrund - ScheinKraeftigAb) / (GlasStil.HintergrundHell - ScheinKraeftigAb), 0, 1);
+        if (k <= 0) return [.. ScheinVorgabe];
+        if (k >= 1) return [.. ScheinHell];
+        var aus = new List<(double, double)>();
+        for (int i = 0; i < ScheinHell.Count; i++)
+        {
+            var (rh, ah) = ScheinHell[i];
+            var (rv, av) = i < ScheinVorgabe.Count ? ScheinVorgabe[i] : (rh, 0.0);
+            var a = av + (ah - av) * k;
+            if (a > 0.01) aus.Add((rv + (rh - rv) * k, a));
+        }
+        return aus;
+    }
+
     /// <summary>Grösse eines Hinweises (m): Breite nach dem Text (höchstens zwei Zeilen à zeichenJeZeile), Höhe einer bzw. zweier Zeilen; zeichenHoehe = Schrifthöhe (m).</summary>
     public static (double B, double H, int Zeilen) Groesse(string text, double zeichenHoehe, int zeichenJeZeile = ZeichenJeZeileVorgabe)
     {

@@ -13,6 +13,7 @@
 using System.Text.Json;
 using System.Text.Json.Nodes;
 using Hlks.Xr.Bedienung;
+using Hlks.Xr.Desktop;
 
 namespace Hlks.Xr.Labor;
 
@@ -23,8 +24,8 @@ public sealed class LaborWerte
     static readonly string[] BegehenSchluessel = ["begehen.ziel_ruhe_s", "begehen.ziel_ruhe_radius_m", "begehen.ziel_verzoegerung_s", "begehen.drehen_sperre_s"];
     static readonly string[] HaltungSchluessel = ["haltung.schwelle_m", "haltung.hysterese_m", "haltung.haltezeit_s"];
 
-    /// <summary>Alle Schlüssel, die die App versteht (Begehen, Haltung, Bedienung samt Varianten).</summary>
-    public static readonly IReadOnlyList<string> Schluessel = [.. BegehenSchluessel, .. HaltungSchluessel, .. XrBedienEinstellungen.Schluessel];
+    /// <summary>Alle Schlüssel, die die App versteht (Begehen, Haltung, Bedienung samt Varianten; V1c: Desktop in der Brille).</summary>
+    public static readonly IReadOnlyList<string> Schluessel = [.. BegehenSchluessel, .. HaltungSchluessel, .. XrBedienEinstellungen.Schluessel, .. DesktopEinstellungen.Schluessel];
 
     /// <summary>Versteht die App diesen Schlüssel?</summary>
     public static bool Kennt(string schluessel) => Schluessel.Contains(schluessel, StringComparer.Ordinal);
@@ -35,6 +36,8 @@ public sealed class LaborWerte
     public XrBedienEinstellungen Bedien { get; private set; } = XrBedienEinstellungen.Vorgabe;
     public HandBegehenEinstellungen Begehen { get; private set; } = HandBegehenEinstellungen.Vorgabe;
     public HaltungEinstellungen Haltung { get; private set; } = HaltungEinstellungen.Vorgabe;
+    /// <summary>V1c: Hineinziehen und Bildschirm von «Desktop in der Brille» (hineinziehen.*, desktop.*; das Wegwischen gehört V1a, wegwischen.*).</summary>
+    public DesktopEinstellungen Desktop { get; private set; } = DesktopEinstellungen.Vorgabe;
     public LaborKatalog? Katalog => katalog;
     /// <summary>Werte von Katalog und Profil, die die App nicht übernehmen konnte («Schlüssel (Herkunft)»), z. B. eine widersprüchliche Paarung.</summary>
     public IReadOnlyList<string> Abgewiesen { get; private set; } = [];
@@ -81,15 +84,16 @@ public sealed class LaborWerte
     {
         if (katalog is not null && katalog.Pruefen(s, w) is var u && u != WertUrteil.Unbekannt) return u;
         if (!Kennt(s)) return WertUrteil.Unbekannt;
-        return Anwenden(s, w, null, Bedien, Begehen, Haltung) is not null ? WertUrteil.Ok : WertUrteil.Ungueltig;
+        return Anwenden(s, w, null, (Bedien, Begehen, Haltung, Desktop)) is not null ? WertUrteil.Ok : WertUrteil.Ungueltig;
     }
 
-    static (XrBedienEinstellungen, HandBegehenEinstellungen, HaltungEinstellungen)? Anwenden(string s, JsonElement w, IReadOnlyDictionary<string, (double, double)>? grenzen,
-        XrBedienEinstellungen b, HandBegehenEinstellungen be, HaltungEinstellungen h)
+    static (XrBedienEinstellungen, HandBegehenEinstellungen, HaltungEinstellungen, DesktopEinstellungen)? Anwenden(string s, JsonElement w,
+        IReadOnlyDictionary<string, (double, double)>? grenzen, (XrBedienEinstellungen B, HandBegehenEinstellungen Be, HaltungEinstellungen H, DesktopEinstellungen D) x)
     {
-        if (be.MitStellschraube(s, w, grenzen) is { } nbe) return (b, nbe, h);
-        if (h.MitStellschraube(s, w, grenzen) is { } nh) return (b, be, nh);
-        if (b.MitStellschraube(s, w, grenzen) is { } nb) return (nb, be, h);
+        if (x.Be.MitStellschraube(s, w, grenzen) is { } nbe) return x with { Be = nbe };
+        if (x.H.MitStellschraube(s, w, grenzen) is { } nh) return x with { H = nh };
+        if (x.B.MitStellschraube(s, w, grenzen) is { } nb) return x with { B = nb };
+        if (x.D.MitStellschraube(s, w, grenzen) is { } nd) return x with { D = nd };   // V1c
         return null;
     }
 
@@ -111,9 +115,7 @@ public sealed class LaborWerte
     /// <summary>Rechnet die Sätze neu; gibt die live gesetzten Schlüssel zurück, die abgewiesen wurden (Katalog und Profil stehen in <see cref="Abgewiesen"/>).</summary>
     List<string> Neu()
     {
-        var b = XrBedienEinstellungen.Vorgabe;
-        var be = HandBegehenEinstellungen.Vorgabe;
-        var h = HaltungEinstellungen.Vorgabe;
+        var x = (XrBedienEinstellungen.Vorgabe, HandBegehenEinstellungen.Vorgabe, HaltungEinstellungen.Vorgabe, DesktopEinstellungen.Vorgabe);
         var grenzen = katalog?.Grenzen;
         var abgewiesen = new List<string>();
         var liveAb = new List<string>();
@@ -124,16 +126,18 @@ public sealed class LaborWerte
             {
                 var rest = new List<KeyValuePair<string, JsonElement>>();
                 foreach (var w in offen)
-                    if (Anwenden(w.Key, w.Value, grenzen, b, be, h) is { } neu) (b, be, h) = neu;
+                    if (Anwenden(w.Key, w.Value, grenzen, x) is { } neu) x = neu;
                     else rest.Add(w);
                 offen = rest;
             }
             foreach (var w in offen)
                 if (herkunft == "live") liveAb.Add(w.Key); else abgewiesen.Add($"{w.Key} ({herkunft})");
         }
+        var (b, be, h, d) = x;
         Bedien = b;
         Begehen = be with { Wisch = b.Wisch, Pinch = b.Pinch };
         Haltung = h;
+        Desktop = d;
         Abgewiesen = abgewiesen;
         return liveAb;
     }

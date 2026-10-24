@@ -19,7 +19,7 @@ const eintrag = (k) => katalog.stellschrauben.find((s) => s.schluessel === k);
 
 test('Gruppen: in der Reihenfolge des Katalogs, jede Stellschraube genau einmal', () => {
   const g = T.gruppen(katalog);
-  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung', 'hebe', 'wegwischen', 'symbole']);   // V1a: hebe, wegwischen, symbole
+  assert.deepEqual(g.map((x) => x.id), ['begehen', 'haltung', 'anzeige', 'apps', 'wisch', 'pinch', 'komfort', 'sitzung', 'hebe', 'wegwischen', 'symbole', 'desktop']);   // V1a: hebe, wegwischen, symbole; V1c: desktop
   assert.equal(g.flatMap((x) => x.eintraege).length, katalog.stellschrauben.length);
   assert.deepEqual(g.find((x) => x.id === 'begehen').eintraege.map((s) => s.schluessel).slice(0, 4),
     ['begehen.ziel_ruhe_s', 'begehen.ziel_ruhe_radius_m', 'begehen.ziel_verzoegerung_s', 'begehen.drehen_sperre_s']);

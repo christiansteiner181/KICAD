@@ -17,24 +17,34 @@ namespace Hlks.Quest;
 /// in der Farbe der Schrift getönt, Revit mit eigenen Farben (Benutzereinstellung «oberflaeche.symbole» über «willkommen», <see cref="SymbolEinstellung"/>).
 /// Kosten: je Fläche ein Zeichenaufruf mit 4 Ecken (Netze je Grösse zwischengespeichert); je Symbol ein Viereck mit Textur; Text über Text.Add (gesammelt von StereoKit).
 /// Schichten (<see cref="Schicht"/>; Befund Prüfbilder 03: Wände schnitten Symbole und die Karte an): die Bedienung (Symbolfeld, Fenster, Karte, Tooltips) zeichnet
-/// ohne Tiefentest gegen das Modell, in fester Reihenfolge – erst das Feld, dann Fenster und Karte, dann die Tooltips, danach die Hände (Tiefentest gegen die Bedienung,
+/// ohne Tiefentest gegen das Modell, in fester Reihenfolge – V1c: zuerst der Bildschirm des PCs (Schicht «Hinten»), dann das Feld, dann Fenster und Karte, dann die
+/// Tooltips, danach die Hände (Tiefentest gegen die Bedienung,
 /// <see cref="HandReihe"/>); innerhalb einer Schicht Schatten, Leuchten, Glas, Knöpfe (drei Stufen übereinander), Zeichen, Schrift. Das Glas schreibt die Tiefe, so
 /// verdeckt es die Hände dahinter. Die Welt (Bodenplatte am Tisch, Beschriftungen im Modell) zeichnet wie bisher mit Tiefentest.
 /// </summary>
 sealed class GlasZeichner
 {
-    /// <summary>Wo gezeichnet wird: im Modell (mit Tiefentest) bzw. als Bedienung über dem Modell (ohne Tiefentest gegen das Modell) in dieser Reihenfolge.</summary>
-    public enum GlasSchicht { Welt, Feld, Vorn, Oben }
+    /// <summary>
+    /// Wo gezeichnet wird: im Modell (mit Tiefentest) bzw. als Bedienung über dem Modell (ohne Tiefentest gegen das Modell) in dieser Reihenfolge; V1c: «Hinten» = der
+    /// Bildschirm des PCs (Rahmen, Griff, Knöpfe) vor dem Modell, aber hinter dem Symbolfeld, den Fenstern und den Hinweisen.
+    /// </summary>
+    public enum GlasSchicht { Welt, Feld, Vorn, Oben, Hinten }
 
-    // Reihenfolge (QueueOffset) je Schicht: Schatten, Leuchten, Glas, Knopf (Stufe 0, 1, 2), Zeichen (Symbol, Punkt, Linie, Ring), Schrift (Welt: Vorgabe von StereoKit)
-    static readonly int[][] Reihe = [[8, 9, 10, 11, 11, 11, 12, 0], [1, 2, 3, 4, 4, 4, 5, 6], [13, 14, 15, 16, 17, 18, 19, 20], [21, 21, 22, 23, 23, 23, 24, 25]];
+    // Reihenfolge (QueueOffset) je Schicht: Schatten, Leuchten, Glas, Knopf (Stufe 0, 1, 2), Zeichen (Symbol, Punkt, Linie, Ring), Schrift (Welt: Vorgabe von StereoKit).
+    // V1c: die Schichten von V1a um 6 nach hinten verschoben (Reihenfolge unter ihnen unverändert), damit «Hinten» (der PC-Bildschirm) nach den durchscheinenden Teilen
+    // des Modells (Reihe 0) und vor dem Symbolfeld zeichnet – Befund Prüfbild V1c 24.10.2026: ein durchscheinender Schacht des Modells lag sonst über dem Bildschirm.
+    static readonly int[][] Reihe = [[14, 15, 16, 17, 17, 17, 18, 0], [7, 8, 9, 10, 10, 10, 11, 12], [19, 20, 21, 22, 23, 24, 25, 26], [27, 27, 28, 29, 29, 29, 30, 31],
+        [1, 2, 3, 5, 5, 5, 6, 6]];
+    /// <summary>V1c: das Bild des PC-Bildschirms (Texturen je Feld) zeichnet in der Schicht «Hinten» zwischen dem Glas des Rahmens und den Knöpfen.</summary>
+    public const int BildReihe = 4;
+    const int Schichten = 5;
     /// <summary>Die Hände zeichnen nach der Bedienung (Tiefentest gegen ihr Glas); die Geisterhände danach (KomfortAnzeigen).</summary>
-    public const int HandReihe = 27, GeisterReihe = 28;
+    public const int HandReihe = 33, GeisterReihe = 34;
 
-    readonly Material?[] glas = new Material?[4], schatten = new Material?[4], leuchten = new Material?[4];
-    readonly Material?[,] duenn = new Material?[4, 3];
-    readonly Material[] ersatz = new Material[4], punkt = new Material[4];
-    readonly Material?[] schriftMaterial = new Material?[4];
+    readonly Material?[] glas = new Material?[Schichten], schatten = new Material?[Schichten], leuchten = new Material?[Schichten];
+    readonly Material?[,] duenn = new Material?[Schichten, 3];
+    readonly Material[] ersatz = new Material[Schichten], punkt = new Material[Schichten];
+    readonly Material?[] schriftMaterial = new Material?[Schichten];
     readonly Dictionary<(int, int, int, int), Mesh> netze = [];
     readonly Dictionary<(int, int, int, int), TextStyle> stile = [];
     readonly Dictionary<(string, int), Material> symbolMaterial = [];
@@ -72,7 +82,7 @@ sealed class GlasZeichner
             m.SetVector("art", new Vec4(art, glanz, weich, rand));
             return m;
         }
-        for (int l = 0; l < 4; l++)
+        for (int l = 0; l < Schichten; l++)
         {
             var q = Reihe[l];
             var immer = l != (int)GlasSchicht.Welt;
@@ -192,6 +202,23 @@ sealed class GlasZeichner
     }
 
     /// <summary>
+    /// V1c: Glas auf einem eigenen Netz, z. B. dem gebogenen Rahmen des PC-Bildschirms. Das Netz trägt wie die Rechtecke hier uv = Lage im Rechteck (m, Mitte 0) und
+    /// Normale = (halbe Breite, halbe Höhe, Eckenradius) – der Shader rundet die Ecken im Raum der uv, die Fläche darf gebogen sein. schattenNetz (dasselbe mit Rand) und
+    /// schattenWelt für den weichen Schatten dahinter; ohne Shader zeichnet das Netz einfarbig (eckig).
+    /// </summary>
+    public void FlaecheNetz(Mesh netz, Matrix welt, GlasFarbe farbe, Mesh? schattenNetz = null, Matrix? schattenWelt = null)
+    {
+        if (glas[L] is not { } g) { netz.Draw(ersatz[L], welt, Farbe(farbe)); flaechenBild++; return; }
+        if (schattenNetz is not null && schatten[L] is { } sm)
+        {
+            schattenNetz.Draw(sm, schattenWelt ?? welt, Farbe(GlasStil.Schatten with { A = GlasStil.Schatten.A * Math.Min(1, farbe.A / Math.Max(0.01, GlasStil.Glas.A)) }));
+            flaechenBild++;
+        }
+        netz.Draw(g, welt, Farbe(farbe));
+        flaechenBild++;
+    }
+
+    /// <summary>
     /// Knopf auf dem Glas («thin material»): Form Kreis, Kapsel (Radius halbe Höhe) bzw. abgerundetes Rechteck (12 pt). stufe 0 … 2: übereinanderliegende Knöpfe
     /// (Eintrag, darauf der Schalter, darauf sein Knopf) in dieser Reihenfolge.
     /// </summary>
@@ -285,6 +312,8 @@ sealed class GlasZeichner
     /// lesbar vor dem hellen Sitzungsraum und vor dunklen Wänden. Der Schein ist die Schrift selbst, dunkel und durchscheinend, in zwei Ringen (je acht Richtungen,
     /// 7 % und 14 % der Schrifthöhe) leicht versetzt und 1 mm dahinter. Höchstens zwei Zeilen (SchwebeHinweise.Kurz); zum Auge gedreht. Kosten: 17 Textaufrufe je
     /// Hinweis (StereoKit sammelt sie in einem Durchgang).
+    /// V1c (Auftrag V1c Punkt 5b: «vor sehr hellem Grund schwach … kräftiger, ohne Kasten»): vor hellem Grund (heller Sitzungsraum) sind die Ringe deckender und ein
+    /// dritter, weiterer kommt dazu (SchwebeHinweise.ScheinRinge; dann 25 Textaufrufe).
     /// </summary>
     public void Schein(string text, XVec3 ort, XVec3 auge, double hoehe, double deckkraft, TextAlign wo = TextAlign.Center,
         int zeichenJeZeile = SchwebeHinweise.ZeichenJeZeileVorgabe + 1)
@@ -296,7 +325,7 @@ sealed class GlasZeichner
         var p = XrTabletLogik.TabletLageAus(ort, auge - ort);
         var q = Drehung(p);
         var groesse = new Vec2((float)(laengste * hoehe * 0.62 + hoehe), (float)(anzahl * hoehe * 1.45));
-        foreach (var (r, a) in new[] { (0.07, 0.42), (0.14, 0.2) })
+        foreach (var (r, a) in SchwebeHinweise.ScheinRinge(hintergrund))
         {
             var stil = Stil(hoehe, new GlasFarbe(0.02, 0.03, 0.05, a * deckkraft));
             for (int k = 0; k < 8; k++)

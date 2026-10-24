@@ -2,6 +2,7 @@ using System.Globalization;
 using System.Numerics;
 using Hlks.Xr;
 using Hlks.Xr.Bedienung;
+using Hlks.Xr.Desktop;
 using Hlks.Xr.Labor;
 using Hlks.Xr.Marker;
 using Hlks.Xr.Messen;
@@ -80,6 +81,9 @@ sealed partial class QuestApp
     /// </summary>
     void AppOeffnen(string id, XVec3? platzSymbole = null)
     {
+        // V1c: «Desktop» ist eine App wie die andern (Entscheid Hauptlauf): sein Symbol holt den Bildschirm des PCs; eine andere App schiebt ihn hinaus (ein Fenster)
+        if (id == DesktopBildschirm.FarbId) { DesktopOeffnen(); return; }
+        if (desktop is { Ansicht.Sichtbar: true } d) d.Ausblenden(Time.Total);
         apps.RegisterWaehlen(id);
         statusGesten = false;
         var platz = sitzung.Aktiv && !sitzung.Echt.WartetAufTisch ? AppPlatz(Input.Head) : platzSymbole ?? symbole.Mitte ?? AppPlatz(Input.Head);
@@ -136,6 +140,7 @@ sealed partial class QuestApp
         l.Add(new("marker", "Marker", GlasSymbole.Marker));
         l.Add(sitzung.Aktiv ? new("tisch", "Tisch", GlasSymbole.Tisch) : new("ort", "Ort", GlasSymbole.Begehen));
         if (ebenen.Liste.Count > 0) l.Add(new("ebenen", "Ebenen", GlasSymbole.Ebenen));
+        if (paket is not null) l.Add(new(DesktopBildschirm.FarbId, "Desktop", GlasSymbole.Desktop));   // V1c: nur mit Kopplung (Reserveplatz rechts im Feld)
         return l;
     }
 
@@ -302,6 +307,7 @@ sealed partial class QuestApp
                 new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), seite, bedien.Pinch);
         }
         var rechteHand = Beobachtung(Handed.Right, "right");
+        if (desktop?.Haende is { } ph && ph().Rechts is { } prh) rechteHand = HandBeobachtung.Aus(prh, "right", bedien.Pinch);   // V1c-Prüflauf: die gedachte Hand
         hebeStand = HebeGeste.Schritt(hebe, Time.Total, Beobachtung(Handed.Left, "left"), rechteHand, KopfRef(kopf).Gieren, bedien.Hebe);
         var kopfSymbole = pruefKopf ?? kopf;   // Prüflauf: gedachter Kopf (sitzend am Tisch)
         if (pruefHebe is { } pf) hebeStand = new HebeStand(pruefHebeEreignis, pf, kopfSymbole.position.y - bedien.Symbole.HoeheM, false);
@@ -317,18 +323,22 @@ sealed partial class QuestApp
             GeisterWegwischen(kopf);
         }
         if (!symbole.Sichtbar) symbole.Untergrenze = SymbolUntergrenze();   // am Tisch: das Feld bleibt über der Tischplatte
-        // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld seitlich aus (bzw. «dahinter» zurück); schliesst sie, kehrt es frontal zurück
-        symbole.Hinten = apps.Sichtbar && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
-        // Variante «feld_bei_app» = «seitlich» (Vorgabe, Christian 24.10.2026): das Feld weicht neben Fenster und Ornamente aus. Während das Fenster weggewischt wird,
-        // bleibt die Lage von vorher (sonst schöbe das nach links gleitende Fenster die linken Symbole weiter); danach kehrt das Feld frontal zurück.
-        if (!apps.Sichtbar) symbole.AppFlaechen = null;
-        else if (!apps.Weggewischt && !(wischStand.Laeuft && wischZielId == "app") && apps.Rahmen is { } ar)
+        // Variante «stehen» (Vorgabe): ist eine App offen, weicht das Feld seitlich aus (bzw. «dahinter» zurück); schliesst sie, kehrt es frontal zurück.
+        // V1c (Auftrag Punkt 4 und 5a): der Bildschirm des PCs zählt wie eine offene App; wird die App bzw. der Bildschirm weggewischt, kehrt das Feld schon zu
+        // Beginn der Geste frontal zurück (statt unter dem gleitenden Fenster zu stehen).
+        var appOffen = apps.Sichtbar && !apps.Weggewischt && !(wischStand.Laeuft && wischZielId == "app");
+        var desktopOffen = desktop is { Ansicht: { Sichtbar: true, Phase: not DesktopPhase.Raus } } && !(wischStand.Laeuft && wischZielId == DesktopAnsicht.ZielId);
+        symbole.Hinten = (appOffen || desktopOffen) && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+        // Variante «feld_bei_app» = «seitlich» (Vorgabe, Christian 24.10.2026): das Feld weicht neben Fenster und Ornamente (bzw. den Bildschirm) aus
+        var fl = new List<TabletPose>();
+        if (appOffen && apps.Rahmen is { } ar)
         {
-            var fl = new List<TabletPose> { ar.Fenster, ar.Griff, ar.Schliessen };
+            fl.AddRange([ar.Fenster, ar.Griff, ar.Schliessen]);
             if (ar.Ornament is { } orn) fl.Add(orn);
             if (lauf is not null && karte.Lage is { } kl) fl.Add(kl);
-            symbole.AppFlaechen = fl;
         }
+        if (desktopOffen) fl.AddRange(desktop!.Belegt);
+        symbole.AppFlaechen = fl.Count > 0 ? fl : null;
         if (symbole.Bild(kopfSymbole, Time.Total, Time.Step, symbolListe, hebeStand, bedien, strahlen) is { } gewaehlt) SymbolGewaehlt(gewaehlt);
         // Variante «ausblenden»: die gewählte App öffnet sich, sobald die Symbole ausgeblendet sind
         if (appWahl is { } wahl && !symbole.Sichtbar) { appWahl = null; AppOeffnen(wahl.Id, wahl.Platz); }
@@ -360,6 +370,8 @@ sealed partial class QuestApp
     {
         var auge = new XVec3(kopf.position.x, kopf.position.y, kopf.position.z);
         var gieren = KopfRef(kopf).Gieren;
+        // V1c: kurz nach dem Hineinziehen ruht das Wegwischen (das Zurückholen der Hand nach links wischt nichts weg; DesktopGesten)
+        if (desktop?.WegwischenRuht(Time.Total) == true) rechteHand = null;
         wischStand = Wegwischen.Schritt(wegwisch, Time.Total, rechteHand, gieren, bedien.Wegwischen);
         if (pruefWisch is { } pw)
         {
@@ -368,6 +380,7 @@ sealed partial class QuestApp
             wischStand = new WegwischStand(pruefWischEreignis, pw, !pruefWischEreignis, [start, start + Wegwischen.Links(gieren) * pw]);
             pruefWischEreignis = false;
         }
+        if (wischStand.Ereignis) desktop?.NachWegwischen(Time.Total);   // V1c: das Zurückholen der Hand nach rechts zieht den Bildschirm nicht herein
         var kandidaten = WegwischZiele.Select(z => (Ziel: z, Kandidat: z.Kandidat(auge))).Where(x => x.Kandidat is not null).ToList();
         wischZielId = Wegwischen.ZielFuehren(wischZielZustand, wischStand, [.. kandidaten.Select(x => x.Kandidat!)], auge);   // das Ziel bleibt über die ganze Geste
         foreach (var (ziel, kandidat) in kandidaten)
@@ -521,6 +534,7 @@ sealed partial class QuestApp
     void WischAnwenden(WischRichtung r, Vec3 ort, string? hand = null)
     {
         if (hand is not null && messen.Hand == hand) return;
+        if (DesktopSperrt) return;   // V1c: die VR-Szene bleibt starr, solange der Bildschirm des PCs da ist (kein Blättern, kein Etagenwechsel)
         var mitApps = bedien.MitApps && apps.Sichtbar;
         var anFenster = mitApps && (apps.HandNah(Handed.Left) || apps.HandNah(Handed.Right));
         var aufgabeOffen = lauf is { Fertig: false };

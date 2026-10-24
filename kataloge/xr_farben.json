@@ -14,6 +14,7 @@
     { "id": "ebenen", "titel": "Ebenen", "hell": { "ton": "#DCEBD9", "akzent": "#476F3E" }, "dunkel": { "ton": "#456443", "akzent": "#DCEBD9" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (salbei), zu bestätigen" },
     { "id": "gesten", "titel": "Gesten", "hell": { "ton": "#E9E3EE", "akzent": "#593E6F" }, "dunkel": { "ton": "#524068", "akzent": "#E9E3EE" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (flieder), zu bestätigen" },
     { "id": "labor", "titel": "Labor (Aufgabenkarte)", "hell": { "ton": "#F1E6EC", "akzent": "#6F3E59" }, "dunkel": { "ton": "#634057", "akzent": "#F1E6EC" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (rosé), zu bestätigen" },
+    { "id": "desktop", "titel": "Desktop in der Brille (Bildschirm des PCs)", "hell": { "ton": "#D5ECEC", "akzent": "#3E6F6F" }, "dunkel": { "ton": "#3E6468", "akzent": "#D5ECEC" }, "quelle": "Vorschlag V1c nach der Regel von V1a (petrol, Farbton 180° in der Lücke zwischen Messen und KICAD), zu bestätigen" },
     { "id": "vorgabe", "titel": "Übrige (Schliessen, Griff, Apps ohne eigenen Ton)", "hell": { "ton": "#E4E7EB", "akzent": "#3E536F" }, "dunkel": { "ton": "#3E4F68", "akzent": "#E4E7EB" }, "quelle": "Vorschlag V1a in der Art der App-Pastellreihe (neutral), zu bestätigen" }
   ]
 }

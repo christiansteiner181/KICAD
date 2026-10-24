@@ -37,9 +37,9 @@ test('Jede Textur ist ein PNG mit Deckkraft (RGBA) in der Grösse PX × PX', () 
   }
 });
 
-test('Die App nimmt bestehende Schlüssel von KICAD; die neuen (sitzungstisch, gesten, haken) stehen in symbole.js und haben eine Revit-Fassung', () => {
+test('Die App nimmt bestehende Schlüssel von KICAD; die neuen (sitzungstisch, gesten, haken, V1c bildschirm) stehen in symbole.js und haben eine Revit-Fassung', () => {
   for (const n of NAMEN) assert.ok(strich.SYMBOLNAMEN_STRICH.includes(n) || wz.SYMBOLNAMEN.includes(n), `${n} fehlt in symbole.js bzw. werkzeuge/symbole.js`);
-  for (const n of ['sitzungstisch', 'gesten', 'haken']) assert.ok(strich.SYMBOLNAMEN_STRICH.includes(n), `${n} fehlt in symbole.js`);
-  for (const n of ['info', 'geschoss', 'bemassung', 'sichtbarkeit', 'schliessen', 'loeschen', 'problemMarker', 'raumBegehen']) assert.ok(NAMEN.includes(n));
-  for (const n of ['sitzungstisch', 'gesten', 'haken', 'problemMarker', 'raumBegehen']) assert.ok(rv.hatRevitFassung(n), `${n} ohne Revit-Fassung`);
+  for (const n of ['sitzungstisch', 'gesten', 'haken', 'bildschirm']) assert.ok(strich.SYMBOLNAMEN_STRICH.includes(n), `${n} fehlt in symbole.js`);
+  for (const n of ['info', 'geschoss', 'bemassung', 'sichtbarkeit', 'schliessen', 'loeschen', 'problemMarker', 'raumBegehen', 'bildschirm']) assert.ok(NAMEN.includes(n));
+  for (const n of ['sitzungstisch', 'gesten', 'haken', 'bildschirm', 'problemMarker', 'raumBegehen']) assert.ok(rv.hatRevitFassung(n), `${n} ohne Revit-Fassung`);
 });

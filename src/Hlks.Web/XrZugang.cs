@@ -262,6 +262,7 @@ public sealed class XrNetzDienst : IHostedService
         sucheFehler = null;
         if (server is null) return;
         kanal.AlleTrennen();
+        dienste.GetService<XrDesktopDienst>()?.AlleTrennen();   // V1c: Bildschirm in der Brille (1001, wie der Kanal)
         using (var frist = new CancellationTokenSource(TimeSpan.FromSeconds(3)))
         {
             try { await server.StopAsync(frist.Token); }
@@ -429,6 +430,7 @@ public static class XrZugangDienste
         s.AddSingleton<XrKanal>();
         s.AddSingleton<XrNetzDienst>();
         s.AddHostedService(sp => sp.GetRequiredService<XrNetzDienst>());
+        s.AddXrDesktop();   // V1c: Bildschirm des PCs in der Brille (XrDesktop.cs)
         return s;
     }
 }

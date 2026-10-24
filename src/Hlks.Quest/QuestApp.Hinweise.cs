@@ -56,13 +56,14 @@ sealed partial class QuestApp
 
     /// <summary>
     /// Flächen, über die kein Hinweis darf: Fenster (mit Werkzeugleiste, Griff, Tooltip), Symbole und ihre Tooltips, die Karte einer Aufgabe, der Weg laufender
-    /// Geisterhände und am Tisch das Modell (je als Hülle im Blick).
+    /// Geisterhände, am Tisch das Modell (je als Hülle im Blick) und – V1c – der Bildschirm des PCs.
     /// </summary>
     List<TabletPose> HinweisHindernisse(XVec3 auge)
     {
         var l = new List<TabletPose>(apps.Belegt);
         l.AddRange(symbole.Flaechen);
         if (lauf is not null && karte.Lage is { } k) l.Add(k);
+        if (desktop is { } d) l.AddRange(d.Belegt);   // V1c: nie vor dem Bildschirm des PCs (Auftrag V1c Punkt 4)
         foreach (var g in new[] { geister, geister2 })
             if (g.Laeuft(Time.Total) && Glas.HuelleImBlick([.. g.Bereich], auge, 0.015) is { } gh) l.Add(gh);
         if (ModellBoxImRaum() is { Count: > 0 } ecken && Glas.HuelleImBlick(ecken, auge, 0.02) is { } mh) l.Add(mh);

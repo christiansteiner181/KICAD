@@ -85,6 +85,8 @@ const S = {
   sitzungstisch: '<path d="M3 17h26M7 17v10M25 17v10"/><path d="M11 17v-6l5-3 5 3v6M11 11l5 3 5-3M16 14v3"/>',
   gesten: '<path d="M11.5 16V7.5a1.5 1.5 0 0 1 3 0V15M14.5 14V5.5a1.5 1.5 0 0 1 3 0V14M17.5 14.5V7a1.5 1.5 0 0 1 3 0v8.5M20.5 16v-5a1.5 1.5 0 0 1 3 0v8c0 5-3.2 8.5-7.5 8.5c-3 0-4.8-1.6-6.5-4l-3.2-4.6a1.5 1.5 0 0 1 2.5-1.7l2.7 3.3V16"/>',
   haken: '<path d="M7 17l6 6 12-14"/>',
+  // Quest App V1c: «Desktop in der Brille» = Bildschirm des PCs auf dem Fuss, eigene Zeichnung
+  bildschirm: '<rect x="3" y="5" width="26" height="17" rx="1.5"/><path d="M16 22v5M10 27h12"/><path d="M7 18h6"/>',
   // HKAP (Modul 1d): Verbinden = zwei Kästchen mit Verbindung, Abgleich = zwei Pfeile gegeneinander zwischen zwei Tabellen, Befunde senden = Warndreieck mit Pfeil
   hkapVerbinden: '<rect x="3" y="5" width="9" height="9" rx="1"/><rect x="20" y="18" width="9" height="9" rx="1"/><path d="M12 9.5h5a3 3 0 013 3V18M16 22.5h-4M7.5 14v8.5H12"/>',
   hkapAbgleich: '<rect x="3" y="4" width="10" height="24" rx="1"/><rect x="19" y="4" width="10" height="24" rx="1"/><path d="M6 10h4M6 16h4M6 22h4M22 10h4M22 16h4M22 22h4M14 12h4M16 10l2 2-2 2M18 20h-4M16 18l-2 2 2 2"/>',
