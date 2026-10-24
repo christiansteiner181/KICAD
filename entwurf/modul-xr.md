@@ -144,6 +144,12 @@ Version 1 darauf aufbauen. Inhalt wie im Auftrag: Modell laden, Begehen, Hände;
     (Abschnitt 6).
   - Zu prüfen: Dürfen Apps auf der Quest 3 die Kamerabilder dafür nutzen? Wie genau ist das?
 
+**Darstellung nach der Vision** (Christian, 24.10.2026, nach den Prüfbildern: «richte dich bei der Darstellung der apps und funktionen nach der vision.»):
+- Alle Apps, Karten und Hinweise erscheinen in einem einheitlichen Hologramm-Stil (XR-C «Aussehen»): durchscheinend mit leichtem Leuchten, Cyan/Blau, feines Raster bzw. Scanlinien, weicher Rand, Aufbauen beim Öffnen, Leuchten beim Antippen, lesbar vor jeder Wand.
+- Der Sitzungsraum hat die «Tron-Optik» (XR-H).
+- Nach der Leitlinie: Inhalte im Raum und am Objekt statt Textlisten (Etagen als Scheiben, Messwert an der Linie, Marker als Symbol), wenig Text, Ton und Licht.
+- Die grauen Textkacheln der ersten Fassung (P5a) gelten als überholt; die Umsetzung läuft mit V1a.
+
 **Aufgaben und Zuteilung** (Agenten nach `CLAUDE.md`; Bauagenten mit eigener Arbeitskopie, Zuteilung in `zuteilung.md`):
 
 | Nr. | Aufgabe | Wer | Hängt ab von |
