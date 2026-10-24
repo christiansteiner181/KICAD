@@ -2646,10 +2646,13 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 ### Karte der Prüfaufgaben, Geisterhand, Gesten
 - **Karte** (Befund Durchsicht 24.10.2026): Glas wie die App, so klein wie der Text, Farbe nur als Akzent (Punkt vor dem Titel: läuft weiss, wartet orange, abgebrochen grau;
   grüner Haken bei Erfolg). Mit Fenster steht sie als **Ornament über dem Fenster** (deckt die App nicht), sonst rechts neben dem Blick. Knopf «Aufgabe beenden» unten
-  rechts, daneben «oder wegwischen».
-- **Geisterhand** führt Gesten neben den Bedienelementen vor, nie über ihnen (Prüflauf: Antippen links neben der Registerleiste).
-- **Gesten** (Tabelle im Register Status › «Gesten»): neu «Pinch halten, ziehen, loslassen (Messen ein)», «Offene Hand schnell quer über eine Messlinie», «Pinch auf eine
-  Stelle (Marker setzen)», «Pinch am Griff unter dem Fenster»; Pinch + Wisch links/rechts blättert, wenn die Hand am Fenster ist; Wegwischen blendet das Fenster aus.
+  rechts; der Gestenhinweis «Pinch + Wisch nach vorn: abbrechen» schwebt frei über der Karte.
+- **Geisterhand** führt Gesten neben den Bedienelementen vor, nie über ihnen (Befund Durchsicht 24.10.2026; Regel `Geisterhand.Neben`), dazu die Hebegeste und das
+  Wegschieben (zwei Hände).
+- **Gesten** (Tabelle in der App KICAD › «Gesten»): neu «Pinch halten, ziehen, loslassen (Messen ein)», «Offene Hand schnell quer über eine Messlinie», «Pinch auf eine
+  Stelle (Marker setzen)», «Pinch am Griff unter dem Fenster», «Beide Handflächen nach oben, deutlich anheben» (holt die Symbole; ersetzt «Linke Handfläche zum
+  Gesicht drehen»), «Beide Hände aus der Mitte nach aussen wischen (Handflächen aussen)» (schiebt die Symbole weg); Pinch + Wisch links/rechts blättert, wenn die Hand am
+  Fenster ist; Wegwischen blendet das Fenster aus.
 
 ### Stellschrauben und Varianten (neu bzw. geändert)
 | Schlüssel | Vorgabe | Bereich | Wirkung |
@@ -2669,19 +2672,22 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 ### Prüfen
 - **Am PC:** `werkzeuge\quest_pruefen.ps1 [-Projekt <Test_praxis>] [-Pruefbilder <ordner>]` meldet in jeder Zeile «P4 ok» zusätzlich «V1a: Glas=ok, Umgebung=ok, Fang=ok
   (…, ms je Strahl), Messen=ok (zwei Punkte, Lot, Wisch löscht), Marker=ok (…)» und am Tisch «Fenster am Tisch=ok», «Decke über dem Raum=ok (Schnitt oben …, Unterseite
-  der Decke …)»; Lauf 1 spielt «messen-wand-wand» (eine Messung daneben, eine von Wand zu Wand). Das Skript prüft mit `GET /api/xr/marker`, dass die Marker von Lauf 1,
+  der Decke …)»; Lauf 1 spielt «messen-wand-wand» (eine Messung daneben, eine von Wand zu Wand) und gescriptet die Symbole: Hebegeste mit gedachten Händen, eine gedachte
+  Fingerspitze vor «Messen» (Zeiger, Tooltip), Berührung öffnet die App, Wegschieben – Zeile «Symbole=ok (…)»; «Apps=ok (Symbole …)» prüft die Wahl über die Regeln. Das Skript prüft mit `GET /api/xr/marker`, dass die Marker von Lauf 1,
   der wartende aus Lauf 2 (ohne PC) und der am Tisch aus Lauf 3 im Projekt angekommen sind. Mit `-Pruefbilder` dazu `glas_apps.jpg`, `glas_marker.jpg`, `messen.jpg`,
-  `marker.jpg` (Bild ohne Apps), `glas_apps_sitzung.jpg`, `glas_tisch.jpg`, `marker_sitzung.jpg`, `sitzung_umgebung.jpg` (nur lokal).
+  `marker.jpg` (Bild ohne Apps), `hebe_halb.jpg`, `symbole.jpg`, `symbol_tooltip.jpg`, `app_nach_wahl.jpg`, `wegschieben_halb.jpg`, `hinweis_begehen.jpg`,
+  `glas_apps_sitzung.jpg`, `glas_tisch.jpg`, `marker_sitzung.jpg`, `symbole_sitzung.jpg`, `hinweis_sitzung.jpg`, `sitzung_umgebung.jpg` (nur lokal).
 - **Tests:** Xr `V1aMessenTests` (Fang: Ecke, Kante, Mitte, Achse von Rohr und Kanal, Fläche, Strahl, Sichtbarkeit; Messband und zwei Punkte, Lot, Löschen), `V1aLaborTests`
   (Wandpaar, Sollmass von der sichtbaren Fläche, Prüfung, Lauf), `V1aMarkerTests` (Format, Ablage, Liste), `V1aGlasTests` (Masse, Inhalt, Fensterteile, Verankerung,
-  neben dem Tisch, Hinweise, Strahl, Tönung nach der Umgebung, Geisterhand neben der Leiste, Stellschrauben), `V1aSitzungTests` (Decke über dem Raum, heller Hintergrund,
+  neben dem Tisch, Hinweise, Strahl, Tönung nach der Umgebung, Geisterhand neben der Leiste, Stellschrauben), `V1aSymboleTests` (Hebegeste, Wegschieben, Fehlauslösungen,
+  weder Pinch + Wisch noch Sprung, Lage der Symbole, Tooltip, Zeiger, Hinweise frei schwebend, Stellschrauben), `V1aSitzungTests` (Decke über dem Raum, heller Hintergrund,
   Gestentabelle); Kern `ProblemMarkerTests` (Klasse, Grafik, BCF mit Schemaprüfung); Web `XrMarkerTests` (POST/GET, ETag, Kennung doppelt, ungültige Werte, Netzzugang,
   KI-Einordnung); Node `problemmarker.test.mjs` (Liste, Filter, Zeilen, Frist, BCF-Parameter, Kamera).
 - **Nur mit der Brille prüfbar:** wie sich das Messband mit echten Händen anfühlt (Pinch halten, Zugweg 2 cm, Klick 0.8 s), ob der Fang am Strahl genug trifft (3 cm + 3 cm/m)
   und das Fangsymbol lesbar ist; die Wischgeste über eine Messlinie; Marker setzen mit kurzem Pinch; Lesbarkeit und Kontrast des Glases im echten Raum (Passthrough) und
   im hellen Sitzungsraum; Lage des Fensters (30°) und der Karte über dem Fenster; die Kosten des Fangs auf der Quest (am PC 2.5 ms je Strahl am Tisch) und die Bildrate
-  mit Glas und Umgebung.
-- **Anleitung:** `zb-quest-v1a-messen`, `zb-quest-v1a-marker`, `zb-quest-v1a-glas`, `zb-problemmarker-palette` in `berichte/anleitung/inventar.json`.
+  mit Glas und Umgebung; die Hebegeste und das Wegschieben mit echten Händen (Schwellen, Fehlauslösungen), Griffweite der Symbole, Lesbarkeit der Hinweise ohne Kasten.
+- **Anleitung:** `zb-quest-v1a-symbole`, `zb-quest-v1a-messen`, `zb-quest-v1a-marker`, `zb-problemmarker-palette` in `berichte/anleitung/inventar.json`.
 
 ## Modul XR: XR-Labor (Quest App P6, `entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P6; Entscheid Christian 23.10.2026: «Prüfung: kurz gemischt», «Deutsche Fassungen der Fragebogen nur mit Quelle»)
 
