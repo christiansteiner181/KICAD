@@ -1,9 +1,9 @@
 {
   "art": "hlks-xr-stellschrauben",
   "fassung": 1,
-  "beschreibung": "Stellschrauben des Interface-Labors (Modul XR, Quest App P6): Werte, die KICAD live an die Brille schickt (Kanal «stellschraube») und die die Quest App ab P5 versteht. Vertrag zwischen KICAD (XrLabor.cs, Dialog «XR-Labor») und der App (P5). Wert null setzt eine Stellschraube auf ihre Vorgabe zurück. Keine Normwerte: alle Werte sind Bedienungs-Einstellungen, die Christian im Brillentest festlegt.",
+  "beschreibung": "Stellschrauben des Interface-Labors (Modul XR, Quest App P6): Werte, die KICAD live an die Brille schickt (Kanal «stellschraube») und die die Quest App versteht (seit P5b alle, Status «app»). Vertrag zwischen KICAD (XrLabor.cs, Dialog «XR-Labor») und der App: die App holt den Katalog beim Verbinden (GET /api/xr/labor/katalog) und nimmt Vorgaben und Grenzen von hier; Wert null setzt eine Stellschraube auf ihre Vorgabe zurück. Keine Normwerte: alle Werte sind Bedienungs-Einstellungen, die Christian im Brillentest festlegt.",
   "gruppen": [
-    { "id": "begehen", "titel": "Begehen (Springen und Drehen)" },
+    { "id": "begehen", "titel": "Begehen (Springen, Drehen, Röntgen-Hand)" },
     { "id": "haltung", "titel": "Haltung (sitzend oder stehend)" },
     { "id": "anzeige", "titel": "Anzeige" },
     { "id": "apps", "titel": "Schwebende Apps" },
@@ -17,13 +17,13 @@
       "muster": "labor.variante.<name>",
       "beschreibung": "Gewählte Variante einer Bedienung (A/B). <name> und die erlaubten Werte stehen in xr_varianten.json. KICAD sendet die Wahl als Stellschraube (Wert = Id der Option) und merkt sie für neue Verbindungen; null setzt auf die Vorgabe der Variante zurück.",
       "quelle": "xr_varianten.json",
-      "status": "folgt_p5"
+      "status": "app"
     },
     {
       "muster": "labor.aufgabe",
       "beschreibung": "Startet eine Prüfaufgabe in der Brille (Wert = Id aus xr_pruefaufgaben.json); null beendet bzw. bricht ab. KICAD sendet sie nur an die verbundenen Brillen und merkt sie NICHT (eine neue Verbindung startet keine Aufgabe).",
       "quelle": "xr_pruefaufgaben.json",
-      "status": "folgt_p5"
+      "status": "app"
     }
   ],
   "stellschrauben": [
@@ -41,7 +41,7 @@
     },
     {
       "schluessel": "begehen.ziel_verzoegerung_s", "gruppe": "begehen", "titel": "Verzögerung beim Loslassen", "status": "app",
-      "beschreibung": "Es gilt das Ziel von so lange vor dem Loslassen; so lange darf der Strahl beim Öffnen der Finger den Boden verlassen.",
+      "beschreibung": "Es gilt das Ziel von so lange vor dem Loslassen; so lange darf der Strahl beim Öffnen der Finger den Boden verlassen (beim Stick: so frisch muss das letzte Ziel sein).",
       "art": "zahl", "einheit": "s", "min": 0, "max": 0.5, "schritt": 0.01, "vorgabe": 0.1,
       "herkunft": "Annahme P4a (HandBegehen.cs); Brillentest 23.10.2026"
     },
@@ -52,10 +52,22 @@
       "herkunft": "Christian 23.10.2026 (Brillentest): «schnell aufeinanderfolgende drehungen nur in eine richtung zulassen»; Vorgabe 1.0 s Annahme Hauptlauf"
     },
     {
-      "schluessel": "begehen.drehwinkel_grad", "gruppe": "begehen", "titel": "Winkel je Drehschritt", "status": "folgt_p5",
-      "beschreibung": "Um so viele Grad dreht ein Wisch die Welt.",
+      "schluessel": "begehen.drehwinkel_grad", "gruppe": "begehen", "titel": "Winkel je Drehschritt", "status": "app",
+      "beschreibung": "Um so viele Grad dreht ein Wisch (bzw. der Stick seitlich) die Welt.",
       "art": "zahl", "einheit": "°", "min": 5, "max": 90, "schritt": 5, "vorgabe": 30,
-      "herkunft": "VrLogik.SnapGrad (30°); Brillentest 23.10.2026: «Das neue Drehen passt»"
+      "herkunft": "VrLogik.SnapGrad (30°), XrBedienEinstellungen.DrehwinkelGrad (P5a); Brillentest 23.10.2026: «Das neue Drehen passt»"
+    },
+    {
+      "schluessel": "roentgen.winkel_grad", "gruppe": "begehen", "titel": "Röntgen-Hand: Öffnungswinkel", "status": "app",
+      "beschreibung": "Ganzer Öffnungswinkel des Kegels vor der offenen Hand (Handfläche nach vorn), in dem Wände und Decken durchscheinend werden.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 120, "schritt": 5, "vorgabe": 40,
+      "herkunft": "Annahme P5b (RoentgenEinstellungen.WinkelGrad: 40° ganz, ±20° um die Zeigerichtung); Ergänzung Christian 23.10.2026 «Röntgen-Hand», Auftrag P5b"
+    },
+    {
+      "schluessel": "roentgen.reichweite_m", "gruppe": "begehen", "titel": "Röntgen-Hand: Reichweite", "status": "app",
+      "beschreibung": "So weit reicht der Kegel der Röntgen-Hand von der Hand aus.",
+      "art": "zahl", "einheit": "m", "min": 1, "max": 20, "schritt": 0.5, "vorgabe": 6,
+      "herkunft": "Annahme P5b (RoentgenEinstellungen.ReichweiteM: 6 m, etwa ein bis zwei Wände weit); Auftrag P5b"
     },
     {
       "schluessel": "haltung.schwelle_m", "gruppe": "haltung", "titel": "Sitzhöhe (Schwelle)", "status": "app",
@@ -76,98 +88,110 @@
       "herkunft": "Annahme Hauptlauf 23.10.2026 (DrehenSchalter.cs); Brillentest 23.10.2026"
     },
     {
-      "schluessel": "anzeige.skala", "gruppe": "anzeige", "titel": "Grösse der Anzeigebox", "status": "folgt_p5",
-      "beschreibung": "Faktor für Box und Text der Anzeige in der Brille (Hinweise, Schalter, Meldungen).",
+      "schluessel": "anzeige.skala", "gruppe": "anzeige", "titel": "Grösse von Schrift und Box", "status": "app",
+      "beschreibung": "Faktor für die Schrift der Apps, der Hinweise und der Karte einer Prüfaufgabe sowie für die Box (Variante «Tablet»).",
       "art": "zahl", "einheit": "×", "min": 0.5, "max": 3, "schritt": 0.05, "vorgabe": 1.35,
-      "herkunft": "Brillentest 23.10.2026: «text und box eher etwas klein» → 1.35; Christian: «Ja, passt» (QuestApp.cs AnzeigeSkala)"
+      "herkunft": "Brillentest 23.10.2026: «text und box eher etwas klein» → 1.35; Christian: «Ja, passt» (AppEinstellungen.Skala)"
     },
     {
-      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse einer App-Kachel", "status": "folgt_p5",
+      "schluessel": "apps.groesse_m", "gruppe": "apps", "titel": "Grösse einer App-Kachel", "status": "app",
       "beschreibung": "Kantenlänge der schwebenden Kacheln. Grosse Ziele machen Genauigkeit unnötig (Leitbild Christian 23.10.2026).",
       "art": "zahl", "einheit": "m", "min": 0.08, "max": 0.4, "schritt": 0.01, "vorgabe": 0.18,
-      "herkunft": "Annahme P6, ungeprüft; Brillentest folgt, P5 setzt die Vorgabe der App ein"
+      "herkunft": "Annahme P6, in P5a übernommen (AppEinstellungen.GroesseM, 18 cm); Brillentest folgt"
     },
     {
-      "schluessel": "apps.abstand_m", "gruppe": "apps", "titel": "Abstand der Apps", "status": "folgt_p5",
-      "beschreibung": "Abstand der schwebenden Apps vom Körper (Griffbereich).",
+      "schluessel": "apps.abstand_m", "gruppe": "apps", "titel": "Abstand der Apps", "status": "app",
+      "beschreibung": "Abstand der schwebenden Apps von der Brust (Griffbereich).",
       "art": "zahl", "einheit": "m", "min": 0.25, "max": 0.9, "schritt": 0.01, "vorgabe": 0.45,
-      "herkunft": "Annahme P6, ungeprüft; Brillentest folgt"
+      "herkunft": "Annahme P6, in P5a übernommen (AppEinstellungen.AbstandM, 45 cm vor der Brust); Brillentest folgt"
     },
     {
-      "schluessel": "apps.anordnung", "gruppe": "apps", "titel": "Anordnung der Apps", "status": "folgt_p5",
+      "schluessel": "apps.anordnung", "gruppe": "apps", "titel": "Anordnung der Apps", "status": "app",
       "beschreibung": "Wie die Kacheln im Griffbereich stehen.",
       "art": "auswahl", "auswahl": [
         { "wert": "bogen", "titel": "Im Bogen um den Körper" },
         { "wert": "reihe", "titel": "In einer Reihe vor dem Körper" },
         { "wert": "an_hand", "titel": "An der Hand" }
       ], "vorgabe": "bogen",
-      "herkunft": "Vorschlag P6 (die Auswahl legt P5 fest); Leitbild Christian 23.10.2026: schwebende Apps"
+      "herkunft": "Entscheid P5a (Anordnungen: bogen auf Brusthöhe links neben dem Blick, reihe, an_hand); Leitbild Christian 23.10.2026: schwebende Apps"
     },
     {
-      "schluessel": "wisch.mindestweg_m", "gruppe": "wisch", "titel": "Mindestweg eines Wischs", "status": "folgt_p5",
+      "schluessel": "wisch.mindestweg_m", "gruppe": "wisch", "titel": "Mindestweg eines Wischs", "status": "app",
       "beschreibung": "Kürzester Weg (Sehne), der als Wisch zählt.",
       "art": "zahl", "einheit": "m", "min": 0.05, "max": 0.5, "schritt": 0.01, "vorgabe": 0.15,
       "herkunft": "Annahme Brillentest 21.10.2026 (XrWischLogik.WischWegM, xr-greifen-logik.js WISCH_WEG_M)"
     },
     {
-      "schluessel": "wisch.mindesttempo_ms", "gruppe": "wisch", "titel": "Mindesttempo eines Wischs", "status": "folgt_p5",
+      "schluessel": "wisch.mindesttempo_ms", "gruppe": "wisch", "titel": "Mindesttempo eines Wischs", "status": "app",
       "beschreibung": "Langsamer als dieses Tempo ist es kein Wisch.",
       "art": "zahl", "einheit": "m/s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.8,
       "herkunft": "Annahme Brillentest 21.10.2026 (XrWischLogik.WischVMs, xr-greifen-logik.js WISCH_V_MS)"
     },
     {
-      "schluessel": "wisch.richtung_toleranz_grad", "gruppe": "wisch", "titel": "Richtungstoleranz eines Wischs", "status": "folgt_p5",
+      "schluessel": "wisch.richtung_toleranz_grad", "gruppe": "wisch", "titel": "Richtungstoleranz eines Wischs", "status": "app",
       "beschreibung": "Höchstabweichung von der Waagrechten (bzw. Senkrechten), die noch als Wisch in diese Richtung gilt.",
-      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 1, "vorgabe": 37,
-      "herkunft": "abgeleitet aus XrWischLogik.WischWaagrecht 0.8 (≈ 37° gegen die Waagrechte); Annahme Brillentest 21.10.2026"
+      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 0.01, "vorgabe": 36.87,
+      "herkunft": "arccos(0.8) = 36.87° (WischEinstellungen.ToleranzVorgabe; für diesen Wert gilt genau die Regel «mindestens 80 % waagrecht» von XrWischLogik.WischWaagrecht); Annahme Brillentest 21.10.2026"
     },
     {
-      "schluessel": "pinch.schwelle_an_m", "gruppe": "pinch", "titel": "Pinch an (Fingerabstand)", "status": "folgt_p5",
+      "schluessel": "pinch.schwelle_an_m", "gruppe": "pinch", "titel": "Pinch an (Fingerabstand)", "status": "app",
       "beschreibung": "Daumen- und Zeigefingerspitze näher als dieser Abstand = Pinch.",
       "art": "zahl", "einheit": "m", "min": 0.01, "max": 0.06, "schritt": 0.001, "vorgabe": 0.025,
       "herkunft": "Annahme (XrTabletLogik.PinchAn, 2.5 cm); Brillentest 21.10./23.10.2026"
     },
     {
-      "schluessel": "pinch.schwelle_aus_m", "gruppe": "pinch", "titel": "Pinch aus (Fingerabstand)", "status": "folgt_p5",
+      "schluessel": "pinch.schwelle_aus_m", "gruppe": "pinch", "titel": "Pinch aus (Fingerabstand)", "status": "app",
       "beschreibung": "Erst ab diesem Abstand ist der Pinch gelöst (Hysterese gegen Flackern).",
       "art": "zahl", "einheit": "m", "min": 0.015, "max": 0.08, "schritt": 0.001, "vorgabe": 0.04,
       "herkunft": "Annahme (XrTabletLogik.PinchLos, 4 cm); Brillentest 21.10./23.10.2026"
     },
     {
-      "schluessel": "fang.radius_m", "gruppe": "pinch", "titel": "Fangradius am Finger", "status": "folgt_p5",
-      "beschreibung": "Innerhalb dieses Radius rastet der Finger an einem Ziel (Punkt, Kante, Kachel) ein.",
+      "schluessel": "fang.radius_m", "gruppe": "pinch", "titel": "Fangradius am Finger", "status": "app",
+      "beschreibung": "Innerhalb dieses Radius rastet der Finger an einem Ziel (Kachel, Eintrag, Knopf der Karte) ein.",
       "art": "zahl", "einheit": "m", "min": 0.005, "max": 0.15, "schritt": 0.005, "vorgabe": 0.03,
-      "herkunft": "Annahme Brillentest 21.10.2026 (XrMessLogik.cs: Fangradius am Finger 3 cm)"
+      "herkunft": "Annahme Brillentest 21.10.2026 (XrMessLogik.cs: Fangradius am Finger 3 cm; PinchEinstellungen.FangRadiusM)"
     },
     {
-      "schluessel": "komfort.tunnelblick", "gruppe": "komfort", "titel": "Tunnelblick beim Gehen", "status": "folgt_p5",
-      "beschreibung": "Beim Gehen engt sich das Blickfeld leicht ein (gegen Übelkeit).",
+      "schluessel": "komfort.tunnelblick", "gruppe": "komfort", "titel": "Tunnelblick beim Springen, Drehen und Etagenwechsel", "status": "app",
+      "beschreibung": "Das Blickfeld engt sich beim Springen, Drehen und Etagenwechsel kurz und weich ein (gegen Übelkeit).",
       "art": "ja_nein", "vorgabe": true,
-      "herkunft": "Ergänzung Christian 23.10.2026 (modul-xr.md «Komfort-Stellschrauben»); Vorgabe Annahme P6"
+      "herkunft": "Ergänzung Christian 23.10.2026 (modul-xr.md «Komfort-Stellschrauben»); Vorgabe Annahme P6, in P5a übernommen (KomfortEinstellungen.Tunnelblick)"
     },
     {
-      "schluessel": "komfort.tunnelblick_staerke", "gruppe": "komfort", "titel": "Stärke des Tunnelblicks", "status": "folgt_p5",
-      "beschreibung": "0 = kein Einengen, 1 = stark.",
+      "schluessel": "komfort.tunnelblick_staerke", "gruppe": "komfort", "titel": "Stärke des Tunnelblicks", "status": "app",
+      "beschreibung": "0 = kein Einengen (frei bis 60° um die Blickachse), 1 = stark (frei bis 15°).",
       "art": "zahl", "einheit": "", "min": 0, "max": 1, "schritt": 0.05, "vorgabe": 0.3,
-      "herkunft": "Ergänzung Christian 23.10.2026 (modul-xr.md «Komfort-Stellschrauben»); Vorgabe Annahme P6"
+      "herkunft": "Ergänzung Christian 23.10.2026 (modul-xr.md «Komfort-Stellschrauben»); Vorgabe Annahme P6, in P5a übernommen (KomfortEinstellungen.Staerke)"
     },
     {
-      "schluessel": "komfort.ton", "gruppe": "komfort", "titel": "Ton bei Fang, Griff und Berührung", "status": "folgt_p5",
+      "schluessel": "komfort.ton", "gruppe": "komfort", "titel": "Ton bei Fang, Griff und Berührung", "status": "app",
       "beschreibung": "Ton an oder aus (das Licht bleibt).",
       "art": "ja_nein", "vorgabe": true,
-      "herkunft": "Leitlinie Bedienung 23.10.2026 (Rückmeldung mit Ton und Licht); modul-xr.md «Stellschrauben live»"
+      "herkunft": "Leitlinie Bedienung 23.10.2026 (Rückmeldung mit Ton und Licht); modul-xr.md «Stellschrauben live» (KomfortEinstellungen.Ton)"
     },
     {
-      "schluessel": "sitzung.zoom_min", "gruppe": "sitzung", "titel": "Stärkster Zoom (kleinster Massstab-Nenner)", "status": "folgt_p5",
+      "schluessel": "sitzung.zoom_min", "gruppe": "sitzung", "titel": "Stärkster Zoom (kleinster Massstab-Nenner)", "status": "app",
       "beschreibung": "Das Modell am Sitzungstisch lässt sich bis 1:n vergrössern.",
-      "art": "zahl", "einheit": "1:n", "min": 5, "max": 100, "schritt": 5, "vorgabe": 20,
-      "herkunft": "XrSitzungLogik.MassstabMin (1:20), Annahme P1"
+      "art": "zahl", "einheit": "1:n", "min": 5, "max": 100, "schritt": 5, "vorgabe": 5,
+      "herkunft": "XrSitzungLogik.MassstabMin (1:5, P4b-Nachtrag); Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»"
     },
     {
-      "schluessel": "sitzung.zoom_max", "gruppe": "sitzung", "titel": "Schwächster Zoom (grösster Massstab-Nenner)", "status": "folgt_p5",
-      "beschreibung": "Das Modell am Sitzungstisch lässt sich bis 1:n verkleinern.",
+      "schluessel": "sitzung.zoom_max", "gruppe": "sitzung", "titel": "Schwächster Zoom (grösster Massstab-Nenner)", "status": "app",
+      "beschreibung": "Das Modell am Sitzungstisch lässt sich bis 1:n verkleinern; auch das Einpassen nutzt diese Grenze.",
       "art": "zahl", "einheit": "1:n", "min": 50, "max": 1000, "schritt": 10, "vorgabe": 200,
       "herkunft": "XrSitzungLogik.MassstabMax (1:200), Annahme P1"
+    },
+    {
+      "schluessel": "sitzung.schnitt_ruhe_s", "gruppe": "sitzung", "titel": "Schnitt mit flacher Hand: Ruhezeit", "status": "app",
+      "beschreibung": "So lange muss die flache Hand ruhig über dem Modell liegen, bevor der Schnitt ihr folgt.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 2, "schritt": 0.05, "vorgabe": 0.3,
+      "herkunft": "Annahme P5b (FlacheHandEinstellungen.RuheS); Ergänzung Christian 23.10.2026 «Schnitt mit der flachen Hand», Auftrag P5b «kurz ruhig»"
+    },
+    {
+      "schluessel": "sitzung.schnitt_toleranz_grad", "gruppe": "sitzung", "titel": "Schnitt mit flacher Hand: Winkeltoleranz", "status": "app",
+      "beschreibung": "So weit darf die Handfläche von waagrecht (Schnitt auf Höhe der Hand) bzw. senkrecht (Vertikalschnitt) abweichen.",
+      "art": "zahl", "einheit": "°", "min": 5, "max": 45, "schritt": 1, "vorgabe": 25,
+      "herkunft": "Annahme P5b (FlacheHandEinstellungen.ToleranzGrad)"
     }
   ]
 }

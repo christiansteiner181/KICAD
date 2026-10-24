@@ -21,6 +21,9 @@ namespace Hlks.Quest;
 /// Alles im Raum der Brille (StereoKit, Boden y = 0); das Raum-lokale System der Regeln bildet <see cref="RaumLage"/> ab.
 /// P5a: Wisch mit gehaltenem Pinch (nicht an einem Griff, nicht an den Apps) liefert Schritt an die App (hoch/runter = Etage, feste Gestenbedeutungen); Zoom in
 /// den Grenzen der Stellschrauben («sitzung.zoom_min/max»), Pinch-Schwellen «pinch.*»; Zögern an einem Griff zeigt eine Geisterhand (Greifen).
+/// P5b: Schnitt mit der flachen Hand (Regeln Hlks.Xr.Sitzung.FlacheHand): waagrecht über dem Modell, kurz ruhig, folgt der Schnitt der Hand, senkrecht gehalten ein
+/// Vertikalschnitt; Hand weg behält ihn, «Zurücksetzen» hebt ihn auf. Zusammen mit dem Schnitt der Ansicht ergibt er den Quader für den Shader «schnitt»
+/// (<see cref="WirksamerSchnitt"/>). Dazu zählt die App einen Pinch am Tisch ohne Griff (Fehlgriff der Prüfaufgabe «modell-greifen-zoomen»).
 /// </summary>
 sealed class Sitzungsraum
 {
@@ -43,6 +46,33 @@ sealed class Sitzungsraum
     ZoomGrenzen zoom = ZoomGrenzen.Vorgabe;
     /// <summary>P5a: Pinch-Schwellen (Stellschrauben «pinch.*»).</summary>
     public PinchEinstellungen Pinch { get; set; } = PinchEinstellungen.Vorgabe;
+    /// <summary>P5b: Stellschrauben der flachen Hand («sitzung.schnitt_*»).</summary>
+    public FlacheHandEinstellungen FlacheHand { get; set; } = FlacheHandEinstellungen.Vorgabe;
+    readonly FlacheHandZustand[] flach = [new(), new()];
+    readonly double[] griffBis = new double[2];
+    HandSchnitt? schnittHand;
+    /// <summary>P5b: Schnitt der flachen Hand (Szene), null = keiner; folgt er gerade einer Hand?</summary>
+    public HandSchnitt? SchnittHand => schnittHand;
+    public bool SchnittFolgt => flach[0].Folgt || flach[1].Folgt;
+    /// <summary>P5b: der Schnitt der flachen Hand beginnt zu folgen bzw. bleibt stehen (für Hinweis und Protokoll der App).</summary>
+    public event Action<FlacheHandEreignis, HandSchnitt?>? FlacheHandGeaendert;
+    /// <summary>P5b: Pinch am Tisch ohne Griff in Reichweite (zählt hoch; die App vergleicht je Bild).</summary>
+    public int PinchOhneGriff { get; private set; }
+
+    /// <summary>P5b: Quader für den Shader – Schnitt der Ansicht zusammen mit dem Schnitt der flachen Hand.</summary>
+    public SchnittQuader? WirksamerSchnitt => schnittHand is { } h ? h.Kombiniert(Ansicht?.Schnitt) : Ansicht?.Schnitt;
+
+    /// <summary>P5b: Hüllbox des Modells der Ansicht in der Szene (aus dem Bezug: Grundfläche um den Anker, ab dem tiefsten Punkt).</summary>
+    public Box3 ModellBox => Ansicht?.Bezug is { } b
+        ? new Box3(new XVec3(b.Anker.X - b.Groesse.B / 2, b.Unten, b.Anker.Z - b.Groesse.T / 2), new XVec3(b.Anker.X + b.Groesse.B / 2, b.Unten + b.Groesse.H, b.Anker.Z + b.Groesse.T / 2))
+        : Box3.Leer;
+
+    /// <summary>P5b: Schnitt der flachen Hand von aussen setzen (Prüfung am PC) bzw. aufheben (null).</summary>
+    public void SchnittHandSetzen(HandSchnitt? s)
+    {
+        schnittHand = s;
+        foreach (var z in flach) z.Zuruecksetzen();
+    }
     /// <summary>P5a: gezögert an einem Griff (Hand, Lage des Griffs im Raum der Brille, Gelenke der Hand) – die App zeigt die Geisterhand «Greifen».</summary>
     public (Handed Hand, Vec3 Griff, Dictionary<string, XVec3> Form)? Zoegern { get; private set; }
     GestenZustand gesten = XrSitzungLogik.GestenNeu(new SitzungLage(XrSitzungLogik.MassstabStart, 0, 0, 0));
@@ -137,9 +167,10 @@ sealed class Sitzungsraum
         if (!gleicherBezug) Zuruecksetzen();
     }
 
-    /// <summary>Startlage (XrSitzungLogik.Einpassen bzw. AusschnittLage).</summary>
+    /// <summary>Startlage (XrSitzungLogik.Einpassen bzw. AusschnittLage); P5b: hebt auch den Schnitt der flachen Hand auf.</summary>
     public void Zuruecksetzen()
     {
+        SchnittHandSetzen(null);
         if (Ansicht is null) return;
         var e = SitzungAuswahl.Startlage(Ansicht, zoom);
         Passt = e.Passt;
@@ -226,8 +257,12 @@ sealed class Sitzungsraum
             var p = XVec3.Mitte(d, zf);
             return (new GestenHand(pinch, XrSitzungLogik.GriffTreffer(p, null, griffe), p.X, p.Z, p.Y), p);
         }
+        var (vorL, vorR) = (pinchL, pinchR);
         var (links, pl) = Hand(Handed.Left, ref pinchL);
         var (rechts, pr) = Hand(Handed.Right, ref pinchR);
+        // P5b: ein neuer Pinch ohne Griff in Reichweite (und ohne gehaltenen Griff) – Fehlgriff der Prüfaufgabe «modell-greifen-zoomen»
+        if (!vorL && links is { Griff: true, Nah: null } && gesten.Besitzt.Links is null) PinchOhneGriff++;
+        if (!vorR && rechts is { Griff: true, Nah: null } && gesten.Besitzt.Rechts is null) PinchOhneGriff++;
         for (int i = 0; i < 2; i++)
             hover[i] = new[] { pl, pr }.Any(p => p is { } q && XrSitzungLogik.GriffTreffer(q, null, [griffe[i]], XrSitzungLogik.GriffHoverM) is not null);
         var vorherBesitz = gesten.Besitzt;
@@ -258,7 +293,31 @@ sealed class Sitzungsraum
             var gp = rl.ZuRef(new XVec3(griffe[k].X, griffe[k].Y, griffe[k].Z));
             rueck.Griff((Vec3)(Vector3)gp, nach is not null);
         }
+        FlacheHandSchritt(zeit, kopf, anApps);
         return wische;
+    }
+
+    /// <summary>
+    /// P5b: Schnitt mit der flachen Hand (Hlks.Xr.Sitzung.FlacheHand) je Hand: nicht an den Apps, nicht mit einem gehaltenen Griff. Beginnt bzw. folgt er, gilt der
+    /// Schnitt dieser Hand; Hand weg bzw. nicht mehr flach behält ihn. Gelenke im Raum der Brille; das Modell über <see cref="ModellMatrix"/>.
+    /// </summary>
+    void FlacheHandSchritt(double zeit, Pose kopf, Func<Handed, bool> anApps)
+    {
+        if (Ansicht is not { } an) return;
+        var box = ModellBox;
+        var mm = ModellMatrix;
+        var k = Xv(kopf.position);
+        foreach (var (handed, i, seite, besitz) in new[] { (Handed.Left, 0, "left", gesten.Besitzt.Links), (Handed.Right, 1, "right", gesten.Besitzt.Rechts) })
+        {
+            if (besitz is not null) griffBis[i] = zeit + Hlks.Xr.Sitzung.FlacheHand.SperreNachGriffS;   // kurz nach einem Griff zählt die Hand nicht
+            var h = Input.Hand(handed);
+            Dictionary<string, XVec3>? g = h.IsTracked && !anApps(handed) && besitz is null && zeit >= griffBis[i]
+                ? HandGelenke.AusStereoKit((f, j) => Xv(h[f, j].position), Xv(h.wrist.position)) : null;
+            var (e, s) = Hlks.Xr.Sitzung.FlacheHand.Schritt(flach[i], zeit, g, seite, k, mm, box, an.Sichtbar, an.Ausschnitt, FlacheHand);
+            if (e is FlacheHandEreignis.Beginnt or FlacheHandEreignis.Folgt or FlacheHandEreignis.Behalten && s is not null) schnittHand = s;
+            if (e == FlacheHandEreignis.Beginnt) rueck.Fang(h.palm.position);
+            if (e is FlacheHandEreignis.Beginnt or FlacheHandEreignis.Behalten) FlacheHandGeaendert?.Invoke(e, s);
+        }
     }
 
     static XVec3 Xv(Vec3 v) => new(v.x, v.y, v.z);
@@ -296,8 +355,16 @@ sealed class Sitzungsraum
             return;
         }
         var welt = ModellMatrix;
-        d?.ZeichnenSitzung(welt, Ansicht, Unterlage);
-        ebenen?.Zeichnen(welt, Lage.Massstab, Ansicht.Geschosse, Ansicht.Schnitt, zeit);
+        var schnitt = WirksamerSchnitt;   // P5b: mit dem Schnitt der flachen Hand
+        d?.ZeichnenSitzung(welt, Ansicht, Unterlage, schnitt);
+        ebenen?.Zeichnen(welt, Lage.Massstab, Ansicht.Geschosse, schnitt, zeit);
+        // P5b: Rahmen der Schnittfläche der flachen Hand (heller, solange er der Hand folgt)
+        if (schnittHand is { } sh && sh.Rahmen(ModellBox) is { Count: 4 } r)
+        {
+            var ecken = r.Select(p => (Vec3)Vector3.Transform((Vector3)p, welt)).ToArray();
+            var c = SchnittFolgt ? new Color32(120, 240, 255, 230) : new Color32(60, 220, 255, 160);
+            for (int i = 0; i < 4; i++) Lines.Add(ecken[i], ecken[(i + 1) % 4], c, SchnittFolgt ? 0.003f : 0.002f);
+        }
         // Griffe (XR-H: kleine Cyan-Kugel mit Schein; näher als 5 cm heller, gehalten weiss)
         var griffe = SitzungRaum.GriffPunkte(Lage, Ansicht.Bezug, Ansicht.Sichtbar);   // vordere Ecken des sichtbaren Gebäudes (P4b-Nachtrag)
         for (int i = 0; i < griffe.Count; i++)

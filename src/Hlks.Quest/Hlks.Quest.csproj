@@ -31,4 +31,7 @@
 		<!-- Rechenregeln und Netz-Teil ohne StereoKit (P1, P4a). -->
 		<ProjectReference Include="..\Hlks.Xr\Hlks.Xr.csproj" />
 	</ItemGroup>
+
+	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle). -->
+	<Import Project="Fassung.targets" />
 </Project>

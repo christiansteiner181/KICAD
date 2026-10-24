@@ -1,4 +1,4 @@
-# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1, P4a, P4b und P5a)
+# Hlks.Xr – Rechenregeln und Netz-Teil der Quest App (Modul XR, P1, P4a, P4b, P5a und P5b)
 
 Reine C#-Bibliothek (`net10.0`) ohne StereoKit, ASP.NET und Hlks.Kern. Sie enthält die Regeln, die im Browser-Prototyp als JavaScript mit
 Node-Tests stehen: Begehen, Start, Messen mit Fang, Sitzungsraum, Tablet, Wischgeste. Die App (`src/Hlks.Quest`) zeigt, die Bibliothek rechnet; ein Wechsel
@@ -152,13 +152,47 @@ Abschnitt «Modul XR, Quest App P5a».
   Nachführen, Einblenden, Antippen, Fang, Pinch wählt, Sperre nach dem Öffnen, Zögern, Geisterhand, Tunnelblick), `EtagenWechselTests`, `HandBegehenTests` (Wisch hoch/runter,
   seitlich, vor, offene App, an den Apps, Schwellen, Sperre beim Etagenwisch). Die App selbst: `werkzeuge/quest_pruefen.ps1` (Zeile «P5a»).
 
+## Labor in der App: Katalog, Prüfaufgaben, Varianten, flache Hand, Röntgen-Hand (P5b)
+
+Das Interface-Labor in der App (`entwurf/modul-xr.md`, Zeile P5, «Ergänzungen»; Vertrag mit KICAD in `src/Hlks.Web/OBERFLAECHE.md`, «Modul XR: XR-Labor»). Die App:
+`src/Hlks.Quest/QuestApp.Labor.cs`, `AufgabenKarte.cs`, `Sitzungsraum.cs`, `Fassung.targets`; Bedienung in `OBERFLAECHE.md`, Abschnitt «Quest App P5b».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Labor/LaborKatalog.cs` | `LaborKatalog`, `LaborStellschraube`, `LaborAufgabeDef`, `LaborVarianteDef`, `LaborProfil`, `WertUrteil` | Antwort von `GET /api/xr/labor/katalog` lesen (streng beim Kopf, tolerant bei den Einträgen, Hinweise), Grenzen, Werte nach dem Katalog prüfen (Zahl, Ja/Nein, Auswahl, Varianten) |
+| `Labor/LaborWerte.cs` | `LaborWerte` | wirksame Werte in der Reihenfolge Vorgabe des Katalogs › Profil › live; Grenzen aus dem Katalog, Paare in zwei Durchgängen, «ok/ungültig/unbekannt», neuer Katalog verwirft ungültige live-Werte; Varianten und Stellschrauben für das Messprotokoll |
+| `Labor/PruefAufgaben.cs` | `PruefAufgaben`, `PruefLauf`, `LaufZustand`, `AufgabeOrt`, `TabletFrage` | Lauf einer Prüfaufgabe (gesperrt, wartet, läuft, Erfolg, abgebrochen, neu begonnen), Regeln je Aufgabe (Markierung, Drehen, Etage, Zielmassstab, Raum in AR, Frage zum Bauteil), Fehlgriffe, Messprotokoll, Lage der Karte |
+| `Netz/LaborKatalogLader.cs` | `LaborKatalogLader`, `LaborKatalogAblage`, `LaborKatalogStand` | Katalog vom PC mit `If-None-Match`/304, Ablage im privaten Speicher, Start ohne PC; 404 und Netzfehler ergeben die Ablage |
+| `Netz/ProtokollAblage.cs` | `ProtokollAblage` | Messprotokolle ohne Verbindung (höchstens 50, über einen Neustart) |
+| `Sitzung/FlacheHand.cs` | `FlacheHand`, `FlacheHandZustand`, `FlacheHandEinstellungen`, `HandSchnitt`, `HandSchnittArt`, `FlacheHandEreignis` | Schnitt mit der flachen Hand: Lage der Hand (waagrecht, senkrecht), über dem Modell, Ruhe, Folgen, Behalten; Schnitt in der Szene, Fang an die Achsen, zusammen mit dem Schnitt der Ansicht (Quader für den Shader), Rahmen |
+| `Modell/RoentgenHand.cs` | `RoentgenHand`, `RoentgenZustand`, `RoentgenKegel`, `RoentgenEinstellungen`, `RoentgenVerfolger` | Röntgen-Hand: Geste (offen, Handfläche nach vorn) mit Ein- und Ausschaltzeit, Kegel, Treffer gegen die Dreiecke (Kette von Kugeln), Bauteile im Kegel (ohne Boden, nach Geschoss, nur bei Bewegung neu) |
+| `StickTeleport.cs` | `StickTeleport`, `StickZustand` | Variante «teleport» = «stick»: zielen, springen, Abbruch, Snap-Turn |
+| `Bedienung/Textumbruch.cs` | `Textumbruch` | Zeilenumbruch an Wortgrenzen für Texte in der Brille |
+
+- **Geändert für P5b:** `XrBedienEinstellungen` mit `roentgen.*`, `sitzung.schnitt_*`, `labor.variante.teleport`, `labor.variante.messen` (`Varianten.Bekannt`, `Variante(name)`,
+  `MitStick`) und dem Parameter `grenzen` (Grenzen aus dem Katalog) in `MitStellschraube`/`MitStellschrauben`, ebenso `HandBegehenEinstellungen` und
+  `HaltungEinstellungen`; `WischEinstellungen.ToleranzVorgabe` = 36.87 (arccos 0.8 auf 0.01° gerundet, der Katalog führt sie genau; `CosToleranz` bleibt dafür 0.8);
+  `GestenKontext.AufgabeOffen` und `GestenAktion.AufgabeAbbrechen` (Wegwischen der Karte), Gestentabelle mit flacher Hand und Röntgen-Hand; `BeruehrErgebnis.Daneben`
+  («Antippen daneben», `AppBeruehrung.DanebenM` 6 cm); `KanalText.Messprotokoll`; `DurchgangVerfolger.BereicheJeNetz(szene, schlüssel)` (Durchgang und Röntgen-Hand
+  zusammen); `RaumStandort.RaumBei`, `RaumStandort.GroessterRaum`.
+- **Annahmen P5b** (Stellschrauben, wo der Katalog sie führt; sonst benannte Konstanten): Markierung 2 … 4.5 m vor einem (Radius 0.5 m aus dem Katalog), Haltezeit
+  beim Drehen 0.5 s, Zielmassstab = runder Massstab nahe der halben Startgrösse, Frage nach der Höhe mit Antworten im Abstand 0.2 m; flache Hand: offen ab 1.65 (halten
+  1.4), Toleranz 25° (+10° Hysterese), nicht zum Gesicht (45°), Rand 5 cm, bis 30 cm über dem Modell, Ruhe 0.3 s in 2 cm, Fang an die Achsen 10°, 1 s nach einem Griff
+  gesperrt (die App); Röntgen-Hand: vorn
+  bis 50° (halten 65°), ein 0.2 s, aus 0.25 s, Kegel 40° und 6 m, Kugeln alle 0.25 m, Boden 5 cm; Stick: zielen ab 0.7, los unter 0.3, Ziel höchstens 0.1 s alt; Karte
+  0.30 × 0.17 m, 60 cm vor dem Auge, 28° rechts, 8 cm unter den Augen; Antippen daneben bis 6 cm neben dem Fang; Zeichenbreite 0.55 × Höhe.
+- **Tests:** `LaborKatalogTests`, `PruefAufgabenTests`, `FlacheHandTests`, `RoentgenHandTests`, `StickTeleportTests`, `P5bBedienungTests` (Hilfe `HandHilfen`: Hand in
+  beliebiger Lage); gegen den Server und die echten Kataloge `tests/Hlks.Web.Tests/XrLaborTests.cs` (Katalog = Code der App). Die App selbst: `werkzeuge/quest_pruefen.ps1`
+  (Zeile «P5b»).
+
 ## Offene Punkte
 
 - Die Gelenknamen der WebXR-Hand-API bildet `HandGelenke` auf die 25 Gelenke von StereoKit ab (P4a).
 - Die Schwellen (Faust, Totzone des Tablets, Griffe, Tisch, Schnitt, Schulter des Zeigestrahls) sind die **Annahmen des Prototyps bzw. von P4a/P4b** und stehen in den
   Kommentaren der Konstanten. Seit P5a sind Pinch, Fang, Wisch, Zoom, Drehwinkel, Komfort und die Apps Stellschrauben (`XrBedienEinstellungen`), dazu Springen und
-  Haltung (P4a); die übrigen bleiben feste `const`-Werte, bis das Labor sie braucht.
-- P5a nicht gebaut: Schnitt mit der flachen Hand, Röntgen-Hand (Ergänzungen), Faust greift (XR-B); Prüfaufgaben und Messprotokoll (P5b).
+  Haltung (P4a), seit P5b Röntgen-Hand und flache Hand (Ruhezeit, Winkel); die übrigen bleiben feste `const`-Werte, bis das Labor sie braucht.
+- Nicht gebaut: Faust greift (XR-B); Messen (Version 1, Prüfaufgabe «messen-wand-wand» gesperrt). «tablet-wert-ablesen» fragt nach der Höhe aus der Hüllbox des Bauteils
+  (die GLB kennt keine Eigenschaften); echte Eigenschaften kommen mit «Eigenschaften dort, wo man hinzeigt».
 - Der JSON-Zugang für `Koerper` (`/api/koerper`) fehlt weiter; die App rechnet den Durchgang mit `DreieckForm` aus der GLB. `Standort` (`raum_begehen`) ersetzt
   `RaumStandort` aus dem Netz des Raums, bis der Server die Standorte der Räume mitliefert (siehe Bericht P4a).
 - P4b: Den Tisch findet die App noch nicht selbst (`XR_EXT_spatial_plane_tracking`) und erkennt keine Marker (`XR_EXT_spatial_marker_tracking`); beides nur auf Machbarkeit

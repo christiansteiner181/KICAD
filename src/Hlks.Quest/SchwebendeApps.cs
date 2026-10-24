@@ -22,10 +22,11 @@ namespace Hlks.Quest;
 /// </summary>
 sealed class SchwebendeApps
 {
-    /// <summary>Ausgelöst: Kachel (Id), Eintrag der offenen App (Id der App, Id des Eintrags) bzw. «schliessen».</summary>
+    /// <summary>Ausgelöst: Kachel (Id), Eintrag der offenen App (Id der App, Id des Eintrags) bzw. «schliessen»; P5b: «daneben» (Antippen neben eine Kachel, Fehlgriff
+    /// der Prüfaufgaben).</summary>
     public sealed record Ereignis(string Art, string Id, string? Eintrag = null)
     {
-        public const string Kachel = "kachel", Eintrag_ = "eintrag", Schliessen = "schliessen";
+        public const string Kachel = "kachel", Eintrag_ = "eintrag", Schliessen = "schliessen", Daneben = "daneben";
     }
 
     /// <summary>Inhalt der offenen App: Titel, Einträge (Liste) bzw. Textzeilen (z. B. «Status»).</summary>
@@ -200,6 +201,7 @@ sealed class SchwebendeApps
             if (panel is not null) umgebung.Add(panel);
             nah[i] = AppBeruehrung.Naechste(umgebung, spitze, e.Pinch.FangRadiusM + 0.03) is not null;
             if (r.HoverNeu && hover[i] is int hn2) rueck.Fang(S(ziele[hn2].Mitte), leise: true);
+            if (r.Daneben) ereignisse.Add(new Ereignis(Ereignis.Daneben, Offen ?? ""));
             if (r.Ausgeloest is int ai)
             {
                 var k = index[ai];

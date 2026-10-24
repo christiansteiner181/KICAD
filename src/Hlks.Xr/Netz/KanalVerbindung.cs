@@ -134,6 +134,17 @@ public static class KanalText
         return o.ToJsonString();
     }
 
+    /// <summary>
+    /// P5b: messprotokoll { aufgabe, zeitMs, fehlgriffe, abbrueche, erfolg?, varianten?, stellschrauben?, notiz? } – Inhalt aus
+    /// Hlks.Xr.Labor.PruefAufgaben.Messprotokoll (Schema XrNachrichten.Messprotokoll am PC).
+    /// </summary>
+    public static string Messprotokoll(JsonObject inhalt)
+    {
+        var o = Kopf("messprotokoll");
+        foreach (var (k, w) in inhalt) if (k is not ("typ" or "fassung")) o[k] = w?.DeepClone();
+        return o.ToJsonString();
+    }
+
     /// <summary>Liest Typ und Inhalt einer Nachricht des PCs; null bei ungültigem JSON, fehlendem Typ oder anderer Fassung.</summary>
     public static (string Typ, JsonElement Inhalt)? Lesen(string text)
     {

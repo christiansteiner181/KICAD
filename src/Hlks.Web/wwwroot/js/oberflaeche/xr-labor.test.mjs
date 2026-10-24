@@ -27,11 +27,12 @@ test('Gruppen: in der Reihenfolge des Katalogs, jede Stellschraube genau einmal'
   assert.deepEqual(T.gruppen({ gruppen: [{ id: 'x', titel: 'X' }], stellschrauben: [] }), []);   // leere Gruppen entfallen
 });
 
-test('«folgt P5» ist gekennzeichnet: die sieben bestehenden Schlüssel nicht, alle anderen schon', () => {
-  const heute = ['begehen.ziel_ruhe_s', 'begehen.ziel_ruhe_radius_m', 'begehen.ziel_verzoegerung_s', 'begehen.drehen_sperre_s', 'haltung.schwelle_m', 'haltung.hysterese_m', 'haltung.haltezeit_s'];
-  for (const s of katalog.stellschrauben) assert.equal(T.folgtP5(s), !heute.includes(s.schluessel), s.schluessel);
+test('«folgt P5»: seit Quest App P5b versteht die App alle Stellschrauben – keine trägt die Marke; die Regel kennzeichnet weiter «folgt_p5»', () => {
+  for (const s of katalog.stellschrauben) assert.equal(T.folgtP5(s), false, s.schluessel);
   for (const k of ['anzeige.skala', 'apps.groesse_m', 'apps.abstand_m', 'apps.anordnung', 'wisch.mindestweg_m', 'wisch.mindesttempo_ms', 'wisch.richtung_toleranz_grad', 'pinch.schwelle_an_m',
-    'pinch.schwelle_aus_m', 'fang.radius_m', 'komfort.tunnelblick', 'komfort.tunnelblick_staerke', 'sitzung.zoom_min', 'sitzung.zoom_max']) assert.ok(eintrag(k), k);
+    'pinch.schwelle_aus_m', 'fang.radius_m', 'komfort.tunnelblick', 'komfort.tunnelblick_staerke', 'sitzung.zoom_min', 'sitzung.zoom_max',
+    'roentgen.winkel_grad', 'roentgen.reichweite_m', 'sitzung.schnitt_ruhe_s', 'sitzung.schnitt_toleranz_grad']) assert.ok(eintrag(k), k);
+  assert.equal(T.folgtP5({ status: 'folgt_p5' }), true);
   assert.match(T.FOLGT_P5_HINWEIS, /P5/);
 });
 

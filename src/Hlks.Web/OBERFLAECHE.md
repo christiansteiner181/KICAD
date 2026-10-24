@@ -2285,7 +2285,7 @@ Die App «KICAD» bedient man jetzt mit **schwebenden Apps** statt der Box (Chri
 die prezision weniger ein thema wird»), mit **festen Gestenbedeutungen** und **Geisterhänden**; der Geschosswechsel geht ohne PC (Wisch hoch/runter bzw. App «Etagen»).
 Regeln ohne StereoKit in `src/Hlks.Xr` (`XrGesten.cs`, `Bedienung/`, `Modell/EtagenWechsel.cs`; Übersicht `src/Hlks.Xr/LIESMICH.md`), die App in
 `src/Hlks.Quest/SchwebendeApps.cs` (Apps, Geisterhand, Tunnel), `QuestApp.cs`, `Sitzungsraum.cs`, `Rueckmeldung.cs`. **Am PC keine neue Oberfläche:** die Stellschrauben
-kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben und Messprotokoll folgen mit P5b.
+kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben, Messprotokoll, Katalog, flache Hand und Röntgen-Hand: Abschnitt «Quest App P5b» unten.
 
 - **Wo die Apps stehen** (Annahmen P5a, im Brillentest einzustellen): grosse Kacheln (18 cm, `apps.groesse_m`) im **Bogen auf Brusthöhe** (30 cm unter den Augen), 45 cm vor der
   Brust (`apps.abstand_m`, Griffbereich), höchstens 4 je Reihe (5 Kacheln: 3 + 2), die **Mitte 50° links neben dem Blick** – so zeigt die rechte Hand frei nach vorn zum
@@ -2321,8 +2321,10 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben und Messpr
 | Pinch (Daumen + Zeigefinger) | wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen |
 | Pinch + Wisch links/rechts | blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt) |
 | Pinch + Wisch hoch/runter | Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen») |
-| Pinch + Wisch nach vorn (wegwischen) | schliesst die offene App, sonst blendet es die Apps aus |
+| Pinch + Wisch nach vorn (wegwischen) | schliesst die offene App, sonst (P5b) bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus |
 | Linke Handfläche zum Gesicht drehen | holt die Apps (blendet sie ein) |
+| Flache Hand über dem Modell, kurz ruhig (P5b) | Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf |
+| Offene Hand, Handfläche nach vorn (P5b) | Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend |
 | Faust | greift (noch keine Funktion; Greifen kommt mit XR-B) |
 | Zwei Hände an den Griffen | Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben |
 | Zögern über einer App | eine Geisterhand zeigt die passende Geste |
@@ -2375,8 +2377,8 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben und Messpr
   | `labor.variante.etage` | `wisch_modell`, `app` | `wisch_modell` | Etage per Wisch hoch/runter bzw. nur über die App |
 
   Dazu weiter `begehen.ziel_ruhe_s`, `begehen.ziel_ruhe_radius_m`, `begehen.ziel_verzoegerung_s`, `begehen.drehen_sperre_s` (P4a) und `haltung.*` (P4a-Nachtrag).
-  **Hinweis an P6:** Der Katalog `kataloge/xr_stellschrauben.json` (Stand P6) nennt für `sitzung.zoom_min` die Vorgabe 20; die App nimmt seit dem P4b-Nachtrag 1:5
-  (`XrSitzungLogik.MassstabMin`, Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»).
+  Seit P5b kommen Vorgaben und Grenzen aus dem Katalog (Abschnitt «Quest App P5b»); `sitzung.zoom_min` steht dort jetzt auf 5 (wie die App seit dem P4b-Nachtrag,
+  Christian 23.10.2026: «die modellansichten sollten >1:20 gezoomt werden können»), `wisch.richtung_toleranz_grad` auf 36.87 (Schritt 0.01).
 - **Protokoll** «P4 Status» zusätzlich: `Bedienung=apps|tablet (Apps sichtbar|aus, offen …, Anordnung), Geste=…, Etagenwechsel=n (…), Geisterhände=n, Tunnel=n Bilder`;
   die App heisst im Kanal «KICAD Quest P5a».
 - **Prüfen am PC:** `werkzeuge\quest_pruefen.ps1` prüft in jedem Lauf zusätzlich die Bedienung, in der Zeile «P4 ok» als «P5a: Stellschrauben=ok (18 Schlüssel der
@@ -2389,6 +2391,123 @@ kommen von der Seite «XR-Labor» (P6) über den Kanal. Prüfaufgaben und Messpr
   Brusthöhe) im Stehen und Sitzen, ob die Handfläche die Apps zuverlässig holt, Wisch hoch/runter ohne Fehlauslösung beim Zielen, das Wegwischen, Etagenwechsel
   (Landepunkt, Blickrichtung), Geisterhände (Zeitpunkt, Aussehen), Tunnelblick (Stärke 0.3 spürbar?), Ton und Licht, die Variante «tablet» im Vergleich.
 - **Anleitung:** `zb-quest-app-bedienung` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App P5b: das Labor in der App – Katalog, Prüfaufgaben, Varianten, Schnitt mit der flachen Hand, Röntgen-Hand (`entwurf/modul-xr.md`, Interface-Labor Zeile P5, «Ergänzungen»)
+
+Die App «KICAD» nimmt jetzt den Katalog des Labors von KICAD (Vorgaben, Grenzen, Profil), spielt die **Prüfaufgaben** ab, die man am PC im Dialog «XR-Labor» (P6)
+startet, misst sie und sendet die Messprotokolle; dazu die **Varianten** «teleport» (Stick), «etage», «messen» und die zwei Ergänzungen, die Christian am 23.10.2026
+übernommen hat: **Schnitt mit der flachen Hand** am Sitzungstisch und **Röntgen-Hand** beim Begehen. Regeln ohne StereoKit in `src/Hlks.Xr` (`Labor/LaborKatalog.cs`,
+`Labor/LaborWerte.cs`, `Labor/PruefAufgaben.cs`, `Netz/LaborKatalogLader.cs`, `Netz/ProtokollAblage.cs`, `Sitzung/FlacheHand.cs`, `Modell/RoentgenHand.cs`,
+`StickTeleport.cs`, `Bedienung/Textumbruch.cs`; Übersicht `src/Hlks.Xr/LIESMICH.md`), die App in `src/Hlks.Quest/QuestApp.Labor.cs`, `AufgabenKarte.cs`,
+`Sitzungsraum.cs`, `Fassung.targets`. **Am PC keine neue Oberfläche:** gestartet, eingestellt und ausgewertet wird im Dialog «XR-Labor». Keine Normwerte – alle Zahlen
+sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herkunft»).
+
+### Katalog in der App
+- **Holen:** beim Verbinden zuerst `GET /api/xr/labor/katalog` (vor dem Modell), abgelegt im privaten Speicher der App (`labor/katalog.json`, mit ETag); beim nächsten Mal
+  mit `If-None-Match` – 304 heisst «unverändert». Alle 30 s fragt die App nach (meist 304), so kommt ein neues Profil «Für die App festlegen» ohne Neustart. **Ohne PC**
+  gilt der abgelegte Katalog; ohne Ablage (noch nie verbunden) die Vorgaben des Codes. Ein KICAD ohne Labor (404) bzw. ein Netzfehler: die Ablage, mit Hinweis.
+- **Wert einer Stellschraube** (Vertrag P6): Vorgabe des Katalogs › `profil.werte` › live (`willkommen.stellschrauben`, Nachricht `stellschraube`). `null` setzt live zurück –
+  dann gilt wieder das Profil bzw. die Vorgabe. **Grenzen aus dem Katalog** (`min`/`max`, Auswahl, true/false): ein Wert ausserhalb, vom falschen Typ oder einer, der ein
+  Paar verletzt (Pinch an &lt; aus, Zoom min &lt; max), ist **«ungültig»** (Hinweis in der Brille), der bisherige Wert bleibt. Ein Schlüssel, den die App nicht versteht,
+  ist «unbekannt». Kommt ein Katalog mit engeren Grenzen, fallen live gesetzte Werte, die nicht mehr gelten, auf Profil bzw. Vorgabe zurück (Hinweis).
+- **Katalog angeglichen** (`kataloge/xr_stellschrauben.json`): alle Stellschrauben und beide Muster tragen `status: app`; `sitzung.zoom_min` Vorgabe **5** (1:5);
+  `wisch.richtung_toleranz_grad` **36.87** mit Schritt 0.01 (arccos 0.8 = 36.8699°, im Code auf 0.01° gerundet; für genau diesen Wert gilt weiter die Regel «mindestens
+  80 % waagrecht» des Prototyps); `apps.*` und `komfort.*` gleich den Vorgaben der App. Neu: `roentgen.winkel_grad` (40°, 10 … 120), `roentgen.reichweite_m` (6 m, 1 …
+  20), `sitzung.schnitt_ruhe_s` (0.3 s, 0 … 2), `sitzung.schnitt_toleranz_grad` (25°, 5 … 45). `tests/Hlks.Web.Tests/XrLaborTests.cs` vergleicht jede Vorgabe, Grenze,
+  Auswahl und Variante mit dem Code und prüft durchgehend, dass der ausgelieferte Katalog in der App genau die Vorgaben des Codes ergibt.
+- **Fassung der App:** `hallo.app` = «Fassung+Commit», z. B. `0.1+680f9af` (höchstens 40 Zeichen). `src/Hlks.Quest/Fassung.targets` schreibt beim Bau
+  `AppFassung.g.cs`: Fassung 0.1 (wie `ApplicationDisplayVersion` der Brillen-Fassung), Commit aus `git rev-parse --short HEAD` (ohne Netz; ohne Git «unbekannt»; von
+  aussen `-p:HlksCommit=…`). KICAD schreibt sie in jedes Messprotokoll und wertet je Fassung aus.
+
+### Prüfaufgaben: starten, was man in der Brille sieht, was gemessen wird
+- **Starten:** am PC Register **Ansicht › Fenster › «XR-Labor …»**, Reiter **«Prüfaufgaben»**, bei der Aufgabe **«Aufgabe starten»** (Stellschraube `labor.aufgabe` = Id).
+  Die App stellt den **Ort** her (Begehen bzw. Sitzungsraum mit dem Etagenschnitt im Geschoss am Stand), bereitet die Aufgabe vor und beginnt die Zeit, sobald alles passt
+  (leiser Klick, Hinweis «Aufgabe … läuft.»).
+- **Karte:** rechts neben dem Blick (28°; die Apps stehen links), 60 cm vor dem Auge, 8 cm unter den Augen, zum Auge gedreht, folgt dem Blick träge wie die Apps. Sie zeigt
+  den **Titel** und die **Anleitung** aus dem Katalog, darunter den Abschnitt bzw. das Ziel mit Zeit und Fehlgriffen und den Knopf **«Aufgabe beenden»** (Antippen oder
+  Pinch). Schrift nach `anzeige.skala`. Erfolg: Karte grün «Geschafft · Zeit · Fehlgriffe» (5 s), Klick. Abgebrochen: grau (5 s).
+- **Ende:** Erfolg nach dem Kriterium unten; **Abbruch** mit «Aufgabe beenden», mit **Pinch + Wisch nach vorn** (Wegwischen schliesst das Vorderste: eine offene App,
+  sonst die Karte), am PC mit «Aufgabe beenden» (`null`) bzw. einer anderen Aufgabe. Dieselbe Aufgabe nochmals gestartet = **neu begonnen** (Abbrüche + 1, die Zeit läuft
+  weiter, der Ablauf beginnt von vorn).
+- **Messprotokoll** (Nachricht `messprotokoll`): `aufgabe`, `zeitMs` (vom Beginn bis Erfolg bzw. Abbruch), `fehlgriffe`, `abbrueche`, `erfolg`, `varianten` (die Varianten,
+  die für die Aufgabe zählen – Katalog `aufgaben[].varianten`; ohne Katalog alle), `stellschrauben` (die wirksamen Werte aller Stellschrauben und Varianten aus Katalog,
+  Profil und live) und `notiz` («Fehlgriffe: Sprung daneben ×2; …»). Ohne Verbindung bleibt es im privaten Speicher (`labor/messprotokolle_warten.jsonl`, höchstens 50,
+  auch über einen Neustart) und geht mit dem nächsten «willkommen». Ein Lauf, der nur wartete (z. B. «tablet-wert-ablesen» in der Variante «apps») oder gesperrt war, sendet
+  keines.
+- **Je Aufgabe** (Regeln `Hlks.Xr.Labor.PruefAufgaben`; «Fehlgriff» steht auch im Katalog als Feld `fehlgriff`):
+
+  | Aufgabe | Ort | Was man sieht, wann sie gelingt | Fehlgriff |
+  | --- | --- | --- | --- |
+  | `teleport-markierung` | Begehen | Leuchtender Ring am Boden (Radius 0.5 m = Erfolgskriterium) mit Lichtsäule, 2 … 4.5 m vor einem in einem Raum des Geschosses (sonst 3.5 m geradeaus). Gelingt mit einem Sprung höchstens 0.5 m neben die Mitte. | Sprung weiter daneben, abgebrochener Sprung (Pinch bzw. Stick losgelassen ohne Ziel, Strahl vom Boden), Antippen daneben |
+  | `drehen-90` | Begehen | Pfeil am Boden in die verlangte Richtung. Zuerst 90° nach links (±15°, 0.5 s halten), dann zurück in die Ausgangsrichtung (±15°, 0.5 s) – körperlich oder per Drehschritt. | Drehschritt, der vom Ziel des Abschnitts wegführt; ungewollter Sprung; Antippen daneben |
+  | `etage-wechseln` | Begehen | Die Karte nennt das Ziel: das Geschoss darüber (im obersten: darunter), dann zurück. Mit nur einem Geschoss wartet die Aufgabe (Hinweis). | Wechsel in ein falsches Geschoss; Wisch hoch/runter ohne Wirkung (Variante «app» bzw. kein Geschoss mehr); Antippen daneben |
+  | `modell-greifen-zoomen` | Sitzungsraum | Ziel «1:n und eine Vierteldrehung»: der runde Massstab nahe der halben Startgrösse (z. B. 1:50 → 1:25, 1:137 → 1:75). Gelingt, wenn beide Griffe losgelassen sind, der Massstab höchstens 10 % daneben liegt und das Modell 90° (±15°) gedreht ist, in beide Richtungen. | Pinch am Tisch ohne Griff in Reichweite; Antippen daneben |
+  | `raum-ar-oeffnen` | Sitzungsraum | Der markierte Raum (der Raum, in dem man vor dem Sitzungsraum stand, sonst der des Auftrags, sonst der grösste des Geschosses) als Kiste auf dem Modell. Schritte (auf der Karte): App «Tisch» › **«Raum zeigen»** → «Echter Tisch» → auf die Tischplatte tippen. Ohne Passthrough (Simulator) genügt der Ausschnitt. | Rückschritt: «Echter Tisch» aus, «Tisch neu antippen», «Zurücksetzen», eine Etage statt des Raums; Antippen daneben |
+  | `tablet-wert-ablesen` | Begehen, Variante «tablet» | Das markierte Bauteil (Wand bzw. Decke etwa 2 m vor dem Blick, höchstens 6 m weg) als Kiste; die Box (Tablet) zeigt Art, Höhe und Hüllbox und vier Antworten zur Frage «Welche Höhe hat das markierte Bauteil?». Gelingt mit der richtigen Antwort. In der Variante «apps» wartet die Aufgabe (Karte: «Nur in der Variante «Tablet an der Hand» …», die Zeit läuft nicht) und beginnt, sobald am PC «Tablet» gewählt ist. | falsche Antwort; Antippen daneben |
+  | `messen-wand-wand` | – | Karte «Diese Aufgabe folgt mit Version 1 (Messen).» (8 s), kein Messprotokoll. | – |
+
+  **Antippen daneben** (`Bedienung/AppBeruehrung`, alle Aufgaben): die Fingerspitze geht von vorn durch die Druckebene einer Kachel, eines Eintrags bzw. des Knopfs, liegt
+  aber 3 … 9 cm neben ihr (ausserhalb des Fangs `fang.radius_m`, höchstens 6 cm weiter).
+
+### Varianten
+- **`labor.variante.teleport`:** `zeigen_pinch` (Vorgabe, P4a) | `stick`: am Controller den **Stick nach vorn** drücken (ab 0.7, überwiegend vorn) zielt mit dem Zielstrahl
+  des Controllers (Ring und Strahl wie beim Pinch), **loslassen** (unter 0.3) springt auf das letzte gültige Ziel, wenn es höchstens `begehen.ziel_verzoegerung_s` (0.1 s)
+  alt ist; **seitlich** dreht in Schritten (`begehen.drehwinkel_grad`, Stick rechts = nach rechts wie der Prototyp), nur wenn «Drehen» wirkt. In dieser Variante springt der
+  Pinch nicht. Ohne Controller alle 20 s der Hinweis «einen Controller in die Hand nehmen».
+- **`labor.variante.etage`:** `wisch_modell` (Vorgabe, P5a) | `app`: Pinch + Wisch hoch/runter wechselt nicht (leiser Klick, Hinweis «… das Geschoss in der App «Etagen»
+  wählen»), nur die App «Etagen».
+- **`labor.variante.messen`:** `messband` | `zwei_punkte` – Messen folgt mit Version 1; die App merkt die Wahl (Hinweis) und trägt sie ins Messprotokoll ein.
+- **`labor.variante.bedienung`:** `apps` | `tablet` wie P5a.
+
+### Schnitt mit der flachen Hand (Sitzungsraum; Regeln `Sitzung/FlacheHand`)
+- **Geste:** die Hand flach (Finger gestreckt, kein Pinch, nicht an den Apps, keinen Griff haltend) **über dem Modell** (im Grundriss des Modells auf dem Tisch, 5 cm Rand,
+  höchstens 30 cm über seiner Oberkante) und **kurz ruhig** (`sitzung.schnitt_ruhe_s`, 0.3 s, im Umkreis von 2 cm). Eine Hand, die eben einen Griff losgelassen hat,
+  zählt 1 s lang nicht (wer das Modell gezoomt hat, öffnet die Hand meist flach darüber).
+  - **Handfläche nach unten** (höchstens `sitzung.schnitt_toleranz_grad` = 25° neben senkrecht nach unten): **waagrechter Schnitt** – alles über der Handfläche fällt weg, wie
+    der Etagenschnitt, aber frei in der Höhe.
+  - **Senkrecht gehalten** (Handfläche höchstens 25° neben der Waagrechten, nicht zum Gesicht – die Handfläche zum Gesicht holt die Apps): **Vertikalschnitt** durch die
+    Mitte der Handfläche, parallel zu ihr; weg fällt die Seite zum Kopf hin (man blickt auf die Schnittfläche). Bis 10° neben einer Achse des Gebäudes rastet die Ebene dort
+    ein; im Ausschnitt «Raum zeigen» liegt sie immer in einer Achse des Ausschnitts.
+- **Folgen und behalten:** danach folgt der Schnitt der Hand in jedem Bild (Hysterese 10°, Hand offen bis Verhältnis 1.4); **Hand weg bzw. nicht mehr flach behält den
+  Schnitt**. Ein heller Rahmen zeigt die Schnittfläche, solange er folgt, danach ein feiner. Hinweise: «Schnitt folgt der flachen Hand – Hand weg behält ihn.», «Schnitt
+  bleibt – «Tisch» › «Zurücksetzen» hebt ihn auf.»
+- **Aufheben:** App **«Tisch» › «Zurücksetzen»** (Lage, Massstab, Drehung und Schnitt der Hand); ebenso ein neuer Ausschnitt bzw. das Antippen des echten Tisches. Ein
+  Wechsel der Etage behält ihn (es gilt die tiefere Oberkante). Gezeichnet mit dem vorhandenen Shader «schnitt» (Etagenschnitt bzw. Ausschnitt und Hand zusammen in einem
+  Quader).
+
+### Röntgen-Hand (Begehen; Regeln `Modell/RoentgenHand`)
+- **Geste:** offene Hand (Finger gestreckt, kein Pinch), **Handfläche nach vorn** – ihre Normale höchstens 50° neben der Richtung vom Kopf zur Hand (die «Halt»-Hand auf
+  Brusthöhe liegt bei etwa 40°; durch die Decke mit erhobener Hand, Handfläche nach oben). Ein nach 0.2 s, aus 0.25 s nach dem Loslassen (solange aktiv gilt bis 65° bzw.
+  Verhältnis 1.45). Hängende Hände, die Handfläche zum Gesicht und der Pinch zählen nicht. Rechts vor links.
+- **Wirkung:** Wände und Decken (die Bauteile des Durchgangs, auch die IFC-Unterlage) im **Kegel** um die Zeigerichtung der Handfläche – Öffnungswinkel
+  `roentgen.winkel_grad` (40°, also ±20°), Reichweite `roentgen.reichweite_m` (6 m) – werden durchscheinend wie im Durchgang (dieselben Netze und Deckkraft), so dass die
+  Leitungen und Räume dahinter sichtbar werden. Nur im Geschoss am Stand; der Boden unter den Füssen bleibt. Ein feiner Kegel (60 cm) an der Hand zeigt die Richtung;
+  leiser Klick beim Einschalten, beim ersten Mal ein Hinweis. Neu gerechnet nur, wenn sich die Hand 3 cm bzw. 2° bewegt hat.
+
+### Weiteres
+- App **«Tisch»** (Sitzungsraum): neuer Eintrag **«Raum zeigen»** (Ausschnitt des markierten bzw. des Raums am Standort vor dem Sitzungsraum); in der Variante «tablet» ein
+  Knopf in der Box.
+- **Gesten** (Tabelle in der App «Status» und oben bei P5a): Pinch + Wisch nach vorn bricht eine laufende Prüfaufgabe ab (nach der offenen App, vor dem Ausblenden); neu
+  «Flache Hand über dem Modell» und «Offene Hand, Handfläche nach vorn».
+- **Texte in der Brille** (Karte, Hinweiszeile) bricht die App selbst um (`Bedienung/Textumbruch`; Befund am Prüfbild: StereoKit verkleinerte lange Zeilen sonst auf eine
+  Zeile).
+- **Protokoll** «P4 Status» zusätzlich: `Fassung=…, Katalog=pc|pc, unverändert|zwischenspeicher|keiner (…), Aufgabe=…, Messprotokolle=n (Quittungen, wartend),
+  Teleport=…, Röntgen=…, Schnitt Hand=…`; die App heisst im Protokoll «KICAD Quest P5b».
+
+### Prüfen
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 [-Projekt <Test_praxis>] [-Pruefbilder <ordner>]` meldet in jeder Zeile «P4 ok» zusätzlich «P5b: Fassung=0.1+…, Katalog=ok
+  (pc … bzw. zwischenspeicher …), Grenzen=ok, Vorgaben=ok, Aufgaben=ok (…), Röntgen=ok (…)» bzw. im Sitzungsraum «Aufgaben=ok (modell-greifen-zoomen …), Flache Hand=ok
+  (…)»; Lauf 1 spielt «messen-wand-wand» (gesperrt), «drehen-90» (abgebrochen) und «teleport-markierung» (ein Sprung daneben, einer hinein), Lauf 3
+  «modell-greifen-zoomen». Das Skript prüft mit `GET /api/xr/labor/auswertung`, dass die Messprotokolle am PC angekommen sind. Mit `-Pruefbilder` dazu
+  `aufgabe_karte.jpg`, `roentgen.jpg`, `sitzung_flache_hand.jpg` (nur lokal).
+- **Tests:** Xr `tests/Hlks.Xr.Tests` (`LaborKatalogTests`: Lesen, Prüfen, Schichten, Grenzen, Paare, Laden mit 304 und Ablage, wartende Messprotokolle;
+  `PruefAufgabenTests`: jede Aufgabe mit Erfolg, Fehlgriffen, Abbruch, Neustart, Messprotokoll, Karte, Räume; `FlacheHandTests`; `RoentgenHandTests`; `StickTeleportTests`;
+  `P5bBedienungTests`: Wegwischen der Karte, Antippen daneben, neue Stellschrauben, Textumbruch); Web `XrLaborTests` (Katalog = Code der App, `fehlgriff`).
+- **Nur mit der Brille prüfbar:** ob die Karte gut liegt und lesbar ist; ob die flache Hand zuverlässig erkannt wird (waagrecht und senkrecht, 25°, Ruhezeit 0.3 s) und den
+  Griffen nicht in die Quere kommt; ob die Röntgen-Hand ungewollt anspringt (Winkel 50°) und wie weit der Kegel sinnvoll ist; der Stick an echten Controllern (Richtung von
+  `stick.y`, Zielstrahl); Antippen daneben (6 cm) als Mass für Fehlgriffe; Passthrough in «raum-ar-oeffnen»; Ton und Licht beim Start und Erfolg.
+- **Anleitung:** `zb-quest-app-labor` in `berichte/anleitung/inventar.json`.
+
 ## Modul XR: XR-Labor (Quest App P6, `entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P6; Entscheid Christian 23.10.2026: «Prüfung: kurz gemischt», «Deutsche Fassungen der Fragebogen nur mit Quelle»)
 
 Der Dialog **«XR-Labor …»** (Register **Ansicht › Gruppe Fenster**, Aktion `ansicht.xrLabor`, Symbol `xrLabor`, immer verfügbar) ist die Werkbank für das Interface-Labor der Quest App: Er stellt die Bedienung der App live von KICAD aus ein, startet
@@ -2407,9 +2526,10 @@ zwischen Aufgaben und Varianten, Länge der Anleitung …) und wirft einen `Hlks
   `haltung.haltezeit_s`; Vorgaben und Grenzen gleichen dem Code in `HandBegehen.cs`/`DrehenSchalter.cs`, ein Test prüft das) oder **`folgt_p5`** (`begehen.drehwinkel_grad`, `anzeige.skala` 1.35, `apps.groesse_m`, `apps.abstand_m`, `apps.anordnung`, `wisch.mindestweg_m`,
   `wisch.mindesttempo_ms`, `wisch.richtung_toleranz_grad`, `pinch.schwelle_an_m`, `pinch.schwelle_aus_m`, `fang.radius_m`, `komfort.tunnelblick`, `komfort.tunnelblick_staerke`, `komfort.ton`, `sitzung.zoom_min`, `sitzung.zoom_max`). Vorgaben der neuen Werte
   stammen, wo es sie gibt, aus dem Code der Logik (`XrWischLogik`, `XrTabletLogik`, `XrMessLogik`, `XrSitzungLogik`); die übrigen (`apps.*`, `komfort.*`) sind **Annahmen P6**, die P5 beim Einbau bestätigt oder ändert.
+  **Seit P5b** versteht die App alle: jede Stellschraube und beide Muster tragen `status: app`, die Vorgaben gleichen dem Code (ein Test vergleicht alle), dazu `roentgen.*` und `sitzung.schnitt_*` (Abschnitt «Quest App P5b»); die Marke «folgt P5» erscheint nicht mehr.
   Ein Wert `null` in der Nachricht `stellschraube` bedeutet: zurück auf die Vorgabe.
 - **`xr_pruefaufgaben.json`** – `messgroessen[{ id: zeit | fehlgriffe | abbrueche, titel, einheit, beschreibung }]` und `aufgaben[]`: `id` (`^[a-z][a-z0-9-]{0,39}$`: `teleport-markierung`, `drehen-90`, `etage-wechseln`, `modell-greifen-zoomen`,
-  `raum-ar-oeffnen`, `tablet-wert-ablesen`, `messen-wand-wand`), `titel`, `anleitung` (höchstens 300 Zeichen, für die Brille), `ort`, `varianten[]` (welche Varianten für die Aufgabe zählen), `messgroessen[]`, `erfolgskriterium` (Zahlen darin sind Annahmen P6),
+  `raum-ar-oeffnen`, `tablet-wert-ablesen`, `messen-wand-wand`), `titel`, `anleitung` (höchstens 300 Zeichen, für die Brille), `ort`, `varianten[]` (welche Varianten für die Aufgabe zählen), `messgroessen[]`, `erfolgskriterium` (Zahlen darin sind Annahmen P6), `fehlgriff` (P5b, optional, höchstens 300 Zeichen: was die App als Fehlgriff zählt),
   `herkunft`, `status` (`p5`: die App spielt sie ab; `folgt_v1`: gesperrt, heute nur `messen-wand-wand`).
 - **`xr_varianten.json`** – `varianten[{ name, titel, beschreibung, optionen[{ id, titel }] (mindestens zwei, A/B), vorgabe, herkunft }]`: `bedienung` (`apps` | `tablet`), `teleport` (`zeigen_pinch` | `stick`), `etage` (`wisch_modell` | `app`), `messen` (`messband` | `zwei_punkte`).
 - **`xr_fragebogen.json`** – nur am PC (die App braucht ihn nicht): Teile `komfort` (eigene Fragen mit Wortlaut), `sus` (10 Aussagen, `polaritaet` abwechselnd positiv/negativ) und `nasa_tlx` (6 Skalen `mental`, `physical`, `temporal`, `performance`, `effort`, `frustration`).
@@ -2458,4 +2578,5 @@ Der Dialog passt sich dem Fenster an (`width: min(760px, 100vw − 16px)`, `max-
 - Node: `node --test src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor.test.mjs` (Gruppen, Werte, Eingaben, Profile, Status, Auswertung, Fragebogen, HTML-Sicherheit, Verdrahtung – gegen die echten Kataloge).
 - Browser: `node src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor.browser.mjs` (Port 5741, CDP 9741; kleines Fenster; nachgestellt sind nur die verbundene Brille, das Setzen der Stellschrauben und der Start einer Aufgabe, alles andere ist echt; der Testordner `%TEMP%\HLKS_CAD\xr_test` wird dabei geleert).
 - **Nur mit Brille und App (P5) prüfbar:** ob die App die Stellschrauben, Varianten und Aufgaben versteht und die Messprotokolle mit `app`, `varianten`, `erfolg` sendet; wie sich die Werte anfühlen (die Vorgaben der Gruppen «Schwebende Apps» und «Komfort» sind Annahmen).
+  Seit P5b prüft `werkzeuge\quest_pruefen.ps1` am PC, dass die App den Katalog nimmt, Aufgaben abspielt und die Messprotokolle mit `app`, `varianten`, `erfolg` ankommen (Abschnitt «Quest App P5b»); das Gefühl bleibt Sache der Brille.
 - **Anleitung:** `zb-xr-labor-stellschrauben`, `zb-xr-labor-profile`, `zb-xr-labor-varianten-aufgaben`, `zb-xr-labor-auswertung`, `zb-xr-labor-fragebogen` in `berichte/anleitung/inventar.json`.

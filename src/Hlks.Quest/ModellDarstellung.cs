@@ -284,13 +284,14 @@ sealed class ModellDarstellung
     /// <summary>
     /// Zeichnet die Szene auf dem Tisch: welt = Szene → Raum der Brille (Tisch, Massstab, Drehung); ansicht = Geschosse und Schnitt (Hlks.Xr.Sitzung.SitzungAnsicht);
     /// unterlage = IFC-Unterlage zeigen. Räume (ausgeblendete Gruppen) nie. Der Durchgang gilt hier nicht (die App setzt ihn beim Betreten zurück).
+    /// P5b: wirksam = der Quader für den Shader samt Schnitt der flachen Hand (Sitzungsraum.WirksamerSchnitt); ohne Angabe der Schnitt der Ansicht.
     /// </summary>
-    public void ZeichnenSitzung(Matrix welt, SitzungAnsicht ansicht, bool unterlage)
+    public void ZeichnenSitzung(Matrix welt, SitzungAnsicht ansicht, bool unterlage, SchnittQuader? wirksam = null)
     {
         int netze = 0, aufrufe = 0, schnitt = 0;
         long dreiecke = 0;
         // Prüfung (SchnittErzwingen): alles mit dem Shader «schnitt», ohne etwas zu verwerfen – zum Vergleich der Helligkeit gegen das gewöhnliche Material
-        var schnittQ = ansicht.Schnitt ?? (SchnittErzwingen ? SchnittQuader.Oben(SchnittQuader.Weit) : null);
+        var schnittQ = wirksam ?? ansicht.Schnitt ?? (SchnittErzwingen ? SchnittQuader.Oben(SchnittQuader.Weit) : null);
         var mats = schnittQ is null ? null : SchnittMaterialien();
         if (mats is { } m && schnittQ is { } q)
         {
@@ -305,11 +306,12 @@ sealed class ModellDarstellung
         if (ansicht.Ausschnitt && ansicht.Schnitt is { } aq && aq == ausschnittQuader)
         {
             // «Raum zeigen (VR)»: nur die zusammengestellten Netze der Elemente im Ausschnitt
+            var wq = schnittQ ?? aq;
             foreach (var a in ausschnitt)
             {
                 var t = a.Teil;
                 if (!t.Sichtbar || (!unterlage && t.Netz.Teil == GlbZwischenspeicher.TeilUnterlage)) continue;
-                var lage = aq.Lage(a.Box);
+                var lage = wq.Lage(a.Box);
                 if (lage == SchnittLage.Aussen) continue;
                 if (lage == SchnittLage.Schneidet && mats is { } mm) { a.Netz.Draw(t.Transparent ? mm.Durch : mm.Dicht, welt, t.FarbeLinear); schnitt++; }
                 else a.Netz.Draw(t.Material, welt);

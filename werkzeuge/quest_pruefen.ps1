@@ -13,6 +13,11 @@
 # legt je Abschnitt zwei JPEG des Sitzungsraums ab (nur lokal, nie ins Repository - bei echten Projekten zeigen sie echte Daten).
 # P5a: jeder Lauf prueft dazu die Bedienung (Zeile "P5a: Stellschrauben, Apps, Etage" in "P4 ok"); -Pruefbilder legt auch Bilder der schwebenden Apps ab
 # (begehen_blick.jpg, apps_begehen.jpg, apps_sitzung.jpg, apps_etagen.jpg).
+# P5b: der Server nimmt die Kataloge dieser Arbeitskopie (HLKS_KATALOG = <repo>\kataloge). Jeder Lauf prueft dazu das Labor (Zeile "P5b: Fassung, Katalog,
+# Grenzen, Aufgaben, Roentgen bzw. Flache Hand" in "P4 ok"): Lauf 1 holt den Katalog vom PC und spielt die Pruefaufgaben "drehen-90" (abgebrochen) und
+# "teleport-markierung" (Erfolg), Lauf 2 nimmt den abgelegten Katalog, Lauf 3 spielt "modell-greifen-zoomen". Das Skript prueft am PC (GET
+# /api/xr/labor/auswertung), dass die Messprotokolle von Lauf 1 und 3 angekommen sind. -Pruefbilder legt zusaetzlich aufgabe_karte.jpg, roentgen.jpg und
+# sitzung_flache_hand.jpg ab.
 # Am Ende: Kopplung widerrufen, Server beenden, temporaere Ordner loeschen (Protokolle bleiben in <Build>\quest_pruefen).
 # Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_pruefen.ps1 [-Bilder 300] [-Projekt <ordner>] [-OhneBau] [-OhneUnterlage] [-OhneSitzungsraum] [-Pruefbilder <ordner>]
 # Exit 0 = alle Laeufe "P4 ok", 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
@@ -59,6 +64,7 @@ $env:HLKS_TEST = '1'
 $env:HLKS_BENUTZER = "$tmp\benutzer"
 $env:HLKS_ZULETZT = "$tmp\zuletzt"
 $env:HLKS_WEBROOT = "$repo\src\Hlks.Web\wwwroot"
+$env:HLKS_KATALOG = "$repo\kataloge"
 $basis = "http://localhost:$port"
 $utf8 = New-Object System.Text.UTF8Encoding $false
 
@@ -68,6 +74,11 @@ function Post([string]$pfad, $koerper) {
   return $r.Content
 }
 function Get([string]$pfad) { (Invoke-WebRequest -UseBasicParsing -Uri "$basis$pfad" -TimeoutSec 60).Content | ConvertFrom-Json }
+# P5b: Laeufe einer Pruefaufgabe in den Messprotokollen am PC (0, wenn keine)
+function Laeufe([string]$id) {
+  try { $a = Get '/api/xr/labor/auswertung'; $z = $a.aufgaben | Where-Object { $_.aufgabe -eq $id } | Select-Object -First 1; if ($z -and $z.laeufe) { return [int]$z.laeufe } } catch { }
+  return 0
+}
 
 $server = $null
 $ergebnis = 2
@@ -116,7 +127,8 @@ try {
 
   $zusatz = @()
   if ($OhneUnterlage) { $zusatz += '--ohne-unterlage' }
-  $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough'
+  $muster = '^P4 (ok|Fehler|Laden)|Modell |Start |Netzzugang gibt|Auftrag vom PC|Ebenen |Passthrough|Katalog des Labors|Messprotokoll '
+  $t0 = Laeufe 'teleport-markierung'; $d0 = Laeufe 'drehen-90'; $z0 = Laeufe 'modell-greifen-zoomen'
   Aus "Lauf 1: mit PC ($Bilder Bilder) ..."
   # P5a: mit -Pruefbilder auch zwei Bilder beim Begehen (Blick nach vorn, die schwebenden Apps)
   $bild1 = @()
@@ -125,6 +137,10 @@ try {
   $c1 = $LASTEXITCODE
   $a1 | Out-File -FilePath "$logs\lauf1.log" -Encoding utf8
   $a1 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
+  # P5b: die Messprotokolle der Pruefaufgaben von Lauf 1 sind am PC angekommen
+  $t1 = Laeufe 'teleport-markierung'; $d1 = Laeufe 'drehen-90'
+  $laborOk = ($t1 -ge $t0 + 1) -and ($d1 -ge $d0 + 1)
+  Aus ("Lauf 1: Messprotokolle am PC: teleport-markierung {0} -> {1}, drehen-90 {2} -> {3} - {4}" -f $t0, $t1, $d0, $d1, @('FEHLT', 'ok')[[int]$laborOk])
   Aus "Lauf 2: ohne PC, Start aus dem Zwischenspeicher ($Bilder Bilder) ..."
   $a2 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --ohne-pc @zusatz 2>&1
   $c2 = $LASTEXITCODE
@@ -146,6 +162,11 @@ try {
     $a3 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
     $sitzungOk = ($a3 -match 'Sitzungsraum=ja') -and ($a3 -match 'Auftrag=Nr 2 Sitzungsraum')
     if (-not $sitzungOk) { Aus 'Lauf 3: die App war nicht im Sitzungsraum des Auftrags.' }
+    # P5b: das Messprotokoll von "modell-greifen-zoomen" ist am PC angekommen
+    $z1 = Laeufe 'modell-greifen-zoomen'
+    $zoomOk = $z1 -ge $z0 + 1
+    Aus ("Lauf 3: Messprotokolle am PC: modell-greifen-zoomen {0} -> {1} - {2}" -f $z0, $z1, @('FEHLT', 'ok')[[int]$zoomOk])
+    if (-not $zoomOk) { $laborOk = $false }
     # P4b-Nachtrag: dasselbe Bild mit gewoehnlichem Material und ganz mit dem Shader "schnitt" - die hellen Pixel (Modell) muessen gleich hell sein
     $vi = ''; $vs = ''
     if ($Pruefbilder) { $vi = Join-Path $Pruefbilder 'vergleich_innen.png'; $vs = Join-Path $Pruefbilder 'vergleich_schnitt.png' }
@@ -164,7 +185,7 @@ try {
       }
     }
   }
-  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk) { 0 } else { 1 }
+  $ergebnis = if ($c1 -eq 0 -and $c2 -eq 0 -and $c3 -eq 0 -and $auftragOk -and $sitzungOk -and $laborOk) { 0 } else { 1 }
 } catch {
   Aus ('Fehler: ' + $_.Exception.Message)
   $ergebnis = 2
@@ -172,7 +193,7 @@ try {
   if ($kopplung) { try { Post '/api/xr/kopplung/widerrufen' @{ kopplung = $kopplung } | Out-Null } catch { } }
   if ($server -and -not $server.HasExited) { Stop-Process -Id $server.Id -Force -ErrorAction SilentlyContinue; Start-Sleep -Milliseconds 500 }
   Remove-Item -Recurse -Force $tmp -ErrorAction SilentlyContinue
-  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
+  foreach ($v in 'HLKS_TEST', 'HLKS_BENUTZER', 'HLKS_ZULETZT', 'HLKS_WEBROOT', 'HLKS_KATALOG') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
 }
 Aus ("Ergebnis: " + @('ok', 'nicht ok', 'Fehler im Ablauf')[$ergebnis] + " (Protokolle: $logs)")
 exit $ergebnis

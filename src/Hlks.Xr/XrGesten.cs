@@ -31,8 +31,12 @@ public sealed record WischEinstellungen
     /// <see cref="XrWischLogik.WischWaagrecht"/> (Anteil 0.8 waagrecht, wie im Prototyp).</summary>
     public double RichtungToleranzGrad { get; init; } = ToleranzVorgabe;
 
-    /// <summary>Vorgabe der Richtungstoleranz: arccos(0.8) in Grad (≈ 36.87°), genau die Regel «mindestens 80 % waagrecht» des Prototyps.</summary>
-    public static readonly double ToleranzVorgabe = Math.Acos(XrWischLogik.WischWaagrecht) / Num.Grad;
+    /// <summary>
+    /// Vorgabe der Richtungstoleranz: arccos(0.8) = 36.8699° in Grad, auf 0.01° gerundet – so führt sie der Katalog des Labors genau (P5b: Vorgabe 36.87, Schritt
+    /// 0.01; die Seite «XR-Labor» zeigt und nimmt nur Werte im Schritt). Für genau diesen Wert gilt weiter die Regel «mindestens 80 % waagrecht» des Prototyps
+    /// (<see cref="CosToleranz"/> = 0.8).
+    /// </summary>
+    public const double ToleranzVorgabe = 36.87;
 
     public static readonly WischEinstellungen Vorgabe = new();
 
@@ -54,11 +58,12 @@ public sealed record PinchEinstellungen
     public static readonly PinchEinstellungen Vorgabe = new();
 }
 
-/// <summary>Was ein Wisch im Zusammenhang auslöst (Gestenbedeutung.Wisch).</summary>
-public enum GestenAktion { Nichts, Drehen, SeiteVor, SeiteZurueck, EtageHoch, EtageRunter, AppSchliessen, AppsAusblenden }
+/// <summary>Was ein Wisch im Zusammenhang auslöst (Gestenbedeutung.Wisch). P5b: AufgabeAbbrechen (Wegwischen der Karte einer Prüfaufgabe).</summary>
+public enum GestenAktion { Nichts, Drehen, SeiteVor, SeiteZurueck, EtageHoch, EtageRunter, AppSchliessen, AppsAusblenden, AufgabeAbbrechen }
 
-/// <summary>Zusammenhang einer Geste: Sitzungsraum oder Begehen, eine App (Liste) offen, die Apps sichtbar, Etage per Wisch erlaubt (Variante «etage»).</summary>
-public sealed record GestenKontext(bool Sitzungsraum, bool AppOffen, bool AppsSichtbar, bool EtageMitWisch = true);
+/// <summary>Zusammenhang einer Geste: Sitzungsraum oder Begehen, eine App (Liste) offen, die Apps sichtbar, Etage per Wisch erlaubt (Variante «etage»);
+/// P5b: eine Prüfaufgabe läuft (ihre Karte steht vor einem).</summary>
+public sealed record GestenKontext(bool Sitzungsraum, bool AppOffen, bool AppsSichtbar, bool EtageMitWisch = true, bool AufgabeOffen = false);
 
 /// <summary>Zustand von <see cref="XrGesten.PinchWischSchritt"/> einer Hand: Wischerkennung und letzte Richtung (Sperre der Gegenrichtung).</summary>
 public sealed class PinchWischZustand
@@ -160,7 +165,8 @@ public static class Gestenbedeutung
     /// <summary>
     /// Bedeutung eines Wischs (mit gehaltenem Pinch): links/rechts blättert in einer offenen App (nach links = nächste Seite, der Inhalt folgt der Hand), sonst dreht
     /// er beim Begehen (wenn der Schalter «Drehen» wirkt, HandBegehen); hoch/runter wechselt die Etage (Begehen und Sitzungstisch; nicht in der Variante
-    /// «etage» = «app»); vor (vom Körper weg) = Wegwischen: schliesst die offene App, sonst blendet es die Apps aus; zurück: (noch) nichts.
+    /// «etage» = «app»); vor (vom Körper weg) = Wegwischen: schliesst das Vorderste – die offene App, sonst (P5b) die Karte einer laufenden Prüfaufgabe (Abbruch),
+    /// sonst blendet es die Apps aus; zurück: (noch) nichts.
     /// </summary>
     public static GestenAktion Wisch(WischRichtung r, GestenKontext k) => r switch
     {
@@ -168,7 +174,8 @@ public static class Gestenbedeutung
         WischRichtung.Rechts => k.AppOffen ? GestenAktion.SeiteZurueck : k.Sitzungsraum ? GestenAktion.Nichts : GestenAktion.Drehen,
         WischRichtung.Hoch => k.EtageMitWisch ? GestenAktion.EtageHoch : GestenAktion.Nichts,
         WischRichtung.Runter => k.EtageMitWisch ? GestenAktion.EtageRunter : GestenAktion.Nichts,
-        WischRichtung.Vor => k.AppOffen ? GestenAktion.AppSchliessen : k.AppsSichtbar ? GestenAktion.AppsAusblenden : GestenAktion.Nichts,
+        WischRichtung.Vor => k.AppOffen ? GestenAktion.AppSchliessen : k.AufgabeOffen ? GestenAktion.AufgabeAbbrechen
+            : k.AppsSichtbar ? GestenAktion.AppsAusblenden : GestenAktion.Nichts,
         _ => GestenAktion.Nichts,
     };
 
@@ -179,8 +186,10 @@ public static class Gestenbedeutung
         ("Pinch (Daumen + Zeigefinger)", "wählt: an einer Kachel wie Antippen; beim Begehen auf den Boden zeigen und loslassen = springen; am Tisch einen Griff fassen"),
         ("Pinch + Wisch links/rechts", "blättert in einer offenen App (links = nächste Seite); beim Begehen ohne offene App drehen um 30° (nur wenn «Drehen» wirkt)"),
         ("Pinch + Wisch hoch/runter", "Etage darüber/darunter (Begehen: über demselben Punkt, sonst im grössten Raum; Sitzungstisch: Etagenschnitt, über dem obersten «Alle Etagen»)"),
-        ("Pinch + Wisch nach vorn (wegwischen)", "schliesst die offene App, sonst blendet es die Apps aus"),
+        ("Pinch + Wisch nach vorn (wegwischen)", "schliesst die offene App, sonst bricht es eine laufende Prüfaufgabe ab, sonst blendet es die Apps aus"),
         ("Linke Handfläche zum Gesicht drehen", "holt die Apps vor den Blick (blendet sie ein)"),
+        ("Flache Hand über dem Modell (kurz ruhig)", "Sitzungstisch: Handfläche nach unten = waagrechter Schnitt auf Höhe der Hand, senkrecht gehalten = Vertikalschnitt; Hand weg behält ihn, «Tisch» › «Zurücksetzen» hebt ihn auf"),
+        ("Offene Hand, Handfläche nach vorn", "Begehen: Röntgen-Hand – Wände und Decken im Kegel vor der Hand werden durchscheinend"),
         ("Faust", "greift (noch keine Funktion; Greifen kommt mit XR-B)"),
         ("Zwei Hände an den Griffen", "Sitzungstisch: Massstab (auseinander/zusammen), Drehen, Verschieben"),
         ("Zögern über einer App", "eine Geisterhand zeigt die passende Geste"),

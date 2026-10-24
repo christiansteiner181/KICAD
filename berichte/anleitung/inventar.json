@@ -11267,7 +11267,59 @@
             "werkzeuge/quest_pruefen.ps1 (Zeile P5a, Prüfbilder der Apps)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P5a»)"
           ],
-          "hinweis": "Grundfassung P5a; alle Masse und Schwellen (Platz 50° links, Brusthöhe, Druckebene 5 mm, Fang 3 cm, Zögern 1.5 s, Tunnel) sind Annahmen bis zum Brillentest und als Stellschrauben einstellbar, wo der Katalog es vorsieht. Gewischt wird immer mit gehaltenem Pinch (Entscheid P5a); ein Wisch nach vorn dreht seit P5a nicht mehr. Prüfaufgaben und Messprotokoll des Labors folgen mit P5b. Schnitt mit flacher Hand und Röntgen-Hand sind noch nicht gebaut."
+          "hinweis": "Grundfassung P5a; alle Masse und Schwellen (Platz 50° links, Brusthöhe, Druckebene 5 mm, Fang 3 cm, Zögern 1.5 s, Tunnel) sind Annahmen bis zum Brillentest und als Stellschrauben einstellbar, wo der Katalog es vorsieht. Gewischt wird immer mit gehaltenem Pinch (Entscheid P5a); ein Wisch nach vorn dreht seit P5a nicht mehr. Prüfaufgaben, Messprotokoll, Katalog, Schnitt mit flacher Hand und Röntgen-Hand seit P5b: zb-quest-app-labor."
+        },
+        {
+          "id": "zb-quest-app-labor",
+          "titel": "Quest App: Prüfaufgaben, Varianten, Schnitt mit flacher Hand und Röntgen-Hand (Modul XR, Quest App P5b)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "XR-Labor …",
+            "kuerzel": "",
+            "sonst": "Am PC der Dialog «XR-Labor» (Reiter «Prüfaufgaben», «Varianten», «Stellschrauben», «Auswertung»); in der Brille die Karte der Aufgabe rechts neben dem Blick, die App «Tisch» im Sitzungsraum und die Hände."
+          },
+          "schritte": [
+            "Die Quest App verbinden (zb-quest-app-begehen). Beim Verbinden holt die App den Katalog des Labors von KICAD (Vorgaben, Grenzen, Profil «gilt für die App»); ohne PC nimmt sie den zuletzt geladenen.",
+            "Am PC: Register Ansicht › Fenster › «XR-Labor …», Reiter «Prüfaufgaben», bei «An eine Markierung springen» auf «Aufgabe starten» klicken.",
+            "In der Brille erscheint rechts neben dem Blick eine Karte mit Titel und Anleitung, darunter «Ziel: die leuchtende Markierung · Zeit · Fehlgriffe» und der Knopf «Aufgabe beenden». Am Boden leuchtet ein Ring mit einer Lichtsäule.",
+            "Mit Zeigen und Pinch auf den Ring springen. Ein Sprung daneben zählt als Fehlgriff. Landet man im Ring, wird die Karte grün («Geschafft · Zeit · Fehlgriffe») und die App sendet das Messprotokoll an KICAD.",
+            "Am PC zeigt der Reiter «Prüfaufgaben» bei der Aufgabe «1 Lauf · 1 von 1 erfolgreich …», der Reiter «Auswertung» Zeit, Fehlgriffe und Abbrüche je Variante und je Fassung der App (z. B. «0.1+680f9af»).",
+            "Abbrechen: auf der Karte «Aufgabe beenden» antippen oder Pinch + Wisch nach vorn (wenn keine App offen ist); am PC «Aufgabe beenden». Dieselbe Aufgabe nochmals starten heisst «neu begonnen» und zählt als Abbruch.",
+            "Die übrigen Aufgaben: «Um 90° drehen» (Pfeil am Boden), «Etage wechseln», «Modell greifen, drehen und zoomen» (die App wechselt selbst in den Sitzungsraum; Zielmassstab auf der Karte; Griffe loslassen), «Raum in AR öffnen» (App «Tisch» › «Raum zeigen», dann «Echter Tisch» und auf die Tischplatte tippen), «Auf dem Tablet einen Wert ablesen» (nur mit der Variante Bedienung «Tablet»: die Box zeigt die Höhe des markierten Bauteils und vier Antworten).",
+            "Reiter «Varianten»: Teleport «Stick» – mit einem Controller den Stick nach vorn drücken zielt, loslassen springt, seitlich dreht (Zeigen und Pinch springt dann nicht); Etage «App» – Pinch + Wisch hoch/runter wechselt nicht mehr, nur die App «Etagen»; Messen folgt mit Version 1.",
+            "Schnitt mit der flachen Hand: im Sitzungsraum die Hand flach mit der Handfläche nach unten über das Modell halten und kurz ruhig lassen – der Schnitt folgt der Hand nach oben und unten. Senkrecht gehalten (Handfläche zur Seite) gibt sie einen Vertikalschnitt; die Seite zum Kopf fällt weg. Hand weg behält den Schnitt; App «Tisch» › «Zurücksetzen» hebt ihn auf.",
+            "Röntgen-Hand: beim Begehen die offene Hand mit der Handfläche nach vorn halten (wie «Halt»). Wände und Decken in einem Kegel vor der Hand werden durchscheinend, dahinter erscheinen Leitungen und Räume; durch die Decke mit erhobener Hand, Handfläche nach oben. Hand senken schaltet sie nach einer Viertelsekunde ab.",
+            "Reiter «Stellschrauben»: z. B. «roentgen.winkel_grad» 60 oder «sitzung.schnitt_ruhe_s» 0.5 setzen – die Brille übernimmt sie sofort; ein Wert ausserhalb der Grenzen des Katalogs bleibt unbeachtet («ungültig»)."
+          ],
+          "erwartung": "Die App stellt den Ort jeder Aufgabe selbst her (Begehen bzw. Sitzungsraum), misst ab dem Beginn die Zeit und zählt die Fehlgriffe, wie sie im Katalog je Aufgabe stehen (Feld «fehlgriff»; dazu bei allen ein Antippen knapp neben eine Kachel). Jeder gemessene Lauf ergibt genau ein Messprotokoll mit Aufgabe, Zeit, Fehlgriffen, Abbrüchen, Erfolg, den Varianten der Aufgabe, den wirksamen Stellschrauben und der Fassung der App; ohne Verbindung wartet es in der App und geht mit der nächsten Verbindung. «Von Wand zu Wand messen» zeigt nur «folgt mit Version 1». Der Schnitt der flachen Hand und der Kegel der Röntgen-Hand folgen der Hand ohne Verzögerung und lösen nicht beim Zeigen, Pinch oder an den Apps aus.",
+          "pruefpunkte": [
+            "«P4 Status» nennt «Katalog=pc …» (mit PC) bzw. «zwischenspeicher …» (ohne PC) und «Fassung=0.1+<Commit>».",
+            "«Aufgabe starten» zeigt die Karte rechts neben dem Blick; Titel und Anleitung stimmen mit dem Katalog überein.",
+            "Markierung: ein Sprung daneben zählt einen Fehlgriff, ein Sprung hinein macht die Karte grün; am PC steht danach «1 Lauf».",
+            "«Aufgabe beenden» und Pinch + Wisch nach vorn brechen ab; der Lauf steht am PC als nicht erfolgreich mit einem Abbruch.",
+            "«Modell greifen, drehen und zoomen» wechselt in den Sitzungsraum; Zielmassstab und Vierteldrehung erreichen und loslassen ergibt «Geschafft».",
+            "«Auf dem Tablet einen Wert ablesen» wartet in der Variante «apps» mit Hinweis und beginnt, sobald am PC «Tablet» gewählt ist.",
+            "Variante Teleport «Stick»: mit Controller springen und drehen; ohne Controller erscheint der Hinweis.",
+            "Variante Etage «App»: der Wisch hoch/runter wechselt nicht, die App «Etagen» schon.",
+            "Flache Hand: waagrecht über dem Modell folgt der Schnitt der Hand; senkrecht ein Vertikalschnitt; Hand weg behält ihn; «Zurücksetzen» hebt ihn auf.",
+            "Röntgen-Hand: die Wand vor der Hand wird durchscheinend, eine Wand daneben nicht; die Hand zu senken stellt alles wieder her.",
+            "Am PC: werkzeuge\\quest_pruefen.ps1 meldet «P5b: … Katalog=ok …, Aufgaben=ok …, Röntgen=ok …» bzw. im Sitzungsraum «Flache Hand=ok» und «Messprotokolle am PC: … ok»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder): aufgabe_karte.jpg (Karte einer Aufgabe), roentgen.jpg (Kegel der Röntgen-Hand, Markierung am Boden), sitzung_flache_hand.jpg (Schnitt der flachen Hand am Tisch)",
+            "zustand": "Begehen mit der Karte «An eine Markierung springen» nach dem Erfolg bzw. Sitzungsraum mit dem Schnitt der flachen Hand"
+          },
+          "quelle": [
+            "src/Hlks.Quest/QuestApp.Labor.cs (Katalog, Aufgaben, Messprotokoll, Röntgen-Hand, Stick, Prüfung P5b), AufgabenKarte.cs, Sitzungsraum.cs (flache Hand), Fassung.targets (Fassung und Commit)",
+            "src/Hlks.Xr/Labor (LaborKatalog, LaborWerte, PruefAufgaben), Netz/LaborKatalogLader.cs, Netz/ProtokollAblage.cs, Sitzung/FlacheHand.cs, Modell/RoentgenHand.cs, StickTeleport.cs, Bedienung/Textumbruch.cs",
+            "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json (Feld «fehlgriff»), xr_varianten.json",
+            "tests/Hlks.Xr.Tests/LaborKatalogTests.cs, PruefAufgabenTests.cs, FlacheHandTests.cs, RoentgenHandTests.cs, StickTeleportTests.cs, P5bBedienungTests.cs; tests/Hlks.Web.Tests/XrLaborTests.cs",
+            "werkzeuge/quest_pruefen.ps1 (Zeile P5b, Messprotokolle am PC)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P5b»)"
+          ],
+          "hinweis": "Grundfassung P5b. Alle Schwellen der flachen Hand (25°, 0.3 s, 2 cm), der Röntgen-Hand (50°, 40° Kegel, 6 m), des Sticks (0.7/0.3) und die Lage der Karte sind Annahmen bis zum Brillentest; Ruhezeit, Winkel, Kegel und Reichweite sind Stellschrauben. «Auf dem Tablet einen Wert ablesen» fragt nach der Höhe aus der Hüllbox des Bauteils (die App kennt noch keine Eigenschaften). Ohne Passthrough (Simulator) gilt «Raum in AR öffnen» schon mit dem Ausschnitt. Nur mit der Brille zu prüfen: Hände, Stick, Lesbarkeit der Karte, Ton und Licht."
         },
         {
           "id": "zb-xr-labor-stellschrauben",
@@ -11284,7 +11336,7 @@
             "Im Reiter «Stellschrauben» eine Zeile suchen. Die Zeilen sind nach Gruppen geordnet (Begehen, Haltung, Anzeige, Schwebende Apps, Wischgesten, Pinch und Fang, Komfort, Sitzungsraum). Jede nennt Titel, Schlüssel, Beschreibung, Vorgabe und Herkunft des Werts.",
             "Den Regler ziehen oder anklicken, mit den Pfeiltasten verstellen oder eine Zahl in das Feld eintragen (Tab bestätigt); Schalter anklicken; bei einer Auswahl den Eintrag wählen. Jede Änderung geht sofort an die Brille.",
             "Mit «Vorgabe» setzt man die Stellschraube auf die Vorgabe zurück (sie ist nur frei, wenn der Wert abweicht).",
-            "Steht neben dem Titel «folgt P5», versteht die App den Wert erst ab P5 (Labor in der App); KICAD sendet ihn trotzdem schon."
+            "Steht neben dem Titel «folgt P5», versteht die App den Wert noch nicht; seit Quest App P5b versteht sie alle, die Marke erscheint nicht mehr."
           ],
           "erwartung": "Jede Stellschraube des Katalogs erscheint mit Regler (bzw. Schalter oder Auswahl), Zahlenfeld, Einheit und der Zeile «Gesetzt/Nicht gesetzt: … · Vorgabe: …». Die Grenzen (min, max, Schritt) stammen aus dem Katalog; eine Zahl ausserhalb wird nicht gesendet, die Meldung nennt den erlaubten Bereich und das Feld springt zurück. Ist keine Brille verbunden, merkt KICAD die Werte und sendet sie bei der nächsten Verbindung (solange KICAD läuft). Der Dialog passt sich dem Fenster an, der Inhalt scrollt, die Reiter bleiben oben stehen.",
           "pruefpunkte": [
@@ -11295,7 +11347,7 @@
             "Regler anklicken und mit den Pfeiltasten verstellen: der Wert ändert sich schrittweise.",
             "«Vorgabe» drücken: die Zeile steht wieder auf der Vorgabe, «Nicht gesetzt».",
             "Mit verbundener Brille: der Kopf nennt Name, Gerät und Fassung der App; die Werte erscheinen als gesetzt, sobald sie die Brille erreicht haben.",
-            "Die Stellschrauben mit «folgt P5» sind sichtbar und gekennzeichnet."
+            "Keine Stellschraube trägt die Marke «folgt P5» (seit Quest App P5b versteht die App alle)."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -11308,7 +11360,7 @@
             "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
-          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest."
         },
         {
           "id": "zb-xr-labor-profile",
@@ -11348,7 +11400,7 @@
             "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
-          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest."
         },
         {
           "id": "zb-xr-labor-varianten-aufgaben",
@@ -11386,7 +11438,7 @@
             "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
-          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5). Aufgabe und Messung brauchen die App ab P5."
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest. Aufgaben und Messung in der App: zb-quest-app-labor."
         },
         {
           "id": "zb-xr-labor-auswertung",
@@ -11423,7 +11475,7 @@
             "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
-          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+          "hinweis": "Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest."
         },
         {
           "id": "zb-xr-labor-fragebogen",
@@ -11461,7 +11513,7 @@
             "kataloge/xr_stellschrauben.json, xr_pruefaufgaben.json, xr_varianten.json, xr_fragebogen.json",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR: XR-Labor»)"
           ],
-          "hinweis": "Offen: Wortlaut und Quelle der deutschen Fassungen von SUS und NASA-TLX durch Christian. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Brillentest offen: die Stellschrauben mit «folgt P5» wirken erst, wenn die App sie versteht (P5)."
+          "hinweis": "Offen: Wortlaut und Quelle der deutschen Fassungen von SUS und NASA-TLX durch Christian. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_labor). Seit Quest App P5b versteht die App alle Stellschrauben (keine trägt mehr «folgt P5»); wie sie sich anfühlen, zeigt erst der Brillentest."
         }
       ]
     }

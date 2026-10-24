@@ -58,4 +58,10 @@
 		<Compile Update="..\..\**\*.Android.cs" Visible="true" />
 		<Compile Update="..\..\Platforms\Android\**\*.cs" Visible="true" />
 	</ItemGroup>
+
+	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle); dieselbe Fassung wie ApplicationDisplayVersion. -->
+	<PropertyGroup>
+		<HlksAppFassung>$(ApplicationDisplayVersion)</HlksAppFassung>
+	</PropertyGroup>
+	<Import Project="..\..\Fassung.targets" />
 </Project>
