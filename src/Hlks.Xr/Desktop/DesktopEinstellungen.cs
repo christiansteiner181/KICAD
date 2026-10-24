@@ -27,7 +27,7 @@ public sealed record SeitenWischEinstellungen
     /// <summary>Mittleres Tempo vom Beginn der Bewegung bis jetzt (m/s). Annahme V1c 0.45 (ein langsames Ausholen löst nicht aus).</summary>
     public double TempoMs { get; init; } = 0.45;
     /// <summary>
-    /// Die Normale der Handfläche liegt höchstens so weit neben waagrecht nach links (Grad). Gleich wie das Wegwischen (V1a «wegwischen.handflaeche_grad», 50°):
+    /// Die Normale der Handfläche liegt höchstens so weit neben waagrecht nach links (Grad). Gleich wie das Wegwischen (V1a «wegwischen.handflaeche_grad», 50°; V1h 60°):
     /// dieselbe Haltung für beide Richtungen (DesktopEinstellungen.HineinMit).
     /// </summary>
     public double HandflaecheGrad { get; init; } = WegwischEinstellungen.Vorgabe.HandflaecheGrad;

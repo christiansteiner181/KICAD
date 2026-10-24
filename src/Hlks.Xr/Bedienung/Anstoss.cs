@@ -14,17 +14,21 @@
 // Hineinziehen, Hebegeste) und für den Anstoss gilt «gesten.offen_ab» (FaustVerhaeltnis, Annahme V1f 1.40; bis V1e Haltung 1.65, Anstoss 1.75). Nicht zählen: die Faust (unter
 // XrTabletLogik.FaustAn), die Pistolengeste (Pistole.Haltung) und der Pinch (LockereHand). Die Fehlauslösungen vorher/nachher misst tests/Hlks.Xr.Tests/V1fTests.cs. Gibt der
 // Anstoss nicht aus, nennt <see cref="AnstossStand.Grund"/> den Grund (für das Protokoll der Hebegeste).
+// V1h (Brillentest Christian 25.10.2026: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»): Weg 0.045 m, Tempo 0.35 m/s, für alle drei Gesten. Dazu
+// Christians Regeln für Striche nach aussen (am Rand des Blicks bzw. auf der eigenen Körperseite der Hand: AussenGesperrt) und – gegen die Fehlauslösungen, die mit den
+// lockereren Werten zunehmen – «unter dem Blick» (UntenGesperrt: die am Körper ruhende Hand wischt nicht). Vorher/nachher: tests/Hlks.Xr.Tests/V1hTests.cs.
 
 namespace Hlks.Xr.Bedienung;
 
 /// <summary>Schwellen des Anstosses (Stellschrauben «gesten.anstoss_*», «gesten.offen_ab»; die übrigen feste Annahmen V1e).</summary>
 public sealed record AnstossEinstellungen
 {
-    /// <summary>«gesten.anstoss_weg_m»: so weit (m) muss die Hand in Richtung der Geste (Annahme V1e 0.06 m; Christian: «nur einen anstoss»).</summary>
-    public double WegM { get; init; } = 0.06;
+    /// <summary>«gesten.anstoss_weg_m»: so weit (m) muss die Hand in Richtung der Geste (Annahme V1e 0.06 m; Christian: «nur einen anstoss»; V1h 0.045 m, Brillentest
+    /// 25.10.2026: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»).</summary>
+    public double WegM { get; init; } = 0.045;
     /// <summary>«gesten.anstoss_tempo_ms»: mittleres Tempo (m/s) über den Anstoss (Annahme V1e 0.5 m/s: 6 cm in höchstens 0.12 s bzw. 10 cm in 0.2 s – ein gemächliches
-    /// Ausholen bleibt darunter).</summary>
-    public double TempoMs { get; init; } = 0.5;
+    /// Ausholen bleibt darunter; V1h 0.35 m/s, Brillentest 25.10.2026).</summary>
+    public double TempoMs { get; init; } = 0.35;
     /// <summary>Die Haltung der Geste steht schon so lange (s) vor dem Anlauf (Annahme V1e 0.1 s).</summary>
     public double HaltungVorS { get; init; } = 0.1;
     /// <summary>Quer zur Richtung höchstens so viel im Verhältnis zum Weg (Annahme V1e 0.4; die ganze Bewegung erlaubt 0.6 bzw. 35°).</summary>
@@ -45,12 +49,24 @@ public sealed record AnstossEinstellungen
     /// <summary>V1f: eine lockere Hand (weniger offen als XrTabletLogik.OffenAb) hat die vier Finger etwa gleich gekrümmt – die Streckung (Pistole.Streckung) liegt höchstens so
     /// weit auseinander (Annahme V1f 0.25; ein gestreckter Finger bei eingerollten übrigen ist Zeigen, keine Wischgeste).</summary>
     public double SpreizungMax { get; init; } = 0.25;
+    /// <summary>V1h, «gesten.randwinkel_grad»: die linke Hand wischt am linken bzw. die rechte am rechten Rand nicht nach aussen – beginnt der Strich mehr als so viel (Grad)
+    /// neben der Blickrichtung auf der Seite der Hand, zählt er nicht (Annahme V1h 25°; Christian 25.10.2026). Gilt für Wegwischen (linke Hand) und Hineinziehen (rechte
+    /// Hand); 90 = ohne.</summary>
+    public double RandGrad { get; init; } = 25;
+    /// <summary>V1h, «gesten.mitte_toleranz_m»: ein Strich nach aussen (linke Hand nach links, rechte nach rechts) zählt nur, wenn er an bzw. jenseits der Körpermitte beginnt –
+    /// höchstens so viel (m) auf der eigenen Seite der Hand (Christian 25.10.2026: «oder im normbereich der jeweiligen hand»; Annahme V1h 0.05 m); unendlich = ohne.</summary>
+    public double MitteToleranzM { get; init; } = 0.05;
+    /// <summary>V1h, «gesten.unten_grad»: ein Wisch quer zum Blick (Wegwischen, Hineinziehen) zählt nicht, wenn er mehr als so viel (Grad) unter der Blickrichtung beginnt –
+    /// die Hand ruht dann am Körper bzw. liegt unter dem Bild (Annahme V1h 45°; die ruhende Hand der Tests liegt rund 51° unter dem waagrechten Blick, die Wische rund 30°).
+    /// Gegen die Fehlauslösungen mit den lockereren Werten des Brillentests 25.10.2026; 90 = ohne. Nicht für die Hebegeste (sie beginnt unten).</summary>
+    public double UntenGrad { get; init; } = 45;
 
     public static readonly AnstossEinstellungen Vorgabe = new();
     /// <summary>Kein Anstoss (nur die ganze Bewegung wie bis V1d; für Vergleiche).</summary>
     public static readonly AnstossEinstellungen Aus = new() { WegM = double.PositiveInfinity };
     /// <summary>V1f: der Satz von V1e (deutlich offene Hand: Haltung ab 1.65, Anstoss ab 1.75; für den Vergleich der Fehlauslösungen).</summary>
-    public static readonly AnstossEinstellungen V1e = new() { OffenAb = 1.75, HaltungOffenAb = XrTabletLogik.OffenAb, OhnePistole = false, FormSpiel = double.PositiveInfinity, SpreizungMax = double.PositiveInfinity };
+    public static readonly AnstossEinstellungen V1e = new() { WegM = 0.06, TempoMs = 0.5, OffenAb = 1.75, HaltungOffenAb = XrTabletLogik.OffenAb, OhnePistole = false, FormSpiel = double.PositiveInfinity, SpreizungMax = double.PositiveInfinity,
+        RandGrad = 90, MitteToleranzM = double.PositiveInfinity, UntenGrad = 90 };
 }
 
 /// <summary>
@@ -93,6 +109,54 @@ public static class Anstoss
     public const double ZeitS = 0.2;
     /// <summary>Spiel beim Anlauf (m): der letzte Punkt höchstens so nah am am weitesten entgegen liegenden (Zittern der ruhenden Hand).</summary>
     public const double SpielM = 0.003;
+
+    /// <summary>
+    /// V1h: Winkel (Grad) eines Punkts gegen die Blickrichtung, waagrecht: positiv rechts, negativ links (Gieren wie VrLogik). Ohne Kopf 0.
+    /// </summary>
+    public static double SeitenWinkel(Vec3 p, Vec3? kopf, double blickGieren)
+    {
+        if (kopf is not { } k) return 0;
+        var v = p - k;
+        var rechts = HebeGeste.Rechts(blickGieren);
+        var vorn = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
+        return Math.Atan2(v.Skalar(rechts), v.Skalar(vorn)) * 180 / Math.PI;
+    }
+
+    /// <summary>
+    /// V1h: zählt ein Strich nach aussen (linke Hand nach links, rechte nach rechts) nicht? Er beginnt am Rand des Blicks (mehr als RandGrad neben dem Blick auf der Seite der
+    /// Hand) oder im Bereich der Hand auf ihrer eigenen Körperseite (mehr als MitteToleranzM neben der Körpermitte: senkrechte Ebene durch den Kopf in der Körperrichtung
+    /// koerperGieren, ohne Angabe die Blickrichtung). Ohne Kopf nie.
+    /// </summary>
+    public static bool AussenGesperrt(Vec3 beginn, bool linkeHand, Vec3? kopf, double blickGieren, AnstossEinstellungen e, double? koerperGieren = null)
+    {
+        if (kopf is not { } k) return false;
+        if (e.RandGrad < 90)
+        {
+            var w = SeitenWinkel(beginn, kopf, blickGieren);
+            if (linkeHand ? w < -e.RandGrad : w > e.RandGrad) return true;
+        }
+        if (double.IsFinite(e.MitteToleranzM))
+        {
+            var s = (beginn - k).Skalar(HebeGeste.Rechts(koerperGieren ?? blickGieren));
+            if (linkeHand ? s < -e.MitteToleranzM : s > e.MitteToleranzM) return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// V1h: Winkel (Grad), um den ein Punkt unter der Blickrichtung liegt (blickNicken = Neigung des Blicks, Bogenmass, positiv nach oben; der Punkt gegen die Waagrechte
+    /// vom Kopf). Ohne Kopf 0.
+    /// </summary>
+    public static double UnterBlick(Vec3 p, Vec3? kopf, double blickNicken)
+    {
+        if (kopf is not { } k) return 0;
+        var v = p - k;
+        return (blickNicken - Math.Atan2(v.Y, Math.Sqrt(v.X * v.X + v.Z * v.Z))) * 180 / Math.PI;
+    }
+
+    /// <summary>V1h: beginnt ein Wisch quer zum Blick mehr als «gesten.unten_grad» unter der Blickrichtung (die Hand ruht am Körper)? Ohne Kopf nie.</summary>
+    public static bool UntenGesperrt(Vec3 beginn, Vec3? kopf, double blickNicken, AnstossEinstellungen e) =>
+        kopf is not null && e.UntenGrad < 90 && UnterBlick(beginn, kopf, blickNicken) > e.UntenGrad;
 
     /// <summary>
     /// Prüft den Anstoss auf einer Spur (Zeit, Mitte und Normale der Handfläche, V1f: FaustVerhaeltnis; nur Punkte in der Haltung, älteste zuerst) zur Zeit t in Richtung r
@@ -152,4 +216,25 @@ public static class Anstoss
             if (x.T >= ab - 1e-9) { min = Math.Min(min, x.O); max = Math.Max(max, x.O); }
         return max >= min ? max - min : 0;
     }
+}
+
+/// <summary>
+/// V1h: die Richtung des Körpers (Gierwinkel, wie VrLogik) für die Körpermitte der Wischgesten: der Blick, träge nachgeführt – der Kopf dreht sich schneller und öfter als
+/// der Körper (Zeitkonstante KoerperS, Annahme V1h 1 s).
+/// </summary>
+public sealed class KoerperRichtung
+{
+    public const double KoerperS = 1.0;
+    double? gieren;
+
+    /// <summary>Ein Bild: dt (s), Gierwinkel des Blicks; gibt die Körperrichtung zurück.</summary>
+    public double Schritt(double dt, double blickGieren)
+    {
+        if (gieren is not { } g || !double.IsFinite(g)) return (gieren = blickGieren).Value;
+        var k = 1 - Math.Exp(-Math.Max(0, dt) / KoerperS);
+        gieren = g + XrSitzungLogik.WinkelDiff(blickGieren, g) * k;
+        return gieren.Value;
+    }
+
+    public double? Gieren => gieren;
 }

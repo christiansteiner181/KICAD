@@ -70,6 +70,8 @@ sealed class DesktopBildschirm : IWegwischbar
 
     /// <summary>Prüflauf: gedachte Hände statt Input (null = echte Hände); sie werden auch gezeichnet.</summary>
     public Func<DesktopHaende>? Haende { get; set; }
+    /// <summary>V1h: Körperrichtung (Gierwinkel) für die Körpermitte des Hineinziehens; null = die Blickrichtung.</summary>
+    public double? KoerperGieren { get; set; }
 
     public DesktopBildschirm(Rueckmeldung rueck, Action<string> hinweis, GlasZeichner z)
     {
@@ -147,7 +149,7 @@ sealed class DesktopBildschirm : IWegwischbar
         letztesAuge = auge;
         var f = kopf.Forward;
         var gieren = VrLogik.GierenVonRichtung(new Xz(f.x, f.z));
-        var h = Haende?.Invoke() ?? EchteHaende(t, gieren);
+        var h = Haende?.Invoke() ?? EchteHaende(t, gieren, auge, Math.Asin(Math.Clamp(f.y, -1f, 1f)));
         var vorher = ansicht.Phase;
         // V1d: beide Hände ziehen herein (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen»)
         letzter = gesten.Schritt(h, erlaubt: ansicht.HineinMoeglich && rechtsFrei, erlaubtLinks: ansicht.HineinMoeglich && linksFrei);
@@ -175,14 +177,14 @@ sealed class DesktopBildschirm : IWegwischbar
         return herein;
     }
 
-    DesktopHaende EchteHaende(double t, double gieren)
+    DesktopHaende EchteHaende(double t, double gieren, XVec3 auge, double nicken)
     {
         IReadOnlyDictionary<string, XVec3>? G(Handed seite)
         {
             var hand = Input.Hand(seite);
             return hand.IsTracked ? HandGelenke.AusStereoKit((fi, j) => X(hand[fi, j].position), X(hand.wrist.position)) : null;
         }
-        return new DesktopHaende(t, G(Handed.Right), G(Handed.Left), gieren);
+        return new DesktopHaende(t, G(Handed.Right), G(Handed.Left), gieren, auge, KoerperGieren, nicken);   // V1h: mit Kopf, Körperrichtung und Neigung des Blicks
     }
 
     /// <summary>Griff (Pinch), Schliessen- und Monitor-Knopf (Fingerspitze) – mit der rechten Hand, sonst der linken.</summary>

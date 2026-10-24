@@ -11955,7 +11955,7 @@
             "tests/Hlks.Xr.Tests/V1eTests.cs (Fehlauslösungen vorher/nachher)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1e»)"
           ],
-          "hinweis": "Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen». Annahmen V1e: 6 cm, 0.5 m/s innert 0.2 s, Haltung 0.1 s vorher, Drehung höchstens 25°, Hand deutlich offen. Fehlauslösungen über 900 Zufallsbewegungen gleich wie vorher (Test). Seit V1f genügt eine lockere Hand, die Hebegeste ist lockerer: zb-quest-v1f-gesten."
+          "hinweis": "Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen». Annahmen V1e: 6 cm, 0.5 m/s innert 0.2 s, Haltung 0.1 s vorher, Drehung höchstens 25°, Hand deutlich offen. Fehlauslösungen über 900 Zufallsbewegungen gleich wie vorher (Test). Seit V1f genügt eine lockere Hand, die Hebegeste ist lockerer: zb-quest-v1f-gesten. Seit V1h genügen 4.5 cm und 0.35 m/s (Brillentest 25.10.2026): zb-quest-v1h-wischen."
         },
         {
           "id": "zb-quest-v1e-punkte",
@@ -12167,6 +12167,43 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1g»)"
           ],
           "hinweis": "Christian 24.10.2026: «durch oben unten des roten punkte soll das modell auch rotieren.» (Kippen), «bei schliessen der tafel soll die hand keine app wählen. (app ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.», «die weisse fläche unter dem modell stört immer noch.» Annahmen V1g: höchstens 60°, Sperre 0.5 s, Umriss aus."
+        },
+        {
+          "id": "zb-quest-v1h-wischen",
+          "titel": "Quest App: Wischgesten leichter; Striche nach aussen nicht vom Rand bzw. von der eigenen Seite; kein Wisch unter dem Blick (Modul XR, Quest App V1h)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit den Händen: Wegwischen (nach links), Hineinziehen des PC-Bildschirms (nach rechts), Hebegeste. Im XR-Labor: gesten.anstoss_weg_m, gesten.anstoss_tempo_ms, wegwischen.handflaeche_grad, wegwischen.richtung_grad, gesten.randwinkel_grad, gesten.mitte_toleranz_m, gesten.unten_grad."
+          },
+          "schritte": [
+            "Eine offene Tafel mit einem kurzen Schub der rechten Hand nach links wegwischen (rund 5 cm, zügig): sie gleitet hinaus. Ebenso hebt ein kurzes Anheben beider Hände die Symbole, ein kurzer Schub nach rechts holt den PC-Bildschirm.",
+            "Mit der linken Hand aus der Mitte vor dem Körper nach links wischen: das zählt. Beginnt die linke Hand links neben dem Körper bzw. am linken Rand des Blicks, zählt der Strich nach links nicht (ebenso die rechte Hand nach rechts auf der rechten Seite).",
+            "Die Hand locker tief am Körper (Handfläche zum Körper) bewegen: das wischt nichts weg und holt nichts herein."
+          ],
+          "erwartung": "Wegwischen, Hineinziehen und Hebegeste lösen schon mit einem kurzen, mittelschnellen Schub aus (4.5 cm, 0.35 m/s). Striche nach aussen zählen nur ab der Körpermitte (5 cm Spiel) und nicht vom Rand des Blicks (25°); nach innen wie bisher. Ein Wisch, der mehr als 45° unter dem Blick beginnt, zählt nicht (die Hebegeste schon).",
+          "pruefpunkte": [
+            "Ein kurzer Schub nach links schliesst die Tafel zuverlässig.",
+            "Linke Hand von links aussen nach links: nichts; aus der Mitte nach links: weggewischt.",
+            "Rechte Hand von rechts aussen nach rechts: kein PC-Bildschirm; aus der Mitte nach rechts: er kommt.",
+            "Bewegungen der ruhenden Hand am Körper lösen nichts aus.",
+            "tests/Hlks.Xr.Tests/V1hTests.cs: Fehlauslösungen V1g 0/5/3, V1h 0/4/0 (Hebegeste/Wegwischen/Hineinziehen)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 4, unverändert seit V1e): desktop_9_anstoss_ausgeloest.jpg, desktop_10_anstoss_weg.jpg",
+            "zustand": "PC-Bildschirm mit dem Anstoss hereingezogen bzw. weggewischt"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/Anstoss.cs, Wegwischen.cs, XrBedienEinstellungen.cs",
+            "src/Hlks.Xr/Desktop/DesktopGeste.cs",
+            "src/Hlks.Quest/QuestApp.Apps.cs, QuestApp.Desktop.cs, DesktopBildschirm.cs",
+            "tests/Hlks.Xr.Tests/V1hTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1h»)"
+          ],
+          "hinweis": "Christian 25.10.2026: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.», «rechts nach links gesten mit der linken hand am linken bildrand nicht beachten. ebenso rechte hand links nach rechts gesten am rechten rand nicht beachten.», «oder im normbereich der jeweiligen hand.» Annahmen V1h: Rand 25°, Körpermitte 5 cm, unter dem Blick 45° (Gegenregel gegen Fehlauslösungen). Mit der linken Hand lässt sich das Symbolfeld nicht aus seiner linken Spalte nach links wegwischen."
         }
       ]
     }

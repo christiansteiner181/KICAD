@@ -47,7 +47,7 @@ public static class Geisterhand
     /// <summary>V1d: Blättern auf der Tafel (ohne Pinch) läuft so weit vor der Fläche (m), innerhalb von «tafel.blaettern_abstand_m».</summary>
     public const double BlaetternVorM = 0.02;
     /// <summary>V1e: Hebegeste und Wegwischen zeigen nur den kurzen Anstoss (Christian 24.10.2026: «nur einen anstoss»): erst stellen (AnstossVor des Durchgangs), dann so weit (m) in AnstossAnteil,
-    /// dann steht die Hand (über «gesten.anstoss_weg_m» 6 cm).</summary>
+    /// dann steht die Hand (über «gesten.anstoss_weg_m» 6 cm, seit V1h 4.5 cm).</summary>
     public const double AnstossM = 0.09, AnstossVor = 0.15, AnstossAnteil = 0.15;
 
     /// <summary>Vektor v um die Achse a (Einheit) um den Winkel w (rad, rechte Hand) drehen (Rodrigues).</summary>
@@ -281,7 +281,7 @@ public static class Geisterhand
 
     /// <summary>
     /// Die Geisterhand des Wegwischens ist so weit (Grad) aus «Handfläche nach links» zum Blick hin gedreht (die Handfläche zeigt nach links und etwas vom Auge weg):
-    /// genau nach links stünde sie auf der Kante und wäre nur ein Strich (Befund Prüfbilder 03). Kleiner als «wegwischen.handflaeche_grad» (50°), damit die Vorführung
+    /// genau nach links stünde sie auf der Kante und wäre nur ein Strich (Befund Prüfbilder 03). Kleiner als «wegwischen.handflaeche_grad» (50°, seit V1h 60°), damit die Vorführung
     /// eine gültige Geste zeigt; Annahme V1a.
     /// </summary>
     public const double WischSchraegGrad = 35;

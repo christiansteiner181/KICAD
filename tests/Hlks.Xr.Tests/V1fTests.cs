@@ -341,7 +341,7 @@ public class V1fTests(ITestOutputHelper aus)
     // ================================================================================================ Lockere Hand, Hebegeste
 
     /// <summary>Ein Satz für den Vergleich: V1e (deutlich offene Hand, strenge Hebegeste) bzw. V1f (Vorgabe).</summary>
-    internal sealed record Satz(string Name, AnstossEinstellungen Anstoss, HebeEinstellungen Hebe)
+    internal sealed record Satz(string Name, AnstossEinstellungen Anstoss, HebeEinstellungen Hebe, WegwischEinstellungen? Wegwischen = null)
     {
         public static readonly Satz V1e = new("V1e", AnstossEinstellungen.V1e, HebeEinstellungen.V1e);
         public static readonly Satz V1f = new("V1f", AnstossEinstellungen.Vorgabe, HebeEinstellungen.Vorgabe);
@@ -350,7 +350,7 @@ public class V1fTests(ITestOutputHelper aus)
     /// <summary>Alle drei Gesten über eine Aufnahme, verdrahtet wie in der App (wie V1eTests.Abspielen), mit dem Satz s; dazu die verworfenen Ansätze der Hebegeste.</summary>
     internal static (int Hebe, int Weg, int Hinein, int Anstoss, List<string> Verworfen) Abspielen(Aufnahme a, Satz s)
     {
-        var w = WegwischEinstellungen.Vorgabe with { Anstoss = s.Anstoss };
+        var w = (s.Wegwischen ?? WegwischEinstellungen.Vorgabe) with { Anstoss = s.Anstoss };
         var he = s.Hebe;
         var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe, null, () => w);
         var hz = new HebeZustand();
@@ -367,9 +367,10 @@ public class V1fTests(ITestOutputHelper aus)
             if (hs.Ereignis is not null) { hebe++; if (hs.DurchAnstoss) durch++; }
             if (hs.Verworfen is { } v) verworfen.Add(v);
             var ruht = g.WegwischenRuht(b.T);
-            var ws = Wegwischen.Schritt(wz, b.T, ruht ? null : hr, ruht ? null : hl, b.Gieren, w);
+            // V1h: mit Kopf und Körperrichtung (Randregel, Körpermitte)
+            var ws = Wegwischen.Schritt(wz, b.T, ruht ? null : hr, ruht ? null : hl, b.Gieren, w, b.Kopf, b.Gieren);
             if (ws.Ereignis) { weg++; g.NachWegwischen(b.T); if (ws.DurchAnstoss) durch++; }
-            var st = g.Schritt(new DesktopHaende(b.T, r, l, b.Gieren), true);
+            var st = g.Schritt(new DesktopHaende(b.T, r, l, b.Gieren, b.Kopf, b.Gieren), true);
             if (st.Ausgeloest) { hinein++; if (st.DurchAnstoss) durch++; }
         }
         return (hebe, weg, hinein, durch, verworfen);

@@ -29,7 +29,7 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         G.Erzeugen(b, new Vorfuehrung { DauerS = dauer, GierenGrad = gieren, Saat = saat, BogenM = 0.015, RuheVorS = ruhe, RuheNachS = ruhe });
 
     static DesktopHaende Haende(GestenBild b) =>
-        new(b.T, b.Rechts.Verfolgt ? b.Rechts.GelenkeMitNamen() : null, b.Links.Verfolgt ? b.Links.GelenkeMitNamen() : null, b.Gieren);
+        new(b.T, b.Rechts.Verfolgt ? b.Rechts.GelenkeMitNamen() : null, b.Links.Verfolgt ? b.Links.GelenkeMitNamen() : null, b.Gieren, b.Kopf, b.Gieren);
 
     /// <summary>
     /// Beide Gesten über eine Aufnahme wie in der App (ohne Sperre durch den Zustand des Bildschirms): je Bild erst das gemeinsame Wegwischen (die rechte Hand zählt
@@ -50,7 +50,7 @@ public class DesktopGesteTests(ITestOutputHelper aus)
             var ruht = g.WegwischenRuht(b.T);
             var rechts = ruht ? null : HandBeobachtung.Aus(h.Rechts, "right");
             var links = ruht ? null : HandBeobachtung.Aus(h.Links, "left");
-            var ws = Wegwischen.Schritt(wz, b.T, rechts, links, b.Gieren, w);
+            var ws = Wegwischen.Schritt(wz, b.T, rechts, links, b.Gieren, w, b.Kopf, b.Gieren);
             if (ws.Ereignis) { we.Add(b.T); g.NachWegwischen(b.T); }
             mw = Math.Max(mw, ws.Weg);
             var s = g.Schritt(h, erlaubt: true);
@@ -93,10 +93,10 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     [Fact]
     public void Der_Fortschritt_folgt_der_Hand_und_faellt_beim_Abbruch_zurueck()
     {
-        // halber Wisch (12 cm gemächlich – V1e: zügig wäre es ein Anstoss –, dann stehen bleiben): der Bildschirm folgt bis etwa zur Hälfte, ausgelöst wird nicht; nach
+        // halber Wisch (12 cm gemächlich in 0.9 s – V1e: zügig wäre es ein Anstoss; V1h mit 0.35 m/s bis V1g 0.6 s –, dann stehen bleiben): der Bildschirm folgt bis etwa zur Hälfte, ausgelöst wird nicht; nach
         // dem Zeitfenster fällt der Fortschritt auf 0
         GestenBewegung halb = u => (null, new Haltung(G.V(-0.10 + 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        var a = Vorzeigen(halb, dauer: 0.6, ruhe: 1.0);
+        var a = Vorzeigen(halb, dauer: 0.9, ruhe: 1.0);
         var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
         var verlauf = a.Bilder.Select(b => (b.T, S: g.Schritt(Haende(b), true))).ToList();
         Assert.DoesNotContain(verlauf, x => x.S.Ausgeloest);
@@ -114,7 +114,7 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     [Fact]
     public void Langsam_oder_kurz_loest_nicht_aus()
     {
-        Assert.Empty(Abspielen(Vorzeigen(Hinein, dauer: 1.6)).Hinein);   // 35 cm in 1.6 s: 0.22 m/s
+        Assert.Empty(Abspielen(Vorzeigen(Hinein, dauer: 2.2)).Hinein);   // 35 cm in 2.2 s: 0.16 m/s (V1h: der Anstoss mit 0.35 m/s fängt bis V1g 1.6 s ab)
         GestenBewegung kurz = u => (null, new Haltung(G.V(-0.10 + 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         GestenBewegung kurzWeg = u => (null, new Haltung(G.V(0.25 - 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         // die ganze Bewegung (V1c): 15 cm zügig reichen nicht
@@ -124,23 +124,24 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         // V1e (Christian 24.10.2026: «nur einen anstoss»): derselbe zügige kurze Schub löst aus; ein langsamer kurzer nicht
         Assert.Single(Abspielen(Vorzeigen(kurz, dauer: 0.25)).Hinein);
         Assert.Single(Abspielen(Vorzeigen(kurzWeg, dauer: 0.25)).Weg);
-        Assert.Empty(Abspielen(Vorzeigen(kurz, dauer: 0.8)).Hinein);
-        Assert.Empty(Abspielen(Vorzeigen(kurzWeg, dauer: 0.8)).Weg);
+        // V1h (Tempo des Anstosses 0.35 m/s, dazu 5 mm Rauschen der Hand): langsam heisst 15 cm in 1.5 s (bis V1g 0.8 s)
+        Assert.Empty(Abspielen(Vorzeigen(kurz, dauer: 1.5)).Hinein);
+        Assert.Empty(Abspielen(Vorzeigen(kurzWeg, dauer: 1.5)).Weg);
     }
 
     [Fact]
     public void Ausholen_vor_dem_Wisch_loest_die_andere_Geste_nicht_aus()
     {
-        // Ausholen nach links (12 cm, gemächlich), dann Hineinziehen
+        // Ausholen nach links (12 cm, gemächlich in 0.8 s; V1h mit 0.35 m/s – bis V1g 0.45 s), dann Hineinziehen
         GestenBewegung ausholenLinks = u => (null, new Haltung(G.V(0.02 - 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        var (a1, _) = G.Strom([(ausholenLinks, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.4, RuheNachS = 0.08 }), (Hinein, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.05, RuheNachS = 0.5 })],
+        var (a1, _) = G.Strom([(ausholenLinks, new Vorfuehrung { DauerS = 0.8, RuheVorS = 0.4, RuheNachS = 0.08 }), (Hinein, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.05, RuheNachS = 0.5 })],
             uebergangS: 0.05);
         var r1 = Abspielen(a1);
         Assert.Single(r1.Hinein);
         Assert.Empty(r1.Weg);
         // Ausholen nach rechts, dann Wegwischen
         GestenBewegung ausholenRechts = u => (null, new Haltung(G.V(0.13 + 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        var (a2, _) = G.Strom([(ausholenRechts, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.4, RuheNachS = 0.08 }), (Weg, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.05, RuheNachS = 0.5 })],
+        var (a2, _) = G.Strom([(ausholenRechts, new Vorfuehrung { DauerS = 0.8, RuheVorS = 0.4, RuheNachS = 0.08 }), (Weg, new Vorfuehrung { DauerS = 0.45, RuheVorS = 0.05, RuheNachS = 0.5 })],
             uebergangS: 0.05);
         var r2 = Abspielen(a2);
         Assert.Single(r2.Weg);
@@ -368,14 +369,14 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         GestenBewegung kurz = u => (null, new Haltung(G.V(-0.10 + 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
         var e = DesktopEinstellungen.Vorgabe with { Hinein = SeitenWischEinstellungen.Vorgabe with { WegM = 0.12 } };
         Assert.Single(Abspielen(Vorzeigen(kurz, dauer: 0.25), e).Hinein);
-        // Handfläche 60° schräg nach vorn-links (Finger nach oben): mit der Vorgabe 50° (wegwischen.handflaeche_grad) nicht, mit 70° schon – dieselbe Haltung für
-        // beide Richtungen
-        GestenBewegung schraeg = u => (null, new Haltung(G.V(-0.10 + 0.35 * u, -0.25, 0.4), G.V(0, 1, 0), G.N(-0.5, 0, 0.866), G.Kr(0.1)));
-        Assert.Equal(50, WegwischEinstellungen.Vorgabe.HandflaecheGrad);
+        // Handfläche 70° schräg nach vorn-links (Finger nach oben): mit der Vorgabe 60° (wegwischen.handflaeche_grad; V1h, bis V1g 50° mit 60° schräg) nicht, mit 80°
+        // schon – dieselbe Haltung für beide Richtungen
+        GestenBewegung schraeg = u => (null, new Haltung(G.V(-0.10 + 0.35 * u, -0.25, 0.4), G.V(0, 1, 0), G.N(-Math.Cos(70 * Math.PI / 180), 0, Math.Sin(70 * Math.PI / 180)), G.Kr(0.1)));
+        Assert.Equal(60, WegwischEinstellungen.Vorgabe.HandflaecheGrad);
         Assert.Equal(WegwischEinstellungen.Vorgabe.HandflaecheGrad, DesktopEinstellungen.Vorgabe.Hinein.HandflaecheGrad);
         Assert.Empty(Abspielen(Vorzeigen(schraeg)).Hinein);
-        Assert.Single(Abspielen(Vorzeigen(schraeg), null, WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 70 }).Hinein);
-        Assert.Equal(70, DesktopEinstellungen.Vorgabe.HineinMit(WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 70 }).HandflaecheGrad);
+        Assert.Single(Abspielen(Vorzeigen(schraeg), null, WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 80 }).Hinein);
+        Assert.Equal(80, DesktopEinstellungen.Vorgabe.HineinMit(WegwischEinstellungen.Vorgabe with { HandflaecheGrad = 80 }).HandflaecheGrad);
     }
 
     [Fact]

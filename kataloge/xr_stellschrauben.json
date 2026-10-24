@@ -286,14 +286,14 @@
     {
       "schluessel": "wegwischen.handflaeche_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Handfläche seitlich", "status": "app",
       "beschreibung": "Die Handfläche zeigt höchstens so weit neben waagrecht nach links (rechte Hand) bzw. seitlich in eine der beiden Richtungen (linke Hand, seit V1d); gilt auch für das Hineinziehen.",
-      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 50,
-      "herkunft": "Annahme V1a"
+      "art": "zahl", "einheit": "°", "min": 10, "max": 80, "schritt": 1, "vorgabe": 60,
+      "herkunft": "Annahme V1a (50°); V1h 60°, Brillentest 25.10.2026, Christian: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»"
     },
     {
       "schluessel": "wegwischen.richtung_grad", "gruppe": "wegwischen", "titel": "Wegwischen: Richtung", "status": "app",
       "beschreibung": "Die Bewegung weicht höchstens so weit von «nach links» ab (nicht nach oben, unten oder vorn). Ausholen nach rechts löst nichts aus.",
-      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 1, "vorgabe": 35,
-      "herkunft": "Annahme V1a"
+      "art": "zahl", "einheit": "°", "min": 5, "max": 80, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1a (35°); V1h 45°, Brillentest 25.10.2026, Christian: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»"
     },
     {
       "schluessel": "symbole.abstand_m", "gruppe": "symbole", "titel": "Abstand des Symbolfelds", "status": "app",
@@ -466,20 +466,38 @@
     {
       "schluessel": "gesten.anstoss_weg_m", "gruppe": "gesten", "titel": "Anstoss: Weg", "status": "app",
       "beschreibung": "Hebegeste, Hineinziehen und Wegwischen lösen schon mit einem kurzen, deutlichen Anstoss aus: so weit (m) in Richtung der Geste, in der Haltung der Geste; die Bewegung läuft danach mit Schwung zu Ende.",
-      "art": "zahl", "einheit": "m", "min": 0.02, "max": 0.2, "schritt": 0.01, "vorgabe": 0.06,
-      "herkunft": "Annahme V1e (Auftrag: etwa 5–6 cm); Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen»"
+      "art": "zahl", "einheit": "m", "min": 0.02, "max": 0.2, "schritt": 0.005, "vorgabe": 0.045,
+      "herkunft": "Annahme V1e 0.06 m (Auftrag: etwa 5–6 cm); Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen»; V1h 0.045 m, Brillentest 25.10.2026, Christian: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»"
     },
     {
       "schluessel": "gesten.anstoss_tempo_ms", "gruppe": "gesten", "titel": "Anstoss: Tempo", "status": "app",
-      "beschreibung": "Mittleres Tempo (m/s) über den Anstoss, innert 0.2 s (bei 0.5 m/s: 6 cm in höchstens 0.12 s bzw. 10 cm in 0.2 s); ein gemächliches Ausholen bleibt darunter.",
-      "art": "zahl", "einheit": "m/s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.5,
-      "herkunft": "Annahme V1e; Christian 24.10.2026: «weil die instinktive bewegung zu kurz ist»"
+      "beschreibung": "Mittleres Tempo (m/s) über den Anstoss, innert 0.2 s (bei 0.35 m/s: 4.5 cm in höchstens 0.13 s bzw. 7 cm in 0.2 s); ein gemächliches Ausholen bleibt darunter.",
+      "art": "zahl", "einheit": "m/s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.35,
+      "herkunft": "Annahme V1e 0.5 m/s; Christian 24.10.2026: «weil die instinktive bewegung zu kurz ist»; V1h 0.35 m/s, Brillentest 25.10.2026, Christian: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.»"
     },
     {
       "schluessel": "gesten.offen_ab", "gruppe": "gesten", "titel": "Lockere Hand: offen ab", "status": "app",
       "beschreibung": "Ab so viel gilt die Hand für Wegwischen, Hineinziehen und Hebegeste als offen (mittlerer Abstand der Fingerspitzen zum Handgelenk in Handgrössen: flache Hand rund 1.9, halb gekrümmt rund 1.45, Faust rund 1.0). Faust, Pistolengeste und Pinch zählen nie; die Form der Hand bleibt während der Geste.",
       "art": "zahl", "einheit": "", "min": 1.1, "max": 1.9, "schritt": 0.05, "vorgabe": 1.4,
       "herkunft": "Annahme V1f (bis V1e 1.65 bzw. 1.75 beim Anstoss); Christian 24.10.2026: «wisch geste soll auch gehen wenn die finger nicht voll gestrekt sind.»"
+    },
+    {
+      "schluessel": "gesten.randwinkel_grad", "gruppe": "gesten", "titel": "Wisch nach aussen: Rand des Blicks", "status": "app",
+      "beschreibung": "Ein Strich nach aussen – linke Hand nach links (Wegwischen), rechte Hand nach rechts (Hineinziehen) – zählt nicht, wenn er mehr als so viel (Grad) neben der Blickrichtung auf der Seite der Hand beginnt (das Zurücknehmen des Arms). Aus der Mitte bzw. von der Gegenseite wie bisher. 90 = ohne.",
+      "art": "zahl", "einheit": "°", "min": 5, "max": 90, "schritt": 1, "vorgabe": 25,
+      "herkunft": "Annahme V1h (Auftrag: etwa 25°); Christian 25.10.2026: «rechts nach links gesten mit der linken hand am linken bildrand nicht beachten. ebenso rechte hand links nach rechts gesten am rechten rand nicht beachten.»"
+    },
+    {
+      "schluessel": "gesten.mitte_toleranz_m", "gruppe": "gesten", "titel": "Wisch nach aussen: ab der Körpermitte", "status": "app",
+      "beschreibung": "Ein Strich nach aussen (linke Hand nach links, rechte Hand nach rechts) zählt nur, wenn er an bzw. jenseits der Körpermitte beginnt – höchstens so viel (m) auf der eigenen Seite der Hand. Die Körpermitte folgt dem Blick träge (Zeitkonstante 1 s).",
+      "art": "zahl", "einheit": "m", "min": 0, "max": 0.5, "schritt": 0.01, "vorgabe": 0.05,
+      "herkunft": "Annahme V1h (Auftrag: Startwert 0.05 m); Christian 25.10.2026: «oder im normbereich der jeweiligen hand.»"
+    },
+    {
+      "schluessel": "gesten.unten_grad", "gruppe": "gesten", "titel": "Wisch nicht unter dem Blick", "status": "app",
+      "beschreibung": "Wegwischen und Hineinziehen zählen nicht, wenn der Strich mehr als so viel (Grad) unter der Blickrichtung beginnt – die Hand ruht dann am Körper. Hält die lockereren Werte des Anstosses von Fehlauslösungen frei; nicht für die Hebegeste. 90 = ohne.",
+      "art": "zahl", "einheit": "°", "min": 10, "max": 90, "schritt": 1, "vorgabe": 45,
+      "herkunft": "Annahme V1h (Gegenregel zu den Fehlauslösungen mit den Werten des Brillentests 25.10.2026; die ruhende Hand der Tests liegt rund 51°, die Wische rund 30° unter dem waagrechten Blick)"
     },
     {
       "schluessel": "etagen.zeilen_max", "gruppe": "tafel", "titel": "Etagen auf einer Seite", "status": "app",

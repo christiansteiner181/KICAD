@@ -41,6 +41,7 @@ sealed partial class QuestApp
     void DesktopBild(Pose kopf)
     {
         var d = DesktopTeil;
+        d.KoerperGieren = KoerperJetzt(kopf);   // V1h: Körpermitte für das Hineinziehen
         // V1d: eine Hand auf der Tafel (Blättern) zieht den Bildschirm nicht herein; die linke Hand zieht ebenso herein
         if (d.Bild(kopf, Time.Total, Time.Step, werte.Desktop, bedien.Pinch, bedien.Wegwischen, (!AnApps(Handed.Right) && !apps.AnTafel(Handed.Right)) || d.Haende is not null, paket,
                 _ => Task.FromResult(adresse is { } a ? DesktopRegeln.Adresse(a) : (Uri?)null), !AnApps(Handed.Left) && !apps.AnTafel(Handed.Left), bedien.Tafel))
@@ -81,7 +82,7 @@ sealed partial class QuestApp
         var k = Input.Head;
         var g = VrLogik.GierenVonRichtung(new Xz(k.Forward.x, k.Forward.z));
         var kopf = new XVec3(k.position.x, k.position.y, k.position.z);
-        return new DesktopHaende(Time.Total, dHandDa ? Hlks.Xr.Desktop.PruefHand.RechtsHandflaecheLinks(kopf, g, dHandX) : null, null, g);
+        return new DesktopHaende(Time.Total, dHandDa ? Hlks.Xr.Desktop.PruefHand.RechtsHandflaecheLinks(kopf, g, dHandX) : null, null, g, kopf, KoerperJetzt(k), BlickNicken(k));
     }
 
     static double Weich(double u) { u = Math.Clamp(u, 0, 1); return u * u * u * (10 - 15 * u + 6 * u * u); }   // Minimum-Jerk wie eine Armbewegung

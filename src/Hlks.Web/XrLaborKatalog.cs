@@ -206,7 +206,7 @@ public sealed class XrLaborKatalog
             }
             liste.Add(new XrStellschraubeDef { Schluessel = key, Gruppe = gruppe, Art = art, Status = status, Min = min, Max = max, Schritt = schritt, Auswahl = auswahl, Vorgabe = vorgabe.DeepClone(), Roh = (JsonObject)s.DeepClone() });
         }
-        // V1a 54, V1c 56 statt 48, V1d 80 (V1d zusammen 65), V1g 96 (V1g 83); die Grenze des Kanals (XrNachrichten.StellschraubenMax 128 mit Varianten und Aufgabe: V1g 83 + 12 + 1)
+        // V1a 54, V1c 56 statt 48, V1d 80 (V1d zusammen 65), V1g 96 (V1g 83, V1h 86); die Grenze des Kanals (XrNachrichten.StellschraubenMax 128 mit Varianten und Aufgabe: V1h 86 + 12 + 1)
         // prüft die Zeile weiter unten
         if (liste.Count > StellschraubenMax)
             throw Fehler(d, $"Höchstens {StellschraubenMax} Stellschrauben (der Kanal merkt höchstens {XrNachrichten.StellschraubenMax} Werte, dazu kommen Varianten und Aufgabe).");

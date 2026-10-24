@@ -177,7 +177,7 @@ public class V1aSymboleTests
         Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.3, offen: false)));     // Faust
         Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.3, nx: -1)));          // Handfläche nach rechts (Handrücken voran)
         Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.3, nx: 0.3)));         // Handfläche nach vorn (73° neben links)
-        Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.1)));                  // zu kurz
+        Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.04)));                 // zu kurz (V1h: auch für den Anstoss, 4.5 cm; bis V1g 10 cm in 0.3 s)
         Assert.Equal(0, W(Wischen(new WegwischZustand(), 1.5, 0.3, t1: 2.5)));         // zu langsam (0.6 s)
         Assert.Equal(0, W(Wischen(new WegwischZustand(), 0.3, 0.2, hoch: 0.3)));       // eher nach oben als nach links
         // mit Ausholen nach rechts zählt nur der Weg nach links
