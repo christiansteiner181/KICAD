@@ -30,7 +30,7 @@ using Hlks.Xr.Bedienung;
 namespace Hlks.Xr.Desktop;
 
 /// <summary>Stand des Hineinziehens in einem Bild: ausgelöst (nur in diesem Bild), Fortschritt 0 … 1, läuft (Bildschirm folgt der Hand), Weg in m.</summary>
-public readonly record struct SeitenWischStand(bool Ausgeloest, double Fortschritt, bool Laeuft, double WegM)
+public readonly record struct SeitenWischStand(bool Ausgeloest, double Fortschritt, bool Laeuft, double WegM, bool DurchAnstoss = false)
 {
     public static readonly SeitenWischStand Nichts = new(false, 0, false, 0);
 }
@@ -38,10 +38,12 @@ public readonly record struct SeitenWischStand(bool Ausgeloest, double Fortschri
 /// <summary>Zustand des Hineinziehens (Punkte der rechten Hand, solange die Haltung passt; Spur der linken Hand; Pinch vorher; Sperre).</summary>
 public sealed class SeitenWischZustand
 {
-    internal readonly List<(double T, Vec3 P)> Punkte = [];
+    internal readonly List<(double T, Vec3 P, Vec3 N)> Punkte = [];
     internal readonly List<(double T, Vec3 P)> Andere = [];
     internal bool PinchVorher;
     internal double SperreBis = double.NegativeInfinity;
+    /// <summary>V1e: der Anstoss des letzten Bilds (Prüfung, Protokoll).</summary>
+    public Bedienung.AnstossStand Anstoss { get; internal set; }
 
     /// <summary>Sperre von aussen (Gegengeste ausgelöst): bis t nichts, und die laufende Bewegung zählt nicht weiter.</summary>
     public void Sperren(double bis)
@@ -86,7 +88,7 @@ public static class SeitenWisch
         var haltung = erlaubt && mitte is not null && normale is not null && !pinchJetzt && XrTabletLogik.IstOffen(rechts)
             && seitlich >= Math.Cos(e.HandflaecheGrad * Num.Grad);
         if (!haltung) { z.Punkte.Clear(); return SeitenWischStand.Nichts; }
-        z.Punkte.Add((t, mitte!.Value));
+        z.Punkte.Add((t, mitte!.Value, normale!.Value));
         while (z.Punkte.Count > 0 && z.Punkte[0].T < t - behalten) z.Punkte.RemoveAt(0);
         if (t < z.SperreBis)
         {
@@ -110,11 +112,16 @@ public static class SeitenWisch
         if (tempo < e.TempoMs && weg >= e.WegM)
             for (int i = fenster.Count - 2; i >= 0; i--)
                 if ((jetzt - fenster[i].P).Skalar(r) >= e.WegM) { tempo = Math.Max(tempo, e.WegM / Math.Max(1e-3, t - fenster[i].T)); break; }
-        if (weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig)
+        var voll = weg >= e.WegM && tempo >= e.TempoMs && quer <= SeitlichAnteil * weg && ruhig;
+        // V1e: oder ein kurzer, deutlicher Anstoss nach rechts (Christian 24.10.2026: «nur einen anstoss»); die andere Hand ruht seit seinem Anlauf
+        var a = Bedienung.Anstoss.Pruefen(z.Punkte, t, r, SeitlichAnteil, e.Anstoss, XrTabletLogik.FaustVerhaeltnis(rechts) ?? 0);
+        z.Anstoss = a;
+        var anstoss = a.Ausgeloest && AndereRuhig(z, a.Beginn, Math.Max(Bedienung.Wegwischen.GegenMinM, Math.Min(e.AndereHandM, Bedienung.Wegwischen.GegenAnteil * a.Weg)));
+        if (voll || anstoss)
         {
             z.SperreBis = t + e.SperreS;
             z.Punkte.Clear();
-            return new SeitenWischStand(true, 1, false, weg);
+            return new SeitenWischStand(true, 1, false, weg, !voll);
         }
         return new SeitenWischStand(false, fortschritt, laeuft, weg);
     }

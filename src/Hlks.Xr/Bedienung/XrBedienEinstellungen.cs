@@ -12,6 +12,9 @@
 // V1d: symbole.hoehe_sitzend_m, symbole.hoehe_tisch_m, symbole.wahl_frei_s (Symbolfeld höher bzw. am Tisch tiefer, Sperre nach der Wahl), tafel.* (Tafel mittig,
 //   träges Nachführen, Blättern auf der Tafel), labor.variante.tafel_nachfuehren (traege | fest), sitzung.drehknopf_grad und labor.variante.zoom_ein_griff
 //   (zweite_hand | drehknopf; ein Griff am Tisch), sitzung.vereinfachen_mm und sitzung.dreiecke_max (vereinfachte Unterlage am Tisch, Hlks.Xr.Modell.TischStufe).
+// V1e: gesten.anstoss_weg_m, gesten.anstoss_tempo_ms (Anstoss statt ganzer Bewegung), etagen.zeilen_max (Etagenliste auf einer Seite), labor.variante.griffe_tisch
+//   (zwei_punkte | ein_griff), sitzung.dreh_totzone_grad und sitzung.zoom_totzone (zwei Punkte am Tisch), symbole.abstand_tafel_m und symbole.radius_seitlich_m (Feld
+//   neben der Tafel), anzeige.glanz (Glanz der Apps).
 //   Hat die App den Katalog, gelten seine Grenzen (Parameter «grenzen» von MitStellschraube, Hlks.Xr.Labor.LaborWerte); sonst die Grenzen hier (gleich wie im
 //   Katalog; tests/Hlks.Web.Tests/XrLaborTests.cs vergleicht beide).
 // Die Schlüssel begehen.ziel_* / begehen.drehen_sperre_s und haltung.* führen HandBegehenEinstellungen und HaltungEinstellungen (P4a).
@@ -67,6 +70,9 @@ public static class Varianten
     /// <summary>V1d, «labor.variante.zoom_ein_griff»: am einen Griff zoomt ein Pinch der zweiten Hand über den Abstand der Hände (Vorgabe) bzw. das Rollen des
     /// Handgelenks (Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»).</summary>
     public const string ZoomZweiteHand = "zweite_hand", ZoomDrehknopf = "drehknopf";
+    /// <summary>V1e, «labor.variante.griffe_tisch»: am Sitzungstisch zwei Punkte – Verschieben und Drehen/Vergrössern um das Zentrum (Vorgabe; Christian 24.10.2026:
+    /// «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern») bzw. der eine Griff von V1d.</summary>
+    public const string GriffeZweiPunkte = "zwei_punkte", GriffeEinGriff = "ein_griff";
 
     /// <summary>Die Varianten, die die App kennt: Name → Optionen (die erste ist die Vorgabe), wie kataloge/xr_varianten.json.</summary>
     public static readonly IReadOnlyDictionary<string, IReadOnlyList<string>> Bekannt = new Dictionary<string, IReadOnlyList<string>>(StringComparer.Ordinal)
@@ -74,6 +80,7 @@ public static class Varianten
         ["bedienung"] = [Apps, Tablet], ["teleport"] = [ZeigenPinch, Stick], ["etage"] = [EtageApp, EtageWisch], ["messen"] = [Messband, ZweiPunkte],
         ["umgebung"] = [UmgebungHell, UmgebungTron], ["symbole"] = [SymboleVerteilt, SymboleBogen], ["symbolwahl"] = [SymbolwahlStehen, SymbolwahlAusblenden],
         ["feld_bei_app"] = [FeldSeitlich, FeldDahinter], ["tafel_nachfuehren"] = [TafelTraege, TafelFest], ["zoom_ein_griff"] = [ZoomZweiteHand, ZoomDrehknopf],
+        ["griffe_tisch"] = [GriffeZweiPunkte, GriffeEinGriff],
     };
 }
 
@@ -106,6 +113,12 @@ public sealed record AppEinstellungen
     /// <summary>V1a, «hinweis.dauer_s»: so lange steht ein schwebender Hinweis (s), dann blendet er aus (Annahme V1a 4 s; Christian 24.10.2026: «hinweistexte frei
     /// schwebend»).</summary>
     public double HinweisDauerS { get; init; } = 4;
+    /// <summary>V1e, «etagen.zeilen_max»: bis zu so vielen Geschossen zeigt die App «Etagen» alle auf einer Seite (die Tafel wird höher); darüber rollt die Liste
+    /// (Christian 24.10.2026: «die etagen auswahl geht über mehrere seiten da wäre besser die liste zu vergrössern»; Annahme V1e 12).</summary>
+    public int EtagenZeilenMax { get; init; } = 12;
+    /// <summary>V1e, «anzeige.glanz»: Glanz der Glas-Apps, App-Symbole und Aufgabenkarte, 0 = wie bis V1d, 1 = kräftig (Christian 24.10.2026: «apps sollen etwas
+    /// mehr glanz erhalten»; Annahme V1e 0.6).</summary>
+    public double Glanz { get; init; } = 0.6;
 }
 
 /// <summary>Komfort: Tunnelblick beim Springen und Drehen, Ton an/aus.</summary>
@@ -156,6 +169,10 @@ public sealed record XrBedienEinstellungen
     public EinGriffEinstellungen Griff { get; init; } = EinGriffEinstellungen.Vorgabe;
     /// <summary>V1d: die vereinfachte Unterlage am Tisch («sitzung.vereinfachen_mm», «sitzung.dreiecke_max»).</summary>
     public TischStufeEinstellungen Tisch { get; init; } = TischStufeEinstellungen.Vorgabe;
+    /// <summary>V1e: die zwei Punkte am Sitzungstisch (Variante «griffe_tisch», «sitzung.dreh_totzone_grad», «sitzung.zoom_totzone»).</summary>
+    public ZweiPunkteEinstellungen Punkte { get; init; } = ZweiPunkteEinstellungen.Vorgabe;
+    /// <summary>V1e: der Anstoss der Gesten («gesten.anstoss_*»; gilt für Hebegeste, Wegwischen und – über DesktopEinstellungen.HineinMit – das Hineinziehen).</summary>
+    public AnstossEinstellungen Anstoss => Wegwischen.Anstoss;
 
     public static readonly XrBedienEinstellungen Vorgabe = new();
 
@@ -170,7 +187,7 @@ public sealed record XrBedienEinstellungen
     public string? Variante(string name) => name switch
     {
         "bedienung" => Bedienung, "teleport" => Teleport, "etage" => Etage, "messen" => Messen, "umgebung" => Umgebung, "symbole" => Symbole.Verteilung,
-        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, "tafel_nachfuehren" => Tafel.Nachfuehren, "zoom_ein_griff" => Griff.Zoom, _ => null,
+        "symbolwahl" => Symbole.NachWahl, "feld_bei_app" => Symbole.FeldBeiApp, "tafel_nachfuehren" => Tafel.Nachfuehren, "zoom_ein_griff" => Griff.Zoom, "griffe_tisch" => Punkte.Variante, _ => null,
     };
 
     /// <summary>V1a: der Sitzungsraum in der hellen Umgebung (visionOS) statt der früheren dunklen.</summary>
@@ -229,6 +246,15 @@ public sealed record XrBedienEinstellungen
         ["sitzung.drehknopf_grad"] = (20, 180),
         ["sitzung.vereinfachen_mm"] = (0, 5),
         ["sitzung.dreiecke_max"] = (50_000, 2_000_000),
+        // V1e
+        ["gesten.anstoss_weg_m"] = (0.02, 0.2),
+        ["gesten.anstoss_tempo_ms"] = (0.2, 3),
+        ["etagen.zeilen_max"] = (4, 30),
+        ["sitzung.dreh_totzone_grad"] = (0, 20),
+        ["sitzung.zoom_totzone"] = (0, 0.3),
+        ["symbole.abstand_tafel_m"] = (0.02, 0.4),
+        ["symbole.radius_seitlich_m"] = (0.3, 1.0),
+        ["anzeige.glanz"] = (0, 1),
     };
 
     /// <summary>Alle Schlüssel, die dieser Satz versteht.</summary>
@@ -252,6 +278,9 @@ public sealed record XrBedienEinstellungen
         "symbole.hoehe_sitzend_m", "symbole.hoehe_tisch_m", "symbole.wahl_frei_s", "tafel.hoehe_m", "tafel.nachfuehren_grad", "tafel.blaettern_abstand_m",
         "tafel.blaettern_weg_m", "labor.variante.tafel_nachfuehren", "sitzung.drehknopf_grad", "labor.variante.zoom_ein_griff", "sitzung.vereinfachen_mm",
         "sitzung.dreiecke_max",
+        // V1e
+        "gesten.anstoss_weg_m", "gesten.anstoss_tempo_ms", "etagen.zeilen_max", "labor.variante.griffe_tisch", "sitzung.dreh_totzone_grad", "sitzung.zoom_totzone",
+        "symbole.abstand_tafel_m", "symbole.radius_seitlich_m", "anzeige.glanz",
     ];
 
     /// <summary>Gehört der Schlüssel zu diesem Satz?</summary>
@@ -277,6 +306,7 @@ public sealed record XrBedienEinstellungen
         var v = Vorgabe;
         XrBedienEinstellungen? MitPinch(PinchEinstellungen p) => p.AnM < p.AusM ? this with { Pinch = p } : null;
         XrBedienEinstellungen? MitZoom(ZoomGrenzen z) => z.Min < z.Max ? this with { Zoom = z } : null;
+        XrBedienEinstellungen MitAnstoss(AnstossEinstellungen a) => this with { Hebe = Hebe with { Anstoss = a }, Wegwischen = Wegwischen with { Anstoss = a } };
         switch (schluessel)
         {
             case "anzeige.skala": return zurueck ? this with { Apps = Apps with { Skala = v.Apps.Skala } } : Zahl() is { } a ? this with { Apps = Apps with { Skala = a } } : null;
@@ -414,6 +444,31 @@ public sealed record XrBedienEinstellungen
             case "sitzung.dreiecke_max":
                 return zurueck ? this with { Tisch = Tisch with { DreieckeMax = v.Tisch.DreieckeMax } }
                     : Zahl() is { } d12 ? this with { Tisch = Tisch with { DreieckeMax = d12 } } : null;
+            // V1e: der Anstoss gilt für Hebegeste und Wegwischen (und über HineinMit für das Hineinziehen)
+            case "gesten.anstoss_weg_m":
+                return (zurueck ? v.Anstoss.WegM : Zahl()) is { } e1 ? MitAnstoss(Anstoss with { WegM = e1 }) : null;
+            case "gesten.anstoss_tempo_ms":
+                return (zurueck ? v.Anstoss.TempoMs : Zahl()) is { } e2 ? MitAnstoss(Anstoss with { TempoMs = e2 }) : null;
+            case "etagen.zeilen_max":
+                return zurueck ? this with { Apps = Apps with { EtagenZeilenMax = v.Apps.EtagenZeilenMax } }
+                    : Zahl() is { } e3 && Math.Abs(e3 - Math.Round(e3)) < 1e-9 ? this with { Apps = Apps with { EtagenZeilenMax = (int)Math.Round(e3) } } : null;
+            case "labor.variante.griffe_tisch":
+                return zurueck ? this with { Punkte = Punkte with { Variante = v.Punkte.Variante } }
+                    : Wahl(Varianten.GriffeZweiPunkte, Varianten.GriffeEinGriff) is { } e4 ? this with { Punkte = Punkte with { Variante = e4 } } : null;
+            case "sitzung.dreh_totzone_grad":
+                return zurueck ? this with { Punkte = Punkte with { DrehTotzoneGrad = v.Punkte.DrehTotzoneGrad } }
+                    : Zahl() is { } e5 ? this with { Punkte = Punkte with { DrehTotzoneGrad = e5 } } : null;
+            case "sitzung.zoom_totzone":
+                return zurueck ? this with { Punkte = Punkte with { ZoomTotzone = v.Punkte.ZoomTotzone } }
+                    : Zahl() is { } e6 ? this with { Punkte = Punkte with { ZoomTotzone = e6 } } : null;
+            case "symbole.abstand_tafel_m":
+                return zurueck ? this with { Symbole = Symbole with { AbstandTafelM = v.Symbole.AbstandTafelM } }
+                    : Zahl() is { } e7 ? this with { Symbole = Symbole with { AbstandTafelM = e7 } } : null;
+            case "symbole.radius_seitlich_m":
+                return zurueck ? this with { Symbole = Symbole with { RadiusSeitlichM = v.Symbole.RadiusSeitlichM } }
+                    : Zahl() is { } e8 ? this with { Symbole = Symbole with { RadiusSeitlichM = e8 } } : null;
+            case "anzeige.glanz":
+                return zurueck ? this with { Apps = Apps with { Glanz = v.Apps.Glanz } } : Zahl() is { } e9 ? this with { Apps = Apps with { Glanz = e9 } } : null;
             default:
                 return null;
         }

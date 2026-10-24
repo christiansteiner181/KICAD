@@ -37,6 +37,8 @@ public sealed record SeitenWischEinstellungen
     public double AndereHandM { get; init; } = 0.08;
     /// <summary>Nach dem Hineinziehen zählt so lange kein Wegwischen (s): das Zurückholen der Hand schiebt den Bildschirm nicht gleich wieder hinaus. Annahme V1c 1.0 s.</summary>
     public double SperreS { get; init; } = 1.0;
+    /// <summary>V1e: der Anstoss (Stellschrauben «gesten.anstoss_*», gemeinsam mit Hebegeste und Wegwischen; DesktopEinstellungen.HineinMit nimmt ihn vom Wegwischen).</summary>
+    public Bedienung.AnstossEinstellungen Anstoss { get; init; } = Bedienung.AnstossEinstellungen.Vorgabe;
 
     public static readonly SeitenWischEinstellungen Vorgabe = new();
 }
@@ -80,7 +82,7 @@ public sealed record DesktopEinstellungen
 
     /// <summary>Die Schwellen des Hineinziehens mit der Lage der Handfläche des gemeinsamen Wegwischens (dieselbe Haltung für beide Richtungen).</summary>
     public SeitenWischEinstellungen HineinMit(WegwischEinstellungen? wegwischen) =>
-        wegwischen is null ? Hinein : Hinein with { HandflaecheGrad = wegwischen.HandflaecheGrad };
+        wegwischen is null ? Hinein : Hinein with { HandflaecheGrad = wegwischen.HandflaecheGrad, Anstoss = wegwischen.Anstoss };
 
     /// <summary>Alle Schlüssel (für LaborWerte und den Katalog).</summary>
     public static readonly IReadOnlyList<string> Schluessel =

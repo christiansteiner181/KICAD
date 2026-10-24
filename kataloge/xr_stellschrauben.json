@@ -13,6 +13,7 @@
     { "id": "sitzung", "titel": "Sitzungsraum" },
     { "id": "hebe", "titel": "Hebegeste (App-Symbole holen)" },
     { "id": "wegwischen", "titel": "Wegwischen (schliessen: rechte oder linke Hand von rechts nach links)" },
+    { "id": "gesten", "titel": "Anstoss (Hebegeste, Hineinziehen, Wegwischen)" },
     { "id": "symbole", "titel": "App-Symbole, Zeiger und Hinweise" },
     { "id": "tafel", "titel": "Tafel (Fenster einer App): Lage, Nachführen, Blättern" },
     { "id": "desktop", "titel": "Desktop in der Brille (Hineinziehen, Bildschirm, Übertragung)" }
@@ -425,6 +426,54 @@
       "beschreibung": "Zeichnet der Tisch mehr Dreiecke, nimmt die App die nächstgröbere Stufe der vereinfachten Unterlage (die eigenen Bauteile von KICAD bleiben).",
       "art": "zahl", "einheit": "Dreiecke", "min": 50000, "max": 2000000, "schritt": 10000, "vorgabe": 350000,
       "herkunft": "Annahme V1d; Brillentest P4a 23.10.2026: das EG mit 382 000 Dreiecken lief stabil mit 72 Hz, am Tisch kommt Passthrough dazu"
+    },
+    {
+      "schluessel": "gesten.anstoss_weg_m", "gruppe": "gesten", "titel": "Anstoss: Weg", "status": "app",
+      "beschreibung": "Hebegeste, Hineinziehen und Wegwischen lösen schon mit einem kurzen, deutlichen Anstoss aus: so weit (m) in Richtung der Geste, in der Haltung der Geste; die Bewegung läuft danach mit Schwung zu Ende.",
+      "art": "zahl", "einheit": "m", "min": 0.02, "max": 0.2, "schritt": 0.01, "vorgabe": 0.06,
+      "herkunft": "Annahme V1e (Auftrag: etwa 5–6 cm); Christian 24.10.2026: «alle ein und aus wisch gesten sollen nur einen anstoss brauchen»"
+    },
+    {
+      "schluessel": "gesten.anstoss_tempo_ms", "gruppe": "gesten", "titel": "Anstoss: Tempo", "status": "app",
+      "beschreibung": "Mittleres Tempo (m/s) über den Anstoss, innert 0.2 s (bei 0.5 m/s: 6 cm in höchstens 0.12 s bzw. 10 cm in 0.2 s); ein gemächliches Ausholen bleibt darunter.",
+      "art": "zahl", "einheit": "m/s", "min": 0.2, "max": 3, "schritt": 0.05, "vorgabe": 0.5,
+      "herkunft": "Annahme V1e; Christian 24.10.2026: «weil die instinktive bewegung zu kurz ist»"
+    },
+    {
+      "schluessel": "etagen.zeilen_max", "gruppe": "tafel", "titel": "Etagen auf einer Seite", "status": "app",
+      "beschreibung": "Bis zu so vielen Geschossen zeigt die App «Etagen» alle auf einer Seite (die Tafel wird höher); darüber rollt die Liste mit einem Wisch hoch/runter auf der Tafel.",
+      "art": "zahl", "einheit": "", "min": 4, "max": 30, "schritt": 1, "vorgabe": 12,
+      "herkunft": "Annahme V1e (Auftrag: «z. B. über 12»); Christian 24.10.2026: «die etagen auswahl geht über mehrere seiten da wäre besser die liste zu vergrössern»"
+    },
+    {
+      "schluessel": "sitzung.dreh_totzone_grad", "gruppe": "sitzung", "titel": "Punkt «Drehen»: Totzone Drehung", "status": "app",
+      "beschreibung": "So viel Drehung der Hand um das Zentrum zählt nicht (damit Vergrössern nicht ungewollt dreht).",
+      "art": "zahl", "einheit": "°", "min": 0, "max": 20, "schritt": 0.5, "vorgabe": 3,
+      "herkunft": "Annahme V1e; Christian 24.10.2026: «einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum»"
+    },
+    {
+      "schluessel": "sitzung.zoom_totzone", "gruppe": "sitzung", "titel": "Punkt «Drehen»: Totzone Vergrössern", "status": "app",
+      "beschreibung": "So viel Änderung des Abstands der Hand zum Zentrum (Anteil) zählt nicht (damit Drehen nicht ungewollt zoomt).",
+      "art": "zahl", "einheit": "", "min": 0, "max": 0.3, "schritt": 0.01, "vorgabe": 0.05,
+      "herkunft": "Annahme V1e; Auftrag V1e: «Kleine Ausschläge um den Startpunkt dämpfen»"
+    },
+    {
+      "schluessel": "symbole.abstand_tafel_m", "gruppe": "symbole", "titel": "Abstand der Symbole zur Tafel", "status": "app",
+      "beschreibung": "Weicht das Symbolfeld neben eine offene Tafel aus (Glas-App, PC-Bildschirm, Karte), bleibt so viel Luft (kleinster Abstand im Raum) zu Tafel, Werkzeugleiste, Griff und Schliessen.",
+      "art": "zahl", "einheit": "m", "min": 0.02, "max": 0.4, "schritt": 0.01, "vorgabe": 0.1,
+      "herkunft": "Annahme V1e (bis V1e 3 cm im Blick); Christian 24.10.2026: «apps mit mehr abstand zu den popup tafeln»"
+    },
+    {
+      "schluessel": "symbole.radius_seitlich_m", "gruppe": "symbole", "titel": "Radius der Symbole neben der Tafel", "status": "app",
+      "beschreibung": "Neben einer offenen Tafel stehen die Symbole auf einem Bogen mit diesem Radius um den Kopf (waagrecht) – näher als die Tafel, damit sie seitlich weniger weit hinaus rücken und in Griffweite bleiben.",
+      "art": "zahl", "einheit": "m", "min": 0.3, "max": 1, "schritt": 0.01, "vorgabe": 0.5,
+      "herkunft": "Annahme V1e; Christian 24.10.2026: «die apps bei grösseren abständen in einem kleineren radius um den betrachter anornen»"
+    },
+    {
+      "schluessel": "anzeige.glanz", "gruppe": "anzeige", "titel": "Glanz der Apps", "status": "app",
+      "beschreibung": "Glanz von Glas-Apps, App-Symbolen und Aufgabenkarte: Lichtsaum am Rand, weicher Schein oben (verschiebt sich leicht mit dem Kopf), Spiegelkante der Scheiben. 0 = wie bis V1d.",
+      "art": "zahl", "einheit": "", "min": 0, "max": 1, "schritt": 0.05, "vorgabe": 0.6,
+      "herkunft": "Annahme V1e; Christian 24.10.2026: «apps sollen etwas mehr glanz erhalten»"
     }
   ]
 }

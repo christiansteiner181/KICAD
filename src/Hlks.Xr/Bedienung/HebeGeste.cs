@@ -20,6 +20,8 @@ public sealed record HebeEinstellungen
     public double HandflaecheGrad { get; init; } = 45;
     /// <summary>«hebe.gleichzeitig_s»: die beiden Hände beginnen höchstens so weit auseinander (Annahme V1a 0.35 s).</summary>
     public double GleichzeitigS { get; init; } = 0.35;
+    /// <summary>V1e: der Anstoss (Stellschrauben «gesten.anstoss_*», gemeinsam für Hebegeste, Hineinziehen und Wegwischen).</summary>
+    public AnstossEinstellungen Anstoss { get; init; } = AnstossEinstellungen.Vorgabe;
 
     public static readonly HebeEinstellungen Vorgabe = new();
 }
@@ -71,16 +73,24 @@ public sealed record SymbolEinstellungen
     /// <summary>«symbole.tisch_abstand_m»: am Sitzungstisch liegt die Unterkante der untersten Symbole mindestens so weit (m) über der Tischplatte; das Feld wird dort
     /// entsprechend niedriger (Auftrag Hauptlauf 24.10.2026 nach den Prüfbildern 03: «mindestens einige Zentimeter»; Annahme V1a 0.06 m).</summary>
     public double TischAbstandM { get; init; } = 0.06;
+    /// <summary>V1e, «symbole.abstand_tafel_m»: weicht das Feld neben eine offene Tafel aus (Glas-App, PC-Bildschirm, Karte), bleibt so viel (m) Luft zwischen den Symbolen
+    /// und Tafel samt Ornamenten (kleinster Raumabstand; Christian 24.10.2026: «apps mit mehr abstand zu den popup tafeln»; Annahme V1e 0.10 m, bis V1d 3 cm im Blick).</summary>
+    public double AbstandTafelM { get; init; } = 0.10;
+    /// <summary>V1e, «symbole.radius_seitlich_m»: seitlich neben der Tafel stehen die Symbole auf einem Bogen mit diesem Radius um den Kopf (waagrecht) – näher als das
+    /// frontale Feld, damit sie seitlich weniger weit hinaus rücken (Christian 24.10.2026: «die apps bei grösseren abständen in einem kleineren radius um den betrachter
+    /// anornen»; Annahme V1e 0.50 m).</summary>
+    public double RadiusSeitlichM { get; init; } = 0.50;
 }
 
-/// <summary>Was eine Hand für die Gesten zeigt: Mitte und Normale der Handfläche (Normale aus der Handfläche heraus), offen, Pinch.</summary>
-public readonly record struct HandBeobachtung(Vec3 Mitte, Vec3 Normale, bool Offen, bool Pinch)
+/// <summary>Was eine Hand für die Gesten zeigt: Mitte und Normale der Handfläche (Normale aus der Handfläche heraus), offen, Pinch; V1e: wie weit offen (Verhältnis der
+/// Fingerspitzen zum Handgelenk, XrTabletLogik.FaustVerhaeltnis; ohne Angabe ganz offen).</summary>
+public readonly record struct HandBeobachtung(Vec3 Mitte, Vec3 Normale, bool Offen, bool Pinch, double Offenheit = 2.0)
 {
     /// <summary>Aus den Gelenken (WebXR-Namen); seite «left» bzw. «right». null, wenn Gelenke fehlen.</summary>
     public static HandBeobachtung? Aus(IReadOnlyDictionary<string, Vec3>? g, string seite, PinchEinstellungen? pinch = null)
     {
         if (XrTabletLogik.HandflaechenMitte(g) is not { } m || XrTabletLogik.HandflaechenNormale(g, seite) is not { } n) return null;
-        return new HandBeobachtung(m, n, XrTabletLogik.IstOffen(g), XrTabletLogik.IstPinch(g, false, pinch));
+        return new HandBeobachtung(m, n, XrTabletLogik.IstOffen(g), XrTabletLogik.IstPinch(g, false, pinch), XrTabletLogik.FaustVerhaeltnis(g) ?? 0);
     }
 }
 
@@ -90,12 +100,12 @@ public enum HebeArt { Heben }
 /// <summary>
 /// Stand eines Bildes: Ereignis (oder null); Fortschritt des Hebens 0 … 1 (beide Handflächen oben) und mittlere Höhe der Handflächen; gezögert (Hebegeste).
 /// </summary>
-public sealed record HebeStand(HebeArt? Ereignis, double Fortschritt, double Hoehe, bool Zoegert);
+public sealed record HebeStand(HebeArt? Ereignis, double Fortschritt, double Hoehe, bool Zoegert, bool DurchAnstoss = false);
 
 /// <summary>Zustand der Gesten (je Hand die Punkte, solange die Hand passt).</summary>
 public sealed class HebeZustand
 {
-    internal readonly List<(double T, Vec3 P)>[] Hoch = [[], []];
+    internal readonly List<(double T, Vec3 P, Vec3 N)>[] Hoch = [[], []];
     internal double SperreBis = double.NegativeInfinity;
     internal bool ZoegernGemeldet;
 }
@@ -151,21 +161,26 @@ public static class HebeGeste
         {
             var a = Weg(z.Hoch[0], t, e.ZeitS, oben);
             var b = Weg(z.Hoch[1], t, e.ZeitS, oben);
-            if (a.Weg >= e.WegM && b.Weg >= e.WegM && a.Quer <= SeitlichAnteil * a.Weg && b.Quer <= SeitlichAnteil * b.Weg && Math.Abs(a.Beginn - b.Beginn) <= e.GleichzeitigS + 1e-9)
+            var voll = a.Weg >= e.WegM && b.Weg >= e.WegM && a.Quer <= SeitlichAnteil * a.Weg && b.Quer <= SeitlichAnteil * b.Weg && Math.Abs(a.Beginn - b.Beginn) <= e.GleichzeitigS + 1e-9;
+            // V1e: oder ein kurzer, deutlicher Anstoss beider Hände nach oben, etwa gleichzeitig (Christian 24.10.2026: «nur einen anstoss»)
+            var sa = Anstoss.Pruefen(z.Hoch[0], t, oben, SeitlichAnteil, e.Anstoss, links?.Offenheit ?? 0);
+            var sb = Anstoss.Pruefen(z.Hoch[1], t, oben, SeitlichAnteil, e.Anstoss, rechts?.Offenheit ?? 0);
+            var anstoss = sa.Ausgeloest && sb.Ausgeloest && Math.Abs(sa.Beginn - sb.Beginn) <= e.GleichzeitigS + 1e-9;
+            if (voll || anstoss)
             {
                 z.SperreBis = t + SperreS;
                 foreach (var l in z.Hoch) l.Clear();
                 z.ZoegernGemeldet = true;
-                return new HebeStand(HebeArt.Heben, 1, hoehe, false);
+                return new HebeStand(HebeArt.Heben, 1, hoehe, false, !voll);
             }
         }
         return new HebeStand(null, fortschritt, hoehe, zoegert);
     }
 
-    static void Fuehren(List<(double T, Vec3 P)> l, bool passt, HandBeobachtung? h, double t, double behalten)
+    static void Fuehren(List<(double T, Vec3 P, Vec3 N)> l, bool passt, HandBeobachtung? h, double t, double behalten)
     {
         if (!passt) { l.Clear(); return; }
-        l.Add((t, h!.Value.Mitte));
+        l.Add((t, h!.Value.Mitte, h.Value.Normale));
         while (l.Count > 0 && l[0].T < t - behalten) l.RemoveAt(0);
     }
 
@@ -173,7 +188,7 @@ public static class HebeGeste
     /// Weg in Richtung r (Einheit) vom kleinsten Stand im Zeitfenster bis jetzt, der Weg quer dazu, die Zeit des Beginns (der letzte Punkt am kleinsten Stand, 1 cm Spiel –
     /// nicht der erste, sonst gälte eine ruhende Hand als «gleichzeitig») und der Punkt dort.
     /// </summary>
-    static (double Weg, double Quer, double Beginn, Vec3 Start) Weg(List<(double T, Vec3 P)> l, double t, double fenster, Vec3 r)
+    static (double Weg, double Quer, double Beginn, Vec3 Start) Weg(List<(double T, Vec3 P, Vec3 N)> l, double t, double fenster, Vec3 r)
     {
         var jetzt = l[^1].P;
         var kleinst = l.Where(x => x.T >= t - fenster - 1e-9).Min(x => x.P.Skalar(r));
@@ -184,7 +199,7 @@ public static class HebeGeste
         return (weg, quer, beginn.T, beginn.P);
     }
 
-    static bool Ruhig(List<(double T, Vec3 P)> l, double t)
+    static bool Ruhig(List<(double T, Vec3 P, Vec3 N)> l, double t)
     {
         if (l.Count == 0 || l[0].T > t - ZoegernS + 1e-9) return false;
         var jetzt = l[^1].P;

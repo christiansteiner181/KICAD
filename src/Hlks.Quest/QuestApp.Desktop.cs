@@ -70,6 +70,8 @@ sealed partial class QuestApp
     int dPhase = -1, dOhne, dMit, dGezaehlt, dEnde, dAufrufe, dDurchgang, dSchritt;
     double dTs, dT0, dOhneSumme, dMitSumme, dMitMax, dRechnen, dHandX = -0.10, dHalb, dHalbWeg, dHalb2, dStart = -1, dErstesBild = -1, dWegHalb = -1;
     bool dHandDa, dBild5, dPausiert, dFeldSeitlich, dHinweisFrei, dAppWeg, dDesktopWeg, dSymbolDa;
+    /// <summary>V1e: im zweiten Durchgang kommt und geht der Bildschirm mit nur einem Anstoss.</summary>
+    bool dBildAnstoss, dAnstossHinein, dAnstossWeg;
     int dSymbole;
     Rig? dRig;
     string? dFehler;
@@ -157,14 +159,28 @@ sealed partial class QuestApp
                 Strich(1);
                 dStart = t;
                 return;
-            case 1:   // Geste halb: 12 cm in 0.25 s, dann halten
-                dHandX = -0.10 + 0.12 * Weich((t - dT0) / 0.25);
-                if (t - dT0 < 0.45) return;
-                if (dDurchgang == 0) { dHalb = d.Ansicht.Anteil; dHalbWeg = d.Gesten.WegM; DesktopFotoLinks("desktop_0_geste_halb_ohne_bild.jpg", kopf); }
-                else { dHalb2 = d.Ansicht.Anteil; DesktopFotoLinks("desktop_1_geste_halb.jpg", kopf); }
+            case 1 when dDurchgang == 0:   // Geste halb und gemächlich (V1e: ein zügiger Schub löste schon aus): 12 cm in 0.7 s, dann halten
+                dHandX = -0.10 + 0.12 * Weich((t - dT0) / 0.7);
+                if (t - dT0 < 0.9) return;
+                dHalb = d.Ansicht.Anteil;
+                dHalbWeg = d.Gesten.WegM;
+                DesktopFotoLinks("desktop_0_geste_halb_ohne_bild.jpg", kopf);
                 dPhase = 2;
                 dT0 = t;
                 return;
+            case 1:   // V1e, zweiter Durchgang: nur ein Anstoss (8 cm in 0.15 s), dann steht die Hand – der Bildschirm kommt mit Schwung ganz herein
+                {
+                    var ta = t - dT0 - 0.2;   // erst 0.2 s die Hand stellen, dann der Schub
+                    dHandX = -0.10 + 0.08 * Weich(ta / 0.15);
+                    if (ta >= 0.07 && !dBildAnstoss) { dBildAnstoss = true; dHalb2 = d.Ansicht.Anteil; DesktopFotoLinks("desktop_1_anstoss_halb.jpg", kopf); }
+                    if (ta < 0.4) return;
+                    dAnstossHinein = d.Ansicht.Phase is DesktopPhase.Kommt or DesktopPhase.Setzt or DesktopPhase.Da && d.Gesten.Hand is null;
+                    DesktopFotoLinks("desktop_9_anstoss_ausgeloest.jpg", kopf);
+                    dHandDa = false;
+                    dPhase = 3;
+                    dT0 = t;
+                    return;
+                }
             case 2:   // der Rest des Wegs (23 cm in 0.3 s): Hineinziehen; die Hand bleibt noch drei Bilder am Ende (bei langen Bildern käme die letzte Lage sonst nie an)
                 dHandX = 0.02 + 0.23 * Weich((t - dT0) / 0.3);
                 if (t - dT0 < 0.3 || ++dEnde < 3) return;
@@ -238,17 +254,27 @@ sealed partial class QuestApp
                 if (dGezaehlt < Math.Max(150, o.PruefBilder) - 60 || dSchritt < 5 || t - dT0 < 10) return;
                 Strich(5);
                 return;
-            case 5:   // Wegwischen (gemeinsame Geste, V1a): halb (Prüfbild im ersten Durchgang), dann ganz
+            case 5 when dDurchgang == 1:   // V1e: Wegwischen mit nur einem Anstoss (8 cm in 0.15 s nach links), dann steht die Hand – der Bildschirm gleitet hinaus
+                {
+                    var ta = t - dT0 - 0.2;   // erst 0.2 s die Hand stellen, dann der Schub
+                    dHandX = 0.25 - 0.08 * Weich(ta / 0.15);
+                    if (ta >= 0.3 && !dBild5) { dBild5 = true; DesktopFotoLinks("desktop_10_anstoss_weg.jpg", kopf); }
+                    if (ta > 0.45) dHandDa = false;
+                    if (d.Ansicht.Phase == DesktopPhase.Aus && ta > 1.0) { dAnstossWeg = true; dEnde = 0; dPhase = 6; dT0 = t; }
+                    else if (ta > 6) { dFehler = $"der Anstoss schob den Bildschirm nicht hinaus ({d.Ansicht.Phase})"; dPhase = 7; dT0 = t; }
+                    return;
+                }
+            case 5:   // Wegwischen (gemeinsame Geste, V1a): halb und gemächlich (Prüfbild im ersten Durchgang), dann ganz
                 var tt = t - dT0;
-                dHandX = tt < 0.45 ? 0.25 - 0.12 * Weich(tt / 0.25) : 0.13 - 0.23 * Weich((tt - 0.45) / 0.3);
-                if (tt >= 0.45 && !dBild5)
+                dHandX = tt < 0.9 ? 0.25 - 0.12 * Weich(tt / 0.7) : 0.13 - 0.23 * Weich((tt - 0.9) / 0.3);
+                if (tt >= 0.9 && !dBild5)
                 {
                     dBild5 = true;
                     dWegHalb = d.Ansicht.Anteil;
                     DesktopFotoLinks("desktop_5_wegwischen_halb.jpg", kopf);
                 }
-                if (tt > 0.8 && dHandX <= -0.0999 && ++dEnde >= 3) dHandDa = false;
-                if (d.Ansicht.Phase == DesktopPhase.Aus && tt > 1.0) { dEnde = 0; dPhase = 6; dT0 = t; }
+                if (tt > 1.25 && dHandX <= -0.0999 && ++dEnde >= 3) dHandDa = false;
+                if (d.Ansicht.Phase == DesktopPhase.Aus && tt > 1.4) { dEnde = 0; dPhase = 6; dT0 = t; }
                 else if (tt > 6) { dFehler = $"Wegwischen schob den Bildschirm nicht hinaus ({d.Ansicht.Phase})"; dPhase = 7; dT0 = t; }
                 return;
             case 6:   // pausiert? dann (nach der Gegensperre von 1 s) der zweite Durchgang bzw. «wie eine App»
@@ -287,10 +313,11 @@ sealed partial class QuestApp
                 var pausiert = dPausiert && v?.Pausiert == true;
                 var starr = rig == dRig;
                 var r = d.Kennzahlen();
-                var ok = dFehler is null && pausiert && starr && d.Eingeblendet == 3 && dHalb is > 0.25 and < 0.8 && dHalb2 is > 0.25 and < 0.8
+                var ok = dFehler is null && pausiert && starr && d.Eingeblendet == 3 && dHalb is > 0.25 and < 0.8 && dAnstossHinein && dAnstossWeg
                     && dWegHalb is > 0.6 and < 0.95 && dFeldSeitlich && dHinweisFrei && dAppWeg && dDesktopWeg && dSymbolDa;
                 var z = string.Create(CultureInfo.InvariantCulture,
-                    $"Desktop: {(ok ? "ok" : "FEHLER")}{(dFehler is null ? "" : " " + dFehler)}; Geste halb Anteil {dHalb:0.00} bzw. {dHalb2:0.00} (Weg {dHalbWeg:0.000} m), " +
+                    $"Desktop: {(ok ? "ok" : "FEHLER")}{(dFehler is null ? "" : " " + dFehler)}; Geste halb Anteil {dHalb:0.00} (Weg {dHalbWeg:0.000} m), " +
+                    $"Anstoss 8 cm herein {(dAnstossHinein ? "ja" : "nein")} (Anteil beim Schub {dHalb2:0.00}), Anstoss hinaus {(dAnstossWeg ? "ja" : "nein")}, " +
                     $"Wegwischen halb Anteil {dWegHalb:0.00}, eingeblendet {d.Eingeblendet}× (2 Gesten, 1 Symbol), " +
                     $"erstes Bild {dErstesBild:0.00} s nach Beginn der Geste, {v?.Puffer?.Raster.Breite}×{v?.Puffer?.Raster.Hoehe} in {v?.Puffer?.Raster.Felder} Feldern; " +
                     $"Bildzeit ohne Bildschirm {dOhneSumme / Math.Max(1, dOhne) * 1000:0.0} ms, mit Bildschirm {dMitSumme / Math.Max(1, dGezaehlt) * 1000:0.0} ms (höchstens {dMitMax * 1000:0.0}), " +

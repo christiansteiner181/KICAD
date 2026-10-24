@@ -93,9 +93,10 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     [Fact]
     public void Der_Fortschritt_folgt_der_Hand_und_faellt_beim_Abbruch_zurueck()
     {
-        // halber Wisch (12 cm, dann stehen bleiben): der Bildschirm folgt bis etwa zur Hälfte, ausgelöst wird nicht; nach dem Zeitfenster fällt der Fortschritt auf 0
+        // halber Wisch (12 cm gemächlich – V1e: zügig wäre es ein Anstoss –, dann stehen bleiben): der Bildschirm folgt bis etwa zur Hälfte, ausgelöst wird nicht; nach
+        // dem Zeitfenster fällt der Fortschritt auf 0
         GestenBewegung halb = u => (null, new Haltung(G.V(-0.10 + 0.12 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        var a = Vorzeigen(halb, dauer: 0.25, ruhe: 1.0);
+        var a = Vorzeigen(halb, dauer: 0.6, ruhe: 1.0);
         var g = new DesktopGesten(() => DesktopEinstellungen.Vorgabe);
         var verlauf = a.Bilder.Select(b => (b.T, S: g.Schritt(Haende(b), true))).ToList();
         Assert.DoesNotContain(verlauf, x => x.S.Ausgeloest);
@@ -105,9 +106,9 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         Assert.True(verlauf.First(x => x.S.Fortschritt == max).S.Laeuft);
         Assert.Equal(0, verlauf[^1].S.Fortschritt, 6);
         Assert.False(verlauf[^1].S.Laeuft);
-        // Fortschritt steigt mit dem Weg (monoton bis zum Höchstwert)
+        // Fortschritt steigt mit dem Weg (monoton bis zum Höchstwert; gemächlich ist der Schritt je Bild kleiner als das Rauschen der Hand von 5 mm ≈ 0.03)
         var bisMax = verlauf.TakeWhile(x => x.S.Fortschritt < max).Select(x => x.S.Fortschritt).ToList();
-        for (int i = 1; i < bisMax.Count; i++) Assert.True(bisMax[i] >= bisMax[i - 1] - 0.02, $"Bild {i}");
+        for (int i = 1; i < bisMax.Count; i++) Assert.True(bisMax[i] >= bisMax[i - 1] - 0.07, $"Bild {i}");
     }
 
     [Fact]
@@ -115,8 +116,16 @@ public class DesktopGesteTests(ITestOutputHelper aus)
     {
         Assert.Empty(Abspielen(Vorzeigen(Hinein, dauer: 1.6)).Hinein);   // 35 cm in 1.6 s: 0.22 m/s
         GestenBewegung kurz = u => (null, new Haltung(G.V(-0.10 + 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
-        Assert.Empty(Abspielen(Vorzeigen(kurz, dauer: 0.25)).Hinein);   // 15 cm
-        Assert.Empty(Abspielen(Vorzeigen(u => (null, new Haltung(G.V(0.25 - 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1))), dauer: 0.25)).Weg);
+        GestenBewegung kurzWeg = u => (null, new Haltung(G.V(0.25 - 0.15 * u, -0.25, 0.4), VornHoch, G.V(-1, 0, 0), G.Kr(0.1)));
+        // die ganze Bewegung (V1c): 15 cm zügig reichen nicht
+        var ohne = WegwischEinstellungen.Vorgabe with { Anstoss = AnstossEinstellungen.Aus };
+        Assert.Empty(Abspielen(Vorzeigen(kurz, dauer: 0.25), null, ohne).Hinein);
+        Assert.Empty(Abspielen(Vorzeigen(kurzWeg, dauer: 0.25), null, ohne).Weg);
+        // V1e (Christian 24.10.2026: «nur einen anstoss»): derselbe zügige kurze Schub löst aus; ein langsamer kurzer nicht
+        Assert.Single(Abspielen(Vorzeigen(kurz, dauer: 0.25)).Hinein);
+        Assert.Single(Abspielen(Vorzeigen(kurzWeg, dauer: 0.25)).Weg);
+        Assert.Empty(Abspielen(Vorzeigen(kurz, dauer: 0.8)).Hinein);
+        Assert.Empty(Abspielen(Vorzeigen(kurzWeg, dauer: 0.8)).Weg);
     }
 
     [Fact]
@@ -288,7 +297,8 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         }
         for (int i = 0; i < 30; i++) Bild(-0.10);
         var t0 = t;
-        while (t - t0 < 0.45) Bild(-0.10 + 0.12 * W((t - t0) / 0.25));
+        // V1e: der halbe Weg gemächlich (12 cm in 0.7 s; zügig wäre es schon ein Anstoss), dann der Rest
+        while (t - t0 < 0.9) Bild(-0.10 + 0.12 * W((t - t0) / 0.7));
         halb = a.Anteil;
         t0 = t;
         while (t - t0 < 0.35) Bild(0.02 + 0.23 * W((t - t0) / 0.3));
@@ -297,19 +307,31 @@ public class DesktopGesteTests(ITestOutputHelper aus)
         Assert.Equal(1, hinein);
         Assert.Equal(DesktopPhase.Da, a.Phase);
         Assert.InRange(halb, 0.3, 0.75);
-        // Wegwischen nach der Sperre: halb, dann ganz
+        // Wegwischen nach der Sperre: halb (gemächlich), dann ganz
         t0 = t;
-        while (t - t0 < 1.3)
+        while (t - t0 < 1.75)
         {
             var tt = t - t0;
-            Bild(tt < 0.45 ? 0.25 - 0.12 * W(tt / 0.25) : 0.13 - 0.23 * W((tt - 0.45) / 0.3), hand: tt <= 0.8);
-            if (wegHalb < 0 && t - t0 >= 0.45) wegHalb = a.Anteil;
+            Bild(tt < 0.9 ? 0.25 - 0.12 * W(tt / 0.7) : 0.13 - 0.23 * W((tt - 0.9) / 0.3), hand: tt <= 1.25);
+            if (wegHalb < 0 && t - t0 >= 0.9) wegHalb = a.Anteil;
         }
         aus.WriteLine($"gedachte Hand: Wegwischen halb {wegHalb:0.00}");
         Assert.Equal(1, weg);
         Assert.Equal(1, hinein);
         Assert.InRange(wegHalb, 0.6, 0.95);   // läuft mit der Hand nach links mit (gleicher Winkel wie das Symbolfeld)
         Assert.Equal(DesktopPhase.Aus, a.Phase);
+        // V1e, zweiter Durchgang des Prüflaufs: nur ein Anstoss (0.2 s stellen, 8 cm in 0.15 s), dann steht die Hand – herein bzw. hinaus mit Schwung
+        for (int i = 0; i < 100; i++) Bild(-0.10, hand: false);
+        t0 = t;
+        while (t - t0 < 0.8) { var ta = t - t0 - 0.2; Bild(-0.10 + 0.08 * W(ta / 0.15), hand: ta < 0.4); }
+        Assert.Equal(2, hinein);
+        for (int i = 0; i < 150; i++) Bild(0.25, hand: false);
+        Assert.Equal(DesktopPhase.Da, a.Phase);
+        t0 = t;
+        while (t - t0 < 1.5) { var ta = t - t0 - 0.2; Bild(0.25 - 0.08 * W(ta / 0.15), hand: ta < 0.45); }
+        Assert.Equal(2, weg);
+        Assert.Equal(DesktopPhase.Aus, a.Phase);
+        Assert.True(XrTabletLogik.FaustVerhaeltnis(PruefHand.RechtsHandflaecheLinks(kopf, gieren, 0)) >= AnstossEinstellungen.Vorgabe.OffenAb);
         // die Hand ist offen, ohne Pinch, Handfläche nach links
         var hand = PruefHand.RechtsHandflaecheLinks(kopf, gieren, 0);
         Assert.True(XrTabletLogik.IstOffen(hand));
