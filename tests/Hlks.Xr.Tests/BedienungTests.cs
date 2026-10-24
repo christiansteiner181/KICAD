@@ -137,7 +137,7 @@ public class BedienungTests
         Assert.Equal(GestenAktion.Nichts, Gestenbedeutung.Wisch(WischRichtung.Vor, begehen with { AppsSichtbar = false }));
         // die Tabelle nennt alle festen Gesten
         var text = string.Join(" ", Gestenbedeutung.Tabelle.Select(x => x.Geste));
-        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "Wegwischen", "Handfläche", "Faust", "Zwei Hände", "Zögern" }) Assert.Contains(g, text);
+        foreach (var g in new[] { "Antippen", "Pinch", "links/rechts", "hoch/runter", "Wegwischen", "Handfläche", "Faust", "Griff", "Zögern" }) Assert.Contains(g, text);   // V1d: ein Griff statt zwei
     }
 
     // ------------------------------------------------------------------------------------------------ Stellschrauben

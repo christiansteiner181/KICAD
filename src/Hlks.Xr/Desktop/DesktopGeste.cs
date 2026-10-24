@@ -18,7 +18,10 @@
 //   Fortschritt (für das Folgen der Hand): (Weg − 20 % WegM) / (80 % WegM), 0 … 1; Läuft, sobald 20 % erreicht sind.
 // Gegensperre (DesktopGesten): nach dem Hineinziehen ruht das Wegwischen SperreS lang (WegwischenRuht: das Zurückholen der Hand schiebt den Bildschirm nicht gleich
 // wieder hinaus und wischt auch nichts anderes weg); nach jedem Wegwischen (NachWegwischen) ruht das Hineinziehen ebenso lang.
-// Warum Hebegeste, Pinch + Wisch, Röntgen-Hand, zwei Hände nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände – die linke bewegt
+// V1d (Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links
+// soll in wieder raus schieben»): dieselbe Regel auch für die linke Hand (eigene Spur; Handfläche seitlich in einer der beiden Richtungen, die Richtung des Wischs
+// entscheidet; die rechte Hand muss dabei ruhen). Löst eine Hand aus, sperrt sie die andere mit – zwei Hände zugleich lösen höchstens einmal aus.
+// Warum Hebegeste, Pinch + Wisch, Röntgen-Hand, zwei Hände nicht auslösen (Tests DesktopGesteTests): Hebegeste – Handflächen oben; zwei Hände – die andere bewegt
 // sich mit; Pinch + Wisch – Pinch; Röntgen-Hand – Handfläche nach vorn. Ausholen vor dem Wisch: zu kurz bzw. zu langsam, und Hineinziehen und Wegwischen schauen in
 // entgegengesetzte Richtungen; das Zurückholen der Hand nach der Geste fällt in die Gegensperre.
 

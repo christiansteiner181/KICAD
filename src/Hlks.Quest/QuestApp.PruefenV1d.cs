@@ -59,8 +59,8 @@ sealed partial class QuestApp
     void PruefV1dFolge(string? ordner)
     {
         if (v1dFolge <= 0) return;
-        if (v1dFolge == 1) { v1dT0 = Time.Total; v1dVorher = -1; v1dFolge = 2; apps.OhneEchteHaende = symbole.OhneEchteHaende = true; }   // nur gedachte Hände (die Maus-Hand liegt, wo die Maus ist)
-        v1dJetzt = Time.Total - v1dT0;
+        if (v1dFolge == 1) { v1dT0 = Time.Total; v1dVorher = -1; v1dJetzt = 0; v1dFolge = 2; apps.OhneEchteHaende = symbole.OhneEchteHaende = true; }   // nur gedachte Hände (die Maus-Hand liegt, wo die Maus ist)
+        else v1dJetzt += Math.Min(Time.Step, 0.02);   // Uhr der Folge: höchstens 20 ms je Bild – ein langsames Bild (Befund Prüflauf: Laden im Hintergrund) überspringt keinen Schritt
         var k = Input.Head;
         var gieren = KopfRef(k).Gieren;
         var f0 = new Vec3((float)Math.Cos(gieren), 0, -(float)Math.Sin(gieren));

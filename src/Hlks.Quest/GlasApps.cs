@@ -314,8 +314,14 @@ sealed class GlasApps : IWegwischbar
         double Blitz(string art, string id) => blitz.TryGetValue($"{art}:{id}", out var tb) ? Math.Max(0, 1 - (t - tb) / 0.25) : 0;
         // Fenster
         z.Flaeche(r.Fenster, m.M(GlasStil.EckenPt), glasFarbe, groesse);
-        // Inhalt (V1d: beim Blättern gleitet die Seite mit der Hand mit)
-        var p = r.Inhalt with { Mitte = r.Inhalt.Mitte + SeitenVersatz };
+        // Inhalt (V1d: beim Blättern gleitet die Seite mit der Hand mit – halb so weit wie die Hand, höchstens ein Zehntel der Breite – und blendet dabei bis auf
+        // ein Viertel aus; so bleibt sie im Fenster, der Inhalt wird nicht beschnitten. Befund Prüfbild «v1d_blaettern_halb»: mit dem ganzen Weg lief sie aus dem Glas)
+        var weit = SeitenVersatz.Laenge;
+        var spiel = 0.1 * r.Fenster.B;
+        var gleiten = Math.Min(weit * 0.5, spiel);
+        var inhaltDeck = 1 - 0.75 * (spiel > 0 ? gleiten / spiel : 0);
+        GlasFarbe MalI(GlasFarbe f) => f with { A = f.A * deck * inhaltDeck };
+        var p = r.Inhalt with { Mitte = r.Inhalt.Mitte + (weit > 1e-9 ? SeitenVersatz * (gleiten / weit) : XVec3.Null) };
         foreach (var el in inhalt.Elemente)
         {
             var k = el.Ziel ? ziele.FindIndex(x => x.Art == GlasApps.Ereignis.Element && x.Id == el.Id) : -1;
@@ -331,24 +337,24 @@ sealed class GlasApps : IWegwischbar
                 // Titel mittig, Text linksbündig (Befund Prüfbild 24.10.2026: links ausgerichtet ab der Mitte lief der Text über den rechten Rand)
                 if (el.Stufe == 0)
                 {
-                    z.Schrift(el.Titel ?? "", lage, 0, el.H / 2, el.B, el.H, hoehe, Mal(farbe), TextAlign.TopCenter);
+                    z.Schrift(el.Titel ?? "", lage, 0, el.H / 2, el.B, el.H, hoehe, MalI(farbe), TextAlign.TopCenter);
                     // schmaler Akzent der App unter dem Titel (wie der Streifen im Projektbrowser)
                     var strich = lage with { Mitte = lage.Mitte - lage.Oben * (el.H / 2 - m.M(2)) + lage.Normale * 0.001, B = m.M(34), H = m.M(4) };
-                    z.Knopf(strich, GlasForm.Kapsel, Mal(s0.Akzent), m.Pt);
+                    z.Knopf(strich, GlasForm.Kapsel, MalI(s0.Akzent), m.Pt);
                 }
-                else z.Schrift(el.Titel ?? "", lage, -el.B / 2, el.H / 2, el.B, el.H, hoehe, Mal(farbe), TextAlign.TopLeft);
+                else z.Schrift(el.Titel ?? "", lage, -el.B / 2, el.H / 2, el.B, el.H, hoehe, MalI(farbe), TextAlign.TopLeft);
                 continue;
             }
             var an = el.Ein && el.Art is GlasArt.Segment or GlasArt.Knopf;
             var grund = !el.Aktiv ? s0.Duenn with { A = s0.Duenn.A * 0.5 } : an ? s0.Ein
                 : (k >= 0 && Hover(k) > 0) || Blitz(GlasApps.Ereignis.Element, el.Id!) > 0 ? s0.DuennNah : el.Aktuell || el.Primaer ? s0.DuennGedrueckt : s0.Duenn;
-            z.Knopf(lage, el.Form, Mal(grund), m.Pt);
+            z.Knopf(lage, el.Form, MalI(grund), m.Pt);
             var text = !el.Aktiv ? s0.TextTertiaer : an ? s0.TextAufEin : s0.Text;
             var th = m.Schrift(GlasStil.TextPt);
             var links = -el.B / 2 + m.M(14);
             if (el.Symbol is { } sy)
             {
-                z.Symbol(sy, lage, el.H * 0.5, Mal(text), s0.Hell != an, links + el.H * 0.25, 0);
+                z.Symbol(sy, lage, el.H * 0.5, MalI(text), s0.Hell != an, links + el.H * 0.25, 0);
                 links += el.H * 0.55;
             }
             if (el.Art == GlasArt.Schalter)
@@ -356,26 +362,26 @@ sealed class GlasApps : IWegwischbar
                 // Schalter rechts: Kapsel, ein = Akzent der App mit Knopf rechts
                 var sb = m.M(46); var sh = m.M(26);
                 var sl = lage with { Mitte = lage.Mitte + lage.Rechts * (el.B / 2 - m.M(14) - sb / 2) + lage.Normale * 0.001, B = sb, H = sh };
-                z.Knopf(sl, GlasForm.Kapsel, Mal(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt, stufe: 1);
+                z.Knopf(sl, GlasForm.Kapsel, MalI(el.Ein ? s0.Akzent with { A = 0.95 } : s0.DuennGedrueckt), m.Pt, stufe: 1);
                 var kn = sl with { Mitte = sl.Mitte + sl.Rechts * ((el.Ein ? 1 : -1) * (sb / 2 - sh / 2)) + sl.Normale * 0.001, B = sh * 0.84, H = sh * 0.84 };
-                z.Knopf(kn, GlasForm.Kreis, Mal(GlasStil.Ein), m.Pt, stufe: 2);
+                z.Knopf(kn, GlasForm.Kreis, MalI(GlasStil.Ein), m.Pt, stufe: 2);
             }
             var zeile = el.Zeile is { Length: > 0 };
             var breite = el.B - (links + el.B / 2) - m.M(14) - (el.Art == GlasArt.Schalter ? m.M(60) : 0);
             var mittig = el.Form == GlasForm.Kapsel;
             if (mittig)
-                z.Schrift(el.Titel ?? "", lage, el.Symbol is null ? 0 : el.H * 0.25, th * 0.62, el.B - m.M(20) - (el.Symbol is null ? 0 : el.H * 0.5), el.H, th, Mal(text), TextAlign.TopCenter,
+                z.Schrift(el.Titel ?? "", lage, el.Symbol is null ? 0 : el.H * 0.25, th * 0.62, el.B - m.M(20) - (el.Symbol is null ? 0 : el.H * 0.5), el.H, th, MalI(text), TextAlign.TopCenter,
                     umbrechen: false);   // ein Wort je Kapsel nie trennen (Befund Prüfbild: «Kollisio-n»), zu lang wird kleiner
             else
             {
-                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.3 : th * 0.62, breite, th * 1.4, th, Mal(text), TextAlign.TopCenter);
-                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.22, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), Mal(an ? s0.TextAufEin : s0.TextSekundaer), TextAlign.TopCenter);
+                z.Schrift(el.Titel ?? "", lage, links + breite / 2, zeile ? th * 1.3 : th * 0.62, breite, th * 1.4, th, MalI(text), TextAlign.TopCenter);
+                if (zeile) z.Schrift(el.Zeile!, lage, links + breite / 2, -th * 0.22, breite, th * 1.3, m.Schrift(GlasStil.KleinPt), MalI(an ? s0.TextAufEin : s0.TextSekundaer), TextAlign.TopCenter);
             }
-            if (el.Aktuell) z.Symbol(GlasSymbole.Haken, lage, el.H * 0.42, Mal(s0.Akzent), s0.Hell, el.B / 2 - m.M(14) - el.H * 0.2, 0);
+            if (el.Aktuell) z.Symbol(GlasSymbole.Haken, lage, el.H * 0.42, MalI(s0.Akzent), s0.Hell, el.B / 2 - m.M(14) - el.H * 0.2, 0);
             if (el.Ampel > 0)
             {
                 var c = el.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
-                z.Punkt(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003, 0.008, c with { A = deck });
+                z.Punkt(lage.Mitte + lage.Rechts * (el.B / 2 - m.M(18)) + lage.Normale * 0.003, 0.008, c with { A = deck * inhaltDeck });
             }
         }
         // Werkzeugleiste (Ornament)

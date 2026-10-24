@@ -266,3 +266,38 @@ in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1c».
   Zurückholen in beide Richtungen, zwei Hände, linke Hand, Pinch, Handlagen, Hebegeste und Wegschieben, Testgesten des Labors, 80 Zufallsbewegungen, umgekehrt Pinch + Wisch
   und Gestenlabor, gedachte Hand des Prüflaufs, Stellschrauben), `DesktopAnsichtTests` (Form, Netze, Glasnetz, Platz, Kommen, Mitlaufen und Gehen, Griff, Knöpfe, Ziel,
   belegte Flächen, Format und Puffer), `DesktopGlasTests` (Farbe, Symbol, Schein, kein alter Hinweis); gegen den Server `tests/Hlks.Web.Tests/XrDesktopTests.cs`.
+
+## Befunde des ersten Brillentests (V1d)
+
+Christian 24.10.2026 nach dem Brillentest V1: Symbolfeld höher (sitzend noch höher, am Sitzungstisch rund 20 cm tiefer), Tafel immer mittig, ein Griff am
+Sitzungstisch, Sperre nach der Wahl einer App, beide Hände für Wegwischen und Hineinziehen, Blättern auf der Tafel; dazu Leistung bei «Alle Etagen» und der Fang. Die
+App: `src/Hlks.Quest/SymbolApps.cs`, `GlasApps.cs`, `QuestApp.Apps.cs`, `QuestApp.Desktop.cs`, `DesktopBildschirm.cs`, `Sitzungsraum.cs`, `ModellDarstellung.cs`,
+`QuestApp.Messen.cs`, `QuestApp.Marker.cs`, `QuestApp.PruefenV1d.cs`; Bedienung in `src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1d».
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Bedienung/Tafel.cs` | `TafelEinstellungen`, `TafelFolgen`, `Tafel` | Platz einer Tafel mittig in der Blickrichtung (Höhe, Abstand, am Tisch über der Platte), Abweichung im Blick, träges Nachführen ab der Schwelle (still mit der Hand an der Tafel, nicht mehr nach dem Hinstellen am Griff) |
+| `Bedienung/TafelBlaettern.cs` | `TafelBlaetternZustand`, `BlaetternStand`, `TafelBlaettern` | Wisch ohne Pinch auf der Tafel blättert (je Hand; Ort entscheidet, Fang bis zum Ende, Mindestweg gegen Antippen, Richtung, Versatz der Seite, Gegenrichtung gesperrt, im freien Raum begonnen zählt nicht) |
+| `Sitzung/EinGriff.cs` | `EinGriffEinstellungen`, `EinGriffHand`, `EinGriffZustand`, `EinGriffEreignis`, `EinGriff` | ein Griff an der vorderen Gebäudekante: fassen, bewegen in alle Richtungen, drehen mit dem Gierwinkel der Hand, zoomen mit der zweiten Hand bzw. als Drehknopf (Rollen), Grenzen 1:5 … 1:200, ohne Sprung beim Wechsel |
+| `Modell/TischStufe.cs` | `TischStufeEinstellungen`, `VereinfachtesNetz`, `TischStufe` | vereinfachte IFC-Unterlage am Tisch: Ecken auf ein Gitter (1, 2, 4 cm) je Richtung der Normalen, Wahl der Stufe nach Zelle auf dem Tisch und Dreiecksbudget mit Hysterese |
+| `Messen/BoxBaum.cs` | `BoxBaum` | Hüllkörper-Hierarchie (Median-Teilung): Strahl, Strahl mit wachsender Dehnung (Kegel), Umkreis |
+| `Messen/FangImHintergrund.cs` | `FangAnfrage`, `FangImHintergrund` | Fang der Hände im Hintergrund: eine Anfrage je Hand (die neueste ersetzt eine wartende), das Bild liest das letzte Ergebnis und wartet nie; «unverändert» (2 mm × Massstab, 0.3°, gleicher Filter) |
+
+- **Geändert für V1d:** `Messen/SzenenFang.cs` (räumlicher Index statt linearer Suche, einmal je Modell im Hintergrund `Aufbauen`; Punkte nach Anschluss und Ecke
+  getrennt, schrumpfende Umkreise, gestufte Dehnung am Strahl; eine Abfrage zur Zeit; gleiche Ergebnisse wie bis V1a, Referenz `tests/Hlks.Xr.Tests/FangReferenz.cs`);
+  `Bedienung/AppSymbole.cs` (Mitte nach Lage: Begehen, sitzend, Tisch; Tischregel nur gegen die Platte; `FeldMinM` 0.24; `Bewegt`); `Bedienung/HandBeruehrung.cs`
+  (Sperre nach der Wahl, bis das Feld ruht und die Hand `symbole.wahl_frei_s` frei ist); `Bedienung/HebeGeste.cs` (`SymbolEinstellungen` mit `HoeheSitzendM`,
+  `HoeheTischM`, `WahlFreiS`); `Bedienung/Wegwischen.cs` (beide Hände, linke Handfläche seitlich in beide Richtungen, eine Sperre, gegenläufige zweite Hand zählt
+  nicht); `Desktop/DesktopGeste.cs` (Hineinziehen mit beiden Händen, die eine sperrt die andere); `Desktop/DesktopAnsicht.cs` und `Bedienung/Glas.cs` (Nachführen);
+  `Bedienung/Geisterhand.cs` (Gesten `Zoomen`, `Drehknopf`; Blättern ohne Pinch); `Bedienung/XrBedienEinstellungen.cs` (Stellschrauben und Varianten V1d, Sätze
+  `Tafel`, `Griff`, `Tisch`); `XrGesten.cs` (Tabelle: ein Griff, linke Hand, Wisch auf der Tafel); `XrSitzungLogik.cs` (Hinweis: die App nutzt `EinGriff`);
+  `Labor/PruefAufgaben.cs` (höchstens 96 Werte im Messprotokoll).
+- **Annahmen V1d** (Stellschrauben, wo der Katalog sie führt; sonst benannte Konstanten): Symbolfeld Mitte 0.22 m unter den Augen, sitzend 0.08 m höher, am Tisch
+  0.52 m, Feld mindestens 0.24 m hoch; Sperre 0.3 s, Feld ruht ab 3 cm/s; Tafel 0.15 m unter den Augen, Nachführen ab 25°, in 0.35 s bis 2°; Blättern bis 5 cm vor
+  der Fläche (3 cm dahinter), Mindestweg 8 cm in 0.8 s, «läuft» ab 2 cm, Ende nach 0.35 s Ruhe bzw. 15 cm von der Fläche, Gegenrichtung 0.8 s, Vorlauf 0.2 s mit 3 cm;
+  Griff Totzonen 2° (Gieren) und 3° (Rollen), Drehknopf 60° je Verdoppelung; Tischstufe Zellen 1/2/4 cm, höchstens 1 mm auf dem Tisch, 350 000 Dreiecke, Hysterese
+  15 %; Wegwischen gegenläufige Hand 8 cm.
+- **Tests:** `V1dTests` (Feldhöhen mit Tabelle, Sperre auch mit der Hand im gleitenden Feld, Tafel mittig und träge, PC-Bildschirm, Griff, Bewegen, Drehen, Zoom
+  mit zweiter Hand und Drehknopf, linke Hand für beide Gesten, gegenläufige Hand, Blättern mit beiden Händen und gegen Antippen, Gestentabelle, Tischstufe, Fang
+  mit Index gleich wie bis V1a, Fang im Hintergrund, Stellschrauben, Geisterhand); `DesktopGesteTests` mit beiden Händen verdrahtet wie in der App; gegen
+  Test_praxis `tests/Hlks.Web.Tests/XrV1dEchtTests.cs` (nur lokal). Die App selbst: `werkzeuge/quest_pruefen.ps1` (Zeilen «V1d» und «V1d Tisch»).

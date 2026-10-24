@@ -11,7 +11,7 @@
 //   teleport-markierung   Sprung höchstens MarkierungRadiusM = 0.5 m neben die Mitte der Markierung (Markierung 2 … 4.5 m vor einem, im Raum des Geschosses).
 //   drehen-90             zuerst 90° nach links (±15°), dann zurück in die Ausgangsrichtung (±15°), je HaltenS = 0.5 s gehalten.
 //   etage-wechseln        ins Geschoss darüber (ohne: darunter), dann zurück ins Ausgangsgeschoss.
-//   modell-greifen-zoomen Griffe losgelassen, Massstab höchstens 10 % neben dem Zielmassstab, Drehung 90° (±15°) gegen den Start, in beide Richtungen.
+//   modell-greifen-zoomen Griffe losgelassen (seit V1d der eine Griff), Massstab höchstens 10 % neben dem Zielmassstab, Drehung 90° (±15°) gegen den Start, in beide Richtungen.
 //   raum-ar-oeffnen       Ausschnitt des markierten Raums auf dem Tisch, mit «Echter Tisch» angetippt (ist Passthrough nicht verfügbar – Simulator –, genügt der
 //                         Ausschnitt; die Karte sagt es).
 //   tablet-wert-ablesen   die richtige Höhe des markierten Bauteils auf dem Tablet gewählt; nur in der Variante «bedienung» = «tablet», sonst wartet die Aufgabe.

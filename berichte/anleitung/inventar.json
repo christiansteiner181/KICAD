@@ -11218,7 +11218,7 @@
             "werkzeuge/quest_pruefen.ps1 (Lauf 3 «Sitzungsraum»)",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App P4b»)"
           ],
-          "hinweis": "Grundfassung P4b; schwebende Apps, Etagenwahl per Wisch und Stellschrauben seit P5a (zb-quest-app-bedienung): die Box mit «Echter Tisch», «IFC-Unterlage», «Zurücksetzen» und «Tisch neu antippen» ist jetzt die App «Tisch» (in der Variante «tablet» weiter die Box). Schwellen des Antippens, Ersatzwerte und Aussehen sind Annahmen bis zum Brillentest. Passthrough nutzt XR_FB_passthrough über die OpenXR-Schnittstelle von StereoKit 0.3.11; ob es in der Brille erscheint, ist erst dort zu sehen. Die Probe-Ebene «fliessrichtung» nimmt die Reihenfolge der Leitungspunkte als Fliessrichtung (Annahme). Reine Rechner-Funktion xr_ebenen, für die KI verboten."
+          "hinweis": "Grundfassung P4b; schwebende Apps, Etagenwahl per Wisch und Stellschrauben seit P5a (zb-quest-app-bedienung): die Box mit «Echter Tisch», «IFC-Unterlage», «Zurücksetzen» und «Tisch neu antippen» ist jetzt die App «Tisch» (in der Variante «tablet» weiter die Box). Schwellen des Antippens, Ersatzwerte und Aussehen sind Annahmen bis zum Brillentest. Passthrough nutzt XR_FB_passthrough über die OpenXR-Schnittstelle von StereoKit 0.3.11; ob es in der Brille erscheint, ist erst dort zu sehen. Die Probe-Ebene «fliessrichtung» nimmt die Reihenfolge der Leitungspunkte als Fliessrichtung (Annahme). Reine Rechner-Funktion xr_ebenen, für die KI verboten. Seit V1d ein Griff statt zwei und eine vereinfachte IFC-Unterlage am Tisch: zb-quest-v1d-griff."
         },
         {
           "id": "zb-quest-app-bedienung",
@@ -11372,7 +11372,7 @@
             "tests/Hlks.Xr.Tests/V1aSymboleTests.cs, V1aFarbenTests.cs, V1aGlasTests.cs, P5bBedienungTests.cs; src/Hlks.Web/wwwroot/js/oberflaeche/quest-symbole.test.mjs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1a»)"
           ],
-          "hinweis": "Vorgaben Christian 24.10.2026 (Hebegeste; Symbolfeld frontal 60 cm vor den Augen, 0.6 m hoch, höchstens 3 Reihen; Apps bleiben stehen; Berührung mit der ganzen Hand; App-Pastellreihe; Symbolsprache wie im CAD; eine Wegwisch-Geste von rechts nach links, auch für offene Glas-Apps; Pinch + Wisch nach vorn entfällt; Hinweise frei schwebend). Die Pastelltöne für Ebenen, Gesten, Labor und Vorgabe sowie die dunkle Fassung sind Vorschläge. Alle Schwellen und Masse (Hebegeste 15 cm in 0.9 s, Wegwischen 18 cm in 0.6 s, Feldmitte 0.32 m unter den Augen, Berührungsrand 1 cm, Sperre 0.6 s, Tooltip nach 0.6 s, Hinweise 4 s) sind Annahmen V1a und Stellschrauben im XR-Labor. Die Knöpfe im Fenster bleiben bei der Fingerspitze (Annahme). Nur mit der Brille zu prüfen: ob die Gesten zuverlässig und ohne Fehlauslösung erkannt werden, Griffweite des Felds, Lesbarkeit von Glas, Farben und Hinweisen."
+          "hinweis": "Vorgaben Christian 24.10.2026 (Hebegeste; Symbolfeld frontal 60 cm vor den Augen, 0.6 m hoch, höchstens 3 Reihen; Apps bleiben stehen; Berührung mit der ganzen Hand; App-Pastellreihe; Symbolsprache wie im CAD; eine Wegwisch-Geste von rechts nach links, auch für offene Glas-Apps; Pinch + Wisch nach vorn entfällt; Hinweise frei schwebend). Die Pastelltöne für Ebenen, Gesten, Labor und Vorgabe sowie die dunkle Fassung sind Vorschläge. Alle Schwellen und Masse (Hebegeste 15 cm in 0.9 s, Wegwischen 18 cm in 0.6 s, Feldmitte 0.32 m unter den Augen, Berührungsrand 1 cm, Sperre 0.6 s, Tooltip nach 0.6 s, Hinweise 4 s) sind Annahmen V1a und Stellschrauben im XR-Labor. Die Knöpfe im Fenster bleiben bei der Fingerspitze (Annahme). Nur mit der Brille zu prüfen: ob die Gesten zuverlässig und ohne Fehlauslösung erkannt werden, Griffweite des Felds, Lesbarkeit von Glas, Farben und Hinweisen. Seit V1d (Brillentest V1, 24.10.2026): das Feld liegt höher (oberste Reihe leicht über Augenhöhe), sitzend noch höher, am Sitzungstisch tiefer; nach der Wahl einer App ist die Wahl gesperrt; Wegwischen auch mit der linken Hand: zb-quest-v1d-feld, zb-quest-v1d-haende."
         },
         {
           "id": "zb-quest-v1a-messen",
@@ -11413,7 +11413,7 @@
             "tests/Hlks.Xr.Tests/V1aMessenTests.cs, V1aLaborTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1a»)"
           ],
-          "hinweis": "Fangradien (3 cm am Finger, 3 cm + 3 cm je Meter am Strahl), Zugweg und Klickzeit sind Annahmen V1a. Höchstens ein Strahl je Bild; am Tisch 2.5 ms je Strahl am PC – die Kosten auf der Brille sind noch zu messen."
+          "hinweis": "Fangradien (3 cm am Finger, 3 cm + 3 cm je Meter am Strahl), Zugweg und Klickzeit sind Annahmen V1a. Höchstens ein Strahl je Bild; am Tisch 2.5 ms je Strahl am PC – die Kosten auf der Brille sind noch zu messen. Seit V1d rechnet der Fang mit räumlichem Index im Hintergrund (zb-quest-v1d-haende)."
         },
         {
           "id": "zb-quest-v1a-marker",
@@ -11725,7 +11725,7 @@
             "tests/Hlks.Xr.Tests/DesktopGesteTests.cs, DesktopAnsichtTests.cs, DesktopGlasTests.cs; tests/Hlks.Web.Tests/XrDesktopTests.cs",
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1c: Desktop in der Brille»)"
           ],
-          "hinweis": "V1c mit V1a zusammengeführt. Alle Schwellen (Weg 0.20 m, Tempo 0.45 m/s, andere Hand 8 cm, Gegensperre 1 s), Grösse, Abstand, Krümmung und die Ruhe-Bildrate sind Annahmen bis zum Brillentest; Stellschrauben: hineinziehen.weg_m, hineinziehen.tempo_ms, desktop.breite_m, desktop.abstand_m, desktop.bildrate, desktop.ruhe_bildrate; das Wegwischen und die Lage der Handfläche stellt V1a ein (wegwischen.*). Der Ton «Desktop» (#D5ECEC) ist ein Vorschlag nach der Regel von V1a, zu bestätigen. Nur mit der Brille zu prüfen: WLAN-Bandbreite, Lesbarkeit, 72 Hz, wie sich die Gesten anfühlen. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_desktop)."
+          "hinweis": "V1c mit V1a zusammengeführt. Alle Schwellen (Weg 0.20 m, Tempo 0.45 m/s, andere Hand 8 cm, Gegensperre 1 s), Grösse, Abstand, Krümmung und die Ruhe-Bildrate sind Annahmen bis zum Brillentest; Stellschrauben: hineinziehen.weg_m, hineinziehen.tempo_ms, desktop.breite_m, desktop.abstand_m, desktop.bildrate, desktop.ruhe_bildrate; das Wegwischen und die Lage der Handfläche stellt V1a ein (wegwischen.*). Der Ton «Desktop» (#D5ECEC) ist ein Vorschlag nach der Regel von V1a, zu bestätigen. Nur mit der Brille zu prüfen: WLAN-Bandbreite, Lesbarkeit, 72 Hz, wie sich die Gesten anfühlen. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_desktop). Seit V1d auch mit der linken Hand und mittig mit trägem Nachführen: zb-quest-v1d-haende, zb-quest-v1d-tafel."
         },
         {
           "id": "zb-xr-desktop-anzeige",
@@ -11762,6 +11762,165 @@
             "src/Hlks.Web/wwwroot/js/oberflaeche/xr-desktop.test.mjs, xr-desktop.browser.mjs"
           ],
           "hinweis": "Die Anzeige fragt den Server alle 2 s. Reine Rechner-Funktion, für die KI verboten (KiEinordnung xr_desktop)."
+        },
+        {
+          "id": "zb-quest-v1d-feld",
+          "titel": "Quest App: App-Symbole höher, sitzend noch höher, am Sitzungstisch tiefer; nach der Wahl einer App gesperrt (Modul XR, Quest App V1d)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit den Händen: Hebegeste (beide Handflächen nach oben anheben) holt das Symbolfeld; ein Symbol mit der Hand berühren öffnet die App. Höhen im XR-Labor: symbole.hoehe_m, symbole.hoehe_sitzend_m, symbole.hoehe_tisch_m, symbole.wahl_frei_s."
+          },
+          "schritte": [
+            "Beim Begehen stehend die Hebegeste machen: das Feld steht frontal etwa 60 cm vor den Augen; die oberste Reihe liegt jetzt leicht über Augenhöhe (rund 8 cm), die Mitte rund 22 cm unter den Augen.",
+            "Sich hinsetzen (die App erkennt die Haltung «sitzend» nach etwa 2 s) und die Hebegeste wiederholen: das Feld liegt nochmals rund 8 cm höher.",
+            "Am Sitzungstisch die Hebegeste machen: das Feld liegt deutlich tiefer (Mitte rund 52 cm unter den Augen); ragte die unterste Reihe in die Tischplatte, rückt sie auf 6 cm über die Platte und das Feld wird niedriger.",
+            "Ein Symbol mit der Hand berühren (z. B. «Etagen»): die App öffnet, das Feld ordnet sich neben dem Fenster neu an. Die Hand dabei im Feld lassen: auch wenn ein anderes Symbol unter ihr durchgleitet, öffnet nichts Zweites.",
+            "Die Hand aus dem Feld nehmen und kurz (0.3 s) weglassen: danach wählt eine Berührung wieder."
+          ],
+          "erwartung": "Stehend liegt die oberste Reihe leicht über Augenhöhe, sitzend noch etwas höher; am Sitzungstisch liegt das Feld rund 20 cm tiefer als bis V1d (am echten Tisch des Brillentests) und nie in der Platte. Nach der Wahl einer App wird nichts weiter gewählt, solange sich das Feld bewegt oder die Hand an einem Symbol ist; erst wenn das Feld ruht und die Hand 0.3 s frei war, zählt eine Berührung wieder. Gilt auch für das Symbol «Bildschirm».",
+          "pruefpunkte": [
+            "Stehend: die oberste Reihe liegt leicht über Augenhöhe, gut erreichbar.",
+            "Sitzend (beim Begehen): das Feld liegt höher als im Stehen.",
+            "Am Sitzungstisch (echter und virtueller Tisch): das Feld liegt tiefer und bequem über der Platte, keine Reihe in der Platte.",
+            "Nach der Wahl einer App öffnet beim Neuanordnen kein zweites Symbol – auch nicht, wenn die Hand im Feld bleibt.",
+            "Nach dem Wegnehmen der Hand (0.3 s) wählt eine Berührung wieder.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 1 «V1d=ok (Feld: oberste Reihe stehend +0.080 m, sitzend +0.160 m …; Sperre nach der Wahl ja, … kein zweites unter der Hand ja, danach frei ja …)»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder; Beispielprojekt, die Leistung mit IFC-Unterlage mit -Projekt Test_praxis nur lokal, Lauf 1): v1d_feld_stehend.jpg, v1d_feld_stehend_seite.jpg, v1d_feld_sitzend.jpg, v1d_feld_sitzend_seite.jpg (rote Linie = Augenhöhe); am Tisch symbole_sitzung.jpg, symbole_sitzung_seite.jpg",
+            "zustand": "Begehen stehend bzw. sitzend mit dem Symbolfeld; Sitzungstisch sitzend"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/AppSymbole.cs (MitteUnterAuge, Plaetze), HebeGeste.cs (SymbolEinstellungen), HandBeruehrung.cs (Sperre nach der Wahl)",
+            "src/Hlks.Quest/SymbolApps.cs (Sitzend, FeldBewegt), QuestApp.Apps.cs, QuestApp.PruefenV1d.cs",
+            "kataloge/xr_stellschrauben.json (symbole.hoehe_m, symbole.hoehe_sitzend_m, symbole.hoehe_tisch_m, symbole.wahl_frei_s)",
+            "tests/Hlks.Xr.Tests/V1dTests.cs, V1aSymboleTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
+          ],
+          "hinweis": "Befund Brillentest V1 (Christian 24.10.2026): «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», «nach tippen einer App sollte erneutes auswählen gesperrt sein». Alle Werte sind Annahmen V1d (Mitte 0.22 m, sitzend +0.08 m, am Tisch 0.52 m, Sperre 0.3 s) und als Stellschrauben einstellbar. Am virtuellen Tisch (Platte 0.75 m) hält die Platte die unterste Reihe – dort liegt das Feld nur rund 9 cm tiefer als bis V1d."
+        },
+        {
+          "id": "zb-quest-v1d-tafel",
+          "titel": "Quest App: Tafel immer mittig und träge nachgeführt; Blättern mit einem Wisch auf der Tafel (Modul XR, Quest App V1d)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille: jede Glas-App, Auswahltafel und der PC-Bildschirm. Blättern mit der rechten oder linken Hand, ohne Pinch, auf der Fläche des Fensters. Im XR-Labor: tafel.hoehe_m, tafel.nachfuehren_grad, tafel.blaettern_abstand_m, tafel.blaettern_weg_m, Variante «tafel_nachfuehren»."
+          },
+          "schritte": [
+            "Eine App öffnen (Symbol berühren): das Fenster öffnet mittig in der Blickrichtung, etwas unter Augenhöhe – auch am Sitzungstisch (über der Platte).",
+            "Den Kopf bzw. Körper um mehr als 25° wegdrehen: das Fenster rückt ruhig wieder in die Blickmitte nach. Kleine Kopfbewegungen lassen es stehen.",
+            "Das Fenster am Griff verschieben und loslassen: es bleibt dort stehen (bis man es neu öffnet).",
+            "Blättern: die Hand flach auf bzw. wenige Zentimeter vor das Fenster halten und zügig nach links wischen (gut 8 cm) – die nächste Seite; nach rechts die vorige; nach oben bzw. unten ebenso. Die Seite gleitet ein Stück mit und es klickt.",
+            "Kurz antippen (ohne Wisch) wählt wie bisher einen Knopf bzw. eine Zeile.",
+            "Im freien Raum (nicht auf dem Fenster) bleibt der Wisch das Wegwischen bzw. das Hineinziehen des PC-Bildschirms."
+          ],
+          "erwartung": "Jede Tafel steht beim Öffnen mittig vor einem und folgt träge, nie starr am Kopf; während eine Hand an ihr ist, bleibt sie still. Ein Wisch, der auf der Tafel beginnt, blättert genau eine Seite und schliesst nichts; das Zurückholen der Hand blättert nicht zurück. Ein Wisch, der neben der Tafel beginnt, wischt weg bzw. zieht herein wie bisher. Der PC-Bildschirm blättert nicht (Maus und Tastatur am PC). Pinch + Wisch blättert vorerst weiter wie bisher.",
+          "pruefpunkte": [
+            "Fenster öffnet mittig in der Blickrichtung, auch am Sitzungstisch.",
+            "Nach einer Drehung um mehr als 25° rückt es ruhig in die Mitte nach; mit der Variante «fest» bleibt es stehen.",
+            "Am Griff hingestellt bleibt es stehen.",
+            "Wisch auf der Tafel nach links blättert vor, nach rechts zurück – mit der rechten und mit der linken Hand.",
+            "Antippen wählt, ohne zu blättern; ein Wisch im freien Raum schliesst das Fenster (Wegwischen) statt zu blättern.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 1 «Tafel beim Öffnen 0.0° neben der Mitte, nach 50° Drehung 2.0° (nachgerückt 1×); Blättern auf der Tafel ja»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder; Beispielprojekt, die Leistung mit IFC-Unterlage mit -Projekt Test_praxis nur lokal, Lauf 1): v1d_tafel_offen.jpg, v1d_tafel_folgt.jpg, v1d_tafel_mittig_nach_drehen.jpg, v1d_blaettern_halb.jpg",
+            "zustand": "Begehen mit offener App «Etagen»"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/Tafel.cs (Platz, Nachfuehren), TafelBlaettern.cs, Glas.cs (Nachfuehren), Desktop/DesktopAnsicht.cs (Nachfuehren)",
+            "src/Hlks.Quest/GlasApps.cs (Blättern, Seite gleitet mit), QuestApp.Apps.cs (AppPlatz, BlaetternAufTafel), DesktopBildschirm.cs",
+            "kataloge/xr_stellschrauben.json (Gruppe «tafel»), kataloge/xr_varianten.json («tafel_nachfuehren»)",
+            "tests/Hlks.Xr.Tests/V1dTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein», «eine swap bewegung mit der rechten oder linken hand soll in einem aktiven fenster blättern». Annahmen V1d: Höhe 0.15 m unter den Augen, Schwelle 25°, Blättern bis 5 cm vor der Fläche, Mindestweg 8 cm. Ob Pinch + Wisch zum Blättern noch nötig ist, ist an der Brille zu klären."
+        },
+        {
+          "id": "zb-quest-v1d-griff",
+          "titel": "Quest App: Sitzungstisch mit einem Griff – Modell bewegen, drehen und zoomen; vereinfachte Unterlage für «Alle Etagen» (Modul XR, Quest App V1d)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille am Sitzungstisch: der Griff (Kugel) in der Mitte der vorderen Gebäudekante. Im XR-Labor: Variante «zoom_ein_griff» (zweite Hand | Drehknopf), sitzung.drehknopf_grad, sitzung.vereinfachen_mm, sitzung.dreiecke_max."
+          },
+          "schritte": [
+            "Am Sitzungstisch den Griff vorn am Modell mit Daumen und Zeigefinger fassen (Pinch).",
+            "Die Hand bewegen: das Modell folgt in alle Richtungen, auch in der Höhe. Die Hand drehen (wie einen Schlüssel waagrecht): das Modell dreht mit.",
+            "Zoomen (Vorgabe «zweite Hand»): den Griff halten und mit der anderen Hand irgendwo pinchen; die Hände auseinander = grösser, zusammen = kleiner.",
+            "Zoomen (Variante «Drehknopf»): am Griff das Handgelenk rollen – im Uhrzeigersinn grösser, 60° je Verdoppelung.",
+            "Loslassen: das Modell bleibt so liegen; der Griff steht wieder vorn in der Mitte (auch nach einer Drehung).",
+            "«Alle Etagen» mit der IFC-Unterlage zeigen und zwischen 1:19 und 1:200 zoomen: die Unterlage erscheint vereinfacht (am Tisch nicht zu sehen), die Bildrate bleibt hoch."
+          ],
+          "erwartung": "Ein Griff genügt für alles; das Modell springt beim Fassen, Loslassen und beim Wechsel auf die zweite Hand nicht. Zoom 1:5 … 1:200. Zögert man am Griff, zeigt eine Geisterhand das Fassen bzw. das Zoomen der gewählten Variante. Bei «Alle Etagen» mit Unterlage zeichnet der Tisch bei Test_praxis höchstens rund 340 000 statt 861 000 Dreiecke (1:19), ab etwa 1:45 rund 154 000.",
+          "pruefpunkte": [
+            "Griff steht mitten an der vorderen Gebäudekante, auch nach einer Drehung des Modells.",
+            "Fassen und bewegen verschiebt in allen Richtungen; die Hand drehen dreht das Modell.",
+            "Zweite Hand zoomt um die Griffhand (Variante «zweite Hand»); Handgelenk rollen zoomt (Variante «Drehknopf»).",
+            "Prüfaufgabe «Modell greifen, drehen und zoomen» gelingt mit dem einen Griff.",
+            "«Alle Etagen» mit Unterlage läuft flüssig (72 Hz) bei 1:19 bis 1:200; die Vereinfachung ist am Tisch nicht störend.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 3 «V1d Tisch=ok (… mit Tischstufe 1:19: Stufe 1, 341122 Dreiecke …; ein Griff: fassen, heben, drehen ja, zweite Hand zoomt 1:50 → 1:25 ja, Drehknopf ja; …)»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder; Beispielprojekt, die Leistung mit IFC-Unterlage mit -Projekt Test_praxis nur lokal, Lauf 3): v1d_griff_gefasst_gedreht.jpg, v1d_griff_zoom_zweite_hand.jpg, v1d_griff_drehknopf.jpg, v1d_geist_zoomen.jpg, v1d_geist_drehknopf.jpg, v1d_alle_etagen_vorher_1zu50.jpg, v1d_alle_etagen_nachher_1zu50.jpg",
+            "zustand": "Sitzungstisch «Alle Etagen» mit IFC-Unterlage"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Sitzung/EinGriff.cs, Modell/TischStufe.cs, Bedienung/Geisterhand.cs (Zoomen, Drehknopf)",
+            "src/Hlks.Quest/Sitzungsraum.cs, ModellDarstellung.cs (Stufen), QuestApp.cs, QuestApp.PruefenV1d.cs",
+            "kataloge/xr_stellschrauben.json (sitzung.drehknopf_grad, sitzung.vereinfachen_mm, sitzung.dreiecke_max), kataloge/xr_varianten.json («zoom_ein_griff»), kataloge/xr_pruefaufgaben.json («modell-greifen-zoomen»)",
+            "tests/Hlks.Xr.Tests/V1dTests.cs; tests/Hlks.Web.Tests/XrV1dEchtTests.cs (Test_praxis, nur lokal)",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden». Ersetzt die zwei Griffe an den vorderen Ecken (P4b). Annahmen V1d: Drehknopf 60° je Verdoppelung, Totzonen 2° bzw. 3°, Zelle höchstens 1 mm auf dem Tisch, höchstens 350 000 Dreiecke. Die Bildrate auf der Quest ist nur an der Brille zu prüfen (am PC 7 ms je Bild, nicht aussagekräftig)."
+        },
+        {
+          "id": "zb-quest-v1d-haende",
+          "titel": "Quest App: Wegwischen und Hineinziehen auch mit der linken Hand; Fang beim Messen im Hintergrund (Modul XR, Quest App V1d)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit der linken (oder rechten) Hand, offen, ohne Pinch, Handfläche seitlich. Messen bzw. «Problem markieren» in den Apps «Messen» und «Marker»."
+          },
+          "schritte": [
+            "Den PC-Bildschirm mit der linken Hand hereinziehen: Hand offen, Handfläche seitlich, zügig von links nach rechts wischen (gut 20 cm); die rechte Hand ruht.",
+            "Mit der linken Hand wegwischen: von rechts nach links wischen – das Vorderste (Fenster, Karte, Symbolfeld, Bildschirm) gleitet nach links hinaus.",
+            "Beide Hände zugleich nach links wischen: es geht genau eines weg. Beide Hände auseinander bewegen: nichts geht weg.",
+            "Messen einschalten und auf Bauteile zeigen bzw. sie berühren: das Fangsymbol folgt der Hand ohne Ruckeln, auch am Tisch bei «Alle Etagen»."
+          ],
+          "erwartung": "Die linke Hand kann beides wie die rechte; die Handfläche darf seitlich nach links oder rechts zeigen, die Richtung des Wischs entscheidet. Ausholen löst die Gegengeste nicht aus; die Sperren gelten für beide Hände gemeinsam. Pinch + Wisch, Drehen, Sprung und Hebegeste lösen nichts davon aus. Der Fang rechnet im Hintergrund mit einem räumlichen Index: das Bild wartet nie darauf, gleich nach dem Laden steht kurz «Fang wird vorbereitet …».",
+          "pruefpunkte": [
+            "Linke Hand links → rechts holt den PC-Bildschirm; rechts → links schiebt ihn bzw. das Vorderste hinaus.",
+            "Eine Hand wischt, die andere ruht: genau ein Ereignis; beide zugleich: nicht doppelt; auseinander: keins.",
+            "Pinch + Wisch und die Hebegeste lösen weder Wegwischen noch Hineinziehen aus.",
+            "Beim Messen am Tisch ruckelt nichts, das Fangsymbol bleibt bei der Hand.",
+            "Protokoll «P4 Status» (Messen=…): «Fang im Hintergrund …× ⌀ … ms, … im Bild ⌀ … ms»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder; Beispielprojekt, die Leistung mit IFC-Unterlage mit -Projekt Test_praxis nur lokal, Lauf 4): desktop_1_geste_halb.jpg, desktop_5_wegwischen_halb.jpg (mit der gedachten rechten Hand; die linke Hand ist nur in den Tests geprüft)",
+            "zustand": "Begehen mit dem PC-Bildschirm"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/Wegwischen.cs (beide Hände, gegenläufige Hand), Desktop/DesktopGeste.cs (DesktopGesten mit beiden Händen)",
+            "src/Hlks.Xr/Messen/SzenenFang.cs, BoxBaum.cs, FangImHintergrund.cs; src/Hlks.Quest/QuestApp.Messen.cs, QuestApp.Marker.cs",
+            "tests/Hlks.Xr.Tests/V1dTests.cs, DesktopGesteTests.cs, FangReferenz.cs; tests/Hlks.Web.Tests/XrV1dEchtTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1d»)"
+          ],
+          "hinweis": "Christian 24.10.2026: «wisch mit der linken hand von links nach rechts soll auch den monitor reinziehen. und wisch mit der linken hand von rechts nach links soll in wieder raus schieben.» Fang: Befund Brillentest V1 (im Mittel 12 ms, einmal 1 s auf der Quest); am PC mit Test_praxis am Tisch je Strahl vorher ⌀ 41 ms, mit Index ⌀ 0.17 ms, im Bild nur noch das Stellen der Anfrage. Annahme V1d: gegenläufige Hand höchstens 8 cm."
         }
       ]
     }

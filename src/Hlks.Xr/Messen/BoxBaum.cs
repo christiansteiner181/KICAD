@@ -1,13 +1,15 @@
 // Quest App V1d (Befund Brillentest V1 24.10.2026: Fang beim Messen bzw. Zeigen 4 057 Abfragen, im Mittel 12 ms, einmal 1 013 ms auf der Quest): räumlicher Index
 // für den Fang – eine Hüllkörper-Hierarchie (BVH) über achsenparallele Boxen, einmal je Modell im Hintergrund gebaut (SzenenFang.Aufbauen). Rein, ohne StereoKit.
 //   - Bau: Teilung am Median der Mittelpunkte entlang der längsten Achse, bis höchstens BlattMax Einträge je Blatt (O(n log n)).
-//   - Abfragen ohne Zuteilung von Speicher je Abfrage (eigener Stapel), nur im Bild-Thread: Strahl (Strecke [0, tMax], Boxen um «dehnung» vergrössert; die Knoten
-//     in der Reihenfolge des Eintritts, so dass ein näherer Treffer die weiteren abschneidet) und Umkreis (Abstand Punkt–Box).
+//   - Abfragen ohne Zuteilung von Speicher (ein Stapel je Baum), darum aus einem Thread zur Zeit (SzenenFang sperrt; die App fragt im Hintergrund,
+//     FangImHintergrund): Strahl (Strecke
+//     [0, tMax], Boxen um «dehnung» vergrössert; die Knoten in der Reihenfolge des Eintritts, so dass ein näherer Treffer die weiteren abschneidet), Strahl mit Kegel
+//     (StrahlNahe: die Dehnung wächst mit dem Weg, kegel0 + kegelJe × t, wie der Fangradius am Strahl) und Umkreis (Abstand Punkt–Box, nächstes Kind zuerst).
 // Die Rangfolge des Fangs (Gleichstände) regelt SzenenFang über eine feste Nummer je Eintrag, nicht die Reihenfolge des Baums.
 
 namespace Hlks.Xr.Messen;
 
-/// <summary>Hüllkörper-Hierarchie über Boxen (Einträge 0 … n − 1). Unveränderlich nach dem Bau; Abfragen nur aus einem Thread.</summary>
+/// <summary>Hüllkörper-Hierarchie über Boxen (Einträge 0 … n − 1). Unveränderlich nach dem Bau; Abfragen aus einem Thread zur Zeit.</summary>
 public sealed class BoxBaum
 {
     /// <summary>Höchstens so viele Einträge je Blatt.</summary>

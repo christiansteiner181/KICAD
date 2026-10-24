@@ -6,7 +6,9 @@
 //   - Erkennung (Wegwischen.Schritt): die rechte Hand offen, ohne Pinch, Handfläche höchstens «wegwischen.handflaeche_grad» neben «nach links» (waagrecht quer
 //     zum Blick); seit V1d auch die linke Hand (Christian 24.10.2026: «wisch mit der linken hand von rechts nach links soll in wieder raus schieben»), deren Handfläche
 //     seitlich in einer der beiden Richtungen zeigen darf – die Richtung des Wischs entscheidet. Jede Hand hat ihre Spur, die Sperre gilt für beide (zwei Hände
-//     zugleich lösen einmal aus). Gemessen wird der Weg nach links vom am weitesten rechts liegenden Punkt im Zeitfenster «wegwischen.zeit_s» bis jetzt – Ausholen nach rechts löst
+//     zugleich lösen einmal aus). Geht die andere Hand dabei mehr als GegenM gegenläufig nach rechts (Wegschieben mit zwei Händen auseinander, Zusammenführen), zählt
+//     der Strich nicht (V1d, Befund Test «Auseinander» des Gestenlabors mit der linken Hand).
+//     Gemessen wird der Weg nach links vom am weitesten rechts liegenden Punkt im Zeitfenster «wegwischen.zeit_s» bis jetzt – Ausholen nach rechts löst
 //     nichts aus, es verlängert nur den Anlauf. Die Bewegung weicht höchstens «wegwischen.richtung_grad» von «nach links» ab (nicht nach oben, unten, vorn).
 //     Ab «wegwischen.weg_m» nach links: das Ereignis (einmal), danach eine Sperre. Während der Geste der Weg nach links, damit das Ziel mitläuft.
 //   - Abgrenzung: ohne Pinch löst sie weder Pinch + Wisch (Etage, Blättern, Drehen) noch den Sprung aus – die brauchen den Pinch; die Hebegeste braucht beide Hände
@@ -41,6 +43,9 @@ public sealed class WegwischZustand
 {
     internal readonly List<(double T, Vec3 P)> Punkte = [];
     internal readonly List<(double T, Vec3 P)> PunkteLinks = [];
+    // V1d: Weg beider Hände im Zeitfenster, gleich in welcher Haltung (gegenläufige zweite Hand erkennen)
+    internal readonly List<(double T, Vec3 P)> VerlaufRechts = [];
+    internal readonly List<(double T, Vec3 P)> VerlaufLinks = [];
     internal double SperreBis = double.NegativeInfinity;
     /// <summary>V1d: welche Hand zuletzt ausgelöst hat bzw. gerade wischt («right», «left»), sonst null.</summary>
     public string? Hand { get; internal set; }
@@ -82,6 +87,12 @@ public static class Wegwischen
         var cos = Math.Cos(e.HandflaecheGrad * Math.PI / 180);
         var r = Spur(z.Punkte, t, rechts is { Offen: true, Pinch: false } hr && hr.Normale.Skalar(nachLinks) >= cos ? hr.Mitte : null, nachLinks, e, z.SperreBis);
         var l = Spur(z.PunkteLinks, t, links is { Offen: true, Pinch: false } hl && Math.Abs(hl.Normale.Skalar(nachLinks)) >= cos ? hl.Mitte : null, nachLinks, e, z.SperreBis);
+        // V1d: bewegt sich die andere Hand zugleich gegenläufig (nach rechts), ist es kein Wegwischen – z. B. das Wegschieben mit zwei Händen (auseinander) bzw. das
+        // Zusammenführen; die Spur dieser Hand beginnt neu
+        Verlauf(z.VerlaufRechts, t, rechts?.Mitte, e);
+        Verlauf(z.VerlaufLinks, t, links?.Mitte, e);
+        if (r.Laeuft || r.Ereignis) r = Gegenlaeufig(z.VerlaufLinks, nachLinks, r, z.Punkte);
+        if (l.Laeuft || l.Ereignis) l = Gegenlaeufig(z.VerlaufRechts, nachLinks, l, z.PunkteLinks);
         foreach (var (s, hand) in new[] { (r, "right"), (l, "left") })
         {
             if (!s.Ereignis) continue;
@@ -97,6 +108,26 @@ public static class Wegwischen
     }
 
     /// <summary>Spur einer Hand (Punkte im Zeitfenster): Weg nach links vom Anlauf (am weitesten rechts), Richtung, Ereignis ab «wegwischen.weg_m»; mitte null = Hand nicht in der Haltung.</summary>
+    /// <summary>V1d: so weit (m) darf sich die andere Hand während des Wischs gegenläufig bewegen (nach rechts), sonst ist es kein Wegwischen (Annahme V1d).</summary>
+    public const double GegenM = 0.08;
+
+    static void Verlauf(List<(double T, Vec3 P)> v, double t, Vec3? p, WegwischEinstellungen e)
+    {
+        if (p is not { } q) { v.Clear(); return; }
+        v.Add((t, q));
+        while (v.Count > 0 && v[0].T < t - e.ZeitS - 1e-9) v.RemoveAt(0);
+    }
+
+    /// <summary>Ist die andere Hand im Zeitfenster mehr als GegenM nach rechts gegangen (vom am weitesten links liegenden Punkt bis jetzt), zählt der Strich nicht.</summary>
+    static WegwischStand Gegenlaeufig(List<(double T, Vec3 P)> andere, Vec3 links, WegwischStand s, List<(double T, Vec3 P)> spur)
+    {
+        if (andere.Count < 2) return s;
+        var nachRechts = andere.Max(x => x.P.Skalar(links)) - andere[^1].P.Skalar(links);
+        if (nachRechts <= GegenM) return s;
+        spur.Clear();
+        return new WegwischStand(false, 0, false, []);
+    }
+
     static WegwischStand Spur(List<(double T, Vec3 P)> punkte, double t, Vec3? mitte, Vec3 links, WegwischEinstellungen e, double sperreBis)
     {
         if (mitte is not { } m) { punkte.Clear(); return new WegwischStand(false, 0, false, []); }

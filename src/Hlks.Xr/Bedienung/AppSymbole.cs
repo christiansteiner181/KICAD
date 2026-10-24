@@ -15,7 +15,12 @@
 //     nach einer Verweilzeit der Name als Tooltip. Apple HIG «Buttons» (visionOS): «the system displays a tooltip after people hover over a button for a moment»
 //     (abgerufen 24.10.2026). Der Tooltip steht ÜBER dem Ziel (Befund Prüfbilder 02: darunter verdeckte ihn die zeigende Hand; HIG «Eyes» nennt «below» für den Blick,
 //     mit der Hand zeigt man von unten).
-// Alle Zahlen sind Annahmen V1a bzw. Christians Werte (Stellschrauben symbole.*, zeiger.tooltip_s), keine Normwerte.
+// V1d (Brillentest V1, Christian 24.10.2026: «die apps solten beim hochwischen etwas weiter oben sein», «die appanordnung muss bei erkanntem sitzen eher etwas weiter
+// oben sein», am Tisch «apps sind nun ca. 20cm zu hoch», bestätigt «beim Begehen etwas höher, am Sitzungstisch rund 20 cm tiefer»): die Mitte liegt beim Begehen
+// «symbole.hoehe_m» (0.22 m, bis V1d 0.32 m) unter den Augen, sitzend «symbole.hoehe_sitzend_m» (0.08 m) höher, am Sitzungstisch «symbole.hoehe_tisch_m» (0.52 m)
+// darunter (MitteUnterAuge); die Tischregel hebt nur noch die unterste Reihe über die Platte (das Feld wird dafür gestaucht, höchstens bis FeldMinM). Die oberste
+// Reihe darf beim Begehen leicht über Augenhöhe liegen. Bewegt (Neuanordnung nach der Wahl erkennen): HandBeruehrung sperrt die Wahl, solange sich das Feld bewegt.
+// Alle Zahlen sind Annahmen V1a bzw. V1d bzw. Christians Werte (Stellschrauben symbole.*, zeiger.tooltip_s), keine Normwerte.
 
 namespace Hlks.Xr.Bedienung;
 

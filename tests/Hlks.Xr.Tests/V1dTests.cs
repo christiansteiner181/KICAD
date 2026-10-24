@@ -434,6 +434,35 @@ public class V1dTests(ITestOutputHelper aus)
         Assert.Equal("left", z.Hand);
     }
 
+    [Fact]
+    public void Gestentabelle_nennt_den_einen_Griff_die_linke_Hand_und_das_Blaettern_auf_der_Tafel()
+    {
+        var text = string.Join(" ", Gestenbedeutung.Tabelle.Select(x => x.Geste + " " + x.Bedeutung));
+        foreach (var s in new[] { "vorderen Gebäudekante", "zweiten Hand", "Drehknopf", "linke Hand", "Wisch auf der Tafel", "nächste Seite" }) Assert.Contains(s, text);
+        Assert.DoesNotContain("Zwei Hände an den Griffen", text);
+    }
+
+    [Fact]
+    public void Gegenlaeufige_zweite_Hand_ist_kein_Wegwischen_Wegschieben_mit_zwei_Haenden()
+    {
+        var links = V(-1, 0, 0);
+        var rechts = V(1, 0, 0);
+        // auseinander: die linke Hand nach links (Handfläche nach aussen bzw. innen), die rechte zugleich nach rechts – kein Wegwischen
+        Assert.Equal(0, Wegwischen_(u => (Hb(0.05 + 0.25 * u, rechts), Hb(-0.05 - 0.3 * u, links))));
+        Assert.Equal(0, Wegwischen_(u => (Hb(0.05 + 0.25 * u, links), Hb(-0.05 - 0.3 * u, rechts))));
+        // zusammen: die rechte Hand nach links, die linke zugleich nach rechts – kein Wegwischen
+        Assert.Equal(0, Wegwischen_(u => (Hb(0.3 - 0.3 * u, links), Hb(-0.3 + 0.25 * u, rechts))));
+        // die andere Hand zittert nur bzw. geht ein paar Zentimeter mit (unter GegenM): Wegwischen wie bisher
+        Assert.Equal(1, Wegwischen_(u => (Hb(0.05 + 0.04 * u, rechts), Hb(-0.05 - 0.3 * u, links))));
+        Assert.Equal(1, Wegwischen_(u => (Hb(0.15 - 0.3 * u, links), Hb(-0.3 + 0.03 * Math.Sin(u * Math.PI * 4), rechts))));
+        Assert.Equal(0.08, Wegwischen.GegenM);
+        // nur die rechte Hand (Schritt ohne die linke, wie bis V1d): unverändert
+        var z = new WegwischZustand();
+        var n = 0;
+        for (int i = 0; i <= 72; i++) if (Wegwischen.Schritt(z, i / 72.0, Hb(0.15 - 0.3 * GlasStil.Weich(Math.Clamp((i / 72.0 - 0.3) / 0.4, 0, 1)), links), Blick).Ereignis) n++;
+        Assert.Equal(1, n);
+    }
+
     static Dictionary<string, Vec3> Offen(string seite, double x, Vec3 n) => HandHilfen.Hand(seite, V(x, 1.25, -0.25), V(0, 0.2, -1), n);
 
     static (int Rechts, int Links) Hineinziehen_(Func<double, (Dictionary<string, Vec3>? R, Dictionary<string, Vec3>? L)> haende, double dauer = 0.45)
