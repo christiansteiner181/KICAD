@@ -298,7 +298,8 @@ sealed partial class QuestApp
             Directory.CreateDirectory(ordner);
             Renderer.Screenshot(Path.Combine(ordner, name), k.position, (Vec3)(Vector3)z, 1280, 960, fov);
         }
-        if (n == 1) { PruefbildVorbereiten(); apps.Ausblenden(Time.Total); pruefHebe = 0; GeisterHeben(k); }
+        // V1g: die Folge prüft die Variante «stehen» (Feld seitlich bzw. dahinter, Wegwischen des Felds); die Vorgabe «ausblenden» prüft QuestApp.PruefenV1f.cs
+        if (n == 1) { PruefbildVorbereiten(); apps.Ausblenden(Time.Total); pruefHebe = 0; GeisterHeben(k); StellschraubeAnwenden("labor.variante.symbolwahl", JsonDocument.Parse("\"stehen\"").RootElement.Clone()); }
         if (n <= 30) pruefHebe = n / 30.0 * 0.999;
         if (n == 15) Bild("hebe_halb.jpg", symbole.Mitte, 80);
         if (n == 31) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
@@ -403,6 +404,7 @@ sealed partial class QuestApp
             symbole.SimFinger = null;
             symbole.SimHand = null;
             pruefWisch = null;
+            StellschraubeAnwenden("labor.variante.symbolwahl", JsonDocument.Parse("null").RootElement.Clone());
             symbolFolge = 0;
         }
     }

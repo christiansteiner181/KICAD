@@ -24,6 +24,7 @@ sealed partial class QuestApp
     bool v1fZielt, v1fKeinSprungVorher = true, v1fSprung, v1fAusloeser;
     int v1fAbzuege0;
     string v1fZielText = "";
+    bool v1gAppNachWahl, v1gGesperrt, v1gNichtZurueck;
 
     void PruefV1fStarten() { if (v1fFolge == -1 && bedien.MitApps && szene is not null) v1fFolge = 1; }
     bool PruefV1fLaeuft => v1fFolge > 0;
@@ -86,17 +87,33 @@ sealed partial class QuestApp
         if (v1fJetzt >= 0.9 && rig != v1fRig) v1fSprung = true;
         if (V1fBei(1.3)) pruefPistolenHand = PruefPistole(k, 0);
         if (V1fBei(1.45)) { pruefPistolenHand = null; geister.Stoppen(); }
+        // V1g (Christian 24.10.2026: «auch ausblenden nach wahl eines apps», «bei schliessen der tafel soll die hand keine app wählen»): Symbole holen, «Messen» wählen – die
+        // Symbole blenden aus, die App öffnet; die Tafel schliessen («×») – die Symbole kommen nicht zurück, Berührungen sind kurz gesperrt
+        if (V1fBei(1.5)) { rig = v1fRig; standort = null; apps.Ausblenden(Time.Total); symbole.Ausblenden(Time.Total); }
+        if (V1fBei(1.6)) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; }
+        if (V1fBei(1.65)) pruefHebe = null;
+        if (V1fBei(2.2)) { SymbolGewaehlt("messen"); symbole.Ausblenden(Time.Total); }   // wie die Berührung: wählen, die Symbole blenden aus
+        if (V1fBei(2.8))
+        {
+            v1gAppNachWahl = apps.Sichtbar && apps.Aktiv == "messen" && !symbole.Sichtbar;
+            if (apps.Rahmen is { } ra) V1dBild(ordner, "v1g_app_nach_wahl.jpg", k.position, (Vec3)(Vector3)ra.Fenster.Mitte, 90);
+        }
+        if (V1fBei(2.85)) apps.Ausblenden(Time.Total);   // wie «×»
+        if (V1fBei(2.9)) v1gGesperrt = symbole.BeruehrungGesperrt(Time.Total) && !symbole.Sichtbar;
+        if (V1fBei(3.5)) v1gNichtZurueck = !symbole.Sichtbar && !apps.Sichtbar;
         v1fVorher = v1fJetzt;
-        if (v1fJetzt < 1.5) return;
+        if (v1fJetzt < 3.55) return;
         // zurück an den Ausgangspunkt (die übrigen Prüfungen beginnen dort)
         rig = v1fRig;
         standort = null;
         var abzuege = pistoleZ[1].Abzuege - v1fAbzuege0;
-        var ok = !v1fAusloeser || (v1fZielt && v1fKeinSprungVorher && v1fSprung && abzuege == 1);
+        var ausblenden = bedien.Symbole.NachWahl == Varianten.SymbolwahlAusblenden;
+        var ok = (!v1fAusloeser || (v1fZielt && v1fKeinSprungVorher && v1fSprung && abzuege == 1)) && (!ausblenden || (v1gAppNachWahl && v1gGesperrt && v1gNichtZurueck));
         pruefV1f = string.Create(CultureInfo.InvariantCulture,
             $"V1f={(ok ? "ok" : "FEHLER")} (Auslöser {bedien.Ausloeser}; Pistolengeste beim Begehen: zielen {(v1fZielt ? "ja" : "nein")} ({v1fZielText}), blosses Zielen springt nicht " +
             $"{(v1fKeinSprungVorher ? "ja" : "nein")}, abgedrückt {abzuege}×, gesprungen {(v1fSprung ? "ja" : "nein")}; Tafel {bedien.Tafel.Nachfuehren}; " +
-            $"Hebegeste {bedien.Hebe.HandflaecheGrad:0}°/{bedien.Hebe.DrehGrad:0}°/{bedien.Hebe.VorhalteS:0.00} s/{bedien.Hebe.GleichzeitigS:0.00} s, lockere Hand ab {bedien.Anstoss.OffenAb:0.00})");
+            $"Hebegeste {bedien.Hebe.HandflaecheGrad:0}°/{bedien.Hebe.DrehGrad:0}°/{bedien.Hebe.VorhalteS:0.00} s/{bedien.Hebe.GleichzeitigS:0.00} s, lockere Hand ab {bedien.Anstoss.OffenAb:0.00}; V1g: nach der Wahl {bedien.Symbole.NachWahl}: App offen und Symbole aus {(v1gAppNachWahl ? "ja" : "nein")}, " +
+            $"nach dem Schliessen gesperrt {(v1gGesperrt ? "ja" : "nein")}, Symbole kommen nicht zurück {(v1gNichtZurueck ? "ja" : "nein")})");
         v1fFolge = 0;
     }
 

@@ -3278,3 +3278,56 @@ Grenzen: Katalog 80 von 80 Stellschrauben, mit 12 Varianten und der Aufgabe 93 v
   auslöst, der Faustgriff an den Punkten, Passthrough im Sitzungszimmer mit dem Antippen des echten Tischs, die lockere Hand beim Wischen und das natürliche Anheben
   (die Zeilen «Hebe verworfen: …» im Protokoll zeigen die Gründe).
 - **Anleitung:** `zb-quest-v1f-pistole`, `zb-quest-v1f-sitzung`, `zb-quest-v1f-gesten` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1g: Kippen am roten Punkt, Symbole blenden aus, keine Fläche unter dem Modell (Christian 24.10.2026)
+
+Christian: «durch oben unten des roten punkte soll das modell auch rotieren.» (auf Rückfrage «Kippen») – «bei schliessen der tafel soll die hand keine app wählen. (app
+ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.» – «die weisse fläche unter dem modell stört immer noch.» Regeln in `src/Hlks.Xr`
+(`Sitzung/Kippen.cs`, `Sitzung/ZweiPunkte.cs`, `Sitzung/SitzungRaum.cs`, `Bedienung/HandBeruehrung.cs`), die App in `src/Hlks.Quest` (`Sitzungsraum.cs`,
+`QuestApp.Apps.cs`, `SymbolApps.cs`, `QuestApp.PruefenV1f.cs`). **Keine Normwerte**, alle Zahlen sind Annahmen V1g.
+
+### Kippen am roten Punkt «Drehen und Vergrössern»
+- **Auf/Ab** kippt das Modell um eine **waagrechte Achse durch das Zentrum** (Mitte des sichtbaren Rechtecks auf der Unterkante), quer zur Richtung vom Kopf zum Zentrum
+  beim Greifen: die Hand hoch hebt die Seite zum Betrachter, die Hand tief senkt sie. Die Neigung folgt dem **Winkel der Hand über der Unterkante** (im waagrechten Abstand
+  zum Zentrum beim Greifen gemessen), mit der Totzone von «sitzung.dreh_totzone_grad» = **3°**, höchstens `sitzung.kipp_max_grad` = **±60°** (0 = nicht kippen).
+- **Unverändert:** links/rechts um das Modell dreht um die senkrechte Achse, nach aussen/innen zoomt (zoomen kippt nicht). Gekippt bleibt das Modell beim Drehen,
+  Vergrössern und Verschieben gekippt (die Neigung bleibt zum Betrachter; Achse und Drehpunkt bleiben, bis sie wieder 0 ist).
+- **Nie in den Tisch:** das gekippte Modell hebt sich so weit, dass die tiefste Ecke der Grundfläche auf der Unterkante ohne Kippung bleibt (bei 30° und dem Modell von
+  Test_praxis rund 12 cm).
+- **Zurücksetzen:** **Doppeltipp** am roten Punkt (zweimal kurz fassen: höchstens 0.4 s gehalten, innert 0.5 s wieder, höchstens 6 cm daneben) stellt die Neigung auf 0
+  (Klick); «Tisch» › «Zurücksetzen» setzt Lage, Massstab, Drehung und Neigung zurück. Im Status «Neigung n° (zurückgesetzt n×)».
+
+### Symbole blenden nach der Wahl aus (Variante `labor.variante.symbolwahl` = `ausblenden`, Vorgabe seit V1g | `stehen`)
+- Nach der Wahl einer App blendet das Symbolfeld aus, die App öffnet. **Schliesst man die Tafel** (Wegwischen, «×», PC-Bildschirm hinaus), kommen die Symbole **nicht
+  zurück** – eine andere App holt man mit der Hebegeste (einmal ein Hinweis «Andere App: beide Handflächen nach oben – kurz anheben»). So trifft die Hand beim Schliessen
+  nie ein Symbol.
+- Nach jedem Schliessen einer Tafel zählt `symbole.sperre_schliessen_s` = **0.5 s** lang keine Berührung eines Symbols (auch auf Distanz mit der Pistolengeste).
+- «stehen» bleibt zum Vergleich (die Symbole weichen neben bzw. hinter die App, `labor.variante.feld_bei_app` wirkt nur dann).
+
+### Keine Fläche unter dem Modell
+- Die Bodenplatte (bis V1f eine helle Glasfläche) entfällt am Sitzungstisch, auch mit Passthrough und bei «Raum zeigen»: es wird nur das Modell gezeichnet.
+- Höchstens mit `sitzung.umriss` (Vorgabe **aus**) deutet beim Annähern an einen Punkt bzw. beim Greifen ein dünner, blasser Umriss die Grundfläche an (er kippt mit).
+
+### Stellschrauben und Varianten (neu bzw. geändert)
+| Schlüssel | Vorgabe | Bereich | Wirkung |
+| --- | --- | --- | --- |
+| `sitzung.kipp_max_grad` | 60° | 0 … 85 | höchstens so weit kippt der rote Punkt das Modell |
+| `symbole.sperre_schliessen_s` | 0.5 s | 0 … 3 | nach dem Schliessen einer Tafel keine Berührung eines Symbols |
+| `sitzung.umriss` | aus | ein, aus | dünner Umriss der Grundfläche beim Greifen |
+| `labor.variante.symbolwahl` | ausblenden (bis V1f stehen) | ausblenden, stehen | Symbole nach der Wahl einer App |
+
+Grenzen: Katalog 83 von 96 Stellschrauben (bis V1f 80), mit 12 Varianten und der Aufgabe 96 von 128 Werten im Kanal (bis V1f 96; `XrLaborKatalog.StellschraubenMax`,
+`XrNachrichten.StellschraubenMax`, `PruefAufgaben.StellschraubenMax`, Werte je Profil).
+
+### Prüfen
+- **Tests:** Xr `V1gTests` (Kippen um die waagrechte Achse durch das Zentrum quer zum Blick, die Seite zum Betrachter hebt sich, Matrix gleich den Punkten, nach unten,
+  seitlich sitzend; Grenze, Totzone, Stellschraube; Drehen und Vergrössern bleiben, die Neigung bleibt beim Drehen, Zoomen und Verschieben; nie unter die Unterkante bei
+  verschiedenen Drehungen und Winkeln; Doppeltipp, zu langsam, zu lang, ohne Zeit; Symbole ausblenden, Sperre nach dem Schliessen, Umriss), angepasst `V1aSymboleTests`,
+  `LaborKatalogTests`; Web `XrLaborTests` (Grenze 128); Node `xr-labor.test.mjs`.
+- **Am PC:** `werkzeuge\quest_pruefen.ps1 -Projekt <Test_praxis> -Pruefbilder <ordner>`: Lauf 1 «V1f=ok (…; V1g: nach der Wahl ausblenden: App offen und Symbole aus ja,
+  nach dem Schliessen gesperrt ja, Symbole kommen nicht zurück ja)», Lauf 3 «V1g Tisch=ok (gekippt 30.0° (Hand 33°, Totzone 3°), Drehung und Massstab gleich, Zentrum
+  versetzt 0.0 mm, angehoben 11.7 cm, tiefste Ecke +0.0 mm über der Unterkante ja; Doppeltipp Neigung 0 ja; Grenze 60° ja; …)». Die Folgen von V1a und V1d prüfen die
+  Variante «stehen». Prüfbilder `v1g_gekippt.jpg`, `v1g_gekippt_seite.jpg`, `v1g_tisch_ohne_flaeche.jpg`, `v1g_app_nach_wahl.jpg` (nur lokal).
+- **Nur mit der Brille prüfbar:** wie sich das Kippen mit der Faust bzw. dem Pinch anfühlt (Winkel, Grenze, Anheben über dem echten Tisch), ob der Doppeltipp
+  zuverlässig ist, ob das Ausblenden der Symbole und die Sperre nach dem Schliessen passen.
+- **Anleitung:** `zb-quest-v1g-kippen` in `berichte/anleitung/inventar.json`.
