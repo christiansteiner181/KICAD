@@ -28,6 +28,9 @@ sealed partial class QuestApp
     readonly HebeZustand hebe = new();
     HebeStand hebeStand = new(null, 0, 0, false);
     int hebenGezaehlt, wischGezaehlt;
+    /// <summary>V1g: war im letzten Bild eine Tafel offen; so oft geschlossen (Protokoll); der Hinweis zur Hebegeste nach dem Schliessen kam schon.</summary>
+    bool tafelOffenVorher, hebeHinweisNachSchliessen;
+    int tafelGeschlossen;
     /// <summary>Prüflauf am PC (ohne Hände): gedachter Fortschritt der Hebegeste bzw. das Ereignis.</summary>
     double? pruefHebe;
     HebeArt? pruefHebeEreignis;
@@ -371,6 +374,20 @@ sealed partial class QuestApp
         var appOffen = apps.Sichtbar && !apps.Weggewischt && !(wischStand.Laeuft && wischZielId == "app");
         var desktopOffen = desktop is { Ansicht: { Sichtbar: true, Phase: not DesktopPhase.Raus } } && !(wischStand.Laeuft && wischZielId == DesktopAnsicht.ZielId);
         symbole.Hinten = (appOffen || desktopOffen) && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+        // V1g (Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen»): schliesst eine Tafel (Wegwischen, «×», PC-Bildschirm hinaus), zählt eine
+        // Weile keine Berührung eines Symbols («symbole.sperre_schliessen_s»); mit «ausblenden» kommen die Symbole ohnehin nicht zurück – neu holt sie die Hebegeste
+        var tafelOffen = appOffen || desktopOffen;
+        if (tafelOffenVorher && !tafelOffen)
+        {
+            symbole.BeruehrungSperren(Time.Total + bedien.Symbole.SperreSchliessenS);
+            tafelGeschlossen++;
+            if (bedien.Symbole.NachWahl == Varianten.SymbolwahlAusblenden && !symbole.Sichtbar && !hebeHinweisNachSchliessen)
+            {
+                hebeHinweisNachSchliessen = true;
+                Hinweis("Andere App: beide Handflächen nach oben – kurz anheben.");
+            }
+        }
+        tafelOffenVorher = tafelOffen;
         // Variante «feld_bei_app» = «seitlich» (Vorgabe, Christian 24.10.2026): das Feld weicht neben Fenster und Ornamente (bzw. den Bildschirm) aus
         var fl = new List<TabletPose>();
         if (appOffen && apps.Rahmen is { } ar)

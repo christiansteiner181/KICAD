@@ -120,5 +120,88 @@ sealed partial class QuestApp
         Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
         var ziel = Sk(XrSitzungLogik.TischMitte.X, XrSitzungLogik.TischHoehe + 0.08, XrSitzungLogik.TischMitte.Z);
         V1dBild(ordner, "v1f_sitzung_ohne_tisch.jpg", Sk(0, 1.25, 0.05), ziel, 85);
+        V1dBild(ordner, "v1g_tisch_ohne_flaeche.jpg", Sk(0.2, 0.98, 0.0), ziel, 60);   // V1g: keine Fläche unter dem Modell, flach von vorn
+    }
+    // ================================================================================================ V1g am Tisch: Kippen am roten Punkt
+
+    string pruefV1gTisch = "";
+    ZweiPunkteLage v1gP;
+    XVec3 v1gHand;
+    bool v1gKippOk, v1gZurueckOk, v1gGrenzeOk;
+    string v1gText = "";
+
+    /// <summary>
+    /// V1g am Tisch (Bild g der Folge nach den zwei Punkten von V1e): die gedachte rechte Hand fasst den roten Punkt und hebt ihn um 33° über die Unterkante (das Modell kippt
+    /// 30° um das Zentrum, Drehung und Massstab bleiben, es taucht nicht unter die Unterkante), Doppeltipp setzt die Neigung zurück, dann die Grenze (70° gehoben, höchstens 60°).
+    /// Prüfbild gekippt, ohne Fläche unter dem Modell.
+    /// </summary>
+    void PruefV1gTisch(int g, string? ordner)
+    {
+        if (sitzung.Ansicht is not { } an || g < 392 || g > 495) return;
+        var rl = sitzung.RaumLage;
+        Vec3 Sk(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
+        EinGriffHand H(XVec3 p, bool fasst = true) => new(fasst, p, 0, 0);
+        XVec3 Gehoben(double grad)
+        {
+            var yb = XrSitzungLogik.TischHoehe + sitzung.Lage.Hoehe;
+            var r = Math.Sqrt((v1gP.Drehen.X - v1gP.Zentrum.X) * (v1gP.Drehen.X - v1gP.Zentrum.X) + (v1gP.Drehen.Z - v1gP.Zentrum.Z) * (v1gP.Drehen.Z - v1gP.Zentrum.Z));
+            return v1gP.Drehen with { Y = yb + r * Math.Tan(Math.Atan2(v1gP.Drehen.Y - yb, r) + grad * Grad1) };
+        }
+        void Zeigen(XVec3 h) { var r = rl.ZuRef(h); geister.Form(Geisterhand.Vorlage(r, XrTabletLogik.TabletLageAus(r, new XVec3(0, 1, 0)), links: false), 0.55); }
+        if (g == 392) { sitzung.PruefHaende = () => (null, null); sitzung.LageSetzen(v1dStart!); }
+        if (g == 395) v1gP = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar);
+        // 1. heben: 33° in 30 Bildern
+        if (g >= 397 && g <= 432)
+        {
+            var u = Math.Clamp((g - 399) / 28.0, 0, 1);
+            var ziel = Gehoben(33);
+            v1gHand = v1gP.Drehen + (ziel - v1gP.Drehen) * GlasStil.Weich(u);
+            sitzung.PruefHaende = () => (null, H(v1gHand));
+            Zeigen(v1gHand);
+            if (g == 430)
+            {
+                var l = sitzung.Lage;
+                var p1 = ZweiPunkte.Punkte(l, an.Bezug, an.Sichtbar);
+                var winkel = (l.Kippung?.Winkel ?? 0) / Grad1;
+                var unten = XrSitzungLogik.TischHoehe + l.Hoehe;
+                var tiefst = Kippen.Grundflaeche(an.Bezug, an.Sichtbar).Min(e => SitzungRaum.ModellZuRaum(e, l, an.Bezug).Y);
+                var zentrum = Math.Sqrt((p1.Zentrum.X - v1gP.Zentrum.X) * (p1.Zentrum.X - v1gP.Zentrum.X) + (p1.Zentrum.Z - v1gP.Zentrum.Z) * (p1.Zentrum.Z - v1gP.Zentrum.Z));
+                v1gKippOk = Math.Abs(winkel - 30) < 0.3 && Math.Abs(XrSitzungLogik.WinkelDiff(l.Drehung, v1dStart!.Drehung)) < 1e-6 && Math.Abs(l.Massstab - v1dStart.Massstab) < 1e-6
+                    && zentrum < 1e-4 && tiefst >= unten - 1e-6;
+                v1gText = string.Create(CultureInfo.InvariantCulture,
+                    $"gekippt {winkel:0.0}° (Hand 33°, Totzone 3°), Drehung und Massstab gleich, Zentrum versetzt {zentrum * 1000:0.0} mm, angehoben {(l.Kippung?.Anheben ?? 0) * 100:0.0} cm, tiefste Ecke {(tiefst - unten) * 1000:+0.0;-0.0} mm über der Unterkante");
+            }
+            if (g == 428)
+            {
+                var c = rl.ZuRef(v1gP.Zentrum);
+                V1dBild(ordner, "v1g_gekippt.jpg", Sk(0.45, 1.15, 0.05), (Vec3)(Vector3)c, 60);
+                V1dBild(ordner, "v1g_gekippt_seite.jpg", (Vec3)(Vector3)rl.ZuRef(v1gP.Zentrum + new XVec3(0.75, 0.1, 0)), (Vec3)(Vector3)c, 55);
+            }
+        }
+        // 2. Doppeltipp am roten Punkt: loslassen, kurz fassen, loslassen, gleich wieder fassen
+        if (g >= 433 && g <= 455)
+        {
+            var p = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar);
+            if (g == 433) v1gHand = p.Drehen;
+            var fasst = g is >= 436 and <= 438 or >= 443 and <= 446;
+            sitzung.PruefHaende = () => (null, H(v1gHand, fasst));
+            Zeigen(v1gHand);
+            if (g == 450) v1gZurueckOk = sitzung.Lage.Kippung is null && sitzung.NeigungZurueck >= 1;
+        }
+        // 3. Grenze: 70° gehoben – höchstens 60°
+        if (g == 456) { sitzung.PruefHaende = () => (null, null); v1gP = ZweiPunkte.Punkte(sitzung.Lage, an.Bezug, an.Sichtbar); }
+        if (g >= 458 && g <= 484)
+        {
+            var u = Math.Clamp((g - 460) / 20.0, 0, 1);
+            v1gHand = v1gP.Drehen + (Gehoben(70) - v1gP.Drehen) * GlasStil.Weich(u);
+            sitzung.PruefHaende = () => (null, H(v1gHand, g < 484));
+            if (g == 482) v1gGrenzeOk = Math.Abs((sitzung.Lage.Kippung?.Winkel ?? 0) / Grad1 - bedien.Punkte.KippMaxGrad) < 0.01;
+        }
+        if (g == 488) { sitzung.PruefHaende = null; sitzung.LageSetzen(v1dStart!); }
+        if (g != 495) return;
+        var ok = v1gKippOk && v1gZurueckOk && v1gGrenzeOk;
+        pruefV1gTisch = string.Create(CultureInfo.InvariantCulture,
+            $"V1g Tisch={(ok ? "ok" : "FEHLER")} ({v1gText} {(v1gKippOk ? "ja" : "nein")}; Doppeltipp Neigung 0 {(v1gZurueckOk ? "ja" : "nein")}; Grenze {bedien.Punkte.KippMaxGrad:0}° {(v1gGrenzeOk ? "ja" : "nein")}; " +
+            $"keine Fläche unter dem Modell (Umriss {(bedien.Umriss ? "ein" : "aus")}); Symbole nach der Wahl {bedien.Symbole.NachWahl}, Sperre nach dem Schliessen {bedien.Symbole.SperreSchliessenS:0.0} s)");
     }
 }

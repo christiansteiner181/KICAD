@@ -77,8 +77,11 @@ public static class SitzungRaum
     /// <summary>Bezug für einen Ausschnitt (XrSitzungLogik.AusschnittBezugAus).</summary>
     public static SitzungBezug BezugAusAusschnitt(AusschnittBezug a) => new(a.Anker, a.Unten, a.Groesse);
 
-    /// <summary>Szene → Raum-lokal (siehe Dateikopf).</summary>
-    public static Vec3 ModellZuRaum(Vec3 p, SitzungLage lage, SitzungBezug bezug)
+    /// <summary>Szene → Raum-lokal (siehe Dateikopf); V1g mit der Kippung (Kippen.cs).</summary>
+    public static Vec3 ModellZuRaum(Vec3 p, SitzungLage lage, SitzungBezug bezug) => Kippen.Anwenden(ModellZuRaumOhneKippung(p, lage, bezug), lage, bezug);
+
+    /// <summary>Szene → Raum-lokal ohne die Kippung (siehe Dateikopf).</summary>
+    public static Vec3 ModellZuRaumOhneKippung(Vec3 p, SitzungLage lage, SitzungBezug bezug)
     {
         var n = lage.Massstab;
         var d = XrSitzungLogik.DreheXZ(new Xz((p.X - bezug.Anker.X) / n, (p.Z - bezug.Anker.Z) / n), lage.Drehung);
@@ -86,14 +89,15 @@ public static class SitzungRaum
         return new Vec3(m.X + d.X, XrSitzungLogik.TischHoehe + lage.Hoehe + (p.Y - bezug.Unten) / n, m.Z + d.Z);
     }
 
-    /// <summary>Matrix Szene → Raum-lokal (dieselbe Abbildung wie <see cref="ModellZuRaum"/>).</summary>
+    /// <summary>Matrix Szene → Raum-lokal (dieselbe Abbildung wie <see cref="ModellZuRaum"/>, V1g mit der Kippung).</summary>
     public static Matrix4x4 ModellMatrix(SitzungLage lage, SitzungBezug bezug)
     {
         var m = XrSitzungLogik.ModellMitte(lage);
         return Matrix4x4.CreateTranslation((float)-bezug.Anker.X, (float)-bezug.Unten, (float)-bezug.Anker.Z)
             * Matrix4x4.CreateScale((float)(1 / lage.Massstab))
             * Matrix4x4.CreateRotationY((float)lage.Drehung)
-            * Matrix4x4.CreateTranslation((float)m.X, (float)(XrSitzungLogik.TischHoehe + lage.Hoehe), (float)m.Z);
+            * Matrix4x4.CreateTranslation((float)m.X, (float)(XrSitzungLogik.TischHoehe + lage.Hoehe), (float)m.Z)
+            * Kippen.Matrix(lage, bezug);
     }
 
     /// <summary>

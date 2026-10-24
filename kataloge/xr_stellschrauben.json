@@ -350,6 +350,12 @@
       "herkunft": "Annahme V1a (Schutz vor Fehlwahl, Auftrag Hauptlauf 24.10.2026)"
     },
     {
+      "schluessel": "symbole.sperre_schliessen_s", "gruppe": "symbole", "titel": "Sperre nach dem Schliessen einer Tafel", "status": "app",
+      "beschreibung": "Nach dem Schliessen einer Tafel (Wegwischen, «×», PC-Bildschirm hinaus) zählt so lange keine Berührung eines Symbols – die Hand wählt beim Schliessen keine App.",
+      "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.1, "vorgabe": 0.5,
+      "herkunft": "Annahme V1g (Auftrag: z. B. 0.5 s); Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen.»"
+    },
+    {
       "schluessel": "zeiger.tooltip_s", "gruppe": "symbole", "titel": "Verzögerung des Tooltips", "status": "app",
       "beschreibung": "So lange zeigt der Finger auf ein Symbol bzw. einen Knopf, bis der Name als Tooltip darüber erscheint.",
       "art": "zahl", "einheit": "s", "min": 0, "max": 3, "schritt": 0.05, "vorgabe": 0.6,
@@ -498,6 +504,18 @@
       "beschreibung": "Am Sitzungstisch steht das Modell immer im echten Raum (Passthrough, kein virtueller Tisch). Ist kein echter Tisch angetippt, steht es auf dieser Höhe über dem Boden.",
       "art": "zahl", "einheit": "m", "min": 0.4, "max": 1.3, "schritt": 0.01, "vorgabe": 0.75,
       "herkunft": "Annahme V1f (wie bisher der virtuelle Tisch); Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)»"
+    },
+    {
+      "schluessel": "sitzung.kipp_max_grad", "gruppe": "sitzung", "titel": "Punkt «Drehen»: Kippen höchstens", "status": "app",
+      "beschreibung": "Am roten Punkt kippt eine Auf/Ab-Bewegung der Hand das Modell um eine waagrechte Achse durch sein Zentrum, quer zum Blick beim Greifen – höchstens so weit nach vorn bzw. hinten. Die Totzone ist dieselbe wie beim Drehen; ein Doppeltipp am Punkt bzw. «Zurücksetzen» stellt die Neigung auf 0. 0 = nicht kippen.",
+      "art": "zahl", "einheit": "°", "min": 0, "max": 85, "schritt": 1, "vorgabe": 60,
+      "herkunft": "Annahme V1g (Auftrag: z. B. ±60°); Christian 24.10.2026: «durch oben unten des roten punkte soll das modell auch rotieren.» – auf Rückfrage «Kippen»"
+    },
+    {
+      "schluessel": "sitzung.umriss", "gruppe": "sitzung", "titel": "Umriss der Grundfläche beim Greifen", "status": "app",
+      "beschreibung": "Unter dem Modell liegt keine Fläche mehr. Ist dies ein, deutet beim Annähern an einen Punkt bzw. beim Greifen ein dünner, blasser Umriss die Grundfläche an.",
+      "art": "ja_nein", "vorgabe": false,
+      "herkunft": "Annahme V1g (Auftrag: Vorgabe aus); Christian 24.10.2026: «die weisse fläche unter dem modell stört immer noch.»"
     },
     {
       "schluessel": "symbole.abstand_tafel_m", "gruppe": "symbole", "titel": "Abstand der Symbole zur Tafel", "status": "app",

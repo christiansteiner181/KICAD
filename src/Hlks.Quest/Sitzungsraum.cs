@@ -27,9 +27,10 @@ namespace Hlks.Quest;
 /// V1a: die helle Umgebung im Stil von visionOS (bis V1e; seit V1f nicht mehr gezeichnet), unter dem Modell eine Bodenplatte
 /// aus Glas wie bei einem «Volume», die sanft leuchtet, wenn eine Hand nahe ist bzw. einen Griff hält.
 /// V1f (Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)»): im Sitzungsraum ist Passthrough immer ein (ohne
-/// Passthrough – Simulator – der helle Ersatzhintergrund); der virtuelle Raum, Tisch, Boden und die Tischkante werden nie gezeichnet, nur das Modell mit Bodenplatte. «Auf echten
+/// Passthrough – Simulator – der helle Ersatzhintergrund); der virtuelle Raum, Tisch, Boden und die Tischkante werden nie gezeichnet, nur das Modell (V1g auch ohne Bodenplatte). «Auf echten
 /// Tisch» ist der Normalfall und beim Betreten ein (einmal auf die Platte tippen); sonst steht das Modell auf der angenommenen Höhe «sitzung.tisch_hoehe_m». Die Variante
 /// «umgebung» gilt hier nicht mehr. Mit der Pistolengeste (Variante «ausloeser») fasst die Faust die zwei Punkte.
+/// V1g: der rote Punkt kippt das Modell auch (Hlks.Xr.Sitzung.Kippen, ZweiPunkte); die Bodenplatte entfällt (höchstens ein dezenter Umriss, «sitzung.umriss»).
 /// </summary>
 sealed class Sitzungsraum
 {
@@ -37,6 +38,10 @@ sealed class Sitzungsraum
     readonly Passthrough passthrough;
     readonly GlasZeichner glas;
     double leuchten;
+    /// <summary>V1g, «sitzung.umriss»: dezenter Umriss der Grundfläche beim Annähern an einen Punkt bzw. beim Greifen (Vorgabe aus).</summary>
+    public bool UmrissAn { get; set; }
+    /// <summary>V1g: so oft wurde die Neigung mit dem Doppeltipp zurückgesetzt (Protokoll).</summary>
+    public int NeigungZurueck { get; private set; }
     /// <summary>
     /// V1a: helle Farben am Tisch (Bodenplatte, Punkte, Text). V1f: immer hell – ohne Passthrough der helle Ersatzhintergrund (die Variante «umgebung» gilt am Tisch nicht mehr).
     /// </summary>
@@ -422,8 +427,11 @@ sealed class Sitzungsraum
         if (!punkteZ.Gehalten)
             foreach (var (h, vor) in new[] { (links, vorL), (rechts, vorR) })
                 if (h is { Pinch: true, Frei: true } && !vor && Naechster(h.Punkt) > XrSitzungLogik.GriffFangM) PinchOhneGriff++;
-        var ereignis = ZweiPunkte.Schritt(punkteZ, links, rechts, p, punkteE, zoom);
-        if (ereignis == ZweiPunkteEreignis.Gefasst) Gefasst++;
+        // V1g: Kippen am Punkt «Drehen» (Achse quer zur Richtung Kopf → Zentrum), Anheben über der Grundfläche, Doppeltipp setzt die Neigung zurück
+        var kopfLokal = rl.AusRef(Xv(kopf.position));
+        var ereignis = ZweiPunkte.Schritt(punkteZ, links, rechts, p, punkteE, zoom, kopfLokal, Ansicht.Bezug, Ansicht.Sichtbar, zeit);
+        if (ereignis is ZweiPunkteEreignis.Gefasst or ZweiPunkteEreignis.NeigungZurueck) Gefasst++;
+        if (ereignis == ZweiPunkteEreignis.NeigungZurueck) { NeigungZurueck++; rueck.Fang((Vec3)(Vector3)rl.ZuRef(p.Zentrum)); }
         // die Punkte im Bild: der gehaltene an der Hand, die übrigen an ihrem Platz nach der neuen Lage
         var neu = ZweiPunkte.Punkte(Lage, Ansicht.Bezug, Ansicht.Sichtbar);
         var halt = punkteZ.Hand == "links" ? links : punkteZ.Hand == "rechts" ? rechts : null;
@@ -434,7 +442,7 @@ sealed class Sitzungsraum
         griffJetzt = punkteZ.Punkt == TischPunkt.Drehen ? punktD : punktV;
         griffNah = nahV || nahD;
         hover[0] = griffNah;
-        if (ereignis is ZweiPunkteEreignis.Gefasst or ZweiPunkteEreignis.Losgelassen) rueck.Griff((Vec3)(Vector3)rl.ZuRef(halt?.Punkt ?? griffJetzt), ereignis == ZweiPunkteEreignis.Gefasst);
+        if (ereignis is ZweiPunkteEreignis.Gefasst or ZweiPunkteEreignis.NeigungZurueck or ZweiPunkteEreignis.Losgelassen) rueck.Griff((Vec3)(Vector3)rl.ZuRef(halt?.Punkt ?? griffJetzt), ereignis != ZweiPunkteEreignis.Losgelassen);
         var blick = BlickGieren(kopf);
         foreach (var (handed, i, gh, wz, seite) in new[] { (Handed.Left, 0, links, wischL, "links"), (Handed.Right, 1, rechts, wischR, "rechts") })
         {
@@ -502,7 +510,7 @@ sealed class Sitzungsraum
         if (!Aktiv || Ansicht is null) return;
         var rl = RaumLage;
         // V1f (Christian 24.10.2026: «den tisch nie zeigen(nur das modell)»): kein virtueller Raum, kein Tisch, kein Boden, keine Tischkante – nur das Modell mit seiner
-        // Bodenplatte, mit Passthrough im echten Raum (ohne Passthrough vor dem hellen Ersatzhintergrund). Wartet «Auf echten Tisch» aufs Antippen, steht das Modell schon
+        // Bodenplatte (V1g auch die nicht mehr), mit Passthrough im echten Raum (ohne Passthrough vor dem hellen Ersatzhintergrund). Wartet «Auf echten Tisch» aufs Antippen, steht das Modell schon
         // auf der angenommenen Höhe, und die Fingerspitzen zeigen, wo man tippt.
         if (Echt.WartetAufTisch)
             foreach (var handed in new[] { Handed.Left, Handed.Right })
@@ -512,7 +520,7 @@ sealed class Sitzungsraum
             }
         var welt = ModellMatrix;
         var schnitt = WirksamerSchnitt;   // P5b: mit dem Schnitt der flachen Hand
-        Bodenplatte(welt, zeit);
+        Umriss(welt);   // V1g: keine Bodenplatte; höchstens ein dezenter Umriss beim Greifen («sitzung.umriss»)
         d?.ZeichnenSitzung(welt, Ansicht, Unterlage, schnitt, TischStufeAn ? Lage.Massstab : 0, Tisch);   // V1d: vereinfachte Unterlage nach Massstab und Budget
         ebenen?.Zeichnen(welt, Lage.Massstab, Ansicht.Geschosse, schnitt, zeit);
         // P5b: Rahmen der Schnittfläche der flachen Hand (heller, solange er der Hand folgt)
@@ -575,33 +583,17 @@ sealed class Sitzungsraum
     }
 
     /// <summary>
-    /// V1a: das Modell am Tisch wie ein «Volume» von visionOS (HIG «Windows», visionOS volumes: «baseplate … gentle glow around its border when people look at it»): eine
-    /// Bodenplatte unter dem Grundriss des Modells, deren Rand sanft leuchtet, wenn eine Hand nahe kommt (15 cm) bzw. einen Griff hält – statt des Blicks der Vision Pro.
+    /// V1g (Christian 24.10.2026: «die weisse fläche unter dem modell stört immer noch»): keine Bodenplatte mehr (bis V1f eine Glasfläche wie ein «Volume» von visionOS).
+    /// Nur mit «sitzung.umriss» (Vorgabe aus) deutet beim Annähern an einen Punkt bzw. beim Greifen ein dünner, blasser Umriss die Grundfläche an – er kippt mit dem Modell.
     /// </summary>
-    void Bodenplatte(Matrix4x4 welt, double zeit)
+    void Umriss(Matrix4x4 welt)
     {
-        var box = ModellBox;
-        if (box.IstLeer) return;
+        var nah = griffNah || Griffe > 0;
+        leuchten = GlasStil.Folgen(leuchten, UmrissAn && nah ? 1 : 0, Time.Step, 0.12);
+        if (leuchten < 0.02 || ModellBox is not { IstLeer: false } box) return;
         var y = box.Min.Y;
         var ecken = new[] { new XVec3(box.Min.X, y, box.Min.Z), new XVec3(box.Max.X, y, box.Min.Z), new XVec3(box.Max.X, y, box.Max.Z), new XVec3(box.Min.X, y, box.Max.Z) }
-            .Select(p => (XVec3)Vector3.Transform((Vector3)p, welt)).ToArray();
-        var mitte = XVec3.Mitte(ecken[0], ecken[2]) + new XVec3(0, 0.002, 0);
-        var b = ecken[0].Abstand(ecken[1]);
-        var t = ecken[1].Abstand(ecken[2]);
-        var rechts = (ecken[1] - ecken[0]).Einheit();
-        var vorn = (ecken[2] - ecken[1]).Einheit();
-        var nah = Griffe > 0;
-        foreach (var handed in new[] { Handed.Left, Handed.Right })
-        {
-            var h = Input.Hand(handed);
-            if (!h.IsTracked) continue;
-            var w = Xv(h[FingerId.Index, JointId.Tip].position) - mitte;
-            if (Math.Abs(w.Skalar(rechts)) < b / 2 + 0.15 && Math.Abs(w.Skalar(vorn)) < t / 2 + 0.15 && w.Y > -0.05 && w.Y < 0.4) nah = true;
-        }
-        leuchten = GlasStil.Folgen(leuchten, nah ? 1 : 0, Time.Step, 0.12);
-        // Platte: Normale nach oben, «Oben» = vorn (die Platte liegt waagrecht)
-        var p = new TabletPose(mitte, new XVec3(0, 1, 0), rechts, vorn, b + 0.02, t + 0.02);
-        glas.Flaeche(p, 0.012, new Hlks.Xr.Bedienung.GlasFarbe(0.85, 0.87, 0.9, hellAn ? 0.25 : 0.12), mitSchatten: false);
-        if (leuchten > 0.02) glas.Leuchten(p, 0.012, new Hlks.Xr.Bedienung.GlasFarbe(0.85, 0.95, 1, 0.55 * leuchten));
-    }
-}
+            .Select(p => (Vec3)Vector3.Transform((Vector3)p, welt)).ToArray();
+        var farbe = new Color32(255, 255, 255, (byte)Math.Clamp(90 * leuchten, 0, 255));
+        for (int i = 0; i < 4; i++) Lines.Add(ecken[i], ecken[(i + 1) % 4], farbe, 0.0012f);
+    }}
