@@ -378,3 +378,12 @@ beachten, «oder im normbereich der jeweiligen hand». Bedienung in `src/Hlks.We
 - **Annahmen V1h:** Rand 25° (Auftrag), Körpermitte 5 cm (Auftrag), unter dem Blick 45° (Gegenregel; die Ruhelage der Testhand rund 51°, die Wische rund 30°),
   Körperrichtung mit Zeitkonstante 1 s.
 - **Tests:** `V1hTests`; angepasst `V1eTests`, `V1fTests` (mit Kopf und Körperrichtung wie in der App), `V1aSymboleTests`, `DesktopGesteTests`.
+
+## Hebegeste schliesst die offene Tafel (V1i)
+
+Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schliessen und die Symbole frontal stehen.» Bedienung in
+`src/Hlks.Web/OBERFLAECHE.md`, Abschnitt «Modul XR, Quest App V1i».
+
+- **Geändert für V1i:** `Bedienung/AppSymbole.cs` (`HebenBeiTafel`, `BeimHeben`: mit «ausblenden» gleiten Glas-App und PC-Bildschirm hinaus, mit «stehen» blendet
+  die Glas-App aus; `WeichtAus`: das Feld weicht nur mit «stehen» neben eine offene Tafel aus).
+- **Tests:** `V1iTests`.

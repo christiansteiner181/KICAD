@@ -3390,3 +3390,21 @@ Grenzen: Katalog 86 von 96 Stellschrauben, mit 12 Varianten und der Aufgabe 99 v
 - **Nur mit der Brille prüfbar:** ob die neuen Vorgaben mit echten Händen leicht genug und ohne Fehlauslösungen sind, ob 25° und 5 cm für die Striche nach aussen
   passen, ob «unter dem Blick» (45°) keinen gewollten Wisch verschluckt (z. B. tief vor der untersten Symbolreihe bei waagrechtem Kopf).
 - **Anleitung:** `zb-quest-v1h-wischen` in `berichte/anleitung/inventar.json`.
+
+## Modul XR, Quest App V1i: Hebegeste schliesst die offene Tafel (Christian 25.10.2026)
+
+Christian: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schliessen und die Symbole frontal stehen.» Regel in `src/Hlks.Xr/Bedienung/AppSymbole.cs`
+(`BeimHeben`, `WeichtAus`), die App in `src/Hlks.Quest` (`QuestApp.Apps.cs`, Prüflauf `QuestApp.Desktop.cs`).
+
+- **Mit `labor.variante.symbolwahl` = `ausblenden` (Vorgabe):** ist beim Anheben eine Tafel offen, **gleitet sie hinaus wie beim Wegwischen** – die Glas-App nach
+  links, der PC-Bildschirm zur Seite (danach ruht das Hineinziehen kurz wie nach dem Wegwischen). Die Symbole steigen **frontal** auf wie ohne Tafel. Die Karte einer
+  Prüfaufgabe bleibt stehen. Nach dem Schliessen gilt wie seit V1g `symbole.sperre_schliessen_s` (0.5 s keine Berührung).
+- **Mit `stehen` (Vergleich):** wie bis V1h – die Glas-App blendet aus, vor dem PC-Bildschirm weicht das Feld seitlich aus (`labor.variante.feld_bei_app`).
+
+### Prüfen
+- **Tests:** Xr `V1iTests` (beide Varianten: Glas-App, PC-Bildschirm, beide, keine Tafel; Ausweichen nur mit «stehen»; über die Stellschraube der Variante).
+- **Am PC:** `werkzeuge\quest_pruefen.ps1`, Lauf 4: mit «ausblenden» zum Schluss die Hebegeste bei offener Glas-App und – nach dem Symbol «Desktop» – bei offenem
+  Bildschirm: «V1i Hebegeste schliesst die Glas-App ja und den Bildschirm ja, Symbole frontal», eingeblendet 4× (2 Gesten, 2 Symbol); «Feld seitlich daneben» prüft
+  er nur noch mit «stehen». Prüfbild `desktop_11_heben_schliesst.jpg` (nur lokal).
+- **Nur mit der Brille prüfbar:** ob das Schliessen beim Anheben im Gebrauch stimmt (z. B. eine Tafel, die man behalten wollte).
+- **Anleitung:** `zb-quest-v1i-heben` in `berichte/anleitung/inventar.json`.
