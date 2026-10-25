@@ -12204,6 +12204,40 @@
             "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1h»)"
           ],
           "hinweis": "Christian 25.10.2026: «Ja, das Wegwischen geht jetzt gut, übernimm die Werte als Vorgabe.», «rechts nach links gesten mit der linken hand am linken bildrand nicht beachten. ebenso rechte hand links nach rechts gesten am rechten rand nicht beachten.», «oder im normbereich der jeweiligen hand.» Annahmen V1h: Rand 25°, Körpermitte 5 cm, unter dem Blick 45° (Gegenregel gegen Fehlauslösungen). Mit der linken Hand lässt sich das Symbolfeld nicht aus seiner linken Spalte nach links wegwischen."
+        },
+        {
+          "id": "zb-quest-v1i-heben",
+          "titel": "Quest App: die Hebegeste schliesst eine offene Tafel, die Symbole stehen frontal (Modul XR, Quest App V1i)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "In der Brille mit beiden Händen (Hebegeste), während eine Glas-App oder der PC-Bildschirm offen ist. Im XR-Labor: Variante «symbolwahl»."
+          },
+          "schritte": [
+            "Eine App öffnen (z. B. «Etagen») bzw. den PC-Bildschirm hereinziehen.",
+            "Beide Handflächen nach oben – kurz anheben: die offene Tafel gleitet hinaus wie beim Wegwischen, die App-Symbole steigen frontal auf.",
+            "Mit der Variante «stehen» (Vergleich) blendet die Glas-App aus und vor dem PC-Bildschirm weicht das Feld seitlich aus."
+          ],
+          "erwartung": "Nach dem Anheben steht keine Tafel mehr vor den Symbolen; die Symbole stehen frontal in Griffweite. Die Karte einer Prüfaufgabe bleibt.",
+          "pruefpunkte": [
+            "Glas-App offen, anheben: die App gleitet hinaus, die Symbole stehen frontal.",
+            "PC-Bildschirm offen, anheben: der Bildschirm gleitet hinaus, die Symbole stehen frontal.",
+            "werkzeuge\\quest_pruefen.ps1 meldet in Lauf 4 «V1i Hebegeste schliesst die Glas-App ja und den Bildschirm ja, Symbole frontal»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Prüfbild der PC-Fassung (quest_pruefen.ps1 -Pruefbilder, Lauf 4): desktop_11_heben_schliesst.jpg",
+            "zustand": "der PC-Bildschirm gleitet nach der Hebegeste hinaus, die Symbole stehen frontal"
+          },
+          "quelle": [
+            "src/Hlks.Xr/Bedienung/AppSymbole.cs (BeimHeben, WeichtAus)",
+            "src/Hlks.Quest/QuestApp.Apps.cs, QuestApp.Desktop.cs",
+            "tests/Hlks.Xr.Tests/V1iTests.cs",
+            "src/Hlks.Web/OBERFLAECHE.md (Abschnitt «Modul XR, Quest App V1i»)"
+          ],
+          "hinweis": "Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schliessen und die Symbole frontal stehen.» Gilt mit der Vorgabe «ausblenden»; «stehen» bleibt als Vergleich (seitliches Ausweichen wie bis V1h)."
         }
       ]
     }

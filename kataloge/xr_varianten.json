@@ -65,7 +65,7 @@
     },
     {
       "name": "symbolwahl", "titel": "App-Symbole nach der Wahl",
-      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: ausblenden (Vorgabe seit V1g; die App öffnet, sobald die Symbole weg sind, und schliesst man die Tafel, kommen sie nicht zurück – neu holt sie die Hebegeste) oder zum Vergleich stehen bleiben (die App öffnet frontal etwas näher, das Symbolfeld weicht dahinter zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) – nur dann weicht das Feld nach «feld_bei_app» aus. Nach jedem Schliessen einer Tafel zählt «symbole.sperre_schliessen_s» lang keine Berührung.",
+      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: ausblenden (Vorgabe seit V1g; die App öffnet, sobald die Symbole weg sind; schliesst man die Tafel, kommen sie nicht zurück; die Hebegeste holt sie und schliesst dabei eine offene Tafel – Glas-App, PC-Bildschirm –, die Symbole stehen frontal, V1i) oder zum Vergleich stehen bleiben (die App öffnet frontal näher, das Feld weicht zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) – nur dann weicht das Feld nach «feld_bei_app» aus. Nach dem Schliessen einer Tafel zählt «symbole.sperre_schliessen_s» lang keine Berührung.",
       "optionen": [
         { "id": "ausblenden", "titel": "Ausblenden" },
         { "id": "stehen", "titel": "Stehen bleiben" }

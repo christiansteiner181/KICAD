@@ -71,6 +71,10 @@ sealed partial class QuestApp
     int dPhase = -1, dOhne, dMit, dGezaehlt, dEnde, dAufrufe, dDurchgang, dSchritt;
     double dTs, dT0, dOhneSumme, dMitSumme, dMitMax, dRechnen, dHandX = -0.10, dHalb, dHalbWeg, dHalb2, dStart = -1, dErstesBild = -1, dWegHalb = -1;
     bool dHandDa, dBild5, dPausiert, dFeldSeitlich, dHinweisFrei, dAppWeg, dDesktopWeg, dSymbolDa;
+    /// <summary>V1i: mit «ausblenden» schliesst die Hebegeste die offene Glas-App bzw. den PC-Bildschirm, die Symbole stehen frontal (Phase 9).</summary>
+    bool dHebenApp, dHebenDesktop;
+    /// <summary>V1i: Variante «symbolwahl» = «stehen» (das Feld weicht neben den Bildschirm aus; sonst schliesst die Hebegeste ihn).</summary>
+    bool DStehen => bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
     /// <summary>V1e: im zweiten Durchgang kommt und geht der Bildschirm mit nur einem Anstoss.</summary>
     bool dBildAnstoss, dBildAnstossWeg, dAnstossHinein, dAnstossWeg;
     int dSymbole;
@@ -230,9 +234,10 @@ sealed partial class QuestApp
                     var n = new Vec3((float)gl.Normale.X, (float)gl.Normale.Y, (float)gl.Normale.Z);
                     DesktopFoto("desktop_8_leiste_nah.jpg", p + n * 0.35f + new Vec3(0, 0.08f, 0), p, 45);
                 }
-                // die App-Symbole holen (gedachte Hebegeste): das Feld weicht seitlich neben den Bildschirm aus; nach der Zeit, nicht nach Bildern (schnelle Bilder
-                // am PC: das Feld braucht etwa 0.5 s, bis es ganz ausgewichen ist)
-                if (dMit == 66) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; dSchritt = 1; dTs = t; }
+                // die App-Symbole holen (gedachte Hebegeste): mit «stehen» weicht das Feld seitlich neben den Bildschirm aus; nach der Zeit, nicht nach Bildern (schnelle
+                // Bilder am PC: das Feld braucht etwa 0.5 s, bis es ganz ausgewichen ist). V1i: mit «ausblenden» schlösse die Hebegeste den Bildschirm – das prüft Phase 9
+                if (dMit == 66 && DStehen) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; dSchritt = 1; dTs = t; }
+                else if (dMit == 66) { dSchritt = 3; dTs = t; }
                 if (dMit == 68) pruefHebe = null;
                 if (dSchritt == 1 && t - dTs >= 1.0)
                 {
@@ -305,27 +310,63 @@ sealed partial class QuestApp
                 if (dSchritt == 3 && t - dT0 > 0.6)
                 {
                     dDesktopWeg = apps.Sichtbar && !d.Ansicht.Sichtbar;
-                    apps.Ausblenden(t);
-                    dPhase = 7;
+                    if (DStehen) { apps.Ausblenden(t); dPhase = 7; }
+                    else { dPhase = 9; dSchritt = 0; dT0 = t; }   // V1i: die Glas-App ist offen – die Hebegeste schliesst sie
                 }
+                return;
+            case 9:   // V1i: Hebegeste bei offener Tafel («ausblenden»): erst bei offener Glas-App, dann beim PC-Bildschirm – die Tafel gleitet hinaus, die Symbole stehen frontal
+                if (dSchritt == 0) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; dSchritt = 1; dTs = t; return; }
+                if (dSchritt == 1) { pruefHebe = null; dSchritt = 2; return; }
+                if (dSchritt == 2 && t - dTs >= 1.0)
+                {
+                    dSymbole = symbole.Flaechen.Count;
+                    dSymbolDa = symbole.Plaetze.Any(p => p.Id == DesktopBildschirm.FarbId);
+                    dHebenApp = !apps.Sichtbar && symbole.Sichtbar && symbole.HintenAnteil < 0.1 && dSymbole >= symbole.Plaetze.Count;
+                    symbole.Ausblenden(t);
+                    DesktopOeffnen();   // das Symbol «Desktop» holt den Bildschirm wieder
+                    dSchritt = 3;
+                    dTs = t;
+                    return;
+                }
+                if (dSchritt == 3)
+                {
+                    if (d.Ansicht.Phase == DesktopPhase.Da && t - dTs > 0.5) { pruefHebe = 1; pruefHebeEreignis = HebeArt.Heben; dSchritt = 4; dTs = t; }
+                    else if (t - dTs > 8) { dFehler = string.Create(CultureInfo.InvariantCulture, $"der Bildschirm kam für die Hebegeste nicht ({d.Ansicht.Phase})"); dPhase = 7; }
+                    return;
+                }
+                if (dSchritt == 4) { pruefHebe = null; dSchritt = 5; return; }
+                if (dSchritt == 5 && t - dTs >= 1.0)
+                {
+                    dHebenDesktop = d.Ansicht.Phase is DesktopPhase.Raus or DesktopPhase.Aus && symbole.Sichtbar && symbole.HintenAnteil < 0.1
+                        && symbole.Flaechen.Count >= symbole.Plaetze.Count;
+                    DesktopFoto("desktop_11_heben_schliesst.jpg", kopf.position, kopf.position + kopf.Forward, 95);
+                    symbole.Ausblenden(t);
+                    dSchritt = 6;
+                    dTs = t;
+                    return;
+                }
+                if (dSchritt == 6 && (d.Ansicht.Phase == DesktopPhase.Aus || t - dTs > 3)) dPhase = 7;
                 return;
             case 7:   // Ergebnis
                 var v = d.Verbindung;
                 var pausiert = dPausiert && v?.Pausiert == true;
                 var starr = rig == dRig;
                 var r = d.Kennzahlen();
-                var ok = dFehler is null && pausiert && starr && d.Eingeblendet == 3 && dHalb is > 0.25 and < 0.8 && dAnstossHinein && dAnstossWeg
-                    && dWegHalb is > 0.6 and < 0.95 && dFeldSeitlich && dHinweisFrei && dAppWeg && dDesktopWeg && dSymbolDa;
+                var stehen = DStehen;
+                var feld = stehen ? $"Feld seitlich daneben {(dFeldSeitlich ? "ja" : "nein")} ({dSymbole} Symbole), "
+                    : $"V1i Hebegeste schliesst die Glas-App {(dHebenApp ? "ja" : "nein")} und den Bildschirm {(dHebenDesktop ? "ja" : "nein")}, Symbole frontal ({dSymbole} Symbole), ";
+                var ok = dFehler is null && pausiert && starr && d.Eingeblendet == (stehen ? 3 : 4) && dHalb is > 0.25 and < 0.8 && dAnstossHinein && dAnstossWeg
+                    && dWegHalb is > 0.6 and < 0.95 && (stehen ? dFeldSeitlich : dHebenApp && dHebenDesktop) && dHinweisFrei && dAppWeg && dDesktopWeg && dSymbolDa;
                 var z = string.Create(CultureInfo.InvariantCulture,
                     $"Desktop: {(ok ? "ok" : "FEHLER")}{(dFehler is null ? "" : " " + dFehler)}; Geste halb Anteil {dHalb:0.00} (Weg {dHalbWeg:0.000} m), " +
                     $"Anstoss 8 cm herein {(dAnstossHinein ? "ja" : "nein")} (Anteil beim Schub {dHalb2:0.00}), Anstoss hinaus {(dAnstossWeg ? "ja" : "nein")}, " +
-                    $"Wegwischen halb Anteil {dWegHalb:0.00}, eingeblendet {d.Eingeblendet}× (2 Gesten, 1 Symbol), " +
+                    $"Wegwischen halb Anteil {dWegHalb:0.00}, eingeblendet {d.Eingeblendet}× (2 Gesten, {(stehen ? 1 : 2)} Symbol), " +
                     $"erstes Bild {dErstesBild:0.00} s nach Beginn der Geste, {v?.Puffer?.Raster.Breite}×{v?.Puffer?.Raster.Hoehe} in {v?.Puffer?.Raster.Felder} Feldern; " +
                     $"Bildzeit ohne Bildschirm {dOhneSumme / Math.Max(1, dOhne) * 1000:0.0} ms, mit Bildschirm {dMitSumme / Math.Max(1, dGezaehlt) * 1000:0.0} ms (höchstens {dMitMax * 1000:0.0}), " +
                     $"Rechenzeit {dRechnen / Math.Max(1, dGezaehlt):0.00} ms ({dGezaehlt} Bilder); hochladen {d.HochladenMsMittel:0.00} ms je Bild mit Upload (höchstens {d.HochladenMsMax:0.0}), " +
                     $"dekodieren {v?.DekodierMsMittel ?? 0:0.0} ms (höchstens {v?.DekodierMsMax ?? 0:0.0}, das erste Vollbild), {v?.Bilder ?? 0} Bilder, {(v?.Bytes ?? 0) / 1024.0:0} KB; " +
                     $"Zeichenaufrufe Bildschirm höchstens {dAufrufe}, Szene {darstellung?.GezeichnetAufrufe ?? 0}; Symbol «Desktop» im Feld {(dSymbolDa ? "ja" : "nein")}, " +
-                    $"Feld seitlich daneben {(dFeldSeitlich ? "ja" : "nein")} ({dSymbole} Symbole), Hinweis nicht davor {(dHinweisFrei ? "ja" : "nein")}, " +
+                    $"{feld}Hinweis nicht davor {(dHinweisFrei ? "ja" : "nein")}, " +
                     $"wie eine App: Glas-App geht {(dAppWeg ? "ja" : "nein")}, Bildschirm geht {(dDesktopWeg ? "ja" : "nein")}; pausiert {(pausiert ? "ja" : "nein")}, VR starr {(starr ? "ja" : "nein")}");
                 Console.WriteLine("P4 Laden: " + ladeText);
                 Ende(ok, z);

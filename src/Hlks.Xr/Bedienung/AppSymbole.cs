@@ -9,7 +9,8 @@
 //     (Tischplatte am Sitzungstisch, AppSymbole.Untergrenze mit «symbole.tisch_abstand_m»), rückt die unterste Reihe darüber und das Feld wird niedriger. Im Raum
 //     fest, zum Kopf gewandt.
 //   - Ist eine App offen (Variante «feld_bei_app»): das Feld weicht seitlich neben Fenster und Ornamente aus (Vorgabe; Christian 24.10.2026: «Das Symbolfeld weicht bei
-//     offener App seitlich neben das Fenster aus.»; Seitlich) bzw. zum Vergleich dahinter zurück (Zurueck/Gedaempft).
+//     offener App seitlich neben das Fenster aus.»; Seitlich) bzw. zum Vergleich dahinter zurück (Zurueck/Gedaempft). V1i: das nur noch mit «symbolwahl» = «stehen»;
+//     mit «ausblenden» (Vorgabe seit V1g) schliesst die Hebegeste eine offene Tafel und das Feld steht frontal (BeimHeben, WeichtAus).
 //     Variante «symbole» = «verteilt» (Vorgabe) | «bogen» (eine Reihe im Bogen, zum Vergleich im Labor).
 //   - Zeiger mit Tooltip (Zeiger): ein gestreckter Zeigefinger nahe an einem Symbol bzw. Knopf zeigt einen Punkt darauf und eine feine Linie von der Fingerspitze;
 //     nach einer Verweilzeit der Name als Tooltip. Apple HIG «Buttons» (visionOS): «the system displays a tooltip after people hover over a button for a moment»
@@ -160,6 +161,24 @@ public static class AppSymbole
         for (int i = 0; i < jetzt.Count; i++) if (vorher[i].Abstand(jetzt[i]) > weg) return true;
         return false;
     }
+
+    // ---------------------------------------------------------------------------------------------------- Heben bei offener Tafel (V1i)
+    // Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schliessen und die Symbole frontal stehen.» Mit «symbolwahl» = «ausblenden»
+    // (Vorgabe) gleitet eine offene Glas-App bzw. der PC-Bildschirm bei der Hebegeste hinaus wie beim Wegwischen, die Symbole steigen frontal auf; die Karte einer
+    // Prüfaufgabe bleibt. Mit «stehen» wie bis V1h: die Glas-App blendet aus, vor dem PC-Bildschirm weicht das Feld seitlich aus (Vergleich).
+
+    /// <summary>V1i: was die Hebegeste mit den offenen Tafeln tut – Glas-App hinausgleiten bzw. (stehen) ausblenden, PC-Bildschirm hinausgleiten.</summary>
+    public readonly record struct HebenBeiTafel(bool AppHinaus, bool AppAusblenden, bool DesktopHinaus);
+
+    /// <summary>V1i: die Hebegeste bei offener Glas-App (appOffen) bzw. offenem PC-Bildschirm (desktopOffen); siehe oben.</summary>
+    public static HebenBeiTafel BeimHeben(SymbolEinstellungen e, bool appOffen, bool desktopOffen)
+    {
+        var schliessen = e.NachWahl == Varianten.SymbolwahlAusblenden;
+        return new(appOffen && schliessen, appOffen && !schliessen, desktopOffen && schliessen);
+    }
+
+    /// <summary>V1i: weicht das Feld neben eine offene Tafel aus? Nur mit «stehen» (Vergleich); mit «ausblenden» steht es frontal (die Hebegeste schliesst die Tafel).</summary>
+    public static bool WeichtAus(SymbolEinstellungen e, bool tafelOffen) => tafelOffen && e.NachWahl == Varianten.SymbolwahlStehen;
 
     // ---------------------------------------------------------------------------------------------------- Nach der Wahl (Variante «symbolwahl» = «stehen»)
     // Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen.» Auslegung Hauptlauf (Christian kann berichtigen): die gewählte App öffnet frontal etwas

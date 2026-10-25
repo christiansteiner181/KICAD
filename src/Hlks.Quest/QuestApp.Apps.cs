@@ -376,7 +376,7 @@ sealed partial class QuestApp
         // Beginn der Geste frontal zurück (statt unter dem gleitenden Fenster zu stehen).
         var appOffen = apps.Sichtbar && !apps.Weggewischt && !(wischStand.Laeuft && wischZielId == "app");
         var desktopOffen = desktop is { Ansicht: { Sichtbar: true, Phase: not DesktopPhase.Raus } } && !(wischStand.Laeuft && wischZielId == DesktopAnsicht.ZielId);
-        symbole.Hinten = (appOffen || desktopOffen) && bedien.Symbole.NachWahl == Varianten.SymbolwahlStehen;
+        symbole.Hinten = AppSymbole.WeichtAus(bedien.Symbole, appOffen || desktopOffen);   // V1i: nur mit «stehen»; mit «ausblenden» schliesst die Hebegeste die Tafel
         // V1g (Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen»): schliesst eine Tafel (Wegwischen, «×», PC-Bildschirm hinaus), zählt eine
         // Weile keine Berührung eines Symbols («symbole.sperre_schliessen_s»); mit «ausblenden» kommen die Symbole ohnehin nicht zurück – neu holt sie die Hebegeste
         var tafelOffen = appOffen || desktopOffen;
@@ -413,12 +413,19 @@ sealed partial class QuestApp
             AppEreignis(e);
     }
 
-    /// <summary>Hebegeste: holt die Symbole (ein offenes Fenster macht Platz), mit Ton.</summary>
+    /// <summary>
+    /// Hebegeste: holt die Symbole, mit Ton. V1i (Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schliessen und die Symbole frontal
+    /// stehen.»): mit «ausblenden» gleiten eine offene Glas-App und der PC-Bildschirm hinaus wie beim Wegwischen (AppSymbole.BeimHeben), die Karte einer Prüfaufgabe
+    /// bleibt; mit «stehen» blendet die Glas-App aus und vor dem Bildschirm weicht das Feld aus (wie bis V1h).
+    /// </summary>
     void HebeEreignis(HebeArt art, Pose kopf)
     {
         if (art != HebeArt.Heben) return;
         hebenGezaehlt++;
-        if (apps.Sichtbar) apps.Ausblenden(Time.Total);
+        var tafel = AppSymbole.BeimHeben(bedien.Symbole, apps.Sichtbar && !apps.Weggewischt, desktop is { Ansicht: { Sichtbar: true, Phase: not DesktopPhase.Raus } });
+        if (tafel.AppHinaus) apps.Wegwischen(Time.Total);
+        else if (tafel.AppAusblenden) apps.Ausblenden(Time.Total);
+        if (tafel.DesktopHinaus) { desktop!.Wegwischen(Time.Total); desktop.NachWegwischen(Time.Total); }
         symbole.Zeigen(kopf, Time.Total);
         wischGeistGezeigt = false;
         rueck.Fang(kopf.position + kopf.Forward * 0.4f);
