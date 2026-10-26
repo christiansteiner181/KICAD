@@ -13,6 +13,10 @@
 // werden blasser. Klick auf eine Fläche zeigt Raum, Nachbar, Bauteil, Fläche und U im Infofeld; Legende unten links.
 // 3D-Schnittbereich (N13): Clipping, Griffe und Bedienung stehen in schnittbereich3d.js (hier nur die Anschlüsse); die Ansichtseigenschaften
 // schnittbereich und startansicht liegen im Modell (Kern, element_aendern), die Startansicht nicht mehr je Rechner im Browser.
+// Gesten (Modul G): navigieren({ drehen, rollen, verschieben, zoom }) dreht und rollt um die Mitte der Auswahl bzw. des Modells (navigieren-logik.js). Die
+// OrbitControls haben eine feste Hochrichtung (+y); die freie Lage entsteht als ROLLE um die Blickachse, die nach jeder Aktualisierung der Steuerung angewendet wird
+// (kamera.rotateZ). Maus (dreht weiter um die Hochachse des Modells, die Rolle bleibt), Treffer, Schnittbereich und Würfel rechnen mit der echten Kamera.
+// Navigationswürfel, Startansicht (Haus), «alles zeigen», Begehen, VR und Blickpunkte richten die Ansicht wieder auf (Rolle 0).
 
 import * as THREE from 'three';
 import { zustand, element, auswaehlen, derKlasse, merken } from '../zustand.js';
@@ -34,6 +38,7 @@ import { erzeugeBrillen } from './xr-teilnehmer.js';
 import { standortAusKamera } from './vr-logik.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
+import { navigieren3d, rolleZwischen } from './navigieren-logik.js';
 
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 
@@ -114,6 +119,17 @@ function erstellen(behaelter, ansichtElement) {
   steuerung.mouseButtons = { LEFT: THREE.MOUSE[ORBIT_TASTEN.LEFT], MIDDLE: THREE.MOUSE[ORBIT_TASTEN.MIDDLE], RIGHT: THREE.MOUSE[ORBIT_TASTEN.RIGHT] };
   steuerung.zoomToCursor = true;
   steuerung.screenSpacePanning = true;
+  // Gesten (Modul G): Rolle um die Blickachse über der aufrechten Lage der Steuerung (Bogenmass; Kamera = aufrecht · Drehung um die lokale z-Achse). Die
+  // Steuerung ruft update() auch selbst (scope.update) – darum wird die Methode ersetzt, nicht nur hier aufgerufen.
+  let rolle = 0;
+  let rolleAus = () => false;   // beim Begehen und in VR gibt es keine Rolle (wird unten gesetzt, sobald Begehen und VR da sind)
+  const orbitUpdate = steuerung.update;
+  steuerung.update = function (...a) {
+    const r = orbitUpdate.apply(this, a);
+    if (rolleAus()) rolle = 0;
+    else if (rolle !== 0) kamera.rotateZ(rolle);
+    return r;
+  };
   const strahl = new THREE.Raycaster();
 
   // ---------- Rendern bei Bedarf ----------
@@ -129,7 +145,8 @@ function erstellen(behaelter, ansichtElement) {
   function kameraMerken() {
     const f = (v) => [v.x, v.y, v.z].map((x) => Math.round(x * 1000) / 1000);
     const blick = new THREE.Vector3().copy(steuerung.target).sub(kamera.position).normalize();
-    wurzel.dataset.kamera = JSON.stringify({ ziel: f(steuerung.target), lage: f(kamera.position), blick: f(blick), fov: kamera.fov });
+    const hoch = new THREE.Vector3(0, 1, 0).applyQuaternion(kamera.quaternion);
+    wurzel.dataset.kamera = JSON.stringify({ ziel: f(steuerung.target), lage: f(kamera.position), blick: f(blick), fov: kamera.fov, hoch: f(hoch), rolle: Math.round(rolle * 1e4) / 1e4 });
   }
   function anfordern() {
     if (!geplant && !zerstoert) geplant = requestAnimationFrame(zeichnen);
@@ -201,7 +218,9 @@ function erstellen(behaelter, ansichtElement) {
     startLesen: () => startRoh(),
     startSchreiben: (wert) => startSchreiben(wert),
     menue: (x, y, eintraege) => import('../oberflaeche/dialoge.js').then(({ kontextmenue }) => kontextmenue(x, y, eintraege)),
+    rolle: { lesen: () => rolle, setzen: (w) => { rolle = Number.isFinite(w) ? w : 0; } },   // Modul G: der Würfel zeigt die Rolle und richtet auf
   });
+  rolleAus = () => begehen.aktiv || !!vr?.aktiv;
 
   // ---------- Ansichtseigenschaften im Modell: Startansicht (Rest N11) und Schnittbereich (N13) ----------
   /** Ändert Eigenschaften dieser Ansicht über den Kern (ein Paket, zurücknehmbar). false bei Ablehnung oder Fehler (mit Meldung). */
@@ -441,6 +460,7 @@ function erstellen(behaelter, ansichtElement) {
   function zoomAlles(richtung = null) {
     if (zerstoert || begehen.aktiv) return;   // beim Begehen (N15) bleibt die Kamera im Raum
     benutzt = false;
+    rolle = 0;   // Modul G: «alles zeigen» stellt die Ansicht wieder aufrecht
     const e = einpassWerte();
     const z = richtung && richtung.richtung ? richtung : startansichtZiel(startansichtLesen(startRoh()), ausrichtungGrad() * Math.PI / 180);
     kamera.position.copy(e.ziel).addScaledVector(new THREE.Vector3(z.richtung.x, z.richtung.y, z.richtung.z), e.abstand);
@@ -456,6 +476,51 @@ function erstellen(behaelter, ansichtElement) {
     zoomAlles(zielWinkel(START_VORGABE, ausrichtungGrad() * Math.PI / 180));
     benutzt = true;       // bleibt so stehen: weder das erste Laden noch eine Grössenänderung stellt die Kamera neu ein
     hatGezoomt = true;
+  }
+
+  // ---------- Gesten (Modul G): navigieren ----------
+  const DREHPUNKT_HALTEN_MS = 400;   // so lange nach der letzten Geste gilt derselbe Drehpunkt (eine Bewegung der Faust)
+  let drehpunkt = null;             // { p: Vector3, auswahl, zeit }
+  /** Richtet die Ansicht auf (Rolle 0), ohne sonst etwas zu ändern. */
+  function aufrichten() {
+    if (!rolle) return;
+    rolle = 0;
+    steuerung.update();
+    anfordern();
+  }
+  /**
+   * Vertrag Modul G: { drehen: [dx, dy], rollen, verschieben: [dx, dy], zoom } (Einheiten und Richtungen: navigieren-logik.js). Gedreht und gerollt wird um die Mitte
+   * der Auswahl bzw. des Modells; danach zerlegt in die aufrechte Lage der Steuerung und die Rolle. Beim Begehen und in VR ohne Wirkung. Ergebnis: ob sich etwas tat.
+   */
+  function navigieren(eingabe = {}) {
+    if (zerstoert || begehen.aktiv || vr?.aktiv) return false;
+    const e = eingabe ?? {};
+    const dreht = Array.isArray(e.drehen) || Number.isFinite(e.rollen);
+    kamera.updateMatrixWorld();
+    if (dreht) {
+      const jetzt = performance.now();
+      if (!drehpunkt || jetzt - drehpunkt.zeit > DREHPUNKT_HALTEN_MS || drehpunkt.auswahl !== gewaehlt) drehpunkt = { p: pivot() ?? steuerung.target.clone(), auswahl: gewaehlt };
+      drehpunkt.zeit = jetzt;
+    }
+    const vorher = { position: kamera.position.toArray(), ziel: steuerung.target.toArray(), q: kamera.quaternion.toArray() };
+    const neu = navigieren3d(vorher, e, {
+      drehpunkt: dreht ? drehpunkt.p.toArray() : undefined, fovGrad: kamera.fov, seitenverhaeltnis: kamera.aspect,
+      minAbstand: Math.max(kamera.near * 4, 0.3), maxAbstand: steuerung.maxDistance,
+    });
+    if (neu.position.every((x, i) => x === vorher.position[i]) && neu.q.every((x, i) => x === vorher.q[i])) return false;
+    wuerfel.abbrechen?.();   // eine laufende Kamerafahrt des Würfels endet
+    kamera.position.fromArray(neu.position);
+    steuerung.target.fromArray(neu.ziel);
+    // aufrechte Lage durch die Steuerung (sie begrenzt auch Abstand und Polarwinkel), dann die Rolle bis zur neuen Lage
+    rolle = 0;
+    steuerung.update();
+    rolle = rolleZwischen(kamera.quaternion.toArray(), neu.q);
+    if (Math.abs(rolle) < 1e-6) rolle = 0;
+    else kamera.rotateZ(rolle);
+    benutzt = true;
+    hatGezoomt = true;
+    anfordern();
+    return true;
   }
 
   // ---------- Darstellung «Hülle» ----------
@@ -688,6 +753,7 @@ function erstellen(behaelter, ansichtElement) {
       if (begehen.aktiv) begehenEnde();
       kamera.position.set(position[0], position[1], position[2]);
       steuerung.target.set(ziel[0], ziel[1], ziel[2]);
+      rolle = 0;   // Modul G: ein Blickpunkt steht aufrecht
       steuerung.update();
       benutzt = true;
       hatGezoomt = true;
@@ -696,13 +762,19 @@ function erstellen(behaelter, ansichtElement) {
     },
     get schnittbereich() { return schnitt; },
     /** N15: Raum begehen – standort = Antwort der Abfrage raum_begehen; augenhoeheMm übersteuert deren Augenhöhe. */
-    begehen: (standort, augenhoeheMm = null) => begehen.starten(standort, augenhoeheMm),
+    begehen: (standort, augenhoeheMm = null) => { aufrichten(); return begehen.starten(standort, augenhoeheMm); },
     beendeBegehen: () => begehen.beenden(),
     get begehenAktiv() { return begehen.aktiv; },
     /** N23: «In VR begehen» (Meta Quest über Air Link): die VR-Steuerung der Ansicht (vr3d.js: knopf, pruefen, starten, beenden, aktiv, api) */
     get vr() { return vr; },
     /** N23: VR starten, am Standort der Abfrage raum_begehen (sonst am Standort des Begehens bzw. der Kamera); nur aus einer Benutzeraktion (Klick). */
-    begehenVr: (standort = null) => vr.starten(standort),
+    begehenVr: (standort = null) => { aufrichten(); return vr.starten(standort); },
+    /** Modul G (Gesten): navigieren({ drehen, rollen, verschieben, zoom }) – Einheiten in navigieren-logik.js; 3D dreht und rollt. */
+    navigieren,
+    navigierenArt: '3d',
+    /** Modul G: Ansicht wieder aufrecht (Rolle 0); die Rolle in Bogenmass (Kontrolle). */
+    aufrichten,
+    get rolle() { return rolle; },
     /** Element, das an dieser Bildschirmstelle gewählt würde (clientX, clientY), sonst null – weggeschnittene Teile zählen nicht (Kontrolle für Browser-Tests). */
     trefferBei: (clientX, clientY) => trefferId({ clientX, clientY }),
     /** Darstellung der Materialien je Körper { id: { ebene, m: [{ deckkraft, transparent, depthWrite, geclippt }] } } (Kontrolle für Browser-Tests, N22). */

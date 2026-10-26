@@ -22,6 +22,7 @@ import * as T from './schema-text.js';
 import { kontextmenue, meldung } from '../oberflaeche/dialoge.js';
 import { ausfuehren, hinweisSetzen } from '../oberflaeche/register.js';
 import * as bearbeiten from '../oberflaeche/schema-bearbeiten.js';
+import { navigieren2d } from './navigieren-logik.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const KLICK_TOLERANZ = 4;      // px, darunter gilt eine Mausbewegung noch als Klick
@@ -551,6 +552,16 @@ function erstellen(behaelter, ansichtElement) {
     },
     auswahlGeaendert(id) { hervorheben(id); },
     zoomAlles,
+    /** Modul G (Gesten): { verschieben: [dx, dy] (Anteil der Ansicht), zoom } zur Mitte; drehen und rollen gibt es im Schema nicht (navigieren-logik.js). */
+    navigieren(eingabe = {}) {
+      const neu = navigieren2d(vb, eingabe, { minBreite: MIN_BREITE, maxBreite: MAX_BREITE });
+      if (!neu) return false;
+      benutzt = true;
+      vb = neu;
+      vbAnwenden();
+      return true;
+    },
+    navigierenArt: '2d',
     zerstoeren() {
       zerstoert = true;
       ladeNr++;
