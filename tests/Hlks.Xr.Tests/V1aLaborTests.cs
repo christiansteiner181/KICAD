@@ -71,6 +71,35 @@ public class V1aLaborTests
     }
 
     [Fact]
+    public void Paar_mit_Wandflächen_auf_beiden_Seiten_hat_Vorrang_vor_dem_Blick()
+    {
+        // Befund Prüflauf Beispielprojekt 26.10.2026: offener Grundriss – der Raum endet bei x = 4 ohne Wand (Raumgrenze), nur vorne und hinten stehen Wände.
+        // Mit Blick nach +x wählte die Regel das Paar links/rechts (Sollmass von der Kante); der Messstrahl ging durch die fehlende Wand hindurch.
+        var raum = ModellHilfen.RaumNetz("r", [new(0, 0), new(4, 0), new(4, -3), new(0, -3)], 0, 2.6);
+        var waende = ModellHilfen.Quadernetz("architektur",
+            ("wl", "wand", V(-0.2, 0, -3.2), V(0, 2.6, 0.2)), ("wv", "wand", V(0, 0, 0), V(4, 2.6, 0.2)), ("wh", "wand", V(0, 0, -3.2), V(4, 2.6, -3)));
+        var paar = WandPaare.Waehlen(V1aMessenTests.Szene(raum, waende), "g", 0, V(2, 1.6, -1.5), 0)!;
+        Nah(paar.SollMm, 3000, 0.05);   // vorne–hinten, beide mit Wand – nicht links–rechts (4000 mm mit einer Kante ohne Wand)
+        Nah(Math.Abs(paar.A.Normale.Z), 1, 1e-9);
+        // ohne jede Wand bleibt es beim Blick (wie bisher)
+        Nah(WandPaare.Waehlen(V1aMessenTests.Szene(raum), "g", 0, V(2, 1.6, -1.5), 0)!.SollMm, 4000, 0.05);
+    }
+
+    [Fact]
+    public void Kante_ohne_Wand_misst_bis_zur_nächsten_Wand_dahinter()
+    {
+        // Beispielprojekt 26.10.2026: der Raum endet bei x = 4 an einer Raumgrenze, die nächste Wand steht erst bei x = 8 (Aussenwand); vorne/hinten keine Wände.
+        // Der Messstrahl geht durch die Raumgrenze bis x = 8 – das Sollmass muss das auch tun (vorher 4000 mm von der Kante, gemessen 8000 mm).
+        var raum = ModellHilfen.RaumNetz("r", [new(0, 0), new(4, 0), new(4, -3), new(0, -3)], 0, 2.6);
+        var waende = ModellHilfen.Quadernetz("architektur", ("wl", "wand", V(-0.2, 0, -3.2), V(0, 2.6, 0.2)), ("wf", "wand", V(8, 0, -3.2), V(8.2, 2.6, 0.2)));
+        var paar = WandPaare.Waehlen(V1aMessenTests.Szene(raum, waende), "g", 0, V(2, 1.6, -1.5), 0)!;
+        Nah(paar.SollMm, 8000, 0.05);
+        var xs = new[] { paar.A.Punkt.X, paar.B.Punkt.X }.Order().ToArray();
+        Nah(xs[1], 8, 1e-6);
+        Assert.Null(WandPaare.Pruefen(paar, M(V(0, 1.2, -1.5), V(8, 1.2, -1.5))));   // die Messung des Strahls gelingt
+    }
+
+    [Fact]
     public void Kanten_werden_unabhängig_von_der_Richtung_verbunden()
     {
         var k = WandPaare.Kanten([(new Xz(0, 0), new Xz(1, 0)), (new Xz(2, 0), new Xz(1, 0)), (new Xz(2, 0), new Xz(2, 1))]);
