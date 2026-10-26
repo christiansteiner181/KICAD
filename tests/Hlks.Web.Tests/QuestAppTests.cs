@@ -755,8 +755,26 @@ public class QuestAppTests
         var w = Assert.Single(h, x => x.Stufe == "warnung");
         Assert.Contains("KICAD XR", w.Text);
         Assert.Contains(@"werkzeuge\xr_firewall.ps1", w.Text);
+        Assert.Contains(@"werkzeuge\xr_netz_einrichten.cmd", w.Text);   // Doppelklick-Skript (Christian 26.10.2026)
         Assert.Contains("Administrator", w.Text);
         Assert.Contains("5140", w.Text);
+    }
+
+    [Fact]
+    public void Bewertung_öffentliches_Netz_nennt_das_Einrichtungsskript()
+    {
+        var h = QuestAppNetz.Bewerten(new NetzAuskunft(true, null, [new NetzProfil("s-net 3", "WLAN", "Public")], []), Echte, 5140, 5141, true);
+        Assert.Contains(h, x => x.Stufe == "warnung" && x.Text.Contains("s-net 3") && x.Text.Contains(@"werkzeuge\xr_netz_einrichten.cmd"));
+    }
+
+    [Fact]
+    public void Einrichtungsskript_liegt_im_Repository()
+    {
+        var wurzel = AppContext.BaseDirectory;
+        while (wurzel is not null && !File.Exists(Path.Combine(wurzel, "HLKS_CAD.slnx"))) wurzel = Path.GetDirectoryName(wurzel);
+        if (wurzel is null) return;   // Bauordner ausserhalb des Repositorys (HLKS_BUILD): nicht prüfbar
+        Assert.True(File.Exists(Path.Combine(wurzel, "werkzeuge", "xr_netz_einrichten.cmd")));
+        Assert.True(File.Exists(Path.Combine(wurzel, "werkzeuge", "xr_netz_einrichten.ps1")));
     }
 
     [Fact]

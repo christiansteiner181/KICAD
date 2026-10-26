@@ -236,5 +236,5 @@ export const wartetText = 'Die Brille hat noch nicht aufgedeckt – der Code ers
 export const ERSATZ_HINWEIS = 'Nur wenn die Kopplung bei der Installation nicht möglich war: Die App bittet in der Brille um eine Kopplung. Hier erscheint dann eine Anfrage mit einem 6-stelligen Code. Zeigt die Brille genau denselben Code, «Codes stimmen überein – koppeln» klicken; sonst «Ablehnen». In der Brille wird nichts eingetippt.';
 
 /** Hinweis zum Skript, das die Firewall-Regeln anlegt (der Server ändert die Firewall nie); m = App-Marke. */
-export const firewallHinweis = (m = KICAD_MARKE) => `${m.app} liest Netzprofil und Firewall nur und ändert nichts. Die Regeln legt Christian selbst an: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).`;
+export const firewallHinweis = (m = KICAD_MARKE) => `${m.app} liest Netzprofil und Firewall nur und ändert nichts. Einrichten macht Christian selbst: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd stuft das Netz als privat ein und legt die Regeln an (fragt nach Administratorrechten); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).`;
 export const FIREWALL_HINWEIS = firewallHinweis(KICAD_MARKE);

@@ -272,7 +272,7 @@ test('App-Marke: Vorgabe KICAD mit den bisherigen Texten, eine andere Marke erse
   assert.equal(T.installierenKnopf({ q: quest, app: { ...app, ablage: { ...ablageOk, version: null } }, zugang: an }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 ausführen.');
   assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an }).grund, 'adb fehlt: oben im Dialog einrichten.');
   assert.equal(T.appWegText({ appWeg: 'kabel' }), 'Kabelweg: Die App ist per Kabel gekoppelt. KICAD stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.');
-  assert.equal(T.FIREWALL_HINWEIS, 'KICAD liest Netzprofil und Firewall nur und ändert nichts. Die Regeln legt Christian selbst an: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).');
+  assert.equal(T.FIREWALL_HINWEIS, 'KICAD liest Netzprofil und Firewall nur und ändert nichts. Einrichten macht Christian selbst: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd stuft das Netz als privat ein und legt die Regeln an (fragt nach Administratorrechten); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).');
   const probe = { ...m, app: 'Probe', desktopPort: 5999, bereitstellen: 'probe.ps1', adbEinrichten: 'anderswo einrichten' };
   assert.equal(T.zugangAnzeige({ ...aus, an: true }, probe).text, 'Er startet gleich (nur im Probe auf Port 5999).');
   assert.match(T.zugangAnzeige(aus, probe).text, /^Nur dieser PC erreicht Probe\./);
