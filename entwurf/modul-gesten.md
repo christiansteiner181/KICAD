@@ -1,6 +1,6 @@
 # Modul G – Gesten am Arbeitsplatz (Kamera): Spezifikation
 
-Stand 26.10.2026 · Sitzung «modul-gesten», Zweig `claude/modul-gesten` · **im Bau** (Freigabe Christian 26.10.2026;
+Stand 26.10.2026 · Sitzung «modul-gesten», Zweig `claude/modul-gesten` · **Stufe 1 gebaut, Abnahme nicht abgeschlossen** – Tuning im Labor (Christian 26.10.2026: «wir machen das tuning in der labor app»); Freigabe 26.10.2026;
 Lesart G4/G7 bestätigt)
 
 ## Anlass

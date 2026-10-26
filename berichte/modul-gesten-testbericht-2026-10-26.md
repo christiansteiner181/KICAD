@@ -1,4 +1,4 @@
-# Testbericht Modul G «Gesten am Arbeitsplatz», Stufe 1 (ENTWURF)
+# Testbericht Modul G «Gesten am Arbeitsplatz», Stufe 1 (Abnahme nicht abgeschlossen, Tuning im Labor)
 
 Stand 26.10.2026 · Geprüft: Zweig `claude/modul-gesten` @ `8079195` (Bau hlks-kern), mit `main` @ `7e6dd1f` zusammengeführt in der Arbeitskopie von hlks-test (Merge-Commit auf
 Zweig `worktree-agent-a68ae3340b821a2ba`; Konflikte nur in `zuteilung.md`, `src/Hlks.Web/OBERFLAECHE.md`, `entwurf/modul-gesten.md`, beide Seiten behalten, Entwurf = Fassung des Zweigs) ·
@@ -95,3 +95,21 @@ Mit der Testkamera (Testbild ohne Hand) lässt sich nur der Betrieb prüfen, nic
 - Das Skript nimmt `HLKS_BUILD` wie die Browsertests; ohne diese Variable läuft es auf dem gemeinsamen Bau unter `%USERPROFILE%\HLKS_CAD_build` (kann den Stand eines anderen Laufs sein).
 - Nicht mitgeprüft: Commit `e6dcce6` des Zweigs; Browserreihen anderer Module; Kern- und MCP-Tests (nicht verlangt, Kern unverändert).
 - Keine Befunde im Produktcode: kein Test wurde fehlgeschlagen, kein Test mit `Skip` angelegt.
+
+## 6. Abnahme am Desktop mit Christian (26.10.2026, Prüfserver 5176, Test_praxis auf W:, ASUS FHD webcam)
+
+Ergebnis: **nicht abgeschlossen.** Christian, 26.10.2026: «wir beenden hier. wir machen das tuning in der labor app.» Die «Fertig, wenn»-Liste ist am Desktop
+nicht erfüllt; Fehlauslösungen in 10 min und Bildrate mit Grafikkarte wurden nicht gemessen.
+
+| Befund Christian | Ursache / Änderung | Commit |
+|---|---|---|
+| «gesten haben keine reaktion», Skelett nur bei der rechten Hand | Händigkeit wurde getauscht; MediaPipe 1.1.1 nennt im ungespiegelten Bild schon die Hand des Benutzers | e34f2c1 |
+| «zu kleiner Raum vor Kamera» | 640 × 480 war ein 4:3-Ausschnitt; jetzt 1920 × 1080 (volle Sensorgrösse), Erkennungsbild 960 breit; Messzeile im Dialog | 7a35d67, af1ee51, c7c8926 |
+| Aufnahme nicht gespeichert (Download im App-Fenster kam nicht an) | Speicherdialog des Browsers (`showSaveFilePicker`) | 7a35d67 |
+| «geste bricht oft ab» (auch nach 1–2 s) | Schwellen der Erkennung zurück auf 0,5; Lücken bis 350 ms überbrückt; Ursache nicht belegt → Abbruchprotokoll | af1ee51, ec98087, c3aca8b |
+| «alle operationen abdämpfen» | Drehen 3°/cm, Verschieben 2 %/cm, Rollen 1 : 2, Zoom-Exponent 1,25, Glättung 160/250 ms | ec98087 |
+| «zoom, ausschalten» | G5 aus (`ZOOM_GESTE = false`), Liste, Doku, Anleitung | 448e2a3 |
+| «speichere weshalb die gesten … abbrechen» | Abbruchprotokoll `%LOCALAPPDATA%\HLKS_CAD\gesten\abbrueche.jsonl` (Grund, Dauer, Masse; nur Zahlen) | c3aca8b |
+
+Gezielte Läufe nach den Änderungen: Node `gesten-logik` 51/51, `gesten-ausloesen` 51/51, `gesten-datenschutz` 7/7, `gesten-protokoll` 2/2,
+`navigieren`/`ansichten`/`menueband` 110 (2 übersprungen), `xr-register` 15/15; Web `GestenProtokollTests` 7/7. Gesamtlauf: durch `stand_pruefen.ps1` des Hauptlaufs.
