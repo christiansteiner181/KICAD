@@ -1,10 +1,9 @@
 # Desktop-Start fuer das XR-Labor (Christian 26.10.2026: "die labor app dann auch gleich mit desktop icon"; Spezifikation
 # entwurf\labor-app.md, Abschnitt "Ports und Prozesse", Stufe L0). Gegenstueck zu kicad_starten.ps1, gleiche Regeln:
-# - Das Labor laeuft NIE aus dem Arbeitsordner auf OneDrive, sondern aus der Arbeitskopie %USERPROFILE%\HLKS_CAD_desktop (dieselbe wie
-#   KICAD) auf dem Zweig "geprueft" (sonst main, mit Hinweis). Gebaut wird nur src\Hlks.Labor (mit seinen Projekten Kern, Xr, Web) in den
-#   eigenen Ordner %USERPROFILE%\HLKS_CAD_build\labor: ein Neubau von KICAD (Ordner desktop) trifft das laufende Labor nie und umgekehrt.
-#   Zustand labor.json, Protokoll start.log und server.log liegen dort. Oberflaeche (HLKS_LABOR_WEBROOT) und Kataloge (HLKS_KATALOG)
-#   liest der Server live aus der Arbeitskopie.
+# - Das Labor laeuft NIE aus dem Arbeitsordner auf OneDrive, sondern aus der EIGENEN Arbeitskopie %USERPROFILE%\HLKS_CAD_labor (git
+#   worktree des Repositorys) auf dem Zweig "geprueft" (sonst main, mit Hinweis). Gebaut wird nur src\Hlks.Labor (mit seinen Projekten
+#   Kern, Xr, Web) in den eigenen Ordner %USERPROFILE%\HLKS_CAD_build\labor. Zustand labor.json, Protokoll start.log und server.log
+#   liegen dort. Oberflaeche (HLKS_LABOR_WEBROOT) und Kataloge (HLKS_KATALOG) liest der Server live aus seiner Arbeitskopie.
 # Ablauf beim Klick auf "XR-Labor":
 # - Laeuft das Labor (/api/status mit app = xr-labor) schon mit dem neuesten geprueften Stand: nur das Fenster.
 # - Gibt es einen neueren geprueften Stand: Arbeitskopie nachziehen, bauen, Server neu starten. Arbeitet das Labor gerade
@@ -12,14 +11,9 @@
 # - Laeuft kein Server: bauen falls noetig und starten.
 # - Schlaegt Bau oder Start fehl: zurueck auf den vorigen Stand, dessen Bau und Start.
 # - -Neu: in jedem Fall neu starten (arbeitet das Labor, fragt ein Fenster nach).
-# Gemeinsame Arbeitskopie mit KICAD (Entscheid 26.10.2026): KICAD liest Oberflaeche, Kataloge und KI-Vorlagen LIVE aus
-# %USERPROFILE%\HLKS_CAD_desktop (HLKS_WEBROOT, HLKS_KATALOG, HLKS_KI), nur das Programm kommt aus seinem Bauordner. Ein Nachziehen
-# auf einen neueren Stand wuerde die Oberflaeche eines laufenden, aelteren KICAD-Servers unter ihm austauschen (JS und Programm
-# passten nicht mehr zusammen). Darum zieht das Labor die Arbeitskopie nur nach, wenn KICAD nicht laeuft (nichts auf Port 5130) und
-# kicad_starten.ps1 nicht gerade selbst nachzieht oder baut (Prozess). Sonst startet bzw. belaesst das Labor den Stand, der in der
-# Arbeitskopie liegt (= der von KICAD), und sagt, dass der neuere Stand kommt, sobald KICAD neu gestartet oder beendet ist.
-# Umgekehrt (KICAD zieht nach, waehrend das Labor laeuft) erkennt dieses Skript beim naechsten Klick, dass die Arbeitskopie nicht mehr
-# zum laufenden Labor passt, und startet es neu (ausser es arbeitet gerade).
+# Eigene Arbeitskopie (Befund 26.10.2026: mit der gemeinsamen Arbeitskopie HLKS_CAD_desktop startete das Labor nicht, solange ein
+# aelteres KICAD lief, denn KICAD liest Oberflaeche und Kataloge live aus ihr und durfte nicht unter sich nachgezogen werden). Labor und
+# KICAD ziehen ihre Arbeitskopien unabhaengig nach; keine Sperren zwischen den beiden Startskripten.
 # Test ohne Christians Desktop-Stand: -Arbeitskopie, -Bau und -Port umleiten (z. B. unter %TEMP%), -Trocken meldet nur die Entscheidung,
 # -OhneFenster oeffnet kein Fenster und zeigt keine Meldungsfenster.
 # Datei bewusst nur ASCII (PowerShell 5.1).
@@ -29,14 +23,13 @@ param(
   [switch]$Neu,
   [string]$Arbeitskopie = '',
   [string]$Bau = '',
-  [int]$KicadPort = 5130,
   [switch]$Trocken,
   [switch]$OhneFenster
 )
 
 $ErrorActionPreference = 'Continue'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
-$wt = if ($Arbeitskopie) { $Arbeitskopie } else { "$env:USERPROFILE\HLKS_CAD_desktop" }
+$wt = if ($Arbeitskopie) { $Arbeitskopie } else { "$env:USERPROFILE\HLKS_CAD_labor" }
 $bau = if ($Bau) { $Bau } else { "$env:USERPROFILE\HLKS_CAD_build\labor" }
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
 $bin = "$bau\Hlks.Labor\bin\Debug\net10.0"
@@ -114,13 +107,6 @@ function Auschecken([string]$sha) {
   }
 }
 
-# KICAD (Port 5130): laeuft es, oder zieht kicad_starten.ps1 gerade die gemeinsame Arbeitskopie nach bzw. baut?
-function KicadLaeuft { return $null -ne (Get-NetTCPConnection -State Listen -LocalPort $KicadPort -ErrorAction SilentlyContinue | Select-Object -First 1) }
-function KicadStartetGerade {
-  $m = Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'kicad_starten\.ps1' -and $_.ProcessId -ne $PID }
-  return $null -ne ($m | Select-Object -First 1)
-}
-
 # Bau von src\Hlks.Labor in den eigenen Ordner; neu, wenn er fehlt oder eine Quelle der beteiligten Projekte neuer ist
 function BauVeraltet {
   if (-not (Test-Path $dll)) { return $true }
@@ -196,21 +182,15 @@ if ($srv -and -not $srv.Labor -and -not $st) {
   exit 1
 }
 
-$kicadLaeuft = KicadLaeuft
-$kicadStartet = KicadStartetGerade
-$darfNachziehen = (-not $wtSha) -or ((-not $kicadLaeuft) -and (-not $kicadStartet))
-$gescheitert = [bool]($zu -and $zu.fehler -and $zu.fehler -eq $sha -and $wtSha -and -not $Neu)   # dieser Stand liess sich schon einmal nicht starten
-$ziel = if ($gescheitert) { $wtSha } elseif ($wtSha -eq $sha -or $darfNachziehen) { $sha } else { $wtSha }
+# Eigene Arbeitskopie: immer auf den geprueften Stand, ausser dieser Stand liess sich schon einmal nicht bauen bzw. starten
+$gescheitert = [bool]($zu -and $zu.fehler -and $zu.fehler -eq $sha -and $wtSha -and -not $Neu)
+$ziel = if ($gescheitert) { $wtSha } else { $sha }
 $verzoegert = ($ziel -ne $sha)
 $zielKurz = Kurz $ziel
-Log ("Klick: geprueft {0}, Arbeitskopie {1}, Ziel {2}, Server {3}, gemerkt {4}/{5}, KICAD laeuft={6} startet={7}, Neu={8}, beschaeftigt={9}" -f $kurz, (Kurz $wtSha), $zielKurz,
-  $(if ($srv) { $srv.Pid } else { '-' }), $(if ($zu) { $zu.pid } else { '-' }), $(if ($zu) { Kurz $zu.sha } else { '-' }), $kicadLaeuft, $kicadStartet, [bool]$Neu, $(if ($st) { $st.beschaeftigt } else { '-' }))
+Log ("Klick: geprueft {0}, Arbeitskopie {1}, Ziel {2}, Server {3}, gemerkt {4}/{5}, Neu={6}, beschaeftigt={7}" -f $kurz, (Kurz $wtSha), $zielKurz,
+  $(if ($srv) { $srv.Pid } else { '-' }), $(if ($zu) { $zu.pid } else { '-' }), $(if ($zu) { Kurz $zu.sha } else { '-' }), [bool]$Neu, $(if ($st) { $st.beschaeftigt } else { '-' }))
 
-$hinweisVerzoegert = if ($gescheitert) {
-  "Der gepruefte Stand $kurz liess sich beim letzten Versuch nicht bauen oder starten. Das XR-Labor laeuft mit dem vorigen Stand ($zielKurz).`r`nNeuer Versuch mit dem Icon 'XR-Labor aktualisieren' (Schalter -Neu), sobald es einen neuen geprueften Stand gibt.`r`nProtokoll: $log"
-} else {
-  "Es gibt einen neueren geprueften Stand ($kurz), aber KICAD laeuft (oder startet gerade) und teilt sich die Arbeitskopie mit dem Labor.`r`nDas Labor laeuft mit dem Stand der Arbeitskopie ($zielKurz). Der neue Stand kommt, sobald KICAD beendet oder neu gestartet ist (dann nochmals auf das Icon klicken)."
-}
+$hinweisVerzoegert = "Der gepruefte Stand $kurz liess sich beim letzten Versuch nicht bauen oder starten. Das XR-Labor laeuft mit dem vorigen Stand ($zielKurz).`r`nNeuer Versuch mit dem Icon 'XR-Labor aktualisieren' (Schalter -Neu), sobald es einen neuen geprueften Stand gibt.`r`nProtokoll: $log"
 
 if ($Trocken) {
   Log "Trocken: wuerde $(if ($srv -and $st) { 'laufenden Server pruefen' } else { 'bauen/starten' }); nachziehen=$($wtSha -ne $ziel); bauen=$(($wtSha -ne $ziel) -or (BauVeraltet)); Stand $zielKurz"
