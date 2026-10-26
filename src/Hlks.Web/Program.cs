@@ -58,7 +58,22 @@ if (einstellungen.StartProjekt is { } start)
 }
 
 app.UseDefaultFiles();
-app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = "no-cache" });
+// Modul G (Gesten): MediaPipe liegt lokal unter /lib/mediapipe/ – das Modell (.task) kennt der Standard nicht, WASM und Module (.mjs) werden ausdrücklich gesetzt.
+// Der Worker der Gesten darf nur den eigenen Server erreichen (MediaPipe 1.1.1 meldet sonst Nutzungsdaten an Google; lib/mediapipe/LIESMICH.md).
+var inhaltstypen = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+inhaltstypen.Mappings[".task"] = "application/octet-stream";
+inhaltstypen.Mappings[".wasm"] = "application/wasm";
+inhaltstypen.Mappings[".mjs"] = "text/javascript";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = inhaltstypen,
+    OnPrepareResponse = c =>
+    {
+        c.Context.Response.Headers.CacheControl = "no-cache";
+        if (c.Context.Request.Path.Equals("/js/gesten/gesten-worker.js", StringComparison.OrdinalIgnoreCase))
+            c.Context.Response.Headers.ContentSecurityPolicy = "connect-src 'self'";
+    },
+});
 
 /// Dateiname einer hochgeladenen Unterlage: nur der Name (kein Pfad), ohne ungültige Zeichen, höchstens 150 Zeichen mit Endung.
 static string UnterlageName(string? roh)

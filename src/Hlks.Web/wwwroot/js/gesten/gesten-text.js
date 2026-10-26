@@ -241,21 +241,32 @@ export function skelettLinien(punkte, breite, hoehe) {
 
 /**
  * Datei einer aufgenommenen Punktfolge (gesten.js › aufnahmeBeenden): nur Punkte, nie Bilder. Aus dem Ergebnis werden ausschliesslich version, hand und je Bild
- * t, punkte, welt und haendigkeit übernommen (alles andere, auch ein versehentlich mitgegebenes Bild, fällt weg).
+ * t, punkte, welt und haendigkeit übernommen (alles andere, auch ein versehentlich mitgegebenes Bild, fällt weg). Nachtrag hlks-kern 26.10.2026, damit eine
+ * Aufnahme im Test genau so abläuft wie live (gesten-logik.test.mjs): die Tiefe z der Bildpunkte (sonst wird die scheinbare Grösse der Faust flach gerechnet),
+ * je Bild score und weitere Hände (Zahlen und Händigkeit) sowie – wenn vorhanden – bildbreite, bildhoehe und eingaben (Zeiten der Maus- und Tastendrücke, nötig für
+ * die Sperre neben der Maus). Alles nur Zahlen.
  * Ergebnis { name, text, bilder } oder null, wenn nichts aufgenommen wurde.
  */
 export function aufnahmeDatei(ergebnis, jetzt = new Date()) {
   const liste = Array.isArray(ergebnis?.bilder) ? ergebnis.bilder : [];
-  const bilder = liste.filter((b) => b && typeof b === 'object').map((b) => ({
-    t: zahl(b.t) ?? 0,
-    punkte: Array.isArray(b.punkte) ? b.punkte.map((p) => (punktGueltig(p) ? [p[0], p[1]] : null)) : null,
+  const hand = (b) => ({
+    punkte: Array.isArray(b.punkte) ? b.punkte.map((p) => (punktGueltig(p) ? (Number.isFinite(p[2]) ? [p[0], p[1], p[2]] : [p[0], p[1]]) : null)) : null,
     welt: Array.isArray(b.welt) ? b.welt.map((p) => (Array.isArray(p) ? p.filter((x) => Number.isFinite(x)) : null)) : null,
     haendigkeit: typeof b.haendigkeit === 'string' ? b.haendigkeit : null,
-  }));
+  });
+  const bilder = liste.filter((b) => b && typeof b === 'object').map((b) => {
+    const x = { t: zahl(b.t) ?? 0, ...hand(b) };
+    if (zahl(b.score) !== null) x.score = b.score;
+    const weitere = Array.isArray(b.weitere) ? b.weitere.filter((h) => h && typeof h === 'object').map((h) => ({ ...hand(h), ...(zahl(h.score) !== null ? { score: h.score } : {}) })) : [];
+    if (weitere.length) x.weitere = weitere;
+    return x;
+  });
   if (bilder.length === 0) return null;
   const z = (n, l = 2) => String(n).padStart(l, '0');
   const stempel = `${jetzt.getFullYear()}${z(jetzt.getMonth() + 1)}${z(jetzt.getDate())}-${z(jetzt.getHours())}${z(jetzt.getMinutes())}${z(jetzt.getSeconds())}`;
   const daten = { version: zahl(ergebnis?.version) ?? 1, hand: typeof ergebnis?.hand === 'string' ? ergebnis.hand : null, bilder };
+  if (zahl(ergebnis?.bildbreite) !== null && zahl(ergebnis?.bildhoehe) !== null) { daten.bildbreite = ergebnis.bildbreite; daten.bildhoehe = ergebnis.bildhoehe; }
+  if (Array.isArray(ergebnis?.eingaben)) daten.eingaben = ergebnis.eingaben.filter((x) => zahl(x) !== null);
   return { name: `gestenfolge-${stempel}.json`, text: JSON.stringify(daten), bilder: bilder.length };
 }
 

@@ -254,6 +254,18 @@ for (const d of dateien) {
 
 const lies = (name) => JSON.parse(readFileSync(path.join(ORDNER, `${name}.json`), 'utf8'));
 
+test('Aufnahme als Datei (Dialog «Gesten», gesten-text.js aufnahmeDatei) läuft genau wie live – auch Sperre, Zoom und falsche Hand', async () => {
+  const { aufnahmeDatei } = await import('./gesten-text.js');
+  for (const name of ['synth-faust-zur-kamera', 'synth-stoer-maus-sperre', 'synth-wisch-links', 'synth-stoer-tippen-rand', 'synth-faust-rollen']) {
+    const a = lies(name);
+    const d = JSON.parse(aufnahmeDatei({ ...a, bild: 'DATA' }).text);
+    assert.ok(!JSON.stringify(d).includes('DATA'));
+    const live = L.aufnahmeAbspielen(a), datei = L.aufnahmeAbspielen(d);
+    assert.deepEqual(datei.ereignisse, live.ereignisse, name);
+    assert.deepEqual(datei.summe, live.summe, name);
+  }
+});
+
 // ---------------------------------------------------------------------------------------------- einzelne Regeln (die Folge löst aus, sobald die Regel fehlt)
 
 test('Zustand: «bereit» ohne Hand, «hand» mit Hand, «aktiv» mit Namen nur bei wirkender Faust', () => {

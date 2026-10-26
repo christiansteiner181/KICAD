@@ -365,6 +365,7 @@ export async function diagnose() {
   });
   return {
     laeuft: true, bildrate, dauerMs, zielMs: intervall(l), ruhe: l.ruhe, rueckfall: l.rueckfall, versteckt: l.versteckt,
+    kamera: l.strom?.getVideoTracks?.()[0]?.readyState === 'live',
     delegate: l.delegate, ladenMs: l.ladenMs, gesperrt: antwort?.gesperrt ?? [], bilderImWorker: antwort?.bilder ?? null, zustand: gemeldet.zustand,
   };
 }
