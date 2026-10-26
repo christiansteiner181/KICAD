@@ -26,7 +26,7 @@
 	     «Labor»: dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true   (am besten mit eigenem HLKS_BUILD). Der allgemeine Code ruft das Labor nur über
 	     die Einhängepunkte (QuestApp.Einhaengepunkte.cs) auf; ohne Umsetzung entfernt der Übersetzer die Aufrufe. Die Prüfung bleibt (Grenze Kern ↔ Werkzeug-Modul). -->
 	<ItemGroup Condition="'$(HlksOhneLabor)' == 'true'">
-		<Compile Remove="QuestApp.Labor.cs;QuestApp.LaborPruefen.cs;AufgabenKarte.cs" />
+		<Compile Remove="QuestApp.Labor.cs;QuestApp.LaborPruefen.cs;AufgabenKarte.cs;QuestApp.Spielwiese.cs;QuestApp.PruefenSpielwiese.cs" />
 	</ItemGroup>
 
 	<ItemGroup>
@@ -42,6 +42,8 @@
 	<ItemGroup>
 		<!-- V1a: Farben der App aus dem Katalog (App-Pastellreihe, Christian 24.10.2026), mitgeliefert – keine Farbwerte im Code. -->
 		<EmbeddedResource Include="..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
+		<!-- XR-Labor S1: eingebaute Fassung der Spielwiese (gilt ohne Verbindung, bis die App einmal die Fassung des Labor-PCs geholt hat). -->
+		<EmbeddedResource Include="..\..\kataloge\labor_spielwiese.json" LogicalName="labor_spielwiese.json" />
 	</ItemGroup>
 
 	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle). -->

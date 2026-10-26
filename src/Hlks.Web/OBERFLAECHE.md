@@ -3729,3 +3729,41 @@ Register **XR › Gruppe Brille › «H+K XR installieren …»** (`xr.appInstal
   «Alte Apps entfernen» an der echten Brille (adb gegen die echte Brille lief in diesem Bau nicht).
 - **Offen:** Der Browser-Test `xr-app.browser.mjs` ist auf die neuen Namen nachgeführt, aber **nicht gelaufen** (keine Browserreihen). `berichte/anleitung/inventar.json` ist noch auf dem Stand vor E1
   (Texte zu «App installieren …», Ablage, Name der App); die Nachführung gehört zur Bedienungsanleitung nach Abschluss des Moduls.
+
+## XR-Labor Spielwiese S1: App-Menü mit Platzhalter-Apps (26.10.2026)
+
+Neuausrichtung des Labors (`entwurf/xr-empfaenger.md`, Kasten oben; `entwurf/bedien-grundsatz.md`, Kapitel 1). Christian, 26.10.2026: «Aufrufen von Apps: Bsp. Appmenue aufrufen,
+apps wählen, menue schliessen. das labor wird durch dich bedient, wir feilen dann nur an diesem grundsatz.» Die heutige Bedienung (Hebegeste, Symbolfeld, Tafel, Blättern,
+Wegwischen) ist im XR-Labor ohne KICAD-Inhalt mit neutralen Apps erlebbar. Einzelheiten der Brille: `src/Hlks.Quest/LIESMICH.md`, Abschnitt «XR-Labor Spielwiese S1».
+
+### Wo
+
+- **Brille**, App «H+K XR», Werkzeug **XR-Labor** aktiv, keine Prüfaufgabe läuft: **beide Handflächen nach oben – kurz anheben** holt das Symbolfeld mit **Notizen, Bilder, Uhr,
+  Liste, Dokument, Einstellungen** und **Werkzeuge**. KICAD als Werkzeug zeigt unverändert seine Apps (Etagen, Messen, Marker …).
+- **Labor-PC**: Katalog `kataloge/labor_spielwiese.json` (Art `hlks-labor-spielwiese`, Fassung 1), ausgeliefert unter `GET /api/xr/labor/spielwiese` (nur GET; auch über den
+  Netzzugang 5340 mit Schlüssel; ETag/304; ungültig bzw. fehlend 409 `{ fehler, vorschlag }` mit der Stelle). Kein Knopf, kein Kürzel – die Datei ist die Bedienung.
+- **Stellschrauben live**: Labor-Seite `http://localhost:5430/`, Register **Stellschrauben** (bzw. `POST /api/xr/stellschraube { schluessel, wert }`), z. B. `symbole.abstand_m`.
+
+### Bedienung und Erwartung
+
+1. Hebegeste → sieben runde Glas-Symbole (drei Reihen zu zwei, «Werkzeuge» rechts), je App ein eigener Pastellton (Vorschlag S1 in `kataloge/xr_farben.json`).
+2. Ein Symbol mit der ganzen Hand berühren (Zeiger und Tooltip beim Annähern) → Leuchten und Ton, die Symbole blenden aus, die App öffnet als Glas-Tafel mittig vor einem und fest.
+3. Auf der Tafel wischen: **Dokument** blättert seitlich (drei Seiten), **Liste** (40 Einträge, höhere Tafel wie die Etagen) rollt hoch/runter, **Einstellungen** blättert (zwei
+   Seiten), Schalter schalten ohne Wirkung, ein Eintrag der Liste lässt sich antippen (Haken). **Bilder**: sechs Kacheln aus Farbflächen und Formen; **Uhr**: Zeit und Datum.
+4. Wegwischen (Hand offen, von rechts nach links) schliesst die Tafel; die Symbole kommen nicht zurück. Hebegeste bei offener Tafel schliesst sie, die Symbole stehen frontal (V1i).
+5. Claude ändert Apps und Inhalte in der Datei; die Brille übernimmt die neue Fassung beim nächsten Nachfragen (beim Verbinden, dann alle 30 s) ohne neue APK. Ohne Verbindung gilt
+   die zuletzt geholte Fassung, sonst die beim Bau eingebettete.
+
+### Prüfpunkte
+
+- [ ] Im XR-Labor zeigt die Hebegeste die sechs Platzhalter-Apps und «Werkzeuge», keine KICAD-App; ohne laufende Aufgabe keine Aufgabenkarte.
+- [ ] Jede App öffnet mittig als Tafel in ihrem Ton; Blättern, Rollen, Schalter und Wegwischen wirken wie in KICAD.
+- [ ] Eine Änderung in `kataloge/labor_spielwiese.json` (z. B. ein Name) erscheint nach höchstens 30 s in der Brille; ein Fehler darin meldet `GET /api/xr/labor/spielwiese` mit 409 und Stelle.
+- [ ] `symbole.abstand_m` auf der Labor-Seite verstellt das Symbolfeld sofort.
+
+### Prüfen
+
+- **Tests:** `dotnet test tests/Hlks.Xr.Tests --filter "FullyQualifiedName~SpielwieseTests|FullyQualifiedName~WerkzeugTests"`,
+  `dotnet test tests/Hlks.Labor.Tests --filter "FullyQualifiedName~SpielwieseEndpunktTests"`.
+- **Simulator:** `src\Hlks.Quest\Pruefen\hk_xr_pruefen.ps1 -Lauf Spielwiese` (Labor-Server im Testlauf); Prüfbilder unter `%USERPROFILE%\HLKS_CAD_testdaten\hk_xr\s1\`.
+- **Nur mit der Brille prüfbar:** Gefühl der Gesten, Lesbarkeit der Platzhalter, Übernahme einer geänderten Datei über WLAN.

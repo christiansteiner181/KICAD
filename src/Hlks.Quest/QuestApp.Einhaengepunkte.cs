@@ -1,5 +1,6 @@
 using System.Text.Json;
 using Hlks.Xr;
+using Hlks.Xr.Bedienung;
 using Hlks.Xr.Messen;
 using Hlks.Xr.Netz;
 using StereoKit;
@@ -69,6 +70,35 @@ sealed partial class QuestApp
 
     /// <summary>Raum für «Raum zeigen» vor dem allgemeinen: der markierte der Aufgabe «raum-ar-oeffnen» bzw. der für sie gemerkte (Vorgabe null).</summary>
     partial void LaborRaumZumZeigen(ref string? raum);
+
+    // ------------------------------------------------------------------------------------------------ XR-Labor Spielwiese S1 (QuestApp.Spielwiese.cs)
+
+    /// <summary>
+    /// Die Symbole des Felds (<see cref="SymboleBauen"/>, vor den Apps des Werkzeugs): die Spielwiese setzt <paramref name="ersatz"/> = ihre Platzhalter-Apps und
+    /// «Werkzeuge» und <paramref name="reihenfolge"/> = ihre feste Reihenfolge der Plätze (Vorgaben null: die Apps des Werkzeugs, Reihenfolge von AppSymbole).
+    /// </summary>
+    partial void LaborSymbole(ref List<SymbolApps.Symbol>? ersatz, ref IReadOnlyList<string>? reihenfolge);
+
+    /// <summary>Eine App wurde über ihr Symbol geöffnet (<see cref="AppOeffnen"/>): die Spielwiese beginnt ihre Liste oben bzw. ihr Dokument auf Seite 1.</summary>
+    partial void LaborAppGeoeffnet(string id);
+
+    /// <summary>
+    /// Inhalt der gewählten App (<see cref="InhaltBauen"/>, vor den Apps des Werkzeugs): eine App der Spielwiese baut ihn selbst (<paramref name="gebaut"/> = true,
+    /// <paramref name="seiten"/> = Seiten zum Blättern; die Tafel ohne Werkzeugleiste). Vorgabe: nicht gebaut.
+    /// </summary>
+    partial void LaborAppInhalt(ref GlasInhalt inhalt, ref bool gebaut, ref int seiten);
+
+    /// <summary>Farbe der Tafel: eine App der Spielwiese nimmt die Farbe aus ihrem Katalog (Vorgabe: die Id der App).</summary>
+    partial void LaborAppFarbe(ref string farbId);
+
+    /// <summary>Ein Ziel der Tafel wurde gewählt (<see cref="AppEreignis"/>): ein Schalter der Spielwiese (<paramref name="erledigt"/> = true). Vorgabe: nicht erledigt.</summary>
+    partial void LaborAppEreignis(string id, ref bool erledigt);
+
+    /// <summary>Ein Wisch auf der Tafel (<see cref="BlaetternAufTafel"/>): die Liste der Spielwiese rollt (<paramref name="erledigt"/> = true). Vorgabe: Seiten.</summary>
+    partial void LaborBlaettern(WischRichtung r, StereoKit.Vec3 ort, ref bool erledigt);
+
+    /// <summary>Prüflauf «Spielwiese» (--pruefen mit --spielwiese; QuestApp.PruefenSpielwiese.cs): ein Bild davon; <paramref name="laeuft"/> = true. Ohne Labor: false.</summary>
+    partial void LaborPruefenSpielwiese(ref bool laeuft);
 
     // ------------------------------------------------------------------------------------------------ Ereignisse der Bedienung (Messung der Prüfaufgabe)
 

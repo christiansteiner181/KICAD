@@ -12,6 +12,10 @@ App-spezifisch entworfen werden.»
 - **Spezielles wird ebenfalls im Labor entworfen, aber app-spezifisch** (Christian, 26.10.2026: «nein. wir entwerfen appspezifisch im labor.»):
   Je App ein eigener Teil (z. B. KICAD: Begehen, Messen, Modell am Tisch), erprobt auf der Spielwiese und danach in die App übernommen. Er
   darf der Grundbedienung nicht widersprechen.
+- **Bauprinzip für alle VR-Bedienschnittstellen:** Christian, 26.10.2026: «ev machen wir auch eine Bedienschnittstelle in vr für andere apps und
+  themen. diese werden dann auch aus basis und spez. teilen aufgebaut.» Jede VR-Bedienschnittstelle – KICAD heute, später andere Apps und Themen –
+  besteht aus der **Basis** (dieser Grundsatz, überall gleich) und ihren **spezifischen Teilen** (je App bzw. Thema, eigenes Kapitel). Beides wird
+  im Labor entworfen.
 - Erprobt wird auf der **Spielwiese** im XR-Labor: neutrale Platzhalter-Apps, ich (Claude) baue und schalte Varianten, Christian probiert in
   der Brille und sagt, was bleibt. Jede Regel trägt ihren Stand («erprobt am …» oder «Annahme»).
 - Die Zahlenwerte sind Stellschrauben (`kataloge/xr_stellschrauben.json`); hier steht der festgelegte Wert.

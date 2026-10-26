@@ -463,6 +463,7 @@ sealed partial class QuestApp
         ziele = null; zieleSzene = null; katalogQuelle = null; katalogText = "keiner";
         protokollWarten.Clear();
         karte.WischVersatz = 0;
+        SpielwieseBetreten(LaborAn ? aktiv : null);   // XR-Labor S1: Platzhalter-Apps (QuestApp.Spielwiese.cs)
         if (!LaborAn || aktiv is not { } v) return;
         // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei) – seit E1 der dieses Werkzeugs
         katalogAblage = new LaborKatalogAblage(v.Ordner);
@@ -488,12 +489,12 @@ sealed partial class QuestApp
     {
         if (!LaborAn) return;
         katalogQuelle = quelle;
-        warten = KatalogVomPc(quelle);
+        warten = Task.WhenAll(KatalogVomPc(quelle), SpielwieseVomPc(quelle));   // S1: dazu die Spielwiese (nur im XR-Labor)
     }
 
     partial void LaborNachladen(ref Task? warten)
     {
-        if (LaborAn && katalogQuelle is { } kq) warten = KatalogVomPc(kq);
+        if (LaborAn && katalogQuelle is { } kq) warten = Task.WhenAll(KatalogVomPc(kq), SpielwieseVomPc(kq));   // S1: dazu die Spielwiese
     }
 
     partial void LaborWillkommen()
@@ -516,6 +517,7 @@ sealed partial class QuestApp
     partial void LaborBild(Pose kopf)
     {
         if (LaborAn) AufgabeBild(kopf);
+        SpielwieseBild();   // S1: Spielwiese ein/aus (ruhig beginnen)
     }
 
     partial void LaborStick(Pose kopf, XVec3 kopfRef)
@@ -589,7 +591,8 @@ sealed partial class QuestApp
 
     partial void LaborKennzahlen(ref string text) => text = !LaborAn ? "Labor=aus (Werkzeug ohne Labor), " : string.Create(CultureInfo.InvariantCulture,
         $"Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), ")
-        + (Ziele() is { } zk ? $"Testraum={zk.Kurz}, " : "");   // L1: nur mit Zielen des Testraums (Labor-PC)
+        + (Ziele() is { } zk ? $"Testraum={zk.Kurz}, " : "")   // L1: nur mit Zielen des Testraums (Labor-PC)
+        + SpielwieseKurz();   // S1: nur im XR-Labor
 
     partial void LaborQuittungen(ref string text) => text = string.Create(CultureInfo.InvariantCulture, $", Quittungen={quittungen}");
 

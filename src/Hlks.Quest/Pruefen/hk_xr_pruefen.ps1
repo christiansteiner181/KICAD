@@ -8,14 +8,18 @@
 #                  Startseite -> KICAD waehlen -> das Skript schickt "labor.aufgabe" (drehen-90) an den inaktiven Kanal des Labors -> die App wechselt ins Labor
 #                  -> ueber "Werkzeuge" zurueck zu KICAD. Das Skript prueft dazwischen am PC die Teilnehmer (aktiv ja/nein, Posen) und am Ende das Messprotokoll
 #                  der abgebrochenen Aufgabe am Labor-PC.
+#   -Lauf Spielwiese  XR-Labor S1: Labor-Server, Kopplung "xrlabor", die App mit --spielwiese (QuestApp.PruefenSpielwiese.cs): Platzhalter-Apps vom Labor-PC,
+#                  Hebegeste, Dokument waehlen, blaettern, wegwischen, Liste waehlen und rollen, Hebegeste bei offener App (V1i), die uebrigen Apps offen; auf die
+#                  Zeile "P4 Spielwiese: Stellschraube bereit" setzt das Skript am Labor-PC symbole.abstand_m = 0.7 (POST /api/xr/stellschraube).
 # Pruefbilder (-Pruefbilder, Vorgabe %USERPROFILE%\HLKS_CAD_testdaten\hk_xr\e1; nie ins Repository): Labor: labor\testraum_*.jpg, aufgabe_karte.jpg ...;
-# Wechsel: startseite.jpg, wechsel_meldung.jpg, startseite_zurueck.jpg.
-# Aufruf (Repository-Wurzel): powershell -ExecutionPolicy Bypass -File src\Hlks.Quest\Pruefen\hk_xr_pruefen.ps1 [-Lauf Labor|Wechsel|Alle] [-Bilder 300]
+# Wechsel: startseite.jpg, wechsel_meldung.jpg, startseite_zurueck.jpg. Spielwiese: Vorgabe %USERPROFILE%\HLKS_CAD_testdaten\hk_xr\s1 (mit -Pruefbilder dessen
+# Unterordner s1): symbolfeld.jpg, app_*.jpg, dokument_seite2.jpg, liste_gerollt.jpg, nach_wegwischen.jpg, hebe_bei_offener_app.jpg, stellschraube_vorher/nachher.jpg.
+# Aufruf (Repository-Wurzel): powershell -ExecutionPolicy Bypass -File src\Hlks.Quest\Pruefen\hk_xr_pruefen.ps1 [-Lauf Labor|Wechsel|Spielwiese|Alle] [-Bilder 300]
 #   [-Pruefbilder <ordner>] [-OhneBau]
 # Exit 0 = alle Laeufe ok, 1 = ein Lauf nicht ok, 2 = Fehler im Ablauf. Datei bewusst nur ASCII (PowerShell 5.1).
 
 param(
-  [ValidateSet('Labor', 'Wechsel', 'Alle')][string]$Lauf = 'Alle',
+  [ValidateSet('Labor', 'Wechsel', 'Spielwiese', 'Alle')][string]$Lauf = 'Alle',
   [int]$Bilder = 300,
   [string]$Pruefbilder = "$env:USERPROFILE\HLKS_CAD_testdaten\hk_xr\e1",
   [switch]$OhneBau
@@ -32,6 +36,7 @@ function Aus([string]$t) { $z = "{0:HH:mm:ss} {1}" -f (Get-Date), $t; Write-Host
 function Belegt([int]$p) { [bool](Get-NetTCPConnection -State Listen -LocalPort $p -ErrorAction SilentlyContinue) }
 function FreierPort([int[]]$kandidaten) { foreach ($p in $kandidaten) { if (-not (Belegt $p)) { return $p } }; return 0 }
 if ($Pruefbilder -and $Pruefbilder.ToLower().StartsWith($repo.ToLower())) { Aus 'Pruefbilder nie im Repository.'; exit 2 }
+$sBilder = if ($PSBoundParameters.ContainsKey('Pruefbilder')) { Join-Path $Pruefbilder 's1' } else { "$env:USERPROFILE\HLKS_CAD_testdaten\hk_xr\s1" }
 
 if (-not $OhneBau) {
   Aus "Baue Hlks.Web, Hlks.Labor und Hlks.Quest ($bau) ..."
@@ -113,7 +118,7 @@ function LogLesen([string]$datei) {
 $laborServer = $null; $kicadServer = $null; $kicadKopplung = $null; $laborKopplung = $null
 $lbasis = "http://localhost:$lport"; $kbasis = "http://localhost:$kport"
 $ergebnis = 2
-$muster = '^P4 (ok|Fehler|Wechsel)|Werkzeug |Startseite|Wechsel zu|Testraum mit|Katalog des Labors'
+$muster = '^P4 (ok|Fehler|Wechsel|Spielwiese)|Werkzeug |Startseite|Wechsel zu|Testraum mit|Katalog des Labors|Spielwiese (an|aus|pc|vorgabe|zwischen)'
 try {
   Aus "Starte Labor-Testserver auf Port $lport ..."
   $laborServer = Start-Process -FilePath $dotnet -ArgumentList @("`"$laborDll`"", '--port', "$lport") -PassThru -WindowStyle Hidden `
@@ -146,6 +151,40 @@ try {
     $laborOk = $l1ok -and $l2ok -and ($n -eq 7)
     Aus ("Lauf Labor: L1 {0}, L2 {1}, Aufgaben {2}/7 - {3}" -f @('FEHLER', 'ok')[[int]$l1ok], @('FEHLER', 'ok')[[int]$l2ok], $n, @('NICHT OK', 'ok')[[int]$laborOk])
     if (-not $laborOk) { $alleOk = $false }
+  }
+
+  if ($Lauf -in 'Spielwiese', 'Alle') {
+    New-Item -ItemType Directory -Force $sBilder | Out-Null
+    $sStart = Get-Date
+    Aus 'Lauf S: Spielwiese (Platzhalter-Apps, Hebegeste, waehlen, blaettern, rollen, wegwischen, Stellschraube live) ...'
+    $sArg = @("`"$quest`"", '--pruefen', '5000', '--spielwiese', '--kopplung', "`"$tmp\kopplung_xrlabor.json`"", '--speicher', "`"$tmp\app_spielwiese`"",
+      '--bilder', "`"$sBilder`"")
+    $slog = "$logs\spielwiese.log"
+    $sp = Start-Process -FilePath $dotnet -ArgumentList $sArg -PassThru -NoNewWindow -RedirectStandardOutput $slog -RedirectStandardError "$logs\spielwiese_fehler.log"
+    $null = $sp.Handle
+    $gesetzt = $false
+    $bis = (Get-Date).AddMinutes(12)
+    while (-not $sp.HasExited -and (Get-Date) -lt $bis) {
+      Start-Sleep -Milliseconds 400
+      if ($gesetzt) { continue }
+      $inhalt = LogLesen $slog
+      if ($inhalt -match 'P4 Spielwiese: Stellschraube bereit') {
+        try {
+          $r = Post $lbasis '/api/xr/stellschraube' @{ schluessel = 'symbole.abstand_m'; wert = 0.7 } | ConvertFrom-Json
+          $gesetzt = $true
+          Aus "  Labor-PC: symbole.abstand_m = 0.7 an $($r.gesendet) Teilnehmer gesendet (live)."
+        } catch { Aus ('  Labor-PC: Stellschraube nicht gesendet: ' + $_.Exception.Message) }
+      }
+    }
+    if (-not $sp.HasExited) { Aus 'Lauf S: die App endete nicht in 12 Minuten.'; Stop-Process -Id $sp.Id -Force -ErrorAction SilentlyContinue }
+    $sp.WaitForExit()
+    $s = (LogLesen $slog) -split "`r?`n"
+    $s | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
+    $neu = @(Get-ChildItem -Path $sBilder -Filter '*.jpg' -ErrorAction SilentlyContinue | Where-Object { $_.LastWriteTime -ge $sStart }).Count
+    $sOk = ($sp.ExitCode -eq 0) -and [bool]($s -match '^P4 ok: Spielwiese') -and -not [bool]($s -match '^P4 ok: .*FEHLER') -and $gesetzt
+    Aus ("Lauf Spielwiese: App {0}, Stellschraube vom Labor-PC {1}, Pruefbilder {2} in {3} - {4}" -f $sp.ExitCode, @('nein', 'ja')[[int]$gesetzt], $neu, $sBilder,
+      @('NICHT OK', 'ok')[[int]$sOk])
+    if (-not $sOk) { $alleOk = $false }
   }
 
   if ($Lauf -in 'Wechsel', 'Alle') {
