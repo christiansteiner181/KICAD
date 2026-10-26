@@ -66,16 +66,20 @@ public static class AppSymbole
     /// </summary>
     public static double Untergrenze(double tischOben, SymbolEinstellungen e, GlasMasse m) => tischOben + Math.Max(0, e.TischAbstandM) + Durchmesser(m) / 2;
 
-    /// <summary>Platz im Feld je Id: (Reihe von oben, Spalte, Spalten insgesamt) bei r Reihen; Reserve rechts daneben in der Reihenfolge der Ids.</summary>
-    public static Dictionary<string, (int Reihe, int Spalte)> Raster(IReadOnlyList<string> ids, int reihen, out int spalten)
+    /// <summary>
+    /// Platz im Feld je Id: (Reihe von oben, Spalte, Spalten insgesamt) bei r Reihen; Reserve rechts daneben in der Reihenfolge der Ids. XR-Labor S1: eigene feste
+    /// Reihenfolge (die Platzhalter-Apps der Spielwiese in der Reihenfolge ihres Katalogs), sonst <see cref="Reihenfolge"/>.
+    /// </summary>
+    public static Dictionary<string, (int Reihe, int Spalte)> Raster(IReadOnlyList<string> ids, int reihen, out int spalten, IReadOnlyList<string>? eigeneReihenfolge = null)
     {
         var r = Math.Clamp(reihen, 1, 3);
-        var feste = (reihenfolge.Length + r - 1) / r;
+        string[] folge = eigeneReihenfolge is { Count: > 0 } ef ? [.. ef] : reihenfolge;
+        var feste = (folge.Length + r - 1) / r;
         var aus = new Dictionary<string, (int, int)>(StringComparer.Ordinal);
         var reserve = 0;
         foreach (var id in ids)
         {
-            var k = Array.IndexOf(reihenfolge, id == "tisch" ? "ort" : id);
+            var k = Array.IndexOf(folge, id == "tisch" && eigeneReihenfolge is null ? "ort" : id);
             if (k >= 0) aus[id] = (k / feste, k % feste);
             else { aus[id] = (reserve % r, feste + reserve / r); reserve++; }
         }
@@ -90,7 +94,7 @@ public static class AppSymbole
     /// Auge gedreht.
     /// </summary>
     public static List<SymbolPlatz> Plaetze(IReadOnlyList<string> ids, Vec3 auge, double blickGieren, SymbolEinstellungen e, GlasMasse m, double? untergrenze = null,
-        bool sitzend = false)
+        bool sitzend = false, IReadOnlyList<string>? reihenfolge = null)
     {
         var vor = new Vec3(Math.Cos(blickGieren), 0, -Math.Sin(blickGieren));
         var rechts = HebeGeste.Rechts(blickGieren);   // rechts vom Blick (Blick −z → rechts +x)
@@ -111,7 +115,7 @@ public static class AppSymbole
             return aus;
         }
         var reihen = Math.Clamp(e.Reihen, 1, 3);
-        var raster = Raster(ids, reihen, out var spalten);
+        var raster = Raster(ids, reihen, out var spalten, reihenfolge);
         // Höhe der obersten und untersten Reihe; eine Untergrenze schiebt das Feld zusammen (nie unter FeldMinM)
         var oben = auge.Y - mitteUnten + (reihen > 1 ? e.FeldHoeheM / 2 : 0);
         var unten = auge.Y - mitteUnten - (reihen > 1 ? e.FeldHoeheM / 2 : 0);

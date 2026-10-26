@@ -249,3 +249,46 @@ public sealed class SpielwieseKatalog
 
     static XrNetzFehler Fehler(string wo, string was) => new($"Katalog der Spielwiese: {(wo.Length > 0 ? wo + " " : "")}{was}.", Vorschlag);
 }
+
+/// <summary>
+/// XR-Labor S1: Regeln für die Tafel einer Platzhalter-App (ohne StereoKit; die App baut daraus den Inhalt, QuestApp.Spielwiese.cs): Seiten, Zeilen eines Texts, Zeit
+/// und Datum der App «Uhr» auf Deutsch (Schweiz) – ohne Kulturdaten des Geräts (Android kann ohne ICU laufen) – und die Ids im Feld bzw. auf der Tafel.
+/// </summary>
+public static class SpielwieseTafel
+{
+    static readonly string[] Tage = ["Sonntag", "Montag", "Dienstag", "Mittwoch", "Donnerstag", "Freitag", "Samstag"];
+    static readonly string[] Monate = ["Januar", "Februar", "März", "April", "Mai", "Juni", "Juli", "August", "September", "Oktober", "November", "Dezember"];
+
+    /// <summary>«Montag, 26. Oktober 2026».</summary>
+    public static string Datum(DateTime t) => $"{Tage[(int)t.DayOfWeek]}, {t.Day}. {Monate[t.Month - 1]} {t.Year}";
+
+    /// <summary>«14:05».</summary>
+    public static string Zeit(DateTime t) => $"{t.Hour:00}:{t.Minute:00}";
+
+    /// <summary>Seiten für anzahl Teile zu jeSeite (mindestens eine Seite, mindestens ein Teil je Seite) und die gültige Seite (begrenzt) mit erstem Teil und Zahl.</summary>
+    public static (int Seite, int Ab, int Anzahl, int Seiten) Seite(int anzahl, int jeSeite, int seite)
+    {
+        var je = Math.Max(1, jeSeite);
+        var seiten = Math.Max(1, (Math.Max(0, anzahl) + je - 1) / je);
+        var s = Math.Clamp(seite, 0, seiten - 1);
+        return (s, s * je, Math.Max(0, Math.Min(je, anzahl - s * je)), seiten);
+    }
+
+    /// <summary>Die Zeilen eines Texts nach dem Umbruch (Textumbruch, wie ihn die Tafel zeichnet) bei so vielen Zeichen je Zeile.</summary>
+    public static IReadOnlyList<string> Zeilen(string text, int zeichenJeZeile) => Textumbruch.Umbrechen(text, Math.Max(1, zeichenJeZeile)).Split('\n');
+
+    /// <summary>Vorsatz der Id einer Platzhalter-App im Symbolfeld und auf der Tafel – so trifft sie nie eine App eines Werkzeugs («etagen», «status» …).</summary>
+    public const string Vorsatz = "sw:";
+
+    /// <summary>Die Id im Feld zu einer Kennung des Katalogs.</summary>
+    public static string Id(string kennung) => Vorsatz + kennung;
+
+    /// <summary>Die Kennung im Katalog zu einer Id im Feld, sonst null.</summary>
+    public static string? Kennung(string? id) => id is not null && id.StartsWith(Vorsatz, StringComparison.Ordinal) ? id[Vorsatz.Length..] : null;
+
+    /// <summary>Vorsatz der Id eines Schalters auf der Tafel.</summary>
+    public const string SchalterVorsatz = "sw-schalter:";
+
+    /// <summary>Die Id des Schalters im Katalog zu einer Id auf der Tafel, sonst null.</summary>
+    public static string? SchalterId(string? id) => id is not null && id.StartsWith(SchalterVorsatz, StringComparison.Ordinal) ? id[SchalterVorsatz.Length..] : null;
+}

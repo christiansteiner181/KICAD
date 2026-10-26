@@ -23,7 +23,8 @@ public class WerkzeugTests
     static string Quest => Path.Combine(Repo(), "src", "Hlks.Quest");
 
     /// <summary>Die Dateien des Werkzeug-Moduls «Labor» in src/Hlks.Quest – dieselbe Liste wie HlksOhneLabor in Hlks.Quest.csproj.</summary>
-    static readonly string[] LaborDateien = ["QuestApp.Labor.cs", "QuestApp.LaborPruefen.cs", "AufgabenKarte.cs"];
+    // XR-Labor S1: die Spielwiese und ihr Prüflauf gehören zum Werkzeug-Modul «Labor»
+    static readonly string[] LaborDateien = ["QuestApp.Labor.cs", "QuestApp.LaborPruefen.cs", "AufgabenKarte.cs", "QuestApp.Spielwiese.cs", "QuestApp.PruefenSpielwiese.cs"];
 
     // ---------------------------------------------------------------------------------------------- Werkzeuge und App
 
@@ -407,11 +408,13 @@ public class WerkzeugTests
         Assert.Equal(LaborDateien.Order(), entfernt.Order());
         // Typen des Labors in keiner anderen Datei, Felder und Methoden des Labors in keinem anderen Teil von QuestApp (L1: dazu die Ziele des Testraums)
         var typen = new Regex(@"\b(PruefAufgaben|PruefLauf|LaufZustand|AufgabenKarte|LaborKatalogLader|LaborKatalogAblage|LaborKatalogStand|ProtokollAblage|StickTeleport|" +
-            @"LaborZiele|ZielMarkierung|ZielWandPaar|ZielBauteil|ZielRaum)\b");
+            @"LaborZiele|ZielMarkierung|ZielWandPaar|ZielBauteil|ZielRaum|" +
+            @"SpielwieseKatalog|SpielwieseLader|SpielwieseAblage|SpielwieseStand|SpielwieseApp|SpielwieseTafel)\b");   // S1: Spielwiese
         var glieder = new Regex(@"\b(lauf|karte|raumFuerAufgabe|markiertesBauteil|letztesProtokoll|protokollWarten|protokolleGesendet|quittungen|katalogText|katalogQuelle|" +
             @"katalogAblage|protokollAblage|stickZustand|AufgabeBild|AufgabeVomPc|AufgabeBeenden|AufgabeImTablet|AufgabeKurz|Abschliessen|StickSchritt|KatalogVomPc|" +
             @"KatalogUebernehmen|ProtokolleNachsenden|PruefMessenWandWand|PruefAufgabenBegehen|PruefAufgabeSitzung|KarteKandidat|KarteWegwischen|" +
-            @"zieleSzene|PruefTestraumBegehen|PruefRaumArOeffnen|TestraumBilder|BildLauf|testraumVorOg)\b");
+            @"zieleSzene|PruefTestraumBegehen|PruefRaumArOeffnen|TestraumBilder|BildLauf|testraumVorOg|" +
+            @"spielwiese\w*|SpielwieseAn|SpielwieseBild|SpielwieseBetreten|SpielwieseVomPc|SpielwieseUebernehmen|SpielwieseKurz|SpielwieseTafelApp|SpielwieseLaufBild|sPhase|sTeile)\b");   // S1
         var funde = new List<string>();
         foreach (var d in Quellen(Quest).Where(d => !LaborDateien.Contains(Path.GetFileName(d))))
         {

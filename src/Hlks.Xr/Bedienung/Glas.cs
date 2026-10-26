@@ -64,6 +64,10 @@ public static class GlasStil
     public const double OrnamentVorM = 0.012;
     /// <summary>Schrift (pt, ohne Fingerfaktor): Titel 22, Text 17, klein 15 (HIG «Typography», visionOS-Stufen als Annahme).</summary>
     public const double TitelPt = 22, TextPt = 17, KleinPt = 15;
+    /// <summary>XR-Labor S1: grosse Schrift (pt) für eine einzelne Angabe auf der Tafel, z. B. die Zeit der Platzhalter-App «Uhr» (Annahme S1).</summary>
+    public const double GrossPt = 56;
+    /// <summary>Text-Stufe der grossen Schrift (<see cref="GlasInhalt.Gross"/>; 0 Titel, 1 primär, 2 sekundär, 3 tertiär).</summary>
+    public const int StufeGross = 4;
 
     // ---------------------------------------------------------------------------------------------------- Farben (neutral, nicht farbig)
     /// <summary>Glas ohne Katalog der Farben: neutral hellgrau (Rückfall; sonst der Pastellton der App, AppFarben; Deckkraft aus anzeige.glas_deckkraft).</summary>
@@ -145,7 +149,7 @@ public sealed record GlasRahmen(TabletPose Fenster, TabletPose Inhalt, TabletPos
 public enum GlasForm { Kreis, Kapsel, Rechteck }
 
 /// <summary>Art eines Inhaltselements.</summary>
-public enum GlasArt { Text, Knopf, Schalter, Zeile, Segment }
+public enum GlasArt { Text, Knopf, Schalter, Zeile, Segment, Kachel }
 
 /// <summary>
 /// Ein Element im Inhalt eines Fensters: Id (Ziel; Text ohne), Art, Form, Mitte (X rechts, Y oben, m, relativ zur Mitte des Inhalts), Grösse, Titel, zweite Zeile,
@@ -180,6 +184,51 @@ public sealed class GlasInhalt(GlasMasse m, double breite, double hoehe)
         var h = m.M(GlasStil.KopfPt);
         elemente.Add(new GlasElement(null, GlasArt.Text, GlasForm.Rechteck, 0, y - h / 2, breite, h, text, Stufe: 0));
         y -= h;
+    }
+
+    /// <summary>XR-Labor S1: freie Höhe unter dem bisherigen Inhalt (m), z. B. für Text über mehrere Seiten.</summary>
+    public double FreieHoehe => Math.Max(0, y + hoehe / 2);
+
+    /// <summary>XR-Labor S1: eine einzelne Angabe in grosser Schrift, mittig (<see cref="GlasStil.GrossPt"/>, z. B. die Zeit der App «Uhr»).</summary>
+    public void Gross(string text)
+    {
+        var h = m.Schrift(GlasStil.GrossPt) * 1.3;
+        elemente.Add(new GlasElement(null, GlasArt.Text, GlasForm.Rechteck, 0, y - h / 2, breite, h, text, Stufe: GlasStil.StufeGross));
+        y -= h;
+    }
+
+    /// <summary>XR-Labor S1: Lücke zum vorigen Inhalt (m).</summary>
+    public void Abstand(double m0) => y -= Math.Max(0, m0);
+
+    /// <summary>Kacheln: Höhe der Farbfläche im Verhältnis zur Breite (Querformat wie ein Foto) und Lücke (pt), Annahme S1.</summary>
+    public const double KachelSeitenverhaeltnis = 0.72, KachelLueckePt = 12;
+
+    double KachelBreite(int spalten) => (breite - m.M(KachelLueckePt) * (Math.Max(1, spalten) - 1)) / Math.Max(1, spalten);
+    double KachelReihe(int spalten) => KachelBreite(spalten) * KachelSeitenverhaeltnis + m.Schrift(GlasStil.KleinPt) * 1.5 + m.M(KachelLueckePt);
+
+    /// <summary>XR-Labor S1: so viele Reihen Kacheln passen noch unter den bisherigen Inhalt (mindestens eine).</summary>
+    public int KachelReihenFrei(int spalten) => Math.Max(1, (int)Math.Floor((FreieHoehe + m.M(KachelLueckePt) + 1e-9) / KachelReihe(spalten)));
+
+    /// <summary>
+    /// XR-Labor S1 (Platzhalter-App «Bilder»): Kacheln aus Farbfläche und einfacher Form mit dem Titel darunter, in Reihen zu spalten (nicht antippbar). Im Element:
+    /// Titel = Titel, Zeile = Farbe «#RRGGBB», Symbol = Form (kreis | quadrat | kapsel | ring | streifen).
+    /// </summary>
+    public void Kacheln(IReadOnlyList<(string Titel, string Farbe, string Form)> kacheln, int spalten = 3)
+    {
+        spalten = Math.Max(1, spalten);
+        var b = KachelBreite(spalten);
+        var hf = b * KachelSeitenverhaeltnis;
+        var ht = m.Schrift(GlasStil.KleinPt) * 1.5;
+        for (int i = 0; i < kacheln.Count; i += spalten)
+        {
+            var mitte = y - (hf + ht) / 2;
+            for (int j = 0; j < spalten && i + j < kacheln.Count; j++)
+            {
+                var k = kacheln[i + j];
+                elemente.Add(new GlasElement(null, GlasArt.Kachel, GlasForm.Rechteck, -breite / 2 + b / 2 + j * (b + m.M(KachelLueckePt)), mitte, b, hf + ht, k.Titel, k.Farbe, k.Form));
+            }
+            y -= KachelReihe(spalten);
+        }
     }
 
     /// <summary>Ein Text (Stufe 1 primär, 2 sekundär, 3 tertiär) über zeilen Zeilen.</summary>

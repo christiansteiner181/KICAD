@@ -333,6 +333,12 @@ sealed class GlasApps : IWegwischbar
             var k = el.Ziel ? ziele.FindIndex(x => x.Art == GlasApps.Ereignis.Element && x.Id == el.Id) : -1;
             var lift = el.Ziel ? Anheben($"el:{el.Id}", k >= 0 ? Hover(k) : 0, dt) : 0;
             var lage = Glas.Lage(p, el, lift);
+            if (el.Art == GlasArt.Kachel) { KachelZeichnen(el, lage, MalI, s0, m); continue; }   // XR-Labor S1: Platzhalter-App «Bilder»
+            if (el.Art == GlasArt.Text && el.Stufe == GlasStil.StufeGross)   // XR-Labor S1: eine grosse Angabe (Zeit der App «Uhr»), mittig
+            {
+                z.Schrift(el.Titel ?? "", lage, 0, el.H / 2, el.B, el.H, m.Schrift(GlasStil.GrossPt), MalI(s0.Text), TextAlign.TopCenter, umbrechen: false);
+                continue;
+            }
             if (el.Art == GlasArt.Text)
             {
                 var (hoehe, farbe) = el.Stufe switch
@@ -432,6 +438,35 @@ sealed class GlasApps : IWegwischbar
             Belegt.Add(tl);
             Tooltip = (name, zb.Tooltip);
         }
+    }
+
+    /// <summary>
+    /// XR-Labor S1: eine Kachel der Platzhalter-App «Bilder» – Farbfläche (Farbe aus dem Katalog, Zeile = «#RRGGBB») mit einer einfachen hellen Form darauf (Symbol =
+    /// kreis | quadrat | kapsel | ring | streifen) und dem Titel darunter. Keine echten Bilder (Auftrag S1).
+    /// </summary>
+    void KachelZeichnen(GlasElement el, TabletPose lage, Func<GlasFarbe, GlasFarbe> mal, GlasSatz s0, GlasMasse m)
+    {
+        GlasFarbe grund;
+        try { grund = AppFarben.Hex(el.Zeile, 0.92); }
+        catch (FormatException) { grund = s0.Duenn; }
+        var th = m.Schrift(GlasStil.KleinPt) * 1.5;
+        var fh = el.H - th;
+        var fl = lage with { Mitte = lage.Mitte + lage.Oben * (th / 2), H = fh };
+        z.Knopf(fl, GlasForm.Rechteck, mal(grund), m.Pt);
+        var hell = mal(GlasStil.Ein with { A = 0.88 });
+        var vor = fl.Normale * 0.0015;
+        switch (el.Symbol)
+        {
+            case "kreis": z.Knopf(fl with { Mitte = fl.Mitte + vor, B = fh * 0.5, H = fh * 0.5 }, GlasForm.Kreis, hell, m.Pt, stufe: 1); break;
+            case "quadrat": z.Knopf(fl with { Mitte = fl.Mitte + vor, B = fh * 0.46, H = fh * 0.46 }, GlasForm.Rechteck, hell, m.Pt * 0.4, stufe: 1); break;
+            case "kapsel": z.Knopf(fl with { Mitte = fl.Mitte + vor, B = fl.B * 0.58, H = fh * 0.28 }, GlasForm.Kapsel, hell, m.Pt, stufe: 1); break;
+            case "ring": z.Ring(fl, fh * 0.28, fh * 0.07, hell); break;
+            case "streifen":
+                foreach (var dy in new[] { -0.22, 0.0, 0.22 })
+                    z.Knopf(fl with { Mitte = fl.Mitte + vor + fl.Oben * (dy * fh), B = fl.B * 0.7, H = fh * 0.08 }, GlasForm.Kapsel, hell, m.Pt, stufe: 1);
+                break;
+        }
+        z.Schrift(el.Titel ?? "", lage, 0, -el.H / 2 + th, el.B, th, m.Schrift(GlasStil.KleinPt), mal(s0.TextSekundaer), TextAlign.TopCenter, umbrechen: false);
     }
 
     double Anheben(string schluessel, double naehe, double dt)

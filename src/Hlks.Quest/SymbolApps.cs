@@ -20,14 +20,20 @@ namespace Hlks.Quest;
 /// </summary>
 sealed class SymbolApps : IWegwischbar
 {
-    /// <summary>Ein Symbol: Id der App, Name (Tooltip), Symbol von KICAD (GlasSymbole), Ampel (nur Status).</summary>
-    public sealed record Symbol(string Id, string Titel, string Bild, int Ampel = 0);
+    /// <summary>
+    /// Ein Symbol: Id der App, Name (Tooltip), Symbol von KICAD (GlasSymbole) bzw. ein selbst gezeichnetes Zeichen («@…», GlasZeichen), Ampel (nur Status); XR-Labor S1:
+    /// Farbe = Eintrag in kataloge/xr_farben.json (null = die Id; die Platzhalter-Apps der Spielwiese tragen ihre Farbe im Katalog).
+    /// </summary>
+    public sealed record Symbol(string Id, string Titel, string Bild, int Ampel = 0, string? Farbe = null);
 
     /// <summary>
     /// H+K XR E1: Bild des Symbols «Werkzeuge» (zurück zur Startseite). Es gibt dafür kein Symbol in KICAD (symbole.js); gezeichnet wird ein Raster aus vier Punkten
     /// wie eine Startseite (Annahme E1, bis ein Symbol im Bedienstandard festgelegt ist).
     /// </summary>
-    public const string BildWerkzeuge = "@werkzeuge";
+    public const string BildWerkzeuge = GlasSymbole.ZeichenWerkzeuge;
+
+    /// <summary>XR-Labor S1: eigene feste Reihenfolge der Plätze (die Spielwiese; je Bild gesetzt), null = die von AppSymbole.</summary>
+    public IReadOnlyList<string>? Reihenfolge { get; set; }
 
     enum Phase { Weg, Hebt, Da, Geht }
 
@@ -234,7 +240,7 @@ sealed class SymbolApps : IWegwischbar
         wischZiel = 0;
         hinten = GlasStil.Folgen(hinten, Hinten ? 1 : 0, dt, 0.1);   // weich zurück bzw. wieder nach vorn
         var ids = symbole.Select(s => s.Id).ToList();
-        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m, untergrenzeAnker, sitzendAnker);
+        var plaetze = AppSymbole.Plaetze(ids, auge, gieren, e.Symbole, m, untergrenzeAnker, sitzendAnker, Reihenfolge);
         Plaetze = plaetze;
         var gehen = phase == Phase.Geht ? GlasStil.Weich((t - gehtSeit) / AusDauer) : 0;
         var rechts = HebeGeste.Rechts(gieren);
@@ -326,7 +332,7 @@ sealed class SymbolApps : IWegwischbar
             if (deck[i] <= 0.01) continue;
             var sym = symbole[i];
             // Ton der App (kataloge/xr_farben.json), immer die helle Fassung: Pastell-Scheibe mit dunklem Symbol, auch in dunkler Umgebung (Befund Prüfbilder 03)
-            var s = z.Satz(sym.Id, immerHell: true);
+            var s = z.Satz(sym.Farbe ?? sym.Id, immerHell: true);
             var zeigerNah = Math.Max(zeigerBilder[0]?.Index == i ? zeigerBilder[0]!.Naehe : 0, zeigerBilder[1]?.Index == i ? zeigerBilder[1]!.Naehe : 0);
             var naehe = Math.Max(zeigerNah, handNaehe.TryGetValue(sym.Id, out var hn) ? hn : 0);
             var alt = anheben.TryGetValue(sym.Id, out var a0) ? a0 : 0;
@@ -339,10 +345,8 @@ sealed class SymbolApps : IWegwischbar
             z.Flaeche(lage, r, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1 * naehe) * deck[i] }, mitSchatten: true);
             z.Ring(lage, r * 0.97, naehe > 0 ? 0.0022 : 0.0014, s.Akzent with { A = (0.55 + 0.45 * naehe) * deck[i] });
             if (gew > 0) z.Leuchten(lage, r, s.Akzent with { A = 0.8 * gew });
-            if (sym.Bild == BildWerkzeuge)
-                foreach (var (dx, dy) in new[] { (-1, 1), (1, 1), (-1, -1), (1, -1) })   // E1: Raster aus vier Punkten (siehe BildWerkzeuge)
-                    z.Punkt(lage.Mitte + lage.Rechts * (dx * r * 0.22) + lage.Oben * (dy * r * 0.22) + lage.Normale * 0.003, r * 0.26, s.Text with { A = deck[i] });
-            else z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
+            // E1 «Werkzeuge» und S1 die Platzhalter-Apps: selbst gezeichnete Zeichen (GlasZeichen), sonst die Textur von KICAD
+            if (!GlasZeichen.Zeichnen(z, sym.Bild, lage, r, s.Text with { A = deck[i] })) z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
             if (sym.Ampel > 0)
             {
                 var c = sym.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
@@ -354,7 +358,7 @@ sealed class SymbolApps : IWegwischbar
         foreach (var zb in zeigerBilder)
         {
             if (zb is null || zb.Index >= lagen.Count) continue;
-            var s = z.Satz(symbole[zb.Index].Id, immerHell: true);
+            var s = z.Satz(symbole[zb.Index].Farbe ?? symbole[zb.Index].Id, immerHell: true);
             var a = s.Akzent;
             z.Linie(zb.Von, zb.Punkt, 0.0015, a with { A = 0.86 * deck[zb.Index] });
             z.Punkt(zb.Punkt, 0.006, a with { A = deck[zb.Index] });

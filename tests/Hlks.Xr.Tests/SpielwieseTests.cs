@@ -107,6 +107,80 @@ public class SpielwieseTests
         Assert.True(Werkzeug.Aus("xrlabor", "Labor am PC 2").MitSpielwiese);   // der Name aus dem Paket ändert nichts
     }
 
+    // ------------------------------------------------------------------------------------------------ Tafel und Symbolfeld
+
+    [Fact]
+    public void Tafel_Seiten_Zeilen_Zeit_und_Datum_auf_Deutsch_und_Ids()
+    {
+        Assert.Equal((0, 0, 4, 2), SpielwieseTafel.Seite(5, 4, 0));
+        Assert.Equal((1, 4, 1, 2), SpielwieseTafel.Seite(5, 4, 1));
+        Assert.Equal((1, 4, 1, 2), SpielwieseTafel.Seite(5, 4, 9));     // begrenzt
+        Assert.Equal((0, 0, 1, 3), SpielwieseTafel.Seite(3, 0, -2));    // mindestens ein Teil je Seite, Seite begrenzt
+        Assert.Equal((2, 2, 1, 3), SpielwieseTafel.Seite(3, 1, 2));
+        Assert.Equal((0, 0, 0, 1), SpielwieseTafel.Seite(0, 4, 3));
+        Assert.Equal(["eins zwei", "drei", "", "vier"], SpielwieseTafel.Zeilen("eins zwei drei\n\nvier", 9));
+        var t = new DateTime(2026, 10, 26, 9, 5, 0);
+        Assert.Equal("Montag, 26. Oktober 2026", SpielwieseTafel.Datum(t));
+        Assert.Equal("09:05", SpielwieseTafel.Zeit(t));
+        Assert.Equal("Samstag, 1. März 2025", SpielwieseTafel.Datum(new DateTime(2025, 3, 1)));
+        Assert.Equal("sw:liste", SpielwieseTafel.Id("liste"));
+        Assert.Equal("liste", SpielwieseTafel.Kennung("sw:liste"));
+        Assert.Null(SpielwieseTafel.Kennung("etagen"));   // die Apps eines Werkzeugs sind nie Platzhalter
+        Assert.Equal("wlan", SpielwieseTafel.SchalterId("sw-schalter:wlan"));
+        Assert.Null(SpielwieseTafel.SchalterId("messen_an"));
+    }
+
+    [Fact]
+    public void Kacheln_und_grosse_Schrift_auf_der_Tafel()
+    {
+        var m = GlasMasse.Fuer(new AppEinstellungen());
+        var c = new GlasInhalt(m, m.FensterB - 2 * m.M(GlasStil.RandPt), m.FensterH - 2 * m.M(GlasStil.RandPt) - m.M(GlasStil.FussPt));
+        c.Titel("Bilder");
+        var frei = c.FreieHoehe;
+        Assert.Equal(2, c.KachelReihenFrei(3));   // sechs Kacheln passen auf eine Seite
+        c.Kacheln([("A", "#C9874A", "kreis"), ("B", "#4F7FA6", "streifen"), ("C", "#5E8C5A", "quadrat"), ("D", "#8C5A7A", "ring")], 3);
+        var k = c.Elemente.Where(e => e.Art == GlasArt.Kachel).ToList();
+        Assert.Equal(4, k.Count);
+        Assert.All(k, e => Assert.False(e.Ziel));   // nicht antippbar
+        Assert.Equal(("#C9874A", "kreis"), (k[0].Zeile, k[0].Symbol));
+        Assert.Equal(k[0].Y, k[2].Y, 9);               // eine Reihe zu drei
+        Assert.True(k[3].Y < k[0].Y);                  // die vierte in der zweiten Reihe
+        Assert.True(k[0].X < k[1].X && k[1].X < k[2].X);
+        Assert.All(k, e => Assert.InRange(Math.Abs(e.X) + e.B / 2, 0, c.Breite / 2 + 1e-9));   // in der Breite der Tafel
+        Assert.True(c.FreieHoehe >= -1e-9 && c.FreieHoehe < frei);
+        var u = new GlasInhalt(m, 0.3, 0.3);
+        u.Gross("09:05");
+        Assert.Equal(GlasStil.StufeGross, u.Elemente[0].Stufe);
+        Assert.Equal(GlasArt.Text, u.Elemente[0].Art);
+    }
+
+    [Fact]
+    public void Symbolfeld_mit_eigener_Reihenfolge_der_Spielwiese_ohne_leere_Spalten()
+    {
+        var ids = new[] { "sw:notizen", "sw:bilder", "sw:uhr", "sw:liste", "sw:dokument", "sw:einstellungen", "werkzeuge" };
+        var eigene = ids[..6];
+        var r = AppSymbole.Raster(ids, 3, out var spalten, eigene);
+        Assert.Equal(3, spalten);   // zwei Spalten für die sechs Apps, «Werkzeuge» rechts daneben
+        Assert.Equal((0, 0), r["sw:notizen"]);
+        Assert.Equal((0, 1), r["sw:bilder"]);
+        Assert.Equal((2, 1), r["sw:einstellungen"]);
+        Assert.Equal((0, 2), r["werkzeuge"]);
+        // ohne eigene Reihenfolge lägen die Platzhalter alle in Reservespalten rechts der (leeren) Plätze von KICAD
+        AppSymbole.Raster(ids, 3, out var ohne);
+        Assert.True(ohne > spalten);
+        // KICAD unverändert: «tisch» teilt sich den Platz von «ort»
+        Assert.Equal(AppSymbole.Raster(["ort"], 3, out _)["ort"], AppSymbole.Raster(["tisch"], 3, out _)["tisch"]);
+        // Plätze mit eigener Reihenfolge: gleiche App, gleicher Platz – unabhängig von der Reihenfolge der Ids
+        var m = GlasMasse.Fuer(new AppEinstellungen());
+        var e = new SymbolEinstellungen();
+        var a = AppSymbole.Plaetze(ids, T.V(0, 1.6, 0), Math.PI / 2, e, m, reihenfolge: eigene);
+        var b = AppSymbole.Plaetze([.. ids.Reverse()], T.V(0, 1.6, 0), Math.PI / 2, e, m, reihenfolge: eigene);
+        Assert.All(a, p => T.Nah(p.Lage.Mitte.Abstand(b.Single(x => x.Id == p.Id).Lage.Mitte), 0, 1e-12));
+        Assert.All(GlasSymbole.Gezeichnet, g => Assert.True(GlasSymbole.Bekannt(g)));
+        Assert.False(GlasSymbole.Bekannt("@gibtsnicht"));
+        Assert.Equal("@werkzeuge", GlasSymbole.ZeichenWerkzeuge);
+    }
+
     // ------------------------------------------------------------------------------------------------ Laden vom Labor-PC, Ablage, Vorgabe
 
     sealed class Quelle(params TextAntwort?[] antworten) : IEbenenQuelle
