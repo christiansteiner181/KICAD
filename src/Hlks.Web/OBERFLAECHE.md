@@ -1709,6 +1709,8 @@ Browser `node src/Hlks.Web/wwwroot/js/ansichten/vr.browser.mjs` (Port 5600, CDP 
 
 ### Kontextmenü eines Raums (Benennung Christian 23.10.2026)
 Christian: «benenne im Kontextm. Raum in 3D, Raum begehen, Raum in AR, Raum begehen in VR, Modell am Sitzungstisch». Reihenfolge wie aufgezählt.
+Ein Trenner scheidet die Ansichten am PC (Raum in 3D, Raum begehen) von den VR-Ansichten an der Brille (Raum in AR, Raum begehen in VR,
+Modell am Sitzungstisch); Christian 26.10.2026: «normale Ansichten und VR ansichten sollen im Kontextmenue getrennt sein».
 
 | Eintrag | Früher | Wirkung |
 | --- | --- | --- |

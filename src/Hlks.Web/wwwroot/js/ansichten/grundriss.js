@@ -401,6 +401,7 @@ function erstellen(behaelter, ansichtElement) {
       // Benennung und Reihenfolge: Christian 23.10.2026 («benenne im Kontextm. Raum in 3D, Raum begehen, Raum in AR, Raum begehen in VR, Modell am Sitzungstisch»)
       { titel: 'Raum in 3D', aktion: () => ausfuehren('ansicht.raum3d', { raeume: [raum.kennzeichen] }) },   // N14: Raum + Rand im 3D
       { titel: 'Raum begehen', aktion: () => ausfuehren('ansicht.raumBegehen', { raeume: [raum.kennzeichen] }) },   // N15: Ich-Perspektive im 3D
+      { trenner: true },   // Christian 26.10.2026: normale Ansichten und VR-Ansichten getrennt
       { titel: 'Raum in AR', aktion: () => ausfuehren('ansicht.vrRaumZeigen', { raeume: [raum.kennzeichen] }) },   // Quest App: nur der Raum plus Rand auf dem (echten) Tisch, unter der Decke geschnitten
       { titel: 'Raum begehen in VR', aktion: () => ausfuehren('ansicht.vrBegehen', { raeume: [raum.kennzeichen] }) },   // Modul XR: Auftrag an die Brille
       { titel: 'Modell am Sitzungstisch', aktion: () => ausfuehren('ansicht.vrSitzungsraum', { raeume: [raum.kennzeichen] }) },   // Etage des Raums mit Schnitt unter der Decke, alles darunter

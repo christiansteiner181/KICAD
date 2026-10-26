@@ -151,6 +151,12 @@ test('Kontextmenü Raum im Grundriss: die drei VR-Einträge sind unverändert un
   assert.match(g, /titel: 'Modell am Sitzungstisch', aktion: \(\) => ausfuehren\('ansicht\.vrSitzungsraum', \{ raeume: \[raum\.kennzeichen\] \}\)/);
 });
 
+test('Kontextmenü Raum im Grundriss: ein Trenner scheidet die Ansichten am PC von den VR-Ansichten', () => {
+  const g = readFileSync(path.join(js, 'ansichten/grundriss.js'), 'utf8');
+  const titel = [...g.slice(g.indexOf("titel: 'Raum in 3D'") - 10).matchAll(/\{ (?:titel: '([^']+)'|(trenner): true)/g)].slice(0, 7).map((m) => m[1] ?? '—');
+  assert.deepEqual(titel, ['Raum in 3D', 'Raum begehen', '—', 'Raum in AR', 'Raum begehen in VR', 'Modell am Sitzungstisch', '—']);
+});
+
 test('Raumaktionen: Raum aus dem Kontextmenü-Parameter oder, im Menüband, aus der Auswahl; «An die Brille senden» braucht nur ein offenes Projekt', () => {
   const t = lies('./aktionen-vr-auftrag.js');
   assert.match(t, /const kz = p\?\.raeume \? p\.raeume\[0\] : zustand\.auswahl;/);
