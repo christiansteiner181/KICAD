@@ -66,6 +66,9 @@
 .qa-hinweis.ok { border-left-color: var(--ok); }
 .qa-hinweis.warnung { border-left-color: var(--warnung); }
 .qa-hinweis.info { border-left-color: var(--rand); }
+.qa-einrichten-zeile { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; }
+.qa-einrichten-zeile[hidden] { display: none; }
+.qa-einrichten[data-hervorgehoben="0"] { font-size: 0.9em; }
 .qa-fassungen { display: flex; flex-direction: column; gap: 2px; }
 .qa-fz { display: grid; grid-template-columns: 110px 1fr; gap: 8px; align-items: baseline; }
 .qa-abgelegt, .qa-installiert { overflow-wrap: anywhere; }

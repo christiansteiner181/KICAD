@@ -165,6 +165,74 @@ test('Alte Apps entfernen: der Dialog fragt vor dem Aufruf und schickt «bestaet
   assert.match(ep, /if \(!Param\.Bool\(p, "bestaetigt"\)\)/);
 });
 
+// ---------------------------------------------------------------- Netz einrichten (Christian 26.10.2026)
+
+const netzBedarf = { gelesen: true, einrichten: { noetig: true, netze: ['s-net 3'], regelnFehlen: true } };
+const netzFertig = { gelesen: true, einrichten: { noetig: false, netze: [], regelnFehlen: false } };
+
+test('Netz einrichten: Knopf gross bei Hinweisen, sonst klein «Erneut einrichten …», unsichtbar ohne gelesenen Netzstand', () => {
+  const g = T.einrichtenKnopf({ netz: netzBedarf });
+  assert.deepEqual(g, { sichtbar: true, hervorgehoben: true, titel: 'Netz einrichten …', frei: true });
+  const k = T.einrichtenKnopf({ netz: netzFertig });
+  assert.deepEqual(k, { sichtbar: true, hervorgehoben: false, titel: 'Erneut einrichten …', frei: true });
+  assert.equal(T.einrichtenKnopf({ netz: { gelesen: false } }).sichtbar, false);
+  assert.equal(T.einrichtenKnopf({ netz: null }).sichtbar, false);
+  assert.equal(T.einrichtenKnopf({ netz: netzBedarf, laeuft: true }).frei, false);
+  assert.equal(T.einrichtenKnopf({ netz: netzBedarf, wartet: true }).frei, false, 'solange auf das Ergebnis gewartet wird, nicht ein zweites Mal');
+});
+
+test('Netz einrichten: die Rückfrage nennt Netz, Regeln, Ports und die Rückfrage von Windows', () => {
+  const f = T.einrichtenFrage(netzBedarf);
+  assert.match(f, /«s-net 3»/);
+  assert.match(f, /«Privat»/);
+  assert.match(f, /«KICAD XR»/);
+  for (const port of ['5140', '5141', '5340', '5341']) assert.match(f, new RegExp(port), port);
+  assert.match(f, /Administratorrechten/);
+  assert.match(T.einrichtenFrage(netzFertig), /Netzprofil bleibt/);
+  assert.match(T.einrichtenFrage({ gelesen: true, einrichten: { noetig: true, netze: ['A', 'B'], regelnFehlen: false } }), /«A» und «B»/);
+});
+
+test('Netz einrichten: Meldungen zum Start, zum Abbruch der Rückfrage und zum Ende', () => {
+  assert.equal(T.einrichtenMeldung({ gestartet: true }).art, 'ok');
+  const n = T.einrichtenMeldung({ gestartet: false, grund: 'Administratorrechte nicht erteilt. Es wurde nichts geändert.' });
+  assert.deepEqual(n, { art: 'fehler', text: 'Administratorrechte nicht erteilt. Es wurde nichts geändert.' });
+  assert.equal(T.einrichtenMeldung({ gestartet: false }).art, 'fehler');
+  assert.equal(T.einrichtenMeldung(null).art, 'fehler');
+  assert.equal(T.einrichtenEnde('fertig').art, 'ok');
+  assert.match(T.einrichtenEnde('fertig').text, /Netz eingerichtet/);
+  assert.equal(T.einrichtenEnde('zeit').art, 'warnung');
+});
+
+test('Netz einrichten: Warten bis die Hinweise weg sind, höchstens 2 Minuten, alle 3 s', () => {
+  assert.equal(T.EINRICHTEN_TAKT_MS, 3000);
+  assert.equal(T.EINRICHTEN_GRENZE_MS, 120000);
+  assert.equal(T.einrichtenStand({ netz: netzBedarf, vergangenMs: 3000 }), 'wartet');
+  assert.equal(T.einrichtenStand({ netz: netzFertig, vergangenMs: 3000 }), 'fertig');
+  assert.equal(T.einrichtenStand({ netz: netzBedarf, vergangenMs: 120000 }), 'zeit');
+  assert.equal(T.einrichtenStand({ netz: netzBedarf, vergangenMs: 119999 }), 'wartet');
+  assert.equal(T.einrichtenStand({ netz: { gelesen: false }, vergangenMs: 5000 }), 'wartet', 'ein nicht gelesener Netzstand ist nie «fertig»');
+  assert.equal(T.einrichtenStand({ netz: null, vergangenMs: 200000 }), 'zeit');
+});
+
+test('Netz einrichten: der Dialog fragt vor dem Aufruf, schickt «bestaetigt» nur danach und liest den Netzstand neu', () => {
+  const d = lies('./quest-app-dialog.js');
+  assert.match(d, /<div class="qa-einrichten-zeile" hidden>/, 'ohne gelesenen Netzstand ist der Knopf versteckt');
+  assert.match(d, /Netz einrichten …/);
+  const klick = d.slice(d.indexOf("t.matches('.qa-einrichten')"), d.indexOf("t.matches('.qa-installieren')"));
+  assert.match(klick, /bestaetigen\(T\.einrichtenFrage\(netz\)/);
+  assert.ok(klick.indexOf('bestaetigen(') < klick.indexOf("senden('/api/quest/app/netz/einrichten', { bestaetigt: true })"));
+  assert.match(klick, /if \(!ok\) return;/);
+  assert.equal([...d.matchAll(/\/api\/quest\/app\/netz\/einrichten'/g)].length, 1, 'genau ein Aufruf des Endpunkts');
+  assert.match(d, /lies\('\/api\/quest\/app\/netz\?neu=1'\)/);
+  assert.match(d, /T\.EINRICHTEN_TAKT_MS/);
+  // gilt für KICAD und das XR-Labor: gleiche Oberfläche, keine eigene Fassung im Labor
+  assert.doesNotMatch(lies('../../../../Hlks.Labor/wwwroot/labor/labor.js'), /netz\/einrichten/);
+  // Server: nur mit Bestätigung, nur das feste Skript aus dem Programmordner (QuestAppEndpunkte.cs, QuestAppEinrichten.cs)
+  const ep = lies('../../../QuestAppEndpunkte.cs');
+  assert.match(ep, /MapPost\("\/netz\/einrichten"/);
+  assert.match(ep, /if \(!Param\.Bool\(p, "bestaetigt"\)\)/);
+});
+
 test('Gekoppelte Brillen: Name, seit, verbunden bzw. zuletzt', () => {
   const z = { kopplungen: [
     { id: 'a1b2c3d4e5f60718', brille: '1WMHH000000000', name: 'Quest Christian', weg: 'paket', angelegt: new Date(2026, 9, 23, 21, 15).toISOString(), zuletzt: new Date(2026, 9, 23, 21, 20).toISOString(), verbunden: true },
@@ -326,14 +394,14 @@ test('App-Marke: Vorgabe KICAD mit den bisherigen Texten, eine andere Marke erse
   assert.equal(T.installierenKnopf({ q: quest, app: { ...app, ablage: { ...ablageOk, version: null } }, zugang: an }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 ausführen.');
   assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an }).grund, 'adb fehlt: oben im Dialog einrichten.');
   assert.equal(T.appWegText({ appWeg: 'kabel' }), 'Kabelweg: Die App ist per Kabel gekoppelt. KICAD stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.');
-  assert.equal(T.FIREWALL_HINWEIS, 'KICAD liest Netzprofil und Firewall nur und ändert nichts. Einrichten macht Christian selbst: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd stuft das Netz als privat ein und legt die Regeln an (fragt nach Administratorrechten); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).');
+  assert.equal(T.FIREWALL_HINWEIS, 'KICAD ändert Netzprofil und Firewall nur auf Knopfdruck («Netz einrichten …»), nach Rückfrage und mit Bestätigung durch Windows (Administratorrechte). Ersatzweise: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd (stuft das Netz als privat ein und legt die Regeln an); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).');
   const probe = { ...m, app: 'Probe', desktopPort: 5999, bereitstellen: 'probe.ps1', adbEinrichten: 'anderswo einrichten' };
   assert.equal(T.zugangAnzeige({ ...aus, an: true }, probe).text, 'Er startet gleich (nur im Probe auf Port 5999).');
   assert.match(T.zugangAnzeige(aus, probe).text, /^Nur dieser PC erreicht Probe\./);
   assert.equal(T.installierenKnopf({ q: quest, app: { ...app, ablage: { ...ablageOk, version: null } }, zugang: an, marke: probe }).grund, 'Keine App abgelegt: probe.ps1 ausführen.');
   assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an, marke: probe }).grund, 'adb fehlt: anderswo einrichten.');
   assert.match(T.appWegText({ appWeg: 'kabel' }, probe), /Probe stellt die Brille nicht/);
-  assert.match(T.firewallHinweis(probe), /^Probe liest Netzprofil/);
+  assert.match(T.firewallHinweis(probe), /^Probe ändert Netzprofil und Firewall nur auf Knopfdruck/);
   assert.equal(T.installiertText({ adbGefunden: false }, { ...probe, adbFehlt: 'adb fehlt anderswo.' }), 'adb fehlt anderswo.');
   assert.match(lies('./quest-app-dialog.js'), /T\.installiertText\(app, appMarke\)/);
   // der Dialog nimmt die Marke als Option und setzt ihre Werte nur über esc() ins HTML; ohne Ablage-Schlüssel und Brillen-Schalter fehlen diese Teile

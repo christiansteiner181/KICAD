@@ -15,4 +15,11 @@
     <Content Update="wwwroot\**" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
+  <!-- «Netz einrichten …» (QuestAppEinrichten.cs): die Skripte liegen im Programmordner (Unterordner werkzeuge), damit der Server sie unabhängig von der Arbeitskopie findet
+       (Desktop, XR-Labor, Tests). Hlks.Labor erbt sie über den Projektverweis. -->
+  <ItemGroup>
+    <Content Include="..\..\werkzeuge\xr_netz_einrichten.ps1" Link="werkzeuge\xr_netz_einrichten.ps1" CopyToOutputDirectory="PreserveNewest" />
+    <Content Include="..\..\werkzeuge\xr_firewall.ps1" Link="werkzeuge\xr_firewall.ps1" CopyToOutputDirectory="PreserveNewest" />
+  </ItemGroup>
+
 </Project>

@@ -264,6 +264,58 @@ export const wartetText = 'Die Brille hat noch nicht aufgedeckt – der Code ers
 /** Leitfaden für die Ersatzkopplung (kurz, in einfachen Worten). */
 export const ERSATZ_HINWEIS = 'Nur wenn die Kopplung bei der Installation nicht möglich war: Die App bittet in der Brille um eine Kopplung. Hier erscheint dann eine Anfrage mit einem 6-stelligen Code. Zeigt die Brille genau denselben Code, «Codes stimmen überein – koppeln» klicken; sonst «Ablehnen». In der Brille wird nichts eingetippt.';
 
-/** Hinweis zum Skript, das die Firewall-Regeln anlegt (der Server ändert die Firewall nie); m = App-Marke. */
-export const firewallHinweis = (m = KICAD_MARKE) => `${m.app} liest Netzprofil und Firewall nur und ändert nichts. Einrichten macht Christian selbst: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd stuft das Netz als privat ein und legt die Regeln an (fragt nach Administratorrechten); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).`;
+// ------------------------------------------------------------------------------------------ Netz einrichten (Christian 26.10.2026)
+
+/** Abfrageabstand (ms) und Höchstdauer (ms) des Netzstands nach «Netz einrichten …» (das Skript läuft im eigenen Fenster mit Administratorrechten). */
+export const EINRICHTEN_TAKT_MS = 3000;
+export const EINRICHTEN_GRENZE_MS = 120000;
+
+/** Was der Server zum Einrichten sagt (GET /api/quest/app/netz, Feld «einrichten»): { noetig, netze: [Name], regelnFehlen }; ohne Angabe nichts nötig. */
+export function einrichtenBedarf(netz) {
+  const e = netz?.einrichten;
+  return { noetig: e?.noetig === true, netze: (e?.netze ?? []).filter((n) => typeof n === 'string'), regelnFehlen: e?.regelnFehlen === true };
+}
+
+/**
+ * Zustand des Knopfs «Netz einrichten …»: sichtbar nur, wenn der Netzstand gelesen ist. Besteht einer der beiden Hinweise (Netz nicht privat, Regeln fehlen bzw. unvollständig),
+ * steht er gross als «Netz einrichten …» (hervorgehoben = true); sonst klein unter «Netz» als «Erneut einrichten …». frei: kein Vorgang läuft und das Einrichten wartet nicht noch.
+ */
+export function einrichtenKnopf({ netz, laeuft = false, wartet = false }) {
+  const b = einrichtenBedarf(netz);
+  const sichtbar = netz?.gelesen === true;
+  return { sichtbar, hervorgehoben: sichtbar && b.noetig, titel: b.noetig ? 'Netz einrichten …' : 'Erneut einrichten …', frei: sichtbar && !laeuft && !wartet };
+}
+
+/** Die Rückfrage vor dem Einrichten: was geändert wird und dass Windows nach Administratorrechten fragt. Die Namen der Netze kommen von Windows (nur als Text ausgeben). */
+export function einrichtenFrage(netz) {
+  const b = einrichtenBedarf(netz);
+  const profil = b.netze.length > 0
+    ? `Das Netz ${b.netze.map((n) => `«${n}»`).join(' und ')} wird als «Privat» eingestuft (die Regeln gelten nur dort).`
+    : 'Das Netzprofil bleibt, wie es ist.';
+  return `Das Netz für die Brille einrichten?\n\n${profil}\nDie Firewall-Regeln der Gruppe «KICAD XR» werden angelegt bzw. erneuert: KICAD TCP 5140 und UDP 5141, XR-Labor TCP 5340 und UDP 5341 – nur Profil «Privat», nur aus dem eigenen Subnetz.\n\nWindows fragt danach nach Administratorrechten. Das Ergebnis erscheint in einem eigenen Fenster.`;
+}
+
+/** Meldung zur Antwort von POST /api/quest/app/netz/einrichten: { art, text }. Nicht gestartet (z. B. Administratorrechte abgelehnt) ist ein Fehler mit dem Grund des Servers. */
+export function einrichtenMeldung(antwort) {
+  if (antwort?.gestartet === true) return { art: 'ok', text: 'Das Einrichten läuft im Fenster mit Administratorrechten. Der Netzstand wird gelesen, sobald es fertig ist.' };
+  return { art: 'fehler', text: typeof antwort?.grund === 'string' && antwort.grund ? antwort.grund : 'Das Einrichten liess sich nicht starten.' };
+}
+
+/**
+ * Stand des Wartens nach dem Start: 'fertig' (Netzstand gelesen, nichts mehr nötig), 'zeit' (nach 2 Minuten noch nicht fertig) oder 'wartet'.
+ * vergangenMs = Zeit seit dem Start. Nicht gelesener Netzstand zählt nie als fertig.
+ */
+export function einrichtenStand({ netz, vergangenMs }) {
+  if (netz?.gelesen === true && !einrichtenBedarf(netz).noetig) return 'fertig';
+  return vergangenMs >= EINRICHTEN_GRENZE_MS ? 'zeit' : 'wartet';
+}
+
+/** Meldung zum Ende des Wartens: fertig = «Netz eingerichtet», Zeit = noch nicht (Ergebnisfenster ansehen, Skript als Ersatzweg). */
+export function einrichtenEnde(stand) {
+  if (stand === 'fertig') return { art: 'ok', text: 'Netz eingerichtet: Das Netz ist privat, die Regeln der Gruppe «KICAD XR» sind da.' };
+  return { art: 'warnung', text: 'Das Netz ist noch nicht eingerichtet (nach 2 Minuten). Das Ergebnisfenster des Skripts zeigt, was fehlt; ersatzweise Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd. Danach «Erneut einrichten …» bzw. den Dialog neu öffnen.' };
+}
+
+/** Hinweis zum Netz: der Knopf «Netz einrichten …» ändert Netzprofil und Firewall nur auf Knopfdruck; Ersatzwege sind das Doppelklick-Skript und die Firewall-Regeln allein; m = App-Marke. */
+export const firewallHinweis = (m = KICAD_MARKE) => `${m.app} ändert Netzprofil und Firewall nur auf Knopfdruck («Netz einrichten …»), nach Rückfrage und mit Bestätigung durch Windows (Administratorrechte). Ersatzweise: Doppelklick auf werkzeuge\\xr_netz_einrichten.cmd (stuft das Netz als privat ein und legt die Regeln an); nur die Regeln: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).`;
 export const FIREWALL_HINWEIS = firewallHinweis(KICAD_MARKE);

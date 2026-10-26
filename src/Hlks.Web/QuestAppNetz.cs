@@ -1,7 +1,8 @@
 // Netzprofil und Firewall-Regeln für den Netzzugang der Quest App – NUR LESEN (Modul XR, Quest App P7; Auftrag: «Netzprofil und Regeln der Gruppe «KICAD XR» nur lesen,
 // nie ändern»). Der Dialog «Quest verbinden» zeigt daraus Hinweise: Ist das Netz des PCs «Öffentlich» oder fehlen die Regeln, erreicht die Brille den PC nicht über das WLAN
-// (Befund Brillentest 23.10.2026: «s-net 3» war «Öffentlich», die Regeln fehlten; Christian: «Jetzt über Kabel»). KICAD ändert nichts: die Regeln legt Christian selbst mit
-// werkzeuge/xr_firewall.ps1 als Administrator an.
+// (Befund Brillentest 23.10.2026: «s-net 3» war «Öffentlich», die Regeln fehlten; Christian: «Jetzt über Kabel»). KICAD ändert nur auf Knopfdruck («Netz einrichten …», mit
+// Rückfrage und Bestätigung durch Windows; QuestAppEinrichten.cs, POST /api/quest/app/netz/einrichten); ersatzweise legt Christian die Regeln mit werkzeuge/xr_netz_einrichten.cmd
+// bzw. werkzeuge/xr_firewall.ps1 als Administrator selbst an. Dieser Teil hier liest nur.
 //
 // SICHERHEIT: Gelesen wird mit einem festen PowerShell-Skript (Get-NetConnectionProfile, Get-NetFirewallRule -Group 'KICAD XR', Get-NetFirewallPortFilter) – ohne Eingabe von
 // aussen, ohne Schreibbefehle, mit Zeitgrenze (Kill nur dieses Prozesses), Ausgabe höchstens 256 KB. Im Testlauf ist die Naht leer (QuestAppSystemLeer); Tests setzen eine eigene
@@ -133,6 +134,20 @@ public static class QuestAppNetz
         && r.Port.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Contains(port.ToString())
         && (r.Profile.Contains("Private", StringComparison.OrdinalIgnoreCase) || r.Profile.Contains("Any", StringComparison.OrdinalIgnoreCase) || r.Profile.Contains("All", StringComparison.OrdinalIgnoreCase));
 
+    /// <summary>Was «Netz einrichten …» ändern würde (für die Rückfrage im Dialog): die Netze, die auf «Privat» gestellt würden, und ob Regeln fehlen bzw. unvollständig sind.
+    /// Noetig = mindestens eines davon; bei nicht lesbarem Netzstand nie (dann ist unbekannt, was fehlt). Rein: ändert nichts.</summary>
+    public sealed record Bedarf(bool Noetig, IReadOnlyList<string> Netze, bool RegelnFehlen);
+
+    public static Bedarf EinrichtenBedarf(NetzAuskunft a, IReadOnlyList<NetzSchnittstelle> echte, int port, int suchPort)
+    {
+        if (!a.Gelesen) return new Bedarf(false, [], false);
+        var profile = a.Profile.Where(p => echte.Any(s => string.Equals(s.Name, p.Schnittstelle, StringComparison.OrdinalIgnoreCase))).ToList();
+        if (profile.Count == 0 && echte.Count > 0) profile = a.Profile.ToList();
+        var netze = profile.Where(p => !p.Kategorie.Equals("Private", StringComparison.OrdinalIgnoreCase)).Select(p => p.Name).Distinct().ToList();
+        bool regeln = !(a.Regeln.Any(r => Deckt(r, "TCP", port)) && a.Regeln.Any(r => Deckt(r, "UDP", suchPort)));
+        return new Bedarf(netze.Count > 0 || regeln, netze, regeln);
+    }
+
     /// <summary>Hinweise zu Netzprofil und Regeln. echte: die LAN-/WLAN-Schnittstellen des PCs mit privater Adresse (QuestDienst.EchteSchnittstelle). Nichts hier ändert etwas.
     /// name: der Server in den Meldungen (QuestAppMarke.Name: KICAD bzw. XR-Labor).</summary>
     public static List<QuestAppHinweis> Bewerten(NetzAuskunft a, IReadOnlyList<NetzSchnittstelle> echte, int port, int suchPort, bool zugangAktiv, string name = "KICAD")
@@ -150,15 +165,15 @@ public static class QuestAppNetz
             h.Add(new QuestAppHinweis("warnung", $"{name} findet keine LAN- oder WLAN-Karte mit privater Adresse. Ohne Büronetz erreicht die Brille den PC nur über das Kabel."));
         foreach (var p in profile.Where(p => !p.Kategorie.Equals("Private", StringComparison.OrdinalIgnoreCase)))
             h.Add(new QuestAppHinweis("warnung", $"Das Netz «{p.Name}» ({p.Schnittstelle}) ist als «{Kategorie(p.Kategorie)}» eingestuft. Die Regeln der Gruppe «KICAD XR» gelten nur im Profil «Privat»; die Brille erreicht den PC im WLAN so nicht. "
-                + $"Doppelklick auf {EinrichtenSkript} stuft es als privat ein und legt die Regeln an; oder das Netz in den Windows-Einstellungen als privat einstufen, oder die Installation «über Kabel» wählen."));
+                + $"Der Knopf «Netz einrichten …» stuft es als privat ein und legt die Regeln an (Windows fragt nach Administratorrechten); ersatzweise Doppelklick auf {EinrichtenSkript}, oder das Netz in den Windows-Einstellungen als privat einstufen, oder die Installation «über Kabel» wählen."));
         // Regeln
         bool tcp = a.Regeln.Any(r => Deckt(r, "TCP", port)), udp = a.Regeln.Any(r => Deckt(r, "UDP", suchPort));
         if (a.Regeln.Count == 0)
-            h.Add(new QuestAppHinweis("warnung", $"Die Firewall-Regeln der Gruppe «KICAD XR» fehlen (TCP {port}, UDP {suchPort}). Im WLAN erreicht die Brille den PC erst, wenn Christian {EinrichtenSkript} (Doppelklick) bzw. als Administrator {FirewallSkript} ausgeführt hat (KICAD ändert die Firewall nie). Über das Kabel geht es auch ohne."));
+            h.Add(new QuestAppHinweis("warnung", $"Die Firewall-Regeln der Gruppe «KICAD XR» fehlen (TCP {port}, UDP {suchPort}). Im WLAN erreicht die Brille den PC erst, wenn der Knopf «Netz einrichten …» sie angelegt hat (Windows fragt nach Administratorrechten; {name} ändert die Firewall nur auf Knopfdruck); ersatzweise Doppelklick auf {EinrichtenSkript} bzw. als Administrator {FirewallSkript}. Über das Kabel geht es auch ohne."));
         else
         {
-            if (!tcp) h.Add(new QuestAppHinweis("warnung", $"Es gibt keine eingeschaltete, erlaubende Regel für TCP {port} im Profil «Privat» (Gruppe «KICAD XR»). {FirewallSkript} als Administrator neu ausführen."));
-            if (!udp) h.Add(new QuestAppHinweis("info", $"Für die Suche (UDP {suchPort}) fehlt eine Regel; die App findet den PC dann nur über die Adressen im Paket. {FirewallSkript} als Administrator neu ausführen."));
+            if (!tcp) h.Add(new QuestAppHinweis("warnung", $"Es gibt keine eingeschaltete, erlaubende Regel für TCP {port} im Profil «Privat» (Gruppe «KICAD XR»). Der Knopf «Netz einrichten …» legt sie neu an; ersatzweise {FirewallSkript} als Administrator neu ausführen."));
+            if (!udp) h.Add(new QuestAppHinweis("info", $"Für die Suche (UDP {suchPort}) fehlt eine Regel; die App findet den PC dann nur über die Adressen im Paket. Der Knopf «Netz einrichten …» legt sie neu an; ersatzweise {FirewallSkript} als Administrator neu ausführen."));
         }
         if (!zugangAktiv) h.Add(new QuestAppHinweis("info", "Der Netzzugang dieses PCs ist aus. Zum Installieren zuerst einschalten (nur für die Dauer des Tests)."));
         if (h.Count == 0 || h.All(x => x.Stufe == "info" && !zugangAktiv)) { }

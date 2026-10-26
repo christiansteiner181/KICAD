@@ -30,6 +30,7 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
   let meldungText = null; // { art, text, vorschlag }
   let timer = null;
   let beendet = false;
+  let einrichtenWartet = null;   // nach «Netz einrichten …»: { start (ms), takt } bis der Netzstand es zeigt (alle 3 s, höchstens 2 Minuten); sonst null
   let zeichnung = '';     // zuletzt gezeichneter Zustand der Listen (vermeidet Flackern im Takt)
 
   const w = knoten(`<section class="qa" aria-label="Quest App">
@@ -39,6 +40,8 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
       <div class="qa-zeile"><span class="qa-lampe" aria-hidden="true"></span><span class="qa-zugang-text"></span>
         <button type="button" class="dlg-knopf qa-schalter" title="Öffnet bzw. schliesst den Zugang der App im Büronetz (nur dieser PC; Port ${esc(appMarke.port)}, nur gekoppelte Brillen)">Netzzugang einschalten</button></div>
       <ul class="qa-hinweise" aria-label="Hinweise zum Netz"></ul>
+      <div class="qa-einrichten-zeile" hidden><button type="button" class="dlg-knopf qa-einrichten" title="Stuft das Netz der Brille als «Privat» ein und legt die Firewall-Regeln der Gruppe «KICAD XR» an (nach Rückfrage; Windows fragt nach Administratorrechten)">Netz einrichten …</button>
+        <span class="leise qd-klein qa-einrichten-text"></span></div>
       <div class="leise qd-klein qa-firewall">${esc(T.firewallHinweis(appMarke))}</div>
     </div>
     <div class="qa-fassungen">
@@ -84,6 +87,15 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     s.disabled = !zugang || laeuft;
     const h = T.hinweisListe(netz);
     q('.qa-hinweise').innerHTML = h.map((x) => `<li class="qa-hinweis ${esc(x.stufe)}" data-stufe="${esc(x.stufe)}">${esc(x.text)}</li>`).join('');
+    // «Netz einrichten …»: gross, solange einer der Hinweise besteht, sonst klein als «Erneut einrichten …»
+    const e = T.einrichtenKnopf({ netz, laeuft, wartet: einrichtenWartet !== null });
+    q('.qa-einrichten-zeile').hidden = !e.sichtbar;
+    const k = q('.qa-einrichten');
+    k.textContent = e.titel;
+    k.classList.toggle('primaer', e.hervorgehoben);
+    k.dataset.hervorgehoben = e.hervorgehoben ? '1' : '0';
+    k.disabled = !e.frei;
+    q('.qa-einrichten-text').textContent = einrichtenWartet !== null ? 'Wartet auf das Ergebnis …' : '';
   }
 
   function zeichneFassungen() {
@@ -188,6 +200,29 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     }
   }
 
+  /** Wartet nach dem Start des Skripts auf das Ergebnis: liest alle 3 s den Netzstand (neu) bis «eingerichtet» oder 2 Minuten. */
+  function einrichtenAbwarten() {
+    einrichtenBeenden();
+    const start = Date.now();
+    const takt = setInterval(async () => {
+      if (beendet) return einrichtenBeenden();
+      const n = await lies('/api/quest/app/netz?neu=1');
+      if (beendet || einrichtenWartet === null) return;
+      if (n) netz = n;
+      const stand = T.einrichtenStand({ netz, vergangenMs: Date.now() - start });
+      if (stand === 'wartet') { zeichne(); return; }
+      einrichtenBeenden();
+      meldungText = { ...T.einrichtenEnde(stand), vorschlag: null };
+      zeichne(true);
+    }, T.EINRICHTEN_TAKT_MS);
+    einrichtenWartet = { start, takt };
+  }
+
+  function einrichtenBeenden() {
+    if (einrichtenWartet) clearInterval(einrichtenWartet.takt);
+    einrichtenWartet = null;
+  }
+
   async function taktSchritt() {
     if (beendet || laeuft) return;
     const z = await lies('/api/xr/zugang');
@@ -202,6 +237,15 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
         zugang = await senden('/api/xr/zugang', { an: T.schalterWert(zugang) });
         netz = await lies('/api/quest/app/netz?neu=1');
         meldungText = { art: 'ok', text: zugang.an ? 'Der Netzzugang ist eingeschaltet.' : 'Der Netzzugang ist ausgeschaltet; verbundene Brillen sind getrennt.' };
+      });
+    } else if (t.matches('.qa-einrichten')) {
+      bestaetigen(T.einrichtenFrage(netz), { ja: 'Einrichten', titel: 'Netz einrichten' }).then((ok) => {
+        if (!ok) return;
+        lauf(async () => {
+          const a = await senden('/api/quest/app/netz/einrichten', { bestaetigt: true });
+          meldungText = { ...T.einrichtenMeldung(a), vorschlag: null };
+          if (a?.gestartet === true) einrichtenAbwarten();
+        });
       });
     } else if (t.matches('.qa-installieren')) {
       lauf(async () => {
@@ -275,6 +319,6 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     knoten: w,
     aktualisieren: () => zeichne(),
     zustandNeu,
-    beenden() { beendet = true; clearInterval(timer); timer = null; },
+    beenden() { beendet = true; clearInterval(timer); timer = null; einrichtenBeenden(); },
   };
 }

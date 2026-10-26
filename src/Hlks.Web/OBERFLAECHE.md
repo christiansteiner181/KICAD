@@ -2039,7 +2039,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   Weg B: beim ersten Kontakt das Zertifikat vorläufig annehmen und seinen SHA-256 merken, Zufallszahl erzeugen, anfragen, aufdecken, den Code selbst rechnen und gross
   zeigen («Am PC denselben Code bestätigen»), abholen bis 200; nur übernehmen, wenn `paket.fingerabdruck` gleich dem gemerkten ist. GLB mit `Accept-Encoding: br, gzip`
   und `If-None-Match` holen.
-- **Firewall:** KICAD ändert nichts. `werkzeuge/xr_firewall.ps1` (als Administrator, von Christian) legt zwei eingehende Regeln an: TCP 5140 und UDP 5141, nur Profil
+- **Firewall:** KICAD ändert nur auf Knopfdruck («Netz einrichten …», Abschnitt «H+K XR (Empfänger-App), E1 – PC-Seite», Unterabschnitt «Netz einrichten per Knopf»). `werkzeuge/xr_firewall.ps1` (als Administrator, von Christian; ersatzweise) legt zwei eingehende Regeln an: TCP 5140 und UDP 5141, nur Profil
   «Privat», nur aus dem eigenen Subnetz; `-Entfernen` nimmt sie weg, `-Liste` zeigt Regeln, Netzprofil und Sperren für dotnet.exe.
 - **Netz einrichten per Doppelklick** (Christian 26.10.2026: «mache ein skript, dass der nutzer auslösen kann, um die beiden hinweise zu erfüllen»): `werkzeuge\xr_netz_einrichten.cmd` zeigt die Netzverbindungen, stuft nach Rückfrage (J/N) und Windows-Bestätigung (Administrator) die öffentlichen Verbindungen über echte Netzwerkkarten (WLAN/LAN; VPN und virtuelle bleiben) als «Privat» ein und ruft `xr_firewall.ps1` auf (Regeln für KICAD und XR-Labor). `-Trocken` zeigt nur, `-OhneFirewall` nur das Netzprofil. Die Hinweise im Teil «Quest App» bzw. «Brille» nennen das Skript (`QuestAppNetz.EinrichtenSkript`).
 - **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~Hlks.Web.Tests.Xr"` (Netzzugang echt mit TLS, aber nur auf 127.0.0.1 mit freien Ports).
@@ -2056,7 +2056,7 @@ Der Dialog **«Quest verbinden»** (Register **XR › Gruppe Brille › «Quest 
 
 - **Netzzugang ein/aus:** Zeile mit Lampe (grün = aktiv, rot = eingeschaltet aber nicht aktiv, grau = aus), Port, Fingerabdruck in Kurzform («AB12 CD34 EF56 7890») und den Adressen des PCs; Knopf **«Netzzugang einschalten/ausschalten»**
   (`POST /api/xr/zugang { an }`, Schalter dieses PCs wie im Abschnitt «Zugang im Büronetz»). Der Zugang öffnet sich nur im KICAD auf Port 5130 (Desktop); sonst steht der Grund in der Zeile.
-- **Hinweise zu Netz und Firewall (nur lesen):** `GET /api/quest/app/netz`. KICAD liest mit einem **festen PowerShell-Skript** (`Get-NetConnectionProfile`, `Get-NetFirewallRule -Group 'KICAD XR'`, `Get-NetFirewallPortFilter`; kein Schreibbefehl,
+- **Hinweise zu Netz und Firewall (Lesen: nur lesend; Ändern seit 26.10.2026 nur über den Knopf «Netz einrichten …»):** `GET /api/quest/app/netz`. KICAD liest mit einem **festen PowerShell-Skript** (`Get-NetConnectionProfile`, `Get-NetFirewallRule -Group 'KICAD XR'`, `Get-NetFirewallPortFilter`; kein Schreibbefehl,
   Zeitgrenze 20 s, 30 s gemerkt, «?neu=1» liest neu) und bewertet (`QuestAppNetz.Bewerten`, getestet): **Warnung**, wenn ein Netz des PCs nicht «Privat» ist (Beispiel: «s-net 3» als «Öffentlich»; die Regeln gelten nur im Profil «Privat»),
   wenn die Regeln der Gruppe «KICAD XR» fehlen oder TCP 5140 nicht erlaubt ist (mit Verweis auf `werkzeuge\xr_firewall.ps1`, das **Christian selbst als Administrator** ausführt – KICAD ändert nie etwas) bzw. wenn keine LAN-/WLAN-Karte mit privater
   Adresse da ist; **Hinweis**, wenn nur UDP 5141 (Suche) fehlt oder Windows nicht lesbar war («über das Kabel geht es trotzdem»); **grün**, wenn alles in Ordnung ist. Im Testlauf wird Windows nicht befragt (`QuestAppSystemLeer`).
@@ -3717,6 +3717,31 @@ Register **XR › Gruppe Brille › «H+K XR installieren …»** (`xr.appInstal
 - Das Paket Fassung 2 enthält `werkzeug` und `werkzeugName` des Servers, der es ausgibt (KICAD `kicad`/«KICAD», Labor `xrlabor`/«XR-Labor»); `POST /api/xr/kopplung/paket` gibt es ebenso aus.
 - «Alte Apps entfernen …» ist nur sichtbar, wenn mindestens eine alte App installiert ist, fragt immer vorher und entfernt nur «KICAD» und «XR-Labor».
 - Im 3D-Fenster am PC erscheint die Figur einer Brille nur, solange ihre App dieses Werkzeug vorn zeigt (`aktiv` fehlt oder `true`).
+
+### Netz einrichten per Knopf (Christian 26.10.2026: «bitte alle netzkomponenten in der app integrieren»; ein Knopf in KICAD und im Labor)
+
+Das Doppelklick-Skript `werkzeuge\xr_netz_einrichten.cmd` muss man nicht mehr suchen: der Teil «Quest App» (KICAD: Register XR › «H+K XR installieren …» bzw. Dialog «Quest verbinden»; Labor: Reiter **Brille**
+– dieselbe Oberfläche `quest-app-dialog.js`) hat unter den Netz-Hinweisen den Knopf **«Netz einrichten …»**.
+
+- **Wo / wann sichtbar:** sobald der Netzstand gelesen ist (`GET /api/quest/app/netz`, `gelesen: true`). Besteht einer der beiden Hinweise (Netz nicht «Privat», Regeln der Gruppe «KICAD XR» fehlen bzw. TCP/UDP unvollständig;
+  Feld `einrichten.noetig`), steht er gross (hervorgehoben); sonst klein als **«Erneut einrichten …»**. Ist Windows nicht lesbar (Testlauf, kein Windows), fehlt der Knopf.
+- **Bedienung:** Klick → Rückfrage: «Das Netz «<Name>» wird als «Privat» eingestuft» (nur die Netze, die nicht privat sind; sonst «Das Netzprofil bleibt, wie es ist»), «die Firewall-Regeln der Gruppe «KICAD XR» werden
+  angelegt bzw. erneuert: KICAD TCP 5140/UDP 5141, XR-Labor TCP 5340/UDP 5341 – nur Profil «Privat», nur eigenes Subnetz», «Windows fragt danach nach Administratorrechten». Bei «Einrichten» ruft die Oberfläche
+  `POST /api/quest/app/netz/einrichten { bestaetigt: true }`; Windows blendet die Rückfrage der Benutzerkontensteuerung ein, danach läuft `xr_netz_einrichten.ps1` im **eigenen Fenster** (Ergebnis dort sichtbar,
+  «Enter zum Schliessen»). Die Oberfläche liest den Netzstand alle 3 s neu (`?neu=1`, höchstens 2 Minuten); sind die Hinweise weg, meldet sie «Netz eingerichtet», sonst nach 2 Minuten «noch nicht eingerichtet»
+  mit Verweis auf das Ergebnisfenster und das Doppelklick-Skript.
+- **Endpunkt** (`QuestAppEndpunkte.cs`, `QuestAppEinrichten.cs`): nur localhost, Herkunftsschutz, ohne `bestaetigt: true` 400 (nichts gestartet). Er startet `powershell.exe -NoProfile -ExecutionPolicy Bypass -File
+  "<Programmordner>\werkzeuge\xr_netz_einrichten.ps1" -Erhoeht -Ja` mit `Verb = runas` und wartet nicht auf das Ende. Antwort `{ gestartet: true }` bzw. `{ gestartet: false, grund }`: lehnt der Mensch die Windows-Rückfrage
+  ab (Win32-Fehler 1223), lautet der Grund «Administratorrechte nicht erteilt. Es wurde nichts geändert.»; fehlt das Skript oder läuft schon eine offene Rückfrage, steht das im Grund. Ein zweiter Start bei offener
+  Rückfrage wird nicht ausgelöst. Für die KI verboten (`KiEinordnung` › `quest_app_netz`, deckt auch diesen Endpunkt; kein MCP-Werkzeug).
+- **Skripte im Programmordner:** `Hlks.Web.csproj` baut `xr_netz_einrichten.ps1` und `xr_firewall.ps1` als Inhalt in den Unterordner `werkzeuge\` des Bauordners (auch der des Labors, über den Projektverweis); der Server
+  findet sie über `AppContext.BaseDirectory`, unabhängig von der Arbeitskopie (Desktop, Labor, Tests). Das Skript selbst ist unverändert (Doppelklick-Skript und `-Trocken` gelten weiter).
+- **Prozessstart austauschbar:** `IQuestAppEinrichten` (Vorgabe im Testlauf `QuestAppEinrichtenLeer`: startet nie etwas; sonst `QuestAppEinrichtenEcht` mit austauschbarem Startdelegat). Tests starten nie PowerShell mit
+  Administratorrechten.
+- **Texte:** Die Hinweise nennen den Knopf; das Skript `xr_netz_einrichten.cmd` bleibt als Ersatzweg genannt (und `xr_firewall.ps1` für nur die Regeln). Statt «KICAD ändert die Firewall nie» steht: nur auf Knopfdruck, mit Bestätigung durch Windows.
+- **Prüfen:** `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~NetzEinrichten|FullyQualifiedName~QuestAppTests|FullyQualifiedName~KiEinordnung"`; `dotnet test tests/Hlks.Labor.Tests --filter "FullyQualifiedName~QuestApp"`;
+  `node --test src/Hlks.Web/wwwroot/js/oberflaeche/quest-app.test.mjs src/Hlks.Labor/wwwroot/labor/labor.test.mjs`. **Nur am echten PC prüfbar:** die Windows-Rückfrage, das Fenster mit dem Ergebnis, die Änderung von Netzprofil und Firewall
+  (der Endpunkt wurde im Bau nie echt ausgelöst).
 
 ### Prüfen
 
