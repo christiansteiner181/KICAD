@@ -178,6 +178,24 @@ Zwischen den Stufen ein Brillentest mit Christian (Prüfbilder an jedem sichtbar
   während E1/E2 ändert nur diese Sitzung die App.
 - **Hauptsitzung:** L1 kann wie gemeldet zusammengeführt werden; es bleibt Grundlage. Neue Knöpfe in KICAD («H+K XR installieren») gehören zu E1.
 
+### Schnittstellen im Bau E1 (Hauptlauf, 26.10.2026)
+
+Damit Brille (`hlks-kern`) und PC-Seite (`hlks-modul`) gleichzeitig bauen, gilt:
+
+- **App:** Kennung `ch.hkplanung.xr`, Name «H+K XR». Eine APK für alle Werkzeuge, abgelegt von `werkzeuge/quest_app_bereitstellen.ps1` (ohne
+  `-Labor`) in `%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr\` (`ch.hkplanung.xr-Signed.apk` + `version.json` wie bisher). KICAD und Labor installieren
+  dieselbe APK von dort. Bauausgabe `<bau>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xr-Signed.apk`.
+- **Kopplungspaket** Fassung 2: wie Fassung 1 plus `werkzeug` (`kicad` | `xrlabor`, Muster `[a-z][a-z0-9_-]{0,31}`) und `werkzeugName` («KICAD» |
+  «XR-Labor»). Fassung 1 ohne `werkzeug` gilt als `kicad`.
+- **Eingang** der App: `/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_<werkzeug>.json` (ein Paket je Werkzeug); die App übernimmt jedes in
+  ihren privaten Speicher `kopplungen/<werkzeug>.json` und löscht es im Eingang. Ein altes `kopplung.json` gilt als `kicad`.
+- **Kanal:** Die App hält zu jedem gekoppelten, erreichbaren Werkzeug einen Kanal offen. `hallo` bekommt `aktiv` (bool, fehlt = true); neue
+  Nachricht der App `aktiv { aktiv }` beim Wechsel. Ein inaktiver Teilnehmer bekommt Aufträge, aber die App sendet ihm keine Posen; der PC
+  führt ihn in der Teilnehmerliste mit `aktiv: false` (KICAD zeigt seine Figur dann nicht). Ein Auftrag an eine inaktive App lässt sie zu diesem
+  Werkzeug wechseln.
+- **Alte Apps:** Der Quest-Dialog bietet «Alte Apps entfernen» (`adb uninstall ch.hkplanung.kicad.quest` und `ch.hkplanung.xrlabor`, nur auf Knopfdruck
+  und nur, wenn sie installiert sind).
+
 ### Prüfliste für E1 (Hinweise der Sitzung «Modul XR – Quest App», 26.10.2026)
 
 1. Paketname `ch.hkplanung.kicad.quest` mitziehen in `werkzeuge/quest_app_bereitstellen.ps1`, `quest_brillentest.ps1`, `quest_pruefen.ps1`, im
