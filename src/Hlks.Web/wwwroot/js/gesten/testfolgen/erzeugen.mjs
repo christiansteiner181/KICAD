@@ -75,9 +75,9 @@ export function alleFolgen() {
   {
     const a = [-0.15, 0.05, 0.55], b = [-0.15, 0.05, 0.42];
     f.push(folge({
-      name: 'synth-faust-zur-kamera', beschreibung: 'G5: Faust neben der Bildmitte 13 cm gerade auf die Kamera zu. Zoomt näher, dreht nicht (die Faust wandert im Bild nach aussen).',
+      name: 'synth-faust-zur-kamera', beschreibung: 'G5: Faust neben der Bildmitte 13 cm gerade auf die Kamera zu. G5 ist ausgeschaltet (Entscheid 26.10.2026): zoomt nicht und dreht nicht (die Faust wandert im Bild nach aussen).',
       dauer: 2350, schluessel: [k(0, 'offen', a), k(400, 'offen', a), k(550, 'faust', a), k(1000, 'faust', a), k(1700, 'faust', b), k(2000, 'faust', b), k(2150, 'offen', b), k(2350, 'offen', b)],
-      erwartet: { schritte: [], navigation: { drehen: [wenig, wenig], rollen: [-0.05, 0.05], zoom: [1.3, 1.95] }, gesten: ['zoomen'] },
+      erwartet: { schritte: [], navigation: { drehen: [wenig, wenig], rollen: [-0.05, 0.05], zoom: [0.999, 1.001] }, gesten: [] },
     }));
   }
   f.push(folge({

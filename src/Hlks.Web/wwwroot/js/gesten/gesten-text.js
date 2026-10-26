@@ -75,7 +75,7 @@ export const GESTEN = Object.freeze([
   { nr: 'G2', name: 'Wisch links/rechts', wirkung: 'Ansichtsreiter wechseln; in Dialog, Liste und Hilfe mit Seiten: Seite zurück/vor', art: 'Schritt' },
   { nr: 'G3', name: 'Wisch hoch/runter', wirkung: 'im aktiven Fenster (Dialog, Liste) um eine Bildschirmseite rollen; in Plan, Schema und 3D ohne Wirkung', art: 'Schritt' },
   { nr: 'G4', name: 'Faust schliessen und bewegen', wirkung: '3D: Ansicht drehen um Auswahl bzw. Modellmitte; Plan und Schema: verschieben', art: 'fliessend' },
-  { nr: 'G5', name: 'Faust zur Kamera hin/weg', wirkung: 'zoomen in der aktiven Ansicht', art: 'fliessend' },
+  { nr: 'G5', name: 'Faust zur Kamera hin/weg', wirkung: 'ausgeschaltet (Entscheid 26.10.2026) – zoomen mit Mausrad oder G6', art: 'fliessend' },
   { nr: 'G6', name: 'Pistolengeste (Daumen hoch, Zeigefinger gestreckt), kurz', wirkung: 'Zoom alles; in 3D stellt sie die Ansicht zugleich wieder aufrecht', art: 'Schritt' },
   { nr: 'G7', name: 'Faust um die Blickachse drehen (nur 3D)', wirkung: 'Ansicht um die Blickachse rollen', art: 'fliessend' },
 ]);

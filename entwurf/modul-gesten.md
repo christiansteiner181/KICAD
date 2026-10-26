@@ -52,7 +52,7 @@ gemessen und als Stellschrauben geführt.
 | G2 | Wisch links/rechts (ein Anstoss, Hand offen oder locker) | vorheriger/nächster Ansichtsreiter; in Liste, Hilfe und Dialog mit Seiten: Seite zurück/vor | Schritt |
 | G3 | Wisch hoch/runter | im aktiven Fenster rollen bzw. blättern (Liste, Hilfe, Dialog) um eine Bildschirmseite; in Plan, Schema und 3D ohne Wirkung. Das Geschoss wechselt nicht per Geste (Entscheid 26.10.2026, wie in der Brille). | Schritt |
 | G4 | Faust schliessen und bewegen | 3D: drehen um Auswahl bzw. Modellmitte (gleiche Regel wie Umschalt + Mitte, `wuerfel-logik.js`); Plan und Schema: verschieben | fliessend |
-| G5 | Faust zur Kamera hin/weg | zoomen in der aktiven Ansicht, zur Mitte des Bildausschnitts | fliessend |
+| G5 | Faust zur Kamera hin/weg | ~~zoomen~~ **ausgeschaltet** (Entscheid Christian 26.10.2026 in der Abnahme: «zoom, ausschalten»); zoomen mit Mausrad oder G6 | – |
 | G6 | Pistolengeste (Daumen hoch, Zeigefinger gestreckt), kurz | «Zoom alles» (`ansicht.zoom-alles`); in 3D stellt sie die Ansicht zugleich wieder aufrecht (nach G7) | Schritt |
 | G7 | *nur 3D:* Faust um die Blickachse drehen (Handgelenk wie einen Drehknopf) | Ansicht rollen um die Blickachse, durch die Mitte der Auswahl bzw. des Modells | fliessend |
 

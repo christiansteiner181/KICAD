@@ -187,6 +187,9 @@ export const SICHTBAR_VOR_MS = 300;
 /** Anlauf aus der Ruhe: in den HALTUNG_VOR_MS vor dem Anlauf ging die Hand höchstens so weit (m) in Wischrichtung (Annahme Modul G). */
 export const RUHE_VOR_M = 0.01;
 /** Lücken der Erkennung bis zu so viel zählen als «ohne Unterbruch». */
+/** G5 (Faust zur Kamera = zoomen) ist ausgeschaltet: Entscheid Christian 26.10.2026 in der Abnahme («zoom, ausschalten»). Die Stellschrauben zoom_* bleiben
+ *  (stabile Namen fürs Labor), wirken aber nicht. Zoomen geht weiter mit Mausrad und G6 (Zoom alles). */
+export const ZOOM_GESTE = false;
 export const LUECKE_MS = 350;   // 150 → 350 nach der Abnahme 26.10.2026: die Erkennung verliert die Faust kurz, die Geste brach sonst ab
 /** Wisch beendet: Tempo in Wischrichtung unter so viel des höchsten Tempos bzw. unter STOPP_TEMPO_MS (m/s). */
 export const STOPP_ANTEIL = 0.35, STOPP_TEMPO_MS = 0.1;
@@ -539,7 +542,7 @@ function faustSchritt(z, m, t, dt, faust, bild, aus) {
   const dLage = spielLage(k.bewegen, lage, schwelle, schwelle * SPIEL_BEWEGEN);
   const ansicht3d = bild.ansicht3d !== false;
   const dRoll = ansicht3d ? spielSkalar(k.rollen, g.roll, w.rollen_min_grad * GRAD, w.rollen_min_grad * GRAD * SPIEL_ROLLEN) : 0;
-  const dLn = spielSkalar(k.zoom, g.ln, w.zoom_totbereich, w.zoom_totbereich * SPIEL_ZOOM);
+  const dLn = ZOOM_GESTE ? spielSkalar(k.zoom, g.ln, w.zoom_totbereich, w.zoom_totbereich * SPIEL_ZOOM) : 0;
   const nav = {};
   const cm = [dLage[0] * 100, dLage[1] * 100];
   if (cm[0] !== 0 || cm[1] !== 0) {
@@ -558,7 +561,7 @@ function faustSchritt(z, m, t, dt, faust, bild, aus) {
     ['zoomen', Math.abs(dLn) / 0.03],
   ].sort((a, b) => b[1] - a[1]);
   if (staerke[0][1] > 0) f.geste = staerke[0][0];
-  if (k.bewegen.aktiv || k.rollen.aktiv || k.zoom.aktiv) {
+  if (k.bewegen.aktiv || k.rollen.aktiv || (ZOOM_GESTE && k.zoom.aktiv)) {
     aus.zustand = 'aktiv';
     aus.geste = f.geste ?? (k.bewegen.aktiv ? (ansicht3d ? 'drehen' : 'verschieben') : k.rollen.aktiv ? 'rollen' : 'zoomen');
   }

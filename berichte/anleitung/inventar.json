@@ -9116,7 +9116,7 @@
         },
         {
           "id": "mg-faust-navigieren",
-          "titel": "Faust: 3D drehen, zoomen, rollen; Plan verschieben (G4, G5, G7)",
+          "titel": "Faust: 3D drehen und rollen; Plan verschieben (G4, G7)",
           "wo": {
             "register": "",
             "gruppe": "",
@@ -9127,12 +9127,11 @@
           "schritte": [
             "Die 3D-Ansicht öffnen; die rechte Hand bleibt an der Maus.",
             "Mit der linken Hand im Bild die Faust schliessen, kurz stillhalten und dann seitlich bewegen (G4), dann loslassen.",
-            "Die Faust zur Kamera hin und weg bewegen (G5).",
             "Die Faust wie einen Drehknopf um die Blickachse drehen (G7).",
             "Zur Pistolengeste (G6) wechseln oder auf den Navigationswürfel klicken, um die Ansicht wieder aufzurichten.",
-            "Im Grundriss die Faust bewegen und zur Kamera hin und weg führen."
+            "Im Grundriss die Faust bewegen."
           ],
-          "erwartung": "Die Faust hält das Modell wie einen Gegenstand: Bewegen dreht die 3D-Ansicht um die Auswahl bzw. die Modellmitte (G4), die Handbewegung zur Kamera hin zoomt (G5), das Handgelenk rollt die Ansicht um die Blickachse (G7). Im Plan und im Schema verschiebt die Faust die Ansicht und zoomt. Das Modell ändert sich nie, nur die Ansicht. Faust lösen beendet die Bewegung sofort, ohne Nachlauf. Die Maus bleibt parallel bedienbar. Die Statusleiste nennt die aktive Geste.",
+          "erwartung": "Die Faust hält das Modell wie einen Gegenstand: Bewegen dreht die 3D-Ansicht um die Auswahl bzw. die Modellmitte (G4), das Handgelenk rollt die Ansicht um die Blickachse (G7). Im Plan und im Schema verschiebt die Faust die Ansicht. Faust zur Kamera hin und weg bewirkt nichts (G5 ausgeschaltet, Entscheid 26.10.2026). Das Modell ändert sich nie, nur die Ansicht. Faust lösen beendet die Bewegung sofort, ohne Nachlauf. Die Maus bleibt parallel bedienbar. Die Statusleiste nennt die aktive Geste.",
           "pruefpunkte": [
             "Mit offener Hand bewegt sich nichts, erst die geschlossene Faust wirkt.",
             "Faust lösen stoppt sofort.",
@@ -9140,7 +9139,8 @@
             "Eine Faust, die schon geschlossen ins Bild kommt (Tasse, Telefon), bewegt nichts.",
             "Nach dem Rollen richten Würfel-Klick, Haus-Knopf und Zoom alles (ZF) die Ansicht wieder auf; der Würfel zeigt die Rolle mit.",
             "Das Modell ist danach unverändert (kein Eintrag bei «Rückgängig»).",
-            "Während der Gesten bleibt die Bildrate der 3D-Ansicht höchstens 10 % unter der ohne Gesten."
+            "Während der Gesten bleibt die Bildrate der 3D-Ansicht höchstens 10 % unter der ohne Gesten.",
+            "Faust zur Kamera hin und weg zoomt nicht (G5 ausgeschaltet)."
           ],
           "bild": {
             "projekt": "beispiel",
