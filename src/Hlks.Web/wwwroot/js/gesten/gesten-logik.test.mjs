@@ -15,6 +15,10 @@ const hier = path.dirname(fileURLToPath(import.meta.url));
 const ORDNER = path.join(hier, 'testfolgen');
 const GRAD = Math.PI / 180;
 const W = L.stellschraubenWerte();
+// Die Erwartungen der Testfolgen sind für die ursprüngliche Übersetzung bemessen. Seit der Abnahme 26.10.2026 sind die Vorgaben gedämpft
+// («alle operationen abdämpfen»); die Folgen laufen deshalb mit dieser Bemessung, die Dämpfung prüft ein eigener Test.
+const BEMESSUNG = Object.freeze({ drehen_grad_je_cm: 6, verschieben_je_cm: 0.04, rollen_faktor: 1, zoom_faktor: 2.5, glaettung_ms: 80, zoom_glaettung_ms: 150 });
+const abspielen = (a, opt = {}) => L.aufnahmeAbspielen(a, { ...opt, stellschrauben: { ...BEMESSUNG, ...(opt.stellschrauben ?? {}) } });
 const m = (haltung, extra = {}) => L.merkmale(handBild({ haltung, lage: P0, ...extra }), 0.75);
 
 // ---------------------------------------------------------------------------------------------- Stellschrauben
@@ -202,7 +206,7 @@ test('Aufnahme: Bild hin und zurück (zwei Hände, gerundet), leeres Bild', () =
 
 /** Prüft eine Folge gegen ihr «erwartet» (siehe testfolgen/erzeugen.mjs). */
 function pruefen(a, erwartet, opt = {}) {
-  const r = L.aufnahmeAbspielen(a, opt);
+  const r = abspielen(a, opt);
   const name = a.name ?? '?';
   if (!erwartet) return r;
   assert.deepEqual(r.ereignisse.map((e) => ({ geste: e.geste, richtung: e.richtung })), erwartet.schritte ?? [], `${name}: Schritt-Gesten (Gründe: ${r.gruende.join(' | ')})`);
@@ -243,7 +247,7 @@ for (const d of dateien) {
     const r = pruefen(a, a.erwartet);
     assert.ok(r.zustaende.length > 0);
     if (a.erwartet?.zweiD) {
-      const r2 = L.aufnahmeAbspielen(a, { ansicht3d: false });
+      const r2 = abspielen(a, { ansicht3d: false });
       const v = a.erwartet.zweiD.verschieben;
       assert.ok(r2.summe.verschieben[0] >= v[0][0] && r2.summe.verschieben[0] <= v[0][1], `2D verschieben x ${r2.summe.verschieben[0]}`);
       assert.ok(r2.summe.verschieben[1] >= v[1][0] && r2.summe.verschieben[1] <= v[1][1], `2D verschieben y ${r2.summe.verschieben[1]}`);
@@ -261,7 +265,7 @@ test('Aufnahme als Datei (Dialog «Gesten», gesten-text.js aufnahmeDatei) läuf
     const a = lies(name);
     const d = JSON.parse(aufnahmeDatei({ ...a, bild: 'DATA' }).text);
     assert.ok(!JSON.stringify(d).includes('DATA'));
-    const live = L.aufnahmeAbspielen(a), datei = L.aufnahmeAbspielen(d);
+    const live = abspielen(a), datei = abspielen(d);
     assert.deepEqual(datei.ereignisse, live.ereignisse, name);
     assert.deepEqual(datei.summe, live.summe, name);
   }
@@ -270,36 +274,36 @@ test('Aufnahme als Datei (Dialog «Gesten», gesten-text.js aufnahmeDatei) läuf
 // ---------------------------------------------------------------------------------------------- einzelne Regeln (die Folge löst aus, sobald die Regel fehlt)
 
 test('Zustand: «bereit» ohne Hand, «hand» mit Hand, «aktiv» mit Namen nur bei wirkender Faust', () => {
-  const r = L.aufnahmeAbspielen(lies('synth-faust-drehen-rechts'));
+  const r = abspielen(lies('synth-faust-drehen-rechts'));
   assert.deepEqual(r.zustaende.sort(), ['aktiv', 'hand']);
   assert.deepEqual(r.gesten, ['drehen']);
   const z = L.neuerZustand();
   assert.equal(L.schritt(z, { t: 0, haende: [] }).zustand, 'bereit');
   assert.equal(L.schritt(z, { t: NaN, haende: [] }).zustand, 'bereit');
-  const w = L.aufnahmeAbspielen(lies('synth-wisch-links'));
+  const w = abspielen(lies('synth-wisch-links'));
   assert.deepEqual(w.zustaende, ['hand'], 'ein Wisch macht nicht «aktiv»');
 });
 
 test('Faust: Rollen nur in 3D; im Plan rollt nichts', () => {
   const f = lies('synth-faust-rollen');
-  const plan = L.aufnahmeAbspielen(f, { ansicht3d: false });
+  const plan = abspielen(f, { ansicht3d: false });
   assert.equal(plan.summe.rollen, 0);
   assert.ok(!plan.gesten.includes('rollen'));
 });
 
 test('Faust: Totbereich und Mindestdrehung sind Stellschrauben (grösser = weniger Weg)', () => {
   const f = lies('synth-faust-drehen-rechts');
-  const normal = L.aufnahmeAbspielen(f).summe.drehen[0];
-  const gross = L.aufnahmeAbspielen(f, { stellschrauben: { totbereich: 0.05 } }).summe.drehen[0];
+  const normal = abspielen(f).summe.drehen[0];
+  const gross = abspielen(f, { stellschrauben: { totbereich: 0.05 } }).summe.drehen[0];
   assert.ok(gross < normal - 0.15, `${gross} < ${normal}`);
-  const rollen = L.aufnahmeAbspielen(lies('synth-faust-rollen'), { stellschrauben: { rollen_min_grad: 30 } }).summe.rollen;
+  const rollen = abspielen(lies('synth-faust-rollen'), { stellschrauben: { rollen_min_grad: 30 } }).summe.rollen;
   assert.ok(rollen < 0.25, rollen);
-  const doppelt = L.aufnahmeAbspielen(f, { stellschrauben: { drehen_grad_je_cm: 12 } }).summe.drehen[0];
+  const doppelt = abspielen(f, { stellschrauben: { drehen_grad_je_cm: 12 } }).summe.drehen[0];
   assert.ok(Math.abs(doppelt - 2 * normal) < 0.05, 'Übersetzung linear');
 });
 
 test('Faust: die schon geschlossen ins Bild kommende Hand navigiert nicht (Tasse); im Bild geschlossen schon', () => {
-  const t = L.aufnahmeAbspielen(lies('synth-stoer-tasse'));
+  const t = abspielen(lies('synth-stoer-tasse'));
   assert.ok(t.gruende.includes('Faust nicht im Bild geschlossen'), t.gruende.join(' | '));
 });
 
@@ -307,44 +311,44 @@ test('Wisch: die Handfläche flach nach unten wischt nicht seitlich; ohne die Re
   const a = folge({
     name: 'flach', dauer: 1300, schluessel: [k(0, 'locker', P0, { nick: 90 * GRAD }), k(600, 'locker', P0, { nick: 90 * GRAD }), k(750, 'locker', plus(P0, [-0.09, 0, 0]), { nick: 90 * GRAD }), k(1300, 'locker', plus(P0, [-0.09, 0, 0]), { nick: 90 * GRAD })],
   });
-  assert.equal(L.aufnahmeAbspielen(a).ereignisse.length, 0);
-  assert.deepEqual(L.aufnahmeAbspielen(a, { stellschrauben: { handflaeche_grad: 90 } }).ereignisse.map((e) => e.richtung), ['links']);
+  assert.equal(abspielen(a).ereignisse.length, 0);
+  assert.deepEqual(abspielen(a, { stellschrauben: { handflaeche_grad: 90 } }).ereignisse.map((e) => e.richtung), ['links']);
 });
 
 test('Wisch: nach aussen am eigenen Bildrand zählt nicht (linke Hand nach links); nach innen schon', () => {
   const rand = [-0.17, 0.05, 0.5];   // Handflächenmitte rund 0.2 Bildbreiten vom linken Rand (≈ 16° neben der Mitte)
   const mach = (d) => folge({ name: 'rand', dauer: 1300, schluessel: [k(0, 'locker', rand), k(600, 'locker', rand), k(750, 'locker', plus(rand, d)), k(1300, 'locker', plus(rand, d))] });
-  assert.equal(L.aufnahmeAbspielen(mach([-0.05, 0, 0]), { stellschrauben: { randwinkel_grad: 12 } }).ereignisse.length, 0, 'nach aussen');
-  assert.deepEqual(L.aufnahmeAbspielen(mach([-0.05, 0, 0]), { stellschrauben: { randwinkel_grad: 90 } }).ereignisse.map((e) => e.richtung), ['links']);
-  assert.deepEqual(L.aufnahmeAbspielen(mach([0.08, 0, 0]), { stellschrauben: { randwinkel_grad: 12 } }).ereignisse.map((e) => e.richtung), ['rechts'], 'nach innen');
+  assert.equal(abspielen(mach([-0.05, 0, 0]), { stellschrauben: { randwinkel_grad: 12 } }).ereignisse.length, 0, 'nach aussen');
+  assert.deepEqual(abspielen(mach([-0.05, 0, 0]), { stellschrauben: { randwinkel_grad: 90 } }).ereignisse.map((e) => e.richtung), ['links']);
+  assert.deepEqual(abspielen(mach([0.08, 0, 0]), { stellschrauben: { randwinkel_grad: 12 } }).ereignisse.map((e) => e.richtung), ['rechts'], 'nach innen');
 });
 
 test('Wisch: Sperre neben der Maus – ohne Sperre löst dieselbe Folge aus; nach der Sperre wieder', () => {
   const a = lies('synth-stoer-maus-sperre');
-  assert.equal(L.aufnahmeAbspielen(a).ereignisse.length, 0);
-  assert.equal(L.aufnahmeAbspielen(a, { stellschrauben: { sperre_ms: 0 } }).ereignisse.length, 1);
-  assert.equal(L.aufnahmeAbspielen({ ...a, eingaben: [200] }).ereignisse.length, 1, 'Klick 400 ms vor dem Anstoss stört nicht');
+  assert.equal(abspielen(a).ereignisse.length, 0);
+  assert.equal(abspielen(a, { stellschrauben: { sperre_ms: 0 } }).ereignisse.length, 1);
+  assert.equal(abspielen({ ...a, eingaben: [200] }).ereignisse.length, 1, 'Klick 400 ms vor dem Anstoss stört nicht');
 });
 
 test('Wisch: zu kurzer Anstoss (Stellschraube anstoss_weg) und zu langsames Tempo lösen nichts aus', () => {
   const a = lies('synth-wisch-links');
-  assert.equal(L.aufnahmeAbspielen(a, { stellschrauben: { anstoss_weg: 0.12 } }).ereignisse.length, 0);
-  assert.equal(L.aufnahmeAbspielen(a, { stellschrauben: { anstoss_tempo_ms: 2.5 } }).ereignisse.length, 0);
+  assert.equal(abspielen(a, { stellschrauben: { anstoss_weg: 0.12 } }).ereignisse.length, 0);
+  assert.equal(abspielen(a, { stellschrauben: { anstoss_tempo_ms: 2.5 } }).ereignisse.length, 0);
 });
 
 test('Falsche Hand: mit Gestenhand rechts lösen dieselben Bewegungen aus', () => {
   const a = lies('synth-stoer-falsche-hand');
-  const r = L.aufnahmeAbspielen(a, { hand: 'rechts' });
+  const r = abspielen(a, { hand: 'rechts' });
   assert.deepEqual(r.ereignisse.map((e) => e.richtung), ['rechts']);
   assert.ok(r.summe.drehen[0] < -0.5, 'die rechte Faust dreht nach links');
 });
 
 test('Pistole: länger gezeigt als «pistole_max_ms» löst nichts aus, mit grösserer Grenze schon', () => {
   const a = lies('synth-stoer-zeigen-lange');
-  assert.ok(L.aufnahmeAbspielen(a).gruende.includes('Pistole: zu lange gezeigt'));
-  assert.deepEqual(L.aufnahmeAbspielen(a, { stellschrauben: { pistole_max_ms: 4000 } }).ereignisse.map((e) => e.geste), ['G6']);
+  assert.ok(abspielen(a).gruende.includes('Pistole: zu lange gezeigt'));
+  assert.deepEqual(abspielen(a, { stellschrauben: { pistole_max_ms: 4000 } }).ereignisse.map((e) => e.geste), ['G6']);
   const p = lies('synth-pistole-kurz');
-  assert.equal(L.aufnahmeAbspielen({ ...p, eingaben: [700] }).ereignisse.length, 0, 'Maus während der Pistole');
+  assert.equal(abspielen({ ...p, eingaben: [700] }).ereignisse.length, 0, 'Maus während der Pistole');
 });
 
 test('Einstellen: neue Gestenhand beginnt neu, Stellschrauben gelten sofort', () => {
@@ -358,4 +362,11 @@ test('Einstellen: neue Gestenhand beginnt neu, Stellschrauben gelten sofort', ()
   assert.equal(z.hand, 'rechts');
   assert.equal(z.faust, null);
   assert.equal(z.werte.sperre_ms, 500);
+});
+
+test('Vorgaben gedämpft (Abnahme 26.10.2026): halbe Übersetzung, stärkere Glättung', () => {
+  for (const [k, v] of Object.entries({ drehen_grad_je_cm: 3, verschieben_je_cm: 0.02, rollen_faktor: 0.5, zoom_faktor: 1.25, glaettung_ms: 160, zoom_glaettung_ms: 250 })) assert.equal(W[k], v, k);
+  const f = lies('synth-faust-drehen-rechts');
+  const voll = abspielen(f).summe.drehen[0], vorgabe = L.aufnahmeAbspielen(f).summe.drehen[0];
+  assert.ok(vorgabe > 0 && vorgabe < 0.6 * voll, `${vorgabe} gegen ${voll}`);
 });

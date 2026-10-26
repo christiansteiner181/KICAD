@@ -96,28 +96,28 @@ export const STELLSCHRAUBEN_VORGABE = Object.freeze({
   totbereich: s(0.015, 0.002, 0.06, 0.001, 'Bildbreite', 'faust', 'Faust: Totbereich',
     'Unter diesem Weg (Anteil der Bildbreite) bewegt die Faust nichts, damit das Zittern der Erkennung nicht wackelt; danach linear und geglättet.',
     'Annahme der Spezifikation (1,5 % der Bildbreite, entwurf/modul-gesten.md)'),
-  glaettung_ms: s(80, 0, 400, 10, 'ms', 'faust', 'Faust: Glättung',
+  glaettung_ms: s(160, 0, 400, 10, 'ms', 'faust', 'Faust: Glättung',
     'Zeitkonstante (ms) der Glättung von Lage und Drehung der Faust; grösser = ruhiger, aber träger.',
     'Annahme Modul G (26.10.2026)'),
-  drehen_grad_je_cm: s(6, 1, 30, 0.5, '°/cm', 'faust', 'Faust bewegen: Drehen (3D)',
+  drehen_grad_je_cm: s(3, 1, 30, 0.5, '°/cm', 'faust', 'Faust bewegen: Drehen (3D)',
     'So viel (Grad) dreht die 3D-Ansicht je Zentimeter Faustweg.',
-    'Annahme Modul G (15 cm Weg = 90°)'),
-  verschieben_je_cm: s(0.04, 0.005, 0.2, 0.005, 'Ansicht/cm', 'faust', 'Faust bewegen: Verschieben (Plan, Schema)',
+    'Abnahme Christian 26.10.2026: «alle operationen abdämpfen», darum 3 statt 6 (15 cm Weg = 45°)'),
+  verschieben_je_cm: s(0.02, 0.005, 0.2, 0.005, 'Ansicht/cm', 'faust', 'Faust bewegen: Verschieben (Plan, Schema)',
     'So weit (Anteil der Ansichtsbreite) verschiebt sich Plan bzw. Schema je Zentimeter Faustweg.',
-    'Annahme Modul G (25 cm Weg = eine Ansichtsbreite)'),
+    'Abnahme Christian 26.10.2026: gedämpft, 0,02 statt 0,04 (50 cm Weg = eine Ansichtsbreite)'),
   rollen_min_grad: s(8, 2, 30, 1, '°', 'faust', 'Faust rollen: Mindestdrehung',
     'Erst ab so viel Drehung des Handgelenks (Grad) rollt die 3D-Ansicht; das trennt das Rollen vom Zittern.',
     'Annahme der Spezifikation (8°, entwurf/modul-gesten.md)'),
-  rollen_faktor: s(1, 0.25, 4, 0.05, '×', 'faust', 'Faust rollen: Übersetzung',
-    'So viel rollt die Ansicht je Grad Drehung des Handgelenks (1 = gleich viel).',
+  rollen_faktor: s(0.5, 0.25, 4, 0.05, '×', 'faust', 'Faust rollen: Übersetzung',
+    'So viel rollt die Ansicht je Grad Drehung des Handgelenks (1 = gleich viel; Vorgabe 0,5 gedämpft, Abnahme 26.10.2026).',
     'Annahme Modul G («die Faust hält das Modell»)'),
   zoom_totbereich: s(0.08, 0.02, 0.3, 0.01, 'ln', 'faust', 'Faust zur Kamera: Totbereich',
     'Erst wenn die Faust so viel grösser bzw. kleiner erscheint (natürlicher Logarithmus des Verhältnisses; 0.08 ≈ 8 %), zoomt die Ansicht.',
     'Annahme Modul G (26.10.2026)'),
-  zoom_faktor: s(2.5, 0.5, 6, 0.1, 'Exponent', 'faust', 'Faust zur Kamera: Übersetzung',
-    'Zoomfaktor = (scheinbare Grösse nachher / vorher) hoch diesen Wert; 2.5: Faust 10 % näher → 27 % näher.',
+  zoom_faktor: s(1.25, 0.5, 6, 0.1, 'Exponent', 'faust', 'Faust zur Kamera: Übersetzung',
+    'Zoomfaktor = (scheinbare Grösse nachher / vorher) hoch diesen Wert; 1.25 (gedämpft, Abnahme 26.10.2026): Faust 10 % näher → 13 % näher.',
     'Annahme Modul G (26.10.2026)'),
-  zoom_glaettung_ms: s(150, 0, 500, 10, 'ms', 'faust', 'Faust zur Kamera: Glättung',
+  zoom_glaettung_ms: s(250, 0, 500, 10, 'ms', 'faust', 'Faust zur Kamera: Glättung',
     'Zeitkonstante (ms) der Glättung der scheinbaren Grösse der Faust.',
     'Annahme Modul G (26.10.2026)'),
   // ---- Pistole (G6)
@@ -187,7 +187,7 @@ export const SICHTBAR_VOR_MS = 300;
 /** Anlauf aus der Ruhe: in den HALTUNG_VOR_MS vor dem Anlauf ging die Hand höchstens so weit (m) in Wischrichtung (Annahme Modul G). */
 export const RUHE_VOR_M = 0.01;
 /** Lücken der Erkennung bis zu so viel zählen als «ohne Unterbruch». */
-export const LUECKE_MS = 150;
+export const LUECKE_MS = 350;   // 150 → 350 nach der Abnahme 26.10.2026: die Erkennung verliert die Faust kurz, die Geste brach sonst ab
 /** Wisch beendet: Tempo in Wischrichtung unter so viel des höchsten Tempos bzw. unter STOPP_TEMPO_MS (m/s). */
 export const STOPP_ANTEIL = 0.35, STOPP_TEMPO_MS = 0.1;
 /** Abstand der Handflächenmitte zum Bildrand (Anteil) und Anteil der Punkte im Bild, unter denen die Hand «am Rand» ist. */
