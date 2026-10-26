@@ -53,8 +53,10 @@ public sealed record XrEinstellungen
     public string? Ordner { get; init; }
     /// <summary>Ordner des Zertifikats; null = Ordner (KICAD). Das XR-Labor hat eigene Schalter und Kopplungen, aber dasselbe Zertifikat je PC wie KICAD.</summary>
     public string? ZertifikatOrdner { get; init; }
-    /// <summary>Name des Servers in Meldungen am PC: «KICAD» bzw. «XR-Labor».</summary>
+    /// <summary>Name des Servers in Meldungen am PC: «KICAD» bzw. «XR-Labor». Zugleich «werkzeugName» im Kopplungspaket (Fassung 2, H+K XR E1).</summary>
     public string ServerName { get; init; } = "KICAD";
+    /// <summary>Kennung des Werkzeugs im Kopplungspaket (Fassung 2, H+K XR E1) und im Kanal («hallo.marke» der App): «kicad» bzw. «xrlabor».</summary>
+    public string Werkzeug { get; init; } = "kicad";
     /// <summary>So oft wird der Schalter (zugang.json) nachgelesen, z. B. wenn ein anderer KICAD-Prozess auf diesem PC ihn geändert hat.</summary>
     public TimeSpan PruefAbstand { get; init; } = TimeSpan.FromSeconds(10);
 

@@ -3,18 +3,22 @@
 // Was KICAD tut, in dieser Reihenfolge (macht dasselbe wie werkzeuge/quest_brillentest.ps1, nur mit Knopf und ohne Server-Start):
 //   1. Voraussetzungen: Netzzugang dieses PCs ist an (Einstellung je PC, XrNetzDienst), die abgelegte App ist heil (version.json passt zur APK).
 //   2. Brille wählen (freigegeben, «device»): bei «über Kabel» bevorzugt der USB-Weg, bei «über WLAN» der WLAN-Weg. Modell und Seriennummer lesen (getprop).
-//   3. «adb install -r» der APK aus der Ablage (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app, Einstellung quest.app_ablage; gebaut von werkzeuge/quest_app_bereitstellen.ps1).
+//   3. «adb install -r» der APK aus der Ablage (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, Einstellung quest.app_ablage; gebaut von werkzeuge/quest_app_bereitstellen.ps1).
 //   4. Nur «über Kabel»: «adb reverse» des HTTPS-Ports des Netzzugangs (Vorgabe 5140) und 127.0.0.1 als erste Adresse im Paket.
-//   5. Kopplungspaket (Weg A, mit Schlüssel) erzeugen und mit «adb push» in den Eingang der App legen
-//      (/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json; die App übernimmt und löscht es). Das Paket liegt am PC nur für die Dauer von «adb push»
+//   5. Kopplungspaket (Weg A, Fassung 2, mit Schlüssel und Werkzeug) erzeugen und mit «adb push» in den Eingang der App legen
+//      (/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_<werkzeug>.json; die App übernimmt und löscht es). Das Paket liegt am PC nur für die Dauer von «adb push»
 //      in einer Datei (eigener Ordner unter %TEMP%, danach überschrieben und gelöscht), steht in keiner Antwort und in keinem Protokoll. Scheitert die Übertragung,
 //      wird die frisch angelegte Kopplung widerrufen (kein Schlüssel ohne Brille).
 //   6. App starten (resolve-activity, am start -n). Scheitert nur der Start, gilt die Installation trotzdem (Meldung: von Hand starten).
 // SICHERHEIT wie beim Quest-Verbinder: Es startet nur adb.exe, ohne Shell, mit festen Argumenten. Eingesetzt werden nur die Seriennummer aus «adb devices», der
 // Pfad der geprüften APK, ein Port aus dem Netzzugang und feste Texte. Reine Rechner-Funktion, für die KI verboten (KiEinordnung.RechnerFunktionen «quest_app»).
-// APP-MARKE (XR-Labor L0, entwurf/labor-app.md): Welche App installiert wird (Paket, Eingang, Ablage, Einstellungsschlüssel, Name in Meldungen), steht in
-// QuestEinstellungen.AppMarke. Vorgabe ist KICAD (QuestAppMarke.Kicad, Werte wie bisher); das XR-Labor (src/Hlks.Labor) gibt ch.hkplanung.xrlabor mit. Die Marke ist
-// fest im Code, nie eine Eingabe; Paket und Ordnername werden trotzdem geprüft, weil das Paket in adb-Argumente eingesetzt wird.
+// APP-MARKE (XR-Labor L0, entwurf/labor-app.md; H+K XR E1, entwurf/xr-empfaenger.md): Welche App installiert wird (Paket, Eingang, Ablage, Einstellungsschlüssel, Name in Meldungen),
+// steht in QuestEinstellungen.AppMarke. Seit E1 gibt es EINE App «H+K XR» (ch.hkplanung.xr) für alle Werkzeuge: Die Marken von KICAD (QuestAppMarke.Kicad) und XR-Labor
+// (src/Hlks.Labor, LaborMarke.App) zeigen auf dieselbe App und dieselbe Ablage (%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, Einstellung quest.app_ablage) und unterscheiden sich nur
+// im Werkzeug (Kennung kicad | xrlabor, Name KICAD | XR-Labor; daraus der Name der Eingangsdatei kopplung_<werkzeug>.json und die Angaben im Kopplungspaket). Die Marke ist
+// fest im Code, nie eine Eingabe; Paket, Werkzeug und Ordnername werden trotzdem geprüft, weil sie in adb-Argumente und Dateinamen eingesetzt werden.
+// ALTE APPS (E1): Die bisherigen Apps «KICAD» (ch.hkplanung.kicad.quest) und «XR-Labor» (ch.hkplanung.xrlabor) sind durch «H+K XR» ersetzt. Der Zustand nennt die auf der Brille
+// noch installierten (brille.alteApps), «Alte Apps entfernen» (AlteAppsEntfernen) deinstalliert genau diese beiden Pakete per «adb uninstall» – nur auf Knopfdruck, nie sonst.
 
 using System.Security.Cryptography;
 using System.Text;
@@ -25,26 +29,41 @@ using Hlks.Kern;
 namespace Hlks.Web;
 
 /// <summary>
-/// Die Brillen-App, die QuestDienst installiert und koppelt. Paket = Android-Paketname (App-Kennung); Name = Name der App in der Brille und des Servers am PC (Meldungen);
-/// AblageSchluessel = Benutzereinstellung mit dem Ordner der abgelegten App; AblageOrdner = Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge;
-/// Bereitstellen = Befehl, der die APK baut und ablegt (nur für Meldungen).
+/// Die Brillen-App, die QuestDienst installiert und koppelt, und das Werkzeug, mit dem sie sich koppelt. Paket = Android-Paketname (App-Kennung, seit E1 für alle Werkzeuge
+/// ch.hkplanung.xr); Name = Name der App in der Brille (Meldungen, «H+K XR»); AblageSchluessel = Benutzereinstellung mit dem Ordner der abgelegten App;
+/// AblageOrdner = Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge; Bereitstellen = Befehl, der die APK baut und ablegt (nur für Meldungen);
+/// Werkzeug = Kennung des Werkzeugs (kicad | xrlabor; Muster [a-z][a-z0-9_-]{0,31}) für das Kopplungspaket und den Namen der Eingangsdatei; WerkzeugName = Name des Werkzeugs
+/// am PC in Meldungen und im Paket («KICAD», «XR-Labor»).
 /// </summary>
-public sealed record QuestAppMarke(string Paket, string Name, string AblageSchluessel, string AblageOrdner, string Bereitstellen)
+public sealed record QuestAppMarke(string Paket, string Name, string AblageSchluessel, string AblageOrdner, string Bereitstellen, string Werkzeug = "kicad", string WerkzeugName = "KICAD")
 {
     static readonly Regex PaketMuster = new(@"^[a-z][a-z0-9_]{0,30}(\.[a-z][a-z0-9_]{0,30}){1,5}$", RegexOptions.CultureInvariant);
     static readonly Regex OrdnerMuster = new(@"^[A-Za-z0-9_]{1,40}$", RegexOptions.CultureInvariant);
     static readonly Regex SchluesselMuster = new(@"^[a-z][a-z0-9_.\-]{0,63}$", RegexOptions.CultureInvariant);
+    static readonly Regex WerkzeugMuster = new(@"^[a-z][a-z0-9_\-]{0,31}$", RegexOptions.CultureInvariant);
 
     public string Paket { get; } = PaketMuster.IsMatch(Paket ?? "") ? Paket! : throw new ArgumentException($"Ungültiger Paketname «{Paket}».", nameof(Paket));
     public string AblageOrdner { get; } = OrdnerMuster.IsMatch(AblageOrdner ?? "") ? AblageOrdner! : throw new ArgumentException($"Ungültiger Ordnername «{AblageOrdner}».", nameof(AblageOrdner));
     public string AblageSchluessel { get; } = SchluesselMuster.IsMatch(AblageSchluessel ?? "") ? AblageSchluessel! : throw new ArgumentException($"Ungültiger Schlüssel «{AblageSchluessel}».", nameof(AblageSchluessel));
+    public string Werkzeug { get; } = WerkzeugMuster.IsMatch(Werkzeug ?? "") ? Werkzeug! : throw new ArgumentException($"Ungültige Werkzeugkennung «{Werkzeug}».", nameof(Werkzeug));
+    public string WerkzeugName { get; } = !string.IsNullOrWhiteSpace(WerkzeugName) && WerkzeugName.Length <= 40 && !WerkzeugName.Any(char.IsControl) ? WerkzeugName.Trim()
+        : throw new ArgumentException($"Ungültiger Werkzeugname «{WerkzeugName}».", nameof(WerkzeugName));
 
     /// <summary>Eingang der App auf der Brille: dorthin legt adb das Kopplungspaket.</summary>
     public string Eingang => "/sdcard/Android/data/" + Paket + "/files";
 
-    /// <summary>KICAD (Vorgabe, unverändert): ch.hkplanung.kicad.quest, Einstellung quest.app_ablage, Ablage %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app.</summary>
-    public static QuestAppMarke Kicad { get; } = new(QuestDienst.AppPaket, "KICAD", QuestDienst.AppAblageSchluessel, "quest_app", @"werkzeuge\quest_app_bereitstellen.ps1");
+    /// <summary>Name der Eingangsdatei dieses Werkzeugs: kopplung_&lt;werkzeug&gt;.json (je Werkzeug ein Paket; die App übernimmt jedes und löscht es im Eingang).</summary>
+    public string KopplungDatei => "kopplung_" + Werkzeug + ".json";
+
+    /// <summary>Das Kopplungspaket dieses Werkzeugs im Eingang der App (Weg A, adb push).</summary>
+    public string KopplungEingang => Eingang + "/" + KopplungDatei;
+
+    /// <summary>KICAD: die App «H+K XR» (ch.hkplanung.xr), Einstellung quest.app_ablage, Ablage %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, Werkzeug kicad / «KICAD».</summary>
+    public static QuestAppMarke Kicad { get; } = new(QuestDienst.AppPaket, QuestDienst.AppName, QuestDienst.AppAblageSchluessel, QuestDienst.AppOrdner, @"werkzeuge\quest_app_bereitstellen.ps1", "kicad", "KICAD");
 }
+
+/// <summary>Eine alte Brillen-App, die «H+K XR» ersetzt (Paketname und Name der App von früher).</summary>
+public sealed record QuestAlteApp(string Paket, string Name);
 
 /// <summary>Die abgelegte App: Inhalt von version.json (geschrieben von werkzeuge/quest_app_bereitstellen.ps1), geprüft gegen die APK.</summary>
 public sealed record QuestAppVersion(string Datei, string? Commit, string? Zeit, long Groesse, string Sha256, string? VersionName, int? VersionCode);

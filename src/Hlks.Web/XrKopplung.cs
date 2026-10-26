@@ -12,8 +12,10 @@
 // Brillen-Endpunkte auf localhost rufen nur diese Methode.
 //
 // WEG A (bei der Installation, Knopf folgt in P7): PaketErzeugen erzeugt das Kopplungspaket (JSON: PC-Name, IP-Adressen, Port, Suchport,
-//   Fingerabdruck des Zertifikats, Kopplung, Schlüssel, Brille). KICAD gibt es nur einmal heraus (POST /api/xr/kopplung/paket, nur localhost) und
+//   Fingerabdruck des Zertifikats, Kopplung, Schlüssel, Brille, Werkzeug). KICAD gibt es nur einmal heraus (POST /api/xr/kopplung/paket, nur localhost) und
 //   bringt es per adb in die App; es wird nirgends gespeichert.
+//   Fassung 2 (H+K XR E1, entwurf/xr-empfaenger.md): eine App «H+K XR» für alle Werkzeuge; das Paket nennt das Werkzeug, mit dem die App sich koppelt
+//   («werkzeug»: kicad | xrlabor, «werkzeugName»: KICAD | XR-Labor – aus XrEinstellungen.Werkzeug und ServerName dieses Servers). Je Werkzeug eine Kopplung.
 // WEG B (Ersatz ohne Kabel; Entscheid Christian 23.10.2026 «Nur vergleichen»): Brille und PC zeigen denselben 6-stelligen VERGLEICHSCODE (Short
 //   Authentication String). In der Brille wird nichts eingetippt; der Mensch vergleicht und bestätigt nur am PC. Ablauf (alle drei Schritte ohne Schlüssel,
 //   streng begrenzt; die Brille kennt den Fingerabdruck noch nicht und nimmt das Zertifikat dieser Verbindung vorläufig an):
@@ -105,9 +107,12 @@ public sealed record XrZugangInfo(string Pc, IReadOnlyList<string> Ips, int Port
 
 /// <summary>Das Kopplungspaket (Weg A und B). Enthält den Schlüssel im Klartext: nur einmal ausgeben, nie speichern.</summary>
 public sealed record XrPaket(string Art, int Fassung, string Pc, IReadOnlyList<string> Ips, int Port, int SuchPort, string Fingerabdruck,
-    string Kopplung, string Schluessel, string Brille, string Name, DateTimeOffset Angelegt)
+    string Kopplung, string Schluessel, string Brille, string Name, DateTimeOffset Angelegt, string Werkzeug, string WerkzeugName)
 {
     public const string ArtName = "hlks-xr-kopplung";
+    /// <summary>H+K XR E1 (entwurf/xr-empfaenger.md, «Schnittstellen im Bau E1»): Fassung 2 = Fassung 1 plus «werkzeug» (kicad | xrlabor, Muster
+    /// <c>[a-z][a-z0-9_-]{0,31}</c>) und «werkzeugName» («KICAD» | «XR-Labor»). Eine Fassung 1 ohne «werkzeug» gilt in der App als «kicad».</summary>
+    public const int FassungAktuell = 2;
 }
 
 /// <summary>Eine offene Kopplungsanfrage (Weg B), wie der PC sie sieht. Code erst nach dem Aufdecken (vorher null); ZufallPc nur für die Antwort an die Brille.</summary>
@@ -224,11 +229,14 @@ public sealed class XrKopplungen
 
     // ---------------------------------------------------------------- Weg A: Paket
 
-    /// <summary>Koppelt eine Brille und gibt das Paket zurück (der Schlüssel steht nur darin). Eine alte Kopplung derselben Brille wird ersetzt.</summary>
-    public XrPaket PaketErzeugen(string? brille, string? name, XrZugangInfo info, string weg = "paket")
+    /// <summary>Koppelt eine Brille und gibt das Paket zurück (der Schlüssel steht nur darin). Eine alte Kopplung derselben Brille wird ersetzt.
+    /// werkzeug / werkzeugName (H+K XR E1): das Werkzeug, mit dem die App sich koppelt; ohne Angabe das dieses Servers (XrEinstellungen.Werkzeug, ServerName).</summary>
+    public XrPaket PaketErzeugen(string? brille, string? name, XrZugangInfo info, string weg = "paket", string? werkzeug = null, string? werkzeugName = null)
     {
         var b = BrillePruefen(brille);
         var n = NamePruefen(name, b);
+        var w = WerkzeugPruefen(werkzeug ?? einstellungen.Werkzeug);
+        var wn = WerkzeugNamePruefen(werkzeugName ?? einstellungen.ServerName);
         var (id, schluessel) = XrSchluessel.Neu();
         try
         {
@@ -244,7 +252,7 @@ public sealed class XrKopplungen
                 liste.Add(new Eintrag(kopplung, XrSchluessel.Pruefwert(schluessel), XrSchluessel.Suchschluessel(schluessel)));
             });
             if (ersetzt is not null) Melden(ersetzt);
-            return new XrPaket(XrPaket.ArtName, 1, info.Pc, info.Ips, info.Port, info.SuchPort, info.Fingerabdruck, id, XrSchluessel.Text(schluessel), b, n, jetzt);
+            return new XrPaket(XrPaket.ArtName, XrPaket.FassungAktuell, info.Pc, info.Ips, info.Port, info.SuchPort, info.Fingerabdruck, id, XrSchluessel.Text(schluessel), b, n, jetzt, w, wn);
         }
         finally { CryptographicOperations.ZeroMemory(schluessel); }
     }
@@ -416,6 +424,26 @@ public sealed class XrKopplungen
         if (string.IsNullOrEmpty(b) || !BrilleMuster.IsMatch(b))
             throw new HlksFehler("Die Kennung der Brille fehlt oder ist ungültig.", "Seriennummer bzw. Kennung der Brille angeben: Buchstaben, Ziffern, . _ : - (höchstens 64 Zeichen, nicht mit - beginnend).");
         return b;
+    }
+
+    static readonly Regex WerkzeugMuster = new(@"^[a-z][a-z0-9_-]{0,31}$", RegexOptions.CultureInvariant);
+
+    /// <summary>Kennung des Werkzeugs im Paket und im Namen der Eingangsdatei (kopplung_&lt;werkzeug&gt;.json): Kleinbuchstaben, Ziffern, _ und -, höchstens 32 Zeichen.</summary>
+    public static string WerkzeugPruefen(string? werkzeug)
+    {
+        var w = werkzeug?.Trim();
+        if (string.IsNullOrEmpty(w) || !WerkzeugMuster.IsMatch(w))
+            throw new HlksFehler("Die Kennung des Werkzeugs ist ungültig.", "Kleinbuchstaben, Ziffern, _ und - (höchstens 32 Zeichen, mit einem Buchstaben beginnend), z. B. «kicad».");
+        return w;
+    }
+
+    /// <summary>Anzeigename des Werkzeugs im Paket («KICAD», «XR-Labor»): 1 bis 40 Zeichen, keine Steuerzeichen.</summary>
+    public static string WerkzeugNamePruefen(string? name)
+    {
+        var n = name?.Trim();
+        if (string.IsNullOrEmpty(n) || n.Length > 40 || n.Any(char.IsControl))
+            throw new HlksFehler("Der Name des Werkzeugs ist ungültig (1 bis 40 Zeichen, keine Steuerzeichen).");
+        return n;
     }
 
     public static string NamePruefen(string? name, string vorgabe)
