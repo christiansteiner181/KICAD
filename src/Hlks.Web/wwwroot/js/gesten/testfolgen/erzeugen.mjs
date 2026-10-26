@@ -14,12 +14,12 @@ import { bildFuerAufnahme, AUFNAHME_VERSION } from '../gesten-logik.js';
 
 const GRAD = Math.PI / 180;
 const RAUSCHEN = Object.freeze({ bild: 0.0015, tiefe: 0.003, welt: 0.002 });
-const P0 = [-0.12, 0.05, 0.5];   // linke Hand: links der Bildmitte, etwas unter der Mitte, 50 cm vor der Kamera
-const plus = (p, d) => [p[0] + d[0], p[1] + d[1], p[2] + d[2]];
-const k = (t, haltung, lage, extra = {}) => ({ t, haltung, lage, ...extra });
+export const P0 = [-0.12, 0.05, 0.5];   // linke Hand: links der Bildmitte, etwas unter der Mitte, 50 cm vor der Kamera
+export const plus = (p, d) => [p[0] + d[0], p[1] + d[1], p[2] + d[2]];
+export const k = (t, haltung, lage, extra = {}) => ({ t, haltung, lage, ...extra });
 
 /** Eine Folge: Bilder mit fps (Zeiten leicht unregelmässig), Rauschen aus einem festen Zufallsstrom. */
-function folge({ name, beschreibung, hand = 'links', seite = hand, fps = 30, dauer, schluessel, zittern = null, rauschen = RAUSCHEN, saat = 1, eingaben = [], erwartet }) {
+export function folge({ name, beschreibung, hand = 'links', seite = hand, fps = 30, dauer, schluessel, zittern = null, rauschen = RAUSCHEN, saat = 1, eingaben = [], erwartet }) {
   const zz = zufall(saat);
   const bilder = [];
   const schritt = 1000 / fps;
