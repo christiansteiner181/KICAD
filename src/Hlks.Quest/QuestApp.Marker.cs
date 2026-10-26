@@ -22,7 +22,8 @@ namespace Hlks.Quest;
 /// </summary>
 sealed partial class QuestApp
 {
-    MarkerAblage markerAblage = null!;
+    /// <summary>Ablage der Marker im Speicher des aktiven Werkzeugs (H+K XR E1, MarkerBetreten; vorher eine leere unter %TEMP%, die nie geschrieben wird).</summary>
+    MarkerAblage markerAblage = new(Path.Combine(Path.GetTempPath(), "HLKS_CAD", "hk_xr_ohne_werkzeug"));
     readonly List<MarkerNeu> markerWartend = [];
     IReadOnlyList<MarkerEintrag> markerVomPc = [];
     string? markerEtag;
@@ -38,11 +39,23 @@ sealed partial class QuestApp
     double markerHervorBis;
     string markerText = "–";
 
-    void MarkerStarten()
+    /// <summary>H+K XR E1: ein Werkzeug wird aktiv – seine Ablage (wartende Marker, Listen je Projekt) im Speicher des Werkzeugs (bis E1 beim Start der App).</summary>
+    void MarkerBetreten(Verbindung v)
     {
-        markerAblage = new MarkerAblage(privat);
-        markerWartend.AddRange(markerAblage.Wartend());
+        markerAblage = new MarkerAblage(v.Ordner);
+        lock (sperre) { markerWartend.Clear(); markerWartend.AddRange(markerAblage.Wartend()); }
         if (markerWartend.Count > 0) Console.WriteLine($"{AppName}: {markerWartend.Count} Problem-Marker warten auf die Verbindung.");
+    }
+
+    /// <summary>H+K XR E1: beim Wechsel die Marker des bisherigen Werkzeugs wegräumen (die wartenden liegen in seiner Ablage und gehen, wenn es wieder aktiv ist).</summary>
+    void MarkerLeeren()
+    {
+        lock (sperre) markerWartend.Clear();
+        markerVomPc = [];
+        markerEtag = null;
+        markerProjekt = null;
+        markerSetzen = false;
+        markerText = "–";
     }
 
     /// <summary>Alle Marker, die die App zeigt: die Liste vom PC und die noch nicht gesendeten.</summary>
@@ -202,7 +215,7 @@ sealed partial class QuestApp
         var nadel = SkVonSzene(ort);
         var sn = StecknadelMass(nadel, kopf);
         var ueber = KennzeichenOrt(nadel + Vec3.Up * (0.16f * sn), kopf, sn) + new XVec3(0, 0.02 * sn, 0);
-        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : $" – geht mit der nächsten Verbindung an {Marke.Gegenstelle}")}.",
+        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : $" – geht mit der nächsten Verbindung an {AnzeigeName}")}.",
             (Vec3)(Vector3)ueber, Hlks.Xr.Bedienung.HinweisArt.Objekt);
         Task.Run(MarkerSenden);
     }
@@ -219,6 +232,7 @@ sealed partial class QuestApp
     async Task MarkerSenden()
     {
         if (MarkerQuelle is not { } q) return;
+        var gen = wechselNr;   // H+K XR E1: Ergebnisse nur für das Werkzeug, für das gesendet wurde
         List<MarkerNeu> offen;
         lock (sperre) offen = [.. markerWartend];
         var gesendet = new List<string>();
@@ -234,7 +248,7 @@ sealed partial class QuestApp
             catch (Exception ex) when (ex is HttpRequestException or IOException or TaskCanceledException && !ende.IsCancellationRequested) { break; }
         }
         if (gesendet.Count == 0) return;
-        amBild.Enqueue(() =>
+        AmBild(gen, () =>
         {
             lock (sperre) markerWartend.RemoveAll(m => gesendet.Contains(m.Kennung));
             MarkerWartendAblegen();
@@ -247,16 +261,18 @@ sealed partial class QuestApp
     {
         if (MarkerQuelle is not { } q || markerProjekt is not { } projekt || markerHolenLaeuft) return;
         markerHolenLaeuft = true;
+        var gen = wechselNr;   // H+K XR E1: die Liste gilt nur für das Werkzeug, für das sie geholt wurde
+        var ab = markerAblage;
         try
         {
             var a = await q.MarkerListe(markerEtag, ende.Token);
-            if (a.Status == 304) return;
+            if (a.Status == 304 || gen != wechselNr) return;
             if (a.Status != 200 || a.Text is null) { markerText = $"Liste nicht geholt ({a.Status})"; return; }
             var liste = ProblemMarker.ListeLesen(a.Text);
             markerEtag = a.ETag;
-            try { markerAblage.ListeSpeichern(projekt, a.Text); }
+            try { ab.ListeSpeichern(projekt, a.Text); }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
-            amBild.Enqueue(() => { markerVomPc = liste; markerText = $"{liste.Count} vom PC"; });
+            AmBild(gen, () => { markerVomPc = liste; markerText = $"{liste.Count} vom PC"; });
         }
         catch (Exception ex) when (ex is HttpRequestException or IOException or JsonException or TaskCanceledException && !ende.IsCancellationRequested)
         {

@@ -1,6 +1,8 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<!-- Quest App (Modul XR), Fassung für die Meta Quest. Quellen aus ..\..\ (wie Hlks.Quest.csproj).
-	     Bau: dotnet build -c Release (APK im Bauordner unter %USERPROFILE%\HLKS_CAD_build\Hlks.Quest.Android).
+	<!-- Brillen-App «H+K XR» (Modul XR; seit H+K XR E1 eine App für alle Werkzeuge: KICAD, XR-Labor …), Fassung für die Meta Quest. Quellen aus ..\..\
+	     (wie Hlks.Quest.csproj). Bis E1 «KICAD» (ch.hkplanung.kicad.quest); die zweite App «XR-Labor» (src/Hlks.Labor.Quest, ch.hkplanung.xrlabor) entfällt.
+	     Bau: dotnet publish -c Release -f net10.0-android → <Bauordner>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xr-Signed.apk
+	     (Bauordner HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build; abgelegt von werkzeuge\quest_app_bereitstellen.ps1 in %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr).
 	     Android SDK und JDK: lokal unter %USERPROFILE%\HLKS_CAD_werkzeuge, sonst wie von der Workload gefunden. -->
 	<PropertyGroup>
 		<TargetFramework>net10.0-android</TargetFramework>
@@ -8,7 +10,7 @@
 		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
 		<OutputType>Exe</OutputType>
 		<TargetType>Exe</TargetType> <!-- Einstieg über Program.Main wie am PC -->
-		<ApplicationId>ch.hkplanung.kicad.quest</ApplicationId>
+		<ApplicationId>ch.hkplanung.xr</ApplicationId> <!-- H+K XR E1: gleich Hlks.Xr.Netz.XrApp.Kennung (Test WerkzeugTests) -->
 		<ApplicationVersion>1</ApplicationVersion>
 		<ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
 		<RootNamespace>Hlks.Quest</RootNamespace>

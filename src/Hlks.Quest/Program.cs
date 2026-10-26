@@ -2,7 +2,7 @@ using StereoKit;
 
 namespace Hlks.Quest;
 
-// Quest App (Modul XR). P0: Durchstich (Gerät, Laufzeit, Hände); P4a: verbinden, Modell laden und zwischenspeichern, Begehen mit den Händen (QuestApp);
+// Quest App (Modul XR), seit H+K XR E1 die App «H+K XR» für alle Werkzeuge (QuestApp.Werkzeuge.cs). P0: Durchstich (Gerät, Laufzeit, Hände); P4a: verbinden, Modell laden und zwischenspeichern, Begehen mit den Händen (QuestApp);
 // P4b: Sitzungsraum mit Passthrough «Echter Tisch» und Ebenen der Fachmodule.
 // Am PC: «--simulator» erzwingt den Simulator mit Maus-Händen; «--pruefen <bilder>» lässt so viele Bilder laufen, schreibt eine Zeile «P4 ok …» bzw.
 // «P4 Fehler …» und beendet sich (automatische Prüfung ohne Brille; mit «--kopplung <datei>» mit Modell). Weitere Argumente: Optionen.cs.
@@ -16,7 +16,7 @@ class Program
 
 		SKSettings einstellungen = new SKSettings
 		{
-			appName = Marke.Name,   // XR-Labor L0: je Marke («KICAD» bzw. «XR-Labor»)
+			appName = Hlks.Xr.Netz.XrApp.Name,   // H+K XR E1: eine App für alle Werkzeuge («H+K XR»; bis E1 je Marke «KICAD» bzw. «XR-Labor»)
 			mode    = optionen.Simulator || optionen.PruefBilder > 0 ? AppMode.Simulator : AppMode.XR,
 			origin  = OriginMode.Floor,   // Boden des Raums ist y = 0 (Rig auf OK Boden, VrLogik); ohne Unterstützung: lokal mit −1.5 m
 		};

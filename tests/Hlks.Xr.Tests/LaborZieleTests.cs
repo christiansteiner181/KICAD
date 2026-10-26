@@ -176,10 +176,11 @@ public class LaborZieleTests
     }
 
     [Fact]
-    public void Marken_Labor_ohne_Projekt_KICAD_mit()
+    public void Werkzeuge_Labor_ohne_Projekt_KICAD_mit()
     {
-        Assert.True(AppMarke.Kicad.MitProjekt);
-        Assert.False(AppMarke.XrLabor.MitProjekt);
-        Assert.Same(AppMarke.XrLabor, AppMarke.Von("xrlabor"));
+        // H+K XR E1: das Werkzeug (bis L1 die Marke der App) sagt, ob es ein Projekt führt
+        Assert.True(Werkzeug.Kicad.MitProjekt);
+        Assert.False(Werkzeug.XrLabor.MitProjekt);
+        Assert.Same(Werkzeug.XrLabor, Werkzeug.Von("xrlabor"));
     }
 }

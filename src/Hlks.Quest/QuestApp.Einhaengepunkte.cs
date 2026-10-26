@@ -9,10 +9,12 @@ namespace Hlks.Quest;
 
 /// <summary>
 /// XR-Labor L0 (entwurf/labor-app.md, «Trennung der Brillen-Apps aus gemeinsamen Quellen»): die Einhängepunkte des Labors in der gemeinsamen Bedienung.
-/// Der allgemeine Code ruft das Labor nur über diese <c>partial void</c>-Methoden auf. Fehlt die Umsetzung (KICAD-App ohne Labor-Dateien), entfernt der
+/// Der allgemeine Code ruft das Labor nur über diese <c>partial void</c>-Methoden auf. Fehlt die Umsetzung (Probebau ohne Labor-Dateien), entfernt der
 /// Übersetzer die Aufrufe samt ihren Argumenten; Werte, die der allgemeine Code braucht, gehen als <c>ref</c> mit einer Vorgabe des Aufrufers (Vorgabe = ohne
-/// Labor). Umgesetzt sind sie in QuestApp.Labor.cs und QuestApp.LaborPruefen.cs (L0 noch in src/Hlks.Quest, ab L1 in src/Hlks.Labor.Quest).
-/// Probebau ohne Labor: <c>dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true</c>. Übersicht als Tabelle: src/Hlks.Labor.Quest/LIESMICH.md.
+/// Labor). Umgesetzt sind sie in QuestApp.Labor.cs und QuestApp.LaborPruefen.cs.
+/// H+K XR E1 (entwurf/xr-empfaenger.md, «Was aus L0/L1 wird»): die Einhängepunkte sind die Grenze zwischen Empfänger-Kern und Werkzeug-Modul «Labor»; das Modul
+/// arbeitet nur, wenn das aktive Werkzeug es führt (Werkzeug.MitLabor: XR-Labor, KICAD bis E3). Probebau ohne Labor:
+/// <c>dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true</c>. Übersicht als Tabelle: src/Hlks.Quest/LIESMICH.md.
 /// </summary>
 sealed partial class QuestApp
 {
@@ -21,8 +23,14 @@ sealed partial class QuestApp
     /// <summary>Konstruktor, nach dem Fenster der Apps: die Karte einer Prüfaufgabe anlegen und als Ziel des Wegwischens einhängen (nach der App, vor den Symbolen).</summary>
     partial void LaborAnlegen();
 
-    /// <summary>Konstruktor, vor <see cref="EinstellungenAnwenden"/>: Katalog des Labors aus der Ablage, wartende Messprotokolle lesen.</summary>
-    partial void LaborStarten();
+    /// <summary>
+    /// H+K XR E1: ein Werkzeug wird aktiv (<see cref="WerkzeugWechseln"/>, vor <see cref="EinstellungenAnwenden"/>; bis E1 «LaborStarten» im Konstruktor): Zustand des
+    /// Moduls leeren; führt das Werkzeug das Labor (Werkzeug.MitLabor), Katalog und wartende Messprotokolle aus seinem Speicher lesen.
+    /// </summary>
+    partial void LaborWerkzeugBetreten();
+
+    /// <summary>H+K XR E1: das aktive Werkzeug wird verlassen (Wechsel): eine laufende Aufgabe bricht ab (Messprotokoll an das bisherige Werkzeug), die Karte geht.</summary>
+    partial void LaborWerkzeugVerlassen();
 
     /// <summary>Verbunden, vor dem Modell: Katalog vom PC. <paramref name="warten"/>: was der Aufrufer abwartet, bevor er das Modell lädt (Vorgabe null).</summary>
     partial void LaborVerbunden(IEbenenQuelle quelle, ref Task? warten);

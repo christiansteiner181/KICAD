@@ -157,7 +157,7 @@ sealed partial class QuestApp
                 var ortMm = markerWartend[^1].OrtMm;
                 teile.Add(string.Create(CultureInfo.InvariantCulture,
                     $"Marker={(markerOk ? "ok" : "FEHLER")} (gesetzt an {fb.Name}, Ort {ortMm[0]:0}/{ortMm[1]:0}/{ortMm[2]:0} mm, Element {(fb.Id is null ? "keins" : "ja")}, " +
-                    $"{(MarkerQuelle is null ? "ohne PC: wartet" : $"geht an {Marke.Gegenstelle}")})"));
+                    $"{(MarkerQuelle is null ? "ohne PC: wartet" : $"geht an {AnzeigeName}")})"));
                 var kp = SzeneVonSk(kopf.position);
                 // Blick auf den Marker: am Tisch vom Kopf, beim Begehen aus dem Raum (von der Mitte, 30 cm zurück und 35 cm höher)
                 var zumMarker = (fb.P!.Value - mitte).Einheit();

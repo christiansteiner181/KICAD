@@ -35,6 +35,7 @@ sealed partial class QuestApp
     /// </summary>
     partial void LaborPruefRegeln(List<string> teile)
     {
+        if (!LaborAn) { teile.Add("Labor=aus (Werkzeug ohne Labor)"); return; }   // H+K XR E1: Werkzeug.MitLabor
         // Katalog
         var k = werte.Katalog;
         var mitPc = kanal is not null && !o.OhnePc;
@@ -229,6 +230,7 @@ sealed partial class QuestApp
     /// <summary>Prüfbild P5b (--bilder): die Karte der Aufgabe – einmal. L1: beim Begehen im Testraum dazu die Bilder des Testraums (<see cref="TestraumBilder"/>).</summary>
     partial void LaborPruefBilder(string ordner)
     {
+        if (!LaborAn) return;
         var k = Input.Head;
         if (karte.Lage is { } kl && !aufgabenBild)
         {

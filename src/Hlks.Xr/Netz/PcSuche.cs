@@ -9,7 +9,7 @@
 //      dass der Fingerabdruck dem gepinnten entspricht; dann wie 1. mit dem Absender und den IP-Adressen der Antwort.
 // Eine Antwort 401 der Probe heisst: der Schlüssel gilt nicht mehr (widerrufen bzw. ersetzt) – dann nicht weiter versuchen (der PC sperrt nach
 // 10 Fehlversuchen die Adresse), sondern «neu koppeln» melden. Ein anderer Fingerabdruck in einer gültig signierten Antwort heisst: KICAD hat ein
-// neues Zertifikat – ebenfalls neu koppeln (die App nimmt nur das gepinnte an).
+// neues Zertifikat – ebenfalls neu koppeln (die App nimmt nur das gepinnte an). H+K XR E1: die Meldungen nennen das Werkzeug des Pakets (KICAD, XR-Labor …).
 //
 //   Anfrage  { typ: "suche", fassung: 1, kopplung, zeit (Unix-ms), zufall (base64url, 16 Byte), signatur }
 //            signatur = base64url(HMAC-SHA256(Suchschlüssel, "hlks-xr-suche|1|<kopplung>|<zeit>|<zufall>"))
@@ -232,14 +232,14 @@ public static class PcSuche
 
         var antwort = await Rufen(p, o.Ziele ?? BroadcastZiele(p.SuchPort), o, abbruch).ConfigureAwait(false);
         if (antwort is null)
-            return new PcFund(null, PcFundZustand.NichtGefunden, $"KICAD auf {p.Pc} antwortet nicht (Adressen {string.Join(", ", kandidaten.Select(k => $"{k.Ip}:{k.Port}"))}, Suche ohne Antwort).");
+            return new PcFund(null, PcFundZustand.NichtGefunden, $"{p.WerkzeugName} auf {p.Pc} antwortet nicht (Adressen {string.Join(", ", kandidaten.Select(k => $"{k.Ip}:{k.Port}"))}, Suche ohne Antwort).");
         if (!antwort.FingerabdruckPasst)
-            return new PcFund(null, PcFundZustand.ZertifikatAnders, $"KICAD auf {antwort.Pc} hat ein neues Zertifikat. Die Brille in KICAD neu koppeln.");
+            return new PcFund(null, PcFundZustand.ZertifikatAnders, $"{p.WerkzeugName} auf {antwort.Pc} hat ein neues Zertifikat. Die Brille {Werkzeug.Aus(p).InWerkzeug} neu koppeln.");
         var neu = new[] { antwort.Absender }.Concat(antwort.Ips).Where(i => i is not null).Distinct()
             .Select(ip => new PcAdresse(ip!, antwort.Port, antwort.Pc, "suche")).ToList();
         var zweite = await Proben(neu, p, o, abbruch).ConfigureAwait(false);
         return zweite.Zustand == PcFundZustand.NichtGefunden
-            ? new PcFund(null, PcFundZustand.NichtGefunden, $"KICAD auf {antwort.Pc} antwortet auf die Suche, aber nicht über HTTPS (Port {antwort.Port}; Firewall?).")
+            ? new PcFund(null, PcFundZustand.NichtGefunden, $"{p.WerkzeugName} auf {antwort.Pc} antwortet auf die Suche, aber nicht über HTTPS (Port {antwort.Port}; Firewall?).")
             : zweite;
     }
 
@@ -270,7 +270,7 @@ public static class PcSuche
             if (e.SchluesselUngueltig) ungueltig = true;
         }
         return ungueltig
-            ? new PcFund(null, PcFundZustand.SchluesselUngueltig, $"KICAD auf {p.Pc} kennt diese Brille nicht mehr (Kopplung widerrufen oder ersetzt). Die Brille in KICAD neu koppeln.")
-            : new PcFund(null, PcFundZustand.NichtGefunden, $"KICAD auf {p.Pc} antwortet nicht.");
+            ? new PcFund(null, PcFundZustand.SchluesselUngueltig, $"{p.WerkzeugName} auf {p.Pc} kennt diese Brille nicht mehr (Kopplung widerrufen oder ersetzt). Die Brille {Werkzeug.Aus(p).InWerkzeug} neu koppeln.")
+            : new PcFund(null, PcFundZustand.NichtGefunden, $"{p.WerkzeugName} auf {p.Pc} antwortet nicht.");
     }
 }
