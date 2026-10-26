@@ -1,0 +1,73 @@
+{
+  "art": "hlks-labor-testraum",
+  "fassung": 1,
+  "beschreibung": "Neutraler Testraum des XR-Labors (entwurf/labor-app.md, «Testwelt der Labor-App»; Entscheid Christian 26.10.2026: «Nur neutraler Testraum» – kein Projekt, keine Projektdaten). Der Labor-PC (src/Hlks.Labor, TestraumModell.cs) baut daraus je Etage eine GLB im Format von KICAD (GET /api/xr/geschosse, GET /api/xr/geschoss/{id}.glb) und schreibt die Ziele der Prüfaufgaben (kataloge/xr_pruefaufgaben.json) in scene.extras.kicad.labor; die Brillen-App «XR-Labor» nimmt sie statt der Ziele, die sie sonst im Modell sucht. Koordinaten in KICAD-mm wie im Kern: x Ost, y Nord, z oben, absolut. Wände als Achse (von, bis) mit Dicke wie die Wandgeometrie «linie» von KICAD, Platten und Räume als Umriss mit Unter- und Oberkante. Die Platte zwischen EG und OG steht zweimal im Katalog (Decke des EG, Boden des OG), weil die App beim Begehen nur die Etage am Stand zeichnet und jede Etage Boden und Decke braucht; beide haben dieselbe Lage und dieselbe Farbe. Masse und Farben sind Annahmen für Prüfaufgaben, keine Normwerte.",
+  "projekt": "labor-testraum",
+  "annahmen": [
+    "Raum innen 8.0 × 6.0 m je Etage (Vorschlag Auftrag L1, Hauptlauf 26.10.2026: «ca. 8 × 6 m»; Begehen und Springen mit 2 … 4.5 m Weite wie die Markierung der App, PruefAufgaben.MarkierungAbstaende).",
+    "Wände 200 mm dick, von OK Boden bis UK Decke (lichte Höhe), Platten 250 mm dick (Annahme L1, nur für die Darstellung; so berühren sich Wand und Platte ohne Überlappung).",
+    "Geschosshöhe 2900 mm wie im Beispielprojekt «MFH Musterweg» (src/Hlks.Kern/Beispiel/Beispielprojekt.cs: EG Kote 0, Höhe 2900; 1.OG Kote 2900, Höhe 2900); lichte Höhe damit 2650 mm.",
+    "Markierungen 300 mm Radius als flache Scheibe 1 … 6 mm über OK Boden; als gelungen zählt ein Sprung bis 0.5 m neben die Mitte (PruefAufgaben.MarkierungRadiusM, Katalog xr_pruefaufgaben.json «Annahme P6»).",
+    "Kein Durchgang und keine Treppe: die Aufgabe «etage-wechseln» wechselt mit der App «Etagen» (Vorgabe labor.variante.etage = app, Brillentest V1d), sie braucht keinen Weg zwischen den Etagen."
+  ],
+  "farben": {
+    "wand": { "farbe": "#E4E7EB", "quelle": "kataloge/xr_farben.json, App «vorgabe», hell.ton (neutral)" },
+    "platte": { "farbe": "#D9DDE2", "quelle": "hell-neutral eine Stufe dunkler als die Wände, damit sich Boden und Wand abheben (Annahme L1); Boden und Decke gleich, siehe Beschreibung" },
+    "markierung": { "farbe": "#6F3E59", "quelle": "kataloge/xr_farben.json, App «labor», hell.akzent" }
+  },
+  "geschosse": [
+    { "id": "EG", "kennzeichen": "EG", "name": "Erdgeschoss", "koteMm": 0, "hoeheMm": 2900, "quelle": "Beispielprojekt.cs: Geschoss EG, kote 0, hoehe 2900" },
+    { "id": "OG", "kennzeichen": "OG", "name": "Obergeschoss", "koteMm": 2900, "hoeheMm": 2900, "quelle": "Beispielprojekt.cs: Geschoss 1.OG, kote 2900, hoehe 2900" }
+  ],
+  "elemente": [
+    { "id": "boden-eg", "art": "boden", "geschoss": "EG", "name": "Boden EG", "umrissMm": [[-200, -200], [8200, -200], [8200, 6200], [-200, 6200]], "untenMm": -250, "obenMm": 0 },
+    { "id": "decke-eg", "art": "decke", "geschoss": "EG", "name": "Decke über EG", "umrissMm": [[-200, -200], [8200, -200], [8200, 6200], [-200, 6200]], "untenMm": 2650, "obenMm": 2900 },
+    { "id": "wand-eg-sued", "art": "wand", "geschoss": "EG", "name": "Wand Süd EG", "vonMm": [-200, -100], "bisMm": [8200, -100], "dickeMm": 200, "untenMm": 0, "obenMm": 2650 },
+    { "id": "wand-eg-nord", "art": "wand", "geschoss": "EG", "name": "Wand Nord EG", "vonMm": [-200, 6100], "bisMm": [8200, 6100], "dickeMm": 200, "untenMm": 0, "obenMm": 2650 },
+    { "id": "wand-eg-west", "art": "wand", "geschoss": "EG", "name": "Wand West EG", "vonMm": [-100, 0], "bisMm": [-100, 6000], "dickeMm": 200, "untenMm": 0, "obenMm": 2650 },
+    { "id": "wand-eg-ost", "art": "wand", "geschoss": "EG", "name": "Wand Ost EG", "vonMm": [8100, 0], "bisMm": [8100, 6000], "dickeMm": 200, "untenMm": 0, "obenMm": 2650 },
+    { "id": "testraum-eg", "art": "raum", "geschoss": "EG", "kennzeichen": "T.EG", "name": "Testraum EG", "umrissMm": [[0, 0], [8000, 0], [8000, 6000], [0, 6000]], "untenMm": 0, "obenMm": 2650 },
+    { "id": "markierung-eg-sw", "art": "markierung", "geschoss": "EG", "name": "Markierung Südwest", "mitteMm": [2000, 1500], "radiusMm": 300 },
+    { "id": "markierung-eg-so", "art": "markierung", "geschoss": "EG", "name": "Markierung Südost", "mitteMm": [6000, 1500], "radiusMm": 300 },
+    { "id": "markierung-eg-nw", "art": "markierung", "geschoss": "EG", "name": "Markierung Nordwest", "mitteMm": [2000, 4500], "radiusMm": 300 },
+    { "id": "markierung-eg-no", "art": "markierung", "geschoss": "EG", "name": "Markierung Nordost", "mitteMm": [6000, 4500], "radiusMm": 300 },
+
+    { "id": "boden-og", "art": "boden", "geschoss": "OG", "name": "Boden OG (dieselbe Platte wie «Decke über EG»)", "umrissMm": [[-200, -200], [8200, -200], [8200, 6200], [-200, 6200]], "untenMm": 2650, "obenMm": 2900 },
+    { "id": "decke-og", "art": "decke", "geschoss": "OG", "name": "Decke über OG", "umrissMm": [[-200, -200], [8200, -200], [8200, 6200], [-200, 6200]], "untenMm": 5550, "obenMm": 5800 },
+    { "id": "wand-og-sued", "art": "wand", "geschoss": "OG", "name": "Wand Süd OG", "vonMm": [-200, -100], "bisMm": [8200, -100], "dickeMm": 200, "untenMm": 2900, "obenMm": 5550 },
+    { "id": "wand-og-nord", "art": "wand", "geschoss": "OG", "name": "Wand Nord OG", "vonMm": [-200, 6100], "bisMm": [8200, 6100], "dickeMm": 200, "untenMm": 2900, "obenMm": 5550 },
+    { "id": "wand-og-west", "art": "wand", "geschoss": "OG", "name": "Wand West OG", "vonMm": [-100, 0], "bisMm": [-100, 6000], "dickeMm": 200, "untenMm": 2900, "obenMm": 5550 },
+    { "id": "wand-og-ost", "art": "wand", "geschoss": "OG", "name": "Wand Ost OG", "vonMm": [8100, 0], "bisMm": [8100, 6000], "dickeMm": 200, "untenMm": 2900, "obenMm": 5550 },
+    { "id": "testraum-og", "art": "raum", "geschoss": "OG", "kennzeichen": "T.OG", "name": "Testraum OG", "umrissMm": [[0, 0], [8000, 0], [8000, 6000], [0, 6000]], "untenMm": 2900, "obenMm": 5550 },
+    { "id": "markierung-og-west", "art": "markierung", "geschoss": "OG", "name": "Markierung West", "mitteMm": [2000, 3000], "radiusMm": 300 },
+    { "id": "markierung-og-ost", "art": "markierung", "geschoss": "OG", "name": "Markierung Ost", "mitteMm": [6000, 3000], "radiusMm": 300 },
+    { "id": "markierung-og-nord", "art": "markierung", "geschoss": "OG", "name": "Markierung Nord", "mitteMm": [4000, 4800], "radiusMm": 300 }
+  ],
+  "ziele": {
+    "teleport-markierung": {
+      "markierungen": ["markierung-eg-sw", "markierung-eg-so", "markierung-eg-nw", "markierung-eg-no", "markierung-og-west", "markierung-og-ost", "markierung-og-nord"],
+      "erklaerung": "Die App nimmt eine Markierung der Etage am Stand: zuerst die 2 … 4.5 m entfernten, darunter die mit dem kleinsten Winkel zum Blick, bei Gleichstand die erste dieser Liste (Hlks.Xr.Labor.LaborZiele)."
+    },
+    "messen-wand-wand": {
+      "wandpaare": [
+        { "id": "wandpaar-eg", "raum": "testraum-eg", "a": "wand-eg-sued", "b": "wand-eg-nord", "sollMm": 6000 },
+        { "id": "wandpaar-og", "raum": "testraum-og", "a": "wand-og-west", "b": "wand-og-ost", "sollMm": 8000 }
+      ],
+      "erklaerung": "Sollmass = Abstand der Innenflächen der beiden Wände (der Labor-PC prüft es gegen die Geometrie, höchstens 0.5 mm Abweichung). Die App markiert das Paar der Etage am Stand."
+    },
+    "raum-ar-oeffnen": {
+      "raum": "testraum-eg",
+      "erklaerung": "Dieser Raum ist der markierte Raum der Aufgabe und steht mit «Raum zeigen» auf dem Tisch."
+    },
+    "tablet-wert-ablesen": {
+      "bauteile": [
+        { "bauteil": "wand-eg-ost", "hoeheMm": 2650 },
+        { "bauteil": "wand-og-nord", "hoeheMm": 2650 }
+      ],
+      "erklaerung": "Das markierte Bauteil der Etage am Stand; die App fragt nach seiner Höhe (Hüllbox), der Labor-PC prüft hoeheMm gegen die Geometrie."
+    },
+    "drehen-90": { "erklaerung": "Kein Ziel nötig: die Drehung misst die App an der Blickrichtung; der Raum ist gross genug, dass nach jeder Vierteldrehung eine Wand mit Abstand vor einem steht." },
+    "etage-wechseln": { "erklaerung": "Kein Ziel nötig: zwei Etagen (EG und OG), die App wechselt ins Geschoss darüber und zurück." },
+    "modell-greifen-zoomen": { "erklaerung": "Kein Ziel nötig: am Sitzungstisch steht das ganze Modell des Testraums (beide Etagen)." }
+  }
+}

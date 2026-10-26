@@ -156,6 +156,7 @@ public static class LaborDienste
         app.MapGet("/api/status", () => EndpunktHilfe.Antwort(LaborStatus.Status()));
         app.MapXr();   // Netzzugang, Kopplung, Teilnehmer, Kanal, Desktop (XrEndpunkte.cs von KICAD, mit den Werten des Labors)
         app.MapQuestApp(app.Services.GetRequiredService<QuestDienst>());   // App «XR-Labor» installieren/aktualisieren (QuestAppEndpunkte.cs von KICAD)
+        LaborTestraum.Abbilden(app);   // L1: Etagen des Testraums als GLB wie KICAD (/api/xr/geschosse, /api/xr/geschoss/{id}.glb; TestraumEndpunkte.cs)
         return app;
     }
 }
