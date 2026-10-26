@@ -5,7 +5,7 @@
 # Dieses Skript legt dafuer zwei eingehende Regeln an: nur Profil "Privat", nur aus dem eigenen Subnetz (LocalSubnet). Gruppe "KICAD XR".
 # Es aendert sonst nichts (kein Netzprofil, keine anderen Regeln). KICAD selbst aendert nie Firewall- oder Systemeinstellungen.
 # XR-Labor (Entwurf entwurf\labor-app.md, Stufe L0; Christian 26.10.2026): dazu kommen zwei gleichartige Regeln fuer die Labor-Brille,
-# Gruppe "XR-Labor", Regelnamen "XR-Labor ...":
+# ebenfalls Gruppe "KICAD XR" (die Netzpruefung im Labor liest wie KICAD diese Gruppe, QuestAppNetz.cs), Regelnamen "XR-Labor ...":
 #   - TCP 5340  HTTPS, Zugang der Labor-App (src/Hlks.Labor, gleiche Technik wie 5140, eigene Kopplung je Brille)
 #   - UDP 5341  Suche des PCs durch die Labor-App
 # Wie die Regeln fuer KICAD: nur Profil "Privat", nur aus dem eigenen Subnetz; zusaetzlich nur fuer das Programm dotnet.exe
@@ -15,8 +15,8 @@
 #   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1                  Regeln anlegen bzw. erneuern (KICAD: TCP 5140, UDP 5141; XR-Labor: TCP 5340, UDP 5341)
 #   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -Port 5240 -SuchPort 5241   andere Ports (wie xr.port / xr.suchport)
 #   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -LaborPort 5440 -LaborSuchPort 5441   andere Ports fuer das XR-Labor
-#   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -Entfernen       Regeln der Gruppen "KICAD XR" und "XR-Labor" entfernen
-#   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -Liste           nur anzeigen (Regeln beider Gruppen, Netzprofil, Sperren fuer dotnet.exe)
+#   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -Entfernen       Regeln der Gruppe "KICAD XR" (KICAD und XR-Labor) entfernen
+#   powershell -ExecutionPolicy Bypass -File werkzeuge\xr_firewall.ps1 -Liste           nur anzeigen (Regeln der Gruppe, Netzprofil, Sperren fuer dotnet.exe)
 # Hinweis: Fragt Windows beim ersten Einschalten des Zugangs "Zugriff zulassen?" fuer dotnet.exe, nur "Private Netzwerke" waehlen.
 # "Abbrechen" legt Sperrregeln fuer dotnet.exe an, die Vorrang vor diesen Regeln haben (-Liste zeigt sie).
 # Datei bewusst nur ASCII (PowerShell 5.1). Laedt nichts herunter.
@@ -30,14 +30,14 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 $Gruppe = 'KICAD XR'
-$LaborGruppe = 'XR-Labor'
+$LaborGruppe = $Gruppe   # gleiche Gruppe: QuestAppNetz.cs liest fuer KICAD und Labor die Gruppe "KICAD XR"
 $Dotnet = 'C:\Program Files\dotnet\dotnet.exe'
 
 function Meldung([string]$t) { Write-Host $t }
 function Fehler([string]$t) { Write-Host "FEHLER: $t" -ForegroundColor Red; exit 1 }
 
 function Anzeigen {
-  foreach ($g in @($Gruppe, $LaborGruppe)) {
+  foreach ($g in @($Gruppe, $LaborGruppe | Select-Object -Unique)) {
     $regeln = @(Get-NetFirewallRule -Group $g -ErrorAction SilentlyContinue)
     if ($regeln.Count -eq 0) { Meldung "Keine Regeln der Gruppe '$g'." }
     foreach ($r in $regeln) {
@@ -71,7 +71,7 @@ if (@($Port, $SuchPort) -contains $LaborPort -or @($Port, $SuchPort) -contains $
 if (-not $Entfernen -and -not (Test-Path $Dotnet)) { Fehler "dotnet.exe nicht gefunden: $Dotnet (die Regeln des XR-Labors gelten nur fuer dieses Programm)." }
 
 # vorhandene Regeln der Gruppen entfernen (auch vor dem Anlegen: so gibt es nie doppelte oder veraltete Ports)
-foreach ($g in @($Gruppe, $LaborGruppe)) {
+foreach ($g in @($Gruppe, $LaborGruppe | Select-Object -Unique)) {
   $alt = @(Get-NetFirewallRule -Group $g -ErrorAction SilentlyContinue)
   if ($alt.Count -gt 0) {
     $alt | Remove-NetFirewallRule

@@ -141,6 +141,17 @@ $wtSha = if (Test-Path "$wt\.git") { try { GitAufruf @('-C', $wt, 'rev-parse', '
 $zu = Zustand
 $srv = Laufender
 $st = Status
+# XR-Labor (entwurf\labor-app.md, L0): labor_starten.ps1 zieht dieselbe Arbeitskopie nach und baut daraus. Laeuft es gerade, nicht
+# gleichzeitig nachziehen (sonst bricht dessen Bau); umgekehrt wartet das Labor auf dieses Skript (KicadStartetGerade).
+if ($wtSha -ne $sha) {
+  $laborStart = Get-CimInstance Win32_Process -Filter "Name='powershell.exe'" -ErrorAction SilentlyContinue | Where-Object { $_.CommandLine -match 'labor_starten\.ps1' }
+  if ($laborStart) {
+    Log "neuer Stand $kurz, XR-Labor startet gerade - kein Nachziehen"
+    if ($srv -and $st) { Fenster -Start }
+    Hinweis "Das XR-Labor startet bzw. baut gerade aus derselben Arbeitskopie.`r`nBitte in einer Minute nochmals auf das KICAD-Icon klicken."
+    exit 0
+  }
+}
 
 if ($srv -and $st) {
   $aktuell = $zu -and ([int]$zu.pid -eq $srv.Pid) -and ($zu.sha -eq $sha) -and ($wtSha -eq $sha)
