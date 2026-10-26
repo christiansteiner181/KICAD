@@ -2048,6 +2048,8 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
 
 ## Modul XR: Quest App in KICAD (Quest App P7, `entwurf/modul-xr.md`, Zeile P7; Entscheide Christian 23.10.2026: «KICAD installiert die App», «PC sieht Brille»)
 
+*Stand vor H+K XR E1 (26.10.2026): Seitdem heisst die App «H+K XR» (`ch.hkplanung.xr`, eine App für KICAD und Labor), die Ablage `…\hk_xr`, der Eingang `kopplung_<werkzeug>.json` und der Knopf «H+K XR installieren …»; siehe Abschnitt «H+K XR (Empfänger-App), E1 – PC-Seite» am Ende. Wo unten `ch.hkplanung.kicad.quest`, `quest_app` oder `kopplung.json` steht, gilt dieser Abschnitt.*
+
 Der Dialog **«Quest verbinden»** (Register **XR › Gruppe Brille › «Quest verbinden …»** bzw. **«App installieren …»**) hat jetzt einen Teil **«Quest App»** (zwischen «Begehung beim Aufsetzen» und «Gut zu wissen»). Er ersetzt den Ablauf von Hand
 (`werkzeuge/quest_brillentest.ps1`) durch Knöpfe. Der Browser-Weg darüber bleibt unverändert. **Reine Rechner-Funktionen** (kein Befehl, keine Abfrage des Kerns, kein Paket im Modell), für die KI **verboten**
 (`KiEinordnung.RechnerFunktionen` › `quest_app`, `quest_app_netz`; die Anzeige der Brille am PC fällt unter `xr_kanal`), kein MCP-Werkzeug.
@@ -3431,7 +3433,7 @@ Die Aktions-Ids bleiben (`ansicht.questVerbinden`, `koordination.problemMarker` 
 | Gruppe | Eintrag (Aktion) | Symbol | Kürzel | Vorher | Wirkung |
 | --- | --- | --- | --- | --- | --- |
 | Brille | **Quest verbinden …** (`ansicht.questVerbinden`) | `questVerbinden` | XQ | Ansicht › Fenster | Dialog «Quest verbinden» (Ampel, adb, WLAN, Brille merken) |
-| Brille | **App installieren …** (`xr.appInstallieren`, neu) | `appInstallieren` | XI | Teil des Dialogs | öffnet denselben Dialog; sein erster Teil «Quest App» hat «App installieren/aktualisieren», Kopplung, Netzzugang |
+| Brille | **H+K XR installieren …** (`xr.appInstallieren`, neu; bis E1 «App installieren …») | `appInstallieren` | XI | Teil des Dialogs | öffnet denselben Dialog; sein erster Teil «Quest App» hat «App installieren/aktualisieren», «Alte Apps entfernen …», Kopplung, Netzzugang (Abschnitt «H+K XR (Empfänger-App), E1») |
 | Brille | **Autostart** (`xr.autostart`, neu) | `autostart` | XU | Kästchen im Dialog | Schalter (Knopf gedrückt = ein), Einstellung `quest.autostart`, Vorgabe ein: die Begehung startet, sobald die Brille aufgesetzt ist; derselbe Wert wie das Kästchen im Dialog |
 | Brille | **Brille zeigen** (`ansicht.brilleZeigen`) | `brilleZeigen` | XB | Ansicht › Fenster | Schalter: verbundene Brillen (Teilnehmer) als Figuren in der 3D-Ansicht, Einstellung `ansicht3d.brillen_zeigen` |
 | Zeigen | **In VR begehen** (`ansicht.vrBegehen`) | `raumBegehen` | XV | nur Kontextmenü «Raum begehen in VR» | Auftrag an die Brille: den **gewählten Raum** begehen |
@@ -3515,6 +3517,8 @@ Ein Dialog oder eine Ansicht kann Seiten anbieten, die G2 blättert: ein Element
 - **Anleitung:** Kapitel «Gesten am Arbeitsplatz» (`mg`) in `berichte/anleitung/inventar.json`; Bilder folgen durch den Hauptlauf (Vorgaben im Feld «bild»).
 
 ## XR-Labor (Labor-App), L0: eigener Server neben KICAD (26.10.2026)
+
+*Stand vor H+K XR E1 (26.10.2026): Seitdem gibt es keine eigene Labor-App mehr; das Labor installiert und koppelt dieselbe App «H+K XR» (`ch.hkplanung.xr`, Ablage `…\hk_xr`, Einstellung `quest.app_ablage`) als Werkzeug «XR-Labor» (Eingang `kopplung_xrlabor.json`). In der Tabelle unten gilt für die Zeile «App in der Brille» und in «Prüfen» der Abschnitt «H+K XR (Empfänger-App), E1 – PC-Seite» am Ende.*
 
 Spezifikation `entwurf/labor-app.md` (freigegeben von Christian am 26.10.2026), Stufe L0 «Gerüst und Durchstich». Das XR-Labor ist eine **eigene App** neben KICAD:
 PC-Teil `src/Hlks.Labor` (dieser Abschnitt), Brillen-App «XR-Labor» `src/Hlks.Labor.Quest` (App-Kennung `ch.hkplanung.xrlabor`). Es braucht **kein KICAD-Projekt**,
@@ -3663,3 +3667,65 @@ Christian 26.10.2026: Testwelt «Nur neutraler Testraum» – kein Projekt, kein
   Ohne Ebenen und Marker (gibt es im Labor nicht, `AppMarke.MitProjekt`) meldet die Labor-App nichts.
 - **Prüfen:** `dotnet test tests/Hlks.Labor.Tests --filter "FullyQualifiedName~Testraum"`, `dotnet test tests/Hlks.Xr.Tests --filter "FullyQualifiedName~LaborZiele"`;
   Simulator der Labor-App gegen einen Labor-Server im Testlauf löst alle sieben Prüfaufgaben (Bilder unter `%USERPROFILE%\HLKS_CAD_testdaten\labor\l1\`).
+
+## H+K XR (Empfänger-App), E1 – PC-Seite (26.10.2026)
+
+Spezifikation `entwurf/xr-empfaenger.md` (freigegeben von Christian am 26.10.2026: «eine app für alles, Idee eine reciverapp die für alle tools genutzt werden kann»), Stufe E1,
+Abschnitt «Schnittstellen im Bau E1». In der Brille gibt es künftig **eine** App **«H+K XR»** (Kennung `ch.hkplanung.xr`) für alle Werkzeuge; die bisherigen Apps «KICAD»
+(`ch.hkplanung.kicad.quest`) und «XR-Labor» (`ch.hkplanung.xrlabor`) sind ersetzt. Dieser Abschnitt beschreibt den **PC-Teil**: was KICAD und das XR-Labor dazu anders tun und zeigen.
+Die App selbst (`src/Hlks.Quest`, `src/Hlks.Xr`) baut eine andere Sitzung; Startseite der Werkzeuge und Wechsel in der Brille gehören dazu und stehen nicht hier.
+**Reine Rechner-Funktionen** wie bisher (für die KI verboten, `KiEinordnung.RechnerFunktionen` › `quest_app`); der neue Endpunkt `alte-entfernen` fällt unter dieselbe Gruppe.
+Die Abschnitte «Quest App in KICAD» (P7) und «XR-Labor (Labor-App), L0» oben beschreiben den Stand vor E1; wo sie Paket, Ablage oder App-Namen nennen, gilt dieser Abschnitt.
+
+### Wo
+
+Register **XR › Gruppe Brille › «H+K XR installieren …»** (`xr.appInstallieren`, Kürzel **XI**, bisher «App installieren …»; Symbol unverändert) öffnet wie bisher den Dialog
+«Quest verbinden» mit dem Teil «Quest App». Im XR-Labor: Seite `http://localhost:5430/`, Reiter **Brille**, derselbe Teil. Die Aktions-Ids und alle übrigen Kürzel bleiben.
+
+### Was sich zeigt
+
+| | vorher | jetzt (E1) |
+| --- | --- | --- |
+| Name der App im Dialog und in Meldungen | «KICAD» bzw. «XR-Labor» | **«H+K XR»** (Werkzeug daneben: «KICAD» bzw. «XR-Labor») |
+| Einleitung im Teil «Quest App» | «Die App «KICAD» in der Brille ersetzt auf Dauer den Browser …» | «Die App «H+K XR» … verbindet sich … mit KICAD (und mit weiteren Werkzeugen wie dem XR-Labor) … Sie ersetzt die bisherigen Apps «KICAD» und «XR-Labor».» |
+| Ablage der APK am PC | `%USERPROFILE%\HLKS_CAD_werkzeuge\quest_app` (KICAD), `…\labor_app` (Labor) | **`%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr`** für beide (`ch.hkplanung.xr-Signed.apk`, `version.json`) |
+| Einstellung des Ordners | `quest.app_ablage` (KICAD), `labor.app_ablage` (Labor, nur gelesen) | **`quest.app_ablage`** für beide; `labor.app_ablage` entfällt (das Labor liest `quest.app_ablage`, schreibt sie nie) |
+| APK bauen | `werkzeuge\quest_app_bereitstellen.ps1` (KICAD) bzw. `… -Labor` | `werkzeuge\quest_app_bereitstellen.ps1` (baut `src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj`); `-Labor` gibt es nicht mehr (Hinweis, es wird die eine App gebaut) |
+| Kopplungspaket | Fassung 1 | **Fassung 2**: Fassung 1 plus `werkzeug` (`kicad` \| `xrlabor`) und `werkzeugName` («KICAD» \| «XR-Labor»); Fassung 1 ohne `werkzeug` gilt in der App als `kicad` |
+| Eingang auf der Brille | `…/ch.hkplanung.kicad.quest/files/kopplung.json` | **`/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_<werkzeug>.json`** (ein Paket je Werkzeug; die App übernimmt jedes und löscht es im Eingang; ein altes `kopplung.json` gilt als `kicad`) |
+| Teilnehmerliste `GET /api/xr/teilnehmer` | ohne Zustand | je Teilnehmer **`aktiv`** (false = die App zeigt gerade ein anderes Werkzeug); die 3D-Figur der Brille am PC erscheint nur für aktive Teilnehmer |
+| `GET /api/quest/app` | `paket`, `ablage`, `brille` … | zusätzlich **`app`** («H+K XR»), **`werkzeug`**, **`werkzeugName`** (auch ohne adb und ohne Brille) und **`brille.alteApps`** (`[{ paket, name }]`) |
+
+### Bedienung
+
+1. **Installieren und koppeln:** wie bisher (Netzzugang einschalten, «über Kabel» oder «über WLAN», Knopf «App installieren» bzw. «App aktualisieren»). Es ist **dieselbe App** wie beim anderen
+   Werkzeug: Wer KICAD schon eingerichtet hat, installiert im Labor nur noch dessen Kopplung dazu (der Knopf aktualisiert die App; das Paket legt `kopplung_xrlabor.json` neben `kopplung_kicad.json`).
+   Die App in der Brille braucht nach dem Wechsel der Kennung **einmal** eine neue Kopplung per Kabel (Vorgabe der Spezifikation: kein Übertrag der alten Kopplung).
+2. **Alte Apps entfernen:** Sind in der Brille noch «KICAD» (`ch.hkplanung.kicad.quest`) und/oder «XR-Labor» (`ch.hkplanung.xrlabor`) installiert (`brille.alteApps` nicht leer), erscheint im Teil
+   «Quest App» ein Hinweis und der Knopf **«Alte Apps entfernen …»**. Klick → Rückfrage («Die bisherigen Apps «KICAD» und «XR-Labor» von der Brille entfernen? «H+K XR» ersetzt sie und bleibt; …»)
+   → bei «Entfernen» `POST /api/quest/app/alte-entfernen { bestaetigt: true }`: KICAD ruft `adb uninstall` für **genau diese zwei Pakete**, soweit sie installiert sind, nie für ein anderes und nie für «H+K XR».
+   Ohne `bestaetigt: true` antwortet der Server 400 und ruft kein adb. Ein Fehlschlag bei einer App hindert die andere nicht; die Antwort nennt je App einen Schritt (grün oder rot) und eine Meldung.
+   Ist keine alte App mehr da, ist der Knopf nicht sichtbar; ruft man den Endpunkt trotzdem auf, antwortet der Server «Auf der Brille sind keine alten Apps installiert.» (ok, ohne `uninstall`).
+3. **Zum Kanal:** Die App hält zu jedem gekoppelten, erreichbaren Werkzeug einen Kanal offen. `hallo` bekommt `aktiv` (bool; fehlt es, gilt `true`); beim Wechsel sendet die App `aktiv { aktiv }`.
+   Ein inaktiver Teilnehmer bekommt Aufträge und Stellschrauben wie bisher, sendet aber keine Posen. Ein Wert, der nicht `true`/`false` ist, gibt eine Fehlermeldung des Kanals (die Verbindung bleibt;
+   im ersten `hallo` wird sie wie bei jedem ungültigen `hallo` geschlossen).
+
+### Erwartung
+
+- Der Teil «Quest App» nennt überall die App «H+K XR»; der Ordner der App steht auf `…\hk_xr`; «Abgelegte App» zeigt die APK `ch.hkplanung.xr-Signed.apk`.
+- «App installieren» schreibt im Kabelweg dieselben sieben Schritte wie bisher; auf der Brille entsteht die App `ch.hkplanung.xr` und im Eingang `kopplung_<werkzeug>.json` (KICAD `kopplung_kicad.json`, Labor `kopplung_xrlabor.json`).
+- Das Paket Fassung 2 enthält `werkzeug` und `werkzeugName` des Servers, der es ausgibt (KICAD `kicad`/«KICAD», Labor `xrlabor`/«XR-Labor»); `POST /api/xr/kopplung/paket` gibt es ebenso aus.
+- «Alte Apps entfernen …» ist nur sichtbar, wenn mindestens eine alte App installiert ist, fragt immer vorher und entfernt nur «KICAD» und «XR-Labor».
+- Im 3D-Fenster am PC erscheint die Figur einer Brille nur, solange ihre App dieses Werkzeug vorn zeigt (`aktiv` fehlt oder `true`).
+
+### Prüfen
+
+- **Tests:** `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~QuestAppTests|FullyQualifiedName~XrKopplung|FullyQualifiedName~XrKanalAktivTests"` (Fassung 2, Werkzeug je Server, Eingang je Werkzeug,
+  Alte Apps entfernen: nur mit Bestätigung, nur die zwei Pakete, nur wenn installiert, Fehlschläge, Zeitüberschreitung, Zustand, `aktiv` im hallo und als Nachricht);
+  `dotnet test tests/Hlks.Labor.Tests` (Marke des Labors: gleiche App und Ablage, Werkzeug `xrlabor`, Installation mit der Attrappe bis zum Start, «Alte Apps entfernen» vom Labor aus).
+  Statt `adb.exe` läuft die Attrappe `tests/Hlks.AdbAttrappe` (neu: `pm list packages <Filter>` aus `alte_apps.txt`, `uninstall <Paket>` mit `uninstall.log`, Ziel `kopplung_<werkzeug>.json`).
+  Node: `node --test src/Hlks.Web/wwwroot/js/oberflaeche/quest-app.test.mjs src/Hlks.Web/wwwroot/js/oberflaeche/xr-register.test.mjs src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor.test.mjs src/Hlks.Web/wwwroot/js/ansichten/xr-teilnehmer.test.mjs src/Hlks.Labor/wwwroot/labor/labor.test.mjs`.
+- **Nur mit der Brille und der neuen App prüfbar:** Installation von `ch.hkplanung.xr` per Kabel, Übernahme beider Pakete in der App, Wechsel zwischen den Werkzeugen und `aktiv` im echten Kanal,
+  «Alte Apps entfernen» an der echten Brille (adb gegen die echte Brille lief in diesem Bau nicht).
+- **Offen:** Der Browser-Test `xr-app.browser.mjs` ist auf die neuen Namen nachgeführt, aber **nicht gelaufen** (keine Browserreihen). `berichte/anleitung/inventar.json` ist noch auf dem Stand vor E1
+  (Texte zu «App installieren …», Ablage, Name der App); die Nachführung gehört zur Bedienungsanleitung nach Abschluss des Moduls.
