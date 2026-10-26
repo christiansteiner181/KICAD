@@ -182,9 +182,10 @@ POST /api/xr/zugang { an: true }; POST /api/xr/kopplung/paket { brille, name } �
 … --auftrag '{"modus":"sitzungsraum","raum":"testraum-eg","nr":1}'      (Sitzungsraum)
 ```
 
-Stand 26.10.2026 (Simulator, ohne Katalog-Endpunkt): alle sieben Aufgaben mit Erfolg (messen-wand-wand 6000 mm gegen Soll 6000 mm); die Zeile endet trotzdem mit «P4 Fehler»,
-weil «Katalog» ohne `/api/xr/labor/katalog` FEHLER ist und die Prüfungen von messen-wand-wand und teleport-markierung aus L0 `stellschrauben` im Messprotokoll verlangen (die
-gibt es nur mit Katalog). Nach der Zusammenführung mit dem Auftrag «L1 Endpunkte» erneut prüfen.
+Stand 26.10.2026 (Simulator): alle sieben Aufgaben mit Erfolg (messen-wand-wand 6000 mm gegen Soll 6000 mm, Markierung `markierung-eg-nw`, tablet 2.65 m, Raum
+`testraum-eg`). Auf diesem Zweig allein endet die Zeile mit «P4 Fehler», weil «Katalog» ohne `/api/xr/labor/katalog` FEHLER ist und die Prüfungen von messen-wand-wand und
+teleport-markierung aus L0 `stellschrauben` im Messprotokoll verlangen (die gibt es nur mit Katalog). Probe mit dem Stand des Auftrags «L1 Endpunkte» (Zweig
+`worktree-agent-ac951f224725c4bc6` @ eb31014, dazu diese Dateien, in einem Temp-Ordner gebaut): beide Läufe «P4 ok», Katalog ok (86 Stellschrauben, 7 Aufgaben).
 
 ## Symbol
 
