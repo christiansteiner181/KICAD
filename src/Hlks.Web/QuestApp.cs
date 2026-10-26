@@ -12,6 +12,9 @@
 //   6. App starten (resolve-activity, am start -n). Scheitert nur der Start, gilt die Installation trotzdem (Meldung: von Hand starten).
 // SICHERHEIT wie beim Quest-Verbinder: Es startet nur adb.exe, ohne Shell, mit festen Argumenten. Eingesetzt werden nur die Seriennummer aus «adb devices», der
 // Pfad der geprüften APK, ein Port aus dem Netzzugang und feste Texte. Reine Rechner-Funktion, für die KI verboten (KiEinordnung.RechnerFunktionen «quest_app»).
+// APP-MARKE (XR-Labor L0, entwurf/labor-app.md): Welche App installiert wird (Paket, Eingang, Ablage, Einstellungsschlüssel, Name in Meldungen), steht in
+// QuestEinstellungen.AppMarke. Vorgabe ist KICAD (QuestAppMarke.Kicad, Werte wie bisher); das XR-Labor (src/Hlks.Labor) gibt ch.hkplanung.xrlabor mit. Die Marke ist
+// fest im Code, nie eine Eingabe; Paket und Ordnername werden trotzdem geprüft, weil das Paket in adb-Argumente eingesetzt wird.
 
 using System.Security.Cryptography;
 using System.Text;
@@ -20,6 +23,28 @@ using System.Text.RegularExpressions;
 using Hlks.Kern;
 
 namespace Hlks.Web;
+
+/// <summary>
+/// Die Brillen-App, die QuestDienst installiert und koppelt. Paket = Android-Paketname (App-Kennung); Name = Name der App in der Brille und des Servers am PC (Meldungen);
+/// AblageSchluessel = Benutzereinstellung mit dem Ordner der abgelegten App; AblageOrdner = Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge;
+/// Bereitstellen = Befehl, der die APK baut und ablegt (nur für Meldungen).
+/// </summary>
+public sealed record QuestAppMarke(string Paket, string Name, string AblageSchluessel, string AblageOrdner, string Bereitstellen)
+{
+    static readonly Regex PaketMuster = new(@"^[a-z][a-z0-9_]{0,30}(\.[a-z][a-z0-9_]{0,30}){1,5}$", RegexOptions.CultureInvariant);
+    static readonly Regex OrdnerMuster = new(@"^[A-Za-z0-9_]{1,40}$", RegexOptions.CultureInvariant);
+    static readonly Regex SchluesselMuster = new(@"^[a-z][a-z0-9_.\-]{0,63}$", RegexOptions.CultureInvariant);
+
+    public string Paket { get; } = PaketMuster.IsMatch(Paket ?? "") ? Paket! : throw new ArgumentException($"Ungültiger Paketname «{Paket}».", nameof(Paket));
+    public string AblageOrdner { get; } = OrdnerMuster.IsMatch(AblageOrdner ?? "") ? AblageOrdner! : throw new ArgumentException($"Ungültiger Ordnername «{AblageOrdner}».", nameof(AblageOrdner));
+    public string AblageSchluessel { get; } = SchluesselMuster.IsMatch(AblageSchluessel ?? "") ? AblageSchluessel! : throw new ArgumentException($"Ungültiger Schlüssel «{AblageSchluessel}».", nameof(AblageSchluessel));
+
+    /// <summary>Eingang der App auf der Brille: dorthin legt adb das Kopplungspaket.</summary>
+    public string Eingang => "/sdcard/Android/data/" + Paket + "/files";
+
+    /// <summary>KICAD (Vorgabe, unverändert): ch.hkplanung.kicad.quest, Einstellung quest.app_ablage, Ablage %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app.</summary>
+    public static QuestAppMarke Kicad { get; } = new(QuestDienst.AppPaket, "KICAD", QuestDienst.AppAblageSchluessel, "quest_app", @"werkzeuge\quest_app_bereitstellen.ps1");
+}
 
 /// <summary>Die abgelegte App: Inhalt von version.json (geschrieben von werkzeuge/quest_app_bereitstellen.ps1), geprüft gegen die APK.</summary>
 public sealed record QuestAppVersion(string Datei, string? Commit, string? Zeit, long Groesse, string Sha256, string? VersionName, int? VersionCode);
@@ -38,13 +63,16 @@ public sealed record QuestAppErgebnis(bool Ok, IReadOnlyList<QuestAppSchritt> Sc
 
 public sealed partial class QuestDienst
 {
-    /// <summary>Paketname (Kennung) der Quest App; fest, nie aus einer Eingabe.</summary>
+    /// <summary>Paketname (Kennung) der KICAD-App; fest, nie aus einer Eingabe. Welche App dieser Dienst installiert, sagt Marke (QuestEinstellungen.AppMarke).</summary>
     public const string AppPaket = "ch.hkplanung.kicad.quest";
-    /// <summary>Schlüssel der Benutzereinstellung mit dem Ordner der abgelegten App (Vorgabe: %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app).</summary>
+    /// <summary>Schlüssel der Benutzereinstellung mit dem Ordner der abgelegten KICAD-App (Vorgabe: %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app).</summary>
     public const string AppAblageSchluessel = "quest.app_ablage";
-    /// <summary>Eingang der App auf der Brille: dorthin legt adb das Paket (die App übernimmt es in ihren privaten Speicher und löscht es hier).</summary>
+    /// <summary>Eingang der KICAD-App auf der Brille: dorthin legt adb das Paket (die App übernimmt es in ihren privaten Speicher und löscht es hier).</summary>
     public const string AppEingang = "/sdcard/Android/data/" + AppPaket + "/files";
     public const string AppVersionDatei = "version.json";
+
+    /// <summary>Die App dieses Dienstes (Vorgabe KICAD; das XR-Labor gibt seine eigene mit).</summary>
+    public QuestAppMarke Marke => einstellungen.AppMarke;
 
     /// <summary>Wird von MapQuestApp gesetzt: Besteht für diese Kennung der Brille eine Kopplung am Netzzugang? Ohne Setzen gilt «nein».</summary>
     public Func<string, bool>? KopplungBesteht { get; set; }
@@ -54,7 +82,9 @@ public sealed partial class QuestDienst
     static readonly Regex AppDateiMuster = new(@"^[A-Za-z0-9][A-Za-z0-9._\-]{0,100}\.apk$", RegexOptions.CultureInvariant);
     static readonly Regex Hex64 = new("^[0-9a-f]{64}$", RegexOptions.CultureInvariant);
     static readonly Regex KurzText = new(@"^[A-Za-z0-9._:+\- ]{1,40}$", RegexOptions.CultureInvariant);
-    static readonly Regex AktivitaetMuster = new(@"^" + Regex.Escape(AppPaket) + @"/[A-Za-z0-9_.$]{1,200}$", RegexOptions.CultureInvariant);
+    Regex? aktivitaetMuster;
+    /// <summary>Startaktivität der App aus «resolve-activity»: «&lt;Paket der Marke&gt;/&lt;Klasse&gt;».</summary>
+    Regex AktivitaetMuster => aktivitaetMuster ??= new(@"^" + Regex.Escape(Marke.Paket) + @"/[A-Za-z0-9_.$]{1,200}$", RegexOptions.CultureInvariant);
 
     // ---------------------------------------------------------------- Ablage (rein bis auf das Lesen der Dateien)
 
@@ -76,14 +106,14 @@ public sealed partial class QuestDienst
     public static string? AppAblagePruefen(JsonNode w) =>
         w is JsonValue v && v.TryGetValue<string>(out var s) ? AppAblageFehler(s) : @"Der Wert muss ein Ordnerpfad (Text) sein, z. B. C:\Users\...\HLKS_CAD_werkzeuge\quest_app.";
 
-    /// <summary>Der Ordner der abgelegten App und woher er stammt (einstellung | vorgabe).</summary>
+    /// <summary>Der Ordner der abgelegten App und woher er stammt (einstellung | vorgabe). Einstellung und Vorgabe-Ordner kommen aus der Marke.</summary>
     public (string Ordner, string Quelle) AppOrdner()
     {
-        if (benutzer.Hole(AppAblageSchluessel) is JsonValue v && v.TryGetValue<string>(out var p) && !string.IsNullOrWhiteSpace(p) && AppAblageFehler(p) is null)
+        if (benutzer.Hole(Marke.AblageSchluessel) is JsonValue v && v.TryGetValue<string>(out var p) && !string.IsNullOrWhiteSpace(p) && AppAblageFehler(p) is null)
             return (Path.GetFullPath(p.Trim()), "einstellung");
         if (!string.IsNullOrWhiteSpace(einstellungen.AppAblage)) return (einstellungen.AppAblage!, "vorgabe");
         var profil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-        return (Path.Combine(profil, "HLKS_CAD_werkzeuge", "quest_app"), "vorgabe");
+        return (Path.Combine(profil, "HLKS_CAD_werkzeuge", Marke.AblageOrdner), "vorgabe");
     }
 
     /// <summary>Liest version.json und prüft die APK dagegen (Datei da, Grösse, SHA-256). Wirft nie; Fehler stehen in der Antwort.</summary>
@@ -92,7 +122,7 @@ public sealed partial class QuestDienst
         var (ordner, quelle) = AppOrdner();
         var vdatei = Path.Combine(ordner, AppVersionDatei);
         if (!File.Exists(vdatei))
-            return new QuestAppAblage(ordner, quelle, false, null, null, $"In {ordner} liegt keine App (version.json fehlt). Mit werkzeuge\\quest_app_bereitstellen.ps1 bauen und ablegen.");
+            return new QuestAppAblage(ordner, quelle, false, null, null, $"In {ordner} liegt keine App (version.json fehlt). Mit {Marke.Bereitstellen} bauen und ablegen.");
         QuestAppVersion v;
         try { v = VersionLesen(File.ReadAllText(vdatei, Encoding.UTF8)); }
         catch (Exception ex) when (ex is HlksFehler or IOException or UnauthorizedAccessException or System.Text.Json.JsonException)
@@ -100,7 +130,7 @@ public sealed partial class QuestDienst
             return new QuestAppAblage(ordner, quelle, true, null, null, "version.json ist unbrauchbar: " + ex.Message);
         }
         var apk = Path.Combine(ordner, v.Datei);
-        if (!File.Exists(apk)) return new QuestAppAblage(ordner, quelle, true, v, null, $"Die Datei {v.Datei} fehlt in {ordner}. Mit werkzeuge\\quest_app_bereitstellen.ps1 neu ablegen.");
+        if (!File.Exists(apk)) return new QuestAppAblage(ordner, quelle, true, v, null, $"Die Datei {v.Datei} fehlt in {ordner}. Mit {Marke.Bereitstellen} neu ablegen.");
         try
         {
             var laenge = new FileInfo(apk).Length;
@@ -277,16 +307,16 @@ public sealed partial class QuestDienst
         {
             var adb = AdbFinden(out var hinweis);
             if (adb is null)
-                return new { paket = AppPaket, ablage, adbGefunden = false, adbHinweis = hinweis, brille = (object?)null, vergleich = "unbekannt" };
+                return new { paket = Marke.Paket, ablage, adbGefunden = false, adbHinweis = hinweis, brille = (object?)null, vergleich = "unbekannt" };
             var geraete = await GeraeteListe(adb);
             var g = geraete.Where(x => x.Zustand == "device").OrderBy(x => x.Wlan ? 0 : 1).FirstOrDefault();
             if (g is null)
-                return new { paket = AppPaket, ablage, adbGefunden = true, brille = (object?)null, vergleich = "unbekannt" };
+                return new { paket = Marke.Paket, ablage, adbGefunden = true, brille = (object?)null, vergleich = "unbekannt" };
             var inst = await InstalliertVon(adb, g.Seriennummer);
             var modell = await ModellVon(adb, g.Seriennummer);
             return new
             {
-                paket = AppPaket, ablage, adbGefunden = true,
+                paket = Marke.Paket, ablage, adbGefunden = true,
                 brille = new { seriennummer = g.Seriennummer, wlan = g.Wlan, modell, installiert = inst, kennung = await KennungVon(adb, g.Seriennummer) },
                 appWeg = AppKabelAktiv(out _) ? "kabel" : AppWegLesen()?.Weg,   // «kabel»: keine Umstellung auf WLAN-adb, KICAD hält die Weiterleitung
                 vergleich = FassungVergleich(inst, ablage.Version),
@@ -297,7 +327,7 @@ public sealed partial class QuestDienst
 
     async Task<QuestAppInstalliert?> InstalliertVon(AdbFund adb, string serie)
     {
-        var r = await AufrufGross(adb, "-s", serie, "shell", "dumpsys", "package", AppPaket);
+        var r = await AufrufGross(adb, "-s", serie, "shell", "dumpsys", "package", Marke.Paket);
         return r.Zeitueberschreitung || r.Code != 0 ? null : InstalliertLesen(r.Ausgabe);
     }
 
@@ -315,13 +345,13 @@ public sealed partial class QuestDienst
     public static QuestGeraet? AppGeraetWaehlen(IEnumerable<QuestGeraet> geraete, string weg) =>
         geraete.Where(g => g.Zustand == "device").OrderBy(g => (weg == "wlan") == g.Wlan ? 0 : 1).FirstOrDefault();
 
-    /// <summary>Die Meldung zu einem fehlgeschlagenen «adb install» (Meldungen von Android: INSTALL_FAILED_…).</summary>
-    public static (string Fehler, string Vorschlag) InstallFehler(string? ausgabe)
+    /// <summary>Die Meldung zu einem fehlgeschlagenen «adb install» (Meldungen von Android: INSTALL_FAILED_…). appName: Name der App in der Brille (Marke).</summary>
+    public static (string Fehler, string Vorschlag) InstallFehler(string? ausgabe, string appName = "KICAD")
     {
         var a = ausgabe ?? "";
         if (a.Contains("INSTALL_FAILED_UPDATE_INCOMPATIBLE", StringComparison.Ordinal) || a.Contains("INSTALL_PARSE_FAILED_INCONSISTENT_CERTIFICATES", StringComparison.Ordinal))
             return ("Die App in der Brille ist mit einem anderen Schlüssel signiert und lässt sich nicht überschreiben.",
-                "In der Brille die App «KICAD» deinstallieren (App-Bibliothek › KICAD › Deinstallieren) und erneut installieren.");
+                $"In der Brille die App «{appName}» deinstallieren (App-Bibliothek › {appName} › Deinstallieren) und erneut installieren.");
         if (a.Contains("INSTALL_FAILED_VERSION_DOWNGRADE", StringComparison.Ordinal))
             return ("In der Brille ist eine neuere Fassung der App installiert als die abgelegte.", "Die App in der Brille deinstallieren und erneut installieren, oder die neuere APK ablegen.");
         if (a.Contains("INSTALL_FAILED_INSUFFICIENT_STORAGE", StringComparison.Ordinal))
@@ -347,14 +377,14 @@ public sealed partial class QuestDienst
 
         // 1. Voraussetzungen (ohne adb)
         if (!netz.Aktiv)
-            return Scheitert("zugang", "Der Netzzugang dieses PCs ist aus.", "Zuerst «Netzzugang einschalten» im Teil «Quest App» klicken. Die App verbindet sich nur über den Netzzugang (Port 5140, nur gekoppelte Brillen).");
+            return Scheitert("zugang", "Der Netzzugang dieses PCs ist aus.", $"Zuerst «Netzzugang einschalten» im Teil «Quest App» klicken. Die App verbindet sich nur über den Netzzugang (Port {netz.PortStandard}, nur gekoppelte Brillen).");
         var info = netz.Info();
         if (w == "wlan" && info.Ips.Count == 0)
-            return Scheitert("zugang", "KICAD findet keine Netzadresse dieses PCs im Büronetz.", "LAN oder WLAN verbinden (ohne VPN) und erneut versuchen – oder «über Kabel» installieren.");
+            return Scheitert("zugang", $"{Marke.Name} findet keine Netzadresse dieses PCs im Büronetz.", "LAN oder WLAN verbinden (ohne VPN) und erneut versuchen – oder «über Kabel» installieren.");
         Erledigt("zugang", w == "kabel" ? $"Netzzugang aktiv (Port {info.Port}); die Brille erreicht ihn über das Kabel." : $"Netzzugang aktiv (Port {info.Port}), Adressen des PCs: {string.Join(", ", info.Ips)}.");
         var ablage = AppAblageLesen();
         if (ablage.Fehler is not null || ablage.ApkPfad is null || ablage.Version is null)
-            return Scheitert("apk", ablage.Fehler ?? "Es liegt keine App in der Ablage.", "werkzeuge\\quest_app_bereitstellen.ps1 ausführen (baut die APK und legt sie ab).");
+            return Scheitert("apk", ablage.Fehler ?? "Es liegt keine App in der Ablage.", $"{Marke.Bereitstellen} ausführen (baut die APK und legt sie ab).");
         Erledigt("apk", $"Abgelegte App: {Fassungstext(ablage.Version)}.");
 
         await sperre.WaitAsync();
@@ -388,7 +418,7 @@ public sealed partial class QuestDienst
                 return Scheitert("installieren", $"adb hat bei «install» nicht innerhalb von {einstellungen.InstallZeitlimit.TotalSeconds:0} s geantwortet.", "Brille aufgesetzt und wach halten, Kabel bzw. WLAN prüfen und erneut versuchen.", kennung, brillenName);
             if (inst.Code != 0 || !Regex.IsMatch(inst.Ausgabe, @"\bSuccess\b"))
             {
-                var (fehler, vorschlag) = InstallFehler(inst.Ausgabe);
+                var (fehler, vorschlag) = InstallFehler(inst.Ausgabe, Marke.Name);
                 return Scheitert("installieren", fehler, vorschlag, kennung, brillenName);
             }
             Erledigt("installieren", "App installiert (adb install -r).");
@@ -431,7 +461,7 @@ public sealed partial class QuestDienst
             else schritte.Add(new QuestAppSchritt("starten", start, false));
             var meldung = start is null
                 ? $"{brillenName} ist installiert und gekoppelt, die App startet. Brille aufsetzen: sie verbindet sich von selbst."
-                : $"{brillenName} ist installiert und gekoppelt, aber die App liess sich nicht starten ({start}). In der Brille die App «KICAD» in der App-Bibliothek öffnen.";
+                : $"{brillenName} ist installiert und gekoppelt, aber die App liess sich nicht starten ({start}). In der Brille die App «{Marke.Name}» in der App-Bibliothek öffnen.";
             return new QuestAppErgebnis(true, schritte, meldung, null, null, w, kennung, brillenName);
         }
         finally { sperre.Release(); }
@@ -452,14 +482,14 @@ public sealed partial class QuestDienst
         var wurzel = einstellungen.PaketOrdner is { Length: > 0 } po ? po : Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_app");
         var ordner = Path.Combine(wurzel, Guid.NewGuid().ToString("N")[..12]);
         var datei = Path.Combine(ordner, "kopplung.json");
-        var mk = await Aufruf(adb, "-s", serie, "shell", "mkdir", "-p", AppEingang);
+        var mk = await Aufruf(adb, "-s", serie, "shell", "mkdir", "-p", Marke.Eingang);
         if (mk.Zeitueberschreitung) return "adb hat beim Anlegen des Eingangs der App nicht geantwortet.";
         if (mk.Code != 0) return "Der Eingang der App in der Brille liess sich nicht anlegen: " + Kuerzen(mk.Ausgabe, 200);
         Directory.CreateDirectory(ordner);
         try
         {
             File.WriteAllText(datei, Json.Text(paket), new UTF8Encoding(false));
-            var r = await AufrufLang(adb, einstellungen.InstallZeitlimit, "-s", serie, "push", datei, AppEingang + "/kopplung.json");
+            var r = await AufrufLang(adb, einstellungen.InstallZeitlimit, "-s", serie, "push", datei, Marke.Eingang + "/kopplung.json");
             if (r.Zeitueberschreitung) return $"adb hat bei «push» nicht innerhalb von {einstellungen.InstallZeitlimit.TotalSeconds:0} s geantwortet.";
             if (r.Code != 0) return "adb meldet bei «push»: " + Kuerzen(r.Ausgabe, 200);
             return null;
@@ -489,7 +519,7 @@ public sealed partial class QuestDienst
     /// <summary>Startet die App: Aktivität mit resolve-activity bestimmen, dann am start -n. Gibt den Fehlertext zurück (null = gestartet).</summary>
     async Task<string?> AppStarten(AdbFund adb, string serie)
     {
-        var a = await Aufruf(adb, "-s", serie, "shell", "cmd", "package", "resolve-activity", "--brief", AppPaket);
+        var a = await Aufruf(adb, "-s", serie, "shell", "cmd", "package", "resolve-activity", "--brief", Marke.Paket);
         if (a.Zeitueberschreitung || a.Code != 0) return "die Startaktivität der App liess sich nicht bestimmen";
         var zeile = a.Ausgabe.Split('\n').Select(z => z.Trim()).LastOrDefault(z => z.Length > 0);
         if (zeile is null || !AktivitaetMuster.IsMatch(zeile)) return "die Startaktivität der App liess sich nicht bestimmen";

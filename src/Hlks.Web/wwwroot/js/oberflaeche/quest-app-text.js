@@ -13,6 +13,26 @@ export const ZUGANG_TAKT_MS = 2000;
 /** Schlüssel der Benutzereinstellung mit dem Ordner der abgelegten App. */
 export const ABLAGE_SCHLUESSEL = 'quest.app_ablage';
 
+/**
+ * App-Marke: welche App und welcher Server der Teil zeigt (XR-Labor L0, entwurf/labor-app.md). Vorgabe KICAD – die Texte sind dann genau die bisherigen.
+ * Das XR-Labor (src/Hlks.Labor/wwwroot/labor/labor-marke.js) gibt seine eigene mit. Felder: app (Name der App und des Servers), port (Netzzugang),
+ * desktopPort (nur dieser Server öffnet ihn), ablageSchluessel (Benutzereinstellung mit dem Ordner der App; null = am PC nicht einstellbar), ablageVorgabe,
+ * bereitstellen (Befehl, der die APK baut und ablegt), adbEinrichten (wo adb eingerichtet wird), adbFehlt (Zeile «In der Brille», wenn adb fehlt),
+ * brillenZeigen (Schalter «Brillen in der 3D-Ansicht»), einleitung.
+ */
+export const KICAD_MARKE = Object.freeze({
+  app: 'KICAD',
+  port: 5140,
+  desktopPort: 5130,
+  ablageSchluessel: ABLAGE_SCHLUESSEL,
+  ablageVorgabe: '%USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app',
+  bereitstellen: 'werkzeuge\\quest_app_bereitstellen.ps1',
+  adbEinrichten: 'oben im Dialog einrichten',
+  adbFehlt: 'adb fehlt (siehe oben).',
+  brillenZeigen: true,
+  einleitung: 'Die App «KICAD» in der Brille ersetzt auf Dauer den Browser: sie verbindet sich über das Büronetz mit KICAD, geht ohne Kabel und braucht keinen Link-fähigen PC.',
+});
+
 /** Die Wege der Installation (Auswahl im Dialog). Kabel = adb reverse und 127.0.0.1 im Paket, WLAN = Adressen des PCs im Büronetz. */
 export const WEGE = Object.freeze([
   { id: 'wlan', titel: 'über WLAN', hinweis: 'Die Brille erreicht den PC über das Büro-WLAN (Netz «Privat» und Firewall-Regeln nötig).' },
@@ -39,15 +59,15 @@ export const groesseText = (bytes) => (Number.isFinite(bytes) && bytes > 0 ? `${
  * Anzeige des Netzzugangs aus GET /api/xr/zugang: { stufe: 'ok' | 'schlecht' | 'offen', titel, text }.
  * ok = aktiv (Port, Fingerabdruck in Kurzform, Adressen), schlecht = eingeschaltet, aber nicht aktiv (Fehler vom Server), offen = aus.
  */
-export function zugangAnzeige(z) {
+export function zugangAnzeige(z, m = KICAD_MARKE) {
   if (!z) return { stufe: 'offen', titel: 'Netzzugang', text: 'Wird gelesen …' };
   if (z.aktiv) {
     const ips = (z.ips ?? []).length ? `Adressen ${(z.ips ?? []).join(', ')}` : 'keine Adresse im Büronetz gefunden';
     const fp = z.fingerabdruckKurz ? `Fingerabdruck ${z.fingerabdruckKurz}` : '';
     return { stufe: 'ok', titel: 'Netzzugang ist an', text: [`Port ${z.port}`, fp, ips].filter(Boolean).join(' · ') };
   }
-  if (z.an) return { stufe: 'schlecht', titel: 'Netzzugang ist eingeschaltet, aber nicht aktiv', text: z.fehler || 'Er startet gleich (nur im KICAD auf Port 5130).' };
-  return { stufe: 'offen', titel: 'Netzzugang ist aus', text: 'Nur dieser PC erreicht KICAD. Zum Installieren und Verbinden der App einschalten – am besten nur für die Dauer des Tests.' };
+  if (z.an) return { stufe: 'schlecht', titel: 'Netzzugang ist eingeschaltet, aber nicht aktiv', text: z.fehler || `Er startet gleich (nur im ${m.app} auf Port ${m.desktopPort}).` };
+  return { stufe: 'offen', titel: 'Netzzugang ist aus', text: `Nur dieser PC erreicht ${m.app}. Zum Installieren und Verbinden der App einschalten – am besten nur für die Dauer des Tests.` };
 }
 
 /** Beschriftung des Schalters für den Netzzugang. */
@@ -78,9 +98,9 @@ export function abgelegtText(app) {
 }
 
 /** Die in der Brille installierte Fassung (dumpsys package). */
-export function installiertText(app) {
+export function installiertText(app, m = KICAD_MARKE) {
   if (!app) return 'Wird gelesen …';
-  if (app.adbGefunden === false) return 'adb fehlt (siehe oben).';
+  if (app.adbGefunden === false) return m.adbFehlt;
   const b = app.brille;
   if (!b) return 'Keine Brille verbunden.';
   const i = b.installiert;
@@ -113,13 +133,13 @@ export function brilleText(b) {
  * per adb freigegeben; ein gültiger Weg. Der Server prüft dasselbe noch einmal.
  * q = Zustand von GET /api/quest (freigegeben, adbGefunden), app = GET /api/quest/app, zugang = GET /api/xr/zugang.
  */
-export function installierenKnopf({ q, app, zugang, laeuft = false, weg = 'wlan' }) {
+export function installierenKnopf({ q, app, zugang, laeuft = false, weg = 'wlan', marke: m = KICAD_MARKE }) {
   if (laeuft) return { frei: false, grund: 'Es läuft schon ein Vorgang.' };
   if (!WEGE.some((w) => w.id === weg)) return { frei: false, grund: 'Weg wählen.' };
   if (!zugang) return { frei: false, grund: 'Der Zustand wird gelesen …' };
   if (!zugang.aktiv) return { frei: false, grund: 'Zuerst den Netzzugang einschalten.' };
-  if (!app?.ablage || app.ablage.fehler || !app.ablage.version) return { frei: false, grund: app?.ablage?.fehler || 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 ausführen.' };
-  if (!q?.adbGefunden) return { frei: false, grund: 'adb fehlt: oben im Dialog einrichten.' };
+  if (!app?.ablage || app.ablage.fehler || !app.ablage.version) return { frei: false, grund: app?.ablage?.fehler || `Keine App abgelegt: ${m.bereitstellen} ausführen.` };
+  if (!q?.adbGefunden) return { frei: false, grund: `adb fehlt: ${m.adbEinrichten}.` };
   if (!q?.freigegeben) return { frei: false, grund: q?.nichtFreigegeben ? 'In der Brille «USB-Debugging erlauben» bestätigen.' : 'Keine freigegebene Brille: Kabel stecken oder über WLAN verbinden.' };
   return { frei: true, grund: '' };
 }
@@ -143,9 +163,9 @@ export function installierenTitel(app, zugang = null) {
 }
 
 /** Satz zum Weg der App: Im Kabelweg stellt KICAD nie auf WLAN-adb um und hält die Weiterleitung. */
-export function appWegText(app) {
+export function appWegText(app, m = KICAD_MARKE) {
   return app?.appWeg === 'kabel'
-    ? 'Kabelweg: Die App ist per Kabel gekoppelt. KICAD stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.'
+    ? `Kabelweg: Die App ist per Kabel gekoppelt. ${m.app} stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.`
     : '';
 }
 
@@ -215,5 +235,6 @@ export const wartetText = 'Die Brille hat noch nicht aufgedeckt – der Code ers
 /** Leitfaden für die Ersatzkopplung (kurz, in einfachen Worten). */
 export const ERSATZ_HINWEIS = 'Nur wenn die Kopplung bei der Installation nicht möglich war: Die App bittet in der Brille um eine Kopplung. Hier erscheint dann eine Anfrage mit einem 6-stelligen Code. Zeigt die Brille genau denselben Code, «Codes stimmen überein – koppeln» klicken; sonst «Ablehnen». In der Brille wird nichts eingetippt.';
 
-/** Hinweis zum Skript, das die Firewall-Regeln anlegt (KICAD ändert die Firewall nie). */
-export const FIREWALL_HINWEIS = 'KICAD liest Netzprofil und Firewall nur und ändert nichts. Die Regeln legt Christian selbst an: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).';
+/** Hinweis zum Skript, das die Firewall-Regeln anlegt (der Server ändert die Firewall nie); m = App-Marke. */
+export const firewallHinweis = (m = KICAD_MARKE) => `${m.app} liest Netzprofil und Firewall nur und ändert nichts. Die Regeln legt Christian selbst an: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).`;
+export const FIREWALL_HINWEIS = firewallHinweis(KICAD_MARKE);
