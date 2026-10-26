@@ -219,3 +219,55 @@ Damit Brille (`hlks-kern`) und PC-Seite (`hlks-modul`) gleichzeitig bauen, gilt:
 - Knopf XI im Register XR: **«H+K XR installieren …»**.
 - Übergang: Die KICAD-App führt das bisherige Interface-Labor (Prüfaufgaben aus dem KICAD-Dialog «XR-Labor») **bis E3** noch selbst aus
   (`Werkzeug.Kicad.MitLabor = true`); mit dem Bedienstandard in E3 wird das `false`.
+
+### Schnittstellen im Bau E2 (Hauptlauf, 26.10.2026; Christian: «E2 (Bedienmuster-Schicht) jetzt planen und starten, den Brillentest machen wir danach.»)
+
+Ziel E2: Werkzeuge können Bedienaufgaben schicken, der Empfänger stellt sie mit einem Bedienmuster dar und meldet das Ergebnis mit Messung.
+KICADs heutige Apps (Etagen, Messen, Marker …) bleiben **unverändert** (Umzug erst E5). Brille/Logik `hlks-kern`, PC/Protokoll `hlks-modul`.
+
+**Kanal-Nachrichten** (Hülle wie alle: `typ`, `fassung`; Prüfung in `XrNachrichten.cs` am PC und `KanalVerbindung.cs` in der App):
+```
+PC → App   bedienaufgabe            { id, art, titel, text?, eintraege?, bereich?, vorgabe?, ziel?, abbrechbar = true, muster? }
+             id         [a-z0-9][a-z0-9_-]{0,39}, eindeutig je Werkzeug; eine neue Aufgabe mit gleicher id ersetzt die alte
+             art        auswahl | menue | liste | wert | bestaetigen | platzieren | greifen
+             titel      Text bis 120 Zeichen; text bis 400
+             eintraege  [{ id, text, symbol? }] bis 200 (auswahl, menue, liste); symbol = Name aus symbole.js
+             bereich    { min, max, schritt, einheit? } (wert)
+             vorgabe    Eintrag-id bzw. Zahl
+             ziel       { mm: [x, y, z] } (platzieren, greifen: Ort im Bezug des Werkzeugs, KICAD-mm wie Posen)
+             muster     Kennung eines Bedienmusters – nur vom Labor (Werkzeug mit MitLabor), sonst übergangen
+PC → App   bedienaufgabe.schliessen { id }
+App → PC   bedienergebnis           { id, status: ok | abgebrochen | ersetzt | geschlossen, wert?, zeitMs, fehlgriffe, muster }
+             wert       Eintrag-id (auswahl, menue, liste) | Zahl (wert) | true/false (bestaetigen) | { mm: [x,y,z] } (platzieren)
+                        | { mm: [x,y,z], drehungGrad, massstab } (greifen)
+```
+- Höchstens eine offene Bedienaufgabe je Werkzeug; nur das aktive Werkzeug zeigt sie. Ein Wechsel bricht sie nicht ab, sie ruht.
+- `zeitMs` vom Erscheinen bis zum Ergebnis; `fehlgriffe` zählt der Kern einheitlich (Berührung bzw. Auslösen ausserhalb eines Ziels, Wahl
+  zurückgenommen); `muster` = Kennung des Musters, das die Aufgabe dargestellt hat.
+
+**Am PC** (`src/Hlks.Web`, für alle Werkzeuge, nur localhost): `POST /api/xr/bedienaufgabe { teilnehmer?, aufgabe }` (ohne teilnehmer an alle
+aktiven Brillen des Werkzeugs), `POST /api/xr/bedienaufgabe/schliessen { id }`, `GET /api/xr/bedienergebnisse?seit=<zeit>` (die letzten
+100 Ergebnisse im Speicher des Kanals, mit Zeit und Teilnehmer). Für die KI verboten wie die übrigen XR-Endpunkte.
+
+**Katalog der Muster** `kataloge/xr_bedienmuster.json` (Art `hlks-xr-bedienmuster`, Fassung 1; schreibt `hlks-kern`):
+```
+{ art, fassung, beschreibung,
+  arten:  [{ id, name, beschreibung }],                       die sieben Arten oben
+  muster: [{ kennung, name, beschreibung, arten: [...], herkunft, status: "app" }],
+  vorgabe: { "<art>": "<kennung>" } }
+```
+Der Labor-Katalog (`GET /api/xr/labor/katalog`, `hlks-xr-labor-katalog`) liefert ihn zusätzlich als Feld `bedienmuster` (`hlks-modul`). Wahl je Art
+als Stellschraube `muster.<art>` = Kennung (Muster wie `labor.variante.<name>`; Schicht Vorgabe → Profil/Standard → live). Stellschrauben eines
+Musters in `kataloge/xr_stellschrauben.json`, Gruppe je Muster, Namensraum `muster.<kennung>.…`.
+
+**Erste Muster (aus der heutigen App, Verhalten der Bausteine unverändert):**
+
+| Kennung | Arten | Grundlage |
+| --- | --- | --- |
+| `glas-tafel` | auswahl, menue, liste, wert, bestaetigen | `Tafel`, `TafelBlaettern`, `Glas`; Einträge als Knöpfe auf der mittigen Tafel, Blättern per Wisch, Wert mit −/+ und Wisch, Bestätigen mit zwei Knöpfen, Wegwischen = abbrechen |
+| `symbolfeld` | auswahl, menue | `AppSymbole`, `HebeGeste`, `AppBeruehrung`; Einträge als Glas-Symbole im Feld, Wahl durch Berühren |
+| `pistole-zeigen` | platzieren | `Pistole`, Fang wie beim Springen; Ziel zeigen und abdrücken |
+| `zwei-punkt-griff` | greifen | Griffe «Verschieben» und «Drehen und Vergrössern» vom Sitzungstisch, an einem neutralen Würfel |
+
+**Prüfen:** Prüflauf «Bedienaufgaben» im Simulator: je Art eine Aufgabe, gelöst mit jedem passenden Muster über simulierte Hände; offline über
+`--bedienaufgabe <datei>`, nach dem Zusammenführen auch über den Kanal (Hauptlauf). KICAD-Prüflauf und Labor-Prüflauf bleiben grün.
