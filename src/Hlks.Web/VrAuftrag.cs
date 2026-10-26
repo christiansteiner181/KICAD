@@ -3,13 +3,15 @@
 // und führt ihn aus (neuer Auftrag während der Sitzung: sofort, ohne neuen Tipp).
 //
 //   GET  /api/vr/auftrag   { auftrag: { modus, raum?, geschoss?, ausschnitt, ansicht?, nr, zeit } | null }
-//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar };
+//   POST /api/vr/auftrag   { modus: "begehen" | "sitzungsraum", raum?: Id, geschoss?: Id, ausschnitt?: bool, ansicht?: Id, autostart?: bool }  → { auftrag, autostart: gestartet | aus | nicht_angefordert | nicht_verfuegbar | app | app_gestartet };
 //                          autostart: true startet nach dem Speichern «Begehung beim Aufsetzen automatisch starten» (QuestStarter.cs), wenn die Einstellung quest.autostart an ist; nr zählt bei jedem Setzen hoch (vom Server vergeben, ein nr im Körper zählt nicht)
 //
 // Gespeichert im Speicher des Servers und zusätzlich in den BenutzerEinstellungen (Schlüssel vr.auftrag), damit er einen Neustart übersteht; die Ablage ist nur eine
 // Zugabe (im Testlauf ohne Umleitung nach %TEMP% wird sie abgelehnt, der Speicher gilt trotzdem). Keine Fachlogik: der Auftrag ist nur eine Anweisung für die Anzeige,
 // ändert weder Modell noch Rechner; ob eine Id ein Raum ist, entscheidet die Seite mit der Kern-Abfrage raum_begehen. Hinter dem Herkunftsschutz wie alle /api.
 // KI: kein MCP-Werkzeug, siehe KiEinordnung.Oberflaechenfunktionen.
+// Quest App (P3): Ein neuer Auftrag geht zusätzlich sofort über den Live-Kanal an die App (Ereignis Gesetzt → XrKanal.AuftragSenden); P7: ist eine App verbunden, meldet die Antwort autostart «app» und KICAD startet keinen Browser in der Brille; die Abfrage alle 2 s
+// bleibt für die VR-Startseite im Browser.
 
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -36,8 +38,20 @@ public sealed class VrAuftragSpeicher
     VrAuftragWert? aktuell;
     bool geladen;
     public Func<DateTimeOffset> Uhr { get; set; } = () => DateTimeOffset.UtcNow;
+    /// <summary>Ein neuer Auftrag ist gesetzt (nach dem Speichern). Der Live-Kanal der Quest App (XrKanal.cs) schickt ihn damit sofort an die Brille.</summary>
+    public event Action<VrAuftragWert>? Gesetzt;
 
     public VrAuftragSpeicher(BenutzerEinstellungen benutzer) { this.benutzer = benutzer; }
+
+    /// <summary>
+    /// Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): der Symbolsatz des Benutzers (Benutzereinstellung «oberflaeche.symbole»,
+    /// «strich» oder «revit»); der Live-Kanal schickt ihn mit «willkommen», damit die App dieselben Symbole zeigt wie KICAD. Unlesbar oder unbekannt: «strich».
+    /// </summary>
+    public string Symbolsatz()
+    {
+        try { return benutzer.Hole("oberflaeche.symbole") is JsonValue v && v.TryGetValue<string>(out var s) && s == "revit" ? "revit" : "strich"; }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or InvalidOperationException) { return "strich"; }
+    }
 
     /// <summary>Id (Guid) oder Kennzeichen eines Elements; sonst Fehler.</summary>
     public static bool IdGueltig(string? t) => t is not null && (IdMuster.IsMatch(t) || KennzeichenMuster.IsMatch(t));
@@ -85,15 +99,18 @@ public sealed class VrAuftragSpeicher
     {
         var t = Pruefen(p);
         if (t.Ansicht is not null) ansichtPruefen?.Invoke(t.Ansicht);   // Klasse Ansicht mit art 3d (nur wenn ein Projekt offen ist)
+        VrAuftragWert neu;
         lock (sperre)
         {
             Laden();
-            var neu = new VrAuftragWert(t.Modus, t.Raum, t.Geschoss, (aktuell?.Nr ?? 0) + 1, Uhr(), t.Ausschnitt, t.Ansicht);
+            neu = new VrAuftragWert(t.Modus, t.Raum, t.Geschoss, (aktuell?.Nr ?? 0) + 1, Uhr(), t.Ausschnitt, t.Ansicht);
             aktuell = neu;
             try { benutzer.Setzen(Schluessel, Zuobjekt(neu)); }
             catch (Exception ex) when (ex is HlksFehler or IOException or UnauthorizedAccessException) { /* nur eine Zugabe: der Speicher des Servers gilt */ }
-            return neu;
         }
+        try { Gesetzt?.Invoke(neu); }
+        catch (Exception ex) when (ex is InvalidOperationException or ObjectDisposedException) { /* Weitergabe an die Brille ist eine Zugabe; der Auftrag gilt */ }
+        return neu;
     }
 
     public static JsonObject Zuobjekt(VrAuftragWert a) => new()
@@ -106,7 +123,8 @@ public static class VrAuftragEndpunkte
 {
     public static WebApplication MapVrAuftrag(this WebApplication app, ProjektDienst dienst, QuestStarter? starter = null)
     {
-        var speicher = new VrAuftragSpeicher(dienst.Benutzer);
+        // derselbe Speicher wie der Live-Kanal der Quest App (XrZugangDienste.AddXrZugang), damit ein neuer Auftrag sofort an die Brille geht
+        var speicher = app.Services.GetService<VrAuftragSpeicher>() ?? new VrAuftragSpeicher(dienst.Benutzer);
         var g = app.MapGroup("/api/vr");
         g.MapGet("/auftrag", () => Gesichert(() => Task.FromResult(Antwort(new { auftrag = speicher.Lesen() is { } a ? VrAuftragSpeicher.Zuobjekt(a) : null }))));
         g.MapPost("/auftrag", (HttpRequest r) => Gesichert(async () =>
@@ -122,7 +140,13 @@ public static class VrAuftragEndpunkte
             });
             // Autostart (QuestStarter.cs): nur auf Wunsch des Menschen (autostart: true im Körper) und nur mit eingeschalteter Einstellung quest.autostart. Der Port ist der des Servers.
             var gewuenscht = p["autostart"] is JsonValue v && v.TryGetValue<bool>(out var b) && b;
-            var autostart = !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
+            // Quest App (P7): Ist eine Brille mit der App im Live-Kanal, ging der Auftrag schon über den Kanal an sie (Ereignis Gesetzt). Dann startet KICAD keinen Browser in der Brille
+            // (der Autostart würde den Browser über die laufende App legen und dieselbe Begehung ein zweites Mal öffnen). Antwort «app»; ohne App gilt der Weg über den Browser wie bisher.
+            var appVerbunden = (app.Services.GetService<XrKanal>()?.Anzahl ?? 0) > 0;
+            // Ist die App installiert und gekoppelt, aber gerade nicht verbunden (Brille sleept, App beendet), wird sie gestartet statt des Browsers; der Auftrag kommt über den Kanal,
+            // sobald sie verbindet (willkommen.auftrag). Browser-Autostart nur noch, wenn keine App da ist.
+            var appGestartet = !appVerbunden && starter is not null && await starter.Quest.AppFuerAuftragStarten();
+            var autostart = appVerbunden ? "app" : appGestartet ? "app_gestartet" : !gewuenscht ? "nicht_angefordert" : starter is null ? "nicht_verfuegbar" : starter.Starten(r.Host.Port ?? 80, a.Nr) ? "gestartet" : "aus";
             return Antwort(new { auftrag = VrAuftragSpeicher.Zuobjekt(a), autostart });
         }));
         return app;

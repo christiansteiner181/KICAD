@@ -173,6 +173,12 @@ einlageplan | Einlageplan | eigenes | Plan mit grauer Betonplatte, Abwasserleitu
 grundleitungsplan | Grundleitungsplan | eigenes | Plan mit Bodenplatte über Erdreich, Abwasser-Grundleitung (braun) mit Gefällepfeil
 listeCsv | Liste als CSV | eigenes | Tabelle mit Blatt davor, blaue Kommas
 ifcExport | IFC exportieren | IFC exportieren | Würfel mit blauem Pfeil heraus nach rechts unten
+problemMarker | Problem-Marker (Palette, Quest App) | eigenes | orange Stecknadel mit weissem Ausrufezeichen
+raumBegehen | Raum begehen / In VR begehen | eigenes | blaue Figur auf grauer Bodenplatte
+sitzungstisch | Sitzungstisch (Quest App, App «Tisch») | eigenes | Tisch mit Modellwürfel, Seiten blau
+gesten | Gesten (Quest App) | eigenes | gelbe offene Hand
+haken | Erledigt (Quest App) | eigenes | grüner Kreis mit weissem Haken
+bildschirm | Desktop in der Brille (Quest App V1c) | eigenes | grauer Bildschirm mit hellblauer Fläche auf dem Fuss
 `;
 
 export const ZUORDNUNG = TABELLE.trim().split('\n').map((z) => z.split('|').map((t) => t.trim()));
@@ -666,6 +672,27 @@ s('ifcExport',
 s('sanZusammenstellung',
   '<rect class="fp" x="3.5" y="4.5" width="25" height="23"/><path class="fb" d="M3.5 4.5h25v6.5h-25z"/><path d="M3.5 17h12M3.5 22h12M15.5 11v16.5"/><path class="sW w15" d="M12 6.2H8.5l2.5 2.3-2.5 2.3H12"/><path class="fsa" d="M22 13.5c-2.8 3.4-3.8 4.8-3.8 6.4a3.8 3.8 0 0 0 7.6 0c0-1.6-1-3-3.8-6.4z"/>',
   '<rect class="fp" x="1.5" y="1.5" width="13" height="13"/><path class="fb" d="M1.5 1.5h13v4h-13z"/><path d="M1.5 9h6M1.5 12h6M7.5 5.5v9"/><path class="fsa" d="M11 6.8c-1.5 1.8-2 2.5-2 3.4a2 2 0 0 0 4 0c0-.9-.5-1.6-2-3.4z"/>');
+
+// ---------------------------------------------------------------------------------------------- Quest App V1a: Problem-Marker, Begehen, Sitzungstisch, Gesten, Haken; V1c: Bildschirm
+
+s('problemMarker',
+  '<path class="fo" d="M16 29.5s-8.5-8.6-8.5-15A8.5 8.5 0 0 1 24.5 14.5c0 6.4-8.5 15-8.5 15z"/><path class="sW w2" d="M16 9v6"/><circle class="fW n" cx="16" cy="19" r="1.4"/>',
+  '<path class="fo" d="M8 15s-4.5-4.4-4.5-8A4.5 4.5 0 0 1 12.5 7c0 3.6-4.5 8-4.5 8z"/><path class="sW w15" d="M8 4.6v3"/><circle class="fW n" cx="8" cy="9.6" r="0.8"/>');
+s('raumBegehen',
+  '<path class="f2" d="M3 24l13-6 13 6-13 6z"/><circle class="fb n" cx="16" cy="5.5" r="2.8"/><path class="sb w2" d="M16 9v8M12 12.5l4 2 4-2M16 17l-3 5M16 17l3 5"/>',
+  '<path class="f2" d="M1.5 12l6.5-3 6.5 3-6.5 3z"/><circle class="fb n" cx="8" cy="3" r="1.6"/><path class="sb w15" d="M8 5v4.5M6 7l2 1 2-1M8 9.5l-1.5 2.5M8 9.5l1.5 2.5"/>');
+s('sitzungstisch',
+  '<path class="f2" d="M3 16.5h26v3H3z"/><path class="w15" d="M7 19.5v8M25 19.5v8"/><path class="f1" d="M16 5l6 3.2-6 3.2-6-3.2z"/><path class="fl" d="M10 8.2l6 3.2v5.1l-6-3.2z"/><path class="fb" d="M22 8.2v5.1l-6 3.2v-5.1z"/>',
+  '<path class="f2" d="M1.5 8.5h13v2h-13z"/><path d="M3.5 10.5v4M12.5 10.5v4"/><path class="f1" d="M8 2l3.5 1.8L8 5.6 4.5 3.8z"/><path class="fl" d="M4.5 3.8L8 5.6v2.9L4.5 6.7z"/><path class="fb" d="M11.5 3.8v2.9L8 8.5V5.6z"/>');
+s('gesten',
+  '<path class="fy" d="M9 17V9.5a1.8 1.8 0 0 1 3.6 0V15V6.5a1.8 1.8 0 0 1 3.6 0V15V7.5a1.8 1.8 0 0 1 3.6 0V15.5V10a1.8 1.8 0 0 1 3.6 0v9c0 5.5-3.5 9.5-8.5 9.5c-3.5 0-5.5-1.8-7.5-4.5l-3.5-5.2a1.8 1.8 0 0 1 3-2z"/>',
+  '<path class="fy" d="M4.5 9V5a1 1 0 0 1 2 0v3.5V3.5a1 1 0 0 1 2 0V8V4a1 1 0 0 1 2 0v4.5V6a1 1 0 0 1 2 0v4.5c0 2.8-1.8 4.5-4.2 4.5c-1.8 0-2.8-1-3.8-2.3L2.6 10.3a1 1 0 0 1 1.6-1.1z"/>');
+s('haken',
+  '<circle class="fsa n" cx="16" cy="16" r="12"/><path class="sW w3" d="M10 16.5l4 4 8-9"/>',
+  '<circle class="fsa n" cx="8" cy="8" r="6.5"/><path class="sW w2" d="M5 8.2l2 2 4-4.5"/>');
+s('bildschirm',
+  '<rect class="f3" x="2.5" y="4.5" width="27" height="18" rx="1.5"/><rect class="fl n" x="4.5" y="6.5" width="23" height="14"/><path class="sb w15" d="M7.5 17.5h7"/><path class="f2" d="M14 22.5h4v4h-4z"/><path class="f3" d="M9.5 26.5h13v2.5h-13z"/>',
+  '<rect class="f3" x="1" y="2" width="14" height="9.5" rx="1"/><rect class="fl n" x="2.2" y="3.2" width="11.6" height="7.1"/><path class="f2" d="M7 11.5h2v2H7z"/><path class="f3" d="M4.5 13.5h7V15h-7z"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 

@@ -287,6 +287,22 @@ public sealed class SpeicherTests : IDisposable
         Assert.Equal(("B", "pc-b"), (r.Akteur, r.Geraet));
     }
 
+    // ---------------------------------------------------------------- 5b. Ablage ohne Ordner sperren (Befund 24.10.2026)
+
+    [Fact]
+    public void FehlenderSperrOrdnerWirdBeimReservierenAngelegt()
+    {
+        var a = NeuesProjekt("A", "pc-a");
+        Ok(GebaeudeAnlegen(a, "GEB-X"));
+        Directory.Delete(Unterordner("sperren"), recursive: true);   // kopierte Ablage ohne den leeren Ordner
+
+        Assert.Empty(a.Speicher!.Reservierungen());
+        a.Freigeben();                                              // nichts freizugeben, kein Fehler
+        Ok(Umbenennen(a, "GEB-X", "von A"));                        // Änderung eines bestehenden Elements reserviert
+        Assert.True(Directory.Exists(Unterordner("sperren")));
+        Assert.Equal(a.Modell.Finde("GEB-X")!.Id, Assert.Single(a.Speicher.Reservierungen()).Element);
+    }
+
     // ---------------------------------------------------------------- 6. Konflikt bei veraltetem Stand
 
     [Fact]

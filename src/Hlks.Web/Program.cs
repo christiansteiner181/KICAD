@@ -29,12 +29,17 @@ builder.Services.AddSingleton(einstellungen);
 builder.Services.AddSingleton<ProjektDienst>();
 builder.Services.AddSingleton<KiLaeufe>();   // Modul 3c: höchstens ein KI-Lauf je Projekt (Gespräch der KI-Palette oder Auftrag)
 builder.Services.AddHostedService<AbgleichDienst>();
-// Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB):
-// gzip, wenn der Browser es annimmt und nicht auf demselben Rechner läuft (siehe UseWhen unten). Alles andere (JSON,
-// Oberfläche, Bilder, SSE) bleibt unkomprimiert.
+// Modul XR (Quest App P3): zweiter Zugang im Büronetz – eigener HTTPS-Server neben diesem, nur /api/xr, nur gekoppelte Brillen; aus, solange der
+// Schalter dieses PCs aus ist (%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json, je PC), und nur im KICAD auf Port 5130 (XrZugang.cs). Dieser Server bleibt
+// unverändert nur auf localhost.
+builder.Services.AddXrZugang(port);
+// Antwortkomprimierung nur für rohe Binärdateien (application/octet-stream = die Netzdatei einer IFC-Unterlage, bis ~35 MB;
+// model/gltf-binary = das Modell als GLB je Geschoss, XrModellEndpunkte.cs): gzip, wenn der Browser es annimmt und nicht auf demselben
+// Rechner läuft (siehe UseWhen unten). Alles andere (JSON, Oberfläche, Bilder, SSE) bleibt unkomprimiert. Der Zugang im Büronetz
+// (XrZugang.cs) hat eine eigene Komprimierung (Brotli und gzip, nur GLB).
 builder.Services.AddResponseCompression(o =>
 {
-    o.MimeTypes = ["application/octet-stream"];
+    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp];
     o.Providers.Add<GzipCompressionProvider>();
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
@@ -262,7 +267,13 @@ app.MapAnleitung(dienst);   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hil
 app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; hinter dem Schliessen angemeldet, damit beim Beenden zuerst die Läufe enden
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI
+app.MapQuestApp(questStarter.Quest);   // Quest App installieren/aktualisieren (Quest App P7): QuestAppEndpunkte.cs – /api/quest/app; reine Rechner-Funktion, nicht für die KI
 app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2): IfcExportEndpunkte.cs – POST /api/ifc/export, Download aus ausgabe\ifc
+app.MapXr();   // Quest App P3: /api/xr – Zugang, Kopplung, Live-Kanal (XrEndpunkte.cs); im Büronetz nur Endpunkte mit .XrImNetz()
+app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
+app.MapXrEbenen(dienst);   // Quest App P4b: XrEbenenEndpunkte.cs – Ebenen der Fachmodule (/api/xr/ebenen, /api/xr/ebene/{name}); reine Rechner-Funktion, nicht für die KI
+app.MapXrLabor(dienst);   // Quest App P6: XrLaborEndpunkte.cs – Interface-Labor: Katalog für die App, Auswertung, Fragebogen (/api/xr/labor/…); reine Rechner-Funktion, nicht für die KI
+app.MapXrMarker(dienst);   // Quest App V1a: XrMarkerEndpunkte.cs – Problem-Marker aus der Brille (/api/xr/marker; Elemente ProblemMarker im Projekt); Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
 await app.RunAsync();

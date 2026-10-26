@@ -70,6 +70,16 @@ public sealed class BenutzerEinstellungen
         ["quest.brillen"] = QuestDienst.BrillenPruefen,
         // «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs): Ja/Nein, Vorgabe ja.
         ["quest.autostart"] = QuestDienst.AutomatikPruefen,
+        // Quest App (Quest App P7): Ordner mit der abgelegten APK und version.json (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app, werkzeuge/quest_app_bereitstellen.ps1); ein vollständiger lokaler Ordnerpfad.
+        ["quest.app_ablage"] = QuestDienst.AppAblagePruefen,
+        // Brillen der Quest App in der 3D-Ansicht am PC zeigen (Quest App P7, Register Ansicht): Ja/Nein, Vorgabe ja.
+        ["ansicht3d.brillen_zeigen"] = QuestDienst.AutomatikPruefen,
+        // Profile des XR-Labors (Quest App P6, Dialog «XR-Labor»): «labor.profil.<kennung>» = { name, werte{} } (je Profil ein Schlüssel, damit die Grenze von 4000 Zeichen reicht;
+        // die Form prüft Pruefen() unten über XrLaborProfil) und «labor.profil_aktiv» = Kennung des Profils, das für die App gilt (die App holt es mit dem Katalog, GET /api/xr/labor/katalog).
+        // Nicht «xr.…»: diese Schlüssel sind für den Zugang je PC reserviert (ein Test verbietet sie hier).
+        ["labor.profil_aktiv"] = w => XrLaborProfil.Pruefen(XrLaborProfil.AktivSchluessel, w),
+        // Der Zugang der Quest App im Büronetz (Modul XR, Quest App P3) ist bewusst KEINE Benutzereinstellung: er gilt je PC (Christian 23.10.2026),
+        // Schalter und Ports stehen in %LOCALAPPDATA%\HLKS_CAD\xr\zugang.json (XrPcEinstellung in XrEinstellungen.cs).
     };
 
     static string? AugenhoeheDaten(JsonNode w) =>
@@ -130,6 +140,8 @@ public sealed class BenutzerEinstellungen
             throw new HlksFehler($"Der Wert für «{schluessel}» ist zu gross (höchstens {WertMax} Zeichen).", "Einen kürzeren Wert wählen.");
         if (Bekannt.TryGetValue(schluessel, out var pruefung) && pruefung(wert) is { } meldung)
             throw new HlksFehler($"Der Wert für «{schluessel}» ist ungültig. {meldung}", "Einen gültigen Wert senden oder null, um die Einstellung zurückzusetzen.");
+        if (schluessel.StartsWith(XrLaborProfil.Vorsatz, StringComparison.Ordinal) && XrLaborProfil.Pruefen(schluessel, wert) is { } profilMeldung)
+            throw new HlksFehler($"Der Wert für «{schluessel}» ist ungültig. {profilMeldung}", "Einen gültigen Wert senden oder null, um die Einstellung zurückzusetzen.");
     }
 
     // ---------------------------------------------------------------- Lesen

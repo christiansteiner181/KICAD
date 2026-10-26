@@ -63,6 +63,15 @@ public sealed record QuestEinstellungen
     public TimeSpan KlickGrenze { get; init; } = TimeSpan.FromSeconds(10);
     /// <summary>Naht für Tests: der lokale Port des Fern-Debuggings; null = KICAD wählt selbst einen freien Port (nur 127.0.0.1).</summary>
     public Func<int>? CdpPortWahl { get; init; }
+    /// <summary>Quest App (QuestApp.cs): Zeitgrenze für «adb install» und «adb push» (die APK ist einige MB gross, das WLAN ist langsam).</summary>
+    public TimeSpan InstallZeitlimit { get; init; } = TimeSpan.FromMinutes(3);
+    /// <summary>Quest App: Ordner mit der APK und version.json, wenn die Benutzereinstellung quest.app_ablage fehlt; null = %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app (werkzeuge/quest_app_bereitstellen.ps1).</summary>
+    public string? AppAblage { get; init; }
+    /// <summary>Quest App: Ordner, in dem das Kopplungspaket für «adb push» höchstens einen Augenblick liegt; null = %TEMP%\HLKS_CAD\quest_app.</summary>
+    public string? PaketOrdner { get; init; }
+    /// <summary>Quest App: Datei, in der KICAD je PC merkt, auf welchem Weg die App zuletzt installiert und gekoppelt wurde (kabel | wlan); null = %LOCALAPPDATA%\HLKS_CAD\xr\quest_app_weg.json
+    /// (im Testlauf ein Pfad unter %TEMP%, der nicht existiert, damit kein Test den Zustand eines anderen sieht).</summary>
+    public string? AppWegDatei { get; init; }
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
@@ -71,6 +80,7 @@ public sealed record QuestEinstellungen
         ? new QuestEinstellungen
         {
             PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")],
+            AppAblage = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_app"),
             WlanGrenze = TimeSpan.FromSeconds(3), WlanAbstand = TimeSpan.FromMilliseconds(300), WeiterleitungGrenze = TimeSpan.FromSeconds(2),   // Browserreihen warten nicht 15 s auf einen absichtlichen Fehlschlag
         }
         : new QuestEinstellungen();
@@ -82,7 +92,7 @@ public sealed record QuestGeraet(string Seriennummer, string Zustand, bool Wlan)
 /// <summary>Eine gemerkte Brille (Benutzereinstellung «quest.brillen»): Seriennummer, WLAN-MAC, zuletzt gesehene IP und Zeitpunkt (UTC, ISO).</summary>
 public sealed record QuestBrille(string Seriennummer, string Mac, string? LetzteIp, string? Zuletzt);
 
-public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen, IQuestNetz? netzNaht = null)
+public sealed partial class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellungen einstellungen, IQuestNetz? netzNaht = null)
 {
     /// <summary>Schlüssel der Benutzereinstellung mit dem Pfad zur adb.exe.</summary>
     public const string AdbSchluessel = "quest.adb";
@@ -415,7 +425,10 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     /// <summary>Wie Aufruf, aber mit grösserer Ausgabegrenze (nur für «dumpsys activity activities», QuestStarter.cs).</summary>
     internal Task<AdbErgebnis> AufrufGross(AdbFund adb, params string[] argumente) => AufrufBegrenzt(adb, 1024 * 1024, argumente);
 
-    async Task<AdbErgebnis> AufrufBegrenzt(AdbFund adb, int ausgabeMax, string[] argumente)
+    /// <summary>Wie Aufruf, aber mit eigener Zeitgrenze (Installation und Übertragung der App, QuestApp.cs).</summary>
+    internal Task<AdbErgebnis> AufrufLang(AdbFund adb, TimeSpan grenzzeit, params string[] argumente) => AufrufBegrenzt(adb, AusgabeMax, argumente, grenzzeit);
+
+    async Task<AdbErgebnis> AufrufBegrenzt(AdbFund adb, int ausgabeMax, string[] argumente, TimeSpan? grenzzeit = null)
     {
         if (AdbPfadFehler(adb.Pfad) is { } fehler) throw new HlksFehler($"adb wird nicht gestartet: {fehler}", "Den Pfad zur adb.exe prüfen.");
         var psi = new ProcessStartInfo(adb.Pfad)
@@ -436,7 +449,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             var aus = Lesen(p.StandardOutput, ausgabeMax);
             var err = Lesen(p.StandardError, ausgabeMax);
             bool zeit = false;
-            using (var grenze = new CancellationTokenSource(einstellungen.Zeitlimit))
+            using (var grenze = new CancellationTokenSource(grenzzeit ?? einstellungen.Zeitlimit))
             {
                 try { await p.WaitForExitAsync(grenze.Token); }
                 catch (OperationCanceledException)
@@ -506,7 +519,11 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
     {
         PortPruefen(port);
         await sperre.WaitAsync();
-        try { return await ZustandOhneSperre(port); }
+        try
+        {
+            if (AdbFinden(out _) is { } adb) await AppWeiterleitungSicher(adb);
+            return await ZustandOhneSperre(port);
+        }
         finally { sperre.Release(); }
     }
 
@@ -626,6 +643,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             var (g, _) = await Waehlen(adb, geraete, port);
             await WeiterleitungSetzen(adb, g!.Seriennummer, port);
             await BrilleMerkenVon(adb, g);
+            await AppWeiterleitungSicher(adb);
             return await ZustandOhneSperre(port, $"Bereit. In der Quest den Browser öffnen und http://localhost:{port} eingeben.");
         }
         finally { sperre.Release(); }
@@ -649,9 +667,11 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
                 foreach (var w in wlanWege)
                     if (await HatWeiterleitung(adb, w.Seriennummer, port)) { mit = w; break; }
                 if (mit is null) await WeiterleitungSetzen(adb, wlanWege[0].Seriennummer, port, wiederholen: true);
+                await AppWeiterleitungSicher(adb);
                 return await ZustandOhneSperre(port, "Die Quest ist schon über WLAN verbunden; die Weiterleitung ist gesetzt.");
             }
             var ip = await UmstellenKern(adb, frei[0], port);
+            await AppWeiterleitungSicher(adb);   // adb tcpip startet adbd in der Brille neu: die Weiterleitung der Quest App (Kabelweg) ist dann weg
             return await ZustandOhneSperre(port, $"WLAN aktiv. Das Kabel kann ab. Nächstes Mal genügt die Adresse {ip}.");
         }
         finally { sperre.Release(); }
@@ -726,6 +746,7 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
             var g = await Geraet(adb, ziel);
             await WeiterleitungSetzen(adb, g.Seriennummer, port, wiederholen: true);
             await BrilleMerkenVon(adb, g);
+            await AppWeiterleitungSicher(adb);
             return await ZustandOhneSperre(port, $"Über WLAN verbunden ({ziel}). In der Quest http://localhost:{port} öffnen.");
         }
         finally { sperre.Release(); }
@@ -818,7 +839,15 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         finally { sperre.Release(); }
     }
 
+    /// <summary>Ein Schritt der Automatik; danach stellt er die Weiterleitung der Quest App wieder her (QuestApp.cs), falls eine Kabel-Kopplung besteht und adb sie verloren hat.</summary>
     async Task<object> AutomatikSchritt(int port, string anlass, bool an)
+    {
+        var ergebnis = await AutomatikSchrittKern(port, anlass, an);
+        if (AdbFinden(out _) is { } adb) await AppWeiterleitungSicher(adb);
+        return ergebnis;
+    }
+
+    async Task<object> AutomatikSchrittKern(int port, string anlass, bool an)
     {
         var adb = AdbFinden(out var adbHinweis);
         if (adb is null) return AutomatikErgebnis("kein_adb", port, an, adbHinweis);
@@ -848,6 +877,14 @@ public sealed class QuestDienst(BenutzerEinstellungen benutzer, QuestEinstellung
         // 3. Eine USB-Quest, aber kein WLAN-Weg: selbst auf WLAN umstellen.
         if (weg is { } usb)
         {
+            // Quest App im Kabelweg: adb tcpip würde adbd in der Brille neu starten und die Weiterleitung der App (tcp:5140) wegnehmen, die App wäre getrennt
+            // (Brillentest 23.10.2026). Solange die App per Kabel gekoppelt ist, bleibt es beim Kabel.
+            if (AppKabelAktiv(out _))
+            {
+                await WeiterleitungSetzen(adb, usb.Seriennummer, port);
+                await BrilleMerkenVon(adb, usb);
+                return AutomatikErgebnis("bereit", port, an, $"Über das Kabel verbunden (die Quest App ist per Kabel gekoppelt: keine Umstellung auf WLAN-adb). In der Quest http://localhost:{port} öffnen.", serie: usb.Seriennummer);
+            }
             try
             {
                 var ip = await UmstellenKern(adb, usb, port);

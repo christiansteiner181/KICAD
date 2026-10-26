@@ -1,0 +1,42 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Quest App (Modul XR), Fassung für den PC: Simulator mit Maus-Händen und automatische Prüfung ohne Brille.
+	     Die Fassung für die Brille ist Projects\Android\Hlks.Quest.Android.csproj (gleiche Quellen).
+	     Bewusst nicht in HLKS_CAD.slnx: Der Android-Bau braucht die .NET-Workload «android». Aufbau nach der Vorlage
+	     StereoKit.Templates 0.10.0 (MIT). -->
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<OutputType>Exe</OutputType>
+		<RootNamespace>Hlks.Quest</RootNamespace>
+		<ApplicationIcon>Platforms\Net\App.ico</ApplicationIcon>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Android-Teile nur im Android-Projekt übersetzen. -->
+		<Compile Remove="**\*.Android.cs" />
+		<Compile Remove="Platforms\Android\**" />
+		<None Include="**\*.Android.cs" />
+		<None Include="Platforms\Android\**" />
+
+		<Compile Remove="Projects\**" />
+		<EmbeddedResource Remove="Projects\**" />
+		<None Remove="Projects\**" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Festgelegt auf 0.3.11 (Entscheid Quest App 23.10.2026, modul-xr.md). -->
+		<PackageReference Include="StereoKit" Version="0.3.11" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- Rechenregeln und Netz-Teil ohne StereoKit (P1, P4a). -->
+		<ProjectReference Include="..\Hlks.Xr\Hlks.Xr.csproj" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<!-- V1a: Farben der App aus dem Katalog (App-Pastellreihe, Christian 24.10.2026), mitgeliefert – keine Farbwerte im Code. -->
+		<EmbeddedResource Include="..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
+	</ItemGroup>
+
+	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle). -->
+	<Import Project="Fassung.targets" />
+</Project>

@@ -19,6 +19,10 @@
   <ItemGroup>
     <!-- T1: gemeinsames Hilfsmittel für Umgebungsvariablen -->
     <Compile Include="..\Hlks.Kern.Tests\TestUmgebung.cs" Link="TestUmgebung.cs" />
+    <!-- Quest App (Modul XR, P2): unabhängige Prüfung der GLB-Dateien, dieselbe wie in den Kern-Tests -->
+    <Compile Include="..\Hlks.Kern.Tests\GlbPruefer.cs" Link="GlbPruefer.cs" />
+    <!-- Quest App V1d: der Fang bis V1a als Vergleich für die Messung vorher/nachher am realen Projekt (XrV1dEchtTests) -->
+    <Compile Include="..\Hlks.Xr.Tests\FangReferenz.cs" Link="FangReferenz.cs" />
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +33,8 @@
     <ProjectReference Include="..\Hlks.ClaudeAttrappe\Hlks.ClaudeAttrappe.csproj" />
     <!-- Quest verbinden (Modul XR): die Attrappe statt adb.exe (nie ein echtes adb) -->
     <ProjectReference Include="..\Hlks.AdbAttrappe\Hlks.AdbAttrappe.csproj" />
+    <!-- Quest App P4a: der Netz-Teil der App (Hlks.Xr.Netz) im Integrationstest gegen den echten Netzzugang (XrAppKlientTests) -->
+    <ProjectReference Include="..\..\src\Hlks.Xr\Hlks.Xr.csproj" />
   </ItemGroup>
 
   <ItemGroup>

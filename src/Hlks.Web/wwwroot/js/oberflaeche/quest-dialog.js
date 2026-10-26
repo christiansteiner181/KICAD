@@ -15,7 +15,9 @@ import { zeigen, meldung } from './dialoge.js';
 import { knoten } from './werkzeug.js';
 import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import * as T from './quest-text.js';
+import * as TA from './quest-app-text.js';
 import { questStatusAktualisieren } from './quest-status.js';
+import { questAppTeil } from './quest-app-dialog.js';
 
 const esc = T.esc;
 
@@ -32,6 +34,10 @@ export function questDialog() {
   let brillenZahl = null;     // Zahl der gemerkten Brillen beim letzten Lesen (null = noch nicht gelesen)
 
   const w = knoten(`<div class="qd">
+    <div class="qd-app-platz"></div>
+    <details class="qd-browser" open>
+    <summary class="qd-browser-kopf"><b>Browser-Prototyp</b> <span class="leise">älterer Weg: KICAD im Browser der Brille (adb reverse, Autostart); mit der Quest App nicht nötig</span></summary>
+    <div class="qd-browser-inhalt">
     <div class="qd-kopf"><b>Zustand</b><button type="button" class="dlg-knopf qd-neu" title="Liest den Zustand von adb neu">Erneut prüfen</button><span class="spinner qd-spinner" aria-hidden="true" hidden></span></div>
     <ul class="qd-ampel" aria-label="Zustand"></ul>
     <div class="qd-meldung" role="status" aria-live="polite" hidden></div>
@@ -69,8 +75,22 @@ export function questDialog() {
     <section class="qd-hinweise"><b>Gut zu wissen</b>
       <ul>${T.HINWEISE.map((h) => `<li>${esc(h)}</li>`).join('')}</ul></section>
     <div class="qd-adresse"></div>
+    </div>
+    </details>
   </div>`);
   const q = (s) => w.querySelector(s);
+  // Quest App (P7): Netzzugang, App installieren, gekoppelte Brillen, Ersatzkopplung – eigener Teil (quest-app-dialog.js), liest den Zustand von adb aus diesem Dialog
+  // Der Browser-Prototyp klappt von selbst ein, sobald die App in der Brille installiert ist (der Mensch kann ihn aufklappen; das gilt dann bis zum Schliessen)
+  const browser = w.querySelector('.qd-browser');
+  let browserVomMenschen = false;
+  browser.querySelector('summary').addEventListener('click', () => { browserVomMenschen = true; });   // nur ein Klick des Menschen zählt (das Ereignis «toggle» kommt auch beim Aufbau)
+  function browserEinstellen(app) {
+    if (browserVomMenschen) return;
+    const soll = TA.browserOffen(app, z);
+    if (browser.open !== soll) browser.open = soll;
+  }
+  const appTeil = questAppTeil({ quest: () => z, beiAenderung: () => neuPruefen(), beiGelesen: browserEinstellen });
+  q('.qd-app-platz').replaceWith(appTeil.knoten);
   const qa = (s) => [...w.querySelectorAll(s)];
 
   // ------------------------------------------------------------------------------------------ Anzeige
@@ -102,6 +122,7 @@ export function questDialog() {
       : brillen.map((b) => `<div class="qd-brille-zeile" data-mac="${esc(b.mac)}"><span class="qd-brille-text">${esc(T.brilleText(b))}</span>`
         + `<button type="button" class="dlg-knopf qd-vergessen" data-mac="${esc(b.mac)}" title="Vergisst diese Brille (die Automatik sucht sie dann nicht mehr)"${laeuft ? ' disabled' : ''}>Vergessen</button></div>`).join('');
     q('.qd-spinner').hidden = !laeuft;
+    appTeil.aktualisieren();
     const m = q('.qd-meldung');
     m.hidden = !letzteMeldung;
     if (letzteMeldung) {
@@ -130,7 +151,7 @@ export function questDialog() {
       try { z = await holen('/api/quest'); } catch { /* der Fehler oben genügt */ }
     } finally {
       laeuft = false;
-      if (offen) zeigeAmpel();
+      if (offen) { zeigeAmpel(); appTeil.zustandNeu(); }   // Quest App (P7): adb, Brille oder Pfad haben sich geändert – installierte Fassung und Weg neu lesen
       // eine Brille wurde gemerkt (oder vergessen): die Statusanzeige in der Statusleiste zieht nach
       const n = T.brillenListe(z?.brillen).length;
       if (brillenZahl !== null && n !== brillenZahl) questStatusAktualisieren();
@@ -195,7 +216,7 @@ export function questDialog() {
       neuPruefen();
     },
     knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }],
-  }).then((wert) => { offen = false; offenerDialog = null; return wert; });
+  }).then((wert) => { offen = false; offenerDialog = null; appTeil.beenden(); return wert; });
   offenerDialog = geschlossen;
   return geschlossen;
 }

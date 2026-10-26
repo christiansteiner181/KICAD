@@ -91,6 +91,33 @@ public static class KiEinordnung
             "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
         new("quest_autostart", "Steuert den Browser der VR-Brille (Modul XR, QuestStarter.cs, «Begehung beim Aufsetzen automatisch starten»): startet adb.exe, öffnet die VR-Startseite " +
             "im Browser der Brille und klickt dort über das Fern-Debugging (CDP) den Knopf «Eintreten» – nur auf eine Handlung des Menschen am Rechner, nie durch die KI."),
+        new("xr_zugang", "Öffnet einen zweiten Zugang zu diesem PC im Büronetz (HTTPS-Port 5140, Suche über UDP 5141) und erzeugt dafür ein Zertifikat (Modul XR, Quest App P3, " +
+            "XrZugang.cs, /api/xr/zugang) – greift über das Modell hinaus ins Netz; nur der Mensch am Rechner schaltet es ein oder aus."),
+        new("xr_kopplung", "Koppelt eine VR-Brille mit diesem PC: erzeugt den Schlüssel und das Kopplungspaket, bestätigt oder lehnt einen Code ab, widerruft Kopplungen " +
+            "(Modul XR, Quest App P3, XrKopplung.cs, /api/xr/kopplung/…). Wer koppelt, gibt einem Gerät Zugang zum PC – nur der Mensch am Rechner."),
+        new("xr_kanal", "Live-Kanal zur Quest App (Modul XR, Quest App P3, XrKanal.cs): liest Kopf- und Handpositionen der Brille (/api/xr/teilnehmer), sendet Stellschrauben an die " +
+            "Brille (/api/xr/stellschraube) und schreibt Messprotokolle; ab P7 zeigt die 3D-Ansicht am PC die Brille aus /api/xr/teilnehmer (ansichten/xr-teilnehmer.js). Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
+            "später eigens einzuordnen)."),
+        new("quest_app", "Installiert die Quest App per adb.exe in der VR-Brille, erzeugt dafür das Kopplungspaket mit Schlüssel (Weg A) und legt es in die Brille, startet die App " +
+            "und zeigt die installierte Fassung (Modul XR, Quest App P7, QuestApp.cs, /api/quest/app/…) – startet ein Programm auf dem PC und gibt einem Gerät Zugang zu diesem PC; nur der Mensch am Rechner."),
+        new("quest_app_netz", "Liest Netzprofil und Firewall-Regeln der Gruppe «KICAD XR» mit PowerShell, nur lesend (Modul XR, Quest App P7, QuestAppNetz.cs, /api/quest/app/netz), " +
+            "um dem Menschen zu zeigen, warum die Brille den PC im WLAN nicht erreicht – Auskunft über den Rechner, nicht für die KI."),
+        new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
+            "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +
+            "Ausgabe nicht; über den Zugang im Büronetz (P3) greift sie über den Rechner hinaus – darum kein Werkzeug der KI."),
+        new("xr_ebenen", "Liefert Ebenen der Fachmodule (Linien, Pfeile, Partikel, Farbflächen; Probe «fliessrichtung») an die Quest App (Modul XR, P4b, XrEbenenEndpunkte.cs: " +
+            "GET /api/xr/ebenen und /api/xr/ebene/{name}): eine Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket – wie xr_modell; über " +
+            "den Zugang im Büronetz greift sie über den Rechner hinaus, darum kein Werkzeug der KI."),
+        new("xr_labor", "Interface-Labor der Quest App (Modul XR, P6, XrLaborEndpunkte.cs: GET /api/xr/labor/katalog, /auswertung, /fragebogen, POST /fragebogen, /variante, /aufgabe): " +
+            "liefert der App den Katalog der Stellschrauben, Prüfaufgaben und Varianten, wertet die Messprotokolle der Brille aus, speichert Fragebogen und startet eine Prüfaufgabe bzw. stellt eine Variante " +
+            "in der Brille des Menschen ein – steuert ein Gerät des Menschen und liest dessen Bewegungen und Antworten, ohne Kern-Befehl und ohne Paket; nicht für die KI."),
+        new("xr_desktop", "Desktop in der Brille (Modul XR, XR-I, Quest App V1c, XrDesktop.cs: GET /api/xr/desktop, /api/xr/desktop/zustand, POST /api/xr/desktop/beenden): " +
+            "erfasst den ganzen Bildschirm des PCs und schickt ihn live an die gekoppelte Brille – greift über das Modell hinaus auf den Rechner und zeigt alles, was am " +
+            "Bildschirm steht; nur auf Anforderung der Brille des Menschen, beenden kann es der Mensch am PC. Nicht für die KI."),
+        new("xr_marker", "Problem-Marker aus der Quest App (Modul XR, XR-E, V1a, XrMarkerEndpunkte.cs: GET/POST /api/xr/marker): die Schnittstelle, über die die Brille des Menschen " +
+            "Marker setzt (Element ProblemMarker über element_anlegen, ein Paket) und ihre Liste holt – ein Weg eines Geräts des Menschen über den Zugang im Büronetz, wie " +
+            "xr_modell nicht für die KI. Die Marker selbst sind Projektdaten: die KI liest sie wie jedes Element (elemente_suchen klasse ProblemMarker) und exportiert sie " +
+            "nicht (bcf_export ist verboten)."),
     ];
 
     /// <summary>Oberflächen- bzw. Ansichtsfunktionen des Servers, die nur eine Anweisung an die Anzeige sind (kein Kern-Befehl, kein Modelländerung, kein Programmstart,

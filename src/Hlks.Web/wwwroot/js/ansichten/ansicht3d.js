@@ -30,6 +30,7 @@ import { gebaeudeAusrichtungGrad, nordwinkelGrad, startansichtSchluessel, schwen
 import { erzeugeSchnittbereich } from './schnittbereich3d.js';
 import { erzeugeBegehen } from './begehen3d.js';
 import { erzeugeVr } from './vr3d.js';
+import { erzeugeBrillen } from './xr-teilnehmer.js';
 import { standortAusKamera } from './vr-logik.js';
 import { startansichtUebernahme } from './schnittbereich-logik.js';
 import { befehl } from '../api.js';
@@ -181,6 +182,11 @@ function erstellen(behaelter, ansichtElement) {
     vorRender: () => schnitt?.vorRender(),
     schnittNeu: () => schnitt?.neueObjekte(),   // XR-H: nach dem Sitzungsraum die Ebenen des Schnittbereichs neu bewerten (pausiert im Begehen)
     beiBeendet: () => groesseAnpassen(),
+  });
+  // Quest App P7 «PC sieht die Brille»: verbundene Brillen als einfache Figuren (xr-teilnehmer.js); in VR (Browser-Prototyp) aus, damit die Figur nicht ins Bild ragt
+  const brillen = erzeugeBrillen({
+    szene, anfordern, sichtbar: () => !vr?.aktiv,
+    beiAenderung: (liste) => { wurzel.dataset.brillen = JSON.stringify(liste.map((f) => ({ id: f.id, name: f.name, kopf: f.kopf, haende: f.haende, veraltet: f.veraltet }))); },
   });
   const vrKnopf = vr.knopf();
   vrKnopf.classList.add('d3-vr-haupt');
@@ -676,6 +682,18 @@ function erstellen(behaelter, ansichtElement) {
     auswahlGeaendert: hervorhebenId,
     zoomAlles: () => zoomAlles(),
     zeigeBereich,
+    /** Quest App V1a (Problem-Marker): Kamera an position mit Blick auf ziel (Szene der 3D-Ansicht, m; problemmarker-text.js kamera); beendet ein Begehen. */
+    blickpunkt({ position, ziel } = {}) {
+      if (zerstoert || !Array.isArray(position) || !Array.isArray(ziel)) return false;
+      if (begehen.aktiv) begehenEnde();
+      kamera.position.set(position[0], position[1], position[2]);
+      steuerung.target.set(ziel[0], ziel[1], ziel[2]);
+      steuerung.update();
+      benutzt = true;
+      hatGezoomt = true;
+      anfordern();
+      return true;
+    },
     get schnittbereich() { return schnitt; },
     /** N15: Raum begehen – standort = Antwort der Abfrage raum_begehen; augenhoeheMm übersteuert deren Augenhöhe. */
     begehen: (standort, augenhoeheMm = null) => begehen.starten(standort, augenhoeheMm),
@@ -705,6 +723,7 @@ function erstellen(behaelter, ansichtElement) {
       window.removeEventListener('hlks-design', designGeaendert);
       beobachter?.disconnect();
       steuerung.removeEventListener('change', anfordern);
+      brillen.zerstoeren();
       vr?.zerstoeren();
       begehen.zerstoeren();
       wuerfel.zerstoeren();

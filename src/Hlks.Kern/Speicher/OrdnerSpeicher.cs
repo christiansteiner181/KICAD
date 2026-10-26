@@ -168,6 +168,10 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
         // statt sich gegenseitig je eine Hälfte wegzunehmen und beide zu scheitern.
         var ids = elementIds.Distinct(StringComparer.Ordinal).Order(StringComparer.Ordinal).ToList();
         if (ids.Count == 0) return [];
+        // Befund 24.10.2026: In einer kopierten Ablage ohne Ordner sperren scheiterte jede Änderung bestehender Elemente mit
+        // «Projektablage nicht erreichbar». Der Ordner wird wie stand\ bei Bedarf angelegt – die Ablage selbst nie.
+        OrtPruefen();
+        Directory.CreateDirectory(sperrOrdner);
         var pfade = ids.Select(SperrPfad).ToList();
         var jetzt = DateTimeOffset.Now;
 
@@ -209,6 +213,7 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
     {
         ArgumentNullException.ThrowIfNull(akteur);
         ArgumentNullException.ThrowIfNull(geraet);
+        if (!Directory.Exists(sperrOrdner)) { OrtPruefen(); return; }   // ohne Ordner gibt es nichts freizugeben
         var pfade = elementIds is null ? JsonDateien(sperrOrdner) : elementIds.Distinct(StringComparer.Ordinal).Select(SperrPfad).ToList();
         foreach (var pfad in pfade)
             if (SperreLesen(pfad) is { } r && !Fremd(r, akteur, geraet))
@@ -218,6 +223,7 @@ public sealed class OrdnerSpeicher : IProjektSpeicher
     public IReadOnlyList<Reservierung> Reservierungen()
     {
         var jetzt = DateTimeOffset.Now;
+        if (!Directory.Exists(sperrOrdner)) { OrtPruefen(); return []; }
         return JsonDateien(sperrOrdner).Select(SperreLesen).Where(r => r is not null && r.Bis > jetzt).Select(r => r!)
             .OrderBy(r => r.Element, StringComparer.Ordinal).ToList();
     }

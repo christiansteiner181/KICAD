@@ -1,0 +1,127 @@
+{
+  "art": "hlks-xr-varianten",
+  "fassung": 1,
+  "beschreibung": "Umschaltbare Varianten (A/B) je Bedienung im Interface-Labor (Modul XR, Quest App P6). KICAD sendet die Wahl als Stellschraube «labor.variante.<name>» mit der Id der Option als Wert. Die App setzt die Variante um (P5) und trägt sie bei jedem Messprotokoll in «varianten» ein.",
+  "varianten": [
+    {
+      "name": "bedienung", "titel": "Bedienung",
+      "beschreibung": "Wie die Funktionen bedient werden: schwebende Apps mit Wischgesten (Leitbild Christian 23.10.2026) oder das Tablet an der Hand (Browser-Prototyp).",
+      "optionen": [
+        { "id": "apps", "titel": "Schwebende Apps" },
+        { "id": "tablet", "titel": "Tablet an der Hand" }
+      ],
+      "vorgabe": "apps",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»: Leitbild Christian 23.10.2026, Tablet als Vergleichsvariante"
+    },
+    {
+      "name": "teleport", "titel": "Teleport",
+      "beschreibung": "Wie man springt: mit der Hand zeigen und auslösen (V1f: Pistolengeste bzw. Pinch, Variante «Auslöser») oder mit dem Stick eines Controllers (nach vorn drücken zielt, loslassen springt; seitlich dreht). Ohne Controller zeigt die App in der Variante «Stick» einen Hinweis.",
+      "optionen": [
+        { "id": "zeigen_pinch", "titel": "Zeigen und Pinch" },
+        { "id": "stick", "titel": "Stick" }
+      ],
+      "vorgabe": "zeigen_pinch",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Teleport mit Zeigen und Pinch"
+    },
+    {
+      "name": "etage", "titel": "Etage wählen",
+      "beschreibung": "Wie man das Geschoss wechselt: mit einem Wisch hoch/runter (beim Begehen und am Tisch) oder nur in der App «Etagen» (der Wisch wechselt dann nicht).",
+      "optionen": [
+        { "id": "wisch_modell", "titel": "Wisch am Modell" },
+        { "id": "app", "titel": "App" }
+      ],
+      "vorgabe": "app",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Etage direkt am Modell wählen; Vorgabe «app» seit dem Brillentest 24.10.2026 (Christian: «der etagenwechsel mit geste ist unpraktisch.»)"
+    },
+    {
+      "name": "messen", "titel": "Messen",
+      "beschreibung": "Wie man misst (App «Messen», seit V1a): ein Messband zwischen zwei Punkten aufziehen (Pinch halten, ziehen, loslassen) oder zwei Punkte mit je einem Pinch setzen. Die App «Messen» kann die Variante auch selbst umschalten.",
+      "optionen": [
+        { "id": "messband", "titel": "Messband aufziehen" },
+        { "id": "zwei_punkte", "titel": "Zwei Punkte setzen" }
+      ],
+      "vorgabe": "messband",
+      "herkunft": "modul-xr.md «Varianten je Bedienung»; Leitlinie Bedienung: Messen als Massband"
+    },
+    {
+      "name": "umgebung", "titel": "Umgebung des Sitzungsraums",
+      "beschreibung": "Seit V1f ohne Wirkung: am Sitzungstisch gilt immer Passthrough (ohne Passthrough, z. B. im Simulator, ein heller Ersatzhintergrund), ein virtueller Raum bzw. Tisch wird nicht mehr gezeichnet. Bis V1e: hell und weit im Stil von visionOS oder die frühere dunkle Fassung mit Raster und Leuchtlinien («Tron»).",
+      "optionen": [
+        { "id": "hell", "titel": "Hell (visionOS)" },
+        { "id": "tron", "titel": "Dunkel mit Leuchtlinien (früher)" }
+      ],
+      "vorgabe": "hell",
+      "herkunft": "Christian 24.10.2026: «auch der Sitzungsraum soll im Stil von visionOS erscheinen (ruhige, helle Umgebung)»; Apple HIG «Immersive experiences», «Creating an environment» (abgerufen 24.10.2026); V1f, Christian 24.10.2026: «der tisch stört. immer pass im sitzungszimmer und den tisch nie zeigen(nur das modell)»"
+    },
+    {
+      "name": "symbole", "titel": "Anordnung der App-Symbole",
+      "beschreibung": "Wie die App-Symbole nach der Hebegeste vor dem Körper stehen: locker verteilt (verschiedene Höhen, leicht gestaffelt, je App immer am selben Platz) oder in einer Reihe im Bogen zum Vergleich.",
+      "optionen": [
+        { "id": "verteilt", "titel": "Locker verteilt" },
+        { "id": "bogen", "titel": "Im Bogen (Reihe)" }
+      ],
+      "vorgabe": "verteilt",
+      "herkunft": "Christian 24.10.2026: «frei schwebende Appsymbole … in griff weite», «symbole nicht in einer leiste sondern verteilt»; nach den Bildern 02: «frontal des nutzers in einem abstand von ca. 60cm und über eine höhe von ca. 0.6m verteilt … maximal 3 reihig»"
+    },
+    {
+      "name": "symbolwahl", "titel": "App-Symbole nach der Wahl",
+      "beschreibung": "Was die App-Symbole tun, wenn man eine App wählt: ausblenden (Vorgabe seit V1g; die App öffnet, sobald die Symbole weg sind; schliesst man die Tafel, kommen sie nicht zurück; die Hebegeste holt sie und schliesst dabei eine offene Tafel – Glas-App, PC-Bildschirm –, die Symbole stehen frontal, V1i) oder zum Vergleich stehen bleiben (die App öffnet frontal näher, das Feld weicht zurück und wird gedämpft; schliesst die App, kommt es wieder nach vorn) – nur dann weicht das Feld nach «feld_bei_app» aus. Nach dem Schliessen einer Tafel zählt «symbole.sperre_schliessen_s» lang keine Berührung.",
+      "optionen": [
+        { "id": "ausblenden", "titel": "Ausblenden" },
+        { "id": "stehen", "titel": "Stehen bleiben" }
+      ],
+      "vorgabe": "ausblenden",
+      "herkunft": "Christian 24.10.2026: «werden die aps hineingehoben bleiben diese stehen»; Auslegung Hauptlauf (visionOS: der Hintergrund weicht in der Tiefe zurück); V1g, Christian 24.10.2026: «bei schliessen der tafel soll die hand keine app wählen. (app ausblenden nach schliessen der Tafel) auch ausblenden nach wahl eines apps.»"
+    },
+    {
+      "name": "feld_bei_app", "titel": "Symbolfeld bei offener App",
+      "beschreibung": "Nur mit «symbolwahl» = «stehen» (seit V1g nicht mehr die Vorgabe): wo das Feld der App-Symbole steht, solange eine App offen ist: seitlich (es weicht links und rechts neben das Fenster und seine Ornamente aus, im selben Abstand zum Auge, also in Griffweite; schliesst die App, kehrt es frontal zurück) oder zum Vergleich dahinter (es weicht in die Tiefe zurück und wird gedämpft).",
+      "optionen": [
+        { "id": "seitlich", "titel": "Neben dem Fenster" },
+        { "id": "dahinter", "titel": "Hinter dem Fenster" }
+      ],
+      "vorgabe": "seitlich",
+      "herkunft": "Christian 24.10.2026: «Das Symbolfeld weicht bei offener App seitlich neben das Fenster aus.» (nach den Prüfbildern 03: das Fenster verdeckte das Feld fast ganz); «dahinter» bleibt als Vergleich"
+    },
+    {
+      "name": "tafel_nachfuehren", "titel": "Tafel nachführen",
+      "beschreibung": "Das Fenster einer App (auch der PC-Bildschirm) öffnet mittig in der Blickrichtung. «fest» (Vorgabe seit V1f): es bleibt danach im Raum stehen. «träge»: dreht man sich weiter als «tafel.nachfuehren_grad» weg, rückt es ruhig wieder in die Mitte (nie starr am Kopf; still, solange eine Hand daran ist, und nicht mehr, wenn man es am Griff hingestellt hat).",
+      "optionen": [
+        { "id": "fest", "titel": "fest" },
+        { "id": "traege", "titel": "träge" }
+      ],
+      "vorgabe": "fest",
+      "herkunft": "Christian 24.10.2026: «die tafel mit informationen oder auswahlmöglichkeiten sollte immer zentrisch sein»; V1d träge nachgeführt; V1f, Christian 24.10.2026: «zudem soll die tafel nicht mit dem blick wandern. dies soll mittig sein.»"
+    },
+    {
+      "name": "zoom_ein_griff", "titel": "Zoomen am einen Griff",
+      "beschreibung": "Nur mit «griffe_tisch» = «ein Griff» (V1d): am Sitzungstisch bewegt und dreht ein Griff an der vorderen Gebäudekante das Modell. Zoomen: «zweite Hand» – hält eine Hand den Griff, zoomt ein Pinch der anderen Hand über den Abstand der Hände; «Drehknopf» – Rollen des Handgelenks am Griff (im Uhrzeigersinn grösser).",
+      "optionen": [
+        { "id": "zweite_hand", "titel": "Zweite Hand" },
+        { "id": "drehknopf", "titel": "Drehknopf" }
+      ],
+      "vorgabe": "zweite_hand",
+      "herkunft": "Christian 24.10.2026: «das modell soll nur mit einem griff bewegt und gezoomt werden»; die zwei Arten des Zoomens Auftrag V1d"
+    },
+    {
+      "name": "griffe_tisch", "titel": "Griffe am Sitzungstisch",
+      "beschreibung": "«zwei Punkte»: ein Punkt «Verschieben» (Mitte der vorderen Gebäudekante; verschiebt in allen Richtungen, ohne Drehen und Zoomen) und ein Punkt «Drehen und Vergrössern» (rechte vordere Ecke; dreht um das Zentrum des Modells, der Abstand zum Zentrum ergibt den Massstab), farblich verschieden, mit Symbol beim Greifen. «ein Griff»: der eine Griff von V1d (Variante «zoom_ein_griff»).",
+      "optionen": [
+        { "id": "zwei_punkte", "titel": "Zwei Punkte" },
+        { "id": "ein_griff", "titel": "Ein Griff (V1d)" }
+      ],
+      "vorgabe": "zwei_punkte",
+      "herkunft": "Christian 24.10.2026: «modell auf tisch soll einen verschieben punkt erhalten, und einen punkt für drehen und vergrössern diese bewegung dreht immer um das zentrum»"
+    },
+    {
+      "name": "ausloeser", "titel": "Auslöser beim Zeigen",
+      "beschreibung": "Womit man beim Zeigen auslöst (Springen, Messen, Marker setzen, Knopf- und Symbolwahl auf Distanz). «Pistolengeste»: Zeigefinger gestreckt, übrige Finger eingerollt, Daumen oben – der Strahl geht vom Zeigefinger; den Daumen an die Hand klappen drückt ab; die zwei Punkte am Sitzungstisch fasst die Faust (mit der ganzen Hand zugreifen). «Pinch»: wie bis V1e mit Daumen und Zeigefinger.",
+      "optionen": [
+        { "id": "pistole", "titel": "Pistolengeste" },
+        { "id": "pinch", "titel": "Pinch (bis V1e)" }
+      ],
+      "vorgabe": "pistole",
+      "herkunft": "Christian 24.10.2026: «pich ist zu sensibel.. hier braucht es eine andere geste. bsp. pistolengeste.»; Faustgriff an den Punkten: Vorschlag V1f"
+    }
+  ]
+}

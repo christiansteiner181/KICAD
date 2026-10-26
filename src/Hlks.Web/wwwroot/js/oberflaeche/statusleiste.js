@@ -13,6 +13,7 @@ import { bibliothekInfo, beiBibliothek, bibliothekLaden } from '../familien/bibl
 import { bibliothekStatus } from '../familien/bibliothek-text.js';
 import { bibliothekHinweis } from '../familien/bibliothek-dialoge.js';
 import { questStatusEinrichten } from './quest-status.js';
+import { xrDesktopStatusEinrichten } from './xr-desktop-status.js';
 
 const TAKT_MS = 3000;
 const lc = (t) => String(t ?? '').toLowerCase();
@@ -25,7 +26,7 @@ let fremdTimer = null;
 
 export function einrichten(w) {
   w.innerHTML = `<span class="sl-links"></span>
-    <span class="sl-mitte"><span class="sl-abgleich"></span><button type="button" class="sl-res" title="Reservierungen anzeigen"></button><button type="button" class="sl-bib" hidden></button><button type="button" class="sl-brille" hidden></button></span>
+    <span class="sl-mitte"><span class="sl-abgleich"></span><button type="button" class="sl-res" title="Reservierungen anzeigen"></button><button type="button" class="sl-bib" hidden></button><button type="button" class="sl-brille" hidden></button><span class="sl-desktop" hidden></span></span>
     <span class="sl-rechts"><span class="sl-akteur"></span><span class="sl-stand"></span></span>`;
   teile = {
     links: w.querySelector('.sl-links'), abgleich: w.querySelector('.sl-abgleich'), res: w.querySelector('.sl-res'),
@@ -34,6 +35,7 @@ export function einrichten(w) {
   teile.res.onclick = reservierungenDialog;
   teile.bib.onclick = () => bibliothekHinweis();
   questStatusEinrichten(w.querySelector('.sl-brille'));   // «Brille» (Modul XR): nur sichtbar bei eingeschalteter Automatik oder gemerkter Brille
+  xrDesktopStatusEinrichten(w.querySelector('.sl-desktop'));   // V1c: «Brille sieht den Bildschirm» mit «Beenden», nur solange eine Brille verbunden ist
 
   const zeichnenSpaeter = entprellen(zeichnen, 30);
   const statusSpaeter = entprellen(statusHolen, 500);
