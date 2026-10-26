@@ -2041,6 +2041,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
   und `If-None-Match` holen.
 - **Firewall:** KICAD ändert nichts. `werkzeuge/xr_firewall.ps1` (als Administrator, von Christian) legt zwei eingehende Regeln an: TCP 5140 und UDP 5141, nur Profil
   «Privat», nur aus dem eigenen Subnetz; `-Entfernen` nimmt sie weg, `-Liste` zeigt Regeln, Netzprofil und Sperren für dotnet.exe.
+- **Netz einrichten per Doppelklick** (Christian 26.10.2026: «mache ein skript, dass der nutzer auslösen kann, um die beiden hinweise zu erfüllen»): `werkzeugexr_netz_einrichten.cmd` zeigt die Netzverbindungen, stuft nach Rückfrage (J/N) und Windows-Bestätigung (Administrator) die öffentlichen Verbindungen über echte Netzwerkkarten (WLAN/LAN; VPN und virtuelle bleiben) als «Privat» ein und ruft `xr_firewall.ps1` auf (Regeln für KICAD und XR-Labor). `-Trocken` zeigt nur, `-OhneFirewall` nur das Netzprofil. Die Hinweise im Teil «Quest App» bzw. «Brille» nennen das Skript (`QuestAppNetz.EinrichtenSkript`).
 - **Prüfen:** Web `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~Hlks.Web.Tests.Xr"` (Netzzugang echt mit TLS, aber nur auf 127.0.0.1 mit freien Ports).
   **Nur mit Brille und Büronetz prüfbar:** Erreichbarkeit über WLAN und Firewall, Broadcast im Büronetz, Pinning in der App, Dauerlast 30 Posen/s über WLAN.
   **Anleitung:** `zb-xr-zugang` in `berichte/anleitung/inventar.json`.

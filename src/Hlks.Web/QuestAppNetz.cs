@@ -123,6 +123,8 @@ public sealed class QuestAppSystemEcht : IQuestAppSystem
 public static class QuestAppNetz
 {
     public const string FirewallSkript = @"werkzeuge\xr_firewall.ps1";
+    /// <summary>Doppelklick-Skript, das beide Hinweise erfüllt: Netz «Privat» einstufen und die Regeln anlegen (Christian 26.10.2026; fragt nach Administratorrechten).</summary>
+    public const string EinrichtenSkript = @"werkzeuge\xr_netz_einrichten.cmd";
 
     /// <summary>Gilt die Regel für TCP bzw. UDP an diesem Port, eingehend, erlaubend, eingeschaltet und im Profil «Privat» (oder allen)?</summary>
     public static bool Deckt(FirewallRegel r, string protokoll, int port) =>
@@ -148,11 +150,11 @@ public static class QuestAppNetz
             h.Add(new QuestAppHinweis("warnung", $"{name} findet keine LAN- oder WLAN-Karte mit privater Adresse. Ohne Büronetz erreicht die Brille den PC nur über das Kabel."));
         foreach (var p in profile.Where(p => !p.Kategorie.Equals("Private", StringComparison.OrdinalIgnoreCase)))
             h.Add(new QuestAppHinweis("warnung", $"Das Netz «{p.Name}» ({p.Schnittstelle}) ist als «{Kategorie(p.Kategorie)}» eingestuft. Die Regeln der Gruppe «KICAD XR» gelten nur im Profil «Privat»; die Brille erreicht den PC im WLAN so nicht. "
-                + "Das Netz in den Windows-Einstellungen als privat einstufen, oder die Installation «über Kabel» wählen."));
+                + $"Doppelklick auf {EinrichtenSkript} stuft es als privat ein und legt die Regeln an; oder das Netz in den Windows-Einstellungen als privat einstufen, oder die Installation «über Kabel» wählen."));
         // Regeln
         bool tcp = a.Regeln.Any(r => Deckt(r, "TCP", port)), udp = a.Regeln.Any(r => Deckt(r, "UDP", suchPort));
         if (a.Regeln.Count == 0)
-            h.Add(new QuestAppHinweis("warnung", $"Die Firewall-Regeln der Gruppe «KICAD XR» fehlen (TCP {port}, UDP {suchPort}). Im WLAN erreicht die Brille den PC erst, wenn Christian als Administrator {FirewallSkript} ausgeführt hat (KICAD ändert die Firewall nie). Über das Kabel geht es auch ohne."));
+            h.Add(new QuestAppHinweis("warnung", $"Die Firewall-Regeln der Gruppe «KICAD XR» fehlen (TCP {port}, UDP {suchPort}). Im WLAN erreicht die Brille den PC erst, wenn Christian {EinrichtenSkript} (Doppelklick) bzw. als Administrator {FirewallSkript} ausgeführt hat (KICAD ändert die Firewall nie). Über das Kabel geht es auch ohne."));
         else
         {
             if (!tcp) h.Add(new QuestAppHinweis("warnung", $"Es gibt keine eingeschaltete, erlaubende Regel für TCP {port} im Profil «Privat» (Gruppe «KICAD XR»). {FirewallSkript} als Administrator neu ausführen."));
