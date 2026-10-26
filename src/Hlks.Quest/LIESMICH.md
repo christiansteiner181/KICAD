@@ -171,6 +171,11 @@ KICAD-Testserver mit dem Beispielprojekt und einen Labor-Server im Testlauf, kop
 
 Prüfbilder nie ins Repository (Vorgabe `%USERPROFILE%\HLKS_CAD_testdaten\hk_xr\e1`).
 
+**Ergebnis 26.10.2026 (E1, Simulator):** KICAD `quest_pruefen.ps1` ok (Lauf 1 mit PC «Auftrag=Nr 1 beim Start», Messprotokolle und Marker am PC; Lauf 2 ohne PC aus dem
+Zwischenspeicher des Werkzeugs; Lauf 3 Sitzungsraum «Nr 2»; Lauf 4 Desktop). Labor: L1 und L2 «P4 ok», Messprotokolle der sieben Aufgaben am Labor-PC (7/7). Wechsel:
+«P4 ok» – Wahl auf der Startseite mit der Hand nach 11 Bildern, Posen an das verlassene Werkzeug nach jedem Wechsel +0, PC-Prüfungen 3/3, Messprotokoll der
+abgebrochenen Aufgabe am Labor-PC. APK `ch.hkplanung.xr-Signed.apk`: `aapt2 dump badging` – Paket `ch.hkplanung.xr`, Name «H+K XR», minSdk 29, targetSdk 32.
+
 ## Testraum (XR-Labor L1)
 
 Entscheid Christian 26.10.2026: **«Nur neutraler Testraum»** – kein Projekt, keine Projektdaten (`entwurf/labor-app.md`, «Testwelt der Labor-App», «Zuschnitt L1»). Die App
