@@ -1121,6 +1121,13 @@ sealed partial class QuestApp
     {
         if (o.PruefBilder <= 0) return;
         if (o.WechselPruefen) { WechselPruefen(); return; }   // H+K XR E1: Prüflauf «Wechsel» (QuestApp.PruefenWechsel.cs)
+        if (o.SpielwiesePruefen)   // XR-Labor S1: Prüflauf «Spielwiese» (QuestApp.PruefenSpielwiese.cs, Werkzeug-Modul «Labor»)
+        {
+            var laeuft = false;
+            LaborPruefenSpielwiese(ref laeuft);
+            if (!laeuft) Ende(false, "Spielwiese: ohne Werkzeug-Modul «Labor» übersetzt");
+            return;
+        }
         if (o.DesktopPruefen) { DesktopPruefen(rechnen); return; }   // V1c: eigener Prüflauf des Bildschirms des PCs (QuestApp.Desktop.cs)
         if (o.Kopplung is null && !o.OhnePc)
         {

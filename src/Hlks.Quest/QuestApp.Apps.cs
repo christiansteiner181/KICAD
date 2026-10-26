@@ -96,6 +96,7 @@ sealed partial class QuestApp
         if (desktop is { Ansicht.Sichtbar: true } d) d.Ausblenden(Time.Total);
         apps.RegisterWaehlen(id);
         if (id == "etagen") apps.Rollen = null;   // V1e: beim Öffnen das aktuelle Geschoss sichtbar
+        LaborAppGeoeffnet(id);   // XR-Labor S1: Liste oben, Dokument auf Seite 1
         statusGesten = false;
         // V1d: immer mittig in der Blickrichtung von jetzt (bis V1d vor dem Feld bzw. dort, wo die Symbole standen)
         apps.Holen(AppPlatz(pruefKopf ?? Input.Head), Time.Total);
@@ -120,6 +121,9 @@ sealed partial class QuestApp
         var ort = apps.Rahmen is { } ra ? (Vec3)(Vector3)ra.Fenster.Mitte : Input.Head.position + Input.Head.Forward * 0.45f;
         tafelGeblaettert++;
         letzteGeste = $"Blättern {r}";
+        var erledigt = false;
+        LaborBlaettern(r, ort, ref erledigt);   // XR-Labor S1: die Liste der Spielwiese rollt
+        if (erledigt) return;
         // V1e: die rollende Etagenliste rollt mit dem Wisch hoch/runter (keine Seiten)
         if (apps.Aktiv == "etagen" && etagenAnordnung.Rollt && r is WischRichtung.Hoch or WischRichtung.Runter)
         {
@@ -146,8 +150,19 @@ sealed partial class QuestApp
         AppOeffnen(id);   // V1d: mittig in der Blickrichtung (Tafel.Platz); das Feld weicht seitlich aus
     }
 
-    /// <summary>Die Farben des Fensters: die gewählte App, «Gesten» in der Gestenübersicht von KICAD (Status).</summary>
-    string FarbId => apps.Aktiv == "status" && statusGesten ? "gesten" : apps.Aktiv;
+    /// <summary>Die Farben des Fensters: die gewählte App, «Gesten» in der Gestenübersicht von KICAD (Status); XR-Labor S1: die Farbe aus dem Katalog der Spielwiese.</summary>
+    string FarbId
+    {
+        get
+        {
+            var f = apps.Aktiv == "status" && statusGesten ? "gesten" : apps.Aktiv;
+            LaborAppFarbe(ref f);
+            return f;
+        }
+    }
+
+    /// <summary>XR-Labor S1: der Inhalt im letzten Bild kam von der Spielwiese (die Tafel ohne Werkzeugleiste Messen/Marker).</summary>
+    bool inhaltOhneOrnament;
 
     /// <summary>V1a: tiefste Höhe einer Symbolmitte am Sitzungstisch (über der Tischplatte, Raum der Brille), sonst null.</summary>
     double? SymbolUntergrenze() => sitzung.Aktiv   // V1f: über der echten bzw. angenommenen Platte
@@ -168,6 +183,12 @@ sealed partial class QuestApp
     /// «Werkzeuge» (zurück zur Startseite; Reserveplatz rechts im Feld).</summary>
     List<SymbolApps.Symbol> SymboleBauen()
     {
+        // XR-Labor S1: im XR-Labor (ohne laufende Prüfaufgabe) die Platzhalter-Apps der Spielwiese statt der Apps des Werkzeugs, mit eigener Reihenfolge der Plätze
+        List<SymbolApps.Symbol>? ersatz = null;
+        IReadOnlyList<string>? reihenfolge = null;
+        LaborSymbole(ref ersatz, ref reihenfolge);
+        symbole.Reihenfolge = reihenfolge;
+        if (ersatz is not null) return ersatz;
         var (ampel, _) = VerbindungKurz();
         var l = new List<SymbolApps.Symbol> { new("status", AnzeigeName, GlasSymbole.Status, ampel) };
         if (werkzeuge.Length > 1) l.Add(new(WerkzeugStartseite.SymbolId, "Werkzeuge", SymbolApps.BildWerkzeuge));
@@ -213,6 +234,12 @@ sealed partial class QuestApp
     {
         var c = apps.NeuerInhalt(bedien);
         appSeiten = 1;
+        // XR-Labor S1: eine App der Spielwiese baut ihren Inhalt selbst (Katalog vom Labor-PC)
+        var gebaut = false;
+        var seiten = 1;
+        LaborAppInhalt(ref c, ref gebaut, ref seiten);
+        inhaltOhneOrnament = gebaut;
+        if (gebaut) { appSeiten = Math.Max(1, seiten); return c; }
         static string Z(FormattableString f) => FormattableString.Invariant(f);
         switch (darstellung is null ? "status" : apps.Aktiv)
         {
@@ -409,7 +436,7 @@ sealed partial class QuestApp
         // Variante «ausblenden»: die gewählte App öffnet sich, sobald die Symbole ausgeblendet sind
         if (appWahl is { } wahl && !symbole.Sichtbar) { appWahl = null; AppOeffnen(wahl.Id, wahl.Platz); }
         var inhalt = InhaltBauen();
-        var ornament = darstellung is null ? new List<(string, string, bool)>()
+        var ornament = darstellung is null || inhaltOhneOrnament ? new List<(string, string, bool)>()
             : [("orn_messen", GlasSymbole.Messen, messen.An), ("orn_marker", GlasSymbole.Marker, markerSetzen)];
         const bool karteOffen = false;   // die Karte einer Aufgabe ist ein Ornament über dem Fenster (deckt es nicht) – kein Zurückweichen
         // Prüflauf: der gedachte Kopf gilt auch für die Tafel (V1d: mittig und träge nachgeführt, wenn er sich dreht)
@@ -554,6 +581,9 @@ sealed partial class QuestApp
                 return;
         }
         var id = e.Id;
+        var erledigt = false;
+        LaborAppEreignis(id, ref erledigt);   // XR-Labor S1: Schalter der Spielwiese
+        if (erledigt) return;
         if (id.StartsWith("ebene:", StringComparison.Ordinal))
         {
             var name = id[6..];

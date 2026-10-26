@@ -54,6 +54,12 @@ public sealed record Werkzeug(string Kennung, string Name)
     /// </summary>
     public bool MitLabor { get; init; }
 
+    /// <summary>
+    /// XR-Labor Spielwiese S1 (entwurf/xr-empfaenger.md, Neuausrichtung 26.10.2026): mit diesem Werkzeug zeigt das Symbolfeld statt der KICAD-Apps die
+    /// Platzhalter-Apps aus kataloge/labor_spielwiese.json (vom Labor-PC). Nur das XR-Labor; KICAD zeigt weiter seine eigenen Apps.
+    /// </summary>
+    public bool MitSpielwiese { get; init; }
+
     /// <summary>«in KICAD», «im XR-Labor» («… neu koppeln»).</summary>
     public string InWerkzeug { get; init; } = "";
 
@@ -75,7 +81,7 @@ public sealed record Werkzeug(string Kennung, string Name)
     /// <summary>Das XR-Labor (src/Hlks.Labor; Netzzugang 5340, Suche 5341; Entscheid Christian 26.10.2026: Name «XR-Labor»). Neutraler Testraum, kein Projekt.</summary>
     public static readonly Werkzeug XrLabor = new("xrlabor", "XR-Labor")
     {
-        MitProjekt = false, MitLabor = true, InWerkzeug = "im XR-Labor", Koppeln = "im XR-Labor am PC die App installieren bzw. aktualisieren", FarbId = "labor",
+        MitProjekt = false, MitLabor = true, MitSpielwiese = true, InWerkzeug = "im XR-Labor", Koppeln = "im XR-Labor am PC die App installieren bzw. aktualisieren", FarbId = "labor",
     };
 
     /// <summary>Die bekannten Werkzeuge in der Reihenfolge der Startseite.</summary>

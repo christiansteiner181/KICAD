@@ -11,6 +11,8 @@
   <ItemGroup>
     <ProjectReference Include="..\Hlks.Web\Hlks.Web.csproj" />
     <ProjectReference Include="..\Hlks.Kern\Hlks.Kern.csproj" />
+    <!-- S1: den Katalog der Spielwiese mit demselben Leser prüfen wie die Brille (Hlks.Xr.Labor.SpielwieseKatalog; rein, ohne StereoKit) -->
+    <ProjectReference Include="..\Hlks.Xr\Hlks.Xr.csproj" />
   </ItemGroup>
 
   <!-- Oberfläche: während der Entwicklung direkt aus dem Quellordner (Änderungen ohne Neubau sichtbar), sonst aus der Kopie neben der Programmdatei.

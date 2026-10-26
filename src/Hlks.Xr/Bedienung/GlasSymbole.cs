@@ -21,6 +21,20 @@ public static class GlasSymbole
     /// <summary>Alle Namen, die die App braucht (für den Bau der Texturen, die Tests und die Anleitung).</summary>
     public static readonly IReadOnlyList<string> Alle = [Status, Etagen, Messen, Marker, Ort, Tisch, Ebenen, Schliessen, Loeschen, Gesten, Haken, Desktop, Verschieben, Drehen];
 
+    /// <summary>
+    /// Zeichen, die die App selbst aus Linien, Punkten und Ringen zeichnet (keine Textur; Zeichner src/Hlks.Quest/GlasZeichen.cs). H+K XR E1: «Werkzeuge» (Raster aus
+    /// vier Punkten). XR-Labor S1: die Platzhalter-Apps der Spielwiese (kataloge/labor_spielwiese.json) – in symbole.js gibt es keine Uhr, keine Notiz und kein Bild,
+    /// und neue Texturen bräuchten werkzeuge/quest_symbole.mjs (Annahme S1, offene Frage im Bericht). Vorsatz «@» unterscheidet sie von den Texturen.
+    /// </summary>
+    public const string ZeichenWerkzeuge = "@werkzeuge", ZeichenNotizen = "@notizen", ZeichenBilder = "@bilder", ZeichenUhr = "@uhr", ZeichenListe = "@liste",
+        ZeichenDokument = "@dokument", ZeichenEinstellungen = "@einstellungen";
+
+    /// <summary>Alle selbst gezeichneten Zeichen (<see cref="ZeichenWerkzeuge"/> …).</summary>
+    public static readonly IReadOnlyList<string> Gezeichnet = [ZeichenWerkzeuge, ZeichenNotizen, ZeichenBilder, ZeichenUhr, ZeichenListe, ZeichenDokument, ZeichenEinstellungen];
+
+    /// <summary>Gibt es dieses Bild (Textur aus <see cref="Alle"/> oder selbst gezeichnet)?</summary>
+    public static bool Bekannt(string? name) => name is not null && (Alle.Contains(name) || Gezeichnet.Contains(name));
+
     /// <summary>Datei der Textur (relativ zum Ordner Assets) für Name und Satz; Strich wird in der Farbe der Schrift getönt, Revit trägt seine Farben selbst.</summary>
     public static string Datei(string name, string satz) => $"symbole/{satz}/{name}.png";
 

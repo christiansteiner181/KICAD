@@ -62,6 +62,8 @@
 
 		<!-- V1a: Farben der App aus dem Katalog, mitgeliefert (wie Hlks.Quest.csproj). -->
 		<EmbeddedResource Include="..\..\..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
+		<!-- XR-Labor S1: eingebaute Fassung der Spielwiese (wie Hlks.Quest.csproj). -->
+		<EmbeddedResource Include="..\..\..\..\kataloge\labor_spielwiese.json" LogicalName="labor_spielwiese.json" />
 	</ItemGroup>
 
 	<!-- P5b: Fassung und Commit der App (hallo.app, Messprotokolle); dieselbe Fassung wie ApplicationDisplayVersion. -->

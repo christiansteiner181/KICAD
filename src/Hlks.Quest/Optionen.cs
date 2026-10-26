@@ -17,9 +17,11 @@ namespace Hlks.Quest;
 ///   --desktop                V1c, nur mit --pruefen: Prüflauf «Desktop in der Brille» (Gesten mit gedachter Hand, Bildschirm des PCs, Bildzeit, Prüfbilder desktop_*.jpg)
 ///   --wechsel                H+K XR E1, nur mit --pruefen und zwei --kopplung (KICAD und XR-Labor): Prüflauf «Wechsel» (Startseite, KICAD wählen, Auftrag vom Labor
 ///                            holt die App ins Labor, über «Werkzeuge» zurück; QuestApp.PruefenWechsel.cs)
+///   --spielwiese             XR-Labor S1, nur mit --pruefen und einer --kopplung des XR-Labors: Prüflauf «Spielwiese» (Platzhalter-Apps, Hebegeste, wählen, blättern,
+///                            rollen, wegwischen, Stellschraube live; QuestApp.PruefenSpielwiese.cs). Ohne diese Angabe bleibt die Spielwiese in Prüfläufen aus.
 /// </summary>
 sealed record Optionen(bool Simulator, int PruefBilder, IReadOnlyList<string> Kopplungen, string? Speicher, int? ModellLokal, bool Unterlage, bool OhnePc,
-    string? BildOrdner = null, string? Auftrag = null, bool DesktopPruefen = false, string? Werkzeug = null, bool WechselPruefen = false)
+    string? BildOrdner = null, string? Auftrag = null, bool DesktopPruefen = false, string? Werkzeug = null, bool WechselPruefen = false, bool SpielwiesePruefen = false)
 {
     /// <summary>Die erste Kopplungsdatei (null ohne --kopplung) – die Prüfläufe bis E1 fragen so, ob mit Modell geprüft wird.</summary>
     public string? Kopplung => Kopplungen.Count > 0 ? Kopplungen[0] : null;
@@ -41,6 +43,6 @@ sealed record Optionen(bool Simulator, int PruefBilder, IReadOnlyList<string> Ko
         var pc = !OperatingSystem.IsAndroid();
         return new Optionen(args.Contains("--simulator"), pruefen, Werte("--kopplung"), Wert("--speicher"), lokal, !args.Contains("--ohne-unterlage"),
             args.Contains("--ohne-pc"), Wert("--bilder"), pc ? Wert("--auftrag") : null, pruefen > 0 && args.Contains("--desktop"), pc ? Wert("--werkzeug") : null,
-            pruefen > 0 && args.Contains("--wechsel"));
+            pruefen > 0 && args.Contains("--wechsel"), pruefen > 0 && args.Contains("--spielwiese"));
     }
 }
