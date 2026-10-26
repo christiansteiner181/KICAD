@@ -18,7 +18,7 @@ public sealed class LaborProgramm
         string? Arg(string name) { int i = Array.IndexOf(args, name); return i >= 0 && i + 1 < args.Length ? args[i + 1] : null; }
 
         int port = int.TryParse(Arg("--port"), out var pt) && pt is >= 1 and <= 65535 ? pt : PortVorgabe;
-        // Akteur und Gerät für die Benutzereinstellungen (gelesen: quest.adb, labor.app_ablage, Symbolsatz); Kataloge wie KICAD (--katalog, sonst HLKS_KATALOG, …)
+        // Akteur und Gerät für die Benutzereinstellungen (gelesen: quest.adb, quest.app_ablage, Symbolsatz); Kataloge wie KICAD (--katalog, sonst HLKS_KATALOG, …)
         var einstellungen = new Einstellungen(Akteur: Environment.UserName, Geraet: Environment.MachineName, KatalogOrdner: Arg("--katalog") ?? Katalog.StandardOrdner(), StartProjekt: null);
 
         // Wie Hlks.Web/Program.cs: keine Dateiwächter auf Quell- bzw. OneDrive-Ordnern (Befund R 19.10.2026) – Konfiguration ohne Neuladen bei Änderung,

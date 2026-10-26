@@ -6,11 +6,11 @@
 //                                       zertifikatBis, zertifikatErsetzt, fehler?, hinweis?, kopplungen[{ id, brille, name, weg, angelegt, zuletzt?, verbunden }],
 //                                       anfragen[{ anfrage, brille, name, ip?, code (null bis die Brille aufgedeckt hat), bis, bestaetigt, abgelehnt, versuche }], teilnehmer }
 //   POST /api/xr/zugang                 { an: bool, port?, suchPort? }  Schalter DIESES PCs setzen (zugang.json, XrPcEinstellung) und sofort anwenden → Zustand
-//   POST /api/xr/kopplung/paket         { brille, name? }  Weg A: Kopplungspaket (mit Schlüssel; nur einmal, nie speichern) → { paket }
+//   POST /api/xr/kopplung/paket         { brille, name? }  Weg A: Kopplungspaket Fassung 2 (mit Schlüssel und Werkzeug; nur einmal, nie speichern) → { paket }
 //   POST /api/xr/kopplung/bestaetigen   { anfrage }  Weg B am PC bestätigen, NACHDEM der Mensch die Codes verglichen hat (erst wenn code da ist) → { anfrage }
 //   POST /api/xr/kopplung/ablehnen      { anfrage }  Weg B ablehnen (z. B. Codes verschieden) → { anfrage }
 //   POST /api/xr/kopplung/widerrufen    { kopplung }  Kopplung widerrufen (trennt den Kanal) → { widerrufen: bool }
-//   GET  /api/xr/teilnehmer             { teilnehmer[{ id, name, geraet, app?, kopplung, brille, brillenName, seit, pose?, poseZeit?, zeigen?, zeigenZeit?,
+//   GET  /api/xr/teilnehmer             { teilnehmer[{ id, name, geraet, app?, marke?, aktiv (H+K XR E1: false = die App zeigt gerade ein anderes Werkzeug), kopplung, brille, brillenName, seit, pose?, poseZeit?, zeigen?, zeigenZeit?,
 //                                       posen, weitergereicht, verworfen }], stellschrauben{} }
 //   POST /api/xr/stellschraube          { schluessel, wert, teilnehmer? }  an die Brille(n) → { gesendet, stellschrauben }
 // Für die Brille (Marke XrImNetz; im Netzzugang nur über HTTPS mit Schlüssel, ausser den drei Schritten der Ersatzkopplung):

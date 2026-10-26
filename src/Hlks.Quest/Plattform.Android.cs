@@ -1,10 +1,11 @@
 namespace Hlks.Quest;
 
 /// <summary>
-/// Ablage der App auf der Quest (Kennung je Marke: ch.hkplanung.kicad.quest bzw. ch.hkplanung.xrlabor, Hlks.Xr.Netz.AppMarke):
-///   privat  = Context.FilesDir (/data/user/0/&lt;Kennung&gt;/files) – nur die App liest ihn: Kopplung, Zustand, Zwischenspeicher der GLB;
-///   Eingang = Context.GetExternalFilesDir(null) (/sdcard/Android/data/&lt;Kennung&gt;/files, AppMarke.Eingang) – dorthin legt P7 per adb die kopplung.json
-///             (adb kann dort ohne run-as schreiben); die App übernimmt sie beim Start in den privaten Speicher und löscht sie im Eingang.
+/// Ablage der App auf der Quest (H+K XR E1: eine App für alle Werkzeuge, Kennung ch.hkplanung.xr, Hlks.Xr.Netz.XrApp):
+///   privat  = Context.FilesDir (/data/user/0/ch.hkplanung.xr/files) – nur die App liest ihn: kopplungen/&lt;werkzeug&gt;.json und je Werkzeug werkzeuge/&lt;kennung&gt;/
+///             (Zustand, Zwischenspeicher der GLB, Katalog, wartende Messprotokolle und Marker);
+///   Eingang = Context.GetExternalFilesDir(null) (/sdcard/Android/data/ch.hkplanung.xr/files, XrApp.Eingang) – dorthin legt das Werkzeug am PC per adb sein
+///             kopplung_&lt;werkzeug&gt;.json (adb kann dort ohne run-as schreiben); die App übernimmt jedes beim Start in den privaten Speicher und löscht es im Eingang.
 /// </summary>
 static class Plattform
 {

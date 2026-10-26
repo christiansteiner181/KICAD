@@ -23,6 +23,7 @@ public class LaborEinstellungenTests
         Assert.Equal(5341, b.SuchPortStandard);
         Assert.Equal(5430, b.DesktopPort);
         Assert.Equal("XR-Labor", b.ServerName);
+        Assert.Equal("xrlabor", b.Werkzeug);   // «werkzeug» im Kopplungspaket Fassung 2 (H+K XR E1)
         Assert.Equal(Path.Combine(Lokal, "HLKS_CAD", "xr", "labor"), b.OrdnerPfad());
         Assert.Equal(Path.Combine(Lokal, "HLKS_CAD", "xr"), b.ZertifikatOrdnerPfad());
         Assert.Equal(XrEinstellungen.StandardOrdner(), b.ZertifikatOrdnerPfad());   // dasselbe Zertifikat je PC wie KICAD
@@ -72,15 +73,18 @@ public class LaborEinstellungenTests
         Assert.Equal(5141, k.SuchPortStandard);
         Assert.Equal(5130, k.DesktopPort);
         Assert.Equal("KICAD", k.ServerName);
+        Assert.Equal("kicad", k.Werkzeug);
         Assert.Null(k.ZertifikatOrdner);
         Assert.Equal(Path.Combine(Lokal, "HLKS_CAD", "xr"), k.OrdnerPfad());
         Assert.Equal(k.OrdnerPfad(), k.ZertifikatOrdnerPfad());
         Assert.Equal(Path.Combine(Temp, "HLKS_CAD", "xr_test"), XrEinstellungen.Vorgabe(true, _ => null).OrdnerPfad());
         var q = new QuestEinstellungen();
         Assert.Equal(QuestAppMarke.Kicad, q.AppMarke);
-        Assert.Equal("ch.hkplanung.kicad.quest", QuestAppMarke.Kicad.Paket);
+        Assert.Equal("ch.hkplanung.xr", QuestAppMarke.Kicad.Paket);   // H+K XR E1: eine App für alle Werkzeuge
+        Assert.Equal("H+K XR", QuestAppMarke.Kicad.Name);
+        Assert.Equal("kicad", QuestAppMarke.Kicad.Werkzeug);
         Assert.Equal("quest.app_ablage", QuestAppMarke.Kicad.AblageSchluessel);
-        Assert.Equal("quest_app", QuestAppMarke.Kicad.AblageOrdner);
+        Assert.Equal("hk_xr", QuestAppMarke.Kicad.AblageOrdner);
         Assert.Equal(QuestDienst.AppEingang, QuestAppMarke.Kicad.Eingang);
         Assert.Equal(QuestAppMarke.Kicad, QuestEinstellungen.Vorgabe(true).AppMarke);
         Assert.Equal(QuestAppMarke.Kicad, QuestEinstellungen.Vorgabe(false).AppMarke);
@@ -89,16 +93,27 @@ public class LaborEinstellungenTests
     [Fact]
     public void App_Marke_des_Labors()
     {
+        // H+K XR E1: dieselbe App und dieselbe Ablage wie KICAD, nur das Werkzeug ist ein anderes
         var m = LaborMarke.App;
-        Assert.Equal("ch.hkplanung.xrlabor", m.Paket);
-        Assert.Equal("XR-Labor", m.Name);
-        Assert.Equal("labor.app_ablage", m.AblageSchluessel);
-        Assert.Equal("labor_app", m.AblageOrdner);
-        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xrlabor/files", m.Eingang);
-        Assert.Contains("-Labor", m.Bereitstellen);
-        Assert.NotEqual(QuestAppMarke.Kicad.Paket, m.Paket);
-        Assert.NotEqual(QuestAppMarke.Kicad.AblageSchluessel, m.AblageSchluessel);
-        Assert.NotEqual(QuestAppMarke.Kicad.AblageOrdner, m.AblageOrdner);
+        Assert.Equal("ch.hkplanung.xr", m.Paket);
+        Assert.Equal("H+K XR", m.Name);
+        Assert.Equal("xrlabor", m.Werkzeug);
+        Assert.Equal("XR-Labor", m.WerkzeugName);
+        Assert.Equal("quest.app_ablage", m.AblageSchluessel);
+        Assert.Equal("hk_xr", m.AblageOrdner);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xr/files", m.Eingang);
+        Assert.Equal("kopplung_xrlabor.json", m.KopplungDatei);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_xrlabor.json", m.KopplungEingang);
+        Assert.DoesNotContain("-Labor", m.Bereitstellen);   // den Schalter -Labor gibt es nicht mehr
+        Assert.Equal(QuestAppMarke.Kicad.Paket, m.Paket);
+        Assert.Equal(QuestAppMarke.Kicad.Name, m.Name);
+        Assert.Equal(QuestAppMarke.Kicad.AblageSchluessel, m.AblageSchluessel);
+        Assert.Equal(QuestAppMarke.Kicad.AblageOrdner, m.AblageOrdner);
+        Assert.Equal(QuestAppMarke.Kicad.Eingang, m.Eingang);
+        Assert.NotEqual(QuestAppMarke.Kicad.Werkzeug, m.Werkzeug);
+        Assert.NotEqual(QuestAppMarke.Kicad.KopplungDatei, m.KopplungDatei);   // je Werkzeug eine Eingangsdatei: das Labor überschreibt nie KICADs Paket
+        Assert.Equal(LaborMarke.Id, m.Werkzeug);
+        Assert.Equal(LaborMarke.Name, m.WerkzeugName);
     }
 
     [Theory]
@@ -108,22 +123,22 @@ public class LaborEinstellungenTests
     [InlineData("Ch.Gross.Buchstaben")]
     [InlineData("")]
     public void App_Marke_nimmt_nur_gueltige_Paketnamen(string paket) =>
-        Assert.Throws<ArgumentException>(() => new QuestAppMarke(paket, "X", "labor.app_ablage", "labor_app", "x"));
+        Assert.Throws<ArgumentException>(() => new QuestAppMarke(paket, "X", "quest.app_ablage", "hk_xr", "x"));
 
     [Fact]
     public void App_Marke_prueft_Ordnername_und_Schluessel()
     {
-        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.a.b", "X", "labor.app_ablage", @"..\weg", "x"));
-        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.a.b", "X", "Gross", "labor_app", "x"));
+        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.a.b", "X", "quest.app_ablage", @"..\weg", "x"));
+        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.a.b", "X", "Gross", "hk_xr", "x"));
     }
 
     [Fact]
-    public void Installation_im_Betrieb_eigene_Ablage_und_eigener_Weg_neben_dem_Schalter_des_Labors()
+    public void Installation_im_Betrieb_gleiche_Ablage_wie_KICAD_und_eigener_Weg_neben_dem_Schalter_des_Labors()
     {
         var xr = LaborXr.Vorgabe(false, _ => null);
         var q = LaborQuest.Vorgabe(false, xr);
         Assert.Equal(LaborMarke.App, q.AppMarke);
-        Assert.Null(q.AppAblage);   // Vorgabe aus der Marke: %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app
+        Assert.Null(q.AppAblage);   // Vorgabe aus der Marke: %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr
         Assert.Equal(Path.Combine(Lokal, "HLKS_CAD", "xr", "labor", "quest_app_weg.json"), q.AppWegDatei);
         Assert.True(q.PfadDurchsuchen);
         var ablage = Path.Combine(Path.GetTempPath(), "hlks_labor_ablage_" + Guid.NewGuid().ToString("N")[..8]);
@@ -132,7 +147,7 @@ public class LaborEinstellungenTests
             Directory.CreateDirectory(ablage);
             var dienst = new QuestDienst(new BenutzerEinstellungen(new RechnerAblage(ablage, "testpc", true, "einstellungen.json", "Umleitung")), q);
             var profil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
-            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "labor_app"), "vorgabe"), dienst.AppOrdner());
+            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "hk_xr"), "vorgabe"), dienst.AppOrdner());
             Assert.Equal(LaborMarke.App, dienst.Marke);
         }
         finally { Directory.Delete(ablage, true); }

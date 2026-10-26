@@ -72,7 +72,7 @@ Die JavaScript-Dateien bleiben unverändert (Prototyp). Zu jeder Funktion steht 
 
 | Datei | Klassen | Inhalt |
 | --- | --- | --- |
-| `Netz/Kopplungspaket.cs` | `Kopplungspaket`, `KopplungAblage`, `XrNetzFehler` | Paket wie von `POST /api/xr/kopplung/paket` lesen und prüfen (auch `{ paket: … }`), Bearer, Suchschlüssel; Übernahme aus dem Eingang in den privaten Speicher |
+| `Netz/Kopplungspaket.cs` | `Kopplungspaket`, `KopplungAblage`, `KopplungEintrag`, `XrNetzFehler` | Paket wie von `POST /api/xr/kopplung/paket` lesen und prüfen (auch `{ paket: … }`, H+K XR E1: Fassung 1 und 2 mit Werkzeug), Bearer, Suchschlüssel; Übernahme aus dem Eingang in den privaten Speicher (E1: je Werkzeug) |
 | `Netz/XrPinning.cs` | `XrPinning` | TLS nur mit dem gepinnten SHA-256-Fingerabdruck (keine Kette); Handler für HTTP, Prüfung für den Kanal |
 | `Netz/PcZugang.cs` | `PcZugang`, `PcAdresse`, `IModellQuelle`, `ModellHttp` | HTTPS zum Netzzugang: Probe `GET /api/xr/verbindung`, Liste und GLB (auch über localhost für Tests) |
 | `Netz/PcSuche.cs` | `PcSuche`, `SucheOptionen`, `PcFund` | PC finden: gespeicherte Adressen, Adressen des Pakets, sonst UDP-Broadcast mit HMAC; Antwort prüfen |
@@ -388,31 +388,33 @@ Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die 
   die Glas-App aus; `WeichtAus`: das Feld weicht nur mit «stehen» neben eine offene Tafel aus).
 - **Tests:** `V1iTests`.
 
-## Zwei Brillen-Apps aus denselben Quellen (XR-Labor L0)
+## Zwei Brillen-Apps aus denselben Quellen (XR-Labor L0) – seit H+K XR E1 ersetzt
+
+Seit H+K XR E1 (Abschnitt unten) gibt es nur noch die App «H+K XR»; `src/Hlks.Labor.Quest` und `Netz/AppMarke.cs` sind entfallen, die Marke ist die Kennung des Werkzeugs.
+Stand L0 zum Nachlesen:
 
 Spezifikation `entwurf/labor-app.md` (freigegeben Christian 26.10.2026), Abschnitt «Trennung der Brillen-Apps aus gemeinsamen Quellen». Die Quellen von
-`src/Hlks.Quest` ergeben zwei Apps: «KICAD» (`ch.hkplanung.kicad.quest`) und «XR-Labor» (`ch.hkplanung.xrlabor`, `src/Hlks.Labor.Quest`, Aufbau dort in `LIESMICH.md`).
+`src/Hlks.Quest` ergaben zwei Apps: «KICAD» (`ch.hkplanung.kicad.quest`) und «XR-Labor» (`ch.hkplanung.xrlabor`, `src/Hlks.Labor.Quest`).
 
 - **Neu:** `Netz/AppMarke.cs` (`AppMarke.Kicad`, `AppMarke.XrLabor`): Id im Kanal, Name in Texten, App-Kennung, Eingang der Kopplung
   (`/sdcard/Android/data/<Kennung>/files/kopplung.json`), Vorsatz der Protokollzeilen, Ablage am PC. Die App wählt ihre Marke in `Marke.Kicad.cs` bzw.
   `Marke.XrLabor.cs`. Ports und Suchport stehen nicht hier, sie kommen aus dem Kopplungspaket (KICAD 5140/5141, Labor-PC 5340/5341).
 - **Geändert:** `Netz/KanalVerbindung.cs`: `hallo` hat das zusätzliche Feld `marke` (`KanalOptionen.Marke`; «kicad» bzw. «xrlabor»), damit der PC die Apps
   unterscheiden kann. Der Server von KICAD liest es nicht (`XrNachrichten.Hallo` übergeht unbekannte Felder); ohne Marke wie bisher.
-- **Unverändert, offen:** Meldungen in `Netz/PcSuche.cs`, `Netz/PcZugang.cs`, `Netz/Kopplungspaket.cs` und `Netz/LaborKatalogLader.cs` nennen weiter «KICAD» als
-  Gegenstelle; in der Labor-App erscheinen sie so (Frage für L1; im Testraum-Auftrag L1 nicht geändert – die Meldung zum Katalog steht nur im Protokoll).
-- **Tests:** `AppMarkeTests` (Marken, `hallo.marke`, Kennung und Name gleich in den Projektdateien, keine Ports fest in den Apps, der allgemeine Code der App ruft das
-  Labor nur über Einhängepunkte auf).
+- **Offen in L0, seit E1 erledigt für die Suche:** die Meldungen von `Netz/PcSuche.cs` nennen das Werkzeug des Pakets; `Netz/PcZugang.cs` (Vorschläge zu 401/404/409),
+  `Netz/Kopplungspaket.cs` (Vorschlag «in KICAD neu koppeln») und `Netz/LaborKatalogLader.cs` (Hinweis zum Katalog) nennen weiter «KICAD».
+- **Tests:** bis E1 `AppMarkeTests`, seither `WerkzeugTests`.
 
 ## Testraum des Labors (XR-Labor L1)
 
 Entscheid Christian 26.10.2026: im Labor «Nur neutraler Testraum». Der Labor-PC liefert ihn als GLB je Etage wie KICAD und schreibt die Ziele der Prüfaufgaben in
-`scene.extras.kicad.labor` (Form und Katalog: `src/Hlks.Labor.Quest/LIESMICH.md`, «Testraum (L1)»). Die App nimmt diese Ziele zuerst, sonst wählt sie wie bisher.
+`scene.extras.kicad.labor` (Form und Katalog: `src/Hlks.Quest/LIESMICH.md`, «Testraum (XR-Labor L1)»; bis E1 `src/Hlks.Labor.Quest/LIESMICH.md`). Die App nimmt diese Ziele zuerst, sonst wählt sie wie bisher.
 
 | Datei | Klassen | Inhalt |
 | --- | --- | --- |
 | `Labor/LaborZiele.cs` | `LaborZiele`, `ZielMarkierung`, `ZielRaum`, `ZielWandPaar`, `ZielBauteil` | `labor` der GLB lesen (tolerant, Hinweise; KICAD-mm → Szene mit dem Bezugspunkt), Wahl je Aufgabe: Markierung (2 … 4.5 m, kleinster Winkel zum Blick auf 0.01°, dann Katalog), Wandpaar (Raum am Stand, sonst das erste der Etage; Sollmass aus dem Katalog, Prüfung gegen die Flächen ±1 mm), Raum «raum-ar-oeffnen», Bauteil «tablet-wert-ablesen»; ohne `labor` null |
 
-- **Geändert für L1 (ohne Verhaltensänderung für KICAD):** `Modell/ModellSzene.cs` behält `scene.extras.kicad` je GLB (`Extras`, `SzenenExtras`); `Netz/AppMarke.cs`
+- **Geändert für L1 (ohne Verhaltensänderung für KICAD):** `Modell/ModellSzene.cs` behält `scene.extras.kicad` je GLB (`Extras`, `SzenenExtras`); `Netz/AppMarke.cs` (seit E1 `Netz/Werkzeug.cs`)
   `MitProjekt` (KICAD ja, XR-Labor nein: der Labor-PC hat keine Ebenen und keine Problem-Marker); `Netz/EbenenLader.cs` `VomPc(…, fehlenMelden)` – mit `false` ergibt 404
   eine leere Liste ohne Hinweis (die App gibt `Marke.MitProjekt` mit). Die Labor-Dateien der App (`QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs`) nutzen `LaborZiele`; der
   allgemeine Code nicht (`AppMarkeTests`).
@@ -421,4 +423,28 @@ Entscheid Christian 26.10.2026: im Labor «Nur neutraler Testraum». Der Labor-P
 - **Tests:** `LaborZieleTests` (ohne `labor` keine Ziele, Umrechnung mit Bezugspunkt, Wandpaar gegen `WandPaare.Waehlen` und `WandPaare.Pruefen`, Wahl der Markierung bei
   Gleichstand, nahe Markierung, Etagen, Bauteil gegen `PruefAufgaben.FrageZu`, Unbrauchbares fällt mit Hinweis weg, Marken); angepasst `AppMarkeTests` (`MitProjekt`, Typen
   und Glieder des Testraums nur in den Labor-Dateien), `XrEbeneTests` (404 ohne Hinweis). Gegen den Labor-PC: `tests/Hlks.Labor.Tests/Testraum*Tests.cs`; die App selbst im
-  Simulator mit dem Labor-PC (`src/Hlks.Labor.Quest/LIESMICH.md`).
+  Simulator mit dem Labor-PC (`src/Hlks.Quest/LIESMICH.md`; seit E1 `src/Hlks.Quest/Pruefen/hk_xr_pruefen.ps1 -Lauf Labor`).
+
+## Eine App für alle Werkzeuge (H+K XR E1)
+
+Spezifikation `entwurf/xr-empfaenger.md` (freigegeben Christian 26.10.2026), «Empfänger-Kern» und «Schnittstellen im Bau E1». Aus den zwei Brillen-Apps wird die eine App
+«H+K XR» (`ch.hkplanung.xr`); die Marke der App wird die Kennung des verbundenen Werkzeugs. Die App selbst: `src/Hlks.Quest/LIESMICH.md` (Kopplungen, Startseite, Wechsel,
+Werkzeug-Module, Prüfläufe).
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Netz/Werkzeug.cs` | `XrApp`, `Werkzeug`, `AppMarke` (Übergang) | die eine App (Kennung, Name, Speicher, Eingang, `KopplungEingang(werkzeug)`); Werkzeug mit Kennung, Name, `MitProjekt`, `MitLabor`, `InWerkzeug`, `Koppeln`, `FarbId`, `HalloMarke`; `Kicad`, `XrLabor`, `Von`, `Aus(paket)`, `Ordnen` |
+| `Netz/WerkzeugWahl.cs` | `WerkzeugWahl`, `Erreichbarkeit`, `StartEintrag` | Start (eine Kopplung direkt, sonst Startseite; `--werkzeug`), Auftrag holt die App (`labor.aufgabe` mit Aufgabe; VR-Auftrag), Meldung «Wechsel zu …», Zeilen und Ampel der Startseite |
+| `Bedienung/Startseite.cs` | `Startseite` | Lage der Werkzeug-Symbole (eine Reihe frontal, höchstens vier je Reihe), Schild darunter, Titel darüber |
+
+- **Geändert für E1:** `Netz/Kopplungspaket.cs` (Fassung 2 mit `werkzeug`, `werkzeugName`; Fassung 1 = `kicad`; `AlsJson` schreibt Fassung 2; `KopplungAblage`: Eingang
+  `kopplung_<werkzeug>.json` und altes `kopplung.json` = `kicad`, privat `kopplungen/<werkzeug>.json`, `Alle`, `Laden(privat, werkzeug)`, Umzug des alten privaten
+  `kopplung.json`, das Werkzeug des Pakets muss zum Namen der Datei passen), `Netz/KanalVerbindung.cs` (`KanalText.Hallo(…, aktiv)`, `KanalText.Aktiv`, `KanalOptionen.Aktiv`,
+  `KanalVerbindung.Aktiv`, `AktivSetzen`, `AktivGesendet`; Posen nur, solange aktiv; ein Wechsel während des Verbindens folgt gleich nach «willkommen»),
+  `Netz/PcSuche.cs` (Meldungen mit dem Werkzeug des Pakets). `Netz/AppMarke.cs` entfällt (die Fassade `AppMarke` steht in `Netz/Werkzeug.cs`, bis `tests/Hlks.Labor.Tests`
+  nachgeführt ist).
+- **Annahmen E1:** Startseite 160 pt, 0.55 m vor den Augen, Mitte 0.12 m darunter, Lücke 0.10 m, vier je Reihe, Schild 64 pt; KICAD führt das Werkzeug-Modul «Labor» bis E3
+  (`Werkzeug.Kicad.MitLabor`).
+- **Tests:** `WerkzeugTests` (Werkzeuge, App, Wahl, Startseite, `hallo.aktiv` und «aktiv» gegen einen kleinen WebSocket-Server, Projektdateien der App, Grenze zum
+  Werkzeug-Modul «Labor»), `KopplungspaketTests` (Fassung 2, mehrere Kopplungen, Eingang und Umzug); angepasst `NetzKopplungTests`, `LaborZieleTests`. Die App selbst:
+  `src/Hlks.Quest/Pruefen/hk_xr_pruefen.ps1` (Labor, Wechsel) und `werkzeuge/quest_pruefen.ps1` (KICAD).

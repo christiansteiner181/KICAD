@@ -4,7 +4,8 @@
 //
 // Ablauf: Die Brille sendet zuerst «hallo» (Frist 10 s), der Server antwortet «willkommen» (eigene Teilnehmer-Id, die anderen Teilnehmer, aktueller
 // VR-Auftrag, aktuelle Stellschrauben) und meldet den anderen «hallo». Danach: pose (Kopf und Hände, 20–30 je Sekunde), zeigen (Element, auf das die
-// Brille zeigt; für «Claude sieht mit»), messprotokoll (Interface-Labor). Der PC sendet: auftrag (sofort, sobald POST /api/vr/auftrag ihn setzt; statt
+// Brille zeigt; für «Claude sieht mit»), messprotokoll (Interface-Labor), aktiv (H+K XR E1: die App wechselt zu diesem Werkzeug bzw. weg davon; die Liste der
+// Teilnehmer führt «aktiv», KICADs Figur der Brille zeigt nur aktive; Aufträge und Stellschrauben bekommt ein inaktiver Teilnehmer wie bisher). Der PC sendet: auftrag (sofort, sobald POST /api/vr/auftrag ihn setzt; statt
 // der Abfrage alle 2 s) und stellschraube (POST /api/xr/stellschraube). Am Ende «tschuess» an die anderen. Schema: XrNachrichten.cs und OBERFLAECHE.md.
 //
 // Grenzen: eine Verbindung je Kopplung (eine neue derselben Brille ersetzt die alte, Code 4002), höchstens 8 Teilnehmer, Nachrichten nur als Text bis
@@ -57,6 +58,8 @@ public sealed class XrKanal
         public required WebSocket Socket;
         public required Channel<string> Schlange;
         public required CancellationTokenSource Abbruch;
+        /// <summary>H+K XR E1: Ist dieses Werkzeug gerade das vorn gezeigte der App? Aus «hallo.aktiv» (fehlt = true), danach «aktiv { aktiv }». Gelesen auch von der REST-Liste.</summary>
+        public volatile bool Aktiv = true;
         public XrPose? Pose;
         public DateTimeOffset? PoseZeit;
         public XrZeigen? Zeigen;
@@ -211,7 +214,7 @@ public sealed class XrKanal
             neu = new Teilnehmer
             {
                 Id = "t" + Convert.ToHexStringLower(RandomNumberGenerator.GetBytes(4)),
-                Hallo = hallo, Kopplung = kopplung, Seit = einstellungen.Jetzt(), Socket = ws,
+                Hallo = hallo, Kopplung = kopplung, Seit = einstellungen.Jetzt(), Socket = ws, Aktiv = hallo.Aktiv,
                 Schlange = Channel.CreateBounded<string>(new BoundedChannelOptions(einstellungen.SchlangeMax) { SingleReader = true, FullMode = BoundedChannelFullMode.Wait }),
                 Abbruch = CancellationTokenSource.CreateLinkedTokenSource(abbruch.Token),
             };
@@ -298,6 +301,9 @@ public sealed class XrKanal
                 }
                 case "messprotokoll":
                     Protokollieren(t, XrNachrichten.Messprotokoll(o));
+                    break;
+                case "aktiv":
+                    t.Aktiv = XrNachrichten.Aktiv(o);   // H+K XR E1: die App wechselt zu diesem Werkzeug bzw. weg davon
                     break;
                 case "tschuess":
                     throw new XrKanalSchluss(WebSocketCloseStatus.NormalClosure, "tschuess");
@@ -454,7 +460,7 @@ public sealed class XrKanal
         {
             return [.. teilnehmer.Values.OrderBy(t => t.Seit).Select(t => (JsonNode)new JsonObject
             {
-                ["id"] = t.Id, ["name"] = t.Hallo.Name, ["geraet"] = t.Hallo.Geraet, ["app"] = t.Hallo.App, ["marke"] = t.Hallo.Marke,
+                ["id"] = t.Id, ["name"] = t.Hallo.Name, ["geraet"] = t.Hallo.Geraet, ["app"] = t.Hallo.App, ["marke"] = t.Hallo.Marke, ["aktiv"] = t.Aktiv,
                 ["kopplung"] = t.Kopplung.Id, ["brille"] = t.Kopplung.Brille, ["brillenName"] = t.Kopplung.Name, ["seit"] = t.Seit.ToString("o"),
                 ["pose"] = t.Pose is null ? null : XrNachrichten.PoseKnoten(t.Pose), ["poseZeit"] = t.PoseZeit?.ToString("o"),
                 ["zeigen"] = t.Zeigen is null ? null : XrNachrichten.ZeigenKnoten(t.Zeigen), ["zeigenZeit"] = t.ZeigenZeit?.ToString("o"),

@@ -3,7 +3,7 @@
 // Einträge und lösen dieselben Aktionen aus (aktionen-vr-auftrag.js, ansichten/grundriss.js). Die Aktions-Ids («ansicht.…», «koordination.problemMarker») bleiben, wie sie waren: sie sind
 // Bezeichner für Anleitung, Kürzelliste und Tests, keine Orte.
 //
-// Gruppe «Brille»: «Quest verbinden …» (Dialog quest-dialog.js; die Weiterleitung selbst setzt der Server: POST /api/quest/verbinden, QuestDienst.cs, adb reverse), «App installieren …»
+// Gruppe «Brille»: «Quest verbinden …» (Dialog quest-dialog.js; die Weiterleitung selbst setzt der Server: POST /api/quest/verbinden, QuestDienst.cs, adb reverse), «H+K XR installieren …» (bis E1 «App installieren …»)
 // (derselbe Dialog; sein erster Teil ist «Quest App» mit dem Knopf «App installieren/aktualisieren»), «Autostart» (Schalter, Einstellung quest.autostart: die Begehung startet beim
 // Aufsetzen der Brille) und «Brille zeigen» (Quest App P7: Figuren der verbundenen Brillen in der 3D-Ansicht am PC, ansichten/xr-teilnehmer.js; hier nur das kleine Modul
 // ansichten/xr-brille-einstellung.js ohne three.js, Einstellung ansicht3d.brillen_zeigen, Vorgabe ein).
@@ -25,9 +25,10 @@ registrieren({
   ausfuehren: () => questDialog(),
 });
 
-// «App installieren …»: öffnet denselben Dialog; die Quest App steht dort als erster Teil, mit «App installieren/aktualisieren» (adb über WLAN oder Kabel, quest-app-dialog.js)
+// «H+K XR installieren …» (H+K XR E1: eine App «H+K XR» für alle Werkzeuge; vorher «App installieren …»): öffnet denselben Dialog; die Quest App steht dort als erster Teil, mit «App installieren/aktualisieren»
+// (adb über WLAN oder Kabel, quest-app-dialog.js) und – solange die alten Apps «KICAD» und «XR-Labor» in der Brille sind – «Alte Apps entfernen …». Aktions-Id und Kürzel XI bleiben.
 registrieren({
-  id: 'xr.appInstallieren', titel: 'App installieren …', symbol: 'appInstallieren', kuerzel: 'XI', register: 'xr', gruppe: 'Brille', groesse: 'gross',
+  id: 'xr.appInstallieren', titel: 'H+K XR installieren …', symbol: 'appInstallieren', kuerzel: 'XI', register: 'xr', gruppe: 'Brille', groesse: 'gross',
   ausfuehren: () => questDialog(),
 });
 

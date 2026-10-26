@@ -2,8 +2,10 @@
 #   1. KICAD-Server dieses Stands auf Port 5130 (nur dort oeffnet sich der Netzzugang) mit einer Arbeitskopie von Test_praxis
 #      (Christian 23.10.2026: "fuer tests im echten projekt das test_praxis projekt verwenden", "ohne einschraenkung").
 #   2. Netzzugang dieses PCs einschalten (%LOCALAPPDATA%\HLKS_CAD\xr\zugang.json), Kopplungspaket fuer die Brille erzeugen.
-#   3. App per adb installieren, Paket nach /sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json legen (die App uebernimmt
+#   3. App per adb installieren, Paket nach /sdcard/Android/data/ch.hkplanung.xr/files/kopplung_kicad.json legen (die App uebernimmt
 #      es beim Start in ihren privaten Speicher und loescht es dort), App starten. Das Paket liegt am PC nie auf der Platte.
+#      H+K XR E1 (entwurf/xr-empfaenger.md): eine App "H+K XR" (ch.hkplanung.xr) fuer alle Werkzeuge, Paket Fassung 2 mit Werkzeug kicad,
+#      ein Eingang je Werkzeug (kopplung_<werkzeug>.json). Die APK baut werkzeuge\quest_app_bereitstellen.ps1 (oder der Bau von src\Hlks.Quest).
 #   4. Optional VR-Auftrag: Begehen im ersten Raum des Modells.
 # Der Server laeuft danach weiter (Fenster ausgeblendet). Ende: -Beenden widerruft die Kopplung, schaltet den Zugang aus, beendet den Server.
 # Voraussetzungen: Desktop-KICAD beendet (Port 5130 frei); Firewall-Regeln (werkzeuge\xr_firewall.ps1, Christian als Administrator);
@@ -26,7 +28,7 @@ $port = 5130
 if (-not $env:HLKS_BUILD) { $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build" }
 $bau = $env:HLKS_BUILD
 $web = "$bau\Hlks.Web\bin\Debug\net10.0\Hlks.Web.dll"
-$apk = "$bau\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.kicad.quest-Signed.apk"
+$apk = "$bau\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xr-Signed.apk"
 $ablage = "$env:LOCALAPPDATA\HLKS_CAD\xr\brillentest"
 $zustand = "$ablage\zustand.json"
 $basis = "http://localhost:$port"
@@ -109,12 +111,12 @@ Aus ('Paket fuer IPs: ' + ((($inhalt | ConvertFrom-Json).paket.ips) -join ', '))
 
 Aus 'Installiere die App ...'
 & $adb -s $serie install -r $apk | ForEach-Object { Aus "  $_" }
-$ziel = '/sdcard/Android/data/ch.hkplanung.kicad.quest/files'
+$ziel = '/sdcard/Android/data/ch.hkplanung.xr/files'
 & $adb -s $serie shell mkdir -p $ziel | Out-Null
-$datei = Join-Path $tmp 'kopplung.json'
+$datei = Join-Path $tmp 'kopplung_kicad.json'
 try {
   [IO.File]::WriteAllText($datei, $inhalt, $utf8)
-  & $adb -s $serie push $datei "$ziel/kopplung.json" | Out-Null
+  & $adb -s $serie push $datei "$ziel/kopplung_kicad.json" | Out-Null
 } finally { Remove-Item $datei -Force -ErrorAction SilentlyContinue }
 Aus 'Kopplungspaket in der Brille abgelegt (am PC geloescht).'
 
@@ -124,6 +126,6 @@ if (-not $OhneAuftrag) {
   if ($treffer.Success) { Post '/api/vr/auftrag' @{ modus = 'begehen'; raum = $treffer.Groups[1].Value } | Out-Null; Aus 'VR-Auftrag: begehen im ersten Raum.' }
 }
 & $adb -s $serie logcat -c
-$akt = (& $adb -s $serie shell cmd package resolve-activity --brief ch.hkplanung.kicad.quest | Select-Object -Last 1).Trim()
+$akt = (& $adb -s $serie shell cmd package resolve-activity --brief ch.hkplanung.xr | Select-Object -Last 1).Trim()
 & $adb -s $serie shell am start -n $akt | Out-Null
 Aus "App gestartet ($akt). Protokoll: adb logcat -s DOTNET  |  Ende: quest_brillentest.ps1 -Beenden"

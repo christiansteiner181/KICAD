@@ -1,6 +1,6 @@
 <Project Sdk="Microsoft.NET.Sdk">
-	<!-- Quest App (Modul XR), Fassung für den PC: Simulator mit Maus-Händen und automatische Prüfung ohne Brille.
-	     Die Fassung für die Brille ist Projects\Android\Hlks.Quest.Android.csproj (gleiche Quellen).
+	<!-- Brillen-App «H+K XR» (Modul XR; seit H+K XR E1 eine App für alle Werkzeuge, LIESMICH.md), Fassung für den PC: Simulator mit Maus-Händen und automatische
+	     Prüfung ohne Brille. Die Fassung für die Brille ist Projects\Android\Hlks.Quest.Android.csproj (gleiche Quellen). Der Ordner heisst weiter Hlks.Quest (E1).
 	     Bewusst nicht in HLKS_CAD.slnx: Der Android-Bau braucht die .NET-Workload «android». Aufbau nach der Vorlage
 	     StereoKit.Templates 0.10.0 (MIT). -->
 	<PropertyGroup>
@@ -22,9 +22,9 @@
 		<None Remove="Projects\**" />
 	</ItemGroup>
 
-	<!-- XR-Labor L0 (entwurf/labor-app.md): Probebau der KICAD-App ohne die Labor-Dateien, so wie sie nach dem Umzug in L1 übersetzt wird:
-	     dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true   (am besten mit eigenem HLKS_BUILD). Der allgemeine Code ruft das Labor nur über
-	     die Einhängepunkte (QuestApp.Einhaengepunkte.cs) auf; ohne Umsetzung entfernt der Übersetzer die Aufrufe. Bis L1, dann ohne Gegenstand. -->
+	<!-- XR-Labor L0 (entwurf/labor-app.md), seit H+K XR E1 (entwurf/xr-empfaenger.md, «Was aus L0/L1 wird»): Probebau des Empfänger-Kerns ohne das Werkzeug-Modul
+	     «Labor»: dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true   (am besten mit eigenem HLKS_BUILD). Der allgemeine Code ruft das Labor nur über
+	     die Einhängepunkte (QuestApp.Einhaengepunkte.cs) auf; ohne Umsetzung entfernt der Übersetzer die Aufrufe. Die Prüfung bleibt (Grenze Kern ↔ Werkzeug-Modul). -->
 	<ItemGroup Condition="'$(HlksOhneLabor)' == 'true'">
 		<Compile Remove="QuestApp.Labor.cs;QuestApp.LaborPruefen.cs;AufgabenKarte.cs" />
 	</ItemGroup>

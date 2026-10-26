@@ -42,6 +42,7 @@ sealed partial class QuestApp
     {
         var d = DesktopTeil;
         d.KoerperGieren = KoerperJetzt(kopf);   // V1h: Körpermitte für das Hineinziehen
+        d.Werkzeug = aktiv?.Werkzeug;   // H+K XR E1: der Bildschirm kommt vom PC des aktiven Werkzeugs
         // V1d: eine Hand auf der Tafel (Blättern) zieht den Bildschirm nicht herein; die linke Hand zieht ebenso herein
         if (d.Bild(kopf, Time.Total, Time.Step, werte.Desktop, bedien.Pinch, bedien.Wegwischen, (!AnApps(Handed.Right) && !apps.AnTafel(Handed.Right)) || d.Haende is not null, paket,
                 _ => Task.FromResult(adresse is { } a ? DesktopRegeln.Adresse(a) : (Uri?)null), !AnApps(Handed.Left) && !apps.AnTafel(Handed.Left), bedien.Tafel))

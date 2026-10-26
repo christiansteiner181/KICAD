@@ -18,7 +18,7 @@ let app = null;   // letzte Antwort von GET /api/quest/app (für den Zustand «B
 // ------------------------------------------------------------------------------------------ Reiter «Brille» (L0)
 
 const brille = knoten(`<div class="labor-brille">
-  <div class="leise qd-klein">Netzzugang, Installation der App «XR-Labor» und Kopplung – getrennt von KICAD (eigene Ports 5340/5341, eigene Kopplungen). KICAD kann daneben laufen.</div>
+  <div class="leise qd-klein">Netzzugang, Installation der App «H+K XR» (dieselbe App wie bei KICAD) und Kopplung des Werkzeugs «XR-Labor» – getrennt von KICAD (eigene Ports 5340/5341, eigene Kopplungen). KICAD kann daneben laufen.</div>
   <div id="labor-quest-app"></div>
   <div class="labor-block" aria-labelledby="labor-teilnehmer-titel">
     <b id="labor-teilnehmer-titel">Verbundene Brillen im Kanal</b>
@@ -42,7 +42,7 @@ async function teilnehmer() {
   if (zeilen.length === 0) {
     const leer = document.createElement('div');
     leer.className = 'leise';
-    leer.textContent = 'Keine Brille verbunden. Die App «XR-Labor» verbindet sich, sobald der Netzzugang an und die Brille gekoppelt ist.';
+    leer.textContent = 'Keine Brille verbunden. Die App «H+K XR» verbindet sich mit dem Werkzeug «XR-Labor», sobald der Netzzugang an und die Brille gekoppelt ist.';
     ziel.appendChild(leer);
     return;
   }

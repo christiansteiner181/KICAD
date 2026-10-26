@@ -101,6 +101,7 @@ export function etikettText(name) {
  */
 export function teilnehmerFigur(t, jetztMs = Date.now()) {
   if (!t || typeof t !== 'object' || !t.pose) return null;
+  if (t.aktiv === false) return null;   // H+K XR E1: die App zeigt gerade ein anderes Werkzeug, ihre letzte Pose gilt nicht mehr (fehlt «aktiv», gilt sie als aktiv)
   const kopf = kopfFigur(t.pose.kopf);
   if (!kopf) return null;
   const zeit = Date.parse(t.poseZeit ?? '');

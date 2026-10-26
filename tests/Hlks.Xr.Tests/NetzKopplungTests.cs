@@ -98,7 +98,8 @@ public class NetzKopplungTests
 
     [Theory]
     [InlineData("art", "\"anders\"", "art")]
-    [InlineData("fassung", "2", "Fassung")]
+    [InlineData("fassung", "3", "Fassung")]   // H+K XR E1: Fassung 1 und 2 gelten (KopplungspaketTests)
+    [InlineData("fassung", "0", "Fassung")]
     [InlineData("pc", "\"\"", "pc")]
     [InlineData("ips", "[\"keine-ip\"]", "IPv4")]
     [InlineData("ips", "[\"fe80::1\"]", "IPv4")]
@@ -138,15 +139,17 @@ public class NetzKopplungTests
             Assert.Null(KopplungAblage.Importieren(eingang, privat));
             Assert.False(File.Exists(Path.Combine(eingang, "kopplung.json")));   // kein Schlüssel bleibt im geteilten Speicher
             Assert.Equal(NetzHilfen.Paket(), KopplungAblage.Laden(privat));
+            // H+K XR E1: je Werkzeug eine Datei im privaten Speicher (das alte kopplung.json gilt als KICAD)
+            var ablage = Path.Combine(privat, "kopplungen", "kicad.json");
             if (!OperatingSystem.IsWindows())
-                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(Path.Combine(privat, "kopplung.json")));
+                Assert.Equal(UnixFileMode.UserRead | UnixFileMode.UserWrite, File.GetUnixFileMode(ablage));
             // ungültige Datei: Meldung, im Eingang gelöscht, die bisherige Kopplung bleibt
             File.WriteAllText(Path.Combine(eingang, "kopplung.json"), "{\"art\":\"x\"}");
             Assert.Contains("ungültig", KopplungAblage.Importieren(eingang, privat));
             Assert.False(File.Exists(Path.Combine(eingang, "kopplung.json")));
             Assert.Equal(NetzHilfen.Paket(), KopplungAblage.Laden(privat));
             // ungültige Ablage: Fehler beim Laden
-            File.WriteAllText(Path.Combine(privat, "kopplung.json"), "kaputt");
+            File.WriteAllText(ablage, "kaputt");
             Assert.Throws<XrNetzFehler>(() => KopplungAblage.Laden(privat));
             Assert.Null(KopplungAblage.Importieren(null, privat));
         }

@@ -20,14 +20,20 @@ test('Marke des Labors: alle Felder der KICAD-Marke, Werte wie im Server', () =>
   assert.equal(LABOR_MARKE.desktopPort, 5430);
   assert.equal(LABOR_MARKE.ablageSchluessel, null, 'am Labor nicht einstellbar: die Seite schreibt keine Benutzereinstellungen');
   assert.equal(LABOR_MARKE.brillenZeigen, false, 'das Labor hat keine 3D-Ansicht');
-  assert.match(LABOR_MARKE.ablageVorgabe, /HLKS_CAD_werkzeuge\\labor_app$/);
-  assert.match(LABOR_MARKE.bereitstellen, /quest_app_bereitstellen\.ps1 -Labor$/);
+  // H+K XR E1: eine App «H+K XR» für alle Werkzeuge, dieselbe Ablage wie KICAD, der Schalter -Labor entfällt
+  assert.equal(LABOR_MARKE.appName, 'H+K XR');
+  assert.equal(LABOR_MARKE.appName, T.KICAD_MARKE.appName);
+  assert.match(LABOR_MARKE.ablageVorgabe, /HLKS_CAD_werkzeuge\\hk_xr$/);
+  assert.equal(LABOR_MARKE.ablageVorgabe, T.KICAD_MARKE.ablageVorgabe);
+  assert.match(LABOR_MARKE.bereitstellen, /quest_app_bereitstellen\.ps1$/);
+  assert.match(LABOR_MARKE.einleitung, /«H\+K XR»/);
   // dieselben Werte wie der Server (LaborDienste.cs)
   const server = readFileSync(fileURLToPath(new URL('../../LaborDienste.cs', import.meta.url)), 'utf8');
   assert.match(server, /ZugangPort = 5340;/);
   assert.match(server, /DesktopPort = 5430;/);
-  assert.match(server, /AblageOrdner = "labor_app";/);
-  assert.match(server, /@"werkzeuge\\quest_app_bereitstellen\.ps1 -Labor"/);
+  assert.match(server, /AblageOrdner = QuestDienst\.AppAblageOrdner;/);
+  assert.match(server, /@"werkzeuge\\quest_app_bereitstellen\.ps1", Id, Name\);/);
+  assert.doesNotMatch(server, /quest_app_bereitstellen\.ps1 -Labor"/);
   assert.match(server, /"XR-Labor"/);
 });
 
@@ -35,7 +41,7 @@ test('Texte des Teils «Quest App» mit der Marke des Labors', () => {
   assert.equal(T.zugangAnzeige({ an: true, aktiv: false }, LABOR_MARKE).text, 'Er startet gleich (nur im XR-Labor auf Port 5430).');
   assert.match(T.zugangAnzeige({ an: false, aktiv: false }, LABOR_MARKE).text, /^Nur dieser PC erreicht XR-Labor\./);
   const app = { ablage: { fehler: null, version: null }, adbGefunden: true, brille: { wlan: false } };
-  assert.equal(T.installierenKnopf({ q: questAusApp(app), app, zugang: { aktiv: true }, marke: LABOR_MARKE }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 -Labor ausführen.');
+  assert.equal(T.installierenKnopf({ q: questAusApp(app), app, zugang: { aktiv: true }, marke: LABOR_MARKE }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 ausführen.');
   assert.match(T.installierenKnopf({ q: questAusApp({ adbGefunden: false }), app: { ablage: { version: {} } }, zugang: { aktiv: true }, marke: LABOR_MARKE }).grund, /in KICAD unter «Quest verbinden» einrichten/);
   assert.match(T.firewallHinweis(LABOR_MARKE), /^XR-Labor liest Netzprofil/);
   assert.equal(T.installiertText({ adbGefunden: false }, LABOR_MARKE), 'adb fehlt (in KICAD unter «Quest verbinden» einrichten).');

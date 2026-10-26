@@ -17,14 +17,16 @@
 //     (DesktopPort), wie bei KICAD nur auf 5130. Testserver: eigene Umgebungsvariable HLKS_LABOR_DESKTOP_PORT (HLKS_XR_DESKTOP_PORT gilt nur für KICAD).
 //   - eigener Ordner für Schalter und Kopplungen: %LOCALAPPDATA%\HLKS_CAD\xr\labor (zugang.json, kopplungen.json, quest_app_weg.json, messprotokolle\).
 //   - dasselbe Zertifikat je PC wie KICAD: %LOCALAPPDATA%\HLKS_CAD\xr\zertifikat.dpapi (atomar angelegt; wer zuerst kommt, legt es an, der andere lädt es).
-//   - eigene App: ch.hkplanung.xrlabor, Ablage %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app (Einstellung labor.app_ablage, nur gelesen).
+//   - dieselbe App wie KICAD (H+K XR E1, entwurf/xr-empfaenger.md): «H+K XR» ch.hkplanung.xr, Ablage %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr (Einstellung quest.app_ablage, nur gelesen).
+//     Das Labor ist ein Werkzeug der App: Kennung xrlabor, Name «XR-Labor», eigene Kopplung (Eingangsdatei kopplung_xrlabor.json), eigene Ports.
+//     Die frühere zweite App ch.hkplanung.xrlabor und die Einstellung labor.app_ablage entfallen.
 // DAS LABOR SCHREIBT NIE: KICADs zugang.json, kopplungen.json und quest_app_weg.json, den VR-Auftrag (vr.auftrag) und die Benutzereinstellungen (es gibt keinen
-// Endpunkt dafür; gelesen werden nur quest.adb, labor.app_ablage und der Symbolsatz). Im Testlauf (HLKS_TEST oder Testrunner) liegt alles unter %TEMP%.
+// Endpunkt dafür; gelesen werden nur quest.adb, quest.app_ablage und der Symbolsatz). Im Testlauf (HLKS_TEST oder Testrunner) liegt alles unter %TEMP%.
 //
 // ENDPUNKTE (nur localhost, Herkunftsschutz wie KICAD):
 //   GET  /api/status                 { app: "xr-labor", fassung, commit, beschaeftigt: false } – das Startskript prüft damit, ob das Labor läuft
 //   /api/xr/…                        Netzzugang, Kopplung (Paket, Ersatzkopplung, Widerruf), Teilnehmer, Kanal, Desktop – XrEndpunkte.cs von KICAD
-//   /api/quest/app, …/netz, …/installieren   App «XR-Labor» installieren/aktualisieren und koppeln (Weg A) – QuestAppEndpunkte.cs von KICAD
+//   /api/quest/app, …/netz, …/installieren, …/alte-entfernen   App «H+K XR» installieren/aktualisieren und mit dem Labor koppeln (Weg A), alte Apps entfernen – QuestAppEndpunkte.cs von KICAD
 //   L1: /api/xr/labor/katalog (auch im Netzzugang), auswertung, fragebogen (GET/POST), variante, aufgabe – XrLaborEndpunkte.cs von KICAD mit der Ablage des Labors (LaborQuelle)
 //   L1: /api/labor/profile (GET/POST, POST …/aktiv, DELETE …/{kennung}) – LaborProfile.cs; /api/labor/daten (GET), /api/labor/uebernahme (POST) – LaborUebernahme.cs
 // ABLAGE (L1, LaborAblage.cs): %OneDrive%\HLKS-CAD\labor\ (messungen, fragebogen, profile, aktiv.json), ohne OneDrive %APPDATA%\HLKS-CAD\labor, Umleitung HLKS_LABOR_DATEN;
@@ -41,21 +43,25 @@ using Microsoft.Extensions.DependencyInjection.Extensions;
 
 namespace Hlks.Labor;
 
-/// <summary>Die Brillen-App des Labors (App-Marke für QuestDienst).</summary>
+/// <summary>
+/// Die Brillen-App im Labor (App-Marke für QuestDienst). Seit H+K XR E1 (entwurf/xr-empfaenger.md) gibt es keine eigene Labor-App mehr: Das Labor installiert dieselbe App «H+K XR»
+/// (ch.hkplanung.xr) aus derselben Ablage (%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, Einstellung quest.app_ablage) wie KICAD; die Marke unterscheidet nur das Werkzeug
+/// (xrlabor / «XR-Labor», Eingangsdatei kopplung_xrlabor.json, eigene Ports 5340/5341).
+/// </summary>
 public static class LaborMarke
 {
-    /// <summary>App-Kennung der Labor-App (Entscheid Christian 26.10.2026, Name «XR-Labor»).</summary>
-    public const string Paket = "ch.hkplanung.xrlabor";
-    /// <summary>Id der Marke im Kanal (<c>hallo.marke</c>, Hlks.Xr/Netz/AppMarke.cs: AppMarke.XrLabor.Id): an Brillen mit dieser Marke gehen Prüfaufgaben und Varianten (L1).</summary>
+    /// <summary>App-Kennung: dieselbe App wie bei KICAD («H+K XR»). Die bisherige Labor-App ch.hkplanung.xrlabor ist ersetzt und wird über «Alte Apps entfernen» von der Brille genommen.</summary>
+    public const string Paket = QuestDienst.AppPaket;
+    /// <summary>Id des Werkzeugs im Kanal (<c>hallo.marke</c>) und im Kopplungspaket (<c>werkzeug</c>): an Brillen mit dieser Marke gehen Prüfaufgaben und Varianten (L1).</summary>
     public const string Id = "xrlabor";
-    /// <summary>Name der App in Texten.</summary>
+    /// <summary>Name des Werkzeugs in Texten (Anzeigename im Kopplungspaket: <c>werkzeugName</c>).</summary>
     public const string Name = "XR-Labor";
-    /// <summary>Benutzereinstellung mit dem Ordner der abgelegten Labor-App (nur gelesen; leer = Vorgabe).</summary>
-    public const string AblageSchluessel = "labor.app_ablage";
-    /// <summary>Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge (APK ch.hkplanung.xrlabor-Signed.apk und version.json, quest_app_bereitstellen.ps1 -Labor).</summary>
-    public const string AblageOrdner = "labor_app";
+    /// <summary>Benutzereinstellung mit dem Ordner der abgelegten App: dieselbe wie bei KICAD (nur gelesen; leer = Vorgabe). Die frühere Einstellung labor.app_ablage entfällt.</summary>
+    public const string AblageSchluessel = QuestDienst.AppAblageSchluessel;
+    /// <summary>Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge: derselbe wie bei KICAD (APK ch.hkplanung.xr-Signed.apk und version.json, quest_app_bereitstellen.ps1).</summary>
+    public const string AblageOrdner = QuestDienst.AppAblageOrdner;
 
-    public static QuestAppMarke App { get; } = new(Paket, "XR-Labor", AblageSchluessel, AblageOrdner, @"werkzeuge\quest_app_bereitstellen.ps1 -Labor");
+    public static QuestAppMarke App { get; } = new(Paket, QuestDienst.AppName, AblageSchluessel, AblageOrdner, @"werkzeuge\quest_app_bereitstellen.ps1", Id, Name);
 }
 
 /// <summary>Werte des Netzzugangs der Labor-Brille (XrEinstellungen mit den Ports und Ordnern des Labors).</summary>
@@ -75,7 +81,7 @@ public static class LaborXr
     /// <summary>Betrieb: alle IPv4-Adressen, Ports 5340/5341 (sofern zugang.json des Labors nichts anderes sagt), nur auf 5430, Ordner …\xr\labor, Zertifikat …\xr.</summary>
     public static XrEinstellungen Betrieb() => new()
     {
-        PortStandard = ZugangPort, SuchPortStandard = SuchPort, DesktopPort = DesktopPort, ServerName = "XR-Labor",
+        PortStandard = ZugangPort, SuchPortStandard = SuchPort, DesktopPort = DesktopPort, ServerName = LaborMarke.Name, Werkzeug = LaborMarke.Id,
         Ordner = Path.Combine(XrEinstellungen.StandardOrdner(), Unterordner), ZertifikatOrdner = XrEinstellungen.StandardOrdner(),
     };
 
@@ -188,7 +194,7 @@ public static class LaborDienste
         LaborOberflaeche.Ausliefern(app, app.Environment.WebRootPath);
         app.MapGet("/api/status", () => EndpunktHilfe.Antwort(LaborStatus.Status()));
         app.MapXr();   // Netzzugang, Kopplung, Teilnehmer, Kanal, Desktop (XrEndpunkte.cs von KICAD, mit den Werten des Labors)
-        app.MapQuestApp(app.Services.GetRequiredService<QuestDienst>());   // App «XR-Labor» installieren/aktualisieren (QuestAppEndpunkte.cs von KICAD)
+        app.MapQuestApp(app.Services.GetRequiredService<QuestDienst>());   // App «H+K XR» installieren/aktualisieren, alte Apps entfernen (QuestAppEndpunkte.cs von KICAD)
         // L1 – die Labor-Funktionen. Je Zeile ein Teil; weitere (Testraum, Bedienstandard) kommen als eigene Zeilen dazu:
         app.MapXrLabor(LaborQuelle(app.Services));   // /api/xr/labor/… aus Hlks.Web (XrLaborEndpunkte.cs) mit Ablage, Profil und Marke des Labors
         app.MapLaborProfile();                       // /api/labor/profile (LaborProfile.cs)

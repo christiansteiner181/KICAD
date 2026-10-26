@@ -98,7 +98,7 @@ public static class KiEinordnung
         new("xr_kanal", "Live-Kanal zur Quest App (Modul XR, Quest App P3, XrKanal.cs): liest Kopf- und Handpositionen der Brille (/api/xr/teilnehmer), sendet Stellschrauben an die " +
             "Brille (/api/xr/stellschraube) und schreibt Messprotokolle; ab P7 zeigt die 3D-Ansicht am PC die Brille aus /api/xr/teilnehmer (ansichten/xr-teilnehmer.js). Steuert ein Gerät des Menschen und liest dessen Bewegungen – nicht für die KI (für «Claude sieht mit», XR-D, " +
             "später eigens einzuordnen)."),
-        new("quest_app", "Installiert die Quest App per adb.exe in der VR-Brille, erzeugt dafür das Kopplungspaket mit Schlüssel (Weg A) und legt es in die Brille, startet die App " +
+        new("quest_app", "Installiert die Quest App «H+K XR» per adb.exe in der VR-Brille, erzeugt dafür das Kopplungspaket mit Schlüssel (Weg A) und legt es in die Brille, startet die App, entfernt auf Wunsch die alten Apps «KICAD» und «XR-Labor» " +
             "und zeigt die installierte Fassung (Modul XR, Quest App P7, QuestApp.cs, /api/quest/app/…) – startet ein Programm auf dem PC und gibt einem Gerät Zugang zu diesem PC; nur der Mensch am Rechner."),
         new("quest_app_netz", "Liest Netzprofil und Firewall-Regeln der Gruppe «KICAD XR» mit PowerShell, nur lesend (Modul XR, Quest App P7, QuestAppNetz.cs, /api/quest/app/netz), " +
             "um dem Menschen zu zeigen, warum die Brille den PC im WLAN nicht erreicht – Auskunft über den Rechner, nicht für die KI."),

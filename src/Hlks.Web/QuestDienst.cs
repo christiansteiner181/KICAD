@@ -65,15 +65,15 @@ public sealed record QuestEinstellungen
     public Func<int>? CdpPortWahl { get; init; }
     /// <summary>Quest App (QuestApp.cs): Zeitgrenze für «adb install» und «adb push» (die APK ist einige MB gross, das WLAN ist langsam).</summary>
     public TimeSpan InstallZeitlimit { get; init; } = TimeSpan.FromMinutes(3);
-    /// <summary>Quest App: Ordner mit der APK und version.json, wenn die Benutzereinstellung quest.app_ablage fehlt; null = %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app (werkzeuge/quest_app_bereitstellen.ps1).</summary>
+    /// <summary>Quest App: Ordner mit der APK und version.json, wenn die Benutzereinstellung quest.app_ablage fehlt; null = %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr (werkzeuge/quest_app_bereitstellen.ps1; seit H+K XR E1 für alle Werkzeuge dieselbe).</summary>
     public string? AppAblage { get; init; }
     /// <summary>Quest App: Ordner, in dem das Kopplungspaket für «adb push» höchstens einen Augenblick liegt; null = %TEMP%\HLKS_CAD\quest_app.</summary>
     public string? PaketOrdner { get; init; }
     /// <summary>Quest App: Datei, in der KICAD je PC merkt, auf welchem Weg die App zuletzt installiert und gekoppelt wurde (kabel | wlan); null = %LOCALAPPDATA%\HLKS_CAD\xr\quest_app_weg.json
     /// (im Testlauf ein Pfad unter %TEMP%, der nicht existiert, damit kein Test den Zustand eines anderen sieht).</summary>
     public string? AppWegDatei { get; init; }
-    /// <summary>Quest App: welche App installiert und gekoppelt wird (Paket, Eingang, Ablage, Einstellungsschlüssel; QuestApp.cs). Vorgabe KICAD; das XR-Labor (src/Hlks.Labor)
-    /// setzt seine eigene Marke und eine eigene AppWegDatei.</summary>
+    /// <summary>Quest App: welche App installiert und gekoppelt wird (Paket, Eingang, Ablage, Einstellungsschlüssel, Werkzeug; QuestApp.cs). Vorgabe KICAD; das XR-Labor (src/Hlks.Labor)
+    /// setzt dieselbe App mit seinem Werkzeug und eine eigene AppWegDatei.</summary>
     public QuestAppMarke AppMarke { get; init; } = QuestAppMarke.Kicad;
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein

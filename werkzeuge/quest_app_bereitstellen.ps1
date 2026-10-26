@@ -1,17 +1,18 @@
-# Quest App bauen und fuer KICAD ablegen (Modul XR, Quest App P7): KICAD installiert die App per adb aus dem Dialog "Quest verbinden"
-# (Knopf "App installieren/aktualisieren") und sucht die APK dort, wo dieses Skript sie ablegt:
-#   %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app\ch.hkplanung.kicad.quest-Signed.apk   die gebaute APK (Testschluessel, nur fuer die eigene Brille)
-#   %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app\version.json                          Commit, Zeit, Groesse, SHA-256 (KICAD prueft die APK dagegen)
-# Ein anderer Ordner ist als Einstellung moeglich (Benutzereinstellung quest.app_ablage) oder hier mit -Ablage.
+# H+K XR bauen und ablegen (Modul XR, Quest App P7; H+K XR E1, entwurf\xr-empfaenger.md): eine App "H+K XR" (ch.hkplanung.xr) fuer alle Werkzeuge.
+# KICAD und das XR-Labor installieren per adb aus ihrem Dialog (Register XR > Brille, Knopf "App installieren/aktualisieren") dieselbe App und suchen die APK dort,
+# wo dieses Skript sie ablegt:
+#   %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr\ch.hkplanung.xr-Signed.apk   die gebaute APK (Testschluessel, nur fuer die eigene Brille)
+#   %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr\version.json                 Commit, Zeit, Groesse, SHA-256 (KICAD und Labor pruefen die APK dagegen)
+# Ein anderer Ordner ist als Einstellung moeglich (Benutzereinstellung quest.app_ablage, gilt fuer beide Werkzeuge) oder hier mit -Ablage.
 # Das Skript baut nur und legt ab. Es ruft kein adb auf, laedt nichts herunter und aendert nichts an der Brille oder am System.
 # Voraussetzung: .NET 10 mit der Workload "android", Android SDK und JDK 17 unter %USERPROFILE%\HLKS_CAD_werkzeuge (Quest App P0).
-# Mit -Labor (XR-Labor, Entwurf entwurf\labor-app.md, Stufe L0; Christian 26.10.2026) baut das Skript stattdessen die Brillen-App des Labors,
-# src\Hlks.Labor.Quest\Projects\Android\Hlks.Labor.Quest.Android.csproj (App-Kennung ch.hkplanung.xrlabor), und legt sie getrennt ab:
-#   %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app\ch.hkplanung.xrlabor-Signed.apk   die gebaute APK (Testschluessel)
-#   %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app\version.json                       gleiches Format wie bei der KICAD-App
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_app_bereitstellen.ps1 [-Labor] [-Ablage <ordner>] [-OhneBau]
-#   -Labor    die Labor-App statt der KICAD-App (ohne den Schalter alles wie bisher)
+# Gebaut wird src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj; die APK entsteht unter
+#   <bau>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xr-Signed.apk
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_app_bereitstellen.ps1 [-Ablage <ordner>] [-OhneBau]
 #   -OhneBau  legt die zuletzt gebaute APK aus dem Bauordner (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build) nur ab.
+#   -Labor    gibt es seit H+K XR E1 nicht mehr (keine zweite App): der Schalter wird mit einem Hinweis ignoriert, es wird die eine App gebaut.
+# Bisherige Ablagen %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app und \labor_app gelten nicht mehr (die alten Apps "KICAD" und "XR-Labor" ersetzt "H+K XR";
+# sie lassen sich in KICAD mit "Alte Apps entfernen" von der Brille nehmen).
 # Bauausgabe getrennt: vorher $env:HLKS_BUILD setzen, wenn mehrere Baulaeufe gleichzeitig arbeiten (Datei bewusst nur ASCII, PowerShell 5.1).
 param(
   [string]$Ablage = '',
@@ -21,21 +22,12 @@ param(
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
-if ($Labor) {
-  $appName = 'XR-Labor'
-  $projektName = 'Hlks.Labor.Quest.Android'
-  $projekt = "$repo\src\Hlks.Labor.Quest\Projects\Android\$projektName.csproj"
-  $apkName = 'ch.hkplanung.xrlabor-Signed.apk'
-  $standOrdner = @('src/Hlks.Labor.Quest', 'src/Hlks.Quest', 'src/Hlks.Xr')   # die Labor-App uebersetzt auch die gemeinsamen Quellen von Hlks.Quest
-  if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\labor_app" }
-} else {
-  $appName = 'Quest App'
-  $projektName = 'Hlks.Quest.Android'
-  $projekt = "$repo\src\Hlks.Quest\Projects\Android\$projektName.csproj"
-  $apkName = 'ch.hkplanung.kicad.quest-Signed.apk'
-  $standOrdner = @('src/Hlks.Quest', 'src/Hlks.Xr')
-  if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\quest_app" }
-}
+$appName = 'H+K XR'
+$projektName = 'Hlks.Quest.Android'
+$projekt = "$repo\src\Hlks.Quest\Projects\Android\$projektName.csproj"
+$apkName = 'ch.hkplanung.xr-Signed.apk'
+$standOrdner = @('src/Hlks.Quest', 'src/Hlks.Xr')
+if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\hk_xr" }
 if (-not $env:HLKS_BUILD) { $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build" }
 $bau = $env:HLKS_BUILD
 $apkQuelle = "$bau\$projektName\bin\Release\net10.0-android\publish\$apkName"
@@ -43,11 +35,12 @@ $apkQuelle = "$bau\$projektName\bin\Release\net10.0-android\publish\$apkName"
 function Meldung([string]$t) { Write-Host $t }
 function Fehler([string]$t) { Write-Host "FEHLER: $t" -ForegroundColor Red; exit 1 }
 
+if ($Labor) { Meldung 'Hinweis: -Labor gibt es nicht mehr. Seit H+K XR E1 ist es EINE App fuer alle Werkzeuge (KICAD und XR-Labor); es wird die App H+K XR gebaut und in hk_xr abgelegt.' }
 if (-not (Test-Path $projekt)) { Fehler "Das Projekt fehlt: $projekt" }
 
 if (-not $OhneBau) {
   if (-not (Test-Path $dotnet)) { Fehler "dotnet nicht gefunden: $dotnet" }
-  Meldung "Baue die $appName (Release, net10.0-android), Bauordner $bau ..."
+  Meldung "Baue die App $appName (Release, net10.0-android), Bauordner $bau ..."
   & $dotnet publish $projekt -c Release -f net10.0-android -v q -nologo
   if ($LASTEXITCODE -ne 0) { Fehler "Der Bau ist fehlgeschlagen (Exit $LASTEXITCODE)." }
 }
@@ -81,7 +74,7 @@ $groesse = (Get-Item $tmp).Length
 $sha = (Get-FileHash -Algorithm SHA256 -Path $tmp).Hash.ToLowerInvariant()
 Move-Item -Path $tmp -Destination $ziel -Force
 
-# version.json zuletzt und ohne Umlaute/BOM: KICAD liest sie und prueft die APK dagegen
+# version.json zuletzt und ohne Umlaute/BOM: KICAD und das Labor lesen sie und pruefen die APK dagegen
 $o = [ordered]@{
   datei = $apkName
   commit = $commit
@@ -97,8 +90,4 @@ $json = $o | ConvertTo-Json -Compress
 Meldung "Abgelegt in $Ablage"
 Meldung ("  {0}  {1:N1} MB  Commit {2}  Fassung {3} ({4})" -f $apkName, ($groesse / 1MB), $commit, $versionName, $versionCode)
 Meldung "  SHA-256 $sha"
-if ($Labor) {
-  Meldung "Weiter: Die Labor-App ist ein eigenes Paket (ch.hkplanung.xrlabor) neben der KICAD-App. Installieren an der Brille vorerst von Hand mit den Android-Werkzeugen (install -r `"$ziel`"); der Knopf im XR-Labor folgt in einer spaeteren Stufe."
-} else {
-  Meldung 'Weiter: in KICAD Register XR > Brille > "App installieren ...".'
-}
+Meldung 'Weiter: in KICAD Register XR > Brille > "H+K XR installieren ..." (im XR-Labor: Reiter Brille, "App installieren"). Die alten Apps "KICAD" und "XR-Labor" nimmt dort "Alte Apps entfernen ..." von der Brille.'

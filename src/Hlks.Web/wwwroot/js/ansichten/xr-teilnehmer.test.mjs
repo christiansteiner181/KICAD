@@ -135,6 +135,14 @@ test('Ohne Pose oder mit kaputter Pose keine Figur', () => {
   assert.equal(L.teilnehmerFigur('x'), null);
 });
 
+test('H+K XR E1: ein inaktiver Teilnehmer (die App zeigt ein anderes Werkzeug) hat keine Figur; fehlt «aktiv», gilt er als aktiv', () => {
+  assert.equal(L.teilnehmerFigur(eintrag({ aktiv: false })), null);
+  assert.equal(L.teilnehmerFigur(eintrag({ aktiv: true }), 1_000_100).id, 't1');
+  assert.equal(L.teilnehmerFigur(eintrag(), 1_000_100).id, 't1');
+  const a = { teilnehmer: [eintrag(), eintrag({ id: 't2', aktiv: false }), eintrag({ id: 't3', aktiv: true })] };
+  assert.deepEqual(L.figurenAus(a, 1_000_100).map((f) => f.id), ['t1', 't3']);
+});
+
 test('Antwort des Servers: mehrere Brillen, Brillen ohne Pose fallen weg, Unsinn gibt eine leere Liste', () => {
   const a = { teilnehmer: [eintrag(), eintrag({ id: 't2', brillenName: 'Beat', pose: undefined }), eintrag({ id: 't3', brillenName: 'Anna' })], stellschrauben: {} };
   assert.deepEqual(L.figurenAus(a, 1_000_100).map((f) => f.id), ['t1', 't3']);

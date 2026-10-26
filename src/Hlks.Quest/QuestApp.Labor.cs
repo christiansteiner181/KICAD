@@ -31,12 +31,18 @@ namespace Hlks.Quest;
 /// XR-Labor L1 (Zuschnitt L1: die Dateien bleiben bis L2 hier): trägt das Modell Ziele des Testraums (scene.extras.kicad.labor, Hlks.Xr.Labor.LaborZiele – nur vom
 /// Labor-PC), nehmen die Aufgaben diese – Markierung, Wandpaar mit Sollmass, Raum «raum-ar-oeffnen», Bauteil «tablet-wert-ablesen»; fehlt ein Ziel in der Etage
 /// bzw. gibt es keine (KICAD), wählt die App wie bisher.
+/// H+K XR E1 (entwurf/xr-empfaenger.md): diese Dateien sind das Werkzeug-Modul «Labor» der App «H+K XR». Es arbeitet nur, wenn das aktive Werkzeug es führt
+/// (<see cref="LaborAn"/>, Werkzeug.MitLabor: XR-Labor; KICAD bis E3, weil KICAD das Interface-Labor aus P5b noch selbst führt). Katalog und wartende Messprotokolle
+/// liegen im Speicher des Werkzeugs (LaborWerkzeugBetreten); beim Wechsel bricht eine laufende Aufgabe ab (LaborWerkzeugVerlassen, Messprotokoll an das bisherige).
 /// </summary>
 sealed partial class QuestApp
 {
-    /// <summary>Ablagen im privaten Speicher: Katalog, wartende Messprotokolle (gesetzt in <see cref="LaborStarten"/>, aus dem Konstruktor).</summary>
-    LaborKatalogAblage katalogAblage = null!;
-    ProtokollAblage protokollAblage = null!;
+    /// <summary>H+K XR E1: arbeitet das Modul mit dem aktiven Werkzeug (Werkzeug.MitLabor)?</summary>
+    bool LaborAn => aktiv?.Werkzeug.MitLabor == true;
+
+    /// <summary>Ablagen im Speicher des aktiven Werkzeugs: Katalog, wartende Messprotokolle (gesetzt in <see cref="LaborWerkzeugBetreten"/>; vorher leer unter %TEMP%).</summary>
+    LaborKatalogAblage katalogAblage = new(Path.Combine(Path.GetTempPath(), "HLKS_CAD", "hk_xr_ohne_werkzeug"));
+    ProtokollAblage protokollAblage = new(Path.Combine(Path.GetTempPath(), "HLKS_CAD", "hk_xr_ohne_werkzeug"));
     IEbenenQuelle? katalogQuelle;
     volatile string katalogText = "keiner";
 
@@ -78,13 +84,15 @@ sealed partial class QuestApp
 
     // =================================================================================================== Katalog
 
-    /// <summary>Katalog vom PC (Hintergrund); übernommen im Bild. Netzfehler ergeben die Ablage (LaborKatalogLader wirft nicht).</summary>
+    /// <summary>Katalog vom PC (Hintergrund); übernommen im Bild – nur, solange dasselbe Werkzeug aktiv ist (H+K XR E1). Netzfehler ergeben die Ablage.</summary>
     async Task KatalogVomPc(IEbenenQuelle q)
     {
+        var gen = wechselNr;
+        var ablage = katalogAblage;
         LaborKatalogStand st;
-        try { st = await LaborKatalogLader.VomPc(q, katalogAblage, ende.Token); }
+        try { st = await LaborKatalogLader.VomPc(q, ablage, ende.Token); }
         catch (OperationCanceledException) { return; }
-        amBild.Enqueue(() => KatalogUebernehmen(st));
+        AmBild(gen, () => KatalogUebernehmen(st));
     }
 
     /// <summary>Neuer Katalog (bzw. keiner): Vorgaben, Grenzen und Profil gelten sofort; live gesetzte Werte bleiben, wenn sie nach dem Katalog gültig sind.</summary>
@@ -441,6 +449,7 @@ sealed partial class QuestApp
     }
 
     // =================================================================================================== Einhängepunkte (QuestApp.Einhaengepunkte.cs)
+    // H+K XR E1: jeder Einhängepunkt arbeitet nur, wenn das aktive Werkzeug das Labor führt (LaborAn); sonst gilt die Vorgabe des Aufrufers (wie ohne Labor).
 
     partial void LaborAnlegen()
     {
@@ -448,105 +457,137 @@ sealed partial class QuestApp
         WegwischZiele.Add(new WischZiel(KarteKandidat, w => karte.WischVersatz = AppSymbole.NachLinks(w, 0), KarteWegwischen));
     }
 
-    partial void LaborStarten()
+    partial void LaborWerkzeugBetreten()
     {
-        // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei)
-        katalogAblage = new LaborKatalogAblage(privat);
+        lauf = null; laufEnde = null; laufAbgeschlossen = false; markiertesBauteil = null; raumFuerAufgabe = null; letztesProtokoll = null;
+        ziele = null; zieleSzene = null; katalogQuelle = null; katalogText = "keiner";
+        protokollWarten.Clear();
+        karte.WischVersatz = 0;
+        if (!LaborAn || aktiv is not { } v) return;
+        // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei) – seit E1 der dieses Werkzeugs
+        katalogAblage = new LaborKatalogAblage(v.Ordner);
         KatalogUebernehmen(LaborKatalogLader.AusAblage(katalogAblage));
-        // P5b: Messprotokolle, die beim letzten Mal ohne Verbindung entstanden, gehen mit dem nächsten «willkommen»
-        protokollAblage = new ProtokollAblage(privat);
+        // P5b: Messprotokolle, die beim letzten Mal ohne Verbindung entstanden, gehen mit dem nächsten «willkommen» (E1: bzw. gleich, wenn der Kanal schon steht)
+        protokollAblage = new ProtokollAblage(v.Ordner);
         protokollWarten.AddRange(protokollAblage.Lesen());
-        if (protokollWarten.Count > 0) Console.WriteLine($"{AppName}: {protokollWarten.Count} Messprotokolle warten auf die Verbindung.");
+        if (protokollWarten.Count == 0) return;
+        Console.WriteLine($"{AppName}: {protokollWarten.Count} Messprotokolle warten auf die Verbindung.");
+        ProtokolleNachsenden();
+    }
+
+    partial void LaborWerkzeugVerlassen()
+    {
+        if (!LaborAn) return;
+        if (lauf is { Fertig: false, Zustand: not LaufZustand.Gesperrt }) AufgabeBeenden("Wechsel des Werkzeugs");
+        else if (lauf is { Fertig: true } l) Abschliessen(l, Time.Total);   // Messprotokoll einmal (wie nach 5 s)
+        lauf = null; laufEnde = null; markiertesBauteil = null;
+        karte.WischVersatz = 0;
     }
 
     partial void LaborVerbunden(IEbenenQuelle quelle, ref Task? warten)
     {
+        if (!LaborAn) return;
         katalogQuelle = quelle;
         warten = KatalogVomPc(quelle);
     }
 
     partial void LaborNachladen(ref Task? warten)
     {
-        if (katalogQuelle is { } kq) warten = KatalogVomPc(kq);
+        if (LaborAn && katalogQuelle is { } kq) warten = KatalogVomPc(kq);
     }
 
-    partial void LaborWillkommen() => amBild.Enqueue(ProtokolleNachsenden);
+    partial void LaborWillkommen()
+    {
+        if (LaborAn) amBild.Enqueue(ProtokolleNachsenden);
+    }
 
     partial void LaborNachricht(string typ, JsonElement inhalt)
     {
         // P5b: Quittung des PCs für ein Messprotokoll (XrKanal)
-        if (typ == "quittung" && inhalt.TryGetProperty("bezug", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() == "messprotokoll") Interlocked.Increment(ref quittungen);
+        if (LaborAn && typ == "quittung" && inhalt.TryGetProperty("bezug", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() == "messprotokoll")
+            Interlocked.Increment(ref quittungen);
     }
 
     partial void LaborStellschraube(string schluessel, JsonElement wert, ref string? ergebnis)
     {
-        if (schluessel == LaborKatalog.AufgabeSchluessel) ergebnis = AufgabeVomPc(wert);
+        if (LaborAn && schluessel == LaborKatalog.AufgabeSchluessel) ergebnis = AufgabeVomPc(wert);
     }
 
-    partial void LaborBild(Pose kopf) => AufgabeBild(kopf);
+    partial void LaborBild(Pose kopf)
+    {
+        if (LaborAn) AufgabeBild(kopf);
+    }
 
-    partial void LaborStick(Pose kopf, XVec3 kopfRef) => StickSchritt(kopf, kopfRef);
+    partial void LaborStick(Pose kopf, XVec3 kopfRef)
+    {
+        if (LaborAn) StickSchritt(kopf, kopfRef);
+    }
 
-    partial void LaborImTablet() => AufgabeImTablet();
+    partial void LaborImTablet()
+    {
+        if (LaborAn) AufgabeImTablet();
+    }
 
-    partial void LaborHandAnKarte(ref bool nah) => nah |= karte.HandNah;
+    partial void LaborHandAnKarte(ref bool nah) => nah |= LaborAn && karte.HandNah;
 
     partial void LaborFlaechen(List<TabletPose> flaechen)
     {
-        if (lauf is not null && karte.Lage is { } k) flaechen.Add(k);
+        if (LaborAn && lauf is not null && karte.Lage is { } k) flaechen.Add(k);
     }
 
-    partial void LaborAufgabeOffen(ref bool offen) => offen |= lauf is { Fertig: false };
+    partial void LaborAufgabeOffen(ref bool offen) => offen |= LaborAn && lauf is { Fertig: false };
 
-    partial void LaborRaumZumZeigen(ref string? raum) =>
-        raum ??= (lauf is { Id: PruefAufgaben.RaumArOeffnen, Raum: { } r, Fertig: false } ? r : null) ?? raumFuerAufgabe;
+    partial void LaborRaumZumZeigen(ref string? raum)
+    {
+        if (LaborAn) raum ??= (lauf is { Id: PruefAufgaben.RaumArOeffnen, Raum: { } r, Fertig: false } ? r : null) ?? raumFuerAufgabe;
+    }
 
     partial void LaborSprung(Xz ziel)
     {
-        if (lauf is { } l) PruefAufgaben.Sprung(l, Time.Total, ziel);
+        if (LaborAn && lauf is { } l) PruefAufgaben.Sprung(l, Time.Total, ziel);
     }
 
     partial void LaborSprungAbgebrochen()
     {
-        if (lauf is { } l) PruefAufgaben.SprungAbgebrochen(l);
+        if (LaborAn && lauf is { } l) PruefAufgaben.SprungAbgebrochen(l);
     }
 
     partial void LaborDrehschritt(double blickVorher, double blickNachher)
     {
-        if (lauf is { } l) PruefAufgaben.Drehschritt(l, blickVorher, blickNachher);
+        if (LaborAn && lauf is { } l) PruefAufgaben.Drehschritt(l, blickVorher, blickNachher);
     }
 
     partial void LaborEtageGewechselt(ListenGeschoss? geschoss)
     {
-        if (lauf is { } l) PruefAufgaben.EtageGewechselt(l, Time.Total, geschoss);
+        if (LaborAn && lauf is { } l) PruefAufgaben.EtageGewechselt(l, Time.Total, geschoss);
     }
 
     partial void LaborWischOhneWirkung()
     {
-        if (lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
+        if (LaborAn && lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
     }
 
     partial void LaborRaumRueckschritt(string grund)
     {
-        if (lauf is { } l) PruefAufgaben.RaumRueckschritt(l, grund);
+        if (LaborAn && lauf is { } l) PruefAufgaben.RaumRueckschritt(l, grund);
     }
 
     partial void LaborGemessen(Messung messung)
     {
-        if (lauf is { } l) PruefAufgaben.Gemessen(l, Time.Total, messung);
+        if (LaborAn && lauf is { } l) PruefAufgaben.Gemessen(l, Time.Total, messung);
     }
 
     partial void LaborMessenDaneben(string grund)
     {
-        if (lauf is { } l) PruefAufgaben.MessenDaneben(l, grund);
+        if (LaborAn && lauf is { } l) PruefAufgaben.MessenDaneben(l, grund);
     }
 
     partial void LaborDaneben()
     {
-        if (lauf is { } l) PruefAufgaben.Daneben(l);
+        if (LaborAn && lauf is { } l) PruefAufgaben.Daneben(l);
     }
 
-    partial void LaborKennzahlen(ref string text) => text = string.Create(CultureInfo.InvariantCulture,
+    partial void LaborKennzahlen(ref string text) => text = !LaborAn ? "Labor=aus (Werkzeug ohne Labor), " : string.Create(CultureInfo.InvariantCulture,
         $"Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), ")
         + (Ziele() is { } zk ? $"Testraum={zk.Kurz}, " : "");   // L1: nur mit Zielen des Testraums (Labor-PC)
 
@@ -554,6 +595,6 @@ sealed partial class QuestApp
 
     partial void LaborPruefbildVorbereiten()
     {
-        if (lauf is { Fertig: true } l) { Abschliessen(l, Time.Total); lauf = null; laufEnde = null; markiertesBauteil = null; }   // Messprotokoll einmal (wie nach 5 s)
+        if (LaborAn && lauf is { Fertig: true } l) { Abschliessen(l, Time.Total); lauf = null; laufEnde = null; markiertesBauteil = null; }   // Messprotokoll einmal (wie nach 5 s)
     }
 }

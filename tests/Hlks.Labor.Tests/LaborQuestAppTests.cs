@@ -7,15 +7,15 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Hlks.Labor.Tests;
 
 /// <summary>
-/// «App installieren» im Labor (L0): dieselbe Installation wie in KICAD (QuestApp.cs), aber mit der Marke des Labors – Paket ch.hkplanung.xrlabor, Eingang
-/// /sdcard/Android/data/ch.hkplanung.xrlabor/files, eigene Ablage, Port des Labors. Statt adb.exe läuft die Attrappe tests/Hlks.AdbAttrappe (nie ein echtes adb).
-/// Die Attrappe kennt Eingang, Start und dumpsys nur für die KICAD-App: Bei der Labor-App scheitert darum das Anlegen des Eingangs – geprüft wird, dass alle adb-Aufrufe
-/// die Kennung des Labors tragen, keiner die von KICAD, und dass die Kopplung nach dem gescheiterten Übertragen zurückgenommen ist.
+/// «App installieren» im Labor (H+K XR E1, entwurf/xr-empfaenger.md): dieselbe Installation wie in KICAD (QuestApp.cs) mit derselben App «H+K XR» (ch.hkplanung.xr) und
+/// derselben Ablage (hk_xr); das Labor ist nur ein anderes Werkzeug der App: Eingangsdatei kopplung_xrlabor.json, Paket mit werkzeug «xrlabor» (Fassung 2), Port des Labors.
+/// Statt adb.exe läuft die Attrappe tests/Hlks.AdbAttrappe (nie ein echtes adb).
 /// </summary>
 public class LaborQuestAppTests
 {
     const string Seriennummer = "1WMHH000000000";
-    const string ApkName = "ch.hkplanung.xrlabor-Signed.apk";
+    const string ApkName = "ch.hkplanung.xr-Signed.apk";
+    const string Eingang = "/sdcard/Android/data/ch.hkplanung.xr/files";
 
     sealed class Adb
     {
@@ -30,14 +30,17 @@ public class LaborQuestAppTests
                 File.Copy(Path.Combine(AppContext.BaseDirectory, n), Path.Combine(ordner, n), true);
             File.WriteAllLines(Path.Combine(ordner, "geraete.txt"), [Seriennummer + "\tdevice"]);
         }
-        public string[] Aufrufe() => File.Exists(Path.Combine(Ordner, "aufrufe.log")) ? File.ReadAllLines(Path.Combine(Ordner, "aufrufe.log")).Where(z => z.Length > 0).ToArray() : [];
+        public string[] Aufrufe() => Zeilen("aufrufe.log");
+        public string[] Zeilen(string name) => File.Exists(Path.Combine(Ordner, name)) ? File.ReadAllLines(Path.Combine(Ordner, name)).Where(z => z.Length > 0).ToArray() : [];
+        public string? Gelesen(string name) => File.Exists(Path.Combine(Ordner, name)) ? File.ReadAllText(Path.Combine(Ordner, name)) : null;
+        public Adb Datei(string name, string inhalt) { File.WriteAllText(Path.Combine(Ordner, name), inhalt); return this; }
     }
 
     sealed class Umgebung : IAsyncDisposable
     {
         public string Wurzel { get; } = Path.Combine(Path.GetTempPath(), "hlks_laborapp_" + Guid.NewGuid().ToString("N")[..10]);
         public Adb Adb { get; }
-        public string Ablage => Path.Combine(Wurzel, "labor_app");
+        public string Ablage => Path.Combine(Wurzel, "hk_xr");
         public string Apk => Path.Combine(Ablage, ApkName);
         public LaborServer Labor { get; }
 
@@ -69,50 +72,99 @@ public class LaborQuestAppTests
     }
 
     [Fact]
-    public async Task Zustand_nennt_die_Labor_App_und_fragt_die_Brille_nach_ihr()
+    public async Task Zustand_nennt_die_App_H_K_XR_mit_dem_Werkzeug_Labor_und_fragt_die_Brille_nach_ihr()
     {
         await using var u = new Umgebung();
         var (code, j) = await u.Labor.Get("/api/quest/app");
         Assert.Equal(HttpStatusCode.OK, code);
-        Assert.Equal("ch.hkplanung.xrlabor", (string)j!["paket"]!);
+        Assert.Equal("ch.hkplanung.xr", (string)j!["paket"]!);
+        Assert.Equal("H+K XR", (string)j["app"]!);
+        Assert.Equal("xrlabor", (string)j["werkzeug"]!);
+        Assert.Equal("XR-Labor", (string)j["werkzeugName"]!);
         Assert.Equal(u.Ablage, (string)j["ablage"]!["ordner"]!);
         Assert.Null(j["ablage"]!["fehler"]);
         Assert.Equal(ApkName, (string)j["ablage"]!["version"]!["datei"]!);
         Assert.True((bool)j["adbGefunden"]!);
         Assert.Equal(Seriennummer, (string)j["brille"]!["seriennummer"]!);
+        Assert.Empty(j["brille"]!["alteApps"]!.AsArray());
         var aufrufe = u.Adb.Aufrufe();
-        Assert.Contains(aufrufe, a => a.EndsWith(" shell dumpsys package ch.hkplanung.xrlabor", StringComparison.Ordinal));
+        Assert.Contains(aufrufe, a => a.EndsWith(" shell dumpsys package ch.hkplanung.xr", StringComparison.Ordinal));
         Assert.DoesNotContain(aufrufe, a => a.Contains("kicad.quest", StringComparison.Ordinal));
+        Assert.DoesNotContain(aufrufe, a => a.Contains("xrlabor", StringComparison.Ordinal));
     }
 
     [Fact]
-    public async Task Ohne_abgelegte_App_nennt_die_Meldung_das_Werkzeug_mit_Labor()
+    public async Task Ohne_abgelegte_App_nennt_die_Meldung_das_Bereitstellungsskript_ohne_Schalter_Labor()
     {
         await using var u = new Umgebung();
         File.Delete(Path.Combine(u.Ablage, "version.json"));
         var (_, j) = await u.Labor.Get("/api/quest/app");
-        Assert.Contains(@"werkzeuge\quest_app_bereitstellen.ps1 -Labor", (string)j!["ablage"]!["fehler"]!);
+        var fehler = (string)j!["ablage"]!["fehler"]!;
+        Assert.Contains(@"werkzeuge\quest_app_bereitstellen.ps1", fehler);
+        Assert.DoesNotContain("-Labor", fehler);
     }
 
     [Fact]
-    public async Task Installieren_ueber_Kabel_mit_Paket_Eingang_und_Port_des_Labors()
+    public async Task Installieren_ueber_Kabel_legt_kopplung_xrlabor_json_ab_und_koppelt_das_Labor()
     {
         await using var u = new Umgebung();
-        var (port, _, _) = await u.Labor.Aktiv();
+        var (port, _, fp) = await u.Labor.Aktiv();
         var (code, e) = await u.Labor.LokalPost("/api/quest/app/installieren", new { weg = "kabel" });
         Assert.Equal(HttpStatusCode.OK, code);
-        Assert.False((bool)e!["ok"]!, e.ToJsonString());
-        Assert.Equal(["zugang", "apk", "brille", "installieren", "kabel", "uebertragen"], e["schritte"]!.AsArray().Select(s => (string)s!["id"]!).ToArray());
-        Assert.False((bool)e["schritte"]!.AsArray().Last()!["ok"]!);
-        Assert.Contains("Eingang der App", (string)e["fehler"]!);
+        Assert.True((bool)e!["ok"]!, e.ToJsonString());
+        Assert.Equal(["zugang", "apk", "brille", "installieren", "kabel", "uebertragen", "starten"], e["schritte"]!.AsArray().Select(s => (string)s!["id"]!).ToArray());
         var aufrufe = u.Adb.Aufrufe();
         Assert.Contains(aufrufe, a => a.EndsWith(" install -r " + u.Apk, StringComparison.Ordinal));
         Assert.Contains(aufrufe, a => a.EndsWith($" reverse tcp:{port} tcp:{port}", StringComparison.Ordinal));   // der Netzzugang des Labors über das Kabel
-        Assert.Contains(aufrufe, a => a.EndsWith(" shell mkdir -p /sdcard/Android/data/ch.hkplanung.xrlabor/files", StringComparison.Ordinal));
-        Assert.DoesNotContain(aufrufe, a => a.Contains("kicad.quest", StringComparison.Ordinal));
-        // kein Schlüssel ohne Brille: die frisch angelegte Kopplung ist zurückgenommen, und kein Paket liegt mehr am PC
+        Assert.Contains(aufrufe, a => a.EndsWith($" shell mkdir -p {Eingang}", StringComparison.Ordinal));
+        Assert.Equal([Eingang + "/kopplung_xrlabor.json"], u.Adb.Zeilen("push_ziel.txt"));
+        Assert.DoesNotContain(aufrufe, a => a.Contains("kicad.quest", StringComparison.Ordinal) || a.Contains("ch.hkplanung.xrlabor", StringComparison.Ordinal));
+        Assert.Equal(["ch.hkplanung.xr/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
+        // das Paket in der Brille: Fassung 2, Werkzeug des Labors, Fingerabdruck und Port des Labors
+        var paket = (JsonObject)JsonNode.Parse(u.Adb.Gelesen("gepusht_xrlabor.txt")!)!;
+        Assert.Equal(2, (int)paket["fassung"]!);
+        Assert.Equal("xrlabor", (string)paket["werkzeug"]!);
+        Assert.Equal("XR-Labor", (string)paket["werkzeugName"]!);
+        Assert.Equal(port, (int)paket["port"]!);
+        Assert.Equal(fp, (string)paket["fingerabdruck"]!);
+        Assert.Null(u.Adb.Gelesen("gepusht_kicad.txt"));   // KICADs Paket bleibt unberührt
+        // die Kopplung steht im Ordner des Labors, am PC bleibt kein Paket liegen
+        Assert.Single((await u.Labor.Zugang())["kopplungen"]!.AsArray());
+        Assert.Empty(Directory.Exists(Path.Combine(u.Wurzel, "paket_temp")) ? Directory.GetFiles(Path.Combine(u.Wurzel, "paket_temp"), "*", SearchOption.AllDirectories) : []);
+        Assert.True(File.Exists(Path.Combine(u.Wurzel, "weg", "weg.json")));
+    }
+
+    [Fact]
+    public async Task Scheitert_das_Uebertragen_ist_die_Kopplung_zurueckgenommen_und_kein_Paket_liegt_am_PC()
+    {
+        await using var u = new Umgebung();
+        u.Adb.Datei("verhalten.txt", "push_fehler\n");
+        await u.Labor.Aktiv();
+        var (code, e) = await u.Labor.LokalPost("/api/quest/app/installieren", new { weg = "kabel" });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.False((bool)e!["ok"]!, e.ToJsonString());
+        Assert.Equal("uebertragen", (string)e["schritte"]!.AsArray().Last()!["id"]!);
         Assert.Empty((await u.Labor.Zugang())["kopplungen"]!.AsArray());
         Assert.Empty(Directory.Exists(Path.Combine(u.Wurzel, "paket_temp")) ? Directory.GetFiles(Path.Combine(u.Wurzel, "paket_temp"), "*", SearchOption.AllDirectories) : []);
         Assert.False(File.Exists(Path.Combine(u.Wurzel, "weg", "weg.json")));
+    }
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_geht_auch_vom_Labor_aus_nur_mit_Bestaetigung_und_nur_die_zwei_Pakete()
+    {
+        await using var u = new Umgebung();
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\nch.hkplanung.xrlabor\nch.hkplanung.fremd\n");
+        u.Adb.Datei("app_installiert.txt", "0.1 1");
+        var (_, z) = await u.Labor.Get("/api/quest/app");
+        Assert.Equal(["ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor"], z!["brille"]!["alteApps"]!.AsArray().Select(a => (string)a!["paket"]!).ToArray());
+        var (ohne, _) = await u.Labor.LokalPost("/api/quest/app/alte-entfernen", new { });
+        Assert.Equal(HttpStatusCode.BadRequest, ohne);
+        Assert.Null(u.Adb.Gelesen("uninstall.log"));
+        var (code, j) = await u.Labor.LokalPost("/api/quest/app/alte-entfernen", new { bestaetigt = true });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.True((bool)j!["ok"]!, j.ToJsonString());
+        Assert.Equal(["ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor"], u.Adb.Zeilen("uninstall.log"));
+        Assert.Equal(["ch.hkplanung.fremd"], u.Adb.Zeilen("alte_apps.txt"));
+        Assert.NotNull(u.Adb.Gelesen("app_installiert.txt"));   // «H+K XR» bleibt
     }
 }

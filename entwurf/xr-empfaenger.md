@@ -1,7 +1,7 @@
 # H+K XR – eine Empfänger-App in der Brille für alle Werkzeuge: Spezifikation
 
-Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Entwurf, zur Freigabe durch Christian**. Gebaut wird erst nach
-Freigabe. Ergänzt `entwurf/labor-app.md` (XR-Labor) und `entwurf/modul-xr.md` (Quest App); wo sie sich widersprechen, gilt diese Datei.
+Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Freigegeben von Christian am 26.10.2026** («Spezifikation H+K XR freigegeben, starte E1»). Bau ab E1.
+Ergänzt `entwurf/labor-app.md` (XR-Labor) und `entwurf/modul-xr.md` (Quest App); wo sie sich widersprechen, gilt diese Datei.
 
 ## Anlass
 
@@ -178,8 +178,44 @@ Zwischen den Stufen ein Brillentest mit Christian (Prüfbilder an jedem sichtbar
   während E1/E2 ändert nur diese Sitzung die App.
 - **Hauptsitzung:** L1 kann wie gemeldet zusammengeführt werden; es bleibt Grundlage. Neue Knöpfe in KICAD («H+K XR installieren») gehören zu E1.
 
+### Schnittstellen im Bau E1 (Hauptlauf, 26.10.2026)
+
+Damit Brille (`hlks-kern`) und PC-Seite (`hlks-modul`) gleichzeitig bauen, gilt:
+
+- **App:** Kennung `ch.hkplanung.xr`, Name «H+K XR». Eine APK für alle Werkzeuge, abgelegt von `werkzeuge/quest_app_bereitstellen.ps1` (ohne
+  `-Labor`) in `%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr\` (`ch.hkplanung.xr-Signed.apk` + `version.json` wie bisher). KICAD und Labor installieren
+  dieselbe APK von dort. Bauausgabe `<bau>\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xr-Signed.apk`.
+- **Kopplungspaket** Fassung 2: wie Fassung 1 plus `werkzeug` (`kicad` | `xrlabor`, Muster `[a-z][a-z0-9_-]{0,31}`) und `werkzeugName` («KICAD» |
+  «XR-Labor»). Fassung 1 ohne `werkzeug` gilt als `kicad`.
+- **Eingang** der App: `/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_<werkzeug>.json` (ein Paket je Werkzeug); die App übernimmt jedes in
+  ihren privaten Speicher `kopplungen/<werkzeug>.json` und löscht es im Eingang. Ein altes `kopplung.json` gilt als `kicad`.
+- **Kanal:** Die App hält zu jedem gekoppelten, erreichbaren Werkzeug einen Kanal offen. `hallo` bekommt `aktiv` (bool, fehlt = true); neue
+  Nachricht der App `aktiv { aktiv }` beim Wechsel. Ein inaktiver Teilnehmer bekommt Aufträge, aber die App sendet ihm keine Posen; der PC
+  führt ihn in der Teilnehmerliste mit `aktiv: false` (KICAD zeigt seine Figur dann nicht). Ein Auftrag an eine inaktive App lässt sie zu diesem
+  Werkzeug wechseln.
+- **Alte Apps:** Der Quest-Dialog bietet «Alte Apps entfernen» (`adb uninstall ch.hkplanung.kicad.quest` und `ch.hkplanung.xrlabor`, nur auf Knopfdruck
+  und nur, wenn sie installiert sind).
+
+### Prüfliste für E1 (Hinweise der Sitzung «Modul XR – Quest App», 26.10.2026)
+
+1. Paketname `ch.hkplanung.kicad.quest` mitziehen in `werkzeuge/quest_app_bereitstellen.ps1`, `quest_brillentest.ps1`, `quest_pruefen.ps1`, im
+   Quest-Dialog von KICAD (Installation und Start per adb, Prüfung gegen `version.json`) und im Kopplungspfad
+   `/sdcard/Android/data/<paket>/files/kopplung.json`; die alte App auf der Brille deinstallieren lassen.
+2. Netzzugang und Pinning hängen am PC (`zugang.json`, `XrPforte`); mehrere Werkzeuge = mehrere Kopplungseinträge in der App. Das `hallo` trägt
+   Fassung und Commit der App.
+3. Grenzen für Stellschrauben und Varianten (Katalog 96, Kanal 128) gelten je Kanal – bei mehreren Werkzeugen je Werkzeug zählen.
+4. Die Prüfläufe V1a–V1i (`QuestApp.Pruefen*.cs`) setzen Varianten selbst; beim Umbau zu Modulen mitziehen.
+5. Register «XR» im Menüband, Gruppe «Brille», «App installieren …» (Kürzel XI) zeigt auf den Quest-Dialog: neuen Namen «H+K XR» nachführen.
+
 ## Offene Punkte (im Bau zu klären, ohne Rückfrage)
 
 - Ordnername `src/Hlks.Quest` behalten oder umbenennen (E1, nach Konfliktlage).
 - Erhalt der bestehenden Kopplung beim Wechsel der App-Kennung: neu koppeln per Kabel (einmalig) ist die Vorgabe.
 - Symbol «H+K XR»: Entwurf als Bild an Christian (E1).
+
+### Entscheide Christian 26.10.2026 nach E1 (Fragefenster)
+
+- Symbol «H+K XR»: **kräftig** (dunkles Blaugrau `#3E536F`, heller Brillenumriss mit «XR», darunter «H+K»).
+- Knopf XI im Register XR: **«H+K XR installieren …»**.
+- Übergang: Die KICAD-App führt das bisherige Interface-Labor (Prüfaufgaben aus dem KICAD-Dialog «XR-Labor») **bis E3** noch selbst aus
+  (`Werkzeug.Kicad.MitLabor = true`); mit dem Bedienstandard in E3 wird das `false`.
