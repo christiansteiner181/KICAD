@@ -730,7 +730,9 @@ sealed partial class QuestApp
         else Lines.Add(new Vec3(-0.5f, 0, -1), new Vec3(0.5f, 0, -1), new Color32(80, 220, 255, 255), 0.005f);   // Bodenmarke, solange kein Modell da ist
         MessenBild(kopf);    // V1a: Messen (Fang, Messband, stehende Messungen) – beim Begehen und am Tisch
         MarkerBild(kopf);    // V1a: Problem-Marker (setzen, Stecknadeln)
-        LaborBild(kopf);   // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung; Einhängepunkt XR-Labor)
+        // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung; Einhängepunkt XR-Labor). H+K XR E1: nicht, solange die Startseite offen ist (die Karte stünde
+        // vor den Werkzeugen; Prüfbild startseite_zurueck.jpg) – die Aufgabe ruht so lange
+        if (!startseite.Offen) LaborBild(kopf);
         HinweiseZeichnen(kopf);   // V1a: Hinweise frei schwebend (nach Apps und Karte, die sie nie überdecken)
         WechselMeldungZeichnen(kopf);   // H+K XR E1: «Wechsel zu …»
         rueck.Zeichnen(kopf);

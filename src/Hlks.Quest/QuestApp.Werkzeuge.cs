@@ -451,6 +451,7 @@ sealed partial class QuestApp
     void StartseiteOeffnen(Pose kopf)
     {
         if (apps.Sichtbar) apps.Ausblenden(Time.Total);
+        tafelOffenVorher = false;   // kein Hinweis «Andere App: …» – die Tafel geht für die Startseite, nicht durch Schliessen
         if (symbole.Sichtbar) symbole.Ausblenden(Time.Total);
         startseite.Oeffnen(kopf, Time.Total);
         letzteGeste = "Startseite";

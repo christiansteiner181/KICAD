@@ -70,6 +70,7 @@ sealed partial class QuestApp
                         var offen = false;
                         LaborAufgabeOffen(ref offen);   // das Labor ist nicht mehr aktiv: keine Aufgabe offen
                         W(!offen && lk is { Aktiv: false } && kk is { Aktiv: true }, "zurück zu KICAD: die Aufgabe des Labors ist abgebrochen, KICAD aktiv, Labor inaktiv");
+                        wPosenLabor = lk?.PosenGesendet ?? 0;   // ab dem Wechsel: das Labor bekommt keine Posen mehr
                     }
                     wPhase = wPhase == 2 ? 3 : 9; wT0 = t;
                     break;
@@ -80,7 +81,8 @@ sealed partial class QuestApp
                     break;
                 }
                 var l = platz.Lage;
-                startseite.SimHand = Geisterhand.VorlageFlach(l.Mitte + l.Normale * (0.10 - 0.005 * wSchritt), l.Normale * -1, l.Oben, links: false);
+                // flache Hand, Handfläche zum Symbol, von 20 cm davor je Bild 1 cm näher (wie das Antippen in PruefP5aRegeln)
+                startseite.SimHand = Geisterhand.VorlageFlach(l.Mitte + l.Normale * (0.20 - 0.01 * wSchritt), l.Normale * -1, l.Oben, links: false);
                 if (++wSchritt > 50) WEnde(false, "die flache Hand wählte KICAD nicht");
                 break;
             case 3:   // KICAD geladen, Posen nur an KICAD
@@ -88,7 +90,6 @@ sealed partial class QuestApp
                 {
                     var ok = lk is { Aktiv: false } && lk.PosenGesendet == 0 && kk.AktivGesendet >= 1;
                     W(ok, $"KICAD aktiv mit Modell ({darstellung.Netze} Netze), Posen KICAD {kk.PosenGesendet}, Labor {lk?.PosenGesendet}, «aktiv» an KICAD {kk.AktivGesendet}×");
-                    wPosenKicad = kk.PosenGesendet;
                     Console.WriteLine("P4 Wechsel: KICAD bereit");
                     wPhase = 4; wT0 = t;
                 }
@@ -97,6 +98,7 @@ sealed partial class QuestApp
             case 4:   // auf die Aufgabe des Labors warten (das Skript sendet sie an den inaktiven Kanal)
                 if (aktiv == labor)
                 {
+                    wPosenKicad = kk?.PosenGesendet ?? 0;   // ab dem Wechsel (im selben Bild): KICAD bekommt keine Posen mehr
                     var meldung = wechselMeldung?.Text;
                     W(meldung == WerkzeugWahl.Meldung(labor.Werkzeug), $"Auftrag vom Labor holt die App ins Labor, Meldung «{meldung}»");
                     wPhase = 5; wT0 = t;
@@ -109,9 +111,8 @@ sealed partial class QuestApp
                 LaborAufgabeOffen(ref laeuft);
                 if (darstellung is not null && laeuft && lk is { Aktiv: true, PosenGesendet: > 0 } && t - wT0 > 1)
                 {
-                    var ok = kk is { Aktiv: false } && kk.PosenGesendet <= wPosenKicad + 2 && lk.AktivGesendet >= 1;   // höchstens die Posen, die schon unterwegs waren
-                    W(ok, $"XR-Labor aktiv mit Testraum ({darstellung.Netze} Netze), Aufgabe läuft, Posen Labor {lk.PosenGesendet}, KICAD danach {kk?.PosenGesendet - wPosenKicad}");
-                    wPosenLabor = lk.PosenGesendet;
+                    var ok = kk is { Aktiv: false } && kk.PosenGesendet <= wPosenKicad + 1 && lk.AktivGesendet >= 1;   // höchstens eine, die schon unterwegs war
+                    W(ok, $"XR-Labor aktiv mit Testraum ({darstellung.Netze} Netze), Aufgabe läuft, Posen Labor {lk.PosenGesendet}, KICAD seit dem Wechsel +{kk?.PosenGesendet - wPosenKicad}");
                     Console.WriteLine("P4 Wechsel: Labor bereit");
                     wPhase = 6; wT0 = t;
                 }
@@ -135,7 +136,7 @@ sealed partial class QuestApp
                 if (darstellung is not null && kk is { Aktiv: true } && t - wT0 > 1)
                 {
                     W(lk is { Aktiv: false }, $"zurück bei KICAD mit Modell ({darstellung.Netze} Netze, {modellWeg})");
-                    wPosenKicad = kk.PosenGesendet;
+                    wPosenKicad = kk.PosenGesendet;   // ab hier wieder Posen an KICAD (Prüfung in Phase 10)
                     Console.WriteLine("P4 Wechsel: zurück bei KICAD");
                     wPhase = 10; wT0 = t;
                 }
@@ -143,7 +144,8 @@ sealed partial class QuestApp
                 break;
             case 10:   // 4 s stehen lassen (das Skript prüft die Teilnehmer), dann Schluss
                 if (t - wT0 < 4) break;
-                W(kk!.PosenGesendet > wPosenKicad && lk!.PosenGesendet <= wPosenLabor + 2, $"Posen danach KICAD +{kk.PosenGesendet - wPosenKicad}, Labor +{lk!.PosenGesendet - wPosenLabor}");
+                W(kk!.PosenGesendet > wPosenKicad && lk!.PosenGesendet <= wPosenLabor + 1,
+                    $"Posen nach dem Zurückwechseln: KICAD +{kk.PosenGesendet - wPosenKicad} (in 4 s), Labor seit dem Wechsel +{lk!.PosenGesendet - wPosenLabor}");
                 W(wechselGezaehlt == 3, $"{wechselGezaehlt} Wechsel");
                 WEnde(!wTeile.Any(x => x.Contains("FEHLER", StringComparison.Ordinal)), "");
                 break;
