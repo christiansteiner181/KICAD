@@ -292,6 +292,63 @@ public class QuestAppTests
         Assert.DoesNotContain("\n", f);
         Assert.False(string.IsNullOrEmpty(v));
         Assert.Contains("Installation ist fehlgeschlagen", QuestDienst.InstallFehler(null).Fehler);
+        // die App heisst wie die Marke (Vorgabe KICAD, unverändert); das XR-Labor nennt seine
+        Assert.Equal("In der Brille die App «KICAD» deinstallieren (App-Bibliothek › KICAD › Deinstallieren) und erneut installieren.", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]").Vorschlag);
+        Assert.Contains("«XR-Labor»", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]", "XR-Labor").Vorschlag);
+    }
+
+    [Fact]
+    public void App_Marke_KICAD_ist_die_Vorgabe_mit_den_bisherigen_Werten()
+    {
+        // XR-Labor L0: Paket, Eingang, Ablage und Einstellungsschlüssel sind Parameter (QuestEinstellungen.AppMarke); KICAD behält genau die bisherigen Werte
+        var k = QuestAppMarke.Kicad;
+        Assert.Equal("ch.hkplanung.kicad.quest", k.Paket);
+        Assert.Equal("KICAD", k.Name);
+        Assert.Equal("quest.app_ablage", k.AblageSchluessel);
+        Assert.Equal("quest_app", k.AblageOrdner);
+        Assert.Equal(@"werkzeuge\quest_app_bereitstellen.ps1", k.Bereitstellen);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.kicad.quest/files", k.Eingang);
+        Assert.Equal(QuestDienst.AppEingang, k.Eingang);
+        Assert.Equal(QuestDienst.AppPaket, k.Paket);
+        Assert.Equal(QuestDienst.AppAblageSchluessel, k.AblageSchluessel);
+        Assert.Equal(k, new QuestEinstellungen().AppMarke);
+        Assert.Equal(k, QuestEinstellungen.Vorgabe().AppMarke);
+        Assert.Equal(k, QuestEinstellungen.Vorgabe(false).AppMarke);
+        Assert.Equal(k, QuestEinstellungen.Vorgabe(true).AppMarke);
+        // im Testrunner gilt Vorgabe() als Testlauf: dieselben Werte wie Vorgabe(true)
+        Assert.Equal(QuestEinstellungen.Vorgabe(true).AppAblage, QuestEinstellungen.Vorgabe().AppAblage);
+        Assert.False(QuestEinstellungen.Vorgabe(true).PfadDurchsuchen);
+        Assert.True(QuestEinstellungen.Vorgabe(false).PfadDurchsuchen);
+        Assert.Null(QuestEinstellungen.Vorgabe(false).AppAblage);
+        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.x; rm", "X", "quest.app_ablage", "quest_app", "x"));
+        Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.x.y", "X", "quest.app_ablage", "..", "x"));
+    }
+
+    [Fact]
+    public void Ablage_Vorgabe_und_Einstellung_kommen_aus_der_Marke()
+    {
+        var o = Path.Combine(Path.GetTempPath(), "hlks_marke_" + Guid.NewGuid().ToString("N")[..8]);
+        try
+        {
+            Directory.CreateDirectory(o);
+            var benutzer = new BenutzerEinstellungen(new RechnerAblage(o, "testpc", true, "einstellungen.json", "Umleitung"));
+            var profil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
+            // KICAD ohne Einstellung: wie bisher %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app (nur der Pfad, nichts gelesen)
+            var kicad = new QuestDienst(benutzer, new QuestEinstellungen());
+            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "quest_app"), "vorgabe"), kicad.AppOrdner());
+            // eine andere Marke: eigener Ordner und eigener Einstellungsschlüssel; KICADs Einstellung gilt dort nicht und umgekehrt
+            var andere = new QuestDienst(benutzer, new QuestEinstellungen { AppMarke = new QuestAppMarke("ch.hkplanung.probe", "Probe", "probe.app_ablage", "probe_app", "x") });
+            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "probe_app"), "vorgabe"), andere.AppOrdner());
+            var ak = Path.Combine(o, "kicad");
+            var ap = Path.Combine(o, "probe");
+            benutzer.Setzen("quest.app_ablage", JsonValue.Create(ak));
+            Assert.Equal((ak, "einstellung"), kicad.AppOrdner());
+            Assert.Equal("vorgabe", andere.AppOrdner().Quelle);
+            benutzer.Setzen("probe.app_ablage", JsonValue.Create(ap));
+            Assert.Equal((ap, "einstellung"), andere.AppOrdner());
+            Assert.Equal((ak, "einstellung"), kicad.AppOrdner());
+        }
+        finally { Directory.Delete(o, true); }
     }
 
     [Fact]

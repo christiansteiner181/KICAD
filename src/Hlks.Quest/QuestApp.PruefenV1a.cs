@@ -23,26 +23,10 @@ namespace Hlks.Quest;
 sealed partial class QuestApp
 {
     string pruefV1a = "";
-    /// <summary>Ort und Blick für das Prüfbild «messen.jpg» bzw. «marker.jpg» (Szene).</summary>
-    (XVec3 Auge, XVec3 Ziel)? pruefMessBlick, pruefMarkerBlick;
-    /// <summary>Wände der Prüfaufgabe (für Lot und Marker in PruefV1aRegeln).</summary>
-    WandPaar? pruefWaende;
-
-    /// <summary>Waagrechte Richtung entlang einer Wand (Von → Bis), Einheit.</summary>
-    static XVec3 Entlang(WandMarke w) => (w.Bis - w.Von).Laenge < 1e-9 ? new XVec3(1, 0, 0) : (w.Bis - w.Von).Einheit();
-
-    /// <summary>Fang von der Mitte zwischen den Wänden (1.2 m über dem Boden) zu beiden Wänden – derselbe Fang wie mit dem Zielstrahl der Hand.</summary>
-    (FangErgebnis A, FangErgebnis B, XVec3 Mitte, double Ms) WandFang(WandPaar w)
-    {
-        FangFilterSetzen();
-        var am = XVec3.Mitte(w.A.Von, w.A.Bis) + new XVec3(0, 1.2, 0);
-        var n = w.A.Normale;
-        var c = am + n * (w.SollMm / 2000);
-        var uhr = Stopwatch.StartNew();
-        var fa = szenenFang!.Strahl(c, n * -1);
-        var fb = szenenFang.Strahl(c, n);
-        return (fa, fb, c, uhr.Elapsed.TotalMilliseconds / 2);
-    }
+    /// <summary>Ort und Blick für das Prüfbild «messen.jpg» (setzt der Prüflauf des XR-Labors, «messen-wand-wand») bzw. «marker.jpg» (Szene).</summary>
+    (XVec3 Auge, XVec3 Ziel)? pruefMessBlick = null, pruefMarkerBlick;
+    /// <summary>Wände der Prüfaufgabe «messen-wand-wand» (für Lot und Marker in PruefV1aRegeln; setzt der Prüflauf des XR-Labors, ohne Labor null).</summary>
+    WandPaar? pruefWaende = null;
 
     /// <summary>Ein Messband wie mit der Hand: Pinch beim Fang von, 0.5 s ziehen, loslassen beim Fang bis (Hand «pruefung», stört die echten Hände nicht).</summary>
     List<MessEreignis> MessbandZiehen(FangErgebnis von, FangErgebnis bis, Pose kopf)
@@ -54,61 +38,6 @@ sealed partial class QuestApp
         e.AddRange(Messband.Schritt(messen, t0 + 0.5, "pruefung", false, R(bis), bis, modus));
         foreach (var x in e) MessEreignis(x, kopf);
         return e;
-    }
-
-    /// <summary>
-    /// Prüfaufgabe «messen-wand-wand» beim Begehen (PruefAufgabenBegehen): starten (die App markiert zwei Wände und schaltet Messen ein), ein Messband von der einen
-    /// Wand zur Raummitte (Fehlgriff «nicht von Wand zu Wand»), dann eines von Wand zu Wand über den Fang der Szene: Erfolg und Messprotokoll.
-    /// </summary>
-    (bool Ok, string Text) PruefMessenWandWand(Pose kopf)
-    {
-        var vorher = (messen.An, messen.Variante, messen.Lot);
-        StellschraubeAnwenden("labor.aufgabe", J("\"messen-wand-wand\""));
-        AufgabeBild(kopf);
-        var l = lauf!;
-        if (l.Waende is not { } w || !l.Laeuft)
-        {
-            var grund = l.Grund ?? l.Zustand.ToString();
-            var gesperrt = l.Zustand == LaufZustand.Gesperrt;
-            AufgabeBeenden("Prüfung");
-            return (!gesperrt, $"messen-wand-wand {(gesperrt ? "FEHLER gesperrt" : "ohne Wandpaar, nicht geprüft")} ({grund})");
-        }
-        pruefWaende = w;
-        var messenEin = messen.An;
-        Messband.VarianteSetzen(messen, Varianten.Messband);
-        Messband.LotSetzen(messen, false);
-        var (fa, fb, c, ms) = WandFang(w);
-        string text;
-        bool ok;
-        if (fa.P is null || fb.P is null)
-        {
-            ok = false;
-            text = $"messen-wand-wand FEHLER: der Fang trifft die Wand nicht ({fa.Art}/{fb.Art})";
-            AufgabeBeenden("Prüfung");
-        }
-        else
-        {
-            MessbandZiehen(fa, new FangErgebnis(Fangart.Flaeche, Fangart.Namen[Fangart.Flaeche], c, null), kopf);   // daneben: zur Raummitte
-            var fg = l.Fehlgriffe;
-            var e = MessbandZiehen(fa, fb, kopf);
-            var m = e.FirstOrDefault(x => x.Art == MessEreignisArt.Fertig)?.Messung;
-            AufgabeBild(kopf);
-            var p = letztesProtokoll;
-            ok = messenEin && fg == 1 && m is not null && l.Zustand == LaufZustand.Erfolg && p is not null && (string?)p["aufgabe"] == PruefAufgaben.MessenWandWand
-                && (bool?)p["erfolg"] == true && (int?)p["fehlgriffe"] == 1 && p["stellschrauben"] is JsonObject;
-            string Art(FangErgebnis f) => f.Id is { } id && szene!.Elemente.TryGetValue(id, out var el) ? $"{el.Teil} {el.Art}" : "–";
-            text = string.Create(CultureInfo.InvariantCulture,
-                $"messen-wand-wand {(ok ? "Erfolg" : "FEHLER")} (Raum {w.Raum[..Math.Min(8, w.Raum.Length)]}, Soll {w.SollMm:0} mm, gemessen {m?.Mass.AbstandMm ?? 0:0} mm, " +
-                $"Fang {fa.Name} {Art(fa)} {w.A.Abstand(fa.P.Value) * 1000:0} mm vor A / {fb.Name} {Art(fb)} {w.B.Abstand(fb.P.Value) * 1000:0} mm vor B in {ms:0.0} ms, " +
-                $"Messen {(messenEin ? "ein" : "aus")}, Fehlgriffe {l.Fehlgriffe}{(l.FehlgriffGruende.Count > 0 ? " «" + l.FehlgriffGruende[^1] + "»" : "")})");
-            var d = Entlang(w.A);
-            // Blick entlang der Wände auf die Messung: im Raum (höchstens bis kurz vor das Ende der Markierung), 40 cm über der Messlinie
-            pruefMessBlick = (c + d * Math.Min(0.9, (w.A.Bis - w.A.Von).Laenge / 2 - 0.05) + new XVec3(0, 0.4, 0), c - new XVec3(0, 0.05, 0));
-        }
-        Messband.AnSetzen(messen, vorher.An);
-        Messband.VarianteSetzen(messen, vorher.Variante);
-        Messband.LotSetzen(messen, vorher.Lot);
-        return (ok, text);
     }
 
     /// <summary>
@@ -228,7 +157,7 @@ sealed partial class QuestApp
                 var ortMm = markerWartend[^1].OrtMm;
                 teile.Add(string.Create(CultureInfo.InvariantCulture,
                     $"Marker={(markerOk ? "ok" : "FEHLER")} (gesetzt an {fb.Name}, Ort {ortMm[0]:0}/{ortMm[1]:0}/{ortMm[2]:0} mm, Element {(fb.Id is null ? "keins" : "ja")}, " +
-                    $"{(MarkerQuelle is null ? "ohne PC: wartet" : "geht an KICAD")})"));
+                    $"{(MarkerQuelle is null ? "ohne PC: wartet" : $"geht an {Marke.Gegenstelle}")})"));
                 var kp = SzeneVonSk(kopf.position);
                 // Blick auf den Marker: am Tisch vom Kopf, beim Begehen aus dem Raum (von der Mitte, 30 cm zurück und 35 cm höher)
                 var zumMarker = (fb.P!.Value - mitte).Einheit();
@@ -434,7 +363,7 @@ sealed partial class QuestApp
         hinweise.Leeren();
         geister.Stoppen();
         geister2.Stoppen();
-        if (lauf is { Fertig: true } l) { Abschliessen(l, Time.Total); lauf = null; laufEnde = null; markiertesBauteil = null; }   // Messprotokoll einmal (wie nach 5 s)
+        LaborPruefbildVorbereiten();   // XR-Labor: die Karte einer fertigen Prüfaufgabe weg (Messprotokoll einmal, wie nach 5 s)
     }
 
     /// <summary>Ein Bild lang die Apps nicht zeichnen (Prüfbilder der Messungen und Marker im Raum: der Blick dorthin geht sonst oft durch das Fenster).</summary>

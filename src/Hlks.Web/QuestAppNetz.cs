@@ -131,8 +131,9 @@ public static class QuestAppNetz
         && r.Port.Split(',', StringSplitOptions.TrimEntries | StringSplitOptions.RemoveEmptyEntries).Contains(port.ToString())
         && (r.Profile.Contains("Private", StringComparison.OrdinalIgnoreCase) || r.Profile.Contains("Any", StringComparison.OrdinalIgnoreCase) || r.Profile.Contains("All", StringComparison.OrdinalIgnoreCase));
 
-    /// <summary>Hinweise zu Netzprofil und Regeln. echte: die LAN-/WLAN-Schnittstellen des PCs mit privater Adresse (QuestDienst.EchteSchnittstelle). Nichts hier ändert etwas.</summary>
-    public static List<QuestAppHinweis> Bewerten(NetzAuskunft a, IReadOnlyList<NetzSchnittstelle> echte, int port, int suchPort, bool zugangAktiv)
+    /// <summary>Hinweise zu Netzprofil und Regeln. echte: die LAN-/WLAN-Schnittstellen des PCs mit privater Adresse (QuestDienst.EchteSchnittstelle). Nichts hier ändert etwas.
+    /// name: der Server in den Meldungen (QuestAppMarke.Name: KICAD bzw. XR-Labor).</summary>
+    public static List<QuestAppHinweis> Bewerten(NetzAuskunft a, IReadOnlyList<NetzSchnittstelle> echte, int port, int suchPort, bool zugangAktiv, string name = "KICAD")
     {
         var h = new List<QuestAppHinweis>();
         if (!a.Gelesen)
@@ -144,7 +145,7 @@ public static class QuestAppNetz
         var profile = a.Profile.Where(p => echte.Any(s => string.Equals(s.Name, p.Schnittstelle, StringComparison.OrdinalIgnoreCase))).ToList();
         if (profile.Count == 0 && echte.Count > 0) profile = a.Profile.ToList();   // Anzeigename passt nicht: alle Profile prüfen
         if (echte.Count == 0)
-            h.Add(new QuestAppHinweis("warnung", "KICAD findet keine LAN- oder WLAN-Karte mit privater Adresse. Ohne Büronetz erreicht die Brille den PC nur über das Kabel."));
+            h.Add(new QuestAppHinweis("warnung", $"{name} findet keine LAN- oder WLAN-Karte mit privater Adresse. Ohne Büronetz erreicht die Brille den PC nur über das Kabel."));
         foreach (var p in profile.Where(p => !p.Kategorie.Equals("Private", StringComparison.OrdinalIgnoreCase)))
             h.Add(new QuestAppHinweis("warnung", $"Das Netz «{p.Name}» ({p.Schnittstelle}) ist als «{Kategorie(p.Kategorie)}» eingestuft. Die Regeln der Gruppe «KICAD XR» gelten nur im Profil «Privat»; die Brille erreicht den PC im WLAN so nicht. "
                 + "Das Netz in den Windows-Einstellungen als privat einstufen, oder die Installation «über Kabel» wählen."));

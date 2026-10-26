@@ -2,7 +2,7 @@
 # letzten geprueften Stand startet und Agenten getrennt arbeiten").
 # Ablauf:
 #   1. Commit (Vorgabe main) in einer eigenen Arbeitskopie %USERPROFILE%\HLKS_CAD_pruefung auschecken (git worktree, detached).
-#   2. Kern-, MCP- und Web-Tests dieses Commits bauen und laufen lassen (Build %USERPROFILE%\HLKS_CAD_build\pruefung,
+#   2. Kern-, MCP-, Web-, Xr- und (seit 26.10.2026) Labor-Tests dieses Commits bauen und laufen lassen (Build %USERPROFILE%\HLKS_CAD_build\pruefung,
 #      Kataloge, KI-Vorlagen und Oberflaeche aus der Arbeitskopie), dazu die Node-Tests (*.test.mjs; Tests, die einen
 #      Server brauchen, ueberspringen sich selbst). Browser-Reihen laufen hier nicht.
 #   3. Fehlgeschlagene .NET-Tests einzeln wiederholen (Zeitgrenzen unter Last), hoechstens -Wiederholungen mal.
@@ -58,7 +58,20 @@ try {
   # 2./3. .NET-Tests
   $gruen = $true
   $zusammen = @()
-  foreach ($p in 'Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests') {
+  # XR-Labor (seit 26.10.2026, Stufe L0): src\Hlks.Labor wird mitgebaut (eigener Schritt, damit ein Fehler klar benannt ist) und
+  # tests\Hlks.Labor.Tests laeuft als eigener Teil "Labor" mit. Brillen-Projekte (Hlks.Quest, Hlks.Labor.Quest) baut diese Pruefung nie.
+  # Fehlen beide Projekte im geprueften Stand (Staende vor L0), entfaellt der Teil mit Hinweis; fehlt nur eines, ist das ein Fehler.
+  $laborProjekt = Test-Path "$wt\src\Hlks.Labor\Hlks.Labor.csproj"
+  $laborTests = Test-Path "$wt\tests\Hlks.Labor.Tests\Hlks.Labor.Tests.csproj"
+  if ($laborProjekt) {
+    & $dotnet build "$wt\src\Hlks.Labor\Hlks.Labor.csproj" --nologo -v q 2>&1 | Out-Null
+    if ($LASTEXITCODE -ne 0) { Log "Hlks.Labor: BAU FEHLGESCHLAGEN (Exit $LASTEXITCODE)"; $gruen = $false } else { Log 'Hlks.Labor: gebaut' }
+  }
+  $teile = @('Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests')
+  if ($laborTests) { $teile += 'Hlks.Labor.Tests' }
+  elseif ($laborProjekt) { Log 'Hlks.Labor.Tests: Testprojekt fehlt, obwohl src\Hlks.Labor vorhanden ist'; $gruen = $false }
+  else { Log 'Labor: Projekte in diesem Stand nicht vorhanden - uebersprungen' }
+  foreach ($p in $teile) {
     $trx = "$erg\$p.trx"; Remove-Item $trx -ErrorAction SilentlyContinue
     $uhr = [System.Diagnostics.Stopwatch]::StartNew()
     & $dotnet test "$wt\tests\$p" --nologo -v q --logger "trx;LogFileName=$p.trx" --results-directory $erg 2>&1 | Out-Null

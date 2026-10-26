@@ -197,8 +197,11 @@ public sealed class XrNetzDienst : IHostedService
     /// <summary>Ist der Schalter dieses PCs an?</summary>
     public bool EinstellungAn() => pc.Lesen().An;
 
-    int KonfigPort => einstellungen.Port ?? pc.Lesen().Port ?? XrEinstellungen.PortVorgabe;
-    int KonfigSuchPort => einstellungen.SuchPort ?? pc.Lesen().SuchPort ?? XrEinstellungen.SuchPortVorgabe;
+    int KonfigPort => einstellungen.Port ?? pc.Lesen().Port ?? einstellungen.PortStandard;
+    int KonfigSuchPort => einstellungen.SuchPort ?? pc.Lesen().SuchPort ?? einstellungen.SuchPortStandard;
+
+    /// <summary>Port des Netzzugangs ohne Einstellung dieses PCs (KICAD 5140, XR-Labor 5340); für Meldungen.</summary>
+    public int PortStandard => einstellungen.PortStandard;
 
     /// <summary>Soll der Zugang laufen, und was steht dem entgegen (null = nichts)?</summary>
     string? Hindernis(out bool soll)
@@ -206,7 +209,7 @@ public sealed class XrNetzDienst : IHostedService
         soll = EinstellungAn();
         if (!soll) return null;
         if (einstellungen.DesktopPort is { } d && haupt.Port != d)
-            return $"Der XR-Zugang öffnet sich nur im KICAD auf Port {d} (Desktop). Dieses KICAD läuft auf Port {haupt.Port} (Test- oder Abnahmeserver).";
+            return $"Der XR-Zugang öffnet sich nur im {einstellungen.ServerName} auf Port {d} (Desktop). Dieses {einstellungen.ServerName} läuft auf Port {haupt.Port} (Test- oder Abnahmeserver).";
         if (KonfigPort != 0 && (KonfigPort == haupt.Port || KonfigPort == KonfigSuchPort))
             return $"Der Port {KonfigPort} des XR-Zugangs ist schon vergeben (Oberfläche oder Suche).";
         return null;
@@ -418,7 +421,9 @@ public sealed class XrNetzDienst : IHostedService
 
 public static class XrZugangDienste
 {
-    /// <summary>Dienste des XR-Zugangs (Program.cs, eine Zeile). hauptPort: der localhost-Port dieses KICAD (für die Sperre auf den Desktop-Port).</summary>
+    /// <summary>Dienste des XR-Zugangs (Program.cs, eine Zeile). hauptPort: der localhost-Port dieses KICAD (für die Sperre auf den Desktop-Port).
+    /// Das XR-Labor (src/Hlks.Labor) ruft dieselbe Methode, nachdem es eigene XrEinstellungen und einen VrAuftragSpeicher ohne Ablage registriert hat
+    /// (TryAdd: die zuerst registrierten gelten).</summary>
     public static IServiceCollection AddXrZugang(this IServiceCollection s, int hauptPort)
     {
         s.TryAddSingleton(XrEinstellungen.Vorgabe());   // Tests registrieren eine eigene Fassung (ConfigureTestServices), die dann gilt

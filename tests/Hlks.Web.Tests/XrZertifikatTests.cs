@@ -38,6 +38,31 @@ public class XrZertifikatTests
     }
 
     [Fact]
+    public void Eigener_Ordner_des_Zertifikats_teilt_es_zwischen_zwei_Servern_mit_getrennten_Kopplungen()
+    {
+        // XR-Labor L0: Schalter und Kopplungen je Server, das Zertifikat je PC (ZertifikatOrdner); ohne Angabe liegt es wie bisher neben den Kopplungen
+        var o = NeuerOrdner();
+        try
+        {
+            var kicad = new XrEinstellungen { Ordner = o };
+            var labor = new XrEinstellungen { Ordner = Path.Combine(o, "labor"), ZertifikatOrdner = o };
+            Assert.Null(kicad.ZertifikatOrdner);
+            Assert.Equal(kicad.OrdnerPfad(), kicad.ZertifikatOrdnerPfad());
+            Assert.Equal(Path.GetFullPath(o), labor.ZertifikatOrdnerPfad());
+            using var a = new XrZertifikat(kicad);
+            using var b = new XrZertifikat(labor);
+            Assert.Equal(a.DateiPfad, b.DateiPfad);
+            Assert.Equal(a.Fingerabdruck, b.Fingerabdruck);
+            Assert.True(a.NeuErzeugt);
+            Assert.False(b.NeuErzeugt);
+            Assert.False(File.Exists(Path.Combine(o, "labor", Path.GetFileName(a.DateiPfad))));
+            Assert.NotEqual(new XrKopplungen(kicad).DateiPfad, new XrKopplungen(labor).DateiPfad);
+            Assert.NotEqual(new XrPcEinstellung(kicad).DateiPfad, new XrPcEinstellung(labor).DateiPfad);
+        }
+        finally { Weg(o); }
+    }
+
+    [Fact]
     public void Ist_ECDSA_P256_nur_fuer_Serverauthentisierung_ohne_CA_zehn_Jahre()
     {
         var jetzt = DateTimeOffset.UtcNow;
@@ -243,6 +268,29 @@ public class XrZertifikatTests
         Assert.Equal(5130, b.DesktopPort);
         Assert.Equal(IPAddress.Any, b.Adresse);
         Assert.Equal(XrEinstellungen.StandardOrdner(), b.OrdnerPfad());
+        // mit eigener Vorgabe (XR-Labor 5430): gleiche Prüfung
+        Assert.Equal(5439, XrEinstellungen.TestDesktopPort("5439", 5430));
+        Assert.Equal(5430, XrEinstellungen.TestDesktopPort("80", 5430));
+        Assert.Equal(5430, XrEinstellungen.TestDesktopPort(null, 5430));
+    }
+
+    [Fact]
+    public void KICAD_Standardports_Zertifikat_und_Name_bleiben_wie_bisher()
+    {
+        // XR-Labor L0: Standardports, Ordner des Zertifikats und Name sind Felder; KICADs Vorgaben ändern sich dadurch nicht
+        foreach (var e in new[] { XrEinstellungen.Betrieb(), XrEinstellungen.Vorgabe(true, _ => null), new XrEinstellungen() })
+        {
+            Assert.Equal(5140, e.PortStandard);
+            Assert.Equal(5141, e.SuchPortStandard);
+            Assert.Equal(5130, e.DesktopPort);
+            Assert.Null(e.ZertifikatOrdner);
+            Assert.Equal(e.OrdnerPfad(), e.ZertifikatOrdnerPfad());
+            Assert.Equal("KICAD", e.ServerName);
+        }
+        using var z = new XrZertifikat(XrEinstellungen.Betrieb());
+        Assert.Equal(XrEinstellungen.StandardOrdner(), Path.GetDirectoryName(z.DateiPfad));   // nur der Pfad, nichts angelegt
+        Assert.Contains("Vorgabe: 5140 (HTTPS).", Assert.Throws<Hlks.Kern.HlksFehler>(() => new XrPcEinstellung(new XrEinstellungen { Ordner = NeuerOrdner() }).Setzen(true, 80)).Vorschlag);
+        Assert.Contains("Vorgabe: 5341 (UDP).", Assert.Throws<Hlks.Kern.HlksFehler>(() => new XrPcEinstellung(new XrEinstellungen { Ordner = NeuerOrdner(), SuchPortStandard = 5341 }).Setzen(true, null, 80)).Vorschlag);
     }
 
     [Fact]
