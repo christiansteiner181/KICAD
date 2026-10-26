@@ -17,7 +17,7 @@ public class QuestAppTests
     const string Seriennummer = "1WMHH000000000";
     const string Usb = Seriennummer + "\tdevice";
     const string WlanWeg = "192.168.1.124:5555";
-    const string ApkName = "ch.hkplanung.kicad.quest-Signed.apk";
+    const string ApkName = "ch.hkplanung.xr-Signed.apk";
 
     // ---------------------------------------------------------------- Umgebung
 
@@ -146,12 +146,15 @@ public class QuestAppTests
         new(@"^devices$"), new(@"^start-server$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} reverse tcp:\d{1,5} tcp:\d{1,5}$"), new(@"^-s [A-Za-z0-9._:\-]{1,64} reverse --list$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} shell getprop ro\.product\.model$"), new(@"^-s [A-Za-z0-9._:\-]{1,64} shell getprop ro\.serialno$"),
-        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell dumpsys package ch\.hkplanung\.kicad\.quest$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell dumpsys package ch.hkplanung.xr$"),
         new(@"^-s [A-Za-z0-9._:\-]{1,64} install -r .+\.apk$"),
-        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell mkdir -p /sdcard/Android/data/ch\.hkplanung\.kicad\.quest/files$"),
-        new(@"^-s [A-Za-z0-9._:\-]{1,64} push .+kopplung\.json /sdcard/Android/data/ch\.hkplanung\.kicad\.quest/files/kopplung\.json$"),
-        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell cmd package resolve-activity --brief ch\.hkplanung\.kicad\.quest$"),
-        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell am start -n ch\.hkplanung\.kicad\.quest/[A-Za-z0-9_.$]+$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell mkdir -p /sdcard/Android/data/ch.hkplanung.xr/files$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} push .+kopplung_[a-z][a-z0-9_-]{0,31}\.json /sdcard/Android/data/ch\.hkplanung\.xr/files/kopplung_[a-z][a-z0-9_-]{0,31}\.json$"),
+        // H+K XR E1: die alten Apps lesen und (nur auf Knopfdruck) entfernen – genau diese zwei Pakete, sonst keines
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell pm list packages ch\.hkplanung$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} uninstall (ch\.hkplanung\.kicad\.quest|ch\.hkplanung\.xrlabor)$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell cmd package resolve-activity --brief ch.hkplanung.xr$"),
+        new(@"^-s [A-Za-z0-9._:\-]{1,64} shell am start -n ch.hkplanung.xr/[A-Za-z0-9_.$]+$"),
     ];
 
     static void NurFesteAufrufe(Adb adb) => Assert.All(adb.Aufrufe(), z => Assert.True(Erlaubt.Any(r => r.IsMatch(z)), $"Unerwarteter adb-Aufruf: {z}"));
@@ -223,7 +226,7 @@ public class QuestAppTests
     public void Versionsdatei_wie_werkzeuge_quest_app_bereitstellen_sie_schreibt()
     {
         // so lieferte das Skript am 23.10.2026 (Stand 90ecca7) die Datei neben der APK ab; ein Formatwechsel dort muss hier auffallen
-        const string vomSkript = "{\"datei\":\"ch.hkplanung.kicad.quest-Signed.apk\",\"commit\":\"90ecca7\",\"zeit\":\"2026-10-23T21:25:31\",\"groesse\":7891448,\"sha256\":\"897244b2a7532fe2d3951d02c7143d4657461ebf87ee3648e757446431f2b194\",\"versionName\":\"0.1\",\"versionCode\":1}";
+        const string vomSkript = "{\"datei\":\"ch.hkplanung.xr-Signed.apk\",\"commit\":\"90ecca7\",\"zeit\":\"2026-10-23T21:25:31\",\"groesse\":7891448,\"sha256\":\"897244b2a7532fe2d3951d02c7143d4657461ebf87ee3648e757446431f2b194\",\"versionName\":\"0.1\",\"versionCode\":1}";
         var v = QuestDienst.VersionLesen(vomSkript);
         Assert.Equal(ApkName, v.Datei);
         Assert.Equal("90ecca7", v.Commit);
@@ -292,9 +295,9 @@ public class QuestAppTests
         Assert.DoesNotContain("\n", f);
         Assert.False(string.IsNullOrEmpty(v));
         Assert.Contains("Installation ist fehlgeschlagen", QuestDienst.InstallFehler(null).Fehler);
-        // die App heisst wie die Marke (Vorgabe KICAD, unverändert); das XR-Labor nennt seine
-        Assert.Equal("In der Brille die App «KICAD» deinstallieren (App-Bibliothek › KICAD › Deinstallieren) und erneut installieren.", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]").Vorschlag);
-        Assert.Contains("«XR-Labor»", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]", "XR-Labor").Vorschlag);
+        // die App heisst wie die Marke (seit H+K XR E1 «H+K XR» für alle Werkzeuge); eine andere Marke nennt ihren Namen
+        Assert.Equal("In der Brille die App «H+K XR» deinstallieren (App-Bibliothek › H+K XR › Deinstallieren) und erneut installieren.", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]").Vorschlag);
+        Assert.Contains("«Probe»", QuestDienst.InstallFehler("Failure [INSTALL_FAILED_UPDATE_INCOMPATIBLE]", "Probe").Vorschlag);
     }
 
     [Fact]
@@ -302,12 +305,16 @@ public class QuestAppTests
     {
         // XR-Labor L0: Paket, Eingang, Ablage und Einstellungsschlüssel sind Parameter (QuestEinstellungen.AppMarke); KICAD behält genau die bisherigen Werte
         var k = QuestAppMarke.Kicad;
-        Assert.Equal("ch.hkplanung.kicad.quest", k.Paket);
-        Assert.Equal("KICAD", k.Name);
+        Assert.Equal("ch.hkplanung.xr", k.Paket);
+        Assert.Equal("H+K XR", k.Name);
+        Assert.Equal("kicad", k.Werkzeug);
+        Assert.Equal("KICAD", k.WerkzeugName);
+        Assert.Equal("kopplung_kicad.json", k.KopplungDatei);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_kicad.json", k.KopplungEingang);
         Assert.Equal("quest.app_ablage", k.AblageSchluessel);
-        Assert.Equal("quest_app", k.AblageOrdner);
+        Assert.Equal("hk_xr", k.AblageOrdner);
         Assert.Equal(@"werkzeuge\quest_app_bereitstellen.ps1", k.Bereitstellen);
-        Assert.Equal("/sdcard/Android/data/ch.hkplanung.kicad.quest/files", k.Eingang);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xr/files", k.Eingang);
         Assert.Equal(QuestDienst.AppEingang, k.Eingang);
         Assert.Equal(QuestDienst.AppPaket, k.Paket);
         Assert.Equal(QuestDienst.AppAblageSchluessel, k.AblageSchluessel);
@@ -335,7 +342,7 @@ public class QuestAppTests
             var profil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
             // KICAD ohne Einstellung: wie bisher %USERPROFILE%\HLKS_CAD_werkzeuge\quest_app (nur der Pfad, nichts gelesen)
             var kicad = new QuestDienst(benutzer, new QuestEinstellungen());
-            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "quest_app"), "vorgabe"), kicad.AppOrdner());
+            Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "hk_xr"), "vorgabe"), kicad.AppOrdner());
             // eine andere Marke: eigener Ordner und eigener Einstellungsschlüssel; KICADs Einstellung gilt dort nicht und umgekehrt
             var andere = new QuestDienst(benutzer, new QuestEinstellungen { AppMarke = new QuestAppMarke("ch.hkplanung.probe", "Probe", "probe.app_ablage", "probe_app", "x") });
             Assert.Equal((Path.Combine(profil, "HLKS_CAD_werkzeuge", "probe_app"), "vorgabe"), andere.AppOrdner());
@@ -376,13 +383,13 @@ public class QuestAppTests
     [Fact]
     public void Installierte_Fassung_aus_dumpsys_package()
     {
-        var i = QuestDienst.InstalliertLesen("Packages:\n  Package [ch.hkplanung.kicad.quest] (a1):\n    versionCode=7 minSdk=29 targetSdk=32\n    versionName=0.3\n    firstInstallTime=2026-10-23 17:59:10\n    lastUpdateTime=2026-10-24 08:01:02\n");
+        var i = QuestDienst.InstalliertLesen("Packages:\n  Package [ch.hkplanung.xr] (a1):\n    versionCode=7 minSdk=29 targetSdk=32\n    versionName=0.3\n    firstInstallTime=2026-10-23 17:59:10\n    lastUpdateTime=2026-10-24 08:01:02\n");
         Assert.True(i.Installiert);
         Assert.Equal("0.3", i.VersionName);
         Assert.Equal(7, i.VersionCode);
         Assert.Equal("2026-10-24 08:01:02", i.Aktualisiert);
         Assert.Equal("2026-10-23 17:59:10", i.Erstinstalliert);
-        Assert.False(QuestDienst.InstalliertLesen("Unable to find package: ch.hkplanung.kicad.quest").Installiert);
+        Assert.False(QuestDienst.InstalliertLesen("Unable to find package: ch.hkplanung.xr").Installiert);
         Assert.False(QuestDienst.InstalliertLesen("").Installiert);
         Assert.False(QuestDienst.InstalliertLesen(null).Installiert);
         Assert.False(QuestDienst.InstalliertLesen("Packages:\n  nichts Brauchbares").Installiert);
@@ -409,12 +416,16 @@ public class QuestAppTests
         Assert.True((bool)j["adbGefunden"]!);
         Assert.Null(j["brille"]);
         Assert.Equal(["devices"], u.Adb.Aufrufe());
+        Assert.Equal("H+K XR", (string)j["app"]!);   // App und Werkzeug stehen auch ohne Brille im Zustand
+        Assert.Equal("kicad", (string)j["werkzeug"]!);
 
         await using var v = await Umgebung.Neu();
         Assert.Equal(HttpStatusCode.OK, (await v.Xr.LokalPost("/api/benutzer/einstellungen", new { schluessel = "quest.adb", wert = (string?)null })).Code);
         var k = (await v.Get("/api/quest/app")).Json!;
         Assert.False((bool)k["adbGefunden"]!);
         Assert.Contains("adb.exe", (string)k["adbHinweis"]!);
+        Assert.Equal("H+K XR", (string)k["app"]!);
+        Assert.Equal("KICAD", (string)k["werkzeugName"]!);
     }
 
     [Fact]
@@ -473,8 +484,9 @@ public class QuestAppTests
         Assert.True(Pos(" install -r ") >= 0 && Pos(" install -r ") < Pos(" shell mkdir -p ") && Pos(" shell mkdir -p ") < Pos(" push ") && Pos(" push ") < Pos(" am start -n "), string.Join("\n", aufrufe));
         Assert.DoesNotContain(aufrufe, a => a.Contains(" reverse tcp:"));
         Assert.Contains(u.Adb.Zeilen("installiert.log"), z => z == u.Apk);
-        Assert.Equal(["ch.hkplanung.kicad.quest/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
-        Assert.Equal(["/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json"], u.Adb.Zeilen("push_ziel.txt"));
+        Assert.Equal(["ch.hkplanung.xr/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
+        Assert.Equal(["/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_kicad.json"], u.Adb.Zeilen("push_ziel.txt"));
+        Assert.DoesNotContain(aufrufe, a => a.Contains("kopplung.json"));   // das alte Ziel gibt es nicht mehr
 
         // das Paket in der Brille ist ein echtes Paket dieses PCs: richtiger Fingerabdruck, Schlüssel gilt am Netzzugang
         var paket = (JsonObject)JsonNode.Parse(u.Adb.Gelesen("gepusht.txt")!)!;
@@ -482,6 +494,10 @@ public class QuestAppTests
         Assert.Equal(fp, (string)paket["fingerabdruck"]!);
         Assert.Equal(port, (int)paket["port"]!);
         Assert.Equal(Seriennummer, (string)paket["brille"]!);
+        // H+K XR E1: Fassung 2 mit dem Werkzeug dieses Servers
+        Assert.Equal(2, (int)paket["fassung"]!);
+        Assert.Equal("kicad", (string)paket["werkzeug"]!);
+        Assert.Equal("KICAD", (string)paket["werkzeugName"]!);
         using var klient = XrServer.Netz(port, fp, XrServer.Token(paket));
         Assert.Equal(HttpStatusCode.OK, (await klient.GetAsync("/api/xr/verbindung")).StatusCode);
         var k = (await u.Kopplungen()).Single()!;
@@ -537,7 +553,7 @@ public class QuestAppTests
         Assert.StartsWith(u.PaketOrdner, quelle);
         Assert.Empty(Directory.Exists(u.PaketOrdner) ? Directory.GetFileSystemEntries(u.PaketOrdner, "*", SearchOption.AllDirectories) : []);
         // und der Schlüssel steht auch in keiner Datei der Umgebung am PC (ausser der Attrappe, die den Inhalt des «push» als gepusht.txt festhält = die Brille)
-        foreach (var d in Directory.GetFiles(u.Wurzel, "*", SearchOption.AllDirectories).Where(f => !f.EndsWith("gepusht.txt")))
+        foreach (var d in Directory.GetFiles(u.Wurzel, "*", SearchOption.AllDirectories).Where(f => !Path.GetFileName(f).StartsWith("gepusht")))
         {
             if (!(Path.GetExtension(d) is ".json" or ".txt" or ".log" or ".dpapi")) continue;
             Assert.DoesNotContain(schluessel, File.ReadAllText(d, Encoding.Latin1));
@@ -618,7 +634,7 @@ public class QuestAppTests
     public async Task Installationsfehler_werden_uebersetzt_und_es_entsteht_keine_Kopplung()
     {
         await using var u = await Umgebung.Neu();
-        u.Adb.Datei("install_fehler.txt", "INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package ch.hkplanung.kicad.quest signatures do not match");
+        u.Adb.Datei("install_fehler.txt", "INSTALL_FAILED_UPDATE_INCOMPATIBLE: Package ch.hkplanung.xr signatures do not match");
         var e = await u.Installieren();
         Assert.False((bool)e["ok"]!);
         Assert.Equal("installieren", (string)e["schritte"]!.AsArray().Last()!["id"]!);
@@ -998,7 +1014,7 @@ public class QuestAppTests
         var (code, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04", autostart = true });
         Assert.Equal(HttpStatusCode.OK, code);
         Assert.Equal("app_gestartet", (string)j!["autostart"]!);
-        Assert.Equal(["ch.hkplanung.kicad.quest/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
+        Assert.Equal(["ch.hkplanung.xr/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
         Assert.True(HatReverse(u.Adb, port), "vor dem Start ist die Weiterleitung wieder da");
         Assert.DoesNotContain(u.Adb.Aufrufe(), a => a.Contains("android.intent.action.VIEW") || a.Contains("forward tcp:"));   // kein Browser, kein Fern-Debugging
         // der Auftrag wartet im Server, bis die App verbindet (willkommen.auftrag)
@@ -1060,6 +1076,223 @@ public class QuestAppTests
         var (code, j) = await u.Xr.LokalPost("/api/vr/auftrag", new { modus = "begehen", raum = "R-1.04" });
         Assert.Equal(HttpStatusCode.OK, code);
         Assert.Equal("nicht_angefordert", (string)j!["autostart"]!);
+    }
+
+    // ---------------------------------------------------------------- H+K XR E1: eine App für alle Werkzeuge
+
+    static QuestAppMarke LaborMarke() => new(QuestDienst.AppPaket, QuestDienst.AppName, QuestDienst.AppAblageSchluessel, QuestDienst.AppAblageOrdner,
+        @"werkzeuge\quest_app_bereitstellen.ps1", "xrlabor", "XR-Labor");
+
+    [Fact]
+    public void Marke_Werkzeug_und_Name_werden_geprueft_weil_sie_in_Dateinamen_und_Paketen_stehen()
+    {
+        foreach (var schlecht in new[] { "", "Kicad", "1kicad", "ki cad", "kicad/../x", "kicad.json", new string('a', 33), "-kicad" })
+            Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.hkplanung.xr", "H+K XR", "quest.app_ablage", "hk_xr", "x", schlecht, "KICAD"));
+        foreach (var schlecht in new[] { "", "  ", "Zeile\nzwei", new string('n', 41) })
+            Assert.Throws<ArgumentException>(() => new QuestAppMarke("ch.hkplanung.xr", "H+K XR", "quest.app_ablage", "hk_xr", "x", "kicad", schlecht));
+        var m = new QuestAppMarke("ch.hkplanung.xr", "H+K XR", "quest.app_ablage", "hk_xr", "x", "mein-werkzeug_2", " Mein Werkzeug ");
+        Assert.Equal("kopplung_mein-werkzeug_2.json", m.KopplungDatei);
+        Assert.Equal("Mein Werkzeug", m.WerkzeugName);
+    }
+
+    [Fact]
+    public void Labor_und_KICAD_teilen_App_und_Ablage_und_unterscheiden_sich_im_Werkzeug()
+    {
+        var k = QuestAppMarke.Kicad;
+        var l = LaborMarke();
+        Assert.Equal(k.Paket, l.Paket);
+        Assert.Equal(k.Eingang, l.Eingang);
+        Assert.Equal(k.AblageOrdner, l.AblageOrdner);
+        Assert.Equal(k.AblageSchluessel, l.AblageSchluessel);
+        Assert.NotEqual(k.KopplungDatei, l.KopplungDatei);
+        Assert.Equal("/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_xrlabor.json", l.KopplungEingang);
+    }
+
+    [Fact]
+    public async Task Eingang_je_Werkzeug_das_Labor_legt_kopplung_xrlabor_json_mit_seinem_Werkzeug_in_den_Eingang()
+    {
+        await using var u = await Umgebung.Neu(anpassen: q => q with { AppMarke = LaborMarke() });
+        var e = await u.Installieren("kabel");
+        Assert.True((bool)e["ok"]!, e.ToJsonString());
+        Assert.Equal(["/sdcard/Android/data/ch.hkplanung.xr/files/kopplung_xrlabor.json"], u.Adb.Zeilen("push_ziel.txt"));
+        var paket = (JsonObject)JsonNode.Parse(u.Adb.Gelesen("gepusht_xrlabor.txt")!)!;
+        Assert.Equal(2, (int)paket["fassung"]!);
+        Assert.Equal("xrlabor", (string)paket["werkzeug"]!);
+        Assert.Equal("XR-Labor", (string)paket["werkzeugName"]!);
+        Assert.Null(u.Adb.Gelesen("gepusht_kicad.txt"));
+        Assert.Equal(["ch.hkplanung.xr/crc6412ab34cd.MainActivity"], u.Adb.Zeilen("app_start.log"));
+        NurFesteAufrufe(u.Adb);
+        // der Zustand nennt App und Werkzeug
+        var z = (await u.Get("/api/quest/app")).Json!;
+        Assert.Equal("ch.hkplanung.xr", (string)z["paket"]!);
+        Assert.Equal("H+K XR", (string)z["app"]!);
+        Assert.Equal("xrlabor", (string)z["werkzeug"]!);
+        Assert.Equal("XR-Labor", (string)z["werkzeugName"]!);
+    }
+
+    [Fact]
+    public async Task Eingang_je_Werkzeug_KICAD_legt_kopplung_kicad_json_und_ein_zweites_Werkzeug_aendert_die_App_nicht()
+    {
+        await using var u = await Umgebung.Neu();
+        var z = (await u.Get("/api/quest/app")).Json!;
+        Assert.Equal("H+K XR", (string)z["app"]!);
+        Assert.Equal("kicad", (string)z["werkzeug"]!);
+        Assert.Equal("KICAD", (string)z["werkzeugName"]!);
+        Assert.True((bool)(await u.Installieren("kabel"))["ok"]!);
+        var paket = (JsonObject)JsonNode.Parse(u.Adb.Gelesen("gepusht_kicad.txt")!)!;
+        Assert.Equal("kicad", (string)paket["werkzeug"]!);
+        Assert.Equal("KICAD", (string)paket["werkzeugName"]!);
+        Assert.Null(u.Adb.Gelesen("gepusht_xrlabor.txt"));
+    }
+
+    // ---- Alte Apps entfernen
+
+    [Theory]
+    [InlineData("", 0)]
+    [InlineData("package:com.oculus.browser\npackage:ch.hkplanung.xr\n", 0)]
+    [InlineData("package:ch.hkplanung.kicad.quest\n", 1)]
+    [InlineData("package:ch.hkplanung.xrlabor\r\npackage:ch.hkplanung.kicad.quest\r\n", 2)]
+    [InlineData("package:ch.hkplanung.kicad.quest.extra\npackage:ch.hkplanung.xrlaborx\npackage:xch.hkplanung.xrlabor\n", 0)]   // nur genau diese Pakete
+    [InlineData("ch.hkplanung.kicad.quest\n", 0)]   // ohne «package:» keine Zeile von pm
+    public void Alte_Apps_aus_pm_list_packages_nur_die_zwei_bekannten_Pakete(string ausgabe, int erwartet)
+    {
+        var l = QuestDienst.AlteAppsLesen(ausgabe);
+        Assert.Equal(erwartet, l.Count);
+        Assert.All(l, a => Assert.Contains(a.Paket, new[] { "ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor" }));
+        Assert.Empty(QuestDienst.AlteAppsLesen(null));
+    }
+
+    [Fact]
+    public void Die_alten_Apps_sind_genau_KICAD_und_XR_Labor()
+    {
+        Assert.Equal([("ch.hkplanung.kicad.quest", "KICAD"), ("ch.hkplanung.xrlabor", "XR-Labor")], QuestDienst.AlteApps.Select(a => (a.Paket, a.Name)).ToArray());
+        Assert.DoesNotContain(QuestDienst.AlteApps, a => a.Paket == QuestDienst.AppPaket);
+    }
+
+    [Fact]
+    public async Task Zustand_nennt_die_noch_installierten_alten_Apps()
+    {
+        await using var u = await Umgebung.Neu();
+        Assert.Empty((await u.Get("/api/quest/app")).Json!["brille"]!["alteApps"]!.AsArray());
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\nch.hkplanung.xrlabor\nch.hkplanung.fremd\n");
+        u.Adb.Datei("app_installiert.txt", "0.1 1");   // «H+K XR» selbst zählt nicht
+        var alte = (await u.Get("/api/quest/app")).Json!["brille"]!["alteApps"]!.AsArray();
+        Assert.Equal(["ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor"], alte.Select(a => (string)a!["paket"]!).ToArray());
+        Assert.Equal(["KICAD", "XR-Labor"], alte.Select(a => (string)a!["name"]!).ToArray());
+        // ein Zustand ändert nichts: nichts deinstalliert
+        Assert.Null(u.Adb.Gelesen("uninstall.log"));
+        NurFesteAufrufe(u.Adb);
+        // pm antwortet nicht: keine Angabe, kein Fehler im Zustand
+        u.Adb.Verhalten("pm_fehler");
+        Assert.Empty((await u.Get("/api/quest/app")).Json!["brille"]!["alteApps"]!.AsArray());
+    }
+
+    async Task<(HttpStatusCode Code, JsonNode? Json)> AlteEntfernen(Umgebung u, object? koerper = null) =>
+        await u.Xr.LokalPost("/api/quest/app/alte-entfernen", koerper ?? new { bestaetigt = true });
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_nur_mit_Bestaetigung()
+    {
+        await using var u = await Umgebung.Neu();
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\nch.hkplanung.xrlabor\n");
+        foreach (var k in new object[] { new { }, new { bestaetigt = false }, new { bestaetigt = "true" }, new { bestaetigt = 1 }, new { bestaet = true } })
+            Assert.Equal(HttpStatusCode.BadRequest, (await AlteEntfernen(u, k)).Code);
+        Assert.Empty(u.Adb.Aufrufe());   // ohne Bestätigung nicht einmal adb gefragt
+        Assert.Null(u.Adb.Gelesen("uninstall.log"));
+        Assert.Equal(HttpStatusCode.MethodNotAllowed, (await u.Xr.Lokal.GetAsync("/api/quest/app/alte-entfernen")).StatusCode);
+        Assert.Equal(2, u.Adb.Zeilen("alte_apps.txt").Length);
+    }
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_deinstalliert_beide_und_laesst_H_K_XR_stehen()
+    {
+        await using var u = await Umgebung.Neu();
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\nch.hkplanung.xrlabor\nch.hkplanung.fremd\n");
+        u.Adb.Datei("app_installiert.txt", "0.1 1");
+        var (code, j) = await AlteEntfernen(u);
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.True((bool)j!["ok"]!, j.ToJsonString());
+        Assert.Equal(["ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor"], u.Adb.Zeilen("uninstall.log"));
+        Assert.Equal(["ch.hkplanung.fremd"], u.Adb.Zeilen("alte_apps.txt"));   // ein fremdes Paket bleibt, auch mit gleichem Präfix
+        Assert.NotNull(u.Adb.Gelesen("app_installiert.txt"));                   // «H+K XR» bleibt
+        var schritte = j["schritte"]!.AsArray();
+        Assert.Equal(2, schritte.Count);
+        Assert.All(schritte, s => Assert.True((bool)s!["ok"]!));
+        Assert.Contains("«KICAD»", (string)j["meldung"]!);
+        Assert.Contains("«XR-Labor»", (string)j["meldung"]!);
+        NurFesteAufrufe(u.Adb);
+        // danach zeigt der Zustand nichts mehr an
+        Assert.Empty((await u.Get("/api/quest/app")).Json!["brille"]!["alteApps"]!.AsArray());
+    }
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_nur_was_installiert_ist()
+    {
+        await using var u = await Umgebung.Neu();
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.xrlabor\n");
+        var (_, j) = await AlteEntfernen(u);
+        Assert.True((bool)j!["ok"]!);
+        Assert.Equal(["ch.hkplanung.xrlabor"], u.Adb.Zeilen("uninstall.log"));   // die KICAD-App war nicht installiert: kein uninstall dafür
+        // nichts mehr da: kein uninstall, freundliche Meldung
+        var (_, k) = await AlteEntfernen(u);
+        Assert.True((bool)k!["ok"]!);
+        Assert.Contains("keine alten Apps", (string)k["meldung"]!);
+        Assert.Empty(k["schritte"]!.AsArray());
+        Assert.Equal(["ch.hkplanung.xrlabor"], u.Adb.Zeilen("uninstall.log"));
+        NurFesteAufrufe(u.Adb);
+    }
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_ein_Fehlschlag_haelt_die_andere_nicht_auf()
+    {
+        await using var u = await Umgebung.Neu();
+        u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\nch.hkplanung.xrlabor\n");
+        u.Adb.Verhalten("uninstall_fehler");
+        var (code, j) = await AlteEntfernen(u);
+        Assert.Equal(HttpStatusCode.OK, code);   // Status 200 auch bei ok = false, wie bei der Installation
+        Assert.False((bool)j!["ok"]!);
+        Assert.Equal(["ch.hkplanung.kicad.quest", "ch.hkplanung.xrlabor"], u.Adb.Zeilen("uninstall.log"));
+        Assert.All(j["schritte"]!.AsArray(), s => Assert.False((bool)s!["ok"]!));
+        Assert.Contains("liess sich nicht entfernen", (string)j["fehler"]!);
+        Assert.False(string.IsNullOrEmpty((string)j["vorschlag"]!));
+    }
+
+    [Fact]
+    public async Task Alte_Apps_entfernen_mit_Zeitueberschreitung_ohne_Brille_und_ohne_pm()
+    {
+        await using (var u = await Umgebung.Neu(anpassen: q => q with { InstallZeitlimit = TimeSpan.FromSeconds(1) }))
+        {
+            u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\n");
+            u.Adb.Verhalten("uninstall_haengt");
+            var (_, j) = await AlteEntfernen(u);
+            Assert.False((bool)j!["ok"]!);
+            Assert.Contains("nicht innerhalb", (string)j["fehler"]!);
+        }
+        await using (var u = await Umgebung.Neu(geraete: []))
+        {
+            var (code, j) = await AlteEntfernen(u);
+            Assert.Equal(HttpStatusCode.OK, code);
+            Assert.False((bool)j!["ok"]!);
+            Assert.Equal("brille", (string)j["schritte"]![0]!["id"]!);
+            Assert.Null(u.Adb.Gelesen("uninstall.log"));
+        }
+        await using (var u = await Umgebung.Neu())
+        {
+            u.Adb.Datei("alte_apps.txt", "ch.hkplanung.kicad.quest\n");
+            u.Adb.Verhalten("pm_fehler");
+            var (_, j) = await AlteEntfernen(u);
+            Assert.False((bool)j!["ok"]!);
+            Assert.Equal("lesen", (string)j["schritte"]![0]!["id"]!);
+            Assert.Null(u.Adb.Gelesen("uninstall.log"));   // lieber nichts tun, als blind deinstallieren
+        }
+    }
+
+    [Fact]
+    public void Der_Endpunkt_alte_entfernen_kommt_nicht_in_die_KI()
+    {
+        // «quest_app» deckt die ganze Gruppe /api/quest/app ab (verboten für die KI, kein MCP-Werkzeug): auch das Deinstallieren
+        Assert.Equal("verboten", KiEinordnung.Von("quest_app"));
+        Assert.DoesNotContain(Hlks.Mcp.Werkzeugauswahl.Alle(), n => n.Contains("alte") || n.Contains("uninstall"));
     }
 
     // ---------------------------------------------------------------- KI

@@ -333,11 +333,11 @@ public sealed partial class QuestDienst
         {
             var adb = AdbFinden(out var hinweis);
             if (adb is null)
-                return new { paket = Marke.Paket, ablage, adbGefunden = false, adbHinweis = hinweis, brille = (object?)null, vergleich = "unbekannt" };
+                return new { paket = Marke.Paket, app = Marke.Name, werkzeug = Marke.Werkzeug, werkzeugName = Marke.WerkzeugName, ablage, adbGefunden = false, adbHinweis = hinweis, brille = (object?)null, vergleich = "unbekannt" };
             var geraete = await GeraeteListe(adb);
             var g = geraete.Where(x => x.Zustand == "device").OrderBy(x => x.Wlan ? 0 : 1).FirstOrDefault();
             if (g is null)
-                return new { paket = Marke.Paket, ablage, adbGefunden = true, brille = (object?)null, vergleich = "unbekannt" };
+                return new { paket = Marke.Paket, app = Marke.Name, werkzeug = Marke.Werkzeug, werkzeugName = Marke.WerkzeugName, ablage, adbGefunden = true, brille = (object?)null, vergleich = "unbekannt" };
             var inst = await InstalliertVon(adb, g.Seriennummer);
             var modell = await ModellVon(adb, g.Seriennummer);
             var alte = await AlteAppsVon(adb, g.Seriennummer) ?? [];

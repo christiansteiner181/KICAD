@@ -25,9 +25,12 @@ public class LaborStartTests
         Assert.Equal(HttpStatusCode.OK, (await l.Klient.GetAsync("/css/quest.css")).StatusCode);
         Assert.Equal(HttpStatusCode.OK, (await l.Klient.GetAsync("/js/oberflaeche/quest-app-dialog.js")).StatusCode);
 
-        // im Testlauf nie ein echtes adb, die Ablage der Labor-App unter %TEMP%
+        // im Testlauf nie ein echtes adb, die Ablage der App unter %TEMP%; seit H+K XR E1 dieselbe App wie bei KICAD, das Labor ist ihr Werkzeug «xrlabor»
         var app = (JsonObject)JsonNode.Parse(await l.Klient.GetStringAsync("/api/quest/app"))!;
-        Assert.Equal("ch.hkplanung.xrlabor", (string)app["paket"]!);
+        Assert.Equal("ch.hkplanung.xr", (string)app["paket"]!);
+        Assert.Equal("H+K XR", (string)app["app"]!);
+        Assert.Equal("xrlabor", (string)app["werkzeug"]!);
+        Assert.Equal("XR-Labor", (string)app["werkzeugName"]!);
         Assert.False((bool)app["adbGefunden"]!);
         Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()), Path.GetFullPath((string)app["ablage"]!["ordner"]!));
         Assert.Empty(JsonNode.Parse(await l.Klient.GetStringAsync("/api/xr/teilnehmer"))!["teilnehmer"]!.AsArray());

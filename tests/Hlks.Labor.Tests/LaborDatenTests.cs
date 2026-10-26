@@ -91,9 +91,12 @@ public class LaborDatenTests
     [Fact]
     public void Die_Marke_des_Labors_ist_die_der_Brillen_App()
     {
+        // H+K XR E1: Id und Name sind die des Werkzeugs «xrlabor» in der App; die App selbst ist für alle Werkzeuge dieselbe (ch.hkplanung.xr, wie bei KICAD).
+        // Die App-Kennung in Hlks.Xr (AppMarke.*.Kennung) stellt die App-Seite von E1 um; hier gilt die der PC-Seite.
         Assert.Equal(Hlks.Xr.Netz.AppMarke.XrLabor.Id, LaborMarke.Id);
         Assert.Equal(Hlks.Xr.Netz.AppMarke.XrLabor.Name, LaborMarke.Name);
-        Assert.Equal(Hlks.Xr.Netz.AppMarke.XrLabor.Kennung, LaborMarke.Paket);
+        Assert.Equal("ch.hkplanung.xr", LaborMarke.Paket);
+        Assert.Equal(QuestAppMarke.Kicad.Paket, LaborMarke.Paket);
     }
 
     // ---------------------------------------------------------------- Profile

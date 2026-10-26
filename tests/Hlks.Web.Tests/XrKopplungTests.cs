@@ -35,7 +35,9 @@ public class XrKopplungTests
         using var u = new Umgebung();
         var p = u.Kopplungen.PaketErzeugen("1WMHH000X00000", "Quest Christian", Info);
         Assert.Equal("hlks-xr-kopplung", p.Art);
-        Assert.Equal(1, p.Fassung);
+        Assert.Equal(2, p.Fassung);   // H+K XR E1: Fassung 2 = Fassung 1 plus werkzeug und werkzeugName (XrWerkzeugTests)
+        Assert.Equal("kicad", p.Werkzeug);
+        Assert.Equal("KICAD", p.WerkzeugName);
         Assert.Equal("PC-TEST", p.Pc);
         Assert.Equal(["192.168.1.20"], p.Ips);
         Assert.Equal(5140, p.Port);
@@ -46,7 +48,7 @@ public class XrKopplungTests
         Assert.Matches("^[0-9a-f]{16}$", p.Kopplung);
         Assert.Matches("^[A-Za-z0-9_-]{43}$", p.Schluessel);
         var json = Json.Text(p);   // so geht es an die App (camelCase)
-        foreach (var feld in new[] { "\"pc\"", "\"ips\"", "\"port\"", "\"suchPort\"", "\"fingerabdruck\"", "\"kopplung\"", "\"schluessel\"", "\"brille\"", "\"name\"" })
+        foreach (var feld in new[] { "\"pc\"", "\"ips\"", "\"port\"", "\"suchPort\"", "\"fingerabdruck\"", "\"kopplung\"", "\"schluessel\"", "\"brille\"", "\"name\"", "\"werkzeug\"", "\"werkzeugName\"" })
             Assert.Contains(feld, json);
         var k = u.Kopplungen.Pruefen(Bearer(p));
         Assert.NotNull(k);

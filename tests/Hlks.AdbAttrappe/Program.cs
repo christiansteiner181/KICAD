@@ -21,12 +21,21 @@
 //   install_version.txt  «<versionName> <versionCode>» der installierten App (Vorgabe «0.1 1»); app_installiert.txt gibt es, sobald «install» gelungen ist (der Test kann sie vorab anlegen)
 //   verhalten.txt  zusätzlich: install_haengt, push_fehler, mkdir_fehler, start_fehler, aktivitaet_fehler
 //   gepusht.txt    (die Attrappe schreibt) Inhalt der zuletzt mit «push» übertragenen Datei; push_ziel.txt das Ziel; push_quelle.txt der Pfad am PC und ob die Datei da war
+//                  (H+K XR E1: App ch.hkplanung.xr; erlaubt ist nur das Ziel /sdcard/Android/data/ch.hkplanung.xr/files/kopplung_<werkzeug>.json, ein Paket je Werkzeug;
+//                  gepusht_<werkzeug>.txt hält den Inhalt je Werkzeug)
+//   Alte Apps entfernen (H+K XR E1, QuestApp.cs «AlteAppsEntfernen»):
+//   alte_apps.txt  Pakete, die in der Brille installiert sind (eines je Zeile, z. B. ch.hkplanung.kicad.quest); «shell pm list packages <Filter>» listet sie als «package:<Paket>»,
+//                  dazu ch.hkplanung.xr, sobald app_installiert.txt da ist; fehlt die Datei, sind keine alten Apps installiert
+//   uninstall.log  (die Attrappe schreibt) jedes Paket, das «uninstall <Paket>» bekam (auch ein nicht installiertes); «uninstall» entfernt es aus alte_apps.txt (ch.hkplanung.xr:
+//                  app_installiert.txt) und meldet «Success», sonst «Failure [DELETE_FAILED_INTERNAL_ERROR]» mit Code 1
+//   verhalten.txt  zusätzlich: uninstall_fehler (uninstall scheitert immer), uninstall_haengt (schläft 60 s), pm_fehler (pm list packages scheitert)
 //   app_start.log  (die Attrappe schreibt) jede Aktivität, die «am start -n» bekam
 //   aufrufe.log    jeder Aufruf mit seinen Argumenten, eine Zeile (die Attrappe schreibt)
 // Bekannte Aufrufe (optional mit «-s <Seriennummer>» davor): start-server, devices, reverse tcp:A tcp:B, reverse --list, reverse --remove tcp:A,
-// shell ip -f inet addr show wlan0, tcpip 5555, connect <Adresse>. Alles andere meldet «unknown command» mit Code 1.
+// shell ip -f inet addr show wlan0, tcpip 5555, connect <Adresse>, dazu die der Quest App (install -r, push, uninstall <Paket>, shell pm list packages <Filter>). Alles andere meldet «unknown command» mit Code 1.
 // Ein Weg mit «-s», der in geraete.txt nicht «device» ist, antwortet auf reverse/tcpip/shell wie adb: «error: device offline» bzw. «not found», Code 1.
 using System.Text;
+using System.Text.RegularExpressions;
 
 var dir = AppContext.BaseDirectory;
 string P(string n) => Path.Combine(dir, n);
@@ -159,36 +168,59 @@ switch (a[0])
         File.WriteAllText(P("app_installiert.txt"), File.Exists(P("install_version.txt")) ? File.ReadAllText(P("install_version.txt")).Trim() : "0.1 1");
         return Ende("Performing Streamed Install\nSuccess");
     }
-    case "shell" when string.Join(' ', a.Skip(1)).StartsWith("mkdir -p /sdcard/Android/data/ch.hkplanung.kicad.quest/files"):
+    case "shell" when string.Join(' ', a.Skip(1)).StartsWith("mkdir -p /sdcard/Android/data/ch.hkplanung.xr/files"):
         if (WegFehler() is { } g4) return g4;
-        return verhalten.Contains("mkdir_fehler") ? Ende("mkdir: '/sdcard/Android/data/ch.hkplanung.kicad.quest/files': Permission denied", 1) : 0;
-    case "push" when a.Count == 3 && a[2] == "/sdcard/Android/data/ch.hkplanung.kicad.quest/files/kopplung.json":
+        return verhalten.Contains("mkdir_fehler") ? Ende("mkdir: '/sdcard/Android/data/ch.hkplanung.xr/files': Permission denied", 1) : 0;
+    // H+K XR E1: ein Paket je Werkzeug, Ziel kopplung_<werkzeug>.json im Eingang der App (das alte kopplung.json gibt es nicht mehr: «unknown command»)
+    case "push" when a.Count == 3 && Regex.IsMatch(a[2], @"^/sdcard/Android/data/ch\.hkplanung\.xr/files/kopplung_[a-z][a-z0-9_-]{0,31}\.json$"):
     {
         if (WegFehler() is { } g5) return g5;
         if (verhalten.Contains("push_fehler")) return Ende("adb: error: failed to copy '" + a[1] + "' to '" + a[2] + "': remote couldn't create file: Permission denied", 1);
         File.AppendAllText(P("push_quelle.txt"), a[1] + " da=" + File.Exists(a[1]) + Environment.NewLine);
         if (!File.Exists(a[1])) return Ende("adb: error: cannot stat '" + a[1] + "': No such file or directory", 1);
         File.WriteAllText(P("gepusht.txt"), File.ReadAllText(a[1]));
+        File.WriteAllText(P("gepusht_" + Regex.Match(a[2], @"kopplung_(.+)\.json$").Groups[1].Value + ".txt"), File.ReadAllText(a[1]));   // je Werkzeug
         File.AppendAllText(P("push_ziel.txt"), a[2] + Environment.NewLine);
         return Ende(a[1] + ": 1 file pushed, 0 skipped. 0.1 MB/s (600 bytes in 0.005s)");
     }
-    case "shell" when string.Join(' ', a.Skip(1)) == "dumpsys package ch.hkplanung.kicad.quest":
+    case "shell" when string.Join(' ', a.Skip(1)) == "dumpsys package ch.hkplanung.xr":
     {
         if (WegFehler() is { } g6) return g6;
-        if (!File.Exists(P("app_installiert.txt"))) return Ende("Unable to find package: ch.hkplanung.kicad.quest");
+        if (!File.Exists(P("app_installiert.txt"))) return Ende("Unable to find package: ch.hkplanung.xr");
         var v = File.ReadAllText(P("app_installiert.txt")).Trim().Split(' ');
-        return Ende("Packages:\n  Package [ch.hkplanung.kicad.quest] (a1b2c3):\n    userId=10234\n    versionCode=" + v.ElementAtOrDefault(1) + " minSdk=29 targetSdk=32\n    versionName=" + v[0]
+        return Ende("Packages:\n  Package [ch.hkplanung.xr] (a1b2c3):\n    userId=10234\n    versionCode=" + v.ElementAtOrDefault(1) + " minSdk=29 targetSdk=32\n    versionName=" + v[0]
             + "\n    firstInstallTime=2026-10-23 17:59:10\n    lastUpdateTime=2026-10-23 21:15:42\n    installerPackageName=null");
     }
-    case "shell" when string.Join(' ', a.Skip(1)) == "cmd package resolve-activity --brief ch.hkplanung.kicad.quest":
+    case "shell" when string.Join(' ', a.Skip(1)) == "cmd package resolve-activity --brief ch.hkplanung.xr":
         if (WegFehler() is { } g7) return g7;
         if (verhalten.Contains("aktivitaet_fehler")) return Ende("No activity found", 1);
-        return Ende("priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\nch.hkplanung.kicad.quest/crc6412ab34cd.MainActivity");
-    case "shell" when a.Count == 5 && a[1] == "am" && a[2] == "start" && a[3] == "-n" && a[4].StartsWith("ch.hkplanung.kicad.quest/"):
+        return Ende("priority=0 preferredOrder=0 match=0x108000 specificIndex=-1 isDefault=true\nch.hkplanung.xr/crc6412ab34cd.MainActivity");
+    case "shell" when a.Count == 5 && a[1] == "am" && a[2] == "start" && a[3] == "-n" && a[4].StartsWith("ch.hkplanung.xr/"):
         if (WegFehler() is { } g8) return g8;
         if (verhalten.Contains("start_fehler")) return Ende("Starting: Intent { cmp=" + a[4] + " }\nError type 3\nError: Activity class {" + a[4] + "} does not exist.");
         File.AppendAllText(P("app_start.log"), a[4] + Environment.NewLine);
         return Ende("Starting: Intent { cmp=" + a[4] + " }");
+    // Alte Apps entfernen (QuestApp.cs, H+K XR E1): installierte Pakete lesen und deinstallieren
+    case "shell" when a.Count == 5 && a[1] == "pm" && a[2] == "list" && a[3] == "packages":
+    {
+        if (WegFehler() is { } h1) return h1;
+        if (verhalten.Contains("pm_fehler")) return Ende("Error: Could not access the Package Manager.  Is the system running?", 1);
+        var pakete = Zeilen("alte_apps.txt").ToList();
+        if (File.Exists(P("app_installiert.txt"))) pakete.Add("ch.hkplanung.xr");
+        pakete.Add("com.oculus.browser");   // fremde Pakete stehen in der echten Liste auch; der Filter (a[4]) lässt sie weg
+        return Ende(string.Join('\n', pakete.Where(p => p.Contains(a[4], StringComparison.Ordinal)).Select(p => "package:" + p)));
+    }
+    case "uninstall" when a.Count == 2:
+    {
+        if (WegFehler() is { } h2) return h2;
+        File.AppendAllText(P("uninstall.log"), a[1] + Environment.NewLine);
+        if (verhalten.Contains("uninstall_haengt")) Thread.Sleep(TimeSpan.FromSeconds(60));
+        if (verhalten.Contains("uninstall_fehler")) return Ende("Failure [DELETE_FAILED_DEVICE_POLICY_MANAGER]", 1);
+        var alle = Zeilen("alte_apps.txt");
+        if (alle.Contains(a[1])) { File.WriteAllLines(P("alte_apps.txt"), alle.Where(z => z != a[1]).ToArray()); return Ende("Success"); }
+        if (a[1] == "ch.hkplanung.xr" && File.Exists(P("app_installiert.txt"))) { File.Delete(P("app_installiert.txt")); return Ende("Success"); }
+        return Ende("Failure [DELETE_FAILED_INTERNAL_ERROR]", 1);
+    }
     case "tcpip" when a.Count == 2 && a[1] == "5555":
         if (verhalten.Contains("tcpip_fehler")) return Ende("error: closed", 1);
         if (JeWeg && serie is not null && File.Exists(P(ReverseDatei()))) File.Delete(P(ReverseDatei()));   // adbd startet neu: Weiterleitungen dieses Weges sind weg
