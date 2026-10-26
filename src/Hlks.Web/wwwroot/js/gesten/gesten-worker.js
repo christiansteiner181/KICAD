@@ -35,6 +35,11 @@ for (const name of ['WebSocket', 'EventSource', 'WebTransport']) {
 }
 // </netzsperre>
 
+// Die WASM-Laufzeit von MediaPipe schreibt Hinweise auf stderr, das im Browser als console.error erscheint (z. B. «INFO: Created TensorFlow Lite XNNPACK delegate
+// for CPU.», Befund gesten.browser.mjs 26.10.2026): solche Zeilen als Hinweis ausgeben, echte Fehler bleiben Fehler.
+const fehlerAusgabe = console.error.bind(console);
+console.error = (...a) => (typeof a[0] === 'string' && /^(INFO|I\d{4}|W\d{4})[: ]/.test(a[0]) ? console.info(...a) : fehlerAusgabe(...a));
+
 let erkenner = null;
 let letzteZeit = -1;
 let bilder = 0;

@@ -21,7 +21,8 @@ const BREITE = 640, HOEHE = 480;
 const TAKT_MS = 1000 / 30, RUECKFALL_MS = 1000 / 15, RUHE_TAKT_MS = 1000 / 5;
 const RUHE_NACH_MS = 10000;
 const PUNKTE_MS = 1000 / 15;
-const RUECKFALL_AB_MS = 28, RUECKFALL_BIS_MS = 18, RUECKFALL_ZURUECK_S = 3;
+const RUECKFALL_AB_MS = 30, RUECKFALL_BIS_MS = 24, RUECKFALL_ZURUECK_S = 3;
+const ANLAUF_BILDER = 20;   // die ersten Erkennungen sind langsamer (WASM wärmt auf): sie zählen nicht für den Rückfall
 const LADEN_FRIST_MS = 60000;
 const WAECHTER_MS = 1500;   // so lange darf ein Bild im Worker unterwegs sein
 const BASIS = '/lib/mediapipe/';
@@ -113,7 +114,7 @@ async function takt(l) {
     l.unterwegs = false;   // keine Antwort des Workers: das Bild gilt als verloren
   }
   const warten = l.letztesBild + intervall(l) - jetzt;
-  if (warten > 1) { planen(l, warten); return; }
+  if (warten > 4) { planen(l, warten); return; }   // bis 4 ms zu früh ist recht (Zeitgeber runden ohnehin auf)
   const v = l.video;
   if (!v || v.readyState < 2 || !v.videoWidth) { planen(l, 20); return; }
   l.unterwegs = true;
@@ -121,7 +122,8 @@ async function takt(l) {
   try {
     const b = BREITE, h = Math.max(1, Math.round((BREITE * v.videoHeight) / v.videoWidth));
     l.sv = h / b;
-    const bild = await createImageBitmap(v, { resizeWidth: b, resizeHeight: h, resizeQuality: 'low' });
+    // liefert die Kamera mehr als 640 Punkte Breite, wird verkleinert (die Erkennung braucht nicht mehr)
+    const bild = v.videoWidth > BREITE ? await createImageBitmap(v, { resizeWidth: b, resizeHeight: h, resizeQuality: 'low' }) : await createImageBitmap(v);
     if (lauf !== l) { bild.close(); return; }
     l.worker.postMessage({ art: 'bild', bild, t: jetzt }, [bild]);
     planen(l, WAECHTER_MS + 50);   // Wächter; die Antwort plant den nächsten Takt früher
@@ -135,7 +137,7 @@ async function takt(l) {
 function ergebnis(l, n) {
   l.unterwegs = false;
   const jetzt = performance.now();
-  l.dauern.push(n.dauerMs ?? 0);
+  if (++l.erkannt > ANLAUF_BILDER) l.dauern.push(n.dauerMs ?? 0);
   if (l.dauern.length > 30) l.dauern.shift();
   l.zeiten.push(jetzt);
   while (l.zeiten.length && jetzt - l.zeiten[0] > 2000) l.zeiten.shift();
@@ -157,7 +159,8 @@ function ergebnis(l, n) {
     l.punkteLeer = keine;
     melden({ art: 'punkte', punkte: r.punkte });
   }
-  planen(l, l.letztesBild + intervall(l) - performance.now());
+  const rest = l.letztesBild + intervall(l) - performance.now();
+  if (rest <= 4) takt(l); else planen(l, rest);
 }
 
 /** Rückfall auf 15/s, wenn die Erkennung im Mittel länger als RUECKFALL_AB_MS braucht; zurück auf 30/s nach RUECKFALL_ZURUECK_S Sekunden unter RUECKFALL_BIS_MS. */
@@ -214,7 +217,7 @@ export async function starten({ hand = 'links', kameraId = null, stellschrauben 
   logik = L.neuerZustand({ hand: einst.hand, stellschrauben: einst.stellschrauben });
   const l = {
     strom: null, video: null, worker: null, zeitgeber: 0, unterwegs: false, letztesBild: -Infinity, sv: HOEHE / BREITE,
-    dauern: [], zeiten: [], rueckfall: false, schnellSeit: null, ruhe: false, letzteHand: performance.now(),
+    dauern: [], zeiten: [], erkannt: 0, rueckfall: false, schnellSeit: null, ruhe: false, letzteHand: performance.now(),
     punkteZeit: -Infinity, punkteLeer: true, versteckt: false, delegate: null, ladenMs: null, wartende: new Map(),
   };
   startet = (async () => {

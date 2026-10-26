@@ -25,7 +25,8 @@
 //     (Spielfilter) gegen das Zittern der Erkennung, geglättet. Öffnet sich die Faust (Faustverhältnis steigt), endet alles sofort, ohne Nachlauf.
 //   Wisch (G2 links/rechts, G3 hoch/runter, Schritt): wie Hlks.Xr/Bedienung/Anstoss.cs ein ANSTOSS mit offener oder lockerer Hand (Weg «anstoss_weg» in m innert 0.2 s,
 //     mittleres Tempo «anstoss_tempo_ms» in m/s, quer höchstens 0.4 des Wegs, Handfläche dreht höchstens 25°, Form der Hand bleibt, die Hand stand vorher 0.1 s in der
-//     Haltung). Für den Schreibtisch dazu: die Hand ist vorher SICHTBAR_VOR_MS im Bild (nicht eben hereingekommen), der Strich beginnt nicht am Bildrand, ein Strich nach
+//     Haltung). Für den Schreibtisch dazu: der Anlauf kommt aus der Ruhe (RUHE_VOR_M; eine durchgehende Bewegung wie Greifen oder Heben ist kein Anstoss), die Hand
+//     ist vorher SICHTBAR_VOR_MS im Bild (nicht eben hereingekommen), der Strich beginnt nicht am Bildrand, ein Strich nach
 //     aussen (linke Hand nach links, rechte nach rechts) beginnt nicht mehr als «randwinkel_grad» neben der Bildmitte auf der Seite der Hand, die Handfläche liegt
 //     höchstens «handflaeche_grad» neben der Ebene aus Wischrichtung und Blickachse der Kamera (eine flache Hand, die zur Seite greift, wischt nicht), und der Strich
 //     ENDET im Bild innert «wisch_dauer_max_ms» (die Hand bremst; wer die Hand sinken lässt oder aus dem Bild nimmt, wischt nicht). Hat in den «sperre_ms» vor dem
