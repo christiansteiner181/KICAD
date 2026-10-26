@@ -156,13 +156,13 @@ await ausw(`window.__calls = []; const f = window.fetch.bind(window); window.fet
 const anrufe = (teil) => ausw(`return window.__calls.filter((c) => c.url.includes(${JSON.stringify(teil)})).map((c) => c.methode + ' ' + c.url.replace(location.origin, '') + (c.body ? ' ' + c.body : ''));`);
 
 // ================================================================== 1. Knopf im Menüband
-abschnitt('Register Ansicht: Gruppe «Fenster» mit dem Knopf «Quest verbinden …»');
-await register('Ansicht');
+abschnitt('Register XR: Gruppe «Brille» mit dem Knopf «Quest verbinden …»');
+await register('XR');
 const k = await knopfInfo('ansicht.questVerbinden');
-pruef(!!k && k.gruppe === 'Fenster' && /Quest verbinden/.test(k.tipp) && /Quest verbinden/.test(k.text) && k.symbol, 'Knopf «Quest verbinden …» in der Gruppe «Fenster», mit Symbol', JSON.stringify(k));
+pruef(!!k && k.gruppe === 'Brille' && /Quest verbinden/.test(k.tipp) && /Quest verbinden/.test(k.text) && k.symbol, 'Knopf «Quest verbinden …» in der Gruppe «Brille», mit Symbol', JSON.stringify(k));
 pruef(k && k.sym === 'questVerbinden' && !k.gesperrt, 'Symbol «questVerbinden», Knopf aktiv', JSON.stringify(k));
-pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 10, 'Kein neues Register: es bleiben zehn');
-await shot('01_register_ansicht');
+pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 11, 'Das Register XR ist das elfte (nach Ansicht, vor Verwalten)');
+await shot('01_register_xr');
 
 // ================================================================== 2. Dialog ohne adb
 abschnitt('Dialog ohne adb: Ampel rot, Einrichtung in drei Schritten, Hinweise');
@@ -299,7 +299,7 @@ adbDatei('geraete.txt', [`${SERIE}\tdevice`]);
 adbDatei('reverse.txt', []);
 adbDatei('verhalten.txt', []);
 adbDatei('mac.txt', [MAC]);
-await register('Ansicht');
+await register('XR');
 await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
 await warteBis(dialogOffen, 'Dialog offen', 8000);
 await eingeben('.qd-adb', ADB);
@@ -370,7 +370,7 @@ const nachAus = (await anrufe('/api/quest/automatik')).length;
 await warte(1500);
 pruef((await anrufe('/api/quest/automatik')).length === nachAus, 'Ohne die Einstellung ruft die Oberfläche nichts mehr auf');
 await dialogZu();
-await register('Ansicht');
+await register('XR');
 await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
 await warteBis(dialogOffen, 'Dialog offen', 8000);
 await eingeben('.qd-adb', '');

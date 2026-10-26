@@ -195,7 +195,7 @@ try {
   const ohneRegister = await ausw(`const a = (await import('/js/oberflaeche/aktionen.js')).aktionen; return [...a.values()].filter((x) => x.kuerzel && !x.register).map((x) => [x.kuerzel, ...x.kuerzelAlt].join(' / '));`);
   pruef(JSON.stringify(allgemein.sort()) === JSON.stringify(ohneRegister.sort()), `«Allgemein» enthält nur Aktionen ohne Register (${allgemein.join(', ') || 'keine'})`, `${allgemein} gegen ${ohneRegister}`);
   const mitRegister = await ausw(`const a = (await import('/js/oberflaeche/aktionen.js')).aktionen; return [...a.values()].filter((x) => x.kuerzel && x.register).map((x) => x.register);`);
-  const bekannt = ['datei', 'architektur', 'huelle', 'gebaeudetechnik', 'einfuegen', 'beschriften', 'aendern', 'koordination', 'ansicht', 'verwalten', 'kontext', 'familie'];
+  const bekannt = ['datei', 'architektur', 'huelle', 'gebaeudetechnik', 'einfuegen', 'beschriften', 'aendern', 'koordination', 'ansicht', 'xr', 'verwalten', 'kontext', 'familie'];
   pruef(mitRegister.every((r) => bekannt.includes(r)), 'jedes Register einer Aktion mit Kürzel hat einen Namen im Dialog', [...new Set(mitRegister)].join(','));
   await zweiBilder('kuerzel', '#dialogschicht .dlg');
   await alleDialogeZu();

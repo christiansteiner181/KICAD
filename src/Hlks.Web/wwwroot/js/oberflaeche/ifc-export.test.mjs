@@ -291,7 +291,7 @@ test('Verdrahtung: Aktion im Register Datei › Ausgabe, nur mit offenem Projekt
   assert.match(a, /aktiv: \(\) => !!zustand\.status\?\.offen/);
   assert.match(lies('./aktionen.js'), /import '\.\/aktionen-ifc\.js'/);
   assert.match(lies('./menueband.js'), /datei: \['Projekt', 'Ausgabe'\]/);
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['verwalten', 'Verwalten'\]\]/);
+  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
   const d = lies('./ifc-export-dialog.js');
   assert.match(d, /senden\('\/api\/ifc\/export', T\.anfrageAus\(a\)\)/);
   assert.match(d, /senden\('\/api\/ordner\/zeigen'/);

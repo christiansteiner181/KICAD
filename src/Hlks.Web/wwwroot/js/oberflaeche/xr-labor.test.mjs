@@ -311,7 +311,7 @@ test('HTML-Sicherheit: Namen und Texte aus dem Netz gehen nur über esc() ins HT
 
 test('Verdrahtung: Menüband-Aktion, Symbol, Dialog nur über /api/xr, Benutzereinstellungen für die Profile', () => {
   const akt = lies('aktionen-quest.js');
-  assert.match(akt, /id: 'ansicht\.xrLabor'.*register: 'ansicht'.*gruppe: 'Fenster'.*groesse: 'klein'/s);
+  assert.match(akt, /id: 'ansicht\.xrLabor'.*register: 'xr'.*gruppe: 'Labor'.*groesse: 'gross'/s);
   assert.match(akt, /import\('\.\/xr-labor-dialog\.js'\)/);
   assert.match(lies('symbole.js'), /xrLabor: '/);
   const dialog = lies('xr-labor-dialog.js');

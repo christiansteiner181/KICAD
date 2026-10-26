@@ -1,4 +1,4 @@
-// Menüband wie in Revit: Register (Datei, Architektur, Hülle (Modul 1c), Gebäudetechnik, Einfügen, Beschriften, Ändern, Ansicht, Verwalten) mit Knöpfen in
+// Menüband wie in Revit: Register (Datei, Architektur, Hülle (Modul 1c), Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, XR (26.10.2026), Verwalten) mit Knöpfen in
 // beschrifteten Gruppen, Kontextregister «Ändern | <Klasse>» bei Auswahl, Optionsleiste darunter, Schnellzugriff im Kopf.
 // Kontextregister «Familie» (Modul 2, C1): erscheint, solange ein Familieneditor die aktive Ansicht ist, und wird dann gewählt.
 // Das Menüband löst nur Aktionen aus (aktionen.js); Zustand und Hinweise für gesperrte Knöpfe kommen aus den Aktionen.
@@ -20,7 +20,7 @@ import { werkzeugOptionen } from '../werkzeuge/optionsleiste.js';
 import { familieAktiv } from '../familien/aktiv.js';
 import { STUFEN, gruppenPlan, stufenWaehlen, minWeiter, minUmschalten, MIN_ZUSTAENDE } from './menueband-stufen.js';
 
-const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['gebaeudetechnik', 'Gebäudetechnik'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['verwalten', 'Verwalten']];
+const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['gebaeudetechnik', 'Gebäudetechnik'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['xr', 'XR'], ['verwalten', 'Verwalten']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
 const GRUPPENFOLGE = {
   datei: ['Projekt', 'Ausgabe'],   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)
@@ -31,6 +31,7 @@ const GRUPPENFOLGE = {
   aendern: ['Auswahl', 'Verändern', 'Bearbeiten', 'Verlauf', 'Paletten'],
   ansicht: ['Erstellen', 'Ansicht', 'Ansichtsvorlage', 'Grafik', 'Fenster', 'Zoom', 'Darstellung', '3D-Schnitt'],   // 3D-Schnitt seit N13
   koordination: ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'Koordinationsplan', 'BCF'],   // Modul 3b, C1; Typenliste seit C1c; Koordinationsplan seit Modul 7 Teil B3
+  xr: ['Brille', 'Zeigen', 'Koordination', 'Labor'],   // Register XR (26.10.2026): alles zu VR/AR und der Quest App, aktionen-quest.js, aktionen-vr-auftrag.js, problemmarker-panel.js
   verwalten: ['Projekt', 'Zusammenarbeit', 'Modell', 'HKAP', 'Hilfe'],
   familie: ['Parameter', 'Typen', 'Körper', 'Anschlüsse', 'Sinnbild', 'Ansicht', 'Prüfen', 'Unterlagen', 'Bibliothek'],
 };

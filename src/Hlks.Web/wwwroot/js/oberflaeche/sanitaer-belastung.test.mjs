@@ -530,7 +530,7 @@ test('Verdrahtung: Aktion im Register Gebäudetechnik › Apparate und Armaturen
 });
 
 test('Verdrahtung: keine neuen Register, die Gruppe «Apparate und Armaturen» gibt es schon', () => {
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['verwalten', 'Verwalten'\]\]/);
+  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
   assert.match(lies('../familien/aktionen-familien.js'), /register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen'/);
 });
 

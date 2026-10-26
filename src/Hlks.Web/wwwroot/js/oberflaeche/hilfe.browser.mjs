@@ -182,7 +182,7 @@ const alleDialogeZu = async () => { for (let i = 0; i < 5 && (await dialoge()) >
 const designSetzen = (d) => ausw(`const m = await import('/js/oberflaeche/design.js'); m.designSetzen(${JSON.stringify(d)}, false); return 1;`).then(() => warte(250));
 const meldungen = () => ausw(`return [...document.querySelectorAll('#meldungen .meldung')].map((m) => m.innerText);`);
 const meldungenLeeren = () => ausw(`document.querySelectorAll('#meldungen .meldung').forEach((m) => m.remove()); return 1;`);
-const REGISTERNAME = { datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', gebaeudetechnik: 'Gebäudetechnik', einfuegen: 'Einfügen', beschriften: 'Beschriften', aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', verwalten: 'Verwalten' };
+const REGISTERNAME = { datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', gebaeudetechnik: 'Gebäudetechnik', einfuegen: 'Einfügen', beschriften: 'Beschriften', aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten' };
 
 /** Verbindung zu einem weiteren Fenster (Ziel) des Browsers, hier dem Hilfefenster; sammelt Ausnahmen der Seite. */
 async function verbinde(wsUrl) {

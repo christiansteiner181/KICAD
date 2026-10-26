@@ -174,6 +174,13 @@ grundleitungsplan | Grundleitungsplan | eigenes | Plan mit Bodenplatte über Erd
 listeCsv | Liste als CSV | eigenes | Tabelle mit Blatt davor, blaue Kommas
 ifcExport | IFC exportieren | IFC exportieren | Würfel mit blauem Pfeil heraus nach rechts unten
 problemMarker | Problem-Marker (Palette, Quest App) | eigenes | orange Stecknadel mit weissem Ausrufezeichen
+questVerbinden | Quest verbinden (Register XR) | eigenes | graue Brille mit hellblauem Visier, blauer Pfeil nach rechts darunter
+appInstallieren | App installieren (Register XR) | eigenes | blauer Pfeil nach unten über der Brille
+autostart | Autostart der Begehung (Register XR) | eigenes | grüner Kreis mit weissem Startdreieck
+brilleZeigen | Brille zeigen (Register XR) | eigenes | Brille über einem Auge mit blauer Iris
+anBrille | An die Brille senden (Register XR) | eigenes | blaue Funkwellen über der Brille
+raumAr | Raum in AR (Register XR) | eigenes | grauer Raumquader in blauen Eckmarken
+xrLabor | XR-Labor (Register XR) | eigenes | Messkolben mit blauer Füllung und weissen Bläschen
 raumBegehen | Raum begehen / In VR begehen | eigenes | blaue Figur auf grauer Bodenplatte
 sitzungstisch | Sitzungstisch (Quest App, App «Tisch») | eigenes | Tisch mit Modellwürfel, Seiten blau
 gesten | Gesten (Quest App) | eigenes | gelbe offene Hand
@@ -693,6 +700,31 @@ s('haken',
 s('bildschirm',
   '<rect class="f3" x="2.5" y="4.5" width="27" height="18" rx="1.5"/><rect class="fl n" x="4.5" y="6.5" width="23" height="14"/><path class="sb w15" d="M7.5 17.5h7"/><path class="f2" d="M14 22.5h4v4h-4z"/><path class="f3" d="M9.5 26.5h13v2.5h-13z"/>',
   '<rect class="f3" x="1" y="2" width="14" height="9.5" rx="1"/><rect class="fl n" x="2.2" y="3.2" width="11.6" height="7.1"/><path class="f2" d="M7 11.5h2v2H7z"/><path class="f3" d="M4.5 13.5h7V15h-7z"/>');
+
+// ---------------------------------------------------------------------------------------------- Register XR (26.10.2026)
+// Brille, App, Labor und Zeigen im Register «XR»; eigene Entwürfe, dieselbe Bildsprache wie Sitzungstisch und Raum begehen (graue Körper, blaue Akzente).
+
+s('questVerbinden',
+  '<rect class="f2" x="1.5" y="4.5" width="29" height="13" rx="3.5"/><rect class="fl n" x="4" y="7" width="24" height="8" rx="2"/><path class="fp" d="M12 17.5l1.5-3.5h5l1.5 3.5z"/><path class="fb n" d="M5 23.5h13V20l8 5.75L18 31.5V28H5z"/>',
+  '<rect class="f2" x="0.8" y="1.8" width="14.4" height="6.4" rx="1.8"/><rect class="fl n" x="2" y="3" width="12" height="3.6" rx="1"/><path class="fp" d="M6 8.2l.8-1.8h2.4l.8 1.8z"/><path class="fb n" d="M2.5 11.3h6.2V9.7l4.8 2.9-4.8 2.9v-1.6H2.5z"/>');
+s('appInstallieren',
+  '<path class="fb n" d="M12.5 2h7v6h4L16 14.5 8.5 8h4z"/><rect class="f2" x="1.5" y="16" width="29" height="12" rx="3.5"/><rect class="fl n" x="4" y="18.5" width="24" height="7" rx="2"/><path class="fp" d="M12 28l1.5-3h5l1.5 3z"/>',
+  '<path class="fb n" d="M6 0.8h4v3.4h2.2L8 8 3.8 4.2H6z"/><rect class="f2" x="0.8" y="8.8" width="14.4" height="6" rx="1.8"/><rect class="fl n" x="2" y="10" width="12" height="3.3" rx="1"/><path class="fp" d="M6 14.8l.8-1.7h2.4l.8 1.7z"/>');
+s('autostart',
+  '<circle class="fsa n" cx="16" cy="16" r="12"/><path class="fW n" d="M13 10.5l9 5.5-9 5.5z"/>',
+  '<circle class="fsa n" cx="8" cy="8" r="6.5"/><path class="fW n" d="M6.3 5l4.6 3-4.6 3z"/>');
+s('brilleZeigen',
+  '<rect class="f2" x="5" y="2.5" width="22" height="10" rx="3"/><rect class="fl n" x="7" y="4.5" width="18" height="6" rx="1.5"/><path class="fp" d="M3 22.5c3.5-5 8-7.5 13-7.5s9.5 2.5 13 7.5c-3.5 5-8 7.5-13 7.5S6.5 27.5 3 22.5z"/><circle class="fb n" cx="16" cy="22.5" r="4"/><circle class="fk n" cx="16" cy="22.5" r="1.7"/>',
+  '<rect class="f2" x="3" y="1" width="10" height="5" rx="1.5"/><rect class="fl n" x="4" y="2" width="8" height="3" rx="0.8"/><path class="fp" d="M1 11c1.8-2.6 4-3.8 7-3.8s5.2 1.2 7 3.8c-1.8 2.6-4 3.8-7 3.8S2.8 13.6 1 11z"/><circle class="fb n" cx="8" cy="11" r="2"/><circle class="fk n" cx="8" cy="11" r="0.8"/>');
+s('anBrille',
+  '<circle class="fb n" cx="16" cy="13" r="1.8"/><path class="sb w2" d="M12 10.5a5.5 5.5 0 0 1 8 0"/><path class="sb w2" d="M8.5 7.5a10 10 0 0 1 15 0"/><rect class="f2" x="1.5" y="17" width="29" height="12" rx="3.5"/><rect class="fl n" x="4" y="19.5" width="24" height="7" rx="2"/><path class="fp" d="M12 29l1.5-3h5l1.5 3z"/>',
+  '<circle class="fb n" cx="8" cy="6" r="1"/><path class="sb w15" d="M5.8 4.6a3 3 0 0 1 4.4 0"/><path class="sb w15" d="M3.4 2.6a6 6 0 0 1 9.2 0"/><rect class="f2" x="0.8" y="9" width="14.4" height="6" rx="1.8"/><rect class="fl n" x="2" y="10.2" width="12" height="3.3" rx="1"/><path class="fp" d="M6 15l.8-1.7h2.4L10 15z"/>');
+s('raumAr',
+  '<path class="f1" d="M16 7.5l8.5 4.8-8.5 4.8-8.5-4.8z"/><path class="f2" d="M7.5 12.3l8.5 4.8v9.4l-8.5-4.8z"/><path class="f3" d="M24.5 12.3v9.4l-8.5 4.8v-9.4z"/><path class="sb w2" d="M3 9V3h6M23 3h6v6M29 23v6h-6M9 29H3v-6"/>',
+  '<path class="f1" d="M8 3.8l4.2 2.4L8 8.6 3.8 6.2z"/><path class="f2" d="M3.8 6.2L8 8.6v4.7l-4.2-2.4z"/><path class="f3" d="M12.2 6.2v4.7L8 13.3V8.6z"/><path class="sb w15" d="M1.5 4.5v-3h3M11.5 1.5h3v3M14.5 11.5v3h-3M4.5 14.5h-3v-3"/>');
+s('xrLabor',
+  '<path class="fp" d="M12 3h8v8l7.5 14A2.5 2.5 0 0 1 25.3 28.6H6.7A2.5 2.5 0 0 1 4.5 25L12 11z"/><path class="fb" d="M9.2 19h13.6l3 5.6a2.5 2.5 0 0 1-2.2 3.6H8.4A2.5 2.5 0 0 1 6.2 24.6z"/><circle class="fW n" cx="13.5" cy="23.5" r="1.3"/><circle class="fW n" cx="19" cy="22" r="1"/>',
+  '<path class="fp" d="M6.5 1.5h3v4l4.3 7a1.2 1.2 0 0 1-1 1.8H3.2a1.2 1.2 0 0 1-1-1.8l4.3-7z"/><path class="fb" d="M3.8 10h8.4l1.6 2.5a1.2 1.2 0 0 1-1 1.8H3.2a1.2 1.2 0 0 1-1-1.8z"/><circle class="fW n" cx="6.5" cy="12.2" r="0.7"/>');
 
 // ---------------------------------------------------------------------------------------------- Ausgabe
 
