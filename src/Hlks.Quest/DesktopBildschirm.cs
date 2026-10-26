@@ -236,7 +236,7 @@ sealed class DesktopBildschirm : IWegwischbar
         {
             hinweis(w.Zustand == DesktopZustand.AmPcBeendet
                 ? "Der Bildschirm wurde am PC beendet. Zum neuen Verbinden wieder hineinziehen."
-                : $"{Marke.Gegenstelle} lässt den Bildschirm nicht zu – die Brille {Marke.InGegenstelle} neu koppeln.");
+                : $"{Werkzeug?.Name ?? "Der PC"} lässt den Bildschirm nicht zu – die Brille {Werkzeug?.InWerkzeug ?? "am PC"} neu koppeln.");
             ansicht.Ausblenden(t, auge);
             _ = w.Beenden();
             verbindung = null;
@@ -407,5 +407,18 @@ sealed class DesktopBildschirm : IWegwischbar
     {
         try { verbindung?.Beenden().Wait(TimeSpan.FromSeconds(2)); }
         catch (AggregateException) { }
+    }
+
+    /// <summary>H+K XR E1: das Werkzeug, dessen PC den Bildschirm liefert (Name in Meldungen); die App setzt es je Bild.</summary>
+    public Hlks.Xr.Netz.Werkzeug? Werkzeug { get; set; }
+
+    /// <summary>
+    /// H+K XR E1: beim Wechsel des Werkzeugs – der Bildschirm gleitet hinaus, die Verbindung zum bisherigen PC endet (im Hintergrund); mit dem nächsten Hineinziehen
+    /// verbindet er sich mit dem PC des neuen Werkzeugs.
+    /// </summary>
+    public void Trennen(double t)
+    {
+        if (ansicht.Sichtbar) ansicht.Ausblenden(t, letztesAuge);
+        if (verbindung is { } v) { _ = v.Beenden(); verbindung = null; }
     }
 }

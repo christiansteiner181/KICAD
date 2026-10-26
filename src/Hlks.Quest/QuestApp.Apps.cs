@@ -53,8 +53,8 @@ sealed partial class QuestApp
     /// <summary>Die Geisterhand für das Wegwischen schon gezeigt (einmal je Erscheinen der Symbole)?</summary>
     bool wischGeistGezeigt;
 
-    /// <summary>Ist diese Hand an den Apps (Fenster, Werkzeugleiste, App-Symbole; Finger oder Strahl) – dann zielt ihr Pinch nicht und greift nicht.</summary>
-    bool AnApps(Handed h) => bedien.MitApps && (apps.HandNah(h) || symbole.HandNah(h));
+    /// <summary>Ist diese Hand an den Apps (Fenster, Werkzeugleiste, App-Symbole, H+K XR E1: Startseite; Finger oder Strahl) – dann zielt ihr Pinch nicht und greift nicht.</summary>
+    bool AnApps(Handed h) => startseite.HandNah(h) || bedien.MitApps && (apps.HandNah(h) || symbole.HandNah(h));
 
     /// <summary>Die vier Ecken der Tischplatte im Raum der Brille.</summary>
     List<XVec3> TischEcken()
@@ -91,6 +91,8 @@ sealed partial class QuestApp
     {
         // V1c: «Desktop» ist eine App wie die andern (Entscheid Hauptlauf): sein Symbol holt den Bildschirm des PCs; eine andere App schiebt ihn hinaus (ein Fenster)
         if (id == DesktopBildschirm.FarbId) { DesktopOeffnen(); return; }
+        // H+K XR E1: das Symbol «Werkzeuge» führt zurück zur Startseite (das aktive Werkzeug bleibt, bis man ein anderes wählt)
+        if (id == WerkzeugStartseite.SymbolId) { StartseiteOeffnen(pruefKopf ?? Input.Head); return; }
         if (desktop is { Ansicht.Sichtbar: true } d) d.Ausblenden(Time.Total);
         apps.RegisterWaehlen(id);
         if (id == "etagen") apps.Rollen = null;   // V1e: beim Öffnen das aktuelle Geschoss sichtbar
@@ -162,11 +164,13 @@ sealed partial class QuestApp
 
     double Hz => bildzeit.Mittel > 0 ? 1000 / bildzeit.Mittel : 0;
 
-    /// <summary>Die Apps (Symbole) nach dem Modus; ohne Modell nur KICAD (Status).</summary>
+    /// <summary>Die Apps (Symbole) nach dem Modus; ohne Modell nur der Status des Werkzeugs (KICAD, XR-Labor …). H+K XR E1: mit mehreren gekoppelten Werkzeugen dazu
+    /// «Werkzeuge» (zurück zur Startseite; Reserveplatz rechts im Feld).</summary>
     List<SymbolApps.Symbol> SymboleBauen()
     {
         var (ampel, _) = VerbindungKurz();
-        var l = new List<SymbolApps.Symbol> { new("status", Marke.Name, GlasSymbole.Status, ampel) };
+        var l = new List<SymbolApps.Symbol> { new("status", AnzeigeName, GlasSymbole.Status, ampel) };
+        if (werkzeuge.Length > 1) l.Add(new(WerkzeugStartseite.SymbolId, "Werkzeuge", SymbolApps.BildWerkzeuge));
         if (darstellung is null || szene is null) return l;
         l.Add(new("etagen", "Etagen", GlasSymbole.Etagen));
         l.Add(new("messen", "Messen", GlasSymbole.Messen));
@@ -286,7 +290,7 @@ sealed partial class QuestApp
                 break;
             default:
             {
-                c.Titel(statusGesten ? "Gesten" : Marke.Name);
+                c.Titel(statusGesten ? "Gesten" : AnzeigeName);
                 if (statusGesten)
                 {
                     var t = Gestenbedeutung.Tabelle;

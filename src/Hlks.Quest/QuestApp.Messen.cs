@@ -39,6 +39,18 @@ sealed partial class QuestApp
     /// Neue Szene: Fang neu (die Messungen bleiben – sie liegen in Modellkoordinaten). V1d: der räumliche Index entsteht einmal je Modell im Hintergrund
     /// (SzenenFang.Aufbauen); bis er steht, fängt nichts (Hinweis), es wartet nie ein Bild darauf.
     /// </summary>
+    /// <summary>H+K XR E1: beim Wechsel des Werkzeugs – Messungen und Fang gehören zum Modell des bisherigen Werkzeugs; Messen aus.</summary>
+    void MessenLeeren()
+    {
+        Messband.Loeschen(messen);
+        Messband.AnSetzen(messen, false);
+        szenenFang = null;
+        fangHinten = null;
+        fangGestellt[0] = fangGestellt[1] = null;
+        fangSchluessel = null;
+        messFang[0] = messFang[1] = null;
+    }
+
     void MessenSzene(ModellSzene sz)
     {
         var f = new SzenenFang(sz);

@@ -23,6 +23,12 @@ sealed class SymbolApps : IWegwischbar
     /// <summary>Ein Symbol: Id der App, Name (Tooltip), Symbol von KICAD (GlasSymbole), Ampel (nur Status).</summary>
     public sealed record Symbol(string Id, string Titel, string Bild, int Ampel = 0);
 
+    /// <summary>
+    /// H+K XR E1: Bild des Symbols «Werkzeuge» (zurück zur Startseite). Es gibt dafür kein Symbol in KICAD (symbole.js); gezeichnet wird ein Raster aus vier Punkten
+    /// wie eine Startseite (Annahme E1, bis ein Symbol im Bedienstandard festgelegt ist).
+    /// </summary>
+    public const string BildWerkzeuge = "@werkzeuge";
+
     enum Phase { Weg, Hebt, Da, Geht }
 
     /// <summary>Ausblenden nach einer Wahl (s): schnell, damit die App erst danach erscheint.</summary>
@@ -333,7 +339,10 @@ sealed class SymbolApps : IWegwischbar
             z.Flaeche(lage, r, s.Glas with { A = Math.Min(1, s.Glas.A + 0.1 * naehe) * deck[i] }, mitSchatten: true);
             z.Ring(lage, r * 0.97, naehe > 0 ? 0.0022 : 0.0014, s.Akzent with { A = (0.55 + 0.45 * naehe) * deck[i] });
             if (gew > 0) z.Leuchten(lage, r, s.Akzent with { A = 0.8 * gew });
-            z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
+            if (sym.Bild == BildWerkzeuge)
+                foreach (var (dx, dy) in new[] { (-1, 1), (1, 1), (-1, -1), (1, -1) })   // E1: Raster aus vier Punkten (siehe BildWerkzeuge)
+                    z.Punkt(lage.Mitte + lage.Rechts * (dx * r * 0.22) + lage.Oben * (dy * r * 0.22) + lage.Normale * 0.003, r * 0.26, s.Text with { A = deck[i] });
+            else z.Symbol(sym.Bild, lage, lage.H * 0.62, s.Text with { A = deck[i] }, s.Hell);
             if (sym.Ampel > 0)
             {
                 var c = sym.Ampel switch { 1 => GlasStil.Gruen, 2 => GlasStil.Orange, _ => GlasStil.Rot };
