@@ -1,7 +1,7 @@
 // Nachrichten des Live-Kanals (Modul XR, Quest App P3): GET /api/xr/kanal (WebSocket, Textnachrichten, je eine JSON-Nachricht).
 // Jede Nachricht hat «typ» und «fassung» (heute 1). Beschreibung für Menschen: src/Hlks.Web/OBERFLAECHE.md, Abschnitt «Modul XR: Zugang im Büronetz».
 //
-// Brille → PC:   hallo { name, geraet, app? }   tschuess {}   pose { kopf, links?, rechts?, modus?, massstab? }   zeigen { element?, punkt? }
+// Brille → PC:   hallo { name, geraet, app?, marke? }   tschuess {}   pose { kopf, links?, rechts?, modus?, massstab? }   zeigen { element?, punkt? }
 //                messprotokoll { aufgabe, variante?, varianten?{ name: option }, zeitMs, fehlgriffe, abbrueche, erfolg?, stellschrauben?, notiz? }   (Auswertung: XrLaborAuswertung.cs)
 // PC → Brille:   willkommen { id, teilnehmer[], auftrag?, stellschrauben{} }   hallo { id, name, geraet }   tschuess { id }
 //                pose { von, … , zeit }   zeigen { von, element?, punkt?, zeit }   auftrag { auftrag }   stellschraube { schluessel, wert }
@@ -33,8 +33,8 @@ public sealed record XrZeigen(string? Element, double[]? Punkt);
 /// <summary>Messung einer Prüfaufgabe im Interface-Labor.</summary>
 public sealed record XrMessprotokoll(string Aufgabe, string? Variante, double ZeitMs, int Fehlgriffe, int Abbrueche, bool? Erfolg, JsonObject? Stellschrauben, string? Notiz, JsonObject? Varianten = null);
 
-/// <summary>Anmeldung eines Teilnehmers.</summary>
-public sealed record XrHallo(string Name, string Geraet, string? App);
+/// <summary>Anmeldung eines Teilnehmers. Marke (XR-Labor L1): Id der Brillen-App aus «hallo.marke» («kicad», «xrlabor»); null bei Apps ohne das Feld.</summary>
+public sealed record XrHallo(string Name, string Geraet, string? App, string? Marke = null);
 
 /// <summary>Ein Teilnehmer, wie die anderen ihn sehen.</summary>
 public sealed record XrTeilnehmerInfo(string Id, string Name, string Geraet);
@@ -74,8 +74,15 @@ public static class XrNachrichten
         return (typ, o);
     }
 
-    public static XrHallo Hallo(JsonObject o) =>
-        new(Text(o, "name", 40, true)!, Text(o, "geraet", 40, true)!, Text(o, "app", 40, false));
+    static readonly Regex MarkeMuster = new(@"^[a-z][a-z0-9]{0,15}$", RegexOptions.CultureInvariant);
+
+    /// <summary>hallo { name, geraet, app?, marke? }. «marke» (XR-Labor L1) ist die Id der Brillen-App: Kleinbuchstaben und Ziffern, bis 16 Zeichen.</summary>
+    public static XrHallo Hallo(JsonObject o)
+    {
+        var marke = Text(o, "marke", 16, false);
+        if (marke is not null && !MarkeMuster.IsMatch(marke)) throw new XrNachrichtFehler("«marke» muss aus Kleinbuchstaben und Ziffern bestehen (z. B. «kicad»).");
+        return new(Text(o, "name", 40, true)!, Text(o, "geraet", 40, true)!, Text(o, "app", 40, false), marke);
+    }
 
     public static XrPose Pose(JsonObject o)
     {
