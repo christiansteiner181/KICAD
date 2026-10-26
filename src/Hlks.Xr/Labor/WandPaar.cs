@@ -7,7 +7,7 @@
 // nebeneinander. Bevorzugt das Paar, über das man blickt (Normale nahe der Blickrichtung), dann die längere Überlappung. Sollmass: der Raumgrundriss liegt nicht
 // immer genau auf den Wandflächen (Putz, Toleranz der Erkennung, eine Wand im Raum) – deshalb sucht die App je Kante mit Strahlen aus der Mitte des Raums die
 // Fläche einer Wand (Ebene «wand» bzw. IfcWall… der Unterlage), die man von dort sieht (parallel ±ParallelGrad, höchstens FlaecheSucheM hinter der Kante); ohne
-// Wandfläche gilt die Kante.
+// Wandfläche gilt die Kante. Vorrang haben Paare mit Wandfläche auf beiden Seiten (Befund 26.10.2026, siehe Waehlen).
 // ANNAHMEN V1a (Brillentest): ParallelGrad 3°, AbstandMinM 0.8 m, UeberlappMinM 0.5 m, FlaecheSucheM 0.25 m, Punkte höchstens PunktWandM = 5 cm neben der Wand,
 // Markierung 2.2 m hoch.
 
@@ -61,7 +61,7 @@ public static class WandPaare
         if (g is null) return null;
         var kanten = Kanten(g.Rand);
         var cosPar = Math.Cos(ParallelGrad * Math.PI / 180);
-        (int I, int J, double Wert)? best = null;
+        var kandidaten = new List<(int I, int J, double Wert)>();
         for (int i = 0; i < kanten.Count; i++)
             for (int j = i + 1; j < kanten.Count; j++)
             {
@@ -80,12 +80,26 @@ public static class WandPaare
                 var mitteS = (lo + hi) / 2;
                 var mitte = new Xz(a0.X + da.X * mitteS + n.X * abstand / 2, a0.Z + da.Z * mitteS + n.Z * abstand / 2);
                 if (!RaumStandort.Innen(g, mitte)) continue;
-                var wert = Math.Abs(n.X * blick.X + n.Z * blick.Z) * 10 + (hi - lo);
-                if (best is null || wert > best.Value.Wert + 1e-9) best = (i, j, wert);
+                kandidaten.Add((i, j, Math.Abs(n.X * blick.X + n.Z * blick.Z) * 10 + (hi - lo)));
             }
-        if (best is not { } b) return null;
-        var (k0, k1) = kanten[b.I];
-        var (m0, m1) = kanten[b.J];
+        // Vorrang hat ein Paar mit sichtbarer Wandfläche auf beiden Seiten, dann auf einer; erst danach Blick und Überlappung. Befund Prüflauf Beispielprojekt
+        // 26.10.2026 (Christian: «Ja, beheben»): eine Raumkante ohne Wand (Raumgrenze im offenen Grundriss) gab Sollmass 4825 mm, der Messstrahl ging aber durch
+        // bis zur gegenüberliegenden Aussenwand (9650 mm).
+        WandPaar? best = null;
+        (int Waende, double Wert) bestWert = (-1, 0);
+        foreach (var (i, j, wert) in kandidaten)
+        {
+            var (p, waende) = Bauen(szene, geschossId, raum, g, kanten[i], kanten[j]);
+            if (waende > bestWert.Waende || (waende == bestWert.Waende && wert > bestWert.Wert + 1e-9)) { best = p; bestWert = (waende, wert); }
+        }
+        return best;
+    }
+
+    /// <summary>Das Paar aus zwei gegenüberliegenden Kanten: Marken auf den sichtbaren Wandflächen (sonst auf den Kanten), Sollmass, Zahl der gefundenen Wandflächen (0–2).</summary>
+    static (WandPaar Paar, int Waende) Bauen(ModellSzene szene, string? geschossId, string raum, RaumGrundriss g, (Xz A, Xz B) kante, (Xz A, Xz B) gegenueber)
+    {
+        var (k0, k1) = kante;
+        var (m0, m1) = gegenueber;
         var d0 = Richtung(k0, k1);
         double T(Xz p) => (p.X - k0.X) * d0.X + (p.Z - k0.Z) * d0.Z;
         double ulo = Math.Max(Math.Min(T(k0), T(k1)), Math.Min(T(m0), T(m1))), uhi = Math.Min(Math.Max(T(k0), T(k1)), Math.Max(T(m0), T(m1)));
@@ -99,12 +113,15 @@ public static class WandPaare
         var bVon = Auf(bBasis, ulo, 0, nA);
         var bBis = Auf(bBasis, uhi, 0, nA);
         var halb = Math.Abs(dist) / 2;
-        var wA = Flaeche(szene, geschossId, aVon, aBis, nA, g.Boden, halb);
-        var wB = Flaeche(szene, geschossId, bVon, bBis, -nA, g.Boden, halb);
+        var fA = FlaecheSuchen(szene, geschossId, aVon, aBis, nA, g.Boden, halb);
+        var fB = FlaecheSuchen(szene, geschossId, bVon, bBis, -nA, g.Boden, halb);
+        // Kante ohne Wand (Raumgrenze im offenen Grundriss): dort misst man bis zur nächsten Wand dahinter – die trifft auch der Messstrahl; ohne solche die Kante
+        double wA = fA ?? FlaecheSuchen(szene, geschossId, aVon, aBis, nA, g.Boden, halb, AbstandMaxM) ?? 0;
+        double wB = fB ?? FlaecheSuchen(szene, geschossId, bVon, bBis, -nA, g.Boden, halb, AbstandMaxM) ?? 0;
         var a = new WandMarke(aVon + nA * wA, nA, aVon + nA * wA, aBis + nA * wA, g.Boden, MarkeHoeheM);
         var bm = new WandMarke(bVon - nA * wB, -nA, bVon - nA * wB, bBis - nA * wB, g.Boden, MarkeHoeheM);
         var soll = Math.Abs((bm.Punkt - a.Punkt).Skalar(nA)) * 1000;
-        return new WandPaar(raum, a, bm, Math.Round(soll, 1));
+        return (new WandPaar(raum, a, bm, Math.Round(soll, 1)), (fA is null ? 0 : 1) + (fB is null ? 0 : 1));
     }
 
     /// <summary>
@@ -114,17 +131,21 @@ public static class WandPaare
     /// Treffer 0 (die Kante). Befund Prüflauf Test_praxis 24.10.2026: lag der Grundriss auf der Aussenseite einer Wand im Raum, galt vorher die Fläche an der Kante
     /// (hinter der Wand, 250 mm zu weit) statt der sichtbaren.
     /// </summary>
-    public static double Flaeche(ModellSzene szene, string? geschossId, Vec3 von, Vec3 bis, Vec3 normale, double boden, double tiefe)
+    public static double Flaeche(ModellSzene szene, string? geschossId, Vec3 von, Vec3 bis, Vec3 normale, double boden, double tiefe) =>
+        FlaecheSuchen(szene, geschossId, von, bis, normale, boden, tiefe) ?? 0;
+
+    /// <summary>Wie <see cref="Flaeche"/>, aber null, wenn an dieser Kante keine Wandfläche zu sehen ist (dann gibt es dort nichts, woran man misst).</summary>
+    public static double? FlaecheSuchen(ModellSzene szene, string? geschossId, Vec3 von, Vec3 bis, Vec3 normale, double boden, double tiefe, double hinter = FlaecheSucheM)
     {
         var d = bis - von;
         var l = d.Laenge;
-        if (l < 1e-9 || tiefe <= 0) return 0;
+        if (l < 1e-9 || tiefe <= 0) return null;
         var dir = d * (1 / l);
         var cosPar = Math.Cos(ParallelGrad * Math.PI / 180);
         // Band, in dem die Treffer liegen können (von FlaecheSucheM hinter der Kante bis zur Mitte), als Hüllbox für die Vorauswahl der Wände
         var band = Box3.Leer;
         foreach (var p in new[] { von, bis })
-            foreach (var v in new[] { -FlaecheSucheM, tiefe })
+            foreach (var v in new[] { -hinter, tiefe })
                 foreach (var h in new[] { 0.7, 1.7 })
                     band = band.Plus(p + normale * v + new Vec3(0, h, 0));
         var dreiecke = new List<(Vec3 A, Vec3 B, Vec3 C)>();
@@ -145,7 +166,7 @@ public static class WandPaare
                 }
             }
         }
-        if (dreiecke.Count == 0) return 0;
+        if (dreiecke.Count == 0) return null;
         var treffer = new List<double>();
         var r = normale * -1;
         foreach (var s in new[] { 0.15, 0.325, 0.5, 0.675, 0.85 })
@@ -154,10 +175,10 @@ public static class WandPaare
                 var u = von + dir * (l * s) + normale * tiefe + new Vec3(0, boden + h - von.Y, 0);
                 double? erster = null;
                 foreach (var (a, b, c) in dreiecke)
-                    if (SzenenFang.StrahlDreieck(u, r, a, b, c) is { } t && t <= tiefe + FlaecheSucheM && (erster is null || t < erster)) erster = t;
+                    if (SzenenFang.StrahlDreieck(u, r, a, b, c) is { } t && t <= tiefe + hinter && (erster is null || t < erster)) erster = t;
                 if (erster is { } te) treffer.Add(tiefe - te);
             }
-        if (treffer.Count == 0) return 0;
+        if (treffer.Count == 0) return null;
         treffer.Sort();
         return treffer[treffer.Count / 2];
     }
