@@ -3646,3 +3646,20 @@ baut daraus die KICAD-Quelle; `XrMessAblage` (Ordner, Rechnername, Sperre; optio
 - **Im Betrieb prüfen (Christian):** Reiter **Daten** zeigt `%OneDrive%\HLKS-CAD\labor` und nach dem ersten Start die Zahlen der übernommenen Messprotokolle der Brillentests 23.–25.10.2026;
   **Auswertung** zeigt diese Läufe je Aufgabe, Variante und Fassung; ein Profil unter **Profile** speichern und «Für die App festlegen» – die App holt es beim nächsten Verbinden.
 - **Nur mit der Brille prüfbar:** Marke im `hallo` der echten Labor-App (L0-Brillentest), Prüfaufgabe nur in der Labor-Brille, Messprotokoll der Labor-Brille in `labor\messungen`.
+
+## XR-Labor (Labor-App), L1: Testraum (26.10.2026)
+
+Christian 26.10.2026: Testwelt «Nur neutraler Testraum» – kein Projekt, keine Projektdaten (`entwurf/labor-app.md`, «Testwelt der Labor-App»).
+
+- **Katalog** `kataloge/labor_testraum.json` (Art `hlks-labor-testraum`, Fassung 1): EG (Kote 0) und OG (Kote 2900), je ein Raum innen
+  8,0 × 6,0 m, lichte Höhe 2650 mm, Wände 200 mm, Platten 250 mm (Masse = Annahmen, im Katalog gekennzeichnet). Keine Treppe: «etage-wechseln»
+  läuft über die App «Etagen». Farben: Wände `#E4E7EB`, Platten `#D9DDE2`, Markierungen als Ring `#6F3E59` (xr_farben «labor»), nie Gewerkfarben.
+- **Ziele der Prüfaufgaben** im Katalog: Markierungen (EG 4, OG 3), Wandpaare mit Sollmass (EG Süd–Nord 6000 mm, OG West–Ost 8000 mm), Raum
+  für «raum-ar-oeffnen» (`testraum-eg`), Bauteil für «tablet-wert-ablesen» (Höhe 2,65 m). Der Labor-PC prüft Sollmass und Höhe gegen die Geometrie.
+- **Endpunkte im Labor** (`src/Hlks.Labor/Testraum*.cs`, gleicher Vertrag wie `XrModellEndpunkte.cs`): `GET /api/xr/geschosse`,
+  `GET /api/xr/geschoss/{id}.glb?teil=modell|unterlage` (ETag/304, auch über den Netzzugang 5340). Fehlt der Katalog oder ist er ungültig: 409 mit Stelle.
+  Je Etage stehen die Ziele in `scene.extras.kicad.labor` (`raeume`, `markierungen`, `wandpaare`, `bauteile`, KICAD-mm).
+- **Brille:** Die Labor-Dateien nehmen zuerst die Ziele aus den extras (`Hlks.Xr/Labor/LaborZiele.cs`), sonst wie bisher (KICAD-App unverändert).
+  Ohne Ebenen und Marker (gibt es im Labor nicht, `AppMarke.MitProjekt`) meldet die Labor-App nichts.
+- **Prüfen:** `dotnet test tests/Hlks.Labor.Tests --filter "FullyQualifiedName~Testraum"`, `dotnet test tests/Hlks.Xr.Tests --filter "FullyQualifiedName~LaborZiele"`;
+  Simulator der Labor-App gegen einen Labor-Server im Testlauf löst alle sieben Prüfaufgaben (Bilder unter `%USERPROFILE%\HLKS_CAD_testdaten\labor\l1\`).
