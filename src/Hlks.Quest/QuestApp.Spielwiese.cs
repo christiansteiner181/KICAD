@@ -195,12 +195,17 @@ sealed partial class QuestApp
         {
             case SpielwieseKatalog.ArtText:
             {
+                // Befund Prüfbild S1 (app_notizen.jpg): mehrere Zeilen brauchen mehr als 1.35 Zeilenhöhen (die erste Zeile lag auf dem Akzent unter dem Titel) – Abstand
+                // unter dem Titel und 1.5 Zeilenhöhen je Zeile
+                const double zeilenHoehe = 1.5;
+                var luecke = m.M(8);
                 var zeilen = SpielwieseTafel.Zeilen(inh.Text!, Textumbruch.ZeichenJeZeile(c.Breite, m.Schrift(GlasStil.TextPt)));
-                var je = (int)Math.Floor((probe.FreieHoehe - m.M(4)) / (m.Schrift(GlasStil.TextPt) * 1.35));
+                var je = (int)Math.Floor((probe.FreieHoehe - luecke - m.M(4)) / (m.Schrift(GlasStil.TextPt) * zeilenHoehe));
                 var (s, ab, n, ss) = SpielwieseTafel.Seite(zeilen.Count, je, apps.Seite);
                 apps.Seite = s; seiten = ss;
                 c.Titel(Titel(s, ss));
-                c.Text(string.Join('\n', zeilen.Skip(ab).Take(n)), 1, Math.Max(1, n));
+                c.Abstand(luecke);
+                c.Text(string.Join('\n', zeilen.Skip(ab).Take(n)), 1, (int)Math.Ceiling(Math.Max(1, n) * zeilenHoehe / 1.35));
                 break;
             }
             case SpielwieseKatalog.ArtSeiten:
@@ -209,12 +214,13 @@ sealed partial class QuestApp
                 apps.Seite = s; seiten = ss;
                 var seite = inh.Seiten[s];
                 c.Titel($"{app.Name} · Seite {s + 1}/{ss}");
+                c.Abstand(m.M(8));
                 c.Text(seite.Titel, 1);
                 c.Abstand(m.M(6));
                 var zeilen = SpielwieseTafel.Zeilen(seite.Text, Textumbruch.ZeichenJeZeile(c.Breite, m.Schrift(GlasStil.KleinPt)));
-                var platz = (int)Math.Floor((c.FreieHoehe - m.M(4)) / (m.Schrift(GlasStil.KleinPt) * 1.35));
+                var platz = (int)Math.Floor((c.FreieHoehe - m.M(4)) / (m.Schrift(GlasStil.KleinPt) * 1.5));
                 var n = Math.Max(1, Math.Min(zeilen.Count, platz));
-                c.Text(string.Join('\n', zeilen.Take(n)), 2, n);
+                c.Text(string.Join('\n', zeilen.Take(n)), 2, (int)Math.Ceiling(n * 1.5 / 1.35));
                 break;
             }
             case SpielwieseKatalog.ArtListe:

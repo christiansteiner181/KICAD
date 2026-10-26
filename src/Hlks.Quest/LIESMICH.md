@@ -231,6 +231,61 @@ wählt die App wie bisher; ohne `labor` (KICAD) ändert sich nichts:
 EG), tablet-wert-ablesen Erfolg, Markierung … aus dem Katalog» und im Sitzungsraum (`--auftrag`) «raum-ar-oeffnen Erfolg». Mit `--bilder` legt er beim Begehen
 `testraum_eg.jpg`, `testraum_markierung.jpg`, `testraum_wandpaar.jpg`, `testraum_og.jpg`, `testraum_og_wandpaar.jpg` ab (das OG ab 220 Bildern).
 
+## XR-Labor Spielwiese S1 (26.10.2026)
+
+Neuausrichtung des Labors (`entwurf/xr-empfaenger.md`, Kasten oben; `entwurf/bedien-grundsatz.md`, Kapitel 1). Christian, 26.10.2026: «Aufrufen von Apps: Bsp. Appmenue
+aufrufen, apps wählen, menue schliessen. das labor wird durch dich bedient, wir feilen dann nur an diesem grundsatz.» Die heutige Bedienung von KICAD wird im XR-Labor ohne
+KICAD-Inhalt mit neutralen Platzhalter-Apps erlebbar und live verstellbar.
+
+| Teil | Dateien | Inhalt |
+| --- | --- | --- |
+| Katalog | `kataloge/labor_spielwiese.json` (Art `hlks-labor-spielwiese`, Fassung 1) | die Apps: Kennung, Name, Symbol, Farbe, Inhalt (`text`, `seiten`, `liste`, `schalter`, `kacheln`, `uhr`); Aufbau und Grenzen im Kopf von `src/Hlks.Xr/Labor/Spielwiese.cs` |
+| Regeln ohne StereoKit | `src/Hlks.Xr/Labor/Spielwiese.cs` (`SpielwieseKatalog`, `SpielwieseTafel`), `src/Hlks.Xr/Netz/SpielwieseLader.cs` | Lesen und Prüfen (Fehler mit Stelle), Seiten, Zeilen, Zeit und Datum; Laden vom Labor-PC mit ETag/304, Ablage je Werkzeug, eingebaute Vorgabe |
+| Labor-PC | `src/Hlks.Labor/SpielwieseEndpunkt.cs` | `GET /api/xr/labor/spielwiese` (auch über den Netzzugang 5340): der Text der Datei unverändert, ETag/304; ungültig bzw. fehlend 409 `{ fehler, vorschlag }` |
+| Werkzeug-Modul «Labor» | `QuestApp.Spielwiese.cs`, `QuestApp.PruefenSpielwiese.cs` | Symbole und Inhalt der Tafel über sieben neue Einhängepunkte (`LaborSymbole`, `LaborAppGeoeffnet`, `LaborAppInhalt`, `LaborAppFarbe`, `LaborAppEreignis`, `LaborBlaettern`, `LaborPruefenSpielwiese`); im Probebau ohne Labor weggelassen |
+| Kern (allgemein) | `SymbolApps.cs` (Farbe je Symbol, eigene Reihenfolge), `GlasZeichen.cs` (selbst gezeichnete Zeichen «@…»), `GlasApps.cs` (Kacheln, grosse Schrift), `Hlks.Xr/Bedienung/Glas.cs` (`GlasInhalt.Kacheln`, `Gross`, `FreieHoehe`), `AppSymbole.Raster` (eigene Reihenfolge) | ohne Wirkung auf KICAD |
+
+**Wann:** Das Symbolfeld zeigt die Spielwiese, wenn das aktive Werkzeug das XR-Labor ist (`Werkzeug.MitSpielwiese`), ein Katalog da ist und **keine Prüfaufgabe läuft**.
+Eine Aufgabe (Szenario «KICAD-Bedienung» im Testraum) bringt für ihre Dauer die KICAD-Apps zurück, die sie braucht (Etagen, Messen, Tisch …); danach kehrt die Spielwiese
+zurück. KICAD als Werkzeug zeigt weiter seine eigenen Apps. Prüfläufe ohne `--spielwiese` (Labor L1/L2, Wechsel) lassen die Spielwiese aus und prüfen unverändert.
+
+**In der Brille:** Beim Betreten des Labors schliesst eine offene Tafel des Werkzeugs (Status), einmal erscheint der Hinweis «XR-Labor Spielwiese: beide Handflächen nach oben
+– kurz anheben holt die Apps.» Der Testraum EG bleibt Boden und Hintergrund (hell). Die **Hebegeste** holt sechs Platzhalter-Apps und «Werkzeuge»:
+
+| App | Symbol | Farbe (xr_farben, Vorschlag S1) | Tafel |
+| --- | --- | --- | --- |
+| Notizen | `@notizen` (Zeilen) | `notizen` #F2EEDC | kurzer Text (über mehrere Seiten, wenn er nicht passt) |
+| Bilder | `@bilder` (Rahmen, Berge, Sonne) | `bilder` #F7DCD8 | sechs Kacheln: Farbfläche mit Kreis, Quadrat, Kapsel, Ring bzw. Streifen und Titel |
+| Uhr | `@uhr` (Zifferblatt) | `uhr` #D3E9F2 | Zeit gross, Datum («Montag, 26. Oktober 2026»), Zeit der Brille |
+| Liste | `@liste` (Punkte und Zeilen) | `liste` #D8EEDB | 40 Einträge wie die Etagen: höhere Tafel bis `etagen.zeilen_max` (12) Zeilen, Wisch hoch/runter rollt um eine Zeile weniger als sichtbar; Antippen markiert einen Eintrag |
+| Dokument | `@dokument` (Seite mit Eselsohr) | `dokument` #EFE6DA | drei Seiten, Wisch nach links/rechts blättert |
+| Einstellungen | `@einstellungen` (drei Regler) | `einstellungen` #E0E3EA | fünf Schalter ohne Wirkung (zwei Seiten zu vier) |
+| Werkzeuge | `@werkzeuge` (vier Punkte, E1) | vorgabe | Startseite der Werkzeuge (in der Spielwiese immer da, auch mit nur einer Kopplung – Annahme S1) |
+
+Die Platzhalter liegen in drei Reihen zu zwei Spalten in der Reihenfolge des Katalogs, «Werkzeuge» rechts daneben (`AppSymbole.Raster` mit eigener Reihenfolge; ohne sie
+lägen sie alle in Reservespalten rechts der leeren Plätze von KICAD). Bedienung **unverändert** (Kapitel 1 des Grundsatzes): Berühren mit der ganzen Hand, Zeiger und
+Tooltip, Leuchten und Ton, Sperren, Symbole blenden nach der Wahl aus, Tafel mittig und fest, Blättern auf der Tafel, Wegwischen (die Symbole kommen nicht zurück),
+Hebegeste bei offener App schliesst sie (V1i). Die Tafel trägt keine Werkzeugleiste (Messen, Marker gehören zu KICAD). Alle Stellschrauben wirken live vom Labor-PC
+(Labor-Seite, Register Stellschrauben, bzw. `POST /api/xr/stellschraube`).
+
+**Apps und Inhalte ändern (ohne neue APK):** `kataloge/labor_spielwiese.json` am Labor-PC bearbeiten (Ordner der Kataloge des Labors, `--katalog` bzw. `HLKS_KATALOG`),
+mit `GET http://localhost:5430/api/xr/labor/spielwiese` prüfen (200 = gültig; 409 nennt die Stelle, z. B. `apps[uhr].farbe «rot» steht nicht in kataloge/xr_farben.json`).
+Die Brille fragt beim Verbinden und alle 30 s mit ETag nach und übernimmt die neue Fassung im nächsten Bild (Protokoll «Spielwiese pc (…)»); ohne Verbindung gilt die zuletzt
+geholte Fassung (`werkzeuge/xrlabor/labor/spielwiese.json` im Speicher der App), sonst die beim Bau eingebettete. Neue Farben zuerst in `kataloge/xr_farben.json` eintragen;
+neue Symbole sind Zeichen «@…» (`GlasSymbole.Gezeichnet`, gezeichnet in `GlasZeichen.cs` – das braucht eine neue APK) oder die Texturen von KICAD (`GlasSymbole.Alle`).
+
+**Prüflauf «Spielwiese»** (`src\Hlks.Quest\Pruefen\hk_xr_pruefen.ps1 -Lauf Spielwiese`; die App mit `--pruefen 5000 --spielwiese --kopplung kopplung_xrlabor.json`):
+XR-Labor aktiv, Testraum, Spielwiese vom Labor-PC, keine Aufgabe und keine Karte → Hebegeste: sechs Platzhalter und «Werkzeuge» → «Dokument» mit einer gedachten flachen
+Hand → Symbole aus, Tafel mittig → Wisch auf der Tafel: Seite 2 → Wegwischen: Tafel zu, Symbole nach 2 s nicht zurück → Hebegeste → «Liste» → Wisch nach oben rollt →
+Hebegeste bei offener Liste: Tafel zu, Symbole frontal (V1i) → Notizen, Bilder, Uhr, Einstellungen je offen (ein Schalter umgeschaltet) → Zeile «P4 Spielwiese: Stellschraube
+bereit», das Skript setzt am Labor-PC `symbole.abstand_m` = 0.7, das Symbolfeld rückt von 0.50 m auf 0.70 m. Prüfbilder (nie ins Repository) in
+`%USERPROFILE%\HLKS_CAD_testdaten\hk_xr\s1\`: `symbolfeld.jpg`, `app_dokument.jpg`, `dokument_seite2.jpg`, `nach_wegwischen.jpg`, `app_liste.jpg`, `liste_gerollt.jpg`,
+`hebe_bei_offener_app.jpg`, `app_notizen.jpg`, `app_bilder.jpg`, `app_uhr.jpg`, `app_einstellungen.jpg`, `stellschraube_vorher.jpg`, `stellschraube_nachher.jpg`.
+
+**Annahmen S1:** Symbole als selbst gezeichnete Zeichen (in `symbole.js` gibt es keine Uhr, keine Notiz und kein Bild; neue Texturen bräuchten `werkzeuge/quest_symbole.mjs`);
+Farben der sechs Apps als Vorschlag nach der Regel von V1a; «Werkzeuge» immer im Feld; Grenzen des Katalogs (11 Apps, Texte 1200 Zeichen, Listen 200 Einträge);
+Kacheln im Querformat 0.72, drei je Reihe; Uhr in 56 pt.
+
 ## Symbol
 
 Entwurf E1 (Christian beurteilt; `entwurf/xr-empfaenger.md`: «eigenes Symbol (Entwurf an Christian)»): gleiche Grundform wie `werkzeuge/kicad.ico` und das Symbol des XR-Labors

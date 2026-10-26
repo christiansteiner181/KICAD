@@ -103,7 +103,7 @@ sealed partial class QuestApp
                 {
                     var abw = Math.Abs(Tafel.Abweichung(ra.Fenster.Mitte, new XVec3(k.position.x, k.position.y, k.position.z), KopfRef(k).Gieren)) * 180 / Math.PI;
                     W2(!symbole.Sichtbar && abw < 5, $"{apps.Aktiv}: Symbole ausgeblendet {(!symbole.Sichtbar ? "ja" : "nein")}, Tafel mittig ({abw:0.0}° neben dem Blick), Farbe «{FarbId}»");
-                    SBild(sPhase == 4 ? "app_dokument.jpg" : "app_liste.jpg", ra.Fenster.Mitte, 70);
+                    SBild(sPhase == 4 ? "app_dokument.jpg" : "app_liste.jpg", ra.Fenster.Mitte, sPhase == 4 ? 70 : 105);   // die Liste: höhere Tafel (12 Zeilen)
                     sPhase++; sSchritt = 0; sT0 = t;
                 }
                 break;
@@ -133,7 +133,7 @@ sealed partial class QuestApp
                 else
                 {
                     W2(spielwieseGerollt >= 1 && spielwieseAnordnung is { Rollt: true, Ab: > 0 }, $"Liste gerollt: ab Eintrag {spielwieseAnordnung.Ab + 1}, {spielwieseAnordnung.Sichtbar} sichtbar");
-                    if (apps.Rahmen is { } r2) SBild("liste_gerollt.jpg", r2.Fenster.Mitte, 70);
+                    if (apps.Rahmen is { } r2) SBild("liste_gerollt.jpg", r2.Fenster.Mitte, 105);
                     sPhase = 12; sSchritt = 0; sT0 = t;
                 }
                 break;
