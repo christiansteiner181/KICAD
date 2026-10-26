@@ -282,6 +282,13 @@ bereit», das Skript setzt am Labor-PC `symbole.abstand_m` = 0.7, das Symbolfeld
 `%USERPROFILE%\HLKS_CAD_testdaten\hk_xr\s1\`: `symbolfeld.jpg`, `app_dokument.jpg`, `dokument_seite2.jpg`, `nach_wegwischen.jpg`, `app_liste.jpg`, `liste_gerollt.jpg`,
 `hebe_bei_offener_app.jpg`, `app_notizen.jpg`, `app_bilder.jpg`, `app_uhr.jpg`, `app_einstellungen.jpg`, `stellschraube_vorher.jpg`, `stellschraube_nachher.jpg`.
 
+**Ergebnis 26.10.2026 (S1, Simulator):** `-Lauf Spielwiese` ok – Spielwiese vom Labor-PC, 7 Symbole, Dokument mit der flachen Hand nach 32 Bildern gewählt, Tafel 0.0° neben
+dem Blick, Seite 2/3, nach dem Wegwischen Symbole nicht zurück, Liste ab Eintrag 12 gerollt, V1i ok, die übrigen vier Apps offen, `symbole.abstand_m` live 0.50 → 0.70 m;
+13 Prüfbilder. Probebau ohne Labor: 0 Fehler, 0 Warnungen. APK gebaut (Katalog der Spielwiese eingebettet). KICAD `werkzeuge\quest_pruefen.ps1`: ok (der erste Lauf
+war «nicht ok» in Lauf 2, `messen-wand-wand` traf eine Leitung 1341 mm vor der Wand – das Skript nimmt als Auftrag den «ersten Raum des Modells», der je nach den Ids des
+Beispielprojekts im UG liegt; derselbe Befund steht in Protokollen anderer Sitzungen vom 26.10.2026 14:06 und 14:13, der Ausgangsstand 5437e29 lief im Vergleich ok mit
+Start im EG; zweiter Lauf mit Start im EG ok).
+
 **Annahmen S1:** Symbole als selbst gezeichnete Zeichen (in `symbole.js` gibt es keine Uhr, keine Notiz und kein Bild; neue Texturen bräuchten `werkzeuge/quest_symbole.mjs`);
 Farben der sechs Apps als Vorschlag nach der Regel von V1a; «Werkzeuge» immer im Feld; Grenzen des Katalogs (11 Apps, Texte 1200 Zeichen, Listen 200 Einträge);
 Kacheln im Querformat 0.72, drei je Reihe; Uhr in 56 pt.
