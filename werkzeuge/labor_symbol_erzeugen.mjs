@@ -6,7 +6,7 @@
 // Das Labor-Symbol hat dieselbe Grundform und dieselben Grössen, aber den Pastellton der Labor-App aus kataloge/xr_farben.json
 // (App «labor», helle Fassung: Fläche «ton», Zeichen «akzent») und ein eigenes Zeichen: Erlenmeyerkolben mit «XR» in der Flüssigkeit und
 // darunter eine Bewegungsbahn aus wachsenden Punkten (Geste). Bis 32 px entfallen Schrift und Bahn (zu fein), der Strich wird kräftiger.
-// Variante «kraeftig»: Farben vertauscht (Fläche im Akzent, Zeichen im Ton), näher an der Wirkung des KICAD-Blaus; zur Auswahl in der Vorschau.
+// Variante «kraeftig»: Farben vertauscht (Fläche im Akzent, Zeichen im Ton), näher an der Wirkung des KICAD-Blaus; Vorgabe seit Christian 26.10.2026 («Kräftig»).
 // Reiner Node ohne Pakete (PNG und ICO von Hand geschrieben, 4x4-Überabtastung für glatte Kanten, wie vr_symbol_erzeugen.mjs).
 //
 // Aufruf: node werkzeuge/labor_symbol_erzeugen.mjs [--variante hell|kraeftig] [--ziel <datei.ico>] [--vorschau <ordner>] [--ohne-vorschau]
@@ -227,7 +227,7 @@ function vergleich(spalten) {
 if (process.argv[1] && path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)) {
   const arg = process.argv.slice(2);
   const wert = (n, vorgabe) => { const i = arg.indexOf(n); return i >= 0 && arg[i + 1] ? arg[i + 1] : vorgabe; };
-  const variante = wert('--variante', 'hell');
+  const variante = wert('--variante', 'kraeftig');
   if (!['hell', 'kraeftig'].includes(variante)) { console.error('--variante: hell oder kraeftig'); process.exit(2); }
   const ziel = path.resolve(wert('--ziel', path.join(hier, 'labor.ico')));
   const ico = icoVon(variante);
