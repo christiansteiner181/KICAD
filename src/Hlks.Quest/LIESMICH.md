@@ -256,7 +256,7 @@ zurück. KICAD als Werkzeug zeigt weiter seine eigenen Apps. Prüfläufe ohne `-
 | --- | --- | --- | --- |
 | Notizen | `@notizen` (Zeilen) | `notizen` #F2EEDC | kurzer Text (über mehrere Seiten, wenn er nicht passt) |
 | Bilder | `@bilder` (Rahmen, Berge, Sonne) | `bilder` #F7DCD8 | sechs Kacheln: Farbfläche mit Kreis, Quadrat, Kapsel, Ring bzw. Streifen und Titel |
-| Uhr | `@uhr` (Zifferblatt) | `uhr` #D3E9F2 | Zeit gross, Datum («Montag, 26. Oktober 2026»), Zeit der Brille |
+| Uhr | `@uhr` (Zifferblatt) | `uhr` #E9F1DA (lindgrün) | Zeit gross, Datum («Montag, 26. Oktober 2026»), Zeit der Brille |
 | Liste | `@liste` (Punkte und Zeilen) | `liste` #D8EEDB | 40 Einträge wie die Etagen: höhere Tafel bis `etagen.zeilen_max` (12) Zeilen, Wisch hoch/runter rollt um eine Zeile weniger als sichtbar; Antippen markiert einen Eintrag |
 | Dokument | `@dokument` (Seite mit Eselsohr) | `dokument` #EFE6DA | drei Seiten, Wisch nach links/rechts blättert |
 | Einstellungen | `@einstellungen` (drei Regler) | `einstellungen` #E0E3EA | fünf Schalter ohne Wirkung (zwei Seiten zu vier) |
