@@ -129,6 +129,7 @@ Aktionen sind zentral in `aktionen.js` registriert (`id`, `titel`, `symbol` (SVG
 | Koordination (seit Modul 3b, C1, zwischen Ändern und Ansicht) | Gruppen **Vorgaben** (Projektvorgaben), **Kollisionen** (Kollisionen prüfen, Kollisionsliste), **Aussparungen** (Aussparungen vorschlagen, Aussparungen nummerieren, Aussparungsliste, Abgleich, Aussparungsplan anlegen, IFC für Architekt), **Koordinationsplan** (Koordinationsplan, Aussparungsboxen; Modul 7 Teil B3), **BCF** (BCF exportieren, BCF importieren). Keine Kürzel. Beschreibung: Abschnitt «Koordination (Modul 3b, C1)» |
 | Ändern | Ändern/Auswählen (MD), Löschen (DE, Entf) mit Trockenlauf-Vorschau der neuen Befunde und Bestätigung, Rückgängig (Strg+Z), Wiederholen (Strg+Y), Eigenschaften ein/aus (PP); seit 1a Verschieben (MV), Kopieren (CO), Drehen (RO), Spiegeln (MM), Mehrfachauswahl mit Strg+Klick |
 | Ansicht | Grundriss anlegen, 3D-Ansicht anlegen (3D), Liste anlegen, Schnitt (Werkzeug), Ansicht duplizieren, Sichtbarkeit/Grafiken (VV, VG), Ansichtsvorlage speichern / anwenden, Fenster nebeneinander (WT), Fenster als Reiter (WC), Zoom alles (ZF, ZE), Zoom alle Ansichten (ZA), Design hell/dunkel, **Hülle** (seit 1c, Gruppe «Darstellung»: Umschalter für die Ansichtseigenschaft darstellung huelle/standard, nur Grundriss und 3D); **Schema** (seit Modul 3, C2: Knopf «Schema» in der Gruppe «Erstellen», Gruppe «Schema» mit Verbinden, Trennen, Element einfügen, Neu anordnen – Abschnitt «Schema (Modul 3, C2)»); Planblätter (`aktionen-plaene.js`): Planblatt, Ansicht platzieren (auch Schemas), PDF öffnen |
+| XR (seit 26.10.2026, zwischen Ansicht und Verwalten) | alles zu Brille, Quest App und VR/AR: Gruppen **Brille** (Quest verbinden … XQ, App installieren … XI, Autostart XU, Brille zeigen XB), **Zeigen** (In VR begehen XV, Im Sitzungsraum zeigen XS, Raum in AR XR, An die Brille senden XA), **Koordination** (Problem-Marker XM), **Labor** (XR-Labor … XL) – Abschnitt «Register XR» |
 | Verwalten | Projektinformationen, **Koordinaten** (seit 1b, nur lesend), Synchronisieren, meine Elemente freigeben, Prüfbefunde, Katalog anzeigen, Tastaturkürzel (KS); **Gruppe «HKAP»** (seit 1d, zwischen «Modell» und «Hilfe»): Verbinden, Abgleich, Prüfbefunde senden – Beschreibung: Abschnitt «Verwalten › HKAP» |
 | Kontextregister «Ändern \| <Klasse>» | erscheint bei Auswahl: Löschen, Eigenschaften, im Netz folgen (stromab/stromauf hervorheben, Abfrage netz_folgen), Warum (Herkunft des gewählten Werts) |
 
@@ -1841,7 +1842,7 @@ Der Dialog macht in KICAD, was `werkzeuge/quest_verbinden.ps1` macht (das Skript
 das Modell wird nicht berührt, es entsteht kein Paket. Die Regel «jede Oberflächenaktion hat ihren Befehl» gilt für Modelländerungen; für diese Funktion gilt sie nicht – sie ist in `KiEinordnung.RechnerFunktionen` als **für die KI verboten**
 eingetragen (Grund: startet ein Programm auf dem PC), es gibt kein MCP-Werkzeug dazu, und `QuestTests` hält das fest.
 
-- **Öffnen:** Register **Ansicht › Gruppe Fenster › «Quest verbinden …»** (kleiner Knopf unter «Paletten»; eine eigene Gruppe «VR» machte das Menüband bei 1920 px breiter als vorher) (Aktion `ansicht.questVerbinden`, immer verfügbar); in der 3D-Ansicht der **graue Knopf «In VR begehen»** («Keine VR-Brille verbunden …», ein Klick prüft erneut und öffnet sonst den Dialog)
+- **Öffnen:** Register **XR › Gruppe Brille › «Quest verbinden …»** (seit 26.10.2026; vorher im Register Ansicht; Abschnitt «Register XR») (Aktion `ansicht.questVerbinden`, immer verfügbar); in der 3D-Ansicht der **graue Knopf «In VR begehen»** («Keine VR-Brille verbunden …», ein Klick prüft erneut und öffnet sonst den Dialog)
   und daneben der Link **«Quest im Browser der Brille nutzen …»** (nur beim grauen Knopf sichtbar). Der Anschluss in `ansichten/vr3d.js` ist minimal (dynamischer Import von `oberflaeche/quest-dialog.js`, Funktion `questDialogOeffnen`).
 - **Ampel** (vier Punkte, `quest-text.js` `ampel(zustand)`): *adb gefunden* · *Quest verbunden* · *Freigegeben* · *Weiterleitung aktiv*; grün = in Ordnung, rot = hier fehlt etwas, grau = noch nicht an der Reihe. Darüber «Erneut prüfen», darunter der nächste Schritt in einem Satz.
 - **Knöpfe:** «Verbinden» (setzt `adb reverse tcp:<Port> tcp:<Port>`), «Auf WLAN umstellen» (einmal mit Kabel: `adb tcpip 5555`, `adb connect <Adresse der Quest>:5555`, Weiterleitung neu), Feld **WLAN-Adresse** mit «Über WLAN verbinden» (IPv4, optional `:Port`), «Trennen» (entfernt die Weiterleitung),
@@ -2044,7 +2045,7 @@ Oberfläche dazu folgt mit P6 («XR-Labor») und P7 («Quest verbinden»: App in
 
 ## Modul XR: Quest App in KICAD (Quest App P7, `entwurf/modul-xr.md`, Zeile P7; Entscheide Christian 23.10.2026: «KICAD installiert die App», «PC sieht Brille»)
 
-Der Dialog **«Quest verbinden»** (Register **Ansicht › Gruppe Fenster › «Quest verbinden …»**) hat jetzt einen Teil **«Quest App»** (zwischen «Begehung beim Aufsetzen» und «Gut zu wissen»). Er ersetzt den Ablauf von Hand
+Der Dialog **«Quest verbinden»** (Register **XR › Gruppe Brille › «Quest verbinden …»** bzw. **«App installieren …»**) hat jetzt einen Teil **«Quest App»** (zwischen «Begehung beim Aufsetzen» und «Gut zu wissen»). Er ersetzt den Ablauf von Hand
 (`werkzeuge/quest_brillentest.ps1`) durch Knöpfe. Der Browser-Weg darüber bleibt unverändert. **Reine Rechner-Funktionen** (kein Befehl, keine Abfrage des Kerns, kein Paket im Modell), für die KI **verboten**
 (`KiEinordnung.RechnerFunktionen` › `quest_app`, `quest_app_netz`; die Anzeige der Brille am PC fällt unter `xr_kanal`), kein MCP-Werkzeug.
 
@@ -2082,7 +2083,7 @@ Der Dialog **«Quest verbinden»** (Register **Ansicht › Gruppe Fenster › «
   (`ansichten/xr-teilnehmer-logik.js`, getestet; Blick ohne Drehung = Norden, wie `KicadUmrechnung`). Die Figuren hängen an der Szene, nicht am Modell: sie zählen nicht beim Einpassen, werden nicht angeklickt und nicht vom Schnittbereich beschnitten;
   sie sind für das Auge auch hinter Wänden sichtbar und bleiben bei jedem Abstand erkennbar (Punktmarken und Etikett mit fester Bildschirmgrösse). In VR im Browser sind sie aus.
   **Abfrage:** ein gemeinsamer Takt für alle offenen 3D-Ansichten – **mit Brille alle 200 ms**, ohne Brille nur alle 4 s ein winziger Blick auf die Liste, **ausgeschaltet oder bei verstecktem Fenster gar keine Anfrage**; ohne offene 3D-Ansicht läuft nichts.
-  **Ein/aus:** Register **Ansicht › Fenster › «Brille zeigen»** (Aktion `ansicht.brilleZeigen`, Schalter mit Symbol) und das Kästchen im Teil «Quest App»; Benutzereinstellung **`ansicht3d.brillen_zeigen`** (Ja/Nein, Vorgabe ja).
+  **Ein/aus:** Register **XR › Brille › «Brille zeigen»** (Aktion `ansicht.brilleZeigen`, Schalter mit Symbol) und das Kästchen im Teil «Quest App»; Benutzereinstellung **`ansicht3d.brillen_zeigen`** (Ja/Nein, Vorgabe ja).
 - **Nachtrag nach dem Brillentest (Christian 23.10.2026, Quest 3 am Kabel, Test_praxis):**
   1. **Dialog im Fenster:** Höhe und Breite folgen dem Fenster (`max-height: calc(100vh − 24px)`, `width: min(640px, 100vw − 16px)`), der Inhalt scrollt, Titelleiste und «Schliessen» bleiben stehen; auch mit einer zu grossen gemerkten Lage (`dialog-merken.js`) und in 1280×720, 1024×600 und 800×500 (Browserreihe). Die **Quest App steht jetzt oben**, der alte Teil darunter als einklappbarer **«Browser-Prototyp»** (`<details>`); er klappt von selbst ein, sobald die App in der Brille installiert ist (offen bleibt er ohne App oder ohne adb, dort steht die Einrichtung; ein Klick des Menschen gilt bis zum Schliessen).
   2. **Kabelweg bleibt stehen:** Nach einer erfolgreichen Installation merkt KICAD je PC den Weg (`%LOCALAPPDATA%\HLKS_CAD\xr\quest_app_weg.json`: Kennung der Brille, `kabel`|`wlan`, Port; kein Schlüssel). **Solange die App per Kabel gekoppelt ist und die Kopplung besteht**, stellt die Automatik («Brille automatisch verbinden», Autostart) die Brille **nicht mehr auf WLAN-adb um** (`adb tcpip` startete adbd neu und nahm `adb reverse tcp:5140` weg, die App war getrennt); sie bleibt beim Kabel («Quest App ist per Kabel gekoppelt»). Nach jeder Änderung der adb-Verbindung (Verbinden, «Auf WLAN umstellen», «Über WLAN verbinden», jeder Schritt der Automatik, Lesen des Zustands im Dialog) stellt KICAD **`adb reverse tcp:<Port des Netzzugangs>`** wieder her (USB-Weg zuerst, nur wenn keiner der Wege sie hat; `QuestDienst.AppWeiterleitungSicher`). Der Zustand `GET /api/quest/app` nennt `appWeg: "kabel"`. Wer die App schon vor diesem Nachtrag installiert hat, installiert einmal neu («App aktualisieren»), damit der Weg gemerkt wird.
@@ -2435,7 +2436,7 @@ sind Einstellungen der Bedienung (Annahmen P5b bzw. P6, im Katalog je mit «herk
   aussen `-p:HlksCommit=…`). KICAD schreibt sie in jedes Messprotokoll und wertet je Fassung aus.
 
 ### Prüfaufgaben: starten, was man in der Brille sieht, was gemessen wird
-- **Starten:** am PC Register **Ansicht › Fenster › «XR-Labor …»**, Reiter **«Prüfaufgaben»**, bei der Aufgabe **«Aufgabe starten»** (Stellschraube `labor.aufgabe` = Id).
+- **Starten:** am PC Register **XR › Labor › «XR-Labor …»**, Reiter **«Prüfaufgaben»**, bei der Aufgabe **«Aufgabe starten»** (Stellschraube `labor.aufgabe` = Id).
   Die App stellt den **Ort** her (Begehen bzw. Sitzungsraum mit dem Etagenschnitt im Geschoss am Stand), bereitet die Aufgabe vor und beginnt die Zeit, sobald alles passt
   (leiser Klick, Hinweis «Aufgabe … läuft.»).
 - **Karte:** rechts neben dem Blick (28°; die Apps stehen links), 60 cm vor dem Auge, 8 cm unter den Augen, zum Auge gedreht, folgt dem Blick träge wie die Apps. Sie zeigt
@@ -2708,7 +2709,7 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
   Abgleich wie jede Änderung) – alle KICAD-Plätze sehen ihn, im Grundriss als Kreis mit «!» (nur am Bildschirm), in 3D als Kugel. Ohne Verbindung wartet der Marker in der
   Brille (`marker/wartend.jsonl`, höchstens 100) und geht mit der nächsten Verbindung; dieselbe Kennung legt keinen zweiten an. Die App holt die Liste mit
   `GET /api/xr/marker` (ETag, alle 30 s) und legt sie je Projekt ab (Start ohne PC). In den GLB der App stehen die Marker nicht (die App zeichnet sie selbst).
-- **Am PC:** Register **Koordination › Gruppe Kollisionen › «Problem-Marker»** öffnet die Palette rechts: Filter (Alle, Offen, Erledigt), Zahl offen/erledigt/überfällig,
+- **Am PC:** Register **XR › Gruppe Koordination › «Problem-Marker» (XM)** öffnet die Palette rechts: Filter (Alle, Offen, Erledigt), Zahl offen/erledigt/überfällig,
   die Liste (Kennzeichen, Status, Notiz, Geschoss, gesetzt von, Zuständig, Frist; überfällige Fristen hervorgehoben). **Klick auf einen Marker** wählt ihn und öffnet die
   3D-Ansicht **am Blickpunkt der Brille** (Kamera am Kopf, Blick auf die Stelle). Darunter Status, Zuständig, Frist und Notiz ändern («Speichern», ein Befehl
   `element_aendern`), «In 3D zeigen», «Löschen» (mit Rückfrage, Rückgängig möglich).
@@ -2801,7 +2802,7 @@ Christian 24.10.2026: «hinweistexte frei schwebend.» Kurze Hinweise und Status
 
 ## Modul XR: XR-Labor (Quest App P6, `entwurf/modul-xr.md`, Prototyp Interface-Labor, Zeile P6; Entscheid Christian 23.10.2026: «Prüfung: kurz gemischt», «Deutsche Fassungen der Fragebogen nur mit Quelle»)
 
-Der Dialog **«XR-Labor …»** (Register **Ansicht › Gruppe Fenster**, Aktion `ansicht.xrLabor`, Symbol `xrLabor`, immer verfügbar) ist die Werkbank für das Interface-Labor der Quest App: Er stellt die Bedienung der App live von KICAD aus ein, startet
+Der Dialog **«XR-Labor …»** (Register **XR › Gruppe Labor**, Kürzel XL, Aktion `ansicht.xrLabor`, Symbol `xrLabor`, immer verfügbar) ist die Werkbank für das Interface-Labor der Quest App: Er stellt die Bedienung der App live von KICAD aus ein, startet
 Prüfaufgaben, wertet die Messprotokolle aus und nimmt den Fragebogen nach dem Test auf. **Reine Rechner-Funktionen** (kein Befehl, keine Abfrage des Kerns, das Modell wird nicht berührt), für die KI **verboten**
 (`KiEinordnung.RechnerFunktionen` › `xr_labor`), kein MCP-Werkzeug. Code: `XrLaborKatalog.cs` (Kataloge, Prüfung beim Laden, Form der Profile), `XrLaborAuswertung.cs`, `XrFragebogen.cs` (Katalog, Regeln, Ablage), `XrLaborEndpunkte.cs` (Endpunkte);
 Oberfläche `wwwroot/js/oberflaeche/xr-labor-dialog.js` (DOM), `xr-labor-text.js` (reine Hilfen), `css/quest.css` (Klassen `xl-…`). **Keine Normwerte:** alle Werte der Kataloge sind Einstellungen der Bedienung (Annahmen, je Eintrag mit «herkunft»).
@@ -3417,3 +3418,29 @@ Christian: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schli
   er nur noch mit «stehen». Prüfbild `desktop_11_heben_schliesst.jpg` (nur lokal).
 - **Nur mit der Brille prüfbar:** ob das Schliessen beim Anheben im Gebrauch stimmt (z. B. eine Tafel, die man behalten wollte).
 - **Anleitung:** `zb-quest-v1i-heben` in `berichte/anleitung/inventar.json`.
+
+## Register XR: alles zu Brille, Quest App und VR/AR in einem Register (Christian 26.10.2026)
+
+Christian, 26.10.2026: «wir nehmen alles was VR/XR ist in einen eigenen Menue Tab im CAD». Das Register **XR** steht im Menüband zwischen **Ansicht** und **Verwalten** (`menueband.js`: `REGISTER`, `GRUPPENFOLGE`; Name im Kürzeldialog: `kuerzel-liste.js`).
+Es ist nur eine neue Ordnung: keine neue Logik, kein neuer Befehl des Kerns, keine neue Abfrage. Jede Funktion steht **nur noch hier** im Menüband; die Kontextmenüs behalten ihre Einträge und lösen dieselben Aktionen aus.
+Die Aktions-Ids bleiben (`ansicht.questVerbinden`, `koordination.problemMarker` usw.): sie sind Bezeichner für Anleitung und Tests, keine Orte.
+
+| Gruppe | Eintrag (Aktion) | Symbol | Kürzel | Vorher | Wirkung |
+| --- | --- | --- | --- | --- | --- |
+| Brille | **Quest verbinden …** (`ansicht.questVerbinden`) | `questVerbinden` | XQ | Ansicht › Fenster | Dialog «Quest verbinden» (Ampel, adb, WLAN, Brille merken) |
+| Brille | **App installieren …** (`xr.appInstallieren`, neu) | `appInstallieren` | XI | Teil des Dialogs | öffnet denselben Dialog; sein erster Teil «Quest App» hat «App installieren/aktualisieren», Kopplung, Netzzugang |
+| Brille | **Autostart** (`xr.autostart`, neu) | `autostart` | XU | Kästchen im Dialog | Schalter (Knopf gedrückt = ein), Einstellung `quest.autostart`, Vorgabe ein: die Begehung startet, sobald die Brille aufgesetzt ist; derselbe Wert wie das Kästchen im Dialog |
+| Brille | **Brille zeigen** (`ansicht.brilleZeigen`) | `brilleZeigen` | XB | Ansicht › Fenster | Schalter: verbundene Brillen (Teilnehmer) als Figuren in der 3D-Ansicht, Einstellung `ansicht3d.brillen_zeigen` |
+| Zeigen | **In VR begehen** (`ansicht.vrBegehen`) | `raumBegehen` | XV | nur Kontextmenü «Raum begehen in VR» | Auftrag an die Brille: den **gewählten Raum** begehen |
+| Zeigen | **Im Sitzungsraum zeigen** (`ansicht.vrSitzungsraum`) | `sitzungstisch` | XS | nur Kontextmenü «Modell am Sitzungstisch» | Auftrag: das Geschoss des gewählten Raums auf dem Tisch |
+| Zeigen | **Raum in AR** (`ansicht.vrRaumZeigen`) | `raumAr` | XR | nur Kontextmenü «Raum in AR» | Auftrag: nur der gewählte Raum plus Rand auf dem Tisch |
+| Zeigen | **An die Brille senden** (`xr.anBrille`, neu) | `anBrille` | XA | Knopf in der 3D-Ansicht | VR-Auftrag wie der Knopf in der 3D-Ansicht: läuft das Begehen, dessen Raum; sonst die aktive 3D-Ansicht als Sitzungsraum; sonst das ganze Modell |
+| Koordination | **Problem-Marker** (`koordination.problemMarker`) | `problemMarker` | XM | Koordination › Kollisionen | öffnet die Palette «Problem-Marker» rechts (Abschnitt «Problem-Marker») |
+| Labor | **XR-Labor …** (`ansicht.xrLabor`) | `xrLabor` | XL | Ansicht › Fenster | Werkbank für das Interface-Labor (Abschnitt «XR-Labor») |
+
+- **Raumaktionen im Menüband:** «In VR begehen», «Im Sitzungsraum zeigen» und «Raum in AR» nehmen den **gewählten Raum** (Grundriss oder Projektbrowser); ohne gewählten Raum sind sie gesperrt («Zuerst einen Raum wählen.»). Im Kontextmenü gibt der Rechtsklick den Raum mit (`{ raeume: [Kennzeichen] }`); die Kontextmenüeinträge sind unverändert.
+- **Kürzel:** neu, X plus Anfangsbuchstabe (zwei Buchstaben nacheinander tippen). Die Kürzel waren vorher alle leer; kein bestehendes Kürzel ändert sich. Ein Test (`xr-register.test.mjs`) prüft, dass kein Kürzel doppelt vorkommt.
+- **Symbole:** neu gezeichnet (Strich in `symbole.js`, Revit-Fassung in `symbole-revit.js`, je 32 und 16): `appInstallieren`, `autostart`, `anBrille`, `raumAr`; die Revit-Fassungen von `questVerbinden`, `brilleZeigen` und `xrLabor` gab es noch nicht (vorher galt auch im Revit-Satz der Strich).
+- **Palettenliste:** «Ansicht › Fenster › Paletten» zeigt weiterhin alle Paletten mit Häkchen, auch «Problem-Marker» (das ist die allgemeine Palettenverwaltung, kein zweiter Weg zur Funktion im Menüband).
+- **Prüfen:** Node `node --test src/Hlks.Web/wwwroot/js/oberflaeche/xr-register.test.mjs` (Register vorhanden und an der richtigen Stelle, Einträge nur einmal, alte Orte leer, Kürzel eindeutig, Symbole mit Strich und Revit-Fassung, Kontextmenüs unverändert, Doku und Inventar).
+- **Anleitung:** Wege in `berichte/anleitung/inventar.json` auf «XR › …» umgestellt.

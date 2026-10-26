@@ -60,7 +60,7 @@ anmelden({
 });
 
 registrieren({
-  id: 'koordination.problemMarker', titel: 'Problem-Marker', symbol: 'problemMarker', kuerzel: null, register: 'koordination', gruppe: 'Kollisionen', groesse: 'klein',
+  id: 'koordination.problemMarker', titel: 'Problem-Marker', symbol: 'problemMarker', kuerzel: 'XM', register: 'xr', gruppe: 'Koordination', groesse: 'gross',
   aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => panelOeffnen(),
 });

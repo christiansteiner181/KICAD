@@ -182,13 +182,13 @@ await ausw(`
 const katalog = await ausw(`return await (await fetch('/api/xr/labor/katalog')).json();`);
 
 // ================================================================== 1. Menüband
-abschnitt('Register Ansicht: Gruppe «Fenster» mit «XR-Labor …»');
-await register('Ansicht');
+abschnitt('Register XR: Gruppe «Labor» mit «XR-Labor …»');
+await register('XR');
 const k = await knopfInfo('ansicht.xrLabor');
-pruef(!!k && k.gruppe === 'Fenster' && /XR-Labor/.test(k.tipp) && k.symbol && k.sym === 'xrLabor' && !k.gesperrt, 'Knopf «XR-Labor …» in der Gruppe «Fenster», mit Symbol, nicht gesperrt', JSON.stringify(k));
-pruef((await knopfInfo('ansicht.questVerbinden'))?.gruppe === 'Fenster' && (await knopfInfo('ansicht.brilleZeigen'))?.gruppe === 'Fenster', 'Die Knöpfe «Quest verbinden …» und «Brille zeigen» stehen unverändert da');
-pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 10, 'Kein neues Register: es bleiben zehn');
-await shot('01_register_ansicht');
+pruef(!!k && k.gruppe === 'Labor' && /XR-Labor/.test(k.tipp) && k.symbol && k.sym === 'xrLabor' && !k.gesperrt, 'Knopf «XR-Labor …» in der Gruppe «Labor», mit Symbol, nicht gesperrt', JSON.stringify(k));
+pruef((await knopfInfo('ansicht.questVerbinden'))?.gruppe === 'Brille' && (await knopfInfo('ansicht.brilleZeigen'))?.gruppe === 'Brille', 'Die Knöpfe «Quest verbinden …» und «Brille zeigen» stehen in der Gruppe «Brille»');
+pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 11, 'Das Register XR ist das elfte (nach Ansicht, vor Verwalten)');
+await shot('01_register_xr');
 
 // ================================================================== 2. Dialog im kleinen Fenster
 abschnitt('Dialog im kleinen Fenster (900 × 560): passt, Inhalt scrollt, «Schliessen» bleibt sichtbar');
