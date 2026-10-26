@@ -258,6 +258,39 @@ test('Kabelweg-Satz und Einklappen des Browser-Prototyps', () => {
   assert.equal(T.appInstalliert(inst), true);
 });
 
+test('App-Marke: Vorgabe KICAD mit den bisherigen Texten, eine andere Marke ersetzt Namen, Ports und Werkzeug', () => {
+  // XR-Labor L0 (entwurf/labor-app.md): der Teil «Quest App» dient auch dem Labor-Server; ohne Marke bleibt alles wie in KICAD
+  const m = T.KICAD_MARKE;
+  assert.ok(Object.isFrozen(m));
+  assert.equal(m.app, 'KICAD');
+  assert.equal(m.port, 5140);
+  assert.equal(m.desktopPort, 5130);
+  assert.equal(m.ablageSchluessel, T.ABLAGE_SCHLUESSEL);
+  assert.equal(m.brillenZeigen, true);
+  assert.equal(T.zugangAnzeige({ ...aus, an: true }).text, 'Er startet gleich (nur im KICAD auf Port 5130).');
+  assert.equal(T.zugangAnzeige(aus).text, 'Nur dieser PC erreicht KICAD. Zum Installieren und Verbinden der App einschalten – am besten nur für die Dauer des Tests.');
+  assert.equal(T.installierenKnopf({ q: quest, app: { ...app, ablage: { ...ablageOk, version: null } }, zugang: an }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 ausführen.');
+  assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an }).grund, 'adb fehlt: oben im Dialog einrichten.');
+  assert.equal(T.appWegText({ appWeg: 'kabel' }), 'Kabelweg: Die App ist per Kabel gekoppelt. KICAD stellt die Brille nicht auf WLAN-adb um und stellt die Weiterleitung (adb reverse) nach jeder Änderung der adb-Verbindung wieder her.');
+  assert.equal(T.FIREWALL_HINWEIS, 'KICAD liest Netzprofil und Firewall nur und ändert nichts. Die Regeln legt Christian selbst an: PowerShell als Administrator, dann «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» (zeigt mit -Liste Regeln und Netzprofil).');
+  const probe = { ...m, app: 'Probe', desktopPort: 5999, bereitstellen: 'probe.ps1', adbEinrichten: 'anderswo einrichten' };
+  assert.equal(T.zugangAnzeige({ ...aus, an: true }, probe).text, 'Er startet gleich (nur im Probe auf Port 5999).');
+  assert.match(T.zugangAnzeige(aus, probe).text, /^Nur dieser PC erreicht Probe\./);
+  assert.equal(T.installierenKnopf({ q: quest, app: { ...app, ablage: { ...ablageOk, version: null } }, zugang: an, marke: probe }).grund, 'Keine App abgelegt: probe.ps1 ausführen.');
+  assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an, marke: probe }).grund, 'adb fehlt: anderswo einrichten.');
+  assert.match(T.appWegText({ appWeg: 'kabel' }, probe), /Probe stellt die Brille nicht/);
+  assert.match(T.firewallHinweis(probe), /^Probe liest Netzprofil/);
+  // der Dialog nimmt die Marke als Option und setzt ihre Werte nur über esc() ins HTML; ohne Ablage-Schlüssel und Brillen-Schalter fehlen diese Teile
+  const d = lies('./quest-app-dialog.js');
+  assert.match(d, /marke = T\.KICAD_MARKE \}\)/);
+  for (const feld of ['einleitung', 'port', 'ablageVorgabe', 'bereitstellen']) assert.match(d, new RegExp(`esc\\(m\\.${feld}\\)`), feld);
+  assert.match(d, /\$\{m\.brillenZeigen \? `<div class="qa-block qa-anzeige">/);
+  assert.match(d, /\$\{m\.ablageSchluessel \? `<div class="qd-zeile qa-ablage">/);
+  assert.match(d, /benutzerSetzen\(m\.ablageSchluessel,/);
+  assert.match(d, /T\.zugangAnzeige\(zugang, m\)/);
+  assert.match(d, /marke: m \}\)/);
+});
+
 test('Style: der Dialog passt in jedes Fenster', () => {
   const css = lies('../../css/quest.css');
   assert.match(css, /\.dlg\.quest-verbinden \{[^}]*max-height: calc\(100vh - 24px\)/);

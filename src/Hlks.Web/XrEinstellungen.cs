@@ -18,6 +18,11 @@
 // Umgebungsvariable HLKS_XR_DESKTOP_PORT (DesktopPortVariable) den Desktop-Port, z. B. quest_pruefen.ps1 auf 5139, wenn 5130 belegt ist. Sie wirkt nur, wenn
 // gesetzt und ein gültiger Port (1024–65535), und nur im Testlauf – dort bindet der Zugang ohnehin nur 127.0.0.1 und Schalter, Zertifikat und Kopplungen liegen
 // unter %TEMP%; zugang.json, Kopplungen und Zertifikat des echten Desktops (%LOCALAPPDATA%) bleiben unberührt. Im Betrieb wird sie nicht gelesen.
+//
+// Zweiter Server auf demselben PC (XR-Labor, Stufe L0, entwurf/labor-app.md «Ports und Prozesse»): src/Hlks.Labor nutzt denselben Zugang mit eigenen Werten –
+// PortStandard 5340, SuchPortStandard 5341, DesktopPort 5430, Ordner %LOCALAPPDATA%\HLKS_CAD\xr\labor (eigene zugang.json und kopplungen.json), aber
+// ZertifikatOrdner %LOCALAPPDATA%\HLKS_CAD\xr (dasselbe Zertifikat je PC wie KICAD) und eine eigene Umgebungsvariable für Testserver (LaborXr.cs). Die Vorgaben
+// unten sind die von KICAD und bleiben unverändert; KICAD und Labor laufen gleichzeitig, jeder öffnet seinen Zugang nur auf seinem Desktop-Port.
 
 using System.Net;
 using System.Text.Json;
@@ -39,8 +44,17 @@ public sealed record XrEinstellungen
     public int? SuchPort { get; init; }
     /// <summary>Nur der KICAD-Server auf diesem Port öffnet den Zugang (Desktop); null = jeder (nur Tests).</summary>
     public int? DesktopPort { get; init; } = DesktopPortVorgabe;
-    /// <summary>Ordner für Schalter (zugang.json), Zertifikat, Kopplungen und Messprotokolle; null = %LOCALAPPDATA%\HLKS_CAD\xr (je PC; nie OneDrive, nie das Repository).</summary>
+    /// <summary>Port des Netzzugangs, wenn weder Port noch die Einstellung dieses PCs (zugang.json) einen nennen: KICAD 5140, XR-Labor 5340.</summary>
+    public int PortStandard { get; init; } = PortVorgabe;
+    /// <summary>Port der Suche, wenn weder SuchPort noch die Einstellung dieses PCs einen nennen: KICAD 5141, XR-Labor 5341.</summary>
+    public int SuchPortStandard { get; init; } = SuchPortVorgabe;
+    /// <summary>Ordner für Schalter (zugang.json), Zertifikat (ausser ZertifikatOrdner ist gesetzt), Kopplungen und Messprotokolle; null = %LOCALAPPDATA%\HLKS_CAD\xr
+    /// (je PC; nie OneDrive, nie das Repository).</summary>
     public string? Ordner { get; init; }
+    /// <summary>Ordner des Zertifikats; null = Ordner (KICAD). Das XR-Labor hat eigene Schalter und Kopplungen, aber dasselbe Zertifikat je PC wie KICAD.</summary>
+    public string? ZertifikatOrdner { get; init; }
+    /// <summary>Name des Servers in Meldungen am PC: «KICAD» bzw. «XR-Labor».</summary>
+    public string ServerName { get; init; } = "KICAD";
     /// <summary>So oft wird der Schalter (zugang.json) nachgelesen, z. B. wenn ein anderer KICAD-Prozess auf diesem PC ihn geändert hat.</summary>
     public TimeSpan PruefAbstand { get; init; } = TimeSpan.FromSeconds(10);
 
@@ -101,6 +115,9 @@ public sealed record XrEinstellungen
 
     public string OrdnerPfad() => string.IsNullOrWhiteSpace(Ordner) ? StandardOrdner() : Path.GetFullPath(Ordner);
 
+    /// <summary>Ordner des Zertifikats: ZertifikatOrdner, sonst derselbe wie für Schalter und Kopplungen.</summary>
+    public string ZertifikatOrdnerPfad() => string.IsNullOrWhiteSpace(ZertifikatOrdner) ? OrdnerPfad() : Path.GetFullPath(ZertifikatOrdner);
+
     /// <summary>%LOCALAPPDATA%\HLKS_CAD\xr – je PC, ausserhalb von OneDrive und Repository.</summary>
     public static string StandardOrdner()
     {
@@ -119,7 +136,7 @@ public sealed record XrEinstellungen
     public static XrEinstellungen Vorgabe() => Vorgabe(FamilienBibliothekDienst.Testlauf(), Environment.GetEnvironmentVariable);
 
     /// <summary>Vorgabe für testlauf (ja/nein) mit diesen Umgebungsvariablen (Tests setzen eigene, statt die des Prozesses zu ändern).</summary>
-    internal static XrEinstellungen Vorgabe(bool testlauf, Func<string, string?> umgebung) => testlauf
+    public static XrEinstellungen Vorgabe(bool testlauf, Func<string, string?> umgebung) => testlauf
         ? new XrEinstellungen
         {
             Adresse = IPAddress.Loopback, Port = 0, SuchPort = 0, Ordner = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "xr_test"),
@@ -128,8 +145,11 @@ public sealed record XrEinstellungen
         : Betrieb();
 
     /// <summary>Desktop-Port eines Testservers: der Wert der Variablen, wenn er ein gültiger Port ist (1024–65535), sonst 5130 (wie ohne Variable).</summary>
-    public static int TestDesktopPort(string? wert) =>
-        int.TryParse(wert?.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var p) && PortGueltig(p) ? p : DesktopPortVorgabe;
+    public static int TestDesktopPort(string? wert) => TestDesktopPort(wert, DesktopPortVorgabe);
+
+    /// <summary>Wie oben mit eigener Vorgabe (XR-Labor: 5430).</summary>
+    public static int TestDesktopPort(string? wert, int vorgabe) =>
+        int.TryParse(wert?.Trim(), System.Globalization.NumberStyles.None, System.Globalization.CultureInfo.InvariantCulture, out var p) && PortGueltig(p) ? p : vorgabe;
 
     /// <summary>Ein Port für Zugang oder Suche: 1024 bis 65535.</summary>
     public static bool PortGueltig(int? p) => p is >= 1024 and <= 65535;
@@ -177,8 +197,8 @@ public sealed class XrPcEinstellung(XrEinstellungen einstellungen)
     /// <summary>Setzt den Schalter (Ports null = bisherigen Wert behalten). Wirft HlksFehler bei ungültigem Port oder wenn die Datei nicht geschrieben werden kann.</summary>
     public XrPcStand Setzen(bool an, int? port = null, int? suchPort = null)
     {
-        if (port is not null && !XrEinstellungen.PortGueltig(port)) throw new HlksFehler("Der Port muss eine ganze Zahl von 1024 bis 65535 sein.", "Vorgabe: 5140 (HTTPS).");
-        if (suchPort is not null && !XrEinstellungen.PortGueltig(suchPort)) throw new HlksFehler("Der Suchport muss eine ganze Zahl von 1024 bis 65535 sein.", "Vorgabe: 5141 (UDP).");
+        if (port is not null && !XrEinstellungen.PortGueltig(port)) throw new HlksFehler("Der Port muss eine ganze Zahl von 1024 bis 65535 sein.", $"Vorgabe: {einstellungen.PortStandard} (HTTPS).");
+        if (suchPort is not null && !XrEinstellungen.PortGueltig(suchPort)) throw new HlksFehler("Der Suchport muss eine ganze Zahl von 1024 bis 65535 sein.", $"Vorgabe: {einstellungen.SuchPortStandard} (UDP).");
         lock (sperre)
         {
             var alt = Lesen();
