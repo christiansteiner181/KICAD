@@ -98,7 +98,7 @@ Meldung "Abgelegt in $Ablage"
 Meldung ("  {0}  {1:N1} MB  Commit {2}  Fassung {3} ({4})" -f $apkName, ($groesse / 1MB), $commit, $versionName, $versionCode)
 Meldung "  SHA-256 $sha"
 if ($Labor) {
-  Meldung "Weiter: Die Labor-App ist ein eigenes Paket (ch.hkplanung.xrlabor) neben der KICAD-App. Installation per adb: adb install -r `"$ziel`" (der Knopf im XR-Labor folgt in einer spaeteren Stufe)."
+  Meldung "Weiter: Die Labor-App ist ein eigenes Paket (ch.hkplanung.xrlabor) neben der KICAD-App. Installieren an der Brille vorerst von Hand mit den Android-Werkzeugen (install -r `"$ziel`"); der Knopf im XR-Labor folgt in einer spaeteren Stufe."
 } else {
-  Meldung 'Weiter: in KICAD Register Ansicht > Fenster > "Quest verbinden ..." > Quest App > "App installieren/aktualisieren".'
+  Meldung 'Weiter: in KICAD Register XR > Brille > "App installieren ...".'
 }
