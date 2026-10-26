@@ -59,7 +59,7 @@ try {
   $gruen = $true
   $zusammen = @()
   # XR-Labor (seit 26.10.2026, Stufe L0): src\Hlks.Labor wird mitgebaut (eigener Schritt, damit ein Fehler klar benannt ist) und
-  # tests\Hlks.Labor.Tests laeuft als eigener Teil "Labor" mit. Brillen-Projekte (Hlks.Quest, Hlks.Labor.Quest) baut diese Pruefung nie.
+  # tests\Hlks.Labor.Tests laeuft als eigener Teil "Labor" mit. Das Brillen-Projekt (Hlks.Quest = App "H+K XR" ch.hkplanung.xr fuer alle Werkzeuge; Hlks.Labor.Quest entfaellt seit H+K XR E1) baut diese Pruefung nie.
   # Fehlen beide Projekte im geprueften Stand (Staende vor L0), entfaellt der Teil mit Hinweis; fehlt nur eines, ist das ein Fehler.
   $laborProjekt = Test-Path "$wt\src\Hlks.Labor\Hlks.Labor.csproj"
   $laborTests = Test-Path "$wt\tests\Hlks.Labor.Tests\Hlks.Labor.Tests.csproj"

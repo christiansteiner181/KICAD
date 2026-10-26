@@ -1,5 +1,7 @@
 # Quest App am PC pruefen, mit Modell (Quest App P4a): ein KICAD-Testserver auf diesem PC, ein Kopplungspaket, dann die PC-Fassung der App im Simulator
 # zweimal mit --pruefen - einmal mit PC (verbinden, Modell laden, Kanal) und einmal ohne PC (Start aus dem Zwischenspeicher).
+# H+K XR E1: die App heisst "H+K XR" (ch.hkplanung.xr, eine App fuer alle Werkzeuge); das Paket (Fassung 2, Werkzeug kicad) liegt hier unter dem Namen
+#   seines Eingangs kopplung_kicad.json im Temp-Ordner und wird dem Simulator mit --kopplung uebergeben (auf der Brille: .../ch.hkplanung.xr/files/kopplung_kicad.json).
 #   - Server: Hlks.Web aus dem Build (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build), im Testlauf (HLKS_TEST=1): Benutzereinstellungen, Liste
 #     "zuletzt" und XR-Ablage nur unter %TEMP%, Netzzugang nur auf 127.0.0.1 mit freiem Port. Der Netzzugang oeffnet sich nur im KICAD auf dem
 #     Desktop-Port (XrEinstellungen.DesktopPort, 5130). Der Testserver laeuft auf 5130, wenn der Port frei ist. Ist er belegt (Desktop-KICAD laeuft),
@@ -114,7 +116,7 @@ function MarkerZahl {
 # V1c: Lauf 4 "Desktop in der Brille" - die App laeuft im Hintergrund, das Skript liest waehrenddessen die Anzeige am PC (und fotografiert KICAD im Edge)
 function DesktopLauf {
   Aus "Lauf 4: Desktop in der Brille (Testbild des Servers) ..."
-  $dArg = @("`"$quest`"", '--pruefen', [Math]::Max($Bilder, 600), '--desktop', '--kopplung', "`"$tmp\kopplung.json`"", '--speicher', "`"$tmp\app`"", '--modell-lokal', "$port")
+  $dArg = @("`"$quest`"", '--pruefen', [Math]::Max($Bilder, 600), '--desktop', '--kopplung', "`"$tmp\kopplung_kicad.json`"", '--speicher', "`"$tmp\app`"", '--modell-lokal', "$port")
   if ($OhneUnterlage) { $dArg += '--ohne-unterlage' }
   if ($Pruefbilder) { New-Item -ItemType Directory -Force $Pruefbilder | Out-Null; $dArg += @('--bilder', "`"$Pruefbilder`"") }
   $ap = Start-Process -FilePath $dotnet -ArgumentList $dArg -PassThru -NoNewWindow -RedirectStandardOutput "$logs\lauf4.log" -RedirectStandardError "$logs\lauf4_fehler.log"
@@ -186,7 +188,7 @@ try {
   Aus "Netzzugang aktiv: HTTPS 127.0.0.1:$($z.port), Suche UDP $($z.suchPort), Fingerabdruck $($z.fingerabdruckKurz)"
   $inhalt = Post '/api/xr/kopplung/paket' @{ brille = 'PC-PRUEFUNG'; name = 'Pruefung am PC' }
   $kopplung = ($inhalt | ConvertFrom-Json).paket.kopplung
-  [IO.File]::WriteAllText("$tmp\kopplung.json", $inhalt, $utf8)
+  [IO.File]::WriteAllText("$tmp\kopplung_kicad.json", $inhalt, $utf8)
   if ($NurDesktop) { $ergebnis = if (DesktopLauf) { 0 } else { 1 } } else {   # V1c: nur Lauf 4
 
   # VR-Auftrag wie aus dem Kontextmenue eines Raums (Id des ersten Raumkoerpers): Lauf 1 muss in diesem Raum starten (Auftrag=Nr 1 ...)
@@ -205,7 +207,7 @@ try {
   # P5a: mit -Pruefbilder auch zwei Bilder beim Begehen (Blick nach vorn, die schwebenden Apps)
   $bild1 = @()
   if ($Pruefbilder) { $bild1 = @('--bilder', $Pruefbilder) }
-  $a1 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bild1 2>&1
+  $a1 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung_kicad.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bild1 2>&1
   $c1 = $LASTEXITCODE
   $a1 | Out-File -FilePath "$logs\lauf1.log" -Encoding utf8
   $a1 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
@@ -221,7 +223,7 @@ try {
   if (-not $v1aOk) { Aus 'Lauf 1: die Zeile "V1a" fehlt.' }
   if ($a1 -match 'messen-wand-wand ohne Wandpaar') { Aus 'Lauf 1: messen-wand-wand ohne Wandpaar (am Startpunkt kein Raum mit zwei gegenueberliegenden Waenden) - nicht geprueft.' }
   Aus "Lauf 2: ohne PC, Start aus dem Zwischenspeicher ($Bilder Bilder) ..."
-  $a2 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --ohne-pc @zusatz 2>&1
+  $a2 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung_kicad.json" --speicher "$tmp\app" --ohne-pc @zusatz 2>&1
   $c2 = $LASTEXITCODE
   $a2 | Out-File -FilePath "$logs\lauf2.log" -Encoding utf8
   $a2 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }
@@ -235,7 +237,7 @@ try {
     Aus "Lauf 3: Sitzungsraum mit PC ($Bilder Bilder, Auftrag sitzungsraum) ..."
     $bildArg = @()
     if ($Pruefbilder) { $bildArg = @('--bilder', $Pruefbilder) }
-    $a3 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bildArg 2>&1
+    $a3 = & $dotnet $quest --pruefen $Bilder --kopplung "$tmp\kopplung_kicad.json" --speicher "$tmp\app" --modell-lokal $port @zusatz @bildArg 2>&1
     $c3 = $LASTEXITCODE
     $a3 | Out-File -FilePath "$logs\lauf3.log" -Encoding utf8
     $a3 | Where-Object { "$_" -match $muster } | ForEach-Object { Aus "  $_" }

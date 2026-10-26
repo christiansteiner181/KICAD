@@ -31,7 +31,7 @@ for t in "${teile[@]}"; do
     mcp) p=Hlks.Mcp.Tests ;;
     web) p=Hlks.Web.Tests ;;
     xr) p=Hlks.Xr.Tests ;;
-    labor) p=Hlks.Labor.Tests   # XR-Labor (seit 26.10.2026): baut src/Hlks.Labor mit; Brillen-Projekte (Hlks.Quest, Hlks.Labor.Quest) nie
+    labor) p=Hlks.Labor.Tests   # XR-Labor (seit 26.10.2026): baut src/Hlks.Labor mit; das Brillen-Projekt (Hlks.Quest = App "H+K XR" ch.hkplanung.xr fuer alle Werkzeuge; Hlks.Labor.Quest entfaellt seit H+K XR E1) nie
       if [ ! -d "$repo/tests/$p" ]; then echo "== $p: Projekt in diesem Stand nicht vorhanden - übersprungen"; continue; fi ;;
     node)
       mapfile -t dateien < <(find "$repo/src/Hlks.Web/wwwroot/js" -name '*.test.mjs' | sort)
