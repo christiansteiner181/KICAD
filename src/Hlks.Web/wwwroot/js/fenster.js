@@ -437,6 +437,19 @@ export function aktivePlanansicht() {
   const o = aktive();
   return o && PLANARTEN.has(artVon(element(o.id))) && typeof o.instanz?.setzeWerkzeug === 'function' ? o.instanz : null;
 }
+/** Zahl der Reiter in der aktiven Gruppe (Aktionen «Nächster/Voriger Reiter»). */
+export const reiterAnzahl = () => A.reiterZahl(anordnung);
+/**
+ * Wechselt zum nächsten (schritt = 1) bzw. vorherigen (-1) Reiter der aktiven Gruppe, am Ende der Reihe von vorn bzw. hinten weiter.
+ * Ergebnis { id, titel } der neu aktiven Ansicht oder null, wenn es keinen zweiten Reiter gibt (Modul G, Gesten: Meldung «Reiter: …»).
+ */
+export function reiterWechseln(schritt = 1) {
+  const name = A.reiterNachbar(anordnung, schritt);
+  if (!name || !offen.has(name)) return null;
+  aktivieren(name);
+  const a = element(name);
+  return { id: name, titel: a?.name || a?.kennzeichen || '' };
+}
 export function zoomAlles() { aktive()?.instanz?.zoomAlles?.(); }
 export function zoomAlleAnsichten() { for (const o of offen.values()) o.instanz?.zoomAlles?.(); }
 export { auswaehlen };

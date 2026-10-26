@@ -133,6 +133,8 @@ export function einrichten(bandElement, optionsleisteElement, schnellzugriffElem
     spaeter();
   });
   beiModus(() => { optionenZeichnen(); zustandAnwenden(); });
+  // Ein Schalter, der ausserhalb des Menübands umgelegt wird (z. B. «Gesten» in der Statusleiste), meldet es mit diesem Fensterereignis; die gedrückten Knöpfe ziehen nach.
+  window.addEventListener('hlks-aktionszustand', spaeter);
 }
 
 // ---------------------------------------------------------------------------------------------- Register

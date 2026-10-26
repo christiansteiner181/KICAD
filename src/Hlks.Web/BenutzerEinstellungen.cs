@@ -78,6 +78,9 @@ public sealed class BenutzerEinstellungen
         // die Form prüft Pruefen() unten über XrLaborProfil) und «labor.profil_aktiv» = Kennung des Profils, das für die App gilt (die App holt es mit dem Katalog, GET /api/xr/labor/katalog).
         // Nicht «xr.…»: diese Schlüssel sind für den Zugang je PC reserviert (ein Test verbietet sie hier).
         ["labor.profil_aktiv"] = w => XrLaborProfil.Pruefen(XrLaborProfil.AktivSchluessel, w),
+        // Gesten am Arbeitsplatz (Modul G, entwurf/modul-gesten.md, GestenEinstellung.cs): { an (Vorgabe nein), hand (links), kameraId, skelett (ja), stellschrauben { Name: Zahl }, belegung { G2 { links, rechts }, G6 } };
+        // jedes Feld wahlweise, unbekannte Felder werden abgelehnt (nie Bilddaten). Das Kamerabild bleibt im Browser.
+        ["gesten"] = GestenEinstellung.Pruefen,
         // Der Zugang der Quest App im Büronetz (Modul XR, Quest App P3) ist bewusst KEINE Benutzereinstellung: er gilt je PC (Christian 23.10.2026),
         // Schalter und Ports stehen in %LOCALAPPDATA%\HLKS_CAD\xr\zugang.json (XrPcEinstellung in XrEinstellungen.cs).
     };

@@ -44,6 +44,20 @@ export const ansichten = (a) => gruppen(a).flatMap((g) => g.ansichten);
 export const aktiveGruppe = (a) => findeGruppe(a, a?.aktiveGruppe) ?? gruppen(a)[0] ?? null;
 /** Die aktive Ansicht der aktiven Gruppe oder null. */
 export const aktiveAnsicht = (a) => aktiveGruppe(a)?.aktiv ?? null;
+/**
+ * Der nächste (schritt = 1) bzw. vorherige (schritt = -1) Reiter in der aktiven Gruppe, am Ende der Reihe von vorn bzw. hinten weiter (Modul G, Gesten, «ansicht.reiter-vor»).
+ * Ergebnis: Name der Ansicht oder null, wenn die aktive Gruppe weniger als zwei Reiter hat.
+ */
+export function reiterNachbar(a, schritt = 1) {
+  const g = aktiveGruppe(a);
+  const liste = g?.ansichten ?? [];
+  if (liste.length < 2) return null;
+  const i = Math.max(0, liste.indexOf(g.aktiv));
+  return liste[(((i + (schritt < 0 ? -1 : 1)) % liste.length) + liste.length) % liste.length];
+}
+/** Zahl der Reiter der aktiven Gruppe. */
+export const reiterZahl = (a) => aktiveGruppe(a)?.ansichten.length ?? 0;
+
 /** 'reiter' = höchstens eine Gruppe, 'nebeneinander' = mehrere Gruppen. */
 export const modus = (a) => (gruppen(a).length > 1 ? 'nebeneinander' : 'reiter');
 
