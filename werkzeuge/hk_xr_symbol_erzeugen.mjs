@@ -3,7 +3,7 @@
 // 11 bis 245 px (Eckenradius 45 px auf 256), Grössen 256/64/48/32/16 px. Zeichen neutral, ohne Bezug zu einem Werkzeug: der Umriss einer Brille (Visier mit
 // Nasenausschnitt, Bügelansätze) mit «XR» im Glas, darunter «H+K». Bis 32 px entfallen die Schrift (zu fein): das Visier wird kräftiger, im Glas zwei Linsen.
 // Farben aus kataloge/xr_farben.json, Eintrag «vorgabe» (neutral; helle Fassung: Ton #E4E7EB, Akzent #3E536F), Variante «kraeftig» wie das Labor (Fläche im
-// Akzent, Zeichen im Ton; Vorgabe) bzw. «hell» (Fläche im Ton, Zeichen im Akzent, feiner Rand). Annahme E1, Christian beurteilt die Vorschau.
+// Akzent, Zeichen im Ton; Vorgabe) bzw. «hell» (Fläche im Ton, Zeichen im Akzent, feiner Rand). Christian 26.10.2026: «Kräftig».
 // Reiner Node ohne Pakete (PNG und ICO von Hand geschrieben, 4x4-Überabtastung).
 //
 // Was geschrieben wird:

@@ -212,3 +212,10 @@ Damit Brille (`hlks-kern`) und PC-Seite (`hlks-modul`) gleichzeitig bauen, gilt:
 - Ordnername `src/Hlks.Quest` behalten oder umbenennen (E1, nach Konfliktlage).
 - Erhalt der bestehenden Kopplung beim Wechsel der App-Kennung: neu koppeln per Kabel (einmalig) ist die Vorgabe.
 - Symbol «H+K XR»: Entwurf als Bild an Christian (E1).
+
+### Entscheide Christian 26.10.2026 nach E1 (Fragefenster)
+
+- Symbol «H+K XR»: **kräftig** (dunkles Blaugrau `#3E536F`, heller Brillenumriss mit «XR», darunter «H+K»).
+- Knopf XI im Register XR: **«H+K XR installieren …»**.
+- Übergang: Die KICAD-App führt das bisherige Interface-Labor (Prüfaufgaben aus dem KICAD-Dialog «XR-Labor») **bis E3** noch selbst aus
+  (`Werkzeug.Kicad.MitLabor = true`); mit dem Bedienstandard in E3 wird das `false`.
