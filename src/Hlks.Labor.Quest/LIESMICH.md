@@ -31,8 +31,9 @@ Ports und Suchport stehen nirgends fest in der App. Sie kommen aus dem Kopplungs
   - `Platforms/symbol_erzeugen.mjs` – legt beide Symbole ab (siehe «Symbol»).
 - **Marke:** Wo die App bis V1i fest «KICAD» voraussetzte, fragt sie `Marke` (`src/Hlks.Quest/Marke.cs`): Name in Texten (Fenster, App «Status», StereoKit),
   «Suche … auf …», «… neu koppeln», «Nicht gekoppelt – …», Vorsatz der Protokollzeilen, Ablage am PC, `hallo.marke`. Die KICAD-App zeigt dieselben Texte wie vorher.
-- **In L0 noch in `src/Hlks.Quest`:** die Labor-Teile `QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs` (Labor-Teil des Prüflaufs) und `AufgabenKarte.cs`. Sie
-  gehören in L0 zu beiden Apps (keine Verhaltensänderung der KICAD-App) und ziehen in L1 hierher. Sie setzen die Einhängepunkte selbst um.
+- **In L0 und L1 noch in `src/Hlks.Quest`:** die Labor-Teile `QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs` (Labor-Teil des Prüflaufs) und `AufgabenKarte.cs`. Sie
+  gehören bis L2 zu beiden Apps (keine Verhaltensänderung der KICAD-App) und ziehen mit L2 hierher (Zuschnitt L1 in `entwurf/labor-app.md`: ohne sie lädt die
+  KICAD-App keinen Katalog und kein Profil, bis `GET /api/xr/bedienung` kommt). Sie setzen die Einhängepunkte selbst um.
 
 ## Einhängepunkte (`src/Hlks.Quest/QuestApp.Einhaengepunkte.cs`)
 
@@ -105,6 +106,86 @@ Bauausgabe wie alle Projekte unter `HLKS_BUILD` bzw. `%USERPROFILE%\HLKS_CAD_bui
 Gleiche Argumente wie die KICAD-App (`src/Hlks.Quest/Optionen.cs`): `--simulator`, `--pruefen <bilder>`, `--kopplung <datei>`, `--speicher <ordner>` usw. Ohne
 `--kopplung` endet die Prüfung mit «P4 ok: ohne Modell, …». Mit einem Kopplungspaket des Labor-PCs (Ports 5340/5341) verbindet sie sich mit dem Labor;
 `hallo.marke` ist `xrlabor`.
+
+## Testraum (L1)
+
+Entscheid Christian 26.10.2026: **«Nur neutraler Testraum»** – kein Projekt, keine Projektdaten (`entwurf/labor-app.md`, «Testwelt der Labor-App», «Zuschnitt L1»). Die
+Labor-App löst darin alle Prüfaufgaben aus `kataloge/xr_pruefaufgaben.json`.
+
+**Katalog** `kataloge/labor_testraum.json` (Art `hlks-labor-testraum`, Fassung 1; Aufbau im Kopf von `src/Hlks.Labor/TestraumKatalog.cs`), KICAD-mm absolut:
+
+| Teil | Inhalt | Herkunft |
+| --- | --- | --- |
+| Etagen | EG Kote 0, OG Kote 2900, Geschosshöhe je 2900 mm | wie Beispielprojekt «MFH Musterweg» (`Beispielprojekt.cs`, EG und 1.OG; Test prüft es) |
+| Raum je Etage | innen 8.0 × 6.0 m (x 0 … 8000, y 0 … 6000), lichte Höhe 2650 mm | **Annahme L1** (Vorschlag Auftrag «ca. 8 × 6 m») |
+| Wände | 200 mm, Achse wie die Wandgeometrie «linie» von KICAD, von OK Boden bis UK Decke | **Annahme L1** |
+| Boden, Decke | Platten 250 mm; die Platte zwischen EG und OG steht zweimal (Decke EG, Boden OG), gleiche Lage und Farbe | **Annahme L1**; doppelt, weil die App beim Begehen nur die Etage am Stand zeichnet |
+| Markierungen | EG vier (2.5 m von der Raummitte), OG drei; flacher Ring 300 mm, innen 75 % | **Annahme L1** (Ring statt Scheibe nach den ersten Prüfbildern); Erfolg bis 0.5 m (`PruefAufgaben.MarkierungRadiusM`) |
+| Farben | Wände `#E4E7EB` (xr_farben «vorgabe» ton), Platten `#D9DDE2` (hell-neutral), Markierung `#6F3E59` (xr_farben «labor» akzent); Räume wie KICAD | nie Gewerkfarben (Test) |
+| Ziele | `teleport-markierung` (alle Markierungen), `messen-wand-wand` (EG Süd–Nord 6000 mm, OG West–Ost 8000 mm), `raum-ar-oeffnen` (Raum EG), `tablet-wert-ablesen` (Wand Ost EG, Wand Nord OG, Höhe 2650 mm); `drehen-90`, `etage-wechseln`, `modell-greifen-zoomen` ohne Ziel (Erklärung) | Sollmass und Höhe prüft der Labor-PC gegen die Geometrie (±0.5 mm) |
+
+Kein Durchgang und keine Treppe: «etage-wechseln» läuft über die App «Etagen» (Vorgabe `labor.variante.etage` = app).
+
+**Labor-PC** (`src/Hlks.Labor/Testraum*.cs`, eingebunden mit `LaborTestraum.Abbilden(app)` in `LaborDienste.MapLabor`): derselbe Vertrag wie KICAD
+(`src/Hlks.Web/XrModellEndpunkte.cs`), über den Netzzugang der Labor-Brille (`.XrImNetz()`):
+
+```
+GET /api/xr/geschosse                    { fassung, projekt: "labor-testraum", bezugspunktMm: [0, 0, 0], achsen, geschosse: [{ id, kennzeichen, name, koteMm, hoeheMm,
+                                           modell: { schluessel, elemente, url }, unterlage: null }], hinweise: [] }
+GET /api/xr/geschoss/{id}.glb?teil=…     GLB mit ETag "<schluessel>", no-cache, If-None-Match → 304; 400 Teil unbekannt, 404 Geschoss unbekannt bzw. «unterlage»
+                                           (der Testraum hat keine IFC-Unterlage); Katalog fehlt oder ungültig → 409 { fehler, vorschlag } mit Ort im Katalog
+```
+
+Die GLB schreibt der `GlbSchreiber` des Kerns aus Körperteilen des Kerns (quader, prisma) – Koordinaten, Netze je Gruppe/Farbe/Deckkraft, `mesh.extras.kicad.elemente`,
+`scene.extras.kicad` und Versionsschlüssel wie `XrModell` (Fassung 1). Der Katalog wird neu gelesen, sobald sich Zeit oder Grösse der Datei ändern; der Schlüssel einer
+Etage ändert sich nur, wenn sich ihr Inhalt ändert.
+
+**Ziele in `scene.extras.kicad.labor`** (je Etage nur ihre Ziele; Form Fassung 1, KICAD-mm absolut, Normalen in KICAD-Achsen):
+
+```
+labor = { art: "hlks-labor-testraum", fassung: 1, geschoss: <Id>,
+          raeume:       [{ id, kennzeichen, name, bodenMm, raumArOeffnen }],
+          markierungen: [{ id, mitteMm: [x, y, z], radiusMm }],
+          wandpaare:    [{ id, raum, sollMm, a: Fläche, b: Fläche }]      Fläche = { wand, vonMm: [x, y, z], bisMm: [x, y, z], normale: [x, y, z] }
+                                                                          (Innenfläche der Wand am Boden, Normale in den Raum)
+          bauteile:     [{ id, aufgabe: "tablet-wert-ablesen", hoeheMm }] }
+```
+
+**App** (Labor-Dateien `QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs`; Regeln in `Hlks.Xr/Labor/LaborZiele.cs`): trägt das Modell `labor`, nehmen die Aufgaben diese
+Ziele – fehlt eines in der Etage am Stand, wählt die App wie bisher; ohne `labor` (KICAD) ändert sich nichts:
+
+| Aufgabe | Ziel im Testraum (`LaborZiele`) | sonst (wie bis L0) |
+| --- | --- | --- |
+| teleport-markierung | Markierung der Etage, 2 … 4.5 m entfernt, kleinster Winkel zum Blick (0.01°), dann Reihenfolge im Katalog | `PruefAufgaben.MarkierungWaehlen` |
+| messen-wand-wand | Wandpaar der Etage (zuerst das des Raums am Stand) mit dem Sollmass des Katalogs | `WandPaare.Waehlen` |
+| raum-ar-oeffnen | Raum mit `raumArOeffnen` (zuerst in der Etage) | Raum beim Betreten, «Raum zeigen», grösster Raum |
+| tablet-wert-ablesen | Bauteil der Etage (Element der Szene) | `PruefAufgaben.BauteilWaehlen` |
+
+**Was es im Labor nicht gibt** (kein Projekt): `/api/xr/marker`, `/api/xr/ebenen`, `/api/xr/ebene/{name}` antworten 404 (Test). Die App übergeht das ohne Hinweis:
+Ebenen – `EbenenLader.VomPc(…, fehlenMelden: Marke.MitProjekt)`, `AppMarke.XrLabor.MitProjekt = false` (KICAD meldet weiter «älterer Stand»); Marker – unverändert, die Liste
+fehlt nur in der Statuszeile («Liste nicht geholt (404)»), ein gesetzter Marker wartet in der App (er geht nicht an KICAD). Der Katalog des Labors
+(`/api/xr/labor/katalog`) kommt mit dem Auftrag «L1 Endpunkte»; bis dahin steht die 404 nur im Protokoll.
+
+**Prüflauf** (`--pruefen`, mit Kopplungspaket des Labor-PCs): mit Zielen prüft die Zeile «P5b … Aufgaben» zusätzlich «Testraum: Wandpaar … aus dem Katalog, drehen-90
+Erfolg, etage-wechseln Erfolg (EG → OG → EG), tablet-wert-ablesen Erfolg, Markierung … aus dem Katalog» und im Sitzungsraum (`--auftrag`) «raum-ar-oeffnen Erfolg». Mit
+`--bilder` legt er beim Begehen `testraum_eg.jpg`, `testraum_markierung.jpg`, `testraum_wandpaar.jpg`, `testraum_og.jpg`, `testraum_og_wandpaar.jpg` ab (Apps und
+Symbole aus; die Markierung bzw. die Wände zeichnet ein Lauf nur für das Bild, ohne Messprotokoll; das OG ab 220 Bildern).
+
+Simulator-Lauf am PC (Testlauf, Ablagen unter `%TEMP%`, Bilder nie ins Repository):
+
+```
+$env:HLKS_TEST = '1'; $env:HLKS_BENUTZER = <Temp>; $env:HLKS_ZULETZT = <Temp>; $env:HLKS_LABOR_DATEN = <Temp>
+$env:HLKS_KATALOG = <repo>\kataloge; $env:HLKS_LABOR_DESKTOP_PORT = <port>
+dotnet <bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll --port <port>
+POST /api/xr/zugang { an: true }; POST /api/xr/kopplung/paket { brille, name } → kopplung.json
+"C:\Program Files\dotnet\dotnet.exe" <bau>\Hlks.Labor.Quest\bin\Release\net10.0\Hlks.Labor.Quest.dll --pruefen 300 --kopplung kopplung.json --speicher <Temp> --bilder <ordner>
+… --auftrag '{"modus":"sitzungsraum","raum":"testraum-eg","nr":1}'      (Sitzungsraum)
+```
+
+Stand 26.10.2026 (Simulator): alle sieben Aufgaben mit Erfolg (messen-wand-wand 6000 mm gegen Soll 6000 mm, Markierung `markierung-eg-nw`, tablet 2.65 m, Raum
+`testraum-eg`). Auf diesem Zweig allein endet die Zeile mit «P4 Fehler», weil «Katalog» ohne `/api/xr/labor/katalog` FEHLER ist und die Prüfungen von messen-wand-wand und
+teleport-markierung aus L0 `stellschrauben` im Messprotokoll verlangen (die gibt es nur mit Katalog). Probe mit dem Stand des Auftrags «L1 Endpunkte» (Zweig
+`worktree-agent-ac951f224725c4bc6` @ eb31014, dazu diese Dateien, in einem Temp-Ordner gebaut): beide Läufe «P4 ok», Katalog ok (86 Stellschrauben, 7 Aufgaben).
 
 ## Symbol
 

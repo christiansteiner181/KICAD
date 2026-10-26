@@ -193,6 +193,7 @@ public static class LaborDienste
         app.MapXrLabor(LaborQuelle(app.Services));   // /api/xr/labor/… aus Hlks.Web (XrLaborEndpunkte.cs) mit Ablage, Profil und Marke des Labors
         app.MapLaborProfile();                       // /api/labor/profile (LaborProfile.cs)
         app.MapLaborDaten();                         // /api/labor/daten, /api/labor/uebernahme (LaborUebernahme.cs)
+        LaborTestraum.Abbilden(app);                 // Etagen des Testraums als GLB wie KICAD (/api/xr/geschosse, /api/xr/geschoss/{id}.glb; TestraumEndpunkte.cs)
         return app;
     }
 }

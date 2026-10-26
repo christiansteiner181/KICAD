@@ -408,7 +408,8 @@ sealed partial class QuestApp
     {
         try
         {
-            if (aktiveQuelle is IEbenenQuelle q) EbenenUebernehmen(await EbenenLader.VomPc(q, liste.Projekt, ebenenAblage, ende.Token), liste.Bezugspunkt);
+            // XR-Labor L1: der Labor-PC hat keine Ebenen (404 ohne Hinweis, Marke.MitProjekt); KICAD wie bisher
+            if (aktiveQuelle is IEbenenQuelle q) EbenenUebernehmen(await EbenenLader.VomPc(q, liste.Projekt, ebenenAblage, ende.Token, fehlenMelden: Marke.MitProjekt), liste.Bezugspunkt);
         }
         catch (Exception ex) when (ex is XrNetzFehler or HttpRequestException or IOException or TaskCanceledException && !ende.IsCancellationRequested)
         {

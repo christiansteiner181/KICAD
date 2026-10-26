@@ -40,6 +40,9 @@ public class AppMarkeTests
         Assert.Same(k, AppMarke.Von("kicad"));
         Assert.Null(AppMarke.Von("anders"));
         Assert.Null(AppMarke.Von(null));
+        // L1: nur KICAD führt ein Projekt (Ebenen, Problem-Marker); das Labor hat den neutralen Testraum
+        Assert.True(k.MitProjekt);
+        Assert.False(l.MitProjekt);
     }
 
     [Fact]
@@ -124,10 +127,13 @@ public class AppMarkeTests
         Assert.Equal(LaborDateien.Order(), entfernt.Order());
         // was nur in den Labor-Dateien steht bzw. nur das Labor aufruft – im übrigen Code nur über partial void Labor…(…): Typen des Labors in keiner Datei,
         // Felder und Methoden des Labors in keinem anderen Teil von QuestApp
-        var typen = new Regex(@"\b(PruefAufgaben|PruefLauf|LaufZustand|AufgabenKarte|LaborKatalogLader|LaborKatalogAblage|LaborKatalogStand|ProtokollAblage|StickTeleport)\b");
+        // L1: dazu die Ziele des Testraums (LaborZiele und ihre Datensätze, die Glieder in den Labor-Dateien)
+        var typen = new Regex(@"\b(PruefAufgaben|PruefLauf|LaufZustand|AufgabenKarte|LaborKatalogLader|LaborKatalogAblage|LaborKatalogStand|ProtokollAblage|StickTeleport|" +
+            @"LaborZiele|ZielMarkierung|ZielWandPaar|ZielBauteil|ZielRaum)\b");
         var glieder = new Regex(@"\b(lauf|karte|raumFuerAufgabe|markiertesBauteil|letztesProtokoll|protokollWarten|protokolleGesendet|quittungen|katalogText|katalogQuelle|" +
             @"katalogAblage|protokollAblage|stickZustand|AufgabeBild|AufgabeVomPc|AufgabeBeenden|AufgabeImTablet|AufgabeKurz|Abschliessen|StickSchritt|KatalogVomPc|" +
-            @"KatalogUebernehmen|ProtokolleNachsenden|PruefMessenWandWand|PruefAufgabenBegehen|PruefAufgabeSitzung|KarteKandidat|KarteWegwischen)\b");
+            @"KatalogUebernehmen|ProtokolleNachsenden|PruefMessenWandWand|PruefAufgabenBegehen|PruefAufgabeSitzung|KarteKandidat|KarteWegwischen|" +
+            @"zieleSzene|PruefTestraumBegehen|PruefRaumArOeffnen|TestraumBilder|BildLauf|testraumVorOg)\b");
         var funde = new List<string>();
         foreach (var d in Quellen(Quest).Where(d => !LaborDateien.Contains(Path.GetFileName(d))))
         {

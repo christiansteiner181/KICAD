@@ -26,8 +26,11 @@ namespace Hlks.Quest;
 ///   - V1a: «messen-wand-wand» markiert zwei gegenüberliegende Wände (Hlks.Xr.Labor.WandPaare) und schaltet Messen ein; die Messung entscheidet.
 /// XR-Labor L0 (entwurf/labor-app.md): der allgemeine Code ruft das Labor nur über die Einhängepunkte auf (QuestApp.Einhaengepunkte.cs); diese Datei setzt sie um
 /// (Abschnitt «Einhängepunkte» unten). Labor-Dateien sind diese, AufgabenKarte.cs und QuestApp.LaborPruefen.cs: ohne sie übersetzt die App ohne Labor (Probebau
-/// -p:HlksOhneLabor=true). In L0 liegen sie noch hier und gehören zu beiden Apps, ab L1 nur noch zu src/Hlks.Labor.Quest. Röntgen-Hand und flache Hand gehören zur
+/// -p:HlksOhneLabor=true). In L0 und L1 liegen sie noch hier und gehören zu beiden Apps, ab L2 nur noch zu src/Hlks.Labor.Quest. Röntgen-Hand und flache Hand gehören zur
 /// Bedienung: QuestApp.Roentgen.cs, QuestApp.Schnitt.cs.
+/// XR-Labor L1 (Zuschnitt L1: die Dateien bleiben bis L2 hier): trägt das Modell Ziele des Testraums (scene.extras.kicad.labor, Hlks.Xr.Labor.LaborZiele – nur vom
+/// Labor-PC), nehmen die Aufgaben diese – Markierung, Wandpaar mit Sollmass, Raum «raum-ar-oeffnen», Bauteil «tablet-wert-ablesen»; fehlt ein Ziel in der Etage
+/// bzw. gibt es keine (KICAD), wählt die App wie bisher.
 /// </summary>
 sealed partial class QuestApp
 {
@@ -54,6 +57,24 @@ sealed partial class QuestApp
     // Stick (Variante «teleport»)
     readonly StickZustand[] stickZustand = [new(), new()];
     double stickHinweisBis;
+
+    // XR-Labor L1: Ziele des Testraums (aus der Szene, je Modell einmal gelesen)
+    LaborZiele? ziele;
+    ModellSzene? zieleSzene;
+
+    /// <summary>Die Ziele des Testraums im geladenen Modell (scene.extras.kicad.labor), sonst null – bei KICAD immer null.</summary>
+    LaborZiele? Ziele()
+    {
+        if (ReferenceEquals(zieleSzene, szene)) return ziele;
+        zieleSzene = szene;
+        ziele = szene is null ? null : LaborZiele.AusSzene(szene);
+        if (ziele is not null)
+        {
+            Console.WriteLine($"{AppName}: Testraum mit Zielen der Prüfaufgaben: {ziele.Kurz}");
+            foreach (var h in ziele.Hinweise) Console.WriteLine($"{AppName}: Ziele des Testraums: {h}");
+        }
+        return ziele;
+    }
 
     // =================================================================================================== Katalog
 
@@ -222,10 +243,12 @@ sealed partial class QuestApp
         var kr = KopfRef(Input.Head);
         var kw = VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z));
         var blick = VrLogik.BlickGierenWelt(rig, kr.Gieren);
+        var zl = Ziele();   // L1: Ziele des Testraums (Labor-PC), sonst null
         switch (l.Id)
         {
             case PruefAufgaben.TeleportMarkierung:
-                var (m, b) = PruefAufgaben.MarkierungWaehlen(szene, GeschossAmStand()?.Id, rig.Y, kw, blick);
+                var (m, b) = zl?.MarkierungWaehlen(GeschossAmStand()?.Id, kw, blick) is { } zm ? (zm.Mitte, zm.Boden)
+                    : PruefAufgaben.MarkierungWaehlen(szene, GeschossAmStand()?.Id, rig.Y, kw, blick);
                 PruefAufgaben.TeleportVorbereiten(l, m, b);
                 break;
             case PruefAufgaben.Drehen90:
@@ -238,7 +261,8 @@ sealed partial class QuestApp
                 PruefAufgaben.ZoomVorbereiten(l, sitzung.Lage, bedien.Zoom);
                 break;
             case PruefAufgaben.RaumArOeffnen:
-                var raum = raumFuerAufgabe ?? RaumZumZeigen() ?? RaumStandort.GroessterRaum(szene, sitzung.Ansicht?.Geschoss ?? geschossAmStand?.Id) ?? RaumStandort.GroessterRaum(szene, null);
+                var raum = zl?.RaumArOeffnen(sitzung.Ansicht?.Geschoss ?? geschossAmStand?.Id)
+                    ?? raumFuerAufgabe ?? RaumZumZeigen() ?? RaumStandort.GroessterRaum(szene, sitzung.Ansicht?.Geschoss ?? geschossAmStand?.Id) ?? RaumStandort.GroessterRaum(szene, null);
                 if (!PruefAufgaben.RaumVorbereiten(l, raum) && !neustart) return;
                 break;
             case PruefAufgaben.TabletWertAblesen:
@@ -247,7 +271,7 @@ sealed partial class QuestApp
                     PruefAufgaben.Warten(l, "Nur in der Variante «Tablet an der Hand» – am PC unter «Varianten» die Bedienung auf «Tablet» stellen.");
                     return;
                 }
-                var e = PruefAufgaben.BauteilWaehlen(szene, GeschossAmStand()?.Id, kw, blick);
+                var e = zl?.BauteilWaehlen(szene, GeschossAmStand()?.Id) ?? PruefAufgaben.BauteilWaehlen(szene, GeschossAmStand()?.Id, kw, blick);
                 PruefAufgaben.TabletVorbereiten(l, e is null ? null : PruefAufgaben.FrageZu(e));
                 markiertesBauteil = e;
                 if (e is null && !neustart) return;
@@ -255,7 +279,9 @@ sealed partial class QuestApp
             case PruefAufgaben.MessenWandWand:   // V1a: zwei gegenüberliegende Wände des Raums markieren; Messen ein
                 if (t < wandSucheAb && !neustart) return;   // ohne Raum höchstens zweimal je Sekunde neu suchen
                 wandSucheAb = t + 0.5;
-                if (!PruefAufgaben.MessenVorbereiten(l, WandPaare.Waehlen(szene, GeschossAmStand()?.Id, rig.Y, kw, blick)) && !neustart) return;
+                // L1: im Testraum das Wandpaar des Katalogs (bekanntes Sollmass), sonst die Wahl im Modell
+                var paar = zl?.WandPaarWaehlen(szene, GeschossAmStand()?.Id, kw, rig.Y)?.Paar ?? WandPaare.Waehlen(szene, GeschossAmStand()?.Id, rig.Y, kw, blick);
+                if (!PruefAufgaben.MessenVorbereiten(l, paar) && !neustart) return;
                 if (!messen.An) MessenSchalten(true);
                 break;
         }
@@ -521,7 +547,8 @@ sealed partial class QuestApp
     }
 
     partial void LaborKennzahlen(ref string text) => text = string.Create(CultureInfo.InvariantCulture,
-        $"Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), ");
+        $"Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), ")
+        + (Ziele() is { } zk ? $"Testraum={zk.Kurz}, " : "");   // L1: nur mit Zielen des Testraums (Labor-PC)
 
     partial void LaborQuittungen(ref string text) => text = string.Create(CultureInfo.InvariantCulture, $", Quittungen={quittungen}");
 
