@@ -1,0 +1,78 @@
+{
+  "art": "hlks-labor-spielwiese",
+  "fassung": 1,
+  "beschreibung": "XR-Labor Spielwiese S1 (entwurf/xr-empfaenger.md, Neuausrichtung 26.10.2026; entwurf/bedien-grundsatz.md, Kapitel 1 App-Menü): neutrale Platzhalter-Apps, mit denen die Grundbedienung von «H+K XR» ohne KICAD-Inhalt erlebbar ist (Hebegeste, Symbolfeld, Tafel, Blättern, Rollen, Wegwischen). Ist das aktive Werkzeug der Brille das XR-Labor und läuft keine Prüfaufgabe, zeigt das Symbolfeld diese Apps statt der KICAD-Apps, dazu «Werkzeuge». Der Labor-Server liefert die Datei unter GET /api/xr/labor/spielwiese (auch über den Netzzugang 5340, ETag/304); die App holt sie beim Verbinden und alle 30 s, legt sie im Speicher des Werkzeugs ab und nimmt ohne Verbindung die zuletzt geholte, sonst die eingebaute Fassung. Ändern ohne neue APK: Datei bearbeiten, am Labor-PC GET /api/xr/labor/spielwiese prüfen (409 mit Fehler, wenn ungültig), die Brille übernimmt sie beim nächsten Nachfragen. Aufbau: apps[] = { kennung [a-z][a-z0-9-]{0,23}, name (bis 24 Zeichen, Tooltip und Titel der Tafel), symbol (ein Zeichen der App: @notizen, @bilder, @uhr, @liste, @dokument, @einstellungen, @werkzeuge, oder ein Symbol des Symbolsatzes der App, Hlks.Xr.Bedienung.GlasSymbole.Alle), farbe (Eintrag in kataloge/xr_farben.json), inhalt }. inhalt.art: text { text } | seiten { seiten: [{ titel, text }] } | liste { eintraege: [{ titel, zeile? }] oder anzahl, muster mit {n}, zeile? mit {n} und {anzahl} } | schalter { schalter: [{ id, titel, ein, zeile? }] } | kacheln { kacheln: [{ titel, farbe #RRGGBB, form kreis|quadrat|kapsel|ring|streifen }] } | uhr { } (Zeit und Datum der Brille). Grenzen im Kopf von src/Hlks.Xr/Labor/Spielwiese.cs. Inhalte sind Platzhalter ohne Wirkung (Annahme S1, Vorschlag Auftrag S1).",
+  "apps": [
+    {
+      "kennung": "notizen",
+      "name": "Notizen",
+      "symbol": "@notizen",
+      "farbe": "notizen",
+      "inhalt": {
+        "art": "text",
+        "text": "Einkauf für Samstag: Brot, Käse, Äpfel, Kaffee.\nAnruf Zahnarzt bis Mittwoch.\nIdee: Fensterbank im Wohnzimmer neu streichen.\n\nPlatzhalter-Notiz der Spielwiese – ohne Wirkung."
+      }
+    },
+    {
+      "kennung": "bilder",
+      "name": "Bilder",
+      "symbol": "@bilder",
+      "farbe": "bilder",
+      "inhalt": {
+        "art": "kacheln",
+        "kacheln": [
+          { "titel": "Sonne", "farbe": "#C9874A", "form": "kreis" },
+          { "titel": "See", "farbe": "#4F7FA6", "form": "streifen" },
+          { "titel": "Wiese", "farbe": "#5E8C5A", "form": "quadrat" },
+          { "titel": "Abend", "farbe": "#8C5A7A", "form": "ring" },
+          { "titel": "Stein", "farbe": "#7A7F87", "form": "kapsel" },
+          { "titel": "Sand", "farbe": "#A88E5E", "form": "streifen" }
+        ]
+      }
+    },
+    {
+      "kennung": "uhr",
+      "name": "Uhr",
+      "symbol": "@uhr",
+      "farbe": "uhr",
+      "inhalt": { "art": "uhr" }
+    },
+    {
+      "kennung": "liste",
+      "name": "Liste",
+      "symbol": "@liste",
+      "farbe": "liste",
+      "inhalt": { "art": "liste", "anzahl": 40, "muster": "Eintrag {n}", "zeile": "Platzhalter {n} von {anzahl}" }
+    },
+    {
+      "kennung": "dokument",
+      "name": "Dokument",
+      "symbol": "@dokument",
+      "farbe": "dokument",
+      "inhalt": {
+        "art": "seiten",
+        "seiten": [
+          { "titel": "Ein Ausflug", "text": "Am Morgen lag noch Nebel über dem Tal. Wir packten Brot, Käse und eine Thermosflasche ein und nahmen den ersten Zug in die Berge. Oben schien die Sonne, und unter uns lag ein weisses Meer aus Wolken." },
+          { "titel": "Unterwegs", "text": "Der Weg führte zuerst durch einen Wald, dann über eine offene Weide. Die Kühe schauten uns nach. An einem Brunnen füllten wir die Flaschen und rasteten auf einer Bank mit Blick auf drei Seen." },
+          { "titel": "Zurück", "text": "Gegen Abend zogen Wolken auf. Wir nahmen die Seilbahn ins Tal und waren rechtzeitig vor dem Regen zu Hause. Ende des Platzhalter-Dokuments – mit einem Wisch nach rechts geht es zurück." }
+        ]
+      }
+    },
+    {
+      "kennung": "einstellungen",
+      "name": "Einstellungen",
+      "symbol": "@einstellungen",
+      "farbe": "einstellungen",
+      "inhalt": {
+        "art": "schalter",
+        "schalter": [
+          { "id": "flugmodus", "titel": "Flugmodus", "ein": false, "zeile": "ohne Wirkung" },
+          { "id": "wlan", "titel": "WLAN", "ein": true, "zeile": "ohne Wirkung" },
+          { "id": "bluetooth", "titel": "Bluetooth", "ein": true, "zeile": "ohne Wirkung" },
+          { "id": "nicht-stoeren", "titel": "Nicht stören", "ein": false, "zeile": "ohne Wirkung" },
+          { "id": "dunkel", "titel": "Dunkles Design", "ein": false, "zeile": "ohne Wirkung" }
+        ]
+      }
+    }
+  ]
+}
