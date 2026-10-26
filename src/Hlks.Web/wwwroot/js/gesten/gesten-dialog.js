@@ -24,8 +24,21 @@ export function gestenDialog() {
   return offen;
 }
 
-/** Bietet eine Textdatei zum Speichern an (nur die Punktfolge; kein Bild). */
-function dateiAnbieten(name, text) {
+/** Bietet eine Textdatei zum Speichern an (nur die Punktfolge; kein Bild). Zuerst mit dem Speicherdialog des Browsers (im App-Fenster
+ *  von KICAD kam der Download über einen Link nicht an, Abnahme 26.10.2026); ohne diesen Dialog über einen Link. Ergebnis: true = gespeichert. */
+async function dateiAnbieten(name, text) {
+  if (typeof window.showSaveFilePicker === 'function') {
+    try {
+      const h = await window.showSaveFilePicker({ suggestedName: name, startIn: 'downloads', types: [{ description: 'Punktfolge der Hand', accept: { 'application/json': ['.json'] } }] });
+      const s = await h.createWritable();
+      await s.write(text);
+      await s.close();
+      return true;
+    } catch (e) {
+      if (e?.name === 'AbortError') return false;   // abgebrochen
+      // sonst über den Link
+    }
+  }
   const url = URL.createObjectURL(new Blob([text], { type: 'application/json' }));
   const a = document.createElement('a');
   a.href = url; a.download = name; a.hidden = true;
@@ -33,6 +46,7 @@ function dateiAnbieten(name, text) {
   a.click();
   a.remove();
   setTimeout(() => URL.revokeObjectURL(url), 4000);
+  return true;
 }
 
 async function oeffnen() {
@@ -102,8 +116,8 @@ async function oeffnen() {
       aufnahmeNeu();
       const d = T.aufnahmeDatei(r);
       if (!d) { meldung('Es wurde nichts aufgenommen.', 'info'); return; }
-      dateiAnbieten(d.name, d.text);
-      meldung(`Punktfolge mit ${d.bilder} Bildern zum Speichern angeboten (nur Punkte).`, 'ok');
+      if (await dateiAnbieten(d.name, d.text)) meldung(`Punktfolge mit ${d.bilder} Bildern gespeichert (nur Punkte).`, 'ok');
+      else meldung('Speichern abgebrochen.', 'info');
     };
   }
 

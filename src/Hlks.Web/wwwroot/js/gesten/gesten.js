@@ -17,7 +17,8 @@
 import * as L from './gesten-logik.js';
 import * as fenster from '../fenster.js';
 
-const BREITE = 640, HOEHE = 480;
+const BREITE = 640, HOEHE = 480;   // Bild für die Erkennung (Breite fest, Höhe nach dem Seitenverhältnis der Kamera)
+const KAMERA_BREITE = 1280, KAMERA_HOEHE = 720;   // angeforderte Kameraauflösung (16:9, volles Sichtfeld)
 const TAKT_MS = 1000 / 30, RUECKFALL_MS = 1000 / 15, RUHE_TAKT_MS = 1000 / 5;
 const RUHE_NACH_MS = 10000;
 const PUNKTE_MS = 1000 / 15;
@@ -63,7 +64,10 @@ function kameraFehler(e) {
 async function kameraOeffnen(kameraId) {
   const md = typeof navigator !== 'undefined' ? navigator.mediaDevices : null;
   if (!md?.getUserMedia) { const f = new Error('Dieser Browser bietet keine Kamera an.'); f.name = 'NotFoundError'; throw f; }
-  const video = { width: { ideal: BREITE }, height: { ideal: HOEHE }, frameRate: { ideal: 30 } };
+  // Volles Sichtfeld: 640 × 480 schneidet bei den meisten eingebauten Kameras (Sensor 16:9) die Seiten ab – die Hand fiel dann schon
+  // knapp neben der Mitte aus dem Bild (Abnahme Christian 26.10.2026: «zu kleiner Raum vor der Kamera»). Darum 16:9 anfordern; für
+  // die Erkennung wird das Bild ohnehin auf BREITE verkleinert (bildHolen).
+  const video = { width: { ideal: KAMERA_BREITE }, height: { ideal: KAMERA_HOEHE }, frameRate: { ideal: 30 } };
   if (kameraId) video.deviceId = { exact: kameraId };
   try { return await md.getUserMedia({ video, audio: false }); }
   catch (e) { throw kameraFehler(e); }

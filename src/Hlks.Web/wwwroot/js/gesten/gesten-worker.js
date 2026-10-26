@@ -53,7 +53,7 @@ async function laden({ basis = '/lib/mediapipe/', modell = 'hand_landmarker.task
   const dateien = await FilesetResolver.forVisionTasks(new URL('wasm', b).href.replace(/\/$/, ''), true);   // true = Modul-Variante (import statt importScripts)
   const optionen = (d) => ({
     baseOptions: { modelAssetPath: new URL(modell, b).href, delegate: d },
-    runningMode: 'VIDEO', numHands: haende, minHandDetectionConfidence: 0.5, minHandPresenceConfidence: 0.5, minTrackingConfidence: 0.5,
+    runningMode: 'VIDEO', numHands: haende, minHandDetectionConfidence: 0.4, minHandPresenceConfidence: 0.3, minTrackingConfidence: 0.3,   // tiefer als die Vorgabe 0,5: die Faust und eine kleine Hand am Bildrand gingen sonst verloren (Abnahme 26.10.2026)
   });
   let genutzt = delegate;
   try {
