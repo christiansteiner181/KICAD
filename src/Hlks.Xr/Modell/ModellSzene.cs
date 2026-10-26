@@ -4,8 +4,15 @@
 //
 // Koordinaten: Szene der App (m, y oben, x Ost, z −Nord, relativ zum Bezugspunkt; KicadUmrechnung). Alle GLB eines Stands haben denselben Bezugspunkt
 // (P2); weicht einer ab, steht das in den Hinweisen.
+// XR-Labor L1: die Szene behält scene.extras.kicad jeder GLB (Extras) – darin bringt der Testraum des Labors die Ziele der Prüfaufgaben («labor»,
+// Hlks.Xr.Labor.LaborZiele). Die übrigen Regeln lesen sie nicht.
+
+using System.Text.Json.Nodes;
 
 namespace Hlks.Xr.Modell;
+
+/// <summary>scene.extras.kicad einer GLB der Szene mit Geschoss und Teil.</summary>
+public sealed record SzenenExtras(string GeschossId, string Teil, JsonObject Kicad);
 
 /// <summary>Ein Netz der Szene: Nummer, Daten, Geschoss und Teil (modell, unterlage).</summary>
 public sealed record SzenenNetz(int Nr, GlbNetzDaten Daten, string GeschossId, string Teil);
@@ -33,8 +40,11 @@ public sealed class ModellSzene
 
     readonly List<SzenenNetz> netze = [];
     readonly Dictionary<string, SzenenElement> elemente = new(StringComparer.Ordinal);
+    readonly List<SzenenExtras> extras = [];
 
     public IReadOnlyList<SzenenNetz> Netze => netze;
+    /// <summary>XR-Labor L1: scene.extras.kicad je GLB (in der Reihenfolge der Dateien; GLB ohne extras fehlen).</summary>
+    public IReadOnlyList<SzenenExtras> Extras => extras;
     public IReadOnlyDictionary<string, SzenenElement> Elemente => elemente;
     public double[] Bezugspunkt { get; } = [0, 0, 0];
     public List<string> Hinweise { get; } = [];
@@ -53,6 +63,7 @@ public sealed class ModellSzene
             if (erster) { Array.Copy(datei.Bezugspunkt, Bezugspunkt, 3); erster = false; }
             else if (!datei.Bezugspunkt.SequenceEqual(Bezugspunkt))
                 Hinweise.Add($"Geschoss {datei.GeschossKennzeichen ?? geschoss} ({teil}): anderer Bezugspunkt [{string.Join(", ", datei.Bezugspunkt)}] als die übrigen GLB.");
+            if (datei.Kicad is { } k) extras.Add(new SzenenExtras(geschoss, teil, k));
             foreach (var n in datei.Netze)
             {
                 var sn = new SzenenNetz(netze.Count, n, geschoss, teil);

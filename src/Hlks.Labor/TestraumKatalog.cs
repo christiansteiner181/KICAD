@@ -7,7 +7,7 @@
 //     art wand        vonMm [x, y], bisMm [x, y], dickeMm, untenMm, obenMm                    Achse wie die Wandgeometrie «linie» von KICAD (Dicke beidseits halb)
 //     art boden|decke umrissMm [[x, y] …], untenMm, obenMm                                    Platte; in der GLB Ebene «decke» (Klasse Decke des Kerns)
 //     art raum        umrissMm, untenMm, obenMm, kennzeichen?                                  Raumkörper; in der GLB Gruppe «raum» (wie KICAD, Deckkraft 0.15)
-//     art markierung  mitteMm [x, y], radiusMm                                                 flache Scheibe auf OK Boden des Geschosses (Ebene «sonst»)
+//     art markierung  mitteMm [x, y], radiusMm                                                 flacher Ring auf OK Boden des Geschosses (Ebene «sonst»)
 //   ziele      { <Id der Prüfaufgabe>: { … } }                                                nur Ids aus kataloge/xr_pruefaufgaben.json (Prüfung im Test)
 //     teleport-markierung { markierungen: [Id] }
 //     messen-wand-wand    { wandpaare: [{ id, raum, a, b, sollMm }] }                          a, b: parallele Wände gegenüber; sollMm = Abstand der Innenflächen

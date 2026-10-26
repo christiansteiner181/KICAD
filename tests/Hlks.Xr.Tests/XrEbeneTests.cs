@@ -246,6 +246,10 @@ public class XrEbeneTests
         var st = await EbenenLader.VomPc(q, "P-1", null);
         Assert.Empty(st.Ebenen);
         Assert.Contains("älterer Stand", Assert.Single(st.Hinweise));
+        // XR-Labor L1: der Labor-PC hat keine Ebenen (kein Projekt) – 404 heisst «gibt es hier nicht», ohne Hinweis (AppMarke.MitProjekt)
+        var labor = await EbenenLader.VomPc(q, "P-1", null, fehlenMelden: false);
+        Assert.Empty(labor.Ebenen);
+        Assert.Empty(labor.Hinweise);
         var q2 = MitProbe();
         q2.Antworten.Remove("/api/xr/ebene/probe");
         var st2 = await EbenenLader.VomPc(q2, "P-1", null);

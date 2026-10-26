@@ -5,7 +5,8 @@
 // Gleich wie KICAD:
 //   - Koordinaten (m, y oben, x Ost, z −Nord) relativ zum Bezugspunkt (XrKoordinaten.Bezugspunkt über alle Körper; der Testraum liegt am Nullpunkt → 0, 0, 0).
 //   - Je Etage ein Netz je (Gruppe, Farbe, Deckkraft in VR, Deckkraft 3D), undurchsichtige zuerst; Farben, Deckkraft und Gruppen nach XrFarben aus Material und
-//     Ebene der Körperteile (wand → Ebene «wand», boden/decke → «decke», raum → «raum» mit Deckkraft 0.15 wie die Räume des Kerns, markierung → «sonst»).
+//     Ebene der Körperteile (wand → Ebene «wand», boden/decke → «decke», raum → «raum» mit Deckkraft 0.15 wie die Räume des Kerns, markierung → «sonst», als flacher
+//     Ring: Prisma mit Loch).
 //   - mesh.extras.kicad { gruppe, farbe, deckkraft, deckkraft3d, dreiecke, elemente { ids, ab, anzahl, ebenen } }.
 //   - scene.extras.kicad { fassung, teil, schluessel, projekt, geschoss { id, kennzeichen, name, koteMm, hoeheMm }, bezugspunktMm, achsen, netze, dreiecke,
 //     elemente, hinweise }, asset.extras.kicad { format «kicad-xr-glb», fassung }.
@@ -41,8 +42,12 @@ public static class TestraumModell
     /// <summary>Fassung der Form von scene.extras.kicad.labor (die App nimmt nur diese).</summary>
     public const int LaborFassung = 1;
     public const string TeilModell = "modell";
-    /// <summary>Höhe der Markierung: Scheibe von 1 bis 6 mm über OK Boden (Annahme L1, siehe Katalog; ohne gemeinsame Fläche mit dem Boden).</summary>
+    /// <summary>Höhe der Markierung: flacher Ring von 1 bis 6 mm über OK Boden (Annahme L1, siehe Katalog; ohne gemeinsame Fläche mit dem Boden).</summary>
     public const double MarkierungUntenMm = 1, MarkierungObenMm = 6;
+    /// <summary>Innenradius des Rings als Anteil des Radius (Annahme L1 nach den ersten Prüfbildern: eine volle Scheibe in der Akzentfarbe wirkte wie ein Loch im Boden).</summary>
+    public const double MarkierungInnen = 0.75;
+    /// <summary>Ecken je Kreis des Rings (wie XrNetzbau.Rund für Zylinder: Sehnenfehler unter 1 % des Radius).</summary>
+    public const int MarkierungEcken = 32;
     /// <summary>Deckkraft der Räume wie im Kern (ArchitekturGrafik: Raum «Deckkraft 0.15»).</summary>
     public const double RaumDeckkraft = 0.15;
 
@@ -73,11 +78,13 @@ public static class TestraumModell
                 return new Koerperteil { Art = "prisma", Material = "decke", Farbe = k.Farben["platte"], Grundriss = [.. e.Umriss!], Unten = e.UntenMm, Oben = e.ObenMm };
             case TestraumKatalog.ArtRaum:
                 return new Koerperteil { Art = "prisma", Material = "raum", Deckkraft = RaumDeckkraft, Grundriss = [.. e.Umriss!], Unten = e.UntenMm, Oben = e.ObenMm, NichtSchneiden = true };
-            default:   // markierung: flacher Zylinder
+            default:   // markierung: flacher Ring (Prisma mit Loch)
+                List<double[]> Kreis(double r) =>
+                    [.. Enumerable.Range(0, MarkierungEcken).Select(i => new[] { e.Mitte![0] + r * Math.Cos(2 * Math.PI * i / MarkierungEcken), e.Mitte[1] + r * Math.Sin(2 * Math.PI * i / MarkierungEcken) })];
                 return new Koerperteil
                 {
-                    Art = "zylinder", Material = "sonst", Farbe = k.Farben["markierung"], Radius = e.RadiusMm,
-                    Von = [e.Mitte![0], e.Mitte[1], e.UntenMm + MarkierungUntenMm], Nach = [e.Mitte[0], e.Mitte[1], e.UntenMm + MarkierungObenMm],
+                    Art = "prisma", Material = "sonst", Farbe = k.Farben["markierung"], Grundriss = Kreis(e.RadiusMm), Loecher = [Kreis(e.RadiusMm * MarkierungInnen)],
+                    Unten = e.UntenMm + MarkierungUntenMm, Oben = e.UntenMm + MarkierungObenMm,
                 };
         }
     }
@@ -95,7 +102,8 @@ public static class TestraumModell
     }
 
     static string Z(double v) => v.ToString("R", CultureInfo.InvariantCulture);
-    static JsonArray P(params double[] werte) => new([.. werte.Select(v => (JsonNode)JsonValue.Create(Math.Round(v, 3)))]);
+    /// <summary>Zahlen auf 0.001 mm gerundet, ohne «−0» (Normalen quer zur Achse).</summary>
+    static JsonArray P(params double[] werte) => new([.. werte.Select(v => (JsonNode)JsonValue.Create(Math.Round(v, 3) is var r && r == 0 ? 0.0 : r))]);
 
     /// <summary>
     /// Ziele der Prüfaufgaben in einer Etage (scene.extras.kicad.labor), Koordinaten in KICAD-mm absolut (x Ost, y Nord, z oben), Normalen in KICAD-Achsen:

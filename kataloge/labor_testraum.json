@@ -7,7 +7,7 @@
     "Raum innen 8.0 × 6.0 m je Etage (Vorschlag Auftrag L1, Hauptlauf 26.10.2026: «ca. 8 × 6 m»; Begehen und Springen mit 2 … 4.5 m Weite wie die Markierung der App, PruefAufgaben.MarkierungAbstaende).",
     "Wände 200 mm dick, von OK Boden bis UK Decke (lichte Höhe), Platten 250 mm dick (Annahme L1, nur für die Darstellung; so berühren sich Wand und Platte ohne Überlappung).",
     "Geschosshöhe 2900 mm wie im Beispielprojekt «MFH Musterweg» (src/Hlks.Kern/Beispiel/Beispielprojekt.cs: EG Kote 0, Höhe 2900; 1.OG Kote 2900, Höhe 2900); lichte Höhe damit 2650 mm.",
-    "Markierungen 300 mm Radius als flache Scheibe 1 … 6 mm über OK Boden; als gelungen zählt ein Sprung bis 0.5 m neben die Mitte (PruefAufgaben.MarkierungRadiusM, Katalog xr_pruefaufgaben.json «Annahme P6»).",
+    "Markierungen als flacher Ring 1 … 6 mm über OK Boden, aussen 300 mm Radius (radiusMm), innen 75 % davon (TestraumModell.MarkierungInnen; eine volle Scheibe in der Akzentfarbe wirkte in den ersten Prüfbildern wie ein Loch); als gelungen zählt ein Sprung bis 0.5 m neben die Mitte (PruefAufgaben.MarkierungRadiusM, Katalog xr_pruefaufgaben.json «Annahme P6»).",
     "Kein Durchgang und keine Treppe: die Aufgabe «etage-wechseln» wechselt mit der App «Etagen» (Vorgabe labor.variante.etage = app, Brillentest V1d), sie braucht keinen Weg zwischen den Etagen."
   ],
   "farben": {
