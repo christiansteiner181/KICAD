@@ -41,7 +41,7 @@ public sealed class XrServer : IAsyncDisposable
     {
         Directory.CreateDirectory(BenutzerOrdner);
         var e = new Einstellungen("Test", "testpc", Katalog.StandardOrdner(), null) { ZuletztMerken = false, BenutzerOrdner = BenutzerOrdner };
-        var xr = new XrEinstellungen
+        var xr = KicadXr.Betrieb() with
         {
             Adresse = IPAddress.Loopback, Port = 0, SuchPort = 0, Ordner = XrOrdner, DesktopPort = null, PruefAbstand = TimeSpan.FromHours(1),
             Uhr = uhr is null ? null : () => uhr.Jetzt,

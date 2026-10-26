@@ -1,5 +1,5 @@
 // Register XR (Christian, 26.10.2026: «wir nehmen alles was VR/XR ist in einen eigenen Menue Tab im CAD»): alles, was mit der Brille (Meta Quest), der Quest App und dem VR/AR-Zeigen zu tun
-// hat, steht in einem eigenen Register «XR» (menueband.js) mit den Gruppen Brille · Zeigen · Koordination · Labor. Jede Funktion steht nur dort; die Kontextmenüs (Raum, Grundriss) behalten ihre
+// hat, steht in einem eigenen Register «XR» (menueband.js) mit den Gruppen Brille · Zeigen · Koordination (Gruppe «Labor» mit «XR-Labor …» entfällt seit dem Umzug nach HK_XR, 26.10.2026). Jede Funktion steht nur dort; die Kontextmenüs (Raum, Grundriss) behalten ihre
 // Einträge und lösen dieselben Aktionen aus (aktionen-vr-auftrag.js, ansichten/grundriss.js). Die Aktions-Ids («ansicht.…», «koordination.problemMarker») bleiben, wie sie waren: sie sind
 // Bezeichner für Anleitung, Kürzelliste und Tests, keine Orte.
 //
@@ -7,11 +7,11 @@
 // (derselbe Dialog; sein erster Teil ist «Quest App» mit dem Knopf «App installieren/aktualisieren»), «Autostart» (Schalter, Einstellung quest.autostart: die Begehung startet beim
 // Aufsetzen der Brille) und «Brille zeigen» (Quest App P7: Figuren der verbundenen Brillen in der 3D-Ansicht am PC, ansichten/xr-teilnehmer.js; hier nur das kleine Modul
 // ansichten/xr-brille-einstellung.js ohne three.js, Einstellung ansicht3d.brillen_zeigen, Vorgabe ein).
-// Gruppe «Zeigen»: aktionen-vr-auftrag.js. Gruppe «Koordination»: «Problem-Marker» in problemmarker-panel.js. Gruppe «Labor»: «XR-Labor …» unten.
+// Gruppe «Zeigen»: aktionen-vr-auftrag.js. Gruppe «Koordination»: «Problem-Marker» in problemmarker-panel.js.
 // Alles reine Rechner-Funktionen, kein Befehl des Kerns und für die KI nicht freigegeben (KiEinordnung.RechnerFunktionen). Immer verfügbar (auch ohne offenes Projekt).
 // Eingetragen wird nur über registrieren() (register.js).
 //
-// Kürzel des Registers: X plus Anfangsbuchstabe (XQ Quest, XI Installieren, XU aUtostart, XB Brille, XV VR, XS Sitzungsraum, XR Raum in AR, XA An die Brille, XM Marker, XL Labor).
+// Kürzel des Registers: X plus Anfangsbuchstabe (XQ Quest, XI Installieren, XU aUtostart, XB Brille, XV VR, XS Sitzungsraum, XR Raum in AR, XA An die Brille, XM Marker).
 
 import { registrieren } from './register.js';
 import { questDialog } from './quest-dialog.js';
@@ -26,7 +26,7 @@ registrieren({
 });
 
 // «H+K XR installieren …» (H+K XR E1: eine App «H+K XR» für alle Werkzeuge; vorher «App installieren …»): öffnet denselben Dialog; die Quest App steht dort als erster Teil, mit «App installieren/aktualisieren»
-// (adb über WLAN oder Kabel, quest-app-dialog.js) und – solange die alten Apps «KICAD» und «XR-Labor» in der Brille sind – «Alte Apps entfernen …». Aktions-Id und Kürzel XI bleiben.
+// (adb über WLAN oder Kabel; Teil aus HK_XR, /hkxr/brillen-app-dialog.js) und – solange die alten Apps «KICAD» und «XR-Labor» in der Brille sind – «Alte Apps entfernen …». Aktions-Id und Kürzel XI bleiben.
 registrieren({
   id: 'xr.appInstallieren', titel: 'H+K XR installieren …', symbol: 'appInstallieren', kuerzel: 'XI', register: 'xr', gruppe: 'Brille', groesse: 'gross',
   ausfuehren: () => questDialog(),
@@ -55,10 +55,3 @@ registrieren({
   },
 });
 
-// Quest App P6: «XR-Labor …» – die Werkbank für das Interface-Labor der App (Stellschrauben live, Profile, Varianten, Prüfaufgaben, Auswertung, Fragebogen). Öffnet den Dialog
-// (xr-labor-dialog.js, erst beim Klick geladen); alles läuft über /api/xr/… (XrEndpunkte.cs, XrLaborEndpunkte.cs). Reine Rechner-Funktion, für die KI nicht freigegeben
-// (KiEinordnung.RechnerFunktionen «xr_labor»). Immer verfügbar (auch ohne offenes Projekt).
-registrieren({
-  id: 'ansicht.xrLabor', titel: 'XR-Labor …', symbol: 'xrLabor', kuerzel: 'XL', register: 'xr', gruppe: 'Labor', groesse: 'gross',
-  ausfuehren: async () => (await import('./xr-labor-dialog.js')).xrLaborDialogOeffnen(),
-});

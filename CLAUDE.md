@@ -16,6 +16,11 @@ Christian Steiner gilt zusätzlich die übergeordnete `CLAUDE.md` im Ordner dar�
   echtes Verhalten ab, nicht Quelltext oder Texte; Bedienung in `src/Hlks.Web/OBERFLAECHE.md` und `berichte/anleitung/inventar.json`
   nachführen, wie in den bestehenden Einträgen.
 
+## HK_XR (seit 26.10.2026)
+Alles zur Brille (App «H+K XR», Netzzugang, Kopplung, XR-Labor) liegt im eigenen Projekt `Claude_Code\HK_XR` (nur lokal, kein GitHub). KICAD verweist auf
+`HkXr.Verbindung` (MSBuild `HkXrOrdner`, Umgebungsvariable `HLKS_HKXR`; Stand in `extern/hk_xr.commit`). Änderungen an diesen Teilen gehören nach HK_XR,
+nicht hierher. **Cloud-Sitzungen können KICAD seither nicht bauen** (HK_XR fehlt dort).
+
 ## Cloud-Sitzungen (Linux)
 - **Zweig:** Arbeiten auf einem eigenen Zweig `cloud/<thema>`. Nie auf `main` oder `geprueft` pushen, nie Marken setzen. Der Hauptlauf
   am Windows-PC holt den Zweig, prüft ihn mit `werkzeuge/stand_pruefen.ps1` und führt ihn zusammen.

@@ -13,7 +13,6 @@ import { bibliothekInfo, beiBibliothek, bibliothekLaden } from '../familien/bibl
 import { bibliothekStatus } from '../familien/bibliothek-text.js';
 import { bibliothekHinweis } from '../familien/bibliothek-dialoge.js';
 import { questStatusEinrichten } from './quest-status.js';
-import { xrDesktopStatusEinrichten } from './xr-desktop-status.js';
 import { steuerung as gestenSteuerung } from '../gesten/gesten-steuerung.js';
 import { gestenProtokollEinrichten } from './gesten-protokoll.js';   // Abbruchprotokoll der Gesten an den Server (nur Grund und Zahlen)
 import { gestenEinrichten } from '../gesten/gesten-oberflaeche.js';   // Symbol «Gesten» (Modul G): vier Zustände, Klick schaltet, Rechtsklick öffnet den Dialog
@@ -40,7 +39,8 @@ export function einrichten(w) {
   questStatusEinrichten(w.querySelector('.sl-brille'));   // «Brille» (Modul XR): nur sichtbar bei eingeschalteter Automatik oder gemerkter Brille
   gestenEinrichten(w.querySelector('.sl-gesten'));
   try { gestenProtokollEinrichten(gestenSteuerung); } catch (e) { console.error('Gestenprotokoll', e); }   // Gesten (Modul G): immer sichtbar, damit man sie einschalten kann; die Kamera öffnet sich erst dann
-  xrDesktopStatusEinrichten(w.querySelector('.sl-desktop'));   // V1c: «Brille sieht den Bildschirm» mit «Beenden», nur solange eine Brille verbunden ist
+  // V1c aus HK_XR: «Brille sieht den Bildschirm» mit «Beenden», nur solange eine Brille verbunden ist (erst im Browser geladen, nicht in den Node-Tests)
+  import('/hkxr/xr-desktop-status.js').then((m) => m.xrDesktopStatusEinrichten(w.querySelector('.sl-desktop'), { meldung })).catch((e) => console.error('H+K XR: Desktop-Status nicht geladen', e));   // V1c: «Brille sieht den Bildschirm» mit «Beenden», nur solange eine Brille verbunden ist
 
   const zeichnenSpaeter = entprellen(zeichnen, 30);
   const statusSpaeter = entprellen(statusHolen, 500);

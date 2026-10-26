@@ -1,4 +1,4 @@
-// «Quest verbinden» (Modul XR) über REST – dünne Hülle über QuestDienst; in Program.cs hängt nur «app.MapQuest(dienst);» sie ein. Reine Rechner-Funktion:
+// «Quest verbinden» (Modul XR) über REST – dünne Hülle über BrillenDienst; in Program.cs hängt nur «app.MapQuest(dienst);» sie ein. Reine Rechner-Funktion:
 // es ist kein Kern-Befehl und keine Kern-Abfrage (das Modell wird nicht berührt), wie «Ordner im Explorer zeigen» (POST /api/ordner/zeigen). Für die KI nicht
 // freigegeben (KiEinordnung.RechnerFunktionen, kein MCP-Werkzeug). Der Herkunftsschutz gilt (nur localhost, POST nur mit application/json, kein fremder Ursprung).
 // Der Port der Weiterleitung ist der Port, auf dem dieser Server die Anfrage bekam (Host-Kopf der geprüften Anfrage) – nie ein Wert aus dem Körper.
@@ -28,9 +28,8 @@ public static class QuestEndpunkte
     /// <summary>Erzeugt Quest-Dienst und Autostart (gemeinsame Sperre und Einstellungen); MapVrAuftrag und MapQuest teilen sich den Starter.</summary>
     public static QuestStarter StarterErzeugen(WebApplication app, ProjektDienst dienst)
     {
-        var einst = app.Services.GetService<QuestEinstellungen>() ?? QuestEinstellungen.Vorgabe();
-        var netz = app.Services.GetService<IQuestNetz>() ?? IQuestNetz.Vorgabe();
-        return new QuestStarter(new QuestDienst(dienst.Benutzer, einst, netz), einst);
+        // derselbe Dienst wie für «App installieren …» (HK_XR, gemeinsame Sperre und Suche nach adb)
+        return new QuestStarter(app.Services.GetRequiredService<BrillenDienst>(), app.Services.GetRequiredService<BrillenEinstellungen>());
     }
 
     public static WebApplication MapQuest(this WebApplication app, ProjektDienst dienst, QuestStarter? starter = null)

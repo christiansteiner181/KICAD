@@ -17,4 +17,11 @@
     <Copyright>H+K Planungs AG 2026</Copyright>
     <Version>0.1.0</Version>
   </PropertyGroup>
+  <!-- HK_XR (eigenes Projekt, nur lokal, Umzug U3 vom 26.10.2026): KICAD verweist auf die Verbindungs-Bibliothek HkXr.Verbindung.
+       Ordner aus HLKS_HKXR (Prüfung und Desktop: eigene Arbeitskopie %USERPROFILE%\HK_XR_fuer_kicad auf dem Stand aus extern\hk_xr.commit),
+       sonst der Nachbarordner Claude_Code\HK_XR. Ohne HK_XR lässt sich KICAD nicht bauen (Cloud-Sitzungen). -->
+  <PropertyGroup>
+    <HkXrOrdner Condition="'$(HLKS_HKXR)' != ''">$(HLKS_HKXR)</HkXrOrdner>
+    <HkXrOrdner Condition="'$(HLKS_HKXR)' == ''">$(MSBuildThisFileDirectory)..\HK_XR</HkXrOrdner>
+  </PropertyGroup>
 </Project>

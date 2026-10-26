@@ -11,7 +11,7 @@ using Microsoft.Extensions.DependencyInjection;
 namespace Hlks.Web.Tests;
 
 /// <summary>
-/// «Quest verbinden» (Modul XR): QuestDienst und die Endpunkte /api/quest. Statt adb.exe läuft die Attrappe tests/Hlks.AdbAttrappe (als adb.exe unter %TEMP%
+/// «Quest verbinden» (Modul XR): BrillenDienst und die Endpunkte /api/quest. Statt adb.exe läuft die Attrappe tests/Hlks.AdbAttrappe (als adb.exe unter %TEMP%
 /// angelegt, feste Ausgaben aus Dateien, jeder Aufruf im Protokoll) – nie ein echtes adb. Die Benutzereinstellungen (quest.adb) liegen unter %TEMP%.
 /// </summary>
 public partial class QuestTests : IDisposable
@@ -115,7 +115,7 @@ public partial class QuestTests : IDisposable
         readonly WebApplicationFactory<Program> basis = new();
         readonly WebApplicationFactory<Program> fabrik;
         public HttpClient Http { get; }
-        public Server(string wurzel, QuestEinstellungen quest, int port = 5130, string geraet = "testpc", IQuestNetz? netz = null)
+        public Server(string wurzel, BrillenEinstellungen quest, int port = 5130, string geraet = "testpc", IBrillenNetz? netz = null)
         {
             var e = new Einstellungen("Test", geraet, Katalog.StandardOrdner(), null)
             {
@@ -142,19 +142,19 @@ public partial class QuestTests : IDisposable
         public Task<(HttpStatusCode Code, JsonNode? Json)> AdbSetzen(string? pfad) => Post("/api/benutzer/einstellungen", new { schluessel = "quest.adb", wert = pfad });
     }
 
-    static QuestEinstellungen Ohne(TimeSpan? limit = null) => new()
+    static BrillenEinstellungen Ohne(TimeSpan? limit = null) => new BrillenEinstellungen { AppMarke = KicadXr.App } with
     {
         Zeitlimit = limit ?? TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
         WlanGrenze = TimeSpan.FromMilliseconds(500), WlanAbstand = TimeSpan.FromMilliseconds(50), WeiterleitungGrenze = TimeSpan.FromMilliseconds(500),
     };
 
     /// <summary>Wie Ohne(), aber mit grosszügigen Grenzen für Fälle, die erst nach mehreren Versuchen gelingen (jeder Aufruf der Attrappe braucht ~0,1 s).</summary>
-    static QuestEinstellungen Geduldig() => Ohne() with { WlanGrenze = TimeSpan.FromSeconds(20), WeiterleitungGrenze = TimeSpan.FromSeconds(10) };
+    static BrillenEinstellungen Geduldig() => Ohne() with { WlanGrenze = TimeSpan.FromSeconds(20), WeiterleitungGrenze = TimeSpan.FromSeconds(10) };
 
     const string WlanWeg = "192.168.1.124:5555";
     const string Wlan = WlanWeg + "\tdevice";
 
-    async Task<Server> Start(Adb? adb, QuestEinstellungen? quest = null, int port = 5130, IQuestNetz? netz = null)
+    async Task<Server> Start(Adb? adb, BrillenEinstellungen? quest = null, int port = 5130, IBrillenNetz? netz = null)
     {
         var s = new Server(wurzel, quest ?? Ohne(), port, netz: netz);
         aufraeumen.Add(s);
@@ -455,8 +455,7 @@ public partial class QuestTests : IDisposable
     public async Task Auf_WLAN_umstellen_Zeitgrenze_ausgeschoepft_meldet_klar_mit_Hinweis()
     {
         var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").ConnectScheitertNoch(1000);
-        var s = await Start(adb, new QuestEinstellungen
-        {
+        var s = await Start(adb, new BrillenEinstellungen { AppMarke = KicadXr.App,
             Zeitlimit = TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
             WlanGrenze = TimeSpan.FromMilliseconds(1500), WlanAbstand = TimeSpan.FromMilliseconds(80), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),
         });
@@ -479,8 +478,7 @@ public partial class QuestTests : IDisposable
     public async Task Auf_WLAN_umstellen_WLAN_Weg_bleibt_offline_meldet_den_Zustand()
     {
         var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").WlanOfflineFuer(1000);
-        var s = await Start(adb, new QuestEinstellungen
-        {
+        var s = await Start(adb, new BrillenEinstellungen { AppMarke = KicadXr.App,
             PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
             WlanGrenze = TimeSpan.FromMilliseconds(400), WlanAbstand = TimeSpan.FromMilliseconds(60), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),
         });
@@ -585,17 +583,17 @@ public partial class QuestTests : IDisposable
     [Fact]
     public void Bekannte_Orte_nennen_zuerst_USERPROFILE_platform_tools()
     {
-        var orte = QuestDienst.BekannteOrte();
+        var orte = BrillenDienst.BekannteOrte();
         var profil = Environment.GetFolderPath(Environment.SpecialFolder.UserProfile);
         Assert.Equal(Path.Combine(profil, "platform-tools", "adb.exe"), orte[0]);   // dorthin lässt der Dialog entpacken (Schritt 2)
         Assert.Contains(@"C:\platform-tools\adb.exe", orte);
-        Assert.All(orte, o => Assert.Null(QuestDienst.AdbPfadFehler(o)));
+        Assert.All(orte, o => Assert.Null(BrillenDienst.AdbPfadFehler(o)));
     }
 
     [Fact]
     public async Task Ohne_adb_nennt_der_Zustand_die_Suchorte_fuer_die_Einrichtung()
     {
-        var s = await Start(null, new QuestEinstellungen { PfadDurchsuchen = false, Orte = [Path.Combine(wurzel, "nix", "adb.exe")] });
+        var s = await Start(null, new BrillenEinstellungen { AppMarke = KicadXr.App, PfadDurchsuchen = false, Orte = [Path.Combine(wurzel, "nix", "adb.exe")] });
         var (_, j) = await s.Get();
         Assert.False(j!["adbGefunden"]!.GetValue<bool>());
         Assert.Equal([Path.Combine(wurzel, "nix", "adb.exe")], j["suchorte"]!.AsArray().Select(x => x!.GetValue<string>()).ToArray());
@@ -604,12 +602,12 @@ public partial class QuestTests : IDisposable
     [Fact]
     public void IpPruefen_rein()
     {
-        Assert.Equal(("192.168.1.50", 5555), QuestDienst.IpPruefen("192.168.1.50"));
-        Assert.Equal(("192.168.1.50", 5556), QuestDienst.IpPruefen("  192.168.1.50:5556 "));
-        Assert.Equal(("10.0.0.7", 5555), QuestDienst.IpPruefen("010.000.000.007".Replace("010", "10").Replace("000", "0").Replace("007", "7")));
-        Assert.Throws<HlksFehler>(() => QuestDienst.IpPruefen(null));
-        Assert.Throws<HlksFehler>(() => QuestDienst.IpPruefen("192.168.1.256"));
-        Assert.Throws<HlksFehler>(() => QuestDienst.IpPruefen("192.168.1.5:65536"));
+        Assert.Equal(("192.168.1.50", 5555), BrillenDienst.IpPruefen("192.168.1.50"));
+        Assert.Equal(("192.168.1.50", 5556), BrillenDienst.IpPruefen("  192.168.1.50:5556 "));
+        Assert.Equal(("10.0.0.7", 5555), BrillenDienst.IpPruefen("010.000.000.007".Replace("010", "10").Replace("000", "0").Replace("007", "7")));
+        Assert.Throws<HkXrFehler>(() => BrillenDienst.IpPruefen(null));
+        Assert.Throws<HkXrFehler>(() => BrillenDienst.IpPruefen("192.168.1.256"));
+        Assert.Throws<HkXrFehler>(() => BrillenDienst.IpPruefen("192.168.1.5:65536"));
     }
 
     [Fact]
@@ -617,7 +615,7 @@ public partial class QuestTests : IDisposable
     {
         var aus = "* daemon not running; starting now at tcp:5037\n* daemon started successfully\nList of devices attached\n"
             + "1WMHH000000000\tdevice\n192.168.1.50:5555\tdevice\nAAAA\tunauthorized\nevil;calc\tdevice\n-s x\tdevice\n$(x)\tdevice\nschrott\n\n";
-        var g = QuestDienst.GeraeteLesen(aus);
+        var g = BrillenDienst.GeraeteLesen(aus);
         Assert.Equal(["1WMHH000000000", "192.168.1.50:5555", "AAAA"], g.Select(x => x.Seriennummer).ToArray());
         Assert.Equal([false, true, false], g.Select(x => x.Wlan).ToArray());
         Assert.Equal("unauthorized", g[2].Zustand);
@@ -714,7 +712,7 @@ public partial class QuestTests : IDisposable
         d.Werte["quest.adb"] = new EinstellungsWert { Wert = JsonValue.Create(rechner), Zeit = DateTimeOffset.UtcNow };
         Directory.CreateDirectory(ordner);
         File.WriteAllText(ablage.EigenerPfad, Json.Text(d));
-        var dienst = new QuestDienst(b, Ohne());
+        var dienst = new BrillenDienst(new KicadBenutzerWerte(b), Ohne());
         Assert.Null(dienst.AdbFinden(out var hinweis));
         Assert.Contains("ungültig", hinweis);
         Assert.Contains("adb.exe", hinweis);
@@ -727,7 +725,7 @@ public partial class QuestTests : IDisposable
         var a2 = NeueAttrappe("ort2");
         var ordner = Path.Combine(wurzel, "reihe");
         var b = new BenutzerEinstellungen(new RechnerAblage(ordner, "pc", true, "einstellungen.json", "Umleitung"));
-        var nurOrte = new QuestDienst(b, new QuestEinstellungen { PfadDurchsuchen = false, Orte = [Path.Combine(wurzel, "nix", "adb.exe"), a1.Pfad, a2.Pfad] });
+        var nurOrte = new BrillenDienst(new KicadBenutzerWerte(b), new BrillenEinstellungen { AppMarke = KicadXr.App, PfadDurchsuchen = false, Orte = [Path.Combine(wurzel, "nix", "adb.exe"), a1.Pfad, a2.Pfad] });
         var fund = nurOrte.AdbFinden(out _);
         Assert.Equal((a1.Pfad, "ort"), (fund!.Pfad, fund.Quelle));
         // Einstellung geht vor den Orten
@@ -746,7 +744,7 @@ public partial class QuestTests : IDisposable
         try
         {
             Environment.SetEnvironmentVariable("PATH", "relativ;" + Path.GetDirectoryName(a1.Pfad) + ";C:\\gibtsnicht");
-            var fund = new QuestDienst(b, new QuestEinstellungen { Orte = [a2.Pfad] }).AdbFinden(out _);
+            var fund = new BrillenDienst(new KicadBenutzerWerte(b), new BrillenEinstellungen { AppMarke = KicadXr.App, Orte = [a2.Pfad] }).AdbFinden(out _);
             Assert.Equal((a1.Pfad, "pfad"), (fund!.Pfad, fund.Quelle));
         }
         finally { Environment.SetEnvironmentVariable("PATH", alt); }
@@ -800,7 +798,7 @@ public partial class QuestTests : IDisposable
     const string WlanText = "    inet 192.168.1.50/24 brd 192.168.1.255 scope global wlan0";
 
     /// <summary>Netz-Attrappe: Nachbartabelle, Schnittstellen, Pings (mit Zählung, auch der gleichzeitigen). Wer auf einen Ping antwortet, landet in der Tabelle.</summary>
-    sealed class NetzAttrappe : IQuestNetz
+    sealed class NetzAttrappe : IBrillenNetz
     {
         public List<NachbarEintrag> Tabelle { get; } = [];
         public List<NetzSchnittstelle> Netze { get; } = [new("Ethernet", "Intel(R) Ethernet Connection", "Ethernet", "192.168.1.20", 24)];
@@ -828,7 +826,7 @@ public partial class QuestTests : IDisposable
 
     sealed class Uhr { public DateTimeOffset Jetzt { get; set; } = new(2026, 10, 21, 9, 0, 0, TimeSpan.Zero); }
 
-    static QuestEinstellungen MitUhr(Uhr u) => Ohne() with { Uhr = () => u.Jetzt };
+    static BrillenEinstellungen MitUhr(Uhr u) => Ohne() with { Uhr = () => u.Jetzt };
 
     static object Brille(string mac = BrillenMac, string serie = Seriennummer, string? ip = "192.168.1.40") => new { seriennummer = serie, mac, letzteIp = ip, zuletzt = "2026-10-20T08:00:00Z" };
 
@@ -930,7 +928,7 @@ public partial class QuestTests : IDisposable
         };
         Directory.CreateDirectory(ordner);
         File.WriteAllText(ablage.EigenerPfad, Json.Text(d));
-        var brillen = new QuestDienst(new BenutzerEinstellungen(ablage), Ohne()).Brillen();
+        var brillen = new BrillenDienst(new KicadBenutzerWerte(new BenutzerEinstellungen(ablage)), Ohne()).Brillen();
         var b = Assert.Single(brillen);
         Assert.Equal(("A2", "aa:bb:cc:dd:ee:02", null), (b.Seriennummer, b.Mac, b.LetzteIp));   // die ungültige IP fällt weg, der Doppelte auch
     }
@@ -938,15 +936,15 @@ public partial class QuestTests : IDisposable
     [Fact]
     public void MacPruefen_und_MacLesen_rein()
     {
-        Assert.Equal(BrillenMac, QuestDienst.MacPruefen(BrillenMac));
-        Assert.Null(QuestDienst.MacPruefen(null));
-        Assert.Null(QuestDienst.MacPruefen(" aa:bb:cc:dd:ee:01"));
-        Assert.Null(QuestDienst.MacPruefen("AA:BB:CC:DD:EE:01"));   // nur die Schreibweise der Nachbartabelle und von adb nach ToLower
-        Assert.Equal(BrillenMac, QuestDienst.MacLesen("21: wlan0: <UP>\n    link/ether AA:BB:CC:DD:EE:01 brd ff:ff:ff:ff:ff:ff"));
-        Assert.Null(QuestDienst.MacLesen("21: wlan0: <UP>\n    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff"));
-        Assert.Null(QuestDienst.MacLesen("link/ether aa:bb:cc:dd:ee:01:02:03"));
-        Assert.Null(QuestDienst.MacLesen("Device \"wlan0\" does not exist."));
-        Assert.Null(QuestDienst.MacLesen(null));
+        Assert.Equal(BrillenMac, BrillenDienst.MacPruefen(BrillenMac));
+        Assert.Null(BrillenDienst.MacPruefen(null));
+        Assert.Null(BrillenDienst.MacPruefen(" aa:bb:cc:dd:ee:01"));
+        Assert.Null(BrillenDienst.MacPruefen("AA:BB:CC:DD:EE:01"));   // nur die Schreibweise der Nachbartabelle und von adb nach ToLower
+        Assert.Equal(BrillenMac, BrillenDienst.MacLesen("21: wlan0: <UP>\n    link/ether AA:BB:CC:DD:EE:01 brd ff:ff:ff:ff:ff:ff"));
+        Assert.Null(BrillenDienst.MacLesen("21: wlan0: <UP>\n    link/ether 00:00:00:00:00:00 brd ff:ff:ff:ff:ff:ff"));
+        Assert.Null(BrillenDienst.MacLesen("link/ether aa:bb:cc:dd:ee:01:02:03"));
+        Assert.Null(BrillenDienst.MacLesen("Device \"wlan0\" does not exist."));
+        Assert.Null(BrillenDienst.MacLesen(null));
     }
 
     [Fact]
@@ -1173,8 +1171,8 @@ public partial class QuestTests : IDisposable
             new("Mobilfunk", "Mobilfunk", "Ethernet", "85.1.2.3", 24),   // nicht privat
             new("Ethernet 3", "Realtek", "Ethernet", "169.254.4.4", 16),   // Link-lokal
         ];
-        Assert.Equal(["Ethernet"], netze.Where(QuestDienst.EchteSchnittstelle).Select(n => n.Name));
-        var ziele = QuestDienst.PingZiele(netze);
+        Assert.Equal(["Ethernet"], netze.Where(BrillenDienst.EchteSchnittstelle).Select(n => n.Name));
+        var ziele = BrillenDienst.PingZiele(netze);
         Assert.Equal(253, ziele.Count);
         Assert.All(ziele, z => Assert.StartsWith("192.168.1.", z));
     }
@@ -1182,7 +1180,7 @@ public partial class QuestTests : IDisposable
     [Fact]
     public void Ping_Ziele_bei_engerer_Maske_nur_im_eigenen_Netz_und_ohne_Doppelte()
     {
-        var ziele = QuestDienst.PingZiele([
+        var ziele = BrillenDienst.PingZiele([
             new("a", "Wi-Fi", "Wireless80211", "192.168.5.20", 28),
             new("b", "Wi-Fi 2", "Wireless80211", "192.168.5.21", 28),
             new("c", "Ethernet", "Ethernet", "10.1.2.3", 16)]);   // weitere Maske: trotzdem nur das /24
@@ -1222,8 +1220,8 @@ public partial class QuestTests : IDisposable
     [Fact]
     public void Im_Testlauf_ist_das_echte_Netz_leer()
     {
-        var netz = IQuestNetz.Vorgabe();
-        Assert.IsType<QuestNetzLeer>(netz);
+        var netz = IBrillenNetz.Vorgabe();
+        Assert.IsType<BrillenNetzLeer>(netz);
         Assert.Empty(netz.Nachbarn());
         Assert.Empty(netz.Schnittstellen());
         Assert.False(netz.Anpingen("192.168.1.1", TimeSpan.FromMilliseconds(100), CancellationToken.None).Result);

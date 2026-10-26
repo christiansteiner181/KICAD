@@ -1,5 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?>
-<resources>
-    <!-- H+K XR E1: Fläche des Symbols (kataloge/xr_farben.json, Eintrag «vorgabe», Variante «kraeftig»; werkzeuge/hk_xr_symbol_erzeugen.mjs) -->
-    <color name="ic_launcher_background">#3E536F</color>
-</resources>

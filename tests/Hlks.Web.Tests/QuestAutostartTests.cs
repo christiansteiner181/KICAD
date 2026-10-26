@@ -11,7 +11,7 @@ namespace Hlks.Web.Tests;
 
 /// <summary>
 /// «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs). Statt adb.exe die Attrappe tests/Hlks.AdbAttrappe, statt des Browsers der Brille ein
-/// kleiner CDP-WebSocket-Server (CdpAttrappe, Kestrel auf 127.0.0.1, freier Port; KICAD erreicht ihn über die Naht QuestEinstellungen.CdpPortWahl). Nie ein echtes adb,
+/// kleiner CDP-WebSocket-Server (CdpAttrappe, Kestrel auf 127.0.0.1, freier Port; KICAD erreicht ihn über die Naht BrillenEinstellungen.CdpPortWahl). Nie ein echtes adb,
 /// nie die echte Brille.
 /// </summary>
 public partial class QuestTests
@@ -158,7 +158,7 @@ public partial class QuestTests
     sealed record Auto(Server S, Adb Adb, CdpAttrappe Cdp);
 
     /// <summary>Server, adb-Attrappe mit einer USB-Quest (Weiterleitung für den Server-Port steht schon) und CDP-Attrappe mit einem /vr-Tab.</summary>
-    async Task<Auto> AutoStart(Action<Adb>? adbEinrichten = null, Action<CdpAttrappe>? cdpEinrichten = null, Func<QuestEinstellungen, QuestEinstellungen>? anp = null)
+    async Task<Auto> AutoStart(Action<Adb>? adbEinrichten = null, Action<CdpAttrappe>? cdpEinrichten = null, Func<BrillenEinstellungen, BrillenEinstellungen>? anp = null)
     {
         var cdp = new CdpAttrappe();
         aufraeumen.Add(cdp);

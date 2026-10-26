@@ -181,7 +181,11 @@ $env:HLKS_WEBROOT = "$wt\src\Hlks.Web\wwwroot"
 $env:HLKS_KATALOG = "$wt\kataloge"
 $env:HLKS_KI = "$wt\ki"
 $env:HLKS_MCP_DLL = $mcp
-$arg = @('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$wt\werkzeuge\start.ps1`"", '-Port', $Port, '-Akteur', $Akteur)
+# HK_XR (Umzug U3, 26.10.2026): eigene Arbeitskopie auf dem Stand aus extern\hk_xr.commit; der Bau findet sie ueber HLKS_HKXR (hk_xr_stand.ps1)
+. "$PSScriptRoot\hk_xr_stand.ps1"
+try { $hkxr = HkXr-Bereitstellen $wt "$env:USERPROFILE\HK_XR_fuer_kicad" "$bau\hk_xr"; if ($hkxr) { Log "HK_XR auf $($hkxr.Substring(0, 8))" } }
+catch { Log "HK_XR: $($_.Exception.Message)"; [System.Windows.Forms.MessageBox]::Show("KICAD: HK_XR liess sich nicht bereitstellen.`r`n$($_.Exception.Message)", 'KICAD') | Out-Null; exit 1 }
+$arg =@('-NoProfile', '-ExecutionPolicy', 'Bypass', '-WindowStyle', 'Hidden', '-File', "`"$wt\werkzeuge\start.ps1`"", '-Port', $Port, '-Akteur', $Akteur)
 if ($Projekt) { $arg += @('-Projekt', "`"$Projekt`"") }
 Log "starte $wt\werkzeuge\start.ps1 (Port $Port, Projekt '$Projekt', Stand $kurz)"
 $ps = Start-Process -FilePath 'powershell.exe' -ArgumentList $arg -WindowStyle Hidden -PassThru

@@ -11,13 +11,12 @@
 // der Brille nutzen …» der 3D-Ansicht (ansichten/vr3d.js ruft questDialog() über einen dynamischen Import).
 
 import { holen, senden } from '../api.js';
-import { zeigen, meldung } from './dialoge.js';
+import { zeigen, meldung, bestaetigen } from './dialoge.js';
 import { knoten } from './werkzeug.js';
 import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import * as T from './quest-text.js';
-import * as TA from './quest-app-text.js';
 import { questStatusAktualisieren } from './quest-status.js';
-import { questAppTeil } from './quest-app-dialog.js';
+import { brilleZeigenAn, brilleZeigenSetzen } from '../ansichten/xr-brille-einstellung.js';
 
 const esc = T.esc;
 
@@ -79,18 +78,29 @@ export function questDialog() {
     </details>
   </div>`);
   const q = (s) => w.querySelector(s);
-  // Quest App (P7): Netzzugang, App installieren, gekoppelte Brillen, Ersatzkopplung – eigener Teil (quest-app-dialog.js), liest den Zustand von adb aus diesem Dialog
+  // Teil «App» (Netzzugang, App «H+K XR» installieren, gekoppelte Brillen, Ersatzkopplung, Netz einrichten) kommt aus HK_XR (/hkxr/brillen-app-dialog.js, erst beim Öffnen
+  // geladen) und liest den Zustand von adb aus diesem Dialog
   // Der Browser-Prototyp klappt von selbst ein, sobald die App in der Brille installiert ist (der Mensch kann ihn aufklappen; das gilt dann bis zum Schliessen)
   const browser = w.querySelector('.qd-browser');
   let browserVomMenschen = false;
   browser.querySelector('summary').addEventListener('click', () => { browserVomMenschen = true; });   // nur ein Klick des Menschen zählt (das Ereignis «toggle» kommt auch beim Aufbau)
   function browserEinstellen(app) {
     if (browserVomMenschen) return;
-    const soll = TA.browserOffen(app, z);
+    const soll = browserOffenRegel(app, z);
     if (browser.open !== soll) browser.open = soll;
   }
-  const appTeil = questAppTeil({ quest: () => z, beiAenderung: () => neuPruefen(), beiGelesen: browserEinstellen });
-  q('.qd-app-platz').replaceWith(appTeil.knoten);
+  let browserOffenRegel = () => true;
+  let appTeil = { aktualisieren() {}, zustandNeu() {}, beenden() {} };   // bis HK_XR geladen ist
+  let appAbgemeldet = false;
+  Promise.all([import('/hkxr/brillen-app-dialog.js'), import('/hkxr/brillen-app-text.js')]).then(([d, t]) => {
+    if (appAbgemeldet) return;
+    browserOffenRegel = t.browserOffen;
+    appTeil = d.brillenAppTeil({
+      quest: () => z, beiAenderung: () => neuPruefen(), beiGelesen: browserEinstellen, marke: T.KICAD_MARKE,
+      dienste: { bestaetigen, benutzerLaden, benutzerSetzen, benutzerWert, brilleZeigenAn, brilleZeigenSetzen },
+    });
+    q('.qd-app-platz').replaceWith(appTeil.knoten);
+  }).catch((e) => { console.error('H+K XR: Teil «App» nicht geladen', e); q('.qd-app-platz').textContent = 'Der Teil «App» aus HK_XR fehlt.'; });
   const qa = (s) => [...w.querySelectorAll(s)];
 
   // ------------------------------------------------------------------------------------------ Anzeige
@@ -216,7 +226,7 @@ export function questDialog() {
       neuPruefen();
     },
     knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }],
-  }).then((wert) => { offen = false; offenerDialog = null; appTeil.beenden(); return wert; });
+  }).then((wert) => { offen = false; offenerDialog = null; appAbgemeldet = true; appTeil.beenden(); return wert; });
   offenerDialog = geschlossen;
   return geschlossen;
 }

@@ -246,3 +246,21 @@ export function autostartAnzeige(a) {
 
 /** Hinweis zum Schalter im Dialog. */
 export const AUTOSTART_HINWEIS = 'KICAD öffnet nach dem Klick die VR-Startseite im Browser der Brille und startet die Begehung, sobald die Brille aufgesetzt ist. Beim ersten Mal fragt der Browser in der Brille «VR erlauben» – das einmal bestätigen.';
+
+/**
+ * App-Marke von KICAD für den Teil «App» aus HK_XR (/hkxr/brillen-app-dialog.js, brillen-app-text.js; Umzug U3 26.10.2026): Name des Werkzeugs, App «H+K XR»,
+ * Netzzugang 5140, Desktop-Port 5130, Ordner der abgelegten App (Benutzereinstellung quest.app_ablage), Bau der App in HK_XR.
+ */
+export const KICAD_MARKE = Object.freeze({
+  app: 'KICAD',
+  appName: 'H+K XR',
+  port: 5140,
+  desktopPort: 5130,
+  ablageSchluessel: 'quest.app_ablage',
+  ablageVorgabe: '%USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr',
+  bereitstellen: 'HK_XR\werkzeuge\app_bereitstellen.ps1',
+  adbEinrichten: 'oben im Dialog einrichten',
+  adbFehlt: 'adb fehlt (siehe oben).',
+  brillenZeigen: true,
+  einleitung: 'Die App «H+K XR» in der Brille ersetzt auf Dauer den Browser: sie verbindet sich über das Büronetz mit KICAD (und mit weiteren Werkzeugen wie dem XR-Labor), geht ohne Kabel und braucht keinen Link-fähigen PC.',
+});

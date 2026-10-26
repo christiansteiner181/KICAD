@@ -43,17 +43,16 @@ const ERWARTET = {
   Brille: ['ansicht.questVerbinden', 'xr.appInstallieren', 'xr.autostart', 'ansicht.brilleZeigen'],
   Zeigen: ['ansicht.vrBegehen', 'ansicht.vrSitzungsraum', 'ansicht.vrRaumZeigen', 'xr.anBrille'],
   Koordination: ['koordination.problemMarker'],
-  Labor: ['ansicht.xrLabor'],
 };
 const ALLE_IDS = Object.values(ERWARTET).flat();
 
 // ---------------------------------------------------------------------------------------------- Register
 
-test('Register XR: im Menüband zwischen Ansicht und Verwalten, mit den vier Gruppen in der Reihenfolge Brille · Zeigen · Koordination · Labor', () => {
+test('Register XR: im Menüband zwischen Ansicht und Verwalten, mit den drei Gruppen in der Reihenfolge Brille · Zeigen · Koordination (Labor seit dem Umzug nach HK_XR weg)', () => {
   const m = lies('./menueband.js');
   assert.match(m, /\['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
-  assert.match(m, /xr: \['Brille', 'Zeigen', 'Koordination', 'Labor'\]/);
-  assert.deepEqual(Object.keys(ERWARTET), ['Brille', 'Zeigen', 'Koordination', 'Labor']);
+  assert.match(m, /xr: \['Brille', 'Zeigen', 'Koordination'\]/);
+  assert.deepEqual(Object.keys(ERWARTET), ['Brille', 'Zeigen', 'Koordination']);
 });
 
 test('Kürzeldialog: das Register XR heisst dort wie im Menüband und steht zwischen Ansicht und Verwalten', () => {
@@ -180,14 +179,13 @@ test('OBERFLAECHE.md: Menüband-Tabelle mit Register XR, Abschnitt «Register XR
   const t = readFileSync(path.join(hier, '../../../OBERFLAECHE.md'), 'utf8');
   assert.match(t, /\| XR \(seit 26\.10\.2026, zwischen Ansicht und Verwalten\) \|/);
   assert.match(t, /## Register XR: alles zu Brille, Quest App und VR\/AR in einem Register/);
-  for (const [id] of [['ansicht.questVerbinden'], ['xr.appInstallieren'], ['xr.autostart'], ['ansicht.brilleZeigen'], ['ansicht.vrBegehen'], ['ansicht.vrSitzungsraum'], ['ansicht.vrRaumZeigen'], ['xr.anBrille'], ['koordination.problemMarker'], ['ansicht.xrLabor']]) {
+  for (const [id] of [['ansicht.questVerbinden'], ['xr.appInstallieren'], ['xr.autostart'], ['ansicht.brilleZeigen'], ['ansicht.vrBegehen'], ['ansicht.vrSitzungsraum'], ['ansicht.vrRaumZeigen'], ['xr.anBrille'], ['koordination.problemMarker']]) {
     assert.ok(t.includes('`' + id + '`'), `${id} fehlt im Abschnitt Register XR`);
   }
   for (const alt of [/Ansicht › (Gruppe )?Fenster › «(Quest verbinden|Brille zeigen|XR-Labor)/, /Ansicht › Fenster › «XR-Labor/, /Koordination › Gruppe Kollisionen › «Problem-Marker/, /Register \*\*Ansicht › Gruppe Fenster\*\*, Aktion `ansicht\.xrLabor`/]) {
     assert.doesNotMatch(t, alt, `alter Weg noch in der Doku: ${alt}`);
   }
   assert.match(t, /Register \*\*XR › Gruppe Brille › «Quest verbinden …»\*\*/);
-  assert.match(t, /Register \*\*XR › Labor › «XR-Labor …»\*\*/);
 });
 
 test('Inventar der Anleitung: gültiges JSON, Wege der XR-Einträge zeigen auf das Register XR, keine alten Wege', () => {
@@ -198,15 +196,14 @@ test('Inventar der Anleitung: gültiges JSON, Wege der XR-Einträge zeigen auf d
     if (Array.isArray(o)) o.forEach(lauf);
     else if (o && typeof o === 'object') { if (o.id && o.wo) wo.push(o); Object.values(o).forEach(lauf); }
   })(inv);
-  const knoepfe = ['Brille zeigen', 'XR-Labor …', 'Problem-Marker'];
+  const knoepfe = ['Brille zeigen', 'Problem-Marker'];
   const xr = wo.filter((e) => knoepfe.includes(e.wo.knopf) || /^Quest verbinden …/.test(e.wo.knopf));
-  assert.ok(xr.length >= 12, `XR-Einträge: ${xr.length}`);
+  assert.ok(xr.length >= 6, `XR-Einträge: ${xr.length}`);
   for (const e of xr) {
     assert.equal(e.wo.register, 'XR', e.id);
-    assert.ok(['Brille', 'Labor', 'Koordination'].includes(e.wo.gruppe), `${e.id}: Gruppe ${e.wo.gruppe}`);
+    assert.ok(['Brille', 'Koordination'].includes(e.wo.gruppe), `${e.id}: Gruppe ${e.wo.gruppe}`);
   }
   assert.equal(xr.find((e) => e.wo.knopf === 'Problem-Marker').wo.gruppe, 'Koordination');
-  assert.equal(xr.find((e) => e.wo.knopf === 'XR-Labor …').wo.gruppe, 'Labor');
   assert.doesNotMatch(roh, /Ansicht › (Gruppe )?Fenster(\)| ›) ?(«(Quest verbinden|Brille zeigen|XR-Labor)|die Quest verbinden|im Teil «Quest App»)/);
   assert.doesNotMatch(roh, /Koordination › Gruppe Kollisionen › «Problem-Marker/);
   assert.doesNotMatch(roh, /«XR-Labor …» steht im Register Ansicht/);

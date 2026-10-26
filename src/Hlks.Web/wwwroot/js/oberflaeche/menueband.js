@@ -31,7 +31,7 @@ const GRUPPENFOLGE = {
   aendern: ['Auswahl', 'Verändern', 'Bearbeiten', 'Verlauf', 'Paletten'],
   ansicht: ['Erstellen', 'Ansicht', 'Ansichtsvorlage', 'Grafik', 'Fenster', 'Zoom', 'Darstellung', '3D-Schnitt'],   // 3D-Schnitt seit N13
   koordination: ['Vorgaben', 'Typenliste', 'Kollisionen', 'Aussparungen', 'Koordinationsplan', 'BCF'],   // Modul 3b, C1; Typenliste seit C1c; Koordinationsplan seit Modul 7 Teil B3
-  xr: ['Brille', 'Zeigen', 'Koordination', 'Labor'],   // Register XR (26.10.2026): alles zu VR/AR und der Quest App, aktionen-quest.js, aktionen-vr-auftrag.js, problemmarker-panel.js
+  xr: ['Brille', 'Zeigen', 'Koordination'],   // Register XR (26.10.2026): alles zu VR/AR und der Quest App, aktionen-quest.js, aktionen-vr-auftrag.js, problemmarker-panel.js
   verwalten: ['Projekt', 'Zusammenarbeit', 'Modell', 'HKAP', 'Hilfe'],
   familie: ['Parameter', 'Typen', 'Körper', 'Anschlüsse', 'Sinnbild', 'Ansicht', 'Prüfen', 'Unterlagen', 'Bibliothek'],
 };

@@ -1,4 +1,0 @@
-<resources>
-    <!-- H+K XR E1: Name der App in der App-Bibliothek der Quest (Entscheid Christian 26.10.2026); gleich Hlks.Xr.Netz.XrApp.Name (Test WerkzeugTests) -->
-    <string name="app_name">H+K XR</string>
-</resources>

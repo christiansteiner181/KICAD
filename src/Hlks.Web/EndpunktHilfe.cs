@@ -24,6 +24,7 @@ public static class EndpunktHilfe
     {
         try { return await arbeit(); }
         catch (HlksFehler f) { return Antwort(new { fehler = f.Message, vorschlag = f.Vorschlag }, f.Message.StartsWith("Es ist kein Projekt offen") ? 409 : 400); }
+        catch (HkXrFehler f) { return Antwort(new { fehler = f.Message, vorschlag = f.Vorschlag }, 400); }   // Fehler aus HK_XR (BrillenDienst im Quest-Dialog)
         catch (TimeoutException) { return Antwort(new { fehler = "Der Zugriff hat zu lange gedauert.", vorschlag = "Netzwerk/VPN prüfen und erneut versuchen." }, 503); }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
         { return Antwort(new { fehler = "Zugriff nicht möglich: " + ex.Message, vorschlag = "Netzwerk/VPN und Rechte prüfen." }, 503); }

@@ -62,22 +62,18 @@ public sealed class BenutzerEinstellungen
         ["ansicht3d.raumrand"] = RaumrandPruefen,
         // Augenhöhe bei «Raum begehen» in mm über OK Boden (N15, Vorgabe 1700 steht in der Oberfläche und im Kern): eine Zahl von 300 bis 5000.
         ["ansicht3d.augenhoehe"] = AugenhoeheDaten,
-        // Pfad zur adb.exe der Android Platform Tools für «Quest verbinden» (Modul XR, QuestDienst.cs): leer/zurückgesetzt = suchen; sonst ein
+        // Pfad zur adb.exe der Android Platform Tools für «Quest verbinden» (Modul XR, BrillenDienst.cs): leer/zurückgesetzt = suchen; sonst ein
         // vollständiger lokaler Pfad, der auf adb.exe endet (kein Netzpfad – es wird ein Programm gestartet).
-        ["quest.adb"] = QuestDienst.AdbPfadPruefen,
+        ["quest.adb"] = BrillenDienst.AdbPfadPruefen,
         // «Brille automatisch verbinden» (Modul XR): Ja/Nein, Vorgabe nein; und die gemerkten Brillen (Liste { seriennummer, mac, letzteIp, zuletzt }, gültige MAC).
-        ["quest.automatisch"] = QuestDienst.AutomatikPruefen,
-        ["quest.brillen"] = QuestDienst.BrillenPruefen,
+        ["quest.automatisch"] = BrillenDienst.AutomatikPruefen,
+        ["quest.brillen"] = BrillenDienst.BrillenPruefen,
         // «Begehung beim Aufsetzen automatisch starten» (Modul XR, QuestStarter.cs): Ja/Nein, Vorgabe ja.
-        ["quest.autostart"] = QuestDienst.AutomatikPruefen,
-        // Quest App (Quest App P7): Ordner mit der abgelegten APK und version.json (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, werkzeuge/quest_app_bereitstellen.ps1; H+K XR E1: gilt für KICAD und XR-Labor); ein vollständiger lokaler Ordnerpfad.
-        ["quest.app_ablage"] = QuestDienst.AppAblagePruefen,
+        ["quest.autostart"] = BrillenDienst.AutomatikPruefen,
+        // Quest App (Quest App P7): Ordner mit der abgelegten APK und version.json (Vorgabe %USERPROFILE%\HLKS_CAD_werkzeuge\hk_xr, HK_XR werkzeuge/app_bereitstellen.ps1; H+K XR E1: gilt für KICAD und XR-Labor); ein vollständiger lokaler Ordnerpfad.
+        ["quest.app_ablage"] = BrillenDienst.AppAblagePruefen,
         // Brillen der Quest App in der 3D-Ansicht am PC zeigen (Quest App P7, Register Ansicht): Ja/Nein, Vorgabe ja.
-        ["ansicht3d.brillen_zeigen"] = QuestDienst.AutomatikPruefen,
-        // Profile des XR-Labors (Quest App P6, Dialog «XR-Labor»): «labor.profil.<kennung>» = { name, werte{} } (je Profil ein Schlüssel, damit die Grenze von 4000 Zeichen reicht;
-        // die Form prüft Pruefen() unten über XrLaborProfil) und «labor.profil_aktiv» = Kennung des Profils, das für die App gilt (die App holt es mit dem Katalog, GET /api/xr/labor/katalog).
-        // Nicht «xr.…»: diese Schlüssel sind für den Zugang je PC reserviert (ein Test verbietet sie hier).
-        ["labor.profil_aktiv"] = w => XrLaborProfil.Pruefen(XrLaborProfil.AktivSchluessel, w),
+        ["ansicht3d.brillen_zeigen"] = BrillenDienst.AutomatikPruefen,
         // Gesten am Arbeitsplatz (Modul G, entwurf/modul-gesten.md, GestenEinstellung.cs): { an (Vorgabe nein), hand (links), kameraId, skelett (ja), stellschrauben { Name: Zahl }, belegung { G2 { links, rechts }, G6 } };
         // jedes Feld wahlweise, unbekannte Felder werden abgelehnt (nie Bilddaten). Das Kamerabild bleibt im Browser.
         ["gesten"] = GestenEinstellung.Pruefen,
@@ -143,8 +139,6 @@ public sealed class BenutzerEinstellungen
             throw new HlksFehler($"Der Wert für «{schluessel}» ist zu gross (höchstens {WertMax} Zeichen).", "Einen kürzeren Wert wählen.");
         if (Bekannt.TryGetValue(schluessel, out var pruefung) && pruefung(wert) is { } meldung)
             throw new HlksFehler($"Der Wert für «{schluessel}» ist ungültig. {meldung}", "Einen gültigen Wert senden oder null, um die Einstellung zurückzusetzen.");
-        if (schluessel.StartsWith(XrLaborProfil.Vorsatz, StringComparison.Ordinal) && XrLaborProfil.Pruefen(schluessel, wert) is { } profilMeldung)
-            throw new HlksFehler($"Der Wert für «{schluessel}» ist ungültig. {profilMeldung}", "Einen gültigen Wert senden oder null, um die Einstellung zurückzusetzen.");
     }
 
     // ---------------------------------------------------------------- Lesen

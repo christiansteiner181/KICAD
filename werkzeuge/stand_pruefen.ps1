@@ -2,7 +2,7 @@
 # letzten geprueften Stand startet und Agenten getrennt arbeiten").
 # Ablauf:
 #   1. Commit (Vorgabe main) in einer eigenen Arbeitskopie %USERPROFILE%\HLKS_CAD_pruefung auschecken (git worktree, detached).
-#   2. Kern-, MCP-, Web-, Xr- und (seit 26.10.2026) Labor-Tests dieses Commits bauen und laufen lassen (Build %USERPROFILE%\HLKS_CAD_build\pruefung,
+#   2. Kern-, MCP- und Web-Tests dieses Commits (gegen HK_XR auf dem Stand aus extern\hk_xr.commit, hk_xr_stand.ps1) bauen und laufen lassen (Build %USERPROFILE%\HLKS_CAD_build\pruefung,
 #      Kataloge, KI-Vorlagen und Oberflaeche aus der Arbeitskopie), dazu die Node-Tests (*.test.mjs; Tests, die einen
 #      Server brauchen, ueberspringen sich selbst). Browser-Reihen laufen hier nicht.
 #   3. Fehlgeschlagene .NET-Tests einzeln wiederholen (Zeitgrenzen unter Last), hoechstens -Wiederholungen mal.
@@ -55,22 +55,16 @@ try {
   foreach ($v in 'HLKS_FAMILIENBIBLIOTHEK', 'HLKS_BIBLIOTHEK_AUSSTEHEND', 'HLKS_PROJEKTABLAGE', 'HLKS_ZULETZT', 'HLKS_BENUTZER', 'HLKS_ANLEITUNG', 'HLKS_ANLEITUNG_PRUEFUNG', 'HLKS_NORMEN', 'HLKS_MCP_DLL') { Remove-Item "Env:$v" -ErrorAction SilentlyContinue }
   $env:HLKS_TEST = '1'
 
+  # HK_XR (seit U3, 26.10.2026): eigene Arbeitskopie auf dem Stand aus extern\hk_xr.commit; HK_XR prueft seine Tests selbst, hier nur der Bau ueber den Verweis.
+  . "$PSScriptRoot\hk_xr_stand.ps1"
+  $hkxr = HkXr-Bereitstellen $wt "$env:USERPROFILE\HK_XR_fuer_kicad_pruefung" "$bau\hk_xr"
+  if ($hkxr) { Log ("HK_XR: Stand {0}" -f $hkxr.Substring(0, 8)) }
+
   # 2./3. .NET-Tests
   $gruen = $true
   $zusammen = @()
-  # XR-Labor (seit 26.10.2026, Stufe L0): src\Hlks.Labor wird mitgebaut (eigener Schritt, damit ein Fehler klar benannt ist) und
-  # tests\Hlks.Labor.Tests laeuft als eigener Teil "Labor" mit. Das Brillen-Projekt (Hlks.Quest = App "H+K XR" ch.hkplanung.xr fuer alle Werkzeuge; Hlks.Labor.Quest entfaellt seit H+K XR E1) baut diese Pruefung nie.
-  # Fehlen beide Projekte im geprueften Stand (Staende vor L0), entfaellt der Teil mit Hinweis; fehlt nur eines, ist das ein Fehler.
-  $laborProjekt = Test-Path "$wt\src\Hlks.Labor\Hlks.Labor.csproj"
-  $laborTests = Test-Path "$wt\tests\Hlks.Labor.Tests\Hlks.Labor.Tests.csproj"
-  if ($laborProjekt) {
-    & $dotnet build "$wt\src\Hlks.Labor\Hlks.Labor.csproj" --nologo -v q 2>&1 | Out-Null
-    if ($LASTEXITCODE -ne 0) { Log "Hlks.Labor: BAU FEHLGESCHLAGEN (Exit $LASTEXITCODE)"; $gruen = $false } else { Log 'Hlks.Labor: gebaut' }
-  }
-  $teile = @('Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests')
-  if ($laborTests) { $teile += 'Hlks.Labor.Tests' }
-  elseif ($laborProjekt) { Log 'Hlks.Labor.Tests: Testprojekt fehlt, obwohl src\Hlks.Labor vorhanden ist'; $gruen = $false }
-  else { Log 'Labor: Projekte in diesem Stand nicht vorhanden - uebersprungen' }
+  # Teile: was es in diesem Stand gibt (Xr- und Labor-Tests nur in Staenden vor dem Umzug nach HK_XR).
+  $teile = @('Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests', 'Hlks.Labor.Tests') | Where-Object { Test-Path "$wt\tests\$_\$_.csproj" }
   foreach ($p in $teile) {
     $trx = "$erg\$p.trx"; Remove-Item $trx -ErrorAction SilentlyContinue
     $uhr = [System.Diagnostics.Stopwatch]::StartNew()

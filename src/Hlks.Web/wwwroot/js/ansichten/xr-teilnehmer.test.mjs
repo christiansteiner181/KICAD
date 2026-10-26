@@ -183,7 +183,6 @@ test('Verdrahtung: 3D-Ansicht, Aktion, Symbol, Einstellung', () => {
   assert.match(lies('./xr-brille-einstellung.js'), /EINSTELLUNG = 'ansicht3d\.brillen_zeigen'/);
   // das Menüband und der Dialog laden beim Start kein three.js: sie importieren nur das kleine Einstellungsmodul
   assert.doesNotMatch(lies('../oberflaeche/aktionen-quest.js'), /xr-teilnehmer\.js'/);
-  assert.doesNotMatch(lies('../oberflaeche/quest-app-dialog.js'), /xr-teilnehmer\.js'/);
   assert.doesNotMatch(lies('./xr-brille-einstellung.js'), /from 'three'/);
   assert.match(t, /holen\('\/api\/xr\/teilnehmer'\)/);
   assert.doesNotMatch(t, /innerHTML/, 'Namen aus dem Netz gehen nie als HTML in die Seite (nur als Canvas-Text)');

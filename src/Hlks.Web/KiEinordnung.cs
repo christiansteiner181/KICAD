@@ -88,7 +88,7 @@ public static class KiEinordnung
         new("quest_verbinden", "Startet ein Programm auf dem PC (adb.exe der Android Platform Tools) und öffnet damit einen Weg von der VR-Brille auf diesen PC (Modul XR, " +
             "QuestEndpunkte.cs) – nur der Mensch am Rechner."),
         new("quest_automatik", "Startet adb.exe, liest die Nachbartabelle des PCs und pingt das eigene Netz an, um die gemerkte VR-Brille über ihre MAC-Adresse zu finden und zu " +
-            "verbinden (Modul XR, QuestDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
+            "verbinden (Modul XR, BrillenDienst.cs, «Brille automatisch verbinden») – nur der Mensch am Rechner."),
         new("quest_autostart", "Steuert den Browser der VR-Brille (Modul XR, QuestStarter.cs, «Begehung beim Aufsetzen automatisch starten»): startet adb.exe, öffnet die VR-Startseite " +
             "im Browser der Brille und klickt dort über das Fern-Debugging (CDP) den Knopf «Eintreten» – nur auf eine Handlung des Menschen am Rechner, nie durch die KI."),
         new("xr_zugang", "Öffnet einen zweiten Zugang zu diesem PC im Büronetz (HTTPS-Port 5140, Suche über UDP 5141) und erzeugt dafür ein Zertifikat (Modul XR, Quest App P3, " +
@@ -100,9 +100,9 @@ public static class KiEinordnung
             "später eigens einzuordnen)."),
         new("quest_app", "Installiert die Quest App «H+K XR» per adb.exe in der VR-Brille, erzeugt dafür das Kopplungspaket mit Schlüssel (Weg A) und legt es in die Brille, startet die App, entfernt auf Wunsch die alten Apps «KICAD» und «XR-Labor» " +
             "und zeigt die installierte Fassung (Modul XR, Quest App P7, QuestApp.cs, /api/quest/app/…) – startet ein Programm auf dem PC und gibt einem Gerät Zugang zu diesem PC; nur der Mensch am Rechner."),
-        new("quest_app_netz", "Liest Netzprofil und Firewall-Regeln der Gruppe «KICAD XR» mit PowerShell (Modul XR, Quest App P7, QuestAppNetz.cs, /api/quest/app/netz), " +
+        new("quest_app_netz", "Liest Netzprofil und Firewall-Regeln der Gruppe «KICAD XR» mit PowerShell (Modul XR, Quest App P7, BrillenAppNetz.cs, /api/quest/app/netz), " +
             "um dem Menschen zu zeigen, warum die Brille den PC im WLAN nicht erreicht – Auskunft über den Rechner, nicht für die KI. Dazu gehört «Netz einrichten …» " +
-            "(QuestAppEinrichten.cs, POST /api/quest/app/netz/einrichten): startet PowerShell mit Administratorrechten, stuft das Netz als privat ein und legt Firewall-Regeln an – " +
+            "(BrillenAppEinrichten.cs, POST /api/quest/app/netz/einrichten): startet PowerShell mit Administratorrechten, stuft das Netz als privat ein und legt Firewall-Regeln an – " +
             "ändert den Rechner über KICAD hinaus und braucht die Bestätigung des Menschen durch Windows; nie für die KI."),
         new("xr_modell", "Liefert das Modell als GLB je Geschoss an die Quest App (Modul XR, P2, XrModellEndpunkte.cs: GET /api/xr/geschosse und /api/xr/geschoss/{id}.glb): eine " +
             "Datenlieferung an ein Gerät des Menschen, nur lesend, ohne Kern-Befehl und ohne Paket. Die KI liest das Modell über ihre eigenen Abfragen und braucht diese " +

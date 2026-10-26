@@ -3,9 +3,9 @@
 // Brille getragen wird, und klickt dann im Browser der Brille (Fern-Debugging, CDP) den Knopf «Eintreten» – so startet die Sitzung ohne Handgriff in der Brille.
 //
 // Ablauf eines Autostarts (ein Lauf zur Zeit; ein neuer Auftrag bricht den alten ab):
-//   1. Brille verbinden wie die Automatik (QuestDienst.BrilleFuerStart: Weg wählen, Weiterleitung für den KICAD-Port sicherstellen).
+//   1. Brille verbinden wie die Automatik (BrillenDienst.BrilleFuerStart: Weg wählen, Weiterleitung für den KICAD-Port sicherstellen).
 //   2. adb shell am start -a android.intent.action.VIEW -d http://localhost:<Port>/vr com.oculus.browser
-//   3. Warten (höchstens QuestEinstellungen.AutostartGrenze, 10 min), bis die Brille getragen wird: «dumpsys power» → mWakefulness=Awake UND «dumpsys activity activities»
+//   3. Warten (höchstens BrillenEinstellungen.AutostartGrenze, 10 min), bis die Brille getragen wird: «dumpsys power» → mWakefulness=Awake UND «dumpsys activity activities»
 //      → der fortgesetzte Vordergrund-Eintrag (mResumedActivity / topResumedActivity) gehört zu com.oculus.browser. Im Ruhezustand reisst adb über WLAN unter Umständen ab;
 //      dann wird die Verbindung wie in Schritt 1 neu aufgebaut.
 //   4. adb forward tcp:<lokaler Port> localabstract:chrome_devtools_remote; CDP-WebSocket ws://127.0.0.1:<lokaler Port>/devtools/browser. Warten, bis #vr-eintreten
@@ -40,9 +40,9 @@ namespace Hlks.Web;
 /// <summary>Zustand des Autostarts für die Statusanzeige am PC. Status: leer | laeuft | aktiv | fehler | abgebrochen. Phase: verbinden | browser | aufsetzen | debugging | klick.</summary>
 public sealed record AutostartStand(string Status, string? Phase, string? Meldung, string? Hinweis, long Nr, int Port, string? Seit, string? Ende);
 
-public sealed class QuestStarter(QuestDienst quest, QuestEinstellungen einst)
+public sealed class QuestStarter(BrillenDienst quest, BrillenEinstellungen einst)
 {
-    public QuestDienst Quest => quest;
+    public BrillenDienst Quest => quest;
 
     /// <summary>Die einzigen Ausdrücke, die im Browser der Brille ausgewertet werden.</summary>
     public static class Ausdruecke
@@ -115,7 +115,7 @@ public sealed class QuestStarter(QuestDienst quest, QuestEinstellungen einst)
     {
         try { await vorher; } catch (Exception) { /* der alte Lauf meldet sich selbst */ }
         var abbruch = ich.Token;
-        QuestDienst.AdbFund? adb = null;
+        BrillenDienst.AdbFund? adb = null;
         string serie = "";
         int? cdpPort = null;
         Action? schluss = null;
@@ -183,7 +183,7 @@ public sealed class QuestStarter(QuestDienst quest, QuestEinstellungen einst)
         return treffer.Count > 0 && treffer.All(m => m.Groups["pkg"].Value == Browser);
     }
 
-    async Task<string> AufsetzenWarten(QuestDienst.AdbFund adb, string serie, int port, CancellationToken abbruch)
+    async Task<string> AufsetzenWarten(BrillenDienst.AdbFund adb, string serie, int port, CancellationToken abbruch)
     {
         var uhr = Stopwatch.StartNew();
         int ohneAntwort = 0;

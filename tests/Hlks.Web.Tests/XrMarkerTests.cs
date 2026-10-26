@@ -2,15 +2,15 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using Hlks.Kern;
-using Hlks.Xr.Marker;
-using Hlks.Xr.Netz;
+using HkXr.Logik.Marker;
+using HkXr.Logik.Netz;
 
 namespace Hlks.Web.Tests;
 
 /// <summary>
 /// Quest App V1a (Modul XR, XR-E): Problem-Marker aus der Brille (XrMarkerEndpunkte.cs) mit dem Beispielprojekt «MFH Musterweg» – POST und GET /api/xr/marker,
 /// Ablage als Element ProblemMarker im Projekt (Paket, Rückgängig, Liste im Modell), doppelt gesendete Kennung, Prüfung der Eingaben, ETag/304, Zugang im Büronetz
-/// nur mit Schlüssel (Benutzer = Name der Kopplung), die App (Hlks.Xr.Marker, ModellHttp) sendet und liest, Änderung am PC mit element_aendern, BCF-Export, KI-Einordnung.
+/// nur mit Schlüssel (Benutzer = Name der Kopplung), die App (HkXr.Logik.Marker, ModellHttp) sendet und liest, Änderung am PC mit element_aendern, BCF-Export, KI-Einordnung.
 /// </summary>
 public class XrMarkerTests
 {
@@ -116,10 +116,10 @@ public class XrMarkerTests
         using var ohne = XrServer.Netz(port, fp);
         Assert.Equal(HttpStatusCode.Unauthorized, (await ohne.GetAsync("/api/xr/marker")).StatusCode);
         Assert.Equal(HttpStatusCode.Unauthorized, (await Post(ohne, Neu())).Code);
-        // die App: Hlks.Xr.Marker baut den Marker, ModellHttp (über den Netzzugang mit Schlüssel) sendet ihn
+        // die App: HkXr.Logik.Marker baut den Marker, ModellHttp (über den Netzzugang mit Schlüssel) sendet ihn
         using var mit = XrServer.Netz(port, fp, XrServer.Token(paket));
         var quelle = new ModellHttp(mit, "netz");
-        var neu = ProblemMarker.Neu("k-app", new Hlks.Xr.Vec3(1, 1.2, -2), new Hlks.Xr.Vec3(1, 1.7, 0), new Hlks.Xr.Vec3(0, 0, -1), [0, 0, 0], ProblemMarker.ModusBegehen, 1,
+        var neu = ProblemMarker.Neu("k-app", new HkXr.Logik.Vec3(1, 1.2, -2), new HkXr.Logik.Vec3(1, 1.7, 0), new HkXr.Logik.Vec3(0, 0, -1), [0, 0, 0], ProblemMarker.ModusBegehen, 1,
             null, null, null, Zeit, "Prüfen");
         var antwort = await quelle.MarkerSenden(neu.ZuJson().ToJsonString(), CancellationToken.None);
         Assert.Equal(201, antwort.Status);
@@ -133,7 +133,7 @@ public class XrMarkerTests
         var liste = ProblemMarker.ListeLesen(l.Text!);
         var e = Assert.Single(liste);
         Assert.Equal("k-app", e.Kennung);
-        Assert.Equal(new Hlks.Xr.Vec3(1, 1.2, -2), ProblemMarker.OrtSzene(e, [0, 0, 0]));
+        Assert.Equal(new HkXr.Logik.Vec3(1, 1.2, -2), ProblemMarker.OrtSzene(e, [0, 0, 0]));
         Assert.Equal(304, (await quelle.MarkerListe(l.ETag, CancellationToken.None)).Status);
         // im Modell: brille = Kennung der Brille
         var modell = await s.Lokal.GetStringAsync("/api/modell");

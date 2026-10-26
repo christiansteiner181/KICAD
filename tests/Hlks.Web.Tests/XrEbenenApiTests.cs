@@ -2,7 +2,7 @@ using System.Net;
 using System.Text;
 using System.Text.Json.Nodes;
 using Hlks.Kern;
-using Hlks.Xr.Ebenen;
+using HkXr.Logik.Ebenen;
 using Microsoft.Extensions.DependencyInjection;
 
 namespace Hlks.Web.Tests;
@@ -10,7 +10,7 @@ namespace Hlks.Web.Tests;
 /// <summary>
 /// Quest App P4b (Modul XR, Schnittstelle für Fachmodule): GET /api/xr/ebenen und GET /api/xr/ebene/{name} (XrEbenenEndpunkte.cs) mit dem Beispielprojekt «MFH Musterweg»:
 /// Liste, Format der Probe-Ebene «fliessrichtung» (gegen die Leitungen des Modells gerechnet), ETag und 304, neuer Schlüssel nach einer Änderung, Fehler, Zugang im
-/// Büronetz mit Schlüssel, Lesen mit dem Parser der App (Hlks.Xr.Ebenen) und KI-Einordnung.
+/// Büronetz mit Schlüssel, Lesen mit dem Parser der App (HkXr.Logik.Ebenen) und KI-Einordnung.
 /// </summary>
 public class XrEbenenApiTests
 {
@@ -227,18 +227,18 @@ public class XrEbenenApiTests
         await using var s = new XrServer();
         await s.ProjektAnlegen();
         var (port, _, fp) = await s.Aktiv();
-        var paket = Hlks.Xr.Netz.Kopplungspaket.Lesen((await s.Paket()).ToJsonString());
-        using var zugang = new Hlks.Xr.Netz.PcZugang(new Hlks.Xr.Netz.PcAdresse("127.0.0.1", port, "testpc", "test"), paket);
+        var paket = HkXr.Logik.Netz.Kopplungspaket.Lesen((await s.Paket()).ToJsonString());
+        using var zugang = new HkXr.Logik.Netz.PcZugang(new HkXr.Logik.Netz.PcAdresse("127.0.0.1", port, "testpc", "test"), paket);
         Assert.Equal(fp, paket.Fingerabdruck);
         var ordner = Path.Combine(Path.GetTempPath(), "hlks_xr_ebenen_" + Guid.NewGuid().ToString("N")[..8]);
         try
         {
-            var ablage = new Hlks.Xr.Netz.EbenenAblage(ordner);
-            var st = await Hlks.Xr.Netz.EbenenLader.VomPc(zugang.Ebenen, "P", ablage);
+            var ablage = new HkXr.Logik.Netz.EbenenAblage(ordner);
+            var st = await HkXr.Logik.Netz.EbenenLader.VomPc(zugang.Ebenen, "P", ablage);
             var e = Assert.Single(st.Ebenen);
             Assert.Equal("fliessrichtung", e.Name);
             Assert.NotEmpty(e.Elemente);
-            var st2 = await Hlks.Xr.Netz.EbenenLader.VomPc(zugang.Ebenen, "P", ablage);   // 304 → aus der Ablage
+            var st2 = await HkXr.Logik.Netz.EbenenLader.VomPc(zugang.Ebenen, "P", ablage);   // 304 → aus der Ablage
             Assert.Equal(e.Schluessel, Assert.Single(st2.Ebenen).Schluessel);
         }
         finally { if (Directory.Exists(ordner)) Directory.Delete(ordner, true); }
