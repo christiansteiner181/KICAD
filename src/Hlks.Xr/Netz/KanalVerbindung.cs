@@ -9,6 +9,9 @@
 //     NICHT neu verbinden nach Code 4001 (Kopplung widerrufen) und 4002 (durch eine neue Verbindung derselben Brille ersetzt) und nach HTTP 401 beim
 //     Verbinden (Schlüssel gilt nicht mehr; der PC sperrt die Adresse nach 10 Fehlversuchen).
 // Masse im Kanal: KICAD-Koordinaten (mm, z oben, Quaternion [x, y, z, w]); die Umrechnung macht KicadUmrechnung.
+// H+K XR E1 (entwurf/xr-empfaenger.md, «Schnittstellen im Bau E1»): die App hält zu jedem gekoppelten, erreichbaren Werkzeug einen Kanal offen. «hallo» trägt
+// «aktiv» (ist dieses Werkzeug das vorn gezeigte?; der PC nimmt ohne das Feld true an), beim Wechsel sendet die App «aktiv { aktiv }». Ein inaktiver Kanal
+// bekommt Aufträge und Stellschrauben wie bisher, sendet aber keine Posen (AktivSetzen, PoseSetzen).
 
 using System.Net.WebSockets;
 using System.Text;
@@ -90,17 +93,26 @@ public static class KanalText
     static JsonObject Kopf(string typ) => new() { ["typ"] = typ, ["fassung"] = Fassung };
 
     /// <summary>
-    /// hallo { name, geraet, app?, marke? } – Name und Gerät höchstens 40 Zeichen, ohne Steuerzeichen. XR-Labor L0: «marke» = Id der Marke der App
-    /// (<see cref="AppMarke.Id"/>: «kicad» bzw. «xrlabor»), damit der PC die beiden Brillen-Apps unterscheiden kann; der Server von KICAD liest das Feld nicht
-    /// (XrNachrichten.Hallo übergeht unbekannte Felder).
+    /// hallo { name, geraet, app?, marke?, aktiv? } – Name und Gerät höchstens 40 Zeichen, ohne Steuerzeichen. XR-Labor L0: «marke» unterscheidet die Brillen-Apps;
+    /// seit H+K XR E1 ist es die Kennung des Werkzeugs, mit dem dieser Kanal besteht (<see cref="Werkzeug.HalloMarke"/>: «kicad» bzw. «xrlabor»). «aktiv» (E1): ist
+    /// dieses Werkzeug in der App gerade das vorn gezeigte? null = ohne das Feld (der PC nimmt dann true an).
     /// </summary>
-    public static string Hallo(string name, string geraet, string? app, string? marke = null)
+    public static string Hallo(string name, string geraet, string? app, string? marke = null, bool? aktiv = null)
     {
         var o = Kopf("hallo");
         o["name"] = Kurz(name, 40);
         o["geraet"] = Kurz(geraet, 40);
         if (!string.IsNullOrWhiteSpace(app)) o["app"] = Kurz(app, 40);
         if (!string.IsNullOrWhiteSpace(marke)) o["marke"] = Kurz(marke, 20);
+        if (aktiv is { } a) o["aktiv"] = a;
+        return o.ToJsonString();
+    }
+
+    /// <summary>H+K XR E1: aktiv { aktiv } – die App wechselt zu diesem Werkzeug (true) bzw. von ihm weg (false); Schema XrNachrichten.Aktiv am PC.</summary>
+    public static string Aktiv(bool aktiv)
+    {
+        var o = Kopf("aktiv");
+        o["aktiv"] = aktiv;
         return o.ToJsonString();
     }
 
@@ -171,8 +183,10 @@ public sealed record KanalOptionen
     public string Name { get; init; } = "Quest";
     public string Geraet { get; init; } = "Meta Quest";
     public string? App { get; init; }
-    /// <summary>XR-Labor L0: Id der Marke der App für «hallo.marke» (<see cref="AppMarke.Id"/>); null = ohne das Feld (wie bis V1i).</summary>
+    /// <summary>«hallo.marke»: seit H+K XR E1 die Kennung des Werkzeugs (<see cref="Werkzeug.HalloMarke"/>); null = ohne das Feld (wie bis V1i).</summary>
     public string? Marke { get; init; }
+    /// <summary>H+K XR E1: ist das Werkzeug beim Start des Kanals das vorn gezeigte? null = «hallo» ohne «aktiv» (wie bis E1; der Kanal gilt als aktiv).</summary>
+    public bool? Aktiv { get; init; }
     public double PosenJeSekunde { get; init; } = PosenTakt.Vorgabe;
     /// <summary>Frist für Verbinden und «willkommen».</summary>
     public TimeSpan Frist { get; init; } = TimeSpan.FromSeconds(10);
@@ -200,9 +214,40 @@ public sealed class KanalVerbindung : IAsyncDisposable
         this.paket = paket;
         this.adresse = adresse;
         this.optionen = optionen ?? new KanalOptionen();
+        aktiv = this.optionen.Aktiv ?? true;
+        mitAktiv = this.optionen.Aktiv is not null;
     }
 
     public KanalZustand Zustand => zustand;
+
+    // H+K XR E1: aktiv bzw. nicht (siehe Dateikopf). gesendetAktiv = was der PC auf der laufenden Verbindung zuletzt erfuhr (hallo bzw. «aktiv»); bekannt = nach
+    // «willkommen» (vorher trägt das nächste hallo den Stand).
+    readonly object aktivSperre = new();
+    volatile bool aktiv;
+    bool mitAktiv, gesendetAktiv, aktivBekannt;
+
+    /// <summary>H+K XR E1: ist das Werkzeug dieses Kanals in der App gerade das vorn gezeigte? Nur dann gehen Posen (Vorgabe true).</summary>
+    public bool Aktiv => aktiv;
+
+    /// <summary>
+    /// H+K XR E1: die App wechselt zu diesem Werkzeug (true) bzw. von ihm weg (false). Verbunden: sofort «aktiv { aktiv }» an den PC; sonst trägt das nächste «hallo»
+    /// den Stand. Inaktiv gehen keine Posen mehr (die letzte gesetzte wird verworfen).
+    /// </summary>
+    public void AktivSetzen(bool a)
+    {
+        lock (aktivSperre)
+        {
+            mitAktiv = true;
+            if (!a) Volatile.Write(ref pose, null);
+            if (aktiv == a) return;
+            aktiv = a;
+            if (aktivBekannt && gesendetAktiv != a && ausgang.Writer.TryWrite(KanalText.Aktiv(a))) gesendetAktiv = a;
+        }
+    }
+
+    /// <summary>Wie oft «aktiv { … }» an den PC ging (Prüfung).</summary>
+    public int AktivGesendet => Volatile.Read(ref aktivGesendet);
+    int aktivGesendet;
     /// <summary>Teilnehmer-Id aus «willkommen» (null, solange nicht verbunden).</summary>
     public string? TeilnehmerId { get; private set; }
     /// <summary>Code des letzten Schlusses durch den Server (null: Netz weg bzw. noch keiner).</summary>
@@ -237,9 +282,10 @@ public sealed class KanalVerbindung : IAsyncDisposable
     /// <summary>Startet die Schleife (verbinden, empfangen, wiederverbinden) im Hintergrund.</summary>
     public void Starten() => schleife ??= Task.Run(() => Schleife(stopp.Token));
 
-    /// <summary>Neueste Pose; gesendet im Takt (siehe Dateikopf).</summary>
+    /// <summary>Neueste Pose; gesendet im Takt (siehe Dateikopf). H+K XR E1: nur, solange der Kanal aktiv ist (sonst verworfen).</summary>
     public void PoseSetzen(KicadPose p)
     {
+        if (!aktiv) return;
         Volatile.Write(ref pose, KanalText.Pose(p));
         Interlocked.Increment(ref poseNr);
     }
@@ -303,7 +349,14 @@ public sealed class KanalVerbindung : IAsyncDisposable
         using var verbindung = CancellationTokenSource.CreateLinkedTokenSource(ende);
         try
         {
-            await SendenRoh(ws, KanalText.Hallo(optionen.Name, optionen.Geraet, optionen.App, optionen.Marke), verbindung.Token).ConfigureAwait(false);
+            string hallo;
+            lock (aktivSperre)
+            {
+                hallo = KanalText.Hallo(optionen.Name, optionen.Geraet, optionen.App, optionen.Marke, mitAktiv ? aktiv : null);
+                gesendetAktiv = aktiv;
+                aktivBekannt = false;
+            }
+            await SendenRoh(ws, hallo, verbindung.Token).ConfigureAwait(false);
             using (var frist = CancellationTokenSource.CreateLinkedTokenSource(verbindung.Token))
             {
                 frist.CancelAfter(optionen.Frist);
@@ -319,6 +372,12 @@ public sealed class KanalVerbindung : IAsyncDisposable
                 Verbindungen++;
                 war = true;
                 Versuch = 0;
+                // E1: hat die App während des Verbindens gewechselt, erfährt es der PC jetzt (vor allen anderen Nachrichten)
+                lock (aktivSperre)
+                {
+                    aktivBekannt = true;
+                    if (gesendetAktiv != aktiv && ausgang.Writer.TryWrite(KanalText.Aktiv(aktiv))) gesendetAktiv = aktiv;
+                }
                 Setzen(KanalZustand.Verbunden);
                 Ausloesen(() => Willkommen?.Invoke(w.Inhalt));
             }
@@ -349,6 +408,7 @@ public sealed class KanalVerbindung : IAsyncDisposable
         {
             aktuell = null;
             TeilnehmerId = null;
+            lock (aktivSperre) aktivBekannt = false;
             if (ws.State is WebSocketState.Open or WebSocketState.CloseReceived)
             {
                 try
@@ -400,9 +460,13 @@ public sealed class KanalVerbindung : IAsyncDisposable
         var abstand = TimeSpan.FromSeconds(1 / Math.Clamp(optionen.PosenJeSekunde, 1, 30) / 2);
         while (!abbruch.IsCancellationRequested && ws.State == WebSocketState.Open)
         {
-            while (ausgang.Reader.TryRead(out var text)) await SendenRoh(ws, text, abbruch).ConfigureAwait(false);
+            while (ausgang.Reader.TryRead(out var text))
+            {
+                await SendenRoh(ws, text, abbruch).ConfigureAwait(false);
+                if (text.StartsWith("{\"typ\":\"aktiv\"", StringComparison.Ordinal)) Interlocked.Increment(ref aktivGesendet);
+            }
             var nr = Interlocked.Read(ref poseNr);
-            if (nr != poseGesendetNr && Volatile.Read(ref pose) is { } p && takt.Faellig(uhr.Elapsed.TotalSeconds))
+            if (aktiv && nr != poseGesendetNr && Volatile.Read(ref pose) is { } p && takt.Faellig(uhr.Elapsed.TotalSeconds))
             {
                 await SendenRoh(ws, p, abbruch).ConfigureAwait(false);
                 poseGesendetNr = nr;
