@@ -22,6 +22,13 @@
 		<None Remove="Projects\**" />
 	</ItemGroup>
 
+	<!-- XR-Labor L0 (entwurf/labor-app.md): Probebau der KICAD-App ohne die Labor-Dateien, so wie sie nach dem Umzug in L1 übersetzt wird:
+	     dotnet build src/Hlks.Quest/Hlks.Quest.csproj -p:HlksOhneLabor=true   (am besten mit eigenem HLKS_BUILD). Der allgemeine Code ruft das Labor nur über
+	     die Einhängepunkte (QuestApp.Einhaengepunkte.cs) auf; ohne Umsetzung entfernt der Übersetzer die Aufrufe. Bis L1, dann ohne Gegenstand. -->
+	<ItemGroup Condition="'$(HlksOhneLabor)' == 'true'">
+		<Compile Remove="QuestApp.Labor.cs;QuestApp.LaborPruefen.cs;AufgabenKarte.cs" />
+	</ItemGroup>
+
 	<ItemGroup>
 		<!-- Festgelegt auf 0.3.11 (Entscheid Quest App 23.10.2026, modul-xr.md). -->
 		<PackageReference Include="StereoKit" Version="0.3.11" />

@@ -387,3 +387,18 @@ Christian 25.10.2026: «Wenn ich die Symbole bei offener Tafel anhebe, soll die 
 - **Geändert für V1i:** `Bedienung/AppSymbole.cs` (`HebenBeiTafel`, `BeimHeben`: mit «ausblenden» gleiten Glas-App und PC-Bildschirm hinaus, mit «stehen» blendet
   die Glas-App aus; `WeichtAus`: das Feld weicht nur mit «stehen» neben eine offene Tafel aus).
 - **Tests:** `V1iTests`.
+
+## Zwei Brillen-Apps aus denselben Quellen (XR-Labor L0)
+
+Spezifikation `entwurf/labor-app.md` (freigegeben Christian 26.10.2026), Abschnitt «Trennung der Brillen-Apps aus gemeinsamen Quellen». Die Quellen von
+`src/Hlks.Quest` ergeben zwei Apps: «KICAD» (`ch.hkplanung.kicad.quest`) und «XR-Labor» (`ch.hkplanung.xrlabor`, `src/Hlks.Labor.Quest`, Aufbau dort in `LIESMICH.md`).
+
+- **Neu:** `Netz/AppMarke.cs` (`AppMarke.Kicad`, `AppMarke.XrLabor`): Id im Kanal, Name in Texten, App-Kennung, Eingang der Kopplung
+  (`/sdcard/Android/data/<Kennung>/files/kopplung.json`), Vorsatz der Protokollzeilen, Ablage am PC. Die App wählt ihre Marke in `Marke.Kicad.cs` bzw.
+  `Marke.XrLabor.cs`. Ports und Suchport stehen nicht hier, sie kommen aus dem Kopplungspaket (KICAD 5140/5141, Labor-PC 5340/5341).
+- **Geändert:** `Netz/KanalVerbindung.cs`: `hallo` hat das zusätzliche Feld `marke` (`KanalOptionen.Marke`; «kicad» bzw. «xrlabor»), damit der PC die Apps
+  unterscheiden kann. Der Server von KICAD liest es nicht (`XrNachrichten.Hallo` übergeht unbekannte Felder); ohne Marke wie bisher.
+- **Unverändert, offen:** Meldungen in `Netz/PcSuche.cs`, `Netz/PcZugang.cs`, `Netz/Kopplungspaket.cs` und `Netz/LaborKatalogLader.cs` nennen weiter «KICAD» als
+  Gegenstelle; in der Labor-App erscheinen sie so (Frage für L1).
+- **Tests:** `AppMarkeTests` (Marken, `hallo.marke`, Kennung und Name gleich in den Projektdateien, keine Ports fest in den Apps, der allgemeine Code der App ruft das
+  Labor nur über Einhängepunkte auf).

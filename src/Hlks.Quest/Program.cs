@@ -16,7 +16,7 @@ class Program
 
 		SKSettings einstellungen = new SKSettings
 		{
-			appName = "KICAD",
+			appName = Marke.Name,   // XR-Labor L0: je Marke («KICAD» bzw. «XR-Labor»)
 			mode    = optionen.Simulator || optionen.PruefBilder > 0 ? AppMode.Simulator : AppMode.XR,
 			origin  = OriginMode.Floor,   // Boden des Raums ist y = 0 (Rig auf OK Boden, VrLogik); ohne Unterstützung: lokal mit −1.5 m
 		};

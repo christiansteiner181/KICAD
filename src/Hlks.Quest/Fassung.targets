@@ -5,7 +5,7 @@
 	     - Commit: ohne Netz aus «git rev-parse» (kurze Form von HEAD) im Repository bzw. der Arbeitskopie; ohne Git oder ausserhalb eines Repositorys «unbekannt».
 	       Von aussen vorgeben: -p:HlksCommit=abc1234.
 	     Ergebnis: $(IntermediateOutputPath)AppFassung.g.cs mit der Klasse Hlks.Quest.AppFassung (Fassung, Commit, Text). Eingebunden von Hlks.Quest.csproj und
-	     Projects\Android\Hlks.Quest.Android.csproj. -->
+	     Projects\Android\Hlks.Quest.Android.csproj, seit XR-Labor L0 auch von src\Hlks.Labor.Quest (beide Projektdateien; Commit aus demselben Repository). -->
 	<PropertyGroup>
 		<HlksAppFassung Condition="'$(HlksAppFassung)' == ''">0.1</HlksAppFassung>
 	</PropertyGroup>

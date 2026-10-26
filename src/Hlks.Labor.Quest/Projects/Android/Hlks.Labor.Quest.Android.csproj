@@ -1,0 +1,74 @@
+<Project Sdk="Microsoft.NET.Sdk">
+	<!-- Brillen-App «XR-Labor» (XR-Labor L0, entwurf/labor-app.md), Fassung für die Meta Quest. Daten wie Hlks.Quest.Android.csproj, aber App-Kennung
+	     ch.hkplanung.xrlabor, Name «XR-Labor» (Platforms\Android\Resources\values\strings.xml) und eigenes Symbol (Platforms\symbol_erzeugen.mjs).
+	     Quellen: alle von src/Hlks.Quest (wie die Android-Fassung dort ..\..\**\*.cs einbindet) ohne deren Marke.Kicad.cs, dazu die eigenen aus ..\..\;
+	     Manifest, Assets (Shader, Symbole), xr_farben.json und Fassung.targets aus src/Hlks.Quest bzw. kataloge.
+	     Bau: dotnet publish -c Release -f net10.0-android → <Bauordner>\Hlks.Labor.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.xrlabor-Signed.apk
+	     (Bauordner HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build). Android SDK und JDK: lokal unter %USERPROFILE%\HLKS_CAD_werkzeuge. Nicht in HLKS_CAD.slnx. -->
+	<PropertyGroup>
+		<TargetFramework>net10.0-android</TargetFramework>
+		<RuntimeIdentifiers>android-arm64</RuntimeIdentifiers>
+		<SupportedOSPlatformVersion>29</SupportedOSPlatformVersion>
+		<OutputType>Exe</OutputType>
+		<TargetType>Exe</TargetType> <!-- Einstieg über Program.Main wie am PC -->
+		<ApplicationId>ch.hkplanung.xrlabor</ApplicationId>
+		<ApplicationVersion>1</ApplicationVersion>
+		<ApplicationDisplayVersion>0.1</ApplicationDisplayVersion>
+		<RootNamespace>Hlks.Quest</RootNamespace>
+		<ReadOnlyProject>true</ReadOnlyProject>
+
+		<SKOpenXRLoader>Standard</SKOpenXRLoader>
+		<SKAssetFolder>..\..\..\Hlks.Quest\Assets</SKAssetFolder>
+		<SKAssetDestination>Assets</SKAssetDestination>
+
+		<!-- XR-Geräte laufen auf älteren Android-Fassungen (targetSdkVersion 32), wie Hlks.Quest.Android.csproj. -->
+		<NoWarn>XA4211;XA1006;XA4301</NoWarn>
+	</PropertyGroup>
+
+	<PropertyGroup>
+		<HlksWerkzeuge>$([System.Environment]::GetFolderPath(SpecialFolder.UserProfile))\HLKS_CAD_werkzeuge</HlksWerkzeuge>
+		<AndroidSdkDirectory Condition="'$(AndroidSdkDirectory)' == '' and Exists('$(HlksWerkzeuge)\android-sdk')">$(HlksWerkzeuge)\android-sdk</AndroidSdkDirectory>
+		<JavaSdkDirectory Condition="'$(JavaSdkDirectory)' == '' and Exists('$(HlksWerkzeuge)\jdk-17')">$(HlksWerkzeuge)\jdk-17</JavaSdkDirectory>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="StereoKit" Version="0.3.11" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\..\..\Hlks.Xr\Hlks.Xr.csproj" />
+	</ItemGroup>
+
+	<!-- Manifest der gemeinsamen App (Name und Symbol über @string/app_name und @mipmap/appicon); Ressourcen (Name, Symbol) eigene. -->
+	<PropertyGroup>
+		<AndroidManifest          >..\..\..\Hlks.Quest\Platforms\Android\AndroidManifest.xml</AndroidManifest>
+		<MonoAndroidResourcePrefix>..\..\Platforms\Android\Resources</MonoAndroidResourcePrefix>
+		<MonoAndroidAssetsPrefix  >..\..\Platforms\Android\Assets</MonoAndroidAssetsPrefix>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<!-- Gemeinsame Quellen (ohne Marke.Kicad.cs) und die eigenen. -->
+		<Compile Include="..\..\..\Hlks.Quest\**\*.cs" Exclude="..\..\..\Hlks.Quest\obj\**;..\..\..\Hlks.Quest\bin\**;..\..\..\Hlks.Quest\Projects\**;..\..\..\Hlks.Quest\Marke.Kicad.cs" />
+		<Compile Include="..\..\**\*.cs" Exclude="..\..\obj\**;..\..\bin\**;..\..\Projects\**" />
+
+		<!-- Nur-PC-Teile nicht übersetzen. -->
+		<Compile Remove="..\..\..\Hlks.Quest\**\*.Net.cs" />
+		<Compile Remove="..\..\..\Hlks.Quest\Platforms\Net\**\*.cs" />
+		<Compile Remove="..\..\**\*.Net.cs" />
+		<Compile Remove="..\..\Platforms\Net\**\*.cs" />
+
+		<Compile Update="..\..\..\Hlks.Quest\**" Visible="false" />
+		<Compile Update="..\..\**" Visible="false" />
+		<None    Update="..\..\**" Visible="false" />
+		<Content Update="..\..\**" Visible="false" />
+
+		<!-- Farben der App aus dem Katalog, mitgeliefert (wie Hlks.Quest.Android.csproj). -->
+		<EmbeddedResource Include="..\..\..\..\kataloge\xr_farben.json" LogicalName="xr_farben.json" />
+	</ItemGroup>
+
+	<!-- Fassung und Commit der App (hallo.app); dieselbe Fassung wie ApplicationDisplayVersion. -->
+	<PropertyGroup>
+		<HlksAppFassung>$(ApplicationDisplayVersion)</HlksAppFassung>
+	</PropertyGroup>
+	<Import Project="..\..\..\Hlks.Quest\Fassung.targets" />
+</Project>

@@ -1,0 +1,4 @@
+<resources>
+    <!-- XR-Labor L0: Name der Brillen-App (Entscheid Christian 26.10.2026); gleich Hlks.Xr.Netz.AppMarke.XrLabor.Name (Test AppMarkeTests) -->
+    <string name="app_name">XR-Labor</string>
+</resources>
