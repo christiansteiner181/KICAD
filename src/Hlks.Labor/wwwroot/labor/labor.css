@@ -15,5 +15,5 @@ body.labor #titel { flex: none; text-align: left; font-weight: 600; }
 .labor-daten { display: flex; flex-direction: column; gap: 10px; }
 .labor-daten-teil { display: flex; flex-direction: column; gap: 4px; }
 .labor-daten-tabelle th { width: 220px; text-align: left; font-weight: 600; vertical-align: top; }
-.labor-daten-tabelle td { overflow-wrap: anywhere; }
+.labor-daten-tabelle td { overflow-wrap: anywhere; text-align: left; }
 .labor-uebernehmen { align-self: flex-start; }
