@@ -29,6 +29,7 @@
 //   /api/quest/app, …/netz, …/installieren, …/alte-entfernen   App «H+K XR» installieren/aktualisieren und mit dem Labor koppeln (Weg A), alte Apps entfernen – QuestAppEndpunkte.cs von KICAD
 //   L1: /api/xr/labor/katalog (auch im Netzzugang), auswertung, fragebogen (GET/POST), variante, aufgabe – XrLaborEndpunkte.cs von KICAD mit der Ablage des Labors (LaborQuelle)
 //   L1: /api/labor/profile (GET/POST, POST …/aktiv, DELETE …/{kennung}) – LaborProfile.cs; /api/labor/daten (GET), /api/labor/uebernahme (POST) – LaborUebernahme.cs
+//   S1: /api/xr/labor/spielwiese (GET, auch im Netzzugang) – Platzhalter-Apps der Spielwiese aus kataloge/labor_spielwiese.json, SpielwieseEndpunkt.cs
 // ABLAGE (L1, LaborAblage.cs): %OneDrive%\HLKS-CAD\labor\ (messungen, fragebogen, profile, aktiv.json), ohne OneDrive %APPDATA%\HLKS-CAD\labor, Umleitung HLKS_LABOR_DATEN;
 // im Testlauf nur unter %TEMP%. Die Messprotokolle des Kanals gehen über XrMessAblage nach labor\messungen.
 // Kein Projekt, kein Kern-Projektzugriff, keine Benutzer- und keine Projekt-Endpunkte. Für die KI gibt es kein Werkzeug (reine Rechner-Funktionen wie in KICAD).
@@ -200,6 +201,7 @@ public static class LaborDienste
         app.MapLaborProfile();                       // /api/labor/profile (LaborProfile.cs)
         app.MapLaborDaten();                         // /api/labor/daten, /api/labor/uebernahme (LaborUebernahme.cs)
         LaborTestraum.Abbilden(app);                 // Etagen des Testraums als GLB wie KICAD (/api/xr/geschosse, /api/xr/geschoss/{id}.glb; TestraumEndpunkte.cs)
+        LaborSpielwiese.Abbilden(app);               // S1: Platzhalter-Apps der Spielwiese (/api/xr/labor/spielwiese; SpielwieseEndpunkt.cs)
         return app;
     }
 }
