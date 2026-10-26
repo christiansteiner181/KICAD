@@ -2,7 +2,8 @@
 //
 //   Ablage:  <XrEinstellungen.Ordner>\zertifikat.dpapi   (Windows: PKCS#12 mit privatem Schlüssel, verschlüsselt mit DPAPI für den angemeldeten Benutzer)
 //            <XrEinstellungen.Ordner>/zertifikat.pfx     (andere Systeme, z. B. Cloud-Tests: nur für den Benutzer lesbar, Modus 600)
-//   Vorgabe-Ordner: %LOCALAPPDATA%\HLKS_CAD\xr (XrEinstellungen.StandardOrdner).
+//   Vorgabe-Ordner: %LOCALAPPDATA%\HLKS_CAD\xr (XrEinstellungen.StandardOrdner); XrEinstellungen.ZertifikatOrdner übersteuert ihn (XR-Labor: eigener
+//   Ordner für Schalter und Kopplungen, dasselbe Zertifikat je PC wie KICAD).
 //   Art:     ECDSA P-256, SHA-256, 10 Jahre gültig, Name «CN=KICAD XR <PC>», Verwendung nur Serverauthentisierung (1.3.6.1.5.5.7.3.1), keine CA.
 //   Fingerabdruck: SHA-256 über das Zertifikat (DER), 64 Kleinbuchstaben hex. Die App pinnt genau diesen Wert (aus dem Kopplungspaket);
 //                  eine Kette oder Zertifizierungsstelle gibt es nicht.
@@ -40,7 +41,7 @@ public sealed class XrZertifikat(XrEinstellungen einstellungen) : IDisposable
     /// <summary>true, wenn das Zertifikat in diesem Lauf neu erzeugt wurde (erstmals oder als Ersatz).</summary>
     public bool NeuErzeugt { get; private set; }
 
-    public string DateiPfad => Path.Combine(einstellungen.OrdnerPfad(), XrSchutz.Aktiv ? "zertifikat.dpapi" : "zertifikat.pfx");
+    public string DateiPfad => Path.Combine(einstellungen.ZertifikatOrdnerPfad(), XrSchutz.Aktiv ? "zertifikat.dpapi" : "zertifikat.pfx");
 
     /// <summary>Das Zertifikat mit privatem Schlüssel; beim ersten Aufruf (bzw. nach Dispose) geladen oder erzeugt.</summary>
     public X509Certificate2 Holen()

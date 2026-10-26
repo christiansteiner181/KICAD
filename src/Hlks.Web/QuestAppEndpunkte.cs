@@ -51,7 +51,7 @@ public static class QuestAppEndpunkte
             var a = await Auskunft(r.Query["neu"] == "1", r.HttpContext.RequestAborted);
             var info = netz.Info();
             var echte = lan.Schnittstellen().Where(QuestDienst.EchteSchnittstelle).ToList();
-            var hinweise = QuestAppNetz.Bewerten(a, echte, info.Port, info.SuchPort, netz.Aktiv);
+            var hinweise = QuestAppNetz.Bewerten(a, echte, info.Port, info.SuchPort, netz.Aktiv, quest.Marke.Name);
             var zustand = netz.Zustand();
             return Antwort(new
             {

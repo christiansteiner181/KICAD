@@ -70,7 +70,7 @@ sealed partial class QuestApp
             foreach (var (handed, i) in new[] { (Handed.Left, 0), (Handed.Right, 1) })
             {
                 var h = Input.Hand(handed);
-                var frei = h.IsTracked && !AnApps(handed) && !karte.HandNah && !sitzung.AmGriff(handed);
+                var frei = h.IsTracked && !AnApps(handed) && !HandAnKarte && !sitzung.AmGriff(handed);
                 var g = frei ? HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                     new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)) : null;
                 var p = g is not null && XrTabletLogik.IstPinch(g, markerPinch[i], bedien.Pinch);
@@ -120,7 +120,7 @@ sealed partial class QuestApp
     {
         var l = new List<TabletPose>();
         if (apps.Sichtbar) l.AddRange(apps.Belegt);
-        if (lauf is not null && karte.Lage is { } kl) l.Add(kl);
+        LaborFlaechen(l);   // XR-Labor: die Karte einer Prüfaufgabe
         return l;
     }
 
@@ -202,7 +202,7 @@ sealed partial class QuestApp
         var nadel = SkVonSzene(ort);
         var sn = StecknadelMass(nadel, kopf);
         var ueber = KennzeichenOrt(nadel + Vec3.Up * (0.16f * sn), kopf, sn) + new XVec3(0, 0.02 * sn, 0);
-        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : " – geht mit der nächsten Verbindung an KICAD")}.",
+        HinweisBei($"Problem-Marker gesetzt{(neu.Notiz is null ? "" : $" («{neu.Notiz}»)")}{(kanal is { Zustand: KanalZustand.Verbunden } ? "" : $" – geht mit der nächsten Verbindung an {Marke.Gegenstelle}")}.",
             (Vec3)(Vector3)ueber, Hlks.Xr.Bedienung.HinweisArt.Objekt);
         Task.Run(MarkerSenden);
     }

@@ -34,6 +34,7 @@ public sealed class VrAuftragSpeicher
     static readonly Regex KennzeichenMuster = new(@"^[A-Za-z0-9][A-Za-z0-9._\-]{0,39}$", RegexOptions.CultureInvariant);
 
     readonly BenutzerEinstellungen benutzer;
+    readonly bool ablage;
     readonly object sperre = new();
     VrAuftragWert? aktuell;
     bool geladen;
@@ -41,7 +42,9 @@ public sealed class VrAuftragSpeicher
     /// <summary>Ein neuer Auftrag ist gesetzt (nach dem Speichern). Der Live-Kanal der Quest App (XrKanal.cs) schickt ihn damit sofort an die Brille.</summary>
     public event Action<VrAuftragWert>? Gesetzt;
 
-    public VrAuftragSpeicher(BenutzerEinstellungen benutzer) { this.benutzer = benutzer; }
+    /// <summary>ablage false: der Auftrag lebt nur im Speicher, die Benutzereinstellung «vr.auftrag» wird weder gelesen noch geschrieben. So nutzt ihn das XR-Labor
+    /// (src/Hlks.Labor): KICADs VR-Auftrag gilt dort nicht, und das Labor schreibt ihn nie. Der Symbolsatz kommt in beiden Fällen aus den Benutzereinstellungen.</summary>
+    public VrAuftragSpeicher(BenutzerEinstellungen benutzer, bool ablage = true) { this.benutzer = benutzer; this.ablage = ablage; }
 
     /// <summary>
     /// Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): der Symbolsatz des Benutzers (Benutzereinstellung «oberflaeche.symbole»,
@@ -82,6 +85,7 @@ public sealed class VrAuftragSpeicher
     {
         if (geladen) return;
         geladen = true;
+        if (!ablage) return;
         try
         {
             if (benutzer.Hole(Schluessel) is JsonObject o && o["modus"]?.GetValue<string>() is { } m && Modi.Contains(m)
@@ -105,7 +109,7 @@ public sealed class VrAuftragSpeicher
             Laden();
             neu = new VrAuftragWert(t.Modus, t.Raum, t.Geschoss, (aktuell?.Nr ?? 0) + 1, Uhr(), t.Ausschnitt, t.Ansicht);
             aktuell = neu;
-            try { benutzer.Setzen(Schluessel, Zuobjekt(neu)); }
+            try { if (ablage) benutzer.Setzen(Schluessel, Zuobjekt(neu)); }
             catch (Exception ex) when (ex is HlksFehler or IOException or UnauthorizedAccessException) { /* nur eine Zugabe: der Speicher des Servers gilt */ }
         }
         try { Gesetzt?.Invoke(neu); }

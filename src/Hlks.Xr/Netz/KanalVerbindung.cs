@@ -89,13 +89,18 @@ public static class KanalText
 
     static JsonObject Kopf(string typ) => new() { ["typ"] = typ, ["fassung"] = Fassung };
 
-    /// <summary>hallo { name, geraet, app } – Name und Gerät höchstens 40 Zeichen, ohne Steuerzeichen.</summary>
-    public static string Hallo(string name, string geraet, string? app)
+    /// <summary>
+    /// hallo { name, geraet, app?, marke? } – Name und Gerät höchstens 40 Zeichen, ohne Steuerzeichen. XR-Labor L0: «marke» = Id der Marke der App
+    /// (<see cref="AppMarke.Id"/>: «kicad» bzw. «xrlabor»), damit der PC die beiden Brillen-Apps unterscheiden kann; der Server von KICAD liest das Feld nicht
+    /// (XrNachrichten.Hallo übergeht unbekannte Felder).
+    /// </summary>
+    public static string Hallo(string name, string geraet, string? app, string? marke = null)
     {
         var o = Kopf("hallo");
         o["name"] = Kurz(name, 40);
         o["geraet"] = Kurz(geraet, 40);
         if (!string.IsNullOrWhiteSpace(app)) o["app"] = Kurz(app, 40);
+        if (!string.IsNullOrWhiteSpace(marke)) o["marke"] = Kurz(marke, 20);
         return o.ToJsonString();
     }
 
@@ -166,6 +171,8 @@ public sealed record KanalOptionen
     public string Name { get; init; } = "Quest";
     public string Geraet { get; init; } = "Meta Quest";
     public string? App { get; init; }
+    /// <summary>XR-Labor L0: Id der Marke der App für «hallo.marke» (<see cref="AppMarke.Id"/>); null = ohne das Feld (wie bis V1i).</summary>
+    public string? Marke { get; init; }
     public double PosenJeSekunde { get; init; } = PosenTakt.Vorgabe;
     /// <summary>Frist für Verbinden und «willkommen».</summary>
     public TimeSpan Frist { get; init; } = TimeSpan.FromSeconds(10);
@@ -296,7 +303,7 @@ public sealed class KanalVerbindung : IAsyncDisposable
         using var verbindung = CancellationTokenSource.CreateLinkedTokenSource(ende);
         try
         {
-            await SendenRoh(ws, KanalText.Hallo(optionen.Name, optionen.Geraet, optionen.App), verbindung.Token).ConfigureAwait(false);
+            await SendenRoh(ws, KanalText.Hallo(optionen.Name, optionen.Geraet, optionen.App, optionen.Marke), verbindung.Token).ConfigureAwait(false);
             using (var frist = CancellationTokenSource.CreateLinkedTokenSource(verbindung.Token))
             {
                 frist.CancelAfter(optionen.Frist);

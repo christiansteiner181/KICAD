@@ -72,11 +72,17 @@ public sealed record QuestEinstellungen
     /// <summary>Quest App: Datei, in der KICAD je PC merkt, auf welchem Weg die App zuletzt installiert und gekoppelt wurde (kabel | wlan); null = %LOCALAPPDATA%\HLKS_CAD\xr\quest_app_weg.json
     /// (im Testlauf ein Pfad unter %TEMP%, der nicht existiert, damit kein Test den Zustand eines anderen sieht).</summary>
     public string? AppWegDatei { get; init; }
+    /// <summary>Quest App: welche App installiert und gekoppelt wird (Paket, Eingang, Ablage, Einstellungsschlüssel; QuestApp.cs). Vorgabe KICAD; das XR-Labor (src/Hlks.Labor)
+    /// setzt seine eigene Marke und eine eigene AppWegDatei.</summary>
+    public QuestAppMarke AppMarke { get; init; } = QuestAppMarke.Kicad;
 
     /// <summary>Vorgabe für den Betrieb. Im Testlauf (HLKS_TEST oder Testrunner) wird weder PATH noch ein bekannter Ort durchsucht – es startet nie ein
     /// echtes adb; gefunden wird nur, was die Einstellung «quest.adb» nennt (die Tests zeigen auf eine Attrappe). Der einzige Suchort ist ein Ordner unter %TEMP%
     /// ohne adb.exe, damit die Liste der Suchorte im Dialog nicht leer ist.</summary>
-    public static QuestEinstellungen Vorgabe() => FamilienBibliothekDienst.Testlauf()
+    public static QuestEinstellungen Vorgabe() => Vorgabe(FamilienBibliothekDienst.Testlauf());
+
+    /// <summary>Wie Vorgabe() mit ausdrücklicher Angabe, ob ein Testlauf ist (das XR-Labor baut seine Fassung darauf auf, Tests prüfen beide Zweige).</summary>
+    public static QuestEinstellungen Vorgabe(bool testlauf) => testlauf
         ? new QuestEinstellungen
         {
             PfadDurchsuchen = false, Orte = [Path.Combine(Path.GetTempPath(), "HLKS_CAD", "quest_ohne_adb", "adb.exe")],

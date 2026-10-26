@@ -62,7 +62,7 @@ sealed partial class QuestApp
     {
         var l = new List<TabletPose>(apps.Belegt);
         l.AddRange(symbole.Flaechen);
-        if (lauf is not null && karte.Lage is { } k) l.Add(k);
+        LaborFlaechen(l);   // XR-Labor: die Karte einer Prüfaufgabe
         if (desktop is { } d) l.AddRange(d.Belegt);   // V1c: nie vor dem Bildschirm des PCs (Auftrag V1c Punkt 4)
         foreach (var g in new[] { geister, geister2 })
             if (g.Laeuft(Time.Total) && Glas.HuelleImBlick([.. g.Bereich], auge, 0.015) is { } gh) l.Add(gh);

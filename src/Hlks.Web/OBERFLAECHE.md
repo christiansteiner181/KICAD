@@ -3512,3 +3512,61 @@ Ein Dialog oder eine Ansicht kann Seiten anbieten, die G2 blättert: ein Element
 - **Tests:** Node `gesten-ausloesen.test.mjs` (Einstellung, Liste, Status, Stellschrauben, Skelett, Punktfolge, Auslösen mit Attrappe von `gesten.js`, Steuerung ohne Last, Dialogtexte, Kürzel ohne Kollision, keine Bilddaten, Anleitung); Web `GestenEinstellungTests` (Rundlauf, Vorgaben, Fehlerfälle).
 - **Nur mit Kamera am Desktop prüfbar** (Hauptlauf, Abnahme am realen Projekt Test_praxis): Fehlauslösungen bei normaler Arbeit, Bildrate der 3D-Ansicht mit und ohne Gesten, ob Wisch nach rechts als «nächster» natürlich ist, die Namen der Kameras im Dialog.
 - **Anleitung:** Kapitel «Gesten am Arbeitsplatz» (`mg`) in `berichte/anleitung/inventar.json`; Bilder folgen durch den Hauptlauf (Vorgaben im Feld «bild»).
+
+## XR-Labor (Labor-App), L0: eigener Server neben KICAD (26.10.2026)
+
+Spezifikation `entwurf/labor-app.md` (freigegeben von Christian am 26.10.2026), Stufe L0 «Gerüst und Durchstich». Das XR-Labor ist eine **eigene App** neben KICAD:
+PC-Teil `src/Hlks.Labor` (dieser Abschnitt), Brillen-App «XR-Labor» `src/Hlks.Labor.Quest` (App-Kennung `ch.hkplanung.xrlabor`). Es braucht **kein KICAD-Projekt**,
+KICAD kann daneben laufen oder ganz fehlen. In der Brille läuft immer nur eine der beiden Apps. Die Labor-Funktionen (Stellschrauben live, Varianten, Prüfaufgaben,
+Fragebogen, Auswertung) folgen mit L1; bis dahin bleibt der Dialog «XR-Labor» in KICAD unverändert.
+
+**Start:** `dotnet Hlks.Labor.dll [--port 5430] [--katalog <ordner>]` (gebaut nach `<bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll`; Desktop-Symbol «XR-Labor»
+mit `werkzeuge\labor_starten.ps1`). Nur `http://localhost:<Port>`. Die Seite kommt aus `src/Hlks.Labor/wwwroot`, übersteuerbar mit `HLKS_LABOR_WEBROOT` (der Desktop
+startet aus einer Arbeitskopie); Kataloge wie KICAD (`--katalog`, `HLKS_KATALOG`). Keine Dateiwächter, Konfiguration ohne Neuladen (wie KICAD, Befund R 19.10.2026).
+
+| Teil | Labor | KICAD (unverändert) |
+| --- | --- | --- |
+| Seite am PC | 5430, nur localhost | 5130 |
+| Netzzugang der Brille (HTTPS, TCP) | 5340 | 5140 |
+| Suche (UDP) | 5341 | 5141 |
+| Netzzugang öffnet sich nur auf | Labor auf 5430 (Testserver: `HLKS_LABOR_DESKTOP_PORT`) | KICAD auf 5130 (Testserver: `HLKS_XR_DESKTOP_PORT`) |
+| Schalter, Kopplungen, Weg der App, Messprotokolle | `%LOCALAPPDATA%\HLKS_CAD\xr\labor\` (`zugang.json`, `kopplungen.json`, `quest_app_weg.json`) | `%LOCALAPPDATA%\HLKS_CAD\xr\` |
+| Zertifikat | dasselbe wie KICAD: `%LOCALAPPDATA%\HLKS_CAD\xr\zertifikat.dpapi` | dort |
+| App in der Brille | `ch.hkplanung.xrlabor`, Ablage `%USERPROFILE%\HLKS_CAD_werkzeuge\labor_app` (`werkzeuge\quest_app_bereitstellen.ps1 -Labor`), Einstellung `labor.app_ablage` (nur gelesen) | `ch.hkplanung.kicad.quest`, `…\quest_app`, `quest.app_ablage` |
+
+- **Gleichzeitig mit KICAD:** beide Netzzugänge dürfen zugleich offen sein. Die Kopplungen sind getrennt: eine mit KICAD gekoppelte Brille kommt nicht ins Labor und
+  umgekehrt (401). Das Labor schreibt KICADs `zugang.json`, `kopplungen.json` und `quest_app_weg.json` nie, auch nicht den VR-Auftrag (`vr.auftrag`) und keine
+  Benutzereinstellungen (es gibt dafür keinen Endpunkt). Es liest nur `quest.adb` (adb wird in KICAD unter «Quest verbinden» eingerichtet), `labor.app_ablage` und den
+  Symbolsatz. Im «willkommen» des Kanals steht nie KICADs VR-Auftrag.
+- **Im Testlauf** (`HLKS_TEST` oder Testrunner): Netzzugang nur 127.0.0.1 mit freien Ports, Schalter und Kopplungen unter `%TEMP%\HLKS_CAD\xr_test\labor`, Zertifikat
+  unter `%TEMP%\HLKS_CAD\xr_test`, Ablage der App `%TEMP%\HLKS_CAD\quest_ohne_labor_app`, nie ein echtes adb.
+- **Transport aus KICAD, nicht kopiert:** `Hlks.Labor` verweist auf `Hlks.Web` und ruft dessen Teile mit eigenen Werten auf (`AddXrZugang`, `MapXr`, `MapQuestApp`,
+  `UseHerkunftsschutz`; Werte in `src/Hlks.Labor/LaborDienste.cs`: `LaborXr`, `LaborMarke`, `LaborQuest`). In KICAD dafür neu, mit unveränderten Vorgaben:
+  `XrEinstellungen.PortStandard`, `SuchPortStandard`, `ZertifikatOrdner`, `ServerName`; `QuestEinstellungen.AppMarke` (`QuestAppMarke`, Vorgabe `QuestAppMarke.Kicad`);
+  `VrAuftragSpeicher(…, ablage: false)`; in der Oberfläche die Option `marke` von `questAppTeil` (`KICAD_MARKE` in `quest-app-text.js`).
+
+**Endpunkte des Labors** (nur localhost, Herkunftsschutz wie KICAD):
+
+- `GET /api/status` → `{ app: "xr-labor", fassung, commit, beschaeftigt: false }` (Fassung und Commit aus der Programmdatei, Version «0.1.0+&lt;Commit&gt;»; ohne
+  Commit `null`). Das Startskript erkennt daran das laufende Labor.
+- `/api/xr/…` wie in KICAD (Abschnitt «Modul XR: Zugang im Büronetz»): `zugang` (GET/POST), `kopplung/paket`, `kopplung/bestaetigen`, `kopplung/ablehnen`,
+  `kopplung/widerrufen`, `teilnehmer`, `stellschraube`, `desktop/zustand`, `desktop/beenden`; für die Brille über den Netzzugang `verbindung`, `kanal`,
+  `kopplung/anfrage|aufdecken|abholen`, `desktop`. Das Kopplungspaket nennt Port 5340 und Suchport 5341.
+- `/api/quest/app`, `/api/quest/app/netz`, `POST /api/quest/app/installieren` wie in KICAD (Abschnitt «Modul XR: Quest App in KICAD»), mit der App «XR-Labor».
+- **Nicht im Labor:** Projekt, Kern-Abfragen und -Befehle, `/api/benutzer/…`, `/api/vr/auftrag`, `/api/quest` (Quest verbinden), `/hilfe/`, Modell-GLB (Testraum folgt mit L1).
+
+**Seite «XR-Labor»** (`src/Hlks.Labor/wwwroot`): Kopf mit Fassung und Commit; Bereich **Brille** mit dem Teil «Quest App» aus KICAD (dieselbe Datei
+`js/oberflaeche/quest-app-dialog.js` mit der Marke des Labors: Netzzugang ein/aus, «App installieren/aktualisieren» über WLAN oder Kabel, gekoppelte Brillen mit
+«Widerrufen», Ersatzkopplung mit Code; ohne Ordnerfeld und ohne Schalter «Brillen in der 3D-Ansicht») und darunter **Verbundene Brillen im Kanal** (alle 2 s); Bereich
+**Labor** als Platzhalter «Labor folgt mit L1». Stil, Design (hell/dunkel) und Module kommen aus `src/Hlks.Web/wwwroot` als zweitem Wurzelordner (nur `css/` und `js/`,
+aus derselben Arbeitskopie wie die Labor-Seite), nicht als Kopie.
+
+**Prüfen**
+- **Tests:** `dotnet test tests/Hlks.Labor.Tests` (Werte des Labors und unveränderte KICAD-Vorgaben, Start als eigener Prozess auf freiem Port mit `HLKS_TEST`,
+  `/api/status`, Seite und Auslieferung aus KICAD, Herkunftsschutz, Kopplungspaket 5340/5341, Desktop-Port-Sperre, Kanal ohne KICADs VR-Auftrag, KICAD und Labor
+  gleichzeitig mit demselben Zertifikat, Installation mit der adb-Attrappe: Paket und Eingang `ch.hkplanung.xrlabor`). In `tests/Hlks.Web.Tests`: `XrZertifikatTests`,
+  `QuestAppTests`, `VrAuftragTests` (KICAD-Vorgaben). Node: `node --test src/Hlks.Labor/wwwroot/labor/labor.test.mjs` und
+  `src/Hlks.Web/wwwroot/js/oberflaeche/quest-app.test.mjs` (Marke, KICAD-Texte unverändert).
+- **Am PC:** `dotnet <bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll --port 5430`, dann `http://localhost:5430/` – die Seite zeigt «Quest App» mit «Netzzugang ist aus»;
+  `http://localhost:5430/api/status` meldet `xr-labor`. KICAD auf 5130 läuft daneben weiter.
+- **Nur mit der Brille prüfbar:** Installation und Kopplung der App «XR-Labor» (Kabel und WLAN), Verbinden mit 5340, beide Apps zugleich installiert.

@@ -126,7 +126,7 @@ sealed partial class QuestApp
         if (szenenFang is null || fangHinten is null) return null;
         var i = handed == Handed.Left ? 0 : 1;
         var h = Input.Hand(handed);
-        if (!h.IsTracked || AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed))
+        if (!h.IsTracked || AnApps(handed) || HandAnKarte || sitzung.AmGriff(handed))
         {
             if (fangGestellt[i] is not null) { fangHinten.Vergessen(i); fangGestellt[i] = null; }
             return null;
@@ -179,7 +179,7 @@ sealed partial class QuestApp
             foreach (var (handed, i, seite) in new[] { (Handed.Left, 0, "left"), (Handed.Right, 1, "right") })
             {
                 var h = Input.Hand(handed);
-                var amApp = AnApps(handed) || karte.HandNah || sitzung.AmGriff(handed);   // am Tisch: eine Hand am Griff misst nicht
+                var amApp = AnApps(handed) || HandAnKarte || sitzung.AmGriff(handed);   // am Tisch: eine Hand am Griff misst nicht
                 var pinch = h.IsTracked && !amApp && XrTabletLogik.IstPinch(HandGelenke.AusStereoKit((f, j) => new XVec3(h[f, j].position.x, h[f, j].position.y, h[f, j].position.z),
                     new XVec3(h.wrist.position.x, h.wrist.position.y, h.wrist.position.z)), messPinch[i], bedien.Pinch);
                 // V1f: mit der Pistolengeste hält das Abdrücken das Messband (zwei Punkte: je ein Schuss); es gilt der Fang von kurz vor dem Abzug bzw. dem Lösen
@@ -212,16 +212,16 @@ sealed partial class QuestApp
                 HinweisBei($"Messung {m.Nr}: {m.Text}", SkVonSzene(Hlks.Xr.Vec3.Mitte(m.A.P, m.B.P)), HinweisArt.Objekt);   // bei der Messung (frei schwebend)
                 messHervor = m.Nr;
                 messHervorBis = Time.Total + 3;
-                if (lauf is { } l) PruefAufgaben.Gemessen(l, Time.Total, m);
+                LaborGemessen(m);   // P5b (XR-Labor): Messung der Prüfaufgabe
                 break;
             case MessEreignisArt.Abgebrochen:
                 rueck.Leer(ort);
                 if (e.Grund is { } g) Hinweis(g == Messband.TextLotBraucht ? g + "." : $"{g} – nochmals: {MitAusloeser(messen.Hinweis)}.");
-                if (lauf is { } l2) PruefAufgaben.MessenDaneben(l2, e.Grund ?? "Messband abgebrochen");
+                LaborMessenDaneben(e.Grund ?? "Messband abgebrochen");
                 break;
             case MessEreignisArt.OhneZiel:
                 rueck.Leer(ort);
-                if (lauf is { } l3) PruefAufgaben.MessenDaneben(l3, e.Grund ?? "Pinch ohne Ziel");
+                LaborMessenDaneben(e.Grund ?? "Pinch ohne Ziel");
                 break;
         }
     }

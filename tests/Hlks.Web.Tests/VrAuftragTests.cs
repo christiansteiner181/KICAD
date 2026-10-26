@@ -95,6 +95,35 @@ public class VrAuftragTests
     }
 
     [Fact]
+    public void OhneAblage_WederGelesenNochGeschrieben_MitAblageWieBisher()
+    {
+        // XR-Labor L0: der Speicher des Labors (ablage: false) sieht KICADs gespeicherten Auftrag nicht und schreibt nie; die Vorgabe (KICAD) speichert wie bisher
+        var o = NeuerOrdner();
+        try
+        {
+            Directory.CreateDirectory(o);
+            BenutzerEinstellungen Benutzer() => new(new RechnerAblage(o, "testpc", true, "einstellungen.json", "Umleitung"));
+            var kicad = new VrAuftragSpeicher(Benutzer());
+            var a = kicad.Setzen(new JsonObject { ["modus"] = "begehen", ["raum"] = "R-1" });
+            Assert.Equal(1, a.Nr);
+            Assert.Equal(1, (long)Benutzer().Hole(VrAuftragSpeicher.Schluessel)!["nr"]!);
+            Assert.Equal(1, new VrAuftragSpeicher(Benutzer()).Lesen()!.Nr);   // nach einem Neustart wie bisher
+
+            var labor = new VrAuftragSpeicher(Benutzer(), ablage: false);
+            Assert.Null(labor.Lesen());
+            VrAuftragWert? gesetzt = null;
+            labor.Gesetzt += w => gesetzt = w;
+            var b = labor.Setzen(new JsonObject { ["modus"] = "sitzungsraum" });
+            Assert.Equal(1, b.Nr);
+            Assert.Same(b, labor.Lesen());
+            Assert.Same(b, gesetzt);
+            Assert.Equal("begehen", (string)Benutzer().Hole(VrAuftragSpeicher.Schluessel)!["modus"]!);   // KICADs Auftrag bleibt unberührt
+            Assert.Equal(1, (long)Benutzer().Hole(VrAuftragSpeicher.Schluessel)!["nr"]!);
+        }
+        finally { Weg(o); }
+    }
+
+    [Fact]
     public async Task AusschnittUndAnsicht_WerdenGespeichertUndGelesen()
     {
         var o = NeuerOrdner();

@@ -236,7 +236,7 @@ sealed class DesktopBildschirm : IWegwischbar
         {
             hinweis(w.Zustand == DesktopZustand.AmPcBeendet
                 ? "Der Bildschirm wurde am PC beendet. Zum neuen Verbinden wieder hineinziehen."
-                : "KICAD lässt den Bildschirm nicht zu – die Brille in KICAD neu koppeln.");
+                : $"{Marke.Gegenstelle} lässt den Bildschirm nicht zu – die Brille {Marke.InGegenstelle} neu koppeln.");
             ansicht.Ausblenden(t, auge);
             _ = w.Beenden();
             verbindung = null;

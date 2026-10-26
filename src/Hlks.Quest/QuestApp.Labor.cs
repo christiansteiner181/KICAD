@@ -1,4 +1,3 @@
-using System.Diagnostics;
 using System.Globalization;
 using System.Numerics;
 using System.Text.Json;
@@ -9,7 +8,6 @@ using Hlks.Xr.Labor;
 using Hlks.Xr.Messen;
 using Hlks.Xr.Modell;
 using Hlks.Xr.Netz;
-using Hlks.Xr.Sitzung;
 using StereoKit;
 using Vec3 = StereoKit.Vec3;
 using XVec3 = Hlks.Xr.Vec3;
@@ -26,21 +24,26 @@ namespace Hlks.Quest;
 ///   - Varianten: «teleport» = «stick» (StickSchritt), «etage» = «app» (QuestApp.WischAnwenden), «messen» (V1a: Messband bzw. zwei Punkte, QuestApp.Messen.cs),
 ///     «umgebung» (V1a: hell bzw. tron, Sitzungsraum).
 ///   - V1a: «messen-wand-wand» markiert zwei gegenüberliegende Wände (Hlks.Xr.Labor.WandPaare) und schaltet Messen ein; die Messung entscheidet.
-///   - Röntgen-Hand beim Begehen (RoentgenSchritt), Schnitt mit der flachen Hand am Tisch (Sitzungsraum).
+/// XR-Labor L0 (entwurf/labor-app.md): der allgemeine Code ruft das Labor nur über die Einhängepunkte auf (QuestApp.Einhaengepunkte.cs); diese Datei setzt sie um
+/// (Abschnitt «Einhängepunkte» unten). Labor-Dateien sind diese, AufgabenKarte.cs und QuestApp.LaborPruefen.cs: ohne sie übersetzt die App ohne Labor (Probebau
+/// -p:HlksOhneLabor=true). In L0 liegen sie noch hier und gehören zu beiden Apps, ab L1 nur noch zu src/Hlks.Labor.Quest. Röntgen-Hand und flache Hand gehören zur
+/// Bedienung: QuestApp.Roentgen.cs, QuestApp.Schnitt.cs.
 /// </summary>
 sealed partial class QuestApp
 {
-    readonly LaborKatalogAblage katalogAblage;
-    readonly ProtokollAblage protokollAblage;
+    /// <summary>Ablagen im privaten Speicher: Katalog, wartende Messprotokolle (gesetzt in <see cref="LaborStarten"/>, aus dem Konstruktor).</summary>
+    LaborKatalogAblage katalogAblage = null!;
+    ProtokollAblage protokollAblage = null!;
     IEbenenQuelle? katalogQuelle;
     volatile string katalogText = "keiner";
 
     // Prüfaufgabe
     PruefLauf? lauf;
-    readonly AufgabenKarte karte;
+    /// <summary>Karte der Prüfaufgabe (gesetzt in <see cref="LaborAnlegen"/>, aus dem Konstruktor).</summary>
+    AufgabenKarte karte = null!;
     bool laufAbgeschlossen;
     double? laufEnde;
-    string? raumFuerAufgabe, raumAmStand;
+    string? raumFuerAufgabe;
     SzenenElement? markiertesBauteil;
     int pinchOhneGriffVorher;
     double wandSucheAb;
@@ -48,18 +51,9 @@ sealed partial class QuestApp
     readonly List<string> protokollWarten = [];
     int protokolleGesendet, quittungen;
 
-    // Röntgen-Hand und Stick
-    RoentgenVerfolger? roentgen;
-    readonly RoentgenZustand[] roentgenHand = [new(), new()];
-    RoentgenKegel? roentgenPruefKegel;
-    bool roentgenAktiv;
-    int roentgenBenutzt;
-    double roentgenMaxMs;
-    string roentgenText = "aus";
+    // Stick (Variante «teleport»)
     readonly StickZustand[] stickZustand = [new(), new()];
     double stickHinweisBis;
-
-    string pruefP5b = "";
 
     // =================================================================================================== Katalog
 
@@ -395,80 +389,6 @@ sealed partial class QuestApp
     string AufgabeKurz() => lauf is not { } l ? "keine" : string.Create(CultureInfo.InvariantCulture,
         $"{l.Id} {l.Zustand} (Phase {l.Phase}, {l.ZeitMs(Time.Total) / 1000:0.0} s, Fehlgriffe {l.Fehlgriffe}, Abbrüche {l.Abbrueche})");
 
-    // =================================================================================================== Räume
-
-    /// <summary>Der Raum, in dem man beim Begehen steht (Szene, Geschoss am Stand), sonst null.</summary>
-    string? RaumAmStand()
-    {
-        if (szene is null || sitzung.Aktiv) return null;
-        var kr = KopfRef(Input.Head);
-        var kw = VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z));
-        return RaumStandort.RaumBei(szene, GeschossAmStand()?.Id, new Xz(kw.X, kw.Z), rig.Y);
-    }
-
-    /// <summary>Raum für «Raum zeigen» in der App «Tisch»: der markierte der Aufgabe, sonst der Raum am Standort vor dem Sitzungsraum, sonst der des Auftrags.</summary>
-    string? RaumZumZeigen() => (lauf is { Id: PruefAufgaben.RaumArOeffnen, Raum: { } r, Fertig: false } ? r : null) ?? raumFuerAufgabe ?? raumAmStand ?? auftragRaum;
-
-    // =================================================================================================== Röntgen-Hand
-
-    /// <summary>
-    /// Röntgen-Hand beim Begehen (Hlks.Xr.Modell.RoentgenHand): je Hand die Geste (nicht an den Apps bzw. der Karte, nicht beim Pinch), der Kegel der aktiven (rechts
-    /// vor links), die Bauteile darin (RoentgenVerfolger, nur im Geschoss am Stand, ohne den Boden). true, wenn sich die Menge geändert hat.
-    /// </summary>
-    bool RoentgenSchritt(XVec3 kopfWelt)
-    {
-        if (roentgen is null || szene is null) return false;
-        RoentgenKegel? kegel = roentgenPruefKegel;
-        if (kegel is null)
-            foreach (var (handed, i, seite, z) in new[] { (Handed.Left, 0, "left", links), (Handed.Right, 1, "right", rechts) })
-            {
-                var h = Input.Hand(handed);
-                Dictionary<string, XVec3>? g = h.IsTracked && !AnApps(handed) && !karte.HandNah && !z.Pinch
-                    ? HandGelenke.AusStereoKit((f, j) => Welt(h[f, j].position), Welt(h.wrist.position)) : null;
-                if (RoentgenHand.Schritt(roentgenHand[i], Time.Total, g, seite, kopfWelt, bedien.Roentgen) is { } k && (kegel is null || i == 1)) kegel = k;
-            }
-        var aktiv = kegel is not null;
-        if (aktiv != roentgenAktiv)
-        {
-            roentgenAktiv = aktiv;
-            if (aktiv)
-            {
-                roentgenBenutzt++;
-                rueck.Fang(Sk(kegel!.Spitze), leise: true);
-                if (roentgenBenutzt == 1 && roentgenPruefKegel is null) Hinweis("Röntgen-Hand: Wände und Decken vor der Hand werden durchscheinend.");
-            }
-        }
-        var uhr = Stopwatch.StartNew();
-        var geaendert = roentgen.Pruefen(kegel, geschossAmStand?.Id, rig.Y);
-        if (geaendert) roentgenMaxMs = Math.Max(roentgenMaxMs, uhr.Elapsed.TotalMilliseconds);
-        if (kegel is not null) KegelZeichnen(kegel);
-        roentgenText = aktiv
-            ? string.Create(CultureInfo.InvariantCulture, $"ein ({roentgen.Nah.Count} Bauteile, {roentgen.Gemessen} gemessen, höchstens {roentgenMaxMs:0.0} ms)")
-            : $"aus ({roentgenBenutzt}× benutzt)";
-        return geaendert;
-    }
-
-    /// <summary>Der Kegel der Röntgen-Hand, fein: acht Linien entlang des Mantels und ein Ring, 0.6 m lang.</summary>
-    void KegelZeichnen(RoentgenKegel k)
-    {
-        const double laenge = 0.6;
-        var a = k.Achse;
-        var q = Math.Abs(a.Y) < 0.9 ? a.Kreuz(new XVec3(0, 1, 0)).Einheit() : a.Kreuz(new XVec3(1, 0, 0)).Einheit();
-        var w = a.Kreuz(q).Einheit();
-        var r = laenge * Math.Tan(k.HalbwinkelRad);
-        var c = new Color32(90, 220, 255, 70);
-        Vec3? vorher = null;
-        for (int i = 0; i <= 8; i++)
-        {
-            var phi = 2 * Math.PI * i / 8;
-            var p = k.Spitze + a * laenge + (q * Math.Cos(phi) + w * Math.Sin(phi)) * r;
-            var ps = Sk(p);
-            if (i < 8) Lines.Add(Sk(k.Spitze + a * 0.05), ps, c, 0.002f);
-            if (vorher is { } v) Lines.Add(v, ps, c, 0.002f);
-            vorher = ps;
-        }
-    }
-
     // =================================================================================================== Stick (Variante «teleport»)
 
     /// <summary>Variante «teleport» = «stick»: je Controller zielen, springen und drehen (Hlks.Xr.StickTeleport); ohne Controller ein Hinweis (alle 20 s).</summary>
@@ -494,228 +414,119 @@ sealed partial class QuestApp
         }
     }
 
-    // =================================================================================================== flache Hand
+    // =================================================================================================== Einhängepunkte (QuestApp.Einhaengepunkte.cs)
 
-    void FlacheHandMelden(FlacheHandEreignis e, HandSchnitt? s)
+    partial void LaborAnlegen()
     {
-        if (e == FlacheHandEreignis.Beginnt)
-            Hinweis(s?.Art == HandSchnittArt.Senkrecht ? "Vertikalschnitt folgt der Hand – Hand weg behält ihn." : "Schnitt folgt der flachen Hand – Hand weg behält ihn.");
-        else if (e == FlacheHandEreignis.Behalten)
-            Hinweis("Schnitt bleibt – «Tisch» › «Zurücksetzen» hebt ihn auf.");
+        karte = new AufgabenKarte(rueck, glas);
+        WegwischZiele.Add(new WischZiel(KarteKandidat, w => karte.WischVersatz = AppSymbole.NachLinks(w, 0), KarteWegwischen));
     }
 
-    string SchnittHandText() => sitzung.SchnittHand is not { } s ? "keiner"
-        : s.Art == HandSchnittArt.Waagrecht
-            ? string.Create(CultureInfo.InvariantCulture, $"waagrecht auf {s.Hoehe:0.00} m{(sitzung.SchnittFolgt ? ", folgt" : "")}")
-            : string.Create(CultureInfo.InvariantCulture, $"senkrecht ({s.Normale.X:0.00}, {s.Normale.Z:0.00}){(sitzung.SchnittFolgt ? ", folgt" : "")}");
-
-    // =================================================================================================== Prüfen P5b (--pruefen)
-
-    static JsonElement J(string json) => JsonDocument.Parse(json).RootElement.Clone();
-
-    /// <summary>
-    /// Einmal im Prüflauf (P5b): Fassung, Katalog (mit PC vom PC, ohne PC aus der Ablage), Grenzen und Vorgaben aus dem Katalog, Prüfaufgaben – beim Begehen
-    /// «messen-wand-wand» (V1a: eine Messung daneben, eine von Wand zu Wand: Erfolg), «drehen-90» (abgebrochen) und «teleport-markierung» (ein Sprung daneben, einer hinein: Erfolg, Messprotokoll), im Sitzungsraum
-    /// «modell-greifen-zoomen» –, die Röntgen-Hand (Kegel vom Kopf nach vorn) bzw. der Schnitt mit der flachen Hand (gedachte Hand über dem Modell). «FEHLER» lässt
-    /// den Lauf scheitern.
-    /// </summary>
-    string PruefP5bRegeln()
+    partial void LaborStarten()
     {
-        var teile = new List<string> { $"Fassung={AppFassung.Text}" };
-        try
-        {
-            // Katalog
-            var k = werte.Katalog;
-            var mitPc = kanal is not null && !o.OhnePc;
-            var katalogOk = k is not null && (mitPc ? katalogText.StartsWith("pc", StringComparison.Ordinal) : katalogText.StartsWith(LaborKatalogStand.AusAblage, StringComparison.Ordinal));
-            var keinerErlaubt = k is null && !mitPc && !File.Exists(katalogAblage.Datei);
-            teile.Add($"Katalog={(katalogOk ? "ok" : keinerErlaubt ? "keiner (noch nie verbunden)" : "FEHLER")} ({katalogText})");
-            if (k is not null)
-            {
-                // Grenzen aus dem Katalog: knapp darüber «ungültig», die Grenze selbst «ok», null zurück auf die Vorgabe des Katalogs
-                var s = k.Stellschrauben["anzeige.skala"];
-                var aussen = StellschraubeAnwenden("anzeige.skala", J((s.Max + 0.05).ToString(CultureInfo.InvariantCulture)));
-                var innen = StellschraubeAnwenden("anzeige.skala", J(s.Max.ToString(CultureInfo.InvariantCulture)));
-                var gesetzt = bedien.Apps.Skala;
-                StellschraubeAnwenden("anzeige.skala", J("null"));
-                var grenzenOk = aussen == LaborWerte.Ungueltig && innen == LaborWerte.Ok && gesetzt == s.Max && bedien.Apps.Skala == s.Vorgabe.GetDouble();
-                var zoomOk = k.Stellschrauben.TryGetValue("sitzung.zoom_min", out var zm) && bedien.Zoom.Min == zm.Vorgabe.GetDouble();
-                teile.Add(string.Create(CultureInfo.InvariantCulture,
-                    $"Grenzen={(grenzenOk ? "ok" : "FEHLER")} (anzeige.skala bis {s.Max}: {aussen}/{innen}), Vorgaben={(zoomOk ? "ok" : "FEHLER")} (Zoom 1:{bedien.Zoom.Min:0} … 1:{bedien.Zoom.Max:0})"));
-            }
-            teile.Add(sitzung.Aktiv ? PruefAufgabeSitzung() : PruefAufgabenBegehen());
-            teile.Add(sitzung.Aktiv ? PruefFlacheHand() : PruefRoentgen());
-        }
-        catch (Exception ex) when (ex is InvalidOperationException or ArgumentException or NullReferenceException or JsonException or KeyNotFoundException)
-        {
-            teile.Add("Regeln P5b: FEHLER " + ex.Message);
-        }
-        return "P5b: " + string.Join(", ", teile);
+        // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei)
+        katalogAblage = new LaborKatalogAblage(privat);
+        KatalogUebernehmen(LaborKatalogLader.AusAblage(katalogAblage));
+        // P5b: Messprotokolle, die beim letzten Mal ohne Verbindung entstanden, gehen mit dem nächsten «willkommen»
+        protokollAblage = new ProtokollAblage(privat);
+        protokollWarten.AddRange(protokollAblage.Lesen());
+        if (protokollWarten.Count > 0) Console.WriteLine($"{AppName}: {protokollWarten.Count} Messprotokolle warten auf die Verbindung.");
     }
 
-    /// <summary>Beim Begehen: messen-wand-wand mit Erfolg (V1a), drehen-90 abgebrochen (Protokoll erfolg = false), teleport-markierung mit Erfolg (Protokoll).</summary>
-    string PruefAufgabenBegehen()
+    partial void LaborVerbunden(IEbenenQuelle quelle, ref Task? warten)
     {
-        var rigVorher = rig;
-        var standortVorher = standort;
-        var kopf = Input.Head;
-        var kr = KopfRef(kopf);
-        var kv = new XVec3(kr.X, kr.Y, kr.Z);
-        // V1a: messen-wand-wand (vorher gesperrt) – Wände markieren, eine Messung daneben, dann von Wand zu Wand über den Fang der Szene
-        var (wandOk, wandText) = PruefMessenWandWand(kopf);
-        // drehen-90: starten, ein Drehschritt in die falsche Richtung, abbrechen
-        StellschraubeAnwenden("labor.aufgabe", J("\"drehen-90\""));
-        AufgabeBild(kopf);
-        var d = lauf!;
-        var laeuftD = d.Laeuft;
-        BegehenEreignisAnwenden(new BegehenEreignis(BegehenArt.Drehen, "right", null, -1), kopf, kv, false);   // nach rechts: weg vom Ziel (90° links)
-        AufgabeBeenden("Prüfung");
-        var pd = letztesProtokoll;
-        var abbruchOk = laeuftD && pd is not null && (string?)pd["aufgabe"] == "drehen-90" && (bool?)pd["erfolg"] == false && (int?)pd["abbrueche"] == 1 && (int?)pd["fehlgriffe"] == 1;
-        rig = rigVorher;
-        // teleport-markierung: ein Sprung daneben, einer in die Markierung
-        StellschraubeAnwenden("labor.aufgabe", J("\"teleport-markierung\""));
-        AufgabeBild(kopf);
-        var l = lauf!;
-        var m = l.Markierung ?? throw new InvalidOperationException("keine Markierung");
-        SprungAusfuehren(new XVec3(m.X + 1.2, l.MarkierungBoden, m.Z), kopf, kv);
-        var fg = l.Fehlgriffe;
-        SprungAusfuehren(new XVec3(m.X + 0.2, l.MarkierungBoden, m.Z), kopf, kv);
-        AufgabeBild(kopf);
-        var p = letztesProtokoll;
-        var teleportOk = fg == 1 && l.Zustand == LaufZustand.Erfolg && p is not null && (string?)p["aufgabe"] == "teleport-markierung" && (bool?)p["erfolg"] == true
-            && (int?)p["fehlgriffe"] == 1 && (int?)p["abbrueche"] == 0 && (string?)p["varianten"]?["teleport"] == bedien.Teleport && p["stellschrauben"] is JsonObject;
-        rig = rigVorher;
-        standort = standortVorher;
-        var ok = wandOk && abbruchOk && teleportOk;
-        return string.Create(CultureInfo.InvariantCulture,
-            $"Aufgaben={(ok ? "ok" : "FEHLER")} ({wandText}; drehen-90 abgebrochen {(abbruchOk ? "ja" : "nein")}; " +
-            $"teleport-markierung Markierung ({m.X:0.00}, {m.Z:0.00}) {(teleportOk ? "Erfolg" : "nein")}, Protokolle gesendet {protokolleGesendet}, wartend {protokollWarten.Count}; " +
-            $"Protokoll {p?.ToJsonString().Length ?? 0} Zeichen)");
+        katalogQuelle = quelle;
+        warten = KatalogVomPc(quelle);
     }
 
-    /// <summary>Im Sitzungsraum: modell-greifen-zoomen – Lage auf Zielmassstab und Vierteldrehung, Griffe frei: Erfolg und Protokoll.</summary>
-    string PruefAufgabeSitzung()
+    partial void LaborNachladen(ref Task? warten)
     {
-        var lageVorher = sitzung.Lage;
-        StellschraubeAnwenden("labor.aufgabe", J("\"modell-greifen-zoomen\""));
-        AufgabeBild(Input.Head);
-        var l = lauf!;
-        var laeuft = l.Laeuft;
-        sitzung.LageSetzen(sitzung.Lage with { Massstab = l.ZielMassstab, Drehung = l.StartDrehung + Math.PI / 2 });
-        AufgabeBild(Input.Head);
-        var p = letztesProtokoll;
-        var ok = laeuft && l.Zustand == LaufZustand.Erfolg && p is not null && (string?)p["aufgabe"] == "modell-greifen-zoomen" && (bool?)p["erfolg"] == true
-            && (string?)p["varianten"]?["bedienung"] == bedien.Bedienung;
-        var ziel = l.ZielMassstab;
-        sitzung.LageSetzen(lageVorher);
-        return string.Create(CultureInfo.InvariantCulture,
-            $"Aufgaben={(ok ? "ok" : "FEHLER")} (modell-greifen-zoomen 1:{l.StartMassstab:0} → Ziel 1:{ziel:0} {(ok ? "Erfolg" : "nein")}, Protokolle gesendet {protokolleGesendet}, wartend {protokollWarten.Count})");
+        if (katalogQuelle is { } kq) warten = KatalogVomPc(kq);
     }
 
-    /// <summary>Begehen: Röntgen-Hand mit einem Kegel vom Kopf nach vorn (Vorgaben der Stellschrauben); die Bauteile im Kegel, Dauer.</summary>
-    string PruefRoentgen()
+    partial void LaborWillkommen() => amBild.Enqueue(ProtokolleNachsenden);
+
+    partial void LaborNachricht(string typ, JsonElement inhalt)
     {
-        if (szene is null) return "Röntgen=FEHLER (kein Modell)";
-        var kr = KopfRef(Input.Head);
-        var kw = VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z));
-        var g = VrLogik.BlickGierenWelt(rig, kr.Gieren);
-        var kegel = new RoentgenKegel(kw + new XVec3(0, -0.25, 0), new XVec3(Math.Cos(g), 0, -Math.Sin(g)), bedien.Roentgen.WinkelGrad / 2 * Math.PI / 180, bedien.Roentgen.ReichweiteM);
-        var v = new RoentgenVerfolger(szene);
-        var uhr = Stopwatch.StartNew();
-        v.Pruefen(kegel, GeschossAmStand()?.Id, rig.Y);
-        var ms = uhr.Elapsed.TotalMilliseconds;
-        var jeNetz = DurchgangVerfolger.BereicheJeNetz(szene, v.Nah);
-        roentgenPruefKegel = o.BildOrdner is not null ? kegel : null;   // mit Prüfbildern: einige Bilder lang sichtbar (Pruefen schaltet ihn wieder aus)
-        var geste = RoentgenHand.Geste(PruefHand(kw, new XVec3(Math.Cos(g), 0, -Math.Sin(g))), "right", kw, false);
-        return string.Create(CultureInfo.InvariantCulture,
-            $"Röntgen={(geste ? "ok" : "FEHLER")} ({v.Nah.Count} Bauteile im Kegel, {v.Gemessen} gemessen, {jeNetz.Count} Netze, {ms:0.0} ms; Geste der gedachten Hand {(geste ? "ja" : "nein")})");
+        // P5b: Quittung des PCs für ein Messprotokoll (XrKanal)
+        if (typ == "quittung" && inhalt.TryGetProperty("bezug", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() == "messprotokoll") Interlocked.Increment(ref quittungen);
     }
 
-    /// <summary>Gedachte rechte «Halt»-Hand 45 cm vor dem Kopf (Szene), Finger nach oben, Handfläche in Richtung vor.</summary>
-    static Dictionary<string, XVec3> PruefHand(XVec3 kopf, XVec3 vor)
+    partial void LaborStellschraube(string schluessel, JsonElement wert, ref string? ergebnis)
     {
-        var f = new XVec3(0, 1, 0);
-        var n = vor.Einheit();
-        var q = f.Kreuz(n);
-        var w = kopf + n * 0.45 + new XVec3(0, -0.3, 0) + q * 0.15;
-        var g = new Dictionary<string, XVec3>
-        {
-            ["wrist"] = w, ["middle-finger-phalanx-proximal"] = w + f * 0.09, ["index-finger-phalanx-proximal"] = w + f * 0.09 + q * 0.02,
-            ["index-finger-metacarpal"] = w + f * 0.03 + q * 0.02, ["pinky-finger-metacarpal"] = w + f * 0.03 - q * 0.02, ["thumb-tip"] = w + f * 0.06 + q * 0.07,
-        };
-        foreach (var (name, s) in new[] { ("index-finger-tip", 0.03), ("middle-finger-tip", 0.005), ("ring-finger-tip", -0.02), ("pinky-finger-tip", -0.04) })
-            g[name] = w + f * 0.18 + q * s;
-        return g;
+        if (schluessel == LaborKatalog.AufgabeSchluessel) ergebnis = AufgabeVomPc(wert);
     }
 
-    /// <summary>Sitzungsraum: gedachte flache Hand über der Mitte des Modells (Raum der Brille) – Schnitt beginnt nach der Ruhezeit, liegt unter der Oberkante.</summary>
-    string PruefFlacheHand()
+    partial void LaborBild(Pose kopf) => AufgabeBild(kopf);
+
+    partial void LaborStick(Pose kopf, XVec3 kopfRef) => StickSchritt(kopf, kopfRef);
+
+    partial void LaborImTablet() => AufgabeImTablet();
+
+    partial void LaborHandAnKarte(ref bool nah) => nah |= karte.HandNah;
+
+    partial void LaborFlaechen(List<TabletPose> flaechen)
     {
-        var box = sitzung.ModellBox;
-        if (box.IstLeer || sitzung.Ansicht is not { } an) return "Flache Hand=FEHLER (kein Modell auf dem Tisch)";
-        var mm = sitzung.ModellMatrix;
-        var oben = Math.Min(box.Max.Y, an.Schnitt?.YMax ?? box.Max.Y);
-        var mitteSzene = new XVec3((box.Min.X + box.Max.X) / 2, box.Min.Y + (oben - box.Min.Y) * 0.6, (box.Min.Z + box.Max.Z) / 2);
-        var palm = (XVec3)Vector3.Transform((Vector3)mitteSzene, mm);
-        var vor = new XVec3(0, 0, -1);
-        var unten = new XVec3(0, -1, 0);
-        var q = vor.Kreuz(unten);   // rechte Hand: Daumenseite
-        var w = palm - vor * 0.045;
-        var g = new Dictionary<string, XVec3>
-        {
-            ["wrist"] = w, ["middle-finger-phalanx-proximal"] = w + vor * 0.09, ["index-finger-phalanx-proximal"] = w + vor * 0.09 + q * 0.02,
-            ["index-finger-metacarpal"] = w + vor * 0.03 + q * 0.02, ["pinky-finger-metacarpal"] = w + vor * 0.03 - q * 0.02, ["thumb-tip"] = w + vor * 0.06 + q * 0.07,
-        };
-        foreach (var (name, s) in new[] { ("index-finger-tip", 0.03), ("middle-finger-tip", 0.005), ("ring-finger-tip", -0.02), ("pinky-finger-tip", -0.04) })
-            g[name] = w + vor * 0.18 + q * s;
-        var kopf = new XVec3(Input.Head.position.x, Input.Head.position.y, Input.Head.position.z);
-        var z = new FlacheHandZustand();
-        Hlks.Xr.Sitzung.FlacheHand.Schritt(z, 0, g, "right", kopf, mm, box, an.Sichtbar, an.Ausschnitt, bedien.FlacheHand);
-        var (e, s2) = Hlks.Xr.Sitzung.FlacheHand.Schritt(z, bedien.FlacheHand.RuheS + 0.01, g, "right", kopf, mm, box, an.Sichtbar, an.Ausschnitt, bedien.FlacheHand);
-        var ok = e == FlacheHandEreignis.Beginnt && s2 is { Art: HandSchnittArt.Waagrecht } && s2.Hoehe < oben && s2.Hoehe > box.Min.Y;
-        if (ok) sitzung.SchnittHandSetzen(s2);
-        var wirksam = sitzung.WirksamerSchnitt;
-        ok = ok && wirksam is not null && Math.Abs(wirksam.YMax - s2!.Hoehe) < 1e-9;
-        flacheHandPruefBilder = ok && o.BildOrdner is not null ? 1 : 0;   // Prüfbild in einem der nächsten Bilder (SitzungPruefen), danach aufgehoben
-        if (o.BildOrdner is null) sitzung.SchnittHandSetzen(null);
-        return string.Create(CultureInfo.InvariantCulture,
-            $"Flache Hand={(ok ? "ok" : "FEHLER")} ({e}, Schnitt auf {s2?.Hoehe:0.00} m unter der Oberkante {oben:0.00} m, Quader bis {wirksam?.YMax:0.00} m)");
+        if (lauf is not null && karte.Lage is { } k) flaechen.Add(k);
     }
 
-    int flacheHandPruefBilder;
+    partial void LaborAufgabeOffen(ref bool offen) => offen |= lauf is { Fertig: false };
 
-    /// <summary>Prüfbilder P5b (--bilder): die Karte der Aufgabe, die Röntgen-Hand, der Schnitt der flachen Hand – je einmal, danach aufgehoben.</summary>
-    void PruefBilderP5b(string ordner, bool imSitzungsraum)
+    partial void LaborRaumZumZeigen(ref string? raum) =>
+        raum ??= (lauf is { Id: PruefAufgaben.RaumArOeffnen, Raum: { } r, Fertig: false } ? r : null) ?? raumFuerAufgabe;
+
+    partial void LaborSprung(Xz ziel)
     {
-        Directory.CreateDirectory(ordner);
-        var k = Input.Head;
-        if (karte.Lage is { } kl && !aufgabenBild)
-        {
-            aufgabenBild = true;
-            Renderer.Screenshot(Path.Combine(ordner, "aufgabe_karte.jpg"), k.position, new Vec3((float)kl.Mitte.X, (float)kl.Mitte.Y, (float)kl.Mitte.Z), 1280, 960, 70);
-        }
-        if (!imSitzungsraum && roentgenPruefKegel is not null)
-        {
-            if (roentgenBilder++ == 2)
-            {
-                Renderer.Screenshot(Path.Combine(ordner, "roentgen.jpg"), k.position, k.position + k.Forward + new Vec3(0, -0.15f, 0), 1280, 960, 80);
-                roentgenPruefKegel = null;
-            }
-        }
-        if (imSitzungsraum && flacheHandPruefBilder > 0)
-        {
-            if (flacheHandPruefBilder++ == 3)
-            {
-                var rl = sitzung.RaumLage;
-                Vec3 Sk2(double x, double y, double z) => (Vec3)(Vector3)rl.ZuRef(new XVec3(x, y, z));
-                var ziel = Sk2(XrSitzungLogik.TischMitte.X, XrSitzungLogik.TischHoehe + 0.05, XrSitzungLogik.TischMitte.Z);
-                Renderer.Screenshot(Path.Combine(ordner, "sitzung_flache_hand.jpg"), Sk2(0.5, 1.5, 0.1), ziel, 1280, 960, 60);
-            }
-            else if (flacheHandPruefBilder > 5) { sitzung.SchnittHandSetzen(null); flacheHandPruefBilder = 0; }
-        }
+        if (lauf is { } l) PruefAufgaben.Sprung(l, Time.Total, ziel);
     }
 
-    bool aufgabenBild;
-    int roentgenBilder;
+    partial void LaborSprungAbgebrochen()
+    {
+        if (lauf is { } l) PruefAufgaben.SprungAbgebrochen(l);
+    }
+
+    partial void LaborDrehschritt(double blickVorher, double blickNachher)
+    {
+        if (lauf is { } l) PruefAufgaben.Drehschritt(l, blickVorher, blickNachher);
+    }
+
+    partial void LaborEtageGewechselt(ListenGeschoss? geschoss)
+    {
+        if (lauf is { } l) PruefAufgaben.EtageGewechselt(l, Time.Total, geschoss);
+    }
+
+    partial void LaborWischOhneWirkung()
+    {
+        if (lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
+    }
+
+    partial void LaborRaumRueckschritt(string grund)
+    {
+        if (lauf is { } l) PruefAufgaben.RaumRueckschritt(l, grund);
+    }
+
+    partial void LaborGemessen(Messung messung)
+    {
+        if (lauf is { } l) PruefAufgaben.Gemessen(l, Time.Total, messung);
+    }
+
+    partial void LaborMessenDaneben(string grund)
+    {
+        if (lauf is { } l) PruefAufgaben.MessenDaneben(l, grund);
+    }
+
+    partial void LaborDaneben()
+    {
+        if (lauf is { } l) PruefAufgaben.Daneben(l);
+    }
+
+    partial void LaborKennzahlen(ref string text) => text = string.Create(CultureInfo.InvariantCulture,
+        $"Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), ");
+
+    partial void LaborQuittungen(ref string text) => text = string.Create(CultureInfo.InvariantCulture, $", Quittungen={quittungen}");
+
+    partial void LaborPruefbildVorbereiten()
+    {
+        if (lauf is { Fertig: true } l) { Abschliessen(l, Time.Total); lauf = null; laufEnde = null; markiertesBauteil = null; }   // Messprotokoll einmal (wie nach 5 s)
+    }
 }
