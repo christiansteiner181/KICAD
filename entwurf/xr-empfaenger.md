@@ -1,7 +1,7 @@
 # H+K XR – eine Empfänger-App in der Brille für alle Werkzeuge: Spezifikation
 
-Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Entwurf, zur Freigabe durch Christian**. Gebaut wird erst nach
-Freigabe. Ergänzt `entwurf/labor-app.md` (XR-Labor) und `entwurf/modul-xr.md` (Quest App); wo sie sich widersprechen, gilt diese Datei.
+Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Freigegeben von Christian am 26.10.2026** («Spezifikation H+K XR freigegeben, starte E1»). Bau ab E1.
+Ergänzt `entwurf/labor-app.md` (XR-Labor) und `entwurf/modul-xr.md` (Quest App); wo sie sich widersprechen, gilt diese Datei.
 
 ## Anlass
 
