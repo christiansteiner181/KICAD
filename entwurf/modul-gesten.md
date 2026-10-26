@@ -168,6 +168,12 @@ Richtwert 4–6 Arbeitstage für Stufe 1.
 
 | Lesart G4/G7 (26.10.2026, Sitzung modul-gesten) | «Ja, so bauen»: Faust hält das Modell, Bewegen dreht, Handgelenk rollt um die Blickachse; freie Hochrichtung, Würfel und G6 richten auf |
 
+**Nach Stufe 1 (Entscheid Christian 26.10.2026, Sitzung «Labor-App», `entwurf/labor-app.md`):** Die Empfindlichkeiten der
+PC-Gesten werden «nur im Labor» eingestellt. Mit Stufe L4 des XR-Labors entfallen sie im Dialog «Gesten» und das Feld
+`stellschrauben` der Benutzereinstellung; KICAD liest dann den Bedienstandard (`pc.stellschrauben`) über
+`STELLSCHRAUBEN_VORGABE`. Deshalb: Namen der Stellschrauben in `gesten-logik.js` stabil halten, jede mit Bereich und
+Erklärung. Aufnahme und `testmodus` nutzt das PC-Gesten-Labor wieder.
+
 ## Schnittstellen im Bau (Hauptlauf modul-gesten, 26.10.2026)
 
 Damit `hlks-kern` und `hlks-modul` gleichzeitig bauen können, gilt diese Aufteilung. Alles unter
