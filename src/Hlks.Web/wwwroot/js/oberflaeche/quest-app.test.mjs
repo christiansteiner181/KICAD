@@ -13,7 +13,7 @@ const lies = (n) => readFileSync(new URL(n, import.meta.url), 'utf8');
 const aus = { an: false, aktiv: false, port: 5140, suchPort: 5141, ips: ['192.168.1.20'], kopplungen: [], anfragen: [], teilnehmer: 0 };
 const an = { ...aus, an: true, aktiv: true, fingerabdruckKurz: 'AB12 CD34 EF56 7890' };
 const ablageOk = { ordner: 'C:\\x\\quest_app', quelle: 'vorgabe', vorhanden: true, version: { datei: 'a.apk', commit: 'abc1234', zeit: '2026-10-23T21:00:00', groesse: 7891448, sha256: 'a'.repeat(64), versionName: '0.1', versionCode: 1 }, apkPfad: 'C:\\x\\a.apk' };
-const app = { paket: 'ch.hkplanung.kicad.quest', ablage: ablageOk, adbGefunden: true, brille: { seriennummer: '1WMHH000000000', wlan: false, modell: 'Quest 3', installiert: { installiert: false } }, vergleich: 'nicht_installiert' };
+const app = { paket: 'ch.hkplanung.xr', app: 'H+K XR', werkzeug: 'kicad', werkzeugName: 'KICAD', ablage: ablageOk, adbGefunden: true, brille: { seriennummer: '1WMHH000000000', wlan: false, modell: 'Quest 3', installiert: { installiert: false } }, vergleich: 'nicht_installiert' };
 const quest = { adbGefunden: true, freigegeben: true, nichtFreigegeben: false };
 const frei = (extra = {}) => T.installierenKnopf({ q: quest, app, zugang: an, weg: 'wlan', ...extra });
 
@@ -121,6 +121,50 @@ test('Schritte und Meldung der Installation', () => {
   assert.deepEqual(T.schritteListe(null), []);
 });
 
+test('Alte Apps entfernen (H+K XR E1): Knopf nur sichtbar, wenn die Brille noch eine alte App hat; Rückfrage nennt die Apps', () => {
+  const alt = (liste) => ({ ...app, brille: { ...app.brille, alteApps: liste } });
+  const kicad = { paket: 'ch.hkplanung.kicad.quest', name: 'KICAD' };
+  const labor = { paket: 'ch.hkplanung.xrlabor', name: 'XR-Labor' };
+  assert.deepEqual(T.alteApps(alt([kicad, labor])), [kicad, labor]);
+  assert.deepEqual(T.alteApps(app), [], 'ohne Angabe des Servers keine alten Apps');
+  assert.deepEqual(T.alteApps(null), []);
+  assert.deepEqual(T.alteApps({ brille: null }), []);
+  assert.deepEqual(T.alteApps(alt([null, { paket: 5, name: 'x' }, { paket: 'a.b' }, kicad])), [kicad], 'nur vollständige Einträge');
+  // sichtbar nur mit mindestens einer alten App, frei nur, wenn nichts läuft
+  assert.deepEqual(T.alteAppsKnopf({ app }), { sichtbar: false, frei: false, liste: [] });
+  assert.deepEqual(T.alteAppsKnopf({ app: alt([]) }), { sichtbar: false, frei: false, liste: [] });
+  assert.equal(T.alteAppsKnopf({ app: alt([kicad]) }).sichtbar, true);
+  assert.equal(T.alteAppsKnopf({ app: alt([kicad]) }).frei, true);
+  assert.deepEqual(T.alteAppsKnopf({ app: alt([kicad]), laeuft: true }), { sichtbar: true, frei: false, liste: [kicad] });
+  // Rückfrage und Hinweis nennen genau die installierten alten Apps und dass «H+K XR» bleibt
+  assert.match(T.alteAppsFrage([kicad, labor]), /«KICAD» und «XR-Labor»/);
+  assert.match(T.alteAppsFrage([labor]), /«XR-Labor» von der Brille entfernen\? «H\+K XR» ersetzt sie und bleibt/);
+  assert.doesNotMatch(T.alteAppsFrage([labor]), /KICAD/);
+  assert.match(T.alteAppsHinweis([kicad]), /ist noch die alte App «KICAD» installiert/);
+  assert.match(T.alteAppsHinweis([kicad, labor]), /sind noch die alten Apps «KICAD» und «XR-Labor» installiert/);
+  // das Ergebnis des Entfernens hat dieselbe Form wie das der Installation; ohne Text gilt der eigene Standard
+  assert.deepEqual(T.ergebnisMeldung({ ok: true, schritte: [], meldung: 'Entfernt: «KICAD».' }), { art: 'ok', text: 'Entfernt: «KICAD».', vorschlag: null });
+  assert.equal(T.ergebnisMeldung({ ok: false }, 'Die alten Apps liessen sich nicht entfernen.').text, 'Die alten Apps liessen sich nicht entfernen.');
+  assert.equal(T.ergebnisMeldung({ ok: false }).text, 'Die Installation ist fehlgeschlagen.');
+});
+
+test('Alte Apps entfernen: der Dialog fragt vor dem Aufruf und schickt «bestaetigt» nur danach', () => {
+  const d = lies('./quest-app-dialog.js');
+  assert.match(d, /<div class="qa-block qa-alte" hidden>/, 'ohne alte Apps ist der Block versteckt');
+  assert.match(d, /Alte Apps entfernen …/);
+  assert.match(d, /q\('\.qa-alte'\)\.hidden = !alt\.sichtbar/);
+  // der Aufruf steht in der Antwort der Rückfrage (then → if (!ok) return), nie davor
+  const klick = d.slice(d.indexOf("t.matches('.qa-alte-entfernen')"), d.indexOf("t.matches('.qa-widerrufen')"));
+  assert.match(klick, /bestaetigen\(T\.alteAppsFrage\(liste\)/);
+  assert.ok(klick.indexOf('bestaetigen(') < klick.indexOf("senden('/api/quest/app/alte-entfernen', { bestaetigt: true })"));
+  assert.match(klick, /if \(!ok\) return;/);
+  assert.equal([...d.matchAll(/\/api\/quest\/app\/alte-entfernen'/g)].length, 1, 'genau ein Aufruf des Endpunkts');
+  // Server: nur mit Bestätigung (QuestAppEndpunkte.cs) und nur die zwei Pakete (QuestApp.cs)
+  const ep = lies('../../../QuestAppEndpunkte.cs');
+  assert.match(ep, /MapPost\("\/alte-entfernen"/);
+  assert.match(ep, /if \(!Param\.Bool\(p, "bestaetigt"\)\)/);
+});
+
 test('Gekoppelte Brillen: Name, seit, verbunden bzw. zuletzt', () => {
   const z = { kopplungen: [
     { id: 'a1b2c3d4e5f60718', brille: '1WMHH000000000', name: 'Quest Christian', weg: 'paket', angelegt: new Date(2026, 9, 23, 21, 15).toISOString(), zuletzt: new Date(2026, 9, 23, 21, 20).toISOString(), verbunden: true },
@@ -199,8 +243,13 @@ test('Das Werkzeug quest_app_bereitstellen.ps1: nur ASCII, baut und legt ab, kei
   const s = readFileSync(new URL('../../../../../werkzeuge/quest_app_bereitstellen.ps1', import.meta.url), 'utf8');
   assert.doesNotMatch(s, /[^\x00-\x7f]/, 'PowerShell 5.1: Datei bewusst nur ASCII');
   assert.match(s, /dotnet.*publish \$projekt -c Release -f net10\.0-android/);
-  assert.match(s, /HLKS_CAD_werkzeuge\\quest_app/);
-  assert.match(s, /ch\.hkplanung\.kicad\.quest-Signed\.apk/);
+  assert.match(s, /HLKS_CAD_werkzeuge\\hk_xr/);
+  assert.match(s, /ch\.hkplanung\.xr-Signed\.apk/);
+  assert.match(s, /Hlks\.Quest\.Android\.csproj/, 'H+K XR E1: eine App für alle Werkzeuge, gebaut aus src/Hlks.Quest');
+  const code = s.replace(/^#.*$/gm, '');
+  assert.doesNotMatch(code, /Hlks\.Labor\.Quest|labor_app|xrlabor-Signed|quest_app\\|kicad\.quest/, 'die zweite App und die alten Ablagen gibt es nicht mehr');
+  assert.equal([...code.matchAll(/\$Labor\b/g)].length, 2, '-Labor bleibt nur als Parameter, der einen Hinweis ausgibt (keine Verzweigung des Baus)');
+  assert.match(code, /if \(\$Labor\) \{ Meldung 'Hinweis: -Labor gibt es nicht mehr/);
   for (const feld of ['datei', 'commit', 'zeit', 'groesse', 'sha256', 'versionName', 'versionCode']) assert.match(s, new RegExp(`\\b${feld}\\b`), feld);
   assert.match(s, /Get-FileHash -Algorithm SHA256/);
   assert.match(s, /\[switch\]\$OhneBau/);
@@ -262,7 +311,12 @@ test('App-Marke: Vorgabe KICAD mit den bisherigen Texten, eine andere Marke erse
   // XR-Labor L0 (entwurf/labor-app.md): der Teil «Quest App» dient auch dem Labor-Server; ohne Marke bleibt alles wie in KICAD
   const m = T.KICAD_MARKE;
   assert.ok(Object.isFrozen(m));
-  assert.equal(m.app, 'KICAD');
+  assert.equal(m.app, 'KICAD', 'das Werkzeug am PC');
+  assert.equal(m.appName, 'H+K XR', 'die App in der Brille (H+K XR E1: eine App für alle Werkzeuge)');
+  assert.equal(T.APP_NAME, 'H+K XR');
+  assert.equal(m.ablageVorgabe, '%USERPROFILE%\\HLKS_CAD_werkzeuge\\hk_xr');
+  assert.match(m.einleitung, /^Die App «H\+K XR» in der Brille/);
+  assert.match(m.einleitung, /ersetzt die bisherigen Apps «KICAD» und «XR-Labor»/);
   assert.equal(m.port, 5140);
   assert.equal(m.desktopPort, 5130);
   assert.equal(m.ablageSchluessel, T.ABLAGE_SCHLUESSEL);

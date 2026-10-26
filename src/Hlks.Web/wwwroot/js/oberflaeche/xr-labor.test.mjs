@@ -342,7 +342,7 @@ test('L1 Marken: Name zur Marke der Brille; unbekannte und fehlende Marken haben
   assert.equal(T.MARKE_LABOR, 'xrlabor');
 });
 
-test('L1 Brillen mit Marke: nur auf Wunsch im Text; Zahl der Brillen mit der App «XR-Labor»', () => {
+test('L1 Brillen mit Marke: nur auf Wunsch im Text; Zahl der Brillen mit dem Werkzeug «XR-Labor»', () => {
   const antwort = { teilnehmer: [
     { id: 't1', name: 'A', geraet: 'Quest 3', app: '0.1+abc', marke: 'xrlabor' },
     { id: 't2', name: 'B', geraet: 'Quest 3', marke: 'kicad' },
@@ -359,11 +359,11 @@ test('L1 Brillen mit Marke: nur auf Wunsch im Text; Zahl der Brillen mit der App
   assert.match(T.brillenInfo({ teilnehmer: [] }).text, /solange KICAD läuft/);
 });
 
-test('L1 Hinweis zum Ziel: nur wenn Brillen verbunden sind, aber keine mit der App «XR-Labor»', () => {
+test('L1 Hinweis zum Ziel: nur wenn Brillen verbunden sind, aber keine mit dem Werkzeug «XR-Labor»', () => {
   const k = (teilnehmer) => T.brillenInfo({ teilnehmer }, { ort: 'labor', marken: true });
   assert.equal(T.zielHinweis(k([])), null, 'keine Brille: der Knopf ist ohnehin gesperrt');
   assert.equal(T.zielHinweis(k([{ id: 't1', name: 'A', marke: 'xrlabor' }, { id: 't2', name: 'B', marke: 'kicad' }])), null);
-  assert.match(T.zielHinweis(k([{ id: 't1', name: 'A', marke: 'kicad' }, { id: 't2', name: 'B' }])), /Keine Brille mit der App «XR-Labor» verbunden: Prüfaufgaben und Varianten gehen an alle 2 verbundenen Brillen\./);
+  assert.match(T.zielHinweis(k([{ id: 't1', name: 'A', marke: 'kicad' }, { id: 't2', name: 'B' }])), /Keine Brille ist mit dem Werkzeug «XR-Labor» verbunden: Prüfaufgaben und Varianten gehen an alle 2 verbundenen Brillen\./);
   assert.equal(T.zielHinweis(null), null);
 });
 
@@ -375,7 +375,7 @@ test('L1 Erklärtexte je Ort: KICAD wie bisher, Labor nennt das Labor und die Ab
   assert.match(k.varianten, /^Je Bedienung eine Wahl \(A\/B\)\. KICAD sendet sie als Stellschraube/);
   assert.match(l.stellschrauben, /das Labor sendet sie schon/);
   assert.doesNotMatch(l.varianten, /KICAD/);
-  assert.match(l.varianten, /Brillen der App «XR-Labor»/);
+  assert.match(l.varianten, /Brillen, die mit dem Werkzeug «XR-Labor» verbunden sind/);
   assert.match(l.aufgaben, /alle verbundenen Brillen/);
   assert.match(l.profile, /OneDrive, Ordner labor\\profile/);
   assert.doesNotMatch(k.profile, /OneDrive/);

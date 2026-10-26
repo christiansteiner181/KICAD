@@ -55,6 +55,8 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     <div class="leise qd-klein qa-grund"></div>
     <div class="qa-box qa-meldung" role="status" aria-live="polite" hidden></div>
     <ol class="qa-schritte" aria-label="Schritte der Installation" hidden></ol>
+    <div class="qa-block qa-alte" hidden><div class="leise qd-klein qa-alte-text"></div>
+      <button type="button" class="dlg-knopf qa-alte-entfernen" title="Deinstalliert die bisherigen Apps «KICAD» und «XR-Labor» von der Brille (nach Rückfrage); «${esc(T.APP_NAME)}» bleibt">Alte Apps entfernen …</button></div>
     <div class="qa-block"><b>Gekoppelte Brillen</b>
       <div class="qa-kopplungen" aria-label="Gekoppelte Brillen"></div></div>
     <div class="qa-block"><b>Ersatzkopplung (ohne Kabel)</b>
@@ -109,6 +111,11 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     const liste = q('.qa-schritte');
     liste.hidden = s.length === 0;
     liste.innerHTML = s.map((x) => `<li class="qa-schritt ${x.ok ? 'ok' : 'schlecht'}" data-schritt="${esc(x.id)}" data-ok="${x.ok ? '1' : '0'}">${esc(x.text)}</li>`).join('');
+    // H+K XR E1: «Alte Apps entfernen …» nur, wenn die Brille noch eine der alten Apps «KICAD» / «XR-Labor» hat
+    const alt = T.alteAppsKnopf({ app, laeuft });
+    q('.qa-alte').hidden = !alt.sichtbar;
+    q('.qa-alte-text').textContent = alt.sichtbar ? T.alteAppsHinweis(alt.liste) : '';
+    q('.qa-alte-entfernen').disabled = !alt.frei;
   }
 
   /** Listen der Kopplungen und Anfragen; nur neu zeichnen, wenn sich etwas geändert hat (der Takt läuft alle 2 s). */
@@ -202,6 +209,18 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
         ergebnis = await senden('/api/quest/app/installieren', { weg });
         meldungText = T.ergebnisMeldung(ergebnis);
         beiAenderung();
+      });
+    } else if (t.matches('.qa-alte-entfernen')) {
+      const liste = T.alteAppsKnopf({ app }).liste;
+      if (liste.length === 0) return;
+      bestaetigen(T.alteAppsFrage(liste), { ja: 'Entfernen', gefahr: true, titel: 'Alte Apps entfernen' }).then((ok) => {
+        if (!ok) return;
+        lauf(async () => {
+          ergebnis = null;
+          ergebnis = await senden('/api/quest/app/alte-entfernen', { bestaetigt: true });
+          meldungText = T.ergebnisMeldung(ergebnis, 'Die alten Apps liessen sich nicht entfernen.');
+          beiAenderung();
+        });
       });
     } else if (t.matches('.qa-widerrufen')) {
       const id = t.dataset.id;

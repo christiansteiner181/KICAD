@@ -144,7 +144,7 @@ export function xrLaborAufbauen(opt = {}) {
     const b = brillen();
     q('.xl-lampe').dataset.stufe = b.stufe;
     q('.xl-brillen').textContent = b.text;
-    // nur Labor: Prüfaufgaben und Varianten gehen an die Brillen der App «XR-Labor», sonst an alle – das Wort dazu steht über den beiden Bereichen
+    // nur Labor: Prüfaufgaben und Varianten gehen an die Brillen, die mit dem Werkzeug «XR-Labor» verbunden sind, sonst an alle – das Wort dazu steht über den beiden Bereichen
     const hinweis = opt.marken === true ? T.zielHinweis(b) : null;
     for (const h of qa('.xl-ziel-hinweis')) { h.hidden = !hinweis; h.textContent = hinweis ?? ''; }
   }

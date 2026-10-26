@@ -56,9 +56,9 @@ const SERIE = '1WMHH000000000';
 const ABLAGE = path.join(arbeit, 'quest_app');
 mkdirSync(ABLAGE, { recursive: true });
 const apkBytes = randomBytes(6000);
-writeFileSync(path.join(ABLAGE, 'ch.hkplanung.kicad.quest-Signed.apk'), apkBytes);
+writeFileSync(path.join(ABLAGE, 'ch.hkplanung.xr-Signed.apk'), apkBytes);
 writeFileSync(path.join(ABLAGE, 'version.json'), JSON.stringify({
-  datei: 'ch.hkplanung.kicad.quest-Signed.apk', commit: 'abc1234', zeit: '2026-10-23T21:00:00', groesse: apkBytes.length,
+  datei: 'ch.hkplanung.xr-Signed.apk', commit: 'abc1234', zeit: '2026-10-23T21:00:00', groesse: apkBytes.length,
   sha256: createHash('sha256').update(apkBytes).digest('hex'), versionName: '0.1', versionCode: 1,
 }));
 
@@ -235,11 +235,11 @@ await warteBis(async () => /Commit abc1234/.test((await text('.qa-abgelegt')) ??
 pruef(/Fassung 0\.1 \(1\)/.test(await text('.qa-abgelegt')) && /gebaut 23\.10\.2026 21:00/.test(await text('.qa-abgelegt')) && /MB/.test(await text('.qa-abgelegt')), 'Abgelegt: Fassung, Commit, Bauzeit, Grösse', await text('.qa-abgelegt'));
 pruef((await ausw(`return (await (await fetch('/api/benutzer/einstellungen')).json()).werte['quest.app_ablage'];`)) === ABLAGE, 'Der Ordner liegt in den Benutzereinstellungen');
 // eine veränderte APK wird erkannt
-writeFileSync(path.join(ABLAGE, 'ch.hkplanung.kicad.quest-Signed.apk'), Buffer.concat([apkBytes, Buffer.from('x')]));
+writeFileSync(path.join(ABLAGE, 'ch.hkplanung.xr-Signed.apk'), Buffer.concat([apkBytes, Buffer.from('x')]));
 await klick('.qd-neu-schritt');   // ohne adb steht «Erneut prüfen» im dritten Schritt der Einrichtung
 await warteBis(async () => /Grösse/.test((await text('.qa-abgelegt')) ?? ''), 'Veränderung erkannt', 10000);
 pruef(/passt nicht zu version\.json/.test(await text('.qa-abgelegt')), 'Veränderte APK: Grund steht da (Grösse passt nicht)', await text('.qa-abgelegt'));
-writeFileSync(path.join(ABLAGE, 'ch.hkplanung.kicad.quest-Signed.apk'), apkBytes);
+writeFileSync(path.join(ABLAGE, 'ch.hkplanung.xr-Signed.apk'), apkBytes);
 await klick('.qd-neu-schritt');   // ohne adb steht «Erneut prüfen» im dritten Schritt der Einrichtung
 await warteBis(async () => /Commit abc1234/.test((await text('.qa-abgelegt')) ?? ''), 'wieder heil', 10000);
 
@@ -256,7 +256,7 @@ pruef(/Quest 3 \(USB\) – Nicht installiert/.test(await text('.qa-installiert')
 pruef(/noch nicht in der Brille/.test(await text('.qa-vergleich')), 'Vergleich: «noch nicht in der Brille»', await text('.qa-vergleich'));
 pruef((await ausw(`return document.querySelector('input[name="qa-weg"]:checked').value;`)) === 'kabel', 'Am Kabel ist «über Kabel» vorgewählt');
 pruef((await gesperrt('.qa-installieren')) && /Netzzugang einschalten/.test(await text('.qa-grund')), 'Solange der Netzzugang aus ist, bleibt «App installieren» gesperrt', await text('.qa-grund'));
-pruef(aufrufe().some((a) => a.endsWith('shell dumpsys package ch.hkplanung.kicad.quest')) && aufrufe().some((a) => a.endsWith('shell getprop ro.product.model')), 'Die installierte Fassung kommt von adb (dumpsys package, getprop)', JSON.stringify(aufrufe().slice(-4)));
+pruef(aufrufe().some((a) => a.endsWith('shell dumpsys package ch.hkplanung.xr')) && aufrufe().some((a) => a.endsWith('shell getprop ro.product.model')), 'Die installierte Fassung kommt von adb (dumpsys package, getprop)', JSON.stringify(aufrufe().slice(-4)));
 await klick('input[name="qa-weg"][value="wlan"]');
 pruef((await ausw(`return document.querySelector('input[name="qa-weg"]:checked').value;`)) === 'wlan', 'Der Mensch kann «über WLAN» wählen');
 await klick('input[name="qa-weg"][value="kabel"]');

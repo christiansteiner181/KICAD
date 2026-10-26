@@ -12,25 +12,29 @@ export { esc };
 export const ZUGANG_TAKT_MS = 2000;
 /** Schlüssel der Benutzereinstellung mit dem Ordner der abgelegten App. */
 export const ABLAGE_SCHLUESSEL = 'quest.app_ablage';
+/** Name der Brillen-App (App-Bibliothek der Quest): eine App für alle Werkzeuge (H+K XR E1, entwurf/xr-empfaenger.md). */
+export const APP_NAME = 'H+K XR';
 
 /**
- * App-Marke: welche App und welcher Server der Teil zeigt (XR-Labor L0, entwurf/labor-app.md). Vorgabe KICAD – die Texte sind dann genau die bisherigen.
- * Das XR-Labor (src/Hlks.Labor/wwwroot/labor/labor-marke.js) gibt seine eigene mit. Felder: app (Name der App und des Servers), port (Netzzugang),
+ * App-Marke: welches Werkzeug (Server am PC) der Teil zeigt (XR-Labor L0, entwurf/labor-app.md; seit H+K XR E1 gibt es EINE App «H+K XR» für alle Werkzeuge,
+ * entwurf/xr-empfaenger.md). Vorgabe KICAD. Das XR-Labor (src/Hlks.Labor/wwwroot/labor/labor-marke.js) gibt seine eigene mit. Felder: app (Name des Werkzeugs bzw.
+ * Servers am PC: «KICAD», «XR-Labor»), appName (Name der App in der Brille: «H+K XR», für alle gleich), port (Netzzugang),
  * desktopPort (nur dieser Server öffnet ihn), ablageSchluessel (Benutzereinstellung mit dem Ordner der App; null = am PC nicht einstellbar), ablageVorgabe,
  * bereitstellen (Befehl, der die APK baut und ablegt), adbEinrichten (wo adb eingerichtet wird), adbFehlt (Zeile «In der Brille», wenn adb fehlt),
  * brillenZeigen (Schalter «Brillen in der 3D-Ansicht»), einleitung.
  */
 export const KICAD_MARKE = Object.freeze({
   app: 'KICAD',
+  appName: APP_NAME,
   port: 5140,
   desktopPort: 5130,
   ablageSchluessel: ABLAGE_SCHLUESSEL,
-  ablageVorgabe: '%USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app',
+  ablageVorgabe: '%USERPROFILE%\\HLKS_CAD_werkzeuge\\hk_xr',
   bereitstellen: 'werkzeuge\\quest_app_bereitstellen.ps1',
   adbEinrichten: 'oben im Dialog einrichten',
   adbFehlt: 'adb fehlt (siehe oben).',
   brillenZeigen: true,
-  einleitung: 'Die App «KICAD» in der Brille ersetzt auf Dauer den Browser: sie verbindet sich über das Büronetz mit KICAD, geht ohne Kabel und braucht keinen Link-fähigen PC.',
+  einleitung: 'Die App «H+K XR» in der Brille ersetzt auf Dauer den Browser: sie verbindet sich über das Büronetz mit KICAD (und mit weiteren Werkzeugen wie dem XR-Labor), geht ohne Kabel und braucht keinen Link-fähigen PC. Sie ersetzt die bisherigen Apps «KICAD» und «XR-Labor».',
 });
 
 /** Die Wege der Installation (Auswahl im Dialog). Kabel = adb reverse und 127.0.0.1 im Paket, WLAN = Adressen des PCs im Büronetz. */
@@ -181,12 +185,37 @@ export function schritteListe(ergebnis) {
 }
 
 /** Meldung zum Ergebnis: { art: 'ok' | 'fehler' | 'warnung', text, vorschlag }. Ein Teilerfolg (Start gescheitert) ist eine Warnung. */
-export function ergebnisMeldung(e) {
+export function ergebnisMeldung(e, standardFehler = 'Die Installation ist fehlgeschlagen.') {
   if (!e) return null;
-  if (!e.ok) return { art: 'fehler', text: e.fehler || 'Die Installation ist fehlgeschlagen.', vorschlag: e.vorschlag || null };
+  if (!e.ok) return { art: 'fehler', text: e.fehler || standardFehler, vorschlag: e.vorschlag || null };
   const warnung = schritteListe(e).some((s) => !s.ok);
   return { art: warnung ? 'warnung' : 'ok', text: e.meldung || 'Fertig.', vorschlag: null };
 }
+
+// ------------------------------------------------------------------------------------------ Alte Apps entfernen (H+K XR E1)
+
+/**
+ * Die alten Apps «KICAD» und «XR-Labor», die «H+K XR» ersetzt und die noch in der Brille installiert sind: [{ paket, name }] aus GET /api/quest/app (brille.alteApps).
+ * Welche Pakete gelten, entscheidet der Server (QuestDienst.AlteApps); hier werden nur Einträge mit Paket und Name als Text übernommen.
+ */
+export const alteApps = (app) => (app?.brille?.alteApps ?? []).filter((a) => a && typeof a.paket === 'string' && typeof a.name === 'string').map((a) => ({ paket: a.paket, name: a.name }));
+
+/**
+ * Zustand des Knopfs «Alte Apps entfernen …»: sichtbar nur, wenn mindestens eine alte App in der Brille installiert ist; frei, solange kein Aufruf läuft.
+ * Entfernt wird nie ohne Rückfrage (alteAppsFrage) und nie ohne «bestaetigt» im Aufruf (der Server verlangt es).
+ */
+export function alteAppsKnopf({ app, laeuft = false }) {
+  const liste = alteApps(app);
+  return { sichtbar: liste.length > 0, frei: liste.length > 0 && !laeuft, liste };
+}
+
+/** Die Rückfrage vor dem Entfernen: nennt die Apps, die entfernt werden, und dass «H+K XR» bleibt. */
+export const alteAppsFrage = (liste) =>
+  `Die bisherigen Apps ${liste.map((a) => `«${a.name}»`).join(' und ')} von der Brille entfernen? «${APP_NAME}» ersetzt sie und bleibt; Einstellungen und Daten der alten Apps in der Brille gehen verloren.`;
+
+/** Hinweistext neben dem Knopf. */
+export const alteAppsHinweis = (liste) =>
+  `In der Brille ${liste.length === 1 ? 'ist noch die alte App' : 'sind noch die alten Apps'} ${liste.map((a) => `«${a.name}»`).join(' und ')} installiert. «${APP_NAME}» ersetzt sie; entfernen geht mit dem Knopf (nach Rückfrage).`;
 
 // ------------------------------------------------------------------------------------------ Gekoppelte Brillen
 

@@ -134,8 +134,8 @@ const TEXTE = Object.freeze({
   labor: Object.freeze({
     stellschrauben: 'Jede Änderung geht sofort an die Brille. «Vorgabe» setzt die Stellschraube zurück. Mit «folgt P5» gekennzeichnete Werte versteht die App erst ab P5; das Labor sendet sie schon.',
     profile: 'Ein Profil ist der aktuelle Satz aller Stellschrauben und Varianten unter einem Namen (gespeichert je Benutzer in OneDrive, Ordner labor\\profile). «Für die App festlegen» heisst: die App holt dieses Profil beim Verbinden mit dem Katalog (Reihenfolge: Vorgabe › Profil › live gesetzte Werte).',
-    varianten: 'Je Bedienung eine Wahl (A/B). Das Labor sendet sie als Stellschraube <code>labor.variante.&lt;name&gt;</code> an die Brillen der App «XR-Labor» (ist keine verbunden, an alle) und sendet sie bei jeder neuen Verbindung wieder; die App trägt sie in jedes Messprotokoll ein.',
-    aufgaben: '«Aufgabe starten» schickt die Aufgabe an die verbundene Brille mit der App «XR-Labor» (ist keine solche verbunden, an alle verbundenen Brillen; Stellschraube <code>labor.aufgabe</code>). Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status unten kommt aus den Messprotokollen aller Rechner.',
+    varianten: 'Je Bedienung eine Wahl (A/B). Das Labor sendet sie als Stellschraube <code>labor.variante.&lt;name&gt;</code> an die Brillen, die mit dem Werkzeug «XR-Labor» verbunden sind (ist keine verbunden, an alle) und sendet sie bei jeder neuen Verbindung wieder; die App trägt sie in jedes Messprotokoll ein.',
+    aufgaben: '«Aufgabe starten» schickt die Aufgabe an die Brille, die mit dem Werkzeug «XR-Labor» verbunden ist (ist keine solche verbunden, an alle verbundenen Brillen; Stellschraube <code>labor.aufgabe</code>). Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status unten kommt aus den Messprotokollen aller Rechner.',
     keineBrille: 'Keine Brille verbunden. Änderungen werden gemerkt und beim nächsten Verbinden gesendet (solange das Labor läuft).',
   }),
 });
@@ -144,12 +144,12 @@ const TEXTE = Object.freeze({
 export const ortTexte = (ort) => TEXTE[ort] ?? TEXTE.kicad;
 
 /**
- * Hinweis für die Labor-Seite, wenn Brillen verbunden sind, aber keine mit der App «XR-Labor»: Prüfaufgaben und Varianten gehen dann an alle (so verhält sich der Server).
+ * Hinweis für die Labor-Seite, wenn Brillen verbunden sind, aber keine mit dem Werkzeug «XR-Labor»: Prüfaufgaben und Varianten gehen dann an alle (so verhält sich der Server).
  * Sonst null. brillen = Ergebnis von brillenInfo(…, { marken: true }).
  */
 export function zielHinweis(brillen) {
   if (!brillen || brillen.anzahl === 0 || brillen.laborBrillen > 0) return null;
-  return `Keine Brille mit der App «${MARKEN[MARKE_LABOR]}» verbunden: Prüfaufgaben und Varianten gehen an alle ${brillen.anzahl} verbundenen Brillen.`;
+  return `Keine Brille ist mit dem Werkzeug «${MARKEN[MARKE_LABOR]}» verbunden: Prüfaufgaben und Varianten gehen an alle ${brillen.anzahl} verbundenen Brillen.`;
 }
 
 // ------------------------------------------------------------------------------------------ Profile
