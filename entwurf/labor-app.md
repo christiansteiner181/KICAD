@@ -290,6 +290,37 @@ Aufträgen und Markern, Desktop in der Brille, alle Bedienung in der Brille.
 
 Zwischen den Stufen ein Brillentest mit Christian (Prüfbilder an jedem sichtbaren Zwischenstand, `feedback_zwischenbilder`).
 
+### Übergabe von Modul G an L4 (26.10.2026)
+
+Christian hat die Abnahme von Modul G Stufe 1 beendet: «wir machen das tuning in der labor app». Stand Modul G: Zweig
+`claude/modul-gesten` @ ee27264, an den Hauptlauf zum Zusammenführen gemeldet. Kamera: ASUS FHD (eingebaut).
+
+**Offen fürs Tuning (Ausgangslage L4):**
+1. Fliessende Gesten brechen nach 1–2 s ab; die Ursache ist nicht belegt. Hauptverdacht der Sitzung Modul G: die feste Konstante
+   `OEFFNEN_SPIEL` 0,12 (Abbruchgrund «hand öffnet sich»).
+2. Der Bereich vor der eingebauten Kamera ist eng. Das ist eine Grenze der Hardware; schon jetzt läuft die Kamera mit 1920×1080 bei vollem
+   Sichtfeld.
+
+**Hilfen, die L4 nutzt:**
+- Abbruchprotokoll `%LOCALAPPDATA%\HLKS_CAD\gesten\abbrueche.jsonl`. Gründe: faust gelöst, zeigefinger gestreckt, hand öffnet sich, hand
+  verloren, hand neu im bild; je mit `dauerMs` und den Massen `faust`, `minFaust`, `faustAn`, `zeigefinger`, `imBild`, `rand`, `luecke`.
+  L4 wertet es auf der Labor-Seite aus (Häufigkeit je Grund, Verteilung der Masse kurz vor dem Abbruch).
+- Messzeile im Dialog «Gesten»; Aufnahme und `aufnahmeAbspielen()` in `gesten-logik.js` liefern auch `abbrueche`. Damit lassen sich
+  aufgenommene Punktfolgen mit geänderten Werten erneut abspielen, ohne die Geste neu vorzuzeigen.
+
+**Werte nach der Abnahme (Vorgaben in `gesten-logik.js`, Namen unverändert):** `drehen_grad_je_cm` 3, `verschieben_je_cm` 0,02,
+`rollen_faktor` 0,5, `zoom_faktor` 1,25, `glaettung_ms` 160, `zoom_glaettung_ms` 250.
+
+**Feste Konstanten (heute keine Stellschrauben):** `LUECKE_MS` 350, `OEFFNEN_SPIEL` 0,12, `FAUST_OFFEN_VOR_MS` 1500, `ZOOM_GESTE` false
+(G5 aus, Entscheid Christian). Damit das Labor sie verstellen kann, werden sie in L4 zu Stellschrauben mit Bereich und Erklärung; die
+Vorgaben bleiben gleich.
+
+**Entscheide Christian 26.10.2026 (Fragefenster nach der Übergabe):**
+- **Reihenfolge wie geplant:** L1 → L2 → L3 → L4; das PC-Tuning wird nicht vorgezogen.
+- **Übergang bis zum Bedienstandard:** Wird im Labor ein PC-Wert gefunden, bevor `standard.json` für KICAD gilt, schreibt das Labor ihn
+  auf «Für KICAD übernehmen» übergangsweise direkt in die Benutzereinstellung `gesten` (Feld `stellschrauben`, Modul G). Mit L2 wechselt
+  das auf den Bedienstandard. Bei der geplanten Reihenfolge greift das nur, falls L4 doch vor L2 fertig wird.
+
 ## Zuteilung (nach Tabelle in `../CLAUDE.md`)
 
 Bauagenten mit `isolation: "worktree"`, Zuteilung in `zuteilung.md`, Tests nur gefiltert auf das Geänderte.
