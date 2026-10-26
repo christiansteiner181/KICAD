@@ -1,7 +1,7 @@
-# Labor-App – VR-Steuerung und Standardgesten erproben: Spezifikation
+# XR-Labor (Labor-App) – VR-Steuerung und Standardgesten erproben: Spezifikation
 
-Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Entwurf, nicht gebaut**. Gebaut wird erst nach Freigabe
-durch Christian. Offene Punkte stehen am Schluss.
+Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Freigegeben von Christian am 26.10.2026** («Freigegeben, L0 starten»);
+Bau ab L0. Offene Punkte stehen am Schluss.
 
 ## Anlass
 
@@ -323,7 +323,7 @@ Richtwert: L0 1 Tag, L1 2 Tage, L2 2 Tage, L3 2–3 Tage, L4 2 Tage.
 
 ## Offene Punkte
 
-- Alle Fragen zur Spezifikation sind entschieden (Tabellen oben). **Offen: Freigabe der Spezifikation durch Christian**; danach Start
+- Alle Fragen zur Spezifikation sind entschieden (Tabellen oben), freigegeben am 26.10.2026; Start
   mit L0 nach Abstimmung mit der Sitzung Quest App.
 - Im Bau zu klären (Hauptlauf): Abbildung der 21 MediaPipe-Punkte ohne Mittelhandknochen (L4), Umbenennen von `LaborWerte` (L0),
   Entwurf des Symbols `labor.ico` (Bild an Christian, L0).
