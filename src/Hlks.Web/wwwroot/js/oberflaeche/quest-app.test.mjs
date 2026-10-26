@@ -280,15 +280,20 @@ test('App-Marke: Vorgabe KICAD mit den bisherigen Texten, eine andere Marke erse
   assert.equal(T.installierenKnopf({ q: { ...quest, adbGefunden: false }, app, zugang: an, marke: probe }).grund, 'adb fehlt: anderswo einrichten.');
   assert.match(T.appWegText({ appWeg: 'kabel' }, probe), /Probe stellt die Brille nicht/);
   assert.match(T.firewallHinweis(probe), /^Probe liest Netzprofil/);
+  assert.equal(T.installiertText({ adbGefunden: false }, { ...probe, adbFehlt: 'adb fehlt anderswo.' }), 'adb fehlt anderswo.');
+  assert.match(lies('./quest-app-dialog.js'), /T\.installiertText\(app, appMarke\)/);
   // der Dialog nimmt die Marke als Option und setzt ihre Werte nur über esc() ins HTML; ohne Ablage-Schlüssel und Brillen-Schalter fehlen diese Teile
   const d = lies('./quest-app-dialog.js');
   assert.match(d, /marke = T\.KICAD_MARKE \}\)/);
-  for (const feld of ['einleitung', 'port', 'ablageVorgabe', 'bereitstellen']) assert.match(d, new RegExp(`esc\\(m\\.${feld}\\)`), feld);
-  assert.match(d, /\$\{m\.brillenZeigen \? `<div class="qa-block qa-anzeige">/);
-  assert.match(d, /\$\{m\.ablageSchluessel \? `<div class="qd-zeile qa-ablage">/);
-  assert.match(d, /benutzerSetzen\(m\.ablageSchluessel,/);
-  assert.match(d, /T\.zugangAnzeige\(zugang, m\)/);
-  assert.match(d, /marke: m \}\)/);
+  for (const feld of ['einleitung', 'port', 'ablageVorgabe', 'bereitstellen']) assert.match(d, new RegExp(`esc\\(appMarke\\.${feld}\\)`), feld);
+  assert.match(d, /\$\{appMarke\.brillenZeigen \? `<div class="qa-block qa-anzeige">/);
+  assert.match(d, /\$\{appMarke\.ablageSchluessel \? `<div class="qd-zeile qa-ablage">/);
+  assert.match(d, /benutzerSetzen\(appMarke\.ablageSchluessel,/);
+  assert.match(d, /T\.zugangAnzeige\(zugang, appMarke\)/);
+  assert.match(d, /marke: appMarke \}\)/);
+  // Befund 26.10.2026 (Prüfbild): hiess die Marke «m», verdeckte das Meldungsfeld «const m» in zeichneInstallieren sie (ReferenceError beim Öffnen).
+  // Der Name der Marke kommt im Modul genau einmal als Deklaration vor.
+  assert.equal([...d.matchAll(/\b(?:const|let|var)\s+appMarke\b/g)].length, 1);
 });
 
 test('Style: der Dialog passt in jedes Fenster', () => {

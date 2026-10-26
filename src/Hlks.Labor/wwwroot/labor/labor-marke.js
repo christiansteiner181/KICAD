@@ -9,6 +9,7 @@ export const LABOR_MARKE = Object.freeze({
   ablageVorgabe: '%USERPROFILE%\\HLKS_CAD_werkzeuge\\labor_app',
   bereitstellen: 'werkzeuge\\quest_app_bereitstellen.ps1 -Labor',
   adbEinrichten: 'in KICAD unter «Quest verbinden» einrichten (gilt auch hier)',
+  adbFehlt: 'adb fehlt (in KICAD unter «Quest verbinden» einrichten).',
   brillenZeigen: false,
   einleitung: 'Die App «XR-Labor» in der Brille verbindet sich über das Büronetz mit diesem Labor-PC: eigener Netzzugang (Port 5340), eigene Kopplung, unabhängig von KICAD. In der Brille läuft immer nur eine der beiden Apps.',
 });

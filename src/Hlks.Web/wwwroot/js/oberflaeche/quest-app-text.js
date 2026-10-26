@@ -17,7 +17,8 @@ export const ABLAGE_SCHLUESSEL = 'quest.app_ablage';
  * App-Marke: welche App und welcher Server der Teil zeigt (XR-Labor L0, entwurf/labor-app.md). Vorgabe KICAD – die Texte sind dann genau die bisherigen.
  * Das XR-Labor (src/Hlks.Labor/wwwroot/labor/labor-marke.js) gibt seine eigene mit. Felder: app (Name der App und des Servers), port (Netzzugang),
  * desktopPort (nur dieser Server öffnet ihn), ablageSchluessel (Benutzereinstellung mit dem Ordner der App; null = am PC nicht einstellbar), ablageVorgabe,
- * bereitstellen (Befehl, der die APK baut und ablegt), adbEinrichten (wo adb eingerichtet wird), brillenZeigen (Schalter «Brillen in der 3D-Ansicht»), einleitung.
+ * bereitstellen (Befehl, der die APK baut und ablegt), adbEinrichten (wo adb eingerichtet wird), adbFehlt (Zeile «In der Brille», wenn adb fehlt),
+ * brillenZeigen (Schalter «Brillen in der 3D-Ansicht»), einleitung.
  */
 export const KICAD_MARKE = Object.freeze({
   app: 'KICAD',
@@ -27,6 +28,7 @@ export const KICAD_MARKE = Object.freeze({
   ablageVorgabe: '%USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app',
   bereitstellen: 'werkzeuge\\quest_app_bereitstellen.ps1',
   adbEinrichten: 'oben im Dialog einrichten',
+  adbFehlt: 'adb fehlt (siehe oben).',
   brillenZeigen: true,
   einleitung: 'Die App «KICAD» in der Brille ersetzt auf Dauer den Browser: sie verbindet sich über das Büronetz mit KICAD, geht ohne Kabel und braucht keinen Link-fähigen PC.',
 });
@@ -96,9 +98,9 @@ export function abgelegtText(app) {
 }
 
 /** Die in der Brille installierte Fassung (dumpsys package). */
-export function installiertText(app) {
+export function installiertText(app, m = KICAD_MARKE) {
   if (!app) return 'Wird gelesen …';
-  if (app.adbGefunden === false) return 'adb fehlt (siehe oben).';
+  if (app.adbGefunden === false) return m.adbFehlt;
   const b = app.brille;
   if (!b) return 'Keine Brille verbunden.';
   const i = b.installiert;

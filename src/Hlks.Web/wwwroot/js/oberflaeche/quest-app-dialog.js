@@ -19,7 +19,7 @@ const esc = T.esc;
  * Gibt { knoten, aktualisieren(), beenden(), zustandNeu() } zurück: aktualisieren() zeichnet mit dem aktuellen Zustand des Dialogs neu, beenden() hält den Takt an.
  */
 export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () => {}, marke = T.KICAD_MARKE }) {
-  const m = marke;
+  const appMarke = marke;   // nicht «m»: zeichneInstallieren hat ein eigenes m (Meldungsfeld)
   let zugang = null;      // GET /api/xr/zugang
   let app = null;         // GET /api/quest/app
   let netz = null;        // GET /api/quest/app/netz
@@ -34,12 +34,12 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
 
   const w = knoten(`<section class="qa" aria-label="Quest App">
     <b>Quest App</b>
-    <div class="leise qd-klein">${esc(m.einleitung)}</div>
+    <div class="leise qd-klein">${esc(appMarke.einleitung)}</div>
     <div class="qa-zugang">
       <div class="qa-zeile"><span class="qa-lampe" aria-hidden="true"></span><span class="qa-zugang-text"></span>
-        <button type="button" class="dlg-knopf qa-schalter" title="Öffnet bzw. schliesst den Zugang der App im Büronetz (nur dieser PC; Port ${esc(m.port)}, nur gekoppelte Brillen)">Netzzugang einschalten</button></div>
+        <button type="button" class="dlg-knopf qa-schalter" title="Öffnet bzw. schliesst den Zugang der App im Büronetz (nur dieser PC; Port ${esc(appMarke.port)}, nur gekoppelte Brillen)">Netzzugang einschalten</button></div>
       <ul class="qa-hinweise" aria-label="Hinweise zum Netz"></ul>
-      <div class="leise qd-klein qa-firewall">${esc(T.firewallHinweis(m))}</div>
+      <div class="leise qd-klein qa-firewall">${esc(T.firewallHinweis(appMarke))}</div>
     </div>
     <div class="qa-fassungen">
       <div class="qa-fz"><span class="qa-etikett leise">Abgelegte App</span><span class="qa-abgelegt"></span></div>
@@ -60,20 +60,20 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
     <div class="qa-block"><b>Ersatzkopplung (ohne Kabel)</b>
       <div class="leise qd-klein">${esc(T.ERSATZ_HINWEIS)}</div>
       <div class="qa-anfragen" aria-label="Offene Kopplungsanfragen"></div></div>
-    ${m.brillenZeigen ? `<div class="qa-block qa-anzeige"><label class="qd-schalter"><input type="checkbox" class="qa-zeigen" aria-label="Brillen in der 3D-Ansicht zeigen"> Verbundene Brillen in der 3D-Ansicht zeigen</label>
+    ${appMarke.brillenZeigen ? `<div class="qa-block qa-anzeige"><label class="qd-schalter"><input type="checkbox" class="qa-zeigen" aria-label="Brillen in der 3D-Ansicht zeigen"> Verbundene Brillen in der 3D-Ansicht zeigen</label>
       <div class="leise qd-klein">Kopf mit Blickrichtung, Hände und Name, mit der Pose aus der Brille. Derselbe Schalter wie Register Ansicht › Fenster › «Brille zeigen».</div></div>` : ''}
-    ${m.ablageSchluessel ? `<div class="qd-zeile qa-ablage"><label class="qd-etikett" for="qa-ordner">Ordner der App</label>
-      <input id="qa-ordner" type="text" class="qa-ordner" spellcheck="false" autocomplete="off" data-kein-enter="1" placeholder="leer = ${esc(m.ablageVorgabe)}" aria-label="Ordner der abgelegten App">
+    ${appMarke.ablageSchluessel ? `<div class="qd-zeile qa-ablage"><label class="qd-etikett" for="qa-ordner">Ordner der App</label>
+      <input id="qa-ordner" type="text" class="qa-ordner" spellcheck="false" autocomplete="off" data-kein-enter="1" placeholder="leer = ${esc(appMarke.ablageVorgabe)}" aria-label="Ordner der abgelegten App">
       <button type="button" class="dlg-knopf qa-ordner-speichern">Speichern</button></div>
-    <div class="leise qd-klein">Die App baut und legt dort ab: <code>${esc(m.bereitstellen)}</code> (APK und version.json). Der Ordner muss auf diesem Rechner liegen.</div>`
-    : `<div class="leise qd-klein qa-ablage-hinweis">Die App liegt in <code>${esc(m.ablageVorgabe)}</code>; bauen und ablegen mit <code>${esc(m.bereitstellen)}</code> (APK und version.json).</div>`}
+    <div class="leise qd-klein">Die App baut und legt dort ab: <code>${esc(appMarke.bereitstellen)}</code> (APK und version.json). Der Ordner muss auf diesem Rechner liegen.</div>`
+    : `<div class="leise qd-klein qa-ablage-hinweis">Die App liegt in <code>${esc(appMarke.ablageVorgabe)}</code>; bauen und ablegen mit <code>${esc(appMarke.bereitstellen)}</code> (APK und version.json).</div>`}
   </section>`);
   const q = (s) => w.querySelector(s);
 
   // ------------------------------------------------------------------------------------------ Anzeige
 
   function zeichneZugang() {
-    const a = T.zugangAnzeige(zugang, m);
+    const a = T.zugangAnzeige(zugang, appMarke);
     const z = q('.qa-zeile');
     z.dataset.stufe = a.stufe;
     q('.qa-zugang-text').innerHTML = `<b>${esc(a.titel)}</b> <span class="leise">${esc(a.text)}</span>`;
@@ -86,17 +86,17 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
 
   function zeichneFassungen() {
     q('.qa-abgelegt').textContent = T.abgelegtText(app);
-    q('.qa-installiert').textContent = `${T.brilleText(app?.brille)} – ${T.installiertText(app)}`;
+    q('.qa-installiert').textContent = `${T.brilleText(app?.brille)} – ${T.installiertText(app, appMarke)}`;
     q('.qa-vergleich').textContent = T.vergleichText(app?.vergleich);
   }
 
   function zeichneInstallieren() {
-    const k = T.installierenKnopf({ q: quest(), app, zugang, laeuft, weg, marke: m });
+    const k = T.installierenKnopf({ q: quest(), app, zugang, laeuft, weg, marke: appMarke });
     const knopf = q('.qa-installieren');
     knopf.disabled = !k.frei;
     knopf.textContent = T.installierenTitel(app, zugang);
     q('.qa-neukoppeln').hidden = !T.neuKoppeln(app, zugang);
-    q('.qa-wegtext').textContent = T.appWegText(app, m);
+    q('.qa-wegtext').textContent = T.appWegText(app, appMarke);
     q('.qa-grund').textContent = k.frei ? '' : k.grund;
     for (const r of w.querySelectorAll('input[name="qa-weg"]')) { r.disabled = laeuft; r.checked = r.value === weg; }
     const m = q('.qa-meldung');
@@ -225,10 +225,10 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
         await senden('/api/xr/kopplung/ablehnen', { anfrage });
         meldungText = { art: 'ok', text: 'Die Anfrage ist abgelehnt.' };
       });
-    } else if (t.matches('.qa-ordner-speichern') && m.ablageSchluessel) {
+    } else if (t.matches('.qa-ordner-speichern') && appMarke.ablageSchluessel) {
       const pfad = q('.qa-ordner').value.trim();
       lauf(async () => {
-        await benutzerSetzen(m.ablageSchluessel, pfad === '' ? null : pfad);
+        await benutzerSetzen(appMarke.ablageSchluessel, pfad === '' ? null : pfad);
         meldungText = { art: 'ok', text: pfad === '' ? 'Der Ordner ist zurückgesetzt.' : 'Der Ordner der App ist gespeichert.' };
       });
     }
@@ -243,11 +243,11 @@ export function questAppTeil({ quest, beiAenderung = () => {}, beiGelesen = () =
   zeichne(true);
   timer = setInterval(taktSchritt, T.ZUGANG_TAKT_MS);
   // Benutzereinstellungen nur, wenn der Teil sie zeigt (Ordner der App, Brillen-Schalter); das XR-Labor zeigt beides nicht und liest sie nicht
-  if (m.ablageSchluessel || m.brillenZeigen) {
+  if (appMarke.ablageSchluessel || appMarke.brillenZeigen) {
     benutzerLaden().finally(() => {
       if (beendet) return;
       const o = q('.qa-ordner');
-      if (o) o.value = String(benutzerWert(m.ablageSchluessel, '') ?? '');
+      if (o) o.value = String(benutzerWert(appMarke.ablageSchluessel, '') ?? '');
       zeichne();
     });
   }

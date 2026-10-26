@@ -38,6 +38,7 @@ test('Texte des Teils «Quest App» mit der Marke des Labors', () => {
   assert.equal(T.installierenKnopf({ q: questAusApp(app), app, zugang: { aktiv: true }, marke: LABOR_MARKE }).grund, 'Keine App abgelegt: werkzeuge\\quest_app_bereitstellen.ps1 -Labor ausführen.');
   assert.match(T.installierenKnopf({ q: questAusApp({ adbGefunden: false }), app: { ablage: { version: {} } }, zugang: { aktiv: true }, marke: LABOR_MARKE }).grund, /in KICAD unter «Quest verbinden» einrichten/);
   assert.match(T.firewallHinweis(LABOR_MARKE), /^XR-Labor liest Netzprofil/);
+  assert.equal(T.installiertText({ adbGefunden: false }, LABOR_MARKE), 'adb fehlt (in KICAD unter «Quest verbinden» einrichten).');
 });
 
 test('Brille per adb aus GET /api/quest/app (das Labor hat kein /api/quest)', () => {
