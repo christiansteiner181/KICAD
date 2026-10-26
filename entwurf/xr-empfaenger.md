@@ -178,6 +178,17 @@ Zwischen den Stufen ein Brillentest mit Christian (Prüfbilder an jedem sichtbar
   während E1/E2 ändert nur diese Sitzung die App.
 - **Hauptsitzung:** L1 kann wie gemeldet zusammengeführt werden; es bleibt Grundlage. Neue Knöpfe in KICAD («H+K XR installieren») gehören zu E1.
 
+### Prüfliste für E1 (Hinweise der Sitzung «Modul XR – Quest App», 26.10.2026)
+
+1. Paketname `ch.hkplanung.kicad.quest` mitziehen in `werkzeuge/quest_app_bereitstellen.ps1`, `quest_brillentest.ps1`, `quest_pruefen.ps1`, im
+   Quest-Dialog von KICAD (Installation und Start per adb, Prüfung gegen `version.json`) und im Kopplungspfad
+   `/sdcard/Android/data/<paket>/files/kopplung.json`; die alte App auf der Brille deinstallieren lassen.
+2. Netzzugang und Pinning hängen am PC (`zugang.json`, `XrPforte`); mehrere Werkzeuge = mehrere Kopplungseinträge in der App. Das `hallo` trägt
+   Fassung und Commit der App.
+3. Grenzen für Stellschrauben und Varianten (Katalog 96, Kanal 128) gelten je Kanal – bei mehreren Werkzeugen je Werkzeug zählen.
+4. Die Prüfläufe V1a–V1i (`QuestApp.Pruefen*.cs`) setzen Varianten selbst; beim Umbau zu Modulen mitziehen.
+5. Register «XR» im Menüband, Gruppe «Brille», «App installieren …» (Kürzel XI) zeigt auf den Quest-Dialog: neuen Namen «H+K XR» nachführen.
+
 ## Offene Punkte (im Bau zu klären, ohne Rückfrage)
 
 - Ordnername `src/Hlks.Quest` behalten oder umbenennen (E1, nach Konfliktlage).
