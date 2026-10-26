@@ -422,7 +422,7 @@ export function schritt(z, bild) {
   }
   if (z.sichtbarSeit === null || t - z.zuletztGesehen > LUECKE_MS) {
     // neu im Bild: alles, was an der alten Hand hing, beginnt neu
-    if (z.sichtbarSeit !== null) abbrechen(z, t);
+    if (z.sichtbarSeit !== null) abbrechen(z, t, 'hand neu im bild', aus);
     z.sichtbarSeit = t;
   }
   z.zuletztGesehen = t;
@@ -437,9 +437,27 @@ export function schritt(z, bild) {
   return aus;
 }
 
+/**
+ * Abbruchprotokoll (Abnahme Christian 26.10.2026: «speichere weshalb die gesten nach 1-2 sek. abbrechen»): Endet eine scharfe Faust (G4/G7), meldet die Logik
+ * { art: 'abbruch', geste, dauerMs, grund, werte } – nur Text und Zahlen, nie Punkte oder Bilder. grund: 'faust gelöst' (Finger auf), 'zeigefinger gestreckt',
+ * 'hand öffnet sich' (Faustmass stieg um mehr als OEFFNEN_SPIEL über sein Minimum), 'hand verloren' (länger als LUECKE_MS nicht erkannt),
+ * 'hand neu im bild' (nach einer Lücke).
+ */
+function faustAbbruch(z, t, grund, m, aus) {
+  const f = z.faust;
+  if (!f || !f.gueltig || !f.scharf || f.gemeldet || !aus) return;
+  f.gemeldet = true;
+  const r3 = (x) => (zahl(x) ? Math.round(x * 1000) / 1000 : null);
+  aus.ereignisse.push({
+    art: 'abbruch', geste: f.geste ?? null, dauerMs: Math.round(t - f.seit), grund,
+    werte: m ? { faust: r3(m.faust), minFaust: r3(f.minFaust), faustAn: r3(z.werte.faust_an), zeigefinger: r3(m.streckung[0]), imBild: r3(m.imBild), rand: r3(m.rand), luecke: Math.round(t - z.zuletztGesehen) }
+      : { minFaust: r3(f.minFaust), luecke: Math.round(t - z.zuletztGesehen) },
+  });
+}
+
 /** Laufendes abbrechen (Hand verloren, andere Hand): Faust endet sofort, Kandidaten verfallen. */
-function abbrechen(z, t) {
-  if (z.faust) z.faustEnde = t;
+function abbrechen(z, t, grund = null, aus = null) {
+  if (z.faust) { faustAbbruch(z, t, grund ?? 'abgebrochen', null, aus); z.faustEnde = t; }
   z.faust = null;
   z.kandidat = null;
   z.spur = [];
@@ -451,7 +469,7 @@ function verloren(z, t, eingabe, aus) {
   if (z.sichtbarSeit === null) return;
   if (t - z.zuletztGesehen <= LUECKE_MS) return;
   if (z.pistole) pistoleEnde(z, z.pistole.zuletzt, eingabe, aus);
-  abbrechen(z, t);
+  abbrechen(z, t, 'hand verloren', aus);
   z.sichtbarSeit = null;
 }
 
@@ -496,7 +514,10 @@ export function spielLage(k, wert, schwelle, spiel) {
 function faustSchritt(z, m, t, dt, faust, bild, aus) {
   const w = z.werte;
   if (!faust) {
-    if (z.faust) { z.faust = null; z.faustEnde = t; }   // Faust gelöst: sofort aus, ohne Nachlauf
+    if (z.faust) {   // Faust gelöst: sofort aus, ohne Nachlauf
+      faustAbbruch(z, t, m.streckung[0] >= STRECK_ANTEIL ? 'zeigefinger gestreckt' : 'faust gelöst', m, aus);
+      z.faust = null; z.faustEnde = t;
+    }
     return;
   }
   let f = z.faust;
@@ -508,7 +529,7 @@ function faustSchritt(z, m, t, dt, faust, bild, aus) {
   }
   if (!f.gueltig) return;
   f.minFaust = Math.min(f.minFaust, m.faust);
-  if (m.faust > f.minFaust + OEFFNEN_SPIEL) f.oeffnet = true;   // die Hand öffnet sich: keine Bewegung mehr
+  if (m.faust > f.minFaust + OEFFNEN_SPIEL && !f.oeffnet) { faustAbbruch(z, t, 'hand öffnet sich', m, aus); f.oeffnet = true; }   // die Hand öffnet sich: keine Bewegung mehr
   if (f.oeffnet) return;
   // Rollwinkel ohne Sprung bei ±180°
   f.rollSumme += winkelDiff(f.rollRoh, m.roll);
@@ -732,7 +753,7 @@ export function bildFuerAufnahme(t, haende) {
 }
 
 /**
- * Spielt eine Aufnahme durch den Zustandsautomaten (Tests, Testfeld): Rückgabe Ereignisse (mit t), Summe der Navigation (drehen und verschieben addiert, rollen
+ * Spielt eine Aufnahme durch den Zustandsautomaten (Tests, Testfeld): Rückgabe Schritt-Ereignisse (mit t), Abbrüche der Faust (abbrueche), Summe der Navigation (drehen und verschieben addiert, rollen
  * addiert, zoom multipliziert), Gesten und Zustände, die vorkamen. optionen: hand (Vorgabe die der Aufnahme), stellschrauben, ansicht3d, ansichtSeitenverhaeltnis.
  */
 export function aufnahmeAbspielen(a, { hand, stellschrauben, ansicht3d = true, ansichtSeitenverhaeltnis = 1.6 } = {}) {
@@ -740,12 +761,12 @@ export function aufnahmeAbspielen(a, { hand, stellschrauben, ansicht3d = true, a
   const sv = zahl(a?.bildhoehe) && zahl(a?.bildbreite) && a.bildbreite > 0 ? a.bildhoehe / a.bildbreite : SEITENVERHAELTNIS_VORGABE;
   const eingaben = [...(a?.eingaben ?? [])].filter(zahl).sort((x, y) => x - y);
   let ie = 0, letzte = -Infinity;
-  const ereignisse = [], gesten = new Set(), zustaende = new Set(), gruende = new Set();
+  const ereignisse = [], abbrueche = [], gesten = new Set(), zustaende = new Set(), gruende = new Set();
   const summe = { drehen: [0, 0], verschieben: [0, 0], rollen: 0, zoom: 1, bilderMitNavigation: 0, letzteNavigation: null };
   for (const b of a?.bilder ?? []) {
     while (ie < eingaben.length && eingaben[ie] <= b.t) letzte = eingaben[ie++];
     const r = schritt(z, { ...bildAusAufnahme(b), letzteEingabe: letzte, ansicht3d, seitenverhaeltnis: sv, ansichtSeitenverhaeltnis });
-    for (const e of r.ereignisse) ereignisse.push({ t: b.t, ...e });
+    for (const e of r.ereignisse) (e.art === 'abbruch' ? abbrueche : ereignisse).push({ t: b.t, ...e });
     const n = r.navigation;
     if (n) {
       summe.bilderMitNavigation++;
@@ -759,7 +780,7 @@ export function aufnahmeAbspielen(a, { hand, stellschrauben, ansicht3d = true, a
     zustaende.add(r.zustand);
     if (r.grund) gruende.add(r.grund);
   }
-  return { ereignisse, summe, gesten: [...gesten], zustaende: [...zustaende], gruende: [...gruende] };
+  return { ereignisse, abbrueche, summe, gesten: [...gesten], zustaende: [...zustaende], gruende: [...gruende] };
 }
 
 // ---------------------------------------------------------------------------------------------------- Datenschutz

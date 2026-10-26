@@ -3492,6 +3492,12 @@ Christian, 26.10.2026: «eine erweiterung der normalen bedienung, nicht diese zu
 - **Schnittstelle** `navigieren({ drehen, rollen, verschieben, zoom })` jeder Ansicht und `navigierenArt` ('3d' | '2d'), Rechnung in `js/ansichten/navigieren-logik.js`; auch für Tests und die KI nutzbar.
 - **Stellschrauben** (alle Annahmen, im Dialog einstellbar): u. a. `anstoss_weg` 0,045 m, `anstoss_tempo_ms` 0,35 m/s, `randwinkel_grad` 25°, `totbereich` 1,5 % der Bildbreite, `rollen_min_grad` 8°, `sperre_ms` 300, `bildwinkel_grad` 60°.
 
+### Befunde der Abnahme 26.10.2026 und Abbruchprotokoll
+
+- **Geändert nach Befunden von Christian:** Händigkeit nicht mehr getauscht (die linke Hand galt als rechte), Kamera mit voller Auflösung 1920 × 1080 (volles Sichtfeld), Erkennungsbild 960 Punkte breit, Lücken der Erkennung bis 350 ms überbrückt, alle fliessenden Gesten gedämpft (Drehen 3°/cm, Verschieben 2 %/cm, Rollen 1 : 2, Glättung 160 ms), **G5 (Zoom per Faust) ausgeschaltet**. Der Dialog «Gesten» zeigt oben eine Messzeile (Bildrate der Erkennung, Kamera- und Erkennungsbild).
+- **Abbruchprotokoll:** Jedes Ende einer laufenden Faust meldet die Logik mit Grund (`faust gelöst`, `zeigefinger gestreckt`, `hand öffnet sich`, `hand verloren`, `hand neu im bild`), Dauer und einigen Massen; `js/oberflaeche/gesten-protokoll.js` schickt es an `POST /api/gesten/abbruch` (`GestenProtokoll.cs`), der Server hängt es an `%LOCALAPPDATA%\HLKS_CAD\gesten\abbrueche.jsonl` an (Ordner mit `HLKS_GESTEN_PROTOKOLL`). Angenommen wird nur `{ geste, dauerMs, grund, werte { Name: Zahl } }` – keine Punkte, keine Bilder.
+- **Offen:** Das Tuning (Abbrüche nach 1–2 s, enger Bereich vor der Kamera) läuft im Labor (Entscheid Christian 26.10.2026: «wir machen das tuning in der labor app»); die «Fertig, wenn»-Liste ist am Desktop noch nicht erfüllt.
+
 ### Schnittstelle «Seiten» für Dialoge und Listen (Vertrag für G2/G3)
 
 Ein Dialog oder eine Ansicht kann Seiten anbieten, die G2 blättert: ein Element mit `data-seiten`, darin Knöpfe `data-seite="zurueck"` und `data-seite="vor"` (optional ein Element `data-seite-text` mit «Seite 2 von 3»), oder eine Reiterliste `role="tablist"` mit `role="tab"` (`aria-selected`). Heute nutzt das noch kein Dialog; die Hilfe (`/hilfe/`) ist ein eigenes Browserfenster und hört nicht auf die Gesten dieses Fensters. G3 rollt die grösste rollbare Fläche (`overflow-y: auto|scroll`) des obersten Dialogs bzw. der Listenansicht.

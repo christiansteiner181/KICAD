@@ -370,3 +370,21 @@ test('Vorgaben gedämpft (Abnahme 26.10.2026): halbe Übersetzung, stärkere Gl�
   const voll = abspielen(f).summe.drehen[0], vorgabe = L.aufnahmeAbspielen(f).summe.drehen[0];
   assert.ok(vorgabe > 0 && vorgabe < 0.6 * voll, `${vorgabe} gegen ${voll}`);
 });
+
+test('Abbruchprotokoll: das Ende einer scharfen Faust meldet Grund und Masse (nur Zahlen); Wisch ohne Faust nicht', () => {
+  const geloest = abspielen(lies('synth-faust-loesen-im-zug'));
+  assert.ok(geloest.abbrueche.length >= 1, 'Faust im Zug gelöst');
+  const a = geloest.abbrueche[0];
+  assert.equal(a.art, 'abbruch');
+  assert.ok(['faust gelöst', 'zeigefinger gestreckt', 'hand öffnet sich'].includes(a.grund), a.grund);
+  assert.ok(a.dauerMs > 0 && Number.isFinite(a.werte.minFaust));
+  for (const v of Object.values(a.werte)) assert.ok(v === null || typeof v === 'number', 'nur Zahlen');
+  assert.equal(abspielen(lies('synth-wisch-links')).abbrueche.length, 0, 'Wisch ohne Faust');
+  // Faust, dann ist die Hand länger weg: «hand verloren»
+  const f = lies('synth-faust-drehen-rechts');
+  const ende = f.bilder.at(-1).t * 0.7;
+  const weg = { ...f, bilder: [...f.bilder.filter((b) => b.t < ende), { t: ende + 1000, punkte: null, welt: null, haendigkeit: null }] };
+  const v = abspielen(weg).abbrueche;
+  assert.deepEqual(v.map((x) => x.grund), ['hand verloren']);
+  assert.ok(v[0].werte.luecke > L.LUECKE_MS);
+});
