@@ -8859,6 +8859,551 @@
       ]
     },
     {
+      "id": "mg",
+      "titel": "Gesten am Arbeitsplatz",
+      "modul": "G",
+      "einleitung": "Modul G, Stufe 1: Gesten als vierte Eingabeebene neben Tastatur, Maus und Touch – eine Erweiterung der normalen Bedienung, kein Ersatz. Die eingebaute Kamera des Computers erkennt die Hand (die Auswertung läuft im Browser; das Kamerabild wird nie gespeichert, protokolliert oder gesendet). Die Gestenhand (Vorgabe links) gestikuliert, die rechte bleibt an der Maus. Gesten setzen keine Punkte und ändern das Modell nie: sie drehen, rollen, zoomen, verschieben und blättern nur die Ansicht. Die Gesten sind immer aktiv, solange der Grundschalter «Gesten» (GE) an ist; die Vorgabe ist aus, damit der Browser erst beim ersten Einschalten nach der Kamera fragt. Das Kapitel beschreibt den Grundschalter, das Symbol in der Statusleiste mit vier Zuständen, das Handskelett, die Schritt-Gesten G2 (Reiter wechseln), G3 (rollen), G6 (Zoom alles), die Faust-Gesten G4/G5/G7 (3D drehen, zoomen, rollen; Plan verschieben), den Dialog «Gesten» (Liste, Einstellungen, Belegung, Empfindlichkeit, Testfeld, Punktfolge aufnehmen) und die neuen Befehle «Nächster Reiter» (RV) und «Voriger Reiter» (RZ). Die Gesten selbst lassen sich nur mit einer Kamera am Desktop zeigen; die Bilder zeigen die Oberfläche, nicht die Kamera.",
+      "funktionen": [
+        {
+          "id": "mg-grundschalter",
+          "titel": "Gesten ein- und ausschalten (Grundschalter, GE)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Gesten",
+            "kuerzel": "GE",
+            "sonst": "oder Klick auf das Symbol «Gesten» in der Statusleiste"
+          },
+          "schritte": [
+            "In KICAD den Beispielprojekt-Grundriss öffnen und in der Statusleiste das Symbol «Gesten aus» ansehen.",
+            "GE tippen (oder im Register Ansicht in der Gruppe «Fenster» den Knopf «Gesten» drücken).",
+            "Die Frage des Browsers nach der Kamera mit «Zulassen» beantworten (nur beim ersten Einschalten).",
+            "Die Hand vor die Kamera halten und wieder wegnehmen.",
+            "GE noch einmal tippen."
+          ],
+          "erwartung": "Vorgabe ist aus: ohne eingeschaltete Gesten gibt es keine Kamera und keine Last (die Gestenerkennung wird gar nicht geladen). Mit GE startet sie; der Knopf «Gesten» im Menüband ist gedrückt, die Statusleiste zeigt «Gesten bereit», mit Hand im Bild «Hand erkannt». Der Schalter bleibt je Benutzer gespeichert: nach einem Neustart von KICAD laufen die Gesten wieder (der Browser fragt nicht erneut). Nochmal GE schaltet aus und gibt die Kamera frei (die Kamera-LED erlischt). Das Kamerabild bleibt im Browser: es wird nicht gespeichert und nicht gesendet.",
+          "pruefpunkte": [
+            "Vor dem Einschalten: Statusleiste «Gesten aus», keine Kamera-LED, kein Kameradialog.",
+            "Beim ersten Einschalten fragt der Browser nach der Kamera, danach nicht mehr.",
+            "Eingeschaltet ist der Knopf «Gesten» gedrückt, auch wenn per Statusleiste umgeschaltet wurde.",
+            "Ausgeschaltet erlischt die Kamera-LED.",
+            "Nach Neustart von KICAD: der Zustand ist wie zuletzt.",
+            "Im eigenen Fenster einer Ansicht (Zweitfenster) gibt es kein Symbol und keine Gesten."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Register Ansicht, Gruppe «Fenster», Statusleiste",
+            "zustand": "Knopf «Gesten» gedrückt; Statusleiste «Hand erkannt»; daneben im Hintergrund der Grundriss EG"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:292 (Aktion, Kürzel GE)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-steuerung.js:136 (Grundschalter)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-steuerung.js:221 (gesten.js erst beim Einschalten)"
+          ],
+          "hinweis": "Die Gestenerkennung (Kamera, MediaPipe) baut hlks-kern in js/gesten/gesten.js; diese Funktion beschreibt den Schalter der Oberfläche. Beim ersten Einschalten fragt nur der Browser nach der Kamera. Im Zweitfenster (eigenes Fenster einer Ansicht) laufen keine Gesten, damit nicht zwei Erkennungen dieselbe Kamera öffnen.",
+          "hauptfunktion": true
+        },
+        {
+          "id": "mg-statusleiste",
+          "titel": "Statusleiste: Symbol «Gesten» mit vier Zuständen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Statusleiste, Mitte (rechts neben «Brille»)"
+          },
+          "schritte": [
+            "Gesten einschalten (GE) und das Symbol in der Statusleiste ansehen: «Gesten bereit».",
+            "Die Gestenhand (Vorgabe links) ins Bild halten: «Hand erkannt».",
+            "In der 3D-Ansicht die Faust schliessen und bewegen: «Geste: drehen».",
+            "Die Hand wegnehmen.",
+            "Mit der Maus über das Symbol fahren und den Tooltip lesen; dann auf das Symbol klicken, danach mit der rechten Maustaste darauf klicken."
+          ],
+          "erwartung": "Das Symbol zeigt vier Zustände: aus (grau, «Gesten aus»), bereit ohne Hand (blau, «Gesten bereit»), Hand erkannt (grün, «Hand erkannt»), Geste aktiv mit Namen (Akzentfarbe, «Geste: drehen», «Geste: zoomen», «Geste: verschieben», «Geste: rollen»). Kurz nach dem Einschalten steht «Gesten starten …», solange der Browser die Kamera öffnet. Der Tooltip erklärt den Zustand und nennt: Klick schaltet ein oder aus, Rechtsklick öffnet die Einstellungen. Ein Klick schaltet die Gesten ein bzw. aus; ein Rechtsklick öffnet den Dialog «Gesten».",
+          "pruefpunkte": [
+            "Das Symbol ist auch bei ausgeschalteten Gesten da (sonst liessen sie sich nicht einschalten).",
+            "Die vier Zustände sind an Text und Farbe zu unterscheiden.",
+            "Klick schaltet um, Rechtsklick öffnet den Dialog «Gesten», ohne das Kontextmenü des Browsers.",
+            "Schlägt das Einschalten fehl (Kamera verweigert, keine Kamera), steht «Gesten aus»; der Tooltip nennt den Grund («Zuletzt: …»)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Statusleiste",
+            "zustand": "Ausschnitt der Statusleiste rechts: Symbol «Hand erkannt» (grün); daneben «Geste: drehen» in der Akzentfarbe"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-status.js:9 (Verdrahtung)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:112 (die vier Zustände)",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/statusleiste.js:30"
+          ],
+          "hinweis": "Die Zustände und der Name der Geste kommen als Ereignis {art:\"zustand\"} von js/gesten/gesten.js (hlks-kern). Die Prüfung der Zustände «Hand erkannt» und «Geste aktiv» braucht eine Kamera am Desktop."
+        },
+        {
+          "id": "mg-handskelett",
+          "titel": "Handskelett unten rechts (ohne Kamerabild)",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Feld unten rechts über der Statusleiste; Schalter im Dialog «Gesten» › Einstellungen"
+          },
+          "schritte": [
+            "Gesten einschalten und die Gestenhand ins Bild halten.",
+            "Die Finger bewegen und beobachten, wie das Feld unten rechts mitgeht.",
+            "Eine Geste auslösen, die eine Meldung zeigt (z. B. Wisch nach rechts), und beachten, wo die Meldung erscheint.",
+            "Im Dialog «Gesten» unter «Einstellungen» «Handskelett unten rechts zeigen» abwählen."
+          ],
+          "erwartung": "Ein kleines Feld (160 × 120 Punkte) unten rechts zeigt die 21 Punkte der Hand als Linien (Handgelenk, Daumen, vier Finger) – ohne Kamerabild, damit man sieht, warum etwas nicht erkannt wird. Es ist nur sichtbar, solange die Gesten laufen, und blockiert keine Mausklicks. Die Einblendungen der Oberfläche rücken darüber. Ohne Hand im Bild bleibt das Feld leer. Vorgabe ein; abgewählt verschwindet es, die Erkennung läuft weiter. Das Skelett ist je Benutzer gespeichert.",
+          "pruefpunkte": [
+            "Die Linien folgen der Hand (gespiegelt, wie im Spiegel); es ist kein Kamerabild zu sehen.",
+            "Ohne Hand: leeres Feld; bei ausgeschalteten Gesten: kein Feld.",
+            "Meldungen («Reiter: …») stehen über dem Feld, nicht darunter.",
+            "Abgewählt: das Feld ist weg, Gesten gehen weiter."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Unten rechts im Fenster",
+            "zustand": "Handskelett-Feld unten rechts mit der Hand als Linienfigur; darüber die Meldung «Reiter: 3D Lüftung»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-skelett.js:14",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:233 (Linien aus den 21 Punkten)",
+            "src/Hlks.Web/wwwroot/css/gesten.css:15 (Stil)"
+          ],
+          "hinweis": "Die 21 Punkte liefert gesten.js als Ereignis {art:\"punkte\"} (höchstens 15 je Sekunde, Bildkoordinaten 0…1, schon gespiegelt). Das Feld ist nur Anzeige."
+        },
+        {
+          "id": "mg-g2-reiter",
+          "titel": "G2 Wisch links/rechts: Ansichtsreiter wechseln",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Geste mit der Gestenhand (Vorgabe links) vor der Kamera; Belegung im Dialog «Gesten»"
+          },
+          "schritte": [
+            "Drei Ansichten öffnen, z. B. Grundriss EG, 3D und eine Liste, und alle als Reiter anordnen (WC).",
+            "Gesten einschalten und die Gestenhand offen oder locker mit einem kurzen Anstoss nach rechts bewegen.",
+            "Dann mit einem kurzen Anstoss nach links.",
+            "Bei der letzten Ansicht noch einmal nach rechts wischen.",
+            "Einen Dialog öffnen (z. B. Verwalten › Hilfe › Tastaturkürzel) und nach rechts wischen."
+          ],
+          "erwartung": "Ein Wisch nach rechts wechselt zum nächsten, ein Wisch nach links zum vorherigen Ansichtsreiter der aktiven Gruppe; am Ende geht es rundherum weiter. Kurz erscheint die Meldung «Reiter: <Name der Ansicht>». Lieber keine Auslösung als eine falsche: ein Wisch braucht einen deutlichen Anstoss; ein Wisch, bei dem eben die Maus geklickt oder eine Taste gedrückt wurde, zählt nicht (Sperre, Gestenlogik). Bei offenem Dialog wechselt kein Reiter dahinter; hat der Dialog (oder die Liste, die Hilfe) Seiten, blättert G2 die Seiten. Das Tastenkürzel-Gegenstück sind RV und RZ.",
+          "pruefpunkte": [
+            "Rechts = nächster Reiter, links = voriger; am Ende von vorn bzw. hinten.",
+            "Die Meldung nennt den Namen der neuen Ansicht und ersetzt die vorige, statt sich zu stapeln.",
+            "Bei offenem Dialog ohne Seiten passiert nichts; die Reiter dahinter bleiben.",
+            "Mit nur einem Reiter in der Gruppe wechselt nichts; das Register nennt den Grund («Mindestens zwei Ansichten in derselben Gruppe öffnen.»).",
+            "Im Testfeld des Dialogs «Gesten» löst G2 nichts aus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Ansichtsfläche mit Reiterleiste",
+            "zustand": "Drei Reiter (Grundriss EG, 3D Lüftung, Raumliste); der mittlere aktiv, darüber die Meldung «Reiter: 3D Lüftung»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-ausloesen-logik.js:33 (Entscheidung)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-ausloesen.js:17",
+            "src/Hlks.Web/wwwroot/js/fenster.js:446"
+          ],
+          "hinweis": "Annahme: Wisch nach rechts ist «vorwärts» (nächster Reiter); die Zuordnung steht allein in gesten-ausloesen-logik.js (SCHRITT) und lässt sich im Dialog über die Belegung tauschen. Die Erkennung des Wischs (Anstoss, Tempo, Rand) liegt in gesten-logik.js (hlks-kern); die Gesten lassen sich nur mit Kamera am Desktop prüfen."
+        },
+        {
+          "id": "mg-reiter-vor-zurueck",
+          "titel": "Nächster Reiter (RV) und Voriger Reiter (RZ)",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Nächster Reiter / Voriger Reiter",
+            "kuerzel": "RV / RZ",
+            "sonst": ""
+          },
+          "schritte": [
+            "Drei Ansichten als Reiter öffnen.",
+            "RV tippen, dann noch zweimal RV.",
+            "RZ tippen.",
+            "Mit nur einer offenen Ansicht den Mauszeiger über den Knopf «Nächster Reiter» halten."
+          ],
+          "erwartung": "RV macht den nächsten Reiter der aktiven Gruppe aktiv, RZ den vorherigen; am Ende der Reihe geht es rundherum weiter. Bei Fenstern nebeneinander (WT) wechselt es nur innerhalb der aktiven Gruppe. Mit höchstens einem Reiter in der Gruppe sind beide Knöpfe gesperrt (Tooltip: «Mindestens zwei Ansichten in derselben Gruppe öffnen.»). Dieselben Befehle löst die Geste G2 standardmässig aus.",
+          "pruefpunkte": [
+            "RV: Reihenfolge Grundriss → 3D → Liste → wieder Grundriss.",
+            "RZ geht in umgekehrter Reihenfolge.",
+            "Mit einer einzigen Ansicht sind beide Knöpfe gesperrt und nennen den Grund.",
+            "Die Kürzel stehen in der Liste der Tastaturkürzel (KS) unter «Ansicht»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Register Ansicht, Gruppe «Fenster»",
+            "zustand": "Gruppe «Fenster» mit den Knöpfen «Gesten», «Nächster Reiter», «Voriger Reiter»; Tooltip «Nächster Reiter (RV)»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:297",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-ansicht.js:302",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/anordnung.js:51"
+          ],
+          "hinweis": "Kürzel RV und RZ waren frei (alle Kürzel der Oberfläche haben zwei Zeichen; Test in gesten-ausloesen.test.mjs). Beide Knöpfe zeigen das Symbol «Reiter» wie «Fenster als Reiter»."
+        },
+        {
+          "id": "mg-g3-rollen",
+          "titel": "G3 Wisch hoch/runter: eine Bildschirmseite rollen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Geste mit der Gestenhand; wirkt im obersten Dialog und in der Listenansicht"
+          },
+          "schritte": [
+            "Eine lange Liste öffnen (z. B. die Raumliste), Gesten einschalten und die Gestenhand mit einem kurzen Anstoss nach unten bewegen.",
+            "Mit einem Anstoss nach oben zurückrollen.",
+            "Den Dialog «Tastaturkürzel» öffnen (KS) und nach unten wischen.",
+            "In den Grundriss, ein Schema und die 3D-Ansicht wechseln und dort nach oben und unten wischen."
+          ],
+          "erwartung": "Ein Wisch nach unten rollt die Liste bzw. den Dialog um eine Bildschirmseite (etwa 90 % der sichtbaren Höhe) weiter, ein Wisch nach oben zurück. Am Ende erscheint «Ende erreicht», am Anfang «Anfang erreicht». In Plan, Schema und 3D bewirkt der Wisch nichts: das Geschoss wechselt nicht per Geste (Entscheid Christian 26.10.2026, wie in der Brille). Bei offenem Dialog rollt der Dialog, nicht die Ansicht dahinter.",
+          "pruefpunkte": [
+            "Die Liste rollt um eine Seite, sanft, nicht ruckartig.",
+            "Im Dialog rollt der Dialog; die Ansicht dahinter bleibt.",
+            "Im Grundriss, Schema und 3D geschieht nichts (kein Geschosswechsel).",
+            "Im Testfeld des Dialogs «Gesten» rollt nichts."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Listenansicht Raumliste",
+            "zustand": "Raumliste mit Rollbalken, um eine Seite nach unten gerollt; kein Geschosswechsel im Grundriss"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-ausloesen-logik.js:40 (Entscheidung)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-ausloesen-logik.js:58 (eine Bildschirmseite)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-umgebung.js:36"
+          ],
+          "hinweis": "Annahme: Wisch nach unten rollt nach unten (SCHRITT in gesten-ausloesen-logik.js). Die Hilfe (/hilfe/) ist ein eigenes Browserfenster und hört nicht auf die Gesten; ein Vertrag für Dialoge und Listen mit Seiten (data-seiten, role=\"tablist\") steht in OBERFLAECHE.md."
+        },
+        {
+          "id": "mg-g6-zoom-alles",
+          "titel": "G6 Pistolengeste: Zoom alles",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Geste mit der Gestenhand (Daumen hoch, Zeigefinger gestreckt, kurz); Belegung im Dialog «Gesten»"
+          },
+          "schritte": [
+            "Eine Plan- oder 3D-Ansicht öffnen und mit der Maus stark hinein- oder hinauszoomen bzw. drehen.",
+            "Gesten einschalten und mit der Gestenhand kurz die Pistolengeste zeigen.",
+            "Im Dialog «Gesten» die Belegung von G6 auf «Zoom alle Ansichten» stellen und die Geste wiederholen."
+          ],
+          "erwartung": "Die Pistolengeste löst «Zoom alles» aus wie ZF: die aktive Ansicht passt sich ein, in 3D stellt sie zugleich die Ansicht wieder aufrecht. Kurz erscheint die Meldung «Zoom alles». Bei offenem Dialog geschieht nichts. Die Belegung wählt der Dialog aus den Befehlen für Ansicht und Navigation; «keine Wirkung» schaltet die Geste ab.",
+          "pruefpunkte": [
+            "Plan und 3D passen sich ein.",
+            "In 3D steht die Ansicht danach wieder aufrecht (falls zuvor um die Blickachse gerollt).",
+            "Mit der Belegung «Zoom alle Ansichten» passen sich alle offenen Ansichten ein.",
+            "Bei offenem Dialog und im Testfeld geschieht nichts."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D-Ansicht",
+            "zustand": "3D-Ansicht nach «Zoom alles»: das ganze Haus im Bild, aufrecht; Meldung «Zoom alles» unten rechts"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-ausloesen-logik.js:46 (Entscheidung)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:17 (Vorgabe ansicht.zoom-alles)"
+          ],
+          "hinweis": "Das Aufrichten der 3D-Ansicht gehört zu zoomAlles() der 3D-Ansicht (hlks-kern, js/ansichten/ansicht3d.js)."
+        },
+        {
+          "id": "mg-faust-navigieren",
+          "titel": "Faust: 3D drehen und rollen; Plan verschieben (G4, G7)",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Geste mit der Gestenhand; die Statusleiste zeigt «Geste: drehen», «zoomen», «rollen», «verschieben»"
+          },
+          "schritte": [
+            "Die 3D-Ansicht öffnen; die rechte Hand bleibt an der Maus.",
+            "Mit der linken Hand im Bild die Faust schliessen, kurz stillhalten und dann seitlich bewegen (G4), dann loslassen.",
+            "Die Faust wie einen Drehknopf um die Blickachse drehen (G7).",
+            "Zur Pistolengeste (G6) wechseln oder auf den Navigationswürfel klicken, um die Ansicht wieder aufzurichten.",
+            "Im Grundriss die Faust bewegen."
+          ],
+          "erwartung": "Die Faust hält das Modell wie einen Gegenstand: Bewegen dreht die 3D-Ansicht um die Auswahl bzw. die Modellmitte (G4), das Handgelenk rollt die Ansicht um die Blickachse (G7). Im Plan und im Schema verschiebt die Faust die Ansicht. Faust zur Kamera hin und weg bewirkt nichts (G5 ausgeschaltet, Entscheid 26.10.2026). Das Modell ändert sich nie, nur die Ansicht. Faust lösen beendet die Bewegung sofort, ohne Nachlauf. Die Maus bleibt parallel bedienbar. Die Statusleiste nennt die aktive Geste.",
+          "pruefpunkte": [
+            "Mit offener Hand bewegt sich nichts, erst die geschlossene Faust wirkt.",
+            "Faust lösen stoppt sofort.",
+            "Zittern der Erkennung bewegt die Ansicht nicht (Totbereich).",
+            "Eine Faust, die schon geschlossen ins Bild kommt (Tasse, Telefon), bewegt nichts.",
+            "Nach dem Rollen richten Würfel-Klick, Haus-Knopf und Zoom alles (ZF) die Ansicht wieder auf; der Würfel zeigt die Rolle mit.",
+            "Das Modell ist danach unverändert (kein Eintrag bei «Rückgängig»).",
+            "Während der Gesten bleibt die Bildrate der 3D-Ansicht höchstens 10 % unter der ohne Gesten.",
+            "Faust zur Kamera hin und weg zoomt nicht (G5 ausgeschaltet)."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "3D-Ansicht",
+            "zustand": "3D-Ansicht um etwa 30° gedreht und um die Blickachse gerollt; Statusleiste «Geste: drehen»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:77 (Eintrag der Liste)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-status.js:15",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-logik.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/navigieren-logik.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js"
+          ],
+          "hinweis": "Fliessende Gesten löst gesten.js über navigieren() der aktiven Ansicht aus (ansicht3d.js mit eigener Rolle um die Blickachse, grundriss.js, schema.js). Nur am Desktop mit Kamera prüfbar."
+        },
+        {
+          "id": "mg-dialog",
+          "titel": "Dialog «Gesten»: Liste der Gesten",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "oder Rechtsklick auf das Symbol in der Statusleiste"
+          },
+          "schritte": [
+            "Im Register Verwalten in der Gruppe «Hilfe» den Knopf «Gesten» anklicken (neben «Tastaturkürzel»).",
+            "Die Liste der Gesten lesen.",
+            "Den Dialog schliessen und mit der rechten Maustaste auf das Symbol in der Statusleiste klicken."
+          ],
+          "erwartung": "Der Dialog «Gesten» (verschiebbar, in der Grösse änderbar, einklappbar wie alle Dialoge) zeigt oben den Grundschalter mit dem Zustand in Worten und den Datenschutz-Satz (das Kamerabild bleibt im Browser). Darunter steht die Liste der Gesten wie die Liste der Tastaturkürzel: Nr (G2 bis G7), Geste, Wirkung, Art (Schritt oder fliessend); bei G2 und G6 zeigt die Wirkung die eingestellte Belegung. Weiter unten folgen Einstellungen, Empfindlichkeit, Testfeld und Aufnahme. F1 im Dialog öffnet die Anleitung an dieser Stelle.",
+          "pruefpunkte": [
+            "Der Dialog öffnet sich über Verwalten › Hilfe › Gesten und über den Rechtsklick.",
+            "Die Tabelle nennt G2, G3, G4, G5, G6 und G7 mit Art «Schritt» bzw. «fliessend» (G1 gibt es nicht, die Gesten sind immer aktiv).",
+            "Ein zweites Öffnen gibt es nicht: der offene Dialog bleibt der einzige.",
+            "Der Dialog öffnet ohne Kamera: sie wird erst durch den Grundschalter geöffnet."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten»",
+            "zustand": "Dialog offen, Kopf mit Schalter und Zustand, Tabelle der Gesten G2 bis G7"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-projekt.js:158",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog.js:21",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:27",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:74"
+          ],
+          "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt. Der Dialog wird erst beim Öffnen geladen.",
+          "hauptfunktion": true
+        },
+        {
+          "id": "mg-einstellungen",
+          "titel": "Einstellungen: Gestenhand, Kamera, Handskelett, auf Vorgabe zurück",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Dialog «Gesten» › Einstellungen"
+          },
+          "schritte": [
+            "Den Dialog «Gesten» öffnen und «Gestenhand» auf «rechts» stellen; die Hand wechseln und eine Geste zeigen.",
+            "Bei «Kamera» die Auswahlliste öffnen (mit eingeschalteten Gesten erscheinen die Namen der Kameras).",
+            "«Handskelett unten rechts zeigen» abwählen und wieder wählen.",
+            "Auf «Auf Vorgabe zurück» klicken.",
+            "KICAD schliessen und neu starten; den Dialog wieder öffnen."
+          ],
+          "erwartung": "Die Gestenhand (Vorgabe links, die rechte bleibt an der Maus) und die Kamera (Vorgabe: die Standardkamera, bei einem Laptop die eingebaute Kamera oben am Bildschirm) wirken sofort auf die laufende Erkennung. Das Handskelett lässt sich ausblenden. «Auf Vorgabe zurück» setzt Gestenhand, Kamera, Handskelett, Belegung und Empfindlichkeit zurück; der Grundschalter bleibt. Alle Einstellungen sind je Benutzer gespeichert (OneDrive) und gelten nach einem Neustart und auf den anderen Rechnern des Benutzers. Ist die gewählte Kamera nicht mehr da, steht sie als «Gewählte Kamera (nicht gefunden)» in der Liste.",
+          "pruefpunkte": [
+            "Nach dem Wechsel der Gestenhand reagiert nur die gewählte Hand.",
+            "Die Kameraliste nennt die angeschlossenen Kameras mit Namen.",
+            "Ein Neustart behält die Einstellungen; «Auf Vorgabe zurück» stellt Vorgaben her.",
+            "Wird die Einstellung nicht gespeichert (OneDrive nicht erreichbar), meldet KICAD das; die Wahl gilt für die Sitzung."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten» › Einstellungen",
+            "zustand": "Abschnitt «Einstellungen»: Gestenhand links, Kamera «Standardkamera», Handskelett angehakt, Belegungen, Knopf «Auf Vorgabe zurück»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:42",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-steuerung.js:160",
+            "src/Hlks.Web/GestenEinstellung.cs:32"
+          ],
+          "hinweis": "Der Browser nennt die Namen der Kameras erst, wenn er die Kamera freigegeben hat; deshalb füllt der Dialog die Liste nach dem Einschalten neu."
+        },
+        {
+          "id": "mg-belegung",
+          "titel": "Belegung: welche Aktion G2 und G6 auslösen",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Dialog «Gesten» › Einstellungen › Belegung"
+          },
+          "schritte": [
+            "Den Dialog «Gesten» öffnen und bei «G6 Pistolengeste» die Auswahlliste öffnen.",
+            "«Zoom alle Ansichten» wählen; in der Liste der Gesten oben die Wirkung von G6 ansehen.",
+            "Bei «G2 Wisch nach rechts» «Fenster als Reiter» wählen und im Testfeld die Geste zeigen.",
+            "Bei G6 «keine Wirkung» wählen."
+          ],
+          "erwartung": "Für G2 (nach rechts und nach links getrennt) und G6 steht je eine Auswahl der Aktionen des Aktionsregisters, die für Gesten zulässig sind: nur Befehle für Ansicht und Navigation (Nächster/Voriger Reiter, Zoom alles, Zoom alle Ansichten, Fenster nebeneinander, Fenster als Reiter) – nie etwas, das das Modell ändert. Die Liste der Gesten und das Testfeld zeigen die neue Belegung sofort. «keine Wirkung» schaltet die Geste ab. Vorgaben: G2 nach rechts «Nächster Reiter», nach links «Voriger Reiter», G6 «Zoom alles». Dialoge und Listen mit Seiten haben Vorrang vor der Belegung von G2.",
+          "pruefpunkte": [
+            "Die Auswahl bietet nur Befehle für Ansicht und Navigation, kein «Löschen» o. Ä.",
+            "Die geänderte Belegung gilt sofort und nach dem Neustart.",
+            "Mit «keine Wirkung» passiert bei der Geste nichts.",
+            "Im Testfeld steht «würde … auslösen» mit dem Titel der gewählten Aktion."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten» › Belegung",
+            "zustand": "Drei Auswahlfelder G2 nach rechts, G2 nach links, G6; G6 auf «Zoom alle Ansichten»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:13 (zulässige Aktionen)",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:52",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:33"
+          ],
+          "hinweis": "Eine von Hand in die Einstellung geschriebene andere Aktion wird beim Auslösen ignoriert (Test «Belegung: nur Aktionen für Ansicht und Navigation»)."
+        },
+        {
+          "id": "mg-empfindlichkeit",
+          "titel": "Empfindlichkeit: Stellschrauben der Gesten",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Dialog «Gesten» › Empfindlichkeit"
+          },
+          "schritte": [
+            "Den Dialog «Gesten» öffnen und im Abschnitt «Empfindlichkeit» eine Stellschraube ansehen (Erklärung, Bereich, Vorgabe).",
+            "Einen Wert ändern (z. B. kleiner, damit der Wisch leichter auslöst), mit Tab bestätigen.",
+            "Einen Wert ausserhalb des Bereichs eintippen.",
+            "Bei der geänderten Stellschraube auf «Vorgabe» klicken."
+          ],
+          "erwartung": "Jede Stellschraube der Gestenlogik steht als Zeile da – mit Titel, Erklärung, Wert, Einheit, Bereich und Vorgabe –, ohne dass die Oberfläche die einzelnen Namen kennt. Ein geänderter Wert gilt sofort für die laufende Erkennung und bleibt gespeichert; ein Wert ausserhalb des Bereichs wird auf die Grenze gesetzt; geänderte Zeilen sind hervorgehoben, und «Vorgabe» setzt sie einzeln zurück. Die Grenzwerte sind Bedienungs-Einstellungen, keine Normwerte; sie werden im Alltag und am Desktop eingestellt.",
+          "pruefpunkte": [
+            "Jede Zeile nennt Bereich und Vorgabe.",
+            "Ein zu grosser Wert wird auf den Höchstwert gesetzt.",
+            "Die Änderung wirkt ohne Neustart und bleibt nach dem Neustart.",
+            "Fehlt die Gestenlogik in einer Fassung, steht stattdessen ein Hinweis."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten» › Empfindlichkeit",
+            "zustand": "Tabelle der Stellschrauben mit Wert, Bereich und Vorgabe; eine geänderte Zeile hervorgehoben"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:148",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:63",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:177"
+          ],
+          "hinweis": "Die Stellschrauben und ihre Vorgaben liefert js/gesten/gesten-logik.js (STELLSCHRAUBEN_VORGABE, hlks-kern); die Oberfläche liest dafür eine tolerante Form (vorgabe oder wert, min und max oder bereich, schritt, einheit, titel, erklaerung)."
+        },
+        {
+          "id": "mg-testfeld",
+          "titel": "Testfeld: erkannte Gesten ohne Auslösung",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Dialog «Gesten» › Testfeld"
+          },
+          "schritte": [
+            "Gesten einschalten und den Dialog «Gesten» öffnen.",
+            "Im Testfeld die Hand zeigen und die Geste G2 (Wisch nach rechts) ausführen.",
+            "Prüfen, ob der Ansichtsreiter hinter dem Dialog gewechselt hat.",
+            "Den Dialog schliessen und G2 wiederholen."
+          ],
+          "erwartung": "Solange der Dialog offen ist, steht die Erkennung im Testmodus: das Testfeld listet die letzten erkannten Gesten (neueste oben, höchstens acht) und nennt, was sie auslösen würden – z. B. «G2 Wisch nach rechts: würde «Nächster Reiter» (bzw. die Seite im Dialog) auslösen» –, lässt aber nichts geschehen, weder Schritt-Gesten noch die Faust-Gesten. Mit dem Schliessen des Dialogs gelten die Gesten wieder. Sind die Gesten aus, sagt das Testfeld, wie man sie einschaltet.",
+          "pruefpunkte": [
+            "Im Testfeld erscheint jede erkannte Geste mit Wirkung.",
+            "Hinter dem Dialog wechselt kein Reiter, nichts dreht oder rollt.",
+            "Nach dem Schliessen lösen die Gesten wieder aus.",
+            "Ohne eingeschaltete Gesten steht ein Hinweis statt der Liste."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten» › Testfeld",
+            "zustand": "Testfeld mit drei Zeilen: «Hand erkannt», «G2 Wisch nach rechts: würde «Nächster Reiter» … auslösen», «Gesten bereit»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:82",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-steuerung.js:177",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:195"
+          ],
+          "hinweis": "Das Testfeld setzt auf testmodus() von gesten.js; die Schritt-Gesten hält die Oberfläche selbst zurück (auch wenn gesten.js sie weiter meldet)."
+        },
+        {
+          "id": "mg-aufnahme",
+          "titel": "Punktfolge aufnehmen (nur Punkte, als Datei)",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Hilfe",
+            "knopf": "Gesten",
+            "kuerzel": "",
+            "sonst": "Dialog «Gesten» › Punktfolge aufnehmen"
+          },
+          "schritte": [
+            "Gesten einschalten und den Dialog «Gesten» öffnen.",
+            "«Aufnahme starten» klicken und eine Geste mehrmals ausführen.",
+            "«Aufnahme beenden und speichern …» klicken.",
+            "Die angebotene Datei speichern und mit einem Texteditor öffnen."
+          ],
+          "erwartung": "Die Aufnahme zeichnet nur die Punkte der Hand auf (21 Punkte je Bild, Weltpunkte, Händigkeit, Zeit) – nie das Kamerabild. Am Ende bietet der Browser die Datei «gestenfolge-<Datum>-<Zeit>.json» zum Speichern an. Sie ist die Testfolge für die Gestenlogik. Ist nichts aufgenommen, meldet KICAD das; bei ausgeschalteten Gesten ist der Knopf «Aufnahme starten» gesperrt. Wird der Dialog bei laufender Aufnahme geschlossen, endet sie ohne Datei.",
+          "pruefpunkte": [
+            "Die Datei enthält version, hand und bilder mit t, punkte, welt und haendigkeit – kein Bild, kein Bilddatenfeld.",
+            "Ohne eingeschaltete Gesten ist «Aufnahme starten» gesperrt.",
+            "Die Datei wird nicht an den Server oder an Claude gesendet; sie liegt dort, wo man sie speichert."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Gesten» › Punktfolge aufnehmen",
+            "zustand": "Abschnitt «Punktfolge aufnehmen» mit den Knöpfen «Aufnahme starten» und «Aufnahme beenden und speichern …»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog-text.js:88",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:247",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-dialog.js:28"
+          ],
+          "hinweis": "Die Aufnahme selbst (aufnahmeStarten/aufnahmeBeenden) liefert gesten.js (hlks-kern); die Oberfläche reduziert das Ergebnis auf die erlaubten Felder, bevor sie es zum Speichern anbietet."
+        },
+        {
+          "id": "mg-fehler",
+          "titel": "Kamera verweigert oder Gestenerkennung fehlt",
+          "wo": {
+            "register": "Ansicht",
+            "gruppe": "Fenster",
+            "knopf": "Gesten",
+            "kuerzel": "GE",
+            "sonst": ""
+          },
+          "schritte": [
+            "Die Kamera für KICAD im Browser sperren (Schloss in der Adressleiste) und GE tippen.",
+            "Die Meldung lesen und die Statusleiste ansehen.",
+            "Die Kamera wieder erlauben und GE noch einmal tippen."
+          ],
+          "erwartung": "Verweigert der Browser die Kamera, gibt es keine passende Kamera oder ist sie belegt, zeigt KICAD eine deutsche Meldung mit dem Weg zur Lösung (z. B. «Der Browser hat den Zugriff auf die Kamera nicht erlaubt. In der Adressleiste die Kamera erlauben und die Gesten erneut einschalten.»). Die Statusleiste bleibt auf «Gesten aus», der Tooltip nennt «Zuletzt: …», der Grundschalter springt auf aus. Der Start von KICAD wird dadurch nie gestört. Fehlt die Gestenerkennung in einer Fassung ganz, sagt die Meldung das («Die Gestenerkennung ist in dieser Fassung von KICAD nicht vorhanden.»).",
+          "pruefpunkte": [
+            "Die Meldung ist deutsch und nennt, was zu tun ist.",
+            "Der Knopf «Gesten» ist danach nicht gedrückt.",
+            "Nach dem Erlauben der Kamera lassen sich die Gesten wieder einschalten.",
+            "Verliert die Erkennung später die Kamera (Stecker gezogen), meldet KICAD das und schaltet aus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Statusleiste und Meldung",
+            "zustand": "Meldung «Der Browser hat den Zugriff auf die Kamera nicht erlaubt …» unten rechts, Statusleiste «Gesten aus»"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:128",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-steuerung.js:81",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:136"
+          ],
+          "hinweis": "Nur am Desktop mit gesperrter Kamera zu zeigen; die Fälle sind in gesten-ausloesen.test.mjs mit einer Attrappe geprüft."
+        }
+      ]
+    },
+    {
       "id": "zusatz",
       "titel": "Zusatzbausteine ausserhalb der Module",
       "modul": "–",

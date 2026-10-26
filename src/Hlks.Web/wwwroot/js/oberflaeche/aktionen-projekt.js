@@ -151,3 +151,10 @@ registrieren({
   id: 'verwalten.kuerzel', titel: 'Tastaturkürzel', symbol: 'tastatur', kuerzel: 'KS', register: 'verwalten', gruppe: 'Hilfe',
   ausfuehren: kuerzelDialog,
 });
+
+// Dialog «Gesten» (Modul G, entwurf/modul-gesten.md): Liste der Gesten, Einstellungen, Testfeld, Punktfolge aufnehmen. Er wird erst beim Öffnen geladen (ohne eingeschaltete Gesten keine Last);
+// Rechtsklick auf das Symbol «Gesten» in der Statusleiste öffnet ihn ebenfalls.
+registrieren({
+  id: 'verwalten.gesten', titel: 'Gesten', symbol: 'gesten', kuerzel: null, register: 'verwalten', gruppe: 'Hilfe',
+  ausfuehren: async () => { await (await import('../gesten/gesten-dialog.js')).gestenDialog(); },
+});

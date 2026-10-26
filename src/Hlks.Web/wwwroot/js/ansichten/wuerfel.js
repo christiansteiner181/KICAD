@@ -11,7 +11,7 @@ import * as THREE from 'three';
 import { cssVar } from './hilfen.js';
 import {
   teilflaechen, FLAECHEN, bereichsSchluessel, bereichsName, bereichsArt, zielWinkel, kugelwinkel, richtungAusWinkeln, weltZuLokal, zwischenstand,
-  ziehenZuWinkel, ringMarken, ringWinkel, ringZug, startansichtZiel, startansichtAusRichtung, startansichtLesen,
+  ziehenZuWinkel, ringMarken, ringWinkel, ringZug, startansichtZiel, startansichtAusRichtung, startansichtLesen, weich,
 } from './wuerfel-logik.js';
 import { startansichtWert } from './schnittbereich-logik.js';
 
@@ -28,7 +28,9 @@ const HAUS = '<svg viewBox="0 0 16 16" width="16" height="16" aria-hidden="true"
  *  optionen: renderer, kamera (Hauptkamera), steuerung (OrbitControls), anfordern() (neu zeichnen), beiBenutzt() (Kamera vom Benutzer bewegt),
  *            begehen { aktiv(), beenden() } (N15 «Raum begehen»: Haus-Knopf und Klick auf eine Fläche beenden es, Ziehen ist dann aus),
  *            ausrichtungGrad() (Gebäudeausrichtung, wuerfel-logik gebaeudeAusrichtungGrad), nordwinkelGrad(), einpassung() → { ziel: Vector3, abstand },
- *            startLesen() / startSchreiben(wert | null) (Startansicht merken), menue(x, y, eintraege)
+ *            startLesen() / startSchreiben(wert | null) (Startansicht merken), menue(x, y, eintraege),
+ *            rolle { lesen(), setzen(w) } (Modul G, Gesten: Rolle der Hauptkamera um die Blickachse; der Würfel steht wie die Ansicht, jede Bewegung am Würfel
+ *            richtet sie auf – Klick und Haus weich mit der Fahrt, Ziehen sofort)
  */
 export function erzeugeWuerfel(o) {
   const { wurzel, renderer, kamera, steuerung } = o;
@@ -134,6 +136,8 @@ export function erzeugeWuerfel(o) {
     wKamera.position.set((lokal.x / l) * ABSTAND, (lokal.y / l) * ABSTAND, (lokal.z / l) * ABSTAND);
     wKamera.up.set(0, 1, 0);
     wKamera.lookAt(0, 0, 0);
+    const rolle = o.rolle?.lesen?.() ?? 0;   // Modul G: der Würfel steht wie die Ansicht
+    if (rolle) wKamera.rotateZ(rolle);
     wKamera.aspect = r.width / r.height;
     wKamera.updateProjectionMatrix();
     const x = r.left - c.left, y = c.bottom - r.bottom;
@@ -188,12 +192,14 @@ export function erzeugeWuerfel(o) {
     abbrechen();
     o.beiBenutzt?.();
     const von = aktuell();
+    const rolleVon = o.rolle?.lesen?.() ?? 0;   // Modul G: die Fahrt richtet die Ansicht zugleich auf
     const ziel = { azimut: nach.azimut ?? von.azimut, polar: nach.polar ?? von.polar, abstand: nach.abstand ?? von.abstand, ziel: nach.ziel ?? von.ziel };
     const klein = typeof matchMedia === 'function' && matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (dauer <= 0 || klein) { setzen(ziel); return; }
+    if (dauer <= 0 || klein) { o.rolle?.setzen?.(0); setzen(ziel); return; }
     const t0 = performance.now();
     const schritt = (jetzt) => {
       const t = (jetzt - t0) / dauer;
+      o.rolle?.setzen?.(t >= 1 ? 0 : rolleVon * (1 - weich(t)));
       setzen(t >= 1 ? ziel : zwischenstand(von, ziel, t));
       fahrt = t >= 1 ? 0 : requestAnimationFrame(schritt);
     };
@@ -206,6 +212,7 @@ export function erzeugeWuerfel(o) {
     if (o.begehen?.aktiv()) return;   // N15: beim Begehen dreht der Würfel mit, wird aber nicht gezogen
     abbrechen();
     o.beiBenutzt?.();
+    o.rolle?.setzen?.(0);   // Modul G: Ziehen am Würfel bzw. Ring richtet auf
     const a = aktuell();
     setzen({ ...a, azimut: a.azimut + dAzimut, polar: Math.max(1e-4, Math.min(Math.PI - 1e-4, a.polar + dPolar)) });
   }
@@ -327,7 +334,7 @@ export function erzeugeWuerfel(o) {
   function designGeaendert() { farbenLesen(); o.anfordern(); }
 
   return {
-    zeichnen, heim, fahreZu, drehen, startFestlegen, startZuruecksetzen, designGeaendert, klickBereich, startZiel,
+    zeichnen, heim, fahreZu, drehen, abbrechen, startFestlegen, startZuruecksetzen, designGeaendert, klickBereich, startZiel,
     element: gruppe,
     zerstoeren() {
       abbrechen();

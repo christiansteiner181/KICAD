@@ -1,6 +1,7 @@
 # Modul G – Gesten am Arbeitsplatz (Kamera): Spezifikation
 
-Stand 26.10.2026 · Hauptlauf · **Entwurf, nicht gebaut** (Start nach Freigabe durch Christian; Entscheide unten)
+Stand 26.10.2026 · Sitzung «modul-gesten», Zweig `claude/modul-gesten` · **Stufe 1 gebaut, Abnahme nicht abgeschlossen** – Tuning im Labor (Christian 26.10.2026: «wir machen das tuning in der labor app»); Freigabe 26.10.2026;
+Lesart G4/G7 bestätigt)
 
 ## Anlass
 
@@ -51,13 +52,13 @@ gemessen und als Stellschrauben geführt.
 | G2 | Wisch links/rechts (ein Anstoss, Hand offen oder locker) | vorheriger/nächster Ansichtsreiter; in Liste, Hilfe und Dialog mit Seiten: Seite zurück/vor | Schritt |
 | G3 | Wisch hoch/runter | im aktiven Fenster rollen bzw. blättern (Liste, Hilfe, Dialog) um eine Bildschirmseite; in Plan, Schema und 3D ohne Wirkung. Das Geschoss wechselt nicht per Geste (Entscheid 26.10.2026, wie in der Brille). | Schritt |
 | G4 | Faust schliessen und bewegen | 3D: drehen um Auswahl bzw. Modellmitte (gleiche Regel wie Umschalt + Mitte, `wuerfel-logik.js`); Plan und Schema: verschieben | fliessend |
-| G5 | Faust zur Kamera hin/weg | zoomen in der aktiven Ansicht, zur Mitte des Bildausschnitts | fliessend |
+| G5 | Faust zur Kamera hin/weg | ~~zoomen~~ **ausgeschaltet** (Entscheid Christian 26.10.2026 in der Abnahme: «zoom, ausschalten»); zoomen mit Mausrad oder G6 | – |
 | G6 | Pistolengeste (Daumen hoch, Zeigefinger gestreckt), kurz | «Zoom alles» (`ansicht.zoom-alles`); in 3D stellt sie die Ansicht zugleich wieder aufrecht (nach G7) | Schritt |
 | G7 | *nur 3D:* Faust um die Blickachse drehen (Handgelenk wie einen Drehknopf) | Ansicht rollen um die Blickachse, durch die Mitte der Auswahl bzw. des Modells | fliessend |
 
 G1 (Ein/Aus-Geste) entfällt, weil die Gesten immer aktiv sind. Die Nummer bleibt frei, damit sie zur Spezifikation passt.
 
-- **Lesart von «drehen und rollen» (Annahme, mit Christian bestätigen):**
+- **Lesart von «drehen und rollen» (bestätigt von Christian 26.10.2026: «Ja, so bauen»):**
   - Die Faust hält das Modell wie einen Gegenstand in der Hand. Bewegen dreht es (G4), das Handgelenk rollt es (G7).
   - Das Modell selbst ändert sich nicht; geändert wird nur die Ansicht.
   - Fürs Rollen braucht es eine freie Drehung um die Blickachse, die OrbitControls nicht kann (feste Hochrichtung). Die
@@ -165,4 +166,52 @@ Richtwert 4–6 Arbeitstage für Stufe 1.
 | Kupplung | «Immer aktiv»: keine Ein/Aus-Geste, nur Grundschalter; strengere Gesten statt Kupplung |
 | Kamera | eingebaute Kamera |
 
-Offen: Bestätigung der Lesart «Faust hält das Modell, Handgelenk rollt» (G4/G7).
+| Lesart G4/G7 (26.10.2026, Sitzung modul-gesten) | «Ja, so bauen»: Faust hält das Modell, Bewegen dreht, Handgelenk rollt um die Blickachse; freie Hochrichtung, Würfel und G6 richten auf |
+
+**Nach Stufe 1 (Entscheid Christian 26.10.2026, Sitzung «Labor-App», `entwurf/labor-app.md`):** Die Empfindlichkeiten der
+PC-Gesten werden «nur im Labor» eingestellt. Mit Stufe L4 des XR-Labors entfallen sie im Dialog «Gesten» und das Feld
+`stellschrauben` der Benutzereinstellung; KICAD liest dann den Bedienstandard (`pc.stellschrauben`) über
+`STELLSCHRAUBEN_VORGABE`. Deshalb: Namen der Stellschrauben in `gesten-logik.js` stabil halten, jede mit Bereich und
+Erklärung. Aufnahme und `testmodus` nutzt das PC-Gesten-Labor wieder.
+
+## Schnittstellen im Bau (Hauptlauf modul-gesten, 26.10.2026)
+
+Damit `hlks-kern` und `hlks-modul` gleichzeitig bauen können, gilt diese Aufteilung. Alles unter
+`src/Hlks.Web/wwwroot/js/gesten/`.
+
+**`gesten-logik.js` (hlks-kern):** reine Funktionen ohne DOM, Kamera oder Worker. Merkmale aus 21 Punkten, Faust- und
+Pistolenerkennung, Wisch-Regel, Totbereich, Glättung, Zustandsautomat. Eingabe je Bild: Punkte, Weltpunkte, Händigkeit,
+Zeit, Zeit der letzten Maus-/Tastaturbetätigung. Ausgabe: Zustand und Ereignisse wie unten. Stellschrauben als ein
+Objekt `STELLSCHRAUBEN_VORGABE` (Namen wie `XrWischLogik.cs`, dazu `totbereich`, `rollen_min_grad`, `zoom_*`,
+`sperre_ms` …), jede mit Bereich und Erklärung, damit der Einstellungsdialog sie ohne Sonderfälle anzeigen kann.
+
+**`gesten.js` (hlks-kern):** Laufzeit im Hauptfaden, startet Kamera (`getUserMedia`, 640×480) und Worker
+(`gesten-worker.js`, MediaPipe aus `/lib/mediapipe/`).
+
+- `starten({ hand, kameraId, stellschrauben }) → Promise` (wirft mit deutscher Meldung, wenn die Kamera fehlt oder
+  verweigert ist), `stoppen()`, `einstellen(teil)`, `laeuft()`, `kameras() → [{ id, name }]`
+- `abonnieren(fn) → abmelden`; Ereignisse:
+  - `{ art: 'zustand', zustand: 'aus'|'bereit'|'hand'|'aktiv', geste: null|'drehen'|'rollen'|'zoomen'|'verschieben', fehler? }`
+  - `{ art: 'punkte', punkte: [[x, y], …21] | null }` – Bildkoordinaten 0…1, wie im Spiegel; höchstens 15/s
+  - `{ art: 'schritt', geste: 'G2'|'G3'|'G6', richtung: 'links'|'rechts'|'hoch'|'runter'|null }`
+- `testmodus(an)`: Ereignisse laufen weiter, aber nichts wird ausgelöst (Testfeld im Dialog).
+- `aufnahmeStarten()` / `aufnahmeBeenden() → { version, hand, bilder: [{ t, punkte, welt, haendigkeit }] }` – nur
+  Punkte, nie Bilder (Testfolgen von Christian).
+- Fliessende Gesten löst `gesten.js` selbst aus: `fenster.aktive()?.instanz?.navigieren?.({...})`. Schritt-Gesten löst
+  **nicht** `gesten.js` aus, sondern `gesten-ausloesen.js`.
+- Ruhebetrieb, Freigabe der Kamera bei verstecktem Fenster und die Sperre neben der Maus liegen hier.
+
+**`navigieren({ drehen: [dx, dy], rollen, verschieben: [dx, dy], zoom })` je Ansicht (hlks-kern):** alle Felder
+wahlweise. `drehen` in Bogenmass (dx um die Hochachse des Bildschirms, dy um die waagrechte), `rollen` in Bogenmass um
+die Blickachse (positiv = gegen den Uhrzeiger, wie der Betrachter sieht), `verschieben` als Anteil der Ansichtsgrösse,
+`zoom` als Faktor (> 1 näher), zur Mitte des Bildausschnitts. 3D (`ansicht3d.js`), Grundriss und Schema; Grundriss und
+Schema ignorieren `drehen` und `rollen`. `zoomAlles()` stellt in 3D die Hochrichtung wieder auf.
+
+**`gesten-ausloesen.js` (hlks-modul):** abonniert `gesten.js`, führt Schritt-Gesten aus: G2 → Seite vor/zurück im
+obersten Dialog bzw. in Liste/Hilfe mit Seiten, sonst die belegte Aktion (Vorgabe `ansicht.reiter-vor`/`-zurueck`);
+G3 → im aktiven Fenster (oberster Dialog, Hilfe, Liste) eine Bildschirmseite rollen, in Plan, Schema und 3D nichts;
+G6 → belegte Aktion (Vorgabe `ansicht.zoom-alles`). Danach die schwebende Meldung.
+
+**Oberfläche (hlks-modul):** Grundschalter `ansicht.gesten`, Statusleistensymbol, Handskelett, Dialog «Gesten»,
+Gestenliste, Aktionen `ansicht.reiter-vor`/`-zurueck`, Speicherung in `BenutzerEinstellungen.cs`, Doku. Bis
+`gesten.js` da ist, baut hlks-modul gegen eine Attrappe mit genau dieser Schnittstelle (nur in Tests).

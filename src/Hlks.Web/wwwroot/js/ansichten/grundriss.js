@@ -19,6 +19,7 @@ import { ansichtsWerte, esc } from './hilfen.js';
 import { planSvg, fangdatenVon, schraffurMap, neuerMusterPraefix } from './plangrafik.js';
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
 import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText, svgAusModell, modellAusSvg } from './ausrichtung.js';   // N9: gedrehte Grundrisse
+import { navigieren2d } from './navigieren-logik.js';   // Modul G: Gesten verschieben und zoomen
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FREMD_DAUER = 1500;      // ms Hervorhebung fremder Änderungen
@@ -444,6 +445,16 @@ function erstellen(behaelter, ansichtElement) {
     /** Zoomt auf ein Rechteck {minx, miny, maxx, maxy} in Modell-mm (auch vor der ersten Grafik); der Ausschnitt bleibt dann stehen.
      *  N9: in gedrehten Grundrissen auf das umschliessende Rechteck in den Achsen der Ansicht. */
     zoomAuf(b) { if (plan && vb) { benutzt = true; einpassen(boxInAnsicht(b, drehung)); } else wunschBox = b; },
+    /** Modul G (Gesten): { verschieben: [dx, dy] (Anteil der Ansicht), zoom } zur Mitte; drehen und rollen gibt es im Plan nicht (navigieren-logik.js). */
+    navigieren(eingabe = {}) {
+      const neu = navigieren2d(vb, eingabe, { minBreite: 100, maxBreite: 5e7 });
+      if (!neu) return false;
+      benutzt = true;
+      vb = neu;
+      vbAnwenden();
+      return true;
+    },
+    navigierenArt: '2d',
     zerstoeren() {
       zerstoert = true;
       ladeNr++;

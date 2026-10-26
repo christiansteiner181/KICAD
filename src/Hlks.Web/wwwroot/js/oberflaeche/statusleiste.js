@@ -14,6 +14,9 @@ import { bibliothekStatus } from '../familien/bibliothek-text.js';
 import { bibliothekHinweis } from '../familien/bibliothek-dialoge.js';
 import { questStatusEinrichten } from './quest-status.js';
 import { xrDesktopStatusEinrichten } from './xr-desktop-status.js';
+import { steuerung as gestenSteuerung } from '../gesten/gesten-steuerung.js';
+import { gestenProtokollEinrichten } from './gesten-protokoll.js';   // Abbruchprotokoll der Gesten an den Server (nur Grund und Zahlen)
+import { gestenEinrichten } from '../gesten/gesten-oberflaeche.js';   // Symbol «Gesten» (Modul G): vier Zustände, Klick schaltet, Rechtsklick öffnet den Dialog
 
 const TAKT_MS = 3000;
 const lc = (t) => String(t ?? '').toLowerCase();
@@ -26,7 +29,7 @@ let fremdTimer = null;
 
 export function einrichten(w) {
   w.innerHTML = `<span class="sl-links"></span>
-    <span class="sl-mitte"><span class="sl-abgleich"></span><button type="button" class="sl-res" title="Reservierungen anzeigen"></button><button type="button" class="sl-bib" hidden></button><button type="button" class="sl-brille" hidden></button><span class="sl-desktop" hidden></span></span>
+    <span class="sl-mitte"><span class="sl-abgleich"></span><button type="button" class="sl-res" title="Reservierungen anzeigen"></button><button type="button" class="sl-bib" hidden></button><button type="button" class="sl-brille" hidden></button><button type="button" class="sl-gesten aus"></button><span class="sl-desktop" hidden></span></span>
     <span class="sl-rechts"><span class="sl-akteur"></span><span class="sl-stand"></span></span>`;
   teile = {
     links: w.querySelector('.sl-links'), abgleich: w.querySelector('.sl-abgleich'), res: w.querySelector('.sl-res'),
@@ -35,6 +38,8 @@ export function einrichten(w) {
   teile.res.onclick = reservierungenDialog;
   teile.bib.onclick = () => bibliothekHinweis();
   questStatusEinrichten(w.querySelector('.sl-brille'));   // «Brille» (Modul XR): nur sichtbar bei eingeschalteter Automatik oder gemerkter Brille
+  gestenEinrichten(w.querySelector('.sl-gesten'));
+  try { gestenProtokollEinrichten(gestenSteuerung); } catch (e) { console.error('Gestenprotokoll', e); }   // Gesten (Modul G): immer sichtbar, damit man sie einschalten kann; die Kamera öffnet sich erst dann
   xrDesktopStatusEinrichten(w.querySelector('.sl-desktop'));   // V1c: «Brille sieht den Bildschirm» mit «Beenden», nur solange eine Brille verbunden ist
 
   const zeichnenSpaeter = entprellen(zeichnen, 30);

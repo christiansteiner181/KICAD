@@ -58,7 +58,22 @@ if (einstellungen.StartProjekt is { } start)
 }
 
 app.UseDefaultFiles();
-app.UseStaticFiles(new StaticFileOptions { OnPrepareResponse = c => c.Context.Response.Headers.CacheControl = "no-cache" });
+// Modul G (Gesten): MediaPipe liegt lokal unter /lib/mediapipe/ – das Modell (.task) kennt der Standard nicht, WASM und Module (.mjs) werden ausdrücklich gesetzt.
+// Der Worker der Gesten darf nur den eigenen Server erreichen (MediaPipe 1.1.1 meldet sonst Nutzungsdaten an Google; lib/mediapipe/LIESMICH.md).
+var inhaltstypen = new Microsoft.AspNetCore.StaticFiles.FileExtensionContentTypeProvider();
+inhaltstypen.Mappings[".task"] = "application/octet-stream";
+inhaltstypen.Mappings[".wasm"] = "application/wasm";
+inhaltstypen.Mappings[".mjs"] = "text/javascript";
+app.UseStaticFiles(new StaticFileOptions
+{
+    ContentTypeProvider = inhaltstypen,
+    OnPrepareResponse = c =>
+    {
+        c.Context.Response.Headers.CacheControl = "no-cache";
+        if (c.Context.Request.Path.Equals("/js/gesten/gesten-worker.js", StringComparison.OrdinalIgnoreCase))
+            c.Context.Response.Headers.ContentSecurityPolicy = "connect-src 'self'";
+    },
+});
 
 /// Dateiname einer hochgeladenen Unterlage: nur der Name (kein Pfad), ohne ungültige Zeichen, höchstens 150 Zeichen mit Endung.
 static string UnterlageName(string? roh)
@@ -268,6 +283,7 @@ app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; 
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI
 app.MapQuestApp(questStarter.Quest);   // Quest App installieren/aktualisieren (Quest App P7): QuestAppEndpunkte.cs – /api/quest/app; reine Rechner-Funktion, nicht für die KI
+app.MapGestenProtokoll();   // Modul G: Abbruchprotokoll der Gesten (GestenProtokoll.cs) – POST /api/gesten/abbruch, nur Grund und Zahlen, Ablage lokal
 app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2): IfcExportEndpunkte.cs – POST /api/ifc/export, Download aus ausgabe\ifc
 app.MapXr();   // Quest App P3: /api/xr – Zugang, Kopplung, Live-Kanal (XrEndpunkte.cs); im Büronetz nur Endpunkte mit .XrImNetz()
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
