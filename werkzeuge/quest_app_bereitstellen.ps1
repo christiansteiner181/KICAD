@@ -5,29 +5,49 @@
 # Ein anderer Ordner ist als Einstellung moeglich (Benutzereinstellung quest.app_ablage) oder hier mit -Ablage.
 # Das Skript baut nur und legt ab. Es ruft kein adb auf, laedt nichts herunter und aendert nichts an der Brille oder am System.
 # Voraussetzung: .NET 10 mit der Workload "android", Android SDK und JDK 17 unter %USERPROFILE%\HLKS_CAD_werkzeuge (Quest App P0).
-# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_app_bereitstellen.ps1 [-Ablage <ordner>] [-OhneBau]
+# Mit -Labor (XR-Labor, Entwurf entwurf\labor-app.md, Stufe L0; Christian 26.10.2026) baut das Skript stattdessen die Brillen-App des Labors,
+# src\Hlks.Labor.Quest\Projects\Android\Hlks.Labor.Quest.Android.csproj (App-Kennung ch.hkplanung.xrlabor), und legt sie getrennt ab:
+#   %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app\ch.hkplanung.xrlabor-Signed.apk   die gebaute APK (Testschluessel)
+#   %USERPROFILE%\HLKS_CAD_werkzeuge\labor_app\version.json                       gleiches Format wie bei der KICAD-App
+# Aufruf: powershell -ExecutionPolicy Bypass -File werkzeuge\quest_app_bereitstellen.ps1 [-Labor] [-Ablage <ordner>] [-OhneBau]
+#   -Labor    die Labor-App statt der KICAD-App (ohne den Schalter alles wie bisher)
 #   -OhneBau  legt die zuletzt gebaute APK aus dem Bauordner (HLKS_BUILD bzw. %USERPROFILE%\HLKS_CAD_build) nur ab.
 # Bauausgabe getrennt: vorher $env:HLKS_BUILD setzen, wenn mehrere Baulaeufe gleichzeitig arbeiten (Datei bewusst nur ASCII, PowerShell 5.1).
 param(
   [string]$Ablage = '',
-  [switch]$OhneBau
+  [switch]$OhneBau,
+  [switch]$Labor
 )
 $ErrorActionPreference = 'Stop'
 $repo = (Resolve-Path "$PSScriptRoot\..").Path
 $dotnet = 'C:\Program Files\dotnet\dotnet.exe'
-if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\quest_app" }
+if ($Labor) {
+  $appName = 'XR-Labor'
+  $projektName = 'Hlks.Labor.Quest.Android'
+  $projekt = "$repo\src\Hlks.Labor.Quest\Projects\Android\$projektName.csproj"
+  $apkName = 'ch.hkplanung.xrlabor-Signed.apk'
+  $standOrdner = @('src/Hlks.Labor.Quest', 'src/Hlks.Quest', 'src/Hlks.Xr')   # die Labor-App uebersetzt auch die gemeinsamen Quellen von Hlks.Quest
+  if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\labor_app" }
+} else {
+  $appName = 'Quest App'
+  $projektName = 'Hlks.Quest.Android'
+  $projekt = "$repo\src\Hlks.Quest\Projects\Android\$projektName.csproj"
+  $apkName = 'ch.hkplanung.kicad.quest-Signed.apk'
+  $standOrdner = @('src/Hlks.Quest', 'src/Hlks.Xr')
+  if (-not $Ablage) { $Ablage = "$env:USERPROFILE\HLKS_CAD_werkzeuge\quest_app" }
+}
 if (-not $env:HLKS_BUILD) { $env:HLKS_BUILD = "$env:USERPROFILE\HLKS_CAD_build" }
 $bau = $env:HLKS_BUILD
-$projekt = "$repo\src\Hlks.Quest\Projects\Android\Hlks.Quest.Android.csproj"
-$apkQuelle = "$bau\Hlks.Quest.Android\bin\Release\net10.0-android\publish\ch.hkplanung.kicad.quest-Signed.apk"
-$apkName = 'ch.hkplanung.kicad.quest-Signed.apk'
+$apkQuelle = "$bau\$projektName\bin\Release\net10.0-android\publish\$apkName"
 
 function Meldung([string]$t) { Write-Host $t }
 function Fehler([string]$t) { Write-Host "FEHLER: $t" -ForegroundColor Red; exit 1 }
 
+if (-not (Test-Path $projekt)) { Fehler "Das Projekt fehlt: $projekt" }
+
 if (-not $OhneBau) {
   if (-not (Test-Path $dotnet)) { Fehler "dotnet nicht gefunden: $dotnet" }
-  Meldung "Baue die Quest App (Release, net10.0-android), Bauordner $bau ..."
+  Meldung "Baue die $appName (Release, net10.0-android), Bauordner $bau ..."
   & $dotnet publish $projekt -c Release -f net10.0-android -v q -nologo
   if ($LASTEXITCODE -ne 0) { Fehler "Der Bau ist fehlgeschlagen (Exit $LASTEXITCODE)." }
 }
@@ -40,7 +60,7 @@ if ($git) {
   $c = (& $git.Source -C $repo rev-parse --short HEAD 2>$null)
   if ($LASTEXITCODE -eq 0 -and $c) {
     $commit = ([string]$c).Trim()
-    $offen = (& $git.Source -C $repo status --porcelain -- src/Hlks.Quest src/Hlks.Xr 2>$null)
+    $offen = (& $git.Source -C $repo status --porcelain -- @standOrdner 2>$null)
     if ($offen) { $commit = "$commit-geaendert" }
   }
 }
@@ -77,4 +97,8 @@ $json = $o | ConvertTo-Json -Compress
 Meldung "Abgelegt in $Ablage"
 Meldung ("  {0}  {1:N1} MB  Commit {2}  Fassung {3} ({4})" -f $apkName, ($groesse / 1MB), $commit, $versionName, $versionCode)
 Meldung "  SHA-256 $sha"
-Meldung 'Weiter: in KICAD Register Ansicht > Fenster > "Quest verbinden ..." > Quest App > "App installieren/aktualisieren".'
+if ($Labor) {
+  Meldung "Weiter: Die Labor-App ist ein eigenes Paket (ch.hkplanung.xrlabor) neben der KICAD-App. Installation per adb: adb install -r `"$ziel`" (der Knopf im XR-Labor folgt in einer spaeteren Stufe)."
+} else {
+  Meldung 'Weiter: in KICAD Register Ansicht > Fenster > "Quest verbinden ..." > Quest App > "App installieren/aktualisieren".'
+}
