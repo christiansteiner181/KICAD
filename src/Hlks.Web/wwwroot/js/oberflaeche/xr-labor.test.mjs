@@ -300,7 +300,7 @@ test('HTML-Sicherheit: Namen und Texte aus dem Netz gehen nur über esc() ins HT
     'skalaRadio(`xl-k-${f.id', 'sus.wortlautVorhanden ? skalaRadio(`xl-sus-${i',                                          // skalaRadio() schützt den Namen mit esc()
     "sus.wortlautVorhanden ? '' : 'disabled'", "tlx.wortlautVorhanden ? '' : 'disabled'", 'f.id',                          // feste Wörter; Selektor mit fester Id des Katalogs
     // verschachtelte Vorlagen, vom einfachen Muster beim ersten «}» abgeschnitten; die enthaltenen Werte stehen alle in esc(…)
-    'T.BEREICHE.map((b) => `<button type="button" role="tab" class="xl-reiter-knopf" data-bereich="${esc(b.id)',
+    '[...zusatzVorne, ...T.BEREICHE, ...zusatzHinten].map((b) => `<button type="button" role="tab" class="xl-reiter-knopf" data-bereich="${esc(b.id)',   // L1: eigene Reiter der Labor-Seite davor und danach
     'v.optionen.map((o, i) => `<label class="xl-option"><input type="radio" name="xl-var-${esc(v.name)',
     'f.wortlaut ? esc(f.wortlaut) : `<i class="xl-platzhalter">${esc(f.platzhalter ?? \'Wortlaut fehlt\')',
   ]);
@@ -329,4 +329,70 @@ test('Verdrahtung: Menüband-Aktion, Symbol, Dialog nur über /api/xr, Benutzere
   assert.match(lies('benutzer.js'), /export const benutzerAlle/);
   assert.match(lies('../../css/quest.css'), /\.dlg\.xr-labor \{ width: min\(760px, calc\(100vw - 16px\)\)/);
   assert.deepEqual(T.BEREICHE.map((b) => b.id), ['stellschrauben', 'profile', 'varianten', 'aufgaben', 'auswertung', 'fragebogen']);
+});
+
+// ------------------------------------------------------------------------------------------ XR-Labor L1: derselbe Inhalt als Seite im Labor
+
+test('L1 Marken: Name zur Marke der Brille; unbekannte und fehlende Marken haben keinen', () => {
+  assert.equal(T.markeName('kicad'), 'KICAD');
+  assert.equal(T.markeName('xrlabor'), 'XR-Labor');
+  assert.equal(T.markeName('fremd'), null);
+  assert.equal(T.markeName(undefined), null);
+  assert.equal(T.markeName('toString'), null, 'keine Eigenschaften des Objekts');
+  assert.equal(T.MARKE_LABOR, 'xrlabor');
+});
+
+test('L1 Brillen mit Marke: nur auf Wunsch im Text; Zahl der Brillen mit der App «XR-Labor»', () => {
+  const antwort = { teilnehmer: [
+    { id: 't1', name: 'A', geraet: 'Quest 3', app: '0.1+abc', marke: 'xrlabor' },
+    { id: 't2', name: 'B', geraet: 'Quest 3', marke: 'kicad' },
+    { id: 't3', name: 'C' },
+  ] };
+  const ohne = T.brillenInfo(antwort);
+  assert.doesNotMatch(ohne.text, /XR-Labor|KICAD/, 'KICAD-Dialog unverändert: keine Marke im Text');
+  assert.equal(ohne.laborBrillen, 1);
+  const mit = T.brillenInfo(antwort, { ort: 'labor', marken: true });
+  assert.match(mit.text, /A \(Quest 3, App 0\.1\+abc, XR-Labor\)/);
+  assert.match(mit.text, /B \(Quest 3, KICAD\)/);
+  assert.equal(mit.anzahl, 3);
+  assert.match(T.brillenInfo({ teilnehmer: [] }, { ort: 'labor' }).text, /solange das Labor läuft/);
+  assert.match(T.brillenInfo({ teilnehmer: [] }).text, /solange KICAD läuft/);
+});
+
+test('L1 Hinweis zum Ziel: nur wenn Brillen verbunden sind, aber keine mit der App «XR-Labor»', () => {
+  const k = (teilnehmer) => T.brillenInfo({ teilnehmer }, { ort: 'labor', marken: true });
+  assert.equal(T.zielHinweis(k([])), null, 'keine Brille: der Knopf ist ohnehin gesperrt');
+  assert.equal(T.zielHinweis(k([{ id: 't1', name: 'A', marke: 'xrlabor' }, { id: 't2', name: 'B', marke: 'kicad' }])), null);
+  assert.match(T.zielHinweis(k([{ id: 't1', name: 'A', marke: 'kicad' }, { id: 't2', name: 'B' }])), /Keine Brille mit der App «XR-Labor» verbunden: Prüfaufgaben und Varianten gehen an alle 2 verbundenen Brillen\./);
+  assert.equal(T.zielHinweis(null), null);
+});
+
+test('L1 Erklärtexte je Ort: KICAD wie bisher, Labor nennt das Labor und die Ablage', () => {
+  const k = T.ortTexte('kicad');
+  const l = T.ortTexte('labor');
+  assert.equal(T.ortTexte('gibt-es-nicht'), k);
+  assert.match(k.stellschrauben, /KICAD sendet sie schon/);
+  assert.match(k.varianten, /^Je Bedienung eine Wahl \(A\/B\)\. KICAD sendet sie als Stellschraube/);
+  assert.match(l.stellschrauben, /das Labor sendet sie schon/);
+  assert.doesNotMatch(l.varianten, /KICAD/);
+  assert.match(l.varianten, /Brillen der App «XR-Labor»/);
+  assert.match(l.aufgaben, /alle verbundenen Brillen/);
+  assert.match(l.profile, /OneDrive, Ordner labor\\profile/);
+  assert.doesNotMatch(k.profile, /OneDrive/);
+});
+
+test('L1 Dialog als Seite: eine Quelle, Optionen für Ort, Profilquelle, Marken und eigene Reiter; KICAD nimmt die Benutzereinstellungen', () => {
+  const dialog = lies('xr-labor-dialog.js');
+  assert.match(dialog, /export function xrLaborAufbauen\(opt = \{\}\)/);
+  assert.match(dialog, /export function xrLaborSeite\(behaelter, opt = \{\}\)/);
+  assert.match(dialog, /export function xrLaborDialog\(\)/);
+  assert.match(dialog, /export function benutzerProfilquelle\(\)/);
+  assert.match(dialog, /const profile = opt\.profile \?\? benutzerProfilquelle\(\);/);
+  assert.match(dialog, /const a = xrLaborAufbauen\(\{\}\);/, 'der Dialog von KICAD ohne Optionen = Verhalten wie vor L1');
+  // KICAD-Quelle: dieselben Schlüssel der Benutzereinstellungen wie vor L1
+  assert.match(dialog, /speichern: \(kennung, profil\) => benutzerSetzen\(T\.profilSchluessel\(kennung\), profil\)/);
+  assert.match(dialog, /aktivSetzen: \(kennung\) => benutzerSetzen\(T\.PROFIL_AKTIV, kennung\)/);
+  // die Optionen der Labor-Seite sind belegt
+  for (const o of ['opt.ort', 'opt.marken', 'opt.zusatz', 'opt.start']) assert.ok(dialog.includes(o), o);
+  assert.doesNotMatch(dialog, /['`]\/api\/labor\//, 'die Profile des Labors kennt der Dialog nicht; sie kommen als Quelle von aussen');
 });

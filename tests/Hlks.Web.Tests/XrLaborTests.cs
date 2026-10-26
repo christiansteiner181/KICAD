@@ -572,6 +572,46 @@ public class XrLaborTests
         Assert.Null(ende["wert"]);
     }
 
+    [Fact]
+    public async Task Hallo_traegt_die_Marke_der_App_KICAD_schickt_Aufgaben_und_Varianten_unveraendert_an_alle()
+    {
+        await using var s = new XrServer();
+        var (port, _, fp) = await s.Aktiv();
+        await using var a = await XrKlient.Verbinden(port, fp, XrServer.Token(await s.Paket("QUEST-A")));
+        await using var b = await XrKlient.Verbinden(port, fp, XrServer.Token(await s.Paket("QUEST-B")));
+        await using var c = await XrKlient.Verbinden(port, fp, XrServer.Token(await s.Paket("QUEST-C")));
+        await a.Senden(XrKlient.N("hallo", new JsonObject { ["name"] = "A", ["geraet"] = "Quest 3", ["marke"] = "xrlabor" }));
+        await a.Warten("willkommen");
+        await b.Senden(XrKlient.N("hallo", new JsonObject { ["name"] = "B", ["geraet"] = "Quest 3", ["marke"] = "kicad" }));
+        await b.Warten("willkommen");
+        await c.Hallo("C", "Quest 3");   // ältere App ohne «marke»
+        var t = ((JsonObject)(await Lokal(s, "/api/xr/teilnehmer")).Json!)["teilnehmer"]!.AsArray();
+        Assert.Equal("xrlabor", (string)t.Single(x => (string)x!["name"]! == "A")!["marke"]!);
+        Assert.Equal("kicad", (string)t.Single(x => (string)x!["name"]! == "B")!["marke"]!);
+        Assert.Null(t.Single(x => (string)x!["name"]! == "C")!["marke"]);
+        // KICAD filtert nicht nach Marke (nur das Labor): alle drei bekommen die Aufgabe, kein Hinweis
+        var (code, j) = await s.LokalPost("/api/xr/labor/aufgabe", new { aufgabe = "teleport-markierung" });
+        Assert.Equal(HttpStatusCode.OK, code);
+        Assert.Equal(3, (int)j!["gesendet"]!);
+        Assert.Null(j["hinweis"]);
+        foreach (var k in new[] { a, b, c }) Assert.Equal("teleport-markierung", (string)(await k.Warten("stellschraube"))["wert"]!);
+        var (_, v) = await s.LokalPost("/api/xr/labor/variante", new { name = "teleport", option = "stick" });
+        Assert.Equal(3, (int)v!["gesendet"]!);
+        Assert.Null(v["hinweis"]);
+    }
+
+    [Fact]
+    public async Task Hallo_mit_ungueltiger_Marke_wird_abgelehnt()
+    {
+        await using var s = new XrServer();
+        var (port, _, fp) = await s.Aktiv();
+        await using var a = await XrKlient.Verbinden(port, fp, XrServer.Token(await s.Paket("QUEST-A")));
+        await a.Senden(XrKlient.N("hallo", new JsonObject { ["name"] = "A", ["geraet"] = "Quest 3", ["marke"] = "Gross Und Leer" }));
+        var f = await a.Warten("fehler");
+        Assert.Contains("marke", (string)f["meldung"]!);
+        Assert.Equal(System.Net.WebSockets.WebSocketCloseStatus.PolicyViolation, await a.GeschlossenAbwarten());
+    }
+
     // ---------------------------------------------------------------- Messprotokoll und Auswertung
 
     [Fact]
@@ -589,6 +629,7 @@ public class XrLaborTests
         }));
         Assert.Equal("messprotokoll", (string)(await a.Warten("quittung"))["bezug"]!);
         var datei = Assert.Single(Directory.GetFiles(Path.Combine(s.XrOrdner, "messprotokolle"), "*.jsonl"));
+        Assert.Matches(@"^\d{8}-\d{6}_t[0-9a-f]{8}\.jsonl$", Path.GetFileName(datei));   // KICAD-Vorgabe unverändert (L1): ohne Rechnername im Dateinamen
         var z = JsonNode.Parse(File.ReadAllLines(datei)[0])!;
         Assert.Equal("apps", (string)z["varianten"]!["bedienung"]!);
         Assert.Equal("0.3+abc1234", (string)z["app"]!);   // die Fassung der App kommt aus «hallo»
@@ -770,6 +811,7 @@ public class XrLaborTests
         Assert.Equal("0.5+d00d", (string)r["app"]!);
         var datei = Assert.Single(Directory.GetFiles(Path.Combine(s.XrOrdner, "fragebogen"), "*.json"));
         Assert.EndsWith("_christian_steiner.json", datei);
+        Assert.Matches(@"^\d{8}-\d{6}_christian_steiner\.json$", Path.GetFileName(datei));   // KICAD-Vorgabe unverändert (L1): ohne Rechnername im Dateinamen
         Assert.StartsWith(Path.GetFullPath(Path.GetTempPath()), Path.GetFullPath(datei));   // im Test unter %TEMP%
         var gespeichert = JsonNode.Parse(File.ReadAllText(datei))!;
         Assert.Equal("Drehen gut.\nSpringen hakt.", (string)gespeichert["komfort"]!["text"]!);

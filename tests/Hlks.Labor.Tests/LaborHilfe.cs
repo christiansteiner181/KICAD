@@ -30,7 +30,15 @@ public sealed class LaborServer : IAsyncDisposable
     public HttpClient Lokal { get; }
     public IServiceProvider Dienste => fabrik.Services;
 
-    public LaborServer(bool zugang = false, string? zertifikatOrdner = null, Func<XrEinstellungen, XrEinstellungen>? anpassen = null, Action<IServiceCollection>? dienste = null)
+    /// <summary>Wie %OneDrive%\HLKS-CAD\labor: die Ablage der Labor-Daten (L1), unter %TEMP%.</summary>
+    public string DatenOrdner => Path.Combine(Ordner, "labor_daten");
+    /// <summary>Wie %LOCALAPPDATA%\HLKS_CAD\xr: die bisherigen Dateien von KICAD (messprotokolle, fragebogen) für die Übernahme (L1), unter %TEMP%.</summary>
+    public string AltOrdner => Path.Combine(Ordner, "alt_xr");
+    public LaborAblage Ablage { get; }
+
+    /// <param name="ablage">Ablage der Labor-Daten; Vorgabe: ein Ordner unter %TEMP% im Testlauf.</param>
+    /// <param name="vorher">Läuft vor dem Start des Servers (der Start übernimmt die bisherigen Daten): z. B. alte Dateien in AltOrdner legen.</param>
+    public LaborServer(bool zugang = false, string? zertifikatOrdner = null, Func<XrEinstellungen, XrEinstellungen>? anpassen = null, Action<IServiceCollection>? dienste = null, LaborAblage? ablage = null, Action<LaborServer>? vorher = null)
     {
         Ordner = Path.Combine(Path.GetTempPath(), "hlks_labor_" + Guid.NewGuid().ToString("N")[..10]);
         ZertifikatOrdner = zertifikatOrdner ?? Path.Combine(Ordner, "xr");
@@ -40,7 +48,11 @@ public sealed class LaborServer : IAsyncDisposable
         var xr = LaborXr.Vorgabe(true, _ => null) with { Ordner = LaborOrdner, ZertifikatOrdner = ZertifikatOrdner, DesktopPort = null, PruefAbstand = TimeSpan.FromHours(1) };
         Xr = anpassen is null ? xr : anpassen(xr);
         if (zugang) SchalterSetzen(true);
-        fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(Xr); dienste?.Invoke(s); }));
+        // L1: Ablage der Labor-Daten und bisherige Dateien nur unter %TEMP% (nie die echten Ordner im OneDrive und unter %LOCALAPPDATA%)
+        Ablage = ablage ?? new LaborAblage(DatenOrdner, "testpc", "Umleitung", testlauf: true);
+        var alt = new LaborAltdaten(AltOrdner);
+        vorher?.Invoke(this);
+        fabrik = basis.WithWebHostBuilder(b => b.ConfigureTestServices(s => { s.AddSingleton(e); s.AddSingleton(Xr); s.AddSingleton(Ablage); s.AddSingleton(alt); dienste?.Invoke(s); }));
         Lokal = fabrik.CreateClient();
     }
 
@@ -76,6 +88,13 @@ public sealed class LaborServer : IAsyncDisposable
     public async Task<(HttpStatusCode Code, JsonNode? Json)> LokalPost(string pfad, object koerper)
     {
         var a = await Lokal.PostAsync(pfad, new StringContent(Json.Text(koerper), Encoding.UTF8, "application/json"));
+        var t = await a.Content.ReadAsStringAsync();
+        return (a.StatusCode, t.Length == 0 ? null : JsonNode.Parse(t));
+    }
+
+    public async Task<(HttpStatusCode Code, JsonNode? Json)> LokalDelete(string pfad)
+    {
+        var a = await Lokal.DeleteAsync(pfad);
         var t = await a.Content.ReadAsStringAsync();
         return (a.StatusCode, t.Length == 0 ? null : JsonNode.Parse(t));
     }

@@ -14,6 +14,8 @@
 //
 // Messprotokolle: je Sitzung (Verbindung) eine Datei JSON-Zeilen in <XrEinstellungen.Ordner>\messprotokolle\<JJJJMMTT-hhmmss>_<Teilnehmer>.jsonl
 // (Vorgabe %LOCALAPPDATA%\HLKS_CAD\xr\messprotokolle; ausserhalb von Repository und OneDrive), höchstens 5 MB je Sitzung.
+// XR-Labor L1: Das Labor (src/Hlks.Labor) legt über XrMessAblage eine andere Ablage fest – %OneDrive%\HLKS-CAD\labor\messungen\<JJJJMMTT-hhmmss>_<rechner>_<teilnehmer>.jsonl;
+// ohne XrMessAblage in den Diensten bleibt alles wie bei KICAD.
 
 using System.Net.WebSockets;
 using System.Security.Cryptography;
@@ -29,6 +31,13 @@ public sealed class XrKanalSchluss(WebSocketCloseStatus status, string grund) : 
 {
     public WebSocketCloseStatus Status { get; } = status;
 }
+
+/// <summary>
+/// Andere Ablage der Messprotokolle (XR-Labor L1, entwurf/labor-app.md «Datenfluss Labor → KICAD › Labor-Daten»): Ordner, ein Rechnername im Dateinamen
+/// (<c>JJJJMMTT-hhmmss_&lt;rechner&gt;_&lt;teilnehmer&gt;.jsonl</c>, damit zwei Rechner nie dieselbe Datei schreiben) und eine Sperre (Text = Schreiben abgelehnt, z. B. im
+/// Testlauf ausserhalb von %TEMP%). Ohne Eintrag in den Diensten gilt die Vorgabe von KICAD: <c>&lt;XrEinstellungen.Ordner&gt;\messprotokolle\JJJJMMTT-hhmmss_&lt;teilnehmer&gt;.jsonl</c>.
+/// </summary>
+public sealed record XrMessAblage(string Ordner, string? Rechner = null, Func<string?>? Sperre = null);
 
 public sealed class XrKanal
 {
@@ -66,10 +75,14 @@ public sealed class XrKanal
     readonly Dictionary<string, Teilnehmer> teilnehmer = new(StringComparer.Ordinal);
     readonly Dictionary<string, JsonNode> stellschrauben = new(StringComparer.Ordinal);
 
-    public XrKanal(XrEinstellungen einstellungen, XrKopplungen kopplungen, VrAuftragSpeicher auftraege)
+    readonly XrMessAblage? messAblage;
+
+    /// <param name="messAblage">XR-Labor L1: andere Ablage der Messprotokolle (null = Vorgabe von KICAD, siehe <see cref="XrMessAblage"/>).</param>
+    public XrKanal(XrEinstellungen einstellungen, XrKopplungen kopplungen, VrAuftragSpeicher auftraege, XrMessAblage? messAblage = null)
     {
         this.einstellungen = einstellungen;
         this.auftraege = auftraege;
+        this.messAblage = messAblage;
         posenBremse = new XrBremse(einstellungen.PosenJeSekunde, einstellungen.PosenVorrat, einstellungen.Jetzt);
         nachrichtenBremse = new XrBremse(einstellungen.NachrichtenJeSekunde, einstellungen.NachrichtenJeSekunde, einstellungen.Jetzt);
         kopplungen.KopplungEntfernt += KopplungTrennen;
@@ -78,7 +91,7 @@ public sealed class XrKanal
 
     public int Anzahl { get { lock (sperre) return teilnehmer.Count; } }
 
-    public string ProtokollOrdner => Path.Combine(einstellungen.OrdnerPfad(), "messprotokolle");
+    public string ProtokollOrdner => messAblage?.Ordner ?? Path.Combine(einstellungen.OrdnerPfad(), "messprotokolle");
 
     // ---------------------------------------------------------------- Verbindung
 
@@ -309,8 +322,10 @@ public sealed class XrKanal
         {
             lock (t)
             {
+                if (messAblage?.Sperre?.Invoke() is { } gesperrt) throw new XrNachrichtFehler("Das Messprotokoll wird nicht gespeichert: " + gesperrt);
                 var ordner = ProtokollOrdner;
-                t.Protokolldatei ??= Path.Combine(ordner, $"{t.Seit.UtcDateTime:yyyyMMdd-HHmmss}_{t.Id}.jsonl");
+                var rechner = string.IsNullOrWhiteSpace(messAblage?.Rechner) ? "" : RechnerAblage.Dateiname(messAblage.Rechner) + "_";
+                t.Protokolldatei ??= Path.Combine(ordner, $"{t.Seit.UtcDateTime:yyyyMMdd-HHmmss}_{rechner}{t.Id}.jsonl");
                 var zeile = Json.Text(new
                 {
                     zeit = einstellungen.Jetzt().ToString("o"), teilnehmer = t.Id, name = t.Hallo.Name, geraet = t.Hallo.Geraet, app = t.Hallo.App,
@@ -363,7 +378,11 @@ public sealed class XrKanal
 
     /// <summary>Stellschraube setzen (PC → Brille). an = Teilnehmer-Id (nur diesem, nicht gemerkt) oder null (alle, gemerkt für neue Teilnehmer;
     /// wert null setzt zurück). Gibt die Zahl der Empfänger zurück. Wirft HlksFehler bei ungültigen Werten oder unbekanntem Teilnehmer.</summary>
-    public int StellschraubeSetzen(string? schluessel, JsonNode? wert, string? an)
+    public int StellschraubeSetzen(string? schluessel, JsonNode? wert, string? an) => StellschraubeSetzen(schluessel, wert, an, null);
+
+    /// <summary>Wie oben; nurMarke (XR-Labor L1): ist sie gesetzt und ist mindestens eine Brille dieser App verbunden, geht der Wert (an = null) nur an diese Brillen –
+    /// gemerkt wird er trotzdem für alle künftigen Verbindungen. Ist keine solche Brille verbunden, geht er wie bisher an alle.</summary>
+    public int StellschraubeSetzen(string? schluessel, JsonNode? wert, string? an, string? nurMarke)
     {
         if (!XrNachrichten.StellschraubeSchluesselGueltig(schluessel))
             throw new HlksFehler("Der Schlüssel der Stellschraube ist ungültig.", "Kleinbuchstaben, Ziffern, Punkt, Unterstrich, Bindestrich (bis 64 Zeichen), z. B. «pinch.schwelle».");
@@ -385,9 +404,17 @@ public sealed class XrKanal
                     throw new HlksFehler($"Es gibt schon {XrNachrichten.StellschraubenMax} Stellschrauben.", "Nicht mehr gebrauchte mit wert null zurücksetzen.");
                 stellschrauben[schluessel!] = wert.DeepClone();
             }
-            foreach (var x in teilnehmer.Values) Einreihen(x, text);
-            return teilnehmer.Count;
+            var empfaenger = teilnehmer.Values.Where(x => nurMarke is not null && x.Hallo.Marke == nurMarke).ToList();
+            if (empfaenger.Count == 0) empfaenger = [.. teilnehmer.Values];
+            foreach (var x in empfaenger) Einreihen(x, text);
+            return empfaenger.Count;
         }
+    }
+
+    /// <summary>Wie viele verbundene Brillen haben diese Marke (XR-Labor L1)?</summary>
+    public int AnzahlMarke(string marke)
+    {
+        lock (sperre) return teilnehmer.Values.Count(x => x.Hallo.Marke == marke);
     }
 
     public JsonObject Stellschrauben()
@@ -427,7 +454,7 @@ public sealed class XrKanal
         {
             return [.. teilnehmer.Values.OrderBy(t => t.Seit).Select(t => (JsonNode)new JsonObject
             {
-                ["id"] = t.Id, ["name"] = t.Hallo.Name, ["geraet"] = t.Hallo.Geraet, ["app"] = t.Hallo.App,
+                ["id"] = t.Id, ["name"] = t.Hallo.Name, ["geraet"] = t.Hallo.Geraet, ["app"] = t.Hallo.App, ["marke"] = t.Hallo.Marke,
                 ["kopplung"] = t.Kopplung.Id, ["brille"] = t.Kopplung.Brille, ["brillenName"] = t.Kopplung.Name, ["seit"] = t.Seit.ToString("o"),
                 ["pose"] = t.Pose is null ? null : XrNachrichten.PoseKnoten(t.Pose), ["poseZeit"] = t.PoseZeit?.ToString("o"),
                 ["zeigen"] = t.Zeigen is null ? null : XrNachrichten.ZeigenKnoten(t.Zeigen), ["zeigenZeit"] = t.ZeigenZeit?.ToString("o"),

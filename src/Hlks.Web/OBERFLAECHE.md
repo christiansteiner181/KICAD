@@ -3518,7 +3518,7 @@ Ein Dialog oder eine Ansicht kann Seiten anbieten, die G2 blättert: ein Element
 Spezifikation `entwurf/labor-app.md` (freigegeben von Christian am 26.10.2026), Stufe L0 «Gerüst und Durchstich». Das XR-Labor ist eine **eigene App** neben KICAD:
 PC-Teil `src/Hlks.Labor` (dieser Abschnitt), Brillen-App «XR-Labor» `src/Hlks.Labor.Quest` (App-Kennung `ch.hkplanung.xrlabor`). Es braucht **kein KICAD-Projekt**,
 KICAD kann daneben laufen oder ganz fehlen. In der Brille läuft immer nur eine der beiden Apps. Die Labor-Funktionen (Stellschrauben live, Varianten, Prüfaufgaben,
-Fragebogen, Auswertung) folgen mit L1; bis dahin bleibt der Dialog «XR-Labor» in KICAD unverändert.
+Fragebogen, Auswertung) folgen mit L1 (Abschnitt «XR-Labor (Labor-App), L1» unten); in L1 bleibt der Dialog «XR-Labor» in KICAD unverändert.
 
 **Start:** `dotnet Hlks.Labor.dll [--port 5430] [--katalog <ordner>]` (gebaut nach `<bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll`; Desktop-Symbol «XR-Labor»
 mit `werkzeuge\labor_starten.ps1`). Nur `http://localhost:<Port>`. Die Seite kommt aus `src/Hlks.Labor/wwwroot`, übersteuerbar mit `HLKS_LABOR_WEBROOT` (der Desktop
@@ -3558,7 +3558,7 @@ startet aus einer Arbeitskopie); Kataloge wie KICAD (`--katalog`, `HLKS_KATALOG`
 **Seite «XR-Labor»** (`src/Hlks.Labor/wwwroot`): Kopf mit Fassung und Commit; Bereich **Brille** mit dem Teil «Quest App» aus KICAD (dieselbe Datei
 `js/oberflaeche/quest-app-dialog.js` mit der Marke des Labors: Netzzugang ein/aus, «App installieren/aktualisieren» über WLAN oder Kabel, gekoppelte Brillen mit
 «Widerrufen», Ersatzkopplung mit Code; ohne Ordnerfeld und ohne Schalter «Brillen in der 3D-Ansicht») und darunter **Verbundene Brillen im Kanal** (alle 2 s); Bereich
-**Labor** als Platzhalter «Labor folgt mit L1». Stil, Design (hell/dunkel) und Module kommen aus `src/Hlks.Web/wwwroot` als zweitem Wurzelordner (nur `css/` und `js/`,
+**Labor** war in L0 ein Platzhalter; seit L1 stehen dort die Register (siehe unten). Stil, Design (hell/dunkel) und Module kommen aus `src/Hlks.Web/wwwroot` als zweitem Wurzelordner (nur `css/` und `js/`,
 aus derselben Arbeitskopie wie die Labor-Seite), nicht als Kopie.
 
 **Prüfen**
@@ -3570,3 +3570,78 @@ aus derselben Arbeitskopie wie die Labor-Seite), nicht als Kopie.
 - **Am PC:** `dotnet <bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll --port 5430`, dann `http://localhost:5430/` – die Seite zeigt «Quest App» mit «Netzzugang ist aus»;
   `http://localhost:5430/api/status` meldet `xr-labor`. KICAD auf 5130 läuft daneben weiter.
 - **Nur mit der Brille prüfbar:** Installation und Kopplung der App «XR-Labor» (Kabel und WLAN), Verbinden mit 5340, beide Apps zugleich installiert.
+
+## XR-Labor (Labor-App), L1: Server, Seite und Ablage (26.10.2026)
+
+Stufe L1 «Umzug VR-Labor», Teil Server, Seite und Ablage (Zuschnitt L1 in `entwurf/labor-app.md`). Das Labor kann jetzt alles, was der Dialog «XR-Labor» in KICAD kann.
+**KICAD behält in L1 seine Labor-Endpunkte und den Dialog unverändert (paralleler Betrieb)**; es wird kein Code kopiert: das Labor ruft den Code aus `Hlks.Web` mit eigenen
+Werten auf. Das Entfernen aus KICAD folgt mit L2. Nicht Teil dieses Abschnitts: Testraum und Etagen des Labors (`/api/xr/geschosse`, `/api/xr/geschoss/{id}.glb`), die
+Brillen-Apps.
+
+**Seite** (`http://localhost:5430/`, Titel «XR-Labor»): ein Reiterband mit **Brille** (L0: Netzzugang, App installieren, Kopplung, Teilnehmer im Kanal), **Stellschrauben**,
+**Profile**, **Varianten**, **Prüfaufgaben**, **Auswertung**, **Fragebogen** (die sechs Bereiche des KICAD-Dialogs, gleiche Optik) und **Daten**. Der Inhalt der sechs Bereiche ist
+derselbe Code wie der Dialog (`js/oberflaeche/xr-labor-dialog.js`, `xr-labor-text.js`, CSS `xl-…`): `xrLaborAufbauen(opt)` baut ihn, `xrLaborDialog()` hängt ihn in einen Dialog
+(KICAD, Optionen leer = Verhalten wie vor L1), `xrLaborSeite(behaelter, opt)` in einen Behälter der Labor-Seite. Optionen: `ort` (`kicad` | `labor`, Erklärtexte), `profile`
+(Profilquelle: KICAD `benutzerProfilquelle()` = Benutzereinstellungen wie bisher; Labor `labor/labor-profile.js` = `/api/labor/profile`), `marken`, `zusatz` (eigene Reiter vorne
+und hinten, hier Brille und Daten), `start`. Mit `?bereich=<id>` öffnet die Seite einen Reiter (`brille`, `stellschrauben`, `profile`, `varianten`, `aufgaben`, `auswertung`,
+`fragebogen`, `daten`).
+
+- **Marke der Brille:** Die Teilnehmerliste (Reiter Brille und Kopfzeile) nennt die App jeder Brille (`hallo.marke`: `kicad` bzw. `xrlabor`, `Hlks.Xr/Netz/AppMarke.cs`).
+  Prüfaufgaben und Varianten gehen im Labor **nur an Brillen mit der Marke `xrlabor`**, wenn eine solche verbunden ist; sonst wie in KICAD an alle, und die Antwort trägt
+  einen `hinweis` («Keine Brille mit der App «XR-Labor» verbunden: der Auftrag ging an alle n verbundenen Brillen»), den die Seite über den Bereichen und in der Meldung zeigt.
+  Eine Variante wird für künftige Verbindungen immer gemerkt, auch wenn sie nur an die Labor-Brillen ging. Live-Stellschrauben (`POST /api/xr/stellschraube`) gehen an alle
+  (Transport von `MapXr`, schon in L0).
+- **Daten (Reiter):** Ablage mit Ordner, Quelle, Rechner und Zahl der Dateien; die bisherigen Daten dieses PCs; Stand der Übernahme mit Zahlen; Knopf **Erneut übernehmen**.
+
+**Ablage der Labor-Daten** je Benutzer über OneDrive (`src/Hlks.Labor/LaborAblage.cs`):
+
+```
+%OneDrive%\HLKS-CAD\labor\
+  messungen\<JJJJMMTT-hhmmss>_<rechner>_<teilnehmer>.jsonl   Messprotokolle der Brillen (Kanal), alle Rechner
+  fragebogen\<JJJJMMTT-hhmmss>_<rechner>_<name>.json
+  profile\<kennung>.json                                     { name, werte } wie bisher «labor.profil.<kennung>»
+  aktiv.json                                                 { kennung | null, zeit, rechner } wie bisher «labor.profil_aktiv»
+  uebernahme_<rechner>.json                                  Merker der Übernahme (Zeit, Zahlen)
+```
+
+Wahl wie `RechnerAblage`: Umleitung `HLKS_LABOR_DATEN` › OneDrive des Benutzers › `%APPDATA%\HLKS-CAD\labor`. Dateinamen tragen den Rechnernamen (zwei Rechner schreiben nie
+dieselbe Datei), geschrieben wird über eine temporäre Datei im selben Ordner. **Schutz im Testlauf** (`HLKS_TEST` oder Testrunner), wie bei den Benutzereinstellungen: nur unter
+`%TEMP%` gelesen und geschrieben; zeigt die Ablage woandershin, wird das Schreiben abgelehnt («… werden im Testlauf nicht beschrieben») und das Lesen sieht nichts. Die Auswertung liest
+alle Dateien in `messungen` (alle Rechner; die neuesten 300, zusammen höchstens 64 MB).
+
+**Endpunkte des Labors** (zusätzlich zu L0; nur localhost, Herkunftsschutz wie KICAD):
+
+- `GET /api/xr/labor/katalog` (auch über den Netzzugang 5340 mit Schlüssel, ETag/304), `GET /api/xr/labor/auswertung`, `GET`/`POST /api/xr/labor/fragebogen`,
+  `POST /api/xr/labor/variante`, `POST /api/xr/labor/aufgabe`: derselbe Code wie in KICAD (`XrLaborEndpunkte.cs`, Beschreibung im Abschnitt «Modul XR: XR-Labor»). Im Labor
+  kommt das Profil «gilt für die App» aus `labor\profile`/`aktiv.json` (bereinigt wie bisher), die Fragebogen gehen nach `labor\fragebogen`, die Messprotokolle des Kanals nach
+  `labor\messungen`.
+- `GET /api/labor/profile` → `{ aktiv, profile: [{ kennung, name, anzahl, werte }] }` (nach Name); `POST /api/labor/profile` `{ kennung, profil: { name, werte } }` speichert
+  (Prüfung wie `XrLaborProfil.Pruefen`: Kennung `[a-z0-9_]` bis 24 Zeichen, Name bis 40, höchstens 128 Werte; höchstens 100 Profile); `POST /api/labor/profile/aktiv` `{ kennung | null }`;
+  `DELETE /api/labor/profile/{kennung}` (war es das aktive, gilt danach keines). Dateien mit ungültiger Kennung (Konfliktkopien von OneDrive) oder ungültigem Inhalt werden übergangen.
+- `GET /api/labor/daten` → Ablage (Ordner, Quelle, Rechner, erlaubt, Zahl der Dateien), bisherige Daten, Merker der Übernahme; `POST /api/labor/uebernahme` übernimmt erneut.
+
+**Übernahme der bisherigen Daten** (Entscheid Christian 26.10.2026 «Übernehmen»; `LaborUebernahme.cs`): beim ersten Start des Labors (kein Merker `uebernahme_<rechner>.json`) und
+auf «Erneut übernehmen». **Kopiert, nie verschoben, nie gelöscht:** `%LOCALAPPDATA%\HLKS_CAD\xr\messprotokolle\*.jsonl` → `labor\messungen`, `…\xr\fragebogen\*.json` →
+`labor\fragebogen` (der Rechnername wird nach dem Zeitstempel in den Namen eingefügt), die Benutzereinstellungen `labor.profil.*` → `labor\profile`, `labor.profil_aktiv` →
+`aktiv.json` (nur, wenn im Labor noch kein Profil gilt); die Benutzereinstellungen werden nur gelesen. Doppelte: gleicher Inhalt (SHA-256) wie eine Datei im Ziel → übersprungen; eine
+Messdatei, die seit der ersten Übernahme gewachsen ist (die Quelle beginnt mit dem Inhalt der Kopie), ersetzt die Kopie («aktualisiert»); ein im Labor anders gespeichertes Profil
+bleibt («abweichend»). Der Merker nennt Zeit und Zahlen (gefunden, kopiert, aktualisiert, doppelt, Fehler). Die Quelle der Dateien lässt sich mit `HLKS_LABOR_ALTDATEN`
+(XR-Ordner je PC) umleiten; im Testlauf wird nur unter `%TEMP%` gelesen.
+
+**Neu in `Hlks.Web`** (die Vorgaben von KICAD sind unverändert; die bestehenden C#-Tests von KICAD laufen ohne Anpassung und prüfen jetzt zusätzlich die Dateinamen ohne Rechnername, im Node-Test des Dialogs wurde nur der Eintrag der Reiter in der Liste der geprüften Vorlagen nachgeführt):
+`XrLaborQuelle` (Katalogordner, Profilquelle, Fragebogenspeicher, `NurMarke`/`MarkeName`) mit der Überladung `MapXrLabor(app, XrLaborQuelle)` – die bisherige `MapXrLabor(app, dienst)`
+baut daraus die KICAD-Quelle; `XrMessAblage` (Ordner, Rechnername, Sperre; optionaler Dienst, den `XrKanal` nimmt); `XrFragebogenSpeicher(ordner, jetzt, rechner?, sperre?)`;
+`XrKanal.StellschraubeSetzen(…, nurMarke)`, `XrKanal.AnzahlMarke`; `XrHallo.Marke` (`hallo.marke`, Kleinbuchstaben und Ziffern bis 16 Zeichen, sonst abgelehnt) und
+`marke` in `GET /api/xr/teilnehmer`.
+
+**Prüfen**
+- **Tests:** `dotnet test tests/Hlks.Labor.Tests` (neu: `LaborDatenTests` – Wahl der Ablage, Schutz im Testlauf, Schreiben über temporäre Datei, Profile-Endpunkte, Katalog mit Profil aus
+  dem Labor (lokal und im Netzzugang), Messprotokoll nach `labor\messungen`, Auswertung über mehrere Rechner, Fragebogen mit Rechnername, Marke und Ziel von Aufgabe und
+  Variante, Live-Stellschrauben, Übernahme einmalig/erneut/Doppelte/gewachsene Dateien/geänderte Profile, nichts in KICADs Ablage; `LaborApiTests`: alle Module der Seite werden
+  ausgeliefert). `dotnet test tests/Hlks.Web.Tests --filter "FullyQualifiedName~XrLabor|FullyQualifiedName~XrKanal|FullyQualifiedName~XrZugang|FullyQualifiedName~BenutzerEinstellungen"`
+  (KICAD-Vorgaben, `hallo.marke`). Node: `node --test src/Hlks.Web/wwwroot/js/oberflaeche/xr-labor.test.mjs src/Hlks.Labor/wwwroot/labor/labor.test.mjs`.
+- **Am PC (Probe ohne echte Daten):** `HLKS_TEST=1`, `HLKS_LABOR_DATEN=%TEMP%\…\labor`, `HLKS_LABOR_ALTDATEN=%TEMP%\…\alt_xr`, `HLKS_BENUTZER=%TEMP%\…\benutzer`, `HLKS_KATALOG=<Arbeitskopie>\kataloge`;
+  `dotnet <bau>\Hlks.Labor\bin\Debug\net10.0\Hlks.Labor.dll --port 5439`, dann `http://localhost:5439/?bereich=daten` (Zahlen der Übernahme) und die übrigen Reiter.
+- **Im Betrieb prüfen (Christian):** Reiter **Daten** zeigt `%OneDrive%\HLKS-CAD\labor` und nach dem ersten Start die Zahlen der übernommenen Messprotokolle der Brillentests 23.–25.10.2026;
+  **Auswertung** zeigt diese Läufe je Aufgabe, Variante und Fassung; ein Profil unter **Profile** speichern und «Für die App festlegen» – die App holt es beim nächsten Verbinden.
+- **Nur mit der Brille prüfbar:** Marke im `hallo` der echten Labor-App (L0-Brillentest), Prüfaufgabe nur in der Labor-Brille, Messprotokoll der Labor-Brille in `labor\messungen`.

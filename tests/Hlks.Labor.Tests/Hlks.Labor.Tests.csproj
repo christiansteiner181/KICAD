@@ -29,6 +29,8 @@
     <!-- KICAD daneben (gleichzeitiger Betrieb, dasselbe Zertifikat) und dessen Vorgaben -->
     <ProjectReference Include="..\..\src\Hlks.Web\Hlks.Web.csproj" />
     <ProjectReference Include="..\..\src\Hlks.Kern\Hlks.Kern.csproj" />
+    <!-- Marke der Brillen-App (AppMarke.XrLabor) gegen die Id im Labor-Server prüfen (L1) -->
+    <ProjectReference Include="..\..\src\Hlks.Xr\Hlks.Xr.csproj" />
     <!-- Installation der Labor-App: die Attrappe statt adb.exe (nie ein echtes adb, nie eine echte Brille) -->
     <ProjectReference Include="..\Hlks.AdbAttrappe\Hlks.AdbAttrappe.csproj" />
   </ItemGroup>
