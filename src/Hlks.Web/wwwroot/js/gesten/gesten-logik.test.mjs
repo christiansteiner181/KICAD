@@ -127,15 +127,16 @@ test('Glättung, Winkelunterschied', () => {
 
 // ---------------------------------------------------------------------------------------------- Händigkeit, MediaPipe, Aufnahmen
 
-test('Händigkeit: MediaPipe nimmt ein Selfie-Bild an – im ungespiegelten Kamerabild wird getauscht; Punkte wie im Spiegel', () => {
+test('Händigkeit: im ungespiegelten Kamerabild nennt MediaPipe die Hand des Benutzers (Abnahme 26.10.2026); Punkte wie im Spiegel', () => {
+  assert.equal(L.MEDIAPIPE_ERWARTET_SPIEGELBILD, false);
   const roh = { punkte: Array.from({ length: 21 }, (_, i) => [0.2 + i * 0.01, 0.5, 0.01]), welt: Array.from({ length: 21 }, () => [0.03, 0.01, -0.02]), haendigkeitRoh: 'Left', score: 0.9 };
   const [h] = L.haendeImSpiegel([roh]);
-  assert.equal(h.haendigkeit, 'rechts');
+  assert.equal(h.haendigkeit, 'links');
   assert.ok(Math.abs(h.punkte[0][0] - 0.8) < 1e-12 && h.punkte[0][1] === 0.5 && h.punkte[0][2] === 0.01);
   assert.equal(h.welt[0][0], -0.03);
-  assert.equal(L.haendeImSpiegel([{ ...roh, haendigkeitRoh: 'Right' }])[0].haendigkeit, 'links');
+  assert.equal(L.haendeImSpiegel([{ ...roh, haendigkeitRoh: 'Right' }])[0].haendigkeit, 'rechts');
   const g = L.haendeImSpiegel([roh], { bildGespiegelt: true })[0];
-  assert.equal(g.haendigkeit, 'links', 'schon gespiegeltes Bild: so, wie MediaPipe es sagt');
+  assert.equal(g.haendigkeit, 'rechts', 'schon gespiegeltes Bild: getauscht');
   assert.equal(g.punkte[0][0], 0.2);
   assert.equal(L.haendeImSpiegel([{ ...roh, haendigkeitRoh: null }])[0].haendigkeit, null);
 });

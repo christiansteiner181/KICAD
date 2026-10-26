@@ -198,9 +198,10 @@ export const SPIEL_BEWEGEN = 1 / 3, SPIEL_ROLLEN = 0.25, SPIEL_ZOOM = 0.25;
 export const HANDGROESSE_VORGABE_M = 0.09;
 /** Bildhöhe / Bildbreite der Kamera (640 × 480). */
 export const SEITENVERHAELTNIS_VORGABE = 0.75;
-/** Vertrag mit MediaPipe: die Händigkeit gilt für ein gespiegeltes Bild (Selfie). gesten.js gibt das Kamerabild ungespiegelt in die Erkennung, darum wird sie getauscht
- *  (Annahme nach der Dokumentation von MediaPipe Hands; an der echten Kamera zu bestätigen – Testfeld «Hand: links»). */
-export const MEDIAPIPE_ERWARTET_SPIEGELBILD = true;
+/** Vertrag mit MediaPipe: Mit dem ungespiegelten Kamerabild nennt der HandLandmarker 1.1.1 bereits die Hand des Benutzers (kein Tausch).
+ *  Die Annahme nach der Dokumentation (Händigkeit für ein Selfie-Bild, also tauschen) war falsch: Abnahme Christian 26.10.2026 an der eingebauten Kamera –
+ *  die linke Hand wurde als rechte erkannt, nur die rechte zeigte ein Skelett. */
+export const MEDIAPIPE_ERWARTET_SPIEGELBILD = false;
 
 // ---------------------------------------------------------------------------------------------------- Vektoren
 
@@ -347,7 +348,7 @@ export function ergebnisAusMediapipe(r) {
  */
 export function haendeImSpiegel(haende, { bildGespiegelt = false } = {}) {
   return (haende ?? []).map((h) => {
-    const tauschen = MEDIAPIPE_ERWARTET_SPIEGELBILD && !bildGespiegelt;
+    const tauschen = MEDIAPIPE_ERWARTET_SPIEGELBILD !== bildGespiegelt;   // tauschen, wenn das Bild anders liegt, als MediaPipe es erwartet
     const benutzer = h.haendigkeitRoh === 'Left' ? (tauschen ? 'rechts' : 'links') : h.haendigkeitRoh === 'Right' ? (tauschen ? 'links' : 'rechts') : null;
     const spiegeln = !bildGespiegelt;
     return {
