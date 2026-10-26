@@ -44,3 +44,6 @@
 .gd-test-leer { margin: 0; }
 .gd-aufnahme .gd-zeile { grid-template-columns: auto auto; justify-content: start; }
 .dlg.gesten .dlg-knopf:disabled { opacity: .5; cursor: default; }
+
+/* Messzeile im Dialog «Gesten»: Bildrate der Erkennung, Auflösung der Kamera */
+.gd-messung { font-size: 12px; opacity: 0.75; margin: 0 0 8px; font-variant-numeric: tabular-nums; }

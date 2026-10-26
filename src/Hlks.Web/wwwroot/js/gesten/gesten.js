@@ -19,7 +19,8 @@ import * as fenster from '../fenster.js';
 
 const BREITE = 960, HOEHE = 540;   // Bild für die Erkennung (Breite fest, Höhe nach dem Seitenverhältnis der Kamera). 960 statt 640: im vollen
                                    // 16:9-Sichtfeld ist die Hand sonst kleiner als vorher im 4:3-Ausschnitt, die Punkte zittern und die Faust bricht ab (Abnahme 26.10.2026)
-const KAMERA_BREITE = 1280, KAMERA_HOEHE = 720;   // angeforderte Kameraauflösung (16:9, volles Sichtfeld)
+const KAMERA_BREITE = 1920, KAMERA_HOEHE = 1080;   // angeforderte Kameraauflösung: volle Sensorgrösse der eingebauten FHD-Kamera, damit
+                                                   // kein Modus mit Ausschnitt gewählt wird (Abnahme 26.10.2026: «zu wenig weitwinklig»)
 const TAKT_MS = 1000 / 30, RUECKFALL_MS = 1000 / 15, RUHE_TAKT_MS = 1000 / 5;
 const RUHE_NACH_MS = 10000;
 const PUNKTE_MS = 1000 / 15;
@@ -374,6 +375,9 @@ export async function diagnose() {
   return {
     laeuft: true, bildrate, dauerMs, zielMs: intervall(l), ruhe: l.ruhe, rueckfall: l.rueckfall, versteckt: l.versteckt,
     kamera: l.strom?.getVideoTracks?.()[0]?.readyState === 'live',
+    kameraBild: l.video?.videoWidth ? [l.video.videoWidth, l.video.videoHeight] : null,
+    erkennungBild: l.video?.videoWidth ? [Math.min(BREITE, l.video.videoWidth), Math.round(Math.min(BREITE, l.video.videoWidth) * l.sv)] : null,
+    kameraName: l.strom?.getVideoTracks?.()[0]?.label ?? null,
     delegate: l.delegate, ladenMs: l.ladenMs, gesperrt: antwort?.gesperrt ?? [], bilderImWorker: antwort?.bilder ?? null, zustand: gemeldet.zustand,
   };
 }

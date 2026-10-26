@@ -173,10 +173,25 @@ async function oeffnen() {
 
   w = knoten('<div class="gd-wurzel"></div>');
   rendern();
+  // Messzeile oben im Dialog: Bildrate der Erkennung und tatsächliche Auflösung der Kamera (Abnahme: Sichtfeld und Bildrate prüfen)
+  const messung = knoten('<div class="gd-messung" aria-live="off"></div>');
+  const huelle = knoten('<div class="gd-huelle"></div>');
+  huelle.append(messung, w);
+  const messen = async () => {
+    const d = await steuerung.diagnose();
+    if (!messung.isConnected) return;
+    const x = (p) => (p ? `${p[0]} × ${p[1]}` : '–');
+    messung.textContent = d?.laeuft
+      ? `Erkennung ${d.bildrate.toFixed(0)} Bilder/s${d.ruhe ? ' (Ruhebetrieb)' : ''} · Kamera ${x(d.kameraBild)}${d.kameraName ? ` (${d.kameraName})` : ''} · Erkennungsbild ${x(d.erkennungBild)}`
+      : 'Gesten aus – keine Messung.';
+  };
+  const messTakt = setInterval(messen, 1000);
+  messen();
   steuerung.testmodus(true);   // erkannte Gesten zeigen, nichts auslösen, solange der Dialog offen ist
   try {
-    await zeigen({ titel: T.DIALOG_TITEL, inhalt: w, breite: 760, klasse: 'dlg-hoch gesten', art: 'gesten', knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }] });
+    await zeigen({ titel: T.DIALOG_TITEL, inhalt: huelle, breite: 760, klasse: 'dlg-hoch gesten', art: 'gesten', knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }] });
   } finally {
+    clearInterval(messTakt);
     abmelden();
     steuerung.testmodus(false);
     if (steuerung.zustand().aufnahme) { try { await steuerung.aufnahmeBeenden(); } catch { /* egal */ } }

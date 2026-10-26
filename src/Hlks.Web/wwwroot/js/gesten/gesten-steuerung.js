@@ -204,6 +204,12 @@ export function steuerungErzeugen(abh = {}) {
       return (await modul?.aufnahmeBeenden?.()) ?? null;
     },
 
+    /** Messwerte der laufenden Erkennung (Bilder/s, Kamera- und Erkennungsbild) oder null, wenn die Gesten aus sind. */
+    async diagnose() {
+      if (!laeuft || !modul?.diagnose) return null;
+      try { return await modul.diagnose(); } catch { return null; }
+    },
+
     abonnieren(fn) { hoerer.add(fn); return () => hoerer.delete(fn); },
   };
   return api;
