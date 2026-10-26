@@ -41,6 +41,9 @@ namespace Hlks.Quest;
 /// P5b (Labor in der App, QuestApp.Labor.cs): der Katalog des Labors vom PC (GET /api/xr/labor/katalog, Zwischenspeicher mit ETag; ohne PC der abgelegte) gibt
 /// Vorgaben, Grenzen und Profil der Stellschrauben (Hlks.Xr.Labor.LaborWerte); Prüfaufgaben («labor.aufgabe») mit schwebender Karte und Messprotokoll; Varianten
 /// «teleport» (Stick), «etage», «messen»; Schnitt mit der flachen Hand (Sitzungsraum) und Röntgen-Hand (Begehen); «hallo.app» = Fassung und Commit (AppFassung).
+/// XR-Labor L0 (entwurf/labor-app.md): der allgemeine Code ruft das Labor nur noch über Einhängepunkte auf (partial void, QuestApp.Einhaengepunkte.cs); Röntgen-Hand
+/// und flache Hand gehören zur Bedienung (QuestApp.Roentgen.cs, QuestApp.Schnitt.cs). Dieselben Quellen übersetzt die Brillen-App «XR-Labor» (src/Hlks.Labor.Quest)
+/// mit eigener Marke (Marke.cs, «hallo.marke»).
 ///
 /// V1a: Messen (XR-C, QuestApp.Messen.cs) und Problem-Marker (XR-E, QuestApp.Marker.cs); die Apps im Stil von visionOS (Christian 24.10.2026, Apple HIG): ein Fenster
 /// aus Glas mit Registern statt der Kacheln (GlasApps, QuestApp.Apps.cs, GlasZeichner, Assets/glas.hlsl), im Raum verankert, am Tisch neben dem Tisch; Hinweise auf dem
@@ -48,7 +51,8 @@ namespace Hlks.Quest;
 /// </summary>
 sealed partial class QuestApp
 {
-    const string AppName = "KICAD Quest V1a";
+    /// <summary>Vorsatz der Protokollzeilen (XR-Labor L0: je Marke; KICAD «KICAD Quest V1a» wie bisher).</summary>
+    static readonly string AppName = Marke.Protokoll;
     static readonly IReadOnlySet<string> Ausgeblendet = new HashSet<string> { ModellSzene.GruppeRaum };   // «Räume ausgeblendet»
 
     readonly Optionen o;
@@ -152,20 +156,14 @@ sealed partial class QuestApp
         ebenenAblage = new EbenenAblage(privat);
         apps = new GlasApps(rueck, glas);
         symbole = new SymbolApps(rueck, glas);
-        karte = new AufgabenKarte(rueck, glas);
-        // V1a: Ziele des Wegwischens (Einhängepunkt; V1c hängt den PC-Bildschirm an): die offene App, die Karte einer Prüfaufgabe, die App-Symbole
+        // V1a: Ziele des Wegwischens (Einhängepunkt; V1c hängt den PC-Bildschirm an): die offene App, die Karte einer Prüfaufgabe (XR-Labor), die App-Symbole
         WegwischZiele.Add(apps);
-        WegwischZiele.Add(new WischZiel(KarteKandidat, w => karte.WischVersatz = AppSymbole.NachLinks(w, 0), KarteWegwischen));
+        LaborAnlegen();
         WegwischZiele.Add(symbole);
         MarkerStarten();
         sitzung.FlacheHandGeaendert += FlacheHandMelden;
-        // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden (ohne PC bleibt es dabei)
-        katalogAblage = new LaborKatalogAblage(privat);
-        KatalogUebernehmen(LaborKatalogLader.AusAblage(katalogAblage));
-        // P5b: Messprotokolle, die beim letzten Mal ohne Verbindung entstanden, gehen mit dem nächsten «willkommen»
-        protokollAblage = new ProtokollAblage(privat);
-        protokollWarten.AddRange(protokollAblage.Lesen());
-        if (protokollWarten.Count > 0) Console.WriteLine($"{AppName}: {protokollWarten.Count} Messprotokolle warten auf die Verbindung.");
+        // P5b: der zuletzt geladene Katalog des Labors gilt schon vor dem Verbinden; Messprotokolle, die ohne Verbindung entstanden, warten (XR-Labor)
+        LaborStarten();
         EinstellungenAnwenden();
     }
 
@@ -197,12 +195,14 @@ sealed partial class QuestApp
 
     /// <summary>
     /// Eine Stellschraube vom PC anwenden (Kanal «stellschraube» bzw. die gemerkten aus «willkommen»): begehen.* (P4a), haltung.* (P4a-Nachtrag) und die Bedienung
-    /// (P5a, P5b) über <see cref="LaborWerte"/> mit den Grenzen des Katalogs; «labor.aufgabe» startet bzw. beendet eine Prüfaufgabe (P5b). Gibt «ok», «ungültig» oder
-    /// «unbekannt» zurück.
+    /// (P5a, P5b) über <see cref="LaborWerte"/> mit den Grenzen des Katalogs; «labor.aufgabe» startet bzw. beendet eine Prüfaufgabe (P5b, Einhängepunkt des XR-Labors).
+    /// Gibt «ok», «ungültig» oder «unbekannt» zurück.
     /// </summary>
     string StellschraubeAnwenden(string s, JsonElement wert)
     {
-        if (s == LaborKatalog.AufgabeSchluessel) return AufgabeVomPc(wert);
+        string? labor = null;
+        LaborStellschraube(s, wert, ref labor);
+        if (labor is not null) return labor;
         var vorher = (bedien.Teleport, bedien.Messen);
         var r = werte.Setzen(s, wert);
         if (r != LaborWerte.Ok) return r;
@@ -289,7 +289,7 @@ sealed partial class QuestApp
                 if (KopplungAblage.Importieren(Plattform.EingangOrdner(), privat) is { } fehler) Melden(fehler);
                 paket = KopplungAblage.Laden(privat);
             }
-            if (paket is null) Status(Zustand.Fehler, "Nicht gekoppelt – in KICAD «Quest verbinden» › «App installieren/aktualisieren».");
+            if (paket is null) Status(Zustand.Fehler, $"Nicht gekoppelt – {Marke.Koppeln}.");
             else Console.WriteLine($"{AppName}: {paket} (Fingerabdruck {paket.FingerabdruckKurz})");
         }
         catch (XrNetzFehler f) { Status(Zustand.Fehler, f.Message); }
@@ -298,7 +298,7 @@ sealed partial class QuestApp
     async Task Verbinden()
     {
         var p = paket!;
-        Status(Zustand.Sucht, $"Suche KICAD auf {p.Pc} …");
+        Status(Zustand.Sucht, $"Suche {Marke.Gegenstelle} auf {p.Pc} …");
         List<(string, int)> gespeichert;
         lock (sperre) gespeichert = [.. ablage.Adressen];
         var f = await PcSuche.Finden(p, gespeichert, new SucheOptionen(), ende.Token);
@@ -313,9 +313,10 @@ sealed partial class QuestApp
         Status(Zustand.Verbunden, $"Verbunden mit {f.Adresse!.Pc}");
         KanalStarten(p);
         var zugang = new PcZugang(f.Adresse, p);
-        // P5b: zuerst der Katalog des Labors (klein; ETag/304 gegen die Ablage) – Vorgaben, Grenzen und Profil gelten, bevor man das Modell betritt
-        katalogQuelle = zugang.Ebenen;
-        await KatalogVomPc(katalogQuelle);
+        // P5b: zuerst der Katalog des Labors (klein; ETag/304 gegen die Ablage) – Vorgaben, Grenzen und Profil gelten, bevor man das Modell betritt (XR-Labor)
+        Task? labor = null;
+        LaborVerbunden(zugang.Ebenen, ref labor);
+        if (labor is not null) await labor;
         try
         {
             var quelle = await ModellQuelle(zugang);
@@ -348,7 +349,9 @@ sealed partial class QuestApp
     /// (der Standpunkt bleibt). Netzfehler stören nicht (der Kanal meldet die Trennung).</summary>
     async Task Nachladen()
     {
-        if (katalogQuelle is { } kq) await KatalogVomPc(kq);   // P5b: ein neues Profil «gilt für die App» kommt so ohne Neustart (meist 304)
+        Task? labor = null;
+        LaborNachladen(ref labor);   // P5b (XR-Labor): ein neues Profil «gilt für die App» kommt so ohne Neustart (meist 304)
+        if (labor is not null) await labor;
         if (aktiveQuelle is not { } q) return;
         try
         {
@@ -475,15 +478,11 @@ sealed partial class QuestApp
                 if (f.Adresse is not null) adresse = f.Adresse;
             }
             return adresse?.Kanal;
-        }, new KanalOptionen { Name = p.Name, Geraet = geraet, App = AppFassung.Text });   // P5b: «hallo.app» = Fassung und Commit (z. B. 0.1+680f9af)
-        k.Nachricht += (typ, o) =>
-        {
-            // P5b: Quittung des PCs für ein Messprotokoll (XrKanal)
-            if (typ == "quittung" && o.TryGetProperty("bezug", out var b) && b.ValueKind == JsonValueKind.String && b.GetString() == "messprotokoll") Interlocked.Increment(ref quittungen);
-        };
+        }, new KanalOptionen { Name = p.Name, Geraet = geraet, App = AppFassung.Text, Marke = Marke.Id });   // P5b: «hallo.app» = Fassung und Commit (z. B. 0.1+680f9af); XR-Labor L0: «hallo.marke»
+        k.Nachricht += (typ, o) => LaborNachricht(typ, o);   // P5b (XR-Labor): Quittung des PCs für ein Messprotokoll (XrKanal)
         k.Willkommen += w =>
         {
-            amBild.Enqueue(ProtokolleNachsenden);   // P5b: Messprotokolle, die ohne Verbindung entstanden
+            LaborWillkommen();   // P5b (XR-Labor): Messprotokolle, die ohne Verbindung entstanden
             if (istGeladen) _ = Task.Run(MarkerSenden);   // V1a: Problem-Marker, die ohne Verbindung gesetzt wurden
             if (w.TryGetProperty("auftrag", out var a) && a.ValueKind == JsonValueKind.Object) AuftragEmpfangen(a);
             // V1a: Symbolsatz des Benutzers wie in KICAD (oberflaeche.symbole: strich | revit); ohne PC bleibt der Strich
@@ -531,9 +530,9 @@ sealed partial class QuestApp
             {
                 case KanalZustand.Verbunden: Status(Zustand.Verbunden, $"Verbunden mit {adresse?.Pc ?? p.Pc}"); break;
                 case KanalZustand.Wartet: Status(istGeladen ? Zustand.OhnePc : Zustand.Sucht, $"Verbindung zu {p.Pc} unterbrochen – neuer Versuch …"); break;
-                case KanalZustand.Widerrufen: Status(Zustand.Fehler, "Die Kopplung wurde am PC widerrufen – Brille in KICAD neu koppeln."); break;
+                case KanalZustand.Widerrufen: Status(Zustand.Fehler, $"Die Kopplung wurde am PC widerrufen – Brille {Marke.InGegenstelle} neu koppeln."); break;
                 case KanalZustand.Ersetzt: Status(Zustand.Fehler, "Eine neuere Verbindung dieser Brille ist aktiv – diese App verbindet nicht neu."); break;
-                case KanalZustand.NichtGekoppelt: Status(Zustand.Fehler, "KICAD kennt diese Brille nicht mehr – in KICAD neu koppeln."); break;
+                case KanalZustand.NichtGekoppelt: Status(Zustand.Fehler, $"{Marke.Gegenstelle} kennt diese Brille nicht mehr – {Marke.InGegenstelle} neu koppeln."); break;
             }
         };
         kanal = k;
@@ -739,6 +738,29 @@ sealed partial class QuestApp
         if (SitzungAnsichtBauen(w) is { } a) { SitzungZeigen(w, a); Hinweis($"Sitzungsraum · {a.Text}"); }
     }
 
+    /// <summary>P5b: Raum am Standort, bevor man in den Sitzungsraum ging (für «Raum zeigen» in der App «Tisch»).</summary>
+    string? raumAmStand;
+
+    /// <summary>Der Raum, in dem man beim Begehen steht (Szene, Geschoss am Stand), sonst null. (XR-Labor L0: aus QuestApp.Labor.cs hierher, unverändert.)</summary>
+    string? RaumAmStand()
+    {
+        if (szene is null || sitzung.Aktiv) return null;
+        var kr = KopfRef(Input.Head);
+        var kw = VrLogik.KopfWelt(rig, new XVec3(kr.X, kr.Y, kr.Z));
+        return RaumStandort.RaumBei(szene, GeschossAmStand()?.Id, new Xz(kw.X, kw.Z), rig.Y);
+    }
+
+    /// <summary>
+    /// Raum für «Raum zeigen» in der App «Tisch»: der markierte bzw. gemerkte einer Prüfaufgabe (Einhängepunkt XR-Labor), sonst der Raum am Standort vor dem
+    /// Sitzungsraum, sonst der des Auftrags.
+    /// </summary>
+    string? RaumZumZeigen()
+    {
+        string? labor = null;
+        LaborRaumZumZeigen(ref labor);
+        return labor ?? raumAmStand ?? auftragRaum;
+    }
+
     /// <summary>Raum der Brille → Szene im aktuellen Modus (für Posen an den PC).</summary>
     XVec3 SzeneVonSk(Vec3 p) => sitzung.Aktiv
         ? Vector3.Transform(p, Matrix4x4.Invert(sitzung.ModellMatrix, out var inv) ? inv : Matrix4x4.Identity)
@@ -828,7 +850,7 @@ sealed partial class QuestApp
         else Lines.Add(new Vec3(-0.5f, 0, -1), new Vec3(0.5f, 0, -1), new Color32(80, 220, 255, 255), 0.005f);   // Bodenmarke, solange kein Modell da ist
         MessenBild(kopf);    // V1a: Messen (Fang, Messband, stehende Messungen) – beim Begehen und am Tisch
         MarkerBild(kopf);    // V1a: Problem-Marker (setzen, Stecknadeln)
-        AufgabeBild(kopf);   // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung)
+        LaborBild(kopf);   // P5b: Prüfaufgabe des Labors (Karte, Messung, Markierung; Einhängepunkt XR-Labor)
         HinweiseZeichnen(kopf);   // V1a: Hinweise frei schwebend (nach Apps und Karte, die sie nie überdecken)
         rueck.Zeichnen(kopf);
         geister.Zeichnen(Time.Total);
@@ -861,7 +883,7 @@ sealed partial class QuestApp
             $"Bedienung={bedien.Bedienung} (Apps {(apps.Sichtbar ? "sichtbar" : "aus")}, App {apps.Aktiv}, {bedien.Apps.Anordnung}, Glas {glas.Flaechen} Flächen{(glas.MitShader ? "" : " ohne Shader")}), Symbole {(symbole.Da ? "da" : symbole.Sichtbar ? "kommen bzw. gehen" : "aus")}, Hebegeste {hebenGezaehlt}× heben, {wischGezaehlt}× weggewischt (zuletzt {wegwisch.Hand ?? "–"}), Tafel nachgerückt {apps.Folgen.Nachgerueckt}×, Tafel geschlossen {tafelGeschlossen}×, auf der Tafel geblättert {tafelGeblaettert}×, Geste={letzteGeste}, " +
             $"Messen={MessenKurz()}, Marker={MarkerKurz()}, Umgebung={(sitzung.Hell ? "hell" : "tron")}, Auslöser={bedien.Ausloeser} (abgedrückt {pistoleZ[0].Abzuege}/{pistoleZ[1].Abzuege}), Hebe verworfen {hebe.Verworfen}×, " +
             $"Etagenwechsel={etagenWechsel} ({etagenText}), Geisterhände={geister.Gezeigt}, Tunnel={tunnelAnzeige.Gezeichnet} Bilder, " +
-            $"Fassung={AppFassung.Text}, Katalog={katalogText}, Aufgabe={AufgabeKurz()}, Messprotokolle={protokolleGesendet} (Quittungen {quittungen}, wartend {protokollWarten.Count}), " +
+            $"Fassung={AppFassung.Text}, {LaborKennzahlenText()}" +   // XR-Labor: Katalog, Aufgabe, Messprotokolle
             $"Teleport={bedien.Teleport}, Röntgen={roentgenText}, Schnitt Hand={SchnittHandText()}, " +
             $"Modell={modellWeg}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}, " +
             $"Hände links={Input.Hand(Handed.Left).IsTracked}, rechts={Input.Hand(Handed.Right).IsTracked}, Desktop={DesktopKennzahlen()}");
@@ -900,7 +922,7 @@ sealed partial class QuestApp
             var aim = Zeiger(handed);
             // P5a: an den Apps zielt ein Pinch nicht (er wählt dort); mit offener App blättert ein Seitenwisch statt zu drehen. P5b: ebenso an der Karte einer Aufgabe;
             // in der Variante «teleport» = «stick» springt der Pinch nicht (der Stick springt, StickSchritt)
-            var anApps = AnApps(handed) || karte.HandNah || DesktopSperrt;   // V1c: Bildschirm des PCs da – nicht springen, kein Strahl
+            var anApps = AnApps(handed) || HandAnKarte || DesktopSperrt;   // V1c: Bildschirm des PCs da – nicht springen, kein Strahl
             // V1a: an den Apps blättert ein Seitenwisch statt zu drehen; die Hand, die ein Messband aufzieht, dreht nicht; mit Messen bzw. Marker setzen springt der
             // Pinch nicht (er misst bzw. markiert)
             var drehenWirkt = drehen.Drehen && !anApps && messen.Hand != seite;   // V1c: anApps enthält DesktopSperrt (die VR-Szene bleibt starr)
@@ -913,7 +935,7 @@ sealed partial class QuestApp
             if (getrackt && !anApps && !bedien.MitStick && !werkzeug && !z.OhneZiel && !(z.Pinch && (z.Gewischt || z.Abgebrochen)) && z.Strahl is { } s)
                 rueck.Strahl(Sk(s.Ursprung), Vector3.TransformNormal((Vector3)s.Richtung, Inverse()), bedien.MitPistole ? z.Zielt : z.Pinch, z.Ziel is { } zz ? Sk(zz.Punkt) : null, z.Bereit);
         }
-        if (!DesktopSperrt) StickSchritt(kopf, kopfRef);   // P5b: Variante «teleport» = «stick»; V1c: nicht, solange der Bildschirm des PCs da ist
+        if (!DesktopSperrt) LaborStick(kopf, kopfRef);   // P5b: Variante «teleport» = «stick» (XR-Labor); V1c: nicht, solange der Bildschirm des PCs da ist
     }
 
     /// <summary>
@@ -935,11 +957,11 @@ sealed partial class QuestApp
                 if (e.Punkt is { } dp) rueck.Drehen(Sk(dp), kopf.position);
                 rig = VrLogik.RigDrehen(rig, kopfRef, e.Schritt * bedien.DrehwinkelGrad);   // Stellschraube «begehen.drehwinkel_grad» (Vorgabe 30°)
                 Tunnelblick.Ausloesen(tunnel, Time.Total, bedien.Komfort);
-                if (lauf is { } l) PruefAufgaben.Drehschritt(l, vorher, VrLogik.BlickGierenWelt(rig, KopfRef(kopf).Gieren));
+                LaborDrehschritt(vorher, VrLogik.BlickGierenWelt(rig, KopfRef(kopf).Gieren));
                 break;
             case BegehenArt.Abbruch:
                 rueck.Abbruch(kopf.position);
-                if (lauf is { } la) PruefAufgaben.SprungAbgebrochen(la);
+                LaborSprungAbgebrochen();
                 break;
             case BegehenArt.Wisch when e.Richtung is { } r:
                 WischAnwenden(r, e.Punkt is { } wp ? Sk(wp) : kopf.position + kopf.Forward * 0.4f, e.Seite);
@@ -954,7 +976,7 @@ sealed partial class QuestApp
         rueck.Teleport(Sk(ziel), kopf.position);
         Tunnelblick.Ausloesen(tunnel, Time.Total, bedien.Komfort);
         standort = null;
-        if (lauf is { } l) PruefAufgaben.Sprung(l, Time.Total, new Xz(ziel.X, ziel.Z));
+        LaborSprung(new Xz(ziel.X, ziel.Z));
     }
 
     /// <summary>
@@ -1042,7 +1064,7 @@ sealed partial class QuestApp
         // (UI.Text statt UI.Label). P5a: die Skala ist die Stellschraube «anzeige.skala» (Vorgabe 1.35).
         Hierarchy.Push(Matrix.TRS(anzeige.position, anzeige.orientation, (float)bedien.Apps.Skala));
         Pose lokal = Pose.Identity;
-        UI.WindowBegin("KICAD", ref lokal, new Vec2(0.32f, 0), UIWin.Body, UIMove.None);
+        UI.WindowBegin(Marke.Name, ref lokal, new Vec2(0.32f, 0), UIWin.Body, UIMove.None);
         UI.PushTint(zustand switch
         {
             Zustand.Verbunden => new Color(0.4f, 1f, 0.5f, 1),
@@ -1082,7 +1104,7 @@ sealed partial class QuestApp
             // P4b: in den Sitzungsraum (Etagenschnitt im Geschoss am Stand) und die Ebenen der Fachmodule
             if (UI.Button("Sitzungsraum")) SitzungAusBegehen();
             EbenenSchalter();
-            AufgabeImTablet();   // P5b: Prüfaufgabe «tablet-wert-ablesen» (Werte des markierten Bauteils, Antworten)
+            LaborImTablet();   // P5b (XR-Labor): Prüfaufgabe «tablet-wert-ablesen» (Werte des markierten Bauteils, Antworten)
         }
         UI.WindowEnd();
         Hierarchy.Pop();
@@ -1159,7 +1181,7 @@ sealed partial class QuestApp
         {
             rueck.Leer(kopf.position);
             Hinweis(richtung > 0 ? $"Über {aktuell?.Kennzeichen} gibt es kein Geschoss." : $"Unter {aktuell?.Kennzeichen} gibt es kein Geschoss.");
-            if (lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
+            LaborWischOhneWirkung();
             return;
         }
         EtageBegehen(n, richtung > 0);
@@ -1175,7 +1197,7 @@ sealed partial class QuestApp
         etagenWechsel++;
         etagenText = an.Text;
         Hinweis($"Sitzungsraum · {an.Text}");
-        if (lauf is { } l) PruefAufgaben.RaumRueckschritt(l, "andere Etage gewählt");   // P5b: «raum-ar-oeffnen» braucht den Raum, nicht eine Etage
+        LaborRaumRueckschritt("andere Etage gewählt");   // P5b: «raum-ar-oeffnen» braucht den Raum, nicht eine Etage
     }
 
     /// <summary>Beim Begehen in ein anderes Geschoss (Hlks.Xr.Modell.EtagenWechsel.Ziel): Rig auf den Punkt und den Boden, Blickrichtung bleibt; Ton, Abblenden, Tunnel.</summary>
@@ -1195,7 +1217,7 @@ sealed partial class QuestApp
         etagenWechsel++;
         etagenText = $"{ziel.Kennzeichen} ({z.Art})";
         Hinweis($"Etage {ziel.Kennzeichen}{(ziel.Name is { Length: > 0 } n && n != ziel.Kennzeichen ? " · " + n : "")} – {z.Art}.");
-        if (lauf is { } l) PruefAufgaben.EtageGewechselt(l, Time.Total, geschossAmStand);   // P5b: Prüfaufgabe «etage-wechseln»
+        LaborEtageGewechselt(geschossAmStand);   // P5b: Prüfaufgabe «etage-wechseln»
     }
 
     /// <summary>In der App «Etagen» gewählt: Begehen wie der Wisch (gleicher Punkt, sonst grösster Raum), Sitzungstisch: diese Etage bzw. «Alle Etagen».</summary>
@@ -1236,7 +1258,7 @@ sealed partial class QuestApp
             hinweise.Leeren(); geister.Stoppen(); geister2.Stoppen();
             return;   // erstes Bild mit Modell: nicht mitmessen (Aufbau)
         }
-        if (o.BildOrdner is { } pb5) PruefBilderP5b(pb5, sitzung.Aktiv || sitzPhase >= 0);   // P5b: Karte, Röntgen-Hand, flache Hand
+        if (o.BildOrdner is { } pb5) PruefBilderP5b(pb5, sitzung.Aktiv || sitzPhase >= 0);   // P5b: Karte (XR-Labor), Röntgen-Hand, flache Hand
         if (sitzung.Aktiv || sitzPhase >= 0) { SitzungPruefen(rechnen); return; }
         gemessen++;
         summeBild += Time.Stepf;
@@ -1275,7 +1297,7 @@ sealed partial class QuestApp
             $"höchstens {(jeGeschoss.Count > 0 ? jeGeschoss.Values.Max() : 0)} je Geschoss), Dreiecke={darstellung.Dreiecke}; Haltung={drehen.Haltung}, Drehen={drehen.Text}, " +
             $"mittlere Bildzeit={summeBild / gemessen * 1000:0.0} ms, Rechenzeit={summeRechnen / gemessen:0.00} ms, " +
             $"Bilder={gemessen}, Modell nach={modellAb:0.0} s, Quelle={stand!.Quelle}, Modell über={modellWeg}, Verbindung={verbindungText}, Kanal={kanal?.Zustand.ToString() ?? "aus"}, " +
-            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; {pruefV1d}; {pruefV1f}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Posen={kanal?.PosenGesendet ?? 0}, Auftrag={auftragText}, {pruefText}, StereoKit-Lader={skLader}, Ebenen={ebenenText}, {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefSymbole}; {pruefV1d}; {pruefV1f}; Messen={MessenKurz()}; Marker={MarkerKurz()}{LaborQuittungenText()}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
             && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefSymbole.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1d.Contains("FEHLER", StringComparison.Ordinal)
@@ -1541,7 +1563,7 @@ sealed partial class QuestApp
         if (sitzPhase < SitzPhasen.Length) return;
         var z = string.Create(CultureInfo.InvariantCulture,
             $"Sitzungsraum=ja; {string.Join("; ", sitzErgebnisse)}; alle Geschosse Dreiecke={d.Dreiecke}; Auftrag={auftragText}; Verbindung={verbindungText}, " +
-            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefV1dTisch}; Messen={MessenKurz()}; Marker={MarkerKurz()}, Quittungen={quittungen}");
+            $"Kanal={kanal?.Zustand.ToString() ?? "aus"}, Posen={kanal?.PosenGesendet ?? 0}; Ebenen={ebenenText}; {pruefP4b}; {pruefP5a}; {pruefP5b}; {pruefV1a}; {pruefV1dTisch}; Messen={MessenKurz()}; Marker={MarkerKurz()}{LaborQuittungenText()}");
         Console.WriteLine("P4 Laden: " + ladeText);
         Ende(!pruefP4b.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5a.Contains("FEHLER", StringComparison.Ordinal) && !pruefP5b.Contains("FEHLER", StringComparison.Ordinal)
             && !pruefV1a.Contains("FEHLER", StringComparison.Ordinal) && !pruefV1dTisch.Contains("FEHLER", StringComparison.Ordinal) && pruefV1dTisch.Length > 0, z);

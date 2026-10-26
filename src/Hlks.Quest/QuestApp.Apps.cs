@@ -166,7 +166,7 @@ sealed partial class QuestApp
     List<SymbolApps.Symbol> SymboleBauen()
     {
         var (ampel, _) = VerbindungKurz();
-        var l = new List<SymbolApps.Symbol> { new("status", "KICAD", GlasSymbole.Status, ampel) };
+        var l = new List<SymbolApps.Symbol> { new("status", Marke.Name, GlasSymbole.Status, ampel) };
         if (darstellung is null || szene is null) return l;
         l.Add(new("etagen", "Etagen", GlasSymbole.Etagen));
         l.Add(new("messen", "Messen", GlasSymbole.Messen));
@@ -286,7 +286,7 @@ sealed partial class QuestApp
                 break;
             default:
             {
-                c.Titel(statusGesten ? "Gesten" : "KICAD");
+                c.Titel(statusGesten ? "Gesten" : Marke.Name);
                 if (statusGesten)
                 {
                     var t = Gestenbedeutung.Tabelle;
@@ -397,7 +397,7 @@ sealed partial class QuestApp
         {
             fl.AddRange([ar.Fenster, ar.Griff, ar.Schliessen]);
             if (ar.Ornament is { } orn) fl.Add(orn);
-            if (lauf is not null && karte.Lage is { } kl) fl.Add(kl);
+            LaborFlaechen(fl);   // XR-Labor: die Karte einer Prüfaufgabe
         }
         if (desktopOffen) fl.AddRange(desktop!.Belegt);
         symbole.AppFlaechen = fl.Count > 0 ? fl : null;
@@ -536,7 +536,7 @@ sealed partial class QuestApp
         switch (e.Art)
         {
             case GlasApps.Ereignis.Daneben:
-                if (lauf is { } l) PruefAufgaben.Daneben(l);
+                LaborDaneben();
                 return;
             case GlasApps.Ereignis.Schliessen:
                 Hinweis(symbole.Sichtbar ? "App geschlossen." : "App geschlossen – beide Handflächen nach oben anheben holt die Symbole.");
@@ -598,7 +598,7 @@ sealed partial class QuestApp
                 var wirksam = sitzung.EchterTischSchalten(!sitzung.Echt.Ein);
                 Hinweis(wirksam ? "Mit dem Zeigefinger kurz auf die Tischplatte tippen – das Modell stellt sich dorthin."
                     : string.Create(System.Globalization.CultureInfo.InvariantCulture, $"Ohne echten Tisch: das Modell steht frei auf {sitzung.TischHoeheM:0.00} m."));
-                if (warEin && !wirksam && lauf is { } l1) PruefAufgaben.RaumRueckschritt(l1, "Auf echten Tisch aus");
+                if (warEin && !wirksam) LaborRaumRueckschritt("Auf echten Tisch aus");
                 break;
             case "ifc":
                 sitzung.Unterlage = !sitzung.Unterlage;
@@ -607,12 +607,12 @@ sealed partial class QuestApp
             case "zuruecksetzen":
                 sitzung.Zuruecksetzen();
                 Hinweis("Lage, Massstab, Drehung und Schnitt der Hand zurückgesetzt.");
-                if (lauf is { } l2) PruefAufgaben.RaumRueckschritt(l2, "Zurücksetzen");
+                LaborRaumRueckschritt("Zurücksetzen");
                 break;
             case "tisch_antippen":
                 sitzung.TischNeuAntippen();
                 Hinweis("Mit dem Zeigefinger kurz auf die Tischplatte tippen.");
-                if (lauf is { } l3) PruefAufgaben.RaumRueckschritt(l3, "Tisch neu antippen");
+                LaborRaumRueckschritt("Tisch neu antippen");
                 break;
             case "raum_zeigen":
                 if (RaumZumZeigen() is not { } raum) { Hinweis("Kein Raum bekannt – im Begehen in einem Raum stehen bzw. am PC «Raum zeigen (VR)»."); break; }
@@ -632,7 +632,8 @@ sealed partial class QuestApp
         if (DesktopSperrt) return;   // V1c: die VR-Szene bleibt starr, solange der Bildschirm des PCs da ist (kein Blättern, kein Etagenwechsel)
         var mitApps = bedien.MitApps && apps.Sichtbar;
         var anFenster = mitApps && (apps.HandNah(Handed.Left) || apps.HandNah(Handed.Right));
-        var aufgabeOffen = lauf is { Fertig: false };
+        var aufgabeOffen = false;
+        LaborAufgabeOffen(ref aufgabeOffen);   // XR-Labor: läuft eine Prüfaufgabe?
         var aktion = Gestenbedeutung.Wisch(r, new GestenKontext(sitzung.Aktiv, anFenster, mitApps, bedien.EtageMitWisch, aufgabeOffen));
         letzteGeste = $"Wisch {r} → {aktion}";
         switch (aktion)
@@ -640,7 +641,7 @@ sealed partial class QuestApp
             case GestenAktion.Nichts when r is WischRichtung.Hoch or WischRichtung.Runter && !bedien.EtageMitWisch:
                 rueck.Leer(ort);
                 Hinweis("Variante «Etage per App»: das Geschoss in der App «Etagen» wählen.");
-                if (lauf is { } l) PruefAufgaben.WischOhneWirkung(l);
+                LaborWischOhneWirkung();
                 break;
             case GestenAktion.SeiteVor or GestenAktion.SeiteZurueck:
                 var neu = Math.Clamp(apps.Seite + (aktion == GestenAktion.SeiteVor ? 1 : -1), 0, Math.Max(0, appSeiten - 1));
