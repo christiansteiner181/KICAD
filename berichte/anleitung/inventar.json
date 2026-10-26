@@ -9126,10 +9126,10 @@
           },
           "schritte": [
             "Die 3D-Ansicht öffnen; die rechte Hand bleibt an der Maus.",
-            "Mit der linken Hand die Faust schliessen und seitlich bewegen (G4), dann loslassen.",
+            "Mit der linken Hand im Bild die Faust schliessen, kurz stillhalten und dann seitlich bewegen (G4), dann loslassen.",
             "Die Faust zur Kamera hin und weg bewegen (G5).",
             "Die Faust wie einen Drehknopf um die Blickachse drehen (G7).",
-            "Zur Pistolengeste (G6) wechseln, um die Ansicht wieder aufzurichten.",
+            "Zur Pistolengeste (G6) wechseln oder auf den Navigationswürfel klicken, um die Ansicht wieder aufzurichten.",
             "Im Grundriss die Faust bewegen und zur Kamera hin und weg führen."
           ],
           "erwartung": "Die Faust hält das Modell wie einen Gegenstand: Bewegen dreht die 3D-Ansicht um die Auswahl bzw. die Modellmitte (G4), die Handbewegung zur Kamera hin zoomt (G5), das Handgelenk rollt die Ansicht um die Blickachse (G7). Im Plan und im Schema verschiebt die Faust die Ansicht und zoomt. Das Modell ändert sich nie, nur die Ansicht. Faust lösen beendet die Bewegung sofort, ohne Nachlauf. Die Maus bleibt parallel bedienbar. Die Statusleiste nennt die aktive Geste.",
@@ -9137,6 +9137,8 @@
             "Mit offener Hand bewegt sich nichts, erst die geschlossene Faust wirkt.",
             "Faust lösen stoppt sofort.",
             "Zittern der Erkennung bewegt die Ansicht nicht (Totbereich).",
+            "Eine Faust, die schon geschlossen ins Bild kommt (Tasse, Telefon), bewegt nichts.",
+            "Nach dem Rollen richten Würfel-Klick, Haus-Knopf und Zoom alles (ZF) die Ansicht wieder auf; der Würfel zeigt die Rolle mit.",
             "Das Modell ist danach unverändert (kein Eintrag bei «Rückgängig»).",
             "Während der Gesten bleibt die Bildrate der 3D-Ansicht höchstens 10 % unter der ohne Gesten."
           ],
@@ -9147,9 +9149,12 @@
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/gesten/gesten-text.js:77 (Eintrag der Liste)",
-            "src/Hlks.Web/wwwroot/js/gesten/gesten-status.js:15"
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-status.js:15",
+            "src/Hlks.Web/wwwroot/js/gesten/gesten-logik.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/navigieren-logik.js",
+            "src/Hlks.Web/wwwroot/js/ansichten/wuerfel.js"
           ],
-          "hinweis": "Die fliessenden Gesten und navigieren() der Ansichten baut hlks-kern (js/gesten/gesten.js, ansicht3d.js, grundriss.js, schema.js); die Oberfläche zeigt nur den Zustand. Der Eintrag ist erst nach dem Zusammenführen beider Teile am Desktop zu prüfen (Kamera nötig)."
+          "hinweis": "Fliessende Gesten löst gesten.js über navigieren() der aktiven Ansicht aus (ansicht3d.js mit eigener Rolle um die Blickachse, grundriss.js, schema.js). Nur am Desktop mit Kamera prüfbar."
         },
         {
           "id": "mg-dialog",
