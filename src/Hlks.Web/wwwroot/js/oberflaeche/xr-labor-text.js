@@ -100,16 +100,56 @@ export function wertGueltig(s, w) {
  * Die verbundenen Brillen aus GET /api/xr/teilnehmer: { anzahl, namen[], app (Fassung der ersten Brille oder null), text, stufe }.
  * Die Stellschrauben gelten für alle Brillen gleich (KICAD merkt sie und sendet sie auch bei jeder neuen Verbindung, solange KICAD läuft).
  */
-export function brillenInfo(antwort) {
+export function brillenInfo(antwort, opt = {}) {
   const t = (antwort?.teilnehmer ?? []).filter((x) => x && typeof x === 'object');
-  if (!antwort) return { anzahl: 0, namen: [], app: null, text: 'Der Zustand der Brillen wird gelesen …', stufe: 'offen' };
+  const tx = ortTexte(opt.ort);
+  if (!antwort) return { anzahl: 0, laborBrillen: 0, namen: [], app: null, text: 'Der Zustand der Brillen wird gelesen …', stufe: 'offen' };
   if (t.length === 0) {
-    return { anzahl: 0, namen: [], app: null, stufe: 'offen', text: 'Keine Brille verbunden. Änderungen werden gemerkt und beim nächsten Verbinden gesendet (solange KICAD läuft).' };
+    return { anzahl: 0, laborBrillen: 0, namen: [], app: null, stufe: 'offen', text: tx.keineBrille };
   }
   const namen = t.map((x) => String(x.brillenName || x.name || x.geraet || 'Brille'));
   const app = t.find((x) => typeof x.app === 'string' && x.app)?.app ?? null;
-  const einzel = t.map((x) => `${x.brillenName || x.name || 'Brille'}${x.geraet ? ` (${x.geraet}${x.app ? `, App ${x.app}` : ''})` : ''}`);
-  return { anzahl: t.length, namen, app, stufe: 'ok', text: `Verbunden: ${einzel.join('; ')}.` };
+  const marke = (x) => (opt.marken ? markeName(x.marke) : null);
+  const einzel = t.map((x) => `${x.brillenName || x.name || 'Brille'}${x.geraet ? ` (${[x.geraet, x.app ? `App ${x.app}` : null, marke(x)].filter(Boolean).join(', ')})` : ''}`);
+  const laborBrillen = t.filter((x) => x.marke === MARKE_LABOR).length;
+  return { anzahl: t.length, laborBrillen, namen, app, stufe: 'ok', text: `Verbunden: ${einzel.join('; ')}.` };
+}
+
+// ------------------------------------------------------------------------------------------ Orte (KICAD-Dialog, Labor-Seite) und Marken der Brillen-Apps
+
+/** Marken der Brillen-Apps (Feld «marke» im «hallo» des Kanals, Hlks.Xr/Netz/AppMarke.cs): Id → Name. */
+export const MARKEN = Object.freeze({ kicad: 'KICAD', xrlabor: 'XR-Labor' });
+export const MARKE_LABOR = 'xrlabor';
+/** Name der App zu einer Marke; ohne bekannte Marke null (ältere Apps senden keine). */
+export const markeName = (id) => (typeof id === 'string' && Object.hasOwn(MARKEN, id) ? MARKEN[id] : null);
+
+const TEXTE = Object.freeze({
+  kicad: Object.freeze({
+    stellschrauben: 'Jede Änderung geht sofort an die Brille. «Vorgabe» setzt die Stellschraube zurück. Mit «folgt P5» gekennzeichnete Werte versteht die App erst ab P5; KICAD sendet sie schon.',
+    profile: 'Ein Profil ist der aktuelle Satz aller Stellschrauben und Varianten unter einem Namen (gespeichert je Benutzer). «Für die App festlegen» heisst: die App holt dieses Profil beim Verbinden mit dem Katalog (Reihenfolge: Vorgabe › Profil › live gesetzte Werte).',
+    varianten: 'Je Bedienung eine Wahl (A/B). KICAD sendet sie als Stellschraube <code>labor.variante.&lt;name&gt;</code> und sendet sie bei jeder neuen Verbindung wieder; die App trägt sie in jedes Messprotokoll ein.',
+    aufgaben: '«Aufgabe starten» schickt die Aufgabe an die verbundene Brille (Stellschraube <code>labor.aufgabe</code>). Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status unten kommt aus den Messprotokollen.',
+    keineBrille: 'Keine Brille verbunden. Änderungen werden gemerkt und beim nächsten Verbinden gesendet (solange KICAD läuft).',
+  }),
+  labor: Object.freeze({
+    stellschrauben: 'Jede Änderung geht sofort an die Brille. «Vorgabe» setzt die Stellschraube zurück. Mit «folgt P5» gekennzeichnete Werte versteht die App erst ab P5; das Labor sendet sie schon.',
+    profile: 'Ein Profil ist der aktuelle Satz aller Stellschrauben und Varianten unter einem Namen (gespeichert je Benutzer in OneDrive, Ordner labor\\profile). «Für die App festlegen» heisst: die App holt dieses Profil beim Verbinden mit dem Katalog (Reihenfolge: Vorgabe › Profil › live gesetzte Werte).',
+    varianten: 'Je Bedienung eine Wahl (A/B). Das Labor sendet sie als Stellschraube <code>labor.variante.&lt;name&gt;</code> an die Brillen der App «XR-Labor» (ist keine verbunden, an alle) und sendet sie bei jeder neuen Verbindung wieder; die App trägt sie in jedes Messprotokoll ein.',
+    aufgaben: '«Aufgabe starten» schickt die Aufgabe an die verbundene Brille mit der App «XR-Labor» (ist keine solche verbunden, an alle verbundenen Brillen; Stellschraube <code>labor.aufgabe</code>). Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status unten kommt aus den Messprotokollen aller Rechner.',
+    keineBrille: 'Keine Brille verbunden. Änderungen werden gemerkt und beim nächsten Verbinden gesendet (solange das Labor läuft).',
+  }),
+});
+
+/** Die Erklärtexte je Ort: 'kicad' (Dialog in KICAD, Vorgabe) oder 'labor' (Seite des Labors). Statischer Text, darf HTML (code) enthalten. */
+export const ortTexte = (ort) => TEXTE[ort] ?? TEXTE.kicad;
+
+/**
+ * Hinweis für die Labor-Seite, wenn Brillen verbunden sind, aber keine mit der App «XR-Labor»: Prüfaufgaben und Varianten gehen dann an alle (so verhält sich der Server).
+ * Sonst null. brillen = Ergebnis von brillenInfo(…, { marken: true }).
+ */
+export function zielHinweis(brillen) {
+  if (!brillen || brillen.anzahl === 0 || brillen.laborBrillen > 0) return null;
+  return `Keine Brille mit der App «${MARKEN[MARKE_LABOR]}» verbunden: Prüfaufgaben und Varianten gehen an alle ${brillen.anzahl} verbundenen Brillen.`;
 }
 
 // ------------------------------------------------------------------------------------------ Profile
