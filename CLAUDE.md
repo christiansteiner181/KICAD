@@ -12,7 +12,8 @@ Christian Steiner gilt zusätzlich die übergeordnete `CLAUDE.md` im Ordner dar�
 - **Nicht anfassen:** `schema/bcf-3.0`, `schema/ids-1.0`. **PDFsharp** bleibt auf 6.2.4 (ab 6.5 AGPL, siehe `Hlks.Kern.csproj`).
 - **Keine Geheimnisse** ins Repository; Schlüssel nur als Umgebungsvariable.
 - **Sprache:** Deutsch (Schweiz, «ss» statt «ß») in Namen, Kommentaren, Oberfläche und Berichten, wie im bestehenden Code.
-- Neue oder geänderte Funktionen: Tests dazu; Bedienung in `src/Hlks.Web/OBERFLAECHE.md` und `berichte/anleitung/inventar.json`
+- Neue oder geänderte Funktionen: Tests dazu, aber nur so viele wie effektiv nötig (Christian 26.10.2026) – sie sichern
+  echtes Verhalten ab, nicht Quelltext oder Texte; Bedienung in `src/Hlks.Web/OBERFLAECHE.md` und `berichte/anleitung/inventar.json`
   nachführen, wie in den bestehenden Einträgen.
 
 ## Cloud-Sitzungen (Linux)
