@@ -78,14 +78,16 @@ public static class EbenenLader
     public const string ListePfad = "/api/xr/ebenen";
 
     /// <summary>
-    /// Lädt die Liste und jede Ebene (bedingt mit dem gespeicherten ETag; 304 = die gespeicherte gilt). Fehlt der Endpunkt (404), ist die Liste leer (Hinweis).
-    /// Fehler einzelner Ebenen stehen in den Hinweisen; dann gilt die gespeicherte Fassung, wenn es eine gibt. Netzfehler bei der Liste werfen.
+    /// Lädt die Liste und jede Ebene (bedingt mit dem gespeicherten ETag; 304 = die gespeicherte gilt). Fehlt der Endpunkt (404), ist die Liste leer (Hinweis; mit
+    /// fehlenMelden = false ohne – XR-Labor L1: der Labor-PC hat keine Ebenen, AppMarke.MitProjekt). Fehler einzelner Ebenen stehen in den Hinweisen; dann gilt die
+    /// gespeicherte Fassung, wenn es eine gibt. Netzfehler bei der Liste werfen.
     /// </summary>
-    public static async Task<EbenenStand> VomPc(IEbenenQuelle q, string projekt, EbenenAblage? ablage, CancellationToken abbruch = default)
+    public static async Task<EbenenStand> VomPc(IEbenenQuelle q, string projekt, EbenenAblage? ablage, CancellationToken abbruch = default, bool fehlenMelden = true)
     {
         var hinweise = new List<string>();
         var a = await q.Text(ListePfad, null, abbruch).ConfigureAwait(false);
-        if (a.Status == (int)HttpStatusCode.NotFound) return new EbenenStand([], ["KICAD am PC kennt noch keine Ebenen für die App (älterer Stand)."], ModellStand.VomPc);
+        if (a.Status == (int)HttpStatusCode.NotFound)
+            return new EbenenStand([], fehlenMelden ? ["KICAD am PC kennt noch keine Ebenen für die App (älterer Stand)."] : [], ModellStand.VomPc);
         if (a.Status != (int)HttpStatusCode.OK || a.Text is null) throw new XrNetzFehler($"Die Liste der Ebenen kam nicht ({a.Status}).", ModellHttp.Vorschlag((HttpStatusCode)a.Status));
         var liste = EbenenListe.Lesen(a.Text);
         var ebenen = new List<XrEbene>();

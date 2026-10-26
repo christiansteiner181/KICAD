@@ -399,6 +399,26 @@ Spezifikation `entwurf/labor-app.md` (freigegeben Christian 26.10.2026), Abschni
 - **Geändert:** `Netz/KanalVerbindung.cs`: `hallo` hat das zusätzliche Feld `marke` (`KanalOptionen.Marke`; «kicad» bzw. «xrlabor»), damit der PC die Apps
   unterscheiden kann. Der Server von KICAD liest es nicht (`XrNachrichten.Hallo` übergeht unbekannte Felder); ohne Marke wie bisher.
 - **Unverändert, offen:** Meldungen in `Netz/PcSuche.cs`, `Netz/PcZugang.cs`, `Netz/Kopplungspaket.cs` und `Netz/LaborKatalogLader.cs` nennen weiter «KICAD» als
-  Gegenstelle; in der Labor-App erscheinen sie so (Frage für L1).
+  Gegenstelle; in der Labor-App erscheinen sie so (Frage für L1; im Testraum-Auftrag L1 nicht geändert – die Meldung zum Katalog steht nur im Protokoll).
 - **Tests:** `AppMarkeTests` (Marken, `hallo.marke`, Kennung und Name gleich in den Projektdateien, keine Ports fest in den Apps, der allgemeine Code der App ruft das
   Labor nur über Einhängepunkte auf).
+
+## Testraum des Labors (XR-Labor L1)
+
+Entscheid Christian 26.10.2026: im Labor «Nur neutraler Testraum». Der Labor-PC liefert ihn als GLB je Etage wie KICAD und schreibt die Ziele der Prüfaufgaben in
+`scene.extras.kicad.labor` (Form und Katalog: `src/Hlks.Labor.Quest/LIESMICH.md`, «Testraum (L1)»). Die App nimmt diese Ziele zuerst, sonst wählt sie wie bisher.
+
+| Datei | Klassen | Inhalt |
+| --- | --- | --- |
+| `Labor/LaborZiele.cs` | `LaborZiele`, `ZielMarkierung`, `ZielRaum`, `ZielWandPaar`, `ZielBauteil` | `labor` der GLB lesen (tolerant, Hinweise; KICAD-mm → Szene mit dem Bezugspunkt), Wahl je Aufgabe: Markierung (2 … 4.5 m, kleinster Winkel zum Blick auf 0.01°, dann Katalog), Wandpaar (Raum am Stand, sonst das erste der Etage; Sollmass aus dem Katalog, Prüfung gegen die Flächen ±1 mm), Raum «raum-ar-oeffnen», Bauteil «tablet-wert-ablesen»; ohne `labor` null |
+
+- **Geändert für L1 (ohne Verhaltensänderung für KICAD):** `Modell/ModellSzene.cs` behält `scene.extras.kicad` je GLB (`Extras`, `SzenenExtras`); `Netz/AppMarke.cs`
+  `MitProjekt` (KICAD ja, XR-Labor nein: der Labor-PC hat keine Ebenen und keine Problem-Marker); `Netz/EbenenLader.cs` `VomPc(…, fehlenMelden)` – mit `false` ergibt 404
+  eine leere Liste ohne Hinweis (die App gibt `Marke.MitProjekt` mit). Die Labor-Dateien der App (`QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs`) nutzen `LaborZiele`; der
+  allgemeine Code nicht (`AppMarkeTests`).
+- **Annahmen L1:** Markierung im Abstand wie ohne Testraum (`PruefAufgaben.MarkierungAbstaende` 2 … 4.5 m), Winkel auf 0.01° gerundet (Gleichstand → Reihenfolge des
+  Katalogs); Markierung der Wände `WandPaare.MarkeHoeheM` hoch; Sollmass und Abstand der Flächen bis 1 mm (Rundung der Koordinaten).
+- **Tests:** `LaborZieleTests` (ohne `labor` keine Ziele, Umrechnung mit Bezugspunkt, Wandpaar gegen `WandPaare.Waehlen` und `WandPaare.Pruefen`, Wahl der Markierung bei
+  Gleichstand, nahe Markierung, Etagen, Bauteil gegen `PruefAufgaben.FrageZu`, Unbrauchbares fällt mit Hinweis weg, Marken); angepasst `AppMarkeTests` (`MitProjekt`, Typen
+  und Glieder des Testraums nur in den Labor-Dateien), `XrEbeneTests` (404 ohne Hinweis). Gegen den Labor-PC: `tests/Hlks.Labor.Tests/Testraum*Tests.cs`; die App selbst im
+  Simulator mit dem Labor-PC (`src/Hlks.Labor.Quest/LIESMICH.md`).

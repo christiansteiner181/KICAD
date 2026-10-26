@@ -59,7 +59,8 @@ public class LaborApiTests
         var start = await s.Lokal.GetStringAsync("/");
         Assert.Contains("<title>XR-Labor</title>", start);
         Assert.Contains("labor/labor.js", start);
-        Assert.Contains("Labor folgt mit L1", start);
+        Assert.DoesNotContain("Labor folgt mit L1", start);   // seit L1 baut labor.js die Register (Brille, Stellschrauben, Profile, Varianten, Prüfaufgaben, Auswertung, Fragebogen, Daten)
+        Assert.Contains("id=\"labor-xl\"", start);
         Assert.Equal(start, await s.Lokal.GetStringAsync("/index.html"));
         var a = await s.Lokal.GetAsync("/labor/labor.js");
         Assert.Equal(HttpStatusCode.OK, a.StatusCode);
@@ -82,11 +83,29 @@ public class LaborApiTests
         var js = await s.Lokal.GetStringAsync("/labor/labor.js");
         var importe = System.Text.RegularExpressions.Regex.Matches(js, @"from '(\.\.?/[^']+)'").Select(m => m.Groups[1].Value).ToList();
         Assert.Contains("../js/oberflaeche/quest-app-dialog.js", importe);
+        Assert.Contains("../js/oberflaeche/xr-labor-dialog.js", importe);   // L1: der Dialog «XR-Labor» von KICAD als Seite
         foreach (var i in importe)
         {
             var pfad = new Uri(new Uri("http://localhost/labor/labor.js"), i).AbsolutePath;
             Assert.True((await s.Lokal.GetAsync(pfad)).IsSuccessStatusCode, pfad);
         }
+        // L1: auch alle Module, die diese Module ihrerseits laden (statische Importe, in beliebiger Tiefe), gibt es
+        var gesehen = new HashSet<string>(StringComparer.Ordinal);
+        var offen = new Queue<string>(["/labor/labor.js"]);
+        while (offen.Count > 0)
+        {
+            var pfad = offen.Dequeue();
+            if (!gesehen.Add(pfad)) continue;
+            var antwort = await s.Lokal.GetAsync(pfad);
+            Assert.True(antwort.IsSuccessStatusCode, pfad);
+            var text = await antwort.Content.ReadAsStringAsync();
+            foreach (System.Text.RegularExpressions.Match m in System.Text.RegularExpressions.Regex.Matches(text, @"^\s*(?:import|export)\b[^;'""]*?from\s+'(\.\.?/[^']+)'", System.Text.RegularExpressions.RegexOptions.Multiline))
+                offen.Enqueue(new Uri(new Uri("http://localhost" + pfad), m.Groups[1].Value).AbsolutePath);
+        }
+        Assert.Contains("/js/oberflaeche/xr-labor-text.js", gesehen);
+        Assert.Contains("/js/oberflaeche/dialoge.js", gesehen);
+        Assert.Contains("/labor/labor-profile.js", gesehen);
+        Assert.Contains("/labor/labor-daten.js", gesehen);
     }
 
     [Fact]

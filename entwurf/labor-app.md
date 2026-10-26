@@ -290,6 +290,21 @@ Aufträgen und Markern, Desktop in der Brille, alle Bedienung in der Brille.
 
 Zwischen den Stufen ein Brillentest mit Christian (Prüfbilder an jedem sichtbaren Zwischenstand, `feedback_zwischenbilder`).
 
+### Zuschnitt L1 (Hauptlauf, 26.10.2026; Christian: «L1 jetzt starten, den Brillentest von L0 machen wir danach.»)
+
+«KICAD behält in L1 noch alles» heisst konkret:
+- **Brille:** Die Labor-Dateien (`QuestApp.Labor.cs`, `QuestApp.LaborPruefen.cs`, `AufgabenKarte.cs`) bleiben in L1 in den gemeinsamen
+  Quellen und damit in beiden Apps. Ohne sie lädt die KICAD-App keinen Katalog und kein Profil mehr (Befund L0); das ändert sich erst mit
+  `GET /api/xr/bedienung` in L2. Der körperliche Umzug nach `src/Hlks.Labor.Quest` gehört darum zu L2.
+- **Server:** Das Labor bildet die Labor-Endpunkte aus `Hlks.Web` mit eigenen Parametern ab (Ablage OneDrive, Profile aus `labor\profile`,
+  Messprotokolle nach `labor\messungen`), ohne Kopie des Codes. KICAD behält seine Abbildung bis L2; dann zieht der Code nach
+  `src/Hlks.Labor`.
+- **Seite:** Die Labor-Seite bindet den Dialog «XR-Labor» (`xr-labor-dialog.js`) als Seite ein, statt ihn zu kopieren; was je Ort anders ist
+  (Profile, Ablage), kommt als Option. In L2 zieht die Datei ins Labor.
+- **Testraum:** Der Labor-Server liefert die Etagen des Testraums über dieselben Endpunkte wie KICAD (`/api/xr/geschosse`,
+  `/api/xr/geschoss/{id}.glb`). Die Ziele der Prüfaufgaben (Markierung, Wandpaar mit Sollmass, Raum) stehen im Katalog des Testraums und
+  kommen in den extras der GLB in die App. Endpunkte, die es im Labor nicht gibt (z. B. Marker an KICAD), übergeht die App ohne Fehler.
+
 ### Übergabe von Modul G an L4 (26.10.2026)
 
 Christian hat die Abnahme von Modul G Stufe 1 beendet: «wir machen das tuning in der labor app». Stand Modul G: Zweig

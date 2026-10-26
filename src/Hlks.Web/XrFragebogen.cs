@@ -180,7 +180,11 @@ public static class XrFragebogenRegeln
 }
 
 /// <summary>Speichert und liest die ausgefüllten Fragebogen (JSON je Fragebogen).</summary>
-public sealed class XrFragebogenSpeicher(string ordner, Func<DateTimeOffset> jetzt)
+/// <param name="ordner">Ablage der Fragebogen.</param>
+/// <param name="jetzt">Uhr.</param>
+/// <param name="rechner">XR-Labor L1: Rechnername im Dateinamen (<c>JJJJMMTT-hhmmss_&lt;rechner&gt;_&lt;name&gt;.json</c>); null = wie KICAD ohne Rechnername.</param>
+/// <param name="sperre">XR-Labor L1: liefert einen Text, wenn das Speichern abgelehnt wird (z. B. im Testlauf ausserhalb von %TEMP%); null oder Rückgabe null = erlaubt.</param>
+public sealed class XrFragebogenSpeicher(string ordner, Func<DateTimeOffset> jetzt, string? rechner = null, Func<string?>? sperre = null)
 {
     static readonly Regex SitzungMuster = new(@"^[A-Za-z0-9_\-]{1,80}$", RegexOptions.CultureInvariant);
     static readonly Regex NameMuster = new(@"^[a-z][a-z0-9_]{0,31}$", RegexOptions.CultureInvariant);
@@ -249,13 +253,14 @@ public sealed class XrFragebogenSpeicher(string ordner, Func<DateTimeOffset> jet
         if (teile == 0) throw new HlksFehler("Der Fragebogen enthält keine Antworten.", "Mindestens einen der Teile komfort, sus oder tlx senden.");
         if (notiz is not null) rec["notiz"] = notiz;
 
+        if (sperre?.Invoke() is { } gesperrt) throw new HlksFehler("Der Fragebogen wird nicht gespeichert: " + gesperrt, "Im Test HLKS_LABOR_DATEN auf einen Ordner unter %TEMP% setzen.");
         var jetztZeit = jetzt();
         rec["zeit"] = jetztZeit.ToString("o");
         Directory.CreateDirectory(Ordner);
         var slug = new string([.. name.ToLowerInvariant().Replace("ä", "ae").Replace("ö", "oe").Replace("ü", "ue").Select(c => c is >= 'a' and <= 'z' or >= '0' and <= '9' ? c : '_')]).Trim('_');
         if (slug.Length == 0) slug = "test";
         if (slug.Length > 24) slug = slug[..24];
-        var stamm = $"{jetztZeit.UtcDateTime:yyyyMMdd-HHmmss}_{slug}";
+        var stamm = $"{jetztZeit.UtcDateTime:yyyyMMdd-HHmmss}_{(string.IsNullOrWhiteSpace(rechner) ? "" : RechnerAblage.Dateiname(rechner) + "_")}{slug}";
         for (int i = 1; ; i++)
         {
             var datei = Path.Combine(Ordner, i == 1 ? $"{stamm}.json" : $"{stamm}-{i}.json");

@@ -24,4 +24,6 @@ static partial class Marke
     public static string Koppeln => Wert.Koppeln;
     /// <summary>Ordner der Ablage am PC unter %LOCALAPPDATA%\HLKS_CAD (Simulator).</summary>
     public static string Speicher => Wert.Speicher;
+    /// <summary>XR-Labor L1: die Gegenstelle führt ein Projekt (Ebenen, Problem-Marker); ohne (Labor-PC) übergeht die App deren 404 ohne Hinweis.</summary>
+    public static bool MitProjekt => Wert.MitProjekt;
 }

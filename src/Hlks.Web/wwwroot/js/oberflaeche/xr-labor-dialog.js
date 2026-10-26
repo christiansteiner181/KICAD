@@ -3,6 +3,14 @@
 // Auswertung der Messprotokolle (je Aufgabe, Variante und Fassung der App) und Fragebogen (Komfort; SUS und NASA-TLX, sobald ihr Wortlaut mit Quelle da ist).
 // Keine Logik hier: alles läuft über /api/xr/… (XrEndpunkte.cs, XrLaborEndpunkte.cs); Katalog, Prüfung und Bewertung liegen im Server, die Hilfen der Anzeige in xr-labor-text.js.
 // Namen aus dem Netz (Brillen, Profile, Texte der Kataloge) gehen nur über esc() ins HTML. Der Dialog passt sich dem Fenster an und scrollt.
+//
+// XR-Labor L1 (entwurf/labor-app.md, Zuschnitt L1): derselbe Inhalt läuft auch als SEITE im Labor (src/Hlks.Labor/wwwroot, Port 5430) – nicht kopiert. xrLaborAufbauen(opt) baut den Inhalt
+// (Knoten) und liefert starten()/beenden(); xrLaborDialog() hängt ihn in einen Dialog von KICAD, xrLaborSeite(behaelter, opt) in einen Behälter der Labor-Seite. Was je Ort anders ist, kommt als Option:
+//   ort      'kicad' (Vorgabe) | 'labor': Erklärtexte (xr-labor-text.js: ortTexte)
+//   profile  Profilquelle (siehe benutzerProfilquelle unten): KICAD = Benutzereinstellungen wie bisher, Labor = /api/labor/profile (labor/labor-profile.js)
+//   marken   true: die Teilnehmerliste nennt die Marke der Brille (kicad | xrlabor) und die Seite weist darauf hin, wenn Aufgaben und Varianten an alle gehen (nur Labor)
+//   zusatz   { vorne: [Reiter], hinten: [Reiter] } mit Reiter = { id, titel, knoten, beiAnzeigen?() }: eigene Bereiche der Labor-Seite (Brille, Daten) im selben Reiterband
+//   start    Id des Bereichs, der zuerst offen ist (Vorgabe 'stellschrauben')
 
 import { holen, senden } from '../api.js';
 import { zeigen, bestaetigen, meldung } from './dialoge.js';
@@ -12,12 +20,41 @@ import * as T from './xr-labor-text.js';
 
 const esc = T.esc;
 
+/**
+ * Profilquelle für KICAD: die Benutzereinstellungen «labor.profil.<kennung>» und «labor.profil_aktiv» (wie vor L1).
+ * Eine Profilquelle hat: laden() (async), liste() → [{ kennung, name, anzahl, aktiv }], holen(kennung) → { name, werte } | null, aktiv() → Kennung | null,
+ * speichern(kennung, profil), aktivSetzen(kennung | null), loeschen(kennung) – die Schreibenden async und mit ApiFehler bei Ablehnung.
+ * Optional aktualisieren(): liest beim Wechsel auf den Reiter «Profile» neu (nur Labor; KICAD liest die Benutzereinstellungen beim Öffnen).
+ */
+export function benutzerProfilquelle() {
+  const aktiv = () => { const a = benutzerWert(T.PROFIL_AKTIV, null); return typeof a === 'string' ? a : null; };
+  return {
+    laden: () => benutzerLaden().catch(() => {}),
+    liste: () => T.profileListe(benutzerAlle(), aktiv()),
+    holen: (kennung) => benutzerWert(T.profilSchluessel(kennung), null),
+    aktiv,
+    speichern: (kennung, profil) => benutzerSetzen(T.profilSchluessel(kennung), profil),
+    aktivSetzen: (kennung) => benutzerSetzen(T.PROFIL_AKTIV, kennung),
+    loeschen: async (kennung) => {
+      await benutzerSetzen(T.profilSchluessel(kennung), null);
+      if (aktiv() === kennung) await benutzerSetzen(T.PROFIL_AKTIV, null);
+    },
+  };
+}
+
 /** Nur ein Dialog zugleich. */
 let offenerDialog = null;
 
-/** Öffnet den Dialog (ein zweiter Aufruf gibt den offenen zurück). Gibt zurück, wenn er geschlossen wird. */
-export function xrLaborDialog() {
-  if (offenerDialog) return offenerDialog;
+/**
+ * Baut den Inhalt (siehe Dateikopf). Gibt { knoten, starten(), beenden() } zurück: starten() lädt Katalog, Brillen und Fragebogen und startet den Takt, beenden() hält den Takt an
+ * und sendet noch ausstehende Reglerwerte.
+ */
+export function xrLaborAufbauen(opt = {}) {
+  const ort = opt.ort === 'labor' ? 'labor' : 'kicad';
+  const tx = T.ortTexte(ort);
+  const profile = opt.profile ?? benutzerProfilquelle();
+  const zusatzVorne = opt.zusatz?.vorne ?? [];
+  const zusatzHinten = opt.zusatz?.hinten ?? [];
   const z = {
     katalog: null,          // GET /api/xr/labor/katalog
     katalogFehler: null,    // { text, vorschlag }
@@ -25,7 +62,7 @@ export function xrLaborDialog() {
     live: {},               // Stellschrauben, die KICAD der Brille gesetzt hat (Schlüssel → Wert)
     auswertung: null,       // GET /api/xr/labor/auswertung
     fragebogen: null,       // GET /api/xr/labor/fragebogen
-    bereich: 'stellschrauben',
+    bereich: opt.start ?? 'stellschrauben',
     gestartet: {},          // Aufgabe → { laeufeVorher }
     laeuft: false,
     appVonHand: false,      // der Mensch hat die Fassung der App im Fragebogen selbst eingetragen
@@ -40,24 +77,26 @@ export function xrLaborDialog() {
     <div class="xl-kopf"><span class="xl-lampe" aria-hidden="true"></span><span class="xl-brillen"></span></div>
     <div class="xl-meldung" role="status" aria-live="polite" hidden></div>
     <div class="xl-fehler" role="alert" hidden></div>
-    <div class="xl-reiter" role="tablist" aria-label="Bereiche des XR-Labors">${T.BEREICHE.map((b) => `<button type="button" role="tab" class="xl-reiter-knopf" data-bereich="${esc(b.id)}" aria-selected="false">${esc(b.titel)}</button>`).join('')}</div>
+    <div class="xl-reiter" role="tablist" aria-label="Bereiche des XR-Labors">${[...zusatzVorne, ...T.BEREICHE, ...zusatzHinten].map((b) => `<button type="button" role="tab" class="xl-reiter-knopf" data-bereich="${esc(b.id)}" aria-selected="false">${esc(b.titel)}</button>`).join('')}</div>
     <section class="xl-bereich" data-bereich="stellschrauben" role="tabpanel" aria-label="Stellschrauben" hidden>
-      <div class="leise xl-klein">Jede Änderung geht sofort an die Brille. «Vorgabe» setzt die Stellschraube zurück. Mit «folgt P5» gekennzeichnete Werte versteht die App erst ab P5; KICAD sendet sie schon.</div>
+      <div class="leise xl-klein">${tx.stellschrauben}</div>
       <div class="xl-liste"></div>
     </section>
     <section class="xl-bereich" data-bereich="profile" role="tabpanel" aria-label="Profile" hidden>
-      <div class="leise xl-klein">Ein Profil ist der aktuelle Satz aller Stellschrauben und Varianten unter einem Namen (gespeichert je Benutzer). «Für die App festlegen» heisst: die App holt dieses Profil beim Verbinden mit dem Katalog (Reihenfolge: Vorgabe › Profil › live gesetzte Werte).</div>
+      <div class="leise xl-klein">${tx.profile}</div>
       <div class="xl-zeile-eingabe"><label class="qd-etikett" for="xl-profilname">Name</label>
         <input id="xl-profilname" type="text" class="xl-profilname" maxlength="40" spellcheck="false" autocomplete="off" data-kein-enter="1" placeholder="z. B. Sitzung sitzend" aria-label="Name des Profils">
         <button type="button" class="dlg-knopf primaer xl-profil-speichern" title="Speichert den aktuellen Satz aller Stellschrauben und Varianten unter diesem Namen">Aktuellen Satz speichern</button></div>
       <div class="xl-profile" aria-label="Gespeicherte Profile"></div>
     </section>
     <section class="xl-bereich" data-bereich="varianten" role="tabpanel" aria-label="Varianten" hidden>
-      <div class="leise xl-klein">Je Bedienung eine Wahl (A/B). KICAD sendet sie als Stellschraube <code>labor.variante.&lt;name&gt;</code> und sendet sie bei jeder neuen Verbindung wieder; die App trägt sie in jedes Messprotokoll ein.</div>
+      <div class="leise xl-klein">${tx.varianten}</div>
+      <div class="xl-ziel-hinweis xl-box warnung" role="note" hidden></div>
       <div class="xl-varianten"></div>
     </section>
     <section class="xl-bereich" data-bereich="aufgaben" role="tabpanel" aria-label="Prüfaufgaben" hidden>
-      <div class="leise xl-klein">«Aufgabe starten» schickt die Aufgabe an die verbundene Brille (Stellschraube <code>labor.aufgabe</code>). Die App misst Zeit, Fehlgriffe und Abbrüche und meldet das Ergebnis; der Status unten kommt aus den Messprotokollen.</div>
+      <div class="leise xl-klein">${tx.aufgaben}</div>
+      <div class="xl-ziel-hinweis xl-box warnung" role="note" hidden></div>
       <div class="xl-aufgaben-kopf"><button type="button" class="dlg-knopf xl-aufgabe-beenden" title="Beendet die laufende Aufgabe in der Brille">Aufgabe beenden</button></div>
       <div class="xl-aufgaben"></div>
     </section>
@@ -71,6 +110,18 @@ export function xrLaborDialog() {
   </div>`);
   const q = (s) => w.querySelector(s);
   const qa = (s) => [...w.querySelectorAll(s)];
+
+  // eigene Bereiche der Labor-Seite (Brille, Daten): als Reiter vorne bzw. hinten im selben Band, ihr Inhalt kommt von aussen
+  const zusatzBereiche = new Map();
+  const zusatzBereich = (b) => {
+    const sec = knoten(`<section class="xl-bereich xl-zusatz" data-bereich="${esc(b.id)}" role="tabpanel" aria-label="${esc(b.titel)}" hidden></section>`);
+    sec.append(b.knoten);
+    zusatzBereiche.set(b.id, b);
+    return sec;
+  };
+  const erster = q('.xl-bereich');
+  for (const b of zusatzVorne) w.insertBefore(zusatzBereich(b), erster);
+  for (const b of zusatzHinten) w.append(zusatzBereich(b));
 
   // ------------------------------------------------------------------------------------------ Meldungen
 
@@ -87,12 +138,15 @@ export function xrLaborDialog() {
 
   // ------------------------------------------------------------------------------------------ Kopf: verbundene Brillen
 
-  const brillen = () => T.brillenInfo(z.teilnehmer);
+  const brillen = () => T.brillenInfo(z.teilnehmer, { ort, marken: opt.marken === true });
 
   function zeichneKopf() {
     const b = brillen();
     q('.xl-lampe').dataset.stufe = b.stufe;
     q('.xl-brillen').textContent = b.text;
+    // nur Labor: Prüfaufgaben und Varianten gehen an die Brillen der App «XR-Labor», sonst an alle – das Wort dazu steht über den beiden Bereichen
+    const hinweis = opt.marken === true ? T.zielHinweis(b) : null;
+    for (const h of qa('.xl-ziel-hinweis')) { h.hidden = !hinweis; h.textContent = hinweis ?? ''; }
   }
 
   // ------------------------------------------------------------------------------------------ Stellschrauben
@@ -219,7 +273,7 @@ export function xrLaborDialog() {
 
   // ------------------------------------------------------------------------------------------ Profile
 
-  const aktivesProfil = () => { const a = benutzerWert(T.PROFIL_AKTIV, null); return typeof a === 'string' ? a : null; };
+  const aktivesProfil = () => profile.aktiv();
 
   /** Setzt den Inhalt nur, wenn er sich geändert hat: der Takt läuft alle 2 s und darf Knöpfe nicht mitten im Klick austauschen. */
   const gezeichnet = new WeakMap();
@@ -230,7 +284,7 @@ export function xrLaborDialog() {
   }
 
   function zeichneProfile() {
-    const liste = T.profileListe(benutzerAlle(), aktivesProfil());
+    const liste = profile.liste();
     const platz = q('.xl-profile');
     if (liste.length === 0) {
       setzeHtml(platz, '<div class="leise xl-keine">Noch kein Profil gespeichert. Stellschrauben und Varianten einstellen, einen Namen eintragen und «Aktuellen Satz speichern».</div>');
@@ -258,9 +312,9 @@ export function xrLaborDialog() {
     const name = T.profilName(q('.xl-profilname').value);
     const kennung = T.profilKennung(name);
     if (!kennung) throw Object.assign(new Error('Bitte einen Namen eintragen (Buchstaben oder Ziffern).'), { vorschlag: null });
-    const vorhanden = T.profileListe(benutzerAlle(), null).find((p) => p.kennung === kennung);
+    const vorhanden = profile.liste().find((p) => p.kennung === kennung);
     if (vorhanden && !(await bestaetigen(`Das Profil «${vorhanden.name}» gibt es schon. Mit dem aktuellen Satz überschreiben?`, { ja: 'Überschreiben', titel: 'Profil überschreiben' }))) return;
-    await benutzerSetzen(T.profilSchluessel(kennung), T.profilErzeugen(name, z.katalog, z.live));
+    await profile.speichern(kennung, T.profilErzeugen(name, z.katalog, z.live));
     meldungZeigen('ok', `Das Profil «${name}» ist gespeichert.`);
   }));
   q('.xl-profilname').addEventListener('keydown', (e) => { if (e.key === 'Enter') { e.preventDefault(); q('.xl-profil-speichern').click(); } });
@@ -269,7 +323,7 @@ export function xrLaborDialog() {
     const t = e.target.closest?.('button');
     if (!t || t.disabled) return;
     const kennung = t.dataset.kennung;
-    const profil = benutzerWert(T.profilSchluessel(kennung), null);
+    const profil = profile.holen(kennung);
     if (t.matches('.xl-profil-laden')) {
       lauf(async () => {
         const r = T.profilZumSenden(profil, z.katalog);
@@ -285,7 +339,7 @@ export function xrLaborDialog() {
     } else if (t.matches('.xl-profil-aktiv')) {
       lauf(async () => {
         const jetzt = aktivesProfil() === kennung;
-        await benutzerSetzen(T.PROFIL_AKTIV, jetzt ? null : kennung);
+        await profile.aktivSetzen(jetzt ? null : kennung);
         meldungZeigen('ok', jetzt ? 'Kein Profil gilt mehr für die App; sie nimmt die Vorgaben des Katalogs.' : `Das Profil «${profil?.name ?? kennung}» gilt jetzt für die App (sie holt es beim nächsten Verbinden).`);
       });
     } else if (t.matches('.xl-profil-loeschen')) {
@@ -293,8 +347,7 @@ export function xrLaborDialog() {
       bestaetigen(`Das Profil «${name}» löschen?`, { ja: 'Löschen', gefahr: true, titel: 'Profil löschen' }).then((ok) => {
         if (!ok) return;
         lauf(async () => {
-          await benutzerSetzen(T.profilSchluessel(kennung), null);
-          if (aktivesProfil() === kennung) await benutzerSetzen(T.PROFIL_AKTIV, null);
+          await profile.loeschen(kennung);
           meldungZeigen('ok', `Das Profil «${name}» ist gelöscht.`);
         });
       });
@@ -326,10 +379,10 @@ export function xrLaborDialog() {
     const name = r.closest('.xl-variante')?.dataset.variante;
     lauf(async () => {
       try {
-        await senden('/api/xr/labor/variante', { name, option: r.value });
+        const antwort = await senden('/api/xr/labor/variante', { name, option: r.value });
         z.live[T.VARIANTE_VORSATZ + name] = r.value;
         const v = z.katalog.varianten.find((x) => x.name === name);
-        meldungZeigen('ok', `${v?.titel ?? name}: ${T.varianteTitel(v, r.value)} gesendet.`);
+        meldungZeigen(antwort?.hinweis ? 'warnung' : 'ok', `${v?.titel ?? name}: ${T.varianteTitel(v, r.value)} gesendet.${antwort?.hinweis ? ` ${antwort.hinweis}` : ''}`);
       } catch (err) { q('.xl-varianten').dataset.stand = ''; throw err; }
     });
   });
@@ -364,7 +417,7 @@ export function xrLaborDialog() {
       const a = z.katalog.aufgaben.find((x) => x.id === id);
       const r = await senden('/api/xr/labor/aufgabe', { aufgabe: id });
       z.gestartet[id] = { laeufeVorher: zeileDerAufgabe(id)?.laeufe ?? 0 };
-      meldungZeigen('ok', `Die Aufgabe «${a?.titel ?? id}» ist an ${r.gesendet} Brille${r.gesendet === 1 ? '' : 'n'} gesendet.`);
+      meldungZeigen(r.hinweis ? 'warnung' : 'ok', `Die Aufgabe «${a?.titel ?? id}» ist an ${r.gesendet} Brille${r.gesendet === 1 ? '' : 'n'} gesendet.${r.hinweis ? ` ${r.hinweis}` : ''}`);
     });
   });
   q('.xl-aufgabe-beenden').addEventListener('click', () => lauf(async () => {
@@ -509,6 +562,8 @@ export function xrLaborDialog() {
     }
     for (const b of qa('.xl-bereich')) b.hidden = b.dataset.bereich !== id;
     if (id === 'auswertung' || id === 'aufgaben') auswertungLesen();
+    if (id === 'profile' && profile.aktualisieren) Promise.resolve(profile.aktualisieren()).then(() => { if (offen) zeichneAlles(); });   // Labor-Seite: die Profile liegen auf dem Server, ein anderer Rechner kann sie geändert haben
+    zusatzBereiche.get(id)?.beiAnzeigen?.();
     zeichneAlles();
   }
   q('.xl-reiter').addEventListener('click', (e) => { const b = e.target.closest?.('.xl-reiter-knopf'); if (b) bereichWaehlen(b.dataset.bereich); });
@@ -567,20 +622,38 @@ export function xrLaborDialog() {
     sende.clear();
   }
 
+  /** Lädt Katalog, Brillen, Profile und Fragebogen und startet den Takt. */
+  async function starten() {
+    bereichWaehlen(z.bereich);
+    await Promise.all([profile.laden(), katalogLesen(), teilnehmerLesen(), fragebogenLesenVomServer()]);
+    if (!offen) return;
+    zeichneAlles();
+    timer = setInterval(teilnehmerLesen, T.TAKT_MS);
+    auswertungTimer = setInterval(() => { if (offen && (z.bereich === 'auswertung' || z.bereich === 'aufgaben')) auswertungLesen(); }, T.AUSWERTUNG_TAKT_MS);
+  }
+
+  return { knoten: w, starten, beenden };
+}
+
+/** Öffnet den Dialog (ein zweiter Aufruf gibt den offenen zurück). Gibt zurück, wenn er geschlossen wird. */
+export function xrLaborDialog() {
+  if (offenerDialog) return offenerDialog;
+  const a = xrLaborAufbauen({});
   const geschlossen = zeigen({
-    titel: 'XR-Labor', inhalt: w, breite: 760, klasse: 'dlg-hoch xr-labor',
-    beiOeffnen: async () => {
-      bereichWaehlen('stellschrauben');
-      await Promise.all([benutzerLaden().catch(() => {}), katalogLesen(), teilnehmerLesen(), fragebogenLesenVomServer()]);
-      if (!offen) return;
-      zeichneAlles();
-      timer = setInterval(teilnehmerLesen, T.TAKT_MS);
-      auswertungTimer = setInterval(() => { if (offen && (z.bereich === 'auswertung' || z.bereich === 'aufgaben')) auswertungLesen(); }, T.AUSWERTUNG_TAKT_MS);
-    },
+    titel: 'XR-Labor', inhalt: a.knoten, breite: 760, klasse: 'dlg-hoch xr-labor',
+    beiOeffnen: () => a.starten(),
     knoepfe: [{ text: 'Schliessen', wert: true, primaer: true }],
-  }).then((wert) => { beenden(); offenerDialog = null; return wert; });
+  }).then((wert) => { a.beenden(); offenerDialog = null; return wert; });
   offenerDialog = geschlossen;
   return geschlossen;
+}
+
+/** XR-Labor L1: hängt den Inhalt in einen Behälter der Labor-Seite (statt in einen Dialog). Gibt { knoten, starten, beenden } zurück; gestartet ist er schon. */
+export function xrLaborSeite(behaelter, opt = {}) {
+  const a = xrLaborAufbauen(opt);
+  behaelter.appendChild(a.knoten);
+  a.starten();
+  return a;
 }
 
 /** Für die Menüband-Aktion: öffnet den Dialog und fängt Fehler ab. */

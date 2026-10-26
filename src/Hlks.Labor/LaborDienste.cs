@@ -25,6 +25,10 @@
 //   GET  /api/status                 { app: "xr-labor", fassung, commit, beschaeftigt: false } – das Startskript prüft damit, ob das Labor läuft
 //   /api/xr/…                        Netzzugang, Kopplung (Paket, Ersatzkopplung, Widerruf), Teilnehmer, Kanal, Desktop – XrEndpunkte.cs von KICAD
 //   /api/quest/app, …/netz, …/installieren   App «XR-Labor» installieren/aktualisieren und koppeln (Weg A) – QuestAppEndpunkte.cs von KICAD
+//   L1: /api/xr/labor/katalog (auch im Netzzugang), auswertung, fragebogen (GET/POST), variante, aufgabe – XrLaborEndpunkte.cs von KICAD mit der Ablage des Labors (LaborQuelle)
+//   L1: /api/labor/profile (GET/POST, POST …/aktiv, DELETE …/{kennung}) – LaborProfile.cs; /api/labor/daten (GET), /api/labor/uebernahme (POST) – LaborUebernahme.cs
+// ABLAGE (L1, LaborAblage.cs): %OneDrive%\HLKS-CAD\labor\ (messungen, fragebogen, profile, aktiv.json), ohne OneDrive %APPDATA%\HLKS-CAD\labor, Umleitung HLKS_LABOR_DATEN;
+// im Testlauf nur unter %TEMP%. Die Messprotokolle des Kanals gehen über XrMessAblage nach labor\messungen.
 // Kein Projekt, kein Kern-Projektzugriff, keine Benutzer- und keine Projekt-Endpunkte. Für die KI gibt es kein Werkzeug (reine Rechner-Funktionen wie in KICAD).
 
 using System.Net;
@@ -42,6 +46,10 @@ public static class LaborMarke
 {
     /// <summary>App-Kennung der Labor-App (Entscheid Christian 26.10.2026, Name «XR-Labor»).</summary>
     public const string Paket = "ch.hkplanung.xrlabor";
+    /// <summary>Id der Marke im Kanal (<c>hallo.marke</c>, Hlks.Xr/Netz/AppMarke.cs: AppMarke.XrLabor.Id): an Brillen mit dieser Marke gehen Prüfaufgaben und Varianten (L1).</summary>
+    public const string Id = "xrlabor";
+    /// <summary>Name der App in Texten.</summary>
+    public const string Name = "XR-Labor";
     /// <summary>Benutzereinstellung mit dem Ordner der abgelegten Labor-App (nur gelesen; leer = Vorgabe).</summary>
     public const string AblageSchluessel = "labor.app_ablage";
     /// <summary>Ordnername der Vorgabe unter %USERPROFILE%\HLKS_CAD_werkzeuge (APK ch.hkplanung.xrlabor-Signed.apk und version.json, quest_app_bereitstellen.ps1 -Labor).</summary>
@@ -145,7 +153,32 @@ public static class LaborDienste
         s.AddXrZugang(hauptPort);
         s.TryAddSingleton(sp => LaborQuest.Vorgabe(sp.GetRequiredService<XrEinstellungen>()));
         s.TryAddSingleton(sp => new QuestDienst(sp.GetRequiredService<BenutzerEinstellungen>(), sp.GetRequiredService<QuestEinstellungen>(), sp.GetService<IQuestNetz>() ?? IQuestNetz.Vorgabe()));
+        // L1: Ablage der Labor-Daten (OneDrive), Profile, Messprotokolle des Kanals nach labor\messungen, Übernahme der bisherigen Daten (die Kanalablage kommt über die Dienste in XrKanal)
+        s.TryAddSingleton(sp => LaborAblage.Waehlen(sp.GetRequiredService<Einstellungen>().Geraet));
+        s.TryAddSingleton(sp => new LaborProfile(sp.GetRequiredService<LaborAblage>(), sp.GetRequiredService<XrEinstellungen>().Jetzt));
+        s.TryAddSingleton(sp => { var a = sp.GetRequiredService<LaborAblage>(); return new XrMessAblage(a.Messungen, a.Rechner, a.SchreibSperre); });
+        s.TryAddSingleton(_ => LaborAltdaten.Vorgabe());
+        s.TryAddSingleton(sp => new LaborUebernahme(sp.GetRequiredService<LaborAblage>(), sp.GetRequiredService<LaborProfile>(), sp.GetRequiredService<BenutzerEinstellungen>(),
+            sp.GetRequiredService<LaborAltdaten>(), sp.GetRequiredService<XrEinstellungen>().Jetzt));
+        s.AddHostedService<LaborUebernahmeStart>();
         return s;
+    }
+
+    /// <summary>Die Quelle der Labor-Endpunkte aus Hlks.Web (XrLaborEndpunkte.cs) mit der Ablage des Labors: Katalog aus den Einstellungen, Profil aus labor\profile,
+    /// Fragebogen in labor\fragebogen (mit Rechnername), Varianten und Prüfaufgaben an Brillen der Marke «xrlabor».</summary>
+    public static XrLaborQuelle LaborQuelle(IServiceProvider sp)
+    {
+        var einstellungen = sp.GetRequiredService<Einstellungen>();
+        var ablage = sp.GetRequiredService<LaborAblage>();
+        var profile = sp.GetRequiredService<LaborProfile>();
+        var xr = sp.GetRequiredService<XrEinstellungen>();
+        return new XrLaborQuelle
+        {
+            KatalogOrdner = () => einstellungen.KatalogOrdner,
+            AktivesProfil = profile.AktivesProfil,
+            Fragebogen = () => new XrFragebogenSpeicher(ablage.Fragebogen, xr.Jetzt, ablage.Rechner, ablage.SchreibSperre),
+            NurMarke = LaborMarke.Id, MarkeName = LaborMarke.Name,
+        };
     }
 
     /// <summary>Herkunftsschutz, Oberfläche und Endpunkte (siehe Kopf der Datei).</summary>
@@ -156,6 +189,11 @@ public static class LaborDienste
         app.MapGet("/api/status", () => EndpunktHilfe.Antwort(LaborStatus.Status()));
         app.MapXr();   // Netzzugang, Kopplung, Teilnehmer, Kanal, Desktop (XrEndpunkte.cs von KICAD, mit den Werten des Labors)
         app.MapQuestApp(app.Services.GetRequiredService<QuestDienst>());   // App «XR-Labor» installieren/aktualisieren (QuestAppEndpunkte.cs von KICAD)
+        // L1 – die Labor-Funktionen. Je Zeile ein Teil; weitere (Testraum, Bedienstandard) kommen als eigene Zeilen dazu:
+        app.MapXrLabor(LaborQuelle(app.Services));   // /api/xr/labor/… aus Hlks.Web (XrLaborEndpunkte.cs) mit Ablage, Profil und Marke des Labors
+        app.MapLaborProfile();                       // /api/labor/profile (LaborProfile.cs)
+        app.MapLaborDaten();                         // /api/labor/daten, /api/labor/uebernahme (LaborUebernahme.cs)
+        LaborTestraum.Abbilden(app);                 // Etagen des Testraums als GLB wie KICAD (/api/xr/geschosse, /api/xr/geschoss/{id}.glb; TestraumEndpunkte.cs)
         return app;
     }
 }

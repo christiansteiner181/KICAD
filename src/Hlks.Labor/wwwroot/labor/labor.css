@@ -1,12 +1,19 @@
-/* Labor-Seite (XR-Labor L0). Grundgestaltung, Farben und der Teil «Quest App» kommen aus KICAD (css/hlks.css, oberflaeche.css, quest.css); hier nur der
-   Aufbau der Seite: Kopf, darunter eine rollbare Spalte mit den Bereichen «Brille» und «Labor». Farben nur über die Variablen von KICAD. */
+/* Labor-Seite (XR-Labor L1). Grundgestaltung, Farben, der Teil «Quest App» und der Inhalt des Dialogs «XR-Labor» (xl-…) kommen aus KICAD (css/hlks.css, oberflaeche.css, quest.css);
+   hier nur der Aufbau der Seite: Kopf, darunter eine rollbare Spalte mit dem Reiterband. Farben nur über die Variablen von KICAD. */
 body.labor { grid-template-rows: var(--hoehe-kopf) minmax(0, 1fr); overflow: hidden; }
 body.labor #titel { flex: none; text-align: left; font-weight: 600; }
 .labor-stand { margin-left: auto; white-space: nowrap; }
-.labor-seite { overflow: auto; padding: 12px; display: flex; flex-direction: column; gap: 12px; align-items: center; }
-.labor-bereich { width: min(720px, 100%); padding: 10px 12px; background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); display: flex; flex-direction: column; gap: 8px; }
-.labor-bereich h2 { margin: 0; font-size: 14px; font-weight: 600; }
-.labor-block { display: flex; flex-direction: column; gap: 4px; }
+.labor-seite { overflow: auto; padding: 12px; display: flex; flex-direction: column; align-items: center; scroll-padding-top: 48px; }
+.labor-xl { width: min(980px, 100%); }
+/* die Reiter bleiben beim Rollen oben stehen, wie im Dialog von KICAD */
+.labor-xl .xl-reiter { padding-top: 2px; }
+.labor-block { display: flex; flex-direction: column; gap: 4px; margin-top: 8px; }
+.labor-brille { display: flex; flex-direction: column; gap: 8px; }
 .labor-teilnehmer { display: flex; flex-direction: column; gap: 3px; }
 .labor-teilnehmer-zeile { padding: 3px 6px; border: 1px solid var(--rand-leise); border-radius: var(--radius); background: var(--flaeche); overflow-wrap: anywhere; }
-.labor-platzhalter { border-style: dashed; }
+/* Register «Daten» */
+.labor-daten { display: flex; flex-direction: column; gap: 10px; }
+.labor-daten-teil { display: flex; flex-direction: column; gap: 4px; }
+.labor-daten-tabelle th { width: 220px; text-align: left; font-weight: 600; vertical-align: top; }
+.labor-daten-tabelle td { overflow-wrap: anywhere; text-align: left; }
+.labor-uebernehmen { align-self: flex-start; }
