@@ -1,6 +1,17 @@
 # H+K XR – eine Empfänger-App in der Brille für alle Werkzeuge: Spezifikation
 
 Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Freigegeben von Christian am 26.10.2026** («Spezifikation H+K XR freigegeben, starte E1»). Bau ab E1.
+
+> **Neuausrichtung des Labors 26.10.2026 (nach E1, vor E2):** Christian: «ich habe das gefühl du verstehst nicht was ich mit dem prüflabor
+> meine.» Geklärt im Fragefenster: Das Labor ist eine **Spielwiese zum Anfassen**. Dort entwerfen wir **beides** – die **Grundbedienung** für alle
+> Apps (App-Menü aufrufen, wählen, schliessen; danach Fenster …) und die **app-spezifische Bedienung** je App («nein. wir entwerfen appspezifisch im
+> labor.»). Claude baut und bedient das Labor, Christian probiert in der Brille, «wir feilen dann nur an diesem grundsatz». Ergebnis ist der
+> **Bedien-Grundsatz** `entwurf/bedien-grundsatz.md`. Start: App-Menü mit der heutigen Lösung («Nur die heutige Lösung»).
+>
+> Folgen für diese Spezifikation: E1 gilt (eine App «H+K XR», Werkzeuge, Startseite). **E2 (abstrakte Bedienaufgaben, Bedienmuster-Schicht) entfällt**
+> («spezielles soll App-spezifisch entworfen werden»); die angefangene Arbeit bleibt ungenutzt liegen. Messung, Szenarien und Fragebogen (E3) sind
+> zweitrangig. Neue Stufen: **S1** Spielwiese App-Menü (Platzhalter-Apps im XR-Labor, heutige Bedienung) → Brillentest und Kapitel 1 feilen → **S2**
+> Fenster → app-spezifische Teile je App nach Zuruf. E7/E8 (Gesten) bleiben.
 Ergänzt `entwurf/labor-app.md` (XR-Labor) und `entwurf/modul-xr.md` (Quest App); wo sie sich widersprechen, gilt diese Datei.
 
 ## Anlass
