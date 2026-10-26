@@ -17,7 +17,8 @@
 import * as L from './gesten-logik.js';
 import * as fenster from '../fenster.js';
 
-const BREITE = 640, HOEHE = 480;   // Bild für die Erkennung (Breite fest, Höhe nach dem Seitenverhältnis der Kamera)
+const BREITE = 960, HOEHE = 540;   // Bild für die Erkennung (Breite fest, Höhe nach dem Seitenverhältnis der Kamera). 960 statt 640: im vollen
+                                   // 16:9-Sichtfeld ist die Hand sonst kleiner als vorher im 4:3-Ausschnitt, die Punkte zittern und die Faust bricht ab (Abnahme 26.10.2026)
 const KAMERA_BREITE = 1280, KAMERA_HOEHE = 720;   // angeforderte Kameraauflösung (16:9, volles Sichtfeld)
 const TAKT_MS = 1000 / 30, RUECKFALL_MS = 1000 / 15, RUHE_TAKT_MS = 1000 / 5;
 const RUHE_NACH_MS = 10000;
@@ -126,7 +127,7 @@ async function takt(l) {
   try {
     const b = BREITE, h = Math.max(1, Math.round((BREITE * v.videoHeight) / v.videoWidth));
     l.sv = h / b;
-    // liefert die Kamera mehr als 640 Punkte Breite, wird verkleinert (die Erkennung braucht nicht mehr)
+    // liefert die Kamera mehr als BREITE Punkte Breite, wird verkleinert (die Erkennung braucht nicht mehr)
     const bild = v.videoWidth > BREITE ? await createImageBitmap(v, { resizeWidth: b, resizeHeight: h, resizeQuality: 'low' }) : await createImageBitmap(v);
     if (lauf !== l) { bild.close(); return; }
     l.worker.postMessage({ art: 'bild', bild, t: jetzt }, [bild]);
