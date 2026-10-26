@@ -193,14 +193,14 @@ await ausw(`
   return 1;`);
 
 // ================================================================== 1. Menüband
-abschnitt('Register Ansicht: Gruppe «Fenster» mit «Quest verbinden …» und «Brille zeigen»');
-await register('Ansicht');
+abschnitt('Register XR: Gruppe «Brille» mit «Quest verbinden …» und «Brille zeigen»');
+await register('XR');
 let k = await knopfInfo('ansicht.brilleZeigen');
-pruef(!!k && k.gruppe === 'Fenster' && /Brille zeigen/.test(k.tipp) && k.symbol && k.sym === 'brilleZeigen' && !k.gesperrt, 'Knopf «Brille zeigen» in der Gruppe «Fenster», mit Symbol', JSON.stringify(k));
+pruef(!!k && k.gruppe === 'Brille' && /Brille zeigen/.test(k.tipp) && k.symbol && k.sym === 'brilleZeigen' && !k.gesperrt, 'Knopf «Brille zeigen» in der Gruppe «Brille», mit Symbol', JSON.stringify(k));
 pruef(k && k.gedrueckt && k.aria === 'true', 'Vorgabe: die Anzeige ist eingeschaltet (Knopf gedrückt)', JSON.stringify(k));
-pruef((await knopfInfo('ansicht.questVerbinden'))?.gruppe === 'Fenster', 'Der Knopf «Quest verbinden …» steht unverändert da');
-pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 10, 'Kein neues Register: es bleiben zehn');
-await shot('01_register_ansicht');
+pruef((await knopfInfo('ansicht.questVerbinden'))?.gruppe === 'Brille', 'Der Knopf «Quest verbinden …» steht in der Gruppe «Brille»');
+pruef((await ausw(`return [...document.querySelectorAll('.mb-tab')].map((t) => t.textContent);`)).length === 11, 'Das Register XR ist das elfte (nach Ansicht, vor Verwalten)');
+await shot('01_register_xr');
 
 // ================================================================== 2. Teil «Quest App» im Dialog
 abschnitt('Dialog «Quest verbinden»: Teil «Quest App» ohne Netzzugang und ohne abgelegte App');
@@ -388,7 +388,7 @@ for (const [fb, fh] of fensterGroessen) {
   // gemerkte Lage und Grösse eines früheren, grösseren Fensters
   await ausw(`const z = await import('/js/zustand.js'); z.merken.schreiben('dialoge', { 'quest verbinden': { x: 1500, y: 900, b: 900, h: 1300 } }); return 1;`);
   await warte(300);
-  await register('Ansicht');
+  await register('XR');
   await klick('.mb-knopf[data-id="ansicht.questVerbinden"]');
   await warteBis(dialogOffen, 'Dialog offen', 8000);
   await warteBis(() => sichtbar(`${DLG} .qa`), 'Teil Quest App', 8000);
@@ -448,7 +448,7 @@ await warteBis(async () => Math.abs((await brillen3d())[0].kopf.pos[0] - (ziel3[
 pruef(true, 'Die Figur folgt einer neuen Pose');
 await shot('08_brille_in_3d');
 // ausschalten: Knopf «Brille zeigen»
-await register('Ansicht');
+await register('XR');
 await klick('.mb-knopf[data-id="ansicht.brilleZeigen"]');
 await warteBis(async () => ((await brillen3d()) ?? []).length === 0, 'Figur weg', 6000);
 k = await knopfInfo('ansicht.brilleZeigen');

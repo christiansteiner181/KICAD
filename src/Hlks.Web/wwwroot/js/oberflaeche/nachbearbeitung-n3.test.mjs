@@ -392,7 +392,7 @@ test('Verdrahtung: Aktionen im Register Ansicht › Erstellen (klein, kein neues
   assert.match(lies('../../index.html'), /css\/nachbearbeitung-n3\.css/);
   assert.ok(lies('../../css/nachbearbeitung-n3.css').includes('.epl-plaene'));
   // keine neuen Register im Menüband
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['verwalten', 'Verwalten'\]\]/);
+  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
 });
 
 test('Verdrahtung: der Einlageplan-Dialog benutzt nur Kernbefehl und Kernabfrage; der Projektinformationen-Dialog nur element_aendern/element_anlegen', () => {

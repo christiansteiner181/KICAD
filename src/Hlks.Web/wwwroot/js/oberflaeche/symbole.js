@@ -79,6 +79,11 @@ const S = {
   questVerbinden: '<path d="M3 9h26a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 29 20h-6.5l-2.5-4h-8l-2.5 4H3a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 3 9z"/><path d="M10 25h12M19 22l3 3-3 3"/>',   // Modul XR: VR-Brille mit Pfeil = Quest verbinden
   brilleZeigen: '<path d="M2 12h20a1.5 1.5 0 0 1 1.5 1.5v6a1.5 1.5 0 0 1-1.5 1.5h-5l-2-3h-6l-2 3H2a1.5 1.5 0 0 1-1.5-1.5v-6A1.5 1.5 0 0 1 2 12z"/><circle cx="27" cy="16" r="2.2"/><path d="M25 9l5-3M25 23l5 3M12 26v3"/>',   // Quest App P7: Brille als Figur in der 3D-Ansicht zeigen
   xrLabor: '<path d="M12 3h8M13.5 3v8L6 25a2.5 2.5 0 0 0 2.2 3.6h15.6A2.5 2.5 0 0 0 26 25l-7.5-14V3"/><path d="M9.5 19h13M14 23h.01M18.5 22h.01"/>',   // Quest App P6: Messkolben = XR-Labor
+  // Register XR (26.10.2026): eigene Entwürfe im Stil der Brille oben (questVerbinden)
+  appInstallieren: '<path d="M16 3v9M12 8.5l4 4 4-4"/><path d="M3 16h26a1.5 1.5 0 0 1 1.5 1.5v8A1.5 1.5 0 0 1 29 27h-6.5l-2.5-4h-8l-2.5 4H3a1.5 1.5 0 0 1-1.5-1.5v-8A1.5 1.5 0 0 1 3 16z"/>',   // Pfeil nach unten in die Brille = App installieren
+  autostart: '<circle cx="16" cy="16" r="12"/><path d="M13 10.5l9 5.5-9 5.5z"/>',   // Startdreieck im Kreis = Autostart der Begehung
+  anBrille: '<circle cx="16" cy="13" r="1.2"/><path d="M12 10.5a5.5 5.5 0 0 1 8 0M8.5 7.5a10 10 0 0 1 15 0"/><path d="M3 17h26a1.5 1.5 0 0 1 1.5 1.5v7A1.5 1.5 0 0 1 29 27h-6.5l-2.5-4h-8l-2.5 4H3a1.5 1.5 0 0 1-1.5-1.5v-7A1.5 1.5 0 0 1 3 17z"/>',   // Funkwellen über der Brille = an die Brille senden
+  raumAr: '<path d="M3 9V3h6M23 3h6v6M29 23v6h-6M9 29H3v-6"/><path d="M16 8l8 4.5v9L16 26l-8-4.5v-9z"/><path d="M8 12.5l8 4.5 8-4.5M16 17v9"/>',   // Raumquader in den Eckmarken eines Sucherrahmens = Raum in AR
   problemMarker: '<path d="M16 29s-8-8.2-8-14.5A8 8 0 0 1 24 14.5C24 20.8 16 29 16 29z"/><path d="M16 9v6.5M16 19h.01"/>',   // Quest App V1a: Stecknadel mit «!» = Problem-Marker
   // Quest App V1a (Christian 24.10.2026: «nutze die gleiche symbolsprache wie im cad»): App «Tisch» = Sitzungstisch mit Modellwürfel, «Gesten» = offene Hand,
   // «erledigt» = Haken; eigene Zeichnungen. Die App nimmt diese Symbole als Texturen (werkzeuge/quest_symbole.mjs).

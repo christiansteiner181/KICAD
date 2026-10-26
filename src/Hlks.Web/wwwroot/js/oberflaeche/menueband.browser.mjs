@@ -176,7 +176,7 @@ const flyoutInfo = () => ausw(`
     knoepfe: [...f.querySelectorAll('.mb-knopf')].map(k => ({ id: k.dataset.id, klasse: k.className, gesperrt: k.classList.contains('gesperrt'), gedrueckt: k.classList.contains('gedrueckt'), titel: k.title, text: k.querySelector('.mb-text')?.textContent ?? null })),
     gruppen: [...f.querySelectorAll('.mb-gruppe')].map(g => g.dataset.gruppe), zu: f.querySelectorAll('.mb-zu').length };`);
 const bildPruefen = (pfad) => { const b = readFileSync(pfad); return b.subarray(0, 8).toString('hex') === '89504e470d0a1a0a' && b.length > 1500; };
-const REGISTER = ['Datei', 'Architektur', 'Hülle', 'Gebäudetechnik', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'Verwalten'];
+const REGISTER = ['Datei', 'Architektur', 'Hülle', 'Gebäudetechnik', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'XR', 'Verwalten'];
 const BREITEN = [1920, 1366, 1024, 800, 600, 420];
 const bilder = [];
 
@@ -186,7 +186,7 @@ try {
 
   // ================================================================== 1. Breiten
   abschnitt('1. Alle Register bei 1920, 1366, 1024, 800, 600 und 420 px: kein Rollbalken, nichts abgeschnitten');
-  pruef(JSON.stringify(await registerNamen()) === JSON.stringify(REGISTER), 'zehn Register', JSON.stringify(await registerNamen()));
+  pruef(JSON.stringify(await registerNamen()) === JSON.stringify(REGISTER), 'elf Register', JSON.stringify(await registerNamen()));
   const matrix = {};
   for (const w of BREITEN) {
     await breite(w);
@@ -222,7 +222,7 @@ try {
   }
   pruef(monoton, 'weniger Platz ergibt nie eine grössere Stufe');
 
-  // Registerreiter: ab 800 px stehen alle zehn Namen ganz da (Polster werden enger, nichts wird gekürzt)
+  // Registerreiter: ab 800 px stehen alle elf Namen ganz da (Polster werden enger, nichts wird gekürzt)
   for (const w of [1920, 1366, 1024, 800]) {
     await breite(w);
     const gekuerzt = await ausw(`return [...document.querySelectorAll('.mb-tab')].filter(t => t.scrollWidth > t.clientWidth + 1).map(t => t.textContent);`);

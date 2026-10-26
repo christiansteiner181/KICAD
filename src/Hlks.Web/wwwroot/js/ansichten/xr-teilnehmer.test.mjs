@@ -168,7 +168,7 @@ test('Verdrahtung: 3D-Ansicht, Aktion, Symbol, Einstellung', () => {
   assert.match(a3, /brillen\.zerstoeren\(\)/);
   assert.match(a3, /sichtbar: \(\) => !vr\?\.aktiv/, 'in VR bleibt die Figur aus');
   const akt = lies('../oberflaeche/aktionen-quest.js');
-  assert.match(akt, /id: 'ansicht\.brilleZeigen'.*register: 'ansicht'.*gruppe: 'Fenster'/s);
+  assert.match(akt, /id: 'ansicht\.brilleZeigen'.*register: 'xr'.*gruppe: 'Brille'/s);
   assert.match(akt, /gedrueckt: \(\) => brilleZeigenAn\(\)/);
   assert.match(lies('../oberflaeche/symbole.js'), /brilleZeigen: '/);
   const t = lies('./xr-teilnehmer.js');

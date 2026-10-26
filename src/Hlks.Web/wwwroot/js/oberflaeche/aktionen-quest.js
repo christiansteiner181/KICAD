@@ -1,24 +1,50 @@
-// Aktion «Quest verbinden …» (Modul XR): kleiner Knopf im Register Ansicht, Gruppe «Fenster» (dort hat die zweite Spalte Platz; eine eigene Gruppe «VR» machte das
-// Menüband bei 1920 px zu breit: menueband.browser.mjs verlangt keine zusammengeklappte Gruppe). Öffnet den Dialog (quest-dialog.js); die Weiterleitung selbst setzt der Server
-// (POST /api/quest/verbinden, QuestDienst.cs: adb reverse). Reine Rechner-Funktion, kein Befehl des Kerns und für die KI nicht freigegeben (KiEinordnung.RechnerFunktionen).
-// Immer verfügbar (auch ohne offenes Projekt). Eingetragen wird nur über registrieren() (register.js).
+// Register XR (Christian, 26.10.2026: «wir nehmen alles was VR/XR ist in einen eigenen Menue Tab im CAD»): alles, was mit der Brille (Meta Quest), der Quest App und dem VR/AR-Zeigen zu tun
+// hat, steht in einem eigenen Register «XR» (menueband.js) mit den Gruppen Brille · Zeigen · Koordination · Labor. Jede Funktion steht nur dort; die Kontextmenüs (Raum, Grundriss) behalten ihre
+// Einträge und lösen dieselben Aktionen aus (aktionen-vr-auftrag.js, ansichten/grundriss.js). Die Aktions-Ids («ansicht.…», «koordination.problemMarker») bleiben, wie sie waren: sie sind
+// Bezeichner für Anleitung, Kürzelliste und Tests, keine Orte.
 //
-// Quest App P7: «Brille zeigen» schaltet die Figuren der verbundenen Quest-Brillen in der 3D-Ansicht am PC ein und aus (Anzeige: ansichten/xr-teilnehmer.js; hier nur das kleine Modul ansichten/xr-brille-einstellung.js ohne three.js,
-// Benutzereinstellung ansicht3d.brillen_zeigen, Vorgabe ein). Immer verfügbar; ohne verbundene Brille ändert sich im Bild nichts.
+// Gruppe «Brille»: «Quest verbinden …» (Dialog quest-dialog.js; die Weiterleitung selbst setzt der Server: POST /api/quest/verbinden, QuestDienst.cs, adb reverse), «App installieren …»
+// (derselbe Dialog; sein erster Teil ist «Quest App» mit dem Knopf «App installieren/aktualisieren»), «Autostart» (Schalter, Einstellung quest.autostart: die Begehung startet beim
+// Aufsetzen der Brille) und «Brille zeigen» (Quest App P7: Figuren der verbundenen Brillen in der 3D-Ansicht am PC, ansichten/xr-teilnehmer.js; hier nur das kleine Modul
+// ansichten/xr-brille-einstellung.js ohne three.js, Einstellung ansicht3d.brillen_zeigen, Vorgabe ein).
+// Gruppe «Zeigen»: aktionen-vr-auftrag.js. Gruppe «Koordination»: «Problem-Marker» in problemmarker-panel.js. Gruppe «Labor»: «XR-Labor …» unten.
+// Alles reine Rechner-Funktionen, kein Befehl des Kerns und für die KI nicht freigegeben (KiEinordnung.RechnerFunktionen). Immer verfügbar (auch ohne offenes Projekt).
+// Eingetragen wird nur über registrieren() (register.js).
+//
+// Kürzel des Registers: X plus Anfangsbuchstabe (XQ Quest, XI Installieren, XU aUtostart, XB Brille, XV VR, XS Sitzungsraum, XR Raum in AR, XA An die Brille, XM Marker, XL Labor).
 
 import { registrieren } from './register.js';
 import { questDialog } from './quest-dialog.js';
 import { brilleZeigenAn, brilleZeigenSetzen } from '../ansichten/xr-brille-einstellung.js';
-import { benutzerLaden } from './benutzer.js';
+import { benutzerLaden, benutzerSetzen, benutzerWert } from './benutzer.js';
 import { meldung } from './dialoge.js';
+import { AUTOSTART_SCHLUESSEL, autostartAn } from './quest-text.js';
 
 registrieren({
-  id: 'ansicht.questVerbinden', titel: 'Quest verbinden …', symbol: 'questVerbinden', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  id: 'ansicht.questVerbinden', titel: 'Quest verbinden …', symbol: 'questVerbinden', kuerzel: 'XQ', register: 'xr', gruppe: 'Brille', groesse: 'gross',
   ausfuehren: () => questDialog(),
 });
 
+// «App installieren …»: öffnet denselben Dialog; die Quest App steht dort als erster Teil, mit «App installieren/aktualisieren» (adb über WLAN oder Kabel, quest-app-dialog.js)
 registrieren({
-  id: 'ansicht.brilleZeigen', titel: 'Brille zeigen', symbol: 'brilleZeigen', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  id: 'xr.appInstallieren', titel: 'App installieren …', symbol: 'appInstallieren', kuerzel: 'XI', register: 'xr', gruppe: 'Brille', groesse: 'gross',
+  ausfuehren: () => questDialog(),
+});
+
+// «Autostart»: die Begehung startet, sobald die Brille aufgesetzt ist (Einstellung quest.autostart, Vorgabe ein; derselbe Schalter wie im Dialog «Quest verbinden»)
+registrieren({
+  id: 'xr.autostart', titel: 'Autostart', symbol: 'autostart', kuerzel: 'XU', register: 'xr', gruppe: 'Brille', groesse: 'gross',
+  gedrueckt: () => autostartAn(benutzerWert(AUTOSTART_SCHLUESSEL, true)),
+  async ausfuehren() {
+    try { await benutzerLaden(); } catch { /* ohne Einstellungen gilt die Vorgabe */ }
+    const an = !autostartAn(benutzerWert(AUTOSTART_SCHLUESSEL, true));
+    await benutzerSetzen(AUTOSTART_SCHLUESSEL, an);
+    meldung(an ? 'Autostart ein: Nach dem Klick am PC startet die Begehung, sobald die Brille aufgesetzt ist.' : 'Autostart aus: In der Brille die VR-Startseite von Hand öffnen und tippen.', 'info');
+  },
+});
+
+registrieren({
+  id: 'ansicht.brilleZeigen', titel: 'Brille zeigen', symbol: 'brilleZeigen', kuerzel: 'XB', register: 'xr', gruppe: 'Brille', groesse: 'gross',
   gedrueckt: () => brilleZeigenAn(),
   async ausfuehren() {
     try { await benutzerLaden(); } catch { /* ohne Einstellungen gilt die Vorgabe */ }
@@ -32,6 +58,6 @@ registrieren({
 // (xr-labor-dialog.js, erst beim Klick geladen); alles läuft über /api/xr/… (XrEndpunkte.cs, XrLaborEndpunkte.cs). Reine Rechner-Funktion, für die KI nicht freigegeben
 // (KiEinordnung.RechnerFunktionen «xr_labor»). Immer verfügbar (auch ohne offenes Projekt).
 registrieren({
-  id: 'ansicht.xrLabor', titel: 'XR-Labor …', symbol: 'xrLabor', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  id: 'ansicht.xrLabor', titel: 'XR-Labor …', symbol: 'xrLabor', kuerzel: 'XL', register: 'xr', gruppe: 'Labor', groesse: 'gross',
   ausfuehren: async () => (await import('./xr-labor-dialog.js')).xrLaborDialogOeffnen(),
 });

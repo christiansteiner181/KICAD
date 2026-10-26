@@ -11359,14 +11359,14 @@
           "id": "zb-xr-quest-verbinden",
           "titel": "Quest verbinden: KICAD im Browser der Meta Quest ohne Meta Link (Modul XR)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Quest verbinden …",
-            "kuerzel": "",
+            "kuerzel": "XQ",
             "sonst": "3D-Ansicht: grauer Knopf «In VR begehen» (Klick) und Link «Quest im Browser der Brille nutzen …». Seit der Quest App ist dieser Teil im Dialog unter «Browser-Prototyp» einklappbar (klappt bei installierter App von selbst ein)"
           },
           "schritte": [
-            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» klicken (oder in einer 3D-Ansicht den Link «Quest im Browser der Brille nutzen …» bzw. den grauen Knopf «In VR begehen»). Der Dialog zeigt oben vier Punkte: adb gefunden, Quest verbunden, Freigegeben, Weiterleitung aktiv.",
+            "Register XR › Gruppe Brille › «Quest verbinden …» klicken (oder in einer 3D-Ansicht den Link «Quest im Browser der Brille nutzen …» bzw. den grauen Knopf «In VR begehen»). Der Dialog zeigt oben vier Punkte: adb gefunden, Quest verbunden, Freigegeben, Weiterleitung aktiv.",
             "Ist der erste Punkt rot («adb gefunden»): den drei Schritten im Dialog folgen. (1) Android Platform Tools von der offiziellen Seite holen (Link im Dialog, öffnet im Browser). (2) Die ZIP-Datei nach %USERPROFILE%\\platform-tools entpacken. (3) «Erneut prüfen» klicken. KICAD lädt nichts herunter und installiert nichts. Liegt adb.exe woanders: den Pfad im Feld «Pfad zur adb.exe» eintragen und «Speichern» klicken.",
             "Entwicklermodus der Quest in der Meta-Horizon-App einschalten (einmalig braucht es eine Entwickler-Organisation bei Meta), die Quest mit einem Datenkabel (USB-C) an den PC stecken und aufsetzen. Dort «USB-Debugging erlauben» bestätigen (immer von diesem Computer). Im Dialog «Erneut prüfen» klicken: «Quest verbunden» und «Freigegeben» werden grün. Steht trotz Kabel «Keine Quest gefunden»: Meta-ADB-Treiber installieren (developers.meta.com, Administratorrechte; KICAD installiert den Treiber nicht).",
             "«Verbinden» klicken: «Weiterleitung aktiv» wird grün, unten steht die Adresse http://localhost:<Port>.",
@@ -11413,7 +11413,7 @@
             "sonst": "Browser der Meta Quest: Adresse http://localhost:<Port>/vr bzw. das Icon «KICAD VR»; die Adresse steht im Dialog «Quest verbinden»"
           },
           "schritte": [
-            "Am PC KICAD starten und das Projekt öffnen. Im Dialog «Quest verbinden» (Register Ansicht › Gruppe Fenster) die Quest verbinden; unten steht die Adresse http://localhost:<Port>/vr.",
+            "Am PC KICAD starten und das Projekt öffnen. Im Dialog «Quest verbinden» (Register XR › Gruppe Brille) die Quest verbinden; unten steht die Adresse http://localhost:<Port>/vr.",
             "In der Quest den Browser öffnen und diese Adresse eingeben. Die Startseite erscheint: Projektname, Geschoss und Raum des Startpunkts und ein grosser Knopf «Eintreten».",
             "Einmalig das Icon anlegen: im Menü des Browsers (drei Punkte) «Zur Startseite hinzufügen», «Zum Startbildschirm hinzufügen» oder «Als App installieren» wählen (die Namen können sich je nach Version ändern); sonst die Seite als Lesezeichen speichern. Das Icon «KICAD VR» (Cyan, VR-Brille auf Dunkel) öffnet künftig die Startseite.",
             "Ein Tipp (Controller-Abzug oder Pinch) irgendwo auf der Seite startet VR: man steht im Modell, im Raum des Startpunkts.",
@@ -11455,8 +11455,8 @@
           "id": "zb-xr-quest-automatisch",
           "titel": "Brille automatisch verbinden: die Quest wird über ihre MAC-Adresse gefunden (Modul XR)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Quest verbinden … › Schalter «Brille automatisch verbinden»",
             "kuerzel": "",
             "sonst": "Statusleiste (Mitte): Anzeige «Brille» mit grünem, gelbem oder grauem Punkt; Klick = jetzt suchen, Rechtsklick = Dialog «Quest verbinden»"
@@ -11501,11 +11501,11 @@
           "id": "zb-xr-autostart",
           "titel": "Begehung beim Aufsetzen automatisch starten: Klick am PC, Brille aufsetzen, fertig (Modul XR)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Quest verbinden … › Schalter «Begehung beim Aufsetzen automatisch starten»",
             "kuerzel": "",
-            "sonst": "Auslöser: Grundriss › Rechtsklick auf einen Raum › «In VR begehen (Brille)» bzw. «Geschoss im Sitzungsraum zeigen (Brille)»; 3D-Ansicht › «An die Brille senden». Rückmeldung in der Statusleiste (Anzeige «Brille»)"
+            "sonst": "Auslöser: Register XR › Zeigen (gewählter Raum) oder Grundriss › Rechtsklick auf einen Raum › «In VR begehen (Brille)» bzw. «Geschoss im Sitzungsraum zeigen (Brille)»; 3D-Ansicht › «An die Brille senden». Rückmeldung in der Statusleiste (Anzeige «Brille»)"
           },
           "schritte": [
             "Die Quest wie bei «Quest verbinden» bzw. «Brille automatisch verbinden» einrichten (adb, Freigabe, Brille gemerkt). Im Dialog «Quest verbinden» ist der Schalter «Begehung beim Aufsetzen automatisch starten» eingeschaltet (Vorgabe).",
@@ -11545,12 +11545,12 @@
             "gruppe": "",
             "knopf": "",
             "kuerzel": "",
-            "sonst": "Der Schalter steht im Dialog «Quest verbinden» (Register Ansicht › Fenster) im Teil «Quest App»: «Netzzugang einschalten/ausschalten»; er schreibt den Schalter dieses PCs (%LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json). Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
+            "sonst": "Der Schalter steht im Dialog «Quest verbinden» (Register XR › Brille) im Teil «Quest App»: «Netzzugang einschalten/ausschalten»; er schreibt den Schalter dieses PCs (%LOCALAPPDATA%\\HLKS_CAD\\xr\\zugang.json). Firewall: werkzeuge\\xr_firewall.ps1 in PowerShell als Administrator"
           },
           "schritte": [
             "PowerShell als Administrator öffnen, in den Ordner HLKS_CAD wechseln und «powershell -ExecutionPolicy Bypass -File werkzeuge\\xr_firewall.ps1» ausführen. Das Skript legt zwei eingehende Regeln an (TCP 5140 und UDP 5141, nur Profil «Privat», nur aus dem eigenen Subnetz) und zeigt das Profil des Netzes.",
             "Steht beim Büronetz nicht «Private», das Netz in den Windows-Einstellungen als privates Netz einstufen; sonst greifen die Regeln nicht.",
-            "Den Zugang einschalten: Register Ansicht › Gruppe Fenster › «Quest verbinden …» › Teil «Quest App» › «Netzzugang einschalten». Die Zeile wird grün und nennt Port, Fingerabdruck in Kurzform und die Adressen des PCs; darunter lesen die Hinweise Netzprofil und Firewall (nur gelesen) und sagen, was fehlt. Der Schalter gilt nur für diesen PC (nicht über OneDrive für die anderen Rechner).",
+            "Den Zugang einschalten: Register XR › Gruppe Brille › «Quest verbinden …» › Teil «Quest App» › «Netzzugang einschalten». Die Zeile wird grün und nennt Port, Fingerabdruck in Kurzform und die Adressen des PCs; darunter lesen die Hinweise Netzprofil und Firewall (nur gelesen) und sagen, was fehlt. Der Schalter gilt nur für diesen PC (nicht über OneDrive für die anderen Rechner).",
             "Fragt Windows «Zugriff zulassen?» für dotnet.exe, nur «Private Netzwerke» wählen («Abbrechen» sperrt KICAD; «xr_firewall.ps1 -Liste» zeigt solche Sperren).",
             "Den Zustand ansehen: im Teil «Quest App» stehen Zugang, gekoppelte Brillen und offene Anfragen mit Code; ausführlicher (JSON) unter http://localhost:5130/api/xr/zugang im Browser des PC.",
             "Zum Ausschalten «Netzzugang ausschalten» klicken. Die Firewall-Regeln entfernt «xr_firewall.ps1 -Entfernen»."
@@ -11582,8 +11582,8 @@
           "id": "zb-xr-quest-app-installieren",
           "titel": "Quest App installieren oder aktualisieren: ein Klick in «Quest verbinden» (Modul XR, Quest App P7)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Quest verbinden … › Teil «Quest App» › «App installieren» bzw. «App aktualisieren»",
             "kuerzel": "",
             "sonst": "Der Teil «Quest App» steht oben im Dialog; darunter der einklappbare «Browser-Prototyp». Vorher einmal: werkzeuge\\quest_app_bereitstellen.ps1 (baut die APK und legt sie ab)"
@@ -11591,7 +11591,7 @@
           "schritte": [
             "APK bereitstellen (einmal je neuem Stand der App): in PowerShell im Ordner HLKS_CAD «powershell -ExecutionPolicy Bypass -File werkzeuge\\quest_app_bereitstellen.ps1» ausführen. Das Skript baut die App und legt sie mit einer Versionsdatei (Commit, Zeit, Grösse, Prüfsumme) nach %USERPROFILE%\\HLKS_CAD_werkzeuge\\quest_app. Es ruft kein adb auf und lädt nichts herunter.",
             "Die Brille vorbereiten wie für «Quest verbinden»: Entwicklermodus, Datenkabel, in der Brille «USB-Debugging erlauben», im Dialog oben «Erneut prüfen» (Punkte «adb gefunden», «Quest verbunden», «Freigegeben» grün).",
-            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» öffnen und im Teil «Quest App» schauen: «Abgelegte App» nennt Fassung, Commit, Bauzeit und Grösse; «In der Brille» nennt die installierte Fassung oder «Nicht installiert». Liegt die App woanders, den Ordner im Feld «Ordner der App» eintragen und «Speichern» klicken.",
+            "Register XR › Gruppe Brille › «Quest verbinden …» öffnen und im Teil «Quest App» schauen: «Abgelegte App» nennt Fassung, Commit, Bauzeit und Grösse; «In der Brille» nennt die installierte Fassung oder «Nicht installiert». Liegt die App woanders, den Ordner im Feld «Ordner der App» eintragen und «Speichern» klicken.",
             "«Netzzugang einschalten» klicken. Die Zeile wird grün und nennt Port, Fingerabdruck in Kurzform und die Adresse des PCs. Der Zugang gilt nur für diesen PC und öffnet sich nur im KICAD auf Port 5130; am besten nur für die Dauer des Tests einschalten.",
             "Die Hinweise darunter lesen (nur gelesen, KICAD ändert nichts): Steht dort, das Netz sei «Öffentlich» oder die Firewall-Regeln der Gruppe «KICAD XR» fehlten, erreicht die Brille den PC im WLAN nicht. Dann «über Kabel» wählen oder Christian führt werkzeuge\\xr_firewall.ps1 als Administrator aus.",
             "Den Weg wählen: «über Kabel» (Brille steckt am USB-Kabel; die Brille erreicht den PC über adb reverse) oder «über WLAN».",
@@ -11633,14 +11633,14 @@
           "id": "zb-xr-kopplungen",
           "titel": "Gekoppelte Brillen ansehen und widerrufen, Ersatzkopplung mit Code bestätigen (Modul XR, Quest App P7)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Quest verbinden … › Teil «Quest App» › «Gekoppelte Brillen» und «Ersatzkopplung (ohne Kabel)»",
             "kuerzel": "",
             "sonst": "Der Zustand wird alle 2 Sekunden gelesen, solange der Dialog offen ist"
           },
           "schritte": [
-            "Register Ansicht › Gruppe Fenster › «Quest verbinden …» öffnen, im Teil «Quest App» nach unten zu «Gekoppelte Brillen» gehen.",
+            "Register XR › Gruppe Brille › «Quest verbinden …» öffnen, im Teil «Quest App» nach unten zu «Gekoppelte Brillen» gehen.",
             "Die Liste zeigt je Brille Name, seit wann sie gekoppelt ist und ob sie verbunden ist (grüne Lampe) bzw. wann sie zuletzt da war; «Paket» heisst: gekoppelt bei der Installation, «Code»: gekoppelt mit dem Vergleichscode.",
             "Eine Brille nicht mehr zuzulassen: «Widerrufen» klicken und die Rückfrage bestätigen. Der Schlüssel gilt sofort nicht mehr, eine verbundene App wird getrennt; neu koppeln geht mit «App installieren».",
             "Ersatzkopplung (nur wenn die Kopplung bei der Installation nicht möglich war): Die App bittet in der Brille um eine Kopplung. Unter «Ersatzkopplung (ohne Kabel)» erscheint die Anfrage mit Name und Kennung der Brille und einem 6-stelligen Code (zuerst «Die Brille hat noch nicht aufgedeckt»).",
@@ -11675,10 +11675,10 @@
           "id": "zb-xr-brille-am-pc",
           "titel": "Die Brille in der 3D-Ansicht am PC sehen: Kopf mit Blickrichtung, Hände, Name (Modul XR, Quest App P7)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Brille",
             "knopf": "Brille zeigen",
-            "kuerzel": "",
+            "kuerzel": "XB",
             "sonst": "Dasselbe Kästchen steht im Dialog «Quest verbinden» (Teil «Quest App»: «Verbundene Brillen in der 3D-Ansicht zeigen»)"
           },
           "schritte": [
@@ -11686,7 +11686,7 @@
             "Am PC eine 3D-Ansicht öffnen (Projektbrowser › 3D-Ansichten, oder Register Ansicht › «3D-Ansicht»).",
             "Sobald die Brille Posen sendet, erscheint dort eine Figur: Kugel für den Kopf mit Blickkegel und einer Linie in Blickrichtung, kleine Kugeln für die Hände (bei Pinch grösser) und der Name der Brille als Schild.",
             "Beim Gehen mit der Brille wandert die Figur im Modell mit; Blick und Hände folgen.",
-            "Ausschalten: Register Ansicht › Gruppe Fenster › «Brille zeigen» (ist gedrückt, solange die Anzeige an ist) oder das Kästchen im Dialog «Quest verbinden». Dann fragt die 3D-Ansicht auch nicht mehr nach der Brille."
+            "Ausschalten: Register XR › Gruppe Brille › «Brille zeigen» (ist gedrückt, solange die Anzeige an ist) oder das Kästchen im Dialog «Quest verbinden». Dann fragt die 3D-Ansicht auch nicht mehr nach der Brille."
           ],
           "erwartung": "Mit einer verbundenen Brille zeigt die 3D-Ansicht an ihrer Stelle eine einfache Figur mit Namen, Blickrichtung und Händen, auch hinter Wänden sichtbar und aus jedem Abstand erkennbar. Ohne Brille ändert sich im Bild nichts und es entsteht kaum Last (nur ein seltener, winziger Blick auf die Liste; mit Brille etwa fünfmal je Sekunde). Ausgeschaltet oder ohne offene 3D-Ansicht fragt KICAD gar nicht. Sendet die Brille seit 5 Sekunden keine Pose mehr, wird die Figur blass. Die Figuren verändern das Modell nicht, werden nicht angeklickt und nicht vom Schnittbereich beschnitten.",
           "pruefpunkte": [
@@ -11857,15 +11857,15 @@
           "id": "zb-quest-app-labor",
           "titel": "Quest App: Prüfaufgaben, Varianten, Schnitt mit flacher Hand und Röntgen-Hand (Modul XR, Quest App P5b)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
+            "kuerzel": "XL",
             "sonst": "Am PC der Dialog «XR-Labor» (Reiter «Prüfaufgaben», «Varianten», «Stellschrauben», «Auswertung»); in der Brille die Karte der Aufgabe rechts neben dem Blick, die App «Tisch» im Sitzungsraum und die Hände."
           },
           "schritte": [
             "Die Quest App verbinden (zb-quest-app-begehen). Beim Verbinden holt die App den Katalog des Labors von KICAD (Vorgaben, Grenzen, Profil «gilt für die App»); ohne PC nimmt sie den zuletzt geladenen.",
-            "Am PC: Register Ansicht › Fenster › «XR-Labor …», Reiter «Prüfaufgaben», bei «An eine Markierung springen» auf «Aufgabe starten» klicken.",
+            "Am PC: Register XR › Gruppe Labor › «XR-Labor …», Reiter «Prüfaufgaben», bei «An eine Markierung springen» auf «Aufgabe starten» klicken.",
             "In der Brille erscheint rechts neben dem Blick eine Karte mit Titel und Anleitung, darunter «Ziel: die leuchtende Markierung · Zeit · Fehlgriffe» und der Knopf «Aufgabe beenden». Am Boden leuchtet ein Ring mit einer Lichtsäule.",
             "Mit Zeigen und Pinch auf den Ring springen. Ein Sprung daneben zählt als Fehlgriff. Landet man im Ring, wird die Karte grün («Geschafft · Zeit · Fehlgriffe») und die App sendet das Messprotokoll an KICAD.",
             "Am PC zeigt der Reiter «Prüfaufgaben» bei der Aufgabe «1 Lauf · 1 von 1 erfolgreich …», der Reiter «Auswertung» Zeit, Fehlgriffe und Abbrüche je Variante und je Fassung der App (z. B. «0.1+680f9af»).",
@@ -12037,14 +12037,14 @@
           "id": "zb-problemmarker-palette",
           "titel": "Problem-Marker am PC: Liste, Status, Zuständig, Frist, In 3D zeigen, BCF (Modul XR, Quest App V1a)",
           "wo": {
-            "register": "Koordination",
-            "gruppe": "Kollisionen",
+            "register": "XR",
+            "gruppe": "Koordination",
             "knopf": "Problem-Marker",
-            "kuerzel": "",
+            "kuerzel": "XM",
             "sonst": "Palette «Problem-Marker» rechts."
           },
           "schritte": [
-            "Register Koordination › Gruppe Kollisionen › «Problem-Marker» klicken; die Palette öffnet rechts.",
+            "Register XR › Gruppe Koordination › «Problem-Marker» klicken; die Palette öffnet rechts.",
             "Oben den Filter wählen (Alle, Offen, Erledigt); daneben die Zahl offen/erledigt/überfällig.",
             "Einen Marker anklicken: er wird gewählt und die 3D-Ansicht springt an den Blickpunkt der Brille (Kamera am Kopf, Blick auf die Stelle).",
             "Unten Status, Zuständig, Frist und Notiz ändern und «Speichern» klicken; «In 3D zeigen» springt nochmals hin, «Löschen» fragt zurück (Rückgängig möglich).",
@@ -12074,14 +12074,14 @@
           "id": "zb-xr-labor-stellschrauben",
           "titel": "XR-Labor: Stellschrauben der Quest App live von KICAD aus einstellen (Modul XR, Quest App P6)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
-            "sonst": "Register Ansicht › Gruppe Fenster › «XR-Labor …», Reiter «Stellschrauben». Öffnen geht auch ohne Projekt."
+            "kuerzel": "XL",
+            "sonst": "Register XR › Gruppe Labor › «XR-Labor …», Reiter «Stellschrauben». Öffnen geht auch ohne Projekt."
           },
           "schritte": [
-            "Register Ansicht › Gruppe Fenster › «XR-Labor …» klicken. Der Dialog öffnet; oben steht, welche Brille verbunden ist (oder «Keine Brille verbunden»).",
+            "Register XR › Gruppe Labor › «XR-Labor …» klicken. Der Dialog öffnet; oben steht, welche Brille verbunden ist (oder «Keine Brille verbunden»).",
             "Im Reiter «Stellschrauben» eine Zeile suchen. Die Zeilen sind nach Gruppen geordnet (Begehen, Haltung, Anzeige, Schwebende Apps, Wischgesten, Pinch und Fang, Komfort, Sitzungsraum). Jede nennt Titel, Schlüssel, Beschreibung, Vorgabe und Herkunft des Werts.",
             "Den Regler ziehen oder anklicken, mit den Pfeiltasten verstellen oder eine Zahl in das Feld eintragen (Tab bestätigt); Schalter anklicken; bei einer Auswahl den Eintrag wählen. Jede Änderung geht sofort an die Brille.",
             "Mit «Vorgabe» setzt man die Stellschraube auf die Vorgabe zurück (sie ist nur frei, wenn der Wert abweicht).",
@@ -12089,7 +12089,7 @@
           ],
           "erwartung": "Jede Stellschraube des Katalogs erscheint mit Regler (bzw. Schalter oder Auswahl), Zahlenfeld, Einheit und der Zeile «Gesetzt/Nicht gesetzt: … · Vorgabe: …». Die Grenzen (min, max, Schritt) stammen aus dem Katalog; eine Zahl ausserhalb wird nicht gesendet, die Meldung nennt den erlaubten Bereich und das Feld springt zurück. Ist keine Brille verbunden, merkt KICAD die Werte und sendet sie bei der nächsten Verbindung (solange KICAD läuft). Der Dialog passt sich dem Fenster an, der Inhalt scrollt, die Reiter bleiben oben stehen.",
           "pruefpunkte": [
-            "Der Knopf «XR-Labor …» steht im Register Ansicht in der Gruppe Fenster.",
+            "Der Knopf «XR-Labor …» steht im Register XR in der Gruppe Labor.",
             "Der Dialog liegt auch in einem kleinen Fenster (z. B. 900 × 560) ganz sichtbar, «Schliessen» bleibt erreichbar.",
             "Eine Zahl eintragen: die Zeile zeigt «Gesetzt: …», «Vorgabe» wird frei.",
             "Eine Zahl ausserhalb der Grenzen eintragen: Meldung mit dem erlaubten Bereich, nichts wird gesendet.",
@@ -12115,10 +12115,10 @@
           "id": "zb-xr-labor-profile",
           "titel": "XR-Labor: Profile speichern, laden und für die App festlegen (Modul XR, Quest App P6)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
+            "kuerzel": "XL",
             "sonst": "Reiter «Profile». Gespeichert wird je Benutzer in den Benutzereinstellungen («labor.profil.<kennung>»)."
           },
           "schritte": [
@@ -12155,10 +12155,10 @@
           "id": "zb-xr-labor-varianten-aufgaben",
           "titel": "XR-Labor: Varianten umschalten und Prüfaufgaben in der Brille starten (Modul XR, Quest App P6)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
+            "kuerzel": "XL",
             "sonst": "Reiter «Varianten» und «Prüfaufgaben»."
           },
           "schritte": [
@@ -12193,10 +12193,10 @@
           "id": "zb-xr-labor-auswertung",
           "titel": "XR-Labor: Messprotokolle auswerten – je Aufgabe, Variante und Fassung der App (Modul XR, Quest App P6)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
+            "kuerzel": "XL",
             "sonst": "Reiter «Auswertung». Gelesen werden die Messprotokolle der Brille in %LOCALAPPDATA%\\HLKS_CAD\\xr\\messprotokolle."
           },
           "schritte": [
@@ -12230,10 +12230,10 @@
           "id": "zb-xr-labor-fragebogen",
           "titel": "XR-Labor: Fragebogen nach dem Test – Komfort, SUS und NASA-TLX (Modul XR, Quest App P6)",
           "wo": {
-            "register": "Ansicht",
-            "gruppe": "Fenster",
+            "register": "XR",
+            "gruppe": "Labor",
             "knopf": "XR-Labor …",
-            "kuerzel": "",
+            "kuerzel": "XL",
             "sonst": "Reiter «Fragebogen». Gespeichert wird je PC in %LOCALAPPDATA%\\HLKS_CAD\\xr\\fragebogen (eine JSON-Datei je Fragebogen)."
           },
           "schritte": [

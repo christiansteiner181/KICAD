@@ -20,8 +20,9 @@ Christian Steiner gilt zusätzlich die übergeordnete `CLAUDE.md` im Ordner dar�
   am Windows-PC holt den Zweig, prüft ihn mit `werkzeuge/stand_pruefen.ps1` und führt ihn zusammen.
 - **Commits:** `git config user.name "Christian Steiner"` und `git config user.email "christian.steiner@hkplanung.ch"`, Meldung
   deutsch, Trailer `Co-Authored-By` wie von der Sitzung vorgegeben.
-- **Tests:** `bash werkzeuge/cloud/tests.sh` (alles) oder z. B. `bash werkzeuge/cloud/tests.sh kern -- --filter "FullyQualifiedName~Stuetze"`.
-  Vor dem letzten Commit müssen die betroffenen Teile grün sein.
+- **Tests:** immer gefiltert auf das Geänderte, z. B. `bash werkzeuge/cloud/tests.sh kern -- --filter "FullyQualifiedName~Stuetze"`.
+  `bash werkzeuge/cloud/tests.sh` (alles) nur, wenn der Auftrag es ausdrücklich verlangt (Christian 26.10.2026: «nur
+  spezifische Unit-Tests»). Vor dem letzten Commit müssen die betroffenen Teile grün sein.
 - **Nicht verfügbar:** PowerShell-Werkzeuge (`werkzeuge/*.ps1`), Browserreihen (`*.browser.mjs`, Edge), Abnahmeserver, HKAP,
   Laufwerk W:, echte Testdaten. Was nur dort prüfbar ist, im Schlussbericht ausdrücklich als «nicht geprüft» nennen.
 - **Schriften:** Arial und Calibri sind durch Liberation Sans und Carlito mit gleichen Laufweiten ersetzt (`werkzeuge/cloud/einrichten.sh`).
