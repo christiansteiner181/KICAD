@@ -17,6 +17,7 @@ import { esc, knoten, vergleichen, gewerkeListe, aufElement, freiesKennzeichen, 
 import { systemGewerk } from './projektbrowser-gliederung.js';
 import { anlageMitGewerk, anlagenVorne } from './sanitaer-anlage.js';
 import { MODI, MODUS_NAMEN, ARTEN as IFC_ARTEN, ifcModus } from '../ansichten/ifc-darstellung.js';
+import { steuerung as gesten } from '../gesten/gesten-steuerung.js';   // Grundschalter «Gesten» (Modul G); gesten.js selbst wird erst beim Einschalten geladen
 
 const MASSSTAEBE = [10, 20, 50, 100, 200, 500];
 const DETAILGRADE = ['grob', 'mittel', 'fein'];
@@ -284,6 +285,23 @@ registrieren({
   id: 'ansicht.eigenes-fenster', titel: 'In eigenem Fenster öffnen', symbol: 'eigenesFenster', kuerzel: null, register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
   aktiv: () => !!fenster.aktive() && !fenster.imZweitfenster(), hinweis: (p) => (fenster.imZweitfenster() ? 'Diese Ansicht ist schon in einem eigenen Fenster.' : 'Zuerst eine Ansicht öffnen.'),
   ausfuehren: () => { const o = fenster.aktive(); if (o) fenster.eigenesFensterOeffnen(o.id); },
+});
+// Modul G «Gesten am Arbeitsplatz» (entwurf/modul-gesten.md): Grundschalter und die Reiterwechsel, die Schritt-Geste G2 standardmässig auslöst (auch per Kürzel nützlich).
+// Kürzel GE (Gesten), RV (Reiter vor), RZ (Reiter zurück): frei (kein anderes Kürzel, auch nicht als Anfang eines Kürzels – alle Kürzel haben zwei Zeichen).
+registrieren({
+  id: 'ansicht.gesten', titel: 'Gesten', symbol: 'gesten', kuerzel: 'GE', register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  gedrueckt: () => gesten.an(),
+  ausfuehren: async () => { await gesten.schalten(); },
+});
+registrieren({
+  id: 'ansicht.reiter-vor', titel: 'Nächster Reiter', symbol: 'reiter', kuerzel: 'RV', register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  aktiv: () => fenster.reiterAnzahl() > 1, hinweis: 'Mindestens zwei Ansichten in derselben Gruppe öffnen.',
+  ausfuehren: () => fenster.reiterWechseln(1),
+});
+registrieren({
+  id: 'ansicht.reiter-zurueck', titel: 'Voriger Reiter', symbol: 'reiter', kuerzel: 'RZ', register: 'ansicht', gruppe: 'Fenster', groesse: 'klein',
+  aktiv: () => fenster.reiterAnzahl() > 1, hinweis: 'Mindestens zwei Ansichten in derselben Gruppe öffnen.',
+  ausfuehren: () => fenster.reiterWechseln(-1),
 });
 registrieren({
   id: 'ansicht.zoom-alles', titel: 'Zoom alles', symbol: 'zoomAlle', kuerzel: 'ZF', kuerzelAlt: ['ZE'], register: 'ansicht', gruppe: 'Zoom', groesse: 'klein',

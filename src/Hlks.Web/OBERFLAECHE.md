@@ -3417,3 +3417,54 @@ Christian: «Wenn ich die Symbole bei offener Tafel anhebe, soll die Tafel schli
   er nur noch mit «stehen». Prüfbild `desktop_11_heben_schliesst.jpg` (nur lokal).
 - **Nur mit der Brille prüfbar:** ob das Schliessen beim Anheben im Gebrauch stimmt (z. B. eine Tafel, die man behalten wollte).
 - **Anleitung:** `zb-quest-v1i-heben` in `berichte/anleitung/inventar.json`.
+
+## Modul G: Gesten am Arbeitsplatz (Stufe 1, Teil Oberfläche; `entwurf/modul-gesten.md`)
+
+Christian, 26.10.2026: «eine erweiterung der normalen bedienung, nicht diese zu ersetzen … wie eine 4. ebene nach Tastatur, Maus, Touch.» Die Kamera erkennt die Hand im Browser (MediaPipe; `js/gesten/gesten.js`, `gesten-logik.js`, `gesten-worker.js`, gebaut von hlks-kern); die **Oberfläche** (dieser Abschnitt) schaltet sie, zeigt den Zustand, löst die Schritt-Gesten über das Aktionsregister aus und speichert die Einstellung. Keine Fachlogik in der Oberfläche: Gesten setzen nie Punkte und ändern das Modell nie, nur Ansicht und Navigation. **Das Kamerabild bleibt im Browser** – nichts davon wird gespeichert, protokolliert oder gesendet; ausgewertet und weitergegeben werden nur Zustände, die 21 Punkte der Hand und Schritt-Gesten.
+
+### Wo
+
+| Funktion | Ort | Kürzel |
+| --- | --- | --- |
+| Grundschalter «Gesten» (gedrückter Knopf) | Register **Ansicht › Fenster › Gesten**; auch Klick auf das Symbol in der Statusleiste | **GE** |
+| Nächster / Voriger Reiter | Register **Ansicht › Fenster › Nächster Reiter / Voriger Reiter** (wechselt in der aktiven Gruppe, am Ende rundherum); Vorgabe der Geste G2 | **RV** / **RZ** |
+| Symbol «Gesten» mit vier Zuständen | **Statusleiste**, Mitte, rechts neben «Brille»: aus · Gesten bereit (keine Hand) · Hand erkannt · «Geste: drehen» (Name der aktiven Geste); dazu kurz «Gesten starten …», solange der Browser die Kamera öffnet. Klick schaltet ein/aus, **Rechtsklick** öffnet den Dialog | – |
+| Handskelett | kleines Feld **unten rechts** über der Statusleiste: die 21 Punkte der Hand als Linien, **ohne Kamerabild**; Vorgabe ein, abschaltbar im Dialog; nur sichtbar, solange die Gesten laufen. Die Einblendungen (Meldungen) rücken darüber | – |
+| Dialog «Gesten» | Register **Verwalten › Hilfe › Gesten** (neben «Tastaturkürzel») oder Rechtsklick auf das Symbol | – |
+| Kurzmeldung nach einer Schritt-Geste | schwebend unten rechts, 1,6 s, ersetzt die vorige («Reiter: 3D Lüftung», «Zoom alles», «Seite 2 von 3») | – |
+
+**Kürzel (Begründung):** GE («Gesten»), RV («Reiter vor») und RZ («Reiter zurück») waren frei; alle Kürzel der Oberfläche haben genau zwei Zeichen, GE/RV/RZ sind weder doppelt noch Anfang eines anderen (Test `gesten-ausloesen.test.mjs`, wie der Kürzeltest in `ki-palette.test.mjs`). Alle Kürzel des Bestands: 3D, CM, CO, DE, DI, DL, DR, DT, EL, GR, KI, KS, MD, MM, MV, PA, PF, PI, PP, PX, RM, RO, TX, VV, WA, WC, WN, WT, ZA, ZF (dazu VG, ZE, Entf als zweites Kürzel). Strg+Tab ist Sache des Browsers und nicht abfangbar.
+
+### Bedienung
+
+1. **Einschalten:** GE tippen, Knopf «Gesten» im Register Ansicht oder Klick auf das Symbol in der Statusleiste. **Erst jetzt** lädt KICAD die Gestenerkennung und der Browser fragt nach der Kamera (Vorgabe: aus; ohne eingeschaltete Gesten gibt es keine Last und keine Kamera). Der Schalter bleibt je Benutzer gespeichert (OneDrive) und gilt beim nächsten Start. Die Gesten sind danach **immer aktiv**, solange eine Hand im Bild ist.
+2. **Gesten** (Gestenhand: Vorgabe links, die rechte bleibt an der Maus):
+   - **G2 Wisch links/rechts:** Ansichtsreiter wechseln (nach rechts nächster, nach links voriger); in einem Dialog, einer Liste oder der Hilfe mit Seiten blättert er die Seiten. Bei offenem Dialog **ohne** Seiten passiert nichts (kein Reiterwechsel hinter dem Dialog).
+   - **G3 Wisch hoch/runter:** rollt eine Bildschirmseite (90 % der sichtbaren Höhe) im obersten Dialog oder in der Listenansicht; in Plan, Schema und 3D **ohne Wirkung** (das Geschoss wechselt nicht per Geste). Am Ende meldet «Ende erreicht» bzw. «Anfang erreicht».
+   - **G6 Pistolengeste:** «Zoom alles» (in 3D stellt es die Ansicht zugleich wieder aufrecht); bei offenem Dialog ohne Wirkung.
+   - **G4, G5, G7** (Faust bewegen, Faust zur Kamera, Faust drehen: 3D drehen, zoomen, um die Blickachse rollen; Plan und Schema verschieben bzw. zoomen) löst `gesten.js` selbst über `navigieren()` der aktiven Ansicht aus; die Statusleiste zeigt dabei «Geste: drehen» usw.
+3. **Dialog «Gesten»:** oben der Grundschalter und der Zustand in Worten; **Liste der Gesten** (Nr, Geste, Wirkung, Art – wie die Liste der Tastaturkürzel; bei G2 und G6 steht die eingestellte Belegung); **Einstellungen**: Gestenhand links/rechts, Kamera wählen (Standardkamera oder eine der Liste; die Namen erscheinen, sobald der Browser die Kamera freigegeben hat), Handskelett ein/aus, **Belegung** (G2 nach rechts, G2 nach links, G6: je eine Aktion aus dem Aktionsregister oder «keine Wirkung»), «Auf Vorgabe zurück» (alles ausser dem Grundschalter); **Empfindlichkeit**: je Stellschraube der Gestenlogik eine Zeile mit Wert, Einheit, Bereich, Erklärung und «Vorgabe» (die Zeilen entstehen ohne Sonderfälle aus `STELLSCHRAUBEN_VORGABE`; jeder Wert wird auf seinen Bereich begrenzt); **Testfeld** (siehe unten); **Punktfolge aufnehmen**.
+4. **Testfeld:** Solange der Dialog offen ist, steht die Steuerung im Testmodus (`testmodus(true)`): erkannte Gesten erscheinen im Testfeld mit dem, was sie auslösen *würden*, lösen aber nichts aus – weder die fliessenden Gesten noch die Schritt-Gesten. Beim Schliessen endet der Testmodus.
+5. **Punktfolge aufnehmen:** «Aufnahme starten», Gesten ausführen, «Aufnahme beenden und speichern …»: der Browser bietet eine JSON-Datei `gestenfolge-<Datum>.json` an. Sie enthält **nur Punkte** (`version`, `hand`, je Bild `t`, `punkte`, `welt`, `haendigkeit`), nie ein Bild – alle anderen Felder fallen weg (`aufnahmeDatei`). Die Dateien sind die Testfolgen für `gesten-logik.test.mjs`.
+
+### Erwartung
+
+- Ohne eingeschaltete Gesten: keine Kamera, kein Laden von `gesten.js`/MediaPipe, die Statusleiste zeigt «Gesten aus». Fehlt die Gestenerkennung in einer Fassung oder verweigert der Browser die Kamera, zeigt KICAD eine Meldung (deutsch, mit Hinweis), die Statusleiste «Gesten aus» (Tooltip «Zuletzt: …»), der Schalter springt zurück auf aus – der Start von KICAD bricht nie ab.
+- Im eigenen Fenster einer Ansicht (Zweitfenster) laufen keine Gesten und es gibt kein Symbol; nur das Hauptfenster öffnet die Kamera (ein Gerät, eine Erkennung).
+- Eine Schritt-Geste löst nur Aktionen der Liste «belegbar» aus (Ansicht und Navigation: Reiter vor/zurück, Zoom alles, Zoom alle Ansichten, Fenster nebeneinander, Fenster als Reiter); eine von Hand in die Einstellung geschriebene andere Aktion (z. B. Löschen) wird ignoriert.
+- Das Menüband zeigt «Gesten» gedrückt, wenn die Gesten an sind – auch wenn der Schalter in der Statusleiste umgelegt wurde.
+
+### Schnittstelle «Seiten» für Dialoge und Listen (Vertrag für G2/G3)
+
+Ein Dialog oder eine Ansicht kann Seiten anbieten, die G2 blättert: ein Element mit `data-seiten`, darin Knöpfe `data-seite="zurueck"` und `data-seite="vor"` (optional ein Element `data-seite-text` mit «Seite 2 von 3»), oder eine Reiterliste `role="tablist"` mit `role="tab"` (`aria-selected`). Heute nutzt das noch kein Dialog; die Hilfe (`/hilfe/`) ist ein eigenes Browserfenster und hört nicht auf die Gesten dieses Fensters. G3 rollt die grösste rollbare Fläche (`overflow-y: auto|scroll`) des obersten Dialogs bzw. der Listenansicht.
+
+### Speicherung und Dateien
+
+- **Benutzereinstellung `gesten`** (je Benutzer über OneDrive, `BenutzerEinstellungen.cs`, Prüfung `GestenEinstellung.cs`): `{ an (Vorgabe false), hand ("links"), kameraId (null), skelett (true), stellschrauben { Name: Zahl } (nur Abweichungen), belegung { G2 { links, rechts }, G6 } }`; jedes Feld wahlweise, unbekannte Felder und Nicht-Einstellungen (Bilddaten) lehnt der Server ab. Der JS-Zugriff steht in `js/gesten/gesten-steuerung.js` (über `benutzer.js`).
+- **Dateien** unter `wwwroot/js/gesten/` (Teil Oberfläche): `gesten-text.js` (Einstellung, Liste, Status, Stellschrauben, Skelett, Punktfolge – rein), `gesten-steuerung.js` (Steuerung mit Attrappe testbar; `import('./gesten.js')` nur beim Einschalten), `gesten-ausloesen-logik.js` und `gesten-ausloesen.js` (Entscheidung und Ausführung der Schritt-Gesten), `gesten-umgebung.js` (das Dokument lesen, Register bedienen), `gesten-status.js`, `gesten-skelett.js`, `gesten-dialog-text.js` und `gesten-dialog.js`, `gesten-oberflaeche.js` (Verdrahtung); dazu `css/gesten.css`. Geändert: `aktionen-ansicht.js` (Aktionen), `aktionen-projekt.js` (Dialog), `statusleiste.js`, `menueband.js` (Ereignis `hlks-aktionszustand`), `dialoge.js` (Meldung `ersetze`/`dauer`), `fenster.js` und `anordnung.js` (`reiterWechseln`, `reiterNachbar`).
+- **Annahmen:** Wisch nach rechts bzw. runter ist vorwärts (nächster Reiter, nächste Seite, weiter nach unten); die Zuordnung steht allein in `gesten-ausloesen-logik.js` (`SCHRITT`). Schritt-Gesten im Testfeld löst die Oberfläche selbst nicht aus (auch wenn `gesten.js` sie weiter meldet).
+
+### Prüfen
+- **Tests:** Node `gesten-ausloesen.test.mjs` (Einstellung, Liste, Status, Stellschrauben, Skelett, Punktfolge, Auslösen mit Attrappe von `gesten.js`, Steuerung ohne Last, Dialogtexte, Kürzel ohne Kollision, keine Bilddaten, Anleitung); Web `GestenEinstellungTests` (Rundlauf, Vorgaben, Fehlerfälle).
+- **Nur mit Kamera am Desktop prüfbar** (Hauptlauf, Abnahme am realen Projekt Test_praxis): Fehlauslösungen bei normaler Arbeit, Bildrate der 3D-Ansicht mit und ohne Gesten, ob Wisch nach rechts als «nächster» natürlich ist, die Namen der Kameras im Dialog.
+- **Anleitung:** Kapitel «Gesten am Arbeitsplatz» (`mg`) in `berichte/anleitung/inventar.json`; Bilder folgen durch den Hauptlauf (Vorgaben im Feld «bild»).

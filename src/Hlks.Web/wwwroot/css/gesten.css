@@ -1,0 +1,46 @@
+/* Gesten am Arbeitsplatz (Modul G, entwurf/modul-gesten.md): Symbol in der Statusleiste, Handskelett, Dialog «Gesten». Farben aus den Variablen von hlks.css (hell und dunkel). */
+
+/* Statusleiste: vier Zustände – aus (grau), bereit (blau), Hand erkannt (grün), Geste aktiv (fett, Akzent) – und «startet» (gelb). */
+.sl-gesten { display: inline-flex; align-items: center; gap: 4px; border: none; background: none; padding: 0 4px; cursor: pointer; border-radius: var(--radius); color: var(--text-leise); white-space: nowrap; font: inherit; }
+.sl-gesten:hover { background: var(--ob-hover); }
+.sl-gesten[hidden] { display: none; }
+.sl-gesten .sl-gesten-sym { display: inline-flex; }
+.sl-gesten.aus { color: var(--text-leise); }
+.sl-gesten.startet { color: var(--warnung); }
+.sl-gesten.bereit { color: var(--akzent); }
+.sl-gesten.hand { color: var(--ok); }
+.sl-gesten.aktiv { color: var(--akzent-text); background: var(--akzent); font-weight: 600; }
+
+/* Handskelett unten rechts über der Statusleiste: nur Linien, kein Kamerabild; blockiert keine Mausklicks. Die Einblendungen (#meldungen) rücken darüber (--meldungen-unten, gesten-skelett.js). */
+#gesten-skelett { position: fixed; right: 12px; bottom: calc(var(--hoehe-status) + 8px); width: 160px; height: 120px; z-index: 105; pointer-events: none;
+  background: color-mix(in srgb, var(--flaeche) 82%, transparent); border: 1px solid var(--rand); border-radius: var(--radius); color: var(--auswahl); box-shadow: var(--schatten); }
+#gesten-skelett[hidden] { display: none; }
+#gesten-skelett canvas { display: block; width: 160px; height: 120px; }
+#meldungen { bottom: calc(var(--hoehe-status) + 10px + var(--meldungen-unten, 0px)); }
+
+/* Dialog «Gesten» */
+.gd { display: flex; flex-direction: column; gap: 10px; }
+.gd section { display: flex; flex-direction: column; gap: 4px; padding: 6px 8px; border: 1px solid var(--rand-leise); border-radius: var(--radius); }
+.gd section > b { font-weight: 600; }
+.gd-klein { font-size: 11px; margin: 0; }
+.gd-kopf { gap: 4px; }
+.gd-schalter { display: flex; align-items: center; gap: 6px; font-weight: 600; cursor: pointer; }
+.gd-status { font-weight: 600; color: var(--text-leise); }
+.gd-status.bereit { color: var(--akzent); }
+.gd-status.hand { color: var(--ok); }
+.gd-status.aktiv { color: var(--akzent); }
+.gd-status.startet { color: var(--warnung); }
+.gd-fehler { color: var(--fehler); }
+.gd-fehler[hidden] { display: none; }
+.gd-zeile { display: grid; grid-template-columns: 170px 1fr; gap: 8px; align-items: center; }
+.gd-zeile.gd-haken { grid-template-columns: 1fr; }
+.gd-zeile > .dlg-knopf { justify-self: start; }
+.gd-etikett { color: var(--text-leise); }
+.gd-belegung { display: flex; flex-direction: column; gap: 4px; }
+.gd-liste th, .gd-liste td, .gd-schrauben th, .gd-schrauben td { vertical-align: top; }
+.gd-schraube { width: 90px; }
+.gd-schraube-zeile.geaendert .gd-schraube { border-color: var(--akzent); font-weight: 600; }
+.gd-test-liste { margin: 0; padding-left: 18px; font-family: var(--schrift-mono); font-size: 11px; }
+.gd-test-leer { margin: 0; }
+.gd-aufnahme .gd-zeile { grid-template-columns: auto auto; justify-content: start; }
+.dlg.gesten .dlg-knopf:disabled { opacity: .5; cursor: default; }

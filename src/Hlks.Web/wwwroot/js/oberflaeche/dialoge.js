@@ -148,22 +148,28 @@ export async function eingabe(titel, feld, vorgabe = '', { leerErlaubt = false, 
 
 // ------------------------------------------------------------------------------------------------ Meldungen
 
-/** Kurze Einblendung unten rechts. opt.vorschlag: zweiter Satz mit Weg zur Lösung. */
+/**
+ * Kurze Einblendung unten rechts. opt.vorschlag: zweiter Satz mit Weg zur Lösung.
+ * opt.ersetze: Schlüssel; eine noch sichtbare Meldung mit demselben Schlüssel wird ersetzt statt gestapelt (Gesten: «Reiter: …» bei schnellen Wischen).
+ * opt.dauer: Anzeigedauer in ms (Vorgabe nach Art).
+ */
 export function meldung(text, art = 'info', opt = {}) {
   const arten = ['info', 'ok', 'warnung', 'fehler'];
   if (!arten.includes(art)) art = 'info';
   if (art === 'fehler') console.error(text, opt.vorschlag ?? '');
   const ort = document.getElementById('meldungen');
   if (!ort) { console.log(art, text); return; }
+  if (opt.ersetze) for (const alt of [...ort.children]) if (alt.dataset.ersetze === opt.ersetze) alt.remove();
   const m = document.createElement('div');
   m.className = 'meldung ' + art;
+  if (opt.ersetze) m.dataset.ersetze = opt.ersetze;
   m.innerHTML = `<div class="m-text"></div>${opt.vorschlag ? '<div class="m-vorschlag"></div>' : ''}`;
   m.querySelector('.m-text').textContent = text;
   if (opt.vorschlag) m.querySelector('.m-vorschlag').textContent = 'Vorschlag: ' + opt.vorschlag;
   m.onclick = () => m.remove();
   while (ort.children.length >= 4) ort.firstElementChild.remove();
   ort.appendChild(m);
-  const dauer = art === 'fehler' || opt.vorschlag ? 9000 : art === 'warnung' ? 6000 : 3800;
+  const dauer = opt.dauer > 0 ? opt.dauer : art === 'fehler' || opt.vorschlag ? 9000 : art === 'warnung' ? 6000 : 3800;
   setTimeout(() => m.remove(), dauer);
 }
 
