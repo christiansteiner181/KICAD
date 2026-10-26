@@ -3,6 +3,13 @@
 Stand 26.10.2026 · Sitzung «Labor-App» (Zweig `claude/labor-app-9c82bf`) · **Freigegeben von Christian am 26.10.2026** («Freigegeben, L0 starten»);
 Bau ab L0. Offene Punkte stehen am Schluss.
 
+> **Neuausrichtung 26.10.2026 (nach L1):** Christian: «ich will im Prüflabor unterschiedliche nicht KICAD spezifische interfaceideen ausprobieren»
+> und «eine app für alles, Idee eine reciverapp die für alle tools genutzt werden kann.» Die Brillen-Seite gilt jetzt nach
+> **`entwurf/xr-empfaenger.md`** (eine App «H+K XR» für alle Werkzeuge, Bedienmuster als Module, Labor mit allgemeinen Szenarien). Überholt sind
+> hier: die zweite APK `src/Hlks.Labor.Quest` (Abschnitte «Projekte», «Trennung der Brillen-Apps …», Ports der Labor-APK), die Stufen L2–L4
+> (gehen in E3, E7, E8 auf). Gültig bleiben: PC-Teil `src/Hlks.Labor`, Ablage, Bedienstandard (dort um die Musterwahl erweitert), Gestenformat,
+> Testraum, Übergabe Modul G.
+
 ## Anlass
 
 Christian, 26.10.2026: «VR-Labor möchte ich als eigenständige App auslagern. Dies dient nur dazu die Funktionalität einer VR-steuerung
