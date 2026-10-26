@@ -139,8 +139,8 @@ test('Der Dialog setzt Server-Text nur maskiert in HTML (esc) und öffnet die Se
   assert.doesNotMatch(d, /fetch\(/, 'der Dialog geht nur über api.js');
 });
 
-test('Verdrahtung: Aktion im Register Ansicht, Symbol, Stilblatt; der eine VR-Knopf geht ohne VR im Browser über die Brille', () => {
-  assert.match(lies('aktionen-quest.js'), /id: 'ansicht\.questVerbinden'.*register: 'ansicht'.*gruppe: 'Fenster'/s);
+test('Verdrahtung: Aktion im Register XR, Symbol, Stilblatt; der eine VR-Knopf geht ohne VR im Browser über die Brille', () => {
+  assert.match(lies('aktionen-quest.js'), /id: 'ansicht\.questVerbinden'.*register: 'xr'.*gruppe: 'Brille'/s);
   assert.match(lies('aktionen.js'), /import '\.\/aktionen-quest\.js'/);
   assert.match(lies('symbole.js'), /questVerbinden: '/);
   assert.match(lies('../../index.html'), /css\/quest\.css/);
