@@ -187,10 +187,20 @@ function eingabe() {
   if (aufnahme) aufnahme.eingaben.push(Math.round((letzteEingabe - aufnahme.t0) * 10) / 10);
 }
 
+/** KICAD gilt als «im Hintergrund», wenn die Seite versteckt ist oder das Fenster seit FOKUS_WEG_MS keinen Fokus hat. Grund (Christian 27.10.2026: «scheinbar ist die
+ *  kamera für andere anwendungen blockiert»): ein Fenster hinter anderen ist nicht «hidden» und hielt die Kamera fest – andere Programme bekamen sie nicht. */
+const FOKUS_WEG_MS = 2000;
+let fokusZeit = 0;
+function imHintergrund() {
+  return document.visibilityState === 'hidden' || (typeof document.hasFocus === 'function' && !document.hasFocus());
+}
+function fokusWeg() { clearTimeout(fokusZeit); fokusZeit = setTimeout(sichtbarkeit, FOKUS_WEG_MS); }
+function fokusDa() { clearTimeout(fokusZeit); sichtbarkeit(); }
+
 async function sichtbarkeit() {
   const l = lauf;
   if (!l || typeof document === 'undefined') return;
-  if (document.visibilityState === 'hidden') {
+  if (imHintergrund()) {
     if (l.versteckt) return;
     l.versteckt = true;
     clearTimeout(l.zeitgeber);
@@ -248,6 +258,8 @@ export async function starten({ hand = 'links', kameraId = null, stellschrauben 
       window.addEventListener('pointerdown', eingabe, true);
       window.addEventListener('keydown', eingabe, true);
       document.addEventListener('visibilitychange', sichtbarkeit);
+      window.addEventListener('blur', fokusWeg);
+      window.addEventListener('focus', fokusDa);
       zustandMelden('bereit');
       planen(l, 0);
     } catch (e) {
@@ -292,6 +304,9 @@ function aufraeumen(l) {
   window.removeEventListener('pointerdown', eingabe, true);
   window.removeEventListener('keydown', eingabe, true);
   document.removeEventListener('visibilitychange', sichtbarkeit);
+  window.removeEventListener('blur', fokusWeg);
+  window.removeEventListener('focus', fokusDa);
+  clearTimeout(fokusZeit);
   logik = L.neuerZustand({ hand: einst.hand, stellschrauben: einst.stellschrauben });
 }
 
