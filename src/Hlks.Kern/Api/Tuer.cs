@@ -69,7 +69,13 @@ public static class Tuer
     }
 
     /// <summary>Führt einen Befehl aus (inkl. rueckgaengig, wiederholen, synchronisieren und paket_zuruecknehmen {paket, akteurArt?}).</summary>
-    public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false) => name switch
+    public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false)
+    {
+        par = Projekt.TrockenlaufAusParametern(par, ref trockenlauf);   // auch für rueckgaengig, wiederholen, paket_zuruecknehmen
+        return BefehlOhneTrockenlaufParameter(p, name, par, trockenlauf);
+    }
+
+    static object BefehlOhneTrockenlaufParameter(Projekt p, string name, JsonObject? par, bool trockenlauf) => name switch
     {
         "rueckgaengig" => p.Rueckgaengig(trockenlauf),
         "wiederholen" => p.Wiederholen(trockenlauf),

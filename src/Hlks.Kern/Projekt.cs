@@ -131,7 +131,17 @@ public sealed class Projekt
     public BefehlsErgebnis Ausfuehren(string befehl, JsonObject? parameter = null, bool trockenlauf = false)
     {
         IBefehl b;
-        try { b = Befehle.Hole(befehl); }
+        try
+        {
+            b = Befehle.Hole(befehl);
+            parameter = TrockenlaufAusParametern(parameter, ref trockenlauf);
+            // Unbekannte Parameter ablehnen statt still übergehen (Gesamtschau 30.10.2026, P7): ein Tippfehler oder ein
+            // Parameter eines anderen Befehls soll nicht zu einer Änderung führen, die so nicht gemeint war.
+            var fremd = parameter?.Select(x => x.Key).Where(n => b.Parameter.All(d => d.Name != n)).ToList() ?? [];
+            if (fremd.Count > 0)
+                throw new HlksFehler($"Unbekannte Parameter: {string.Join(", ", fremd)}.",
+                    b.Parameter.Count == 0 ? $"{b.Name} hat keine Parameter." : $"Gültig für {b.Name}: {string.Join(", ", b.Parameter.Select(d => d.Name))}.");
+        }
         catch (HlksFehler f) { return Abgelehnt(befehl, trockenlauf, f); }
         var k = new Kontext(this, Modell.Kopie(), NeueHerkunft(b.Name)) { Trockenlauf = trockenlauf };
         try
@@ -147,6 +157,20 @@ public sealed class Projekt
         var r = Uebernehmen(b.Name, parameter, k.Operationen, k.Arbeit, k.Hinweise, trockenlauf, null, "lokal");
         r.Lage = k.Lage;
         return r;
+    }
+
+    /// <summary>«trockenlauf» darf auch unter den Parametern stehen (HTTP-Körper, KI). Bis 30.10.2026 wurde er dort still übergangen und der
+    /// Befehl ausgeführt (Gesamtschau P7). Gibt die Parameter ohne «trockenlauf» zurück; das Original bleibt unverändert.</summary>
+    public static JsonObject? TrockenlaufAusParametern(JsonObject? parameter, ref bool trockenlauf)
+    {
+        if (parameter is null || !parameter.ContainsKey("trockenlauf")) return parameter;
+        var wert = parameter["trockenlauf"];
+        if (wert is not JsonValue v || !v.TryGetValue<bool>(out var t))
+            throw new HlksFehler("Parameter «trockenlauf» muss true oder false sein.");
+        trockenlauf |= t;
+        var ohne = parameter.DeepClone().AsObject();
+        ohne.Remove("trockenlauf");
+        return ohne;
     }
 
     static BefehlsErgebnis Abgelehnt(string befehl, bool trockenlauf, HlksFehler f) => new()

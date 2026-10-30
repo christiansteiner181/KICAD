@@ -87,6 +87,12 @@ Ziel: ein ehrliches, überprüftes Bild dessen, was heute steht, bevor bereinigt
 ## Phase 1 – Grundmodule bereinigen
 Nutzung, Anzeigen, Verhalten, Logik, Familien. Was gebaut ist, soll sich so verhalten, wie Christian es von Revit und HKAP gewohnt ist.
 
+**Reihenfolge freigegeben 30.10.2026** (Christian: «Ja, freigeben», Vorschlag aus `berichte/gesamtschau-2026-10.md`):
+1 Sofortkorrekturen (P7 Trockenlauf/unbekannte Parameter, Altlasten, Arbeitskopien aus OneDrive, `inventar.json` ohne XR) ·
+2 Familien offline + Grundausstattung abschliessen · 3 Leistung Kern/Oberfläche (H1, H2, M2, M3) · 4 Protokoll B + Dateiausgaben als Befehle (M5) ·
+5 offene Abnahmen 3, 3b, 3c, 4A, 7A, 7B, G am neuen Test_praxis · 6 Datenqualität Kataloge · 7 Kontrollliste neu · 8 Rest (M1, G4, Quelltext-Tests,
+Zweig Modul 5 neu aufsetzen). Die Tabelle unten bleibt die Sammlung der offenen Punkte je Bereich.
+
 | Bereich | Module | Offene Punkte (Stand 22.10.2026) |
 | --- | --- | --- |
 | Datenmodell, Gerüst, Explorer, live | 0a, 0b | Mängel aus der Kontrollliste (Artifact, Sammlung `pruefung`) |

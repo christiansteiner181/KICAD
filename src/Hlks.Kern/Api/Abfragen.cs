@@ -102,7 +102,7 @@ public sealed class Abfragen(Projekt p)
         }).ToArray());
         return new JsonObject
         {
-            ["hinweis"] = "Alle Längen in mm, Koordinaten x Ost, y Nord, z über ±0.00. Elemente über Kennzeichen ansprechen. Jeder Befehl kann mit trockenlauf=true geprüft werden.",
+            ["hinweis"] = "Alle Längen in mm, Koordinaten x Ost, y Nord, z über ±0.00. Elemente über Kennzeichen ansprechen. Jeder Befehl kann mit trockenlauf=true geprüft werden (als Parameter oder über HTTP als ?trockenlauf=true); unbekannte Parameter werden abgelehnt.",
             ["befehle"] = befehle,
             ["abfragen"] = abfragen,
         };

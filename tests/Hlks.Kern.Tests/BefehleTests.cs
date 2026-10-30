@@ -812,4 +812,26 @@ public class BefehleTests
         var e = Abgelehnt(Rohr(p, "KW", "RO-1", 1000, new JsonObject { ["nach"] = "HA-1.aus" }));
         Assert.Contains("Fliessrichtung", e.Fehler);
     }
+
+    // ---------------------------------------------------------------- Trockenlauf und unbekannte Parameter (Gesamtschau P7, 30.10.2026)
+
+    [Fact]
+    public void Trockenlauf_UnterDenParametern_SpeichertNichts()
+    {
+        var p = Neu();
+        var r = Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["kennzeichen"] = "GEB-9", ["trockenlauf"] = true }));
+        Assert.True(r.Trockenlauf);
+        Assert.Null(p.Modell.Finde("GEB-9"));
+    }
+
+    [Fact]
+    public void UnbekannterParameter_Abgelehnt_MitGueltigenParametern()
+    {
+        var p = Neu();
+        var r = p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["kennzeichn"] = "GEB-9" });
+        Assert.False(r.Angenommen);
+        Assert.Contains("kennzeichn", r.Fehler);
+        Assert.Contains("kennzeichen", r.Vorschlag);
+        Assert.Null(p.Modell.Finde("GEB-9"));
+    }
 }
