@@ -18,7 +18,8 @@ public static class KiEinordnung
     [
         new("Projekt lesen", "Abfragen über die Tür des Kerns: lesen das Modell, ändern nichts, schreiben keine Dateien ausser Zwischenständen im Projekt.",
             ["faehigkeiten", "projekt_ueberblick", "element_lesen", "elemente_suchen", "system_lesen", "strang_text", "netz_folgen", "raum_inhalt",
-             "mengen", "raumliste", "strangliste", "pruefen", "warum", "aenderungen", "katalog"]),
+             "mengen", "raumliste", "strangliste", "pruefen", "warum", "aenderungen", "katalog",
+             "ausgaben"]),   // Rang 4, 30.10.2026: Ausgabeprotokoll nur lesen
         new("Abgleich", "Holt Änderungen anderer Bearbeiter aus der Ablage ins Modell dieses Laufs; schreibt nichts.", ["synchronisieren"]),
         new("Gebäudeautomation lesen", "Datenpunkte und Messwerte nur lesen (Spezifikation 3c: GA nur lesend); die Datenquelle ist nur lesend.", ["datenpunkte", "zeitreihe"]),
         new("Fachabfragen", "Auswertungen und Listen des Kerns (Hülle, Material, Kollisionen, Aussparungen, Leitungen, Schema, Sanitär, Pläne); nur lesend.",

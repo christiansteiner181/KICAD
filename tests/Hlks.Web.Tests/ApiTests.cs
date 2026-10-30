@@ -410,6 +410,7 @@ public class ApiTests
         ["pruefen"] = "{}",
         ["warum"] = """{"element":"WT-E.02","eigenschaft":"raum"}""",
         ["aenderungen"] = """{"anzahl":5}""",
+        ["ausgaben"] = """{"anzahl":5}""",
         ["katalog"] = "{}",
         ["datenpunkte"] = "{}",
         ["zeitreihe"] = """{"datenpunkt":"DP-WZ1-VOL","von":"2026-10-19T00:00","bis":"2026-10-20T00:00","aufloesungMinuten":120}""",

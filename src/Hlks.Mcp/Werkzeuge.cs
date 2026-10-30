@@ -176,6 +176,11 @@ public sealed partial class Werkzeuge(Projekt projekt)
         [Description("Anzahl (Vorgabe 20)")] double? anzahl = null) =>
         Lauf(() => Antwort(new Abfragen(projekt).Aenderungen(element, Ganz(anzahl, 20))));
 
+    [McpServerTool(Name = "ausgaben"), Description("Ausgabeprotokoll: welche Dateien (Planblatt-/Plansatz-PDF, IFC-Export, Aussparungs-IFC) wann von wem auf welchem Modellstand geschrieben wurden (neueste zuerst; alle Geräte).")]
+    public string Ausgaben(
+        [Description("Anzahl (Vorgabe 50)")] double? anzahl = null) =>
+        Lauf(() => Antwort(Ausgabeprotokoll.Lesen(projekt, Ganz(anzahl, 50))));
+
     [McpServerTool(Name = "katalog"), Description("Katalog: Klassen mit Eigenschaften und Anschlüssen, Medien, Systemtypen.")]
     public string Katalog([Description("Nur diese Klasse")] string? klasse = null) =>
         Lauf(() => Antwort(new Abfragen(projekt).Katalog(klasse)));
