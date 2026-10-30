@@ -960,16 +960,17 @@ public sealed class AuftragDienst
     /// <summary>Kopie von ClaudeCode.FindeExe (HKAP): die neueste claude.exe aus dem Ordner der Claude-App. Seit dem
     /// App-Update vom 02.10.2026 liegt sie eine Ebene tiefer (claude-code\&lt;Version&gt;\&lt;Kennung&gt;\claude.exe statt
     /// claude-code\&lt;Version&gt;\claude.exe); beide Formen. Die Version steht im ersten Ordner unter der Wurzel, bei
-    /// gleicher Version gewinnt die jüngere Datei.</summary>
+    /// gleicher Version gewinnt die jüngere Datei. Befund 30.10.2026: die Store-App legt Claude Code inzwischen unter
+    /// %LOCALAPPDATA%\Claude-Data\claude_&lt;Kennung&gt;\claude-code ab – KI-Aufträge und KI-Palette fanden es nicht mehr.</summary>
     public static string? FindeExe()
     {
+        var lokal = Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData);
+        static string[] Ordner(string pfad) { try { return Directory.GetDirectories(pfad); } catch { return []; } }
         var wurzeln = new[]
         {
             Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData), "Claude", "claude-code"),
-            Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                         "Packages", "Claude_pzs8sxrjxfjjc", "LocalCache", "Roaming", "Claude", "claude-code"),
-        };
-        static string[] Ordner(string pfad) { try { return Directory.GetDirectories(pfad); } catch { return []; } }
+            Path.Combine(lokal, "Packages", "Claude_pzs8sxrjxfjjc", "LocalCache", "Roaming", "Claude", "claude-code"),
+        }.Concat(Ordner(Path.Combine(lokal, "Claude-Data")).Select(d => Path.Combine(d, "claude-code")));
         return wurzeln.Where(Directory.Exists)
             .SelectMany(Ordner)
             .SelectMany(v => new[] { Path.Combine(v, "claude.exe") }
