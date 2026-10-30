@@ -91,12 +91,14 @@ export function projektLeeren() {
 export async function nachladen(ids, info = {}) {
   if (!ids || ids.length === 0) return;
   const r = await senden('/api/elemente', { ids });
-  for (const e of r.elemente) eintragen(e);
+  // Verbindungen der betroffenen Elemente ersetzen (auch unter dem alten Kennzeichen): /api/elemente liefert sie mit, das ganze
+  // Modell nachzuladen kostete am echten Projekt je Änderung ~200 ms und ~450 kB (Gesamtschau H2, 30.10.2026)
+  const kz = new Set();
+  for (const id of ids) { const alt = zustand.elemente.get(id); if (alt) kz.add(alt.kennzeichen); }
+  for (const e of r.elemente) { kz.add(e.kennzeichen); eintragen(e); }
   for (const id of r.geloescht) austragen(id);
   zustand.stand = r.stand;
-  // Verbindungen ändern sich mit Elementen; sie sind klein und werden mit dem Modell gesamt nachgeführt
-  const m = await holen('/api/modell');
-  zustand.verbindungen = m.verbindungen;
+  zustand.verbindungen = zustand.verbindungen.filter(v => !kz.has(v.von) && !kz.has(v.nach)).concat(r.verbindungen ?? []);
   melden('modell', { ...info, ids: r.elemente.map(e => e.id), geloescht: r.geloescht });
 }
 

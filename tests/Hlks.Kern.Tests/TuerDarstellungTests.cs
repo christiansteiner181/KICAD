@@ -348,5 +348,9 @@ public class TuerDarstellungTests
         var geloescht = nachher["geloescht"]!.AsArray().Select(x => x!.GetValue<string>()).ToList();
         Assert.Equal([id, "gibt-es-nicht"], geloescht);
         Assert.NotNull(nachher["stand"]);
+        // die Verbindungen der genannten Elemente kommen mit (die Oberfläche lädt das Modell nicht mehr ganz nach)
+        var vb = nachher["verbindungen"]!.AsArray();
+        Assert.Equal(p.Modell.VerbindungenVon(wc).Count(), vb.Count);
+        Assert.All(vb, v => Assert.True(v!["von"]!.GetValue<string>() == "WC-E.02" || v["nach"]!.GetValue<string>() == "WC-E.02"));
     }
 }

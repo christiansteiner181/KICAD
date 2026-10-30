@@ -54,23 +54,30 @@ public static class Darstellung
         ["projekt"] = p.Kopf.Name,
         ["stand"] = Json.Knoten(p.Stand),
         ["elemente"] = new JsonArray(p.Modell.Elemente.OrderBy(e => e.Kennzeichen, StringComparer.OrdinalIgnoreCase).Select(e => (JsonNode)Element(p, e)).ToArray()),
-        ["verbindungen"] = new JsonArray(p.Modell.Verbindungen.Select(v => (JsonNode)new JsonObject
-        {
-            ["id"] = v.Id,
-            ["von"] = p.Modell.Finde(v.Von.Element)?.Kennzeichen, ["vonAnschluss"] = v.Von.Anschluss,
-            ["nach"] = p.Modell.Finde(v.Nach.Element)?.Kennzeichen, ["nachAnschluss"] = v.Nach.Anschluss,
-        }).ToArray()),
+        ["verbindungen"] = new JsonArray(p.Modell.Verbindungen.Select(v => (JsonNode)Verbindung(p, v)).ToArray()),
+    };
+
+    static JsonObject Verbindung(Projekt p, Verbindung v) => new()
+    {
+        ["id"] = v.Id,
+        ["von"] = p.Modell.Finde(v.Von.Element)?.Kennzeichen, ["vonAnschluss"] = v.Von.Anschluss,
+        ["nach"] = p.Modell.Finde(v.Nach.Element)?.Kennzeichen, ["nachAnschluss"] = v.Nach.Anschluss,
     };
 
     /// <summary>Nur die genannten Elemente (nach einer Änderung); gelöschte Ids kommen unter «geloescht».</summary>
     public static JsonObject Elemente(Projekt p, IEnumerable<string> ids)
     {
         var vorhanden = new JsonArray(); var geloescht = new JsonArray();
+        var verbindungen = new Dictionary<string, JsonNode>(StringComparer.Ordinal);
         foreach (var id in ids.Distinct())
         {
             var e = p.Modell.Finde(id);
-            if (e is null) geloescht.Add(id); else vorhanden.Add(Element(p, e));
+            if (e is null) { geloescht.Add(id); continue; }
+            vorhanden.Add(Element(p, e));
+            foreach (var v in p.Modell.VerbindungenVon(e.Id)) verbindungen.TryAdd(v.Id, Verbindung(p, v));
         }
-        return new JsonObject { ["stand"] = Json.Knoten(p.Stand), ["elemente"] = vorhanden, ["geloescht"] = geloescht };
+        // verbindungen: alle heutigen Verbindungen der genannten Elemente – die Oberfläche ersetzt damit deren Verbindungen, statt das ganze
+        // Modell nachzuladen (Gesamtschau H2, 30.10.2026)
+        return new JsonObject { ["stand"] = Json.Knoten(p.Stand), ["elemente"] = vorhanden, ["geloescht"] = geloescht, ["verbindungen"] = new JsonArray([.. verbindungen.Values]) };
     }
 }
