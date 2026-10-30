@@ -738,6 +738,31 @@ sealed class Aussparungsplanung(Kontext k)
 
     // ------------------------------------------------------------------ Bedarf
 
+    /// <summary>Ist die Leitung am Anschluss (anfang | ende) mit einem Formteil, einer Armatur oder einer weiteren Leitung verbunden?</summary>
+    bool Fortgesetzt(Pruefkoerper l, string anschluss)
+    {
+        if (l.ElementId is not { } id) return false;
+        foreach (var v in m.VerbindungenVon(id))
+            if (v.Gegenueber(id, anschluss) is { } gp && m.Finde(gp.Element) is { } e
+                && (k.Katalog.IstArt(e, "Formteil") || k.Katalog.IstArt(e, "Leitung") || k.Katalog.IstArt(e, "Armatur")))
+                return true;
+        return false;
+    }
+
+    /// <summary>Durchgang des Teilstücks mit über den Anfang bzw. das Ende hinaus verlängerter Achse (5 m) – der Teil, der die Mitte des
+    /// ursprünglichen Durchgangs enthält; null, wenn das Bauteil kein Netz hat oder nichts gefunden wird.</summary>
+    static Durchgang? Verlaengert(Pruefkoerper l, Pruefkoerper b, Durchgang g, bool amAnfang, bool amEnde)
+    {
+        if (b.Netz is not { } n || g.Teilstueck + 1 >= l.Achse.Count) return null;
+        var a = l.Achse[g.Teilstueck]; var e = l.Achse[g.Teilstueck + 1];
+        var d = (e - a).Einheit();
+        const double Weiter = 5000;
+        var a2 = amAnfang ? a - d * Weiter : a; var e2 = amEnde ? e + d * Weiter : e;
+        foreach (var x in Durchgaenge.Finden(n, a2, e2, g.Teilstueck))
+            if ((g.Mitte - x.Eintritt).Mal(d) >= -Tol && (x.Austritt - g.Mitte).Mal(d) >= -Tol) return x;
+        return null;
+    }
+
     List<Aussparungsbedarf> BedarfRechnen(List<Pruefkoerper> leitungen, List<Pruefkoerper> bereich, Pruefkoerpermenge menge)
     {
         var aus = new List<Aussparungsbedarf>();
@@ -745,9 +770,16 @@ sealed class Aussparungsplanung(Kontext k)
         var idx = new Raumindex<Pruefkoerper>(bereich, b => b.Huelle);
         foreach (var l in leitungen)
             foreach (var b in idx.Kandidaten(l.Huelle).OrderBy(x => x.Kennung, StringComparer.Ordinal))
-                foreach (var g in Zusammensetzen(Durchgaenge.Finden(l, b)))
+                foreach (var g0 in Zusammensetzen(Durchgaenge.Finden(l, b)))
                 {
                     var wer = $"{l.Kennzeichen} durch {Name(b)}";
+                    // Rang 5 (31.10.2026): beginnt bzw. endet das Rohr im Bauteil an einem Formteil oder einer weiteren Leitung (T-Stück im
+                    // Deckenbereich eines Fallstrangs), läuft der Leitungszug weiter: der Durchgang gilt über die ganze Bauteildicke (Achse über
+                    // das Formteil hinaus verlängert); die gleichen Vorschläge der Teilstücke fasst die Sammelaussparung zusammen. Nur ein
+                    // offenes Ende bzw. ein Anschluss an ein Gerät gilt als Beginn im Bauteil.
+                    var g = g0;
+                    bool fa = g.BeginntInnen && Fortgesetzt(l, "anfang"), fe = g.EndetInnen && Fortgesetzt(l, "ende");
+                    if ((fa || fe) && Verlaengert(l, b, g, fa, fe) is { } gv) g = gv;
                     if (g.BeginntInnen || g.EndetInnen)
                     {
                         Liste("keine Aussparung: Leitung beginnt bzw. endet im Bauteil",

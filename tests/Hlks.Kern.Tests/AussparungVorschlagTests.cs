@@ -142,6 +142,26 @@ public class AussparungVorschlagTests
 
     /// <summary>Geschoss-Regel (Hauptlauf 19.10.2026, SIA 400:2000 B.10.3 / SIA 410/2 Ziff. 2.3): Deckenaussparungen gehören ins
     /// Geschoss unter der Decke – D-1 (im OG, z 2750 … 3000): Unterkante 2750 − 1 = 2749 im Band des EG (0 … 3000) → EG.</summary>
+    /// <summary>Rang 5 (31.10.2026, Befund Test_praxis): ein Fallstrang, der in der Decke an einem T-Stück geteilt ist, braucht trotzdem
+    /// eine Aussparung – die beiden Teilstücke sind verbunden, keines beginnt «wirklich» in der Decke. Ein offenes Ende in der Decke nicht.</summary>
+    [Fact]
+    public void Leitungszug_InDerDeckeGeteilt_GibtEineAussparung_OffenesEndeNicht()
+    {
+        var p = Wandprojekt();
+        Decke(p);
+        Ok(Modul3Hilfe.Rohr(p, "RO-1", "DN 50", [3000, 2000, 2500], [3000, 2000, 2875]));
+        Ok(Modul3Hilfe.Rohr(p, "RO-2", "DN 50", [3000, 2000, 2875], [3000, 2000, 3500]));
+        Ok(Modul3Hilfe.Rohr(p, "RO-3", "DN 50", [1000, 2000, 2875], [1000, 2000, 3500]));   // beginnt offen in der Decke
+        Ok(p.Ausfuehren("verbinden", new JsonObject { ["von"] = "RO-1.ende", ["nach"] = "RO-2.anfang" }));
+        var e = Ok(Vorschlagen(p));
+        var a = Aussparungen(p);
+        var zug = Assert.Single(a, x => LeitungKz(p, x).Contains("RO-1"));
+        Assert.Equal(["RO-1", "RO-2"], LeitungKz(p, zug).Order());
+        Etwa(250, zug.Zahl("tiefe"), was: "ganze Deckendicke");
+        Assert.DoesNotContain(a, x => LeitungKz(p, x).Contains("RO-3"));
+        Assert.Contains(e.Hinweise, h => h.Contains("RO-3 durch D-1: die Leitung beginnt im Bauteil"));
+    }
+
     [Fact]
     public void Kanal400x200_DurchDecke_Rechteckig_Koten_GeschossUnterDerDecke()
     {
