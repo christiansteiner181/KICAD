@@ -511,6 +511,30 @@ public sealed partial class Leitungsserie
     /// oder abgelehnt mit Grund und Vorschlag – wirft nie für fachliche Gründe.</summary>
     public FormteilWahl Formteil(Modell m, Katalog k, string art, Leitungsgroesse g1, Leitungsgroesse? g2 = null, double? winkel = null)
     {
+        var eigen = FormteilEigen(m, k, art, g1, g2, winkel);
+        if (eigen.Ok || Block.Mischbar is not { Count: > 0 } mischbar) return eigen;
+        // regeln.mischbar (30.10.2026): fehlt das eigene Formteil, das passende einer mischbaren Serie (z. B. Geberit PE in Silent-db20)
+        foreach (var bezug in mischbar)
+        {
+            var fam = FamilienMitId(m, bezug).FirstOrDefault()
+                      ?? m.DerKlasse(Familien.Klasse).FirstOrDefault(f => string.Equals(f.Name?.Trim(), bezug, StringComparison.OrdinalIgnoreCase));
+            if (fam is null || fam.Id == Familie.Id) continue;
+            Leitungsserie andere;
+            try { andere = Von(m, k, fam); } catch (HlksFehler) { continue; }
+            var w = andere.FormteilEigen(m, k, art, g1, g2, winkel);
+            if (!w.Ok) continue;
+            var text = $"{Artname(art)} aus der mischbaren Serie {andere.Bezeichnung} ({eigen.Fehler})";
+            return new FormteilWahl
+            {
+                Art = w.Art, Familie = w.Familie, Def = w.Def, Typ = w.Typ, Exemplar = w.Exemplar, Geometrie = w.Geometrie, Vertauscht = w.Vertauscht,
+                Groesse1 = w.Groesse1, Groesse2 = w.Groesse2, Abzweigwinkel = w.Abzweigwinkel, Frei = w.Frei, Hinweis = w.Hinweis is null ? text : text + " " + w.Hinweis,
+            };
+        }
+        return eigen;
+    }
+
+    FormteilWahl FormteilEigen(Modell m, Katalog k, string art, Leitungsgroesse g1, Leitungsgroesse? g2, double? winkel)
+    {
         FormteilWahl Nein(string grund, string vorschlag) => new() { Art = art, Fehler = grund, Vorschlag = vorschlag };
         g1 = Norm(g1);
         if (g2 is { } gn) g2 = Norm(gn);

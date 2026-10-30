@@ -210,7 +210,8 @@
             "winkel": { "description": "Erlaubte Bogenwinkel in Grad (Liste) oder «frei»", "oneOf": [{ "type": "array", "items": { "type": "number" } }, { "const": "frei" }] },
             "biegeradius": { "$ref": "#/$defs/zahl" },
             "abzweig": { "enum": ["tstueck"] },
-            "abzweigwinkel": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 90 }, "description": "Erlaubte Abzweigwinkel der T-Stücke in Grad (Winkel zwischen Durchgang und Abzweig, 90 = rechtwinklig; z. B. 45 bei Abwasser-Abzweigen); fehlt = [90]. Die T-Stück-Familie trägt dann einen Parameter winkel; Abzweig c bei Lc·(−cos w, sin w, 0)" }
+            "abzweigwinkel": { "type": "array", "minItems": 1, "uniqueItems": true, "items": { "type": "number", "exclusiveMinimum": 0, "maximum": 90 }, "description": "Erlaubte Abzweigwinkel der T-Stücke in Grad (Winkel zwischen Durchgang und Abzweig, 90 = rechtwinklig; z. B. 45 bei Abwasser-Abzweigen); fehlt = [90]. Die T-Stück-Familie trägt dann einen Parameter winkel; Abzweig c bei Lc·(−cos w, sin w, 0)" },
+            "mischbar": { "type": "array", "uniqueItems": true, "items": { "type": "string" }, "description": "ids bzw. Namen anderer Leitungsserien, deren Formteile genommen werden, wenn die eigene Formteil-Familie keinen passenden Typ hat (z. B. Geberit PE in Silent-db20)" }
           }
         },
         "frei": {

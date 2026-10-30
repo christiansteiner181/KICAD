@@ -159,6 +159,29 @@ public class RoutingAbzweigwinkelTests
 
     // ------------------------------------------------------------------ Formteilwahl
 
+    /// <summary>regeln.mischbar (30.10.2026, Christian: «geberit silent und pe können gemischt werden»): fehlt das eigene T-Stück, nimmt die
+    /// Formteilwahl das der mischbaren Serie; ohne mischbar bleibt es abgelehnt.</summary>
+    [Fact]
+    public void Formteilwahl_MischbareSerie_LiefertFehlendesFormteil()
+    {
+        var p = MitAbwasser();
+        var a = Familie("test_abwasserserie");
+        a["id"] = "fam-test-abwasserserie-ohne-t"; a["name"] = "Testabwasserserie ohne T (fiktiv)";
+        a["leitung"]!["formteile"]!["tstueck"] = new JsonObject { ["familie"] = "fam-test-fehlt" };
+        Ok(p.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = a.DeepClone() }));
+        var dn100 = Leitungsgroesse.Rohr(100);
+        var ohne = Leitungsserie.Hole(p.Modell, p.Katalog, "fam-test-abwasserserie-ohne-t").Formteil(p.Modell, p.Katalog, "tstueck", dn100, dn100, 88.5);
+        Assert.False(ohne.Ok);
+
+        a["leitung"]!["regeln"]!["mischbar"] = new JsonArray("fam-test-abwasserserie");
+        Ok(p.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = a, ["familie"] = "fam-test-abwasserserie-ohne-t" }));
+        var w = Leitungsserie.Hole(p.Modell, p.Katalog, "fam-test-abwasserserie-ohne-t").Formteil(p.Modell, p.Katalog, "tstueck", dn100, dn100, 88.5);
+        Assert.True(w.Ok, w.Fehler);
+        Assert.Equal("fam-test-abwasser-t", Familien.DefinitionsId(w.Familie!));
+        Assert.Equal("DN 100", w.Typ);
+        Assert.Contains("mischbaren Serie", w.Hinweis);
+    }
+
     [Fact]
     public void Formteilwahl_Abzweigwinkel_ToleranzExemplarUndAblehnung()
     {

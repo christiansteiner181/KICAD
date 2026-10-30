@@ -259,6 +259,9 @@ public sealed class FamLeitung
     /// <summary>regeln.abzweigwinkel (Modul 3, B7): erlaubte Abzweigwinkel der T-Stücke in Grad (0 &lt; w ≤ 90, Winkel zwischen
     /// Durchgang und Abzweig); null = nicht angegeben (gilt als [90], rechtwinklig).</summary>
     public IReadOnlyList<double>? Abzweigwinkel { get; init; }
+    /// <summary>regeln.mischbar (30.10.2026, Christian: «geberit silent und pe können gemischt werden»): ids bzw. Namen anderer
+    /// Leitungsserien, deren Formteile die Formteilwahl nimmt, wenn die eigene Formteil-Familie keinen passenden Typ hat; null = keine.</summary>
+    public IReadOnlyList<string>? Mischbar { get; init; }
     /// <summary>leitung.frei (nur Kanalserien): freie Grösse mit Vorlage-Typ, Grenzen und Schritt; null = nur die Typen.</summary>
     public FamFrei? Frei { get; init; }
 
@@ -541,11 +544,11 @@ public sealed class FamilieDef
         else if (o["formteile"] is not null) Fehl("leitung.formteile", "formteile muss ein Objekt sein", "{ \"bogen\": { \"familie\": \"…\" }, \"tstueck\": …, \"reduktion\": … }");
 
         // Regeln
-        bool winkelFrei = false; List<double>? winkel = null; string? abzweig = null; FamZahl? biegeradius = null; List<double>? abzweigwinkel = null;
+        bool winkelFrei = false; List<double>? winkel = null; string? abzweig = null; FamZahl? biegeradius = null; List<double>? abzweigwinkel = null; List<string>? mischbar = null;
         if (o["regeln"] is JsonObject ro)
         {
             foreach (var (feld, _) in ro)
-                if (feld is not ("winkel" or "biegeradius" or "abzweig" or "abzweigwinkel")) Fehl("leitung.regeln", $"Unbekanntes Feld «{feld}»", "Erlaubt: winkel, biegeradius, abzweig, abzweigwinkel");
+                if (feld is not ("winkel" or "biegeradius" or "abzweig" or "abzweigwinkel" or "mischbar")) Fehl("leitung.regeln", $"Unbekanntes Feld «{feld}»", "Erlaubt: winkel, biegeradius, abzweig, abzweigwinkel, mischbar");
             switch (ro["winkel"])
             {
                 case null: break;
@@ -594,6 +597,14 @@ public sealed class FamilieDef
                     Fehl(AwOrt, $"abzweigwinkel {ro["abzweigwinkel"]!.ToJsonString()} ist keine Liste", AwForm);
                     break;
             }
+            if (ro["mischbar"] is JsonArray ma)
+            {
+                mischbar = [];
+                foreach (var x in ma)
+                    if (Text(x)?.Trim() is { Length: > 0 } t && !mischbar.Contains(t, StringComparer.OrdinalIgnoreCase)) mischbar.Add(t);
+                    else Fehl("leitung.regeln.mischbar", $"Eintrag {x?.ToJsonString()} ist keine Serie bzw. doppelt", "Liste der ids (oder Namen) anderer Leitungsserien, z. B. [\"fam-9f55564bd8e8\"].");
+            }
+            else if (ro["mischbar"] is not null) Fehl("leitung.regeln.mischbar", "mischbar muss eine Liste sein", "Liste der ids (oder Namen) anderer Leitungsserien, deren Formteile passen.");
         }
         else if (o["regeln"] is not null) Fehl("leitung.regeln", "regeln muss ein Objekt sein", "{ \"winkel\": [15, 30, 45, 90], \"abzweig\": \"tstueck\" }");
 
@@ -610,7 +621,7 @@ public sealed class FamilieDef
         Leitung = new FamLeitung
         {
             Querschnitt = querschnitt ?? "rund", Groesse = groesse, Aussen = aussen, Innen = innen, Wand = wand, Biegeradius = biegeradius, Kuerzel = kuerzel,
-            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei, Einsatz = einsatz,
+            Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei, Einsatz = einsatz, Mischbar = mischbar,
         };
     }
 
