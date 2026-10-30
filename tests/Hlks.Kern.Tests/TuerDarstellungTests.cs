@@ -35,6 +35,7 @@ public class TuerDarstellungTests
         ["zeitreihe"] = """{"datenpunkt":"DP-WZ1-VOL","von":"2026-10-19T00:00","bis":"2026-10-20T00:00","aufloesungMinuten":120}""",
         ["plan_pdf"] = "{\"planblatt\":\"PB-1\",\"datei\":\"" + PlanPdfDatei + "\"}",   // Planblatt legt der Test vorher an
         ["ifc_pruefen"] = "{\"datei\":\"" + IfcHilfe.Testdaten("minimal_ifc4.ifc").Replace('\\', '/') + "\"}",
+        ["ausgaben"] = """{"anzahl":5}""",   // Rang 4, 30.10.2026: Ausgabeprotokoll
         ["aufbau_rechnen"] = """{"aufbau":"AUF-1"}""",   // Aufbau legt der Test vorher an (das Beispielprojekt hat keinen)
         ["materialien"] = "{}",
         ["huelle_pruefen"] = "{}",
