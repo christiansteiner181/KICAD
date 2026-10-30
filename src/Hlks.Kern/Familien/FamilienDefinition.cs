@@ -144,6 +144,15 @@ public sealed class FamKoerper
     public FamZahl[]? ProfilRechteck { get; init; }
     public List<FamZahl[]>? Pfad { get; init; }
     public FamZahl? Biegeradius { get; init; }
+    // uebergang (Profil bei von = ProfilKreis/ProfilRechteck, bei nach = ProfilNachKreis/ProfilNachRechteck; oben = Lage der Rechteckhöhe)
+    public FamZahl? ProfilNachKreis { get; init; }
+    public FamZahl[]? ProfilNachRechteck { get; init; }
+    public FamZahl[]? Oben { get; init; }
+    // netz (Herstellergeometrie, Ecken in mm, Dreiecke als Eckindizes; verschoben und um z gedreht)
+    public List<double[]>? NetzEcken { get; init; }
+    public List<int[]>? NetzDreiecke { get; init; }
+    public FamZahl[]? Verschiebung { get; init; }
+    public FamZahl? DrehungZ { get; init; }
 }
 
 public sealed class FamAnschluss
@@ -286,7 +295,9 @@ public sealed class FamilieDef
     public static readonly string[] Arten = ["typ", "exemplar"];
     public static readonly string[] Datentypen = ["laenge", "winkel", "zahl", "text", "ja_nein", "medium", "dn"];
     public static readonly string[] Gruppen = ["abmessung", "anschluss", "kennwert", "sonstiges"];
-    public static readonly string[] Koerperarten = ["quader", "zylinder", "kegel", "kugel", "extrusion", "rotation", "sweep"];
+    public static readonly string[] Koerperarten = ["quader", "zylinder", "kegel", "kugel", "extrusion", "rotation", "sweep", "uebergang", "netz"];
+    /// <summary>Höchstzahl Dreiecke eines Körpers «netz» (Familien bleiben handlich; grössere Herstellernetze vorher vereinfachen).</summary>
+    public const int NetzMaxDreiecke = 200_000;
     public static readonly string[] Materialien = ["geraet", "apparat", "armatur", "rohr", "sonst"];
     public static readonly string[] Ebenen = ["xy", "xz", "yz"];
     public static readonly string[] Fluesse = ["rein", "raus", "beide"];
@@ -969,6 +980,16 @@ public sealed class FamilieDef
         return s.Count > 0 ? s : AlleDetailgrade;
     }
 
+    (FamZahl? Kreis, FamZahl[]? Rechteck) ProfilLesen(JsonNode? n, string ort)
+    {
+        if (n is not JsonObject pr) { Fehl(ort, "Profil fehlt", "{ \"kreis\": r } oder { \"rechteck\": [b, h] }"); return (null, null); }
+        if (pr["kreis"] is not null && pr["rechteck"] is not null) Fehl(ort, "Profil hat kreis und rechteck", "Genau eines angeben.");
+        foreach (var (feld, _) in pr) if (feld is not ("kreis" or "rechteck")) Fehl(ort, $"Unbekanntes Feld «{feld}»", "kreis oder rechteck");
+        if (pr["kreis"] is not null) return (Zahl(pr["kreis"], ort + ".kreis"), null);
+        if (pr["rechteck"] is not null) return (null, Punkt(pr["rechteck"], ort + ".rechteck", 2));
+        Fehl(ort, "Profil braucht kreis (Radius) oder rechteck [b, h]"); return (null, null);
+    }
+
     void KoerperLesen(JsonNode? n)
     {
         if (n is null) { Fehl("koerper", "koerper fehlt", "\"koerper\": [] angeben (auch leer)."); return; }
@@ -978,7 +999,8 @@ public sealed class FamilieDef
         {
             ["quader"] = ["von", "bis"], ["zylinder"] = ["von", "nach", "r"], ["kegel"] = ["von", "nach", "r1", "r2"], ["kugel"] = ["mitte", "r"],
             ["extrusion"] = ["ebene", "kontur", "loecher", "von", "bis"], ["rotation"] = ["ebene", "kontur", "achse", "winkel"],
-            ["sweep"] = ["profil", "pfad", "biegeradius"],
+            ["sweep"] = ["profil", "pfad", "biegeradius"], ["uebergang"] = ["von", "nach", "profil", "profil_nach", "oben"],
+            ["netz"] = ["ecken", "dreiecke", "verschiebung", "drehung", "herkunft"],
         };
         int nr = 0;
         foreach (var x in a)
@@ -1041,6 +1063,32 @@ public sealed class FamilieDef
                         Winkel = o["winkel"] is null ? null : Zahl(o["winkel"], ort + ".winkel") };
                     break;
                 }
+                case "uebergang":
+                {
+                    var (k1, q1) = ProfilLesen(o["profil"], ort + ".profil");
+                    var (k2, q2) = ProfilLesen(o["profil_nach"], ort + ".profil_nach");
+                    k = new FamKoerper { Von = Punkt(o["von"], ort + ".von", 3), Nach = Punkt(o["nach"], ort + ".nach", 3), ProfilKreis = k1, ProfilRechteck = q1,
+                        ProfilNachKreis = k2, ProfilNachRechteck = q2, Oben = o["oben"] is null ? null : Punkt(o["oben"], ort + ".oben", 3) };
+                    break;
+                }
+                case "netz":
+                {
+                    var ecken = new List<double[]>(); var dreiecke = new List<int[]>();
+                    if (o["ecken"] is JsonArray ea)
+                        foreach (var e in ea)
+                            if (e is JsonArray ep && ep.Count == 3 && ep.All(c => c is JsonValue cv && cv.TryGetValue<double>(out _))) ecken.Add([.. ep.Select(c => c!.GetValue<double>())]);
+                            else { Fehl(ort + ".ecken", "Jede Ecke ist [x, y, z] mit Zahlen (mm)"); break; }
+                    else Fehl(ort + ".ecken", "ecken fehlt", "Liste von [x, y, z] in mm (z. B. aus dem Befund form3d einer STL/OBJ/STEP-Unterlage)");
+                    if (o["dreiecke"] is JsonArray da)
+                        foreach (var d in da)
+                            if (d is JsonArray dp && dp.Count == 3 && dp.All(c => c is JsonValue cv && cv.TryGetValue<int>(out var ci) && ci >= 0 && ci < ecken.Count)) dreiecke.Add([.. dp.Select(c => c!.GetValue<int>())]);
+                            else { Fehl(ort + ".dreiecke", "Jedes Dreieck ist [i, j, k] mit Indizes in ecken"); break; }
+                    else Fehl(ort + ".dreiecke", "dreiecke fehlt", "Liste von [i, j, k] (Indizes in ecken)");
+                    if (dreiecke.Count > NetzMaxDreiecke) Fehl(ort + ".dreiecke", $"{dreiecke.Count} Dreiecke sind zu viele (höchstens {NetzMaxDreiecke})", "Netz vereinfachen.");
+                    k = new FamKoerper { NetzEcken = ecken, NetzDreiecke = dreiecke, Verschiebung = o["verschiebung"] is null ? null : Punkt(o["verschiebung"], ort + ".verschiebung", 3),
+                        DrehungZ = o["drehung"] is null ? null : Zahl(o["drehung"], ort + ".drehung") };
+                    break;
+                }
                 default:   // sweep
                 {
                     FamZahl? kreis = null; FamZahl[]? rechteck = null;
@@ -1071,6 +1119,8 @@ public sealed class FamilieDef
                 Von = k.Von, Bis = k.Bis, Nach = k.Nach, Mitte = k.Mitte, R = k.R, R1 = k.R1, R2 = k.R2, Ebene = k.Ebene, Kontur = k.Kontur, Loecher = k.Loecher,
                 ExVon = k.ExVon, ExBis = k.ExBis, AchsePunkt = k.AchsePunkt, AchseRichtung = k.AchseRichtung, Winkel = k.Winkel,
                 ProfilKreis = k.ProfilKreis, ProfilRechteck = k.ProfilRechteck, Pfad = k.Pfad, Biegeradius = k.Biegeradius,
+                ProfilNachKreis = k.ProfilNachKreis, ProfilNachRechteck = k.ProfilNachRechteck, Oben = k.Oben, NetzEcken = k.NetzEcken, NetzDreiecke = k.NetzDreiecke,
+                Verschiebung = k.Verschiebung, DrehungZ = k.DrehungZ,
             });
         }
     }

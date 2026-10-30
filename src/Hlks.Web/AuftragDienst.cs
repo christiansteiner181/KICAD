@@ -122,7 +122,7 @@ public sealed class AuftragDienst
         // Orientierung
         "faehigkeiten", "projekt_ueberblick", "katalog", "warum", "aenderungen",
         // Familien
-        "familien", "familie", "anschlusslagen", "familie_ansicht", "familie_entwurf", "familie_aendern", "familie_laden",
+        "familien", "familie", "anschlusslagen", "familie_ansicht", "familie_entwurf", "familie_aendern", "familie_laden", "familie_netz_uebernehmen",
         "familie_vergleichen", "familie_masse", "rueckgaengig", "wiederholen",
         "familien_bibliothek",   // Modul 2, C3: Bibliothek nur lesend (Index, Stand, Versionen, Vorschau)
         "leitungsserie",   // Modul 3: Leitungsserie mit Formteilen je Grösse prüfen (nur lesen)

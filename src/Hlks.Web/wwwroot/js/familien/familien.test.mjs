@@ -196,7 +196,7 @@ test('Typkatalog: Zellen lesen (Zahl, ja/nein, leer), Typ mit Zelle, Kopie, Umbe
 // ================================================================================================ Körper
 
 test('Körper: Felder je Art, Platzhalter, freie Ids, Detailgrad', () => {
-  assert.deepEqual(T.KOERPER_ARTEN.map(([a]) => a), ['quader', 'zylinder', 'kegel', 'kugel', 'extrusion', 'rotation', 'sweep']);
+  assert.deepEqual(T.KOERPER_ARTEN.map(([a]) => a), ['quader', 'zylinder', 'kegel', 'kugel', 'extrusion', 'rotation', 'sweep', 'uebergang', 'netz']);
   assert.deepEqual(T.koerperFelder('quader').map((f) => f.pfad), ['von', 'bis']);
   assert.deepEqual(T.koerperFelder('zylinder').map((f) => f.pfad), ['von', 'nach', 'r']);
   assert.deepEqual(T.koerperFelder('kegel').map((f) => f.pfad), ['von', 'nach', 'r1', 'r2']);

@@ -57,7 +57,7 @@ public static class KiEinordnung
         new("Familien als Entwurf", "Familien entwerfen, ändern, platzieren und neue laden – immer als Entwurf; Freigabe, Bestätigen, Bibliothek und Übernahme " +
             "einer neueren Fassung macht der Mensch (Kern lehnt die KI dort ab, Verbotsliste). familien_quellen_nachfuehren speichert wie familie_aendern " +
             "(Entwurf, ein Paket, zurücknehmbar) und ändert nur die Befund-Ids der Quellen auf die aktuelle Leserversion.",
-            ["familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren", "familien_quellen_nachfuehren"]),
+            ["familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren", "familien_quellen_nachfuehren", "familie_netz_uebernehmen"]),
         new("Unterlagen und IFC übernehmen", "Unterlagen einfügen/kalibrieren und ein IFC übernehmen – Dateipfade nur unter dem Projektordner und den Wurzeln " +
             "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar.",
             ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen"]),

@@ -404,6 +404,24 @@ public static class FamilienKoerper
                 (double, double)? rechteck = k.ProfilRechteck is null ? null : (Z(k.ProfilRechteck[0]), Z(k.ProfilRechteck[1]));
                 return Netz(NetzBau.Sweep(pfad, k.ProfilKreis is null ? null : Z(k.ProfilKreis), rechteck, k.Biegeradius is null ? null : Z(k.Biegeradius)), k);
             }
+            case "uebergang":
+            {
+                (double, double)? q1 = k.ProfilRechteck is null ? null : (Z(k.ProfilRechteck[0]), Z(k.ProfilRechteck[1]));
+                (double, double)? q2 = k.ProfilNachRechteck is null ? null : (Z(k.ProfilNachRechteck[0]), Z(k.ProfilNachRechteck[1]));
+                var von = P(k.Von); var nach = P(k.Nach);
+                if (Geometrie.Abstand(von, nach) < 1e-6) throw new HlksFehler($"{ort}: von und nach liegen aufeinander.", "Zwei verschiedene Punkte angeben.");
+                return Netz(NetzBau.Uebergang(von, nach, k.ProfilKreis is null ? null : Z(k.ProfilKreis), q1, k.ProfilNachKreis is null ? null : Z(k.ProfilNachKreis), q2,
+                    k.Oben is null ? null : P(k.Oben)), k);
+            }
+            case "netz":
+            {
+                var sh = k.Verschiebung is null ? [0.0, 0, 0] : P(k.Verschiebung);
+                double w = (k.DrehungZ is null ? 0 : Z(k.DrehungZ)) * Math.PI / 180, c = Math.Cos(w), s = Math.Sin(w);
+                var n = new Netz3();
+                foreach (var e in k.NetzEcken!) n.Ecken.Add([sh[0] + e[0] * c - e[1] * s, sh[1] + e[0] * s + e[1] * c, sh[2] + e[2]]);
+                foreach (var d in k.NetzDreiecke!) n.Dreiecke.Add(d);
+                return Netz(n, k);
+            }
             default: throw new HlksFehler($"{ort}: Körperart «{k.Art}» gibt es nicht.");
         }
     }

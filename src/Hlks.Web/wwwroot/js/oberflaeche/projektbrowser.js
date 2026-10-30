@@ -386,7 +386,7 @@ function kontext(e) {
   } else if (listenAst) {
     eintraege.push(eintrag('Materialliste anlegen / öffnen', 'ansicht.materialliste'));
   } else if (famAst) {
-    eintraege.push(eintrag('Familie aus Unterlagen …', 'familie.aus-unterlagen'), { trenner: true }, eintrag('Neue Familie …', 'familie.neu'), eintrag('Familie laden …', 'familie.laden'),
+    eintraege.push(eintrag('Familie aus Unterlagen …', 'familie.aus-unterlagen'), { trenner: true }, eintrag('Neue Familie …', 'familie.neu'), eintrag('Familie aus IFC-Objekt / 3D-Modell …', 'familie.aus-geometrie'), eintrag('Familie laden …', 'familie.laden'),
       { trenner: true }, eintrag('Familien im Explorer …', 'familie.explorer'));
   } else if (bibFam) {
     // Modul 2, C3: Bibliotheksfamilie, die noch nicht im Projekt ist – zuerst laden (familie_laden), dann wie gewohnt platzieren
@@ -398,7 +398,7 @@ function kontext(e) {
     const p_ = { familie: k, typ: z.dataset.typ };
     eintraege.push(eintrag('Bearbeiten', 'familie.bearbeiten', { familie: k }), eintrag('Entwurf prüfen', 'familie.entwurf-pruefen-browser', { familie: k }), eintrag('Platzieren', 'familie.platzieren-aus-browser', p_), { trenner: true },
       eintrag('Familie aus Unterlagen …', 'familie.aus-unterlagen'), eintrag('Aus Unterlagen ersetzen …', 'familie.ersetzen-aus-unterlagen', { familie: k }),
-      eintrag('Neue Familie …', 'familie.neu'), eintrag('Familie laden …', 'familie.laden'), eintrag('Aktualisieren …', 'familie.aktualisieren', { familie: k }), eintrag('Familien im Explorer …', 'familie.explorer'));
+      eintrag('Neue Familie …', 'familie.neu'), eintrag('Familie aus IFC-Objekt / 3D-Modell …', 'familie.aus-geometrie'), eintrag('Familie laden …', 'familie.laden'), eintrag('Aktualisieren …', 'familie.aktualisieren', { familie: k }), eintrag('Familien im Explorer …', 'familie.explorer'));
     if (art === 'fam') eintraege.push({ trenner: true }, { titel: 'Auswählen', aktion: () => { familieSetzen(null); auswaehlen(z.dataset.id); } }, eintrag('Löschen', 'aendern.loeschen', { element: k }));
   } else if (art === 'raum-offen') {
     // Nicht platzierter Raum aus HKAP (Modul 1d): zeichnen lassen oder einem schon gezeichneten Raum zuordnen

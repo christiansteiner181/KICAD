@@ -40,6 +40,8 @@ function feldHtml(f, wert, fk) {
     case 'punkt2': return formZeile(f.label, h(zellen(wert ?? [], 2, fk, UV)));
     case 'punkte2': return formZeile(f.label, h(punktTabelle(wert ?? [], fk, 2, { woelbung: !f.ohneWoelbung, min: f.min, max: f.max })), { klasse: 'oben' });
     case 'punkte3': return formZeile(f.label, h(punktTabelle(wert ?? [], fk, 3, { min: f.min })), { klasse: 'oben' });
+    // Herstellernetz: nur Anzeige (Ecken und Dreiecke kommen aus der Unterlage, nicht von Hand)
+    case 'netzinfo': return formZeile(f.label, `<span class="fe-netzinfo">${Array.isArray(wert) ? wert.length : 0} Dreiecke (aus einer Herstellerunterlage)</span>`);
     case 'loecher': {
       const l = wert ?? [];
       return formZeile(f.label, h(`${l.map((ring, i) => `<div class="fe-loch" data-i="${i}"><div class="fe-loch-kopf">Loch ${i + 1} ${knopf('Loch entfernen', 'loch-weg', { klasse: 'klein' })}</div>${punktTabelle(ring, `${fk}.${i}`, 2, { woelbung: true, min: 2 })}</div>`).join('')}${knopf('＋ Loch', 'loch-neu', { klasse: 'klein', titel: 'Loch in der Kontur anfügen' })}`), { klasse: 'oben' });

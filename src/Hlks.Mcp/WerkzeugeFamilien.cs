@@ -70,6 +70,22 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl(FamilienQuellenNachfuehren.BefehlName, Parameter(("familien", familien)), trockenlauf);
 
+    [McpServerTool(Name = "familie_netz_uebernehmen"), Description(FamilieNetzUebernehmen.Text)]   // 30.10.2026: Geometrie aus IFC bzw. Herstellermodell
+    public string FamilieNetzUebernehmenWerkzeug(
+        [Description("IFC: GlobalId des Produkts oder Kennzeichen eines übernommenen Elements; STL/OBJ/STEP: Id des Befunds form3d (z. B. «3fa2…#1» oder «1»)")] string objekt,
+        [Description("Unterlage (Kennzeichen, Id oder Dateiname); bei einem übernommenen Element die Unterlage seiner Übernahme")] string? unterlage = null,
+        [Description("Bestehende Familie (Kennzeichen, Name oder id), in die der Körper kommt; leer = neue Familie")] string? familie = null,
+        [Description("Name der neuen Familie")] string? name = null,
+        [Description("KICAD-Klasse der neuen Familie, z. B. Sanitaerapparat")] string? kategorie = null,
+        [Description("id des Körpers (Vorgabe «netz»); ein Körper gleicher id wird ersetzt")] string? koerper = null,
+        [Description("geraet | apparat | armatur | rohr | sonst (Vorgabe apparat)")] string? material = null,
+        [Description("Drehung des Objekts im Projekt um z in Grad; wird zurückgedreht. Leer: IFC automatisch, sonst 0")] double? drehung = null,
+        [Description("unten_mitte | unten_hinten_mitte (Wandobjekte: Rückseite +y) | unveraendert; Vorgabe IFC unten_mitte, sonst unveraendert")] string? nullpunkt = null,
+        [Description("form3d: das vereinfachte Netz statt des vollen nehmen")] bool vereinfacht = false,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("familie_netz_uebernehmen", Parameter(("objekt", objekt), ("unterlage", unterlage), ("familie", familie), ("name", name), ("kategorie", kategorie),
+            ("koerper", koerper), ("material", material), ("drehung", drehung), ("nullpunkt", nullpunkt), ("vereinfacht", vereinfacht ? true : null)), trockenlauf);
+
     [McpServerTool(Name = "familie_laden"), Description(FamilieLaden.Text)]
     public string FamilieLadenWerkzeug(
         [Description("Statt id: Dateiname in kataloge/familien (mit oder ohne .familie.json), Ordner bzw. Datei in der Bibliothek oder voller Pfad")] string? datei = null,

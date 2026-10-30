@@ -43,6 +43,8 @@ public static class FamilienBefehle
         r.Hinzufuegen(new FamilienauswahlSetzen());
         // Nachtrag 21.10.2026 (FamilienQuellenVersion.cs): Quellen auf die aktuelle Leserversion nachführen
         r.Hinzufuegen(new FamilienQuellenNachfuehren());
+        // 30.10.2026 (FamilienNetzUebernehmen.cs): Geometrie aus IFC bzw. Herstellermodell als Körper netz
+        r.Hinzufuegen(new FamilieNetzUebernehmen());
     }
 
     /// <summary>Definition ohne die mitgeführten Felder version und status (zum Vergleich «hat sich etwas geändert?»).</summary>

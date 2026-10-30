@@ -235,6 +235,44 @@ public static class NetzBau
         return n;
     }
 
+    /// <summary>Übergang zwischen zwei Profilen (30.10.2026, Christian: «es müssen alle geometrien abgebildet werden können»): Kreis
+    /// (Radius) oder Rechteck (b, h) bei «von» und bei «nach», z. B. Übergang rund–eckig oder exzentrische Reduktion (Versatz über von/nach).
+    /// Profile stehen senkrecht zur Achse von→nach; oben gibt die Lage der Rechteckhöhe h (Vorgabe z, bei senkrechter Achse x). Beide Ringe
+    /// mit gleich vielen Punkten (48), Rechteck ab seiner Ecke gleichmässig über den Umfang, Kreis im selben Winkelbezug; Deckel als Fächer.</summary>
+    public static Netz3 Uebergang(double[] von, double[] nach, double? r1, (double B, double H)? q1, double? r2, (double B, double H)? q2, double[]? oben = null)
+    {
+        const int N = 48;
+        var p0 = V3.Aus(von); var p1 = V3.Aus(nach);
+        var w = (p1 - p0).Einheit();
+        var o = oben is null ? (Math.Abs(w.Z) > 0.9 ? new V3(0, 1, 0) : new V3(0, 0, 1)) : V3.Aus(oben);
+        var u = (o - w * o.Mal(w)).Einheit();   // Richtung der Höhe h
+        var v = w.Kreuz(u).Einheit();             // Richtung der Breite b
+        List<V3> Ring(V3 m, double? r, (double B, double H)? q)
+        {
+            var ring = new List<V3>(N);
+            for (int i = 0; i < N; i++)
+            {
+                double t = (double)i / N;
+                if (r is double rr) { double a = Math.PI * 2 * t + Math.PI * 0.75; ring.Add(m + v * (rr * Math.Cos(a)) + u * (rr * Math.Sin(a))); continue; }
+                var (b, h) = q!.Value;
+                double s = t * 2 * (b + h), x, y;   // Umfang ab der Ecke (−b/2, +h/2) im Gegenuhrzeigersinn
+                if (s < h) { x = -b / 2; y = h / 2 - s; }
+                else if (s < h + b) { x = -b / 2 + (s - h); y = -h / 2; }
+                else if (s < 2 * h + b) { x = b / 2; y = -h / 2 + (s - h - b); }
+                else { x = b / 2 - (s - 2 * h - b); y = h / 2; }
+                ring.Add(m + v * x + u * y);
+            }
+            return ring;
+        }
+        var n = new Netz3();
+        var a0 = Ring(p0, r1, q1).Select(n.Ecke).ToArray();
+        var a1 = Ring(p1, r2, q2).Select(n.Ecke).ToArray();
+        for (int i = 0; i < N; i++) { int j = (i + 1) % N; n.Viereck(a0[i], a0[j], a1[j], a1[i]); }
+        int c0 = n.Ecke(p0), c1 = n.Ecke(p1);
+        for (int i = 0; i < N; i++) { int j = (i + 1) % N; n.Dreieck(c0, a0[j], a0[i]); n.Dreieck(c1, a1[i], a1[j]); }
+        return n;
+    }
+
     /// <summary>Kegelstumpf (auch Zylinder r1 = r2, Kegel mit Spitze r = 0) von «von» nach «nach».</summary>
     public static Netz3 Kegel(double[] von, double[] nach, double r1, double r2)
     {

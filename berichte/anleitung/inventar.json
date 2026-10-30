@@ -5675,6 +5675,39 @@
             "src/Hlks.Web/OBERFLAECHE.md:488 (Familie aus Unterlagen (Modul 2, C2))"
           ],
           "hinweis": "Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
+        },
+        {
+          "id": "m2-geometrie-uebernehmen",
+          "titel": "Familie aus IFC-Objekt oder 3D-Modell",
+          "wo": {
+            "register": "Familie",
+            "gruppe": "Körper",
+            "knopf": "Geometrie übernehmen",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Familien › Rechtsklick › Familie aus IFC-Objekt / 3D-Modell …"
+          },
+          "schritte": [
+            "Im Projekt eine Architektur-IFC übernehmen oder ein STL/OBJ/STEP-Modell des Herstellers als Unterlage einfügen.",
+            "Im Projektbrowser Rechtsklick auf «Familien» › «Familie aus IFC-Objekt / 3D-Modell …».",
+            "Unterlage wählen, Objekt angeben (IFC-GlobalId, Kennzeichen eines übernommenen Elements oder Befund-Id form3d), Kategorie und Name eintragen, «Übernehmen».",
+            "Im Familieneditor die Ansichten Vorne, Oben und 3D ansehen; bei schräg gezeichneten Objekten die Drehung prüfen."
+          ],
+          "erwartung": "Es entsteht eine Familie im Status Entwurf mit dem Körper «netz» in der Form des Objekts, zurückgedreht und mit dem Nullpunkt unten Mitte (IFC) bzw. dem Ursprung des Herstellermodells; die Meldung nennt Ecken, Dreiecke, Grösse und Drehung.",
+          "pruefpunkte": [
+            "Form und Grösse entsprechen dem Objekt.",
+            "Vorderseite zeigt nach −y (sonst Drehung angeben).",
+            "Im Editor mit offener Familie kommt der Körper in diese Familie."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Familieneditor",
+            "zustand": "Familie aus einem IFC-Objekt mit Körper netz in vier Fenstern"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/familien/aktionen-familien.js",
+            "src/Hlks.Kern/Familien/FamilienNetzUebernehmen.cs"
+          ],
+          "hinweis": "Anschlüsse und Parameter fehlen danach noch; sie werden im Editor ergänzt."
         }
       ]
     },

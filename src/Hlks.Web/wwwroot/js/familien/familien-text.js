@@ -319,7 +319,7 @@ export function pfadSetzen(obj, pfad, wert) {
 
 // ------------------------------------------------------------------------------------------------ Körper
 
-export const KOERPER_ARTEN = [['quader', 'Quader'], ['zylinder', 'Zylinder'], ['kegel', 'Kegel'], ['kugel', 'Kugel'], ['extrusion', 'Extrusion'], ['rotation', 'Rotation'], ['sweep', 'Sweep']];
+export const KOERPER_ARTEN = [['quader', 'Quader'], ['zylinder', 'Zylinder'], ['kegel', 'Kegel'], ['kugel', 'Kugel'], ['extrusion', 'Extrusion'], ['rotation', 'Rotation'], ['sweep', 'Sweep'], ['uebergang', 'Übergang'], ['netz', 'Netz (Herstellergeometrie)']];
 const EBENEN = [['xy', 'xy (Grundriss)'], ['xz', 'xz (Vorderansicht)'], ['yz', 'yz (Seitenansicht)']];
 
 /** Felder je Körperart: { pfad, label, typ: zahl|punkt3|punkt2|punkte2|punkte3|loecher|auswahl|profil, optionen?, optional? }. */
@@ -339,6 +339,10 @@ export function koerperFelder(art) {
       { pfad: 'achse.richtung', label: 'Achse: Richtung', typ: 'auswahl', optionen: [['u', 'u'], ['v', 'v']] },
       Z('winkel', 'Winkel (leer = 360)', true)];
     case 'sweep': return [{ pfad: 'profil', label: 'Profil', typ: 'profil' }, { pfad: 'pfad', label: 'Pfad (x, y, z)', typ: 'punkte3', min: 2 }, Z('biegeradius', 'Biegeradius', true)];
+    // Übergang zwischen zwei Profilen (rund–eckig, exzentrisch) und Herstellergeometrie (30.10.2026: «es müssen alle geometrien abgebildet werden können»)
+    case 'uebergang': return [P3('von', 'von (x, y, z)'), { pfad: 'profil', label: 'Profil bei von', typ: 'profil' }, P3('nach', 'nach (x, y, z)'),
+      { pfad: 'profil_nach', label: 'Profil bei nach', typ: 'profil' }, { pfad: 'oben', label: 'oben (Richtung der Höhe h, leer = z)', typ: 'punkt3', optional: true }];
+    case 'netz': return [{ pfad: 'dreiecke', label: 'Netz', typ: 'netzinfo' }, { pfad: 'verschiebung', label: 'Verschiebung (x, y, z)', typ: 'punkt3', optional: true }, Z('drehung', 'Drehung um z (Grad)', true)];
     default: return [];
   }
 }
@@ -354,6 +358,8 @@ export function koerperNeu(art, id, name) {
     case 'extrusion': k.ebene = 'xy'; k.kontur = [[0, 0], [100, 0], [100, 100], [0, 100]]; k.von = 0; k.bis = 100; break;
     case 'rotation': k.ebene = 'xz'; k.kontur = [[10, 0], [50, 0], [50, 100], [10, 100]]; k.achse = { punkt: [0, 0], richtung: 'v' }; break;
     case 'sweep': k.profil = { kreis: 10 }; k.pfad = [[0, 0, 0], [0, 0, 100], [100, 0, 100]]; break;
+    case 'uebergang': k.von = [0, 0, 0]; k.nach = [0, 0, 100]; k.profil = { kreis: 50 }; k.profil_nach = { rechteck: [100, 60] }; break;
+    case 'netz': k.ecken = [[0, 0, 0], [100, 0, 0], [0, 100, 0], [0, 0, 100]]; k.dreiecke = [[0, 2, 1], [0, 1, 3], [1, 2, 3], [0, 3, 2]]; break;
     default: break;
   }
   return k;

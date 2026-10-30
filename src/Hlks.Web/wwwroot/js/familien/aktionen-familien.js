@@ -40,9 +40,11 @@ fam({ id: 'familie.typen', titel: 'Typen', symbol: 'famTypen', gruppe: 'Typen', 
 
 fam({ id: 'familie.koerper', titel: 'Körper', symbol: 'famKoerper', gruppe: 'Körper', ausfuehren: () => aktiverEditor()?.tabWaehlen('koerper'), gedrueckt: () => aktiverEditor()?.tab === 'koerper' });
 for (const [art, titel, symbol] of [['quader', 'Quader', 'famQuader'], ['zylinder', 'Zylinder', 'famZylinder'], ['kegel', 'Kegel', 'famKegel'], ['kugel', 'Kugel', 'famKugel'],
-  ['extrusion', 'Extrusion', 'famExtrusion'], ['rotation', 'Rotation', 'famRotation'], ['sweep', 'Sweep', 'famSweep']])
+  ['extrusion', 'Extrusion', 'famExtrusion'], ['rotation', 'Rotation', 'famRotation'], ['sweep', 'Sweep', 'famSweep'], ['uebergang', 'Übergang', 'famKegel'], ['netz', 'Netz', 'famKoerper']])
   fam({ id: `familie.koerper-${art}`, titel, symbol, gruppe: 'Körper', groesse: 'klein', aktion: 'koerper-neu', param: { art } });
 fam({ id: 'familie.koerper-loeschen', titel: 'Körper löschen', symbol: 'famKoerperWeg', gruppe: 'Körper', groesse: 'klein', aktion: 'koerper-loeschen' });
+fam({ id: 'familie.netz-uebernehmen', titel: 'Geometrie übernehmen', symbol: 'famKoerper', gruppe: 'Körper', groesse: 'klein',
+  ausfuehren: () => netzUebernehmen(aktiverEditor()?.kennzeichen()) });
 
 fam({ id: 'familie.anschluss-neu', titel: 'Anschluss hinzufügen', symbol: 'famAnschluss', gruppe: 'Anschlüsse', aktion: 'anschluss-neu' });
 fam({ id: 'familie.anschluesse', titel: 'Anschlüsse', symbol: 'famAnschluesse', gruppe: 'Anschlüsse', ausfuehren: () => aktiverEditor()?.tabWaehlen('anschluesse'), gedrueckt: () => aktiverEditor()?.tab === 'anschluesse' });
@@ -150,6 +152,56 @@ registrieren({
     });
     return undefined;
   },
+});
+
+// ================================================================================================ Geometrie aus IFC bzw. 3D-Modell
+
+// 30.10.2026 (Christian: «es muss auch möglich sein fehlende familien aus einem ifc geometrisch abzubilden»): Befehl familie_netz_uebernehmen.
+// Mit familie kommt der Körper «netz» in diese Familie, sonst entsteht eine neue. Objekt: GlobalId bzw. übernommenes Element (vorbelegt aus der
+// Auswahl) oder die Id eines Befunds form3d einer STL/OBJ/STEP-Unterlage.
+const NETZ_ARTEN = ['ifc', 'stl', 'obj', 'step', 'iges'];
+async function netzUebernehmen(familie) {
+  const unterlagen = derKlasse('Unterlage').filter((u) => NETZ_ARTEN.includes(u.werte?.art));
+  if (!unterlagen.length) { meldung('Keine IFC-, STL-, OBJ- oder STEP-Unterlage im Projekt.', 'warnung', { vorschlag: 'Zuerst über «Unterlagen» bzw. «IFC übernehmen» einfügen.' }); return undefined; }
+  const gewaehlt = element(zustand.auswahl);
+  const vorgabeUl = gewaehlt?.kennungen?.quelle ? element(gewaehlt.kennungen.quelle)?.kennzeichen : null;
+  const kategorien = familie ? [] : familienKategorien(zustand.katalog?.klassen);
+  const w = knoten(`<div class="fe-dlg">
+    <label class="fz"><span>Unterlage *</span><select class="nu-ul">${unterlagen.map((u) => `<option value="${esc(u.kennzeichen)}"${u.kennzeichen === vorgabeUl ? ' selected' : ''}>${esc(u.kennzeichen)} · ${esc(u.name ?? '')} (${esc(u.werte?.art)})</option>`).join('')}</select></label>
+    <label class="fz"><span>Objekt *</span><input type="text" class="nu-obj" data-kein-enter="1" value="${esc(gewaehlt?.kennungen?.ifc ? gewaehlt.kennzeichen : '')}" placeholder="IFC-GlobalId, Element-Kennzeichen oder Befund-Id (form3d)"></label>
+    ${familie ? '' : `<label class="fz"><span>Kategorie *</span><select class="nu-kat">${kategorien.map((k) => `<option>${esc(k)}</option>`).join('')}</select></label>
+    <label class="fz"><span>Name *</span><input type="text" class="nu-name" data-kein-enter="1" placeholder="z. B. Badewanne aus Architektur-IFC"></label>`}
+    <label class="fz"><span>Drehung °</span><input type="text" class="nu-dreh" data-kein-enter="1" placeholder="leer: IFC automatisch"></label>
+    <label class="fz"><span>Nullpunkt</span><select class="nu-null"><option value="">Vorgabe (IFC unten Mitte, Modell unverändert)</option><option value="unten_mitte">unten Mitte</option>
+      <option value="unten_hinten_mitte">unten hinten Mitte (Wandobjekt)</option><option value="unveraendert">unverändert</option></select></label>
+    <p class="leise">Das Netz kommt als Körper «netz» ${familie ? `in ${esc(familie)}` : 'in eine neue Familie (Entwurf)'}; Anschlüsse und Parameter ergänzt du danach.</p></div>`);
+  const q = (s) => w.querySelector(s);
+  await zeigen({
+    titel: 'Geometrie übernehmen', inhalt: w, breite: 520, klasse: 'familie',
+    knoepfe: [{ text: 'Abbrechen', wert: false },
+      { text: 'Übernehmen', primaer: true, schliesst: false,
+        pruefen: () => (!q('.nu-obj').value.trim() ? 'Objekt angeben.' : !familie && !q('.nu-name').value.trim() ? 'Name angeben.' : true),
+        async klick(c) {
+          const p = { unterlage: q('.nu-ul').value, objekt: q('.nu-obj').value.trim() };
+          if (familie) p.familie = familie; else { p.kategorie = q('.nu-kat').value; p.name = q('.nu-name').value.trim(); }
+          const d = q('.nu-dreh').value.trim().replace(',', '.');
+          if (d) p.drehung = Number(d);
+          if (q('.nu-null').value) p.nullpunkt = q('.nu-null').value;
+          const r = await sende('familie_netz_uebernehmen', p);
+          if (!r.angenommen) { const k = kernFehler(r); c.fehler(`${k.text}${k.vorschlag ? ' – ' + k.vorschlag : ''}`); return; }
+          c.schliessen(true);
+          for (const h of r.hinweise ?? []) if (h.startsWith('Körper')) meldung(h, 'info');
+          await familienLaden();
+          const kz = familie ?? r.aenderungen?.find((a) => a.klasse === 'Familie')?.kennzeichen;
+          if (!familie && kz && (await aufElement(kz))) await ansichtOeffnen(kz);
+        } }],
+  });
+  return undefined;
+}
+
+registrieren({
+  id: 'familie.aus-geometrie', titel: 'Familie aus IFC-Objekt / 3D-Modell', symbol: 'famKoerper', aktiv: projektOffen, hinweis: 'Zuerst ein Projekt öffnen.',
+  ausfuehren: () => netzUebernehmen(null),
 });
 
 // ================================================================================================ Familie laden

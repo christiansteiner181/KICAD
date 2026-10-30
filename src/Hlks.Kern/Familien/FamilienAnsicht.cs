@@ -55,8 +55,74 @@ public static class FamilienAnsicht
     {
         var g = new Plangrafik { Ansicht = $"{fam.Kennzeichen} {a.Typ} grundriss", Art = "grundriss", Massstab = Massstab, Stand = p.Modell.Pruefsumme() };
         g.Teile.Add(FamilienGrafik.Grundriss(a, [0, 0, 0], 0, detail, Massstab, null, p.Katalog, null, fam.Id, ebene, null));
+        if (Bemassung(a, "oben", Grafik.Begrenzung(g.Teile)) is { } mass) g.Teile.Add(mass);
         g.Begrenzung = Grafik.Begrenzung(g.Teile);
         return g;
+    }
+
+    /// <summary>Masse der Familie als Masslinien in einer Ansicht (Christian 30.10.2026: «erweitere … den Familieneditor so, dass deine
+    /// Darstellungen gleich wie die Zeichnungen aussehen»): jedes Mass mit von/bis, das dieser Ansicht gehört (ansicht) bzw. ohne ansicht
+    /// mit einer Richtung, die in der Ansicht liegt. Masslinie mit Schrägstrichen und Hilfslinien, Text «Name Wert» in mm, neben dem
+    /// Körper (Seite weg von der Mitte). ANNAHME (Gestaltung): Abstand 6 mm Papier, Schrägstrich 1.5 mm, Schrift 2.5 mm, Farbe #3a6ea5.</summary>
+    static Grafikteil? Bemassung(FamAufloesung a, string ansicht, double[]? begrenzung)
+    {
+        var teil = new Grafikteil { Id = null, Ebene = "bemassung", Fangpunkte = [] };
+        var stil = new Stil { Stift = Stifte.Duenn, Farbe = "#3a6ea5" };
+        double mx = begrenzung is { Length: 4 } bg ? (bg[0] + bg[2]) / 2 : 0, my = begrenzung is { Length: 4 } bh ? (bh[1] + bh[3]) / 2 : 0;
+        int nr = 0;
+        foreach (var m in a.Familie.Masse)
+        {
+            if (m.Von is null || m.Bis is null) continue;
+            var achse = (m.Richtung, ansicht) switch
+            {
+                ("x", "vorne" or "hinten" or "oben" or "unten") => new[] { 1.0, 0 },
+                ("y", "links" or "rechts") => [1.0, 0],
+                ("y", "oben" or "unten") => [0, 1.0],
+                ("z", "vorne" or "hinten" or "links" or "rechts") => [0, 1.0],
+                (null or "abstand", _) when m.Ansicht == ansicht => null,
+                _ => [double.NaN, 0],
+            };
+            if (achse is not null && double.IsNaN(achse[0])) continue;
+            if (m.Ansicht is not null && m.Ansicht != ansicht && !(ansicht == "oben" && m.Ansicht == "grundriss")) continue;
+            double[] p1, p2;
+            try { p1 = FamilienMasse.InAnsicht(ansicht, FamilienMasse.Auswerten(m.Von, a)); p2 = FamilienMasse.InAnsicht(ansicht, FamilienMasse.Auswerten(m.Bis, a)); }
+            catch (FormelFehler) { continue; }
+            double dx = p2[0] - p1[0], dy = p2[1] - p1[1];
+            var d = achse ?? [dx, dy];
+            double dl = Math.Sqrt(d[0] * d[0] + d[1] * d[1]);
+            if (dl < 1e-9) continue;
+            d = [d[0] / dl, d[1] / dl];
+            double wert = Math.Abs(dx * d[0] + dy * d[1]);
+            if (wert < 0.05) continue;
+            double[] nrm = [-d[1], d[0]];
+            // Seite weg von der Mitte des Körpers; je weiteres Mass etwas weiter aussen, damit sich Texte nicht decken
+            double sx = (p1[0] + p2[0]) / 2 - mx, sy = (p1[1] + p2[1]) / 2 - my;
+            if (sx * nrm[0] + sy * nrm[1] < 0) nrm = [-nrm[0], -nrm[1]];
+            double ab = (6 + 4 * (nr++ % 3)) * Massstab;
+            // Masslinie auf der Höhe des äusseren der beiden Punkte
+            double h1 = p1[0] * nrm[0] + p1[1] * nrm[1], h2 = p2[0] * nrm[0] + p2[1] * nrm[1], h = Math.Max(h1, h2) + ab;
+            double[] Auf(double[] q, double hq) => [q[0] + nrm[0] * (h - hq), q[1] + nrm[1] * (h - hq)];
+            var a1 = Auf(p1, h1); var a2b = Auf(p2, h2);
+            // Endpunkte der Masslinie genau entlang d (bei Richtung x/y/z kann die Hilfslinie schräg zur Messrichtung stehen)
+            double t1 = a1[0] * d[0] + a1[1] * d[1], t2 = t1 + ((p2[0] - p1[0]) * d[0] + (p2[1] - p1[1]) * d[1]);
+            double[] e1 = a1, e2 = [a1[0] + d[0] * (t2 - t1), a1[1] + d[1] * (t2 - t1)];
+            double ue = 1.5 * Massstab;
+            teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [p1, [e1[0] + nrm[0] * ue, e1[1] + nrm[1] * ue]], Stil = stil });
+            teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [p2, [e2[0] + nrm[0] * ue, e2[1] + nrm[1] * ue]], Stil = stil });
+            teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[e1[0] - d[0] * ue, e1[1] - d[1] * ue], [e2[0] + d[0] * ue, e2[1] + d[1] * ue]], Stil = stil });
+            double sl = 1.5 * Massstab, s45x = (d[0] + nrm[0]) / Math.Sqrt(2) * sl / 2, s45y = (d[1] + nrm[1]) / Math.Sqrt(2) * sl / 2;
+            foreach (var e in (double[][])[e1, e2])
+                teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[e[0] - s45x, e[1] - s45y], [e[0] + s45x, e[1] + s45y]], Stil = stil });
+            double grad = Math.Atan2(d[1], d[0]) * 180 / Math.PI;
+            if (grad > 90.5 || grad < -89.5) grad = grad > 0 ? grad - 180 : grad + 180;   // lesbar von unten bzw. rechts
+            teil.Primitive.Add(new Primitiv
+            {
+                Art = "text", Punkte = [[(e1[0] + e2[0]) / 2 + nrm[0] * 1.2 * Massstab, (e1[1] + e2[1]) / 2 + nrm[1] * 1.2 * Massstab]],
+                Text = $"{m.Name} {Math.Round(wert, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", Groesse = 2.5, Ausrichtung = "mitte", Winkel = grad,
+                Stil = new Stil { Farbe = "#3a6ea5" },
+            });
+        }
+        return teil.Primitive.Count == 0 ? null : teil;
     }
 
     /// <summary>Punkt der Familie in die Lage «vorne» der gewählten Ansicht.</summary>
@@ -110,6 +176,7 @@ public static class FamilienAnsicht
             }
             g.Teile.Add(marken);
         }
+        if (Bemassung(a, ansicht, Grafik.Begrenzung(g.Teile)) is { } mass) g.Teile.Add(mass);
         g.Begrenzung = Grafik.Begrenzung(g.Teile);
         return g;
     }

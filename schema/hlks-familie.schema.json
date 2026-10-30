@@ -140,7 +140,21 @@
                 "properties": { "kreis": { "$ref": "#/$defs/zahl", "description": "Radius" }, "rechteck": { "type": "array", "items": { "$ref": "#/$defs/zahl" }, "minItems": 2, "maxItems": 2, "description": "[b, h]" } } },
               "pfad": { "type": "array", "items": { "$ref": "#/$defs/punkt3" }, "minItems": 2 },
               "biegeradius": { "$ref": "#/$defs/zahl" } },
-            "required": ["profil", "pfad"] }
+            "required": ["profil", "pfad"] },
+          { "properties": {
+              "art": { "const": "uebergang" },
+              "von": { "$ref": "#/$defs/punkt3" }, "nach": { "$ref": "#/$defs/punkt3" },
+              "profil": { "type": "object", "description": "Profil bei von: { kreis: r } oder { rechteck: [b, h] }" },
+              "profil_nach": { "type": "object", "description": "Profil bei nach: { kreis: r } oder { rechteck: [b, h] }" },
+              "oben": { "$ref": "#/$defs/punkt3", "description": "Richtung der Rechteckhöhe h (Vorgabe z, bei senkrechter Achse x)" } },
+            "required": ["von", "nach", "profil", "profil_nach"] },
+          { "properties": {
+              "art": { "const": "netz" },
+              "ecken": { "type": "array", "items": { "type": "array", "items": { "type": "number" }, "minItems": 3, "maxItems": 3 }, "description": "Ecken [x, y, z] in mm, z. B. aus dem Befund form3d einer STL-, OBJ- oder STEP-Unterlage" },
+              "dreiecke": { "type": "array", "items": { "type": "array", "items": { "type": "integer", "minimum": 0 }, "minItems": 3, "maxItems": 3 } },
+              "verschiebung": { "$ref": "#/$defs/punkt3" }, "drehung": { "$ref": "#/$defs/zahl", "description": "Drehung um z in Grad" },
+              "herkunft": { "type": "string", "description": "Woher das Netz stammt (IFC-Produkt bzw. Befund und Unterlage); setzt familie_netz_uebernehmen" } },
+            "required": ["ecken", "dreiecke"] }
         ]
       }
     },

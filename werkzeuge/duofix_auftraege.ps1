@@ -39,12 +39,12 @@ foreach ($a in $auftraege) {
   $koerper = @{ art = 'familie_aus_unterlagen'; unterlagen = $a.unterlagen; kategorie = $a.kategorie; hinweis = $hinweis; internet = $true; zeitlimitMinuten = 90 } | ConvertTo-Json -Depth 4
   $st = $null
   for ($v = 0; $v -lt 180 -and -not $st; $v++) {
-    try { $st = Invoke-RestMethod "$u/api/auftraege" -Method Post -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($koerper)) }
+    try { $st = Invoke-RestMethod "$u/api/auftraege" -TimeoutSec 120 -Method Post -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($koerper)) }
     catch { if ($_.Exception.Response.StatusCode.value__ -eq 409) { Start-Sleep 60 } else { Log "$($a.nr) Start FEHLER $($_.ErrorDetails.Message)"; break } }
   }
   if (-not $st) { continue }
   Log "$($a.nr) gestartet $($st.id)"
-  do { Start-Sleep 30; try { $s = Invoke-RestMethod "$u/api/auftraege/$($st.id)" } catch { $s = $null } } while (-not $s -or $s.status -in @('wartet', 'laeuft'))
+  do { Start-Sleep 30; try { $s = Invoke-RestMethod "$u/api/auftraege/$($st.id)" -TimeoutSec 60 } catch { $s = $null } } while (-not $s -or $s.status -in @('wartet', 'laeuft'))
   $fam = @($s.ergebnis.familien | ForEach-Object { "$($_.kennzeichen) $($_.name) [$($_.kategorie)] Typen $(@($_.typen).Count) offeneKonflikte $($_.offeneKonflikte)" }) -join '; '
   Log "$($a.nr) $($s.status) $($st.id): $fam"
 }
