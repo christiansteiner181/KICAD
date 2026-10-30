@@ -852,7 +852,7 @@ public sealed class FamilieDef
             var name = Text(o["name"])?.Trim() ?? "";
             var ort = name.Length > 0 ? $"typ «{name}»" : $"typen[{nr}]";
             foreach (var (feld, _) in o)
-                if (feld is not ("name" or "werte" or "quellen")) Fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: name, werte, quellen");
+                if (feld is not ("name" or "werte" or "quellen" or "entfaellt")) Fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: name, werte, quellen, entfaellt");
             if (name.Length == 0) { Fehl(ort, "Name fehlt", "\"name\" angeben, z. B. die Typenbezeichnung des Herstellers."); continue; }
             if (Typen.Any(t => t.Name == name)) { Fehl(ort, $"Typ «{name}» gibt es zweimal", "Typnamen eindeutig machen."); continue; }
             var t = new FamTyp { Name = name };
@@ -872,6 +872,18 @@ public sealed class FamilieDef
             else if (o["quellen"] is JsonObject qo)
                 foreach (var (pn, _) in qo)
                     if (!NachName.ContainsKey(pn)) Fehl($"{ort}.quellen.{pn}", $"Parameter «{pn}» gibt es nicht", Hlks.Kern.Formel.NamensVorschlag(pn, NachName.Keys));
+            // entfaellt (30.10.2026): Typparameter, die es für diesen Typ nicht gibt (z. B. ein Winkel, den der Hersteller in dieser Grösse nicht
+            // liefert) – mit Quelle; sie zählen nicht als fehlende Pflichtwerte, einen Wert dazu gibt es nicht
+            if (o["entfaellt"] is { } en && en is not JsonObject) Fehl(ort + ".entfaellt", "entfaellt muss ein Objekt sein", "{ \"parameter\": [\"<befund-id>\"] }");
+            else if (o["entfaellt"] is JsonObject eo)
+                foreach (var (pn, l) in eo)
+                {
+                    var eort = $"{ort}.entfaellt.{pn}";
+                    if (!NachName.TryGetValue(pn, out var p)) Fehl(eort, $"Parameter «{pn}» gibt es nicht", Hlks.Kern.Formel.NamensVorschlag(pn, NachName.Keys));
+                    else if (p.Art != "typ") Fehl(eort, $"«{pn}» ist kein Typparameter", "entfaellt gilt nur für Typparameter.");
+                    else if (t.Werte.ContainsKey(pn)) Fehl(eort, $"«{pn}» hat in diesem Typ einen Wert und kann nicht entfallen", "Wert entfernen oder den Eintrag in entfaellt.");
+                    if (l is not JsonArray { Count: > 0 }) Fehl(eort, "Quelle fehlt: dass es den Wert nicht gibt, braucht einen Beleg", "Befund-Id der Unterlage angeben, z. B. die Zeile «d12/d18 nur 45 oder 90».");
+                }
             Typen.Add(t);
         }
     }
@@ -1233,6 +1245,7 @@ public sealed class FamilieDef
         {
             i++;
             if (x is JsonObject o && o["quellen"] is JsonObject q) foreach (var (pn, l) in q) Liste(l, $"typen[{i}].quellen.{pn}");
+            if (x is JsonObject oe && oe["entfaellt"] is JsonObject en) foreach (var (pn, l) in en) Liste(l, $"typen[{i}].entfaellt.{pn}");
         }
         i = 0;
         foreach (var x in Quelle["koerper"] as JsonArray ?? []) { i++; if (x is JsonObject o) Liste(o["quellen"], $"koerper[{i}].quellen"); }

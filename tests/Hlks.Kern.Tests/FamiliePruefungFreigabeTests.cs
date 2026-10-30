@@ -85,6 +85,28 @@ public sealed class FamiliePruefungFreigabeTests : IDisposable
     }
 
     [Fact]
+    public void Entfallender_Typwert_mit_Beleg_ist_kein_fehlender_Pflichtwert()
+    {
+        // Befund FAM-5 Mapress Edelstahl Bogen 30.10.2026: d12/d18 gibt es nur in 45° und 90° – die übrigen Winkelmasse entfallen
+        var ki = ProjektB4("ki");
+        var pdf = Ablegen(ki, UnterlagenHilfe.TestPdf(o));
+        var d = Ventil(pdf);
+        TypWert(d, "V-25", "H", null);
+        var typ = (JsonObject)((JsonArray)d["typen"]!).Single(x => x!["name"]!.GetValue<string>() == "V-25")!;
+        typ["entfaellt"] = new JsonObject { ["H"] = new JsonArray(Id(pdf, "zeile")) };
+        Ok(ki.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d.DeepClone() }));
+        var f = Assert.Throws<HlksFehler>(() => new FamilieFreigeben().Ausfuehren(Als(ki, "mensch"), new JsonObject { ["familie"] = "FAM-1" }));
+        Assert.DoesNotContain("abdeckung «V-25/H»", f.Message);
+        // ohne Beleg bzw. neben einem Wert: abgelehnt
+        typ["entfaellt"] = new JsonObject { ["H"] = new JsonArray() };
+        Assert.Contains("braucht einen Beleg", Nein(ki.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d.DeepClone() })).Fehler);
+        TypWert(d, "V-25", "H", 40);
+        typ = (JsonObject)((JsonArray)d["typen"]!).Single(x => x!["name"]!.GetValue<string>() == "V-25")!;
+        typ["entfaellt"] = new JsonObject { ["H"] = new JsonArray(Id(pdf, "zeile")) };
+        Assert.Contains("kann nicht entfallen", Nein(ki.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d.DeepClone() })).Fehler);
+    }
+
+    [Fact]
     public void Editor_Familie_ohne_Quellen_von_einem_Menschen_ist_freigebbar()
     {
         var p = ProjektB4();

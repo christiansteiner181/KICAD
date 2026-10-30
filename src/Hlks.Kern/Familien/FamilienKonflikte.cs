@@ -74,8 +74,12 @@ public static class FamilienQuellenAnalyse
         foreach (var o in (def["parameter"] as JsonArray ?? []).OfType<JsonObject>())
             yield return ($"parameter «{T(o["name"])}».quellen", Ids(o["quellen"]));
         foreach (var o in (def["typen"] as JsonArray ?? []).OfType<JsonObject>())
+        {
             if (o["quellen"] is JsonObject q)
                 foreach (var (pn, l) in q) yield return ($"typ «{T(o["name"])}».quellen.{pn}", Ids(l));
+            if (o["entfaellt"] is JsonObject en)
+                foreach (var (pn, l) in en) yield return ($"typ «{T(o["name"])}».entfaellt.{pn}", Ids(l));
+        }
         foreach (var o in (def["koerper"] as JsonArray ?? []).OfType<JsonObject>())
             yield return ($"koerper «{T(o["id"])}».quellen", Ids(o["quellen"]));
         foreach (var o in (def["anschluesse"] as JsonArray ?? []).OfType<JsonObject>())
@@ -185,7 +189,7 @@ public static class FamilienQuellenAnalyse
                     if (!hat && p.Wert is null) e.Hinweise.Add($"typ «{t.Name}».quellen.{p.Name}: Quellen ohne Wert – den Wert aus der Quelle in werte eintragen.");
                     eintraege.Add(new Eintrag { Schluessel = $"{t.Name}/{p.Name}", P = p, Typ = t, Wert = hat ? tw : p.Wert, Quellen = tq, Ort = $"typ «{t.Name}».werte.{p.Name}" });
                 }
-                else if (p.Wert is null && p.Art == "typ" && Pflicht(p))
+                else if (p.Wert is null && p.Art == "typ" && Pflicht(p) && !(to?["entfaellt"] is JsonObject en && en.ContainsKey(p.Name)))
                     eintraege.Add(new Eintrag { Schluessel = $"{t.Name}/{p.Name}", P = p, Typ = t, Wert = null, Ort = $"typ «{t.Name}».werte.{p.Name}" });
             }
         }
