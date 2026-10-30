@@ -1,0 +1,232 @@
+{
+    "familie":  "FAM-19",
+    "quellen":  [
+                    {
+                        "typ":  "d250/200",
+                        "parameter":  "H",
+                        "wert":  40.5,
+                        "befund":  "78ec99292421#15522",
+                        "beleg":  "371.596.16.1 | 1430227 | 250 / 200 | 250 | 200 | 2.5 | 40.5 | 15.8 | 15.7 | 8 | 8 (S. 16, Spalte L = 40.5 cm)"
+                    },
+                    {
+                        "typ":  "d315/250",
+                        "parameter":  "H",
+                        "wert":  43.5,
+                        "befund":  "78ec99292421#15524",
+                        "beleg":  "372.598.16.1 | 1430232 | 300 / 250 | 315 | 250 | 3.2 | 43.5 | 16.1 | 15.7 | 8 | 8 (S. 16, Spalte L = 43.5 cm)"
+                    },
+                    {
+                        "typ":  "d50/40",
+                        "parameter":  "A",
+                        "wert":  0.5,
+                        "befund":  "78ec99292421#13968",
+                        "beleg":  "361.558.16.1 | 1430193 | 50 / 40 | 50 | 40 | 0.5 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.5 cm)"
+                    },
+                    {
+                        "typ":  "d56/40",
+                        "parameter":  "A",
+                        "wert":  0.8,
+                        "befund":  "78ec99292421#13969",
+                        "beleg":  "363.558.16.1 | 1430196 | 56 / 40 | 56 | 40 | 0.8 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.8 cm)"
+                    },
+                    {
+                        "typ":  "d63/40",
+                        "parameter":  "A",
+                        "wert":  1.2,
+                        "befund":  "78ec99292421#13971",
+                        "beleg":  "364.558.16.1 | 1433189 | 60 / 40 | 63 | 40 | 1.2 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.2 cm)"
+                    },
+                    {
+                        "typ":  "d63/50",
+                        "parameter":  "A",
+                        "wert":  0.7,
+                        "befund":  "78ec99292421#13972",
+                        "beleg":  "364.561.16.1 | 1430199 | 60 / 50 | 63 | 50 | 0.7 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.7 cm)"
+                    },
+                    {
+                        "typ":  "d63/56",
+                        "parameter":  "A",
+                        "wert":  0.4,
+                        "befund":  "78ec99292421#13973",
+                        "beleg":  "364.566.16.1 | 1430200 | 60 / 56 | 63 | 56 | 0.4 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.4 cm)"
+                    },
+                    {
+                        "typ":  "d75/40",
+                        "parameter":  "A",
+                        "wert":  1.8,
+                        "befund":  "78ec99292421#13974",
+                        "beleg":  "365.558.16.1 | 1433562 | 70 / 40 | 75 | 40 | 1.8 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.8 cm)"
+                    },
+                    {
+                        "typ":  "d75/50",
+                        "parameter":  "A",
+                        "wert":  1.3,
+                        "befund":  "78ec99292421#13975",
+                        "beleg":  "365.561.16.1 | 1430202 | 70 / 50 | 75 | 50 | 1.3 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.3 cm)"
+                    },
+                    {
+                        "typ":  "d75/63",
+                        "parameter":  "A",
+                        "wert":  0.6,
+                        "befund":  "78ec99292421#13977",
+                        "beleg":  "365.571.16.1 | 1430204 | 70 / 60 | 75 | 63 | 0.6 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.6 cm)"
+                    },
+                    {
+                        "typ":  "d90/56",
+                        "parameter":  "A",
+                        "wert":  1.7,
+                        "befund":  "78ec99292421#13979",
+                        "beleg":  "366.566.16.1 | 1430206 | 90 / 56 | 90 | 56 | 1.7 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.7 cm)"
+                    },
+                    {
+                        "typ":  "d90/63",
+                        "parameter":  "A",
+                        "wert":  1.3,
+                        "befund":  "78ec99292421#13980",
+                        "beleg":  "366.571.16.1 | 1430207 | 90 / 60 | 90 | 63 | 1.3 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.3 cm)"
+                    },
+                    {
+                        "typ":  "d110/40",
+                        "parameter":  "A",
+                        "wert":  3.4,
+                        "befund":  "78ec99292421#13982",
+                        "beleg":  "367.558.16.1 | 1433599 | 100 / 40 | 110 | 40 | 3.4 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 3.4 cm)"
+                    },
+                    {
+                        "typ":  "d125/50",
+                        "parameter":  "A",
+                        "wert":  3.6,
+                        "befund":  "78ec99292421#13988",
+                        "beleg":  "368.561.16.1 | 1430217 | 125 / 50 | 125 | 50 | 3.6 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 3.6 cm)"
+                    },
+                    {
+                        "typ":  "d125/56",
+                        "parameter":  "A",
+                        "wert":  3.3,
+                        "befund":  "78ec99292421#13989",
+                        "beleg":  "368.566.16.1 | 1430218 | 125 / 56 | 125 | 56 | 3.3 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 3.3 cm)"
+                    },
+                    {
+                        "typ":  "d125/63",
+                        "parameter":  "A",
+                        "wert":  2.9,
+                        "befund":  "78ec99292421#13990",
+                        "beleg":  "368.571.16.1 | 1430219 | 125 / 60 | 125 | 63 | 2.9 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 2.9 cm)"
+                    },
+                    {
+                        "typ":  "d125/75",
+                        "parameter":  "A",
+                        "wert":  2.3,
+                        "befund":  "78ec99292421#13991",
+                        "beleg":  "368.576.16.1 | 1430220 | 125 / 70 | 125 | 75 | 2.3 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 2.3 cm)"
+                    },
+                    {
+                        "typ":  "d125/110",
+                        "parameter":  "A",
+                        "wert":  0.7,
+                        "befund":  "78ec99292421#13993",
+                        "beleg":  "368.586.16.1 | 1430222 | 125 / 100 | 125 | 110 | 0.7 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 0.7 cm)"
+                    },
+                    {
+                        "typ":  "d160/125",
+                        "parameter":  "A",
+                        "wert":  1.6,
+                        "befund":  "78ec99292421#13995",
+                        "beleg":  "369.588.16.1 | 1430215 | 150 / 125 | 160 | 125 | 1.6 | 8 | 3.5 | 3.7 | 2 (S. 15, Spalte A = 1.6 cm)"
+                    },
+                    {
+                        "typ":  "d200/110",
+                        "parameter":  "A",
+                        "wert":  4.3,
+                        "befund":  "78ec99292421#15519",
+                        "beleg":  "370.584.16.5 | 1430229 | 200 / 100 | 200 | 110 | 4.3 | 28 | 11.5 | 3.7 | 4 | 0 (S. 16, Spalte A = 4.3 cm)"
+                    },
+                    {
+                        "typ":  "d200/125",
+                        "parameter":  "A",
+                        "wert":  3.6,
+                        "befund":  "78ec99292421#15520",
+                        "beleg":  "370.587.16.5 | 1430230 | 200 / 125 | 200 | 125 | 3.6 | 28 | 11.5 | 3.7 | 4 | 0 (S. 16, Spalte A = 3.6 cm)"
+                    },
+                    {
+                        "typ":  "d250/200",
+                        "parameter":  "A",
+                        "wert":  2.5,
+                        "befund":  "78ec99292421#15522",
+                        "beleg":  "371.596.16.1 | 1430227 | 250 / 200 | 250 | 200 | 2.5 | 40.5 | 15.8 | 15.7 | 8 | 8 (S. 16, Spalte A = 2.5 cm)"
+                    },
+                    {
+                        "typ":  "d315/200",
+                        "parameter":  "A",
+                        "wert":  5.7,
+                        "befund":  "78ec99292421#15523",
+                        "beleg":  "372.596.16.1 | 1430259 | 300 / 200 | 315 | 200 | 5.7 | 58 | 16.1 | 15.7 | 8 | 8 (S. 16, Spalte A = 5.7 cm)"
+                    },
+                    {
+                        "typ":  "d315/250",
+                        "parameter":  "A",
+                        "wert":  3.2,
+                        "befund":  "78ec99292421#15524",
+                        "beleg":  "372.598.16.1 | 1430232 | 300 / 250 | 315 | 250 | 3.2 | 43.5 | 16.1 | 15.7 | 8 | 8 (S. 16, Spalte A = 3.2 cm)"
+                    }
+                ],
+    "entfaellt":  [
+                      {
+                          "typ":  "d56/50",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15540",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 363.560.16.1 | 1433181 | 56 / 50 | 56 | 50 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d90/75",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15541",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 366.575.16.1 | 1430188 | 90 / 70 | 90 | 75 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d110/50",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15542",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 367.560.16.1 | 1430178 | 100 / 50 | 110 | 50 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d110/56",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15543",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 367.565.16.1 | 1430189 | 100 / 56 | 110 | 56 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d110/63",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15544",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 367.570.16.1 | 1430179 | 100 / 60 | 110 | 63 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d110/75",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15545",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 367.575.16.1 | 1430180 | 100 / 70 | 110 | 75 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d110/90",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15546",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 367.580.16.1 | 1430190 | 100 / 90 | 110 | 90 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d125/90",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15547",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 368.580.16.1 | 1433615 | 125 / 90 | 125 | 90 | 8 | 3 | 1.5"
+                      },
+                      {
+                          "typ":  "d160/110",
+                          "parameter":  "A",
+                          "befund":  "78ec99292421#15548",
+                          "grund":  "Achsversatz A gibt es nur bei exzentrischen Reduktionen; dieser Typ ist die zentrische Ausführung (Tabelle «reducer, concentric, short» hat keine Spalte A): 369.535.16.1 | 1430184 | 150 / 100 | 160 | 110 | 4 | 0.6 | 0"
+                      }
+                  ],
+    "offen":  [
+
+              ]
+}

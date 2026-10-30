@@ -1,0 +1,368 @@
+{
+    "familie":  "FAM-17",
+    "quellen":  [
+                    {
+                        "typ":  "d160",
+                        "parameter":  "X15a",
+                        "wert":  7.5,
+                        "befund":  "78ec99292421#4301",
+                        "beleg":  "369.015.16.1 | 150 | 160 | 7.5 | 7.5 | 4.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 15°, Spalte X1 = 7.5 cm)"
+                    },
+                    {
+                        "typ":  "d200",
+                        "parameter":  "X15a",
+                        "wert":  15.5,
+                        "befund":  "78ec99292421#5290",
+                        "beleg":  "370.015.16.1 | 200 | 200 | 15.5 | 4 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 15.5 cm)"
+                    },
+                    {
+                        "typ":  "d250",
+                        "parameter":  "X15a",
+                        "wert":  10.3,
+                        "befund":  "78ec99292421#5291",
+                        "beleg":  "371.015.16.1 | 250 | 250 | 10.3 | 0 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 10.3 cm)"
+                    },
+                    {
+                        "typ":  "d315",
+                        "parameter":  "X15a",
+                        "wert":  10.3,
+                        "befund":  "78ec99292421#5292",
+                        "beleg":  "372.015.16.1 | 300 | 315 | 10.3 | 0 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 10.3 cm)"
+                    },
+                    {
+                        "typ":  "d160",
+                        "parameter":  "X15b",
+                        "wert":  7.5,
+                        "befund":  "78ec99292421#4301",
+                        "beleg":  "369.015.16.1 | 150 | 160 | 7.5 | 7.5 | 4.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 15°, Spalte X2 = 7.5 cm)"
+                    },
+                    {
+                        "typ":  "d200",
+                        "parameter":  "X15b",
+                        "wert":  15.5,
+                        "befund":  "78ec99292421#5290",
+                        "beleg":  "370.015.16.1 | 200 | 200 | 15.5 | 4 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 15.5 cm)"
+                    },
+                    {
+                        "typ":  "d250",
+                        "parameter":  "X15b",
+                        "wert":  10.3,
+                        "befund":  "78ec99292421#5291",
+                        "beleg":  "371.015.16.1 | 250 | 250 | 10.3 | 0 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 10.3 cm)"
+                    },
+                    {
+                        "typ":  "d315",
+                        "parameter":  "X15b",
+                        "wert":  10.3,
+                        "befund":  "78ec99292421#5292",
+                        "beleg":  "372.015.16.1 | 300 | 315 | 10.3 | 0 | – (S. 10, Abschnitt arc / angle: 15°, Spalte X = 10.3 cm)"
+                    },
+                    {
+                        "typ":  "d110",
+                        "parameter":  "X30a",
+                        "wert":  19.5,
+                        "befund":  "78ec99292421#4303",
+                        "beleg":  "367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 30°, Spalte X1 = 19.5 cm)"
+                    },
+                    {
+                        "typ":  "d160",
+                        "parameter":  "X30a",
+                        "wert":  9.5,
+                        "befund":  "78ec99292421#4304",
+                        "beleg":  "369.030.16.1 | 150 | 160 | 9.5 | 9.5 | 4.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 30°, Spalte X1 = 9.5 cm)"
+                    },
+                    {
+                        "typ":  "d110",
+                        "parameter":  "X30b",
+                        "wert":  8.5,
+                        "befund":  "78ec99292421#4303",
+                        "beleg":  "367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 30°, Spalte X2 = 8.5 cm)"
+                    },
+                    {
+                        "typ":  "d160",
+                        "parameter":  "X30b",
+                        "wert":  9.5,
+                        "befund":  "78ec99292421#4304",
+                        "beleg":  "369.030.16.1 | 150 | 160 | 9.5 | 9.5 | 4.5 | 4.5 | – (S. 9, Abschnitt arc / angle: 30°, Spalte X2 = 9.5 cm)"
+                    },
+                    {
+                        "typ":  "d50",
+                        "parameter":  "X45",
+                        "wert":  4.5,
+                        "befund":  "78ec99292421#3530",
+                        "beleg":  "361.045.16.1 | 1430101 | 50 | 50 | 4.5 | 2 (S. 8, Abschnitt arc / angle: 45°, Spalte X = 4.5 cm)"
+                    },
+                    {
+                        "typ":  "d56",
+                        "parameter":  "X45",
+                        "wert":  4.5,
+                        "befund":  "78ec99292421#3531",
+                        "beleg":  "363.045.16.1 | 1430102 | 56 | 56 | 4.5 | 2 (S. 8, Abschnitt arc / angle: 45°, Spalte X = 4.5 cm)"
+                    },
+                    {
+                        "typ":  "d90",
+                        "parameter":  "X45",
+                        "wert":  5.5,
+                        "befund":  "78ec99292421#3534",
+                        "beleg":  "366.045.16.1 | 1430105 | 90 | 90 | 5.5 | 2 (S. 8, Abschnitt arc / angle: 45°, Spalte X = 5.5 cm)"
+                    },
+                    {
+                        "typ":  "d125",
+                        "parameter":  "X45",
+                        "wert":  6.5,
+                        "befund":  "78ec99292421#3536",
+                        "beleg":  "368.045.16.1 | 1430107 | 125 | 125 | 6.5 | 2.5 (S. 8, Abschnitt arc / angle: 45°, Spalte X = 6.5 cm)"
+                    },
+                    {
+                        "typ":  "d160",
+                        "parameter":  "X45",
+                        "wert":  6.9,
+                        "befund":  "78ec99292421#3537",
+                        "beleg":  "369.045.16.1 | 1430108 | 150 | 160 | 6.9 | 2 (S. 8, Abschnitt arc / angle: 45°, Spalte X = 6.9 cm)"
+                    },
+                    {
+                        "typ":  "d250",
+                        "parameter":  "X45",
+                        "wert":  16.5,
+                        "befund":  "78ec99292421#5298",
+                        "beleg":  "371.045.16.1 | 1430110 | 250 | 250 | 16.5 | 0 | 29 (S. 10, Abschnitt arc / angle: 45°, Spalte X = 16.5 cm)"
+                    },
+                    {
+                        "typ":  "d56",
+                        "parameter":  "X88",
+                        "wert":  6.5,
+                        "befund":  "78ec99292421#3541",
+                        "beleg":  "363.088.16.1 | 1430241 | 56 | 56 | 6.5 | 2 (S. 8, Abschnitt arc / angle: 88.5°, Spalte X = 6.5 cm)"
+                    },
+                    {
+                        "typ":  "d75",
+                        "parameter":  "X88",
+                        "wert":  7.5,
+                        "befund":  "78ec99292421#3543",
+                        "beleg":  "365.088.16.1 | 1430243 | 70 | 75 | 7.5 | 2 (S. 8, Abschnitt arc / angle: 88.5°, Spalte X = 7.5 cm)"
+                    },
+                    {
+                        "typ":  "d110",
+                        "parameter":  "X88",
+                        "wert":  9.5,
+                        "befund":  "78ec99292421#3545",
+                        "beleg":  "367.088.16.1 | 1430245 | 100 | 110 | 9.5 | 2.5 (S. 8, Abschnitt arc / angle: 88.5°, Spalte X = 9.5 cm)"
+                    },
+                    {
+                        "typ":  "d250",
+                        "parameter":  "X90a",
+                        "wert":  33.5,
+                        "befund":  "78ec99292421#5302",
+                        "beleg":  "371.055.16.1 | 1430135 | 250 | 250 | 33.5 | 0 | 29 (S. 10, Abschnitt arc / angle: 90°, Spalte X = 33.5 cm)"
+                    },
+                    {
+                        "typ":  "d250",
+                        "parameter":  "X90b",
+                        "wert":  33.5,
+                        "befund":  "78ec99292421#5302",
+                        "beleg":  "371.055.16.1 | 1430135 | 250 | 250 | 33.5 | 0 | 29 (S. 10, Abschnitt arc / angle: 90°, Spalte X = 33.5 cm)"
+                    }
+                ],
+    "entfaellt":  [
+                      {
+                          "typ":  "d40",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d50",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d56",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d63",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d75",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d90",
+                          "parameter":  "X15a",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d40",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d50",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d56",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d63",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d75",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d90",
+                          "parameter":  "X15b",
+                          "befund":  "78ec99292421#4300",
+                          "grund":  "15°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 15°-Tabelle ist d110 (\"367.015.16.1 | 1430145 | 100 | 110 | 18 | 7 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 15°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d40",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d50",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d56",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d63",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d75",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d90",
+                          "parameter":  "X30a",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d40",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d50",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d56",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d63",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d75",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d90",
+                          "parameter":  "X30b",
+                          "befund":  "78ec99292421#4303",
+                          "grund":  "30°-Bogen ist im Katalog (UL-44) nur für d110 und d160 (S. 9) sowie d200–d315 (S. 10) bemasst. Beleg: erste Zeile der 30°-Tabelle ist d110 (\"367.030.16.1 | 1430146 | 100 | 110 | 19.5 | 8.5 | 15.5 | 4.5 | –\"); die Schweizer Seite (UL-45) nennt 30°-Bögen nur für d110/d125/d160. Bericht der Familie: 15°/30° für d40–d90 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d40",
+                          "parameter":  "X88",
+                          "befund":  "78ec99292421#3540",
+                          "grund":  "88.5°-Bogen (Geberit PE Bogen, S. 8) beginnt bei d50; Beleg: erste Zeile der 88.5°-Tabelle ist d50 (\"361.088.16.1 | 1430240 | 50 | 50 | 6 | 2\"). Die Schweizer Seite UL-42 nennt 88.5° ab d50 (361.088.16.1); Bericht der Familie: d40 88,5° nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d200",
+                          "parameter":  "X88",
+                          "befund":  "78ec99292421#3546",
+                          "grund":  "88.5°-Bogen gibt es nur bis d160; Beleg: letzte Zeile der 88.5°-Tabelle S. 8 ist d160 (\"369.088.16.1 | 1430246 | 150 | 160 | 12 | 2.5\"), die Tabelle S. 10 (d200–d315) führt nur 15°/30°/45°/90°. UL-42 nennt 88.5° nur d50–d160. Bericht der Familie: 88,5° für d200–d315 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d250",
+                          "parameter":  "X88",
+                          "befund":  "78ec99292421#3546",
+                          "grund":  "88.5°-Bogen gibt es nur bis d160; Beleg: letzte Zeile der 88.5°-Tabelle S. 8 ist d160 (\"369.088.16.1 | 1430246 | 150 | 160 | 12 | 2.5\"), die Tabelle S. 10 (d200–d315) führt nur 15°/30°/45°/90°. UL-42 nennt 88.5° nur d50–d160. Bericht der Familie: 88,5° für d200–d315 nicht im Sortiment."
+                      },
+                      {
+                          "typ":  "d315",
+                          "parameter":  "X88",
+                          "befund":  "78ec99292421#3546",
+                          "grund":  "88.5°-Bogen gibt es nur bis d160; Beleg: letzte Zeile der 88.5°-Tabelle S. 8 ist d160 (\"369.088.16.1 | 1430246 | 150 | 160 | 12 | 2.5\"), die Tabelle S. 10 (d200–d315) führt nur 15°/30°/45°/90°. UL-42 nennt 88.5° nur d50–d160. Bericht der Familie: 88,5° für d200–d315 nicht im Sortiment."
+                      }
+                  ],
+    "offen":  [
+                  {
+                      "typ":  "d125",
+                      "parameter":  "X15a",
+                      "grund":  "Kombination gibt es im CH-Sortiment (Art.-Nr. 368.015.16.1 (UL-45, Befund 3f706209cddb#1232)), aber der Reece-Katalog (UL-44) hat keine Zeile für d125 in diesem Winkel und die Schweizer Seiten nennen keine Schenkellänge. Mass fehlt in den Unterlagen, nicht geraten."
+                  },
+                  {
+                      "typ":  "d125",
+                      "parameter":  "X15b",
+                      "grund":  "Kombination gibt es im CH-Sortiment (Art.-Nr. 368.015.16.1 (UL-45, Befund 3f706209cddb#1232)), aber der Reece-Katalog (UL-44) hat keine Zeile für d125 in diesem Winkel und die Schweizer Seiten nennen keine Schenkellänge. Mass fehlt in den Unterlagen, nicht geraten."
+                  },
+                  {
+                      "typ":  "d125",
+                      "parameter":  "X30a",
+                      "grund":  "Kombination gibt es im CH-Sortiment (Art.-Nr. 368.030.16.1 (UL-45, Befund 3f706209cddb#1268)), aber der Reece-Katalog (UL-44) hat keine Zeile für d125 in diesem Winkel und die Schweizer Seiten nennen keine Schenkellänge. Mass fehlt in den Unterlagen, nicht geraten."
+                  },
+                  {
+                      "typ":  "d125",
+                      "parameter":  "X30b",
+                      "grund":  "Kombination gibt es im CH-Sortiment (Art.-Nr. 368.030.16.1 (UL-45, Befund 3f706209cddb#1268)), aber der Reece-Katalog (UL-44) hat keine Zeile für d125 in diesem Winkel und die Schweizer Seiten nennen keine Schenkellänge. Mass fehlt in den Unterlagen, nicht geraten."
+                  },
+                  {
+                      "typ":  "d125",
+                      "parameter":  "X88",
+                      "grund":  "Kombination gibt es im CH-Sortiment (Art.-Nr. 368.088.16.1 (UL-42, Befund 1f217a40bf80#1409)), aber der Reece-Katalog (UL-44) hat keine Zeile für d125 in diesem Winkel und die Schweizer Seiten nennen keine Schenkellänge. Mass fehlt in den Unterlagen, nicht geraten."
+                  },
+                  {
+                      "typ":  "(Exemplar)",
+                      "parameter":  "winkel",
+                      "grund":  "Exemplarparameter «winkel» (Bogenwinkel, Vorgabe 45) hat keinen Wert aus einer Unterlage; der Katalog nennt die Winkel nur als Abschnitte (15, 30, 45, 88.5, 90). Vorgabewert muss ein Mensch setzen (familie_aendern) oder die Abdeckung ausnehmen; nicht aus Quelle ableitbar."
+                  }
+              ]
+}

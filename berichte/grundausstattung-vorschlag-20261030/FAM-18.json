@@ -1,0 +1,975 @@
+{
+    "familie":  "FAM-18",
+    "quellen":  [
+                    {
+                        "typ":  "d40/40",
+                        "parameter":  "H45",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#6982",
+                        "beleg":  "360.109.16.1 | 1431068 | 40 / 40 | 40 | 40 | 13.5 | 4.5 | 9 | 9 | 2.5 | 3 | 3 (S. 11, Abzweig 45°, Spalte H = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d50/40",
+                        "parameter":  "H45",
+                        "wert":  16.5,
+                        "befund":  "78ec99292421#6983",
+                        "beleg":  "361.109.16.1 | 1433163 | 50 / 40 | 50 | 40 | 16.5 | 5.5 | 11 | 11 | 4 | 4.5 | 4.5 (S. 11, Abzweig 45°, Spalte H = 16.5 cm)"
+                    },
+                    {
+                        "typ":  "d50/50",
+                        "parameter":  "H45",
+                        "wert":  16.5,
+                        "befund":  "78ec99292421#6984",
+                        "beleg":  "361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2 (S. 11, Abzweig 45°, Spalte H = 16.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/50",
+                        "parameter":  "H45",
+                        "wert":  19.5,
+                        "befund":  "78ec99292421#6986",
+                        "beleg":  "364.112.16.1 | 1430282 | 60 / 50 | 63 | 50 | 19.5 | 6.5 | 13 | 13 | 5 | 3 | 3 (S. 11, Abzweig 45°, Spalte H = 19.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/56",
+                        "parameter":  "H45",
+                        "wert":  19.5,
+                        "befund":  "78ec99292421#6987",
+                        "beleg":  "364.115.16.1 | 1430283 | 60 / 56 | 63 | 56 | 19.5 | 6.5 | 13 | 13 | 4.5 | 2.5 | 2.5 (S. 11, Abzweig 45°, Spalte H = 19.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/63",
+                        "parameter":  "H45",
+                        "wert":  19.5,
+                        "befund":  "78ec99292421#6988",
+                        "beleg":  "364.120.16.1 | 1430284 | 60 / 60 | 63 | 63 | 19.5 | 6.5 | 13 | 13 | 4 | 2 | 2 (S. 11, Abzweig 45°, Spalte H = 19.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/75",
+                        "parameter":  "H45",
+                        "wert":  37.5,
+                        "befund":  "78ec99292421#7012",
+                        "beleg":  "369.125.16.1 | 1430271 | 150 / 70 | 160 | 75 | 37.5 | 12.5 | 25 | 25 | 13.5 | 6.5 | 7.5 (S. 11, Abzweig 45°, Spalte H = 37.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/90",
+                        "parameter":  "H45",
+                        "wert":  37.5,
+                        "befund":  "78ec99292421#7013",
+                        "beleg":  "369.130.16.1 | 1433620 | 150 / 90 | 160 | 90 | 37.5 | 12.5 | 25 | 25 | 12.5 | 5.5 | 6.5 (S. 11, Abzweig 45°, Spalte H = 37.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "H45",
+                        "wert":  37.5,
+                        "befund":  "78ec99292421#7014",
+                        "beleg":  "369.135.16.1 | 1430294 | 150 / 100 | 160 | 110 | 37.5 | 12.5 | 25 | 25 | 11 | 4.5 | 5.5 (S. 11, Abzweig 45°, Spalte H = 37.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/125",
+                        "parameter":  "H45",
+                        "wert":  37.5,
+                        "befund":  "78ec99292421#7015",
+                        "beleg":  "369.139.16.1 | 1430272 | 150 / 125 | 160 | 125 | 37.5 | 12.5 | 25 | 25 | 10 | 4 | 5 (S. 11, Abzweig 45°, Spalte H = 37.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/160",
+                        "parameter":  "H45",
+                        "wert":  37.5,
+                        "befund":  "78ec99292421#7016",
+                        "beleg":  "369.145.16.1 | 1430273 | 150 / 150 | 160 | 160 | 37.5 | 12.5 | 25 | 25 | 7.5 | 2.5 | 2.5 (S. 11, Abzweig 45°, Spalte H = 37.5 cm)"
+                    },
+                    {
+                        "typ":  "d40/40",
+                        "parameter":  "X1_45",
+                        "wert":  4.5,
+                        "befund":  "78ec99292421#6982",
+                        "beleg":  "360.109.16.1 | 1431068 | 40 / 40 | 40 | 40 | 13.5 | 4.5 | 9 | 9 | 2.5 | 3 | 3 (S. 11, Abzweig 45°, Spalte X1 = 4.5 cm)"
+                    },
+                    {
+                        "typ":  "d50/40",
+                        "parameter":  "X1_45",
+                        "wert":  5.5,
+                        "befund":  "78ec99292421#6983",
+                        "beleg":  "361.109.16.1 | 1433163 | 50 / 40 | 50 | 40 | 16.5 | 5.5 | 11 | 11 | 4 | 4.5 | 4.5 (S. 11, Abzweig 45°, Spalte X1 = 5.5 cm)"
+                    },
+                    {
+                        "typ":  "d50/50",
+                        "parameter":  "X1_45",
+                        "wert":  5.5,
+                        "befund":  "78ec99292421#6984",
+                        "beleg":  "361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2 (S. 11, Abzweig 45°, Spalte X1 = 5.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/50",
+                        "parameter":  "X1_45",
+                        "wert":  6.5,
+                        "befund":  "78ec99292421#6986",
+                        "beleg":  "364.112.16.1 | 1430282 | 60 / 50 | 63 | 50 | 19.5 | 6.5 | 13 | 13 | 5 | 3 | 3 (S. 11, Abzweig 45°, Spalte X1 = 6.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/56",
+                        "parameter":  "X1_45",
+                        "wert":  6.5,
+                        "befund":  "78ec99292421#6987",
+                        "beleg":  "364.115.16.1 | 1430283 | 60 / 56 | 63 | 56 | 19.5 | 6.5 | 13 | 13 | 4.5 | 2.5 | 2.5 (S. 11, Abzweig 45°, Spalte X1 = 6.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/63",
+                        "parameter":  "X1_45",
+                        "wert":  6.5,
+                        "befund":  "78ec99292421#6988",
+                        "beleg":  "364.120.16.1 | 1430284 | 60 / 60 | 63 | 63 | 19.5 | 6.5 | 13 | 13 | 4 | 2 | 2 (S. 11, Abzweig 45°, Spalte X1 = 6.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/75",
+                        "parameter":  "X1_45",
+                        "wert":  12.5,
+                        "befund":  "78ec99292421#7012",
+                        "beleg":  "369.125.16.1 | 1430271 | 150 / 70 | 160 | 75 | 37.5 | 12.5 | 25 | 25 | 13.5 | 6.5 | 7.5 (S. 11, Abzweig 45°, Spalte X1 = 12.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/90",
+                        "parameter":  "X1_45",
+                        "wert":  12.5,
+                        "befund":  "78ec99292421#7013",
+                        "beleg":  "369.130.16.1 | 1433620 | 150 / 90 | 160 | 90 | 37.5 | 12.5 | 25 | 25 | 12.5 | 5.5 | 6.5 (S. 11, Abzweig 45°, Spalte X1 = 12.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "X1_45",
+                        "wert":  12.5,
+                        "befund":  "78ec99292421#7014",
+                        "beleg":  "369.135.16.1 | 1430294 | 150 / 100 | 160 | 110 | 37.5 | 12.5 | 25 | 25 | 11 | 4.5 | 5.5 (S. 11, Abzweig 45°, Spalte X1 = 12.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/125",
+                        "parameter":  "X1_45",
+                        "wert":  12.5,
+                        "befund":  "78ec99292421#7015",
+                        "beleg":  "369.139.16.1 | 1430272 | 150 / 125 | 160 | 125 | 37.5 | 12.5 | 25 | 25 | 10 | 4 | 5 (S. 11, Abzweig 45°, Spalte X1 = 12.5 cm)"
+                    },
+                    {
+                        "typ":  "d160/160",
+                        "parameter":  "X1_45",
+                        "wert":  12.5,
+                        "befund":  "78ec99292421#7016",
+                        "beleg":  "369.145.16.1 | 1430273 | 150 / 150 | 160 | 160 | 37.5 | 12.5 | 25 | 25 | 7.5 | 2.5 | 2.5 (S. 11, Abzweig 45°, Spalte X1 = 12.5 cm)"
+                    },
+                    {
+                        "typ":  "d56/50",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9578",
+                        "beleg":  "363.162.16.1 | 1433176 | 56 / 50 | 56 | 50 | 17.5 | 10.5 | 7 | 7 | 7 | 3 | 3.5 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d56/56",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9579",
+                        "beleg":  "363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/63",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9580",
+                        "beleg":  "364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/40",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9581",
+                        "beleg":  "365.159.16.1 | 1433560 | 70 / 40 | 75 | 40 | 17.5 | 10.5 | 7 | 7 | 7.5 | 2.5 | 4 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/50",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9582",
+                        "beleg":  "365.162.16.1 | 1430322 | 70 / 50 | 75 | 50 | 17.5 | 10.5 | 7 | 7 | 7 | 2.5 | 3.5 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/56",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9583",
+                        "beleg":  "365.165.16.1 | 1430323 | 70 / 56 | 75 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 2.5 | 3 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/63",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9584",
+                        "beleg":  "365.170.16.1 | 1433561 | 70 / 60 | 75 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/75",
+                        "parameter":  "H88",
+                        "wert":  17.5,
+                        "befund":  "78ec99292421#9585",
+                        "beleg":  "365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte H = 17.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/40",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9587",
+                        "beleg":  "367.159.16.1 | 1433583 | 100 / 40 | 110 | 40 | 22.5 | 13.5 | 9 | 9 | 10 | 2.5 | 6 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/50",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9588",
+                        "beleg":  "367.162.16.1 | 1430326 | 100 / 50 | 110 | 50 | 22.5 | 13.5 | 9 | 9 | 9.5 | 2.5 | 5 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/56",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9589",
+                        "beleg":  "367.165.16.1 | 1430908 | 100 / 56 | 110 | 56 | 22.5 | 13.5 | 9 | 9 | 9 | 2.5 | 4.5 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/63",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9590",
+                        "beleg":  "367.170.16.1 | 1430909 | 100 / 60 | 110 | 63 | 22.5 | 13.5 | 9 | 9 | 9 | 2.5 | 4 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/75",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9591",
+                        "beleg":  "367.175.16.1 | 1433584 | 100 / 70 | 110 | 75 | 22.5 | 13.5 | 9 | 9 | 8.5 | 2.5 | 3.5 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/90",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9592",
+                        "beleg":  "367.180.16.1 | 1433585 | 100 / 90 | 110 | 90 | 22.5 | 13.5 | 9 | 9 | 7.5 | 2.5 | 3 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/110",
+                        "parameter":  "H88",
+                        "wert":  22.5,
+                        "befund":  "78ec99292421#9593",
+                        "beleg":  "367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2 (S. 12, Abzweig 88.5°, Spalte H = 22.5 cm)"
+                    },
+                    {
+                        "typ":  "d40/40",
+                        "parameter":  "X1_88",
+                        "wert":  7.5,
+                        "befund":  "78ec99292421#9575",
+                        "beleg":  "360.159.16.1 | 1433156 | 40 / 40 | 40 | 40 | 13 | 7.5 | 5.5 | 5.5 | 4.5 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte X1 = 7.5 cm)"
+                    },
+                    {
+                        "typ":  "d56/50",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9578",
+                        "beleg":  "363.162.16.1 | 1433176 | 56 / 50 | 56 | 50 | 17.5 | 10.5 | 7 | 7 | 7 | 3 | 3.5 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d56/56",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9579",
+                        "beleg":  "363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d63/63",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9580",
+                        "beleg":  "364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/40",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9581",
+                        "beleg":  "365.159.16.1 | 1433560 | 70 / 40 | 75 | 40 | 17.5 | 10.5 | 7 | 7 | 7.5 | 2.5 | 4 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/50",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9582",
+                        "beleg":  "365.162.16.1 | 1430322 | 70 / 50 | 75 | 50 | 17.5 | 10.5 | 7 | 7 | 7 | 2.5 | 3.5 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/56",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9583",
+                        "beleg":  "365.165.16.1 | 1430323 | 70 / 56 | 75 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 2.5 | 3 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/63",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9584",
+                        "beleg":  "365.170.16.1 | 1433561 | 70 / 60 | 75 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d75/75",
+                        "parameter":  "X1_88",
+                        "wert":  10.5,
+                        "befund":  "78ec99292421#9585",
+                        "beleg":  "365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte X1 = 10.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/40",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9587",
+                        "beleg":  "367.159.16.1 | 1433583 | 100 / 40 | 110 | 40 | 22.5 | 13.5 | 9 | 9 | 10 | 2.5 | 6 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/50",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9588",
+                        "beleg":  "367.162.16.1 | 1430326 | 100 / 50 | 110 | 50 | 22.5 | 13.5 | 9 | 9 | 9.5 | 2.5 | 5 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/56",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9589",
+                        "beleg":  "367.165.16.1 | 1430908 | 100 / 56 | 110 | 56 | 22.5 | 13.5 | 9 | 9 | 9 | 2.5 | 4.5 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/63",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9590",
+                        "beleg":  "367.170.16.1 | 1430909 | 100 / 60 | 110 | 63 | 22.5 | 13.5 | 9 | 9 | 9 | 2.5 | 4 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/75",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9591",
+                        "beleg":  "367.175.16.1 | 1433584 | 100 / 70 | 110 | 75 | 22.5 | 13.5 | 9 | 9 | 8.5 | 2.5 | 3.5 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/90",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9592",
+                        "beleg":  "367.180.16.1 | 1433585 | 100 / 90 | 110 | 90 | 22.5 | 13.5 | 9 | 9 | 7.5 | 2.5 | 3 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d110/110",
+                        "parameter":  "X1_88",
+                        "wert":  13.5,
+                        "befund":  "78ec99292421#9593",
+                        "beleg":  "367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2 (S. 12, Abzweig 88.5°, Spalte X1 = 13.5 cm)"
+                    },
+                    {
+                        "typ":  "d40/40",
+                        "parameter":  "X2_88",
+                        "wert":  5.5,
+                        "befund":  "78ec99292421#9575",
+                        "beleg":  "360.159.16.1 | 1433156 | 40 / 40 | 40 | 40 | 13 | 7.5 | 5.5 | 5.5 | 4.5 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte X2 = 5.5 cm)"
+                    },
+                    {
+                        "typ":  "d40/40",
+                        "parameter":  "X3_88",
+                        "wert":  5.5,
+                        "befund":  "78ec99292421#9575",
+                        "beleg":  "360.159.16.1 | 1433156 | 40 / 40 | 40 | 40 | 13 | 7.5 | 5.5 | 5.5 | 4.5 | 2.5 | 2.5 (S. 12, Abzweig 88.5°, Spalte X3 = 5.5 cm)"
+                    }
+                ],
+    "entfaellt":  [
+                      {
+                          "typ":  "d56/50",
+                          "parameter":  "H45",
+                          "befund":  "78ec99292421#6984",
+                          "grund":  "Paar d56/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 45°» (S. 11); die Tabelle springt von der Vorzeile \"361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2\" auf die Folgezeile 78ec99292421#6985: \"363.115.16.1 | 1430280 | 56 / 56 | 56 | 56 | 18 | 6 | 12 | 12 | 4 | 2.5 | 2.5\". Bericht der Familie: d56/50 gibt es nur 88,5° (bei 45° nicht platzierbar)."
+                      },
+                      {
+                          "typ":  "d56/50",
+                          "parameter":  "X1_45",
+                          "befund":  "78ec99292421#6984",
+                          "grund":  "Paar d56/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 45°» (S. 11); die Tabelle springt von der Vorzeile \"361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2\" auf die Folgezeile 78ec99292421#6985: \"363.115.16.1 | 1430280 | 56 / 56 | 56 | 56 | 18 | 6 | 12 | 12 | 4 | 2.5 | 2.5\". Bericht der Familie: d56/50 gibt es nur 88,5° (bei 45° nicht platzierbar)."
+                      },
+                      {
+                          "typ":  "d56/50",
+                          "parameter":  "X2_45",
+                          "befund":  "78ec99292421#6984",
+                          "grund":  "Paar d56/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 45°» (S. 11); die Tabelle springt von der Vorzeile \"361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2\" auf die Folgezeile 78ec99292421#6985: \"363.115.16.1 | 1430280 | 56 / 56 | 56 | 56 | 18 | 6 | 12 | 12 | 4 | 2.5 | 2.5\". Bericht der Familie: d56/50 gibt es nur 88,5° (bei 45° nicht platzierbar)."
+                      },
+                      {
+                          "typ":  "d56/50",
+                          "parameter":  "X3_45",
+                          "befund":  "78ec99292421#6984",
+                          "grund":  "Paar d56/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 45°» (S. 11); die Tabelle springt von der Vorzeile \"361.112.16.1 | 1430278 | 50 / 50 | 50 | 50 | 16.5 | 5.5 | 11 | 11 | 3.5 | 2 | 2\" auf die Folgezeile 78ec99292421#6985: \"363.115.16.1 | 1430280 | 56 / 56 | 56 | 56 | 18 | 6 | 12 | 12 | 4 | 2.5 | 2.5\". Bericht der Familie: d56/50 gibt es nur 88,5° (bei 45° nicht platzierbar)."
+                      },
+                      {
+                          "typ":  "d63/50",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/56",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/40",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d40 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/50",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/56",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/63",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/75",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/63",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/75",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/90",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/110",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/125",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/90",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9594",
+                          "grund":  "Paar d160/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\" auf die Folgezeile 78ec99292421#9595: \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/125",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9595",
+                          "grund":  "Paar d160/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\" auf die Folgezeile 78ec99292421#9596: \"369.195.16.1 | 1430335 | 150 / 150 | 160 | 160 | 35 | 21 | 14 | 14 | 10.5 | 3.5 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d200/125",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9597",
+                          "grund":  "Paar d200/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"370.185.16.1 | 1433742 | 200 / 100 | 200 | 110 | 36 | 18 | 18 | 18 | 0 | 3 | 0\" auf die Folgezeile 78ec99292421#9598: \"370.195.16.1 | 1433743 | 200 / 150 | 200 | 160 | 36 | 18 | 18 | 18 | 0 | 2 | 0\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/125",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/160",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d160 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/200",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/250",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/110",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d315/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/200",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/250",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/315",
+                          "parameter":  "H88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d315 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/50",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/56",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/40",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d40 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/50",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/56",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/63",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/75",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/63",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/75",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/90",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/110",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/125",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/90",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9594",
+                          "grund":  "Paar d160/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\" auf die Folgezeile 78ec99292421#9595: \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/125",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9595",
+                          "grund":  "Paar d160/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\" auf die Folgezeile 78ec99292421#9596: \"369.195.16.1 | 1430335 | 150 / 150 | 160 | 160 | 35 | 21 | 14 | 14 | 10.5 | 3.5 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d200/125",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9597",
+                          "grund":  "Paar d200/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"370.185.16.1 | 1433742 | 200 / 100 | 200 | 110 | 36 | 18 | 18 | 18 | 0 | 3 | 0\" auf die Folgezeile 78ec99292421#9598: \"370.195.16.1 | 1433743 | 200 / 150 | 200 | 160 | 36 | 18 | 18 | 18 | 0 | 2 | 0\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/125",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/160",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d160 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/200",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/250",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/110",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d315/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/200",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/250",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/315",
+                          "parameter":  "X1_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d315 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/50",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/56",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/40",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d40 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/50",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/56",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/63",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/75",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/63",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/75",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/90",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/110",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/125",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/90",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9594",
+                          "grund":  "Paar d160/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\" auf die Folgezeile 78ec99292421#9595: \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/125",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9595",
+                          "grund":  "Paar d160/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\" auf die Folgezeile 78ec99292421#9596: \"369.195.16.1 | 1430335 | 150 / 150 | 160 | 160 | 35 | 21 | 14 | 14 | 10.5 | 3.5 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d200/125",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9597",
+                          "grund":  "Paar d200/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"370.185.16.1 | 1433742 | 200 / 100 | 200 | 110 | 36 | 18 | 18 | 18 | 0 | 3 | 0\" auf die Folgezeile 78ec99292421#9598: \"370.195.16.1 | 1433743 | 200 / 150 | 200 | 160 | 36 | 18 | 18 | 18 | 0 | 2 | 0\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/125",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/160",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d160 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/200",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/250",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/110",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d315/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/200",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/250",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/315",
+                          "parameter":  "X2_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d315 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/50",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d63/56",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9579",
+                          "grund":  "Paar d63/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"363.165.16.1 | 1430316 | 56 / 56 | 56 | 56 | 17.5 | 10.5 | 7 | 7 | 6.5 | 3 | 3\" auf die Folgezeile 78ec99292421#9580: \"364.170.16.1 | 1430320 | 60 / 60 | 63 | 63 | 17.5 | 10.5 | 7 | 7 | 6 | 3 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/40",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d40 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/50",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d50 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/56",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d56 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/63",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d90/75",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9585",
+                          "grund":  "Paar d90/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"365.175.16.1 | 1430325 | 70 / 70 | 75 | 75 | 17.5 | 10.5 | 7 | 7 | 5.5 | 2.5 | 2.5\" auf die Folgezeile 78ec99292421#9586: \"366.180.16.1 | 1430906 | 90 / 90 | 90 | 90 | 20 | 12 | 8 | 8 | 6.5 | 2.5 | 2.5\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/63",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d63 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/75",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d75 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/90",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/110",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d125/125",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9593",
+                          "grund":  "Paar d125/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"367.185.16.1 | 1430327 | 100 / 100 | 110 | 110 | 22.5 | 13.5 | 9 | 9 | 6.5 | 2 | 2\" auf die Folgezeile 78ec99292421#9594: \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/90",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9594",
+                          "grund":  "Paar d160/d90 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.175.16.1 | 1433621 | 150 / 70 | 160 | 75 | 35 | 21 | 14 | 14 | 15 | 4.5 | 8\" auf die Folgezeile 78ec99292421#9595: \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d160/125",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9595",
+                          "grund":  "Paar d160/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"369.185.16.1 | 1430912 | 150 / 100 | 160 | 110 | 35 | 21 | 14 | 14 | 13.5 | 4.5 | 6\" auf die Folgezeile 78ec99292421#9596: \"369.195.16.1 | 1430335 | 150 / 150 | 160 | 160 | 35 | 21 | 14 | 14 | 10.5 | 3.5 | 3\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d200/125",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9597",
+                          "grund":  "Paar d200/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"370.185.16.1 | 1433742 | 200 / 100 | 200 | 110 | 36 | 18 | 18 | 18 | 0 | 3 | 0\" auf die Folgezeile 78ec99292421#9598: \"370.195.16.1 | 1433743 | 200 / 150 | 200 | 160 | 36 | 18 | 18 | 18 | 0 | 2 | 0\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/125",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d125 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/160",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d160 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/200",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d250/250",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d250/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/110",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9600",
+                          "grund":  "Paar d315/d110 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"371.185.16.1 | 1433745 | 250 / 100 | 250 | 110 | 44 | 22 | 22 | 22 | 3.5 | 4 | 3.5\" auf die Folgezeile 78ec99292421#9601: \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/200",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d200 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/250",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d250 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      },
+                      {
+                          "typ":  "d315/315",
+                          "parameter":  "X3_88",
+                          "befund":  "78ec99292421#9601",
+                          "grund":  "Paar d315/d315 hat im Katalog (UL-44) keine Zeile in der Tabelle «branch fitting 88.5°» (S. 12); die Tabelle springt von der Vorzeile \"372.195.16.1 | 1433748 | 300 / 150 | 315 | 160 | 56 | 28 | 28 | 28 | 7 | 6 | 7\". Bericht der Familie: 88,5° fehlt für dieses Paar (im Katalog nicht geführt bzw. nur 45°)."
+                      }
+                  ],
+    "offen":  [
+                  {
+                      "typ":  "(Exemplar)",
+                      "parameter":  "winkel",
+                      "grund":  "Exemplarparameter «winkel» (Abzweigwinkel, Vorgabe 45) hat keinen Wert aus einer Unterlage; der Katalog gibt die Winkel nur als Tabellenabschnitte (45°, 88.5°). Vorgabewert muss ein Mensch setzen (familie_aendern); nicht aus einer Quelle ableitbar."
+                  }
+              ]
+}

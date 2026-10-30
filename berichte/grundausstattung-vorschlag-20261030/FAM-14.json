@@ -1,0 +1,105 @@
+{
+    "familie":  "FAM-14",
+    "quellen":  [
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "H88",
+                        "wert":  335,
+                        "befund":  "ef7be32006aa#94",
+                        "beleg":  "33.5 (Spalte H, = 335 mm). Datenblatt Geberit Silent-db20 Abzweig 88,5° (UL-39, Seite 1), Zeile ef7be32006aa#71: \"315.108.14.1 | 150 / 100 | 160 | 110 | 88.5 | 33.5 | 21 | 15 | 12.5 | 7 | 1.5 | 1\"; das Mass trägt keine Einheit, cm ist Annahme (Spaltenkopf lautet H | X1 | X2 | X3 wie im Geberit-HDPE-Katalog; H = X1 + X3 ist erfüllt: 33.5 = 21 + 12.5; gleicher Massstab wie DIBt Anlage 6, d160/160 H = 335 mm)."
+                    },
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "x88",
+                        "wert":  210,
+                        "befund":  "ef7be32006aa#95",
+                        "beleg":  "21 (Spalte X1, = 210 mm). Datenblatt Geberit Silent-db20 Abzweig 88,5° (UL-39, Seite 1), Zeile ef7be32006aa#71: \"315.108.14.1 | 150 / 100 | 160 | 110 | 88.5 | 33.5 | 21 | 15 | 12.5 | 7 | 1.5 | 1\"; das Mass trägt keine Einheit, cm ist Annahme (Spaltenkopf lautet H | X1 | X2 | X3 wie im Geberit-HDPE-Katalog; H = X1 + X3 ist erfüllt: 33.5 = 21 + 12.5; gleicher Massstab wie DIBt Anlage 6, d160/160 H = 335 mm)."
+                    },
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "z88",
+                        "wert":  150,
+                        "befund":  "ef7be32006aa#96",
+                        "beleg":  "15 (Spalte X2, = 150 mm). Datenblatt Geberit Silent-db20 Abzweig 88,5° (UL-39, Seite 1), Zeile ef7be32006aa#71: \"315.108.14.1 | 150 / 100 | 160 | 110 | 88.5 | 33.5 | 21 | 15 | 12.5 | 7 | 1.5 | 1\"; das Mass trägt keine Einheit, cm ist Annahme (Spaltenkopf lautet H | X1 | X2 | X3 wie im Geberit-HDPE-Katalog; H = X1 + X3 ist erfüllt: 33.5 = 21 + 12.5; gleicher Massstab wie DIBt Anlage 6, d160/160 H = 335 mm)."
+                    },
+                    {
+                        "typ":  "d160/110",
+                        "parameter":  "y88",
+                        "wert":  125,
+                        "befund":  "ef7be32006aa#97",
+                        "beleg":  "12.5 (Spalte X3, = 125 mm). Datenblatt Geberit Silent-db20 Abzweig 88,5° (UL-39, Seite 1), Zeile ef7be32006aa#71: \"315.108.14.1 | 150 / 100 | 160 | 110 | 88.5 | 33.5 | 21 | 15 | 12.5 | 7 | 1.5 | 1\"; das Mass trägt keine Einheit, cm ist Annahme (Spaltenkopf lautet H | X1 | X2 | X3 wie im Geberit-HDPE-Katalog; H = X1 + X3 ist erfüllt: 33.5 = 21 + 12.5; gleicher Massstab wie DIBt Anlage 6, d160/160 H = 335 mm)."
+                    }
+                ],
+    "entfaellt":  [
+                      {
+                          "typ":  "d110/90",
+                          "parameter":  "H88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/90",
+                          "parameter":  "x88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/90",
+                          "parameter":  "y88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/90",
+                          "parameter":  "z88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/110",
+                          "parameter":  "H88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/110",
+                          "parameter":  "x88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/110",
+                          "parameter":  "y88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      },
+                      {
+                          "typ":  "d110/110",
+                          "parameter":  "z88",
+                          "befund":  "4747737e18e4#6007",
+                          "grund":  "Abzweig 88,5° d110/90 bzw. d110/110 gibt es in diesem Produkt nicht: DIBt Z-42.1-265 Anlage 6 (UL-37, S. 15) führt für d110 nur die Paare 110/56, 110/63, 110/75 (letzte d110-Zeile: \"310.078 | 110 | 6 | 75 | 3.6 | 225 | 135 | 90 | 90\"), danach folgt 135/110 (Befund 4747737e18e4#6008); die 16 Zeilen decken sich mit den 16 Art. des CH-Katalogs. Der Bericht der Familie nennt dazu den Bogenabzweig 88,5° (anderes Produkt, nicht in dieser Familie). Der Bericht führt es unter «Offen», die Begründung spricht aber für «entfällt»."
+                      }
+                  ],
+    "offen":  [
+                  {
+                      "typ":  "d160/110",
+                      "parameter":  "H45",
+                      "grund":  "45°-Abzweig d160/110: DIBt Anlage 8 (UL-37, S. 17) hat nur 160/160 (Befund 4747737e18e4#6571), 18 Zeilen = 18 Art. im CH-Katalog; der Bericht nennt aber ein zweites Katalogprodukt «Abzweig 45°» (2 Art.), das nur teilweise belegt ist. Ob die Kombination existiert und mit welchem Mass, ist aus den Unterlagen nicht zu entscheiden; nicht geraten."
+                  },
+                  {
+                      "typ":  "d160/110",
+                      "parameter":  "x45",
+                      "grund":  "wie H45 (d160/110 bei 45°: Kombination unklar, kein Mass in den Unterlagen)"
+                  },
+                  {
+                      "typ":  "d160/110",
+                      "parameter":  "y45",
+                      "grund":  "wie H45 (d160/110 bei 45°: Kombination unklar, kein Mass in den Unterlagen)"
+                  },
+                  {
+                      "typ":  "(Exemplar)",
+                      "parameter":  "winkel",
+                      "grund":  "Exemplarparameter «winkel» (Abzweigwinkel, Vorgabe 88.5) hat keinen Wert aus einer Unterlage; Vorgabewert muss ein Mensch setzen (familie_aendern); nicht aus einer Quelle ableitbar."
+                  }
+              ]
+}

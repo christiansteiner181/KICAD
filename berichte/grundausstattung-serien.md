@@ -9,10 +9,14 @@
 >   fehlenden Quellen di/s d90–d315 aus demselben Blatt (alle Werte deckungsgleich). R7: 52 Werte geprüft, 0 ohne Quelle.
 > - **36 Familien freigegeben** (auf Anweisung Christian) und in die **Bürobibliothek** `W:\03_CAD Bibliotheken\d_KICAD Familien` übernommen
 >   (36 Familien, 34 Unterlagen). Lokaler Spiegel für den Betrieb ohne VPN (`%LOCALAPPDATA%\HLKS_CAD\bibliothek_ausstehend\<hash>\spiegel`).
-> - **8 noch Entwurf** (Pflichtwerte ohne Wert/Quelle bzw. Formelfehler): FAM-5 Mapress Edelstahl Bogen (d12/d18 in 15/30/60° ohne Werte;
->   Christian: «Mapress ist unproblematisch»), FAM-9 Sanipex Bogen (d16 45°), FAM-13 Silent-db20 Bogen (d160 88°), FAM-14 Silent-db20 T-Stück
->   (Formeln 45°/88°), FAM-17 PE Bogen (X15–X90), FAM-18 PE T-Stück (Formeln, 45°/88°-Masse), FAM-19 PE Reduktion (A, H), FAM-21 Gewinderohr Bogen
->   (45°). Vorgehen offen bei Christian.
+> - **Nachtrag 30.10.2026 abends:** neues Feld `typen[].entfaellt` (Typparameter, die es für eine Grösse nicht gibt, mit Beleg; 6ae65b2, df3fb4c,
+>   de16747). Damit bereinigt und freigegeben: FAM-5 (d12/d18 nur 45/90°), FAM-9 (d16 ohne 45°), FAM-13 (d160 ohne 88,5°), FAM-21 (1/4", 4" ohne 45°),
+>   FAM-18 PE T-Stück, FAM-19 PE Reduktion (Quellen der Dezimalwerte und entfallende Paare aus Vorschlag hlks-modul,
+>   `berichte/grundausstattung-vorschlag-20261030/`, alle 820 Werte vom Kern gegen den Befund geprüft). **42 von 44 freigegeben**; Übernahme der neuen
+>   in die Bürobibliothek wartet in der Warteschlange (W: ohne VPN), wird beim nächsten Zugriff nachgeschrieben.
+> - **Noch Entwurf:** FAM-17 PE Bogen – d125 in 15°/30°/88,5° führt der CH-Katalog (368.015/.030/.088), Masse fehlen in allen Unterlagen;
+>   FAM-14 Silent-db20 T-Stück – d160/110 bei 45° unbelegt, bei 88,5° nur aus Datenblatt ohne Einheit (33,5 / 21 / 15 / 12,5, Kern prüft nicht gegen mm),
+>   Vorgabewinkel 88,5° ohne Quelle. Entscheid Christian offen.
 
 Stand 20.10.2026, 16:30 · Hauptlauf · Spezifikation `entwurf/grundausstattung-leitungsserien.md` · **alle zehn Serien gebaut und stichprobengeprüft**
 
