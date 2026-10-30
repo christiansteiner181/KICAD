@@ -14,9 +14,10 @@
 >   FAM-18 PE T-Stück, FAM-19 PE Reduktion (Quellen der Dezimalwerte und entfallende Paare aus Vorschlag hlks-modul,
 >   `berichte/grundausstattung-vorschlag-20261030/`, alle 820 Werte vom Kern gegen den Befund geprüft). **42 von 44 freigegeben**; Übernahme der neuen
 >   in die Bürobibliothek wartet in der Warteschlange (W: ohne VPN), wird beim nächsten Zugriff nachgeschrieben.
-> - **Noch Entwurf:** FAM-17 PE Bogen – d125 in 15°/30°/88,5° führt der CH-Katalog (368.015/.030/.088), Masse fehlen in allen Unterlagen;
->   FAM-14 Silent-db20 T-Stück – d160/110 bei 45° unbelegt, bei 88,5° nur aus Datenblatt ohne Einheit (33,5 / 21 / 15 / 12,5, Kern prüft nicht gegen mm),
->   Vorgabewinkel 88,5° ohne Quelle. Entscheid Christian offen.
+> - **Alle 44 Familien freigegeben und in der Bürobibliothek (30.10.2026 ~19:20, Index W: 44, Warteschlange nachgeholt).** Letzte Masse vom Hauptlauf beschafft
+>   (Christian «sorry du») aus Geberit-Artikeldatenblättern (UL-84 bis UL-88): PE Bogen d125 15°/30°/88,5°, Silent-db20 T-Stück d160/110 45°/88,5°;
+>   Einheit cm steht nur im gedrehten Spaltenkopf, den der PDF-Leser nicht liest → 12 Werte auf Anweisung Christian mit wert_bestaetigen bestätigt.
+>   Auffällig: Silent-db20 Abzweig 45° 160/110 hat c (X2 = 300) ≠ a (X3 = 309), das Modell kennt nur y45 für beide.
 
 Stand 20.10.2026, 16:30 · Hauptlauf · Spezifikation `entwurf/grundausstattung-leitungsserien.md` · **alle zehn Serien gebaut und stichprobengeprüft**
 

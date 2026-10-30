@@ -92,6 +92,11 @@ Nutzung, Anzeigen, Verhalten, Logik, Familien. Was gebaut ist, soll sich so verh
 2 Familien offline + Grundausstattung abschliessen · 3 Leistung Kern/Oberfläche (H1, H2, M2, M3) · 4 Protokoll B + Dateiausgaben als Befehle (M5) ·
 5 offene Abnahmen 3, 3b, 3c, 4A, 7A, 7B, G am neuen Test_praxis · 6 Datenqualität Kataloge · 7 Kontrollliste neu · 8 Rest (M1, G4, Quelltext-Tests,
 Zweig Modul 5 neu aufsetzen). Die Tabelle unten bleibt die Sammlung der offenen Punkte je Bereich.
+**Stand 30.10.2026 abends:** Rang 1 und 2 fertig (geprueft f808b63; Grundausstattung 44/44 freigegeben, Bürobibliothek W: 44, Spiegel für offline).
+Neu in die Liste (Befunde aus Rang 2): **PDF-Leser liest gedrehten Text nicht** (Spaltenköpfe der Geberit-Artikeldatenblätter mit Einheit cm fehlen,
+Werte daraus nicht maschinell prüfbar; zu Rang 6 bzw. neue Leserversion) · **Schreiben über HTTP gilt als Mensch** (der Hauptlauf ist über `/api/befehl`
+Akteur CS, Art mensch – Werte ohne Quelle werden so «mensch»; KI-Zugriffe sollten als ki erkennbar sein; zu Rang 4 Protokoll) · Silent-db20 Abzweig 45°
+kennt nur y45 für a und c (160/110: c 9 mm zu lang).
 
 | Bereich | Module | Offene Punkte (Stand 22.10.2026) |
 | --- | --- | --- |
