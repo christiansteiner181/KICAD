@@ -311,12 +311,13 @@ public static class FamilienAuswertung
     {
         readonly Dictionary<string, FWert?> fertig = new(StringComparer.Ordinal);
         readonly HashSet<string> fehlerhaft = new(StringComparer.Ordinal);
+        readonly HashSet<string> entfallend = new(StringComparer.Ordinal);   // scheiterte an einem entfallenden Typparameter
         readonly HashSet<string> inArbeit = new(StringComparer.Ordinal);
 
         public FWert? Hole(string name)
         {
             if (fertig.TryGetValue(name, out var w)) return w;
-            if (fehlerhaft.Contains(name)) throw new FormelFehler($"«{name}» lässt sich selbst nicht rechnen", 0, $"Zuerst den Fehler bei «{name}» beheben.");
+            if (fehlerhaft.Contains(name)) throw new FormelFehler(entfallend.Contains(name) ? $"«{name}» {EntfaelltText} «{typ.Name}» (braucht einen entfallenden Wert)" : $"«{name}» lässt sich selbst nicht rechnen", 0, $"Zuerst den Fehler bei «{name}» beheben.");
             var p = f.NachName[name];
             if (!inArbeit.Add(name)) throw new FormelFehler($"Zirkuläre Formel über «{name}»", 0, "Eine der Formeln durch einen Wert ersetzen.");
             try
@@ -336,7 +337,7 @@ public static class FamilienAuswertung
                 fertig[name] = r;
                 return r;
             }
-            catch (FormelFehler) { fehlerhaft.Add(name); throw; }
+            catch (FormelFehler ff) { fehlerhaft.Add(name); if (ff.Message.Contains(EntfaelltText)) entfallend.Add(name); throw; }
             finally { inArbeit.Remove(name); }
         }
 
