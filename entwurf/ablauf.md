@@ -30,8 +30,9 @@ Christian, 22.10.2026: «ab sofort bauen wir parallel mit einem realen projekt, 
   22.10.2026. Ein Wechsel oder ein zweites Projekt legt Christian fest.
   - **Neu aufgesetzt 30.10.2026** (Christian: «wir setzten das testprojekt neu auf. nur mit IFC und IFC nachbau. so dass es eine reine
     Architekturgrundlage ist.»): nur Architekten-IFC «440_Bernstrasse 42 Ausführung» (Archicad 27) mit `ifc_uebernehmen` (Architektur +
-    Räume, Hintergrund), Grundrisse je Geschoss 1:50 und 3D; keine DWG, keine Gebäudetechnik. Lokal `%USERPROFILE%\HLKS_CAD_testdaten\test_praxis_neu`
-    (Stand in `test_praxis_neu_STAND.txt`); Ersatz auf W: (altes Projekt daneben aufbewahren) durch den Hauptlauf, sobald W: erreichbar ist.
+    Räume, Hintergrund), Grundrisse je Geschoss 1:50 und 3D; keine DWG, keine Gebäudetechnik. **Auf W: ersetzt 30.10.2026 16:45**; das alte
+    Projekt (141 Pakete) liegt im selben Ordner unter `_KICAD_alt_20261030` (`projekt.json.alt`, damit es nicht als Projekt erscheint). Lokal:
+    `test_praxis` schreibgeschützte Kopie für Echt-Tests, `test_praxis_arbeit` beschreibbar, alte Stände `*_alt_20261030` (Stand in `test_praxis_STAND.txt`).
     Gebäudetechnik kommt nur noch über die Bauaufgaben hinein, die sie prüfen.
 - **Jede Bauaufgabe endet mit einer Prüfung am realen Projekt.** Grüne Tests mit Beispielprojekt und Attrappen reichen nicht mehr. Der
   Hauptlauf spielt die geänderte Funktion am realen Projekt durch (Desktop bzw. Brille) und hält das Ergebnis in `zuteilung.md` fest.
