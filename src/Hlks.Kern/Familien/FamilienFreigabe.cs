@@ -70,7 +70,8 @@ public static class FamilienFreigabe
         foreach (var t in f.Typen)
         {
             var a = FamilienAuswertung.Aufloesen(f, t.Name, null);
-            foreach (var x in a.Fehler) fehler.Add(new FamFehler($"typ «{t.Name}»: {x.Stelle}", x.Meldung, x.Vorschlag));
+            foreach (var x in a.Fehler.Where(x => !x.Meldung.Contains(FamilienAuswertung.EntfaelltText)))   // Vorgabe trifft eine entfallende Grösse
+                fehler.Add(new FamFehler($"typ «{t.Name}»: {x.Stelle}", x.Meldung, x.Vorschlag));
         }
         var definitionFehler = fehler.ToList();
         var q = new BefundQuelle(p);

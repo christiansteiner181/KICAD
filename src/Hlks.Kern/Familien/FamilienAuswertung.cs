@@ -85,6 +85,10 @@ public sealed class FamAufloesung
 
 public static class FamilienAuswertung
 {
+    /// <summary>Teil der Meldung, wenn eine Formel einen entfallenden Typparameter braucht (typen[].entfaellt, 30.10.2026): der Typ ist mit
+    /// diesem Exemplarwert nicht lieferbar – kein Fehler der Familie, die Freigabeprüfung übergeht ihn.</summary>
+    public const string EntfaelltText = "gibt es nicht für Typ";
+
     /// <summary>Auswertung für Typ und Exemplarwerte, zwischengespeichert je Definitionsstand.</summary>
     public static FamAufloesung Aufloesen(FamilieDef f, string? typ, JsonObject? exemplar) => Aufloesen(f, typ, exemplar, null);
 
@@ -342,6 +346,8 @@ public static class FamilienAuswertung
             FWert? w;
             try { w = Hole(name); }
             catch (FormelFehler ff) { throw new FormelFehler($"«{name}»: {ff.Message}", stelle, ff.Vorschlag); }
+            if (w is null && typ.Entfaellt.Contains(name))
+                throw new FormelFehler($"«{name}» {EntfaelltText} «{typ.Name}»", stelle, "Einen Wert wählen, den es für diesen Typ gibt (z. B. einen anderen Winkel).");
             return w ?? throw new FormelFehler($"Parameter «{name}» hat keinen Wert", stelle,
                 $"Wert im Typ «{typ.Name}» (typen.werte) oder einen Vorgabewert (wert) angeben.");
         }

@@ -108,6 +108,8 @@ public sealed class FamTyp
 {
     public string Name { get; init; } = "";
     public Dictionary<string, JsonNode?> Werte { get; } = new(StringComparer.Ordinal);
+    /// <summary>Typparameter, die es für diesen Typ nicht gibt (typen[].entfaellt, mit Beleg).</summary>
+    public HashSet<string> Entfaellt { get; } = new(StringComparer.Ordinal);
 }
 
 public sealed class FamKoerper
@@ -883,6 +885,7 @@ public sealed class FamilieDef
                     else if (p.Art != "typ") Fehl(eort, $"«{pn}» ist kein Typparameter", "entfaellt gilt nur für Typparameter.");
                     else if (t.Werte.ContainsKey(pn)) Fehl(eort, $"«{pn}» hat in diesem Typ einen Wert und kann nicht entfallen", "Wert entfernen oder den Eintrag in entfaellt.");
                     if (l is not JsonArray { Count: > 0 }) Fehl(eort, "Quelle fehlt: dass es den Wert nicht gibt, braucht einen Beleg", "Befund-Id der Unterlage angeben, z. B. die Zeile «d12/d18 nur 45 oder 90».");
+                    t.Entfaellt.Add(pn);
                 }
             Typen.Add(t);
         }

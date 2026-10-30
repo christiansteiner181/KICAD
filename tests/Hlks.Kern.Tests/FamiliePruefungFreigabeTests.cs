@@ -97,6 +97,9 @@ public sealed class FamiliePruefungFreigabeTests : IDisposable
         Ok(ki.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d.DeepClone() }));
         var f = Assert.Throws<HlksFehler>(() => new FamilieFreigeben().Ausfuehren(Als(ki, "mensch"), new JsonObject { ["familie"] = "FAM-1" }));
         Assert.DoesNotContain("abdeckung «V-25/H»", f.Message);
+        Assert.DoesNotContain("typ «V-25»", f.Message);   // Körper braucht H: der Typ ist so nicht lieferbar, kein Fehler der Familie
+        var a = FamilienAuswertung.Aufloesen(FamilieTestHilfe.Def(d), "V-25", null);
+        Assert.Contains(a.Fehler, x => x.Meldung.Contains("«H» gibt es nicht für Typ «V-25»"));
         // ohne Beleg bzw. neben einem Wert: abgelehnt
         typ["entfaellt"] = new JsonObject { ["H"] = new JsonArray() };
         Assert.Contains("braucht einen Beleg", Nein(ki.Ausfuehren("familie_entwurf", new JsonObject { ["definition"] = d.DeepClone() })).Fehler);
