@@ -69,6 +69,10 @@ public static class FamilienAnsicht
         var teil = new Grafikteil { Id = null, Ebene = "bemassung", Fangpunkte = [] };
         var stil = new Stil { Stift = Stifte.Duenn, Farbe = "#3a6ea5" };
         double mx = begrenzung is { Length: 4 } bg ? (bg[0] + bg[2]) / 2 : 0, my = begrenzung is { Length: 4 } bh ? (bh[1] + bh[3]) / 2 : 0;
+        // Abstände und Schrift in Papier-mm × Massstab, bei kleinen Familien (Formteile d12 …) auf ein Zwanzigstel ihrer Grösse begrenzt,
+        // sonst überdeckt die Bemassung die Familie (Befund Sichtprüfung 30.10.2026, Mapress-Bogen d12)
+        double groesse = begrenzung is { Length: 4 } bb ? Math.Max(bb[2] - bb[0], bb[3] - bb[1]) : 0;
+        double s = groesse > 0 ? Math.Min(Massstab, groesse / 20) : Massstab;
         int nr = 0;
         foreach (var m in a.Familie.Masse)
         {
@@ -98,7 +102,7 @@ public static class FamilienAnsicht
             // Seite weg von der Mitte des Körpers; je weiteres Mass etwas weiter aussen, damit sich Texte nicht decken
             double sx = (p1[0] + p2[0]) / 2 - mx, sy = (p1[1] + p2[1]) / 2 - my;
             if (sx * nrm[0] + sy * nrm[1] < 0) nrm = [-nrm[0], -nrm[1]];
-            double ab = (6 + 4 * (nr++ % 3)) * Massstab;
+            double ab = (6 + 4 * (nr++ % 3)) * s;
             // Masslinie auf der Höhe des äusseren der beiden Punkte
             double h1 = p1[0] * nrm[0] + p1[1] * nrm[1], h2 = p2[0] * nrm[0] + p2[1] * nrm[1], h = Math.Max(h1, h2) + ab;
             double[] Auf(double[] q, double hq) => [q[0] + nrm[0] * (h - hq), q[1] + nrm[1] * (h - hq)];
@@ -106,19 +110,19 @@ public static class FamilienAnsicht
             // Endpunkte der Masslinie genau entlang d (bei Richtung x/y/z kann die Hilfslinie schräg zur Messrichtung stehen)
             double t1 = a1[0] * d[0] + a1[1] * d[1], t2 = t1 + ((p2[0] - p1[0]) * d[0] + (p2[1] - p1[1]) * d[1]);
             double[] e1 = a1, e2 = [a1[0] + d[0] * (t2 - t1), a1[1] + d[1] * (t2 - t1)];
-            double ue = 1.5 * Massstab;
+            double ue = 1.5 * s;
             teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [p1, [e1[0] + nrm[0] * ue, e1[1] + nrm[1] * ue]], Stil = stil });
             teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [p2, [e2[0] + nrm[0] * ue, e2[1] + nrm[1] * ue]], Stil = stil });
             teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[e1[0] - d[0] * ue, e1[1] - d[1] * ue], [e2[0] + d[0] * ue, e2[1] + d[1] * ue]], Stil = stil });
-            double sl = 1.5 * Massstab, s45x = (d[0] + nrm[0]) / Math.Sqrt(2) * sl / 2, s45y = (d[1] + nrm[1]) / Math.Sqrt(2) * sl / 2;
+            double sl = 1.5 * s, s45x = (d[0] + nrm[0]) / Math.Sqrt(2) * sl / 2, s45y = (d[1] + nrm[1]) / Math.Sqrt(2) * sl / 2;
             foreach (var e in (double[][])[e1, e2])
                 teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[e[0] - s45x, e[1] - s45y], [e[0] + s45x, e[1] + s45y]], Stil = stil });
             double grad = Math.Atan2(d[1], d[0]) * 180 / Math.PI;
             if (grad > 90.5 || grad < -89.5) grad = grad > 0 ? grad - 180 : grad + 180;   // lesbar von unten bzw. rechts
             teil.Primitive.Add(new Primitiv
             {
-                Art = "text", Punkte = [[(e1[0] + e2[0]) / 2 + nrm[0] * 1.2 * Massstab, (e1[1] + e2[1]) / 2 + nrm[1] * 1.2 * Massstab]],
-                Text = $"{m.Name} {Math.Round(wert, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", Groesse = 2.5, Ausrichtung = "mitte", Winkel = grad,
+                Art = "text", Punkte = [[(e1[0] + e2[0]) / 2 + nrm[0] * 1.2 * s, (e1[1] + e2[1]) / 2 + nrm[1] * 1.2 * s]],
+                Text = $"{m.Name} {Math.Round(wert, 1).ToString(System.Globalization.CultureInfo.InvariantCulture)}", Groesse = 2.0 * s / Massstab, Ausrichtung = "mitte", Winkel = grad,
                 Stil = new Stil { Farbe = "#3a6ea5" },
             });
         }
