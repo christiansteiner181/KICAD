@@ -5164,7 +5164,7 @@
           "wo": {
             "register": "Familie",
             "gruppe": "Körper",
-            "knopf": "Quader · Zylinder · Kegel · Kugel · Extrusion · Rotation · Sweep · Körper löschen",
+            "knopf": "Quader · Zylinder · Kegel · Kugel · Extrusion · Rotation · Sweep · Übergang · Netz · Geometrie übernehmen · Körper löschen",
             "kuerzel": "",
             "sonst": ""
           },
@@ -5172,13 +5172,15 @@
             "Seite «Körper» wählen.",
             "Im Register Familie › Körper auf «Quader» klicken.",
             "In den Eigenschaften des Körpers eine Zahl durch eine Formel ersetzen.",
-            "Detailgrad-Häkchen (grob, mittel, fein) setzen."
+            "Detailgrad-Häkchen (grob, mittel, fein) setzen.",
+            "«Übergang» wählen (rund auf rechteckig) und die Profile setzen; mit «Geometrie übernehmen» ein Netz aus einer IFC- oder STL/OBJ/STEP-Unterlage holen."
           ],
-          "erwartung": "Ein neuer Körper bekommt Platzhaltermasse (Würfel 100 mm), jede Zahl darf eine Formel sein; Konturen, Löcher und Pfade sind Punkttabellen. Der gewählte Körper ist rechts hervorgehoben (3D in der Auswahlfarbe, 2D gestrichelter Rahmen).",
+          "erwartung": "Ein neuer Körper bekommt Platzhaltermasse (Würfel 100 mm; Übergang Kreis 50 → Rechteck 100 × 60, Netz ein Platzhalter-Tetraeder), jede Zahl darf eine Formel sein; Konturen, Löcher und Pfade sind Punkttabellen. Der gewählte Körper ist rechts hervorgehoben (3D in der Auswahlfarbe, 2D gestrichelter Rahmen). Die Masse der Familie (masse mit von/bis) erscheinen in den 2D-Ansichten als blaue Masslinien mit Name und Wert, bei kleinen Formteilen verkleinert.",
           "pruefpunkte": [
-            "Sieben Körperarten.",
+            "Neun Körperarten (dazu Übergang und Netz).",
             "Hervorhebung des gewählten Körpers.",
-            "«Sichtbar (Formel)» blendet den Körper aus."
+            "«Sichtbar (Formel)» blendet den Körper aus.",
+            "Masslinien in Vorne/Oben passen zur Familiengrösse."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -6188,11 +6190,12 @@
             "Bei «Bogen» die Familie wechseln, bei Regeln die Winkelliste ändern.",
             "Die Kontrolltabelle und «Nicht verfügbar» ansehen."
           ],
-          "erwartung": "Die Seite führt: Querschnitt und Grösse (dn bzw. d bzw. b/h), Masse (aussen Pflicht, innen, wand als Zahl oder Formel), Beschriftung (Kürzel nur bei Rohren, höchstens 12 Zeichen), Formteile je Art mit optionaler Typregel, Regeln (erlaubte Bogenwinkel oder «frei», Biegeradius, Abzweig, Abzweigwinkel). Die Kontrolle zeigt je Grösse, ob Bogen, T-Stück, Reduktion und Reinigungsöffnung verfügbar sind, und listet «Nicht verfügbar» mit Grund und Vorschlag des Kerns. Körper und Anschlüsse entfallen bei Serien.",
+          "erwartung": "Die Seite führt: Querschnitt und Grösse (dn bzw. d bzw. b/h), Masse (aussen Pflicht, innen, wand als Zahl oder Formel), Beschriftung (Kürzel nur bei Rohren, höchstens 12 Zeichen), Formteile je Art mit optionaler Typregel, Regeln (erlaubte Bogenwinkel oder «frei», Biegeradius, Abzweig, Abzweigwinkel, «Mischbar mit» – eine andere Serie, deren Formteile der Kern nimmt, wenn ein eigenes fehlt, z. B. Geberit PE in Silent-db20). Die Kontrolle zeigt je Grösse, ob Bogen, T-Stück, Reduktion und Reinigungsöffnung verfügbar sind, und listet «Nicht verfügbar» mit Grund und Vorschlag des Kerns. Körper und Anschlüsse entfallen bei Serien.",
           "pruefpunkte": [
             "Reiter «Leitungsserie» nur bei Serien.",
             "Kontrolltabelle je Grösse (ja/nein).",
-            "Fehler des Kerns stehen rot mit Vorschlag."
+            "Fehler des Kerns stehen rot mit Vorschlag.",
+            "«Mischbar mit» bietet nur Serien der gleichen Kategorie an."
           ],
           "bild": {
             "projekt": "beispiel",
