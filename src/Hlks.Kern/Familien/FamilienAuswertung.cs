@@ -236,6 +236,9 @@ public static class FamilienAuswertung
             catch (FeldFehler ff) { a.Fehler.Add(ff.Fehler); }
         }
 
+        // 3b. Bogen mit Radius (Christian 30.10.2026: «alle ansichten von oben zeichnen keine bogenradien»)
+        FamilienKoerper.BogenMitRadius(f, a);
+
         // 4. Sinnbild
         foreach (var s in f.Sinnbild ?? [])
         {
@@ -406,6 +409,69 @@ public static class FamilienKoerper
     }
 
     static Koerperteil Netz(Netz3 n, FamKoerper k) => new() { Art = "koerper", Ecken = n.Ecken, Dreiecke = n.Dreiecke, Material = k.Material, Teil = k.Id };
+
+    /// <summary>Bogen (Formteil mit zwei Anschlüssen), dessen Körper nur aus geraden Zylindern je Schenkel besteht (so bauen die
+    /// KI-Familien der Grundausstattung, Annahme im Bericht): Grundriss, 3D und Schnitt zeigten eine scharfe Ecke statt eines
+    /// Bogens. Die Zylinder werden durch einen Sweep über die Schenkelachsen ersetzt – Pfad Anschluss a → Achsschnittpunkt →
+    /// Anschluss b, Profil = grösster Zylinderradius, gerade Einsteckmuffen vom Rohrende (Anschluss) bis zum Ende der Schenkelzylinder,
+    /// Biegeradius aus einem Parameter r/R/radius/biegeradius des Typs, sonst so, dass der Bogen bis zum kürzeren Rohrende reicht (ANNAHME: R = Schenkellänge / tan(Ablenkung / 2); Darstellung, kein Herstellerwert).</summary>
+    internal static void BogenMitRadius(FamilieDef f, FamAufloesung a)
+    {
+        if (f.Kategorie != "Bogen" || a.Anschluesse.Count != 2 || a.Koerper.Count == 0) return;
+        // Ausnahme Geberit PE (Christian 30.10.2026: «ausnahme geberit-pe dort sind es segmente»): geschweisste Segmentbögen – ohne
+        // Parameter segmente bleiben die geraden Schenkel, mit segmente wird der Bogen aus so vielen geraden Stücken gezeichnet
+        int? segmente = a.Werte.GetValueOrDefault("segmente") is { IstText: false } sw && sw.Zahl >= 1 ? (int)Math.Round(sw.Zahl) : null;
+        // Silent-db20 ebenso (PE-S2; Geberit-Datenblatt «Silent-db20 Bogen»: zwei lange Schenkel mit Gehrung, kein Radius)
+        if (segmente is null && (f.Name.StartsWith("Geberit PE", StringComparison.OrdinalIgnoreCase) || f.Name.StartsWith("Geberit Silent", StringComparison.OrdinalIgnoreCase))) return;
+        var zyl = a.Koerper.Where(k => k.Teil is { Art: "zylinder" }).ToList();
+        if (zyl.Count == 0 || zyl.Any(k => !k.Def.Detailgrad.SequenceEqual(zyl[0].Def.Detailgrad))) return;
+        // andere Körper im selben Detailgrad (eigener Körper der Familie): so lassen; ein Hüllquader für «grob» stört nicht
+        if (a.Koerper.Any(k => k.Teil is { } t && t.Art != "zylinder" && k.Def.Detailgrad.Intersect(zyl[0].Def.Detailgrad).Any())) return;
+        var pa = V3.Aus(a.Anschluesse[0].Lage); var ra = V3.Aus(a.Anschluesse[0].Richtung);
+        var pb = V3.Aus(a.Anschluesse[1].Lage); var rb = V3.Aus(a.Anschluesse[1].Richtung);
+        // Achsschnittpunkt: nächste Punkte der beiden Schenkelachsen pa − s·ra und pb − t·rb
+        double b = ra.Mal(rb), nenner = 1 - b * b;
+        if (nenner < 1e-6) return;   // parallel: kein Bogen
+        var w = pa - pb; double d = ra.Mal(w), e = rb.Mal(w);
+        double s = (b * e - d) / nenner, t = (e - b * d) / nenner;   // Parameter auf pa + s·ra bzw. pb + t·rb
+        if (s > -1e-6 || t > -1e-6) return;   // Schnittpunkt muss im Inneren liegen
+        var pi = ((pa + ra * s) + (pb + rb * t)) * 0.5;
+        double la = (pa - pi).Laenge, lb = (pb - pi).Laenge;
+        double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
+        if (ablenkung < 1e-3) return;
+        double? radiusParameter = null;
+        foreach (var n in (string[])["biegeradius", "radius", "r", "R"])
+            if (a.Werte.GetValueOrDefault(n) is { IstText: false } wr && wr.Zahl > 0) { radiusParameter = wr.Zahl; break; }
+        double rMax = Math.Min(la, lb) / Math.Tan(ablenkung / 2) * 0.999;
+        double R = Math.Min(radiusParameter ?? rMax, rMax);
+        double profil = zyl.Max(k => k.Teil!.Radius ?? 0);
+        if (profil <= 0 || R <= 0) return;
+        // Einsteckmuffen (Christian 30.10.2026: «rohrbogen sind meist ein rotierter kreis mit einsteckmuffen»): der Bogen reicht vom
+        // Achsschnittpunkt bis zum Rohrende (Anschluss, Mass z); bis zum Fittingende (Ende der Schenkelzylinder, Mass L) bleibt ein gerades Stück
+        double Ende(V3 u, double mindest) => Math.Max(mindest, zyl.SelectMany(k => new[] { k.Teil!.Von, k.Teil.Nach }).Where(q => q is not null)
+            .Select(q => (V3.Aus(q!) - pi).Mal(u)).DefaultIfEmpty(0).Max());
+        var ua = (pa - pi).Einheit(); var ub = (pb - pi).Einheit();
+        List<double[]> pfad;
+        if (segmente is int nSeg)
+        {
+            // Segmentbogen: Tangentenpunkte im Abstand T = R·tan(Ablenkung/2) vom Achsschnittpunkt, dazwischen nSeg gerade Stücke auf dem Bogen
+            double T = R * Math.Tan(ablenkung / 2);
+            var mitte = pi + (ua + ub).Einheit() * (R / Math.Cos(ablenkung / 2));
+            var p0 = pi + ua * T; var p1 = pi + ub * T;
+            pfad = [(pi + ua * Ende(ua, la)).Feld(), p0.Feld()];
+            var v0 = p0 - mitte; var v1 = p1 - mitte; double phi = Math.Acos(Math.Clamp(v0.Einheit().Mal(v1.Einheit()), -1, 1));
+            var achse = v0.Kreuz(v1).Einheit();
+            for (int i = 1; i < nSeg; i++) pfad.Add((mitte + v0.Gedreht(achse, phi * i / nSeg)).Feld());
+            pfad.Add(p1.Feld()); pfad.Add((pi + ub * Ende(ub, lb)).Feld());
+        }
+        else pfad = [(pi + ua * Ende(ua, la)).Feld(), pi.Feld(), (pi + ub * Ende(ub, lb)).Feld()];
+        var n3 = NetzBau.Sweep(pfad, profil, null, segmente is null ? R : null);
+        var def = zyl[0].Def;
+        var bogen = new Koerperteil { Art = "koerper", Ecken = n3.Ecken, Dreiecke = n3.Dreiecke, Material = def.Material, Teil = def.Id };
+        var stelle = a.Koerper.IndexOf(zyl[0]);
+        a.Koerper.RemoveAll(k => zyl.Contains(k));
+        a.Koerper.Insert(Math.Min(stelle, a.Koerper.Count), new FamKoerperErgebnis { Def = def, Sichtbar = true, Teil = bogen });
+    }
 
     /// <summary>Jeder Körperteil als Netz (für Ansichten von oben/unten, die nur Netze kennen).</summary>
     public static Netz3 AlsNetz(Koerperteil t)
