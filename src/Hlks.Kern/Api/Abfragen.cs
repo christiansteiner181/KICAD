@@ -110,7 +110,7 @@ public sealed class Abfragen(Projekt p)
 
     public JsonObject ProjektUeberblick()
     {
-        var bef = Pruefungen.Alle(M, K);
+        var bef = p.BefundeDesStands();
         var gebaeude = new JsonArray(M.DerKlasse("Gebaeude").OrderBy(g => g.Kennzeichen).Select(g => (JsonNode)new JsonObject
         {
             ["kennzeichen"] = g.Kennzeichen, ["name"] = g.Name,
@@ -357,7 +357,7 @@ public sealed class Abfragen(Projekt p)
 
     public JsonObject Pruefen(string? schwere)
     {
-        var b = Pruefungen.Alle(M, K).Where(x => schwere is null || x.Schwere == schwere).ToList();
+        var b = p.BefundeDesStands().Where(x => schwere is null || x.Schwere == schwere).ToList();
         return new JsonObject
         {
             ["anzahl"] = b.Count,

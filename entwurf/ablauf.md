@@ -97,6 +97,11 @@ Neu in die Liste (Befunde aus Rang 2): **PDF-Leser liest gedrehten Text nicht** 
 Werte daraus nicht maschinell prüfbar; zu Rang 6 bzw. neue Leserversion) · **Schreiben über HTTP gilt als Mensch** (der Hauptlauf ist über `/api/befehl`
 Akteur CS, Art mensch – Werte ohne Quelle werden so «mensch»; KI-Zugriffe sollten als ki erkennbar sein; zu Rang 4 Protokoll) · Silent-db20 Abzweig 45°
 kennt nur y45 für a und c (160/110: c 9 mm zu lang).
+**Rang 3 (30.10.2026), nach Messung am echten Projekt:** H2 umgesetzt – nach einer Änderung lädt die Oberfläche nur die betroffenen Elemente samt
+Verbindungen (Test_praxis: 3 ms/2 kB statt 212 ms/449 kB je Änderung und je fremdem Paket). H1 umgesetzt – Prüfbefunde je Modellstand gemerkt (je Befehl
+ein statt drei volle Prüfläufe; heute nicht messbar: Befehl Test_praxis 41 ms, Beispielprojekt 4–5 ms). **Nicht umgesetzt, weil gemessen unnötig:**
+Kopie nur der betroffenen Elemente, M2 Lesestand (Befehle 41 ms), M3 Paketarchiv (141 Pakete über SMB < 1 ms). Wieder aufnehmen mit Modul 12 (Generator,
+hunderte Trockenläufe) bzw. wenn ein Projekt spürbar langsam wird – dann zuerst messen.
 
 | Bereich | Module | Offene Punkte (Stand 22.10.2026) |
 | --- | --- | --- |

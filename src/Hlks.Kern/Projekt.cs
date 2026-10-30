@@ -181,11 +181,12 @@ public sealed class Projekt
     BefehlsErgebnis Uebernehmen(string befehl, JsonObject? parameter, List<Operation> ops, Modell arbeit, List<string> hinweise,
         bool trockenlauf, string? rueckgaengigVon, string quelle)
     {
-        var vorher = Pruefungen.Alle(Modell, Katalog).Select(x => x.Schluessel).ToHashSet();
+        var vorherListe = BefundeDesStands();
+        var vorher = vorherListe.Select(x => x.Schluessel).ToHashSet();
         var nachherListe = Pruefungen.Alle(arbeit, Katalog);
         var nachher = nachherListe.Select(x => x.Schluessel).ToHashSet();
         var neu = nachherListe.Where(x => !vorher.Contains(x.Schluessel)).ToList();
-        var behoben = Pruefungen.Alle(Modell, Katalog).Where(x => !nachher.Contains(x.Schluessel)).ToList();
+        var behoben = vorherListe.Where(x => !nachher.Contains(x.Schluessel)).ToList();
         var aenderungen = Beschreiben(ops, arbeit);
         var ids = ops.SelectMany(o => o.Art.StartsWith("element") ? [o.Id] :
             new[] { o.Verbindung?.Von.Element, o.Verbindung?.Nach.Element, o.VerbindungVorher?.Von.Element, o.VerbindungVorher?.Nach.Element }
@@ -242,6 +243,8 @@ public sealed class Projekt
             };
         }
         var konflikte = Modell.Anwenden(ops, paket.Id);
+        // ohne Konflikt ist der neue Stand die Arbeitskopie: ihre Befunde gelten für den nächsten Befehl als «vorher»
+        if (konflikte.Count == 0) befundeStand = (Modell, Modell.Aenderungszaehler, nachherListe);
         bekannt.Add(paket.Id);
         verlauf.Add(paket);
         if (quelle == "lokal") { rueckgaengigStapel.Push(paket); wiederholenStapel.Clear(); }
@@ -254,6 +257,18 @@ public sealed class Projekt
             Angenommen = true, Befehl = befehl, PaketId = paket.Id, Meldung = $"{aenderungen.Count} Änderung(en) gespeichert.",
             Aenderungen = aenderungen, NeueBefunde = neu, BehobeneBefunde = behoben, Hinweise = hinweise, Konflikte = konflikte,
         };
+    }
+
+    // Prüfbefunde des aktuellen Modellstands (Gesamtschau H1, 30.10.2026): bisher rechnete jeder Befehl alle Prüfungen dreimal über das
+    // ganze Modell (zweimal den alten Stand, einmal den neuen); gemerkt je Modell und Änderungszähler, nach einem eigenen Paket gleich der neue
+    (Modell Modell, long Zaehler, List<Befund> Befunde)? befundeStand;
+
+    public List<Befund> BefundeDesStands()
+    {
+        if (befundeStand is { } s && ReferenceEquals(s.Modell, Modell) && s.Zaehler == Modell.Aenderungszaehler) return s.Befunde;
+        var l = Pruefungen.Alle(Modell, Katalog);
+        befundeStand = (Modell, Modell.Aenderungszaehler, l);
+        return l;
     }
 
     List<AenderungInfo> Beschreiben(List<Operation> ops, Modell arbeit)
