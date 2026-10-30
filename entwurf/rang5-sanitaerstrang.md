@@ -71,8 +71,12 @@ Begründung «Rang 5»). Ausgaben lokal in `%USERPROFILE%\HLKS_CAD_build\rang5_a
   1260 × 800, Drehung −42.7° erkannt), Masslinien in den Familienansichten (skaliert mit der Familiengrösse).
 - **3 Leitungen/Schema** – Silent-db20 hat keine 88.5°-Abzweige d110/110 und d110/90 → neu `leitung.regeln.mischbar`
   (Christian: «geberit silent und pe können gemischt werden»), in Test_praxis Silent ↔ PE gesetzt; Materialliste zeigt die
-  PE-T-Stücke im Silent-Strang. Schemas «Wasser» und «Abwasser» angelegt (PB-2). [ ] Schemas ansehen: Steigstränge im
-  Wasserschema nur im 1.OG gezeichnet (nicht bis 1.UG), Beschriftungen teils übereinander.
+  PE-T-Stücke im Silent-Strang. Schemas «Wasser» und «Abwasser» angelegt (PB-2). [ ] **Entscheid:** Steigstränge, die
+  unter dem 1.OG keinen Knoten haben (Verteilung im UG nicht modelliert), erscheinen nur als kurzer offener Stummel im 1.OG –
+  Regel B8 «offene Enden die Offenlänge neben ihrem Knoten». Soll ein offenes Strangende im Geschoss seiner Lage gezeichnet
+  werden? [ ] Beschriftungen teils übereinander. [ ] **Befund:** `leitung_abzweigen` liess zwischen T-Stück und Bogen ein
+  Rohrstück von 18.7 mm zu (KW-S1-3-2-2); 3b meldet dort Kontakt der Formteile (TS-10/BO-10, TS-8/BO-18, TS-9/BO-19) –
+  Mindestlänge zwischen Formteilen (Einstecktiefe/Pressbacke) beim Abzweigen fehlt; Wert und Quelle von dir.
 - **3b Kollision/Aussparungen** – Vorgaben VG-1 aus Christians Entscheiden vom 19.10.2026 (Spiel 50, Zusammenfassen 100,
   toleranz_hart 5). Lauf ganzes Projekt: 77 harte Kollisionen (19 Durchdringungen, 58 Kontakte): Decken bei den Strängen,
   Leitungen/Duofix in Wänden ohne modellierte Vorwand (W-169, W-153), **DU-1 ragt in die Aussenwand W-199/W-174** (Element
