@@ -50,7 +50,8 @@ namespace Hlks.Kern;
 public sealed record BefundZuordnung(string Alt, string? Neu, string? Grund);
 
 /// <summary>Ordnet die Befunde einer Leserversion denen einer anderen zu: gleiche Seite bzw. Layout, gleiche Art, gleicher Wert, Box ±0.5;
-/// bei mehreren Kandidaten zusätzlich Lage, Zusatz (ohne Verweise auf Ids), Layer und Einheit. Eindeutig oder gar nicht.</summary>
+/// bei mehreren Kandidaten zusätzlich Lage, Zusatz (ohne Verweise auf Ids), Layer und Einheit. Eindeutig oder gar nicht; deckungsgleiche
+/// Doppel (auch die Box gleich) gelten als ein Befund, der erste in Lesereihenfolge.</summary>
 public sealed class BefundZuordner
 {
     /// <summary>Toleranz für Box und Lage in Einheiten der Unterlage (PDF pt, DWG Zeichnungseinheiten, 3D mm).</summary>
@@ -166,6 +167,12 @@ public sealed class BefundZuordner
         return da.Count == 1 ? $" – an derselben Stelle liest Leser {NeuLeser} nur das Wort «{text}» ({da[0].Id}), keine Tabelle mehr" : "";
     }
 
+    static bool GleicheBox(double[]? a, double[]? b) =>
+        (a is null && b is null) || (a is not null && b is not null && a.Length == b.Length && a.Zip(b).All(x => Math.Abs(x.First - x.Second) <= 1e-6));
+
+    /// <summary>Laufnummer einer Befund-Id «präfix#nummer» (Lesereihenfolge); ohne Nummer ans Ende.</summary>
+    static long Nummer(string id) => long.TryParse(id[(id.LastIndexOf('#') + 1)..], out var n) ? n : long.MaxValue;
+
     /// <summary>Befund der alten Version zur Id (null, wenn es ihn nicht gibt).</summary>
     public UnterlagenBefund? Alt(string id) => alt.GetValueOrDefault(id);
 
@@ -189,6 +196,10 @@ public sealed class BefundZuordner
         r = Enger(r, n => JsonNode.DeepEquals(ZusatzNormal(b), ZusatzNormal(n)));
         r = Enger(r, n => n.Layer == b.Layer && n.Einheit == b.Einheit);
         if (r.Count == 1) return new(id, r[0].Id, null);
+        // Doppelt gezeichnet (30.10.2026, FAM-24 Gewinderohr: dieselbe Linie zweimal auf Seite 20): Kandidaten, die sich auch in der Box
+        // nicht unterscheiden, sind gleichwertig – der erste in Lesereihenfolge gilt, statt die ganze Familie liegen zu lassen.
+        if (r.All(n => GleicheBox(n.Box, r[0].Box)))
+            return new(id, r.OrderBy(n => Nummer(n.Id)).First().Id, null);
         return new(id, null, $"nicht eindeutig: {r.Count} Befunde mit gleicher Seite, Art, Wert und Lage in Leser {NeuLeser} ({Beschreiben(b)}: " +
             $"{string.Join(", ", r.Take(5).Select(x => x.Id))}{(r.Count > 5 ? " …" : "")})");
     }

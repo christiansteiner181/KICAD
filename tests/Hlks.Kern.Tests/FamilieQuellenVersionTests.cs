@@ -127,10 +127,14 @@ public class FamilieQuellenVersionTests
         using var o = new Ordner();
         var (_, pdf) = Aufbau(o, familien: 0);
         var zelle = pdf.Befunde.Single(b => b.Id == Zelle(pdf, 1, 3));   // V-15 | L = 67
-        // neue Version mit einem zweiten, gleichen Befund an derselben Stelle: nicht eindeutig
+        // neue Version mit einem zweiten, deckungsgleichen Befund (im PDF doppelt gezeichnet, Befund FAM-24 30.10.2026): gleichwertig,
+        // der erste in Lesereihenfolge gilt
         var neu = pdf.Befunde.Select(Kopie).ToList();
         var doppelt = Kopie(zelle); doppelt.Id = $"{pdf.Pruefsumme}#{neu.Count + 1}"; neu.Add(doppelt);
         var (alt, nachAlt) = AlteVersion(pdf, 2);
+        Assert.Equal(zelle.Id, new BefundZuordner(alt.Befunde, neu, "pdf-1", "pdf-3").Zuordnen(nachAlt[zelle.Id]).Neu);
+        // zweiter Befund innerhalb der Toleranz verschoben: nicht eindeutig
+        doppelt.Box = [doppelt.Box![0] + 0.3, doppelt.Box[1], doppelt.Box[2] + 0.3, doppelt.Box[3]];
         var r = new BefundZuordner(alt.Befunde, neu, "pdf-1", "pdf-3").Zuordnen(nachAlt[zelle.Id]);
         Assert.Null(r.Neu);
         Assert.Contains("nicht eindeutig: 2 Befunde", r.Grund);
@@ -277,12 +281,14 @@ public class FamilieQuellenVersionTests
         var (alt, nachAlt) = AlteVersion(pdf, 3);
         Ablegen(FamilienQuellenVersion.AblagePfad(p, pdf.Pruefsumme, "pdf-1"), alt);
         var altDef = AlsAltbestand(p, "FAM-1", nachAlt, "pdf-1");
-        // aktuelle Ablage mit einem zweiten, gleichen Befund der Zelle V-15 | L
+        // aktuelle Ablage mit einem zweiten, gleichen Befund der Zelle V-15 | L, innerhalb der Toleranz verschoben (deckungsgleiche Doppel
+        // gelten seit 30.10.2026 als ein Befund)
         var leser = UnterlagenLeser.Fuer("pdf")!;
         var ablage = UnterlagenService.AblagePfad(p, pdf.Pruefsumme, leser);
         var neu = UnterlagenService.Laden(ablage)!;
         var zelle = neu.Befunde.Single(b => b.Id == Zelle(pdf, 1, 3));
         var doppelt = Kopie(zelle); doppelt.Id = $"{pdf.Pruefsumme}#{neu.Befunde.Count + 1}";
+        doppelt.Box = [doppelt.Box![0] + 0.3, doppelt.Box[1], doppelt.Box[2] + 0.3, doppelt.Box[3]];
         neu.Befunde.Add(doppelt);
         Ablegen(ablage, neu);
 
