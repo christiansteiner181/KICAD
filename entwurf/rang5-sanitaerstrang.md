@@ -39,3 +39,51 @@ Die beiden WCs stehen Rücken an Rücken an der Wand zwischen R-34 und R-35 → 
 4. Strang und Anschlussleitungen mit `leitung_zeichnen` (Gefälle SW), Verbindungen; Prüfbefunde abarbeiten.
 5. Module durchspielen: 3 (Leitungen, Schema `schema_anlegen`), 3b (`kollision_pruefen`, `aussparungen_vorschlagen`), 4A (`sanitaer_zusammenstellung`),
    7A (Planblatt + `plan_pdf`), 7B (`ifc_export`, Listen); Ergebnis je Modul als Abnahmeliste für Christian.
+
+## Ergebnis Nachtlauf 30./31.10.2026 – Abnahmeliste
+
+Christian 30.10.2026 23:00: «arbeite bis morgen 08:00 weiter». Modell in Test_praxis (W:) über Server 5177 (Hauptlauf als KI,
+Begründung «Rang 5»). Ausgaben lokal in `%USERPROFILE%\HLKS_CAD_build\rang5_abnahme` (nicht im Repository: echtes Projekt).
+
+### Modell
+
+- Familien (KI-Aufträge «Familie aus Unterlagen» auf 5153, alle **Entwurf**): Geberit Duofix WC 111.300.00.5 (FAM-17),
+  Waschtisch 111.426/492/498.00.2 (FAM-18), Badewanne und Dusche 111.764/744.00.2 (FAM-19, FAM-20), Spültisch mit JRG-Wanddosen
+  4610.xxx (FAM-21). Dazu aus der Bürobibliothek Sanipex MT, Mapress Edelstahl, Silent-db20, Geberit PE mit Formteilen.
+- Platziert an den Lagen der Architekten-IFC (Einfügepunkt + Objekt-x-Achse, Duofix 50 mm hinter der Vorwandbeplankung):
+  Bad R-35: WC-1, WT-2, BW-1; Bad R-34: WC-2, WT-1, DU-1; Küche: SP-1 (Wanddosen 500 mm über OKFB, Achsabstand 120 mm).
+- A-SAN, Systeme KW/WW/SW; Stränge Bad KW-S1/WW-S1/SW-F1 (Installationszone W-157/W-182), Küche KW-S2/WW-S2/SW-F2.
+  SW: Fallstrang Silent-db20 d110, Sammelleitung in Bodenebene 1.5 %, Anschlüsse PE (WC d90, übrige d50); KW/WW Sanipex MT
+  DN 25 bis 4250/4330 über die Apparate, Anschlüsse DN 15 (WC DN 12).
+
+### Annahmen des Hauptlaufs (bitte bestätigen oder ersetzen)
+
+- [ ] DN 15 aus Gewinde R 1/2 an allen Duofix-kw/ww; WC-Spülkasten mit PEX 16 (DN 12) angeschlossen.
+- [ ] Waschtisch-Ablauf d 50; Wannen- und Duschablauf d 50 als Exemplarlage (`sw_x/sw_y/sw_z`), Lage geschätzt.
+- [ ] Spültisch: Dosenhöhe 500 mm, Achsabstand 120 mm, Ablauf d 50 150 mm unter den Dosen.
+- [ ] Stranggrössen (SW d110 bzw. d75, KW/WW DN 25 bzw. DN 12) bis zur Bemessung (4B fehlt: SN 592000, SVGW W3).
+- [ ] Duofix-Elemente: Konflikte H_max (Badewanne/Dusche 112 gegenüber 130 cm) und offene Punkte der KI-Berichte – erst danach freigeben.
+
+### Je Modul
+
+- **2 Familien** – [ ] Duofix-/JRG-Entwürfe prüfen und freigeben (nur Mensch). Neu in der Nacht: Körper `uebergang` und `netz`,
+  `familie_netz_uebernehmen` (fehlende Familien aus IFC-Geometrie; am IFC geprüft: WC 565 × 380, Wanne 1810 × 800, Dusche
+  1260 × 800, Drehung −42.7° erkannt), Masslinien in den Familienansichten (skaliert mit der Familiengrösse).
+- **3 Leitungen/Schema** – Silent-db20 hat keine 88.5°-Abzweige d110/110 und d110/90 → neu `leitung.regeln.mischbar`
+  (Christian: «geberit silent und pe können gemischt werden»), in Test_praxis Silent ↔ PE gesetzt; Materialliste zeigt die
+  PE-T-Stücke im Silent-Strang. Schemas «Wasser» und «Abwasser» angelegt (PB-2). [ ] Schemas ansehen: Steigstränge im
+  Wasserschema nur im 1.OG gezeichnet (nicht bis 1.UG), Beschriftungen teils übereinander.
+- **3b Kollision/Aussparungen** – Vorgaben VG-1 aus Christians Entscheiden vom 19.10.2026 (Spiel 50, Zusammenfassen 100,
+  toleranz_hart 5). Lauf ganzes Projekt: 77 harte Kollisionen (19 Durchdringungen, 58 Kontakte): Decken bei den Strängen,
+  Leitungen/Duofix in Wänden ohne modellierte Vorwand (W-169, W-153), **DU-1 ragt in die Aussenwand W-199/W-174** (Element
+  ~150 mm Richtung Waschtisch schieben), Kontakte zwischen Formteilen an kurzen Rohrstücken. Befund Kern behoben (e66e6ca):
+  Stränge mit T-Stück im Deckenbereich erhielten keine Aussparung. Jetzt 3 Vorschläge: AUS-1 Steigzone Bad in D-20 (270 × 280,
+  Sammelaussparung), AUS-2 Duschablauf D-20 (150 × 150), AUS-3 Küchenstrang D-6 (330 × 430). [ ] Aussparungen freigeben
+  (Mensch), danach `aussparungen_ifc`. BCF mit den Kollisionen: `rang5_kollisionen.bcf`.
+- **4A Sanitär-Zusammenstellung** – 7 Apparate, ΣLU KW 11 / WW 9, ΣDU 7.2, Spitzendurchfluss 0.59 l/s (Kurve grösster LU 3);
+  Strang KW-S1 9 LU (6 Apparate), KW-S2 2 LU. [ ] Abflusskennzahl K fehlt (Projektvorgabe bzw. SN 592000).
+- **7A Pläne** – PB-1 S03 «Sanitär 1.OG» A1 1:50 (Grundriss gedreht nach Planwinkel), PB-2 Strangschemas A2; PDFs in
+  `rang5_abnahme`. [ ] Projektinformation (Projektname, Projektnummer) fehlt im Plankopf; [ ] Schema Wasser auf PB-2 überlappt
+  den Plankopf (Lage vom Hauptlauf gesetzt).
+- **7B Ausgaben** – IFC4-Export: Kontrolle bestanden, Schema fehlerfrei, IDS bestanden (`rang5_sanitaer.ifc`); Materialliste
+  (Leitungslängen je Serie/Grösse, Formteile je Typ und Winkel).
