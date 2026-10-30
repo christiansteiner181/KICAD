@@ -1,5 +1,19 @@
 # Grundausstattung Rohr- und Kanalserien – Übersicht zur Freigabe
 
+> **Stand 30.10.2026 (Phase 1, Rang 2) – ersetzt die offenen Punkte unten:**
+> - Quellen aller 44 Familien auf PDF-Leser 3 umgeschlüsselt (`familien_quellen_nachfuehren`, 1 686 Ids; FAM-24 nach Regel «deckungsgleiche
+>   Doppel gelten als ein Befund», f85b41f). 11 Altbestands-Familien tragen `leser` erst mit dem nächsten Speichern.
+> - **Entscheide Christian (Chat 30.10.2026), mit `konflikt_entscheiden` eingetragen:** R1 11 und R2 6 Bogenkonflikte nach der Geberit-Übersicht
+>   (das-1540060/-1540062); **K3 v_max = 25 m/s** (Preisbuch Schmidlin 07/2026; ersetzt «30 m/s» vom 21.10.). Offene Konflikte: 0.
+> - **R7 d32** ergänzt aus Geberit-Produktdatenblatt «Geberit PE Rohr» (Art. 379.000.16.0: di 26, s 3 mm, Stand 24.10.2022, UL-83); dazu die 13
+>   fehlenden Quellen di/s d90–d315 aus demselben Blatt (alle Werte deckungsgleich). R7: 52 Werte geprüft, 0 ohne Quelle.
+> - **36 Familien freigegeben** (auf Anweisung Christian) und in die **Bürobibliothek** `W:\03_CAD Bibliotheken\d_KICAD Familien` übernommen
+>   (36 Familien, 34 Unterlagen). Lokaler Spiegel für den Betrieb ohne VPN (`%LOCALAPPDATA%\HLKS_CAD\bibliothek_ausstehend\<hash>\spiegel`).
+> - **8 noch Entwurf** (Pflichtwerte ohne Wert/Quelle bzw. Formelfehler): FAM-5 Mapress Edelstahl Bogen (d12/d18 in 15/30/60° ohne Werte;
+>   Christian: «Mapress ist unproblematisch»), FAM-9 Sanipex Bogen (d16 45°), FAM-13 Silent-db20 Bogen (d160 88°), FAM-14 Silent-db20 T-Stück
+>   (Formeln 45°/88°), FAM-17 PE Bogen (X15–X90), FAM-18 PE T-Stück (Formeln, 45°/88°-Masse), FAM-19 PE Reduktion (A, H), FAM-21 Gewinderohr Bogen
+>   (45°). Vorgehen offen bei Christian.
+
 Stand 20.10.2026, 16:30 · Hauptlauf · Spezifikation `entwurf/grundausstattung-leitungsserien.md` · **alle zehn Serien gebaut und stichprobengeprüft**
 
 Arbeitsprojekt (lokal, nicht auf W:): `%USERPROFILE%\HLKS_CAD_build\grundausstattung\e_KICAD` – in KICAD über «Öffnen»

@@ -341,8 +341,6 @@ public sealed class FamilieLaden : IBefehl
             throw new HlksFehler(ort.Sperre ?? "Die Familienbibliothek ist nicht eingestellt.",
                 $"{FamilienBibliothekDienst.Umgebungsvariable} setzen (in Tests einen Ordner unter %TEMP%) oder eine Datei laden (datei).");
         var bib = FamilienBibliothekDienst.Lesen(ort, !k.Trockenlauf);
-        if (bib.Offline)
-            throw new HlksFehler($"Familienbibliothek nicht erreichbar ({ort.Pfad}) – laden geht erst wieder mit erreichbarer Bibliothek.", "Netzwerk/VPN prüfen und erneut versuchen.");
         var idx = bib.Index!;
         BibIndexEintrag? e;
         if (ordner is not null) e = idx.Familien.FirstOrDefault(f => string.Equals(f.Ordner, ordner, StringComparison.OrdinalIgnoreCase));
@@ -360,6 +358,14 @@ public sealed class FamilieLaden : IBefehl
             throw new HlksFehler($"Familie «{id ?? ordner}» gibt es in der Familienbibliothek nicht.", Vorschlag(k));
         var (v, ab) = FamilienBibliothekSchreiben.VersionLesen(e, version);
         var bisher = k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(f => Familien.DefinitionsId(f) == e.Id);
+        // Ohne NAS (seit 30.10.2026): laden aus dem lokalen Spiegel, wenn die Version dort liegt; Abzweige und das Nachführen einer
+        // Familie, die schon im Projekt ist, brauchen die Bibliothek
+        if (bib.Offline)
+        {
+            if (ab is not null || bisher is not null || !FamilienBibliothekDienst.ImSpiegel(ort, e, v))
+                throw new HlksFehler($"Familienbibliothek nicht erreichbar ({ort.Pfad}) – laden geht erst wieder mit erreichbarer Bibliothek.", "Netzwerk/VPN prüfen und erneut versuchen.");
+            k.Hinweise.Add($"Familienbibliothek nicht erreichbar – «{e.Name}» Version {v ?? e.Version} aus dem lokalen Spiegel geladen.");
+        }
         if (bisher is not null)
         {
             NurNeueFuerKi(k, bisher);

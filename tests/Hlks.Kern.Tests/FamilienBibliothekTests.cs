@@ -456,6 +456,20 @@ public sealed class FamilienBibliothekTests : BibliothekTestBasis
     }
 
     [Fact]
+    public void Ohne_NAS_laedt_ein_anderes_Projekt_die_Familie_aus_dem_Spiegel()
+    {
+        var a = NeuesProjekt("Projekt A");
+        Ok(a.Ausfuehren("familie_entwurf", Entwurf()));
+        var b = NeuesProjekt("Projekt B");
+        Assert.NotNull(BibEintrag(b));   // liest den Index online und spiegelt Version 1
+        NasWeg();
+        var e = Ok(b.Ausfuehren("familie_laden", new JsonObject { ["id"] = HkId }));
+        Assert.Contains(e.Aenderungen, x => x.Klasse == "Familie");
+        Assert.Equal("FAM-1", BibEintrag(b)!["imProjekt"]!.GetValue<string>());
+        NasDa();
+    }
+
+    [Fact]
     public void Ohne_NAS_Warteschlange_Lesen_aus_dem_gemerkten_Stand_nachgeschrieben_beim_naechsten_Zugriff()
     {
         var p = NeuesProjekt("Projekt A");

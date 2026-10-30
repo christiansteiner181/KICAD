@@ -20,7 +20,8 @@
 //
 // Warteschlange (NAS nicht erreichbar, Familienordner zu lange gesperrt): %LOCALAPPDATA%\HLKS_CAD\bibliothek_ausstehend\<hash des
 //   Bibliothekspfads>\ (im Testlauf unter %TEMP%, überschreibbar mit HLKS_BIBLIOTHEK_AUSSTEHEND) – auftraege\*.json in Reihenfolge,
-//   _unterlagen\ (Kopien), index.json (letzter gelesener Index für das Lesen ohne NAS). Nachgeholt beim nächsten Zugriff
+//   _unterlagen\ (Kopien), index.json (letzter gelesener Index für das Lesen ohne NAS), spiegel\ (aktuelle Versionen und Unterlagen für
+//   das Laden ohne NAS, seit 30.10.2026). Nachgeholt beim nächsten Zugriff
 //   (Lesen oder Schreiben), immer vor einem neuen Schreibvorgang; ein Auftrag je Rechner, Doppel verhindert die Planung.
 // ANNAHMEN (Prüfliste): Ordnername bleibt beim Umbenennen der Familie (der Index trägt den aktuellen Namen); der Bibliotheksordner
 //   wird angelegt, wenn sein übergeordneter Ordner erreichbar ist (sonst «nicht erreichbar»); dauert eine erfolglose Prüfung der
@@ -436,6 +437,11 @@ public static class FamilienBibliothekDienst
         var root = ort.Pfad!;
         var datei = abzweig is not null ? Path.Combine(Absolut(root, e.Ordner), "abzweige", abzweig + ".familie.json")
             : Path.Combine(Absolut(root, e.Ordner), "versionen", $"v{version ?? e.Version:D4}.familie.json");
+        if (abzweig is null && !File.Exists(datei))
+        {
+            var gespiegelt = Path.Combine(Absolut(SpiegelOrdner(root), e.Ordner), "versionen", $"v{version ?? e.Version:D4}.familie.json");
+            if (File.Exists(gespiegelt)) datei = gespiegelt;
+        }
         try
         {
             if (!File.Exists(datei))
@@ -462,7 +468,9 @@ public static class FamilienBibliothekDienst
     {
         if (!ort.Aktiv) return null;
         var p = Path.Combine(ort.Pfad!, "_unterlagen", UnterlageName(u));
-        return File.Exists(p) ? p : null;
+        if (File.Exists(p)) return p;
+        var gespiegelt = Path.Combine(SpiegelOrdner(ort.Pfad!), "_unterlagen", UnterlageName(u));
+        return File.Exists(gespiegelt) ? gespiegelt : null;
     }
 
     static string UnterlageName(BibUnterlage u)
@@ -881,6 +889,56 @@ public static class FamilienBibliothekDienst
             lokalGemerkt[root] = idx.Stand;
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        if (Testlauf()) Spiegeln(root, idx);
+        else if (spiegelLaeuft.TryAdd(root, 0))
+            Task.Run(() => { try { Spiegeln(root, idx); } finally { spiegelLaeuft.TryRemove(root, out _); } });
+    }
+
+    // Spiegel (Phase 1, 30.10.2026, Gesamtschau P2): Ohne NAS gab es bis dahin keine einzige Familie, nur die gemerkte Liste. Neben der
+    // Warteschlange liegt deshalb ein Spiegel der aktuellen Version jeder Familie und aller Herstellerunterlagen (<Warteschlange>\spiegel\
+    // <Ordner>\versionen\, \spiegel\_unterlagen\). Versionen und Unterlagen sind unveränderlich: kopiert wird nur, was fehlt – nach jedem
+    // neu gelesenen Index im Hintergrund. FassungLesen und UnterlageInBibliothek greifen darauf zurück, wenn die Bibliothek fehlt.
+    static readonly ConcurrentDictionary<string, byte> spiegelLaeuft = new(StringComparer.OrdinalIgnoreCase);
+
+    public static string SpiegelOrdner(string root) => Path.Combine(WarteschlangeOrdner(root), "spiegel");
+
+    /// <summary>Liegt diese Version der Familie im lokalen Spiegel?</summary>
+    public static bool ImSpiegel(BibliotheksOrt ort, BibIndexEintrag e, int? version) => ort.Aktiv &&
+        File.Exists(Path.Combine(Absolut(SpiegelOrdner(ort.Pfad!), e.Ordner), "versionen", $"v{version ?? e.Version:D4}.familie.json"));
+
+    /// <summary>Kopiert fehlende aktuelle Versionen und Unterlagen in den Spiegel (öffentlich für Tests). Rückgabe: Anzahl kopierter Dateien.</summary>
+    public static int Spiegeln(string root, BibIndex idx)
+    {
+        int n = 0;
+        var spiegel = SpiegelOrdner(root);
+        foreach (var e in idx.Familien)
+        {
+            var name = $"v{e.Version:D4}.familie.json";
+            if (Kopieren(Path.Combine(Absolut(root, e.Ordner), "versionen", name), Path.Combine(Absolut(spiegel, e.Ordner), "versionen", name))) n++;
+        }
+        try
+        {
+            var quelle = Path.Combine(root, "_unterlagen");
+            if (Directory.Exists(quelle))
+                foreach (var d in Directory.EnumerateFiles(quelle))
+                    if (Kopieren(d, Path.Combine(spiegel, "_unterlagen", Path.GetFileName(d)))) n++;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { }
+        return n;
+    }
+
+    static bool Kopieren(string quelle, string ziel)
+    {
+        try
+        {
+            if (File.Exists(ziel) || !File.Exists(quelle)) return false;
+            Directory.CreateDirectory(Path.GetDirectoryName(ziel)!);
+            var tmp = ziel + ".tmp-" + Environment.ProcessId;
+            File.Copy(quelle, tmp, true);
+            File.Move(tmp, ziel, false);
+            return true;
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException) { return false; }
     }
 
     static BibIndex? LokalLesen(string root)
