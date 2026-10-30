@@ -178,6 +178,7 @@ public static class IfcExport
             File.Move(temp, pfad, overwrite: true);
             temp = null;
             bytes = new FileInfo(pfad).Length;
+            Ausgabeprotokoll.Vermerken(p, "ifc_export", pfad);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

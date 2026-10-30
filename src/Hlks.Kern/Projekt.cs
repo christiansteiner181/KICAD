@@ -124,17 +124,56 @@ public sealed class Projekt
 
     public StandInfo Stand =>new(bekannt.Count, verlauf.LastOrDefault()?.Id, Modell.Pruefsumme(), Modell.Elemente.Count, Modell.Verbindungen.Count);
 
-    Herkunft NeueHerkunft(string befehl) => new() { Art = AkteurArt, Akteur = Akteur, Zeit = DateTimeOffset.Now, Befehl = befehl,
-        Quelle = AkteurArt == "beispiel" ? "Beispielprojekt, Werte fiktiv" : null };
+    Herkunft NeueHerkunft(string befehl) => new() { Art = ArtJetzt, Akteur = Akteur, Zeit = DateTimeOffset.Now, Befehl = befehl,
+        Quelle = ArtJetzt == "beispiel" ? "Beispielprojekt, Werte fiktiv" : null };
+
+    // Rang 4 (30.10.2026): Angaben des laufenden Aufrufs. aufrufArt: eine KI, die über HTTP schreibt, meldet sich als «ki» (sonst galt sie als
+    // Akteur-Art des Servers, meist «mensch»); begruendung/prozessschritt landen im Paket. Gesetzt nur während Ausfuehren (unter der Sperre des Projekts).
+    string? aufrufArt, aufrufBegruendung, aufrufSchritt;
+    string ArtJetzt => aufrufArt ?? AkteurArt;
+
+    /// <summary>Wie Ausfuehren, aber als Akteur-Art «ki» bzw. einer anderen Art als der des Projekts (null = Art des Projekts).</summary>
+    public BefehlsErgebnis Ausfuehren(string befehl, JsonObject? parameter, bool trockenlauf, string? akteurArt)
+    {
+        if (akteurArt is not null && !Herkunft.Arten.Contains(akteurArt))
+            return Abgelehnt(befehl, trockenlauf, new HlksFehler($"Akteur-Art «{akteurArt}» gibt es nicht.", $"Erlaubt: {string.Join(", ", Herkunft.Arten)}."));
+        aufrufArt = akteurArt;
+        try { return Ausfuehren(befehl, parameter, trockenlauf); }
+        finally { aufrufArt = null; }
+    }
+
+    /// <summary>begruendung und prozessschritt darf jeder Befehl mitgeben (Protokoll im Paket). Hat der Befehl selbst einen Parameter dieses
+    /// Namens (z. B. konflikt_entscheiden.begruendung), bleibt er stehen und gilt zugleich fürs Paket.</summary>
+    JsonObject? ProtokollAusParametern(JsonObject? parameter, IBefehl b)
+    {
+        aufrufBegruendung = aufrufSchritt = null;
+        if (parameter is null) return null;
+        foreach (var name in (string[])["begruendung", "prozessschritt"])
+        {
+            if (!parameter.ContainsKey(name)) continue;
+            if (parameter[name] is not JsonValue v || !v.TryGetValue<string>(out var text))
+                throw new HlksFehler($"Parameter «{name}» muss ein Text sein.");
+            if (name == "begruendung") aufrufBegruendung = text; else aufrufSchritt = text;
+            if (b.Parameter.All(d => d.Name != name)) { parameter = parameter.DeepClone().AsObject(); parameter.Remove(name); }
+        }
+        return parameter;
+    }
 
     /// <summary>Führt einen Befehl aus. trockenlauf = nur Auswirkungen und Prüfbefunde zeigen, nichts ändern.</summary>
     public BefehlsErgebnis Ausfuehren(string befehl, JsonObject? parameter = null, bool trockenlauf = false)
+    {
+        try { return AusfuehrenIntern(befehl, parameter, trockenlauf); }
+        finally { aufrufBegruendung = aufrufSchritt = null; }   // nie an ein späteres Paket (rückgängig, fremd) weitergeben
+    }
+
+    BefehlsErgebnis AusfuehrenIntern(string befehl, JsonObject? parameter, bool trockenlauf)
     {
         IBefehl b;
         try
         {
             b = Befehle.Hole(befehl);
             parameter = TrockenlaufAusParametern(parameter, ref trockenlauf);
+            parameter = ProtokollAusParametern(parameter, b);
             // Unbekannte Parameter ablehnen statt still übergehen (Gesamtschau 30.10.2026, P7): ein Tippfehler oder ein
             // Parameter eines anderen Befehls soll nicht zu einer Änderung führen, die so nicht gemeint war.
             var fremd = parameter?.Select(x => x.Key).Where(n => b.Parameter.All(d => d.Name != n)).ToList() ?? [];
@@ -222,8 +261,9 @@ public sealed class Projekt
 
         var paket = new Paket
         {
-            Akteur = Akteur, AkteurArt = AkteurArt, Geraet = Geraet, Zeit = DateTimeOffset.Now, Befehl = befehl,
+            Akteur = Akteur, AkteurArt = ArtJetzt, Geraet = Geraet, Zeit = DateTimeOffset.Now, Befehl = befehl,
             Parameter = parameter?.DeepClone() as JsonObject, RueckgaengigVon = rueckgaengigVon, Operationen = ops,
+            Begruendung = rueckgaengigVon is null ? aufrufBegruendung : null, Prozessschritt = rueckgaengigVon is null ? aufrufSchritt : null,
         };
         for (int versuch = 0; ; versuch++)
         {
@@ -248,7 +288,7 @@ public sealed class Projekt
         bekannt.Add(paket.Id);
         verlauf.Add(paket);
         if (quelle == "lokal") { rueckgaengigStapel.Push(paket); wiederholenStapel.Clear(); }
-        Geaendert?.Invoke(new ModellAenderung(paket.Id, Akteur, AkteurArt, quelle, ids));
+        Geaendert?.Invoke(new ModellAenderung(paket.Id, Akteur, paket.AkteurArt, quelle, ids));
         // Modul 2, Nachtrag B7: geänderte Familien als neue Version in die Familienbibliothek – Nachlauf nach dem gespeicherten eigenen
         // Paket (nie Trockenlauf, nie fremde Pakete), wirft nie (NAS fehlt → Warteschlange); siehe FamilienBibliothekBefehle.cs
         hinweise.AddRange(FamilienBibliothekSchreiben.NachPaket(this, paket));

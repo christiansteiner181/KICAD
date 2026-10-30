@@ -222,6 +222,7 @@ public static class AussparungIfcExport
             File.Move(temp, pfad, overwrite: true);
             temp = null;
             bytes = new FileInfo(pfad).Length;
+            Ausgabeprotokoll.Vermerken(p, "aussparungen_ifc", pfad);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

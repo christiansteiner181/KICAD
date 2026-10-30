@@ -35,6 +35,7 @@ public static class Tuer
             "datenpunkte" => a.Datenpunkte(T("element")),
             "zeitreihe" => a.Zeitreihe(T("datenpunkt", true)!, T("von", true)!, T("bis", true)!, Param.Zahl(par, "aufloesungMinuten") ?? 60),
             "plan_pdf" => Planausgabe.PdfDatei(p, T("planblatt", true)!, T("datei")),
+            "ausgaben" => Ausgabeprotokoll.Lesen(p, (int)(Param.Zahl(par, "anzahl") ?? 50)),
             "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),
@@ -69,19 +70,19 @@ public static class Tuer
     }
 
     /// <summary>Führt einen Befehl aus (inkl. rueckgaengig, wiederholen, synchronisieren und paket_zuruecknehmen {paket, akteurArt?}).</summary>
-    public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false)
+    public static object Befehl(Projekt p, string name, JsonObject? par = null, bool trockenlauf = false, string? akteurArt = null)
     {
         par = Projekt.TrockenlaufAusParametern(par, ref trockenlauf);   // auch für rueckgaengig, wiederholen, paket_zuruecknehmen
-        return BefehlOhneTrockenlaufParameter(p, name, par, trockenlauf);
+        return BefehlOhneTrockenlaufParameter(p, name, par, trockenlauf, akteurArt);
     }
 
-    static object BefehlOhneTrockenlaufParameter(Projekt p, string name, JsonObject? par, bool trockenlauf) => name switch
+    static object BefehlOhneTrockenlaufParameter(Projekt p, string name, JsonObject? par, bool trockenlauf, string? akteurArt) => name switch
     {
         "rueckgaengig" => p.Rueckgaengig(trockenlauf),
         "wiederholen" => p.Wiederholen(trockenlauf),
         "synchronisieren" => p.Synchronisieren(),
         // Modul 3c: ein bestimmtes Paket zurücknehmen (KI-Palette «Zurücknehmen»); nicht als MCP-Werkzeug – die KI nimmt eigene Änderungen mit rueckgaengig zurück
         "paket_zuruecknehmen" => p.PaketZuruecknehmen(Param.Text(par ?? new JsonObject(), "paket", true)!, trockenlauf, Param.Text(par ?? new JsonObject(), "akteurArt")),
-        _ => p.Ausfuehren(name, par, trockenlauf),
+        _ => p.Ausfuehren(name, par, trockenlauf, akteurArt),
     };
 }

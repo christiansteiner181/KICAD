@@ -118,7 +118,8 @@ public static class Planausgabe
         {
             throw new HlksFehler($"Die Datei «{datei}» kann nicht geschrieben werden: {ex.Message}", "Anderen Pfad angeben oder datei weglassen (dann im Temp-Ordner).");
         }
-        return new JsonObject { ["datei"] = datei, ["seiten"] = 1, ["groesseBytes"] = bytes.Length };
+        var protokoll = Ausgabeprotokoll.Vermerken(p, "plan_pdf", datei);
+        return new JsonObject { ["datei"] = datei, ["seiten"] = 1, ["groesseBytes"] = bytes.Length, ["hinweis"] = protokoll };
     }
 
     internal static string DateinameSicher(string s)

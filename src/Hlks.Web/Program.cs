@@ -160,7 +160,11 @@ api.MapPost("/abfrage/{name}", (string name, HttpRequest r) => Sicher(async () =
 api.MapPost("/befehl/{name}", (string name, bool? trockenlauf, HttpRequest r) => Sicher(async () =>
 {
     var par = await Koerper(r);
-    return JsonAntwort(await dienst.Mit(p => Tuer.Befehl(p, name, par, trockenlauf ?? false)));
+    // Rang 4 (30.10.2026): eine KI, die über HTTP schreibt, meldet sich mit X-Hlks-Akteur-Art: ki – ihre Pakete und Werte gelten dann als «ki»
+    // (Befehle nur für Menschen lehnen ab); ohne Kopf gilt die Art des Servers. Nur «ki» ist erlaubt: zum Menschen machen kann der Kopf nicht.
+    var art = r.Headers["X-Hlks-Akteur-Art"].ToString();
+    if (art.Length > 0 && art != "ki") return Fehler(new HlksFehler($"X-Hlks-Akteur-Art «{art}» ist nicht erlaubt.", "Nur «ki» oder den Kopf weglassen."));
+    return JsonAntwort(await dienst.Mit(p => Tuer.Befehl(p, name, par, trockenlauf ?? false, art.Length > 0 ? art : null)));
 }));
 
 api.MapPost("/freigeben", () => Sicher(async () => JsonAntwort(new { freigegeben = await dienst.Mit(p => p.Freigeben()) })));

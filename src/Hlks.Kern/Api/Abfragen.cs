@@ -40,6 +40,8 @@ public sealed class Abfragen(Projekt p)
             [new("element", "text", true, "Element"), new("eigenschaft", "text", true, "Eigenschaft oder abgeleiteter Wert")]),
         new("aenderungen", "Änderungsprotokoll: wer hat wann was geändert (neueste zuerst).",
             [new("element", "text", false, "Nur Änderungen an diesem Element"), new("anzahl", "zahl", false, "Anzahl (Vorgabe 20)")]),
+        new("ausgaben", "Ausgabeprotokoll: welche Dateien (Planblatt-/Plansatz-PDF, IFC-Export, Aussparungs-IFC) wann von wem auf welchem Modellstand geschrieben wurden (neueste zuerst; alle Geräte).",
+            [new("anzahl", "zahl", false, "Anzahl (Vorgabe 50)")]),
         new("katalog", "Katalog: Klassen mit Eigenschaften und Anschlüssen, Medien, Systemtypen.", [new("klasse", "text", false, "Nur diese Klasse")]),
         new("datenpunkte", "Funktionsgraph: Datenpunkte mit Bezug, Station und Adresse; Regelkreise mit Messung, Stellung, Führung.",
             [new("element", "text", false, "Nur Datenpunkte an diesem Element")]),
@@ -102,7 +104,7 @@ public sealed class Abfragen(Projekt p)
         }).ToArray());
         return new JsonObject
         {
-            ["hinweis"] = "Alle Längen in mm, Koordinaten x Ost, y Nord, z über ±0.00. Elemente über Kennzeichen ansprechen. Jeder Befehl kann mit trockenlauf=true geprüft werden (als Parameter oder über HTTP als ?trockenlauf=true); unbekannte Parameter werden abgelehnt.",
+            ["hinweis"] = "Alle Längen in mm, Koordinaten x Ost, y Nord, z über ±0.00. Elemente über Kennzeichen ansprechen. Jeder Befehl kann mit trockenlauf=true geprüft werden (als Parameter oder über HTTP als ?trockenlauf=true); unbekannte Parameter werden abgelehnt. Jeder Befehl nimmt zusätzlich begruendung und prozessschritt (Text, ins Protokoll des Pakets). Eine KI, die über HTTP schreibt, sendet den Kopf X-Hlks-Akteur-Art: ki.",
             ["befehle"] = befehle,
             ["abfragen"] = abfragen,
         };
@@ -458,7 +460,8 @@ public sealed class Abfragen(Projekt p)
             ["aenderungen"] = new JsonArray(liste.Select(x => (JsonNode)new JsonObject
             {
                 ["paket"] = x.Id, ["zeit"] = x.Zeit.ToString("yyyy-MM-dd HH:mm:ss"), ["akteur"] = x.Akteur, ["akteurArt"] = x.AkteurArt, ["geraet"] = x.Geraet,
-                ["befehl"] = x.Befehl, ["rueckgaengigVon"] = x.RueckgaengigVon, ["operationen"] = x.Operationen.Count,
+                ["befehl"] = x.Befehl, ["rueckgaengigVon"] = x.RueckgaengigVon, ["begruendung"] = x.Begruendung, ["prozessschritt"] = x.Prozessschritt,
+                ["operationen"] = x.Operationen.Count,
                 ["elemente"] = Arr(x.Operationen.Where(o => o.Art.StartsWith("element")).Select(o => (o.Element ?? o.ElementVorher)!.Kennzeichen).Distinct().Take(10)),
             }).ToArray()),
         };

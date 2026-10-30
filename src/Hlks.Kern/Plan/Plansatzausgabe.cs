@@ -136,6 +136,7 @@ public static class Plansatzausgabe
         {
             Directory.CreateDirectory(ordner);
             foreach (var (d, bytes, _) in inhalte) File.WriteAllBytes(d.Pfad, bytes);
+            foreach (var (d, _, _) in inhalte) Ausgabeprotokoll.Vermerken(p, "plansatz_pdf", d.Pfad);
         }
         catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or ArgumentException or NotSupportedException)
         {

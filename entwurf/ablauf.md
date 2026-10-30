@@ -100,7 +100,8 @@ kennt nur y45 für a und c (160/110: c 9 mm zu lang).
 **Rang 3 (30.10.2026), nach Messung am echten Projekt:** H2 umgesetzt – nach einer Änderung lädt die Oberfläche nur die betroffenen Elemente samt
 Verbindungen (Test_praxis: 3 ms/2 kB statt 212 ms/449 kB je Änderung und je fremdem Paket). H1 umgesetzt – Prüfbefunde je Modellstand gemerkt (je Befehl
 ein statt drei volle Prüfläufe; heute nicht messbar: Befehl Test_praxis 41 ms, Beispielprojekt 4–5 ms). **Nicht umgesetzt, weil gemessen unnötig:**
-Kopie nur der betroffenen Elemente, M2 Lesestand (Befehle 41 ms), M3 Paketarchiv (141 Pakete über SMB < 1 ms). Wieder aufnehmen mit Modul 12 (Generator,
+Kopie nur der betroffenen Elemente, M2 Lesestand (Befehle 41 ms), M3 Paketarchiv (141 Pakete über SMB < 1 ms).
+**Rang 4 (30.10.2026):** jeder Befehl nimmt `begruendung` und `prozessschritt` (im Paket, Abfrage `aenderungen`); eine KI über HTTP sendet `X-Hlks-Akteur-Art: ki` (Pakete und Werte als «ki», «nur ein Mensch»-Befehle lehnen ab; Kopf «mensch» abgelehnt); Dateiausgaben vermerkt im Ausgabeprotokoll (`ausgabeprotokoll<Gerät>.jsonl`, Abfrage `ausgaben`). Nicht gebaut: Trockenlauf der Dateiausgaben (keine Modelländerung, Vorschau in der Oberfläche vorhanden). Offen: Akteurname bleibt der des Servers (z. B. «CS» mit Art ki). Wieder aufnehmen mit Modul 12 (Generator,
 hunderte Trockenläufe) bzw. wenn ein Projekt spürbar langsam wird – dann zuerst messen.
 
 | Bereich | Module | Offene Punkte (Stand 22.10.2026) |

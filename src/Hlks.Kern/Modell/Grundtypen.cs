@@ -186,6 +186,10 @@ public sealed class Paket
     public string Befehl { get; set; } = "";
     public JsonObject? Parameter { get; set; }
     public string? RueckgaengigVon { get; set; }
+    /// <summary>Warum der Befehl ausgeführt wurde (optional, Protokoll für Mustersituationen und Prüfstand; Rang 4, 30.10.2026).</summary>
+    public string? Begruendung { get; set; }
+    /// <summary>Prozessschritt bzw. Mustersituation, zu der der Befehl gehört (optional, frei benannt).</summary>
+    public string? Prozessschritt { get; set; }
     public List<Operation> Operationen { get; set; } = [];
 
     /// <summary>Sortierbare, geräteübergreifend eindeutige Kennung: Zeit UTC, Gerät, Akteur, laufende Nummer.</summary>

@@ -825,6 +825,25 @@ public class BefehleTests
     }
 
     [Fact]
+    public void Begruendung_Prozessschritt_und_Akteur_ki_landen_im_Paket()
+    {
+        // Rang 4, 30.10.2026: Protokoll für Mustersituationen und Prüfstand; eine KI über HTTP schreibt als «ki»
+        var p = Neu();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["kennzeichen"] = "GEB-9", ["begruendung"] = "Musterprojekt Wohnbau", ["prozessschritt"] = "S1 Erfassen" }, false, "ki"));
+        var paket = p.Verlauf.Last();
+        Assert.Equal("Musterprojekt Wohnbau", paket.Begruendung);
+        Assert.Equal("S1 Erfassen", paket.Prozessschritt);
+        Assert.Equal("ki", paket.AkteurArt);
+        Assert.False(paket.Parameter!.ContainsKey("begruendung"));   // gehört dem Paket, nicht dem Befehl
+        Assert.Equal("ki", p.Modell.Hole("GEB-9").Angelegt!.Art);
+        // rückgängig erbt nichts davon
+        Assert.True(p.Rueckgaengig().Angenommen);
+        Assert.Null(p.Verlauf.Last().Begruendung);
+        Assert.Equal("mensch", p.Verlauf.Last().AkteurArt);
+        Assert.Contains("Text", Abgelehnt(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "Gebaeude", ["begruendung"] = 3 })).Fehler);
+    }
+
+    [Fact]
     public void UnbekannterParameter_Abgelehnt_MitGueltigenParametern()
     {
         var p = Neu();

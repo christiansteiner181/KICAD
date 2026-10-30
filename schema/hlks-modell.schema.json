@@ -137,6 +137,8 @@
         "befehl": { "type": "string", "description": "Name des Befehls, z. B. element_anlegen, leitung_ziehen, rueckgaengig" },
         "parameter": { "type": "object", "description": "Parameter des Befehls, wie übergeben" },
         "rueckgaengigVon": { "type": "string", "description": "Id des Pakets, das dieses Paket rückgängig macht" },
+        "begruendung": { "type": "string", "description": "Warum der Befehl ausgeführt wurde (optional)" },
+        "prozessschritt": { "type": "string", "description": "Prozessschritt bzw. Mustersituation, zu der der Befehl gehört (optional)" },
         "operationen": { "type": "array", "items": { "$ref": "#/$defs/operation" }, "minItems": 1 }
       },
       "additionalProperties": false
