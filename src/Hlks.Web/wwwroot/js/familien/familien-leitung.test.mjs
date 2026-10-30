@@ -98,7 +98,7 @@ test('Definition → Formular: Testrohrserie mit allen Feldern, Werten und Grupp
   const f = T.leitungFelder(rohr, { art: 'rohr', familien });
   assert.deepEqual(f.map((x) => x.pfad), ['querschnitt', 'einsatz', 'groesse.dn', 'aussen', 'innen', 'wand', 'kuerzel',
     'formteile.bogen.familie', 'formteile.bogen.typ', 'formteile.tstueck.familie', 'formteile.tstueck.typ', 'formteile.reduktion.familie', 'formteile.reduktion.typ', 'formteile.reinigungsoeffnung.familie', 'formteile.reinigungsoeffnung.typ',
-    'regeln.winkel', 'regeln.biegeradius', 'regeln.abzweig', 'regeln.abzweigwinkel']);
+    'regeln.winkel', 'regeln.biegeradius', 'regeln.abzweig', 'regeln.abzweigwinkel', 'regeln.mischbar']);
   const w = (p) => feld(rohr, p);
   assert.equal(w('querschnitt').wert, 'rund');
   assert.deepEqual(w('querschnitt').optionen, [['rund', 'rund']], 'ein Rohr ist immer rund');
@@ -488,4 +488,16 @@ test('Echter Kern (HLKS_TEST_SERVER): Vorlagen und alle ops der Seite nimmt der 
   const ohne = klon(rohr); delete ohne.leitung;
   const o = await entwurf(ohne);
   assert.equal(o.angenommen, false); assert.match(T.kernFehler(o).text, /braucht den Block «leitung»/);
+});
+
+test('Regeln: «Mischbar mit» – Auswahl einer anderen Serie, gespeichert als regeln.mischbar (Liste)', () => {
+  const f = feld(rohr, 'regeln.mischbar');
+  assert.equal(f.typ, 'mischbar');
+  assert.equal(f.optionen.some(([id]) => id === rohr.id), false);   // die eigene Serie steht nicht zur Wahl
+  let r = T.leitungAenderung(rohr, 'rohr', 'regeln.mischbar', 'mischbar', 'fam-andere-serie');
+  assert.deepEqual(r.ops[0].leitung.regeln.mischbar, ['fam-andere-serie']);
+  const mit = klon(rohr); mit.leitung.regeln = { ...(mit.leitung.regeln ?? {}), mischbar: ['fam-andere-serie'] };
+  assert.equal(feld(mit, 'regeln.mischbar').wert, 'fam-andere-serie');
+  r = T.leitungAenderung(mit, 'rohr', 'regeln.mischbar', 'mischbar', '');
+  assert.equal('mischbar' in (r.ops[0].leitung.regeln ?? {}), false);
 });

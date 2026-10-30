@@ -703,7 +703,7 @@ export function zahlenListeLesen(text) {
 /** Anzeige einer Zahlenliste: «15, 30, 45, 90». */
 export const zahlenListeText = (l) => (Array.isArray(l) ? l.map((x) => feldText(x)).join(', ') : '');
 
-/** Eingabe eines Feldes des Blocks → { wert } (undefined = Feld entfernen) oder { fehler }. typ: zahl (Pflicht) | zahlopt | winkel («frei» oder Liste) | liste (Zahlenliste) | typregel (Formel-Text) | auswahl | text (freier Text, leer = entfernen). */
+/** Eingabe eines Feldes des Blocks → { wert } (undefined = Feld entfernen) oder { fehler }. typ: zahl (Pflicht) | zahlopt | winkel («frei» oder Liste) | liste (Zahlenliste) | typregel (Formel-Text) | auswahl | mischbar (Serie → Liste) | text (freier Text, leer = entfernen). */
 export function leitungFeldLesen(typ, text) {
   const t = String(text ?? '').trim();
   switch (typ) {
@@ -736,6 +736,7 @@ export function leitungFeldLesen(typ, text) {
     }
     case 'typregel': { const f = t.startsWith('=') ? t.slice(1).trim() : t; return { wert: f === '' ? undefined : f }; }
     case 'auswahl': return { wert: t === '' ? undefined : t };
+    case 'mischbar': return { wert: t === '' ? undefined : [t] };   // Liste mit einer Serie (Kern: regeln.mischbar)
     case 'text': return { wert: t === '' ? undefined : t };   // freier Text (Kürzel); Länge und Zeichen prüft der Kern
     default: return { fehler: 'unbekanntes Feld' };
   }
@@ -842,6 +843,14 @@ export function leitungFelder(def, o = {}) {
   f.push({ gruppe: 'Regeln', pfad: 'regeln.biegeradius', label: 'Biegeradius', typ: 'zahlopt', text: feldText(b.regeln?.biegeradius), platzhalter: 'optional, mm oder Formel', titel: 'Optional: Biegeradius in mm (Zahl oder Formel)' });
   f.push({ gruppe: 'Regeln', pfad: 'regeln.abzweig', label: 'Abzweig', typ: 'auswahl', optionen: [['tstueck', 'T-Stück']], wert: b.regeln?.abzweig ?? '', leer: '(nicht angegeben)' });
   f.push({ gruppe: 'Regeln', pfad: 'regeln.abzweigwinkel', label: 'Abzweigwinkel', typ: 'liste', text: zahlenListeText(b.regeln?.abzweigwinkel), platzhalter: 'leer = nur 90°', titel: 'Erlaubte Abzweigwinkel der T-Stücke in Grad (über 0 bis 90), z. B. 45, 88.5; leer = nur rechtwinklig' });
+  // regeln.mischbar (31.10.2026, Christian: «geberit silent und pe können gemischt werden»): fehlt ein Formteil, nimmt der Kern das der anderen Serie
+  const kat = o.art === 'kanal' ? 'Kanal' : 'Rohr';
+  const mischOpt = (o.familien ?? []).filter((x) => x.kategorie === kat && x.id && x.id !== def?.id).sort((x, y) => String(x.name).localeCompare(String(y.name), 'de'))
+    .map((x) => [x.id, `${x.kennzeichen} · ${x.name}`]);
+  const misch = Array.isArray(b.regeln?.mischbar) ? b.regeln.mischbar[0] ?? '' : '';
+  if (misch && !mischOpt.some(([id]) => id === misch)) mischOpt.push([misch, `${misch} (nicht im Projekt)`]);
+  f.push({ gruppe: 'Regeln', pfad: 'regeln.mischbar', label: 'Mischbar mit', typ: 'mischbar', optionen: mischOpt, wert: misch, leer: '(keine)',
+    titel: 'Andere Leitungsserie, deren Formteile der Kern nimmt, wenn die eigene Formteil-Familie keinen passenden Typ hat (z. B. Geberit PE in Silent-db20)' });
   return f;
 }
 

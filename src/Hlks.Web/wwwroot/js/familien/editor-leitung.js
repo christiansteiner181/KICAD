@@ -13,7 +13,7 @@ import { eingabeFeld, auswahlFeld, tabelle, leerHinweis, formZeile, knopf } from
 /** Ein Feld des Formulars als Zeile «Beschriftung – Eingabe»; jedes Feld trägt data-pfad und data-ftyp (der Editor liest sie bei Änderungen). */
 export function feldHtml(f) {
   const fk = `l:${f.pfad}`;
-  const inner = f.typ === 'auswahl'
+  const inner = f.typ === 'auswahl' || f.typ === 'mischbar'
     ? auswahlFeld(f.optionen, f.wert, { fk, leer: f.leer, titel: f.titel, extra: f.deaktiviert ? { disabled: true } : undefined })
     : eingabeFeld(f.text ?? '', { fk, live: true, platzhalter: f.platzhalter, titel: f.titel, deaktiviert: f.deaktiviert, klasse: ['zahl', 'zahlopt', 'typregel', 'masse', 'ganzzahl'].includes(f.typ) ? 'formel' : '' });
   const hinweis = f.hinweis ? `<span class="leise fe-feldhinweis">${esc(f.hinweis)}</span>` : '';
