@@ -1,7 +1,9 @@
 # KICAD – Vorhaben «Erzeugendes HLKS-CAD»: Datengrundlage, Mustersituationen, Generator
 
-Stand 30.10.2026 · Chat-Sitzung mit Christian (claude.ai), Abgleich mit dem Repository auf Commit `7edee1a` · **Vorhaben, nicht
-beauftragt, nicht gebaut**
+Stand 30.10.2026 · Chat-Sitzung mit Christian (claude.ai), Abgleich mit dem Repository auf Commit `7edee1a` · **Im Bauplan seit
+30.10.2026** (Christian: «wir nehmen das komplettpaket in den bauplan»), nicht gebaut. Einordnung und technische Prüfung: `entwurf/ablauf.md`,
+Abschnitt «Vorhaben „Erzeugendes HLKS-CAD“». Generator und Bewertung = **Modul 12** (Phase 3). Die Hinweise unten «nicht beauftragt» sind damit
+überholt; gebaut wird trotzdem nur in der Reihenfolge von `ablauf.md`.
 
 ## Zweck dieses Dokuments
 
