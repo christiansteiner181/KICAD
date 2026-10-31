@@ -91,3 +91,36 @@ Begründung «Rang 5»). Ausgaben lokal in `%USERPROFILE%\HLKS_CAD_build\rang5_a
   den Plankopf (Lage vom Hauptlauf gesetzt).
 - **7B Ausgaben** – IFC4-Export: Kontrolle bestanden, Schema fehlerfrei, IDS bestanden (`rang5_sanitaer.ifc`); Materialliste
   (Leitungslängen je Serie/Grösse, Formteile je Typ und Winkel).
+
+## Vergleich mit dem H+K-Leitungs-IFC (31.10.2026)
+
+Auftrag Christian 31.10.2026: «du kannst das Leitungs IFC von dem Projekt nehmen und die unterschiede prüfen.» Grundlage:
+H+K-Revit-Modell 1-0768 Stand 01.05.2025, wie am 24.10. ins alte Test_praxis übernommen (Lesekopie lokal, Server 5178). Beide
+Modelle liegen im selben Koordinatensystem. Ausgewertet sind die Bäder R-34/R-35 und die Küche im 1.OG, Leitungen z 2400–4600 und
+die Stränge. Bilder (H+K gestrichelt, Rang 5 voll) nur lokal: `%USERPROFILE%\HLKS_CAD_build\rang5_abnahme\vergleich_baeder.png`,
+`vergleich_kueche.png`. Die neuere Fassung 10.02.2026 ist nicht übernommen und nicht verglichen.
+
+| Thema | H+K-IFC | Rang 5 |
+|---|---|---|
+| WC / WT | WC-7/8, WT-7/8 «Vorwandinstallation» | WC-1/2, WT-1/2: 15–20 mm daneben – stimmt |
+| Wanne, Dusche, Spültisch | nicht als Objekte, nur über die Leitungen | BW-1, DU-1, SP-1 als Apparate |
+| Trinkwasser-Steigzone | Schacht hinter WT-1 (KW/WW/ZIR Mapress 28 bzw. 22, ZIR SaniPex 16) | eigener Strang KW/WW ab UG am Nordende der Installationswand neben SW-F1, rund 1.7 m davon |
+| Wohnungszähler | in der WT-Vorwand («mit Zählerstrecken») | nicht modelliert |
+| Verteilung in der Wohnung | SaniPex d16 im Unterlagsboden (rund 130 mm unter OKFB) | SaniPex d32 oben in der Vorwand (1.2 m über OKFB), Anschlüsse d20/d16 |
+| Küche Wasser | ab Bad über den Boden, d16, rund 5 m | eigener Strang KW-S2/WW-S2 ab UG |
+| Zirkulation | ZIR bis in die Wohnung bzw. weiter nach oben | keine |
+| Fallleitung Bad | d110 beim Südende (Wannenseite), Sammelleitung d110 im Boden fliesst nach Süden | SW-F1 d110 am Nordende (Dusche/WT-2), Sammelleitung fliesst nach Norden, rund 2 m versetzt |
+| Weitere SW-Leitung | d75 von oben endet im 1.OG-Boden nahe SW-F1 und wird waagrecht nach aussen verzogen; d63 im Boden ostseitig | – |
+| WC-Anschluss | Silent d110 | Silent d90 |
+| Anschlüsse WT/BW/DU | Silent-db20 d56/d63 | PE d50 |
+| Badewanne | Ablauf rund 300 mm über OKFB, in der Vorwand zur Fallleitung | Ablauf im Boden |
+| Dusche | an DU-1 kein Anschluss | DU-1 mit Ablauf im Boden (ragt in die Aussenwand, siehe 3b) |
+| Spültisch | Anschlüsse rund 0.8–1.0 m weiter nordwestlich an der Rückwand; SW d63 waagrecht nach Nordwesten weg | Dosen und Ablauf bei SP-1, eigener Fallstrang d75 |
+
+Lesart: Die Apparate stimmen, das Leitungskonzept nicht. H+K verteilt Trinkwasser über den Boden ab einer Steigzone mit Zähler
+hinter dem Waschtisch, mit Zirkulation; Rang 5 hat eigene Stränge ab UG und Verteilung oben in der Vorwand. Rang-5-Leitungen liegen
+nur auf 1.6 von 15.0 m (KW), 1.7 von 15.4 m (WW) und 3.8 von 13.6 m (SW) innerhalb von 300 mm eines H+K-Rohrs gleichen Mediums.
+
+- [ ] Christian: Rang 5 nach dem H+K-Konzept nachführen (Steigzone, Bodenverteilung, Zirkulation, Fallleitung Südende) oder
+  bewusst als Variante stehen lassen?
+- [ ] Christian: Lage Spültisch und Dusche – gilt die Architektur (Rang 5) oder der H+K-Stand 2025?
