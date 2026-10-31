@@ -137,8 +137,9 @@ verteiler werden die apparate in der gleichen vorwand mit pex angeschlossen. aus
 - WC-1/2, WT-1/2 (Duofix) stehen in der Installationszone zwischen den Beplankungen W-157/W-182 (260 mm, Leichtbau) – einbaubar;
   Installationstiefe WC ≥ 13.5 cm (Geberit Montageanleitung 966.027.00.0(03), 12-2022, S. 5) eingehalten, Rücken an Rücken rund 65 mm frei.
 - DU-1: Duofix-Element ragte in die tragende Holz-Aussenwand W-199/W-174 → neue Familie FAM-22 «Dusche JRG Wanddosen» (4610.150 d16,
-  Achsabstand 153 = Annahme) in der Beplankung W-182; Armatur rund 130 mm neben der Mitte der Duschwanne. Ablauf als getrennte Einlage an der
-  Architektenlage (sw_x/sw_y/sw_z je Exemplar, Produkt offen).
+  Achsabstand 153 = Annahme) in der Beplankung W-182; Armatur rund 130 mm neben der Mitte der Duschwanne. Ablauf getrennt an der Architektenlage (sw_x/sw_y/sw_z je Exemplar): Geberit
+  Duschwannenablauf d90, Siphonierhöhe 50 mm, Abgang PE, 150.556.00.1 (Christian: «duschablauf ist auch geberit»; Katalog CH PRO_282937; die
+  30-mm-Variante 150.581.00.1 weicht laut Geberit von SN 592 000 ab); Abgang d50 = Annahme, Katalog nennt ihn nicht.
 - BW-1 bleibt Duofix (FAM-19), 15 mm hinter der Beplankung in der Ständerwand W-169 (Leichtbau, nicht tragend; Geberit «für Metall- und
   Holzständerwände»). Wasseranschlüsse FAM-19 neu von unten (PEX aus der Decke). FAM-23 «Badewanne JRG Wanddosen» angelegt, nicht verwendet.
 - SP-1: JRG-Wanddosen in der Ständerwand W-153 – wie gewollt.
@@ -156,4 +157,5 @@ verteiler werden die apparate in der gleichen vorwand mit pex angeschlossen. aus
 - Kollisionen (Lauf 4): gewollt – PEX in der Decke (D-20/D-49), Steigen in den Ständerwänden (W-169, W-153, W-182), Durchführung UG-Decke
   D-6 (Aussparung nötig). Bleibt: Querung unter den tragenden Betonwänden W-78/W-79/W-155 (Wandfuss im Modell bis z 2720 in der Decke).
 - Annahmen: Dimensionen (Steigzone d32, Einzelzuleitungen d16) bis zur Bemessung; Höhe Verteiler; Armaturenhöhe DU-1 600 über OKFB.
-- [ ] Christian: Verteilerlage und Leitungsführung abnehmen; [ ] Zirkulation am Verteiler (Ventil, Produkt); [ ] Duschablauf-Produkt.
+- [ ] Christian: Verteilerlage und Leitungsführung abnehmen; [ ] Zirkulation am Verteiler (Ventil, Produkt).
+- Befund Familie JRG-Wanddosen (FAM-21/22): Massvergleich l3 ausserhalb der Toleranz bei 4610.150/.180/.137/.237 – Massblatt prüfen.
