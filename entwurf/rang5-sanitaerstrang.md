@@ -158,4 +158,6 @@ verteiler werden die apparate in der gleichen vorwand mit pex angeschlossen. aus
   D-6 (Aussparung nötig). Bleibt: Querung unter den tragenden Betonwänden W-78/W-79/W-155 (Wandfuss im Modell bis z 2720 in der Decke).
 - Annahmen: Dimensionen (Steigzone d32, Einzelzuleitungen d16) bis zur Bemessung; Höhe Verteiler; Armaturenhöhe DU-1 600 über OKFB.
 - [ ] Christian: Verteilerlage und Leitungsführung abnehmen; [ ] Zirkulation am Verteiler (Ventil, Produkt).
+- Zurückgestellt (Christian 31.10.2026: «eher sekundär, können wir später klären»): Abstand KW/WW in der Decke – parallel übereinander,
+  30 mm auseinander (z 2800/2770); Mindestabstand nur mit Normquelle.
 - Befund Familie JRG-Wanddosen (FAM-21/22): Massvergleich l3 ausserhalb der Toleranz bei 4610.150/.180/.137/.237 – Massblatt prüfen.
