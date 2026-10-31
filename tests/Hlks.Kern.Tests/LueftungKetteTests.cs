@@ -110,4 +110,43 @@ public class LueftungKetteTests
         Assert.Equal(7, kat.KanalMs(25000));
         Assert.Equal(2, kat.ApparateMs);
     }
+
+    [Fact]
+    public void Bewertung_GewichteNormierungAusschlussUndFehlendeKennzahl()
+    {
+        static Bewertung.Variante V(string k, double? raum, double? klappen, double geraete, params string[] aus) =>
+            new(k, k, new Dictionary<string, double?> { ["raum"] = raum, ["klappen"] = klappen, ["geraete"] = geraete }, aus);
+        var kriterien = new List<Bewertung.Kriterium>
+        {
+            new("raumbedarf", "Raumbedarf", 0.5, ["raum"], "Test"), new("geraete", "Geräte", 0.25, ["geraete"], "Test"), new("klappen", "Klappen", 0.25, ["klappen"], "Test"),
+        };
+        // A: wenig Raum, 1 Gerät, 4 Klappen; B: viel Raum, 2 Geräte, keine Klappe; C: ausgeschlossen (zählt nicht in der Normierung)
+        var r = Bewertung.Rechnen([V("A", 1, 4, 1), V("B", 3, 0, 2), V("C", 0, 0, 0, "Test-Ausschluss")], kriterien);
+        var rang = r["rangfolge"]!.AsArray();
+        Assert.Equal(75, Z(rang[0]!["punkte"]));   // 100 × (0.5·1 + 0.25·1 + 0.25·0)
+        Assert.Equal(25, Z(rang[1]!["punkte"]));
+        Assert.Null(rang[2]!["punkte"]);
+        Assert.Equal("A", r["empfehlung"]!["variante"]!.GetValue<string>());
+        Assert.Equal(new[] { "Raumbedarf", "Geräte" }, r["empfehlung"]!["entscheidend"]!.AsArray().Select(x => x!.GetValue<string>()));
+
+        // fehlt eine Kennzahl, zählt das Kriterium nicht und die übrigen Gewichte tragen allein: A 100 × 0.75/0.75
+        var ohne = Bewertung.Rechnen([V("A", 1, null, 1), V("B", 3, 0, 2)], kriterien);
+        Assert.Equal(100, Z(ohne["rangfolge"]![0]!["punkte"]));
+        Assert.Equal("klappen", Assert.Single(ohne["kriterienFehlen"]!.AsArray())!.GetValue<string>());
+    }
+
+    [Fact]
+    public void Lueftung_BewertungMitKatalogGewichtenUndProjektgewichten()
+    {
+        var r = Rechne(Beispiel(brandabschnitte: true));
+        var b = r["bewertung"]!;
+        Assert.Equal(new[] { 0.5, 0.25, 0.25 }, b["gewichte"]!.AsArray().Select(x => Z(x!["gewicht"])));
+        Assert.All(b["gewichte"]!.AsArray(), x => Assert.StartsWith("Katalog lueftung.json", x!["herkunft"]!.GetValue<string>()));
+        Assert.Equal(4, b["rangfolge"]!.AsArray().Count);
+        Assert.NotNull(b["empfehlung"]);
+
+        var eigen = Rechne(Beispiel(brandabschnitte: true), new JsonObject { ["gewichte"] = new JsonObject { ["raumbedarf"] = 0 } })["bewertung"]!;
+        Assert.Equal("Abfrage (Parameter gewichte)", eigen["gewichte"]![0]!["herkunft"]!.GetValue<string>());
+        Assert.Throws<HlksFehler>(() => Rechne(Beispiel(), new JsonObject { ["gewichte"] = new JsonObject { ["kosten"] = 1 } }));
+    }
 }

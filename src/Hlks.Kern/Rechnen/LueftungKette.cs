@@ -58,25 +58,28 @@ public static class LueftungKette
         "aus den Räumen mit Zu-/Abluft – je Variante Geräte mit Lage (Kandidat Nutzung «Technik» bzw. angenommen), Zuordnung der Räume, Steigzone, " +
         "vordimensionierte Kanäle (Länge als rechtwinkliger Weg geschätzt, Querschnitt aus Volumenstrom und Geschwindigkeit nach MuKEn 2014 Art. 1.19 " +
         "Abs. 3), Raumbedarf (Zentrale, Schacht je Geschoss, Deckenhohlraum mit Vergleich zur Decke darüber), Kennzahlen (Geräte, Geräte in " +
-        "Nutzungseinheiten, Schachtfläche, Hohlraum, Brandschutzklappen) und Befunde. Rechnet nur, ändert das Modell nicht. Ohne Bewertung und Empfehlung.";
+        "Nutzungseinheiten, Schachtfläche, Hohlraum, Brandschutzklappen) und Befunde; dazu die Bewertung mit Rangfolge und Empfehlung nach den Gewichten " +
+        "aus dem Katalog (Raumbedarf, Geräte und Wartung, Brandschutzklappen; je Abfrage mit gewichte überschreibbar). Rechnet nur, ändert das Modell nicht.";
     public const string ParGeschoss = "Nur die Räume dieses Geschosses (Kennzeichen); ohne: ganzes Gebäude";
     public const string ParGleichzeitigkeit = "Gleichzeitigkeit für Summen mehrerer Räume (über 0 bis 1, Vorgabe 1)";
     public const string ParVariante = "Nur dieser Variantentyp (Schlüssel aus lueftung.json, z. B. zentral)";
+    public const string ParGewichte = "Gewichte für dieses Projekt statt der Katalogvorgabe: { raumbedarf, geraete_wartung, brandschutzklappen } (Zahlen ab 0; fehlende behalten die Vorgabe)";
 
     public static readonly IReadOnlyList<AbfrageDef> Definitionen =
     [
         new("lueftung_varianten", AbfrageText,
-            [new("geschoss", "text", false, ParGeschoss), new("gleichzeitigkeit", "zahl", false, ParGleichzeitigkeit), new("variante", "text", false, ParVariante)]),
+            [new("geschoss", "text", false, ParGeschoss), new("gleichzeitigkeit", "zahl", false, ParGleichzeitigkeit), new("variante", "text", false, ParVariante),
+             new("gewichte", "objekt", false, ParGewichte)]),
     ];
 
     /// <summary>Beantwortet eine Lüftungs-Abfrage; null = nicht zuständig.</summary>
     public static object? Tuer(Projekt p, string name, JsonObject par) => name switch
     {
-        "lueftung_varianten" => Rechnen(p, Param.Text(par, "geschoss"), Param.Zahl(par, "gleichzeitigkeit"), Param.Text(par, "variante")),
+        "lueftung_varianten" => Rechnen(p, Param.Text(par, "geschoss"), Param.Zahl(par, "gleichzeitigkeit"), Param.Text(par, "variante"), par["gewichte"] as JsonObject),
         _ => null,
     };
 
-    public static JsonObject Rechnen(Projekt p, string? geschoss = null, double? gleichzeitigkeit = null, string? variante = null)
+    public static JsonObject Rechnen(Projekt p, string? geschoss = null, double? gleichzeitigkeit = null, string? variante = null, JsonObject? gewichte = null)
     {
         var kat = p.Katalog.Lueftung ?? throw new HlksFehler($"Katalog {LueftungKatalog.Datei} fehlt im Katalogordner {p.Katalog.Ordner}.",
             "Die Datei aus dem Repository (kataloge/) wiederherstellen.");
@@ -103,9 +106,18 @@ public static class LueftungKette
                         $"{(ohneLuft.Count > 20 ? " …" : "")}. Luftmengen aus HKAP (hkap_abgleich) oder von Hand eintragen.");
         if (raeume.Count == 0) befunde.Add("Kein Raum mit Luftmenge – keine Variante.");
 
+        var kriterien = Kriterien(kat, gewichte);
         var varianten = new JsonArray();
         if (raeume.Count > 0)
             foreach (var t in typen) varianten.Add(Variante(kat, t, raeume, alle, geschosse, decken, g));
+        // Bewertung (A-6): nur gebildete Varianten (mit Gerät); Ausschlussbefunde gibt es in Teil A noch keine – ein zu kleiner
+        // Deckenhohlraum ist die Raumforderung an die Architektur, kein Ausschluss.
+        var bewertet = varianten.Select(v => (JsonObject)v!).Where(v => Json.Zahl(v["kennzahlen"]!["geraete"]) > 0).Select(v =>
+        {
+            var kz = (JsonObject)v["kennzahlen"]!;
+            return new Bewertung.Variante(v["variante"]!.GetValue<string>(), v["name"]!.GetValue<string>(),
+                kz.ToDictionary(x => x.Key, x => Json.Zahl(x.Value)), []);
+        }).ToList();
 
         return new JsonObject
         {
@@ -118,11 +130,27 @@ public static class LueftungKette
             },
             ["werte"] = WerteJson(kat),
             ["varianten"] = varianten,
+            ["bewertung"] = Bewertung.Rechnen(bewertet, kriterien),
             ["befunde"] = befunde,
             ["hinweis"] = "Vordimensionierung ohne Trasse: Längen als rechtwinkliger Weg Gerät → Steigzone → Raumschwerpunkt (geschätzt), Querschnitt aus " +
                           "Volumenstrom und Geschwindigkeit, als runder Kanal ausgewiesen. Nicht enthalten: Druckverlust, Schall, Ventilatorleistung, Kosten, " +
                           "Energie, Aussen- und Fortluft. Das Modell bleibt unverändert.",
         };
+    }
+
+    /// <summary>Kriterien aus dem Katalog; Gewichte aus dem Parameter gewichte ersetzen die Vorgabe (Herkunft «Abfrage»).</summary>
+    static List<Bewertung.Kriterium> Kriterien(LueftungKatalog kat, JsonObject? gewichte)
+    {
+        var liste = kat.Kriterien.ToList();
+        if (gewichte is null) return liste;
+        foreach (var (name, wert) in gewichte)
+        {
+            var i = liste.FindIndex(k => k.Schluessel == name);
+            if (i < 0) throw new HlksFehler($"Kriterium «{name}» gibt es nicht.", "Kriterien: " + string.Join(", ", liste.Select(k => k.Schluessel)));
+            if (Json.Zahl(wert) is not double w || w < 0) throw new HlksFehler($"Gewicht für «{name}» muss eine Zahl ab 0 sein.", "z. B. { \"raumbedarf\": 0.5 }");
+            liste[i] = liste[i] with { Gewicht = w, Herkunft = "Abfrage (Parameter gewichte)" };
+        }
+        return liste;
     }
 
     static JsonObject WerteJson(LueftungKatalog kat) => new()

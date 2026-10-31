@@ -1280,14 +1280,19 @@ stromab/stromauf (warnung, am Apparat, mit Anschluss, Medium und Stelle, an der 
 
 Noch ohne Oberfläche; erreichbar über die Tür (REST `/api/abfrage/lueftung_varianten`, MCP, KI-Palette). Rechnet nur, das Modell bleibt unverändert.
 
-- `lueftung_varianten { geschoss?, gleichzeitigkeit? (über 0 bis 1, Vorgabe 1), variante? }` – `{ umfang, eingaben { raeume, mitLuftmenge, ohneLuftmenge,
+- `lueftung_varianten { geschoss?, gleichzeitigkeit? (über 0 bis 1, Vorgabe 1), variante?, gewichte? { raumbedarf, geraete_wartung, brandschutzklappen } }` – `{ umfang, eingaben { raeume, mitLuftmenge, ohneLuftmenge,
   zuluftM3h, abluftM3h, gleichzeitigkeit }, werte { geschwindigkeit { quelle, apparateMs, kanal[] { bisM3h, ms }, ausnahmen }, hohlraumZuschlagMm,
   schachtZuschlagMm, laengenZuschlagProzent (je { wert, quelle, hinweis? }), wartungsflaeche, variantenQuelle }, varianten[] { variante, name,
   geraete[] { geraet, gruppe, raum, geschoss, lageAngenommen, zuluftM3h, abluftM3h, steigzone, raeume[] }, kanaele[] { abschnitt, art (anbindung |
   steigzone | verteilung), medium, geschoss, m3h, laengeM, ms, flaecheM2, durchmesserMm }, raumbedarf { zentralen[] { geraet, raum, geschoss,
   lageAngenommen, nettoflaecheMinM2, flaeche }, schaechte[] { geraet, geschoss, raum, lageAngenommen, kanaele, breiteMm, tiefeMm, flaecheM2 },
   hohlraum[] { geraet, geschoss, noetigMm, verfuegbarMm? | verfuegbar (Grund), fehlbetragMm? } }, kennzahlen { geraete, geraeteInNutzungseinheiten,
-  schachtflaecheM2, hohlraumMaxMm, brandschutzklappen (null ohne Brandabschnitte), laengeGeschaetztM }, befunde[] }, befunde[], hinweis }`.
+  schachtflaecheM2, hohlraumMaxMm, brandschutzklappen (null ohne Brandabschnitte), laengeGeschaetztM }, befunde[] }, bewertung { gewichte[] { kriterium,
+  name, gewicht, kennzahlen[], herkunft, zaehlt }, rangfolge[] { rang, variante, name, punkte (0–100), kriterien { schluessel: 0–1 } | ausschluss[] },
+  empfehlung { variante, name, punkte, entscheidend[], hinweis } | null, kriterienFehlen[], befunde[], verfahren }, befunde[], hinweis }`.
+- Bewertung (`src/Hlks.Kern/Bewertung/Bewertung.cs`, gewerkneutral): je Kennzahl über die Varianten normiert (0 = beste), Kriterium = Mittel, Punkte =
+  Σ Gewicht × (1 − Kriterium) ÷ Σ Gewicht. Fehlt eine Kennzahl (z. B. Brandschutzklappen ohne Brandabschnitte), zählt das Kriterium nicht. Gewichte aus
+  `kataloge/lueftung.json` (Christian «Raumbedarf zuerst»: 50/25/25), je Abfrage mit `gewichte` überschreibbar; die Empfehlung entscheidet nicht.
 - Eingaben am Raum: `zuluft`, `abluft` (aus HKAP oder von Hand), `nutzung` (Kandidaten «Technik» für die Zentrale, «Schacht» für die Steigzone; Katalog
   `kataloge/lueftung.json`), `lichteHoehe`, neu `brandabschnitt` und `nutzungseinheit` (oder `teilVon` einer Zone). Geschwindigkeiten nach MuKEn 2014
   Art. 1.19 Abs. 3 und Planungswerte von Christian stehen nur im Katalog.

@@ -13,7 +13,7 @@ Christian, 31.10.2026:
 
 ## Baustand (31.10.2026)
 
-**Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4 und A-5 als reine Abfrage `lueftung_varianten`
+**Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4, A-5 und A-6 als reine Abfrage `lueftung_varianten`
 (`src/Hlks.Kern/Rechnen/LueftungKette.cs`, MCP `WerkzeugeLueftung.cs`, Tests `LueftungKetteTests`). Abweichungen vom Konzept, vom Hauptlauf entschieden:
 - **Katalog `kataloge/lueftung.json`** statt eines Abschnitts in `buero.json`. Darin stehen die Variantentypen, die Geschwindigkeiten (MuKEn 2014),
   Christians Planungswerte und die Kandidaten-Nutzungen, je mit Quelle.
@@ -21,13 +21,15 @@ Christian, 31.10.2026:
   und zu einem Brandabschnitt gehören; `teilVon` einer Zone gilt weiterhin.
 - **Kanäle rund** ausgewiesen (Durchmesser aus dem Querschnitt). Die Rundung auf die Seriengrösse und Rechteckkanäle folgen, sobald die
   Rechteckgrenzen feststehen.
+- **Bewertung** gewerkneutral in `src/Hlks.Kern/Bewertung/Bewertung.cs`. Gewichte 50/25/25 (Raumbedarf, Geräte und Wartung, Brandschutzklappen) nach
+  Christian «Raumbedarf zuerst», die Zahlen sind ein Vorschlag des Hauptlaufs. Ein zu kleiner Deckenhohlraum ist kein Ausschluss, sondern die
+  Raumforderung; Ausschlussbefunde gibt es in Teil A noch keine.
 - **Brandschutzklappen** = je Medium die Brandabschnitte der versorgten Räume ausser dem des Geräteraums. Ohne Brandabschnitte an allen Räumen wird
   nicht gezählt.
 
 **Offen in Teil A:**
 - Variantenstudie (A-2 3)
 - Brandabschnitte nach VKF erkennen (A-1 3; Regeln mit Fundstelle fehlen)
-- Bewertung (A-6; Startgewichte fehlen)
 - Raumreservation und Ausgabe (A-7)
 - Übernahme (A-8)
 - Prinzipschema (A-3)
@@ -287,7 +289,7 @@ Die Kette des Papiers:
 
 ## Offene Fragen an Christian
 
-1. **Startgewichte** für Raumbedarf, Geräte und Wartung sowie Brandschutzklappen.
+1. **Startgewichte bestätigen:** 50/25/25 (Raumbedarf, Geräte und Wartung, Brandschutzklappen) nach «Raumbedarf zuerst».
 2. **Schachtzuschlag 20 cm:** je Seite oder gesamt?
 3. **Grenzen der Rechteckkanäle:** grösste Höhe, Seitenverhältnis.
 4. **Zentrale Lüftungsgeräte:** Welcher Hersteller kommt für die Grundausstattung dazu? Zehnder deckt die Wohnungsgeräte ab.

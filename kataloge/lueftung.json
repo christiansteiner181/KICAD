@@ -34,6 +34,14 @@
     "laengenZuschlagProzent": { "wert": 0, "quelle": "Christian Steiner, 31.10.2026: «Ohne Zuschlag»" },
     "wartungsflaeche": { "quelle": "Christian Steiner, 31.10.2026: «Wartungsfläche vom hersteller (nur apparate und geräte) leitungen keine wartung»" }
   },
+  "bewertung": {
+    "quelle": "Kriterien: Christian Steiner, 31.10.2026 (Raumbedarf, Geräte und Wartung, Brandschutzklappen; Kosten und Energie vorerst weg). Gewichte: Christian 31.10.2026 «Raumbedarf zuerst», Zahlen 50/25/25 als Vorschlag des Hauptlaufs, von Christian zu bestätigen",
+    "kriterien": [
+      { "schluessel": "raumbedarf", "name": "Raumbedarf", "gewicht": 0.5, "kennzahlen": [ "schachtflaecheM2", "hohlraumMaxMm" ] },
+      { "schluessel": "geraete_wartung", "name": "Geräte und Wartung", "gewicht": 0.25, "kennzahlen": [ "geraete", "geraeteInNutzungseinheiten" ] },
+      { "schluessel": "brandschutzklappen", "name": "Brandschutzklappen", "gewicht": 0.25, "kennzahlen": [ "brandschutzklappen" ] }
+    ]
+  },
   "kandidaten": {
     "hinweis": "Zuordnung von KICAD, kein Fachwert: Räume, deren Nutzung einen dieser Begriffe enthält (ohne Gross-/Kleinschreibung), gelten als Kandidaten.",
     "zentrale": [ "Technik" ],

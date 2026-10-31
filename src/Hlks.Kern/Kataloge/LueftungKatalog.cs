@@ -31,6 +31,9 @@ public sealed class LueftungKatalog
     public string WartungsflaecheQuelle { get; private init; } = "";
     public IReadOnlyList<string> ZentraleNutzung { get; private init; } = [];
     public IReadOnlyList<string> SchachtNutzung { get; private init; } = [];
+    /// <summary>Kriterien der Bewertung (A-6) mit Gewicht und Kennzahlen; Quelle der Gewichte.</summary>
+    public IReadOnlyList<Bewertung.Kriterium> Kriterien { get; private init; } = [];
+    public string BewertungQuelle { get; private init; } = "";
 
     /// <summary>Kanalgeschwindigkeit für einen Volumenstrom (Stufe nach MuKEn 2014 Art. 1.19 Abs. 3).</summary>
     public double KanalMs(double m3h) => Kanal.First(s => s.BisM3h is null || m3h <= s.BisM3h).Ms;
@@ -79,8 +82,23 @@ public sealed class LueftungKatalog
         var apparate = Zahl(gw["apparateMs"], "geschwindigkeit.apparateMs");
         if (apparate <= 0) throw Fehl("geschwindigkeit.apparateMs", "muss grösser als 0 sein");
 
+        var bw = w["bewertung"] as JsonObject ?? throw Fehl("bewertung", "fehlt");
+        var bwQuelle = Pflicht(bw["quelle"], "bewertung.quelle");
+        var kriterien = (bw["kriterien"] as JsonArray ?? throw Fehl("bewertung.kriterien", "fehlt")).Select((n, i) =>
+        {
+            var gew = Zahl(n?["gewicht"], $"bewertung.kriterien[{i}].gewicht");
+            if (gew < 0) throw Fehl($"bewertung.kriterien[{i}].gewicht", "darf nicht negativ sein");
+            var kz = (n?["kennzahlen"] as JsonArray ?? throw Fehl($"bewertung.kriterien[{i}].kennzahlen", "fehlt"))
+                .Select((x, j) => Pflicht(x, $"bewertung.kriterien[{i}].kennzahlen[{j}]")).ToList();
+            if (kz.Count == 0) throw Fehl($"bewertung.kriterien[{i}].kennzahlen", "leer");
+            return new Bewertung.Kriterium(Pflicht(n?["schluessel"], $"bewertung.kriterien[{i}].schluessel"), Pflicht(n?["name"], $"bewertung.kriterien[{i}].name"),
+                gew, kz, "Katalog lueftung.json: " + bwQuelle);
+        }).ToList();
+
         return new LueftungKatalog
         {
+            Kriterien = kriterien,
+            BewertungQuelle = bwQuelle,
             VariantenQuelle = Pflicht(v["quelle"], "varianten.quelle"),
             Typen = typen,
             GeschwindigkeitQuelle = (JsonObject)quelle.DeepClone(),

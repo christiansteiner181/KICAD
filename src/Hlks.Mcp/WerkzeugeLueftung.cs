@@ -2,6 +2,8 @@
 // Dünne Hülle über dem Kern wie in Werkzeuge.cs; Name, Beschreibung und Parameter stehen genau so im Kern (LueftungKette.Definitionen).
 
 using System.ComponentModel;
+using System.Text.Json;
+using System.Text.Json.Nodes;
 using Hlks.Kern;
 using ModelContextProtocol.Server;
 
@@ -13,6 +15,7 @@ public sealed partial class Werkzeuge
     public string LueftungVariantenLesen(
         [Description(LueftungKette.ParGeschoss)] string? geschoss = null,
         [Description(LueftungKette.ParGleichzeitigkeit)] double? gleichzeitigkeit = null,
-        [Description(LueftungKette.ParVariante)] string? variante = null) =>
-        Lauf(() => Antwort(LueftungKette.Rechnen(projekt, geschoss, gleichzeitigkeit, variante)));
+        [Description(LueftungKette.ParVariante)] string? variante = null,
+        [Description(LueftungKette.ParGewichte)] JsonElement? gewichte = null) =>
+        Lauf(() => Antwort(LueftungKette.Rechnen(projekt, geschoss, gleichzeitigkeit, variante, Knoten(gewichte) as JsonObject)));
 }
