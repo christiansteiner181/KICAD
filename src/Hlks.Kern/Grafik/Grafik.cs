@@ -79,7 +79,7 @@ public static class Grafik
     public static Plangrafik Plan(Projekt p, string ansicht)
     {
         var a = p.Modell.HoleDerKlasse(ansicht, "Ansicht");
-        if (a.Text("art") == "schema") return SchemaGrafik.Plan(p, a);   // Modul 3 (Schema/)
+        if (a.Text("art") == "schema") return LueftungSchema.IstLueftung(a) ? LueftungSchema.Plan(p, a) : SchemaGrafik.Plan(p, a);   // Modul 3 (Schema/); Lüftung Modul 6 A-3
         if (a.Text("art") == "liste") return Listentabelle.Plan(p, a);   // Modul 7 Teil A: Liste als Tabelle auf dem Planblatt (Papier-mm, Massstab 1)
         var ctx = Kontext(p, a);
         var g = new Plangrafik { Ansicht = a.Kennzeichen, Art = ctx.Art, Massstab = ctx.Massstab, Stand = p.Modell.Pruefsumme() };

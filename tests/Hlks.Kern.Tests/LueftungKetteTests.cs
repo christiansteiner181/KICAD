@@ -215,4 +215,32 @@ public class LueftungKetteTests
         Ok(p.Rueckgaengig());
         Assert.Equal(vorher, p.Modell.Elemente.Count);
     }
+
+    [Fact]
+    public void Schema_AesteRaeumeUndKlappenWieDieKennzahl_AlsAnsichtGezeichnet()
+    {
+        var p = Beispiel(brandabschnitte: true);
+        var s = (JsonObject)Tuer.Abfrage(p, "lueftung_schema", new JsonObject { ["variante"] = "zentral" });
+        var g = Assert.Single(s["geraete"]!.AsArray());
+        // Äste vom Gerät (UG) weg: EG, dann 1.OG; Räume nach Lage West → Ost, bei gleichem x nach Kennzeichen
+        var aeste = g!["aeste"]!.AsArray();
+        Assert.Equal(["EG", "1.OG"], aeste.Select(a => a!["geschoss"]!.GetValue<string>()));
+        Assert.Equal(["E.01", "E.04", "E.02", "E.03"], aeste[0]!["raeume"]!.AsArray().Select(r => r!["raum"]!.GetValue<string>()));
+        Assert.Equal(180, Z(aeste[0]!["zuluftM3h"]));
+        Assert.Equal(120, Z(aeste[0]!["abluftM3h"]));
+        // Klappen: je Medium und fremdem Brandabschnitt eine (BA-E, BA-1; Geräteraum BA-U) – gleich wie die Kennzahl der Variante
+        Assert.Equal(4, Z(s["brandschutzklappen"]));
+        Assert.Equal(4, aeste.Sum(a => a!["klappen"]!.AsArray().Count));
+        var kEg = aeste[0]!["klappen"]!.AsArray();
+        Assert.Contains(kEg, k => k!["medium"]!.GetValue<string>() == "ZUL" && k["vorRaum"]!.GetValue<string>() == "E.01");
+        Assert.Contains(kEg, k => k!["medium"]!.GetValue<string>() == "ABL" && k["vorRaum"]!.GetValue<string>() == "E.02");
+
+        Ok(p.Ausfuehren("schema_anlegen", new JsonObject { ["vorlage"] = "lueftung", ["variante"] = "zentral" }));
+        var plan = Grafik.Plan(p, "AN-SCHEMA-LUEFTUNG");
+        var texte = plan.Teile.SelectMany(t => t.Primitive).Where(x => x.Art == "text").Select(x => x.Text).ToList();
+        Assert.Contains("E.01", texte);
+        Assert.Contains("180/120", texte);
+        Assert.Contains("BSK BA-E", texte);
+        Assert.Equal("zentral", ((JsonObject)Tuer.Abfrage(p, "schema", new JsonObject { ["ansicht"] = "AN-SCHEMA-LUEFTUNG" }))["variante"]!.GetValue<string>());
+    }
 }

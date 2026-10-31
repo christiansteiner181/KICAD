@@ -456,6 +456,7 @@ public class ApiTests
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
+        ["lueftung_schema"] = "{}",                                    // Modul 6 Teil A-3: Beispiel ohne Luftmengen → leer mit Befund
         ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund
         ["raumforderung"] = "{}",                                      // Modul 6 Teil A-7: Beispiel ohne Raumreservationen
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",   // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)

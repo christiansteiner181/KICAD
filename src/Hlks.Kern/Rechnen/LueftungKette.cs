@@ -38,7 +38,7 @@ public static class LueftungKette
     }
 
     /// <summary>Alle platzierten Räume mit Geschoss (für Kandidaten), dazu die Räume ohne Luftmenge.</summary>
-    static List<Raum> AlleRaeume(Modell m)
+    internal static List<Raum> AlleRaeume(Modell m)
     {
         var liste = new List<Raum>();
         foreach (var r in m.DerKlasse("Raum"))

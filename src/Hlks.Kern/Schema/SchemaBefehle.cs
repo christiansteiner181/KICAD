@@ -25,7 +25,9 @@ public static class SchemaBefehle
     public const string ParY = "y in Papier-mm der Schema-Ansicht (nach oben)";
     public const string ParZuruecksetzen = "true = Hand-Lage entfernen, es gilt wieder die automatische Anordnung";
     public const string ParAlle = "true = alle Hand-Lagen entfernen, sonst nur die verwaisten";
-    public const string ParVorlage = "wasser (Trinkwasser kalt, warm, Zirkulation) | abwasser (Schmutz- und Regenwasser)";
+    public const string ParVorlage = "wasser (Trinkwasser kalt, warm, Zirkulation) | abwasser (Schmutz- und Regenwasser) | lueftung (Prinzipschema einer Lüftungsvariante, Modul 6 A-3)";
+    public const string ParLueftungVariante = "Nur Vorlage lueftung: Variante (zentral, zentral_zone, geschoss, einheit); ohne die übernommene";
+    public const string ParLueftungGleichzeitigkeit = "Nur Vorlage lueftung: Gleichzeitigkeit für Summen mehrerer Räume (über 0 bis 1, Vorgabe 1)";
     public const string ParName = "Name der Ansicht (Vorgabe «Schema Wasser» bzw. «Schema Abwasser»)";
     public const string ParKennzeichen = "Kennzeichen der Ansicht (Vorgabe AN-SCHEMA-WASSER bzw. AN-SCHEMA-ABWASSER, falls frei)";
     public const string ParBlickrichtung = "sued | nord | ost | west: Blick von dieser Seite (Projekt-Nord), Vorgabe sued";
@@ -200,7 +202,7 @@ public sealed class SchemaAnordnen : IBefehl
 public sealed class SchemaAnlegen : IBefehl
 {
     public string Name => "schema_anlegen";
-    public const string Text = "Legt eine Schema-Ansicht (Strangschema) aus einer Vorlage an: wasser = Systeme Trinkwasser kalt, warm und Zirkulation («Schema Wasser»), abwasser = Schmutz- und Regenwasser («Schema Abwasser»). Die Vorlage setzt systeme auf die Systeme dieser Medien im Modell; dazu wahlweise Blickrichtung und Wohnungsblöcke. Das Schema ist strangweise angeordnet: je Steigzone (Strang.steigzone) ein Bündel mit Kreis, Stränge nach Lage im Gebäude, Endgeräte nach Lage im Netz.";
+    public const string Text = "Legt eine Schema-Ansicht (Strangschema) aus einer Vorlage an: wasser = Systeme Trinkwasser kalt, warm und Zirkulation («Schema Wasser»), abwasser = Schmutz- und Regenwasser («Schema Abwasser»). Die Vorlage setzt systeme auf die Systeme dieser Medien im Modell; dazu wahlweise Blickrichtung und Wohnungsblöcke. Das Schema ist strangweise angeordnet: je Steigzone (Strang.steigzone) ein Bündel mit Kreis, Stränge nach Lage im Gebäude, Endgeräte nach Lage im Netz. lueftung = Prinzipschema einer Lüftungsvariante (Modul 6 A-3, Parameter variante und gleichzeitigkeit; ohne variante die übernommene), gezeichnet aus der Lüftungskette wie lueftung_schema.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
@@ -209,11 +211,14 @@ public sealed class SchemaAnlegen : IBefehl
         new("kennzeichen", "text", false, SchemaBefehle.ParKennzeichen),
         new("blickrichtung", "text", false, SchemaBefehle.ParBlickrichtung),
         new("wohnungsbloecke", "bool", false, SchemaBefehle.ParWohnungsbloecke),
+        new("variante", "text", false, SchemaBefehle.ParLueftungVariante),
+        new("gleichzeitigkeit", "zahl", false, SchemaBefehle.ParLueftungGleichzeitigkeit),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
         var vorlage = Param.Text(p, "vorlage", true)!.Trim().ToLowerInvariant();
+        if (vorlage == "lueftung") { Lueftung(k, p); return; }
         var systeme = SchemaBefehle.SystemeDerVorlage(k.Arbeit, k.Katalog, vorlage);
         var typen = SchemaBefehle.Vorlagen[vorlage];
         if (systeme.Count == 0)
@@ -253,6 +258,30 @@ public sealed class SchemaAnlegen : IBefehl
         k.Hinweise.Add($"Schema-Ansicht {a.Kennzeichen} «{a.Name}» angelegt: Systeme {string.Join(", ", systeme.Select(s => s.Kennzeichen))}"
             + (ohne.Count > 0 ? $"; ohne System im Modell: {string.Join(", ", ohne)} (später mit element_aendern in systeme ergänzen)" : "") + ".");
     }
+
+    /// <summary>Modul 6 A-3: Prinzipschema Lüftung als Schema-Ansicht mit der Variante (gezeichnet von LueftungSchema).</summary>
+    static void Lueftung(Kontext k, JsonObject p)
+    {
+        var variante = Param.Text(p, "variante")?.Trim() ?? LueftungSchema.UebernommeneVariante(k.Arbeit)
+            ?? throw new HlksFehler("Für das Lüftungsschema fehlt die Variante.", "variante angeben (zentral, zentral_zone, geschoss, einheit) oder zuerst lueftung_variante_uebernehmen.");
+        if (k.Katalog.Lueftung?.Typen.Any(t => t.Schluessel == variante) != true)
+            throw new HlksFehler($"Variante «{variante}» gibt es nicht.", "Varianten: " + string.Join(", ", k.Katalog.Lueftung?.Typen.Select(t => t.Schluessel) ?? []));
+        var g = Param.Zahl(p, "gleichzeitigkeit");
+        if (g is <= 0 or > 1) throw new HlksFehler($"Gleichzeitigkeit {g} ist ungültig.", "Einen Wert über 0 und höchstens 1 angeben (Vorgabe 1).");
+        var kz = Param.Text(p, "kennzeichen")?.Trim();
+        if (string.IsNullOrEmpty(kz)) kz = k.Arbeit.Finde("AN-SCHEMA-LUEFTUNG") is null ? "AN-SCHEMA-LUEFTUNG" : null;
+        var eig = new JsonObject { ["art"] = "schema", ["schemaart"] = "prinzipschema", ["lueftungVariante"] = variante };
+        if (g is double gg) eig["lueftungGleichzeitigkeit"] = gg;
+        var anlegen = new JsonObject
+        {
+            ["klasse"] = "Ansicht", ["name"] = Param.Text(p, "name")?.Trim() is { Length: > 0 } n ? n : "Prinzipschema Lüftung", ["eigenschaften"] = eig,
+        };
+        if (kz is not null) anlegen["kennzeichen"] = kz;
+        new ElementAnlegen().Ausfuehren(k, anlegen);
+        var a = k.Arbeit.Finde(k.Operationen[^1].Id)!;
+        k.Hinweise.Add($"Prinzipschema Lüftung {a.Kennzeichen} «{a.Name}» angelegt: Variante {variante}" +
+            (LueftungSchema.UebernommeneVariante(k.Arbeit) == variante ? " (übernommen)" : " (Vorschau, nicht übernommen)") + ".");
+    }
 }
 
 public static class SchemaPruefung
@@ -284,5 +313,8 @@ public static class SchemaAbfragen
         _ => null,
     };
 
-    public static JsonObject Schema(Projekt p, string ansicht) => Schemaplan.Rechnen(p, ansicht).AlsJson();
+    public static JsonObject Schema(Projekt p, string ansicht) =>
+        p.Modell.Finde(ansicht) is { } a && LueftungSchema.IstLueftung(a)
+            ? LueftungSchema.AlsJson(LueftungSchema.Aufbauen(p, a.Text("lueftungVariante"), a.Zahl("lueftungGleichzeitigkeit")))   // Modul 6 A-3
+            : Schemaplan.Rechnen(p, ansicht).AlsJson();
 }

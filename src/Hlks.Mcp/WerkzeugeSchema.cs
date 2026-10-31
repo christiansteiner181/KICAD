@@ -50,9 +50,12 @@ public sealed partial class Werkzeuge
         [Description(SchemaBefehle.ParKennzeichen)] string? kennzeichen = null,
         [Description(SchemaBefehle.ParBlickrichtung)] string? blickrichtung = null,
         [Description(SchemaBefehle.ParWohnungsbloecke)] bool wohnungsbloecke = false,
+        [Description(SchemaBefehle.ParLueftungVariante)] string? variante = null,
+        [Description(SchemaBefehle.ParLueftungGleichzeitigkeit)] double? gleichzeitigkeit = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
     {
-        var par = Parameter(("vorlage", vorlage), ("name", name), ("kennzeichen", kennzeichen), ("blickrichtung", blickrichtung));
+        var par = Parameter(("vorlage", vorlage), ("name", name), ("kennzeichen", kennzeichen), ("blickrichtung", blickrichtung), ("variante", variante),
+            ("gleichzeitigkeit", gleichzeitigkeit));
         if (wohnungsbloecke) par["wohnungsbloecke"] = true;
         return Befehl("schema_anlegen", par, trockenlauf);
     }

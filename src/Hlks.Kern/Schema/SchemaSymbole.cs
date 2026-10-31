@@ -444,7 +444,7 @@ public static class SchemaSymbole
         return k;
     }
 
-    static Primitiv Verschoben(Primitiv pr, double x, double y)
+    internal static Primitiv Verschoben(Primitiv pr, double x, double y)
     {
         var k = Kopie(pr);
         k.Punkte = pr.Punkte.Select(q => new[] { Math.Round(q[0] + x, 3), Math.Round(q[1] + y, 3) }).ToList();

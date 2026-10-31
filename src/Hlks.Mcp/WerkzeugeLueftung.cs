@@ -19,6 +19,12 @@ public sealed partial class Werkzeuge
         [Description(LueftungKette.ParGewichte)] JsonElement? gewichte = null) =>
         Lauf(() => Antwort(LueftungKette.Rechnen(projekt, geschoss, gleichzeitigkeit, variante, Knoten(gewichte) as JsonObject)));
 
+    [McpServerTool(Name = "lueftung_schema"), Description(LueftungSchema.AbfrageText)]
+    public string LueftungSchemaLesen(
+        [Description(LueftungTexte.ParVariante)] string? variante = null,
+        [Description(LueftungKette.ParGleichzeitigkeit)] double? gleichzeitigkeit = null) =>
+        Lauf(() => Antwort(LueftungSchema.AlsJson(LueftungSchema.Aufbauen(projekt, variante, gleichzeitigkeit))));
+
     [McpServerTool(Name = "raumforderung"), Description(LueftungTexte.Liste)]
     public string RaumforderungLesen() => Lauf(() => Antwort(LueftungBefehle.Liste(projekt)));
 

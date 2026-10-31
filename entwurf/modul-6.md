@@ -14,7 +14,7 @@ Christian, 31.10.2026:
 ## Baustand (31.10.2026)
 
 **Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4, A-5 und A-6 als reine Abfrage `lueftung_varianten`;
-A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `raumforderung`, A-8 als Befehl `lueftung_variante_uebernehmen` (`LueftungBefehle.cs`)
+A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `raumforderung`, A-8 als Befehl `lueftung_variante_uebernehmen` (`LueftungBefehle.cs`), A-3 als Abfrage `lueftung_schema` und Schema-Ansicht `schema_anlegen { vorlage: lueftung }` (`Schema/LueftungSchema.cs`)
 (`src/Hlks.Kern/Rechnen/LueftungKette.cs`, MCP `WerkzeugeLueftung.cs`, Tests `LueftungKetteTests`). Abweichungen vom Konzept, vom Hauptlauf entschieden:
 - **Katalog `kataloge/lueftung.json`** statt eines Abschnitts in `buero.json`. Darin stehen die Variantentypen, die Geschwindigkeiten (MuKEn 2014),
   Christians Planungswerte und die Kandidaten-Nutzungen, je mit Quelle.
@@ -28,6 +28,10 @@ A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `r
 - **Übernahme (A-8)** ohne eigene Zonen: Die Zuordnung der Räume steht am Gerät (Eigenschaft `raeume`), weil `teilVon` der Räume schon die Wohnung
   trägt und ein Raum nur ein `teilVon` hat. Je Gerät eine Anlage `A-LG-n` mit den Systemen `LG-n-AUL/ZUL/ABL/FOL`; das Gerät ist ein Platzhalter ohne
   Familie, `volumenstrom` = grössere von Zu- und Abluft. Nur eine Übernahme je Projekt; eine zweite verlangt zuerst das Zurücknehmen.
+- **Prinzipschema (A-3)** aus den Daten der Lüftungskette, auch nach der Übernahme (es gibt keine Kanäle im Modell). Aufbau nach PS-2026-006: Zeile je
+  Geschoss, Steigzone Zu-/Abluft, Ast je Geschoss mit Summe ZUL/ABL, Räume mit Luftmengen und Brandabschnitt, Klappen eig-bsk und Gitter mit Skala 0.7.
+  Anders als die Vorlage: keine VAV und Regler (Teil A wählt keine Regelung), Gerät als Kasten mit AUL/FOL. Klappen wie die Kennzahl (je Medium und
+  fremdem Brandabschnitt eine, auf dem nächsten Ast vor dem ersten Raum des Brandabschnitts).
 - **Brandschutzklappen** = je Medium die Brandabschnitte der versorgten Räume ausser dem des Geräteraums. Ohne Brandabschnitte an allen Räumen wird
   nicht gezählt.
 
@@ -35,7 +39,7 @@ A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `r
 - Variantenstudie (A-2 3)
 - Brandabschnitte nach VKF erkennen (A-1 3; Regeln mit Fundstelle fehlen)
 - A-7 Rest: Planblatt «Raumbedarf Lüftung», Reservation der Zentrale (Herstellerangaben), Raumreservation in Kollision und IFC-Export
-- Prinzipschema (A-3)
+- Prinzipschema: Anordnung von Hand (schema_lage) und Legende
 - Projektwerte überschreibbar (heute nur `gleichzeitigkeit` als Parameter)
 - Oberfläche und Anleitung
 
