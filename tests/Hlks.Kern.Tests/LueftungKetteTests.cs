@@ -149,4 +149,41 @@ public class LueftungKetteTests
         Assert.Equal("Abfrage (Parameter gewichte)", eigen["gewichte"]![0]!["herkunft"]!.GetValue<string>());
         Assert.Throws<HlksFehler>(() => Rechne(Beispiel(), new JsonObject { ["gewichte"] = new JsonObject { ["kosten"] = 1 } }));
     }
+
+    [Fact]
+    public void Raumforderung_LegtSchachtUndHohlraumAn_ErsetztOffeneBehaeltEntschiedene()
+    {
+        var p = Beispiel();
+        var par = new JsonObject { ["variante"] = "zentral" };
+        Ok(p.Ausfuehren("raumforderung_anlegen", (JsonObject)par.DeepClone(), trockenlauf: true));
+        Assert.Empty(p.Modell.DerKlasse("Raumreservation"));
+
+        var e = Ok(p.Ausfuehren("raumforderung_anlegen", (JsonObject)par.DeepClone()));
+        // Schacht UG (UG–EG) und EG (EG–1.OG); Hohlraum EG und 1.OG – im UG nur die Anbindung, keine versorgten Räume
+        var rr = p.Modell.DerKlasse("Raumreservation").ToList();
+        Assert.Equal(2, rr.Count(x => x.Text("art") == "schacht"));
+        Assert.Equal(2, rr.Count(x => x.Text("art") == "hohlraum"));
+        Assert.Contains(e.Hinweise, h => h.Contains("Zentrale(n) ohne Reservation"));
+        // Schacht UG: Fläche wie lueftung_varianten, Rechteck um die Steigzone (6625/6750), über die Geschosshöhe ab Kote UG
+        var ug = rr.Single(x => x.Text("art") == "schacht" && Hole(p, "UG").Id == x.Geschoss);
+        double dz = D(360, 3), da = D(240, 3);
+        Assert.Equal(Math.Round((dz + da + 200) * (dz + 200) / 1e6, 3), ug.Zahl("flaeche"));
+        Assert.Equal(6625, (ug.Geometrie!.Punkte[0][0] + ug.Geometrie.Punkte[2][0]) / 2, 0);
+        Assert.Equal(-2700, ug.Geometrie.Punkte[0][2]);
+        Assert.Equal(2700, ug.Geometrie.Hoehe);
+        // Hohlraum EG: Rechteck der versorgten Räume E.01–E.04, ab Oberkante lichte Höhe (0 + 2500)
+        var hEg = rr.Single(x => x.Text("art") == "hohlraum" && Hole(p, "EG").Id == x.Geschoss);
+        Assert.Equal(2500, hEg.Geometrie!.Punkte[0][2]);
+        Assert.Equal("forderung", hEg.Text("status"));
+
+        // erneut: offene Forderungen ersetzt; eine freigegebene bleibt
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = hEg.Kennzeichen, ["eigenschaften"] = new JsonObject { ["status"] = "freigegeben" } }));
+        Ok(p.Ausfuehren("raumforderung_anlegen", (JsonObject)par.DeepClone()));
+        Assert.Equal(5, p.Modell.DerKlasse("Raumreservation").Count());
+        Assert.NotNull(p.Modell.Finde(hEg.Kennzeichen));
+
+        var liste = (JsonObject)Tuer.Abfrage(p, "raumforderung");
+        Assert.Equal(5, liste["raumreservationen"]!.AsArray().Count);
+        Assert.Equal(4, Z(liste["summen"]!["offen"]));
+    }
 }

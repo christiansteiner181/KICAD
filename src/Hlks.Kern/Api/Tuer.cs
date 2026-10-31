@@ -50,7 +50,7 @@ public static class Tuer
                  ?? PlanAbfragen.Tuer(p, name, par)   // Modul 7 Teil A: plannummer_vorschlag
                  ?? NormenAbfragen.Tuer(p, name, par)   // Modul 3c: Normensuche
                  ?? SanitaerAbfragen.Tuer(p, name, par)   // Modul 4 Teil A
-                 ?? LueftungKette.Tuer(p, name, par)   // Modul 6 Teil A
+                 ?? LueftungKette.Tuer(p, name, par) ?? LueftungBefehle.Tuer(p, name, par)   // Modul 6 Teil A
                  ?? IfcExportAbfragen.Tuer(p, name, par)   // Modul 7 Teil B2: ifc_export
                  ?? PlanwinkelAbfragen.Tuer(p, name, par)   // N9: planwinkel
                  ?? RaumBegehenAbfragen.Tuer(p, name, par)   // N15: raum_begehen

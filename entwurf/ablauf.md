@@ -138,7 +138,7 @@ Spezielle Berechnungen, Systemerkennung, Darstellungen.
 | --- | --- | --- |
 | 4 | Sanitär rechnen | Teil A (Belastungswerte) gebaut; Teil B wartet auf SN EN 12056 und SVGW W3 |
 | 5 | Heizung, Hydraulik | Teil A begonnen (Datenmodell, Heizsymbole, Zweig `pause/modul5-datenmodell`), pausiert |
-| 6 | Lüftung, Kanalnetz | Konzept Teil A «Lüftungskette bis zum Raumbedarf» (`modul-6.md`, 31.10.2026); gebaut A-1, A-2, A-4, A-5, A-6 als Abfrage `lueftung_varianten` (31.10.2026); darf vor Modul 5 kommen (Christian 31.10.2026: «wir können lüftung auch vorziehen»), Fragen 31.10.2026 grösstenteils beantwortet; offen die Startgewichte (Luftgeschwindigkeit MuKEn 2014 bestätigt) |
+| 6 | Lüftung, Kanalnetz | Konzept Teil A «Lüftungskette bis zum Raumbedarf» (`modul-6.md`, 31.10.2026); gebaut A-1, A-2, A-4, A-5, A-6 als Abfrage `lueftung_varianten` und A-7 als Befehl `raumforderung_anlegen` (31.10.2026); darf vor Modul 5 kommen (Christian 31.10.2026: «wir können lüftung auch vorziehen»), Fragen 31.10.2026 grösstenteils beantwortet; offen die Startgewichte (Luftgeschwindigkeit MuKEn 2014 bestätigt) |
 | 7 | Ausgabe: Planset PDF/DWG, Listen, Ausschreibung, IFC mit IDS | Teil A gebaut; IFC-Export und IDS teilweise |
 | 7b | Partneraustausch | offen |
 | 8 | MSRL, Messkonzept | offen |

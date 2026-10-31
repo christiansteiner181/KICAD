@@ -297,6 +297,7 @@ public static class LueftungKette
                 {
                     ["geraet"] = kz, ["geschoss"] = gs.Key, ["raum"] = schachtRaum?.Element.Kennzeichen, ["lageAngenommen"] = schachtRaum is null,
                     ["kanaele"] = d.Count, ["breiteMm"] = Math.Round(breite), ["tiefeMm"] = Math.Round(tiefe), ["flaecheM2"] = Math.Round(flaeche, 3),
+                    ["x"] = Math.Round(sx), ["y"] = Math.Round(sy),
                 });
             }
             schachtSumme += schachtMax;
@@ -304,8 +305,14 @@ public static class LueftungKette
             {
                 var noetig = gs.Max(k => k.DurchmesserMm) + kat.HohlraumZuschlagMm.Wert;
                 hohlraumMax = Math.Max(hohlraumMax, noetig);
-                var o = new JsonObject { ["geraet"] = kz, ["geschoss"] = gs.Key, ["noetigMm"] = Math.Round(noetig) };
-                var (verfuegbar, ohne) = Hohlraum(rs.Where(r => r.Geschoss.Kennzeichen == gs.Key), decken);
+                var dort = rs.Where(r => r.Geschoss.Kennzeichen == gs.Key).ToList();
+                var o = new JsonObject
+                {
+                    ["geraet"] = kz, ["geschoss"] = gs.Key, ["noetigMm"] = Math.Round(noetig),
+                    ["raeume"] = new JsonArray(dort.Select(r => (JsonNode)JsonValue.Create(r.Element.Kennzeichen)).ToArray()),
+                };
+                if (dort.All(r => r.LichteHoehe is not null) && dort.Count > 0) o["unterkanteMm"] = Math.Round(dort.Min(r => r.Kote + r.LichteHoehe!.Value));
+                var (verfuegbar, ohne) = Hohlraum(dort, decken);
                 if (verfuegbar is double v)
                 {
                     o["verfuegbarMm"] = Math.Round(v);
@@ -406,8 +413,9 @@ public static class LueftungKette
 
     /// <summary>Verfügbarer Deckenhohlraum: Unterkante der Decke über dem Raum minus Oberkante der lichten Höhe, das Minimum der Räume.
     /// null, wenn für einen Raum die lichte Höhe oder die Decke darüber fehlt.</summary>
-    static (double? Mm, string Grund) Hohlraum(IEnumerable<Raum> rs, List<Element> decken)
+    static (double? Mm, string Grund) Hohlraum(IReadOnlyCollection<Raum> rs, List<Element> decken)
     {
+        if (rs.Count == 0) return (null, "keine versorgten Räume in diesem Geschoss (nur Anbindung)");
         double? min = null;
         foreach (var r in rs)
         {

@@ -1293,6 +1293,12 @@ Noch ohne Oberfläche; erreichbar über die Tür (REST `/api/abfrage/lueftung_va
 - Bewertung (`src/Hlks.Kern/Bewertung/Bewertung.cs`, gewerkneutral): je Kennzahl über die Varianten normiert (0 = beste), Kriterium = Mittel, Punkte =
   Σ Gewicht × (1 − Kriterium) ÷ Σ Gewicht. Fehlt eine Kennzahl (z. B. Brandschutzklappen ohne Brandabschnitte), zählt das Kriterium nicht. Gewichte aus
   `kataloge/lueftung.json` (Christian «Raumbedarf zuerst»: 50/25/25), je Abfrage mit `gewichte` überschreibbar; die Empfehlung entscheidet nicht.
+- `raumforderung_anlegen { variante, geschoss?, gleichzeitigkeit? }` (Befehl, ein Paket) – legt den Raumbedarf der Variante als Klasse **Raumreservation**
+  (RR, Polygon mit Unterkante z und Höhe) an: `art` schacht (Rechteck um die Steigzone, Geschosshöhe) bzw. hohlraum (Rechteck um die versorgten Räume ab
+  Oberkante lichte Höhe, Höhe = Bedarf, `fehlbetrag`), `status` forderung, `variante`, `geraet`, `bedarf` (Text mit Quelle), `flaeche`, `hoehe`, `raeume`.
+  Ersetzt offene Forderungen; `freigegeben`/`abgelehnt` setzt der Mensch mit element_aendern und bleiben. Zentrale ohne Reservation, bis Herstellerangaben da sind.
+- `raumforderung {}` – `{ raumreservationen[] { kennzeichen, art, geschoss, geraet, flaecheM2, hoeheMm, fehlbetragMm, raeume, bedarf, status, variante },
+  summen { schachtflaecheM2, hohlraumMaxMm, mitFehlbetrag, offen }, hinweis }`.
 - Eingaben am Raum: `zuluft`, `abluft` (aus HKAP oder von Hand), `nutzung` (Kandidaten «Technik» für die Zentrale, «Schacht» für die Steigzone; Katalog
   `kataloge/lueftung.json`), `lichteHoehe`, neu `brandabschnitt` und `nutzungseinheit` (oder `teilVon` einer Zone). Geschwindigkeiten nach MuKEn 2014
   Art. 1.19 Abs. 3 und Planungswerte von Christian stehen nur im Katalog.

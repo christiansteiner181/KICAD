@@ -116,6 +116,8 @@ public sealed class Befehlsregister
         // Modul 3b
         KollisionBefehle.Registrieren(r);
         AussparungBefehle.Registrieren(r);
+        // Modul 6 Teil A
+        LueftungBefehle.Registrieren(r);
         return r;
     }
 }

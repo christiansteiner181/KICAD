@@ -13,7 +13,8 @@ Christian, 31.10.2026:
 
 ## Baustand (31.10.2026)
 
-**Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4, A-5 und A-6 als reine Abfrage `lueftung_varianten`
+**Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4, A-5 und A-6 als reine Abfrage `lueftung_varianten`;
+A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `raumforderung` (`LueftungBefehle.cs`)
 (`src/Hlks.Kern/Rechnen/LueftungKette.cs`, MCP `WerkzeugeLueftung.cs`, Tests `LueftungKetteTests`). Abweichungen vom Konzept, vom Hauptlauf entschieden:
 - **Katalog `kataloge/lueftung.json`** statt eines Abschnitts in `buero.json`. Darin stehen die Variantentypen, die Geschwindigkeiten (MuKEn 2014),
   Christians Planungswerte und die Kandidaten-Nutzungen, je mit Quelle.
@@ -30,7 +31,7 @@ Christian, 31.10.2026:
 **Offen in Teil A:**
 - Variantenstudie (A-2 3)
 - Brandabschnitte nach VKF erkennen (A-1 3; Regeln mit Fundstelle fehlen)
-- Raumreservation und Ausgabe (A-7)
+- A-7 Rest: Planblatt «Raumbedarf Lüftung», Reservation der Zentrale (Herstellerangaben), Raumreservation in Kollision und IFC-Export
 - Übernahme (A-8)
 - Prinzipschema (A-3)
 - Projektwerte überschreibbar (heute nur `gleichzeitigkeit` als Parameter)

@@ -67,6 +67,7 @@ public sealed class Abfragen(Projekt p)
         .. NormenAbfragen.Definitionen,   // Modul 3c: normen_suchen, norm_lesen
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
         .. LueftungKette.Definitionen,   // Modul 6 Teil A: lueftung_varianten
+        .. LueftungBefehle.Definitionen,   // Modul 6 Teil A-7: raumforderung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
         .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)
         .. RaumBegehenAbfragen.Definitionen,   // N15: raum_begehen (Standort für «Raum begehen»)

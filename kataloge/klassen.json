@@ -39,6 +39,19 @@
     "beschreibung": "Gruppe von Räumen, z. B. eine Wohnung oder Brandabschnitt. Räume verweisen mit teilVon darauf.",
     "eigenschaften": [ { "name": "nutzung", "typ": "text", "beschreibung": "Art der Zone" } ] },
 
+  { "name": "Raumreservation", "kuerzel": "RR", "schicht": "raum", "gewerk": "lueftung", "geometrie": "polygon", "brauchtGeschoss": true,
+    "beschreibung": "Raumbedarf der Gebäudetechnik als Forderung an die Architektur (Modul 6 Teil A-7): Grundriss als Polygon (mm), z der Punkte = Unterkante, Höhe in der Geometrie. Angelegt von raumforderung_anlegen aus einer Lüftungsvariante; freigeben und versenden tut der Mensch.",
+    "eigenschaften": [
+      { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "zentrale", "schacht", "hohlraum" ], "beschreibung": "Zentrale, Schacht (Steigzone je Geschoss) oder Deckenhohlraum" },
+      { "name": "status", "typ": "auswahl", "auswahl": [ "forderung", "freigegeben", "abgelehnt" ], "beschreibung": "Forderung (vom Kern angelegt); freigegeben bzw. abgelehnt setzt der Mensch" },
+      { "name": "variante", "typ": "text", "beschreibung": "Lüftungsvariante, aus der die Forderung stammt (Schlüssel aus lueftung.json)" },
+      { "name": "geraet", "typ": "text", "beschreibung": "Gerät der Variante (LG-n)" },
+      { "name": "bedarf", "typ": "text", "beschreibung": "Bedarf in Worten mit Begründung (Kanäle, Zuschläge, Quelle)" },
+      { "name": "flaeche", "typ": "zahl", "einheit": "m²", "beschreibung": "Geforderte Fläche (Schacht)" },
+      { "name": "hoehe", "typ": "zahl", "einheit": "mm", "beschreibung": "Geforderte Höhe (Deckenhohlraum)" },
+      { "name": "fehlbetrag", "typ": "zahl", "einheit": "mm", "beschreibung": "Fehlt gegenüber dem Bestand (Deckenhohlraum: Unterkante Decke minus lichte Höhe)" },
+      { "name": "raeume", "typ": "liste", "beschreibung": "Betroffene Räume (Kennzeichen)" } ] },
+
   { "name": "Bauteil", "abstrakt": true, "schicht": "huelle", "gewerk": "architektur", "brauchtGeschoss": true,
     "beschreibung": "Basis der Hüllbauteile. Der Schichtaufbau hängt als Element Aufbau über bezuege.aufbau am Bauteil (Modul 1c).",
     "eigenschaften": [

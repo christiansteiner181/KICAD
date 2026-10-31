@@ -30,7 +30,8 @@ public static class KiEinordnung
              "planwinkel",      // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel und Ausrichtung der Grundrisse, nur lesend
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
-             "lueftung_varianten"]),   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
+             "lueftung_varianten",
+             "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
@@ -71,6 +72,9 @@ public static class KiEinordnung
             "setzt nur angekommen/fehlt aus dem Abgleich mit der Architekten-IFC (Herkunft berechnung, Prüfergebnis, keine Freigabe); kollision_pruefen " +
             "legt Kollisionen an. Status «freigegeben/versandt» und Entscheide bleiben beim Menschen (Verbotsliste).",
             ["aussparungen_vorschlagen", "aussparung_form", "aussparungen_nummerieren", "aussparungen_abgleichen", "kollision_pruefen"]),
+        new("Raumforderung Lüftung", "Legt den Raumbedarf einer Lüftungsvariante als Raumreservationen mit Status «forderung» an (Modul 6 Teil A-7) – ein Paket, " +
+            "zurücknehmbar; ersetzt nur offene Forderungen. Freigeben, ablehnen und an die Architektur senden bleibt beim Menschen.",
+            ["raumforderung_anlegen"]),
     ];
 
     /// <summary>Alle erlaubten Werkzeuge (lesend und ändernd).</summary>
