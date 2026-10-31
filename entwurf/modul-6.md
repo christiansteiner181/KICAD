@@ -110,7 +110,7 @@ Die Kette des Papiers:
 
    | Wert | Festlegung | Quelle |
    | --- | --- | --- |
-   | Luftgeschwindigkeit | «Energiegesetz». Gefunden: Apparate 2 m/s bezogen auf die Nettofläche; Kanäle im massgebenden Strang nach Volumenstrom bis 1'000 / 2'000 / 4'000 / 10'000 / über 10'000 m³/h: 3 / 4 / 5 / 6 / 7 m/s; Ausnahmen nach Abs. 4 | MuKEn 2014 (Nachführung 2018) Art. 1.19 Abs. 3, wörtlich gelesen auf energiehub-gebaeude.ch. Das KEnG und die KEnV Bern (Stand 01.01.2026) nennen selbst keine Luftgeschwindigkeit. **Offen:** Gilt das im Kanton Bern, und gilt schon die MuKEn 2025 (nicht gelesen)? |
+   | Luftgeschwindigkeit | «Energiegesetz». Gefunden: Apparate 2 m/s bezogen auf die Nettofläche; Kanäle im massgebenden Strang nach Volumenstrom bis 1'000 / 2'000 / 4'000 / 10'000 / über 10'000 m³/h: 3 / 4 / 5 / 6 / 7 m/s; Ausnahmen nach Abs. 4 | MuKEn 2014 (Nachführung 2018) Art. 1.19 Abs. 3, wörtlich gelesen auf energiehub-gebaeude.ch. Das KEnG und die KEnV Bern (Stand 01.01.2026) nennen selbst keine Luftgeschwindigkeit. **Bestätigt von Christian 31.10.2026: «Ja, MuKEn 2014»** (MuKEn 2025 nicht übernommen). |
    | Wartungsfläche | Herstellerangabe, nur für Apparate und Geräte; Leitungen brauchen keine Wartungsfläche | Christian |
    | Hohlraumzuschlag | ca. 10 cm | Christian |
    | Schachtzuschlag | 20 cm (je Seite oder gesamt: beim Bau klären) | Christian |
@@ -250,8 +250,8 @@ Die Kette des Papiers:
 
 ## Voraussetzungen und Reihenfolge
 
-1. Christian hat am 31.10.2026 die meisten Fragen beantwortet (siehe oben, je mit Datum). Vor dem Bau fehlen noch die
-   **Startgewichte** und die **Bestätigung der Luftgeschwindigkeiten** (offene Fragen 1 und 2).
+1. Christian hat am 31.10.2026 die meisten Fragen beantwortet (siehe oben, je mit Datum). Vor dem Bau der Bewertung (A-6)
+   fehlen noch die **Startgewichte** (offene Frage 1). A-1 bis A-5 können ohne sie beginnen.
 2. **Bau durch den Hauptlauf**, in der Reihenfolge A-1 → A-2 → A-4 → A-5 → A-6 → A-7 → A-8 → A-3.
    - Die Brandabschnitts-Erkennung (A-1 3) braucht zuerst die VKF-Regeln mit Fundstelle. Die Richtlinie liegt auf W: als PDF.
      Am Rechner fehlt dafür noch ein PDF-Leser (poppler).
@@ -265,13 +265,10 @@ Die Kette des Papiers:
 ## Offene Fragen an Christian
 
 1. **Startgewichte** für Raumbedarf, Geräte und Wartung sowie Brandschutzklappen.
-2. **Luftgeschwindigkeit:**
-   - Gelten im Kanton Bern die Werte aus MuKEn 2014 Art. 1.19 Abs. 3, oder schon die MuKEn 2025?
-   - Ist das Berner Hauptformular EN-BE die richtige Stelle zum Nachweis?
-3. **Schachtzuschlag 20 cm:** je Seite oder gesamt?
-4. **Grenzen der Rechteckkanäle:** grösste Höhe, Seitenverhältnis.
-5. **Zentrale Lüftungsgeräte:** Welcher Hersteller kommt für die Grundausstattung dazu? Zehnder deckt die Wohnungsgeräte ab.
-6. **Gleichzeitigkeit:** aus HKAP über Modul 1d übernehmen (lesende Erweiterung)? Vorschlag: ja.
+2. **Schachtzuschlag 20 cm:** je Seite oder gesamt?
+3. **Grenzen der Rechteckkanäle:** grösste Höhe, Seitenverhältnis.
+4. **Zentrale Lüftungsgeräte:** Welcher Hersteller kommt für die Grundausstattung dazu? Zehnder deckt die Wohnungsgeräte ab.
+5. **Gleichzeitigkeit:** aus HKAP über Modul 1d übernehmen (lesende Erweiterung)? Vorschlag: ja.
 
 ## Bezüge
 
