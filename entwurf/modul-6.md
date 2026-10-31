@@ -79,6 +79,12 @@ Die Kette des Papiers:
   - «MFH Musterweg» mit fiktiven Werten.
   - **BKW HS 1/2:** gegen Christians Lüftungsplanung (Projektierung PJ-2026-001 in HKAP, Projekt P-005). Nur lokal, nie im
     Repository. Christian beurteilt die Varianten fachlich.
+    - Architektenmodell (Christian 31.10.2026): `W:\02_Projektdateien Objekte\Bern_BKWH_BKW HS, Viktoriastrasse\c_Pläne und
+      Modelle\b_Verknüpfungen\Koordination\BKW-HS_1_ARCH_ARC.ifc`.
+    - Befund 31.10.2026: Archicad, ReferenceView 1.2, 90 MB, 10 Geschosse, **kein IfcSpace**. Die Räume kommen deshalb aus der
+      Raumerkennung ohne IfcSpace (Phase 2) bzw. aus den HKAP-Räumen.
+    - Daneben liegt das Lüftungsmodell `BKW-HS_1_LU-GEBT_NOV.ifc`. Es dient als Vergleich für Geräte, Steigzonen und Trassen.
+    - Arbeitskopie lokal unter `%USERPROFILE%\HLKS_CAD_testdaten\bkw_hs1`.
 
 ## A-1 Eingaben
 
@@ -88,31 +94,41 @@ Die Kette des Papiers:
 2. **Gleichzeitigkeit je Geschoss bzw. Gerät:** Modul 1d um das HKAP-Feld erweitern (lesend); sonst Eingabe, Vorgabe 1.
 3. **Zonen** (neue Klasse `Zone`, Kürzel ZO; Gruppierung von Räumen wie der Strang, ohne eigene Geometrie):
    - `art`: brandabschnitt, nutzungseinheit (Wohnung, Mieter), lueftungszone.
-   - Brandabschnitte sind Eingabe Dritter (Brandschutzkonzept). Woher sie kommen, ist offen (Frage 5).
+   - **Brandabschnitte erkennt KICAD grob** (Christian 31.10.2026: «die musst du im groben erkennen. basis VKF richtlinie.»).
+     - Die Regeln kommen aus der VKF-Brandschutzrichtlinie «Brandschutzabstände, Tragwerke, Brandabschnitte»
+       (`W:\05_Normen und Merkblätter\VKF_Brandschutzrichtlinien\VKF_Tragwerke_Brandabschnitte.pdf`). Jede Regel trägt
+       Ausgabe, Ziffer und Seite; Christian prüft die Übertragung gegen.
+     - Die Zuordnung leitet KICAD aus Geschossen, Nutzungen und vertikalen Räumen ab (Treppenhaus, Schacht). Jede Zone
+       trägt die Herkunft «erkannt (VKF Ziff. …)» und einen Hinweis «zu bestätigen».
+     - Von Hand korrigierbar. Liegt ein Brandschutzplan vor, gilt er vor der Erkennung.
 4. **Kandidaten für Zentrale und Steigzonen:**
    - Zentrale: Räume mit Nutzung Technik, oder von Hand gesetzt.
    - Steigzonen: Schächte aus dem Modell, oder von Hand gesetzt.
    - Fehlt beides: Annahme je Zone am Schwerpunkt, als Befund «Lage angenommen».
-5. **Bürowerte** (neuer Abschnitt `lueftung` in `kataloge/buero.json`, je Wert mit `quelle`; je Projekt in der Projektinformation
-   überschreibbar):
-   - Auslegungsgeschwindigkeit je Netzteil: Zentrale, Steigzone, Verteilung.
-   - Längenzuschlag auf die Manhattan-Distanz.
-   - Zuschläge Schacht (Dämmung, Montage) und Hohlraum (Abstand, Abhängung).
-   - Wartungsfläche am Gerät, wo die Herstellerangabe fehlt.
-   - Grenzen der Rechteckkanäle: grösste Höhe, Seitenverhältnis.
+5. **Planungswerte** (neuer Abschnitt `lueftung` in `kataloge/buero.json`, je Wert mit `quelle`; je Projekt in der
+   Projektinformation überschreibbar). Christian, 31.10.2026:
 
-   **Leer, bis Christian sie setzt** (Frage 2). Ohne Wert rechnet die Kette bis zum betroffenen Schritt und meldet, welcher Wert
-   fehlt.
+   | Wert | Festlegung | Quelle |
+   | --- | --- | --- |
+   | Luftgeschwindigkeit | «Energiegesetz». Gefunden: Apparate 2 m/s bezogen auf die Nettofläche; Kanäle im massgebenden Strang nach Volumenstrom bis 1'000 / 2'000 / 4'000 / 10'000 / über 10'000 m³/h: 3 / 4 / 5 / 6 / 7 m/s; Ausnahmen nach Abs. 4 | MuKEn 2014 (Nachführung 2018) Art. 1.19 Abs. 3, wörtlich gelesen auf energiehub-gebaeude.ch. Das KEnG und die KEnV Bern (Stand 01.01.2026) nennen selbst keine Luftgeschwindigkeit. **Offen:** Gilt das im Kanton Bern, und gilt schon die MuKEn 2025 (nicht gelesen)? |
+   | Wartungsfläche | Herstellerangabe, nur für Apparate und Geräte; Leitungen brauchen keine Wartungsfläche | Christian |
+   | Hohlraumzuschlag | ca. 10 cm | Christian |
+   | Schachtzuschlag | 20 cm (je Seite oder gesamt: beim Bau klären) | Christian |
+   | Längenzuschlag | keiner (rechtwinkliger Weg ohne Zuschlag) | Christian |
+   | Grenzen Rechteckkanal | offen | – |
+
+   Fehlt ein Wert, rechnet die Kette bis zum betroffenen Schritt und meldet, welcher Wert fehlt.
 
 ## A-2 Varianten erzeugen (Schritt 3)
 
 1. **Variantenkatalog** `kataloge/lueftung_varianten.json`. Jeder Typ beschreibt eine Regel, wie die Räume den Geräten
-   zugeordnet werden. Vorschlag, Christian legt den Katalog fest (Frage 1):
+   zugeordnet werden. Festgelegt von Christian am 31.10.2026:
    - **zentral:** ein Gerät für das Gebäude
    - **zentral je Zone:** ein Gerät je Brandabschnitt bzw. Nutzungsart
    - **semizentral je Geschoss**
-   - **dezentral je Nutzungseinheit:** Wohnungsgerät
-   - **Einzelraum:** nur, wo der Katalog es erlaubt
+   - **dezentral je Nutzungseinheit:** Wohnungs- bzw. Mietergerät
+
+   Einzelraumgeräte gehören nicht in den Katalog.
 2. **Erzeugen** (`src/Hlks.Kern/Lueftung/Varianten.cs`): deterministisch. Gleiche Eingaben ergeben gleiche Varianten in gleicher
    Reihenfolge. Je Variante:
    - Geräte mit Lage (Kandidat aus A-1 4) und Volumenstrom: Σ Raum-Luftmengen × Gleichzeitigkeit.
@@ -127,8 +143,8 @@ Die Kette des Papiers:
 ## A-3 Prinzipschema je Variante (Schritt 4)
 
 - **Anordnung nach dem Fliessweg:** gewerkneutral, wie in Modul 5 A-S 1 vorgesehen. Gebaut wird sie jetzt hier zuerst;
-  Heizung folgt als eigene Schicht. Sie wartet auf Christians Beispielplan für die Lüftung (Frage 6).
-  - Vorschlag als Vorlage: sein HKAP-Prinzipschema BKW HS2 (PS-2026-006).
+  Heizung folgt als eigene Schicht.
+  - Vorlage (Christian 31.10.2026): sein HKAP-Prinzipschema BKW HS2 (PS-2026-006), nur lesend aus der Testkopie.
   - Fliessweg Aussenluft → Gerät (Zuluftseite) → Steigzonen → Zonen, zurück Abluft → Gerät → Fortluft.
   - Brandschutzklappen an den Zonengrenzen.
 - **Symbole:** aus Christians HKAP-Bibliothek `data/schema_symbole.json`, wie für Modul 5 entschieden. Lüftungssymbole sind dort
@@ -145,7 +161,11 @@ Die Kette des Papiers:
 - **Querschnitt** = Volumenstrom ÷ Auslegungsgeschwindigkeit (Bürowert je Netzteil). Gerundet wird auf die nächste Grösse der
   Kanalserie (K1 rund, K2 rechteckig mit den Grenzen aus A-1 5).
 - **Gerät:** Gewählt wird aus Lüftungsgeräte-Familien nach dem Volumenstrombereich (Herstellerunterlage, Quelle wie bei den
-  Familien). Ohne Familie ist die Gerätegrösse eine Annahme mit Befund (Frage 8).
+  Familien).
+  - Grundausstattung: **Zehnder** (Christian 31.10.2026) für die Wohnungsgeräte.
+  - Für zentrale Geräte gibt es noch keinen Hersteller. Ohne Familie ist die Gerätegrösse eine Annahme mit Befund.
+- **Geschwindigkeit in Apparaten:** Die Nettofläche des Geräts folgt aus der Apparategeschwindigkeit (A-1 5). Daraus ergibt
+  sich nur ein Mindestquerschnitt als Plausibilität, nicht die Gerätewahl.
 - **Teil B:** Druckverlust, Schall und spezifische Ventilatorleistung kommen erst mit Norm und Herstellerdaten.
 
 ## A-5 Raumbedarf (Schritt 6)
@@ -163,15 +183,13 @@ Die Kette des Papiers:
 
 ## A-6 Bewertung und Empfehlung (Schritt 3)
 
-1. **Kriterien Teil A** (alle ohne Normwert):
-   - Raumbedarf: Fläche Zentrale + Schacht, Hohlraumhöhe
-   - geschätzte Kanallänge
-   - Anzahl Geräte
-   - Anzahl Brandschutzklappen (Querungen)
-   - Geräte in Nutzungseinheiten (Wartungszugang)
-   - Befunde mit Fehlbetrag
-2. **Kosten und Energie:** nur mit Kennwerten aus einer Quelle (Musterprojekte, Christians Erfahrungswerte als Bürowert, später
-   Teil B). Fehlt die Quelle, zeigt die Bewertung «fehlt» und rechnet das Kriterium nicht mit.
+1. **Kriterien Teil A** (Christian 31.10.2026):
+   - **Raumbedarf:** Fläche Zentrale + Schacht, Hohlraumhöhe
+   - **Geräte und Wartung:** Anzahl Geräte, Geräte in Nutzungseinheiten (Wartungszugang)
+   - **Brandschutzklappen:** Anzahl Querungen von Brandabschnitten
+
+   Die Kanallänge wird ausgewiesen, zählt aber nicht. Befunde mit Fehlbetrag stehen getrennt (Punkt 4).
+2. **Kosten und Energie:** vorerst weggelassen (Christian 31.10.2026). Sie kommen mit Teil B bzw. den Musterprojekten.
 3. **Gewichtung** (Vorschlag 31.10.2026, Christian hat nicht widersprochen):
    - Vorgabe sind Christians Erfahrungswerte (`kataloge/buero.json`, Abschnitt `bewertung`). Jedes Projekt kann sie
      überschreiben (Projektinformation).
@@ -203,8 +221,7 @@ Die Kette des Papiers:
   - die Raumreservationen
 
   Alles in einem Paket, rückgängig in einem Schritt.
-- **Keine Kanäle** in Teil A. Die Führung macht der Mensch oder später Modul 12. Ob die Hauptkanäle als einfache Verläufe
-  mitkommen sollen, entscheidet Christian (Frage 10).
+- **Keine Kanäle** (Christian 31.10.2026: «Ohne Kanäle»). Die Führung macht der Mensch oder später Modul 12.
 
 ## Befehle und Abfragen (eine Tür, MCP)
 
@@ -233,29 +250,28 @@ Die Kette des Papiers:
 
 ## Voraussetzungen und Reihenfolge
 
-1. Christian beantwortet die Fragen 1, 2 und 6. Ohne sie lassen sich Varianten, Querschnitte und Schema nicht sinnvoll bauen.
-2. **Bau durch den Hauptlauf**, in der Reihenfolge A-1 → A-2 → A-4 → A-5 → A-6 → A-7 → A-8 → A-3. Das Schema kommt zuletzt, weil
-   es auf den Beispielplan wartet.
+1. Christian hat am 31.10.2026 die meisten Fragen beantwortet (siehe oben, je mit Datum). Vor dem Bau fehlen noch die
+   **Startgewichte** und die **Bestätigung der Luftgeschwindigkeiten** (offene Fragen 1 und 2).
+2. **Bau durch den Hauptlauf**, in der Reihenfolge A-1 → A-2 → A-4 → A-5 → A-6 → A-7 → A-8 → A-3.
+   - Die Brandabschnitts-Erkennung (A-1 3) braucht zuerst die VKF-Regeln mit Fundstelle. Die Richtlinie liegt auf W: als PDF.
+     Am Rechner fehlt dafür noch ein PDF-Leser (poppler).
    - Nebenaufgaben gehen an Agenten: Symbole übertragen (hlks-modul), Testauswertung (hlks-test), Prüfung (hlks-pruefer).
 3. **Phase 1 läuft** (Rang 5 Sanitärstrang offen). Modul 6 Teil A startet auf Christians Zuruf nach Rang 5 oder parallel, wenn er
    es so will.
-4. **Grenze für echte Projekte:** Für echte Projekte braucht Teil A Räume, die das Geschoss abdecken (Phase 2, «Räume vollständig
-   aus IFC ohne IfcSpace»). Am Beispielprojekt und mit HKAP-Räumen geht es vorher.
+4. **Grenze für echte Projekte:** Teil A braucht Räume mit Lage. Das BKW-Architektenmodell hat kein IfcSpace, und die HKAP-Räume
+   liegen nur auf PDF-Plänen. Für BKW braucht es deshalb zuerst die Raumerkennung ohne IfcSpace (Phase 2). Am Beispielprojekt
+   «MFH Musterweg» geht es vorher.
 
 ## Offene Fragen an Christian
 
-1. **Variantenkatalog:** Welche Lüftungssysteme gehören hinein, für Wohnen und für Gewerbe?
-2. **Bürowerte:** Auslegungsgeschwindigkeiten je Netzteil, Längenzuschlag, Schacht- und Hohlraumzuschlag, Wartungsfläche,
-   Rechteckgrenzen. Deine Erfahrungswerte, oder warten wir auf SIA 382/1?
-3. **Gewichtung:** Kriterien aus A-6 und deine Startgewichte.
-4. **Kosten und Energie:** Woher kommen Kennwerte (eigene Erfahrungswerte, Musterprojekte, erst Teil B)?
-5. **Brandabschnitte:** Zone von Hand zeichnen, aus dem IFC des Architekten, oder aus dem Brandschutzplan?
-6. **Prinzipschema Lüftung:** Beispielplan als Vorlage, z. B. dein HKAP-Prinzipschema BKW HS2 (PS-2026-006)?
-7. **BKW HS 1/2 als Prüffall:** Wo liegt das Architekten-IFC? Gibt es ein KICAD-Projekt, oder legen wir eines als lokale
-   Testkopie an?
-8. **Lüftungsgeräte-Familien:** Welche Hersteller bzw. Unterlagen für die Grundausstattung?
-9. **Gleichzeitigkeit:** aus HKAP über Modul 1d übernehmen (Erweiterung lesend)?
-10. **Übernahme:** nur Geräte, Systeme, Zonen und Reservationen, oder auch die Hauptkanäle als einfache Verläufe?
+1. **Startgewichte** für Raumbedarf, Geräte und Wartung sowie Brandschutzklappen.
+2. **Luftgeschwindigkeit:**
+   - Gelten im Kanton Bern die Werte aus MuKEn 2014 Art. 1.19 Abs. 3, oder schon die MuKEn 2025?
+   - Ist das Berner Hauptformular EN-BE die richtige Stelle zum Nachweis?
+3. **Schachtzuschlag 20 cm:** je Seite oder gesamt?
+4. **Grenzen der Rechteckkanäle:** grösste Höhe, Seitenverhältnis.
+5. **Zentrale Lüftungsgeräte:** Welcher Hersteller kommt für die Grundausstattung dazu? Zehnder deckt die Wohnungsgeräte ab.
+6. **Gleichzeitigkeit:** aus HKAP über Modul 1d übernehmen (lesende Erweiterung)? Vorschlag: ja.
 
 ## Bezüge
 
