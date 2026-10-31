@@ -1297,6 +1297,10 @@ Noch ohne Oberfläche; erreichbar über die Tür (REST `/api/abfrage/lueftung_va
   (RR, Polygon mit Unterkante z und Höhe) an: `art` schacht (Rechteck um die Steigzone, Geschosshöhe) bzw. hohlraum (Rechteck um die versorgten Räume ab
   Oberkante lichte Höhe, Höhe = Bedarf, `fehlbetrag`), `status` forderung, `variante`, `geraet`, `bedarf` (Text mit Quelle), `flaeche`, `hoehe`, `raeume`.
   Ersetzt offene Forderungen; `freigegeben`/`abgelehnt` setzt der Mensch mit element_aendern und bleiben. Zentrale ohne Reservation, bis Herstellerangaben da sind.
+- `lueftung_variante_uebernehmen { variante, geschoss?, gleichzeitigkeit? }` (Befehl, ein Paket, Modul 6 A-8) – je Gerät eine **Anlage** `A-LG-n` mit
+  den **Systemen** `LG-n-AUL`, `-ZUL`, `-ABL`, `-FOL` und das **Lueftungsgeraet** `LG-n` als Platzhalter ohne Familie im Geräteraum (Punkt im Raumschwerpunkt)
+  mit `volumenstrom`, `zuluft`, `abluft`, `raeume` (versorgte Räume) und `variante`; dazu die Raumreservationen wie `raumforderung_anlegen`. Keine Kanäle.
+  Nur einmal je Projekt – eine zweite Übernahme wird abgelehnt, bis die erste zurückgenommen ist.
 - `raumforderung {}` – `{ raumreservationen[] { kennzeichen, art, geschoss, geraet, flaecheM2, hoeheMm, fehlbetragMm, raeume, bedarf, status, variante },
   summen { schachtflaecheM2, hohlraumMaxMm, mitFehlbetrag, offen }, hinweis }`.
 - Eingaben am Raum: `zuluft`, `abluft` (aus HKAP oder von Hand), `nutzung` (Kandidaten «Technik» für die Zentrale, «Schacht» für die Steigzone; Katalog

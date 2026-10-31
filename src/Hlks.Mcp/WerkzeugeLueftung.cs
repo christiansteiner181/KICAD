@@ -1,4 +1,4 @@
-// MCP-Werkzeuge der Lüftungskette (Modul 6 Teil A): Abfragen lueftung_varianten, raumforderung; Befehl raumforderung_anlegen.
+// MCP-Werkzeuge der Lüftungskette (Modul 6 Teil A): Abfragen lueftung_varianten, raumforderung; Befehle raumforderung_anlegen, lueftung_variante_uebernehmen.
 // Dünne Hülle über dem Kern wie in Werkzeuge.cs; Name, Beschreibung und Parameter stehen genau so im Kern (LueftungKette.Definitionen).
 
 using System.ComponentModel;
@@ -29,4 +29,12 @@ public sealed partial class Werkzeuge
         [Description(LueftungKette.ParGleichzeitigkeit)] double? gleichzeitigkeit = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("raumforderung_anlegen", Parameter(("variante", variante), ("geschoss", geschoss), ("gleichzeitigkeit", gleichzeitigkeit)), trockenlauf);
+
+    [McpServerTool(Name = "lueftung_variante_uebernehmen"), Description(LueftungTexte.Uebernehmen)]
+    public string LueftungVarianteUebernehmenWerkzeug(
+        [Description(LueftungTexte.ParVariante)] string variante,
+        [Description(LueftungKette.ParGeschoss)] string? geschoss = null,
+        [Description(LueftungKette.ParGleichzeitigkeit)] double? gleichzeitigkeit = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("lueftung_variante_uebernehmen", Parameter(("variante", variante), ("geschoss", geschoss), ("gleichzeitigkeit", gleichzeitigkeit)), trockenlauf);
 }

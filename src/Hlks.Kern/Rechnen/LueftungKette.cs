@@ -348,7 +348,8 @@ public static class LueftungKette
             geraete.Add(new JsonObject
             {
                 ["geraet"] = kz, ["gruppe"] = name, ["raum"] = geraetRaum.Element.Kennzeichen, ["geschoss"] = geraetRaum.Geschoss.Kennzeichen,
-                ["lageAngenommen"] = angenommen, ["zuluftM3h"] = Math.Round(gesamt.GetValueOrDefault("ZUL")), ["abluftM3h"] = Math.Round(gesamt.GetValueOrDefault("ABL")),
+                ["lageAngenommen"] = angenommen, ["x"] = Math.Round(gx), ["y"] = Math.Round(gy), ["z"] = Math.Round(gKote),
+                ["zuluftM3h"] = Math.Round(gesamt.GetValueOrDefault("ZUL")), ["abluftM3h"] = Math.Round(gesamt.GetValueOrDefault("ABL")),
                 ["steigzone"] = mitSteig, ["raeume"] = new JsonArray(rs.Select(r => (JsonNode)JsonValue.Create(r.Element.Kennzeichen)).ToArray()),
             });
             foreach (var k in gk) kanaele.Add(new JsonObject

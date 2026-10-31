@@ -14,7 +14,7 @@ Christian, 31.10.2026:
 ## Baustand (31.10.2026)
 
 **Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4, A-5 und A-6 als reine Abfrage `lueftung_varianten`;
-A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `raumforderung` (`LueftungBefehle.cs`)
+A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `raumforderung`, A-8 als Befehl `lueftung_variante_uebernehmen` (`LueftungBefehle.cs`)
 (`src/Hlks.Kern/Rechnen/LueftungKette.cs`, MCP `WerkzeugeLueftung.cs`, Tests `LueftungKetteTests`). Abweichungen vom Konzept, vom Hauptlauf entschieden:
 - **Katalog `kataloge/lueftung.json`** statt eines Abschnitts in `buero.json`. Darin stehen die Variantentypen, die Geschwindigkeiten (MuKEn 2014),
   Christians Planungswerte und die Kandidaten-Nutzungen, je mit Quelle.
@@ -25,6 +25,9 @@ A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `r
 - **Bewertung** gewerkneutral in `src/Hlks.Kern/Bewertung/Bewertung.cs`. Gewichte 50/25/25 (Raumbedarf, Geräte und Wartung, Brandschutzklappen) nach
   Christian «Raumbedarf zuerst», die Zahlen sind ein Vorschlag des Hauptlaufs. Ein zu kleiner Deckenhohlraum ist kein Ausschluss, sondern die
   Raumforderung; Ausschlussbefunde gibt es in Teil A noch keine.
+- **Übernahme (A-8)** ohne eigene Zonen: Die Zuordnung der Räume steht am Gerät (Eigenschaft `raeume`), weil `teilVon` der Räume schon die Wohnung
+  trägt und ein Raum nur ein `teilVon` hat. Je Gerät eine Anlage `A-LG-n` mit den Systemen `LG-n-AUL/ZUL/ABL/FOL`; das Gerät ist ein Platzhalter ohne
+  Familie, `volumenstrom` = grössere von Zu- und Abluft. Nur eine Übernahme je Projekt; eine zweite verlangt zuerst das Zurücknehmen.
 - **Brandschutzklappen** = je Medium die Brandabschnitte der versorgten Räume ausser dem des Geräteraums. Ohne Brandabschnitte an allen Räumen wird
   nicht gezählt.
 
@@ -32,7 +35,6 @@ A-7 als Befehl `raumforderung_anlegen` mit Klasse Raumreservation und Abfrage `r
 - Variantenstudie (A-2 3)
 - Brandabschnitte nach VKF erkennen (A-1 3; Regeln mit Fundstelle fehlen)
 - A-7 Rest: Planblatt «Raumbedarf Lüftung», Reservation der Zentrale (Herstellerangaben), Raumreservation in Kollision und IFC-Export
-- Übernahme (A-8)
 - Prinzipschema (A-3)
 - Projektwerte überschreibbar (heute nur `gleichzeitigkeit` als Parameter)
 - Oberfläche und Anleitung

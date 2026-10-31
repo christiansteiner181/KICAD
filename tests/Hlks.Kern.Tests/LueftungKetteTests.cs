@@ -186,4 +186,33 @@ public class LueftungKetteTests
         Assert.Equal(5, liste["raumreservationen"]!.AsArray().Count);
         Assert.Equal(4, Z(liste["summen"]!["offen"]));
     }
+
+    [Fact]
+    public void Uebernahme_LegtAnlageSystemeGeraetUndReservationenAn_RueckgaengigInEinemSchritt()
+    {
+        var p = Beispiel();
+        var vorher = p.Modell.Elemente.Count;
+        var par = new JsonObject { ["variante"] = "zentral" };
+        Ok(p.Ausfuehren("lueftung_variante_uebernehmen", (JsonObject)par.DeepClone(), trockenlauf: true));
+        Assert.Equal(vorher, p.Modell.Elemente.Count);
+
+        Ok(p.Ausfuehren("lueftung_variante_uebernehmen", (JsonObject)par.DeepClone()));
+        var lg = Assert.Single(p.Modell.DerKlasse("Lueftungsgeraet"));
+        Assert.Equal(Hole(p, "U.01").Id, lg.Raum);   // Technik ist Kandidat für die Zentrale
+        Assert.Equal(360, lg.Zahl("volumenstrom"));   // Zuluft 2 × (120 + 60) ist grösser als Abluft 2 × (80 + 40)
+        Assert.Equal(8, lg.Eigenschaft("raeume")!.Inhalt!.AsArray().Count);
+        var anlage = Hole(p, $"A-{lg.Kennzeichen}");
+        Assert.Equal(anlage.Id, lg.TeilVon);
+        var systeme = p.Modell.DerKlasse("System").Where(s => s.TeilVon == anlage.Id).Select(s => s.Text("medium")).OrderBy(x => x).ToList();
+        Assert.Equal(["ABL", "AUL", "FOL", "ZUL"], systeme);
+        var rr = p.Modell.DerKlasse("Raumreservation").ToList();
+        Assert.Equal(4, rr.Count);
+        Assert.All(rr, r => Assert.Equal(lg.Kennzeichen, r.Text("geraet")));
+        Assert.Empty(p.Modell.DerKlasse("Kanal"));
+
+        // ein zweites Mal nicht; rückgängig nimmt alles in einem Schritt zurück
+        Assert.Contains("schon eine Lüftungsvariante", Nein(p.Ausfuehren("lueftung_variante_uebernehmen", (JsonObject)par.DeepClone())).Fehler);
+        Ok(p.Rueckgaengig());
+        Assert.Equal(vorher, p.Modell.Elemente.Count);
+    }
 }

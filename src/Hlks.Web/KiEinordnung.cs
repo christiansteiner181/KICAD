@@ -72,9 +72,10 @@ public static class KiEinordnung
             "setzt nur angekommen/fehlt aus dem Abgleich mit der Architekten-IFC (Herkunft berechnung, Prüfergebnis, keine Freigabe); kollision_pruefen " +
             "legt Kollisionen an. Status «freigegeben/versandt» und Entscheide bleiben beim Menschen (Verbotsliste).",
             ["aussparungen_vorschlagen", "aussparung_form", "aussparungen_nummerieren", "aussparungen_abgleichen", "kollision_pruefen"]),
-        new("Raumforderung Lüftung", "Legt den Raumbedarf einer Lüftungsvariante als Raumreservationen mit Status «forderung» an (Modul 6 Teil A-7) – ein Paket, " +
-            "zurücknehmbar; ersetzt nur offene Forderungen. Freigeben, ablehnen und an die Architektur senden bleibt beim Menschen.",
-            ["raumforderung_anlegen"]),
+        new("Raumforderung Lüftung", "Legt den Raumbedarf einer Lüftungsvariante als Raumreservationen mit Status «forderung» an (Modul 6 Teil A-7) bzw. übernimmt " +
+            "eine Variante mit Anlagen, Systemen, Geräten als Platzhalter und Raumreservationen (A-8, ohne Kanäle) – je ein Paket, zurücknehmbar; ersetzt nur " +
+            "offene Forderungen. Welche Variante gilt, entscheidet der Mensch; freigeben, ablehnen und an die Architektur senden bleibt bei ihm.",
+            ["raumforderung_anlegen", "lueftung_variante_uebernehmen"]),
     ];
 
     /// <summary>Alle erlaubten Werkzeuge (lesend und ändernd).</summary>
