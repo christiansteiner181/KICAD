@@ -76,6 +76,7 @@ public class TuerDarstellungTests
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
+        ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",       // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
         ["planwinkel"] = """{"ansicht":"AN-GR-EG"}""",                       // N9: Planwinkel GEB-1 und Ausrichtung des Grundrisses EG
         ["raum_begehen"] = """{"raum":"E.02"}""",                             // N15: Standort für «Raum begehen» im Raum E.02

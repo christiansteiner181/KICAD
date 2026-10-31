@@ -1276,6 +1276,22 @@ Anschlüssen (warnung), P23 Apparat in keiner Anlage (hinweis), P24 Netz mit Mas
 Verzweigung; `masche` nur an den Leitungen in der Masche), P25 Abflusskennzahl fehlt (warnung, an der Anlage), P26 Apparat ohne Weg im Netz – Belastung fehlt
 stromab/stromauf (warnung, am Apparat, mit Anschluss, Medium und Stelle, an der der Weg endet).
 
+## Lüftungskette (Modul 6 Teil A, entwurf/modul-6.md)
+
+Noch ohne Oberfläche; erreichbar über die Tür (REST `/api/abfrage/lueftung_varianten`, MCP, KI-Palette). Rechnet nur, das Modell bleibt unverändert.
+
+- `lueftung_varianten { geschoss?, gleichzeitigkeit? (über 0 bis 1, Vorgabe 1), variante? }` – `{ umfang, eingaben { raeume, mitLuftmenge, ohneLuftmenge,
+  zuluftM3h, abluftM3h, gleichzeitigkeit }, werte { geschwindigkeit { quelle, apparateMs, kanal[] { bisM3h, ms }, ausnahmen }, hohlraumZuschlagMm,
+  schachtZuschlagMm, laengenZuschlagProzent (je { wert, quelle, hinweis? }), wartungsflaeche, variantenQuelle }, varianten[] { variante, name,
+  geraete[] { geraet, gruppe, raum, geschoss, lageAngenommen, zuluftM3h, abluftM3h, steigzone, raeume[] }, kanaele[] { abschnitt, art (anbindung |
+  steigzone | verteilung), medium, geschoss, m3h, laengeM, ms, flaecheM2, durchmesserMm }, raumbedarf { zentralen[] { geraet, raum, geschoss,
+  lageAngenommen, nettoflaecheMinM2, flaeche }, schaechte[] { geraet, geschoss, raum, lageAngenommen, kanaele, breiteMm, tiefeMm, flaecheM2 },
+  hohlraum[] { geraet, geschoss, noetigMm, verfuegbarMm? | verfuegbar (Grund), fehlbetragMm? } }, kennzahlen { geraete, geraeteInNutzungseinheiten,
+  schachtflaecheM2, hohlraumMaxMm, brandschutzklappen (null ohne Brandabschnitte), laengeGeschaetztM }, befunde[] }, befunde[], hinweis }`.
+- Eingaben am Raum: `zuluft`, `abluft` (aus HKAP oder von Hand), `nutzung` (Kandidaten «Technik» für die Zentrale, «Schacht» für die Steigzone; Katalog
+  `kataloge/lueftung.json`), `lichteHoehe`, neu `brandabschnitt` und `nutzungseinheit` (oder `teilVon` einer Zone). Geschwindigkeiten nach MuKEn 2014
+  Art. 1.19 Abs. 3 und Planungswerte von Christian stehen nur im Katalog.
+
 ## KI-Palette (3c, Teil O)
 
 Palette «Claude» in der Oberfläche (Spezifikation `entwurf/modul-3c.md`, Teil O; baut nur auf `/api/ki/*`, `/api/normen/*` und den Ereignissen `{ art: "ki" }` des vorigen Abschnitts auf). Keine Fachlogik in der Oberfläche: gefragt, abgebrochen und zurückgenommen wird über die Endpunkte; **geändert wird das Modell nur von Claude über die Befehle des Kerns**, die Palette zeigt die Änderungen und nimmt sie zurück.

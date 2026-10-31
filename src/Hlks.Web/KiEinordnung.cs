@@ -29,7 +29,8 @@ public static class KiEinordnung
              "abzweigwinkel",   // Nachtrag Modul 3, 21.10.2026 (hlks-kern, zur Bestätigung): Abzweigwinkel einer Serie bzw. Leitung, nur lesend wie leitungsserie
              "planwinkel",      // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel und Ausrichtung der Grundrisse, nur lesend
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
-             "schnitthoehe_sia"]),   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
+             "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
+             "lueftung_varianten"]),   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +

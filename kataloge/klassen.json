@@ -31,7 +31,9 @@
       { "name": "kuehlleistung", "typ": "zahl", "einheit": "W", "beschreibung": "Kühlleistung (Anforderung; aus HKAP)" },
       { "name": "tempWinter", "typ": "zahl", "einheit": "°C", "beschreibung": "Auslegungstemperatur Winter (Anforderung; aus HKAP)" },
       { "name": "tempSommer", "typ": "zahl", "einheit": "°C", "beschreibung": "Auslegungstemperatur Sommer (Anforderung; aus HKAP)" },
-      { "name": "co2Max", "typ": "zahl", "einheit": "ppm", "beschreibung": "Höchstzulässige CO₂-Konzentration (Anforderung; aus HKAP)" } ] },
+      { "name": "co2Max", "typ": "zahl", "einheit": "ppm", "beschreibung": "Höchstzulässige CO₂-Konzentration (Anforderung; aus HKAP)" },
+      { "name": "brandabschnitt", "typ": "text", "beschreibung": "Brandabschnitt des Raums (Kennung, z. B. «BA-1»; Eingabe aus dem Brandschutzkonzept). Modul 6: Lüftungsvarianten je Zone und Zählung der Brandschutzklappen. Gehört der Raum mit teilVon zu einer Zone mit Nutzung «Brandabschnitt», gilt diese" },
+      { "name": "nutzungseinheit", "typ": "text", "beschreibung": "Nutzungseinheit des Raums (Wohnung, Mieter; z. B. «W 1.1»). Modul 6: Lüftungsvariante je Nutzungseinheit. Gehört der Raum mit teilVon zu einer anderen Zone, gilt diese" } ] },
 
   { "name": "Zone", "kuerzel": "Z", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcZone",
     "beschreibung": "Gruppe von Räumen, z. B. eine Wohnung oder Brandabschnitt. Räume verweisen mit teilVon darauf.",

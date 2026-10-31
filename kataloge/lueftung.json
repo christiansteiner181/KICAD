@@ -1,0 +1,42 @@
+{
+  "beschreibung": "Lüftungskette Modul 6 Teil A (entwurf/modul-6.md): Variantenkatalog, Luftgeschwindigkeiten und Planungswerte. Jeder Wert mit Quelle; nichts ergänzen oder herleiten.",
+  "varianten": {
+    "quelle": "Christian Steiner, 31.10.2026 (Fragefenster Modul 6): Zentral fürs Gebäude, Zentral je Zone, Je Geschoss, Je Wohnung/Einheit; Einzelraumgeräte nicht im Katalog",
+    "typen": [
+      { "schluessel": "zentral", "name": "Zentral für das Gebäude", "gruppierung": "gebaeude" },
+      { "schluessel": "zentral_zone", "name": "Zentral je Zone (Brandabschnitt bzw. Nutzung)", "gruppierung": "zone" },
+      { "schluessel": "geschoss", "name": "Semizentral je Geschoss", "gruppierung": "geschoss" },
+      { "schluessel": "einheit", "name": "Dezentral je Nutzungseinheit (Wohnung, Mieter)", "gruppierung": "nutzungseinheit" }
+    ]
+  },
+  "geschwindigkeit": {
+    "quelle": {
+      "dokument": "MuKEn 2014, Mustervorschriften der Kantone im Energiebereich (EnDK), Nachführung 2018",
+      "stelle": "Art. 1.19 Abs. 3",
+      "gelesen": "energiehub-gebaeude.ch/energiepolitik-der-kantone/muken-2014/, Wortlaut gelesen am 31.10.2026",
+      "bestaetigt": "Christian Steiner, 31.10.2026: «Ja, MuKEn 2014» (Luftgeschwindigkeit «aus dem Energiegesetz»; KEnG und KEnV Bern nennen selbst keine Werte)"
+    },
+    "apparateMs": 2.0,
+    "apparateBezug": "Nettofläche",
+    "kanal": [
+      { "bisM3h": 1000, "ms": 3.0 },
+      { "bisM3h": 2000, "ms": 4.0 },
+      { "bisM3h": 4000, "ms": 5.0 },
+      { "bisM3h": 10000, "ms": 6.0 },
+      { "bisM3h": null, "ms": 7.0 }
+    ],
+    "kanalBezug": "massgebender Strang der Kanäle, Stufe nach Volumenstrom",
+    "ausnahmen": "Grössere Geschwindigkeiten nach Art. 1.19 Abs. 4: fachgerechter Nachweis ohne erhöhten Energieverbrauch, weniger als 1000 Jahresbetriebsstunden, unvermeidbar wegen einzelner räumlicher Hindernisse."
+  },
+  "planungswerte": {
+    "hohlraumZuschlagMm": { "wert": 100, "quelle": "Christian Steiner, 31.10.2026: «Hohlraumzuschlag ca. 10cm»" },
+    "schachtZuschlagMm": { "wert": 200, "quelle": "Christian Steiner, 31.10.2026: «20cm»", "hinweis": "Ob je Seite oder gesamt, ist offen; gerechnet wird gesamt je Richtung (Breite und Tiefe)." },
+    "laengenZuschlagProzent": { "wert": 0, "quelle": "Christian Steiner, 31.10.2026: «Ohne Zuschlag»" },
+    "wartungsflaeche": { "quelle": "Christian Steiner, 31.10.2026: «Wartungsfläche vom hersteller (nur apparate und geräte) leitungen keine wartung»" }
+  },
+  "kandidaten": {
+    "hinweis": "Zuordnung von KICAD, kein Fachwert: Räume, deren Nutzung einen dieser Begriffe enthält (ohne Gross-/Kleinschreibung), gelten als Kandidaten.",
+    "zentrale": [ "Technik" ],
+    "schacht": [ "Schacht" ]
+  }
+}

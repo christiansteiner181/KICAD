@@ -101,6 +101,8 @@ public sealed class Katalog
     public SanitaerKatalog? Sanitaer { get; private set; }
     /// <summary>Schemasymbole aus Christians HKAP-Symbolbibliothek (schemasymbole.json, Modul 5 A-S 2; vom Werkzeug hkap_symbole_uebernehmen erzeugt); null, wenn die Datei fehlt.</summary>
     public SchemaSymbolKatalog? Schemasymbole { get; private set; }
+    /// <summary>Lüftungskette (lueftung.json, Modul 6 Teil A): Variantentypen, Luftgeschwindigkeiten, Planungswerte; null, wenn die Datei fehlt.</summary>
+    public LueftungKatalog? Lueftung { get; private set; }
     public string Ordner { get; private set; } = "";
 
     /// <summary>Lädt klassen.json, medien.json, systemtypen.json (und ifc.json) aus dem Ordner und löst die Basisklassen auf.</summary>
@@ -118,6 +120,8 @@ public sealed class Katalog
         if (File.Exists(san)) k.Sanitaer = SanitaerKatalog.Laden(san);
         var sym = Path.Combine(ordner, SchemaSymbolKatalog.Datei);
         if (File.Exists(sym)) k.Schemasymbole = SchemaSymbolKatalog.Laden(sym);
+        var lue = Path.Combine(ordner, LueftungKatalog.Datei);
+        if (File.Exists(lue)) k.Lueftung = LueftungKatalog.Laden(lue);
         k.SanitaerAuswahlSetzen();
         k.Pruefen();
         return k;

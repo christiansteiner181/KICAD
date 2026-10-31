@@ -11,6 +11,29 @@ Christian, 31.10.2026:
 - Zur Reihenfolge: «ich finde die reihenfolge nicht so wichtig. wir können lüftung auch vorziehen.»
 - «Ja, Konzept schreiben».
 
+## Baustand (31.10.2026)
+
+**Gebaut** (Christian 31.10.2026: «Ja, Bau beginnen»): A-1, A-2 (ohne Studie), A-4 und A-5 als reine Abfrage `lueftung_varianten`
+(`src/Hlks.Kern/Rechnen/LueftungKette.cs`, MCP `WerkzeugeLueftung.cs`, Tests `LueftungKetteTests`). Abweichungen vom Konzept, vom Hauptlauf entschieden:
+- **Katalog `kataloge/lueftung.json`** statt eines Abschnitts in `buero.json`. Darin stehen die Variantentypen, die Geschwindigkeiten (MuKEn 2014),
+  Christians Planungswerte und die Kandidaten-Nutzungen, je mit Quelle.
+- **Zonen als Raum-Eigenschaften** `brandabschnitt` und `nutzungseinheit` statt nur über die Klasse Zone. Ein Raum kann so zugleich zu einer Wohnung
+  und zu einem Brandabschnitt gehören; `teilVon` einer Zone gilt weiterhin.
+- **Kanäle rund** ausgewiesen (Durchmesser aus dem Querschnitt). Die Rundung auf die Seriengrösse und Rechteckkanäle folgen, sobald die
+  Rechteckgrenzen feststehen.
+- **Brandschutzklappen** = je Medium die Brandabschnitte der versorgten Räume ausser dem des Geräteraums. Ohne Brandabschnitte an allen Räumen wird
+  nicht gezählt.
+
+**Offen in Teil A:**
+- Variantenstudie (A-2 3)
+- Brandabschnitte nach VKF erkennen (A-1 3; Regeln mit Fundstelle fehlen)
+- Bewertung (A-6; Startgewichte fehlen)
+- Raumreservation und Ausgabe (A-7)
+- Übernahme (A-8)
+- Prinzipschema (A-3)
+- Projektwerte überschreibbar (heute nur `gleichzeitigkeit` als Parameter)
+- Oberfläche und Anleitung
+
 ## Ziel
 
 KICAD beansprucht seinen Rahmen, statt ihn hinzunehmen. Aus Räumen und Luftmengen erzeugt es Lüftungsvarianten, bewertet sie
