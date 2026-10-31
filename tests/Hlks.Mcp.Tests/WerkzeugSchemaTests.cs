@@ -52,9 +52,11 @@ public class WerkzeugSchemaTests
         Assert.Equal("ost", sch["blickrichtung"]!.GetValue<string>());
         Assert.True(sch["wohnungsbloecke"]!.GetValue<bool>());
         Assert.All(sch["linien"]!.AsArray(), l => Assert.Equal("KW", l!["medium"]?.GetValue<string>()));
-        var f = Json(w.SchemaAnlegenWerkzeug("lueftung"));
+        var f = Json(w.SchemaAnlegenWerkzeug("heizung"));
         Assert.False(f["angenommen"]!.GetValue<bool>());
-        Assert.Contains("abwasser", f["vorschlag"]!.GetValue<string>());
+        Assert.Contains("lueftung", f["vorschlag"]!.GetValue<string>());
+        // Lüftung (Modul 6 A-3): ohne Variante und ohne Übernahme abgelehnt
+        Assert.False(Json(w.SchemaAnlegenWerkzeug("lueftung"))["angenommen"]!.GetValue<bool>());
     }
 
     [Fact]

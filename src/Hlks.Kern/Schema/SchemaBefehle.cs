@@ -57,7 +57,7 @@ public static class SchemaBefehle
     public static List<Element> SystemeDerVorlage(Modell m, Katalog k, string vorlage)
     {
         if (!Vorlagen.TryGetValue(vorlage, out var typen))
-            throw new HlksFehler($"Vorlage «{vorlage}» gibt es nicht.", "Vorlagen: " + string.Join(", ", Vorlagen.Keys));
+            throw new HlksFehler($"Vorlage «{vorlage}» gibt es nicht.", "Vorlagen: " + string.Join(", ", Vorlagen.Keys) + ", lueftung");
         var medien = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
         foreach (var t in typen)
             if (k.Systemtypen.TryGetValue(t, out var st)) medien.Add(st.Medium);
