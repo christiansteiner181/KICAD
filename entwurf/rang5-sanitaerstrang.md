@@ -124,3 +124,36 @@ nur auf 1.6 von 15.0 m (KW), 1.7 von 15.4 m (WW) und 3.8 von 13.6 m (SW) innerha
 - [ ] Christian: Rang 5 nach dem H+K-Konzept nachführen (Steigzone, Bodenverteilung, Zirkulation, Fallleitung Südende) oder
   bewusst als Variante stehen lassen?
 - [ ] Christian: Lage Spültisch und Dusche – gilt die Architektur (Rang 5) oder der H+K-Stand 2025?
+
+## Einbaubarkeit und Umbau Trinkwasser (31.10.2026)
+
+Vorgaben Christian 31.10.2026: «Ja die lage Architekt hat vorrang. sofern die elemente eingebaut werden können. einbau von duofix in
+den Baukörper ist nicht möglich. beachte die installationshinweise von geberit.» – «duofix kann nicht in rohbauwand eingebaut werden.» –
+«bei einer duche sind versorgung und abwasser getrennt zu beachten Abwasser = einlage, Wasser mit Duofox oder JRG dosen.» – «ab dem
+verteiler werden die apparate in der gleichen vorwand mit pex angeschlossen. ausserhalb der vorwand meist mit pex im beton eingelegt.» –
+«nutze pex verteiler».
+
+**Apparate an der Architektenlage**
+- WC-1/2, WT-1/2 (Duofix) stehen in der Installationszone zwischen den Beplankungen W-157/W-182 (260 mm, Leichtbau) – einbaubar;
+  Installationstiefe WC ≥ 13.5 cm (Geberit Montageanleitung 966.027.00.0(03), 12-2022, S. 5) eingehalten, Rücken an Rücken rund 65 mm frei.
+- DU-1: Duofix-Element ragte in die tragende Holz-Aussenwand W-199/W-174 → neue Familie FAM-22 «Dusche JRG Wanddosen» (4610.150 d16,
+  Achsabstand 153 = Annahme) in der Beplankung W-182; Armatur rund 130 mm neben der Mitte der Duschwanne. Ablauf als getrennte Einlage an der
+  Architektenlage (sw_x/sw_y/sw_z je Exemplar, Produkt offen).
+- BW-1 bleibt Duofix (FAM-19), 15 mm hinter der Beplankung in der Ständerwand W-169 (Leichtbau, nicht tragend; Geberit «für Metall- und
+  Holzständerwände»). Wasseranschlüsse FAM-19 neu von unten (PEX aus der Decke). FAM-23 «Badewanne JRG Wanddosen» angelegt, nicht verwendet.
+- SP-1: JRG-Wanddosen in der Ständerwand W-153 – wie gewollt.
+- Geberit-Angaben ohne Fundstelle (Beplankung, Mindestabstände, Duschelement): offen, Geberit-Planungshandbuch nicht erreichbar.
+
+**Trinkwasser neu (ersetzt Ring oben in der Vorwand und Küchenstränge KW-S2/WW-S2)**
+- Steigzone im Schacht am Südende der Installationswand (Lage wie H+K-Modell): KW/WW d32, ZIR d16 ab UG; im EG innen entlang der
+  Beton-Aussenwand W-112 (das 1.OG kragt dort aus), in der Decke zum Schacht hinüber.
+- Verteiler FAM-24 «JRG Sanipex MT Verteiler» (Lieferprogramm Schweiz 2025, Gruppe 4640; Lage der Abgänge aus der Masstabelle abgeleitet,
+  Skizze nicht geprüft): KW 4-fach + 3-fach gekoppelt (VT-KW-1/2), WW 5-fach (VT-WW-1), oben im Schacht. ZIR beginnt am Ende des
+  WW-Verteilers (Zirkulationsventil; Medienwechsel, im Modell nicht verbunden).
+- Einzelzuleitungen PEX d16 (Sanipex MT): WT-1, WC-1, WC-2, WT-2, DU-1 in der Installationswand je auf eigener Höhe über den
+  Duofix-Rahmen; BW-1 und SP-1 in der Decke eingelegt (Verlegung «einlage»), senkrecht in der Ständerwand zum Anschluss.
+- Netz: KW 11 LU an 7 Apparaten, WW 9 LU an 5 Apparaten, alles über die Verteiler.
+- Kollisionen (Lauf 4): gewollt – PEX in der Decke (D-20/D-49), Steigen in den Ständerwänden (W-169, W-153, W-182), Durchführung UG-Decke
+  D-6 (Aussparung nötig). Bleibt: Querung unter den tragenden Betonwänden W-78/W-79/W-155 (Wandfuss im Modell bis z 2720 in der Decke).
+- Annahmen: Dimensionen (Steigzone d32, Einzelzuleitungen d16) bis zur Bemessung; Höhe Verteiler; Armaturenhöhe DU-1 600 über OKFB.
+- [ ] Christian: Verteilerlage und Leitungsführung abnehmen; [ ] Zirkulation am Verteiler (Ventil, Produkt); [ ] Duschablauf-Produkt.
