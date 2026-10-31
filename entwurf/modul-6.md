@@ -261,5 +261,5 @@ Die Kette des Papiers:
 
 - `entwurf/ablauf.md` (Phasen, Modul 12), `entwurf/vorhaben-erzeugendes-cad.md` (Generator, Bewertung, Datengrundlage)
 - `entwurf/modul-5.md` (Prinzipschema-Anordnung A-S 1, Symbole), `entwurf/modul-1d.md` (HKAP-Räume)
-- `entwurf/modul-3b-kollision.md` (Prüfkörper), `entwurf/modul-7*.md` (Planblatt)
+- `entwurf/modul-3b-kollision.md` (Prüfkörper), `entwurf/modul-7.md` (Planblatt)
 - Papier «KICAD – Einordnung der HLKS-Arbeitsschritte» (Christian, 31.10.2026; nicht im Repository)
