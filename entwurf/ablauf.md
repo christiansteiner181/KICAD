@@ -9,6 +9,11 @@ Der Ablauf ersetzt die bisherige Reihenfolge nach Modulnummern aus dem Factsheet
 bleiben. Neu ist, dass zuerst das Bestehende bereinigt wird, bevor neue Fachmodule kommen. Modul 5 (Heizung) bleibt pausiert, bis Phase 3
 beginnt.
 
+**Nachschärfung Christian 02.11.2026 – BIM to field und Reihenfolge:** «wir brauchen als erstes den geometrischen und informativen
+gesamtharnes. dann machen wir mit den Inteligenzen weiter.» Zuerst das vollständige Gerüst aus Geometrie und Information bis auf die Baustelle
+(Phasen 1 und 2 samt **BIM to field**, `bim-to-field.md`), danach die rechnenden und erzeugenden Teile (Rechenkerne Modul 4 B, 5, 6, Generator 12).
+Modul 6 Teil A ruht beim Stand vom 31.10.2026 (A-1 bis A-8 und A-3 gebaut, geprueft 2003c0f).
+
 ## Nutzung von KICAD (Stand 22.10.2026)
 Christian, 22.10.2026: «momentan gibt es nur testprojekte. die software wird nur durch uns zu entwicklungsprozess genutzt.»
 
@@ -119,6 +124,8 @@ hunderte Trockenläufe) bzw. wenn ein Projekt spürbar langsam wird – dann zue
 | **Protokoll im Kern** (Baustein B) | 0a | optionale Felder `begruendung` und `prozessschritt`/`situation` am Paket (Durchreichen in `Projekt.cs`, Schema `hlks-modell.schema.json` nachführen); jetzt, solange Formate frei sind |
 | **Familien offline** | 2 | lokaler Zwischenstand der Bibliothek W:; Grundausstattung abschliessen (Leser 3, Entscheide K3/R1/R2, R7 d32) und in die Bibliothek bzw. mitgeliefert – ohne Familien kann weder Mensch noch Generator eine Leitung legen |
 
+| **BIM to field** (Stufen 0 und 1, 02.11.2026) | neu, `bim-to-field.md` | Informationsmodell vervollständigen (Montageabschnitt, Montagestatus, Dokumente, Wartung); Export-Paket als Webseite ohne Server (3D, Grundrisse, Schemas, Pläne, Elementinfo, Materialauszug, Arbeitsplan, Rückkanal als Datei) für Monteur, später Bauleiter, Projektleiter, Bauherr, Facility; Stufe 2 Plattform unter eigener Domain (Cloud CH) nach Entscheid zum Anbieter |
+
 ## Phase 2 – Gebäudeerfassung und Auswertung
 Das Gebäude kommt vollständig und richtig ins Modell: Räume, Hülle, Anforderungen. Es lässt sich auswerten.
 
@@ -138,7 +145,7 @@ Spezielle Berechnungen, Systemerkennung, Darstellungen.
 | --- | --- | --- |
 | 4 | Sanitär rechnen | Teil A (Belastungswerte) gebaut; Teil B wartet auf SN EN 12056 und SVGW W3 |
 | 5 | Heizung, Hydraulik | Teil A begonnen (Datenmodell, Heizsymbole, Zweig `pause/modul5-datenmodell`), pausiert |
-| 6 | Lüftung, Kanalnetz | Konzept Teil A «Lüftungskette bis zum Raumbedarf» (`modul-6.md`, 31.10.2026); gebaut A-1, A-2, A-4, A-5, A-6 als Abfrage `lueftung_varianten` A-7 als Befehl `raumforderung_anlegen` A-8 als Befehl `lueftung_variante_uebernehmen` und A-3 als Prinzipschema `lueftung_schema` / `schema_anlegen { vorlage: lueftung }` (31.10.2026); darf vor Modul 5 kommen (Christian 31.10.2026: «wir können lüftung auch vorziehen»), Fragen 31.10.2026 grösstenteils beantwortet; offen die Startgewichte (Luftgeschwindigkeit MuKEn 2014 bestätigt) |
+| 6 | Lüftung, Kanalnetz | **ruht seit 02.11.2026 (Gesamtharness zuerst)**; Konzept Teil A «Lüftungskette bis zum Raumbedarf» (`modul-6.md`, 31.10.2026); gebaut A-1, A-2, A-4, A-5, A-6 als Abfrage `lueftung_varianten` A-7 als Befehl `raumforderung_anlegen` A-8 als Befehl `lueftung_variante_uebernehmen` und A-3 als Prinzipschema `lueftung_schema` / `schema_anlegen { vorlage: lueftung }` (31.10.2026); darf vor Modul 5 kommen (Christian 31.10.2026: «wir können lüftung auch vorziehen»), Fragen 31.10.2026 grösstenteils beantwortet; offen die Startgewichte (Luftgeschwindigkeit MuKEn 2014 bestätigt) |
 | 7 | Ausgabe: Planset PDF/DWG, Listen, Ausschreibung, IFC mit IDS | Teil A gebaut; IFC-Export und IDS teilweise |
 | 7b | Partneraustausch | offen |
 | 8 | MSRL, Messkonzept | offen |
