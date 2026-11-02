@@ -194,4 +194,9 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
     fein (detailgetreu mit Antrieb, Griff, Gehäuse, Stutzen; bevorzugt 3D-Modell des Herstellers), Anschlüsse lagerichtig. Der Kern
     meldet als Hinweis «Darstellung fehlt/unvollständig/nicht abgestuft»; der Schlussbericht weist jede Familie ohne vollständige
     Darstellung aus. Gilt für alle Hersteller- und Basisfamilien.
+14. **Abnahme gegen Datenblatt und IFC (Christian 02.11.2026):** «Es muss aussehen wie in den Datenblätter. uch das geometrische
+    nachbauen von IFC familien muss passen.» → Je Familie `familie_vergleichen` gegen das Massbild des Datenblatts in grob, mittel,
+    fein (kleinster und grösster Typ) und, wo ein Hersteller-IFC/STEP vorliegt, gegen dieses Modell mit gemessener Abweichung
+    (Kantenabstand, Anschluss gegen Port). Die Kontrollbilder legt der Hauptlauf beim Schlussbericht unter
+    `~/HLKS_CAD_build/herstellerbibliothek_ki/berichte/` ab (nicht im Repository: Herstellerunterlagen).
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).
