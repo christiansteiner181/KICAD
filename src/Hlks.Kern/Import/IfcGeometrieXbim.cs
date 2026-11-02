@@ -27,7 +27,10 @@ public static class IfcGeometrieXbim
     public static string? Grund { get; private set; }
 
     /// <summary>Soll xBIM rechnen? Nur unter Windows und nicht mit HLKS_XBIM_GEOMETRIE=0.</summary>
-    public static bool Ein => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("HLKS_XBIM_GEOMETRIE") != "0" && dienste >= 0;
+    public static bool Ein => OperatingSystem.IsWindows() && Environment.GetEnvironmentVariable("HLKS_XBIM_GEOMETRIE") != "0" && dienste >= 0 && !Aussetzen.Value;
+
+    /// <summary>Im laufenden Ablauf ohne xBIM rechnen (Tests der eigenen Auswertung, die bei fehlendem xBIM gilt); gilt nur für diesen Ablauf.</summary>
+    public static readonly AsyncLocal<bool> Aussetzen = new();
 
     /// <summary>Richtet die Dienste von xBIM ein (vor dem ersten Öffnen eines Modells; Modellwahl wie bisher heuristisch).</summary>
     public static void DiensteEinrichten()

@@ -17,7 +17,8 @@
 //   UTF-8 Fundstelle des Materials (L = 0: keine Angabe),
 //   [nur Fassung 4:] uint16 k + k × (int32 erstes Dreieck, uint32 Farbe RGBA) – ab diesem Dreieck gilt die Farbe (0 = keine Angabe),
 //   6 × float32 Begrenzung, int32 Anzahl Punkte p, int32 Anzahl Dreiecke d, p × 3 float32 Punkte (x, y, z in Projekt-mm),
-//   d × 3 int32 Dreiecke (Punktindizes 0-basiert, je Datensatz).
+//   d × 3 int32 Dreiecke (Punktindizes 0-basiert, je Datensatz),
+//   [nur Fassung 5:] uint8 a (1 = Anzeigenetz folgt): uint16 k + k × (int32, uint32) Farbabschnitte, int32 p, int32 d, p × 3 float32, d × 3 int32.
 // Fassung 1 (Modul 1b) hat die drei Felder der Fassung 2 nicht und keine Öffnungen; gelesen wird sie weiter (alle Produkte gelten
 // als Rolle bauteil ohne Bezug). Fassungen 1 und 2 haben kein Material (Leser: leere Liste, Typname null).
 //
@@ -32,6 +33,9 @@
 //   Architektur führt als Material nur Darstellungsmaterialien («Farbe, weiss», «<Unnamed>»), die Bauart steht im Typnamen
 //   («Beton, Stahlbeton 250», «1.0_AW Holz …»). Die Einteilung (Wortliste) macht AussparungMaterial.cs.
 //
+// Fassung 5 (xBIM-Geometrie, Entscheid Christian 02.11.2026): das Hauptnetz ist der Körper der Darstellung samt ihren Booleans (Zuschnitte),
+//   die Öffnungen NICHT ausgeschnitten – Kollision und Aussparungen ziehen sie weiter logisch ab; wo die Öffnungen den Körper verändern, folgt
+//   ein zweites Netz mit ausgeschnittenen Öffnungen für die Anzeige (3D, Original im Grundriss), wie ein IFC-Betrachter es zeigt.
 // Fassung 4 (IFC 1:1, Christian 02.11.2026: «ein fenster muss 1:1 so aussehen wie im IFC. mit allen details»; «dies gilt für alle
 //   importierten familien»): je Produkt die Farben seiner Teilkörper aus IfcStyledItem (Flächenstil Farbe und Transparenz, IFC4 direkt,
 //   IFC2x3 über IfcPresentationStyleAssignment), Grundfarbe aus der Darstellung des Materials (IfcMaterialDefinitionRepresentation).
@@ -86,6 +90,8 @@ public sealed record IfcNetzProdukt(int EntityLabel, string GlobalId, string Ent
     public string? Materialquelle { get; init; }
     /// <summary>Fassung 4: Farbabschnitte (erstes Dreieck, RGBA; 0 = keine Angabe); sonst leer.</summary>
     public IReadOnlyList<(int Start, uint Farbe)> Farben { get; init; } = [];
+    /// <summary>Fassung 5: Anzeigenetz mit ausgeschnittenen Öffnungen (Lage der Punkte in der Datei, Anzahl, Farben); null = wie das Hauptnetz.</summary>
+    public (long Lage, int Punkte, int Dreiecke, IReadOnlyList<(int Start, uint Farbe)> Farben)? Anzeige { get; init; }
 }
 
 /// <summary>Schreibt die Netzdatei (IIfcGrundlage, von IfcUebernehmen per Reflexion gefunden).</summary>
@@ -93,20 +99,22 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
 {
     public const string Kennung = "HLKSNETZ";
     /// <summary>Fassung, die geschrieben wird (2: mit Rolle, Bezug und Öffnungen; 3: dazu Material und Typname, Nachtrag B3c).</summary>
-    public const int Fassung = 4;
+    public const int Fassung = 5;
     /// <summary>Erste Fassung mit Material und Typname je Produkt.</summary>
     public const int FassungMaterial = 3;
     /// <summary>Erste Fassung mit Farben der Teilkörper (IFC 1:1).</summary>
     public const int FassungFarben = 4;
+    /// <summary>Erste Fassung mit Anzeigenetz (Öffnungen ausgeschnitten) neben dem Hauptnetz.</summary>
+    public const int FassungAnzeige = 5;
     /// <summary>Fassungen, die IfcNetzdatei lesen kann.</summary>
-    public static readonly IReadOnlyList<int> LesbareFassungen = [1, 2, 3, 4];
+    public static readonly IReadOnlyList<int> LesbareFassungen = [1, 2, 3, 4, 5];
     /// <summary>Höchstens so viele Zeichen je Text (Materialname, Typname, Fundstelle) – Schutz gegen entartete Dateien.</summary>
     public const int TextMax = 1000;
     /// <summary>Länge einer GlobalId (IFC: 22 Zeichen, base64-ähnlich).</summary>
     public const int GidLaenge = 22;
 
     public const string Beschreibung =
-        "HLKS-CAD Netzdatei einer IFC-Unterlage (Modul 1b, Fassung 2 seit Modul 3b, Fassung 3 seit Nachtrag B3c, Fassung 4 seit IFC 1:1). Little-endian. Kopf: 8 Byte HLKSNETZ, int32 Fassung, " +
+        "HLKS-CAD Netzdatei einer IFC-Unterlage (Modul 1b, Fassung 2 seit Modul 3b, Fassung 3 seit Nachtrag B3c, Fassung 4 seit IFC 1:1, Fassung 5 mit Anzeigenetz). Little-endian. Kopf: 8 Byte HLKSNETZ, int32 Fassung, " +
         "int32 Laenge L, L Byte diese Beschreibung (UTF-8), int32 Anzahl Datensaetze N (Bauteile, Teile, Oeffnungen), 6 float64 Begrenzung " +
         "der Bauteile und Teile (minx miny minz maxx maxy maxz, Projekt-mm). Je Datensatz: int32 EntityLabel, 22 Byte GlobalId (ASCII), " +
         "uint8 n + n Byte Entitaet (ASCII), float64 Geschosskote mm (NaN = ohne), uint8 Kennzeichen (1 = uebernommen als KICAD-Element, " +
@@ -116,7 +124,8 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
         "uint16 L + L Byte UTF-8 Typname (ObjectType, sonst Name des Typobjekts), uint16 L + L Byte UTF-8 Fundstelle des Materials, " +
         "uint16 k + k*(int32 erstes Dreieck, uint32 Farbe RGBA, 0 = keine) Farbabschnitte (IfcStyledItem bzw. Material), " +
         "6 float32 Begrenzung, int32 Anzahl Punkte p, int32 Anzahl Dreiecke d, p*3 float32 Punkte x y z (Projekt-mm), " +
-        "d*3 int32 Dreiecke (Punktindizes 0-basiert je Datensatz). Fassung 1 hat Rolle, Bezug und Fuellungen nicht, Fassungen 1 und 2 " +
+        "d*3 int32 Dreiecke (Punktindizes 0-basiert je Datensatz), uint8 a + (a = 1) Anzeigenetz mit ausgeschnittenen Oeffnungen: uint16 k + k*(int32, uint32) " +
+        "Farbabschnitte, int32 p, int32 d, p*3 float32, d*3 int32 (das Hauptnetz ist nicht ausgeschnitten). Fassung 1 hat Rolle, Bezug und Fuellungen nicht, Fassungen 1 und 2 " +
         "haben Materialnamen, Typname und Fundstelle nicht, Fassungen 1 bis 3 keine Farbabschnitte. " +
         "Zerlegung (IfcRelAggregates, IfcRelNests unter einem IfcElement): ein Ganzes mit eigenem Koerper steht mit seinem Netz darin " +
         "und seine Teile zusaetzlich (Rolle teil, Bezug = Ganzes) - nicht doppelt pruefen; ein Ganzes ohne eigenen Koerper traegt das " +
@@ -159,7 +168,7 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
             bool traegt;
             if (labels.Contains(gl))
             {
-                var n = g.AnzeigeNetz(ge) ?? g.Herausnehmen(gl) ?? g.Koerper(ge, merken: false);
+                var n = g.Herausnehmen(gl) ?? g.Koerper(ge, merken: false);
                 eigen[gl] = n is { Leer: false } ? n : null;
                 traegt = eigen[gl] is null;
             }
@@ -186,14 +195,14 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
         for (int i = 0; i < 6; i++) w.Write(0.0);
 
         // Netz aller verbrauchten Teile eines Ganzen (verschachtelt: ein Teil ohne Körper bringt die Netze seiner Teile mit)
-        Dreiecksnetz? TeileNetz(IIfcElement ganz, int tiefe = 0)
+        Dreiecksnetz? TeileNetz(IIfcElement ganz, int tiefe = 0, bool anzeige = false)
         {
             var n = new Dreiecksnetz();
             foreach (var t in teileVon[ganz.EntityLabel])
             {
                 if (!verbraucht.ContainsKey(t.EntityLabel)) continue;
-                var tn = eigen.TryGetValue(t.EntityLabel, out var en) ? en : g.AnzeigeNetz(t) ?? g.Herausnehmen(t.EntityLabel) ?? g.Koerper(t, merken: false);
-                if ((tn is null || tn.Leer) && tiefe < 8 && ohneKoerper.TryGetValue(t.EntityLabel, out var tg)) tn = TeileNetz(tg, tiefe + 1);
+                var tn = anzeige && g.AnzeigeNetz(t) is { } an ? an : eigen.TryGetValue(t.EntityLabel, out var en) ? en : g.Herausnehmen(t.EntityLabel) ?? g.Koerper(t, merken: false);
+                if ((tn is null || tn.Leer) && tiefe < 8 && ohneKoerper.TryGetValue(t.EntityLabel, out var tg)) tn = TeileNetz(tg, tiefe + 1, anzeige);
                 if (tn is { Leer: false }) n.Anhaengen(tn);
             }
             return n.Leer ? null : n;
@@ -213,10 +222,10 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
             return IfcNetzMaterial.Vereinen(eigenes.Typname, teile);
         }
 
-        void Produkt(IIfcProduct p, Dreiecksnetz n, IfcNetzMaterial.Angabe mat)
+        void Produkt(IIfcProduct p, Dreiecksnetz n, IfcNetzMaterial.Angabe mat, Dreiecksnetz? anzeige = null)
         {
             var (rolle, bezug) = ganzesVon.TryGetValue(p.EntityLabel, out var ge) ? (IfcNetzRolle.Teil, Gid(ge)) : (IfcNetzRolle.Bauteil, null);
-            Schreiben(w, p, datei.GeschossVon(p)?.KoteMm, uebernommen.Contains(p.EntityLabel), rolle, bezug, [], mat, n, b);
+            Schreiben(w, p, datei.GeschossVon(p)?.KoteMm, uebernommen.Contains(p.EntityLabel), rolle, bezug, [], mat, n, b, anzeige is null || ReferenceEquals(anzeige, n) || anzeige.Leer ? null : anzeige);
             geschrieben[p.EntityLabel] = Gid(p);
             anzahl++; mitNetz++;
         }
@@ -226,16 +235,16 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
             if (verbraucht.ContainsKey(p.EntityLabel)) continue;
             if (ohneKoerper.TryGetValue(p.EntityLabel, out var ganz))
             {
-                if (TeileNetz(ganz) is { } tn) Produkt(p, tn, TeileMaterial(ganz));
+                if (TeileNetz(ganz) is { } tn) Produkt(p, tn, TeileMaterial(ganz), g.MitXbim ? TeileNetz(ganz, anzeige: true) : null);
                 continue;
             }
-            var netz = eigen.TryGetValue(p.EntityLabel, out var en) ? en : g.AnzeigeNetz(p) ?? g.Herausnehmen(p.EntityLabel) ?? g.Koerper(p, merken: false);
+            var netz = eigen.TryGetValue(p.EntityLabel, out var en) ? en : g.Herausnehmen(p.EntityLabel) ?? g.Koerper(p, merken: false);
             if (netz is null || netz.Leer) continue;
-            Produkt(p, netz, material.Von(p));
+            Produkt(p, netz, material.Von(p), g.AnzeigeNetz(p));
         }
         // Ganze ohne eigenen Körper, die selbst nicht in der Liste stehen (keine Repräsentation): mit dem Netz ihrer Teile
         foreach (var (gl, ganz) in ohneKoerper.OrderBy(x => x.Key))
-            if (!labels.Contains(gl) && TeileNetz(ganz) is { } tn) Produkt(ganz, tn, TeileMaterial(ganz));
+            if (!labels.Contains(gl) && TeileNetz(ganz) is { } tn) Produkt(ganz, tn, TeileMaterial(ganz), g.MitXbim ? TeileNetz(ganz, anzeige: true) : null);
         // ein verbrauchtes Teil ist dort «geschrieben», wo seine Geometrie steht: beim (obersten) Ganzen
         foreach (var t in verbraucht.Keys)
         {
@@ -290,7 +299,7 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
     }
 
     static void Schreiben(BinaryWriter w, IIfcProduct p, double? kote, bool uebernommen, IfcNetzRolle rolle, string? bezug,
-        IReadOnlyList<string> fuellungen, IfcNetzMaterial.Angabe material, Dreiecksnetz n, double[]? gesamt)
+        IReadOnlyList<string> fuellungen, IfcNetzMaterial.Angabe material, Dreiecksnetz n, double[]? gesamt, Dreiecksnetz? anzeige = null)
     {
         w.Write(p.EntityLabel);
         GidSchreiben(w, Gid(p));
@@ -322,6 +331,16 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
         w.Write(n.Dreiecke);
         foreach (var x in n.P) w.Write((float)x);
         foreach (var i in n.D) w.Write(i);
+        // Fassung 5: Anzeigenetz (Öffnungen ausgeschnitten), nur wo es vom Hauptnetz abweicht
+        w.Write((byte)(anzeige is null ? 0 : 1));
+        if (anzeige is null) return;
+        int ka = Math.Min(anzeige.Farben.Count, ushort.MaxValue);
+        w.Write((ushort)ka);
+        for (int i = 0; i < ka; i++) { w.Write(anzeige.Farben[i].Start); w.Write(anzeige.Farben[i].Farbe); }
+        w.Write(anzeige.Punkte);
+        w.Write(anzeige.Dreiecke);
+        foreach (var x in anzeige.P) w.Write((float)x);
+        foreach (var i in anzeige.D) w.Write(i);
     }
 }
 
@@ -487,12 +506,23 @@ public sealed class IfcNetzdatei
             for (int i = 0; i < 6; i++) bb[i] = r.ReadSingle();
             int punkte = r.ReadInt32(), dreiecke = r.ReadInt32();
             long lage = fs.Position;
+            fs.Position = lage + punkte * 12L + dreiecke * 12L;
+            (long, int, int, IReadOnlyList<(int, uint)>)? anz = null;
+            if (fassung >= IfcNetzErzeuger.FassungAnzeige && r.ReadByte() == 1)
+            {
+                int ka = r.ReadUInt16();
+                var fa = new List<(int, uint)>(ka);
+                for (int i = 0; i < ka; i++) fa.Add((r.ReadInt32(), r.ReadUInt32()));
+                int pa = r.ReadInt32(), da = r.ReadInt32();
+                anz = (fs.Position, pa, da, fa);
+                fs.Position += pa * 12L + da * 12L;
+            }
             var pr = new IfcNetzProdukt(label, gid, ent, double.IsNaN(kote) ? null : kote, ueb, bb, punkte, dreiecke, lage)
             {
                 Rolle = rolle, Bezug = bezug, Fuellungen = fuellungen, Materialien = materialien, Typname = typname, Materialquelle = materialquelle, Farben = farben,
+                Anzeige = anz,
             };
             (rolle == IfcNetzRolle.Oeffnung ? oeffnungen : produkte).Add(pr);
-            fs.Position = lage + punkte * 12L + dreiecke * 12L;
         }
         return new IfcNetzdatei(pfad, fassung, text, begrenzung, produkte, oeffnungen);
     }
@@ -539,20 +569,32 @@ public sealed class IfcNetzdatei
         return (punkte, dreiecke);
     }
 
-    /// <summary>Alle Produkte (Bauteile und Teile, ohne Öffnungen) mit ihren Netzen (nurHintergrund = ohne die übernommenen).</summary>
-    public IEnumerable<(IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)> Alle(bool nurHintergrund) =>
-        Lesen(Produkte.Where(p => !(nurHintergrund && p.Uebernommen)));
+    /// <summary>Alle Produkte (Bauteile und Teile, ohne Öffnungen) mit ihren Netzen (nurHintergrund = ohne die übernommenen). anzeige = das
+    /// Anzeigenetz mit ausgeschnittenen Öffnungen, wo es eines gibt (Fassung 5; Darstellung) – sonst das Hauptnetz (Kollision, Aussparungen).</summary>
+    public IEnumerable<(IfcNetzProdukt Produkt, float[] Punkte, int[] Dreiecke)> Alle(bool nurHintergrund, bool anzeige = false) =>
+        Lesen(Produkte.Where(p => !(nurHintergrund && p.Uebernommen)), anzeige);
 
     /// <summary>Alle Öffnungen mit ihren Netzen (Fassung 2; sonst leer).</summary>
     public IEnumerable<(IfcNetzProdukt Oeffnung, float[] Punkte, int[] Dreiecke)> AlleOeffnungen() => Lesen(Oeffnungen);
 
-    IEnumerable<(IfcNetzProdukt, float[], int[])> Lesen(IEnumerable<IfcNetzProdukt> auswahl)
+    IEnumerable<(IfcNetzProdukt, float[], int[])> Lesen(IEnumerable<IfcNetzProdukt> auswahl, bool anzeige = false)
     {
         using var fs = new FileStream(Pfad, FileMode.Open, FileAccess.Read, FileShare.Read, 1 << 20);
         foreach (var p in auswahl)
         {
-            var (pu, dr) = Lesen(fs, p);
+            var (pu, dr) = anzeige && p.Anzeige is { } a ? LesenAb(fs, a.Lage, a.Punkte, a.Dreiecke) : Lesen(fs, p);
             yield return (p, pu, dr);
         }
+    }
+
+    static (float[], int[]) LesenAb(FileStream fs, long lage, int punkte, int dreiecke)
+    {
+        fs.Position = lage;
+        var pb = new byte[punkte * 12]; fs.ReadExactly(pb);
+        var db = new byte[dreiecke * 12]; fs.ReadExactly(db);
+        var pu = new float[punkte * 3]; var dr = new int[dreiecke * 3];
+        Buffer.BlockCopy(pb, 0, pu, 0, pb.Length);
+        Buffer.BlockCopy(db, 0, dr, 0, db.Length);
+        return (pu, dr);
     }
 }

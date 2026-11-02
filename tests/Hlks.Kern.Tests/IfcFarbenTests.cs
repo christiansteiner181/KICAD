@@ -34,6 +34,7 @@ public class IfcFarbenTests
     [Fact]
     public void Geometrie_StilfarbeJeTeilkoerper_OhneStilKeineFarbe()
     {
+        IfcGeometrieXbim.Aussetzen.Value = true;   // Farbe je Teilkörper der eigenen Auswertung (xBIM fasst Teilkörper derselben Darstellung zusammen)
         using var d = IfcDatei.Oeffnen(Datei());
         var wand = d.Modell.Instances.OfType<IIfcProduct>().Single(p => p.GlobalId == Wand);
         var n = IfcGeometrie.Von(d).Koerper(wand, merken: false)!;
@@ -46,13 +47,14 @@ public class IfcFarbenTests
     [Fact]
     public void Netzdatei_Fassung4_TraegtDieFarbabschnitte()
     {
+        IfcGeometrieXbim.Aussetzen.Value = true;
         var pfad = Datei();
         using var d = IfcDatei.Oeffnen(pfad);
         var produkte = d.Modell.Instances.OfType<IIfcProduct>().Where(p => p is IIfcWall).ToList();
         var ziel = Path.Combine(Path.GetDirectoryName(pfad)!, "farben.netz");
         new IfcNetzErzeuger().Erzeugen(d, produkte, new HashSet<int>(), ziel);
         var netz = IfcNetzdatei.Oeffnen(ziel);
-        Assert.Equal(4, netz.Fassung);
+        Assert.Equal(IfcNetzErzeuger.Fassung, netz.Fassung);
         var w = netz.Produkt(Wand)!;
         Assert.Equal(Rot, w.Farben[0].Farbe);
         Assert.Equal(0u, w.Farben[^1].Farbe);

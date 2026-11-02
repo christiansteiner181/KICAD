@@ -697,47 +697,57 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         var netz = KoerperMitTeilen(p, out var teile, out _);
         if (netz is null) { Hintergrund(p, $"{klasse} ohne Körper"); return; }
         var bb = netz.Begrenzung()!;
-        List<double[]>? ring = null; double dicke = 0; int loecher = 0, flaechen = 1;
+        // Alle Flächen (02.11.2026, deckungsgleich mit dem IFC): die grösste als Element der GlobalId, jede weitere als «GlobalId:2» … (wie
+        // die Stücke einer geknickten Wand) – vorher ging nur die grösste über
+        var ringe = new List<List<double[]>>(); double dicke = 0; int loecher = 0;
         var ex = teile.Count == 0 ? g.Extrusion(p) : null;
         if (ex is not null)
         {
-            var aussen = ex.Aussen.OrderByDescending(r => Math.Abs(Polygone.Flaecheninhalt(r))).First();
-            flaechen = ex.Aussen.Count;
             loecher = ex.Loecher.Count;
             var v = ex.Vektor;
-            var nrm = Normale(aussen);
-            if (Math.Abs(nrm[2]) > 0.2)
+            foreach (var aussen in ex.Aussen.OrderByDescending(r => Math.Abs(Polygone.Flaecheninhalt(r))))
             {
+                var nrm = Normale(aussen);
+                if (Math.Abs(nrm[2]) <= 0.2) { ringe.Clear(); break; }
                 // Oberseite: der Ring oder der um die Extrusion verschobene Ring, je nachdem welcher oben liegt
                 bool hoch = v[2] > 0;
-                ring = aussen.Select(q => hoch ? new[] { q[0] + v[0], q[1] + v[1], q[2] + v[2] } : q).ToList();
+                ringe.Add(aussen.Select(q => hoch ? new[] { q[0] + v[0], q[1] + v[1], q[2] + v[2] } : q).ToList());
                 dicke = Math.Abs((v[0] * nrm[0] + v[1] * nrm[1] + v[2] * nrm[2]) / nrm[2]);
             }
         }
-        if (ring is null)
+        if (ringe.Count == 0)
         {
             var gf = Netzflaechen.Grundflaeche(netz);
             if (gf.Count == 0) { Hintergrund(p, $"{klasse} ohne Grundfläche"); return; }
-            var f = gf.OrderByDescending(x => x.Inhalt).First();
-            flaechen = gf.Count;
-            loecher = f.Loecher.Count;
-            ring = f.Aussen.Select(q => new[] { q[0], q[1], bb[5] }).ToList();
+            loecher = gf.Sum(x => x.Loecher.Count);
+            foreach (var f in gf.OrderByDescending(x => x.Inhalt)) ringe.Add(f.Aussen.Select(q => new[] { q[0], q[1], bb[5] }).ToList());
             dicke = bb[5] - bb[2];
             if (ex is null && teile.Count == 0) hinweise.Dazu($"{klasse}: Umriss aus der Netz-Grundfläche, Dicke = Höhe des Netzes", IfcSammler.Beispiel(p));
         }
-        if (dicke <= 0 || ring.Count < 3) { Hintergrund(p, $"{klasse} ohne Dicke oder Umriss"); return; }
-        if (Polygone.Flaecheninhalt(ring) < 0) ring.Reverse();
-        var e = lauf.Neu(klasse, p);
-        e.Geometrie = new Geometrie { Art = "polygon", Punkte = ring.Select(q => new[] { R(q[0]), R(q[1]), R(q[2]) }).ToList(), Dicke = R(dicke) };
+        ringe.RemoveAll(r => r.Count < 3);
+        if (dicke <= 0 || ringe.Count == 0) { Hintergrund(p, $"{klasse} ohne Dicke oder Umriss"); return; }
+        int flaechen = ringe.Count;
+        var stuecke = new List<Element>();
+        for (int i = 0; i < ringe.Count; i++)
+        {
+            var ring = ringe[i];
+            if (Polygone.Flaecheninhalt(ring) < 0) ring.Reverse();
+            var ei = i == 0 ? lauf.Neu(klasse, p) : IfcBauteile.NeuAbgeleitet(lauf, klasse, p, (i + 1).ToString(), null);
+            ei.Geometrie = new Geometrie { Art = "polygon", Punkte = ring.Select(q => new[] { R(q[0]), R(q[1]), R(q[2]) }).ToList(), Dicke = R(dicke) };
+            stuecke.Add(ei);
+        }
         foreach (var t in teile) lauf.Behandelt.Add(t.EntityLabel);
         if (kinder.TryGetValue(p.EntityLabel, out var alleTeile)) foreach (var t in alleTeile) lauf.Behandelt.Add(t.EntityLabel);
         if (loecher > 0) hinweise.Dazu($"{klasse} mit Aussparungen: Umriss ohne Löcher übernommen (Löcher in der Netzdatei)", IfcSammler.Beispiel(p) + $" {loecher} Löcher");
-        if (flaechen > 1) hinweise.Dazu($"{klasse} aus mehreren Flächen: grösste übernommen", IfcSammler.Beispiel(p) + $" {flaechen} Flächen");
+        if (flaechen > 1) hinweise.Dazu($"{klasse} aus mehreren Flächen: je Fläche ein Element", IfcSammler.Beispiel(p) + $" {flaechen} Flächen");
         var schichten = Schichten(p);
-        if (schichten.Count > 0 && schichten.All(s => !double.IsNaN(s.Dicke)) && MaterialVon(p) is IIfcMaterialLayerSetUsage or IIfcMaterialLayerSet)
-            AufbauSetzen(e, schichten, schichten[0].Fundstelle.Split(',')[0]);
-        else if (schichten.Count == 1 && schichten[0].Name is { } nm)
-            lauf.Wert(e, "aufbau", $"{nm} {IfcBauteile.Mm(dicke)}", schichten[0].Fundstelle + ", Dicke aus dem Körper");
+        foreach (var e in stuecke)
+        {
+            if (schichten.Count > 0 && schichten.All(s => !double.IsNaN(s.Dicke)) && MaterialVon(p) is IIfcMaterialLayerSetUsage or IIfcMaterialLayerSet)
+                AufbauSetzen(e, schichten, schichten[0].Fundstelle.Split(',')[0]);
+            else if (schichten.Count == 1 && schichten[0].Name is { } nm)
+                lauf.Wert(e, "aufbau", $"{nm} {IfcBauteile.Mm(dicke)}", schichten[0].Fundstelle + ", Dicke aus dem Körper");
+        }
     }
 
     static double[] Normale(List<double[]> ring)

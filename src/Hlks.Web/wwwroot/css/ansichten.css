@@ -156,5 +156,5 @@
 .hl-fuss { margin-top: 2px; font-size: 11px; color: var(--text-leise); }
 .hl-fehler { color: var(--text-leise); max-width: 280px; white-space: normal; }
 /* Auswahlfenster wie AutoCAD (Christian 02.11.2026): links → rechts Fenster (blau, durchgezogen), rechts → links Kreuzen (grün, gestrichelt) */
-.gr-auswahlfenster { position: fixed; z-index: 50; pointer-events: none; border: 1px solid #2b6fd6; background: rgba(43, 111, 214, 0.12); }
-.gr-auswahlfenster.kreuzen { border: 1px dashed #2e9a3a; background: rgba(46, 154, 58, 0.12); }
+.gr-auswahlfenster { position: fixed; z-index: 50; pointer-events: none; border: 1px solid var(--akzent); background: color-mix(in srgb, var(--akzent) 12%, transparent); }
+.gr-auswahlfenster.kreuzen { border: 1px dashed var(--ok); background: color-mix(in srgb, var(--ok) 12%, transparent); }

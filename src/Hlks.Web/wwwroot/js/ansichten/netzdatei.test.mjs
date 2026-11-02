@@ -48,12 +48,23 @@ function baueNetz(produkte, { fassung = 2 } = {}) {
       const fa = p.farben ?? [];
       puffer(2 + 8 * fa.length, (b) => { b.setUint16(0, fa.length, true); fa.forEach((x, i) => { b.setInt32(2 + 8 * i, x.ab, true); b.setUint32(6 + 8 * i, x.farbe, true); }); });
     }
+    p.__fassung = fassung;
     puffer(24 + 8, (b) => {
       for (let i = 0; i < 6; i++) b.setFloat32(4 * i, i, true);
       b.setInt32(24, p.punkte.length, true); b.setInt32(28, p.dreiecke.length, true);
     });
     puffer(12 * p.punkte.length, (b) => p.punkte.forEach((q, i) => q.forEach((v, j) => b.setFloat32(12 * i + 4 * j, v, true))));
     puffer(12 * p.dreiecke.length, (b) => p.dreiecke.forEach((q, i) => q.forEach((v, j) => b.setInt32(12 * i + 4 * j, v, true))));
+    if (fassung >= 5) {   // xBIM: Anzeigenetz mit ausgeschnittenen Öffnungen (optional)
+      const a = p.anzeige;
+      teile.push(new Uint8Array([a ? 1 : 0]));
+      if (a) {
+        puffer(2, (b) => b.setUint16(0, 0, true));
+        puffer(8, (b) => { b.setInt32(0, a.punkte.length, true); b.setInt32(4, a.dreiecke.length, true); });
+        puffer(12 * a.punkte.length, (b) => a.punkte.forEach((q, i) => q.forEach((v, j) => b.setFloat32(12 * i + 4 * j, v, true))));
+        puffer(12 * a.dreiecke.length, (b) => a.dreiecke.forEach((q, i) => q.forEach((v, j) => b.setInt32(12 * i + 4 * j, v, true))));
+      }
+    }
   }
   const gesamt = new Uint8Array(teile.reduce((s, t) => s + t.length, 0));
   let o = 0; for (const t of teile) { gesamt.set(t, o); o += t.length; }
@@ -118,8 +129,8 @@ test('Netzdatei Fassung 2: Fehler deutsch (unbekannte Rolle, abgeschnitten in Be
   assert.throws(() => netzd.leseNetz(kaputt.buffer), /unbekannte Rolle 7/);
   for (const kuerzer of [lage, lage + 5, lage + 23, ganz.byteLength - 1])
     assert.throws(() => netzd.leseNetz(ganz.slice(0, kuerzer)), /abgeschnitten/, `bei ${kuerzer} Byte`);
-  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 5 })), /Fassung 5 wird nicht unterstützt \(bekannt: 1, 2, 3, 4\)/);
-  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3, 4]);
+  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 6 })), /Fassung 6 wird nicht unterstützt \(bekannt: 1, 2, 3, 4, 5\)/);
+  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3, 4, 5]);
   assert.deepEqual(netzd.ROLLEN, ['bauteil', 'teil', 'oeffnung']);
 });
 
@@ -154,7 +165,7 @@ test('Netzdatei: der Leser kennt die Fassung des Kern-Schreibers, die Rollen-Num
   if (!cs) return;
   const f = Number(cs.match(/public const int Fassung = (\d+);/)?.[1]);
   assert.ok(netzd.FASSUNGEN.includes(f), `Kern schreibt Fassung ${f}`);
-  assert.match(cs, /LesbareFassungen = \[1, 2, 3, 4\]/);
+  assert.match(cs, /LesbareFassungen = \[1, 2, 3, 4, 5\]/);
   assert.match(cs, /uint8 m \+ m\*\(uint16 L \+ L Byte UTF-8\) Materialnamen/);   // Fassung 3 (Nachtrag B3c)
   assert.match(cs, /enum IfcNetzRolle : byte \{ Bauteil = 0, Teil = 1, Oeffnung = 2 \}/);
   assert.match(cs, /uint8 Rolle \(0 = bauteil, 1 = teil, 2 = oeffnung\), 22 Byte Bezug/);
@@ -172,4 +183,13 @@ test('Netzdatei Fassung 4 (IFC 1:1): Farbabschnitte je Produkt, im zusammengefü
   assert.deepEqual(n.produkte[0].farben, [{ ab: 0, farbe: rot }, { ab: 1, farbe: 0 }]);
   assert.deepEqual(n.produkte[2].farben, []);
   assert.deepEqual(n.farben, [{ ab: 0, farbe: rot }, { ab: 1, farbe: 0 }, { ab: 2, farbe: grau }, { ab: 4, farbe: 0 }]);
+});
+
+test('Netzdatei Fassung 5 (xBIM): das Anzeigenetz (Öffnungen ausgeschnitten) ersetzt in der Anzeige das Hauptnetz; ohne Anzeigenetz das Hauptnetz', () => {
+  const wand = { label: 1, gid: 'WAND-1', ent: 'IfcWall', kote: 0, uebernommen: false, ...dreieck(0), anzeige: { punkte: [[0, 0, 0], [500, 0, 0], [0, 500, 0], [500, 500, 0]], dreiecke: [[0, 1, 2], [1, 3, 2]] } };
+  const decke = { label: 2, gid: 'DECKE-1', ent: 'IfcSlab', kote: 0, uebernommen: false, ...dreieck(2000) };
+  const n = netzd.leseNetz(baueNetz([wand, decke], { fassung: 5 }), { nur: 'alle' });
+  assert.equal(n.fassung, 5);
+  assert.equal(n.dreiecke, 3);    // Wand: 2 Dreiecke der Anzeige, Decke: 1 des Hauptnetzes
+  assert.equal(n.punkte, 7);
 });

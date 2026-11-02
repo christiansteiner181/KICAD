@@ -147,7 +147,7 @@ public sealed class GrundlagenIfc : IGrundlagenArt
         var punkte = new List<float>();
         var dreiecke = new List<int>();
         float zmin = float.MaxValue, zmax = float.MinValue;
-        foreach (var (pr, pu, dr) in datei.Alle(nurHintergrund))
+        foreach (var (pr, pu, dr) in datei.Alle(nurHintergrund, anzeige: true))   // Fassung 5: wie ein IFC-Betrachter, Öffnungen ausgeschnitten
         {
             int basis = punkte.Count / 3;
             punkte.AddRange(pu);

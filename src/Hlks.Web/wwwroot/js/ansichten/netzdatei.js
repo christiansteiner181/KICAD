@@ -22,7 +22,7 @@
 export const KENNUNG = 'HLKSNETZ';
 export const GLOBALID_LAENGE = 22;
 /** Fassungen, die leseNetz kennt (der Kern schreibt die höchste: IfcNetzErzeuger.Fassung). */
-export const FASSUNGEN = Object.freeze([1, 2, 3, 4]);
+export const FASSUNGEN = Object.freeze([1, 2, 3, 4, 5]);
 /** Rollen der Datensätze nach ihrer Nummer (Fassung 2; Fassung 1: immer bauteil). */
 export const ROLLEN = Object.freeze(['bauteil', 'teil', 'oeffnung']);
 const M = 1 / 1000;
@@ -36,7 +36,8 @@ class NetzFehler extends Error {}
  * Liest eine Netzdatei.
  * @param {ArrayBuffer|ArrayBufferView} daten  Inhalt der Datei
  * @param {{ nur?: 'hintergrund'|'uebernommen'|'alle', ids?: Iterable<string> }} [optionen]  nur: Vorgabe «hintergrund»;
- *   ids (IFC 1:1): nur diese Produkte (GlobalIds), gleich ob übernommen – das eigene Netz eines übernommenen Elements
+ *   ids (IFC 1:1): nur diese Produkte (GlobalIds), gleich ob übernommen – das eigene Netz eines übernommenen Elements;
+ *   Fassung 5: wo ein Anzeigenetz (Öffnungen ausgeschnitten) folgt, zeigt der Leser dieses – das Hauptnetz ist für Kollision und Aussparungen
  * @returns {{ fassung:number, beschreibung:string, begrenzung:number[], produkte:object[], punkte:number, dreiecke:number,
  *             positionen:Float32Array, indizes:Uint32Array, farben:{ ab:number, farbe:number }[] }}
  *   produkte: Kopfdaten ALLER Datensätze (label, globalId, entitaet, kote, uebernommen, rolle, bezug, fuellungen, begrenzung,
@@ -128,8 +129,23 @@ export function leseNetz(daten, optionen = {}) {
     brauche(12 * p + 12 * d, `Punkte und Dreiecke von Produkt ${n + 1}`);
     produkte.push({ label, globalId, entitaet, kote: Number.isNaN(kote) ? null : kote, uebernommen, rolle, bezug, fuellungen, materialien, typname, materialquelle, farben, begrenzung: bb, punkte: p, dreiecke: d });
     const mit = rolle !== 'oeffnung' && (ids ? ids.has(globalId.trim()) : (nur === AUSWAHL.alle || (nur === AUSWAHL.uebernommen ? uebernommen : !uebernommen)));
-    if (mit && p > 0 && d > 0) { gewaehlt.push({ punkteAb: pos, dreieckeAb: pos + 12 * p, p, d, farben }); summeP += p; summeD += d; }
+    let netz = { punkteAb: pos, dreieckeAb: pos + 12 * p, p, d, farben };
     pos += 12 * p + 12 * d;
+    if (fassung >= 5) {   // Fassung 5: uint8 a; a = 1 → Anzeigenetz (Öffnungen ausgeschnitten): uint16 k + Farben, int32 p, int32 d, Punkte, Dreiecke
+      brauche(1, 'Anzeigenetz');
+      if (bytes[pos++] === 1) {
+        brauche(2, 'Farben des Anzeigenetzes'); const k = dv.getUint16(pos, true); pos += 2;
+        brauche(8 * k, 'Farben des Anzeigenetzes');
+        const fa = [];
+        for (let i = 0; i < k; i++) { fa.push({ ab: dv.getInt32(pos, true), farbe: dv.getUint32(pos + 4, true) }); pos += 8; }
+        const pa = i32('Punktzahl Anzeige'), da = i32('Dreieckszahl Anzeige');
+        if (pa < 0 || da < 0) throw new NetzFehler(`Die Netzdatei ist beschädigt (Produkt ${n + 1}: negative Anzahl im Anzeigenetz).`);
+        brauche(12 * pa + 12 * da, `Anzeigenetz von Produkt ${n + 1}`);
+        netz = { punkteAb: pos, dreieckeAb: pos + 12 * pa, p: pa, d: da, farben: fa };
+        pos += 12 * pa + 12 * da;
+      }
+    }
+    if (mit && netz.p > 0 && netz.d > 0) { gewaehlt.push(netz); summeP += netz.p; summeD += netz.d; }
   }
 
   // Zweiter Durchgang: zusammenführen, Punkte nach three (Meter), Indizes um den Versatz des Produkts verschieben

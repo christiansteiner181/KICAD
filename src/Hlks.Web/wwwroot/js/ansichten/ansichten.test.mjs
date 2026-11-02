@@ -1073,7 +1073,7 @@ test('Netzdatei: Kennung und Fassung stimmen mit dem Schreiber im Kern überein'
   const cs = kernQuelle('Import/IfcNetz.cs');
   if (!cs) return;
   assert.match(cs, new RegExp(`Kennung = "${netzd.KENNUNG}"`));
-  assert.match(cs, /Fassung = 3;/);   // Fassung 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); 1 und 2 bleiben lesbar (netzdatei.test.mjs)
+  assert.match(cs, /Fassung = 5;/);   // Fassung 5 mit Anzeigenetz (xBIM), 4 seit IFC 1:1 (Farben), 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); ältere bleiben lesbar (netzdatei.test.mjs)
   assert.match(cs, /22 Byte GlobalId/);
 });
 
@@ -1103,7 +1103,7 @@ test('3D: Körperteil «netz» wird zum Halter; Mesh durchscheinend, doppelseiti
   const g = k3.baueKoerper(k);
   assert.ok(g, 'ein Körper nur aus einem Netz ist trotzdem ein Körper');
   const halter = g.children[0];
-  assert.deepEqual(halter.userData.netz, { quelle: 'UL-9', farbe: '#8a8a8a', deckkraft: 0.4 });
+  assert.deepEqual(halter.userData.netz, { quelle: 'UL-9', farbe: '#8a8a8a', deckkraft: 0.4, ifcFarben: false, produkte: null });   // IFC 1:1: ohne IFC-Farben, ganze Unterlage
   assert.equal(g.userData.materialien.length, 0, 'nie hervorgehoben');
   // ohne Quelle: kein Halter; Standard-Deckkraft 0.5
   assert.equal(k3.baueKoerper({ id: 'x', teile: [{ art: 'netz' }] }), null);

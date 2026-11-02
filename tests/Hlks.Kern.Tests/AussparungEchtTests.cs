@@ -151,7 +151,7 @@ public sealed class AussparungEchtTests(ITestOutputHelper aus)
             Assert.True(leitungen > 100, $"{leitungen} Leitungen");
             Assert.True(alle.Count > 0, "keine Aussparungen vorgeschlagen");
             // Nachtrag B3c: Netzdatei Fassung 3 mit Material; keine Aussparung in einer Bekleidung; Aussparungen nur in Bauteilen mit Aussparung
-            Assert.Equal("3", material["netzFassung"]!.GetValue<string>());
+            Assert.Equal(IfcNetzErzeuger.Fassung.ToString(), material["netzFassung"]!.GetValue<string>());   // ab Fassung 3 mit Material
             Assert.All(alle, a => Assert.False(string.IsNullOrEmpty(a.Text("material")), $"{a.Kennzeichen} ohne material"));
             Assert.DoesNotContain(alle, a => a.Kennungen?.GetValueOrDefault("bauteilEntitaet") == "IfcCovering");
             Assert.Equal(alle.Count, liste["zeilen"]!.AsArray().Count);

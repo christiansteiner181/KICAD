@@ -149,12 +149,16 @@ public static class IfcDeckung
         return b;
     }
 
-    /// <summary>Körper des Nachbaus für den Vergleich: Wände mit ihren Öffnungen, aber ohne den Abzug der Decken (ArchitekturGrafik.WandKoerperOhneDecken)
-    /// – wie das Wandnetz der Datei aus der xBIM-Geometrie (Öffnungen ausgeschnitten, Wand bis in die Decke); sonst der Körper des Kerns.</summary>
+    /// <summary>Körper des Nachbaus für den Vergleich: Wände als ganzer Quader (Achse mit Verlängerung, Dicke, Unterkante bis Oberkante) – ohne
+    /// Öffnungen und ohne den Abzug der Decken, wie das Hauptnetz der Netzdatei (Fassung 5: Öffnungen nicht ausgeschnitten, Wand bis in die Decke);
+    /// sonst der Körper des Kerns.</summary>
     static IEnumerable<Koerperteil> VergleichsTeile(Projekt p, Element e)
     {
-        // Wand: mit ihren Öffnungen (das IFC-Netz der xBIM-Geometrie ist ausgeschnitten), ohne den Abzug der Decken (das IFC führt sie bis in die Decke)
-        if (e.Klasse == "Wand" && ArchitekturGrafik.WandKoerperOhneDecken(p, e) is { Leer: false } wk) return wk.Teile;
+        if (e.Klasse == "Wand" && Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, e) is { Hoehe: double h } w && h > 0 && w.Dicke > 0)
+        {
+            var c = w.Punkt((w.Von + w.Bis) / 2, 0);
+            return [new Koerperteil { Art = "quader", Mitte = [c[0], c[1], w.Unterkante + h / 2], Masse = [w.Bis - w.Von, w.Dicke, h], Drehung = w.Winkel }];
+        }
         return Grafik.QuelleFuer(p.Katalog, e)?.Koerper(p, e)?.Teile ?? [];
     }
 
