@@ -134,7 +134,7 @@ public class KatalogTests
         Assert.True(formteile.Count >= 3);
         Assert.All(formteile, k =>
         {
-            Assert.True(k.Anschluesse.Count >= 2, $"{k.Name}: weniger als zwei Anschlüsse");
+            Assert.True(k.Anschluesse.Count >= (k.Name == "Endkappe" ? 1 : 2), $"{k.Name}: zu wenig Anschlüsse");   // Endkappe (Herstellerbibliothek): ein Anschluss
             Assert.All(k.Anschluesse, a => Assert.Equal("beide", a.Fluss));
             Assert.All(k.Anschluesse, a => Assert.Equal("*", a.Medium));
         });

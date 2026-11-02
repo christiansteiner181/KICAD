@@ -179,4 +179,14 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
     «fabrikat ega. bsp Buderus.» → Ventil-Bauart `kugelhahn` neu; Auftrag A1: Buderus, sonst ein anderer Hersteller mit
     vollständig bemasstem Datenblatt (deutlich genannt); zwei Familien, wenn sich die Masse der Griffe unterscheiden, sonst
     Typparameter griff.
+11. **Lüftung (Christian 02.11.2026, über den Hauptlauf):** «für lüftung gehören alle Rohre Kanäle inkl. Formstücke +
+    Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems». Bestand: Wickelfalzrohr rund, Rechteckkanal (je Bogen,
+    T-Stück, Reduktion), 8 Schmidlin-Flexrohre freigegeben. Neue Klassen: Hosenstueck, Endkappe (Formteile), Brandschutzklappe,
+    Luftklappe, Schalldaempfer (Armaturen Lüftung, Antriebe über die Antriebsfamilie), Luftverteiler, Erdwaermetauscher.
+    Fragefenster zu Reihenfolge, Fabrikat und Zehnder-Umfang **unbeantwortet** – angenommen nach Vorschlag: Zehnder zuerst
+    (Z1 ComfoAir-Geräte, Z2 ComfoWell/ComfoTube, Z3 ComfoValve/Durchlässe, Z4 Erdwärmetauscher), dann L1–L6 (Formstücke,
+    Brandschutzklappen, Luftklappen, Schalldämpfer, Volumenstromregler, Durchlässe) mit Schmidlin, sonst Trox. Korrigierbar.
+12. **Schemas (Christian 02.11.2026):** «du zeichnest schemas aus den daten. dies müssen wir im detail korrigieren. erst wenn
+    anlagen gezeichnet sind die reale daten enthalten.» → Die Aufträge erfinden keine Schemasymbole; die Schemadarstellung der
+    Bibliotheksfamilien wird an realen Anlagen korrigiert.
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).

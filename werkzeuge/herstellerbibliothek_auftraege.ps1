@@ -12,7 +12,7 @@ New-Item -ItemType Directory -Force $hb | Out-Null
 function Log($t) { $z = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $t"; Add-Content -Path $log -Value $z -Encoding UTF8; $z }
 
 $gemeinsam = @'
-Teil der Herstellerbibliothek der H+K-Bürobibliothek (Auftrag Christian Steiner 02.11.2026). Arbeite nach den Abschnitten «Regeltechnik und Antriebe» und «Internet-Recherche» der Anleitung. Typen vollständig, wie der Hersteller die Reihe heute in der Schweiz führt (Typname wie der Hersteller, Artikelnummer als Typparameter artikelnummer, wenn die Unterlage sie je Typ nennt). Quellen bevorzugt: Datenblatt bzw. Planungsunterlage des Herstellers (PDF), Geometrie aus einem frei abrufbaren IFC- oder STEP-Modell des Herstellers, sonst aus dem Massbild; Revit-Dateien (RFA) werden nicht gelesen. Regeltechnik vollständig, soweit die Unterlage sie nennt: Speisung, Leistungsaufnahme, Strom, Schutzart, Stellsignale und Rückmeldung, Laufzeit bzw. Stellkraft/Drehmoment, Busprotokolle mit nötigem Modul, Datenpunkte (Meldungen, Befehle, Messwerte) – jeder Wert mit Befund. Keine Kennlinien (später, Modul 5). Keine Preise. Was nur mit Anmeldung erhältlich ist, im Bericht nennen. Alle Familien bleiben Entwurf.
+Teil der Herstellerbibliothek der H+K-Bürobibliothek (Auftrag Christian Steiner 02.11.2026). Arbeite nach den Abschnitten «Regeltechnik und Antriebe» und «Internet-Recherche» der Anleitung. Typen vollständig, wie der Hersteller die Reihe heute in der Schweiz führt (Typname wie der Hersteller, Artikelnummer als Typparameter artikelnummer, wenn die Unterlage sie je Typ nennt). Quellen bevorzugt: Datenblatt bzw. Planungsunterlage des Herstellers (PDF), Geometrie aus einem frei abrufbaren IFC- oder STEP-Modell des Herstellers, sonst aus dem Massbild; Revit-Dateien (RFA) werden nicht gelesen. Regeltechnik vollständig, soweit die Unterlage sie nennt: Speisung, Leistungsaufnahme, Strom, Schutzart, Stellsignale und Rückmeldung, Laufzeit bzw. Stellkraft/Drehmoment, Busprotokolle mit nötigem Modul, Datenpunkte (Meldungen, Befehle, Messwerte) – jeder Wert mit Befund. Keine Kennlinien (später, Modul 5). Kein Schemasymbol erfinden (Christian 02.11.2026: Schemas aus den Daten werden erst an realen Anlagen im Detail korrigiert). Keine Preise. Was nur mit Anmeldung erhältlich ist, im Bericht nennen. Alle Familien bleiben Entwurf.
 '@ -replace "`r?`n", ' '
 
 $auftraege = @(
@@ -40,6 +40,28 @@ $auftraege = @(
   # Kugelhähne (Christian 02.11.2026: «Kugelhanen mit knebelgriff und mit schmetterlingsgriff» – «fabrikat ega. bsp Buderus.»)
   @{ nr = 'A1'; kategorie = 'Ventil'
      hinweis = 'Absperr-Kugelhähne für Heizung (Gewindeanschluss, Nennweiten wie der Hersteller sie führt) in zwei Ausführungen: mit Knebelgriff (Hebelgriff) und mit Schmetterlingsgriff (Flügelgriff). Fabrikat beliebig, Vorschlag Christian: Buderus; nimm Buderus, wenn ein Buderus-Datenblatt mit Massen je Nennweite ohne Anmeldung erhältlich ist, sonst einen anderen gängigen Hersteller mit vollständig bemasstem Datenblatt und nenne ihn deutlich im Bericht und im Familiennamen. Eigenschaft art der Klasse Ventil: kugelhahn; Medium «*». Unterscheiden sich die Masse der beiden Griffe, zwei Familien («… Knebelgriff», «… Schmetterlingsgriff»), sonst eine Familie mit Typparameter griff. Keine Elektrik, kein Abschnitt regeltechnik. ' }
+  # Lüftung (Christian 02.11.2026: «für lüftung gehören alle Rohre Kanäle inkl. Formstücke + Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems»)
+  # Umfang und Fabrikat nach den Vorschlägen im Fragefenster (unbeantwortet, Christian kann korrigieren): Zehnder zuerst, Komponenten Schmidlin, sonst Trox.
+  @{ nr = 'Z1'; kategorie = 'Lueftungsgeraet'
+     hinweis = 'Zehnder (ComfoSystems): alle Wohnungslüftungsgeräte mit Wärmerückgewinnung der aktuellen ComfoAir-Reihen, die Zehnder in der Schweiz führt (je Reihe eine Familie, Typen nach Baugrösse und Ausführung). Anschlüsse aul, zul, abl, fol nach Klasse Lueftungsgeraet mit Durchmesser wie in der Unterlage. Regeltechnik vollständig (Speisung, Leistung, Bedienung und Bus wie Modbus/KNX/BACnet mit nötigem Modul, Datenpunkte für Stufe, Störung, Filter, Temperaturen). ' }
+  @{ nr = 'Z2'; kategorie = 'Luftverteiler'
+     hinweis = 'Zehnder (ComfoSystems): Luftverteilsystem – Verteilerkästen der Reihe ComfoWell als Familien der Kategorie Luftverteiler (Typen nach Anzahl Abgänge, Abgänge als Anschlüsse), dazu das Rohrsystem ComfoTube als Leitungsserie (Kategorie Kanal, rund bzw. wie in der Unterlage) mit seinen Formteilen (Bogen, T-Stück, Reduktion, soweit bemasst) nach dem Abschnitt «Leitungsserien und Formteile». ' }
+  @{ nr = 'Z3'; kategorie = 'Zuluftdurchlass'
+     hinweis = 'Zehnder (ComfoSystems): Zu- und Abluftventile ComfoValve und die Luftdurchlässe des Systems, die Zehnder führt (Zuluft als Kategorie Zuluftdurchlass, Abluft als eigene Familie der Kategorie Abluftdurchlass), Typen nach Grösse. ' }
+  @{ nr = 'Z4'; kategorie = 'Erdwaermetauscher'
+     hinweis = 'Zehnder (ComfoSystems): Erdwärmetauscher bzw. Erdregister für Wohnungslüftung, die Zehnder heute führt (z. B. ComfoFond), je Bauart eine Familie; elektrische Teile (Pumpe, Regelung) mit Regeltechnik. ' }
+  @{ nr = 'L1'; kategorie = 'Hosenstueck'
+     hinweis = 'Schmidlin (wie die freigegebenen Serien «Wickelfalzrohr rund» und «Rechteckkanal» der Bürobibliothek): fehlende Formstücke Hosenstück (Kategorie Hosenstueck) und Endkappe/Enddeckel (Kategorie Endkappe) für Wickelfalzrohr rund und Rechteckkanal, Masse nur aus dem Schmidlin-Katalog bzw. Schmidlin-Datenblättern, PREISE NIE ÜBERNEHMEN; fehlt ein Mass, Typ offen lassen. ' }
+  @{ nr = 'L2'; kategorie = 'Brandschutzklappe'
+     hinweis = 'Brandschutzklappen rund und rechteckig: Schmidlin, falls Schmidlin sie bemasst führt, sonst Trox (Trox bietet VDI-3805-Daten – nur als Zweitbeleg). Auslöser und Endschalter bzw. Federrücklaufantrieb als Antriebsfamilie (Kategorie Antrieb) mit Regeltechnik, Kombination in antriebe, anbau aus dem Massbild. ' }
+  @{ nr = 'L3'; kategorie = 'Luftklappe'
+     hinweis = 'Absperr- und Regelklappen (Luftklappen) rund und rechteckig: Schmidlin, sonst Trox; Antriebe als Antriebsfamilie (z. B. die Klappenantriebe, die der Hersteller nennt) mit Regeltechnik, Kombination in antriebe, anbau aus dem Massbild. Eigenschaft art der Klasse Luftklappe. ' }
+  @{ nr = 'L4'; kategorie = 'Schalldaempfer'
+     hinweis = 'Rohr- und Kulissenschalldämpfer: Schmidlin, sonst Trox; Typen nach Grösse und Länge wie in der Unterlage, keine Akustikkennwerte erfinden (Einfügedämpfung nur, wenn tabelliert). ' }
+  @{ nr = 'L5'; kategorie = 'Volumenstromregler'
+     hinweis = 'Volumenstromregler rund und rechteckig (variabel und konstant): Schmidlin, sonst Trox; Regler-/Antriebseinheit als Antriebsfamilie mit Regeltechnik (Stellsignal, Rückmeldung, Bus), Kombination in antriebe. ' }
+  @{ nr = 'L6'; kategorie = 'Zuluftdurchlass'
+     hinweis = 'Luftdurchlässe für Büro und Wohnen (Tellerventile, Gitter, Drallauslässe): Schmidlin, sonst Trox; Zuluft und Abluft als getrennte Familien der Kategorien Zuluftdurchlass bzw. Abluftdurchlass, Typen nach Grösse. ' }
 )
 
 foreach ($a in $auftraege) {
