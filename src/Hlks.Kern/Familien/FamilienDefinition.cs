@@ -309,7 +309,8 @@ public sealed class FamilieDef
     public static readonly string[] Zeichnungsarten = ["linie", "polylinie", "polygon", "kreis", "bogen", "text"];
     public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten"];
     static readonly string[] KopfFelder = ["format", "id", "name", "kategorie", "hersteller", "produkt", "beschreibung", "version", "status",
-        "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht"];
+        "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht",
+        "regeltechnik", "antriebe", "anbau"];   // Herstellerbibliothek H1
     static readonly Regex NamensMuster = new("^[A-Za-zÄÖÜäöü_][A-Za-zÄÖÜäöü0-9_]*$");
     static readonly Regex BefundMuster = new("^[0-9a-f]{12}#[0-9]+$");
 
@@ -331,6 +332,8 @@ public sealed class FamilieDef
     public List<FamZeichnung>? Schemasymbol { get; private set; }
     /// <summary>Block «leitung» (Modul 3): gesetzt bei Leitungsserien (Kategorie Rohr bzw. Kanal), sonst null.</summary>
     public FamLeitung? Leitung { get; private set; }
+    /// <summary>Abschnitte «regeltechnik», «antriebe», «anbau» (Herstellerbibliothek, FamilienRegeltechnik.cs) oder null.</summary>
+    public FamRegeltechnik? Regeltechnik { get; private set; }
     /// <summary>Die Familie ist eine Leitungsserie (Kategorie IstArt Leitung bzw. ohne Katalog: Block «leitung» vorhanden).</summary>
     public bool IstLeitungsserie => Leitung is not null;
     /// <summary>Fehler der Definition (Aufbau, Namen, Formeln, Regeln). Leer = gültig.</summary>
@@ -400,6 +403,7 @@ public sealed class FamilieDef
         MasseLesen(d["masse"]);
         Sinnbild = ZeichnungLesen(d["sinnbild"], "sinnbild");
         Schemasymbol = ZeichnungLesen(d["schemasymbol"], "schemasymbol");
+        Regeltechnik = FamRegeltechnik.Lesen(d, this, kat, klasse, (o, m, v) => Fehl(o, m, v), (o, m, v) => Hinweise.Add(new(o, m, v)), (n, o, a) => Punkt(n, o, a));
         QuellenPruefen();
         FormelnPruefen();
     }
@@ -1322,6 +1326,7 @@ public sealed class FamilieDef
             Liste(lo["quellen"], "leitung.quellen");   // Modul 3
             if (lo["frei"] is JsonObject fo) Liste(fo["quellen"], "leitung.frei.quellen");   // Nachtrag freie Grösse
         }
+        foreach (var (stelle, liste) in FamRegeltechnik.Quellenlisten(Quelle)) Liste(liste, stelle);   // Herstellerbibliothek H1
     }
 
     // ------------------------------------------------------------------ Formeln: Namen, Typregel, Zyklen

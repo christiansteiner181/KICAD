@@ -281,6 +281,73 @@
         }
       }
     },
+    "regeltechnik": {
+      "type": "object", "additionalProperties": false,
+      "description": "Herstellerbibliothek (entwurf/herstellerbibliothek.md): regeltechnische Angaben jeder elektrischen Komponente (Pumpe, Antrieb, Ventil mit eigenem Antrieb). Jeder Einzelwert ist der NAME eines Parameters der Familie (Wert je Typ mit quellen wie jeder Parameter, damit Wertprüfung und Konflikte gelten); Listeneinträge tragen eigene quellen (Befunde müssen existieren; ohne quellen Hinweis «unbelegt»).",
+      "properties": {
+        "elektrisch": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "speisung": { "type": "array", "items": { "type": "object", "required": ["art", "spannung"], "additionalProperties": false, "properties": {
+              "art": { "enum": ["AC", "DC", "AC/DC"] },
+              "spannung": { "type": "string", "description": "Parameter: Nennspannung (zahl, V) oder Text wie in der Unterlage (z. B. Bereich)" },
+              "frequenz": { "type": "string", "description": "Parameter: zahl, Hz" },
+              "phasen": { "enum": [1, 3] },
+              "quellen": { "$ref": "#/$defs/quellen" } } } },
+            "leistung": { "type": "string", "description": "Parameter: Leistungsaufnahme im Betrieb (zahl, W)" },
+            "leistung_ruhe": { "type": "string", "description": "Parameter: Leistungsaufnahme in Ruhe (zahl, W)" },
+            "leistung_bemessung": { "type": "string", "description": "Parameter: Bemessungsleistung für die Leitungsdimensionierung (zahl, VA)" },
+            "strom": { "type": "string", "description": "Parameter: Strom (zahl, A)" },
+            "schutzart": { "type": "string", "description": "Parameter (Text), z. B. IP-Schutzart wie in der Unterlage" },
+            "schutzklasse": { "type": "string", "description": "Parameter (Text)" }
+          }
+        },
+        "stellen": {
+          "type": "object", "additionalProperties": false,
+          "properties": {
+            "signale": { "type": "array", "items": { "type": "object", "required": ["art"], "additionalProperties": false, "properties": {
+              "art": { "enum": ["0-10V", "2-10V", "0-20mA", "4-20mA", "3-punkt", "auf-zu", "pwm", "bus"] }, "quellen": { "$ref": "#/$defs/quellen" } } } },
+            "rueckmeldung": { "type": "array", "items": { "type": "object", "required": ["art"], "additionalProperties": false, "properties": {
+              "art": { "enum": ["0-10V", "2-10V", "0-20mA", "4-20mA", "kontakt", "bus"] }, "quellen": { "$ref": "#/$defs/quellen" } } } },
+            "laufzeit": { "type": "string", "description": "Parameter: zahl, s" },
+            "stellkraft": { "type": "string", "description": "Parameter: zahl, N" },
+            "drehmoment": { "type": "string", "description": "Parameter: zahl, Nm" },
+            "hub": { "type": "string", "description": "Parameter: laenge (mm)" },
+            "drehwinkel": { "type": "string", "description": "Parameter: winkel (Grad)" },
+            "notstellung": { "type": "string", "description": "Parameter (Text): Notstellfunktion wie in der Unterlage" }
+          }
+        },
+        "kommunikation": { "type": "array", "items": { "type": "object", "required": ["protokoll"], "additionalProperties": false, "properties": {
+          "protokoll": { "enum": ["modbus-rtu", "modbus-tcp", "bacnet-mstp", "bacnet-ip", "mp-bus", "knx", "lon", "mbus", "profinet", "herstellerbus"] },
+          "zusatz": { "type": "string", "description": "z. B. nötiges Busmodul bzw. Name des Herstellerbusses – wie in der Unterlage" },
+          "quellen": { "$ref": "#/$defs/quellen" } } } },
+        "datenpunkte": {
+          "type": "array", "description": "Vorlage für Datenpunkt-Elemente (Klasse Datenpunkt, Modul 8 GA-Liste); signal und art wie dort",
+          "items": { "type": "object", "required": ["name", "signal", "art"], "additionalProperties": false, "properties": {
+            "name": { "type": "string", "minLength": 1 },
+            "signal": { "enum": ["AI", "AO", "DI", "DO", "Zaehler", "Wert"] },
+            "art": { "enum": ["messung", "stellung", "meldung", "schaltung", "zaehlung", "sollwert"] },
+            "messgroesse": { "type": "string" }, "einheit": { "type": "string" },
+            "weg": { "type": "string", "description": "kontakt, eine Signalart (ohne bus) oder ein Protokoll" },
+            "objekt": { "type": "string", "description": "Busobjekt bzw. Register wie in der Unterlage" },
+            "optional": { "type": "boolean", "description": "nur auf Wunsch anlegen (z. B. Buspunkte)" },
+            "quellen": { "$ref": "#/$defs/quellen" } } }
+        }
+      }
+    },
+    "antriebe": {
+      "type": "array", "description": "Nur Armaturen: Kombinationstabelle des Herstellers – welche Antriebsfamilie (Kategorie Antrieb) mit welchen Typen auf welche Ventiltypen dieser Familie passt",
+      "items": { "type": "object", "required": ["familie"], "additionalProperties": false, "properties": {
+        "familie": { "type": "string", "description": "Name oder id der Antriebsfamilie" },
+        "typen": { "type": "array", "items": { "type": "string" }, "description": "Antriebstypen; leer = alle" },
+        "fuer": { "type": "array", "items": { "type": "string" }, "description": "Typen dieser Familie; leer = alle" },
+        "quellen": { "$ref": "#/$defs/quellen" } } }
+    },
+    "anbau": {
+      "type": "object", "additionalProperties": false, "required": ["lage", "richtung"],
+      "description": "Nur Armaturen: Anbaupunkt des Antriebs (Lage und Richtung aus der Armatur heraus, Familienkoordinaten)",
+      "properties": { "lage": { "$ref": "#/$defs/punkt3" }, "richtung": { "$ref": "#/$defs/punkt3" }, "quellen": { "$ref": "#/$defs/quellen" } }
+    },
     "abdeckung": { "type": "object", "description": "Vom Kern gerechnet: { Parameter oder Typ/Parameter: { quellen, fehlt } }" },
     "bericht": { "type": "string", "description": "Bericht des Erstellers (KI oder Mensch): gelesene Werte, Annahmen, offene Felder" }
   }
