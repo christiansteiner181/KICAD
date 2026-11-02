@@ -292,6 +292,8 @@ public sealed class Projekt
         // Modul 2, Nachtrag B7: geänderte Familien als neue Version in die Familienbibliothek – Nachlauf nach dem gespeicherten eigenen
         // Paket (nie Trockenlauf, nie fremde Pakete), wirft nie (NAS fehlt → Warteschlange); siehe FamilienBibliothekBefehle.cs
         hinweise.AddRange(FamilienBibliothekSchreiben.NachPaket(this, paket));
+        // Christian 02.11.2026: «jeder nachbau muss jeweils mit der ifc darstellung verifiziert … werden» – nach jeder IFC-Übernahme (wirft nie)
+        if (befehl == "ifc_uebernehmen") hinweise.AddRange(IfcDeckung.NachUebernahme(this));
         return new BefehlsErgebnis
         {
             Angenommen = true, Befehl = befehl, PaketId = paket.Id, Meldung = $"{aenderungen.Count} Änderung(en) gespeichert.",

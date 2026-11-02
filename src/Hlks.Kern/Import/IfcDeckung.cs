@@ -56,6 +56,29 @@ public static class IfcDeckung
         return aus;
     }
 
+    /// <summary>Nachlauf von ifc_uebernehmen (Projekt.Ausfuehren): Deckung je IFC-Unterlage als Hinweise – deckungsgleich, abweichend je Klasse,
+    /// nicht nachgebaut. Wirft nie.</summary>
+    public static IEnumerable<string> NachUebernahme(Projekt p)
+    {
+        JsonObject r;
+        try { r = Pruefen(p, new JsonObject { ["anzahl"] = 0 }); }
+        catch (Exception ex) { return [$"Prüfung Nachbau ↔ IFC nicht möglich: {ex.Message}"]; }
+        var aus = new List<string>();
+        foreach (var u in r["unterlagen"]!.AsArray().OfType<JsonObject>())
+        {
+            if (u["fehler"] is { } f) { aus.Add($"Prüfung Nachbau ↔ IFC {u["unterlage"]}: {f}"); continue; }
+            int n = u["elemente"]!.GetValue<int>(), ok = u["deckungsgleich"]!.GetValue<int>();
+            var ab = u["jeKlasse"]!.AsObject().Select(kv => (Klasse: kv.Key, Anzahl: kv.Value!["anzahl"]!.GetValue<int>(), Ok: kv.Value["deckungsgleich"]!.GetValue<int>(), Max: kv.Value["maxMm"]))
+                .Where(x => x.Ok < x.Anzahl).Select(x => $"{x.Klasse} {x.Anzahl - x.Ok} (bis {x.Max} mm)").ToList();
+            var fehlt = u["nichtNachgebaut"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
+            aus.Add($"Prüfung Nachbau ↔ IFC {u["unterlage"]} (±{r["toleranz"]} mm): {ok} von {n} deckungsgleich"
+                + (ab.Count > 0 ? $"; abweichend: {string.Join(", ", ab)}" : "")
+                + (fehlt.Count > 0 ? $"; nicht nachgebaut (nur Hintergrund): {string.Join(", ", fehlt)}" : "")
+                + (ab.Count > 0 || fehlt.Count > 0 ? " – Einzelheiten: Abfrage ifc_deckung." : "."));
+        }
+        return aus;
+    }
+
     static string Basis(string kennung) => kennung.IndexOf(':') is var i and > 0 ? kennung[..i] : kennung;
 
     static JsonObject EineUnterlage(Projekt p, Element ul, IfcNetzdatei d, double tol, int anzahl)

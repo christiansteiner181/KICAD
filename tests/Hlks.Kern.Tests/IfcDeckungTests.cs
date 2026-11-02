@@ -11,7 +11,8 @@ public class IfcDeckungTests
     public void FiktiveArchitektur_WaendeDeckenStuetzen_Deckungsgleich_VerschiebungWirdGemessen()
     {
         var p = Leer();
-        Ok(Uebernehmen(p, IfcArchitekturTestdatei.Datei("IFC4", false)));
+        var ein = Ok(Uebernehmen(p, IfcArchitekturTestdatei.Datei("IFC4", false)));
+        Assert.Contains(ein.Hinweise, h => h.StartsWith("Prüfung Nachbau ↔ IFC") && h.Contains("deckungsgleich"));   // Nachlauf jeder Übernahme
         var u = IfcDeckung.Pruefen(p, new JsonObject { ["toleranz"] = 1 })["unterlagen"]!.AsArray().Single()!;
         var k = u["jeKlasse"]!.AsObject();
         foreach (var klasse in new[] { "Wand", "Decke", "Stuetze", "Tuer", "Fenster" }.Where(x => k.ContainsKey(x)))
