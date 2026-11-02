@@ -175,4 +175,8 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
    Netzfunktion, `bezuege.verteiler`; die Verteilerfamilie nennt die Kästen je Abgangszahl in `kaesten`); Expansion **Statico,
    Compresso, Transfero**; neue Klasse **Ausdehnungsgefaess** (bauart statisch/kompressor/pumpe, nennvolumen, ein Anschluss).
    IMI-VDI-3805-Daten nicht gefunden → Datenblatt mit Beleg je Wert. Aufträge I1–I4.
+10. **Kugelhähne (Christian 02.11.2026, über den Hauptlauf):** «Kugelhanen mit knebelgriff und mit schmetterlingsgriff» –
+    «fabrikat ega. bsp Buderus.» → Ventil-Bauart `kugelhahn` neu; Auftrag A1: Buderus, sonst ein anderer Hersteller mit
+    vollständig bemasstem Datenblatt (deutlich genannt); zwei Familien, wenn sich die Masse der Griffe unterscheiden, sonst
+    Typparameter griff.
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).

@@ -37,6 +37,9 @@ $auftraege = @(
      hinweis = 'IMI Hydronic Engineering (Pneumatex): Kompressor-Druckhaltung «Compresso», alle Ausführungen und Gefässgrössen, die IMI führt (Steuereinheit und Gefässe als je eigene Familie, wenn sie getrennt aufgestellt werden; die Kombination im Bericht). Eigenschaft bauart: kompressor. Regeltechnik der Steuereinheit vollständig (Speisung, Leistung, Störmeldungen, Bus wie BACnet/Modbus mit nötigem Modul, Datenpunkte). ' }
   @{ nr = 'I4'; kategorie = 'Ausdehnungsgefaess'
      hinweis = 'IMI Hydronic Engineering (Pneumatex): Pumpen-Druckhaltung «Transfero», alle Ausführungen und Gefässgrössen, die IMI führt (Steuereinheit und Gefässe als je eigene Familie, wenn sie getrennt aufgestellt werden; die Kombination im Bericht). Eigenschaft bauart: pumpe. Regeltechnik der Steuereinheit vollständig (Speisung, Leistung, Störmeldungen, Bus wie BACnet/Modbus mit nötigem Modul, Datenpunkte). ' }
+  # Kugelhähne (Christian 02.11.2026: «Kugelhanen mit knebelgriff und mit schmetterlingsgriff» – «fabrikat ega. bsp Buderus.»)
+  @{ nr = 'A1'; kategorie = 'Ventil'
+     hinweis = 'Absperr-Kugelhähne für Heizung (Gewindeanschluss, Nennweiten wie der Hersteller sie führt) in zwei Ausführungen: mit Knebelgriff (Hebelgriff) und mit Schmetterlingsgriff (Flügelgriff). Fabrikat beliebig, Vorschlag Christian: Buderus; nimm Buderus, wenn ein Buderus-Datenblatt mit Massen je Nennweite ohne Anmeldung erhältlich ist, sonst einen anderen gängigen Hersteller mit vollständig bemasstem Datenblatt und nenne ihn deutlich im Bericht und im Familiennamen. Eigenschaft art der Klasse Ventil: kugelhahn; Medium «*». Unterscheiden sich die Masse der beiden Griffe, zwei Familien («… Knebelgriff», «… Schmetterlingsgriff»), sonst eine Familie mit Typparameter griff. Keine Elektrik, kein Abschnitt regeltechnik. ' }
 )
 
 foreach ($a in $auftraege) {
