@@ -91,7 +91,7 @@ public static class IfcDeckung
         foreach (var g in gruppen)
         {
             if (d.Produkt(g.Key) is not { } pr) { ohneNetz++; continue; }
-            var teile = g.SelectMany(e => Grafik.QuelleFuer(p.Katalog, e)?.Koerper(p, e)?.Teile ?? []).ToList();
+            var teile = g.SelectMany(e => VergleichsTeile(p, e)).ToList();
             double w = (teile.FirstOrDefault(t => t.Art == "quader")?.Drehung ?? 0) * Math.PI / 180;
             var ifc = Box(new[] { pr }.Concat(d.TeileVon(g.Key)).Where(x => x.Dreiecke > 0).Select(x => NetzBox(d, x, w)).OfType<double[]>());
             if (ifc is null) { ohneNetz++; continue; }
@@ -147,6 +147,18 @@ public static class IfcDeckung
         double[] b = [double.MaxValue, double.MaxValue, double.MaxValue, double.MinValue, double.MinValue, double.MinValue];
         foreach (var q in punkte) for (int i = 0; i < 3; i++) { b[i] = Math.Min(b[i], q[i]); b[i + 3] = Math.Max(b[i + 3], q[i]); }
         return b;
+    }
+
+    /// <summary>Körper des Nachbaus für den Vergleich: Wände als ganzer Quader (Achse mit Verlängerung, Dicke, Unterkante bis Oberkante) – ohne
+    /// Öffnungen und ohne den Abzug der Decken, denn auch das Wandnetz der Datei ist nicht ausgeschnitten (IfcNetz.cs); sonst der Körper des Kerns.</summary>
+    static IEnumerable<Koerperteil> VergleichsTeile(Projekt p, Element e)
+    {
+        if (e.Klasse == "Wand" && Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, e) is { Hoehe: double h } w && h > 0 && w.Dicke > 0)
+        {
+            var c = w.Punkt((w.Von + w.Bis) / 2, 0);
+            return [new Koerperteil { Art = "quader", Mitte = [c[0], c[1], w.Unterkante + h / 2], Masse = [w.Bis - w.Von, w.Dicke, h], Drehung = w.Winkel }];
+        }
+        return Grafik.QuelleFuer(p.Katalog, e)?.Koerper(p, e)?.Teile ?? [];
     }
 
     /// <summary>Punkt im um w (Bogenmass, um z) gedrehten System: u längs, v quer, z.</summary>
