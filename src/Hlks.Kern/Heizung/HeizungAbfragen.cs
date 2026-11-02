@@ -197,6 +197,10 @@ public static class HeizungAbfragen
         var o = new JsonObject { ["summeW"] = s.SummeW, ["verbraucher"] = s.Anzahl };
         if (s.OhneAngabe.Count > 0) o["ohneAngabe"] = new JsonArray(s.OhneAngabe.Select(v => (JsonNode)JsonValue.Create(v.Kennzeichen)).ToArray());
         if (s.Masche) o["masche"] = true;
+        // Massen- und Volumenstrom (Christian 02.11.2026): Summe der Verbraucher mit allen Angaben; die übrigen stehen in ohneStrom
+        o["massenstrom_kgh"] = s.MassenstromKgh;
+        o["volumenstrom_lh"] = s.VolumenstromLh;
+        if (s.OhneStrom is { Count: > 0 } os) o["ohneStrom"] = new JsonArray(os.Select(v => (JsonNode)JsonValue.Create(v.Kennzeichen)).ToArray());
         return o;
     }
 
@@ -360,12 +364,29 @@ public static class HeizungAbfragen
             block["weg"] = n.LeitungWeg[e.Id];
             block["beschriftung"] = HeizungLeistung.Beschriftung;
             Abg()["summeLeistung_W"] = ls.SummeW;
+            Abg()["massenstrom_kgh"] = ls.MassenstromKgh;
+            Abg()["volumenstrom_lh"] = ls.VolumenstromLh;
         }
         else if (k.IstArt(e, "Verteiler") && n.Verteiler(e.Id) is { } vs)
         {
             foreach (var (key, x) in SummeJson(vs)) block[key] = x?.DeepClone();
             block["beschriftung"] = HeizungLeistung.Beschriftung;
             Abg()["summeLeistung_W"] = vs.SummeW;
+            Abg()["massenstrom_kgh"] = vs.MassenstromKgh;
+            Abg()["volumenstrom_lh"] = vs.VolumenstromLh;
+        }
+        else if (n.Verbraucher.TryGetValue(e.Id, out var vw))
+        {
+            // Verbraucher: Leistung mit Herkunft (Angabe bzw. Raum gleich verteilt), Massen- und Volumenstrom bzw. warum nicht
+            if (vw is double w) Abg()["leistung_W"] = w;
+            if (n.LeistungWoher.TryGetValue(e.Id, out var woher)) block["leistungWoher"] = woher;
+            if (n.Strom.TryGetValue(e.Id, out var strom))
+            {
+                if (strom.Kgh is double kgh) { Abg()["massenstrom_kgh"] = kgh; Abg()["volumenstrom_lh"] = strom.Lh; }
+                if (strom.SpreizungK is double dt) block["spreizungK"] = dt;
+                if (strom.Stoff is { } sw) block["stoffwerte"] = new JsonObject { ["cp_kJkgK"] = Math.Round(sw.CpKjKgK, 4), ["rho_kgm3"] = Math.Round(sw.RhoKgM3, 2), ["fluid"] = sw.Fluid, ["quelle"] = sw.Quelle };
+                if (strom.Grund is { } grund) block["ohneStrom"] = grund;
+            }
         }
         o["heizung"] = block;
     }

@@ -105,6 +105,8 @@ public sealed class Katalog
     public SchemaSymbolKatalog? Schemasymbole { get; private set; }
     /// <summary>Lüftungskette (lueftung.json, Modul 6 Teil A): Variantentypen, Luftgeschwindigkeiten, Planungswerte; null, wenn die Datei fehlt.</summary>
     public LueftungKatalog? Lueftung { get; private set; }
+    /// <summary>Stoffwerte der Heiz- und Kältemedien (stoffwerte.json, Modul 5); null, wenn die Datei fehlt.</summary>
+    public StoffwerteKatalog? Stoffwerte { get; private set; }
     public string Ordner { get; private set; } = "";
 
     /// <summary>Lädt klassen.json, medien.json, systemtypen.json (und ifc.json) aus dem Ordner und löst die Basisklassen auf.</summary>
@@ -124,6 +126,8 @@ public sealed class Katalog
         if (File.Exists(sym)) k.Schemasymbole = SchemaSymbolKatalog.Laden(sym);
         var lue = Path.Combine(ordner, LueftungKatalog.Datei);
         if (File.Exists(lue)) k.Lueftung = LueftungKatalog.Laden(lue);
+        var stoff = Path.Combine(ordner, StoffwerteKatalog.Datei);
+        if (File.Exists(stoff)) k.Stoffwerte = StoffwerteKatalog.Laden(stoff);
         k.SanitaerAuswahlSetzen();
         k.Pruefen();
         return k;

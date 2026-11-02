@@ -301,8 +301,8 @@ public class HeizungTests
         var g = L("""{"heizgruppe":"HG-1"}""");
         Assert.Equal((800.0, 1), (g["summeW"]!.GetValue<double>(), g["verbraucher"]!.GetValue<int>()));
         Assert.Equal("Σ Normleistung der Verbraucher (Angabe)", g["beschriftung"]!.GetValue<string>());
-        Assert.Contains("nicht auf Auslegungstemperaturen umgerechnet", g["hinweis"]!.GetValue<string>());
-        Assert.Contains("kein Volumenstrom, keine Stoffwerte", g["hinweis"]!.GetValue<string>());
+        Assert.Contains("nicht auf andere Auslegungstemperaturen umgerechnet", g["hinweis"]!.GetValue<string>());
+        Assert.Contains("Massenstrom", g["hinweis"]!.GetValue<string>());
         Assert.Equal(10.0, g["spreizungK"]!.GetValue<double>());
         Assert.Equal(Testwert, g["verbraucherListe"]![0]!["herkunft"]!.GetValue<string>().Split(", ", 2)[1]);
 
@@ -313,6 +313,10 @@ public class HeizungTests
 
         var vl = L("""{"leitung":"R-V1"}""");
         Assert.Equal((800.0, "vl"), (vl["summeW"]!.GetValue<double>(), vl["weg"]!.GetValue<string>()));
+        // Massenstrom (Christian 02.11.2026): ṁ = 800 W / (c_p(50 °C) · 10 K) = 800 · 3600 / (4.1811 · 1000 · 10) = 68.88 kg/h (NIST, stoffwerte.json),
+        // V = ṁ / ρ(50 °C) = 68.88 / 988.08 · 1000 = 69.71 l/h
+        Assert.Equal(68.88, vl["massenstrom_kgh"]!.GetValue<double>(), 2);
+        Assert.Equal(69.71, vl["volumenstrom_lh"]!.GetValue<double>(), 2);
         Assert.Contains("HK-1 800", vl["rechenweg"]!.GetValue<string>());
         Assert.Equal(["HG-1"], vl["heizgruppen"]!.AsArray().Select(x => x!.GetValue<string>()));
         var rl = L("""{"leitung":"R-R3"}""");
@@ -642,5 +646,23 @@ public class HeizungTests
         Assert.Equal(vorher, p.Modell.Elemente.Count);
         Gut(p, "heizgruppe_anlegen", """{"verteiler":"VT-1","abgangVl":"vl_1"}""");
         Assert.Equal(vorher + 1, p.Modell.Elemente.Count);
+    }
+
+    /// <summary>Christian 02.11.2026: Leistung «Raum oder Eingabe» – ohne Angabe die Heizleistung des Raums gleich auf seine Verbraucher verteilt.</summary>
+    [Fact]
+    public void Leistung_OhneAngabe_AusDemRaumGleichVerteilt()
+    {
+        var p = Netz();
+        foreach (var hk in new[] { "HK-1", "HK-2" })
+            Gut(p, "element_aendern", new JsonObject { ["element"] = hk, ["eigenschaften"] = new JsonObject { ["leistung"] = null } });
+        Gut(p, "element_aendern", """{"element":"R-1","eigenschaften":{"heizleistung":1000}}""");
+        var n = HeizungLeistung.Ergebnis(p.Modell, p.Katalog);
+        Assert.Equal(500.0, n.Verbraucher[Hole(p, "HK-1").Id]);
+        Assert.Equal("raum", n.LeistungWoher[Hole(p, "HK-2").Id]);
+        // eine Angabe geht vor: HK-1 800 W, für HK-2 bleibt der Rest 200 W
+        Gut(p, "element_aendern", """{"element":"HK-1","eigenschaften":{"leistung":800}}""");
+        n = HeizungLeistung.Ergebnis(p.Modell, p.Katalog);
+        Assert.Equal(200.0, n.Verbraucher[Hole(p, "HK-2").Id]);
+        Assert.Equal("angabe", n.LeistungWoher[Hole(p, "HK-1").Id]);
     }
 }

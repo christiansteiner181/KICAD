@@ -1,0 +1,51 @@
+{
+  "hinweis": "Stoffwerte für den Massen- und Volumenstrom der Heiz- und Kältenetze (Modul 5, Christian 02.11.2026: «suche im netz. grunddaten für wasser und wasserglykol für 35%»). Nur Werte mit Quelle; zwischen den Temperaturpunkten linear, ausserhalb keine Werte (Befund). Recherche Agent general-purpose 02.11.2026, Zeile in zuteilung.md.",
+  "fluide": {
+    "wasser": {
+      "name": "Wasser",
+      "quelle": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems, Wasser (C7732185), Isobare 0.2 MPa, abgerufen 02.11.2026: https://webbook.nist.gov/cgi/fluid.cgi?Action=Load&ID=C7732185&Type=IsoBar&P=0.2&THigh=80&TLow=10&TInc=10&TUnit=C&PUnit=MPa&DUnit=kg%2Fm3&HUnit=kJ%2Fkg",
+      "punkte": [
+        { "t": 10, "cp": 4.1948, "rho": 999.75 },
+        { "t": 20, "cp": 4.1837, "rho": 998.25 },
+        { "t": 30, "cp": 4.1796, "rho": 995.69 },
+        { "t": 40, "cp": 4.1792, "rho": 992.26 },
+        { "t": 50, "cp": 4.1811, "rho": 988.08 },
+        { "t": 60, "cp": 4.1847, "rho": 983.24 },
+        { "t": 70, "cp": 4.1899, "rho": 977.81 },
+        { "t": 80, "cp": 4.1965, "rho": 971.83 }
+      ]
+    },
+    "ethylenglykol30": {
+      "name": "Wasser-Ethylenglykol 30 Vol.-%",
+      "quelle": "Dow, Engineering and Operating Guide for DOWTHERM SR-1 and DOWTHERM 4000, Form No. 180-01190-0208 (Februar 2008), Tabelle 11 (Dichte, S. 19) und Tabelle 23 (c_p, S. 31), Spalte 30 Vol.-% Ethylenglykol",
+      "punkte": [
+        { "t": -10, "cp": 3.562, "rho": 1055.5 },
+        { "t": 0, "cp": 3.590, "rho": 1053.0 },
+        { "t": 10, "cp": 3.619, "rho": 1049.9 },
+        { "t": 20, "cp": 3.647, "rho": 1046.4 },
+        { "t": 40, "cp": 3.704, "rho": 1037.9 }
+      ]
+    },
+    "ethylenglykol40": {
+      "name": "Wasser-Ethylenglykol 40 Vol.-%",
+      "quelle": "Dow, Engineering and Operating Guide for DOWTHERM SR-1 and DOWTHERM 4000, Form No. 180-01190-0208 (Februar 2008), Tabelle 11 (Dichte, S. 19) und Tabelle 23 (c_p, S. 31), Spalte 40 Vol.-% Ethylenglykol; c_p bei 20 °C im PDF nicht lesbar und deshalb weggelassen",
+      "punkte": [
+        { "t": -10, "cp": 3.369, "rho": 1070.8 },
+        { "t": 0, "cp": 3.403, "rho": 1068.0 },
+        { "t": 10, "cp": 3.436, "rho": 1064.7 },
+        { "t": 40, "cp": 3.537, "rho": 1051.8 }
+      ]
+    }
+  },
+  "gemische": {
+    "ethylenglykol35": {
+      "name": "Wasser-Ethylenglykol 35 Vol.-%",
+      "mittel": [ "ethylenglykol30", "ethylenglykol40" ],
+      "quelle": "Rechenwert: Mittel aus 30 und 40 Vol.-% je Temperatur (Entscheid Christian 02.11.2026: «Ethylenglykol, 30/40 % mitteln»); Gefrierpunkt bei 35.1 Vol.-% DOWTHERM SR-1 (= 33.5 Vol.-% EG): −18.6 °C, Dow-Guide Tabelle 3 (S. 6)"
+    }
+  },
+  "medien": {
+    "HZ-VL": "wasser", "HZ-RL": "wasser", "KAE-VL": "wasser", "KAE-RL": "wasser",
+    "HZ-VL-Glyk": "ethylenglykol35", "HZ-RL-Glyk": "ethylenglykol35", "KAE-VL-Glyk": "ethylenglykol35", "KAE-RL-Glyk": "ethylenglykol35"
+  }
+}
