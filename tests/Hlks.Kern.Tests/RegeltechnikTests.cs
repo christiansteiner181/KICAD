@@ -114,6 +114,17 @@ public class RegeltechnikTests
     }
 
     [Fact]
+    public void Darstellung_FehlendeOderNichtAbgestufteDetailgradeSindHinweise()
+    {
+        var gleich = Def(Antrieb);   // ein Körper ohne detailgrad = in allen drei gleich
+        Assert.True(gleich.Gueltig);
+        Assert.Contains(gleich.Hinweise, h => h.Meldung.StartsWith("Darstellung nicht abgestuft"));
+        var ohneFein = Def(Antrieb, d => d["koerper"]![0]!["detailgrad"] = new JsonArray("grob", "mittel"));
+        Assert.Contains(ohneFein.Hinweise, h => h.Meldung.Contains("«fein» ohne Körper"));
+        Assert.DoesNotContain(ohneFein.Hinweise, h => h.Meldung.StartsWith("Darstellung nicht abgestuft"));
+    }
+
+    [Fact]
     public void Quellen_MuessenBefundIdsSein()
     {
         var f = Def(Antrieb, d => d["regeltechnik"]!["kommunikation"]![0]!["quellen"] = new JsonArray("Seite 3"));

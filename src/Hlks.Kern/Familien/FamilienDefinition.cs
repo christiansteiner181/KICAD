@@ -400,12 +400,34 @@ public sealed class FamilieDef
         KoerperLesen(d["koerper"]);
         AnschluesseLesen(d["anschluesse"], kat);
         LeitungLesen(d, kat, klasse);
+        DarstellungPruefen();
         MasseLesen(d["masse"]);
         Sinnbild = ZeichnungLesen(d["sinnbild"], "sinnbild");
         Schemasymbol = ZeichnungLesen(d["schemasymbol"], "schemasymbol");
         Regeltechnik = FamRegeltechnik.Lesen(d, this, kat, klasse, (o, m, v) => Fehl(o, m, v), (o, m, v) => Hinweise.Add(new(o, m, v)), (n, o, a) => Punkt(n, o, a));
         QuellenPruefen();
         FormelnPruefen();
+    }
+
+    // ------------------------------------------------------------------ Darstellung je Detailgrad
+
+    /// <summary>Christian 02.11.2026: «mir ist wichtig das bei allen Familien eine detailgetreue Abbildung der Komponenten vorliegt. in allen
+    /// detaillierungsgraden.» Hinweis (kein Fehler, ein Entwurf bleibt möglich), wenn ein Detailgrad keinen Körper hat oder alle drei
+    /// Detailgrade dieselben Körper zeigen. Leitungsserien haben keine Körper (Geometrie aus dem Verlauf).</summary>
+    void DarstellungPruefen()
+    {
+        if (IstLeitungsserie) return;
+        if (Koerper.Count == 0)
+        {
+            Hinweise.Add(new("koerper", "Darstellung fehlt: keine Körper", "Körper aus dem Massbild bzw. 3D-Modell des Herstellers in grob, mittel und fein anlegen."));
+            return;
+        }
+        foreach (var g in Detailgrade)
+            if (!Koerper.Any(k => k.Detailgrad.Contains(g)))
+                Hinweise.Add(new("koerper", $"Darstellung unvollständig: Detailgrad «{g}» ohne Körper", $"Körper für «{g}» ergänzen (grob = bemasste Hülle, fein = detailgetreu mit Antrieb, Griff, Gehäuse)."));
+        if (Koerper.All(k => k.Detailgrad.Count == Detailgrade.Length))
+            Hinweise.Add(new("koerper", "Darstellung nicht abgestuft: grob, mittel und fein zeigen dieselben Körper",
+                "grob als bemasste Hülle, mittel mit den Hauptformen, fein detailgetreu (Antrieb, Griff, Gehäuse, Anschlussstutzen) anlegen."));
     }
 
     // ------------------------------------------------------------------ Leitungsserie (Modul 3)

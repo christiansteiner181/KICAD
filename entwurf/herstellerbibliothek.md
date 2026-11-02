@@ -189,4 +189,9 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
 12. **Schemas (Christian 02.11.2026):** «du zeichnest schemas aus den daten. dies müssen wir im detail korrigieren. erst wenn
     anlagen gezeichnet sind die reale daten enthalten.» → Die Aufträge erfinden keine Schemasymbole; die Schemadarstellung der
     Bibliotheksfamilien wird an realen Anlagen korrigiert.
+13. **Abnahmekriterium Darstellung (Christian 02.11.2026):** «mir ist wichtig das bei allen Familien eine detailgetreue Abbildung
+    der Komponenten vorliegt. in allen detaillierungsgraden.» → Je Familie grob (bemasste Hülle), mittel (Hauptformen),
+    fein (detailgetreu mit Antrieb, Griff, Gehäuse, Stutzen; bevorzugt 3D-Modell des Herstellers), Anschlüsse lagerichtig. Der Kern
+    meldet als Hinweis «Darstellung fehlt/unvollständig/nicht abgestuft»; der Schlussbericht weist jede Familie ohne vollständige
+    Darstellung aus. Gilt für alle Hersteller- und Basisfamilien.
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).
