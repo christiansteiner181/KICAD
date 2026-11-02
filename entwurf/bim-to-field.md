@@ -74,6 +74,21 @@ offline auf dem Tablet (installierbare Web-App).
 - **Rückkanal in Stufe 1:** offline erfasst (abhaken, Mangel mit Foto, Mass), als Datei exportiert (BCF 3.0 bzw. JSON) und in KICAD
   eingelesen (BCF-Import vorhanden, Modul 3b B6). Ohne Server geht nichts verloren und nichts wird automatisch übernommen.
 
+### Baustand Stufe 1 (02.11.2026)
+
+Gebaut: Abfrage `baustelle_export` (eine HTML-Datei, offline), Knopf «Baustelle (Webseite)» im Register Datei › Ausgabe, SVG-Ausgabe der Plangrafik
+(`Plan/PlanSvg.cs`), 3D aus den GLB der Quest App mit Architekten-IFC, Elementinfo mit Höhe aus den Punkten, Materialauszug der Auswahl (auch
+Armaturen und Apparate). Noch nicht: Montageabschnitte, Arbeitsplan, Rückkanal, Planblätter als PDF, Dokumente; Stufe 0 (Datenmodell).
+
+**Bestandsaufnahme Stufe 0 (Agent hlks-modul, 02.11.2026) – Lücken im Informationsmodell:**
+1. Artikelnummer und Wartung fehlen ganz (Hersteller/Produkt nur als freier Text im Familienkopf; Typ = Name des Familientyps).
+2. Hersteller und Typ am Element nur bei Apparaten; kein typisierter Zugriff Element → Hersteller.
+3. Dokumente nur an der Familie (`definition.unterlagen`, Rolle z. B. datenblatt), nicht am Element; Rollen Montageanleitung und Wartung fehlen.
+4. Montagestatus, Montageabschnitt, Termin, Kolonne und die Herkunft «baustelle» fehlen.
+5. Keine Höhenkote je Element (Achse/UK/OK) im Kern – der Export rechnet sie vorerst aus den Punkten.
+6. Material und Dämmung nur an Leitungen, nicht an Formteilen und Armaturen.
+7. Materialliste (Modul 3) ohne Armaturen/Apparate und ohne freie Auswahl – der Export rechnet den Auszug selbst.
+
 ## Stufe 2 – Plattform (eigene Domain, Cloud CH)
 
 - Dasselbe Paket, ausgeliefert von einem Server unter eigener Domain; Anmeldung je Person, Rollen und Projektzugang verwaltet H+K.

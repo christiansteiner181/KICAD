@@ -68,6 +68,7 @@ public sealed class Abfragen(Projekt p)
         .. SanitaerAbfragen.Definitionen,   // Modul 4 Teil A: sanitaer_belastung, sanitaer_zusammenstellung, sanitaer_katalog
         .. LueftungKette.Definitionen,   // Modul 6 Teil A: lueftung_varianten
         .. LueftungSchema.Definitionen,   // Modul 6 Teil A-3: lueftung_schema
+        .. BaustelleExport.Definitionen,   // BIM to field Stufe 1: baustelle_export
         .. LueftungBefehle.Definitionen,   // Modul 6 Teil A-7: raumforderung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
         .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)

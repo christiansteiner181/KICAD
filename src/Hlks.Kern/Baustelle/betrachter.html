@@ -1,0 +1,51 @@
+<!doctype html>
+<html lang="de-CH">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>KICAD Baustelle</title>
+<!--KICAD_LIZENZ-->
+<style>/*KICAD_STIL*/</style>
+</head>
+<body>
+<header id="kopf">
+  <div class="titel"><b id="k-projekt">Projekt</b> <span id="k-rolle" class="rolle"></span></div>
+  <div id="k-stand" class="stand"></div>
+  <div class="klein" id="k-info"></div>
+</header>
+<nav id="reiter">
+  <button data-reiter="d3" class="aktiv">3D</button>
+  <button data-reiter="plaene">Pläne</button>
+  <button data-reiter="elemente">Elemente</button>
+  <button data-reiter="material">Material</button>
+</nav>
+<section id="filter">
+  <label>Geschoss <select id="f-geschoss"><option value="">alle</option></select></label>
+  <label>Gewerk <select id="f-gewerk"><option value="">alle</option></select></label>
+  <label>System <select id="f-system"><option value="">alle</option></select></label>
+  <label>Klasse <select id="f-klasse"><option value="">alle</option></select></label>
+  <label class="suche">Suche <input id="f-suche" type="search" placeholder="Kennzeichen, Name, Raum"></label>
+</section>
+<main>
+  <div id="ansicht">
+    <div id="r-d3" class="reiterinhalt aktiv">
+      <div id="d3-leiste"><span id="d3-geschosse"></span><label><input type="checkbox" id="d3-ifc" checked> Architekten-IFC</label>
+        <button id="d3-alles">Alles zeigen</button></div>
+      <div id="d3-flaeche"></div>
+    </div>
+    <div id="r-plaene" class="reiterinhalt">
+      <div id="plan-leiste"><select id="plan-wahl"></select> <button id="plan-passend">Einpassen</button></div>
+      <div id="plan-flaeche"></div>
+    </div>
+    <div id="r-elemente" class="reiterinhalt"><div class="tabelle" id="el-tabelle"></div></div>
+    <div id="r-material" class="reiterinhalt">
+      <div class="leiste"><span id="mat-umfang"></span> <button id="mat-csv">CSV speichern</button></div>
+      <div class="tabelle" id="mat-tabelle"></div>
+    </div>
+  </div>
+  <aside id="info"><div class="leer">Element antippen – im 3D, im Plan oder in der Liste.</div></aside>
+</main>
+<script type="application/json" id="kicad-daten">/*KICAD_DATEN*/</script>
+<script type="module">/*KICAD_SKRIPT*/</script>
+</body>
+</html>

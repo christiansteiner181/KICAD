@@ -287,6 +287,7 @@ app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; 
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI
 app.MapGestenProtokoll();   // Modul G: Abbruchprotokoll der Gesten (GestenProtokoll.cs) – POST /api/gesten/abbruch, nur Grund und Zahlen, Ablage lokal
+app.MapBaustelle(dienst);   // BIM to field Stufe 1: BaustelleEndpunkte.cs – GET /api/baustelle/datei (Webseite aus ausgabe\baustelle öffnen)
 app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2): IfcExportEndpunkte.cs – POST /api/ifc/export, Download aus ausgabe\ifc
 app.MapHkXrVerbindung();   // HK_XR: /api/xr (Zugang, Kopplung, Teilnehmer, Kanal, Desktop) und /api/quest/app (App installieren, Netz einrichten, alte Apps); nicht für die KI
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI

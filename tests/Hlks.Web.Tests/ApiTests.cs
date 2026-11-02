@@ -459,6 +459,7 @@ public class ApiTests
         ["lueftung_schema"] = "{}",                                    // Modul 6 Teil A-3: Beispiel ohne Luftmengen → leer mit Befund
         ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund
         ["raumforderung"] = "{}",                                      // Modul 6 Teil A-7: Beispiel ohne Raumreservationen
+        ["baustelle_export"] = "{\"datei\":\"" + Path.Combine(Path.GetTempPath(), "HLKS_CAD", $"tuer-test-{Environment.ProcessId}-baustelle.html").Replace('\\', '/') + "\",\"rolle\":\"bauleitung\",\"stand\":\"arbeitsstand\"}",   // BIM to field Stufe 1: Webseite des Beispielprojekts
         ["ifc_export"] = "{\"datei\":\"" + IfcExportDatei() + "\"}",   // Modul 7 Teil B2: IFC-Export des Beispielprojekts (Bericht daneben)
         ["planwinkel"] = """{"ansicht":"AN-GR-EG"}""",                   // N9: Planwinkel GEB-1 und Ausrichtung des Grundrisses EG
         ["raum_begehen"] = """{"raum":"E.02"}""",                         // N15: Standort für «Raum begehen» im Raum E.02

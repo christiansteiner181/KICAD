@@ -1477,6 +1477,22 @@ Folgeblatt (zweite Listenansicht, z. B. für ein anderes Geschoss) oder ein grö
 
 **Prüfen:** `node --test js/oberflaeche/koordinationsplan.test.mjs`; Kern: `PlanListeUmbruchTests.cs` (Filter `PlanListeUmbruch`); Browser: `HLKS_B3_PORT=5240 HLKS_CDP_PORT=9580 node js/oberflaeche/koordinationsplan.browser.mjs` (Ports 5240–5249; Bilder `%TEMP%\HLKS_CAD\kp_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
 
+## Baustelle (Webseite) – BIM to field Stufe 1 (entwurf/bim-to-field.md)
+
+**Ort:** Register **Datei › Gruppe Ausgabe › Baustelle (Webseite)** (Aktion `datei.baustelle-export`, Symbol `bildschirm`, aktiv nur mit offenem
+Projekt; `js/oberflaeche/aktionen-baustelle.js`). Dialog: Rolle Monteur (nur freigegebener Stand) | Bauleitung; Stand freigegeben (mit dem Namen des
+Menschen als Freigabe) | Arbeitsstand (Vermerk «nicht freigegeben»). «Erzeugen» ruft die Abfrage `baustelle_export { datei?, rolle?, stand? }`
+(Kern `Baustelle/BaustelleExport.cs`) und öffnet die Seite über `GET /api/baustelle/datei?pfad=…` (nur .html aus ausgabe/baustelle).
+Die KI hat kein Werkzeug dafür (Ausgabe an Dritte); der Kern lehnt «freigegeben» von der KI ab.
+
+**Die Webseite** ist eine einzige HTML-Datei (three.js r160 MIT, Betrachter `Baustelle/betrachter.*`, Daten als JSON), läuft offline von file://:
+Kopf mit Projekt, Rolle, Stand/Freigabe, Modellprüfsumme; Reiter **3D** (GLB je Geschoss wie die Quest App, Architekten-IFC zuschaltbar, Geschosse
+ein/aus, Antippen = Elementinfo, gewähltes Element rot), **Pläne** (Grundrisse, Schnitte, Schemas als SVG aus der Plangrafik, `Plan/PlanSvg.cs`;
+Ziehen, Mausrad bzw. zwei Finger; Antippen = Elementinfo; beim Wählen springt der Plan auf einen Grundriss mit dem Element), **Elemente** (Liste),
+**Material** (Auszug der aktuellen Auswahl: Leitungen je Serie und Grösse mit Länge, Formteile und Bauteile je Familie/Typ mit Stück; CSV).
+Filter Geschoss, Gewerk, System, Klasse, Suche gelten für Liste, Material und 3D. Elementinfo: Geschoss, Raum, System, Strang, Familie, Typ, Höhe
+über ±0.00 und über Geschoss (aus den Punkten), Eigenschaften mit Einheit. Adresse `#plaene/E.01` öffnet Reiter und Element.
+
 ## IFC exportieren (Modul 7 Teil B2, Dialog)
 
 Entwurf: `entwurf/modul-7.md` Teil B2 (Punkt 4 Exportbericht) und die Entscheide A1–A4 (Räume nur auf Wunsch, Dämmung als IfcCovering, Ablage `<Projektordner>\ausgabe\ifc`, Pset `HK_KICAD`). Gerechnet, geschrieben und geprüft wird im Kern (`src/Hlks.Kern/IfcExport/`, Abfrage `ifc_export`); die Oberfläche schickt die Auswahl und zeigt den Bericht. Keine Fachlogik im Browser.
