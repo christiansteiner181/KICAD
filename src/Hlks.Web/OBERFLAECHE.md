@@ -1489,9 +1489,14 @@ Christian: «ein fenster muss 1:1 so aussehen wie im IFC. mit allen details» �
   IFC-Farben (Rahmen, Glas halb durchsichtig usw.). Wer es in KICAD ändert, sieht ab dann den Nachbau (wie bei der Kollision).
 - **Original einer Unterlage** (`ifcDarstellung original/beide`): in den IFC-Farben, solange an der Unterlage keine `farbeOriginal` gesetzt ist.
 - Farben gibt es für Unterlagen, die mit diesem Stand (Netzdatei Fassung 4) übernommen wurden – ältere: IFC erneut übernehmen.
+- **Exakte Geometrie (xBIM, OpenCascade):** Zuschnitte und Öffnungen der IFC-Körper werden gerechnet (Netzdatei Fassung 5: Hauptnetz ohne
+  ausgeschnittene Öffnungen für Kollision und Aussparungen, Anzeigenetz mit Öffnungen für 3D und das Original im Grundriss). Nur unter Windows;
+  `HLKS_XBIM_GEOMETRIE=0` schaltet zurück auf die eigene, vereinfachte Rechnung. Die Übernahme dauert damit länger (Bernstrasse 42: rund 45 s).
+- **Prüfung nach jeder Übernahme:** in den Hinweisen «Prüfung Nachbau ↔ IFC (±5 mm): … von … deckungsgleich; abweichend …; nicht nachgebaut …».
+  Einzelheiten je Element: Abfrage `ifc_deckung { unterlage?, toleranz?, anzahl? }` (auch für die KI, nur lesen).
 - Grundriss, Schnitt und Ansicht zeichnen noch den Nachbau (nächster Schritt).
 
-**Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~IfcFarbenTests`; Node `ansichten/netzdatei.test.mjs`.
+**Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~IfcFarbenTests|FullyQualifiedName~IfcDeckungTests|FullyQualifiedName~IfcGeometrieXbimTests"`; Node `ansichten/netzdatei.test.mjs`.
 
 ## Prüfansicht – PDF prüfen und markieren (Christian 02.11.2026)
 

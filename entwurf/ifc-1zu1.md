@@ -54,3 +54,24 @@ aussehen wie in den Datenblätter». Grundsatz vom selben Tag: KICAD so schnell 
 - **Offen:** Grundriss/Schnitt/Ansicht aus dem Elementnetz (Schnitt auf Schnitthöhe, Ansicht von oben, Türaufschlag als Sinnbild dazu);
   XR/GLB und Baustellen-Webseite mit dem IFC-Netz; Familie aus IFC-Typ mit Teilkörpern und Farben (`familie_netz_uebernehmen`), Lage aus der
   IFC-Platzierung; Wandöffnung aus dem Öffnungsnetz; Detailgrad-Entscheid.
+
+## Stand 03.11.2026 – Deckung und xBIM-Geometrie
+
+Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein», «jeder nachbau muss jeweils mit der ifc darstellung
+verifiziert und korrigiert werden», «der ifc import ist die basis für alles folgende, dieser muss immer 100% passen»; Entscheid «xBIM-Geometrie
+(OpenCascade)».
+
+- **Prüfung:** Abfrage `ifc_deckung` (Nachbau ↔ IFC-Netz je Element, im System des Bauteils, Toleranz 5 mm) und Nachlauf jeder `ifc_uebernehmen`
+  («Prüfung Nachbau ↔ IFC …» in den Hinweisen).
+- **xBIM-Geometrie** (`IfcGeometrieXbim.cs`, Xbim.Geometry 6.3.891-netcore, OCCT 7.8.1; nur Windows, Abschalter `HLKS_XBIM_GEOMETRIE=0`): rechnet
+  die Booleans der Darstellungen exakt. Netzdatei **Fassung 5**: Hauptnetz = Körper samt Zuschnitten, Öffnungen nicht ausgeschnitten (Kollision,
+  Aussparungen); Anzeigenetz mit ausgeschnittenen Öffnungen (3D, Original im Grundriss).
+- **Korrekturen des Nachbaus:** Tür/Fenster-Körper aus dem IFC (`koerperLinks/Rechts/Unten/Oben`, `tiefe`, `versatz`, negative `bruestung`,
+  Türschwelle); Wandenden `verlAnfang/verlEnde` aus dem Körper (auch Wände aus Teilen); Decke/Dach aus mehreren Flächen: je Fläche ein Element.
+- **Bernstrasse 42 (Archicad, IFC2X3):** 566 von 588 deckungsgleich – Dach 11/11, Decke 72/72, Fenster 15/15, Tür 56/56, Wand 339/342,
+  Stütze 41/43, Träger 32/40, Treppe 0/9.
+- **Grenzen von xBIM in dieser Datei:** 4213 Brep-Flächen mit ungültiger Aussenkante ignoriert, 34 Bauteil-Teile ergeben beim Ausschneiden einen
+  leeren Körper und fehlen – dort rechnet KICAD selbst (vereinfacht; z. B. die Teile der Träger UZ-9/10/18/19/21/36/39/40).
+- **Offen:** Treppen (~200 mm: Wangen?), 8 Träger (IFC selbst vereinfacht), 2 Stützen, 3 Wände; nicht nachgebaut (nur Hintergrund):
+  IfcFlowTerminal 57, IfcCovering 44, IfcRailing 40, IfcWall 22 (Archicad-Fensterwände ohne Achse), IfcWindow 21 (Wirt IfcBuildingElementProxy),
+  IfcBeam 9 (geneigt), IfcStair 1. Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid.
