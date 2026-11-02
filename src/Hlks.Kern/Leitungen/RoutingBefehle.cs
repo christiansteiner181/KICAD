@@ -133,7 +133,7 @@ public static class RoutingBefehle
     }
 
     /// <summary>Zuordnung neuer Elemente: system bzw. strang aus den Parametern, sonst das System von «partner».</summary>
-    public static RoutingZiel Ziel(Kontext k, JsonObject p, Element? geschoss, Element? partner, Element? vorlage = null)
+    public static RoutingZiel Ziel(Kontext k, JsonObject p, Element? geschoss, Element? partner, Element? vorlage = null, string? kategorie = null, string? anschlussMedium = null)
     {
         string? strang = Param.Text(p, "strang") is { } st ? Elementpflege.BezugPruefen(k, st, "Strang", "Strang").Id : null;
         string? system = Param.Text(p, "system") is { } sy ? Elementpflege.BezugPruefen(k, sy, "System", "System").Id : null;
@@ -146,10 +146,9 @@ public static class RoutingBefehle
         {
             medium = MediumAus(k, Param.Text(p, "medium"))
                 ?? (vorlage is null ? null : Netz.ElementMedium(k.Arbeit, vorlage))
-                ?? (partner is null ? null : Netz.ElementMedium(k.Arbeit, partner));
-            if (medium is null)
-                throw new HlksFehler("Medium bzw. System fehlt.", "medium (z. B. KW, HZ-VL, ZUL) oder system bzw. strang angeben. Medien: " + string.Join(", ", k.Katalog.Medien.Keys.Order(StringComparer.Ordinal))
-                    + "; Systeme: " + string.Join(", ", k.Arbeit.DerKlasse("System").Select(x => x.Kennzeichen).Order()));
+                ?? (partner is null ? null : Netz.ElementMedium(k.Arbeit, partner))
+                ?? anschlussMedium   // Anschluss mit eigenem Medium (Heizkörper vl: HZ-VL)
+                ?? LetztesMedium(k, kategorie);   // Christian 02.11.2026: «keine warnung beim zeichnen ohne system. immer das letzte medium übernehmen.»
         }
         var praefix = Param.Text(p, "praefix")?.Trim();
         var gf = Param.Zahl(p, "gefaelle");
@@ -161,6 +160,12 @@ public static class RoutingBefehle
     }
 
     /// <summary>Medium aus Kennung oder Name (Katalog medien.json); null ohne Angabe, Fehler bei unbekanntem.</summary>
+    /// <summary>Medium der zuletzt gezeichneten bzw. geänderten Leitung ohne System (gleiche Kategorie Rohr bzw. Kanal, wenn bekannt); sonst null –
+    /// dann bleibt die Leitung ohne Medium, ohne Rückfrage und ohne Warnung.</summary>
+    public static string? LetztesMedium(Kontext k, string? kategorie) => k.Arbeit.Elemente
+        .Where(e => e.System is null && k.Katalog.IstArt(e, kategorie ?? "Leitung") && e.Text("medium") is { Length: > 0 })
+        .MaxBy(e => (e.Geaendert ?? e.Angelegt)?.Zeit ?? DateTimeOffset.MinValue)?.Text("medium");
+
     static string? MediumAus(Kontext k, string? text)
     {
         if (string.IsNullOrWhiteSpace(text)) return null;
@@ -375,7 +380,8 @@ public sealed class LeitungZeichnen : IBefehl
         var nach = RoutingBefehle.Ende(k, p, "nach", false, roh.LastOrDefault());
         if (von is not null && nach is not null && von.Element.Id == nach.Element.Id && von.Anschluss.Equals(nach.Anschluss, StringComparison.OrdinalIgnoreCase))
             throw new HlksFehler("von und nach sind derselbe Anschluss.", "Zwei verschiedene Anschlüsse angeben.");
-        var ziel = RoutingBefehle.Ziel(k, p, geschoss, von?.Element ?? nach?.Element);
+        var anschlussMedium = new[] { von, nach }.Select(x => x?.Stelle.Medium).FirstOrDefault(x => x is { Length: > 0 } and not "*");
+        var ziel = RoutingBefehle.Ziel(k, p, geschoss, von?.Element ?? nach?.Element, kategorie: s.Kategorie, anschlussMedium: anschlussMedium);
         var hinweise = new List<string>();
         var pkt = Routing.Vorbereiten(roh, geschoss?.Zahl("kote") ?? 0, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
         var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach);

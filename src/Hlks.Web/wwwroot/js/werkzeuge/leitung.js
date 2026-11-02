@@ -4,8 +4,9 @@
 // Enter oder Doppelklick schliesst ab: zuerst der Trockenlauf des Kerns (Vorschau-Zeile mit Längen und Formteilen oder die Ablehnung
 // mit Vorschlag), dann «Ausführen». Das Werkzeug rechnet nichts Fachliches: Geraden, Bögen, Reduktionen, Einbaulängen und
 // Verbindungen setzt der Kern (leitung_zeichnen, leitung_abzweigen); Parameter und Texte stehen in leitung-logik.js (in Node getestet).
-// Tasten ausser den Ziffern (Basis: basis.js) verarbeitet ein eigener Hörer am Fenster: Esc verwirft zuerst die laufende Leitung,
-// Rückschritt nimmt den letzten Punkt zurück, H springt in das Feld «Höhe».
+// Tasten ausser den Ziffern (Basis: basis.js) verarbeitet ein eigener Hörer am Fenster: Esc schliesst die Leitung bis zum letzten Linksklick
+// ab und lässt nur das Gummiband fallen (Christian 02.11.2026: «esc soll linie nur bis zum letzten linksklick abbrechen»; ein einzelner
+// Startpunkt wird verworfen, bei offener Vorschau zeichnet Esc weiter), Rückschritt nimmt den letzten Punkt zurück, H springt in das Feld «Höhe».
 
 import { element, alleElemente } from '../zustand.js';
 import { sende } from '../oberflaeche/befehle.js';
@@ -148,6 +149,7 @@ async function ausfuehren(z, ctx) {
   const info = L.vorschauAus(v.r);
   const r = await ctx.befehl(v.name, v.parameter, L.vorschauZeile(info));
   if (r.angenommen) {
+    mediumUebernehmen(r, ctx);
     zuruecksetzen(z);
     const b = L.neueBefundeTexte(r);
     if (b.length) meldung(b.join(' · '), 'warnung');
@@ -155,6 +157,21 @@ async function ausfuehren(z, ctx) {
     z.vorschau = { ok: false, r };
     leisteZeigen(z.vorschau);
   }
+}
+
+/** Ohne System und Medium hat der Kern das zuletzt gezeichnete Medium genommen: es in die Optionsleiste übernehmen (Christian 02.11.2026:
+ *  «immer das letzte medium übernehmen»). */
+function mediumUebernehmen(r, ctx) {
+  if (!laufend || ctx.opt.system || ctx.opt.strang || ctx.opt.medium) return;
+  const kz = (r.aenderungen ?? []).find((a) => a.art === 'angelegt' && ['Rohr', 'Kanal'].includes(a.klasse))?.kennzeichen;
+  const m = kz ? element(kz)?.werte?.medium : null;
+  if (m) { setze(laufend.id, 'medium', m); ctx.optionenNeu(); }
+}
+
+/** Esc: die Leitung bis zum letzten Klick abschliessen (Trockenlauf, angenommen → ausführen; abgelehnt → Vorschau mit Vorschlag bleibt). */
+async function bisLetztemKlick(z, ctx) {
+  await vorschauHolen(z, ctx);
+  if (z.vorschau?.ok) await ausfuehren(z, ctx);
 }
 
 // ------------------------------------------------------------------------------------------------ Start und Klicks
@@ -190,8 +207,22 @@ function abzweigStarten(z, hit, maus, ctx, id) {
   // Freie Grösse (Nachtrag): Breite × Höhe bzw. Durchmesser der Leitung (aus ihren Eigenschaften) in die Zahlenfelder; sie gelten nur bei einer freien Serie
   F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
   setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), q[2]));
+  const u = L.vomPunkt({ medium: null }, el, []);   // System bzw. Medium der Leitung, an der abgezweigt wird
+  if (u.system) { setze(id, 'system', u.system); setze(id, 'medium', ''); }
+  else if (u.medium) { setze(id, 'medium', u.medium); setze(id, 'system', ''); setze(id, 'strang', ''); }
   ctx.optionenNeu();
   return true;
+}
+
+/** Dimension und System bzw. Medium des Punktes, ab dem weitergezeichnet wird, in die Optionsleiste (L.vomPunkt). */
+function punktUebernehmen(a, ctx, id) {
+  const el = element(a.element);
+  const u = L.vomPunkt(a, el, L.groessenListe(D.serieDef(ctx.opt.serie)));
+  if (u.serie) setze(id, 'serie', u.serie);
+  if (u.groesse) setze(id, 'groesse', u.groesse);
+  if (u.ausLeitung) F.abzweigGroesse(el.werte).forEach(([feld, w]) => setze(id, feld, w));
+  if (u.system) { setze(id, 'system', u.system); setze(id, 'medium', ''); }
+  else if (u.medium) { setze(id, 'medium', u.medium); setze(id, 'system', ''); setze(id, 'strang', ''); }
 }
 
 function leitungenImGeschoss(kategorie, ctx) {
@@ -213,6 +244,7 @@ async function klick(z, fang, ctx, id, kategorie) {
       z.von = a;
       z.punkte.push([a.lage[0], a.lage[1], a.lage[2]]);
       setze(id, 'hoehe', L.hoeheRelativ(kote(ctx), a.lage[2]));        // die Höhe des Anschlusses gilt
+      punktUebernehmen(a, ctx, id);                                     // Dimension und Medium des Punktes
       ctx.optionenNeu();
       return;
     }
@@ -284,6 +316,7 @@ if (typeof window !== 'undefined') {
     if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
       stop();
       if (z.vorschau && z.punkte.length) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
+      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length >= 1)) bisLetztemKlick(z, ctx).then(() => { ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); });
       else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
     } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);
@@ -331,7 +364,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
       if (z.von && z.punkte.length === 1 && L.anschlussRichtungPlan(z.von) === null)
         return `${z.von.element}.${z.von.name} zeigt senkrecht ${(z.von.richtung?.[2] ?? 0) < 0 ? 'nach unten' : 'nach oben'}: zuerst die Höhe ändern (H), dann weiterzeichnen.`;
       if (z.abzweig) return 'Abzweig: Punkt rechtwinklig neben der Leitung anklicken, Zahl = Länge, Enter ohne weiteren Punkt setzt nur das T-Stück.';
-      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Enter oder Doppelklick beendet, Umschalt = orthogonal.';
+      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Enter, Doppelklick oder Esc beendet (bis zum letzten Klick), Umschalt = orthogonal.';
     },
 
     letzterPunkt: (z) => (z.punkte.length ? plan(z.punkte.at(-1)) : null),

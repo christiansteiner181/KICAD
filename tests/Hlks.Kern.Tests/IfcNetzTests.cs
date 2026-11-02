@@ -34,7 +34,7 @@ public class IfcNetzTests
     {
         var (p, _) = IfcArchitekturTests.Uebernommen(schema);
         var n = Netz(p);
-        Assert.Equal(3, n.Fassung);   // Fassung 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); Fassung 1 und 2 lesen: IfcNetzFassung2Tests, AussparungMaterialTests
+        Assert.Equal(4, n.Fassung);   // Fassung 4 seit IFC 1:1 (Farben), 3 seit Nachtrag B3c (Material), 2 seit Modul 3b (B1b); Fassung 1 und 2 lesen: IfcNetzFassung2Tests, AussparungMaterialTests
         Assert.Contains("HLKS-CAD Netzdatei", n.Beschreibung);
         var sued = IfcArchitekturTests.Namens(p, "Wand", "W-Sued");
         var w = n.Produkt(sued.Kennungen!["ifc"])!;

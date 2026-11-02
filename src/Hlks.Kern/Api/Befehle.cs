@@ -359,10 +359,8 @@ static class Elementpflege
                 }
             }
         }
-        // Christian 02.11.2026: «bis alle module komplett sind müssen die gewerkespezifischen zuweisungen optional sein» – ohne System angenommen,
-        // nur ein Hinweis (Befund P02 als Warnung); Raum und Geschoss sind ohnehin nur Warnungen (P04, P11)
-        if (d.BrauchtSystem && e.System is null)
-            k.Hinweise.Add($"{e.Kennzeichen}: ohne System angelegt – später zuordnen (system oder teilVon Strang).");
+        // Christian 02.11.2026: «bis alle module komplett sind müssen die gewerkespezifischen zuweisungen optional sein» – ohne System angenommen;
+        // «keine warnung beim zeichnen ohne system» – darum auch kein Hinweis (Befund P02 nur noch als Hinweis, ohne Medium)
     }
 
     public static void SystemtypUebernehmen(Kontext k, Element e)
@@ -542,7 +540,6 @@ public sealed class Verbinden : IBefehl
             throw new HlksFehler($"Fliessrichtung widerspricht sich: {a.Kennzeichen}.{pa.Name} und {b.Kennzeichen}.{pb.Name} sind beide «{pa.Fluss}».",
                 "Bei Leitungen fliesst es von «anfang» nach «ende»: Punkte umkehren oder den anderen Anschluss nehmen.");
         LageUndGroessePruefen(k, a, pa, b, pb);
-        if (ma == "*" || mb == "*") k.Hinweise.Add($"Medium an {a.Kennzeichen}.{pa.Name} oder {b.Kennzeichen}.{pb.Name} noch offen (kein System).");
         var verbindung = k.Verbinden(new(a.Id, pa.Name), new(b.Id, pb.Name));
         Strangzuordnung.Uebernehmen(k, a); Strangzuordnung.Uebernehmen(k, b);   // Modul 3, Korrektur 30b: einzelnes Formteil übernimmt den Strang der Leitung
         return verbindung;

@@ -7,13 +7,8 @@ public sealed record NetzSchritt(Element Element, int Tiefe, string? Vorgaenger,
 
 public static class Netz
 {
-    /// <summary>Wirksames Medium eines Anschlusses: «*» übernimmt das Medium des Systems.</summary>
-    public static string Medium(Modell m, Element e, Anschluss a)
-    {
-        if (a.Medium != "*") return a.Medium;
-        var sys = m.Finde(e.System);
-        return sys?.Text("medium") ?? "*";
-    }
+    /// <summary>Wirksames Medium eines Anschlusses: «*» übernimmt das Medium des Systems, ohne System das des Elements (Leitung mit medium).</summary>
+    public static string Medium(Modell m, Element e, Anschluss a) => a.Medium != "*" ? a.Medium : ElementMedium(m, e) ?? "*";
 
     /// <summary>Medium eines Systems (aus der Eigenschaft «medium»).</summary>
     public static string? SystemMedium(Modell m, string? systemId) => m.Finde(systemId)?.Text("medium");

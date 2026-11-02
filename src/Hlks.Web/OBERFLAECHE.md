@@ -355,8 +355,8 @@ Fremde Änderungen kurz melden («Änderung von KI: 3 Elemente»).
     `stil.musterUrsprung` (Fusspunkt des Lots vom Ursprung auf die Achse); `patternTransform="rotate(w) translate(tx ty)"`, die Verschiebung hält eine Musterlinie
     bzw. das Punktraster im Anker (auf 0.5 mm gerundet, damit nur wenige `<pattern>` entstehen). Ohne die Felder gilt das achsparallele Muster wie bisher.
   - Nach jedem Ereignis «modell» wird die Grafik neu geholt (entprellt 150 ms); Zoom und Auswahl bleiben; eingepasst wird beim ersten Zeigen,
-    beim Wechsel von Geschoss/Art und bei «Zoom alles». Zoom mit Mausrad an der Mausposition, Verschieben mit mittlerer Taste, Leertaste+Ziehen oder
-    Ziehen auf leerer Fläche, Doppelklick mittlere Taste = alles. Massstabsbalken, Nordpfeil (nur im Grundriss), Ansichtssteuerleiste unten.
+    beim Wechsel von Geschoss/Art und bei «Zoom alles». Zoom mit Mausrad an der Mausposition, Verschieben mit mittlerer Taste oder Leertaste+Ziehen
+    (Ziehen mit der linken Taste spannt seit 02.11.2026 ein Auswahlfenster auf, siehe «Zeichnen und Auswählen wie in CAD»), Doppelklick mittlere Taste = alles. Massstabsbalken, Nordpfeil (nur im Grundriss), Ansichtssteuerleiste unten.
   - **Unterlagen (Modul 1b, C2):** Ebene `grundlage` liegt ganz unten (`EBENEN[0]`). DWG/DXF/IFC-Unterlagen sind normale Primitive (graue Linien); PDF und Bild kommen als
     Primitiv `bild` (Punkte = vier Ecken im Modell: unten links, unten rechts, oben rechts, oben links; `quelle` = Id der Unterlage). `plangrafik.js` macht daraus
     `<image href="/api/unterlagen/{quelle}/bild">` der Grösse 1 × 1 mit `transform="matrix(…)"` (`bildMatrix`: affin aus drei Ecken – oben links = Ursprung, oben rechts, unten links; im y-gespiegelten
@@ -1608,6 +1608,19 @@ Kältesysteme unterscheiden sich von der Heizung nur über Medium und Systemtyp.
 - Das Beispielprojekt «MFH Musterweg» hat einen kleinen Kältekreis (Anlage A-KAE, Systeme KAE-VL/KAE-RL, Pumpe, drei Ventile, zwei Rohre) mit dem Grundriss «UG Heizung/Kälte».
 
 **Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~KaelteHeizung`, Node-Tests `projektbrowser.test.mjs` («Kälte:»), `bibliothek.test.mjs`.
+
+## Zeichnen und Auswählen wie in CAD (Christian 02.11.2026)
+
+| Funktion | Bedienung | Dateien |
+| --- | --- | --- |
+| **Auswahlfenster** («analog Autodesk CAD») | Plan-Ansicht ohne Werkzeug: Klick ins Leere = erste Ecke, zweiter Klick = zweite Ecke; oder links gedrückt ziehen und loslassen. **Links → rechts = Fenster** (blau, durchgezogen): nur was ganz drin liegt. **Rechts → links = Kreuzen** (grün, gestrichelt): alles, was berührt wird; Leitungen und Wände nach ihrer Achse, Räume nur im Fenster. Strg/Umschalt = zur Auswahl dazu; zweiter Klick am selben Ort leert die Auswahl, Esc bricht das Fenster ab. Verschieben: mittlere Taste oder Leertaste. | `ansichten/fensterauswahl.js` (Rechnung, Node-Test), `grundriss.js`, `werkzeuge/auswahl.js` (`mengeSetzen`) |
+| **Esc beim Zeichnen** | Rohr, Kanal, Wand: Esc schliesst die Linie bis zum letzten Linksklick ab (Gummiband fällt weg), das Werkzeug bleibt; ein einzelner Startpunkt wird verworfen; nächstes Esc beendet. Bei offener Vorschau zeichnet Esc weiter. | `leitung.js`, `basis.js` (`escAbschliessen`), `wand.js` |
+| **Weiterzeichnen ab einem Punkt** | Start an einem Anschluss: Höhe, Grösse (Ende einer Leitung: ihre Serie und Grösse; sonst die passende Grösse der Serie nach DN/Ø/b×h) und System bzw. Medium des Punktes gehen in die Optionsleiste; beim Abzweig System bzw. Medium der Leitung. | `leitung-logik.js` (`vomPunkt`), `leitung.js` |
+| **Ohne System** | Keine Warnung, kein Abbruch: ohne System und Medium nimmt der Kern das Medium des Anschlusses, sonst das der zuletzt gezeichneten Leitung derselben Art (Rohr/Kanal); die Optionsleiste zeigt es danach. Befund P02 nur noch als Hinweis und nur ohne Medium. | `RoutingBefehle.LetztesMedium`, `leitung.js` (`mediumUebernehmen`) |
+| **Ähnliches platzieren** | Rechtsklick auf ein Bauteil (bzw. Kontextregister «Ändern | Klasse» › Erstellen): Rohr/Kanal mit Serie, Grösse, Höhe, System bzw. Medium; Familienbauteil mit Familie und Typ. | `oberflaeche/aktionen-aehnlich.js` |
+| **Letzten Befehl wiederholen** | Rechtsklick ins Leere, wenn nichts gewählt ist: das zuletzt benutzte Werkzeug startet wieder. | `werkzeuge/basis.js` (`letztesWiederholen`), `grundriss.js` |
+
+**Prüfen:** Node `ansichten/fensterauswahl.test.mjs`, `werkzeuge/leitung.test.mjs`; Kern `--filter "FullyQualifiedName~LeitungMediumTests"`.
 
 ## Ströme vom Verbraucher her, Fliessrichtung aus der Quelle (Christian 02.11.2026)
 

@@ -228,7 +228,7 @@ public class PruefungenTests
         Neues(m, "WC-1", "x-dup", "WC-1");                                          // P05 (und P01 am Duplikat)
         var schwere = Alle(m).GroupBy(b => b.Code).ToDictionary(g => g.Key, g => g.Select(b => b.Schwere).Distinct().Single());
         Assert.Equal("hinweis", schwere["P01"]);
-        Assert.Equal("warnung", schwere["P02"]);   // bis alle Module komplett sind (Christian 02.11.2026)
+        Assert.Equal("hinweis", schwere["P02"]);   // ohne System und Medium; «keine warnung beim zeichnen ohne system» (Christian 02.11.2026)
         Assert.Equal("warnung", schwere["P04"]);
         Assert.Equal("fehler", schwere["P05"]);
         Assert.Equal("warnung", schwere["P06"]);
@@ -302,11 +302,11 @@ public class PruefungenTests
     // ---------------------------------------------------------------- P02 Leitungsbauteil ohne System
 
     [Fact]
-    public void P02_RohrOhneSystem_Fehler()
+    public void P02_RohrOhneSystemUndMedium_Hinweis()
     {
         var m = Grund().Modell.Kopie();
         Aendere(m, "RO-KW", e => e.System = null);
-        var b = Assert.Single(Erwarte(m, "P02", "warnung", "RO-KW"));
+        var b = Assert.Single(Erwarte(m, "P02", "hinweis", "RO-KW"));
         Assert.Contains("Rohr", b.Text);
     }
 
@@ -327,9 +327,9 @@ public class PruefungenTests
     {
         var m = Grund().Modell.Kopie();
         Aendere(m, "HA-1", e => e.System = null);
-        Erwarte(m, "P02", "warnung", "HA-1");
+        Erwarte(m, "P02", "hinweis", "HA-1");   // ohne System und ohne Medium nur ein Hinweis (Christian 02.11.2026)
         Aendere(m, "KS-1", e => e.System = null);
-        Erwarte(m, "P02", "warnung", "KS-1");
+        Erwarte(m, "P02", "hinweis", "KS-1");
     }
 
     // ---------------------------------------------------------------- P03 Medien passen nicht

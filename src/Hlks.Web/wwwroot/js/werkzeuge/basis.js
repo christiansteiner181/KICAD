@@ -61,6 +61,15 @@ export const beiWerkzeugEnde = (fn) => { beiEnde.add(fn); return () => beiEnde.d
 export function beendeWerkzeug() { aktiv?.beenden(); }
 
 /** Startet ein Werkzeug in der aktiven Plan-Ansicht. Gibt den Lauf zurück oder null (mit Meldung). */
+let letzterStart = null;   // Definition des zuletzt gestarteten Werkzeugs (Rechtsklick ins Leere wiederholt es)
+
+/** Startet das zuletzt benutzte Werkzeug noch einmal (Christian 02.11.2026: «rechtsklick ohne das etwas gewählt ist bewirkt letzten befehl
+ *  wiederholen»); false, wenn es noch keines gab. */
+export function letztesWiederholen() {
+  if (!letzterStart) return false;
+  return !!werkzeugStarten(letzterStart);
+}
+
 export function werkzeugStarten(def) {
   const ansicht = planAnsicht();
   if (!ansicht) { meldung('Zuerst eine Plan-Ansicht (Grundriss, Schnitt oder Ansicht) aktivieren.', 'info'); return null; }
@@ -71,6 +80,7 @@ export function werkzeugStarten(def) {
   aktiv?.beenden(true);
   try { document.activeElement?.blur?.(); } catch { /* egal */ }
   const lauf = new Lauf(def, ansicht);
+  if (!def.passiv) letzterStart = def;
   aktiv = lauf;
   lauf.start();
   return lauf;
@@ -291,7 +301,12 @@ class Lauf {
   tasteInnen(e) {
     const d = this.def;
     if (e.key === 'Shift') { this.shift = true; this.berechneFang(); this.zeichnen(); return false; }
-    if (e.key === 'Escape') { this.beenden(); return true; }
+    if (e.key === 'Escape') {
+      // Mehrpunkt-Werkzeuge mit escAbschliessen (Wand; Leitung hat einen eigenen Hörer): Esc schliesst bis zum letzten Linksklick ab (das Gummiband fällt weg), erst das nächste Esc beendet das Werkzeug
+      // (Christian 02.11.2026: «esc soll linie nur bis zum letzten linksklick abbrechen»)
+      if (d.escAbschliessen && !this.tipp && (this.z?.punkte?.length ?? 0) >= 2 && d.enter) { this.run(() => d.enter(this.z, this.ctx)); return true; }
+      this.beenden(); return true;
+    }
     if (e.key === 'Enter') {
       if (this.tipp) { this.tippBestaetigen(); return true; }
       this.run(() => d.enter?.(this.z, this.ctx));

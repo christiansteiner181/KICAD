@@ -124,6 +124,26 @@ export function anschluesseAus(antwort) {
   }));
 }
 
+/** Weiterzeichnen ab einem Punkt (Christian 02.11.2026: «wird ab einem Punkt weiter konstruiert, wird die Dimension und höhe sowie medium des
+ *  Punktes übernommen»; die Höhe setzt das Werkzeug): System bzw. Medium und Grösse des Anschlusses. Ist der Punkt das Ende einer Leitung,
+ *  gelten ihre Serie und Grösse; sonst die Grösse der gewählten Serie, die zum Anschluss passt (DN, Durchmesser, Breite × Höhe).
+ *  el = Element des Anschlusses (zustand), groessen = groessenListe der gewählten Serie. → { system?, medium?, serie?, groesse?, ausLeitung? } */
+export function vomPunkt(a, el, groessen) {
+  const r = {};
+  if (el?.system) r.system = el.system;
+  const m = a?.medium && a.medium !== '*' ? a.medium : el?.werte?.medium;
+  if (!r.system && m) r.medium = m;
+  if (['Rohr', 'Kanal'].includes(el?.klasse) && el.bezuege?.familie) {
+    r.serie = el.bezuege.familie; r.ausLeitung = true;
+    if (el.werte?.familientyp) r.groesse = el.werte.familientyp;
+    return r;
+  }
+  const g = (groessen ?? []).find((x) => (a?.dn != null && (x.dn === a.dn || x.dnHersteller === a.dn))
+    || (a?.d != null && x.d === a.d) || (a?.b != null && x.b === a.b && x.h === a.h));
+  if (g) r.groesse = g.typ;
+  return r;
+}
+
 export function anschlussGroesse(a) {
   if (a?.dn != null) return `DN ${a.dn}`;
   if (a?.b != null) return `${a.b}×${a.h ?? '?'}`;
@@ -330,8 +350,7 @@ export function leitungParameter({ opt, punkte, von = null, nach = null, geschos
   if (opt.strang) p.strang = opt.strang;
   if (opt.system) p.system = opt.system;
   if (!p.strang && !p.system && opt.medium) p.medium = opt.medium;   // ohne System gehört die Leitung einem Medium (Christian 02.11.2026)
-  if (!p.strang && !p.system && !p.medium && !r.von && !r.nach)
-    throw new WerkzeugFehler('Medium oder System fehlt.', 'In der Optionsleiste ein Medium (z. B. KW) oder ein System wählen – oder an einem Anschluss beginnen, der das Medium liefert.');
+  // ohne System und Medium: der Kern nimmt das zuletzt gezeichnete Medium (Christian 02.11.2026: «keine warnung beim zeichnen ohne system»)
   if (zahlOK(opt.gefaelle) && opt.gefaelle > 0) p.gefaelle = opt.gefaelle;
   if (geschoss) p.geschoss = geschoss;
   const eig = eigenschaftenAus(opt);

@@ -285,14 +285,15 @@ public class BefehleTests
     }
 
     [Fact]
-    public void Anlegen_LeitungsbauteilOhneSystem_AngenommenMitWarnung()
+    public void Anlegen_LeitungsbauteilOhneSystem_AngenommenOhneWarnung()
     {
         // Christian 02.11.2026: «bis alle module komplett sind müssen die gewerkespezifischen zuweisungen optional sein»
         var p = Neu();
         var e = Anlegen(p, "Bogen", "BO-1", geo: Punkt(0, 0, 0));
         Assert.True(e.Angenommen, e.Fehler);
-        Assert.Contains(e.Hinweise, h => h.Contains("ohne System"));
-        Assert.Contains(e.NeueBefunde, b => b.Code == "P02" && b.Schwere == "warnung" && b.Element == "BO-1");
+        // «keine warnung beim zeichnen ohne system» (Christian 02.11.2026): ohne Medium nur ein Hinweis
+        Assert.DoesNotContain(e.Hinweise, h => h.Contains("ohne System"));
+        Assert.Contains(e.NeueBefunde, b => b.Code == "P02" && b.Schwere == "hinweis" && b.Element == "BO-1");
     }
 
     [Fact]
@@ -763,16 +764,16 @@ public class BefehleTests
     }
 
     [Fact]
-    public void LeitungZiehen_OhneSystemOderStrang_AngenommenMitWarnung()
+    public void LeitungZiehen_OhneSystemOderStrang_AngenommenOhneWarnung()
     {
-        // System ist bis zum Abschluss aller Module freiwillig (Christian 02.11.2026): Warnung P02 statt Ablehnung
+        // System ist bis zum Abschluss aller Module freiwillig (Christian 02.11.2026), ohne Warnung (ohne Medium P02 als Hinweis)
         var p = Neu();
         var e = p.Ausfuehren("leitung_ziehen", new JsonObject
         {
             ["punkte"] = new JsonArray(new JsonArray(0, 0, 0), new JsonArray(1000, 0, 0)),
         });
         Assert.True(e.Angenommen, e.Fehler + " | " + e.Vorschlag);
-        Assert.Contains(e.NeueBefunde, b => b.Code == "P02" && b.Schwere == "warnung");
+        Assert.Contains(e.NeueBefunde, b => b.Code == "P02" && b.Schwere == "hinweis");
     }
 
     [Fact]

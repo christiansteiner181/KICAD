@@ -22,7 +22,7 @@ async function senden(z, ctx) {
 
 export function wandWerkzeug() {
   return {
-    id: 'wand', titel: 'Wand', planarten: ['grundriss'], mehrpunkt: true,
+    id: 'wand', titel: 'Wand', planarten: ['grundriss'], mehrpunkt: true, escAbschliessen: true,
     neu: () => ({ punkte: [] }),
     hinweis: (z) => (z.punkte.length === 0 ? 'Startpunkt anklicken.' : 'Nächsten Punkt anklicken, Zahl = Länge in mm, Enter oder Doppelklick beendet, Umschalt = orthogonal.'),
     letzterPunkt: (z) => z.punkte.at(-1) ?? null,

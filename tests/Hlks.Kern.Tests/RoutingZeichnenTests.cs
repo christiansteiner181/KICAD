@@ -190,9 +190,7 @@ public class RoutingZeichnenTests
         p = MitSerie();
         e = Nein(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0], [500, 0, 0]]));
         Assert.Contains("kehrt", e.Fehler);
-        // ohne System
-        e = Nein(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0]], system: null));
-        Assert.Contains("System fehlt", e.Fehler);
+        // ohne System: angenommen, ohne Warnung (Christian 02.11.2026) – LeitungMediumTests
         // Grösse als Zahl und als Objekt
         Ok(Zeichnen(p, "20", [[0, 0, 0], [1000, 0, 0]]));
         var par = new JsonObject { ["serie"] = "FAM-1", ["groesse"] = new JsonObject { ["dn"] = 25 }, ["punkte"] = Punkte([0, 500, 0], [1000, 500, 0]), ["system"] = "KW" };

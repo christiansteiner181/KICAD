@@ -193,7 +193,7 @@ public sealed class AussparungMaterialTests : IDisposable
     {
         var p = Uebernommen(schema);
         var n = Netz(p);
-        Assert.Equal(3, n.Fassung);
+        Assert.Equal(4, n.Fassung);   // Fassung 4 (IFC 1:1) trägt das Material wie Fassung 3
         Assert.Contains("Materialnamen", n.Beschreibung);
         IfcNetzProdukt P(string name) => n.Produkt(M.Gid(name)) ?? throw new Xunit.Sdk.XunitException($"{name} fehlt");
         // IfcMaterial (IFC4 mit Category in Klammern)
@@ -255,7 +255,7 @@ public sealed class AussparungMaterialTests : IDisposable
             else
             {
                 Assert.True(b.Unbekannt);
-                Assert.Equal($"unbekannt: Netzdatei Fassung {fassung} ohne Material – die IFC-Datei erneut übernehmen (Fassung 3)", b.Text);
+                Assert.Equal($"unbekannt: Netzdatei Fassung {fassung} ohne Material – die IFC-Datei erneut übernehmen (Fassung 4)", b.Text);
             }
         }
     }

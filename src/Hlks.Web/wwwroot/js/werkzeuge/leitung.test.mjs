@@ -237,8 +237,9 @@ test('leitung_zeichnen: fehlende Angaben → Fehler mit Vorschlag', () => {
   assert.throws(() => L.leitungParameter({ opt, punkte: [[0, 0, 0]] }), /mindestens zwei Punkte/);
   assert.throws(() => L.leitungParameter({ opt: { ...opt, serie: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Serie fehlt/);
   assert.throws(() => L.leitungParameter({ opt: { ...opt, groesse: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Grösse fehlt/);
-  try { L.leitungParameter({ opt: { ...opt, system: '' }, punkte: [[0, 0, 0], [1000, 0, 0]] }); assert.fail(); }
-  catch (e) { assert.match(e.message, /Medium oder System/); assert.match(e.vorschlag, /Anschluss/); }   // System freiwillig, sonst Medium (Christian 02.11.2026)
+  // ohne System und Medium kein Abbruch: der Kern nimmt das zuletzt gezeichnete Medium (Christian 02.11.2026: «keine warnung beim zeichnen ohne system»)
+  const ohne = L.leitungParameter({ opt: { ...opt, system: '', medium: '' }, punkte: [[0, 0, 0], [1000, 0, 0]] }).parameter;
+  assert.equal(ohne.system, undefined); assert.equal(ohne.medium, undefined);
 });
 
 test('Pflichtangaben vor dem ersten Klick: Serie, Grösse und Höhe (keine erfundene Vorgabe)', () => {
@@ -576,4 +577,17 @@ test('Daten: Serien der Kategorie kommen aus der Familienliste, die Haken sind l
   assert.deepEqual(D.serienListe('Rohr'), []);
   assert.deepEqual(D.anschluesseVon('gibt-es-nicht'), null);
   assert.deepEqual(D.alleAnschluesse(), []);
+});
+
+test('Weiterzeichnen ab einem Punkt: Dimension und System bzw. Medium des Punktes (Christian 02.11.2026)', () => {
+  const groessen = [{ typ: 'DN 15', dn: 15 }, { typ: 'DN 20', dn: 20 }, { typ: '200', d: 200 }];
+  // Heizkörper ohne System: Medium des Anschlusses, Grösse der gewählten Serie nach DN
+  assert.deepEqual(L.vomPunkt({ medium: 'HZ-VL', dn: 15 }, { klasse: 'Heizkoerper', werte: {} }, groessen), { medium: 'HZ-VL', groesse: 'DN 15' });
+  // Ende einer Leitung: ihre Serie und Grösse, das Medium der Leitung (Anschluss «*»)
+  assert.deepEqual(L.vomPunkt({ medium: '*', dn: 20 }, { klasse: 'Rohr', bezuege: { familie: 'FAM-4' }, werte: { familientyp: 'DN 20', medium: 'KW' } }, groessen),
+    { medium: 'KW', serie: 'FAM-4', ausLeitung: true, groesse: 'DN 20' });
+  // mit System: das System gilt (es bringt das Medium mit)
+  assert.deepEqual(L.vomPunkt({ medium: 'ZUL', d: 200 }, { klasse: 'Zuluftdurchlass', system: 'ZUL-1', werte: {} }, groessen), { system: 'ZUL-1', groesse: '200' });
+  // nichts Passendes: nichts übernommen
+  assert.deepEqual(L.vomPunkt({ medium: '*', dn: 65 }, { klasse: 'Ventil', werte: {} }, groessen), {});
 });

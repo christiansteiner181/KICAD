@@ -20,6 +20,8 @@ import { planSvg, fangdatenVon, schraffurMap, neuerMusterPraefix } from './plang
 import { istHuelle, legendeDaten, legendeHtml } from './huelle-darstellung.js';
 import { weltTransform, ansichtsBegrenzung, boxInAnsicht, drehen, drehungVon, nordCss, ausrichtungText, svgAusModell, modellAusSvg } from './ausrichtung.js';   // N9: gedrehte Grundrisse
 import { navigieren2d } from './navigieren-logik.js';   // Modul G: Gesten verschieben und zoomen
+import { gewaehlt as gewaehltIm, modus as modusVon, rechteck as rechteckVon } from './fensterauswahl.js';   // Auswahlfenster wie AutoCAD (02.11.2026)
+import { mengeSetzen } from '../werkzeuge/auswahl.js';
 
 const SVGNS = 'http://www.w3.org/2000/svg';
 const FREMD_DAUER = 1500;      // ms Hervorhebung fremder Änderungen
@@ -261,6 +263,46 @@ function erstellen(behaelter, ansichtElement) {
   // ---------- Bedienung ----------
   const idVon = (ziel) => ziel?.closest?.('[data-id]')?.getAttribute('data-id') ?? null;
   let druck = null;            // { id, x, y, bewegt, taste }
+  let fenster = null;          // Auswahlfenster (AutoCAD): { x, y, ziehen, hinzu, div }
+
+  // ---------- Auswahlfenster (Christian 02.11.2026: «auswahlfenster bei linksklick (analog autodesk cad)», fensterauswahl.js) ----------
+  function fensterStarten(x, y, ziehen, hinzu) {
+    fenster = { x, y, ziehen, hinzu, div: document.createElement('div') };
+    fenster.div.className = 'gr-auswahlfenster';
+    document.body.append(fenster.div);
+    fensterZeigen(x, y);
+  }
+  function fensterZeigen(x, y) {
+    if (!fenster) return;
+    const r = rechteckVon(fenster, { x, y });
+    Object.assign(fenster.div.style, { left: `${r.l}px`, top: `${r.o}px`, width: `${r.r - r.l}px`, height: `${r.u - r.o}px` });
+    fenster.div.classList.toggle('kreuzen', modusVon(fenster.x, x) === 'kreuzen');
+  }
+  function fensterAbbrechen() { fenster?.div.remove(); fenster = null; }
+  function fensterAbschliessen(x, y) {
+    const f = fenster;
+    fensterAbbrechen();
+    if (!f) return;
+    if (Math.hypot(x - f.x, y - f.y) < KLICK_TOLERANZ) { if (!f.hinzu) auswaehlen(null); return; }   // zweiter Klick am selben Ort: Auswahl leeren
+    mengeSetzen(gewaehltIm(kandidatenSammeln(), f, { x, y }), f.hinzu);
+  }
+  /** Elemente der Ansicht mit ihrem Kasten in Pixeln; Leitungen und Wände mit ihrer Achse (Kreuzen nach der Achse). */
+  function kandidatenSammeln() {
+    const kaesten = new Map();
+    for (const g of svg.querySelectorAll('[data-id]')) {
+      const id = g.getAttribute('data-id');
+      const b = g.getBoundingClientRect();
+      if (!b.width && !b.height) continue;
+      const k = kaesten.get(id);
+      kaesten.set(id, k ? { l: Math.min(k.l, b.left), o: Math.min(k.o, b.top), r: Math.max(k.r, b.right), u: Math.max(k.u, b.bottom) } : { l: b.left, o: b.top, r: b.right, u: b.bottom });
+    }
+    return [...kaesten].map(([id, kasten]) => {
+      const el = element(id);
+      const pts = el?.geometrie?.punkte;
+      const linie = ['linie', 'polylinie'].includes(el?.geometrie?.art) && pts?.length >= 2 ? [pts.map((p) => instanz.zuBildschirm([p[0], p[1]]))] : null;
+      return { id, kasten, raum: el?.klasse === 'Raum', linien: linie };
+    });
+  }
   let schiebt = false;
   let leertaste = false;
   let imFenster = false;
@@ -295,6 +337,7 @@ function erstellen(behaelter, ansichtElement) {
       return;
     }
     if (werkzeug && anWerkzeug('pointerdown', e)) { e.preventDefault(); druck = null; return; }
+    if (e.button === 0 && fenster) { druck = { id: null, x: e.clientX, y: e.clientY, bewegt: false, taste: 0, fenster: true }; return; }
     if (e.button === 0) {
       druck = { id: idVon(e.target), x: e.clientX, y: e.clientY, bewegt: false, taste: 0 };
       if (leertaste) { druck.bewegt = true; schiebenStart(e); }
@@ -317,6 +360,7 @@ function erstellen(behaelter, ansichtElement) {
 
   function beiPointerMove(e) {
     koordZeigen(e);
+    if (fenster) { fensterZeigen(e.clientX, e.clientY); return; }
     if (druck?.taste === 1 || (druck && schiebt)) {
       // Verschieben (mittlere Taste, Leertaste oder Ziehen auf leerer Fläche)
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
@@ -334,7 +378,9 @@ function erstellen(behaelter, ansichtElement) {
       const dx = e.clientX - druck.x, dy = e.clientY - druck.y;
       if (!druck.bewegt && Math.hypot(dx, dy) > KLICK_TOLERANZ) {
         druck.bewegt = true;
-        schiebenStart(e);
+        // Ziehen mit der linken Taste spannt ein Auswahlfenster auf (wie AutoCAD); verschoben wird mit der mittleren Taste oder der Leertaste
+        fensterStarten(druck.x, druck.y, true, e.ctrlKey || e.metaKey || e.shiftKey);
+        fensterZeigen(e.clientX, e.clientY);
       }
       return;
     }
@@ -353,7 +399,11 @@ function erstellen(behaelter, ansichtElement) {
     const d = druck;
     druck = null;
     if (schiebt) { schiebt = false; svg.classList.remove('schiebt'); try { svg.releasePointerCapture(e.pointerId); } catch { /* egal */ } }
-    if (d.taste === 0 && !d.bewegt) auswaehlen(d.id ?? null);
+    if (fenster) { fensterAbschliessen(e.clientX, e.clientY); return; }   // zweiter Klick bzw. Loslassen nach dem Ziehen
+    if (d.taste === 0 && !d.bewegt) {
+      if (d.id) auswaehlen(d.id);
+      else fensterStarten(e.clientX, e.clientY, false, e.ctrlKey || e.metaKey || e.shiftKey);   // Klick ins Leere: erste Ecke
+    }
   }
 
   function beiRad(e) {
@@ -369,6 +419,7 @@ function erstellen(behaelter, ansichtElement) {
   // Tasten: zuerst das Werkzeug (nur in der aktiven Ansicht, nicht aus Eingabefeldern), dann die Leertaste zum Verschieben
   const beiTasteUnten = (e) => {
     if (eingabeFeld(e.target)) return;
+    if (fenster && e.key === 'Escape') { fensterAbbrechen(); e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (werkzeug && bin_ich_aktiv() && anWerkzeug('keydown', e)) { e.preventDefault(); e.stopImmediatePropagation(); return; }
     if (e.code !== 'Space' || !imFenster) return;
     leertaste = true;
@@ -388,14 +439,27 @@ function erstellen(behaelter, ansichtElement) {
   svg.addEventListener('mousedown', (e) => { if (e.button === 1) e.preventDefault(); });   // kein Autoscroll
   svg.addEventListener('auxclick', (e) => e.preventDefault());
   svg.addEventListener('contextmenu', (e) => { e.preventDefault(); kontextMenue(e); });
-  /** N14: Rechtsklick auf einen Raum (oder ins Leere bei gewähltem Raum) bietet «Raum im 3D zeigen» an; mit aktivem Werkzeug hat der Rechtsklick keine Bedeutung. */
+  /** N14: Rechtsklick auf einen Raum (oder ins Leere bei gewähltem Raum) bietet «Raum im 3D zeigen» an; mit aktivem Werkzeug hat der Rechtsklick keine Bedeutung.
+   *  Christian 02.11.2026: auf ein gewähltes Bauteil «Ähnliches platzieren»; ins Leere ohne Auswahl wiederholt der Rechtsklick das letzte Werkzeug. */
   async function kontextMenue(e) {
     if (werkzeug && !werkzeug.passiv) return;
     const id = idVon(e.target);
     const el = id ? element(id) : null;
     const gewaehlt = zustand.auswahl ? element(zustand.auswahl) : null;
+    if (!el && !gewaehlt) {
+      const { letztesWiederholen } = await import('../werkzeuge/basis.js');
+      letztesWiederholen();
+      return;
+    }
     const raum = el?.klasse === 'Raum' ? el : (!el || el.id === gewaehlt?.id) && gewaehlt?.klasse === 'Raum' ? gewaehlt : null;
-    if (!raum) return;
+    if (!raum) {
+      const bauteil = el ?? gewaehlt;
+      const [{ kontextmenue }, { ausfuehren }, { aehnlichMoeglich }] = await Promise.all([import('../oberflaeche/dialoge.js'), import('../oberflaeche/register.js'), import('../oberflaeche/aktionen-aehnlich.js')]);
+      if (!aehnlichMoeglich(bauteil)) return;
+      if (zustand.auswahl !== bauteil.id) auswaehlen(bauteil.id);
+      kontextmenue(e.clientX, e.clientY, [{ titel: 'Ähnliches platzieren', aktion: () => ausfuehren('kontext.aehnlich', { element: bauteil.kennzeichen }) }]);
+      return;
+    }
     if (zustand.auswahl !== raum.id) auswaehlen(raum.id);
     const [{ kontextmenue }, { ausfuehren }] = await Promise.all([import('../oberflaeche/dialoge.js'), import('../oberflaeche/register.js')]);
     kontextmenue(e.clientX, e.clientY, [

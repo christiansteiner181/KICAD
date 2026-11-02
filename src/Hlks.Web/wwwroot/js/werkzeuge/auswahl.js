@@ -5,7 +5,7 @@
 // zuvor gemerkten Strg-Taste zu (`strgMerken`, aufgerufen vom Griff-Werkzeug beim pointerdown). Das ist ein Ersatz ohne Änderung
 // an zustand.js/Ansichten; die Hervorhebung der weiteren Mitglieder zeichnet griffe.js in die Werkzeugschicht.
 
-import { zustand, element, abonnieren } from '../zustand.js';
+import { zustand, element, abonnieren, auswaehlen } from '../zustand.js';
 
 const menge = new Set();          // Ids
 let strgBis = 0;                  // Zeitpunkt, bis zu dem ein Strg+Klick als Ursache der nächsten Auswahländerung gilt
@@ -31,7 +31,21 @@ export const hatAuswahl = () => auswahlElemente().length > 0;
 export const istMehrfach = () => auswahlElemente().length > 1;
 export function leeren() { menge.clear(); ruf(); }
 
+let uebernahme = null;   // Ids des Auswahlfensters für den nächsten Auswahlwechsel
+
+/** Auswahlfenster (fensterauswahl.js): diese Elemente wählen; hinzu = zur bestehenden Auswahl (Strg bzw. Umschalt). Keine → Auswahl leeren
+ *  (ausser hinzu). Das zuletzt genannte Element wird das gewählte (Eigenschaften, Kontextregister). */
+export function mengeSetzen(ids, hinzu = false) {
+  const neu = hinzu ? [...new Set([...auswahlElemente().map((e) => e.id), ...ids])] : [...new Set(ids)];
+  if (neu.length === 0) { if (!hinzu) auswaehlen(null); return; }
+  uebernahme = neu;
+  if (zustand.auswahl === neu.at(-1)) { menge.clear(); for (const id of neu) menge.add(id); uebernahme = null; ruf(); return; }
+  auswaehlen(neu.at(-1));
+}
+
 abonnieren('auswahl', (id) => {
+  if (uebernahme && id) { menge.clear(); for (const x of uebernahme) menge.add(x); uebernahme = null; ruf(); return; }
+  uebernahme = null;
   if (!id) menge.clear();
   else if (jetzt() < strgBis) {
     strgBis = 0;
