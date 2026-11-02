@@ -103,6 +103,12 @@ public sealed class IfcLauf
     public void Wert(Element e, string eigenschaft, JsonNode? wert, string? fundstelle = null)
     {
         if (wert is null) return;
+        // nie NaN oder unendlich in ein Element (aus einem entarteten Körper): weglassen und melden (02.11.2026)
+        if (wert is JsonValue jv && jv.TryGetValue<double>(out var dz) && !double.IsFinite(dz))
+        {
+            Hinweise.Add($"{e.Klasse} {e.Name} ({e.Kennungen?.GetValueOrDefault("ifc")}): {eigenschaft} nicht bestimmbar (Körper der Datei ohne gültige Masse) – weggelassen.");
+            return;
+        }
         var def = Katalog.Klassen.TryGetValue(e.Klasse, out var d) ? d.Eigenschaften.FirstOrDefault(x => x.Name.Equals(eigenschaft, StringComparison.OrdinalIgnoreCase)) : null;
         if (def is null) throw new HlksFehler($"Übertrag: Eigenschaft «{eigenschaft}» gibt es für {e.Klasse} nicht.");
         e.Eigenschaften[def.Name] = new Wert

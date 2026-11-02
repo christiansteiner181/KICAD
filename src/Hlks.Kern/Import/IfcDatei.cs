@@ -98,6 +98,7 @@ public sealed class IfcDatei : IDisposable
         // Im Arbeitsspeicher öffnen bis 2 GB: xBIM legt sonst ab 100 MB eine Esent-Datenbank auf der Festplatte an – das
         // Architekten-IFC Bernstrasse (106 MB) brauchte so 57 s statt 30 s (Messung Hauptlauf 18.10.2026); Speicherbedarf
         // im Arbeitsspeicher rund das Fünffache der Datei.
+        IfcGeometrieXbim.DiensteEinrichten();   // xBIM-Geometrie (02.11.2026) braucht ihre Dienste vor dem ersten Öffnen
         try { m = IfcStore.Open(pfad, null, SpeicherSchwelleMb); }
         catch (Exception ex) when (ex is not HlksFehler)
         {

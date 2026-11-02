@@ -204,11 +204,41 @@ public sealed partial class IfcGeometrie
         rad = f > 0 ? f : Math.PI / 180;
     }
 
-    /// <summary>Wurde der Körper des Produkts vereinfacht (Boolean: nur erster Operand)?</summary>
-    public bool IstVereinfacht(IIfcProduct p) => vereinfacht.Contains(p.EntityLabel);
+    /// <summary>Wurde der Körper des Produkts vereinfacht (Boolean: nur erster Operand)? Mit dem Netz der xBIM-Geometrie nie.</summary>
+    public bool IstVereinfacht(IIfcProduct p) => vereinfacht.Contains(p.EntityLabel) && XbimNetz(p) is null;
+
+    // ------------------------------------------------------------------ xBIM-Geometrie (IfcGeometrieXbim.cs, 02.11.2026)
+
+    Dictionary<int, Dreiecksnetz>? xbim;          // roher Körper (ohne Öffnungen) – Massstab des Nachbaus
+    Dictionary<int, Dreiecksnetz>? xbimAnzeige;   // mit ausgeschnittenen Öffnungen – Netzdatei, 3D
+    bool xbimVersucht;
+
+    /// <summary>Ob die xBIM-Geometrie dieses Modell gerechnet hat (sonst: eigene Auswertung; Grund in IfcGeometrieXbim.Grund).</summary>
+    public bool MitXbim { get { XbimLaden(); return xbim is not null; } }
+
+    void XbimLaden()
+    {
+        if (xbimVersucht) return;
+        xbimVersucht = true;
+        if (IfcGeometrieXbim.Netze(Datei, Stilfarbe, Materialfarbe) is { } x) { xbim = x.Roh; xbimAnzeige = x.Anzeige; }
+    }
+
+    /// <summary>Netz für die Anzeige (Netzdatei): mit der xBIM-Geometrie samt ausgeschnittenen Öffnungen, sonst null (dann der Körper).</summary>
+    public Dreiecksnetz? AnzeigeNetz(IIfcProduct p)
+    {
+        XbimLaden();
+        return xbimAnzeige is not null && xbimAnzeige.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? n : null;
+    }
+
+    /// <summary>Exaktes Netz des Produkts aus der xBIM-Geometrie (samt Booleans) in Projektkoordinaten oder null.</summary>
+    Dreiecksnetz? XbimNetz(IIfcProduct p)
+    {
+        XbimLaden();
+        return xbim is not null && xbim.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? n : null;
+    }
 
     /// <summary>Anzahl der Produkte mit vereinfachtem Körper.</summary>
-    public int AnzahlVereinfacht => vereinfacht.Count;
+    public int AnzahlVereinfacht => vereinfacht.Count(l => xbim is null || !xbim.ContainsKey(l));   // mit xBIM-Netz ist nichts vereinfacht
 
     // ------------------------------------------------------------------ Produkte
 
@@ -232,6 +262,7 @@ public sealed partial class IfcGeometrie
     {
         if (gemerktBezug is not null && !Equals(gemerktBezug, Datei.Bezug)) { gemerkt.Clear(); gemerktBezug = null; }
         if (gemerkt.TryGetValue(p.EntityLabel, out var da)) return da;
+        if (XbimNetz(p) is { } x) return x;
         var n = Netz(p, KoerperKennungen);
         if (n is not null && merken)
         {
@@ -259,7 +290,8 @@ public sealed partial class IfcGeometrie
     public Dreiecksnetz? Herausnehmen(int entityLabel)
     {
         if (gemerktBezug is not null && !Equals(gemerktBezug, Datei.Bezug)) { gemerkt.Clear(); gemerktBezug = null; }
-        return gemerkt.Remove(entityLabel, out var n) ? n : null;
+        if (gemerkt.Remove(entityLabel, out var n)) return n;
+        return xbim is not null && xbim.TryGetValue(entityLabel, out var x) ? x : null;   // xBIM-Netze bleiben (Koerper fragt sie wieder)
     }
 
     /// <summary>Zähler (nicht ausgewertete Entitäten, vereinfachte Körper) sichern – eine Auswertung neben dem Übertrag (IFC einpassen)

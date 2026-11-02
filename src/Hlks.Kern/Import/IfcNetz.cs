@@ -159,7 +159,7 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
             bool traegt;
             if (labels.Contains(gl))
             {
-                var n = g.Herausnehmen(gl) ?? g.Koerper(ge, merken: false);
+                var n = g.AnzeigeNetz(ge) ?? g.Herausnehmen(gl) ?? g.Koerper(ge, merken: false);
                 eigen[gl] = n is { Leer: false } ? n : null;
                 traegt = eigen[gl] is null;
             }
@@ -192,7 +192,7 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
             foreach (var t in teileVon[ganz.EntityLabel])
             {
                 if (!verbraucht.ContainsKey(t.EntityLabel)) continue;
-                var tn = eigen.TryGetValue(t.EntityLabel, out var en) ? en : g.Herausnehmen(t.EntityLabel) ?? g.Koerper(t, merken: false);
+                var tn = eigen.TryGetValue(t.EntityLabel, out var en) ? en : g.AnzeigeNetz(t) ?? g.Herausnehmen(t.EntityLabel) ?? g.Koerper(t, merken: false);
                 if ((tn is null || tn.Leer) && tiefe < 8 && ohneKoerper.TryGetValue(t.EntityLabel, out var tg)) tn = TeileNetz(tg, tiefe + 1);
                 if (tn is { Leer: false }) n.Anhaengen(tn);
             }
@@ -229,7 +229,7 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
                 if (TeileNetz(ganz) is { } tn) Produkt(p, tn, TeileMaterial(ganz));
                 continue;
             }
-            var netz = eigen.TryGetValue(p.EntityLabel, out var en) ? en : g.Herausnehmen(p.EntityLabel) ?? g.Koerper(p, merken: false);
+            var netz = eigen.TryGetValue(p.EntityLabel, out var en) ? en : g.AnzeigeNetz(p) ?? g.Herausnehmen(p.EntityLabel) ?? g.Koerper(p, merken: false);
             if (netz is null || netz.Leer) continue;
             Produkt(p, netz, material.Von(p));
         }

@@ -17,6 +17,8 @@
          IFC4 und IFC2x3 lesen (Schemaklassen aus den buildingSMART-EXPRESS-Schemas). CDDL-1.0: Nutzung unverändert
          erlaubt; nur geänderte Dateien der Bibliothek müssten bei Weitergabe offengelegt werden. -->
     <PackageReference Include="Xbim.Essentials" Version="6.1.605" />
+    <!-- IFC-Geometrie samt Booleans (OpenCascade), Entscheid Christian 02.11.2026; CDDL-1.0 bzw. OCCT LGPL-2.1 mit Ausnahme, unverändert genutzt -->
+    <PackageReference Include="Xbim.Geometry" Version="6.3.891-netcore" />
     <!-- DWG (AC1014–AC1032) und DXF direkt lesen, ohne ODA File Converter. MIT. -->
     <PackageReference Include="ACadSharp" Version="3.8.0" />
     <!-- PDF-Seiten als Bild rendern (PDFium, BSD). MIT. -->

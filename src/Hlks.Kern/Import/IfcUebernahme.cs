@@ -402,6 +402,11 @@ public sealed class IfcUebernehmen : IBefehl
         var gesehen = new HashSet<string>();
         foreach (var (vorl, plan) in lauf.Geplant)
         {
+            if (plan.Geometrie is { } pg && pg.Punkte.Any(q => q.Any(v => !double.IsFinite(v))) || plan.Geometrie?.Hoehe is double ph && !double.IsFinite(ph) || plan.Geometrie?.Dicke is double pd && !double.IsFinite(pd))
+            {
+                lauf.Hinweise.Add($"{plan.Klasse} {plan.Name}: Lage nicht bestimmbar (Körper der Datei ohne gültige Masse) – nur im Hintergrund.");
+                continue;
+            }
             var e = plan.Kopie();
             e.Id = z.Ids[vorl];
             e.Geschoss = Aufloesen(e.Geschoss, e, "geschoss");

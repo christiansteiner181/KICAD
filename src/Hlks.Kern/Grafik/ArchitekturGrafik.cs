@@ -448,6 +448,20 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         return koerper;
     }
 
+    /// <summary>Wandkörper mit Öffnungen, ohne den Abzug der Decken – Vergleich mit dem IFC-Netz (IfcDeckung), das die Wand bis in die Decke führt.</summary>
+    public static Koerper? WandKoerperOhneDecken(Projekt p, Element e)
+    {
+        var w = Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, e);
+        if (w is null || w.Dicke <= 0 || w.Hoehe is not double hoehe || hoehe <= 0) return null;
+        var oeff = Wandgeometrie.Oeffnungen(p.Katalog, w, Wandgeometrie.OeffnungenVon(p.Modell, p.Katalog, e.Id));
+        var marken = new List<double> { w.Von, w.Bis };
+        foreach (var o in oeff) foreach (var s in new[] { o.Von, o.Bis }) if (s > w.Von && s < w.Bis) marken.Add(s);
+        marken.Sort();
+        var k = new Koerper { Id = e.Id, Ebene = "wand" };
+        Quader(k.Teile, w, hoehe, marken, oeff, []);
+        return k;
+    }
+
     /// <summary>Quader je Abschnitt zwischen den Marken: Wandhöhe ohne Öffnungen und ohne die Platten über der Achse.</summary>
     static void Quader(List<Koerperteil> teile, Wandlage w, double hoehe, List<double> marken, List<Oeffnungslage> oeff, List<Platte> platten)
     {
