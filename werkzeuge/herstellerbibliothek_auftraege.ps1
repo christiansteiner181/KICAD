@@ -42,7 +42,9 @@ foreach ($a in $auftraege) {
   }
   if (-not $st) { continue }
   Log "$($a.nr) gestartet $($st.id)"
-  do { Start-Sleep 30; try { $s = Invoke-RestMethod "$u/api/auftraege/$($st.id)" } catch { $s = $null } } while (-not $s -or $s.status -in @('wartet', 'laeuft'))
+  $weg = 0   # Befund 02.11.2026: ein .NET-Update beendete den Server – nicht endlos weiterfragen
+  do { Start-Sleep 30; try { $s = Invoke-RestMethod "$u/api/auftraege/$($st.id)"; $weg = 0 } catch { $s = $null; $weg++ } } while ($weg -lt 20 -and (-not $s -or $s.status -in @('wartet', 'laeuft')))
+  if ($weg -ge 20) { Log "$($a.nr) Server seit 10 min nicht erreichbar - Abbruch"; break }
   $fam = @($s.ergebnis.familien | ForEach-Object { "$($_.kennzeichen) $($_.name) [$($_.kategorie)] Typen $(@($_.typen).Count) offeneKonflikte $($_.offeneKonflikte)" }) -join '; '
   Log "$($a.nr) $($s.status) $($st.id): $fam"
 }
