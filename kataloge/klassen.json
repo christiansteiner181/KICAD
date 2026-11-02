@@ -158,7 +158,9 @@
     "beschreibung": "Wand als Achse (Linie von Anfang nach Ende, Mitte der Wand) mit Dicke und Höhe in der Geometrie. z der Punkte = Unterkante Wand (meist Geschosskote). Eine Wand je gerades Stück; Ecken und Anschlüsse bereinigt der Kern.",
     "eigenschaften": [
       { "name": "material", "typ": "auswahl", "auswahl": [ "unbestimmt", "beton", "backstein", "kalksandstein", "porenbeton", "holz", "leichtbau" ], "beschreibung": "Hauptmaterial; bestimmt die Schraffur der Schnittfläche (SIA 400:2000 Ziff. B.8.3.1)" },
-      { "name": "tragend", "typ": "bool", "beschreibung": "Tragende Wand" } ] },
+      { "name": "tragend", "typ": "bool", "beschreibung": "Tragende Wand" },
+      { "name": "verlAnfang", "typ": "zahl", "einheit": "mm", "beschreibung": "Körper reicht so weit über den Anfang der Achse hinaus (negativ = beginnt danach); aus dem IFC (02.11.2026: deckungsgleich mit dem IFC); fehlt = Regel: halbe Dicke der berührten Wand" },
+      { "name": "verlEnde", "typ": "zahl", "einheit": "mm", "beschreibung": "Körper reicht so weit über das Ende der Achse hinaus; aus dem IFC; fehlt = Regel" } ] },
   { "name": "Decke", "kuerzel": "D", "basis": "Bauteil", "ifc": "IfcSlab", "geometrie": "polygon",
     "beschreibung": "Decke oder Bodenplatte als Polygon mit Dicke. z der Punkte = Oberkante (aus IFC: Rohdecke; mit decke_erzeugen: Geschosskote), die Dicke geht nach unten. bezuege.umrissAus = Geschoss, aus dessen Wänden decke_erzeugen den Umriss gebildet hat (Modul 1c).",
     "eigenschaften": [

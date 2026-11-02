@@ -174,8 +174,9 @@ public static class Wandgeometrie
         Dictionary<(long, long), List<Wandlage>>? zellen = raster && waende.Count >= RasterAb ? Rastern(waende) : null;
         foreach (var w in waende)
         {
-            w.VerlAnfang = Verlaengerung(w, w.Ax, w.Ay, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? []);
-            w.VerlEnde = Verlaengerung(w, w.Bx, w.By, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? []);
+            // aus dem IFC festgehaltene Enden (verlAnfang/verlEnde, 02.11.2026: deckungsgleich mit dem IFC) gelten vor der Regel
+            w.VerlAnfang = w.Wand.Zahl("verlAnfang") ?? Verlaengerung(w, w.Ax, w.Ay, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Ax), Zelle(w.Ay))) ?? []);
+            w.VerlEnde = w.Wand.Zahl("verlEnde") ?? Verlaengerung(w, w.Bx, w.By, zellen is null ? waende : zellen.GetValueOrDefault((Zelle(w.Bx), Zelle(w.By))) ?? []);
         }
     }
 

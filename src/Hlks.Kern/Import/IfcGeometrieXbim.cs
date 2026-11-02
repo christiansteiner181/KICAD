@@ -97,3 +97,13 @@ public static class IfcGeometrieXbim
         }
     }
 }
+
+/// <summary>Richtet die xBIM-Dienste beim Laden des Kerns ein – vor jedem anderen Gebrauch von xBIM (auch IfcStore.Create in Tests oder Exporten),
+/// sonst baut xBIM seine Dienste ohne Geometrie und lässt sie nicht mehr ändern.</summary>
+static class IfcGeometrieXbimStart
+{
+#pragma warning disable CA2255   // bewusst: Dienste vor jedem Gebrauch von xBIM
+    [System.Runtime.CompilerServices.ModuleInitializer]
+#pragma warning restore CA2255
+    internal static void Einrichten() => IfcGeometrieXbim.DiensteEinrichten();
+}

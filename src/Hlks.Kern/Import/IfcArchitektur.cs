@@ -135,6 +135,8 @@ sealed class IfcWandStueck
     public required IIfcProduct Quelle { get; init; }
     public double Ax, Ay, Bx, By, Dicke, Unterkante, Hoehe;
     public string? GeschossId { get; init; }
+    /// <summary>Körper der ganzen Wand (eigener Körper oder die Teile), nicht vereinfacht – für die Enden wie im IFC; sonst null.</summary>
+    public Dreiecksnetz? Netz { get; init; }
     public double Laenge => Math.Sqrt((Bx - Ax) * (Bx - Ax) + (By - Ay) * (By - Ay));
     public double Ux => (Bx - Ax) / Laenge;
     public double Uy => (By - Ay) / Laenge;
@@ -426,6 +428,7 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
             {
                 Element = e, Quelle = w, GeschossId = geschoss,
                 Ax = a[0], Ay = a[1], Bx = b[0], By = b[1], Dicke = dicke, Unterkante = unten, Hoehe = hoehe,
+                Netz = daten.Count == 1 && !vereinfacht ? netz : null,
             });
         }
         if (stuecke.Count > 1) hinweise.Dazu("Wand mit geknickter Achse in gerade Stücke geteilt", IfcSammler.Beispiel(w) + $" ({stuecke.Count} Stücke)");
@@ -514,6 +517,19 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
 
     void WandSchreiben(IfcWandStueck s)
     {
+        // Enden wie im IFC (02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»): wie weit der Körper über Anfang
+        // und Ende der Achse reicht – nur bei Wänden aus einem Stück mit nicht vereinfachtem Körper (eigener oder aus den Teilen)
+        if (s.Netz is { Leer: false } n)
+        {
+            double l = Math.Sqrt((s.Bx - s.Ax) * (s.Bx - s.Ax) + (s.By - s.Ay) * (s.By - s.Ay));
+            if (l > 1)
+            {
+                var (a0, a1) = n.Bereich(s.Ax, s.Ay, (s.Bx - s.Ax) / l, (s.By - s.Ay) / l);
+                string q = $"Körper {IfcDatei.Entitaet(s.Quelle)} #{s.Quelle.EntityLabel} längs der Achse";
+                lauf.Wert(s.Element, "verlAnfang", R(-a0), q);
+                lauf.Wert(s.Element, "verlEnde", R(a1 - l), q);
+            }
+        }
         s.Element.Geometrie = new Geometrie
         {
             Art = "linie",
