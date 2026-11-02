@@ -36,6 +36,7 @@ public static class Tuer
             "zeitreihe" => a.Zeitreihe(T("datenpunkt", true)!, T("von", true)!, T("bis", true)!, Param.Zahl(par, "aufloesungMinuten") ?? 60),
             "plan_pdf" => Planausgabe.PdfDatei(p, T("planblatt", true)!, T("datei")),
             "ausgaben" => Ausgabeprotokoll.Lesen(p, (int)(Param.Zahl(par, "anzahl") ?? 50)),
+            "ifc_deckung" => IfcDeckung.Pruefen(p, par),
             "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),

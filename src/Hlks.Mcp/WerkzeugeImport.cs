@@ -10,6 +10,13 @@ namespace Hlks.Mcp;
 
 public sealed partial class Werkzeuge
 {
+    [McpServerTool(Name = "ifc_deckung"), Description(IfcDeckung.Text)]
+    public string IfcDeckungWerkzeug(
+        [Description(IfcDeckung.ParUnterlage)] string? unterlage = null,
+        [Description(IfcDeckung.ParToleranz)] double? toleranz = null,
+        [Description(IfcDeckung.ParAnzahl)] double? anzahl = null) =>
+        Lauf(() => Antwort(IfcDeckung.Pruefen(projekt, Parameter(("unterlage", unterlage), ("toleranz", toleranz), ("anzahl", anzahl)))));
+
     [McpServerTool(Name = "ifc_pruefen"), Description(IfcImport.PruefenBeschreibung)]
     public string IfcPruefen(
         [Description("Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen")] string datei,

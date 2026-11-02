@@ -50,6 +50,7 @@ public sealed class Abfragen(Projekt p)
              new("aufloesungMinuten", "zahl", false, "Raster in Minuten (Vorgabe 60)")]),
         new("plan_pdf", "Schreibt ein Planblatt mit seinen Ansichtsfenstern und dem H+K-Plankopf als Vektor-PDF. Ohne datei nach %TEMP%\\HLKS_CAD\\<Plannummer>.pdf. Antwort: datei, seiten, groesseBytes.",
             [new("planblatt", "text", true, "Planblatt (Kennzeichen, Id oder Plannummer)"), new("datei", "text", false, "Zieldatei (.pdf); leer = Temp-Ordner")]),
+        new("ifc_deckung", IfcDeckung.Text, IfcDeckung.Parameter),   // Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»
         new("ifc_pruefen", IfcImport.PruefenBeschreibung,
             [new("datei", "text", true, "Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen"),
              new("einpassen", "bool", false, IfcImport.ParEinpassen)]),
