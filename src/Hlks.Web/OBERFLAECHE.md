@@ -1597,6 +1597,24 @@ Kältesysteme unterscheiden sich von der Heizung nur über Medium und Systemtyp.
 
 **Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~KaelteHeizung`, Node-Tests `projektbrowser.test.mjs` («Kälte:»), `bibliothek.test.mjs`.
 
+## Ströme vom Verbraucher her, Fliessrichtung aus der Quelle (Christian 02.11.2026)
+
+Christian, 02.11.2026: «leitungseigenschaften werden vom verbraucher her übergeben und summiert» und «lüftung: aus- einlässe bestimmen luftmenge. Flussrichtung aus dem
+Lüftungsgerät». Der Kern rechnet, die Oberfläche zeigt es in den Eigenschaften (Gruppe «Abgeleitet» aus `element_lesen`).
+
+- **Heizung/Kälte:** Leistung des Heizkörpers (Angabe, sonst Heiz- bzw. Kühlleistung des Raums gleich auf seine Verbraucher ohne Angabe verteilt) → `massenstrom_kgh`,
+  `volumenstrom_lh` mit ΔT aus der Heizgruppe (vlTemp/rlTemp) und c_p, ρ bei Mitteltemperatur aus `kataloge/stoffwerte.json` (Wasser NIST, Ethylenglykol 35 % = Mittel 30/40 %
+  Dow); `leistungWoher`, `spreizungK`, `stoffwerte` (mit Quelle), `ohneStrom` (Verbraucher ohne Leistung bzw. ohne Temperaturen).
+- **Lüftung:** Zu-/Abluftdurchlass `volumenstrom` (Angabe, sonst Zu- bzw. Abluft des Raums abzüglich der Angaben, gleich verteilt) → je Kanal `volumenstrom_m3h` (Summe der
+  Durchlässe auf dem Weg zum Gerät), `durchlaesse`, `durchlaesseOhneAngabe`; am Durchlass `volumenstrom_m3h` und `volumenstromWoher` (angabe | raum). Der Weg folgt der
+  Fliessrichtung der Kanäle – ist ein Kanal verkehrt gezeichnet, bricht die Summe dort ab.
+- **Fliessrichtung ab hier** (Kontextregister «Ändern | Pumpe» bzw. «Ändern | Lueftungsgeraet», Gruppe Netz; Befehl `fliessrichtung_aus_quelle { quelle, anschluss? }`,
+  ein Paket, Strg+Z): ab jedem gerichteten Anschluss der Quelle bis zum nächsten Gerät wird jede Leitung, die gegen den Fluss gezeichnet ist, umgekehrt (Punkte, Grössen und
+  Verbindungen von anfang/ende getauscht, Lage unverändert). Armaturen mit fester Richtung gegen den Fluss und Leitungen mit widersprüchlicher Richtung werden nur gemeldet.
+  Die Meldung nennt «n Leitung(en) erreicht, m umgekehrt».
+
+**Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~LueftungMengenTests|FullyQualifiedName~HeizungTests"`.
+
 ## Nachbearbeitung N9: Ausrichtung der Grundrisse (`nachbearbeitung.md`, Abschnitt N9)
 
 Christian, 21.10.2026: «bei den ansichten sollte eingestellt werden ob sie nach himmelsrichtung oder nach geometrie ausgerichtet sein sollen. standard ist geometrie

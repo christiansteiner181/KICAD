@@ -199,6 +199,7 @@ public sealed class Abfragen(Projekt p)
             if (abg.Count > 0) o["abgeleitet"] = abg;
         }
         SanitaerAbfragen.ElementErgaenzen(p, e, o);   // Modul 4 Teil A: Apparateart mit LU/DU bzw. Belastungssummen der Leitung (abgeleitet)
+        LueftungMengen.ElementErgaenzen(p, e, o);     // Lüftung: Volumenstrom am Durchlass bzw. Summe am Kanal (Christian 02.11.2026)
         HeizungAbfragen.ElementErgaenzen(p, e, o);    // Modul 5 Teil A-D: Heizgruppe (Glieder, Spreizung, Σ Normleistung), Systempaar, Leistungssumme der Leitung
         if (e.Bezuege.Count > 0) o["bezuege"] = new JsonObject(e.Bezuege.Select(b => KeyValuePair.Create(b.Key, (JsonNode?)Kz(b.Value))));
         if (Netz.IstEndgeraet(K, e)) o["angeschlossenAn"] = Arr(Netz.SystemeVon(M, e).Select(s => s.Kennzeichen));

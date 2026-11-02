@@ -7,7 +7,7 @@ import { registrieren } from './register.js';
 import { zustand, element, derKlasse } from '../zustand.js';
 import { ansichtOeffnen } from '../fenster.js';
 import { meldung } from './dialoge.js';
-import { sende } from './befehle.js';
+import { sende, ergebnisMelden } from './befehle.js';
 import { aufElement, freiesKennzeichen } from './werkzeug.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
@@ -73,4 +73,19 @@ registrieren({
   id: 'ansicht.materialliste', titel: 'Material​liste', symbol: 'liste', kuerzel: null, register: 'ansicht', gruppe: 'Erstellen',
   aktiv: projektOffen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: materiallisteOeffnen,
+});
+
+// ---------------------------------------------------------------------------------------------- Fliessrichtung aus der Quelle
+
+// Christian 02.11.2026: Fliessrichtung aus dem Pumpeneinbau bzw. dem Lüftungsgerät, auf Befehl (fliessrichtung_aus_quelle, ein Paket).
+const QUELLEN = ['Pumpe', 'Lueftungsgeraet'];
+const gewaehlteQuelle = (p) => element(p?.element ?? zustand.auswahl);
+registrieren({
+  id: 'kontext.fliessrichtung', titel: 'Fliessrichtung ab hier', symbol: 'netzAb', kuerzel: null, register: 'kontext', gruppe: 'Netz',
+  aktiv: (p) => QUELLEN.includes(gewaehlteQuelle(p)?.klasse),
+  hinweis: 'Zuerst eine Pumpe oder ein Lüftungsgerät wählen.',
+  async ausfuehren(p) {
+    const r = await sende('fliessrichtung_aus_quelle', { quelle: gewaehlteQuelle(p).kennzeichen });
+    ergebnisMelden(r, (r.hinweise ?? []).join(' ') || null);
+  },
 });

@@ -115,4 +115,11 @@ public sealed partial class Werkzeuge
         if (zug) par["zug"] = true;
         return Befehl("leitung_serie", par, trockenlauf);
     }
+
+    [McpServerTool(Name = "fliessrichtung_aus_quelle"), Description(FliessrichtungAusQuelle.Text)]
+    public string FliessrichtungWerkzeug(
+        [Description(FliessrichtungAusQuelle.ParQuelle)] string quelle,
+        [Description(FliessrichtungAusQuelle.ParAnschluss)] string? anschluss = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
+        => Befehl("fliessrichtung_aus_quelle", Parameter(("quelle", quelle), ("anschluss", anschluss)), trockenlauf);
 }
