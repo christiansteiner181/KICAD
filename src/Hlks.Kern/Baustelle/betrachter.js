@@ -22,13 +22,18 @@
   const werte = (f) => [...new Set(D.elemente.map(f).filter((x) => x))].sort((a, b) => a.localeCompare(b, 'de', { numeric: true }));
   const fuellen = (id, liste, text = (x) => x) => { for (const w of liste) $(id).append(el('option', { value: w, textContent: text(w) })); };
   fuellen('f-geschoss', D.geschosse.map((g) => g.kz), (kz) => { const g = D.geschosse.find((x) => x.kz === kz); return g.name ? `${kz} – ${g.name}` : kz; });
+  const abschnitte = D.abschnitte || [];
+  const abIds = new Map(abschnitte.map((a) => [a.kz, new Set(a.ids)]));
+  const statusText = { geplant: 'geplant', freigegeben: 'freigegeben zur Montage', montiert: 'montiert', geprueft: 'geprüft', abgenommen: 'abgenommen' };
+  fuellen('f-abschnitt', abschnitte.map((a) => a.kz), (kz) => { const a = abschnitte.find((x) => x.kz === kz); return [kz, a.name, a.termin].filter((x) => x).join(' – '); });
+  fuellen('f-status', D.statusStufen || [], (s) => statusText[s] || s);
   fuellen('f-gewerk', werte((e) => e.gewerk));
   fuellen('f-system', werte((e) => e.system));
   fuellen('f-klasse', werte((e) => e.klasse));
-  const filter = () => ({ g: $('f-geschoss').value, w: $('f-gewerk').value, s: $('f-system').value, k: $('f-klasse').value, t: $('f-suche').value.trim().toLowerCase() });
-  const passt = (e, f = filter()) => (!f.g || e.geschoss === f.g) && (!f.w || e.gewerk === f.w) && (!f.s || e.system === f.s) && (!f.k || e.klasse === f.k)
+  const filter = () => ({ a: $('f-abschnitt').value, st: $('f-status').value, g: $('f-geschoss').value, w: $('f-gewerk').value, s: $('f-system').value, k: $('f-klasse').value, t: $('f-suche').value.trim().toLowerCase() });
+  const passt = (e, f = filter()) => (!f.a || abIds.get(f.a).has(e.id)) && (!f.st || e.status === f.st) && (!f.g || e.geschoss === f.g) && (!f.w || e.gewerk === f.w) && (!f.s || e.system === f.s) && (!f.k || e.klasse === f.k)
     && (!f.t || [e.kz, e.name, e.raum, e.klasse, e.familie, e.typ].some((x) => x && String(x).toLowerCase().includes(f.t)));
-  for (const id of ['f-geschoss', 'f-gewerk', 'f-system', 'f-klasse', 'f-suche']) $(id).addEventListener('input', () => { liste(); material(); d3Filter(); });
+  for (const id of ['f-abschnitt', 'f-status', 'f-geschoss', 'f-gewerk', 'f-system', 'f-klasse', 'f-suche']) $(id).addEventListener('input', () => { liste(); material(); d3Filter(); });
 
   // ------------------------------------------------------------ Reiter
   for (const b of document.querySelectorAll('#reiter button')) b.addEventListener('click', () => reiter(b.dataset.reiter));
@@ -52,14 +57,25 @@
     const t = el('table'); const tb = el('tbody'); t.append(tb);
     const zeile = (n, w) => { if (w !== undefined && w !== null && w !== '') tb.append(el('tr', {}, el('td', { textContent: n }), el('td', { textContent: w }))); };
     zeile('Geschoss', e.geschoss); zeile('Raum', e.raum); zeile('System', e.system); zeile('Gehört zu', e.teilVon);
+    if (e.status) zeile('Montagestatus', (statusText[e.status] || e.status) + (e.statusAm ? ` (${e.statusAm}, ${e.statusVon || ''})` : ''));
+    const ab = abschnitte.filter((a) => abIds.get(a.kz).has(e.id)).map((a) => a.name || a.kz); if (ab.length) zeile('Abschnitt', ab.join(', '));
     zeile('Familie', e.familie); zeile('Typ', e.typ);
-    if (e.zMin !== undefined) {
-      zeile('Höhe ü. ±0.00', e.zMin === e.zMax ? m(e.zMin) + ' m' : `${m(e.zMin)} … ${m(e.zMax)} m`);
-      if (e.kote !== undefined) zeile('Höhe ü. Geschoss', e.zMin === e.zMax ? m(e.zMin - e.kote) + ' m' : `${m(e.zMin - e.kote)} … ${m(e.zMax - e.kote)} m`);
+    const ar = e.artikel || {}; zeile('Hersteller', ar.hersteller?.wert); zeile('Produkt', ar.produkt?.wert); zeile('Artikelnummer', ar.artikelnummer?.wert);
+    const h = e.hoehe;
+    if (h) {
+      const bereich = (a, b, null0 = 0) => a === b ? m(a - null0) + ' m' : `${m(a - null0)} … ${m(b - null0)} m`;
+      zeile('Achse ü. ±0.00', bereich(h.achseMinMm, h.achseMaxMm));
+      if (h.ukMm !== undefined) { zeile('UK ü. ±0.00', m(h.ukMm) + ' m'); zeile('OK ü. ±0.00', m(h.okMm) + ' m'); }
+      if (h.geschossKoteMm !== undefined) { zeile('Achse ü. Geschoss', bereich(h.achseMinMm, h.achseMaxMm, h.geschossKoteMm)); if (h.ukMm !== undefined) zeile('UK ü. Geschoss', m(h.ukMm - h.geschossKoteMm) + ' m'); }
     }
     if (e.mat && e.mat.art === 'leitung') { zeile('Serie', e.mat.serie); zeile('Grösse', e.mat.groesse); zeile('Länge', e.mat.laengeM.toFixed(2) + ' m'); }
     a.append(t);
-    const eig = Object.entries(e.eig || {});
+    const doks = e.eig && e.eig.dokumente && Array.isArray(e.eig.dokumente.wert) ? e.eig.dokumente.wert : [];
+    if (doks.length) {
+      a.append(el('h4', { textContent: 'Dokumente' }));
+      for (const d of doks) { const ziel = d.url || d.datei; a.append(el('div', {}, ziel ? el('a', { href: ziel, target: '_blank', textContent: d.titel || ziel }) : (d.titel || ''), d.rolle ? ` (${d.rolle})` : '')); }
+    }
+    const eig = Object.entries(e.eig || {}).filter(([n]) => !['dokumente', 'montagestatus'].includes(n));
     if (eig.length) {
       a.append(el('h4', { textContent: 'Eigenschaften' }));
       const t2 = el('table'); const tb2 = el('tbody'); t2.append(tb2);
@@ -77,11 +93,11 @@
     const f = filter();
     const zeilen = D.elemente.filter((e) => passt(e, f));
     const t = el('table'); const kopf = el('tr');
-    for (const n of ['Kennzeichen', 'Klasse', 'Name', 'Geschoss', 'Raum', 'System']) kopf.append(el('th', { textContent: n }));
+    for (const n of ['Kennzeichen', 'Klasse', 'Name', 'Geschoss', 'Raum', 'System', 'Status']) kopf.append(el('th', { textContent: n }));
     t.append(el('thead', {}, kopf)); const tb = el('tbody'); t.append(tb);
     for (const e of zeilen.slice(0, 3000)) {
       const tr = el('tr'); tr.dataset.id = e.id;
-      for (const w of [e.kz, e.klasse, e.name, e.geschoss, e.raum, e.system]) tr.append(el('td', { textContent: w || '' }));
+      for (const w of [e.kz, e.klasse, e.name, e.geschoss, e.raum, e.system, e.status ? statusText[e.status] : '']) tr.append(el('td', { textContent: w || '' }));
       tr.addEventListener('click', () => waehlen(e, 'liste'));
       tb.append(tr);
     }
@@ -109,7 +125,7 @@
     t.append(el('thead', {}, kopf)); const tb = el('tbody'); t.append(tb);
     for (const z of matZeilen.slice(1)) { const tr = el('tr'); z.forEach((w, i) => tr.append(el('td', { textContent: w, className: i >= 3 ? 'zahl' : '' }))); tb.append(tr); }
     $('mat-tabelle').innerHTML = ''; $('mat-tabelle').append(t);
-    const teile = [f.g && 'Geschoss ' + f.g, f.w && 'Gewerk ' + f.w, f.s && 'System ' + f.s, f.k && 'Klasse ' + f.k, f.t && `«${f.t}»`].filter((x) => x);
+    const teile = [f.a && 'Abschnitt ' + f.a, f.st && 'Status ' + (statusText[f.st] || f.st), f.g && 'Geschoss ' + f.g, f.w && 'Gewerk ' + f.w, f.s && 'System ' + f.s, f.k && 'Klasse ' + f.k, f.t && `«${f.t}»`].filter((x) => x);
     $('mat-umfang').textContent = 'Auswahl: ' + (teile.length ? teile.join(', ') : 'ganzes Modell') + ` · ${L.reduce((s, x) => s + x.laenge, 0).toFixed(2)} m Leitungen`;
   }
   $('mat-csv').addEventListener('click', () => {
@@ -117,6 +133,25 @@
     const a = el('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `${k.projekt}_Material.csv` });
     document.body.append(a); a.click(); a.remove();
   });
+
+  // ------------------------------------------------------------ Arbeitsplan (Montageabschnitte)
+  function arbeitsplan() {
+    const t = el('table'); const kopf = el('tr');
+    const stufen = D.statusStufen || [];
+    for (const n of ['Nr.', 'Abschnitt', 'Termin', 'Kolonne', 'Elemente', ...stufen.map((s) => statusText[s] || s), 'Bemerkung']) kopf.append(el('th', { textContent: n }));
+    t.append(el('thead', {}, kopf)); const tb = el('tbody'); t.append(tb);
+    for (const a of abschnitte) {
+      const tr = el('tr');
+      const el2 = D.elemente.filter((e) => abIds.get(a.kz).has(e.id));
+      const termin = [a.termin, a.terminBis].filter((x) => x).join(' – ');
+      for (const w of [a.reihenfolge ?? '', [a.kz, a.name].filter((x) => x).join(' '), termin, a.kolonne || '', el2.length, ...stufen.map((s) => el2.filter((e) => e.status === s).length || ''), a.bemerkung || ''])
+        tr.append(el('td', { textContent: w }));
+      tr.addEventListener('click', () => { $('f-abschnitt').value = a.kz; liste(); material(); d3Filter(); reiter('elemente'); });
+      tb.append(tr);
+    }
+    $('ab-tabelle').innerHTML = '';
+    $('ab-tabelle').append(abschnitte.length ? t : el('p', { textContent: 'Keine Montageabschnitte im Modell.', style: 'padding:12px' }));
+  }
 
   // ------------------------------------------------------------ Pläne (SVG)
   let planGezeigt = false, plan = { s: 1, x: 0, y: 0 };
@@ -279,10 +314,10 @@
   function zeichnen() { if (renderer) { steuerung.update(); renderer.render(szene, kamera); } requestAnimationFrame(zeichnen); }
 
   // ------------------------------------------------------------ Start
-  liste(); material(); d3Filter(); d3Groesse(); if (renderer) { d3Einpassen(); zeichnen(); }
+  arbeitsplan(); liste(); material(); d3Filter(); d3Groesse(); if (renderer) { d3Einpassen(); zeichnen(); }
   // Adresse: #d3 | #plaene | #elemente | #material, dazu ein Kennzeichen (#plaene/E.01 oder #E.01) – für Links auf ein Element
   for (const teil of decodeURIComponent(location.hash.slice(1)).split("/").filter((x) => x)) {
-    if (["d3", "plaene", "elemente", "material"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
+    if (["d3", "plaene", "elemente", "material", "abschnitte"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
   }
   window.kicad = { daten: D, waehlen: (kz) => waehlen(nachKz.get(kz) || null), reiter };
 })();

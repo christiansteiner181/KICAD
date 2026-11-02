@@ -232,6 +232,8 @@ public sealed class Katalog
             }
             if (d.Familie)
                 foreach (var e in FamilienEigenschaften) if (!eig.Any(x => x.Name == e.Name)) eig.Add(e);
+            if (d.Schicht == "system" && d.Rolle is not null)
+                foreach (var e in BauteilEigenschaften) if (!eig.Any(x => x.Name == e.Name)) eig.Add(e);
             d.Linie = linie;
             d.Eigenschaften = eig;
         }
@@ -245,6 +247,19 @@ public sealed class Katalog
         new() { Name = "parameter", Typ = "objekt", Beschreibung = "Exemplarwerte der Familienparameter { name: wert } – gehen den Typwerten vor" },
         new() { Name = "drehung", Typ = "zahl", Einheit = "°", Beschreibung = "Drehung um die senkrechte Achse, Gegenuhrzeigersinn; 0 = Vorderseite der Familie zeigt nach Süden (−y)" },
         new() { Name = "ausrichtung", Typ = "objekt", Beschreibung = "Volle Ausrichtung im Raum (Modul 3, z. B. Steig- und Neigungsbögen): { x: [dx, dy, dz], z: [dx, dy, dz] } = lokale x- und z-Achse der Familie in Weltkoordinaten, orthonormal; geht drehung vor" },
+    ];
+
+    /// <summary>Montage und Betrieb (BIM to field, entwurf/bim-to-field.md Stufe 0, 02.11.2026): Eigenschaften jedes Bauteils im Netz (Klassen der
+    /// Schicht «system» mit Rolle: Leitungen, Formteile, Armaturen, Apparate, Geräte). Datum und Person einer Statusänderung stehen in der Herkunft des
+    /// Werts (Akteur, Zeit). Hersteller und Artikelnummer am Element gehen den Angaben der Familie vor (BaustelleDaten.Artikel).</summary>
+    public static readonly IReadOnlyList<EigenschaftDef> BauteilEigenschaften =
+    [
+        new() { Name = "montagestatus", Typ = "auswahl", Auswahl = ["geplant", "freigegeben", "montiert", "geprueft", "abgenommen"],
+            Beschreibung = "Montagestatus (Entscheid Christian 02.11.2026): geplant · freigegeben zur Montage · montiert · geprüft (Druckprobe/Spülung) · abgenommen; Datum und Person in der Herkunft. Ohne Angabe: geplant" },
+        new() { Name = "hersteller", Typ = "text", Beschreibung = "Hersteller des Bauteils; ohne Angabe der Hersteller der Familie (Kopf der Familiendefinition)" },
+        new() { Name = "artikelnummer", Typ = "text", Beschreibung = "Artikelnummer des Herstellers bzw. Lieferanten; ohne Angabe der Typparameter «artikelnummer» der Familie" },
+        new() { Name = "dokumente", Typ = "liste", Beschreibung = "Dokumente zum Bauteil: [{ titel, datei oder url, rolle: datenblatt | montageanleitung | wartung | pruefprotokoll }]; dazu die Unterlagen der Familie" },
+        new() { Name = "wartung", Typ = "objekt", Beschreibung = "Wartung (Facility): { intervallMonate, taetigkeit, quelle } – nur mit Quelle (Herstellerunterlage), keine Werte aus dem Gedächtnis" },
     ];
 
     void Pruefen()

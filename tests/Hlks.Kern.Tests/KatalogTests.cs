@@ -145,7 +145,7 @@ public class KatalogTests
     public void SystemschichtKlassen_HabenEineRolle()
     {
         string[] rollen = ["verbraucher", "quelle", "senke", "zentrale", "leitung"];
-        var ausnahmen = new[] { "Anlage", "System", "Strang" };
+        var ausnahmen = new[] { "Anlage", "System", "Strang", "Montageabschnitt" };   // Montageabschnitt (BIM to field): Gliederung wie der Strang
         var ohne = Konkrete.Where(k => k.Schicht == "system" && !ausnahmen.Contains(k.Name) && string.IsNullOrEmpty(k.Rolle)).Select(k => k.Name).ToList();
         Assert.True(ohne.Count == 0, "Ohne Rolle: " + string.Join(", ", ohne));
         Assert.All(Konkrete.Where(k => !string.IsNullOrEmpty(k.Rolle)), k => Assert.Contains(k.Rolle!, rollen));

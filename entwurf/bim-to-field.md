@@ -80,6 +80,13 @@ Gebaut: Abfrage `baustelle_export` (eine HTML-Datei, offline), Knopf «Baustelle
 (`Plan/PlanSvg.cs`), 3D aus den GLB der Quest App mit Architekten-IFC, Elementinfo mit Höhe aus den Punkten, Materialauszug der Auswahl (auch
 Armaturen und Apparate). Noch nicht: Montageabschnitte, Arbeitsplan, Rückkanal, Planblätter als PDF, Dokumente; Stufe 0 (Datenmodell).
 
+**Stufe 0 gebaut (02.11.2026, Christian «Erst Datenmodell-Lücken»):** Eigenschaften jedes Bauteils im Netz (Katalog.BauteilEigenschaften:
+`montagestatus` mit Datum/Person aus der Herkunft, `hersteller`, `artikelnummer`, `dokumente`, `wartung`); Klasse **Montageabschnitt** (MA, Kriterien
+und von Hand gewählte Elemente, Termin, Kolonne, Reihenfolge); Material und Dämmung an Formteil und Armatur; Herkunftsart `baustelle`; Kern
+`Baustelle/BaustelleDaten.cs` (Abschnitt, Artikel Element vor Familie mit Typparameter `artikelnummer`, Höhenkote Achse/UK/OK), Abfrage
+`montageabschnitte`, Befehl `montagestatus_setzen`. Die Webseite zeigt Abschnitt- und Statusfilter, Reiter «Arbeitsplan», Artikel, UK/OK.
+Offen: Wartung und Dokumente an der Familie (Kopf), Import des Bauprogramms, Rückkanal.
+
 **Bestandsaufnahme Stufe 0 (Agent hlks-modul, 02.11.2026) – Lücken im Informationsmodell:**
 1. Artikelnummer und Wartung fehlen ganz (Hersteller/Produkt nur als freier Text im Familienkopf; Typ = Name des Familientyps).
 2. Hersteller und Typ am Element nur bei Apparaten; kein typisierter Zugriff Element → Hersteller.

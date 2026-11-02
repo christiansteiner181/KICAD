@@ -456,6 +456,7 @@ public class ApiTests
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
         ["sanitaer_katalog"] = "{}",
+        ["montageabschnitte"] = "{}",                                   // BIM to field Stufe 0: Beispiel ohne Abschnitte → leere Liste
         ["lueftung_schema"] = "{}",                                    // Modul 6 Teil A-3: Beispiel ohne Luftmengen → leer mit Befund
         ["lueftung_varianten"] = "{}",                                 // Modul 6 Teil A: Beispiel ohne Luftmengen → nur Befund
         ["raumforderung"] = "{}",                                      // Modul 6 Teil A-7: Beispiel ohne Raumreservationen

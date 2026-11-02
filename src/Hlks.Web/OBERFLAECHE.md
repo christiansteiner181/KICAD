@@ -1492,6 +1492,14 @@ Ziehen, Mausrad bzw. zwei Finger; Antippen = Elementinfo; beim Wählen springt d
 **Material** (Auszug der aktuellen Auswahl: Leitungen je Serie und Grösse mit Länge, Formteile und Bauteile je Familie/Typ mit Stück; CSV).
 Filter Geschoss, Gewerk, System, Klasse, Suche gelten für Liste, Material und 3D. Elementinfo: Geschoss, Raum, System, Strang, Familie, Typ, Höhe
 über ±0.00 und über Geschoss (aus den Punkten), Eigenschaften mit Einheit. Adresse `#plaene/E.01` öffnet Reiter und Element.
+Filter auch nach **Abschnitt** und **Status**; Reiter **Arbeitsplan** (Montageabschnitte mit Termin, Kolonne, Anzahl je Status; Zeile antippen = Filter).
+Elementinfo zusätzlich: Montagestatus mit Datum und Person, Abschnitte, Hersteller/Produkt/Artikelnummer (Element vor Familie), Achse, UK und OK
+über ±0.00 und über Geschoss, Dokumente als Links.
+
+**Datenmodell (Stufe 0):** jedes Bauteil im Netz hat `montagestatus` (geplant | freigegeben | montiert | geprueft | abgenommen), `hersteller`,
+`artikelnummer`, `dokumente` [{ titel, datei|url, rolle }], `wartung` { intervallMonate, taetigkeit, quelle }; Klasse **Montageabschnitt** (MA-n:
+`kriterien` { systeme, straenge, klassen, geschosse, raeume, gewerke }, `elemente`, `termin`, `terminBis`, `kolonne`, `reihenfolge`); Abfrage
+`montageabschnitte { abschnitt? }`; Befehl `montagestatus_setzen { status, elemente?, abschnitt? }` (ein Paket).
 
 ## IFC exportieren (Modul 7 Teil B2, Dialog)
 

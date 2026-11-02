@@ -31,7 +31,7 @@ public static class BaustelleExport
     public static object? Tuer(Projekt p, string name, JsonObject par) => name == "baustelle_export" ? Schreiben(p, par) : null;
 
     static readonly string[] Rollen = ["monteur", "bauleitung"];
-    static readonly HashSet<string> OhneElement = ["Ansicht", "Planblatt", "Projektinformation"];
+    static readonly HashSet<string> OhneElement = ["Ansicht", "Planblatt", "Projektinformation", "Montageabschnitt"];
     static readonly HashSet<string> Planarten = ["grundriss", "schnitt", "ansicht", "schema"];
 
     public static JsonObject Schreiben(Projekt p, JsonObject par)
@@ -107,10 +107,12 @@ public static class BaustelleExport
                 ["geschoss"] = Kz(e.Geschoss), ["raum"] = Kz(e.Raum), ["system"] = Kz(e.System), ["teilVon"] = Kz(e.TeilVon), ["eig"] = eig,
             };
             if (Familien.FamilieVon(m, e) is { } fam) { o["familie"] = fam.Name ?? fam.Kennzeichen; o["typ"] = Familien.Typ(e); }
-            if (e.Geometrie?.Punkte is { Count: > 0 } pk && pk.All(q => q.Length >= 3))
+            if (BaustelleDaten.Hoehe(p, e) is { } hoehe) o["hoehe"] = hoehe;
+            if (BaustelleDaten.IstBauteil(k, e))
             {
-                o["zMin"] = Math.Round(pk.Min(q => q[2])); o["zMax"] = Math.Round(pk.Max(q => q[2]));
-                if (m.Finde(e.Geschoss)?.Zahl("kote") is double kote) o["kote"] = kote;
+                o["status"] = BaustelleDaten.Montagestatus(e);
+                if (e.Eigenschaft("montagestatus")?.Herkunft is { } hk) { o["statusVon"] = hk.Akteur; o["statusAm"] = hk.Zeit.ToString("dd.MM.yyyy HH:mm"); }
+                if (BaustelleDaten.Artikel(p, e) is { } art) o["artikel"] = art;
             }
             if (Material(p, e) is { } mat) o["mat"] = mat;
             elemente.Add(o);
@@ -146,9 +148,18 @@ public static class BaustelleExport
         var modell3d = XrModell.Liste(xr, (_, _) => "");
         modell3d["geschosse"] = geschosse3d;
 
+        var abschnitte = new JsonArray(m.DerKlasse("Montageabschnitt")
+            .OrderBy(a => a.Zahl("reihenfolge") ?? double.MaxValue).ThenBy(a => a.Kennzeichen, StringComparer.Ordinal)
+            .Select(a => (JsonNode)new JsonObject
+            {
+                ["kz"] = a.Kennzeichen, ["name"] = a.Name, ["reihenfolge"] = a.Zahl("reihenfolge"), ["termin"] = a.Text("termin"), ["terminBis"] = a.Text("terminBis"),
+                ["kolonne"] = a.Text("kolonne"), ["bemerkung"] = a.Text("bemerkung"),
+                ["ids"] = new JsonArray(BaustelleDaten.Abschnitt(m, k, a).Select(e => (JsonNode)JsonValue.Create(e.Id)).ToArray()),
+            }).ToArray());
+
         return new JsonObject
         {
-            ["kopf"] = kopf,
+            ["kopf"] = kopf, ["abschnitte"] = abschnitte, ["statusStufen"] = new JsonArray(BaustelleDaten.Status.Select(s => (JsonNode)JsonValue.Create(s)).ToArray()),
             ["geschosse"] = new JsonArray(geschosse.Select(g => (JsonNode)new JsonObject { ["kz"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Zahl("kote") }).ToArray()),
             ["elemente"] = elemente, ["ansichten"] = ansichten, ["modell3d"] = modell3d,
         };

@@ -69,6 +69,7 @@ public sealed class Abfragen(Projekt p)
         .. LueftungKette.Definitionen,   // Modul 6 Teil A: lueftung_varianten
         .. LueftungSchema.Definitionen,   // Modul 6 Teil A-3: lueftung_schema
         .. BaustelleExport.Definitionen,   // BIM to field Stufe 1: baustelle_export
+        .. BaustelleDaten.Definitionen,   // BIM to field Stufe 0: montageabschnitte
         .. LueftungBefehle.Definitionen,   // Modul 6 Teil A-7: raumforderung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
         .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)

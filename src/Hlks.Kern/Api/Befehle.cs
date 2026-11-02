@@ -118,6 +118,7 @@ public sealed class Befehlsregister
         AussparungBefehle.Registrieren(r);
         // Modul 6 Teil A
         LueftungBefehle.Registrieren(r);
+        BaustelleDaten.Registrieren(r);   // BIM to field Stufe 0: montagestatus_setzen
         return r;
     }
 }

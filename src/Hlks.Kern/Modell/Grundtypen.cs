@@ -21,8 +21,9 @@ public sealed record Herkunft
     public string? Befehl { get; init; }
 
     /// <summary>familie: Wert aus der Familie des Elements (Quelle = Familie und Typ); unterlage: Wert aus einer
-    /// Herstellerunterlage (Quelle = Befund-Id mit Datei, Seite, Stelle) – beide Modul 2.</summary>
-    public static readonly string[] Arten = ["mensch", "ki", "ifc", "import", "berechnung", "katalog", "norm", "beispiel", "hkap", "familie", "unterlage"];
+    /// Herstellerunterlage (Quelle = Befund-Id mit Datei, Seite, Stelle) – beide Modul 2; baustelle: Rückmeldung von der Baustelle (BIM to field,
+    /// vom Menschen übernommen).</summary>
+    public static readonly string[] Arten = ["mensch", "ki", "ifc", "import", "berechnung", "katalog", "norm", "beispiel", "hkap", "familie", "unterlage", "baustelle"];
 }
 
 /// <summary>Ein Eigenschaftswert mit Einheit und Herkunft.</summary>
