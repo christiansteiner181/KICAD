@@ -98,6 +98,22 @@ public class RegeltechnikTests
     }
 
     [Fact]
+    public void Kaesten_NurBeiVerteilernUndMitBekanntenTypen()
+    {
+        static JsonObject Verteiler(string kategorie, string fuer) => FamilieTestHilfe.JsonAus($$"""
+            { "format": 1, "name": "Musterverteiler (fiktiv)", "kategorie": "{{kategorie}}", "parameter": [],
+              "typen": [ { "name": "4 Abgänge", "werte": {} }, { "name": "8 Abgänge", "werte": {} } ], "koerper": [], "anschluesse": [],
+              "antriebe": [ { "familie": "Musterantrieb (fiktiv)" } ],
+              "kaesten": [ { "familie": "Musterkasten (fiktiv)", "typen": [ "Grösse 2" ], "fuer": [ "{{fuer}}" ] } ] }
+            """);
+        var gut = FamilieDef.Lesen(Verteiler("Verteiler", "4 Abgänge"), Kat);
+        Assert.True(gut.Gueltig, string.Join("; ", gut.Fehler));
+        Assert.DoesNotContain(gut.Hinweise, h => h.Stelle == "anbau");   // Verteiler: Stellantriebe je Abgang, kein Anbaupunkt
+        Assert.Contains(FamilieDef.Lesen(Verteiler("Verteiler", "12 Abgänge"), Kat).Fehler, x => x.Stelle == "kaesten[1].fuer");
+        Assert.Contains(FamilieDef.Lesen(Verteiler("Ventil", "4 Abgänge"), Kat).Fehler, x => x.Stelle == "kaesten");
+    }
+
+    [Fact]
     public void Quellen_MuessenBefundIdsSein()
     {
         var f = Def(Antrieb, d => d["regeltechnik"]!["kommunikation"]![0]!["quellen"] = new JsonArray("Seite 3"));

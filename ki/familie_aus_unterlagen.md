@@ -202,9 +202,14 @@ Entscheid Christian Steiner 02.11.2026: «alle Elektrischen Komponenten brauchen
 5. **Ventil bzw. Klappe mit passenden Antrieben:** `antriebe` = Kombinationstabelle des Herstellers (welche Antriebsfamilie
    und -typen auf welche Ventiltypen passen, `fuer` = Typen der Ventilfamilie) mit `quellen`; `anbau` = Lage und Richtung des
    Kupplungspunkts am Ventil (aus dem Massbild, Formel aus bemassten Werten). Baue zuerst die Antriebsfamilie, dann das Ventil.
-6. **Pumpen:** Kennlinien (Q-H, P1, NPSH) noch nicht übernehmen (Entscheid 02.11.2026: später mit Modul 5); Kennwerte,
+6. **Verteiler (FBH) und Verteilerkasten:** Der Verteiler (Kategorie Verteiler) hat je Abgangszahl einen Typ, die
+   Stellantriebe als eigene Antriebsfamilie in `antriebe` (ohne `anbau`), die passenden Kästen in `kaesten` (Familie der
+   Kategorie Verteilerkasten, Typen = Kastengrössen, `fuer` = Verteilertypen nach der Zuordnungstabelle des Herstellers).
+   Der Kasten ist eine eigene Familie (Kategorie Verteilerkasten, Einbau unter- oder aufputz). **Ausdehnungsgefässe**:
+   Kategorie Ausdehnungsgefaess; elektrische Druckhaltungen (Kompressor, Pumpe) mit Regeltechnik der Steuerung.
+7. **Pumpen:** Kennlinien (Q-H, P1, NPSH) noch nicht übernehmen (Entscheid 02.11.2026: später mit Modul 5); Kennwerte,
    Regeltechnik, Abmessungen, Anschlüsse ja. Eigenschaft `bauart` der Klasse Pumpe im Bericht nennen.
-7. **VDI 3805:** Liegt eine VDI-3805-Datei als Unterlage vor, ist sie nur **Zweitbeleg** (Entscheid 02.11.2026: Feldbedeutungen
+8. **VDI 3805:** Liegt eine VDI-3805-Datei als Unterlage vor, ist sie nur **Zweitbeleg** (Entscheid 02.11.2026: Feldbedeutungen
    sind ohne die Normblätter unbekannt): Die Quelle eines Werts bleibt das Datenblatt; ein VDI-Feld mit gleichem Wert darfst
    du zusätzlich nennen. Deute nie ein VDI-Feld allein.
 

@@ -169,4 +169,10 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
 5. **Downloads:** Das Belimo-VDI-Paket lädt die Sitzung (Dateiname, Quelle, Grösse vorher nennen); bei EBRO registriert sich Christian.
 6. **EBRO: Z 011 und Z 014**, DN 50–250.
 7. **Kennlinien später** mit Modul 5; jetzt Kennwerte und Regeltechnik.
+9. **IMI-Zusatz (Christian 02.11.2026, über den Hauptlauf):** «wir brauchen in der Basis, FBH verteiler, FBH Verteilerkasten»,
+   «fabrikat IMI», «Expansionsgefässe ebenfalls IMI». Fragefenster: FBH-Verteiler **Dynacon Eclipse** mit den IMI-Stellantrieben
+   (Antriebsfamilie, `antriebe` ohne `anbau`); **Verteilerkasten als eigenes Element** (neue Klasse Verteilerkasten, Gehäuse ohne
+   Netzfunktion, `bezuege.verteiler`; die Verteilerfamilie nennt die Kästen je Abgangszahl in `kaesten`); Expansion **Statico,
+   Compresso, Transfero**; neue Klasse **Ausdehnungsgefaess** (bauart statisch/kompressor/pumpe, nennvolumen, ein Anschluss).
+   IMI-VDI-3805-Daten nicht gefunden → Datenblatt mit Beleg je Wert. Aufträge I1–I4.
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).

@@ -310,7 +310,7 @@ public sealed class FamilieDef
     public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten"];
     static readonly string[] KopfFelder = ["format", "id", "name", "kategorie", "hersteller", "produkt", "beschreibung", "version", "status",
         "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht",
-        "regeltechnik", "antriebe", "anbau"];   // Herstellerbibliothek H1
+        "regeltechnik", "antriebe", "anbau", "kaesten"];   // Herstellerbibliothek H1 (kaesten: Verteiler, 02.11.2026)
     static readonly Regex NamensMuster = new("^[A-Za-zÄÖÜäöü_][A-Za-zÄÖÜäöü0-9_]*$");
     static readonly Regex BefundMuster = new("^[0-9a-f]{12}#[0-9]+$");
 

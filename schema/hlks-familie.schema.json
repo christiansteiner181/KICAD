@@ -336,12 +336,18 @@
       }
     },
     "antriebe": {
-      "type": "array", "description": "Nur Armaturen: Kombinationstabelle des Herstellers – welche Antriebsfamilie (Kategorie Antrieb) mit welchen Typen auf welche Ventiltypen dieser Familie passt",
+      "type": "array", "description": "Nur Armaturen und Verteiler (Stellantriebe je Abgang): Kombinationstabelle des Herstellers – welche Antriebsfamilie (Kategorie Antrieb) mit welchen Typen auf welche Typen dieser Familie passt",
       "items": { "type": "object", "required": ["familie"], "additionalProperties": false, "properties": {
         "familie": { "type": "string", "description": "Name oder id der Antriebsfamilie" },
         "typen": { "type": "array", "items": { "type": "string" }, "description": "Antriebstypen; leer = alle" },
         "fuer": { "type": "array", "items": { "type": "string" }, "description": "Typen dieser Familie; leer = alle" },
         "quellen": { "$ref": "#/$defs/quellen" } } }
+    },
+    "kaesten": {
+      "type": "array", "description": "Nur Verteiler (Entscheid Christian 02.11.2026): passende Verteilerkästen (Familie der Kategorie Verteilerkasten) und ihre Typen je Typ dieses Verteilers (Abgangszahl)",
+      "items": { "type": "object", "required": ["familie"], "additionalProperties": false, "properties": {
+        "familie": { "type": "string" }, "typen": { "type": "array", "items": { "type": "string" } },
+        "fuer": { "type": "array", "items": { "type": "string" } }, "quellen": { "$ref": "#/$defs/quellen" } } }
     },
     "anbau": {
       "type": "object", "additionalProperties": false, "required": ["lage", "richtung"],

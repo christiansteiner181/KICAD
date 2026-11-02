@@ -42,6 +42,8 @@ public sealed class FamRegeltechnik
     public List<FamRtVerweis> Verweise { get; } = [];
     /// <summary>Kombinationstabelle (nur Armaturen): je Eintrag Antriebsfamilie, Antriebstypen (leer = alle), Ventiltypen (leer = alle).</summary>
     public List<(string Familie, List<string> Typen, List<string> Fuer)> Antriebe { get; } = [];
+    /// <summary>Nur Verteiler (Entscheid Christian 02.11.2026): passende Verteilerkästen je Typ (Abgangszahl), gleicher Aufbau wie Antriebe.</summary>
+    public List<(string Familie, List<string> Typen, List<string> Fuer)> Kaesten { get; } = [];
     public FamZahl[]? AnbauLage { get; set; }
     public FamZahl[]? AnbauRichtung { get; set; }
 
@@ -71,6 +73,10 @@ public sealed class FamRegeltechnik
             int i = 0;
             foreach (var s in def["antriebe"] as JsonArray ?? []) { i++; if (s is JsonObject o) yield return ($"antriebe[{i}].quellen", o["quellen"]); }
         }
+        {
+            int i = 0;
+            foreach (var s in def["kaesten"] as JsonArray ?? []) { i++; if (s is JsonObject o) yield return ($"kaesten[{i}].quellen", o["quellen"]); }
+        }
         if (def["anbau"] is JsonObject an) yield return ("anbau.quellen", an["quellen"]);
     }
 
@@ -83,16 +89,23 @@ public sealed class FamRegeltechnik
         var rt = def["regeltechnik"];
         var an = def["antriebe"];
         var ab = def["anbau"];
-        if (rt is null && an is null && ab is null) return null;
+        var ka = def["kaesten"];
+        if (rt is null && an is null && ab is null && ka is null) return null;
         var r = new FamRegeltechnik();
         if (rt is not null) r.RegeltechnikLesen(rt, f, kat, fehl, hinweis);
-        bool armatur = klasse is null || klasse.IstArt("Armatur");
+        bool verteiler = klasse is null || klasse.IstArt("Verteiler");
+        bool armatur = klasse is null || klasse.IstArt("Armatur") || verteiler;   // Verteiler: Stellantriebe je Abgang (FBH)
+        if (ka is not null)
+        {
+            if (!verteiler) fehl("kaesten", $"kaesten gibt es nur bei Verteilern, nicht bei {klasse!.Name}", "Abschnitt entfernen.");
+            else r.ListeLesen(ka, "kaesten", "Verteilerkasten", r.Kaesten, f, fehl, hinweis);
+        }
         if ((an is not null || ab is not null) && !armatur)
-            fehl(an is not null ? "antriebe" : "anbau", $"antriebe und anbau gibt es nur bei Armaturen (Ventil, Klappe), nicht bei {klasse!.Name}",
+            fehl(an is not null ? "antriebe" : "anbau", $"antriebe und anbau gibt es nur bei Armaturen (Ventil, Klappe) und Verteilern, nicht bei {klasse!.Name}",
                 "Abschnitt entfernen; ein Antrieb ist eine eigene Familie der Kategorie Antrieb.");
         else
         {
-            if (an is not null) r.AntriebeLesen(an, f, fehl, hinweis);
+            if (an is not null) r.ListeLesen(an, "antriebe", "Antrieb", r.Antriebe, f, fehl, hinweis);
             if (ab is not null)
             {
                 if (ab is not JsonObject o) fehl("anbau", "anbau muss ein Objekt sein", "{ lage: [x, y, z], richtung: [dx, dy, dz], quellen }");
@@ -104,7 +117,7 @@ public sealed class FamRegeltechnik
                     r.AnbauRichtung = punkt(o["richtung"], "anbau.richtung", 3);
                 }
             }
-            if (an is not null && ab is null)
+            if (an is not null && ab is null && !(klasse?.IstArt("Verteiler") ?? false))
                 hinweis("anbau", "Die Familie nennt Antriebe, aber keinen Anbaupunkt – der Antrieb lässt sich nicht darstellen", "anbau { lage, richtung } aus dem Massbild angeben.");
         }
         return r;
@@ -216,25 +229,28 @@ public sealed class FamRegeltechnik
         }
     }
 
-    void AntriebeLesen(JsonNode an, FamilieDef f, Action<string, string, string?> fehl, Action<string, string, string?> hinweis)
+    /// <summary>Kombinationstabelle «antriebe» bzw. «kaesten»: je Eintrag Familie (Kategorie <paramref name="kategorie"/>), deren Typen und die
+    /// Typen dieser Familie, für die sie passen.</summary>
+    void ListeLesen(JsonNode an, string name, string kategorie, List<(string Familie, List<string> Typen, List<string> Fuer)> ziel, FamilieDef f,
+        Action<string, string, string?> fehl, Action<string, string, string?> hinweis)
     {
-        if (an is not JsonArray a) { fehl("antriebe", "antriebe muss eine Liste sein", "[{ familie: \"<Antriebsfamilie>\", typen: [ … ], fuer: [ <Ventiltypen> ], quellen }]"); return; }
+        if (an is not JsonArray a) { fehl(name, $"{name} muss eine Liste sein", $"[{{ familie: \"<Familie der Kategorie {kategorie}>\", typen: [ … ], fuer: [ <Typen dieser Familie> ], quellen }}]"); return; }
         int i = 0;
         foreach (var x in a)
         {
             i++;
-            var ort = $"antriebe[{i}]";
+            var ort = $"{name}[{i}]";
             if (x is not JsonObject o) { fehl(ort, "Eintrag muss ein Objekt sein", null); continue; }
             foreach (var (feld, _) in o)
                 if (feld is not ("familie" or "typen" or "fuer" or "quellen")) fehl(ort, $"Unbekanntes Feld «{feld}»", "Erlaubt: familie, typen, fuer, quellen");
             var fam = T(o["familie"])?.Trim();
-            if (string.IsNullOrEmpty(fam)) { fehl($"{ort}.familie", "familie fehlt", "Name oder id der Antriebsfamilie (Kategorie Antrieb) angeben."); continue; }
+            if (string.IsNullOrEmpty(fam)) { fehl($"{ort}.familie", "familie fehlt", $"Name oder id der Familie (Kategorie {kategorie}) angeben."); continue; }
             var typen = Texte(o["typen"], $"{ort}.typen", fehl);
             var fuer = Texte(o["fuer"], $"{ort}.fuer", fehl);
             foreach (var t in fuer)
                 if (f.Typ(t) is null) fehl($"{ort}.fuer", $"Typ «{t}» gibt es in dieser Familie nicht", "Erlaubt: " + string.Join(", ", f.Typen.Select(x => x.Name).Take(20)));
             Unbelegt(o, ort, hinweis);
-            Antriebe.Add((fam, typen, fuer));
+            ziel.Add((fam, typen, fuer));
         }
     }
 
