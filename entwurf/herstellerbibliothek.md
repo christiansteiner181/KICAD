@@ -183,9 +183,9 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
     Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems». Bestand: Wickelfalzrohr rund, Rechteckkanal (je Bogen,
     T-Stück, Reduktion), 8 Schmidlin-Flexrohre freigegeben. Neue Klassen: Hosenstueck, Endkappe (Formteile), Brandschutzklappe,
     Luftklappe, Schalldaempfer (Armaturen Lüftung, Antriebe über die Antriebsfamilie), Luftverteiler, Erdwaermetauscher.
-    Fragefenster zu Reihenfolge, Fabrikat und Zehnder-Umfang **unbeantwortet** – angenommen nach Vorschlag: Zehnder zuerst
+    Reihenfolge, Fabrikat und Zehnder-Umfang nach Vorschlag, **bestätigt von Christian 02.11.2026 («Ja, so lassen»)**: Zehnder zuerst
     (Z1 ComfoAir-Geräte, Z2 ComfoWell/ComfoTube, Z3 ComfoValve/Durchlässe, Z4 Erdwärmetauscher), dann L1–L6 (Formstücke,
-    Brandschutzklappen, Luftklappen, Schalldämpfer, Volumenstromregler, Durchlässe) mit Schmidlin, sonst Trox. Korrigierbar.
+    Brandschutzklappen, Luftklappen, Schalldämpfer, Volumenstromregler, Durchlässe) mit Schmidlin, sonst Trox.
 12. **Schemas (Christian 02.11.2026):** «du zeichnest schemas aus den daten. dies müssen wir im detail korrigieren. erst wenn
     anlagen gezeichnet sind die reale daten enthalten.» → Die Aufträge erfinden keine Schemasymbole; die Schemadarstellung der
     Bibliotheksfamilien wird an realen Anlagen korrigiert.
