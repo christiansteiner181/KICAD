@@ -150,8 +150,13 @@ public static class UnterlagenAbfrage
                 var bl = b.Befunde.Where(x => x.Art == "block").Select(x => x.Wert?.ToString()).Distinct().Take(MaxListe).ToList();
                 if (bl.Count > 0) o["bloecke"] = new JsonArray(bl.Select(x => (JsonNode?)x).ToArray());
                 break;
+            case "vdi3805":   // Herstellerbibliothek H2: Satzarten mit Anzahl und erstem Satz (Felder ungedeutet)
+                o["satzarten"] = new JsonArray(b.Befunde.Where(x => x.Art == "satz").GroupBy(x => x.Wert?["satzart"]?.ToString() ?? "")
+                    .OrderBy(g => g.Key, StringComparer.Ordinal).Take(MaxListe)
+                    .Select(g => (JsonNode)new JsonObject { ["satzart"] = g.Key, ["anzahl"] = g.Count(), ["erster"] = g.First().Id }).ToArray());
+                break;
             case "typkatalog":
-                var typen = b.Befunde.Where(x => x.Art == "typ").ToList();
+                var typen =b.Befunde.Where(x => x.Art == "typ").ToList();
                 o["typen"] = new JsonArray(typen.Take(MaxTabellen).Select(t => (JsonNode)new JsonObject { ["id"] = t.Id, ["name"] = (t.Wert as JsonObject)?["name"]?.DeepClone() }).ToArray());
                 if (typen.Count > MaxTabellen) o["typenWeitere"] = typen.Count - MaxTabellen;
                 break;

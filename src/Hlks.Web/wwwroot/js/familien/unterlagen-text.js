@@ -21,7 +21,7 @@ export { esc };
 
 export const ERLAUBTE_ENDUNGEN = ['pdf', 'dwg', 'dxf', 'step', 'stp', 'iges', 'igs', 'stl', 'obj', 'ifc', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg'];
 export const DATEI_ACCEPT = ERLAUBTE_ENDUNGEN.map((e) => '.' + e).join(',');
-export const ART_NAMEN = { html: 'Webseite', pdf: 'PDF', dwg: 'DWG', dxf: 'DXF', step: 'STEP', iges: 'IGES', stl: 'STL', obj: 'OBJ', ifc: 'IFC', xlsx: 'Excel', csv: 'CSV', typkatalog: 'Typkatalog', bild: 'Bild' };
+export const ART_NAMEN = { html: 'Webseite', pdf: 'PDF', dwg: 'DWG', dxf: 'DXF', step: 'STEP', iges: 'IGES', stl: 'STL', obj: 'OBJ', ifc: 'IFC', xlsx: 'Excel', csv: 'CSV', typkatalog: 'Typkatalog', bild: 'Bild', vdi3805: 'VDI 3805' };
 export const ohnePruefsumme = (n) => String(n ?? '').replace(/^[0-9a-f]{12}_/i, '');
 export const endungVon = (name) => (/\.([a-z0-9]+)$/i.exec(String(name ?? '').trim())?.[1] ?? '').toLowerCase();
 

@@ -504,7 +504,7 @@ public static class UnterlagenDownload
         var passend = art switch
         {
             "pdf" => new[] { ".pdf" }, "dwg" => [".dwg"], "dxf" => [".dxf"], "step" => [".step", ".stp"], "iges" => [".iges", ".igs"], "stl" => [".stl"], "obj" => [".obj"],
-            "ifc" => [".ifc"], "xlsx" => [".xlsx", ".xlsm"], "csv" => [".csv"], "typkatalog" => [".txt"], "png" => [".png"], "jpg" => [".jpg", ".jpeg"], "html" => [".html", ".htm"], _ => [],
+            "ifc" => [".ifc"], "xlsx" => [".xlsx", ".xlsm"], "csv" => [".csv"], "typkatalog" => [".txt"], "vdi3805" => [".vdi"], "png" => [".png"], "jpg" => [".jpg", ".jpeg"], "html" => [".html", ".htm"], _ => [],
         };
         return passend.Contains(ext) ? name : name + passend.FirstOrDefault();
     }

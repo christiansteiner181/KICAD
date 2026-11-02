@@ -406,6 +406,17 @@ public static class QuellVergleiche
                 l.Add(new QuellKandidat(null, null, text));
                 break;
             }
+            case "satz":
+            {
+                // VDI 3805 (Herstellerbibliothek H2): Felder ungedeutet – jede Zahl und jeder Text eines Felds ist Kandidat (Zweitbeleg)
+                int nr = 0;
+                foreach (var f in VdiBefundLeser.Felder(b))
+                {
+                    nr++;
+                    l.Add(new QuellKandidat($"feld {nr}", QuellZahlen.Lesen(f), f));
+                }
+                break;
+            }
             case "mass":
                 if (b.Wert is JsonValue mv && mv.GetValueKind() == JsonValueKind.Number)
                 {

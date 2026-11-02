@@ -569,7 +569,7 @@
     "eigenschaften": [
       { "name": "datei", "typ": "text", "pflicht": true, "beschreibung": "Dateiname im Ordner unterlagen des Projekts (Prüfsumme + ursprünglicher Name)" },
       { "name": "original", "typ": "text", "beschreibung": "Ursprünglicher Pfad der Datei beim Einfügen" },
-      { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "ifc", "dwg", "dxf", "pdf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "html" ], "beschreibung": "Dateiart (step bis html: Herstellerunterlagen für Familien, Modul 2; html = abgerufene Webseite)" },
+      { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "ifc", "dwg", "dxf", "pdf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "html", "vdi3805" ], "beschreibung": "Dateiart (step bis vdi3805: Herstellerunterlagen für Familien, Modul 2; html = abgerufene Webseite; vdi3805 = VDI-3805-Produktdaten, nur Zweitbeleg)" },
       { "name": "seite", "typ": "zahl", "beschreibung": "PDF: Seite (ab 1)" },
       { "name": "massstab", "typ": "zahl", "beschreibung": "PDF/Bild: Massstabsnenner der Vorlage (100 = 1:100), Grundlage für die erste Lage vor dem Kalibrieren" },
       { "name": "transformation", "typ": "objekt", "beschreibung": "Von Unterlagen-Koordinaten (DWG: Zeichnungseinheiten; PDF/Bild: Pixel, y nach unten) in Modell-mm: { \"faktor\", \"drehung\" (Grad, Gegenuhrzeigersinn), \"dx\", \"dy\" }. Modell = Drehung(faktor · u) + [dx, dy]; PDF/Bild spiegeln y zuerst. Dazu für die Plausibilitätsprüfung: erwartung (Faktor aus Einheit bzw. Massstab und dpi), grundlage (woher die erste Lage stammt), dpi (PDF/Bild)." },

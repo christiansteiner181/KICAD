@@ -51,6 +51,8 @@ public class TuerDarstellungTests
         ["unterlagen_lesen"] = "{\"unterlagen\":[\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\"]}",   // Modul 2, B2: kleines Beispiel-PDF
         ["befunde"] = "{\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\",\"art\":\"wort\"}",
         ["unterlage_bild"] = "{\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\",\"breite\":200}",
+        ["regeltechnik"] = """{"familie":"FAM-1"}""",                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
+        ["vdi_abgleich"] = "{\"familie\":\"FAM-1\",\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/muster.vdi").Replace("\\", "/") + "\"}",   // fiktive VDI-Datei
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/")
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",

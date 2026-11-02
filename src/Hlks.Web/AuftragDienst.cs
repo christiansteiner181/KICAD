@@ -126,6 +126,7 @@ public sealed class AuftragDienst
         "familie_vergleichen", "familie_masse", "rueckgaengig", "wiederholen",
         "familien_bibliothek",   // Modul 2, C3: Bibliothek nur lesend (Index, Stand, Versionen, Vorschau)
         "leitungsserie",   // Modul 3: Leitungsserie mit Formteilen je Grösse prüfen (nur lesen)
+        "regeltechnik", "vdi_abgleich",   // Herstellerbibliothek 02.11.2026: Regeltechnik und VDI-Typenliste prüfen (nur lesen)
         // Unterlagen
         "unterlagen_lesen", "befunde", "unterlage_bild",
     ];
@@ -137,7 +138,7 @@ public sealed class AuftragDienst
     public static readonly IReadOnlyList<string> InternetWerkzeuge =
     [
         "katalog", "familien", "familie", "familie_ansicht", "familie_masse", "familie_vergleichen", "familie_entwurf", "familie_aendern",
-        "familien_bibliothek", "leitungsserie",
+        "familien_bibliothek", "leitungsserie", "regeltechnik", "vdi_abgleich",
         "unterlagen_lesen", "befunde", "unterlage_bild", "unterlage_aus_url",
     ];
     /// <summary>Eingebautes Werkzeug von Claude Code bei «internet»: nur die Websuche. WebFetch ist nicht erlaubt (es lässt sich

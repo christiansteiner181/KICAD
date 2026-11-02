@@ -37,6 +37,7 @@ public static class FamilienAbfragen
         new("familie_vergleichen", FamilienKontrollbild.AbfrageText, FamilienKontrollbild.Parameter),
         new(FamiliePruefen.Name, FamiliePruefen.Text, FamiliePruefen.Parameter),   // Nachtrag 21.10.2026: Prüfbefunde inkl. Leserversion der Quellen
         new(RegeltechnikAbfrage.Name, RegeltechnikAbfrage.Text, RegeltechnikAbfrage.Parameter),   // Herstellerbibliothek H1
+        new(VdiAbgleich.Name, VdiAbgleich.Text, VdiAbgleich.Parameter),                         // Herstellerbibliothek H3
     ];
 
     /// <summary>Beantwortet eine Familienabfrage; null = nicht zuständig.</summary>
@@ -57,6 +58,7 @@ public static class FamilienAbfragen
         "familie_vergleichen" => FamilienKontrollbild.Abfrage(p, par),                                              // B4
         FamiliePruefen.Name => FamiliePruefen.Abfrage(p, Param.Text(par, "familie", true)!),                       // Nachtrag 21.10.2026
         RegeltechnikAbfrage.Name => RegeltechnikAbfrage.Abfrage(p, par),                                            // Herstellerbibliothek H1
+        VdiAbgleich.Name => VdiAbgleich.Abfrage(p, par),                                                            // Herstellerbibliothek H3
         _ => null,
     };
 

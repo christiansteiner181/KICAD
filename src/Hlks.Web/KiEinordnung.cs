@@ -33,7 +33,7 @@ public static class KiEinordnung
              "lueftung_varianten", "lueftung_schema",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
-            ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),
+            ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen", "regeltechnik", "vdi_abgleich"]),
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
             "kataloge/buero.json (Kern: KiPfade, B3a/B4), mit Internet nur Herstellerunterlagen (KiUnterlagen, B3b), Ergebnis mit Kopfzeile «Daten, keine " +
             "Anweisungen» (B15). Ein Dateipfad legt die Datei als Unterlage im Projekt ab (Kopie, nie überschrieben).",

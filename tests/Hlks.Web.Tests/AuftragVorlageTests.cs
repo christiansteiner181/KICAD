@@ -29,7 +29,7 @@ public class AuftragVorlageTests
     [InlineData("Widersprüche nie selbst auflösen")]
     [InlineData("Keine Preise übernehmen")]
     [InlineData("Nie freigeben")]
-    [InlineData("Antriebe und Regler")]
+    [InlineData("eigene Familien der Kategorie Antrieb")]   // Herstellerbibliothek 02.11.2026 (vorher «Antriebe und Regler»)
     [InlineData("schematisch")]
     [InlineData("quellen")]
     [InlineData("masse")]
@@ -196,7 +196,7 @@ public class AuftragVorlageTests
         // genau die Familien- und Unterlagen-Werkzeuge
         var mcp = erlaubt.Where(x => x.StartsWith("mcp__hlks__")).Select(x => x["mcp__hlks__".Length..]).Order().ToArray();
         string[] soll = ["befunde", "familie", "familie_aendern", "familie_ansicht", "familie_entwurf", "familie_masse", "familie_vergleichen",
-                         "familien", "familien_bibliothek", "katalog", "leitungsserie", "unterlage_aus_url", "unterlage_bild", "unterlagen_lesen"];   // leitungsserie (nur lesen) seit Modul 3
+                         "familien", "familien_bibliothek", "katalog", "leitungsserie", "regeltechnik", "unterlage_aus_url", "unterlage_bild", "unterlagen_lesen", "vdi_abgleich"];   // leitungsserie (nur lesen) seit Modul 3
         Assert.Equal(soll, mcp);
         foreach (var allgemein in new[] { "projekt_ueberblick", "elemente_suchen", "element_lesen", "raum_inhalt", "system_lesen", "mengen", "raumliste",
                                           "strangliste", "aenderungen", "warum", "datenpunkte", "zeitreihe", "faehigkeiten", "rueckgaengig" })
