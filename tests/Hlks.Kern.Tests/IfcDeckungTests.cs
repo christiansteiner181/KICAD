@@ -14,7 +14,7 @@ public class IfcDeckungTests
         Ok(Uebernehmen(p, IfcArchitekturTestdatei.Datei("IFC4", false)));
         var u = IfcDeckung.Pruefen(p, new JsonObject { ["toleranz"] = 1 })["unterlagen"]!.AsArray().Single()!;
         var k = u["jeKlasse"]!.AsObject();
-        foreach (var klasse in new[] { "Wand", "Decke", "Stuetze" })
+        foreach (var klasse in new[] { "Wand", "Decke", "Stuetze", "Tuer", "Fenster" }.Where(x => k.ContainsKey(x)))
             Assert.Equal(k[klasse]!["anzahl"]!.GetValue<int>(), k[klasse]!["deckungsgleich"]!.GetValue<int>());
         var w = IfcArchitekturTests.Namens(p, "Wand", "W-Sued");
         var g = w.Geometrie!.Punkte;

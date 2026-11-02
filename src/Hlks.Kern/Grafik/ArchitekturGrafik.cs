@@ -632,8 +632,12 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         if (w is null || Wandgeometrie.Oeffnung(p.Katalog, e, w) is not { } o) return null;
         double oben = o.Oben ?? w.Hoehe ?? 0, h = oben - o.Unten;
         if (h <= 0) return null;
-        var c = w.Punkt(o.Abstand, 0);
-        double tiefe = w.Dicke > 0 ? Math.Min(OeffnungTiefe, w.Dicke) : OeffnungTiefe;
+        // Körper aus dem IFC (Rahmen, Futter, Bank; IfcArchitektur.KoerperMasse, 02.11.2026): Überstände über die Öffnung, Tiefe, Versatz
+        double li = e.Zahl("koerperLinks") ?? 0, re = e.Zahl("koerperRechts") ?? 0, un = e.Zahl("koerperUnten") ?? 0, ob = e.Zahl("koerperOben") ?? 0;
+        double breite = o.Breite + li + re, hoehe = h + un + ob;
+        if (breite <= 0 || hoehe <= 0) return null;
+        var c = w.Punkt(o.Abstand + (re - li) / 2, e.Zahl("versatz") ?? 0);
+        double tiefe = e.Zahl("tiefe") is double t && t > 0 ? t : w.Dicke > 0 ? Math.Min(OeffnungTiefe, w.Dicke) : OeffnungTiefe;
         return new Koerper
         {
             Id = e.Id, Ebene = "oeffnung",
@@ -641,7 +645,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
             [
                 new Koerperteil
                 {
-                    Art = "quader", Mitte = [c[0], c[1], w.Unterkante + o.Unten + h / 2], Masse = [o.Breite, tiefe, h], Drehung = w.Winkel,
+                    Art = "quader", Mitte = [c[0], c[1], w.Unterkante + o.Unten - un + hoehe / 2], Masse = [breite, tiefe, hoehe], Drehung = w.Winkel,
                     Material = o.IstTuer ? "tuer" : "glas", Deckkraft = o.IstTuer ? null : 0.35,
                 },
             ],

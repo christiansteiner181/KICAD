@@ -1,7 +1,9 @@
 // Deckung Nachbau ↔ IFC (Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»). Je übernommenem Element
 // einer IFC-Unterlage wird der umschliessende Quader des Nachbaus (Körper des Kerns: Quader, Prisma, Zylinder, Kugel, Familienkörper) mit dem
 // des IFC-Netzes (Netzdatei, Produkt und seine Teile; verteilte Produkte «GlobalId:2» gemeinsam) verglichen; Abweichung = grösste Differenz
-// einer der sechs Seiten in mm. Dazu die Produkte der Bauteilarten, die gar nicht nachgebaut wurden (nur Hintergrund). Nur lesen.
+// einer der sechs Seiten in mm. Gemessen im System des Bauteils (Drehung um z wie sein Nachbau-Quader bzw. seine Wand), sonst würde ein schräg
+// stehender Rahmen, der die Ecken seines Quaders nicht füllt, als Abweichung zählen. Dazu die Produkte der Bauteilarten, die gar nicht
+// nachgebaut wurden (nur Hintergrund). Nur lesen.
 // Grenze der Aussage: gleiche Hülle heisst nicht gleiche Form (eine L-Wand und ihr Rechteck haben denselben Quader) – das ist der erste,
 // schnelle Massstab; die Form zeigt der Vergleich im 3D (ifcDarstellung «beide»).
 
@@ -66,12 +68,14 @@ public static class IfcDeckung
         foreach (var g in gruppen)
         {
             if (d.Produkt(g.Key) is not { } pr) { ohneNetz++; continue; }
-            var ifc = Box(new[] { pr }.Concat(d.TeileVon(g.Key)).Where(x => x.Dreiecke > 0).Select(x => x.Begrenzung.Select(v => (double)v).ToArray()));
+            var teile = g.SelectMany(e => Grafik.QuelleFuer(p.Katalog, e)?.Koerper(p, e)?.Teile ?? []).ToList();
+            double w = (teile.FirstOrDefault(t => t.Art == "quader")?.Drehung ?? 0) * Math.PI / 180;
+            var ifc = Box(new[] { pr }.Concat(d.TeileVon(g.Key)).Where(x => x.Dreiecke > 0).Select(x => NetzBox(d, x, w)).OfType<double[]>());
             if (ifc is null) { ohneNetz++; continue; }
-            var nb = Box(g.SelectMany(e => Grafik.QuelleFuer(p.Katalog, e)?.Koerper(p, e)?.Teile ?? []).Select(TeilBox).OfType<double[]>());
+            var nb = Box(teile.Select(t => TeilBox(t, w)).OfType<double[]>());
             var erstes = g.OrderBy(e => e.Kennungen!["ifc"].Length).First();
             if (nb is null) { ohneNachbau++; ergebnisse.Add((erstes, pr.Entitaet, double.PositiveInfinity, "kein Nachbau-Körper", [], ifc)); continue; }
-            string[] seiten = ["xmin", "ymin", "zmin", "xmax", "ymax", "zmax"];
+            string[] seiten = w == 0 ? ["xmin", "ymin", "zmin", "xmax", "ymax", "zmax"] : ["anfang", "rechts", "unten", "ende", "links", "oben"];
             int i = Enumerable.Range(0, 6).MaxBy(k => Math.Abs(nb[k] - ifc[k]));
             ergebnisse.Add((erstes, pr.Entitaet, Math.Abs(nb[i] - ifc[i]), seiten[i], nb, ifc));
         }
@@ -122,33 +126,48 @@ public static class IfcDeckung
         return b;
     }
 
-    /// <summary>Umschliessender Quader eines Körperteils in Projekt-mm; null für Netze und unvollständige Angaben.</summary>
-    public static double[]? TeilBox(Koerperteil t)
+    /// <summary>Punkt im um w (Bogenmass, um z) gedrehten System: u längs, v quer, z.</summary>
+    static double[] Dreh(double x, double y, double z, double w) => [x * Math.Cos(w) + y * Math.Sin(w), -x * Math.Sin(w) + y * Math.Cos(w), z];
+
+    static double[]? NetzBox(IfcNetzdatei d, IfcNetzProdukt pr, double w)
+    {
+        var (pu, _) = d.Netz(pr);
+        if (pu.Length < 3) return null;
+        return Aus(Enumerable.Range(0, pu.Length / 3).Select(i => Dreh(pu[3 * i], pu[3 * i + 1], pu[3 * i + 2], w)));
+    }
+
+    /// <summary>Umschliessender Quader eines Körperteils im um w gedrehten System (mm); null für Netze und unvollständige Angaben.</summary>
+    public static double[]? TeilBox(Koerperteil t, double w = 0)
     {
         switch (t.Art)
         {
             case "quader" when t.Mitte is { Length: >= 3 } c && t.Masse is { Length: >= 3 } s:
             {
-                double w = (t.Drehung ?? 0) * Math.PI / 180, co = Math.Abs(Math.Cos(w)), si = Math.Abs(Math.Sin(w));
-                double ex = co * s[0] / 2 + si * s[1] / 2, ey = si * s[0] / 2 + co * s[1] / 2, ez = s[2] / 2;
-                return [c[0] - ex, c[1] - ey, c[2] - ez, c[0] + ex, c[1] + ey, c[2] + ez];
+                double d = (t.Drehung ?? 0) * Math.PI / 180, co = Math.Cos(d), si = Math.Sin(d);
+                var ecken = new List<double[]>();
+                foreach (var a in new[] { -0.5, 0.5 }) foreach (var b in new[] { -0.5, 0.5 }) foreach (var h in new[] { -0.5, 0.5 })
+                    ecken.Add(Dreh(c[0] + co * a * s[0] - si * b * s[1], c[1] + si * a * s[0] + co * b * s[1], c[2] + h * s[2], w));
+                return Aus(ecken);
             }
             case "prisma" when t.Grundriss is { Count: > 0 } g && t.Unten is double u && t.Oben is double o:
             {
-                var b = Aus(g.Select(q => new[] { q[0], q[1], u }));
+                var b = Aus(g.Select(q => Dreh(q[0], q[1], u, w)));
                 b[5] = o;
                 return b;
             }
             case "zylinder" when t.Von is { Length: >= 3 } v && t.Nach is { Length: >= 3 } n && t.Radius is double r:
             {
-                var b = Aus([v, n]);
+                var b = Aus([Dreh(v[0], v[1], v[2], w), Dreh(n[0], n[1], n[2], w)]);
                 for (int i = 0; i < 3; i++) { b[i] -= r; b[i + 3] += r; }
                 return b;
             }
             case "kugel" when t.Mitte is { Length: >= 3 } c && t.Radius is double r:
-                return [c[0] - r, c[1] - r, c[2] - r, c[0] + r, c[1] + r, c[2] + r];
+            {
+                var m = Dreh(c[0], c[1], c[2], w);
+                return [m[0] - r, m[1] - r, m[2] - r, m[0] + r, m[1] + r, m[2] + r];
+            }
             case "koerper" when t.Ecken is { Count: > 0 } e:
-                return Aus(e);
+                return Aus(e.Select(q => Dreh(q[0], q[1], q[2], w)));
             default:
                 return null;
         }

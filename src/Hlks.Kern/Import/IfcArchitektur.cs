@@ -586,11 +586,30 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         }
         else lauf.Wert(e, "hoehe", R(bb[5] - bb[2]), $"{quelleLage}, Höhe");
         lauf.Wert(e, "abstand", abstand, $"Mitte {quelleLage} auf der Achse der Wand");
-        if (klasse == "Fenster")
-            lauf.Wert(e, "bruestung", R(unterkante - GeschossKote(wand.GeschossId)), $"Unterkante {quelleUnterkante} − Geschosskote");
-        else TuerSeite(e, f, wand);
+        double bruestung = R(unterkante - GeschossKote(wand.GeschossId));
+        if (klasse == "Fenster" || Math.Abs(bruestung) >= 0.5)   // Tür: Schwelle unter bzw. über OK Boden (02.11.2026, Deckung mit dem IFC)
+            lauf.Wert(e, "bruestung", bruestung, $"Unterkante {quelleUnterkante} − Geschosskote");
+        if (klasse == "Tuer") TuerSeite(e, f, wand);
+        KoerperMasse(e, f, wand, abstand, unterkante, e.Zahl("breite") ?? (s1 - s0), e.Zahl("hoehe") ?? (bb[5] - bb[2]));
         if (Math.Abs(bestQ) > wand.Dicke / 2 + 50 && bestQ < 1e6)
             hinweise.Dazu($"{art} liegt neben der Wandachse (auf die Achse gesetzt)", IfcSammler.Beispiel(f) + $" {IfcBauteile.Mm(bestQ)} mm");
+    }
+
+    /// <summary>Körper von Tür bzw. Fenster (Rahmen, Futter, Bank) gegenüber der Öffnung, im System der Wand (Christian 02.11.2026: «nach dem
+    /// import müssen die beiden geometrien deckungsgleich sein»): Überstand links, rechts, unten, oben, Tiefe und Versatz quer zur Achse – der
+    /// Nachbau-Körper (ArchitekturGrafik.OeffnungKoerper) deckt sich damit mit dem Körper der Datei. Ohne eigenen Körper (oder vereinfacht) nichts.</summary>
+    void KoerperMasse(Element e, IIfcElement f, IfcWandStueck w, double abstand, double unterkante, double breite, double hoehe)
+    {
+        if (g.Koerper(f) is not { Leer: false } n || g.IstVereinfacht(f) || n.Begrenzung() is not { } bb) return;
+        var (b0, b1) = n.Bereich(w.Ax, w.Ay, w.Ux, w.Uy);
+        var (q0, q1) = n.Bereich(w.Ax, w.Ay, -w.Uy, w.Ux);
+        string q = $"Körper {IfcDatei.Entitaet(f)} #{f.EntityLabel} im System der Wand";
+        lauf.Wert(e, "koerperLinks", R(abstand - breite / 2 - b0), q);
+        lauf.Wert(e, "koerperRechts", R(b1 - (abstand + breite / 2)), q);
+        lauf.Wert(e, "koerperUnten", R(unterkante - bb[2]), q);
+        lauf.Wert(e, "koerperOben", R(bb[5] - (unterkante + hoehe)), q);
+        lauf.Wert(e, "tiefe", R(q1 - q0), q);
+        lauf.Wert(e, "versatz", R((q0 + q1) / 2), q);
     }
 
     /// <summary>N6: Der Körper gilt statt OverallHeight erst ab dieser Abweichung – beides muss überschritten sein (Herleitung

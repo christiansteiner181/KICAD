@@ -247,10 +247,10 @@ public static class Wandgeometrie
         return new Oeffnungslage(o, tuer, a, b, unten, oben);
     }
 
-    /// <summary>Unterkante einer Öffnung relativ zur Wandunterkante: Tür ab OK Boden, Fenster ab OK Boden + Brüstung
-    /// (Annahme: Fenster ohne Brüstung ab OK Boden); nie unter der Wand.</summary>
-    public static double Unterkante(Wandlage w, bool tuer, double? bruestung) =>
-        Math.Max(0, w.Boden + (tuer ? 0 : Math.Max(0, bruestung ?? 0)));
+    /// <summary>Unterkante einer Öffnung relativ zur Wandunterkante: OK Boden + Brüstung (Tür: Schwelle; fehlt = 0). Seit 02.11.2026 auch
+    /// negativ und unter der Wand (Christian: «nach dem import müssen die beiden geometrien deckungsgleich sein» – Archicad-Fenstertüren
+    /// reichen unter OK Boden); der Wandkörper zieht nur ab, was in der Wand liegt.</summary>
+    public static double Unterkante(Wandlage w, bool tuer, double? bruestung) => w.Boden + (bruestung ?? 0);
 
     public static List<Oeffnungslage> Oeffnungen(Katalog k, Wandlage w, IEnumerable<Element> oeffnungen) =>
         oeffnungen.Select(o => Oeffnung(k, o, w)).OfType<Oeffnungslage>().OrderBy(o => o.Von).ToList();
