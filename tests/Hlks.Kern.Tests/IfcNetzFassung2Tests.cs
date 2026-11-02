@@ -126,7 +126,7 @@ public sealed class IfcNetzFassung2Tests : IDisposable
     public void Fassung2_OeffnungenAlsEigeneDatensaetze_MitWirtUndFuellung(string schema)
     {
         var n = Netz(Uebernommen(schema));
-        Assert.Equal(3, n.Fassung);   // Fassung 3 seit Nachtrag B3c (Material); Rolle, Bezug, Öffnungen wie Fassung 2
+        Assert.Equal(4, n.Fassung);   // Fassung 3 seit Nachtrag B3c (Material), 4 seit IFC 1:1 (Farben); Rolle, Bezug, Öffnungen wie Fassung 2
         Assert.Equal(IfcNetzErzeuger.Fassung, n.Fassung);
         Assert.Contains("Oeffnungen", n.Beschreibung);
         Assert.Equal(7, n.Oeffnungen.Count);
@@ -301,11 +301,11 @@ public sealed class IfcNetzFassung2Tests : IDisposable
         var pfad = Temp(".bin");
         NetzdateiTestschreiber.Schreiben(pfad, 2, [NetzdateiTestschreiber.Quader("WAND1", "IfcWall", [0, 0, 0], [1, 1, 1])]);
         var bytes = File.ReadAllBytes(pfad);
-        BitConverter.GetBytes(4).CopyTo(bytes, 8);
+        BitConverter.GetBytes(5).CopyTo(bytes, 8);
         File.WriteAllBytes(pfad, bytes);
         var f = Assert.Throws<HlksFehler>(() => IfcNetzdatei.Oeffnen(pfad));
-        Assert.Contains("Fassung 4", f.Message);
-        Assert.Contains("1 und 2 und 3", f.Message);
+        Assert.Contains("Fassung 5", f.Message);
+        Assert.Contains("1 und 2 und 3 und 4", f.Message);
         // Rolle 9 beim ersten Datensatz: nach Kopf, Label, GlobalId, Entität, Kote, Kennzeichen
         BitConverter.GetBytes(2).CopyTo(bytes, 8);
         int text = BitConverter.ToInt32(bytes, 12);

@@ -15,6 +15,7 @@
 //   Fenster …; sonst f = 0),
 //   [nur Fassung 3:] uint8 m + m × (uint16 L + L Byte UTF-8) Materialnamen, uint16 L + L Byte UTF-8 Typname, uint16 L + L Byte
 //   UTF-8 Fundstelle des Materials (L = 0: keine Angabe),
+//   [nur Fassung 4:] uint16 k + k × (int32 erstes Dreieck, uint32 Farbe RGBA) – ab diesem Dreieck gilt die Farbe (0 = keine Angabe),
 //   6 × float32 Begrenzung, int32 Anzahl Punkte p, int32 Anzahl Dreiecke d, p × 3 float32 Punkte (x, y, z in Projekt-mm),
 //   d × 3 int32 Dreiecke (Punktindizes 0-basiert, je Datensatz).
 // Fassung 1 (Modul 1b) hat die drei Felder der Fassung 2 nicht und keine Öffnungen; gelesen wird sie weiter (alle Produkte gelten
@@ -30,6 +31,11 @@
 //   Typname (ObjectType des Exemplars, sonst Name des Typobjekts) – Befund Bernstrasse 42: der Revit-Export der verknüpften
 //   Architektur führt als Material nur Darstellungsmaterialien («Farbe, weiss», «<Unnamed>»), die Bauart steht im Typnamen
 //   («Beton, Stahlbeton 250», «1.0_AW Holz …»). Die Einteilung (Wortliste) macht AussparungMaterial.cs.
+//
+// Fassung 4 (IFC 1:1, Christian 02.11.2026: «ein fenster muss 1:1 so aussehen wie im IFC. mit allen details»; «dies gilt für alle
+//   importierten familien»): je Produkt die Farben seiner Teilkörper aus IfcStyledItem (Flächenstil Farbe und Transparenz, IFC4 direkt,
+//   IFC2x3 über IfcPresentationStyleAssignment), Grundfarbe aus der Darstellung des Materials (IfcMaterialDefinitionRepresentation).
+//   Ein Element ohne Stil übernimmt die Farbe, die um es herum gilt (MappedItem, Boolean). Rechnet IfcGeometrie (Dreiecksnetz.Farben).
 //
 // Regeln (Fassung 2, Entscheid Hauptlauf 19.10.2026, Befunde aus Modul 3b B1):
 //   Zerlegung: Ein Produkt ist ein Teil, wenn es in IfcRelAggregates oder IfcRelNests (IFC4 und IFC2x3: RelatingObject →
@@ -78,6 +84,8 @@ public sealed record IfcNetzProdukt(int EntityLabel, string GlobalId, string Ent
     public string? Typname { get; init; }
     /// <summary>Fassung 3: Fundstelle des Materials, z. B. «IfcMaterialList #123 am Typ #45»; sonst null.</summary>
     public string? Materialquelle { get; init; }
+    /// <summary>Fassung 4: Farbabschnitte (erstes Dreieck, RGBA; 0 = keine Angabe); sonst leer.</summary>
+    public IReadOnlyList<(int Start, uint Farbe)> Farben { get; init; } = [];
 }
 
 /// <summary>Schreibt die Netzdatei (IIfcGrundlage, von IfcUebernehmen per Reflexion gefunden).</summary>
@@ -85,18 +93,20 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
 {
     public const string Kennung = "HLKSNETZ";
     /// <summary>Fassung, die geschrieben wird (2: mit Rolle, Bezug und Öffnungen; 3: dazu Material und Typname, Nachtrag B3c).</summary>
-    public const int Fassung = 3;
+    public const int Fassung = 4;
     /// <summary>Erste Fassung mit Material und Typname je Produkt.</summary>
     public const int FassungMaterial = 3;
+    /// <summary>Erste Fassung mit Farben der Teilkörper (IFC 1:1).</summary>
+    public const int FassungFarben = 4;
     /// <summary>Fassungen, die IfcNetzdatei lesen kann.</summary>
-    public static readonly IReadOnlyList<int> LesbareFassungen = [1, 2, 3];
+    public static readonly IReadOnlyList<int> LesbareFassungen = [1, 2, 3, 4];
     /// <summary>Höchstens so viele Zeichen je Text (Materialname, Typname, Fundstelle) – Schutz gegen entartete Dateien.</summary>
     public const int TextMax = 1000;
     /// <summary>Länge einer GlobalId (IFC: 22 Zeichen, base64-ähnlich).</summary>
     public const int GidLaenge = 22;
 
     public const string Beschreibung =
-        "HLKS-CAD Netzdatei einer IFC-Unterlage (Modul 1b, Fassung 2 seit Modul 3b, Fassung 3 seit Nachtrag B3c). Little-endian. Kopf: 8 Byte HLKSNETZ, int32 Fassung, " +
+        "HLKS-CAD Netzdatei einer IFC-Unterlage (Modul 1b, Fassung 2 seit Modul 3b, Fassung 3 seit Nachtrag B3c, Fassung 4 seit IFC 1:1). Little-endian. Kopf: 8 Byte HLKSNETZ, int32 Fassung, " +
         "int32 Laenge L, L Byte diese Beschreibung (UTF-8), int32 Anzahl Datensaetze N (Bauteile, Teile, Oeffnungen), 6 float64 Begrenzung " +
         "der Bauteile und Teile (minx miny minz maxx maxy maxz, Projekt-mm). Je Datensatz: int32 EntityLabel, 22 Byte GlobalId (ASCII), " +
         "uint8 n + n Byte Entitaet (ASCII), float64 Geschosskote mm (NaN = ohne), uint8 Kennzeichen (1 = uebernommen als KICAD-Element, " +
@@ -104,9 +114,10 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
         "oeffnung: GlobalId des Wirts, sonst Leerzeichen), uint8 f + f*22 Byte GlobalIds der Fuellungen (oeffnung: Tuer, Fenster; " +
         "IfcRelFillsElement), uint8 m + m*(uint16 L + L Byte UTF-8) Materialnamen (IfcRelAssociatesMaterial am Exemplar, sonst am Typ), " +
         "uint16 L + L Byte UTF-8 Typname (ObjectType, sonst Name des Typobjekts), uint16 L + L Byte UTF-8 Fundstelle des Materials, " +
+        "uint16 k + k*(int32 erstes Dreieck, uint32 Farbe RGBA, 0 = keine) Farbabschnitte (IfcStyledItem bzw. Material), " +
         "6 float32 Begrenzung, int32 Anzahl Punkte p, int32 Anzahl Dreiecke d, p*3 float32 Punkte x y z (Projekt-mm), " +
         "d*3 int32 Dreiecke (Punktindizes 0-basiert je Datensatz). Fassung 1 hat Rolle, Bezug und Fuellungen nicht, Fassungen 1 und 2 " +
-        "haben Materialnamen, Typname und Fundstelle nicht. " +
+        "haben Materialnamen, Typname und Fundstelle nicht, Fassungen 1 bis 3 keine Farbabschnitte. " +
         "Zerlegung (IfcRelAggregates, IfcRelNests unter einem IfcElement): ein Ganzes mit eigenem Koerper steht mit seinem Netz darin " +
         "und seine Teile zusaetzlich (Rolle teil, Bezug = Ganzes) - nicht doppelt pruefen; ein Ganzes ohne eigenen Koerper traegt das " +
         "Netz aller Teile, die Teile fehlen einzeln (ausser selbst uebernommene Teile eines nicht uebernommenen Ganzen). " +
@@ -299,6 +310,10 @@ public sealed class IfcNetzErzeuger : IIfcGrundlage
         for (int i = 0; i < m; i++) Text16(w, material.Namen[i]);
         Text16(w, material.Typname);
         Text16(w, material.Quelle);
+        // Fassung 4: Farbabschnitte
+        int k = Math.Min(n.Farben.Count, ushort.MaxValue);
+        w.Write((ushort)k);
+        for (int i = 0; i < k; i++) { w.Write(n.Farben[i].Start); w.Write(n.Farben[i].Farbe); }
         var bb = n.Begrenzung()!;
         foreach (var x in bb) w.Write((float)x);
         if (gesamt is not null)
@@ -462,13 +477,19 @@ public sealed class IfcNetzdatei
                 typname = Text16(r);
                 materialquelle = Text16(r);
             }
+            List<(int, uint)> farben = [];
+            if (fassung >= IfcNetzErzeuger.FassungFarben)
+            {
+                int nf = r.ReadUInt16();
+                for (int i = 0; i < nf; i++) farben.Add((r.ReadInt32(), r.ReadUInt32()));
+            }
             var bb = new float[6];
             for (int i = 0; i < 6; i++) bb[i] = r.ReadSingle();
             int punkte = r.ReadInt32(), dreiecke = r.ReadInt32();
             long lage = fs.Position;
             var pr = new IfcNetzProdukt(label, gid, ent, double.IsNaN(kote) ? null : kote, ueb, bb, punkte, dreiecke, lage)
             {
-                Rolle = rolle, Bezug = bezug, Fuellungen = fuellungen, Materialien = materialien, Typname = typname, Materialquelle = materialquelle,
+                Rolle = rolle, Bezug = bezug, Fuellungen = fuellungen, Materialien = materialien, Typname = typname, Materialquelle = materialquelle, Farben = farben,
             };
             (rolle == IfcNetzRolle.Oeffnung ? oeffnungen : produkte).Add(pr);
             fs.Position = lage + punkte * 12L + dreiecke * 12L;

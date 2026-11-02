@@ -173,6 +173,8 @@ public sealed class Koerperteil
     public double? Radius { get; set; }
     /// <summary>Farbe #rrggbb; null = Vorgabe des Materials.</summary>
     public string? Farbe { get; set; }
+    /// <summary>Art netz: die Farben der Teilkörper aus dem IFC zeigen (Netzdatei Fassung 4); Farbe gilt dann nur für Teile ohne IFC-Farbe.</summary>
+    public bool? IfcFarben { get; set; }
     /// <summary>Darstellungsmaterial: wand | decke | raum | glas | tuer | rohr | apparat | geraet | armatur | sonst</summary>
     public string Material { get; set; } = "sonst";
     /// <summary>Deckkraft 0…1, null = 1 (Glas, Räume durchscheinend).</summary>

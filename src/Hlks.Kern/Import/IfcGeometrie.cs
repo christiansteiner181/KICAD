@@ -66,6 +66,19 @@ public sealed class Dreiecksnetz
     public int Punkte => P.Count / 3;
     public int Dreiecke => D.Count / 3;
     public bool Leer => D.Count == 0;
+    /// <summary>Farben der Dreiecke (IFC 1:1, Christian 02.11.2026): ab Dreieck Start gilt Farbe (RGBA, 0 = keine Angabe), bis zum nächsten Abschnitt.</summary>
+    public List<(int Start, uint Farbe)> Farben { get; } = [];
+    public uint FarbeAktuell => Farben.Count == 0 ? 0 : Farben[^1].Farbe;
+
+    /// <summary>Ab dem nächsten Dreieck gilt diese Farbe.</summary>
+    public void FarbeSetzen(uint farbe) => Abschnitt(Dreiecke, farbe);
+
+    void Abschnitt(int start, uint farbe)
+    {
+        if (Farben.Count > 0 && Farben[^1].Start == start) { Farben[^1] = (start, farbe); if (Farben.Count > 1 && Farben[^2].Farbe == farbe) Farben.RemoveAt(Farben.Count - 1); return; }
+        if (FarbeAktuell == farbe) return;
+        Farben.Add((start, farbe));
+    }
 
     public int Punkt(double x, double y, double z)
     {
@@ -84,7 +97,8 @@ public sealed class Dreiecksnetz
     /// <summary>Hängt ein Netz an, abgebildet mit t (gespiegelte Abbildung dreht die Dreiecke um).</summary>
     public void Anhaengen(Dreiecksnetz n, in Affin t)
     {
-        int basis = Punkte;
+        int basis = Punkte, basisD = Dreiecke;
+        uint aussen = FarbeAktuell;
         for (int i = 0; i < n.P.Count; i += 3)
         {
             var (x, y, z) = t.Punkt(n.P[i], n.P[i + 1], n.P[i + 2]);
@@ -96,6 +110,9 @@ public sealed class Dreiecksnetz
             if (drehen) { D.Add(basis + n.D[i]); D.Add(basis + n.D[i + 2]); D.Add(basis + n.D[i + 1]); }
             else { D.Add(basis + n.D[i]); D.Add(basis + n.D[i + 1]); D.Add(basis + n.D[i + 2]); }
         }
+        if (n.Farben.Count == 0) return;   // ohne eigene Farbe: die Farbe, die hier gilt
+        foreach (var (start, farbe) in n.Farben) Abschnitt(basisD + start, farbe == 0 ? aussen : farbe);
+        Abschnitt(Dreiecke, aussen);
     }
 
     public void Anhaengen(Dreiecksnetz n) => Anhaengen(n, Affin.Einheit);
@@ -230,6 +247,7 @@ public sealed partial class IfcGeometrie
         var items = Elemente(p, kennungen);
         if (items is null) return null;
         var lokal = new Dreiecksnetz();
+        lokal.FarbeSetzen(Materialfarbe(p));
         aktuell = p.EntityLabel;
         foreach (var it in items) Element(it, lokal, Affin.Einheit, 0);
         aktuell = 0;
@@ -320,6 +338,14 @@ public sealed partial class IfcGeometrie
 
     /// <summary>Wertet ein Geometrie-Element aus und hängt sein Netz (abgebildet mit t) an ziel an.</summary>
     void Element(IIfcRepresentationItem it, Dreiecksnetz ziel, in Affin t, int tiefe)
+    {
+        uint farbe = Stilfarbe(it), vorher = ziel.FarbeAktuell;
+        if (farbe != 0) ziel.FarbeSetzen(farbe);
+        ElementOhneStil(it, ziel, t, tiefe);
+        if (farbe != 0) ziel.FarbeSetzen(vorher);
+    }
+
+    void ElementOhneStil(IIfcRepresentationItem it, Dreiecksnetz ziel, in Affin t, int tiefe)
     {
         if (tiefe > 40) { Zaehlen(it); return; }
         switch (it)
@@ -445,6 +471,75 @@ public sealed partial class IfcGeometrie
     }
 
     static double[] Kreuz(double[] a, double[] b) => [a[1] * b[2] - a[2] * b[1], a[2] * b[0] - a[0] * b[2], a[0] * b[1] - a[1] * b[0]];
+
+    // ------------------------------------------------------------------ Farben (IFC 1:1, Christian 02.11.2026)
+
+    readonly Dictionary<int, uint> stilfarben = [];
+
+    /// <summary>Farbe eines Geometrie-Elements aus IfcStyledItem (Flächenstil: Farbe, Transparenz) als RGBA; 0 = keine.</summary>
+    uint Stilfarbe(IIfcRepresentationItem it)
+    {
+        foreach (var si in it.StyledByItem) if (Farbe(si) is var f && f != 0) return f;
+        return 0;
+    }
+
+    /// <summary>Farbe eines IfcStyledItem: IFC4 Flächenstil direkt, IFC2x3 über IfcPresentationStyleAssignment.</summary>
+    uint Farbe(IIfcStyledItem si)
+    {
+        if (stilfarben.TryGetValue(si.EntityLabel, out var f)) return f;
+        f = 0;
+        foreach (var st in si.Styles)
+        {
+            var stile = st switch
+            {
+                IIfcPresentationStyleAssignment a => a.Styles.OfType<IIfcSurfaceStyle>(),
+                IIfcSurfaceStyle s => [s],
+                _ => [],
+            };
+            foreach (var s in stile)
+                foreach (var e in s.Styles)
+                    if (e is IIfcSurfaceStyleShading sh && sh.SurfaceColour is { } c)
+                    {
+                        double tr = sh is IIfcSurfaceStyleRendering r && r.Transparency is { } t ? (double)t : 0;
+                        f = Rgba((double)c.Red, (double)c.Green, (double)c.Blue, 1 - tr);
+                        goto fertig;
+                    }
+        }
+        fertig:
+        stilfarben[si.EntityLabel] = f;
+        return f;
+    }
+
+    /// <summary>Grundfarbe eines Produkts aus seinem Material (IfcMaterialDefinitionRepresentation); 0 = keine.</summary>
+    uint Materialfarbe(IIfcProduct p)
+    {
+        IEnumerable<IIfcRelAssociatesMaterial> rel = p is IIfcObjectDefinition od ? od.HasAssociations.OfType<IIfcRelAssociatesMaterial>() : [];
+        foreach (var r in rel)
+            foreach (var m in Materialien(r.RelatingMaterial))
+                foreach (var dr in m.HasRepresentation)
+                    foreach (var rep in dr.Representations)
+                        foreach (var it in rep.Items.OfType<IIfcStyledItem>())
+                            if (Farbe(it) is var f && f != 0) return f;
+        return 0;
+    }
+
+    static IEnumerable<IIfcMaterial> Materialien(IIfcMaterialSelect? m) => m switch
+    {
+        IIfcMaterial x => [x],
+        IIfcMaterialList l => l.Materials,
+        IIfcMaterialLayerSetUsage u => u.ForLayerSet?.MaterialLayers.Select(x => x.Material).OfType<IIfcMaterial>() ?? [],
+        IIfcMaterialLayerSet ls => ls.MaterialLayers.Select(x => x.Material).OfType<IIfcMaterial>(),
+        IIfcMaterialLayer ml => ml.Material is { } x ? [x] : [],
+        _ => [],
+    };
+
+    /// <summary>RGBA aus Anteilen 0…1; nie 0 (0 heisst «keine Farbe»).</summary>
+    public static uint Rgba(double r, double g, double b, double a)
+    {
+        static uint K(double v) => (uint)Math.Round(Math.Clamp(v, 0, 1) * 255);
+        uint f = K(r) << 24 | K(g) << 16 | K(b) << 8 | K(a);
+        return f == 0 ? 1 : f;
+    }
 
     /// <summary>Netz einer Abbildungsquelle in ihren eigenen Koordinaten (einmal je Quelle gerechnet).</summary>
     Dreiecksnetz? Karte(IIfcRepresentationMap? karte)

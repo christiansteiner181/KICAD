@@ -201,6 +201,19 @@ export function netzGeometrie(netz) {
   const g = new THREE.BufferGeometry();
   g.setAttribute('position', new THREE.BufferAttribute(netz.positionen, 3));
   g.setIndex(new THREE.BufferAttribute(netz.indizes, 1));
+  // IFC 1:1 (Fassung 4): je Farbabschnitt eine Gruppe; Farbe 0 (keine Angabe) = Index 0 (Farbe der Unterlage)
+  const abschnitte = (netz.farben ?? []).filter((f, i, a) => i === 0 || f.ab !== a[i - 1].ab);
+  if (abschnitte.some((f) => f.farbe)) {
+    const farben = [0];
+    const index = (f) => { let i = farben.indexOf(f); if (i < 0) { i = farben.length; farben.push(f); } return i; };
+    const n = netz.indizes.length / 3;
+    if (abschnitte[0].ab > 0) g.addGroup(0, abschnitte[0].ab * 3, 0);
+    abschnitte.forEach((f, i) => {
+      const bis = i + 1 < abschnitte.length ? abschnitte[i + 1].ab : n;
+      if (bis > f.ab) g.addGroup(f.ab * 3, (bis - f.ab) * 3, index(f.farbe));
+    });
+    g.userData.farben = farben;
+  }
   g.computeBoundingBox();
   g.computeBoundingSphere();
   g.userData.geteilt = true;
@@ -209,9 +222,16 @@ export function netzGeometrie(netz) {
 
 /** Mesh des Hintergrunds: durchscheinend, doppelseitig, ohne Normalen (flache Schattierung aus Bildschirmableitungen),
  *  nie ein Treffer (Raycast aus – bei Millionen Dreiecken auch aus Leistungsgründen). */
-export function netzMesh(geometrie, farbe, deckkraft) {
-  const durchscheinend = deckkraft < 1;
-  const mat = new THREE.MeshLambertMaterial({ color: farbe, side: THREE.DoubleSide, flatShading: true, transparent: durchscheinend, opacity: deckkraft, depthWrite: !durchscheinend });
+export function netzMesh(geometrie, farbe, deckkraft, ifcFarben = false) {
+  const material = (color, opacity) => {
+    const durchscheinend = opacity < 1;
+    return new THREE.MeshLambertMaterial({ color, side: THREE.DoubleSide, flatShading: true, transparent: durchscheinend, opacity, depthWrite: !durchscheinend });
+  };
+  // IFC 1:1: Farben der Teilkörper (RGBA) mit ihrer eigenen Deckkraft; Teile ohne Angabe in der Farbe der Unterlage
+  const mat = ifcFarben && geometrie.userData.farben
+    ? geometrie.userData.farben.map((f, i) => (i === 0 || !f ? material(farbe, deckkraft)
+      : material(new THREE.Color(((f >>> 24) & 255) / 255, ((f >>> 16) & 255) / 255, ((f >>> 8) & 255) / 255), (f & 255) / 255)))
+    : material(farbe, deckkraft);
   const mesh = new THREE.Mesh(geometrie, mat);
   mesh.raycast = () => {};
   mesh.renderOrder = -1;   // zuerst zeichnen; die Körper des Modells liegen davor
@@ -249,7 +269,7 @@ export function baueKoerper(k, opt = {}) {
       if (t.art === 'netz') {   // Halter; das Netz kommt asynchron (ansicht3d.js)
         if (!t.quelle) continue;
         const halter = new THREE.Group();
-        halter.userData.netz = { quelle: t.quelle, farbe: teilFarbe({ ...t, material: 'sonst' }), deckkraft: Number.isFinite(t.deckkraft) ? Math.min(Math.max(t.deckkraft, 0), 1) : 0.5 };
+        halter.userData.netz = { quelle: t.quelle, farbe: teilFarbe({ ...t, material: 'sonst' }), deckkraft: Number.isFinite(t.deckkraft) ? Math.min(Math.max(t.deckkraft, 0), 1) : 0.5, ifcFarben: t.ifcFarben === true };
         g.add(halter);
         continue;
       }

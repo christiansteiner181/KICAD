@@ -44,7 +44,9 @@ public sealed class GrundlagenIfc : IGrundlagenArt
         return new Koerper
         {
             Id = unterlage.Id, Ebene = "grundlage",
-            Teile = [new Koerperteil { Art = "netz", Quelle = unterlage.Id, Material = "sonst", Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = unterlage.Zahl("deckkraft") ?? VorgabeDeckkraft }],
+            // IFC 1:1 (Christian 02.11.2026): ohne eigene Farbe an der Unterlage die Farben aus dem IFC
+            Teile = [new Koerperteil { Art = "netz", Quelle = unterlage.Id, Material = "sonst", Farbe = IfcDarstellung.Farbe(unterlage, "farbeOriginal") ?? Farbe, Deckkraft = unterlage.Zahl("deckkraft") ?? VorgabeDeckkraft,
+                IfcFarben = IfcDarstellung.Farbe(unterlage, "farbeOriginal") is null ? true : null }],
         };
     }
 

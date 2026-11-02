@@ -44,6 +44,10 @@ function baueNetz(produkte, { fassung = 2 } = {}) {
       for (const x of m) t16(x);
       t16(p.typname); t16(p.materialquelle);
     }
+    if (fassung >= 4) {   // IFC 1:1: uint16 k + k × (int32 erstes Dreieck, uint32 RGBA)
+      const fa = p.farben ?? [];
+      puffer(2 + 8 * fa.length, (b) => { b.setUint16(0, fa.length, true); fa.forEach((x, i) => { b.setInt32(2 + 8 * i, x.ab, true); b.setUint32(6 + 8 * i, x.farbe, true); }); });
+    }
     puffer(24 + 8, (b) => {
       for (let i = 0; i < 6; i++) b.setFloat32(4 * i, i, true);
       b.setInt32(24, p.punkte.length, true); b.setInt32(28, p.dreiecke.length, true);
@@ -114,8 +118,8 @@ test('Netzdatei Fassung 2: Fehler deutsch (unbekannte Rolle, abgeschnitten in Be
   assert.throws(() => netzd.leseNetz(kaputt.buffer), /unbekannte Rolle 7/);
   for (const kuerzer of [lage, lage + 5, lage + 23, ganz.byteLength - 1])
     assert.throws(() => netzd.leseNetz(ganz.slice(0, kuerzer)), /abgeschnitten/, `bei ${kuerzer} Byte`);
-  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 4 })), /Fassung 4 wird nicht unterstützt \(bekannt: 1, 2, 3\)/);
-  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3]);
+  assert.throws(() => netzd.leseNetz(baueNetz(PRODUKTE, { fassung: 5 })), /Fassung 5 wird nicht unterstützt \(bekannt: 1, 2, 3, 4\)/);
+  assert.deepEqual(netzd.FASSUNGEN, [1, 2, 3, 4]);
   assert.deepEqual(netzd.ROLLEN, ['bauteil', 'teil', 'oeffnung']);
 });
 
@@ -150,8 +154,22 @@ test('Netzdatei: der Leser kennt die Fassung des Kern-Schreibers, die Rollen-Num
   if (!cs) return;
   const f = Number(cs.match(/public const int Fassung = (\d+);/)?.[1]);
   assert.ok(netzd.FASSUNGEN.includes(f), `Kern schreibt Fassung ${f}`);
-  assert.match(cs, /LesbareFassungen = \[1, 2, 3\]/);
+  assert.match(cs, /LesbareFassungen = \[1, 2, 3, 4\]/);
   assert.match(cs, /uint8 m \+ m\*\(uint16 L \+ L Byte UTF-8\) Materialnamen/);   // Fassung 3 (Nachtrag B3c)
   assert.match(cs, /enum IfcNetzRolle : byte \{ Bauteil = 0, Teil = 1, Oeffnung = 2 \}/);
   assert.match(cs, /uint8 Rolle \(0 = bauteil, 1 = teil, 2 = oeffnung\), 22 Byte Bezug/);
+});
+
+test('Netzdatei Fassung 4 (IFC 1:1): Farbabschnitte je Produkt, im zusammengeführten Netz verschoben; ohne Angabe Farbe 0', () => {
+  const rot = 0xff000080, grau = 0x808080ff;
+  const zwei = { punkte: [[0, 0, 0], [1000, 0, 0], [0, 1000, 0], [1000, 1000, 0]], dreiecke: [[0, 1, 2], [1, 3, 2]] };
+  const p = [
+    { label: 1, gid: 'FENSTER-1', ent: 'IfcWindow', kote: 0, uebernommen: false, ...zwei, farben: [{ ab: 0, farbe: rot }, { ab: 1, farbe: 0 }] },
+    { label: 2, gid: 'WAND-1', ent: 'IfcWall', kote: 0, uebernommen: false, ...zwei, farben: [{ ab: 0, farbe: grau }] },
+    { label: 3, gid: 'DECKE-1', ent: 'IfcSlab', kote: 0, uebernommen: false, ...zwei },
+  ];
+  const n = netzd.leseNetz(baueNetz(p, { fassung: 4 }), { nur: 'alle' });
+  assert.deepEqual(n.produkte[0].farben, [{ ab: 0, farbe: rot }, { ab: 1, farbe: 0 }]);
+  assert.deepEqual(n.produkte[2].farben, []);
+  assert.deepEqual(n.farben, [{ ab: 0, farbe: rot }, { ab: 1, farbe: 0 }, { ab: 2, farbe: grau }, { ab: 4, farbe: 0 }]);
 });

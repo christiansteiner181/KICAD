@@ -22,7 +22,7 @@
 export const KENNUNG = 'HLKSNETZ';
 export const GLOBALID_LAENGE = 22;
 /** Fassungen, die leseNetz kennt (der Kern schreibt die höchste: IfcNetzErzeuger.Fassung). */
-export const FASSUNGEN = Object.freeze([1, 2, 3]);
+export const FASSUNGEN = Object.freeze([1, 2, 3, 4]);
 /** Rollen der Datensätze nach ihrer Nummer (Fassung 2; Fassung 1: immer bauteil). */
 export const ROLLEN = Object.freeze(['bauteil', 'teil', 'oeffnung']);
 const M = 1 / 1000;
@@ -37,10 +37,12 @@ class NetzFehler extends Error {}
  * @param {ArrayBuffer|ArrayBufferView} daten  Inhalt der Datei
  * @param {{ nur?: 'hintergrund'|'uebernommen'|'alle' }} [optionen]  nur: Vorgabe «hintergrund»
  * @returns {{ fassung:number, beschreibung:string, begrenzung:number[], produkte:object[], punkte:number, dreiecke:number,
- *             positionen:Float32Array, indizes:Uint32Array }}
+ *             positionen:Float32Array, indizes:Uint32Array, farben:{ ab:number, farbe:number }[] }}
  *   produkte: Kopfdaten ALLER Datensätze (label, globalId, entitaet, kote, uebernommen, rolle, bezug, fuellungen, begrenzung,
  *   punkte, dreiecke, materialien, typname, materialquelle; Fassung 1: rolle «bauteil», bezug null, fuellungen [];
  *   Fassungen 1 und 2: materialien [], typname und materialquelle null);
+ *   Fassung 4 (IFC 1:1): je Produkt farben [{ ab, farbe }] (ab = erstes Dreieck im Produkt, farbe = RGBA als Zahl, 0 = keine Angabe);
+ *   im Ergebnis farben = dieselben Abschnitte über das zusammengeführte Netz (ab = Dreieck in indizes/3; vor dem ersten und bei 0: keine).
  *   positionen/indizes: nur die gewählten Produkte, nie Öffnungen, zusammengeführt (positionen in three-Metern).
  *   Wirft Error mit deutscher Meldung bei unlesbarer oder abgeschnittener Datei.
  */
@@ -110,15 +112,21 @@ export function leseNetz(daten, optionen = {}) {
       typname = text16('Typname');
       materialquelle = text16('Fundstelle des Materials');
     }
+    const farben = [];
+    if (fassung >= 4) {   // Fassung 4: uint16 k + k × (int32 erstes Dreieck, uint32 RGBA)
+      brauche(2, 'Farbabschnitte'); const k = dv.getUint16(pos, true); pos += 2;
+      brauche(8 * k, 'Farbabschnitte');
+      for (let i = 0; i < k; i++) { farben.push({ ab: dv.getInt32(pos, true), farbe: dv.getUint32(pos + 4, true) }); pos += 8; }
+    }
     brauche(24 + 8, 'Produktkopf');
     const bb = [];
     for (let i = 0; i < 6; i++) { bb.push(dv.getFloat32(pos, true)); pos += 4; }
     const p = i32('Punktzahl'), d = i32('Dreieckszahl');
     if (p < 0 || d < 0) throw new NetzFehler(`Die Netzdatei ist beschädigt (Produkt ${n + 1}: negative Anzahl).`);
     brauche(12 * p + 12 * d, `Punkte und Dreiecke von Produkt ${n + 1}`);
-    produkte.push({ label, globalId, entitaet, kote: Number.isNaN(kote) ? null : kote, uebernommen, rolle, bezug, fuellungen, materialien, typname, materialquelle, begrenzung: bb, punkte: p, dreiecke: d });
+    produkte.push({ label, globalId, entitaet, kote: Number.isNaN(kote) ? null : kote, uebernommen, rolle, bezug, fuellungen, materialien, typname, materialquelle, farben, begrenzung: bb, punkte: p, dreiecke: d });
     const mit = rolle !== 'oeffnung' && (nur === AUSWAHL.alle || (nur === AUSWAHL.uebernommen ? uebernommen : !uebernommen));
-    if (mit && p > 0 && d > 0) { gewaehlt.push({ punkteAb: pos, dreieckeAb: pos + 12 * p, p, d }); summeP += p; summeD += d; }
+    if (mit && p > 0 && d > 0) { gewaehlt.push({ punkteAb: pos, dreieckeAb: pos + 12 * p, p, d, farben }); summeP += p; summeD += d; }
     pos += 12 * p + 12 * d;
   }
 
@@ -126,7 +134,16 @@ export function leseNetz(daten, optionen = {}) {
   const positionen = new Float32Array(summeP * 3);
   const indizes = new Uint32Array(summeD * 3);
   let vp = 0, vi = 0, versatz = 0;
+  const farbenGesamt = [];
+  const abschnitt = (ab, farbe) => {
+    const letzte = farbenGesamt[farbenGesamt.length - 1];
+    if (letzte && letzte.ab === ab) { letzte.farbe = farbe; return; }
+    if ((letzte?.farbe ?? 0) !== farbe) farbenGesamt.push({ ab, farbe });
+  };
   for (const g of gewaehlt) {
+    const ab = vi / 3;
+    abschnitt(ab, 0);
+    for (const x of g.farben) abschnitt(ab + x.ab, x.farbe);
     for (let k = 0, o = g.punkteAb; k < g.p; k++, o += 12) {
       positionen[vp++] = dv.getFloat32(o, true) * M;          // x
       const y = dv.getFloat32(o + 4, true), z = dv.getFloat32(o + 8, true);
@@ -139,5 +156,5 @@ export function leseNetz(daten, optionen = {}) {
     }
     versatz += g.p;
   }
-  return { fassung, beschreibung, begrenzung, produkte, punkte: summeP, dreiecke: summeD, positionen, indizes };
+  return { fassung, beschreibung, begrenzung, produkte, punkte: summeP, dreiecke: summeD, positionen, indizes, farben: farbenGesamt };
 }

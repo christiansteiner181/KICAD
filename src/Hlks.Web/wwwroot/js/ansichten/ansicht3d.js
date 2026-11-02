@@ -356,7 +356,7 @@ function erstellen(behaelter, ansichtElement) {
       const n = h.userData.netz;
       netzHolen(n.quelle, netzAuswahl(ansicht)).then((g) => {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
-        h.add(netzMesh(g, n.farbe, n.deckkraft));
+        h.add(netzMesh(g, n.farbe, n.deckkraft, n.ifcFarben));
         schnitt?.neueObjekte();
         vr?.netzeAnwenden();   // N23: in VR folgt das neue Netz der Wahl «IFC-Unterlage zeigen»
         if (!benutzt) zoomAlles(); else anfordern();
