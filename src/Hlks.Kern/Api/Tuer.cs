@@ -51,6 +51,7 @@ public static class Tuer
                  ?? NormenAbfragen.Tuer(p, name, par)   // Modul 3c: Normensuche
                  ?? SanitaerAbfragen.Tuer(p, name, par)   // Modul 4 Teil A
                  ?? LueftungKette.Tuer(p, name, par) ?? LueftungBefehle.Tuer(p, name, par) ?? LueftungSchema.Tuer(p, name, par)   // Modul 6 Teil A
+                 ?? HeizungAbfragen.Tuer(p, name, par)   // Modul 5 Teil A-D: heizung_lesen, heizung_leistung
                  ?? IfcExportAbfragen.Tuer(p, name, par)   // Modul 7 Teil B2: ifc_export
                  ?? BaustelleExport.Tuer(p, name, par) ?? BaustelleDaten.Tuer(p, name, par) ?? BaustelleRueckmeldung.Tuer(p, name, par)   // BIM to field
                  ?? PlanwinkelAbfragen.Tuer(p, name, par)   // N9: planwinkel

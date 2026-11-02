@@ -125,7 +125,8 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
     public void Basis_ListenEntsprechenIfcJson()
     {
         var abb = IfcHilfe.Kat.Ifc!;
-        var hlks = abb.Klassen.Where(k => IfcHlksKlasse.IstHlks(IfcHilfe.Kat, k.Klasse)).SelectMany(k => k.Ziele("IFC4")).Select(z => z.Ziel.Entitaet.ToUpperInvariant()).ToHashSet();
+        // IfcSensor teilen sich der Fühler (HLKS, Modul 5) und der Datenpunkt (MSRL, ohne System): nicht in den Regeln für HLKS-Elemente
+        var hlks = abb.Klassen.Where(k => IfcHlksKlasse.IstHlks(IfcHilfe.Kat, k.Klasse)).SelectMany(k => k.Ziele("IFC4")).Select(z => z.Ziel.Entitaet.ToUpperInvariant()).Where(n => n != "IFCSENSOR").ToHashSet();
         var doc = IdsLeser.Lesen(IfcExport.IdsBasisPfad(IfcHilfe.Kat)!, IfcHilfe.Kat);
         foreach (var k in new[] { "HK-HLKS-03", "HK-HLKS-04", "HK-HLKS-05", "HK-HLKS-08" })
         {
@@ -151,7 +152,7 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
         var e = new IdsPruefer(d).Pruefen(IdsLeser.Lesen(IfcExport.IdsBasisPfad(IfcHilfe.Kat)!, IfcHilfe.Kat));
         Assert.Equal("bestanden", e["ergebnis"]!.GetValue<string>());
         Assert.Equal(0, e["regelnNichtBestanden"]!.GetValue<int>());
-        Assert.Equal(71, e["regeln"]!.AsArray().OfType<JsonObject>().Single(r => r["kennung"]!.GetValue<string>() == "HK-HLKS-01")["anwendbar"]!.GetValue<int>());
+        Assert.Equal(112, e["regeln"]!.AsArray().OfType<JsonObject>().Single(r => r["kennung"]!.GetValue<string>() == "HK-HLKS-01")["anwendbar"]!.GetValue<int>());   // 71 + 41 Heizungsrohre (Modul 5 A-D)
         // nicht anwendbar: die Systemregel der anderen Fassung, in IFC2X3 dazu die Systemart (IfcSystem hat dort keinen PredefinedType)
         Assert.Equal(fassung == "IFC4" ? 1 : 2, e["regelnNichtAnwendbar"]!.GetValue<int>());
     }
@@ -171,15 +172,15 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
             Spez("Apparate", Ent("IFCSANITARYTERMINAL")) +
             Spez("WC", Ent("IFCSANITARYTERMINAL", "TOILETPAN"), Ent("IFCSANITARYTERMINAL", "TOILETPAN")) +
             Spez("Ventile sind Absperrventile", Ent("IFCVALVE"), Ent("IFCVALVE", "ISOLATING")));
-        Assert.Equal(3, Anw(e, "Absperrventile"));
+        Assert.Equal(7, Anw(e, "Absperrventile"));   // 3 Kälte + 4 Heizgruppen (Modul 5 A-D)
         Assert.Equal(1, Anw(e, "Magnetventil"));
-        Assert.Equal(4, Anw(e, "Ventile"));
-        Assert.Equal(71, Anw(e, "Rohre"));
+        Assert.Equal(9, Anw(e, "Ventile"));          // dazu Magnetventil MV-1 und Mischventil MV-HG1 (IfcValve MIXING)
+        Assert.Equal(112, Anw(e, "Rohre"));
         Assert.Equal(14, Anw(e, "Apparate"));
         Assert.Equal(4, Anw(e, "WC"));
         Assert.Equal("bestanden", Erg(e, "WC"));
         Assert.Equal("nicht bestanden", Erg(e, "Ventile sind Absperrventile"));
-        Assert.Equal(["MV-1"], Befunde(R(e, "Ventile sind Absperrventile")));
+        Assert.Equal(["MV-1", "MV-HG1"], Befunde(R(e, "Ventile sind Absperrventile")).Order());
     }
 
     [Theory]
@@ -206,7 +207,7 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
         Assert.Equal("nicht bestanden", Erg(e, "falscher Datentyp"));
         Assert.Equal("bestanden", Erg(e, "Familie verboten"));
         Assert.Equal("nicht bestanden", Erg(e, "Kennzeichen verboten"));
-        Assert.Equal(71, R(e, "Kennzeichen verboten")["nichtBestandenElemente"]!.GetValue<int>());
+        Assert.Equal(112, R(e, "Kennzeichen verboten")["nichtBestandenElemente"]!.GetValue<int>());
         Assert.Equal("nicht bestanden", Erg(e, "optional falsch"));
         Assert.Equal("bestanden", Erg(e, "optional fehlt"));
         Assert.Equal("bestanden", Erg(e, "Länge Qto in m"));   // Polylinie 1900 + 6500 mm
@@ -222,7 +223,7 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
         var e = Pruefen(fassung,
             Spez("Namen KW", Ent("IFCPIPESEGMENT") + EigAnw("HK_KICAD", "System", "KW"), """<ids:attribute><ids:name><ids:simpleValue>Name</ids:simpleValue></ids:name><ids:value><xs:restriction base="xs:string"><xs:pattern value="KW-.*"/></xs:restriction></ids:value></ids:attribute>""") +
             Spez("Beschreibung fehlt", Ent("IFCPIPESEGMENT"), """<ids:attribute><ids:name><ids:simpleValue>Description</ids:simpleValue></ids:name></ids:attribute>""") +
-            Spez("Tag Länge", Ent("IFCPUMP"), """<ids:attribute><ids:name><ids:simpleValue>Tag</ids:simpleValue></ids:name><ids:value><xs:restriction base="xs:string"><xs:length value="7"/></xs:restriction></ids:value></ids:attribute>""") +
+            Spez("Tag Länge", Ent("IFCPUMP") + EigAnw("HK_KICAD", "System", "KAE-VL"), """<ids:attribute><ids:name><ids:simpleValue>Tag</ids:simpleValue></ids:name><ids:value><xs:restriction base="xs:string"><xs:length value="7"/></xs:restriction></ids:value></ids:attribute>""") +
             Spez("BKP 251 Apparate", Ent("IFCSANITARYTERMINAL"), """<ids:classification><ids:value><ids:simpleValue>251</ids:simpleValue></ids:value><ids:system><ids:simpleValue>BKP</ids:simpleValue></ids:system></ids:classification>""") +
             Spez("BKP 254 Apparate", Ent("IFCSANITARYTERMINAL"), """<ids:classification><ids:value><ids:simpleValue>254</ids:simpleValue></ids:value><ids:system><ids:simpleValue>BKP</ids:simpleValue></ids:system></ids:classification>""") +
             Spez("Uniclass verboten", Ent("IFCSANITARYTERMINAL"), """<ids:classification cardinality="prohibited"><ids:system><ids:simpleValue>Uniclass 2015</ids:simpleValue></ids:system></ids:classification>""") +
@@ -252,7 +253,7 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
             Spez("nicht im Raum", Ent("IFCPIPESEGMENT"), """<ids:partOf cardinality="prohibited"><ids:entity><ids:name><ids:simpleValue>IFCSPACE</ids:simpleValue></ids:name></ids:entity></ids:partOf>""", "IFC4"));
         Assert.Equal("bestanden", Erg(e, "im Gebäude"));                  // Rohr → Geschoss (enthalten) → Gebäude (Aggregat)
         Assert.Equal("nicht bestanden", Erg(e, "im Gebäude enthalten"));  // nur über Enthaltensein: das Geschoss, nicht das Gebäude
-        Assert.Equal(2, Anw(e, "Ports am Rohr"));                          // Pumpe P-KAE-1: saug, druck
+        Assert.Equal(6, Anw(e, "Ports am Rohr"));                          // Pumpen P-KAE-1, P-HG1, P-HG2 (Modul 5 A-D): je saug, druck
         Assert.Equal("bestanden", Erg(e, "Ports am Rohr"));
         Assert.Equal("bestanden", Erg(e, "Systeme in Anlage"));
         Assert.Equal(1, Anw(e, "Systeme in Anlage"));
@@ -272,7 +273,7 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
         Assert.Equal("nicht bestanden", Erg(e, "Kanal verlangt"));
         Assert.Equal("bestanden", Erg(e, "Kanal verboten"));
         Assert.Equal("nicht bestanden", Erg(e, "Pumpe verboten"));
-        Assert.Equal(["P-KAE-1"], Befunde(R(e, "Pumpe verboten")));
+        Assert.Equal(["P-HG1", "P-HG2", "P-KAE-1"], Befunde(R(e, "Pumpe verboten")));
         Assert.Equal("bestanden", Erg(e, "Kanal optional"));
         Assert.Equal("nicht anwendbar (Fassung)", Erg(e, "nur IFC2X3"));
         Assert.Equal("nicht bestanden", e["ergebnis"]!.GetValue<string>());

@@ -344,8 +344,12 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
         var p = Beispielprojekt.Erzeugen(IfcHilfe.Kat, null);
         // Kälte gehört zur Heizung (Entscheid Christian 20.10.2026); «kaelte» ist der alte Wert
         var hz = Export(p, ordner.Datei("hz.ifc"), "IFC4", O("""{"umfang":{"gewerke":["kaelte"]}}"""));
-        Assert.Equal(["Pumpe", "Rohr", "Ventil"], hz["jeKlasse"]!.AsArray().Select(x => x!["klasse"]!.GetValue<string>()).Distinct().Order());
-        Assert.Equal(2, hz["anzahl"]!["systeme"]!.GetValue<int>());
+        // seit Modul 5 A-D mit der Heizungsanlage A-HZG (Systempaar HZ-VL/HZ-RL) neben dem Kältekreis
+        var klassen = hz["jeKlasse"]!.AsArray().Select(x => x!["klasse"]!.GetValue<string>()).Distinct().ToList();
+        foreach (var k in new[] { "Pumpe", "Rohr", "Ventil", "Mischventil", "Fuehler", "Verteiler", "Speicher", "Waermeerzeuger", "Ausdehnungsgefaess", "Heizkoerper", "Fussbodenheizkreis" })
+            Assert.Contains(k, klassen);
+        Assert.DoesNotContain("WC", klassen);
+        Assert.Equal(4, hz["anzahl"]!["systeme"]!.GetValue<int>());
         var eg = Export(p, ordner.Datei("eg.ifc"), "IFC4", O("""{"umfang":{"geschosse":["EG"],"klassen":["Apparat"]}}"""));
         Assert.Equal(7, eg["anzahl"]!["elemente"]!.GetValue<int>());   // 7 Apparate im EG
         Assert.Contains(eg["uebersprungenJeGrund"]!.AsObject(), x => x.Key == "Klasse nicht im Umfang");
@@ -381,11 +385,11 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
         Assert.Equal(b["bericht"]!["md"]!.GetValue<string>(), ordner.Datei("modell.bericht.md"));
         var md = File.ReadAllText(ordner.Datei("modell.bericht.md"));
         Assert.Contains("# IFC-Exportbericht", md);
-        Assert.Contains("| Rohr | IfcPipeSegment | IfcPipeSegmentType | RIGIDSEGMENT | 71 |", md);
+        Assert.Contains("| Rohr | IfcPipeSegment | IfcPipeSegmentType | RIGIDSEGMENT | 112 |", md);   // 71 + 41 Heizungsrohre (Modul 5 A-D)
         Assert.Contains("H+K HLKS-Basis", md);
         // Zähler je Klasse und Entität, Dauer
-        Assert.Equal(71, b["jeKlasse"]!.AsArray().OfType<JsonObject>().Single(x => x["klasse"]!.GetValue<string>() == "Rohr")["anzahl"]!.GetValue<int>());
-        Assert.Equal(71, b["jeEntitaet"]!["IfcPipeSegment"]!.GetValue<int>());
+        Assert.Equal(112, b["jeKlasse"]!.AsArray().OfType<JsonObject>().Single(x => x["klasse"]!.GetValue<string>() == "Rohr")["anzahl"]!.GetValue<int>());
+        Assert.Equal(112, b["jeEntitaet"]!["IfcPipeSegment"]!.GetValue<int>());
         Assert.True(b["dauerSekunden"]!.GetValue<double>() > 0);
         // zweiter Export ersetzt die Datei
         Export(p, datei);
@@ -457,7 +461,7 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
         var r1 = Regel(b, "HK-HLKS-01");
         Assert.Equal("nicht bestanden", r1["ergebnis"]!.GetValue<string>());
         Assert.Equal(["RO-OHNE"], Befunde(r1));
-        Assert.Equal(72, r1["anwendbar"]!.GetValue<int>());
+        Assert.Equal(113, r1["anwendbar"]!.GetValue<int>());   // 71 + 41 Heizungsrohre (Modul 5 A-D) + RO-OHNE
         Assert.Equal(1, r1["nichtBestandenElemente"]!.GetValue<int>());
         Assert.Contains("fehlt", r1["befunde"]![0]!["gruende"]![0]!.GetValue<string>());
         Assert.Equal(["WT-OHNE"], Befunde(Regel(b, systemregel)));
@@ -486,7 +490,7 @@ public sealed class IfcExportTests(Xunit.Abstractions.ITestOutputHelper aus) : I
         Assert.Equal(3, ids.Count);
         Assert.True(ids[0]["basis"]!.GetValue<bool>());
         Assert.Equal("bestanden", ids[1]["ergebnis"]!.GetValue<string>());
-        Assert.Equal(1, ids[1]["regeln"]![0]!["anwendbar"]!.GetValue<int>());
+        Assert.Equal(3, ids[1]["regeln"]![0]!["anwendbar"]!.GetValue<int>());   // P-KAE-1, P-HG1, P-HG2 (Modul 5 A-D)
         Assert.Equal("IDS ungültig", ids[2]["ergebnis"]!.GetValue<string>());
         Assert.NotEmpty(ids[2]["xsdMeldungen"]!.AsArray());
     }

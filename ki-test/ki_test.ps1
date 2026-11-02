@@ -1,5 +1,5 @@
 # KI-Verstaendnistest (Abnahme Modul 0a)
-# Eine KI ohne Vorwissen bekommt nur die MCP-Werkzeuge des HLKS-CAD und beantwortet 10 Fragen zum Beispielprojekt.
+# Eine KI ohne Vorwissen bekommt nur die MCP-Werkzeuge des HLKS-CAD und beantwortet die Fragen zum Beispielprojekt (f1-f10, seit Modul 5 f11 Heizgruppen).
 # Die richtigen Antworten rechnet der Kern selbst; das Ergebnis landet in ki-test\ergebnisse\.
 #
 # Aufruf:  powershell -ExecutionPolicy Bypass -File ki-test\ki_test.ps1 [-Modell claude-sonnet-5-5]

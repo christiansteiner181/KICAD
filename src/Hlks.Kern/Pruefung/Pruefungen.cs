@@ -54,6 +54,14 @@ public static class Pruefungen
         ["P32"] = "Quelle einer Familie nicht eindeutig auf die aktuelle Leserversion umschlüsselbar",
         // Nachtrag Modul 3, 21.10.2026 (Formteile in Vorgabegrösse): gemeldet von LeitungenPruefung (Leitungen/FreieGroesse.cs)
         ["P45"] = "Formteil einer freien Serie trägt seine Grösse nicht selbst",
+        // Modul 5 Teil A-D (entwurf/modul-5.md, Punkt 6): gemeldet von HeizungPruefung (Heizung/HeizungPruefung.cs)
+        ["P33"] = HeizungPruefung.Codes["P33"],
+        ["P34"] = HeizungPruefung.Codes["P34"],
+        ["P35"] = HeizungPruefung.Codes["P35"],
+        ["P36"] = HeizungPruefung.Codes["P36"],
+        ["P37"] = HeizungPruefung.Codes["P37"],
+        ["P38"] = HeizungPruefung.Codes["P38"],
+        ["P39"] = HeizungPruefung.Codes["P39"],
     };
 
     /// <summary>P12 (Modul 1c): Kennwerte der Hülle, die nur mit Quelle gelten (Norm mit Ausgabe, Datenblatt, IFC). Gerechnete
@@ -146,6 +154,7 @@ public static class Pruefungen
         AussparungPruefung.Pruefen(m, k, b);  // Modul 3b: P19, P20
         SanitaerPruefung.Pruefen(m, k, b);    // Modul 4 Teil A: P21–P26
         PlanPruefung.Pruefen(m, k, b);        // Modul 7 Teil A: P27; Teil B3: P28
+        HeizungPruefung.Pruefen(m, k, b);     // Modul 5 Teil A-D: P33–P39
 
         return b.OrderBy(x => x.Schwere switch { "fehler" => 0, "warnung" => 1, _ => 2 }).ThenBy(x => x.Code).ThenBy(x => x.Element).ToList();
     }

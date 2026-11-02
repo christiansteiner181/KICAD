@@ -275,7 +275,10 @@ public static class Ableitungen
         var m = p.Modell; var k = p.Katalog;
         var sFilter = system is null ? null : m.HoleDerKlasse(system, "System").Id;
         var gFilter = geschoss is null ? null : m.HoleDerKlasse(geschoss, "Geschoss").Id;
-        bool Passt(Element e) => (sFilter is null || e.System == sFilter || Netz.SystemeVon(m, e).Any(s => s.Id == sFilter))
+        // Eine Leitung mit System gehört genau zu diesem (Modul 5: der Bypass vom Rücklauf zum Mischventil im Vorlauf zählte sonst in beiden Systemen);
+        // ohne eigenes System und bei Bauteilen gelten die Systeme der Anschlüsse
+        bool Passt(Element e) => (sFilter is null || e.System == sFilter
+                                  || ((!k.IstArt(e, "Leitung") || e.System is null) && Netz.SystemeVon(m, e).Any(s => s.Id == sFilter)))
                                  && (gFilter is null || e.Geschoss == gFilter);
         var leitungen = m.Elemente.Where(e => k.IstArt(e, "Leitung") && Passt(e)).ToList();
         var gruppen = new JsonArray(leitungen.Select(l => (L: l, B: HlksMasse.Bezeichnung(p, l)))

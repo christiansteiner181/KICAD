@@ -145,11 +145,11 @@ public class KatalogTests
     public void SystemschichtKlassen_HabenEineRolle()
     {
         string[] rollen = ["verbraucher", "quelle", "senke", "zentrale", "leitung"];
-        var ausnahmen = new[] { "Anlage", "System", "Strang", "Montageabschnitt" };   // Montageabschnitt (BIM to field): Gliederung wie der Strang
+        var ausnahmen = new[] { "Anlage", "System", "Strang", "Montageabschnitt", "Heizgruppe" };   // Montageabschnitt (BIM to field), Heizgruppe (Modul 5 A-D): Gliederung wie der Strang
         var ohne = Konkrete.Where(k => k.Schicht == "system" && !ausnahmen.Contains(k.Name) && string.IsNullOrEmpty(k.Rolle)).Select(k => k.Name).ToList();
         Assert.True(ohne.Count == 0, "Ohne Rolle: " + string.Join(", ", ohne));
         Assert.All(Konkrete.Where(k => !string.IsNullOrEmpty(k.Rolle)), k => Assert.Contains(k.Rolle!, rollen));
-        // Anlage, System, Strang sind Gliederung und haben keine Rolle
+        // Anlage, System, Strang und Heizgruppe sind Gliederung und haben keine Rolle
         Assert.All(ausnahmen, n => Assert.Null(Kat.Klassen[n].Rolle));
         // Rolle «leitung» für alle Leitungsbauteile
         Assert.All(Konkrete.Where(k => k.IstArt("Leitung") || k.IstArt("Formteil") || k.IstArt("Armatur")), k => Assert.Equal("leitung", k.Rolle));

@@ -120,6 +120,8 @@ public sealed class Befehlsregister
         LueftungBefehle.Registrieren(r);
         BaustelleDaten.Registrieren(r);   // BIM to field Stufe 0: montagestatus_setzen
         BaustelleRueckmeldung.Registrieren(r);   // BIM to field Stufe 1: rueckmeldung_uebernehmen
+        // Modul 5 Teil A-D: Heizgruppen und Systempaar
+        HeizungBefehle.Registrieren(r);
         return r;
     }
 }
@@ -342,7 +344,7 @@ static class Elementpflege
             {
                 var eltern = k.Arbeit.Hole(t, "teilVon");
                 if (eltern.Id == e.Id) throw new HlksFehler("Ein Element kann nicht Teil von sich selbst sein.");
-                string? erwartet = d.Name switch { "Strang" => "System", "System" => "Anlage", "Geschoss" => "Gebaeude", "Raum" => "Zone", _ => null };
+                string? erwartet = d.Name switch { "Strang" => "System", "System" => "Anlage", "Geschoss" => "Gebaeude", "Raum" => "Zone", "Heizgruppe" => "Anlage", _ => null };
                 if (Netz.IstLeitungsbauteil(k.Katalog, e)) erwartet = "Strang";
                 if (erwartet is not null && !k.Katalog.IstArt(eltern, erwartet))
                     throw new HlksFehler($"{d.Name} kann nur teilVon einem {erwartet} sein, «{eltern.Kennzeichen}» ist ein {eltern.Klasse}.");

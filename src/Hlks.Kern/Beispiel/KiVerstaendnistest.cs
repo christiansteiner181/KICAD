@@ -21,6 +21,9 @@ public static class KiVerstaendnistest
         new("f8", "Erstelle die Raumliste des 1.OG: je Raum Kennzeichen, Fläche in m² und Anzahl Endgeräte.", "[ { \"raum\": Kennzeichen, \"flaeche_m2\": Zahl, \"endgeraete\": Zahl } ]"),
         new("f9", "Erstelle die Strangliste: je Strang Kennzeichen, System und Anzahl direkt angeschlossener Endgeräte.", "[ { \"strang\": Kennzeichen, \"system\": Kennzeichen, \"direkt\": Zahl } ]"),
         new("f10", "Welche Räume im EG haben keinen Sanitäranschluss (kein Endgerät)?", "Liste von Kennzeichen"),
+        // Modul 5 A-D: heizung_lesen beschreibt die Anlage richtig
+        new("f11", "Welche Heizgruppen hat die Heizungsanlage A-HZG? Je Gruppe Kennzeichen, Gruppenpumpe, Mischventil (null, wenn keines), Anzahl Verbraucher und Σ Normleistung der Verbraucher (Angabe) in W.",
+            "[ { \"heizgruppe\": Kennzeichen, \"pumpe\": Kennzeichen, \"mischventil\": Kennzeichen oder null, \"verbraucher\": Zahl, \"leistung_W\": Zahl } ]"),
     ];
 
     /// <summary>Auftrag an die KI: Fragen und Antwortformat. Die KI darf nur die Werkzeuge benutzen.</summary>
@@ -29,7 +32,7 @@ public static class KiVerstaendnistest
         var sb = new System.Text.StringBuilder();
         sb.AppendLine("Du hast Zugriff auf ein Gebäudetechnik-Modell nur über die Werkzeuge des Servers «hlks». Du kennst das Projekt nicht.");
         sb.AppendLine("Ermittle die Antworten ausschliesslich mit diesen Werkzeugen (Tipp: zuerst faehigkeiten und projekt_ueberblick). Ändere nichts am Modell; zum Prüfen von Auswirkungen gibt es den Trockenlauf.");
-        sb.AppendLine("Antworte am Schluss mit genau einem JSON-Objekt in einem ```json-Block mit den Schlüsseln f1 bis f10, sonst nichts dahinter.");
+        sb.AppendLine($"Antworte am Schluss mit genau einem JSON-Objekt in einem ```json-Block mit den Schlüsseln f1 bis {Fragen[^1].Id}, sonst nichts dahinter.");
         sb.AppendLine();
         foreach (var f in Fragen) sb.AppendLine($"{f.Id}: {f.Text}  Format: {f.Format}");
         return sb.ToString();
@@ -73,7 +76,18 @@ public static class KiVerstaendnistest
             ["strang"] = z!["strang"]!.GetValue<string>(), ["system"] = z["system"]!.GetValue<string>(), ["direkt"] = z["anzahlDirekt"]!.DeepClone(),
         }).ToArray());
         var eg = m.Hole("EG").Id;
-        o["f10"] = Arr(m.DerKlasse("Raum").Where(r => r.Geschoss == eg && !m.Elemente.Any(e => e.Raum == r.Id && Netz.IstEndgeraet(k, e))).Select(r => r.Kennzeichen));
+        // Sanitäranschluss: Endgeräte ohne Heiz-/Kältemedium (seit Modul 5 stehen auch FBH-Kreise und Heizkörper als Endgeräte in Räumen)
+        o["f10"] = Arr(m.DerKlasse("Raum").Where(r => r.Geschoss == eg && !m.Elemente.Any(e => e.Raum == r.Id && Netz.IstEndgeraet(k, e) && !Heizgruppen.HatHeizmedium(m, k, e)))
+            .Select(r => r.Kennzeichen));
+        var stand = Heizgruppen.Ergebnis(m, k);
+        var netz = HeizungLeistung.Ergebnis(m, k);
+        var anlage = m.Hole("A-HZG").Id;
+        o["f11"] = new JsonArray(stand.Gruppen.Values.Where(w => w.Gruppe.TeilVon == anlage).OrderBy(w => w.Gruppe.Kennzeichen, StringComparer.OrdinalIgnoreCase)
+            .Select(w => (JsonNode)new JsonObject
+            {
+                ["heizgruppe"] = w.Gruppe.Kennzeichen, ["pumpe"] = w.Pumpen.FirstOrDefault()?.Kennzeichen, ["mischventil"] = w.Mischer.FirstOrDefault()?.Kennzeichen,
+                ["verbraucher"] = w.Verbraucher.Count, ["leistung_W"] = netz.Summe(w.Verbraucher).SummeW,
+            }).ToArray());
         return o;
     }
 
@@ -116,16 +130,16 @@ public static class KiVerstaendnistest
                     ok = string.Equals(T(soll?["datenpunkt"]), T(ist?["datenpunkt"]), StringComparison.OrdinalIgnoreCase)
                          && string.Equals(T(soll?["raum"]), T(ist?["raum"]), StringComparison.OrdinalIgnoreCase);
                     break;
-                case "f8" or "f9":
+                case "f8" or "f9" or "f11":
                 {
-                    string schluessel = f.Id == "f8" ? "raum" : "strang";
+                    string schluessel = f.Id switch { "f8" => "raum", "f9" => "strang", _ => "heizgruppe" };
                     var sollZ = soll!.AsArray().ToDictionary(x => T(x![schluessel])!, x => x!.AsObject(), StringComparer.OrdinalIgnoreCase);
                     var istZ = (ist as JsonArray)?.Where(x => x is JsonObject).ToDictionary(x => T(x![schluessel]) ?? "", x => x!.AsObject(), StringComparer.OrdinalIgnoreCase) ?? [];
                     ok = sollZ.Count == istZ.Count && sollZ.All(kv => istZ.TryGetValue(kv.Key, out var z) && kv.Value.All(feld =>
                         feld.Key == schluessel ||
-                        (Json.Zahl(feld.Value) is double sz ? Json.Zahl(z[feld.Key]) is double iz && Math.Abs(sz - iz) <= (feld.Key == "flaeche_m2" ? 0.05 : 0)
+                        (Json.Zahl(feld.Value) is double sz ? Json.Zahl(z[feld.Key]) is double iz && Math.Abs(sz - iz) <= (feld.Key switch { "flaeche_m2" => 0.05, "leistung_W" => 0.5, _ => 0 })
                                                             : string.Equals(T(feld.Value), T(z[feld.Key]), StringComparison.OrdinalIgnoreCase))));
-                    hinweis = f.Id == "f8" ? "Fläche ±0.05 m²" : null;
+                    hinweis = f.Id switch { "f8" => "Fläche ±0.05 m²", "f11" => "Leistung ±0.5 W; Mischventil null, wenn keines", _ => null };
                     break;
                 }
                 default: ok = false; break;

@@ -248,7 +248,7 @@ public sealed class IfcExportAufbau
         }
     }
 
-    static readonly HashSet<string> Gliederungsklassen = new(StringComparer.OrdinalIgnoreCase) { "Gebaeude", "Geschoss", "Anlage", "System", "Strang", "Regelkreis", "Zone" };
+    static readonly HashSet<string> Gliederungsklassen = new(StringComparer.OrdinalIgnoreCase) { "Gebaeude", "Geschoss", "Anlage", "System", "Strang", "Regelkreis", "Zone", "Heizgruppe" };
 
     void Pruefen(Element e)
     {
@@ -641,6 +641,7 @@ public sealed class IfcExportAufbau
         }
         var ohneAnlage = systeme.Where(s => m.Finde(s.Element.TeilVon) is not { Klasse: "Anlage" }).Select(s => s.Element.Kennzeichen).ToList();
         if (ohneAnlage.Count > 0) Hinweise.Add($"Systeme ohne Anlage: {string.Join(", ", ohneAnlage)}.");
+        Heizgruppen_();
         // Regelkreise: IFC4 IfcDistributionSystem CONTROL, IFC2X3 IfcSystem – Gruppe der Datenpunkte
         var rk = abb.Klasse("Regelkreis");
         foreach (var r in m.DerKlasse("Regelkreis").OrderBy(x => x.Kennzeichen, StringComparer.Ordinal))
@@ -669,6 +670,50 @@ public sealed class IfcExportAufbau
                 gr.Psets.Add(GruppenPset(zo, null, null));
                 gruppen[zo.Id] = gr; aus.Gruppen.Add(gr);
             }
+    }
+
+    /// <summary>Modul 5 (entwurf/modul-5.md, A-D 1): Heizgruppen als Gruppe ihrer exportierten Elemente (Glieder, Leitungen der Wege, Unterverteiler,
+    /// Verbraucher; IfcRelAssignsToGroup). IFC4 IfcDistributionCircuit mit ObjectType «Heizgruppe» und PredefinedType aus dem Systemtyp des Vorlaufs
+    /// (HEATING bzw. CHILLEDWATER, ifc.json systemtypen), IFC2X3 IfcSystem mit ObjectType «Heizgruppe» (kennt keine Circuits). Teil der Anlage über
+    /// IfcRelAggregates (RelatingObject und RelatedObjects sind IfcObjectDefinition – am Schema zulässig, Test IfcExportSchemaTests), wenn die Anlage
+    /// ausgegeben wird; die Heizgruppe gehört zur Anlage, nicht zu einem einzelnen System, weil sie Vor- und Rücklauf umfasst.</summary>
+    void Heizgruppen_()
+    {
+        var hgs = m.DerKlasse("Heizgruppe").OrderBy(x => x.Kennzeichen, StringComparer.Ordinal).ToList();
+        if (hgs.Count == 0) return;
+        var stand = Heizgruppen.Ergebnis(m, kat);
+        var ziel = abb.Klasse("Heizgruppe")?.Fuer(fassung);
+        foreach (var hg in hgs)
+        {
+            var w = stand.Gruppen[hg.Id];
+            var mitglieder = w.Elemente.Concat(w.Verbraucher.Select(v => v.Id)).Distinct(StringComparer.Ordinal)
+                .Select(id => produkte.GetValueOrDefault(id)).OfType<IfcExProdukt>().OrderBy(x => x.Element.Kennzeichen, StringComparer.Ordinal).Select(x => x.GlobalId).ToList();
+            if (mitglieder.Count == 0) { if (!UmfangGefiltert) Notiz("Heizgruppen ohne exportierte Elemente – nicht ausgegeben", hg.Kennzeichen); continue; }
+            var typ = w.Vorlauf?.Text("systemtyp");
+            var st = typ is null ? null : abb.Systemtypen.FirstOrDefault(t => kat.Systemtypen.TryGetValue(t.Systemtyp, out var a) && kat.Systemtypen.TryGetValue(typ, out var b) && a == b);
+            var gr = new IfcExGruppe
+            {
+                Element = hg, GlobalId = ElementGlobalId(aus.ProjektId, hg.Id), Art = "heizgruppe",
+                Entitaet = ziel?.Entitaet ?? (aus.IstIfc4 ? "IfcDistributionCircuit" : "IfcSystem"),
+                PredefinedType = aus.IstIfc4 ? st?.Ifc4 ?? ziel?.PredefinedType : null,
+                ObjectType = "Heizgruppe",
+                Name = hg.Name ?? hg.Kennzeichen,
+                Description = string.Join(", ", new[] { hg.Text("art"), hg.Text("verbraucherart") }.Where(x => x is not null)) is { Length: > 0 } d ? d : null,
+                LongName = aus.IstIfc4 ? hg.Kennzeichen : null,
+                Teil = hg.TeilVon is { } an && gruppen.TryGetValue(an, out var ag) && ag.Art == "anlage" ? ag.GlobalId : null,
+            };
+            gr.Mitglieder.AddRange(mitglieder);
+            var pset = GruppenPset(hg, typ, w.MediumVl ?? w.Vorlauf?.Text("medium"));
+            pset.Werte.Add(new("Art", "label", hg.Text("art")));
+            pset.Werte.Add(new("Verbraucherart", "label", hg.Text("verbraucherart")));
+            pset.Werte.Add(new("Vorlauf", "label", w.Vorlauf?.Kennzeichen));
+            pset.Werte.Add(new("Ruecklauf", "label", w.Ruecklauf?.Kennzeichen));
+            pset.Werte.Add(new("Abgang", "label", w.AbgangText));
+            pset.Werte.Add(new("VorlaufTemperatur", "real", Zahl: hg.Zahl("vlTemp")));
+            pset.Werte.Add(new("RuecklaufTemperatur", "real", Zahl: hg.Zahl("rlTemp")));
+            gr.Psets.Add(pset);
+            gruppen[hg.Id] = gr; aus.Gruppen.Add(gr);
+        }
     }
 
     bool UmfangGefiltert => umfang.Gewerke is not null || umfang.GeschossIds is not null || umfang.Klassen is not null;

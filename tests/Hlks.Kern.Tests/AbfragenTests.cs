@@ -27,10 +27,10 @@ public class AbfragenTests
     [Fact]
     public void Beispiel_HatDieErwarteteGroesse()
     {
-        Assert.Equal(187, P.Modell.Elemente.Count);
-        Assert.Equal(142, P.Modell.Verbindungen.Count);
-        Assert.Equal(187, P.Verlauf.Count);
-        Assert.Equal(187, P.BekanntePakete.Count);
+        Assert.Equal(270, P.Modell.Elemente.Count);
+        Assert.Equal(224, P.Modell.Verbindungen.Count);
+        Assert.Equal(270, P.Verlauf.Count);   // Modul 5 A-D: +83 Elemente in 83 Paketen (system_paar_anlegen legt zwei Systeme an, heizgruppen_vorschlagen zwei Gruppen, dazu zwei heizgruppe_aendern)
+        Assert.Equal(270, P.BekanntePakete.Count);
     }
 
     // ---------------------------------------------------------------- system_lesen, strang_text
@@ -205,9 +205,11 @@ public class AbfragenTests
         Assert.Equal("EG", Text(o["geschoss"]));
         Assert.Equal(12.0, Zahl(o["flaeche_m2"]), 2);
         var elemente = Liste(o["elemente"]);
-        Assert.Equal(3, elemente.Count);
-        Assert.Equal(["Badewanne", "Waschtisch", "WC"], elemente.Select(e => Text(e!["klasse"])).Order().ToArray());
-        foreach (var e in elemente)
+        Assert.Equal(4, elemente.Count);   // seit Modul 5 A-D mit dem Heizkörper HK-E.02 (Heizgruppe HG-2)
+        Assert.Equal(["Badewanne", "Heizkoerper", "Waschtisch", "WC"], elemente.Select(e => Text(e!["klasse"])).Order().ToArray());
+        var hk = elemente.Single(e => Text(e!["klasse"]) == "Heizkoerper")!;
+        Assert.Equal(["HZ-RL", "HZ-VL"], Texte(hk["angeschlossenAn"]).Order().ToArray());
+        foreach (var e in elemente.Where(e => Text(e!["klasse"]) != "Heizkoerper"))
         {
             var an = Texte(e!["angeschlossenAn"]);
             Assert.Contains("SW", an);
@@ -272,7 +274,7 @@ public class AbfragenTests
     public void ElementeSuchen_Filter()
     {
         Assert.Equal(4, (int)Zahl(A.ElementeSuchen("WC", null, null, null, null)["treffer"]));
-        Assert.Equal(3, (int)Zahl(A.ElementeSuchen(null, null, "E.02", null, null)["treffer"]));
+        Assert.Equal(4, (int)Zahl(A.ElementeSuchen(null, null, "E.02", null, null)["treffer"]));   // 3 Apparate + Heizkörper HK-E.02 (Modul 5 A-D)
         Assert.Equal(3, (int)Zahl(A.ElementeSuchen("Apparat", "EG", "E.02", null, null)["treffer"]));
         Assert.Equal(0, (int)Zahl(A.ElementeSuchen("Apparat", "1.OG", "E.02", null, null)["treffer"]));
         Assert.Equal(1, (int)Zahl(A.ElementeSuchen(null, null, null, null, "WZ-1")["treffer"]));
@@ -600,11 +602,13 @@ public class AbfragenTests
     {
         var o = A.ProjektUeberblick();
         Assert.Equal(Beispielprojekt.Name, Text(o["projekt"]));
-        Assert.Equal(187, (int)Zahl(o["modellStand"]!["elemente"]));
+        Assert.Equal(270, (int)Zahl(o["modellStand"]!["elemente"]));
         var geb = Liste(o["gebaeude"]).Single()!;
         Assert.Equal(3, Liste(geb["geschosse"]).Count);
         Assert.Equal("1.OG", Text(Liste(geb["geschosse"])[0]!["kennzeichen"])); // oberstes zuerst
-        Assert.Equal(["KAE-RL", "KAE-VL", "KW", "SW"], Liste(o["systeme"]).Select(s => Text(s!["kennzeichen"])).ToArray());   // KW, SW (Sanitär) und der Kältekreis KAE-VL/KAE-RL (Gewerk Heizung)
+        Assert.Equal(["HZ-RL", "HZ-VL", "KAE-RL", "KAE-VL", "KW", "SW"], Liste(o["systeme"]).Select(s => Text(s!["kennzeichen"])).ToArray());   // KW, SW (Sanitär), der Kältekreis KAE-VL/KAE-RL und das Systempaar HZ-VL/HZ-RL (Modul 5 A-D; Gewerk Heizung)
+        Assert.Equal("HZ-RL", Liste(o["systeme"]).Single(s => Text(s!["kennzeichen"]) == "HZ-VL")!["gegenstueck"]!.GetValue<string>());
+        Assert.Equal(["HG-1 «FBH gemischt» (A-HZG)", "HG-2 «Heizkörper ungemischt» (A-HZG)"], Liste(o["heizgruppen"]).Select(Text).ToArray());
         Assert.Equal(4, (int)Zahl(o["funktionsgraph"]!["datenpunkte"]));
         Assert.Equal(0, (int)Zahl(o["befunde"]!["fehler"]));
         Assert.Equal(0, (int)Zahl(o["befunde"]!["warnung"]));

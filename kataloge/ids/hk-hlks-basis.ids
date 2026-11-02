@@ -65,6 +65,8 @@
               <xs:enumeration value="IFCWASTETERMINAL"/>
               <xs:enumeration value="IFCTANK"/>
               <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCCHILLER"/>
+              <xs:enumeration value="IFCFLOWINSTRUMENT"/>
               <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
               <xs:enumeration value="IFCHEATEXCHANGER"/>
               <xs:enumeration value="IFCSPACEHEATER"/>
@@ -100,6 +102,8 @@
               <xs:enumeration value="IFCWASTETERMINAL"/>
               <xs:enumeration value="IFCTANK"/>
               <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCCHILLER"/>
+              <xs:enumeration value="IFCFLOWINSTRUMENT"/>
               <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
               <xs:enumeration value="IFCHEATEXCHANGER"/>
               <xs:enumeration value="IFCSPACEHEATER"/>
@@ -135,6 +139,8 @@
               <xs:enumeration value="IFCWASTETERMINAL"/>
               <xs:enumeration value="IFCTANK"/>
               <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCCHILLER"/>
+              <xs:enumeration value="IFCFLOWINSTRUMENT"/>
               <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
               <xs:enumeration value="IFCHEATEXCHANGER"/>
               <xs:enumeration value="IFCSPACEHEATER"/>
@@ -186,6 +192,7 @@
               <xs:enumeration value="IFCWASTETERMINAL"/>
               <xs:enumeration value="IFCTANK"/>
               <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCCHILLER"/>
               <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
               <xs:enumeration value="IFCHEATEXCHANGER"/>
               <xs:enumeration value="IFCSPACEHEATER"/>
@@ -221,6 +228,8 @@
               <xs:enumeration value="IFCWASTETERMINAL"/>
               <xs:enumeration value="IFCTANK"/>
               <xs:enumeration value="IFCBOILER"/>
+              <xs:enumeration value="IFCCHILLER"/>
+              <xs:enumeration value="IFCFLOWINSTRUMENT"/>
               <xs:enumeration value="IFCUNITARYEQUIPMENT"/>
               <xs:enumeration value="IFCHEATEXCHANGER"/>
               <xs:enumeration value="IFCSPACEHEATER"/>

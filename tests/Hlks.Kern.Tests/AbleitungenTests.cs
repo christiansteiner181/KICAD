@@ -31,9 +31,9 @@ public class AbleitungenTests
         Assert.Equal("Bad", Text(bad["name"]));
         Assert.Equal(2.5, Zahl(bad["hoehe_m"]), 2);
         Assert.Equal(30.0, Zahl(bad["volumen_m3"]), 2);
-        Assert.Equal(3, (int)Zahl(bad["anzahlEndgeraete"]));
-        Assert.Equal(["KW", "SW"], Liste(bad["systeme"]).Select(Text).ToArray());
-        Assert.Equal(["BW-E.02 (Badewanne)", "WC-E.02 (WC)", "WT-E.02 (Waschtisch)"], Liste(bad["endgeraete"]).Select(Text).ToArray());
+        Assert.Equal(4, (int)Zahl(bad["anzahlEndgeraete"]));   // 3 Apparate + Heizkörper HK-E.02 (Modul 5 A-D)
+        Assert.Equal(["HZ-RL", "HZ-VL", "KW", "SW"], Liste(bad["systeme"]).Select(Text).ToArray());
+        Assert.Equal(["BW-E.02 (Badewanne)", "HK-E.02 (Heizkoerper)", "WC-E.02 (WC)", "WT-E.02 (Waschtisch)"], Liste(bad["endgeraete"]).Select(Text).ToArray());
 
         var summe = Liste(o["summenJeGeschoss"]).Single()!;
         Assert.Equal("EG", Text(summe["geschoss"]));
@@ -54,8 +54,8 @@ public class AbleitungenTests
         Assert.All(summen, s => Assert.Equal(120.0, Zahl(s!["flaeche_m2"]), 2));
         // Die Summe der Zeilen stimmt mit dem Total überein
         Assert.Equal(Zahl(o["flaecheTotal_m2"]), Liste(o["zeilen"]).Sum(z => Zahl(z!["flaeche_m2"])), 2);
-        // Endgeräte: 16 Apparate stehen in Räumen
-        Assert.Equal(16, Liste(o["zeilen"]).Sum(z => (int)Zahl(z!["anzahlEndgeraete"])));
+        // Endgeräte: 16 Apparate, 6 FBH-Kreise und 2 Heizkörper (Modul 5 A-D) stehen in Räumen
+        Assert.Equal(24, Liste(o["zeilen"]).Sum(z => (int)Zahl(z!["anzahlEndgeraete"])));
     }
 
     [Fact]
@@ -73,7 +73,7 @@ public class AbleitungenTests
     {
         var o = Ableitungen.Strangliste(P);
         Assert.Equal("Strangliste", Text(o["ableitung"]));
-        Assert.Equal(9, (int)Zahl(o["anzahl"]));   // 7 Sanitär-Stränge + 2 Kälte-Stränge (KAE-V1, KAE-R1; Entscheid Christian 20.10.2026)
+        Assert.Equal(17, (int)Zahl(o["anzahl"]));   // 7 Sanitär-Stränge + 2 Kälte-Stränge (KAE-V1, KAE-R1; Entscheid Christian 20.10.2026) + 8 Heizungsstränge (HZ-V0 … HZ-RH, Modul 5 A-D)
 
         void Pruefe(string strang, int direkt, int gesamt)
         {
@@ -154,7 +154,7 @@ public class AbleitungenTests
     {
         var o = Ableitungen.Mengen(P);
         Assert.Equal("Mengen", Text(o["ableitung"]));
-        Assert.Equal(123.77, Zahl(o["leitungslaengeTotal_m"]), 2);   // nach den Gefälle-Korrekturen (vorher 120.19) = 119.77 Sanitär + 4.00 Kälte (KAE-V1-1, KAE-R1-1)
+        Assert.Equal(170.06, Zahl(o["leitungslaengeTotal_m"]), 2);   // nach den Gefälle-Korrekturen (vorher 120.19) = 119.77 Sanitär + 4.00 Kälte (KAE-V1-1, KAE-R1-1) + 46.29 Heizung (Modul 5 A-D, HZ-VL/HZ-RL)
 
         var gruppen = Liste(o["leitungen"]);
         Assert.NotEmpty(gruppen);
@@ -183,7 +183,9 @@ public class AbleitungenTests
         double kw = Zahl(Ableitungen.Mengen(P, "KW")["leitungslaengeTotal_m"]);
         double kae = Zahl(Ableitungen.Mengen(P, "KAE-VL")["leitungslaengeTotal_m"]) + Zahl(Ableitungen.Mengen(P, "KAE-RL")["leitungslaengeTotal_m"]);   // Kältekreis (Gewerk Heizung)
         Assert.Equal(4.0, kae, 2);
-        Assert.Equal(total, sw + kw + kae, 1);
+        double hz = Zahl(Ableitungen.Mengen(P, "HZ-VL")["leitungslaengeTotal_m"]) + Zahl(Ableitungen.Mengen(P, "HZ-RL")["leitungslaengeTotal_m"]);   // Heizung (Modul 5 A-D)
+        Assert.True(hz > 0);
+        Assert.Equal(total, sw + kw + kae + hz, 1);
         Assert.True(sw > 0 && kw > 0);
         double jeGeschoss = new[] { "UG", "EG", "1.OG" }.Sum(g => Zahl(Ableitungen.Mengen(P, null, g)["leitungslaengeTotal_m"]));
         Assert.Equal(total, jeGeschoss, 1);
@@ -292,7 +294,7 @@ public class AbleitungenTests
         });
         Assert.True(e.Angenommen, e.Fehler);
         var z = Zeile(Ableitungen.Raumliste(p, "EG"), "raum", "E.02");
-        Assert.Equal(4, (int)Zahl(z["anzahlEndgeraete"]));
-        Assert.Equal(17, Liste(Ableitungen.Raumliste(p)["zeilen"]).Sum(r => (int)Zahl(r!["anzahlEndgeraete"])));
+        Assert.Equal(5, (int)Zahl(z["anzahlEndgeraete"]));   // 3 Apparate + HK-E.02 (Modul 5 A-D) + AB-1
+        Assert.Equal(25, Liste(Ableitungen.Raumliste(p)["zeilen"]).Sum(r => (int)Zahl(r!["anzahlEndgeraete"])));
     }
 }

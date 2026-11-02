@@ -75,6 +75,7 @@ public static class IfcExportBericht
                 ["ports"] = aus.Produkte.Sum(x => x.Ports.Count), ["verbindungen"] = aus.Verbindungen.Count,
                 ["systeme"] = aus.Gruppen.Count(g => g.Art == "system"), ["straenge"] = aus.Gruppen.Count(g => g.Art == "strang"),
                 ["anlagen"] = aus.Gruppen.Count(g => g.Art == "anlage"), ["regelkreise"] = aus.Gruppen.Count(g => g.Art == "regelkreis"),
+                ["heizgruppen"] = aus.Gruppen.Count(g => g.Art == "heizgruppe"),   // Modul 5
                 ["typobjekte"] = aus.Typen.Count, ["daemmungen"] = aus.Produkte.Count(x => x.Daemmung is not null),
                 ["geschosse"] = aus.Geschosse.Count, ["uebersprungen"] = aufbau.Uebersprungen.Count,
             },
