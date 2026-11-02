@@ -160,7 +160,18 @@ public static class FamilienAnsicht
         foreach (var t in teile) ymin = Math.Min(ymin, FamilienKoerper.AlsNetz(t).Ausdehnung()[1]);
         var raum = new Schnittraum { Ax = 0, Ay = ymin - 1000, Dx = 1, Dy = 0, Nx = 0, Ny = 1, Laenge = 1, Tiefe = double.PositiveInfinity };
         var g = new Plangrafik { Ansicht = $"{fam.Kennzeichen} {a.Typ} {ansicht}", Art = "ansicht", Massstab = Massstab, Stand = p.Modell.Pruefsumme() };
-        if (teile.Count > 0)
+        if (detail == "grob" && a.Achsen.Count > 0)
+            // Formteil im Detailgrad grob: einlinig entlang der Achse wie im Grundriss (Bogen mit Radius, Befund Christian 02.11.2026)
+            g.Teile.Add(new Grafikteil
+            {
+                Id = fam.Id, Ebene = ebene,
+                Primitive = a.Achsen.Select(achse => new Primitiv
+                {
+                    Art = "polylinie", Punkte = achse.Select(q => { var l = Lage(ansicht, q); return new[] { l[0], l[2] }; }).ToList(),
+                    Stil = new Stil { Stift = Stifte.Mittel },
+                }).ToList(),
+            });
+        else if (teile.Count > 0)
             // je Familienkörper ein Eintrag (gemeinsam verdeckt): jedes Grafikteil trägt die Körper-Id
             g.Teile.AddRange(Schnittgrafik.Zeichnen(raum, false, teile.Select(t => (fam, new Koerper { Id = fam.Id, Ebene = ebene, Teile = [t] })).ToList(), p.Katalog));
         if (anschluesse.Count > 0)

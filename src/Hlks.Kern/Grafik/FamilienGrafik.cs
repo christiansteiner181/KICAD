@@ -137,7 +137,17 @@ public sealed class FamilienGrafik : IGrafikquelle
 
         var umriss = UmrissWelt(a, lage, detail);
         var sinnbild = lage.Senkrecht ? a.SinnbildFuer(detail) : [];
+        // Formteile im Detailgrad grob einlinig wie die Leitung (Stift wie HlksGrafik bei grob), Bogen mit Radius statt Hüllquader
+        // (Christian 02.11.2026: «Ansichten der Familien, fehlende Radien … muss auch beim Konstruieren korrekt aussehen»)
+        var einlinig = detail == "grob" && sinnbild.Count == 0 && a.Achsen.Count > 0;
         if (sinnbild.Count > 0) teil.Primitive.AddRange(sinnbild.Select(p => Gedreht(p, lage, farbe)));
+        else if (einlinig)
+            foreach (var achse in a.Achsen)
+                teil.Primitive.Add(new Primitiv
+                {
+                    Art = "polylinie", Punkte = achse.Select(q => W2(q, lage)).ToList(),
+                    Stil = new Stil { Stift = HlksEinordnung.Stift(HlksEinordnung.Strichbreite("grob", null, M) / M), Farbe = farbe },
+                });
         else
             foreach (var f in umriss)
                 teil.Primitive.Add(new Primitiv
@@ -169,7 +179,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         }
 
         var box = Grafik.Begrenzung([teil]) ?? [ein[0], ein[1], ein[0], ein[1]];
-        if (sinnbild.Count == 0 && umriss.Count == 0)
+        if (sinnbild.Count == 0 && umriss.Count == 0 && !einlinig)
             // nichts sichtbar in diesem Detailgrad: Einfügepunkt als Kreuz, damit das Element anklickbar bleibt (nur Bildschirm)
             teil.Primitive.AddRange(new Skizze(ein[0], ein[1], Stifte.Duenn, farbe).Linie(-0.8 * M, 0, 0.8 * M, 0).Linie(0, -0.8 * M, 0, 0.8 * M).Primitive
                 .Select(p => { p.Stil.NurBildschirm = true; return p; }));

@@ -50,6 +50,11 @@ public sealed class FamAufloesung
     /// <summary>Werte einer Leitungsserie für diesen Typ (Modul 3) oder null (keine Leitungsserie bzw. Fehler).</summary>
     public FamLeitungWerte? Leitung { get; internal set; }
 
+    List<List<double[]>>? achsen;
+    /// <summary>Achse der Formteile (Bogen, T-Stück, Reduktion, Reinigungsöffnung) als Linienzüge in Familienkoordinaten – Darstellung im Detailgrad
+    /// grob wie die Leitung (einlinig, Bogen mit Radius); leer für alle übrigen Familien (FamilienKoerper.Achsen).</summary>
+    public List<List<double[]>> Achsen => achsen ??= FamilienKoerper.Achsen(this);
+
     readonly ConcurrentDictionary<string, List<Flaeche>> umrisse = new();
     readonly ConcurrentDictionary<string, List<Koerperteil>> teile = new();
 
@@ -489,6 +494,72 @@ public static class FamilienKoerper
         var stelle = a.Koerper.IndexOf(zyl[0]);
         a.Koerper.RemoveAll(k => zyl.Contains(k));
         a.Koerper.Insert(Math.Min(stelle, a.Koerper.Count), new FamKoerperErgebnis { Def = def, Sichtbar = true, Teil = bogen });
+    }
+
+    static readonly string[] AchsenKategorien = ["Bogen", "TStueck", "Reduktion", "Reinigungsoeffnung"];
+
+    /// <summary>Achse eines Formteils für die einlinige Darstellung (Detailgrad grob, Befund Christian 02.11.2026: «Ansichten der Familien, fehlende Radien»;
+    /// «muss auch beim Konstruieren korrekt aussehen»): Bogen von Anschluss a über den Kreisbogen (Radius wie BogenMitRadius: Parameter biegeradius/
+    /// radius/r/R, sonst bis zum kürzeren Rohrende) zu Anschluss b; Geberit PE und Silent-db20 ohne segmente mit Gehrung, mit segmente als Segmentbogen;
+    /// zwei Anschlüsse sonst gerade; drei und mehr: die durchgehende Achse (zwei gegenläufige Anschlüsse) und je Abgang ein Stück bis auf diese Achse.</summary>
+    public static List<List<double[]>> Achsen(FamAufloesung a)
+    {
+        var f = a.Familie;
+        var an = a.Anschluesse;
+        if (!AchsenKategorien.Contains(f.Kategorie) || an.Count < 2) return [];
+        var p = an.Select(x => V3.Aus(x.Lage)).ToList();
+        var r = an.Select(x => V3.Aus(x.Richtung)).ToList();
+        if (an.Count == 2)
+            return [f.Kategorie == "Bogen" && BogenAchse(f, a, p[0], r[0], p[1], r[1]) is { } bogen ? bogen : [p[0].Feld(), p[1].Feld()]];
+        // durchgehende Achse: das Paar mit den am stärksten gegenläufigen Richtungen
+        int ia = 0, ib = 1; double min = 2;
+        for (int i = 0; i < an.Count; i++)
+            for (int j = i + 1; j < an.Count; j++)
+                if (r[i].Mal(r[j]) < min) { min = r[i].Mal(r[j]); ia = i; ib = j; }
+        var achsen = new List<List<double[]>> { new() { p[ia].Feld(), p[ib].Feld() } };
+        var dir = p[ib] - p[ia]; var l2 = dir.Mal(dir);
+        for (int i = 0; i < an.Count; i++)
+        {
+            if (i == ia || i == ib) continue;
+            var fuss = l2 < 1e-9 ? p[ia] : p[ia] + dir * Math.Clamp((p[i] - p[ia]).Mal(dir) / l2, 0, 1);
+            achsen.Add([fuss.Feld(), p[i].Feld()]);
+        }
+        return achsen;
+    }
+
+    static List<double[]>? BogenAchse(FamilieDef f, FamAufloesung a, V3 pa, V3 ra, V3 pb, V3 rb)
+    {
+        int? segmente = a.Werte.GetValueOrDefault("segmente") is { IstText: false } sw && sw.Zahl >= 1 ? (int)Math.Round(sw.Zahl) : null;
+        bool gehrung = segmente is null && (f.Name.StartsWith("Geberit PE", StringComparison.OrdinalIgnoreCase) || f.Name.StartsWith("Geberit Silent", StringComparison.OrdinalIgnoreCase));
+        double b = ra.Mal(rb), nenner = 1 - b * b;
+        if (nenner < 1e-6) return null;
+        var w = pa - pb; double d = ra.Mal(w), e = rb.Mal(w);
+        double s = (b * e - d) / nenner, t = (e - b * d) / nenner;
+        if (s > -1e-6 || t > -1e-6) return null;
+        var pi = ((pa + ra * s) + (pb + rb * t)) * 0.5;
+        double la = (pa - pi).Laenge, lb = (pb - pi).Laenge;
+        double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
+        if (ablenkung < 1e-3) return null;
+        if (gehrung) return [pa.Feld(), pi.Feld(), pb.Feld()];
+        double? radiusParameter = null;
+        foreach (var n in (string[])["biegeradius", "radius", "r", "R"])
+            if (a.Werte.GetValueOrDefault(n) is { IstText: false } wr && wr.Zahl > 0) { radiusParameter = wr.Zahl; break; }
+        double R = Math.Min(radiusParameter ?? double.MaxValue, Math.Min(la, lb) / Math.Tan(ablenkung / 2) * 0.999);
+        if (R <= 0) return [pa.Feld(), pi.Feld(), pb.Feld()];
+        var ua = (pa - pi).Einheit(); var ub = (pb - pi).Einheit();
+        double T = R * Math.Tan(ablenkung / 2);
+        var mitte = pi + (ua + ub).Einheit() * (R / Math.Cos(ablenkung / 2));
+        var p0 = pi + ua * T; var p1 = pi + ub * T;
+        var v0 = p0 - mitte; var v1 = p1 - mitte;
+        double phi = Math.Acos(Math.Clamp(v0.Einheit().Mal(v1.Einheit()), -1, 1));
+        var achse = v0.Kreuz(v1).Einheit();
+        int schritte = segmente ?? Math.Max(4, (int)Math.Ceiling(phi / (Math.PI / 36)));   // ANNAHME Darstellung: höchstens 5° je Stück
+        var pfad = new List<double[]> { pa.Feld() };
+        if ((pa - p0).Laenge > 0.01) pfad.Add(p0.Feld());
+        for (int i = 1; i < schritte; i++) pfad.Add((mitte + v0.Gedreht(achse, phi * i / schritte)).Feld());
+        pfad.Add(p1.Feld());
+        if ((pb - p1).Laenge > 0.01) pfad.Add(pb.Feld());
+        return pfad;
     }
 
     /// <summary>Jeder Körperteil als Netz (für Ansichten von oben/unten, die nur Netze kennen).</summary>
