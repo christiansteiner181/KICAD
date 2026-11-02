@@ -37,6 +37,8 @@
     <EmbeddedResource Include="Baustelle\betrachter.html" LogicalName="Hlks.Kern.Baustelle.betrachter.html" />
     <EmbeddedResource Include="Baustelle\betrachter.css" LogicalName="Hlks.Kern.Baustelle.betrachter.css" />
     <EmbeddedResource Include="Baustelle\betrachter.js" LogicalName="Hlks.Kern.Baustelle.betrachter.js" />
+    <EmbeddedResource Include="Baustelle\icon.svg" LogicalName="Hlks.Kern.Baustelle.icon.svg" />
+    <EmbeddedResource Include="Baustelle\icon.png" LogicalName="Hlks.Kern.Baustelle.icon.png" />
     <EmbeddedResource Include="..\Hlks.Web\wwwroot\lib\three\three.module.js" LogicalName="Hlks.Kern.Baustelle.three.module.js" Link="Baustelle\three.module.js" />
     <EmbeddedResource Include="..\Hlks.Web\wwwroot\lib\three\addons\controls\OrbitControls.js" LogicalName="Hlks.Kern.Baustelle.OrbitControls.js" Link="Baustelle\OrbitControls.js" />
     <EmbeddedResource Include="..\Hlks.Web\wwwroot\lib\three\LICENSE" LogicalName="Hlks.Kern.Baustelle.LICENSE" Link="Baustelle\LICENSE" />

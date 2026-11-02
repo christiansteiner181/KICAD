@@ -30,7 +30,7 @@ public static class KiEinordnung
              "planwinkel",      // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel und Ausrichtung der Grundrisse, nur lesend
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
-             "lueftung_varianten", "lueftung_schema",
+             "lueftung_varianten", "lueftung_schema", "montageabschnitte", "rueckmeldung_lesen",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),

@@ -34,6 +34,7 @@ public class BaustelleExportTests
         // three.js im selben Modul, ohne Import-Zeilen (läuft von file://)
         Assert.DoesNotContain("from 'three'", html);
         Assert.Contains("class OrbitControls", html);
+        Assert.Contains("rel=\"apple-touch-icon\" href=\"data:image/png;base64,iVBOR", html);   // Icon für den Startbildschirm (PNG)
         File.Delete(datei);
     }
 
@@ -92,5 +93,52 @@ public class BaustelleExportTests
         Assert.Contains("\"kz\":\"MA-1\"", html);
         Assert.Contains("\"status\":\"montiert\"", html);
         File.Delete(datei);
+    }
+
+    /// <summary>Rückmeldedatei wie sie die Webseite speichert (Format in BaustelleRueckmeldung.cs).</summary>
+    static JsonObject Rueckmeldung(Projekt p, string? projektId = null) => new()
+    {
+        ["format"] = "kicad-baustelle-rueckmeldung", ["fassung"] = 1, ["projektId"] = projektId ?? p.Kopf.Id, ["projekt"] = p.Kopf.Name,
+        ["modellPruefsumme"] = p.Stand.Pruefsumme[..12], ["person"] = "Max Monteur, Muster AG", ["gespeichert"] = "2026-11-03T10:00:00Z",
+        ["meldungen"] = new JsonArray(
+            new JsonObject { ["id"] = "m1", ["zeit"] = "2026-11-03T08:15:00Z", ["art"] = "status", ["element"] = Hole(p, "SW-F1-1").Id, ["kz"] = "SW-F1-1", ["status"] = "montiert" },
+            new JsonObject { ["id"] = "m2", ["zeit"] = "2026-11-03T08:20:00Z", ["art"] = "mangel", ["element"] = Hole(p, "SW-F1-2").Id, ["kz"] = "SW-F1-2", ["text"] = "Rohrschelle fehlt",
+                ["fotos"] = new JsonArray("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==") },
+            new JsonObject { ["id"] = "m3", ["zeit"] = "2026-11-03T08:30:00Z", ["art"] = "abweichung", ["kz"] = "SW-F1-2", ["text"] = "Fallstrang versetzt",
+                ["mass"] = new JsonObject { ["dx"] = 40, ["dy"] = 0, ["dz"] = 0 } }),
+    };
+
+    [Fact]
+    public void Rueckmeldung_LesenUndUebernehmen_StatusUndMarker_EinzweitesMalNicht()
+    {
+        var p = Beispielprojekt.Erzeugen(Kat, null);
+        var r = Rueckmeldung(p);
+        var vorschau = (JsonObject)Tuer.Abfrage(p, "rueckmeldung_lesen", new JsonObject { ["inhalt"] = r.DeepClone() });
+        Assert.Equal(3, vorschau["meldungen"]!.AsArray().Count);
+        Assert.All(vorschau["meldungen"]!.AsArray(), x => Assert.False(x!["uebernommen"]!.GetValue<bool>()));
+        Assert.False(vorschau["modellGeaendert"]!.GetValue<bool>());
+
+        Ok(p.Ausfuehren("rueckmeldung_uebernehmen", new JsonObject { ["inhalt"] = r.DeepClone() }));
+        // Status mit Herkunft Baustelle: Person und Zeit der Meldung
+        var w = Hole(p, "SW-F1-1").Eigenschaft("montagestatus")!;
+        Assert.Equal("montiert", w.Inhalt!.GetValue<string>());
+        Assert.Equal("baustelle", w.Herkunft!.Art);
+        Assert.Equal("Max Monteur, Muster AG", w.Herkunft.Akteur);
+        // Mangel und Abweichung als Problem-Marker an der Lage des Elements; das Element selbst bleibt (keine Lageänderung)
+        var marker = p.Modell.DerKlasse("ProblemMarker").ToList();
+        Assert.Equal(2, marker.Count);
+        var mangel = marker.Single(x => x.Text("kennung") == "m2");
+        Assert.Equal("mangel", mangel.Text("art"));
+        Assert.Equal("baustelle", mangel.Text("quelle"));
+        Assert.Single(mangel.Eigenschaft("fotos")!.Inhalt!.AsArray());
+        Assert.Equal(1650, mangel.Geometrie!.Punkte[0][2]);   // Mitte der Achse 300…3000
+        Assert.Equal(40, Json.Zahl(marker.Single(x => x.Text("kennung") == "m3").Eigenschaft("mass")!.Inhalt!["dx"]));
+
+        // ein zweites Mal: nichts Neues; fremdes Projekt: abgelehnt
+        Ok(p.Ausfuehren("rueckmeldung_uebernehmen", new JsonObject { ["inhalt"] = r.DeepClone() }));
+        Assert.Equal(2, p.Modell.DerKlasse("ProblemMarker").Count());
+        Assert.All(((JsonObject)Tuer.Abfrage(p, "rueckmeldung_lesen", new JsonObject { ["inhalt"] = r.DeepClone() }))["meldungen"]!.AsArray(),
+            x => Assert.True(x!["uebernommen"]!.GetValue<bool>()));
+        Nein(p.Ausfuehren("rueckmeldung_uebernehmen", new JsonObject { ["inhalt"] = Rueckmeldung(p, "anderes-projekt") }));
     }
 }

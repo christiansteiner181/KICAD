@@ -6,13 +6,65 @@ import { abfrage, ApiFehler } from '../api.js';
 import { zustand } from '../zustand.js';
 import { registrieren } from './register.js';
 import { zeigen, meldung } from './dialoge.js';
-import { knoten } from './werkzeug.js';
+import { knoten, esc } from './werkzeug.js';
+import { sende, ergebnisMelden } from './befehle.js';
 
 registrieren({
   id: 'datei.baustelle-export', titel: 'Baustelle (Webseite)', symbol: 'bildschirm', kuerzel: null, register: 'datei', gruppe: 'Ausgabe',
   aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => baustelleDialog(),
 });
+
+// Rückkanal (Datei von der Baustellen-Webseite): Vorschau mit rueckmeldung_lesen, Übernahme der angehakten Meldungen mit rueckmeldung_uebernehmen
+// (ein Paket; Status ans Element, Mängel/Fragen/Abweichungen als Problem-Marker). Übernehmen tut der Mensch.
+registrieren({
+  id: 'datei.baustelle-rueckmeldung', titel: 'Rückmeldung Baustelle', symbol: 'problemMarker', kuerzel: null, register: 'datei', gruppe: 'Ausgabe',
+  aktiv: () => !!zustand.status?.offen, hinweis: 'Zuerst ein Projekt öffnen.',
+  ausfuehren: () => rueckmeldungDialog(),
+});
+
+const ART = { status: 'Status', mangel: 'Mangel', frage: 'Frage', abweichung: 'Abweichung' };
+
+export function rueckmeldungDialog() {
+  let inhalt = null;
+  const w = knoten(`<div style="display:grid;gap:10px">
+    <label>Rückmeldedatei (.json von der Baustellen-Webseite) <input type="file" accept=".json,application/json" class="rm-datei"></label>
+    <div class="rm-kopf leise"></div>
+    <div class="rm-liste" style="max-height:50vh;overflow:auto"></div>
+  </div>`);
+  const q = (s) => w.querySelector(s);
+  q('.rm-datei').addEventListener('change', async () => {
+    const f = q('.rm-datei').files[0]; if (!f) return;
+    q('.rm-liste').textContent = 'Wird gelesen …';
+    try {
+      inhalt = JSON.parse(await f.text());
+      const v = await abfrage('rueckmeldung_lesen', { inhalt });
+      q('.rm-kopf').textContent = `Von ${v.person ?? '?'}, gespeichert ${v.gespeichert ?? '?'}, Webseite vom ${v.exportErstellt ?? '?'}` +
+        (v.modellGeaendert ? ' – das Modell wurde seither geändert, bitte prüfen.' : '');
+      q('.rm-liste').innerHTML = `<table class="tabelle"><thead><tr><th></th><th>Zeit</th><th>Element</th><th>Art</th><th>Inhalt</th><th>Fotos</th></tr></thead><tbody>${
+        v.meldungen.map((m) => `<tr><td><input type="checkbox" value="${esc(m.id)}"${m.uebernommen || !m.gefunden ? '' : ' checked'}${m.gefunden ? '' : ' disabled'}></td>
+          <td>${esc(new Date(m.zeit).toLocaleString('de-CH'))}</td><td>${esc(m.element ?? '')}${m.gefunden ? '' : ' (fehlt)'}</td><td>${esc(ART[m.art] ?? m.art)}</td>
+          <td>${esc(m.art === 'status' ? m.status : [m.text, m.mass ? `Δx ${m.mass.dx} Δy ${m.mass.dy} Δz ${m.mass.dz} mm` : ''].filter((x) => x).join(' · '))}${m.uebernommen ? ' <span class="leise">(schon übernommen)</span>' : ''}</td>
+          <td>${m.fotos || ''}</td></tr>`).join('')}</tbody></table>`;
+    } catch (f2) {
+      inhalt = null;
+      q('.rm-liste').textContent = f2 instanceof ApiFehler ? `${f2.message}${f2.vorschlag ? ' – ' + f2.vorschlag : ''}` : `Die Datei lässt sich nicht lesen: ${f2.message ?? f2}`;
+    }
+  });
+
+  async function uebernehmen(ctrl) {
+    if (!inhalt) { ctrl.fehler('Zuerst eine Rückmeldedatei wählen.'); return; }
+    const meldungen = [...w.querySelectorAll('.rm-liste input:checked')].map((x) => x.value);
+    if (meldungen.length === 0) { ctrl.fehler('Keine Meldung angehakt.'); return; }
+    const r = await sende('rueckmeldung_uebernehmen', { inhalt, meldungen });
+    if (ergebnisMelden(r)) ctrl.schliessen?.(true);
+  }
+
+  return zeigen({
+    titel: 'Rückmeldung Baustelle', inhalt: w, breite: 820,
+    knoepfe: [{ text: 'Schliessen', wert: false }, { text: 'Übernehmen', primaer: true, schliesst: false, klick: (ctrl) => uebernehmen(ctrl) }],
+  });
+}
 
 export function baustelleDialog() {
   const w = knoten(`<div class="bs-dialog" style="display:grid;gap:10px">

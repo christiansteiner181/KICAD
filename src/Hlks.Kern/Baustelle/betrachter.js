@@ -82,6 +82,7 @@
       for (const [n, v] of eig) tb2.append(el('tr', {}, el('td', { textContent: n }), el('td', { textContent: wert(v.wert) + (v.einheit ? ' ' + v.einheit : '') })));
       a.append(t2);
     }
+    rueckmelden(a, e);
     for (const tr of document.querySelectorAll('#el-tabelle tr.gewaehlt')) tr.classList.remove('gewaehlt');
     const tr = document.querySelector(`#el-tabelle tr[data-id="${CSS.escape(e.id)}"]`); if (tr) { tr.classList.add('gewaehlt'); if (quelle !== 'liste') tr.scrollIntoView({ block: 'nearest' }); }
     if (planGezeigt && quelle !== "plan") planMitElement(); else planMarkieren();
@@ -133,6 +134,99 @@
     const a = el('a', { href: URL.createObjectURL(new Blob([csv], { type: 'text/csv' })), download: `${k.projekt}_Material.csv` });
     document.body.append(a); a.click(); a.remove();
   });
+
+  // ------------------------------------------------------------ Rückmeldungen (offline im Browser, als Datei an die Projektleitung)
+  const rmSchluessel = 'kicad-rm-' + (k.projektId || k.projekt) + '-' + k.modellPruefsumme;
+  const lesen = (s, v) => { try { return JSON.parse(localStorage.getItem(s)) ?? v; } catch { return v; } };
+  let meldungen = lesen(rmSchluessel, []);
+  $('rm-person').value = lesen('kicad-person', '');
+  $('rm-person').addEventListener('change', () => { try { localStorage.setItem('kicad-person', JSON.stringify($('rm-person').value.trim())); } catch { /* nur diese Sitzung */ } });
+  function rmSichern() {
+    try { localStorage.setItem(rmSchluessel, JSON.stringify(meldungen)); }
+    catch { alert('Der Speicher des Browsers ist voll – bitte jetzt «Datei speichern» (Reiter Meldungen) und die Datei weitergeben.'); }
+    rmZeigen();
+  }
+  function rmNeu(e, art, daten) {
+    const id = crypto.randomUUID ? crypto.randomUUID() : Date.now() + '-' + Math.random().toString(16).slice(2);
+    meldungen.push({ id, zeit: new Date().toISOString(), art, element: e.id, kz: e.kz, ...daten });
+    rmSichern();
+  }
+  async function fotoLesen(datei) {
+    const bild = await createImageBitmap(datei);
+    const f = Math.min(1, 1600 / Math.max(bild.width, bild.height));
+    const cv = el('canvas', { width: Math.round(bild.width * f), height: Math.round(bild.height * f) });
+    cv.getContext('2d').drawImage(bild, 0, 0, cv.width, cv.height);
+    return cv.toDataURL('image/jpeg', 0.75);
+  }
+  const artText = { status: 'Status', mangel: 'Mangel', frage: 'Frage', abweichung: 'Abweichung' };
+  function rmZeigen() {
+    $('rm-zahl').textContent = meldungen.length;
+    const t = el('table'); const kopf = el('tr');
+    for (const n of ['Zeit', 'Element', 'Art', 'Inhalt', 'Fotos', '']) kopf.append(el('th', { textContent: n }));
+    t.append(el('thead', {}, kopf)); const tb = el('tbody'); t.append(tb);
+    for (const x of meldungen.slice().reverse()) {
+      const tr = el('tr');
+      const inhalt = x.art === 'status' ? (statusText[x.status] || x.status)
+        : [x.text, x.mass ? `Δx ${x.mass.dx} Δy ${x.mass.dy} Δz ${x.mass.dz} mm` : ''].filter((s) => s).join(' · ');
+      tr.append(el('td', { textContent: new Date(x.zeit).toLocaleString('de-CH') }), el('td', { textContent: x.kz }), el('td', { textContent: artText[x.art] }), el('td', { textContent: inhalt }));
+      const fo = el('td'); for (const f of x.fotos || []) fo.append(el('img', { src: f })); tr.append(fo);
+      const weg = el('button', { textContent: 'Löschen' });
+      weg.addEventListener('click', (ev) => { ev.stopPropagation(); meldungen = meldungen.filter((y) => y.id !== x.id); rmSichern(); });
+      tr.append(el('td', {}, weg));
+      tr.addEventListener('click', () => { const e = nachId.get(x.element); if (e) waehlen(e, 'liste'); });
+      tb.append(tr);
+    }
+    $('rm-tabelle').innerHTML = '';
+    $('rm-tabelle').append(meldungen.length ? t : el('p', { textContent: 'Noch keine Meldungen. Element antippen und rechts «Rückmelden».', style: 'padding:12px' }));
+  }
+  $('rm-speichern').addEventListener('click', () => {
+    const person = $('rm-person').value.trim();
+    if (!person) { alert('Bitte zuerst den Namen eintragen.'); $('rm-person').focus(); return; }
+    const jetzt = new Date();
+    const datei = { format: 'kicad-baustelle-rueckmeldung', fassung: 1, projektId: k.projektId, projekt: k.projekt, modellPruefsumme: k.modellPruefsumme,
+      exportErstellt: k.erstellt, person, gespeichert: jetzt.toISOString(), meldungen };
+    const stempel = jetzt.toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
+    const name = `KICAD_Rueckmeldung_${k.projekt}_${stempel}.json`.replace(/[^\w.\-]+/g, '_');
+    const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(datei)], { type: 'application/json' })), download: name });
+    document.body.append(a); a.click(); a.remove();
+  });
+  $('rm-leeren').addEventListener('click', () => {
+    if (meldungen.length && confirm('Alle Meldungen in diesem Browser löschen? Erst, wenn die Datei abgegeben ist.')) { meldungen = []; rmSichern(); }
+  });
+
+  function rueckmelden(a, e) {
+    const rm = el('div', { className: 'rm' }); rm.append(el('h4', { textContent: 'Rückmelden' }));
+    if (e.status) {
+      const kn = el('div', { className: 'knoepfe' });
+      for (const s of ['montiert', 'geprueft', 'abgenommen']) {
+        const b = el('button', { textContent: statusText[s] });
+        b.addEventListener('click', () => { rmNeu(e, 'status', { status: s }); b.textContent = '✓ ' + statusText[s]; });
+        kn.append(b);
+      }
+      rm.append(kn);
+    }
+    const text = el('textarea', { placeholder: 'Mangel, Frage oder Abweichung beschreiben' });
+    const foto = el('input', { type: 'file', accept: 'image/*', multiple: true }); foto.setAttribute('capture', 'environment');
+    const mass = el('div', { className: 'mass' }, 'Abweichung mm:');
+    const m3 = ['dx', 'dy', 'dz'].map((n) => { const i = el('input', { type: 'number', placeholder: n }); mass.append(i); return i; });
+    const kn2 = el('div', { className: 'knoepfe' });
+    for (const art of ['mangel', 'frage', 'abweichung']) {
+      const b = el('button', { textContent: artText[art] });
+      b.addEventListener('click', async () => {
+        const daten = { text: text.value.trim() };
+        if (art === 'abweichung') {
+          if (m3.every((i) => i.value === '')) { alert('Bitte die gemessene Abweichung (dx, dy, dz in mm) eintragen.'); return; }
+          daten.mass = { dx: +m3[0].value || 0, dy: +m3[1].value || 0, dz: +m3[2].value || 0 };
+        } else if (!daten.text && !foto.files.length) { alert('Bitte beschreiben oder ein Foto anhängen.'); return; }
+        daten.fotos = []; for (const f of foto.files) daten.fotos.push(await fotoLesen(f));
+        rmNeu(e, art, daten); text.value = ''; foto.value = ''; for (const i of m3) i.value = '';
+        b.textContent = '✓ ' + artText[art];
+      });
+      kn2.append(b);
+    }
+    rm.append(text, foto, mass, kn2);
+    a.append(rm);
+  }
 
   // ------------------------------------------------------------ Arbeitsplan (Montageabschnitte)
   function arbeitsplan() {
@@ -314,10 +408,10 @@
   function zeichnen() { if (renderer) { steuerung.update(); renderer.render(szene, kamera); } requestAnimationFrame(zeichnen); }
 
   // ------------------------------------------------------------ Start
-  arbeitsplan(); liste(); material(); d3Filter(); d3Groesse(); if (renderer) { d3Einpassen(); zeichnen(); }
+  rmZeigen(); arbeitsplan(); liste(); material(); d3Filter(); d3Groesse(); if (renderer) { d3Einpassen(); zeichnen(); }
   // Adresse: #d3 | #plaene | #elemente | #material, dazu ein Kennzeichen (#plaene/E.01 oder #E.01) – für Links auf ein Element
   for (const teil of decodeURIComponent(location.hash.slice(1)).split("/").filter((x) => x)) {
-    if (["d3", "plaene", "elemente", "material", "abschnitte"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
+    if (["d3", "plaene", "elemente", "material", "abschnitte", "meldungen"].includes(teil)) reiter(teil); else if (nachKz.has(teil)) waehlen(nachKz.get(teil));
   }
   window.kicad = { daten: D, waehlen: (kz) => waehlen(nachKz.get(kz) || null), reiter };
 })();

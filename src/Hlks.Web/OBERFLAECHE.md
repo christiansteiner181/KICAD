@@ -1496,6 +1496,14 @@ Filter auch nach **Abschnitt** und **Status**; Reiter **Arbeitsplan** (Montageab
 Elementinfo zusätzlich: Montagestatus mit Datum und Person, Abschnitte, Hersteller/Produkt/Artikelnummer (Element vor Familie), Achse, UK und OK
 über ±0.00 und über Geschoss, Dokumente als Links.
 
+**Rückkanal (Datei):** Elementinfo «Rückmelden» – Status montiert / geprüft / abgenommen, Mangel, Frage, Abweichung (dx, dy, dz mm) mit Text und
+Fotos (Kamera des Tablets, verkleinert auf 1600 px); Reiter **Meldungen** mit Name, Liste, «Datei speichern» (JSON `kicad-baustelle-rueckmeldung`), «Alle
+löschen»; gespeichert nur im Browser (localStorage), nichts wird gesendet. Icon der Seite (Tab und Startbildschirm): Bauhelm über Leitungen
+(`Baustelle/icon.svg`, `icon.png` 180 px). In KICAD: Register Datei › Ausgabe › **Rückmeldung Baustelle** (`datei.baustelle-rueckmeldung`) – Datei wählen,
+Vorschau (`rueckmeldung_lesen`: Absender, Modell seither geändert, je Meldung schon übernommen), Häkchen, «Übernehmen» (`rueckmeldung_uebernehmen`,
+ein Paket): Status an das Element (Herkunft baustelle, Person und Zeit der Meldung), Mängel/Fragen/Abweichungen als **Problem-Marker** (quelle
+baustelle, art, mass, fotos in <Projekt>/baustelle/fotos). Die KI darf beides nicht (Sperrliste, Kern lehnt ab).
+
 **Datenmodell (Stufe 0):** jedes Bauteil im Netz hat `montagestatus` (geplant | freigegeben | montiert | geprueft | abgenommen), `hersteller`,
 `artikelnummer`, `dokumente` [{ titel, datei|url, rolle }], `wartung` { intervallMonate, taetigkeit, quelle }; Klasse **Montageabschnitt** (MA-n:
 `kriterien` { systeme, straenge, klassen, geschosse, raeume, gewerke }, `elemente`, `termin`, `terminBis`, `kolonne`, `reihenfolge`); Abfrage

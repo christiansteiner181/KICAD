@@ -119,6 +119,7 @@ public sealed class Befehlsregister
         // Modul 6 Teil A
         LueftungBefehle.Registrieren(r);
         BaustelleDaten.Registrieren(r);   // BIM to field Stufe 0: montagestatus_setzen
+        BaustelleRueckmeldung.Registrieren(r);   // BIM to field Stufe 1: rueckmeldung_uebernehmen
         return r;
     }
 }

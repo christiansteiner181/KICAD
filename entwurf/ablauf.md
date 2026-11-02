@@ -9,6 +9,11 @@ Der Ablauf ersetzt die bisherige Reihenfolge nach Modulnummern aus dem Factsheet
 bleiben. Neu ist, dass zuerst das Bestehende bereinigt wird, bevor neue Fachmodule kommen. Modul 5 (Heizung) bleibt pausiert, bis Phase 3
 beginnt.
 
+**Grundsatz Christian 02.11.2026 (abends):** «wir brauchen KICAD so schnell wie möglich auf einem nutzbaren Stand wie Revit. die Kirsche auf
+der Torte bauen wir danach.» Vorrang hat, was die tägliche Planung in KICAD statt Revit möglich macht (Modellieren, Leitungen, Familien,
+Ansichten, Pläne, Ausgabe); Erweiterungen wie Plattform, Generator, Rechenkerne und Feinheiten folgen danach. BIM to field ruht nach Stufe 0/1
+(Webseite mit Rückkanal als Datei, 02.11.2026), die Herstellerbibliothek (VDI 3805) läuft als Grundausstattung weiter.
+
 **Nachschärfung Christian 02.11.2026 – BIM to field und Reihenfolge:** «wir brauchen als erstes den geometrischen und informativen
 gesamtharnes. dann machen wir mit den Inteligenzen weiter.» Zuerst das vollständige Gerüst aus Geometrie und Information bis auf die Baustelle
 (Phasen 1 und 2 samt **BIM to field**, `bim-to-field.md`), danach die rechnenden und erzeugenden Teile (Rechenkerne Modul 4 B, 5, 6, Generator 12).

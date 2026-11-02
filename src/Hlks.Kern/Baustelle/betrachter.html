@@ -4,6 +4,10 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>KICAD Baustelle</title>
+<link rel="icon" type="image/svg+xml" href="data:image/svg+xml;base64,/*KICAD_ICON_SVG*/">
+<link rel="apple-touch-icon" href="data:image/png;base64,/*KICAD_ICON_PNG*/">
+<meta name="theme-color" content="#16202e">
+<meta name="apple-mobile-web-app-title" content="KICAD Baustelle">
 <!--KICAD_LIZENZ-->
 <style>/*KICAD_STIL*/</style>
 </head>
@@ -19,6 +23,7 @@
   <button data-reiter="elemente">Elemente</button>
   <button data-reiter="material">Material</button>
   <button data-reiter="abschnitte">Arbeitsplan</button>
+  <button data-reiter="meldungen">Meldungen (<span id="rm-zahl">0</span>)</button>
 </nav>
 <section id="filter">
   <label>Geschoss <select id="f-geschoss"><option value="">alle</option></select></label>
@@ -42,6 +47,12 @@
     </div>
     <div id="r-elemente" class="reiterinhalt"><div class="tabelle" id="el-tabelle"></div></div>
     <div id="r-abschnitte" class="reiterinhalt"><div class="tabelle" id="ab-tabelle"></div></div>
+    <div id="r-meldungen" class="reiterinhalt">
+      <div class="leiste"><label>Name <input id="rm-person" placeholder="Vorname Name, Firma"></label>
+        <button id="rm-speichern">Datei speichern</button> <button id="rm-leeren">Alle löschen</button>
+        <span class="klein">Meldungen bleiben in diesem Browser, bis die Datei an die Projektleitung geht. Nichts wird gesendet.</span></div>
+      <div class="tabelle" id="rm-tabelle"></div>
+    </div>
     <div id="r-material" class="reiterinhalt">
       <div class="leiste"><span id="mat-umfang"></span> <button id="mat-csv">CSV speichern</button></div>
       <div class="tabelle" id="mat-tabelle"></div>

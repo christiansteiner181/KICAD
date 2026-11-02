@@ -82,7 +82,7 @@ public static class BaustelleExport
         var st = p.Stand;
         var kopf = new JsonObject
         {
-            ["projekt"] = p.Kopf.Name, ["rolle"] = rolle, ["stand"] = stand,
+            ["projekt"] = p.Kopf.Name, ["projektId"] = p.Kopf.Id, ["rolle"] = rolle, ["stand"] = stand,
             ["freigegebenVon"] = stand == "freigegeben" ? p.Akteur : null,
             ["erstellt"] = zeit.ToString("dd.MM.yyyy HH:mm"), ["modellPruefsumme"] = st.Pruefsumme[..Math.Min(12, st.Pruefsumme.Length)], ["letztesPaket"] = st.LetztesPaket,
         };
@@ -196,6 +196,15 @@ public static class BaustelleExport
         return r.ReadToEnd();
     }
 
+    static byte[] Bytes(string name)
+    {
+        using var s = Assembly.GetExecutingAssembly().GetManifestResourceStream("Hlks.Kern.Baustelle." + name)
+            ?? throw new InvalidOperationException($"Ressource {name} fehlt im Kern.");
+        using var ms = new MemoryStream();
+        s.CopyTo(ms);
+        return ms.ToArray();
+    }
+
     /// <summary>Die Webseite: Vorlage mit three.js (MIT), OrbitControls, Betrachter und Daten in einem Modul-Skript (inline, damit es auch von
     /// file:// läuft). OrbitControls importiert aus «three» – im gemeinsamen Modul sind die Namen schon da, die Import-Zeilen fallen weg.</summary>
     public static string Html(JsonObject daten)
@@ -209,7 +218,10 @@ public static class BaustelleExport
         // OrbitControls in einem eigenen Gültigkeitsbereich: seine Hilfsnamen (_ray, _plane …) gibt es in three.js schon
         var skript = three + "\nconst OrbitControls = (() => {\n" + orbit + "\nreturn OrbitControls;\n})();\n" + Ressource("betrachter.js");
         // JSON mit escapten < > & (Standard-Encoder) – sicher im <script>
+        // Icon (Bauhelm über Leitungen): SVG für den Browser-Tab, PNG 180 px für den Startbildschirm des Tablets
         return Ressource("betrachter.html")
+            .Replace("/*KICAD_ICON_SVG*/", Convert.ToBase64String(Encoding.UTF8.GetBytes(Ressource("icon.svg"))))
+            .Replace("/*KICAD_ICON_PNG*/", Convert.ToBase64String(Bytes("icon.png")))
             .Replace("/*KICAD_STIL*/", Ressource("betrachter.css"))
             .Replace("/*KICAD_DATEN*/", daten.ToJsonString())
             .Replace("/*KICAD_SKRIPT*/", skript.Replace("</script", "<\\/script"))

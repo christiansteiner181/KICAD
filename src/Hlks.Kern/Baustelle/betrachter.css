@@ -43,6 +43,14 @@ tr.gewaehlt { background: #ffe9e1 !important; }
 #info td:first-child { color: #555; width: 42%; }
 button { font-size: 13px; padding: 5px 10px; border: 1px solid var(--rand); background: #fff; border-radius: 4px; cursor: pointer; }
 h4 { margin: 12px 0 4px; font-size: 13px; color: var(--blau); }
+.rm { margin-top: 14px; padding-top: 8px; border-top: 1px solid var(--rand); display: grid; gap: 6px; }
+.rm .knoepfe { display: flex; flex-wrap: wrap; gap: 6px; }
+.rm textarea { width: 100%; min-height: 54px; font: inherit; box-sizing: border-box; }
+.rm input[type="file"] { max-width: 100%; }
+.rm .mass { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; }
+.rm .mass input { width: 64px; }
+#r-meldungen .klein { font-size: 11px; color: #666; }
+#rm-tabelle img { height: 48px; margin-right: 4px; vertical-align: middle; }
 @media (max-width: 760px) {
   main { flex-direction: column; }
   #info { width: auto; max-height: 40%; border-left: none; border-top: 1px solid var(--rand); }

@@ -85,7 +85,10 @@ Armaturen und Apparate). Noch nicht: Montageabschnitte, Arbeitsplan, Rückkanal,
 und von Hand gewählte Elemente, Termin, Kolonne, Reihenfolge); Material und Dämmung an Formteil und Armatur; Herkunftsart `baustelle`; Kern
 `Baustelle/BaustelleDaten.cs` (Abschnitt, Artikel Element vor Familie mit Typparameter `artikelnummer`, Höhenkote Achse/UK/OK), Abfrage
 `montageabschnitte`, Befehl `montagestatus_setzen`. Die Webseite zeigt Abschnitt- und Statusfilter, Reiter «Arbeitsplan», Artikel, UK/OK.
-Offen: Wartung und Dokumente an der Familie (Kopf), Import des Bauprogramms, Rückkanal.
+**Rückkanal als Datei gebaut (02.11.2026):** Webseite «Rückmelden» und Reiter Meldungen (offline, localStorage, Fotos), Datei
+`kicad-baustelle-rueckmeldung`; KICAD `rueckmeldung_lesen` (Vorschau) und `rueckmeldung_uebernehmen` (Status mit Herkunft baustelle, Problem-Marker
+mit art/mass/fotos, doppelte Kennung übersprungen, fremdes Projekt abgelehnt), Knopf «Rückmeldung Baustelle»; Icon der Seite.
+Offen: Wartung und Dokumente an der Familie (Kopf), Import des Bauprogramms (Beispiel von Christian), PDF-Planblätter, Plattform (Stufe 2).
 
 **Bestandsaufnahme Stufe 0 (Agent hlks-modul, 02.11.2026) – Lücken im Informationsmodell:**
 1. Artikelnummer und Wartung fehlen ganz (Hersteller/Produkt nur als freier Text im Familienkopf; Typ = Name des Familientyps).
