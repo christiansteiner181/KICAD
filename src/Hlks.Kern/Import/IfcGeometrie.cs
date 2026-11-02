@@ -205,7 +205,7 @@ public sealed partial class IfcGeometrie
     }
 
     /// <summary>Wurde der Körper des Produkts vereinfacht (Boolean: nur erster Operand)? Mit dem Netz der xBIM-Geometrie nie.</summary>
-    public bool IstVereinfacht(IIfcProduct p) => vereinfacht.Contains(p.EntityLabel) && XbimNetz(p) is null;
+    public bool IstVereinfacht(IIfcProduct p) => vereinfacht.Contains(p.EntityLabel) && (!MitXbim || XbimNetz(p) is null && HatKoerper(p));   // mit xBIM: nur, wo xBIM für einen eigenen Körper nichts lieferte
 
     // ------------------------------------------------------------------ xBIM-Geometrie (IfcGeometrieXbim.cs, 02.11.2026)
 
@@ -238,7 +238,7 @@ public sealed partial class IfcGeometrie
     }
 
     /// <summary>Anzahl der Produkte mit vereinfachtem Körper.</summary>
-    public int AnzahlVereinfacht => vereinfacht.Count(l => xbim is null || !xbim.ContainsKey(l));   // mit xBIM-Netz ist nichts vereinfacht
+    public int AnzahlVereinfacht => vereinfacht.Count(l => Datei.Modell.Instances[l] is IIfcProduct p && p is not IIfcFeatureElementSubtraction && (!MitXbim || !xbim!.ContainsKey(l) && HatKoerper(p)));   // ohne Öffnungen; mit xBIM-Netz ist nichts vereinfacht
 
     // ------------------------------------------------------------------ Produkte
 
