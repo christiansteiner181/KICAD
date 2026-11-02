@@ -117,7 +117,9 @@ public static class Grafik
         : KoordinationGrafik.Aktiv(ctx) ? KoordinationGrafik.ImPlan(ctx, q, e)
         : q.Plan(ctx, e);
 
-    public static List<Koerper> Koerper(Projekt p, IEnumerable<string>? ids = null)
+    /// <param name="ifcNetz">IFC 1:1: übernommene, unveränderte Elemente als ihr IFC-Netz (nur die 3D-Ansicht der Oberfläche lädt es);
+    /// sonst – Kollision, XR/GLB – immer der Nachbau.</param>
+    public static List<Koerper> Koerper(Projekt p, IEnumerable<string>? ids = null, bool ifcNetz = false)
     {
         var elemente = ids is null ? p.Modell.Elemente : ids.Select(i => p.Modell.Finde(i)).OfType<Element>();
         var liste = new List<Koerper>();
@@ -125,7 +127,9 @@ public static class Grafik
         foreach (var e in elemente)
         {
             if (!IstModellgrafik(p.Katalog, e)) continue;
-            if (QuelleFuer(p.Katalog, e)?.Koerper(p, e) is { Leer: false } k) liste.Add(k);
+            var k = QuelleFuer(p.Katalog, e)?.Koerper(p, e);
+            if (ifcNetz && IfcOriginal.Koerper(p, e, k) is { } ifc) { if (!ifc.Leer) liste.Add(ifc); }   // IFC 1:1: übernommenes, unverändertes Element zeigt sein IFC-Netz
+            else if (k is { Leer: false }) liste.Add(k);
         }
         return liste;
     }

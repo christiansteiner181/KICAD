@@ -57,4 +57,19 @@ public class IfcFarbenTests
         Assert.Equal(Rot, w.Farben[0].Farbe);
         Assert.Equal(0u, w.Farben[^1].Farbe);
     }
+
+    [Fact]
+    public void Uebernommen_ZeigtEigenesIfcNetz_BisZurAenderungInKicad()
+    {
+        var p = IfcHilfe.Leer();
+        IfcHilfe.Ok(IfcHilfe.Uebernehmen(p, Datei()));
+        var wand = p.Modell.Elemente.Single(e => e.Kennungen?.GetValueOrDefault("ifc") == Wand);
+        Koerperteil Teil() => Assert.Single(Grafik.Koerper(p, [wand.Id], ifcNetz: true)).Teile[0];
+        Assert.Equal("quader", Assert.Single(Grafik.Koerper(p, [wand.Id])).Teile[0].Art);   // ohne ifcNetz (Kollision, XR): der Nachbau
+        Assert.Equal(("netz", true), (Teil().Art, Teil().IfcFarben == true));
+        Assert.Equal([Wand], Teil().Produkte!);
+        // in KICAD geändert: nur noch der Nachbau (wie bei der Kollision)
+        IfcHilfe.Ok(p.Ausfuehren("element_aendern", new() { ["element"] = wand.Kennzeichen, ["name"] = "Wand Süd neu" }));
+        Assert.DoesNotContain(Grafik.Koerper(p, [wand.Id], ifcNetz: true), k => k.Teile.Any(t => t.Art == "netz"));
+    }
 }

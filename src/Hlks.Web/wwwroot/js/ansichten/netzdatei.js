@@ -35,7 +35,8 @@ class NetzFehler extends Error {}
 /**
  * Liest eine Netzdatei.
  * @param {ArrayBuffer|ArrayBufferView} daten  Inhalt der Datei
- * @param {{ nur?: 'hintergrund'|'uebernommen'|'alle' }} [optionen]  nur: Vorgabe «hintergrund»
+ * @param {{ nur?: 'hintergrund'|'uebernommen'|'alle', ids?: Iterable<string> }} [optionen]  nur: Vorgabe «hintergrund»;
+ *   ids (IFC 1:1): nur diese Produkte (GlobalIds), gleich ob übernommen – das eigene Netz eines übernommenen Elements
  * @returns {{ fassung:number, beschreibung:string, begrenzung:number[], produkte:object[], punkte:number, dreiecke:number,
  *             positionen:Float32Array, indizes:Uint32Array, farben:{ ab:number, farbe:number }[] }}
  *   produkte: Kopfdaten ALLER Datensätze (label, globalId, entitaet, kote, uebernommen, rolle, bezug, fuellungen, begrenzung,
@@ -48,6 +49,7 @@ class NetzFehler extends Error {}
  */
 export function leseNetz(daten, optionen = {}) {
   const nur = optionen.nur ?? AUSWAHL.hintergrund;
+  const ids = optionen.ids ? new Set(optionen.ids) : null;
   if (!Object.values(AUSWAHL).includes(nur)) throw new NetzFehler(`Unbekannte Auswahl «${nur}» (erlaubt: hintergrund, uebernommen, alle).`);
   const bytes = ArrayBuffer.isView(daten) ? new Uint8Array(daten.buffer, daten.byteOffset, daten.byteLength) : new Uint8Array(daten);
   const dv = new DataView(bytes.buffer, bytes.byteOffset, bytes.byteLength);
@@ -125,7 +127,7 @@ export function leseNetz(daten, optionen = {}) {
     if (p < 0 || d < 0) throw new NetzFehler(`Die Netzdatei ist beschädigt (Produkt ${n + 1}: negative Anzahl).`);
     brauche(12 * p + 12 * d, `Punkte und Dreiecke von Produkt ${n + 1}`);
     produkte.push({ label, globalId, entitaet, kote: Number.isNaN(kote) ? null : kote, uebernommen, rolle, bezug, fuellungen, materialien, typname, materialquelle, farben, begrenzung: bb, punkte: p, dreiecke: d });
-    const mit = rolle !== 'oeffnung' && (nur === AUSWAHL.alle || (nur === AUSWAHL.uebernommen ? uebernommen : !uebernommen));
+    const mit = rolle !== 'oeffnung' && (ids ? ids.has(globalId.trim()) : (nur === AUSWAHL.alle || (nur === AUSWAHL.uebernommen ? uebernommen : !uebernommen)));
     if (mit && p > 0 && d > 0) { gewaehlt.push({ punkteAb: pos, dreieckeAb: pos + 12 * p, p, d, farben }); summeP += p; summeD += d; }
     pos += 12 * p + 12 * d;
   }

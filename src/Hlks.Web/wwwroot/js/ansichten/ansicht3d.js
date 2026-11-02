@@ -348,13 +348,29 @@ function erstellen(behaelter, ansichtElement) {
     return eintrag.zusage;
   }
 
+  /** IFC 1:1: Datei einer Unterlage einmal laden (Puffer), daraus je übernommenem Element sein eigenes Netz (ids = GlobalIds). */
+  const puffer = new Map();   // quelle → { schluessel, zusage: Promise<ArrayBuffer|null> }
+  function elementNetz(quelle, produkte) {
+    const schluessel = netzSchluessel(element(quelle));
+    let p = puffer.get(quelle);
+    if (!p || p.schluessel !== schluessel) {
+      p = { schluessel, zusage: fetch(netzUrl(quelle, schluessel)).then((r) => (r.ok ? r.arrayBuffer() : null)).catch(() => null) };
+      puffer.set(quelle, p);
+    }
+    return p.zusage.then((b) => {
+      if (!b) return null;
+      try { const g = netzGeometrie(leseNetz(b, { ids: produkte })); if (g) g.userData.geteilt = false; return g; }
+      catch (e) { console.error('3D: IFC-Netz des Elements nicht gelesen', quelle, e); return null; }
+    });
+  }
+
   /** Hängt die Netze eines frisch gebauten Körpers an, sobald sie geladen sind (der Körper zeigt bis dahin nichts). */
   function netzeAnhaengen(o) {
     const halter = [];
     o.traverse((h) => { if (h.userData.netz && h.userData.netz !== true) halter.push(h); });
     for (const h of halter) {
       const n = h.userData.netz;
-      netzHolen(n.quelle, netzAuswahl(ansicht)).then((g) => {
+      (n.produkte ? elementNetz(n.quelle, n.produkte) : netzHolen(n.quelle, netzAuswahl(ansicht))).then((g) => {
         if (zerstoert || !g || objekte.get(o.userData.id) !== o) return;   // Körper inzwischen ersetzt oder entfernt
         h.add(netzMesh(g, n.farbe, n.deckkraft, n.ifcFarben));
         schnitt?.neueObjekte();

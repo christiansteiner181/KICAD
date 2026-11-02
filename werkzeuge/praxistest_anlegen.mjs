@@ -56,7 +56,7 @@ console.log('Gebäude, 3 Geschosse und Ansichten angelegt');
 // Alle Familien der Bibliothek laden
 const bib = await post('/abfrage/familien_bibliothek', {});
 const liste = bib.familien ?? bib.eintraege ?? [];
-console.log(`Bibliothek: ${bib.ort ?? bib.bibliothek ?? '?'} – ${liste.length} Familien${bib.offline ? ' (offline, Spiegel)' : ''}`);
+console.log(`Bibliothek: ${bib.bibliothek?.pfad ?? bib.bibliothek?.ort ?? bib.ort ?? '?'} – ${liste.length} Familien${bib.offline ? ' (offline, Spiegel)' : ''}`);
 let gut = 0; const fehler = [];
 for (const f of liste) {
   if (!alle && f.status && f.status !== 'freigegeben') { fehler.push(`${f.name}: übersprungen (Status ${f.status})`); continue; }

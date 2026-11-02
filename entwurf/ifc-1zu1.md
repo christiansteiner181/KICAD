@@ -42,3 +42,15 @@ aussehen wie in den Datenblätter». Grundsatz vom selben Tag: KICAD so schnell 
   Bauteile, Architektur und HLKS (Hersteller-IFC), zeichnen ihr IFC-Netz statt des Nachbaus.
 - **Detailgrade:** offen (Frage gestellt, unbeantwortet). Bis zum Entscheid: in jedem Detailgrad das volle IFC mit Farben, nur die
   Strichstärken unterscheiden sich (wie eine Revit-Verknüpfung). Alternative: grob = Hülle, mittel = Hauptteile, fein = alles.
+
+## Stand 02.11.2026
+
+- **Schritt 1 gebaut (2e15c60):** Netzdatei Fassung 4 mit Farbabschnitten je Teilkörper (IfcStyledItem: Farbe, Transparenz; Grundfarbe aus
+  der Materialdarstellung), C#- und JS-Leser; 3D zeigt das Original einer Unterlage in IFC-Farben, solange `farbeOriginal` nicht gesetzt ist.
+  Bestehende Unterlagen bekommen die Farben erst mit erneutem `ifc_uebernehmen` (Fassung im Schlüssel der Netzdatei).
+- **Schritt 2, 3D gebaut:** übernommene, unveränderte Elemente (dieselbe Regel wie die Kollision: `IfcUebernehmen.UnveraendertUebernommen`,
+  verteilte Produkte «GlobalId:2» nur gemeinsam) zeigen in der 3D-Ansicht ihr eigenes IFC-Netz mit Farben (`Grafik.Koerper(…, ifcNetz: true)`,
+  nur `/api/koerper`; `IfcOriginal.cs`). Kollision und XR/GLB behalten den Nachbau.
+- **Offen:** Grundriss/Schnitt/Ansicht aus dem Elementnetz (Schnitt auf Schnitthöhe, Ansicht von oben, Türaufschlag als Sinnbild dazu);
+  XR/GLB und Baustellen-Webseite mit dem IFC-Netz; Familie aus IFC-Typ mit Teilkörpern und Farben (`familie_netz_uebernehmen`), Lage aus der
+  IFC-Platzierung; Wandöffnung aus dem Öffnungsnetz; Detailgrad-Entscheid.

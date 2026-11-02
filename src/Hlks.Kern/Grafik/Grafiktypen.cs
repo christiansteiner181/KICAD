@@ -155,6 +155,8 @@ public sealed class Koerperteil
     public string? Teil { get; set; }
     /// <summary>Netz: Id der Unterlage; das 3D lädt die Netzdatei über REST (/api/unterlagen/{id}/netz).</summary>
     public string? Quelle { get; set; }
+    /// <summary>Netz (IFC 1:1): nur diese Produkte (GlobalIds) der Netzdatei – das eigene Netz eines übernommenen Elements; null = Hintergrund.</summary>
+    public List<string>? Produkte { get; set; }
     /// <summary>Quader: Mittelpunkt [x, y, z]; Kugel: Mittelpunkt.</summary>
     public double[]? Mitte { get; set; }
     /// <summary>Quader: Kantenlängen [lx, ly, lz] im eigenen System (vor der Drehung).</summary>

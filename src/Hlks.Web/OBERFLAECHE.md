@@ -1481,6 +1481,18 @@ Folgeblatt (zweite Listenansicht, z. B. für ein anderes Geschoss) oder ein grö
 
 **Prüfen:** `node --test js/oberflaeche/koordinationsplan.test.mjs`; Kern: `PlanListeUmbruchTests.cs` (Filter `PlanListeUmbruch`); Browser: `HLKS_B3_PORT=5240 HLKS_CDP_PORT=9580 node js/oberflaeche/koordinationsplan.browser.mjs` (Ports 5240–5249; Bilder `%TEMP%\HLKS_CAD\kp_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
 
+## IFC 1:1 – übernommene Bauteile wie im IFC (Christian 02.11.2026, `entwurf/ifc-1zu1.md`)
+
+Christian: «ein fenster muss 1:1 so aussehen wie im IFC. mit allen details» – «dies gilt für alle importierten familien». Keine neue Bedienung:
+
+- **3D-Ansicht:** jedes aus einer IFC-Unterlage übernommene und seither in KICAD nicht geänderte Element zeigt sein eigenes IFC-Netz in den
+  IFC-Farben (Rahmen, Glas halb durchsichtig usw.). Wer es in KICAD ändert, sieht ab dann den Nachbau (wie bei der Kollision).
+- **Original einer Unterlage** (`ifcDarstellung original/beide`): in den IFC-Farben, solange an der Unterlage keine `farbeOriginal` gesetzt ist.
+- Farben gibt es für Unterlagen, die mit diesem Stand (Netzdatei Fassung 4) übernommen wurden – ältere: IFC erneut übernehmen.
+- Grundriss, Schnitt und Ansicht zeichnen noch den Nachbau (nächster Schritt).
+
+**Prüfen:** `dotnet test tests/Hlks.Kern.Tests --filter FullyQualifiedName~IfcFarbenTests`; Node `ansichten/netzdatei.test.mjs`.
+
 ## Prüfansicht – PDF prüfen und markieren (Christian 02.11.2026)
 
 **Ort:** Register **Ansicht › Planblätter › Prüfen** (Aktion \`plan.pruefen\`, Symbol \`problemMarker\`) und Projektbrowser › Planblatt › «Prüfen

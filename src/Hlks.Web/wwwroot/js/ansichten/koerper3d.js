@@ -269,7 +269,7 @@ export function baueKoerper(k, opt = {}) {
       if (t.art === 'netz') {   // Halter; das Netz kommt asynchron (ansicht3d.js)
         if (!t.quelle) continue;
         const halter = new THREE.Group();
-        halter.userData.netz = { quelle: t.quelle, farbe: teilFarbe({ ...t, material: 'sonst' }), deckkraft: Number.isFinite(t.deckkraft) ? Math.min(Math.max(t.deckkraft, 0), 1) : 0.5, ifcFarben: t.ifcFarben === true };
+        halter.userData.netz = { quelle: t.quelle, farbe: teilFarbe({ ...t, material: 'sonst' }), deckkraft: Number.isFinite(t.deckkraft) ? Math.min(Math.max(t.deckkraft, 0), 1) : 0.5, ifcFarben: t.ifcFarben === true, produkte: Array.isArray(t.produkte) ? t.produkte : null };
         g.add(halter);
         continue;
       }

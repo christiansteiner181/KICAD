@@ -133,7 +133,7 @@ api.MapPost("/elemente", (HttpRequest r) => Sicher(async () =>
 // Grafik aus dem Kern (Modul 1a): Plangrafik einer Ansicht, Körper für 3D, Planblatt als PDF
 api.MapGet("/plangrafik/{ansicht}", (string ansicht) => Sicher(async () => JsonAntwort(await dienst.Mit(p => Grafik.Plan(p, ansicht)))));
 api.MapGet("/koerper", (string? ids) => Sicher(async () =>
-    JsonAntwort(await dienst.Mit(p => Grafik.Koerper(p, string.IsNullOrWhiteSpace(ids) ? null : ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries))))));
+    JsonAntwort(await dienst.Mit(p => Grafik.Koerper(p, string.IsNullOrWhiteSpace(ids) ? null : ids.Split(',', StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries), ifcNetz: true)))));
 api.MapGet("/schraffuren", () => JsonAntwort(Schraffuren.Alle));
 api.MapGet("/plan/{planblatt}.pdf", (string planblatt) => Sicher(async () =>
     Results.File(await dienst.Mit(p => Planausgabe.Pdf(p, planblatt)), "application/pdf", $"{planblatt}.pdf")));
