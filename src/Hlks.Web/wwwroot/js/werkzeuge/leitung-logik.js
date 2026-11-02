@@ -329,8 +329,9 @@ export function leitungParameter({ opt, punkte, von = null, nach = null, geschos
   if (r.nach) p.nach = anschlussEnde(r.nach);
   if (opt.strang) p.strang = opt.strang;
   if (opt.system) p.system = opt.system;
-  if (!p.strang && !p.system && !r.von && !r.nach)
-    throw new WerkzeugFehler('System oder Strang fehlt.', 'In der Optionsleiste ein System (oder einen Strang) wählen – oder an einem Anschluss beginnen, der das System liefert.');
+  if (!p.strang && !p.system && opt.medium) p.medium = opt.medium;   // ohne System gehört die Leitung einem Medium (Christian 02.11.2026)
+  if (!p.strang && !p.system && !p.medium && !r.von && !r.nach)
+    throw new WerkzeugFehler('Medium oder System fehlt.', 'In der Optionsleiste ein Medium (z. B. KW) oder ein System wählen – oder an einem Anschluss beginnen, der das Medium liefert.');
   if (zahlOK(opt.gefaelle) && opt.gefaelle > 0) p.gefaelle = opt.gefaelle;
   if (geschoss) p.geschoss = geschoss;
   const eig = eigenschaftenAus(opt);

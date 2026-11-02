@@ -118,6 +118,8 @@ public sealed class RoutingZiel
     public string? System { get; init; }
     /// <summary>Strang (Id) für teilVon.</summary>
     public string? Strang { get; init; }
+    /// <summary>Medium (Kennung) neuer Geraden und Formteile ohne System (Christian 02.11.2026); null mit System.</summary>
+    public string? Medium { get; init; }
     /// <summary>Geschoss (Id) für alle neuen Elemente; null = aus der Höhe (wie element_anlegen).</summary>
     public string? Geschoss { get; init; }
     /// <summary>Präfix der Kennzeichen neuer Geraden (null = Klassenkürzel).</summary>
@@ -572,6 +574,7 @@ public static class Routing
                 if (z.Strang is { } st) par["teilVon"] = st;
                 Elementpflege.Zuordnungen(k, e, d, par);
                 Elementpflege.Eigenschaften(k, e, d, z.Eigenschaften, false);
+                if (e.System is null && z.Medium is { } md) e.Eigenschaften["medium"] = W(k, JsonValue.Create(md));
                 e.Anschluesse = d.Anschluesse.Select(a => a.Kopie()).ToList();
                 e.Geschoss = z.Geschoss ?? GeschossAusHoehe(k.Arbeit, g.Von.Z);
             }
@@ -621,6 +624,9 @@ public static class Routing
         var teilVon = z.Strang ?? z.Vorlage?.TeilVon;
         if (teilVon is not null && neu.TeilVon != teilVon)
             new ElementAendern().Ausfuehren(k, new JsonObject { ["element"] = neu.Id, ["teilVon"] = teilVon });
+        var medium = system is null ? z.Medium ?? (z.Vorlage is { } vm ? Netz.ElementMedium(k.Arbeit, vm) : null) : null;
+        if (medium is not null && k.Arbeit.Finde(neu.Id)!.Text("medium") != medium)
+            new ElementAendern().Ausfuehren(k, new JsonObject { ["element"] = neu.Id, ["eigenschaften"] = new JsonObject { ["medium"] = medium } });
         return k.Arbeit.Finde(neu.Id)!;
     }
 

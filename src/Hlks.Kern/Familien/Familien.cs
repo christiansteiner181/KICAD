@@ -241,7 +241,7 @@ public static class Familien
     {
         var a = Aufloesung(m, k, e, out var grund) ?? throw new HlksFehler(grund ?? "Keine Familie.", "Element mit familie_platzieren anlegen oder bezuege.familie und familientyp setzen.");
         var lage = Einbaulage(e)!;
-        var sysMedium = Netz.SystemMedium(m, e.System);
+        var sysMedium = Netz.ElementMedium(m, e);
         return a.Anschluesse.Where(x => x.Sichtbar).Select(x => new AnschlussLage(
             x.Name, x.Medium == "*" ? sysMedium ?? "*" : x.Medium, x.Fluss, x.Art, x.Form, x.Dn, x.D, x.B, x.H, x.Gewinde,
             Runden(lage.Welt(x.Lage)), Runden(lage.Richtung(x.Richtung), 9))).ToList();

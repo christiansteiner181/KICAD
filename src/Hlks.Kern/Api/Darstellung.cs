@@ -14,7 +14,7 @@ public static class Darstellung
         k.Klassen.TryGetValue(e.Klasse, out var d);
         string? medium = null;
         if (e.Klasse == "System") medium = e.Text("medium");
-        else if (e.System is not null) medium = Netz.SystemMedium(m, e.System);
+        else if (e.System is not null || e.Text("medium") is not null) medium = Netz.ElementMedium(m, e);
         else if (Netz.IstNetzgeraet(k, e)) medium = null;
         k.Medien.TryGetValue(medium ?? "", out var md);
         string Kz(string? id) => id is null ? "" : m.Finde(id)?.Kennzeichen ?? "";

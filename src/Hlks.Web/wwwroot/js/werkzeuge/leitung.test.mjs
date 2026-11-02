@@ -238,7 +238,7 @@ test('leitung_zeichnen: fehlende Angaben → Fehler mit Vorschlag', () => {
   assert.throws(() => L.leitungParameter({ opt: { ...opt, serie: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Serie fehlt/);
   assert.throws(() => L.leitungParameter({ opt: { ...opt, groesse: '' }, punkte: [[0, 0, 0], [1, 0, 0]] }), /Grösse fehlt/);
   try { L.leitungParameter({ opt: { ...opt, system: '' }, punkte: [[0, 0, 0], [1000, 0, 0]] }); assert.fail(); }
-  catch (e) { assert.match(e.message, /System oder Strang/); assert.match(e.vorschlag, /Anschluss/); }
+  catch (e) { assert.match(e.message, /Medium oder System/); assert.match(e.vorschlag, /Anschluss/); }   // System freiwillig, sonst Medium (Christian 02.11.2026)
 });
 
 test('Pflichtangaben vor dem ersten Klick: Serie, Grösse und Höhe (keine erfundene Vorgabe)', () => {
@@ -368,7 +368,7 @@ test('Optionen: Felder von Rohr und Kanal (Serie, Grösse, Höhe als Pflicht, Ge
   for (const wid of ['rohr', 'kanal']) {
     const ids = O.WERKZEUGE[wid].felder.map((f) => f.id);
     // Nachtrag freie Grösse / Abwasser-Serie: Zahlenfelder und Hinweise hinter der Grösse (sichtbar nur bei den passenden Serien, siehe frei-abwasser.test.mjs)
-    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'hoehe', 'gefaelle', 'system', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
+    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'hoehe', 'gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
     const hoehe = O.feldDef(wid, 'hoehe');
     assert.equal(hoehe.pflicht, true);
     assert.equal(hoehe.art, 'zahl');

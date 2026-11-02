@@ -309,7 +309,7 @@ static class Elementpflege
     /// <summary>Anschlüsse mit Medium «*» aus dem System übernehmen; Nennweite der Leitungsbauteile an die Anschlüsse.</summary>
     public static void AnschluesseAbgleichen(Kontext k, Element e, KlassenDef d)
     {
-        var sysMedium = Netz.SystemMedium(k.Arbeit, e.System);
+        var sysMedium = Netz.ElementMedium(k.Arbeit, e);
         foreach (var a in e.Anschluesse)
         {
             var kat = d.Anschluesse.FirstOrDefault(x => x.Name.Equals(a.Name, StringComparison.OrdinalIgnoreCase));
@@ -357,8 +357,10 @@ static class Elementpflege
                 }
             }
         }
+        // Christian 02.11.2026: «bis alle module komplett sind müssen die gewerkespezifischen zuweisungen optional sein» – ohne System angenommen,
+        // nur ein Hinweis (Befund P02 als Warnung); Raum und Geschoss sind ohnehin nur Warnungen (P04, P11)
         if (d.BrauchtSystem && e.System is null)
-            throw new HlksFehler($"{d.Name} braucht ein System.", "system oder teilVon (Strang) angeben");
+            k.Hinweise.Add($"{e.Kennzeichen}: ohne System angelegt – später zuordnen (system oder teilVon Strang).");
     }
 
     public static void SystemtypUebernehmen(Kontext k, Element e)

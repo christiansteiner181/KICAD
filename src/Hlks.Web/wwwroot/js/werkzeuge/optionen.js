@@ -6,7 +6,7 @@
 //         katalog?: [klasse, eigenschaft] (Auswahl aus dem Katalog), breite? (Zeichen), fluechtig? (nicht merken) }
 // Annahmen: Raster 100 mm, Tiefe eines Schnitts 10000 mm (Vorgaben aus dem Auftrag, keine Norm).
 
-import { merken, derKlasse } from '../zustand.js';
+import { merken, derKlasse, zustand } from '../zustand.js';
 import { zahlAusText, RASTER_MM } from './fangen.js';
 import { KALIBRIERBAR } from './kalibrierung.js';
 import { familieFelder, definitionAus, typTeile } from '../familien/typauswahl.js';
@@ -155,6 +155,9 @@ export const WERKZEUGE = {
 
 const kz = (e) => e.kennzeichen;
 const systemOptionen = () => derKlasse('System').sort((a, b) => kz(a).localeCompare(kz(b), 'de', { numeric: true })).map((e) => [kz(e), e.name ? `${kz(e)} – ${e.name}` : kz(e)]);
+/** Medien des Katalogs (Kennung – Name) für Leitungen ohne System (Christian 02.11.2026: «leitungen gehören einem medium»). */
+const mediumOptionen = () => (zustand.katalog?.medien ?? []).slice().sort((a, b) => a.kennung.localeCompare(b.kennung, 'de', { numeric: true }))
+  .map((m) => [m.kennung, m.name ? `${m.kennung} – ${m.name}` : m.kennung]);
 const strangOptionen = (wid) => derKlasse('Strang').filter((e) => !wert(wid, 'system') || !e.teilVon || e.teilVon === wert(wid, 'system'))
   .sort((a, b) => kz(a).localeCompare(kz(b), 'de', { numeric: true })).map((e) => [kz(e), e.teilVon ? `${kz(e)} (${e.teilVon})` : kz(e)]);
 
@@ -217,6 +220,8 @@ function leitungFelder(wid, kategorie) {
     { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },
     { id: 'system', titel: 'System', art: 'auswahl', get werte() { return systemOptionen(); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st && st.teilVon !== wert(wid, 'system')) setze(wid, 'strang', ''); leitungHaken.optionenNeu?.(); } },
+    { id: 'medium', titel: 'Medium', art: 'auswahl', get werte() { return mediumOptionen(); }, leer: '–',
+      beiAenderung(el) { el?.blur?.(); leitungHaken.optionenNeu?.(); } },   // ohne System: Medium der Leitung (Christian 02.11.2026)
     { id: 'strang', titel: 'Strang', art: 'auswahl', get werte() { return strangOptionen(wid); }, leer: '–',
       beiAenderung(el) { el?.blur?.(); const st = derKlasse('Strang').find((e) => kz(e) === wert(wid, 'strang')); if (st?.teilVon) setze(wid, 'system', st.teilVon); leitungHaken.optionenNeu?.(); } },
     { id: 'daemmdicke', titel: 'Dämmdicke', art: 'zahl', einheit: 'mm', platzhalter: 'keine', breite: 4, fluechtig: true },

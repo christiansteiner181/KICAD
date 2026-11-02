@@ -18,6 +18,11 @@ public static class Netz
     /// <summary>Medium eines Systems (aus der Eigenschaft «medium»).</summary>
     public static string? SystemMedium(Modell m, string? systemId) => m.Finde(systemId)?.Text("medium");
 
+    /// <summary>Medium eines Elements: das seines Systems, sonst die eigene Eigenschaft «medium» (Leitungen ohne System, Christian 02.11.2026:
+    /// «leitungen gehören einem medium»; System bis zum Abschluss aller Module freiwillig).</summary>
+    public static string? ElementMedium(Modell m, Element e) =>
+        SystemMedium(m, e.System) ?? (e.Text("medium") is { Length: > 0 } x ? x : null);
+
     static bool Ausgang(string fluss, string richtung) => richtung switch
     {
         "stromab" => fluss is "raus" or "beide",

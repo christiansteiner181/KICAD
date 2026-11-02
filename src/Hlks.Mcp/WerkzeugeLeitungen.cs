@@ -50,12 +50,13 @@ public sealed partial class Werkzeuge
         [Description(RoutingBefehle.ParGefaelle)] double? gefaelle = null,
         [Description(RoutingBefehle.ParSystem)] string? system = null,
         [Description(RoutingBefehle.ParStrang)] string? strang = null,
+        [Description(RoutingBefehle.ParMedium)] string? medium = null,
         [Description(RoutingBefehle.ParGeschoss)] string? geschoss = null,
         [Description(RoutingBefehle.ParPraefix)] string? praefix = null,
         [Description(RoutingBefehle.ParEigenschaften)] JsonElement? eigenschaften = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_zeichnen", Parameter(("serie", serie), ("groesse", groesse), ("punkte", punkte), ("von", von), ("nach", nach), ("gefaelle", gefaelle),
-            ("system", system), ("strang", strang), ("geschoss", geschoss), ("praefix", praefix), ("eigenschaften", eigenschaften)), trockenlauf);
+            ("system", system), ("strang", strang), ("medium", medium), ("geschoss", geschoss), ("praefix", praefix), ("eigenschaften", eigenschaften)), trockenlauf);
 
     [McpServerTool(Name = "leitung_abzweigen"), Description(LeitungAbzweigen.Text)]
     public string LeitungAbzweigenWerkzeug(
@@ -72,11 +73,12 @@ public sealed partial class Werkzeuge
         [Description(RoutingBefehle.ParGefaelle)] double? gefaelle = null,
         [Description(LeitungAbzweigen.ParSystemAbzweig)] string? system = null,
         [Description(LeitungAbzweigen.ParStrangAbzweig)] string? strang = null,
+        [Description(RoutingBefehle.ParMedium)] string? medium = null,
         [Description(RoutingBefehle.ParGeschoss)] string? geschoss = null,
         [Description(RoutingBefehle.ParPraefix)] string? praefix = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_abzweigen", Parameter(("leitung", leitung), ("punkt", punkt), ("winkel", winkel), ("seite", seite), ("richtung", richtung), ("laenge", laenge), ("punkte", punkte),
-            ("groesse", groesse), ("serie", serie), ("ende", ende), ("gefaelle", gefaelle), ("system", system), ("strang", strang), ("geschoss", geschoss),
+            ("groesse", groesse), ("serie", serie), ("ende", ende), ("gefaelle", gefaelle), ("system", system), ("strang", strang), ("medium", medium), ("geschoss", geschoss),
             ("praefix", praefix)), trockenlauf);
 
     [McpServerTool(Name = "leitung_aufteilen"), Description(LeitungAufteilen.Text)]

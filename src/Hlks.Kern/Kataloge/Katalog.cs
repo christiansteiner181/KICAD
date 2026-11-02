@@ -234,6 +234,10 @@ public sealed class Katalog
                 foreach (var e in FamilienEigenschaften) if (!eig.Any(x => x.Name == e.Name)) eig.Add(e);
             if (d.Schicht == "system" && d.Rolle is not null)
                 foreach (var e in BauteilEigenschaften) if (!eig.Any(x => x.Name == e.Name)) eig.Add(e);
+            // Leitungsbauteile (Leitung, Formteil, Armatur): eigenes Medium, solange das System freiwillig ist (Christian 02.11.2026)
+            if (d.Rolle == "leitung" && !eig.Any(x => x.Name == "medium"))
+                eig.Add(new EigenschaftDef { Name = "medium", Typ = "auswahl", Auswahl = [.. Medien.Keys.Order(StringComparer.Ordinal)],
+                    Beschreibung = "Medium der Leitung (Kennung aus medien.json, z. B. KW); gilt, wenn das Element keinem System zugeordnet ist – mit System gilt dessen Medium" });
             d.Linie = linie;
             d.Eigenschaften = eig;
         }

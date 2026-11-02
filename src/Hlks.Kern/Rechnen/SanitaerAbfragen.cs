@@ -224,7 +224,7 @@ public static class SanitaerAbfragen
         if (n.Leitung(l.Id) is not { } s)
             return new JsonObject
             {
-                ["leitung"] = l.Kennzeichen, ["medium"] = Netz.SystemMedium(m, l.System),
+                ["leitung"] = l.Kennzeichen, ["medium"] = Netz.ElementMedium(m, l),
                 ["ausgenommen"] = "Diese Leitung gehört nicht zum Trinkwasser- (KW, WW) oder Schmutzwassernetz (SW); Zirkulation und Regenwasser sind von den Belastungssummen ausgenommen.",
             };
         var med = n.LeitungMedium[l.Id];

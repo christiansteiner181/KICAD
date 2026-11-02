@@ -181,7 +181,7 @@ public sealed class FamilienNachfuehren : INachfuehrung
         if (leitung) geaendert |= LeitungsgroesseAnschluesse(e, neu, def, a);
 
         // Anschlüsse aus der Familie
-        var sysMedium = Netz.SystemMedium(m, e.System);
+        var sysMedium = Netz.ElementMedium(m, e);
         var soll = a.Anschluesse.Where(x => x.Sichtbar).Select(x => new Anschluss
         {
             Name = x.Name, Medium = x.Medium == "*" ? sysMedium ?? "*" : x.Medium, Fluss = x.Fluss, Dn = Familien.Ganz(x.Dn), D = Familien.Ganz(x.D), B = Familien.Ganz(x.B), H = Familien.Ganz(x.H), Gewinde = x.Gewinde,

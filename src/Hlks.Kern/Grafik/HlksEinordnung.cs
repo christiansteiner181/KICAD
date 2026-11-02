@@ -51,7 +51,7 @@ public static class HlksEinordnung
     {
         string? medium = null;
         if (e.Klasse == "System") medium = e.Text("medium");
-        else if (e.System is not null) medium = Netz.SystemMedium(p.Modell, e.System);
+        else if (e.System is not null || e.Text("medium") is not null) medium = Netz.ElementMedium(p.Modell, e);
         return medium is not null && p.Katalog.Medien.TryGetValue(medium, out var md) ? md : null;
     }
 

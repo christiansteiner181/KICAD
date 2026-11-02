@@ -450,7 +450,7 @@ public sealed class SchemaGraph
     string? MediumVon(SchemaLinie l)
     {
         foreach (var e in l.Elemente)
-            if (Netz.SystemMedium(Modell, e.System) is { } m) return m;
+            if (Netz.ElementMedium(Modell, e) is { } m) return m;
         foreach (var en in new[] { l.Von, l.Nach })
             if (en.Knoten is not null && en.Element.AnschlussNamens(en.Anschluss) is { } a && Netz.Medium(Modell, en.Element, a) is { } m && m != "*")
                 return m;

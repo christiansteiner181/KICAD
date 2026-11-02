@@ -89,8 +89,8 @@ public static class Pruefungen
                     b.Add(new("P08", "fehler", e.Kennzeichen, $"Bezug «{rolle}» verweist auf ein fehlendes Element ({id})", "Bezug neu setzen"));
 
             if (d is null) continue;
-            if (d.BrauchtSystem && e.System is null)
-                b.Add(new("P02", "fehler", e.Kennzeichen, $"{e.Klasse} gehört zu keinem System", "system setzen (element_aendern)"));
+            if (d.BrauchtSystem && e.System is null)   // Warnung statt Fehler, bis alle Module komplett sind (Christian 02.11.2026)
+                b.Add(new("P02", "warnung", e.Kennzeichen, $"{e.Klasse} gehört zu keinem System", "system setzen (element_aendern)"));
             if (d.BrauchtGeschoss && e.Geschoss is null)
                 b.Add(new("P11", "warnung", e.Kennzeichen, $"{e.Klasse} ist keinem Geschoss zugeordnet", "geschoss setzen oder Lage mit z-Koordinate angeben"));
             // Nicht platzierte Elemente (ohne Geometrie, nur im Schema) meldet P17 – ohne Lage gibt es keinen Raum (Modul 3)

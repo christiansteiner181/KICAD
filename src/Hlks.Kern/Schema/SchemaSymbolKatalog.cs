@@ -178,7 +178,7 @@ public sealed class SchemaSymbolKatalog
     /// <summary>Medium des Elements: das des Systems, sonst das feste Medium seiner Anschlüsse (alle gleich), sonst null.</summary>
     static string? Medium(Projekt p, Element e)
     {
-        var m = e.System is null ? null : Netz.SystemMedium(p.Modell, e.System);
+        var m = Netz.ElementMedium(p.Modell, e);
         if (!string.IsNullOrEmpty(m)) return m;
         var fest = e.Anschluesse.Select(a => Netz.Medium(p.Modell, e, a)).Where(x => x != "*").Distinct().ToList();
         return fest.Count == 1 ? fest[0] : null;

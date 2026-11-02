@@ -228,7 +228,7 @@ public static class SanitaerBelastung
     /// <summary>Medium einer Leitung (aus dem System, sonst aus einem Anschluss), nur KW, WW, SW; sonst null (ausgenommen).</summary>
     public static string? LeitungsMedium(Modell m, Element leitung)
     {
-        var med = Netz.SystemMedium(m, leitung.System);
+        var med = Netz.ElementMedium(m, leitung);
         if (string.IsNullOrEmpty(med) || med == "*")
             med = leitung.Anschluesse.Select(a => Netz.Medium(m, leitung, a)).FirstOrDefault(x => x != "*");
         return med is not null && SanitaerKatalog.SpalteFuer(med) is not null ? med.ToUpperInvariant() : null;

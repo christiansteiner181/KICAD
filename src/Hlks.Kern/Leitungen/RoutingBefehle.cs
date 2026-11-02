@@ -47,7 +47,8 @@ public static class RoutingBefehle
     public const string ParVon = "Anschluss am Anfang: { element, anschluss } oder \"KENNZEICHEN.anschluss\" – der erste Punkt wird seine Lage (ohne Lage: logisch verbunden)";
     public const string ParNach = "Anschluss am Ende: { element, anschluss } oder \"KENNZEICHEN.anschluss\" – der letzte Punkt wird seine Lage (ohne Lage: logisch verbunden)";
     public const string ParGefaelle = "Gefälle in % (in Fliessrichtung fallend): waagrecht gezeichnete Stücke fallen ab dem ersten Punkt, senkrechte behalten ihre Länge";
-    public const string ParSystem = "System (Kennzeichen); entfällt mit strang, fehlt beides, gilt das System des Anschlusses";
+    public const string ParSystem = "System (Kennzeichen); entfällt mit strang, fehlt beides, gilt das System des Anschlusses – freiwillig, dann gilt medium";
+    public const string ParMedium = "Medium der Leitung ohne System (Kennung aus medien.json, z. B. KW, HZ-VL, ZUL, oder der Name); fehlt es, das Medium des Anschlusses bzw. der Leitung, an der abgezweigt wird (Christian 02.11.2026: «leitungen gehören einem medium»)";
     public const string ParStrang = "Strang (Kennzeichen), zu dem Geraden und Formteile gehören (teilVon)";
     public const string ParGeschoss = "Geschoss für alle neuen Elemente; fehlt es, aus der Höhe";
     public const string ParPraefix = "Präfix der Kennzeichen der Geraden, z. B. \"KW-V1\" → KW-V1-1, KW-V1-2 …; fehlt es: RO-n bzw. KA-n";
@@ -139,15 +140,34 @@ public static class RoutingBefehle
         if (strang is not null) system ??= k.Arbeit.Finde(strang)!.System;
         if (system is null && strang is null && vorlage is not null) { system = vorlage.System; strang = vorlage.TeilVon is { } tv && k.Arbeit.Finde(tv)?.Klasse == "Strang" ? tv : null; }
         system ??= partner?.System;
+        // System bis zum Abschluss aller Module freiwillig (Christian 02.11.2026); ohne System gehört die Leitung einem Medium
+        string? medium = null;
         if (system is null)
-            throw new HlksFehler("System fehlt.", "system oder strang angeben. Systeme: " + string.Join(", ", k.Arbeit.DerKlasse("System").Select(x => x.Kennzeichen).Order()));
+        {
+            medium = MediumAus(k, Param.Text(p, "medium"))
+                ?? (vorlage is null ? null : Netz.ElementMedium(k.Arbeit, vorlage))
+                ?? (partner is null ? null : Netz.ElementMedium(k.Arbeit, partner));
+            if (medium is null)
+                throw new HlksFehler("Medium bzw. System fehlt.", "medium (z. B. KW, HZ-VL, ZUL) oder system bzw. strang angeben. Medien: " + string.Join(", ", k.Katalog.Medien.Keys.Order(StringComparer.Ordinal))
+                    + "; Systeme: " + string.Join(", ", k.Arbeit.DerKlasse("System").Select(x => x.Kennzeichen).Order()));
+        }
         var praefix = Param.Text(p, "praefix")?.Trim();
         var gf = Param.Zahl(p, "gefaelle");
         return new RoutingZiel
         {
-            System = system, Strang = strang, Geschoss = geschoss?.Id, Praefix = string.IsNullOrEmpty(praefix) ? null : praefix,
+            System = system, Strang = strang, Medium = medium, Geschoss = geschoss?.Id, Praefix = string.IsNullOrEmpty(praefix) ? null : praefix,
             Gefaelle = gf, Eigenschaften = p["eigenschaften"] as JsonObject,
         };
+    }
+
+    /// <summary>Medium aus Kennung oder Name (Katalog medien.json); null ohne Angabe, Fehler bei unbekanntem.</summary>
+    static string? MediumAus(Kontext k, string? text)
+    {
+        if (string.IsNullOrWhiteSpace(text)) return null;
+        var t = text.Trim();
+        if (k.Katalog.Medien.TryGetValue(t, out var md)) return md.Kennung;
+        return k.Katalog.Medien.Values.FirstOrDefault(m => m.Name.Equals(t, StringComparison.OrdinalIgnoreCase))?.Kennung
+            ?? throw new HlksFehler($"Medium «{t}» gibt es nicht.", "Medien: " + string.Join(", ", k.Katalog.Medien.Values.Select(m => $"{m.Kennung} ({m.Name})")));
     }
 
     /// <summary>Leitungen aus «leitung» und «leitungen» (mindestens eine).</summary>
@@ -339,6 +359,7 @@ public sealed class LeitungZeichnen : IBefehl
         new("gefaelle", "zahl", false, RoutingBefehle.ParGefaelle),
         new("system", "text", false, RoutingBefehle.ParSystem),
         new("strang", "text", false, RoutingBefehle.ParStrang),
+        new("medium", "text", false, RoutingBefehle.ParMedium),
         new("geschoss", "text", false, RoutingBefehle.ParGeschoss),
         new("praefix", "text", false, RoutingBefehle.ParPraefix),
         new("eigenschaften", "objekt", false, RoutingBefehle.ParEigenschaften),
@@ -396,6 +417,7 @@ public sealed class LeitungAbzweigen : IBefehl
         new("gefaelle", "zahl", false, RoutingBefehle.ParGefaelle),
         new("system", "text", false, ParSystemAbzweig),
         new("strang", "text", false, ParStrangAbzweig),
+        new("medium", "text", false, RoutingBefehle.ParMedium),
         new("geschoss", "text", false, RoutingBefehle.ParGeschoss),
         new("praefix", "text", false, RoutingBefehle.ParPraefix),
     ];

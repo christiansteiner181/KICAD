@@ -112,7 +112,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         if (a is null) return MitHinweis(ctx, e, grund);
         var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
         var formteil = IstFormteil(ctx.Katalog, e);
-        return [Grundriss(a, Familien.Einbaulage(e)!, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.SystemMedium(ctx.Modell, e.System), e.Id, Ebene(ctx.Katalog, e),
+        return [Grundriss(a, Familien.Einbaulage(e)!, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
             formteil ? null : e.Kennzeichen, anschlussMarken: !formteil)];
     }
 
