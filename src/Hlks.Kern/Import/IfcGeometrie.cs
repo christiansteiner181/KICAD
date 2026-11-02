@@ -209,8 +209,11 @@ public sealed partial class IfcGeometrie
 
     // ------------------------------------------------------------------ xBIM-Geometrie (IfcGeometrieXbim.cs, 02.11.2026)
 
-    Dictionary<int, Dreiecksnetz>? xbim;          // roher Körper (ohne Öffnungen) – Massstab des Nachbaus
-    Dictionary<int, Dreiecksnetz>? xbimAnzeige;   // mit ausgeschnittenen Öffnungen – Netzdatei, 3D
+    Dictionary<int, Dreiecksnetz>? xbim;          // roher Körper (ohne Öffnungen) – Massstab des Nachbaus; Weltkoordinaten
+    Dictionary<int, Dreiecksnetz>? xbimAnzeige;   // mit ausgeschnittenen Öffnungen – Netzdatei, 3D; Weltkoordinaten
+    // auf den Bezug abgebildete Netze (der Bezug wechselt z. B. beim Einpassen: DateiMerkmale rechnet im Bezugsvorschlag)
+    readonly Dictionary<(int, bool), Dreiecksnetz> xbimBezogen = [];
+    IfcBezug? xbimBezug;
     bool xbimVersucht;
 
     /// <summary>Ob die xBIM-Geometrie dieses Modell gerechnet hat (sonst: eigene Auswertung; Grund in IfcGeometrieXbim.Grund).</summary>
@@ -227,14 +230,24 @@ public sealed partial class IfcGeometrie
     public Dreiecksnetz? AnzeigeNetz(IIfcProduct p)
     {
         XbimLaden();
-        return xbimAnzeige is not null && xbimAnzeige.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? n : null;
+        return xbimAnzeige is not null && xbimAnzeige.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? Bezogen(p.EntityLabel, n, true) : null;
     }
 
     /// <summary>Exaktes Netz des Produkts aus der xBIM-Geometrie (samt Booleans) in Projektkoordinaten oder null.</summary>
     Dreiecksnetz? XbimNetz(IIfcProduct p)
     {
         XbimLaden();
-        return xbim is not null && xbim.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? n : null;
+        return xbim is not null && xbim.TryGetValue(p.EntityLabel, out var n) && !n.Leer ? Bezogen(p.EntityLabel, n, false) : null;
+    }
+
+    /// <summary>Weltnetz der xBIM-Geometrie in Projektkoordinaten nach dem aktuellen Bezug (beim Bezug 0 unverändert).</summary>
+    Dreiecksnetz Bezogen(int label, Dreiecksnetz welt, bool anzeige)
+    {
+        var b = Datei.Bezug;
+        if (b is { X: 0, Y: 0, Z: 0, Drehung: 0 }) return welt;
+        if (!Equals(xbimBezug, b)) { xbimBezogen.Clear(); xbimBezug = b; }
+        if (!xbimBezogen.TryGetValue((label, anzeige), out var n)) xbimBezogen[(label, anzeige)] = n = welt.Abgebildet(Affin.Aus(Datei.ZuModell));
+        return n;
     }
 
     /// <summary>Anzahl der Produkte mit vereinfachtem Körper.</summary>
@@ -291,7 +304,7 @@ public sealed partial class IfcGeometrie
     {
         if (gemerktBezug is not null && !Equals(gemerktBezug, Datei.Bezug)) { gemerkt.Clear(); gemerktBezug = null; }
         if (gemerkt.Remove(entityLabel, out var n)) return n;
-        return xbim is not null && xbim.TryGetValue(entityLabel, out var x) ? x : null;   // xBIM-Netze bleiben (Koerper fragt sie wieder)
+        return xbim is not null && xbim.TryGetValue(entityLabel, out var x) && !x.Leer ? Bezogen(entityLabel, x, false) : null;   // xBIM-Netze bleiben (Koerper fragt sie wieder)
     }
 
     /// <summary>Zähler (nicht ausgewertete Entitäten, vereinfachte Körper) sichern – eine Auswertung neben dem Übertrag (IFC einpassen)

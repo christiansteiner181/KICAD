@@ -40,7 +40,7 @@ public static class IfcGeometrieXbim
         catch (Exception ex) { dienste = -1; Grund = $"xBIM-Geometrie nicht eingerichtet: {ex.Message}"; }
     }
 
-    /// <summary>Netze aller Produkte mit Körper in Projektkoordinaten (mm), mit den Farben der Teilkörper; null, wenn xBIM nicht rechnet.
+    /// <summary>Netze aller Produkte mit Körper in Weltkoordinaten der Datei (mm, ohne Bezug – IfcGeometrie bildet sie auf den jeweiligen Bezug ab), mit den Farben der Teilkörper; null, wenn xBIM nicht rechnet.
     /// Roh = Körper der eigenen Darstellung samt ihren Booleans (Zuschnitte), ohne Öffnungen (IfcRelVoidsElement) – Massstab für den Nachbau,
     /// der die Öffnungen selbst führt; Anzeige = mit ausgeschnittenen Öffnungen, wie ein IFC-Betrachter es zeigt (Netzdatei, 3D).</summary>
     public static (Dictionary<int, Dreiecksnetz> Roh, Dictionary<int, Dreiecksnetz> Anzeige)? Netze(IfcDatei d, Func<IIfcRepresentationItem, uint> stilfarbe, Func<IIfcProduct, uint> materialfarbe)
@@ -51,7 +51,6 @@ public static class IfcGeometrieXbim
         {
             var ctx = new Xbim3DModelContext(d.Modell, NullLoggerFactory.Instance, Xbim.Geometry.Abstractions.XGeometryEngineVersion.V6, "model", null);
             if (!ctx.CreateContext(null, false)) { Grund = "xBIM-Geometrie: Kontext nicht erstellt"; return null; }
-            var zuModell = d.ZuModell;
             double mm = d.MmJeEinheit;
             var roh = new Dictionary<int, Dreiecksnetz>();
             var anzeige = new Dictionary<int, Dreiecksnetz>();
@@ -82,12 +81,25 @@ public static class IfcGeometrieXbim
                 int basis = n.Punkte;
                 foreach (var v in tri.Vertices)
                 {
-                    var p = zuModell.Punkt([v.X * mm, v.Y * mm, v.Z * mm]);
-                    n.Punkt(p[0], p[1], p[2]);
+                    n.Punkt(v.X * mm, v.Y * mm, v.Z * mm);
                 }
+                // Umlaufsinn nach aussen: bei gespiegelter Platzierung (Determinante < 0) dreht xBIM die Dreiecke nicht mit – die
+                // Trittflächen einer Treppe zeigten dann nach unten (Bernstrasse 42, IfcStair #177903, 03.11.2026). Massstab: Vorzeichen
+                // des eingeschlossenen Volumens.
+                var v0 = tri.Vertices[0];
+                double vol = 0;
                 foreach (var f in tri.Faces)
                     for (int i = 0; i + 2 < f.Indices.Count; i += 3)
-                        n.Dreieck(basis + f.Indices[i], basis + f.Indices[i + 1], basis + f.Indices[i + 2]);
+                    {
+                        var (a, b, c) = (tri.Vertices[f.Indices[i]], tri.Vertices[f.Indices[i + 1]], tri.Vertices[f.Indices[i + 2]]);
+                        double ax = a.X - v0.X, ay = a.Y - v0.Y, az = a.Z - v0.Z, bx = b.X - v0.X, by = b.Y - v0.Y, bz = b.Z - v0.Z, cx = c.X - v0.X, cy = c.Y - v0.Y, cz = c.Z - v0.Z;
+                        vol += ax * (by * cz - bz * cy) - ay * (bx * cz - bz * cx) + az * (bx * cy - by * cx);
+                    }
+                bool kehren = vol < 0;
+                foreach (var f in tri.Faces)
+                    for (int i = 0; i + 2 < f.Indices.Count; i += 3)
+                        if (kehren) n.Dreieck(basis + f.Indices[i], basis + f.Indices[i + 2], basis + f.Indices[i + 1]);
+                        else n.Dreieck(basis + f.Indices[i], basis + f.Indices[i + 1], basis + f.Indices[i + 2]);
             }
             // ohne Öffnungen gibt es nur die eine Fassung: dann ist sie auch der rohe Körper
             foreach (var (label, n) in anzeige) roh.TryAdd(label, n);

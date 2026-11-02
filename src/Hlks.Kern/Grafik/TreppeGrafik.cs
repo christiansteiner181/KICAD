@@ -205,11 +205,12 @@ internal static class TreppeGrafik
         if (Treppenlage.Von(e) is not { } t) return null;
         var tritte = t.Tritte();
         if (tritte.Count == 0) return null;
-        double dicke = Math.Max(t.Laufdicke ?? Treppenlage.VorgabeLaufdicke, t.Steigung ?? 0);
+        double dicke = Math.Max(t.Laufdicke ?? Treppenlage.VorgabeLaufdicke, t.Steigung ?? 0), unterste = tritte.Min(tr => tr.Z);
         return new Koerper
         {
             Id = e.Id, Ebene = "wand",
-            Teile = tritte.Select(tr => new Koerperteil { Art = "prisma", Grundriss = tr.Ring, Unten = tr.Z - dicke, Oben = tr.Z, Material = "wand" }).ToList(),
+            // die unterste Stufe mit der gemessenen Laufdicke (Unterkante wie im IFC), die übrigen mindestens eine Steigung dick (geschlossener Lauf)
+            Teile = tritte.Select(tr => new Koerperteil { Art = "prisma", Grundriss = tr.Ring, Unten = tr.Z - (tr.Z <= unterste + 0.5 && t.Laufdicke is double ld ? ld : dicke), Oben = tr.Z, Material = "wand" }).ToList(),
         };
     }
 }

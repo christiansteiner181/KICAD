@@ -188,6 +188,7 @@
       { "name": "stufenkanten", "typ": "liste", "beschreibung": "Steigungslinien als Liste [x1, y1, x2, y2, z]: von der rechten zur linken Seite des Laufs in Gehrichtung gesehen (aufwärts), z = Trittfläche, zu der die Steigung hinaufführt (Oberkante der Steigung)" },
       { "name": "podeste", "typ": "liste", "beschreibung": "Podeste und Zwischenpodeste als Liste von { \"z\": Oberkante, \"punkte\": [[x, y], …] } (Umriss im Gegenuhrzeigersinn)" },
       { "name": "laufdicke", "typ": "zahl", "einheit": "mm", "beschreibung": "Senkrechte Dicke des Laufs unter den Trittflächen (für Schnitt und 3D); ohne Angabe 250 mm, mindestens eine Steigung" },
+      { "name": "austritt", "typ": "zahl", "einheit": "mm", "beschreibung": "Tiefe der obersten Trittfläche hinter der letzten Stufenkante (Austrittsstufe auf Höhe der Oberkante, wie im IFC; fehlt = keine)" },
       { "name": "material", "typ": "auswahl", "auswahl": [ "unbestimmt", "beton", "stahl", "holz", "backstein", "kalksandstein" ], "beschreibung": "Hauptmaterial; bestimmt die Schraffur der Schnittfläche" } ] },
   { "name": "Fenster", "kuerzel": "F", "basis": "Bauteil", "ifc": "IfcWindow", "geometrie": "punkt",
     "beschreibung": "Fenster in einer Wand (bezuege.wand). Lage = Mitte unten in der Wandachse; abstand = Lage entlang der Wandachse ab Wandanfang. Wird die Wand verschoben, führt der Kern die Lage nach.",

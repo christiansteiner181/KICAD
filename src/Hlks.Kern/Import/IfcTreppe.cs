@@ -141,6 +141,14 @@ sealed class IfcTreppeLauf(IfcLauf lauf)
         lauf.Wert(e, "stufenkanten", Treppenlage.KantenJson(form.Kanten), $"{geo} (Vorderkante jeder Trittfläche)");
         if (form.Podeste.Count > 0) lauf.Wert(e, "podeste", Treppenlage.PodesteJson(form.Podeste), $"{geo} (Flächen über dem 2.2fachen der mittleren Trittfläche)");
         lauf.Wert(e, "laufdicke", form.Laufdicke, $"{geo} (Höhe der ersten Trittfläche über der tiefsten Stelle des Körpers)");
+        // Austrittsstufe (02.11.2026, deckungsgleich mit dem IFC): reicht der Körper hinter die letzte Stufenkante, gehört diese Trittfläche zur Treppe
+        if (form.Kanten.Count >= 2)
+        {
+            var (kl, kv) = (form.Kanten[^1], form.Kanten[^2]);
+            double mx = (kl[0] + kl[2]) / 2, my = (kl[1] + kl[3]) / 2, dx = mx - (kv[0] + kv[2]) / 2, dy = my - (kv[1] + kv[3]) / 2, dl = Math.Sqrt(dx * dx + dy * dy);
+            if (dl > 1 && netz.Bereich(mx, my, dx / dl, dy / dl) is var (_, hinten) && hinten > 10)
+                lauf.Wert(e, "austritt", Treppenlage.Runden(hinten), $"{geo} (Körper hinter der letzten Stufenkante)");
+        }
         MaterialSetzen(e, p, teile);
         foreach (var k in teile) lauf.Behandelt.Add(k.EntityLabel);
         angelegt.Add((e, p));

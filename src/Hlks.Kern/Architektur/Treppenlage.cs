@@ -36,6 +36,8 @@ public sealed class Treppenlage
     public double? Unterkante { get; init; }
     public double? Oberkante { get; init; }
     public double? Laufdicke { get; init; }
+    /// <summary>Tiefe der Austrittsstufe hinter der letzten Stufenkante (Eigenschaft «austritt»); null = keine.</summary>
+    public double? AustrittTiefe { get; init; }
     public bool Aufwaerts { get; init; } = true;
 
     /// <summary>Vorgabe der Laufdicke (senkrecht unter den Trittflächen), wenn das Element keine nennt.</summary>
@@ -65,7 +67,7 @@ public sealed class Treppenlage
         {
             Element = e, Lauflinie = lauf, Kanten = kanten, Podeste = podeste,
             Stufen = e.Zahl("stufen"), Steigung = e.Zahl("steigung"), Auftritt = e.Zahl("auftritt"), Laufbreite = e.Zahl("laufbreite"),
-            Unterkante = e.Zahl("unterkante"), Oberkante = e.Zahl("oberkante"), Laufdicke = e.Zahl("laufdicke"),
+            Unterkante = e.Zahl("unterkante"), Oberkante = e.Zahl("oberkante"), Laufdicke = e.Zahl("laufdicke"), AustrittTiefe = e.Zahl("austritt"),
             Aufwaerts = !string.Equals(e.Text("richtung"), "abwaerts", StringComparison.OrdinalIgnoreCase),
         };
     }
@@ -132,6 +134,19 @@ public sealed class Treppenlage
             if (Polygone.Flaecheninhalt(ring) < 0) ring.Reverse();
             if (Math.Abs(Polygone.Flaecheninhalt(ring)) < 1) continue;
             aus.Add(new Trittflaeche(ring, k[4], false));
+        }
+        // Austrittsstufe: oberste Trittfläche hinter der letzten Kante, in Gehrichtung (Eigenschaft «austritt», aus dem IFC)
+        if (AustrittTiefe is double t && t > 0 && Kanten.Count >= 2)
+        {
+            var (l, v) = (Kanten[^1], Kanten[^2]);
+            double dx = (l[0] + l[2]) / 2 - (v[0] + v[2]) / 2, dy = (l[1] + l[3]) / 2 - (v[1] + v[3]) / 2, dl = Math.Sqrt(dx * dx + dy * dy);
+            if (dl > 1)
+            {
+                dx = dx / dl * t; dy = dy / dl * t;
+                var ring = new List<double[]> { new[] { l[0], l[1] }, new[] { l[2], l[3] }, new[] { l[2] + dx, l[3] + dy }, new[] { l[0] + dx, l[1] + dy } };
+                if (Polygone.Flaecheninhalt(ring) < 0) ring.Reverse();
+                aus.Add(new Trittflaeche(ring, l[4], false));
+            }
         }
         foreach (var p in Podeste) aus.Add(new Trittflaeche(p.Ring, p.Z, true));
         return aus;

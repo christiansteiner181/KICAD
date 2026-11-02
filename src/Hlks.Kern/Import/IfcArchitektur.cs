@@ -808,6 +808,22 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         MaterialSetzen(e, Schichten(c));
     }
 
+    /// <summary>Liegt der grössere Teil der nach unten gerichteten Fläche schräg (mehr als 1° gegen die Waagrechte)?</summary>
+    static bool UnterseiteSchraeg(Dreiecksnetz n)
+    {
+        double waagrecht = 0, schraeg = 0;
+        for (int i = 0; i < n.D.Count; i += 3)
+        {
+            int a = n.D[i] * 3, b = n.D[i + 1] * 3, c = n.D[i + 2] * 3;
+            double ux = n.P[b] - n.P[a], uy = n.P[b + 1] - n.P[a + 1], uz = n.P[b + 2] - n.P[a + 2];
+            double vx = n.P[c] - n.P[a], vy = n.P[c + 1] - n.P[a + 1], vz = n.P[c + 2] - n.P[a + 2];
+            double nx = uy * vz - uz * vy, ny = uz * vx - ux * vz, nz = ux * vy - uy * vx, f = Math.Sqrt(nx * nx + ny * ny + nz * nz);
+            if (f < 1e-9 || nz / f > -0.1) continue;   // nicht nach unten gerichtet
+            if (-nz / f >= Math.Cos(Math.PI / 180)) waagrecht += f; else schraeg += f;
+        }
+        return schraeg > waagrecht;
+    }
+
     void Traeger(IIfcBeam b)
     {
         var klasse = Klasse(b, "Traeger");
@@ -865,7 +881,12 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
                 if (s <= s0 + l10) zA = Math.Min(zA, netz.P[i + 2]);
                 if (s >= s1 - l10) zB = Math.Min(zB, netz.P[i + 2]);
             }
-            if (Math.Abs(zA - zB) > Math.Max(20, (s1 - s0) * Neigung)) { Hintergrund(b, "Geneigter Unterzug"); return; }
+            // gestufte Unterseite (Archicad-Bauteile aus Teilen, mit xBIM exakt; Bernstrasse 42 03.11.2026) ist nicht geneigt: mit Achse
+            // entscheidet deren Neigung, ohne Achse, ob der grössere Teil der nach unten gerichteten Fläche schräg liegt
+            bool geneigt = achse is not null
+                ? Math.Abs(achse[^1][2] - achse[0][2]) > Math.Max(20, len * Neigung)
+                : Math.Abs(zA - zB) > Math.Max(20, (s1 - s0) * Neigung) && UnterseiteSchraeg(netz);
+            if (geneigt) { Hintergrund(b, "Geneigter Unterzug"); return; }
         }
         if (vereinfacht) { s0 = 0; s1 = len; }
         double qm = (q0 + q1) / 2, breite = q1 - q0, hoehe = bb[5] - bb[2];

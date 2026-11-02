@@ -110,9 +110,12 @@ public class NachbearbeitungN6N7EchtTests(ITestOutputHelper aus)
         foreach (var t in traeger)
         {
             var bb = Begrenzung(beams[t.Kennungen!["ifc"]]);
+            // Endpunkt = Mitte der Stirnseite des Quaders um den Körper; der Körper berührt diese Stirnseite, liegt also höchstens die halbe
+            // Breite daneben (gestufte oder abgewinkelte Archicad-Bauteile aus Teilen, exakt mit xBIM, 03.11.2026)
+            double tol = (t.Geometrie!.Dicke ?? 0) / 2 + 2;
             foreach (var q in t.Geometrie!.Punkte)
             {
-                Assert.True(q[0] >= bb[0] - 2 && q[0] <= bb[3] + 2 && q[1] >= bb[1] - 2 && q[1] <= bb[4] + 2,
+                Assert.True(q[0] >= bb[0] - tol && q[0] <= bb[3] + tol && q[1] >= bb[1] - tol && q[1] <= bb[4] + tol,
                     $"{t.Kennzeichen} «{t.Name}» Punkt [{q[0]}, {q[1]}] ausserhalb seines IFC-Körpers [{bb[0]:0} … {bb[3]:0}, {bb[1]:0} … {bb[4]:0}]");
                 Assert.True(q[0] >= wx0 && q[0] <= wx1 && q[1] >= wy0 && q[1] <= wy1, $"{t.Kennzeichen} «{t.Name}» Punkt [{q[0]}, {q[1]}] ausserhalb der Wände");
             }

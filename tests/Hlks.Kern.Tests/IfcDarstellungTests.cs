@@ -263,10 +263,11 @@ public class IfcDarstellungTests
         Assert.Equal("grundlage", netz.Ebene);
         Assert.Equal(g.Teile[0].Id, netz.Id);   // unterste Ebene zuerst
         Assert.All(netz.Primitive, x => { Assert.Equal("#8a8a8a", x.Stil.Farbe); Assert.Equal(Stifte.Duenn, x.Stil.Stift); });
-        // Südwand (y 0…200 → u 1000…1200) und Nordwand (y 3800…4000 → u 4800…5000), je 2600 hoch
+        // Südwand (y 0…200 → u 1000…1200): bei x = 3000 liegt die Tür (2100 hoch), geschnitten wird nur der Sturz 2100…2600 – wie im IFC
+        // (Anzeigenetz mit ausgeschnittenen Öffnungen); Nordwand (y 3800…4000 → u 4800…5000) voll 2600 hoch
         var punkte = netz.Primitive.SelectMany(x => x.Punkte).ToList();
         Assert.Contains(punkte, q => Math.Abs(q[0] - 1000) < 1 && Math.Abs(q[1] - 2600) < 1);
-        Assert.Contains(punkte, q => Math.Abs(q[0] - 1200) < 1 && Math.Abs(q[1]) < 1);
+        Assert.Contains(punkte, q => Math.Abs(q[0] - 1200) < 1 && Math.Abs(q[1] - 2100) < 1);
         Assert.Contains(punkte, q => Math.Abs(q[0] - 4800) < 1 && Math.Abs(q[1] - 2600) < 1);
         Assert.Contains(punkte, q => Math.Abs(q[0] - 5000) < 1 && Math.Abs(q[1]) < 1);
     }
@@ -307,9 +308,9 @@ public class IfcDarstellungTests
         var linien = GrundlagenIfc.SchnittSenkrecht(pfad, raum);
         Assert.NotEmpty(linien);
         Assert.Same(linien, GrundlagenIfc.SchnittSenkrecht(pfad, raum));   // zwischengespeichert
-        // waagrecht (Grundriss) geschnitten liegt die Südwand bei y 0…200; senkrecht bei u 1000…1200 – gleiche Breite
+        // waagrecht (Grundriss) geschnitten liegt die Südwand bei y 0…200, unterbrochen von der Tür (x 2550…3450); senkrecht bei u 1000…1200
         var wagrecht = GrundlagenIfc.Schnitt(pfad, 1000, nurHintergrund: false);
-        Assert.Contains(wagrecht, l => Hat(l, 0, 0) && Hat(l, 6000, 200));
+        Assert.Contains(wagrecht, l => Hat(l, 0, 0) && Hat(l, 2550, 200));
         Assert.Contains(linien, l => l.Any(q => Math.Abs(q[0] - 1000) < 1) && l.Any(q => Math.Abs(q[0] - 1200) < 1));
     }
 
