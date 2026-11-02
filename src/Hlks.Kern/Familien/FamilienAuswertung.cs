@@ -58,7 +58,13 @@ public sealed class FamAufloesung
     readonly ConcurrentDictionary<string, List<Flaeche>> umrisse = new();
     readonly ConcurrentDictionary<string, List<Koerperteil>> teile = new();
 
-    public IEnumerable<FamKoerperErgebnis> Sichtbare(string detail) => Koerper.Where(k => k.ImDetailgrad(detail));
+    /// <summary>Körper eines Detailgrads. Formteile (mit Achse) zeigen im Detailgrad grob die Körper von mittel statt des Hüllquaders – so hat der
+    /// Bogen in Schnitt, Ansicht und 3D seinen Radius (Christian 02.11.2026: «es muss in allen ansichten korrekt sein»); im Grundriss grob zeichnet
+    /// FamilienGrafik ihn einlinig.</summary>
+    public IEnumerable<FamKoerperErgebnis> Sichtbare(string detail) =>
+        detail == "grob" && Achsen.Count > 0 && Koerper.Any(k => k.ImDetailgrad("mittel"))
+            ? Koerper.Where(k => k.ImDetailgrad("mittel"))
+            : Koerper.Where(k => k.ImDetailgrad(detail));
 
     /// <summary>Körperteile in Familienkoordinaten für einen Detailgrad (gemeinsam genutzt – nicht ändern).</summary>
     public List<Koerperteil> Teile(string detail) => teile.GetOrAdd(detail, d => Sichtbare(d).Select(k => k.Teil!).ToList());

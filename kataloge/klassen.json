@@ -125,7 +125,10 @@
       { "name": "benutzer", "typ": "text", "beschreibung": "Wer den Marker gesetzt hat (Name der gekoppelten Brille bzw. Bearbeiter am PC)" },
       { "name": "brille", "typ": "text", "beschreibung": "Kennung der Brille, die ihn gesetzt hat" },
       { "name": "zeit", "typ": "text", "beschreibung": "Wann er gesetzt wurde (ISO 8601; in der Brille auch ohne Verbindung, abgeglichen beim nächsten Verbinden)" },
-      { "name": "quelle", "typ": "auswahl", "auswahl": [ "brille", "pc" ], "beschreibung": "Wo er gesetzt wurde" } ] },
+      { "name": "quelle", "typ": "auswahl", "auswahl": [ "brille", "pc", "baustelle" ], "beschreibung": "Wo er gesetzt wurde (baustelle: Rückmeldung von der Baustellen-Webseite, BIM to field)" },
+      { "name": "art", "typ": "auswahl", "auswahl": [ "problem", "mangel", "frage", "abweichung" ], "beschreibung": "Art der Meldung (BIM to field); ohne Angabe problem" },
+      { "name": "fotos", "typ": "liste", "beschreibung": "Fotos zur Meldung: Dateien relativ zum Projektordner (baustelle/fotos/…)" },
+      { "name": "mass", "typ": "objekt", "beschreibung": "Abweichung von der geplanten Lage, gemessen auf der Baustelle: { dx, dy, dz } in mm (x Ost, y Nord, z oben) – Grundlage für das As-built (Stufe 3), ändert das Modell nicht" } ] },
   { "name": "Vorgaben", "kuerzel": "VG", "schicht": "ansicht", "gewerk": "allgemein",
     "beschreibung": "Projektvorgaben für Kollisionsprüfung und Aussparungen (Modul 3b) – Bürostandard bzw. Projektfestlegung, je Wert mit Quelle; keine eingebauten Werte. Je Projekt eine.",
     "eigenschaften": [

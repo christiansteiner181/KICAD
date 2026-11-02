@@ -14,7 +14,7 @@
       "description": "Woher ein Wert oder eine Änderung stammt.",
       "required": ["art", "akteur", "zeit"],
       "properties": {
-        "art": { "enum": ["mensch", "ki", "ifc", "import", "berechnung", "katalog", "norm", "beispiel", "hkap", "familie", "unterlage"], "description": "Weg, auf dem der Wert entstand (hkap: aus HKAP übernommen, Modul 1d; familie: aus der Familie des Elements, unterlage: aus einer Herstellerunterlage, Modul 2)" },
+        "art": { "enum": ["mensch", "ki", "ifc", "import", "berechnung", "katalog", "norm", "beispiel", "hkap", "familie", "unterlage", "baustelle"], "description": "Weg, auf dem der Wert entstand (hkap: aus HKAP übernommen, Modul 1d; familie: aus der Familie des Elements, unterlage: aus einer Herstellerunterlage, Modul 2; baustelle: Rückmeldung der Baustellen-Webseite, vom Menschen übernommen, BIM to field)" },
         "akteur": { "type": "string", "description": "Person oder Programm, z. B. «CS» oder «KI (für CS)»" },
         "zeit": { "type": "string", "format": "date-time", "description": "Zeitpunkt" },
         "quelle": { "type": "string", "description": "Fundstelle, z. B. Norm mit Ausgabe, Ziffer und Seite" },
