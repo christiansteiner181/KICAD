@@ -112,6 +112,17 @@
       { "name": "kommentar", "typ": "text", "beschreibung": "Bemerkung zur Bearbeitung" },
       { "name": "material", "typ": "text", "beschreibung": "Bei durchdringung: erkanntes Material des gequerten Bauteils (Wortliste, Nachtrag B3c)" },
       { "name": "rohbau", "typ": "auswahl", "auswahl": [ "ja", "nein", "unbekannt" ], "beschreibung": "Bei durchdringung: ist das Bauteil aus Beton bzw. Mauerwerk? ja oder unbekannt = Aussparung nötig (P20), nein = keine Aussparung (Entscheid Christian 19.10.2026)" } ] },
+  { "name": "Pruefmarke", "kuerzel": "PK", "schicht": "pruefung", "gewerk": "allgemein", "brauchtGeschoss": false,
+    "beschreibung": "Markierung auf einem PDF in der Prüfansicht (Christian 02.11.2026: «Pläne prüfen und markieren»): Wolke, Rechteck, Pfeil, Linie, Text oder Haken auf einer Seite eines Planblatts bzw. einer PDF-Unterlage, mit Text, Farbe und Status. Punkte in PDF-Punkten (1/72 Zoll), Ursprung unten links der Seite, y nach oben.",
+    "eigenschaften": [
+      { "name": "dokument", "typ": "text", "pflicht": true, "beschreibung": "Kennzeichen des Planblatts bzw. der PDF-Unterlage" },
+      { "name": "seite", "typ": "zahl", "beschreibung": "Seite ab 1; ohne Angabe 1" },
+      { "name": "form", "typ": "auswahl", "pflicht": true, "auswahl": [ "wolke", "rechteck", "pfeil", "linie", "text", "haken" ], "beschreibung": "Form der Markierung" },
+      { "name": "punkte", "typ": "liste", "pflicht": true, "beschreibung": "Punkte [[x, y], …] in pt: Wolke/Rechteck zwei Ecken, Pfeil/Linie Anfang und Ende (Pfeilspitze am Ende), Text/Haken ein Punkt" },
+      { "name": "text", "typ": "text", "beschreibung": "Bemerkung zur Markierung" },
+      { "name": "farbe", "typ": "text", "beschreibung": "Farbe #rrggbb; ohne Angabe rot" },
+      { "name": "status", "typ": "auswahl", "auswahl": [ "offen", "erledigt" ], "beschreibung": "Bearbeitungsstand; ohne Angabe offen" },
+      { "name": "zustaendig", "typ": "text", "beschreibung": "Wer die Markierung erledigt (Name, Firma bzw. Gewerk)" } ] },
   { "name": "ProblemMarker", "kuerzel": "PM", "schicht": "pruefung", "gewerk": "allgemein", "brauchtGeschoss": false, "geometrie": "punkt",
     "beschreibung": "Problem-Marker zum Nachverfolgen (Modul XR, XR-E, Quest App V1a): in der Brille auf eine Stelle gezeigt und gesetzt (bzw. am PC angelegt). Punkt = die markierte Stelle; Geschoss, falls bekannt. Ein Marker geht auch ohne Beschreibung. Liste in KICAD: Palette «Problem-Marker»; Export als BCF-Themen mit bcf_export klasse ProblemMarker.",
     "eigenschaften": [
@@ -470,7 +481,8 @@
   { "name": "Ansicht", "kuerzel": "AN", "schicht": "ansicht", "gewerk": "allgemein", "geometrie": "linie",
     "beschreibung": "Eine Ansicht auf das eine Modell: Grundriss (mit geschoss), Schnitt, Ansicht, 3D, Schema oder Liste. Schnitt und Ansicht haben eine Geometrie: die Schnitt- bzw. Ansichtslinie im Grundriss (Anfang → Ende); blick sagt, wohin man schaut.",
     "eigenschaften": [
-      { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "grundriss", "schnitt", "ansicht", "3d", "schema", "liste" ], "beschreibung": "Art der Ansicht" },
+      { "name": "art", "typ": "auswahl", "pflicht": true, "auswahl": [ "grundriss", "schnitt", "ansicht", "3d", "schema", "liste", "pruefung" ], "beschreibung": "Art der Ansicht (pruefung: PDF prüfen und markieren, Christian 02.11.2026)" },
+      { "name": "dokument", "typ": "text", "beschreibung": "Bei art «pruefung»: das geprüfte PDF – Kennzeichen eines Planblatts oder einer PDF-Unterlage" },
       { "name": "massstab", "typ": "zahl", "beschreibung": "Massstabsnenner, 50 = 1:50" },
       { "name": "schnitthoehe", "typ": "zahl", "einheit": "mm", "beschreibung": "Schnitthöhe über OK Geschoss (Grundriss) von Hand; gilt nur, wenn schnitthoeheNachSia aus ist (Vorgabe 1000)" },
       { "name": "schnitthoeheNachSia", "typ": "bool", "beschreibung": "Grundriss (N21): Schnitthöhe nach SIA 400:2000 Ziff. C.3.1.1 aus den Türen und Fenstern des Geschosses rechnen, so dass durch alle Öffnungen geschnitten wird (Abfrage schnitthoehe_sia zeigt Wert und Herkunft); ohne Angabe ja. Aus: es gilt das Feld schnitthoehe" },

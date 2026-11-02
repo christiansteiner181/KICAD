@@ -38,6 +38,7 @@ const MODULE = {
 const MODULE_ZUSATZ = {
   familie: './familien/editor.js',
   schema: './ansichten/schema.js',
+  pruefung: './ansichten/pruefung.js',   // PDF prüfen und markieren (Christian 02.11.2026)
 };
 const PLANARTEN = new Set(['grundriss', 'schnitt', 'ansicht']);
 const KLASSEN = new Set(['Ansicht', 'Planblatt', 'Familie']);
@@ -159,6 +160,7 @@ function steuerungFuellen(o) {
     leiste.innerHTML = `<span>Planblatt ${a.werte?.format ?? ''} ${a.werte?.hochformat ? 'hoch' : 'quer'}</span><span class="kz">${a.kennzeichen}</span>`;
     return;
   }
+  if (art === 'pruefung') { leiste.innerHTML = `<span>Prüfung · ${a.werte?.dokument ?? '?'}</span><span class="kz">${a.kennzeichen}</span>`; return; }
   if (art === 'familie') { leiste.innerHTML = `<span>Familieneditor</span><span class="kz">${a.kennzeichen}${a.werte?.kategorie ? ' · ' + a.werte.kategorie : ''}</span>`; return; }
   if (art === 'schema') {   // ein Schema ist nicht massstäblich: nur der Detailgrad
     const dg = a.werte?.detailgrad ?? 'mittel';

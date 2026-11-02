@@ -1477,6 +1477,20 @@ Folgeblatt (zweite Listenansicht, z. B. für ein anderes Geschoss) oder ein grö
 
 **Prüfen:** `node --test js/oberflaeche/koordinationsplan.test.mjs`; Kern: `PlanListeUmbruchTests.cs` (Filter `PlanListeUmbruch`); Browser: `HLKS_B3_PORT=5240 HLKS_CDP_PORT=9580 node js/oberflaeche/koordinationsplan.browser.mjs` (Ports 5240–5249; Bilder `%TEMP%\HLKS_CAD\kp_*.png`; `HLKS_KATALOG` auf die Kataloge der Arbeitskopie setzen).
 
+## Prüfansicht – PDF prüfen und markieren (Christian 02.11.2026)
+
+**Ort:** Register **Ansicht › Planblätter › Prüfen** (Aktion \`plan.pruefen\`, Symbol \`problemMarker\`) und Projektbrowser › Planblatt › «Prüfen
+(markieren)»: Dialog mit allen Planblättern und PDF-Unterlagen; je Dokument eine Ansicht der Art **pruefung** (Eigenschaft \`dokument\`), die beim zweiten
+Mal wieder geöffnet wird (\`aktionen-plaene.js\` \`pruefungOeffnen\`). Die Ansicht (\`ansichten/pruefung.js\`, \`css/pruefung.css\`) zeigt die Seite als Bild des
+Kerns (\`GET /api/pruefung/info\`, \`/api/pruefung/seite\`, \`PruefungEndpunkte.cs\`, Kern \`Pruefung/PruefDokument.cs\`: Planblatt-PDF wie die Ausgabe bzw.
+PDF-Unterlage, gerendert mit Docnet) mit einer Zeichenebene in pt.
+**Werkzeuge:** Auswählen (Ziehen verschiebt, Antippen wählt eine Markierung), Wolke, Rechteck, Pfeil, Linie (Ziehen), Text, Haken (Klicken), Farbe Rot /
+Orange / Grün / Blau, Seite ‹ ›, Einpassen; Mausrad zoomt, mittlere Maustaste verschiebt, Esc bricht ab. Nach dem Zeichnen fragt KICAD nach einer
+Bemerkung (freiwillig). **Rechts:** alle Markierungen des Dokuments, offen zuerst, mit Haken «erledigt», ✎ Bemerkung, ✕ Löschen; Antippen springt zur Seite.
+**Datenmodell:** Klasse **Pruefmarke** (PK-n: \`dokument\`, \`seite\`, \`form\` wolke|rechteck|pfeil|linie|text|haken, \`punkte\` in pt (y nach oben), \`text\`,
+\`farbe\`, \`status\` offen|erledigt, \`zustaendig\`) – angelegt mit element_anlegen, geändert mit element_aendern; rückgängig, für alle sichtbar, für die KI
+lesbar (elemente_suchen klasse Pruefmarke). Offen: Prüfbericht, Messen im PDF, Markierungen in der Baustellen-Webseite.
+
 ## Baustelle (Webseite) – BIM to field Stufe 1 (entwurf/bim-to-field.md)
 
 **Ort:** Register **Datei › Gruppe Ausgabe › Baustelle (Webseite)** (Aktion `datei.baustelle-export`, Symbol `bildschirm`, aktiv nur mit offenem

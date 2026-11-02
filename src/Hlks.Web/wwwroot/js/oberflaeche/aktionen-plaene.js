@@ -145,6 +145,39 @@ registrieren({
   },
 });
 
+// Prüfen (Christian 02.11.2026: «programm integrierte PDF anzeige» – «Pläne prüfen und markieren»): Planblatt oder PDF-Unterlage in der Prüfansicht
+// (ansichten/pruefung.js). Je Dokument eine Ansicht der Art «pruefung»; gibt es sie schon, wird sie geöffnet, sonst angelegt.
+const pdfUnterlagen = () => derKlasse('Unterlage').filter((u) => u.werte?.art === 'pdf').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen));
+const dokumentText = (d) => d.klasse === 'Planblatt' ? `Planblatt ${blattText(d)}` : `PDF ${d.kennzeichen} ${d.name ?? d.werte?.original ?? ''}`.trim();
+
+export async function pruefungOeffnen(dokument) {
+  const d = element(dokument);
+  if (!d) return;
+  let a = derKlasse('Ansicht').find((x) => x.werte?.art === 'pruefung' && x.werte?.dokument === d.kennzeichen);
+  if (!a) {
+    const r = await sende('element_anlegen', { klasse: 'Ansicht', name: `Prüfung ${d.klasse === 'Planblatt' ? blattText(d) : d.kennzeichen}`, eigenschaften: { art: 'pruefung', dokument: d.kennzeichen } });
+    if (!ergebnisMelden(r)) return;
+    const id = r.aenderungen?.find((x) => x.klasse === 'Ansicht')?.kennzeichen;
+    for (let i = 0; i < 20 && !(a = id ? element(id) : null); i++) await new Promise((ok) => setTimeout(ok, 100));   // Ereignis des Servers abwarten
+    if (!a) return;
+  }
+  await fenster.ansichtOeffnen(a.kennzeichen);
+}
+
+registrieren({
+  id: 'plan.pruefen', titel: 'Prüfen', symbol: 'problemMarker', kuerzel: null, register: 'ansicht', gruppe: 'Planblätter',
+  aktiv: () => bloetter().length > 0 || pdfUnterlagen().length > 0, hinweis: 'Zuerst ein Planblatt anlegen oder ein PDF als Unterlage einfügen.',
+  async ausfuehren(p) {
+    const direkt = p?.dokument ? element(p.dokument) : blattVon(p);
+    if (direkt) { await pruefungOeffnen(direkt.kennzeichen); return; }
+    const liste = [...bloetter(), ...pdfUnterlagen()];
+    const w = knoten(`<div class="ansichtform"><label class="fz"><span>Dokument</span><select class="f-dok">${liste.map((d) => `<option value="${esc(d.kennzeichen)}">${esc(dokumentText(d))}</option>`).join('')}</select></label>
+      <p class="leise">Wolken, Pfeile, Text und Haken auf dem PDF; jede Markierung wird im Projekt gespeichert (offen/erledigt).</p></div>`);
+    const ok = await zeigen({ titel: 'PDF prüfen', inhalt: w, breite: 480, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Öffnen', wert: true, primaer: true }] });
+    if (ok === true) await pruefungOeffnen(w.querySelector('.f-dok').value);
+  },
+});
+
 // ---------------------------------------------------------------------------------------------- Revision hinzufügen (Modul 7 Teil A)
 
 /** Revision hinzufügen: Dialog mit Planblatt (vorbelegt), Beschreibung (Pflicht) und Datum (leer = heute); den Index (nächster Buchstabe) und das Datum setzt der Kern. */
