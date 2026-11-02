@@ -249,7 +249,9 @@ public static class Treppenanalyse
         punkte = Vereinfachen(punkte);
 
         double dicke = h;
-        if (netz.Begrenzung() is { } bb) dicke = Math.Clamp(Math.Round((rs[0].Z - bb[2]) / 5) * 5, h, 3 * h);
+        // gemessen, nicht gerundet (deckungsgleich mit dem IFC, 03.11.2026: Archicad-Läufe 163.8 mm bei Steigung 170 – vorher auf 5 mm
+        // gerundet und auf mindestens eine Steigung gehoben); höchstens drei Steigungen (Körper mit Unterbau)
+        if (netz.Begrenzung() is { } bb && rs[0].Z - bb[2] > 1) dicke = Math.Min(Math.Round(rs[0].Z - bb[2], 1), 3 * h);
 
         string herleitung = $"{n} waagrechte Flächen (davon {rs.Count(r => r.Podest)} Podest), Steigung {Math.Round(h, 1)} mm (Median der Höhenunterschiede), " +
             $"Boden unten {Math.Round(unten, 1)} mm ({(beginntAufBoden ? "erste Fläche auf einem Boden (Geschosskote oder halbe Geschosshöhe)" : "eine Steigung unter der ersten Fläche")}), " +

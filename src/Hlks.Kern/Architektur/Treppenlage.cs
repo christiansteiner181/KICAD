@@ -38,6 +38,8 @@ public sealed class Treppenlage
     public double? Laufdicke { get; init; }
     /// <summary>Tiefe der Austrittsstufe hinter der letzten Stufenkante (Eigenschaft «austritt»); null = keine.</summary>
     public double? AustrittTiefe { get; init; }
+    /// <summary>Umriss der Austrittsstufe (Eigenschaft «austrittUmriss», wie im IFC); null = Rechteck aus <see cref="AustrittTiefe"/>.</summary>
+    public List<double[]>? AustrittUmriss { get; init; }
     public bool Aufwaerts { get; init; } = true;
 
     /// <summary>Vorgabe der Laufdicke (senkrecht unter den Trittflächen), wenn das Element keine nennt.</summary>
@@ -61,13 +63,19 @@ public sealed class Treppenlage
                     var ring = pp.Select(Zahlen).OfType<double[]>().Where(q => q.Length >= 2).Select(q => new[] { q[0], q[1] }).ToList();
                     if (ring.Count >= 3) podeste.Add(new TreppePodest(pz, ring));
                 }
+        List<double[]>? austrittUmriss = null;
+        if (e.Eigenschaft("austrittUmriss")?.Inhalt is JsonArray ua)
+        {
+            var ring = ua.Select(Zahlen).OfType<double[]>().Where(q => q.Length >= 2).Select(q => new[] { q[0], q[1] }).ToList();
+            if (ring.Count >= 3) austrittUmriss = ring;
+        }
         var lauf = e.Geometrie?.Punkte.Where(q => q.Length >= 2).Select(q => q.Length > 2 ? q : [q[0], q[1], 0]).ToList() ?? [];
         if (kanten.Count == 0 && podeste.Count == 0 && lauf.Count < 2) return null;
         return new Treppenlage
         {
             Element = e, Lauflinie = lauf, Kanten = kanten, Podeste = podeste,
             Stufen = e.Zahl("stufen"), Steigung = e.Zahl("steigung"), Auftritt = e.Zahl("auftritt"), Laufbreite = e.Zahl("laufbreite"),
-            Unterkante = e.Zahl("unterkante"), Oberkante = e.Zahl("oberkante"), Laufdicke = e.Zahl("laufdicke"), AustrittTiefe = e.Zahl("austritt"),
+            Unterkante = e.Zahl("unterkante"), Oberkante = e.Zahl("oberkante"), Laufdicke = e.Zahl("laufdicke"), AustrittTiefe = e.Zahl("austritt"), AustrittUmriss = austrittUmriss,
             Aufwaerts = !string.Equals(e.Text("richtung"), "abwaerts", StringComparison.OrdinalIgnoreCase),
         };
     }
@@ -136,7 +144,13 @@ public sealed class Treppenlage
             aus.Add(new Trittflaeche(ring, k[4], false));
         }
         // Austrittsstufe: oberste Trittfläche hinter der letzten Kante, in Gehrichtung (Eigenschaft «austritt», aus dem IFC)
-        if (AustrittTiefe is double t && t > 0 && Kanten.Count >= 2)
+        if (AustrittUmriss is { Count: >= 3 } umriss && Kanten.Count >= 1)
+        {
+            var ring = umriss.Select(q => new[] { q[0], q[1] }).ToList();
+            if (Polygone.Flaecheninhalt(ring) < 0) ring.Reverse();
+            aus.Add(new Trittflaeche(ring, Kanten[^1][4], false));
+        }
+        else if (AustrittTiefe is double t && t > 0 && Kanten.Count >= 2)
         {
             var (l, v) = (Kanten[^1], Kanten[^2]);
             double dx = (l[0] + l[2]) / 2 - (v[0] + v[2]) / 2, dy = (l[1] + l[3]) / 2 - (v[1] + v[3]) / 2, dl = Math.Sqrt(dx * dx + dy * dy);

@@ -14,6 +14,7 @@
 // - Netzdatei: die Treppe ist übernommen (Kennzeichen 1), das Original-Netz wird also nicht zusätzlich als Hintergrund gezeigt. Die
 //   exakte Geometrie bleibt in der Netzdatei (Kollisionsprüfung).
 
+using System.Text.Json.Nodes;
 using Xbim.Common;
 using Xbim.Ifc4.Interfaces;
 
@@ -147,7 +148,14 @@ sealed class IfcTreppeLauf(IfcLauf lauf)
             var (kl, kv) = (form.Kanten[^1], form.Kanten[^2]);
             double mx = (kl[0] + kl[2]) / 2, my = (kl[1] + kl[3]) / 2, dx = mx - (kv[0] + kv[2]) / 2, dy = my - (kv[1] + kv[3]) / 2, dl = Math.Sqrt(dx * dx + dy * dy);
             if (dl > 1 && netz.Bereich(mx, my, dx / dl, dy / dl) is var (_, hinten) && hinten > 10)
+            {
                 lauf.Wert(e, "austritt", Treppenlage.Runden(hinten), $"{geo} (Körper hinter der letzten Stufenkante)");
+                // Umriss wie im IFC: Grundriss des Körpers hinter der letzten Kante (Bernstrasse 42 TR-1: schräg abgeschnitten, oben nur ein
+                // schmaler Streifen waagrecht)
+                if (GrundrissHinter(netz, mx, my, dx / dl, dy / dl) is { } umriss)
+                    lauf.Wert(e, "austrittUmriss", new JsonArray(umriss.Select(q => (JsonNode)new JsonArray(Treppenlage.Runden(q[0]), Treppenlage.Runden(q[1]))).ToArray()),
+                        $"{geo} (Grundriss des Körpers hinter der letzten Stufenkante)");
+            }
         }
         MaterialSetzen(e, p, teile);
         foreach (var k in teile) lauf.Behandelt.Add(k.EntityLabel);
@@ -230,5 +238,27 @@ sealed class IfcTreppeLauf(IfcLauf lauf)
         var pts = e.Geometrie?.Punkte ?? [];
         if (pts.Count == 0) return double.MaxValue;
         return pts.Min(q => Math.Sqrt((q[0] - p[0]) * (q[0] - p[0]) + (q[1] - p[1]) * (q[1] - p[1])));
+    }
+
+    /// <summary>Grundriss der Dreiecke jenseits der Linie durch (mx, my) quer zu (ux, uy) – jedes Dreieck auf die Halbebene beschnitten,
+    /// vereinigt; die grösste Fläche oder null.</summary>
+    static List<double[]>? GrundrissHinter(Dreiecksnetz n, double mx, double my, double ux, double uy)
+    {
+        var pfade = new Clipper2Lib.PathsD();
+        for (int i = 0; i + 2 < n.D.Count; i += 3)
+        {
+            var ecken = new List<double[]>();
+            for (int k = 0; k < 3; k++) { var (x, y, _) = n.Lage(n.D[i + k]); ecken.Add([x, y, (x - mx) * ux + (y - my) * uy]); }
+            var teil = new List<double[]>();
+            for (int k = 0; k < 3; k++)
+            {
+                var (p, q) = (ecken[k], ecken[(k + 1) % 3]);
+                if (p[2] >= 0) teil.Add(p);
+                if ((p[2] >= 0) != (q[2] >= 0)) { double t = p[2] / (p[2] - q[2]); teil.Add([p[0] + t * (q[0] - p[0]), p[1] + t * (q[1] - p[1]), 0]); }
+            }
+            if (teil.Count < 3 || Math.Abs(Polygone.Flaecheninhalt(teil)) < 1) continue;
+            pfade.Add(Polygone.Ccw(Polygone.Pfad(teil)));
+        }
+        return Polygone.Flaechen(Polygone.Vereinigen(pfade)).MaxBy(f => Math.Abs(Polygone.Flaecheninhalt(f.Aussen)))?.Aussen;
     }
 }

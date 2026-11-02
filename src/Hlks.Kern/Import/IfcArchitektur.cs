@@ -509,8 +509,16 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
                     }
                     if (best is not null && bestWeg > 1e-6) neu.Add((w, anfang, best[0], best[1]));
                 }
-            foreach (var (s, anfang, x, y) in neu)
-                if (anfang) { s.Ax = x; s.Ay = y; } else { s.Bx = x; s.By = y; }
+            // beide Enden zusammen prüfen: ein kurzes Stück, dessen beide Enden in derselben dicken Wand liegen, fiele sonst auf einen Punkt
+            // zusammen (Bernstrasse 42 W-150, 630 × 580 mm, 03.11.2026) – dann bleibt es, wie es ist
+            foreach (var g in neu.GroupBy(n => n.S))
+            {
+                var s = g.Key;
+                double ax = s.Ax, ay = s.Ay, bx = s.Bx, by = s.By;
+                foreach (var (_, anfang, x, y) in g) if (anfang) { ax = x; ay = y; } else { bx = x; by = y; }
+                if ((bx - ax) * s.Ux + (by - ay) * s.Uy < 1) continue;
+                (s.Ax, s.Ay, s.Bx, s.By) = (ax, ay, bx, by);
+            }
             if (neu.Count > 0) hinweise.Dazu("Wandenden auf die Achse der anschliessenden Wand gelegt (Ecken und T-Stösse)", null);
         }
     }
@@ -777,9 +785,9 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         if (ex is not null)
         {
             if (!ex.Senkrecht) { Hintergrund(c, "Geneigte Stütze"); return; }
+            // Querschnitt aus der Extrusion; Unter- und Oberkante aus dem Körper – Archicad stutzt Stützen mit Differenzen an den Decken
+            // (Bernstrasse 42 STZ-23: 100 mm), die Extrusion allein ist dann zu lang (03.11.2026)
             ring = ex.Aussen.OrderByDescending(r => Math.Abs(Polygone.Flaecheninhalt(r))).First().Select(q => new[] { q[0], q[1] }).ToList();
-            unten = ex.Unten;
-            hoehe = ex.Hoehe;
         }
         else
         {

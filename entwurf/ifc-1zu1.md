@@ -68,10 +68,16 @@ verifiziert und korrigiert werden», «der ifc import ist die basis für alles f
   Aussparungen); Anzeigenetz mit ausgeschnittenen Öffnungen (3D, Original im Grundriss).
 - **Korrekturen des Nachbaus:** Tür/Fenster-Körper aus dem IFC (`koerperLinks/Rechts/Unten/Oben`, `tiefe`, `versatz`, negative `bruestung`,
   Türschwelle); Wandenden `verlAnfang/verlEnde` aus dem Körper (auch Wände aus Teilen); Decke/Dach aus mehreren Flächen: je Fläche ein Element.
-- **Bernstrasse 42 (Archicad, IFC2X3):** 566 von 588 deckungsgleich – Dach 11/11, Decke 72/72, Fenster 15/15, Tür 56/56, Wand 339/342,
-  Stütze 41/43, Träger 32/40, Treppe 0/9.
-- **Grenzen von xBIM in dieser Datei:** 4213 Brep-Flächen mit ungültiger Aussenkante ignoriert, 34 Bauteil-Teile ergeben beim Ausschneiden einen
-  leeren Körper und fehlen – dort rechnet KICAD selbst (vereinfacht; z. B. die Teile der Träger UZ-9/10/18/19/21/36/39/40).
-- **Offen:** Treppen (~200 mm: Wangen?), 8 Träger (IFC selbst vereinfacht), 2 Stützen, 3 Wände; nicht nachgebaut (nur Hintergrund):
-  IfcFlowTerminal 57, IfcCovering 44, IfcRailing 40, IfcWall 22 (Archicad-Fensterwände ohne Achse), IfcWindow 21 (Wirt IfcBuildingElementProxy),
-  IfcBeam 9 (geneigt), IfcStair 1. Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid.
+- **Bernstrasse 42 (Archicad, IFC2X3), 03.11.2026: 598 von 598 deckungsgleich** (±5 mm) – Dach 11, Decke 72, Fenster 15, Tür 56, Wand 342,
+  Stütze 43, Träger 49, Treppe 10.
+- **Korrekturen dafür (03.11.2026):** xBIM-Netze in Weltkoordinaten, je Bezug abgebildet (Einpassen rechnet im Bezugsvorschlag); Umlaufsinn
+  der Dreiecke nach dem Volumen (xBIM dreht bei gespiegelter Platzierung nicht mit); **Rückfall** für Körper, die xBIM im Ganzen verwirft
+  («Boolean Result returned an empty shape» bei sich nur berührenden Flächen, 98 Archicad-Trägerteile): Differenz um Differenz mit der
+  Modelltoleranz, eine, die den Körper leeren würde, ausgelassen (`IfcGeometrieXbim.Rueckfall`); Träger mit gestufter Unterseite nicht
+  «geneigt» (Achse entscheidet); Stützen-Unter-/Oberkante aus dem Körper statt der Extrusion; Wandenden: kein Zusammenfallen beider Enden
+  in derselben Wand; Treppe: Laufdicke gemessen (nicht gerundet), Austrittsstufe mit Umriss `austrittUmriss` (Grundriss des Körpers
+  hinter der letzten Kante).
+- **Nicht nachgebaut (als IFC-Original im Hintergrund):** IfcFlowTerminal 57 (HLKS-Bereich), IfcCovering 44, IfcRailing 40 (keine
+  KICAD-Klasse), Archicad-Fensterelemente «Fenster-008» (IfcWall 22 ohne Achse, IfcWindow 19 mit Wirt IfcBuildingElementProxy),
+  IfcWindow 2 ohne Öffnung.
+- **Offen:** Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid, Installations-IFC.
