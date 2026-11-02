@@ -15,6 +15,17 @@ unterschiedliche Nutzerprofile ausbauen. Bsp, Monteur, Projektleiter, Bauleiter,
   danach die rechnenden und erzeugenden Teile (Rechenkerne Modul 4 B, 5, 6 ab Teil A-Rest, Generator Modul 12). Modul 6 Teil A ruht beim Stand
   vom 31.10.2026 (geprueft 2003c0f).
 
+**Entscheide Christian 02.11.2026 zu den offenen Fragen (zweites Fragefenster):**
+1. **Montageabschnitte frei wählbar:** «Bsp. einen Strang, Nur Heizkörper, nur eine Trasse usw.» → ein Abschnitt ist eine gespeicherte Auswahl
+   nach beliebigen Kriterien (Strang, System, Klasse, Geschoss, Raum) oder von Hand gewählten Elementen (Trasse). Ein Element kann in mehreren
+   Abschnitten stehen (Strang 1 und «alle Heizkörper»).
+2. **Arbeitsplan:** Termine und Kolonnen von Hand in KICAD **und** aus einem importierten Bauprogramm der Bauleitung.
+3. **Materialauszug:** «gleich wie arbeitsplanung, auswählbar» → je Abschnitt bzw. jeder beliebigen Auswahl nach denselben Kriterien.
+4. **Montagestatus:** wie vorgeschlagen – geplant · freigegeben zur Montage · montiert · geprüft (Druckprobe/Spülung) · abgenommen, je mit
+   Datum und Person.
+5. **Freigabe je Rolle:** Monteur nur freigegebene Stände; Projektleiter und Bauleiter auch Arbeitsstände (deutlich vermerkt).
+6. **Architektur:** das Architekten-IFC ist immer im Export (Hintergrund in 3D und Grundriss), dazu Wände, Decken und Räume des eigenen Modells.
+
 ## Ziel
 
 Jede Person am Bau sieht das Modell im Browser – auf dem Tablet auf der Baustelle auch ohne Netz – mit genau den Inhalten ihrer Rolle, und
@@ -36,7 +47,9 @@ mit Herkunft «baustelle» und werden in KICAD vom Menschen übernommen (wie die
 Was die Rollen brauchen, muss am Element im Modell stehen, nicht erst im Export. Vor dem Bau eine **Bestandsaufnahme** (Agent hlks-modul,
 lesend): welche Angaben gibt es heute je Klasse (Familie/Artikel, Dimension, Material, Dämmung, Höhenkote, System/Strang, Geschoss/Raum), welche
 fehlen. Absehbar neu:
-- **Montageabschnitt** (Klasse oder Eigenschaft: Geschoss × Gewerk × Strang bzw. von Hand), Grundlage für Materialauszug und Arbeitsplan.
+- **Montageabschnitt** (neue Klasse): gespeicherte Auswahl nach Kriterien (Strang, System, Klasse, Geschoss, Raum) bzw. von Hand gewählte
+  Elemente, mehrfache Zugehörigkeit erlaubt; mit Termin, Kolonne, Reihenfolge (von Hand bzw. aus dem Bauprogramm). Grundlage für Materialauszug
+  und Arbeitsplan.
 - **Montagestatus** je Element: geplant · freigegeben zur Montage · montiert · geprüft (Druckprobe/Spülung) · abgenommen; mit Datum und Person.
 - **Dokumente** am Element bzw. an der Familie (Datenblatt, Montageanleitung, Wartung) – Verweis, nicht Kopie.
 - **Wartung** (Facility): Intervall und Herstellerangabe an der Familie, nur mit Quelle.
@@ -52,11 +65,12 @@ offline auf dem Tablet (installierbare Web-App).
   - Planblätter als PDF (Modul 7 Teil A), Stand und Revision sichtbar.
   - Elementinfo beim Antippen: Kennzeichen, Klasse, Dimension, Material, Dämmung, Höhenkote, System/Strang, Artikel, Dokumente.
   - Suche (Kennzeichen, Raum, Strang), Filter nach Geschoss, Gewerk, System, Abschnitt.
-  - **Materialauszug** je Abschnitt (vorhanden: `materialliste`, `mengen`), als Tabelle und CSV.
-  - **Arbeitsplan** je Abschnitt (Reihenfolge, Umfang, Status; Termine erst mit Quelle, siehe offene Fragen).
+  - **Materialauszug** je Abschnitt bzw. frei gewählter Auswahl (vorhanden: `materialliste`, `mengen`), als Tabelle und CSV.
+  - **Arbeitsplan** je Abschnitt (Reihenfolge, Umfang, Status, Termin, Kolonne; von Hand bzw. aus dem importierten Bauprogramm).
 - **Stand:** Kopf mit Projekt, Modellprüfsumme, Commit/Datum, Planstand – jede Seite zeigt, wovon sie stammt.
-- **Datenschutz:** nur freigegebene Inhalte; keine Unterlagen Dritter (Architekten-IFC) ohne Freigabe; ein Export ist eine Ausgabe an Dritte
-  und kommt ins Ausgabeprotokoll (Modul 7, Rang 4).
+- **Stand und Rolle:** Monteur-Export nur aus freigegebenem Stand; für Projektleiter und Bauleiter auch Arbeitsstände mit Vermerk auf jeder Seite.
+- **Architektur:** Architekten-IFC immer dabei (Entscheid 02.11.2026). Ein Export ist eine Ausgabe an Dritte und kommt ins Ausgabeprotokoll
+  (Modul 7, Rang 4).
 - **Rückkanal in Stufe 1:** offline erfasst (abhaken, Mangel mit Foto, Mass), als Datei exportiert (BCF 3.0 bzw. JSON) und in KICAD
   eingelesen (BCF-Import vorhanden, Modul 3b B6). Ohne Server geht nichts verloren und nichts wird automatisch übernommen.
 
@@ -90,9 +104,6 @@ offline auf dem Tablet (installierbare Web-App).
 
 ## Offene Fragen an Christian
 
-1. **Montageabschnitte:** automatisch (Geschoss × Gewerk × Strang) oder von Hand je Projekt? Vorschlag: Vorschlag automatisch, Mensch passt an.
-2. **Arbeitsplanung:** woher kommen Termine und Kolonnen (HKAP, Bauprogramm des Bauleiters, von Hand)? Was gehört für den Monteur hinein?
-3. **Materialauszug:** in welcher Form bestellt der Installateur (Artikelnummern des Lieferanten, Gliederung nach Abschnitt/Geschoss)?
-4. **Montagestatus:** Stufen wie oben oder anders (z. B. Druckprobe und Spülung getrennt)?
-5. **Was ist «freigegeben»** für den Export: nur Stände mit Planfreigabe (Revision) oder jeder Arbeitsstand?
-6. **Architektur im Export:** Wände/Decken aus dem eigenen Modell zeigen, das Architekten-IFC nur mit Freigabe?
+1. **Bauprogramm-Import:** in welchem Format kommt das Terminprogramm der Bauleitung (Excel, MS Project, PDF)? Ein Beispiel genügt.
+2. **Lieferantenformat** für den Materialauszug später (Datanorm, IDS-Connect, Händler)? Vorerst Tabelle/CSV.
+3. **Anbieter und Domain** für Stufe 2 (vor Stufe 2).
