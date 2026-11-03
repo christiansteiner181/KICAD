@@ -109,6 +109,7 @@
     { "klasse": "Kaelteerzeuger", "ifc4": { "entitaet": "IfcChiller", "typ": "IfcChillerType", "predefinedType": "NOTDEFINED" }, "ifc2x3": { "entitaet": "IfcEnergyConversionDevice", "typ": "IfcChillerType", "predefinedType": "NOTDEFINED" },
       "importWerte": ["AIRCOOLED", "WATERCOOLED", "HEATRECOVERY", "USERDEFINED", "NOTDEFINED"] },
     { "klasse": "Lueftungsgeraet", "ifc4": { "entitaet": "IfcUnitaryEquipment", "typ": "IfcUnitaryEquipmentType", "predefinedType": "AIRHANDLER" }, "ifc2x3": { "entitaet": "IfcEnergyConversionDevice", "typ": "IfcUnitaryEquipmentType", "predefinedType": "AIRHANDLER" } },
+    { "klasse": "Luftverteiler", "ifc4": { "entitaet": "IfcDuctFitting", "typ": "IfcDuctFittingType", "predefinedType": "JUNCTION", "objectType": "Luftverteiler" }, "ifc2x3": { "entitaet": "IfcFlowFitting", "typ": "IfcDuctFittingType", "predefinedType": "JUNCTION", "objectType": "Luftverteiler" } },
     { "klasse": "Zuluftdurchlass", "ifc4": { "entitaet": "IfcAirTerminal", "typ": "IfcAirTerminalType", "predefinedType": "DIFFUSER" }, "ifc2x3": { "entitaet": "IfcFlowTerminal", "typ": "IfcAirTerminalType", "predefinedType": "DIFFUSER" } },
     { "klasse": "Abluftdurchlass", "ifc4": { "entitaet": "IfcAirTerminal", "typ": "IfcAirTerminalType", "predefinedType": "GRILLE" }, "ifc2x3": { "entitaet": "IfcFlowTerminal", "typ": "IfcAirTerminalType", "predefinedType": "GRILLE" } },
 
