@@ -3805,6 +3805,42 @@
           "hinweis": "Dauer rund eine Minute (115 MB). Seit W1 verschiebbar, in der Grösse änderbar und einklappbar (siehe «dialog-verschieben»); der Plan dahinter ist nicht mehr abgedunkelt."
         },
         {
+          "id": "rvt-uebernehmen",
+          "titel": "Revit-Datei (.rvt) übernehmen – ohne Revit",
+          "wo": {
+            "register": "Einfügen",
+            "gruppe": "Verknüpfen / Übernehmen",
+            "knopf": "Revit übernehmen",
+            "kuerzel": "",
+            "sonst": "KI bzw. MCP: rvt_als_ifc, danach ifc_uebernehmen"
+          },
+          "schritte": [
+            "Register Einfügen › Gruppe «Verknüpfen / Übernehmen» › «Revit übernehmen» klicken.",
+            "Eine Revit-Projektdatei (.rvt) wählen, z. B. eine Herstellerbibliothek mit Rohrnetz.",
+            "Warten, bis der Dialog «Revit übernehmen – <Datei>» den Abschnitt «Aus der Revit-Datei gelesen» und die Übersicht zeigt.",
+            "Wie bei «IFC übernehmen»: Bereiche und Geschosse prüfen, bei Abweichung die Ausrichtung wählen, «Vorschau» klicken.",
+            "«Übernehmen» klicken und den Ergebnisdialog schliessen."
+          ],
+          "erwartung": "KICAD liest die .rvt selbst (ohne Revit) und schreibt ihr HLKS-Netz als IFC4 in ausgabe\\ifc (<Name>.rvt.ifc); dieses IFC wird wie jedes andere übernommen: Rohre, Formteile (Bogen, T-Stück, Reduktion aus der Lage der Anschlüsse), Armaturen, Systeme und Verbindungen in einem Paket. Bei Geberit Silent-db20: 54 Rohre, 30 Formteile, 1 Ventil, 44 Verbindungen.",
+          "pruefpunkte": [
+            "Der Abschnitt «Aus der Revit-Datei gelesen» nennt die IFC-Entitäten und was nicht übernommen wird (Hilfsfamilien, verschachtelte Teile).",
+            "Die Vorschau ändert noch nichts.",
+            "Nach dem Übernehmen stehen Rohre und Formteile mit Systemen im Projektbrowser; die Serie ist erkannt (z. B. Geberit Silent-db20).",
+            "Eine zweite Übernahme derselben Datei legt nichts doppelt an.",
+            "Strg+Z nimmt die Übernahme in einem Schritt zurück."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Revit übernehmen»",
+            "zustand": "Abschnitt «Aus der Revit-Datei gelesen» und Übersicht nach dem Lesen von geberit_silent_db20_2017.rvt"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md (Revit übernehmen)",
+            "entwurf/rvt-format.md (Übernahme in KICAD)"
+          ],
+          "hinweis": "Nur das HLKS-Netz; Architektur und Fliessrichtung liest KICAD aus der RVT nicht. Koordinaten im internen Projektsystem von Revit. Revit-Familien (.rfa) gehören zu «Familie aus Unterlagen»."
+        },
+        {
           "id": "m1b-cad",
           "titel": "CAD einfügen (DWG/DXF)",
           "wo": {

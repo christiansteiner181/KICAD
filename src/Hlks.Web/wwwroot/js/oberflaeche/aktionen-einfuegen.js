@@ -76,11 +76,21 @@ async function ifcUebernehmen(p) {
   await ifcDialog(datei);
 }
 
-async function ifcDialog(datei) {
+/** Register «Einfügen» → Revit übernehmen: der Kern liest die .rvt ohne Revit und schreibt ihr HLKS-Netz als IFC (rvt_als_ifc); danach
+ *  derselbe Dialog wie bei «IFC übernehmen» mit diesem IFC. p.datei (File) überspringt die Dateiauswahl (Tests). */
+async function rvtUebernehmen(p) {
+  const datei = p?.datei ?? await dateiWaehlen('.rvt');
+  if (!datei) return;
+  if (!/\.rvt$/i.test(datei.name)) { meldung(`«${datei.name}» ist keine Revit-Projektdatei.`, 'warnung', { vorschlag: 'Eine Datei mit der Endung .rvt wählen. Revit-Familien (.rfa) gehören zu «Familie aus Unterlagen».' }); return; }
+  await ifcDialog(datei, { revit: true });
+}
+
+async function ifcDialog(datei, { revit = false } = {}) {
   const w = knoten(`<div class="ifc-dlg"><div class="ifc-status"></div><div class="ifc-inhalt" hidden></div></div>`);
   const status = w.querySelector('.ifc-status'), inhalt = w.querySelector('.ifc-inhalt');
   const q = (s) => w.querySelector(s), qa = (s) => [...w.querySelectorAll(s)];
-  let abgelegt = null, pruefung = null, bereit = false, zu = false;
+  let abgelegt = null, pruefung = null, bereit = false, zu = false, ausRevit = null;
+  const ifcName = revit ? `${datei.name}.ifc` : datei.name;   // rvt_als_ifc legt «<Name>.rvt.ifc» ab
 
   const lesen = () => ({
     bereiche: qa('.b-haken:checked').map((x) => x.value),
@@ -107,7 +117,7 @@ async function ifcDialog(datei) {
 
   function aufbauen() {
     const lage = pruefung.lage, bezug = pruefung.bezugProjekt;
-    const frueher = derKlasse('Unterlage').find((u) => u.werte?.art === 'ifc' && ohnePruefsumme(String(u.werte?.original ?? '').split(/[\\/]/).pop()) === datei.name);
+    const frueher = derKlasse('Unterlage').find((u) => u.werte?.art === 'ifc' && ohnePruefsumme(String(u.werte?.original ?? '').split(/[\\/]/).pop()) === ifcName);
     const geschosse = [...(pruefung.geschosse ?? [])].sort((a, b) => (b.kote ?? 0) - (a.kote ?? 0));
     const optionen = T.ausrichtungOptionen(lage, bezug, T.projektMerkmale(alleElemente()));
     const eindeutig = T.geschossNamenEindeutig(geschosse);
@@ -118,7 +128,12 @@ async function ifcDialog(datei) {
     const keineWahl = lage?.bewertung === 'erster' ? 'Erste IFC-Datei: sie legt den Projektbezug fest. Eine Wahl ist nicht nötig.'
       : lage?.bewertung === 'passt' ? 'Die Lage passt zum Projektbezug (Toleranz 10 mm, 0.01°). Eine Wahl ist nicht nötig.'
       : lage?.bewertung === 'ausdruecklich' ? 'Der Bezug ist ausdrücklich vorgegeben.' : '';
-    const uebersicht = `
+    const revitBlock = ausRevit ? `
+      <h3>Aus der Revit-Datei gelesen</h3>
+      <p class="dlg-text leise">Ohne Revit gelesen und als IFC4 geschrieben (${esc(ohnePruefsumme(String(ausRevit.datei ?? '').split(/[\\/]/).pop()))}, Ordner ausgabe\\ifc): nur das HLKS-Netz –
+        ${esc(ausRevit.ports ?? 0)} Anschlüsse, ${esc(ausRevit.verbindungen ?? 0)} Verbindungen, ${esc(ausRevit.systeme ?? 0)} Systeme. Fliessrichtung und Architektur liest der Kern aus der RVT nicht.</p>
+      ${T.zaehlTabelle(ausRevit.produkte, ['IFC-Entität', 'Anzahl'])}${T.hinweiseHtml(ausRevit.hinweise)}` : '';
+    const uebersicht = `${revitBlock}
       ${frueher ? `<p class="dlg-text leise">Eine Datei gleichen Namens ist schon im Projekt (${esc(frueher.kennzeichen)}).</p>` : ''}
       <h3>Übersicht</h3>
       <div class="ifc-spalten">
@@ -200,12 +215,12 @@ async function ifcDialog(datei) {
       return;
     }
     ctrl.schliessen(true);
-    await ergebnisDialog(r, datei.name);
+    await ergebnisDialog(r, ifcName);
   }
 
   status.innerHTML = spinner('Wird hochgeladen …');
   zeigen({
-    titel: `IFC übernehmen – ${datei.name}`, inhalt: w, breite: 920, klasse: 'dlg-hoch ifc',
+    titel: `${revit ? 'Revit' : 'IFC'} übernehmen – ${datei.name}`, inhalt: w, breite: 920, klasse: 'dlg-hoch ifc',
     beiOeffnen: (ctrl) => { ctrlFehler = ctrl.fehler; laden(ctrl); },
     knoepfe: [
       { text: 'Abbrechen', wert: false },
@@ -218,6 +233,11 @@ async function ifcDialog(datei) {
     try {
       const hoch = await hochladen(datei, (a, b) => { status.innerHTML = spinner(`Wird hochgeladen … ${mb(a)} von ${mb(b)} MB`); });
       abgelegt = hoch.name;
+      if (revit) {
+        status.innerHTML = spinner('Revit-Datei wird gelesen und als IFC geschrieben … bei grossen Modellen einige Sekunden bis Minuten.');
+        ausRevit = await abfrage('rvt_als_ifc', { datei: abgelegt });
+        abgelegt = ausRevit.unterlage;
+      }
       status.innerHTML = spinner('Datei wird geprüft (Fassung, Geschosse, Lage) …');
       pruefung = await abfrage('ifc_pruefen', { datei: abgelegt });
       aufbauen();
@@ -467,6 +487,10 @@ const kalibrierenMoeglich = () => !!planAnsicht() && planAnsicht().art === 'grun
 registrieren({
   id: 'einfuegen.ifc', titel: 'IFC über­nehmen', symbol: 'ifcUebernehmen', kuerzel: null, register: 'einfuegen', gruppe: 'Verknüpfen / Übernehmen',
   aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: ifcUebernehmen,
+});
+registrieren({
+  id: 'einfuegen.rvt', titel: 'Revit über­nehmen', symbol: 'rvtUebernehmen', kuerzel: null, register: 'einfuegen', gruppe: 'Verknüpfen / Übernehmen',
+  aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: rvtUebernehmen,
 });
 registrieren({
   id: 'einfuegen.cad', titel: 'CAD einfügen', symbol: 'cadEinfuegen', kuerzel: null, register: 'einfuegen', gruppe: 'Importieren',

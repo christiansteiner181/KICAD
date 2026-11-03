@@ -199,9 +199,11 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   Zweite Übernahme derselben Datei: 0 neu. Test `RevitDateiTests` 8/8.
 - **Befund:** Die Netzdatei der Übernahme (natives xBIM) bricht vereinzelt mit c0000374 (Heap) ab – 1 von 6 Läufen, ohne Netz
   10/10; derselbe Absturz ist beim IFC-Import vom 03.11.2026 vermerkt. Der Test läuft darum mit `grundlage = false`.
-- **Offen:** Knopf in der Oberfläche (RVT einfügen → als IFC übernehmen, heute über KI/MCP in zwei Schritten), direkte Annahme
-  von .rvt in `ifc_uebernehmen` (eine Zeile in der IFC-Übernahme, mit der IFC-Sitzung abzustimmen), Fliessrichtung,
-  Rechteckkanäle an einer echten Datei.
+- **Oberfläche (04.11.2026):** Register Einfügen › «Revit übernehmen» (`einfuegen.rvt`): Hochladen → `rvt_als_ifc` → derselbe
+  Dialog wie «IFC übernehmen» mit dem geschriebenen IFC, darüber «Aus der Revit-Datei gelesen». Im Browser geprüft mit Geberit
+  Silent-db20 im Beispielprojekt: Vorschau und Übernahme (54 Rohre, 30 Formteile, 1 Ventil, ein Paket), mit Hintergrundnetz ohne Absturz.
+- **Offen:** direkte Annahme von .rvt in `ifc_uebernehmen` (eine Zeile in der IFC-Übernahme, mit der IFC-Sitzung abzustimmen;
+  mit dem Knopf kaum mehr nötig), Fliessrichtung, Rechteckkanäle an einer echten Datei, Bild der Anleitung (`rvt-uebernehmen`).
 
 **Objektdaten – erster Befund vor dem Bau (zur Nachvollziehbarkeit):**
 - Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`

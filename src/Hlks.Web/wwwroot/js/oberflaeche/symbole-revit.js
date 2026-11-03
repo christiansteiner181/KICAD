@@ -167,6 +167,7 @@ versatz | Versatz | Versatz | Linie und parallele Kopie mit Pfeil
 ecke | Stutzen/Dehnen für Ecke | Stutzen/Dehnen für Ecke | zwei Geraden zu einer Ecke
 dehnen | Dehnen bis | Einzelnes Element stutzen/dehnen | Linie bis an eine Bezugslinie
 ifcUebernehmen | IFC übernehmen | IFC verknüpfen | Würfel mit blauem Pfeil nach unten
+rvtUebernehmen | Revit übernehmen | Revit verknüpfen | T-Stück in Medienfarbe mit blauem Pfeil nach unten
 cadEinfuegen | CAD einfügen | CAD verknüpfen | Blatt mit CAD-Linien
 pdfEinfuegen | PDF einfügen | PDF importieren | Blatt mit rotem PDF-Band
 bildEinfuegen | Bild einfügen | Bild | Landschaftsbild
@@ -657,6 +658,9 @@ s('teilen',   // Bearbeitungswerkzeuge A3
 s('ifcUebernehmen',
   '<path class="f1" d="M16 2.5l8 4.5-8 4.5-8-4.5z"/><path class="f2" d="M8 7l8 4.5v9L8 16z"/><path class="f3" d="M24 7v9l-8 4.5v-9z"/><path class="fb" d="M13 22.5h6v3h3.5L16 31.5l-6.5-6h3.5z"/>',
   '<path class="f1" d="M7 1.5l4 2.2-4 2.2-4-2.2z"/><path class="f2" d="M3 3.7l4 2.2v4.2l-4-2.2z"/><path class="f3" d="M11 3.7v4.2l-4 2.2V5.9z"/><path class="fb" d="M5.5 11h3v1.5h1.5L7 15.5 4 12.5h1.5z"/>');
+s('rvtUebernehmen',
+  '<path class="fvl" d="M2.5 5h27v7h-27z"/><path class="fvl" d="M12.5 12h7v8h-7z"/><path class="fb" d="M13 21.5h6v3h3.5L16 30.5l-6.5-6h3.5z"/>',
+  '<path class="fvl" d="M1 2.5h14V6H1z"/><path class="fvl" d="M6 6h4v4H6z"/><path class="fb" d="M5.5 10.5h5v1.5H12l-4 3.5-4-3.5h1.5z"/>');
 s('cadEinfuegen',
   DOC32 + '<path class="sb w15" d="M10.5 25l4-9 4 6 3-4"/><path class="op" d="M10.5 25h11"/>',
   DOC16 + '<path class="sb" d="M4.5 12l2-4.5 2 3 1.5-2"/>');

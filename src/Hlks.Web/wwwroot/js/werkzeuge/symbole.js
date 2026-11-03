@@ -17,6 +17,7 @@ const S = {
   spiegeln: '<path d="M16 3v26" stroke-dasharray="4 2"/><path d="M12 9L4 24h8zM20 9l8 15h-8z"/>',
   // Register «Einfügen» (Modul 1b, C1)
   ifcUebernehmen: '<path d="M16 3l10 5.5v9L16 23 6 17.5v-9z"/><path d="M6 8.5L16 14l10-5.5M16 14v9"/><path d="M16 25v5M12.5 27l3.5 3 3.5-3"/>',
+  rvtUebernehmen: '<path d="M3 6h26v6H3zM13 12h6v8h-6z"/><path d="M16 23v7M12.5 27l3.5 3 3.5-3"/>',   // Rohr-T aus der Revit-Datei, Pfeil nach unten
   cadEinfuegen: '<path d="M6 3h14l6 6v20H6z"/><path d="M20 3v6h6"/><path d="M10 24l4-9 4 6 3-4M10 24h11"/>',
   pdfEinfuegen: '<path d="M6 3h14l6 6v20H6z"/><path d="M20 3v6h6"/><path d="M10 15h12M10 19h12M10 23h7"/>',
   bildEinfuegen: '<rect x="4" y="6" width="24" height="20" rx="1"/><circle cx="11" cy="13" r="2.2"/><path d="M4 23l7-6 5 4 5-6 7 7"/>',

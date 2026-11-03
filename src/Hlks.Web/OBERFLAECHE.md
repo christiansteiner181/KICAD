@@ -189,6 +189,14 @@ Die Oberfläche zeigt Dateinamen ohne die vorangestellte Prüfsumme (`ohnePruefs
   Lange Läufe zeigen ein Wartesymbol; die Oberfläche friert nicht ein.
 - Parameter: `bereiche`/`geschosse` nur bei Teilauswahl, `ausrichtung` nur bei Wahl, `grundlage`/`konflikte`/`koordinationskoerper` nur bei Abweichung von der Vorgabe.
 
+**Revit übernehmen** (Aktion `einfuegen.rvt`, Symbol `rvtUebernehmen`, seit 04.11.2026): nur `.rvt` (Revit-Familien `.rfa` gehören zu «Familie aus Unterlagen»). Hochladen → Abfrage
+`rvt_als_ifc { datei }` (der Kern liest die Datei ohne Revit und schreibt ihr HLKS-Netz als IFC4 nach `ausgabe\ifc\<Name>.rvt.ifc` und als Unterlage) → mit dem Namen dieser Unterlage
+(`unterlage` der Antwort) weiter wie **IFC übernehmen** (`ifc_pruefen`, Dialog, Vorschau, Übernehmen). Titel «Revit übernehmen – <Datei>». Über der Übersicht steht der Abschnitt
+«Aus der Revit-Datei gelesen»: Name des geschriebenen IFC, Zahl der Anschlüsse, Verbindungen und Systeme, Tabelle der IFC-Entitäten (`produkte`) und die Hinweise des Kerns (was nicht
+übernommen wird: Hilfsfamilien ohne Anschluss, verschachtelte Teile, Armaturen ohne Lage der Anschlüsse). «Nicht verstanden» nennt dort die Formteile (`IfcPipeFitting` NOTDEFINED);
+`ifc_uebernehmen` ordnet sie erst bei der Übernahme über die Lage der Anschlüsse als Bogen, T-Stück oder Reduktion ein. Koordinaten: internes Projektsystem von Revit – weicht die Lage ab,
+gilt die Wahl der Ausrichtung wie bei jedem IFC.
+
 **CAD, PDF, Bild einfügen** (`einfuegen.cad`, `.pdf`, `.bild`): Datei wählen → Dialog mit Geschoss (Vorgabe: Geschoss der aktiven Ansicht), bei PDF Seite, Massstab (1 : n, leer = Vorgabe des Kerns) und dpi,
 bei Bild Massstab → Hochladen → `unterlage_einfuegen { datei, geschoss, art, seite?, massstab?, dpi? }`. Fehler des Kerns stehen im Dialog (mit Vorschlag); nach Erfolg wird die Unterlage gewählt.
 
