@@ -15,7 +15,9 @@ public class HeizlastTests
                     "ND5": { "werte": [ { "zBis_m": 2, "fg1": 1.1 }, { "zBis_m": null, "fg1": 1.0 } ] },
                     "ND8": { "werte": [ { "klasse": "Moderate Abschirmung", "e_ohneAussenwand": 0, "e_eineAusrichtung": 0.1, "e_mehrereAusrichtungen": 0.2 } ] },
                     "ND9": { "werte": [ { "hoeheBis_m": 10, "epsilon": 1.0 }, { "hoeheBis_m": null, "epsilon": 2.0 } ] } },
-      "uequiv": {} }
+      "uequiv": { "tabelle4_z0m": { "tabelle": "Tabelle 4 fiktiv", "tiefeZ_m": 0, "werte": [
+          { "bPrime_m": 2, "keineDaemmung": 1.0, "uBoden_2_0": 0.8, "uBoden_1_0": 0.6, "uBoden_0_5": 0.4, "uBoden_0_25": 0.2 },
+          { "bPrime_m": 20, "keineDaemmung": 0.5, "uBoden_2_0": 0.4, "uBoden_1_0": 0.3, "uBoden_0_5": 0.2, "uBoden_0_25": 0.1 } ] } } }
     """;
     const string Klima = """
     { "tabelle6": { "werte": [ { "station": "Teststadt", "thetaE": -8, "hoehe": 500, "seite": 1 } ] },
@@ -82,6 +84,33 @@ public class HeizlastTests
         Assert.Equal(Math.Round(hie * 30 + v * rhoC * 30), Z(z["phiHL"]), 0);
         // Gebäude: Σ ΦT + f · Σ ΦV mit f (natürlich) aus der Tabelle
         Assert.Equal(Math.Round(hie * 30 + 0.7 * v * rhoC * 30), Z(r["gebaeude"]!["phiHL"]), 0);
+    }
+
+    [Fact]
+    public void Heizlast_Erdreich_mit_B_Strich_fg1_fg2_und_Lueftungsanlage_mindestens_Vmin_und_Tau_Grenze()
+    {
+        var p = Raum(out var raum, new JsonObject { ["tempWinter"] = new JsonObject { ["wert"] = 20, ["quelle"] = "Testwert" }, ["zuluft"] = 30 });
+        // Bodenplatte OK 0 auf Terrain ±0 → Boden gegen Erdreich, U 0.5 (Testwert)
+        RaumgrenzenHilfe.Platte(p, "Decke", "D-0", "EG", -200, -200, 6200, 4200, 0, 300, "boden");
+        RaumgrenzenHilfe.Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Aufbau", ["kennzeichen"] = "AUF-B",
+            ["eigenschaften"] = new JsonObject { ["art"] = "boden", ["uWert"] = new JsonObject { ["wert"] = 0.5, ["quelle"] = "Testwert" } },
+        }));
+        RaumgrenzenHilfe.Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "D-0", ["bezuege"] = new JsonObject { ["aufbau"] = "AUF-B" } }));
+        var geb = p.Modell.DerKlasse("Gebaeude").First().Kennzeichen;
+        RaumgrenzenHilfe.Eigenschaften(p, geb, new JsonObject { ["zeitkonstante"] = new JsonObject { ["wert"] = 200, ["quelle"] = "Testwert" } });
+        var r = Mit(() => SanitaerHilfe.Abfrage(p, "heizlast", new JsonObject { ["raum"] = raum }));
+        // τ = 200 h gehört zur Zeile «0 < τ ≤ 200» (−4 K, fiktiv): θe = −8 − 2 − 4
+        Assert.Equal(-14, Z(r["aussen"]!["thetaE"]));
+        var z = r["raeume"]!.AsArray().OfType<JsonObject>().Single();
+        // B' = 24 m² / (0.5 · 20 m Wandumfang, Öffnungen nicht doppelt) = 2.4; Uequiv (Spalte U 0.5) linear zwischen B' 2 und 20
+        double ue = 0.4 + (0.2 - 0.4) * (2.4 - 2) / 18;
+        double fg2 = (20 - 9.0) / (20 + 14);
+        Assert.Equal(1.1 * fg2 * 24 * ue, Z(z["hTig_WK"]), 3);
+        // Lüftungsanlage ohne Zulufttemperatur: wie ohne Anlage, V̇ = max(0.2·V, 0.5·V) = V̇min
+        Assert.True(z["lueftungsanlage"]!.GetValue<bool>());
+        Assert.Equal(0.5 * 6 * 4 * 2.6, Z(z["vPunkt_m3h"]), 2);
     }
 
     [Fact]

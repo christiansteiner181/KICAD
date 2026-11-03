@@ -40,6 +40,7 @@
       { "name": "co2Max", "typ": "zahl", "einheit": "ppm", "beschreibung": "Höchstzulässige CO₂-Konzentration (Anforderung; aus HKAP)" },
       { "name": "brandabschnitt", "typ": "text", "beschreibung": "Brandabschnitt des Raums (Kennung, z. B. «BA-1»; Eingabe aus dem Brandschutzkonzept). Modul 6: Lüftungsvarianten je Zone und Zählung der Brandschutzklappen. Gehört der Raum mit teilVon zu einer Zone mit Nutzung «Brandabschnitt», gilt diese" },
       { "name": "nutzungseinheit", "typ": "text", "beschreibung": "Nutzungseinheit des Raums (Wohnung, Mieter; z. B. «W 1.1»). Modul 6: Lüftungsvariante je Nutzungseinheit. Gehört der Raum mit teilVon zu einer anderen Zone, gilt diese" },
+      { "name": "zulufttemperatur", "typ": "zahl", "einheit": "°C", "beschreibung": "Temperatur der Zuluft der Lüftungsanlage am Raum (nach WRG bzw. Nachwärmung), mit Quelle; Heizlast fV nach SN EN 12831 Gl. 15. Ohne Angabe rechnet die Heizlast wie ohne Anlage (7.2.3.1)" },
       { "name": "bu", "typ": "zahl", "beschreibung": "Nur unbeheizter Raum: Temperatur-Reduktionsfaktor bu gegen die beheizten Nachbarräume (SIA 384.201 Tabelle ND.3 bzw. Pufferzonenbilanz SN EN ISO 13789), mit Quelle. Ohne bu und ohne tempWinter rechnet die Heizlast bu = 1 (sichere Seite)" } ] },
 
   { "name": "Zone", "kuerzel": "Z", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcZone",

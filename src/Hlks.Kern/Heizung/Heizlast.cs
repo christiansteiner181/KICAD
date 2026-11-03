@@ -71,16 +71,19 @@ public static class Heizlast
         double bStrich = BStrich(rg, hl, out var bText);
         var wb = Waermebruecken(m, rg);
         var zeilen = new JsonArray();
-        double sT = 0, sV = 0; bool mech = false;
+        double sT = 0, sV = 0, sTij = 0; bool mech = false; var ohneTheta = new List<string>();
         foreach (var rm in rg.Raeume.OrderBy(x => x.Raum.Kennzeichen, StringComparer.OrdinalIgnoreCase))
         {
             var r = rm.Raum;
             if (!Raumgrenzen.Beheizt(r)) continue;
             if (nur is not null && nur.Id != r.Id) continue;
-            var (z, rohT, rohV) = Raum(r, rm, rg.Grenzen.Where(x => x.Raum.Id == r.Id).ToList(), theta, a, hl, geb, terrain, bStrich, bText, wb.GetValueOrDefault(r.Id) ?? []);
+            var (z, rohT, rohV, rohTij) = Raum(r, rm, rg.Grenzen.Where(x => x.Raum.Id == r.Id).ToList(), theta, a, hl, geb, terrain, bStrich, bText, wb.GetValueOrDefault(r.Id) ?? []);
             zeilen.Add(z);
-            if (z["phiT"] is JsonValue) { sT += rohT; sV += rohV; mech |= z["lueftungsanlage"]?.GetValue<bool>() == true; }
+            if (z["phiT"] is JsonValue) { sT += rohT; sV += rohV; sTij += rohTij; mech |= z["lueftungsanlage"]?.GetValue<bool>() == true; }
+            else ohneTheta.Add(r.Kennzeichen);
         }
+        // Gebäude (8.2): Wärmefluss innerhalb des Gebäudes (HT,ij) zählt nicht
+        sT -= sTij;
         aus["raeume"] = zeilen;
         if (nur is null)
         {
@@ -91,7 +94,12 @@ public static class Heizlast
             {
                 ["gebaeude"] = geb.Kennzeichen, ["summePhiT"] = R(sT, 0), ["summePhiV"] = R(sV, 0), ["faktorLueftung"] = f,
                 ["phiHL"] = R(sT + f * sV, 0),
-                ["formel"] = $"ΦHL = Σ ΦT,i + f·Σ ΦV,i (22) = {R(sT, 0)} + {f}·{R(sV, 0)} W; f nach ND.5.7 ({(mech ? "mechanische Lüftung, höchstens 1,0" : "natürliche Lüftung, höchstens 0,8")})",
+                ["formel"] = $"ΦHL = Σ ΦT,i + f·Σ ΦV,i (22) = {R(sT, 0)} + {f}·{R(sV, 0)} W; ΦT ohne Wärmefluss zwischen beheizten Räumen (HT,ij, 8.2: {R(sTij, 0)} W abgezogen); f nach ND.5.7 ({(mech ? "mechanische Lüftung, höchstens 1,0" : "natürliche Lüftung, höchstens 0,8")})",
+                ["annahmen"] = new JsonArray(new[]
+                {
+                    "ΣΦV als Summe der Räume; die Gebäude-Luftmenge nach 8.2 (max(0,5·ΣV̇inf, ΣV̇min)) ist nicht umgesetzt – ohne n50 ohne Wirkung, bei Altbau (n50 > 0) zu prüfen.",
+                }.Concat(ohneTheta.Count > 0 ? [$"{ohneTheta.Count} beheizte(r) Raum/Räume ohne Innentemperatur nicht in der Summe: {string.Join(", ", ohneTheta.Take(10))}{(ohneTheta.Count > 10 ? " …" : "")}."] : [])
+                 .Select(x => (JsonNode)x).ToArray()),
             };
         }
         return aus;
@@ -122,13 +130,13 @@ public static class Heizlast
             double dh = hg - hSt;
             double proM = Zeilen(new JsonObject { ["werte"] = hl["einzelwerte"]?.DeepClone() }).FirstOrDefault(x => T(x["id"]) == "ND.1.1.1_hoehe") is { } e ? D(e["wert"]) : double.NaN;
             if (double.IsNaN(proM)) hinweise.Add("ND.1.1.1 (Korrektur je Meter) fehlt in heizlast.json – keine Höhenkorrektur.");
-            else if (dh > 0) { korrH = Math.Round(proM * dh, 0, MidpointRounding.AwayFromZero) + 0.0; teile.Add($"Höhe: Gebäude {hg} m über Station {hSt} m → {proM} K/m · {R(dh, 0)} m = {R(proM * dh)} K, gerundet {korrH} K (ND.1.1.1)"); }
+            else if (dh > 0) { korrH = Math.Round(proM * dh, 0, MidpointRounding.AwayFromZero) + 0.0; teile.Add($"Höhe: Gebäude {hg} m über Station {hSt} m → {proM} K/m · {R(dh, 0)} m = {R(proM * dh)} K, gerundet {korrH} K (ND.1.1.1; halbe K von null weg gerundet – Annahme)"); }
             else teile.Add($"Höhe: Gebäude {hg} m nicht höher als Station {hSt} m → keine Korrektur (ND.1.1.1)");
         }
         double korrTau = 0;
         if (geb.Zahl("zeitkonstante") is double tau)
         {
-            var z = Zeilen(hl["tabellen"]?["ND1"]).FirstOrDefault(x => tau > (D(x["tauVon_h"]) is var v && double.IsNaN(v) ? double.NegativeInfinity : v) - 1e-9 &&
+            var z = Zeilen(hl["tabellen"]?["ND1"]).FirstOrDefault(x => tau > (D(x["tauVon_h"]) is var v && double.IsNaN(v) ? double.NegativeInfinity : v) + 1e-9 &&
                                                                        (x["tauBis_h"] is null || tau <= D(x["tauBis_h"]) + 1e-9));
             korrTau = z is null ? 0 : D(z["korrektur_K"]);
             teile.Add($"Zeitkonstante τ = {tau} h → {korrTau} K (Tab. ND.1)");
@@ -171,11 +179,11 @@ public static class Heizlast
     {
         var raeume = rg.Grenzen.Where(g => g.Art == "boden" && g.Angrenzung == "erdreich").Select(g => g.Raum.Id).ToHashSet();
         double ag = rg.Grenzen.Where(g => g.Art == "boden" && g.Angrenzung == "erdreich").Sum(g => g.Flaeche);
-        double pu = rg.Grenzen.Where(g => raeume.Contains(g.Raum.Id) && g.Art is "wand" or "fenster" or "tuer" && g.Angrenzung is "aussen" or "erdreich" && g.Von is not null)
+        double pu = rg.Grenzen.Where(g => raeume.Contains(g.Raum.Id) && g.Art == "wand" && g.Angrenzung is "aussen" or "erdreich" && g.Von is not null)
             .GroupBy(g => (g.Raum.Id, g.Von![0], g.Von[1], g.Bis![0], g.Bis[1])).Sum(x => x.Max(g => g.Laenge)) / 1000;
         if (ag <= 0) { text = "keine Bodenfläche gegen Erdreich"; return double.NaN; }
-        double b = pu > 0 ? ag / (0.5 * pu) : 20;
-        text = pu > 0 ? $"B' = AG/(0,5·P) = {R(ag, 1)} m² / (0,5·{R(pu, 1)} m) = {R(b, 2)} m (9; Innenmasse)" : $"B' ohne Umfang gegen aussen: {R(b)} m (grösster Tabellenwert, Annahme)";
+        double b = pu > 0 ? ag / (0.5 * pu) : 2;
+        text = pu > 0 ? $"B' = AG/(0,5·P) = {R(ag, 1)} m² / (0,5·{R(pu, 1)} m) = {R(b, 2)} m (9; Innenmasse)" : $"B' ohne Umfang gegen aussen: {R(b)} m (kleinster Tabellenwert, sichere Seite, Annahme)";
         return b;
     }
 
@@ -223,23 +231,23 @@ public static class Heizlast
         return Linear(punkte, u);
     }
 
-    static (JsonObject Zeile, double PhiT, double PhiV) Raum(Element r, RaumMasse rm, List<Raumgrenze> grenzen, Dictionary<string, (double? Wert, string Quelle)> theta, Aussen a,
+    static (JsonObject Zeile, double PhiT, double PhiV, double PhiTij) Raum(Element r, RaumMasse rm, List<Raumgrenze> grenzen, Dictionary<string, (double? Wert, string Quelle)> theta, Aussen a,
         JsonObject hl, Element geb, double terrain, double bStrich, string bText, List<(Element Wb, double Anteil)> wbs)
     {
         var ann = new JsonArray();
         var (ti, tiQ) = theta[r.Id];
         var aus = new JsonObject { ["raum"] = r.Kennzeichen, ["nummer"] = r.Text("nummer"), ["name"] = r.Name, ["thetaInt"] = ti, ["thetaIntQuelle"] = tiQ, ["thetaE"] = a.ThetaE };
-        if (ti is not double tint) { ann.Add($"Innentemperatur fehlt ({tiQ}) – keine Heizlast."); aus["annahmen"] = ann; return (aus, 0, 0); }
+        if (ti is not double tint) { ann.Add($"Innentemperatur fehlt ({tiQ}) – keine Heizlast."); aus["annahmen"] = ann; return (aus, 0, 0, 0); }
         double dt = tint - a.ThetaE;
         double vol = rm.FlaecheM2 * rm.HoeheMm / 1000;
         aus["flaeche_m2"] = R(rm.FlaecheM2); aus["volumen_m3"] = R(vol);
         var beitraege = new JsonArray();
-        double hie = 0, hiue = 0, hig = 0, hij = 0; int ohneU = 0;
+        double hie = 0, hiue = 0, hig = 0, hij = 0; int ohneU = 0, ohneUBeheizt = 0, ohneThetaNachbar = 0;
         var tabellen = hl["tabellen"]; var ueq = hl["uequiv"];
         double zBoden = Math.Max(0, (terrain - rm.UntenMm) / 1000);
         foreach (var g in grenzen)
         {
-            if (g.U is not double u) { if (g.Angrenzung != "beheizt") ohneU++; continue; }
+            if (g.U is not double u) { if (g.Angrenzung != "beheizt") ohneU++; else ohneUBeheizt++; continue; }
             double faktor = 1; string text;
             switch (g.Angrenzung)
             {
@@ -257,11 +265,14 @@ public static class Heizlast
                 {
                     if (g.Art == "boden")
                     {
-                        var tab = zBoden < 0.75 ? ueq?["tabelle4_z0m"] : zBoden < 2.25 ? ueq?["tabelle5_z1_5m"] : ueq?["tabelle6_z3_0m"];
+                        var tabs = new[] { (0.0, ueq?["tabelle4_z0m"]), (1.5, ueq?["tabelle5_z1_5m"]), (3.0, ueq?["tabelle6_z3_0m"]) }.Where(x => x.Item2 is JsonObject).ToList();
+                        var tab = tabs.Count == 0 ? null : tabs.MinBy(x => Math.Abs(x.Item1 - zBoden)).Item2;
                         var tabAnn = new List<string>();
-                        double ue = tab is JsonObject to && !double.IsNaN(bStrich) ? UequivBoden(to, bStrich, u, tabAnn) : double.NaN;
+                        double ue = tabs.Count == 0 || double.IsNaN(bStrich) ? double.NaN
+                            : Linear(tabs.Select(x => (x.Item1, UequivBoden((JsonObject)x.Item2!, bStrich, u, tabAnn))).ToList(), zBoden);
+                        tabAnn = tabAnn.Distinct().ToList();
                         foreach (var x in tabAnn) ann.Add(x);
-                        text = $"Uequiv,bf = {R(ue, 3)} ({T(tab?["tabelle"])?.Split(' ')[0]} {T(tab?["tabelle"])?.Split(' ')[1]}, z ≈ {R(zBoden, 1)} m → Tabelle z = {tab?["tiefeZ_m"]} m, {bText})";
+                        text = $"Uequiv,bf = {R(ue, 3)} (Tab. 4–6 linear über z = {R(zBoden, 1)} m ab Raumunterkante, nächste Tabelle z = {tab?["tiefeZ_m"]} m; {bText})";
                         u = ue;
                     }
                     else
@@ -278,7 +289,9 @@ public static class Heizlast
                 }
                 default:   // beheizt
                 {
-                    if (g.NachbarRaum is not { } nb || theta.GetValueOrDefault(nb.Id).Wert is not double tj || Math.Abs(tj - tint) < 1e-9) continue;
+                    if (g.NachbarRaum is not { } nb) continue;
+                    if (theta.GetValueOrDefault(nb.Id).Wert is not double tj) { ohneThetaNachbar++; continue; }
+                    if (Math.Abs(tj - tint) < 1e-9) continue;
                     faktor = Math.Max(0, (tint - tj) / dt);
                     text = $"fij = (θint,i − θj)/(θint,i − θe) = ({tint} − {tj})/{R(dt, 1)} = {R((tint - tj) / dt, 3)}{(tint < tj ? " → 0 (Wärmegewinn nicht angerechnet, Annahme)" : "")} (10)";
                     hij += g.Flaeche * u * faktor; break;
@@ -314,8 +327,11 @@ public static class Heizlast
             else wbOhne++;
         }
         hie += hwb;
+        if (hwb > 0) ann.Add("Wärmebrücken mit Faktor 1 (wie gegen aussen) – auch an Wänden gegen unbeheizt bzw. Erdreich (Gl. 5: ·bu, Gl. 8: ·fg1·fg2; Annahme).");
         if (wbOhne > 0) ann.Add($"{wbOhne} Wärmebrücke(n) ohne ψ bzw. χ – nicht gerechnet (ND.4.1: effektive ψ-Werte einsetzen).");
         if (wbs.Count == 0) ann.Add("Keine Wärmebrücken am Raum erfasst (waermebruecken_vorschlagen, ψ mit Quelle) – Wärmebrückenverluste fehlen.");
+        if (ohneUBeheizt > 0) ann.Add($"{ohneUBeheizt} Fläche(n) gegen beheizte Nachbarräume ohne U-Wert – HT,ij dort nicht gerechnet.");
+        if (ohneThetaNachbar > 0) ann.Add($"{ohneThetaNachbar} Fläche(n) gegen beheizte Nachbarräume ohne Innentemperatur – HT,ij dort 0.");
         if (ohneU > 0) ann.Add($"{ohneU} Raumgrenze(n) ohne U-Wert – nicht gerechnet (Aufbau bzw. Fenster-Uw fehlt).");
         double phiT = (hie + hiue + hig + hij) * dt;
         // Lüftung
@@ -324,12 +340,27 @@ public static class Heizlast
         bool mech = zu > 0 || ab > 0;
         double vMin = 0, vInf, vSu = 0, v;
         string vText;
-        int ausr = grenzen.Where(g => g.Angrenzung == "aussen" && g.Art is "wand" or "fenster" or "tuer" && g.Azimut is double).Select(g => (int)Math.Round(g.Azimut!.Value / 45.0) % 8).Distinct().Count();
+        var azimute = grenzen.Where(g => g.Angrenzung == "aussen" && g.Art is "wand" or "fenster" or "tuer" && g.Azimut is double).Select(g => g.Azimut!.Value).OrderBy(x => x).ToList();
+        var richtungen = new List<double>();
+        foreach (var az in azimute) if (!richtungen.Any(x => Math.Abs(((az - x) % 360 + 540) % 360 - 180) <= 15)) richtungen.Add(az);   // ±15° = eine Ausrichtung (Annahme)
+        int ausr = richtungen.Count;
         if (mech)
         {
-            vInf = ew.GetValueOrDefault("ND.5.1_nInfMech", double.NaN) * vol; vSu = zu; v = vInf;
-            vText = $"mit Lüftungsanlage: V̇ = V̇inf + V̇su·fV = {R(vInf, 1)} + {R(zu, 1)}·0 = {R(v, 1)} m³/h (15; V̇inf = 0,1·V nach ND.5.1)";
-            ann.Add("Lüftungsanlage: Zulufttemperatur unbekannt – fV = 0 (Zuluft mit Raumtemperatur, Annahme); Abluftüberschuss (18) nicht je Raum.");
+            vMin = ew.GetValueOrDefault("ND.5.2_nmin", double.NaN) * vol;
+            vInf = ew.GetValueOrDefault("ND.5.1_nInfMech", double.NaN) * vol; vSu = zu;
+            if (r.Zahl("zulufttemperatur") is double tsu)
+            {
+                double fv = Math.Max(0, (tint - tsu) / dt);
+                v = Math.Max(vInf + zu * fv, vMin);
+                vText = $"mit Lüftungsanlage: V̇ = max(V̇inf + V̇su·fV, V̇min) = max({R(vInf, 1)} + {R(zu, 1)}·{R(fv, 3)}, {R(vMin, 1)}) = {R(v, 1)} m³/h (15; fV = (θint − θsu)/(θint − θe) mit θsu = {tsu} °C; V̇inf = 0,1·V nach ND.5.1; V̇ ≥ V̇min nach 7.2)";
+            }
+            else
+            {
+                v = Math.Max(vInf, vMin);
+                vText = $"Lüftungsanlage ohne Zulufttemperatur: wie ohne Anlage, V̇ = max(V̇inf, V̇min) = max({R(vInf, 1)}, {R(vMin, 1)}) = {R(v, 1)} m³/h (14; 7.2.3.1: fehlen Angaben zur Anlage)";
+                ann.Add("Lüftungsanlage ohne Zulufttemperatur (Raum.zulufttemperatur): gerechnet wie ohne Anlage nach Gl. 14 (7.2.3.1).");
+            }
+            ann.Add("Abluftüberschuss (18) nicht je Raum; V̇inf = 0,1·V gilt nach ND.5.1 für Räume mit Verbindung zum Aussenklima – auch für innenliegende gesetzt (Annahme).");
         }
         else
         {
@@ -360,8 +391,9 @@ public static class Heizlast
         aus["phiHL_Wm2"] = rm.FlaecheM2 > 0 ? R((phiT + phiV) / rm.FlaecheM2, 1) : null;
         aus["beitraege"] = beitraege;
         ann.Add("Masse: Innenmasse der Raumgrenzen (ND.3 verlangt Aussenmasse für den Wärmedämmperimeter) – Heizlast etwas zu klein (Annahme V1).");
+        if (hig > 0) ann.Add("Erdreich: Tiefe z ab Unterkante Raum statt Unterkante Bodenplatte (ND.4.3) – fg1 auf der sicheren Seite (Annahme).");
         ann.Add("ΦRH = 0 (ND.6).");
         aus["annahmen"] = ann;
-        return (aus, phiT, phiV);
+        return (aus, phiT, phiV, hij * dt);
     }
 }
