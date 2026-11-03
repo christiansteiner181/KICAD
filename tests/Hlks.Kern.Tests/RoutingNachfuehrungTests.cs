@@ -18,24 +18,70 @@ public class RoutingNachfuehrungTests
     }
 
     [Fact]
-    public void FormteilVerschoben_BeideLeitungsendenFolgen_HinweisZurRichtung()
+    public void FormteilQuerVerschoben_NachbarMitVersatz_ZweiBoegen45()
     {
         var p = ZZug();
         var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("BO-1"), ["dx"] = 100 }));
         // BO-1 nach (1100, 0, 0): a bei 1100 − 50 = 1050, b bei (1100, 50, 0)
-        Gerade(p, "RO-1", [0, 0, 0], [1050, 0, 0]);                 // Richtung bleibt
-        Gerade(p, "RO-2", [1100, 50, 0], [1000, 950, 0]);           // Anfang folgt, Ende bleibt an BO-2
+        Gerade(p, "RO-1", [0, 0, 0], [1050, 0, 0]);                 // Richtung bleibt: nur länger
         Assert.Contains(e.Hinweise, h => h.StartsWith("RO-1: Ende folgt BO-1.a (100 mm verschoben)"));
-        Assert.Contains(e.Hinweise, h => h.StartsWith("RO-2: Anfang folgt BO-1.b"));
-        // RO-2 dreht um atan(100/900) = 6.34° und hängt am anderen Ende an BO-2 → Hinweis, keine Neuverlegung
-        Assert.Contains(e.Hinweise, h => h.StartsWith("RO-2: Richtung um 6.34° geändert") && h.Contains("BO-2.a"));
-        Assert.DoesNotContain(e.Hinweise, h => h.StartsWith("RO-1: Richtung"));
-        Assert.DoesNotContain(Befunde(p, "P13"), b => b.Text.Contains("auseinander"));   // Lagen stimmen
-        Assert.Contains(Befunde(p, "P13"), b => b.Text.Contains("RO-2.ende und BO-2.a") && b.Text.Contains("nicht gegeneinander"));
+        // A1 (Entscheid Christian 03.11.2026): RO-2 hängt am anderen Ende an BO-2 → Versatz 100 mm in der Mitte mit zwei 45°-Bögen.
+        // Achse von BO-2 (1000, 950) zurück: 900 mm, schräg 100 mm → je 400 mm gerade; Bögen bei (1100, 450) und (1000, 550),
+        // Einbaulänge 45° = 50 · tan 22.5° = 20.71 mm
+        Assert.Contains(e.Hinweise, h => h.StartsWith("RO-2: Versatz 100 mm mit zwei Bögen 45°"));
+        Gerade(p, "RO-2", [1100, 50, 0], [1100, 450 - 50 * Tan(22.5), 0]);
+        Assert.Equal(2, Angelegt(e, "Bogen").Count);
+        Sauber(p);
         // Rückgängig in einem Schritt
         Ok(p.Rueckgaengig());
         Gerade(p, "RO-2", [1000, 50, 0], [1000, 950, 0]);
         Sauber(p);
+    }
+
+    [Fact]
+    public void GeradeQuerVerschoben_FormteileFolgen_NachbarnDehnenSich()
+    {
+        var p = ZZug();
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("RO-2"), ["dx"] = 100 }));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("BO-1 folgt RO-2 (100 mm"));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("BO-2 folgt RO-2 (100 mm"));
+        Gerade(p, "RO-1", [0, 0, 0], [1050, 0, 0]);
+        Gerade(p, "RO-2", [1100, 50, 0], [1100, 950, 0]);
+        Gerade(p, "RO-3", [1150, 1000, 0], [2000, 1000, 0]);
+        Sauber(p);
+    }
+
+    [Fact]
+    public void GeradeEntlangAchseVerschoben_NachbarMitFreiemEnde_FolgtGanz()
+    {
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0], [1000, 1000, 0]]));   // RO-1, BO-1, RO-2 (Ende frei)
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("RO-1"), ["dx"] = 100 }));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("RO-2 folgt BO-1.b ganz"));
+        Gerade(p, "RO-2", [1100, 50, 0], [1100, 1000, 0]);
+        Sauber(p);
+    }
+
+    [Fact]
+    public void Verschieben_MitTrennen_NichtsFolgt()
+    {
+        var p = ZZug();
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("RO-2"), ["dx"] = 100, ["trennen"] = true }));
+        Assert.Contains(e.Hinweise, h => h.StartsWith("2 Verbindung(en)"));
+        Assert.DoesNotContain(e.Hinweise, h => h.Contains("folgt"));
+        Gerade(p, "RO-1", [0, 0, 0], [950, 0, 0]);
+        Assert.False(Verbunden(p, "RO-2", "anfang", "BO-1", "b"));
+    }
+
+    [Fact]
+    public void Versatz_ZuKurz_BefehlAbgelehnt()
+    {
+        var p = ZZug();
+        var vorher = Inhalt(p);
+        var e = p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("BO-1"), ["dx"] = 1000 });
+        Assert.False(e.Angenommen);
+        Assert.Contains("RO-2 müsste 1000 mm versetzt werden", e.Fehler);
+        Assert.Equal(vorher, Inhalt(p));
     }
 
     [Fact]

@@ -137,4 +137,26 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
   Rechtsklick), Griff-Ende auf Anschluss verbindet (Kern: `element_aendern` mit `verbinden`, ein Paket). Bedienung in
   `src/Hlks.Web/OBERFLAECHE.md` (Abschnitt «Verbinden und Trennen im Grundriss»), Anleitung `m3-verbinden`, `m3-trennen`.
   Grenze: Anschlüsse ohne Lage (Geräte und Formteile ohne Familie – im Beispielprojekt alle Formteile) verbindet weiterhin nur das Schema.
-- **Nächstes: A1** Verschieben mit Netznachführung (Versatz mit zwei Bögen bei Richtungswechsel).
+- **A1 gebaut 03.11.2026** (Spezifikation unten): Kern `LeitungenNachfuehren` (Formteile folgen, Dehnen, ganz folgen, Versatz), `elemente_verschieben` mit `trennen`; Oberfläche Mittelgriff, Pfeiltasten, MV-Option «Trennen». Bisheriges Verhalten «Nachbar dreht, Hinweis» gilt nur noch für Altbestand ohne Serie und gedrehte Formteile (Tests angepasst: RoutingNachfuehrungTests, LeitungenPruefungTests.P13_NachVerschiebenDesRohrendes).
+- **Nächstes: A3** Armatur in Leitung setzen und Teilen (SL).
+
+## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
+
+Regeln im Kern (Nachführung `LeitungenNachfuehren`, gilt für jeden Befehl, der Leitungen bzw. Formteile bewegt – MV, Griffe, MCP):
+
+1. **Formteile folgen der Leitung.** Hat sich ein Ende einer Geraden bewegt und ihre Richtung nicht geändert (Verschieben, Dehnen
+   entlang der Achse), wandert das dort angeschlossene Formteil bzw. die Armatur (Rolle «leitung», mit Familie) um dieselbe Strecke mit –
+   sofern es noch an der alten Stelle sass. Direkt aneinander hängende Formteile folgen einander ebenso. Geräte (Heizkörper, Apparate)
+   folgen nicht; dort löst sich das Ende wie bisher (P13).
+2. **Nachbarleitungen** am bewegten Formteil: Ende auf die neue Lage. Bleibt die Richtung (±1°), wird sie nur länger bzw. kürzer. Sonst:
+   - anderes Ende frei → die ganze Leitung verschiebt sich mit (Richtung bleibt);
+   - anderes Ende verbunden und Leitung mit Serie → **Versatz mit zwei Bögen der Serie** (Entscheid Christian): Winkel 45°, wenn die Serie
+     ihn hat, sonst 90°, sonst der grösste erlaubte Winkel unter 90°; der Versatz liegt in der Mitte der Leitung (Annahme). Passt er nicht
+     (zu kurz, Einbaulängen), wird der ganze Befehl abgelehnt mit Vorschlag;
+   - Altbestand ohne Serie → wie bisher drehen, Hinweis, P13/P15.
+3. Dreht sich eine Gerade (Drehen, Griff quer), folgen die Formteile nicht (Annahme; P13 meldet es).
+4. **«Trennen» bei MV:** `elemente_verschieben` mit `trennen: true` löst zuerst die Verbindungen zu nicht mitverschobenen Elementen;
+   dann folgt nichts nach.
+
+Oberfläche: Optionsleiste MV «Trennen»; Griff in der Mitte einer Geraden verschiebt sie (Fangen, Umschalt = orthogonal); Pfeiltasten
+verschieben die Auswahl um den Rasterwert in den Achsen der Ansicht (ohne laufendes Werkzeug).

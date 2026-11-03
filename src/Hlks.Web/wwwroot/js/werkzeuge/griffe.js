@@ -11,13 +11,16 @@
 // Bearbeitungswerkzeuge A2: Beim Ziehen eines Leitungsendes werden Anschlüsse in der Nähe gefangen (gehen allem vor). Loslassen auf einem freien
 // Anschluss setzt das Ende auf dessen Lage (mit Höhe) und verbindet im selben Paket (element_aendern mit «verbinden»); ein belegter Anschluss
 // bricht das Ziehen mit Meldung ab.
+// Bearbeitungswerkzeuge A1: Eine gewählte Gerade (Rohr, Kanal mit zwei Punkten) hat in der Mitte einen Griff zum Verschieben (elemente_verschieben,
+// Fangen, Umschalt = orthogonal); Pfeiltasten verschieben die Auswahl um den Rasterwert in den Achsen der Ansicht. Formteile und Nachbarleitungen
+// führt der Kern nach (Dehnen bzw. Versatz).
 
 import { element, abonnieren } from '../zustand.js';
 import { sende, ergebnisMelden } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon } from './basis.js';
 import { fangen, abstand, FANGRADIUS_PX } from './fangen.js';
-import { griffPunkte, griffGeometrie, griffAnschliessen, tuerUmdrehen } from './parameter.js';
+import { griffPunkte, griffGeometrie, griffAnschliessen, tuerUmdrehen, verschiebenParameter, pfeilParameter } from './parameter.js';
 import { rasterWert } from './optionen.js';
 import { auswahlElemente, strgMerken, beiAuswahlMenge } from './auswahl.js';
 import * as S from './schicht.js';
@@ -64,7 +67,10 @@ class Griffe {
     if (!this.gehoert(el)) return [];
     const s = this.s();
     if (['Wand', 'Achse', 'Detaillinie', 'Rohr', 'Kanal'].includes(el.klasse)) {   // Rohr, Kanal: Leitungsenden (Modul 3, C1)
-      return griffPunkte(el.geometrie).map((p, i) => ({ art: 'punkt', el, index: i, p }));
+      const pts = griffPunkte(el.geometrie);
+      const aus = pts.map((p, i) => ({ art: 'punkt', el, index: i, p }));
+      if (istLeitungsklasse(el.klasse) && pts.length === 2) aus.push({ art: 'mitte', el, p: [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2] });   // A1
+      return aus;
     }
     if (el.klasse === 'Tuer') {
       const wand = element(el.bezuege?.wand);
@@ -108,13 +114,18 @@ class Griffe {
       const alle = auswahlElemente();
       if (alle.length > 1) h += S.umrisseSvg(alle, (p) => p, s, 'wz-auswahl');
       if (this.ziehen) h += this.zeichneZiehen(s);
-      else for (const g of this.griffe()) h += g.art === 'punkt' ? S.griff(g.p, s, 'wz-griff', GRIFF_PX) : S.doppelpfeil(g.p, g.d, s);
+      else for (const g of this.griffe()) h += g.art === 'tuer' ? S.doppelpfeil(g.p, g.d, s) : S.griff(g.p, s, g.art === 'mitte' ? 'wz-griff wz-griff-mitte' : 'wz-griff', GRIFF_PX);
     } finally { S.drehungSetzen(0); }   // andere Nutzer der Schicht-Bausteine zeichnen ungedreht
     sch.innerHTML = h;
   }
 
   zeichneZiehen(s) {
     const z = this.ziehen, g = z.g;
+    if (z.mitte) {   // A1: ganze Gerade verschieben
+      const dx = z.fang.punkt[0] - z.start[0], dy = z.fang.punkt[1] - z.start[1];
+      return S.polylinie(griffPunkte(g.el.geometrie).map((p) => [p[0] + dx, p[1] + dy]), 'wz-linie') + S.tempMass(z.start, z.fang.punkt, s)
+        + S.griff(z.fang.punkt, s, 'wz-griff wz-griff-zieht', GRIFF_PX) + S.fangsymbol(z.fang, s);
+    }
     const neu = griffGeometrie(g.el.geometrie, g.index, z.fang.punkt);
     const pts = neu.punkte.map((p) => [p[0], p[1]]);
     let h = '';
@@ -167,7 +178,7 @@ class Griffe {
       case 'pointerup': return this.los(e);
       case 'keydown':
         if (e.key === 'Escape' && this.ziehen) { this.ziehen = null; this.zeichnen(); return true; }
-        return false;
+        return this.pfeil(e);
       default: return false;
     }
   }
@@ -180,6 +191,12 @@ class Griffe {
     if (!g) { if (e.ctrlKey || e.metaKey) strgMerken(); return false; }
     if (g.art === 'tuer') {
       sende('element_aendern', tuerUmdrehen(g.el, g.was)).then((r) => ergebnisMelden(r, `${g.el.kennzeichen}: ${g.was === 'seite' ? 'Aufschlag' : 'Bandseite'} umgedreht.`));
+      return true;
+    }
+    if (g.art === 'mitte') {
+      this.ziehen = { g, anker: g.p, fang: { punkt: g.p, art: 'frei', ortho: false }, start: g.p, mitte: true };
+      window.addEventListener('pointerup', this.fenster, true);
+      this.zeichnen();
       return true;
     }
     const pts = g.el.geometrie.punkte;
@@ -218,6 +235,7 @@ class Griffe {
     this.zeichnen();
     if (abstand(neu, z.start) < 1 && !(z.leitungsende && z.fang.art === 'anschluss')) return true;
     const g = z.g;
+    if (z.mitte) { verschieben([g.el.kennzeichen], verschiebenParameter([g.el.kennzeichen], z.start, neu)); return true; }
     let par;
     const an = z.leitungsende && z.fang.art === 'anschluss' ? z.fang.anschluss : null;
     if (an && !anschlussFrei(an)) { meldung(`${an.element}.${an.name} ist schon verbunden (${an.verbunden}) – zuerst trennen.`, 'warnung'); return true; }
@@ -235,6 +253,28 @@ class Griffe {
     });
     return true;
   }
+
+  /** A1: Pfeiltasten verschieben die Auswahl um den Rasterwert (ohne Umschalt, Strg, Alt). */
+  pfeil(e) {
+    if (this.ziehen || e.shiftKey || e.ctrlKey || e.metaKey || e.altKey) return false;
+    const alle = auswahlElemente().filter((el) => el.geometrie && this.gehoert(el));
+    if (!alle.length) return false;
+    const kz = alle.map((el) => el.kennzeichen);
+    const par = pfeilParameter(kz, e.key, rasterWert(), this.ansicht.drehung ?? 0);
+    if (!par) return false;
+    verschieben(kz, par);
+    return true;
+  }
+}
+
+/** elemente_verschieben senden; Hinweise des Kerns zum Netz (folgt, Versatz) erscheinen in der Meldung. */
+function verschieben(kz, par) {
+  sende('elemente_verschieben', par).then((r) => {
+    const netz = (r.hinweise ?? []).filter((h) => /Versatz|folgt|getrennt/.test(h));
+    ergebnisMelden(r, [`${kz.length === 1 ? kz[0] : `${kz.length} Elemente`} verschoben.`, ...netz.slice(0, 3)].join(' '));
+    const b = neueBefundeTexte(r);
+    if (r.angenommen && b.length) meldung(b.join(' · '), 'warnung');
+  });
 }
 
 // ------------------------------------------------------------------------------------------------ Verwaltung

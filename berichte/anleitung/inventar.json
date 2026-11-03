@@ -6180,6 +6180,43 @@
           ]
         },
         {
+          "id": "m3-verschieben-netz",
+          "titel": "Leitung verschieben – Netz folgt",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Verschieben",
+            "kuerzel": "MV",
+            "sonst": "Mittelgriff einer gewählten Geraden; Pfeiltasten"
+          },
+          "schritte": [
+            "Eine Gerade zwischen zwei Bögen wählen.",
+            "Den Griff in ihrer Mitte quer zur Leitung ziehen (Umschalt = orthogonal).",
+            "Die Meldung lesen.",
+            "Einen Bogen wählen und eine Pfeiltaste drücken.",
+            "MV wählen, in der Optionsleiste «Trennen» einschalten und eine Gerade verschieben.",
+            "Strg+Z nach jedem Schritt."
+          ],
+          "erwartung": "Die Bögen an den Enden wandern mit, die Nachbarleitungen werden länger bzw. kürzer; muss eine Nachbarleitung quer ausweichen, setzt KICAD einen Versatz mit zwei Bögen der Serie (oder lehnt mit Vorschlag ab). Pfeiltasten verschieben um den Rasterwert. Mit «Trennen» bleibt alles andere stehen. Ein Strg+Z nimmt den ganzen Schritt zurück.",
+          "pruefpunkte": [
+            "Mittelgriff an der gewählten Geraden.",
+            "Bögen folgen, Nachbarn dehnen sich (Meldung «… folgt …»).",
+            "Versatz mit zwei Bögen, wenn eine Nachbarleitung quer ausweichen muss.",
+            "Pfeiltaste verschiebt um den Rasterwert.",
+            "«Trennen» löst die Verbindungen, nichts folgt.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Z-Zug mit Testrohrserie, mittlere Gerade quer verschoben"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3960 (Verschieben mit Netznachführung (Bearbeitungswerkzeuge A1))"
+          ],
+          "hinweis": "Dreht sich eine Gerade (Drehen, Griff quer), folgen die Formteile nicht (P13). Geräte folgen nie."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

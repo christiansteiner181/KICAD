@@ -141,7 +141,11 @@ export const WERKZEUGE = {
   // Leitungen zeichnen (Modul 3, C1): Rohr (PI) und Kanal (DT)
   rohr: { titel: 'Rohr', get felder() { return leitungFelder('rohr', 'Rohr'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
   kanal: { titel: 'Kanal', get felder() { return leitungFelder('kanal', 'Kanal'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
-  verschieben: { titel: 'Verschieben', felder: [], hinweis: 'Basispunkt, dann Zielpunkt anklicken. Strg+Klick wählt mehrere Elemente.' },
+  verschieben: {
+    titel: 'Verschieben',
+    felder: [{ id: 'trennen', titel: 'Trennen', art: 'bool', vorgabe: false }],   // Bearbeitungswerkzeuge A1: ohne folgen Leitungen und Formteile
+    hinweis: 'Basispunkt, dann Zielpunkt anklicken. Strg+Klick wählt mehrere Elemente. «Trennen» löst die Verbindungen nach aussen, sonst folgen Leitungen und Formteile.',
+  },
   kopieren: {
     titel: 'Kopieren',
     felder: [{ id: 'anzahl', titel: 'Anzahl', art: 'zahl', vorgabe: 1, breite: 3, fluechtig: true }],

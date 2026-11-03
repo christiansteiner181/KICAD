@@ -249,8 +249,23 @@ function liste(elemente) {
 }
 
 /** elemente_verschieben: Basispunkt → Zielpunkt. */
-export function verschiebenParameter(elemente, von, nach) {
-  return { elemente: liste(elemente), dx: rund(nach[0] - von[0], 3), dy: rund(nach[1] - von[1], 3) };
+export function verschiebenParameter(elemente, von, nach, trennen = false) {
+  const p = { elemente: liste(elemente), dx: rund(nach[0] - von[0], 3), dy: rund(nach[1] - von[1], 3) };
+  if (trennen) p.trennen = true;   // Bearbeitungswerkzeuge A1: Option «Trennen» – Verbindungen nach aussen zuerst lösen
+  return p;
+}
+
+const PFEILE = { ArrowRight: [1, 0], ArrowLeft: [-1, 0], ArrowUp: [0, 1], ArrowDown: [0, -1] };
+
+/**
+ * Bearbeitungswerkzeuge A1: Pfeiltaste verschiebt die Auswahl um schritt mm in den Achsen der Ansicht (drehung in Grad, Gegenuhrzeigersinn,
+ * Modell → Ansicht; die Richtung am Bildschirm wird ins Modell zurückgedreht). Keine Pfeiltaste bzw. Schritt ≤ 0 → null.
+ */
+export function pfeilParameter(elemente, taste, schritt, drehung = 0) {
+  const r = PFEILE[taste];
+  if (!r || !(schritt > 0)) return null;
+  const w = -drehung * Math.PI / 180, c = Math.cos(w), s = Math.sin(w);
+  return verschiebenParameter(elemente, [0, 0], [schritt * (r[0] * c - r[1] * s), schritt * (r[0] * s + r[1] * c)]);
 }
 
 /** elemente_kopieren: Basispunkt → Zielpunkt, anzahl Kopien (jede um dx, dy weiter). */

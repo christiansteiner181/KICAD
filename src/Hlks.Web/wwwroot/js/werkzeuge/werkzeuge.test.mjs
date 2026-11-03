@@ -297,6 +297,18 @@ test('Griffe: Leitungsende auf Anschluss – volle Lage mit Höhe, eigener Ansch
   assert.deepEqual(ro.geometrie.punkte[2], [1000, 800, 500], 'Original bleibt unverändert');
 });
 
+test('Verschieben: Option Trennen, Pfeiltasten in den Achsen der (gedrehten) Ansicht', () => {
+  assert.equal(P.verschiebenParameter(['RO-1'], [0, 0], [100, 0]).trennen, undefined);
+  assert.equal(P.verschiebenParameter(['RO-1'], [0, 0], [100, 0], true).trennen, true);
+  assert.deepEqual(P.pfeilParameter(['RO-1'], 'ArrowRight', 100), { elemente: ['RO-1'], dx: 100, dy: 0 });
+  assert.deepEqual(P.pfeilParameter(['RO-1'], 'ArrowDown', 50), { elemente: ['RO-1'], dx: 0, dy: -50 });
+  // Ansicht um 90° gedreht (Modell → Ansicht, Gegenuhrzeigersinn): «rechts» am Bildschirm ist im Modell −y
+  const g = P.pfeilParameter(['RO-1'], 'ArrowRight', 100, 90);
+  nah(g.dx, 0); nah(g.dy, -100);
+  assert.equal(P.pfeilParameter(['RO-1'], 'Enter', 100), null);
+  assert.equal(P.pfeilParameter(['RO-1'], 'ArrowUp', 0), null);
+});
+
 test('Griffe: Tür umdrehen (seite, band)', () => {
   const t = { kennzeichen: 'T-1', werte: { seite: 'links', band: 'anfang' } };
   assert.deepEqual(P.tuerUmdrehen(t, 'seite'), { element: 'T-1', eigenschaften: { seite: 'rechts' } });

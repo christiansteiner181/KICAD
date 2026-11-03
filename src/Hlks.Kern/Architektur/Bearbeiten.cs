@@ -67,6 +67,7 @@ public sealed class ElementeVerschieben : IBefehl
         new("dx", "zahl", false, "Verschiebung in x (Ost) in mm"),
         new("dy", "zahl", false, "Verschiebung in y (Nord) in mm"),
         new("dz", "zahl", false, "Verschiebung in z (Höhe) in mm"),
+        new("trennen", "bool", false, "Verbindungen zu nicht mitverschobenen Elementen zuerst lösen (wie Revit «Trennen»); sonst folgen angeschlossene Leitungen und Formteile"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -74,9 +75,20 @@ public sealed class ElementeVerschieben : IBefehl
         var liste = Bearbeitung.MitGeometrie(k, ArchParam.Elemente(k, p));
         double dx = Param.Zahl(p, "dx") ?? 0, dy = Param.Zahl(p, "dy") ?? 0, dz = Param.Zahl(p, "dz") ?? 0;
         if (dx == 0 && dy == 0 && dz == 0) { k.Hinweise.Add("Verschiebung 0 – keine Änderung."); return; }
+        if (Param.Bool(p, "trennen")) Trennen(k, liste);
         double[] Schieben(double[] q) { var z = Bearbeitung.Z(q); return [z[0] + dx, z[1] + dy, z[2] + dz]; }
         foreach (var e in liste)
             Bearbeitung.Setzen(k, e, Bearbeitung.Abbilden(e.Geometrie!, Schieben), Bearbeitung.Mitgefuehrt(e, Schieben));
+    }
+
+    /// <summary>Bearbeitungswerkzeuge A1: Verbindungen zu Elementen ausserhalb der Auswahl lösen, damit nichts nachgeführt wird.</summary>
+    static void Trennen(Kontext k, List<Element> liste)
+    {
+        var ids = liste.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
+        var weg = liste.SelectMany(e => k.Arbeit.VerbindungenVon(e.Id)).DistinctBy(v => v.Id)
+            .Where(v => !ids.Contains(v.Von.Element) || !ids.Contains(v.Nach.Element)).ToList();
+        foreach (var v in weg) k.Trennen(v);
+        if (weg.Count > 0) k.Hinweise.Add($"{weg.Count} Verbindung(en) zu nicht mitverschobenen Elementen getrennt.");
     }
 }
 

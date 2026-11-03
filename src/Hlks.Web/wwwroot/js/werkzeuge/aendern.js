@@ -56,7 +56,7 @@ function versetzen({ id, titel, befehl, parameter, okText, mehrfachOption }) {
 
 export const verschiebenWerkzeug = () => versetzen({
   id: 'verschieben', titel: 'Verschieben', befehl: 'elemente_verschieben', okText: undefined,
-  parameter: (z, von, nach) => verschiebenParameter(kz(z), von, nach),
+  parameter: (z, von, nach, ctx) => verschiebenParameter(kz(z), von, nach, !!ctx.opt.trennen),
 });
 
 export const kopierenWerkzeug = () => versetzen({

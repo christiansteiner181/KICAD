@@ -28,16 +28,17 @@ public class LeitungenPruefungTests
     [Fact]
     public void P13_NachVerschiebenDesRohrendes()
     {
-        // Seit B2 folgt ein Leitungsende seinem Formteil (Nachführung beim Verschieben) – eine Lücke entsteht deshalb,
-        // wenn das Rohrende selbst verschoben wird: RO-1 endet 5 mm vor BO-1.a (950 → 945)
+        // Seit B2 folgt ein Leitungsende seinem Formteil, seit A1 (Bearbeitungswerkzeuge) das Formteil einem entlang der Achse verschobenen
+        // Rohrende – eine Lücke entsteht nur noch, wenn das Rohrende quer gezogen wird (Richtung ändert sich > 1°, das Formteil folgt nicht):
+        // RO-1 endet bei (945, 2010) statt BO-1.a (950, 2000) → √(5² + 10²) = 11.2 mm
         var p = MitBogenUndRohr();
         Ok(p.Ausfuehren("element_aendern", new JsonObject
         {
-            ["element"] = "RO-1", ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts([500, 2000, 500], [945, 2000, 500]) },
+            ["element"] = "RO-1", ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts([500, 2000, 500], [945, 2010, 500]) },
         }));
-        var b = Assert.Single(Befunde(p, "P13"));
+        var b = Assert.Single(Befunde(p, "P13"), x => x.Text.Contains("auseinander"));
         Assert.Equal("warnung", b.Schwere);
-        Assert.Contains("5 mm auseinander", b.Text);
+        Assert.Contains("11.2 mm auseinander", b.Text);
         Assert.Contains("element_aendern", b.Vorschlag);
     }
 

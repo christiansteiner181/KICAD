@@ -3956,3 +3956,19 @@ Oberfläche rechnet nichts Fachliches (Lage, Richtung, Grösse, Medium prüft de
   ab (Richtung, Grösse), bleibt auch die Geometrie. Auf einem belegten Anschluss bricht das Ziehen mit Meldung ab.
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~LeitungsendeAnschliessenTests"`,
   `node --test --test-name-pattern "Griffe" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.
+
+## Verschieben mit Netznachführung (Bearbeitungswerkzeuge A1, `entwurf/bearbeitungswerkzeuge.md`)
+
+Die Rechnung steht im Kern (`LeitungenNachfuehren`, gilt für jeden Befehl, der Leitungen oder Formteile bewegt): Formteile und Armaturen
+folgen einer verschobenen Geraden, Nachbarleitungen werden länger bzw. kürzer, folgen ganz (anderes Ende frei) oder bekommen einen
+**Versatz mit zwei Bögen der Serie** (45°, sonst 90°; in der Mitte der Leitung). Passt der Versatz nicht, lehnt der Kern den ganzen
+Befehl mit Vorschlag ab. Die Oberfläche zeigt die Hinweise des Kerns («BO-1 folgt RO-2», «RO-2: Versatz 100 mm …») in der Meldung.
+
+- **Mittelgriff:** Eine gewählte Gerade (Rohr, Kanal mit zwei Punkten) hat in der Mitte einen Griff; Ziehen (Fangen, Umschalt = orthogonal,
+  Esc bricht ab) sendet `elemente_verschieben` (`js/werkzeuge/griffe.js`).
+- **Pfeiltasten:** verschieben die Auswahl um den Rasterwert (Optionsleiste «Raster», Vorgabe 100 mm) in den Achsen der Ansicht, auch in
+  gedrehten Grundrissen (`pfeilParameter` in `parameter.js`); nur ohne laufendes Werkzeug und ohne Umschalt/Strg/Alt.
+- **Verschieben (MV) › Optionsleiste «Trennen»:** löst zuerst die Verbindungen zu nicht mitverschobenen Elementen (`trennen: true`), dann
+  folgt nichts nach.
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~RoutingNachfuehrungTests"`,
+  `node --test --test-name-pattern "Verschieben: Option" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.
