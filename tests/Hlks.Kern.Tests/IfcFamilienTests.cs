@@ -91,6 +91,22 @@ public sealed class IfcFamilienTests : IDisposable
         foreach (var kl in new[] { "Tuer", "Fenster" })
             Assert.Equal(u["jeKlasse"]![kl]!["anzahl"]!.GetValue<int>(), u["jeKlasse"]![kl]!["deckungsgleich"]!.GetValue<int>());
         Assert.Null(Ok(Uebernehmen(p, datei)).PaketId);
+
+        // Tür in KICAD auf die andere Seite und ans andere Band gestellt: der Körper spiegelt quer zur Wand und um die Öffnungsmitte
+        var t = p.Modell.DerKlasse("Tuer").Single();
+        Assert.Equal(IfcFamilien.TuerLage(t), t.Text(IfcFamilien.Lage));
+        var (ursprung, winkel) = ArchitekturGrafik.OeffnungLage(p.Modell, p.Katalog, t)!.Value;
+        double w = winkel * Math.PI / 180;
+        (double L, double Q) Lokal(double[] q) => ((q[0] - ursprung[0]) * Math.Cos(w) + (q[1] - ursprung[1]) * Math.Sin(w), -(q[0] - ursprung[0]) * Math.Sin(w) + (q[1] - ursprung[1]) * Math.Cos(w));
+        List<(double L, double Q)> Punkte() => [.. new ArchitekturGrafik().Koerper(p, p.Modell.Finde(t.Id)!)!.Teile.SelectMany(x => FamilienKoerper.AlsNetz(x).Ecken).Select(Lokal)];
+        var vor = Punkte();
+        var seite = t.Text("seite") == "rechts" ? "links" : "rechts";
+        var band = t.Text("band") == "ende" ? "anfang" : "ende";
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = t.Kennzeichen, ["eigenschaften"] = new JsonObject { ["seite"] = seite, ["band"] = band } }));
+        var nach = Punkte();
+        Assert.Equal(vor.Count, nach.Count);
+        for (int i = 0; i < vor.Count; i++) { Assert.Equal(-vor[i].L, nach[i].L, 1); Assert.Equal(-vor[i].Q, nach[i].Q, 1); }   // Ecke für Ecke gespiegelt
+        Assert.Contains(vor, q => Math.Abs(q.L) > 1 && Math.Abs(q.Q) > 1);
     }
 
     static double[] Box(List<double[]> ecken) =>

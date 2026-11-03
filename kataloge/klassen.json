@@ -227,6 +227,7 @@
       { "name": "abstand", "typ": "zahl", "einheit": "mm", "beschreibung": "Abstand der Öffnungsmitte vom Wandanfang entlang der Achse" },
       { "name": "seite", "typ": "auswahl", "auswahl": [ "links", "rechts" ], "beschreibung": "Aufschlagseite, in Wandrichtung (Anfang → Ende) gesehen" },
       { "name": "band", "typ": "auswahl", "auswahl": [ "anfang", "ende" ], "beschreibung": "Bandseite (Drehpunkt des Blatts) zum Wandanfang oder zum Wandende" },
+      { "name": "familieLage", "typ": "text", "beschreibung": "Familie aus dem IFC: seite/band, in denen ihr Körper modelliert ist (z. B. «links/anfang»); weichen seite oder band davon ab, zeigt KICAD den Körper gespiegelt. Setzt die IFC-Übernahme." },
       { "name": "ud", "typ": "zahl", "einheit": "W/(m²·K)", "beschreibung": "U-Wert der Tür, mit Quelle (Modul 1c); sonst aus dem Aufbau" } ] },
   { "name": "Achse", "kuerzel": "AX", "schicht": "bezug", "gewerk": "architektur", "ifc": "IfcGrid", "geometrie": "linie",
     "beschreibung": "Achse des Achsrasters (Bezugslinie), sichtbar in allen Grundrissen und in Schnitten, die sie kreuzen.",

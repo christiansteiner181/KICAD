@@ -149,4 +149,7 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
   Familienkörper; Grundriss-Sinnbild (Aufschlag, Glaslinie) und die Wandöffnung bleiben. Eine neue Fassung desselben IFC behält die Familie.
 - Wählbar wie bei HLKS: Tuer bzw. Fenster in Projektinformation.ifcStandard = unser parametrischer Standard ohne Familie.
 - Bernstrasse 42: Architektur weiter 598/598 deckungsgleich, Türen und Fenster jetzt mit dem Familienkörper gemessen.
-- Offen: Aufschlagseite oder Band in KICAD gewechselt → der Familienkörper wird (noch) nicht gespiegelt; Grundriss aus dem Netz (Schritt 3).
+- Spiegeln: die Übernahme hält an der Tür fest, in welcher seite/band ihr Netz steht (`familieLage`, z. B. «links/anfang»). Wird in KICAD die
+  Aufschlagseite gewechselt, spiegelt der Körper quer zur Wand (an der Wandachse), beim Bandwechsel um die Öffnungsmitte; beides zusammen
+  ergibt die Drehung um 180°. Eine neue Fassung desselben IFC behält `familieLage`. Fenster haben keine Seite/kein Band.
+- Offen: Grundriss aus dem Netz (Schritt 3).

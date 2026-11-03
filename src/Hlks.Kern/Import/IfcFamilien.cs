@@ -138,15 +138,27 @@ static class IfcFamilien
                 ["dreiecke"] = new JsonArray(dreiecke.Select(t => (JsonNode)new JsonArray(t[0], t[1], t[2])).ToArray()),
             };
             if (sa.Familie(e.Klasse, x, Path.GetFileName(d.Pfad), koerper, []) is not { } fam) continue;
-            if (Familien.FamilieVon(k.Arbeit, e)?.Id == fam.Id && Familien.Typ(e) == Typ) { sa.Verwiesen++; continue; }
+            // gleiche Familie schon zugeordnet: die Lage bleibt (auch wenn seite/band in KICAD geändert wurden – dann spiegelt die Darstellung)
+            if (Familien.FamilieVon(k.Arbeit, e)?.Id == fam.Id && Familien.Typ(e) == Typ && (!kat.IstArt(e, "Tuer") || e.Text(Lage) is not null)) { sa.Verwiesen++; continue; }
             var neuE = e.Kopie();
             neuE.Bezuege[Familien.Bezug] = fam.Id;
-            neuE.Eigenschaften["familientyp"] = new Wert { Inhalt = JsonValue.Create(Typ), Herkunft = k.Herkunft with { Art = "ifc", Quelle = $"Familie aus dem IFC {fam.Kennzeichen}" } };
+            var herkunft = k.Herkunft with { Art = "ifc", Quelle = $"Familie aus dem IFC {fam.Kennzeichen}" };
+            neuE.Eigenschaften["familientyp"] = new Wert { Inhalt = JsonValue.Create(Typ), Herkunft = herkunft };
+            // Tür: in welcher seite/band das Netz steht (ArchitekturGrafik spiegelt den Körper, wenn sie in KICAD wechseln)
+            if (kat.IstArt(e, "Tuer")) neuE.Eigenschaften[Lage] = new Wert { Inhalt = JsonValue.Create(TuerLage(e)), Herkunft = herkunft };
             k.Setzen(neuE);
             sa.Verwiesen++;
         }
         return sa.Hinweise();
     }
+
+    /// <summary>Tür: Eigenschaft mit seite/band, in denen der Körper ihrer Familie aus dem IFC modelliert ist.</summary>
+    public const string Lage = "familieLage";
+
+    /// <summary>seite/band einer Tür, wie sie die Darstellung liest (fehlt = links/anfang).</summary>
+    public static string TuerLage(Element e) =>
+        (string.Equals(e.Text("seite"), "rechts", StringComparison.OrdinalIgnoreCase) ? "rechts" : "links") + "/"
+        + (string.Equals(e.Text("band"), "ende", StringComparison.OrdinalIgnoreCase) ? "ende" : "anfang");
 
     /// <summary>Familien aus dem IFC finden (Projekt, Bürobibliothek) oder anlegen; Kennung «ifc-» + Prüfsumme von Klasse, Körper und Anschlüssen.</summary>
     sealed class Sammlung

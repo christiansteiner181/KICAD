@@ -456,6 +456,7 @@ public sealed class IfcUebernehmen : IBefehl
                 {
                     e.Bezuege[Familien.Bezug] = fa.Id;
                     if (alt.Eigenschaften.TryGetValue("familientyp", out var ft)) e.Eigenschaften["familientyp"] = ft;
+                    if (alt.Eigenschaften.TryGetValue(IfcFamilien.Lage, out var fl)) e.Eigenschaften[IfcFamilien.Lage] = fl;
                 }
                 if (GleicherInhalt(alt, e)) { z.Gleich++; }
                 else if (!konfliktIfc && InKicadGeaendert(alt))

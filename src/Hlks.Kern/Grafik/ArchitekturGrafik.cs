@@ -637,13 +637,44 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         return ([c[0], c[1], w.Unterkante + o.Unten], w.Winkel);
     }
 
+    /// <summary>Körperteil im System der Öffnung gespiegelt: x (entlang der Wand, um die Öffnungsmitte) und/oder y (quer zur Wand, an der
+    /// Wandachse). Eine ungerade Zahl Spiegelungen dreht den Umlaufsinn der Dreiecke um, damit die Normalen nach aussen zeigen.</summary>
+    static Koerperteil Gespiegelt(Koerperteil t, bool x, bool y)
+    {
+        double sx = x ? -1 : 1, sy = y ? -1 : 1;
+        double[] S(double[] p) => [p[0] * sx, p[1] * sy, p[2]];
+        var k = new Koerperteil { Art = t.Art, Material = t.Material, Farbe = t.Farbe, Deckkraft = t.Deckkraft, NichtSchneiden = t.NichtSchneiden, Teil = t.Teil, Radius = t.Radius, Masse = t.Masse };
+        switch (t.Art)
+        {
+            case "quader": k.Mitte = S(t.Mitte!); k.Drehung = x != y ? -(t.Drehung ?? 0) : t.Drehung; break;   // Quader ist symmetrisch: nur Drehsinn
+            case "zylinder": k.Von = S(t.Von!); k.Nach = S(t.Nach!); break;
+            case "kugel": k.Mitte = S(t.Mitte!); break;
+            case "koerper":
+                k.Ecken = t.Ecken!.Select(S).ToList();
+                k.Dreiecke = x != y ? t.Dreiecke!.Select(d => new[] { d[0], d[2], d[1] }).ToList() : t.Dreiecke;
+                break;
+            default: return t;
+        }
+        return k;
+    }
+
     static Koerper? OeffnungKoerper(Projekt p, Element e)
     {
         // Familie (aus dem IFC bzw. unserem Standard): ihr Körper in der Lage der Öffnung – Rahmen, Flügel, Glas wie im IFC
         if (Familien.Aufloesung(p.Modell, p.Katalog, e, out _) is { } fa && OeffnungLage(p.Modell, p.Katalog, e) is { } lage)
         {
             var kf = new Koerper { Id = e.Id, Ebene = "oeffnung" };
-            foreach (var ft in fa.Teile(FamilienGrafik.Detailgrad3D)) kf.Teile.Add(FamilienKoerper.Platzieren(ft, lage.Ursprung, lage.Winkel, null));
+            // Tür in KICAD auf die andere Seite bzw. das andere Band gestellt: Körper quer zur Wand bzw. um die Öffnungsmitte gespiegelt
+            bool quer = false, laengs = false;
+            if (e.Text(IfcFamilien.Lage) is { } modelliert && p.Katalog.IstArt(e, "Tuer"))
+            {
+                var (ms, mb) = (modelliert.Split('/')[0], modelliert.Split('/').ElementAtOrDefault(1) ?? "anfang");
+                var jetzt = IfcFamilien.TuerLage(e).Split('/');
+                quer = !string.Equals(ms, jetzt[0], StringComparison.OrdinalIgnoreCase);
+                laengs = !string.Equals(mb, jetzt[1], StringComparison.OrdinalIgnoreCase);
+            }
+            foreach (var ft in fa.Teile(FamilienGrafik.Detailgrad3D))
+                kf.Teile.Add(FamilienKoerper.Platzieren(quer || laengs ? Gespiegelt(ft, laengs, quer) : ft, lage.Ursprung, lage.Winkel, null));
             if (!kf.Leer) return kf;
         }
         if (Wandgeometrie.WandVon(e) is not { } wid || p.Modell.Finde(wid) is not { } wand) return null;
