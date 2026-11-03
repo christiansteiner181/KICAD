@@ -90,6 +90,25 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_aufteilen", Parameter(("leitung", leitung), ("leitungen", leitungen), ("serie", serie), ("groesse", groesse)), trockenlauf);
 
+    [McpServerTool(Name = "leitung_teilen"), Description(LeitungTeilen.Text)]   // Bearbeitungswerkzeuge A3
+    public string LeitungTeilenWerkzeug(
+        [Description(LeitungTeilung.ParLeitung)] string leitung,
+        [Description(LeitungTeilung.ParPunkt)] JsonElement punkt,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("leitung_teilen", Parameter(("leitung", leitung), ("punkt", punkt)), trockenlauf);
+
+    [McpServerTool(Name = "leitung_einsetzen"), Description(LeitungEinsetzen.Text)]   // Bearbeitungswerkzeuge A3
+    public string LeitungEinsetzenWerkzeug(
+        [Description(LeitungTeilung.ParLeitung)] string leitung,
+        [Description(LeitungTeilung.ParPunkt)] JsonElement punkt,
+        [Description(LeitungEinsetzen.ParFamilie)] string familie,
+        [Description(LeitungEinsetzen.ParTyp)] string? typ = null,
+        [Description("Exemplarwerte { name: wert }")] JsonElement? parameter = null,
+        [Description("Kennzeichen des eingesetzten Elements")] string? kennzeichen = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("leitung_einsetzen", Parameter(("leitung", leitung), ("punkt", punkt), ("familie", familie), ("typ", typ), ("parameter", parameter),
+            ("kennzeichen", kennzeichen)), trockenlauf);
+
     [McpServerTool(Name = "leitung_groesse"), Description(LeitungGroesseAendern.Text)]
     public string LeitungGroesseWerkzeug(
         [Description(LeitungGroesseAendern.ParGroesse)] JsonElement groesse,

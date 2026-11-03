@@ -1,0 +1,27 @@
+{
+  "format": 1,
+  "id": "fam-test-ventil",
+  "name": "Testventil (fiktiv)",
+  "kategorie": "Ventil",
+  "hersteller": "keiner – Testfamilie",
+  "beschreibung": "Absperrventil zum Einsetzen in eine Gerade (Bearbeitungswerkzeuge A3, 03.11.2026). Alle Werte sind FIKTIV. Lokale Lage: ein bei (−l/2, 0, 0) Richtung (−1, 0, 0), aus bei (l/2, 0, 0) Richtung (1, 0, 0); Einbaulänge l je Typ.",
+  "version": 1,
+  "status": "entwurf",
+  "parameter": [
+    { "name": "dn", "art": "typ", "datentyp": "dn", "gruppe": "anschluss", "ziel": "dn", "beschreibung": "Nennweite" },
+    { "name": "da", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "formel": "dn + 5", "beschreibung": "Aussendurchmesser (FIKTIV, wie Testrohrserie)" },
+    { "name": "l", "art": "typ", "datentyp": "laenge", "gruppe": "abmessung", "beschreibung": "Einbaulänge (FIKTIV)" }
+  ],
+  "typen": [
+    { "name": "DN 15", "werte": { "dn": 15, "l": 70 } },
+    { "name": "DN 20", "werte": { "dn": 20, "l": 80 } },
+    { "name": "DN 25", "werte": { "dn": 25, "l": 90 } }
+  ],
+  "koerper": [
+    { "id": "gehaeuse", "name": "Gehäuse", "art": "kegel", "material": "rohr", "von": ["0 - l / 2", 0, 0], "nach": ["l / 2", 0, 0], "r1": "da / 2 + 5", "r2": "da / 2 + 5" }
+  ],
+  "anschluesse": [
+    { "name": "ein", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn", "lage": ["0 - l / 2", 0, 0], "richtung": [-1, 0, 0], "beschreibung": "Eintritt" },
+    { "name": "aus", "medium": "*", "fluss": "beide", "art": "rohr", "form": "rund", "dn": "dn", "lage": ["l / 2", 0, 0], "richtung": [1, 0, 0], "beschreibung": "Austritt" }
+  ]
+}

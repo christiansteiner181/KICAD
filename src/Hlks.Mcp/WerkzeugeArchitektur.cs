@@ -56,8 +56,9 @@ public sealed partial class Werkzeuge
         [Description("Verschiebung in x (Ost) in mm")] double? dx = null,
         [Description("Verschiebung in y (Nord) in mm")] double? dy = null,
         [Description("Verschiebung in z (Höhe) in mm")] double? dz = null,
+        [Description("Verbindungen zu nicht mitverschobenen Elementen zuerst lösen (wie Revit «Trennen»); sonst folgen angeschlossene Leitungen und Formteile")] bool trennen = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("elemente_verschieben", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("dz", dz)), trockenlauf);
+        Befehl("elemente_verschieben", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("dz", dz), ("trennen", trennen)), trockenlauf);
 
     [McpServerTool(Name = "elemente_kopieren"), Description("Kopiert Elemente mit Geometrie anzahl-mal, jede Kopie um dx, dy weiter. Kopien erhalten neue Kennzeichen; Türen und Fenster gewählter Wände kommen mit; Verbindungen werden nur innerhalb der Kopie übernommen.")]
     public string ElementeKopieren(

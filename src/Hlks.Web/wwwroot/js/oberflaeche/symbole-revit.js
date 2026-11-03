@@ -158,6 +158,7 @@ schnittlinie | Schnitt | Schnitt | Schnittlinie mit blauen Schnittköpfen
 verschieben | Verschieben | Verschieben | blaues Pfeilkreuz
 drehen | Drehen | Drehen | Kreispfeil um Drehpunkt
 spiegeln | Spiegeln | Spiegeln | Spiegelachse mit zwei Dreiecken
+teilen | Teilen | Element teilen | Leitung mit rotem Schnitt
 ifcUebernehmen | IFC übernehmen | IFC verknüpfen | Würfel mit blauem Pfeil nach unten
 cadEinfuegen | CAD einfügen | CAD verknüpfen | Blatt mit CAD-Linien
 pdfEinfuegen | PDF einfügen | PDF importieren | Blatt mit rotem PDF-Band
@@ -622,6 +623,9 @@ s('drehen',
 s('spiegeln',
   '<path class="sb dd w15" d="M16 3v26"/><path class="f2" d="M13 8L4.5 24H13z"/><path class="fl dd" d="M19 8l8.5 16H19z"/>',
   '<path class="sb dd" d="M8 1v14"/><path class="f2" d="M6.5 4L2 12h4.5z"/><path class="fl dd" d="M9.5 4L14 12H9.5z"/>');
+s('teilen',   // Bearbeitungswerkzeuge A3
+  '<path class="f2" d="M2.5 13.5h11v5h-11zM18.5 13.5h11v5h-11z"/><path class="sr w2" d="M13 25l6-18"/>',
+  '<path class="f2" d="M1 6.5h5.5v3H1zM9.5 6.5H15v3H9.5z"/><path class="sr w15" d="M7 13l2-10"/>');
 s('ifcUebernehmen',
   '<path class="f1" d="M16 2.5l8 4.5-8 4.5-8-4.5z"/><path class="f2" d="M8 7l8 4.5v9L8 16z"/><path class="f3" d="M24 7v9l-8 4.5v-9z"/><path class="fb" d="M13 22.5h6v3h3.5L16 31.5l-6.5-6h3.5z"/>',
   '<path class="f1" d="M7 1.5l4 2.2-4 2.2-4-2.2z"/><path class="f2" d="M3 3.7l4 2.2v4.2l-4-2.2z"/><path class="f3" d="M11 3.7v4.2l-4 2.2V5.9z"/><path class="fb" d="M5.5 11h3v1.5h1.5L7 15.5 4 12.5h1.5z"/>');

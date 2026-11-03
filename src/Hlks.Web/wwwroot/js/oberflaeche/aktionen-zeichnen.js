@@ -21,6 +21,7 @@ import { fuellbereichWerkzeug } from '../werkzeuge/fuellbereich.js';
 import { koteWerkzeug, nordpfeilWerkzeug } from '../werkzeuge/kote.js';
 import { schnittWerkzeug } from '../werkzeuge/schnitt.js';
 import { verschiebenWerkzeug, kopierenWerkzeug, drehenWerkzeug, spiegelnWerkzeug } from '../werkzeuge/aendern.js';
+import { teilenWerkzeug } from '../werkzeuge/teilen.js';
 
 const imGrundriss = () => planAnsicht()?.art === 'grundriss';
 const inPlan = () => !!planAnsicht();
@@ -67,6 +68,7 @@ werkzeug({ id: 'ansicht.schnitt', titel: 'Schnitt', symbol: 'schnittlinie', regi
 werkzeug({ id: 'aendern.verschieben', titel: 'Verschieben', symbol: 'verschieben', kuerzel: 'MV', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'verschieben', fabrik: verschiebenWerkzeug });
 werkzeug({ id: 'aendern.kopieren', titel: 'Kopieren', symbol: 'duplizieren', kuerzel: 'CO', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'kopieren', fabrik: kopierenWerkzeug });
 werkzeug({ id: 'aendern.drehen', titel: 'Drehen', symbol: 'drehen', kuerzel: 'RO', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'drehen', fabrik: drehenWerkzeug });
+werkzeug({ id: 'aendern.teilen', titel: 'Teilen', symbol: 'teilen', kuerzel: 'SL', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'teilen', fabrik: teilenWerkzeug });   // A3
 werkzeug({ id: 'aendern.spiegeln', titel: 'Spiegeln', symbol: 'spiegeln', kuerzel: 'MM', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'spiegeln', fabrik: spiegelnWerkzeug });
 
 griffeEinrichten();

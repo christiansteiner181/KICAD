@@ -6217,6 +6217,72 @@
           "hinweis": "Dreht sich eine Gerade (Drehen, Griff quer), folgen die Formteile nicht (P13). Geräte folgen nie."
         },
         {
+          "id": "m3-teilen",
+          "titel": "Leitung teilen",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Teilen",
+            "kuerzel": "SL",
+            "sonst": ""
+          },
+          "schritte": [
+            "Im Grundriss Ändern › Verändern › Teilen wählen (SL).",
+            "Mit der Maus über eine Leitung fahren: ein Strich zeigt die Schnittstelle.",
+            "Klicken.",
+            "Esc beendet; Strg+Z."
+          ],
+          "erwartung": "Die Leitung ist in zwei Geraden geteilt (Meldung «RO-1 geteilt bei … mm»); das zweite Stück heisst «RO-1-2» und hängt am bisherigen Ende.",
+          "pruefpunkte": [
+            "Vorschau-Strich auf der Leitung.",
+            "Zwei Geraden, direkt verbunden.",
+            "Verbindung am Ende bleibt.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Werkzeug Teilen über einer Leitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3976 (Teilen und Armatur in Leitung setzen (Bearbeitungswerkzeuge A3))"
+          ],
+          "hinweis": "Wände teilen ist zurückgestellt."
+        },
+        {
+          "id": "m3-armatur-einsetzen",
+          "titel": "Armatur in Leitung setzen",
+          "wo": {
+            "register": "Einfügen",
+            "gruppe": "",
+            "knopf": "Familie platzieren",
+            "kuerzel": "",
+            "sonst": "Klick auf eine Leitung"
+          },
+          "schritte": [
+            "Familie platzieren mit einer Armatur (z. B. Ventil) starten.",
+            "Auf eine gerade Leitung klicken.",
+            "Meldung und Eigenschaften der Armatur ansehen.",
+            "Strg+Z."
+          ],
+          "erwartung": "Die Armatur sitzt mittig in der Leitung, im Typ der Leitungsgrösse; die Leitung ist geteilt, um die Einbaulänge gekürzt und beidseitig verbunden.",
+          "pruefpunkte": [
+            "Typ passt zur Leitungsgrösse.",
+            "Ein- und Austritt verbunden.",
+            "Neben einer Leitung wird frei platziert.",
+            "Ohne passenden Typ: Ablehnung mit Vorschlag."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Testventil in einer Leitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3976 (Teilen und Armatur in Leitung setzen (Bearbeitungswerkzeuge A3))"
+          ],
+          "hinweis": "Reduktionen setzt A3 noch nicht."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

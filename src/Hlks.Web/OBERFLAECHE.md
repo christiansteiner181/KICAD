@@ -3972,3 +3972,17 @@ Befehl mit Vorschlag ab. Die Oberfläche zeigt die Hinweise des Kerns («BO-1 fo
   folgt nichts nach.
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~RoutingNachfuehrungTests"`,
   `node --test --test-name-pattern "Verschieben: Option" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.
+
+## Teilen und Armatur in Leitung setzen (Bearbeitungswerkzeuge A3, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `leitung_teilen` und `leitung_einsetzen` (`src/Hlks.Kern/Leitungen/LeitungEinsetzen.cs`, MCP gleich).
+
+- **Teilen (SL)**, Ändern › Verändern, nur im Grundriss (`js/werkzeuge/teilen.js`): Klick auf eine Gerade (Rohr, Kanal mit zwei Punkten, auch
+  Altbestand) teilt sie am Fusspunkt; die Vorschau zeigt den Schnitt als Strich quer zur Leitung. Das erste Stück behält das Kennzeichen, das
+  zweite heisst «<kennzeichen>-2» und übernimmt die Verbindung am Ende. Das Werkzeug bleibt aktiv, Esc beendet.
+- **Familie platzieren auf eine Leitung** (`js/familien/platzieren.js`): Gehört die Familie in eine Leitung (Kategorie mit Rolle «leitung»:
+  Armatur, Zubehör, Klappe) und liegt der Klick auf einer Geraden, setzt der Kern sie mittig ein: Typ in der Grösse der Leitung (die Wahl
+  in der Optionsleiste gilt dann nicht), Gerade geteilt und um die Einbaulänge gekürzt, beidseitig verbunden. Neben einer Leitung wird wie
+  bisher frei platziert. Fehlt ein Typ in der Grösse, lehnt der Kern ab (Reduktionen setzt A3 noch nicht).
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~LeitungEinsetzenTests"` (Testfamilie
+  `tests/daten/familien/test_ventil.familie.json`, fiktiv).

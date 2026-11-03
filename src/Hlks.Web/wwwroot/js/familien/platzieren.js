@@ -3,6 +3,8 @@
 // die Leertaste dreht um 90°, die Drehung geht auch als Zahl in der Optionsleiste. Danach der Befehl familie_platzieren; es bleibt aktiv,
 // bis Esc oder Rechtsklick beendet. Die Vorschau am Mauszeiger zeigt den Umriss von oben (Abfrage familie_ansicht oben, Detailgrad mittel),
 // gedreht und verschoben (familien-ansicht.js). Das Werkzeug rechnet nichts: Lage, Anschlüsse und Kennwerte ergibt der Kern.
+// Bearbeitungswerkzeuge A3: Sitzt die Familie in einer Leitung (Kategorie mit Rolle «leitung»: Armatur, Zubehör, Klappe) und liegt der Klick
+// auf einer Geraden, geht leitung_einsetzen an den Kern (Typ in der Grösse der Leitung, Gerade geteilt, beidseitig verbunden).
 
 import { abfrage } from '../api.js';
 import { setze, wert } from '../werkzeuge/optionen.js';
@@ -10,6 +12,23 @@ import { modusSetzen, modus } from '../oberflaeche/register.js';
 import { familienLaden, familienListe } from './daten.js';
 import { typTeile, typWert, definitionLaden, definitionAus, platzierParameter, exemplarWerte, haken } from './typauswahl.js';
 import { umrissPrimitive, vorschauSvg, drehungWeiter, drehungNormieren } from './familien-ansicht.js';
+import { alleElemente, element } from '../zustand.js';
+import { leitungUnterMaus } from '../werkzeuge/leitung-logik.js';
+
+const rollen = new Map();   // Kategorie → Promise<Rolle> (Abfrage katalog)
+const rolle = (kategorie) => {
+  if (!rollen.has(kategorie)) rollen.set(kategorie, abfrage('katalog', { klasse: kategorie }).then((a) => a?.rolle ?? null).catch(() => null));
+  return rollen.get(kategorie);
+};
+
+/** Gerade unter dem Klick, wenn die Familie in eine Leitung gehört (A3), sonst null. */
+async function geradeFuer(t, punkt, ctx) {
+  const kat = familienListe().find((f) => f.kennzeichen === t.familie)?.kategorie;
+  if (!kat || (await rolle(kat)) !== 'leitung') return null;
+  const g = element(ctx.geschoss);
+  const leitungen = alleElemente().filter((e) => ['Rohr', 'Kanal'].includes(e.klasse) && (!g || !e.geschoss || element(e.geschoss)?.id === g.id));
+  return leitungUnterMaus(punkt, leitungen, 8 * ctx.s(), null, false);
+}
 
 /** Nach einer Wahl in der Optionsleiste: Definition holen (Felder der Exemplarparameter) und die Leiste neu zeichnen. */
 export async function typGewaehlt() {
@@ -65,6 +84,15 @@ export function platzierWerkzeug() {
       const t = typTeile(ctx.opt.typ);
       if (!t) { ctx.pflicht('typ', 'Zuerst einen Typ wählen (Optionsleiste «Typ»).'); return; }
       const fam = definitionAus(t.familie);
+      const gerade = await geradeFuer(t, fang.punkt, ctx);
+      if (gerade) {
+        const p = { leitung: gerade.element.kennzeichen, punkt: [fang.punkt[0], fang.punkt[1]], familie: t.familie };
+        const ex = platzierParameter(ctx.opt, fang.punkt, fam, ctx.geschoss)?.parameter;
+        if (ex) p.parameter = ex;
+        const r = await ctx.befehl('leitung_einsetzen', p);
+        if (r?.angenommen) z.punkt = fang.punkt;
+        return;
+      }
       const p = platzierParameter(ctx.opt, fang.punkt, fam, ctx.geschoss);
       const r = await ctx.befehl('familie_platzieren', p, `${fam?.name ?? t.familie} «${t.typ}» platziert.`);
       if (r?.angenommen) z.punkt = fang.punkt;

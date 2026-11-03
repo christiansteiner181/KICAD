@@ -209,11 +209,13 @@ export function projektionAufGerade(p, a, b) {
 /**
  * Die Gerade (Rohr bzw. Kanal mit Serie, zwei Punkte) unter dem Mauspunkt: { element, projektion } oder null.
  * leitungen: Darstellungen aus dem Zustand; radius in mm (Grundriss); Fusspunkt mindestens 1 mm von den Enden.
+ * klasse null = Rohr und Kanal; mitSerie false = auch Altbestand (Bearbeitungswerkzeuge A3: Teilen, Armatur einsetzen).
  */
-export function leitungUnterMaus(maus, leitungen, radius, klasse) {
+export function leitungUnterMaus(maus, leitungen, radius, klasse, mitSerie = true) {
   let best = null;
   for (const el of leitungen) {
-    if (el.klasse !== klasse || !hatSerie(el)) continue;
+    if (klasse ? el.klasse !== klasse : !['Rohr', 'Kanal'].includes(el.klasse)) continue;
+    if (mitSerie && !hatSerie(el)) continue;
     const pts = el.geometrie?.punkte;
     if (!pts || pts.length !== 2) continue;
     const pr = projektionAufGerade(maus, pts[0], pts[1]);

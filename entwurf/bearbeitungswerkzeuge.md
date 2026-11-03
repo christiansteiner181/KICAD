@@ -138,7 +138,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
   `src/Hlks.Web/OBERFLAECHE.md` (Abschnitt «Verbinden und Trennen im Grundriss»), Anleitung `m3-verbinden`, `m3-trennen`.
   Grenze: Anschlüsse ohne Lage (Geräte und Formteile ohne Familie – im Beispielprojekt alle Formteile) verbindet weiterhin nur das Schema.
 - **A1 gebaut 03.11.2026** (Spezifikation unten): Kern `LeitungenNachfuehren` (Formteile folgen, Dehnen, ganz folgen, Versatz), `elemente_verschieben` mit `trennen`; Oberfläche Mittelgriff, Pfeiltasten, MV-Option «Trennen». Bisheriges Verhalten «Nachbar dreht, Hinweis» gilt nur noch für Altbestand ohne Serie und gedrehte Formteile (Tests angepasst: RoutingNachfuehrungTests, LeitungenPruefungTests.P13_NachVerschiebenDesRohrendes).
-- **Nächstes: A3** Armatur in Leitung setzen und Teilen (SL).
+- **A3 gebaut 03.11.2026** (Spezifikation unten): `leitung_teilen`, `leitung_einsetzen` (Kern, MCP, KI-Einordnung «Leitungen»), Werkzeug Teilen (SL), Familie platzieren auf eine Leitung. Offen: Reduktionen beim Einsetzen, Wände teilen.
+- **Nächstes: A4** Stutzen/Dehnen (TR) für Leitungen.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -160,3 +161,20 @@ Regeln im Kern (Nachführung `LeitungenNachfuehren`, gilt für jeden Befehl, der
 
 Oberfläche: Optionsleiste MV «Trennen»; Griff in der Mitte einer Geraden verschiebt sie (Fangen, Umschalt = orthogonal); Pfeiltasten
 verschieben die Auswahl um den Rasterwert in den Achsen der Ansicht (ohne laufendes Werkzeug).
+
+## A3 – Armatur in Leitung setzen, Teilen (Spezifikation, 03.11.2026)
+
+Kernbefehle (ein Paket je Befehl, Trockenlauf = Vorschau):
+
+- **`leitung_teilen`** { leitung, punkt }: teilt eine Gerade am Punkt (auf die Achse projiziert) in zwei Geraden; das erste Stück behält das
+  Kennzeichen, das zweite heisst «<kennzeichen>-2» usw. und übernimmt die Verbindung am Ende; beide Stücke sind direkt miteinander verbunden.
+  Ein Verbindungsstück (Muffe) setzt KICAD nicht (die Serien kennen keines – Annahme). Wände teilen: zurückgestellt (Architektur untergeordnet).
+- **`leitung_einsetzen`** { leitung, punkt, familie, typ?, parameter? }: setzt eine Familie mit zwei gegenüberliegenden Anschlüssen (Armatur,
+  Zubehör, Klappe, Formteil) mittig auf den Punkt in die Gerade: Typ = der erste, dessen beide Anschlüsse die Grösse der Leitung haben (oder
+  ausdrücklich); Ausrichtung so, dass der Eintritt («rein» bzw. der erste Anschluss) gegen die Fliessrichtung zeigt; Gerade geteilt und um die
+  Einbaulänge gekürzt; beidseitig mit den Prüfungen von «verbinden» verbunden; System und Geschoss von der Leitung.
+  Abgelehnt mit Vorschlag: kein Typ in dieser Grösse (Reduktionen setzt A3 noch nicht – Annahme, später), Anschlüsse nicht auf einer Achse,
+  Punkt zu nahe an einem Ende.
+
+Oberfläche: Werkzeug «Teilen» (SL, Ändern › Verändern; Klick auf eine Leitung); «Familie platzieren» mit einer Armatur auf eine Leitung
+geklickt → `leitung_einsetzen`.

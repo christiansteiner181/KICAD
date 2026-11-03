@@ -229,10 +229,11 @@ public sealed partial class Werkzeuge(Projekt projekt)
         [Description("{ name: wert | { wert, einheit, quelle } | null }")] JsonElement? eigenschaften = null,
         [Description("Neue Geometrie (ersetzt die alte)")] JsonElement? geometrie = null,
         [Description("{ rolle: element | null }")] JsonElement? bezuege = null,
+        [Description("{ anschluss, nach } – nach der Änderung den eigenen Anschluss mit «nach» ({ element, anschluss } oder \"KENNZEICHEN.anschluss\") verbinden, z. B. ein gezogenes Leitungsende; eine alte Verbindung an diesem Anschluss wird zuerst getrennt")] JsonElement? verbinden = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("element_aendern", Parameter(("element", element), ("kennzeichen", kennzeichen), ("name", name), ("teilVon", teilVon),
             ("geschoss", geschoss), ("raum", raum), ("system", system), ("eigenschaften", eigenschaften), ("geometrie", geometrie),
-            ("bezuege", bezuege)), trockenlauf);
+            ("bezuege", bezuege), ("verbinden", verbinden)), trockenlauf);
 
     [McpServerTool(Name = "element_loeschen"), Description("Löscht ein Element samt seinen Verbindungen; Türen und Fenster einer Wand gehen mit ihr. Verweisen andere Elemente darauf (teilVon, Raum, System, Bezüge), wird abgelehnt.")]
     public string ElementLoeschen(
