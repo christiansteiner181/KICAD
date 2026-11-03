@@ -6351,6 +6351,41 @@
           "hinweis": "Gleiche Höhe nötig."
         },
         {
+          "id": "m3-gefaelle-hoehe",
+          "titel": "Gefälle und Höhe eines Leitungszugs ändern",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "PP",
+            "sonst": "Eigenschaftenpalette › Leitung › Gefälle bzw. Höhe"
+          },
+          "schritte": [
+            "Eine Leitung mit Serie wählen.",
+            "In der Palette bei Gefälle 2 eintragen und Enter.",
+            "Höhen der Leitungen im Zug ansehen (3D bzw. Eigenschaften).",
+            "Bei Höhe einen um 200 mm grösseren Wert eintragen.",
+            "Strg+Z nach jedem Schritt."
+          ],
+          "erwartung": "Der ganze Leitungszug fällt ab seinem Anfang mit 2 %, die Bögen wandern mit. Die Höhe hebt den Zug; an T-Stücken und Geräten entsteht ein Versatz. Ist das andere Ende fest angeschlossen, lehnt KICAD das Gefälle mit Vorschlag ab.",
+          "pruefpunkte": [
+            "Zug fällt in Fliessrichtung.",
+            "Bögen bleiben verbunden.",
+            "Gefälle-Angabe an allen Geraden.",
+            "Höhe hebt den Zug, Versatz an festen Grenzen.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Palette einer Leitung mit Gefälle und Höhe"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4002 (Gefälle und Höhe nachträglich ändern (Bearbeitungswerkzeuge A5))"
+          ],
+          "hinweis": "An waagrechten T-Stücken passen bis etwa 1.7 %."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

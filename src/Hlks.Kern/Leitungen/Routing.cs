@@ -150,7 +150,7 @@ public static class Routing
     public static string P(V3 p) => "[" + string.Join(", ", new[] { p.X, p.Y, p.Z }.Select(x => Z(x))) + "]";
     static double[] Feld(V3 p) => Familien.Runden(p.Feld(), 6);
     static double Grad(V3 a, V3 b) => Math.Acos(Math.Clamp(a.Einheit().Mal(b.Einheit()), -1, 1)) * 180 / Math.PI;
-    static double Waagrecht(V3 a, V3 b) => Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
+    public static double Waagrecht(V3 a, V3 b) => Math.Sqrt((b.X - a.X) * (b.X - a.X) + (b.Y - a.Y) * (b.Y - a.Y));
     /// <summary>Senkrechtes Stück: waagrechte Länge höchstens 1 mm.</summary>
     public static bool Senkrecht(V3 a, V3 b) => Waagrecht(a, b) <= Anschlusslagen.AbstandMax;
 

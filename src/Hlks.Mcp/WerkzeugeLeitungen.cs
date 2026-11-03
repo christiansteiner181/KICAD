@@ -126,6 +126,25 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("dehnen_bis", Parameter(("element", element), ("bis", bis), ("bleibt", bleibt)), trockenlauf);
 
+    [McpServerTool(Name = "leitung_gefaelle"), Description(LeitungGefaelle.Text)]   // Bearbeitungswerkzeuge A5
+    public string LeitungGefaelleWerkzeug(
+        [Description(LeitungGefaelle.ParGefaelle)] double gefaelle,
+        [Description(RoutingBefehle.ParLeitung)] string? leitung = null,
+        [Description(RoutingBefehle.ParLeitungen)] JsonElement? leitungen = null,
+        [Description(LeitungGefaelle.ParFix)] string? fix = null,
+        [Description(LeitungGefaelle.ParZug)] bool zug = true,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("leitung_gefaelle", Parameter(("leitung", leitung), ("leitungen", leitungen), ("gefaelle", gefaelle), ("fix", fix), ("zug", zug)), trockenlauf);
+
+    [McpServerTool(Name = "leitung_hoehe"), Description(LeitungHoehe.Text)]   // Bearbeitungswerkzeuge A5
+    public string LeitungHoeheWerkzeug(
+        [Description(RoutingBefehle.ParLeitung)] string leitung,
+        [Description("Höhe der Achse über OK Geschoss in mm (am Anfang der Geraden)")] double? hoehe = null,
+        [Description("Höhenänderung in mm (statt hoehe)")] double? dz = null,
+        [Description("false: nur diese Gerade (Vorgabe true: der Leitungszug)")] bool zug = true,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("leitung_hoehe", Parameter(("leitung", leitung), ("hoehe", hoehe), ("dz", dz), ("zug", zug)), trockenlauf);
+
     [McpServerTool(Name = "leitung_groesse"), Description(LeitungGroesseAendern.Text)]
     public string LeitungGroesseWerkzeug(
         [Description(LeitungGroesseAendern.ParGroesse)] JsonElement groesse,

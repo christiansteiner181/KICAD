@@ -140,7 +140,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **A1 gebaut 03.11.2026** (Spezifikation unten): Kern `LeitungenNachfuehren` (Formteile folgen, Dehnen, ganz folgen, Versatz), `elemente_verschieben` mit `trennen`; Oberfläche Mittelgriff, Pfeiltasten, MV-Option «Trennen». Bisheriges Verhalten «Nachbar dreht, Hinweis» gilt nur noch für Altbestand ohne Serie und gedrehte Formteile (Tests angepasst: RoutingNachfuehrungTests, LeitungenPruefungTests.P13_NachVerschiebenDesRohrendes).
 - **A3 gebaut 03.11.2026** (Spezifikation unten): `leitung_teilen`, `leitung_einsetzen` (Kern, MCP, KI-Einordnung «Leitungen»), Werkzeug Teilen (SL), Familie platzieren auf eine Leitung. Offen: Reduktionen beim Einsetzen, Wände teilen.
 - **A4 gebaut 03.11.2026** (Spezifikation unten): `ecke_bilden`, `dehnen_bis` (Kern, MCP, KI-Einordnung), Werkzeuge TR und «Dehnen bis».
-- **Nächstes: A5** Gefälle und Höhe nachträglich ändern.
+- **A5 gebaut 03.11.2026:** `leitung_gefaelle` (Zug ab Fixpunkt neu neigen, Bögen wandern mit; Neuaufbau wie leitung_groesse), `leitung_hoehe` (Zug heben/senken, Versatz an festen Grenzen); Palette Gefälle und Höhe. Annahmen: «flach» bis 15 %, Fixpunkt Vorgabe Anfang; an waagrechten T-Stücken passen bis ≈1.7 % (Hinweis, P13). **Stufe A abgeschlossen.**
+- **Nächstes: Stufe B** (B1 Ausrichten und Versatz) – Entscheid Christian.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 

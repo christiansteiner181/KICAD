@@ -8,6 +8,7 @@
 // Die Bausteine zeile/gruppe/nurLesen liefert eigenschaften.js (Parameter H), damit das Aussehen einheitlich bleibt.
 
 import { esc } from './schicht.js';
+import { element } from '../zustand.js';
 import { groessenListe, hatSerie, istLeitungsklasse, istFormteilklasse, kategorieVon, mmText } from './leitung-logik.js';
 import { istFrei, istRechteck, istAbwasser, nachAussendurchmesser, groessenOptionen, rasterVorschlag, groesseAnzeige, freiHinweis, abwasserHinweis, beschriftungVon, zahlText } from './leitung-frei.js';
 
@@ -42,6 +43,14 @@ export function zugText(zug) {
  * Gruppe «Leitung» einer Gerade mit Serie.
  * d = { el, l (element_lesen), f (Antwort familie der Serie), serie (Antwort leitungsserie oder null), serien ([{ kz, name }] der Kategorie), zug (Antwort leitungszug oder null) }
  */
+/** Höhe der Achse am Anfang über OK Geschoss (mm, gerundet) oder null (kein Geschoss mit Kote). */
+export function hoeheUeberGeschoss(el, geschossVon = (kz) => element(kz)) {
+  const p = el?.geometrie?.punkte?.[0];
+  const kote = Number(geschossVon(el?.geschoss)?.werte?.kote);
+  if (!p || p.length < 3 || !Number.isFinite(kote)) return null;
+  return Math.round((p[2] - kote) * 10) / 10;
+}
+
 export function leitungGruppe(d, H) {
   const { el, l, f, serie, serien, zug } = d;
   const typ = wertVon(l, 'familientyp') ?? el.werte?.familientyp ?? null;
@@ -92,7 +101,10 @@ export function leitungGruppe(d, H) {
     zeilen.push(H.zeile(`Befund ${b.code}`, `<span class="ep-text ep-befund ep-befund-${esc(b.schwere)}">${esc(b.text)}${b.vorschlag ? ` <span class="leise">→ ${esc(b.vorschlag)}</span>` : ''}</span>`,
       { titel: `Prüfbefund ${b.code} (${b.schwere}) – Register Verwalten › Prüfbefunde`, klasse: 'ep-befundzeile' }));
   }
-  zeilen.push(H.zeile('Gefälle', `<input type="text" inputmode="decimal" data-ziel="eig:gefaelle" data-typ="zahl" value="${esc(zahl(wertVon(l, 'gefaelle')))}"><span class="ep-einheit">%</span>`, { titel: 'Gefälle in Fliessrichtung (Schwerkraftleitungen)' }));
+  // Bearbeitungswerkzeuge A5: Gefälle und Höhe ändern den Leitungszug (leitung_gefaelle, leitung_hoehe) – Bögen wandern mit
+  zeilen.push(H.zeile('Gefälle', `<input type="text" inputmode="decimal" data-ziel="lt:gefaelle" data-typ="zahl" value="${esc(zahl(wertVon(l, 'gefaelle')))}"><span class="ep-einheit">%</span>`, { titel: 'Gefälle in Fliessrichtung: neigt den ganzen Leitungszug ab seinem Anfang neu (leer = Angabe entfernen, Lage bleibt)' }));
+  const h = hoeheUeberGeschoss(el);
+  if (h !== null) zeilen.push(H.zeile('Höhe', `<input type="text" inputmode="decimal" data-ziel="lt:hoehe" data-typ="zahl" value="${esc(zahl(h))}"><span class="ep-einheit">mm</span>`, { titel: 'Höhe der Achse am Anfang über OK Geschoss: hebt bzw. senkt den Leitungszug; an T-Stücken und Geräten entsteht ein Versatz' }));;
   zeilen.push(H.zeile('Dämmung', `<input type="text" data-ziel="eig:daemmung" data-typ="text" value="${esc(wertVon(l, 'daemmung') ?? '')}" placeholder="Art / Produkt">`, { titel: 'Art der Dämmung' }));
   zeilen.push(H.zeile('Dämmdicke', `<input type="text" inputmode="decimal" data-ziel="eig:daemmdicke" data-typ="zahl" value="${esc(zahl(wertVon(l, 'daemmdicke')))}"><span class="ep-einheit">mm</span>`, { titel: 'Dämmdicke (zweite Kontur im Plan)' }));
   const zt = zugText(zug);

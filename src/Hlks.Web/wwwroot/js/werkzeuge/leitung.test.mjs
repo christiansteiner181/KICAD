@@ -464,7 +464,7 @@ test('Palette: Gruppe Leitung mit Serie, Grösse, Gefälle, Dämmung, Dämmdicke
   assert.match(h, /data-ziel="lt:groesse"/);
   assert.match(h, /<option value="DN 20" selected>DN 20<\/option>/);
   assert.ok(!h.includes('DN 99'), 'ungültige Grösse');
-  assert.match(h, /data-ziel="eig:gefaelle"[^>]*value="2"/);
+  assert.match(h, /data-ziel="lt:gefaelle"[^>]*value="2"/);
   assert.match(h, /data-ziel="eig:daemmung"[^>]*value="Mineralwolle"/);
   assert.match(h, /data-ziel="eig:daemmdicke"[^>]*value="20"/);
   assert.match(h, /aussen 25 · innen 21 · Wand 2 mm/);

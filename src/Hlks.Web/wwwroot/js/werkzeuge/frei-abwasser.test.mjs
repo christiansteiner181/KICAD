@@ -342,7 +342,7 @@ test('Palette: freie Grösse zeigt Breite und Höhe als Zahlenfelder, «frei» u
   assert.match(h, /<option value="" selected>frei \(keine Normgrösse\)<\/option>/);
   for (const t of ['200 × 200', '300 × 200', '400 × 200', '500 × 300']) assert.ok(h.includes(`>${t}</option>`), t);
   assert.match(h, /frei b × h \(145 … 2500 mm, Schritt 1 mm\)/, 'Grenzen und Schritt als Hinweis');
-  assert.match(h, /data-ziel="eig:gefaelle"/, 'Gefälle, Dämmung usw. bleiben');
+  assert.match(h, /data-ziel="lt:gefaelle"/, 'Gefälle, Dämmung usw. bleiben');
 });
 
 test('Palette: Rastergrösse einer freien Serie ist ein normaler Typ (Normgrösse gewählt, nicht «frei»)', () => {

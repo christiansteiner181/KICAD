@@ -3998,3 +3998,16 @@ Angeklickt werden Geraden aus zwei Punkten (Rohr, Kanal, Wand, Achse, Detaillini
 - **Dehnen bis**, Ändern › Verändern: zuerst die Bezugsgerade, dann beliebig viele Elemente (auf dem Teil, das bleibt). Leitung an Leitung
   (gleiche Höhe): an der Bezugsleitung entsteht ein T-Stück wie bei leitung_abzweigen, das Ende wird angeschlossen. Sonst geometrisch.
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~EckeDehnenTests"`.
+
+## Gefälle und Höhe nachträglich ändern (Bearbeitungswerkzeuge A5, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `leitung_gefaelle` und `leitung_hoehe` (`src/Hlks.Kern/Leitungen/GefaelleHoehe.cs`, MCP gleich). Bedienung in der
+Eigenschaftenpalette einer Leitung mit Serie, Gruppe «Leitung» (`js/werkzeuge/leitung-palette.js`, `js/oberflaeche/eigenschaften.js`):
+
+- **Gefälle** (%): neigt den ganzen Leitungszug ab seinem Anfang neu (ausser nur das Ende ist an ein Element mit Lage gebunden); flache
+  Stücke bekommen das Gefälle, senkrechte bleiben; Bögen wandern mit, Kennzeichen bleiben. Leer entfernt nur die Angabe. Ist das andere Ende
+  an ein Element mit Lage angeschlossen und ändert sich seine Höhe, lehnt der Kern ab (Fixpunkt dort setzen). An einem waagrechten T-Stück
+  passen bis etwa 1.7 % (Toleranz 1°); darüber gibt es einen Hinweis und P13.
+- **Höhe** (mm über OK Geschoss, Achse am Anfang): hebt bzw. senkt den Leitungszug; Randgeraden an T-Stücken und Geräten bekommen einen
+  Versatz mit zwei Bögen der Serie (Nachführung A1).
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~GefaelleHoeheTests"`.

@@ -244,7 +244,10 @@ public static class RoutingBefehle
 
     /// <summary>Baut einen Lauf mit neuer Serie (leitung_serie) bzw. neuer Grösse (leitung_groesse) neu auf: Knoten = Bögen, Lage der
     /// Grenzen bleibt; Formteile werden ersetzt, Geraden neu gekürzt.</summary>
-    static void Neuaufbau(Kontext k, string befehl, Lauf lauf, Leitungsserie? neueSerie, JsonNode? neueGroesse)
+    /// <param name="verlauf">Bearbeitungswerkzeuge A5: ändert die Knoten vor dem Planen (Gefälle; von, nach = Grenzen).</param>
+    /// <param name="gefaelle">A5: Gefälle (%) aller nicht senkrechten Geraden des Laufs.</param>
+    static void Neuaufbau(Kontext k, string befehl, Lauf lauf, Leitungsserie? neueSerie, JsonNode? neueGroesse,
+        Func<List<V3>, RoutingEnde?, RoutingEnde?, List<V3>>? verlauf = null, double? gefaelle = null)
     {
         var m = k.Arbeit; var kat = k.Katalog;
         var leitungen = lauf.Glieder.Where(g => kat.IstArt(g.Element, "Leitung")).Select(g => g.Element).ToList();
@@ -326,6 +329,7 @@ public static class RoutingBefehle
         }
         pkt.Add(nach is { HatLage: true } ? nach.Lage : Aussen(lauf.Glieder[^1], false));
         if (g0 is not { } start) throw new HlksFehler("Die Grösse am Anfang des Zugs ist unbekannt.", "Grösse angeben (leitung_groesse).");
+        if (verlauf is not null) pkt = verlauf(pkt, von, nach);
         // ein Bogen am offenen Ende (bzw. vor einem Gerät ohne Lage) bleibt ohne Gerade davor bzw. danach
         bool IstBogen(ZugGlied g) => kat.IstArt(g.Element, "Bogen");
         var plan = Routing.Planen(m, kat, s, start, pkt, von, nach, new PlanOptionen
@@ -336,16 +340,17 @@ public static class RoutingBefehle
         });
         foreach (var gl in lauf.Glieder) Trennen(k, gl.Element);
         var erste = leitungen[0];
-        var liste = Routing.Umsetzen(k, plan, new RoutingZiel { Vorlage = erste, Praefix = erste.Kennzeichen, AbZwei = true },
+        var liste = Routing.Umsetzen(k, plan, new RoutingZiel { Vorlage = erste, Praefix = erste.Kennzeichen, AbZwei = true, Gefaelle = gefaelle },
             new Wiederverwendung { Geraden = geraden, Formteile = formteile }, nachsichtigAnGrenzen: true);
         Routing.Uebersicht(k, befehl, plan, liste);
     }
 
-    internal static void ZugAendern(Kontext k, JsonObject p, string befehl, Leitungsserie? serie, JsonNode? groesse)
+    internal static void ZugAendern(Kontext k, JsonObject p, string befehl, Leitungsserie? serie, JsonNode? groesse,
+        Func<List<V3>, RoutingEnde?, RoutingEnde?, List<V3>>? verlauf = null, double? gefaelle = null)
     {
         var laeufe = Laeufe(k, p);
         if (laeufe.Count == 0) throw new HlksFehler("Keine Leitung zu ändern.", "leitung bzw. leitungen angeben.");
-        foreach (var l in laeufe) Neuaufbau(k, befehl, l, serie, groesse);
+        foreach (var l in laeufe) Neuaufbau(k, befehl, l, serie, groesse, verlauf, gefaelle);
     }
 }
 

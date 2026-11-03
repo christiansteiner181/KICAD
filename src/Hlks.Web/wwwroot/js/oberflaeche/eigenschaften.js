@@ -11,7 +11,7 @@ import { zustand, abonnieren, element, derKlasse } from '../zustand.js';
 import { abfrage } from '../api.js';
 import { familie, beiFamilie, familieSetzen, ausfuehren } from './aktionen.js';
 import { klasseHtml, klassenDefinition } from './katalogansicht.js';
-import { sende } from './befehle.js';
+import { sende, ergebnisMelden } from './befehle.js';
 import { warumDialog } from './dialoge.js';
 import { symbol, symbolFuerKlasse } from './symbole.js';
 import { esc, entprellen, vergleichen, gewerkeListe, zahlText } from './werkzeug.js';
@@ -453,6 +453,21 @@ function sanitaerKatalog() {
   return sanKatalog;
 }
 
+/** Bearbeitungswerkzeuge A5: Gefälle bzw. Höhe des Leitungszugs (leitung_gefaelle, leitung_hoehe); leeres Gefälle entfernt nur die Angabe. */
+async function zugAendern(feld, ziel) {
+  schmutzig = false;
+  const roh = String(feld.value ?? '').trim().replace(',', '.');
+  let r;
+  if (roh === '' && ziel === 'lt:gefaelle') r = await sende('element_aendern', { element: gerade.kz, eigenschaften: { gefaelle: null } });
+  else {
+    const zahl = Number(roh);
+    if (!Number.isFinite(zahl)) { fehlerAnzeigen(feld, 'Bitte eine Zahl eingeben.'); return; }
+    r = ziel === 'lt:gefaelle' ? await sende('leitung_gefaelle', { leitung: gerade.kz, gefaelle: zahl }) : await sende('leitung_hoehe', { leitung: gerade.kz, hoehe: zahl });
+  }
+  if (!r.angenommen) { fehlerAnzeigen(feld, r.fehler || 'Die Änderung wurde abgelehnt.', r.vorschlag); return; }
+  ergebnisMelden(r, (r.hinweise ?? []).filter(Boolean).slice(0, 2).join(' ') || undefined);
+}
+
 async function beiAenderung(e) {
   const feld = e.target.closest('[data-ziel]');
   if (!feld || !gerade) return;
@@ -478,6 +493,7 @@ async function beiAenderung(e) {
     else if (!r?.ok) zeichnen();      // abgebrochen: die Auswahl zeigt wieder den Stand des Modells
     return;
   }
+  if (ziel === 'lt:gefaelle' || ziel === 'lt:hoehe') { await zugAendern(feld, ziel); return; }
   let wert;
   try { wert = wertLesen(feld); }
   catch (err) { if (!err.still) fehlerAnzeigen(feld, err.message); return; }   // still: Zeile der Tabelle noch unvollständig, Hinweis steht schon an der Tabelle
