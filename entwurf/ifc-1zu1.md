@@ -136,7 +136,8 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
   Entwurf in der Bürobibliothek – «Flexkanal Depping Aludec 112» (Depping 1.100/9.1100: Ø 50–710, innen = Innenmass, aussen = Nennmass
   als Annahme) und «Uponor Uni Pipe PLUS FBH» (Uponor TI 1094698: 16×2,0 / 20×2,25 / 25×2,5 / 32×3,0, DN 12/15/20/25; ohne Formteile,
   winkel frei, biegeradius 100). **Freigabe durch Christian offen.** Bernstrasse 42: 1942 Leitungen mit Serie; Uponor vollständig, Flexkanal
-  2 von 9 (7× Ø 90 – Depping liefert 80 und 100). **Ab Rolle (Christian «Ja, zusammenführen»):** ein Bogen zwischen zwei Leitungen
+  9 von 9 – Ø 90 auf Ø 100 aufgerundet (Christian «Auf Ø 100»; Regeloption «aufrunden», auch in Projektinformation.ifcSerien; Kennung
+  ifcGroesse = IFC-Mass, ifc_deckung zählt «Leitung aufgerundet» eigens). **Ab Rolle (Christian «Ja, zusammenführen»):** ein Bogen zwischen zwei Leitungen
   einer Serie ohne Bogen-Formteil mit freiem Winkel geht beim Import in der Leitung auf (Knick im Achsschnittpunkt, Kennung ifcMit = GlobalIds
   der aufgegangenen Teile); 3D und Grundriss runden jeden Knick mit regeln.biegeradius (HlksKoerper.Gebogen, höchstens halbe Nachbarstrecke).
   Bernstrasse: 572 Bögen aufgegangen, 89 Leitungen ab Rolle (Verteiler ↔ Heizkreis verbunden), ifc_deckung zählt sie unter standardFormteile.

@@ -101,6 +101,12 @@ public static class IfcDeckung
             // Kollision ihr IFC-Netz, solange sie unverändert sind (IfcOriginal) – kein Nachbau zu messen; eigens gezählt (03.11.2026)
             // Formteile mit dem Formteil unserer Serie (Standard nachgezeichnet, Christian 03.11.2026): nicht 1:1, eigens gezählt
             // Leitung ab Rolle (Bögen in der Leitung aufgegangen, IfcSerien.Zusammenfuehren): Biegung mit dem Radius der Serie – nicht 1:1, eigens gezählt
+            // aufgerundete Leitung (Grösse der Serie statt IFC-Mass, Regel «aufrunden»): nicht 1:1, eigens gezählt
+            if (g.Any(e => e.Kennungen!.ContainsKey(IfcSerien.IfcGroesse)))
+            {
+                standard["Leitung aufgerundet"] = standard.GetValueOrDefault("Leitung aufgerundet") + 1;
+                continue;
+            }
             if (g.Any(e => e.Kennungen!.ContainsKey(IfcSerien.IfcMit)))
             {
                 standard["Leitung ab Rolle"] = standard.GetValueOrDefault("Leitung ab Rolle") + 1;

@@ -10,7 +10,9 @@
 // ANNAHMEN (Vorgabe-Regeln, an Bernstrasse 42 H+K-Revit-Typen geprüft; wählbar): Mapress ohne «Edelstahl» im Namen: Trinkwasser (KW, WW, ZIR)
 //   Edelstahl, sonst C-Stahl; «Stahl» = Stahlrohr geschweisst; Rund-Kanäle = Wickelfalzrohr rund. Entscheide Christian 03.11.2026: Flexkanäle =
 //   Depping Aludec 112 («flexkanäle von depping ag»), Uponor-Metallverbundrohr = Uponor Uni Pipe PLUS FBH («uponor FBH Rohre in Standard»;
-//   ohne Formteile, ab Rolle, Biegeradius 100 mm).
+//   ohne Formteile, ab Rolle, Biegeradius 100 mm). Aufrunden (Regel «aufrunden»): fehlt die Grösse in der Serie, nimmt die Leitung die
+//   nächstgrössere (Flexkanal Ø 90 → Ø 100, Christian 03.11.2026: «Auf Ø 100»); die Leitung trägt dann die Grösse der Serie, das IFC-Mass steht
+//   in der Kennung «ifcGroesse» (Deckung zählt sie eigens).
 
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -20,7 +22,7 @@ namespace Hlks.Kern;
 
 static class IfcSerien
 {
-    public sealed record Regel(string Muster, string? Serie, string[]? Medien = null);
+    public sealed record Regel(string Muster, string? Serie, string[]? Medien = null, bool Aufrunden = false);
 
     public static readonly Regel[] Vorgabe =
     [
@@ -30,7 +32,7 @@ static class IfcSerien
         new("Mapress", "Geberit Mapress Edelstahl", ["KW", "WW", "ZIR"]),
         new("Mapress", "Geberit Mapress C-Stahl"),
         new("Sani[Pp]ex", "JRG Sanipex MT"),
-        new("Flexkanal", "Flexkanal Depping Aludec 112"),
+        new("Flexkanal", "Flexkanal Depping Aludec 112", Aufrunden: true),
         new("Uponor", "Uponor Uni Pipe PLUS FBH"),
         new("Stahl", "Stahlrohr geschweisst"),
         new("^Rechteck", "Rechteckkanal"),
@@ -45,7 +47,8 @@ static class IfcSerien
             foreach (var r in a.OfType<JsonObject>())
                 if (Wert(r["muster"]) is { Length: > 0 } mu)
                     aus.Add(new Regel(mu, Wert(r["serie"]) is { Length: > 0 } s ? s : null,
-                        r["medien"] is JsonArray me ? me.Select(x => Wert(x)).OfType<string>().ToArray() : null));
+                        r["medien"] is JsonArray me ? me.Select(x => Wert(x)).OfType<string>().ToArray() : null,
+                        r["aufrunden"] is JsonValue au && au.TryGetValue<bool>(out var ja) && ja));
         aus.AddRange(Vorgabe);
         return aus;
     }
@@ -59,6 +62,7 @@ static class IfcSerien
         var hinweise = new List<string>();
         var ohne = new Dictionary<string, int>();
         var fehler = new Dictionary<string, int>();
+        var aufgerundet = new Dictionary<string, int>();
         var serien = new Dictionary<string, Leitungsserie?>(StringComparer.OrdinalIgnoreCase);
         var vonLeitung = new Dictionary<string, (Leitungsserie S, Leitungsgroesse G)>();
         int zugeordnet = 0;
@@ -72,6 +76,15 @@ static class IfcSerien
             if (!serien.TryGetValue(name, out var s)) serien[name] = s = Laden(k, kat, ort, name, fehler);
             if (s is null) continue;
             var g = Groesse(s, e);
+            if (g is null && regel.Aufrunden && Naechstgroesser(s, e) is { } gr)
+            {
+                // nächstgrössere Grösse der Serie; das IFC-Mass bleibt als Kennung (Deckung)
+                (e.Kennungen ??= [])[IfcGroesse] = Kurz(e);
+                if (e.Zahl("da") is not null && gr.Aussen is double ga) lauf.Wert(e, "da", ga, $"aufgerundet auf {s.Familie.Name} {gr.Typ} (IFC {Kurz(e)})");
+                else if (e.Zahl("durchmesser") is not null && gr.Groesse.D is double gd) lauf.Wert(e, "durchmesser", gd, $"aufgerundet auf {s.Familie.Name} {gr.Typ} (IFC {Kurz(e)})");
+                Zaehlen(aufgerundet, $"{name}: {e.Kennungen[IfcGroesse]} → {gr.Typ}");
+                g = gr;
+            }
             if (g is null) { Zaehlen(fehler, $"{name}: Grösse {Kurz(e)} nicht in der Serie"); continue; }
             e.Bezuege[Familien.Bezug] = s.Familie.Id;
             lauf.Wert(e, "familientyp", g.Typ, $"Serie {s.Familie.Name} nach IFC-Typ «{typname}» (Regel «{regel.Muster}»)");
@@ -120,6 +133,7 @@ static class IfcSerien
 
         if (zugeordnet > 0) hinweise.Add($"Serien aus dem Standard: {zugeordnet} Leitungen und {formteileOk} Formteile nachgezeichnet ({string.Join(", ", serien.Where(s => s.Value is not null).Select(s => s.Key))})"
             + (winkelAngepasst > 0 ? $"; {winkelAngepasst} Bögen auf den nächsten Winkel der Serie (Spielraum Abwasser 5°, sonst 2°; z. B. 90° → 88.5° für das Gefälle)" : "") + ".");
+        foreach (var (was, n) in aufgerundet) hinweise.Add($"Serien aus dem Standard: {n}× aufgerundet – {was}.");
         if (biegungen > 0) hinweise.Add($"Serien aus dem Standard: {biegungen} Bögen ab Rolle in der Leitung aufgegangen (Serie ohne Bogen-Formteil, Winkel frei; Biegung mit dem Biegeradius der Serie).");
         if (ohne.Count > 0) hinweise.Add("Ohne Serie (keine Regel, Projektinformation.ifcSerien): " + string.Join(", ", ohne.OrderByDescending(o => o.Value).Take(8).Select(o => $"«{o.Key}» {o.Value}×")) + ".");
         foreach (var (grund, n) in fehler) hinweise.Add($"Serien aus dem Standard: {n}× {grund}.");
@@ -268,6 +282,17 @@ static class IfcSerien
             n++;
         }
         return n;
+    }
+
+    /// <summary>Kennung einer aufgerundeten Leitung: Grösse laut IFC (z. B. «d 90»).</summary>
+    public const string IfcGroesse = "ifcGroesse";
+
+    /// <summary>Nächstgrössere gültige Grösse der Serie: Rohr nach Aussendurchmesser, Kanal rund nach d; eckig und ohne Mass null.</summary>
+    static SerienGroesse? Naechstgroesser(Leitungsserie s, Element e)
+    {
+        if (e.Zahl("da") is double da) return s.Groessen.Where(g => g.Gueltig && g.Aussen is double a && a > da).MinBy(g => g.Aussen);
+        if (e.Zahl("durchmesser") is double d) return s.Groessen.Where(g => g.Gueltig && g.Groesse.D is double x && x > d).MinBy(g => g.Groesse.D);
+        return null;
     }
 
     /// <summary>Kennung einer Leitung ab Rolle: GlobalIds der IFC-Teile (Leitungen, Bögen), die in ihr aufgegangen sind, mit Komma.</summary>
