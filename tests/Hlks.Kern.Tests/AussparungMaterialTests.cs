@@ -299,8 +299,8 @@ public sealed class AussparungMaterialTests : IDisposable
         var w4 = Bauteilmaterial.Von(p.Modell, p.Katalog, Pruefkoerperbau.Erzeugen(p).Koerper.Single(k => k.Kennzeichen == "W-4"));
         Assert.True(w4.Rohbau);
         Assert.Equal("Mauerwerk: Backstein 150", w4.Text);
-        // KICAD-Klassen sind keine Bekleidungen (keine Klasse hat IfcCovering)
-        Assert.DoesNotContain(p.Katalog.Klassen.Values, d => Pruefkoerperbau.BekleidungEntitaeten.Contains(d.Ifc ?? ""));
+        // Bekleidung ist nur die Klasse aus dem IFC-Import (IfcCovering, IFC 1:1 03.11.2026); alle übrigen KICAD-Klassen nicht
+        Assert.Equal(["Bekleidung"], p.Katalog.Klassen.Values.Where(d => Pruefkoerperbau.BekleidungEntitaeten.Contains(d.Ifc ?? "")).Select(d => d.Name));
         Assert.False(Pruefkoerperbau.IstBekleidung(p.Katalog, Hole(p, "W-1")));
         Assert.True(Pruefkoerperbau.IstBekleidung("IfcCovering"));
         Assert.False(Pruefkoerperbau.IstBekleidung("IfcWall"));
