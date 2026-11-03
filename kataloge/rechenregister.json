@@ -1501,7 +1501,7 @@
       "eingaben": [
         "ΣDU und grösster Einzel-DU stromauf (Teil A, Apparateart)",
         "Anzahl WC stromauf",
-        "Leitungsart aus dem Strang (anschlussleitung, fallstrang, sammelleitung, grundleitung)",
+        "Leitungsart aus dem Strang (anschlussleitung, fallstrang, sammelleitung, grundleitung); im Fallstrang nur steile Leitungen = Fallleitung, waagrechte = Anschlussleitung; eine Leitung mit nur einem Apparat stromauf ist immer Einzelanschlussleitung",
         "Abflusskennzahl K der Anlage bzw. Projektinformation",
         "Gefälle der Leitung in %",
         "Innendurchmesser der Serie (sonst DN der Leitung)"
@@ -1552,7 +1552,7 @@
       "rechenweg": [
         "QT = ΣLU · 0.1 l/s.",
         "Spitzendurchfluss QD nach Diagramm 1: grösster Einzel-LU > 3 → QD = 0.598 · QT^0.257 (0.5–15 l/s), sonst QD = 0.459 · QT^0.353 (0.3–300 l/s); unter dem Startpunkt der Kurve QD = QT.",
-        "Leitungsart: V (Verteilleitung) bei Strang verteilleitung/steigstrang; sonst A (Ausstossleitung, ein Apparat stromab) bzw. T (T-Stückleitung, mehrere).",
+        "Leitungsart: A (Ausstossleitung) bei einem Apparat stromab; sonst V (Verteilleitung) bei Strang verteilleitung/steigstrang bzw. T (T-Stückleitung).",
         "Abgewickelte Länge = Länge der Leitung + längster Weg stromab bis zu einer Entnahmestelle.",
         "Belastungswerttabelle des Systems und der Leitungsart; Spalte = kleinste Länge ≥ abgewickelte Länge (ohne Wasserzähler); Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s.",
         "Vergleich: gezeichneter Aussendurchmesser ≥ da der Tabelle → ok, sonst zu klein."

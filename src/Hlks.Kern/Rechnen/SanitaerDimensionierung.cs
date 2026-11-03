@@ -2,7 +2,8 @@
 // daten von mir bekommen»). Grundlage: Summen aus Teil A (SanitaerBelastung) und die Normtabellen im Büroordner (SanitaerNormtabellen;
 // SN 592000:2024 bzw. SVGW W3 aus dem Handbuch Gebäudetechnik Sanitär 2025). Rechenweg im Klartext: kataloge/rechenregister.json
 // (sanitaer.abwasser_dimensionierung).
-// Abwasser je Leitung, Leitungsart aus dem Strang (art anschlussleitung, fallstrang, sammelleitung, grundleitung; ohne Strang geschätzt):
+// Abwasser je Leitung, Leitungsart aus dem Strang (art anschlussleitung, fallstrang, sammelleitung, grundleitung; im Fallstrang nur die
+// steilen Leitungen = Fallleitung, die waagrechten = Anschlussleitung; ohne Strang geschätzt):
 //   Anschlussleitung: Tabelle 9 (unbelüftet, ≤ 4 m) – erste Zeile mit ΣDU ≤ höchstzulässige DU und grösster Einzel-DU ≤ Grenze, Fussnoten
 //     1 (höchstens ein Gegenstand à 1.5 DU) und 2 (höchstens zwei WC) geprüft.
 //   Fallleitung: Tabelle 11 (Hauptlüftung, Winkel-Abzweig) – ΣDU ≤ höchstzulässige DU (gilt für K = 0.5), sonst Q_ww ≤ Q_max; Einzel-DU.
@@ -12,8 +13,7 @@
 // Trinkwasser je Leitung (KW, WW; nicht Zirkulation), SVGW W3 (Handbuch S. 45–70):
 //   ΣLU der Spalte (KW bzw. WW) stromab, grösster Einzel-LU; QT = ΣLU · 0.1 l/s; Spitzendurchfluss QD nach Diagramm 1 (grösster LU > 3 →
 //     QD = 0.598 · QT^0.257, sonst 0.459 · QT^0.353; unter dem Startpunkt der Kurve QD = QT).
-//   Leitungsart V (Verteilleitung: Strang verteilleitung/steigstrang), sonst A (ein Apparat stromab, Ausstossleitung) bzw. T (mehrere,
-//     T-Stückleitung); abgewickelte Länge = Leitung + längster Weg stromab bis zur Entnahmestelle.
+//   Leitungsart A (ein Apparat stromab, Ausstossleitung), sonst V (Strang verteilleitung/steigstrang) bzw. T (T-Stückleitung); abgewickelte Länge = Leitung + längster Weg stromab bis zur Entnahmestelle.
 //   Belastungswerttabelle des Systems (Serie der Leitung ↔ Hersteller-System), Leitungsart, Spalte = kleinste Länge ≥ abgewickelte Länge
 //     «ohne Wasserzähler», Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s; gezeichneter Aussendurchmesser ≥ da der Tabelle.
 //   ANNAHMEN (Fragen an Christian): Stufen aufgerundet; ohne Gruppenwasserzähler; Leitungsart aus Strang bzw. Anzahl Apparate (die
@@ -70,15 +70,21 @@ public static class SanitaerDimensionierung
         if (e.TeilVon is { } t && m.Finde(t) is { } st && st.Text("art") is { } art)
             switch (art)
             {
-                case "fallstrang": return ("fall", false);
+                case "fallstrang": return (Steil(e) ? "fall" : "anschluss", false);   // waagrechte Leitungen im Fallstrang sind Anschlussleitungen
                 case "sammelleitung": return ("sammel", false);
                 case "grundleitung": return ("grund", false);
                 case "anschlussleitung": return ("anschluss", false);
             }
+        return (Steil(e) ? "fall" : "sammel", true);
+    }
+
+    /// <summary>Steil: der senkrechte Anteil ist mindestens so lang wie der waagrechte.</summary>
+    static bool Steil(Element e)
+    {
         var p = HlksEinordnung.Punkte(e);
         double dz = 0, xy = 0;
         for (int i = 1; i < p.Count; i++) { dz += Math.Abs(p[i][2] - p[i - 1][2]); xy += Math.Sqrt(Math.Pow(p[i][0] - p[i - 1][0], 2) + Math.Pow(p[i][1] - p[i - 1][1], 2)); }
-        return (dz >= xy && dz > 0 ? "fall" : "sammel", true);
+        return dz >= xy && dz > 0;
     }
 
     static double D(JsonNode? n) => n?.GetValue<double>() ?? double.NaN;
@@ -119,11 +125,11 @@ public static class SanitaerDimensionierung
         aus["qd"] = Math.Round(qd, 3); aus["kurve"] = kurve;
         if (h is not null) annahmen.Add(h);
         // Leitungsart und abgewickelte Länge
-        string art = e.TeilVon is { } t && m.Finde(t)?.Text("art") is "verteilleitung" or "steigstrang" ? "V" : s.Apparate <= 1 ? "A" : "T";
+        string art = s.Apparate <= 1 ? "A" : e.TeilVon is { } t && m.Finde(t)?.Text("art") is "verteilleitung" or "steigstrang" ? "V" : "T";
         double laenge = (e.Geometrie?.Laenge() ?? 0) + Netz.Folgen(m, k, e, "stromab", medium).Where(x => Netz.IstEndgeraet(k, x.Element)).Select(x => x.LaengeBisHier).DefaultIfEmpty(0).Max();
         laenge /= 1000;
         aus["art"] = art; aus["laenge_m"] = Math.Round(laenge, 2);
-        annahmen.Add(art == "V" ? "Leitungsart V aus dem Strang (verteilleitung/steigstrang)." : $"Leitungsart {art} aus der Zahl der Apparate stromab ({s.Apparate}); die Gruppenabsperrung als Schnittstelle ist im Modell nicht erfasst.");
+        annahmen.Add(art == "A" ? "Leitungsart A: ein Apparat stromab (Ausstossleitung)." : art == "V" ? "Leitungsart V: mehrere Apparate, Strang verteilleitung/steigstrang." : "Leitungsart T: mehrere Apparate ausserhalb Verteil-/Steigstrang (T-Stückleitung); die Gruppenabsperrung als Schnittstelle ist im Modell nicht erfasst.");
         // Tabelle des Systems
         var serie = HlksMasse.Von(p, e)?.Serie?.SerieName ?? "";
         var sys = Systeme.FirstOrDefault(x => serie.Contains(x.Serie, StringComparison.OrdinalIgnoreCase));
@@ -154,6 +160,8 @@ public static class SanitaerDimensionierung
     {
         var m = p.Modell;
         var (art, geschaetzt) = Leitungsart(m, e);
+        bool einzel = s.Apparate == 1 && art != "anschluss";
+        if (einzel) art = "anschluss";   // Einzelanschlussleitung: ein Apparat, auch wenn sie am Fall-, Sammel- oder Grundleitungsstrang hängt
         var beitraege = s.Beitraege.Where(b => b.Wert is double).ToList();
         double sDu = s.SummeDu, duMax = beitraege.Count == 0 ? 0 : beitraege.Max(b => b.Wert!.Value);
         int wc = beitraege.Where(b => b.Zuordnung.Schluessel?.StartsWith("wc", StringComparison.OrdinalIgnoreCase) == true).Select(b => b.Apparat.Id).Distinct().Count();
@@ -165,6 +173,7 @@ public static class SanitaerDimensionierung
             ["leitung"] = e.Kennzeichen, ["medium"] = medium, ["art"] = art, ["artGeschaetzt"] = geschaetzt,
             ["summeDu"] = Math.Round(sDu, 3), ["groessterDu"] = duMax, ["wc"] = wc, ["apparate"] = s.Apparate,
         };
+        if (einzel) annahmen.Add("Ein Apparat stromauf: als Einzelanschlussleitung gerechnet (Tabelle 9), unabhängig vom Strang.");
         if (geschaetzt) annahmen.Add("Leitungsart ohne Strang aus der Lage geschätzt (steil = Fallleitung, sonst Sammelleitung).");
         if (s.OhneWert.Count > 0) annahmen.Add($"{s.OhneWert.Count} Apparat(e) ohne DU – Summe zu klein (Teil A, Apparateart setzen).");
         int? dnSoll = null; string? beleg = null;
