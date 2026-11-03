@@ -451,3 +451,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 03.11.2026 | Modul 4 Teil B | Trinkwasser-Tabellen aus Handbuch Sanitär 2025 (W3-Auszüge) wertgenau mit Befund-Id, nur Scratchpad | hlks-modul (sonnet) | läuft |
 | 03.11.2026 | Modul 4 Teil B | Abwasser-Tabellen aus Handbuch Sanitär 2025 (SN 592000:2024-Auszüge) wertgenau mit Befund-Id, nur Scratchpad | hlks-modul (sonnet) | läuft |
 | 03.11.2026 | Register / Modul 4 B | Auswertung der drei Aufträge (Register 44 Verfahren, Abwasser- und Trinkwasser-Tabellen) | – | Register committet 345dd8a (Stichproben ok); Tabellen im Büroordner %OneDrive%\HLKS-CAD\normtabellen (nicht im Repo), Teil B f149037 |
+| 03.11.2026 | Modul 4 Teil B | Unabhängige Prüfung Teil B (Abwasser/Trinkwasser gegen Handbuch, Normtabellen, Code) | hlks-pruefer (fable) | ok – Übertragung fehlerfrei; F1–F3, L1–L8 vom Hauptlauf behoben, dazu Leitungsart im importierten Fall-/Steigstrang (Probelauf Praxisprojekt) |

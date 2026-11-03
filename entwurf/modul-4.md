@@ -84,7 +84,17 @@ Gefälle, Lüftung), Hausanschluss (Tabelle 5 W3). Erst mit den Normtexten im No
   buero.json › normtabellen.pfad); Tests mit fiktiven Tabellen.
 - **Gebaut:** Abfrage `sanitaer_dimensionierung { anlage?, leitung? }` (Kern SanitaerDimensionierung.cs, MCP, KI-Gruppe), Rechenweg im Register
   (sanitaer.abwasser_dimensionierung, sanitaer.trinkwasser_dimensionierung).
-- **Offene Fragen an Christian:** Stufen aufrunden?; Gruppenwasserzähler; Leitungsart V/A/T (Gruppenabsperrung); Tabelle 10 (belüftete
-  Anschlussleitungen > 4 m); Fallleitung Haupt-/Nebenlüftung und Abzweigart je Strang (Eigenschaft?); Mindest-DN Grundleitung (Handbuch 100/150
+- **Unabhängige Prüfung (hlks-pruefer, 03.11.2026) eingearbeitet:** Übertragung fehlerfrei; behoben F1 (KW vor dem Wassererwärmer mit ΣLU WW),
+  F2 (abgewickelte Länge je Abschnitt V/A/T), F3 (K ohne Anlage aus der Projektinformation), L1 (Strang vor Ein-Apparat-Regel), L2 (DN in
+  Abflussrichtung nie kleiner, Handbuch S. 26), L3 (Tabellenende mit Hinweis), L4 (Schleifung als Annahme), L5 (K = 0.5 angenommen genannt),
+  L6 (Gefälle gegen Tabelle 6), L7 (Anschlussleitung nach Länge: T9 ≤ 4 m, ein Apparat ohne WC bis 10 m eine DN grösser, sonst T10 mit Umlüftung),
+  L8 (mehrdeutige Systemtabelle gemeldet).
+- **Probelauf Praxisprojekt (Kopie Test_praxis):** Die importierten Stränge fassen alles zusammen (Zuleitungen ab Etagenverteiler im «steigstrang»,
+  Fallstrecken und Fuss im «fallstrang»). Darum: Verteiler stromauf = Schnittstelle (dahinter A/T); im Fallstrang waagrecht mit Fallleitung
+  stromab = Anschlussleitung, ohne = Fuss (Sammelleitung), steil in eine Anschlussleitung mündend = Fallstrecke. Ergebnis: Einzelzuleitungen A
+  16x2.25 = gezeichnet, Steigstrang V 32x3 = gezeichnet; Fallleitungen mit WC DN 100; Waschtisch-/Dusch-/Badewannenanschlüsse d50 kleiner als
+  T9/T5 verlangt (DN 56/60) – Befund für Christian. Verzüge (Achsverschiebung) mitten im Fallstrang würden die obere Fallleitung als Anschluss lesen.
+- **Offene Fragen an Christian:** Stufen aufrunden?; Gruppenwasserzähler; Schnittstelle V/A/T = Verteiler bzw. Strangende (Gruppenabsperrung);
+  Fallleitung Haupt-/Nebenlüftung und Abzweigart je Strang (Eigenschaft?); Mindest-DN Grundleitung (Handbuch 100/150
   widersprüchlich); K ≠ 0.5 bei Fallleitungen; DU-Abweichungen Katalog (wc_90, ausguss_faekalien, steckbeckenapparat 2.5 statt 2.0); Gegenprüfung
   der Bildwerte (S. 52–69) und gegen die Originalnormen.

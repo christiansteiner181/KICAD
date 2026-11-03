@@ -241,12 +241,12 @@ public static class SanitaerZusammenstellung
                 "(Katalog rechnung.kurvenwahl); beide Kurven sind ausgewiesen.";
     }
 
-    /// <summary>Abflusskennzahl der Anlage, sonst die Vorgabe der Projektinformation (mit Herkunft); null, wenn keine gesetzt ist.</summary>
-    public static (double? Wert, string? Herkunft) Abflusskennzahl(Modell m, Element anlage)
+    /// <summary>Abflusskennzahl der Anlage, sonst (auch ohne Anlage) die Vorgabe der Projektinformation (mit Herkunft); null, wenn keine gesetzt ist.</summary>
+    public static (double? Wert, string? Herkunft) Abflusskennzahl(Modell m, Element? anlage)
     {
         static string H(Element e, Wert w) => $"{e.Klasse} {e.Kennzeichen}: {w.Herkunft.Art}, {w.Herkunft.Akteur}, {w.Herkunft.Zeit:yyyy-MM-dd HH:mm}" +
             (string.IsNullOrWhiteSpace(w.Herkunft.Quelle) ? " (ohne Quelle)" : ", " + w.Herkunft.Quelle);
-        if (anlage.Eigenschaft("abflusskennzahl") is { } w && w.AlsZahl() is double k) return (k, H(anlage, w));
+        if (anlage?.Eigenschaft("abflusskennzahl") is { } w && w.AlsZahl() is double k) return (k, H(anlage, w));
         foreach (var pi in m.DerKlasse("Projektinformation").OrderBy(x => x.Kennzeichen))
             if (pi.Eigenschaft("abflusskennzahl") is { } wp && wp.AlsZahl() is double kp) return (kp, H(pi, wp) + " (Vorgabe der Projektinformation)");
         return (null, null);

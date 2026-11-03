@@ -1501,31 +1501,35 @@
       "eingaben": [
         "ΣDU und grösster Einzel-DU stromauf (Teil A, Apparateart)",
         "Anzahl WC stromauf",
-        "Leitungsart aus dem Strang (anschlussleitung, fallstrang, sammelleitung, grundleitung); im Fallstrang nur steile Leitungen = Fallleitung, waagrechte = Anschlussleitung; eine Leitung mit nur einem Apparat stromauf ist immer Einzelanschlussleitung",
-        "Abflusskennzahl K der Anlage bzw. Projektinformation",
+        "Leitungsart aus dem Strang (anschlussleitung, fallstrang, sammelleitung, grundleitung)",
+        "abgewickelte Länge der Anschlussleitung (bis zum entferntesten Apparat und bis zur Fall-/Sammelleitung)",
+        "Abflusskennzahl K der Anlage, sonst der Projektinformation (auch für Leitungen ohne Anlage)",
         "Gefälle der Leitung in %",
         "Innendurchmesser der Serie (sonst DN der Leitung)"
       ],
       "rechenweg": [
-        "Anschlussleitung: Tabelle 9 (unbelüftet) – erste Zeile mit ΣDU ≤ höchstzulässige DU und grösster Einzel-DU ≤ Grenze; Fussnote 1 (höchstens ein Gegenstand à 1.5 DU) und 2 (höchstens zwei WC) geprüft.",
-        "Fallleitung: Tabelle 11 (Hauptlüftung, Winkel-Abzweig) – erste Zeile mit ΣDU ≤ höchstzulässige DU (Spalte für K = 0.5) und grösster Einzel-DU ≤ Grenze; bei K ≠ 0.5 über Q_ww = K · √ΣDU ≤ Q_max.",
+        "Leitungsart aus dem Strang. Im Fallstrang: steil = Fallleitung; waagrecht mit einer Fallleitung stromab = Anschlussleitung; waagrecht ohne Fallleitung stromab (Fuss) = Sammelleitung; steil, aber in eine Anschlussleitung mündend = Fallstrecke der Anschlussleitung. Ohne Strang aus der Lage geschätzt; dann gilt ein einzelner Apparat stromauf als Einzelanschlussleitung. Ohne Apparat stromauf (Lüftungsteil): keine Bemessung.",
+        "Anschlussleitung: abgewickelte Länge ≤ 4 m → Tabelle 9 (unbelüftet); ein Apparat ohne WC bis 10 m → Tabelle 9 eine Nennweite grösser; sonst Tabelle 10 (belüftet, mit Umlüftungs-DN). Erste Zeile mit ΣDU ≤ höchstzulässige DU und grösster Einzel-DU ≤ Grenze; Fussnoten der Tabelle (Anzahl Gegenstände je DU, Anzahl WC) geprüft.",
+        "Fallleitung: Tabelle 11 (Hauptlüftung, Winkel-Abzweig) – erste Zeile mit ΣDU ≤ höchstzulässige DU (Spalte für K = 0.5; fehlt K, wird 0.5 angenommen) und grösster Einzel-DU ≤ Grenze; bei K ≠ 0.5 über Q_ww = K · √ΣDU ≤ Q_max.",
         "Sammel- und Grundleitung: Q_ww = K · √ΣDU; massgebend Q = max(Q_ww, grösster Einzel-DU).",
-        "Tabelle 22: Spalte = grösste Gefällespalte ≤ Gefälle der Leitung (nie interpoliert); kleinste DN mit Q_max ≥ Q; Grundleitung nur Zeilen «für Grundleitung».",
+        "Tabelle 22: Spalte = grösste Gefällespalte ≤ Gefälle der Leitung (nie interpoliert); kleinste DN mit Q_max ≥ Q; Grundleitung nur Zeilen «für Grundleitung». Über der letzten Zeile: keine Bemessung (Hinweis).",
         "Mindest-DN Sammelleitung: ohne WC 80, mit WC 100.",
+        "Gefälle gegen Tabelle 6 (Mindest- und Höchstgefälle je Leitungsart); ausserhalb → Hinweis.",
+        "Nennweite in Abflussrichtung nie reduziert: Soll-DN mindestens die grösste Soll-DN aller zufliessenden Leitungen.",
         "Vergleich: gezeichneter Innendurchmesser ≥ Mindest-Innendurchmesser der Soll-DN (Tabelle 5) → ok, sonst zu klein."
       ],
       "ergebnis": "Abfrage sanitaer_dimensionierung (je Leitung Art, ΣDU, Q, Soll-DN, Beleg, ok, Annahmen).",
       "quellen": [
-        "SN 592000:2024 (Auszug im Handbuch Gebäudetechnik Sanitär 2025): Tabelle 5 (Ziff. 7.1.1, S. 3), Tabelle 7 und Q_ww-Formel (S. 4), Tabelle 9 (Ziff. 7.2.6, S. 8), Tabelle 11 (Ziff. 7.2.8, S. 21), Tabelle 22 (Ziff. 7.5, S. 30/42), Mindest-DN (S. 29)",
+        "SN 592000:2024 (Auszug im Handbuch Gebäudetechnik Sanitär 2025): Tabelle 5 (Ziff. 7.1.1, S. 3), Tabelle 6 Gefälle (Ziff. 7.1.2, S. 3), Tabelle 7 und Q_ww-Formel (S. 4), Auswahl Anschlussleitung und 4-m-Grenze (S. 7), Tabellen 9 und 10 (Ziff. 7.2.6/7.2.7, S. 8), Tabelle 11 (Ziff. 7.2.8, S. 21), Fallleitung ohne Querschnittsverminderung und Schleifung (S. 14–15), Dimensionswechsel (S. 26), Tabelle 22 (Ziff. 7.5, S. 30/42), Mindest-DN (S. 23, 29)",
         "Handbuch Gebäudetechnik Sanitär 2025 (Renggli Consulting, Lehrmittel mit Normauszügen; W:\\05_Normen und Merkblätter), übertragen mit Befund-Id je Wert; Werte im Büroordner HLKS_NORMTABELLEN, nicht im Repository",
         "Christian Steiner, 03.11.2026: «Sanitär KI modul weiter bearbeiten … du hast da gestern neue daten von mir bekommen»"
       ],
       "annahmen": [
-        "Anschlussleitungen höchstens 4 m abgewickelt (Tabelle 10 belüftet noch nicht gerechnet).",
-        "Fallleitungen mit Hauptlüftung und Winkel-Abzweig (Tabelle 11).",
+        "Fallleitungen mit Hauptlüftung und Winkel-Abzweig (Tabelle 11); Tabellen 12–14 noch nicht.",
+        "Schleifungen (liegende Verbindung zweier Fallleitungsteile, nach Tabelle 22) werden nicht erkannt – waagrechte Leitungen im Fallstrang gelten als Anschlussleitung.",
+        "Ein Apparat ohne WC 4–10 m: Sonderbedingungen S. 9 von Hand prüfen.",
         "Q_c, Q_p, Q_R je Teilstrecke nicht berücksichtigt.",
         "Mindest-DN Grundleitung je Fallleitungshöhe nicht angewendet (Handbuch S. 29 widersprüchlich: 100/150).",
-        "Ohne Strang: Leitungsart aus der Lage geschätzt (steil = Fallleitung).",
         "Handbuch ist ein Lehrmittel; verbindlich ist die Originalnorm SN 592000:2024 – Übertragung von Christian gegenzuprüfen."
       ],
       "grenzen": [
@@ -1544,17 +1548,18 @@
       "gebiet": "Sanitär",
       "zweck": "Für jede Trinkwasserleitung (kalt, warm) das Rohr da × s nach SVGW W3 aus der Belastungswerttabelle des Systems bestimmen und mit der gezeichneten Leitung vergleichen.",
       "eingaben": [
-        "ΣLU der Spalte (KW bzw. WW) stromab und grösster Einzel-LU (Teil A)",
+        "ΣLU stromab: WW-Leitung ΣLU WW; KW-Leitung ΣLU KW + ΣLU WW (Kaltwasser vor dem Wassererwärmer trägt dessen Warmwasser-Apparate)",
+        "grösster Einzel-LU (Teil A)",
         "Serie der Leitung (System, z. B. JRG Sanipex MT, Geberit Mapress Edelstahl)",
-        "Strang (verteilleitung/steigstrang) bzw. Anzahl Apparate stromab",
-        "abgewickelte Länge bis zur entferntesten Entnahmestelle"
+        "Strang (verteilleitung/steigstrang), Verteiler stromauf, Anzahl Apparate stromab",
+        "abgewickelte Länge je Abschnitt"
       ],
       "rechenweg": [
-        "QT = ΣLU · 0.1 l/s.",
+        "QT = ΣLU · 0.1 l/s (KW-Leitung vor dem Wassererwärmer: ΣLU KW + ΣLU WW wie die Gesamtsumme am Hausanschluss).",
         "Spitzendurchfluss QD nach Diagramm 1: grösster Einzel-LU > 3 → QD = 0.598 · QT^0.257 (0.5–15 l/s), sonst QD = 0.459 · QT^0.353 (0.3–300 l/s); unter dem Startpunkt der Kurve QD = QT.",
-        "Leitungsart: A (Ausstossleitung) bei einem Apparat stromab; sonst V (Verteilleitung) bei Strang verteilleitung/steigstrang bzw. T (T-Stückleitung).",
-        "Abgewickelte Länge = Länge der Leitung + längster Weg stromab bis zu einer Entnahmestelle.",
-        "Belastungswerttabelle des Systems und der Leitungsart; Spalte = kleinste Länge ≥ abgewickelte Länge (ohne Wasserzähler); Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s.",
+        "Leitungsart: ein Verteiler stromauf ist die Schnittstelle – dahinter A (Ausstossleitung), wenn ein einziger Apparat direkt ab dem Verteiler gespeist wird, sonst T (T-Stückleitung); ohne Verteiler stromauf V (Verteilleitung) bei Strang verteilleitung/steigstrang, sonst T.",
+        "Abgewickelte Länge je Abschnitt: V vom Netzanfang (Hausanschluss bzw. Wassererwärmer) bis zum Ende des Verteil-/Steigstrangs bzw. bis zum Verteiler (Schnittstelle); A und T von der Leitung bis zur entferntesten Entnahmestelle.",
+        "Belastungswerttabelle des Systems und der Leitungsart; passt die Serie zu mehreren Tabellen, gilt die erste (Hinweis). Spalte = kleinste Länge ≥ abgewickelte Länge (ohne Wasserzähler); Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s.",
         "Vergleich: gezeichneter Aussendurchmesser ≥ da der Tabelle → ok, sonst zu klein."
       ],
       "ergebnis": "Abfrage sanitaer_dimensionierung (je Leitung ΣLU, QT, QD, Art, Länge, Tabelle, Rohr, Beleg, ok, Annahmen).",
@@ -1566,7 +1571,7 @@
       ],
       "annahmen": [
         "LU- und Längenstufen aufgerundet («bis»), Spalte «ohne Wasserzähler».",
-        "Leitungsart aus Strang bzw. Anzahl Apparate (Gruppenabsperrung als Schnittstelle nicht erfasst).",
+        "Schnittstelle zwischen V und A/T = Verteiler bzw. Ende des Verteil-/Steigstrangs (die Gruppenabsperrung ist im Modell nicht erfasst).",
         "Unter dem Startpunkt QD = QT (aus dem Diagrammbild).",
         "Tabellenzellen aus dem Bild gelesen (Textschicht unbrauchbar) – Stichprobe durch Christian empfohlen."
       ],
