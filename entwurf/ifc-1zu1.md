@@ -166,4 +166,6 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
 - **Grundriss aus dem Netz (Schritt 3, 03.11.2026):** Familien mit Netzkörper (aus dem IFC oder 3D-Modell) zeigen im Grundriss zusätzlich
   den Schnitt ihres Körpers auf Schnitthöhe (Stift mittel, Annahme) über dem Umriss von oben; Fenster mit Familie: Leibungen + Schnitt
   statt angenommener Rahmen/Glaslinie/Bank; Tür mit Familie: Schnitt (Zarge, Blatt) + Aufschlag als Sinnbild (wie Revit). Schnitt und
-  Ansicht schneiden Netzkörper schon (SchnittNetz). Offen: Detailgrade (Frage an Christian), Kanten unterhalb der Schnitthöhe dünn.
+  Ansicht schneiden Netzkörper schon (SchnittNetz). Detailgrade: Christian 03.11.2026 «Überall volles IFC». Kanten unterhalb der Schnitthöhe
+  (NetzDraufsicht, 03.11.2026): Umriss- und Knickkanten (20°) von oben, dünn, verdeckte über ein Höhenraster (höchste Fläche, im Schnitt die
+  Schnitthöhe) ausgeblendet; je Familie/Typ/Höhe zwischengespeichert (Bernstrasse 2.OG: Plan erstmals 1.5 s, danach 34 ms).

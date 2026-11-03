@@ -117,8 +117,24 @@ public sealed class FamilienGrafik : IGrafikquelle
             formteil ? null : e.Kennzeichen, anschlussMarken: !formteil);
         // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
         var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
+        // darunter die Sichtkanten von oben dünn (NetzDraufsicht), je Familie, Typ und Höhe über dem Einfügepunkt zwischengespeichert
+        if (lage.Senkrecht && Draufsicht(a, ctx.Detailgrad, ctx.Schnitthoehe - lage.Ursprung[2]) is { Count: > 0 } kanten)
+            teil.Primitive.InsertRange(teil.Primitive.FindLastIndex(p => p.Art == "polygon") + 1, kanten.Select(z => new Primitiv
+            {
+                Art = "polylinie", Punkte = z.Select(q => W2([q[0], q[1], 0], lage)).ToList(), Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe },
+            }));
         teil.Primitive.AddRange(Schnittlinien(netz, ctx.Schnitthoehe, farbe));
         return [teil];
+    }
+
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<FamAufloesung, System.Collections.Concurrent.ConcurrentDictionary<(string, long), List<List<double[]>>>> draufsichten = new();
+
+    /// <summary>Sichtkanten von oben der Netzkörper einer Familie in Familienkoordinaten, unterhalb der Höhe h über dem Einfügepunkt.</summary>
+    static List<List<double[]>> Draufsicht(FamAufloesung a, string detail, double h)
+    {
+        var netz = a.Sichtbare(detail).Where(k => k.Def.Art == "netz").Select(k => k.Teil!).ToList();
+        if (netz.Count == 0) return [];
+        return draufsichten.GetOrCreateValue(a).GetOrAdd((detail, (long)Math.Round(h)), _ => NetzDraufsicht.Kanten(netz, Math.Round(h)));
     }
 
     /// <summary>Waagrechter Schnitt von Netzkörpern (Körperteile «koerper» in Weltkoordinaten) mit z = hoehe als Linienzüge, Stift mittel

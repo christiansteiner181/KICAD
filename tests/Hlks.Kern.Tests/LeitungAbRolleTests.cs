@@ -19,3 +19,22 @@ public class LeitungAbRolleTests
         Assert.All(k, q => Assert.Equal(50, Math.Sqrt((q[0] - 50) * (q[0] - 50) + (q[1] - 50) * (q[1] - 50)), 6));
     }
 }
+
+/// <summary>Grundriss aus dem IFC-Netz (Schritt 3): Sichtkanten von oben unter der Schnitthöhe, verdeckte Kanten entfallen.</summary>
+public class NetzDraufsichtTests
+{
+    static Koerperteil Wuerfel(double z0, double z1)
+    {
+        var n = NetzBau.Quader([0, 0, z0], [100, 100, z1]);
+        return new Koerperteil { Art = "koerper", Ecken = n.Ecken, Dreiecke = n.Dreiecke };
+    }
+
+    [Fact]
+    public void Wuerfel_unter_der_Schnitthoehe_zeigt_die_Oberkante_geschnitten_keine_Sichtkante()
+    {
+        var oben = NetzDraufsicht.Kanten([Wuerfel(0, 100)], 1000);
+        Assert.Equal(4, oben.Count);
+        Assert.All(oben, z => Assert.Equal(100, Math.Max(Math.Abs(z[0][0] - z[^1][0]), Math.Abs(z[0][1] - z[^1][1])), 0));
+        Assert.Empty(NetzDraufsicht.Kanten([Wuerfel(0, 100)], 50));
+    }
+}
