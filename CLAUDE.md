@@ -7,6 +7,9 @@ Christian Steiner gilt zusätzlich die übergeordnete `CLAUDE.md` im Ordner dar�
 ## Verbindlich, überall
 - **Normwerte nie aus dem Gedächtnis**, nur mit Quelle (Norm, Ausgabe, Ziffer, Seite). Normtexte (SIA u. a.) nie ins Repository.
   Fehlt eine Quelle: Annahme kennzeichnen und im Bericht als offene Frage an Christian nennen.
+- **Grundlagen** (Christian 03.11.2026: «fehlt eine normelle regulierung gilt die phisik»): Rangfolge Norm › Herstellerunterlage › Bürovorgabe
+  bzw. Entscheid › Physik (Grundgleichung mit Stoffwerten aus belegter Quelle). Jede Grundlage steht in `kataloge/grundlagen.json`, jedes Verfahren
+  in `kataloge/rechenregister.json` verweist mit «grundlagen» darauf; Annahmen ohne Grundlage als `annahme.hauptlauf`.
 - **Keine echten Projektdaten** (Pläne, Modelle, Bilder, Unterlagen von Kunden) ins Repository. Testdaten sind fiktiv, Beispielprojekt
   «MFH Musterweg». Die Echt-Tests lesen `~/HLKS_CAD_testdaten` und überspringen sich, wenn die Dateien fehlen.
 - **Nicht anfassen:** `schema/bcf-3.0`, `schema/ids-1.0`. **PDFsharp** bleibt auf 6.2.4 (ab 6.5 AGPL, siehe `Hlks.Kern.csproj`).

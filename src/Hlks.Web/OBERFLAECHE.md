@@ -1029,6 +1029,10 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
 - **Seite `/rechenweg/`** (`RechenwegSeite.cs`): bei jedem Aufruf frisch aus dem Register, Übersicht nach Gebiet, Suche, `/rechenweg/#<id>` springt zu einem Verfahren; druckbar.
 - **Symbol** rechts in der Kopfleiste neben «?» (`#rechenweg-knopf`, Symbol `warum`, Tooltip «Wie wird gerechnet – Register der technischen Auslegungen»), öffnet die Seite im Fenster `kicad-rechenweg` (`rechenwegOeffnen` in `hilfe-oberflaeche.js`).
 - **Abfrage `rechenweg { id?, suche?, gebiet? }`** (KI und MCP, Gruppe «Normen»): ohne id die Übersicht, mit id der ganze Eintrag.
+- **Grundlagen** (Christian 03.11.2026: «zentrales normenverzeichniss … fehlt eine normelle regulierung gilt die phisik»): oben auf der Seite der Grundsatz
+  (Rangfolge Norm › Herstellerunterlage › Bürovorgabe › Physik, Regeln) und die Tabelle aller Grundlagen aus `kataloge/grundlagen.json` (Art, Kürzel,
+  Ausgabe, Status original/Auszug/online/fehlt, Ablage, Werte, «verwendet in» mit Sprung zum Verfahren); `/rechenweg/#g-<id>` springt zu einer Grundlage.
+  Je Verfahren die Zeile «Grundlagen» mit Verweisen. Abfrage `grundlagen { id?, art?, gebiet? }` (KI und MCP, Gruppe «Normen»).
 
 ## Hilfe (F1)
 

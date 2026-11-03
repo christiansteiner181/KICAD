@@ -23,6 +23,13 @@ public sealed partial class Werkzeuge
         [Description(Rechenregister.ParGebiet)] string? gebiet = null) =>
         Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "rechenweg", Parameter(("id", id), ("suche", suche), ("gebiet", gebiet)))), synchronisieren: false);
 
+    [McpServerTool(Name = "grundlagen"), Description(Grundlagenverzeichnis.Text)]   // Christian 03.11.2026: «zentrales normenverzeichniss»
+    public string GrundlagenWerkzeug(
+        [Description(Grundlagenverzeichnis.ParId)] string? id = null,
+        [Description(Grundlagenverzeichnis.ParArt)] string? art = null,
+        [Description(Grundlagenverzeichnis.ParGebiet)] string? gebiet = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "grundlagen", Parameter(("id", id), ("art", art), ("gebiet", gebiet)))), synchronisieren: false);
+
     [McpServerTool(Name = "norm_lesen"), Description(NormenAbfragen.LesenText)]
     public string NormLesen(
         [Description(NormenAbfragen.ParDatei)] string datei,

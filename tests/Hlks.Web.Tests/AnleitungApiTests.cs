@@ -101,6 +101,8 @@ public class AnleitungApiTests
         var html = await r.Content.ReadAsStringAsync();
         Assert.Contains("<h1>Wie wird gerechnet</h1>", html);
         Assert.Contains("id=\"sanitaer.spitzendurchfluss\"", html);
+        Assert.Contains("id=\"g-norm.sn592000\"", html);   // Verzeichnis der Grundlagen, verlinkt aus den Verfahren
+        Assert.Contains("href=\"#g-norm.sn592000\"", html);
     }
 
     [Fact]

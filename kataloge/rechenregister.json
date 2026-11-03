@@ -34,6 +34,10 @@
         "Werte werden nie hergeleitet oder ergänzt; fehlt etwas im Katalog, lehnt das Laden des Katalogs ab.",
         "Bodenabläufe haben keine Vorgabe und müssen von Hand zugeordnet werden."
       ],
+      "grundlagen": [
+        "buero.lu_du_excel",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerBelastung.cs (SanitaerArten.Von)",
         "src/Hlks.Kern/Kataloge/SanitaerKatalog.cs (SanitaerKatalog.Vorgabe, SanitaerArt.WertFuer)",
@@ -71,6 +75,10 @@
         "Keine Normrechnung je Teilstrecke: kein Spitzendurchfluss, keine DN, kein Q_WW je Leitung. Das ist Teil B; die Normen SN 592000, SN EN 12056 und SVGW W3 liegen nicht vor.",
         "Bei einer Masche ist die Summe der Leitungen darin nicht eindeutig."
       ],
+      "grundlagen": [
+        "buero.lu_du_excel",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerBelastung.cs (SanitaerBelastung.Rechnen, SanitaerBelastung.Folgen, SanitaerNetz.Summe)",
         "src/Hlks.Kern/Schema/SchemaBelastung.cs (SchemaBelastung.Text)"
@@ -105,6 +113,9 @@
       "grenzen": [
         "Die Stückzahl-Summen zählen wie das Excel jeden Apparat der Anlage, auch ohne Netzverbindung; die Netzsummen (sanitaer.belastung_netz) zählen ihn dann nicht. Das nennt ein Hinweis.",
         "Keine Dimensionierung je Teilstrecke."
+      ],
+      "grundlagen": [
+        "buero.lu_du_excel"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Rechnen, SanitaerZusammenstellung.Auswerten)"
@@ -142,6 +153,11 @@
         "Gerechnet wird nur je Anlage, nicht je Teilstrecke.",
         "Ausserhalb der Gültigkeitsbereiche der Kurven wird trotzdem gerechnet, mit Hinweis."
       ],
+      "grundlagen": [
+        "buero.lu_du_excel",
+        "buero.diagramm1_w3",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Kataloge/SanitaerKatalog.cs (SanitaerKurve.Spitze, SanitaerKatalog.MassgebendeKurve)",
         "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Auswerten, KurvenHinweise)",
@@ -176,6 +192,10 @@
       "grenzen": [
         "Kein Q_WW je Teilstrecke, keine Dimensionierung der Abwasserleitungen, kein Füllungs- und Gefällenachweis (Teil B; Normen SN 592000 und SN EN 12056 fehlen)."
       ],
+      "grundlagen": [
+        "buero.lu_du_excel",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Auswerten, Abflusskennzahl, Spezialinstallationen)",
         "src/Hlks.Kern/Rechnen/SanitaerPruefung.cs (Befund P25)"
@@ -208,6 +228,9 @@
         "Keine Heizlastberechnung je Raum, keine Heizkörperumrechnung, keine FBH-Auslegung (Teil B; Normen fehlen, entwurf/modul-5.md).",
         "Normleistung der Verbraucher und Raumheizlast sind nicht vergleichbar; die Raumleistung wird nur als Information neben den Verbrauchern gezeigt."
       ],
+      "grundlagen": [
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Leistungen, HeizungLeistung.LeistungW)"
       ],
@@ -238,6 +261,9 @@
       ],
       "grenzen": [
         "Keine Umrechnung auf Auslegungstemperaturen, kein Druckverlust, keine DN, keine Pumpenförderhöhe (Teil B)."
+      ],
+      "grundlagen": [
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Rechnen, HeizungLeistung.Folgen, HeizungNetz.Summe)"
@@ -273,6 +299,12 @@
       "grenzen": [
         "Keine Gleichzeitigkeit, kein Druckverlust, keine Rohrdimensionierung (DN), keine Pumpenförderhöhe, kein hydraulischer Abgleich (Teil B).",
         "Ohne Stoffwerte beim Mittelwert der Temperaturen (ausserhalb der Tabelle) gibt es keinen Strom, sondern einen Befund."
+      ],
+      "grundlagen": [
+        "physik.kalorimetrie",
+        "stoff.nist_wasser",
+        "hersteller.dow_glykol",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Stroeme)",
@@ -311,6 +343,11 @@
         "Nur Wasser und Ethylenglykol; kein Propylenglykol, keine andere Konzentration, keine Viskosität und Wärmeleitfähigkeit.",
         "Wasser unter 10 °C und über 80 °C, Glykolgemisch über 40 °C haben keine Werte."
       ],
+      "grundlagen": [
+        "stoff.nist_wasser",
+        "hersteller.dow_glykol",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Kataloge/StoffwerteKatalog.cs (StoffwerteKatalog.Wert, Fluidwert, Linear)",
         "kataloge/stoffwerte.json"
@@ -343,6 +380,9 @@
       ],
       "grenzen": [
         "Rein topologisch: keine Auslegung der Gruppe (Heizlast, Temperaturen, Pumpe, Ventil) und kein hydraulischer Abgleich."
+      ],
+      "grundlagen": [
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Heizung/Heizgruppen.cs (Heizgruppen.Ableiten, Heizgruppen.ArtAbleiten)",
@@ -378,6 +418,10 @@
         "Die Wassertabelle beginnt bei 10 °C: Eine Kältegruppe mit Vorlauf 6 °C und Rücklauf 12 °C hat die mittlere Temperatur 9 °C, dafür gibt es keine Stoffwerte und damit keinen Massenstrom (Befund «Stoffwerte fehlen»).",
         "Keine Kühllastberechnung, keine Auslegung von Kältemaschine, Rückkühler oder Kühldecke."
       ],
+      "grundlagen": [
+        "physik.kalorimetrie",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Leistungen, HeizungLeistung.Stroeme)",
         "src/Hlks.Kern/Kataloge/KaelteAlias.cs",
@@ -410,6 +454,10 @@
       ],
       "grenzen": [
         "Kein Kanalquerschnitt, kein Druckverlust, keine Gleichzeitigkeit in dieser Summe."
+      ],
+      "grundlagen": [
+        "physik.kontinuitaet",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungNetz.cs (LueftungMengen.Rechnen, LueftungMengen.ElementErgaenzen)"
@@ -444,6 +492,9 @@
       "grenzen": [
         "Keine Einzelraumgeräte; keine Aussen- und Fortluft; keine Ermittlung der Luftmenge der Räume (kommt aus HKAP oder Eingabe)."
       ],
+      "grundlagen": [
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Rechnen, LueftungKette.Gruppieren, LueftungKette.AlleRaeume)",
         "kataloge/lueftung.json (varianten)"
@@ -472,6 +523,10 @@
       ],
       "grenzen": [
         "Keine Prüfung, ob der gewählte Raum für ein Gerät gross genug ist; Gerätegrösse und Wartungsfläche fehlen bis zur Herstellerunterlage."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "annahme.hauptlauf"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante)",
@@ -510,6 +565,11 @@
         "Nicht gerechnet: Druckverlust, Schall, Ventilatorleistung, Kosten, Energie, Aussen- und Fortluft.",
         "Grössere Geschwindigkeiten nach Art. 1.19 Abs. 4 (fachgerechter Nachweis, unter 1000 Jahresbetriebsstunden, unvermeidbare Hindernisse) werden nicht geprüft; der Katalog nennt sie nur.",
         "Rechteckkanäle werden nur als flächengleicher runder Kanal ausgewiesen."
+      ],
+      "grundlagen": [
+        "vorschrift.muken2014",
+        "physik.kontinuitaet",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante, Neu)",
@@ -550,6 +610,11 @@
         "Keine Flächen der Zentrale (Herstellerunterlage fehlt); Leitungen haben keine Wartungsfläche.",
         "Freigeben und versenden tut der Mensch (Status freigegeben bzw. abgelehnt)."
       ],
+      "grundlagen": [
+        "vorschrift.muken2014",
+        "physik.kontinuitaet",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante, Hohlraum)",
         "src/Hlks.Kern/Rechnen/LueftungBefehle.cs (RaumforderungAnlegen, LueftungBefehle.Liste)",
@@ -578,6 +643,10 @@
       ],
       "grenzen": [
         "Keine Brandschutznachweise, keine Klappenarten, keine Anzahl nach Kanalführung."
+      ],
+      "grundlagen": [
+        "annahme.hauptlauf",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante)"
@@ -614,6 +683,10 @@
         "Keine Kosten- und Energiekriterien.",
         "Die Gewichte kommen vom Menschen (Katalog bzw. Projekt), nie vom Kern."
       ],
+      "grundlagen": [
+        "buero.entscheide",
+        "annahme.hauptlauf"
+      ],
       "code": [
         "src/Hlks.Kern/Bewertung/Bewertung.cs (Bewertung.Rechnen)",
         "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Kriterien)",
@@ -643,6 +716,9 @@
       ],
       "grenzen": [
         "Keine Geschossflächen- oder Volumenberechnung nach Norm."
+      ],
+      "grundlagen": [
+        "physik.geometrie"
       ],
       "code": [
         "src/Hlks.Kern/Api/Ableitungen.cs (Ableitungen.Raumliste)"
@@ -675,6 +751,9 @@
       ],
       "grenzen": [
         "Keine Korrekturen für Wärmebrücken, Befestigungen, Luftschichten oder inhomogene Schichten; keine Taupunkt- oder Feuchteberechnung."
+      ],
+      "grundlagen": [
+        "physik.waermeleitung"
       ],
       "code": [
         "src/Hlks.Kern/Huelle/AufbauRechnung.cs (HuelleRechnung.Rechnen, HuelleRechnung.Uebergang)",
@@ -709,6 +788,10 @@
         "Bei Sprossen, Pfosten oder ungleichen Rahmenbreiten weicht der Glasrandverbund ab; dann Uw ausdrücklich aus dem Datenblatt setzen (fenster_kennwerte).",
         "Kein g-Wert-Nachweis und kein Sonnenschutz."
       ],
+      "grundlagen": [
+        "physik.waermeleitung",
+        "annahme.hauptlauf"
+      ],
       "code": [
         "src/Hlks.Kern/Huelle/FensterRechnung.cs (FensterRechnung.Rechnen)"
       ],
@@ -742,6 +825,11 @@
       ],
       "grenzen": [
         "Keine Normfaktoren (keine b-Faktoren, keine Temperaturkorrekturen), keine Heizlast, keine Wärmebrücken; U wird nur gelesen, nicht gerechnet."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "physik.waermeleitung",
+        "annahme.hauptlauf"
       ],
       "code": [
         "src/Hlks.Kern/Huelle/Raumgrenzen.cs (Raumgrenzen, RaumgrenzenLauf)",
@@ -778,6 +866,10 @@
       "grenzen": [
         "Wählt nur aus den Formteilen, die die Serie führt; fehlt ein Formteil beim Hersteller, wird abgelehnt (mit Vorschlag)."
       ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Leitungen/Leitungsserie.cs (Leitungsserie.Formteil)",
         "src/Hlks.Kern/Leitungen/Routing.cs (Routing.Bogenwinkel, Routing.WinkelToleranz)"
@@ -811,6 +903,10 @@
       "grenzen": [
         "Gilt nur für Kanäle, nicht für Rohre (Rohre haben feste Typen = Grössen).",
         "Druckverlust und Luftgeschwindigkeit werden nicht geprüft."
+      ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Leitungen/FreieGroesse.cs (FreieGroesse)",
@@ -847,6 +943,11 @@
       "grenzen": [
         "Keine hydraulische Auslegung der Leitung; kein Abgleich der Leitung mit Kollisionen."
       ],
+      "grundlagen": [
+        "physik.geometrie",
+        "hersteller.leitungsserien",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Leitungen/Routing.cs (Routing.Planen, Routing.OhneGeradePunkte, Routing.Bogenwinkel)",
         "src/Hlks.Kern/Leitungen/Anschlusslagen.cs (Anschlusslagen.AbstandMax, Anschlusslagen.WinkelMax)"
@@ -879,6 +980,10 @@
       "grenzen": [
         "Es gibt keinen Mindest- oder Höchstwert des Gefälles aus einer Norm (z. B. für Abwasser); geprüft wird nur gegen das eingegebene Soll.",
         "Kein Füllungsnachweis und keine Dimensionierung."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "annahme.hauptlauf"
       ],
       "code": [
         "src/Hlks.Kern/Leitungen/Routing.cs (Routing.MitGefaelle)",
@@ -913,6 +1018,10 @@
       "grenzen": [
         "Rein geometrische Prüfung, keine hydraulische."
       ],
+      "grundlagen": [
+        "physik.geometrie",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Leitungen/Leitungspruefungen.cs (Leitungspruefungen)",
         "src/Hlks.Kern/Leitungen/Anschlusslagen.cs (Anschlusslagen.AbstandMax, WinkelMax)"
@@ -945,6 +1054,10 @@
       ],
       "grenzen": [
         "Reine Darstellung: Der Biegeradius beeinflusst weder Länge noch Mengen und wird nicht auf Einhaltung geprüft."
+      ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Grafik/HlksKoerper.cs (HlksKoerper.Gebogen)",
@@ -984,6 +1097,10 @@
       "grenzen": [
         "Material des Bauteils kommt aus Typenliste, Materialzuordnung im IFC oder Typname; fehlt es, ist es unbekannt."
       ],
+      "grundlagen": [
+        "norm.sia410_2",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Leitungen/Verlegung.cs (Verlegung, Verlegung.AnteilEinlage, AnteilErdreich, Durchgangswinkel, Abtastschritt)"
       ],
@@ -1015,6 +1132,9 @@
       "grenzen": [
         "Es gibt keine Umrechnung zwischen DN und Aussendurchmesser."
       ],
+      "grundlagen": [
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Grafik/Rohrgroesse.cs (Rohrgroessen.Von, Rohrgroesse.Beschriftung)"
       ],
@@ -1043,6 +1163,10 @@
       ],
       "grenzen": [
         "Keine Verschnitt-, Dämmungs- oder Befestigungsmengen; keine Preise."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "annahme.hauptlauf"
       ],
       "code": [
         "src/Hlks.Kern/Api/Ableitungen.cs (Ableitungen.Leitungslaengen, Materialliste, Mengen)"
@@ -1077,6 +1201,10 @@
       ],
       "grenzen": [
         "Geprüft werden nur Bauteile und Netzelemente; Räume, Zonen, Aussparungen, Kollisionen und Unterlagen nicht."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Kollision/Pruefkoerper.cs (Pruefkoerperbau)",
@@ -1117,6 +1245,10 @@
       "grenzen": [
         "Standardmässig keine Abstandsprüfung; keine Prüfung von Bedienungs- und Wartungsräumen."
       ],
+      "grundlagen": [
+        "physik.geometrie",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Kollision/Kollisionspruefung.cs (Kollisionssuche, KollisionPruefen, Kollisionskennung)",
         "src/Hlks.Kern/Kollision/Vorgaben.cs (Projektvorgaben)"
@@ -1147,6 +1279,10 @@
       ],
       "grenzen": [
         "Die Füllung einer Öffnung (z. B. ein Fenster) wird eigens gemeldet."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Kollision/Oeffnungsdeckung.cs (Oeffnungsdeckung, Oeffnungsdeckung.Stationsabstand)"
@@ -1187,6 +1323,11 @@
         "Ohne spiel_aussparung (Projektvorgabe) wird abgelehnt; es gibt keinen eingebauten Wert.",
         "Keine Aussparungen in Dämmung, Leichtbau, Holz, Stahl, Unterdecken, Bodenaufbau und Luftschichten (siehe koordination.aussparung_material)."
       ],
+      "grundlagen": [
+        "norm.sia400",
+        "norm.sia410_2",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Aussparungen/AussparungVorschlag.cs (AussparungenVorschlagen, Aussparungsplanung, AufCm, Kettenluecke)",
         "src/Hlks.Kern/Kollision/Durchgaenge.cs (Durchgaenge.Projektion)",
@@ -1219,6 +1360,9 @@
       "grenzen": [
         "Keine Prüfung der Tragfähigkeit zwischen den Aussparungen."
       ],
+      "grundlagen": [
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Aussparungen/AussparungVorschlag.cs (Aussparungsplanung.Zusammenfassen)"
       ],
@@ -1250,6 +1394,9 @@
       ],
       "grenzen": [
         "Die Wortliste ist begrenzt; projektbezogene Typen gehören in die Typenliste des Projekts."
+      ],
+      "grundlagen": [
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Aussparungen/AussparungMaterial.cs (Bauteilmaterial)",
@@ -1289,6 +1436,11 @@
       "grenzen": [
         "Lift- und Treppenhauswände erkennt der Kern nicht eigens; sie zählen über ihr Material."
       ],
+      "grundlagen": [
+        "norm.sia400",
+        "norm.sia410_2",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Aussparungen/AussparungKennzeichnung.cs (AussparungKennzeichnung)",
         "src/Hlks.Kern/Grafik/AussparungGrafik.cs (AussparungGrafik)",
@@ -1324,6 +1476,11 @@
       "grenzen": [
         "Verglichen werden nur umschliessende Quader, nicht die Form."
       ],
+      "grundlagen": [
+        "standard.ifc_ids",
+        "physik.geometrie",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Import/IfcDeckung.cs (IfcDeckung.Pruefen, IfcDeckung.EineUnterlage, IfcDeckung.NachUebernahme)"
       ],
@@ -1354,6 +1511,10 @@
       ],
       "grenzen": [
         "Ohne passende Regel oder Serie bleibt die Leitung ohne Serie (Hinweis); IFC-Formteile ausser Bogen, T-Stück und Reduktion werden nicht ersetzt."
+      ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Import/IfcSerien.cs (IfcSerien.Vorgabe, IfcSerien.Regeln, IfcSerien.Zuordnen, Naechstgroesser)"
@@ -1387,6 +1548,10 @@
       "grenzen": [
         "Findet sich kein Winkel im Spielraum, entsteht kein Formteil (Hinweis mit Grösse und Winkel)."
       ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Import/IfcSerien.cs (IfcSerien, Spielraum 5° bzw. 2°)"
       ],
@@ -1419,6 +1584,10 @@
       ],
       "grenzen": [
         "Keine Prüfung von Steigungsverhältnis, Laufbreite oder Fluchtweg nach Norm."
+      ],
+      "grundlagen": [
+        "physik.geometrie",
+        "annahme.hauptlauf"
       ],
       "code": [
         "src/Hlks.Kern/Architektur/Treppenanalyse.cs (Treppenanalyse)",
@@ -1454,6 +1623,10 @@
       "grenzen": [
         "Die Norm nennt keinen festen Wert; ist ein gemeinsamer Bereich nicht erfüllbar, wird die Norm-Anforderung nur teilweise erfüllt (Hinweis)."
       ],
+      "grundlagen": [
+        "norm.sia400",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Grafik/SchnitthoeheSia.cs (SchnitthoeheSia.SchnitthoeheNachSia, Rechnen, Waehle)"
       ],
@@ -1484,6 +1657,9 @@
       ],
       "grenzen": [
         "Nur die genannten Teile von SIA 400 sind umgesetzt; es gibt keine Prüfung des ganzen Plans auf SIA-Konformität."
+      ],
+      "grundlagen": [
+        "norm.sia400"
       ],
       "code": [
         "src/Hlks.Kern/Grafik/Grafiktypen.cs (Stifte)",
@@ -1536,6 +1712,11 @@
         "Keine hydraulische Einzelrechnung (Prandtl-Colebrook) – nur Tabellen.",
         "Kein Lüftungsnachweis, keine Verzüge, keine Regenwasserleitungen."
       ],
+      "grundlagen": [
+        "norm.sn592000",
+        "lehrmittel.handbuch_sanitaer_2025",
+        "buero.entscheide"
+      ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerDimensionierung.cs (SanitaerDimensionierung.Abwasser)",
         "src/Hlks.Kern/Rechnen/SanitaerNormtabellen.cs"
@@ -1578,6 +1759,12 @@
       "grenzen": [
         "Über dem Tabellenende kein Rohr (Berechnungsmethode mit Druckverlust nicht enthalten).",
         "Zirkulation, Hausanschluss je Leitung und Druckverlust nicht gerechnet."
+      ],
+      "grundlagen": [
+        "richtlinie.svgw_w3",
+        "lehrmittel.handbuch_sanitaer_2025",
+        "buero.diagramm1_w3",
+        "buero.entscheide"
       ],
       "code": [
         "src/Hlks.Kern/Rechnen/SanitaerDimensionierung.cs (SanitaerDimensionierung.Trinkwasser, Spitze)",

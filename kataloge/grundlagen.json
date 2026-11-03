@@ -1,0 +1,229 @@
+{
+  "format": "Zentrales Verzeichnis der Grundlagen von KICAD: je Grundlage id, art, kuerzel, ausgabe, titel (nur aus der Quelle gelesen, sonst leer), gebiete, ablage (Datei), vorliegend (original | auszug | online | fehlt | –), werte (wohin übertragen), hinweis. Die Verfahren in rechenregister.json verweisen mit «grundlagen» auf die ids; «verwendet in» rechnet KICAD daraus.",
+  "stand": "03.11.2026",
+  "grundsatz": {
+    "rangfolge": [
+      "Norm, Richtlinie bzw. Vorschrift in der geltenden Ausgabe (Ziffer, Tabelle, Seite).",
+      "Herstellerunterlage für das eigene Produkt (Datenblatt, Katalog, Zertifikat).",
+      "Bürovorgabe bzw. Entscheid von Christian Steiner (mit Datum).",
+      "Physik: Fehlt eine normative Regelung, gilt die Physik – Grundgleichung (Erhaltungssätze, Wärmeleitung, Strömung) mit Stoffwerten aus belegter Quelle."
+    ],
+    "regeln": [
+      "Kein Wert aus dem Gedächtnis: jede Zahl trägt ihre Fundstelle; fehlt sie, gilt der Wert als fehlend und KICAD nennt es.",
+      "Normtexte und lizenzierte Tabellen nie ins Repository: übertragene Werte liegen im Büroordner HLKS_NORMTABELLEN (buero.json › normtabellen).",
+      "Ein Lehrmittelauszug ersetzt die Norm nicht: Status «auszug», Gegenprüfung am Original offen.",
+      "Was KICAD selbst festlegt (Toleranzen, Zählregeln), steht als «Annahme des Hauptlaufs» und bleibt offen, bis Christian entscheidet."
+    ],
+    "quelle": "Christian Steiner, 03.11.2026: «mache doch ein zentrales normenverzeichniss. dass die grundlagen klar sind. fehlt eine normelle regulierung gilt die phisik.»"
+  },
+  "grundlagen": [
+    {
+      "id": "norm.sn592000",
+      "art": "norm",
+      "kuerzel": "SN 592000",
+      "ausgabe": "2024",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Handbuch Gebäudetechnik Sanitär 2025.pdf",
+      "vorliegend": "auszug",
+      "werte": "HLKS_NORMTABELLEN\\sanitaer\\abwasser.json",
+      "hinweis": "Nur als Auszug im Handbuch Gebäudetechnik Sanitär 2025; Original nicht im Normenordner – Gegenprüfung offen."
+    },
+    {
+      "id": "richtlinie.svgw_w3",
+      "art": "richtlinie",
+      "kuerzel": "SVGW W3",
+      "ausgabe": "2013 (laut Handbuch S. 52)",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Handbuch Gebäudetechnik Sanitär 2025.pdf",
+      "vorliegend": "auszug",
+      "werte": "HLKS_NORMTABELLEN\\sanitaer\\trinkwasser.json",
+      "hinweis": "Belastungswerttabellen der Hersteller (SVGW-Zertifikate) aus dem Bild gelesen; Original nicht im Normenordner."
+    },
+    {
+      "id": "lehrmittel.handbuch_sanitaer_2025",
+      "art": "lehrmittel",
+      "kuerzel": "Handbuch Gebäudetechnik Sanitär 2025",
+      "ausgabe": "2025",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Handbuch Gebäudetechnik Sanitär 2025.pdf",
+      "vorliegend": "original",
+      "werte": "HLKS_NORMTABELLEN\\sanitaer",
+      "hinweis": "Lehrmittel mit Normauszügen; Fundstellen in berichte/handbuch-sanitaer-fundstellen.md."
+    },
+    {
+      "id": "vorschrift.muken2014",
+      "art": "vorschrift",
+      "kuerzel": "MuKEn 2014",
+      "ausgabe": "Nachführung 2018",
+      "gebiete": [
+        "Lüftung"
+      ],
+      "ablage": "energiehub-gebaeude.ch (online gelesen 31.10.2026); im Normenordner nur MuKEn2008_df.pdf",
+      "vorliegend": "online",
+      "hinweis": "Art. 1.19 Abs. 3 (Luftgeschwindigkeiten); von Christian am 31.10.2026 bestätigt."
+    },
+    {
+      "id": "norm.sia400",
+      "art": "norm",
+      "kuerzel": "SIA 400",
+      "ausgabe": "2000",
+      "gebiete": [
+        "Darstellung",
+        "Koordination"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\400_d.pdf",
+      "vorliegend": "original"
+    },
+    {
+      "id": "norm.sia410_2",
+      "art": "norm",
+      "kuerzel": "SIA 410/2",
+      "gebiete": [
+        "Darstellung",
+        "Koordination",
+        "Leitungen"
+      ],
+      "ablage": null,
+      "vorliegend": "–",
+      "hinweis": "Zitiert in den Verfahren; Datei im Normenordner noch zuzuordnen."
+    },
+    {
+      "id": "buero.lu_du_excel",
+      "art": "buero",
+      "kuerzel": "LU_DU Zusammenstellung_.xlsx",
+      "ausgabe": "Stand 14.03.2024 (Walkringen)",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "ablage": "Büro-Excel (Blatt «MFHA»)",
+      "vorliegend": "original",
+      "werte": "kataloge/sanitaer_belastungswerte.json"
+    },
+    {
+      "id": "buero.diagramm1_w3",
+      "art": "buero",
+      "kuerzel": "Diagramm 1 (2013).xls",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Technische Berechnungen\\Technische-B_Sanitär\\Berechunungen_freigegeben\\Wasser",
+      "vorliegend": "original"
+    },
+    {
+      "id": "stoff.nist_wasser",
+      "art": "stoffwerte",
+      "kuerzel": "NIST Chemistry WebBook, Wasser",
+      "ausgabe": "abgerufen 02.11.2026",
+      "gebiete": [
+        "Heizung",
+        "Kälte"
+      ],
+      "ablage": "webbook.nist.gov",
+      "vorliegend": "online",
+      "werte": "kataloge/stoffwerte.json"
+    },
+    {
+      "id": "hersteller.dow_glykol",
+      "art": "hersteller",
+      "kuerzel": "Dow DOWTHERM SR-1 / 4000 Guide",
+      "ausgabe": "Form No. 180-01190-0208 (2008)",
+      "gebiete": [
+        "Heizung",
+        "Kälte"
+      ],
+      "vorliegend": "online",
+      "werte": "kataloge/stoffwerte.json"
+    },
+    {
+      "id": "hersteller.leitungsserien",
+      "art": "hersteller",
+      "kuerzel": "Herstellerkataloge der Leitungsserien",
+      "gebiete": [
+        "Leitungen",
+        "IFC"
+      ],
+      "ablage": "Familienbibliothek (buero.json › familienbibliothek), Quelle je Typ in der Serie",
+      "vorliegend": "original",
+      "hinweis": "Geberit, GF/JRG, Nussbaum, Schmidlin, Depping, Uponor u. a.; Masse je Typ mit Fundstelle in der Familie."
+    },
+    {
+      "id": "standard.ifc_ids",
+      "art": "standard",
+      "kuerzel": "buildingSMART IFC4 / IFC2x3, IDS 1.0",
+      "gebiete": [
+        "IFC"
+      ],
+      "ablage": "schema/ids-1.0 (Repository)",
+      "vorliegend": "original"
+    },
+    {
+      "id": "physik.geometrie",
+      "art": "physik",
+      "kuerzel": "Geometrie",
+      "gebiete": [
+        "Allgemein",
+        "Hülle",
+        "Leitungen",
+        "Koordination"
+      ],
+      "hinweis": "Längen, Flächen, Volumen, Schnitte und Abstände aus dem Modell (Innenmasse, keine Flächendefinition nach Norm)."
+    },
+    {
+      "id": "physik.waermeleitung",
+      "art": "physik",
+      "kuerzel": "Stationäre Wärmeleitung",
+      "gebiete": [
+        "Hülle",
+        "Heizung"
+      ],
+      "hinweis": "R = Σ d/λ, U = 1/(Rsi + R + Rse); Leitwert eines Bauteils Σ U·A + Σ ψ·l. λ, Rsi, Rse, ψ je mit Quelle (Material, Projektinformation.uebergang, Datenblatt)."
+    },
+    {
+      "id": "physik.kalorimetrie",
+      "art": "physik",
+      "kuerzel": "Wärmestrom eines Mediums",
+      "gebiete": [
+        "Heizung",
+        "Kälte",
+        "Lüftung"
+      ],
+      "hinweis": "Q̇ = ṁ · c_p · Δθ, ṁ = ρ · V̇; Stoffwerte aus stoff.nist_wasser bzw. hersteller.dow_glykol."
+    },
+    {
+      "id": "physik.kontinuitaet",
+      "art": "physik",
+      "kuerzel": "Kontinuität",
+      "gebiete": [
+        "Lüftung",
+        "Heizung",
+        "Sanitär"
+      ],
+      "hinweis": "V̇ = A · v; Querschnitt aus Volumenstrom und Geschwindigkeit, Summen der Volumenströme an Knoten."
+    },
+    {
+      "id": "buero.entscheide",
+      "art": "entscheid",
+      "kuerzel": "Entscheide Christian Steiner",
+      "gebiete": [
+        "Allgemein"
+      ],
+      "ablage": "entwurf/*.md und Quellen der Verfahren (mit Datum)",
+      "hinweis": "Bürovorgaben und Abnahmeentscheide; gelten, wo keine Norm regelt oder die Norm Spielraum lässt."
+    },
+    {
+      "id": "annahme.hauptlauf",
+      "art": "annahme",
+      "kuerzel": "Annahmen des Hauptlaufs",
+      "gebiete": [
+        "Allgemein"
+      ],
+      "hinweis": "Von KICAD festgelegt (Toleranzen, Zählregeln, Schwellen) ohne Norm und ohne Entscheid – offen, bis Christian entscheidet; je Verfahren unter «Annahmen» genannt."
+    }
+  ]
+}

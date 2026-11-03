@@ -52,6 +52,7 @@ public sealed class Abfragen(Projekt p)
             [new("planblatt", "text", true, "Planblatt (Kennzeichen, Id oder Plannummer)"), new("datei", "text", false, "Zieldatei (.pdf); leer = Temp-Ordner")]),
         new("ifc_deckung", IfcDeckung.Text, IfcDeckung.Parameter),
         new("rechenweg", Rechenregister.Text, Rechenregister.Parameter),   // Christian 03.11.2026: Register «Wie wird was gerechnet»
+        new("grundlagen", Grundlagenverzeichnis.Text, Grundlagenverzeichnis.Parameter),   // Christian 03.11.2026: «zentrales normenverzeichniss»
         new("ifc_teile", IfcTeile.Text, IfcTeile.Parameter),   // Christian 03.11.2026: Flow «Familie aus IFC» (Teile wählen)   // Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»
         new("ifc_pruefen", IfcImport.PruefenBeschreibung,
             [new("datei", "text", true, "Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen"),
