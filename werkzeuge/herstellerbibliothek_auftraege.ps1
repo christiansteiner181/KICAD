@@ -17,11 +17,11 @@ Teil der Herstellerbibliothek der H+K-Bürobibliothek (Auftrag Christian Steiner
 '@ -replace "`r?`n", ' '
 
 $auftraege = @(
-  @{ nr = 'P1'; kategorie = 'Pumpe'
+  @{ nr = 'P1'; hersteller = 'Grundfos'; kategorie = 'Pumpe'
      hinweis = 'Nassläufer-Umwälzpumpe «Grundfos MAGNA3» (Heizung, Kälte, Trinkwarmwasser nur, wenn der Hersteller es nennt), alle Baugrössen. Einzel- und Doppelpumpen als getrennte Familien, wenn sich Massbild oder Anschlüsse unterscheiden; Familiennamen «Grundfos MAGNA3» bzw. «Grundfos MAGNA3 D». Eigenschaft bauart der Klasse Pumpe: nasslaeufer. Anschlüsse saug und druck mit DN bzw. Gewinde wie in der Unterlage. ' }
-  @{ nr = 'P2'; kategorie = 'Pumpe'
+  @{ nr = 'P2'; hersteller = 'Wilo'; kategorie = 'Pumpe'
      hinweis = 'Nassläufer-Umwälzpumpe «Wilo-Stratos MAXO» (Heizung, Kälte), alle Baugrössen. Einzel- und Doppelpumpen (Stratos MAXO-D) als getrennte Familien, wenn sich Massbild oder Anschlüsse unterscheiden; Familiennamen wie der Hersteller. Eigenschaft bauart: nasslaeufer. Anschlüsse saug und druck mit DN bzw. Gewinde wie in der Unterlage. ' }
-  @{ nr = 'P3'; kategorie = 'Pumpe'
+  @{ nr = 'P3'; hersteller = 'Biral'; kategorie = 'Pumpe'
      hinweis = 'Nassläufer-Umwälzpumpe «Biral ModulA» (Biral AG, Schweiz; biral.ch), alle Baugrössen der aktuellen Reihe. Einzel- und Doppelpumpen als getrennte Familien, wenn sich Massbild oder Anschlüsse unterscheiden; Familiennamen wie der Hersteller. Eigenschaft bauart: nasslaeufer. Biral bietet IFC und STEP über ein CAD-Portal an – nur nutzen, wenn ohne Anmeldung abrufbar. ' }
   @{ nr = 'V1'; kategorie = 'Ventil'
      hinweis = 'Siemens (Smart Infrastructure, Acvatix): zuerst die Antriebsfamilie «Siemens SQX» (Kategorie Antrieb, alle SQX-Typen, die Siemens für die Ventile VXG.. und VVG.. nennt, bauart hub), dann die Ventilfamilie «Siemens VXG44» (Gewindeventil, alle Nennweiten und Kvs-Werte) mit antriebe (Kombinationstabelle VXG44 × SQX aus der Siemens-Unterlage, fuer = Ventiltypen) und anbau (Kupplungspunkt aus dem Massbild). Bauart (regelventil bzw. mischventil) und Anzahl Wege aus dem Datenblatt; Medium «*». ' }
@@ -33,40 +33,40 @@ $auftraege = @(
   @{ nr = 'P1b'; kategorie = 'Pumpe'
      hinweis = 'NACHARBEIT der bestehenden Familien «Grundfos MAGNA3» und «Grundfos MAGNA3 D» (familien; nicht neu anlegen, mit familie_aendern bzw. familie_entwurf mit familie ersetzen): Werte, Typen, Anschlüsse und Regeltechnik bleiben, wie sie sind. Ergänze die Körper, bis die Familie in grob, mittel und fein aussieht wie die Massbilder im Grundfos-Datenheft (Pumpengehäuse mit Flanschen bzw. Verschraubung, Motor, Elektronikgehäuse/Bedienfeld, Klemmenkasten) – heute zeigen mittel und fein dieselben vier bzw. sechs Quader/Zylinder. Ein frei abrufbares 3D-Modell von Grundfos (IFC, STEP) bevorzugen und für fein übernehmen; dann den geometrischen Vergleich gegen dieses Modell ausweisen. ' }
   # Voller Umfang (Auftrag Christian 02.11.2026 «alle …»; P1–K1 waren die ersten Reihen) – laufen mit Fortsetzungsrunden, -Runden hoch
-  @{ nr = 'PG'; kategorie = 'Pumpe'
+  @{ nr = 'PG'; hersteller = 'Grundfos'; kategorie = 'Pumpe'
      hinweis = 'ALLE Pumpenmodelle von Grundfos, die Grundfos in der Schweiz für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig, die gängigen zuerst. ' }
-  @{ nr = 'PW'; kategorie = 'Pumpe'
+  @{ nr = 'PW'; hersteller = 'Wilo'; kategorie = 'Pumpe'
      hinweis = 'ALLE Pumpenmodelle von Wilo, die Wilo in der Schweiz für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden, z. B. Stratos MAXO-D), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig, die gängigen zuerst. ' }
-  @{ nr = 'PB'; kategorie = 'Pumpe'
+  @{ nr = 'PB'; hersteller = 'Biral'; kategorie = 'Pumpe'
      hinweis = 'ALLE Pumpenmodelle von Biral (Schweiz), die Biral für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig. ' }
-  @{ nr = 'VS'; kategorie = 'Ventil'
+  @{ nr = 'VS'; hersteller = 'Siemens'; kategorie = 'Ventil'
      hinweis = 'Siemens (Smart Infrastructure, Acvatix): ALLE Ventile der Reihen VXG.. (Dreiweg) und VVG.. (Durchgang), die mit SQX-Antrieben kombiniert werden, je Ventilreihe eine Familie mit allen Nennweiten und Kvs-Werten, antriebe (Kombination mit der bestehenden Familie «Siemens SQX» bzw. weiteren SQX-Familien) und anbau. Fehlende SQX-Varianten (z. B. mit Rückmeldung, Notstellfunktion, Bus) in die Antriebsfamilie ergänzen. ' }
-  @{ nr = 'VB'; kategorie = 'Ventil'
+  @{ nr = 'VB'; hersteller = 'Belimo'; kategorie = 'Ventil'
      hinweis = 'Belimo: ALLE Regelkugelhähne R20xx (2-Weg) und R30xx (3-Weg) mit allen zugehörigen Antrieben, die Belimo dafür nennt – je Ventilreihe bzw. Antriebsreihe eine Familie, Antriebe mit allen Varianten (Auf/Zu, 3-Punkt, stetig, MP-Bus, Modbus, BACnet, Notstellfunktion, Federrücklauf) und vollständiger Regeltechnik, Kombinationstabelle antriebe und anbau je Ventil. ' }
-  @{ nr = 'KE'; kategorie = 'Ventil'
+  @{ nr = 'KE'; hersteller = 'EBRO'; kategorie = 'Ventil'
      hinweis = 'EBRO Armaturen: Absperrklappen Z 011 (Zwischenflansch) und Z 014 (Lug bzw. Vollflansch), DN 50 bis DN 250, alle Ausführungen mit verschiedenen Massen als je eigene Familie, bauart absperrklappe, verbindung flansch; Antriebe (Handhebel, Getriebe, elektrische Schwenkantriebe) als Antriebsfamilien, soweit EBRO sie ohne Anmeldung bemasst, mit antriebe und anbau. ' }
   # IMI (Christian 02.11.2026: «FBH verteiler, FBH Verteilerkasten», «fabrikat IMI», «Expansionsgefässe ebenfalls IMI»)
-  @{ nr = 'I1'; kategorie = 'Verteiler'
+  @{ nr = 'I1'; hersteller = 'IMI'; kategorie = 'Verteiler'
      hinweis = 'IMI Hydronic Engineering (Heimeier): Fussbodenheizungs-Verteiler «Dynacon Eclipse», alle Abgangszahlen, die IMI führt (Typ je Abgangszahl), Anschlüsse vl_ein und rl_aus nach Klasse Verteiler sowie die Abgänge, soweit bemasst. Zuerst die Antriebsfamilie der thermischen bzw. elektrischen Stellantriebe, die IMI für diesen Verteiler nennt (Kategorie Antrieb, Regeltechnik), und die Familie des passenden Heimeier-Verteilerkastens (Kategorie Verteilerkasten, Unterputz und Aufputz als getrennte Familien, wenn die Masse verschieden sind; Typen = Kastengrössen), dann der Verteiler mit antriebe (ohne anbau) und kaesten (Zuordnung Abgangszahl → Kastengrösse aus der IMI-Unterlage). ' }
-  @{ nr = 'I2'; kategorie = 'Ausdehnungsgefaess'
+  @{ nr = 'I2'; hersteller = 'IMI'; kategorie = 'Ausdehnungsgefaess'
      hinweis = 'IMI Hydronic Engineering (Pneumatex): statische Ausdehnungsgefässe «Statico», alle Grössen, die IMI für Heizung und Kälte führt (Typen nach Nennvolumen; verschiedene Bauformen mit verschiedenen Massen als getrennte Familien). Eigenschaft bauart: statisch. Keine Elektrik. ' }
-  @{ nr = 'I3'; kategorie = 'Ausdehnungsgefaess'
+  @{ nr = 'I3'; hersteller = 'IMI'; kategorie = 'Ausdehnungsgefaess'
      hinweis = 'IMI Hydronic Engineering (Pneumatex): Kompressor-Druckhaltung «Compresso», alle Ausführungen und Gefässgrössen, die IMI führt (Steuereinheit und Gefässe als je eigene Familie, wenn sie getrennt aufgestellt werden; die Kombination im Bericht). Eigenschaft bauart: kompressor. Regeltechnik der Steuereinheit vollständig (Speisung, Leistung, Störmeldungen, Bus wie BACnet/Modbus mit nötigem Modul, Datenpunkte). ' }
-  @{ nr = 'I4'; kategorie = 'Ausdehnungsgefaess'
+  @{ nr = 'I4'; hersteller = 'IMI'; kategorie = 'Ausdehnungsgefaess'
      hinweis = 'IMI Hydronic Engineering (Pneumatex): Pumpen-Druckhaltung «Transfero», alle Ausführungen und Gefässgrössen, die IMI führt (Steuereinheit und Gefässe als je eigene Familie, wenn sie getrennt aufgestellt werden; die Kombination im Bericht). Eigenschaft bauart: pumpe. Regeltechnik der Steuereinheit vollständig (Speisung, Leistung, Störmeldungen, Bus wie BACnet/Modbus mit nötigem Modul, Datenpunkte). ' }
   # Kugelhähne (Christian 02.11.2026: «Kugelhanen mit knebelgriff und mit schmetterlingsgriff» – «fabrikat ega. bsp Buderus.»)
   @{ nr = 'A1'; kategorie = 'Ventil'
      hinweis = 'Absperr-Kugelhähne für Heizung (Gewindeanschluss, Nennweiten wie der Hersteller sie führt) in zwei Ausführungen: mit Knebelgriff (Hebelgriff) und mit Schmetterlingsgriff (Flügelgriff). Fabrikat beliebig, Vorschlag Christian: Buderus; nimm Buderus, wenn ein Buderus-Datenblatt mit Massen je Nennweite ohne Anmeldung erhältlich ist, sonst einen anderen gängigen Hersteller mit vollständig bemasstem Datenblatt und nenne ihn deutlich im Bericht und im Familiennamen. Eigenschaft art der Klasse Ventil: kugelhahn; Medium «*». Unterscheiden sich die Masse der beiden Griffe, zwei Familien («… Knebelgriff», «… Schmetterlingsgriff»), sonst eine Familie mit Typparameter griff. Keine Elektrik, kein Abschnitt regeltechnik. ' }
   # Gewinderohr mit GF+-Formteilen (Christian 03.11.2026: «wir brachen auch eine gewinderohrfamilie 3/8" bis 4", alle Formteile von GF+»)
-  @{ nr = 'G1'; kategorie = 'Bogen'
+  @{ nr = 'G1'; hersteller = 'GF'; kategorie = 'Bogen'
      hinweis = 'Georg Fischer (GF+) Temperguss-Gewindefittings für die bestehende Leitungsserie «Stahlrohr Gewinderohr» (familien; Grössen 3/8" bis 4", die Serie nicht neu anlegen): ALLE Formteile, die GF für diese Grössen führt, je Formstückart eine Familie mit Typ je Grösse bzw. Grössenpaar, Typname und Figurnummer wie GF: Bogen und Winkel (Kategorie Bogen, alle Winkel), T-Stücke auch reduziert (TStueck), Reduktionen, Reduziermuffen und -nippel (Reduktion), Muffen und Doppelnippel (Muffe), Verschraubungen (Verschraubung), Kreuze (Kreuz), Kappen und Stopfen (Endkappe). Gewinde je Anschluss wie in der GF-Unterlage (z. B. Rp, R, G) und Anschluss-dn nur, wenn GF ihn nennt. Danach in der Serie leitung.formteile bogen, tstueck und reduktion auf die GF-Familien setzen (familie_aendern; die bisherigen Formteile bleiben als Familien bestehen) und im Bericht nennen, was ersetzt wurde. Masse nur aus GF-Unterlagen, keine Preise. ' }
-  @{ nr = 'G1b'; kategorie = 'TStueck'
+  @{ nr = 'G1b'; hersteller = 'GF'; kategorie = 'TStueck'
      hinweis = 'FORTSETZUNG von G1 (GF+ Temperguss-Gewindefittings zur Serie «Stahlrohr Gewinderohr», 3/8" bis 4"): «GF Temperguss Bögen und Winkel» besteht schon (familien). Lege jetzt die übrigen GF-Formstückarten an, je Art eine Familie: T-Stücke auch reduziert (TStueck), Reduktionen, Reduziermuffen und -nippel (Reduktion), Muffen und Doppelnippel (Muffe), Verschraubungen (Verschraubung), Kreuze (Kreuz), Kappen und Stopfen (Endkappe), mit Gewinde und verbindung je Anschluss nach der GF-Unterlage. Korrigiere ausserdem die Typregel leitung.formteile.bogen der Serie: sie wählt heute nur nach dn und findet für 45° keinen Typ – entweder die Regel um den Winkel ergänzen (Exemplar winkel bzw. Typen je Winkel) oder die Regel entfernen, damit der Kern den Typ nach Grösse und Winkel wählt; erlaubte Winkel (regeln.winkel) wie die GF-Bögen. Setze danach tstueck und reduktion der Serie auf die GF-Familien. ' }
   # Rotguss-Fittinge (Christian 03.11.2026: «wir brauchen auch eine Familie für Rotguss fittinge z.bsp. JRG oder Nussbaum.»)
-  @{ nr = 'G2'; kategorie = 'Bogen'
+  @{ nr = 'G2'; hersteller = 'Nussbaum'; kategorie = 'Bogen'
      hinweis = 'Rotguss-Gewindefittings für Trinkwasser (Sanitär), Fabrikat JRG (Georg Fischer JRG) oder Nussbaum (R. Nussbaum AG), beide Schweiz: nimm den Hersteller, dessen Sortiment mit Massen je Grösse ohne Anmeldung erhältlich ist, und nenne ihn im Familiennamen. ALLE Formstückarten des Rotguss-Gewindesortiments, je Art eine Familie mit Typ je Grösse bzw. Grössenpaar (Typname und Artikel- bzw. Figurnummer wie der Hersteller): Bogen und Winkel (Kategorie Bogen), T-Stücke auch reduziert (TStueck), Reduktionen, Reduziermuffen und -nippel (Reduktion), Muffen und Doppelnippel (Muffe), Verschraubungen (Verschraubung), Kreuze (Kreuz), Kappen und Stopfen (Endkappe). Gewinde je Anschluss wie in der Unterlage (z. B. Rp, R, G) und verbindung je Anschluss (gewinde-innen bzw. gewinde-aussen) nach der Unterlage. Die Familien sind Formteile ohne eigene Leitungsserie; im Bericht nennen, zu welchen bestehenden Rohrserien sie passen. Masse nur aus Herstellerunterlagen, keine Preise. ' }
   # Nussbaum (Christian 03.11.2026: «Und eine Familie Nussbaum Wasserfilter., Ventile und Hahnen.»)
-  @{ nr = 'N1'; kategorie = 'Filter'
+  @{ nr = 'N1'; hersteller = 'Nussbaum'; kategorie = 'Filter'
      hinweis = 'R. Nussbaum AG (Schweiz, nussbaum.ch): Sanitärarmaturen für die Hausinstallation – Wasserfilter (Kategorie Filter, je Reihe eine Familie, z. B. Rückspül- und Feinfilter), Ventile (Kategorie Ventil: Absperrventile, Rückflussverhinderer, Druckreduzierventile, Sicherheitsgruppen, je Reihe eine Familie, Eigenschaft art passend) und Hahnen (Kategorie Ventil: Kugelhahnen, Auslauf- und Entleerhahnen; art kugelhahn, auslaufhahn bzw. entleerhahn). Die gängigen Reihen des aktuellen Nussbaum-Sortiments, Typen nach Nennweite bzw. Anschluss; Gewinde und verbindung je Anschluss nach der Unterlage. Elektrische Ausführungen (z. B. Filter mit automatischer Rückspülung) mit Regeltechnik. ' }
   # Übergangsteile je Serie (Christian 03.11.2026: «es gibt in allen familien übergangsteile») – Verbindungstabelle
   foreach ($x in @(
@@ -79,13 +79,13 @@ $auftraege = @(
   }
   # Lüftung (Christian 02.11.2026: «für lüftung gehören alle Rohre Kanäle inkl. Formstücke + Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems»)
   # Umfang und Fabrikat nach Vorschlag, bestätigt von Christian 02.11.2026 («Ja, so lassen»): Zehnder zuerst, Komponenten Schmidlin, sonst Trox.
-  @{ nr = 'Z1'; kategorie = 'Lueftungsgeraet'
+  @{ nr = 'Z1'; hersteller = 'Zehnder'; kategorie = 'Lueftungsgeraet'
      hinweis = 'Zehnder (ComfoSystems): alle Wohnungslüftungsgeräte mit Wärmerückgewinnung der aktuellen ComfoAir-Reihen, die Zehnder in der Schweiz führt (je Reihe eine Familie, Typen nach Baugrösse und Ausführung). Anschlüsse aul, zul, abl, fol nach Klasse Lueftungsgeraet mit Durchmesser wie in der Unterlage. Regeltechnik vollständig (Speisung, Leistung, Bedienung und Bus wie Modbus/KNX/BACnet mit nötigem Modul, Datenpunkte für Stufe, Störung, Filter, Temperaturen). ' }
-  @{ nr = 'Z2'; kategorie = 'Luftverteiler'
+  @{ nr = 'Z2'; hersteller = 'Zehnder'; kategorie = 'Luftverteiler'
      hinweis = 'Zehnder (ComfoSystems): Luftverteilsystem – Verteilerkästen der Reihe ComfoWell als Familien der Kategorie Luftverteiler (Typen nach Anzahl Abgänge, Abgänge als Anschlüsse), dazu das Rohrsystem ComfoTube als Leitungsserie (Kategorie Kanal, rund bzw. wie in der Unterlage) mit seinen Formteilen (Bogen, T-Stück, Reduktion, soweit bemasst) nach dem Abschnitt «Leitungsserien und Formteile». ' }
-  @{ nr = 'Z3'; kategorie = 'Zuluftdurchlass'
+  @{ nr = 'Z3'; hersteller = 'Zehnder'; kategorie = 'Zuluftdurchlass'
      hinweis = 'Zehnder (ComfoSystems): Zu- und Abluftventile ComfoValve und die Luftdurchlässe des Systems, die Zehnder führt (Zuluft als Kategorie Zuluftdurchlass, Abluft als eigene Familie der Kategorie Abluftdurchlass), Typen nach Grösse. ' }
-  @{ nr = 'Z4'; kategorie = 'Erdwaermetauscher'
+  @{ nr = 'Z4'; hersteller = 'Zehnder'; kategorie = 'Erdwaermetauscher'
      hinweis = 'Zehnder (ComfoSystems): Erdwärmetauscher bzw. Erdregister für Wohnungslüftung, die Zehnder heute führt (z. B. ComfoFond), je Bauart eine Familie; elektrische Teile (Pumpe, Regelung) mit Regeltechnik. ' }
   @{ nr = 'L1'; kategorie = 'Hosenstueck'
      hinweis = 'Schmidlin (wie die freigegebenen Serien «Wickelfalzrohr rund» und «Rechteckkanal» der Bürobibliothek): fehlende Formstücke Hosenstück (Kategorie Hosenstueck) und Endkappe/Enddeckel (Kategorie Endkappe) für Wickelfalzrohr rund und Rechteckkanal, Masse nur aus dem Schmidlin-Katalog bzw. Schmidlin-Datenblättern, PREISE NIE ÜBERNEHMEN; fehlt ein Mass, Typ offen lassen. ' }
@@ -111,10 +111,17 @@ foreach ($a0 in $auftraege) {
  $angelegt[$a0.nr] = @($vorgabe[$a0.nr] | Where-Object { $_ })
  for ($runde = 1; $runde -le $Runden; $runde++) {
   $a = $a0
-  $vor = $angelegt[$a.nr]
-  $fortsetzung = if ($vor.Count -gt 0) { "FORTSETZUNG (Runde $runde): Zu diesem Auftrag bestehen schon diese Familien (familien): $($vor -join '; '). Nicht neu anlegen; lege nur an, was vom Auftrag noch fehlt (weitere Reihen, Formstückarten, Grössen, Antriebe). Fehlt nichts mehr, lege nichts an und beginne den Bericht mit «VOLLSTÄNDIG». " } else { '' }
+  # Befund 03.11.2026: vorhandene Familien des Herstellers vor jeder Runde aus dem Projekt lesen (Namen beginnen mit dem Hersteller), dazu -Vorhanden
+  if ($a.hersteller) {
+    try { $pf = @((Invoke-RestMethod "$u/api/abfrage/familien" -Method Post -ContentType 'application/json' -Body '{}').familien | ForEach-Object { $_.name } | Where-Object { $_ -like "$($a.hersteller)*" }) } catch { $pf = @() }
+    $angelegt[$a.nr] = @(@($angelegt[$a.nr]) + $pf | Where-Object { $_ } | Select-Object -Unique)
+  }
+  $vor = @($angelegt[$a.nr])
+  $liste = $vor -join '; '
+  if ($liste.Length -gt 1600) { $liste = $liste.Substring(0, 1600) + ' … (weitere: Abfrage familien)' }
+  $fortsetzung = if ($vor.Count -gt 0) { "FORTSETZUNG (Runde $runde): Zu diesem Auftrag bestehen schon diese Familien (familien): $liste. Nicht neu anlegen; lege nur an, was vom Auftrag noch fehlt (weitere Reihen, Formstückarten, Grössen, Antriebe). Fehlt nichts mehr, lege nichts an und beginne den Bericht mit dem Wort VOLLSTÄNDIG in Grossbuchstaben. " } else { '' }
   $hinweis = $fortsetzung + $a.hinweis + $gemeinsam
-  if ($hinweis.Length -gt 4000) { Log "$($a.nr) Hinweis zu lang: $($hinweis.Length)"; break }
+  if ($hinweis.Length -gt 4000) { $hinweis = $hinweis.Substring(0, 4000) }
   $koerper = @{ art = 'familie_aus_unterlagen'; unterlagen = @('herstellerbibliothek_reihen.csv'); kategorie = $a.kategorie; hinweis = $hinweis; internet = $true; zeitlimitMinuten = 90 } | ConvertTo-Json -Depth 4
   $st = $null
   for ($v = 0; $v -lt 900 -and -not $st; $v++) {   # 409 = anderer KI-Lauf im Projekt: bis 15 h warten (zweite Warteschlange auf demselben Server)
@@ -130,7 +137,8 @@ foreach ($a0 in $auftraege) {
   Log "$($a.nr) Runde $runde $($s.status) $($st.id): $fam"
   $neu = @($s.ergebnis.familien | ForEach-Object { $_.name } | Where-Object { $_ -and $vor -notcontains $_ })
   $angelegt[$a.nr] = @($vor + $neu)
-  if ($s.status -ne 'fertig' -or $neu.Count -eq 0 -or "$($s.ergebnis.bericht)" -match 'VOLLST(Ä|AE)NDIG') { Log "$($a.nr) abgeschlossen nach Runde $runde"; break }
+  # -cmatch: nur das grossgeschriebene Signalwort (Befund 03.11.2026: «vollständig» im Fliesstext beendete die Runden)
+  if ($s.status -ne 'fertig' -or $neu.Count -eq 0 -or "$($s.ergebnis.bericht)" -cmatch 'VOLLST(Ä|AE)NDIG') { Log "$($a.nr) abgeschlossen nach Runde $runde"; break }
  }
 }
 Log 'fertig'
