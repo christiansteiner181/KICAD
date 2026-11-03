@@ -21,6 +21,8 @@ public sealed class IfcHlksKoerper
     public const int MaxPunkte = 20000;
 
     public List<double[]> Punkte { get; } = [];
+    /// <summary>Flächen der Brep- und Flächenmodelle (Eckpunkte in Projektkoordinaten) – für den Verlauf gebogener Schläuche.</summary>
+    public List<double[][]> Flaechenliste { get; } = [];
     /// <summary>Erste Extrusion des Körpers (Revit: Rohre und Kanäle) mit ihrer Lage in Projektkoordinaten.</summary>
     public IIfcExtrudedAreaSolid? Extrusion { get; private set; }
     public Matrix4 ExtrusionLage { get; private set; } = Matrix4.Einheit;
@@ -96,11 +98,122 @@ public sealed class IfcHlksKoerper
         foreach (var f in fs.CfsFaces)
             foreach (var b in f.Bounds)
                 if (b.Bound is IIfcPolyLoop pl)
+                {
+                    var ecken = new List<double[]>();
                     foreach (var p in pl.Polygon)
                     {
                         if (Punkte.Count >= MaxPunkte) return;
-                        Punkte.Add(m.Punkt(datei.Punkt(p)));
+                        var q = m.Punkt(datei.Punkt(p));
+                        Punkte.Add(q);
+                        ecken.Add(q);
                     }
+                    if (f.Bounds.Count == 1 || b is IIfcFaceOuterBound) Flaechenliste.Add([.. ecken]);   // ohne Löcher
+                }
+    }
+
+    /// <summary>Verlauf eines gebogenen runden Schlauchs (Revit «Flexkanal rund», Bernstrasse 42, 03.11.2026: Brep mit zwei runden Deckflächen und
+    /// einem Mantel aus Vier- und Sechsecken): Radius aus den Deckflächen, je Mantelpunkt die Mitte = Punkt − Radius · Normale, zu je einer
+    /// Mitte pro Ring gebündelt und von Deckfläche zu Deckfläche aneinandergereiht. null, wenn der Körper nicht so gebaut ist.</summary>
+    /// <summary>Warum <see cref="Schlauch"/> nichts lieferte (Fehlersuche).</summary>
+    public string? SchlauchGrund { get; private set; }
+
+    public (List<double[]> Mitten, double Durchmesser)? Schlauch()
+    {
+        if (Flaechenliste.Count < 6) return null;
+        var ids = new Dictionary<(long, long, long), int>();
+        var lage = new List<double[]>();
+        int Id(double[] q)
+        {
+            var k = ((long)Math.Round(q[0] * 10), (long)Math.Round(q[1] * 10), (long)Math.Round(q[2] * 10));
+            if (!ids.TryGetValue(k, out var i)) { ids[k] = i = lage.Count; lage.Add(q); }
+            return i;
+        }
+        var flaechen = Flaechenliste.Select(f => f.Select(Id).Distinct().ToArray()).Where(f => f.Length >= 3).ToList();
+        // Deckflächen = die zwei Flächen mit den meisten Ecken; Mantelflächen haben 3 bis 6 (Revit setzt Zwischenpunkte auf Ringkanten)
+        int meiste = flaechen.Max(f => f.Length);
+        var deckel = flaechen.Where(f => f.Length == meiste).ToList();
+        if (deckel.Count != 2 || meiste < 8 || flaechen.Where(f => f.Length < meiste).Select(f => f.Length).DefaultIfEmpty(0).Max() >= meiste) return null;
+        double[] Mitte(IEnumerable<int> vs) { var l = vs.ToList(); return [l.Average(v => lage[v][0]), l.Average(v => lage[v][1]), l.Average(v => lage[v][2])]; }
+        static double Ab(double[] a, double[] b) => Math.Sqrt(Math.Pow(a[0] - b[0], 2) + Math.Pow(a[1] - b[1], 2) + Math.Pow(a[2] - b[2], 2));
+        var mA = Mitte(deckel[0]); var mB = Mitte(deckel[1]);
+        var rDeckel = deckel[0].Select(v => Ab(lage[v], mA)).Concat(deckel[1].Select(v => Ab(lage[v], mB))).ToList();
+        double r = rDeckel.Average();
+        if (r < 1 || rDeckel.Max() - rDeckel.Min() > 0.05 * r + 0.5) return null;   // Deckflächen nicht rund
+        // Mantel: Nachbarschaft und Flächennormalen (Newell); je Punkt die Mitte = Punkt − r · Normale
+        var mantel = flaechen.Where(f => f.Length < meiste).ToList();
+        var nachbarn = new Dictionary<int, HashSet<int>>();
+        var normale = new double[lage.Count][];
+        foreach (var f in mantel)
+        {
+            double nx = 0, ny = 0, nz = 0;
+            for (int i = 0; i < f.Length; i++)
+            {
+                var a = lage[f[i]]; var b = lage[f[(i + 1) % f.Length]];
+                nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]);
+            }
+            foreach (var a in f)
+            {
+                var n = normale[a] ??= new double[3];
+                n[0] += nx; n[1] += ny; n[2] += nz;
+                foreach (var b in f) if (a != b) (nachbarn.TryGetValue(a, out var h) ? h : nachbarn[a] = []).Add(b);
+            }
+        }
+        // Mittelpunkt je Mantelpunkt; Vorzeichen der Normalen (Umlaufsinn der Datei): Nachbarn auf demselben Ring treffen dieselbe Mitte
+        var punkte = Enumerable.Range(0, lage.Count).Where(v => normale[v] is { } n && Math.Sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]) > 1e-9).ToList();
+        if (punkte.Count < 12) { SchlauchGrund = "zu wenige Mantelpunkte"; return null; }
+        double[] Schaetzung(int v, double vz)
+        {
+            var n = normale[v]!; double l = Math.Sqrt(n[0] * n[0] + n[1] * n[1] + n[2] * n[2]);
+            return [lage[v][0] - vz * r * n[0] / l, lage[v][1] - vz * r * n[1] / l, lage[v][2] - vz * r * n[2] / l];
+        }
+        double Naehe(double vz) => punkte.Average(v => (nachbarn.GetValueOrDefault(v) ?? []).Where(w => normale[w] is not null)
+            .Select(w => Ab(Schaetzung(v, vz), Schaetzung(w, vz))).DefaultIfEmpty(0).Min());
+        double vorzeichen = Naehe(1) <= Naehe(-1) ? 1 : -1;
+        // bündeln (je Ring eine Mitte) und von Deckel A zu Deckel B aneinanderreihen
+        var buendel = new List<(double[] Summe, int Anzahl)>();
+        foreach (var v in punkte)
+        {
+            var c = Schaetzung(v, vorzeichen);
+            int i = buendel.FindIndex(b => Ab([b.Summe[0] / b.Anzahl, b.Summe[1] / b.Anzahl, b.Summe[2] / b.Anzahl], c) <= 0.1 * r);
+            if (i < 0) buendel.Add(((double[])c.Clone(), 1));
+            else buendel[i] = ([buendel[i].Summe[0] + c[0], buendel[i].Summe[1] + c[1], buendel[i].Summe[2] + c[2]], buendel[i].Anzahl + 1);
+        }
+        var offen = buendel.Where(b => b.Anzahl >= 3).Select(b => new[] { b.Summe[0] / b.Anzahl, b.Summe[1] / b.Anzahl, b.Summe[2] / b.Anzahl })
+            .Where(c => Ab(c, mA) > 0.1 * r && Ab(c, mB) > 0.1 * r).ToList();
+        var mitten = new List<double[]> { mA };
+        while (offen.Count > 0)
+        {
+            var naechste = offen.MinBy(c => Ab(c, mitten[^1]))!;
+            if (Ab(naechste, mitten[^1]) > 6 * r) { SchlauchGrund = $"Lücke im Verlauf ({Ab(naechste, mitten[^1]):0} mm)"; return null; }
+            mitten.Add(naechste);
+            offen.Remove(naechste);
+        }
+        if (Ab(mitten[^1], mB) > 6 * r) { SchlauchGrund = "Verlauf erreicht die zweite Deckfläche nicht"; return null; }
+        mitten.Add(mB);
+        // Enden gerade wie die Muffen des Schlauchs: Ringmitten näher als r an einer Deckfläche fallen weg, an ihre Stelle tritt unten ein Punkt
+        // längs der Normalen der Deckfläche (Ansatz). Sonst stünden die Endscheiben der kurzen Stücke dort schräg (Ringmitten streuen um
+        // 1–3 mm) und ragten über den Schlauch hinaus. Im Bogen fallen nur Punkte auf einer Geraden weg (Douglas–Peucker 0.02 · r).
+        mitten = [mA, .. mitten.Skip(1).Take(mitten.Count - 2).Where(c => Ab(c, mA) > r && Ab(c, mB) > r), mB];
+        mitten = Vereinfacht(mitten, 0.02 * r);
+        // an beiden Enden ein kurzes Stück längs der Normalen der Deckfläche: die Endscheibe steht dann wie im IFC (nicht quer zur Richtung
+        // zur ersten Ringmitte)
+        double[]? Ansatz(int[] dk, double[] m, double[] nach)
+        {
+            double nx = 0, ny = 0, nz = 0;
+            for (int i = 0; i < dk.Length; i++)
+            {
+                var a = lage[dk[i]]; var b = lage[dk[(i + 1) % dk.Length]];
+                nx += (a[1] - b[1]) * (a[2] + b[2]); ny += (a[2] - b[2]) * (a[0] + b[0]); nz += (a[0] - b[0]) * (a[1] + b[1]);
+            }
+            double l = Math.Sqrt(nx * nx + ny * ny + nz * nz), d = Ab(m, nach);
+            if (l < 1e-9 || d < 2) return null;
+            if (nx * (nach[0] - m[0]) + ny * (nach[1] - m[1]) + nz * (nach[2] - m[2]) < 0) l = -l;
+            double e = Math.Min(r, d / 2);
+            return [m[0] + e * nx / l, m[1] + e * ny / l, m[2] + e * nz / l];
+        }
+        if (Ansatz(deckel[0], mA, mitten[1]) is { } a0) mitten.Insert(1, a0);
+        if (Ansatz(deckel[1], mB, mitten[^2]) is { } b0) mitten.Insert(mitten.Count - 1, b0);
+        return (mitten, 2 * r);
     }
 
     void Extrudiert(IIfcExtrudedAreaSolid ex, Matrix4 m)
@@ -234,8 +347,8 @@ public sealed class IfcHlksKoerper
             double dx = x - hm, dy = y - wm;
             if (dx * dx + dy * dy > 1) richtungen.Add((int)Math.Floor((Math.Atan2(dy, dx) * 180 / Math.PI + 360) % 360 / 10));
         }
-        // rund nur bei gleicher Ausdehnung in beiden Richtungen – ein Flachoval (Bernstrasse 42: 168 × 90) wird zum Rechteck derselben
-        // Hülle, KICAD kennt keinen ovalen Kanal (03.11.2026)
+        // rund nur bei gleicher Ausdehnung in beiden Richtungen, sonst Rechteck derselben Hülle (KICAD kennt keinen ovalen Kanal). Gebogene
+        // Flexkanäle sehen hier oval aus, sind aber rund – sie fasst Schlauch() vorher (03.11.2026)
         if (richtungen.Count >= 12 && Math.Abs(breite - hoehe) <= 0.05 * Math.Max(breite, hoehe))
             return new IfcHlksQuerschnitt(Math.Round(Math.Max(breite, hoehe)), null, null, "Körper (Punkte quer zur Achse)");
         if (Math.Abs(u[2]) > 0.9)   // Quer(u) senkrecht: h = x, w = y
@@ -283,6 +396,26 @@ public sealed class IfcHlksKoerper
             default:
                 return null;
         }
+    }
+
+    static List<double[]> Vereinfacht(List<double[]> p, double tol)
+    {
+        if (p.Count <= 2) return p;
+        double[] a = p[0], b = p[^1];
+        double[] u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]];
+        double l = Math.Sqrt(u[0] * u[0] + u[1] * u[1] + u[2] * u[2]);
+        int beste = -1; double weit = 0;
+        for (int i = 1; i < p.Count - 1; i++)
+        {
+            double[] d = [p[i][0] - a[0], p[i][1] - a[1], p[i][2] - a[2]];
+            double t = l > 1e-9 ? (d[0] * u[0] + d[1] * u[1] + d[2] * u[2]) / l : 0;
+            double q = Math.Sqrt(Math.Max(0, d[0] * d[0] + d[1] * d[1] + d[2] * d[2] - t * t));
+            if (q > weit) { weit = q; beste = i; }
+        }
+        if (weit <= tol) return [a, b];
+        var links = Vereinfacht(p.Take(beste + 1).ToList(), tol);
+        var rechts = Vereinfacht(p.Skip(beste).ToList(), tol);
+        return [.. links, .. rechts.Skip(1)];
     }
 
     double[] Schwerpunkt()

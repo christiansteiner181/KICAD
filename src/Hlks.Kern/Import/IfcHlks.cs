@@ -137,6 +137,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
             zu = IfcHlksAnschluesse.Zuordnen(def, px, PortMedium, null);
             if (Verlauf(x, px, zu, koerper) is not { } v) { NichtUebernommen(x, $"{wahl.Klasse} ohne Verlauf (weder zwei Ports noch eine Achse im Körper)"); return; }
             geo = new Geometrie { Art = "polylinie", Punkte = [Runden(v.A), Runden(v.B)] };
+            // gebogener Schlauch (Flexkanal, Flexrohr): Verlauf durch die Mitten seiner Ringe statt der Geraden zwischen den Ports
+            if (Biegung(v, koerper) is { } verlauf) { geo.Punkte = verlauf.Select(Runden).ToList(); Notiz("Gebogener Schlauch: Verlauf aus den Ringen des Körpers", Kurzname(x)); }
         }
         else
         {
@@ -260,6 +262,30 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
 
     /// <summary>Verlauf einer Leitung: Lagen der beiden End-Ports (anfang → ende); sonst Achse der Extrusion bzw. Hauptachse
     /// des Körpers, mit dem einen Port als Ende, wenn es ihn gibt.</summary>
+    /// <summary>Verlauf eines gebogenen Schlauchs von A nach B durch die Ringmitten (IfcHlksKoerper.Schlauch), wenn er mehr als 1 mm von der
+    /// Geraden abweicht; sonst null (gerade Leitung).</summary>
+    static List<double[]>? Biegung((double[] A, double[] B) v, Lazy<IfcHlksKoerper?> koerper)
+    {
+        if (koerper.Value?.Schlauch() is not { } s) return null;
+        var m = s.Mitten;
+        if (Geometrie.Abstand(m[0], v.B) < Geometrie.Abstand(m[0], v.A)) m = [.. Enumerable.Reverse(m)];
+        double l = Geometrie.Abstand(v.A, v.B);
+        if (l < 1) return null;
+        double[] u = [(v.B[0] - v.A[0]) / l, (v.B[1] - v.A[1]) / l, (v.B[2] - v.A[2]) / l];
+        double Quer(double[] q)
+        {
+            double[] d = [q[0] - v.A[0], q[1] - v.A[1], q[2] - v.A[2]];
+            double t = d[0] * u[0] + d[1] * u[1] + d[2] * u[2];
+            return Math.Sqrt(Math.Max(0, d[0] * d[0] + d[1] * d[1] + d[2] * d[2] - t * t));
+        }
+        if (m.Max(Quer) <= 1) return null;
+        // Enden = Mitten der Deckflächen (die Ports liegen bei Revit-Flexkanälen bis 10 mm daneben); weiter weg gilt der Port
+        var aus = new List<double[]>(m);
+        if (Geometrie.Abstand(aus[0], v.A) > 20) aus[0] = v.A;
+        if (Geometrie.Abstand(aus[^1], v.B) > 20) aus[^1] = v.B;
+        return aus;
+    }
+
     (double[] A, double[] B)? Verlauf(IIfcProduct x, IReadOnlyList<IfcHlksPort> px, IfcHlksZuordnung zu, Lazy<IfcHlksKoerper?> koerper)
     {
         var anfang = zu.PortVon("anfang", px); var ende = zu.PortVon("ende", px);
@@ -401,6 +427,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
             else if (Mm("breite") is not null || Mm("hoehe") is not null)
                 Notiz("Kanäle: Psets nennen nur Breite oder Höhe – Querschnitt aus dem Körper", Kurzname(x));
         }
+        if (q is null && koerper.Value?.Schlauch() is { } sl)
+            q = new IfcHlksQuerschnitt(Math.Round(sl.Durchmesser, 1), null, null, "Körper (Ringe des gebogenen Schlauchs)");
         if (q is null && e.Geometrie is { Punkte.Count: >= 2 } g) q = koerper.Value?.QuerschnittAusPunkten(g.Punkte[0], g.Punkte[1]);
         if (q is null) { Notiz("Kanäle ohne Querschnitt (weder Profil noch Psets noch Körper)", Kurzname(x)); return; }
         if (q.Durchmesser is double dd) lauf.Wert(e, "durchmesser", dd, q.Herkunft);

@@ -84,11 +84,11 @@ verifiziert und korrigiert werden», «der ifc import ist die basis für alles f
 
 ## Stand 03.11.2026 – Installations-IFC (Bernstrasse 42, H+K Revit 2025, IFC2X3)
 
-- **Rohre 1634/1634, Kanäle 310/318 deckungsgleich** (offen: 8 kurze Flachoval-Kanäle, als Rechteck nachgebaut, längs der Achse bis 33 mm kürzer als ihr IFC-Körper) (Prüfprojekt nur Bereich hlks; das Revit-Modell liegt 31 m neben dem Archicad-Modell, ins
+- **Rohre 1634/1634, Kanäle 318/318 deckungsgleich** (Prüfprojekt nur Bereich hlks; das Revit-Modell liegt 31 m neben dem Archicad-Modell, ins
   Architekturprojekt übernimmt KICAD es nur mit ausdrücklichem Bezug).
 - **Korrekturen:** Rohre ohne Serie mit ihrem Aussendurchmesser `da` (aus dem IFC-Profil) in 3D und Kollision statt Mindest-Ø 30 bzw. DN;
   Rechteckkanal-Profil nur dann Querschnitt, wenn die Extrusion längs der Achse läuft (Revit extrudiert waagrechte Kanäle auch senkrecht um
-  die Höhe); Flachovale als Rechteck derselben Hülle (KICAD kennt keinen ovalen Kanal); senkrechte Rechteckkanäle mit `querDrehung`
+  die Höhe); gebogene **Flexkanäle** (Revit «Flexkanal rund», Brep-Schlauch) als Polylinie durch die Ringmitten (Mitte je Mantelpunkt = Punkt − r · Normale, Radius aus den Deckflächen, gerade Muffen an den Enden; `IfcHlksKoerper.Schlauch`); senkrechte Rechteckkanäle mit `querDrehung`
   (Richtung der Breite im Grundriss; Benennung bleibt «grössere Seite = Breite»); Prüfung misst Zylinder genau (r·√(1−u²) quer zur Achse).
 - **Formteile, Armaturen, Apparate, Geräte** (Bogen 1375, Reduktion 107, T-Stück 105, Ventil 52, FBH-Kreis 45, Durchlässe 49 …): in KICAD
   ein Punkt mit Sinnbild, ohne Lage und Grösse – kein Nachbau messbar. In 3D und Kollision zeigen sie ihr IFC-Netz, solange unverändert;

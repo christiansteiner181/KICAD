@@ -41,8 +41,15 @@ public static class HlksKoerper
                     if (mass is not null) radius = mass.Durchmesser / 2;   // Rohr mit Serie, Rundkanal, Lüftungsrohr
                     else if (e.Zahl("da") is double da && da > 0) radius = da / 2;   // ohne Serie: Aussendurchmesser der Leitung (z. B. aus dem IFC-Profil), wie gezeichnet
                     Roehren(k, pts, radius, "rohr", farbe);
-                    for (int i = 1; i < pts.Count - 1; i++)   // Knickstellen schliessen
-                        k.Teile.Add(Kugel(pts[i], radius, "rohr", farbe));
+                    // Knickstellen schliessen – nicht näher als den Radius an einem Ende, sonst ragt die Kugel über das Leitungsende hinaus
+                    // (gebogener Flexkanal aus dem IFC mit vielen kurzen Stücken, Bernstrasse 42, 03.11.2026)
+                    double gesamt = 0, bisher = 0;
+                    for (int i = 1; i < pts.Count; i++) gesamt += Geometrie.Abstand(pts[i - 1], pts[i]);
+                    for (int i = 1; i < pts.Count - 1; i++)
+                    {
+                        bisher += Geometrie.Abstand(pts[i - 1], pts[i]);
+                        if (bisher >= radius && gesamt - bisher >= radius) k.Teile.Add(Kugel(pts[i], radius, "rohr", farbe));
+                    }
                     if (daemmung) DaemmungRohr(k, pts, radius, mass!.Daemmdicke, farbe);
                     break;
                 }
