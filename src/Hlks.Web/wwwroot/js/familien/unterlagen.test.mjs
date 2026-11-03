@@ -51,9 +51,9 @@ const MASSE_SCHLECHT = { masse: 2, bestanden: 1, ausserhalb: 1, ohneVergleich: 0
 // ================================================================================================ Dateien und Dialog
 
 test('Dateien: erlaubte Endungen, Prüfsumme vor dem Namen, Zeile je Datei mit Art, Seiten, Befunden, Tabellen, Hinweisen, Fehler', () => {
-  for (const n of ['a.pdf', 'b.DWG', 'c.dxf', 'd.step', 'e.stp', 'f.iges', 'g.igs', 'h.stl', 'i.obj', 'j.ifc', 'k.xlsx', 'l.csv', 'm.txt', 'n.png', 'o.jpg', 'p.jpeg']) assert.equal(U.dateiPruefen(n), true, n);
+  for (const n of ['a.pdf', 'b.DWG', 'c.dxf', 'd.step', 'e.stp', 'f.iges', 'g.igs', 'h.stl', 'i.obj', 'j.ifc', 'k.xlsx', 'l.csv', 'm.txt', 'n.png', 'o.jpg', 'p.jpeg', 'q.rfa']) assert.equal(U.dateiPruefen(n), true, n);
   assert.match(U.dateiPruefen('x.tif'), /wird nicht gelesen/);
-  assert.match(U.dateiPruefen('x.rfa'), /RFA/);
+  assert.match(U.dateiPruefen('x.rvt'), /RVT/);
   assert.match(U.dateiPruefen('ohne'), /keine Dateiendung/);
   assert.equal(U.ohnePruefsumme('cbec2941ef74_datenblatt.pdf'), 'datenblatt.pdf');
   assert.equal(U.ohnePruefsumme('datenblatt.pdf'), 'datenblatt.pdf');

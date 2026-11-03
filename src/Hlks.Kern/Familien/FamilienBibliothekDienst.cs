@@ -478,7 +478,7 @@ public static class FamilienBibliothekDienst
         var ext = Path.GetExtension(u.Datei ?? "").ToLowerInvariant();
         if (ext.Length < 2 || ext.Length > 8 || !ext[1..].All(char.IsAsciiLetterOrDigit))
             ext = u.Art switch { "pdf" => ".pdf", "dxf" => ".dxf", "dwg" => ".dwg", "bild" => ".png", "step" => ".step", "iges" => ".iges", "stl" => ".stl",
-                "obj" => ".obj", "xlsx" => ".xlsx", "csv" => ".csv", "typkatalog" => ".txt", "ifc" => ".ifc", "html" => ".html", _ => ".bin" };
+                "obj" => ".obj", "xlsx" => ".xlsx", "csv" => ".csv", "typkatalog" => ".txt", "ifc" => ".ifc", "html" => ".html", "rfa" => ".rfa", _ => ".bin" };
         return FamilienBibliothekLogik.Sauber(u.Pruefsumme, 64) + ext;
     }
 

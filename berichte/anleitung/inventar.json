@@ -5442,7 +5442,7 @@
             "Kategorie «Ventil» wählen, einen Hinweis an die KI eintragen.",
             "Den Schalter «Fehlende Angaben im Internet recherchieren» ausschalten."
           ],
-          "erwartung": "Dialog «Familie aus Unterlagen», Schritt 1: Ablagefläche (mehrere Dateien; pdf, dwg, dxf, step, stp, iges, igs, stl, obj, ifc, xlsx, csv, txt, png, jpg), je Datei eine Zeile mit Art, Seiten (nur PDF), Befunden und Hinweisen des Lesers; dazu Kategorie, Hinweis an die KI, «Bestehende Familie ersetzen» und der Internet-Schalter (Vorgabe ein).",
+          "erwartung": "Dialog «Familie aus Unterlagen», Schritt 1: Ablagefläche (mehrere Dateien; pdf, dwg, dxf, step, stp, iges, igs, stl, obj, ifc, xlsx, csv, txt, png, jpg, rfa), je Datei eine Zeile mit Art, Seiten (nur PDF), Befunden und Hinweisen des Lesers; dazu Kategorie, Hinweis an die KI, «Bestehende Familie ersetzen» und der Internet-Schalter (Vorgabe ein).",
           "pruefpunkte": [
             "Zeile je Datei mit Befundzahl.",
             "Internet-Schalter vorhanden mit Erklärtext.",

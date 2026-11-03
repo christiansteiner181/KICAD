@@ -15,14 +15,14 @@ public sealed class UnterlageEinfuegen : IBefehl
     public const string BeschreibungText = "Fügt eine Unterlage in ein Geschoss ein: DWG/DXF (Linien, Polylinien, Bögen, Kreise, Text, Bemassungen, Blöcke, Schraffurumrisse), PDF (eine Seite) oder Bild (PNG, JPEG). " +
         "Die Datei wird unverändert im Ordner unterlagen abgelegt; die Unterlage erscheint grau im Grundriss des Geschosses. Erste Lage: DWG/DXF nach der Einheit der Datei, PDF/Bild nach massstab, " +
         "Ursprung (0, 0). Danach mit unterlage_kalibrieren auf bekannte Punkte ausrichten. Layer ausblenden: element_aendern mit eigenschaften { ebenenAus: [Layer, …] }. " +
-        "Mit zweck «familie» (Modul 2) wird eine Herstellerunterlage für eine Familie abgelegt – ohne Geschoss und ohne Lage, in Plänen nicht gezeichnet: dann auch step, iges, stl, obj, xlsx, csv, typkatalog (Revit-Typkatalog .txt) und ifc; " +
+        "Mit zweck «familie» (Modul 2) wird eine Herstellerunterlage für eine Familie abgelegt – ohne Geschoss und ohne Lage, in Plänen nicht gezeichnet: dann auch step, iges, stl, obj, xlsx, csv, typkatalog (Revit-Typkatalog .txt), rfa (Revit-Familie: Typen und Parameter) und ifc; " +
         "gelesen wird sie mit unterlagen_lesen, optional mit bezuege { familie } der Familie, zu der sie gehört.";
     public string Beschreibung => BeschreibungText;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("datei", "text", true, "Pfad der Datei (lokal oder W:) oder Name einer Unterlage im Ordner unterlagen"),
         new("geschoss", "text", false, "Geschoss (Kennzeichen oder Id), in dessen Grundriss die Unterlage erscheint; entfällt bei zweck «familie»"),
-        new("art", "text", false, "dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | ifc"),
+        new("art", "text", false, "dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | rfa | ifc"),
         new("seite", "zahl", false, "PDF: Seite (ab 1, Vorgabe 1)"),
         new("massstab", "zahl", false, "PDF/Bild: Massstabsnenner der Vorlage (100 = 1:100), bestimmt die erste Lage; ohne Angabe wird die Papiergrösse (1:1) eingesetzt"),
         new("dpi", "zahl", false, "PDF/Bild: Auflösung in Bildpunkten je Zoll (PDF: Vorgabe 150 beim Rendern; Bild: aus der Datei, sonst 150)"),
@@ -191,7 +191,7 @@ public sealed class UnterlageEinfuegen : IBefehl
     /// <param name="inhalt">Pfad, unter dem der Inhalt gelesen werden darf (Typkatalog-Erkennung bei .txt); null = datei.</param>
     static string ArtBestimmen(string datei, string? art, bool fuerFamilie = false, string? inhalt = null)
     {
-        const string NurFamilie = "step, iges, stl, obj, xlsx, csv, typkatalog, html und ifc gibt es nur mit zweck «familie» (Herstellerunterlage ohne Geschoss und Lage).";
+        const string NurFamilie = "step, iges, stl, obj, xlsx, csv, typkatalog, rfa, html und ifc gibt es nur mit zweck «familie» (Herstellerunterlage ohne Geschoss und Lage).";
         if (art is not null)
         {
             var a = art.Trim().ToLowerInvariant();
@@ -211,7 +211,7 @@ public sealed class UnterlageEinfuegen : IBefehl
             var lesbar = inhalt ?? datei;
             return UnterlagenArten.AusEndung(datei, File.Exists(lesbar) ? lesbar : null)
                 ?? throw new HlksFehler($"Aus der Endung «{ext}» lässt sich die Art der Datei nicht bestimmen.",
-                    "art angeben: " + string.Join(", ", UnterlagenArten.FuerFamilie) + ". TIFF und RFA werden nicht gelesen.");
+                    "art angeben: " + string.Join(", ", UnterlagenArten.FuerFamilie) + ". TIFF und RVT werden nicht gelesen.");
         }
         return ext switch
         {
@@ -220,7 +220,7 @@ public sealed class UnterlageEinfuegen : IBefehl
             ".pdf" => "pdf",
             ".png" or ".jpg" or ".jpeg" => "bild",
             ".ifc" => throw new HlksFehler("IFC-Dateien werden nicht mit unterlage_einfuegen eingefügt.", "ifc_pruefen und ifc_uebernehmen verwenden (als Herstellerunterlage einer Familie: zweck «familie»)."),
-            ".step" or ".stp" or ".iges" or ".igs" or ".stl" or ".obj" or ".xlsx" or ".xlsm" or ".csv" or ".html" or ".htm" => throw new HlksFehler($"Dateien mit der Endung «{ext}» sind Herstellerunterlagen.", NurFamilie),
+            ".step" or ".stp" or ".iges" or ".igs" or ".stl" or ".obj" or ".xlsx" or ".xlsm" or ".csv" or ".html" or ".htm" or ".rfa" => throw new HlksFehler($"Dateien mit der Endung «{ext}» sind Herstellerunterlagen.", NurFamilie),
             _ => throw new HlksFehler($"Aus der Endung «{ext}» lässt sich die Art der Datei nicht bestimmen.", "art angeben: dwg, dxf, pdf oder bild (Bilder als PNG oder JPEG)."),
         };
     }

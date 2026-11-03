@@ -35,11 +35,27 @@ public static class UnterlagenAnsicht
             "pdf" => Pdf(u, seite ?? 1, ausschnitt, b, hinweise),
             "bild" => Bild(u, ausschnitt, b, hinweise),
             "dwg" or "dxf" => Cad(p, u, ausschnitt, b, hinweise),
+            "rfa" => Bild(u with { Pfad = RevitVorschau(p, u), Art = "bild" }, ausschnitt, b, hinweise),
             _ => throw new HlksFehler($"Zu «{u.Anzeige}» ({u.Art}) gibt es kein Bild.",
                 u.Art is "step" or "iges" or "stl" or "obj" or "ifc" ? "3D-Modelle haben keine Seite: Hülle, Flächen und Anschlüsse stehen in den Befunden (befunde mit art form3d, port, stutzen)."
                 : u.Art == "html" ? "Eine Webseite hat kein Seitenbild: ihr Inhalt steht in den Befunden (befunde mit art text, tabelle, zelle, link); weiterführende Seiten und Dateien über ihre Links (art link) mit unterlage_aus_url abrufen."
                 : "Tabellen haben kein Bild: ihr Inhalt steht in den Befunden (befunde mit art tabelle)."),
         };
+    }
+
+    /// <summary>Vorschaubild einer Revit-Familie als PNG in der Befund-Ablage (abgeleitet, jederzeit neu erzeugbar).</summary>
+    static string RevitVorschau(Projekt p, UnterlageRef u)
+    {
+        var ziel = Path.Combine(UnterlagenService.BefundOrdner(p), $"{u.Pruefsumme}.revit-vorschau.png");
+        if (File.Exists(ziel)) return ziel;
+        var png = RevitDatei.Oeffnen(u.Pfad).Info().Vorschau
+            ?? throw new HlksFehler($"Die Revit-Familie «{u.Anzeige}» hat kein Vorschaubild.", "Typen und Parameter stehen in den Befunden (befunde mit art typ, pset).");
+        Directory.CreateDirectory(Path.GetDirectoryName(ziel)!);
+        var temp = ziel + $".{Guid.NewGuid():N}.tmp";
+        File.WriteAllBytes(temp, png);
+        try { File.Move(temp, ziel, overwrite: false); } catch (IOException) when (File.Exists(ziel)) { }
+        finally { if (File.Exists(temp)) File.Delete(temp); }
+        return ziel;
     }
 
     // ---------- PDF ----------

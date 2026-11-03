@@ -19,9 +19,9 @@ export { esc };
 
 // ------------------------------------------------------------------------------------------------ Dateien
 
-export const ERLAUBTE_ENDUNGEN = ['pdf', 'dwg', 'dxf', 'step', 'stp', 'iges', 'igs', 'stl', 'obj', 'ifc', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg'];
+export const ERLAUBTE_ENDUNGEN = ['pdf', 'dwg', 'dxf', 'step', 'stp', 'iges', 'igs', 'stl', 'obj', 'ifc', 'xlsx', 'csv', 'txt', 'png', 'jpg', 'jpeg', 'rfa'];
 export const DATEI_ACCEPT = ERLAUBTE_ENDUNGEN.map((e) => '.' + e).join(',');
-export const ART_NAMEN = { html: 'Webseite', pdf: 'PDF', dwg: 'DWG', dxf: 'DXF', step: 'STEP', iges: 'IGES', stl: 'STL', obj: 'OBJ', ifc: 'IFC', xlsx: 'Excel', csv: 'CSV', typkatalog: 'Typkatalog', bild: 'Bild' };
+export const ART_NAMEN = { html: 'Webseite', pdf: 'PDF', dwg: 'DWG', dxf: 'DXF', step: 'STEP', iges: 'IGES', stl: 'STL', obj: 'OBJ', ifc: 'IFC', xlsx: 'Excel', csv: 'CSV', typkatalog: 'Typkatalog', bild: 'Bild', rfa: 'Revit-Familie' };
 export const ohnePruefsumme = (n) => String(n ?? '').replace(/^[0-9a-f]{12}_/i, '');
 export const endungVon = (name) => (/\.([a-z0-9]+)$/i.exec(String(name ?? '').trim())?.[1] ?? '').toLowerCase();
 
@@ -29,7 +29,7 @@ export const endungVon = (name) => (/\.([a-z0-9]+)$/i.exec(String(name ?? '').tr
 export function dateiPruefen(name) {
   const e = endungVon(name);
   if (!e) return `«${name}» hat keine Dateiendung.`;
-  if (!ERLAUBTE_ENDUNGEN.includes(e)) return `«${name}»: Endung .${e} wird nicht gelesen (erlaubt: ${ERLAUBTE_ENDUNGEN.map((x) => '.' + x).join(' ')}). TIFF und RFA werden nicht gelesen.`;
+  if (!ERLAUBTE_ENDUNGEN.includes(e)) return `«${name}»: Endung .${e} wird nicht gelesen (erlaubt: ${ERLAUBTE_ENDUNGEN.map((x) => '.' + x).join(' ')}). TIFF und RVT werden nicht gelesen.`;
   return true;
 }
 

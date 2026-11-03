@@ -26,10 +26,11 @@ public sealed record LeseErgebnis(UnterlagenBefunde Befunde, IUnterlagenLeser Le
 public static class UnterlagenArten
 {
     /// <summary>Arten für unterlage_einfuegen (auch Modul 1b: ifc nur über ifc_uebernehmen).</summary>
-    public static readonly string[] Alle = ["ifc", "dwg", "dxf", "pdf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "html"];
+    public static readonly string[] Alle = ["ifc", "dwg", "dxf", "pdf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "html", "rfa"];
     /// <summary>Arten, die zu einer Familie (ohne Geschoss und Lage) eingefügt werden können.</summary>
-    public static readonly string[] FuerFamilie = ["pdf", "dwg", "dxf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "ifc", "html"];
-    /// <summary>Arten, die nur als Referenz gelten (kein Leser): TIFF, RFA und Unbekanntes (Annahme 8, Prüfliste).</summary>
+    public static readonly string[] FuerFamilie = ["pdf", "dwg", "dxf", "bild", "step", "iges", "stl", "obj", "xlsx", "csv", "typkatalog", "ifc", "html", "rfa"];
+    /// <summary>Art aus der Endung; null = nur Referenz (kein Leser): TIFF, RVT und Unbekanntes (Annahme 8, Prüfliste).
+    /// RFA liest der Leser «revit» (Typen, Parameter, Vorschau; seit 03.11.2026).</summary>
     public static string? AusEndung(string datei, string? pfadFuerInhalt = null)
     {
         var ext = Path.GetExtension(datei).ToLowerInvariant();
@@ -47,6 +48,7 @@ public static class UnterlagenArten
             case ".obj": return "obj";
             case ".xlsx" or ".xlsm": return "xlsx";
             case ".csv": return "csv";
+            case ".rfa": return "rfa";
             case ".txt":
                 return pfadFuerInhalt is not null && IstTypkatalog(pfadFuerInhalt) ? "typkatalog" : null;
             default: return null;
@@ -122,7 +124,7 @@ public static class UnterlagenService
         var a = UnterlagenArten.AusEndung(dateiName, gefunden);
         if (a is null)
             throw new HlksFehler($"Die Art der Datei «{dateiName}» ist nicht bekannt.",
-                "Gelesen werden: pdf, dwg, dxf, png/jpg, ifc, step/stp, iges/igs, stl, obj, xlsx, csv und Revit-Typkatalog (.txt mit Kopf wie Laenge##LENGTH##MILLIMETERS). TIFF und RFA werden nicht gelesen.");
+                "Gelesen werden: pdf, dwg, dxf, png/jpg, ifc, step/stp, iges/igs, stl, obj, xlsx, csv, Revit-Familie (.rfa: Typen und Parameter) und Revit-Typkatalog (.txt mit Kopf wie Laenge##LENGTH##MILLIMETERS). TIFF und RVT werden nicht gelesen.");
         // Unterlage-Element der Datei (falls eingefügt), damit Kennzeichen erscheinen
         var el = p.Modell.DerKlasse("Unterlage").FirstOrDefault(u => string.Equals(u.Text("datei"), dateiName, StringComparison.OrdinalIgnoreCase));
         return new UnterlageRef(dateiName, Unterlagen.OriginalName(dateiName), a, Pruefsumme(dateiName, gefunden), gefunden, el?.Kennzeichen, el?.Id);
@@ -183,7 +185,7 @@ public static class UnterlagenService
     {
         var leser = UnterlagenLeser.Fuer(u.Art)
             ?? throw new HlksFehler($"Für Dateien der Art «{u.Art}» gibt es keinen Leser.",
-                "Lesbar: pdf, dwg, dxf, bild (png, jpg), ifc, stl, obj, xlsx, csv, typkatalog; step und iges mit dem STEP-Leser, wenn er eingebaut ist. Die Datei bleibt als Referenz abgelegt.");
+                "Lesbar: pdf, dwg, dxf, bild (png, jpg), ifc, stl, obj, xlsx, csv, typkatalog, rfa; step und iges mit dem STEP-Leser, wenn er eingebaut ist. Die Datei bleibt als Referenz abgelegt.");
         var sw = Stopwatch.StartNew();
         var ablage = AblagePfad(p, u.Pruefsumme, leser);
         var cached = Aus(ablage);
