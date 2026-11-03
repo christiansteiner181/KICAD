@@ -107,7 +107,27 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
 - Nicht gebaut: ein Ordner-Katalog (alle RFA eines Ordners auf W: mit Kategorie und Typen durchsuchen) – offen als
   nächster Schritt. Nicht im Browser geprüft.
 
-**Stufe 2 – generischer Objektleser:** Schema aus `Formats/Latest` auslegen und damit `Global/ElemTable` und die
+**Stufe 2 – Stand 03.11.2026 (Christian: «Stufe 2 beginnen»):** Das **Klassenschema ist vollständig entschlüsselt**
+(`src/Hlks.Kern/Unterlagen/RevitSchema.cs`, `RevitDatei.Schema()`), nach Revits `ArchiveClassMaps::loadAllClasses`,
+`loadNewClass`, `readADDTable`, `readADDEntry` und `FieldType::getDescription` (Ghidra):
+- Klasse: `u16` Version (0), `u16` Namenlänge, Name, Elternklasse als Verweis, `u32` Schema-Nummer, `u32` Feldzahl,
+  Felder, `u32` Anzahl Upgrade-GUIDs, je 16 B. Ende: Version 0 und Namenlänge 0.
+- Verweis: `u16` Tag; 0 = keine, Bit 15 = neue Klasse folgt inline, sonst Tag einer geladenen Klasse (auch Selbstbezug).
+  Tags zählen in Ladereihenfolge ab 12.
+- Feld: `u32` Namenlänge (1–63), Name, `u32` Feldtyp (Byte 0 Grundtyp 1 bool, 2 char, 3 short, 4 int, 5 long, 6 float,
+  7 double, 8 TCHAR, 9 GUID, 10 Klassenreferenz, 11 int64, 13 typedef, 14 Klasse; Bits 8–11 Zeigerart 1/2 Besitzer,
+  3 Zeiger, 4 Ref-Zeiger; Bits 12–15 Sammlung 1 Array, 5 Collection, 6 String), bei Array `u32` Anzahl, bei typedef ein
+  Untereintrag, bei eingebetteter Klasse ihr Verweis.
+- Gelesen bis aufs Endzeichen: Revit 2017 3879, 2018 4024, 2025 4600 Klassen (12 296 Felder). Beispiele: `Element`
+  (`m_id`, `m_famId`, Parameterwert-Tabellen …), `FamilySymbol` (u. a. `m_arrConnectorData`), `Connector`, `XYZ` = Array
+  aus 3 double.
+- **Die Tags stehen in den Partitionen vor den Objekten** (`Partitions/0` beginnt mit `ElementHeader` 0x5c7,
+  `ElementParents` 0x5d3, `FillPatternElem` 0x7d8) – das Schema ist damit der Schlüssel zur Objektebene.
+- Test `RevitDateiTests` 4/4. **Noch offen:** das Format der Objektdaten selbst (Reihenfolge und Kodierung der Feldwerte,
+  Zeiger, Sammlungen) – nächster Schritt: Objekt-Lesecode in `Utility.dll` dekompilieren (`AArchive::LoadModel`,
+  Feld-Serialisierer) und `Global/ElemTable` (Elementliste, Einträge zu 40 B mit Element-Id) auslegen.
+
+**Stufe 2 – generischer Objektleser (Einschätzung vor Beginn):** Schema aus `Formats/Latest` auslegen und damit `Global/ElemTable` und die
 Partitionen in Objekte mit Klassen- und Feldnamen zerlegen. Mehrere Wochen, Ergebnis unsicher; das Schema ändert mit
 jeder Revit-Version, ist aber in jeder Datei mitgespeichert (das senkt das Risiko). Weitere Dekompilierung der
 Archivklassen in `Utility.dll` und `RevitDB.dll` wäre dafür nötig.

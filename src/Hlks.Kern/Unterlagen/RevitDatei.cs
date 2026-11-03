@@ -149,6 +149,10 @@ public sealed class RevitDatei
     /// alle gzip-Glieder entpackt und gegen CRC32/Länge geprüft, aneinandergehängt. Null, wenn es den Stream nicht gibt.</summary>
     public byte[]? Entpackt(string pfad) => Strom(pfad) is { } roh ? Entpacken(Entblocken(roh)) : null;
 
+    /// <summary>Klassenschema der Datei (Formats/Latest), Schlüssel zu den Objekten in Global/* und Partitions/*.</summary>
+    public RevitSchema Schema() => RevitSchema.Lesen(Entpackt("Formats/Latest")
+        ?? throw new HlksFehler("Die Revit-Datei hat kein Klassenschema (Formats/Latest fehlt)."));
+
     /// <summary>Entfernt aus jedem vollen Block die letzten <see cref="Pruefteil"/> Bytes (Revit-Fehlerkorrektur).</summary>
     public static byte[] Entblocken(byte[] roh)
     {

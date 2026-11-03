@@ -99,4 +99,24 @@ public class RevitDateiTests
         if (alt is null) return;
         Assert.Equal("2018", RevitDatei.Oeffnen(alt).Info().Version);
     }
+
+    [Fact]
+    public void Echtes_Klassenschema_2025_und_2018_vollstaendig_mit_den_Tags_der_Partitionen()
+    {
+        var pfad = Echt("familien/revit/speicher_kaelte_2025.rfa");
+        if (pfad is null) return;
+        var s = RevitDatei.Oeffnen(pfad).Schema();
+        Assert.Equal(4600, s.Anzahl);
+        var element = s.Klasse("Element")!;
+        Assert.Contains(element.Felder, f => f.Name == "m_famId" && f.Typ.Beschreibung(s) == "ElementId");
+        Assert.Equal("Identifier", s.AlleFelder(s.Klasse("ElementId")!).Single().Typ.Beschreibung(s));
+        Assert.Equal("array[3] of double", Assert.Single(s.Klasse("XYZ")!.Felder).Typ.Beschreibung(s));
+        Assert.Equal("Element", s.Eltern(s.Klasse("Instance")!)!.Name);
+        // dieselben Tags stehen in Partitions/0 vor den Objekten (Kopf des ersten Elements)
+        Assert.Equal("ElementHeader", s.Klasse(0x5c7)!.Name);
+
+        var alt = Echt("familien/revit/dynacon_2018.rfa");
+        if (alt is null) return;
+        Assert.Equal(4024, RevitDatei.Oeffnen(alt).Schema().Anzahl);
+    }
 }
