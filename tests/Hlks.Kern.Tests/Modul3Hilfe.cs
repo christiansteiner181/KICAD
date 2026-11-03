@@ -32,7 +32,8 @@ static class Modul3Hilfe
         {
             ["klasse"] = "Rohr", ["kennzeichen"] = kz, ["system"] = "KW", ["geschoss"] = "EG",
             ["eigenschaften"] = new JsonObject { ["familientyp"] = typ },
-            ["bezuege"] = new JsonObject { ["familie"] = "FAM-1" },
+            // die Rohrserie des Projekts (seit 03.11.2026 haben übernommene Fenster und Türen eigene Familien; sonst FAM-1)
+            ["bezuege"] = new JsonObject { ["familie"] = p.Modell.DerKlasse("Familie").Where(f => f.Text("kategorie") == "Rohr").Select(f => f.Kennzeichen).FirstOrDefault() ?? "FAM-1" },
             ["geometrie"] = new JsonObject { ["art"] = "polylinie", ["punkte"] = Pts(punkte) },
         });
 

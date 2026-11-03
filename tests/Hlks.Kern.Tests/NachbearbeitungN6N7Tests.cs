@@ -99,9 +99,10 @@ public class NachbearbeitungN6N7Tests
         var o = Wandgeometrie.Oeffnung(p.Katalog, t, w)!;
         Assert.Equal(2150, o.Oben);
         Assert.Null(Wandgeometrie.PasstNicht(w, o, []));
+        // Körper der Tür: seit 03.11.2026 die Familie aus dem IFC (Netz) – Höhe wie die Öffnung, nicht OverallHeight
         var k = new ArchitekturGrafik().Koerper(p, t)!;
-        var teil = Assert.Single(k.Teile);
-        Assert.Equal(2150, teil.Masse![2], 3);
+        var boxen = k.Teile.Select(x => IfcDeckung.TeilBox(x)!).ToList();
+        Assert.Equal(2150, boxen.Max(x => x[5]) - boxen.Min(x => x[2]), 0);
     }
 
     [Theory]

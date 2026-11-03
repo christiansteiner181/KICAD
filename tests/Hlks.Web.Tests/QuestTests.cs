@@ -397,7 +397,8 @@ public partial class QuestTests : IDisposable
     public async Task Auf_WLAN_umstellen_Weiterleitung_scheitert_dauernd_meldet_den_Fehler_von_adb()
     {
         var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").ReverseScheitertNoch(1000);
-        var s = await Start(adb);
+        // 3 s statt 0,5 s: der erste Aufruf einer frisch kopierten Attrappe dauert ~0,5 s (Virenprüfung) – sonst bleibt es bei einem Versuch (Befund 03.11.2026)
+        var s = await Start(adb, Ohne() with { WeiterleitungGrenze = TimeSpan.FromSeconds(3) });
         var (code, f) = await s.Post("/api/quest/wlan");
         Assert.Equal(HttpStatusCode.BadRequest, code);
         Assert.Contains("device offline", f!["fehler"]!.GetValue<string>());
@@ -457,7 +458,7 @@ public partial class QuestTests : IDisposable
         var adb = NeueAttrappe().Geraete(Usb).Verhalten("je_weg").Ip("    inet 192.168.1.124/24 scope global wlan0").ConnectScheitertNoch(1000);
         var s = await Start(adb, new BrillenEinstellungen { AppMarke = KicadXr.App,
             Zeitlimit = TimeSpan.FromSeconds(10), PfadDurchsuchen = false, Orte = [], WlanWartezeit = TimeSpan.Zero,
-            WlanGrenze = TimeSpan.FromMilliseconds(1500), WlanAbstand = TimeSpan.FromMilliseconds(80), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),
+            WlanGrenze = TimeSpan.FromSeconds(3), WlanAbstand = TimeSpan.FromMilliseconds(80), WeiterleitungGrenze = TimeSpan.FromMilliseconds(300),   // 3 s: Platz für ≥ 3 connect auch bei langsamem Prozessstart (Befund 03.11.2026)
         });
         var uhr = Stopwatch.StartNew();
         var (code, f) = await s.Post("/api/quest/wlan");

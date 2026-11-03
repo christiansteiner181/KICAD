@@ -23,8 +23,10 @@ export const GESETZT_VON = {
   uebergang: 'Register Hülle › Übergang …',
   hkap: 'Register Verwalten › HKAP › Verbinden.',
   familienAuswahl: 'Register Gebäudetechnik › Familien im Explorer ….',
+  ifcStandard: 'Regel für den IFC-Übertrag; setzen über die KI (element_aendern), Vorgabe: Leitung, Formteil, Verteiler, Armatur.',
+  ifcSerien: 'Regeln IFC-Typ → Serie für den IFC-Übertrag; setzen über die KI (element_aendern).',
 };
-const TITEL_LESEND = { kollisionslauf: 'Letzter Kollisionslauf', ifcBezug: 'IFC-Bezug', uebergang: 'Wärmeübergang', hkap: 'HKAP-Verknüpfung', familienAuswahl: 'Familienauswahl' };
+const TITEL_LESEND = { kollisionslauf: 'Letzter Kollisionslauf', ifcBezug: 'IFC-Bezug', uebergang: 'Wärmeübergang', hkap: 'HKAP-Verknüpfung', familienAuswahl: 'Familienauswahl', ifcStandard: 'IFC: mit unserem Standard', ifcSerien: 'IFC: Serien-Zuordnung' };
 
 export const GRUPPEN_REIHE = ['Projekt', 'Beschriftung und Bemassung', 'Lage', 'Weitere', 'Von anderen Funktionen gesetzt'];
 
