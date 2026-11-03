@@ -5,7 +5,7 @@
 //
 //  - Verbindungstechnik: Anschluss.verbindung und leitung.verbindung (Arten unten). Fehlt eine Seite, bleibt es beim bisherigen Verhalten
 //    (Grösse vergleichen, Reduktion).
-//  - Direkt verbindbar (Büroregel, ANNAHME zur Bestätigung durch Christian): Innen- mit Aussengewinde, sonst gleiche Technik (Flansch an
+//  - Direkt verbindbar (Büroregel, bestätigt von Christian 03.11.2026: «Ja, so»): Innen- mit Aussengewinde, sonst gleiche Technik (Flansch an
 //    Flansch, Press an Press …).
 //  - Gleiche Grösse: beide Gewinde → gleiche Zollangabe (Text normalisiert, z. B. «Rp 1 1/4» = «G 1 1/4» = «1 1/4"»); sonst DN gleich,
 //    sonst Durchmesser d gleich.

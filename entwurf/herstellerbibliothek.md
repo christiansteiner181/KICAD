@@ -205,7 +205,7 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
     `leitung.uebergaenge`, Klasse Uebergang (a = Serie im Ursprung, b = andere Technik); Kern `Verbindungen` (Zoll normalisiert,
     Grössenvergleich Gewinde nach Zoll, sonst DN, sonst d); Routing setzt am Gerät statt der Reduktion den Übergang, bei mehreren
     Ablehnung mit Auswahl und Parameter `uebergang` { familie, typ }; Abfragen `verbindungstabelle` und `verbindung_pruefen`.
-    **ANNAHME zur Bestätigung:** direkt verbindbar sind Innen- mit Aussengewinde, sonst nur gleiche Technik (Flansch–Flansch,
+    **Bestätigt von Christian 03.11.2026 («Ja, so»):** direkt verbindbar sind Innen- mit Aussengewinde, sonst nur gleiche Technik (Flansch–Flansch,
     Press–Press …); fehlt eine Seite, gilt das bisherige Verhalten (nur Grösse, Reduktion).
 16. **Weitere Familien (Christian 03.11.2026):** Gewinderohr 3/8"–4" mit allen GF+-Formteilen (G1), Rotguss-Fittinge JRG oder
     Nussbaum (G2), Nussbaum Wasserfilter, Ventile und Hahnen (N1; Klasse Filter, Ventil-Bauarten auslaufhahn, entleerhahn);
