@@ -66,18 +66,29 @@ try {
   # Teile: was es in diesem Stand gibt (Xr- und Labor-Tests nur in Staenden vor dem Umzug nach HK_XR).
   $teile = @('Hlks.Kern.Tests', 'Hlks.Mcp.Tests', 'Hlks.Web.Tests', 'Hlks.Xr.Tests', 'Hlks.Labor.Tests') | Where-Object { Test-Path "$wt\tests\$_\$_.csproj" }
   foreach ($p in $teile) {
-    $trx = "$erg\$p.trx"; Remove-Item $trx -ErrorAction SilentlyContinue
-    $uhr = [System.Diagnostics.Stopwatch]::StartNew()
-    & $dotnet test "$wt\tests\$p" --nologo -v q --logger "trx;LogFileName=$p.trx" --results-directory $erg 2>&1 | Out-Null
-    $fehl = @()
-    if (Test-Path $trx) {
-      [xml]$x = Get-Content -Raw $trx
-      $alle = @($x.TestRun.Results.UnitTestResult)
-      $fehl = @($alle | Where-Object { $_.outcome -eq 'Failed' } | ForEach-Object { ($_.testName -replace '\(.*$', '') } | Sort-Object -Unique)
-      $anzahl = $alle.Count
-    } else { $anzahl = 0; $fehl = @('BUILD') }
-    $zeile = "{0}: {1} Tests, {2} rot ({3:0} s)" -f $p, $anzahl, $fehl.Count, $uhr.Elapsed.TotalSeconds
-    Log $zeile
+    # Befund 03.11.2026 (b2091a72): Stuerzt der Testhost ab (z. B. nativ in xBIM), enthaelt die trx nur die Tests bis dahin, alle "Passed" -
+    # das zaehlte als gruen. Jetzt: Abbruch erkennen (RunInfo outcome Error), den ganzen Teil einmal neu laufen lassen, sonst rot.
+    $abbruch = $null
+    for ($lauf = 1; $lauf -le 2; $lauf++) {
+      $trx = "$erg\$p.trx"; Remove-Item $trx -ErrorAction SilentlyContinue
+      $uhr = [System.Diagnostics.Stopwatch]::StartNew()
+      & $dotnet test "$wt\tests\$p" --nologo -v q --logger "trx;LogFileName=$p.trx" --results-directory $erg 2>&1 | Out-Null
+      $fehl = @(); $abbruch = $null
+      if (Test-Path $trx) {
+        [xml]$x = Get-Content -Raw $trx
+        $alle = @($x.TestRun.Results.UnitTestResult)
+        $fehl = @($alle | Where-Object { $_.outcome -eq 'Failed' } | ForEach-Object { ($_.testName -replace '\(.*$', '') } | Sort-Object -Unique)
+        $anzahl = $alle.Count
+        # Nur der Abbruch zaehlt (RunInfos mit outcome Error stehen auch bei gewoehnlich roten Tests: deren Ausgabe)
+        $ri = @($x.TestRun.ResultSummary.RunInfos.RunInfo) | Where-Object { $_ -and $_.outcome -eq 'Error' -and ([string]$_.Text) -match 'Testlauf wurde abgebrochen|test run was aborted|Testhostprozess ist abgest|test host process crashed' } | Select-Object -First 1
+        if ($ri) { $abbruch = ([string]$ri.Text).Trim() }
+      } else { $anzahl = 0; $fehl = @('BUILD') }
+      $zeile = "{0}: {1} Tests, {2} rot ({3:0} s){4}" -f $p, $anzahl, $fehl.Count, $uhr.Elapsed.TotalSeconds, $(if ($abbruch) { ' - ABBRUCH' } else { '' })
+      Log $zeile
+      if (-not $abbruch) { break }
+      Log "  Abbruch des Testlaufs: $abbruch"
+    }
+    if ($abbruch) { $gruen = $false; Log "  ROT: $p - Testlauf zweimal abgebrochen" }
     for ($w = 1; $w -le $Wiederholungen -and $fehl.Count -gt 0 -and $fehl[0] -ne 'BUILD'; $w++) {
       $filter = ($fehl | ForEach-Object { "FullyQualifiedName=$_" }) -join '|'
       $trx2 = "$erg\$p.w$w.trx"; Remove-Item $trx2 -ErrorAction SilentlyContinue
