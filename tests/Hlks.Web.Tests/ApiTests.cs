@@ -416,7 +416,8 @@ public class ApiTests
         ["zeitreihe"] = """{"datenpunkt":"DP-WZ1-VOL","von":"2026-10-19T00:00","bis":"2026-10-20T00:00","aufloesungMinuten":120}""",
         ["plan_pdf"] = "{\"planblatt\":\"PB-1\",\"datei\":\"" + PlanPdfDatei + "\"}",   // Planblatt legt der Test vorher an
         ["ifc_pruefen"] = "{\"datei\":\"" + IfcTestdatei("minimal_ifc4.ifc") + "\"}",
-        ["ifc_deckung"] = """{"toleranz":5}""",   // 02.11.2026: Deckung Nachbau ↔ IFC
+        ["ifc_deckung"] = """{"toleranz":5}""",
+        ["ifc_teile"] = "{}",   // 03.11.2026: Familie aus IFC   // 02.11.2026: Deckung Nachbau ↔ IFC
         ["aufbau_rechnen"] = """{"aufbau":"AUF-1"}""",   // Aufbau legt der Test vorher an (das Beispielprojekt hat keinen)
         ["materialien"] = "{}",
         ["huelle_pruefen"] = "{}",

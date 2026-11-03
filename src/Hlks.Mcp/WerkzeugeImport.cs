@@ -17,6 +17,13 @@ public sealed partial class Werkzeuge
         [Description(IfcDeckung.ParAnzahl)] double? anzahl = null) =>
         Lauf(() => Antwort(IfcDeckung.Pruefen(projekt, Parameter(("unterlage", unterlage), ("toleranz", toleranz), ("anzahl", anzahl)))));
 
+    [McpServerTool(Name = "ifc_teile"), Description(IfcTeile.Text)]
+    public string IfcTeileWerkzeug(
+        [Description(IfcTeile.ParUnterlage)] string? unterlage = null,
+        [Description(IfcTeile.ParSuche)] string? suche = null,
+        [Description(IfcTeile.ParAnzahl)] double? anzahl = null) =>
+        Lauf(() => Antwort(IfcTeile.Liste(projekt, Parameter(("unterlage", unterlage), ("suche", suche), ("anzahl", anzahl)))));
+
     [McpServerTool(Name = "ifc_pruefen"), Description(IfcImport.PruefenBeschreibung)]
     public string IfcPruefen(
         [Description("Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen")] string datei,
@@ -26,7 +33,7 @@ public sealed partial class Werkzeuge
     [McpServerTool(Name = "ifc_uebernehmen"), Description("Übernimmt ein IFC (IFC4 oder IFC2x3) als eigene, bearbeitbare Elemente: Geschosse, Räume, Wände, Decken, Türen, Fenster, Leitungen, Formteile, Armaturen, Apparate und Systeme mit Anschlüssen und Verbindungen. Jedes Element behält die GlobalId; dieselbe Datei erneut übernehmen gleicht ab (neu, geändert, gelöscht). Was sich nicht als Element fassen lässt, bleibt als Hintergrund (Unterlage). Ein Paket je Übernahme – zuerst als Trockenlauf ansehen.")]
     public string IfcUebernehmen(
         [Description("Pfad der IFC-Datei (lokal oder W:) oder Name einer Unterlage im Ordner unterlagen")] string datei,
-        [Description("architektur | raeume | hlks (Vorgabe alle)")] JsonElement? bereiche = null,
+        [Description("architektur | raeume | hlks (Vorgabe alle); keine = nur einlesen (Unterlage mit Netzdatei, z. B. für Familie aus IFC)")] JsonElement? bereiche = null,
         [Description("Nur diese Geschosse (Kennzeichen oder Name des Geschosses im Projekt bzw. im IFC, oder Kote in m wie \"3.06\"); Vorgabe alle")] JsonElement? geschosse = null,
         [Description("Nicht übernommene Objekte als Hintergrund zeigen (Vorgabe true)")] bool grundlage = true,
         [Description("IFC-Weltpunkt { x, y, z } in mm und drehung in Grad, der im Projekt Ursprung und ±0.00 ist; Vorgabe: Bezug des Projekts, beim ersten IFC aus dem Gebäude der Datei")] JsonElement? bezug = null,

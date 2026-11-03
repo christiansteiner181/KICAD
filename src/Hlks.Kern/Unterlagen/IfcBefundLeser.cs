@@ -142,7 +142,7 @@ public sealed class IfcBefundLeser : IUnterlagenLeser
 
     // ---------- Ports ----------
 
-    static List<IIfcDistributionPort> PortsVon(IfcDatei d, IIfcProduct p)
+    internal static List<IIfcDistributionPort> PortsVon(IfcDatei d, IIfcProduct p)
     {
         var l = new List<IIfcDistributionPort>();
         foreach (var r in d.Modell.Instances.OfType<IIfcRelConnectsPortToElement>())

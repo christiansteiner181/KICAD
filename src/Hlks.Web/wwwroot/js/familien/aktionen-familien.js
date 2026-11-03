@@ -15,6 +15,7 @@ import { familienListe, familienLaden } from './daten.js';
 import { familienKategorien, familieEntwurfMinimal, neueFamiliePruefen, kernFehler, leitungsArt, leitungFormen } from './familien-text.js';
 import { ladenDialog } from './bibliothek-dialoge.js';
 import { typSetzen, platzierWerkzeug } from './platzieren.js';
+import { familieAusIfc } from './aus-ifc.js';
 
 const KEIN_EDITOR = 'Zuerst eine Familie im Projektbrowser doppelklicken (Familieneditor).';
 const imEditor = () => !!aktiverEditor();
@@ -202,6 +203,12 @@ async function netzUebernehmen(familie) {
 registrieren({
   id: 'familie.aus-geometrie', titel: 'Familie aus IFC-Objekt / 3D-Modell', symbol: 'famKoerper', aktiv: projektOffen, hinweis: 'Zuerst ein Projekt öffnen.',
   ausfuehren: () => netzUebernehmen(null),
+});
+
+// Christian 03.11.2026: Flow «Familie aus IFC: IFC einlesen > Teile wählen > Familie nachmodellieren» (aus-ifc.js)
+registrieren({
+  id: 'familie.aus-ifc', titel: 'Familie aus IFC', symbol: 'famKoerper', aktiv: projektOffen, hinweis: 'Zuerst ein Projekt öffnen.',
+  ausfuehren: () => familieAusIfc(),
 });
 
 // ================================================================================================ Familie laden

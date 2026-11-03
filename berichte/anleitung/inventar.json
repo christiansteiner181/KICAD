@@ -5194,6 +5194,41 @@
           "hinweis": "Platzhaltermasse sind keine Herstellerwerte; echte Masse kommen aus der Unterlage."
         },
         {
+          "id": "m2-familie-aus-ifc",
+          "titel": "Familie aus IFC",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Projektbrowser › Knoten «Familien» › Kontextmenü «Familie aus IFC …»"
+          },
+          "schritte": [
+            "Im Projektbrowser mit der rechten Maustaste auf «Familien» klicken und «Familie aus IFC …» wählen.",
+            "Unter «1 · IFC» eine eingelesene IFC-Unterlage wählen oder mit «IFC-Datei einlesen …» eine Datei (z. B. ein Hersteller-IFC) hochladen.",
+            "Unter «2 · Teile wählen» mit der Suche eingrenzen und die Teile anhaken, die zusammen die Familie bilden.",
+            "Unter «3 · Familie» Kategorie, Name (aus dem IFC-Typ vorbelegt) und Nullpunkt wählen; «Anschlüsse aus den IFC-Ports übernehmen» angehakt lassen.",
+            "«Familie anlegen» klicken."
+          ],
+          "erwartung": "Die Familie entsteht als Entwurf mit einem Körper «netz» aus den gewählten Teilen und den Anschlüssen der IFC-Ports; der Familieneditor öffnet zum Nachmodellieren. Das Einlesen legt keine Elemente an und verändert den Projektbezug nicht.",
+          "pruefpunkte": [
+            "Die Teileliste zeigt Typ, IFC-Klasse, Grösse und – falls übernommen – das Element.",
+            "Ein im Modell gewähltes übernommenes Bauteil ist im Dialog vorgewählt.",
+            "Im Familieneditor stimmen Form und Grösse mit dem IFC-Teil überein; die Anschlüsse zeigen aus dem Körper heraus."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog «Familie aus IFC» und Familieneditor",
+            "zustand": "Vorwand-WC gewählt, danach Familie im Editor"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/familien/aus-ifc.js",
+            "src/Hlks.Kern/Familien/IfcTeile.cs",
+            "src/Hlks.Kern/Familien/FamilienNetzUebernehmen.cs"
+          ],
+          "hinweis": "Neu 03.11.2026 (Christian: «IFC einlesen > Teile wählen > Familie nachmodellieren»)."
+        },
+        {
           "id": "m2-anschluesse",
           "titel": "Anschlüsse",
           "wo": {

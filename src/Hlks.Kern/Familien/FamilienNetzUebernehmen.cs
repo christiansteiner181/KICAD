@@ -23,9 +23,14 @@ public sealed class FamilieNetzUebernehmen : IBefehl
         "Übernimmt die Geometrie eines IFC-Produkts (Netzdatei einer IFC-Unterlage, z. B. ein Sanitärobjekt des Architekten, für das es keine Familie gibt) " +
         "oder eines Herstellermodells (Befund form3d einer STL/OBJ/STEP-Unterlage) als Körper art «netz» in eine Familie. Ohne familie entsteht eine neue " +
         "Familie (name und kategorie nötig) im Status entwurf. IFC-Netze werden zurückgedreht (drehung oder automatisch) und auf den Nullpunkt geschoben.";
+    public const string ParObjekt = "IFC: GlobalId des Produkts oder Kennzeichen eines übernommenen Elements; STL/OBJ/STEP: Id des Befunds form3d (z. B. «3fa2…#1» oder «1»)";
+    public const string ParObjekte = "IFC: mehrere Teile (GlobalIds bzw. Kennzeichen) zu einem Körper zusammengefasst – Familie aus IFC (Teile wählen, Abfrage ifc_teile); statt objekt";
+    public const string ParAnschluesse = "IFC, neue Familie: die Ports der Teile (IfcDistributionPort) als Anschlüsse übernehmen – Lage, Richtung (aus dem Körper heraus), Fluss; Medium «*» (des Systems)";
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
-        new("objekt", "text", true, "IFC: GlobalId des Produkts oder Kennzeichen eines übernommenen Elements; STL/OBJ/STEP: Id des Befunds form3d (z. B. «3fa2…#1» oder «1»)"),
+        new("objekt", "text", false, ParObjekt),
+        new("objekte", "liste", false, ParObjekte),
+        new("anschluesse", "bool", false, ParAnschluesse),
         new("unterlage", "text", false, "Unterlage (Kennzeichen, Id oder Dateiname); bei einem übernommenen Element die Unterlage seiner Übernahme"),
         new("familie", "text", false, "Bestehende Familie (Kennzeichen, Name oder id), in die der Körper kommt; leer = neue Familie"),
         new("name", "text", false, "Name der neuen Familie"),
@@ -39,14 +44,19 @@ public sealed class FamilieNetzUebernehmen : IBefehl
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var objekt = Param.Text(p, "objekt", true)!.Trim();
-        var (ecken, dreiecke, herkunft, ausIfc, typname) = Holen(k, p, objekt);
+        var objekte = p["objekte"] is JsonArray oa ? oa.Select(x => x is JsonValue v && v.TryGetValue<string>(out var t) ? t.Trim() : null).OfType<string>().Where(t => t.Length > 0).Distinct().ToList() : [];
+        if (Param.Text(p, "objekt")?.Trim() is { Length: > 0 } eins) objekte.Insert(0, eins);
+        if (objekte.Count == 0) throw new HlksFehler("Parameter «objekt» bzw. «objekte» fehlt.", "Ein Objekt (GlobalId, Kennzeichen, Befund-Id) oder mit objekte mehrere IFC-Teile nennen (Abfrage ifc_teile).");
+        var objekt = string.Join(", ", objekte);
+        var (ecken, dreiecke, herkunft, ausIfc, typname, ports) = Holen(k, p, objekte, Param.Bool(p, "anschluesse"));
         if (dreiecke.Count == 0) throw new HlksFehler($"Das Objekt «{objekt}» hat kein Netz.", "Ein Objekt mit Körper wählen.");
 
         double? drehung = Param.Zahl(p, "drehung");
         bool auto = drehung is null && ausIfc;
         if (auto) drehung = Ausrichtung(ecken);
-        if (drehung is { } dg && Math.Abs(dg) > 1e-9) Drehen(ecken, -dg);
+        var portLagen = ports.Select(x => x.Lage).ToList();
+        var portRichtungen = ports.Select(x => x.Richtung).ToList();
+        if (drehung is { } dg && Math.Abs(dg) > 1e-9) { Drehen(ecken, -dg); Drehen(portLagen, -dg); Drehen(portRichtungen, -dg); }
         var np = Param.Text(p, "nullpunkt")?.Trim().ToLowerInvariant() ?? (ausIfc ? "unten_mitte" : "unveraendert");
         if (np is not ("unten_mitte" or "unten_hinten_mitte" or "unveraendert"))
             throw new HlksFehler($"nullpunkt «{np}» gibt es nicht.", "unten_mitte, unten_hinten_mitte oder unveraendert");
@@ -55,6 +65,7 @@ public sealed class FamilieNetzUebernehmen : IBefehl
         {
             double[] null0 = [(min[0] + max[0]) / 2, np == "unten_hinten_mitte" ? max[1] : (min[1] + max[1]) / 2, min[2]];
             foreach (var e in ecken) for (int i = 0; i < 3; i++) e[i] -= null0[i];
+            foreach (var e in portLagen) for (int i = 0; i < 3; i++) e[i] -= null0[i];
             for (int i = 0; i < 3; i++) { min[i] -= null0[i]; max[i] -= null0[i]; }
         }
         if (dreiecke.Count > FamilieDef.NetzMaxDreiecke)
@@ -79,6 +90,7 @@ public sealed class FamilieNetzUebernehmen : IBefehl
             if (def["koerper"] is not JsonArray ka) def["koerper"] = ka = [];
             int stelle = ka.Select((x, i) => (x, i)).FirstOrDefault(t => t.x?["id"]?.GetValue<string>() == id, (null, -1)).Item2;
             if (stelle >= 0) ka[stelle] = koerper; else ka.Add(koerper);
+            if (ports.Count > 0) k.Hinweise.Add("anschluesse: nur bei einer neuen Familie – die bestehende behält ihre Anschlüsse.");
         }
         else
         {
@@ -93,24 +105,30 @@ public sealed class FamilieNetzUebernehmen : IBefehl
                 ["parameter"] = new JsonArray(),
                 ["typen"] = new JsonArray(new JsonObject { ["name"] = typname ?? "Standard", ["werte"] = new JsonObject() }),
                 ["koerper"] = new JsonArray(koerper),
-                ["anschluesse"] = new JsonArray(),
+                ["anschluesse"] = Anschluesse(ports, portLagen, portRichtungen, min, max),
             };
         }
         var fam = FamilienBefehle.Speichern(k, bisher, def, Name, "entwurf", FamilienBefehle.Version(bisher) + 1, null);
         k.Hinweise.Add($"Körper «{id}» in {fam.Kennzeichen}: {ecken.Count} Ecken, {dreiecke.Count} Dreiecke, Grösse " +
             $"{max[0] - min[0]:0} × {max[1] - min[1]:0} × {max[2] - min[2]:0} mm" +
             (drehung is { } d2 && Math.Abs(d2) > 1e-9 ? $", um {d2:0.##}° zurückgedreht{(auto ? " (automatisch – Vorderseite −y prüfen, sonst drehung angeben)" : "")}" : "") +
-            $", Nullpunkt {np}. Anschlüsse und Parameter fehlen noch.");
+            $", Nullpunkt {np}. " + (bisher is null && ports.Count > 0 ? $"{ports.Count} Anschlüsse aus den IFC-Ports (Medium und Grösse prüfen); Parameter fehlen noch." : "Anschlüsse und Parameter fehlen noch."));
     }
 
-    (List<double[]> Ecken, List<int[]> Dreiecke, string Herkunft, bool AusIfc, string? Typname) Holen(Kontext k, JsonObject p, string objekt)
+    public sealed record IfcPort(string Name, string? Fluss, string? Art, double[] Lage, double[] Richtung);
+
+    (List<double[]> Ecken, List<int[]> Dreiecke, string Herkunft, bool AusIfc, string? Typname, List<IfcPort> Ports) Holen(Kontext k, JsonObject p, List<string> objekte, bool mitPorts)
     {
         var ulBezug = Param.Text(p, "unterlage");
-        string? gid = null;
-        if (k.Arbeit.Finde(objekt) is { Kennungen: { } kn } el && kn.TryGetValue("ifc", out var g))
+        var gids = new List<string>();
+        foreach (var ob in objekte)
         {
-            gid = g.IndexOf(':') is var dp and > 0 ? g[..dp] : g;
-            ulBezug ??= kn.GetValueOrDefault("quelle");
+            if (k.Arbeit.Finde(ob) is { Kennungen: { } kn } el && kn.TryGetValue("ifc", out var g))
+            {
+                gids.Add(g.IndexOf(':') is var dp and > 0 ? g[..dp] : g);
+                ulBezug ??= kn.GetValueOrDefault("quelle");
+            }
+            else gids.Add(ob);
         }
         if (string.IsNullOrWhiteSpace(ulBezug))
             throw new HlksFehler("Parameter «unterlage» fehlt.", "Die IFC- bzw. STL/OBJ/STEP-Unterlage nennen, aus der das Objekt stammt.");
@@ -118,17 +136,28 @@ public sealed class FamilieNetzUebernehmen : IBefehl
         var ulEl = k.Arbeit.Finde(ulBezug);
         if (ulEl is not null && string.Equals(ulEl.Text("art"), "ifc", StringComparison.OrdinalIgnoreCase))
         {
-            gid ??= objekt;
             if (ulEl.Text("netz") is not { Length: > 0 } netzName)
                 throw new HlksFehler($"Unterlage {ulEl.Kennzeichen} hat keine Netzdatei.", "Die IFC-Datei mit ifc_uebernehmen übernehmen (das erzeugt die Netzdatei).");
             var datei = IfcNetzdatei.Oeffnen(Unterlagen.Pfad(k.Projekt, netzName));
-            var pr = datei.Produkt(gid) ?? throw new HlksFehler($"Das Produkt «{gid}» steht nicht in der Netzdatei von {ulEl.Kennzeichen}.",
-                "GlobalId des IFC-Produkts angeben (Eigenschaften des Objekts im 3D bzw. Grundriss).");
-            var (pu, dr) = datei.Netz(pr);
-            var (ecken, dreiecke) = Verschmelzen(pu.Select(x => (double)x).ToArray(), dr);
-            var herkunft = $"IFC {pr.Entitaet} {pr.GlobalId}{(pr.Typname is { } t ? $" «{t}»" : "")} aus Unterlage {ulEl.Kennzeichen} ({Unterlagen.OriginalName(ulEl.Text("datei") ?? "")})";
-            return (ecken, dreiecke, herkunft, true, pr.Typname);
+            var allePunkte = new List<double>(); var alleIdx = new List<int>(); var teile = new List<string>();
+            string? typ = null;
+            foreach (var gid in gids)
+            {
+                var pr = datei.Produkt(gid) ?? throw new HlksFehler($"Das Produkt «{gid}» steht nicht in der Netzdatei von {ulEl.Kennzeichen}.",
+                    "GlobalId des IFC-Produkts angeben (Abfrage ifc_teile bzw. Eigenschaften des Objekts im 3D).");
+                var (pu, dr) = datei.Netz(pr);
+                int basis = allePunkte.Count / 3;
+                allePunkte.AddRange(pu.Select(x => (double)x));
+                alleIdx.AddRange(dr.Select(i => i + basis));
+                teile.Add($"{pr.Entitaet} {pr.GlobalId}{(pr.Typname is { } t ? $" «{t}»" : "")}");
+                typ ??= pr.Typname;
+            }
+            var (ecken, dreiecke) = Verschmelzen([.. allePunkte], [.. alleIdx]);
+            var herkunft = $"IFC {string.Join(" + ", teile)} aus Unterlage {ulEl.Kennzeichen} ({Unterlagen.OriginalName(ulEl.Text("datei") ?? "")})";
+            return (ecken, dreiecke, herkunft, true, typ, mitPorts ? Ports(k, ulEl, gids) : []);
         }
+        if (objekte.Count > 1) throw new HlksFehler("Mehrere Objekte gehen nur aus einer IFC-Unterlage.", "Für STL/OBJ/STEP genau ein Befund form3d (objekt).");
+        var objekt = objekte[0];
 
         var u = UnterlagenService.AufloesenZumLesen(k.Projekt, ulBezug, Name);
         var r = UnterlagenService.Lesen(k.Projekt, u);
@@ -143,7 +172,63 @@ public sealed class FamilieNetzUebernehmen : IBefehl
         var punkte = ea.SelectMany(e => ((JsonArray)e!).Select(c => Json.Zahl(c) ?? 0)).ToArray();
         var idx = da.SelectMany(d => ((JsonArray)d!).Select(c => (int)(Json.Zahl(c) ?? 0))).ToArray();
         var (ek, dk) = Verschmelzen(punkte, idx);
-        return (ek, dk, $"Befund {b.Id}{(verein ? " (vereinfacht)" : "")} aus Unterlage {u.Anzeige} ({u.Original})", false, null);
+        return (ek, dk, $"Befund {b.Id}{(verein ? " (vereinfacht)" : "")} aus Unterlage {u.Anzeige} ({u.Original})", false, null, []);
+    }
+
+    /// <summary>Ports der Teile aus der IFC-Datei der Unterlage, in Projektkoordinaten (Bezug der Unterlage wie bei der Übernahme): Lage,
+    /// Richtung = Achse z der Port-Platzierung, Fluss aus FlowDirection, Art aus PredefinedType (PIPE rohr, DUCT kanal).</summary>
+    static List<IfcPort> Ports(Kontext k, Element ul, List<string> gids)
+    {
+        if (ul.Text("datei") is not { Length: > 0 } name) return [];
+        var pfad = Unterlagen.Pfad(k.Projekt, name);
+        if (!File.Exists(pfad)) { k.Hinweise.Add($"anschluesse: die IFC-Datei von {ul.Kennzeichen} fehlt im Projekt – keine Ports."); return []; }
+        using var d = IfcDatei.Oeffnen(pfad);
+        if (IfcBezug.Aus((ul.Eigenschaft("lage")?.Inhalt as JsonObject)?["bezug"]) is { } bz) d.Bezug = bz;
+        var aus = new List<IfcPort>();
+        var namen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var gid in gids)
+        {
+            var pr = d.Modell.Instances.OfType<Xbim.Ifc4.Interfaces.IIfcProduct>().FirstOrDefault(x => x.GlobalId.ToString() == gid);
+            if (pr is null) continue;
+            foreach (var port in IfcBefundLeser.PortsVon(d, pr))
+            {
+                var w = d.ZuModell * d.Welt(port.ObjectPlacement);
+                // Revit-Kennung im Namen weglassen («InPort_18183978_3» → «InPort_3»)
+                var roh = IfcLauf.Text(port.Name) is { } rn ? System.Text.RegularExpressions.Regex.Replace(rn, @"_d{5,}", "") : null;
+                var basis = roh is { Length: > 0 and <= 24 } n ? n : "p" + (aus.Count + 1);
+                var nm = basis; for (int i = 2; !namen.Add(nm); i++) nm = $"{basis}_{i}";
+                var fd = port.FlowDirection?.ToString();
+                var art = Roh(port, "PredefinedType") switch { "PIPE" => "rohr", "DUCT" => "kanal", _ => null };
+                aus.Add(new IfcPort(nm, fd switch { "SOURCE" => "raus", "SINK" => "rein", _ => "beide" }, art, w.Ursprung, w.AchseZ));
+            }
+        }
+        return aus;
+    }
+
+    static string? Roh(object o, string name) => o.GetType().GetProperty(name)?.GetValue(o)?.ToString();
+
+    /// <summary>Anschlüsse der neuen Familie: Richtung aus dem Körper heraus (Achse z der Ports zeigt je Programm hinein oder heraus).</summary>
+    static JsonArray Anschluesse(List<IfcPort> ports, List<double[]> lagen, List<double[]> richtungen, double[] min, double[] max)
+    {
+        double[] mitte = [(min[0] + max[0]) / 2, (min[1] + max[1]) / 2, (min[2] + max[2]) / 2];
+        var aus = new JsonArray();
+        for (int i = 0; i < ports.Count; i++)
+        {
+            var l = lagen[i]; var r = richtungen[i];
+            double lr = Math.Sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+            if (lr < 1e-9) r = [l[0] - mitte[0], l[1] - mitte[1], l[2] - mitte[2]];
+            else if ((l[0] - mitte[0]) * r[0] + (l[1] - mitte[1]) * r[1] + (l[2] - mitte[2]) * r[2] < 0) r = [-r[0], -r[1], -r[2]];
+            double n = Math.Sqrt(r[0] * r[0] + r[1] * r[1] + r[2] * r[2]);
+            var o = new JsonObject
+            {
+                ["name"] = ports[i].Name, ["medium"] = "*", ["fluss"] = ports[i].Fluss ?? "beide",
+                ["lage"] = new JsonArray(Math.Round(l[0], 1), Math.Round(l[1], 1), Math.Round(l[2], 1)),
+            };
+            if (n > 1e-9) o["richtung"] = new JsonArray(Math.Round(r[0] / n, 6), Math.Round(r[1] / n, 6), Math.Round(r[2] / n, 6));
+            if (ports[i].Art is { } a) o["art"] = a;
+            aus.Add(o);
+        }
+        return aus;
     }
 
     /// <summary>Doppelte Punkte (näher als 0.05 mm) zusammenlegen, entartete Dreiecke weglassen.</summary>

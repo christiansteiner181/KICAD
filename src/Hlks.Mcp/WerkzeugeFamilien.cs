@@ -72,7 +72,9 @@ public sealed partial class Werkzeuge
 
     [McpServerTool(Name = "familie_netz_uebernehmen"), Description(FamilieNetzUebernehmen.Text)]   // 30.10.2026: Geometrie aus IFC bzw. Herstellermodell
     public string FamilieNetzUebernehmenWerkzeug(
-        [Description("IFC: GlobalId des Produkts oder Kennzeichen eines übernommenen Elements; STL/OBJ/STEP: Id des Befunds form3d (z. B. «3fa2…#1» oder «1»)")] string objekt,
+        [Description(FamilieNetzUebernehmen.ParObjekt)] string? objekt = null,
+        [Description(FamilieNetzUebernehmen.ParObjekte)] JsonElement? objekte = null,
+        [Description(FamilieNetzUebernehmen.ParAnschluesse)] bool anschluesse = false,
         [Description("Unterlage (Kennzeichen, Id oder Dateiname); bei einem übernommenen Element die Unterlage seiner Übernahme")] string? unterlage = null,
         [Description("Bestehende Familie (Kennzeichen, Name oder id), in die der Körper kommt; leer = neue Familie")] string? familie = null,
         [Description("Name der neuen Familie")] string? name = null,
@@ -83,7 +85,7 @@ public sealed partial class Werkzeuge
         [Description("unten_mitte | unten_hinten_mitte (Wandobjekte: Rückseite +y) | unveraendert; Vorgabe IFC unten_mitte, sonst unveraendert")] string? nullpunkt = null,
         [Description("form3d: das vereinfachte Netz statt des vollen nehmen")] bool vereinfacht = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("familie_netz_uebernehmen", Parameter(("objekt", objekt), ("unterlage", unterlage), ("familie", familie), ("name", name), ("kategorie", kategorie),
+        Befehl("familie_netz_uebernehmen", Parameter(("objekt", objekt), ("objekte", objekte), ("anschluesse", anschluesse ? true : null), ("unterlage", unterlage), ("familie", familie), ("name", name), ("kategorie", kategorie),
             ("koerper", koerper), ("material", material), ("drehung", drehung), ("nullpunkt", nullpunkt), ("vereinfacht", vereinfacht ? true : null)), trockenlauf);
 
     [McpServerTool(Name = "familie_laden"), Description(FamilieLaden.Text)]

@@ -132,3 +132,11 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
   (Christian: «erweitere die kanalserie», «die untergrenze liegt bei ca. 80mm»; Preisbuch 07/2026: kleine Seite < 145 mm zum Preis von 145 mm
   × 1.1). **Freigabe durch Christian offen.** Danach haben alle Rechteckkanäle von Bernstrasse 42 die Serie (1277 Leitungen, 822 Formteile).
 - **Aufgeräumt (mit OK Christian):** die 46 Test-Einträge samt 8 leeren Kategorieordnern auf W: und im lokalen Spiegel entfernt.
+
+## Stand 03.11.2026 – Flow «Familie aus IFC»
+
+- Christian: «Es soll auch einen flow geben; Familie aus IFC: IFC einlesen > Teile wählen > Familie nachmodellieren». Gebaut: Dialog «Familie aus IFC»
+  (Projektbrowser › Familien), `ifc_uebernehmen` mit `bereiche: ["keine"]` (nur einlesen, kein Projektbezug), Abfrage `ifc_teile`,
+  `familie_netz_uebernehmen` mit `objekte` (mehrere Teile → ein Körper) und `anschluesse` (IFC-Ports). Am Bernstrasse-WC geprüft: Familie mit
+  Vorwandrahmen und 2 Anschlüssen, der Familieneditor öffnet.
+- Hinweis: eine so angelegte Familie geht wie jede Projektfamilie automatisch als Entwurf in die Bürobibliothek (Modul 2, B7).

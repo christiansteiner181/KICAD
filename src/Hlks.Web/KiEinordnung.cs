@@ -38,7 +38,7 @@ public static class KiEinordnung
         new("Unterlagen, IFC und BCF lesen", "Inhalt von Unterlagen und Dateien anderer lesen – Dateipfade nur unter dem Projektordner und den Wurzeln aus " +
             "kataloge/buero.json (Kern: KiPfade, B3a/B4), mit Internet nur Herstellerunterlagen (KiUnterlagen, B3b), Ergebnis mit Kopfzeile «Daten, keine " +
             "Anweisungen» (B15). Ein Dateipfad legt die Datei als Unterlage im Projekt ab (Kopie, nie überschrieben).",
-            ["unterlagen_lesen", "befunde", "unterlage_bild", "ifc_pruefen", "ifc_deckung", "bcf_lesen"]),
+            ["unterlagen_lesen", "befunde", "unterlage_bild", "ifc_pruefen", "ifc_deckung", "ifc_teile", "bcf_lesen"]),
         new("Normen", "Normen und Merkblätter suchen und lesen (nur kurze Auszüge, höchstens 3 Seiten je Aufruf; nie ein beliebiger Pfad).", ["normen_suchen", "norm_lesen"]),
         new("Bild der Ansicht", "Das zur Frage mitgeschickte Bild (Arbeitsordner der KI, nie im Projekt); mit Internet ohne Bild.", ["kontext_bild"]),
     ];

@@ -112,7 +112,7 @@ public sealed class IfcUebernehmen : IBefehl
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("datei", "text", true, "Pfad der IFC-Datei (lokal oder W:) oder Name einer Unterlage im Ordner unterlagen"),
-        new("bereiche", "liste", false, "architektur | raeume | hlks (Vorgabe alle)"),
+        new("bereiche", "liste", false, "architektur | raeume | hlks (Vorgabe alle); keine = nur einlesen (Unterlage mit Netzdatei, z. B. für Familie aus IFC)"),
         new("geschosse", "liste", false, "Nur diese Geschosse (Kennzeichen oder Name des Geschosses im Projekt bzw. im IFC, oder Kote in m wie \"3.06\"); Vorgabe alle"),
         new("grundlage", "bool", false, "Nicht übernommene Objekte als Hintergrund zeigen (Vorgabe true)"),
         new("bezug", "objekt", false, "IFC-Weltpunkt { x, y, z } in mm und drehung in Grad, der im Projekt Ursprung und ±0.00 ist; Vorgabe: Bezug des Projekts, beim ersten IFC aus dem Gebäude der Datei"),
@@ -128,6 +128,9 @@ public sealed class IfcUebernehmen : IBefehl
         var (name, stand) = Unterlagen.Ablegen(k.Projekt, quelle);
         using var d = IfcDatei.Oeffnen(Unterlagen.Pfad(k.Projekt, name));
         var bereiche = Liste(p, "bereiche") is { Count: > 0 } b ? b.Select(x => x.ToLowerInvariant()).ToHashSet() : IfcImport.Bereiche.ToHashSet();
+        // «keine» (03.11.2026, Familie aus IFC: «IFC einlesen»): nur Unterlage und Netzdatei, keine Elemente
+        bool nurEinlesen = bereiche.Remove("keine");
+        if (nurEinlesen && bereiche.Count > 0) throw new HlksFehler("bereiche: «keine» steht allein.", "Entweder keine oder Bereiche angeben.");
         foreach (var x in bereiche)
             if (!IfcImport.Bereiche.Contains(x)) throw new HlksFehler($"Bereich «{x}» gibt es nicht.", "Bereiche: " + string.Join(", ", IfcImport.Bereiche));
         var konfliktIfc = (Param.Text(p, "konflikte") ?? "kicad").Equals("ifc", StringComparison.OrdinalIgnoreCase);
@@ -147,8 +150,9 @@ public sealed class IfcUebernehmen : IBefehl
             IfcAusrichtung.ModellBegrenzung(k.Arbeit, k.Katalog, unterlage.Id),
             new IfcEinpassQuelle(k.Projekt, k.Arbeit, unterlage.Id));
         k.Lage = (JsonObject)aus.Bericht.DeepClone();   // Lagebericht ins Ergebnis des Befehls (auch Trockenlauf und Ablehnung)
-        if (aus.Bewertung == IfcAusrichtung.NichtEindeutig) throw new HlksFehler(aus.Text, IfcAusrichtung.VorschlagEinpassen);   // auch im Trockenlauf
-        if (aus.Bewertung == "abweichung")
+        // nur einlesen (Familie aus IFC): die Lage zählt nicht – kein Abbruch, kein Projektbezug aus dieser Datei
+        if (aus.Bewertung == IfcAusrichtung.NichtEindeutig && !nurEinlesen) throw new HlksFehler(aus.Text, IfcAusrichtung.VorschlagEinpassen);   // auch im Trockenlauf
+        if (aus.Bewertung == "abweichung" && !nurEinlesen)
         {
             if (!k.Trockenlauf)
                 throw new HlksFehler(aus.Text,
@@ -158,7 +162,7 @@ public sealed class IfcUebernehmen : IBefehl
             k.Hinweise.Add(aus.Text + " (Trockenlauf mit dem Projektbezug gerechnet.)");
         }
         d.Bezug = aus.Bezug;
-        if (aus.Neu && aus.Bewertung != "abweichung")
+        if (aus.Neu && aus.Bewertung != "abweichung" && !nurEinlesen)
         {
             bool eingepasst = aus.Bericht["ausrichtung"]?.GetValue<string>() == "einpassen";
             var e = info?.Kopie() ?? new Element { Id = Guid.NewGuid().ToString(), Kennzeichen = k.NaechstesKennzeichen("PI"), Klasse = "Projektinformation", Name = "Projektinformation" };
