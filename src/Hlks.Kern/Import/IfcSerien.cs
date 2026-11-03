@@ -133,8 +133,17 @@ static class IfcSerien
             var s = enden.Values.First().S;
             try
             {
-                var (wahl, ursprung, x, z, angepasst) = Formteil(k.Arbeit, kat, s, art, enden);
-                if (wahl is null) { Zaehlen(fehler, $"{Leitungsserie.Artname(art)} in {s.Familie.Name}: kein passendes Formteil"); continue; }
+                var (wahl, ursprung, x, z, angepasst, getauscht) = Formteil(k.Arbeit, kat, s, art, enden);
+                if (wahl is null)
+                {
+                    // Grösse und Winkel nennen: fehlt das Teil in der Serie (Hersteller führt es nicht) oder liegt der Knick daneben?
+                    var (pa, pb) = (enden["a"], art == "tstueck" ? enden["c"] : enden["b"]);
+                    double w = Math.Acos(Math.Clamp((pa.Raus * -1).Mal(pb.Raus), -1, 1)) * 180 / Math.PI;
+                    var was = art == "reduktion" ? $"{pa.G.Kurz} → {pb.G.Kurz}" : art == "tstueck" ? $"{pa.G.Kurz} / {pb.G.Kurz}, {w:0}°" : $"{pa.G.Kurz}, {w:0}°";
+                    Zaehlen(fehler, $"{Leitungsserie.Artname(art)} in {s.Familie.Name}: kein passendes Formteil ({was})");
+                    continue;
+                }
+                if (getauscht) Tauschen(lauf, e, "a", "b");
                 e.Bezuege[Familien.Bezug] = wahl.Familie!.Id;
                 lauf.Wert(e, "familientyp", wahl.Typ, $"Formteil der Serie {s.Familie.Name}");
                 if (wahl.Exemplar is { Count: > 0 } ex) lauf.Wert(e, "parameter", ex.DeepClone(), $"Formteil der Serie {s.Familie.Name}");
@@ -196,17 +205,20 @@ static class IfcSerien
         return s.Frei is not null && s.Grenzverletzung(g1) is null && s.ImSchritt(g1) ? s.Virtuell(g1) : null;
     }
 
-    static (FormteilWahl? Wahl, V3 Ursprung, V3 X, V3 Z, bool Angepasst) Formteil(Modell m, Katalog kat, Leitungsserie s, string art,
+    static (FormteilWahl? Wahl, V3 Ursprung, V3 X, V3 Z, bool Angepasst, bool Getauscht) Formteil(Modell m, Katalog kat, Leitungsserie s, string art,
         Dictionary<string, (V3 Punkt, V3 Raus, Leitungsserie S, Leitungsgroesse G)> enden)
     {
         var a = enden["a"]; var b = enden["b"];
         var durch = a.Raus * -1;
         if (art == "reduktion")
         {
+            // die Reduktion der Serie geht von gross (a) nach klein (b); liegt im IFC das kleine Ende an a, sitzt sie am anderen Ende
+            // (Befund 03.11.2026: Ø 100 → Ø 125 u. a. blieben ohne Formteil)
             var w = s.Formteil(m, kat, art, a.G, b.G);
-            if (!w.Ok || w.Vertauscht) return (null, a.Punkt, default, default, false);
-            var (rx, rz) = Formteilgeometrie.Ausrichtung(durch);
-            return (w, a.Punkt, rx, rz, false);
+            if (!w.Ok) return (null, a.Punkt, default, default, false, false);
+            var gross = w.Vertauscht ? b : a;
+            var (rx, rz) = Formteilgeometrie.Ausrichtung(gross.Raus * -1);
+            return (w, gross.Punkt, rx, rz, false, w.Vertauscht);
         }
         var seite = art == "tstueck" ? enden["c"] : b;
         var ursprung = Schnitt(a.Punkt, a.Raus, seite.Punkt, seite.Raus);
@@ -223,9 +235,9 @@ static class IfcSerien
             var w = art == "tstueck" ? s.Formteil(m, kat, art, a.G, seite.G, wi) : s.Formteil(m, kat, art, a.G, null, wi);
             if (!w.Ok) continue;
             var (x, z) = Formteilgeometrie.Ausrichtung(durch, seite.Raus);
-            return (w, ursprung, x, z, angepasst);
+            return (w, ursprung, x, z, angepasst, false);
         }
-        return (null, ursprung, default, default, false);
+        return (null, ursprung, default, default, false, false);
     }
 
     /// <summary>Leitungen ab Rolle (Christian 03.11.2026: «bei fbh rohren gibt es keine fittinge. diese rohre werden ab rolle verlegt. minimaler
@@ -297,6 +309,21 @@ static class IfcSerien
             n++;
         }
         return n;
+    }
+
+    /// <summary>Anschlüsse x und y eines geplanten Elements vertauschen (Namen am Element und in den Verbindungen des Laufs).</summary>
+    static void Tauschen(IfcLauf lauf, Element e, string x, string y)
+    {
+        static bool Gleich(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
+        string Anders(string n) => Gleich(n, x) ? y : Gleich(n, y) ? x : n;
+        foreach (var an in e.Anschluesse) an.Name = Anders(an.Name);
+        for (int i = 0; i < lauf.Verbindungen.Count; i++)
+        {
+            var v = lauf.Verbindungen[i];
+            if (v.VonRef == e.Id) v = v with { VonAnschluss = Anders(v.VonAnschluss) };
+            if (v.NachRef == e.Id) v = v with { NachAnschluss = Anders(v.NachAnschluss) };
+            lauf.Verbindungen[i] = v;
+        }
     }
 
     /// <summary>Kennung einer aufgerundeten Leitung: Grösse laut IFC (z. B. «d 90»).</summary>

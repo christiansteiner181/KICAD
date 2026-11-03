@@ -70,6 +70,9 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         Systempaare();
         Anlegefuehler();
         lauf.Hinweise.AddRange(IfcSerien.Zuordnen(lauf, leitungen, bauteile.Select(b => (b.X, b.E))));
+        // in einer Leitung aufgegangen (Leitung ab Rolle): nicht mehr mitzählen
+        foreach (var e in leitungen.Select(l => l.E).Concat(bauteile.Select(b => b.E)).Where(e => !lauf.Geplant.ContainsKey(e.Id)))
+            if (jeKlasse.TryGetValue(e.Klasse, out var n)) { if (n > 1) jeKlasse[e.Klasse] = n - 1; else jeKlasse.Remove(e.Klasse); }
         lauf.Hinweise.AddRange(IfcFamilien.Anlegen(lauf, bauteile));
         Zusammenfassen(uhr.Elapsed);
     }
