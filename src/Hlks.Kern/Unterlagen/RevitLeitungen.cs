@@ -23,30 +23,42 @@ public sealed record RevitLeitung(
     long Id, string Klasse, double[]? Anfang, double[]? Ende, double? BreiteOderDurchmesser, double? Hoehe,
     double? Aussendurchmesser, double? Innendurchmesser, string? Groesse,
     long? TypId, string? Typ, long? SegmentId, string? Segment, long? SystemId, string? System,
-    long? EbeneId, string? Ebene, IReadOnlyList<long> Verbunden)
+    long? EbeneId, string? Ebene, IReadOnlyList<long> Verbunden, IReadOnlyList<RevitAnschluss> Anschluesse)
 {
     public double? Laenge => Anfang is null || Ende is null ? null
         : Math.Sqrt(Math.Pow(Ende[0] - Anfang[0], 2) + Math.Pow(Ende[1] - Anfang[1], 2) + Math.Pow(Ende[2] - Anfang[2], 2));
 }
 
-/// <summary>Anschluss eines Bauteils: Revits Nummer, angeschlossene Elemente und System.</summary>
-public sealed record RevitAnschluss(int Nummer, IReadOnlyList<long> Verbunden, long? SystemId);
+/// <summary>Anschluss (Connector): Revits Nummer, angeschlossene Elemente, Gegenstellen (Element, dessen Anschlussnummer), System und Systemart
+/// (m_eSystemType, Werte der Enum MEPSystemClassification in RevitAPI.dll 2026, z. B. 16 = Sanitary). Bei Leitungen ist Nummer 0 der Anfang,
+/// 1 das Ende (geprüft an den Rohren 2363/2365 der Geberit-Datei am Bogen 2367).</summary>
+public sealed record RevitAnschluss(int Nummer, IReadOnlyList<long> Verbunden, long? SystemId,
+    IReadOnlyList<(long Id, int Nummer)> Gegenstellen, int? Systemart);
+
+/// <summary>Ebene (Level) mit Name und Kote in mm (Höhe der Ebene m_pSurface.m_origin).</summary>
+public sealed record RevitEbene(long Id, string Name, double Kote);
 
 /// <summary>Stück einer Mittellinie in mm: Gerade (<see cref="Mitte"/> null) oder Kreisbogen durch Anfang, Mitte und Ende.</summary>
 public sealed record RevitAchsstueck(double[] Anfang, double[] Ende, double[]? Mitte = null, double? Radius = null);
 
 /// <summary>Ein Bauteil (Formteil, Armatur, Apparat …) aus einer Revit-Datei. <see cref="Drehung"/>: Zeilen der Matrix M mit
 /// Welt = M · lokal + <see cref="Ursprung"/>. <see cref="Achse"/>: Mittellinie der Formteile, sonst leer.
-/// <see cref="TeilVon"/>: verschachteltes Teil einer anderen Familie (m_superInstanceId), nicht doppelt zählen.</summary>
+/// <see cref="TeilVon"/>: verschachteltes Teil einer anderen Familie (m_superInstanceId), nicht doppelt zählen.
+/// <see cref="Huelle"/>: achsparalleler Hüllquader aus dem Kopf (ElementHeader.m_pBBox) als minx, miny, minz, maxx, maxy, maxz in mm.</summary>
 public sealed record RevitBauteil(
     long Id, string Kategorie, long KategorieId, string? Familie, long? TypId, string? Typ,
     double[] Ursprung, double[][] Drehung, string? Groesse, IReadOnlyList<RevitAnschluss> Anschluesse,
-    IReadOnlyList<RevitAchsstueck> Achse, long? SystemId, string? System, long? EbeneId, string? Ebene, long? TeilVon)
+    IReadOnlyList<RevitAchsstueck> Achse, long? SystemId, string? System, long? EbeneId, string? Ebene, long? TeilVon, double[]? Huelle)
 {
     public IEnumerable<long> Verbunden => Anschluesse.SelectMany(a => a.Verbunden).Distinct();
 }
 
-public sealed record RevitNetz(List<RevitLeitung> Leitungen, List<RevitBauteil> Bauteile);
+public sealed record RevitNetz(List<RevitLeitung> Leitungen, List<RevitBauteil> Bauteile, List<RevitEbene> Ebenen)
+{
+    /// <summary>Systemart eines Systems: die häufigste an den Anschlüssen seiner Mitglieder.</summary>
+    public int? Systemart(long systemId) => Leitungen.SelectMany(l => l.Anschluesse).Concat(Bauteile.SelectMany(b => b.Anschluesse))
+        .Where(a => a.SystemId == systemId && a.Systemart is > 0).GroupBy(a => a.Systemart).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault();
+}
 
 public static class RevitLeitungen
 {
@@ -74,13 +86,23 @@ public static class RevitLeitungen
         var namen = new Dictionary<long, string>();
         var familieDesTyps = new Dictionary<long, long>();
         var kategorie = new Dictionary<long, long>();
+        var huelle = new Dictionary<long, double[]>();
+        var ebenen = new List<RevitEbene>();
         var mittellinien = new Dictionary<long, RevitObjekt>();
         var leitungen = new List<(long Id, RevitObjekt O)>();
         var bauteile = new List<(long Id, RevitObjekt O)>();
         foreach (var s in RevitObjekte.Saetze(datei, schema))
         {
             if (s.Objekt is not { } o) continue;
-            if (s.Kopf) { if (IdVon(o["m_categroryId"]) is long k) kategorie.TryAdd(s.Id, k); continue; }
+            if (s.Kopf)
+            {
+                if (IdVon(o["m_categroryId"]) is long k) kategorie.TryAdd(s.Id, k);
+                if ((o["m_pBBox"] as RevitObjekt)?["m_minmax"] is List<object?> { Count: 2 } mm && Zahlen(mm[0]) is { Length: 3 } a && Zahlen(mm[1]) is { Length: 3 } b)
+                    huelle.TryAdd(s.Id, [.. a.Concat(b).Select(x => Math.Round(x * MmJeFuss, 3))]);
+                continue;
+            }
+            if (o.Klasse.Name == "Level" && o["m_text"] is string en && ebenen.All(e => e.Id != s.Id))
+                ebenen.Add(new RevitEbene(s.Id, en, Zahlen((o["m_pSurface"] as RevitObjekt)?["m_origin"]) is { Length: 3 } eo ? Math.Round(eo[2] * MmJeFuss, 3) : 0));
             if (Name(o) is { Length: > 0 } n) namen.TryAdd(s.Id, n);
             if (o.Klasse.Name == "FamilySymbol" && IdVon(o["m_familyId"]) is long fam and > 0) familieDesTyps.TryAdd(s.Id, fam);
             if (o["m_CenterCurves"] is List<object?>) mittellinien.TryAdd(s.Id, o);
@@ -91,7 +113,8 @@ public static class RevitLeitungen
         return new RevitNetz(
             [.. leitungen.Select(r => Leitung(r.Id, r.O, N))],
             [.. bauteile.Where(b => kategorie.TryGetValue(b.Id, out var k) && Kategorien.ContainsKey(k))
-                .Select(b => Bauteil(b.Id, kategorie[b.Id], b.O, N, familieDesTyps, mittellinien))]);
+                .Select(b => Bauteil(b.Id, kategorie[b.Id], b.O, N, familieDesTyps, mittellinien, huelle.GetValueOrDefault(b.Id)))],
+            ebenen);
     }
 
     static bool IstLeitung(RevitSchema s, RevitKlasse k)
@@ -120,11 +143,11 @@ public static class RevitLeitungen
         var typ = Id(o, "m_idType"); var segment = Id(o, "m_idSegment"); var ebene = Id(o, "m_idLevelStart");
         return new RevitLeitung(id, o.Klasse.Name, anfang, ende, Mm(o["m_dWidthOrDiameter"]), Mm(o["m_dHeight"]),
             Mm(bemessung?["m_dOuterDiameter"]), Mm(bemessung?["m_dInnerDiameter"]), bemessung?["m_sCalculatedSize"] as string,
-            typ, N(typ), segment, N(segment), system, N(system), ebene, N(ebene), verbunden);
+            typ, N(typ), segment, N(segment), system, N(system), ebene, N(ebene), verbunden, anschluesse);
     }
 
     static RevitBauteil Bauteil(long id, long kategorie, RevitObjekt o, Func<long?, string?> N,
-        Dictionary<long, long> familieDesTyps, Dictionary<long, RevitObjekt> mittellinien)
+        Dictionary<long, long> familieDesTyps, Dictionary<long, RevitObjekt> mittellinien, double[]? huelle)
     {
         var trf = (o["m_pInstanceInfo"] as RevitObjekt)?["m_Trf"] as RevitObjekt;
         var ursprung = Zahlen(trf?["m_or"]) is { Length: 3 } u ? u.Select(x => Math.Round(x * MmJeFuss, 3)).ToArray() : [0, 0, 0];
@@ -144,16 +167,18 @@ public static class RevitLeitungen
         var ebene = Id(o, "m_assocLevelId");
         return new RevitBauteil(id, Kategorien[kategorie], kategorie, familie, typ, N(typ), ursprung, drehung,
             bemessung?["m_sCalculatedSize"] as string is { Length: > 0 } g ? g : null, anschluesse, achse, system, N(system), ebene, N(ebene),
-            Id(o, "m_superInstanceId"));
+            Id(o, "m_superInstanceId"), huelle);
     }
 
     static List<RevitAnschluss> Anschluesse(RevitObjekt o, long eigene) =>
         [.. ((o["m_pConnectorManager"] as RevitObjekt)?["m_connPtrArray"] as List<object?> ?? []).OfType<RevitObjekt>().Select(a =>
         {
-            long? system = (a["m_modifiers"] as List<object?> ?? []).OfType<RevitObjekt>().Select(x => Id(x, "m_idSystem")).FirstOrDefault(x => x is not null);
-            var verbunden = (a["m_arrRefs"] as List<object?> ?? []).OfType<RevitObjekt>().Select(r => Id(r, "m_id"))
-                .OfType<long>().Where(x => x != eigene && x != system).Distinct().ToList();
-            return new RevitAnschluss(a["m_nIndex"] is { } i ? Convert.ToInt32(i, System.Globalization.CultureInfo.InvariantCulture) : 0, verbunden, system);
+            var modifikatoren = (a["m_modifiers"] as List<object?> ?? []).OfType<RevitObjekt>().ToList();
+            long? system = modifikatoren.Select(x => Id(x, "m_idSystem")).FirstOrDefault(x => x is not null);
+            int? art = modifikatoren.Select(x => x["m_eSystemType"]).Where(x => x is not null).Select(x => (int?)Ganz(x)).FirstOrDefault();
+            var gegen = (a["m_arrRefs"] as List<object?> ?? []).OfType<RevitObjekt>()
+                .Select(r => (Id: Id(r, "m_id") ?? 0, Nummer: Ganz(r["m_nIndex"]))).Where(x => x.Id > 0 && x.Id != eigene && x.Id != system).Distinct().ToList();
+            return new RevitAnschluss(Ganz(a["m_nIndex"]), [.. gegen.Select(x => x.Id).Distinct()], system, gegen, art);
         })];
 
     /// <summary>Gerade (GLine: Ursprung + Richtung × t) oder Kreisbogen (GArc: Mitte + r·(cos t · m_xVec + sin t · m_yVec)) in mm;
@@ -173,6 +198,7 @@ public static class RevitLeitungen
         return null;
     }
 
+    static int Ganz(object? v) => v is null ? 0 : Convert.ToInt32(v, System.Globalization.CultureInfo.InvariantCulture);
     static long? IdVon(object? v) => (v as RevitObjekt)?.AlsId();
     static long? Id(RevitObjekt? q, string f) => IdVon(q?[f]) is long v && v > 0 ? v : null;
     static double[]? Zahlen(object? v) => v is List<object?> l && l.All(x => x is double) ? [.. l.Cast<double>()] : null;

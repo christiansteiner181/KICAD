@@ -23,4 +23,8 @@ public sealed partial class Werkzeuge
         if (raeume) p["raeume"] = true;
         return Lauf(() => Antwort(IfcExport.Schreiben(projekt, p)));
     }
+
+    [McpServerTool(Name = "rvt_als_ifc"), Description(RevitIfc.Text)]
+    public string RvtAlsIfc([Description(RevitIfc.ParDatei)] string datei) =>
+        Lauf(() => Antwort(RevitIfc.Schreiben(projekt, datei)));
 }

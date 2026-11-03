@@ -78,6 +78,7 @@ public sealed class Abfragen(Projekt p)
         .. LueftungBefehle.Definitionen,   // Modul 6 Teil A-7: raumforderung
         .. HeizungAbfragen.Definitionen,   // Modul 5 Teil A-D: heizung_lesen, heizung_leistung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export
+        .. RevitIfc.Definitionen,   // RVT ohne Revit: rvt_als_ifc
         .. PlanwinkelAbfragen.Definitionen,   // N9: planwinkel (Ausrichtung der Grundrisse)
         .. RaumBegehenAbfragen.Definitionen,   // N15: raum_begehen (Standort für «Raum begehen»)
         .. SchnitthoeheAbfragen.Definitionen,   // N21: schnitthoehe_sia (Schnitthöhe des Grundrisses nach SIA 400)

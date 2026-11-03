@@ -173,6 +173,31 @@ public class RevitDateiTests
             p => Assert.Contains(b.Achse, x => x != a && (Nah(p, x.Anfang) || Nah(p, x.Ende))))));
     }
 
+    [Fact]
+    public void Echte_RVT_als_IFC_in_KICAD_uebernommen_Klassen_Systeme_und_Abgleich()
+    {
+        var pfad = Echt("familien/revit/geberit_silent_db20_2017.rvt");
+        if (pfad is null) return;
+        var p = IfcHilfe.Leer();
+        var bericht = RevitIfc.Schreiben(p, pfad);
+        Assert.Equal(54, bericht["produkte"]!["IfcPipeSegment"]!.GetValue<int>());
+        Assert.Equal(1, bericht["geschosse"]!.GetValue<int>());
+        var datei = bericht["unterlage"]!.GetValue<string>();
+        // ohne Netzdatei: deren Erzeugung (natives xBIM) bricht vereinzelt mit c0000374 ab (Heap; auch beim IFC-Import beobachtet, 03.11.2026)
+        var par = new JsonObject { ["bereiche"] = new JsonArray("hlks"), ["grundlage"] = false };
+        IfcHilfe.Ok(IfcHilfe.Uebernehmen(p, datei, par));
+        int N(string klasse) => p.Modell.DerKlasse(klasse).Count();
+        Assert.Equal(54, N("Rohr"));
+        Assert.Equal(30, N("Bogen") + N("TStueck") + N("Reduktion"));   // Klasse aus der Lage der Ports
+        Assert.Equal(["Heizung Vorlauf", "Schmutzwasser"], p.Modell.DerKlasse("System").Select(s => s.Text("systemtyp")).Order());
+        // Rohre im System Schmutzwasser, mit Aussendurchmesser aus dem Pset
+        var schmutz = p.Modell.DerKlasse("System").Single(s => s.Text("systemtyp") == "Schmutzwasser").Id;
+        Assert.All(p.Modell.DerKlasse("Rohr").Where(r => r.System == schmutz), r => Assert.True(r.Zahl("da") > 0));
+        // dieselbe Datei nochmals: feste GlobalIds – nichts neu
+        var zweit = IfcHilfe.Ok(IfcHilfe.Uebernehmen(p, RevitIfc.Schreiben(p, pfad)["unterlage"]!.GetValue<string>(), par));
+        Assert.Contains(zweit.Hinweise, h => h.Contains("0 neu", StringComparison.Ordinal));
+    }
+
     static bool Nah(double[] p, double[] q) => Math.Sqrt(p.Zip(q, (a, b) => (a - b) * (a - b)).Sum()) < 0.5;
 
     [Fact]

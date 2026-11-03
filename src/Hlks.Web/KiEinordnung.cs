@@ -65,8 +65,9 @@ public static class KiEinordnung
             "(Entwurf, ein Paket, zurücknehmbar) und ändert nur die Befund-Ids der Quellen auf die aktuelle Leserversion.",
             ["familie_entwurf", "familie_aendern", "familie_laden", "familie_platzieren", "familien_quellen_nachfuehren", "familie_netz_uebernehmen"]),
         new("Unterlagen und IFC übernehmen", "Unterlagen einfügen/kalibrieren und ein IFC übernehmen – Dateipfade nur unter dem Projektordner und den Wurzeln " +
-            "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar.",
-            ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen"]),
+            "aus kataloge/buero.json (KiPfade, B3a/B4); ein Paket je Übernahme, zurücknehmbar. rvt_als_ifc schreibt das IFC einer Revit-Datei nur in den " +
+            "Projektordner (ausgabe\\ifc und Unterlage) und ändert das Modell nicht.",
+            ["unterlage_einfuegen", "unterlage_kalibrieren", "ifc_uebernehmen", "rvt_als_ifc"]),
         new("Pläne einrichten", "Planblätter anlegen und Ansichten platzieren, Räume im 3D zeigen – im Modell, zurücknehmbar; Revisionen, Plansätze und PDF-Ausgaben sind verboten.",
             ["planblatt_anlegen", "ansicht_platzieren", "einlageplaene_anlegen", "planblatt_gewerk_setzen",
              "planwinkel_bestimmen",

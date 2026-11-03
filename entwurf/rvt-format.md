@@ -178,10 +178,30 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   ist ein Achsenende das Rohrende, beim Rest liegt das Rohrende auf der Achse im Formteil, z. B. beim Mapress-Bogen, oder
   ist im Modell versetzt), JRG Sanipex (856 Formteile, 36 Armaturen, meist unverbunden als Katalog ausgelegt).
   Verweise ins Leere: 0. Test `RevitDateiTests` 7/7.
-- **Offen:** Anschlusslagen der Armaturen (Familiengeometrie), Kanäle an einer echten Datei, Übernahme in ein
-  KICAD-Projekt (Abbildung auf KICAD-Leitungen, Serien und Formteile), Koordinaten von Revits internem System auf
-  Vermessung. Die Kategorie «Rohrformteil» enthält auch Hilfsfamilien der Hersteller (z. B. «warning_cross»); sie müssen
-  bei der Übernahme ausgefiltert werden.
+- **Offen:** Anschlusslagen der Armaturen (Familiengeometrie), Kanäle an einer echten Datei, Koordinaten von Revits
+  internem System auf Vermessung.
+
+**Übernahme in KICAD – gebaut 03.11.2026** (Christian: «In KICAD übernehmen», Weg «sowohl als auch», Umfang «Nur HLKS-Netz»;
+`src/Hlks.Kern/Unterlagen/RevitIfc.cs`):
+- Abfrage `rvt_als_ifc` (MCP gleich): RVT ohne Revit lesen → neutrale Beschreibung des eigenen IFC-Exports → IFC4 mit dessen
+  Schreiber (`IfcExportSchreiber`, Schemaprüfung an Xbim). Ablage `<Projektordner>\ausgabe\ifc\<Name>.rvt.ifc` (das ist der
+  Export) und als Unterlage; `ifc_uebernehmen` mit deren Namen macht KICAD-Elemente daraus – Serien, Anschlusszuordnung,
+  Systeme, Abgleich über feste GlobalIds (UUID v5 aus Dateiname und Revit-Id), Hintergrund und Kollision wie bei jedem IFC.
+  Die Dateien der IFC-Übernahme sind unverändert.
+- Abbildung: Rohr/Kanal RIGIDSEGMENT mit `Pset_PipeSegmentTypeCommon` (Nennweite, Aussen-, Innendurchmesser); Bauteile mit
+  PredefinedType NOTDEFINED (Klasse aus der Lage der Ports); Ports an Rohrenden bzw. freien Achsenenden; Verbindungen aus
+  den Gegenstellen; eigenes Pset `HK_Revit` (Revit-Id, Familie, Typ, Segment, System, Ebene). Nicht übernommen: verschachtelte
+  Teile und Bauteile ohne Anschluss (Hilfsfamilien, Logos). Systemart (`MEPSystemClassification`, RevitAPI.dll) →
+  IfcDistributionSystemEnum nur wo eindeutig (Annahme, siehe Kopf von RevitIfc.cs); Hydronic über den Namen.
+- Geprüft (RVT → IFC → ifc_uebernehmen in ein leeres Projekt): Geberit Silent-db20 54 Rohre, 30 Formteile, 1 Ventil, Systeme
+  Schmutzwasser und Heizung Vorlauf, Silent-Serie nachgezeichnet, Nachbau 54/54 deckungsgleich; Mapress 922 Rohre,
+  385 Formteile, 62 Verteiler, Verbindungen 885/885, Nachbau 922/922; JRG Sanipex 46 Rohre, 121 Formteile, 27 Ventile.
+  Zweite Übernahme derselben Datei: 0 neu. Test `RevitDateiTests` 8/8.
+- **Befund:** Die Netzdatei der Übernahme (natives xBIM) bricht vereinzelt mit c0000374 (Heap) ab – 1 von 6 Läufen, ohne Netz
+  10/10; derselbe Absturz ist beim IFC-Import vom 03.11.2026 vermerkt. Der Test läuft darum mit `grundlage = false`.
+- **Offen:** Knopf in der Oberfläche (RVT einfügen → als IFC übernehmen, heute über KI/MCP in zwei Schritten), direkte Annahme
+  von .rvt in `ifc_uebernehmen` (eine Zeile in der IFC-Übernahme, mit der IFC-Sitzung abzustimmen), Fliessrichtung,
+  Rechteckkanäle an einer echten Datei.
 
 **Objektdaten – erster Befund vor dem Bau (zur Nachvollziehbarkeit):**
 - Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`
