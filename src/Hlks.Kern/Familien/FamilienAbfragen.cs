@@ -38,6 +38,8 @@ public static class FamilienAbfragen
         new(FamiliePruefen.Name, FamiliePruefen.Text, FamiliePruefen.Parameter),   // Nachtrag 21.10.2026: Prüfbefunde inkl. Leserversion der Quellen
         new(RegeltechnikAbfrage.Name, RegeltechnikAbfrage.Text, RegeltechnikAbfrage.Parameter),   // Herstellerbibliothek H1
         new(VdiAbgleich.Name, VdiAbgleich.Text, VdiAbgleich.Parameter),                         // Herstellerbibliothek H3
+        new(Verbindungen.TabelleName, Verbindungen.TabelleText, Verbindungen.TabelleParameter),   // Verbindungstabelle (Christian 03.11.2026)
+        new(Verbindungen.PruefenName, Verbindungen.PruefenText, Verbindungen.PruefenParameter),
     ];
 
     /// <summary>Beantwortet eine Familienabfrage; null = nicht zuständig.</summary>
@@ -59,6 +61,8 @@ public static class FamilienAbfragen
         FamiliePruefen.Name => FamiliePruefen.Abfrage(p, Param.Text(par, "familie", true)!),                       // Nachtrag 21.10.2026
         RegeltechnikAbfrage.Name => RegeltechnikAbfrage.Abfrage(p, par),                                            // Herstellerbibliothek H1
         VdiAbgleich.Name => VdiAbgleich.Abfrage(p, par),                                                            // Herstellerbibliothek H3
+        Verbindungen.TabelleName => Verbindungen.Tabelle(p, par),                                                    // Verbindungstabelle
+        Verbindungen.PruefenName => Verbindungen.PruefenAbfrage(p, par),
         _ => null,
     };
 

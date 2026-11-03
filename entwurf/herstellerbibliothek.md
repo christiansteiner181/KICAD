@@ -199,4 +199,16 @@ Bauarten neu: `regelventil` (2-Weg), `regelkugelhahn`, `absperrklappe`; 3-Weg bl
     fein (kleinster und grösster Typ) und, wo ein Hersteller-IFC/STEP vorliegt, gegen dieses Modell mit gemessener Abweichung
     (Kantenabstand, Anschluss gegen Port). Die Kontrollbilder legt der Hauptlauf beim Schlussbericht unter
     `~/HLKS_CAD_build/herstellerbibliothek_ki/berichte/` ab (nicht im Repository: Herstellerunterlagen).
+15. **Verbindungstabelle (Christian 03.11.2026):** «es braucht eine art verbindungstabelle. dass die unterschiedlichen
+    masssysteme keine konflikte verursachen.» Fragefenster: **Übergang automatisch setzen**, **bei mehreren Möglichkeiten eine
+    Auswahl vorschlagen**, Zuordnungen **aus den Familien**. Gebaut: `anschluss.verbindung`, `leitung.verbindung`,
+    `leitung.uebergaenge`, Klasse Uebergang (a = Serie im Ursprung, b = andere Technik); Kern `Verbindungen` (Zoll normalisiert,
+    Grössenvergleich Gewinde nach Zoll, sonst DN, sonst d); Routing setzt am Gerät statt der Reduktion den Übergang, bei mehreren
+    Ablehnung mit Auswahl und Parameter `uebergang` { familie, typ }; Abfragen `verbindungstabelle` und `verbindung_pruefen`.
+    **ANNAHME zur Bestätigung:** direkt verbindbar sind Innen- mit Aussengewinde, sonst nur gleiche Technik (Flansch–Flansch,
+    Press–Press …); fehlt eine Seite, gilt das bisherige Verhalten (nur Grösse, Reduktion).
+16. **Weitere Familien (Christian 03.11.2026):** Gewinderohr 3/8"–4" mit allen GF+-Formteilen (G1), Rotguss-Fittinge JRG oder
+    Nussbaum (G2), Nussbaum Wasserfilter, Ventile und Hahnen (N1; Klasse Filter, Ventil-Bauarten auslaufhahn, entleerhahn);
+    Formteilklassen Muffe, Verschraubung, Kreuz. «ab jetzt alle Familien ohne unterbruch bauen» → zweite KI-Instanz (Port 5155)
+    parallel zur Warteschlange auf 5154.
 8. **Ablage Herstellerdaten:** `W:\03_CAD Bibliotheken\e_Herstellerdaten\<Hersteller>\<JJJJ-MM-TT>\` (Originale vor dem Einlesen).

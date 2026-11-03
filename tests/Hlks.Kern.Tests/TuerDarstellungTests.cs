@@ -51,7 +51,9 @@ public class TuerDarstellungTests
         ["unterlagen_lesen"] = "{\"unterlagen\":[\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\"]}",   // Modul 2, B2: kleines Beispiel-PDF
         ["befunde"] = "{\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\",\"art\":\"wort\"}",
         ["unterlage_bild"] = "{\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/") + "\",\"breite\":200}",
-        ["regeltechnik"] = """{"familie":"FAM-1"}""",                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
+        ["regeltechnik"] = """{"familie":"FAM-1"}""",
+        ["verbindungstabelle"] = "{}",                                    // Verbindungstabelle (03.11.2026): Rohrserien des Testprojekts
+        ["verbindung_pruefen"] = """{"element":"HK-T1","anschluss":"vl","serie":"fam-test-rohrserie"}""",   // ohne Verbindungsangaben: unbekannt                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
         ["vdi_abgleich"] = "{\"familie\":\"FAM-1\",\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/muster.vdi").Replace("\\", "/") + "\"}",   // fiktive VDI-Datei
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcHilfe.Testdaten("unterlagen/beispiel.pdf").Replace("\\", "/")

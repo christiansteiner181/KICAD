@@ -3,10 +3,11 @@
 # Build %USERPROFILE%\HLKS_CAD_build\herstellerbibliothek, Port 5154, Arbeitsprojekt lokal.
 # Familienbibliothek und Warteschlange lokal: nie W: (Uebernahme in die Buerobibliothek macht Christian nach der Freigabe).
 # Mit werkzeuge\losgeloest.ps1 starten (absoluter Pfad). Datei bewusst nur ASCII (PowerShell 5.1).
-param([Parameter(Mandatory = $true)][string]$Arbeitskopie, [int]$Port = 5154)
+# Zweite Instanz parallel (Christian 03.11.2026: «ab jetzt alle Familien ohne unterbruch bauen»): -Port 5155 -Ablage herstellerbibliothek_ki2 -Bau herstellerbibliothek_b
+param([Parameter(Mandatory = $true)][string]$Arbeitskopie, [int]$Port = 5154, [string]$Ablage = 'herstellerbibliothek_ki', [string]$Bau = 'herstellerbibliothek')
 $wt = $Arbeitskopie
-$hb = "$env:USERPROFILE\HLKS_CAD_build\herstellerbibliothek_ki"
-$bau = "$env:USERPROFILE\HLKS_CAD_build\herstellerbibliothek"
+$hb = "$env:USERPROFILE\HLKS_CAD_build\$Ablage"
+$bau = "$env:USERPROFILE\HLKS_CAD_build\$Bau"
 New-Item -ItemType Directory -Force "$hb\bibliothek", "$hb\ausstehend", "$hb\zuletzt" | Out-Null
 $env:HLKS_BUILD = $bau
 $env:HLKS_HKXR = "$env:USERPROFILE\HK_XR_fuer_kicad"

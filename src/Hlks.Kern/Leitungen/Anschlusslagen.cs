@@ -19,7 +19,7 @@ namespace Hlks.Kern;
 /// Element keine Lage dafür hat – und Grösse (leer = unbekannt). Quelle: leitung | familie | ohne_familie | nicht_platziert |
 /// familie_ungueltig.</summary>
 public sealed record AnschlussStelle(string Name, string Medium, string Fluss, double[]? Lage, double[]? Richtung, Leitungsgroesse Groesse,
-    string? Art, string? Form, string? Gewinde, string Quelle)
+    string? Art, string? Form, string? Gewinde, string Quelle, string? Verbindung = null)
 {
     public bool HatLage => Lage is not null && Richtung is not null;
     public bool HatGroesse => !Groesse.Leer;
@@ -116,7 +116,7 @@ public static class Anschlusslagen
             l.Add(new AnschlussStelle(an.Name, Netz.Medium(m, e, an), an.Fluss,
                 lage is null ? null : Familien.Runden(lage.Welt(fa.Lage)),
                 lage is null ? null : Familien.Runden(V3.Aus(lage.Richtung(fa.Richtung)).Einheit().Feld(), 12),
-                Leitungsgroesse.Von(fa), fa.Art, fa.Form, fa.Gewinde, lage is null ? "nicht_platziert" : "familie"));
+                Leitungsgroesse.Von(fa), fa.Art, fa.Form, fa.Gewinde, lage is null ? "nicht_platziert" : "familie", fa.Verbindung));
         }
         return l;
     }
@@ -141,7 +141,7 @@ public static class Anschlusslagen
     public static JsonObject AlsJson(AnschlussStelle s) => new()
     {
         ["name"] = s.Name, ["medium"] = s.Medium, ["fluss"] = s.Fluss, ["art"] = s.Art, ["form"] = s.Form,
-        ["dn"] = s.Groesse.Dn, ["d"] = s.Groesse.D, ["b"] = s.Groesse.B, ["h"] = s.Groesse.H, ["gewinde"] = s.Gewinde,
+        ["dn"] = s.Groesse.Dn, ["d"] = s.Groesse.D, ["b"] = s.Groesse.B, ["h"] = s.Groesse.H, ["gewinde"] = s.Gewinde, ["verbindung"] = s.Verbindung,
         ["lage"] = s.Lage is null ? null : Json.Knoten(s.Lage), ["richtung"] = s.Richtung is null ? null : Json.Knoten(Familien.Runden(s.Richtung, 9)),
         ["quelle"] = s.Quelle,
     };

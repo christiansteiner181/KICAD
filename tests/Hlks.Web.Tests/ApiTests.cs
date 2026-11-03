@@ -432,7 +432,9 @@ public class ApiTests
         ["befunde"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"art\":\"wort\"}",
         ["unterlage_bild"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"breite\":200}",
         ["familie_pruefen"] = """{"familie":"FAM-1"}""",                  // Nachtrag 21.10.2026: Prüfbefunde der Testfamilie
-        ["regeltechnik"] = """{"familie":"FAM-1"}""",                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
+        ["regeltechnik"] = """{"familie":"FAM-1"}""",
+        ["verbindungstabelle"] = "{}",                                    // Verbindungstabelle (03.11.2026): Rohrserien des Testprojekts
+        ["verbindung_pruefen"] = """{"element":"HK-T1","anschluss":"vl","serie":"fam-test-rohrserie"}""",   // ohne Verbindungsangaben: unbekannt                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
         ["vdi_abgleich"] = "{\"familie\":\"FAM-1\",\"unterlage\":\"" + IfcTestdatei("unterlagen/muster.vdi") + "\"}",   // fiktive VDI-Datei: Übersicht der Satzarten
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf")

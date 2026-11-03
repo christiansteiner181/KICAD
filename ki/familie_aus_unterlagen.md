@@ -219,9 +219,15 @@ Entscheid Christian Steiner 02.11.2026: «alle Elektrischen Komponenten brauchen
    Kategorie Verteilerkasten, Typen = Kastengrössen, `fuer` = Verteilertypen nach der Zuordnungstabelle des Herstellers).
    Der Kasten ist eine eigene Familie (Kategorie Verteilerkasten, Einbau unter- oder aufputz). **Ausdehnungsgefässe**:
    Kategorie Ausdehnungsgefaess; elektrische Druckhaltungen (Kompressor, Pumpe) mit Regeltechnik der Steuerung.
-7. **Pumpen:** Kennlinien (Q-H, P1, NPSH) noch nicht übernehmen (Entscheid 02.11.2026: später mit Modul 5); Kennwerte,
+7. **Verbindungstechnik (Verbindungstabelle, Christian 03.11.2026):** Jeder Rohranschluss nennt `verbindung` nach der
+   Unterlage (gewinde-innen, gewinde-aussen, verschraubung, flansch, press, schweissen, loeten, kleben, steck, klemm, muffe)
+   und das Gewinde wie in der Unterlage (z. B. «Rp 3/4», «G 1»); eine Leitungsserie nennt `leitung.verbindung`. Übergänge
+   zwischen Techniken (Press auf Gewinde, Flansch auf Rohr) sind Familien der Kategorie **Uebergang**: Anschluss a = Seite der
+   Serie **im Ursprung** (wie die Reduktion), b = andere Seite mit verbindung und gewinde bzw. dn; die Serie nennt sie in
+   `leitung.uebergaenge`. DN nie aus Zoll oder Aussendurchmesser ableiten – nur aus der Unterlage.
+8. **Pumpen:** Kennlinien (Q-H, P1, NPSH) noch nicht übernehmen (Entscheid 02.11.2026: später mit Modul 5); Kennwerte,
    Regeltechnik, Abmessungen, Anschlüsse ja. Eigenschaft `bauart` der Klasse Pumpe im Bericht nennen.
-8. **VDI 3805:** Liegt eine VDI-3805-Datei als Unterlage vor, ist sie nur **Zweitbeleg** (Entscheid 02.11.2026: Feldbedeutungen
+9. **VDI 3805:** Liegt eine VDI-3805-Datei als Unterlage vor, ist sie nur **Zweitbeleg** (Entscheid 02.11.2026: Feldbedeutungen
    sind ohne die Normblätter unbekannt): Die Quelle eines Werts bleibt das Datenblatt; ein VDI-Feld mit gleichem Wert darfst
    du zusätzlich nennen. Deute nie ein VDI-Feld allein.
 

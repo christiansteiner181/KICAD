@@ -168,6 +168,8 @@ public sealed class FamAnschluss
     public FamZahl? B { get; init; }
     public FamZahl? H { get; init; }
     public string? Gewinde { get; init; }
+    /// <summary>Verbindungstechnik des Anschlusses (Verbindungstabelle, Christian 03.11.2026), z. B. gewinde-innen, flansch, press; null = nicht angegeben.</summary>
+    public string? Verbindung { get; init; }
     public FamZahl[] Lage { get; init; } = [];
     public FamZahl[] Richtung { get; init; } = [];
     public FamZahl? Sichtbar { get; init; }
@@ -234,6 +236,7 @@ public sealed class FamLeitung
     public static string KlasseVon(string art) => art switch
     {
         "bogen" => "Bogen", "tstueck" => "TStueck", "reduktion" => "Reduktion", "reinigungsoeffnung" => "Reinigungsoeffnung",
+        "uebergang" => "Uebergang",   // Verbindungstabelle (03.11.2026): vom Routing gesetzt, keine Formteilart in leitung.formteile
         _ => throw new HlksFehler($"Formteilart «{art}» gibt es nicht.", "Formteilarten: " + string.Join(", ", Formteilarten)),
     };
 
@@ -276,6 +279,11 @@ public sealed class FamLeitung
     /// <summary>Abwasser-Serie mit Grösse d = Aussendurchmesser (groesse { d }); die DN des Herstellers steht höchstens als Typparameter
     /// (ziel dn), nie abgeleitet.</summary>
     public bool NachAussendurchmesser => Abwasser && Groesse.ContainsKey("d");
+    /// <summary>leitung.verbindung (Verbindungstabelle, Christian 03.11.2026): Verbindungstechnik der Serie, z. B. press, gewinde-aussen; null = nicht angegeben.</summary>
+    public string? Verbindung { get; init; }
+    /// <summary>leitung.uebergaenge: ids bzw. Namen der Übergangs-Familien (Kategorie Uebergang), die das Routing an Geräteanschlüssen mit
+    /// anderer Verbindung setzt; null = keine.</summary>
+    public IReadOnlyList<string>? Uebergaenge { get; init; }
 }
 
 /// <summary>Massbezug (für B4: Abweichungsliste je Typ).</summary>
@@ -409,6 +417,24 @@ public sealed class FamilieDef
         FormelnPruefen();
     }
 
+    List<string>? UebergaengeLesen(JsonNode? n)
+    {
+        if (n is null) return null;
+        if (n is not JsonArray a) { Fehl("leitung.uebergaenge", "uebergaenge muss eine Liste sein", "[\"<id oder Name der Übergangs-Familie>\", …]"); return null; }
+        var l = new List<string>();
+        foreach (var x in a) if (Text(x)?.Trim() is { Length: > 0 } s) l.Add(s); else Fehl("leitung.uebergaenge", "Eintrag muss ein Text sein (id oder Name)");
+        return l;
+    }
+
+    /// <summary>Verbindungstechnik eines Anschlusses bzw. einer Leitungsserie (Verbindungstabelle): Wert aus <see cref="Verbindungen.Arten"/>.</summary>
+    string? VerbindungLesen(JsonNode? n, string ort)
+    {
+        if (n is null) return null;
+        var s = Text(n)?.Trim();
+        if (s is null || !Verbindungen.Arten.Contains(s)) { Fehl(ort, $"Verbindung «{s ?? n.ToJsonString()}» gibt es nicht", "Erlaubt: " + string.Join(", ", Verbindungen.Arten)); return null; }
+        return s;
+    }
+
     // ------------------------------------------------------------------ Darstellung je Detailgrad
 
     /// <summary>Christian 02.11.2026: «mir ist wichtig das bei allen Familien eine detailgetreue Abbildung der Komponenten vorliegt. in allen
@@ -454,7 +480,7 @@ public sealed class FamilieDef
             return;
         }
         if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, einsatz?, formteile?, regeln?, frei?, quellen? }"); return; }
-        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "einsatz", "formteile", "regeln", "frei", "quellen"];
+        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "einsatz", "formteile", "regeln", "frei", "quellen", "verbindung", "uebergaenge"];
         foreach (var (feld, _) in o)
             if (!felder.Contains(feld)) Fehl("leitung", $"Unbekanntes Feld «{feld}»", "Erlaubt: " + string.Join(", ", felder));
 
@@ -648,6 +674,7 @@ public sealed class FamilieDef
         {
             Querschnitt = querschnitt ?? "rund", Groesse = groesse, Aussen = aussen, Innen = innen, Wand = wand, Biegeradius = biegeradius, Kuerzel = kuerzel,
             Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei, Einsatz = einsatz, Mischbar = mischbar,
+            Verbindung = VerbindungLesen(o["verbindung"], "leitung.verbindung"), Uebergaenge = UebergaengeLesen(o["uebergaenge"]),
         };
     }
 
@@ -1175,7 +1202,7 @@ public sealed class FamilieDef
     {
         if (n is null) { Fehl("anschluesse", "anschluesse fehlt", "\"anschluesse\": [] angeben (auch leer)."); return; }
         if (n is not JsonArray a) { Fehl("anschluesse", "anschluesse muss eine Liste sein"); return; }
-        string[] felder = ["name", "medium", "fluss", "art", "form", "dn", "d", "gewinde", "b", "h", "lage", "richtung", "beschreibung", "sichtbar", "quellen"];
+        string[] felder = ["name", "medium", "fluss", "art", "form", "dn", "d", "gewinde", "verbindung", "b", "h", "lage", "richtung", "beschreibung", "sichtbar", "quellen"];
         int nr = 0;
         foreach (var x in a)
         {
@@ -1210,7 +1237,7 @@ public sealed class FamilieDef
             {
                 Name = name, Medium = medium.Length > 0 ? medium : "*", Fluss = Fluesse.Contains(fluss) ? fluss : "beide", Art = art, Form = form,
                 Dn = o["dn"] is null ? null : Zahl(o["dn"], ort + ".dn"), D = o["d"] is null ? null : Zahl(o["d"], ort + ".d"),
-                B = o["b"] is null ? null : Zahl(o["b"], ort + ".b"), H = o["h"] is null ? null : Zahl(o["h"], ort + ".h"), Gewinde = Text(o["gewinde"]),
+                B = o["b"] is null ? null : Zahl(o["b"], ort + ".b"), H = o["h"] is null ? null : Zahl(o["h"], ort + ".h"), Gewinde = Text(o["gewinde"]), Verbindung = VerbindungLesen(o["verbindung"], ort + ".verbindung"),
                 Lage = Punkt(o["lage"], ort + ".lage", 3) ?? [], Richtung = richtung ?? [],
                 Sichtbar = o["sichtbar"] is null ? null : Zahl(o["sichtbar"], ort + ".sichtbar"), Beschreibung = Text(o["beschreibung"]),
             });

@@ -2,11 +2,11 @@
 # KI-Auftrag «Familie aus Unterlagen» mit Internet, nacheinander auf dem Server werkzeuge\herstellerbibliothek_server.ps1 (Port 5154).
 # Aufruf: powershell -File werkzeuge\herstellerbibliothek_auftraege.ps1 [-Nur P1,V1]
 # Datei mit UTF-8-BOM speichern (PowerShell 5.1). Die Hinweise nennen keine Werte: alles aus den Herstellerunterlagen.
-param([string[]]$Nur = @(), [int]$Port = 5154)
+param([string[]]$Nur = @(), [int]$Port = 5154, [string]$Ablage = 'herstellerbibliothek_ki')
 $ErrorActionPreference = 'Stop'
 $Nur = @($Nur | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $u = "http://localhost:$Port"
-$hb = "$env:USERPROFILE\HLKS_CAD_build\herstellerbibliothek_ki"
+$hb = "$env:USERPROFILE\HLKS_CAD_build\$Ablage"
 $log = "$hb\auftraege.log"
 New-Item -ItemType Directory -Force $hb | Out-Null
 function Log($t) { $z = "$(Get-Date -Format 'yyyy-MM-dd HH:mm:ss') $t"; Add-Content -Path $log -Value $z -Encoding UTF8; $z }
@@ -43,6 +43,15 @@ $auftraege = @(
   # Kugelhähne (Christian 02.11.2026: «Kugelhanen mit knebelgriff und mit schmetterlingsgriff» – «fabrikat ega. bsp Buderus.»)
   @{ nr = 'A1'; kategorie = 'Ventil'
      hinweis = 'Absperr-Kugelhähne für Heizung (Gewindeanschluss, Nennweiten wie der Hersteller sie führt) in zwei Ausführungen: mit Knebelgriff (Hebelgriff) und mit Schmetterlingsgriff (Flügelgriff). Fabrikat beliebig, Vorschlag Christian: Buderus; nimm Buderus, wenn ein Buderus-Datenblatt mit Massen je Nennweite ohne Anmeldung erhältlich ist, sonst einen anderen gängigen Hersteller mit vollständig bemasstem Datenblatt und nenne ihn deutlich im Bericht und im Familiennamen. Eigenschaft art der Klasse Ventil: kugelhahn; Medium «*». Unterscheiden sich die Masse der beiden Griffe, zwei Familien («… Knebelgriff», «… Schmetterlingsgriff»), sonst eine Familie mit Typparameter griff. Keine Elektrik, kein Abschnitt regeltechnik. ' }
+  # Gewinderohr mit GF+-Formteilen (Christian 03.11.2026: «wir brachen auch eine gewinderohrfamilie 3/8" bis 4", alle Formteile von GF+»)
+  @{ nr = 'G1'; kategorie = 'Bogen'
+     hinweis = 'Georg Fischer (GF+) Temperguss-Gewindefittings für die bestehende Leitungsserie «Stahlrohr Gewinderohr» (familien; Grössen 3/8" bis 4", die Serie nicht neu anlegen): ALLE Formteile, die GF für diese Grössen führt, je Formstückart eine Familie mit Typ je Grösse bzw. Grössenpaar, Typname und Figurnummer wie GF: Bogen und Winkel (Kategorie Bogen, alle Winkel), T-Stücke auch reduziert (TStueck), Reduktionen, Reduziermuffen und -nippel (Reduktion), Muffen und Doppelnippel (Muffe), Verschraubungen (Verschraubung), Kreuze (Kreuz), Kappen und Stopfen (Endkappe). Gewinde je Anschluss wie in der GF-Unterlage (z. B. Rp, R, G) und Anschluss-dn nur, wenn GF ihn nennt. Danach in der Serie leitung.formteile bogen, tstueck und reduktion auf die GF-Familien setzen (familie_aendern; die bisherigen Formteile bleiben als Familien bestehen) und im Bericht nennen, was ersetzt wurde. Masse nur aus GF-Unterlagen, keine Preise. ' }
+  # Rotguss-Fittinge (Christian 03.11.2026: «wir brauchen auch eine Familie für Rotguss fittinge z.bsp. JRG oder Nussbaum.»)
+  @{ nr = 'G2'; kategorie = 'Bogen'
+     hinweis = 'Rotguss-Gewindefittings für Trinkwasser (Sanitär), Fabrikat JRG (Georg Fischer JRG) oder Nussbaum (R. Nussbaum AG), beide Schweiz: nimm den Hersteller, dessen Sortiment mit Massen je Grösse ohne Anmeldung erhältlich ist, und nenne ihn im Familiennamen. ALLE Formstückarten des Rotguss-Gewindesortiments, je Art eine Familie mit Typ je Grösse bzw. Grössenpaar (Typname und Artikel- bzw. Figurnummer wie der Hersteller): Bogen und Winkel (Kategorie Bogen), T-Stücke auch reduziert (TStueck), Reduktionen, Reduziermuffen und -nippel (Reduktion), Muffen und Doppelnippel (Muffe), Verschraubungen (Verschraubung), Kreuze (Kreuz), Kappen und Stopfen (Endkappe). Gewinde je Anschluss wie in der Unterlage (z. B. Rp, R, G) und verbindung je Anschluss (gewinde-innen bzw. gewinde-aussen) nach der Unterlage. Die Familien sind Formteile ohne eigene Leitungsserie; im Bericht nennen, zu welchen bestehenden Rohrserien sie passen. Masse nur aus Herstellerunterlagen, keine Preise. ' }
+  # Nussbaum (Christian 03.11.2026: «Und eine Familie Nussbaum Wasserfilter., Ventile und Hahnen.»)
+  @{ nr = 'N1'; kategorie = 'Filter'
+     hinweis = 'R. Nussbaum AG (Schweiz, nussbaum.ch): Sanitärarmaturen für die Hausinstallation – Wasserfilter (Kategorie Filter, je Reihe eine Familie, z. B. Rückspül- und Feinfilter), Ventile (Kategorie Ventil: Absperrventile, Rückflussverhinderer, Druckreduzierventile, Sicherheitsgruppen, je Reihe eine Familie, Eigenschaft art passend) und Hahnen (Kategorie Ventil: Kugelhahnen, Auslauf- und Entleerhahnen; art kugelhahn, auslaufhahn bzw. entleerhahn). Die gängigen Reihen des aktuellen Nussbaum-Sortiments, Typen nach Nennweite bzw. Anschluss; Gewinde und verbindung je Anschluss nach der Unterlage. Elektrische Ausführungen (z. B. Filter mit automatischer Rückspülung) mit Regeltechnik. ' }
   # Lüftung (Christian 02.11.2026: «für lüftung gehören alle Rohre Kanäle inkl. Formstücke + Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems»)
   # Umfang und Fabrikat nach Vorschlag, bestätigt von Christian 02.11.2026 («Ja, so lassen»): Zehnder zuerst, Komponenten Schmidlin, sonst Trox.
   @{ nr = 'Z1'; kategorie = 'Lueftungsgeraet'
