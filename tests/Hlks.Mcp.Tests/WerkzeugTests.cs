@@ -199,6 +199,7 @@ public class WerkzeugTests
             ["rueckmeldung_lesen"] = () => w.RueckmeldungLesen(inhalt: System.Text.Json.JsonDocument.Parse("{\"format\":\"kicad-baustelle-rueckmeldung\",\"meldungen\":[]}").RootElement),   // BIM to field: leere Rückmeldung
             ["heizung_lesen"] = () => w.HeizungLesen("A-HZG"),                         // Modul 5 Teil A-D
             ["heizung_leistung"] = () => w.HeizungLeistungLesen(heizgruppe: "HG-1"),
+            ["heizlast"] = () => w.HeizlastRechnen(),   // Modul 5 Teil B-H (ohne Normtabellen: Hinweis, nicht leer)
         };
         Assert.Equal(Abfragen.Liste.Select(a => a.Name).Order(), aufrufe.Keys.Order());   // jede Abfrage ist getestet
         foreach (var (name, f) in aufrufe)

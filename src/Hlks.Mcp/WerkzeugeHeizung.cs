@@ -3,6 +3,7 @@
 // Kern (Heizung/HeizungAbfragen.cs, Heizung/HeizungBefehle.cs).
 
 using System.ComponentModel;
+using System.Text.Json.Nodes;
 using Hlks.Kern;
 using ModelContextProtocol.Server;
 
@@ -15,6 +16,12 @@ public sealed partial class Werkzeuge
     [McpServerTool(Name = "heizung_lesen"), Description(HeizungAbfragen.LesenText)]
     public string HeizungLesen([Description(HeizungAbfragen.ParAnlage)] string? anlage = null) =>
         Lauf(() => HeizungAbfragen.Lesen(projekt, anlage));
+
+    [McpServerTool(Name = "heizlast"), Description(Heizlast.Text)]   // Modul 5 Teil B-H, Christian 03.11.2026
+    public string HeizlastRechnen(
+        [Description(Heizlast.ParRaum)] string? raum = null,
+        [Description(Heizlast.ParGebaeude)] string? gebaeude = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizlast", Parameter(("raum", raum), ("gebaeude", gebaeude)))), synchronisieren: false);
 
     [McpServerTool(Name = "heizung_leistung"), Description(HeizungAbfragen.LeistungText)]
     public string HeizungLeistungLesen(

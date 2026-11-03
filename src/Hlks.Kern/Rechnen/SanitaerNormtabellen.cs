@@ -27,10 +27,10 @@ public static class SanitaerNormtabellen
         return Environment.ExpandEnvironmentVariables(Vorgabe);
     }
 
-    /// <summary>sanitaer\abwasser.json bzw. sanitaer\trinkwasser.json; null, wenn die Datei fehlt.</summary>
-    public static JsonObject? Laden(Katalog k, string name)
+    /// <summary>&lt;gebiet&gt;\&lt;name&gt;.json, z. B. sanitaer\abwasser.json oder heizung\heizlast.json; null, wenn die Datei fehlt.</summary>
+    public static JsonObject? Laden(Katalog k, string name, string gebiet = "sanitaer")
     {
-        var pfad = Path.Combine(Ordner(k), "sanitaer", name + ".json");
+        var pfad = Path.Combine(Ordner(k), gebiet, name + ".json");
         if (!File.Exists(pfad)) return null;
         var zeit = File.GetLastWriteTimeUtc(pfad);
         if (geladen.TryGetValue(pfad, out var da) && da.Zeit == zeit) return da.Inhalt;

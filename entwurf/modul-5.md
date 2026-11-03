@@ -218,6 +218,49 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
   (Rauheit und ζ aus Herstellerunterlagen) sowie die Pumpenförderhöhe.
 - **Hydraulischer Abgleich und Ausdehnungsgefäss.**
 
+### Teil B-H Heizlast je Raum – Entscheide Christian 03.11.2026 (Fragefenster)
+
+- **Norm:** SIA 384.201 / SN EN 12831:2003 mit Nationalem Anhang ND (die neuere SN SIA 384/2:2020 liegt nicht vor; Ausgabe im Ergebnis
+  genannt, später umstellbar). Grundsatz (Christian): «letzt endlich [beruht alles] auf physik... nach norm ist nur die beweislast umgedreht».
+- **Innentemperatur:** Raumwert (tempWinter, von Hand oder aus HKAP), sonst SIA 2024:2015 Tab. 9 nach Raumnutzung.
+- **Aussentemperatur:** SIA 2028:2010 Tab. 6 (40 Stationen, Spalte «kalt, Temperatur» = Auslegungstemperatur für die Norm-Heizlast nach
+  SIA 384.201, Ziffer 3.5 S. 18: Mittel der tiefsten 4-Tagesmittel aus 20 Jahren) vom Hauptlauf aus dem Bild übertragen (zweimal gelesen),
+  dazu Tab. 1a (Stationshöhe) und Tab. 2 (Jahresmittel, Agent); Datei HLKS_NORMTABELLEN\heizung\sia2028_auslegung.json; Christian prüft gegen.
+
+#### Rechenweg (SN EN 12831:2003, Abschnitte 7–8, Nationaler Anhang ND; Gleichungsnummern der Norm)
+
+- **θe** = Tab. 6 der Klimastation (Gebaeude.klimastation; Gebaeude.thetaE mit Quelle geht vor), korrigiert nach ND.1.1.1 (liegt das Gebäude
+  höher als die Station: −0,005 K je m, auf 1 K gerundet; tiefer: keine Korrektur) und ND.1.1.2 (Zeitkonstante τ ≤ 200 h: Tabelle ND.1;
+  ohne Gebaeude.zeitkonstante Annahme τ > 200 h, Hinweis). **θm,e** (Jahresmittel, nur Erdreich) aus SIA 2028 Tab. 2 der gleichen Station
+  (ND.1.2 nennt SIA 381/2 – Abweichung als Annahme, gleiche Quelle wie θe).
+- **θint,i** = Raum.tempWinter, sonst SIA 2024:2015 Tab. 9 nach Raum.nutzung (Name bzw. Code genau), sonst keine Heizlast (Hinweis).
+- **Transmission** ΦT,i = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint,i − θe) (2), aus den Raumgrenzen (Modul 1c):
+  - HT,ie = Σ Ak·Uk·ek mit ek = el = 1,0 (ND.4.1) für Grenzen «aussen»; ψ-Werte (Wärmebrücken) gibt es im Modell noch nicht → fehlen (Hinweis).
+  - HT,iue = Σ Ak·Uk·bu (5) für «unbeheizt»: bu = Raum.bu des Nachbarraums (Tab. ND.3 bzw. ISO 13789, mit Quelle); sonst nach (6) aus dessen
+    tempWinter; sonst bu = 1 (sichere Seite, Hinweis).
+  - HT,ig = fg1·fg2·Σ Ak·Uequiv,k·GW (8) für «erdreich»: fg1 nach Tiefe z (Tab. ND.5; z = Terrain − Unterkante Boden), fg2 = (θint,i − θm,e)/(θint,i − θe),
+    Uequiv aus Tab. 4–6 (Boden nach B' und UBoden, z) bzw. Tab. 7 (Wand nach U und z), linear zwischen den Tabellenpunkten (die Tabellen stehen
+    für die Kurven der Bilder 3–6); B' = AG/(0,5·P) (9) des Gebäudes (Bodenflächen gegen Erdreich, Umfang = Aussenwände dieser Räume);
+    GW = 1,0 (ND.4.3), bei Gebaeude.grundwasserNah keine Rechnung (EN 13370 Anhang H fehlt, Hinweis).
+  - HT,ij = Σ fij·Ak·Uk (10) für «beheizt» mit anderer Temperatur, fij = (θint,i − θint,j)/(θint,i − θe); negative fij (Wärmegewinn) = 0 (Annahme, sichere Seite).
+- **Lüftung** ΦV,i = HV,i·(θint,i − θe) (11), HV,i = V̇i·ρ·c (12), ρ·c = (1220 − 0,14·h)/3600 Wh/(m³K) (37) mit h = Gebaeude.hoeheUeberMeer
+  (ohne: 0,34, Gleichung 13):
+  - ohne Lüftungsanlage (Raum ohne zuluft/abluft): V̇i = max(V̇inf,i, V̇min,i) (14), V̇min,i = nmin·Vi mit nmin = 0,3 h⁻¹ (ND.5.2),
+    V̇inf,i = 2·Vi·n50·ei·εi (17) mit n50 = Gebaeude.n50 (ohne Angabe 0 – Hülle nach SIA 180, ND.5.3, Hinweis), ei nach Tab. ND.8
+    (Gebaeude.abschirmung, Zahl der Aussenwand-Ausrichtungen aus den Raumgrenzen), εi nach Tab. ND.9 (Raummitte über Terrain).
+  - mit Lüftungsanlage: V̇i = V̇inf,i + V̇su,i·fV,i (15) mit V̇inf,i = 0,1·Vi (ND.5.1) und V̇su = Raum.zuluft; Zulufttemperatur unbekannt →
+    fV,i = 0 (Zuluft mit Raumtemperatur, Annahme, Hinweis); Abluftüberschuss (18) nur auf Gebäudeebene.
+- **Aufheizen** ΦRH,i = 0 (ND.6). **Norm-Heizlast** ΦHL,i = ΦT,i + ΦV,i + ΦRH,i (21).
+- **Gebäude** ΦHL = Σ ΦT,i + f·Σ ΦV,i (22, ND.5.7: f = 0,8 natürliche Lüftung, 1,0 mechanisch).
+- **Masse (Annahme V1):** die Raumgrenzen liefern Innenmasse; ND.3 verlangt für Bauteile des Wärmedämmperimeters Aussenmasse (aufgeteilt auf
+  Mittelachsen der Innenwände und OK Geschossdecken). V1 rechnet mit Innenmassen und sagt es (Heizlast zu klein); Aussenmasse folgen (V2).
+- **Ergebnis:** Abfrage `heizlast { raum?, gebaeude? }` – je Raum θint, θe mit Herleitung, alle H mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL, Annahmen;
+  Gebäudesumme. Register `heizung.heizlast`. Gegenprobe gegen das Büroblatt «Formular Wärmebedarf 384.201 (NEU).xls» (Entscheid Christian).
+- **Büro-Rechenblätter** (Formular Wärmebedarf 384.201, Druckverlust Wasser, Fussbodenheizung, Expansionsgefäss): Gegenprobe – KICAD rechnet nach
+  Norm bzw. Physik und vergleicht; Abweichungen werden gemeldet. Daten echter Objekte bleiben ausserhalb des Repositorys.
+- **Klimadaten MeteoSchweiz** (Entscheid «gratis», heruntergeladen): Zukunftsszenarien – für Sommer, Kühlung, Simulation, nicht für die Heizlast.
+- Fundstellen: berichte/heizung-lueftung-fundstellen.md; Grundlagen: kataloge/grundlagen.json (norm.sia384_201, norm.sia2024, merkblatt.sia2028).
+
 ## Zuteilung und Reihenfolge
 
 | Schritt | Inhalt | Wer |

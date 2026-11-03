@@ -1033,6 +1033,10 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
   (Rangfolge Norm › Herstellerunterlage › Bürovorgabe › Physik, Regeln) und die Tabelle aller Grundlagen aus `kataloge/grundlagen.json` (Art, Kürzel,
   Ausgabe, Status original/Auszug/online/fehlt, Ablage, Werte, «verwendet in» mit Sprung zum Verfahren); `/rechenweg/#g-<id>` springt zu einer Grundlage.
   Je Verfahren die Zeile «Grundlagen» mit Verweisen. Abfrage `grundlagen { id?, art?, gebiet? }` (KI und MCP, Gruppe «Normen»).
+- **Heizlast** (Modul 5 Teil B-H, noch ohne Oberfläche): Abfrage `heizlast { raum?, gebaeude? }` (KI und MCP, Gruppe Heizung) – je Raum θint, θe mit
+  Herleitung, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL und Annahmen; Gebäudesumme. Eingaben in den Eigenschaften: Gebäude «klimastation»,
+  «hoeheUeberMeer», «thetaE», «zeitkonstante», «abschirmung», «grundwasserNah»; unbeheizter Raum «bu». Freie Raumnutzungen ordnet
+  `kataloge/raumnutzungen.json` SIA 2024 zu. Rechenweg: Register `heizung.heizlast`.
 
 ## Hilfe (F1)
 

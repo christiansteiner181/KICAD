@@ -1,0 +1,16 @@
+{
+  "beschreibung": "Zuordnung freier Raumnutzungen (Raum.nutzung, z. B. aus HKAP oder IFC) zu den Nutzungen des Merkblatts SIA 2024:2015 (Nummer). Gebraucht von der Heizlast (Modul 5 Teil B-H) für die Innentemperatur, wenn am Raum kein tempWinter steht. Reihenfolge zählt: das erste passende Muster (regulärer Ausdruck, gross/klein egal, ganzer Text oder Wortanfang) gewinnt. Nur Nummern – die Werte stehen in der Normtabelle im Büroordner.",
+  "quelle": "Annahme Hauptlauf 03.11.2026 (Probelauf Beispielprojekt: freie Nutzungen «Wohnen», «Bad», «Schlafen» fanden keine SIA-2024-Zeile) – von Christian zu bestätigen",
+  "zuordnung": [
+    { "muster": "^(wohnen|wohnraum|wohn|wohnzimmer|essen|küche|wohnen/küche|zimmer|schlafen|schlafzimmer|kinderzimmer|arbeiten|büro zu hause)", "sia2024": "1.1", "name": "Wohnen MFH" },
+    { "muster": "^(bad|dusche|wc|dusche/wc|bad/wc|nasszelle)", "sia2024": "12.6", "name": "WC, Bad, Dusche" },
+    { "muster": "^(korridor|gang|flur|entrée|eingang|vorplatz|reduit)", "sia2024": "12.1", "name": "Verkehrsfläche" },
+    { "muster": "^(treppenhaus|treppe)", "sia2024": "12.3", "name": "Treppenhaus" },
+    { "muster": "^(büro|einzelbüro|gruppenbüro)", "sia2024": "3.1", "name": "Einzel-, Gruppenbüro" },
+    { "muster": "^(sitzung|besprechung)", "sia2024": "3.3", "name": "Sitzungszimmer" },
+    { "muster": "^(schulzimmer|klassenzimmer)", "sia2024": "4.1", "name": "Schulzimmer" },
+    { "muster": "^(lager|abstellraum|keller)", "sia2024": "10.1", "name": "Lagerraum" },
+    { "muster": "^(technik|heizung|lüftungszentrale|elektro)", "sia2024": "12.4", "name": "Nebenraum" },
+    { "muster": "^(waschküche|waschraum|trockenraum)", "sia2024": "12.10", "name": "Wasch- und Trockenraum" }
+  ]
+}

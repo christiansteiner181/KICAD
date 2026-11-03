@@ -53,6 +53,7 @@ public sealed class Abfragen(Projekt p)
         new("ifc_deckung", IfcDeckung.Text, IfcDeckung.Parameter),
         new("rechenweg", Rechenregister.Text, Rechenregister.Parameter),   // Christian 03.11.2026: Register «Wie wird was gerechnet»
         new("grundlagen", Grundlagenverzeichnis.Text, Grundlagenverzeichnis.Parameter),   // Christian 03.11.2026: «zentrales normenverzeichniss»
+        new("heizlast", Heizlast.Text, Heizlast.Parameter),   // Modul 5 Teil B-H, Christian 03.11.2026
         new("ifc_teile", IfcTeile.Text, IfcTeile.Parameter),   // Christian 03.11.2026: Flow «Familie aus IFC» (Teile wählen)   // Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»
         new("ifc_pruefen", IfcImport.PruefenBeschreibung,
             [new("datei", "text", true, "Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen"),

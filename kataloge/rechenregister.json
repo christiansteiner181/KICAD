@@ -1771,6 +1771,62 @@
         "src/Hlks.Kern/Rechnen/SanitaerNormtabellen.cs"
       ],
       "abfrage": "sanitaer_dimensionierung"
+    },
+    {
+      "id": "heizung.heizlast",
+      "titel": "Norm-Heizlast je Raum und Gebäude (SN EN 12831:2003 / SIA 384.201)",
+      "gebiet": "Heizung",
+      "zweck": "Für jeden beheizten Raum die Norm-Heizlast ΦHL aus Transmission und Lüftung bestimmen, dazu die Summe des Gebäudes – nachvollziehbar mit allen Beiträgen je Raumgrenze.",
+      "eingaben": [
+        "Gebäude: klimastation (SIA 2028 Tab. 6) bzw. thetaE mit Quelle, hoeheUeberMeer, zeitkonstante, n50, abschirmung, terrain, grundwasserNah",
+        "Raum: tempWinter, sonst nutzung (SIA 2024:2015 Tab. 9), zuluft/abluft (Lüftungsanlage), bei unbeheizten Räumen bu",
+        "Raumgrenzen (Modul 1c): Fläche, Angrenzung (aussen, unbeheizt, erdreich, beheizt), U der Aufbauten bzw. Uw der Fenster",
+        "Wärmebrücken (Klasse Waermebruecke) mit ψ bzw. χ und Quelle"
+      ],
+      "rechenweg": [
+        "θe = Auslegungstemperatur der Klimastation (SIA 2028:2010 Tab. 6, Mittel der tiefsten 4-Tagesmittel aus 20 Jahren); liegt das Gebäude höher als die Station: −0,005 K je m, auf 1 K gerundet (ND.1.1.1); Zeitkonstante τ ≤ 200 h: Korrektur nach Tab. ND.1. Gebaeude.thetaE mit Quelle geht vor.",
+        "θint = Raum.tempWinter, sonst SIA 2024:2015 Tab. 9 «Winter» nach Raum.nutzung (Nummer oder Name).",
+        "HT,ie = Σ A·U·ek + Σ ψ·l·el (ek = el = 1,0, ND.4.1) für Flächen gegen aussen; Wärmebrücken mit Öffnung dem Raum der Öffnung, sonst nach Wandlänge auf die Räume verteilt.",
+        "HT,iue = Σ A·U·bu (5): bu des unbeheizten Nachbarraums (Tab. ND.3 bzw. ISO 13789, mit Quelle), sonst bu = (θint − θu)/(θint − θe) (6), sonst 1.",
+        "HT,ig = fg1·fg2·Σ A·Uequiv·GW (8): fg1 nach Tiefe z (Tab. ND.5), fg2 = (θint − θm,e)/(θint − θe) mit θm,e = SIA 2028 Tab. 2 «Jahr», Uequiv aus Tab. 4–6 (Boden nach B' und U, linear) bzw. Tab. 7 (Wand nach U und z), B' = AG/(0,5·P) (9), GW = 1,0.",
+        "HT,ij = Σ fij·A·U (10), fij = (θint,i − θint,j)/(θint,i − θe); negative fij (Wärmegewinn) = 0.",
+        "ΦT = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint − θe) (2).",
+        "Lüftung ohne Anlage: V̇ = max(V̇inf, V̇min) (14), V̇min = nmin·V (ND.5.2), V̇inf = 2·V·n50·e·ε (17) mit e nach Tab. ND.8 (Abschirmung, Zahl der Aussenwand-Ausrichtungen) und ε nach Tab. ND.9 (Raummitte über Terrain). Mit Anlage: V̇ = V̇inf + V̇su·fV (15), V̇inf nach ND.5.1, fV = 0.",
+        "ΦV = V̇·ρc·(θint − θe) (11, 12) mit ρc = (1220 − 0,14·h)/3600 Wh/(m³K) (37), ohne Höhe 0,34 (13).",
+        "ΦRH = 0 (ND.6); ΦHL = ΦT + ΦV (21); Gebäude ΦHL = Σ ΦT + f·Σ ΦV (22) mit f nach ND.5.7."
+      ],
+      "ergebnis": "Abfrage heizlast { raum?, gebaeude? }: θe mit Herleitung, je Raum θint mit Quelle, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL (W, W/m²), Annahmen; Gebäudesumme.",
+      "quellen": [
+        "SN EN 12831:2003 / SIA 384.201, Abschnitte 7 und 8, Gleichungen (2)–(22), Tabellen 4–7; Nationaler Anhang ND.1–ND.9 (gedruckte S. 37–47); Werte im Büroordner HLKS_NORMTABELLEN\\heizung\\heizlast.json",
+        "SIA 2028:2010 Tab. 6 (S. 19, Erläuterung Ziffer 3.5 S. 18), Tab. 1a (S. 9), Tab. 2 (S. 10–17); HLKS_NORMTABELLEN\\heizung\\sia2028_auslegung.json",
+        "SIA 2024:2015 Tab. 9 (S. 134–135); HLKS_NORMTABELLEN\\heizung\\raumnutzung_sia2024.json",
+        "Entscheide Christian Steiner 03.11.2026 (Fragefenster): «384.201:2003 jetzt», «Raumwert, sonst SIA 2024», «SIA 2028 Tab. 6 übertragen», Büroblätter als Gegenprobe"
+      ],
+      "grundlagen": [
+        "norm.sia384_201",
+        "merkblatt.sia2028",
+        "norm.sia2024",
+        "physik.waermeleitung",
+        "physik.geometrie",
+        "buero.entscheide",
+        "annahme.hauptlauf"
+      ],
+      "annahmen": [
+        "Innenmasse der Raumgrenzen statt Aussenmasse nach ND.3 (Heizlast etwas zu klein) – Aussenmasse folgen.",
+        "θm,e aus SIA 2028 Tab. 2 (ND.1.2 nennt SIA 381/2) – gleiche Quelle wie θe.",
+        "Ohne Zeitkonstante τ > 200 h (keine Korrektur); ohne n50 0 (Hülle nach SIA 180); ohne Abschirmungsklasse «moderat».",
+        "Uequiv linear zwischen den Tabellenpunkten; U über 2,0 → «keine Dämmung», unter 0,25 → Spalte 0,25; Tabelle nach der nächsten Tiefe (0 / 1,5 / 3,0 m).",
+        "Lüftungsanlage: Zuluft mit Raumtemperatur (fV = 0); Abluftüberschuss (18) nicht je Raum.",
+        "Wärmegewinne von wärmeren Nachbarräumen nicht angerechnet (fij ≥ 0)."
+      ],
+      "grenzen": [
+        "Keine Wärmebrücken ohne ψ mit Quelle; GW bei Grundwasser < 1 m nicht gerechnet (EN 13370 Anhang H).",
+        "Keine Kühllast, keine dynamische Simulation."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/Heizlast.cs (Heizlast.Abfrage, AussenKlima, Innentemperatur, Raum)"
+      ],
+      "abfrage": "heizlast"
     }
   ]
 }
