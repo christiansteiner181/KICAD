@@ -17,6 +17,8 @@ public static class ArchitekturBefehle
         r.Hinzufuegen(new ElementeKopieren());
         r.Hinzufuegen(new ElementeDrehen());
         r.Hinzufuegen(new ElementeSpiegeln());
+        r.Hinzufuegen(new Ausrichten());   // Bearbeitungswerkzeuge B1 (AusrichtenVersatz.cs)
+        r.Hinzufuegen(new Versetzen());
         r.Hinzufuegen(new DeckeErzeugen());   // Modul 1c, Auftrag B3 (DeckeBefehle.cs)
         // Wand löschen samt Türen/Fenstern: element_loeschen lässt Öffnungen zu, die nur über bezuege.wand an der Wand
         // hängen; OeffnungenNachfuehren löscht sie im selben Paket (Befund B1, im Kern gelöst 17.10.2026).

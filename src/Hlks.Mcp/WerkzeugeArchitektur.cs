@@ -60,6 +60,23 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("elemente_verschieben", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("dz", dz), ("trennen", trennen)), trockenlauf);
 
+    [McpServerTool(Name = "ausrichten"), Description(Hlks.Kern.Ausrichten.Text)]   // Bearbeitungswerkzeuge B1
+    public string AusrichtenWerkzeug(
+        [Description("Gerade, die verschoben wird (Kennzeichen oder Id)")] string element,
+        [Description("Bezugsgerade (Kennzeichen oder Id)")] string bezug,
+        [Description("Punkt [x, y] beim Bezug (Klickpunkt): bei einer Wand die Seite der Fläche, auf die ausgerichtet wird")] JsonElement? bezug_punkt = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("ausrichten", Parameter(("element", element), ("bezug", bezug), ("bezug_punkt", bezug_punkt)), trockenlauf);
+
+    [McpServerTool(Name = "versetzen"), Description(Hlks.Kern.Versetzen.Text)]   // Bearbeitungswerkzeuge B1
+    public string VersetzenWerkzeug(
+        [Description("Gerade (Kennzeichen oder Id)")] string element,
+        [Description("Abstand in mm (> 0)")] double abstand,
+        [Description("Punkt [x, y] auf der Seite, zu der versetzt wird")] JsonElement seite,
+        [Description("true: parallel kopieren statt verschieben")] bool kopieren = false,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("versetzen", Parameter(("element", element), ("abstand", abstand), ("seite", seite), ("kopieren", kopieren)), trockenlauf);
+
     [McpServerTool(Name = "elemente_kopieren"), Description("Kopiert Elemente mit Geometrie anzahl-mal, jede Kopie um dx, dy weiter. Kopien erhalten neue Kennzeichen; Türen und Fenster gewählter Wände kommen mit; Verbindungen werden nur innerhalb der Kopie übernommen.")]
     public string ElementeKopieren(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,

@@ -141,7 +141,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **A3 gebaut 03.11.2026** (Spezifikation unten): `leitung_teilen`, `leitung_einsetzen` (Kern, MCP, KI-Einordnung «Leitungen»), Werkzeug Teilen (SL), Familie platzieren auf eine Leitung. Offen: Reduktionen beim Einsetzen, Wände teilen.
 - **A4 gebaut 03.11.2026** (Spezifikation unten): `ecke_bilden`, `dehnen_bis` (Kern, MCP, KI-Einordnung), Werkzeuge TR und «Dehnen bis».
 - **A5 gebaut 03.11.2026:** `leitung_gefaelle` (Zug ab Fixpunkt neu neigen, Bögen wandern mit; Neuaufbau wie leitung_groesse), `leitung_hoehe` (Zug heben/senken, Versatz an festen Grenzen); Palette Gefälle und Höhe. Annahmen: «flach» bis 15 %, Fixpunkt Vorgabe Anfang; an waagrechten T-Stücken passen bis ≈1.7 % (Hinweis, P13). **Stufe A abgeschlossen.**
-- **Nächstes: Stufe B** (B1 Ausrichten und Versatz) – Entscheid Christian.
+- **B1 gebaut 03.11.2026** (Spezifikation unten): `ausrichten`, `versetzen` (Kern, MCP, KI-Einordnung), Werkzeuge AL und OF.
+- **Nächstes: B2** parallele Leitungen.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -200,3 +201,18 @@ macht die Oberfläche als Folge von dehnen_bis.
 
 Oberfläche: Werkzeug «Stutzen/Dehnen für Ecke» (TR, Ändern › Verändern): zwei Klicks auf die Teile, die bleiben. Werkzeug «Dehnen bis»:
 zuerst die Bezugslinie bzw. -leitung, dann beliebig viele Elemente (Esc beendet).
+
+## B1 – Ausrichten und Versatz (Spezifikation, 03.11.2026)
+
+Kernbefehle (ein Paket; Leitungen führt die Nachführung A1 nach – Formteile folgen, Nachbarn dehnen sich bzw. bekommen einen Versatz):
+
+- **`ausrichten`** { element, bezug, bezug_punkt? } (Revit «Ausrichten», AL): eine Gerade (Leitung, Wand, Achse, Detaillinie) wird rechtwinklig
+  verschoben, bis ihre Achse auf der Bezugsgeraden liegt (im Grundriss). Ist der Bezug eine Wand, gilt die Wandfläche auf der Seite von
+  bezug_punkt (Klickpunkt), sonst ihre Achse. Element und Bezug müssen parallel sein (±1°).
+- **`versetzen`** { element, abstand, seite, kopieren? } (Revit «Versatz», OF): eine Gerade wird um abstand (mm) rechtwinklig zur Seite des
+  Punkts seite verschoben bzw. mit kopieren parallel kopiert (Kopie ohne Verbindungen, wie elemente_kopieren).
+
+Annahmen: Ausrichten auf Achsen (Leitungsachse, Wandfläche nach Klickseite); Höhe bleibt; ein Sperren der Ausrichtung (Schloss) gibt es nicht.
+
+Oberfläche: Werkzeug «Ausrichten» (AL): zuerst den Bezug, dann beliebig viele Elemente (Esc beendet). Werkzeug «Versatz» (OF): Optionsleiste
+Abstand und «Kopieren»; Klick auf eine Gerade auf der Seite, zu der versetzt wird (Vorschau als Linie).

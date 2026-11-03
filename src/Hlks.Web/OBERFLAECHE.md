@@ -4011,3 +4011,14 @@ Eigenschaftenpalette einer Leitung mit Serie, Gruppe «Leitung» (`js/werkzeuge/
 - **Höhe** (mm über OK Geschoss, Achse am Anfang): hebt bzw. senkt den Leitungszug; Randgeraden an T-Stücken und Geräten bekommen einen
   Versatz mit zwei Bögen der Serie (Nachführung A1).
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~GefaelleHoeheTests"`.
+
+## Ausrichten und Versatz (Bearbeitungswerkzeuge B1, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `ausrichten` und `versetzen` (`src/Hlks.Kern/Architektur/AusrichtenVersatz.cs`, MCP gleich); Werkzeuge in `js/werkzeuge/ausrichten.js`
+(Treffer auf Geraden wie Stutzen/Dehnen: Rohr, Kanal, Wand, Achse, Detaillinie). Leitungen führt die Nachführung A1 nach.
+
+- **Ausrichten (AL)**, Ändern › Verändern: zuerst den Bezug anklicken (bei einer Wand auf der Seite der Fläche, auf die ausgerichtet wird), dann
+  beliebig viele parallele Elemente; jedes rückt rechtwinklig auf die Achse bzw. Wandfläche. Nicht Paralleles lehnt der Kern ab. Esc beendet.
+- **Versatz (OF)**, Ändern › Verändern: Optionsleiste «Abstand» (mm) und «Kopieren»; Klick auf eine Gerade auf der Seite, zu der versetzt wird.
+  Die Vorschau zeigt die neue Lage. Mit «Kopieren» entsteht eine parallele Kopie (ohne Verbindungen), sonst wird die Gerade verschoben.
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~AusrichtenVersatzTests"`.

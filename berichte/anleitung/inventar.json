@@ -6386,6 +6386,72 @@
           "hinweis": "An waagrechten T-Stücken passen bis etwa 1.7 %."
         },
         {
+          "id": "m3-ausrichten",
+          "titel": "Ausrichten",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Ausrichten",
+            "kuerzel": "AL",
+            "sonst": ""
+          },
+          "schritte": [
+            "AL wählen.",
+            "Eine Wand auf der Seite der Fläche anklicken (Bezug).",
+            "Eine parallele Leitung anklicken.",
+            "Weitere Elemente anklicken; Esc beendet; Strg+Z."
+          ],
+          "erwartung": "Die Leitung rückt rechtwinklig auf die Wandfläche (bzw. die Achse des Bezugs); angeschlossene Bögen folgen. Nicht Paralleles lehnt KICAD ab.",
+          "pruefpunkte": [
+            "Bezug bleibt hervorgehoben.",
+            "Element liegt danach auf der Fläche bzw. Achse.",
+            "Bögen folgen.",
+            "Nicht parallel: Ablehnung."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Leitung auf eine Wandfläche ausgerichtet"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4015 (Ausrichten und Versatz (Bearbeitungswerkzeuge B1))"
+          ],
+          "hinweis": "Ausgerichtet wird die Achse des Elements."
+        },
+        {
+          "id": "m3-versatz",
+          "titel": "Versatz",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Versatz",
+            "kuerzel": "OF",
+            "sonst": "Optionsleiste Abstand, Kopieren"
+          },
+          "schritte": [
+            "OF wählen.",
+            "In der Optionsleiste Abstand 200 und «Kopieren» setzen.",
+            "Mit der Maus neben eine Leitung fahren (Vorschau) und klicken.",
+            "Ohne «Kopieren» wiederholen; Strg+Z."
+          ],
+          "erwartung": "Mit «Kopieren» entsteht eine parallele Leitung im Abstand auf der Klickseite; ohne wird die Leitung dorthin versetzt (Bögen folgen).",
+          "pruefpunkte": [
+            "Vorschau der neuen Lage.",
+            "Abstand stimmt.",
+            "Kopie ohne Verbindungen.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Parallele Kopie einer Leitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4015 (Ausrichten und Versatz (Bearbeitungswerkzeuge B1))"
+          ],
+          "hinweis": ""
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

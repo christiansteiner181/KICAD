@@ -159,6 +159,8 @@ verschieben | Verschieben | Verschieben | blaues Pfeilkreuz
 drehen | Drehen | Drehen | Kreispfeil um Drehpunkt
 spiegeln | Spiegeln | Spiegeln | Spiegelachse mit zwei Dreiecken
 teilen | Teilen | Element teilen | Leitung mit rotem Schnitt
+ausrichten | Ausrichten | Ausrichten | Linie, die an eine Bezugslinie rückt
+versatz | Versatz | Versatz | Linie und parallele Kopie mit Pfeil
 ecke | Stutzen/Dehnen für Ecke | Stutzen/Dehnen für Ecke | zwei Geraden zu einer Ecke
 dehnen | Dehnen bis | Einzelnes Element stutzen/dehnen | Linie bis an eine Bezugslinie
 ifcUebernehmen | IFC übernehmen | IFC verknüpfen | Würfel mit blauem Pfeil nach unten
@@ -625,6 +627,12 @@ s('drehen',
 s('spiegeln',
   '<path class="sb dd w15" d="M16 3v26"/><path class="f2" d="M13 8L4.5 24H13z"/><path class="fl dd" d="M19 8l8.5 16H19z"/>',
   '<path class="sb dd" d="M8 1v14"/><path class="f2" d="M6.5 4L2 12h4.5z"/><path class="fl dd" d="M9.5 4L14 12H9.5z"/>');
+s('ausrichten',   // Bearbeitungswerkzeuge B1
+  '<path class="sb dd w2" d="M3 6h26"/><path class="f2" d="M6 21h20v4H6z"/><path class="fb" d="M16 9l4 5h-3v6h-2v-6h-3z"/>',
+  '<path class="sb dd" d="M1 3h14"/><path class="f2" d="M3 11h10v2H3z"/><path class="fb" d="M8 4.5l2.5 3H9v3H7v-3H5.5z"/>');
+s('versatz',   // Bearbeitungswerkzeuge B1
+  '<path class="f2" d="M4 22h24v4H4z"/><path class="fl dd sb" d="M4 7h24v4H4z"/><path class="fb" d="M16 12l3.5 4H17v5h-2v-5h-2.5z"/>',
+  '<path class="f2" d="M2 11h12v2.5H2z"/><path class="fl dd sb" d="M2 3h12v2.5H2z"/><path class="fb" d="M8 6l2 2.5H9V10H7V8.5H6z"/>');
 s('ecke',   // Bearbeitungswerkzeuge A4
   '<path class="f2" d="M5 27V9h4v18z"/><path class="f2" d="M9 9V5h18v4z"/><path class="sb w2" d="M7 7l3 3"/>',
   '<path class="f2" d="M2 14V5h2.5v9z"/><path class="f2" d="M4.5 5V2.5H14V5z"/><path class="sb" d="M3 3.5l2 2"/>');

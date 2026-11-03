@@ -154,6 +154,12 @@ export const WERKZEUGE = {
   drehen: { titel: 'Drehen', felder: [], hinweis: 'Drehpunkt anklicken, dann den Winkel mit zwei Klicks setzen oder in Grad eingeben (Enter).' },
   spiegeln: { titel: 'Spiegeln', felder: [], hinweis: 'Zwei Punkte der Spiegelachse anklicken.' },
   // Bearbeitungswerkzeuge A2
+  ausrichten: { titel: 'Ausrichten', felder: [], hinweis: 'Zuerst den Bezug (bei Wänden auf der Seite der Fläche), dann die Elemente anklicken; Esc beendet.' },   // B1
+  versatz: {   // B1
+    titel: 'Versatz',
+    felder: [{ id: 'abstand', titel: 'Abstand', art: 'zahl', einheit: 'mm', vorgabe: 100, breite: 6 }, { id: 'kopieren', titel: 'Kopieren', art: 'bool', vorgabe: false }],
+    hinweis: 'Gerade auf der Seite anklicken, zu der versetzt wird; mit «Kopieren» entsteht eine parallele Kopie.',
+  },
   ecke: { titel: 'Stutzen/Dehnen für Ecke', felder: [], hinweis: 'Zwei Geraden anklicken, jeweils auf dem Teil, das bleibt; zwei Leitungen bekommen einen Bogen.' },   // A4
   dehnen: { titel: 'Dehnen bis', felder: [], hinweis: 'Zuerst die Bezugsgerade, dann die Elemente anklicken; Leitung an Leitung ergibt ein T-Stück.' },   // A4
   teilen: { titel: 'Teilen', felder: [], hinweis: 'Leitung an der Stelle anklicken, an der sie geteilt wird; das Werkzeug bleibt aktiv.' },   // A3
