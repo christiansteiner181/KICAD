@@ -237,20 +237,20 @@
       ],
       "ablage": "meteonorm.com – Software bzw. Climate API (TMY, AMY, Export u. a. SIA 2028, EPW)",
       "vorliegend": "fehlt",
-      "hinweis": "Christian 03.11.2026: «die daten von metenorm sind soeiso besser». Kostenpflichtig (Lizenz/Abo, Weitergabe der Daten an Dritte nicht erlaubt); im Büro nicht gefunden – Beschaffung entscheidet Christian."
+      "hinweis": "Christian 03.11.2026: «die daten von metenorm sind soeiso besser». Kostenpflichtig (Lizenz/Abo, Weitergabe der Daten an Dritte nicht erlaubt); im Büro nicht gefunden – Beschaffung entscheidet Christian. Christian 03.11.2026: vorerst nicht beschaffen («MeteoSchweiz gratis»)."
     },
     {
       "id": "klima.meteoschweiz_sia2028",
       "art": "stoffwerte",
-      "kuerzel": "MeteoSchweiz Klimaszenarien Raumklima (SIA 2028)",
+      "kuerzel": "MeteoSchweiz Klimaszenarien Raumklima (Ergänzung SIA 2028)",
       "gebiete": [
         "Heizung",
         "Lüftung",
         "Kälte"
       ],
-      "ablage": "opendata.swiss / data.geo.admin.ch (ch.meteoschweiz.klimaszenarien-raumklima)",
+      "ablage": "map.geo.admin.ch bzw. data.geo.admin.ch, Sammlung ch.meteoschweiz.klimaszenarien-raumklima (klimaszenarien-raumklima_2056.csv.zip, 32.8 MB); Datenbeschrieb: meteoswiss.admin.ch, Datenbeschrieb-Meilenstein-EN-FINAL.pdf",
       "vorliegend": "online",
-      "hinweis": "Offene Behördendaten von MeteoSchweiz im Format SIA 2028, ergänzen SIA 2028:2010 um Klimaszenarien; Eignung für die Heizlast noch zu prüfen."
+      "hinweis": "Entscheid Christian 03.11.2026: «MeteoSchweiz gratis» statt Meteonorm. Inhalt laut MeteoSchweiz: stündliche Zukunftsszenarien (CH2018; 2020–2049 und 2045–2074; RCP2.6 und RCP8.5) als typische Jahre (DRY) und warme Sommer (1-in-10) an 45 Stationen, frei verfügbar; für das heutige Klima gilt SIA 2028:2010. Darum für Sommer, Kühlung und Simulation – nicht für die Heizlast-Auslegung (keine Kälteextreme, Zukunft wärmer)."
     },
     {
       "id": "merkblatt.sia2028",
@@ -264,7 +264,7 @@
       ],
       "ablage": "%OneDrive%\\Gebäudetechnik\\Normen\\SIA\\SIA-Reader - 2028_2010_dSIA.srd.pdf",
       "vorliegend": "original",
-      "hinweis": "Klimadaten für Bauphysik, Energie- und Gebäudetechnik; Lesbarkeit (SIA-Reader) wird geprüft."
+      "hinweis": "Klimadaten des heutigen Klimas (laut MeteoSchweiz die Grundlage dafür); Quelle der Norm-Aussentemperatur für die Heizlast. Lesbarkeit (SIA-Reader) wird geprüft."
     }
   ]
 }
