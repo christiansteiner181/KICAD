@@ -77,8 +77,9 @@ verifiziert und korrigiert werden», «der ifc import ist die basis für alles f
   «geneigt» (Achse entscheidet); Stützen-Unter-/Oberkante aus dem Körper statt der Extrusion; Wandenden: kein Zusammenfallen beider Enden
   in derselben Wand; Treppe: Laufdicke gemessen (nicht gerundet), Austrittsstufe mit Umriss `austrittUmriss` (Grundriss des Körpers
   hinter der letzten Kante).
-- **Nicht nachgebaut (als IFC-Original im Hintergrund):** IfcFlowTerminal 57 (HLKS-Bereich), IfcCovering 44, IfcRailing 40 (keine
-  KICAD-Klasse), Archicad-Fensterelemente «Fenster-008» (IfcWall 22 ohne Achse, IfcWindow 19 mit Wirt IfcBuildingElementProxy),
+- **Geländer und Bekleidungen (03.11.2026 nachts, freie Hand Christian):** neue Klassen Gelaender (IfcRailing) und Bekleidung (IfcCovering,
+  Eigenschaft art = PredefinedType), Element am Einfügepunkt (Mitte unten des Körpers), Körper als Familie aus dem IFC wie Tür/Fenster.
+- **Nicht nachgebaut (als IFC-Original im Hintergrund):** IfcFlowTerminal 57 (HLKS-Bereich), Archicad-Fensterelemente «Fenster-008» (IfcWall 22 ohne Achse, IfcWindow 19 mit Wirt IfcBuildingElementProxy),
   IfcWindow 2 ohne Öffnung.
 - **Offen:** Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid.
 

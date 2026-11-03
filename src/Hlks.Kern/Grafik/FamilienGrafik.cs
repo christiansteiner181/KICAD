@@ -54,7 +54,10 @@ public sealed class FamilienGrafik : IGrafikquelle
         return k.Leer ? null : k;
     }
 
-    static string Ebene(Katalog k, Element e) => HlksEinordnung.Art(k, e) == HlksArt.Armatur ? "armatur" : "apparat";
+    static string Ebene(Katalog k, Element e) => Architektur(k, e) ? "wand" : HlksEinordnung.Art(k, e) == HlksArt.Armatur ? "armatur" : "apparat";
+
+    /// <summary>Architekturbauteil als Familie (Geländer, Bekleidung aus dem IFC): Ebene wie die Wände, ohne Etikett.</summary>
+    static bool Architektur(Katalog k, Element e) => k.Klassen.TryGetValue(e.Klasse, out var d) && d.Gewerk == "architektur";
 
     /// <summary>Umriss von oben in Weltkoordinaten (xy) für den Detailgrad. Ist die Lage eine Drehung um z, wird der Umriss der
     /// Familie gedreht; bei voller Ausrichtung (Modul 3, lokale z-Achse nicht senkrecht) ist es der Umriss der gedrehten Körper.</summary>
@@ -114,7 +117,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         var formteil = IstFormteil(ctx.Katalog, e);
         var lage = Familien.Einbaulage(e)!;
         var teil = Grundriss(a, lage, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
-            formteil ? null : e.Kennzeichen, anschlussMarken: !formteil);
+            formteil || Architektur(ctx.Katalog, e) ? null : e.Kennzeichen, anschlussMarken: !formteil);
         // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
         var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
         // darunter die Sichtkanten von oben dünn (NetzDraufsicht), je Familie, Typ und Höhe über dem Einfügepunkt zwischengespeichert

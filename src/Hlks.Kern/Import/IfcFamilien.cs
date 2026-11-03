@@ -110,11 +110,14 @@ static class IfcFamilien
     /// bekommen eine Familie mit ihrem IFC-Netz – im System der Öffnung (Wandachse an der Öffnung, Unterkante der Öffnung, Wandrichtung; so geht
     /// der Körper mit der Wand mit; ArchitekturGrafik.OeffnungLage). Nach dem Abgleich (die Elemente stehen dann im Arbeitsmodell); nicht, was
     /// Projektinformation.ifcStandard unserem Standard zuweist.</summary>
+    /// <summary>Architekturklassen, die ihren Körper als Familie aus dem IFC bekommen.</summary>
+    static readonly string[] KlassenMitNetz = ["Tuer", "Fenster", "Gelaender", "Bekleidung"];
+
     public static IEnumerable<string> Architektur(Kontext k, IfcDatei d, string unterlageId)
     {
         var kat = k.Katalog;
         var standard = Standard(k.Arbeit);
-        var elemente = k.Arbeit.Elemente.Where(e => (kat.IstArt(e, "Tuer") || kat.IstArt(e, "Fenster")) && !standard.Any(s => kat.IstArt(e, s))
+        var elemente = k.Arbeit.Elemente.Where(e => KlassenMitNetz.Any(c => kat.IstArt(e, c)) && !standard.Any(s => kat.IstArt(e, s))
                 && e.Kennungen?.GetValueOrDefault("quelle") == unterlageId && e.Kennungen.GetValueOrDefault("ifc") is { Length: > 0 }
                 && (Familien.FamilieVon(k.Arbeit, e) is not { } fv || Familien.DefinitionsId(fv)?.StartsWith("ifc-") == true)).ToList();
         if (elemente.Count == 0) return [];
@@ -125,7 +128,10 @@ static class IfcFamilien
         {
             var gid = e.Kennungen!["ifc"].Split(':')[0];
             if (!produkte.TryGetValue(gid, out var x) || geo.Koerper(x, false) is not { Leer: false } netz) continue;
-            if (ArchitekturGrafik.OeffnungLage(k.Arbeit, kat, e) is not { } lage) { Zaehlen(sa.Fehler, "ohne Wirtswand"); continue; }
+            // Tür, Fenster: im System der Öffnung (geht mit der Wand mit); Geländer, Bekleidung: am Einfügepunkt, Weltrichtungen
+            var lageOpt = kat.IstArt(e, "Tuer") || kat.IstArt(e, "Fenster") ? ArchitekturGrafik.OeffnungLage(k.Arbeit, kat, e)
+                : Familien.Einfuegepunkt(e) is { } ein ? (ein, 0.0) : null;
+            if (lageOpt is not { } lage) { Zaehlen(sa.Fehler, kat.IstArt(e, "Tuer") || kat.IstArt(e, "Fenster") ? "ohne Wirtswand" : "ohne Einfügepunkt"); continue; }
             double w = lage.Winkel * Math.PI / 180, c = Math.Cos(w), si = Math.Sin(w);
             double[] Lokal(double[] p) { double dx = p[0] - lage.Ursprung[0], dy = p[1] - lage.Ursprung[1]; return [dx * c + dy * si, -dx * si + dy * c, p[2] - lage.Ursprung[2]]; }
             var (ecken, dreiecke) = FamilieNetzUebernehmen.Verschmelzen([.. netz.P], [.. netz.D]);

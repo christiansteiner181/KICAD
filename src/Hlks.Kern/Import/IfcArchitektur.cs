@@ -179,6 +179,10 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
             if (lauf.ImFilter(b)) Traeger(b);
         foreach (var r in d.Modell.Instances.OfType<IIfcGrid>().OrderBy(x => x.EntityLabel))
             if (lauf.ImFilter(r)) Raster(r);
+        foreach (var r in d.Modell.Instances.OfType<IIfcRailing>().OrderBy(x => x.EntityLabel))
+            if (lauf.ImFilter(r)) NetzBauteil(r, "Gelaender");
+        foreach (var c in d.Modell.Instances.OfType<IIfcCovering>().OrderBy(x => x.EntityLabel))
+            if (lauf.ImFilter(c)) NetzBauteil(c, "Bekleidung");
         if (g.AnzahlVereinfacht > 0)
             hinweise.Dazu("Körper vereinfacht (Boolean: nur erster Operand; Netz und Höhe können zu gross sein), Produkte", null, g.AnzahlVereinfacht);
         foreach (var (ent, n) in g.Unbekannt.OrderByDescending(x => x.Value))
@@ -814,6 +818,22 @@ sealed class IfcArchitekturLauf(IfcLauf lauf)
         foreach (var t in teile) lauf.Behandelt.Add(t.EntityLabel);
         if (kinder.TryGetValue(c.EntityLabel, out var alleTeile)) foreach (var t in alleTeile) lauf.Behandelt.Add(t.EntityLabel);
         MaterialSetzen(e, Schichten(c));
+    }
+
+    /// <summary>Geländer, Bekleidung (IFC 1:1, 03.11.2026): Bauteil ohne eigene Rechenlogik – Element mit Einfügepunkt (Mitte unten des Körpers);
+    /// seinen Körper bekommt es nach dem Abgleich als Familie aus dem IFC (IfcFamilien.Architektur).</summary>
+    void NetzBauteil(IIfcProduct p, string sollKlasse)
+    {
+        var klasse = Klasse(p, sollKlasse);
+        if (klasse != sollKlasse) { hinweise.Dazu($"{IfcDatei.Entitaet(p)} als {klasse} abgebildet – nicht übernommen", IfcSammler.Beispiel(p)); return; }
+        var netz = KoerperMitTeilen(p, out var teile, out _);
+        if (netz is null) { Hintergrund(p, $"{sollKlasse} ohne Körper"); return; }
+        var bb = netz.Begrenzung()!;
+        var e = lauf.Neu(sollKlasse, p);
+        e.Geometrie = new Geometrie { Art = "punkt", Punkte = [[R((bb[0] + bb[3]) / 2), R((bb[1] + bb[4]) / 2), R(bb[2])]] };
+        if (sollKlasse == "Bekleidung" && d.PredefinedType(p) is { Length: > 0 } pt) lauf.Wert(e, "art", pt, "PredefinedType");
+        foreach (var t in teile) lauf.Behandelt.Add(t.EntityLabel);
+        if (kinder.TryGetValue(p.EntityLabel, out var alleTeile)) foreach (var t in alleTeile) lauf.Behandelt.Add(t.EntityLabel);
     }
 
     /// <summary>Liegt der grössere Teil der nach unten gerichteten Fläche schräg (mehr als 1° gegen die Waagrechte)?</summary>

@@ -28,6 +28,8 @@
       "importAuch": ["IfcSlabStandardCase", "IfcSlabElementedCase"], "importWerte": ["FLOOR", "BASESLAB", "LANDING", "NOTDEFINED", "USERDEFINED"] },
     { "klasse": "Dach", "ifc4": { "entitaet": "IfcSlab", "typ": "IfcSlabType", "predefinedType": "ROOF" }, "ifc2x3": { "entitaet": "IfcSlab", "typ": "IfcSlabType", "predefinedType": "ROOF" },
       "importAuch": ["IfcRoof"], "importWerte": ["ROOF"] },
+    { "klasse": "Gelaender", "ifc4": { "entitaet": "IfcRailing", "typ": "IfcRailingType", "predefinedType": "GUARDRAIL" }, "ifc2x3": { "entitaet": "IfcRailing", "typ": "IfcRailingType", "predefinedType": "GUARDRAIL" } },
+    { "klasse": "Bekleidung", "ifc4": { "entitaet": "IfcCovering", "typ": "IfcCoveringType", "predefinedType": "CLADDING" }, "ifc2x3": { "entitaet": "IfcCovering", "typ": "IfcCoveringType", "predefinedType": "CLADDING" } },
     { "klasse": "Stuetze", "ifc4": { "entitaet": "IfcColumn", "typ": "IfcColumnType", "predefinedType": "COLUMN" }, "ifc2x3": { "entitaet": "IfcColumn", "typ": "IfcColumnType", "predefinedType": "COLUMN" },
       "importAuch": ["IfcColumnStandardCase"], "importWerte": ["COLUMN", "PILASTER", "USERDEFINED", "NOTDEFINED"] },
     { "klasse": "Traeger", "ifc4": { "entitaet": "IfcBeam", "typ": "IfcBeamType", "predefinedType": "BEAM" }, "ifc2x3": { "entitaet": "IfcBeam", "typ": "IfcBeamType", "predefinedType": "BEAM" },
