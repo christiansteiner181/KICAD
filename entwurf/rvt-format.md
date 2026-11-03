@@ -155,10 +155,33 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   `Connector.m_modifiers → SegmentConnectorCalculation.m_idSystem`, verbundene Elemente über `Connector.m_arrRefs`.
   Namen: Typen `m_symbolInfo.m_name`, Systeme `m_strName`, Ebenen `m_text`, Segmente `m_name`.
 - Geprüft: Geberit Silent-db20 (Revit 2017, 54 Rohre; Aussen/innen 56/49,6 … 160/146 mm, Revits Text «56 mmø»),
-  Geberit PushFit PB (60 Rohre), JRG Sanipex PE-Xa (Revit 2024, 118 MB, 46 Rohre). Test `RevitDateiTests` 6/6.
-- **Offen:** Bögen und gekrümmte Leitungen (andere Kurvenklassen als `GLine`), Formteile (`FamilyInstance` mit
-  `PipeFittingCenterLine`) und Armaturen, Kanäle an einer echten Datei, Übernahme in ein KICAD-Projekt
-  (Abbildung auf KICAD-Leitungen/Serien), Koordinaten von Revits internem System auf Vermessung.
+  Geberit PushFit PB (60 Rohre), JRG Sanipex PE-Xa (Revit 2024, 118 MB, 46 Rohre).
+- Rohre und Kanäle sind in allen Stichproben Geraden (`GLine`); `GArc` kommt nur in Zeichnungslinien und Formteilachsen vor.
+
+**Formteile und Armaturen – gebaut 03.11.2026** (Christian: «Formteile auslegen»; `RevitLeitungen.Netz` → `RevitBauteil`):
+- Bauteil = `FamilyInstance`, deren Kopf (`ElementHeader.m_categroryId`, so geschrieben) eine HLKS-Kategorie nennt:
+  Rohrformteil −2008049, Rohrzubehör −2008055, Sanitärapparat −2001160, Kanalformteil −2008010, Kanalzubehör −2008016,
+  Luftdurchlass −2008013, HLK-Gerät −2001140. Quelle: Enum `BuiltInCategory` in `RevitAPI.dll` (Revit 2026, Metadaten
+  gelesen, nichts geladen). Die Namen der eingebauten Kategorien stehen nicht in der Datei (`Category.m_name` leer).
+- Lage: `m_pInstanceInfo.m_Trf` mit `m_or` (Ursprung) und `m_3x3`; Welt = `m_3x3` · lokal + `m_or`, Matrix zeilenweise.
+  Geprüft am gedrehten Abzweig 2314 (Geberit): Der Begrenzungsquader der Familie, so gedreht, ergibt den des Exemplars.
+  `m_RefDir`/`m_zAxis` bleiben dort 1,0,0 / 0,0,1 und taugen nicht für die Drehung. Ohne Drehung speichert Revit keine Matrix.
+- Typ `m_symbolId` (abgeleitete Typen ohne Namen → `m_masterSymbolId`), Familie über `FamilySymbol.m_familyId` →
+  `Family.m_name` (z. B. «PIF_Silent-dB20 bend_Geberit»), Grösse `m_pDesignPropManager.m_sCalculatedSize` («70 mmø-70 mmø»),
+  Ebene `m_assocLevelId`, verschachtelte Teile `m_superInstanceId`.
+- Achse: `m_pDesignPropManager.m_idCenterLine` → Element mit `m_CenterCurves` (Geraden und Bögen, schon in Weltkoordinaten).
+  Bogen `GArc`: Punkt(t) = `m_center` + `m_radius` · (cos t · `m_xVec` + sin t · `m_yVec`), t in `m_endParams`.
+  Armaturen (Rohrzubehör) haben keine Mittellinie; ihre Anschlusslagen stehen nur in der Familiengeometrie.
+- Anschlüsse: je Connector `m_nIndex`, verbundene Elemente `m_arrRefs`, System `m_idSystem` des Rechenmodifikators.
+- Geprüft: Geberit Silent-db20 (82 Formteile, 1 Armatur, 1 Apparat; Bogen 2367 zwischen den Rohren 2363/2365, Achsenenden =
+  Rohrenden), Geberit Mapress (541 Formteile; 50 Bögen schliessen lückenlos an die Geraden an; bei 829 von 885 Verbindungen
+  ist ein Achsenende das Rohrende, beim Rest liegt das Rohrende auf der Achse im Formteil, z. B. beim Mapress-Bogen, oder
+  ist im Modell versetzt), JRG Sanipex (856 Formteile, 36 Armaturen, meist unverbunden als Katalog ausgelegt).
+  Verweise ins Leere: 0. Test `RevitDateiTests` 7/7.
+- **Offen:** Anschlusslagen der Armaturen (Familiengeometrie), Kanäle an einer echten Datei, Übernahme in ein
+  KICAD-Projekt (Abbildung auf KICAD-Leitungen, Serien und Formteile), Koordinaten von Revits internem System auf
+  Vermessung. Die Kategorie «Rohrformteil» enthält auch Hilfsfamilien der Hersteller (z. B. «warning_cross»); sie müssen
+  bei der Übernahme ausgefiltert werden.
 
 **Objektdaten – erster Befund vor dem Bau (zur Nachvollziehbarkeit):**
 - Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`

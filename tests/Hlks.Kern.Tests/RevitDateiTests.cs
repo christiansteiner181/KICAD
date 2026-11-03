@@ -140,6 +140,42 @@ public class RevitDateiTests
     }
 
     [Fact]
+    public void Echte_Formteile_aus_RVT_mit_Lage_Drehung_Typ_Achse_und_Anschluessen()
+    {
+        var pfad = Echt("familien/revit/geberit_silent_db20_2017.rvt");
+        if (pfad is null) return;
+        var netz = RevitLeitungen.Netz(RevitDatei.Oeffnen(pfad));
+        Assert.Equal(82, netz.Bauteile.Count(b => b.Kategorie == "Rohrformteil"));
+        var bogen = netz.Bauteile.Single(b => b.Id == 2367);   // Bogen zwischen den Rohren 2363 und 2365
+        Assert.Equal("PIF_Silent-dB20 bend_Geberit", bogen.Familie);
+        Assert.Equal("Var. DN/OD", bogen.Typ);
+        Assert.Equal("70 mmø-70 mmø", bogen.Groesse);
+        Assert.Equal([-2195.722, 4541.825, 0], bogen.Ursprung);
+        Assert.Equal([2363L, 2365L], bogen.Anschluesse.SelectMany(a => a.Verbunden));
+        Assert.Equal("Sanitary 10", bogen.System);
+        // Achsenenden sind die Rohrenden: Ende von 2363, Anfang von 2365
+        var enden = bogen.Achse.SelectMany(s => new[] { s.Anfang, s.Ende }).ToList();
+        var rohre = netz.Leitungen.ToDictionary(l => l.Id);
+        Assert.Contains(enden, p => Nah(p, rohre[2363].Ende!));
+        Assert.Contains(enden, p => Nah(p, rohre[2365].Anfang!));
+        // gedrehtes, verschachteltes Teil: Matrix zeilenweise (Welt = M · lokal)
+        var gedreht = netz.Bauteile.Single(b => b.Id == 2314);
+        Assert.Equal([0, 1, 0], gedreht.Drehung[0].Select(Math.Abs));
+        Assert.Equal(-1, gedreht.Drehung[1][0]);
+        Assert.NotNull(gedreht.TeilVon);
+
+        // Bögen in Mittellinien (Mapress): Kreisbogen schliesst lückenlos an die Geraden an
+        var mapress = Echt("familien/revit/geberit_mapress_2017.rvt");
+        if (mapress is null) return;
+        var mitBogen = RevitLeitungen.Netz(RevitDatei.Oeffnen(mapress)).Bauteile.Where(b => b.Achse.Any(a => a.Mitte is not null)).ToList();
+        Assert.Equal(50, mitBogen.Count);
+        Assert.All(mitBogen, b => Assert.All(b.Achse.Where(a => a.Mitte is not null), a => Assert.All(new[] { a.Anfang, a.Ende },
+            p => Assert.Contains(b.Achse, x => x != a && (Nah(p, x.Anfang) || Nah(p, x.Ende))))));
+    }
+
+    static bool Nah(double[] p, double[] q) => Math.Sqrt(p.Zip(q, (a, b) => (a - b) * (a - b)).Sum()) < 0.5;
+
+    [Fact]
     public void Echte_Elemente_vollstaendig_gelesen_und_Kopf_nennt_die_Klasse_des_Koerpers()
     {
         foreach (var (datei, mindestens) in new[] { ("familien/revit/speicher_kaelte_2025.rfa", 26_184), ("familien/revit/dynacon_2018.rfa", 1) })
