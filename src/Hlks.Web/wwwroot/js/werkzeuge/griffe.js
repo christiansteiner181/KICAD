@@ -18,7 +18,7 @@
 import { element, abonnieren, alleElemente } from '../zustand.js';
 import { sende, ergebnisMelden } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
-import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon } from './basis.js';
+import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon, letztesWiederholen } from './basis.js';
 import { fangen, abstand, FANGRADIUS_PX } from './fangen.js';
 import { griffPunkte, griffGeometrie, griffAnschliessen, tuerUmdrehen, verschiebenParameter, pfeilParameter } from './parameter.js';
 import { rasterWert } from './optionen.js';
@@ -199,6 +199,7 @@ class Griffe {
       case 'pointerup': return this.los(e);
       case 'keydown':
         if (e.key === 'Escape' && this.ziehen) { this.ziehen = null; this.zeichnen(); return true; }
+        if (e.key === 'Enter' && !this.ziehen && !e.shiftKey && !e.ctrlKey && !e.altKey) return letztesWiederholen();   // B6: Enter = letztes Werkzeug
         return this.pfeil(e) || this.tab(e);
       default: return false;
     }

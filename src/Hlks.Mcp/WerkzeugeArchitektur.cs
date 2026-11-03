@@ -83,23 +83,27 @@ public sealed partial class Werkzeuge
         [Description("Abstand der Kopien in x (Ost) in mm")] double? dx = null,
         [Description("Abstand der Kopien in y (Nord) in mm")] double? dy = null,
         [Description("Anzahl Kopien (Vorgabe 1)")] double? anzahl = null,
+        [Description("Abstand der Kopien in z (Höhe) in mm (Bearbeitungswerkzeuge B6: Einfügen auf ein anderes Geschoss)")] double? dz = null,
+        [Description("Geschoss der Kopien (Kennzeichen oder Id); fehlt es, das der Originale")] string? geschoss = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("elemente_kopieren", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("anzahl", anzahl)), trockenlauf);
+        Befehl("elemente_kopieren", Parameter(("elemente", elemente), ("dx", dx), ("dy", dy), ("anzahl", anzahl), ("dz", dz), ("geschoss", geschoss)), trockenlauf);
 
     [McpServerTool(Name = "elemente_drehen"), Description("Dreht Elemente mit Geometrie um einen Punkt (winkel in Grad, Gegenuhrzeigersinn). Türen und Fenster folgen ihrer Wand; Texte und Symbole drehen ihren Winkel mit.")]
     public string ElementeDrehen(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,
         [Description("Drehpunkt [x, y] in mm")] JsonElement mitte,
         [Description("Drehwinkel in Grad, Gegenuhrzeigersinn")] double winkel,
+        [Description("true: eine Kopie drehen, das Original bleibt (Revit «Kopieren»)")] bool kopieren = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("elemente_drehen", Parameter(("elemente", elemente), ("mitte", mitte), ("winkel", winkel)), trockenlauf);
+        Befehl("elemente_drehen", Parameter(("elemente", elemente), ("mitte", mitte), ("winkel", winkel), ("kopieren", kopieren)), trockenlauf);
 
     [McpServerTool(Name = "elemente_spiegeln"), Description("Spiegelt Elemente mit Geometrie an einer Achse. Bei Türen wird die Aufschlagseite (seite) mitgespiegelt; Türen und Fenster gewählter Wände folgen ihrer Wand.")]
     public string ElementeSpiegeln(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,
         [Description("Spiegelachse [[x1, y1], [x2, y2]] in mm")] JsonElement achse,
+        [Description("true: eine Kopie spiegeln, das Original bleibt (Revit «Kopieren»)")] bool kopieren = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("elemente_spiegeln", Parameter(("elemente", elemente), ("achse", achse)), trockenlauf);
+        Befehl("elemente_spiegeln", Parameter(("elemente", elemente), ("achse", achse), ("kopieren", kopieren)), trockenlauf);
 
     // Modul 1c, Auftrag B3 (DeckeBefehle.cs)
     [McpServerTool(Name = "decke_erzeugen"), Description("Erzeugt Decke, Boden oder flaches Dach aus der Aussenkontur der Wände und Räume eines Geschosses (Löcher gefüllt, getrennte Gebäudeteile je eine Decke) oder aus einem vorgegebenen Umriss. Oberkante: decke = Kote des Geschosses darüber (fehlt es: Kote + Geschosshöhe), boden = Kote, dach = Kote + Geschosshöhe; die Dicke geht nach unten und ist Pflicht. Lehnt ab, wenn an derselben Stelle schon eine Decke derselben Art und Höhe liegt. Die Decke folgt späteren Wandänderungen nicht (Hinweis «neu erzeugen»).")]

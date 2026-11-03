@@ -28,7 +28,7 @@ Lesart der Spalte «Lücke»: **da** = gleichwertig vorhanden · **teilweise** =
 | --- | --- | --- | --- |
 | Verschieben | Ändern › Verschieben **MV**; Basispunkt → Ziel, Zahl = Abstand; Optionen «Trennen», «Mehrfach», «Orthogonal»; auch direkt ziehen und Pfeiltasten | `elemente_verschieben` (dx, dy, dz) `src/Hlks.Kern/Architektur/Bearbeiten.cs:62` · Werkzeug MV, Basis → Ziel, Zahl = Abstand `src/Hlks.Web/wwwroot/js/werkzeuge/aendern.js:57` | **teilweise:** kein Ziehen des ganzen Elements mit der Maus, keine Pfeiltasten, dz nur über MCP, keine Option «Trennen» (Verbindungen lösen beim Verschieben) |
 | Kopieren | **CO**/CC; Option «Mehrfach» (beliebig viele Ziele nacheinander); Strg+C / Strg+V, «Ausgerichtet einfügen» (auf andere Geschosse) | `elemente_kopieren` (dx, dy, anzahl) `Bearbeiten.cs:85` · Werkzeug CO mit Feld «Anzahl» `aendern.js:62` | **teilweise:** kein «Mehrfach» mit freien Zielen, keine Zwischenablage, kein Kopieren auf andere Geschosse, kein dz |
-| Drehen | **RO**; Drehpunkt ziehbar, Winkel per Klicks oder Zahl, Option «Kopieren»; Leertaste beim Platzieren | `elemente_drehen` `Bearbeiten.cs:152` · RO mit Drehpunkt, zwei Strahlen oder Zahl `aendern.js:68` | **teilweise:** keine Option «Kopieren», Leertaste dreht beim Platzieren nicht |
+| Drehen | **RO**; Drehpunkt ziehbar, Winkel per Klicks oder Zahl, Option «Kopieren»; Leertaste beim Platzieren | `elemente_drehen` `Bearbeiten.cs:152` · RO mit Drehpunkt, zwei Strahlen oder Zahl `aendern.js:68`; Leertaste dreht beim Familie platzieren (`familien/platzieren.js`) | **teilweise:** keine Option «Kopieren» (Korrektur 03.11.2026: die Leertaste gab es schon) |
 | Spiegeln | **MM** (Achse wählen), **DM** (Achse zeichnen); Option «Kopieren» | `elemente_spiegeln` `Bearbeiten.cs:186` · MM, Achse durch zwei Punkte `aendern.js:98` | **teilweise:** nur «Achse zeichnen»; «Achse wählen» (Wand, Achse, Linie anklicken) und «Kopieren» fehlen |
 | Reihe | **AR**; linear oder radial, Anzahl, «Zweites» oder «Letztes», gruppiert und nachträglich änderbar | über `elemente_kopieren` mit anzahl (nur linear, fester Abstand) | **teilweise:** kein radial, kein «Letztes» (Abstand verteilen), nicht nachträglich änderbar |
 | Skalieren | **RE**; nur Linien, Wände, Bilder, Importe | – (Unterlagen werden über «Kalibrieren» massstäblich gesetzt) | fehlt – für HLKS ohne Nutzen, Unterlagen sind abgedeckt |
@@ -146,7 +146,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **B3 gebaut 03.11.2026** (Spezifikation unten; geändert beim Bau: Plus lässt den Durchgang offen statt eines Stummels – sonst ist ein Stummel von anderen freien Leitungsenden nicht zu unterscheiden; Minus nimmt den offenen Anschluss): `bogen_zu_tstueck`, `tstueck_zu_bogen` (Kern, MCP, KI-Einordnung), Kontextregister und Rechtsklick.
 - **B4 gebaut 03.11.2026** (Spezifikation unten): Tab, Umschalt+Klick, Filter, alle Exemplare, `elemente_loeschen`, `elemente_aendern` (Kern, MCP, KI-Einordnung), Palette der Mehrfachauswahl.
 - **B5 gebaut 03.11.2026:** temporäre Masse am gewählten Element (Zahl anklicken verschiebt), Fang-Kürzel SE/SM/SI/SP/SN/SR/SO (einmal), Verwalten › Modell › Fangen … (Fangarten je Benutzer). Befund: direkt verbundene Geraden folgen jetzt (A1 ergänzt).
-- **Nächstes: B6** Kleinigkeiten (Enter = letzter Befehl, Kopieren «Mehrfach», Drehen/Spiegeln «Kopieren», Spiegeln «Achse wählen», Leertaste beim Platzieren, Strg+C/Strg+V).
+- **B6 gebaut 03.11.2026** (Spezifikation unten): Enter, Kopieren «Mehrfach», Drehen/Spiegeln «Kopieren» (Kern `kopieren`), MM/DM wie Revit, Strg+C/Strg+V (Kern `dz`/`geschoss` bei elemente_kopieren). **Stufe B abgeschlossen.**
+- **Offen: Stufe C** (Fixieren/Lösen, Reihe radial, Eigenschaften übertragen, Griffe an Geräten, Bearbeiten in 3D/Schnitt, Lücke teilen, Gruppen, offene Enden, Justieren) – Entscheid Christian; dazu offen aus A3: Reduktionen beim Einsetzen, Wände teilen.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -265,3 +266,16 @@ Oberfläche: Kontextregister eines Bogens «Zu T-Stück (+)», eines T-Stücks �
 - **Eigenschaftenpalette** bei Mehrfachauswahl: Kopf «n Elemente» mit Anzahl je Klasse; sind alle von einer Klasse, ihre Eigenschaften
   (gleiche Werte gezeigt, verschiedene leer «verschieden»); eine Änderung gilt für alle – Kernbefehl **`elemente_aendern`** { elemente,
   eigenschaften } (ein Paket).
+
+## B6 – Kleinigkeiten mit grosser Wirkung (Spezifikation, 03.11.2026)
+
+- **Enter** (ohne laufendes Werkzeug, Fokus im Grundriss): letztes Werkzeug wieder starten (wie Rechtsklick ins Leere).
+- **Kopieren (CO) «Mehrfach»** (Optionsleiste): nach jeder Kopie bleibt der Basispunkt, jeder weitere Klick setzt eine Kopie; Esc beendet.
+- **Drehen (RO) und Spiegeln «Kopieren»** (Optionsleiste): Kernparameter `kopieren` von elemente_drehen bzw. elemente_spiegeln – gedreht bzw.
+  gespiegelt wird eine Kopie (ein Paket).
+- **Spiegeln wie Revit:** MM = «Achse wählen» (eine Gerade anklicken: Leitung, Wand, Achse, Detaillinie), DM = «Achse zeichnen» (zwei Punkte,
+  bisher MM).
+- **Leertaste beim Platzieren:** gab es schon (Familie platzieren dreht um 90°) – Tabellenzeile im Vergleich korrigiert.
+- **Strg+C / Strg+V:** Strg+C merkt die Auswahl; Strg+V im selben Geschoss startet Kopieren mit Basis- und Zielpunkt, in einem Grundriss eines
+  anderen Geschosses wird «ausgerichtet» eingefügt (gleiche Lage im Grundriss, Höhe um den Kotenunterschied, Geschoss neu) – Kernparameter
+  `dz` und `geschoss` von elemente_kopieren.

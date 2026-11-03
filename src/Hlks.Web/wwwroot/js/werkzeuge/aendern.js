@@ -7,6 +7,8 @@ import { abstand, mitteVon } from './fangen.js';
 import { verschiebenParameter, kopierenParameter, drehenParameter, drehwinkel, spiegelnParameter } from './parameter.js';
 import { auswahlElemente } from './auswahl.js';
 import * as S from './schicht.js';
+import { geradeUnter } from './stutzen.js';
+import { meldung } from '../oberflaeche/dialoge.js';
 
 const rad = (grad) => grad * Math.PI / 180;
 
@@ -40,7 +42,8 @@ function versetzen({ id, titel, befehl, parameter, okText, mehrfachOption }) {
       if (!z.von) { z.von = fang.punkt; return; }
       if (abstand(z.von, fang.punkt) < 0.5) return;
       const p = parameter(z, z.von, fang.punkt, ctx);
-      await ctx.befehl(befehl, p, okText);
+      const r = await ctx.befehl(befehl, p, okText);
+      if (mehrfachOption && ctx.opt.mehrfach && r?.angenommen) return;   // B6: Kopieren «Mehrfach» – Basispunkt bleibt, nächster Klick setzt die nächste Kopie
       ctx.beenden();
     },
     zeichne(z, fang, ctx, s) {
@@ -67,7 +70,7 @@ export const kopierenWerkzeug = () => versetzen({
 /** Drehen: Drehpunkt, dann Winkel mit zwei Klicks (Startstrahl, Endstrahl) oder als Zahl in Grad. */
 export function drehenWerkzeug() {
   const senden = async (z, ctx, winkel) => {
-    await ctx.befehl('elemente_drehen', drehenParameter(kz(z), z.mitte, winkel));
+    await ctx.befehl('elemente_drehen', { ...drehenParameter(kz(z), z.mitte, winkel), ...(ctx.opt.kopieren ? { kopieren: true } : {}) });   // B6: Kopieren
     ctx.beenden();
   };
   return {
@@ -106,7 +109,7 @@ export function spiegelnWerkzeug() {
     async klick(z, fang, ctx) {
       if (!z.a) { z.a = fang.punkt; return; }
       if (abstand(z.a, fang.punkt) < 1) return;
-      await ctx.befehl('elemente_spiegeln', spiegelnParameter(kz(z), z.a, fang.punkt));
+      await ctx.befehl('elemente_spiegeln', { ...spiegelnParameter(kz(z), z.a, fang.punkt), ...(ctx.opt.kopieren ? { kopieren: true } : {}) });   // B6: Kopieren
       ctx.beenden();
     },
     zeichne(z, fang, ctx, s) {
@@ -116,3 +119,25 @@ export function spiegelnWerkzeug() {
   };
 }
 
+
+/** Bearbeitungswerkzeuge B6: Spiegeln – Achse wählen (MM wie Revit): eine Gerade anklicken, ihre Achse ist die Spiegelachse. */
+export function spiegelnWaehlenWerkzeug() {
+  return {
+    id: 'spiegelnWaehlen', titel: 'Spiegeln – Achse wählen', ohneFangen: true,
+    neu: (ctx) => ({ elemente: halten(ctx) }),
+    hinweis: (z) => `Gerade als Spiegelachse anklicken (${anzahlText(z)}).`,
+    async klick(z, fang, ctx) {
+      const el = geradeUnter(ctx.maus, ctx);
+      if (!el) { meldung('Hier ist keine Gerade (Leitung, Wand, Achse, Detaillinie).', 'info'); return; }
+      const [a, b] = el.geometrie.punkte;
+      await ctx.befehl('elemente_spiegeln', { ...spiegelnParameter(kz(z), [a[0], a[1]], [b[0], b[1]]), ...(ctx.opt.kopieren ? { kopieren: true } : {}) });
+      ctx.beenden();
+    },
+    zeichne(z, fang, ctx, s) {
+      const el = geradeUnter(ctx.maus, ctx);
+      if (!el) return '';
+      const [a, b] = el.geometrie.punkte;
+      return S.linie([a[0], a[1]], [b[0], b[1]], 'wz-achse') + S.umrisseSvg(z.elemente, spiegler([a[0], a[1]], [b[0], b[1]]), s);
+    },
+  };
+}

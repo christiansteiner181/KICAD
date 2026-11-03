@@ -46,6 +46,8 @@ function kombination(e) {
     const k = e.key.toLowerCase();
     if (k === 'z') return e.shiftKey ? 'Strg+Y' : 'Strg+Z';
     if (k === 'y') return 'Strg+Y';
+    if (k === 'c') return 'Strg+C';   // Bearbeitungswerkzeuge B6: Zwischenablage
+    if (k === 'v') return 'Strg+V';
   }
   return null;
 }

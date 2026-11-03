@@ -3403,7 +3403,7 @@
             "register": "Ändern",
             "gruppe": "Verändern",
             "knopf": "Spiegeln",
-            "kuerzel": "MM",
+            "kuerzel": "MM, DM",
             "sonst": ""
           },
           "schritte": [
@@ -3426,7 +3426,7 @@
             "src/Hlks.Web/wwwroot/js/werkzeuge/optionen.js:150",
             "entwurf/modul-1a.md:128 (Befehle)"
           ],
-          "hinweis": ""
+          "hinweis": "Seit B6 (03.11.2026) wie Revit: MM = Achse wählen (Gerade anklicken), DM = Achse zeichnen (zwei Punkte); Option «Kopieren»."
         },
         {
           "id": "m1a-griffe",
@@ -6589,6 +6589,40 @@
             "src/Hlks.Web/OBERFLAECHE.md:4067 (Temporäre Masse und Fangen (Bearbeitungswerkzeuge B5))"
           ],
           "hinweis": ""
+        },
+        {
+          "id": "m3-kleinigkeiten",
+          "titel": "Enter, Mehrfach kopieren, Kopieren beim Drehen/Spiegeln, Strg+C/Strg+V",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Kopieren, Drehen, Spiegeln",
+            "kuerzel": "Enter, CO, RO, MM, DM, Strg+C, Strg+V",
+            "sonst": "Optionsleiste Mehrfach bzw. Kopieren"
+          },
+          "schritte": [
+            "Eine Leitung wählen, CO mit «Mehrfach»: Basispunkt, dann drei Ziele; Esc.",
+            "Enter: CO startet wieder; Esc.",
+            "MM: eine Wand als Spiegelachse anklicken.",
+            "Leitung wählen, Strg+C, Grundriss EG aktivieren, Strg+V.",
+            "Strg+Z nach jedem Schritt."
+          ],
+          "erwartung": "Drei Kopien in einem Werkzeuglauf; Enter wiederholt das letzte Werkzeug; MM spiegelt eine Kopie an der Wandachse; Strg+V legt die Leitung an gleicher Stelle ins EG (Höhe um den Kotenunterschied).",
+          "pruefpunkte": [
+            "Mehrfach: Basispunkt bleibt.",
+            "Enter wiederholt.",
+            "MM/DM wie Revit, Kopieren vorgewählt.",
+            "Strg+V ausgerichtet bzw. mit Zielpunkt im selben Geschoss."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG",
+            "zustand": "Ausgerichtet eingefügte Leitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4081 (Kleinigkeiten mit grosser Wirkung (Bearbeitungswerkzeuge B6))"
+          ],
+          "hinweis": "MM war bisher «Achse zeichnen» – jetzt DM."
         },
         {
           "id": "m3-palette-leitung",

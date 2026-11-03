@@ -4077,3 +4077,16 @@ Reine Logik in `js/werkzeuge/tempmass.js` und `js/werkzeuge/fangwahl.js` (in Nod
 - **Verwalten › Modell › Fangen …:** Fangarten an/aus, je Benutzer gemerkt (Browser).
 - **Befund beim Bau:** Direkt verbundene Geraden (ohne Formteil) folgen jetzt einer verschobenen Geraden wie an einem Formteil (A1).
 - **Tests:** `node --test --test-name-pattern "Fangwahl|Temporäre Masse" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.
+
+## Kleinigkeiten mit grosser Wirkung (Bearbeitungswerkzeuge B6, `entwurf/bearbeitungswerkzeuge.md`)
+
+- **Enter** im Grundriss ohne laufendes Werkzeug startet das letzte Werkzeug wieder (wie Rechtsklick ins Leere; `griffe.js`).
+- **Kopieren (CO) «Mehrfach»** (Optionsleiste): der Basispunkt bleibt, jeder Klick setzt eine weitere Kopie; Esc beendet (`aendern.js`).
+- **Drehen (RO) «Kopieren»**, **Spiegeln «Kopieren»** (Optionsleiste; beim Spiegeln wie Revit vorgewählt): gedreht bzw. gespiegelt wird eine Kopie
+  (Kernparameter `kopieren` von elemente_drehen bzw. elemente_spiegeln, ein Paket).
+- **Spiegeln wie Revit:** **MM** = «Achse wählen» (eine Gerade anklicken), **DM** = «Achse zeichnen» (zwei Punkte; bisher MM).
+- **Strg+C / Strg+V** (`aktionen-auswahl.js`): Strg+C merkt die Auswahl; Strg+V im selben Geschoss startet Kopieren mit Basis- und Zielpunkt, im
+  Grundriss eines anderen Geschosses wird ausgerichtet eingefügt (gleiche Lage, Höhe um den Kotenunterschied, Geschoss neu; elemente_kopieren
+  mit `dz` und `geschoss`).
+- Die Leertaste dreht beim «Familie platzieren» schon länger um 90° (keine Änderung).
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~KopierenOptionenTests"`.

@@ -20,7 +20,7 @@ import { linieWerkzeug } from '../werkzeuge/linie.js';
 import { fuellbereichWerkzeug } from '../werkzeuge/fuellbereich.js';
 import { koteWerkzeug, nordpfeilWerkzeug } from '../werkzeuge/kote.js';
 import { schnittWerkzeug } from '../werkzeuge/schnitt.js';
-import { verschiebenWerkzeug, kopierenWerkzeug, drehenWerkzeug, spiegelnWerkzeug } from '../werkzeuge/aendern.js';
+import { verschiebenWerkzeug, kopierenWerkzeug, drehenWerkzeug, spiegelnWerkzeug, spiegelnWaehlenWerkzeug } from '../werkzeuge/aendern.js';
 import { teilenWerkzeug } from '../werkzeuge/teilen.js';
 import { eckeWerkzeug, dehnenWerkzeug } from '../werkzeuge/stutzen.js';
 import { ausrichtenWerkzeug, versatzWerkzeug } from '../werkzeuge/ausrichten.js';
@@ -75,6 +75,7 @@ werkzeug({ id: 'aendern.versatz', titel: 'Versatz', symbol: 'versatz', kuerzel: 
 werkzeug({ id: 'aendern.ecke', titel: 'Stutzen/Dehnen für Ecke', symbol: 'ecke', kuerzel: 'TR', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'ecke', fabrik: eckeWerkzeug });   // A4
 werkzeug({ id: 'aendern.dehnen', titel: 'Dehnen bis', symbol: 'dehnen', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'dehnen', fabrik: dehnenWerkzeug });   // A4
 werkzeug({ id: 'aendern.teilen', titel: 'Teilen', symbol: 'teilen', kuerzel: 'SL', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'teilen', fabrik: teilenWerkzeug });   // A3
-werkzeug({ id: 'aendern.spiegeln', titel: 'Spiegeln', symbol: 'spiegeln', kuerzel: 'MM', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'spiegeln', fabrik: spiegelnWerkzeug });
+werkzeug({ id: 'aendern.spiegeln-waehlen', titel: 'Spiegeln – Achse wählen', symbol: 'spiegeln', kuerzel: 'MM', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'spiegelnWaehlen', fabrik: spiegelnWaehlenWerkzeug });   // B6: MM wie Revit
+werkzeug({ id: 'aendern.spiegeln', titel: 'Spiegeln – Achse zeichnen', symbol: 'spiegeln', kuerzel: 'DM', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'spiegeln', fabrik: spiegelnWerkzeug });
 
 griffeEinrichten();

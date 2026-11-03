@@ -148,11 +148,12 @@ export const WERKZEUGE = {
   },
   kopieren: {
     titel: 'Kopieren',
-    felder: [{ id: 'anzahl', titel: 'Anzahl', art: 'zahl', vorgabe: 1, breite: 3, fluechtig: true }],
+    felder: [{ id: 'anzahl', titel: 'Anzahl', art: 'zahl', vorgabe: 1, breite: 3, fluechtig: true }, { id: 'mehrfach', titel: 'Mehrfach', art: 'bool', vorgabe: false }],   // B6: Mehrfach
     hinweis: 'Basispunkt, dann Zielpunkt anklicken; jede Kopie liegt um denselben Abstand weiter.',
   },
-  drehen: { titel: 'Drehen', felder: [], hinweis: 'Drehpunkt anklicken, dann den Winkel mit zwei Klicks setzen oder in Grad eingeben (Enter).' },
-  spiegeln: { titel: 'Spiegeln', felder: [], hinweis: 'Zwei Punkte der Spiegelachse anklicken.' },
+  drehen: { titel: 'Drehen', felder: [{ id: 'kopieren', titel: 'Kopieren', art: 'bool', vorgabe: false }], hinweis: 'Drehpunkt anklicken, dann den Winkel mit zwei Klicks setzen oder in Grad eingeben (Enter).' },   // B6: Kopieren
+  spiegeln: { titel: 'Spiegeln – Achse zeichnen', felder: [{ id: 'kopieren', titel: 'Kopieren', art: 'bool', vorgabe: true }], hinweis: 'Zwei Punkte der Spiegelachse anklicken.' },   // B6: DM, Kopieren wie Revit vorgewählt
+  spiegelnWaehlen: { titel: 'Spiegeln – Achse wählen', felder: [{ id: 'kopieren', titel: 'Kopieren', art: 'bool', vorgabe: true }], hinweis: 'Eine Gerade (Leitung, Wand, Achse, Detaillinie) als Spiegelachse anklicken.' },   // B6: MM
   // Bearbeitungswerkzeuge A2
   parallel: {   // B2
     titel: 'Parallele Leitungen',

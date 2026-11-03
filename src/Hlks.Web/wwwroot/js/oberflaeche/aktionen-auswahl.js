@@ -7,7 +7,9 @@ import { registrieren } from './register.js';
 import { zeigen, meldung } from './dialoge.js';
 import { esc, knoten } from './werkzeug.js';
 import { auswahlElemente, istMehrfach, mengeSetzen } from '../werkzeuge/auswahl.js';
-import { planAnsicht, geschossVon } from '../werkzeuge/basis.js';
+import { planAnsicht, geschossVon, werkzeugStarten } from '../werkzeuge/basis.js';
+import { kopierenWerkzeug } from '../werkzeuge/aendern.js';
+import { sende, ergebnisMelden } from './befehle.js';
 
 const ZIEL = (p) => element(p?.element ?? zustand.auswahl);
 
@@ -59,3 +61,31 @@ registrieren({
   aktiv: (p) => !!ZIEL(p), hinweis: 'Zuerst ein Element auswählen.',
   ausfuehren: alleExemplare,
 });
+
+// ---------------------------------------------------------------------------------------------- Zwischenablage (Bearbeitungswerkzeuge B6)
+
+let ablage = [];   // Kennzeichen
+
+registrieren({
+  id: 'aendern.ablage-kopieren', titel: 'In die Zwischenablage', symbol: 'duplizieren', kuerzel: 'Strg+C',
+  aktiv: () => auswahlElemente().length > 0, hinweis: 'Zuerst Elemente wählen.',
+  ausfuehren() { ablage = auswahlElemente().filter((e) => e.geometrie).map((e) => e.kennzeichen); meldung(`${ablage.length} Element(e) in der Zwischenablage.`, 'ok'); },
+});
+
+/** Strg+V: im selben Geschoss Kopieren mit Basis- und Zielpunkt; im Grundriss eines anderen Geschosses ausgerichtet (gleiche Lage, Höhe um den Kotenunterschied). */
+async function einfuegen() {
+  const els = ablage.map((kz) => element(kz)).filter(Boolean);
+  if (!els.length) { meldung('Die Zwischenablage ist leer (Strg+C).', 'info'); return; }
+  const a = planAnsicht();
+  const ziel = a?.art === 'grundriss' ? element(geschossVon(a)) : null;
+  const quelle = element(els[0].geschoss);
+  if (ziel && quelle && ziel.id !== quelle.id) {
+    const dz = Number(ziel.werte?.kote ?? 0) - Number(quelle.werte?.kote ?? 0);
+    const r = await sende('elemente_kopieren', { elemente: els.map((e) => e.kennzeichen), dz, geschoss: ziel.kennzeichen });
+    ergebnisMelden(r, `${els.length} Element(e) ausgerichtet in ${ziel.kennzeichen} eingefügt.`);
+    return;
+  }
+  mengeSetzen(els.map((e) => e.id));
+  setTimeout(() => werkzeugStarten(kopierenWerkzeug()), 50);
+}
+registrieren({ id: 'aendern.ablage-einfuegen', titel: 'Aus der Zwischenablage einfügen', symbol: 'duplizieren', kuerzel: 'Strg+V', ausfuehren: einfuegen });

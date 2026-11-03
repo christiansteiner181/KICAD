@@ -55,6 +55,21 @@ static class Bearbeitung
     public static double R(double x) => Math.Round(x, 6);
 
     public static double[] Z(double[] q) => q.Length > 2 ? q : [q[0], q[1], 0];
+
+    /// <summary>Bearbeitungswerkzeuge B6: mit «kopieren» die Elemente zuerst am Ort kopieren (elemente_kopieren) und die Kopien zurückgeben –
+    /// Drehen bzw. Spiegeln wirkt dann auf die Kopien (ein Paket); sonst die Elemente selbst.</summary>
+    public static List<Element> ZielElemente(Kontext k, JsonObject p)
+    {
+        if (!Param.Bool(p, "kopieren")) return MitGeometrie(k, ArchParam.Elemente(k, p));
+        int vorher = k.Operationen.Count, hinweise = k.Hinweise.Count;
+        new ElementeKopieren().Ausfuehren(k, new JsonObject { ["elemente"] = p["elemente"]!.DeepClone() });
+        k.Hinweise.RemoveRange(hinweise, k.Hinweise.Count - hinweise);
+        var neu = k.Operationen.Skip(vorher).Where(o => o.Art == "element.setzen" && o.ElementVorher is null).Select(o => k.Arbeit.Finde(o.Id)).OfType<Element>()
+            .DistinctBy(e => e.Id).Where(e => e.Geometrie is { Punkte.Count: > 0 }).ToList();
+        k.Hinweise.Add($"Kopiert: {string.Join(", ", neu.Select(e => e.Kennzeichen).Take(30))}");
+        // Türen und Fenster kopierter Wände folgen ihrer Wand (die Nachführung), nur die übrigen werden selbst abgebildet
+        return neu.Where(e => !((k.Katalog.IstArt(e, "Tuer") || k.Katalog.IstArt(e, "Fenster")) && e.Bezuege.TryGetValue("wand", out var w) && neu.Any(x => x.Id == w))).ToList();
+    }
 }
 
 public sealed class ElementeVerschieben : IBefehl
@@ -102,6 +117,8 @@ public sealed class ElementeKopieren : IBefehl
         new("dx", "zahl", false, "Abstand der Kopien in x (Ost) in mm"),
         new("dy", "zahl", false, "Abstand der Kopien in y (Nord) in mm"),
         new("anzahl", "zahl", false, "Anzahl Kopien (Vorgabe 1)"),
+        new("dz", "zahl", false, "Abstand der Kopien in z (Höhe) in mm (Bearbeitungswerkzeuge B6: Einfügen auf ein anderes Geschoss)"),
+        new("geschoss", "text", false, "Geschoss der Kopien (Kennzeichen oder Id); fehlt es, das der Originale"),
     ];
 
     const int Hoechstens = 1000;
@@ -109,12 +126,14 @@ public sealed class ElementeKopieren : IBefehl
     public void Ausfuehren(Kontext k, JsonObject p)
     {
         var liste = Bearbeitung.MitGeometrie(k, ArchParam.Elemente(k, p));
-        double dx = Param.Zahl(p, "dx") ?? 0, dy = Param.Zahl(p, "dy") ?? 0;
+        double dx = Param.Zahl(p, "dx") ?? 0, dy = Param.Zahl(p, "dy") ?? 0, dz = Param.Zahl(p, "dz") ?? 0;
+        var zielGeschoss = Param.Text(p, "geschoss") is { } gk ? k.Arbeit.Hole(gk) : null;
+        if (zielGeschoss is not null && !k.Katalog.IstArt(zielGeschoss, "Geschoss")) throw new HlksFehler($"{zielGeschoss.Kennzeichen} ist kein Geschoss.", "Ein Geschoss angeben.");
         double anzahlRoh = Param.Zahl(p, "anzahl") ?? 1;
         if (anzahlRoh < 1 || anzahlRoh > Hoechstens || anzahlRoh != Math.Floor(anzahlRoh))
             throw new HlksFehler($"anzahl {anzahlRoh} ist ungültig.", $"Ganze Zahl von 1 bis {Hoechstens} angeben.");
         int anzahl = (int)anzahlRoh;
-        if (dx == 0 && dy == 0) k.Hinweise.Add("dx und dy sind 0: die Kopien liegen auf dem Original.");
+        if (dx == 0 && dy == 0 && dz == 0 && zielGeschoss is null) k.Hinweise.Add("dx und dy sind 0: die Kopien liegen auf dem Original.");
 
         // Türen und Fenster gewählter Wände kommen mit
         var ids = liste.Select(e => e.Id).ToHashSet(StringComparer.Ordinal);
@@ -128,7 +147,7 @@ public sealed class ElementeKopieren : IBefehl
         {
             var abb = ids.ToDictionary(id => id, _ => Guid.NewGuid().ToString(), StringComparer.Ordinal);
             string? Abb(string? id) => id is not null && abb.TryGetValue(id, out var n) ? n : id;
-            double ox = dx * i, oy = dy * i;
+            double ox = dx * i, oy = dy * i, oz = dz * i;
             foreach (var e in liste)
             {
                 var d = k.Katalog.Klassen[e.Klasse];
@@ -138,7 +157,7 @@ public sealed class ElementeKopieren : IBefehl
                 n.Version = 0; n.Paket = null; n.Angelegt = null; n.Geaendert = null;
                 if (n.Geometrie is not null)
                 {
-                    double[] Versatz(double[] q) { var z = Bearbeitung.Z(q); return [z[0] + ox, z[1] + oy, z[2]]; }
+                    double[] Versatz(double[] q) { if (oz == 0 && q.Length < 3) return [q[0] + ox, q[1] + oy]; var z = Bearbeitung.Z(q); return [z[0] + ox, z[1] + oy, z[2] + oz]; }
                     if (Treppenlage.Abbilden(n, Versatz, false) is { } mit)   // N17: Stufenkanten und Podeste einer Treppe wandern mit
                         foreach (var (name, wert) in mit)
                             if (n.Eigenschaften.TryGetValue(name, out var w)) w.Inhalt = wert?.DeepClone();
@@ -146,6 +165,7 @@ public sealed class ElementeKopieren : IBefehl
                 }
                 n.TeilVon = Abb(n.TeilVon); n.System = Abb(n.System); n.Geschoss = Abb(n.Geschoss);
                 bool raumMit = e.Raum is not null && abb.ContainsKey(e.Raum);
+                if (zielGeschoss is not null && n.Geschoss is not null && !abb.ContainsKey(e.Geschoss!)) { n.Geschoss = zielGeschoss.Id; raumMit = false; }
                 n.Raum = Abb(n.Raum);
                 n.Bezuege = n.Bezuege.ToDictionary(b => b.Key, b => Abb(b.Value)!);
                 if (d.BrauchtRaum && !raumMit) { n.Raum = null; Elementpflege.Zuordnen(k, n, d); }
@@ -168,14 +188,15 @@ public sealed class ElementeDrehen : IBefehl
         new("elemente", "liste", true, "Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]"),
         new("mitte", "liste", true, "Drehpunkt [x, y] in mm"),
         new("winkel", "zahl", true, "Drehwinkel in Grad, Gegenuhrzeigersinn"),
+        new("kopieren", "bool", false, "true: eine Kopie drehen, das Original bleibt (Revit «Kopieren»)"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var liste = Bearbeitung.MitGeometrie(k, ArchParam.Elemente(k, p));
         var c = ArchParam.Punkt(p, "mitte") ?? throw new HlksFehler("Parameter «mitte» fehlt.", "Drehpunkt [x, y] in mm angeben.");
         double winkel = Param.Zahl(p, "winkel") ?? throw new HlksFehler("Parameter «winkel» fehlt.", "Drehwinkel in Grad angeben (Gegenuhrzeigersinn).");
         if (Bearbeitung.Norm(winkel) == 0) { k.Hinweise.Add("Drehung 0° – keine Änderung."); return; }
+        var liste = Bearbeitung.ZielElemente(k, p);
         double r = winkel * Math.PI / 180, cos = Math.Cos(r), sin = Math.Sin(r);
         double[] Drehung(double[] q)
         {
@@ -201,13 +222,14 @@ public sealed class ElementeSpiegeln : IBefehl
     [
         new("elemente", "liste", true, "Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]"),
         new("achse", "liste", true, "Spiegelachse [[x1, y1], [x2, y2]] in mm"),
+        new("kopieren", "bool", false, "true: eine Kopie spiegeln, das Original bleibt (Revit «Kopieren»)"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
-        var liste = Bearbeitung.MitGeometrie(k, ArchParam.Elemente(k, p));
         var achse = Param.Punkte(p, "achse");
         if (achse.Count != 2) throw new HlksFehler("Die Spiegelachse braucht genau zwei Punkte.", "achse: [[x1, y1], [x2, y2]] in mm");
+        var liste = Bearbeitung.ZielElemente(k, p);
         double x1 = achse[0][0], y1 = achse[0][1], lx = achse[1][0] - x1, ly = achse[1][1] - y1, l = Math.Sqrt(lx * lx + ly * ly);
         if (l < 1e-6) throw new HlksFehler("Die Punkte der Spiegelachse fallen zusammen.", "Zwei verschiedene Punkte angeben.");
         double ax = lx / l, ay = ly / l, phi = Math.Atan2(ay, ax) * 180 / Math.PI;
