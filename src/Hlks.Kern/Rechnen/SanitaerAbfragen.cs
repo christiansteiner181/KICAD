@@ -365,6 +365,17 @@ public static class SanitaerAbfragen
             var block = new JsonObject { ["netz"] = NetzArt(med), ["medium"] = med, ["richtung"] = trink ? "Apparate stromab" : "Apparate stromauf" };
             foreach (var (key, v) in Summen(s, trink, !trink)) block[key] = v?.DeepClone();
             block["quelle"] = kat.QuelleKurz;
+            // Teil B (03.11.2026): Dimensionierung dieser Leitung, wenn die Normtabellen da sind; Rechenweg im Register
+            try
+            {
+                if (SanitaerDimensionierung.Abfrage(p, new JsonObject { ["leitung"] = e.Id })["leitungen"] is JsonArray { Count: > 0 } dl && dl[0] is JsonObject d)
+                {
+                    var dim = (JsonObject)d.DeepClone();
+                    dim["rechenweg"] = trink ? "sanitaer.trinkwasser_dimensionierung" : "sanitaer.abwasser_dimensionierung";
+                    block["dimensionierung"] = dim;
+                }
+            }
+            catch (HlksFehler) { /* ohne Dimensionierung */ }
             o["sanitaer"] = block;
             var abg = Abg();
             if (trink) { abg["summeLuKw"] = s.SummeLuKw; abg["summeLuWw"] = s.SummeLuWw; abg["groessterLu"] = s.GroessterLu; }

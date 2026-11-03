@@ -103,6 +103,19 @@ export function leitungWerte(abgeleitet) {
 /** Schlüssel von element_lesen.abgeleitet, die die Palette in der Sanitär-Darstellung zeigt (und nicht in der allgemeinen Gruppe «Abgeleitet»). */
 export const SANITAER_ABGELEITET = ['luKw', 'luWw', 'du', 'summeLuKw', 'summeLuWw', 'groessterLu', 'summeDu'];
 
+/**
+ * Dimensionierung einer Leitung (element_lesen.sanitaer.dimensionierung, Modul 4 Teil B) als kurzer Text, z. B.
+ * «Soll DN 100 (Tabelle 22 …) – passt» bzw. «Soll 16x2.25 – zu klein (gezeichnet da 12)»; null ohne Ergebnis.
+ */
+export function dimensionierungText(d) {
+  if (!d) return null;
+  const soll = d.rohrSoll ? d.rohrSoll : d.dnSoll != null ? `DN ${d.dnSoll}` : null;
+  if (!soll) return (d.annahmen ?? [])[0] ?? null;
+  const ist = d.daIst != null ? `da ${d.daIst}` : d.innenIst != null ? `innen ${d.innenIst} mm` : d.dnIst != null ? `DN ${d.dnIst}` : null;
+  const urteil = d.ok === true ? 'passt' : d.ok === false ? `zu klein${ist ? ` (gezeichnet ${ist})` : ''}` : 'nicht verglichen';
+  return `Soll ${soll} – ${urteil}`;
+}
+
 /** Zeile «Apparate» unter den Summen einer Leitung (element_lesen.sanitaer): Anzahl, Richtung, Hinweis bei Masche und Apparaten ohne Wert. */
 export function leitungHinweise(s) {
   if (!s || typeof s !== 'object') return [];

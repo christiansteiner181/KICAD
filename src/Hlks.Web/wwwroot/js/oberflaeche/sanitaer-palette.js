@@ -38,6 +38,14 @@ export function leitungZeilen(l, H) {
     z.push(H.zeile(w.label, H.nurLesen(`${w.text} ${w.einheit}`), { warum: w.schluessel, klasse: `ep-sanwert ep-san-${w.schluessel}`,
       titel: `${w.label} – abgeleitet aus den Apparaten im Netz (nicht gespeichert); das «?» zeigt den Rechenweg und die Beiträge` }));
   }
+  // Teil B: Dimensionierung mit Verweis auf den Rechenweg im Register «Wie wird gerechnet»
+  const dim = l?.sanitaer?.dimensionierung;
+  const dimText = T.dimensionierungText(dim);
+  if (dimText) {
+    const titel = [dim.beleg, ...(dim.annahmen ?? [])].filter(Boolean).join('\n');
+    const link = ` <a href="/rechenweg/#${esc(dim.rechenweg ?? '')}" target="kicad-rechenweg" title="Rechenweg im Register «Wie wird gerechnet»">Wie gerechnet?</a>`;
+    z.push(H.zeile('Dimensionierung', H.nurLesen(dimText) + link, { klasse: `ep-sanwert ep-san-dim${dim.ok === false ? ' ep-sanwarnung' : ''}`, titel }));
+  }
   const hinweise = T.leitungHinweise(l?.sanitaer);
   if (z.length && hinweise.length) z.push(H.zeile('', H.nurLesen(hinweise.join(' · ')), { klasse: `klein ep-sanhinweis${l.sanitaer?.masche ? ' ep-sanwarnung' : ''}` }));
   return z;

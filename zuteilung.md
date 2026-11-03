@@ -450,3 +450,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 03.11.2026 | Register Auslegungen | Einträge kataloge/rechenregister.json aus Code und Kommentaren | hlks-modul (sonnet) | läuft |
 | 03.11.2026 | Modul 4 Teil B | Trinkwasser-Tabellen aus Handbuch Sanitär 2025 (W3-Auszüge) wertgenau mit Befund-Id, nur Scratchpad | hlks-modul (sonnet) | läuft |
 | 03.11.2026 | Modul 4 Teil B | Abwasser-Tabellen aus Handbuch Sanitär 2025 (SN 592000:2024-Auszüge) wertgenau mit Befund-Id, nur Scratchpad | hlks-modul (sonnet) | läuft |
+| 03.11.2026 | Register / Modul 4 B | Auswertung der drei Aufträge (Register 44 Verfahren, Abwasser- und Trinkwasser-Tabellen) | – | Register committet 345dd8a (Stichproben ok); Tabellen im Büroordner %OneDrive%\HLKS-CAD\normtabellen (nicht im Repo), Teil B f149037 |
