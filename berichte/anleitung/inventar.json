@@ -6520,6 +6520,43 @@
           "hinweis": "Ein Kreuz kennt keine Serie."
         },
         {
+          "id": "m3-auswahl",
+          "titel": "Auswahl: Tab, Filter, alle Exemplare, Mehrfach ändern und löschen",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Auswahl",
+            "knopf": "Filter",
+            "kuerzel": "Tab, DE",
+            "sonst": "Kontextregister › Auswahl › Alle Exemplare wählen; Umschalt+Klick"
+          },
+          "schritte": [
+            "Eine Leitung wählen und Tab drücken.",
+            "Ändern › Auswahl › Filter: «Bogen» abwählen, OK.",
+            "In der Palette Dämmdicke 25 eintragen.",
+            "Mit Umschalt+Klick eine Leitung herausnehmen.",
+            "Kontextregister › Alle Exemplare wählen › In der Ansicht.",
+            "Tab und DE: Vorschau lesen, Löschen; Strg+Z."
+          ],
+          "erwartung": "Tab wählt den ganzen Leitungszug; der Filter lässt nur Rohre; die Palette zeigt «n Elemente» und setzt die Dämmdicke bei allen; Umschalt+Klick nimmt heraus; alle Exemplare gleichen Typs im Geschoss werden gewählt; Löschen nimmt alle in einem Schritt weg, Strg+Z bringt alle zurück.",
+          "pruefpunkte": [
+            "Tab: Zug gewählt.",
+            "Filter nach Klasse mit Anzahl.",
+            "Palette: gemeinsame Werte, «verschieden».",
+            "Umschalt+Klick nimmt heraus.",
+            "Alle Exemplare: Ansicht bzw. Projekt.",
+            "Löschen und Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Palette mit 3 gewählten Rohren"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4051 (Auswahl wie Revit (Bearbeitungswerkzeuge B4))"
+          ],
+          "hinweis": "Gemeinsam ändern geht für eine Klasse."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

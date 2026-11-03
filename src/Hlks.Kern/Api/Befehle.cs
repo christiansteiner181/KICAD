@@ -96,6 +96,8 @@ public sealed class Befehlsregister
         r.Hinzufuegen(new Verbinden());
         r.Hinzufuegen(new Trennen());
         r.Hinzufuegen(new LeitungZiehen());
+        r.Hinzufuegen(new ElementeLoeschen());   // Bearbeitungswerkzeuge B4 (Mehrfach.cs)
+        r.Hinzufuegen(new ElementeAendern());
         // Modul 1a: je Bereich eine eigene Datei, damit parallel gebaut werden kann
         ArchitekturBefehle.Registrieren(r);
         PlanBefehle.Registrieren(r);

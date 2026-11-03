@@ -26,7 +26,8 @@ import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
-import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';   // Modul 7 Teil A: Revisionsliste des Planblatts
+import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';
+import { auswahlElemente, beiAuswahlMenge } from '../werkzeuge/auswahl.js';   // Bearbeitungswerkzeuge B4: Palette der Mehrfachauswahl   // Modul 7 Teil A: Revisionsliste des Planblatts
 import { schnittbereichZeilen, startansichtText } from './schnittbereich-palette.js';   // N13: 3D-Schnittbereich und Startansicht der 3D-Ansicht
 import { schnitthoeheZeilen } from './schnitthoehe-palette.js';   // N21: Schnitthöhe nach SIA 400 (gerechnet, schreibgeschützt) und Schalter
 import { ausrichtungZeilen, planwinkelZeilen } from './ausrichtung-palette.js';   // N9: Ausrichtung der Grundrisse (Ansicht) und Planwinkel (Gebäude)
@@ -48,6 +49,7 @@ export function einrichten(w) {
   inhalt = wurzel.querySelector('.ep-inhalt');
 
   inhalt.addEventListener('change', beiAenderung);
+  beiAuswahlMenge(() => { schmutzig = false; planen(); });
   inhalt.addEventListener('input', () => { schmutzig = true; });
   inhalt.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && e.target.matches('input, select')) { e.stopPropagation(); schmutzig = false; zeichnen(); }
@@ -110,6 +112,8 @@ async function zeichnen() {
   reservierungsSig = JSON.stringify(zustand.status?.reservierungen ?? []);
 
   if (familie.name && !zustand.auswahl) { await familieZeigen(mein); return; }
+  const mehr = auswahlElemente();
+  if (mehr.length > 1) { await mehrfachZeigen(mein, mehr); return; }
 
   const istAnsicht = !zustand.auswahl;
   const ziel = istAnsicht ? element(zustand.aktiveAnsicht) : element(zustand.auswahl);
@@ -147,6 +151,33 @@ async function zeichnen() {
   const y = inhalt.scrollTop;
   inhalt.innerHTML = ziel.klasse === 'Familie' ? familienKopfHtml({ f: fam?.f }, HELFER) : palette(ziel, lesen, def, istAnsicht, fam, san, aus, sia);
   inhalt.scrollTop = y;
+}
+
+/** Bearbeitungswerkzeuge B4: Palette der Mehrfachauswahl – Anzahl je Klasse; bei einer Klasse ihre Eigenschaften (gleiche Werte gezeigt,
+ *  verschiedene leer «verschieden»); eine Änderung gilt für alle (elemente_aendern, ein Paket). */
+async function mehrfachZeigen(mein, mehr) {
+  const jeKlasse = new Map();
+  for (const e of mehr) jeKlasse.set(e.klasse, (jeKlasse.get(e.klasse) ?? 0) + 1);
+  const eine = jeKlasse.size === 1 ? mehr[0].klasse : null;
+  const def = eine ? await klassenDefinition(eine).catch(() => null) : null;
+  if (mein !== nr) return;
+  gerade = { mehrfach: true, kz: mehr.map((e) => e.kennzeichen) };
+  let h = `<div class="ep-kopf"><div class="ep-typ"><span class="ep-sym">${symbol(symbolFuerKlasse(eine ?? 'Element'), 16)}</span>`
+    + `<select disabled><option>${mehr.length} Elemente</option></select></div></div>`;
+  h += gruppe('Auswahl', [...jeKlasse].sort((a, b) => b[1] - a[1]).map(([k, n]) => zeile(k, nurLesen(`${n}`))));
+  if (def) {
+    const ez = [];
+    for (const d of def.eigenschaften ?? []) {
+      if (!['zahl', 'text', 'auswahl', 'bool'].includes(d.typ) || d.name === 'familientyp' || d.name === 'parameter') continue;
+      const werte = mehr.map((e) => JSON.stringify(e.werte?.[d.name] ?? null));
+      const gleich = werte.every((w) => w === werte[0]);
+      let feld = eigenschaftsFeld(d, gleich ? mehr[0].werte?.[d.name] : undefined);
+      if (!gleich) feld = feld.replace('<input ', '<input placeholder="verschieden" ');
+      ez.push(zeile(d.name, feld, { titel: [d.beschreibung, gleich ? '' : 'Werte sind verschieden – eine Eingabe gilt für alle'].filter(Boolean).join('\n') }));
+    }
+    h += gruppe('Eigenschaften', ez);
+  } else h += `<div class="ep-leer">Verschiedene Klassen – Eigenschaften gemeinsam ändern geht nur für eine Klasse (Ändern › Auswahl › Filter).</div>`;
+  inhalt.innerHTML = h;
 }
 
 /** Daten der Familie zu einem Element: Familie selbst (Abfrage familie) und bei einem platzierten Element die Anschlusslagen. */
@@ -468,6 +499,17 @@ async function zugAendern(feld, ziel) {
   ergebnisMelden(r, (r.hinweise ?? []).filter(Boolean).slice(0, 2).join(' ') || undefined);
 }
 
+/** B4: Eigenschaft für alle Elemente der Mehrfachauswahl setzen. */
+async function mehrfachAenderung(feld, ziel) {
+  if (!ziel.startsWith('eig:')) return;
+  let wert;
+  try { wert = wertLesen(feld); } catch (err) { if (!err.still) fehlerAnzeigen(feld, err.message); return; }
+  schmutzig = false;
+  const r = await sende('elemente_aendern', { elemente: gerade.kz, eigenschaften: { [ziel.slice(4)]: wert } });
+  if (!r.angenommen) { fehlerAnzeigen(feld, r.fehler || 'Die Änderung wurde abgelehnt.', r.vorschlag); return; }
+  ergebnisMelden(r, (r.hinweise ?? [])[0]);
+}
+
 async function beiAenderung(e) {
   const feld = e.target.closest('[data-ziel]');
   if (!feld || !gerade) return;
@@ -476,6 +518,7 @@ async function beiAenderung(e) {
   zeileEl?.classList.remove('fehlerhaft');
   zeileEl?.querySelector('.ep-fehler')?.remove();
   const ziel = feld.dataset.ziel;
+  if (gerade.mehrfach) { await mehrfachAenderung(feld, ziel); return; }
   if (ziel.startsWith('fam')) { await famAenderung(feld, ziel); return; }
   if (['lt:serie', 'lt:groesse', 'lt:raster', 'lt:b', 'lt:h', 'lt:d'].includes(ziel)) {
     // Leitung (Modul 3, C1): Rückfrage «nur diese Leitung / ganzer Zug», dann leitung_serie bzw. leitung_groesse

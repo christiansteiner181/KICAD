@@ -25,6 +25,7 @@ const S = {
   // Schema-Ansicht (Modul 3, C2): Verbinden, Trennen, Element einfügen, Neu anordnen
   schemaVerbinden: '<rect x="3" y="11" width="9" height="10" rx="1"/><rect x="20" y="11" width="9" height="10" rx="1"/><path d="M12 16h8"/><path d="M16 6v4M14 8h4"/>',
   schemaTrennen: '<rect x="3" y="11" width="9" height="10" rx="1"/><rect x="20" y="11" width="9" height="10" rx="1"/><path d="M12 16h3M17 16h3"/><path d="M13 24l6-16"/>',
+  filter: '<path d="M4 6h24l-9 11v9l-6 3V17z"/>',   // B4
   parallel: '<path d="M4 8h18a4 4 0 0 1 4 4v16"/><path d="M4 14h12a4 4 0 0 1 4 4v10" stroke-dasharray="3 2"/>',   // B2
   ausrichten: '<path d="M4 6h24"/><path d="M8 22h16"/><path d="M16 21v-11M12 14l4-4 4 4"/>',   // B1
   versatz: '<path d="M4 24h24"/><path d="M4 10h24" stroke-dasharray="3 2"/><path d="M16 22v-9M13 16l3-3 3 3"/>',   // B1

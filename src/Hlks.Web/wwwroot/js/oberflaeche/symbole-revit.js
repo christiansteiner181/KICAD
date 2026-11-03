@@ -159,6 +159,7 @@ verschieben | Verschieben | Verschieben | blaues Pfeilkreuz
 drehen | Drehen | Drehen | Kreispfeil um Drehpunkt
 spiegeln | Spiegeln | Spiegeln | Spiegelachse mit zwei Dreiecken
 teilen | Teilen | Element teilen | Leitung mit rotem Schnitt
+filter | Filter | Filter | Trichter
 parallel | Parallele Leitungen | Parallele Rohre | Leitungszug mit gestrichelter Parallele
 ausrichten | Ausrichten | Ausrichten | Linie, die an eine Bezugslinie rückt
 versatz | Versatz | Versatz | Linie und parallele Kopie mit Pfeil
@@ -628,6 +629,9 @@ s('drehen',
 s('spiegeln',
   '<path class="sb dd w15" d="M16 3v26"/><path class="f2" d="M13 8L4.5 24H13z"/><path class="fl dd" d="M19 8l8.5 16H19z"/>',
   '<path class="sb dd" d="M8 1v14"/><path class="f2" d="M6.5 4L2 12h4.5z"/><path class="fl dd" d="M9.5 4L14 12H9.5z"/>');
+s('filter',   // Bearbeitungswerkzeuge B4
+  '<path class="fb" d="M3 5h26l-10 12v9l-6 3V17z"/>',
+  '<path class="fb" d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z"/>');
 s('parallel',   // Bearbeitungswerkzeuge B2
   '<path class="svl w3" d="M3 7h18a5 5 0 0 1 5 5v17"/><path class="svl w2 dd" d="M3 14h12a4 4 0 0 1 4 4v11"/>',
   '<path class="svl w15" d="M1 3.5h9a3 3 0 0 1 3 3V15"/><path class="svl dd" d="M1 7.5h5.5a2 2 0 0 1 2 2V15"/>');

@@ -6,6 +6,7 @@
 // an zustand.js/Ansichten; die Hervorhebung der weiteren Mitglieder zeichnet griffe.js in die Werkzeugschicht.
 
 import { zustand, element, abonnieren, auswaehlen } from '../zustand.js';
+import { abfrage } from '../api.js';
 
 const menge = new Set();          // Ids
 let strgBis = 0;                  // Zeitpunkt, bis zu dem ein Strg+Klick als Ursache der nächsten Auswahländerung gilt
@@ -15,8 +16,11 @@ const jetzt = () => (typeof performance !== 'undefined' ? performance.now() : Da
 
 /** Merkt, dass der nächste Auswahlwechsel durch einen Strg+Klick entsteht (gilt kurz). */
 export function strgMerken(ms = 600) { strgBis = jetzt() + ms; }
+let shiftBis = 0;                 // Bearbeitungswerkzeuge B4: Umschalt+Klick nimmt das Element aus der Auswahl
+let bisher = [];                  // Auswahl vor dem letzten Wechsel (Ids)
+export function shiftMerken(ms = 600) { shiftBis = jetzt() + ms; }
 export const beiAuswahlMenge = (fn) => { hoerer.add(fn); return () => hoerer.delete(fn); };
-const ruf = () => { for (const fn of hoerer) { try { fn(); } catch (e) { console.error(e); } } };
+const ruf = () => { bisher = menge.size ? [...menge] : (zustand.auswahl ? [zustand.auswahl] : []); for (const fn of hoerer) { try { fn(); } catch (e) { console.error(e); } } };
 
 /** Alle gewählten Elemente (Darstellungsobjekte), zuletzt gewähltes zuletzt. Fällt auf die Einfachauswahl zurück. */
 export function auswahlElemente() {
@@ -30,6 +34,24 @@ export const auswahlKennzeichen = () => auswahlElemente().map((e) => e.kennzeich
 export const hatAuswahl = () => auswahlElemente().length > 0;
 export const istMehrfach = () => auswahlElemente().length > 1;
 export function leeren() { menge.clear(); ruf(); }
+
+/** Bearbeitungswerkzeuge B4 (Tab): den Leitungszug des Elements wählen (Abfrage leitungszug); an einem Formteil der Zug einer angeschlossenen
+ *  Leitung. Gibt die Anzahl der gewählten Glieder zurück (0 = kein Zug). */
+export async function zugWaehlen(el) {
+  if (!el) return 0;
+  let leitung = ['Rohr', 'Kanal'].includes(el.klasse) ? el.kennzeichen : null;
+  if (!leitung) {
+    for (const v of zustand.verbindungen ?? []) {
+      const gegen = v.von === el.kennzeichen ? v.nach : v.nach === el.kennzeichen ? v.von : null;
+      if (gegen && ['Rohr', 'Kanal'].includes(element(gegen)?.klasse)) { leitung = gegen; break; }
+    }
+  }
+  if (!leitung) return 0;
+  const z = await abfrage('leitungszug', { leitung }).catch(() => null);
+  const ids = (z?.glieder ?? []).map((g) => element(g.element ?? g.kennzeichen)?.id).filter(Boolean);
+  if (ids.length) mengeSetzen(ids);
+  return ids.length;
+}
 
 let uebernahme = null;   // Ids des Auswahlfensters für den nächsten Auswahlwechsel
 
@@ -46,6 +68,12 @@ export function mengeSetzen(ids, hinzu = false) {
 abonnieren('auswahl', (id) => {
   if (uebernahme && id) { menge.clear(); for (const x of uebernahme) menge.add(x); uebernahme = null; ruf(); return; }
   uebernahme = null;
+  if (id && jetzt() < shiftBis) {
+    shiftBis = 0;
+    const rest = bisher.filter((x) => x !== id);
+    setTimeout(() => (rest.length ? mengeSetzen(rest) : auswaehlen(null)), 0);
+    return;
+  }
   if (!id) menge.clear();
   else if (jetzt() < strgBis) {
     strgBis = 0;

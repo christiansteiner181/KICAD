@@ -144,7 +144,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **B1 gebaut 03.11.2026** (Spezifikation unten): `ausrichten`, `versetzen` (Kern, MCP, KI-Einordnung), Werkzeuge AL und OF.
 - **B2 gebaut 03.11.2026** (Spezifikation unten): `parallele_leitungen` (Kern, MCP, KI-Einordnung), Werkzeug Gebäudetechnik › Leitungen › Parallele Leitungen.
 - **B3 gebaut 03.11.2026** (Spezifikation unten; geändert beim Bau: Plus lässt den Durchgang offen statt eines Stummels – sonst ist ein Stummel von anderen freien Leitungsenden nicht zu unterscheiden; Minus nimmt den offenen Anschluss): `bogen_zu_tstueck`, `tstueck_zu_bogen` (Kern, MCP, KI-Einordnung), Kontextregister und Rechtsklick.
-- **Nächstes: B4** Auswahl (Tab, Auswahlfilter, alle Exemplare, Mehrfachauswahl löschen/Palette).
+- **B4 gebaut 03.11.2026** (Spezifikation unten): Tab, Umschalt+Klick, Filter, alle Exemplare, `elemente_loeschen`, `elemente_aendern` (Kern, MCP, KI-Einordnung), Palette der Mehrfachauswahl.
+- **Nächstes: B5** temporäre Masse am gewählten Element, Fang-Kürzel und Fangarten.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -249,3 +250,17 @@ Kernbefehle (ein Paket), wie Revit Plus/Minus am Formteil:
 Annahmen: Stummellänge 3 × Aussendurchmesser, mindestens 300 mm; ein Kreuz kennt keine Serie (kein Plus am T-Stück).
 
 Oberfläche: Kontextregister eines Bogens «Zu T-Stück (+)», eines T-Stücks «Abzweig entfernen (−)»; dieselben Einträge im Rechtsklick.
+
+## B4 – Auswahl (Spezifikation, 03.11.2026)
+
+- **Tab** (Grundriss, ein Element gewählt): wählt den ganzen Leitungszug (Geraden, Bögen, Reduktionen bis zum nächsten T-Stück, Gerät oder
+  offenen Ende; Abfrage leitungszug). Ist ein Formteil gewählt, gilt der Zug der angeschlossenen Leitung.
+- **Umschalt+Klick** nimmt ein Element aus der Mehrfachauswahl (Strg+Klick ergänzt bzw. nimmt wie bisher).
+- **Auswahlfilter** (Ändern › Auswahl › Filter, bei Mehrfachauswahl): Dialog mit den Klassen der Auswahl und ihrer Anzahl, abwählbar.
+- **Alle Exemplare wählen** (Kontextregister › Auswahl): gleiche Klasse, gleiche Familie bzw. Serie und gleicher Typ – «in der Ansicht»
+  (gleiches Geschoss) oder «im Projekt».
+- **Löschen** bei Mehrfachauswahl: Kernbefehl **`elemente_loeschen`** { elemente } – ein Paket, Vorschau im Trockenlauf; Verweise zwischen
+  den gewählten Elementen sind erlaubt (die Reihenfolge ergibt der Kern).
+- **Eigenschaftenpalette** bei Mehrfachauswahl: Kopf «n Elemente» mit Anzahl je Klasse; sind alle von einer Klasse, ihre Eigenschaften
+  (gleiche Werte gezeigt, verschiedene leer «verschieden»); eine Änderung gilt für alle – Kernbefehl **`elemente_aendern`** { elemente,
+  eigenschaften } (ein Paket).

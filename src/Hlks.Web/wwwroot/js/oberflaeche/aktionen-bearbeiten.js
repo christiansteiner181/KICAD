@@ -9,6 +9,7 @@ import { zeigen, meldung, eingabe, warumDialog } from './dialoge.js';
 import { sende, ergebnisMelden, aenderungenHtml, befundeHtml } from './befehle.js';
 import { esc, knoten, elementText, vergleichen } from './werkzeug.js';
 import { umschalten, sichtbar } from './paletten.js';
+import { istMehrfach, auswahlKennzeichen } from '../werkzeuge/auswahl.js';
 
 const gewaehlt = () => element(zustand.auswahl);
 const ZIEL = (p) => element(p?.element ?? zustand.auswahl);
@@ -31,10 +32,14 @@ registrieren({
 async function loeschen(p) {
   const el = ZIEL(p);
   if (!el) return;
-  const kz = el.kennzeichen;
+  // Bearbeitungswerkzeuge B4: Mehrfachauswahl in einem Paket (elemente_loeschen)
+  const mehr = !p?.element && istMehrfach() ? auswahlKennzeichen() : null;
+  const kz = mehr ? `${mehr.length} Elemente` : el.kennzeichen;
+  const befehl = mehr ? 'elemente_loeschen' : 'element_loeschen';
+  const par = mehr ? { elemente: mehr } : { element: kz };
   modusSetzen('loeschen', { kennzeichen: kz });
   try {
-    const vor = await sende('element_loeschen', { element: kz }, { trockenlauf: true });
+    const vor = await sende(befehl, par, { trockenlauf: true });
     if (!vor.angenommen) {
       meldung(`Löschen von ${kz} abgelehnt: ${vor.fehler || vor.meldung}`, 'warnung', { vorschlag: vor.vorschlag });
       return;
@@ -42,7 +47,7 @@ async function loeschen(p) {
     const neu = vor.neueBefunde ?? [];
     const schlimm = neu.filter((b) => b.schwere === 'fehler' || b.schwere === 'warnung').length;
     const w = knoten(`<div class="loeschen">
-      <p class="dlg-text">«${esc(elementText(el))}» wird gelöscht. Das sind die Folgen (Vorschau, noch nichts geändert):</p>
+      <p class="dlg-text">«${esc(mehr ? `${kz}: ${mehr.slice(0, 12).join(', ')}${mehr.length > 12 ? ' …' : ''}` : elementText(el))}» wird gelöscht. Das sind die Folgen (Vorschau, noch nichts geändert):</p>
       <h4>Änderungen (${(vor.aenderungen ?? []).length})</h4>${aenderungenHtml(vor.aenderungen)}
       <h4>Neue Prüfbefunde (${neu.length})${schlimm ? ` <span class="warnung">davon ${schlimm} Warnungen/Fehler</span>` : ''}</h4>${befundeHtml(neu)}
       ${(vor.behobeneBefunde ?? []).length ? `<h4>Behobene Prüfbefunde (${vor.behobeneBefunde.length})</h4>${befundeHtml(vor.behobeneBefunde)}` : ''}
@@ -54,7 +59,7 @@ async function loeschen(p) {
       knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'Löschen', wert: true, primaer: true, gefahr: true }],
     });
     if (ok !== true) return;
-    const r = await sende('element_loeschen', { element: kz });
+    const r = await sende(befehl, par);
     ergebnisMelden(r, `${kz} gelöscht.`);
   } finally { modusSetzen('aendern'); }
 }

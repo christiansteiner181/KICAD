@@ -217,6 +217,19 @@ public sealed partial class Werkzeuge(Projekt projekt)
             ("geschoss", geschoss), ("raum", raum), ("system", system), ("eigenschaften", eigenschaften), ("geometrie", geometrie),
             ("anschluesse", anschluesse), ("bezuege", bezuege)), trockenlauf);
 
+    [McpServerTool(Name = "elemente_loeschen"), Description(Hlks.Kern.ElementeLoeschen.Text)]   // Bearbeitungswerkzeuge B4
+    public string ElementeLoeschenWerkzeug(
+        [Description("Kennzeichen oder Ids, z. B. [\"RO-1\", \"BO-1\"]")] JsonElement elemente,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("elemente_loeschen", Parameter(("elemente", elemente)), trockenlauf);
+
+    [McpServerTool(Name = "elemente_aendern"), Description(Hlks.Kern.ElementeAendern.Text)]   // Bearbeitungswerkzeuge B4
+    public string ElementeAendernWerkzeug(
+        [Description("Kennzeichen oder Ids")] JsonElement elemente,
+        [Description("{ name: wert | { wert, einheit, quelle } | null }")] JsonElement eigenschaften,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("elemente_aendern", Parameter(("elemente", elemente), ("eigenschaften", eigenschaften)), trockenlauf);
+
     [McpServerTool(Name = "element_aendern"), Description("Ändert ein Element: Kennzeichen, Name, Zuordnung, Eigenschaften (null entfernt), Geometrie, Bezüge.")]
     public string ElementAendern(
         [Description("Kennzeichen oder Id")] string element,

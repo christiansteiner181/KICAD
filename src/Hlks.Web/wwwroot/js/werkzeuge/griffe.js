@@ -22,7 +22,7 @@ import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon } from './basi
 import { fangen, abstand, FANGRADIUS_PX } from './fangen.js';
 import { griffPunkte, griffGeometrie, griffAnschliessen, tuerUmdrehen, verschiebenParameter, pfeilParameter } from './parameter.js';
 import { rasterWert } from './optionen.js';
-import { auswahlElemente, strgMerken, beiAuswahlMenge } from './auswahl.js';
+import { auswahlElemente, strgMerken, shiftMerken, beiAuswahlMenge, zugWaehlen } from './auswahl.js';
 import * as S from './schicht.js';
 import { neueBefundeTexte, istLeitungsklasse, anschluesseNahe, anschlussFangpunkte, anschlussText, anschlussFrei } from './leitung-logik.js';
 import { alleAnschluesse, anschluesseLaden, elementeNahe } from './leitung-daten.js';
@@ -178,7 +178,7 @@ class Griffe {
       case 'pointerup': return this.los(e);
       case 'keydown':
         if (e.key === 'Escape' && this.ziehen) { this.ziehen = null; this.zeichnen(); return true; }
-        return this.pfeil(e);
+        return this.pfeil(e) || this.tab(e);
       default: return false;
     }
   }
@@ -188,7 +188,7 @@ class Griffe {
     const maus = this.ansicht.zuModell?.(e.clientX, e.clientY);
     if (!maus) return false;
     const g = this.griffAn(maus);
-    if (!g) { if (e.ctrlKey || e.metaKey) strgMerken(); return false; }
+    if (!g) { if (e.ctrlKey || e.metaKey) strgMerken(); else if (e.shiftKey) shiftMerken(); return false; }
     if (g.art === 'tuer') {
       sende('element_aendern', tuerUmdrehen(g.el, g.was)).then((r) => ergebnisMelden(r, `${g.el.kennzeichen}: ${g.was === 'seite' ? 'Aufschlag' : 'Bandseite'} umgedreht.`));
       return true;
@@ -251,6 +251,15 @@ class Griffe {
         if (b.length) meldung(b.join(' · '), 'warnung');
       }
     });
+    return true;
+  }
+
+  /** B4: Tab wählt den Leitungszug des gewählten Elements. */
+  tab(e) {
+    if (e.key !== 'Tab' || this.ziehen || e.shiftKey || e.ctrlKey || e.altKey) return false;
+    const alle = auswahlElemente();
+    if (alle.length !== 1) return false;
+    zugWaehlen(alle[0]).then((n) => { if (!n) meldung('Hier gibt es keinen Leitungszug (Tab wählt Leitungen samt Bögen).', 'info'); });
     return true;
   }
 

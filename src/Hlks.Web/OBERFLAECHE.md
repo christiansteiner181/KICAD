@@ -4047,3 +4047,19 @@ Kernbefehle `bogen_zu_tstueck` und `tstueck_zu_bogen` (`src/Hlks.Kern/Leitungen/
   mit `anschluss`, dann entfällt eine Leitung mit freiem Ende daran mit).
 - Formteiltyp wählen: wie bisher in der Eigenschaftenpalette (Typ der Familie).
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~FormteilTauschenTests"`.
+
+## Auswahl wie Revit (Bearbeitungswerkzeuge B4, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `elemente_loeschen` und `elemente_aendern` (`src/Hlks.Kern/Api/Mehrfach.cs`, MCP gleich, je ein Paket). Oberfläche:
+`js/werkzeuge/auswahl.js` (Umschalt+Klick, `zugWaehlen`), `js/werkzeuge/griffe.js` (Tab), `js/oberflaeche/aktionen-auswahl.js` (Filter, alle Exemplare),
+`aktionen-bearbeiten.js` (Löschen), `eigenschaften.js` (Palette der Mehrfachauswahl).
+
+- **Tab** (Grundriss, ein Element gewählt): wählt den Leitungszug (Abfrage leitungszug); an einem Formteil den Zug der angeschlossenen Leitung.
+- **Umschalt+Klick** nimmt ein Element aus der Mehrfachauswahl; Strg+Klick ergänzt bzw. nimmt wie bisher.
+- **Ändern › Auswahl › Filter** (Mehrfachauswahl): Klassen der Auswahl mit Anzahl, abwählbar.
+- **Kontextregister › Auswahl › Alle Exemplare wählen**: gleiche Klasse, Familie bzw. Serie und Typ – «In der Ansicht» (Geschoss der aktiven
+  Ansicht) oder «Im Projekt».
+- **Löschen (DE)** bei Mehrfachauswahl: Vorschau aller Folgen, dann ein Paket (`elemente_loeschen`; Verweise innerhalb der Auswahl erlaubt).
+- **Eigenschaftenpalette** bei Mehrfachauswahl: «n Elemente», Anzahl je Klasse; bei einer Klasse ihre Eigenschaften (gleiche Werte gezeigt,
+  verschiedene leer «verschieden»), eine Eingabe gilt für alle (`elemente_aendern`).
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~Hlks.Kern.Tests.MehrfachTests"`.
