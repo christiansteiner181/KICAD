@@ -2,11 +2,12 @@
   "format": "Zentrales Verzeichnis der Grundlagen von KICAD: je Grundlage id, art, kuerzel, ausgabe, titel (nur aus der Quelle gelesen, sonst leer), gebiete, ablage (Datei), vorliegend (original | auszug | online | fehlt | –), werte (wohin übertragen), hinweis. Die Verfahren in rechenregister.json verweisen mit «grundlagen» auf die ids; «verwendet in» rechnet KICAD daraus.",
   "stand": "03.11.2026",
   "grundsatz": {
+    "prinzip": "Grundlage ist immer die Physik. Eine Norm ist die anerkannte Regel der Technik: wer nach ihr rechnet, muss die Richtigkeit nicht beweisen – sie kehrt die Beweislast um. Wer abweicht, belegt das Ergebnis physikalisch (Nachweis mit Grundgleichung und belegten Stoffwerten). Fehlt eine normative Regelung, gilt die Physik.",
     "rangfolge": [
-      "Norm, Richtlinie bzw. Vorschrift in der geltenden Ausgabe (Ziffer, Tabelle, Seite).",
+      "Norm, Richtlinie bzw. Vorschrift in der geltenden Ausgabe (Ziffer, Tabelle, Seite) – Vorgabe, weil sie die Beweislast umkehrt.",
       "Herstellerunterlage für das eigene Produkt (Datenblatt, Katalog, Zertifikat).",
       "Bürovorgabe bzw. Entscheid von Christian Steiner (mit Datum).",
-      "Physik: Fehlt eine normative Regelung, gilt die Physik – Grundgleichung (Erhaltungssätze, Wärmeleitung, Strömung) mit Stoffwerten aus belegter Quelle."
+      "Physik: wo keine Norm regelt, und als Nachweis jeder Abweichung von der Norm – Grundgleichung (Erhaltungssätze, Wärmeleitung, Strömung) mit Stoffwerten aus belegter Quelle."
     ],
     "regeln": [
       "Kein Wert aus dem Gedächtnis: jede Zahl trägt ihre Fundstelle; fehlt sie, gilt der Wert als fehlend und KICAD nennt es.",
@@ -14,7 +15,7 @@
       "Ein Lehrmittelauszug ersetzt die Norm nicht: Status «auszug», Gegenprüfung am Original offen.",
       "Was KICAD selbst festlegt (Toleranzen, Zählregeln), steht als «Annahme des Hauptlaufs» und bleibt offen, bis Christian entscheidet."
     ],
-    "quelle": "Christian Steiner, 03.11.2026: «mache doch ein zentrales normenverzeichniss. dass die grundlagen klar sind. fehlt eine normelle regulierung gilt die phisik.»"
+    "quelle": "Christian Steiner, 03.11.2026: «mache doch ein zentrales normenverzeichniss. dass die grundlagen klar sind. fehlt eine normelle regulierung gilt die phisik.» und «letzt endlich [beruht alles] auf physik... nach norm ist nur die beweislast umgedreht.»"
   },
   "grundlagen": [
     {

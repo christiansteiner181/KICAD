@@ -35,6 +35,7 @@ public static class RechenwegSeite
         sb.Append("<section id=\"grundlagen\"><h2>Grundlagen</h2>");
         if (inhalt["grundsatz"] is JsonObject gs)
         {
+            if (T(gs["prinzip"]) is { } pr) sb.Append("<p><b>").Append(E(pr)).Append("</b></p>");
             sb.Append("<p><b>Rangfolge:</b></p><ol>");
             foreach (var r in L(gs["rangfolge"])) sb.Append("<li>").Append(E(r)).Append("</li>");
             sb.Append("</ol><ul class=\"leise\">");
