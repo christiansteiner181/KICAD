@@ -4063,3 +4063,17 @@ Kernbefehle `elemente_loeschen` und `elemente_aendern` (`src/Hlks.Kern/Api/Mehrf
 - **Eigenschaftenpalette** bei Mehrfachauswahl: «n Elemente», Anzahl je Klasse; bei einer Klasse ihre Eigenschaften (gleiche Werte gezeigt,
   verschiedene leer «verschieden»), eine Eingabe gilt für alle (`elemente_aendern`).
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~Hlks.Kern.Tests.MehrfachTests"`.
+
+## Temporäre Masse und Fangen (Bearbeitungswerkzeuge B5, `entwurf/bearbeitungswerkzeuge.md`)
+
+Reine Logik in `js/werkzeuge/tempmass.js` und `js/werkzeuge/fangwahl.js` (in Node getestet); Anzeige in `griffe.js`, Kürzel und Dialog in
+`js/oberflaeche/aktionen-fangen.js`; Fangen in `basis.js` und `griffe.js` über `fangArten()`.
+
+- **Temporäre Masse:** An einer gewählten Geraden (Leitung, Wand, Achse, Detaillinie) erscheint je Seite der Abstand zur nächsten parallelen
+  Geraden, die sich mit ihr überdeckt (Leitungsachse, Achse, bei Wänden die Fläche; bis 20 m). Klick auf die Zahl öffnet «Abstand …»; der neue
+  Wert verschiebt die Gerade rechtwinklig (`elemente_verschieben`, Leitungen werden nachgeführt).
+- **Fang-Kürzel** (einmal, für den nächsten Punkt bzw. Griff): SE Endpunkt, SM Mitte, SI Schnittpunkt, SP Lot, SN Nächster, SR Raster, SO kein
+  Fang. Die Statusleiste nennt die Überschreibung. Anschlüsse werden ausser bei SO immer gefangen.
+- **Verwalten › Modell › Fangen …:** Fangarten an/aus, je Benutzer gemerkt (Browser).
+- **Befund beim Bau:** Direkt verbundene Geraden (ohne Formteil) folgen jetzt einer verschobenen Geraden wie an einem Formteil (A1).
+- **Tests:** `node --test --test-name-pattern "Fangwahl|Temporäre Masse" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.

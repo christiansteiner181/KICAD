@@ -5,7 +5,8 @@
 // Bearbeitungswerkzeuge A1 (entwurf/bearbeitungswerkzeuge.md, Entscheide Christian 03.11.2026) – das Netz bleibt beim Verschieben ganz:
 //   - Formteile folgen der Leitung: Bewegt sich ein Ende einer Leitung ohne Richtungsänderung (Verschieben, Dehnen entlang der Achse),
 //     wandert das dort angeschlossene Formteil bzw. die Armatur (Rolle «leitung», mit Familie) um dieselbe Strecke mit, sofern es noch an
-//     der alten Stelle sass; direkt aneinander hängende Formteile folgen einander ebenso. Geräte folgen nicht.
+//     der alten Stelle sass; direkt aneinander hängende Formteile folgen einander ebenso. Hängt dort direkt eine andere Gerade (ohne Formteil),
+//     folgt ihr Ende wie an einem Formteil (Befund B5, 03.11.2026). Geräte folgen nicht.
 //   - Ändert eine nachgeführte Gerade ihre Richtung um mehr als Routing.WinkelToleranz: anderes Ende frei → die ganze Gerade verschiebt
 //     sich mit; anderes Ende verbunden und Gerade mit Serie → Versatz mit zwei Bögen der Serie (Routing, wie leitung_aufteilen); sonst
 //     (Altbestand ohne Serie) wie bisher drehen mit Hinweis (P13/P15 melden die Abweichung).
@@ -67,8 +68,12 @@ public sealed class LeitungenNachfuehren : INachfuehrung
             var d = V3.Aus(neu[i]) - V3.Aus(alt[i]);
             if (d.Laenge <= Gleich) continue;
             if (Winkel(V3.Aus(alt[i]) - V3.Aus(alt[j]), V3.Aus(neu[i]) - V3.Aus(neu[j])) > Routing.WinkelToleranz) continue;   // gedreht: folgt nicht
-            if (m.VerbindungAn(l.Id, an)?.Gegenueber(l.Id, an) is not { } g || m.Finde(g.Element) is not { } f || !Mitlaufend(m, kat, f)) continue;
-            Mitnehmen(k, f, g.Anschluss, alt[i], d, l.Kennzeichen);
+            if (m.VerbindungAn(l.Id, an)?.Gegenueber(l.Id, an) is not { } g || m.Finde(g.Element) is not { } f) continue;
+            if (Mitlaufend(m, kat, f)) { Mitnehmen(k, f, g.Anschluss, alt[i], d, l.Kennzeichen); continue; }
+            // B5-Befund: eine direkt angeschlossene Gerade (ohne Formteil) folgt dem Ende wie an einem Formteil (dehnen, ganz folgen, Versatz)
+            if (kat.IstArt(f, "Leitung") && Anschlusslagen.Stelle(m, kat, f, g.Anschluss) is { HatLage: true } sf && Geometrie.Abstand(sf.Lage!, alt[i]) <= Anschlusslagen.AbstandMax
+                && Anschlusslagen.Stelle(m, kat, l, an) is { HatLage: true } st)
+                Folgen(k, f, g.Anschluss, l, st, true);
         }
     }
 

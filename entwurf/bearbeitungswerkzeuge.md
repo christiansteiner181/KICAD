@@ -145,7 +145,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **B2 gebaut 03.11.2026** (Spezifikation unten): `parallele_leitungen` (Kern, MCP, KI-Einordnung), Werkzeug Gebäudetechnik › Leitungen › Parallele Leitungen.
 - **B3 gebaut 03.11.2026** (Spezifikation unten; geändert beim Bau: Plus lässt den Durchgang offen statt eines Stummels – sonst ist ein Stummel von anderen freien Leitungsenden nicht zu unterscheiden; Minus nimmt den offenen Anschluss): `bogen_zu_tstueck`, `tstueck_zu_bogen` (Kern, MCP, KI-Einordnung), Kontextregister und Rechtsklick.
 - **B4 gebaut 03.11.2026** (Spezifikation unten): Tab, Umschalt+Klick, Filter, alle Exemplare, `elemente_loeschen`, `elemente_aendern` (Kern, MCP, KI-Einordnung), Palette der Mehrfachauswahl.
-- **Nächstes: B5** temporäre Masse am gewählten Element, Fang-Kürzel und Fangarten.
+- **B5 gebaut 03.11.2026:** temporäre Masse am gewählten Element (Zahl anklicken verschiebt), Fang-Kürzel SE/SM/SI/SP/SN/SR/SO (einmal), Verwalten › Modell › Fangen … (Fangarten je Benutzer). Befund: direkt verbundene Geraden folgen jetzt (A1 ergänzt).
+- **Nächstes: B6** Kleinigkeiten (Enter = letzter Befehl, Kopieren «Mehrfach», Drehen/Spiegeln «Kopieren», Spiegeln «Achse wählen», Leertaste beim Platzieren, Strg+C/Strg+V).
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 

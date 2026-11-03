@@ -6557,6 +6557,40 @@
           "hinweis": "Gemeinsam ändern geht für eine Klasse."
         },
         {
+          "id": "m3-temp-masse-fangen",
+          "titel": "Temporäre Masse und Fangen",
+          "wo": {
+            "register": "Verwalten",
+            "gruppe": "Modell",
+            "knopf": "Fangen …",
+            "kuerzel": "SE, SM, SI, SP, SN, SR, SO",
+            "sonst": "gewählte Gerade im Grundriss"
+          },
+          "schritte": [
+            "Eine Leitung neben einer Wand wählen: die Abstände erscheinen.",
+            "Auf die Zahl klicken, 300 eingeben, OK.",
+            "Rohr zeichnen (PI), vor einem Klick SM tippen.",
+            "Verwalten › Modell › Fangen …: Raster ausschalten, OK.",
+            "Strg+Z."
+          ],
+          "erwartung": "Die Leitung steht danach 300 mm von der Wandfläche; mit SM fängt der nächste Punkt nur die Mitte; ohne Raster fängt KICAD kein Raster mehr.",
+          "pruefpunkte": [
+            "Masse zu beiden Seiten.",
+            "Zahl anklicken verschiebt.",
+            "Kürzel gilt einmal (Statusleiste).",
+            "Fangeinstellungen bleiben gemerkt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Gewählte Leitung mit temporären Massen"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4067 (Temporäre Masse und Fangen (Bearbeitungswerkzeuge B5))"
+          ],
+          "hinweis": ""
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

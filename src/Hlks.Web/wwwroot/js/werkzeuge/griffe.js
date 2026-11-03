@@ -15,7 +15,7 @@
 // Fangen, Umschalt = orthogonal); Pfeiltasten verschieben die Auswahl um den Rasterwert in den Achsen der Ansicht. Formteile und Nachbarleitungen
 // führt der Kern nach (Dehnen bzw. Versatz).
 
-import { element, abonnieren } from '../zustand.js';
+import { element, abonnieren, alleElemente } from '../zustand.js';
 import { sende, ergebnisMelden } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon } from './basis.js';
@@ -26,6 +26,13 @@ import { auswahlElemente, strgMerken, shiftMerken, beiAuswahlMenge, zugWaehlen }
 import * as S from './schicht.js';
 import { neueBefundeTexte, istLeitungsklasse, anschluesseNahe, anschlussFangpunkte, anschlussText, anschlussFrei } from './leitung-logik.js';
 import { alleAnschluesse, anschluesseLaden, elementeNahe } from './leitung-daten.js';
+import { fangArten, einmalVerbraucht } from './fangwahl.js';
+import { tempMasse, massVerschiebung } from './tempmass.js';
+import { eingabe } from '../oberflaeche/dialoge.js';
+
+// B5: temporäre Masse des gewählten Elements, neu gerechnet bei jeder Modelländerung
+let modellStand = 0;
+const masseCache = { id: null, stand: -1, liste: [] };
 
 const ANSCHLUSS_PX = 60;     // Suchradius für Anschlüsse beim Ziehen eines Leitungsendes (wie Leitungswerkzeug)
 
@@ -70,6 +77,7 @@ class Griffe {
       const pts = griffPunkte(el.geometrie);
       const aus = pts.map((p, i) => ({ art: 'punkt', el, index: i, p }));
       if (istLeitungsklasse(el.klasse) && pts.length === 2) aus.push({ art: 'mitte', el, p: [(pts[0][0] + pts[1][0]) / 2, (pts[0][1] + pts[1][1]) / 2] });   // A1
+      for (const m of this.masse(el)) aus.push({ art: 'mass', el, mass: m, p: [(m.von[0] + m.bis[0]) / 2, (m.von[1] + m.bis[1]) / 2] });   // B5
       return aus;
     }
     if (el.klasse === 'Tuer') {
@@ -87,6 +95,15 @@ class Griffe {
       ];
     }
     return [];
+  }
+
+  /** B5: temporäre Masse zu den nächsten parallelen Geraden der Ansicht (zwischengespeichert bis zur nächsten Modelländerung). */
+  masse(el) {
+    if (masseCache.id !== el.id || masseCache.stand !== modellStand) {
+      const kand = alleElemente().filter((e) => e.id !== el.id && e.geometrie && this.gehoert(e));
+      masseCache.id = el.id; masseCache.stand = modellStand; masseCache.liste = tempMasse(el, kand);
+    }
+    return masseCache.liste;
   }
 
   griffAn(maus) {
@@ -114,7 +131,11 @@ class Griffe {
       const alle = auswahlElemente();
       if (alle.length > 1) h += S.umrisseSvg(alle, (p) => p, s, 'wz-auswahl');
       if (this.ziehen) h += this.zeichneZiehen(s);
-      else for (const g of this.griffe()) h += g.art === 'tuer' ? S.doppelpfeil(g.p, g.d, s) : S.griff(g.p, s, g.art === 'mitte' ? 'wz-griff wz-griff-mitte' : 'wz-griff', GRIFF_PX);
+      else for (const g of this.griffe()) {
+        if (g.art === 'tuer') h += S.doppelpfeil(g.p, g.d, s);
+        else if (g.art === 'mass') h += S.linie(g.mass.von, g.mass.bis, 'wz-mass') + S.text(g.p, `${g.mass.abstand}`, s, { anker: 'middle', versatzPx: [0, -4], klasse: 'wz-text wz-masstext wz-mass-klick' });
+        else h += S.griff(g.p, s, g.art === 'mitte' ? 'wz-griff wz-griff-mitte' : 'wz-griff', GRIFF_PX);
+      }
     } finally { S.drehungSetzen(0); }   // andere Nutzer der Schicht-Bausteine zeichnen ungedreht
     sch.innerHTML = h;
   }
@@ -167,7 +188,7 @@ class Griffe {
       extraPunkte = anschlussFangpunkte(this.anschluesseNahe(z, ANSCHLUSS_PX));
     }
     return fangen({ punkt: maus, daten: gefiltert, radius: FANGRADIUS_PX * this.s(), letzter: z.anker, raster: rasterWert(), ortho: !!e.shiftKey,
-      extraPunkte, drehung: this.ansicht.drehung ?? 0 });   // N9: Orthogonal und Raster in den Achsen der Ansicht
+      extraPunkte, arten: fangArten(), drehung: this.ansicht.drehung ?? 0 });   // B5: Fangeinstellungen und Fang-Kürzel   // N9: Orthogonal und Raster in den Achsen der Ansicht
   }
 
   ereignis(art, e, ansicht) {
@@ -193,6 +214,7 @@ class Griffe {
       sende('element_aendern', tuerUmdrehen(g.el, g.was)).then((r) => ergebnisMelden(r, `${g.el.kennzeichen}: ${g.was === 'seite' ? 'Aufschlag' : 'Bandseite'} umgedreht.`));
       return true;
     }
+    if (g.art === 'mass') { this.massEingeben(g); return true; }   // B5: Zahl anklicken, neuen Abstand eingeben
     if (g.art === 'mitte') {
       this.ziehen = { g, anker: g.p, fang: { punkt: g.p, art: 'frei', ortho: false }, start: g.p, mitte: true };
       window.addEventListener('pointerup', this.fenster, true);
@@ -221,7 +243,7 @@ class Griffe {
     const maus = this.ansicht.zuModell?.(e.clientX, e.clientY);
     const svg = this.schicht()?.ownerSVGElement;
     const ueber = maus ? this.griffAn(maus) : null;
-    if (svg) svg.style.cursor = ueber ? (ueber.art === 'tuer' ? 'pointer' : 'move') : '';
+    if (svg) svg.style.cursor = ueber ? (ueber.art === 'tuer' || ueber.art === 'mass' ? 'pointer' : 'move') : '';
     if ((this.ansicht.pxJeMm?.() ?? 0) !== this.gezeichnetBei) this.zeichnen();
     return false;
   }
@@ -232,6 +254,7 @@ class Griffe {
     this.ziehen = null;
     window.removeEventListener('pointerup', this.fenster, true);
     const neu = z.fang.punkt;
+    einmalVerbraucht();
     this.zeichnen();
     if (abstand(neu, z.start) < 1 && !(z.leitungsende && z.fang.art === 'anschluss')) return true;
     const g = z.g;
@@ -252,6 +275,18 @@ class Griffe {
       }
     });
     return true;
+  }
+
+  /** B5: neuen Abstand zum Bezug eingeben → elemente_verschieben (rechtwinklig). */
+  async massEingeben(g) {
+    const m = g.mass;
+    const t = await eingabe(`Abstand ${g.el.kennzeichen} – ${m.ref} (${m.was})`, 'Abstand in mm', String(m.abstand));
+    if (t === null) return;
+    const neu = Number(t.replace(',', '.'));
+    if (!Number.isFinite(neu) || neu < 0) { meldung('Bitte einen Abstand in mm ≥ 0 eingeben.', 'warnung'); return; }
+    const v = massVerschiebung(m, neu);
+    if (Math.abs(v.dx) < 0.001 && Math.abs(v.dy) < 0.001) return;
+    verschieben([g.el.kennzeichen], { elemente: [g.el.kennzeichen], ...v });
   }
 
   /** B4: Tab wählt den Leitungszug des gewählten Elements. */
@@ -315,7 +350,7 @@ export function griffeEinrichten() {
   const spaeter = () => setTimeout(griffeAktualisieren, 0);
   abonnieren('ansicht', spaeter);
   abonnieren('auswahl', spaeter);
-  abonnieren('modell', spaeter);
+  abonnieren('modell', () => { modellStand++; spaeter(); });
   beiAuswahlMenge(spaeter);
   beiWerkzeugEnde(spaeter);
   // Ansichten werden asynchron geöffnet; kurze Nachprüfung nach dem Start und bei Fenster-Änderungen

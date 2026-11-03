@@ -28,6 +28,7 @@ import { fangen, punktNachLaenge, zahlAusText, abstand, FANGRADIUS_PX } from './
 import { werte, rasterWert, katalogLaden } from './optionen.js';
 import { WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
+import { fangArten, einmalVerbraucht } from './fangwahl.js';   // B5: Fangeinstellungen und Fang-Kürzel
 
 const PLANARTEN = ['grundriss', 'schnitt', 'ansicht'];
 const DOPPELKLICK_MS = 400;
@@ -179,7 +180,7 @@ class Lauf {
     this.fang = fangen({
       punkt: this.maus, daten: this.fangdaten(), radius: FANGRADIUS_PX * this.s(),
       letzter: d.letzterPunkt?.(z) ?? null, raster: rasterWert(), ortho: this.shift,
-      extraPunkte: d.extraPunkte?.(z) ?? [], extraKanten: d.extraKanten?.(z) ?? [], arten: d.fangArten,
+      extraPunkte: d.extraPunkte?.(z) ?? [], extraKanten: d.extraKanten?.(z) ?? [], arten: fangArten(d.fangArten),
       drehung: this.ansicht.drehung ?? 0,   // N9: Orthogonal und Raster in den Achsen der (gedrehten) Ansicht
     });
   }
@@ -280,6 +281,7 @@ class Lauf {
     if (!this.fang) return true;
     const fang = this.fang;
     this.tipp = '';
+    einmalVerbraucht();
     this.run(() => this.def.klick?.(this.z, fang, this.ctx));
     return true;
   }

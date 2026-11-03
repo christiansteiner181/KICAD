@@ -539,3 +539,29 @@ test('Kalibrieren: Optionen — Unterlagenliste kommt frisch aus dem Zustand, nu
   assert.equal(O.wert('kalibrieren', 'nurVerschieben'), false);
   assert.equal(O.wert('kalibrieren', 'unterlage'), '');
 });
+
+// ------------------------------------------------------------------------------------------------ Bearbeitungswerkzeuge B5
+
+test('Fangwahl: Überschreibung vor Werkzeug vor Einstellung, Anschlussfang bleibt ausser bei «aus»', async () => {
+  const W = await import('./fangwahl.js');
+  assert.deepEqual(W.fangArten(undefined, ['endpunkt', 'mitte'], null), ['endpunkt', 'mitte', 'anschluss']);
+  assert.deepEqual(W.fangArten(['anschluss'], ['endpunkt'], null), ['anschluss']);
+  assert.deepEqual(W.fangArten(['anschluss'], ['endpunkt'], 'mitte'), ['mitte', 'anschluss']);
+  assert.deepEqual(W.fangArten(undefined, ['endpunkt'], 'aus'), []);
+  assert.equal(W.FANG_KUERZEL.SE, 'endpunkt');
+});
+
+test('Temporäre Masse: je Seite der nächste parallele Bezug, Wand mit beiden Flächen, Verschiebung auf neuen Abstand', async () => {
+  const T = await import('./tempmass.js');
+  const rohr = { id: 'r', kennzeichen: 'RO-1', klasse: 'Rohr', geometrie: { art: 'polylinie', punkte: [[0, 500, 0], [3000, 500, 0]] } };
+  const wand = { id: 'w', kennzeichen: 'W-1', klasse: 'Wand', geometrie: { art: 'linie', punkte: [[0, 0], [5000, 0]], dicke: 200 } };
+  const weit = { id: 'w2', kennzeichen: 'W-2', klasse: 'Wand', geometrie: { art: 'linie', punkte: [[0, -800], [5000, -800]], dicke: 200 } };
+  const quer = { id: 'q', kennzeichen: 'RO-2', klasse: 'Rohr', geometrie: { art: 'polylinie', punkte: [[100, 0, 0], [100, 2000, 0]] } };
+  const oben = { id: 'o', kennzeichen: 'RO-3', klasse: 'Rohr', geometrie: { art: 'polylinie', punkte: [[1000, 900, 0], [6000, 900, 0]] } };
+  const m = T.tempMasse(rohr, [wand, weit, quer, oben]);
+  assert.equal(m.length, 2);
+  const unten = m.find((x) => x.ref === 'W-1'), ob = m.find((x) => x.ref === 'RO-3');
+  assert.equal(unten.abstand, 400); assert.equal(unten.was, 'Fläche');   // Wandfläche y = 100
+  assert.equal(ob.abstand, 400);
+  assert.deepEqual(T.massVerschiebung(unten, 250), { dx: 0, dy: -150 });   // näher zur Wand
+});

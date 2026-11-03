@@ -74,6 +74,19 @@ public class RoutingNachfuehrungTests
     }
 
     [Fact]
+    public void DirektVerbundeneGerade_FolgtWieAnEinemFormteil()
+    {
+        var p = MitSerie();
+        Ok(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0]]));      // RO-1
+        Ok(Zeichnen(p, "DN 20", [[1000, 0, 0], [2000, 0, 0]], new JsonObject { ["von"] = "RO-1.ende" }));   // RO-2 direkt an RO-1, Ende frei
+        IstVerbunden(p, "RO-1", "ende", "RO-2", "anfang");
+        var e = Ok(p.Ausfuehren("elemente_verschieben", new JsonObject { ["elemente"] = new JsonArray("RO-1"), ["dy"] = 100 }));
+        Gerade(p, "RO-2", [1000, 100, 0], [2000, 100, 0]);    // anderes Ende frei → ganz mit
+        Assert.Contains(e.Hinweise, h => h.StartsWith("RO-2 folgt RO-1.ende ganz"));
+        Sauber(p);
+    }
+
+    [Fact]
     public void Versatz_ZuKurz_BefehlAbgelehnt()
     {
         var p = ZZug();

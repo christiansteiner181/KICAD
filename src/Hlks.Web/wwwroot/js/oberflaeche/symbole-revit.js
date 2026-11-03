@@ -160,6 +160,7 @@ drehen | Drehen | Drehen | Kreispfeil um Drehpunkt
 spiegeln | Spiegeln | Spiegeln | Spiegelachse mit zwei Dreiecken
 teilen | Teilen | Element teilen | Leitung mit rotem Schnitt
 filter | Filter | Filter | Trichter
+fangen | Fangen | Fangen | Fangquadrat mit Fadenkreuz
 parallel | Parallele Leitungen | Parallele Rohre | Leitungszug mit gestrichelter Parallele
 ausrichten | Ausrichten | Ausrichten | Linie, die an eine Bezugslinie rückt
 versatz | Versatz | Versatz | Linie und parallele Kopie mit Pfeil
@@ -629,6 +630,9 @@ s('drehen',
 s('spiegeln',
   '<path class="sb dd w15" d="M16 3v26"/><path class="f2" d="M13 8L4.5 24H13z"/><path class="fl dd" d="M19 8l8.5 16H19z"/>',
   '<path class="sb dd" d="M8 1v14"/><path class="f2" d="M6.5 4L2 12h4.5z"/><path class="fl dd" d="M9.5 4L14 12H9.5z"/>');
+s('fangen',   // Bearbeitungswerkzeuge B5
+  '<rect class="fl sb w2" x="10" y="10" width="12" height="12"/><path class="sb w2" d="M16 2v7M16 23v7M2 16h7M23 16h7"/>',
+  '<rect class="fl sb" x="5" y="5" width="6" height="6"/><path class="sb" d="M8 1v3.5M8 11.5V15M1 8h3.5M11.5 8H15"/>');
 s('filter',   // Bearbeitungswerkzeuge B4
   '<path class="fb" d="M3 5h26l-10 12v9l-6 3V17z"/>',
   '<path class="fb" d="M1.5 2.5h13l-5 6v4.5l-3 1.5v-6z"/>');
