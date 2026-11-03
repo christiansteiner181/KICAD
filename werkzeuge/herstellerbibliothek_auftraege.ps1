@@ -52,6 +52,15 @@ $auftraege = @(
   # Nussbaum (Christian 03.11.2026: «Und eine Familie Nussbaum Wasserfilter., Ventile und Hahnen.»)
   @{ nr = 'N1'; kategorie = 'Filter'
      hinweis = 'R. Nussbaum AG (Schweiz, nussbaum.ch): Sanitärarmaturen für die Hausinstallation – Wasserfilter (Kategorie Filter, je Reihe eine Familie, z. B. Rückspül- und Feinfilter), Ventile (Kategorie Ventil: Absperrventile, Rückflussverhinderer, Druckreduzierventile, Sicherheitsgruppen, je Reihe eine Familie, Eigenschaft art passend) und Hahnen (Kategorie Ventil: Kugelhahnen, Auslauf- und Entleerhahnen; art kugelhahn, auslaufhahn bzw. entleerhahn). Die gängigen Reihen des aktuellen Nussbaum-Sortiments, Typen nach Nennweite bzw. Anschluss; Gewinde und verbindung je Anschluss nach der Unterlage. Elektrische Ausführungen (z. B. Filter mit automatischer Rückspülung) mit Regeltechnik. ' }
+  # Übergangsteile je Serie (Christian 03.11.2026: «es gibt in allen familien übergangsteile») – Verbindungstabelle
+  foreach ($x in @(
+      @('U1', 'Geberit Mapress C-Stahl', 'Geberit'), @('U2', 'Geberit Mapress Edelstahl', 'Geberit'), @('U3', 'Geberit PE', 'Geberit'),
+      @('U4', 'Geberit Silent-db20', 'Geberit'), @('U5', 'JRG Sanipex MT', 'Georg Fischer JRG'), @('U6', 'Stahlrohr Gewinderohr', 'Georg Fischer (GF+) bzw. den Fitting-Hersteller der Serie'),
+      @('U7', 'Stahlrohr geschweisst', 'den Hersteller der Vorschweiss-Formteile der Serie'), @('U8', 'Uponor Uni Pipe PLUS FBH', 'Uponor'),
+      @('U9', 'Wickelfalzrohr rund', 'Schmidlin'), @('U10', 'Rechteckkanal', 'Schmidlin'))) {
+    @{ nr = $x[0]; kategorie = 'Uebergang'
+       hinweis = "ÜBERGANGSTEILE für die bestehende Leitungsserie «$($x[1])» (familien; Serie und ihre Formteile nicht neu anlegen). Lege alle Übergangsstücke an, die $($x[2]) für diese Serie führt (z. B. auf Innen- bzw. Aussengewinde, Verschraubung, Flansch, andere Rohrsysteme bzw. bei Kanälen rund/eckig und auf Geräte-Stutzen), je Übergangsart eine Familie der Kategorie Uebergang nach Abschnitt «Verbindungstechnik» der Anleitung: Anschluss a = Seite der Serie im Ursprung mit der Grösse der Serie, b = andere Seite mit verbindung und gewinde bzw. dn bzw. d wie in der Unterlage, Typ je Grössenpaar (Typname bzw. Artikelnummer wie der Hersteller). Danach in der Serie mit familie_aendern leitung.verbindung (Technik der Serie nach der Unterlage) und leitung.uebergaenge (ids der neuen Übergangs-Familien) setzen. Masse nur aus Herstellerunterlagen, keine Preise. " }
+  }
   # Lüftung (Christian 02.11.2026: «für lüftung gehören alle Rohre Kanäle inkl. Formstücke + Kompunenten zur Basisfamilie. + alles KWL von Zender Comfosystems»)
   # Umfang und Fabrikat nach Vorschlag, bestätigt von Christian 02.11.2026 («Ja, so lassen»): Zehnder zuerst, Komponenten Schmidlin, sonst Trox.
   @{ nr = 'Z1'; kategorie = 'Lueftungsgeraet'
@@ -82,7 +91,7 @@ foreach ($a in $auftraege) {
   if ($hinweis.Length -gt 4000) { Log "$($a.nr) Hinweis zu lang: $($hinweis.Length)"; continue }
   $koerper = @{ art = 'familie_aus_unterlagen'; unterlagen = @('herstellerbibliothek_reihen.csv'); kategorie = $a.kategorie; hinweis = $hinweis; internet = $true; zeitlimitMinuten = 90 } | ConvertTo-Json -Depth 4
   $st = $null
-  for ($v = 0; $v -lt 180 -and -not $st; $v++) {   # 409 = anderer KI-Lauf im Projekt: bis 3 h warten
+  for ($v = 0; $v -lt 900 -and -not $st; $v++) {   # 409 = anderer KI-Lauf im Projekt: bis 15 h warten (zweite Warteschlange auf demselben Server)
     try { $st = Invoke-RestMethod "$u/api/auftraege" -Method Post -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($koerper)) }
     catch { if ($_.Exception.Response.StatusCode.value__ -eq 409) { Start-Sleep 60 } else { Log "$($a.nr) Start FEHLER $($_.ErrorDetails.Message)"; break } }
   }
