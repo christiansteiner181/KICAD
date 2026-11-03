@@ -6486,6 +6486,40 @@
           "hinweis": "Züge mit Reduktion lehnt KICAD ab."
         },
         {
+          "id": "m3-formteil-tauschen",
+          "titel": "Bogen zu T-Stück und zurück (Plus/Minus)",
+          "wo": {
+            "register": "Ändern | Bogen bzw. T-Stück",
+            "gruppe": "Formteil",
+            "knopf": "Zu T-Stück (+) / Abzweig entfernen (−)",
+            "kuerzel": "",
+            "sonst": "Rechtsklick auf das Formteil"
+          },
+          "schritte": [
+            "Einen Bogen zwischen zwei Leitungen wählen.",
+            "Kontextregister › Formteil › Zu T-Stück (+).",
+            "Am offenen Durchgang mit PI weiterzeichnen (optional).",
+            "Das T-Stück wählen und «Abzweig entfernen (−)».",
+            "Strg+Z."
+          ],
+          "erwartung": "Aus dem Bogen wird ein T-Stück mit offenem Durchgang; Minus macht daraus wieder einen Bogen bzw. verbindet den Durchgang direkt.",
+          "pruefpunkte": [
+            "T-Stück der Serie, beide Leitungen angeschlossen.",
+            "Durchgang offen.",
+            "Minus: Bogen bzw. direkte Verbindung.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "T-Stück mit offenem Durchgang"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4038 (Formteil tauschen: Plus/Minus (Bearbeitungswerkzeuge B3))"
+          ],
+          "hinweis": "Ein Kreuz kennt keine Serie."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

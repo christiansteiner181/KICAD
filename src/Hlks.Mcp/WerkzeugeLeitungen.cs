@@ -157,6 +157,19 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("parallele_leitungen", Parameter(("leitung", leitung), ("abstand", abstand), ("anzahl", anzahl), ("lage", lage), ("seite", seite), ("systeme", systeme), ("zug", zug)), trockenlauf);
 
+    [McpServerTool(Name = "bogen_zu_tstueck"), Description(BogenZuTstueck.Text)]   // Bearbeitungswerkzeuge B3
+    public string BogenZuTstueckWerkzeug(
+        [Description("Bogen (Kennzeichen oder Id) zwischen zwei Geraden")] string bogen,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("bogen_zu_tstueck", Parameter(("bogen", bogen)), trockenlauf);
+
+    [McpServerTool(Name = "tstueck_zu_bogen"), Description(TstueckZuBogen.Text)]   // Bearbeitungswerkzeuge B3
+    public string TstueckZuBogenWerkzeug(
+        [Description("T-Stück (Kennzeichen oder Id)")] string tstueck,
+        [Description("Anschluss, der entfällt (a, b oder c); Vorgabe: der offene. An ihm darf höchstens eine Gerade mit freiem Ende hängen (sie entfällt mit)")] string? anschluss = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("tstueck_zu_bogen", Parameter(("tstueck", tstueck), ("anschluss", anschluss)), trockenlauf);
+
     [McpServerTool(Name = "leitung_groesse"), Description(LeitungGroesseAendern.Text)]
     public string LeitungGroesseWerkzeug(
         [Description(LeitungGroesseAendern.ParGroesse)] JsonElement groesse,

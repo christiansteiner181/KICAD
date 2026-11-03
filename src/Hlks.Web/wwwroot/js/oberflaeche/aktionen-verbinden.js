@@ -66,10 +66,32 @@ registrieren({
   ausfuehren: (p) => trennenDialog(ZIEL(p)),
 });
 
-/** Einträge für das Rechtsklick-Menü im Grundriss: je Verbindung «Trennen: …» (höchstens 8), dazu «Verbinden …». */
+// ---------------------------------------------------------------------------------------------- Formteil tauschen (Bearbeitungswerkzeuge B3)
+
+const istBogen = (el) => el?.klasse === 'Bogen';
+const istTStueck = (el) => el?.klasse === 'TStueck';
+
+async function plus(el) { ergebnisMelden(await sende('bogen_zu_tstueck', { bogen: el.kennzeichen }), `${el.kennzeichen} ist jetzt ein T-Stück.`); }
+// Den offenen Anschluss bestimmt der Kern (kein eindeutiger: Ablehnung mit Vorschlag)
+async function minus(el) { ergebnisMelden(await sende('tstueck_zu_bogen', { tstueck: el.kennzeichen }), `Abzweig von ${el.kennzeichen} entfernt.`); }
+
+registrieren({
+  id: 'kontext.plus', titel: 'Zu T-Stück (+)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
+  aktiv: (p) => istBogen(ZIEL(p)), hinweis: 'Zuerst einen Bogen wählen.',
+  ausfuehren: (p) => plus(ZIEL(p)),
+});
+registrieren({
+  id: 'kontext.minus', titel: 'Abzweig entfernen (−)', symbol: 'formteil', kuerzel: null, register: 'kontext', gruppe: 'Formteil',
+  aktiv: (p) => istTStueck(ZIEL(p)), hinweis: 'Zuerst ein T-Stück wählen.',
+  ausfuehren: (p) => minus(ZIEL(p)),
+});
+
+/** Einträge für das Rechtsklick-Menü im Grundriss: je Verbindung «Trennen: …» (höchstens 8), dazu «Verbinden …»; an Formteilen Plus/Minus. */
 export function verbindungsEintraege(el) {
   const liste = verbindungenText(el);
   const aus = liste.slice(0, 8).map((v) => ({ titel: `Trennen: ${v.text}`, aktion: () => trennen(v.id, v.text) }));
+  if (istBogen(el)) aus.unshift({ titel: 'Zu T-Stück (+)', aktion: () => plus(el) });
+  if (istTStueck(el)) aus.unshift({ titel: 'Abzweig entfernen (−)', aktion: () => minus(el) });
   if (liste.length > 0 || (el && (el.bezuege?.familie || ['Rohr', 'Kanal'].includes(el.klasse)))) aus.push({ titel: 'Verbinden …', aktion: starten });
   return aus;
 }

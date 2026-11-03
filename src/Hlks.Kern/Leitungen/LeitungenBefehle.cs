@@ -28,6 +28,8 @@ public static class LeitungenBefehle
         r.Hinzufuegen(new LeitungGefaelle());   // Bearbeitungswerkzeuge A5 (GefaelleHoehe.cs)
         r.Hinzufuegen(new LeitungHoehe());
         r.Hinzufuegen(new ParalleleLeitungen());   // Bearbeitungswerkzeuge B2
+        r.Hinzufuegen(new BogenZuTstueck());       // Bearbeitungswerkzeuge B3 (FormteilTauschen.cs)
+        r.Hinzufuegen(new TstueckZuBogen());
         r.Hinzufuegen(new LeitungGroesseAendern());
         r.Hinzufuegen(new LeitungSerieAendern());
         r.Hinzufuegen(new FliessrichtungAusQuelle());   // Christian 02.11.2026: Fliessrichtung aus Pumpe bzw. Lüftungsgerät, auf Befehl

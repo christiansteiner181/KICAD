@@ -143,7 +143,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **A5 gebaut 03.11.2026:** `leitung_gefaelle` (Zug ab Fixpunkt neu neigen, Bögen wandern mit; Neuaufbau wie leitung_groesse), `leitung_hoehe` (Zug heben/senken, Versatz an festen Grenzen); Palette Gefälle und Höhe. Annahmen: «flach» bis 15 %, Fixpunkt Vorgabe Anfang; an waagrechten T-Stücken passen bis ≈1.7 % (Hinweis, P13). **Stufe A abgeschlossen.**
 - **B1 gebaut 03.11.2026** (Spezifikation unten): `ausrichten`, `versetzen` (Kern, MCP, KI-Einordnung), Werkzeuge AL und OF.
 - **B2 gebaut 03.11.2026** (Spezifikation unten): `parallele_leitungen` (Kern, MCP, KI-Einordnung), Werkzeug Gebäudetechnik › Leitungen › Parallele Leitungen.
-- **Nächstes: B3** Formteil tauschen (Plus/Minus am Bogen bzw. T-Stück).
+- **B3 gebaut 03.11.2026** (Spezifikation unten; geändert beim Bau: Plus lässt den Durchgang offen statt eines Stummels – sonst ist ein Stummel von anderen freien Leitungsenden nicht zu unterscheiden; Minus nimmt den offenen Anschluss): `bogen_zu_tstueck`, `tstueck_zu_bogen` (Kern, MCP, KI-Einordnung), Kontextregister und Rechtsklick.
+- **Nächstes: B4** Auswahl (Tab, Auswahlfilter, alle Exemplare, Mehrfachauswahl löschen/Palette).
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -232,3 +233,19 @@ Annahmen: Züge mit Reduktion (verschiedene Grössen) lehnt B2 ab; waagrecht ver
 
 Oberfläche: Werkzeug «Parallele Leitungen» (Gebäudetechnik › Leitungen): Optionsleiste Anzahl, Abstand, Lage; Klick auf eine Leitung auf der Seite,
 zu der die Parallelen entstehen (Vorschau).
+
+## B3 – Formteil tauschen (Spezifikation, 03.11.2026)
+
+Kernbefehle (ein Paket), wie Revit Plus/Minus am Formteil:
+
+- **`bogen_zu_tstueck`** { bogen } (Plus): der Bogen wird ein T-Stück der Serie. Die zulaufende Gerade geht durch das T-Stück weiter und
+  endet nach ihm in einem kurzen offenen Stück (Stummel, zum Weiterzeichnen); die abgehende Gerade wird der Abzweig (wie dehnen_bis).
+  Abzweigwinkel = bisheriger Umlenkwinkel (muss ein Abzweigwinkel der Serie sein).
+- **`tstueck_zu_bogen`** { tstueck, anschluss? } (Minus): der Abzweig an «anschluss» (Vorgabe: der freie bzw. der mit einem Stummel ohne
+  weitere Verbindung) entfällt samt Stummel. Bleiben Durchgang a und b, werden die beiden Geraden direkt verbunden; bleibt ein Durchgang
+  und der Abzweig, entsteht ein Bogen der Serie (wie ecke_bilden).
+- **Formteiltyp wählen:** über die Eigenschaftenpalette (Typ der Familie) – Leitungsenden folgen (Nachführung). Unverändert.
+
+Annahmen: Stummellänge 3 × Aussendurchmesser, mindestens 300 mm; ein Kreuz kennt keine Serie (kein Plus am T-Stück).
+
+Oberfläche: Kontextregister eines Bogens «Zu T-Stück (+)», eines T-Stücks «Abzweig entfernen (−)»; dieselben Einträge im Rechtsklick.

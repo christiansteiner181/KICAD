@@ -4034,3 +4034,16 @@ Kernbefehl `parallele_leitungen` (`src/Hlks.Kern/Leitungen/ParalleleLeitungen.cs
   (`systeme`).
 - **Grenzen:** Züge mit Reduktion (verschiedene Grössen) und waagrecht versetzte Züge mit Steigleitung lehnt der Kern ab.
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~ParalleleLeitungenTests"`.
+
+## Formteil tauschen: Plus/Minus (Bearbeitungswerkzeuge B3, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `bogen_zu_tstueck` und `tstueck_zu_bogen` (`src/Hlks.Kern/Leitungen/FormteilTauschen.cs`, MCP gleich); Oberfläche in
+`js/oberflaeche/aktionen-verbinden.js` (Kontextregister › Formteil und Rechtsklick).
+
+- **Zu T-Stück (+)** an einem gewählten Bogen: der Bogen wird ein T-Stück der Serie; die zulaufende Leitung endet am Durchgang, die abgehende
+  wird der Abzweig, der andere Durchgang bleibt offen (zum Weiterzeichnen).
+- **Abzweig entfernen (−)** an einem gewählten T-Stück: der offene Anschluss entfällt samt T-Stück; bleibt der Durchgang, werden die beiden
+  Leitungen direkt verbunden, sonst entsteht ein Bogen. Hat das T-Stück keinen bzw. mehrere offene Anschlüsse, lehnt der Kern ab (über MCP
+  mit `anschluss`, dann entfällt eine Leitung mit freiem Ende daran mit).
+- Formteiltyp wählen: wie bisher in der Eigenschaftenpalette (Typ der Familie).
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~FormteilTauschenTests"`.
