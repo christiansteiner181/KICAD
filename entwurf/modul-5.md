@@ -227,6 +227,12 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
   SIA 384.201, Ziffer 3.5 S. 18: Mittel der tiefsten 4-Tagesmittel aus 20 Jahren) vom Hauptlauf aus dem Bild übertragen (zweimal gelesen),
   dazu Tab. 1a (Stationshöhe) und Tab. 2 (Jahresmittel, Agent); Datei HLKS_NORMTABELLEN\heizung\sia2028_auslegung.json; Christian prüft gegen.
 
+- **Gegenproben aus echten Projekten** (Christian 04.11.2026 «zur prüfung»; Werte bleiben ausserhalb des Repositorys): Büro-Heizlast eines MFH
+  nach **SIA 384/2:2020** (Programm Win_Ht) und ein Büro-Rechenblatt Warmwasserbedarf (Projektordner f_Berechnungen_Heizung). Befund: das Büro
+  rechnet nach SIA 384/2:2020 – anders als die vorliegende Ausgabe 2003 u. a. mit n_min je Raumart (0.1–0.5 h⁻¹ statt pauschal), θint Bad 24 °C
+  und Faktor f(i-z) 0.70 für die Gebäudelüftung. Die Ausgabe 2020 fehlt im Normenordner. **Entscheid Christian 04.11.2026: «Bei 2003 bleiben»** – KICAD rechnet nach
+  SIA 384.201:2003; die Büro-Heizlast dient als Plausibilitätsprüfung, Abweichungen werden erklärt (n_min, θint Bad, Faktor f).
+
 #### Rechenweg (SN EN 12831:2003, Abschnitte 7–8, Nationaler Anhang ND; Gleichungsnummern der Norm)
 
 - **θe** = Tab. 6 der Klimastation (Gebaeude.klimastation; Gebaeude.thetaE mit Quelle geht vor), korrigiert nach ND.1.1.1 (liegt das Gebäude
