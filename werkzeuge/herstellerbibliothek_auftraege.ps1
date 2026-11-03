@@ -2,7 +2,8 @@
 # KI-Auftrag «Familie aus Unterlagen» mit Internet, nacheinander auf dem Server werkzeuge\herstellerbibliothek_server.ps1 (Port 5154).
 # Aufruf: powershell -File werkzeuge\herstellerbibliothek_auftraege.ps1 [-Nur P1,V1]
 # Datei mit UTF-8-BOM speichern (PowerShell 5.1). Die Hinweise nennen keine Werte: alles aus den Herstellerunterlagen.
-param([string[]]$Nur = @(), [int]$Port = 5154, [string]$Ablage = 'herstellerbibliothek_ki')
+param([string[]]$Nur = @(), [int]$Port = 5154, [string]$Ablage = 'herstellerbibliothek_ki', [int]$Runden = 4,
+      [string[]]$Vorhanden = @())   # Vorhanden: «NR=Familie1|Familie2» – schon angelegte Familien eines früheren Laufs (Fortsetzung)
 $ErrorActionPreference = 'Stop'
 $Nur = @($Nur | ForEach-Object { $_ -split ',' } | ForEach-Object { $_.Trim() } | Where-Object { $_ })
 $u = "http://localhost:$Port"
@@ -31,6 +32,19 @@ $auftraege = @(
   # Nacharbeit Darstellung (Christian 02.11.2026: detailgetreu in allen Detailgraden, wie im Datenblatt, IFC muss passen): P1 lief vorher
   @{ nr = 'P1b'; kategorie = 'Pumpe'
      hinweis = 'NACHARBEIT der bestehenden Familien «Grundfos MAGNA3» und «Grundfos MAGNA3 D» (familien; nicht neu anlegen, mit familie_aendern bzw. familie_entwurf mit familie ersetzen): Werte, Typen, Anschlüsse und Regeltechnik bleiben, wie sie sind. Ergänze die Körper, bis die Familie in grob, mittel und fein aussieht wie die Massbilder im Grundfos-Datenheft (Pumpengehäuse mit Flanschen bzw. Verschraubung, Motor, Elektronikgehäuse/Bedienfeld, Klemmenkasten) – heute zeigen mittel und fein dieselben vier bzw. sechs Quader/Zylinder. Ein frei abrufbares 3D-Modell von Grundfos (IFC, STEP) bevorzugen und für fein übernehmen; dann den geometrischen Vergleich gegen dieses Modell ausweisen. ' }
+  # Voller Umfang (Auftrag Christian 02.11.2026 «alle …»; P1–K1 waren die ersten Reihen) – laufen mit Fortsetzungsrunden, -Runden hoch
+  @{ nr = 'PG'; kategorie = 'Pumpe'
+     hinweis = 'ALLE Pumpenmodelle von Grundfos, die Grundfos in der Schweiz für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig, die gängigen zuerst. ' }
+  @{ nr = 'PW'; kategorie = 'Pumpe'
+     hinweis = 'ALLE Pumpenmodelle von Wilo, die Wilo in der Schweiz für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden, z. B. Stratos MAXO-D), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig, die gängigen zuerst. ' }
+  @{ nr = 'PB'; kategorie = 'Pumpe'
+     hinweis = 'ALLE Pumpenmodelle von Biral (Schweiz), die Biral für Gebäudetechnik führt: Nassläufer-Umwälzpumpen, Trockenläufer Inline und Block, Druckerhöhung, Abwasser und Hebeanlagen – je Baureihe eine Familie (Einzel- und Doppelpumpe getrennt, wenn Massbild oder Anschlüsse verschieden), Eigenschaft bauart passend. Je Runde einige Baureihen vollständig. ' }
+  @{ nr = 'VS'; kategorie = 'Ventil'
+     hinweis = 'Siemens (Smart Infrastructure, Acvatix): ALLE Ventile der Reihen VXG.. (Dreiweg) und VVG.. (Durchgang), die mit SQX-Antrieben kombiniert werden, je Ventilreihe eine Familie mit allen Nennweiten und Kvs-Werten, antriebe (Kombination mit der bestehenden Familie «Siemens SQX» bzw. weiteren SQX-Familien) und anbau. Fehlende SQX-Varianten (z. B. mit Rückmeldung, Notstellfunktion, Bus) in die Antriebsfamilie ergänzen. ' }
+  @{ nr = 'VB'; kategorie = 'Ventil'
+     hinweis = 'Belimo: ALLE Regelkugelhähne R20xx (2-Weg) und R30xx (3-Weg) mit allen zugehörigen Antrieben, die Belimo dafür nennt – je Ventilreihe bzw. Antriebsreihe eine Familie, Antriebe mit allen Varianten (Auf/Zu, 3-Punkt, stetig, MP-Bus, Modbus, BACnet, Notstellfunktion, Federrücklauf) und vollständiger Regeltechnik, Kombinationstabelle antriebe und anbau je Ventil. ' }
+  @{ nr = 'KE'; kategorie = 'Ventil'
+     hinweis = 'EBRO Armaturen: Absperrklappen Z 011 (Zwischenflansch) und Z 014 (Lug bzw. Vollflansch), DN 50 bis DN 250, alle Ausführungen mit verschiedenen Massen als je eigene Familie, bauart absperrklappe, verbindung flansch; Antriebe (Handhebel, Getriebe, elektrische Schwenkantriebe) als Antriebsfamilien, soweit EBRO sie ohne Anmeldung bemasst, mit antriebe und anbau. ' }
   # IMI (Christian 02.11.2026: «FBH verteiler, FBH Verteilerkasten», «fabrikat IMI», «Expansionsgefässe ebenfalls IMI»)
   @{ nr = 'I1'; kategorie = 'Verteiler'
      hinweis = 'IMI Hydronic Engineering (Heimeier): Fussbodenheizungs-Verteiler «Dynacon Eclipse», alle Abgangszahlen, die IMI führt (Typ je Abgangszahl), Anschlüsse vl_ein und rl_aus nach Klasse Verteiler sowie die Abgänge, soweit bemasst. Zuerst die Antriebsfamilie der thermischen bzw. elektrischen Stellantriebe, die IMI für diesen Verteiler nennt (Kategorie Antrieb, Regeltechnik), und die Familie des passenden Heimeier-Verteilerkastens (Kategorie Verteilerkasten, Unterputz und Aufputz als getrennte Familien, wenn die Masse verschieden sind; Typen = Kastengrössen), dann der Verteiler mit antriebe (ohne anbau) und kaesten (Zuordnung Abgangszahl → Kastengrösse aus der IMI-Unterlage). ' }
@@ -87,22 +101,36 @@ $auftraege = @(
      hinweis = 'Luftdurchlässe für Büro und Wohnen (Tellerventile, Gitter, Drallauslässe): Schmidlin, sonst Trox; Zuluft und Abluft als getrennte Familien der Kategorien Zuluftdurchlass bzw. Abluftdurchlass, Typen nach Grösse. ' }
 )
 
-foreach ($a in $auftraege) {
-  if ($Nur.Count -gt 0 -and $Nur -notcontains $a.nr) { continue }
-  $hinweis = $a.hinweis + $gemeinsam
-  if ($hinweis.Length -gt 4000) { Log "$($a.nr) Hinweis zu lang: $($hinweis.Length)"; continue }
+# Fortsetzungsrunden (Befund 03.11.2026: ein KI-Lauf endet nach 10–20 min und deckt «alle …» nur teilweise ab): derselbe Auftrag läuft
+# erneut mit den schon angelegten Familien, bis die KI «VOLLSTÄNDIG» meldet, eine Runde nichts Neues anlegt oder -Runden erreicht ist.
+$angelegt = @{}
+$vorgabe = @{}
+foreach ($v in ($Vorhanden | ForEach-Object { $_ -split ';' } | Where-Object { $_ -match '=' })) { $k0, $w0 = $v -split '=', 2; $vorgabe[$k0.Trim()] = @($w0 -split '\|' | ForEach-Object { $_.Trim() } | Where-Object { $_ }) }
+foreach ($a0 in $auftraege) {
+ if ($Nur.Count -gt 0 -and $Nur -notcontains $a0.nr) { continue }
+ $angelegt[$a0.nr] = @($vorgabe[$a0.nr] | Where-Object { $_ })
+ for ($runde = 1; $runde -le $Runden; $runde++) {
+  $a = $a0
+  $vor = $angelegt[$a.nr]
+  $fortsetzung = if ($vor.Count -gt 0) { "FORTSETZUNG (Runde $runde): Zu diesem Auftrag bestehen schon diese Familien (familien): $($vor -join '; '). Nicht neu anlegen; lege nur an, was vom Auftrag noch fehlt (weitere Reihen, Formstückarten, Grössen, Antriebe). Fehlt nichts mehr, lege nichts an und beginne den Bericht mit «VOLLSTÄNDIG». " } else { '' }
+  $hinweis = $fortsetzung + $a.hinweis + $gemeinsam
+  if ($hinweis.Length -gt 4000) { Log "$($a.nr) Hinweis zu lang: $($hinweis.Length)"; break }
   $koerper = @{ art = 'familie_aus_unterlagen'; unterlagen = @('herstellerbibliothek_reihen.csv'); kategorie = $a.kategorie; hinweis = $hinweis; internet = $true; zeitlimitMinuten = 90 } | ConvertTo-Json -Depth 4
   $st = $null
   for ($v = 0; $v -lt 900 -and -not $st; $v++) {   # 409 = anderer KI-Lauf im Projekt: bis 15 h warten (zweite Warteschlange auf demselben Server)
     try { $st = Invoke-RestMethod "$u/api/auftraege" -Method Post -ContentType 'application/json; charset=utf-8' -Body ([Text.Encoding]::UTF8.GetBytes($koerper)) }
     catch { if ($_.Exception.Response.StatusCode.value__ -eq 409) { Start-Sleep 60 } else { Log "$($a.nr) Start FEHLER $($_.ErrorDetails.Message)"; break } }
   }
-  if (-not $st) { continue }
-  Log "$($a.nr) gestartet $($st.id)"
+  if (-not $st) { break }
+  Log "$($a.nr) Runde $runde gestartet $($st.id)"
   $weg = 0   # Befund 02.11.2026: ein .NET-Update beendete den Server – nicht endlos weiterfragen
   do { Start-Sleep 30; try { $s = Invoke-RestMethod "$u/api/auftraege/$($st.id)"; $weg = 0 } catch { $s = $null; $weg++ } } while ($weg -lt 20 -and (-not $s -or $s.status -in @('wartet', 'laeuft')))
-  if ($weg -ge 20) { Log "$($a.nr) Server seit 10 min nicht erreichbar - Abbruch"; break }
+  if ($weg -ge 20) { Log "$($a.nr) Server seit 10 min nicht erreichbar - Abbruch"; exit 1 }
   $fam = @($s.ergebnis.familien | ForEach-Object { "$($_.kennzeichen) $($_.name) [$($_.kategorie)] Typen $(@($_.typen).Count) offeneKonflikte $($_.offeneKonflikte)" }) -join '; '
-  Log "$($a.nr) $($s.status) $($st.id): $fam"
+  Log "$($a.nr) Runde $runde $($s.status) $($st.id): $fam"
+  $neu = @($s.ergebnis.familien | ForEach-Object { $_.name } | Where-Object { $_ -and $vor -notcontains $_ })
+  $angelegt[$a.nr] = @($vor + $neu)
+  if ($s.status -ne 'fertig' -or $neu.Count -eq 0 -or "$($s.ergebnis.bericht)" -match 'VOLLST(Ä|AE)NDIG') { Log "$($a.nr) abgeschlossen nach Runde $runde"; break }
+ }
 }
 Log 'fertig'
