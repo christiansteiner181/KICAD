@@ -158,6 +158,9 @@ public static class FamilienBibliothekSchreiben
         {
             var ops = paket.Operationen.Where(o => o.Art == "element.setzen" && o.Element?.Klasse == Familien.Klasse).ToList();
             if (ops.Count == 0 || p.AkteurArt == "beispiel") return hinweise;
+            // IFC-Import: lädt Serien und Formteile aus der Bibliothek und legt Familien aus dem IFC an – er schreibt nie selbst zurück
+            // (Befund 03.11.2026: eine geladene Formteil-Familie ging als Abzweig auf W:; Familien aus dem IFC nur über familie_in_bibliothek)
+            if (paket.Befehl == "ifc_uebernehmen") return hinweise;
             var ursprung = paket.Befehl is "rueckgaengig" or "wiederholen" ? T(paket.Parameter?["befehl"]) ?? "" : paket.Befehl;
             var ort = FamilienBibliothekDienst.Ort(p.Katalog);
             foreach (var g in ops.GroupBy(o => o.Id))
