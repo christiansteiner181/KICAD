@@ -282,7 +282,8 @@ app.MapBenutzer(dienst);   // Benutzereinstellungen (G1): BenutzerEndpunkte.cs (
 app.MapVrSeite();   // VR-Startseite /vr (VrSeite.cs; Modul XR)
 var questStarter = QuestEndpunkte.StarterErzeugen(app, dienst);   // gemeinsame Sperre für Quest verbinden und Autostart (QuestStarter.cs)
 app.MapVrAuftrag(dienst, questStarter);   // VR-Auftrag vom PC an die Brille (VrAuftrag.cs; Modul XR)
-app.MapAnleitung(dienst);   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hilfe/ und Prüfstand /api/hilfe/pruefung
+app.MapAnleitung(dienst);
+app.MapRechenweg(dienst);   // Register «Wie wird gerechnet» (RechenwegSeite.cs), Christian 03.11.2026   // Bedienungsanleitung (AnleitungEndpunkte.cs): /hilfe/ und Prüfstand /api/hilfe/pruefung
 app.MapAuftraege(dienst);   // KI-Aufträge (Modul 2, B5): AuftragEndpunkte.cs; hinter dem Schliessen angemeldet, damit beim Beenden zuerst die Läufe enden
 app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): GespraechEndpunkte.cs – Gespräche, Zurücknehmen, Normensuche
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI

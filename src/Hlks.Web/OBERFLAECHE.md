@@ -1021,6 +1021,15 @@ Christian, 19.10.2026: «Es wäre gut, wenn die Verschiebbarkeit der Fenster umg
 
 **Prüfen:** Node `paletten.test.mjs` (Anordnung als Daten: Vorgabe, andocken, lösen, Reiter, ein-/ausblenden, zurücksetzen, merken/laden, ungültige Werte; Andockziele; Verdrahtung) und `dialog-fenster.test.mjs` (Begrenzung im sichtbaren Bereich, Verschieben, Grösse, gemerkte Werte, Verdrahtung); Browser `dialoge-paletten.browser.mjs` (Port 5177, `HLKS_W1_PORT`; echte Mausbedienung per CDP, Bilder `w1_*_hell.png` und `w1_*_dunkel.png`). Die ✕-Schaltfläche der Koordination steht jetzt am Palettenkopf (`#palette-koordination .pal-zu`); `koordination.browser.mjs` und `projektbrowser.browser.mjs` klicken sie dort.
 
+## Wie wird gerechnet (Register der Auslegungen)
+
+Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über die technischen auslegungen im KICAD abrufbar machen. "Wie wird was gerechnet" … so dass der nutzer immer nachvollziehen kann wie was gerechnet wird.»
+
+- **Inhalt:** `kataloge/rechenregister.json` – je Rechen- bzw. Auslegungsverfahren Zweck, Eingaben, Rechenweg (Klartext mit Formeln), Ergebnis, Quellen (Norm, Ausgabe, Ziffer bzw. Entscheid mit Datum), Annahmen, Grenzen, Code-Stelle, Abfrage. Ein neues Verfahren im Kern bekommt dort seinen Eintrag.
+- **Seite `/rechenweg/`** (`RechenwegSeite.cs`): bei jedem Aufruf frisch aus dem Register, Übersicht nach Gebiet, Suche, `/rechenweg/#<id>` springt zu einem Verfahren; druckbar.
+- **Symbol** rechts in der Kopfleiste neben «?» (`#rechenweg-knopf`, Symbol `warum`, Tooltip «Wie wird gerechnet – Register der technischen Auslegungen»), öffnet die Seite im Fenster `kicad-rechenweg` (`rechenwegOeffnen` in `hilfe-oberflaeche.js`).
+- **Abfrage `rechenweg { id?, suche?, gebiet? }`** (KI und MCP, Gruppe «Normen»): ohne id die Übersicht, mit id der ganze Eintrag.
+
 ## Hilfe (F1)
 
 Wie in Revit (InfoCenter «?» oben rechts, F1 über einem Befehl): Die Hilfe ist die **Bedienungsanleitung als Webseite, die KICAD selbst unter `/hilfe/` ausliefert** (Entscheid Christian Steiner 19.10.2026: ohne Anmeldung, ohne Internet; Häkchen und Notizen speichert KICAD je Benutzer über OneDrive; Bilder bleiben lokal auf diesem Rechner; die Claude-Seite entfällt). Die Oberfläche öffnet sie nur. Keine Logik in der Oberfläche über das Öffnen hinaus.

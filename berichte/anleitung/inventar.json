@@ -1867,6 +1867,40 @@
           "hinweis": "Häkchen und Notizen der Anleitung speichert KICAD je Benutzer über OneDrive (Entscheid Christian Steiner 19.10.2026); die Bilder bleiben lokal auf diesem Rechner, weil sie echte Projekte zeigen. Die Anleitung wird mit `node werkzeuge/anleitung_bauen.mjs` gebaut; der Desktop-Start baut sie zum geprüften Stand mit."
         },
         {
+          "id": "start-rechenweg",
+          "titel": "Wie wird gerechnet: Register der technischen Auslegungen",
+          "wo": {
+            "register": "",
+            "gruppe": "",
+            "knopf": "",
+            "kuerzel": "",
+            "sonst": "Kopfleiste rechts, Symbol neben «?» (Tooltip «Wie wird gerechnet – Register der technischen Auslegungen»)"
+          },
+          "schritte": [
+            "In der Kopfleiste rechts auf das Symbol neben «?» klicken.",
+            "Im neuen Fenster ein Gebiet bzw. Verfahren wählen oder oben ein Stichwort suchen (z. B. «Spitzendurchfluss»).",
+            "Beim Verfahren Rechenweg, Quellen und Annahmen lesen."
+          ],
+          "erwartung": "Das Register öffnet in einem eigenen Fenster (Adresse /rechenweg/) und zeigt je Verfahren Zweck, Eingaben, Rechenweg mit Formeln, Ergebnis, Quellen, Annahmen, Grenzen und die Code-Stelle. Die Suche blendet nicht passende Verfahren aus.",
+          "pruefpunkte": [
+            "Jedes Verfahren nennt seine Quelle (Norm mit Ausgabe und Ziffer bzw. Entscheid mit Datum) oder sagt, dass sie fehlt.",
+            "Die Formeln stimmen mit den Ergebnissen in KICAD überein (Stichprobe).",
+            "Die Seite lässt sich drucken."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Fenster «Wie wird gerechnet»",
+            "zustand": "Suche «Spitzendurchfluss»"
+          },
+          "quelle": [
+            "src/Hlks.Web/RechenwegSeite.cs",
+            "src/Hlks.Kern/Kataloge/Rechenregister.cs",
+            "kataloge/rechenregister.json",
+            "src/Hlks.Web/wwwroot/js/oberflaeche/hilfe-oberflaeche.js"
+          ],
+          "hinweis": "Neu 03.11.2026 (Christian: «so dass der nutzer immer nachvollziehen kann wie was gerechnet wird»)."
+        },
+        {
           "id": "start-f1-knopf",
           "titel": "F1 über einem Knopf des Menübands: Hilfe zu diesem Befehl",
           "wo": {

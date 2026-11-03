@@ -16,6 +16,13 @@ public sealed partial class Werkzeuge
         [Description(NormenAbfragen.ParReihe)] string? reihe = null) =>
         Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "normen_suchen", Parameter(("frage", frage), ("reihe", reihe)))), synchronisieren: false);
 
+    [McpServerTool(Name = "rechenweg"), Description(Rechenregister.Text)]   // Christian 03.11.2026: «Wie wird was gerechnet»
+    public string RechenwegWerkzeug(
+        [Description(Rechenregister.ParId)] string? id = null,
+        [Description(Rechenregister.ParSuche)] string? suche = null,
+        [Description(Rechenregister.ParGebiet)] string? gebiet = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "rechenweg", Parameter(("id", id), ("suche", suche), ("gebiet", gebiet)))), synchronisieren: false);
+
     [McpServerTool(Name = "norm_lesen"), Description(NormenAbfragen.LesenText)]
     public string NormLesen(
         [Description(NormenAbfragen.ParDatei)] string datei,

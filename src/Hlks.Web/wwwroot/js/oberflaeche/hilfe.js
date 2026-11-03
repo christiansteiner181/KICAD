@@ -20,6 +20,9 @@ export const HILFE_TOOLTIP = 'Hilfe – Bedienungsanleitung (F1)';
 export const HILFE_NICHT_EINGERICHTET = 'Die Bedienungsanleitung ist auf diesem Rechner noch nicht erstellt.';
 /** Adresse der Anleitung auf dem Server der Oberfläche (gleicher Ursprung wie die Oberfläche selbst). */
 export const HILFE_URL = '/hilfe/';
+/** Register der technischen Auslegungen «Wie wird gerechnet» (Server: RechenwegSeite.cs, Inhalt kataloge/rechenregister.json). */
+export const RECHENWEG_URL = '/rechenweg/';
+export const RECHENWEG_TOOLTIP = 'Wie wird gerechnet – Register der technischen Auslegungen';
 export const hilfeBlockiert = (adresse) => `Das Hilfefenster wurde blockiert – Adresse: ${adresse}`;
 
 /** Name des Fensters der Anleitung: immer dasselbe (window.open öffnet nie ein zweites). */

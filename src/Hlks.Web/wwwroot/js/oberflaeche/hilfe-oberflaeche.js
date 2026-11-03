@@ -12,7 +12,7 @@ import { holen } from '../api.js';
 import { symbol } from './symbole.js';
 import { meldung, obersterDialogTitel } from './dialoge.js';
 import { knopfHilfe } from './menueband.js';
-import { hilfeAdresse, hilfeKontext, HILFE_TOOLTIP, HILFE_FENSTER, HILFE_NICHT_EINGERICHTET, hilfeBlockiert } from './hilfe.js';
+import { hilfeAdresse, hilfeKontext, HILFE_TOOLTIP, HILFE_FENSTER, HILFE_NICHT_EINGERICHTET, hilfeBlockiert, RECHENWEG_URL, RECHENWEG_TOOLTIP } from './hilfe.js';
 
 let basis = null;        // Adresse der Anleitung; nur eine gefundene wird gemerkt (ein später eingetragener Wert gilt sofort)
 let laufend = null;      // laufende Abfrage
@@ -25,6 +25,16 @@ export async function anleitungAdresse() {
     .catch((e) => { console.error('Adresse der Bedienungsanleitung', e); return null; })
     .finally(() => { laufend = null; });
   return laufend;
+}
+
+/** Öffnet das Register «Wie wird gerechnet» (Seite /rechenweg/, optional bei einem Verfahren) im eigenen Fenster. */
+export function rechenwegOeffnen(id = null) {
+  const adresse = RECHENWEG_URL + (id ? '#' + encodeURIComponent(id) : '');
+  let fenster = null;
+  try { fenster = window.open(adresse, 'kicad-rechenweg'); } catch { fenster = null; }
+  if (!fenster) { meldung(hilfeBlockiert(adresse), 'warnung'); return false; }
+  try { fenster.focus?.(); } catch { /* egal */ }
+  return true;
 }
 
 /** Öffnet die Anleitung für den Kontext (hilfe.js › hilfeKontext) im Fenster «kicad-hilfe». Ergebnis: true, wenn das Fenster aufging. */
@@ -60,6 +70,13 @@ export function einrichten() {
     b.innerHTML = symbol('anleitung', 18);
     b.addEventListener('click', () => { hilfeOeffnen({ art: 'keiner' }); });
     ort.appendChild(b);
+    // Register der Auslegungen (Christian 03.11.2026: «so dass der nutzer immer nachvollziehen kann wie was gerechnet wird»)
+    const r = document.createElement('button');
+    r.type = 'button'; r.id = 'rechenweg-knopf'; r.className = 'hilfe-knopf';
+    r.title = RECHENWEG_TOOLTIP; r.setAttribute('aria-label', RECHENWEG_TOOLTIP);
+    r.innerHTML = symbol('warum', 18);
+    r.addEventListener('click', () => { rechenwegOeffnen(); });
+    ort.appendChild(r);
   }
   document.addEventListener('pointerdown', () => { fokusPerMaus = true; }, true);
   // Edge öffnet bei F1 sonst seine eigene Hilfe: preventDefault in der Aufnahmephase, vor allen anderen Behandlern

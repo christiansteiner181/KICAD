@@ -38,6 +38,7 @@ public static class Tuer
             "ausgaben" => Ausgabeprotokoll.Lesen(p, (int)(Param.Zahl(par, "anzahl") ?? 50)),
             "ifc_deckung" => IfcDeckung.Pruefen(p, par),
             "ifc_teile" => IfcTeile.Liste(p, par),
+            "rechenweg" => Rechenregister.Abfrage(p.Katalog, par),
             "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),
