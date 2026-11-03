@@ -11,7 +11,8 @@
 //   Edelstahl, sonst C-Stahl; «Stahl» = Stahlrohr geschweisst; Rund-Kanäle = Wickelfalzrohr rund. Entscheide Christian 03.11.2026: Flexkanäle =
 //   Depping Aludec 112 («flexkanäle von depping ag»), Uponor-Metallverbundrohr = Uponor Uni Pipe PLUS FBH («uponor FBH Rohre in Standard»;
 //   ohne Formteile, ab Rolle, Biegeradius 100 mm). Aufrunden (Regel «aufrunden»): fehlt die Grösse in der Serie, nimmt die Leitung die
-//   nächstgrössere (Flexkanal Ø 90 → Ø 100, Christian 03.11.2026: «Auf Ø 100»); die Leitung trägt dann die Grösse der Serie, das IFC-Mass steht
+//   nächstgrössere (zuerst die übrigen passenden Regeln: Flexkanal Ø 90 → Schmidlin KSR, Christian 03.11.2026: «nehme auch noch den 90er
+//   kunststoffschlauch von schmidlin»; vorher «Auf Ø 100»); die Leitung trägt dann die Grösse der Serie, das IFC-Mass steht
 //   in der Kennung «ifcGroesse» (Deckung zählt sie eigens).
 
 using System.Text.Json.Nodes;
@@ -33,6 +34,7 @@ static class IfcSerien
         new("Mapress", "Geberit Mapress C-Stahl"),
         new("Sani[Pp]ex", "JRG Sanipex MT"),
         new("Flexkanal", "Flexkanal Depping Aludec 112", Aufrunden: true),
+        new("Flexkanal", "Flexrohr Schmidlin KSR"),
         new("Uponor", "Uponor Uni Pipe PLUS FBH"),
         new("Stahl", "Stahlrohr geschweisst"),
         new("^Rechteck", "Rechteckkanal"),
@@ -71,13 +73,26 @@ static class IfcSerien
         {
             var typname = Typname(x) ?? e.Name ?? "";
             var medium = e.Anschluesse.Select(a => a.Medium).FirstOrDefault(md => md is { Length: > 0 } && md != "*") ?? Netz.ElementMedium(k.Arbeit, e);
-            var regel = regeln.FirstOrDefault(r => Regex.IsMatch(typname, r.Muster, RegexOptions.IgnoreCase) && (r.Medien is null || medium is not null && r.Medien.Contains(medium, StringComparer.OrdinalIgnoreCase)));
-            if (regel?.Serie is not { } name) { Zaehlen(ohne, typname); continue; }
-            if (!serien.TryGetValue(name, out var s)) serien[name] = s = Laden(k, kat, ort, name, fehler);
-            if (s is null) continue;
-            var g = Groesse(s, e);
-            if (g is null && regel.Aufrunden && Naechstgroesser(s, e) is { } gr)
+            // passende Regeln der Reihe nach: die erste, deren Serie die Grösse hat (Flexkanal Ø 90 → Schmidlin KSR, sonst Depping Aludec);
+            // eine Regel ohne Serie beendet die Suche; hat keine die Grösse, rundet die erste Regel mit «aufrunden» auf
+            var passend = regeln.Where(r => Regex.IsMatch(typname, r.Muster, RegexOptions.IgnoreCase) && (r.Medien is null || medium is not null && r.Medien.Contains(medium, StringComparer.OrdinalIgnoreCase)))
+                .TakeWhile(r => r.Serie is not null).ToList();
+            if (passend.Count == 0) { Zaehlen(ohne, typname); continue; }
+            Regel regel = passend[0];
+            Leitungsserie? s = null;
+            SerienGroesse? g = null;
+            foreach (var r in passend)
             {
+                if (!serien.TryGetValue(r.Serie!, out var rs)) serien[r.Serie!] = rs = Laden(k, kat, ort, r.Serie!, fehler);
+                if (rs is null) continue;
+                s ??= rs;
+                if (Groesse(rs, e) is { } rg) { (regel, s, g) = (r, rs, rg); break; }
+            }
+            if (s is null) continue;
+            var name = regel.Serie!;
+            if (g is null && passend.FirstOrDefault(r => r.Aufrunden) is { } ra && serien.GetValueOrDefault(ra.Serie!) is { } sa && Naechstgroesser(sa, e) is { } gr)
+            {
+                (regel, s, name) = (ra, sa, ra.Serie!);
                 // nächstgrössere Grösse der Serie; das IFC-Mass bleibt als Kennung (Deckung)
                 (e.Kennungen ??= [])[IfcGroesse] = Kurz(e);
                 if (e.Zahl("da") is not null && gr.Aussen is double ga) lauf.Wert(e, "da", ga, $"aufgerundet auf {s.Familie.Name} {gr.Typ} (IFC {Kurz(e)})");
