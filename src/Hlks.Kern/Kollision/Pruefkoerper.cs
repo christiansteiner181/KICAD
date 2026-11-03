@@ -105,19 +105,23 @@ public sealed class Achskoerper
     }
 
     /// <summary>Quader b × h um die Strecke a–b; Lage des Querschnitts wie HlksKoerper (siehe <see cref="KanalLage"/>).</summary>
-    public static Achskoerper Quader(V3 a, V3 b, double breite, double hoehe)
+    public static Achskoerper Quader(V3 a, V3 b, double breite, double hoehe, double querDrehung = 0)
     {
-        var (rb, rh) = KanalLage(b - a);
+        var (rb, rh) = KanalLage(b - a, querDrehung);
         return new(a, b, Querschnittsform.Rechteck, Math.Sqrt(breite * breite + hoehe * hoehe) / 2, breite, hoehe, rb, rh);
     }
 
     /// <summary>Richtungen von Breite und Höhe eines Kanals wie HlksKoerper.Kanal: waagrechte und geneigte Teilstücke b quer und
     /// waagrecht (z × Achse), h = Achse × b (senkrecht zur Achse, nach oben); senkrechte Teilstücke (Grundrisslänge &lt; 0.001 mm)
-    /// b in x, h in y.</summary>
-    public static (V3 B, V3 H) KanalLage(V3 achse)
+    /// b in x, h in y – um querDrehung (Grad, Eigenschaft «querDrehung» des Kanals) gedreht.</summary>
+    public static (V3 B, V3 H) KanalLage(V3 achse, double querDrehung = 0)
     {
         double lxy = Math.Sqrt(achse.X * achse.X + achse.Y * achse.Y);
-        if (lxy < 1e-3) return (new V3(1, 0, 0), new V3(0, 1, 0));
+        if (lxy < 1e-3)
+        {
+            double w = querDrehung * Math.PI / 180;
+            return (new V3(Math.Cos(w), Math.Sin(w), 0), new V3(-Math.Sin(w), Math.Cos(w), 0));
+        }
         var d = achse.Einheit();
         var b = new V3(-d.Y, d.X, 0).Einheit();
         return (b, d.Kreuz(b));
@@ -756,16 +760,18 @@ public static class Pruefkoerperbau
             {
                 var a = punkte[i - 1]; var b = punkte[i];
                 var d = (b - a).Einheit();
-                achsen.Add(Achskoerper.Quader(i > 1 ? a - d * verl : a, i < punkte.Count - 1 ? b + d * verl : b, mass.Breite, mass.Hoehe));
+                achsen.Add(Achskoerper.Quader(i > 1 ? a - d * verl : a, i < punkte.Count - 1 ? b + d * verl : b, mass.Breite, mass.Hoehe, e.Zahl("querDrehung") ?? 0));
             }
             massquelle = mass.Serie is { } s ? $"Serie {s.SerieName}, {s.Typ}: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm" : $"Eigenschaften breite × hoehe: {Z(mass.Breite)} × {Z(mass.Hoehe)} mm";
         }
         else
         {
-            double durchmesser = mass?.Durchmesser ?? Math.Max(HlksEinordnung.Dn(e) ?? 0, HlksKoerper.MinDurchmesser);
+            double? da = mass is null && e.Zahl("da") is double d0 && d0 > 0 ? d0 : null;   // ohne Serie: Aussendurchmesser wie das 3D (z. B. aus dem IFC)
+            double durchmesser = mass?.Durchmesser ?? da ?? Math.Max(HlksEinordnung.Dn(e) ?? 0, HlksKoerper.MinDurchmesser);
             for (int i = 1; i < punkte.Count; i++) achsen.Add(Achskoerper.Kapsel(punkte[i - 1], punkte[i], durchmesser / 2));
             massquelle = mass?.Serie is { } s ? $"Serie {s.SerieName}, {s.Typ}: Ø {Z(durchmesser)} mm"
                 : mass is not null ? $"Eigenschaft durchmesser: Ø {Z(durchmesser)} mm"
+                : da is not null ? $"Eigenschaft da: Ø {Z(durchmesser)} mm"
                 : $"Darstellung DN-gerecht: Ø max(dn, {Z(HlksKoerper.MinDurchmesser)}) = {Z(durchmesser)} mm";
         }
         if (daemm > 0) massquelle += $", Dämmung {Z(daemm)} mm";

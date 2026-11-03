@@ -183,11 +183,13 @@ public sealed class KollisionGeometrieIfcTests : IDisposable
             Assert.Equal("hlks", k.Bereich);
             Assert.Equal(Huelle(nd.Produkt(e.Kennungen!["ifc"])!.Begrenzung), k.Huelle);
         }
-        // Rohr 1 mit Nennweite 100 aus dem Pset (ohne Serie: Ø max(100, 30)), Rohr 2 ohne Nennweite (Ø 30), Kanal 400 × 200
+        // Rohre: Aussendurchmesser da 110 aus dem Körper (gilt vor der Nennweite 100 aus dem Pset und vor dem Mindest-Ø 30, IFC 1:1
+        // 03.11.2026), Kanal 400 × 200
         var r1 = m.Koerper.Single(x => x.ElementId == N("Rohr 1").Id);
         Assert.Equal("achse", r1.Quelle);
-        Assert.Equal(50, r1.Achsen[0].Radius, 9);
-        Assert.Equal(15, m.Koerper.Single(x => x.ElementId == N("Rohr 2").Id).Achsen[0].Radius, 9);
+        Assert.Equal(55, r1.Achsen[0].Radius, 9);
+        Assert.Equal(110, N("Rohr 1").Zahl("da"));
+        Assert.Equal(55, m.Koerper.Single(x => x.ElementId == N("Rohr 2").Id).Achsen[0].Radius, 9);
         var ka = m.Koerper.Single(x => x.ElementId == N("Kanal Zuluft").Id).Achsen[0];
         Assert.Equal(Querschnittsform.Rechteck, ka.Form);
         Assert.Equal(400, ka.Breite, 9); Assert.Equal(200, ka.Hoehe, 9);

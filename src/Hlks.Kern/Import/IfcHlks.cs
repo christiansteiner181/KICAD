@@ -377,7 +377,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
             if (DaAus(wert) is double da) { lauf.Wert(e, "da", da, schluessel); return; }
             Notiz($"Rohr.da: Wert in {schluessel} nicht lesbar (Einheit unklar)", Kurzname(x));
         }
-        var q = koerper.Value?.QuerschnittAusProfil() ?? (e.Geometrie is { Punkte.Count: >= 2 } g ? koerper.Value?.QuerschnittAusPunkten(g.Punkte[0], g.Punkte[1]) : null);
+        var g = e.Geometrie is { Punkte.Count: >= 2 } ge ? ge : null;
+        var q = koerper.Value?.QuerschnittAusProfil(g?.Punkte[0], g?.Punkte[^1]) ?? (g is not null ? koerper.Value?.QuerschnittAusPunkten(g.Punkte[0], g.Punkte[1]) : null);
         if (q?.Durchmesser is double d && d > 0)
         {
             lauf.Wert(e, "da", Math.Round(d, 1), q.Herkunft + " (Geometrie der Datei, kein Normwert)");
@@ -389,7 +390,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
     /// <summary>Kanal: Breite/Höhe bzw. Durchmesser aus dem Profil, sonst aus Psets (nur vollständig), sonst aus dem Körper.</summary>
     void Querschnitt(Element e, IIfcProduct x, Dictionary<string, IfcWert> eig, Dictionary<string, List<string>> psets, Lazy<IfcHlksKoerper?> koerper)
     {
-        var q = koerper.Value?.QuerschnittAusProfil();
+        var achse = e.Geometrie is { Punkte.Count: >= 2 } ga ? ga : null;
+        var q = koerper.Value?.QuerschnittAusProfil(achse?.Punkte[0], achse?.Punkte[^1]);
         if (q is null)
         {
             double? Mm(string n) => psets.TryGetValue(n, out var k) && Pset(eig, k) is { } f ? MmAus(f.Wert) : null;
@@ -402,7 +404,11 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         if (q is null && e.Geometrie is { Punkte.Count: >= 2 } g) q = koerper.Value?.QuerschnittAusPunkten(g.Punkte[0], g.Punkte[1]);
         if (q is null) { Notiz("Kanäle ohne Querschnitt (weder Profil noch Psets noch Körper)", Kurzname(x)); return; }
         if (q.Durchmesser is double dd) lauf.Wert(e, "durchmesser", dd, q.Herkunft);
-        else { lauf.Wert(e, "breite", q.Breite!.Value, q.Herkunft); lauf.Wert(e, "hoehe", q.Hoehe!.Value, q.Herkunft); }
+        else
+        {
+            lauf.Wert(e, "breite", q.Breite!.Value, q.Herkunft); lauf.Wert(e, "hoehe", q.Hoehe!.Value, q.Herkunft);
+            if (q.Drehung is double dr && Math.Abs(dr) >= 0.5) lauf.Wert(e, "querDrehung", dr, q.Herkunft + " (Richtung der Breite im Grundriss)");
+        }
     }
 
     /// <summary>Erster vorhandener Pset-Wert aus den Kandidaten «Pset.Name» (mit Fundstelle).</summary>

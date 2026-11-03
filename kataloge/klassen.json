@@ -332,6 +332,7 @@
     "eigenschaften": [
       { "name": "breite", "typ": "zahl", "einheit": "mm", "beschreibung": "Breite bei Rechteckkanal" },
       { "name": "hoehe", "typ": "zahl", "einheit": "mm", "beschreibung": "Höhe bei Rechteckkanal" },
+      { "name": "querDrehung", "typ": "zahl", "einheit": "Grad", "beschreibung": "Senkrechte Rechteckkanäle: Richtung der Breite im Grundriss gegen x (fehlt = 0, Breite in x); aus dem IFC" },
       { "name": "durchmesser", "typ": "zahl", "einheit": "mm", "beschreibung": "Durchmesser bei Rundkanal" } ] },
 
   { "name": "Formteil", "abstrakt": true, "familie": true, "schicht": "system", "rolle": "leitung", "bkpJeGewerk": { "sanitaer": "254", "heizung": "243" }, "geometrie": "punkt", "brauchtSystem": true, "brauchtGeschoss": true,

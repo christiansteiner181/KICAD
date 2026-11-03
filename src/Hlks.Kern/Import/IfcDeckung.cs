@@ -71,8 +71,10 @@ public static class IfcDeckung
             var ab = u["jeKlasse"]!.AsObject().Select(kv => (Klasse: kv.Key, Anzahl: kv.Value!["anzahl"]!.GetValue<int>(), Ok: kv.Value["deckungsgleich"]!.GetValue<int>(), Max: kv.Value["maxMm"]))
                 .Where(x => x.Ok < x.Anzahl).Select(x => $"{x.Klasse} {x.Anzahl - x.Ok} (bis {x.Max} mm)").ToList();
             var fehlt = u["nichtNachgebaut"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
+            var ifcK = u["ausIfcKoerper"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
             aus.Add($"Prüfung Nachbau ↔ IFC {u["unterlage"]} (±{r["toleranz"]} mm): {ok} von {n} deckungsgleich"
                 + (ab.Count > 0 ? $"; abweichend: {string.Join(", ", ab)}" : "")
+                + (ifcK.Count > 0 ? $"; Körper aus dem IFC (HLKS-Bauteile ohne eigene Form, 3D und Kollision aus dem IFC-Netz): {string.Join(", ", ifcK)}" : "")
                 + (fehlt.Count > 0 ? $"; nicht nachgebaut (nur Hintergrund): {string.Join(", ", fehlt)}" : "")
                 + (ab.Count > 0 || fehlt.Count > 0 ? " – Einzelheiten: Abfrage ifc_deckung." : "."));
         }
@@ -88,9 +90,18 @@ public static class IfcDeckung
             .GroupBy(e => Basis(e.Kennungen!["ifc"])).ToList();
         var ergebnisse = new List<(Element E, string Entitaet, double Abw, string Seite, double[] Nb, double[] Ifc)>();
         int ohneNachbau = 0, ohneNetz = 0;
+        var ausIfc = new SortedDictionary<string, int>(StringComparer.Ordinal);
         foreach (var g in gruppen)
         {
             if (d.Produkt(g.Key) is not { } pr) { ohneNetz++; continue; }
+            // HLKS-Bauteile ohne eigene Form (Formteil, Armatur, Apparat, Gerät: in KICAD ein Punkt mit Sinnbild) zeigen in 3D und in der
+            // Kollision ihr IFC-Netz, solange sie unverändert sind (IfcOriginal) – kein Nachbau zu messen; eigens gezählt (03.11.2026)
+            if (g.All(e => Grafik.QuelleFuer(p.Katalog, e) is HlksGrafik && HlksEinordnung.Art(p.Katalog, e) != HlksArt.Leitung) && IfcOriginal.Netz(p, g.First()) is not null)
+            {
+                var kl = g.First().Klasse;
+                ausIfc[kl] = ausIfc.GetValueOrDefault(kl) + 1;
+                continue;
+            }
             var teile = g.SelectMany(e => VergleichsTeile(p, e)).ToList();
             double w = (teile.FirstOrDefault(t => t.Art == "quader")?.Drehung ?? 0) * Math.PI / 180;
             var ifc = Box(new[] { pr }.Concat(d.TeileVon(g.Key)).Where(x => x.Dreiecke > 0).Select(x => NetzBox(d, x, w)).OfType<double[]>());
@@ -126,6 +137,7 @@ public static class IfcDeckung
         {
             ["unterlage"] = ul.Kennzeichen, ["elemente"] = ergebnisse.Count, ["deckungsgleich"] = ergebnisse.Count(x => x.Abw <= tol),
             ["ohneNachbauKoerper"] = ohneNachbau, ["ohneIfcNetz"] = ohneNetz,
+            ["ausIfcKoerper"] = new JsonObject(ausIfc.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
             ["jeKlasse"] = jeKlasse, ["abweichend"] = abweichend,
             ["nichtNachgebaut"] = new JsonObject(fehlt.Select(x => KeyValuePair.Create(x.Key, (JsonNode?)x.Count()))),
         };
@@ -193,8 +205,15 @@ public static class IfcDeckung
             }
             case "zylinder" when t.Von is { Length: >= 3 } v && t.Nach is { Length: >= 3 } n && t.Radius is double r:
             {
-                var b = Aus([Dreh(v[0], v[1], v[2], w), Dreh(n[0], n[1], n[2], w)]);
-                for (int i = 0; i < 3; i++) { b[i] -= r; b[i + 3] += r; }
+                // genau: quer zur Achse reicht der Kreis je Richtung r · √(1 − u²) (u = Anteil der Achse an dieser Richtung)
+                double[] p0 = Dreh(v[0], v[1], v[2], w), p1 = Dreh(n[0], n[1], n[2], w);
+                var b = Aus([p0, p1]);
+                double l = Math.Sqrt(Enumerable.Range(0, 3).Sum(i => (p1[i] - p0[i]) * (p1[i] - p0[i])));
+                for (int i = 0; i < 3; i++)
+                {
+                    double u = l > 0 ? (p1[i] - p0[i]) / l : 0, q = r * Math.Sqrt(Math.Max(0, 1 - u * u));
+                    b[i] -= q; b[i + 3] += q;
+                }
                 return b;
             }
             case "kugel" when t.Mitte is { Length: >= 3 } c && t.Radius is double r:

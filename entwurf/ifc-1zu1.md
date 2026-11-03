@@ -80,4 +80,18 @@ verifiziert und korrigiert werden», «der ifc import ist die basis für alles f
 - **Nicht nachgebaut (als IFC-Original im Hintergrund):** IfcFlowTerminal 57 (HLKS-Bereich), IfcCovering 44, IfcRailing 40 (keine
   KICAD-Klasse), Archicad-Fensterelemente «Fenster-008» (IfcWall 22 ohne Achse, IfcWindow 19 mit Wirt IfcBuildingElementProxy),
   IfcWindow 2 ohne Öffnung.
-- **Offen:** Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid, Installations-IFC.
+- **Offen:** Grundriss/Schnitt der übernommenen Elemente aus ihrem IFC-Netz (Schritt 3), Detailgrad-Entscheid.
+
+## Stand 03.11.2026 – Installations-IFC (Bernstrasse 42, H+K Revit 2025, IFC2X3)
+
+- **Rohre 1634/1634, Kanäle 310/318 deckungsgleich** (offen: 8 kurze Flachoval-Kanäle, als Rechteck nachgebaut, längs der Achse bis 33 mm kürzer als ihr IFC-Körper) (Prüfprojekt nur Bereich hlks; das Revit-Modell liegt 31 m neben dem Archicad-Modell, ins
+  Architekturprojekt übernimmt KICAD es nur mit ausdrücklichem Bezug).
+- **Korrekturen:** Rohre ohne Serie mit ihrem Aussendurchmesser `da` (aus dem IFC-Profil) in 3D und Kollision statt Mindest-Ø 30 bzw. DN;
+  Rechteckkanal-Profil nur dann Querschnitt, wenn die Extrusion längs der Achse läuft (Revit extrudiert waagrechte Kanäle auch senkrecht um
+  die Höhe); Flachovale als Rechteck derselben Hülle (KICAD kennt keinen ovalen Kanal); senkrechte Rechteckkanäle mit `querDrehung`
+  (Richtung der Breite im Grundriss; Benennung bleibt «grössere Seite = Breite»); Prüfung misst Zylinder genau (r·√(1−u²) quer zur Achse).
+- **Formteile, Armaturen, Apparate, Geräte** (Bogen 1375, Reduktion 107, T-Stück 105, Ventil 52, FBH-Kreis 45, Durchlässe 49 …): in KICAD
+  ein Punkt mit Sinnbild, ohne Lage und Grösse – kein Nachbau messbar. In 3D und Kollision zeigen sie ihr IFC-Netz, solange unverändert;
+  `ifc_deckung` zählt sie eigens («Körper aus dem IFC»). **Offen:** Familie aus dem IFC-Typ (Teilnetze, Lage aus den Ports), damit auch
+  verschobene oder neu gesetzte Bauteile wie im Datenblatt aussehen.
+- **Regressionsprüfung:** `IfcDeckungEchtTests` (beide Dateien, nur lokal).

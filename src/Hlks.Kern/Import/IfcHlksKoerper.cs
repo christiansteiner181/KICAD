@@ -9,7 +9,7 @@ using Xbim.Ifc4.Interfaces;
 namespace Hlks.Kern;
 
 /// <summary>Querschnitt einer Leitung in mm: rund (Durchmesser) oder rechteckig (Breite quer, Höhe senkrecht).</summary>
-public sealed record IfcHlksQuerschnitt(double? Durchmesser, double? Breite, double? Hoehe, string Herkunft)
+public sealed record IfcHlksQuerschnitt(double? Durchmesser, double? Breite, double? Hoehe, string Herkunft, double? Drehung = null)
 {
     public bool Rund => Durchmesser is not null;
 }
@@ -209,7 +209,8 @@ public sealed class IfcHlksKoerper
     /// <summary>Querschnitt quer zur Achse a→b aus der Punktwolke: rund, wenn die Punkte in vielen Richtungen um die Achse
     /// liegen (Kreis als Vieleck; ein Rechteck hat nur vier Ecken), Durchmesser = grösste Ausdehnung quer (robust gegen eine
     /// leicht schiefe Achse); sonst Rechteck mit Breite waagrecht quer und Höhe senkrecht dazu. Senkrechte Kanäle haben kein
-    /// Oben: dort gilt die grössere Seite als Breite (Annahme, wie Kanäle beschriftet werden: 550 × 150).</summary>
+    /// Oben: dort gilt die grössere Seite als Breite (Annahme, wie Kanäle beschriftet werden: 550 × 150), ihre Richtung im Grundriss steht
+    /// in Drehung (Grad gegen x; 0 oder 90).</summary>
     public IfcHlksQuerschnitt? QuerschnittAusPunkten(double[] a, double[] b)
     {
         var u = Einheit([b[0] - a[0], b[1] - a[1], b[2] - a[2]]);
@@ -233,17 +234,27 @@ public sealed class IfcHlksKoerper
             double dx = x - hm, dy = y - wm;
             if (dx * dx + dy * dy > 1) richtungen.Add((int)Math.Floor((Math.Atan2(dy, dx) * 180 / Math.PI + 360) % 360 / 10));
         }
-        if (richtungen.Count >= 12)
+        // rund nur bei gleicher Ausdehnung in beiden Richtungen – ein Flachoval (Bernstrasse 42: 168 × 90) wird zum Rechteck derselben
+        // Hülle, KICAD kennt keinen ovalen Kanal (03.11.2026)
+        if (richtungen.Count >= 12 && Math.Abs(breite - hoehe) <= 0.05 * Math.Max(breite, hoehe))
             return new IfcHlksQuerschnitt(Math.Round(Math.Max(breite, hoehe)), null, null, "Körper (Punkte quer zur Achse)");
-        if (Math.Abs(u[2]) > 0.9)
-            return new IfcHlksQuerschnitt(null, Math.Round(Math.Max(breite, hoehe)), Math.Round(Math.Min(breite, hoehe)), "Körper (Punkte quer zur Achse; senkrecht: grössere Seite als Breite)");
+        if (Math.Abs(u[2]) > 0.9)   // Quer(u) senkrecht: h = x, w = y
+            return new IfcHlksQuerschnitt(null, Math.Round(Math.Max(breite, hoehe)), Math.Round(Math.Min(breite, hoehe)),
+                "Körper (Punkte quer zur Achse; senkrecht: grössere Seite als Breite)", breite >= hoehe ? 0 : 90);
         return new IfcHlksQuerschnitt(null, Math.Round(breite), Math.Round(hoehe), "Körper (Punkte quer zur Achse)");
     }
 
-    /// <summary>Querschnitt aus dem Profil der Extrusion (Kreis: Durchmesser; Rechteck: Breite waagrecht, Höhe senkrecht).</summary>
-    public IfcHlksQuerschnitt? QuerschnittAusProfil()
+    /// <summary>Querschnitt aus dem Profil der Extrusion (Kreis: Durchmesser; Rechteck: Breite waagrecht, Höhe senkrecht). Mit der Achse a→b
+    /// nur, wenn die Extrusion längs dieser Achse läuft – Revit schreibt waagrechte Rechteckkanäle auch als Grundriss-Rechteck, senkrecht um
+    /// die Kanalhöhe extrudiert (Bernstrasse 42 KA-190: Profil 5551.8 × 250, Tiefe 100); dann ist das Profil kein Querschnitt (03.11.2026).</summary>
+    public IfcHlksQuerschnitt? QuerschnittAusProfil(double[]? a = null, double[]? b = null)
     {
         if (Extrusion is null) return null;
+        if (a is not null && b is not null && Einheit([b[0] - a[0], b[1] - a[1], b[2] - a[2]]) is { } achse)
+        {
+            var r = Extrusion.ExtrudedDirection.DirectionRatios.Select(v => (double)v).ToArray();
+            if (Einheit(ExtrusionLage.Richtung([r[0], r.Length > 1 ? r[1] : 0, r.Length > 2 ? r[2] : 0])) is { } ex && Math.Abs(Skalar(ex, achse)) < 0.99) return null;
+        }
         var lage = ExtrusionLage * (Extrusion.SweptArea is IIfcParameterizedProfileDef pp ? datei.Achsen(pp.Position) : Matrix4.Einheit);
         switch (Extrusion.SweptArea)
         {
@@ -255,9 +266,16 @@ public sealed class IfcHlksKoerper
             {
                 double x = (double)r.XDim * datei.MmJeEinheit, y = (double)r.YDim * datei.MmJeEinheit;
                 var ax = lage.Richtung([1, 0, 0]); var ay = lage.Richtung([0, 1, 0]);
-                // Höhe = die Profilseite, die steiler steht; senkrechte Kanäle (beide Seiten waagrecht): grössere als Breite
+                // Höhe = die Profilseite, die steiler steht; senkrechte Kanäle (beide Seiten waagrecht): grössere als Breite, ihre Richtung im
+                // Grundriss als Drehung (sonst lag ein in y breiter Steigkanal quer, Bernstrasse 42 KA-233, 03.11.2026)
                 if (Math.Abs(ax[2]) < 0.1 && Math.Abs(ay[2]) < 0.1)
-                    return new IfcHlksQuerschnitt(null, Math.Round(Math.Max(x, y), 1), Math.Round(Math.Min(x, y), 1), "Profil IfcRectangleProfileDef (senkrecht: grössere Seite als Breite)");
+                {
+                    var lang = x >= y ? ax : ay;
+                    double dr = Math.Atan2(lang[1], lang[0]) * 180 / Math.PI;
+                    dr = Math.Round(((dr % 180) + 270) % 180 - 90, 1);   // (−90, 90]
+                    if (dr <= -90) dr += 180;
+                    return new IfcHlksQuerschnitt(null, Math.Round(Math.Max(x, y), 1), Math.Round(Math.Min(x, y), 1), "Profil IfcRectangleProfileDef (senkrecht: grössere Seite als Breite)", dr);
+                }
                 bool xSenkrecht = Math.Abs(ax[2]) > Math.Abs(ay[2]) + 1e-6;
                 return xSenkrecht ? new IfcHlksQuerschnitt(null, Math.Round(y, 1), Math.Round(x, 1), "Profil IfcRectangleProfileDef")
                                   : new IfcHlksQuerschnitt(null, Math.Round(x, 1), Math.Round(y, 1), "Profil IfcRectangleProfileDef");

@@ -34,11 +34,12 @@ public static class HlksKoerper
                     bool daemmung = detail == "fein" && mass is { Daemmdicke: > 0 };
                     if (mass is { Rechteck: true })
                     {
-                        Kanal(k, pts, mass.Breite, mass.Hoehe, farbe);   // Rechteckkanal in echter Grösse
+                        Kanal(k, pts, mass.Breite, mass.Hoehe, farbe, e.Zahl("querDrehung") ?? 0);   // Rechteckkanal in echter Grösse
                         if (daemmung) DaemmungKanal(k, pts, mass, farbe);
                         break;
                     }
                     if (mass is not null) radius = mass.Durchmesser / 2;   // Rohr mit Serie, Rundkanal, Lüftungsrohr
+                    else if (e.Zahl("da") is double da && da > 0) radius = da / 2;   // ohne Serie: Aussendurchmesser der Leitung (z. B. aus dem IFC-Profil), wie gezeichnet
                     Roehren(k, pts, radius, "rohr", farbe);
                     for (int i = 1; i < pts.Count - 1; i++)   // Knickstellen schliessen
                         k.Teile.Add(Kugel(pts[i], radius, "rohr", farbe));
@@ -114,7 +115,7 @@ public static class HlksKoerper
     /// <summary>Rechteckkanal: Quader je Segment (Breite quer, Höhe senkrecht), an Knicken ein Quader B × B × H zum Schliessen.
     /// Steigende Segmente (Steigleitung) stehen mit B × H im Grundriss. Annahme: geneigte Segmente als Quader längs der
     /// Grundrissprojektion mit mittlerer Höhe (kommen in Lüftungsnetzen kaum vor).</summary>
-    static void Kanal(Koerper k, List<double[]> pts, double b, double h, string? farbe)
+    static void Kanal(Koerper k, List<double[]> pts, double b, double h, string? farbe, double querDrehung = 0)
     {
         for (int i = 1; i < pts.Count; i++)
         {
@@ -125,7 +126,7 @@ public static class HlksKoerper
             if (lxy < 1e-3)
             {
                 if (Math.Abs(dz) < 1e-3) continue;
-                k.Teile.Add(new Koerperteil { Art = "quader", Mitte = mitte, Masse = [b, h, Math.Abs(dz)], Drehung = 0, Farbe = farbe, Material = "rohr" });
+                k.Teile.Add(new Koerperteil { Art = "quader", Mitte = mitte, Masse = [b, h, Math.Abs(dz)], Drehung = querDrehung, Farbe = farbe, Material = "rohr" });
                 continue;
             }
             k.Teile.Add(new Koerperteil

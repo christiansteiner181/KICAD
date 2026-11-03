@@ -62,6 +62,17 @@ public class KollisionGeometrieProjektTests
         Assert.All(Pruefkoerperbau.Leitung(p, Hole(p, "RO-4"))!.Achsen, a => Assert.Equal(27.5, a.Radius, 12));
     }
 
+    [Fact]
+    public void Rohr_OhneSerie_MitDa_DarstellungUndPruefkoerperInEchterGroesse()
+    {
+        // IFC 1:1 (03.11.2026): Aussendurchmesser aus dem IFC-Profil (da 28) gilt in 3D und Kollision, nicht der Mindest-Ø 30
+        var p = MitSerie(false);
+        Ok(RohrOhneSerie(p, "RO-5", 20, [0, 6000, 500], [1000, 6000, 500]));
+        Aendern(p, "RO-5", new JsonObject { ["da"] = 28 });
+        Assert.Equal(14, Pruefkoerperbau.Leitung(p, Hole(p, "RO-5"))!.Achsen[0].Radius, 12);
+        Assert.All(HlksKoerper.Erzeugen(p, Hole(p, "RO-5"))!.Teile.Where(t => t.Art == "zylinder"), t => Assert.Equal(14, t.Radius!.Value, 12));
+    }
+
     static JsonObject Kanalserie(bool rund) => JsonNode.Parse(rund
         ? """
           { "format": 1, "id": "fam-b1-kanal-rund", "name": "Kanal rund (fiktiv B1)", "kategorie": "Kanal",
