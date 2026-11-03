@@ -90,6 +90,7 @@ public sealed partial class Werkzeuge(Projekt projekt)
                 case null: break;
                 case string s: o[name] = s; break;
                 case double d: o[name] = d; break;
+                case bool b: o[name] = b; break;   // Bearbeitungswerkzeuge: Ja/Nein-Parameter (trennen, kopieren, zug)
                 case JsonElement je: if (Knoten(je) is { } k) o[name] = k; break;
                 default: throw new InvalidOperationException("Parametertyp nicht vorgesehen: " + wert.GetType().Name);
             }
