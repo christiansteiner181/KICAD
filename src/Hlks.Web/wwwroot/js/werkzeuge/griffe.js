@@ -8,17 +8,23 @@
 // Annahme: Ecken verbundener Wände werden nicht mitgezogen (es gibt keinen Kernbefehl dafür); jede Wand ändert sich einzeln.
 // Leitungen (Rohr, Kanal; Modul 3, C1): Ziehen eines Endes sendet dieselbe Geometrie-Änderung; die Nachführung verbundener Elemente und die
 // Hinweise kommen vom Kern (Leitungsenden folgen Geräten und Formteilen, neue Befunde P13–P18 erscheinen als Meldung).
+// Bearbeitungswerkzeuge A2: Beim Ziehen eines Leitungsendes werden Anschlüsse in der Nähe gefangen (gehen allem vor). Loslassen auf einem freien
+// Anschluss setzt das Ende auf dessen Lage (mit Höhe) und verbindet im selben Paket (element_aendern mit «verbinden»); ein belegter Anschluss
+// bricht das Ziehen mit Meldung ab.
 
 import { element, abonnieren } from '../zustand.js';
 import { sende, ergebnisMelden } from '../oberflaeche/befehle.js';
 import { meldung } from '../oberflaeche/dialoge.js';
 import { planAnsicht, werkzeugAktiv, beiWerkzeugEnde, geschossVon } from './basis.js';
 import { fangen, abstand, FANGRADIUS_PX } from './fangen.js';
-import { griffPunkte, griffGeometrie, tuerUmdrehen } from './parameter.js';
+import { griffPunkte, griffGeometrie, griffAnschliessen, tuerUmdrehen } from './parameter.js';
 import { rasterWert } from './optionen.js';
 import { auswahlElemente, strgMerken, beiAuswahlMenge } from './auswahl.js';
 import * as S from './schicht.js';
-import { neueBefundeTexte, istLeitungsklasse } from './leitung-logik.js';
+import { neueBefundeTexte, istLeitungsklasse, anschluesseNahe, anschlussFangpunkte, anschlussText, anschlussFrei } from './leitung-logik.js';
+import { alleAnschluesse, anschluesseLaden, elementeNahe } from './leitung-daten.js';
+
+const ANSCHLUSS_PX = 60;     // Suchradius für Anschlüsse beim Ziehen eines Leitungsendes (wie Leitungswerkzeug)
 
 const GRIFF_PX = 8;          // Kantenlänge der Griffe
 const TREFFER_PX = 8;        // Fangradius der Maus auf Griffen
@@ -115,8 +121,22 @@ class Griffe {
     if (g.el.klasse === 'Wand' && neu.dicke > 0) h += S.band(pts[0], pts[1], neu.dicke, 0);
     else h += S.polylinie(pts, 'wz-linie');
     if (z.anker) h += S.tempMass(z.anker, z.fang.punkt, s);
+    if (z.leitungsende) {
+      const gefangen = z.fang.art === 'anschluss' ? z.fang.anschluss : null;
+      for (const a of this.anschluesseNahe(z, ANSCHLUSS_PX * 0.8)) {
+        const gross = gefangen && gefangen.element === a.element && gefangen.name === a.name;
+        h += S.kreis(a.p, (gross ? 6 : 4) * s, a.verbunden ? 'wz-anschluss wz-anschluss-belegt' : 'wz-anschluss');
+      }
+      if (gefangen) h += S.text(gefangen.p, anschlussText(gefangen), s, { versatzPx: [12, 14], klasse: 'wz-text wz-fangtext' });
+    }
     h += S.griff(z.fang.punkt, s, 'wz-griff wz-griff-zieht', GRIFF_PX);
     return h + S.fangsymbol(z.fang, s);
+  }
+
+  /** Anschlüsse anderer Elemente nahe der Maus (nur beim Ziehen eines Leitungsendes). */
+  anschluesseNahe(z, pixel) {
+    if (!z.maus) return [];
+    return anschluesseNahe(alleAnschluesse(), z.maus, pixel * this.s()).filter((a) => a.element !== z.g.el.kennzeichen);
   }
 
   // ------------------------------------------------------------------------------------------ Ereignisse
@@ -129,8 +149,14 @@ class Griffe {
     const eigen = z.g.el.id;
     if (z.daten?.von !== daten) z.daten = { von: daten, punkte: (daten.punkte ?? []).filter((q) => q.id !== eigen), kanten: (daten.kanten ?? []).filter((k) => k.id !== eigen) };
     const gefiltert = z.daten;
+    z.maus = maus;
+    let extraPunkte = [];
+    if (z.leitungsende) {
+      anschluesseLaden(elementeNahe(maus, 3000, geschossVon(this.ansicht)), () => { if (this.ziehen === z) this.zeichnen(); });
+      extraPunkte = anschlussFangpunkte(this.anschluesseNahe(z, ANSCHLUSS_PX));
+    }
     return fangen({ punkt: maus, daten: gefiltert, radius: FANGRADIUS_PX * this.s(), letzter: z.anker, raster: rasterWert(), ortho: !!e.shiftKey,
-      drehung: this.ansicht.drehung ?? 0 });   // N9: Orthogonal und Raster in den Achsen der Ansicht
+      extraPunkte, drehung: this.ansicht.drehung ?? 0 });   // N9: Orthogonal und Raster in den Achsen der Ansicht
   }
 
   ereignis(art, e, ansicht) {
@@ -159,7 +185,8 @@ class Griffe {
     const pts = g.el.geometrie.punkte;
     // Anker für Lot/orthogonal: der Nachbarpunkt (bei Linien der andere Endpunkt)
     const nachbar = pts[g.index === 0 ? Math.min(1, pts.length - 1) : g.index - 1];
-    this.ziehen = { g, anker: nachbar ? [nachbar[0], nachbar[1]] : null, fang: { punkt: g.p, art: 'frei', ortho: false }, start: g.p };
+    const leitungsende = istLeitungsklasse(g.el.klasse) && (g.index === 0 || g.index === pts.length - 1);
+    this.ziehen = { g, anker: nachbar ? [nachbar[0], nachbar[1]] : null, fang: { punkt: g.p, art: 'frei', ortho: false }, start: g.p, leitungsende };
     window.addEventListener('pointerup', this.fenster, true);
     this.zeichnen();
     return true;
@@ -189,11 +216,16 @@ class Griffe {
     window.removeEventListener('pointerup', this.fenster, true);
     const neu = z.fang.punkt;
     this.zeichnen();
-    if (abstand(neu, z.start) < 1) return true;
+    if (abstand(neu, z.start) < 1 && !(z.leitungsende && z.fang.art === 'anschluss')) return true;
     const g = z.g;
-    let geometrie;
-    try { geometrie = griffGeometrie(g.el.geometrie, g.index, neu); } catch (err) { meldung(String(err.message ?? err), 'warnung'); return true; }
-    sende('element_aendern', { element: g.el.kennzeichen, geometrie }).then((r) => {
+    let par;
+    const an = z.leitungsende && z.fang.art === 'anschluss' ? z.fang.anschluss : null;
+    if (an && !anschlussFrei(an)) { meldung(`${an.element}.${an.name} ist schon verbunden (${an.verbunden}) – zuerst trennen.`, 'warnung'); return true; }
+    if (an) par = griffAnschliessen(g.el, g.index, an);
+    if (!par) {
+      try { par = { element: g.el.kennzeichen, geometrie: griffGeometrie(g.el.geometrie, g.index, neu) }; } catch (err) { meldung(String(err.message ?? err), 'warnung'); return true; }
+    }
+    sende('element_aendern', par).then((r) => {
       ergebnisMelden(r, `${g.el.kennzeichen} geändert.`);
       // Leitungsende gezogen: der Kern führt verbundene Elemente nach und meldet, was nicht mehr passt (P13–P18, Hinweise)
       if (r.angenommen && istLeitungsklasse(g.el.klasse)) {

@@ -286,6 +286,17 @@ test('Griffe: neue Geometrie behält Art, Dicke, Höhe und z', () => {
   assert.deepEqual(P.griffPunkte({ art: 'punkt', punkte: [[0, 0]] }), []);
 });
 
+test('Griffe: Leitungsende auf Anschluss – volle Lage mit Höhe, eigener Anschluss nach Ende, Zwischenpunkt nicht', () => {
+  const ro = { kennzeichen: 'RO-1', geometrie: { art: 'polylinie', punkte: [[0, 0, 500], [1000, 0, 500], [1000, 800, 500]] } };
+  const a = { element: 'BO-2', name: 'a', lage: [1000, 1500.0004, 650] };
+  const p = P.griffAnschliessen(ro, 2, a);
+  assert.deepEqual(p.geometrie.punkte[2], [1000, 1500, 650]);
+  assert.deepEqual(p.verbinden, { anschluss: 'ende', nach: { element: 'BO-2', anschluss: 'a' } });
+  assert.equal(P.griffAnschliessen(ro, 0, a).verbinden.anschluss, 'anfang');
+  assert.equal(P.griffAnschliessen(ro, 1, a), null);
+  assert.deepEqual(ro.geometrie.punkte[2], [1000, 800, 500], 'Original bleibt unverändert');
+});
+
 test('Griffe: Tür umdrehen (seite, band)', () => {
   const t = { kennzeichen: 'T-1', werte: { seite: 'links', band: 'anfang' } };
   assert.deepEqual(P.tuerUmdrehen(t, 'seite'), { element: 'T-1', eigenschaften: { seite: 'rechts' } });

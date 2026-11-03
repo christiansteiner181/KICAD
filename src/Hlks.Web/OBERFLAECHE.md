@@ -3931,3 +3931,28 @@ Wegwischen) ist im XR-Labor ohne KICAD-Inhalt mit neutralen Apps erlebbar. Einze
   `dotnet test tests/Hlks.Labor.Tests --filter "FullyQualifiedName~SpielwieseEndpunktTests"`.
 - **Simulator:** `src\Hlks.Quest\Pruefen\hk_xr_pruefen.ps1 -Lauf Spielwiese` (Labor-Server im Testlauf); Prüfbilder unter `%USERPROFILE%\HLKS_CAD_testdaten\hk_xr\s1\`.
 - **Nur mit der Brille prüfbar:** Gefühl der Gesten, Lesbarkeit der Platzhalter, Übernahme einer geänderten Datei über WLAN.
+
+## Verbinden und Trennen im Grundriss (Bearbeitungswerkzeuge A2, `entwurf/bearbeitungswerkzeuge.md`)
+
+Christian, 03.11.2026: «zum zeichen braucht es änderungs und bearbeitungswerkzeuge vergleiche mit Revit» – Stufe A2 der Reihenfolge
+im Entwurf. Kernbefehle `verbinden`, `trennen` und `element_aendern` mit dem neuen Parameter `verbinden { anschluss, nach }`; die
+Oberfläche rechnet nichts Fachliches (Lage, Richtung, Grösse, Medium prüft der Kern und lehnt mit Vorschlag ab).
+
+| Datei | Inhalt |
+| --- | --- |
+| `js/werkzeuge/verbinden.js` | Werkzeug «Verbinden»: zwei Anschlüsse anklicken → `verbinden` |
+| `js/oberflaeche/aktionen-verbinden.js` | Aktionen Verbinden (Ändern › Verändern, Kontextregister › Netz), Trennen … (Kontextregister › Netz), Einträge für den Rechtsklick |
+| `js/werkzeuge/griffe.js`, `parameter.js` (`griffAnschliessen`) | Leitungsende auf einen Anschluss ziehen verbindet |
+
+- **Verbinden** (Ändern › Verändern › Verbinden; Kontextregister › Netz › Verbinden; Rechtsklick «Verbinden …»), nur im Grundriss: gefangen
+  wird nur auf Anschlüsse mit Lage (Leitungsenden, Elemente mit Familie; Marken wie beim Leitungswerkzeug, frei = offen, belegt = grau, der
+  gefangene mit Beschriftung). Erster Klick wählt, zweiter verbindet; das Werkzeug bleibt für das nächste Paar aktiv, Esc beendet. Ein belegter
+  Anschluss wird nicht genommen (Meldung «zuerst trennen»). Anschlüsse ohne Lage (Gerät ohne Familie) verbindet weiterhin das Schema.
+- **Trennen …** (Kontextregister › Netz, aktiv, wenn das gewählte Element Verbindungen hat; Rechtsklick «Trennen: A.x ↔ B.y» je Verbindung,
+  höchstens 8): eine Verbindung wird sofort getrennt, mehrere zeigt der Dialog «Verbindung trennen» mit Auswahl.
+- **Griff-Ende auf Anschluss:** Beim Ziehen eines Leitungsendes (erster bzw. letzter Punkt von Rohr oder Kanal) erscheinen die Anschlüsse
+  in der Nähe und gehen allen anderen Fängen vor. Loslassen auf einem freien Anschluss setzt das Ende auf seine volle Lage (auch die Höhe)
+  und verbindet – ein Paket, ein Strg+Z. War das Ende vorher woanders verbunden, trennt der Kern diese Verbindung (Hinweis). Lehnt der Kern
+  ab (Richtung, Grösse), bleibt auch die Geometrie. Auf einem belegten Anschluss bricht das Ziehen mit Meldung ab.
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~LeitungsendeAnschliessenTests"`,
+  `node --test --test-name-pattern "Griffe" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.

@@ -149,6 +149,8 @@ export const WERKZEUGE = {
   },
   drehen: { titel: 'Drehen', felder: [], hinweis: 'Drehpunkt anklicken, dann den Winkel mit zwei Klicks setzen oder in Grad eingeben (Enter).' },
   spiegeln: { titel: 'Spiegeln', felder: [], hinweis: 'Zwei Punkte der Spiegelachse anklicken.' },
+  // Bearbeitungswerkzeuge A2
+  verbinden: { titel: 'Verbinden', felder: [], hinweis: 'Zwei freie Anschlüsse nacheinander anklicken; das Werkzeug bleibt für das nächste Paar aktiv.' },
 };
 
 // ------------------------------------------------------------------------------------------------ Leitungen (Modul 3, C1)

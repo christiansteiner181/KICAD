@@ -29,6 +29,7 @@ import './aktionen-quest.js';   // Register XR › Brille und Labor: «Quest ver
 import './problemmarker-panel.js';   // Register XR › Koordination › «Problem-Marker» und Palette (Modul XR, XR-E, Quest App V1a)
 import './aktionen-vr-auftrag.js';   // Register XR › Zeigen und Kontextmenü Raum: «In VR begehen», «Im Sitzungsraum zeigen», «Raum in AR», «An die Brille senden» (VR-Auftrag an die Quest, Modul XR)
 import './aktionen-aehnlich.js';   // «Ähnliches platzieren» (Kontextregister, Rechtsklick) – Christian 02.11.2026
+import './aktionen-verbinden.js';   // Verbinden/Trennen im Grundriss (Bearbeitungswerkzeuge A2) – Christian 03.11.2026
 import './aktionen-baustelle.js';   // Register Datei › Ausgabe: «Baustelle (Webseite)» – BIM to field Stufe 1
 import './aktionen-ifc.js';   // Register Datei › Ausgabe: «IFC exportieren …» mit Bericht und IDS-Ergebnis (Modul 7 Teil B2)
 

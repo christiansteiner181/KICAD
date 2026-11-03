@@ -298,6 +298,19 @@ export function griffGeometrie(geometrie, index, neu) {
   return g;
 }
 
+/**
+ * Bearbeitungswerkzeuge A2: Leitungsende (Griff am ersten bzw. letzten Punkt) auf einen Anschluss gezogen → Parameter für element_aendern
+ * mit «verbinden». Der Punkt übernimmt die volle Lage des Anschlusses (auch die Höhe), damit der Kern verbinden kann. a = Anschluss aus
+ * anschlusslagen ({ element, name, lage }). Kein Ende (Zwischenpunkt) → null.
+ */
+export function griffAnschliessen(el, index, a) {
+  const pts = el?.geometrie?.punkte ?? [];
+  const eigen = index === 0 ? 'anfang' : index === pts.length - 1 ? 'ende' : null;
+  if (!eigen || pts.length < 2 || !a?.lage) return null;
+  const geometrie = { ...el.geometrie, punkte: pts.map((p, i) => (i === index ? a.lage.slice(0, 3).map((x) => rund(x)) : [...p])) };
+  return { element: el.kennzeichen, geometrie, verbinden: { anschluss: eigen, nach: { element: a.element, anschluss: a.name } } };
+}
+
 /** Eigenschaft, die ein Türgriff umdreht: 'seite' (links ↔ rechts) oder 'band' (anfang ↔ ende). */
 export function tuerUmdrehen(tuer, was) {
   const w = tuer?.werte ?? {};

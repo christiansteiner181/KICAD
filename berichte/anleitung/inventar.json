@@ -6113,6 +6113,73 @@
           "hinweis": "Formteile folgen einer verschobenen Leitung nicht (Hinweis «Ende folgt», Prüfliste 21)."
         },
         {
+          "id": "m3-verbinden",
+          "titel": "Anschlüsse verbinden (Werkzeug und Griff)",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Verbinden",
+            "kuerzel": "",
+            "sonst": "Kontextregister › Netz › Verbinden; Rechtsklick «Verbinden …»; Griff am Leitungsende"
+          },
+          "schritte": [
+            "Im Grundriss Ändern › Verändern › Verbinden wählen.",
+            "Mit der Maus in die Nähe eines Leitungsendes fahren: die Anschlüsse erscheinen als Kreise.",
+            "Einen freien Anschluss anklicken, dann den Gegenanschluss.",
+            "Esc beendet das Werkzeug.",
+            "Ein Rohr wählen und seinen Endgriff auf einen freien Anschluss ziehen.",
+            "Strg+Z."
+          ],
+          "erwartung": "Das Paar wird verbunden (Meldung «A.x mit B.y verbunden.»); passt Lage, Richtung oder Grösse nicht, lehnt der Kern mit Vorschlag ab. Ein Endgriff, der auf einem freien Anschluss losgelassen wird, springt auf dessen Lage und verbindet im selben Schritt; ein Strg+Z nimmt beides zurück.",
+          "pruefpunkte": [
+            "Anschlüsse erscheinen als Kreise, der gefangene mit Beschriftung.",
+            "Ein belegter Anschluss wird nicht genommen.",
+            "Nach dem Verbinden bleibt das Werkzeug für das nächste Paar aktiv.",
+            "Endgriff auf Anschluss: Leitung endet dort und ist verbunden.",
+            "Ein Strg+Z stellt Lage und Verbindung zurück."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Werkzeug Verbinden mit gefangenem Leitungsende"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3935 (Verbinden und Trennen im Grundriss (Bearbeitungswerkzeuge A2))"
+          ],
+          "hinweis": "Anschlüsse ohne Lage (Geräte ohne Familie, Formteile des Beispielprojekts) verbindet das Schema."
+        },
+        {
+          "id": "m3-trennen",
+          "titel": "Verbindung trennen",
+          "wo": {
+            "register": "Ändern | Klasse",
+            "gruppe": "Netz",
+            "knopf": "Trennen …",
+            "kuerzel": "",
+            "sonst": "Rechtsklick «Trennen: …»"
+          },
+          "schritte": [
+            "Eine Leitung mit Verbindungen wählen.",
+            "Im Kontextregister Netz › Trennen … wählen.",
+            "Bei mehreren Verbindungen eine auswählen und «Trennen».",
+            "Strg+Z."
+          ],
+          "erwartung": "Die gewählte Verbindung ist getrennt (Meldung «Getrennt: …»); mit einer einzigen Verbindung ohne Rückfrage.",
+          "pruefpunkte": [
+            "Der Knopf ist nur aktiv, wenn das Element Verbindungen hat.",
+            "Der Dialog listet alle Verbindungen des Elements.",
+            "Rückgängig verbindet wieder."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Dialog «Verbindung trennen» für HZ-RH-1"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3935 (Verbinden und Trennen im Grundriss (Bearbeitungswerkzeuge A2))"
+          ]
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

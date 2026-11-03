@@ -447,6 +447,7 @@ public sealed class ElementAendern : IBefehl
         new("eigenschaften", "objekt", false, "{ name: wert | { wert, einheit, quelle } | null }"),
         new("geometrie", "objekt", false, "Neue Geometrie (ersetzt die alte)"),
         new("bezuege", "objekt", false, "{ rolle: element | null }"),
+        new("verbinden", "objekt", false, "{ anschluss, nach } – nach der Änderung den eigenen Anschluss mit «nach» ({ element, anschluss } oder \"KENNZEICHEN.anschluss\") verbinden, z. B. ein gezogenes Leitungsende; eine alte Verbindung an diesem Anschluss wird zuerst getrennt"),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -469,8 +470,35 @@ public sealed class ElementAendern : IBefehl
         Elementpflege.Bezuege(k, e, p["bezuege"] as JsonObject);
         Elementpflege.AnsichtPruefen(k, e, d);
         Elementpflege.AnschluesseAbgleichen(k, e, d);
-        if (Json.Text(e) == Json.Text(alt)) { k.Hinweise.Add("Keine Änderung."); return; }
-        k.Setzen(e);
+        bool geaendert = Json.Text(e) != Json.Text(alt);
+        if (geaendert) k.Setzen(e);
+        if (p["verbinden"] is JsonObject vb) Anschliessen(k, e, vb);
+        else if (!geaendert) k.Hinweise.Add("Keine Änderung.");
+    }
+
+    /// <summary>Bearbeitungswerkzeuge A2 (entwurf/bearbeitungswerkzeuge.md): ein Leitungsende wird mit dem Griff auf einen Anschluss gezogen –
+    /// Geometrie und Verbindung im selben Paket (ein Rückgängig). Verbunden wird mit den Prüfungen von «verbinden» (Lage, Richtung, Grösse,
+    /// Medium); lehnt es ab, gilt auch die Geometrie nicht. Hing der eigene Anschluss an einem anderen Element, hat das Ende ihn verlassen:
+    /// diese Verbindung wird zuerst getrennt.</summary>
+    static void Anschliessen(Kontext k, Element e, JsonObject vb)
+    {
+        var eigen = Param.Text(vb, "anschluss", true)!;
+        var (ne, na) = Param.Punkt(vb, "nach") ?? throw new HlksFehler("verbinden.nach fehlt.", "Form: { anschluss: \"ende\", nach: \"KENNZEICHEN.anschluss\" }");
+        var an = e.AnschlussNamens(eigen) ?? throw new HlksFehler($"{e.Kennzeichen} hat keinen Anschluss «{eigen}».",
+            "Anschlüsse: " + string.Join(", ", e.Anschluesse.Select(x => x.Name)));
+        var ziel = k.Arbeit.Hole(ne);
+        if (k.Arbeit.VerbindungAn(e.Id, an.Name) is { } bisher)
+        {
+            var gegen = bisher.Gegenueber(e.Id, an.Name)!;
+            if (gegen.Element == ziel.Id && (na is null || gegen.Anschluss.Equals(na, StringComparison.OrdinalIgnoreCase)))
+            {
+                k.Hinweise.Add($"{e.Kennzeichen}.{an.Name} ist schon mit {ziel.Kennzeichen}.{gegen.Anschluss} verbunden.");
+                return;
+            }
+            k.Trennen(bisher);
+            k.Hinweise.Add($"Bisherige Verbindung von {e.Kennzeichen}.{an.Name} mit {k.Arbeit.Hole(gegen.Element).Kennzeichen}.{gegen.Anschluss} getrennt.");
+        }
+        Verbinden.Ausfuehren(k, k.Arbeit.Hole(e.Id), an.Name, ziel, na);
     }
 }
 

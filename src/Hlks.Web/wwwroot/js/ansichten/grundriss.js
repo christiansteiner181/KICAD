@@ -454,10 +454,14 @@ function erstellen(behaelter, ansichtElement) {
     const raum = el?.klasse === 'Raum' ? el : (!el || el.id === gewaehlt?.id) && gewaehlt?.klasse === 'Raum' ? gewaehlt : null;
     if (!raum) {
       const bauteil = el ?? gewaehlt;
-      const [{ kontextmenue }, { ausfuehren }, { aehnlichMoeglich }] = await Promise.all([import('../oberflaeche/dialoge.js'), import('../oberflaeche/register.js'), import('../oberflaeche/aktionen-aehnlich.js')]);
-      if (!aehnlichMoeglich(bauteil)) return;
+      const [{ kontextmenue }, { ausfuehren }, { aehnlichMoeglich }, { verbindungsEintraege }] = await Promise.all([import('../oberflaeche/dialoge.js'),
+        import('../oberflaeche/register.js'), import('../oberflaeche/aktionen-aehnlich.js'), import('../oberflaeche/aktionen-verbinden.js')]);
+      const eintraege = aehnlichMoeglich(bauteil) ? [{ titel: 'Ähnliches platzieren', aktion: () => ausfuehren('kontext.aehnlich', { element: bauteil.kennzeichen }) }] : [];
+      const netz = verbindungsEintraege(bauteil);   // Bearbeitungswerkzeuge A2: Trennen je Verbindung, Verbinden …
+      if (netz.length) eintraege.push(...(eintraege.length ? [{ trenner: true }] : []), ...netz);
+      if (!eintraege.length) return;
       if (zustand.auswahl !== bauteil.id) auswaehlen(bauteil.id);
-      kontextmenue(e.clientX, e.clientY, [{ titel: 'Ähnliches platzieren', aktion: () => ausfuehren('kontext.aehnlich', { element: bauteil.kennzeichen }) }]);
+      kontextmenue(e.clientX, e.clientY, eintraege);
       return;
     }
     if (zustand.auswahl !== raum.id) auswaehlen(raum.id);
