@@ -136,9 +136,10 @@ public sealed class IdsPrueferTests(IdsBeispielDateien beispiel) : IDisposable, 
         var arten = abb.Systemtypen.Select(s => s.Ifc4).Append(abb.Klasse("Regelkreis")!.Ifc4!.PredefinedType!).Distinct().Order();
         var r6 = doc.Spezifikationen.Single(s => s.Kennung == "HK-HLKS-06").Anforderungen!.OfType<IdsEntitaet>().Single();
         Assert.Equal(arten, r6.Vordefiniert!.Aufzaehlung.Order());
-        // Apparate: alle Entitäten der Klassen mit Rolle verbraucher, zentrale, quelle oder senke ausser Formteilen (Hausanschluss, Verteiler)
+        // Apparate: alle Entitäten der Klassen mit Rolle verbraucher, zentrale, quelle oder senke ausser Formteilen (Hausanschluss, Verteiler,
+        // Luftverteiler als IfcDuctFitting – 03.11.2026)
         var geraete = abb.Klassen.Where(k => IfcHilfe.Kat.Klassen.TryGetValue(k.Klasse, out var d) && d.Rolle is "verbraucher" or "zentrale" or "senke")
-            .SelectMany(k => k.Ziele("IFC4")).Select(z => z.Ziel.Entitaet.ToUpperInvariant()).Where(n => n != "IFCPIPEFITTING").ToHashSet();
+            .SelectMany(k => k.Ziele("IFC4")).Select(z => z.Ziel.Entitaet.ToUpperInvariant()).Where(n => n is not ("IFCPIPEFITTING" or "IFCDUCTFITTING")).ToHashSet();
         var r7 = doc.Spezifikationen.Single(s => s.Kennung == "HK-HLKS-07").Anwendbarkeit.OfType<IdsEntitaet>().Single();
         Assert.Equal(geraete.Order(), r7.Name.Aufzaehlung.Order());
     }
