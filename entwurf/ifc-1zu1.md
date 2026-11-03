@@ -152,4 +152,7 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
 - Spiegeln: die Übernahme hält an der Tür fest, in welcher seite/band ihr Netz steht (`familieLage`, z. B. «links/anfang»). Wird in KICAD die
   Aufschlagseite gewechselt, spiegelt der Körper quer zur Wand (an der Wandachse), beim Bandwechsel um die Öffnungsmitte; beides zusammen
   ergibt die Drehung um 180°. Eine neue Fassung desselben IFC behält `familieLage`. Fenster haben keine Seite/kein Band.
-- Offen: Grundriss aus dem Netz (Schritt 3).
+- **Grundriss aus dem Netz (Schritt 3, 03.11.2026):** Familien mit Netzkörper (aus dem IFC oder 3D-Modell) zeigen im Grundriss zusätzlich
+  den Schnitt ihres Körpers auf Schnitthöhe (Stift mittel, Annahme) über dem Umriss von oben; Fenster mit Familie: Leibungen + Schnitt
+  statt angenommener Rahmen/Glaslinie/Bank; Tür mit Familie: Schnitt (Zarge, Blatt) + Aufschlag als Sinnbild (wie Revit). Schnitt und
+  Ansicht schneiden Netzkörper schon (SchnittNetz). Offen: Detailgrade (Frage an Christian), Kanten unterhalb der Schnitthöhe dünn.

@@ -92,6 +92,22 @@ public sealed class IfcFamilienTests : IDisposable
             Assert.Equal(u["jeKlasse"]![kl]!["anzahl"]!.GetValue<int>(), u["jeKlasse"]![kl]!["deckungsgleich"]!.GetValue<int>());
         Assert.Null(Ok(Uebernehmen(p, datei)).PaketId);
 
+        // Grundriss (IFC 1:1 Schritt 3): Tür und Fenster zeigen den Schnitt ihres Familienkörpers (Stift mittel); das Fenster ohne den
+        // angenommenen Rahmen, die Tür mit dem Aufschlag als Sinnbild
+        foreach (var kl in new[] { "Tuer", "Fenster" })
+        {
+            var e = p.Modell.DerKlasse(kl).Single();
+            Ok(p.Ausfuehren("element_anlegen", new JsonObject
+            {
+                ["klasse"] = "Ansicht", ["kennzeichen"] = "AN-" + kl, ["geschoss"] = p.Modell.Finde(e.Geschoss!)!.Kennzeichen,
+                ["eigenschaften"] = new JsonObject { ["art"] = "grundriss", ["massstab"] = 50 },
+            }));
+            var prim = Grafik.Plan(p, "AN-" + kl).Teile.Single(x => x.Id == e.Id).Primitive;
+            Assert.Contains(prim, x => x.Art == "polylinie" && x.Stil.Stift == Stifte.Mittel);
+            if (kl == "Tuer") Assert.Contains(prim, x => x.Art == "bogen");
+            else Assert.DoesNotContain(prim, x => x.Art == "polygon" && x.Stil.Stift == Stifte.Duenn);
+        }
+
         // Tür in KICAD auf die andere Seite und ans andere Band gestellt: der Körper spiegelt quer zur Wand und um die Öffnungsmitte
         var t = p.Modell.DerKlasse("Tuer").Single();
         Assert.Equal(IfcFamilien.TuerLage(t), t.Text(IfcFamilien.Lage));

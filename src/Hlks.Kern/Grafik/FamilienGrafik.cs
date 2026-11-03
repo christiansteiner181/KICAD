@@ -112,8 +112,39 @@ public sealed class FamilienGrafik : IGrafikquelle
         if (a is null) return MitHinweis(ctx, e, grund);
         var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
         var formteil = IstFormteil(ctx.Katalog, e);
-        return [Grundriss(a, Familien.Einbaulage(e)!, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
-            formteil ? null : e.Kennzeichen, anschlussMarken: !formteil)];
+        var lage = Familien.Einbaulage(e)!;
+        var teil = Grundriss(a, lage, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
+            formteil ? null : e.Kennzeichen, anschlussMarken: !formteil);
+        // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
+        var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
+        teil.Primitive.AddRange(Schnittlinien(netz, ctx.Schnitthoehe, farbe));
+        return [teil];
+    }
+
+    /// <summary>Waagrechter Schnitt von Netzkörpern (Körperteile «koerper» in Weltkoordinaten) mit z = hoehe als Linienzüge, Stift mittel
+    /// (ANNAHME Darstellung, Prüfliste: Schnittkanten von Apparaten und Öffnungsteilen mittel, Hauptbauteile dick). Gerechnet relativ zum
+    /// ersten Eckpunkt, damit grosse Koordinaten in float genau bleiben.</summary>
+    internal static IEnumerable<Primitiv> Schnittlinien(IEnumerable<Koerperteil> teile, double hoehe, string? farbe)
+    {
+        var strecken = new List<double[]>();
+        double ox = 0, oy = 0;
+        bool erster = true;
+        foreach (var t in teile)
+        {
+            if (t.Art != "koerper" || t.Ecken is not { Count: > 0 } ecken || t.Dreiecke is not { Count: > 0 } dreiecke) continue;
+            if (hoehe < ecken.Min(p => p[2]) || hoehe > ecken.Max(p => p[2])) continue;
+            if (erster) { (ox, oy, erster) = (ecken[0][0], ecken[0][1], false); }
+            var punkte = new float[ecken.Count * 3];
+            for (int i = 0; i < ecken.Count; i++) { punkte[3 * i] = (float)(ecken[i][0] - ox); punkte[3 * i + 1] = (float)(ecken[i][1] - oy); punkte[3 * i + 2] = (float)(ecken[i][2] - hoehe); }
+            var d = new int[dreiecke.Count * 3];
+            for (int i = 0; i < dreiecke.Count; i++) { d[3 * i] = dreiecke[i][0]; d[3 * i + 1] = dreiecke[i][1]; d[3 * i + 2] = dreiecke[i][2]; }
+            Netzflaechen.Schneiden(punkte, d, 0, strecken);
+        }
+        if (strecken.Count == 0) return [];
+        return Netzflaechen.Verbinden(strecken).Select(l => new Primitiv
+        {
+            Art = "polylinie", Punkte = l.Select(p => new[] { p[0] + ox, p[1] + oy }).ToList(), Stil = new Stil { Stift = Stifte.Mittel, Farbe = farbe },
+        }).ToList();
     }
 
     /// <summary>Formteil einer Leitung (Klasse Formteil und Unterklassen): ohne Anschlussmarken und Etikett im Grundriss.</summary>

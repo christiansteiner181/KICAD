@@ -243,6 +243,8 @@ public sealed class ArchitekturGrafik : IGrafikquelle
                         Art = "bogen", Punkte = [drehpunkt], Radius = o.Breite,
                         Von = blattZuerst ? aBlatt : aZu, Bis = blattZuerst ? aZu : aBlatt, Stil = new Stil { Stift = Stifte.Duenn },
                     },
+                    // IFC 1:1 Schritt 3: Tür mit Familie (aus dem IFC) – Zarge und Blatt als Schnitt ihres Körpers, der Aufschlag bleibt Sinnbild (wie Revit)
+                    .. (FamilienTeile(ctx.Modell, ctx.Katalog, e, ctx.Detailgrad) is { } ft ? FamilienGrafik.Schnittlinien(ft, ctx.Schnitthoehe, null) : []),
                 ],
                 Fangpunkte = [w.Punkt(o.Von, 0), w.Punkt(o.Bis, 0), w.Punkt(o.Abstand, 0), drehpunkt, spitze],
             },
@@ -251,14 +253,27 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 
     /// <summary>Fenster: geschnitten → Leibungen, Rahmen an den Leibungen, Glaslinie in der Wandmitte, Fensterbank auf der
     /// Seite «links» der Wandrichtung (Annahme: links = aussen, solange es keine Hülle gibt). Nicht geschnitten → nur die
-    /// Glaslinie gestrichelt (Annahme, damit das Fenster im Grundriss anwählbar bleibt).</summary>
+    /// Glaslinie gestrichelt (Annahme, damit das Fenster im Grundriss anwählbar bleibt). Mit Familie (aus dem IFC): Leibungen und der
+    /// Schnitt des Familienkörpers statt Rahmen, Glaslinie und Bank.</summary>
     IEnumerable<Grafikteil> Fenster(GrafikKontext ctx, Element e)
     {
         if (OeffnungIn(ctx, e) is not var (w, o)) return [];
         double h = w.Dicke / 2;
         bool geschnitten = w.Geschnitten(ctx.Schnitthoehe) && o.Schneidet(ctx.Schnitthoehe - w.Unterkante);
         var prim = new List<Primitiv> { Trefferflaeche(w, o) };
-        if (geschnitten && w.Dicke > 0)
+        // IFC 1:1 Schritt 3: Fenster mit Familie (aus dem IFC) – Rahmen, Glas und Bank als Schnitt ihres Körpers auf Schnitthöhe
+        var familie = geschnitten ? FamilienTeile(ctx.Modell, ctx.Katalog, e, ctx.Detailgrad) : null;
+        var schnitt = familie is null ? [] : FamilienGrafik.Schnittlinien(familie, ctx.Schnitthoehe, null).ToList();
+        if (schnitt.Count > 0)
+        {
+            if (w.Dicke > 0)
+            {
+                prim.Add(Linie(w.Punkt(o.Von, -h), w.Punkt(o.Von, h), Stifte.Duenn));
+                prim.Add(Linie(w.Punkt(o.Bis, -h), w.Punkt(o.Bis, h), Stifte.Duenn));
+            }
+            prim.AddRange(schnitt);
+        }
+        else if (geschnitten && w.Dicke > 0)
         {
             // Leibungen
             prim.Add(Linie(w.Punkt(o.Von, -h), w.Punkt(o.Von, h), Stifte.Duenn));
@@ -658,23 +673,29 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         return k;
     }
 
+    /// <summary>Körperteile der Familie einer Tür bzw. eines Fensters in Weltkoordinaten (in der Lage der Öffnung); null ohne Familie oder
+    /// Wirtswand. Tür in KICAD auf die andere Seite bzw. das andere Band gestellt (familieLage): quer zur Wand bzw. um die Öffnungsmitte gespiegelt.</summary>
+    static List<Koerperteil>? FamilienTeile(Modell m, Katalog k, Element e, string detail)
+    {
+        if (Familien.Aufloesung(m, k, e, out _) is not { } fa || OeffnungLage(m, k, e) is not { } lage) return null;
+        bool quer = false, laengs = false;
+        if (e.Text(IfcFamilien.Lage) is { } modelliert && k.IstArt(e, "Tuer"))
+        {
+            var ml = modelliert.Split('/');
+            var jetzt = IfcFamilien.TuerLage(e).Split('/');
+            quer = !string.Equals(ml[0], jetzt[0], StringComparison.OrdinalIgnoreCase);
+            laengs = !string.Equals(ml.ElementAtOrDefault(1) ?? "anfang", jetzt[1], StringComparison.OrdinalIgnoreCase);
+        }
+        return [.. fa.Teile(detail).Select(ft => FamilienKoerper.Platzieren(quer || laengs ? Gespiegelt(ft, laengs, quer) : ft, lage.Ursprung, lage.Winkel, null))];
+    }
+
     static Koerper? OeffnungKoerper(Projekt p, Element e)
     {
         // Familie (aus dem IFC bzw. unserem Standard): ihr Körper in der Lage der Öffnung – Rahmen, Flügel, Glas wie im IFC
-        if (Familien.Aufloesung(p.Modell, p.Katalog, e, out _) is { } fa && OeffnungLage(p.Modell, p.Katalog, e) is { } lage)
+        if (FamilienTeile(p.Modell, p.Katalog, e, FamilienGrafik.Detailgrad3D) is { } teile)
         {
             var kf = new Koerper { Id = e.Id, Ebene = "oeffnung" };
-            // Tür in KICAD auf die andere Seite bzw. das andere Band gestellt: Körper quer zur Wand bzw. um die Öffnungsmitte gespiegelt
-            bool quer = false, laengs = false;
-            if (e.Text(IfcFamilien.Lage) is { } modelliert && p.Katalog.IstArt(e, "Tuer"))
-            {
-                var (ms, mb) = (modelliert.Split('/')[0], modelliert.Split('/').ElementAtOrDefault(1) ?? "anfang");
-                var jetzt = IfcFamilien.TuerLage(e).Split('/');
-                quer = !string.Equals(ms, jetzt[0], StringComparison.OrdinalIgnoreCase);
-                laengs = !string.Equals(mb, jetzt[1], StringComparison.OrdinalIgnoreCase);
-            }
-            foreach (var ft in fa.Teile(FamilienGrafik.Detailgrad3D))
-                kf.Teile.Add(FamilienKoerper.Platzieren(quer || laengs ? Gespiegelt(ft, laengs, quer) : ft, lage.Ursprung, lage.Winkel, null));
+            kf.Teile.AddRange(teile);
             if (!kf.Leer) return kf;
         }
         if (Wandgeometrie.WandVon(e) is not { } wid || p.Modell.Finde(wid) is not { } wand) return null;
