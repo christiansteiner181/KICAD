@@ -1,6 +1,6 @@
 # RVT/RFA direkt lesen – Befund zum Dateiformat
 
-Stand 03.11.2026 · Nebensitzung (REA, Ghidra) · nichts committet
+Stand 03.11.2026 · Nebensitzung (REA, Ghidra) · umgesetzt in `src/Hlks.Kern/Unterlagen/Revit*.cs`
 
 ## Anlass
 
@@ -16,9 +16,11 @@ dahinter: Kann KICAD Revit-Modelle und -Familien direkt lesen (und schreiben), o
   2019–2025, RVT bis 118 MB) sind **alle komprimierten Ströme vollständig und CRC32-geprüft** entpackt.
 - **Sofort nutzbar:** Revit-Version, Vorschaubild, Familientypen mit Parametern, Werten und Einheiten (PartAtom),
   externe Verweise. Damit liesse sich die Familienbibliothek auf W: in KICAD durchsuchen und beim Import vorbefüllen.
-- **Noch offen ist die Objektebene:** Die entpackten Elementdaten sind Revits eigene Objektserialisierung. Sie ist
-  teilweise selbstbeschreibend (Klassen- und Feldnamen stehen im Schema `Formats/Latest`), aber Feldbedeutungen,
-  Geometrie und Familienparametrik (Formeln, Abhängigkeiten, Regeneration) hängen am Revit-Kern.
+- **Auch die Objektebene ist gelesen (Stand 03.11.2026, Christian: «Objektleser weiter»):** Klassenschema und alle
+  Element-Objekte der Partitionen werden nach dem Schema zerlegt – in der Stichprobe von 48 Dateien (Revit 2012–2025)
+  **4 152 176 Sätze vollständig, 0 Lesefehler**; offen sind nur 1543 Einträge mit Extensible Storage (0,04 %). Was die
+  einzelnen Felder fachlich bedeuten (z. B. welche Felder eine Leitung beschreiben) und wie Revit Geometrie (`GElement`)
+  und Familienparametrik ablegt, ist damit lesbar, aber noch nicht ausgelegt.
 - **Schreiben** von RVT/RFA ist nicht realistisch (Prüfdaten, Schema, Regeneration). Für den Export nach Revit ist ein
   Revit-Add-in der Weg, das KICAD-Daten über die Revit-API anlegt.
 
@@ -127,7 +129,23 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   Zeiger, Sammlungen) – nächster Schritt: Objekt-Lesecode in `Utility.dll` dekompilieren (`AArchive::LoadModel`,
   Feld-Serialisierer) und `Global/ElemTable` (Elementliste, Einträge zu 40 B mit Element-Id) auslegen.
 
-**Objektdaten – Befund 03.11.2026 (Ghidra, `AArcObj.cpp`, `DataDict.cpp` in Utility.dll), noch nicht gebaut:**
+**Objektdaten – gebaut 03.11.2026** (`src/Hlks.Kern/Unterlagen/RevitObjekte.cs`, Commit a447ea5 und Nachtrag):
+- Partition (entpackt) = Abschnitte im Wechsel: **Köpfe** `[Id][u32 Länge][Daten][u32 Länge]` (je Element ein
+  `ElementHeader`) und **Körper** `[Id][u32 Adler32][u32 Länge][Daten][u32 Länge]` (je Element das Objekt selbst und
+  seine Geometrie `GElement` bzw. ein Platzhalter `SerializedDummy`). Id u64, in Revit 2017 und älter u32.
+- Objekt: `u16` Klassen-Tag, Felder der Elternklassen, dann die eigenen. Grundtypen roh; Array feste Anzahl; Collection
+  und String `u32` Anzahl + Elemente; eingebettete Klasse ohne Tag; typedef = Untertyp samt eigener Sammlung.
+- Zeiger: `u32`, 0 = leer. Besitzer- und Ref-Zeiger: danach `u16` Klassen-Tag, der Inhalt folgt **erst nach dem
+  Hauptobjekt** (Warteschlange, in Revits `LoadModel` sichtbar); der Zeigerwert ist −1 (neuere) bzw. die Objektnummer
+  (ältere Dateien). Verweis-Zeiger (Art 3): nur die Nummer.
+- Prüfungen: Satzlänge muss exakt aufgehen; Adler32 je Körper stimmt; der Kopf (`ElementHeader.m_classDef`) nennt in
+  allen Fällen die Klasse des Körpers. Schema ohne Upgrade-GUIDs in Revit 2012 wird erkannt.
+- Stichprobe 48 Dateien (40 RFA, 8 RVT bis 118 MB, Revit 2012–2025): 4 152 176 Sätze vollständig, 1543 ES, 0 Fehler.
+- **Offen:** Extensible Storage (`ESEntity.m_blob` mit Schema-GUID; Aufbau in `ESSchema`-Elementen der Datei – lesbar,
+  aber eigener Baustein); die fachliche Auslegung der Felder (Leitungen, Formteile, Anschlüsse, Parameterwerte) und
+  der Geometrie (`GElement`, `GeomTable`).
+
+**Objektdaten – erster Befund vor dem Bau (zur Nachvollziehbarkeit):**
 - Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`
   Bytezahl nochmals (Versions­abhängig; Funktion `0x1801b5ce0`).
 - Objekt: Klassenverweis wie im Schema (`u16` Tag), dann die Felder **erst der Elternklasse, dann der eigenen** in

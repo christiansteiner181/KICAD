@@ -54,8 +54,15 @@ public sealed class RevitSchema
     /// <summary>Felder einer Klasse samt geerbten, in Speicherreihenfolge (Elternklasse zuerst; Annahme nach dem Klassenaufbau).</summary>
     public IEnumerable<RevitFeld> AlleFelder(RevitKlasse k) => (Eltern(k) is { } e ? AlleFelder(e) : []).Concat(k.Felder);
 
-    /// <summary>Zerlegt den entpackten Stream Formats/Latest.</summary>
+    /// <summary>Zerlegt den entpackten Stream Formats/Latest. Ältere Dateien (gesehen: Revit 2012) speichern noch keine
+    /// Upgrade-GUIDs je Klasse (Revit liest sie erst ab Formatversion 25) – das wird am Lesen selbst erkannt.</summary>
     public static RevitSchema Lesen(byte[] d)
+    {
+        try { return Lesen(d, mitUpgrades: true); }
+        catch (HlksFehler) { return Lesen(d, mitUpgrades: false); }
+    }
+
+    static RevitSchema Lesen(byte[] d, bool mitUpgrades)
     {
         var s = new RevitSchema();
         for (int i = 0; i < ErsterTag; i++) s.nachTag.Add(null);
@@ -92,7 +99,7 @@ public sealed class RevitSchema
             uint schema = U32(), nf = U32();
             var felder = new List<RevitFeld>((int)Math.Min(nf, 4096));
             for (uint i = 0; i < nf; i++) felder.Add(Feld());
-            int ng = (int)U32();
+            int ng = mitUpgrades ? (int)U32() : 0;
             p += 16 * ng;
             var k = new RevitKlasse(tag, name, eltern, schema, felder, ng);
             s.nachTag[tag] = k;
@@ -120,6 +127,8 @@ public sealed class RevitSchema
         }
 
         while (NeueKlasse() is not null) { }
+        // nach dem Endzeichen folgen in allen gesehenen Dateien genau 4 Bytes; mehr heisst: falsch gelesen
+        if (d.Length - p > 8) throw new HlksFehler($"Klassenschema: {d.Length - p} Bytes nach dem Endzeichen.");
         return s;
     }
 }
