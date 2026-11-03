@@ -38,10 +38,12 @@ public static class Heizlast
     /// <summary>Aussenklima des Gebäudes: θe mit Herleitung, θm,e, ρ·c der Luft.</summary>
     public sealed record Aussen(double ThetaE, double? ThetaMe, double RhoC, string Herleitung, List<string> Annahmen);
 
-    public static JsonObject Abfrage(Projekt p, JsonObject? par)
+    public static JsonObject Abfrage(Projekt p, JsonObject? par) => Rechnen(p.Modell, p.Katalog, par);
+
+    /// <summary>Rechnung auf einem Modellstand (Abfrage auf dem Projekt, Befehl heizlast_uebernehmen auf dem Arbeitsstand).</summary>
+    public static JsonObject Rechnen(Modell m, Katalog k, JsonObject? par)
     {
         par ??= [];
-        var m = p.Modell; var k = p.Katalog;
         var hinweise = new JsonArray();
         var hl = SanitaerNormtabellen.Laden(k, "heizlast", "heizung");
         var klima = SanitaerNormtabellen.Laden(k, "sia2028_auslegung", "heizung");

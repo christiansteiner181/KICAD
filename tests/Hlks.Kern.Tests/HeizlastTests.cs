@@ -115,6 +115,21 @@ public class HeizlastTests
     }
 
     [Fact]
+    public void Heizlast_uebernehmen_setzt_Heizleistung_aus_der_Rechnung_und_laesst_Handwerte_stehen()
+    {
+        var p = Raum(out var raum, new JsonObject { ["tempWinter"] = new JsonObject { ["wert"] = 20, ["quelle"] = "Testwert" } });
+        var phi = Z(Mit(() => SanitaerHilfe.Abfrage(p, "heizlast", new JsonObject { ["raum"] = raum }))["raeume"]![0]!["phiHL"]);
+        Mit(() => { RaumgrenzenHilfe.Ok(p.Ausfuehren("heizlast_uebernehmen", new JsonObject())); return []; });
+        var w = p.Modell.Finde(raum)!.Eigenschaft("heizleistung")!;
+        Assert.Equal(Math.Round(phi), w.AlsZahl());
+        Assert.Equal("berechnung", w.Herkunft.Art);
+        // Handwert bleibt ohne ueberschreiben stehen
+        RaumgrenzenHilfe.Eigenschaften(p, raum, new JsonObject { ["heizleistung"] = new JsonObject { ["wert"] = 999, ["quelle"] = "von Hand" } });
+        Mit(() => { RaumgrenzenHilfe.Ok(p.Ausfuehren("heizlast_uebernehmen", new JsonObject())); return []; });
+        Assert.Equal(999, p.Modell.Finde(raum)!.Zahl("heizleistung"));
+    }
+
+    [Fact]
     public void Heizlast_Innentemperatur_aus_ND2_vor_SIA_2024_und_Zeitkonstante_und_ohne_Tabellen_Hinweis()
     {
         var p = Raum(out var raum, new JsonObject { ["nutzung"] = "Testnutzung" });

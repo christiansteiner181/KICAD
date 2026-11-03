@@ -46,6 +46,7 @@ public static class HeizungBefehle
         r.Hinzufuegen(new HeizgruppeAnlegen());
         r.Hinzufuegen(new HeizgruppeAendern());
         r.Hinzufuegen(new HeizgruppenVorschlagen());
+        r.Hinzufuegen(new HeizlastUebernehmen());   // Modul 5 Teil B-H
     }
 
     internal static Herkunft Abgeleitet(Kontext k, string quelle) => k.Herkunft with { Art = "berechnung", Quelle = quelle };

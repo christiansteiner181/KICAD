@@ -1795,7 +1795,7 @@
         "ΦV = V̇·ρc·(θint − θe) (11, 12) mit ρc = (1220 − 0,14·h)/3600 Wh/(m³K) (37), ohne Höhe 0,34 (13).",
         "ΦRH = 0 (ND.6); ΦHL = ΦT + ΦV (21); Gebäude ΦHL = Σ ΦT + f·Σ ΦV (22) ohne den Wärmefluss zwischen beheizten Räumen (HT,ij, 8.2), f nach ND.5.7."
       ],
-      "ergebnis": "Abfrage heizlast { raum?, gebaeude? }: θe mit Herleitung, je Raum θint mit Quelle, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL (W, W/m²), Annahmen; Gebäudesumme.",
+      "ergebnis": "Abfrage heizlast { raum?, gebaeude? }: θe mit Herleitung, je Raum θint mit Quelle, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL (W, W/m²), Annahmen; Gebäudesumme. Befehl heizlast_uebernehmen setzt ΦHL als Raum.heizleistung (Herkunft berechnung; Werte von Hand, HKAP oder IFC bleiben ohne ueberschreiben stehen) – damit rechnen Verbraucherleistung, Massenstrom und Prinzipschema weiter.",
       "quellen": [
         "SN EN 12831:2003 / SIA 384.201, Abschnitte 7 und 8, Gleichungen (2)–(22), Tabellen 4–7; Nationaler Anhang ND.1–ND.9 (gedruckte S. 37–47); Werte im Büroordner HLKS_NORMTABELLEN\\heizung\\heizlast.json",
         "SIA 2028:2010 Tab. 6 (S. 19, Erläuterung Ziffer 3.5 S. 18), Tab. 1a (S. 9), Tab. 2 (S. 10–17); HLKS_NORMTABELLEN\\heizung\\sia2028_auslegung.json",
@@ -1825,7 +1825,8 @@
         "Keine Kühllast, keine dynamische Simulation."
       ],
       "code": [
-        "src/Hlks.Kern/Heizung/Heizlast.cs (Heizlast.Abfrage, AussenKlima, Innentemperatur, Raum)"
+        "src/Hlks.Kern/Heizung/Heizlast.cs (Heizlast.Abfrage, AussenKlima, Innentemperatur, Raum)",
+        "src/Hlks.Kern/Heizung/HeizlastBefehle.cs (HeizlastUebernehmen)"
       ],
       "abfrage": "heizlast"
     }

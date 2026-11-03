@@ -1036,7 +1036,7 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
 - **Heizlast** (Modul 5 Teil B-H, noch ohne Oberfläche): Abfrage `heizlast { raum?, gebaeude? }` (KI und MCP, Gruppe Heizung) – je Raum θint, θe mit
   Herleitung, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL und Annahmen; Gebäudesumme. Eingaben in den Eigenschaften: Gebäude «klimastation»,
   «hoeheUeberMeer», «thetaE», «zeitkonstante», «abschirmung», «grundwasserNah»; unbeheizter Raum «bu». Freie Raumnutzungen ordnet
-  `kataloge/raumnutzungen.json` SIA 2024 zu. Rechenweg: Register `heizung.heizlast`.
+  `kataloge/raumnutzungen.json` SIA 2024 zu. Rechenweg: Register `heizung.heizlast`. Befehl `heizlast_uebernehmen { raum?, gebaeude?, ueberschreiben? }` (KI und MCP) setzt ΦHL als Heizleistung der Räume.
 
 ## Hilfe (F1)
 

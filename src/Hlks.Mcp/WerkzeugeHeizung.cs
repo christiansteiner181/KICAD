@@ -96,4 +96,12 @@ public sealed partial class Werkzeuge
         [Description(HeizungBefehle.ParAnlageVorschlag)] string? anlage = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("heizgruppen_vorschlagen", Parameter(("anlage", anlage)), trockenlauf);
+
+    [McpServerTool(Name = "heizlast_uebernehmen"), Description(HeizlastUebernehmen.Text)]   // Modul 5 Teil B-H
+    public string HeizlastUebernehmenWerkzeug(
+        [Description(Heizlast.ParRaum)] string? raum = null,
+        [Description(Heizlast.ParGebaeude)] string? gebaeude = null,
+        [Description("Auch eine Heizleistung ersetzen, die nicht aus der Berechnung stammt (von Hand, HKAP, IFC)")] bool ueberschreiben = false,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("heizlast_uebernehmen", Parameter(("raum", raum), ("gebaeude", gebaeude), ("ueberschreiben", ueberschreiben ? true : null)), trockenlauf);
 }

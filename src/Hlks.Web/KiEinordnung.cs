@@ -55,7 +55,7 @@ public static class KiEinordnung
              "schema_anordnen", "schema_lage"]),
         new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
             "Temperaturen sind Eingaben ohne Vorgabewert, der Kern rechnet daraus nichts nach Norm.",
-            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen"]),
+            ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +
             "Zahlenwerte brauchen eine Quelle (Kern).",
             ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
