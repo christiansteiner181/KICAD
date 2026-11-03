@@ -25,6 +25,8 @@ const S = {
   // Schema-Ansicht (Modul 3, C2): Verbinden, Trennen, Element einfügen, Neu anordnen
   schemaVerbinden: '<rect x="3" y="11" width="9" height="10" rx="1"/><rect x="20" y="11" width="9" height="10" rx="1"/><path d="M12 16h8"/><path d="M16 6v4M14 8h4"/>',
   schemaTrennen: '<rect x="3" y="11" width="9" height="10" rx="1"/><rect x="20" y="11" width="9" height="10" rx="1"/><path d="M12 16h3M17 16h3"/><path d="M13 24l6-16"/>',
+  ecke: '<path d="M6 26V8h18"/><path d="M24 4v8"/><path d="M4 28l4-4"/>',   // A4
+  dehnen: '<path d="M27 4v24"/><path d="M4 16h14"/><path d="M18 16h8" stroke-dasharray="2 2"/><path d="M22 12l4 4-4 4"/>',   // A4
   teilen: '<rect x="2" y="13" width="12" height="6" rx="1"/><rect x="18" y="13" width="12" height="6" rx="1"/><path d="M13 25l6-18"/>',   // Bearbeitungswerkzeuge A3
   schemaEinfuegen: '<rect x="5" y="8" width="14" height="11" rx="1" stroke-dasharray="3 2"/><path d="M24 17v11M18.5 22.5h11"/><path d="M12 19v4"/>',
   schemaAnordnen: '<rect x="3" y="4" width="8" height="7"/><rect x="21" y="4" width="8" height="7"/><rect x="12" y="21" width="8" height="7"/><path d="M11 7.5h10M7 11v5h9M25 11v5h-9M16 16v5"/>',

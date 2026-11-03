@@ -159,6 +159,8 @@ verschieben | Verschieben | Verschieben | blaues Pfeilkreuz
 drehen | Drehen | Drehen | Kreispfeil um Drehpunkt
 spiegeln | Spiegeln | Spiegeln | Spiegelachse mit zwei Dreiecken
 teilen | Teilen | Element teilen | Leitung mit rotem Schnitt
+ecke | Stutzen/Dehnen für Ecke | Stutzen/Dehnen für Ecke | zwei Geraden zu einer Ecke
+dehnen | Dehnen bis | Einzelnes Element stutzen/dehnen | Linie bis an eine Bezugslinie
 ifcUebernehmen | IFC übernehmen | IFC verknüpfen | Würfel mit blauem Pfeil nach unten
 cadEinfuegen | CAD einfügen | CAD verknüpfen | Blatt mit CAD-Linien
 pdfEinfuegen | PDF einfügen | PDF importieren | Blatt mit rotem PDF-Band
@@ -623,6 +625,12 @@ s('drehen',
 s('spiegeln',
   '<path class="sb dd w15" d="M16 3v26"/><path class="f2" d="M13 8L4.5 24H13z"/><path class="fl dd" d="M19 8l8.5 16H19z"/>',
   '<path class="sb dd" d="M8 1v14"/><path class="f2" d="M6.5 4L2 12h4.5z"/><path class="fl dd" d="M9.5 4L14 12H9.5z"/>');
+s('ecke',   // Bearbeitungswerkzeuge A4
+  '<path class="f2" d="M5 27V9h4v18z"/><path class="f2" d="M9 9V5h18v4z"/><path class="sb w2" d="M7 7l3 3"/>',
+  '<path class="f2" d="M2 14V5h2.5v9z"/><path class="f2" d="M4.5 5V2.5H14V5z"/><path class="sb" d="M3 3.5l2 2"/>');
+s('dehnen',   // Bearbeitungswerkzeuge A4
+  '<path class="sb w2" d="M27 3v26"/><path class="f2" d="M3 13.5h13v5H3z"/><path class="sb dd" d="M16 16h7"/><path class="fb" d="M22 11.5l4.5 4.5-4.5 4.5z"/>',
+  '<path class="sb" d="M14 1v14"/><path class="f2" d="M1 6.5h6.5v3H1z"/><path class="sb dd" d="M7.5 8h3.5"/><path class="fb" d="M10.5 5.5L13 8l-2.5 2.5z"/>');
 s('teilen',   // Bearbeitungswerkzeuge A3
   '<path class="f2" d="M2.5 13.5h11v5h-11zM18.5 13.5h11v5h-11z"/><path class="sr w2" d="M13 25l6-18"/>',
   '<path class="f2" d="M1 6.5h5.5v3H1zM9.5 6.5H15v3H9.5z"/><path class="sr w15" d="M7 13l2-10"/>');

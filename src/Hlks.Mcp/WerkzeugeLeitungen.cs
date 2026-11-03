@@ -109,6 +109,23 @@ public sealed partial class Werkzeuge
         Befehl("leitung_einsetzen", Parameter(("leitung", leitung), ("punkt", punkt), ("familie", familie), ("typ", typ), ("parameter", parameter),
             ("kennzeichen", kennzeichen)), trockenlauf);
 
+    [McpServerTool(Name = "ecke_bilden"), Description(EckeBilden.Text)]   // Bearbeitungswerkzeuge A4
+    public string EckeBildenWerkzeug(
+        [Description("Erste Gerade (Kennzeichen oder Id)")] string a,
+        [Description("Zweite Gerade (Kennzeichen oder Id)")] string b,
+        [Description(Stutzen.ParBleibt)] JsonElement? bleibt_a = null,
+        [Description(Stutzen.ParBleibt)] JsonElement? bleibt_b = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("ecke_bilden", Parameter(("a", a), ("b", b), ("bleibt_a", bleibt_a), ("bleibt_b", bleibt_b)), trockenlauf);
+
+    [McpServerTool(Name = "dehnen_bis"), Description(DehnenBis.Text)]   // Bearbeitungswerkzeuge A4
+    public string DehnenBisWerkzeug(
+        [Description("Gerade, die gestutzt bzw. gedehnt wird (Kennzeichen oder Id)")] string element,
+        [Description("Bezugsgerade (Kennzeichen oder Id)")] string bis,
+        [Description(Stutzen.ParBleibt)] JsonElement? bleibt = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("dehnen_bis", Parameter(("element", element), ("bis", bis), ("bleibt", bleibt)), trockenlauf);
+
     [McpServerTool(Name = "leitung_groesse"), Description(LeitungGroesseAendern.Text)]
     public string LeitungGroesseWerkzeug(
         [Description(LeitungGroesseAendern.ParGroesse)] JsonElement groesse,

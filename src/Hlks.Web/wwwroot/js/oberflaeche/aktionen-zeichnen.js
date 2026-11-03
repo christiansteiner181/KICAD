@@ -22,6 +22,7 @@ import { koteWerkzeug, nordpfeilWerkzeug } from '../werkzeuge/kote.js';
 import { schnittWerkzeug } from '../werkzeuge/schnitt.js';
 import { verschiebenWerkzeug, kopierenWerkzeug, drehenWerkzeug, spiegelnWerkzeug } from '../werkzeuge/aendern.js';
 import { teilenWerkzeug } from '../werkzeuge/teilen.js';
+import { eckeWerkzeug, dehnenWerkzeug } from '../werkzeuge/stutzen.js';
 
 const imGrundriss = () => planAnsicht()?.art === 'grundriss';
 const inPlan = () => !!planAnsicht();
@@ -68,6 +69,8 @@ werkzeug({ id: 'ansicht.schnitt', titel: 'Schnitt', symbol: 'schnittlinie', regi
 werkzeug({ id: 'aendern.verschieben', titel: 'Verschieben', symbol: 'verschieben', kuerzel: 'MV', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'verschieben', fabrik: verschiebenWerkzeug });
 werkzeug({ id: 'aendern.kopieren', titel: 'Kopieren', symbol: 'duplizieren', kuerzel: 'CO', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'kopieren', fabrik: kopierenWerkzeug });
 werkzeug({ id: 'aendern.drehen', titel: 'Drehen', symbol: 'drehen', kuerzel: 'RO', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'drehen', fabrik: drehenWerkzeug });
+werkzeug({ id: 'aendern.ecke', titel: 'Stutzen/Dehnen für Ecke', symbol: 'ecke', kuerzel: 'TR', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'ecke', fabrik: eckeWerkzeug });   // A4
+werkzeug({ id: 'aendern.dehnen', titel: 'Dehnen bis', symbol: 'dehnen', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'dehnen', fabrik: dehnenWerkzeug });   // A4
 werkzeug({ id: 'aendern.teilen', titel: 'Teilen', symbol: 'teilen', kuerzel: 'SL', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'grundriss', wid: 'teilen', fabrik: teilenWerkzeug });   // A3
 werkzeug({ id: 'aendern.spiegeln', titel: 'Spiegeln', symbol: 'spiegeln', kuerzel: 'MM', register: 'aendern', gruppe: 'Verändern', groesse: 'klein', wo: 'auswahl', wid: 'spiegeln', fabrik: spiegelnWerkzeug });
 

@@ -3986,3 +3986,15 @@ Kernbefehle `leitung_teilen` und `leitung_einsetzen` (`src/Hlks.Kern/Leitungen/L
   bisher frei platziert. Fehlt ein Typ in der Grösse, lehnt der Kern ab (Reduktionen setzt A3 noch nicht).
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~LeitungEinsetzenTests"` (Testfamilie
   `tests/daten/familien/test_ventil.familie.json`, fiktiv).
+
+## Stutzen/Dehnen (Bearbeitungswerkzeuge A4, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehle `ecke_bilden` und `dehnen_bis` (`src/Hlks.Kern/Leitungen/EckeDehnen.cs`, MCP gleich); Werkzeuge in `js/werkzeuge/stutzen.js`.
+Angeklickt werden Geraden aus zwei Punkten (Rohr, Kanal, Wand, Achse, Detaillinie der Ansicht); die angeklickte Gerade ist hervorgehoben.
+
+- **Stutzen/Dehnen für Ecke (TR)**, Ändern › Verändern: zwei Klicks, jeweils auf dem Teil, das bleibt. Zwei Leitungen (gleiche Serie, Grösse,
+  System, gleiche Höhe) bekommen einen Bogen der Serie und behalten ihre Kennzeichen; eine muss zur Ecke laufen, die andere weg, sonst lehnt
+  der Kern mit Vorschlag ab. Wände, Achsen, Detaillinien: geometrische Ecke im Grundriss. Das Werkzeug bleibt aktiv.
+- **Dehnen bis**, Ändern › Verändern: zuerst die Bezugsgerade, dann beliebig viele Elemente (auf dem Teil, das bleibt). Leitung an Leitung
+  (gleiche Höhe): an der Bezugsleitung entsteht ein T-Stück wie bei leitung_abzweigen, das Ende wird angeschlossen. Sonst geometrisch.
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~EckeDehnenTests"`.

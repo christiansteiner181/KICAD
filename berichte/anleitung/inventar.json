@@ -6283,6 +6283,74 @@
           "hinweis": "Reduktionen setzt A3 noch nicht."
         },
         {
+          "id": "m3-ecke",
+          "titel": "Stutzen/Dehnen für Ecke",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Stutzen/Dehnen für Ecke",
+            "kuerzel": "TR",
+            "sonst": ""
+          },
+          "schritte": [
+            "TR wählen.",
+            "Die erste Leitung auf dem Teil anklicken, das bleibt.",
+            "Die zweite Leitung ebenso anklicken.",
+            "Meldung lesen; Strg+Z.",
+            "Dasselbe mit zwei Wänden."
+          ],
+          "erwartung": "Die Leitungen enden an ihrem Schnittpunkt mit einem Bogen der Serie und behalten ihre Kennzeichen; zwei Wände bilden eine Ecke. Laufen beide Leitungen zur Ecke hin bzw. weg, lehnt KICAD mit Vorschlag ab.",
+          "pruefpunkte": [
+            "Angeklickte Gerade hervorgehoben.",
+            "Bogen der Serie an der Ecke, beidseitig verbunden.",
+            "Weggeschnittene Teile entfallen.",
+            "Wände: geometrische Ecke.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Zwei Leitungen vor und nach der Ecke"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3990 (Stutzen/Dehnen (Bearbeitungswerkzeuge A4))"
+          ],
+          "hinweis": "Leitungen in verschiedenen Höhen lehnt A4 ab."
+        },
+        {
+          "id": "m3-dehnen-bis",
+          "titel": "Dehnen bis",
+          "wo": {
+            "register": "Ändern",
+            "gruppe": "Verändern",
+            "knopf": "Dehnen bis",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Dehnen bis wählen.",
+            "Die Hauptleitung (Bezug) anklicken.",
+            "Eine Leitung anklicken, die auf die Hauptleitung zuläuft.",
+            "Weitere Leitungen bzw. Linien anklicken; Esc beendet."
+          ],
+          "erwartung": "An der Hauptleitung entsteht ein T-Stück, die angeklickte Leitung ist bis dorthin gedehnt bzw. gestutzt und angeschlossen; Linien und Wände werden geometrisch bis an den Bezug geführt.",
+          "pruefpunkte": [
+            "Bezug bleibt hervorgehoben.",
+            "T-Stück an der Hauptleitung, Leitung angeschlossen.",
+            "Mehrere Elemente nacheinander.",
+            "Rückgängig je Element."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Abzweig mit Dehnen bis an die Hauptleitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:3990 (Stutzen/Dehnen (Bearbeitungswerkzeuge A4))"
+          ],
+          "hinweis": "Gleiche Höhe nötig."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {

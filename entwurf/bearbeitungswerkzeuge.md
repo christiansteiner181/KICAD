@@ -139,7 +139,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
   Grenze: Anschlüsse ohne Lage (Geräte und Formteile ohne Familie – im Beispielprojekt alle Formteile) verbindet weiterhin nur das Schema.
 - **A1 gebaut 03.11.2026** (Spezifikation unten): Kern `LeitungenNachfuehren` (Formteile folgen, Dehnen, ganz folgen, Versatz), `elemente_verschieben` mit `trennen`; Oberfläche Mittelgriff, Pfeiltasten, MV-Option «Trennen». Bisheriges Verhalten «Nachbar dreht, Hinweis» gilt nur noch für Altbestand ohne Serie und gedrehte Formteile (Tests angepasst: RoutingNachfuehrungTests, LeitungenPruefungTests.P13_NachVerschiebenDesRohrendes).
 - **A3 gebaut 03.11.2026** (Spezifikation unten): `leitung_teilen`, `leitung_einsetzen` (Kern, MCP, KI-Einordnung «Leitungen»), Werkzeug Teilen (SL), Familie platzieren auf eine Leitung. Offen: Reduktionen beim Einsetzen, Wände teilen.
-- **Nächstes: A4** Stutzen/Dehnen (TR) für Leitungen.
+- **A4 gebaut 03.11.2026** (Spezifikation unten): `ecke_bilden`, `dehnen_bis` (Kern, MCP, KI-Einordnung), Werkzeuge TR und «Dehnen bis».
+- **Nächstes: A5** Gefälle und Höhe nachträglich ändern.
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -178,3 +179,23 @@ Kernbefehle (ein Paket je Befehl, Trockenlauf = Vorschau):
 
 Oberfläche: Werkzeug «Teilen» (SL, Ändern › Verändern; Klick auf eine Leitung); «Familie platzieren» mit einer Armatur auf eine Leitung
 geklickt → `leitung_einsetzen`.
+
+## A4 – Stutzen/Dehnen (Spezifikation, 03.11.2026)
+
+Kernbefehle (ein Paket, Trockenlauf = Vorschau); «bleibt» ist ein Punkt auf dem Teil, das stehen bleibt (der Klickpunkt; ohne Angabe bleibt
+das vom Schnittpunkt weiter entfernte Ende):
+
+- **`ecke_bilden`** { a, b, bleibt_a?, bleibt_b? } (Revit «Stutzen/Dehnen für Ecke», TR): zwei Geraden werden bis zu ihrem Schnittpunkt
+  gestutzt bzw. gedehnt. Zwei Leitungen (gleiche Serie und Grösse, Achsen schneiden sich bis 1 mm) bekommen dort einen Bogen der Serie
+  (Routing wie leitung_zeichnen; beide behalten ihre Kennzeichen). Die Fliessrichtungen müssen zusammenpassen (eine läuft zur Ecke, die andere
+  weg), sonst Ablehnung mit Vorschlag. Verbindungen an weggeschnittenen Enden entfallen (Hinweis). Wände, Detaillinien, Achsen: nur die
+  geometrische Ecke im Grundriss.
+- **`dehnen_bis`** { element, bis, bleibt? } (Revit «Einzelnes Element stutzen/dehnen»): das Element wird bis an die Achse von «bis» gestutzt
+  bzw. gedehnt. Leitung bis Leitung (auf gleicher Höhe): an «bis» entsteht ein T-Stück wie bei leitung_abzweigen (Abzweigwinkel der Serie,
+  Fliessrichtung nach dem System), das Ende wird angeschlossen. Sonst geometrisch bis zum Schnittpunkt im Grundriss.
+
+Annahmen: Leitungen in verschiedenen Höhen (Steigbogen) lehnt A4 ab; mehrere Elemente auf einmal (Revit «Mehrere Elemente stutzen/dehnen»)
+macht die Oberfläche als Folge von dehnen_bis.
+
+Oberfläche: Werkzeug «Stutzen/Dehnen für Ecke» (TR, Ändern › Verändern): zwei Klicks auf die Teile, die bleiben. Werkzeug «Dehnen bis»:
+zuerst die Bezugslinie bzw. -leitung, dann beliebig viele Elemente (Esc beendet).
