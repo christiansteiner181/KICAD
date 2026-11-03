@@ -147,8 +147,9 @@ foreach ($a0 in $auftraege) {
   Log "$($a.nr) Runde $runde $($s.status) $($st.id): $fam"
   $neu = @($s.ergebnis.familien | ForEach-Object { $_.name } | Where-Object { $_ -and $vor -notcontains $_ })
   $angelegt[$a.nr] = @($vor + $neu)
-  # -cmatch: nur das grossgeschriebene Signalwort (Befund 03.11.2026: «vollständig» im Fliesstext beendete die Runden)
-  if ($s.status -ne 'fertig' -or $neu.Count -eq 0 -or "$($s.ergebnis.bericht)" -cmatch 'VOLLST(Ä|AE)NDIG') { Log "$($a.nr) abgeschlossen nach Runde $runde"; break }
+  # Ende nur, wenn eine Runde nichts Neues anlegt (Befund 03./04.11.2026: «vollständig» bzw. «VOLLSTÄNDIG» stand auch in Überschriften
+  # und beendete die Runden zu früh); meldet die KI VOLLSTÄNDIG, legt sie nichts an – das gilt dann ebenso
+  if ($s.status -ne 'fertig' -or $neu.Count -eq 0) { Log "$($a.nr) abgeschlossen nach Runde $runde"; break }
  }
 }
 Log 'fertig'
