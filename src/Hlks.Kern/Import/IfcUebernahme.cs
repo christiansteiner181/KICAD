@@ -193,6 +193,8 @@ public sealed class IfcUebernehmen : IBefehl
 
         // ---- Abgleich und Übernahme
         var zaehler = Abgleichen(k, lauf, unterlage.Id, ausgefuehrt.SelectMany(u => u.Klassen).ToHashSet(StringComparer.OrdinalIgnoreCase), konfliktIfc);
+        // Familie aus dem IFC für Türen und Fenster (Christian 03.11.2026: «auch bei der Architektur sollte das so sein»)
+        if (bereiche.Contains("architektur")) k.Hinweise.AddRange(IfcFamilien.Architektur(k, d, unterlage.Id));
 
         // ---- Netzdatei: exakte Geometrie aller Produkte (Kollision, Aussparungen); die nicht übernommenen = Hintergrund
         double[]? umriss = null; int imNetz = 0;
@@ -449,6 +451,12 @@ public sealed class IfcUebernehmen : IBefehl
                 e.Kennzeichen = alt.Kennzeichen;
                 e.Angelegt = alt.Angelegt;
                 e.Paket = alt.Paket; e.Version = alt.Version; e.Geaendert = alt.Geaendert;
+                // Familie aus dem IFC (Türen, Fenster: erst nach dem Abgleich zugeordnet, IfcFamilien.Architektur) bleibt bei einer neuen Fassung
+                if (!e.Bezuege.ContainsKey(Familien.Bezug) && Familien.FamilieVon(k.Arbeit, alt) is { } fa && Familien.DefinitionsId(fa)?.StartsWith("ifc-") == true)
+                {
+                    e.Bezuege[Familien.Bezug] = fa.Id;
+                    if (alt.Eigenschaften.TryGetValue("familientyp", out var ft)) e.Eigenschaften["familientyp"] = ft;
+                }
                 if (GleicherInhalt(alt, e)) { z.Gleich++; }
                 else if (!konfliktIfc && InKicadGeaendert(alt))
                 {

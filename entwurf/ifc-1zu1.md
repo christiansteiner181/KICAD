@@ -140,3 +140,13 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
   `familie_netz_uebernehmen` mit `objekte` (mehrere Teile → ein Körper) und `anschluesse` (IFC-Ports). Am Bernstrasse-WC geprüft: Familie mit
   Vorwandrahmen und 2 Anschlüssen, der Familieneditor öffnet.
 - Hinweis: eine so angelegte Familie geht wie jede Projektfamilie automatisch als Entwurf in die Bürobibliothek (Modul 2, B7).
+
+## Stand 03.11.2026 – Architektur: Türen und Fenster als Familie aus dem IFC
+
+- Christian: «auch bei der Architektur sollte das so sein». Tür und Fenster sind familienfähig; nach dem Abgleich bekommt jede übernommene
+  Tür bzw. jedes Fenster eine Familie mit seinem IFC-Netz (`IfcFamilien.Architektur`), im System der Öffnung: Wandachse an der Öffnung, Unterkante
+  der Öffnung, Wandrichtung (`ArchitekturGrafik.OeffnungLage`) – der Körper geht mit der Wand mit. 3D, Schnitt, Ansicht und Kollision zeigen den
+  Familienkörper; Grundriss-Sinnbild (Aufschlag, Glaslinie) und die Wandöffnung bleiben. Eine neue Fassung desselben IFC behält die Familie.
+- Wählbar wie bei HLKS: Tuer bzw. Fenster in Projektinformation.ifcStandard = unser parametrischer Standard ohne Familie.
+- Bernstrasse 42: Architektur weiter 598/598 deckungsgleich, Türen und Fenster jetzt mit dem Familienkörper gemessen.
+- Offen: Aufschlagseite oder Band in KICAD gewechselt → der Familienkörper wird (noch) nicht gespiegelt; Grundriss aus dem Netz (Schritt 3).

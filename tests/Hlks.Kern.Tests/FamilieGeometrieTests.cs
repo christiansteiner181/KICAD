@@ -92,7 +92,7 @@ public class FamilieGeometrieTests
             ["objekt"] = pr.GlobalId, ["unterlage"] = ul.Kennzeichen, ["name"] = "Objekt aus IFC (fiktiv)", ["kategorie"] = "Ventil",
         }));
         Assert.Contains(e.Hinweise, h => h.Contains("1000 × 1000 × 2000 mm") && h.Contains("Nullpunkt unten_mitte"));
-        var fam = p.Modell.DerKlasse(Familien.Klasse).Single();
+        var fam = p.Modell.DerKlasse(Familien.Klasse).Single(f => f.Name == "Objekt aus IFC (fiktiv)");   // Tür und Fenster haben seit 03.11.2026 eigene IFC-Familien
         var k = (JsonObject)((JsonObject)fam.Eigenschaft("definition")!.Inhalt!)["koerper"]![0]!;
         Assert.Equal("netz", k["art"]!.GetValue<string>());
         Assert.Contains(pr.GlobalId, k["herkunft"]!.GetValue<string>());

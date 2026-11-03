@@ -39,14 +39,9 @@ static class IfcFamilien
     {
         var geo = IfcGeometrie.Von(lauf.Datei);
         var k = lauf.Kontext;
-        var nachId = k.Arbeit.DerKlasse(Familien.Klasse).Where(f => Familien.DefinitionsId(f) is not null)
-            .GroupBy(f => Familien.DefinitionsId(f)!).ToDictionary(g => g.Key, g => g.First());
-        var namen = new HashSet<string>(k.Arbeit.DerKlasse(Familien.Klasse).Select(f => f.Name ?? ""), StringComparer.OrdinalIgnoreCase);
-        int neu = 0, wieder = 0, verwiesen = 0, ausBibliothek = 0;
-        var ort = FamilienBibliothekDienst.Ort(lauf.Katalog);
-        var bibliothek = ort.Aktiv ? FamilienBibliothekDienst.IndexOhneSchreiben(ort) : null;
+        var sa = new Sammlung(k);
         var standard = Standard(k.Arbeit);
-        var fehler = new Dictionary<string, int>();
+        var fehler = sa.Fehler;
         foreach (var (x, e, px, zu) in bauteile)
         {
             // Standardkomponenten zeichnen unsere Standardfamilien nach – nur alles andere wird übernommen
@@ -99,8 +94,84 @@ static class IfcFamilien
                 ["ecken"] = new JsonArray(ecken.Select(q => (JsonNode)Feld(q, 1)).ToArray()),
                 ["dreiecke"] = new JsonArray(dreiecke.Select(t => (JsonNode)new JsonArray(t[0], t[1], t[2])).ToArray()),
             };
-            var id = "ifc-" + Pruefsumme(e.Klasse, koerper, anschluesse);
+            if (sa.Familie(e.Klasse, x, Path.GetFileName(lauf.Datei.Pfad), koerper, anschluesse) is not { } fam) continue;
 
+            e.Bezuege[Familien.Bezug] = fam.Id;
+            lauf.Wert(e, "familientyp", Typ, $"Familie aus dem IFC {fam.Kennzeichen}");
+            bool stehend = Math.Abs(az.Z - 1) < 1e-9;
+            if (stehend) { if (Math.Abs(Math.Atan2(ax.Y, ax.X)) > 1e-9) lauf.Wert(e, "drehung", Math.Round(Math.Atan2(ax.Y, ax.X) * 180 / Math.PI, 6), "Platzierung des Produkts im IFC"); }
+            else lauf.Wert(e, "ausrichtung", Familien.AusrichtungJson(ax, az), "Platzierung des Produkts im IFC");
+            sa.Verwiesen++;
+        }
+        return sa.Hinweise();
+    }
+
+    /// <summary>Architektur (Christian 03.11.2026: «auch bei der Architektur sollte das so sein»): Türen und Fenster einer übernommenen Unterlage
+    /// bekommen eine Familie mit ihrem IFC-Netz – im System der Öffnung (Wandachse an der Öffnung, Unterkante der Öffnung, Wandrichtung; so geht
+    /// der Körper mit der Wand mit; ArchitekturGrafik.OeffnungLage). Nach dem Abgleich (die Elemente stehen dann im Arbeitsmodell); nicht, was
+    /// Projektinformation.ifcStandard unserem Standard zuweist.</summary>
+    public static IEnumerable<string> Architektur(Kontext k, IfcDatei d, string unterlageId)
+    {
+        var kat = k.Katalog;
+        var standard = Standard(k.Arbeit);
+        var elemente = k.Arbeit.Elemente.Where(e => (kat.IstArt(e, "Tuer") || kat.IstArt(e, "Fenster")) && !standard.Any(s => kat.IstArt(e, s))
+                && e.Kennungen?.GetValueOrDefault("quelle") == unterlageId && e.Kennungen.GetValueOrDefault("ifc") is { Length: > 0 }
+                && (Familien.FamilieVon(k.Arbeit, e) is not { } fv || Familien.DefinitionsId(fv)?.StartsWith("ifc-") == true)).ToList();
+        if (elemente.Count == 0) return [];
+        var geo = IfcGeometrie.Von(d);
+        var produkte = d.Modell.Instances.OfType<IIfcProduct>().GroupBy(x => x.GlobalId.ToString()).ToDictionary(g => g.Key, g => g.First());
+        var sa = new Sammlung(k);
+        foreach (var e in elemente)
+        {
+            var gid = e.Kennungen!["ifc"].Split(':')[0];
+            if (!produkte.TryGetValue(gid, out var x) || geo.Koerper(x, false) is not { Leer: false } netz) continue;
+            if (ArchitekturGrafik.OeffnungLage(k.Arbeit, kat, e) is not { } lage) { Zaehlen(sa.Fehler, "ohne Wirtswand"); continue; }
+            double w = lage.Winkel * Math.PI / 180, c = Math.Cos(w), si = Math.Sin(w);
+            double[] Lokal(double[] p) { double dx = p[0] - lage.Ursprung[0], dy = p[1] - lage.Ursprung[1]; return [dx * c + dy * si, -dx * si + dy * c, p[2] - lage.Ursprung[2]]; }
+            var (ecken, dreiecke) = FamilieNetzUebernehmen.Verschmelzen([.. netz.P], [.. netz.D]);
+            for (int i = 0; i < ecken.Count; i++) ecken[i] = Lokal(ecken[i]);
+            var koerper = new JsonObject
+            {
+                ["id"] = "netz", ["name"] = "Geometrie aus IFC", ["art"] = "netz", ["material"] = "sonst",
+                ["herkunft"] = $"{Path.GetFileName(d.Pfad)}, {IfcDatei.Entitaet(x)} #{x.EntityLabel}",
+                ["ecken"] = new JsonArray(ecken.Select(q => (JsonNode)Feld(q, 1)).ToArray()),
+                ["dreiecke"] = new JsonArray(dreiecke.Select(t => (JsonNode)new JsonArray(t[0], t[1], t[2])).ToArray()),
+            };
+            if (sa.Familie(e.Klasse, x, Path.GetFileName(d.Pfad), koerper, []) is not { } fam) continue;
+            if (Familien.FamilieVon(k.Arbeit, e)?.Id == fam.Id && Familien.Typ(e) == Typ) { sa.Verwiesen++; continue; }
+            var neuE = e.Kopie();
+            neuE.Bezuege[Familien.Bezug] = fam.Id;
+            neuE.Eigenschaften["familientyp"] = new Wert { Inhalt = JsonValue.Create(Typ), Herkunft = k.Herkunft with { Art = "ifc", Quelle = $"Familie aus dem IFC {fam.Kennzeichen}" } };
+            k.Setzen(neuE);
+            sa.Verwiesen++;
+        }
+        return sa.Hinweise();
+    }
+
+    /// <summary>Familien aus dem IFC finden (Projekt, Bürobibliothek) oder anlegen; Kennung «ifc-» + Prüfsumme von Klasse, Körper und Anschlüssen.</summary>
+    sealed class Sammlung
+    {
+        readonly Kontext k;
+        readonly Dictionary<string, Element> nachId;
+        readonly HashSet<string> namen;
+        readonly BibliotheksOrt ort;
+        readonly BibIndex? bibliothek;
+        public readonly Dictionary<string, int> Fehler = [];
+        public int Neu, Wieder, AusBibliothek, Verwiesen;
+
+        public Sammlung(Kontext k)
+        {
+            this.k = k;
+            nachId = k.Arbeit.DerKlasse(Familien.Klasse).Where(f => Familien.DefinitionsId(f) is not null)
+                .GroupBy(f => Familien.DefinitionsId(f)!).ToDictionary(g => g.Key, g => g.First());
+            namen = new HashSet<string>(k.Arbeit.DerKlasse(Familien.Klasse).Select(f => f.Name ?? ""), StringComparer.OrdinalIgnoreCase);
+            ort = FamilienBibliothekDienst.Ort(k.Katalog);
+            bibliothek = ort.Aktiv ? FamilienBibliothekDienst.IndexOhneSchreiben(ort) : null;
+        }
+
+        public Element? Familie(string klasse, IIfcProduct x, string datei, JsonObject koerper, JsonArray anschluesse)
+        {
+            var id = "ifc-" + Pruefsumme(klasse, koerper, anschluesse);
             // dauerhaft in unseren Standard aufgenommen (familie_in_bibliothek, von Hand): dieselbe Familie aus der Bürobibliothek laden
             if (!nachId.ContainsKey(id) && bibliothek?.Familie(id) is not null)
             {
@@ -109,46 +180,41 @@ static class IfcFamilien
                     var anzahl = k.Hinweise.Count;
                     FamilieLaden.AusBibliothek(k, ort, id, null, null);
                     if (k.Hinweise.Count > anzahl) k.Hinweise.RemoveRange(anzahl, k.Hinweise.Count - anzahl);
-                    if (k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(x => Familien.DefinitionsId(x) == id) is { } geladen) { nachId[id] = geladen; ausBibliothek++; }
+                    if (k.Arbeit.DerKlasse(Familien.Klasse).FirstOrDefault(f => Familien.DefinitionsId(f) == id) is { } geladen) { nachId[id] = geladen; AusBibliothek++; }
                 }
-                catch (HlksFehler f) { Zaehlen(fehler, "aus der Bibliothek nicht geladen: " + (f.Message.Length > 60 ? f.Message[..60] + "…" : f.Message)); }
+                catch (HlksFehler f) { Zaehlen(Fehler, "aus der Bibliothek nicht geladen: " + (f.Message.Length > 60 ? f.Message[..60] + "…" : f.Message)); }
             }
-            if (!nachId.TryGetValue(id, out var fam))
+            if (nachId.TryGetValue(id, out var fam)) { Wieder++; return fam; }
+            var name = Eindeutig((Typname(x) ?? klasse) + " (IFC)", namen);
+            var def = new JsonObject
             {
-                var name = Eindeutig((Typname(x) ?? e.Klasse) + " (IFC)", namen);
-                var def = new JsonObject
-                {
-                    ["format"] = 1, ["id"] = id, ["name"] = name, ["kategorie"] = e.Klasse,
-                    ["beschreibung"] = $"Familie aus dem IFC: Form und Anschlüsse von {IfcDatei.Entitaet(x)} «{Typname(x) ?? e.Name}» ({Path.GetFileName(lauf.Datei.Pfad)})",
-                    ["parameter"] = new JsonArray(),
-                    ["typen"] = new JsonArray(new JsonObject { ["name"] = Typ, ["werte"] = new JsonObject() }),
-                    ["koerper"] = new JsonArray(koerper),
-                    ["anschluesse"] = anschluesse,
-                };
-                try
-                {
-                    var anzahl = k.Hinweise.Count;
-                    fam = FamilienBefehle.Speichern(k, null, def, "ifc_uebernehmen", "entwurf", 1, null);
-                    if (k.Hinweise.Count > anzahl) k.Hinweise.RemoveRange(anzahl, k.Hinweise.Count - anzahl);   // je Familie ein Hinweis wäre zu viel
-                }
-                catch (HlksFehler f) { Zaehlen(fehler, f.Message.Length > 80 ? f.Message[..80] + "…" : f.Message); continue; }
-                nachId[id] = fam;
-                namen.Add(name);
-                neu++;
+                ["format"] = 1, ["id"] = id, ["name"] = name, ["kategorie"] = klasse,
+                ["beschreibung"] = $"Familie aus dem IFC: Form und Anschlüsse von {IfcDatei.Entitaet(x)} «{Typname(x) ?? IfcLauf.Text(x.Name)}» ({datei})",
+                ["parameter"] = new JsonArray(),
+                ["typen"] = new JsonArray(new JsonObject { ["name"] = Typ, ["werte"] = new JsonObject() }),
+                ["koerper"] = new JsonArray(koerper),
+                ["anschluesse"] = anschluesse,
+            };
+            try
+            {
+                var anzahl = k.Hinweise.Count;
+                fam = FamilienBefehle.Speichern(k, null, def, "ifc_uebernehmen", "entwurf", 1, null);
+                if (k.Hinweise.Count > anzahl) k.Hinweise.RemoveRange(anzahl, k.Hinweise.Count - anzahl);   // je Familie ein Hinweis wäre zu viel
             }
-            else wieder++;
-
-            e.Bezuege[Familien.Bezug] = fam.Id;
-            lauf.Wert(e, "familientyp", Typ, $"Familie aus dem IFC {fam.Kennzeichen}");
-            bool stehend = Math.Abs(az.Z - 1) < 1e-9;
-            if (stehend) { if (Math.Abs(Math.Atan2(ax.Y, ax.X)) > 1e-9) lauf.Wert(e, "drehung", Math.Round(Math.Atan2(ax.Y, ax.X) * 180 / Math.PI, 6), "Platzierung des Produkts im IFC"); }
-            else lauf.Wert(e, "ausrichtung", Familien.AusrichtungJson(ax, az), "Platzierung des Produkts im IFC");
-            verwiesen++;
+            catch (HlksFehler f) { Zaehlen(Fehler, f.Message.Length > 80 ? f.Message[..80] + "…" : f.Message); return null; }
+            nachId[id] = fam;
+            namen.Add(name);
+            Neu++;
+            return fam;
         }
-        var aus = new List<string>();
-        if (verwiesen > 0) aus.Add($"Familien aus dem IFC: {verwiesen} Bauteile mit dem Körper ihres IFC-Netzes ({neu} Familien neu, {ausBibliothek} aus der Bürobibliothek, {wieder}× wiederverwendet).");
-        foreach (var (grund, n) in fehler) aus.Add($"Familien aus dem IFC: {n}× nicht angelegt – {grund}.");
-        return aus;
+
+        public List<string> Hinweise()
+        {
+            var aus = new List<string>();
+            if (Verwiesen > 0) aus.Add($"Familien aus dem IFC: {Verwiesen} Bauteile mit dem Körper ihres IFC-Netzes ({Neu} Familien neu, {AusBibliothek} aus der Bürobibliothek, {Wieder}× wiederverwendet).");
+            foreach (var (grund, n) in Fehler) aus.Add($"Familien aus dem IFC: {n}× nicht angelegt – {grund}.");
+            return aus;
+        }
     }
 
     static void Zaehlen(Dictionary<string, int> d, string grund) => d[grund] = d.GetValueOrDefault(grund) + 1;

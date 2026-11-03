@@ -191,7 +191,7 @@
       { "name": "austritt", "typ": "zahl", "einheit": "mm", "beschreibung": "Tiefe der obersten Trittfläche hinter der letzten Stufenkante (Austrittsstufe auf Höhe der Oberkante, wie im IFC; fehlt = keine)" },
       { "name": "austrittUmriss", "typ": "liste", "beschreibung": "Umriss der Austrittsstufe [[x, y], …] auf Höhe der letzten Stufenkante, wie im IFC (Gegenuhrzeigersinn); fehlt = Rechteck aus «austritt»" },
       { "name": "material", "typ": "auswahl", "auswahl": [ "unbestimmt", "beton", "stahl", "holz", "backstein", "kalksandstein" ], "beschreibung": "Hauptmaterial; bestimmt die Schraffur der Schnittfläche" } ] },
-  { "name": "Fenster", "kuerzel": "F", "basis": "Bauteil", "ifc": "IfcWindow", "geometrie": "punkt",
+  { "name": "Fenster", "kuerzel": "F", "basis": "Bauteil", "familie": true, "ifc": "IfcWindow", "geometrie": "punkt",
     "beschreibung": "Fenster in einer Wand (bezuege.wand). Lage = Mitte unten in der Wandachse; abstand = Lage entlang der Wandachse ab Wandanfang. Wird die Wand verschoben, führt der Kern die Lage nach.",
     "eigenschaften": [
       { "name": "breite", "typ": "zahl", "einheit": "mm", "beschreibung": "Lichte Breite" },
@@ -212,7 +212,7 @@
       { "name": "uw", "typ": "zahl", "einheit": "W/(m²·K)", "beschreibung": "U-Wert des Fensters: gerechnet (Ag·Ug + Af·Uf + lg·ψg)/(Ag + Af) oder ausdrücklich mit Quelle (dann gilt dieser)" },
       { "name": "sonnenschutz", "typ": "auswahl", "auswahl": [ "keiner", "aussen", "innen", "zwischen" ], "beschreibung": "Lage des Sonnenschutzes" },
       { "name": "fc", "typ": "zahl", "beschreibung": "Abminderungsfaktor des Sonnenschutzes, mit Quelle" } ] },
-  { "name": "Tuer", "kuerzel": "T", "basis": "Bauteil", "ifc": "IfcDoor", "geometrie": "punkt",
+  { "name": "Tuer", "kuerzel": "T", "basis": "Bauteil", "familie": true, "ifc": "IfcDoor", "geometrie": "punkt",
     "beschreibung": "Tür in einer Wand (bezuege.wand). Lage = Mitte unten in der Wandachse; abstand = Lage entlang der Wandachse ab Wandanfang. seite = auf welche Seite der Wand (in Wandrichtung gesehen) das Blatt aufschlägt; band = Bandseite zum Wandanfang oder -ende.",
     "eigenschaften": [
       { "name": "breite", "typ": "zahl", "einheit": "mm", "beschreibung": "Lichte Breite" },

@@ -32,7 +32,7 @@ public sealed class KollisionspruefungOeffnungTests : IDisposable
 
     static void Rohr(Projekt p, string kz, string dn, double[] a, double[] b)
     {
-        var fam = p.Modell.DerKlasse("Familie").Single();   // nur die Testrohrserie
+        var fam = p.Modell.DerKlasse("Familie").Single(f => f.Text("kategorie") == "Rohr");   // die Testrohrserie (Fenster aus dem IFC haben seit 03.11.2026 eigene Familien)
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
             ["klasse"] = "Rohr", ["kennzeichen"] = kz, ["system"] = "KW", ["eigenschaften"] = new JsonObject { ["familientyp"] = dn },

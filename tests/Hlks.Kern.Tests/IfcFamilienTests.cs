@@ -75,6 +75,24 @@ public sealed class IfcFamilienTests : IDisposable
         Assert.All(an, x => Assert.NotNull(x!["richtung"]));
     }
 
+    [Fact]
+    public void Architektur_TuerUndFenster_FamilieAusDemIfc_KoerperDecktSich_ZweiteUebernahmeOhneAenderung()
+    {
+        // Christian 03.11.2026: «auch bei der Architektur sollte das so sein» – Körper im System der Öffnung, geht mit der Wand mit
+        var p = Leer();
+        var datei = IfcArchitekturTestdatei.Datei("IFC4", false);
+        Ok(Uebernehmen(p, datei));
+        foreach (var kl in new[] { "Tuer", "Fenster" })
+        {
+            var e = p.Modell.DerKlasse(kl).Single();
+            Assert.EndsWith("(IFC)", Familien.FamilieVon(p.Modell, e)!.Name);
+        }
+        var u = IfcDeckung.Pruefen(p, new JsonObject())["unterlagen"]!.AsArray().Single()!;
+        foreach (var kl in new[] { "Tuer", "Fenster" })
+            Assert.Equal(u["jeKlasse"]![kl]!["anzahl"]!.GetValue<int>(), u["jeKlasse"]![kl]!["deckungsgleich"]!.GetValue<int>());
+        Assert.Null(Ok(Uebernehmen(p, datei)).PaketId);
+    }
+
     static double[] Box(List<double[]> ecken) =>
         [ecken.Min(q => q[0]), ecken.Min(q => q[1]), ecken.Min(q => q[2]), ecken.Max(q => q[0]), ecken.Max(q => q[1]), ecken.Max(q => q[2])];
 }

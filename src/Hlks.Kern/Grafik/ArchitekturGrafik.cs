@@ -625,8 +625,27 @@ public sealed class ArchitekturGrafik : IGrafikquelle
     }
 
     /// <summary>Tür: dünner Quader «tuer»; Fenster: Quader «glas», Deckkraft 0.35 – je in der Wandachse.</summary>
+    /// <summary>Bezugslage einer Tür bzw. eines Fensters für den Familienkörper (Familie aus dem IFC, 03.11.2026): Punkt in der Wandachse an
+    /// der Öffnung auf Höhe ihrer Unterkante, Drehung = Richtung der Wand (Grad). Der Körper geht so mit, wenn die Wand verschoben oder gedreht
+    /// wird; null ohne Wirtswand.</summary>
+    public static (double[] Ursprung, double Winkel)? OeffnungLage(Modell m, Katalog k, Element e)
+    {
+        if (Wandgeometrie.WandVon(e) is not { } wid || m.Finde(wid) is not { } wand) return null;
+        var w = Wandgeometrie.MitVerlaengerung(m, k, wand);
+        if (w is null || Wandgeometrie.Oeffnung(k, e, w) is not { } o) return null;
+        var c = w.Punkt(o.Abstand, 0);
+        return ([c[0], c[1], w.Unterkante + o.Unten], w.Winkel);
+    }
+
     static Koerper? OeffnungKoerper(Projekt p, Element e)
     {
+        // Familie (aus dem IFC bzw. unserem Standard): ihr Körper in der Lage der Öffnung – Rahmen, Flügel, Glas wie im IFC
+        if (Familien.Aufloesung(p.Modell, p.Katalog, e, out _) is { } fa && OeffnungLage(p.Modell, p.Katalog, e) is { } lage)
+        {
+            var kf = new Koerper { Id = e.Id, Ebene = "oeffnung" };
+            foreach (var ft in fa.Teile(FamilienGrafik.Detailgrad3D)) kf.Teile.Add(FamilienKoerper.Platzieren(ft, lage.Ursprung, lage.Winkel, null));
+            if (!kf.Leer) return kf;
+        }
         if (Wandgeometrie.WandVon(e) is not { } wid || p.Modell.Finde(wid) is not { } wand) return null;
         var w = Wandgeometrie.MitVerlaengerung(p.Modell, p.Katalog, wand);
         if (w is null || Wandgeometrie.Oeffnung(p.Katalog, e, w) is not { } o) return null;
