@@ -145,6 +145,21 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   aber eigener Baustein); die fachliche Auslegung der Felder (Leitungen, Formteile, Anschlüsse, Parameterwerte) und
   der Geometrie (`GElement`, `GeomTable`).
 
+**Leitungen – gebaut 03.11.2026** (Christian: «Leitungen auslegen»; `src/Hlks.Kern/Unterlagen/RevitLeitungen.cs`):
+- Leitung = jede Klasse mit Kurventreiber `m_pCurveDriver` und Querschnitt `m_dWidthOrDiameter`/`m_dHeight` (Rohre
+  `RbsPipeCurve`; Kanäle gleich aufgebaut, in der Stichprobe nicht vorhanden; Dämmung `RbsPipeInsulation` ausgenommen).
+- Achse: `m_pCurveDriver.m_pCrv` = `GLine` mit `m_origin`, `m_dirVec`, `m_endParams` (Fuss) → Anfang/Ende in mm.
+- Rohr: `m_pDesignPropManager.m_dOuterDiameter`/`m_dInnerDiameter`, `m_sCalculatedSize`; `m_dWidthOrDiameter` ist bei
+  Rohren die Nennweite.
+- Bezüge: Typ `m_idType`, Segment `m_idSegment`, Ebene `m_idLevelStart`, System über
+  `Connector.m_modifiers → SegmentConnectorCalculation.m_idSystem`, verbundene Elemente über `Connector.m_arrRefs`.
+  Namen: Typen `m_symbolInfo.m_name`, Systeme `m_strName`, Ebenen `m_text`, Segmente `m_name`.
+- Geprüft: Geberit Silent-db20 (Revit 2017, 54 Rohre; Aussen/innen 56/49,6 … 160/146 mm, Revits Text «56 mmø»),
+  Geberit PushFit PB (60 Rohre), JRG Sanipex PE-Xa (Revit 2024, 118 MB, 46 Rohre). Test `RevitDateiTests` 6/6.
+- **Offen:** Bögen und gekrümmte Leitungen (andere Kurvenklassen als `GLine`), Formteile (`FamilyInstance` mit
+  `PipeFittingCenterLine`) und Armaturen, Kanäle an einer echten Datei, Übernahme in ein KICAD-Projekt
+  (Abbildung auf KICAD-Leitungen/Serien), Koordinaten von Revits internem System auf Vermessung.
+
 **Objektdaten – erster Befund vor dem Bau (zur Nachvollziehbarkeit):**
 - Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`
   Bytezahl nochmals (Versions­abhängig; Funktion `0x1801b5ce0`).

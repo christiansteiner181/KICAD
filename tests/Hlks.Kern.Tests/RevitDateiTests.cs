@@ -121,6 +121,25 @@ public class RevitDateiTests
     }
 
     [Fact]
+    public void Echte_Leitungen_aus_RVT_mit_Achse_Durchmesser_Typ_System_und_Ebene()
+    {
+        var pfad = Echt("familien/revit/geberit_silent_db20_2017.rvt");
+        if (pfad is null) return;
+        var l = RevitLeitungen.Lesen(RevitDatei.Oeffnen(pfad));
+        Assert.Equal(54, l.Count);
+        var r = l.Single(x => x.Id == 2349);
+        Assert.Equal(1000, r.Laenge!.Value, 3);
+        Assert.Equal(56, r.Aussendurchmesser!.Value, 1);   // Revits eigener Text: «56 mmø»
+        Assert.Equal(49.6, r.Innendurchmesser!.Value, 1);
+        Assert.Equal("56 mmø", r.Groesse);
+        Assert.Equal("Geberit Silent-DB20 DN", r.Typ);
+        Assert.Equal("Level 1", r.Ebene);
+        Assert.StartsWith("Sanitary", r.System);
+        Assert.Equal(2367, l.Single(x => x.Id == 2363).Verbunden.Single());   // Formteil zwischen 2363 und 2365
+        Assert.All(l, x => Assert.True(x.Laenge > 0 && x.Aussendurchmesser > x.Innendurchmesser && x.Typ is not null, $"Leitung {x.Id}"));
+    }
+
+    [Fact]
     public void Echte_Elemente_vollstaendig_gelesen_und_Kopf_nennt_die_Klasse_des_Koerpers()
     {
         foreach (var (datei, mindestens) in new[] { ("familien/revit/speicher_kaelte_2025.rfa", 26_184), ("familien/revit/dynacon_2018.rfa", 1) })
