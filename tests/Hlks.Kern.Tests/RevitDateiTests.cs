@@ -119,4 +119,28 @@ public class RevitDateiTests
         if (alt is null) return;
         Assert.Equal(4024, RevitDatei.Oeffnen(alt).Schema().Anzahl);
     }
+
+    [Fact]
+    public void Echte_Elemente_vollstaendig_gelesen_und_Kopf_nennt_die_Klasse_des_Koerpers()
+    {
+        foreach (var (datei, mindestens) in new[] { ("familien/revit/speicher_kaelte_2025.rfa", 26_184), ("familien/revit/dynacon_2018.rfa", 1) })
+        {
+            var pfad = Echt(datei);
+            if (pfad is null) continue;
+            var d = RevitDatei.Oeffnen(pfad);
+            var s = d.Schema();
+            var saetze = RevitObjekte.Saetze(d, s).ToList();
+            Assert.True(saetze.Count >= mindestens, $"{datei}: {saetze.Count} Sätze");
+            // einzige bekannte Lücke: Extensible Storage (Schema-GUID statt Klasse); alles andere wird vollständig gelesen
+            Assert.All(saetze.Where(x => !x.Vollstaendig), x => Assert.StartsWith(RevitObjekte.EsFehler, x.Fehler));
+            Assert.True(saetze.Count(x => !x.Vollstaendig) * 50 <= saetze.Count, $"{datei}: {saetze.Count(x => !x.Vollstaendig)} unvollständig");
+            // Kopf (ElementHeader.m_classDef) und Körper desselben Elements passen zusammen
+            var klasseLautKopf = saetze.Where(x => x.Kopf && x.Objekt?["m_classDef"] is RevitObjekt)
+                .GroupBy(x => (x.Partition, x.Id)).ToDictionary(g => g.Key, g => ((RevitKlassenVerweis)((RevitObjekt)g.First().Objekt!["m_classDef"]!)["m_ref"]!).Name);
+            // je Element zwei Körper: das Element selbst und seine Geometrie (GElement) bzw. ein Platzhalter (SerializedDummy)
+            var koerper = saetze.Where(x => !x.Kopf && x.Objekt is { } o && o.Klasse.Name is not ("SerializedDummy" or "GElement") && klasseLautKopf.ContainsKey((x.Partition, x.Id))).ToList();
+            Assert.NotEmpty(koerper);
+            Assert.All(koerper, x => Assert.Equal(klasseLautKopf[(x.Partition, x.Id)], x.Objekt!.Klasse.Name));
+        }
+    }
 }
