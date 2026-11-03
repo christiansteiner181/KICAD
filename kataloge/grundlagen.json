@@ -265,7 +265,8 @@
       ],
       "ablage": "%OneDrive%\\Gebäudetechnik\\Normen\\SIA\\SIA-Reader - 2028_2010_dSIA.srd.pdf",
       "vorliegend": "original",
-      "hinweis": "Tab. 6 S. 19: Auslegungstemperatur für die Norm-Heizlast nach SIA 384.201, 39 Stationen. Reiner Bildscan (nicht geschützt), sauber lesbar – Werte nur durch Transkription. Für das heutige Klima laut MeteoSchweiz die Grundlage."
+      "hinweis": "Tab. 6 S. 19: Auslegungstemperatur für die Norm-Heizlast nach SIA 384.201, 39 Stationen. Reiner Bildscan (nicht geschützt), sauber lesbar – Werte nur durch Transkription. Für das heutige Klima laut MeteoSchweiz die Grundlage.",
+      "werte": "HLKS_NORMTABELLEN\\heizung\\sia2028_auslegung.json (Tab. 6, 1a, 2; 40 Stationen)"
     },
     {
       "id": "norm.sia384_201",
@@ -277,7 +278,8 @@
       ],
       "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\384_201_2003_d.pdf",
       "vorliegend": "original",
-      "hinweis": "Heizlast: Verfahren S. 12–34, Nationaler Anhang ND ab S. 41 (gedruckte Seiten; PDF-Seite = gedruckt − 2): ND.1 Aussentemperatur, ND.2 Innentemperatur, ND.3–ND.5 Reduktionsfaktoren, ND.5 Lüftung, ND.6 Aufheizen, ND.7 n50. Textschicht gut. Neuere Ausgabe SN SIA 384/2:2020 nicht im Büro (Frage an Christian). Fundstellen: berichte/heizung-lueftung-fundstellen.md."
+      "hinweis": "Heizlast: Verfahren S. 12–34, Nationaler Anhang ND ab S. 41 (gedruckte Seiten; PDF-Seite = gedruckt − 2): ND.1 Aussentemperatur, ND.2 Innentemperatur, ND.3–ND.5 Reduktionsfaktoren, ND.5 Lüftung, ND.6 Aufheizen, ND.7 n50. Textschicht gut. Neuere Ausgabe SN SIA 384/2:2020 nicht im Büro (Frage an Christian). Fundstellen: berichte/heizung-lueftung-fundstellen.md.",
+      "werte": "HLKS_NORMTABELLEN\\heizung\\heizlast.json (ND.1–ND.9, Uequiv Tab. 4–7, Formelverweise; 03.11.2026)"
     },
     {
       "id": "dokumentation.sia_d0208",
@@ -302,7 +304,8 @@
       ],
       "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\2024_2015_d.pdf (und 2006, 2021)",
       "vorliegend": "original",
-      "hinweis": "Raumnutzungsdaten: Tab. 9 S. 134 (2015) Winter-Raumtemperatur und Aussenluft je Person; welche Ausgabe gilt, entscheidet Christian."
+      "hinweis": "Raumnutzungsdaten: Tab. 9 S. 134 (2015) Winter-Raumtemperatur und Aussenluft je Person; welche Ausgabe gilt, entscheidet Christian.",
+      "werte": "HLKS_NORMTABELLEN\\heizung\\raumnutzung_sia2024.json (Tab. 9 der Ausgabe 2015, 45 Nutzungen; Winter = «Auslegung Heizung» der Nutzungsblätter, Stichprobe 1.1)"
     },
     {
       "id": "norm.sia381_2",
