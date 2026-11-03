@@ -92,7 +92,7 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
 
 ## Aufwand und Risiko für KICAD
 
-**Stufe 1 – Metadaten- und Familienkatalog:** **umgesetzt 03.11.2026** (Christian: «Stufe 1 bauen»), noch nicht committet:
+**Stufe 1 – Metadaten- und Familienkatalog:** **umgesetzt 03.11.2026** (Christian: «Stufe 1 bauen»), Commit 48836cc:
 - `src/Hlks.Kern/Unterlagen/RevitDatei.cs`: Compound-File-Leser, Blockkorrektur (`Entblocken`), gzip mit CRC32-Prüfung
   (`Entpacken`, `Entpackt(stream)`), `Info()` mit Version (auch alte BasicFileInfo ab Revit 2012), PartAtom, Vorschau-PNG,
   externe Verweise.
