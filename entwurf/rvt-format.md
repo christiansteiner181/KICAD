@@ -127,6 +127,21 @@ nicht – die scheinbaren Treffer waren Folgen der fehlenden Blockkorrektur. All
   Zeiger, Sammlungen) – nächster Schritt: Objekt-Lesecode in `Utility.dll` dekompilieren (`AArchive::LoadModel`,
   Feld-Serialisierer) und `Global/ElemTable` (Elementliste, Einträge zu 40 B mit Element-Id) auslegen.
 
+**Objektdaten – Befund 03.11.2026 (Ghidra, `AArcObj.cpp`, `DataDict.cpp` in Utility.dll), noch nicht gebaut:**
+- Ein Modell (z. B. ein Element in einer Partition) ist gerahmt: `u32` Adler32-Prüfsumme, `u32` Bytezahl, Daten, `u32`
+  Bytezahl nochmals (Versions­abhängig; Funktion `0x1801b5ce0`).
+- Objekt: Klassenverweis wie im Schema (`u16` Tag), dann die Felder **erst der Elternklasse, dann der eigenen** in
+  Schemareihenfolge (`0x1801b1b20`). Aufeinanderfolgende einfache Felder liest Revit als einen rohen Block.
+- Zeigerfelder: je `u32` – 0 = leer, −1 = neues Objekt folgt inline (mit Klassenverweis), sonst Verweis auf ein schon
+  gelesenes Objekt (`0x1801c5b30`).
+- Sammlungen (Collection, String, Map, Set …) liest jeweils ihr eigener **Container-Manager** (virtuelle Funktion je
+  Sammlungsart) – Anzahl und Kodierung sind je Art verschieden, ebenso eigene Serialisierer für einzelne Grundtypen.
+  Das ist der aufwendige Teil: Es gibt viele Sammlungsarten, jede muss einzeln dekompiliert und geprüft werden; dazu
+  mehrere Formatversionen (Schwellen 6, 11, 13, 14, 15, 18, 20, 25 im Code).
+- Einschätzung: ein Objektleser, der beliebige Elemente mit ihren Feldwerten liefert, ist eine Arbeit von **mehreren
+  Tagen bis Wochen** mit offenem Ende (je Sammlungsart Dekompilieren und Gegenprüfen). Geometrie bleibt auch danach
+  Revits eigene Darstellung (GeomTable/GNode-Klassen) und bräuchte nochmals eigene Arbeit.
+
 **Stufe 2 – generischer Objektleser (Einschätzung vor Beginn):** Schema aus `Formats/Latest` auslegen und damit `Global/ElemTable` und die
 Partitionen in Objekte mit Klassen- und Feldnamen zerlegen. Mehrere Wochen, Ergebnis unsicher; das Schema ändert mit
 jeder Revit-Version, ist aber in jeder Datei mitgespeichert (das senkt das Risiko). Weitere Dekompilierung der
