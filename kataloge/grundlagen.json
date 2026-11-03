@@ -265,7 +265,125 @@
       ],
       "ablage": "%OneDrive%\\Gebäudetechnik\\Normen\\SIA\\SIA-Reader - 2028_2010_dSIA.srd.pdf",
       "vorliegend": "original",
-      "hinweis": "Klimadaten des heutigen Klimas (laut MeteoSchweiz die Grundlage dafür); Quelle der Norm-Aussentemperatur für die Heizlast. Lesbarkeit (SIA-Reader) wird geprüft."
+      "hinweis": "Tab. 6 S. 19: Auslegungstemperatur für die Norm-Heizlast nach SIA 384.201, 39 Stationen. Reiner Bildscan (nicht geschützt), sauber lesbar – Werte nur durch Transkription. Für das heutige Klima laut MeteoSchweiz die Grundlage."
+    },
+    {
+      "id": "norm.sia384_201",
+      "art": "norm",
+      "kuerzel": "SIA 384.201 / SN EN 12831",
+      "ausgabe": "2003 (gültig ab 01.03.2005)",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\384_201_2003_d.pdf",
+      "vorliegend": "original",
+      "hinweis": "Heizlast: Verfahren S. 12–34, Nationaler Anhang ND ab S. 41 (gedruckte Seiten; PDF-Seite = gedruckt − 2): ND.1 Aussentemperatur, ND.2 Innentemperatur, ND.3–ND.5 Reduktionsfaktoren, ND.5 Lüftung, ND.6 Aufheizen, ND.7 n50. Textschicht gut. Neuere Ausgabe SN SIA 384/2:2020 nicht im Büro (Frage an Christian). Fundstellen: berichte/heizung-lueftung-fundstellen.md."
+    },
+    {
+      "id": "dokumentation.sia_d0208",
+      "art": "lehrmittel",
+      "kuerzel": "SIA D 0208 (Wegleitung 384.201)",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "%OneDrive%\\Gebäudetechnik\\Normen\\Wegleitung 384.201.pdf",
+      "vorliegend": "original",
+      "hinweis": "Leitfaden mit Rechenbeispiel (Scan) – mögliches Prüfbeispiel für den Heizlast-Kern."
+    },
+    {
+      "id": "norm.sia2024",
+      "art": "norm",
+      "kuerzel": "SIA 2024",
+      "ausgabe": "2006, 2015, 2021",
+      "gebiete": [
+        "Heizung",
+        "Lüftung",
+        "Kälte"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\2024_2015_d.pdf (und 2006, 2021)",
+      "vorliegend": "original",
+      "hinweis": "Raumnutzungsdaten: Tab. 9 S. 134 (2015) Winter-Raumtemperatur und Aussenluft je Person; welche Ausgabe gilt, entscheidet Christian."
+    },
+    {
+      "id": "norm.sia381_2",
+      "art": "norm",
+      "kuerzel": "SIA 381/2",
+      "ausgabe": "1991",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\381_2_d.pdf",
+      "vorliegend": "original",
+      "hinweis": "Klimadaten (ta,min), auf die ND.1 von SIA 384.201 verweist; weicht teils von SIA 2028 Tab. 6 ab."
+    },
+    {
+      "id": "richtlinie.swki_he301_01",
+      "art": "richtlinie",
+      "kuerzel": "SWKI HE301-01",
+      "ausgabe": "2020-08",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SWKI\\Richtlinie SWKI HE301-01.pdf",
+      "vorliegend": "original",
+      "hinweis": "Sicherheitstechnische Einrichtungen für Heizungsanlagen (Druckhaltung, Ausdehnungsgefäss); Anhang A.3, B.5–B.9."
+    },
+    {
+      "id": "richtlinie.swki_va300_01",
+      "art": "richtlinie",
+      "kuerzel": "SWKI VA300-01",
+      "gebiete": [
+        "Lüftung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\SWKI\\SWKI VA300-01_WRG.pdf",
+      "vorliegend": "original",
+      "hinweis": "Wärmerückgewinnung; nur Scan."
+    },
+    {
+      "id": "buero.formular_waermebedarf",
+      "art": "buero",
+      "kuerzel": "Formular Wärmebedarf 384.201 (NEU).xls",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Technische Berechnungen\\Heizung",
+      "vorliegend": "original",
+      "hinweis": "Büro-Rechenblatt Heizlast, Formeln lesbar; enthält Daten eines echten Objekts (nie ins Repository). Als Büroverfahren/Testreferenz: Frage an Christian."
+    },
+    {
+      "id": "buero.heizung_vorlagen",
+      "art": "buero",
+      "kuerzel": "Büro-Vorlagen Druckverlust Wasser, Fussbodenheizung, Expansionsgefäss",
+      "gebiete": [
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Technische Berechnungen\\Heizung",
+      "vorliegend": "original",
+      "hinweis": "Vorlage Druckverlust Wasser_VETM.xltm (Zeta, kvs, Ventilautorität), Vorlage Fussbodenheizung .xlt, Expansionsgefäss.xls; Herkunft der Faktoren in den Blättern nicht belegt."
+    },
+    {
+      "id": "merkblatt.bfe_bauteile",
+      "art": "richtlinie",
+      "kuerzel": "BFE Bauteile Neubau",
+      "gebiete": [
+        "Hülle",
+        "Heizung"
+      ],
+      "ablage": "W:\\05_Normen und Merkblätter\\Bauteile Neubau.pdf",
+      "vorliegend": "original",
+      "hinweis": "Rsi/Rse, λ-Werte, U-Wert-Katalog."
+    },
+    {
+      "id": "fehlt.heizung_normen",
+      "art": "norm",
+      "kuerzel": "SN EN 442, SN EN 1264, SN EN 12828, SIA 382/1 (aktuell), SIA 382/5, SIA 411, VDI 3814, BFE-Wärmebrückenkatalog",
+      "gebiete": [
+        "Heizung",
+        "Lüftung",
+        "MSRL"
+      ],
+      "vorliegend": "fehlt",
+      "hinweis": "Im Normenordner nicht gefunden (Fundstellenbericht 03.11.2026). Bis sie vorliegen: Herstellerunterlage › Bürovorgabe › Physik."
     }
   ]
 }
