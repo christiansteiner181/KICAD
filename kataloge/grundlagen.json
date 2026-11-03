@@ -249,8 +249,9 @@
         "Kälte"
       ],
       "ablage": "map.geo.admin.ch bzw. data.geo.admin.ch, Sammlung ch.meteoschweiz.klimaszenarien-raumklima (klimaszenarien-raumklima_2056.csv.zip, 32.8 MB); Datenbeschrieb: meteoswiss.admin.ch, Datenbeschrieb-Meilenstein-EN-FINAL.pdf",
-      "vorliegend": "online",
-      "hinweis": "Entscheid Christian 03.11.2026: «MeteoSchweiz gratis» statt Meteonorm. Inhalt laut MeteoSchweiz: stündliche Zukunftsszenarien (CH2018; 2020–2049 und 2045–2074; RCP2.6 und RCP8.5) als typische Jahre (DRY) und warme Sommer (1-in-10) an 45 Stationen, frei verfügbar; für das heutige Klima gilt SIA 2028:2010. Darum für Sommer, Kühlung und Simulation – nicht für die Heizlast-Auslegung (keine Kälteextreme, Zukunft wärmer)."
+      "vorliegend": "original",
+      "hinweis": "Entscheid Christian 03.11.2026: «MeteoSchweiz gratis» statt Meteonorm. Inhalt laut MeteoSchweiz: stündliche Zukunftsszenarien (CH2018; 2020–2049 und 2045–2074; RCP2.6 und RCP8.5) als typische Jahre (DRY) und warme Sommer (1-in-10) an 45 Stationen, frei verfügbar; für das heutige Klima gilt SIA 2028:2010. Darum für Sommer, Kühlung und Simulation – nicht für die Heizlast-Auslegung (keine Kälteextreme, Zukunft wärmer).",
+      "werte": "HLKS_KLIMADATEN\\meteoschweiz_raumklima\\csv (buero.json › klimadaten; 271 Dateien, heruntergeladen 03.11.2026)"
     },
     {
       "id": "merkblatt.sia2028",
