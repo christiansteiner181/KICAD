@@ -225,6 +225,46 @@
         "Allgemein"
       ],
       "hinweis": "Von KICAD festgelegt (Toleranzen, Zählregeln, Schwellen) ohne Norm und ohne Entscheid – offen, bis Christian entscheidet; je Verfahren unter «Annahmen» genannt."
+    },
+    {
+      "id": "klima.meteonorm",
+      "art": "stoffwerte",
+      "kuerzel": "Meteonorm (Meteotest AG)",
+      "gebiete": [
+        "Heizung",
+        "Lüftung",
+        "Kälte"
+      ],
+      "ablage": "meteonorm.com – Software bzw. Climate API (TMY, AMY, Export u. a. SIA 2028, EPW)",
+      "vorliegend": "fehlt",
+      "hinweis": "Christian 03.11.2026: «die daten von metenorm sind soeiso besser». Kostenpflichtig (Lizenz/Abo, Weitergabe der Daten an Dritte nicht erlaubt); im Büro nicht gefunden – Beschaffung entscheidet Christian."
+    },
+    {
+      "id": "klima.meteoschweiz_sia2028",
+      "art": "stoffwerte",
+      "kuerzel": "MeteoSchweiz Klimaszenarien Raumklima (SIA 2028)",
+      "gebiete": [
+        "Heizung",
+        "Lüftung",
+        "Kälte"
+      ],
+      "ablage": "opendata.swiss / data.geo.admin.ch (ch.meteoschweiz.klimaszenarien-raumklima)",
+      "vorliegend": "online",
+      "hinweis": "Offene Behördendaten von MeteoSchweiz im Format SIA 2028, ergänzen SIA 2028:2010 um Klimaszenarien; Eignung für die Heizlast noch zu prüfen."
+    },
+    {
+      "id": "merkblatt.sia2028",
+      "art": "norm",
+      "kuerzel": "SIA 2028 (Merkblatt)",
+      "ausgabe": "2010",
+      "gebiete": [
+        "Heizung",
+        "Lüftung",
+        "Kälte"
+      ],
+      "ablage": "%OneDrive%\\Gebäudetechnik\\Normen\\SIA\\SIA-Reader - 2028_2010_dSIA.srd.pdf",
+      "vorliegend": "original",
+      "hinweis": "Klimadaten für Bauphysik, Energie- und Gebäudetechnik; Lesbarkeit (SIA-Reader) wird geprüft."
     }
   ]
 }
