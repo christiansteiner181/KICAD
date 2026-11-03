@@ -177,7 +177,7 @@ public static class Heizlast
         var n = r.Text("nutzung")?.Trim();
         if (n is not { Length: > 0 }) return (null, "weder tempWinter noch Nutzung");
         var zu = zuordnung?.FirstOrDefault(x => x.Muster.IsMatch(n));
-        string zuText = zu is null ? "" : $" – Nutzung «{n}» zugeordnet nach kataloge/raumnutzungen.json (Annahme Hauptlauf, von Christian zu bestätigen)";
+        string zuText = zu is null ? "" : $" – Nutzung «{n}» zugeordnet nach kataloge/raumnutzungen.json (bestätigt Christian 04.11.2026)";
         // 2. Bürostandard (Christian 04.11.2026: «standard ist heute Wohnen 21°, Bad 22°»)
         if (zu?.Buero is double bw) return (bw, $"Bürostandard {bw} °C für «{n}» ({zu.BueroQuelle ?? "kataloge/raumnutzungen.json"}; Zuordnung kataloge/raumnutzungen.json)");
         // 3. ND.2 der Auslegungsnorm

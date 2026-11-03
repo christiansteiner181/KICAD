@@ -1801,7 +1801,8 @@
         "SIA 2028:2010 Tab. 6 (S. 19, Erläuterung Ziffer 3.5 S. 18), Tab. 1a (S. 9), Tab. 2 (S. 10–17); HLKS_NORMTABELLEN\\heizung\\sia2028_auslegung.json",
         "SIA 2024:2021 Raum-Datenblätter (θi,des,H, vom Bild übertragen) bzw. SIA 2024:2015 Tab. 9 (S. 134–135) – nur Rückfall; SIA 2024:2015 Vorwort S. 4: «Standardwerte für die Auslegung von Anlagen in einer frühen Planungsphase. Massgebend sind in jedem Fall die Festlegungen in den angeführten SIA-Normen bzw. die projektbezogenen Festlegungen.»",
         "Entscheide Christian Steiner 03.11.2026 (Fragefenster): «384.201:2003 jetzt», «Raumwert, sonst SIA 2024», «SIA 2028 Tab. 6 übertragen», Büroblätter als Gegenprobe",
-        "Christian Steiner 04.11.2026: «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung. dabei gilt, es muss einfach funktionieren.» und «standard ist heute Wohnen 21°, Bad 22°»; Prüfbericht hlks-pruefer 04.11.2026 (F1–F3, L1–L7) eingearbeitet"
+        "Christian Steiner 04.11.2026: «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung. dabei gilt, es muss einfach funktionieren.» und «standard ist heute Wohnen 21°, Bad 22°»; Prüfbericht hlks-pruefer 04.11.2026 (F1–F3, L1–L7) eingearbeitet",
+        "Zuordnung freier Raumnutzungen (kataloge/raumnutzungen.json): bestätigt Christian Steiner 04.11.2026 («ja mach»)"
       ],
       "grundlagen": [
         "norm.sia384_201",
@@ -1817,8 +1818,7 @@
         "θm,e aus SIA 2028 Tab. 2 (ND.1.2 nennt SIA 381/2) – gleiche Quelle wie θe.",
         "Ohne Zeitkonstante τ > 200 h (keine Korrektur); ohne n50 0 (Hülle nach SIA 180); ohne Abschirmungsklasse «moderat».",
         "Uequiv linear zwischen den Tabellenpunkten; U über 2,0 → «keine Dämmung», unter 0,25 → Spalte 0,25; Tabelle nach der nächsten Tiefe (0 / 1,5 / 3,0 m).",
-        "Wärmegewinne von wärmeren Nachbarräumen nicht angerechnet (fij ≥ 0).",
-        "Zuordnung freier Raumnutzungen zu ND.2 und SIA 2024 (kataloge/raumnutzungen.json) – von Christian zu bestätigen."
+        "Wärmegewinne von wärmeren Nachbarräumen nicht angerechnet (fij ≥ 0)."
       ],
       "grenzen": [
         "Keine Wärmebrücken ohne ψ mit Quelle; GW bei Grundwasser < 1 m nicht gerechnet (EN 13370 Anhang H).",
