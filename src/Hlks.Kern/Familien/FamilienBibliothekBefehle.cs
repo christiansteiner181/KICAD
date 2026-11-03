@@ -210,6 +210,8 @@ public static class FamilienBibliothekSchreiben
         {
             hinweise.Add($"Familienbibliothek: nicht geschrieben ({ex.Message}) – mit familie_in_bibliothek nachholen.");
         }
+        // IFC-Import lädt Serien aus der Bibliothek: «schon als Version n – keine neue Version» je Familie wäre nur Rauschen (03.11.2026)
+        if (paket.Befehl == "ifc_uebernehmen") hinweise.RemoveAll(h => h.Contains("keine neue Version"));
         return hinweise;
     }
 

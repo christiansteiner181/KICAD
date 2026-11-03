@@ -128,5 +128,7 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
   Bibliothek), Flexkanäle 9, Rechteckkanäle 250 × 100 u. a. (Serie beginnt bei 145), Wickelfalz d 112.
 - **Befund und Korrektur:** der Nachlauf schrieb jede neue Projektfamilie in die Bürobibliothek – ein Prüfimport legte so 46 Familien aus
   dem IFC als Entwurf auf W: ab. Seither gehen Familien «ifc-…» nur nach familie_in_bibliothek (von Hand) in die Bibliothek.
-- **Offen:** Kanalserie erweitern (Christian: «erweitere die kanalserie»; Grössen brauchen eine Quelle); die 46 Einträge auf W: entfernen
-  (Christians OK nötig).
+- **Kanalserie erweitert:** Rechteckkanal (Schmidlin) Version 2 als Entwurf in der Bürobibliothek – freie Grösse ab 80 mm statt 145 mm
+  (Christian: «erweitere die kanalserie», «die untergrenze liegt bei ca. 80mm»; Preisbuch 07/2026: kleine Seite < 145 mm zum Preis von 145 mm
+  × 1.1). **Freigabe durch Christian offen.** Danach haben alle Rechteckkanäle von Bernstrasse 42 die Serie (1277 Leitungen, 822 Formteile).
+- **Aufgeräumt (mit OK Christian):** die 46 Test-Einträge samt 8 leeren Kategorieordnern auf W: und im lokalen Spiegel entfernt.
