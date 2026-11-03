@@ -1048,6 +1048,8 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
 - **Heizkörper auslegen** (Modul 5 Teil B, noch ohne Oberfläche): Abfrage `heizkoerper_auslegung { raum? }` – Bedarf aus der Raum-Heizleistung, Umrechnung
   der Normleistung Φ = Φn·(ΔT/ΔTn)^n, Deckung, erforderliche Normleistung, Massenstrom. Herstellerangaben am Heizkörper: leistung, normVl, normRl, normRaum,
   exponent. Register `heizung.heizkoerper`.
+- **Kanalnetz-Druckverlust** (Modul 6 Teil B, noch ohne Oberfläche): Abfrage `kanal_druckverlust { temperatur? }` – Reibung je Kanal (λ nach Colebrook,
+  Rauheit und Viskosität aus `kataloge/stroemung.json`), Summe je Durchlass bis zum Gerät, massgebender Weg; ohne ζ. Register `lueftung.kanal_druckverlust`.
 
 ## Hilfe (F1)
 

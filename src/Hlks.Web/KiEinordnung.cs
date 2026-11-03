@@ -31,7 +31,7 @@ public static class KiEinordnung
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
              "heizung_lesen", "heizung_leistung", "heizlast", "heizkoerper_auslegung",   // Modul 5 Teil A-D (zurückgeholt 02.11.2026)
-             "lueftung_varianten", "lueftung_schema", "montageabschnitte", "rueckmeldung_lesen",
+             "lueftung_varianten", "lueftung_schema", "kanal_druckverlust", "montageabschnitte", "rueckmeldung_lesen",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
             ["familien", "familie", "anschlusslagen", "familie_ansicht", "familie_masse", "familie_vergleichen", "familien_bibliothek", "familie_pruefen"]),

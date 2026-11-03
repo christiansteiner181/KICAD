@@ -387,6 +387,19 @@
       ],
       "vorliegend": "fehlt",
       "hinweis": "Im Normenordner nicht gefunden (Fundstellenbericht 03.11.2026). Bis sie vorliegen: Herstellerunterlage › Bürovorgabe › Physik."
+    },
+    {
+      "id": "lehrmittel.skript_luftnetz",
+      "art": "lehrmittel",
+      "kuerzel": "Skript «08 Luftnetzberechnung» (P. Rohner, HF Gebäudetechnik)",
+      "gebiete": [
+        "Lüftung",
+        "Heizung"
+      ],
+      "ablage": "%OneDrive%\\HFGT16\\2_Fachstudium\\xx_Lüftung\\08 Luftnetzberechnung.pdf",
+      "vorliegend": "original",
+      "werte": "kataloge/stroemung.json (Tab. 1 Viskosität Luft, Tab. 3 Rauheit; Gleichungen Tab. 2, 1-12, 1-13, 1-15)",
+      "hinweis": "Lehrmittel mit physikalischen Grundlagen (Reibungszahl, Viskosität, Rauheit); vom Bild übertragen 04.11.2026. Kein ζ-Katalog für Formstücke."
     }
   ]
 }

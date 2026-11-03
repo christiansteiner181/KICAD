@@ -48,6 +48,25 @@ public class LueftungMengenTests
     }
 
     [Fact]
+    public void Druckverlust_Reibung_je_Kanal_und_Weg_zum_Durchlass_wie_von_Hand()
+    {
+        // Modul 6 Teil B (Physik, kataloge/stroemung.json): K-0 Ø 200 mm, 1 m, 300 m³/h, Luft 20 °C (ν = 14.9e-6, ρ = η/ν = 17.9/14.9), Blechkanal k = 0.15 mm
+        var p = Netz(k1Verkehrt: false);
+        var r = (JsonObject)Tuer.Abfrage(p, "kanal_druckverlust", new JsonObject());
+        var k0 = r["kanaele"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["kanal"] == "K-0");
+        double a = Math.PI * 0.2 * 0.2 / 4, w = 300 / 3600.0 / a, nu = 14.9e-6, rho = 17.9 / 14.9, re = w * 0.2 / nu;
+        double lam = k0["lambda"]!.GetValue<double>();
+        // Colebrook erfüllt (Tab. 2): 1/√λ = −2·lg((k/d)/3,71 + 2,51/(Re·√λ))
+        Assert.True(Math.Abs(1 / Math.Sqrt(lam) + 2 * Math.Log10(0.15 / 200 / 3.71 + 2.51 / (re * Math.Sqrt(lam)))) < 0.01);
+        Assert.Equal(lam / 0.2 * rho * w * w / 2 * 1.0, k0["dp_Pa"]!.GetValue<double>(), 2);
+        Assert.Equal(64 / 1000.0, KanalDruckverlust.Lambda(1000, 0.001), 9);   // laminar
+        // ZD-1: Summe K-0 + K-1 + K-2 bis zum Gerät
+        double Dp(string kz) => r["kanaele"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["kanal"] == kz)["dp_Pa"]!.GetValue<double>();
+        var zd1 = r["durchlaesse"]!.AsArray().OfType<JsonObject>().Single(x => (string?)x["durchlass"] == "ZD-1");
+        Assert.Equal(Dp("K-0") + Dp("K-1") + Dp("K-2"), zd1["dpReibung_Pa"]!.GetValue<double>(), 1);
+    }
+
+    [Fact]
     public void Fliessrichtung_AusLueftungsgeraet_KehrtVerkehrtenKanalUm()
     {
         var p = Netz(k1Verkehrt: true);

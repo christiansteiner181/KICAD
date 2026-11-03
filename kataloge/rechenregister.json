@@ -1875,6 +1875,52 @@
         "src/Hlks.Kern/Heizung/HeizkoerperAuslegung.cs (HeizkoerperAuslegung.Abfrage, DeltaTLog)"
       ],
       "abfrage": "heizkoerper_auslegung"
+    },
+    {
+      "id": "lueftung.kanal_druckverlust",
+      "titel": "Druckverlust durch Reibung im Lüftungskanalnetz",
+      "gebiet": "Lüftung",
+      "zweck": "Für jeden Kanal den Reibungsdruckverlust und für jeden Durchlass die Summe bis zum Lüftungsgerät bestimmen – Grundlage für die Ventilatorauslegung.",
+      "eingaben": [
+        "Volumenstrom je Kanal aus den Durchlässen (lueftung.luftmengen_kanalnetz)",
+        "Querschnitt aus der Serie bzw. den Eigenschaften (rund d, Rechteck b×h)",
+        "Länge des Kanals",
+        "Lufttemperatur (Vorgabe 20 °C)",
+        "Rauheit nach Material der Serie"
+      ],
+      "rechenweg": [
+        "η und ν der Luft bei der Temperatur aus Tab. 1 (linear), ρ = η/ν (Gleichung 1-10).",
+        "Querschnitt A, hydraulischer Durchmesser d_h = d bzw. 2ab/(a + b) (1-15 bis 1-17); Geschwindigkeit w = V̇/A.",
+        "Re = w·d_h/ν (1-13); laminar unter Re 2320: λ = 64/Re; sonst Colebrook 1/√λ = −2·lg((k/d)/3,71 + 2,51/(Re·√λ)) (Tab. 2), iteriert.",
+        "Rauheit k aus Tab. 3 (oberer Wert): Blechkanal gefalzt 0,15 mm, Kunststoff 0,007 mm.",
+        "R = λ/d_h·ρ·w²/2 in Pa/m, Δp_R = R·l (1-12).",
+        "Je Durchlass Σ Δp_R der Kanäle bis zum Gerät (Zuluft stromauf, Abluft stromab); massgebend der grösste Wert."
+      ],
+      "ergebnis": "Abfrage kanal_druckverlust { temperatur? }: je Kanal V̇, Querschnitt, d_h, w, Re, λ, R, Δp; je Durchlass Δp bis zum Gerät; massgebender Durchlass.",
+      "quellen": [
+        "Skript «08 Luftnetzberechnung» (P. Rohner, HF Gebäudetechnik): Tab. 1 (S. 11), Tab. 2 (S. 14), Tab. 3 (S. 15), Gleichungen 1-10 bis 1-17; kataloge/stroemung.json",
+        "Christian Steiner 03.11.2026: «fehlt eine normelle regulierung gilt die phisik»"
+      ],
+      "grundlagen": [
+        "lehrmittel.skript_luftnetz",
+        "physik.kontinuitaet",
+        "physik.geometrie",
+        "annahme.hauptlauf"
+      ],
+      "annahmen": [
+        "Lufttemperatur 20 °C ohne Angabe.",
+        "Rauheit oberer Tabellenwert; Flexrohre ohne Herstellerangabe wie Blechkanal.",
+        "Kanalmass der Serie = lichtes Mass."
+      ],
+      "grenzen": [
+        "Keine Einzelwiderstände (ζ) – im Büro kein ζ-Katalog für Luftkanäle; keine Geräte-, Filter-, WRG- und Durchlassverluste.",
+        "Kein Dichteeinfluss der Höhe über Meer."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/KanalDruckverlust.cs (KanalDruckverlust.Abfrage, Lambda, Luft)",
+        "kataloge/stroemung.json"
+      ],
+      "abfrage": "kanal_druckverlust"
     }
   ]
 }
