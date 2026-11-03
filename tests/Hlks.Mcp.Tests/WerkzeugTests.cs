@@ -131,6 +131,7 @@ public class WerkzeugTests
             ["ifc_pruefen"] = () => w.IfcPruefen(Testdaten("minimal_ifc4.ifc")),
             ["ifc_deckung"] = () => w.IfcDeckungWerkzeug(toleranz: 5),
             ["rechenweg"] = () => w.RechenwegWerkzeug(),   // 03.11.2026: Register der Auslegungen
+            ["grundlagen"] = () => w.GrundlagenWerkzeug(),   // 03.11.2026: Verzeichnis der Grundlagen
             // 03.11.2026: RVT als IFC – echte Revit-Datei nur lokal (%USERPROFILE%\HLKS_CAD_testdaten), sonst übersprungen
             ["rvt_als_ifc"] = () => Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "HLKS_CAD_testdaten", "familien", "revit",
                 "geberit_silent_db20_2017.rvt") is var rvt && File.Exists(rvt) ? w.RvtAlsIfc(rvt) : """{ "uebersprungen": "Revit-Testdatei fehlt" }""",
