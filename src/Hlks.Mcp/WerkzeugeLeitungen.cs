@@ -145,6 +145,18 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_hoehe", Parameter(("leitung", leitung), ("hoehe", hoehe), ("dz", dz), ("zug", zug)), trockenlauf);
 
+    [McpServerTool(Name = "parallele_leitungen"), Description(ParalleleLeitungen.Text)]   // Bearbeitungswerkzeuge B2
+    public string ParalleleLeitungenWerkzeug(
+        [Description(RoutingBefehle.ParLeitung)] string leitung,
+        [Description("Achsabstand in mm (> 0)")] double abstand,
+        [Description("Anzahl paralleler Züge (Vorgabe 1)")] double? anzahl = null,
+        [Description(ParalleleLeitungen.ParLage)] string? lage = null,
+        [Description(ParalleleLeitungen.ParSeite)] JsonElement? seite = null,
+        [Description(ParalleleLeitungen.ParSysteme)] JsonElement? systeme = null,
+        [Description("false: nur die Gerade (Vorgabe true: der Leitungszug)")] bool zug = true,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("parallele_leitungen", Parameter(("leitung", leitung), ("abstand", abstand), ("anzahl", anzahl), ("lage", lage), ("seite", seite), ("systeme", systeme), ("zug", zug)), trockenlauf);
+
     [McpServerTool(Name = "leitung_groesse"), Description(LeitungGroesseAendern.Text)]
     public string LeitungGroesseWerkzeug(
         [Description(LeitungGroesseAendern.ParGroesse)] JsonElement groesse,

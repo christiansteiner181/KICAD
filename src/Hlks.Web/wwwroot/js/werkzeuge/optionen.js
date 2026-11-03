@@ -154,6 +154,16 @@ export const WERKZEUGE = {
   drehen: { titel: 'Drehen', felder: [], hinweis: 'Drehpunkt anklicken, dann den Winkel mit zwei Klicks setzen oder in Grad eingeben (Enter).' },
   spiegeln: { titel: 'Spiegeln', felder: [], hinweis: 'Zwei Punkte der Spiegelachse anklicken.' },
   // Bearbeitungswerkzeuge A2
+  parallel: {   // B2
+    titel: 'Parallele Leitungen',
+    felder: [
+      { id: 'anzahl', titel: 'Anzahl', art: 'zahl', vorgabe: 1, breite: 3 },
+      { id: 'abstand', titel: 'Abstand', art: 'zahl', einheit: 'mm', vorgabe: 150, breite: 6 },
+      { id: 'lage', titel: 'Lage', art: 'auswahl', werte: [['waagrecht', 'waagrecht'], ['oben', 'darüber'], ['unten', 'darunter']], vorgabe: 'waagrecht' },
+      { id: 'nurGerade', titel: 'Nur Gerade', art: 'bool', vorgabe: false },
+    ],
+    hinweis: 'Leitung anklicken (waagrecht: auf der Seite der Parallelen); der ganze Leitungszug wird parallel gezeichnet.',
+  },
   ausrichten: { titel: 'Ausrichten', felder: [], hinweis: 'Zuerst den Bezug (bei Wänden auf der Seite der Fläche), dann die Elemente anklicken; Esc beendet.' },   // B1
   versatz: {   // B1
     titel: 'Versatz',

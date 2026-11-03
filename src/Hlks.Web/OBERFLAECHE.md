@@ -4022,3 +4022,15 @@ Kernbefehle `ausrichten` und `versetzen` (`src/Hlks.Kern/Architektur/AusrichtenV
 - **Versatz (OF)**, Ändern › Verändern: Optionsleiste «Abstand» (mm) und «Kopieren»; Klick auf eine Gerade auf der Seite, zu der versetzt wird.
   Die Vorschau zeigt die neue Lage. Mit «Kopieren» entsteht eine parallele Kopie (ohne Verbindungen), sonst wird die Gerade verschoben.
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~AusrichtenVersatzTests"`.
+
+## Parallele Leitungen (Bearbeitungswerkzeuge B2, `entwurf/bearbeitungswerkzeuge.md`)
+
+Kernbefehl `parallele_leitungen` (`src/Hlks.Kern/Leitungen/ParalleleLeitungen.cs`, MCP gleich); Werkzeug `js/werkzeuge/parallel.js`.
+
+- **Parallele Leitungen**, Gebäudetechnik › Leitungen: Optionsleiste Anzahl, Abstand (Achsabstand, mm), Lage (waagrecht, darüber, darunter) und
+  «Nur Gerade». Klick auf eine Leitung – bei waagrecht auf der Seite, zu der die Parallelen entstehen (Vorschau der ersten). Der ganze
+  Leitungszug wird parallel gezeichnet (an Knicken auf der Winkelhalbierenden, Bögen der Serie, Enden frei), Serie und Grösse wie das Original.
+- **System:** bei einer Parallele das Gegenstück des Systempaars (Vorlauf ↔ Rücklauf), sonst das System der Leitung; über MCP je Zug wählbar
+  (`systeme`).
+- **Grenzen:** Züge mit Reduktion (verschiedene Grössen) und waagrecht versetzte Züge mit Steigleitung lehnt der Kern ab.
+- **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~ParalleleLeitungenTests"`.

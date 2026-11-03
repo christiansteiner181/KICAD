@@ -11,6 +11,7 @@ import { sende, ergebnisMelden } from './befehle.js';
 import { aufElement, freiesKennzeichen } from './werkzeug.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
+import { parallelWerkzeug } from '../werkzeuge/parallel.js';
 import { aufteilenDialog } from '../werkzeuge/leitung-bearbeiten.js';
 import { istAltbestand } from '../werkzeuge/leitung-logik.js';
 
@@ -31,6 +32,15 @@ for (const [id, titel, symbol, kuerzel, kategorie, wid] of [
     ausfuehren() { werkzeugStarten(leitungWerkzeug(kategorie)); },
   });
 }
+
+// ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)
+
+registrieren({
+  id: 'gt.parallel', titel: 'Parallele Leitungen', symbol: 'parallel', kuerzel: null, register: 'gebaeudetechnik', gruppe: 'Leitungen',
+  aktiv: imGrundriss, hinweis: nurGrundriss,
+  gedrueckt: () => werkzeugAktiv() === 'parallel',
+  ausfuehren() { werkzeugStarten(parallelWerkzeug()); },
+});
 
 // ---------------------------------------------------------------------------------------------- Aufteilen mit Serie
 

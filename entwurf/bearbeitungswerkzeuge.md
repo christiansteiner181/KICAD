@@ -142,7 +142,8 @@ Christian, 03.11.2026: «ja passt» – Vergleich und Reihenfolge A → B → C 
 - **A4 gebaut 03.11.2026** (Spezifikation unten): `ecke_bilden`, `dehnen_bis` (Kern, MCP, KI-Einordnung), Werkzeuge TR und «Dehnen bis».
 - **A5 gebaut 03.11.2026:** `leitung_gefaelle` (Zug ab Fixpunkt neu neigen, Bögen wandern mit; Neuaufbau wie leitung_groesse), `leitung_hoehe` (Zug heben/senken, Versatz an festen Grenzen); Palette Gefälle und Höhe. Annahmen: «flach» bis 15 %, Fixpunkt Vorgabe Anfang; an waagrechten T-Stücken passen bis ≈1.7 % (Hinweis, P13). **Stufe A abgeschlossen.**
 - **B1 gebaut 03.11.2026** (Spezifikation unten): `ausrichten`, `versetzen` (Kern, MCP, KI-Einordnung), Werkzeuge AL und OF.
-- **Nächstes: B2** parallele Leitungen.
+- **B2 gebaut 03.11.2026** (Spezifikation unten): `parallele_leitungen` (Kern, MCP, KI-Einordnung), Werkzeug Gebäudetechnik › Leitungen › Parallele Leitungen.
+- **Nächstes: B3** Formteil tauschen (Plus/Minus am Bogen bzw. T-Stück).
 
 ## A1 – Verschieben mit Netznachführung (Spezifikation, 03.11.2026)
 
@@ -216,3 +217,18 @@ Annahmen: Ausrichten auf Achsen (Leitungsachse, Wandfläche nach Klickseite); H�
 
 Oberfläche: Werkzeug «Ausrichten» (AL): zuerst den Bezug, dann beliebig viele Elemente (Esc beendet). Werkzeug «Versatz» (OF): Optionsleiste
 Abstand und «Kopieren»; Klick auf eine Gerade auf der Seite, zu der versetzt wird (Vorschau als Linie).
+
+## B2 – Parallele Leitungen (Spezifikation, 03.11.2026)
+
+Kernbefehl **`parallele_leitungen`** { leitung, anzahl, abstand, lage, seite?, systeme?, zug? } (Revit «Parallele Rohre»): zeichnet zum
+Leitungszug der Leitung (bzw. nur zur Geraden mit zug = false) anzahl parallele Züge im Abstand (Achsabstand, mm) – lage «waagrecht» (zur Seite
+des Punkts seite, Knoten im Grundriss um den Abstand versetzt, an Knicken auf der Winkelhalbierenden) oder «oben» bzw. «unten» (um den Abstand
+höher bzw. tiefer). Serie und Grösse wie die Leitung; die Bögen setzt das Routing wie bei leitung_zeichnen; die Enden bleiben frei.
+System je Zug aus systeme (Liste, je Zug ein System); ohne Angabe bei einem Zug das Gegenstück des Systempaars (Vorlauf ↔ Rücklauf), sonst das
+System der Leitung.
+
+Annahmen: Züge mit Reduktion (verschiedene Grössen) lehnt B2 ab; waagrecht versetzt nur Züge ohne senkrechte Stücke; Bögen gleicher Art
+(nicht konzentrisch – die Geraden werden passend länger bzw. kürzer).
+
+Oberfläche: Werkzeug «Parallele Leitungen» (Gebäudetechnik › Leitungen): Optionsleiste Anzahl, Abstand, Lage; Klick auf eine Leitung auf der Seite,
+zu der die Parallelen entstehen (Vorschau).

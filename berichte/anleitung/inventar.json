@@ -6452,6 +6452,40 @@
           "hinweis": ""
         },
         {
+          "id": "m3-parallele-leitungen",
+          "titel": "Parallele Leitungen",
+          "wo": {
+            "register": "Gebäudetechnik",
+            "gruppe": "Leitungen",
+            "knopf": "Parallele Leitungen",
+            "kuerzel": "",
+            "sonst": "Optionsleiste Anzahl, Abstand, Lage, Nur Gerade"
+          },
+          "schritte": [
+            "Parallele Leitungen wählen.",
+            "Abstand 150, Anzahl 1, Lage waagrecht einstellen.",
+            "Neben einen Leitungszug mit Knick fahren (Vorschau) und klicken.",
+            "Lage «darüber» mit Anzahl 2 wiederholen; Strg+Z."
+          ],
+          "erwartung": "Neben dem Zug entsteht ein paralleler Zug im Achsabstand mit eigenen Bögen; am Knick auf der Winkelhalbierenden. Darüber entstehen zwei Züge im Abstand übereinander. Bei einem Systempaar bekommt die Parallele das Gegenstück (z. B. Rücklauf).",
+          "pruefpunkte": [
+            "Vorschau auf der Klickseite.",
+            "Abstand zur Achse stimmt, auch nach dem Knick.",
+            "Bögen der Serie, Enden frei.",
+            "System: Gegenstück bzw. wie das Original.",
+            "Rückgängig in einem Schritt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss 1.OG Sanitär",
+            "zustand": "Zug mit paralleler Leitung"
+          },
+          "quelle": [
+            "src/Hlks.Web/OBERFLAECHE.md:4026 (Parallele Leitungen (Bearbeitungswerkzeuge B2))"
+          ],
+          "hinweis": "Züge mit Reduktion lehnt KICAD ab."
+        },
+        {
           "id": "m3-palette-leitung",
           "titel": "Leitung in der Eigenschaftenpalette: Serie und Grösse ändern",
           "wo": {
