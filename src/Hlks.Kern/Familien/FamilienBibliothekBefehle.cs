@@ -165,7 +165,11 @@ public static class FamilienBibliothekSchreiben
             {
                 var alt = g.First().ElementVorher;
                 var neu = g.Last().Element!;
-                if (Familien.DefinitionsId(neu) is null) continue;
+                if (Familien.DefinitionsId(neu) is not { } did) continue;
+                // Familien aus dem IFC (IfcFamilien, Kennung «ifc-…») gehen nur in die Bibliothek, wenn ein Mensch sie dorthin schreibt
+                // (familie_in_bibliothek; Christian 03.11.2026: «wählen, welche importierten bauteile dauerhaft in den standard aufgenommen
+                // werden»); erst danach folgen ihre Änderungen automatisch
+                if (did.StartsWith("ifc-", StringComparison.Ordinal) && !(ort.Aktiv && FamilienBibliothekDienst.IndexOhneSchreiben(ort)?.Familie(did) is not null)) continue;
                 // Übernahme: Entscheid über eigene Abzweige nachtragen (nur beim Befehl selbst, nicht bei rückgängig/wiederholen)
                 if (paket.Befehl == "familie_aktualisieren")
                 {

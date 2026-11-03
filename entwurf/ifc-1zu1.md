@@ -114,3 +114,19 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
 - **Offen:** Standardteile mit unseren Serien nachzeichnen (z. B. Ablaufrohr «Silent-db20» → Serie Geberit Silent-db20, Typ nach dem
   Durchmesser; Zuordnung IFC-Typ → Serie wählbar); Flow «Familie aus IFC: IFC einlesen › Teile wählen › Familie nachmodellieren» in der
   Oberfläche; dasselbe für die Architektur (Türen, Fenster u. a. als Familie aus dem IFC – braucht die Familiengrafik für Bauteile in einer Wand).
+
+## Stand 03.11.2026 – Serien aus unserem Standard beim Import
+
+- **Gebaut (`Import/IfcSerien.cs`):** Regel IFC-Typ → Serie der Bürobibliothek (Projektinformation `ifcSerien` vor der Vorgabe: Silent-db20,
+  PE, Mapress Edelstahl/C-Stahl nach Medium, Sanipex, Stahl, Rechteckkanal, Wickelfalzrohr rund; Flexkanal und Uponor ohne). Serie samt
+  Formteil-Familien wird geladen; Leitung: Typ nach Aussendurchmesser bzw. Kanalgrösse. Formteile zwischen Leitungen derselben Serie: Formteil
+  der Serie im Schnittpunkt der Achsen, Ausrichtung aus den Leitungen, Verlauf bleibt; Winkel auf den nächsten erlaubten der Serie –
+  Abwasser (PE, Silent) bis 5°, sonst 2° (Christian: «die bogen sind 88.5° zum kompensieren des gefälles», «es braucht also einen gewissen
+  spielraum bei PE und Silent», «das gefälle der sammelleitung ist nicht immer gleich. dies gilt auch bei abzweiger»).
+- **Bernstrasse 42:** 1261 Leitungen und 812 Formteile mit unserem Standard (208 Bögen auf den Winkel der Serie); Deckung der Leitungen
+  weiter 1:1; die Formteile der Serie sind nicht 1:1 (eigens gezählt). Ohne Serie: Uponor-Metallverbundrohr 663 (keine Serie in der
+  Bibliothek), Flexkanäle 9, Rechteckkanäle 250 × 100 u. a. (Serie beginnt bei 145), Wickelfalz d 112.
+- **Befund und Korrektur:** der Nachlauf schrieb jede neue Projektfamilie in die Bürobibliothek – ein Prüfimport legte so 46 Familien aus
+  dem IFC als Entwurf auf W: ab. Seither gehen Familien «ifc-…» nur nach familie_in_bibliothek (von Hand) in die Bibliothek.
+- **Offen:** Kanalserie erweitern (Christian: «erweitere die kanalserie»; Grössen brauchen eine Quelle); die 46 Einträge auf W: entfernen
+  (Christians OK nötig).

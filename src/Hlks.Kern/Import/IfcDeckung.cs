@@ -72,8 +72,10 @@ public static class IfcDeckung
                 .Where(x => x.Ok < x.Anzahl).Select(x => $"{x.Klasse} {x.Anzahl - x.Ok} (bis {x.Max} mm)").ToList();
             var fehlt = u["nichtNachgebaut"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
             var ifcK = u["ausIfcKoerper"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
+            var stdK = u["standardFormteile"]!.AsObject().Select(kv => $"{kv.Key} {kv.Value}").ToList();
             aus.Add($"Prüfung Nachbau ↔ IFC {u["unterlage"]} (±{r["toleranz"]} mm): {ok} von {n} deckungsgleich"
                 + (ab.Count > 0 ? $"; abweichend: {string.Join(", ", ab)}" : "")
+                + (stdK.Count > 0 ? $"; mit unserem Standard nachgezeichnet (Formteile der Serie, nicht 1:1): {string.Join(", ", stdK)}" : "")
                 + (ifcK.Count > 0 ? $"; Körper aus dem IFC (HLKS-Bauteile ohne eigene Form, 3D und Kollision aus dem IFC-Netz): {string.Join(", ", ifcK)}" : "")
                 + (fehlt.Count > 0 ? $"; nicht nachgebaut (nur Hintergrund): {string.Join(", ", fehlt)}" : "")
                 + (ab.Count > 0 || fehlt.Count > 0 ? " – Einzelheiten: Abfrage ifc_deckung." : "."));
@@ -91,11 +93,19 @@ public static class IfcDeckung
         var ergebnisse = new List<(Element E, string Entitaet, double Abw, string Seite, double[] Nb, double[] Ifc)>();
         int ohneNachbau = 0, ohneNetz = 0;
         var ausIfc = new SortedDictionary<string, int>(StringComparer.Ordinal);
+        var standard = new SortedDictionary<string, int>(StringComparer.Ordinal);
         foreach (var g in gruppen)
         {
             if (d.Produkt(g.Key) is not { } pr) { ohneNetz++; continue; }
             // HLKS-Bauteile ohne eigene Form (Formteil, Armatur, Apparat, Gerät: in KICAD ein Punkt mit Sinnbild) zeigen in 3D und in der
             // Kollision ihr IFC-Netz, solange sie unverändert sind (IfcOriginal) – kein Nachbau zu messen; eigens gezählt (03.11.2026)
+            // Formteile mit dem Formteil unserer Serie (Standard nachgezeichnet, Christian 03.11.2026): nicht 1:1, eigens gezählt
+            if (g.All(e => HlksEinordnung.Art(p.Katalog, e) == HlksArt.Formteil && Familien.FamilieVon(m, e) is { } f && Familien.DefinitionsId(f)?.StartsWith("ifc-") != true))
+            {
+                var kl = g.First().Klasse;
+                standard[kl] = standard.GetValueOrDefault(kl) + 1;
+                continue;
+            }
             if (g.All(e => Grafik.QuelleFuer(p.Katalog, e) is HlksGrafik && HlksEinordnung.Art(p.Katalog, e) != HlksArt.Leitung) && IfcOriginal.Netz(p, g.First()) is not null)
             {
                 var kl = g.First().Klasse;
@@ -138,6 +148,7 @@ public static class IfcDeckung
             ["unterlage"] = ul.Kennzeichen, ["elemente"] = ergebnisse.Count, ["deckungsgleich"] = ergebnisse.Count(x => x.Abw <= tol),
             ["ohneNachbauKoerper"] = ohneNachbau, ["ohneIfcNetz"] = ohneNetz,
             ["ausIfcKoerper"] = new JsonObject(ausIfc.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
+            ["standardFormteile"] = new JsonObject(standard.Select(kv => KeyValuePair.Create(kv.Key, (JsonNode?)kv.Value))),
             ["jeKlasse"] = jeKlasse, ["abweichend"] = abweichend,
             ["nichtNachgebaut"] = new JsonObject(fehlt.Select(x => KeyValuePair.Create(x.Key, (JsonNode?)x.Count()))),
         };

@@ -52,6 +52,8 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
     readonly Dictionary<int, IfcHlksZuordnung> geplant = [];
     /// <summary>Geplante Bauteile mit Punkt (für die Familien aus dem IFC).</summary>
     readonly List<(IIfcProduct X, Element E, IReadOnlyList<IfcHlksPort> Px, IfcHlksZuordnung Zu)> bauteile = [];
+    /// <summary>Geplante Leitungen (für die Serien aus dem Standard).</summary>
+    readonly List<(IIfcProduct X, Element E)> leitungen = [];
     readonly SortedDictionary<string, int> jeKlasse = new(StringComparer.Ordinal);
     readonly Dictionary<string, (int Anzahl, List<string> Beispiele)> notizen = [];
     readonly Dictionary<string, int> nichtUebernommen = [];
@@ -67,6 +69,7 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         Verbinden();
         Systempaare();
         Anlegefuehler();
+        lauf.Hinweise.AddRange(IfcSerien.Zuordnen(lauf, leitungen, bauteile.Select(b => (b.X, b.E))));
         lauf.Hinweise.AddRange(IfcFamilien.Anlegen(lauf, bauteile));
         Zusammenfassen(uhr.Elapsed);
     }
@@ -174,6 +177,7 @@ sealed class IfcHlksArbeit(IfcLauf lauf)
         if (def.BrauchtRaum && geo.Art == "punkt") e.Raum = Raum(x, e);
         geplant[x.EntityLabel] = zu;
         if (geo.Art == "punkt") bauteile.Add((x, e, px, zu));
+        else leitungen.Add((x, e));
         if (wahl.Klasse == "Fuehler") fuehler.Add((x, e));
     }
 
