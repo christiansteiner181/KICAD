@@ -1,16 +1,71 @@
 {
-  "beschreibung": "Zuordnung freier Raumnutzungen (Raum.nutzung, z. B. aus HKAP oder IFC) zu den Nutzungen des Merkblatts SIA 2024:2015 (Nummer). Gebraucht von der Heizlast (Modul 5 Teil B-H) für die Innentemperatur, wenn am Raum kein tempWinter steht. Reihenfolge zählt: das erste passende Muster (regulärer Ausdruck, gross/klein egal, ganzer Text oder Wortanfang) gewinnt. Nur Nummern – die Werte stehen in der Normtabelle im Büroordner.",
-  "quelle": "Annahme Hauptlauf 03.11.2026 (Probelauf Beispielprojekt: freie Nutzungen «Wohnen», «Bad», «Schlafen» fanden keine SIA-2024-Zeile) – von Christian zu bestätigen",
+  "beschreibung": "Zuordnung freier Raumnutzungen (Raum.nutzung, z. B. aus HKAP oder IFC) zu den Raumnutzungen der Auslegungsnorm SIA 384.201 Tabelle ND.2 (gruppe / raumnutzung) und – als Rückfall der frühen Planungsphase – des Merkblatts SIA 2024 (Nummer der Raum-Datenblätter 2021). Optional «buero»: Bürostandard der Innentemperatur in °C (geht ND.2 und SIA 2024 vor, nach dem Wert am Raum). Gebraucht von der Heizlast (Modul 5 Teil B-H) für die Innentemperatur, wenn am Raum kein tempWinter steht. Reihenfolge zählt: das erste passende Muster (regulärer Ausdruck, gross/klein egal, ab Textanfang) gewinnt. Nur Bezeichnungen und Nummern – die Werte stehen in den Normtabellen im Büroordner.",
+  "quelle": "Annahme Hauptlauf 03./04.11.2026 (Probelauf Beispielprojekt: freie Nutzungen fanden keine Normzeile) – von Christian zu bestätigen. Reihenfolge der Quellen: Christian 04.11.2026 «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung. dabei gilt, es muss einfach funktionieren.»",
   "zuordnung": [
-    { "muster": "^(wohnen|wohnraum|wohn|wohnzimmer|essen|küche|wohnen/küche|zimmer|schlafen|schlafzimmer|kinderzimmer|arbeiten|büro zu hause)", "sia2024": "1.1", "name": "Wohnen MFH" },
-    { "muster": "^(bad|dusche|wc|dusche/wc|bad/wc|nasszelle)", "sia2024": "12.6", "name": "WC, Bad, Dusche" },
-    { "muster": "^(korridor|gang|flur|entrée|eingang|vorplatz|reduit)", "sia2024": "12.1", "name": "Verkehrsfläche" },
-    { "muster": "^(treppenhaus|treppe)", "sia2024": "12.3", "name": "Treppenhaus" },
-    { "muster": "^(büro|einzelbüro|gruppenbüro)", "sia2024": "3.1", "name": "Einzel-, Gruppenbüro" },
-    { "muster": "^(sitzung|besprechung)", "sia2024": "3.3", "name": "Sitzungszimmer" },
-    { "muster": "^(schulzimmer|klassenzimmer)", "sia2024": "4.1", "name": "Schulzimmer" },
-    { "muster": "^(lager|abstellraum|keller)", "sia2024": "10.1", "name": "Lagerraum" },
-    { "muster": "^(technik|heizung|lüftungszentrale|elektro)", "sia2024": "12.4", "name": "Nebenraum" },
-    { "muster": "^(waschküche|waschraum|trockenraum)", "sia2024": "12.10", "name": "Wasch- und Trockenraum" }
-  ]
+    {
+      "muster": "^(schlafen|schlafzimmer|zimmer|kinderzimmer|gästezimmer)",
+      "nd2": "Wohnen / Schlafraum",
+      "sia2024": "1.01",
+      "buero": 21
+    },
+    {
+      "muster": "^(küche)$",
+      "nd2": "Wohnen / Küche",
+      "sia2024": "1.01",
+      "buero": 21
+    },
+    {
+      "muster": "^(wohnen|wohnraum|wohn|wohnzimmer|essen|wohnen/küche|arbeiten|büro zu hause)",
+      "nd2": "Wohnen / Wohnraum",
+      "sia2024": "1.01",
+      "buero": 21
+    },
+    {
+      "muster": "^(wc)$",
+      "nd2": "Nebennutzungen / Toiletten",
+      "sia2024": "12.07"
+    },
+    {
+      "muster": "^(bad|dusche|dusche/wc|bad/wc|bad/dusche|nasszelle)",
+      "nd2": "Nebennutzungen / Bad, Dusche",
+      "sia2024": "12.06",
+      "buero": 22
+    },
+    {
+      "muster": "^(korridor|gang|flur|entrée|eingang|vorplatz|reduit|treppenhaus|treppe|verkehrsfläche|erschliessung)",
+      "nd2": "Nebennutzungen / Erschliessungszonen",
+      "sia2024": "12.01"
+    },
+    {
+      "muster": "^(büro|einzelbüro|gruppenbüro)",
+      "nd2": "Verwaltung / Einzelbüro",
+      "sia2024": "3.01"
+    },
+    {
+      "muster": "^(grossraumbüro)",
+      "nd2": "Verwaltung / Grossraumbüro",
+      "sia2024": "3.02"
+    },
+    {
+      "muster": "^(sitzung|besprechung)",
+      "nd2": "Verwaltung / Sitzungszimmer",
+      "sia2024": "3.03"
+    },
+    {
+      "muster": "^(schulzimmer|klassenzimmer)",
+      "nd2": "Schulen / Schulzimmer",
+      "sia2024": "4.01"
+    },
+    {
+      "muster": "^(lager|abstellraum|keller)",
+      "nd2": "Lager / ohne permanente Arbeitsplätze",
+      "sia2024": "10.01"
+    },
+    {
+      "muster": "^(technik|heizung|lüftungszentrale|elektro|waschküche|waschraum|trockenraum|nebenraum)",
+      "nd2": "Nebennutzungen / Nebenräume",
+      "sia2024": "12.04"
+    }
+  ],
+  "bueroQuelle": "Christian Steiner, 04.11.2026: «standard ist heute Wohnen 21°, Bad 22°»"
 }

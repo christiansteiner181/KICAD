@@ -5,7 +5,7 @@
 // Werte NICHT im Repository: HLKS_NORMTABELLEN\heizung\heizlast.json (ND, Uequiv Tab. 4–7), sia2028_auslegung.json (Tab. 6, 1a, 2),
 // raumnutzung_sia2024.json (Tab. 9). Fehlt eine Datei, rechnet die Abfrage nicht und sagt es.
 //   θe   = SIA 2028 Tab. 6 der Klimastation (Gebaeude.thetaE geht vor) + Höhenkorrektur ND.1.1.1 + τ-Korrektur Tab. ND.1; θm,e = Tab. 2 «Jahr».
-//   θint = Raum.tempWinter, sonst SIA 2024 Tab. 9 «Winter» nach Raum.nutzung (Nr. oder Name).
+//   θint = Raum.tempWinter, sonst Bürostandard (Wohnen 21, Bad 22 °C), sonst SIA 384.201 Tab. ND.2 nach Raum.nutzung, sonst Rückfall SIA 2024 (2021 θi,des,H, sonst 2015 Tab. 9).
 //   ΦT   = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint − θe) (2) aus den Raumgrenzen (Modul 1c, Innenmasse – Annahme V1) und den Wärmebrücken
 //          mit ψ bzw. χ und Quelle (Klasse Waermebruecke, ek = el = 1,0 ND.4.1); bu (5)/(6); Erdreich (8) mit fg1 ND.5, fg2, Uequiv Tab. 4–7, B' (9),
 //          GW = 1,0; HT,ij (10) mit fij ≥ 0.
@@ -46,6 +46,7 @@ public static class Heizlast
         var hl = SanitaerNormtabellen.Laden(k, "heizlast", "heizung");
         var klima = SanitaerNormtabellen.Laden(k, "sia2028_auslegung", "heizung");
         var nutz = SanitaerNormtabellen.Laden(k, "raumnutzung_sia2024", "heizung");
+        var nutz2021 = SanitaerNormtabellen.Laden(k, "raumnutzung_sia2024_2021", "heizung");
         var ordner = Path.Combine(SanitaerNormtabellen.Ordner(k), "heizung");
         var aus = new JsonObject { ["norm"] = Norm, ["normtabellen"] = ordner, ["hinweise"] = hinweise };
         if (hl is null) { hinweise.Add($"Normtabellen Heizlast fehlen ({Path.Combine(ordner, "heizlast.json")}) – keine Heizlast."); return aus; }
@@ -67,7 +68,7 @@ public static class Heizlast
         // θint aller Räume (auch der Nachbarn)
         var theta = new Dictionary<string, (double? Wert, string Quelle)>(StringComparer.Ordinal);
         var zuordnung = Zuordnung(k);
-        foreach (var r in alle) theta[r.Id] = Innentemperatur(r, nutz, zuordnung);
+        foreach (var r in alle) theta[r.Id] = Innentemperatur(r, hl, nutz2021, nutz, zuordnung);
         double bStrich = BStrich(rg, hl, out var bText);
         var wb = Waermebruecken(m, rg);
         var zeilen = new JsonArray();
@@ -147,31 +148,61 @@ public static class Heizlast
         return new Aussen(thetaE, thetaMe, rhoC, string.Join("; ", teile), ann);
     }
 
-    /// <summary>θint: Raum.tempWinter, sonst SIA 2024:2015 Tab. 9 «Winter» nach Raum.nutzung (Nummer oder Name, gross/klein egal).</summary>
-    /// <summary>Zuordnung freier Nutzungen zu SIA-2024-Nummern aus kataloge/raumnutzungen.json (Muster, erste passende gewinnt).</summary>
-    public static List<(System.Text.RegularExpressions.Regex Muster, string Nr)> Zuordnung(Katalog k)
+    /// <summary>Zuordnung einer freien Nutzung: ND.2-Zeile («Gruppe / Raumnutzung») und SIA-2024-Nummer.</summary>
+    public sealed record Nutzungszuordnung(System.Text.RegularExpressions.Regex Muster, string? Nd2, string? Sia2024, double? Buero = null, string? BueroQuelle = null);
+
+    /// <summary>Zuordnung freier Nutzungen aus kataloge/raumnutzungen.json (Muster, erste passende gewinnt).</summary>
+    public static List<Nutzungszuordnung> Zuordnung(Katalog k)
     {
         var pfad = Path.Combine(k.Ordner, "raumnutzungen.json");
         if (!File.Exists(pfad)) return [];
-        return (JsonNode.Parse(File.ReadAllText(pfad))?["zuordnung"] as JsonArray ?? []).OfType<JsonObject>()
-            .Where(x => T(x["muster"]) is { Length: > 0 } && T(x["sia2024"]) is { Length: > 0 })
-            .Select(x => (new System.Text.RegularExpressions.Regex(T(x["muster"])!, System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant), T(x["sia2024"])!)).ToList();
+        var j = JsonNode.Parse(File.ReadAllText(pfad));
+        var bq = T(j?["bueroQuelle"]);
+        return (j?["zuordnung"] as JsonArray ?? []).OfType<JsonObject>()
+            .Where(x => T(x["muster"]) is { Length: > 0 })
+            .Select(x => new Nutzungszuordnung(new System.Text.RegularExpressions.Regex(T(x["muster"])!, System.Text.RegularExpressions.RegexOptions.IgnoreCase | System.Text.RegularExpressions.RegexOptions.CultureInvariant),
+                T(x["nd2"]), T(x["sia2024"]), x["buero"] is JsonValue ? D(x["buero"]) : null, bq)).ToList();
     }
 
-    public static (double? Wert, string Quelle) Innentemperatur(Element r, JsonObject? nutz, List<(System.Text.RegularExpressions.Regex Muster, string Nr)>? zuordnung = null)
+    /// <summary>SIA-2024-Nummer vergleichbar machen: «1.1» = «1.01» (Ausgabe 2015 bzw. 2021); «12.10» bleibt 12.10.</summary>
+    static string NrNorm(string? nr) =>
+        nr is { } x && x.Split('.') is [var h, var u] && int.TryParse(h, out var hi) && int.TryParse(u, out var ui) ? $"{hi}.{ui}" : nr ?? "";
+
+    /// <summary>θint (Christian 04.11.2026: «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung. dabei gilt, es muss einfach
+    /// funktionieren.»; SIA 2024 Vorwort: Standardwerte der frühen Planungsphase, massgebend die Normen bzw. das Projekt): 1. Raum.tempWinter (Projekt,
+    /// Raumbuch), 2. Bürostandard der Zuordnung (kataloge/raumnutzungen.json «buero»), 3. SIA 384.201 Tab. ND.2 nach Raum.nutzung (Name bzw. Zuordnung), 4. Rückfall SIA 2024 (Raum-Datenblätter 2021 θi,des,H, sonst 2015 Tab. 9).</summary>
+    public static (double? Wert, string Quelle) Innentemperatur(Element r, JsonObject? hl, JsonObject? nutz2021, JsonObject? nutz2015, List<Nutzungszuordnung>? zuordnung = null)
     {
         if (r.Zahl("tempWinter") is double t) return (t, $"Raum {r.Kennzeichen}.tempWinter ({r.Eigenschaft("tempWinter")?.Herkunft.Quelle ?? r.Eigenschaft("tempWinter")?.Herkunft.Art})");
-        var n = r.Text("nutzung");
-        if (n is { Length: > 0 } && nutz is not null &&
-            Zeilen(nutz["tabelle"]).FirstOrDefault(x => string.Equals(T(x["nr"]), n.Trim(), StringComparison.OrdinalIgnoreCase) || string.Equals(T(x["nutzung"]), n.Trim(), StringComparison.OrdinalIgnoreCase)) is { } z
-            && z["raumtempWinter_C"] is JsonValue)
-            return (D(z["raumtempWinter_C"]), $"SIA 2024:2015 Tab. 9, {T(z["nr"])} {T(z["nutzung"])}, Winter (S. {z["seite"]})");
-        if (n is { Length: > 0 } && nutz is not null && zuordnung?.FirstOrDefault(x => x.Muster.IsMatch(n.Trim())) is { Nr: { } nr }
-            && Zeilen(nutz["tabelle"]).FirstOrDefault(x => T(x["nr"]) == nr) is { } z2)
-            return z2["raumtempWinter_C"] is JsonValue
-                ? (D(z2["raumtempWinter_C"]), $"SIA 2024:2015 Tab. 9, {nr} {T(z2["nutzung"])}, Winter (S. {z2["seite"]}) – Nutzung «{n}» zugeordnet nach kataloge/raumnutzungen.json (Annahme Hauptlauf, von Christian zu bestätigen)")
-                : (null, $"Nutzung «{n}» → SIA 2024 {nr} {T(z2["nutzung"])}: kein Winterwert in Tab. 9 (unbeheizt?) – tempWinter setzen");
-        return (null, n is { Length: > 0 } ? $"Nutzung «{n}» nicht in SIA 2024 Tab. 9 und kein tempWinter" : "weder tempWinter noch Nutzung");
+        var n = r.Text("nutzung")?.Trim();
+        if (n is not { Length: > 0 }) return (null, "weder tempWinter noch Nutzung");
+        var zu = zuordnung?.FirstOrDefault(x => x.Muster.IsMatch(n));
+        string zuText = zu is null ? "" : $" – Nutzung «{n}» zugeordnet nach kataloge/raumnutzungen.json (Annahme Hauptlauf, von Christian zu bestätigen)";
+        // 2. Bürostandard (Christian 04.11.2026: «standard ist heute Wohnen 21°, Bad 22°»)
+        if (zu?.Buero is double bw) return (bw, $"Bürostandard {bw} °C für «{n}» ({zu.BueroQuelle ?? "kataloge/raumnutzungen.json"}; Zuordnung kataloge/raumnutzungen.json)");
+        // 3. ND.2 der Auslegungsnorm
+        static string Nd2Name(JsonObject z) => $"{T(z["gruppe"])} / {T(z["name"])}";
+        var nd2 = Zeilen(hl?["tabellen"]?["ND2"]).ToList();
+        var z2 = nd2.FirstOrDefault(x => string.Equals(T(x["name"]), n, StringComparison.OrdinalIgnoreCase) || string.Equals(Nd2Name(x), n, StringComparison.OrdinalIgnoreCase));
+        bool zugeordnet = false;
+        if (z2 is null && zu?.Nd2 is { } zn) { z2 = nd2.FirstOrDefault(x => string.Equals(Nd2Name(x), zn, StringComparison.OrdinalIgnoreCase)); zugeordnet = z2 is not null; }
+        if (z2 is not null && z2["thetaInt_C"] is JsonValue)
+            return (D(z2["thetaInt_C"]), $"SIA 384.201 Tab. ND.2, {Nd2Name(z2)} (S. {z2["seite"]}){(zugeordnet ? zuText : "")}");
+        // 4. Rückfall SIA 2024 (frühe Planungsphase)
+        const string frueh = "Rückfall SIA 2024 (Standardwert der frühen Planungsphase; massgebend Projekt bzw. Auslegungsnorm)";
+        foreach (var (nutz, feld, ausgabe) in new[] { (nutz2021, "thetaIDesH_C", "SIA 2024:2021 Raum-Datenblatt θi,des,H"), (nutz2015, "raumtempWinter_C", "SIA 2024:2015 Tab. 9 Winter") })
+        {
+            if (nutz is null) continue;
+            var zeilen = Zeilen(nutz["tabelle"]).ToList();
+            var z = zeilen.FirstOrDefault(x => NrNorm(T(x["nr"])) == NrNorm(n) || string.Equals(T(x["nutzung"]), n, StringComparison.OrdinalIgnoreCase));
+            bool zug = false;
+            if (z is null && zu?.Sia2024 is { } nr) { z = zeilen.FirstOrDefault(x => NrNorm(T(x["nr"])) == NrNorm(nr)); zug = z is not null; }
+            if (z is null) continue;
+            if (z[feld] is JsonValue v && v.TryGetValue<double>(out var wert))
+                return (wert, $"{ausgabe}, {T(z["nr"])} {T(z["nutzung"])} (S. {z["seite"]}) – {frueh}{(zug ? zuText : "")}");
+            return (null, $"Nutzung «{n}» → {ausgabe} {T(z["nr"])} {T(z["nutzung"])}: kein Heizungswert (unbeheizt?) – tempWinter setzen");
+        }
+        return (null, $"Nutzung «{n}» weder in SIA 384.201 Tab. ND.2 noch in SIA 2024, und kein tempWinter");
     }
 
     /// <summary>B' = AG / (0,5·P) (9) des Gebäudes: Bodenflächen gegen Erdreich und Umfang = Aussen- bzw. Erdreichwände dieser Räume.</summary>

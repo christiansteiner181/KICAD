@@ -304,8 +304,8 @@
       ],
       "ablage": "W:\\05_Normen und Merkblätter\\SIA_Normen\\2024_2015_d.pdf (und 2006, 2021)",
       "vorliegend": "original",
-      "hinweis": "Raumnutzungsdaten: Tab. 9 S. 134 (2015) Winter-Raumtemperatur und Aussenluft je Person; welche Ausgabe gilt, entscheidet Christian.",
-      "werte": "HLKS_NORMTABELLEN\\heizung\\raumnutzung_sia2024.json (Tab. 9 der Ausgabe 2015, 45 Nutzungen; Winter = «Auslegung Heizung» der Nutzungsblätter, Stichprobe 1.1)"
+      "hinweis": "Merkblatt zur Projektierung: Standardwerte der frühen Planungsphase (Vorwort S. 4); für die Auslegung gilt die Norm (SIA 384.201) bzw. das Projekt – in der Heizlast nur Rückfall (Christian 04.11.2026). Textschicht der Raum-Datenblätter 2021 im Block Raumklima verschoben – Werte nur vom Bild.",
+      "werte": "HLKS_NORMTABELLENheizung\raumnutzung_sia2024_2021.json (Raum-Datenblätter 2021, θi,des,H u. a., vom Bild) und raumnutzung_sia2024.json (2015 Tab. 9)"
     },
     {
       "id": "norm.sia381_2",

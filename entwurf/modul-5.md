@@ -222,7 +222,7 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
 
 - **Norm:** SIA 384.201 / SN EN 12831:2003 mit Nationalem Anhang ND (die neuere SN SIA 384/2:2020 liegt nicht vor; Ausgabe im Ergebnis
   genannt, später umstellbar). Grundsatz (Christian): «letzt endlich [beruht alles] auf physik... nach norm ist nur die beweislast umgedreht».
-- **Innentemperatur:** Raumwert (tempWinter, von Hand oder aus HKAP), sonst SIA 2024:2015 Tab. 9 nach Raumnutzung.
+- **Innentemperatur:** Raumwert (tempWinter, von Hand oder aus HKAP), sonst Bürostandard, sonst SIA 384.201 ND.2, sonst SIA 2024 (siehe Rechenweg; präzisiert 04.11.2026).
 - **Aussentemperatur:** SIA 2028:2010 Tab. 6 (40 Stationen, Spalte «kalt, Temperatur» = Auslegungstemperatur für die Norm-Heizlast nach
   SIA 384.201, Ziffer 3.5 S. 18: Mittel der tiefsten 4-Tagesmittel aus 20 Jahren) vom Hauptlauf aus dem Bild übertragen (zweimal gelesen),
   dazu Tab. 1a (Stationshöhe) und Tab. 2 (Jahresmittel, Agent); Datei HLKS_NORMTABELLEN\heizung\sia2028_auslegung.json; Christian prüft gegen.
@@ -239,7 +239,10 @@ gegen. Rechenkerne gehen vor der Abnahme an hlks-pruefer.
   höher als die Station: −0,005 K je m, auf 1 K gerundet; tiefer: keine Korrektur) und ND.1.1.2 (Zeitkonstante τ ≤ 200 h: Tabelle ND.1;
   ohne Gebaeude.zeitkonstante Annahme τ > 200 h, Hinweis). **θm,e** (Jahresmittel, nur Erdreich) aus SIA 2028 Tab. 2 der gleichen Station
   (ND.1.2 nennt SIA 381/2 – Abweichung als Annahme, gleiche Quelle wie θe).
-- **θint,i** = Raum.tempWinter, sonst SIA 2024:2015 Tab. 9 nach Raum.nutzung (Name bzw. Code genau), sonst keine Heizlast (Hinweis).
+- **θint,i** = 1. Raum.tempWinter (Projekt, Raumbuch); 2. Bürostandard (Christian 04.11.2026: «standard ist heute Wohnen 21°, Bad 22°»);
+  3. SIA 384.201 Tab. ND.2 nach Raum.nutzung (Name bzw. Zuordnung kataloge/raumnutzungen.json); 4. Rückfall SIA 2024 (Raum-Datenblätter 2021 θi,des,H,
+  sonst 2015 Tab. 9). Christian 04.11.2026: «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung. dabei gilt, es muss einfach
+  funktionieren.» (SIA 2024 Vorwort: Standardwerte der frühen Planungsphase). Ohne Wert keine Heizlast (Hinweis).
 - **Transmission** ΦT,i = (HT,ie + HT,iue + HT,ig + HT,ij)·(θint,i − θe) (2), aus den Raumgrenzen (Modul 1c):
   - HT,ie = Σ Ak·Uk·ek mit ek = el = 1,0 (ND.4.1) für Grenzen «aussen»; ψ-Werte (Wärmebrücken) gibt es im Modell noch nicht → fehlen (Hinweis).
   - HT,iue = Σ Ak·Uk·bu (5) für «unbeheizt»: bu = Raum.bu des Nachbarraums (Tab. ND.3 bzw. ISO 13789, mit Quelle); sonst nach (6) aus dessen

@@ -11,7 +11,8 @@ public class HeizlastTests
     const string Heizlast = """
     { "einzelwerte": [ { "id": "ND.1.1.1_hoehe", "wert": -0.01 }, { "id": "ND.5.2_nmin", "wert": 0.5 }, { "id": "ND.5.1_nInfMech", "wert": 0.2 },
                        { "id": "ND.5.7_faktorNatuerlich", "wert": 0.7 }, { "id": "ND.5.7_faktorMechanisch", "wert": 1.0 } ],
-      "tabellen": { "ND1": { "werte": [ { "tauVon_h": 200, "tauBis_h": null, "korrektur_K": 0 }, { "tauVon_h": 0, "tauBis_h": 200, "korrektur_K": -4 } ] },
+      "tabellen": { "ND2": { "werte": [ { "gruppe": "Testgruppe", "name": "Testnutzung", "thetaInt_C": 17, "seite": 4 } ] },
+                    "ND1": { "werte": [ { "tauVon_h": 200, "tauBis_h": null, "korrektur_K": 0 }, { "tauVon_h": 0, "tauBis_h": 200, "korrektur_K": -4 } ] },
                     "ND5": { "werte": [ { "zBis_m": 2, "fg1": 1.1 }, { "zBis_m": null, "fg1": 1.0 } ] },
                     "ND8": { "werte": [ { "klasse": "Moderate Abschirmung", "e_ohneAussenwand": 0, "e_eineAusrichtung": 0.1, "e_mehrereAusrichtungen": 0.2 } ] },
                     "ND9": { "werte": [ { "hoeheBis_m": 10, "epsilon": 1.0 }, { "hoeheBis_m": null, "epsilon": 2.0 } ] } },
@@ -114,7 +115,7 @@ public class HeizlastTests
     }
 
     [Fact]
-    public void Heizlast_Innentemperatur_aus_SIA_2024_und_Zeitkonstante_und_ohne_Tabellen_Hinweis()
+    public void Heizlast_Innentemperatur_aus_ND2_vor_SIA_2024_und_Zeitkonstante_und_ohne_Tabellen_Hinweis()
     {
         var p = Raum(out var raum, new JsonObject { ["nutzung"] = "Testnutzung" });
         var geb = p.Modell.DerKlasse("Gebaeude").First().Kennzeichen;
@@ -122,8 +123,9 @@ public class HeizlastTests
         var r = Mit(() => SanitaerHilfe.Abfrage(p, "heizlast", new JsonObject { ["raum"] = raum }));
         Assert.Equal(-14, Z(r["aussen"]!["thetaE"]));   // −8 − 2 (Höhe) − 4 (τ ≤ 200 h)
         var z = r["raeume"]!.AsArray().OfType<JsonObject>().Single();
-        Assert.Equal(19, Z(z["thetaInt"]));
-        Assert.Contains("SIA 2024", (string?)z["thetaIntQuelle"]);
+        // Auslegungsnorm vor SIA 2024 (Christian 04.11.2026: «2024 ist eine norm zur projektierung. 384.201, 384/2 ist für die auslegung.»)
+        Assert.Equal(17, Z(z["thetaInt"]));
+        Assert.Contains("ND.2", (string?)z["thetaIntQuelle"]);
         var ohne = Mit(() => SanitaerHilfe.Abfrage(p, "heizlast"), tabellen: false);
         Assert.Contains(ohne["hinweise"]!.AsArray(), h => h!.GetValue<string>().Contains("Normtabellen Heizlast fehlen"));
     }
