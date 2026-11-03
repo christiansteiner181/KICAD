@@ -8,8 +8,9 @@
 //      nimmt den nächsten erlaubten Winkel (Abwasser-Serien bis 5°, sonst 2°; Revit zeichnet 90°, Geberit Silent hat 88.5° – Christian: «die bogen sind 88.5° zum
 //      kompensieren des gefälles von der vertikalen in die Horizontale»), mit Hinweis.
 // ANNAHMEN (Vorgabe-Regeln, an Bernstrasse 42 H+K-Revit-Typen geprüft; wählbar): Mapress ohne «Edelstahl» im Namen: Trinkwasser (KW, WW, ZIR)
-//   Edelstahl, sonst C-Stahl; «Stahl» = Stahlrohr geschweisst; Rund-Kanäle = Wickelfalzrohr rund (Flexkanäle nicht); Uponor-Metallverbundrohr hat
-//   keine Serie in der Bibliothek und bleibt ohne.
+//   Edelstahl, sonst C-Stahl; «Stahl» = Stahlrohr geschweisst; Rund-Kanäle = Wickelfalzrohr rund. Entscheide Christian 03.11.2026: Flexkanäle =
+//   Depping Aludec 112 («flexkanäle von depping ag»), Uponor-Metallverbundrohr = Uponor Uni Pipe PLUS FBH («uponor FBH Rohre in Standard»;
+//   ohne Formteile, ab Rolle, Biegeradius 100 mm).
 
 using System.Text.Json.Nodes;
 using System.Text.RegularExpressions;
@@ -29,7 +30,8 @@ static class IfcSerien
         new("Mapress", "Geberit Mapress Edelstahl", ["KW", "WW", "ZIR"]),
         new("Mapress", "Geberit Mapress C-Stahl"),
         new("Sani[Pp]ex", "JRG Sanipex MT"),
-        new("Flexkanal", null),
+        new("Flexkanal", "Flexkanal Depping Aludec 112"),
+        new("Uponor", "Uponor Uni Pipe PLUS FBH"),
         new("Stahl", "Stahlrohr geschweisst"),
         new("^Rechteck", "Rechteckkanal"),
         new("^Rund", "Wickelfalzrohr rund"),

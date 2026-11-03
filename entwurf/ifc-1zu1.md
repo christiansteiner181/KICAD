@@ -118,7 +118,7 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
 ## Stand 03.11.2026 – Serien aus unserem Standard beim Import
 
 - **Gebaut (`Import/IfcSerien.cs`):** Regel IFC-Typ → Serie der Bürobibliothek (Projektinformation `ifcSerien` vor der Vorgabe: Silent-db20,
-  PE, Mapress Edelstahl/C-Stahl nach Medium, Sanipex, Stahl, Rechteckkanal, Wickelfalzrohr rund; Flexkanal und Uponor ohne). Serie samt
+  PE, Mapress Edelstahl/C-Stahl nach Medium, Sanipex, Stahl, Rechteckkanal, Wickelfalzrohr rund, Flexkanal → Depping Aludec 112, Uponor → Uponor Uni Pipe PLUS FBH). Serie samt
   Formteil-Familien wird geladen; Leitung: Typ nach Aussendurchmesser bzw. Kanalgrösse. Formteile zwischen Leitungen derselben Serie: Formteil
   der Serie im Schnittpunkt der Achsen, Ausrichtung aus den Leitungen, Verlauf bleibt; Winkel auf den nächsten erlaubten der Serie –
   Abwasser (PE, Silent) bis 5°, sonst 2° (Christian: «die bogen sind 88.5° zum kompensieren des gefälles», «es braucht also einen gewissen
@@ -131,6 +131,13 @@ in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte d
 - **Kanalserie erweitert:** Rechteckkanal (Schmidlin) Version 2 als Entwurf in der Bürobibliothek – freie Grösse ab 80 mm statt 145 mm
   (Christian: «erweitere die kanalserie», «die untergrenze liegt bei ca. 80mm»; Preisbuch 07/2026: kleine Seite < 145 mm zum Preis von 145 mm
   × 1.1). **Freigabe durch Christian offen.** Danach haben alle Rechteckkanäle von Bernstrasse 42 die Serie (1277 Leitungen, 822 Formteile).
+- **Flexkanal und FBH (03.11.2026, Christian: «flexkanäle von depping ag» → Aludec 112; «ebenfalls uponor FBH Rohre in Standard» → Uni Pipe
+  PLUS; «bei fbh rohren gibt es keine fittinge. diese rohre werden ab rolle verlegt. minimaler biegeradius 10cm»):** zwei neue Serien als
+  Entwurf in der Bürobibliothek – «Flexkanal Depping Aludec 112» (Depping 1.100/9.1100: Ø 50–710, innen = Innenmass, aussen = Nennmass
+  als Annahme) und «Uponor Uni Pipe PLUS FBH» (Uponor TI 1094698: 16×2,0 / 20×2,25 / 25×2,5 / 32×3,0, DN 12/15/20/25; ohne Formteile,
+  winkel frei, biegeradius 100). **Freigabe durch Christian offen.** Bernstrasse 42: 1942 Leitungen mit Serie; Uponor vollständig, Flexkanal
+  2 von 9 (7× Ø 90 – Depping liefert 80 und 100). Offen: die 572 Revit-Bögen der FBH bleiben als Formteil (IFC-Netz) stehen – Zusammenführen
+  zu einer Leitung mit Biegung (Biegeradius in der Darstellung) ist noch nicht gebaut.
 - **Aufgeräumt (mit OK Christian):** die 46 Test-Einträge samt 8 leeren Kategorieordnern auf W: und im lokalen Spiegel entfernt.
 
 ## Stand 03.11.2026 – Flow «Familie aus IFC»
