@@ -38,6 +38,7 @@ public static class HlksKoerper
                         if (daemmung) DaemmungKanal(k, pts, mass, farbe);
                         break;
                     }
+                    pts = Gebogen(pts, mass);   // Serie ab Rolle: Knicke mit dem Biegeradius
                     if (mass is not null) radius = mass.Durchmesser / 2;   // Rohr mit Serie, Rundkanal, Lüftungsrohr
                     else if (e.Zahl("da") is double da && da > 0) radius = da / 2;   // ohne Serie: Aussendurchmesser der Leitung (z. B. aus dem IFC-Profil), wie gezeichnet
                     Roehren(k, pts, radius, "rohr", farbe);
@@ -108,6 +109,36 @@ public static class HlksKoerper
                 break;
         }
         return k.Leer ? null : k;
+    }
+
+    /// <summary>Leitung einer Serie mit Biegeradius (regeln.biegeradius, z. B. FBH ab Rolle – Christian 03.11.2026: «minimaler biegeradius 10cm»):
+    /// jeder Knick als Kreisbogen mit diesem Radius (höchstens 5° je Stück); passt der Bogen nicht zwischen die Nachbarpunkte, wird der Radius
+    /// so weit verkleinert, dass er die halbe kürzere Strecke nicht überschreitet. Ohne Biegeradius bzw. eckig: die Punkte unverändert.</summary>
+    public static List<double[]> Gebogen(List<double[]> pts, LeitungsMass? mass) =>
+        mass is { Rechteck: false } && mass.Serie?.Werte.Biegeradius is double r ? Gebogen(pts, r) : pts;
+
+    /// <summary>Knicke eines Linienzugs als Kreisbögen mit dem Radius r (siehe oben).</summary>
+    public static List<double[]> Gebogen(List<double[]> pts, double r)
+    {
+        if (pts.Count < 3 || r <= 0) return pts;
+        var aus = new List<double[]> { pts[0] };
+        for (int i = 1; i < pts.Count - 1; i++)
+        {
+            var p = V3.Aus(pts[i]); var a = V3.Aus(pts[i - 1]); var b = V3.Aus(pts[i + 1]);
+            double la = (a - p).Laenge, lb = (b - p).Laenge;
+            if (la < 1e-6 || lb < 1e-6) { aus.Add(pts[i]); continue; }
+            var u = (a - p) * (1 / la); var w = (b - p) * (1 / lb);
+            double theta = Math.Acos(Math.Clamp(u.Mal(w), -1, 1)), phi = Math.PI - theta;   // Innenwinkel, Umlenkung
+            if (phi < Math.PI / 180 || theta < 1e-3) { aus.Add(pts[i]); continue; }
+            double t = Math.Min(r * Math.Tan(phi / 2), Math.Min(la, lb) / 2), rr = t / Math.Tan(phi / 2);
+            var mitte = p + (u + w).Einheit() * (rr / Math.Sin(theta / 2));
+            V3 von = p + u * t - mitte, bis = p + w * t - mitte;
+            var achse = von.Kreuz(bis).Einheit();
+            int n = Math.Max(2, (int)Math.Ceiling(phi / (Math.PI / 36)));
+            for (int j = 0; j <= n; j++) aus.Add((mitte + von.Gedreht(achse, phi * j / n)).Feld());
+        }
+        aus.Add(pts[^1]);
+        return aus;
     }
 
     static void Roehren(Koerper k, List<double[]> pts, double radius, string material, string? farbe)

@@ -79,12 +79,16 @@ static class IfcSerien
             zugeordnet++;
         }
 
+        // Leitungen ab Rolle: Bögen ohne Formteil der Serie gehen in der Leitung auf
+        int biegungen = Zusammenfuehren(lauf, formteile.Select(f => f.E).Where(e => kat.IstArt(e, "Bogen")).ToList(), vonLeitung);
+
         // Formteile zwischen Leitungen derselben Serie
         var anschluss = new Dictionary<(string, string), (string Id, string Name)>();
         foreach (var v in lauf.Verbindungen) { anschluss[(v.VonRef, v.VonAnschluss)] = (v.NachRef, v.NachAnschluss); anschluss[(v.NachRef, v.NachAnschluss)] = (v.VonRef, v.VonAnschluss); }
         int formteileOk = 0, winkelAngepasst = 0;
         foreach (var (_, e) in formteile)
         {
+            if (!lauf.Geplant.ContainsKey(e.Id)) continue;   // in einer Leitung aufgegangen
             string? art = kat.IstArt(e, "Bogen") ? "bogen" : kat.IstArt(e, "TStueck") ? "tstueck" : kat.IstArt(e, "Reduktion") ? "reduktion" : null;
             if (art is null) continue;
             var enden = new Dictionary<string, (V3 Punkt, V3 Raus, Leitungsserie S, Leitungsgroesse G)>(StringComparer.OrdinalIgnoreCase);
@@ -116,6 +120,7 @@ static class IfcSerien
 
         if (zugeordnet > 0) hinweise.Add($"Serien aus dem Standard: {zugeordnet} Leitungen und {formteileOk} Formteile nachgezeichnet ({string.Join(", ", serien.Where(s => s.Value is not null).Select(s => s.Key))})"
             + (winkelAngepasst > 0 ? $"; {winkelAngepasst} Bögen auf den nächsten Winkel der Serie (Spielraum Abwasser 5°, sonst 2°; z. B. 90° → 88.5° für das Gefälle)" : "") + ".");
+        if (biegungen > 0) hinweise.Add($"Serien aus dem Standard: {biegungen} Bögen ab Rolle in der Leitung aufgegangen (Serie ohne Bogen-Formteil, Winkel frei; Biegung mit dem Biegeradius der Serie).");
         if (ohne.Count > 0) hinweise.Add("Ohne Serie (keine Regel, Projektinformation.ifcSerien): " + string.Join(", ", ohne.OrderByDescending(o => o.Value).Take(8).Select(o => $"«{o.Key}» {o.Value}×")) + ".");
         foreach (var (grund, n) in fehler) hinweise.Add($"Serien aus dem Standard: {n}× {grund}.");
         return hinweise;
@@ -193,6 +198,80 @@ static class IfcSerien
         }
         return (null, ursprung, default, default, false);
     }
+
+    /// <summary>Leitungen ab Rolle (Christian 03.11.2026: «bei fbh rohren gibt es keine fittinge. diese rohre werden ab rolle verlegt. minimaler
+    /// biegeradius 10cm»): ein Bogen aus dem IFC zwischen zwei Leitungen derselben Serie, die kein Bogen-Formteil hat und deren Winkel frei ist, geht
+    /// in einer Leitung auf – Knick im Schnittpunkt der Achsen; die Darstellung rundet ihn mit dem Biegeradius der Serie (HlksKoerper). Die erste
+    /// Leitung bleibt (ihre GlobalId), die zweite und der Bogen entfallen; ihre GlobalIds stehen in der Kennung «ifcMit» (Deckung). Nicht bei
+    /// Umkehr (180°) und nicht, wenn der Knick weiter als 1 m vom Leitungsende liegt (dann stimmt die Verbindung nicht).</summary>
+    static int Zusammenfuehren(IfcLauf lauf, List<Element> boegen, Dictionary<string, (Leitungsserie S, Leitungsgroesse G)> vonLeitung)
+    {
+        int n = 0;
+        var jeElement = new Dictionary<string, List<IfcVerbindung>>();
+        void Index(IfcVerbindung v) { foreach (var id in new[] { v.VonRef, v.NachRef }) (jeElement.TryGetValue(id, out var l) ? l : jeElement[id] = []).Add(v); }
+        foreach (var v in lauf.Verbindungen) Index(v);
+        void Entfernen(IfcVerbindung v) { lauf.Verbindungen.Remove(v); foreach (var id in new[] { v.VonRef, v.NachRef }) jeElement.GetValueOrDefault(id)?.Remove(v); }
+        static bool Gleich(string a, string b) => a.Equals(b, StringComparison.OrdinalIgnoreCase);
+        // Verbindungen eines Leitungsendes auf ein anderes Element bzw. Ende umhängen
+        void Umhaengen(string id, string ende, string neuId, string neuEnde)
+        {
+            foreach (var v in (jeElement.GetValueOrDefault(id) ?? []).ToList())
+            {
+                bool von = v.VonRef == id && Gleich(v.VonAnschluss, ende), nach = v.NachRef == id && Gleich(v.NachAnschluss, ende);
+                if (!von && !nach) continue;
+                Entfernen(v);
+                var w = von ? v with { VonRef = neuId, VonAnschluss = neuEnde } : v with { NachRef = neuId, NachAnschluss = neuEnde };
+                lauf.Verbindungen.Add(w);
+                Index(w);
+            }
+        }
+        foreach (var bogen in boegen)
+        {
+            var vb = jeElement.GetValueOrDefault(bogen.Id)?.ToList() ?? [];
+            if (vb.Count != 2) continue;
+            (string Id, string Ende) Gegen(IfcVerbindung v) => v.VonRef == bogen.Id ? (v.NachRef, v.NachAnschluss) : (v.VonRef, v.VonAnschluss);
+            var (ia, ea) = Gegen(vb[0]); var (ib, eb) = Gegen(vb[1]);
+            if (ia == ib || !vonLeitung.TryGetValue(ia, out var sa) || !vonLeitung.TryGetValue(ib, out var sb) || sa.S.Familie.Id != sb.S.Familie.Id) continue;
+            if (!sa.S.Block.WinkelFrei || sa.S.Block.Formteile.ContainsKey("bogen")) continue;
+            if (!lauf.Geplant.TryGetValue(ia, out var a) || !lauf.Geplant.TryGetValue(ib, out var b)) continue;
+            if (a.Geometrie?.Punkte is not { Count: >= 2 } pa || b.Geometrie?.Punkte is not { Count: >= 2 } pb) continue;
+            bool aAmAnfang = Gleich(ea, "anfang"), bAmEnde = Gleich(eb, "ende");
+            var la = pa.Select(p => (double[])p.Clone()).ToList(); if (aAmAnfang) la.Reverse();
+            var lb = pb.Select(p => (double[])p.Clone()).ToList(); if (bAmEnde) lb.Reverse();
+            V3 a1 = V3.Aus(la[^1]), b0 = V3.Aus(lb[0]);
+            var u = (a1 - V3.Aus(la[^2])).Einheit(); var w = (V3.Aus(lb[1]) - b0).Einheit();
+            if (u.Mal(w) < -0.999) continue;   // Umkehr: kein Knick bestimmbar
+            var knick = u.Mal(w) > 0.9999 ? (a1 + b0) * 0.5 : Schnitt(a1, u, b0, w);
+            if ((knick - a1).Laenge > 1000 || (knick - b0).Laenge > 1000) continue;
+            var punkte = la.Take(la.Count - 1).Append(knick.Feld()).Concat(lb.Skip(1)).Select(p => p.Select(x => Math.Round(x, 1)).ToArray()).ToList();
+            // a: die Bogenseite wird «ende»; die Verbindungen am fernen Ende heissen nach dem Umdrehen «anfang»
+            if (aAmAnfang)
+            {
+                Umhaengen(a.Id, "ende", a.Id, "#anfang");
+                foreach (var x in a.Anschluesse) x.Name = Gleich(x.Name, "anfang") ? "ende" : Gleich(x.Name, "ende") ? "anfang" : x.Name;
+                Umhaengen(a.Id, "#anfang", a.Id, "anfang");
+            }
+            string bFern = bAmEnde ? "anfang" : "ende";
+            int ie = a.Anschluesse.FindIndex(x => Gleich(x.Name, "ende"));
+            if (ie >= 0 && b.Anschluesse.FirstOrDefault(x => Gleich(x.Name, bFern))?.Kopie() is { } fern) { fern.Name = "ende"; a.Anschluesse[ie] = fern; }
+            foreach (var v in vb) Entfernen(v);
+            foreach (var v in (jeElement.GetValueOrDefault(b.Id) ?? []).ToList())
+                if (!Gleich(v.VonRef == b.Id ? v.VonAnschluss : v.NachAnschluss, bFern)) Entfernen(v);
+            Umhaengen(b.Id, bFern, a.Id, "ende");
+            a.Geometrie = new Geometrie { Art = a.Geometrie.Art, Punkte = punkte };
+            var mit = new[] { a.Kennungen?.GetValueOrDefault(IfcMit), b.Kennungen?.GetValueOrDefault("ifc"), b.Kennungen?.GetValueOrDefault(IfcMit), bogen.Kennungen?.GetValueOrDefault("ifc") }
+                .Where(x => x is { Length: > 0 }).SelectMany(x => x!.Split(',')).Distinct();
+            (a.Kennungen ??= [])[IfcMit] = string.Join(",", mit);
+            lauf.Geplant.Remove(b.Id);
+            lauf.Geplant.Remove(bogen.Id);
+            vonLeitung.Remove(b.Id);
+            n++;
+        }
+        return n;
+    }
+
+    /// <summary>Kennung einer Leitung ab Rolle: GlobalIds der IFC-Teile (Leitungen, Bögen), die in ihr aufgegangen sind, mit Komma.</summary>
+    public const string IfcMit = "ifcMit";
 
     /// <summary>Mitte der kürzesten Verbindung zweier Geraden p + t·u und q + v·w (parallel: Mitte der Punkte).</summary>
     static V3 Schnitt(V3 p, V3 u, V3 q, V3 w)

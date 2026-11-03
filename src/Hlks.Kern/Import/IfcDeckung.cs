@@ -100,6 +100,12 @@ public static class IfcDeckung
             // HLKS-Bauteile ohne eigene Form (Formteil, Armatur, Apparat, Gerät: in KICAD ein Punkt mit Sinnbild) zeigen in 3D und in der
             // Kollision ihr IFC-Netz, solange sie unverändert sind (IfcOriginal) – kein Nachbau zu messen; eigens gezählt (03.11.2026)
             // Formteile mit dem Formteil unserer Serie (Standard nachgezeichnet, Christian 03.11.2026): nicht 1:1, eigens gezählt
+            // Leitung ab Rolle (Bögen in der Leitung aufgegangen, IfcSerien.Zusammenfuehren): Biegung mit dem Radius der Serie – nicht 1:1, eigens gezählt
+            if (g.Any(e => e.Kennungen!.ContainsKey(IfcSerien.IfcMit)))
+            {
+                standard["Leitung ab Rolle"] = standard.GetValueOrDefault("Leitung ab Rolle") + 1;
+                continue;
+            }
             if (g.All(e => HlksEinordnung.Art(p.Katalog, e) == HlksArt.Formteil && Familien.FamilieVon(m, e) is { } f && Familien.DefinitionsId(f)?.StartsWith("ifc-") != true))
             {
                 var kl = g.First().Klasse;
@@ -141,6 +147,7 @@ public static class IfcDeckung
             ["nachbau"] = x.Nb.Length == 6 ? Arr(x.Nb) : null, ["ifc"] = Arr(x.Ifc),
         }).ToArray());
         var nachgebaut = gruppen.Select(g => g.Key).ToHashSet(StringComparer.Ordinal);
+        foreach (var e in gruppen.SelectMany(g => g)) if (e.Kennungen!.GetValueOrDefault(IfcSerien.IfcMit) is { Length: > 0 } mit) nachgebaut.UnionWith(mit.Split(','));
         var fehlt = d.Produkte.Where(x => x.Rolle == IfcNetzRolle.Bauteil && !nachgebaut.Contains(x.GlobalId) && Bauteile.Contains(x.Entitaet) && x.Dreiecke > 0)
             .GroupBy(x => x.Entitaet).OrderByDescending(x => x.Count());
         return new JsonObject

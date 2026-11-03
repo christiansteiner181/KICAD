@@ -77,7 +77,7 @@ public sealed class HlksGrafik : IGrafikquelle
         var md = HlksEinordnung.Medium(ctx.Projekt, e);
         Grafikteil? teil = HlksEinordnung.Art(ctx.Katalog, e) switch
         {
-            HlksArt.Leitung => Leitung(ctx, e, pts, md),
+            HlksArt.Leitung => Leitung(ctx, e, HlksKoerper.Gebogen(pts, HlksMasse.Von(ctx.Projekt, e)), md),
             HlksArt.Formteil => Formteil(ctx, e, pts, md),
             HlksArt.Armatur => Armatur(ctx, e, pts, md),
             HlksArt.Apparat or HlksArt.Geraet => Apparat(ctx, e, pts, md),

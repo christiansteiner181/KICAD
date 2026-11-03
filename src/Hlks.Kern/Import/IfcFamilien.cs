@@ -45,7 +45,7 @@ static class IfcFamilien
         foreach (var (x, e, px, zu) in bauteile)
         {
             // Standardkomponenten zeichnen unsere Standardfamilien nach – nur alles andere wird übernommen
-            if (!lauf.Katalog.Klassen.TryGetValue(e.Klasse, out var d) || !d.Familie || lauf.Katalog.IstArt(e, "Leitung")
+            if (!lauf.Geplant.ContainsKey(e.Id) || !lauf.Katalog.Klassen.TryGetValue(e.Klasse, out var d) || !d.Familie || lauf.Katalog.IstArt(e, "Leitung")
                 || standard.Any(s => lauf.Katalog.IstArt(e, s))) continue;
             if (Familien.Einfuegepunkt(e) is not { } ein || geo.Koerper(x, false) is not { Leer: false } netz) continue;
             var lage = lauf.Datei.Lage(x);
