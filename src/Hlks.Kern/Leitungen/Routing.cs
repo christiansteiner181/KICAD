@@ -15,7 +15,7 @@
 // ANNAHMEN (Prüfliste):
 //   - WinkelToleranz ±1° (bis 19.10.2026 ±0.5°): ein Knick gilt als Winkel der Liste (regeln.winkel), wenn er höchstens so weit davon abweicht (z. B.
 //     durch Gefälle); der Bogen bekommt den Listenwinkel, die Abweichung bleibt ≤ 1° (verbinden). Bei «frei» bzw. ohne Liste
-//     bekommt er den tatsächlichen Winkel (auf 0.0001° gerundet). Knicke unter 0.5° gelten als gerade (der Punkt entfällt).
+//     bekommt er den tatsächlichen Winkel (auf 0.0001° gerundet). Knicke unter der WinkelToleranz gelten als gerade (der Punkt entfällt).
 //   - Zwei Formteile, zwischen denen höchstens 1 mm bleibt (AbstandMax von verbinden), werden direkt verbunden (keine Gerade).
 //   - Kennzeichen: Geraden «<praefix>-n» bzw. RO-n / KA-n, Formteile nach ihrer Klasse (BO-n, TS-n, RD-n); Teilstücke einer
 //     bestehenden Leitung «<kennzeichen>-2», «-3» …

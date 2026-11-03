@@ -1,0 +1,1497 @@
+{
+  "format": 1,
+  "stand": "03.11.2026",
+  "beschreibung": "Register der technischen Auslegungen: wie KICAD was rechnet (Christian 03.11.2026)",
+  "verfahren": [
+    {
+      "id": "sanitaer.apparateart",
+      "titel": "Apparateart eines Sanitärapparats bestimmen",
+      "gebiet": "Sanitär",
+      "zweck": "Legt fest, mit welcher Apparateart und damit mit welchen Werten LU KW, LU WW und DU ein Sanitärapparat rechnet.",
+      "eingaben": [
+        "Eigenschaft sanitaerArt am Apparat (von Hand oder aus der Familie gesetzt)",
+        "Familienparameter sanitaerArt der Apparatefamilie (Typ- oder Exemplarwert)",
+        "Klasse des Apparats (WC, Waschtisch, Dusche, Badewanne, Spültisch, Waschmaschine, Ausgussbecken)",
+        "Katalog sanitaer_belastungswerte.json (34 Apparatearten mit LU KW, LU WW, DU)"
+      ],
+      "rechenweg": [
+        "1. Steht am Apparat die Eigenschaft sanitaerArt, gilt diese Art.",
+        "2. Sonst gilt der Familienparameter sanitaerArt der Familie des Apparats.",
+        "3. Sonst gilt die Vorgabe der Klasse (bei einer Klasse ohne eigene Vorgabe die nächste Basisklasse mit Vorgabe): WC = Klosettanlage bis 7.5 Liter, Waschtisch = Waschtisch / Wandbecken, Dusche = Dusche nicht staubar, Badewanne = Badewanne, Spültisch = Spülbecken 1- und 2-teilig, Waschmaschine = Waschmaschine bis 6 kg, Ausgussbecken = Waschtrog.",
+        "4. Gibt es nichts davon (z. B. Bodenablauf DN 50/56/70/100), hat der Apparat keine Art, zählt in keiner Summe und erscheint als Befund P21 «Art wählen».",
+        "5. Aus der Art kommen die Werte je Anschluss: Kaltwasser-Anschluss (KW) = LU KW, Warmwasser-Anschluss (WW) = LU WW, Schmutzwasser-Anschluss (SW) = DU. Die Werte stehen nur im Katalog und werden nie am Apparat gespeichert."
+      ],
+      "ergebnis": "Eigenschaft sanitaerArt mit Herkunft am Apparat (element_lesen), Liste aller Arten mit Werten in der Abfrage sanitaer_katalog, Befunde P21 und P22 in der Prüfung.",
+      "quellen": [
+        "LU_DU Zusammenstellung_.xlsx, Blatt «MFHA» A7:D40 (Objekt Walkringen Überbauung Vielmattstrasse, Stand 14.03.2024, H+K Planungs AG); von Christian Steiner als Quelle genannt (HKAP Projektieren-Modul, 28.08.2026); Werte vom Hauptlauf am 20.10.2026 übertragen",
+        "Vorgabe je Klasse: Entscheid Hauptlauf 20.10.2026, von Christian am 20.10.2026 bestätigt (wie HKAP SanitaerKatalog.Standard)"
+      ],
+      "annahmen": [
+        "Die Zuordnung der Medien zu den Excel-Spalten (KW = LU KW, WW = LU WW, SW = DU) ist technisch (Spaltenköpfe des Excel), kein Fachwert.",
+        "Zirkulation (ZIR) und Regenwasser (RW) haben keine Spalte und zählen nicht."
+      ],
+      "grenzen": [
+        "Werte werden nie hergeleitet oder ergänzt; fehlt etwas im Katalog, lehnt das Laden des Katalogs ab.",
+        "Bodenabläufe haben keine Vorgabe und müssen von Hand zugeordnet werden."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerBelastung.cs (SanitaerArten.Von)",
+        "src/Hlks.Kern/Kataloge/SanitaerKatalog.cs (SanitaerKatalog.Vorgabe, SanitaerArt.WertFuer)",
+        "kataloge/sanitaer_belastungswerte.json"
+      ],
+      "abfrage": "sanitaer_katalog"
+    },
+    {
+      "id": "sanitaer.belastung_netz",
+      "titel": "Belastungssummen ΣLU und ΣDU je Leitung im Sanitärnetz",
+      "gebiet": "Sanitär",
+      "zweck": "Zeigt an jeder Leitung des Trinkwasser- und Abwassernetzes, welche Belastungswerte der Apparate dahinter liegen.",
+      "eingaben": [
+        "Sanitärapparate mit Apparateart (siehe sanitaer.apparateart)",
+        "Netz aus Leitungen, Formteilen, Armaturen und Zentralen (Wassererwärmer) mit Fliessrichtung und Medium an den Anschlüssen"
+      ],
+      "rechenweg": [
+        "1. Von jedem Apparateanschluss mit Medium KW, WW oder SW wird dem Netz gefolgt: Trinkwasser (KW, WW) stromauf zur Quelle, Schmutzwasser (SW) stromab zur Senke.",
+        "2. Gefolgt wird nur über Anschlüsse der Medien des Netzes und durch Leitungsbauteile (Leitung, Formteil, Armatur) und Zentralen; an Apparaten, Quellen und Senken endet der Weg.",
+        "3. Jede erreichte Leitung bekommt den Wert des Anschlusses: LU KW, LU WW bzw. DU der Apparateart. Ein Apparat zählt je Leitung und Medium höchstens einmal.",
+        "4. Summe einer Leitung: ΣLU KW, ΣLU WW und ΣDU aller Apparate dahinter; dazu der grösste Einzel-LU (der grössere Wert von LU KW und LU WW unter den Apparaten).",
+        "5. Wassererwärmer: Das Kaltwasser vor dem Wassererwärmer trägt dessen Warmwasser-Apparate mit (wie die Gesamtsumme ΣKW + ΣWW am Hausanschluss).",
+        "6. Masche (Ringleitung): erreichen zwei Wege ab einer Verzweigung denselben Punkt, zählt der Apparat trotzdem einmal; der Treffpunkt wird als Befund P24 gemeldet, als «masche» gekennzeichnet sind nur die Leitungen zwischen Verzweigung und Treffpunkt.",
+        "7. Kommt der Weg trotz Verbindung nicht weiter (Leitung verkehrt gerichtet, falsche Fliessrichtung am Apparat, anderes Medium), fehlt der Apparat dahinter in den Summen; das wird nie still übergangen, sondern als Befund P26 gemeldet."
+      ],
+      "ergebnis": "Abfrage sanitaer_belastung (je Leitung, Strang oder Anlage mit den Beiträgen der Apparate), Eigenschaft «abgeleitet» in element_lesen, Beschriftung «ΣLU 12 / 8» bzw. «ΣDU 4.6» an den Sanitärleitungen im Strangschema (auf eine Nachkommastelle gerundet, Anzeige ein/aus mit Ansichtseigenschaft belastung).",
+      "quellen": [
+        "Werte: LU_DU Zusammenstellung_.xlsx, Blatt «MFHA» A7:D40 (Walkringen, Stand 14.03.2024)",
+        "Christian Steiner, 20.10.2026 (Fragefenster, entwurf/modul-4.md): KW vor dem Wassererwärmer trägt ΣLU WW"
+      ],
+      "annahmen": [
+        "Das Verfahren, die Apparatewerte entlang des Netzes je Leitung aufzusummieren, ist ein Verfahren von KICAD; das Excel summiert nur je Anlage. Quelle fehlt im Code (keine Norm genannt)."
+      ],
+      "grenzen": [
+        "Keine Normrechnung je Teilstrecke: kein Spitzendurchfluss, keine DN, kein Q_WW je Leitung. Das ist Teil B; die Normen SN 592000, SN EN 12056 und SVGW W3 liegen nicht vor.",
+        "Bei einer Masche ist die Summe der Leitungen darin nicht eindeutig."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerBelastung.cs (SanitaerBelastung.Rechnen, SanitaerBelastung.Folgen, SanitaerNetz.Summe)",
+        "src/Hlks.Kern/Schema/SchemaBelastung.cs (SchemaBelastung.Text)"
+      ],
+      "abfrage": "sanitaer_belastung"
+    },
+    {
+      "id": "sanitaer.zusammenstellung",
+      "titel": "Sanitär-Zusammenstellung einer Anlage: Total LU, Volumenstrom, ΣDU",
+      "gebiet": "Sanitär",
+      "zweck": "Bildet die Zusammenstellung von Christians Excel «LU_DU Zusammenstellung_.xlsx» je Anlage nach: Stückzahlen, Summen der Belastungswerte, Total LU und Volumenstrom.",
+      "eingaben": [
+        "Apparate der Anlage (an ein System der Anlage angeschlossen) mit Apparateart",
+        "Geschosse der Gebäude mit Kote",
+        "Katalog sanitaer_belastungswerte.json"
+      ],
+      "rechenweg": [
+        "1. Zeilen sind die vorkommenden Apparatearten in der Reihenfolge des Excel (Zeilen 7 bis 40), Spalten die Geschosse nach Kote aufsteigend (UG zuerst).",
+        "2. Je Art: ΣLU KW = Anzahl · LU KW, ΣLU WW = Anzahl · LU WW, ΣDU = Anzahl · DU (leer, wenn die Art diese Spalte nicht hat).",
+        "3. Total LU = ΣLU KW + ΣLU WW (Excel B55 = M43+N43).",
+        "4. Volumenstrom V = Total LU · 0.1 l/s (Excel B56 = B55*0.1).",
+        "5. Grösster Einzel-LU = grösster Wert von LU KW und LU WW unter den vorkommenden Arten (Grundlage der Kurvenwahl)."
+      ],
+      "ergebnis": "Abfrage sanitaer_zusammenstellung: Tabelle mit Apparatearten, Geschossen, Anzahl und Summen, darunter Total LU, Volumenstrom, Spitzendurchfluss, ΣDU, Q_WW, Hinweise und Formeln mit Excel-Zelle. Referenz Walkringen: Total LU 132, Volumenstrom 13.2 l/s.",
+      "quellen": [
+        "LU_DU Zusammenstellung_.xlsx, Blatt «MFHA», Formeln B55 = M43+N43 und B56 = B55*0.1 (Walkringen, Stand 14.03.2024)"
+      ],
+      "annahmen": [
+        "Die Reihenfolge der Geschosse (UG zuerst, nach Kote) ist eine Annahme, im Excel nicht übertragen.",
+        "Apparate ohne Apparateart zählen nicht (Befund P21)."
+      ],
+      "grenzen": [
+        "Die Stückzahl-Summen zählen wie das Excel jeden Apparat der Anlage, auch ohne Netzverbindung; die Netzsummen (sanitaer.belastung_netz) zählen ihn dann nicht. Das nennt ein Hinweis.",
+        "Keine Dimensionierung je Teilstrecke."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Rechnen, SanitaerZusammenstellung.Auswerten)"
+      ],
+      "abfrage": "sanitaer_zusammenstellung"
+    },
+    {
+      "id": "sanitaer.spitzendurchfluss",
+      "titel": "Spitzendurchfluss Trinkwasser aus der Summe der Belastungswerte",
+      "gebiet": "Sanitär",
+      "zweck": "Rechnet aus dem Volumenstrom nach den zwei Kurven «grösster LU 3» und «grösster LU 5» den Spitzendurchfluss der Anlage und wählt die massgebende Kurve.",
+      "eingaben": [
+        "Volumenstrom V in l/s (aus sanitaer.zusammenstellung)",
+        "Grösster Einzel-LU der vorkommenden Apparatearten",
+        "Spezialinstallationen der Anlage (Eigenschaft spezialinstallationen: Liste mit bezeichnung, versorgung, entsorgung in l/s, wie Excel Zeilen 46 bis 51)"
+      ],
+      "rechenweg": [
+        "1. V = ΣLU · 0.1 l/s mit ΣLU = ΣLU KW + ΣLU WW.",
+        "2. Kurve «grösster LU 3»: Q_D3 = 0.459 · V^0.353 (Excel C57 = B56^0.353*0.459), gültig für V von 0.3 bis 300 l/s.",
+        "3. Kurve «grösster LU 5»: Q_D5 = 0.598 · V^0.257 (Excel I57 = B56^0.257*0.598), gültig für V von 0.5 bis 15 l/s.",
+        "4. Massgebend ist Kurve 5, wenn der grösste Einzel-LU grösser als 3 ist, sonst Kurve 3. Beide Werte werden immer ausgewiesen.",
+        "5. Spitze gesamt = Q_D + Σ Spezialinstallationen Versorgung (Excel C59 = C57+I51 bzw. I59 = I57+I51).",
+        "6. Hinweise (keine Befunde): V ausserhalb des Gültigkeitsbereichs einer Kurve; grösster Einzel-LU über 5 (die Regel deckt ihn nicht ab); Kurvenwahl nicht bestätigt (solange im Katalog nicht als bestätigt eingetragen)."
+      ],
+      "ergebnis": "Abfrage sanitaer_zusammenstellung (Spitzendurchfluss, beide Kurven, massgebende Kurve, Spitze gesamt, Hinweise). Referenz Walkringen: V = 13.2 l/s ergibt 1.1412 l/s (Kurve 3) und 1.1606 l/s (Kurve 5).",
+      "quellen": [
+        "LU_DU Zusammenstellung_.xlsx, Blatt «MFHA»: C55–C57 «Spitzenvolumenstrom bei 0.3 bis 300 l/s, Grösster LU: 3», I55–I57 «Spitzenvolumenstrom bei 0.5 bis 15 l/s, Grösster LU: 5» (Diagramm 1 W3)",
+        "Kurvenwahl: NICHT im Excel (dort stehen beide Kurven nebeneinander, der Bearbeiter liest ab). Übernommen aus HKAP Projektieren-Modul (SanitaerKatalog.cs, 28.08.2026, von Christian abgenommen)",
+        "Christian Steiner, 20.10.2026 (Fragefenster: «Alle bestätigen»): Kurvenwahl «grösster LU > 3 → Kurve 5»"
+      ],
+      "annahmen": [
+        "Die Norm hinter dem Diagramm (SVGW W3) liegt KICAD nicht vor; die Kurven stammen allein aus dem Excel."
+      ],
+      "grenzen": [
+        "Gerechnet wird nur je Anlage, nicht je Teilstrecke.",
+        "Ausserhalb der Gültigkeitsbereiche der Kurven wird trotzdem gerechnet, mit Hinweis."
+      ],
+      "code": [
+        "src/Hlks.Kern/Kataloge/SanitaerKatalog.cs (SanitaerKurve.Spitze, SanitaerKatalog.MassgebendeKurve)",
+        "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Auswerten, KurvenHinweise)",
+        "kataloge/sanitaer_belastungswerte.json (rechnung.spitzeKurve3, spitzeKurve5, kurvenwahl)"
+      ],
+      "abfrage": "sanitaer_zusammenstellung"
+    },
+    {
+      "id": "sanitaer.schmutzwasser",
+      "titel": "Schmutzwasserabfluss Q_WW aus der Summe der Anschlusswerte DU und der Abflusskennzahl K",
+      "gebiet": "Sanitär",
+      "zweck": "Rechnet den Schmutzwasserabfluss einer Anlage aus ΣDU und der Abflusskennzahl K und addiert die Spezialinstallationen der Entsorgung.",
+      "eingaben": [
+        "ΣDU der Anlage (aus sanitaer.zusammenstellung)",
+        "Abflusskennzahl K: Eigenschaft abflusskennzahl der Anlage, sonst Vorgabe in der Projektinformation",
+        "Spezialinstallationen Entsorgung in l/s"
+      ],
+      "rechenweg": [
+        "1. Q_WW = K · √ΣDU (Excel M66 = M65*((M64)^(1/2))).",
+        "2. Q_tot = Q_WW + Σ Spezialinstallationen Entsorgung (Excel M67 = M66+N51).",
+        "3. K wird nie still eingesetzt: Fehlt K an der Anlage und in der Projektinformation, gibt es kein Q_WW und kein Q_tot, dafür den Befund P25."
+      ],
+      "ergebnis": "Abfrage sanitaer_zusammenstellung (Abflusskennzahl mit Herkunft, Q_WW, Q_tot), Befund P25. Referenz Walkringen: ΣDU 38.8, K 0.5 ergibt Q_WW 3.1145 l/s.",
+      "quellen": [
+        "LU_DU Zusammenstellung_.xlsx, Blatt «MFHA», Zellen M65, M66, M67 (Walkringen, Stand 14.03.2024)",
+        "Beispielprojekt K = 0.5 fiktiv: Christian Steiner, 20.10.2026 (Fragefenster, entwurf/modul-4.md)"
+      ],
+      "annahmen": [
+        "K = 0.5 gilt nur im Objekt Walkringen (Gebäudeart Wohnen) und wird in anderen Projekten nicht eingesetzt.",
+        "Weitere Werte für K nach Gebäudeart stehen in SN 592000; diese Norm liegt nicht vor."
+      ],
+      "grenzen": [
+        "Kein Q_WW je Teilstrecke, keine Dimensionierung der Abwasserleitungen, kein Füllungs- und Gefällenachweis (Teil B; Normen SN 592000 und SN EN 12056 fehlen)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerZusammenstellung.cs (SanitaerZusammenstellung.Auswerten, Abflusskennzahl, Spezialinstallationen)",
+        "src/Hlks.Kern/Rechnen/SanitaerPruefung.cs (Befund P25)"
+      ],
+      "abfrage": "sanitaer_zusammenstellung"
+    },
+    {
+      "id": "heizung.leistung_verbraucher",
+      "titel": "Leistung eines Heizverbrauchers: Angabe oder Anteil an der Raumleistung",
+      "gebiet": "Heizung",
+      "zweck": "Bestimmt die Leistung in W, mit der ein Heizkörper, FBH-Kreis oder anderer Verbraucher weiterrechnet.",
+      "eingaben": [
+        "Angabe «leistung» am Verbraucher (W, bei Einheit kW wird mit 1000 multipliziert)",
+        "Eigenschaft heizleistung des Raums (Kälteverbraucher: kuehlleistung)",
+        "Anzahl der Verbraucher im Raum mit und ohne Angabe"
+      ],
+      "rechenweg": [
+        "1. Hat der Verbraucher die Angabe «leistung», gilt sie (Herkunft «angabe»).",
+        "2. Sonst: Rest = max(0, Heizleistung des Raums − Σ Angaben der Verbraucher des Raums mit Angabe); der Rest wird gleich auf die Verbraucher des Raums ohne Angabe verteilt (Rest ÷ Anzahl; Herkunft «raum»). Heizung und Kälte werden getrennt behandelt.",
+        "3. Ohne Angabe und ohne Raumleistung bleibt der Verbraucher ohne Leistung («ohne Angabe»)."
+      ],
+      "ergebnis": "Abfrage heizung_leistung (Leistung je Verbraucher mit Herkunft), element_lesen, Prinzipschema.",
+      "quellen": [
+        "Christian Steiner, 02.11.2026: Raum, gleich verteilt (Leistung: Angabe «leistung» am Verbraucher, sonst die Heiz- bzw. Kühlleistung des Raums gleich auf seine Verbraucher ohne Angabe verteilt)"
+      ],
+      "annahmen": [
+        "Die Summe heisst «Σ Normleistung der Verbraucher (Angabe)» und wird nicht auf andere Auslegungstemperaturen umgerechnet."
+      ],
+      "grenzen": [
+        "Keine Heizlastberechnung je Raum, keine Heizkörperumrechnung, keine FBH-Auslegung (Teil B; Normen fehlen, entwurf/modul-5.md).",
+        "Normleistung der Verbraucher und Raumheizlast sind nicht vergleichbar; die Raumleistung wird nur als Information neben den Verbrauchern gezeigt."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Leistungen, HeizungLeistung.LeistungW)"
+      ],
+      "abfrage": "heizung_leistung"
+    },
+    {
+      "id": "heizung.leistung_netz",
+      "titel": "Leistungssummen je Leitung, Verteiler, Heizgruppe, Anlage und Raum",
+      "gebiet": "Heizung",
+      "zweck": "Zeigt an jeder Leitung und jedem Verteiler des Heiz- bzw. Kältenetzes die Summe der Verbraucherleistungen dahinter.",
+      "eingaben": [
+        "Leistung je Verbraucher (siehe heizung.leistung_verbraucher)",
+        "Netz mit Fliessrichtung und Medium an den Anschlüssen (Vorlauf- und Rücklaufmedium)"
+      ],
+      "rechenweg": [
+        "1. Ab jedem Verbraucheranschluss im Vorlaufmedium wird dem Netz stromauf gefolgt, im Rücklaufmedium stromab; durch Leitungsbauteile und Verteiler (Unterverteiler tragen ihre Kreise weiter) bis zur nächsten anderen Zentrale (Speicher, Erzeuger, Wärmetauscher).",
+        "2. Jede erreichte Leitung bekommt die Leistung des Verbrauchers; ein Verbraucher zählt je Leitung und Weg (Vorlauf oder Rücklauf) höchstens einmal.",
+        "3. Summe = Σ Leistung der Verbraucher dahinter (auf 3 Stellen gerundet), dazu die Verbraucher ohne Angabe.",
+        "4. Dieselbe Summe je Verteiler (Verbraucher, deren Vorlaufweg durch ihn geht), je Heizgruppe, je Anlage und je Raum.",
+        "5. Masche (Ring, Tichelmann): der Verbraucher zählt trotzdem einmal; der Treffpunkt wird als Befund P39 gemeldet."
+      ],
+      "ergebnis": "Abfragen heizung_leistung und heizung_lesen, element_lesen, Prinzipschema.",
+      "quellen": [
+        "Christian Steiner, 02.11.2026: Raum, gleich verteilt (für die Leistung je Verbraucher)"
+      ],
+      "annahmen": [
+        "Die Aufsummierung entlang des Netzes ist ein Verfahren von KICAD (Muster von Modul 4); Quelle fehlt im Code (keine Norm genannt)."
+      ],
+      "grenzen": [
+        "Keine Umrechnung auf Auslegungstemperaturen, kein Druckverlust, keine DN, keine Pumpenförderhöhe (Teil B)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Rechnen, HeizungLeistung.Folgen, HeizungNetz.Summe)"
+      ],
+      "abfrage": "heizung_leistung"
+    },
+    {
+      "id": "heizung.massenstrom",
+      "titel": "Massen- und Volumenstrom aus Leistung und Spreizung",
+      "gebiet": "Heizung",
+      "zweck": "Rechnet aus der Leistung eines Verbrauchers und der Temperaturspreizung seiner Heizgruppe den Massen- und Volumenstrom des Wassers bzw. Wasser-Glykol-Gemischs.",
+      "eingaben": [
+        "Leistung Q in W (siehe heizung.leistung_verbraucher)",
+        "Vorlauftemperatur vlTemp und Rücklauftemperatur rlTemp der Heizgruppe in °C (Eingabe des Planers, ohne Vorgabe aus einer Norm)",
+        "Vorlaufmedium des Verbrauchers (z. B. HZ-VL, HZ-VL-Glyk, KAE-VL)",
+        "Stoffwerte c_p und ρ (siehe heizung.stoffwerte)"
+      ],
+      "rechenweg": [
+        "1. Spreizung ΔT = |vlTemp − rlTemp| in K (Heizung: Vorlauf minus Rücklauf, Kälte: Rücklauf minus Vorlauf). Unter 0.1 K gibt es keinen Strom («Spreizung 0 K»).",
+        "2. Mittlere Temperatur t_m = (vlTemp + rlTemp) / 2.",
+        "3. Stoffwerte c_p in kJ/(kg·K) und ρ in kg/m³ des Mediums bei t_m (Tabelle, linear dazwischen).",
+        "4. Massenstrom ṁ = Q / (c_p · ΔT); gerechnet in kg/h als Q / (c_p · 1000 · ΔT) · 3600 mit Q in W.",
+        "5. Volumenstrom V̇ = ṁ / ρ; in l/h als ṁ / ρ · 1000.",
+        "6. Je Leitung bzw. Verteiler: Σ ṁ und Σ V̇ der Verbraucher dahinter; Verbraucher mit fehlender Angabe stehen separat («ohneStrom») mit Grund (keine Leistung; Temperatur fehlt; Spreizung 0 K; Stoffwerte fehlen)."
+      ],
+      "ergebnis": "Abfragen heizung_leistung und heizung_lesen: Massenstrom in kg/h und Volumenstrom in l/h je Verbraucher, Leitung, Verteiler mit Stoffwerten (c_p, ρ, Fluid, Quelle) und Spreizung.",
+      "quellen": [
+        "Christian Steiner, 02.11.2026: Leistung → Massenstrom, Temperatur aus Heizgruppe"
+      ],
+      "annahmen": [
+        "Die Formel ṁ = Q / (c_p · ΔT) ist die physikalische Grundformel; eine Normquelle ist im Code nicht genannt."
+      ],
+      "grenzen": [
+        "Keine Gleichzeitigkeit, kein Druckverlust, keine Rohrdimensionierung (DN), keine Pumpenförderhöhe, kein hydraulischer Abgleich (Teil B).",
+        "Ohne Stoffwerte beim Mittelwert der Temperaturen (ausserhalb der Tabelle) gibt es keinen Strom, sondern einen Befund."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Stroeme)",
+        "src/Hlks.Kern/Heizung/Heizgruppen.cs (Heizgruppen.Spreizung)"
+      ],
+      "abfrage": "heizung_leistung"
+    },
+    {
+      "id": "heizung.stoffwerte",
+      "titel": "Stoffwerte von Wasser und Wasser-Ethylenglykol (35 Vol.-%) für Heiz- und Kältenetze",
+      "gebiet": "Heizung",
+      "zweck": "Liefert die spezifische Wärmekapazität und die Dichte der Heiz- und Kältemedien bei einer bestimmten Temperatur.",
+      "eingaben": [
+        "Medium (HZ-VL, HZ-RL, KAE-VL, KAE-RL, jeweils auch mit -Glyk)",
+        "Temperatur in °C",
+        "Katalog stoffwerte.json (Tabellen mit Quelle)"
+      ],
+      "rechenweg": [
+        "1. Das Medium bestimmt das Fluid: HZ-VL, HZ-RL, KAE-VL, KAE-RL = Wasser; die Medien mit -Glyk = Wasser-Ethylenglykol 35 Vol.-%.",
+        "2. Zwischen zwei Tabellenpunkten linear: Wert = a + (b − a) · (t − t1) / (t2 − t1) für c_p und ρ getrennt.",
+        "3. Ausserhalb der Tabelle gibt es keinen Wert (der Aufrufer meldet es als Befund); es wird nie extrapoliert.",
+        "4. Gemisch 35 Vol.-%: Mittel aus den Werten von 30 und 40 Vol.-% Ethylenglykol bei derselben Temperatur (c_p und ρ je arithmetisches Mittel); nur dort, wo beide Tabellen Werte haben.",
+        "5. Wertebereiche: Wasser 10 bis 80 °C; Ethylenglykol 30 und 35 Vol.-% −10 bis 40 °C (40 Vol.-%: c_p bei 20 °C fehlt, weil im PDF nicht lesbar)."
+      ],
+      "ergebnis": "Stoffwerte mit Fluid und Quelle in der Abfrage heizung_leistung (Block stoffwerte).",
+      "quellen": [
+        "Wasser: NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems, Wasser (C7732185), Isobare 0.2 MPa, abgerufen 02.11.2026",
+        "Ethylenglykol 30 und 40 Vol.-%: Dow, Engineering and Operating Guide for DOWTHERM SR-1 and DOWTHERM 4000, Form No. 180-01190-0208 (Februar 2008), Tabelle 11 (Dichte, S. 19) und Tabelle 23 (c_p, S. 31)",
+        "Entscheid Christian 02.11.2026: «Ethylenglykol, 30/40 % mitteln»; Gefrierpunkt bei 35.1 Vol.-% DOWTHERM SR-1 (= 33.5 Vol.-% EG): −18.6 °C, Dow-Guide Tabelle 3 (S. 6)",
+        "Christian Steiner, 02.11.2026: «suche im netz. grunddaten für wasser und wasserglykol für 35%» (Recherche Agent general-purpose, Zeile in zuteilung.md)"
+      ],
+      "annahmen": [
+        "Die 35-Vol.-%-Werte sind ein Rechenwert (Mittel aus 30 und 40 Vol.-%), kein Tabellenwert der Quelle."
+      ],
+      "grenzen": [
+        "Nur Wasser und Ethylenglykol; kein Propylenglykol, keine andere Konzentration, keine Viskosität und Wärmeleitfähigkeit.",
+        "Wasser unter 10 °C und über 80 °C, Glykolgemisch über 40 °C haben keine Werte."
+      ],
+      "code": [
+        "src/Hlks.Kern/Kataloge/StoffwerteKatalog.cs (StoffwerteKatalog.Wert, Fluidwert, Linear)",
+        "kataloge/stoffwerte.json"
+      ],
+      "abfrage": "heizung_leistung"
+    },
+    {
+      "id": "heizung.heizgruppen",
+      "titel": "Heizgruppen und Glieder aus der Hydraulik des Modells ableiten",
+      "gebiet": "Heizung",
+      "zweck": "Leitet aus dem Netz ab, welche Verbraucher, Armaturen und Unterverteiler zu einer Heizgruppe gehören und wie sie gemischt ist.",
+      "eingaben": [
+        "Heizgruppe mit Systempaar Vorlauf/Rücklauf, Abgang (Verteiler und Anschlüsse abgangVl/abgangRl)",
+        "Netz mit Medien und Anschlüssen"
+      ],
+      "rechenweg": [
+        "1. Vorlaufweg: ab dem Anschluss abgangVl im Medium dieses Anschlusses ungerichtet durch Leitungsbauteile und Unterverteiler; Verbraucher, andere Zentralen (Speicher, Erzeuger, Wärmetauscher) und Verteiler, an deren Abgang eine andere Gruppe beginnt, beenden den Weg.",
+        "2. Rücklaufweg ebenso ab abgangRl im Rücklaufmedium (ohne abgangRl das Gegenstück des Vorlaufanschlusses).",
+        "3. Glieder sind Armaturen (Ventil, Mischventil, Pumpe, Fühler, Zähler) auf diesen Wegen; Stamm ist der Weg vom Abgang bis zur ersten Verzweigung zu mehreren Ästen mit Verbrauchern oder Unterverteilern.",
+        "4. art = «gemischt», wenn ein Mischventil dabei ist (ausser Umschaltventil), sonst «ungemischt».",
+        "5. Vorschlag (heizgruppen_vorschlagen): eine Gruppe je Gruppenpumpe mit Verbrauchern auf der einen Seite; danach je Abgang eines Verteilers, der in keiner Gruppe liegt und Verbraucher erreicht, eine Gruppe ohne Pumpe (Befund P34)."
+      ],
+      "ergebnis": "Abfrage heizung_lesen (Gruppen mit Gliedern, Ästen, Verbrauchern), Prinzipschema Heizung, Befehl heizgruppen_vorschlagen.",
+      "quellen": [
+        "Entscheid Christian 21.10.2026: Heizgruppen nach der Hydraulik des Modells, keine mitgelieferten Bausteine"
+      ],
+      "annahmen": [
+        "Begründung «je Gruppenpumpe» statt «je Verteiler-Abgang»: in der Bernstrasse ist der Speicher die Verteilung und die FBH-Verteiler je Geschoss sind Unterverteiler (sonst 45 Gruppen statt einer).",
+        "Mischer-Bypass (Anschluss im Rücklaufmedium) gilt als erlaubte Masche."
+      ],
+      "grenzen": [
+        "Rein topologisch: keine Auslegung der Gruppe (Heizlast, Temperaturen, Pumpe, Ventil) und kein hydraulischer Abgleich."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/Heizgruppen.cs (Heizgruppen.Ableiten, Heizgruppen.ArtAbleiten)",
+        "src/Hlks.Kern/Heizung/HeizungBefehle.cs (heizgruppen_vorschlagen)"
+      ],
+      "abfrage": "heizung_lesen"
+    },
+    {
+      "id": "kaelte.auslegung",
+      "titel": "Kälte: Leistung, Spreizung und Stoffwerte wie die Heizung mit anderem Medium",
+      "gebiet": "Kälte",
+      "zweck": "Beschreibt, wie KICAD Kältenetze rechnet: gleiche Kette wie die Heizung, mit Kühlleistung des Raums, Kältemedien und deren Stoffwerten.",
+      "eingaben": [
+        "Kühlleistung des Raums (Eigenschaft kuehlleistung) oder Angabe «leistung» am Kälteverbraucher",
+        "Auslegungstemperaturen vlTemp und rlTemp der Kältegruppe (Eingabe des Planers)",
+        "Kältemedien KAE-VL, KAE-RL, KAE-VL-Glyk, KAE-RL-Glyk"
+      ],
+      "rechenweg": [
+        "1. Ein Verbraucher mit Anschluss in einem Medium KAE-… gilt als Kälteverbraucher; ohne Angabe verteilt sich die Kühlleistung des Raums abzüglich der Angaben gleich auf die Verbraucher (wie heizung.leistung_verbraucher).",
+        "2. Spreizung ΔT = |vlTemp − rlTemp| (Kälte: Rücklauf minus Vorlauf).",
+        "3. Massen- und Volumenstrom wie heizung.massenstrom mit den Stoffwerten von Wasser (KAE-VL, KAE-RL) bzw. Wasser-Ethylenglykol 35 Vol.-% (…-Glyk) bei der mittleren Temperatur.",
+        "4. Summen je Leitung und Verteiler wie heizung.leistung_netz."
+      ],
+      "ergebnis": "Abfragen heizung_leistung und heizung_lesen (Kältenetze sind Teil des Gewerks Heizung, Anlage A-KAE).",
+      "quellen": [
+        "Christian Steiner, 20.10.2026: «Kälte ist Teil der Heizung mit anderem Medium.»",
+        "Christian Steiner, 02.11.2026: Raum, gleich verteilt (Kühlleistung des Raums)"
+      ],
+      "annahmen": [
+        "Kälte-Zuordnung der Medien (KAE-…) und ihrer Stoffwerte folgt der Heizung; eine eigene Auslegungsregel für Kälte gibt es im Code nicht."
+      ],
+      "grenzen": [
+        "Die Wassertabelle beginnt bei 10 °C: Eine Kältegruppe mit Vorlauf 6 °C und Rücklauf 12 °C hat die mittlere Temperatur 9 °C, dafür gibt es keine Stoffwerte und damit keinen Massenstrom (Befund «Stoffwerte fehlen»).",
+        "Keine Kühllastberechnung, keine Auslegung von Kältemaschine, Rückkühler oder Kühldecke."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/HeizungLeistung.cs (HeizungLeistung.Leistungen, HeizungLeistung.Stroeme)",
+        "src/Hlks.Kern/Kataloge/KaelteAlias.cs",
+        "kataloge/stoffwerte.json (medien)"
+      ],
+      "abfrage": "heizung_leistung"
+    },
+    {
+      "id": "lueftung.luftmengen_kanalnetz",
+      "titel": "Luftmengen an Durchlässen und Summen je Kanal",
+      "gebiet": "Lüftung",
+      "zweck": "Bestimmt den Volumenstrom jedes Zu- und Abluftdurchlasses und summiert ihn auf jedem Kanal bis zum Lüftungsgerät.",
+      "eingaben": [
+        "Angabe «volumenstrom» am Zuluft- bzw. Abluftdurchlass (m³/h)",
+        "Zuluft und Abluft des Raums (m³/h)",
+        "Kanalnetz mit Fliessrichtung aus den Anschlüssen (mit fliessrichtung_aus_quelle vom Lüftungsgerät her ausgerichtet)"
+      ],
+      "rechenweg": [
+        "1. Durchlass mit Angabe: die Angabe (Herkunft «angabe»).",
+        "2. Durchlass ohne Angabe: Rest = max(0, Zuluft (bzw. Abluft) des Raums − Σ Angaben der Durchlässe im Raum); der Rest wird gleich auf die Durchlässe ohne Angabe verteilt (Rest ÷ Anzahl, auf 0.01 m³/h gerundet). Zuluft- und Abluftdurchlässe werden getrennt behandelt.",
+        "3. Ab jedem Durchlass wird dem Netz zum Gerät gefolgt, bei Zuluft stromauf und bei Abluft stromab, durch Leitungsbauteile (Kanäle, Formteile, Klappen); am Lüftungsgerät oder einem anderen Gerät endet der Weg.",
+        "4. Jeder erreichte Kanal bekommt den Volumenstrom des Durchlasses; ein Durchlass zählt je Kanal einmal. Summe am Kanal = Σ Volumenstrom der Durchlässe dahinter (m³/h, 2 Stellen)."
+      ],
+      "ergebnis": "Eigenschaft «abgeleitet» in element_lesen: volumenstrom_m3h am Durchlass (mit Herkunft) bzw. am Kanal (mit Anzahl Durchlässen und Durchlässen ohne Angabe).",
+      "quellen": [
+        "Christian Steiner, 02.11.2026: «lüftung: aus- einlässe bestimmen luftmenge. Flussrichtung aus dem Lüftungsgerät»"
+      ],
+      "annahmen": [
+        "Gleichmässige Verteilung der Raumluftmenge auf die Durchlässe ohne Angabe (Muster der Heizung)."
+      ],
+      "grenzen": [
+        "Kein Kanalquerschnitt, kein Druckverlust, keine Gleichzeitigkeit in dieser Summe."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungNetz.cs (LueftungMengen.Rechnen, LueftungMengen.ElementErgaenzen)"
+      ],
+      "abfrage": "element_lesen (abgeleitet.volumenstrom_m3h)"
+    },
+    {
+      "id": "lueftung.varianten",
+      "titel": "Lüftungsvarianten bilden: Gruppen von Räumen je Variantentyp",
+      "gebiet": "Lüftung",
+      "zweck": "Teilt die Räume mit Luftmenge je Variantentyp in Gruppen ein, die jeweils von einem Lüftungsgerät versorgt werden.",
+      "eingaben": [
+        "Räume mit Zuluft und Abluft (m³/h), Geschoss, Brandabschnitt und Nutzungseinheit (Eigenschaft am Raum, sonst die Zone, zu der der Raum gehört)",
+        "Variantenkatalog lueftung.json",
+        "Gleichzeitigkeit g (über 0 bis 1, Vorgabe 1)"
+      ],
+      "rechenweg": [
+        "1. Es zählen nur platzierte Räume mit Zuluft über 0 oder Abluft über 0; Räume ganz ohne Angabe sind ein Befund.",
+        "2. «Zentral für das Gebäude»: eine Gruppe mit allen Räumen.",
+        "3. «Zentral je Zone»: eine Gruppe je Brandabschnitt; fehlt der Brandabschnitt bei einem Teil der Räume, werden Zonen nach Nutzung gebildet (Befund).",
+        "4. «Semizentral je Geschoss»: eine Gruppe je Geschoss.",
+        "5. «Dezentral je Nutzungseinheit»: eine Gruppe je Nutzungseinheit; Räume ohne Einheit erhalten ein gemeinsames zentrales Gerät «Allgemein»; ohne erfasste Einheiten wird die Variante nicht gebildet.",
+        "6. Die Gleichzeitigkeit g wird nur auf Summen mehrerer Räume angewendet (Volumenstrom · g)."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten: je Variante Geräte (LG-1 …), Zuordnung der Räume, Befunde.",
+      "quellen": [
+        "Christian Steiner, 31.10.2026 (Fragefenster Modul 6): Zentral fürs Gebäude, Zentral je Zone, Je Geschoss, Je Wohnung/Einheit; Einzelraumgeräte nicht im Katalog"
+      ],
+      "annahmen": [
+        "Die Gleichzeitigkeit ist ein Parameter der Abfrage mit Vorgabe 1; eine Quelle für einen Wert kleiner 1 fehlt im Code."
+      ],
+      "grenzen": [
+        "Keine Einzelraumgeräte; keine Aussen- und Fortluft; keine Ermittlung der Luftmenge der Räume (kommt aus HKAP oder Eingabe)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Rechnen, LueftungKette.Gruppieren, LueftungKette.AlleRaeume)",
+        "kataloge/lueftung.json (varianten)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "lueftung.geraet_steigzone",
+      "titel": "Lage des Lüftungsgeräts und der Steigzone",
+      "gebiet": "Lüftung",
+      "zweck": "Legt fest, in welchem Raum das Gerät einer Variante steht und wo die Steigzone liegt, wenn Räume auf anderen Geschossen versorgt werden.",
+      "eingaben": [
+        "Räume mit Nutzung, Geschosskote und Schwerpunkt des Raumpolygons",
+        "Begriffe im Katalog lueftung.json: Zentrale «Technik», Schacht «Schacht»"
+      ],
+      "rechenweg": [
+        "1. Mitte der Gruppe = Mittelwert der Schwerpunkte der versorgten Räume; Abstände sind rechtwinklig gemessen: |Δx| + |Δy|.",
+        "2. Zentrales Gerät: Kandidat ist ein Raum, dessen Nutzung «Technik» enthält (ohne Gross-/Kleinschreibung; bei der Geschossvariante nur im selben Geschoss); gewählt wird der tiefste, bei Gleichstand der mit dem kleinsten rechtwinkligen Abstand zur Mitte.",
+        "3. Gibt es keinen Kandidaten (oder ist das Gerät dezentral), wird die Lage angenommen: im untersten Geschoss der Gruppe im Raum, der der Mitte am nächsten liegt (Befund «Lage angenommen»).",
+        "4. Steigzone nötig, wenn Räume auf einer anderen Kote als das Gerät liegen: Raum mit Nutzung «Schacht», der der Mitte am nächsten liegt; fehlt er, liegt die Steigzone in der Mitte der versorgten Räume (Befund)."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten: Geräte (Raum, Geschoss, lageAngenommen, x, y, z), Steigzone (Raum, lageAngenommen) und Befunde.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code. Die Begriffe «Technik» und «Schacht» sind laut Katalog eine Zuordnung von KICAD, kein Fachwert; die Wahl nach kleinstem rechtwinkligem Abstand ist ein Verfahren von KICAD."
+      ],
+      "grenzen": [
+        "Keine Prüfung, ob der gewählte Raum für ein Gerät gross genug ist; Gerätegrösse und Wartungsfläche fehlen bis zur Herstellerunterlage."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante)",
+        "kataloge/lueftung.json (kandidaten)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "lueftung.kanaldimension",
+      "titel": "Kanäle vordimensionieren: Länge geschätzt, Querschnitt aus Volumenstrom und Geschwindigkeit",
+      "gebiet": "Lüftung",
+      "zweck": "Schätzt je Variante die Kanalabschnitte und rechnet ihren Querschnitt aus dem Volumenstrom und der zulässigen Luftgeschwindigkeit.",
+      "eingaben": [
+        "Volumenstrom je Abschnitt (Summe der versorgten Räume dahinter, Zuluft und Abluft getrennt)",
+        "Lage von Gerät, Steigzone und Räumen (siehe lueftung.geraet_steigzone)",
+        "Luftgeschwindigkeiten und Längenzuschlag aus lueftung.json"
+      ],
+      "rechenweg": [
+        "1. Abschnitte: Anbindung Gerät → Steigzone (rechtwinkliger Weg), Steigzone je Geschoss (Länge = Höhenunterschied der Geschosskoten, Volumenstrom = Summe der Geschosse dahinter), Verteilung je Geschoss (Länge = Σ der rechtwinkligen Wege von der Steigzone bzw. vom Gerät zu den Raumschwerpunkten, Volumenstrom = Summe des Geschosses).",
+        "2. Luftgeschwindigkeit v nach Stufe des Volumenstroms V̇: bis 1000 m³/h 3.0 m/s, bis 2000 m³/h 4.0 m/s, bis 4000 m³/h 5.0 m/s, bis 10000 m³/h 6.0 m/s, darüber 7.0 m/s.",
+        "3. Querschnittsfläche A = V̇ / 3600 / v in m².",
+        "4. Ausgewiesen als runder Kanal: d = √(4 · A / π) · 1000 in mm.",
+        "5. Länge · (1 + Längenzuschlag / 100) mit Längenzuschlag 0 % (also ohne Zuschlag)."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten: Kanäle mit Abschnitt, Art (anbindung, steigzone, verteilung), Volumenstrom, geschätzte Länge, Geschwindigkeit, Fläche, Durchmesser; Kennzahl «laengeGeschaetztM».",
+      "quellen": [
+        "MuKEn 2014, Mustervorschriften der Kantone im Energiebereich (EnDK), Nachführung 2018, Art. 1.19 Abs. 3 (Wortlaut gelesen am 31.10.2026)",
+        "Christian Steiner, 31.10.2026: «Ja, MuKEn 2014» (Luftgeschwindigkeit «aus dem Energiegesetz»)",
+        "Christian Steiner, 31.10.2026: «Ohne Zuschlag» (Längenzuschlag)",
+        "Kanäle sind gerechnet, nicht gezeichnet: Übernahme ohne Kanäle, Christian 31.10.2026"
+      ],
+      "annahmen": [
+        "Die Länge ist ein rechtwinkliger Weg Gerät → Steigzone → Raumschwerpunkt (geschätzt), keine Trasse."
+      ],
+      "grenzen": [
+        "Nicht gerechnet: Druckverlust, Schall, Ventilatorleistung, Kosten, Energie, Aussen- und Fortluft.",
+        "Grössere Geschwindigkeiten nach Art. 1.19 Abs. 4 (fachgerechter Nachweis, unter 1000 Jahresbetriebsstunden, unvermeidbare Hindernisse) werden nicht geprüft; der Katalog nennt sie nur.",
+        "Rechteckkanäle werden nur als flächengleicher runder Kanal ausgewiesen."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante, Neu)",
+        "src/Hlks.Kern/Kataloge/LueftungKatalog.cs (LueftungKatalog.KanalMs)",
+        "kataloge/lueftung.json (geschwindigkeit, planungswerte)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "lueftung.raumbedarf",
+      "titel": "Raumbedarf der Lüftung: Schacht, Deckenhohlraum, Zentrale und Raumforderung",
+      "gebiet": "Lüftung",
+      "zweck": "Rechnet aus den vordimensionierten Kanälen, wie viel Schachtfläche, Deckenhohlraum und Zentralenfläche eine Variante braucht und legt die Forderung an die Architektur an.",
+      "eingaben": [
+        "Durchmesser der Kanalabschnitte (siehe lueftung.kanaldimension)",
+        "Schachtzuschlag 200 mm, Hohlraumzuschlag 100 mm (lueftung.json)",
+        "Unterkante der Decke über dem Raum, lichte Höhe der Räume, Geschosskoten"
+      ],
+      "rechenweg": [
+        "1. Schacht je Gerät und Geschoss: Breite = Σ Durchmesser der Kanäle der Steigzone + 200 mm; Tiefe = grösster Durchmesser + 200 mm; Fläche = Breite · Tiefe. Schachtfläche der Variante = Summe über die Geräte der je Gerät grössten Geschossfläche.",
+        "2. Deckenhohlraum je Gerät und Geschoss: nötig = grösster Durchmesser der Anbindungs- und Verteilkanäle + 100 mm; verfügbar = Unterkante der Decke über dem Raum − (Kote + lichte Höhe), das Minimum der versorgten Räume. Ist nötig grösser als verfügbar, gibt es einen Befund mit Fehlbetrag. Kennzahl hohlraumMax = grösster nötiger Wert.",
+        "3. Zentrale: Mindest-Nettofläche = max(Zuluft, Abluft in m³/h) / 3600 / 2.0 m/s (Geschwindigkeit in Apparaten, bezogen auf die Nettofläche). Abmessungen und Wartungsfläche fehlen, bis die Herstellerunterlage des Geräts vorliegt.",
+        "4. Raumforderung (Befehle raumforderung_anlegen, lueftung_variante_uebernehmen): Schacht und Deckenhohlraum werden als Raumreservationen angelegt (Rechteck um die Steigzone über die Geschosshöhe bzw. um die versorgten Räume ab Oberkante lichte Höhe); die Zentrale erst mit Herstellerangaben."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten (raumbedarf: zentralen, schaechte, hohlraum; Kennzahlen schachtflaecheM2, hohlraumMaxMm) und Abfrage raumforderung (Raumreservationen mit Bedarf, Fehlbetrag, Status).",
+      "quellen": [
+        "Christian Steiner, 31.10.2026: «Hohlraumzuschlag ca. 10cm»",
+        "Christian Steiner, 31.10.2026: «20cm» (Schachtzuschlag)",
+        "Christian Steiner, 31.10.2026: «Wartungsfläche vom hersteller (nur apparate und geräte) leitungen keine wartung»",
+        "MuKEn 2014 Art. 1.19 Abs. 3 (Geschwindigkeit in Apparaten 2.0 m/s, Bezug Nettofläche)"
+      ],
+      "annahmen": [
+        "Ob der Schachtzuschlag von 20 cm je Seite oder gesamt gilt, ist offen; gerechnet wird gesamt je Richtung (Breite und Tiefe).",
+        "Für den Hohlraum zählt der Durchmesser des flächengleichen runden Kanals, nicht die Höhe eines Rechteckkanals.",
+        "Hohlraum und Schacht gelten als Forderung an die Architektur, nicht als Ausschluss einer Variante."
+      ],
+      "grenzen": [
+        "Keine Flächen der Zentrale (Herstellerunterlage fehlt); Leitungen haben keine Wartungsfläche.",
+        "Freigeben und versenden tut der Mensch (Status freigegeben bzw. abgelehnt)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante, Hohlraum)",
+        "src/Hlks.Kern/Rechnen/LueftungBefehle.cs (RaumforderungAnlegen, LueftungBefehle.Liste)",
+        "kataloge/lueftung.json (planungswerte)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "lueftung.brandschutzklappen",
+      "titel": "Brandschutzklappen je Variante zählen",
+      "gebiet": "Lüftung",
+      "zweck": "Zählt die Brandschutzklappen, die eine Lüftungsvariante bei Brandabschnitten ausserhalb des Geräteraums braucht (Kennzahl für die Bewertung).",
+      "eingaben": [
+        "Brandabschnitt jedes Raums",
+        "Brandabschnitt des Raums, in dem das Gerät steht"
+      ],
+      "rechenweg": [
+        "1. Nur wenn alle versorgten Räume einen Brandabschnitt haben, sonst ist die Zahl «nicht gezählt» (Befund).",
+        "2. Je Gerät und Medium (Zuluft, Abluft): Anzahl der verschiedenen Brandabschnitte der versorgten Räume, die nicht der Brandabschnitt des Geräteraums sind.",
+        "3. Summe über alle Geräte und Medien = Kennzahl brandschutzklappen der Variante."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten (Kennzahl brandschutzklappen), Eingang in die Bewertung.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code. Die Zählregel (eine Klappe je Medium und je fremdem Brandabschnitt) ist ein Verfahren von KICAD; als Kriterium der Bewertung hat Christian Steiner die Brandschutzklappen am 31.10.2026 genannt (lueftung.json)."
+      ],
+      "grenzen": [
+        "Keine Brandschutznachweise, keine Klappenarten, keine Anzahl nach Kanalführung."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Variante)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "allgemein.variantenbewertung",
+      "titel": "Varianten bewerten: normierte Kennzahlen, gewichtete Punkte und Empfehlung",
+      "gebiet": "Allgemein",
+      "zweck": "Ordnet Varianten (heute die Lüftungsvarianten) nach gewichteten Kriterien und empfiehlt die beste; entscheiden tut der Mensch.",
+      "eingaben": [
+        "Kennzahlen je Variante (bei Lüftung: schachtflaecheM2, hohlraumMaxMm, geraete, geraeteInNutzungseinheiten, brandschutzklappen)",
+        "Kriterien mit Gewicht: Raumbedarf 0.5, Geräte und Wartung 0.25, Brandschutzklappen 0.25 (je Abfrage mit gewichte überschreibbar)"
+      ],
+      "rechenweg": [
+        "1. Jede Kennzahl wird über die Varianten normiert: n = (x − min) / (max − min); 0 = beste, 1 = schlechteste (kleiner ist besser); sind alle gleich, ist n = 0.",
+        "2. Kriterium = Mittelwert der normierten Kennzahlen des Kriteriums.",
+        "3. Fehlt eine Kennzahl bei einer Variante, zählt das Kriterium für alle nicht (Befund); die Gewichte der übrigen werden neu verteilt (durch Σ Gewicht geteilt).",
+        "4. Punkte = 100 · Σ Gewicht · (1 − Kriterium) / Σ Gewicht.",
+        "5. Rangfolge nach Punkten; bei Gleichstand nach Schlüssel (Befund). Empfehlung = beste Variante; «entscheidend» sind die zwei Kriterien mit dem grössten gewichteten Vorsprung gegenüber dem Mittel der übrigen Varianten.",
+        "6. Varianten mit Ausschlussbefund werden ausgewiesen, aber weder verrechnet noch empfohlen (in Teil A gibt es noch keine Ausschlüsse)."
+      ],
+      "ergebnis": "Abfrage lueftung_varianten (Block bewertung: Gewichte mit Herkunft, Rangfolge, Punkte, Empfehlung, Befunde).",
+      "quellen": [
+        "Kriterien: Christian Steiner, 31.10.2026 (Raumbedarf, Geräte und Wartung, Brandschutzklappen; Kosten und Energie vorerst weg)",
+        "Gewichte: Christian 31.10.2026 «Raumbedarf zuerst», Zahlen 50/25/25 als Vorschlag des Hauptlaufs, von Christian zu bestätigen"
+      ],
+      "annahmen": [
+        "Die Gewichte 0.5 / 0.25 / 0.25 sind ein Vorschlag des Hauptlaufs und von Christian noch nicht bestätigt.",
+        "Die Normierung auf 0 bis 1 und die Mittelung der Kennzahlen sind ein Verfahren von KICAD; Quelle fehlt im Code."
+      ],
+      "grenzen": [
+        "Keine Kosten- und Energiekriterien.",
+        "Die Gewichte kommen vom Menschen (Katalog bzw. Projekt), nie vom Kern."
+      ],
+      "code": [
+        "src/Hlks.Kern/Bewertung/Bewertung.cs (Bewertung.Rechnen)",
+        "src/Hlks.Kern/Rechnen/LueftungKette.cs (LueftungKette.Kriterien)",
+        "kataloge/lueftung.json (bewertung)"
+      ],
+      "abfrage": "lueftung_varianten"
+    },
+    {
+      "id": "allgemein.raumliste",
+      "titel": "Raumliste: Fläche, Höhe und Volumen der Räume",
+      "gebiet": "Allgemein",
+      "zweck": "Rechnet je Raum Fläche, Höhe und Volumen sowie die Summen je Geschoss.",
+      "eingaben": [
+        "Raumpolygon in mm",
+        "Eigenschaft lichteHoehe, sonst Höhe der Geometrie, sonst Geschosshöhe"
+      ],
+      "rechenweg": [
+        "1. Fläche = Polygonfläche / 1 000 000 in m².",
+        "2. Höhe = lichteHoehe, sonst Höhe der Raumgeometrie, sonst Höhe des Geschosses, in m.",
+        "3. Volumen = Fläche · Höhe in m³.",
+        "4. Summen: Fläche und Anzahl Räume je Geschoss und insgesamt. Alle Werte auf 2 Stellen gerundet (kaufmännisch)."
+      ],
+      "ergebnis": "Abfrage raumliste.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code. Es werden die Innenmasse des Raumpolygons verwendet, keine Flächen nach einer Norm (z. B. SIA 416)."
+      ],
+      "grenzen": [
+        "Keine Geschossflächen- oder Volumenberechnung nach Norm."
+      ],
+      "code": [
+        "src/Hlks.Kern/Api/Ableitungen.cs (Ableitungen.Raumliste)"
+      ],
+      "abfrage": "raumliste"
+    },
+    {
+      "id": "huelle.aufbau_u",
+      "titel": "Wärmedurchgang eines Aufbaus: R = Σ d/λ und U = 1/(Rsi + R + Rse)",
+      "gebiet": "Hülle",
+      "zweck": "Rechnet den Wärmedurchlasswiderstand R und den U-Wert eines Bauteilaufbaus aus den Schichten.",
+      "eingaben": [
+        "Schichten: Material (mit λ in W/(m·K) und Quelle) und Dicke d in mm",
+        "Wärmeübergangswiderstände Rsi und Rse je Gruppe (horizontal, aufwärts, abwärts, erdreich) aus Projektinformation.uebergang, mit Quelle",
+        "Art des Aufbaus bzw. ausdrücklicher Wärmestrom"
+      ],
+      "rechenweg": [
+        "1. Wärmestrom aus der Art, wenn nicht ausdrücklich angegeben: Wand und Tür horizontal, Decke und Dach aufwärts, Boden abwärts; für Raumgrenzen gegen Erdreich ausdrücklich die Gruppe «erdreich».",
+        "2. R = Σ d/λ mit d in m (je Schicht d / 1000 / λ).",
+        "3. U = 1 / (Rsi + R + Rse) in W/(m²·K).",
+        "4. Ein ausdrücklich gesetzter U-Wert (Herkunft nicht «berechnung», z. B. Datenblatt oder IFC) geht vor und wird nie überschrieben.",
+        "5. Werte ohne Quelle gelten als fehlend: λ ohne Quelle, Rsi/Rse ohne Quelle. Fehlt etwas, wird nichts gerechnet und die Abfrage nennt, was fehlt.",
+        "6. Ändert sich ein λ, eine Schichtfolge oder Rsi/Rse, werden rWert und uWert der betroffenen Aufbauten im selben Paket neu gerechnet (Herkunft «berechnung»)."
+      ],
+      "ergebnis": "Abfrage aufbau_rechnen (Schichten mit d, λ, R; Rsi, Rse, R, U mit Quelle und Formel mit eingesetzten Werten), Eigenschaften rWert und uWert am Aufbau, Abfrage huelle_pruefen.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle der Formel fehlt im Code: sie gilt laut Kommentar als Physik (Herkunft «berechnung»), nicht als Normwert. λ, Rsi und Rse tragen jeweils ihre eigene Quelle.",
+        "Die Bürobibliothek kataloge/materialien.json ist leer (Stand 18.10.2026); es gibt keine mitgelieferten λ-Werte."
+      ],
+      "grenzen": [
+        "Keine Korrekturen für Wärmebrücken, Befestigungen, Luftschichten oder inhomogene Schichten; keine Taupunkt- oder Feuchteberechnung."
+      ],
+      "code": [
+        "src/Hlks.Kern/Huelle/AufbauRechnung.cs (HuelleRechnung.Rechnen, HuelleRechnung.Uebergang)",
+        "src/Hlks.Kern/Huelle/AufbauNachfuehrung.cs (HuelleNachfuehren)"
+      ],
+      "abfrage": "aufbau_rechnen"
+    },
+    {
+      "id": "huelle.fenster_uw",
+      "titel": "Uw-Wert eines Fensters aus Glas, Rahmen und Glasrandverbund",
+      "gebiet": "Hülle",
+      "zweck": "Rechnet den U-Wert des ganzen Fensters Uw aus den Kennwerten von Verglasung, Rahmen und Glasrand.",
+      "eingaben": [
+        "Breite und Höhe des Fensters (lichte Masse in mm)",
+        "Ug, Uf (W/(m²·K)), ψg (W/(m·K)) und Rahmenanteil (0 bis 1), jeweils mit Quelle"
+      ],
+      "rechenweg": [
+        "1. A = Breite · Höhe in m².",
+        "2. Af = Rahmenanteil · A; Ag = A − Af.",
+        "3. Umfang der Verglasung lg = 2 · (b + h) · √(1 − Rahmenanteil) in m.",
+        "4. Uw = (Ag · Ug + Af · Uf + lg · ψg) / (Ag + Af) in W/(m²·K).",
+        "5. Ein ausdrücklich gesetztes uw (Herkunft nicht «berechnung», z. B. Datenblatt oder IFC) geht vor und wird nie überschrieben.",
+        "6. Ug, Uf, ψg und Rahmenanteil ohne Quelle gelten als fehlend; ein Rahmenanteil ausserhalb 0 bis 1 wird abgelehnt."
+      ],
+      "ergebnis": "Eigenschaft uw am Fenster (mit Formel und eingesetzten Werten als Quelle), Abfrage huelle_pruefen (fehlende Kennwerte).",
+      "quellen": [],
+      "annahmen": [
+        "Quelle der Formel fehlt im Code (Formel mit Glasrandverbund ψg, keine Normziffer genannt).",
+        "Die Verglasung ist dem Fenster geometrisch ähnlich (gleiches Seitenverhältnis, Rahmen umlaufend gleich breit)."
+      ],
+      "grenzen": [
+        "Bei Sprossen, Pfosten oder ungleichen Rahmenbreiten weicht der Glasrandverbund ab; dann Uw ausdrücklich aus dem Datenblatt setzen (fenster_kennwerte).",
+        "Kein g-Wert-Nachweis und kein Sonnenschutz."
+      ],
+      "code": [
+        "src/Hlks.Kern/Huelle/FensterRechnung.cs (FensterRechnung.Rechnen)"
+      ],
+      "abfrage": "huelle_pruefen"
+    },
+    {
+      "id": "huelle.raumgrenzen",
+      "titel": "Raumgrenzen der Gebäudehülle: Flächen, Nachbarn, Orientierung und U·A",
+      "gebiet": "Hülle",
+      "zweck": "Rechnet je Raum, woran seine Flächen grenzen (Nachbarraum beheizt oder unbeheizt, aussen, Erdreich), mit Fläche, Orientierung und U·A.",
+      "eingaben": [
+        "Raumpolygone, Wände mit Öffnungen, Decken, Dächer, Geschosse",
+        "Raum.beheizt (ohne Angabe: ja), Gebaeude.terrain (Vorgabe ±0), Projektinformation.nordwinkel",
+        "U-Wert des Aufbaus, Fenster.uw, Tuer.ud (nur gelesen)"
+      ],
+      "rechenweg": [
+        "1. Seiten: Jede Kante des Raumpolygons wird den Wänden zugeordnet, deren Band (Achse ± Dicke/2 samt Verlängerung an den Ecken, Toleranz 20 mm) sie berührt; nur etwa parallele Wände (|sin| < 0.05) und Wände, deren Höhenbereich den des Raums um mehr als 20 mm überdeckt. Stücke ohne Wand sind «offen» (Hinweis); Stücke unter 40 mm gehen im längeren Nachbarstück auf.",
+        "2. Nachbar: Abgetastet wird eine Linie parallel zum Stück, 50 mm hinter der Gegenseite der Wand. Raum gefunden = beheizt bzw. unbeheizt nach Raum.beheizt; kein Raum = aussen, unter Gebaeude.terrain = Erdreich.",
+        "3. Öffnungen: Fenster und Türen der Wand im Stück werden abgezogen und als eigene Raumgrenze geführt.",
+        "4. Boden und Decke: Raumfläche gegen die Räume darunter bzw. darüber (Polygon-Schnitt), Reste gegen die Wandbänder des Geschosses darunter bzw. darüber; Rest unten im untersten Geschoss oder auf bzw. unter Terrain = Erdreich, sonst aussen; Rest oben = aussen. Teilflächen unter 0.01 m² gehen in der grössten Teilfläche auf.",
+        "5. Masse: Innenmasse. Fläche Seite = Kantenlänge · Raumhöhe (lichteHoehe, sonst Geometriehöhe, sonst Geschosshöhe), Boden und Decke = Raumfläche.",
+        "6. Orientierung: Azimut der Aussennormalen ab geografisch Nord im Uhrzeigersinn = Winkel ab +y − nordwinkel; Neigung 90° Wand, 0° Decke und Dach, 180° Boden.",
+        "7. U·A = U · A in W/K aus dem gelesenen U-Wert (keine Normfaktoren); Summen je Raum und Angrenzung.",
+        "8. Hüllbauteile: Fläche innen = Summe der Raumgrenzen eines beheizten Raums gegen aussen, Erdreich oder unbeheizt; Aussenmass-Fläche der Wand = Länge an der Aussenseite samt Verlängerung · Wandhöhe − Öffnungen."
+      ],
+      "ergebnis": "Abfragen raumgrenzen und huellbauteile (Fläche, Azimut, Neigung, Angrenzung, U, ua_WK), Darstellung «Hülle».",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code für die Zahlenwerte (20 mm, 40 mm, 50 mm, 0.05, 0.01 m²): Es sind Annahmen des Hauptlaufs (Entscheid Hauptlauf 18.10.2026) für Christians Prüfliste; die Spezifikation steht in entwurf/modul-1c.md.",
+        "Welcher Massbezug (Innen- oder Aussenmass) für welches Normverfahren gilt, legt Christian fest (entwurf/modul-1c.md, Prüfliste 1)."
+      ],
+      "grenzen": [
+        "Keine Normfaktoren (keine b-Faktoren, keine Temperaturkorrekturen), keine Heizlast, keine Wärmebrücken; U wird nur gelesen, nicht gerechnet."
+      ],
+      "code": [
+        "src/Hlks.Kern/Huelle/Raumgrenzen.cs (Raumgrenzen, RaumgrenzenLauf)",
+        "src/Hlks.Kern/Huelle/RaumgrenzenAbfragen.cs"
+      ],
+      "abfrage": "raumgrenzen"
+    },
+    {
+      "id": "leitungen.formteilwahl",
+      "titel": "Formteil (Bogen, T-Stück, Reduktion) aus der Leitungsserie wählen",
+      "gebiet": "Leitungen",
+      "zweck": "Wählt das passende Formteil einer Leitungsserie für Grösse, Umlenkwinkel und Abzweigwinkel.",
+      "eingaben": [
+        "Leitungsserie (Familie der Kategorie Rohr bzw. Kanal) mit Typen, Formteil-Familien und Regeln (regeln.winkel, regeln.abzweigwinkel)",
+        "Grösse am Anfang und am Ende (DN, Ø, b × h bzw. d = Aussendurchmesser)",
+        "Winkel des Knicks bzw. des Abzweigs"
+      ],
+      "rechenweg": [
+        "1. Ohne Typregel gilt der Typ, dessen ausgewertete Anschlussgrössen passen: Bogen a = b = Grösse; T-Stück a = b = Durchgang und c = Abzweig; Reduktion a = gross und b = klein; Reinigungsöffnung a = b = Grösse. Grössen gelten als gleich bis 1e-6.",
+        "2. Mit Typregel (Formel) ergibt diese den Typnamen; Namen der Formel sind die Grössenparameter der Serie (für Abzweig bzw. Reduktion klein mit der Endung «_2»).",
+        "3. Passen mehrere Typen, gilt der erste der Typenliste (Hinweis). Die Reduktion wird nach der Grösse geordnet (a = die grössere).",
+        "4. Bogenwinkel: Der Knick gilt als der nächste Winkel der Liste regeln.winkel, wenn er höchstens ±1° davon abweicht; sonst wird abgelehnt mit den erlaubten Winkeln. Fehlt die Liste («frei»), gilt der tatsächliche Winkel (auf 0.0001° gerundet).",
+        "5. Abzweigwinkel w (0 < w ≤ 90, ohne Parameter 90): Der Winkel der Liste regeln.abzweigwinkel (fehlt = [90]) bis ±1°; der Typ muss c unter genau diesem Winkel haben (aus der Richtung von c, bis 1e-6°).",
+        "6. Danach wird die lokale Lage der Anschlüsse geprüft (Lageabweichung bis 0.001 mm, Richtung bis 1e-6); eine abweichende Formteil-Familie wird abgelehnt."
+      ],
+      "ergebnis": "Formteile im Routing (leitung_zeichnen, leitung_abzweigen, leitung_groesse), Abfrage leitungsserie (Verfügbarkeit je Grösse mit Grund und Vorschlag), Prüfungen P14 und P15.",
+      "quellen": [
+        "Abnahme Christian Steiner, 19.10.2026 (entwurf/modul-3.md, Prüfliste): Winkeltoleranz ±1° wie empfohlen"
+      ],
+      "annahmen": [
+        "Formteilwahl: Entscheid Hauptlauf 18.10.2026; Abzweigwinkel (Nachtrag B7): Entscheid Hauptlauf 19.10.2026 – Annahmen für Christians Prüfliste.",
+        "Der Abzweigwinkel-Parameter heisst «winkel»; fehlt regeln.winkel, ist jeder Winkel erlaubt."
+      ],
+      "grenzen": [
+        "Wählt nur aus den Formteilen, die die Serie führt; fehlt ein Formteil beim Hersteller, wird abgelehnt (mit Vorschlag)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/Leitungsserie.cs (Leitungsserie.Formteil)",
+        "src/Hlks.Kern/Leitungen/Routing.cs (Routing.Bogenwinkel, Routing.WinkelToleranz)"
+      ],
+      "abfrage": "leitungsserie"
+    },
+    {
+      "id": "leitungen.groesse_frei",
+      "titel": "Freie Grösse einer Kanalserie innerhalb von Grenzen und Schritt",
+      "gebiet": "Leitungen",
+      "zweck": "Lässt bei Kanalserien mit freier Grösse jede Grösse b × h bzw. d innerhalb der Grenzen zu; Formteile rechnen ihre Masse aus der Formel.",
+      "eingaben": [
+        "leitung.frei der Serie: Vorlage, Grenzen, Schritt",
+        "Gewünschte Grösse b × h bzw. Durchmesser d in mm"
+      ],
+      "rechenweg": [
+        "1. Hat die Serie einen Typ mit genau dieser Grösse (Raster), gilt der Rastertyp. Sonst wird eine virtuelle Grösse gebildet: Typ = Vorlage, Masse aus der Vorlage mit ersetzten Grössenparametern.",
+        "2. Schritt: Vielfache des Schritts ab 0 (ganze mm).",
+        "3. Formteil: Passt kein Typ, wird der Vorlage-Typ der Formteil-Familie mit Exemplarwerten ausgewertet; jeder Grössenwert eines Anschlusses, der direkt ein Exemplarparameter ohne Formel ist, wird die Soll-Grösse. Das Formteil trägt seine Grössen immer selbst als Exemplarwerte.",
+        "4. Prüfung P29: Grösse ausserhalb der Grenzen = Fehler; nicht im Schritt = Hinweis.",
+        "5. Probe der Abfrage leitungsserie: Mitte der Grenzen (gerundet auf den Schritt), ohne beide Grenzen 430 × 270 bzw. d 430."
+      ],
+      "ergebnis": "Leitung mit familientyp = Vorlage und tatsächlicher Grösse in breite/hoehe bzw. durchmesser; Abfrage leitungsserie (frei, probe); Prüfung P29 und P45.",
+      "quellen": [
+        "Entscheid Christian 20.10.2026: «Rechteckkanäle mit freier Grösse b × h (Normraster nur als Vorschlag); Formteile rechnen ihre Masse aus der Formel»",
+        "Christian Steiner, 03.11.2026 (Serie Rechteckkanal Schmidlin): «die untergrenze liegt bei ca. 80mm»"
+      ],
+      "annahmen": [
+        "Schritt = Vielfache des Schritts ab 0 (ganze mm, weil Anschlussgrössen ganze mm sind); die Probe der Abfrage ist Annahme (Prüfliste)."
+      ],
+      "grenzen": [
+        "Gilt nur für Kanäle, nicht für Rohre (Rohre haben feste Typen = Grössen).",
+        "Druckverlust und Luftgeschwindigkeit werden nicht geprüft."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/FreieGroesse.cs (FreieGroesse)",
+        "src/Hlks.Kern/Leitungen/Leitungsserie.cs (Leitungsserie.TypFuer)"
+      ],
+      "abfrage": "leitungsserie"
+    },
+    {
+      "id": "leitungen.routing",
+      "titel": "Leitung zeichnen: Geraden, Bögen, Reduktionen und Einbaulängen",
+      "gebiet": "Leitungen",
+      "zweck": "Plant aus einem Verlauf Geraden und Formteile der Serie und kürzt die Geraden um die Einbaulängen.",
+      "eingaben": [
+        "Verlauf (Punkte in mm), Serie, Grösse",
+        "Anschlusslagen an bestehenden Elementen",
+        "Einbaulängen der Formteile"
+      ],
+      "rechenweg": [
+        "1. Knick unter 1° gilt als gerade: der Punkt entfällt (mit Hinweis); ab 180° − 1° gilt der Verlauf als Umkehr und wird abgelehnt.",
+        "2. Am Knick kommt ein Bogen der Serie mit dem Listenwinkel (siehe leitungen.formteilwahl).",
+        "3. An einem Grössenwechsel kommt eine Reduktion; ihre grössere Seite a sitzt im Ursprung.",
+        "4. Jede Gerade endet an den Anschlüssen der Formteile, gekürzt um die Einbaulängen. Ist eine Gerade kürzer als die Summe der Einbaulängen der Formteile darauf, wird mit der Mindestlänge abgelehnt.",
+        "5. Zwei Formteile, zwischen denen höchstens 1 mm bleibt, werden direkt verbunden.",
+        "6. An einem Anschluss mit Lage darf der Verlauf höchstens 1° von dessen Achse abweichen."
+      ],
+      "ergebnis": "Geraden (Rohr bzw. Kanal) und Formteile als Elemente im Modell; Meldung mit Ort und Vorschlag bei Fehlern.",
+      "quellen": [
+        "Abnahme Christian Steiner, 19.10.2026 (entwurf/modul-3.md): Winkeltoleranz ±1° und «Verbinden verlangt Lage ≤ 1 mm und gegenläufige Richtung»"
+      ],
+      "annahmen": [
+        "WinkelToleranz ±1° (bis 19.10.2026 ±0.5°; 0.5° liess für Abwasser 1 bis 1.7 % keinen Abzweig zu) und Abstand 1 mm sind Annahmen für Christians Prüfliste, bei der Abnahme bestätigt.",
+        "Der Kommentar im Dateikopf von Routing.cs («Knicke unter 0.5° gelten als gerade») widerspricht dem Code: Es gilt WinkelToleranz = 1°."
+      ],
+      "grenzen": [
+        "Keine hydraulische Auslegung der Leitung; kein Abgleich der Leitung mit Kollisionen."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/Routing.cs (Routing.Planen, Routing.OhneGeradePunkte, Routing.Bogenwinkel)",
+        "src/Hlks.Kern/Leitungen/Anschlusslagen.cs (Anschlusslagen.AbstandMax, Anschlusslagen.WinkelMax)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "leitungen.gefaelle",
+      "titel": "Gefälle von Leitungen setzen und prüfen",
+      "gebiet": "Leitungen",
+      "zweck": "Legt beim Zeichnen das Gefälle von waagrechten Leitungen fest, ändert es nachträglich und prüft Schwerkraftleitungen gegen das Soll.",
+      "eingaben": [
+        "Gefälle in % (Eigenschaft gefaelle, in Fliessrichtung fallend)",
+        "z-Verlauf der Punkte der Leitung",
+        "Systemtyp mit fliessart schwerkraft (Katalog systemtypen.json)"
+      ],
+      "rechenweg": [
+        "1. Zeichnen: Waagrecht gezeichnete Stücke (|Δz| ≤ 1 mm) fallen in Fliessrichtung um Gefälle/100 · waagrechte Länge; senkrechte und schon geneigte Stücke behalten ihren Höhenunterschied. Gerechnet wird ab dem ersten Punkt, ist nur das Ende an einen Anschluss mit Lage gebunden, ab dem Ende.",
+        "2. Anschluss mit geneigter Achse: ist die Achse höchstens arctan(Gefälle/100) + 1° gegen die Waagrechte geneigt, gilt das Stück daran auch dann als waagrecht, wenn es höchstens so weit über bzw. unter dem Anschluss liegt, wie die Achse auf der waagrechten Länge steigt (+ 1 mm).",
+        "3. Nachträglich ändern (leitung_gefaelle): ab dem Fixpunkt werden flache Stücke (Neigung bis 15 %) neu geneigt, senkrechte und steile behalten ihren Höhenunterschied; erlaubt sind 0 bis 15 %. Ändert sich dabei die Höhe eines Endes, das an ein Element mit Lage angeschlossen ist, wird abgelehnt.",
+        "4. Prüfung P16 (nur Leitungen mit Serie in Schwerkraftsystemen): Gefälle je Stück g = −Δz / waagrechte Länge · 100. Fehlt eigenschaften.gefaelle, ist das eine Warnung. Steigt ein Stück in Fliessrichtung, ist das ein Fehler. Weicht g um mehr als 0.1 %-Punkte vom Soll ab, ist das ein Fehler.",
+        "5. Ausgenommen von P16 sind senkrechte Stücke (waagrechte Länge ≤ 1 mm) und Fallstrecken, die mindestens 45° fallen."
+      ],
+      "ergebnis": "Befund P16 (Prüfung), Höhen der Punkte der Leitung, Hinweis «Gefälle … % gesetzt», Eigenschaft gefaelle.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code. Die Zahlen sind Annahmen für Christians Prüfliste: Toleranz 0.1 %-Punkte (Prüfliste 6), Grenze «flach» 15 %, Fallstrecken ab 45° ausgenommen.",
+        "Altbestand ohne Serie (Befund P18) wird von P16 nicht geprüft."
+      ],
+      "grenzen": [
+        "Es gibt keinen Mindest- oder Höchstwert des Gefälles aus einer Norm (z. B. für Abwasser); geprüft wird nur gegen das eingegebene Soll.",
+        "Kein Füllungsnachweis und keine Dimensionierung."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/Routing.cs (Routing.MitGefaelle)",
+        "src/Hlks.Kern/Leitungen/GefaelleHoehe.cs (LeitungGefaelle.Neigen, Flach)",
+        "src/Hlks.Kern/Leitungen/Leitungspruefungen.cs (Leitungspruefungen.Gefaelle, GefaelleToleranz)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "leitungen.anschlusspruefung",
+      "titel": "Anschlüsse prüfen: Abstand, Richtung, Grösse und Knick",
+      "gebiet": "Leitungen",
+      "zweck": "Meldet verbundene Anschlüsse, die räumlich nicht zusammenpassen.",
+      "eingaben": [
+        "Verbundene Anschlüsse mit Lage, Richtung und Grösse"
+      ],
+      "rechenweg": [
+        "1. P13 (Warnung): Zwei verbundene Anschlüsse mit Lage liegen mehr als 1 mm auseinander oder zeigen nicht gegeneinander (Abweichung von gegenläufig über 1°).",
+        "2. P14 (Fehler): Verbundene Anschlüsse haben unterschiedliche Grösse (Reduktion fehlt).",
+        "3. P15 (Fehler): Zwei Leitungen direkt verbunden mit Knick über 1° (Bogen fehlt); Hinweis, wenn eine Polylinie einen Knick ab 1° hat; Warnung, wenn ein Bogenwinkel oder ein T-Stück-Abzweigwinkel nicht in der Liste der Serie liegt.",
+        "4. P30 (Fehler): Leitung einer Abwasser-Serie in einem Medium, zu dem kein Systemtyp mit fliessart schwerkraft gehört (Heizung, Kälte, Trinkwasser); ohne Medium nur Hinweis."
+      ],
+      "ergebnis": "Befunde P13, P14, P15 und P30 in der Prüfung mit Vorschlag.",
+      "quellen": [
+        "Abnahme Christian Steiner, 19.10.2026 (entwurf/modul-3.md): Verbinden verlangt Lage ≤ 1 mm und gegenläufige Richtung",
+        "Entscheid Christian 20.10.2026: «Prüfbefund, wenn jemand sie für Heizung, Kälte oder Trinkwasser verwendet» (P30)"
+      ],
+      "annahmen": [
+        "Ein Knick zwischen zwei direkt verbundenen Leitungen ist P15, nicht zusätzlich P13.",
+        "Der Winkel eines Bogens mit Familie kommt aus der Richtung seines Anschlusses b, ohne Familie aus der Eigenschaft winkel."
+      ],
+      "grenzen": [
+        "Rein geometrische Prüfung, keine hydraulische."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/Leitungspruefungen.cs (Leitungspruefungen)",
+        "src/Hlks.Kern/Leitungen/Anschlusslagen.cs (Anschlusslagen.AbstandMax, WinkelMax)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "leitungen.biegeradius",
+      "titel": "Biegeradius von Leitungen ab Rolle und Bögen in der Darstellung",
+      "gebiet": "Leitungen",
+      "zweck": "Rundet Knicke von Leitungen ohne Formteile (z. B. Fussbodenheizungsrohre ab Rolle) mit dem Biegeradius der Serie.",
+      "eingaben": [
+        "regeln.biegeradius der Serie in mm",
+        "Knicke im Linienzug der Leitung"
+      ],
+      "rechenweg": [
+        "1. Jeder Knick wird als Kreisbogen mit dem Biegeradius gezeichnet (höchstens 5° je Stück).",
+        "2. Passt der Bogen nicht zwischen die Nachbarpunkte, wird der Radius so weit verkleinert, dass er die halbe kürzere Strecke nicht überschreitet.",
+        "3. Beim IFC-Import: Ein Bogen aus dem IFC zwischen zwei Leitungen derselben Serie, die kein Bogen-Formteil hat und deren Winkel frei ist, geht in einer Leitung auf (Knick im Schnittpunkt der Achsen).",
+        "4. Bögen aus Familien ohne Radiusparameter: R = Schenkellänge / tan(Ablenkung / 2), damit der Bogen bis zum kürzeren Rohrende reicht (nur Darstellung); Geberit PE und Silent-db20 sind ausgenommen (Segmente bzw. Gehrung)."
+      ],
+      "ergebnis": "Darstellung der Leitungen im Grundriss, Schnitt und 3D; Abfrage leitungsserie (biegeradius je Grösse).",
+      "quellen": [
+        "Christian Steiner, 03.11.2026: «bei fbh rohren gibt es keine fittinge. diese rohre werden ab rolle verlegt. minimaler biegeradius 10cm»",
+        "Christian Steiner, 30.10.2026: «ausnahme geberit-pe dort sind es segmente»"
+      ],
+      "annahmen": [
+        "Die Formel R = Schenkellänge / tan(Ablenkung / 2) ist eine Annahme (Darstellung, kein Herstellerwert).",
+        "Der Biegeradius ist ein Wert der Familie bzw. des Herstellers, kein gerechneter Wert; ein Mindestbiegeradius wird nicht geprüft."
+      ],
+      "grenzen": [
+        "Reine Darstellung: Der Biegeradius beeinflusst weder Länge noch Mengen und wird nicht auf Einhaltung geprüft."
+      ],
+      "code": [
+        "src/Hlks.Kern/Grafik/HlksKoerper.cs (HlksKoerper.Gebogen)",
+        "src/Hlks.Kern/Familien/FamilienAuswertung.cs (BogenMitRadius)",
+        "src/Hlks.Kern/Import/IfcSerien.cs (Leitungen ab Rolle)"
+      ],
+      "abfrage": "leitungsserie"
+    },
+    {
+      "id": "leitungen.verlegung_einlage",
+      "titel": "Verlegung erkennen: Einlage im Beton, Erdreich oder frei",
+      "gebiet": "Leitungen",
+      "zweck": "Entscheidet je Leitung und Formteil, ob es im Beton eingelegt ist, im Erdreich unter der Bodenplatte liegt oder frei verlegt ist (Grundlage der Einlage- und Grundleitungspläne).",
+      "eingaben": [
+        "Achse der Leitung",
+        "Prüfkörper der Wände, Decken, Dächer (KICAD und IFC-Unterlagen) mit Material",
+        "Kote der Geschosse und Unterkante der Bodenplatten"
+      ],
+      "rechenweg": [
+        "1. Anteil im Beton = Länge der Achse in den geschlossenen Netzen der Beton-Bauteile ÷ Achslänge (mehrere Bauteile vereinigt, Überlappungen zählen einmal).",
+        "2. Durchgänge quer durch ein Bauteil (die Achse tritt ein und wieder aus, und ist steil zum Bauteil: Platte ab 45° gegen die Waagrechte, Wand mit Eintritt über eine Seitenfläche unter ≥ 45°) zählen nicht als Einlage.",
+        "3. Einlage, wenn der Anteil im Beton ≥ 80 % ist.",
+        "4. Erdreich, wenn nicht Einlage und mehr als 50 % der Achslänge in keinem Bauteil liegen und unter einer Bodenplatte (abgetastet in Stücken von höchstens 100 mm, gewichtet mit ihrer Länge).",
+        "5. Sonst frei. Ein von Hand gesetzter Wert (frei, einlage, erdreich) gilt und wird nie überschrieben.",
+        "6. Formteil: wie die angeschlossenen Leitungen, wenn alle übereinstimmen; sonst nach dem Einfügepunkt.",
+        "7. Plan: Decke und Dach = Geschoss unter der Decke (Unterkante − 1 mm im Höhenband [kote − 1, kote + hoehe)); Bodenplatte und Erdreich = ihr bzw. das unterste Geschoss."
+      ],
+      "ergebnis": "Eigenschaft verlegung (erkannt und wirksam), Einlageplan «Einlagen D.ü.<Geschoss>», «Einlagen Bodenplatte <Geschoss>», «Einlagen Wände <Geschoss>» und «Grundleitungen <Geschoss>».",
+      "quellen": [
+        "Entscheid Christian 19.10.2026 (entwurf/modul-3.md «Einlagen und Grundleitungen»): «Leitungen, die im Beton eingelegt sind, müssen auch im Schema so gezeigt werden. Zudem werden diese Leitungen nur im Einlageplan gezeigt.»",
+        "SIA 410/2 Ziff. 2.3 (Geschoss unter der Decke, wie die Deckenaussparung)"
+      ],
+      "annahmen": [
+        "ANNAHMEN (Prüfliste Christian): 80 % aus dem Auftrag B8c; «überwiegend» unter der Bodenplatte = mehr als 50 %; 45° als Grenze zwischen Durchgang und Einlage; Abtastschritt 100 mm. Keine Normwerte.",
+        "Unbekanntes Material zählt nicht als Beton; ein Hinweis nennt «möglicherweise Einlage», wenn zusammen mit Bauteilen unbekannten Materials mindestens 80 % erreicht würden."
+      ],
+      "grenzen": [
+        "Material des Bauteils kommt aus Typenliste, Materialzuordnung im IFC oder Typname; fehlt es, ist es unbekannt."
+      ],
+      "code": [
+        "src/Hlks.Kern/Leitungen/Verlegung.cs (Verlegung, Verlegung.AnteilEinlage, AnteilErdreich, Durchgangswinkel, Abtastschritt)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "leitungen.rohrbezeichnung",
+      "titel": "Rohrgrösse bezeichnen: Aussendurchmesser bei Abwasser, NW oder DN sonst",
+      "gebiet": "Leitungen",
+      "zweck": "Bestimmt, welche Zahl als Grösse eines Rohrs im Plan, in Listen und in Exporten steht.",
+      "eingaben": [
+        "Typ der Leitungsserie (Grössenschlüssel dn bzw. d), Eigenschaften da und dn der Leitung",
+        "Medium bzw. Systemtyp (Abwasser = Schmutz- und Regenwasser) und Serie mit leitung.einsatz abwasser",
+        "Einstellung rohrbezeichnung (NW oder DN) der Ansicht bzw. des Projekts"
+      ],
+      "rechenweg": [
+        "1. Abwasser: Beschriftung «{Kürzel} {da}» (z. B. «PE-S 110»), Grösse in Listen und Exporten «110» (Aussendurchmesser in mm).",
+        "2. Übrige (Wasser, Heizung, Kälte): «{Kürzel} {NW|DN} {dn}» (z. B. «CNS NW 20»); Vorgabe NW.",
+        "3. Die Zahl wird nie umgerechnet: da nie aus DN und DN nie aus da. Fehlt die Zahl, gibt es keine Grösse und einen Hinweis; es wird nie auf Ø ausgewichen.",
+        "4. Kanäle sind keine Rohre: «400×200» bzw. «Ø 250»."
+      ],
+      "ergebnis": "Beschriftung im Schema und Grundriss, Spalte Grösse in Mengen, Materialliste und Exporten.",
+      "quellen": [
+        "Entscheid Christian Steiner 19.10.2026: «Praxisorientiert werden Ablaufrohre immer mit dem Aussendurchmesser definiert. Diese müssten so beschrieben werden (PE-S 110, 90, …). Dies ist auch bei den Exporten so zu übernehmen. DA = 110 → 110.»",
+        "Entscheid Christian Steiner 19.10.2026: «Alle anderen Rohre können mit ihrer NW oder DN definiert werden.»",
+        "Entscheid Christian 20.10.2026: «Geberit PE ist immer Abwasser»"
+      ],
+      "annahmen": [],
+      "grenzen": [
+        "Es gibt keine Umrechnung zwischen DN und Aussendurchmesser."
+      ],
+      "code": [
+        "src/Hlks.Kern/Grafik/Rohrgroesse.cs (Rohrgroessen.Von, Rohrgroesse.Beschriftung)"
+      ],
+      "abfrage": "mengen"
+    },
+    {
+      "id": "leitungen.mengen",
+      "titel": "Leitungslängen, Mengen und Materialliste",
+      "gebiet": "Leitungen",
+      "zweck": "Zählt Leitungslängen je Serie und Grösse sowie Formteile und Bauteile als Stück.",
+      "eingaben": [
+        "Achsen der Leitungen (Polylinie: Summe der Teilstücke)",
+        "Serie, Grösse, Material, Winkel der Formteile",
+        "Filter System, Strang, Geschoss"
+      ],
+      "rechenweg": [
+        "1. Länge = Achslänge der Leitung in mm; je Serie und Grösse summiert und durch 1000 geteilt, auf 2 Stellen gerundet (kaufmännisch).",
+        "2. Formteile: Stück je Familie, Typ und Winkel (Bogenwinkel, bei T-Stücken der Abzweigwinkel).",
+        "3. Mengen: Leitungen gruppiert nach System, Klasse, Material, Grösse (Stückzahl und Länge); Bauteile (Geräte, Armaturen) als Stück je Klasse und Gewerk mit vorläufiger BKP-Zuordnung.",
+        "4. Eine Leitung mit System gehört genau zu diesem System (Bypass zählt nur einmal)."
+      ],
+      "ergebnis": "Abfragen mengen, materialliste, leitungslaengen und strangliste.",
+      "quellen": [],
+      "annahmen": [
+        "Quelle fehlt im Code. Gemessen wird die Achslänge ohne Zuschlag; die BKP-Zuordnung ist laut Code «vorläufig, zu prüfen»."
+      ],
+      "grenzen": [
+        "Keine Verschnitt-, Dämmungs- oder Befestigungsmengen; keine Preise."
+      ],
+      "code": [
+        "src/Hlks.Kern/Api/Ableitungen.cs (Ableitungen.Leitungslaengen, Materialliste, Mengen)"
+      ],
+      "abfrage": "mengen"
+    },
+    {
+      "id": "koordination.pruefkoerper",
+      "titel": "Prüfkörper der Elemente für die Kollisionsprüfung",
+      "gebiet": "Koordination",
+      "zweck": "Bildet für jedes Element den Körper, gegen den die Kollisions- und Aussparungsprüfung rechnet.",
+      "eingaben": [
+        "Leitungen: Achse, Aussendurchmesser bzw. Kanalmasse b × h, Dämmdicke",
+        "Bauteile und Geräte: Körper aus der Familie oder das exakte Netz aus der IFC-Netzdatei",
+        "Hintergrund-Produkte der IFC-Unterlagen"
+      ],
+      "rechenweg": [
+        "1. Rohr: Kapsel um die Achse mit Radius = Aussendurchmesser / 2 (Rundkanal d/2); Rechteckkanal: Quader b × h um die Achse. Dazu eine zweite Hülle mit Dämmung (daemmdicke).",
+        "2. An freien Enden ragt die Halbkugel um r über den Endpunkt hinaus; an Knicken schliessen die Halbkugeln; beim Rechteckkanal wird jeder Quader an inneren Knicken um max(b, h)/2 verlängert.",
+        "3. Zylinder und Kugeln als umschriebenes 24-Eck (Kugel 24 × 12 Streifen): das Netz enthält den wahren Körper, höchstens 0.86 % des Radius zu gross.",
+        "4. Übernommene IFC-Bauteile, die in KICAD unverändert sind, gelten mit dem exakten Netz aus der Netzdatei; alle übrigen mit ihrem Körper aus der Familie.",
+        "5. Ohne Abmessungen der Serie gilt DN-gerecht mit einem Mindestdurchmesser von 30 mm.",
+        "6. Geometrische Toleranz der Prüfungen 0.1 mm."
+      ],
+      "ergebnis": "Grundlage der Kollisionsliste und der Aussparungsvorschläge; keine eigene Ausgabe.",
+      "quellen": [
+        "Grundsatzentscheid 1 (entwurf/modul-3b.md)"
+      ],
+      "annahmen": [
+        "ANNAHMEN (Prüfliste): Kapsel mit Halbkugeln an den Enden; Quader-Verlängerung um max(b, h)/2; umschriebenes 24-Eck; Räume und Dämmung der Darstellung zählen nicht.",
+        "Mindestdurchmesser 30 mm: Quelle fehlt im Code (übernommen aus der 3D-Darstellung)."
+      ],
+      "grenzen": [
+        "Geprüft werden nur Bauteile und Netzelemente; Räume, Zonen, Aussparungen, Kollisionen und Unterlagen nicht."
+      ],
+      "code": [
+        "src/Hlks.Kern/Kollision/Pruefkoerper.cs (Pruefkoerperbau)",
+        "src/Hlks.Kern/Grafik/HlksKoerper.cs (HlksKoerper.MinDurchmesser)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "koordination.kollision",
+      "titel": "Kollisionsprüfung: hart, weich und Durchdringung",
+      "gebiet": "Koordination",
+      "zweck": "Findet Durchdringungen und Berührungen zwischen HLKS-Elementen und Architektur bzw. untereinander und führt sie als Kollisionen mit Status.",
+      "eingaben": [
+        "Prüfkörper (siehe koordination.pruefkoerper)",
+        "Projektvorgaben im Element Vorgaben (VG-1) mit Quelle: toleranz_hart, abstand_leitungen, abstand_weich",
+        "Gewählte Paare: hlks-architektur und hlks-hlks (Vorgabe); zuschaltbar hlks-bekleidung, hlks-vorwand, hlks-fremd"
+      ],
+      "rechenweg": [
+        "1. Keine Kollision: Teile desselben Elements; direkt verbundene Elemente (Rohr – Bogen – Rohr); Leitung ganz (mit Dämmung) in einer Architektenöffnung oder zugeordneten Aussparung (siehe koordination.oeffnungsdeckung).",
+        "2. Hart: Kontakt ohne Dämmung mit Eindringtiefe grösser als toleranz_hart. Fehlt toleranz_hart, zählt jede Durchdringung. Streifende Berührung (Tiefe 0 zwischen geschlossenen Netzen): Mass 0, mit toleranz_hart nicht gemeldet.",
+        "3. Typ «durchdringung»: eine Leitung quert Wand, Decke, Dach, Stütze, Träger u. a.; je nicht gedecktem Durchgang eine Kollision, Lage = Mitte des Durchgangs; sonst Typ «kontakt».",
+        "4. Weich (nur wenn abstand_leitungen bzw. abstand_weich gesetzt ist): Abstand mit Dämmungshülle kleiner als die Vorgabe; Mass = Vorgabe − Abstand; überschneiden sich die Hüllen, Mass = Vorgabe + Überschneidung.",
+        "5. Kennung = Beteiligte (sortiert) und Lage auf 100 mm gerundet; ein Befund mit denselben Beteiligten näher als 50 mm an der gespeicherten Lage ist dieselbe Kollision.",
+        "6. Status: neu gefunden = neu; wieder gefunden = Status bleibt; nicht mehr gefunden = behoben (akzeptiert bleibt). Bekleidungen (IfcCovering, Unterdecken, Bodenaufbau), Installationsvorwände und Luftschichten werden nach Regeln aus der Typenliste bzw. Wortliste aus den Paaren genommen."
+      ],
+      "ergebnis": "Kollisionsliste (kollisionen) mit Art, Typ, Paar, Lage, Mass, Material und rohbau; BCF-Export.",
+      "quellen": [
+        "Entscheid Christian 19.10.2026: «Bekleidungen nicht melden» (Nachtrag B3c)",
+        "Entscheid Christian 19.10.2026: keine Abstandsprüfung (abstand_weich und abstand_leitungen optional)",
+        "Entscheide Christian 19.10.2026 «Material» (B3d) und zu B3d, Fragefenster (B3e)",
+        "Grundsatzentscheid 5 (entwurf/modul-3b.md): Projektvorgaben nur mit Quelle"
+      ],
+      "annahmen": [
+        "Raster 100 mm und Fang 50 mm der Kennung sind technische Annahmen.",
+        "hlks-fremd: ANNAHME, ohne Produkte aus derselben IFC-Datei wie das HLKS-Element.",
+        "Keine eingebauten Werte für toleranz_hart oder Abstände: sie stehen nur als Projektvorgabe mit Quelle."
+      ],
+      "grenzen": [
+        "Standardmässig keine Abstandsprüfung; keine Prüfung von Bedienungs- und Wartungsräumen."
+      ],
+      "code": [
+        "src/Hlks.Kern/Kollision/Kollisionspruefung.cs (Kollisionssuche, KollisionPruefen, Kollisionskennung)",
+        "src/Hlks.Kern/Kollision/Vorgaben.cs (Projektvorgaben)"
+      ],
+      "abfrage": "kollisionen"
+    },
+    {
+      "id": "koordination.oeffnungsdeckung",
+      "titel": "Durchgang durch eine Öffnung oder Aussparung gedeckt?",
+      "gebiet": "Koordination",
+      "zweck": "Entscheidet, ob eine Leitung samt Dämmung ganz in einer Architektenöffnung oder zugeordneten Aussparung liegt; dann ist der Durchgang keine Kollision.",
+      "eingaben": [
+        "Querschnitt der Leitung mit Dämmung",
+        "Öffnungen der IFC-Netzdatei (IfcOpeningElement) mit Wirt, zugeordnete Aussparungen (nicht veraltet)"
+      ],
+      "rechenweg": [
+        "1. Der Querschnitt mit Dämmung wird entlang der Achse über den Durchgang abgetastet (bei schräger Querung um R · cot(Winkel) über Ein- und Austritt hinaus), Stationen alle 20 mm.",
+        "2. Je Station werden die Achse und der Rand geprüft (rund 24 Punkte, rechteckig 4 Ecken und je 3 Punkte je Seite), um 0.1 mm nach innen gerückt.",
+        "3. Jeder Punkt, der im Material des Bauteils liegt, muss in einer Öffnung oder Aussparung liegen. Dann ist der Durchgang gedeckt.",
+        "4. Ein Querschnitt, der genau so gross ist wie die Öffnung, gilt als gedeckt; ragt er um mehr als rund 0.5 mm (rund, 24 Punkte) hinaus, wird das erkannt."
+      ],
+      "ergebnis": "Wegfall der Kollision; Hinweis «Öffnung» bzw. «Aussparung» in der Prüfung; Befund P20 (fehlende Aussparung) nur für Durchgänge im Rohbau.",
+      "quellen": [
+        "Grundsatzentscheid 3 und Entscheid B1b (entwurf/modul-3b.md)"
+      ],
+      "annahmen": [
+        "Abtastung mit 20 mm Stationen ist eine Annahme (Prüfliste)."
+      ],
+      "grenzen": [
+        "Die Füllung einer Öffnung (z. B. ein Fenster) wird eigens gemeldet."
+      ],
+      "code": [
+        "src/Hlks.Kern/Kollision/Oeffnungsdeckung.cs (Oeffnungsdeckung, Oeffnungsdeckung.Stationsabstand)"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "koordination.aussparung_bedarf",
+      "titel": "Aussparungen vorschlagen: Grösse, Spiel, Aufrunden und Geschoss",
+      "gebiet": "Koordination",
+      "zweck": "Schlägt für jeden Durchgang einer Leitung durch ein Rohbau-Bauteil eine rechteckige Aussparung mit Mass, Tiefe und Geschoss vor.",
+      "eingaben": [
+        "Durchgänge der Leitungen durch Wand, Decke, Dach, Stütze, Träger (Prüfkörper)",
+        "Projektvorgabe spiel_aussparung (mm, mit Quelle)",
+        "Querschnitt der Leitung mit Dämmung"
+      ],
+      "rechenweg": [
+        "1. Grösse = Projektion des Querschnitts mit Dämmung über die ganze Tiefe in die Bauteilebene (umschliessendes Rechteck in den Ebenenachsen) + 2 × Spiel. Beispiel laut Code: Rohr senkrecht = (D + 2s) im Quadrat; schräg unter θ durch die Dicke t: D/cos θ + t · tan θ + 2s in Neigungsrichtung, quer D + 2s.",
+        "2. Die Masse b, h (und d) werden auf ganze cm aufgerundet, nie kleiner als gerechnet; die Tiefe (Bauteildicke) auf 0.1 mm aufgerundet.",
+        "3. Immer rechteckig (art aussparung), auch für runde Rohre; eine Kernbohrung entsteht nur von Hand (aussparung_form): rund, d = umschliessender Kreis + 2 × Spiel.",
+        "4. Durchgänge derselben Leitung durch Rohbau-Bauteile, die direkt hintereinander liegen (Normalen parallel bis 1°, Lücke höchstens 1 mm), werden eine Kette und eine durchgehende Aussparung.",
+        "5. Beginnt oder endet die Leitung im Bauteil oder quert sie flacher als 30° zur Bauteilfläche (längs), gibt es keinen Vorschlag (Hinweis). Liegt der Querschnitt mit Dämmung ganz in einer Öffnung der Netzdatei, gibt es keine Aussparung.",
+        "6. Geschoss: Bei Wänden, Stützen, Trägern das Geschoss des Bauteils (liegt die Mitte nicht im Höhenband, das Geschoss aus der Höhe); bei Decken und Dächern das Geschoss direkt unter der Decke (Höhenband [kote − 1, kote + hoehe) bei Unterkante der Decke − 1 mm).",
+        "7. Freigegebene Aussparungen (ab Status freigegeben) werden nie verändert; sie decken den Bedarf, solange der Querschnitt mit Dämmung ganz darin liegt, sonst werden sie «veraltet»."
+      ],
+      "ergebnis": "Aussparungselemente mit Mass, Tiefe, Geschoss, Bezügen und Status; Aussparungsliste (aussparungsliste); Befehl aussparungen_vorschlagen (Trockenlauf = Vorschau).",
+      "quellen": [
+        "Entscheid Christian 19.10.2026: «Rund (Kernbohrung) nur durch manuelle Auswahl» (Nachtrag B3b)",
+        "Entscheid Christian 19.10.2026 (Nachtrag B4e): Masse auf ganze cm aufgerundet, nie kleiner als gerechnet",
+        "SIA 400:2000 B.10.3 und SIA 410/2 Ziff. 2.3 (Hauptlauf 19.10.2026; Christian: «Darstellung nicht nach SIA»): Deckenaussparungen im Grundriss des Geschosses direkt unter der Decke"
+      ],
+      "annahmen": [
+        "ANNAHME (Prüfliste): Das Spiel wird zur Projektion addiert, nicht vor der Projektion zum Querschnitt (bei senkrechter Querung gleich).",
+        "Kettenlücke 1 mm: technische Toleranz, keine Projektvorgabe (Revit führt Wandschichten als eigene, aneinander gezeichnete Wände; im float32-Netz bleiben Spalte im Zehntelmillimeter-Bereich).",
+        "Längs-Grenze 30° ist eine Annahme im Code; Quelle fehlt im Code."
+      ],
+      "grenzen": [
+        "Ohne spiel_aussparung (Projektvorgabe) wird abgelehnt; es gibt keinen eingebauten Wert.",
+        "Keine Aussparungen in Dämmung, Leichtbau, Holz, Stahl, Unterdecken, Bodenaufbau und Luftschichten (siehe koordination.aussparung_material)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Aussparungen/AussparungVorschlag.cs (AussparungenVorschlagen, Aussparungsplanung, AufCm, Kettenluecke)",
+        "src/Hlks.Kern/Kollision/Durchgaenge.cs (Durchgaenge.Projektion)",
+        "src/Hlks.Kern/Aussparungen/AussparungDaten.cs (Aussparungsgeometrie.EbenenWinkel)"
+      ],
+      "abfrage": "aussparungsliste"
+    },
+    {
+      "id": "koordination.aussparung_zusammenfassen",
+      "titel": "Benachbarte Aussparungen zu einer Sammelaussparung zusammenfassen",
+      "gebiet": "Koordination",
+      "zweck": "Fasst Aussparungen, die zu nahe beieinander liegen, zu einer gemeinsamen Aussparung zusammen.",
+      "eingaben": [
+        "Aussparungsbedarf je Bauteil und Ebene",
+        "Projektvorgabe abstand_zusammenfassen (mm, mit Quelle)"
+      ],
+      "rechenweg": [
+        "1. Je Bauteil und Ebene wird der lichte Abstand der Rechtecke in der Bauteilebene geprüft.",
+        "2. Ist er kleiner als abstand_zusammenfassen oder überschneiden sich die Rechtecke, entsteht eine rechteckige Sammelaussparung = umschliessendes Rechteck, Leitungen vereinigt, Tiefe = grösste Tiefe.",
+        "3. Das wird wiederholt, bis nichts mehr zusammenkommt.",
+        "4. Von Hand gewählte Kernbohrungen werden nicht zusammengefasst (bei zu geringem Abstand ein Hinweis)."
+      ],
+      "ergebnis": "Sammelaussparungen in der Aussparungsliste, Hinweise im Befehl aussparungen_vorschlagen.",
+      "quellen": [
+        "Projektvorgabe abstand_zusammenfassen mit Quelle im Element Vorgaben (Grundsatzentscheid 5, entwurf/modul-3b.md)"
+      ],
+      "annahmen": [
+        "Es gibt keinen eingebauten Wert; ein Vorschlag wird ohne diese Vorgabe abgelehnt."
+      ],
+      "grenzen": [
+        "Keine Prüfung der Tragfähigkeit zwischen den Aussparungen."
+      ],
+      "code": [
+        "src/Hlks.Kern/Aussparungen/AussparungVorschlag.cs (Aussparungsplanung.Zusammenfassen)"
+      ],
+      "abfrage": "aussparungsliste"
+    },
+    {
+      "id": "koordination.aussparung_material",
+      "titel": "Material des gequerten Bauteils: wo eine Aussparung nötig ist",
+      "gebiet": "Koordination",
+      "zweck": "Teilt das Material eines gequerten Bauteils ein und entscheidet, ob es eine Aussparung bekommt (Beton, Mauerwerk, unbekannt) oder nicht.",
+      "eingaben": [
+        "Typenliste des Projekts (Typname → Material, mit Quelle)",
+        "Materialzuordnung im IFC bzw. am KICAD-Bauteil (Aufbau, Material)",
+        "Typname des Bauteils"
+      ],
+      "rechenweg": [
+        "1. Vorrang der Quellen: Typenliste > Materialzuordnung im IFC > Typname-Wortliste > unbekannt.",
+        "2. Der Typname wird nur gelesen, wenn die Materialzuordnung keine Bauart nennt (Beton, Mauerwerk, Dämmung, Leichtbau, Holz, Stahl/Metall, Installationsvorwand); Putz, Farbe oder Belag allein sind nicht aussagekräftig.",
+        "3. Rohbau (Aussparung), wenn mindestens eine Angabe Beton oder Mauerwerk ist, auch neben Dämmung oder Putz. Unbekannt (Aussparung mit Hinweis), wenn ein Materialname nicht erkannt wird oder nichts erkennbar ist.",
+        "4. Keine Aussparung: Installationsvorwand, Unterdecke, Bodenaufbau, Dämmung, Leichtbau, Holz, Stahl/Metall, Ausbau (Bekleidung, Belag, Putz, Abdichtung, Glas, Kunststoff), Luftschicht."
+      ],
+      "ergebnis": "Material mit Herkunft (typenliste, ifc, typname) und rohbau (ja, nein, unbekannt) in Kollisionsliste und Aussparungsliste; Befund P20.",
+      "quellen": [
+        "Entscheid Christian 19.10.2026: «Aussparungen nur in Beton und Mauerwerk»",
+        "Entscheide Christian 19.10.2026 «Material» (B3d), bestätigt im Fragefenster zu B3d (Wörter «GIS», «Vorwand», «Installationswand»), und B3e"
+      ],
+      "annahmen": [
+        "ANNAHME Prüfliste: lieber ein Vorschlag zu viel als ein fehlender Durchbruch im Beton (unbekannt = Aussparung); Reihenfolge der Gruppen der Wortliste (Mauerwerk vor Beton, Installationsvorwand zuerst)."
+      ],
+      "grenzen": [
+        "Die Wortliste ist begrenzt; projektbezogene Typen gehören in die Typenliste des Projekts."
+      ],
+      "code": [
+        "src/Hlks.Kern/Aussparungen/AussparungMaterial.cs (Bauteilmaterial)",
+        "src/Hlks.Kern/Kollision/Typenliste.cs"
+      ],
+      "abfrage": "aussparungsliste"
+    },
+    {
+      "id": "koordination.aussparung_darstellung",
+      "titel": "Aussparungen darstellen: Kurzzeichen, Koten, Masse und Massketten nach SIA 400",
+      "gebiet": "Koordination",
+      "zweck": "Bestimmt Kurzzeichen, Farbe, Koten und Massketten der Aussparungen im Aussparungsplan und in der IFC-Ausgabe.",
+      "eingaben": [
+        "Art und Bauteile der Aussparung",
+        "Gewerk der Leitungen (Systemtyp)",
+        "Fertigkote (Geschoss.kote = OK fertig Boden), Schnitthöhe des Grundrisses, Rohbau-Wände und Stützen als Fixpunkte"
+      ],
+      "rechenweg": [
+        "1. Art: vertikales Bauteil (Wand, Stütze, Träger) = WD; horizontales Bauteil (Decke, Dach) = DD; horizontal ohne Geschoss darunter (Bodenplatte, Fundament) = FD.",
+        "2. Gewerk-Kurzzeichen davor, wenn alle Leitungen dasselbe Gewerk haben: E Elektro, H Heizung (Kälte gehört zur Heizung), L Lüftung, S Sanitär; sonst keines («DD»). Beispiele: «S DD», «H WD».",
+        "3. Kennfarbe: gelb bei horizontalem, braun bei vertikalem Bauteil, geteilt bei beidem.",
+        "4. Beschriftung (SIA-Plan): Kurzzeichen und Masse in einer Kopfzeile, horizontal Breite/Länge, vertikal Breite/Höhe, rund «Ø d»; darunter die Nummer.",
+        "5. Lage: Kote OK Durchbruch ab Fertigkote des Geschosses, in m (rund: Achse); Koten immer in m, Masse in cm (Einheit der Ansicht bzw. des Gewerks, sonst cm).",
+        "6. Massketten: horizontal ab Fixpunkten (Rohbau-Wände mit Beton oder Mauerwerk bzw. tragend, Stützen) bis zur nächstliegenden Seitenkante der Aussparung; je Deckenaussparung eine waagrechte und eine senkrechte Kette, die nähere Seite gilt."
+      ],
+      "ergebnis": "Aussparungsplan je Geschoss (Darstellung «aussparungen»), Aussparungsliste (kurzzeichen, Koten), Property Set KICAD_Aussparung im IFC.",
+      "quellen": [
+        "SIA 400:2000 Ziff. B.10 «Darstellung von Aussparungen» (S. 41–42), Tabelle 5 und 6, Figuren 48 und 49 (Quelle dort: Empfehlung SIA 410/2)",
+        "SIA 410/2 Ziff. 2 1 «Bezeichnungen, Kurzzeichen, Sinnbilder» (S. 12) und 3 1 bis 3 5 (S. 15); SIA 400:2000 Ziff. B.5.3 (Masslinien) und B.5.4 (Koten)",
+        "Befund Christian 19.10.2026: «Bei der Darstellung der Aussparungen wurde nicht der SIA-Standard verwendet»; H+K-Bürostandard nach Vorlage Aussparungsplan Bernstrasse 1.UG (24.09.2024)",
+        "Entscheid Christian 20.10.2026: Kälte gehört zur Heizung (Kurzzeichen H)"
+      ],
+      "annahmen": [
+        "ANNAHMEN (Prüfliste): Träger zählt als vertikal; MSRL-Leitungen zählen als Elektro (E); jede Stütze ist ein tragender Pfeiler; Material «unbekannt» ist kein sicherer Fixpunkt; Masseinheit cm wie SIA 400 Figur 49; Kernbohrung = runder Durchbruch (SIA regelt sie nicht eigens).",
+        "Futterrohre, Schlitze und Bodendurchbruch (BD) erzeugt KICAD nicht."
+      ],
+      "grenzen": [
+        "Lift- und Treppenhauswände erkennt der Kern nicht eigens; sie zählen über ihr Material."
+      ],
+      "code": [
+        "src/Hlks.Kern/Aussparungen/AussparungKennzeichnung.cs (AussparungKennzeichnung)",
+        "src/Hlks.Kern/Grafik/AussparungGrafik.cs (AussparungGrafik)",
+        "src/Hlks.Kern/Grafik/AussparungMassketten.cs (AussparungMassketten)"
+      ],
+      "abfrage": "aussparungsliste"
+    },
+    {
+      "id": "ifc.deckung",
+      "titel": "Deckung Nachbau und IFC prüfen (±5 mm)",
+      "gebiet": "IFC",
+      "zweck": "Prüft nach dem IFC-Import, ob der Nachbau jedes Elements mit dem Netz der IFC-Datei deckungsgleich ist.",
+      "eingaben": [
+        "Aus einer IFC-Unterlage übernommene Elemente",
+        "Netzdatei der Unterlage (Produkt und seine Teile)",
+        "Toleranz in mm (Vorgabe 5)"
+      ],
+      "rechenweg": [
+        "1. Je Element wird der umschliessende Quader des Nachbaus (Körper des Kerns) mit dem des IFC-Netzes verglichen (verteilte Produkte «GlobalId:2» gemeinsam).",
+        "2. Gemessen wird im System des Bauteils (Drehung um z wie sein Nachbau-Quader bzw. seine Wand).",
+        "3. Abweichung = grösste Differenz einer der sechs Seiten in mm; deckungsgleich, wenn sie höchstens die Toleranz beträgt (Vorgabe 5 mm).",
+        "4. Je Klasse: Anzahl, deckungsgleich, grösste und mittlere Abweichung; die abweichenden Elemente (grösste zuerst).",
+        "5. Nicht gemessen und eigens gezählt: Formteile mit dem Formteil unserer Serie (Standard nachgezeichnet), Leitungen ab Rolle, aufgerundete Leitungen, HLKS-Bauteile mit dem Körper aus dem IFC. Produkte der Bauteilarten, die gar nicht nachgebaut wurden, stehen als «nicht nachgebaut» je Entität."
+      ],
+      "ergebnis": "Abfrage ifc_deckung und Hinweise «Prüfung Nachbau ↔ IFC …» nach jedem ifc_uebernehmen. Bernstrasse 42 (Archicad, IFC2X3), 03.11.2026: 598 von 598 deckungsgleich (±5 mm).",
+      "quellen": [
+        "Christian Steiner, 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein», «jeder nachbau muss jeweils mit der ifc darstellung verifiziert und korrigiert werden», «der ifc import ist die basis für alles folgende, dieser muss immer 100% passen»"
+      ],
+      "annahmen": [
+        "Quelle fehlt im Code für die Zahl 5 mm; sie ist eine Vorgabe des Kerns (Parameter toleranz).",
+        "Gleiche Hülle heisst nicht gleiche Form (eine L-Wand und ihr Rechteck haben denselben Quader); die Form zeigt der Vergleich im 3D (ifcDarstellung «beide»)."
+      ],
+      "grenzen": [
+        "Verglichen werden nur umschliessende Quader, nicht die Form."
+      ],
+      "code": [
+        "src/Hlks.Kern/Import/IfcDeckung.cs (IfcDeckung.Pruefen, IfcDeckung.EineUnterlage, IfcDeckung.NachUebernahme)"
+      ],
+      "abfrage": "ifc_deckung"
+    },
+    {
+      "id": "ifc.serienzuordnung",
+      "titel": "Leitungen aus dem IFC den Serien der Bürobibliothek zuordnen und aufrunden",
+      "gebiet": "IFC",
+      "zweck": "Zeichnet Standardkomponenten aus dem IFC mit den Leitungsserien von KICAD nach: Serie nach Typname, Grösse nach Durchmesser, bei fehlender Grösse die nächstgrössere.",
+      "eingaben": [
+        "Typname bzw. ObjectType der IFC-Leitung und Medium",
+        "Regeln: Projektinformation.ifcSerien (zuerst), dann die Vorgabe des Kerns",
+        "Aussendurchmesser (Rohr) bzw. Durchmesser oder Breite × Höhe (Kanal)"
+      ],
+      "rechenweg": [
+        "1. Regeln der Reihe nach (regulärer Ausdruck auf den Typnamen, wahlweise nur für bestimmte Medien); die erste Regel, deren Serie die Grösse hat, gilt. Beispiele der Vorgabe: Silent-db20 = Geberit Silent-db20; Geberit PE = Geberit PE; Mapress mit «Edelstahl» oder in KW, WW, ZIR = Geberit Mapress Edelstahl, sonst C-Stahl; SaniPex = JRG Sanipex MT; Flexkanal = Depping Aludec 112, sonst Schmidlin KSR; Uponor = Uponor Uni Pipe PLUS FBH; Stahl = Stahlrohr geschweisst; Rechteck… = Rechteckkanal; Rund… = Wickelfalzrohr rund.",
+        "2. Hat keine Regel die Grösse, rundet die erste Regel mit «aufrunden» auf die nächstgrössere Grösse der Serie auf (echt grösser als das IFC-Mass); das IFC-Mass bleibt als Kennung ifcGroesse.",
+        "3. Die Leitung bekommt Serie und Typ; die Serie samt Formteil-Familien wird ins Projekt geladen. Eine Regel ohne Serie beendet die Suche (keine Serie)."
+      ],
+      "ergebnis": "Hinweise des Imports (zugeordnet, ohne Regel, Grösse nicht in der Serie, aufgerundet), Eigenschaften familientyp und ifcGroesse, Prüfung ifc_deckung (Zählung «Leitung aufgerundet»).",
+      "quellen": [
+        "Christian Steiner, 03.11.2026: «ist ein ablaufrohr gezeichnet, so wird dies beim import mit unserer silent familie nachgezeichnet»",
+        "Entscheide Christian 03.11.2026: Flexkanäle = Depping Aludec 112 («flexkanäle von depping ag»), Uponor-Metallverbundrohr = Uponor Uni Pipe PLUS FBH («uponor FBH Rohre in Standard»), «nehme auch noch den 90er kunststoffschlauch von schmidlin»; Aufrunden «Auf Ø 100» (vorher)"
+      ],
+      "annahmen": [
+        "ANNAHMEN (Vorgabe-Regeln, an Bernstrasse 42 H+K-Revit-Typen geprüft; wählbar): Mapress ohne «Edelstahl» im Namen: Trinkwasser (KW, WW, ZIR) Edelstahl, sonst C-Stahl; «Stahl» = Stahlrohr geschweisst; Rund-Kanäle = Wickelfalzrohr rund."
+      ],
+      "grenzen": [
+        "Ohne passende Regel oder Serie bleibt die Leitung ohne Serie (Hinweis); IFC-Formteile ausser Bogen, T-Stück und Reduktion werden nicht ersetzt."
+      ],
+      "code": [
+        "src/Hlks.Kern/Import/IfcSerien.cs (IfcSerien.Vorgabe, IfcSerien.Regeln, IfcSerien.Zuordnen, Naechstgroesser)"
+      ],
+      "abfrage": "ifc_deckung"
+    },
+    {
+      "id": "ifc.formteil_spielraum",
+      "titel": "IFC-Formteile mit Spielraum auf den nächsten Winkel der Serie setzen",
+      "gebiet": "IFC",
+      "zweck": "Setzt beim Import ein Formteil der Serie an einen Knick der IFC-Leitungen, auch wenn der Winkel nicht genau einem Winkel der Serie entspricht.",
+      "eingaben": [
+        "Knickwinkel aus den Richtungen der IFC-Leitungen",
+        "Erlaubte Winkel der Serie (regeln.winkel bzw. regeln.abzweigwinkel, fehlt = [90])",
+        "Abwasser-Serie ja oder nein"
+      ],
+      "rechenweg": [
+        "1. Zuerst wird der tatsächliche Winkel versucht.",
+        "2. Dann die erlaubten Winkel der Serie, die höchstens um den Spielraum vom tatsächlichen Winkel abweichen, nach Abstand geordnet; der Spielraum ist 5° bei Abwasser-Serien (PE, Silent), sonst 2°.",
+        "3. Gilt ein angepasster Winkel (z. B. 90° im IFC → 88.5° im Formteil für das Gefälle), nennt der Import das mit Hinweis.",
+        "4. Reduktion: Die Reduktion der Serie geht von gross (a) nach klein (b); liegt im IFC das kleine Ende an a, sitzt sie am anderen Ende."
+      ],
+      "ergebnis": "Hinweis «n Bögen auf den nächsten Winkel der Serie (Spielraum Abwasser 5°, sonst 2°; z. B. 90° → 88.5° für das Gefälle)».",
+      "quellen": [
+        "Christian Steiner, 03.11.2026: «dies ist nicht exakt, und kann nachgearbeitet werden. es braucht also einen gewissen spielraum bei PE und Silent»",
+        "Christian Steiner, 03.11.2026: «die bogen sind 88.5° zum kompensieren des gefälles von der vertikalen in die Horizontale» (Geberit Silent)"
+      ],
+      "annahmen": [
+        "Die Zahlen 5° (Abwasser) und 2° (übrige) sind Wahl des Kerns; Christian nannte nur den Spielraum, nicht die Zahl. Quelle der Zahlen fehlt im Code."
+      ],
+      "grenzen": [
+        "Findet sich kein Winkel im Spielraum, entsteht kein Formteil (Hinweis mit Grösse und Winkel)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Import/IfcSerien.cs (IfcSerien, Spielraum 5° bzw. 2°)"
+      ],
+      "abfrage": "ifc_deckung"
+    },
+    {
+      "id": "ifc.treppenerkennung",
+      "titel": "Treppe aus einem Dreiecksnetz erkennen: Steigung, Stufenzahl, Podeste",
+      "gebiet": "IFC",
+      "zweck": "Leitet aus dem Körper einer Treppe Stufenzahl, Steigung, Stufenkanten und Lauflinie ab, wenn die IFC-Datei sie nicht nennt.",
+      "eingaben": [
+        "Dreiecksnetz der Treppe",
+        "Geschosskoten und Stufenzahl aus der Datei (falls vorhanden)"
+      ],
+      "rechenweg": [
+        "1. Trittflächen = waagrechte, nach oben zeigende Dreiecke (Neigung unter 3.6°), nach Höhe gruppiert (Toleranz 3 mm) und im Grundriss vereinigt.",
+        "2. Rauschen fällt weg: Regionen unter 0.02 m², unter 15 % der mittleren Fläche und kleine Regionen (unter 70 %), die nicht auf dem Raster der Steigung liegen.",
+        "3. Steigung = Median der Höhenunterschiede aufeinanderfolgender Regionen (über 20 mm).",
+        "4. Podest = Region mit mehr als der 2.2fachen mittleren Fläche.",
+        "5. Stufenzahl (Steigungen) = (Oberkante − Unterkante) / Steigung; Böden sind die Geschosskoten und die halben Geschosshöhen; nennt die Datei die Stufenzahl, entscheidet sie.",
+        "6. Gehrichtung, Stufenkanten und Lauflinie aus den Regionen (Punkte unter 15 mm Abstand auf einer Geraden entfallen)."
+      ],
+      "ergebnis": "Treppenelement mit Stufenzahl, Steigung, Auftritt und Lauflinie im Grundriss.",
+      "quellen": [
+        "Christian Steiner, 21.10.2026 (Nachbearbeitung N17): «auch treppen sind im Grundriss noch nicht korrekt angezeigt»"
+      ],
+      "annahmen": [
+        "Quelle fehlt im Code für die Schwellen (3.6°, 3 mm, 0.02 m², 15 %, 70 %, 2.2fach, 20 mm, 15 mm); sie sind Annahmen des Hauptlaufs.",
+        "Mündet ein Lauf in ein Podest oder einen Boden, den der Körper nicht enthält und der auf keiner Geschosskote und keiner halben Geschosshöhe liegt, zählt die Geometrie ohne Stufenzahl eine Steigung zu viel (Bernstrasse: 2 von 10); die Attribute der Datei gehen deshalb vor."
+      ],
+      "grenzen": [
+        "Keine Prüfung von Steigungsverhältnis, Laufbreite oder Fluchtweg nach Norm."
+      ],
+      "code": [
+        "src/Hlks.Kern/Architektur/Treppenanalyse.cs (Treppenanalyse)",
+        "src/Hlks.Kern/Import/IfcTreppe.cs"
+      ],
+      "abfrage": null
+    },
+    {
+      "id": "darstellung.schnitthoehe",
+      "titel": "Schnitthöhe des Grundrisses nach SIA 400",
+      "gebiet": "Darstellung",
+      "zweck": "Wählt die Höhe, in der der Grundriss eines Geschosses geschnitten wird, so, dass möglichst durch alle Türen und Fenster geschnitten wird.",
+      "eingaben": [
+        "Türen und Fenster der Wände des Geschosses mit Unterkante und Höhe (Tür ab OK Boden, Fenster ab Brüstung)",
+        "Ansichtseigenschaft schnitthoeheNachSia (Vorgabe ja) und Handwert schnitthoehe"
+      ],
+      "rechenweg": [
+        "1. Jede Öffnung hat einen Höhenbereich [von, bis) in mm über OK Boden des Geschosses (Tür: UK bis UK + Höhe, Fenster: Brüstung bis Brüstung + Höhe; ohne Höhe nach oben offen). Wände ohne Dicke zählen nicht.",
+        "2. Gemeinsamer Bereich aller Öffnungen nicht leer: der Wert darin, der am nächsten bei 1000 mm liegt.",
+        "3. Sonst die Höhe, die die meisten Öffnungen schneidet; bei Gleichstand die nächste bei 1000 mm; ein Hinweis nennt die nicht geschnittenen Öffnungen.",
+        "4. Ohne Türen und Fenster: 1000 mm mit Hinweis.",
+        "5. Auf 10 mm gerundet, so dass der gerundete Wert im Bereich bleibt (ist der Bereich enger als 10 mm, gilt seine Untergrenze unverändert).",
+        "6. Schnitthöhe absolut = Geschosskote + Schnitthöhe; bei schnitthoeheNachSia = nein gilt der Handwert (Vorgabe 1000 mm)."
+      ],
+      "ergebnis": "Abfrage schnitthoehe_sia (Wert mit Herkunft, massgebende Öffnungen, Hinweise); Schnitthöhe im Grundriss.",
+      "quellen": [
+        "SIA 400:2000 Ziff. C.3.1.1: Die Höhenlage des Schnittes «ist nicht genau fixiert … Sie ist in der Regel so zu wählen, dass durch alle Tür- und Fensteröffnungen geschnitten wird». Einen festen Wert nennt die Norm nicht.",
+        "Christian Steiner, 21.10.2026 (Nachbearbeitung N21): «schnitthöhe plan gem. sia»"
+      ],
+      "annahmen": [
+        "Entscheid des Hauptlaufs (nachbearbeitung.md N21): Türen haben keine Schwelle (UK = OK Boden); Zielwert 1000 mm als bisherige Vorgabe («Annahme, am Freitag bestätigen»); Rundung auf 10 mm."
+      ],
+      "grenzen": [
+        "Die Norm nennt keinen festen Wert; ist ein gemeinsamer Bereich nicht erfüllbar, wird die Norm-Anforderung nur teilweise erfüllt (Hinweis)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Grafik/SchnitthoeheSia.cs (SchnitthoeheSia.SchnitthoeheNachSia, Rechnen, Waehle)"
+      ],
+      "abfrage": "schnitthoehe_sia"
+    },
+    {
+      "id": "darstellung.linienstaerken",
+      "titel": "Linienstärken und Schraffuren nach SIA 400",
+      "gebiet": "Darstellung",
+      "zweck": "Legt fest, mit welchen Stiften (Strichstärken) und Schraffuren Schnitt- und Sichtkanten auf dem Plan gezeichnet werden.",
+      "eingaben": [
+        "Art der Linie (Schnittkante, Sichtkante, Mass- und Hilfslinie)",
+        "Material des geschnittenen Bauteils"
+      ],
+      "rechenweg": [
+        "1. Es gibt höchstens drei Stifte: dünn 0.18 mm (Mass- und Hilfslinien, Schraffuren, Sichtkanten), mittel 0.35 mm, dick 0.70 mm (Schnittkanten der Hauptbauteile).",
+        "2. Eine gewünschte Strichstärke in Papier-mm wird auf den nächsten der drei Stifte gelegt.",
+        "3. Schraffuren nach SIA 400:2000 Fig. 34 für beton, backstein, kalksandstein, porenbeton, daemmung, holz, glas, putz, erdreich, kies; Winkel und Abstand je Muster.",
+        "4. Strichmuster der Linienarten (Strich, Lücke) sind Gestaltungswerte, keine Normwerte."
+      ],
+      "ergebnis": "Grundriss, Schnitt und Ansicht im Bildschirm und im PDF.",
+      "quellen": [
+        "SIA 400:2000 Ziff. B.3.1 (drei Stifte) und B.3.3 Tab. 4 (dick = Schnittkanten der Hauptbauteile, dünn = Sichtkanten)",
+        "SIA 400:2000 Ziff. B.8.3.1, Fig. 34 (S. 26); Muster aus KI-Planungsbüro Bauteile.Schraffuren() vom 16.10.2026"
+      ],
+      "annahmen": [
+        "Gestaltungswerte, die nicht aus SIA 400 stammen (z. B. Strichmuster der Linienarten in Papier-mm), sind als Annahme gekennzeichnet; Quelle fehlt im Code."
+      ],
+      "grenzen": [
+        "Nur die genannten Teile von SIA 400 sind umgesetzt; es gibt keine Prüfung des ganzen Plans auf SIA-Konformität."
+      ],
+      "code": [
+        "src/Hlks.Kern/Grafik/Grafiktypen.cs (Stifte)",
+        "src/Hlks.Kern/Grafik/Schraffuren.cs (Schraffuren)",
+        "src/Hlks.Kern/Grafik/HlksEinordnung.cs (Stift für Strichstärke)",
+        "src/Hlks.Kern/Plan/PdfZeichner.cs"
+      ],
+      "abfrage": null
+    }
+  ]
+}

@@ -92,6 +92,18 @@ public sealed class AnleitungUmgebungSammlung;
 public class AnleitungApiTests
 {
     [Fact]
+    public async Task Rechenweg_Seite_zeigt_das_Register_aus_dem_Katalog()
+    {
+        // Register «Wie wird gerechnet» (Christian 03.11.2026): /rechenweg/ frisch aus kataloge/rechenregister.json
+        using var u = new AnleitungUmgebung().Starten();
+        var r = await u.Http.GetAsync("/rechenweg/");
+        Assert.Equal(System.Net.HttpStatusCode.OK, r.StatusCode);
+        var html = await r.Content.ReadAsStringAsync();
+        Assert.Contains("<h1>Wie wird gerechnet</h1>", html);
+        Assert.Contains("id=\"sanitaer.spitzendurchfluss\"", html);
+    }
+
+    [Fact]
     public async Task Info_MitGebauterSeite_MeldetUrlUndVorhanden()
     {
         using var u = new AnleitungUmgebung().Seite().Starten();
