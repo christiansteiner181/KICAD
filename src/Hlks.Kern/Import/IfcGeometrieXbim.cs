@@ -18,7 +18,9 @@ namespace Hlks.Kern;
 
 public static class IfcGeometrieXbim
 {
-    static int dienste;   // 0 = noch nicht, 1 = eingerichtet, -1 = nicht verfügbar
+    static int dienste;
+    /// <summary>Ein Modell zugleich: die native Engine (OpenCascade) stürzte ab, wenn mehrere Läufe parallel rechneten (Tests, 03.11.2026).</summary>
+    static readonly object sperre = new();   // 0 = noch nicht, 1 = eingerichtet, -1 = nicht verfügbar
 
     /// <summary>Teilkörper, die xBIM mit ungültigen Koordinaten lieferte und die verworfen wurden (seit Programmstart).</summary>
     public static int Verworfen { get; private set; }
@@ -47,6 +49,7 @@ public static class IfcGeometrieXbim
     {
         DiensteEinrichten();
         if (!Ein) return null;
+        lock (sperre)
         try
         {
             var ctx = new Xbim3DModelContext(d.Modell, NullLoggerFactory.Instance, Xbim.Geometry.Abstractions.XGeometryEngineVersion.V6, "model", null);

@@ -43,6 +43,9 @@ public class IfcDeckungEchtTests
         Assert.True(kanal["anzahl"]!.GetValue<int>() == kanal["deckungsgleich"]!.GetValue<int>(), u["abweichend"]!.ToJsonString());
         Assert.Equal(0, u["ohneNachbauKoerper"]!.GetValue<int>());
         Assert.True(u["jeKlasse"]!["Rohr"]!["anzahl"]!.GetValue<int>() >= 1634);
+        // Formteile sind Standardkomponenten (unsere Familien zeichnen sie nach); alles andere ist eine Familie aus dem IFC und deckt sich
         Assert.True(u["ausIfcKoerper"]!["Bogen"]!.GetValue<int>() >= 1375);
+        AlleDeckungsgleich(u);
+        Assert.True(u["jeKlasse"]!["WC"]!["anzahl"]!.GetValue<int>() == 10);
     }
 }

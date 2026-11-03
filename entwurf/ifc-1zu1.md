@@ -95,3 +95,22 @@ verifiziert und korrigiert werden», «der ifc import ist die basis für alles f
   `ifc_deckung` zählt sie eigens («Körper aus dem IFC»). **Offen:** Familie aus dem IFC-Typ (Teilnetze, Lage aus den Ports), damit auch
   verschobene oder neu gesetzte Bauteile wie im Datenblatt aussehen.
 - **Regressionsprüfung:** `IfcDeckungEchtTests` (beide Dateien, nur lokal).
+
+## Stand 03.11.2026 – Familie aus dem IFC, unser Standard wählbar
+
+Christian 03.11.2026: «werden die importierten objekte als familie erstellt?» – «Ja, bauen»; «standard komponenten wie rohre, kanäle usw.
+werden mit unseren standard familien nachgezeichnet. alles andere wird übernommen»; «es soll wählbar sein welche bauteile mit unserem
+standart erstellt werden. bsp. FBH verteiler und standard armaturen»; «es soll möglich sein, zu wählen, welche importierten bauteile dauerhaft
+in den standard aufgenommen werden sollen»; «auch bei der Architektur sollte das so sein».
+
+- **Gebaut (`Import/IfcFamilien.cs`):** beim HLKS-Import bekommt jedes Bauteil mit eigener Form, das nicht zum Standard gehört, eine Familie
+  mit seinem IFC-Netz in Bauteilkoordinaten (Einfügepunkt, Achsen der IFC-Platzierung) und den Anschlüssen aus den IFC-Ports; gleiche Form und
+  Anschlüsse = dieselbe Familie (Kennung `ifc-` + Prüfsumme, Name «‹IFC-Typ› (IFC)»). Das Element verweist mit `familientyp`, `drehung` bzw.
+  `ausrichtung` darauf. Bernstrasse 42: die 10 WCs u. a. decken sich mit dem IFC (Prüfung misst jetzt den Familienkörper).
+- **Wählbar:** `Projektinformation.ifcStandard` (Liste von Klassen samt Unterklassen) – Vorgabe Leitung, Formteil, Verteiler, Armatur; diese
+  zeichnet unser Standard nach, alles andere wird übernommen.
+- **Dauerhaft in den Standard:** ein Mensch schreibt die gewählte Familie mit `familie_in_bibliothek` in die Bürobibliothek (und gibt sie frei);
+  ein späterer Import findet sie dort über ihre Kennung und lädt sie, statt neu zu bauen.
+- **Offen:** Standardteile mit unseren Serien nachzeichnen (z. B. Ablaufrohr «Silent-db20» → Serie Geberit Silent-db20, Typ nach dem
+  Durchmesser; Zuordnung IFC-Typ → Serie wählbar); Flow «Familie aus IFC: IFC einlesen › Teile wählen › Familie nachmodellieren» in der
+  Oberfläche; dasselbe für die Architektur (Türen, Fenster u. a. als Familie aus dem IFC – braucht die Familiengrafik für Bauteile in einer Wand).

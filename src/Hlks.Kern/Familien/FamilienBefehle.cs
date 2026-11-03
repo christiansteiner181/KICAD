@@ -337,7 +337,7 @@ public sealed class FamilieLaden : IBefehl
         return (famOrdner, version);
     }
 
-    static void AusBibliothek(Kontext k, BibliotheksOrt ort, string? id, string? ordner, string? version)
+    internal static void AusBibliothek(Kontext k, BibliotheksOrt ort, string? id, string? ordner, string? version)
     {
         if (!ort.Aktiv)
             throw new HlksFehler(ort.Sperre ?? "Die Familienbibliothek ist nicht eingestellt.",
