@@ -43,6 +43,8 @@ public static class Tuer
             "heizlast" => Heizlast.Abfrage(p, par),
             "heizkoerper_auslegung" => HeizkoerperAuslegung.Abfrage(p, par),
             "kanal_druckverlust" => KanalDruckverlust.Abfrage(p, par),
+            "datenpunktliste" => Datenpunktliste.Abfrage(p, par),
+            "webablage_status" => Webablage.Abfrage(p, par),
             "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),

@@ -153,8 +153,8 @@ Spezielle Berechnungen, Systemerkennung, Darstellungen.
 | 6 | Lüftung, Kanalnetz | **ruht seit 02.11.2026 (Gesamtharness zuerst)**; Konzept Teil A «Lüftungskette bis zum Raumbedarf» (`modul-6.md`, 31.10.2026); gebaut A-1, A-2, A-4, A-5, A-6 als Abfrage `lueftung_varianten` A-7 als Befehl `raumforderung_anlegen` A-8 als Befehl `lueftung_variante_uebernehmen` und A-3 als Prinzipschema `lueftung_schema` / `schema_anlegen { vorlage: lueftung }` (31.10.2026); darf vor Modul 5 kommen (Christian 31.10.2026: «wir können lüftung auch vorziehen»), Fragen 31.10.2026 grösstenteils beantwortet; offen die Startgewichte (Luftgeschwindigkeit MuKEn 2014 bestätigt) |
 | 7 | Ausgabe: Planset PDF/DWG, Listen, Ausschreibung, IFC mit IDS | Teil A gebaut; IFC-Export und IDS teilweise |
 | 7b | Partneraustausch | offen |
-| 8 | MSRL, Messkonzept | offen |
-| 9 | GA-Anbindung | offen |
+| 8 | MSRL, Messkonzept | **Gerüst 04.11.2026** (entwurf/modul-8-9-msrl-ga.md): Grundausstattung kataloge/datenpunkte.json (Annahme), datenpunkte_vorschlagen, datenpunktliste |
+| 9 | GA-Anbindung | Gerüst: IDatenquelle mit Simulator vorhanden; Adapter BACnet/OPC UA offen (entwurf/modul-8-9-msrl-ga.md) |
 | 10a, 10b | Physiksimulation, Raumluft (CFD) | offen |
 | 11 | Monitoring | offen |
 | **12 (neu)** | **Generator und Bewertung** (Bausteine D, E): Varianten der Leitungsführung, Kennzahlen, gewichteter Vergleich, Übernahme mit einem Befehl | erster Schritt G1 (Lüftungskanäle in einem Geschoss, ohne Normwerte) gleich zu Beginn von Phase 3; Druckverlust in E erst mit Modul 6 bzw. Normen |

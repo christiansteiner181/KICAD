@@ -56,6 +56,8 @@ public sealed class Abfragen(Projekt p)
         new("heizlast", Heizlast.Text, Heizlast.Parameter),   // Modul 5 Teil B-H, Christian 03.11.2026
         new("heizkoerper_auslegung", HeizkoerperAuslegung.Text, HeizkoerperAuslegung.Parameter),   // Modul 5 Teil B
         new("kanal_druckverlust", KanalDruckverlust.Text, KanalDruckverlust.Parameter),   // Modul 6 Teil B
+        new("datenpunktliste", Datenpunktliste.Text, Datenpunktliste.Parameter),   // Modul 8 MSRL, Gerüst
+        new("webablage_status", Webablage.Text, Webablage.Parameter),   // Webablage, Gerüst 04.11.2026
         new("ifc_teile", IfcTeile.Text, IfcTeile.Parameter),   // Christian 03.11.2026: Flow «Familie aus IFC» (Teile wählen)   // Christian 02.11.2026: «nach dem import müssen die beiden geometrien deckungsgleich sein»
         new("ifc_pruefen", IfcImport.PruefenBeschreibung,
             [new("datei", "text", true, "Pfad der IFC-Datei oder Name einer Unterlage im Ordner unterlagen"),

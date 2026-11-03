@@ -19,9 +19,9 @@ public static class KiEinordnung
         new("Projekt lesen", "Abfragen über die Tür des Kerns: lesen das Modell, ändern nichts, schreiben keine Dateien ausser Zwischenständen im Projekt.",
             ["faehigkeiten", "projekt_ueberblick", "element_lesen", "elemente_suchen", "system_lesen", "strang_text", "netz_folgen", "raum_inhalt",
              "mengen", "raumliste", "strangliste", "pruefen", "warum", "aenderungen", "katalog",
-             "ausgaben"]),   // Rang 4, 30.10.2026: Ausgabeprotokoll nur lesen
+             "ausgaben", "webablage_status"]),   // Rang 4, 30.10.2026: Ausgabeprotokoll nur lesen; webablage_status 04.11.2026 (Gerüst)
         new("Abgleich", "Holt Änderungen anderer Bearbeiter aus der Ablage ins Modell dieses Laufs; schreibt nichts.", ["synchronisieren"]),
-        new("Gebäudeautomation lesen", "Datenpunkte und Messwerte nur lesen (Spezifikation 3c: GA nur lesend); die Datenquelle ist nur lesend.", ["datenpunkte", "zeitreihe"]),
+        new("Gebäudeautomation lesen", "Datenpunkte und Messwerte nur lesen (Spezifikation 3c: GA nur lesend); die Datenquelle ist nur lesend.", ["datenpunkte", "zeitreihe", "datenpunktliste"]),
         new("Fachabfragen", "Auswertungen und Listen des Kerns (Hülle, Material, Kollisionen, Aussparungen, Leitungen, Schema, Sanitär, Pläne); nur lesend.",
             ["aufbau_rechnen", "huellbauteile", "huelle_pruefen", "materialien", "materialliste", "typmaterial", "kollisionen", "aussparungsliste",
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
@@ -54,8 +54,10 @@ public static class KiEinordnung
             ["leitung_abzweigen", "leitung_aufteilen", "leitung_einsetzen", "leitung_teilen", "ecke_bilden", "dehnen_bis", "leitung_gefaelle", "leitung_hoehe", "parallele_leitungen", "bogen_zu_tstueck", "tstueck_zu_bogen", "leitung_groesse", "leitung_serie", "leitung_zeichnen", "fliessrichtung_aus_quelle", "uebergang_setzen", "schema_anlegen",
              "schema_anordnen", "schema_lage"]),
         new("Heizung", "Heizgruppen und Systempaare anlegen, ändern und aus dem Netz vorschlagen (Modul 5) – Modellarbeit, als Paket zurücknehmbar; " +
-            "Temperaturen sind Eingaben ohne Vorgabewert, der Kern rechnet daraus nichts nach Norm.",
+            "Temperaturen sind Eingaben ohne Vorgabewert; die Heizlast nach SIA 384.201 übernimmt heizlast_uebernehmen in die Räume.",
             ["system_paar_anlegen", "heizgruppe_anlegen", "heizgruppe_aendern", "heizgruppen_vorschlagen", "heizlast_uebernehmen"]),
+        new("MSRL planen", "Datenpunkte der Grundausstattung an Bauteilen vorschlagen (Modul 8, Gerüst) – Modellarbeit, als Paket zurücknehmbar; keine Verbindung zur Anlage.",
+            ["datenpunkte_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +
             "Zahlenwerte brauchen eine Quelle (Kern).",
             ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",

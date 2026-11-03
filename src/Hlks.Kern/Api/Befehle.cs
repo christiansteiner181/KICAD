@@ -124,6 +124,7 @@ public sealed class Befehlsregister
         BaustelleRueckmeldung.Registrieren(r);   // BIM to field Stufe 1: rueckmeldung_uebernehmen
         // Modul 5 Teil A-D: Heizgruppen und Systempaar
         HeizungBefehle.Registrieren(r);
+        r.Hinzufuegen(new DatenpunkteVorschlagen());   // Modul 8 MSRL, Gerüst 04.11.2026
         return r;
     }
 }

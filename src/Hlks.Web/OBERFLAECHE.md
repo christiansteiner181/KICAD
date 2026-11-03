@@ -1050,6 +1050,8 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
   exponent. Register `heizung.heizkoerper`.
 - **Kanalnetz-Druckverlust** (Modul 6 Teil B, noch ohne Oberfläche): Abfrage `kanal_druckverlust { temperatur? }` – Reibung je Kanal (λ nach Colebrook,
   Rauheit und Viskosität aus `kataloge/stroemung.json`), Summe je Durchlass bis zum Gerät, massgebender Weg; ohne ζ. Register `lueftung.kanal_druckverlust`.
+- **MSRL und Webablage** (Gerüste, noch ohne Oberfläche): Befehl `datenpunkte_vorschlagen { anlage? }` und Abfrage `datenpunktliste { anlage? }` (Modul 8,
+  Grundausstattung `kataloge/datenpunkte.json`); Abfrage `webablage_status` (Einstellung `buero.json › webablage`, Dateien in `ausgabe`, ohne Netzzugriff).
 
 ## Hilfe (F1)
 

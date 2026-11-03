@@ -177,6 +177,10 @@ public sealed partial class Werkzeuge(Projekt projekt)
         [Description("Anzahl (Vorgabe 20)")] double? anzahl = null) =>
         Lauf(() => Antwort(new Abfragen(projekt).Aenderungen(element, Ganz(anzahl, 20))));
 
+    [McpServerTool(Name = "webablage_status"), Description(Webablage.Text)]   // Webablage, Gerüst 04.11.2026
+    public string WebablageStatusWerkzeug() =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "webablage_status", new JsonObject())), synchronisieren: false);
+
     [McpServerTool(Name = "ausgaben"), Description("Ausgabeprotokoll: welche Dateien (Planblatt-/Plansatz-PDF, IFC-Export, Aussparungs-IFC) wann von wem auf welchem Modellstand geschrieben wurden (neueste zuerst; alle Geräte).")]
     public string Ausgaben(
         [Description("Anzahl (Vorgabe 50)")] double? anzahl = null) =>
@@ -185,6 +189,16 @@ public sealed partial class Werkzeuge(Projekt projekt)
     [McpServerTool(Name = "katalog"), Description("Katalog: Klassen mit Eigenschaften und Anschlüssen, Medien, Systemtypen.")]
     public string Katalog([Description("Nur diese Klasse")] string? klasse = null) =>
         Lauf(() => Antwort(new Abfragen(projekt).Katalog(klasse)));
+
+    [McpServerTool(Name = "datenpunktliste"), Description(Datenpunktliste.Text)]   // Modul 8 MSRL, Gerüst 04.11.2026
+    public string DatenpunktlisteWerkzeug([Description(Datenpunktliste.ParAnlage)] string? anlage = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "datenpunktliste", Parameter(("anlage", anlage)))), synchronisieren: false);
+
+    [McpServerTool(Name = "datenpunkte_vorschlagen"), Description(DatenpunkteVorschlagen.Text)]
+    public string DatenpunkteVorschlagenWerkzeug(
+        [Description(Datenpunktliste.ParAnlage)] string? anlage = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("datenpunkte_vorschlagen", Parameter(("anlage", anlage)), trockenlauf);
 
     [McpServerTool(Name = "datenpunkte"), Description("Funktionsgraph: Datenpunkte mit Bezug, Station und Adresse; Regelkreise mit Messung, Stellung, Führung.")]
     public string Datenpunkte([Description("Nur Datenpunkte an diesem Element")] string? element = null) =>

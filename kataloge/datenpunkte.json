@@ -1,0 +1,40 @@
+{
+  "beschreibung": "Grundausstattung der MSRL-Datenpunkte je Bauteilklasse (Modul 8, Gerüst): welche Datenpunkte datenpunkte_vorschlagen an einem Bauteil anlegt. signal = AI/AO/DI/DO/Zaehler/Wert, art = messung/stellung/meldung/schaltung/zaehlung/sollwert (Klasse Datenpunkt). kurz = Endung des Kennzeichens (DP-<Bauteil>-<kurz>).",
+  "quelle": "Annahme Hauptlauf 04.11.2026 (Christian 04.11.2026: «bitte ale fragen selbst bestätigen») – übliche Grundausstattung; im Büro keine Datenpunkt- bzw. Funktionslistenvorlage gefunden (berichte/heizung-lueftung-fundstellen.md, Abschnitt 4). Von Christian zu bestätigen bzw. durch eine Bürovorlage zu ersetzen.",
+  "klassen": {
+    "Pumpe": [
+      { "kurz": "B", "name": "Betriebsmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Betrieb" },
+      { "kurz": "S", "name": "Störmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Störung" },
+      { "kurz": "EA", "name": "Ein/Aus", "signal": "DO", "art": "schaltung", "messgroesse": "Freigabe" }
+    ],
+    "Mischventil": [
+      { "kurz": "Y", "name": "Stellsignal", "signal": "AO", "art": "stellung", "messgroesse": "Ventilstellung", "einheit": "%" }
+    ],
+    "Fuehler": [
+      { "kurz": "M", "name": "Messwert", "signal": "AI", "art": "messung", "messgroesseAus": "art" }
+    ],
+    "Waermezaehler": [
+      { "kurz": "Z", "name": "Wärmemenge", "signal": "Zaehler", "art": "zaehlung", "messgroesse": "Wärme", "einheit": "kWh" }
+    ],
+    "Wasserzaehler": [
+      { "kurz": "Z", "name": "Volumen", "signal": "Zaehler", "art": "zaehlung", "messgroesse": "Volumen", "einheit": "m3" }
+    ],
+    "Waermeerzeuger": [
+      { "kurz": "B", "name": "Betriebsmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Betrieb" },
+      { "kurz": "S", "name": "Störmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Störung" },
+      { "kurz": "F", "name": "Freigabe", "signal": "DO", "art": "schaltung", "messgroesse": "Freigabe" },
+      { "kurz": "SW", "name": "Sollwert Vorlauf", "signal": "Wert", "art": "sollwert", "messgroesse": "Temperatur", "einheit": "°C", "physikalisch": false }
+    ],
+    "Lueftungsgeraet": [
+      { "kurz": "B", "name": "Betriebsmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Betrieb" },
+      { "kurz": "S", "name": "Störmeldung", "signal": "DI", "art": "meldung", "messgroesse": "Störung" },
+      { "kurz": "EA", "name": "Ein/Aus", "signal": "DO", "art": "schaltung", "messgroesse": "Freigabe" },
+      { "kurz": "TZU", "name": "Zulufttemperatur", "signal": "AI", "art": "messung", "messgroesse": "Temperatur", "einheit": "°C" },
+      { "kurz": "FI", "name": "Filterüberwachung", "signal": "DI", "art": "meldung", "messgroesse": "Filter verschmutzt" }
+    ],
+    "Volumenstromregler": [
+      { "kurz": "Y", "name": "Stellsignal", "signal": "AO", "art": "stellung", "messgroesse": "Klappenstellung", "einheit": "%" },
+      { "kurz": "V", "name": "Volumenstrom", "signal": "AI", "art": "messung", "messgroesse": "Volumenstrom", "einheit": "m3/h" }
+    ]
+  }
+}

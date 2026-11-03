@@ -31,6 +31,13 @@
     "quelle": "Entscheid Christian Steiner 03.11.2026: «MeteoSchweiz gratis» (Klimaszenarien Raumklima, heruntergeladen 03.11.2026)",
     "hinweis": "Stündliche Klimadaten ausserhalb des Repositorys. meteoschweiz_raumklima\\csv: 45 Stationen, Zukunftsszenarien (DRY und warmer Sommer) – für Sommer, Kühlung, Simulation; Heizlast aus SIA 2028:2010. Beschrieb in LIESMICH.txt."
   },
+  "webablage": {
+    "anbieter": "workshare",
+    "url": "https://workshare.hkplanung.ch",
+    "tokenUmgebungsvariable": "HLKS_WEBABLAGE_TOKEN",
+    "quelle": "Annahme Hauptlauf 04.11.2026 (Christian: «schnittestelle zu webablage», «bitte ale fragen selbst bestätigen»): Webablage = Workshare-Schnittstelle des Büros",
+    "hinweis": "Gerüst ohne Netzzugriff (entwurf/webablage.md). Token nur als Umgebungsvariable, nie im Repository, OneDrive oder Chat. Hochgeladen werden nur Dateien aus dem Ordner ausgabe des Projekts."
+  },
   "netz": {
     "server": ["HK-NAS02"],
     "laufwerke": { "W:": "\\\\HK-NAS02\\WorkShare_NAS" },
