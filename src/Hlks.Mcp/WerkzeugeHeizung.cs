@@ -97,6 +97,10 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("heizgruppen_vorschlagen", Parameter(("anlage", anlage)), trockenlauf);
 
+    [McpServerTool(Name = "heizkoerper_auslegung"), Description(HeizkoerperAuslegung.Text)]   // Modul 5 Teil B
+    public string HeizkoerperAuslegungWerkzeug([Description(HeizkoerperAuslegung.ParRaum)] string? raum = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizkoerper_auslegung", Parameter(("raum", raum)))), synchronisieren: false);
+
     [McpServerTool(Name = "heizlast_uebernehmen"), Description(HeizlastUebernehmen.Text)]   // Modul 5 Teil B-H
     public string HeizlastUebernehmenWerkzeug(
         [Description(Heizlast.ParRaum)] string? raum = null,

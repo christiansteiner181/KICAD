@@ -1037,6 +1037,9 @@ Christian 03.11.2026: «wir sollten ein zentrales register (im Klartext) über d
   Herleitung, H-Werte mit Beiträgen je Raumgrenze, ΦT, ΦV, ΦHL und Annahmen; Gebäudesumme. Eingaben in den Eigenschaften: Gebäude «klimastation»,
   «hoeheUeberMeer», «thetaE», «zeitkonstante», «abschirmung», «grundwasserNah»; unbeheizter Raum «bu». Freie Raumnutzungen ordnet
   `kataloge/raumnutzungen.json` SIA 2024 zu. Rechenweg: Register `heizung.heizlast`. Befehl `heizlast_uebernehmen { raum?, gebaeude?, ueberschreiben? }` (KI und MCP) setzt ΦHL als Heizleistung der Räume.
+- **Heizkörper auslegen** (Modul 5 Teil B, noch ohne Oberfläche): Abfrage `heizkoerper_auslegung { raum? }` – Bedarf aus der Raum-Heizleistung, Umrechnung
+  der Normleistung Φ = Φn·(ΔT/ΔTn)^n, Deckung, erforderliche Normleistung, Massenstrom. Herstellerangaben am Heizkörper: leistung, normVl, normRl, normRaum,
+  exponent. Register `heizung.heizkoerper`.
 
 ## Hilfe (F1)
 

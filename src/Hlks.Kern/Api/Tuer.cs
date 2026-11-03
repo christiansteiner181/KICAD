@@ -41,6 +41,7 @@ public static class Tuer
             "rechenweg" => Rechenregister.Abfrage(p.Katalog, par),
             "grundlagen" => Grundlagenverzeichnis.Abfrage(p.Katalog, par),
             "heizlast" => Heizlast.Abfrage(p, par),
+            "heizkoerper_auslegung" => HeizkoerperAuslegung.Abfrage(p, par),
             "ifc_pruefen" => IfcImport.Pruefen(p, T("datei", true)!, Param.Bool(par, "einpassen")),
             "aufbau_rechnen" => HuelleAbfragen.AufbauRechnen(p, T("aufbau", true)!),
             "materialien" => HuelleAbfragen.Materialien(p),

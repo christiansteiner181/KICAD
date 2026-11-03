@@ -1829,6 +1829,52 @@
         "src/Hlks.Kern/Heizung/HeizlastBefehle.cs (HeizlastUebernehmen)"
       ],
       "abfrage": "heizlast"
+    },
+    {
+      "id": "heizung.heizkoerper",
+      "titel": "Heizkörper auslegen: Normleistung auf Betriebstemperaturen umrechnen",
+      "gebiet": "Heizung",
+      "zweck": "Prüfen, ob die Heizkörper eines Raums den Bedarf bei den Temperaturen der Heizgruppe decken, und die erforderliche Normleistung angeben.",
+      "eingaben": [
+        "Heizkörper: leistung (Normleistung Φn), normVl, normRl, normRaum, exponent n – Herstellerangaben mit Quelle",
+        "Raum: heizleistung (z. B. aus heizlast_uebernehmen) und Innentemperatur wie die Heizlast",
+        "Heizgruppe: vlTemp, rlTemp",
+        "Stoffwerte des Mediums (stoffwerte.json)"
+      ],
+      "rechenweg": [
+        "Bedarf je Heizkörper = Raum.heizleistung · Anteil (nach Normleistung der Heizkörper im Raum; ohne Normleistung gleich verteilt).",
+        "ΔT = (VL − RL) / ln((VL − θi)/(RL − θi)) (logarithmische Übertemperatur im Betrieb).",
+        "ΔTn = (normVl + normRl)/2 − normRaum (Übertemperatur der Herstellerangabe).",
+        "Φ = Φn · (ΔT/ΔTn)^n; erforderliche Normleistung = Bedarf / (ΔT/ΔTn)^n; Deckung = Φ / Bedarf (ok ab 1,0).",
+        "Massenstrom ṁ = Bedarf / (c_p · (VL − RL)) mit c_p bei der mittleren Temperatur."
+      ],
+      "ergebnis": "Abfrage heizkoerper_auslegung { raum? }: je Heizkörper Bedarf, Betrieb, ΔT, ΔTn, Leistung im Betrieb, erforderliche Normleistung, Deckung, Massenstrom, Annahmen.",
+      "quellen": [
+        "Herstellerangaben am Heizkörper (Datenblatt mit Quelle); SN EN 442 liegt nicht im Normenordner (Grundlagen fehlt.heizung_normen)",
+        "Gegenprobe: Büroblatt «Auslegung Heizkörper» (Projekt Bernstrasse, Christian 04.11.2026 «zur prüfung»): gleiche Umrechnung, dazu Korrekturen ohne Quelle",
+        "Christian Steiner 04.11.2026: «bitte ale fragen selbst bestätigen» (Entscheid Hauptlauf: Büro-Korrekturen nennen, nicht anwenden)"
+      ],
+      "grundlagen": [
+        "hersteller.leitungsserien",
+        "physik.kalorimetrie",
+        "stoff.nist_wasser",
+        "buero.heizung_vorlagen",
+        "fehlt.heizung_normen",
+        "annahme.hauptlauf"
+      ],
+      "annahmen": [
+        "ΔTn arithmetisch (wie Herstellerangabe und Büroblatt), ΔT im Betrieb logarithmisch.",
+        "Korrekturen des Büroblatts (Luftdruck nach Höhe, Anschlussart, Strahlungsanteil, senkrechter Einbau) ohne Quelle – nicht angewendet.",
+        "Erste Heizgruppe des Heizkörpers gilt."
+      ],
+      "grenzen": [
+        "Keine Ventil- und Rohrauslegung, kein hydraulischer Abgleich.",
+        "Fussbodenheizung nicht (eigenes Verfahren)."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/HeizkoerperAuslegung.cs (HeizkoerperAuslegung.Abfrage, DeltaTLog)"
+      ],
+      "abfrage": "heizkoerper_auslegung"
     }
   ]
 }
