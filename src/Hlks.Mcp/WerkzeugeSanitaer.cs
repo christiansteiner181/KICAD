@@ -21,6 +21,11 @@ public sealed partial class Werkzeuge
     public string SanitaerZusammenstellungLesen([Description(SanitaerZusammenstellung.ParAnlage)] string? anlage = null) =>
         Lauf(() => Antwort(SanitaerAbfragen.Zusammenstellung(projekt, anlage)));
 
+    [McpServerTool(Name = "sanitaer_dimensionierung"), Description(SanitaerDimensionierung.Text)]   // Modul 4 Teil B, 03.11.2026
+    public string SanitaerDimensionierungLesen([Description(SanitaerDimensionierung.ParAnlage)] string? anlage = null,
+        [Description(SanitaerDimensionierung.ParLeitung)] string? leitung = null) =>
+        Lauf(() => Antwort(SanitaerDimensionierung.Abfrage(projekt, Parameter(("anlage", anlage), ("leitung", leitung)))));
+
     [McpServerTool(Name = "sanitaer_katalog"), Description(SanitaerAbfragen.KatalogText)]
     public string SanitaerKatalogLesen() => Lauf(() => Antwort(SanitaerAbfragen.KatalogLesen(projekt)));
 }

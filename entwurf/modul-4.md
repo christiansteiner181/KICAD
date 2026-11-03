@@ -66,10 +66,25 @@ fehlende oder widersprüchliche Angaben als Befund erscheinen.
 - Befunde im Befund-Browser bzw. Koordination wie andere Prüfungen.
 - Tests: Browser-Reihe `sanitaer-belastung.browser.mjs`, Bilder.
 
-## Teil B – Dimensionierung (wartet auf Normen)
+## Teil B – Dimensionierung (gebaut 03.11.2026, Entwurf zur Prüfung)
 
 DN je Teilstrecke Trinkwasser (Belastungswerttabellen W3), Abwasser (SN 592000/SN EN 12056: Q_WW je Teilstrecke, Füllung,
 Gefälle, Lüftung), Hausanschluss (Tabelle 5 W3). Erst mit den Normtexten im Normenverzeichnis; Werte nur mit Zitat
 (Norm, Ausgabe, Ziffer, Seite), Normtabellen als versionierte JSON, Christian prüft die Übertragung gegen.
 
 **Bestätigt:** Christian, 20.10.2026 (Fragefenster): Kurvenwahl «grösster LU > 3 → Kurve 5» (aus HKAP), KW vor dem Wassererwärmer trägt ΣLU WW, Vorgabe-Apparateart je Klasse, Beispielprojekt K = 0.5 fiktiv. **Teil B** startet, sobald Christian den Ablageort der Normen nennt.
+
+### Stand 03.11.2026 (Nacht; Christian: «Sanitär KI modul weiter bearbeiten … du hast da gestern neue daten von mir bekommen», «ohne rückfragen»)
+
+- **Quelle:** Handbuch Gebäudetechnik Sanitär 2025 (W:\05_Normen und Merkblätter; Lehrmittel mit SN 592000:2024- und W3-Auszügen), Fundstellen
+  in berichte/handbuch-sanitaer-fundstellen.md; Tabellen von zwei hlks-modul-Agenten mit Befund-Id je Wert übertragen (Abwasser: T5–T14, T22;
+  Trinkwasser: Leitungsarten, Hausanschluss, 48 Herstellertabellen S. 53–69, Diagramm 1 – gleich der Büro-Excel «Diagramm 1 (2013)»).
+- **Ablage der Werte (Entscheid Hauptlauf, freie Hand):** NICHT im Repository («Normtexte nie ins Repository», Impressum schränkt Weitergabe ein),
+  sondern im Büroordner `%OneDrive%\HLKS-CAD\normtabellen\sanitaer\{abwasser,trinkwasser}.json` (Umgebungsvariable HLKS_NORMTABELLEN bzw.
+  buero.json › normtabellen.pfad); Tests mit fiktiven Tabellen.
+- **Gebaut:** Abfrage `sanitaer_dimensionierung { anlage?, leitung? }` (Kern SanitaerDimensionierung.cs, MCP, KI-Gruppe), Rechenweg im Register
+  (sanitaer.abwasser_dimensionierung, sanitaer.trinkwasser_dimensionierung).
+- **Offene Fragen an Christian:** Stufen aufrunden?; Gruppenwasserzähler; Leitungsart V/A/T (Gruppenabsperrung); Tabelle 10 (belüftete
+  Anschlussleitungen > 4 m); Fallleitung Haupt-/Nebenlüftung und Abzweigart je Strang (Eigenschaft?); Mindest-DN Grundleitung (Handbuch 100/150
+  widersprüchlich); K ≠ 0.5 bei Fallleitungen; DU-Abweichungen Katalog (wc_90, ausguss_faekalien, steckbeckenapparat 2.5 statt 2.0); Gegenprüfung
+  der Bildwerte (S. 52–69) und gegen die Originalnormen.

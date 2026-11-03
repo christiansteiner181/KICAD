@@ -25,7 +25,7 @@ public static class KiEinordnung
         new("Fachabfragen", "Auswertungen und Listen des Kerns (Hülle, Material, Kollisionen, Aussparungen, Leitungen, Schema, Sanitär, Pläne); nur lesend.",
             ["aufbau_rechnen", "huellbauteile", "huelle_pruefen", "materialien", "materialliste", "typmaterial", "kollisionen", "aussparungsliste",
              "leitungsserie", "leitungszug", "verlegung", "vorgaben", "raumgrenzen", "schema", "sanitaer_belastung", "sanitaer_katalog",
-             "sanitaer_zusammenstellung", "plannummer_vorschlag", "plansaetze",
+             "sanitaer_zusammenstellung", "sanitaer_dimensionierung", "plannummer_vorschlag", "plansaetze",
              "abzweigwinkel",   // Nachtrag Modul 3, 21.10.2026 (hlks-kern, zur Bestätigung): Abzweigwinkel einer Serie bzw. Leitung, nur lesend wie leitungsserie
              "planwinkel",      // N9, 21.10.2026 (hlks-kern, zur Bestätigung): Planwinkel und Ausrichtung der Grundrisse, nur lesend
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur

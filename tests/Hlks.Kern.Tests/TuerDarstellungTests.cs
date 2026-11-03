@@ -78,6 +78,7 @@ public class TuerDarstellungTests
         ["norm_lesen"] = """{"datei":"SIA 9999:2026","seite":3}""",
         ["sanitaer_belastung"] = """{"anlage":"A-SAN"}""",              // Modul 4 Teil A: Belastungssummen des Beispielprojekts
         ["sanitaer_zusammenstellung"] = """{"anlage":"A-SAN"}""",
+        ["sanitaer_dimensionierung"] = """{"anlage":"A-SAN"}""",   // Modul 4 Teil B (ohne Normtabellen: Hinweis)
         ["sanitaer_katalog"] = "{}",
         ["rueckmeldung_lesen"] = "{\"inhalt\":{\"format\":\"kicad-baustelle-rueckmeldung\",\"meldungen\":[]}}",   // BIM to field: leere Rückmeldung
         ["montageabschnitte"] = "{}",                                   // BIM to field Stufe 0: Beispiel ohne Abschnitte → leere Liste

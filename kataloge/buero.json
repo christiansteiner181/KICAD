@@ -19,6 +19,12 @@
     "umgebungsvariable": "HLKS_NORMEN",
     "hinweis": "Nur lesen. Wurzel für die Pfadprüfung der KI (src/Hlks.Kern/Sicherheit/KiPfade.cs); die Normensuche selbst liest HLKS_NORMEN bzw. ihre Vorgabe. Tests setzen HLKS_NORMEN auf einen Ordner unter %TEMP%."
   },
+  "normtabellen": {
+    "pfad": "%OneDrive%\\HLKS-CAD\\normtabellen",
+    "umgebungsvariable": "HLKS_NORMTABELLEN",
+    "quelle": "Modul 4 Teil B (src/Hlks.Kern/Rechnen/SanitaerNormtabellen.cs), Entscheid Hauptlauf 03.11.2026",
+    "hinweis": "Übertragene Normtabellen (Werte mit Befund-Id) ausserhalb des Repositorys – Normtexte nie ins Repository. Darin sanitaer/abwasser.json und sanitaer/trinkwasser.json."
+  },
   "netz": {
     "server": ["HK-NAS02"],
     "laufwerke": { "W:": "\\\\HK-NAS02\\WorkShare_NAS" },

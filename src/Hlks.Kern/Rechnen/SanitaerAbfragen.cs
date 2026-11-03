@@ -31,6 +31,7 @@ public static class SanitaerAbfragen
             [new("anlage", "text", false, ParAnlage), new("strang", "text", false, ParStrang), new("leitung", "text", false, ParLeitung)]),
         new("sanitaer_zusammenstellung", SanitaerZusammenstellung.AbfrageText, [new("anlage", "text", false, SanitaerZusammenstellung.ParAnlage)]),
         new("sanitaer_katalog", KatalogText, []),
+        new("sanitaer_dimensionierung", SanitaerDimensionierung.Text, SanitaerDimensionierung.Parameter),   // Modul 4 Teil B, 03.11.2026
     ];
 
     /// <summary>Beantwortet eine Sanitär-Abfrage; null = nicht zuständig.</summary>
@@ -39,6 +40,7 @@ public static class SanitaerAbfragen
         "sanitaer_belastung" => Belastung(p, Param.Text(par, "anlage"), Param.Text(par, "strang"), Param.Text(par, "leitung")),
         "sanitaer_zusammenstellung" => Zusammenstellung(p, Param.Text(par, "anlage")),
         "sanitaer_katalog" => KatalogLesen(p),
+        "sanitaer_dimensionierung" => SanitaerDimensionierung.Abfrage(p, par),
         _ => null,
     };
 

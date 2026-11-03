@@ -1492,6 +1492,93 @@
         "src/Hlks.Kern/Plan/PdfZeichner.cs"
       ],
       "abfrage": null
+    },
+    {
+      "id": "sanitaer.abwasser_dimensionierung",
+      "titel": "Abwasserleitungen dimensionieren (Soll-DN je Leitung)",
+      "gebiet": "Sanitär",
+      "zweck": "Für jede Schmutzwasserleitung die Soll-Nennweite nach SN 592000:2024 bestimmen und mit der gezeichneten Leitung vergleichen.",
+      "eingaben": [
+        "ΣDU und grösster Einzel-DU stromauf (Teil A, Apparateart)",
+        "Anzahl WC stromauf",
+        "Leitungsart aus dem Strang (anschlussleitung, fallstrang, sammelleitung, grundleitung)",
+        "Abflusskennzahl K der Anlage bzw. Projektinformation",
+        "Gefälle der Leitung in %",
+        "Innendurchmesser der Serie (sonst DN der Leitung)"
+      ],
+      "rechenweg": [
+        "Anschlussleitung: Tabelle 9 (unbelüftet) – erste Zeile mit ΣDU ≤ höchstzulässige DU und grösster Einzel-DU ≤ Grenze; Fussnote 1 (höchstens ein Gegenstand à 1.5 DU) und 2 (höchstens zwei WC) geprüft.",
+        "Fallleitung: Tabelle 11 (Hauptlüftung, Winkel-Abzweig) – erste Zeile mit ΣDU ≤ höchstzulässige DU (Spalte für K = 0.5) und grösster Einzel-DU ≤ Grenze; bei K ≠ 0.5 über Q_ww = K · √ΣDU ≤ Q_max.",
+        "Sammel- und Grundleitung: Q_ww = K · √ΣDU; massgebend Q = max(Q_ww, grösster Einzel-DU).",
+        "Tabelle 22: Spalte = grösste Gefällespalte ≤ Gefälle der Leitung (nie interpoliert); kleinste DN mit Q_max ≥ Q; Grundleitung nur Zeilen «für Grundleitung».",
+        "Mindest-DN Sammelleitung: ohne WC 80, mit WC 100.",
+        "Vergleich: gezeichneter Innendurchmesser ≥ Mindest-Innendurchmesser der Soll-DN (Tabelle 5) → ok, sonst zu klein."
+      ],
+      "ergebnis": "Abfrage sanitaer_dimensionierung (je Leitung Art, ΣDU, Q, Soll-DN, Beleg, ok, Annahmen).",
+      "quellen": [
+        "SN 592000:2024 (Auszug im Handbuch Gebäudetechnik Sanitär 2025): Tabelle 5 (Ziff. 7.1.1, S. 3), Tabelle 7 und Q_ww-Formel (S. 4), Tabelle 9 (Ziff. 7.2.6, S. 8), Tabelle 11 (Ziff. 7.2.8, S. 21), Tabelle 22 (Ziff. 7.5, S. 30/42), Mindest-DN (S. 29)",
+        "Handbuch Gebäudetechnik Sanitär 2025 (Renggli Consulting, Lehrmittel mit Normauszügen; W:\\05_Normen und Merkblätter), übertragen mit Befund-Id je Wert; Werte im Büroordner HLKS_NORMTABELLEN, nicht im Repository",
+        "Christian Steiner, 03.11.2026: «Sanitär KI modul weiter bearbeiten … du hast da gestern neue daten von mir bekommen»"
+      ],
+      "annahmen": [
+        "Anschlussleitungen höchstens 4 m abgewickelt (Tabelle 10 belüftet noch nicht gerechnet).",
+        "Fallleitungen mit Hauptlüftung und Winkel-Abzweig (Tabelle 11).",
+        "Q_c, Q_p, Q_R je Teilstrecke nicht berücksichtigt.",
+        "Mindest-DN Grundleitung je Fallleitungshöhe nicht angewendet (Handbuch S. 29 widersprüchlich: 100/150).",
+        "Ohne Strang: Leitungsart aus der Lage geschätzt (steil = Fallleitung).",
+        "Handbuch ist ein Lehrmittel; verbindlich ist die Originalnorm SN 592000:2024 – Übertragung von Christian gegenzuprüfen."
+      ],
+      "grenzen": [
+        "Keine hydraulische Einzelrechnung (Prandtl-Colebrook) – nur Tabellen.",
+        "Kein Lüftungsnachweis, keine Verzüge, keine Regenwasserleitungen."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerDimensionierung.cs (SanitaerDimensionierung.Abwasser)",
+        "src/Hlks.Kern/Rechnen/SanitaerNormtabellen.cs"
+      ],
+      "abfrage": "sanitaer_dimensionierung"
+    },
+    {
+      "id": "sanitaer.trinkwasser_dimensionierung",
+      "titel": "Trinkwasserleitungen dimensionieren (Rohr je Leitung nach Belastungswerttabelle)",
+      "gebiet": "Sanitär",
+      "zweck": "Für jede Trinkwasserleitung (kalt, warm) das Rohr da × s nach SVGW W3 aus der Belastungswerttabelle des Systems bestimmen und mit der gezeichneten Leitung vergleichen.",
+      "eingaben": [
+        "ΣLU der Spalte (KW bzw. WW) stromab und grösster Einzel-LU (Teil A)",
+        "Serie der Leitung (System, z. B. JRG Sanipex MT, Geberit Mapress Edelstahl)",
+        "Strang (verteilleitung/steigstrang) bzw. Anzahl Apparate stromab",
+        "abgewickelte Länge bis zur entferntesten Entnahmestelle"
+      ],
+      "rechenweg": [
+        "QT = ΣLU · 0.1 l/s.",
+        "Spitzendurchfluss QD nach Diagramm 1: grösster Einzel-LU > 3 → QD = 0.598 · QT^0.257 (0.5–15 l/s), sonst QD = 0.459 · QT^0.353 (0.3–300 l/s); unter dem Startpunkt der Kurve QD = QT.",
+        "Leitungsart: V (Verteilleitung) bei Strang verteilleitung/steigstrang; sonst A (Ausstossleitung, ein Apparat stromab) bzw. T (T-Stückleitung, mehrere).",
+        "Abgewickelte Länge = Länge der Leitung + längster Weg stromab bis zu einer Entnahmestelle.",
+        "Belastungswerttabelle des Systems und der Leitungsart; Spalte = kleinste Länge ≥ abgewickelte Länge (ohne Wasserzähler); Zeile = kleinste LU-Stufe ≥ ΣLU → Rohr da × s.",
+        "Vergleich: gezeichneter Aussendurchmesser ≥ da der Tabelle → ok, sonst zu klein."
+      ],
+      "ergebnis": "Abfrage sanitaer_dimensionierung (je Leitung ΣLU, QT, QD, Art, Länge, Tabelle, Rohr, Beleg, ok, Annahmen).",
+      "quellen": [
+        "SVGW W3 (Auszug im Handbuch Gebäudetechnik Sanitär 2025; Ausgabe nur auf S. 52 als 2013 genannt): Leitungsarten S. 48–51, Belastungswerttabellen der Hersteller S. 53–69 (SVGW-Zertifikate), Diagramm 1 S. 70; 1 LU = 0.1 l/s S. 47",
+        "Handbuch Gebäudetechnik Sanitär 2025 (Renggli Consulting, Lehrmittel mit Normauszügen; W:\\05_Normen und Merkblätter), übertragen mit Befund-Id je Wert; Werte im Büroordner HLKS_NORMTABELLEN, nicht im Repository",
+        "Büro-Excel «Diagramm 1 (2013).xls» (W:\\05_Normen und Merkblätter\\Technische Berechnungen\\Technische-B_Sanitär\\Berechunungen_freigegeben\\Wasser): gleiche Gleichungen",
+        "Kurvenwahl «grösster LU > 3 → Kurve 5»: Christian Steiner, 20.10.2026 (Teil A)"
+      ],
+      "annahmen": [
+        "LU- und Längenstufen aufgerundet («bis»), Spalte «ohne Wasserzähler».",
+        "Leitungsart aus Strang bzw. Anzahl Apparate (Gruppenabsperrung als Schnittstelle nicht erfasst).",
+        "Unter dem Startpunkt QD = QT (aus dem Diagrammbild).",
+        "Tabellenzellen aus dem Bild gelesen (Textschicht unbrauchbar) – Stichprobe durch Christian empfohlen."
+      ],
+      "grenzen": [
+        "Über dem Tabellenende kein Rohr (Berechnungsmethode mit Druckverlust nicht enthalten).",
+        "Zirkulation, Hausanschluss je Leitung und Druckverlust nicht gerechnet."
+      ],
+      "code": [
+        "src/Hlks.Kern/Rechnen/SanitaerDimensionierung.cs (SanitaerDimensionierung.Trinkwasser, Spitze)",
+        "src/Hlks.Kern/Rechnen/SanitaerNormtabellen.cs"
+      ],
+      "abfrage": "sanitaer_dimensionierung"
     }
   ]
 }
