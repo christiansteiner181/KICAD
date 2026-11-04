@@ -400,6 +400,18 @@
       "vorliegend": "original",
       "werte": "kataloge/stroemung.json (Tab. 1 Viskosität Luft, Tab. 3 Rauheit; Gleichungen Tab. 2, 1-12, 1-13, 1-15)",
       "hinweis": "Lehrmittel mit physikalischen Grundlagen (Reibungszahl, Viskosität, Rauheit); vom Bild übertragen 04.11.2026. Kein ζ-Katalog für Formstücke."
+    },
+    {
+      "id": "hersteller.geberit_planungshandbuch_2025",
+      "art": "hersteller",
+      "kuerzel": "Geberit Planungshandbuch Sanitär 2025",
+      "ausgabe": "Dok. 995.828.00.1 (2025)",
+      "gebiete": [
+        "Sanitär"
+      ],
+      "vorliegend": "online",
+      "werte": "kataloge/vorwand_geberit.json",
+      "hinweis": "Über oxomi (Portal 3000991, Dokument 10655687), von Christian am 04.11.2026 verlinkt. Profilquerschnitte, Elementbreiten und Anschlusshöhen stehen nicht im Handbuch – im Katalog als Annahmen geführt, bis Produktdatenblätter vorliegen."
     }
   ]
 }

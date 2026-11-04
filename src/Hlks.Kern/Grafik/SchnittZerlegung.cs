@@ -26,6 +26,10 @@ internal sealed partial class Schnittzerlegung(Schnittraum raum, bool schnitt)
     public List<Sichtteil> Teile { get; } = [];
     /// <summary>Rohe Schnittflächen je Element (Index), noch nicht vereinigt.</summary>
     public Dictionary<int, PathsD> Schnitte { get; } = [];
+    /// <summary>Dieselben rohen Schnittflächen je Element nach Farbe des Körperteils («» = ohne Farbe). Hat ein Element mehrere
+    /// Farben (z. B. Vorwand: Beplankung, Profile, Befestigungen), zeichnet Schnittgrafik je Farbe eine eigene Fläche.</summary>
+    public Dictionary<int, Dictionary<string, PathsD>> SchnitteJeFarbe { get; } = [];
+    string aktuelleFarbe = "";
     /// <summary>Dieselben Schnittflächen als konvexe Stücke (Verdecker für die Sichtkanten).</summary>
     public List<List<P2>> Schnittstuecke { get; } = [];
     /// <summary>Für den Teil in SchnittNetz.cs (Parameter des Hauptkonstruktors sind nur in dieser Datei sichtbar).</summary>
@@ -38,6 +42,7 @@ internal sealed partial class Schnittzerlegung(Schnittraum raum, bool schnitt)
         foreach (var t in k.Teile)
         {
             if (t.NichtSchneiden) continue;
+            aktuelleFarbe = t.Farbe ?? "";
             switch (t.Art)
             {
                 case "quader": Quader(element, k.Ebene, t); break;
@@ -52,11 +57,19 @@ internal sealed partial class Schnittzerlegung(Schnittraum raum, bool schnitt)
         }
     }
 
+    PathsD NachFarbe(int element)
+    {
+        if (!SchnitteJeFarbe.TryGetValue(element, out var d)) SchnitteJeFarbe[element] = d = [];
+        if (!d.TryGetValue(aktuelleFarbe, out var p)) d[aktuelleFarbe] = p = [];
+        return p;
+    }
+
     /// <summary>Konvexe Schnittfläche (Gegenuhrzeigersinn) eines Elements merken.</summary>
     void Schnitt(int element, List<P2> flaeche)
     {
         if (!Schnitte.TryGetValue(element, out var l)) Schnitte[element] = l = [];
         l.Add(SchnittGeometrie.Pfad(flaeche));
+        NachFarbe(element).Add(SchnittGeometrie.Pfad(flaeche));
         Schnittstuecke.Add(flaeche);
     }
 

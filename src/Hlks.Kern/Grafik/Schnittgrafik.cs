@@ -121,12 +121,17 @@ public static class Schnittgrafik
                     Fangpunkt(pts[0]); Fangpunkt(pts[1]);
                 }
             }
-            foreach (var fl in flaechen.GetValueOrDefault(i) ?? [])
+            // Element mit mehreren Farben (z. B. Vorwand: Beplankung, Profile, Befestigungen): Schnittfläche je Farbe, damit die Teile unterscheidbar bleiben
+            var jeFarbe = zerlegung.SchnitteJeFarbe.GetValueOrDefault(i) is { Count: > 1 } d && k.Ebene is not ("wand" or "decke" or "oeffnung")
+                ? d.Select(x => (Farbe: x.Key.Length > 0 ? x.Key : null, Flaechen: Polygone.Flaechen(Polygone.Vereinigen(x.Value)))).ToList()
+                : [(Farbe: farbe, Flaechen: flaechen.GetValueOrDefault(i) ?? [])];
+            foreach (var (ff, fls) in jeFarbe)
+            foreach (var fl in fls)
             {
                 teil.Primitive.Add(new Primitiv
                 {
                     Art = "polygon", Punkte = fl.Aussen, Loecher = fl.Loecher.Count > 0 ? fl.Loecher : null,
-                    Stil = Schnittstil(k, e, farbe, grob),
+                    Stil = Schnittstil(k, e, ff, grob),
                 });
                 foreach (var ring in fl.Loecher.Prepend(fl.Aussen))
                     for (int j = 0; j < ring.Count; j++)

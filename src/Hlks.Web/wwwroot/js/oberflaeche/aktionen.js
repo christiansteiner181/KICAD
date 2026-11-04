@@ -21,6 +21,7 @@ import '../familien/aktionen-bibliothek.js';   // Familienbibliothek: Explorer, 
 import './aktionen-schema.js';   // Schema-Ansicht (Modul 3, C2)
 import './aktionen-leitung.js';   // Rohr und Kanal zeichnen, Aufteilen mit Serie, Materialliste (Modul 3, C1)
 import './aktionen-sanitaer.js';   // Sanitär-Zusammenstellung: Knopf im Register Sanitär (Modul 4 Teil A-O)
+import './aktionen-vorwand.js';    // Geberit Vorwand (04.11.2026): Register Sanitär › Vorwand
 import './aktionen-koordination.js';   // Register Koordination: Projektvorgaben, Kollisionen, Aussparungen, BCF (Modul 3b, C1)
 import './aktionen-serienpdf.js';   // Serien-PDF: Plansätze je Gewerk, Gewerk eines Planblatts (entwurf/serien-pdf.md)
 import './aktionen-paletten.js';   // Register Ansicht › Paletten: je angemeldeter Palette ein Eintrag, Paletten zurücksetzen (W1)

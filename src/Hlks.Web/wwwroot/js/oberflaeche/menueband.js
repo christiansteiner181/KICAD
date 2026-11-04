@@ -29,7 +29,7 @@ const GRUPPENFOLGE = {
   huelle: ['Aufbauten', 'Materialien', 'Fenster', 'Übergang', 'Prüfen', 'Listen'],
   heizung: ['Leitungen', 'Familien'],
   lueftung: ['Leitungen', 'Familien'],
-  sanitaer: ['Leitungen', 'Apparate und Armaturen', 'Familien'],
+  sanitaer: ['Leitungen', 'Apparate und Armaturen', 'Vorwand', 'Familien'],
   msrl: ['Schema', 'Familien'],
   einfuegen: ['Verknüpfen / Übernehmen', 'Importieren', 'Unterlagen'],
   beschriften: ['Bemassung', 'Text', 'Detail', 'Symbol'],

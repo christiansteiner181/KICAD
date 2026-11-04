@@ -12,6 +12,7 @@ import { KALIBRIERBAR } from './kalibrierung.js';
 import { familieFelder, definitionAus, typTeile } from '../familien/typauswahl.js';
 import { serienListe, serieDef, serieLaden, haken as leitungHaken } from './leitung-daten.js';
 import { groessenListe } from './leitung-logik.js';
+import { elementWerte } from './vorwand-typen.js';
 import { istFrei, istRechteck, istAbwasser, groessenOptionen, vorbelegung, freiHinweis, abwasserHinweis, beschriftungVon } from './leitung-frei.js';
 
 const BEZUGSLINIEN = [['mitte', 'Mitte'], ['links', 'Links'], ['rechts', 'Rechts']];
@@ -46,6 +47,26 @@ export const WERKZEUGE = {
       { id: 'breite', titel: 'Breite', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
       { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
       { id: 'bruestung', titel: 'Brüstung', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
+    ],
+  },
+  vorwand: {   // Geberit Vorwand (04.11.2026): System, Tiefe, Höhe Pflicht; Bereiche im Hinweis (Planungshandbuch S. 175, 250)
+    titel: 'Vorwand',
+    felder: [
+      { id: 'system', titel: 'System', art: 'auswahl', werte: [['gis', 'Geberit GIS'], ['duofix', 'Geberit Duofix']], vorgabe: 'gis' },
+      { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
+      { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
+      { id: 'bezugslinie', titel: 'Rohbauwand', art: 'auswahl', werte: [['links', 'links'], ['rechts', 'rechts'], ['mitte', 'keine (frei stehend)']], vorgabe: 'links' },
+      { id: 'bauwerk', titel: 'Bauwerk', art: 'auswahl', werte: [['massiv', 'massiv'], ['trockenbau', 'Trockenbau']], vorgabe: 'massiv' },
+      { id: 'bodenaufbau', titel: 'Bodenaufbau', art: 'zahl', einheit: 'mm', platzhalter: '0', breite: 5 },
+      { id: 'bestuecken', titel: 'Bestücken', art: 'bool', vorgabe: true },
+      { id: 'kette', titel: 'Kette', art: 'bool', vorgabe: true },
+    ],
+    hinweis: 'Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden.',
+  },
+  montageelement: {
+    titel: 'Montageelement',
+    felder: [
+      { id: 'element', titel: 'Element', art: 'auswahl', get werte() { return elementWerte(); }, leer: 'wählen …' },
     ],
   },
   raum: {

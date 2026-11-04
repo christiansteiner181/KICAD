@@ -70,7 +70,7 @@ public static class Grafik
     // Die Unterlagen stehen vor HlksGrafik, weil diese als letzte Quelle für alles Übrige zuständig ist (Befund B3-1).
     // FamilienGrafik (Modul 2) zeichnet die familienfähigen Elemente mit bezuege.familie und steht deshalb ebenfalls vor
     // HlksGrafik (ihre Elemente sind von denen der Architektur und der Unterlagen verschieden).
-    public static readonly IReadOnlyList<IGrafikquelle> Quellen = [new BeschriftungGrafik(), new ArchitekturGrafik(), new FamilienGrafik(), new EinlageGrafik(), new GrundlagenGrafik(), new HuelleGrafik(), new AussparungGrafik(), new KollisionGrafik(), new ProblemMarkerGrafik(), new HlksGrafik()];
+    public static readonly IReadOnlyList<IGrafikquelle> Quellen = [new BeschriftungGrafik(), new ArchitekturGrafik(), new VorwandGrafik(), new FamilienGrafik(), new EinlageGrafik(), new GrundlagenGrafik(), new HuelleGrafik(), new AussparungGrafik(), new KollisionGrafik(), new ProblemMarkerGrafik(), new HlksGrafik()];
 
     static readonly HashSet<string> NieGrafisch = ["ansicht", "funktion"];
     static readonly HashSet<string> Gliederung = ["Gebaeude", "Geschoss", "Anlage", "System", "Strang", "Zone"];

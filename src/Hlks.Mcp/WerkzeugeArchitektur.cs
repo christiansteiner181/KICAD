@@ -57,6 +57,42 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("raumtrennung_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte)), trockenlauf);
 
+    [McpServerTool(Name = "vorwand_zeichnen"), Description(Hlks.Kern.VorwandZeichnen.Text)]   // Geberit Vorwand, 04.11.2026
+    public string VorwandZeichnenWerkzeug(
+        [Description("Geschoss (Kennzeichen oder Id)")] string geschoss,
+        [Description("Linienzug [[x,y], …] in mm, mindestens zwei Punkte; ohne z gilt die Geschosskote (OK Fertigboden)")] JsonElement punkte,
+        [Description("gis oder duofix")] string system,
+        [Description("Vorwandtiefe in mm inkl. Beplankung (GIS 100–700, Duofix 135–220 bzw. 420 mit Wandankerverlängerung)")] double tiefe,
+        [Description("Höhe über OK Fertigboden in mm (teilhoch = Ablagehöhe, raumhoch = Geschosshöhe)")] double hoehe,
+        [Description("links oder rechts (Vorgabe links) = Punkte auf der Rohbauwand links/rechts in Zeichenrichtung; mitte = frei stehend, Punkte auf der Achse")] string? bezugslinie = null,
+        [Description("massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel")] string? bauwerk = null,
+        [Description("Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)")] double? bodenaufbau = null,
+        [Description("Danach Montageelemente für die Apparate vor der Vorwand setzen (wie vorwand_bestuecken)")] bool bestuecken = false,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("vorwand_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte), ("system", system), ("tiefe", tiefe), ("hoehe", hoehe), ("bezugslinie", bezugslinie),
+            ("bauwerk", bauwerk), ("bodenaufbau", bodenaufbau), ("bestuecken", bestuecken)), trockenlauf);
+
+    [McpServerTool(Name = "montageelement_setzen"), Description(Hlks.Kern.MontageelementSetzen.Text)]
+    public string MontageelementSetzenWerkzeug(
+        [Description("Vorwand (Kennzeichen oder Id)")] string vorwand,
+        [Description("Elementtyp, z. B. gis.wc.sigma12.114, duofix.wt.112 (vorwand_stueckliste ohne vorwand listet die Typen)")] string element,
+        [Description("Punkt [x, y] in mm; Elementmitte auf die Vorderseite der Vorwand gezogen")] JsonElement? punkt = null,
+        [Description("Statt punkt: Elementmitte ab dem Vorwandanfang entlang der Achse in mm")] double? abstand = null,
+        [Description("Apparat, für den das Element gesetzt wird (bezuege.apparat)")] string? apparat = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("montageelement_setzen", Parameter(("vorwand", vorwand), ("element", element), ("punkt", punkt), ("abstand", abstand), ("apparat", apparat)), trockenlauf);
+
+    [McpServerTool(Name = "vorwand_bestuecken"), Description(Hlks.Kern.VorwandBestuecken.Text)]
+    public string VorwandBestueckenWerkzeug(
+        [Description("Vorwand (Kennzeichen oder Id)")] string vorwand,
+        [Description("Apparate bis zu diesem Abstand vor der Vorderseite in mm (Vorgabe 1000; Annahme Hauptlauf)")] double? reichweite = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("vorwand_bestuecken", Parameter(("vorwand", vorwand), ("reichweite", reichweite)), trockenlauf);
+
+    [McpServerTool(Name = "vorwand_stueckliste"), Description(Hlks.Kern.VorwandStueckliste.Text)]
+    public string VorwandStuecklisteWerkzeug([Description("Vorwand (Kennzeichen oder Id); leer = alle")] string? vorwand = null) =>
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "vorwand_stueckliste", Parameter(("vorwand", vorwand)))), synchronisieren: false);
+
     [McpServerTool(Name = "elemente_verschieben"), Description("Verschiebt Elemente mit Geometrie (Architektur, HLKS, Beschriftung) um dx, dy, dz. Türen und Fenster folgen ihrer Wand; eine Öffnung allein wandert entlang ihrer Wand.")]
     public string ElementeVerschieben(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,

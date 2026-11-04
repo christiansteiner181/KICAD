@@ -184,6 +184,7 @@ internal sealed partial class Schnittzerlegung
         if (flaeche.Count == 0) return;
         if (!Schnitte.TryGetValue(element, out var l)) Schnitte[element] = l = [];
         l.AddRange(flaeche);
+        NachFarbe(element).AddRange(flaeche);
         foreach (var f in Polygone.Flaechen(flaeche))
         {
             var punkte = new List<(double X, double Y)>();

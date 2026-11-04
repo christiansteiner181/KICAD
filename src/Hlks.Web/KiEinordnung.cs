@@ -31,6 +31,7 @@ public static class KiEinordnung
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
              "heizung_lesen", "heizung_leistung", "heizlast", "heizkoerper_auslegung", "rohr_druckverlust",   // Modul 5 Teil A-D (zurückgeholt 02.11.2026)
+             "vorwand_stueckliste",   // Geberit Vorwand, 04.11.2026: Stückliste, Befunde, Annahmen, nur lesend
              "lueftung_varianten", "lueftung_schema", "kanal_druckverlust", "montageabschnitte", "rueckmeldung_lesen",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",
@@ -60,7 +61,7 @@ public static class KiEinordnung
             ["datenpunkte_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +
             "Zahlenwerte brauchen eine Quelle (Kern).",
-            ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "raumtrennung_zeichnen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
+            ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "raumtrennung_zeichnen", "vorwand_zeichnen", "montageelement_setzen", "vorwand_bestuecken", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
              "material_aendern", "material_uebernehmen", "fenster_kennwerte", "waermebruecken_vorschlagen", "typmaterial_setzen", "vorgaben_setzen"]),
         new("Familien als Entwurf", "Familien entwerfen, ändern, platzieren und neue laden – immer als Entwurf; Freigabe, Bestätigen, Bibliothek und Übernahme " +
             "einer neueren Fassung macht der Mensch (Kern lehnt die KI dort ab, Verbotsliste). familien_quellen_nachfuehren speichert wie familie_aendern " +

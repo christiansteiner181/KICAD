@@ -8833,6 +8833,103 @@
             "src/Hlks.Kern/Pruefung/Pruefungen.cs:42"
           ],
           "hinweis": "Für die Anzeige im Beispielprojekt muss der Zustand zuerst hergestellt werden (Art am Bodenablauf entfernen, K löschen)."
+        },
+        {
+          "id": "m4-vorwand",
+          "titel": "Geberit Vorwand zeichnen (Duofix, GIS)",
+          "wo": {
+            "register": "Sanitär",
+            "gruppe": "Vorwand",
+            "knopf": "Vorwand",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Grundriss EG öffnen, Register Sanitär › Vorwand.",
+            "Optionsleiste: System «Geberit GIS», Tiefe 200, Höhe 1140, Rohbauwand «links», Bodenaufbau 100, Bestücken angehakt.",
+            "Im Bad E.02 auf der Innenfläche der Nordwand von links nach rechts zwei Punkte anklicken, Enter.",
+            "Detailgrad «fein» wählen und an die Vorwand heranzoomen."
+          ],
+          "erwartung": "Eine Vorwand VW-… entsteht entlang der Wand (Tiefe zur Raumseite). Hinter WC und Waschtisch sitzen Montageelemente (WC 114, WT) mit Kreuz und Kurzbezeichnung. Im Grundriss: Beplankung als dunkle Schnittfläche, geschnittene Vertikalprofile gefüllt, Horizontalprofile darunter gestrichelt, Montagewinkel und Wandanbindungen dünn. Im 3D ist die Beplankung durchscheinend, das Gestell grau, Befestigungen ocker, Elemente blau.",
+          "pruefpunkte": [
+            "Vorwand liegt auf der Raumseite der Wand, nicht in der Wand.",
+            "GIS: Horizontalprofile auf 5 und 65 cm über Rohboden und unter der Ablage (Planungshandbuch S. 251).",
+            "Montageelemente hinter WC und Waschtisch, Artikel in den Eigenschaften.",
+            "Stückliste Vorwand ohne Befunde; Annahmen aufgeführt."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Detail Vorwand EG (1:20, fein)",
+            "zustand": "Bäder E.02 (GIS) und E.03 (Duofix), je 200 mm tief, 1140 mm hoch, bestückt"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-vorwand.js:1",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/vorwand.js:1",
+            "src/Hlks.Kern/Vorwand/VorwandGestell.cs:1",
+            "kataloge/vorwand_geberit.json"
+          ],
+          "hinweis": "Neu 04.11.2026 (Christian: Geberit Duofix und GIS, Profile und Befestigungen gezeichnet). Profilquerschnitte, Elementbreiten und Anschlusshöhen sind Annahmen, bis Produktdatenblätter vorliegen."
+        },
+        {
+          "id": "m4-vorwand-element",
+          "titel": "Montageelement setzen und Vorwand bestücken",
+          "wo": {
+            "register": "Sanitär",
+            "gruppe": "Vorwand",
+            "knopf": "Montageelement / Bestücken",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Montageelement: Elementtyp in der Optionsleiste wählen, Maus über die Vorwand, klicken.",
+            "Bestücken: die Vorwand wählen, Sanitär › Vorwand › Bestücken."
+          ],
+          "erwartung": "Das Element sitzt mit seiner Mitte an der geklickten Stelle auf der Vorderseite der Vorwand. Bestücken setzt hinter jeden Apparat vor der Vorwand das passende Element; Apparate mit Element bleiben. Das Gestell weicht den Elementen aus (GIS-Vertikalprofile beidseits, Duofix-Ständer in den Lücken).",
+          "pruefpunkte": [
+            "Element in der Vorwand, nicht davor.",
+            "Kein zweites Element hinter demselben Apparat.",
+            "Duofix: höchstens 55 cm zwischen Ständern bzw. Elementen."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Schnitt hinter der Beplankung (1:20)",
+            "zustand": "Gestell von vorne, Apparate und Leitungen ausgeblendet"
+          },
+          "quelle": [
+            "src/Hlks.Kern/Vorwand/VorwandBefehle.cs:1"
+          ],
+          "hinweis": "Neu 04.11.2026."
+        },
+        {
+          "id": "m4-vorwand-stueckliste",
+          "titel": "Stückliste und Befunde der Vorwand",
+          "wo": {
+            "register": "Sanitär",
+            "gruppe": "Vorwand",
+            "knopf": "Stückliste Vorwand",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Eine Vorwand wählen (oder keine für alle).",
+            "Sanitär › Vorwand › Stückliste Vorwand."
+          ],
+          "erwartung": "Dialog mit Profilen bzw. Schienen und Ständern samt Zuschnitt, Befestigungen, Beplankung in m², Montageelementen mit Artikelnummer, Befunden (Tiefe, Höhe, Mindesttiefe je Element, Überschneidungen) und den Annahmen.",
+          "pruefpunkte": [
+            "GIS-Profilzuschnitt = Länge minus 3 cm.",
+            "Raumhohe Duofix-Ständer mit Artikel nach Raumhöhe (111.871–874.00.2).",
+            "Zu geringe Tiefe für ein Element erscheint als Befund."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Dialog Stückliste Vorwand",
+            "zustand": "VW-1 (GIS) gewählt"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-vorwand.js:1",
+            "src/Hlks.Kern/Vorwand/VorwandBefehle.cs:1"
+          ],
+          "hinweis": "Neu 04.11.2026."
         }
       ]
     },

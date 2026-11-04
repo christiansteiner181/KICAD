@@ -123,7 +123,7 @@ Aktionen sind zentral in `aktionen.js` registriert (`id`, `titel`, `symbol` (SVG
 | Architektur | Wand (WA), Tür (DR), Fenster (WN), Raum (RM), Raumtrennung (RT: Klick, Klick; teilt jeden Raum, den die Linie ganz durchquert, und begrenzt «Raum» wie eine Wand; Linie läuft im Zug weiter, Esc beendet), Achse (GR) – Werkzeuge seit Modul 1a (`aktionen-zeichnen.js`, `js/werkzeuge/`) |
 | Architektur, Gruppe «Decke, Boden, Dach» (seit 1c) | Decke, Boden, Dach → Dialog `decke_erzeugen`; keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
 | Hülle (seit 1c, zwischen Architektur und Heizung) | Gruppen **Aufbauten** (Aufbau …, Zuweisen …), **Materialien** (Material …), **Fenster** (Kennwerte …), **Übergang** (Übergang …), **Prüfen** (Hülle prüfen, Wärmebrücken vorschlagen), **Listen** (Raumgrenzen, Hüllbauteile). Keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
-| Heizung, Lüftung, Sanitär, MSRL (je Gewerk seit 04.11.2026, vorher ein Register «Gebäudetechnik»; Christian: «die tab aufteilung gewerkeweise gliedern», «ein weiteres Register MSRL») | Ein Werkzeug mehrerer Gewerke steht in jedem seiner Register (`register` als Liste, `register.js › registerVon/imRegister`; das erste ist sein Hauptregister für Kürzelliste und Schnellzugriff). **Heizung:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil (PF, deaktiviert) · «Familien». **Lüftung:** «Leitungen» Kanal (DT), Parallele Leitungen, Formteil · «Familien». **Sanitär:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil · «Apparate und Armaturen» Sanitär-Zusammenstellung, Sanitärapparat (PX), Armatur (PA) – beide deaktiviert, «folgt in Modul 2/3» · «Familien». **MSRL:** «Schema» Verbinden, Trennen, Element einfügen, Neu anordnen (dieselben Knöpfe wie Ansicht › Schema) · «Familien». «Familien» = Familie platzieren (CM), Familie aus Unterlagen, Familien im Explorer (Modul 2, C3). Ein gemerktes Register «Gebäudetechnik» öffnet Heizung. |
+| Heizung, Lüftung, Sanitär, MSRL (je Gewerk seit 04.11.2026, vorher ein Register «Gebäudetechnik»; Christian: «die tab aufteilung gewerkeweise gliedern», «ein weiteres Register MSRL») | Ein Werkzeug mehrerer Gewerke steht in jedem seiner Register (`register` als Liste, `register.js › registerVon/imRegister`; das erste ist sein Hauptregister für Kürzelliste und Schnellzugriff). **Heizung:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil (PF, deaktiviert) · «Familien». **Lüftung:** «Leitungen» Kanal (DT), Parallele Leitungen, Formteil · «Familien». **Sanitär:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil · «Apparate und Armaturen» Sanitär-Zusammenstellung, Sanitärapparat (PX), Armatur (PA) – beide deaktiviert, «folgt in Modul 2/3» · «Vorwand» Vorwand, Montageelement, Bestücken, Stückliste Vorwand (Abschnitt «Geberit Vorwand») · «Familien». **MSRL:** «Schema» Verbinden, Trennen, Element einfügen, Neu anordnen (dieselben Knöpfe wie Ansicht › Schema) · «Familien». «Familien» = Familie platzieren (CM), Familie aus Unterlagen, Familien im Explorer (Modul 2, C3). Ein gemerktes Register «Gebäudetechnik» öffnet Heizung. |
 | Einfügen (seit 1b) | Gruppe «Verknüpfen / Übernehmen»: IFC übernehmen · «Importieren»: CAD einfügen (DWG/DXF), PDF einfügen, Bild einfügen · «Unterlagen»: Kalibrieren (Werkzeug), Unterlagen verwalten. Reihenfolge wie in Revit: dort steht «Einfügen» nach «Systeme» (hier die Register je Gewerk bis MSRL) und vor «Beschriften». Keine Kürzel (Revit hat für diese Befehle keine). Beschreibung: Abschnitt «Register Einfügen» |
 | Beschriften (seit 1a, wie Revit «Beschriften») | Bemassung (DI), Text (TX), Detaillinie (DL), Höhenkote (EL), Füllbereich, Nordpfeil |
 | Koordination (seit Modul 3b, C1, zwischen Ändern und Ansicht) | Gruppen **Vorgaben** (Projektvorgaben), **Kollisionen** (Kollisionen prüfen, Kollisionsliste), **Aussparungen** (Aussparungen vorschlagen, Aussparungen nummerieren, Aussparungsliste, Abgleich, Aussparungsplan anlegen, IFC für Architekt), **Koordinationsplan** (Koordinationsplan, Aussparungsboxen; Modul 7 Teil B3), **BCF** (BCF exportieren, BCF importieren). Keine Kürzel. Beschreibung: Abschnitt «Koordination (Modul 3b, C1)» |
@@ -4143,3 +4143,36 @@ Reine Logik in `js/werkzeuge/tempmass.js` und `js/werkzeuge/fangwahl.js` (in Nod
   mit `dz` und `geschoss`).
 - Die Leertaste dreht beim «Familie platzieren» schon länger um 90° (keine Änderung).
 - **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~KopierenOptionenTests"`.
+
+
+## Geberit Vorwand (04.11.2026)
+
+Christian 04.11.2026: «eine funktion zum erstellen von geberit duofix und gis vorwänden» (Geberit Planungshandbuch Sanitär 2025, Dok. 995.828.00.1),
+«auch die Profile und befestigungen müssen gezeichnet werden», «zur prüfung brauche ich dann ausschnitte».
+
+**Knöpfe:** Register Sanitär › Gruppe «Vorwand» (`aktionen-vorwand.js`):
+- **Vorwand** (Werkzeug `vorwand`, `werkzeuge/vorwand.js`): Punkte auf der Rohbauwand anklicken wie bei der Wand, Enter oder Doppelklick beendet → `vorwand_zeichnen`.
+  Optionsleiste: System (GIS/Duofix), **Tiefe** und **Höhe** (Pflicht, keine Vorgabe; Tiefe inkl. Beplankung), Rohbauwand links/rechts bzw. keine (frei stehend),
+  Bauwerk massiv/Trockenbau (Abstand der Montagewinkel), Bodenaufbau (Profile stehen auf dem Rohboden), Bestücken (Vorgabe ja), Kette.
+- **Montageelement** (Werkzeug `montageelement`): Elementtyp in der Optionsleiste (aus `vorwand_stueckliste` › elementtypen), Maus über eine Vorwand, Klick → `montageelement_setzen`.
+- **Bestücken** (gewählte Vorwand oder ihr Element): `vorwand_bestuecken` setzt hinter jeden Apparat vor der Vorwand das passende Element (Klasse und System).
+- **Stückliste Vorwand**: Dialog aus `vorwand_stueckliste` – Teile mit Artikel und Zuschnitt, Beplankung in m², Elemente, Befunde, Annahmen.
+
+**Kern** (`src/Hlks.Kern/Vorwand/`): Klassen Vorwand (VW, Linie wie die Wand: Achse, Dicke = Tiefe, Höhe ab OKFF; Eigenschaften system, rueckseite, bauwerk, bodenaufbau)
+und Montageelement (ME, Punkt auf der Vorderseite, teilVon = Vorwand, Eigenschaften element, artikel, bezuege.apparat). Profile, Schienen, Ständer, Befestigungen und
+Beplankung sind **keine Elemente**: `VorwandGestell.Ableiten` erzeugt sie bei jedem Zeichnen aus `kataloge/vorwand_geberit.json` (sie folgen damit jeder Änderung).
+GIS (S. 251): Horizontalprofile OK 5/65/130/135 cm über Rohboden, weitere je 65 cm, oberstes unter der Ablage; Vertikalprofile an den Enden, ≤ 250 cm, beidseits der Elemente;
+Montagewinkel Boden (raumhoch auch Decke) ≤ 100 cm bzw. 40 cm Trockenbau, erster 10 cm von der Wand; Wandanbindungen je Vertikalprofil. Duofix (S. 191–197): Systemschiene
+Boden und oben (raumhoch Decke), Ständer an freien Enden und so, dass höchstens 55 cm zwischen Stützen liegen (Elemente sind selbsttragend und zählen als Stütze), raumhohe
+Ständer mit Artikel nach Länge; Schienenbefestigung ≤ 50 cm; Wandanker je Element zwei, je teilhohem Ständer einer, ab 20 cm Tiefe mit Verlängerung. Beplankung 18 mm
+(Duofix-Paneel 200 × 60 cm horizontal, Stösse versetzt), teilhoch mit Ablage. Befunde: Tiefe/Höhe ausserhalb des Systems, Mindesttiefe je Element, Element höher als die
+Vorwand, Überschneidungen. Was das Handbuch nicht hergibt (Profilquerschnitte, Elementbreiten, Anschlusshöhen, Lage der Wandanker), steht im Katalog unter «annahmen»
+und erscheint in der Stückliste.
+
+**Grafik** (`VorwandGrafik`): Grundriss – Umriss (geschnitten mittel), Beplankung als Schnittfläche, im Detailgrad mittel/fein geschnittene Profile gefüllt, Profile unter
+der Schnitthöhe gestrichelt, Befestigungen dünn, Elemente als Rechteck mit Kreuz und Kurzbezeichnung (Anschlüsse als Fangpunkte). 3D/Schnitt/Ansicht – Quader je Teil
+(Beplankung durchscheinend grün, Profile grau, Befestigungen ocker, Elemente blau mit Traversen und Stutzen). Schnitt und Ansicht zeichnen die Schnittflächen eines
+Elements mit mehreren Farben seit 04.11.2026 je Farbe (`Schnittzerlegung.SchnitteJeFarbe`), sonst unverändert. Prüfausschnitte: Schnittlinie direkt hinter der
+Beplankung zeigt das Gestell von vorne (Klassen Leitung, Formteil, Armatur, Apparat ausblenden).
+
+**Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~VorwandTests"`.
