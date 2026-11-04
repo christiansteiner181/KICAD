@@ -13,6 +13,7 @@ import { griffeEinrichten } from '../werkzeuge/griffe.js';
 import { wandWerkzeug } from '../werkzeuge/wand.js';
 import { oeffnungWerkzeug } from '../werkzeuge/oeffnung.js';
 import { raumWerkzeug } from '../werkzeuge/raum.js';
+import { raumtrennungWerkzeug } from '../werkzeuge/raumtrennung.js';
 import { achseWerkzeug } from '../werkzeuge/achse.js';
 import { bemassungWerkzeug } from '../werkzeuge/bemassung.js';
 import { textWerkzeug } from '../werkzeuge/text.js';
@@ -50,6 +51,7 @@ werkzeug({ id: 'arch.wand', titel: 'Wand', symbol: 'wand', kuerzel: 'WA', regist
 werkzeug({ id: 'arch.tuer', titel: 'Tür', symbol: 'tuer', kuerzel: 'DR', register: 'architektur', gruppe: 'Bauteile', wo: 'grundriss', wid: 'tuer', fabrik: () => oeffnungWerkzeug('Tuer') });
 werkzeug({ id: 'arch.fenster', titel: 'Fenster', symbol: 'fenster', kuerzel: 'WN', register: 'architektur', gruppe: 'Bauteile', wo: 'grundriss', wid: 'fenster', fabrik: () => oeffnungWerkzeug('Fenster') });
 werkzeug({ id: 'arch.raum', titel: 'Raum', symbol: 'raum', kuerzel: 'RM', register: 'architektur', gruppe: 'Raum', wo: 'grundriss', wid: 'raum', fabrik: raumWerkzeug });
+werkzeug({ id: 'arch.raumtrennung', titel: 'Raumtrennung', symbol: 'raumtrennung', kuerzel: 'RT', register: 'architektur', gruppe: 'Raum', wo: 'grundriss', wid: 'raumtrennung', fabrik: raumtrennungWerkzeug });
 werkzeug({ id: 'arch.achse', titel: 'Achse', symbol: 'achse', kuerzel: 'GR', register: 'architektur', gruppe: 'Raster', wo: 'grundriss', wid: 'achse', fabrik: achseWerkzeug });
 
 // ---------------------------------------------------------------------------------------------- Beschriften (alle Plan-Ansichten)

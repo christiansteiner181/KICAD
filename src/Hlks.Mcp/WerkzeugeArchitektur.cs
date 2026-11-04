@@ -50,6 +50,13 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("raum_erkennen", Parameter(("geschoss", geschoss), ("punkt", punkt), ("nummer", nummer), ("nutzung", nutzung), ("name", name)), trockenlauf);
 
+    [McpServerTool(Name = "raumtrennung_zeichnen"), Description(Hlks.Kern.RaumtrennungZeichnen.Text)]
+    public string RaumtrennungZeichnen(
+        [Description("Geschoss (Kennzeichen oder Id)")] string geschoss,
+        [Description("Linienzug [[x,y], …] in mm, mindestens zwei Punkte")] JsonElement punkte,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("raumtrennung_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte)), trockenlauf);
+
     [McpServerTool(Name = "elemente_verschieben"), Description("Verschiebt Elemente mit Geometrie (Architektur, HLKS, Beschriftung) um dx, dy, dz. Türen und Fenster folgen ihrer Wand; eine Öffnung allein wandert entlang ihrer Wand.")]
     public string ElementeVerschieben(
         [Description("Kennzeichen oder Ids, z. B. [\"W-1\", \"T-1\"]")] JsonElement elemente,

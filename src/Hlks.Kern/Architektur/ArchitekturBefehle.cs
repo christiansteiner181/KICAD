@@ -13,6 +13,7 @@ public static class ArchitekturBefehle
         r.Hinzufuegen(new WandZeichnen());
         r.Hinzufuegen(new OeffnungSetzen());
         r.Hinzufuegen(new RaumErkennen());
+        r.Hinzufuegen(new RaumtrennungZeichnen());   // Raumtrennlinie, teilt Räume (Raumtrennung.cs)
         r.Hinzufuegen(new ElementeVerschieben());
         r.Hinzufuegen(new ElementeKopieren());
         r.Hinzufuegen(new ElementeDrehen());

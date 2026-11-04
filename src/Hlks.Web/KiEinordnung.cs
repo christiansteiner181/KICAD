@@ -60,7 +60,7 @@ public static class KiEinordnung
             ["datenpunkte_vorschlagen"]),
         new("Architektur und Hülle", "Wände, Decken, Öffnungen, Räume, Aufbauten, Materialien und Vorgaben im Projekt – Modellarbeit, zurücknehmbar; " +
             "Zahlenwerte brauchen eine Quelle (Kern).",
-            ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
+            ["wand_zeichnen", "decke_erzeugen", "oeffnung_setzen", "raum_erkennen", "raumtrennung_zeichnen", "aufbau_anlegen", "aufbau_aendern", "aufbau_zuweisen", "material_anlegen",
              "material_aendern", "material_uebernehmen", "fenster_kennwerte", "waermebruecken_vorschlagen", "typmaterial_setzen", "vorgaben_setzen"]),
         new("Familien als Entwurf", "Familien entwerfen, ändern, platzieren und neue laden – immer als Entwurf; Freigabe, Bestätigen, Bibliothek und Übernahme " +
             "einer neueren Fassung macht der Mensch (Kern lehnt die KI dort ab, Verbotsliste). familien_quellen_nachfuehren speichert wie familie_aendern " +

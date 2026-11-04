@@ -18,7 +18,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
 {
     public string Name => "architektur";
 
-    static readonly string[] Klassen = ["Wand", "Tuer", "Fenster", "Decke", "Dach", "Raum", "Achse", "Stuetze", "Traeger", "Treppe"];
+    static readonly string[] Klassen = ["Wand", "Tuer", "Fenster", "Decke", "Dach", "Raum", "Raumtrennung", "Achse", "Stuetze", "Traeger", "Treppe"];
 
     // Massvorgaben der Darstellung
     const double RaumSchrift = 2.5;          // mm Papier, Raumstempel (Spezifikation; dort als Annahme geführt)
@@ -198,6 +198,7 @@ public sealed class ArchitekturGrafik : IGrafikquelle
         if (k.IstArt(e, "Tuer")) return Tuer(ctx, e);
         if (k.IstArt(e, "Fenster")) return Fenster(ctx, e);
         if (k.IstArt(e, "Raum")) return Raum(ctx, e);
+        if (k.IstArt(e, "Raumtrennung")) return Raumtrennung(e);
         if (k.IstArt(e, "Achse")) return Achse(ctx, e);
         if (k.IstArt(e, "Decke") || k.IstArt(e, "Dach")) return Decke(ctx, e);
         if (k.IstArt(e, "Stuetze")) return Stuetze(ctx, e);
@@ -381,6 +382,18 @@ public sealed class ArchitekturGrafik : IGrafikquelle
     }
 
     /// <summary>Achse: strichpunktiert dünn, an beiden Enden ein Kreis Ø 8 mm (Papier) mit der Bezeichnung.</summary>
+    /// <summary>Raumtrennlinie im Grundriss: dünn gestrichelt auf der Ebene der Räume (wie Revit); kein Körper im 3D.</summary>
+    static IEnumerable<Grafikteil> Raumtrennung(Element e)
+    {
+        var g = e.Geometrie;
+        if (g is null || g.Punkte.Count < 2) return [];
+        var pk = g.Punkte.Select(p => new[] { p[0], p[1] }).ToList();
+        var prim = new List<Primitiv>();
+        var kanten = new List<double[][]>();
+        for (int i = 1; i < pk.Count; i++) { prim.Add(Linie(pk[i - 1], pk[i], Stifte.Duenn, "strich")); kanten.Add([pk[i - 1], pk[i]]); }
+        return [new Grafikteil { Id = e.Id, Ebene = "raum", Primitive = prim, Fangpunkte = pk, Fangkanten = kanten }];
+    }
+
     IEnumerable<Grafikteil> Achse(GrafikKontext ctx, Element e)
     {
         var g = e.Geometrie;

@@ -246,6 +246,9 @@
     "beschreibung": "Achse des Achsrasters (Bezugslinie), sichtbar in allen Grundrissen und in Schnitten, die sie kreuzen.",
     "eigenschaften": [ { "name": "bezeichnung", "typ": "text", "pflicht": true, "beschreibung": "Achsbezeichnung, z. B. A, B, 1, 2" } ] },
 
+  { "name": "Raumtrennung", "kuerzel": "RT", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcVirtualElement", "geometrie": "linie", "brauchtGeschoss": true,
+    "beschreibung": "Raumtrennlinie ohne Dicke (wie Revit «Raumtrennung»): begrenzt Räume wie eine Wand, schliesst offene Bereiche und unterteilt grosse Flächen (raumtrennung_zeichnen, raum_erkennen). Nur im Grundriss sichtbar." },
+
   { "name": "Beschriftung", "abstrakt": true, "schicht": "beschriftung", "gewerk": "allgemein", "brauchtAnsicht": true,
     "beschreibung": "Basis der ansichtsgebundenen 2D-Beschriftung (wie in Revit nur in der eigenen Ansicht sichtbar). bezuege.ansicht = Ansicht. Koordinaten in Modell-mm der Ansicht (Grundriss: x, y; Schnitt/Ansicht: u entlang der Schnittlinie, v = Höhe z)." },
   { "name": "Detaillinie", "kuerzel": "DL", "basis": "Beschriftung", "geometrie": "polylinie",

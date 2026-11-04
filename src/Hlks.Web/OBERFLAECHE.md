@@ -120,7 +120,7 @@ Aktionen sind zentral in `aktionen.js` registriert (`id`, `titel`, `symbol` (SVG
 | Register | Gruppen und Aktionen (Kürzel) |
 | --- | --- |
 | Datei (blau, wie Revit) | Projekt öffnen, Projekt anlegen (leer / Beispielprojekt), Projekt schliessen, zuletzt geöffnet |
-| Architektur | Wand (WA), Tür (DR), Fenster (WN), Raum (RM), Achse (GR) – Werkzeuge seit Modul 1a (`aktionen-zeichnen.js`, `js/werkzeuge/`) |
+| Architektur | Wand (WA), Tür (DR), Fenster (WN), Raum (RM), Raumtrennung (RT: Klick, Klick; teilt jeden Raum, den die Linie ganz durchquert, und begrenzt «Raum» wie eine Wand; Linie läuft im Zug weiter, Esc beendet), Achse (GR) – Werkzeuge seit Modul 1a (`aktionen-zeichnen.js`, `js/werkzeuge/`) |
 | Architektur, Gruppe «Decke, Boden, Dach» (seit 1c) | Decke, Boden, Dach → Dialog `decke_erzeugen`; keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
 | Hülle (seit 1c, zwischen Architektur und Gebäudetechnik) | Gruppen **Aufbauten** (Aufbau …, Zuweisen …), **Materialien** (Material …), **Fenster** (Kennwerte …), **Übergang** (Übergang …), **Prüfen** (Hülle prüfen, Wärmebrücken vorschlagen), **Listen** (Raumgrenzen, Hüllbauteile). Keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
 | Gebäudetechnik | Gruppe «Leitungen»: **Rohr (PI)** und **Kanal (DT)** (Werkzeuge seit Modul 3, C1 – Abschnitt «Leitungen zeichnen»), Formteil (PF) – deaktiviert; Gruppe «Apparate und Armaturen»: Familie platzieren (CM), Familie aus Unterlagen, Familien im Explorer … (Modul 2, C3), Sanitärapparat (PX), Armatur (PA) – deaktiviert, «folgt in Modul 2/3» |

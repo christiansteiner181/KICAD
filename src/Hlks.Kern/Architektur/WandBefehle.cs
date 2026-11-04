@@ -215,12 +215,13 @@ public sealed class RaumErkennen : IBefehl
         double x = pt[0], y = pt[1];
         // Annahme: alle Wände des Geschosses begrenzen Räume (eine Eigenschaft «raumbegrenzend» gibt es noch nicht)
         var waende = Wandgeometrie.DesGeschosses(k.Arbeit, k.Katalog, geschoss.Id).Where(w => w.Dicke > 0).ToList();
-        if (waende.Count == 0)
+        var trennung = Raumtrennungen.DesGeschosses(k.Arbeit, k.Katalog, geschoss.Id);   // Raumtrennlinien begrenzen wie Wände
+        if (waende.Count == 0 && trennung.Count == 0)
             throw new HlksFehler($"Im Geschoss {geschoss.Kennzeichen} gibt es keine Wände mit Dicke.", "Zuerst Wände zeichnen (wand_zeichnen), dann den Raum erkennen.");
         if (waende.FirstOrDefault(w => Polygone.Innen(w.Band(), x, y)) is { } inWand)
             throw new HlksFehler($"Der Punkt liegt in der Wand {inWand.Wand.Kennzeichen}.", "Einen Punkt im Rauminnern angeben.");
 
-        var baum = Polygone.Baum(new PathsD(waende.Select(w => w.Band())));
+        var baum = Polygone.Baum(new PathsD(waende.Select(w => w.Band()).Concat(trennung.Select(Raumtrennungen.Bandpfad))));
         PolyPathD? treffer = null;
         double kleinste = double.MaxValue;
         void Suchen(PolyPathD knoten)
@@ -247,6 +248,7 @@ public sealed class RaumErkennen : IBefehl
 
         double kote = geschoss.Zahl("kote") ?? 0;
         var ring = Polygone.Ring(treffer.Polygon!, true);
+        if (trennung.Count > 0) ring = Raumtrennungen.AufLinien(ring, trennung);
         var eig = new JsonObject();
         if (Param.Text(p, "nummer") is { } nr) eig["nummer"] = nr;
         if (Param.Text(p, "nutzung") is { } nu) eig["nutzung"] = nu;

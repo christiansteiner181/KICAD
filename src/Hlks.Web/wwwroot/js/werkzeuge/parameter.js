@@ -333,3 +333,10 @@ export function tuerUmdrehen(tuer, was) {
   if (was === 'band') return { element: tuer.kennzeichen, eigenschaften: { band: (w.band ?? 'anfang') === 'anfang' ? 'ende' : 'anfang' } };
   throw new WerkzeugFehler(`«${was}» lässt sich nicht umdrehen.`, 'seite oder band');
 }
+
+/** raumtrennung_zeichnen. */
+export function raumtrennungParameter({ geschoss, punkte }) {
+  if (!geschoss) throw new WerkzeugFehler('Die Ansicht hat kein Geschoss.', 'Einen Grundriss mit Geschoss aktivieren.');
+  if (!Array.isArray(punkte) || punkte.length < 2) throw new WerkzeugFehler('Für eine Raumtrennung braucht es zwei Punkte.', 'Anfangs- und Endpunkt anklicken.');
+  return { geschoss, punkte: punkte.map(pkt) };
+}

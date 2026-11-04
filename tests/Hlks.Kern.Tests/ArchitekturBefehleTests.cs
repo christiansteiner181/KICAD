@@ -177,6 +177,41 @@ public class ArchitekturBefehleTests
         Assert.Contains("R-1", doppelt.Fehler);
     }
 
+    // ---------------------------------------------------------------- raumtrennung_zeichnen
+
+    [Fact]
+    public void Raumtrennung_TeiltRaumGenauAnDerLinie_UndBegrenztRaumErkennen()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("raum_erkennen", new JsonObject { ["geschoss"] = "EG", ["punkt"] = Pt(3000, 2000), ["nummer"] = "0.01", ["nutzung"] = "Wohnen" }));
+        // Linie zu kurz: Raum bleibt
+        var kurz = Ok(p.Ausfuehren("raumtrennung_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([4000, 1000], [4000, 3000]) }));
+        Assert.Contains(kurz.Hinweise, h => h.Contains("R-1 nicht geteilt"));
+        Assert.Equal(22.04, Math.Round(Hole(p, "R-1").Geometrie!.Flaeche() / 1e6, 2));
+        // Linie über die Wände hinaus: zwei Räume 2.9 × 3.8 m, Grenze genau bei x = 3000
+        var e = Ok(p.Ausfuehren("raumtrennung_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([3000, -500], [3000, 4500]) }));
+        Assert.Contains(e.Aenderungen, a => a.Art == "angelegt" && a.Klasse == "Raumtrennung");
+        var r1 = Hole(p, "R-1"); var r2 = Hole(p, "R-2");
+        Assert.Equal(11.02, Math.Round(r1.Geometrie!.Flaeche() / 1e6, 4));
+        Assert.Equal(11.02, Math.Round(r2.Geometrie!.Flaeche() / 1e6, 4));
+        Assert.Equal(4, r1.Geometrie.Punkte.Count);
+        Assert.Equal(4, r2.Geometrie.Punkte.Count);
+        Assert.Equal("0.01", r1.Text("nummer"));
+        Assert.Null(r2.Text("nummer"));                       // neuer Teil: Nummer vergibt der Mensch
+        Assert.Equal("Wohnen", r2.Text("nutzung"));
+        var grenze = r1.Geometrie.Punkte.Concat(r2.Geometrie.Punkte).Where(q => Math.Abs(q[0] - 3000) < 1).ToList();
+        Assert.Equal(4, grenze.Count);
+        Assert.All(grenze, q => Assert.Equal(3000, q[0], 6));
+
+        // raum_erkennen sieht die Trennlinie als Begrenzung
+        var q = Rechteck();
+        Ok(q.Ausfuehren("raumtrennung_zeichnen", new JsonObject { ["geschoss"] = "EG", ["punkte"] = Pts([3000, 0], [3000, 4000]) }));
+        Ok(q.Ausfuehren("raum_erkennen", new JsonObject { ["geschoss"] = "EG", ["punkt"] = Pt(1000, 2000) }));
+        var links = Hole(q, "R-1").Geometrie!;
+        Assert.Equal(11.02, Math.Round(links.Flaeche() / 1e6, 4));
+        Nahe([100, 100, 3000, 3900], Box(links.Punkte));
+    }
+
     // ---------------------------------------------------------------- Nachführung
 
     [Fact]

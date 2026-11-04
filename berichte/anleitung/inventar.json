@@ -3075,6 +3075,42 @@
           "hinweis": "Nummer und Nutzung sind frei gewählte Testbezeichnungen."
         },
         {
+          "id": "m1a-raumtrennung",
+          "titel": "Raum mit Raumtrennung unterteilen",
+          "wo": {
+            "register": "Architektur",
+            "gruppe": "Raum",
+            "knopf": "Raumtrennung",
+            "kuerzel": "RT",
+            "sonst": ""
+          },
+          "schritte": [
+            "RT tippen.",
+            "Unterhalb des Raums E.10 bei 16000 | 1500 klicken (ausserhalb der Wand).",
+            "Oberhalb bei 16000 | 6500 klicken.",
+            "Esc drücken.",
+            "Für einen offenen Bereich: zuerst die Trennlinie über die Öffnung zeichnen, dann mit RM in den Bereich klicken."
+          ],
+          "erwartung": "Eine dünne gestrichelte Linie entsteht. Der Raum E.10 wird an der Linie geteilt: der grössere Teil bleibt E.10, der andere wird ein neuer Raum mit derselben Nutzung, aber ohne Nummer. Beide Flächen ergeben zusammen die alte Fläche. Reicht die Linie nicht von Rand zu Rand, bleibt der Raum unverändert (Hinweis). Das Werkzeug «Raum» behandelt Trennlinien wie Wände.",
+          "pruefpunkte": [
+            "Gestrichelte Trennlinie im Grundriss.",
+            "Zwei Raumstempel, Summe der Flächen gleich der alten Fläche.",
+            "Neuer Raum ohne Nummer im Projektbrowser.",
+            "Zu kurze Linie: Raum unverändert, Hinweis «nicht geteilt»."
+          ],
+          "bild": {
+            "projekt": "beispiel",
+            "ansicht": "Grundriss EG Sanitär",
+            "zustand": "Raum E.10 aus «Raum aus Wänden erkennen», mit Trennlinie bei x 16000 in zwei Räume geteilt"
+          },
+          "quelle": [
+            "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-zeichnen.js:54",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/raumtrennung.js:1",
+            "src/Hlks.Kern/Architektur/Raumtrennung.cs:1"
+          ],
+          "hinweis": "Neu 04.11.2026 (Christian: Trennwerkzeug für grosse Zonen). Bild noch nicht aufgenommen."
+        },
+        {
           "id": "m1a-achse",
           "titel": "Achse zeichnen",
           "wo": {

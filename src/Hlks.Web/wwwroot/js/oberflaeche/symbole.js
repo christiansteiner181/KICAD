@@ -14,6 +14,7 @@ const S = {
   tuer: '<path d="M8 28V5h14v23M4 28h24"/><circle cx="18" cy="17" r="1"/>',
   fenster: '<rect x="6" y="5" width="20" height="22"/><path d="M16 5v22M6 16h20"/>',
   raum: '<rect x="5" y="5" width="22" height="22" stroke-dasharray="3 2"/><path d="M12 16h8M16 12v8"/>',
+  raumtrennung: '<rect x="5" y="5" width="22" height="22"/><path d="M16 2v28" stroke-dasharray="3 2"/>',
   rohr: '<rect x="3" y="12" width="26" height="8"/><path d="M9 12v8M23 12v8"/>',
   kanal: '<rect x="3" y="9" width="26" height="14"/><rect x="7" y="13" width="18" height="6"/>',
   formteil: '<path d="M3 8h26v7H3z"/><path d="M13 15v13h6V15"/>',
