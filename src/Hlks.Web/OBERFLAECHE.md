@@ -335,7 +335,9 @@ Name, Klasse), Zuordnung (Geschoss, Raum, System, teilVon – Auswahllisten aus 
 laut Katalog (zahl → Zahlfeld mit Einheit, auswahl → Liste, bool → Häkchen, text → Feld, liste → Mehrfachauswahl bzw.
 Kommaliste), Abgeleitet (Länge, Fläche, Volumen aus `element_lesen`), Herkunft. Ändern mit Enter/Fokuswechsel →
 `element_aendern`; abgelehnt → Meldung mit Vorschlag am Feld. Neben jedem Wert ein kleines «?» → Dialog mit
-`warum`. Ist nichts gewählt: Eigenschaften der aktiven Ansicht (wie Revit). Reservierung anzeigen, wenn das Element
+`warum`. System an einer Leitung, einem Formteil oder einer Armatur ändern: Rückfrage «An n Teile weitergeben / Nur dieses
+Bauteil» → `system_vererben` gibt es an alle angeschlossenen Leitungsbauteile desselben Mediums weiter (Geräte bleiben, 04.11.2026).
+Ist nichts gewählt: Eigenschaften der aktiven Ansicht (wie Revit). Reservierung anzeigen, wenn das Element
 von jemand anderem reserviert ist (`zustand.status.reservierungen`).
 
 ## Statusleiste – Pflichtumfang

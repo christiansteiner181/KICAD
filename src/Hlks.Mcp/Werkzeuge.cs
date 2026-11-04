@@ -263,6 +263,13 @@ public sealed partial class Werkzeuge(Projekt projekt)
             ("geschoss", geschoss), ("raum", raum), ("system", system), ("eigenschaften", eigenschaften), ("geometrie", geometrie),
             ("bezuege", bezuege), ("verbinden", verbinden)), trockenlauf);
 
+    [McpServerTool(Name = "system_vererben"), Description(Hlks.Kern.SystemVererben.Text)]   // 04.11.2026
+    public string SystemVererben(
+        [Description("Bauteil, an dem das System geändert wird (Kennzeichen oder Id)")] string element,
+        [Description("Neues System (Kennzeichen oder Id); null entfernt das System; ohne Angabe das System des Elements")] string? system = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("system_vererben", Parameter(("element", element), ("system", system)), trockenlauf);
+
     [McpServerTool(Name = "element_loeschen"), Description("Löscht ein Element samt seinen Verbindungen; Türen und Fenster einer Wand gehen mit ihr. Verweisen andere Elemente darauf (teilVon, Raum, System, Bezüge), wird abgelehnt.")]
     public string ElementLoeschen(
         [Description("Kennzeichen oder Id")] string element,

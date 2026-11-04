@@ -12,7 +12,7 @@ import { abfrage } from '../api.js';
 import { familie, beiFamilie, familieSetzen, ausfuehren } from './aktionen.js';
 import { klasseHtml, klassenDefinition } from './katalogansicht.js';
 import { sende, ergebnisMelden } from './befehle.js';
-import { warumDialog } from './dialoge.js';
+import { warumDialog, bestaetigen } from './dialoge.js';
 import { symbol, symbolFuerKlasse } from './symbole.js';
 import { esc, entprellen, vergleichen, gewerkeListe, zahlText } from './werkzeug.js';
 import { ohneQuelleMarke, paletteHinweise, paletteHinweiseHtml } from './huelle-text.js';
@@ -553,7 +553,15 @@ async function beiAenderung(e) {
   schmutzig = false;
   hinweise = null;
   inhalt.querySelector('.ep-hinweise')?.remove();
-  const r = await sende('element_aendern', param);
+  // System an einem Leitungsbauteil: nach Rückfrage an alle angeschlossenen Teile weitergeben (Christian 04.11.2026); der Trockenlauf zählt sie
+  let befehlName = 'element_aendern';
+  if (ziel === 'zu:system') {
+    const vor = await sende('system_vererben', { element: gerade.kz, system: wert }, { trockenlauf: true });
+    const n = vor.angenommen ? (vor.aenderungen ?? []).filter((a) => a.kennzeichen !== gerade.kz).length : 0;
+    if (n > 0 && await bestaetigen(`Das System auch an ${n} angeschlossene Leitungen, Formteile und Armaturen weitergeben?\nGeräte und Teile eines anderen Mediums bleiben unverändert.`,
+      { titel: 'System weitergeben', ja: `An ${n} Teile weitergeben`, nein: 'Nur dieses Bauteil' })) befehlName = 'system_vererben';
+  }
+  const r = await sende(befehlName, befehlName === 'system_vererben' ? { element: gerade.kz, system: wert } : param);
   if (!r.angenommen) {
     fehlerAnzeigen(feld, r.fehler || r.meldung || 'Die Änderung wurde abgelehnt.', r.vorschlag);
     return;

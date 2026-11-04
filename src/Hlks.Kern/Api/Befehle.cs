@@ -92,6 +92,7 @@ public sealed class Befehlsregister
         var r = new Befehlsregister();
         r.Hinzufuegen(new ElementAnlegen());
         r.Hinzufuegen(new ElementAendern());
+        r.Hinzufuegen(new SystemVererben());   // System an angeschlossene Leitungsbauteile (04.11.2026)
         r.Hinzufuegen(new ElementLoeschen());
         r.Hinzufuegen(new Verbinden());
         r.Hinzufuegen(new Trennen());
