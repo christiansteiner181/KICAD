@@ -30,7 +30,7 @@ public sealed partial class Werkzeuge
     public string FamilieAnsicht(
         [Description("Familie (Kennzeichen, Name oder id)")] string familie,
         [Description("Typ aus der Typenliste")] string typ,
-        [Description("vorne | hinten | links | rechts | oben | unten | 3d | grundriss")] string ansicht,
+        [Description("vorne | hinten | links | rechts | oben | unten | iso | 3d | grundriss")] string ansicht,
         [Description("grob | mittel | fein")] string detailgrad,
         [Description("Exemplarwerte { name: wert }")] JsonElement? parameter = null) =>
         Lauf(() => Antwort(FamilienAnsicht.Erzeugen(projekt, familie, typ, ansicht, detailgrad, Knoten(parameter) as JsonObject)));

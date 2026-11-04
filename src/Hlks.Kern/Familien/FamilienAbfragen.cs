@@ -23,7 +23,7 @@ public static class FamilienAbfragen
         [
             new("familie", "text", true, "Familie (Kennzeichen, Name oder id)"),
             new("typ", "text", true, "Typ aus der Typenliste"),
-            new("ansicht", "text", true, "vorne | hinten | links | rechts | oben | unten | 3d | grundriss"),
+            new("ansicht", "text", true, "vorne | hinten | links | rechts | oben | unten | iso | 3d | grundriss"),
             new("detailgrad", "text", true, "grob | mittel | fein"),
             new("parameter", "objekt", false, "Exemplarwerte { name: wert }"),
         ]),

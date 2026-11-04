@@ -284,6 +284,7 @@ public class FamilieGrafikTests
     [InlineData("rechts", -5, 120, 105, 760)]    // u = y
     [InlineData("oben", -5, -5, 1005, 105)]      // u = x, v = y
     [InlineData("unten", -1005, -5, 5, 105)]     // u = −x, v = y
+    [InlineData("iso", -77.782, 122.474, 714.178, 1073.693)]  // u = (x − y)/√2, v = (x + y + 2z)/√6; unten die Körperecke (0, 0, 150), die Stutzen (z 120) liegen höher
     public void FamilieAnsicht_AlleSeitenMitHandrechnung(string ansicht, double u0, double v0, double u1, double v1)
     {
         var p = MitFamilie();

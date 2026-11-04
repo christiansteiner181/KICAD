@@ -8,7 +8,8 @@
 //   vorne  Blick +y: u = x,  v = z        hinten Blick −y: u = −x, v = z
 //   links  Blick +x: u = −y, v = z        rechts Blick −x: u = y,  v = z
 //   oben   Blick −z: u = x,  v = y        unten  Blick +z: u = −x, v = y
-// Umgesetzt durch Drehen der Körper in die Lage «vorne» (bei oben/unten als Netz, weil die Ansicht nur waagrecht blickt).
+//   iso    Blick (1, 1, −1) von vorne links oben: u = (x − y)/√2, v = (x + y + 2z)/√6 (Christian 04.11.2026: Familienliste «als Grund seitenrisse und 3D»)
+// Umgesetzt durch Drehen der Körper in die Lage «vorne» (bei oben/unten/iso als Netz, weil die Ansicht nur waagrecht blickt).
 // ANNAHME (Gestaltung): Massstab der Plangrafik 1:10 (Strichstärken in Papier-mm × 10).
 
 using System.Text.Json.Nodes;
@@ -17,7 +18,7 @@ namespace Hlks.Kern;
 
 public static class FamilienAnsicht
 {
-    public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten", "3d", "grundriss"];
+    public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten", "iso", "3d", "grundriss"];
     const double Massstab = 10;
 
     public static JsonObject Erzeugen(Projekt p, string familie, string typ, string ansicht, string detailgrad, JsonObject? parameter)
@@ -137,6 +138,7 @@ public static class FamilienAnsicht
         "rechts" => [q[1], -q[0], q[2]],
         "oben" => [q[0], -q[2], q[1]],
         "unten" => [-q[0], q[2], q[1]],
+        "iso" => [(q[0] - q[1]) / Math.Sqrt(2), (q[0] + q[1] - q[2]) / Math.Sqrt(3), (q[0] + q[1] + 2 * q[2]) / Math.Sqrt(6)],
         _ => [q[0], q[1], q[2]],
     };
 
@@ -145,7 +147,7 @@ public static class FamilienAnsicht
         var teile = new List<Koerperteil>();
         foreach (var t in a.Teile(detail))
         {
-            if (ansicht is "oben" or "unten")
+            if (ansicht is "oben" or "unten" or "iso")
             {
                 var n = FamilienKoerper.AlsNetz(t).Transformiert(q => Lage(ansicht, q));
                 teile.Add(new Koerperteil { Art = "koerper", Ecken = n.Ecken, Dreiecke = n.Dreiecke, Material = t.Material, Teil = t.Teil });
