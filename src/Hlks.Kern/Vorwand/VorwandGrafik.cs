@@ -98,7 +98,7 @@ public sealed class VorwandGrafik : IGrafikquelle
         var (v, el) = Lage(p.Modell, p.Katalog, e);
         if (v is null || el is null) return null;
         double h = el.Typ?.Rahmenhoehe ?? 1120, w = ElementRahmen;
-        double q1 = v.Tiefe - 18, q0 = Math.Max(0, q1 - (el.Typ?.Rahmentiefe ?? w)), z0 = v.Rohboden, z1 = v.Okff + h;
+        double q1 = v.Tiefe - 18, q0 = Math.Max(0, q1 - (el.Typ?.Rahmentiefe ?? w)), z0 = v.ElementUnterkante, z1 = v.Okff + h;
         var k = new Koerper { Id = e.Id, Ebene = "apparat" };
         void Teil(Koerperteil t) { t.Farbe = ElementFarbe; t.Material = "geraet"; k.Teile.Add(t); }
         Teil(Quader(v, el.S0, el.S0 + w, q0, q1, z0, z1));

@@ -53,6 +53,9 @@ public sealed class VorwandAufbau
     /// <summary>OK Rohboden = OKFF − Bodenaufbau.</summary>
     public required double Rohboden { get; init; }
     public required bool Raumhoch { get; init; }
+    /// <summary>Unterkante der Montageelemente = Rohboden (Christian 04.11.2026: «Rahmen auf Rohboden, WC höhe vorgegeben ab Fertigboden»): der Rahmen
+    /// reicht vom Rohboden bis OKFF + Rahmenhöhe, die Anschlusshöhen gelten ab OKFF; das unterste GIS-Profil läuft durch die Füsse.</summary>
+    public double ElementUnterkante { get; set; }
     public required bool AnWand { get; init; }
     public List<VorwandTeil> Teile { get; } = [];
     /// <summary>Vorgefertigt (GIS aus der Werkstatt, Christian 04.11.2026): in Segmente geteilt, die sich einbringen lassen.</summary>
@@ -105,7 +108,7 @@ public static class VorwandGestell
         double okff = a.Length > 2 ? a[2] : 0;
         double boden = vorwand.Zahl("bodenaufbau") ?? 0;
         var geschoss = vorwand.Geschoss is { } gid ? m.Finde(gid) : null;
-        bool raumhoch = geschoss?.Zahl("hoehe") is double gh && hoehe >= gh - 100;
+        bool raumhoch = vorwand.Text("ausfuehrung") is { } ausf ? ausf == "raumhoch" : geschoss?.Zahl("hoehe") is double gh && hoehe >= gh - 100;
         var auf = new VorwandAufbau
         {
             Vorwand = vorwand, Modell = m, Katalog = k, System = system, A = a, Ux = ux, Uy = uy, Qx = qx, Qy = qy, Laenge = l, Tiefe = tiefe, Hoehe = hoehe,
@@ -127,6 +130,8 @@ public static class VorwandGestell
             {
                 if (typ.System != system) auf.Befunde.Add($"{e.Kennzeichen}: {typ.Titel} gehört zum System {typ.System}, die Vorwand ist {sys.Titel}.");
                 if (typ.Mindesttiefe is double mt && tiefe < mt) auf.Befunde.Add($"{e.Kennzeichen}: Vorwandtiefe {tiefe:0} mm kleiner als die Mindesttiefe {mt:0} mm für {typ.Titel} ({typ.Quelle("mindesttiefe")}).");
+                if (typ.FussbodenaufbauMax is double fb && boden > fb + 1)
+                    auf.Befunde.Add($"{e.Kennzeichen}: Bodenaufbau {boden:0} mm grösser als {fb:0} mm für {typ.Titel} ({typ.Quelle("fussbodenaufbauMax")}).");
                 if (!raumhoch && typ.Hoehe > hoehe + 1) auf.Befunde.Add($"{e.Kennzeichen}: {typ.Titel} ({typ.Hoehe:0} mm) ist höher als die Vorwand ({hoehe:0} mm).");
             }
             if (s - br / 2 < -1 || s + br / 2 > l + 1) auf.Befunde.Add($"{e.Kennzeichen}: Element ragt über das Ende der Vorwand.");
@@ -140,6 +145,7 @@ public static class VorwandGestell
             auf.Befunde.Add($"Vorwandtiefe {tiefe:0} mm ausserhalb {sys.TiefeMin:0}–{sys.TiefeMaxGesamt:0} mm für {sys.Titel} ({sys.Quelle("tiefe")}).");
         if (hoehe > sys.HoeheMax) auf.Befunde.Add($"Vorwandhöhe {hoehe:0} mm grösser als {sys.HoeheMax:0} mm für {sys.Titel} ({sys.Quelle("hoeheMax")}).");
 
+        auf.ElementUnterkante = auf.Rohboden;
         Beplankung(auf, sys);
         if (system == "gis") Gis(auf, sys); else Duofix(auf, sys);
         foreach (var x in sys.Annahmen) auf.Annahmen.Add(x);
@@ -196,15 +202,43 @@ public static class VorwandGestell
         foreach (var (a, b) in segmente)
         {
             double s0 = a + Rand, s1 = b - Rand, zuschnitt = Math.Round(s1 - s0);
+            var elHier = v.Elemente.Where(e => e.S1 > a && e.S0 < b).ToList();
             foreach (var z in ok)
-                v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", s0, s1, q0, q1, z - ph, z, sys.ProfilArtikel, zuschnitt, ann));
+            {
+                // Nie durch ein Element (Spülkasten, Traverse, Füsse): das Profil endet an jedem Element, dessen Rahmen auf dieser Höhe liegt
+                // Das unterste Profil läuft durch (Christian 04.11.2026: «das untere profil muss durchlaufen»)
+                var luecken = z == ok[0] ? [] : elHier.Where(e => z - ph < v.Okff + (e.Typ?.Rahmenhoehe ?? 1120) && z > v.Rohboden).Select(e => (e.S0, e.S1)).OrderBy(x => x.S0).ToList();
+                double von = s0;
+                foreach (var (l0, l1) in luecken.Append((s1, s1)))
+                {
+                    double bis = Math.Min(l0, s1);
+                    if (bis - von > 2 * ph) v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", von, bis, q0, q1, z - ph, z, sys.ProfilArtikel, Math.Round(bis - von), ann));
+                    von = Math.Max(von, l1);
+                }
+            }
             // Vertikalprofile an den Enden des Stücks und höchstens Abstand auseinander, nicht in einem Montageelement
             var el = v.Elemente.Where(e => e.S1 > a && e.S0 < b).ToList();
-            var hier = Ausweichen(Teilung(s0, s1 - pb, sys.VertikalprofilAbstand), el, pb, s0, s1 - pb);
+            var hier = Auffuellen(Ausweichen(Teilung(s0, s1 - pb, sys.VertikalprofilAbstand), el, pb, s0, s1 - pb), el, pb, sys.VertikalprofilAbstand);   // beidseits jedes Einbaus
             foreach (var s in hier)
                 v.Teile.Add(new VorwandTeil("profil", "GIS Profil vertikal", s, s + pb, q1 - ph, q1, vz0, vz1, sys.ProfilArtikel, Math.Round(vz1 - vz0 - 2 * Rand), ann));
             lagen.AddRange(hier);
         }
+        // Befestigung der Elemente am Profil (MA 970.704 S. 3): Teil nach Wandtiefe, je Elementseite an jedem Profil auf Rahmenhöhe und am Profil darüber
+        var tTeil = sys.Elementbefestigung.FirstOrDefault(x => v.Tiefe >= x.Von && v.Tiefe <= x.Bis).Teil;
+        if (v.Elemente.Count > 0 && string.IsNullOrEmpty(tTeil))
+            v.Befunde.Add($"Keine Elementbefestigung T1–T3 für die Wandtiefe {v.Tiefe:0} mm ({sys.Quelle("elementbefestigung")}).");
+        else
+            foreach (var el in v.Elemente)
+            {
+                double oben = v.Okff + (el.Typ?.Rahmenhoehe ?? 1120);
+                var hoehen = ok.Where(z => z > v.Rohboden + ph && z - ph < oben).ToList();
+                if (ok.Where(z => z - ph >= oben).Cast<double?>().FirstOrDefault() is double ueber) hoehen.Add(ueber);
+                double rt = el.Typ?.Rahmentiefe ?? 40;
+                foreach (var z in hoehen)
+                    foreach (var (e0, e1) in new[] { (el.S0 - 15, el.S0 + 25), (el.S1 - 25, el.S1 + 15) })
+                        v.Teile.Add(new VorwandTeil("befestigung", $"GIS Elementbefestigung {tTeil}", e0, e1, Math.Max(0, q1 - rt), q1, z - ph, z, null, null, sys.Annahme("elementbefestigung")));
+            }
+
         // Doppelstoss zwischen zwei Segmenten: Verbindung höchstens 100 cm auseinander (S. 251)
         for (int i = 1; i < segmente.Count; i++)
         {
@@ -215,7 +249,7 @@ public static class VorwandGestell
 
         // Montagewinkel am Boden (und raumhoch an der Decke): erster 10 cm von der angrenzenden Wand, dann höchstens Abstand
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
-        foreach (var s in Teilung(sys.AbstandAngrenzendeWand, v.Laenge - sys.AbstandAngrenzendeWand, abst))
+        foreach (var s in AusserhalbElemente(Teilung(sys.AbstandAngrenzendeWand, v.Laenge - sys.AbstandAngrenzendeWand, abst), v.Elemente, sys.MontagewinkelBreite / 2 + 1))
         {
             // Montagewinkel 13 × 13 cm (461.185.00.1, Entscheid Christian 04.11.2026): Schenkel am Profil, gezeichnet als stehender Schenkel
             double mw = sys.MontagewinkelBreite / 2, ms = sys.MontagewinkelSchenkel;
@@ -241,11 +275,23 @@ public static class VorwandGestell
         double q1 = v.Tiefe - d, q0 = q1 - sb;
         double obenOk = v.Raumhoch ? v.Okff + v.Hoehe : v.Okff + v.Hoehe - d;
         v.Teile.Add(new VorwandTeil("schiene", "Duofix Systemschiene (Boden)", 0, v.Laenge, q0, q1, v.Rohboden, v.Rohboden + sh, sys.SchieneArtikel, Math.Round(v.Laenge), sys.Annahme("schiene")));
-        v.Teile.Add(new VorwandTeil("schiene", v.Raumhoch ? "Duofix Systemschiene (Decke)" : "Duofix Systemschiene (oben)", 0, v.Laenge, q0, q1, obenOk - sh, obenOk,
-            sys.SchieneArtikel, Math.Round(v.Laenge), v.Raumhoch ? sys.Annahme("schiene") : sys.Annahme("obereSchiene")));
+        // Obere Schiene nie durch ein Element: unterbrochen, wo ein Rahmen bis in ihre Höhe reicht (Christian 04.11.2026, auch bei Duofix)
+        {
+            string titelOben = v.Raumhoch ? "Duofix Systemschiene (Decke)" : "Duofix Systemschiene (oben)";
+            string? annOben = v.Raumhoch ? sys.Annahme("schiene") : sys.Annahme("obereSchiene");
+            double von = 0;
+            foreach (var (l0, l1) in v.Elemente.Where(e => v.Okff + (e.Typ?.Rahmenhoehe ?? 1120) > obenOk - sh).Select(e => (e.S0, e.S1)).Append((v.Laenge, v.Laenge)))
+            {
+                double bis = Math.Min(l0, v.Laenge);
+                if (bis - von > 2 * sh) v.Teile.Add(new VorwandTeil("schiene", titelOben, von, bis, q0, q1, obenOk - sh, obenOk, sys.SchieneArtikel, Math.Round(bis - von), annOben));
+                von = Math.Max(von, l1);
+            }
+        }
 
         // Ständer: höchstens Abstand (S. 191), nicht in einem Montageelement; raumhoch mit Artikel nach Länge (S. 196–197)
-        var lagen = Luecken(v.Elemente, v.Laenge, tb, sys.StaenderAbstand);
+        // Ständer beidseits jedes Elements (Element seitlich am Ständer befestigt, S. 186–188; Christian 04.11.2026: «es fehlen nach mir noch vertikal streben
+        // neben den einbauten») und dazwischen höchstens 55 cm
+        var lagen = Auffuellen(Ausweichen(Teilung(0, v.Laenge - tb, sys.StaenderAbstand), v.Elemente, tb, 0, v.Laenge - tb), v.Elemente, tb, sys.StaenderAbstand);
         double z0 = v.Rohboden + sh, z1 = obenOk - sh, laenge = z1 - z0;
         string? art = v.Raumhoch ? sys.StaenderRaumhoch.FirstOrDefault(x => obenOk - v.Rohboden >= x.Von && obenOk - v.Rohboden <= x.Bis)?.Artikel
             : sys.StaenderTeilhoch.FirstOrDefault(x => v.Hoehe >= x.Von && v.Hoehe <= x.Bis)?.Artikel;
@@ -271,8 +317,9 @@ public static class VorwandGestell
         foreach (var el in v.Elemente)
         {
             double zo = v.Okff + (el.Typ?.Rahmenhoehe ?? 1120) - 100;
+            double hinten = Math.Max(1, q1 - (el.Typ?.Rahmentiefe ?? 40));   // Rückseite des Elementrahmens: der Anker endet dort, nicht im Spülkasten
             foreach (var s in new[] { el.S0 + 100, el.S1 - 100 })
-                v.Teile.Add(new VorwandTeil("befestigung", titel, s - 15, s + 15, 0, q0, zo - 30, zo, ankerArt, Math.Round(q0), sys.Annahme("wandanker")));
+                v.Teile.Add(new VorwandTeil("befestigung", titel, s - 15, s + 15, 0, hinten, zo - 30, zo, ankerArt, Math.Round(hinten), sys.Annahme("wandanker")));
         }
         if (!v.Raumhoch)
             foreach (var s in lagen)
@@ -369,6 +416,44 @@ public static class VorwandGestell
             if (!amEnde) a = e!.S1;
         }
         return aus.Distinct().Order().ToList();
+    }
+
+    /// <summary>Zwischen zwei Ständern (Unterkante s, Breite w) ohne Element dazwischen weitere einfügen, bis höchstens max Achsabstand bleibt.</summary>
+    static List<double> Auffuellen(List<double> lagen, List<VorwandElementLage> el, double w, double max)
+    {
+        var aus = lagen.ToList();
+        double min = lagen.Min(), max0 = lagen.Max();   // Enden der Vorwand: dort keine Kante ausserhalb
+        // An jeder Elementkante genau ein Ständer: einen nahen dorthin schieben, sonst einen dazu
+        foreach (var e in el)
+            foreach (var kante in new[] { e.S0 - w, e.S1 }.Where(x => x >= min - 1 && x <= max0 + 1))
+            {
+                int j = aus.FindIndex(x => Math.Abs(x - kante) < 2 * w);
+                if (j >= 0) aus[j] = kante; else aus.Add(kante);
+            }
+        aus = aus.Distinct().Order().ToList();
+        for (int i = 0; i + 1 < aus.Count; i++)
+        {
+            double a = aus[i], b = aus[i + 1];
+            if (b - a <= max + 1e-6 || el.Any(e => e.S0 >= a + w - 1 && e.S1 <= b + 1)) continue;
+            int n = (int)Math.Ceiling((b - a) / max - 1e-9);
+            aus.InsertRange(i + 1, Enumerable.Range(1, n - 1).Select(k => a + (b - a) * k / n));
+            i += n - 1;
+        }
+        return aus;
+    }
+
+    /// <summary>Mittelpunkte, die unter einem Montageelement lägen (halbe Breite w), an die nächste Elementkante schieben; Doppelte fallen weg.</summary>
+    static List<double> AusserhalbElemente(List<double> lagen, List<VorwandElementLage> el, double w)
+    {
+        var aus = new List<double>();
+        foreach (var s0 in lagen)
+        {
+            double s = s0;
+            foreach (var e in el)
+                if (s + w > e.S0 && s - w < e.S1) s = s - e.S0 < e.S1 - s ? e.S0 - w : e.S1 + w;
+            if (aus.All(x => Math.Abs(x - s) > 2 * w)) aus.Add(s);
+        }
+        return aus;
     }
 
     /// <summary>Lagen (Unterkante s, Breite w), die in einem Montageelement lägen, an dessen nächste Kante schieben; Doppelte fallen weg.</summary>

@@ -33,7 +33,7 @@ export function vorwandUnterMaus(maus, daten, radius) {
 
 async function senden(z, ctx) {
   const o = ctx.opt;
-  const p = vorwandParameter({ geschoss: ctx.geschoss, punkte: z.punkte, system: o.system, tiefe: o.tiefe, hoehe: o.hoehe, bezugslinie: o.bezugslinie, bauwerk: o.bauwerk, bodenaufbau: o.bodenaufbau, bestuecken: o.bestuecken, bauweise: o.bauweise });
+  const p = vorwandParameter({ geschoss: ctx.geschoss, punkte: z.punkte, system: o.system, tiefe: o.tiefe, hoehe: o.hoehe, bezugslinie: o.bezugslinie, bauwerk: o.bauwerk, bodenaufbau: o.bodenaufbau, bestuecken: o.bestuecken, bauweise: o.bauweise, ausfuehrung: o.ausfuehrung });
   const r = await ctx.befehl('vorwand_zeichnen', p);
   if (r?.angenommen) z.punkte = [];
   else if (!o.kette) z.punkte = z.punkte.slice(0, 1);
@@ -49,7 +49,7 @@ export function vorwandWerkzeug() {
     async klick(z, fang, ctx) {
       const o = ctx.opt;
       if (!(o.tiefe > 0)) { ctx.pflicht('tiefe', 'Die Vorwandtiefe fehlt – bitte in der Optionsleiste eintragen (Pflichtfeld).'); return; }
-      if (!(o.hoehe > 0)) { ctx.pflicht('hoehe', 'Die Höhe fehlt – bitte in der Optionsleiste eintragen (Pflichtfeld).'); return; }
+      if (o.ausfuehrung !== 'raumhoch' && !(o.hoehe > 0)) { ctx.pflicht('hoehe', 'Die Ablagehöhe fehlt – bitte in der Optionsleiste eintragen (raumhoch: leer = Raumhöhe).'); return; }
       const p = fang.punkt;
       if (z.punkte.length && abstand(p, z.punkte.at(-1)) < 1) return;
       z.punkte.push(p);

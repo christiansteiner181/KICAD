@@ -54,7 +54,8 @@ export const WERKZEUGE = {
     felder: [
       { id: 'system', titel: 'System', art: 'auswahl', werte: [['gis', 'Geberit GIS'], ['duofix', 'Geberit Duofix']], vorgabe: 'gis' },
       { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
-      { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
+      { id: 'ausfuehrung', titel: 'Ausführung', art: 'auswahl', werte: [['teilhoch', 'teilhoch'], ['raumhoch', 'raumhoch']], vorgabe: 'teilhoch' },
+      { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', platzhalter: 'teilhoch Pflicht', breite: 7 },
       { id: 'bezugslinie', titel: 'Rohbauwand', art: 'auswahl', werte: [['links', 'links'], ['rechts', 'rechts'], ['mitte', 'keine (frei stehend)']], vorgabe: 'links' },
       { id: 'bauwerk', titel: 'Bauwerk', art: 'auswahl', werte: [['massiv', 'massiv'], ['trockenbau', 'Trockenbau']], vorgabe: 'massiv' },
       { id: 'bodenaufbau', titel: 'Bodenaufbau', art: 'zahl', einheit: 'mm', platzhalter: '0', breite: 5 },
@@ -62,7 +63,7 @@ export const WERKZEUGE = {
       { id: 'bestuecken', titel: 'Bestücken', art: 'bool', vorgabe: true },
       { id: 'kette', titel: 'Kette', art: 'bool', vorgabe: true },
     ],
-    hinweis: 'Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden.',
+    hinweis: 'Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
   },
   montageelement: {
     titel: 'Montageelement',

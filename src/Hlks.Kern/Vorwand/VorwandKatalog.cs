@@ -30,6 +30,8 @@ public sealed class VorwandKatalog
         public Querschnitt Verbindungsstueck { get; init; } = new(30, 30);
         public string? VerbindungsstueckArtikel { get; init; }
         public string? MontagewinkelArtikel { get; init; }
+        /// <summary>GIS: Befestigungsteil des Elements am Profil je Wandtiefe (T1–T3).</summary>
+        public List<(string Teil, double Von, double Bis)> Elementbefestigung { get; init; } = [];
         public double MontagewinkelSchenkel { get; init; } = 130;
         public double MontagewinkelBreite { get; init; } = 40;
         public List<double> Horizontalprofile { get; init; } = [];
@@ -75,6 +77,8 @@ public sealed class VorwandKatalog
         public double Rahmentiefe { get; init; }
         /// <summary>Höhe der Befestigungstraverse (WC-Bolzen) über OKFF, falls bemasst.</summary>
         public double? Traverse { get; init; }
+        /// <summary>Grösster Bodenaufbau (OK Rohboden bis OKFF), den die Füsse ausgleichen.</summary>
+        public double? FussbodenaufbauMax { get; init; }
         public List<Anschlusshoehe> Anschluesse { get; init; } = [];
         public Dictionary<string, string> Quellen { get; init; } = [];
         public Dictionary<string, string> Annahmen { get; init; } = [];
@@ -134,6 +138,7 @@ public sealed class VorwandKatalog
                 PaneelArtikel = T(s["paneelArtikel"]),
                 Profil = Q(s["profil"], new(32, 32)), ProfilArtikel = T(s["profil"]?["artikel"]),
                 Verbindungsstueck = Q(s["verbindungsstueck"], new(30, 30)), VerbindungsstueckArtikel = T(s["verbindungsstueck"]?["artikel"]),
+                Elementbefestigung = (s["elementbefestigung"] as JsonArray ?? []).OfType<JsonObject>().Select(x => (T(x["teil"]) ?? "", D(x["von"]), D(x["bis"]))).ToList(),
                 MontagewinkelArtikel = T(s["montagewinkel"]?["artikel"]), MontagewinkelSchenkel = D(s["montagewinkel"]?["schenkel"], 130), MontagewinkelBreite = D(s["montagewinkel"]?["breite"], 40),
                 SchieneArtikel = T(s["schiene"]?["artikel"]), WandankerArtikel = T(s["wandanker"]?["artikel"]),
                 StaenderTeilhoch = (s["staenderTeilhoch"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new Staenderlaenge(T(x["artikel"]) ?? "", D(x["von"]), D(x["bis"]))).ToList(),
@@ -160,6 +165,7 @@ public sealed class VorwandKatalog
                 Apparate = (e["apparate"] as JsonArray ?? []).Select(T).OfType<string>().ToList(), Artikel = T(e["artikel"]),
                 Breite = D(e["breite"], 500), Hoehe = D(e["hoehe"], 1120), Mindesttiefe = e["mindesttiefe"] is JsonValue ? D(e["mindesttiefe"]) : null,
                 Rahmenhoehe = D(e["rahmenhoehe"], D(e["hoehe"], 1120)), Rahmentiefe = D(e["rahmentiefe"], 40), Traverse = e["traverse"] is JsonValue ? D(e["traverse"]) : null,
+                FussbodenaufbauMax = e["fussbodenaufbauMax"] is JsonValue ? D(e["fussbodenaufbauMax"]) : null,
                 Anschluesse = an, Quellen = Texte(e["quellen"]), Annahmen = Texte(e["annahmen"]),
             });
         }

@@ -16,13 +16,28 @@ public sealed class VorwandZeichnen : IBefehl
         new("punkte", "liste", true, "Linienzug [[x,y], …] in mm, mindestens zwei Punkte; ohne z gilt die Geschosskote (OK Fertigboden)"),
         new("system", "text", true, "gis oder duofix"),
         new("tiefe", "zahl", true, "Vorwandtiefe in mm inkl. Beplankung (GIS 100–700, Duofix 135–220 bzw. 420 mit Wandankerverlängerung)"),
-        new("hoehe", "zahl", true, "Höhe über OK Fertigboden in mm (teilhoch = Ablagehöhe, raumhoch = Geschosshöhe)"),
+        new("hoehe", "zahl", false, "Höhe über OK Fertigboden in mm (teilhoch: Ablagehöhe, Pflicht; raumhoch: fehlt = Höhe des Raums)"),
+        new("ausfuehrung", "text", false, "teilhoch (Vorgabe; Höhe = Ablagehöhe, Pflicht) oder raumhoch (bis unter die Decke; ohne hoehe gilt die Höhe des Raums: lichteHoehe › Geometriehöhe › Geschosshöhe)"),
         new("bezugslinie", "text", false, "links oder rechts (Vorgabe links) = Punkte auf der Rohbauwand links/rechts in Zeichenrichtung; mitte = frei stehend, Punkte auf der Achse"),
         new("bauwerk", "text", false, "massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel"),
         new("bodenaufbau", "zahl", false, "Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)"),
         new("bauweise", "text", false, "vorgefertigt (in Segmenten eingebracht) oder vor_ort; Vorgabe GIS vorgefertigt, Duofix vor Ort"),
         new("bestuecken", "bool", false, "Danach Montageelemente für die Apparate vor der Vorwand setzen (wie vorwand_bestuecken)"),
     ];
+
+    /// <summary>Raumhoch: Höhe des Raums vor der Vorwand (Punkt eine halbe Tiefe vor der Rohbauwand, sonst die Mitte der Linie) – lichteHoehe ›
+    /// Geometriehöhe › Geschosshöhe, wie Raumliste und HKAP.</summary>
+    static double? Raumhoehe(Kontext k, Element geschoss, double mx, double my, string bezug, double[] a, double[] b)
+    {
+        double l = Math.Sqrt((b[0] - a[0]) * (b[0] - a[0]) + (b[1] - a[1]) * (b[1] - a[1]));
+        if (l > 1)
+        {
+            double nx = -(b[1] - a[1]) / l, ny = (b[0] - a[0]) / l, d = bezug == "links" ? -100 : bezug == "rechts" ? 100 : 0;   // Raumseite: weg von der Rohbauwand
+            mx += nx * d; my += ny * d;
+        }
+        var raum = k.Arbeit.Elemente.FirstOrDefault(e => e.Klasse == "Raum" && e.Geschoss == geschoss.Id && e.Geometrie?.Enthaelt(mx, my) == true);
+        return raum?.Zahl("lichteHoehe") ?? raum?.Geometrie?.Hoehe ?? (raum is not null ? geschoss.Zahl("hoehe") : null);
+    }
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
@@ -35,8 +50,14 @@ public sealed class VorwandZeichnen : IBefehl
             throw new HlksFehler("Parameter «tiefe» fehlt – der Kern setzt keine Vorgabetiefe.", $"Vorwandtiefe in mm angeben ({sys.Titel}: {sys.TiefeMin:0}–{sys.TiefeMaxGesamt:0} mm, {sys.Quelle("tiefe")}).");
         if (tiefe < sys.TiefeMin || tiefe > sys.TiefeMaxGesamt)
             throw new HlksFehler($"Vorwandtiefe {tiefe:0} mm ausserhalb {sys.TiefeMin:0}–{sys.TiefeMaxGesamt:0} mm für {sys.Titel}.", sys.Quelle("tiefe"));
-        if (Param.Zahl(p, "hoehe") is not double hoehe || hoehe <= 0)
-            throw new HlksFehler("Parameter «hoehe» fehlt.", "Höhe über OK Fertigboden in mm angeben (teilhoch z. B. Ablagehöhe, raumhoch Geschosshöhe).");
+        string? ausfuehrung = Param.Text(p, "ausfuehrung") is { Length: > 0 } af ? ArchParam.Auswahl(af, ["teilhoch", "raumhoch"], "ausfuehrung") : null;
+        double kote0 = geschoss.Zahl("kote") ?? 0;
+        double? hoeheP = Param.Zahl(p, "hoehe");
+        if (hoeheP is null && ausfuehrung == "raumhoch" && Param.Punkte(p, "punkte") is [var p0, var p1, ..])
+            hoeheP = Raumhoehe(k, geschoss, (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, Param.Text(p, "bezugslinie") ?? "links", p0, p1);
+        if (hoeheP is not double hoehe || hoehe <= 0)
+            throw new HlksFehler(ausfuehrung == "raumhoch" ? "Höhe fehlt: kein Raum mit Höhe an der Vorwand gefunden." : "Parameter «hoehe» fehlt.",
+                ausfuehrung == "raumhoch" ? "hoehe in mm angeben oder die Vorwand in einem Raum mit lichter Höhe zeichnen." : "Ablagehöhe über OK Fertigboden in mm angeben.");
         if (hoehe > sys.HoeheMax) throw new HlksFehler($"Vorwandhöhe {hoehe:0} mm grösser als {sys.HoeheMax:0} mm für {sys.Titel}.", sys.Quelle("hoeheMax"));
         var bezug = ArchParam.Auswahl(Param.Text(p, "bezugslinie") ?? "links", ["mitte", "links", "rechts"], "bezugslinie");
         var bauwerk = ArchParam.Auswahl(Param.Text(p, "bauwerk") ?? "massiv", ["massiv", "trockenbau"], "bauwerk");
@@ -51,6 +72,7 @@ public sealed class VorwandZeichnen : IBefehl
         for (int i = 0; i + 1 < achse.Count; i++)
         {
             var eig = new JsonObject { ["system"] = system, ["rueckseite"] = bezug == "mitte" ? "keine" : bezug, ["bauwerk"] = bauwerk };
+            if (ausfuehrung is not null) eig["ausfuehrung"] = ausfuehrung;
             if (Param.Zahl(p, "bodenaufbau") is double ba) eig["bodenaufbau"] = ba;
             if (Param.Text(p, "bauweise") is { Length: > 0 } bw) eig["bauweise"] = ArchParam.Auswahl(bw, ["vorgefertigt", "vor_ort"], "bauweise");
             new ElementAnlegen().Ausfuehren(k, new JsonObject

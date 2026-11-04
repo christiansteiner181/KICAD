@@ -45,13 +45,16 @@ public class VorwandTests
         // S. 251: Oberkanten 5 und 65 cm über OK Rohboden (−100) liegen unter der Ablage, 130/135 nicht mehr; dazu das oberste unter der Ablage
         var auf = VorwandGestell.Ableiten(p.Modell, p.Katalog, vw)!;
         var horiz = auf.Teile.Where(t => t.Titel == "GIS Profil horizontal").Select(t => t.Z1).Order().ToList();
-        Assert.Equal([-50, 550, 1122], horiz);
-        Assert.Equal(3, Anzahl(sl, "GIS Profil horizontal", 1970));   // Zuschnitt = lichtes Mass minus 3 cm
+        Assert.Equal([-50, 550, 1122], horiz.Distinct());
+        // Nie durch den Spülkasten: auf 65 cm endet das Profil am WC; das unterste (5 cm) läuft durch (Rahmen bis 104.5 cm), oben laufen sie durch (Zuschnitt = lichtes Mass minus 3 cm)
+        Assert.Equal(2, Anzahl(sl, "GIS Profil horizontal", 1970));   // unten und oben durchgehend
+        Assert.Equal(4, horiz.Count);
+        Assert.Contains(auf.Teile, t => t.Titel == "GIS Elementbefestigung T1");   // Wandtiefe 200 mm: T1 (MA 970.704 S. 3)
         // Vertikalprofile an den Enden und beidseits des Elements (Abstand ≤ 250 cm)
         var vert = auf.Teile.Where(t => t.Titel == "GIS Profil vertikal").Select(t => t.S0).Order().ToList();
         Assert.Equal([15, 756, 1212, 1953], vert);   // Profil 32 mm (Datenblatt 461.000.25.1), WC 424 mm breit (Datenblatt 461.313.00.6)
         // Montagewinkel am Boden: erster 10 cm von der Wand, höchstens 100 cm auseinander
-        Assert.Equal([100, 1000, 1900], auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)").Select(t => (t.S0 + t.S1) / 2).Order().ToList());
+        Assert.Equal([100, 1233, 1900], auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)").Select(t => (t.S0 + t.S1) / 2).Order().ToList());
         Assert.All(auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)"), t => Assert.Equal("461.185.00.1", t.Artikel));   // Entscheid Christian 04.11.2026
         Assert.Equal(8, Anzahl(sl, "GIS Wandanbindung (Verbindungsstück)"));
         Assert.Contains(sl["zeilen"]!.AsArray().OfType<JsonObject>(), z => (string?)z["artikel"] == "461.313.00.6" && (int)z["anzahl"]! == 1);
@@ -109,7 +112,7 @@ public class VorwandTests
         Assert.Contains(auf.Segmente, x => x.S0 <= wc.S0 && wc.S1 <= x.S1);   // Stoss nie durch das Element
         Assert.Contains("Tür", auf.Einbringgrenze);
         Assert.NotEmpty(auf.Teile.Where(t => t.Titel == "GIS Verbindungslasche (Stoss)"));
-        Assert.Equal(3 * 7, auf.Teile.Count(t => t.Titel == "GIS Profil horizontal"));   // je Segment eigene: 5, 65, 130, 135, 200, 265 cm und an der Decke
+        Assert.Equal(3 * 7 + 1, auf.Teile.Count(t => t.Titel == "GIS Profil horizontal"));   // je Segment 5, 65, 130, 135, 200, 265 cm und Decke; 65 cm am WC unterbrochen (+1 Stück)
         Assert.Empty(auf.Befunde);
         // Duofix bleibt vor Ort gebaut: nicht geteilt
         Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
@@ -119,5 +122,96 @@ public class VorwandTests
         var df = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-2"))!;
         Assert.False(df.Vorgefertigt);
         Assert.Empty(df.Segmente);
+    }
+
+    /// <summary>Kein Teil des Gestells liegt im Raum eines Montageelements (Spülkasten, Traverse, Füsse) – ausser der Duofix-Bodenschiene,
+    /// in die die Füsse einrasten (Handbuch S. 189), und den Befestigungen am Elementrahmen. Christian 04.11.2026: «nicht durch die spühlkasten»,
+    /// «prüfe das auch bei duofix».</summary>
+    [Theory]
+    [InlineData("gis", 1140, 200)]
+    [InlineData("gis", 3000, 200)]
+    [InlineData("duofix", 1140, 200)]
+    [InlineData("duofix", 3000, 220)]
+    public void Gestell_NieDurchEinElement(string system, double hoehe, double tiefe)
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["einbringlaenge"] = 1500 } }));
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [3100, 100]), ["system"] = system, ["tiefe"] = tiefe, ["hoehe"] = hoehe, ["bezugslinie"] = "rechts", ["bodenaufbau"] = 100,
+        }));
+        string wc = system == "gis" ? "gis.wc.sigma12.114" : "duofix.wc.sigma12.112", wt = system == "gis" ? "gis.wt.set" : "duofix.wt.112";
+        Ok(p.Ausfuehren("montageelement_setzen", new JsonObject { ["vorwand"] = "VW-1", ["element"] = wc, ["abstand"] = 700 }));
+        Ok(p.Ausfuehren("montageelement_setzen", new JsonObject { ["vorwand"] = "VW-1", ["element"] = wt, ["abstand"] = 1900 }));
+        var auf = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-1"))!;
+        Assert.Equal(2, auf.Elemente.Count);
+        // Vertikale Streben direkt beidseits jedes Einbaus (S. 186–188; Christian 04.11.2026), Duofix-Ständer höchstens 55 cm auseinander
+        string art = system == "gis" ? "profil" : "staender";
+        var senkrecht = auf.Teile.Where(t => t.Art == art && t.Z1 - t.Z0 > t.S1 - t.S0 && t.Z1 - t.Z0 > 500).OrderBy(t => t.S0).ToList();
+        foreach (var el in auf.Elemente)
+        {
+            Assert.Contains(senkrecht, t => Math.Abs(t.S1 - el.S0) < 1);
+            Assert.Contains(senkrecht, t => Math.Abs(t.S0 - el.S1) < 1);
+        }
+        if (system == "duofix")
+            foreach (var (x, y) in senkrecht.Zip(senkrecht.Skip(1)))
+                Assert.True(y.S0 - x.S0 <= 550 + 1e-6 || auf.Elemente.Any(e => e.S0 >= x.S1 - 1 && e.S1 <= y.S0 + 1), $"Ständer {x.S0:0} und {y.S0:0} zu weit auseinander");
+        Assert.Equal(auf.Rohboden, auf.ElementUnterkante);   // Rahmen auf dem Rohboden, Höhen ab OKFF (Christian 04.11.2026)
+        double q1 = auf.Tiefe - 18;
+        foreach (var el in auf.Elemente)
+        {
+            double qe = q1 - el.Typ!.Rahmentiefe, ze = auf.Okff + el.Typ.Rahmenhoehe;
+            foreach (var t in auf.Teile)
+            {
+                if (t.Titel.StartsWith("GIS Elementbefestigung") || t.Titel is "Duofix Systemschiene (Boden)" or "Befestigung Schiene (Boden)" || t.Art == "beplankung") continue;
+                if (t.Titel == "GIS Profil horizontal" && Math.Abs(t.Z1 - (auf.Rohboden + 50)) < 1) continue;   // unterstes Profil läuft durch die Füsse (Entscheid Christian)
+                bool schneidet = t.S0 < el.S1 - 0.5 && t.S1 > el.S0 + 0.5 && t.Q0 < q1 - 0.5 && t.Q1 > qe + 0.5 && t.Z0 < ze - 0.5 && t.Z1 > auf.ElementUnterkante + 0.5;
+                Assert.False(schneidet, $"{t.Titel} (s {t.S0:0}–{t.S1:0}, q {t.Q0:0}–{t.Q1:0}, z {t.Z0:0}–{t.Z1:0}) liegt im {el.Typ.Titel}");
+            }
+        }
+    }
+
+    [Fact]
+    public void Raumhoch_OhneHoehe_NimmtDieRaumhoehe_TeilhochBrauchtHoehe()
+    {
+        // Christian 04.11.2026: «es muss auch möglich sein raumhohe und teilraumhohe elemente zu erstellen»
+        var p = Rechteck();
+        Ok(p.Ausfuehren("raum_erkennen", new JsonObject { ["geschoss"] = "EG", ["punkt"] = Pt(3000, 2000), ["nutzung"] = "Bad" }));
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "R-1", ["eigenschaften"] = new JsonObject { ["lichteHoehe"] = 2600 } }));
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [2100, 100]), ["system"] = "gis", ["tiefe"] = 200, ["ausfuehrung"] = "raumhoch", ["bezugslinie"] = "rechts",
+        }));
+        var vw = Hole(p, "VW-1");
+        Assert.Equal(2600, vw.Geometrie!.Hoehe);
+        Assert.Equal("raumhoch", vw.Text("ausfuehrung"));
+        var auf = VorwandGestell.Ableiten(p.Modell, p.Katalog, vw)!;
+        Assert.True(auf.Raumhoch);   // obwohl tiefer als die Geschosshöhe 3000: die Ausführung entscheidet
+        Assert.Contains(auf.Teile, t => t.Titel == "GIS Montagewinkel (Decke)");
+        Nein(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 3900], [2100, 3900]), ["system"] = "gis", ["tiefe"] = 200, ["ausfuehrung"] = "teilhoch",
+        }));
+    }
+
+    [Fact]
+    public void Schnitt_ZeigtGestellInSeinerFarbe_NichtInDerFarbeDerBeplankung()
+    {
+        // Befund 04.11.2026: Schnitt hinter der Beplankung einer raumhohen Duofix-Vorwand zeigte Ständer und Schienen grün wie die Beplankung
+        var p = Rechteck();
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [2100, 100]), ["system"] = "duofix", ["tiefe"] = 150, ["hoehe"] = 2600, ["ausfuehrung"] = "raumhoch", ["bezugslinie"] = "rechts",
+        }));
+        // Schnittlinie in der Ebene des Gestells (Beplankung 232–250, Ständer 182–232), Blick zur Rohbauwand
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "Ansicht", ["kennzeichen"] = "AN-S", ["geschoss"] = "EG",
+            ["eigenschaften"] = new JsonObject { ["art"] = "schnitt", ["blick"] = "rechts", ["tiefe"] = 300 },
+            ["geometrie"] = new JsonObject { ["art"] = "linie", ["punkte"] = new JsonArray(new JsonArray(0, 220, 0), new JsonArray(2200, 220, 0)) },
+        }));
+        var flaechen = Teil(Grafik.Plan(p, "AN-S"), p, "VW-1").Primitive.Where(x => x.Art == "polygon").Select(x => x.Stil.Fuellung).ToList();
+        Assert.Contains("#8c96a0", flaechen);              // Ständer und Schienen grau
+        Assert.DoesNotContain("#9fd3c0", flaechen);        // keine Beplankung geschnitten
     }
 }

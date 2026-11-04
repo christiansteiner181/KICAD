@@ -51,12 +51,14 @@
         "fugeBauwerk": "S. 269 (10 mm Abstand Bauwerk–Paneel, Schallschutz)",
         "profil": "Produktdatenblatt GIS Profil 461.000.25.1 S. 1 (3.2 × 3.2 cm, L 500 cm)",
         "verbindungsstueck": "Produktdatenblatt 461.003.00.1 S. 1 (30 × 30 × 90 mm, kürzbar auf 30 mm)",
-        "montagewinkel": "Produktdatenblatt 461.185.00.1 S. 1 (Montagewinkel 13 × 13 cm, Abstand Profil–Bauwerk 50–130 mm); Wahl als Standard: Entscheid Christian 04.11.2026"
+        "montagewinkel": "Produktdatenblatt 461.185.00.1 S. 1 (Montagewinkel 13 × 13 cm, Abstand Profil–Bauwerk 50–130 mm); Wahl als Standard: Entscheid Christian 04.11.2026",
+        "elementbefestigung": "Montageanleitung 970.704 S. 3 (Befestigung GIS-Element am GIS Profil: T1 16.5–24, T2 24.5–36, T3 36.5–70 cm Wandtiefe, Zeile Vorwand); Horizontalprofile nie durch den Spülkasten (Christian 04.11.2026: «aber nicht durch die spühlkasten»)"
       },
       "annahmen": {
         "wandanbindung": "Wandanbindung = GIS Verbindungsstück 461.003.00.1 je Vertikalprofil auf halber und oberer Höhe (Höhen angenommen, Handbuch nennt nur den Abstand 250 cm).",
         "montagewinkelBreite": "Breite des Montagewinkels nicht bemasst – 40 mm gezeichnet.",
-        "verbindungslasche": "Doppelstoss zwischen vorgefertigten Segmenten: Verbindungslasche je höchstens 100 cm (Abstand S. 251); kein eigener Artikel gefunden."
+        "verbindungslasche": "Doppelstoss zwischen vorgefertigten Segmenten: Verbindungslasche je höchstens 100 cm (Abstand S. 251); kein eigener Artikel gefunden.",
+        "elementbefestigung": "Befestigungsteile T1–T3 ohne Artikelnummer (in der Montageanleitung nur als Bild); je unterbrochenes Profil zwei am Elementrahmen und zwei am Profil über dem Element."
       },
       "verbindungsstueck": {
         "artikel": "461.003.00.1",
@@ -68,7 +70,24 @@
         "artikel": "461.185.00.1",
         "schenkel": 130,
         "breite": 40
-      }
+      },
+      "elementbefestigung": [
+        {
+          "teil": "T1",
+          "von": 165,
+          "bis": 240
+        },
+        {
+          "teil": "T2",
+          "von": 245,
+          "bis": 360
+        },
+        {
+          "teil": "T3",
+          "von": 365,
+          "bis": 700
+        }
+      ]
     },
     "duofix": {
       "titel": "Geberit Duofix",
@@ -207,11 +226,13 @@
         "traverse": "Montageanleitung 972.342 S. 2 (WC-Befestigung 33 cm, Achsabstand 18/23 cm)",
         "anschluesse.sw": "Montageanleitung 972.342 S. 2 (Abwasser ▼23 cm)",
         "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50: 16.5 cm bei d75/90)",
-        "artikel": "Planungshandbuch S. 159, 230"
+        "artikel": "Planungshandbuch S. 159, 230",
+        "fussbodenaufbauMax": "Montageanleitung 972.342 S. 2 (0–25 cm)"
       },
       "annahmen": {
         "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
-      }
+      },
+      "fussbodenaufbauMax": 250
     },
     {
       "id": "duofix.wc.omega.82",
@@ -455,12 +476,14 @@
         "hoehe": "Produktdatenblatt 461.313.00.6 S. 1 (Einbauhöhe 114 cm)",
         "rahmenhoehe": "Produktdatenblatt 461.313.00.6 S. 1 (104.5 cm)",
         "anschluesse.sw": "Produktdatenblatt 461.313.00.6 S. 1 (▼23 cm)",
-        "mindesttiefe": "Produktdatenblatt 461.313.00.6 S. 1 (≥ 16.5 cm DN 90, ≥ 19.5 cm DN 100)"
+        "mindesttiefe": "Produktdatenblatt 461.313.00.6 S. 1 (≥ 16.5 cm DN 90, ≥ 19.5 cm DN 100)",
+        "fussbodenaufbauMax": "Produktdatenblatt 461.313.00.6 S. 1 (Fussbodenaufbauten 0–20 cm)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe GIS-WC nicht bemasst – 120 mm wie Duofix Sigma 12.",
         "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
-      }
+      },
+      "fussbodenaufbauMax": 200
     },
     {
       "id": "gis.wc.omega.114",

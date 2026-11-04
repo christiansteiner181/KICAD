@@ -122,7 +122,7 @@ public static class Schnittgrafik
                 }
             }
             // Element mit mehreren Farben (z. B. Vorwand: Beplankung, Profile, Befestigungen): Schnittfläche je Farbe, damit die Teile unterscheidbar bleiben
-            var jeFarbe = zerlegung.SchnitteJeFarbe.GetValueOrDefault(i) is { Count: > 1 } d && k.Ebene is not ("wand" or "decke" or "oeffnung")
+            var jeFarbe = zerlegung.SchnitteJeFarbe.GetValueOrDefault(i) is { Count: >= 1 } d && k.Teile.Select(t => t.Farbe).Distinct().Count() > 1 && k.Ebene is not ("wand" or "decke" or "oeffnung")
                 ? d.Select(x => (Farbe: x.Key.Length > 0 ? x.Key : null, Flaechen: Polygone.Flaechen(Polygone.Vereinigen(x.Value)))).ToList()
                 : [(Farbe: farbe, Flaechen: flaechen.GetValueOrDefault(i) ?? [])];
             foreach (var (ff, fls) in jeFarbe)
