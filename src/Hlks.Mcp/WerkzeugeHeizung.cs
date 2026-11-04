@@ -101,6 +101,10 @@ public sealed partial class Werkzeuge
     public string HeizkoerperAuslegungWerkzeug([Description(HeizkoerperAuslegung.ParRaum)] string? raum = null) =>
         Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "heizkoerper_auslegung", Parameter(("raum", raum)))), synchronisieren: false);
 
+    [McpServerTool(Name = "rohr_druckverlust"), Description(RohrDruckverlust.Text)]   // Modul 5 Teil B
+    public string RohrDruckverlustWerkzeug() =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "rohr_druckverlust", new JsonObject())), synchronisieren: false);
+
     [McpServerTool(Name = "heizlast_uebernehmen"), Description(HeizlastUebernehmen.Text)]   // Modul 5 Teil B-H
     public string HeizlastUebernehmenWerkzeug(
         [Description(Heizlast.ParRaum)] string? raum = null,

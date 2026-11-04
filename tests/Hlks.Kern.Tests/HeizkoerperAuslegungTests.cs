@@ -33,3 +33,22 @@ public class HeizkoerperAuslegungTests
         Assert.Null(HeizkoerperAuslegung.DeltaTLog(35, 30, 32));   // RL unter θi: keine Übertemperatur
     }
 }
+
+/// <summary>Modul 5 Teil B: Rohrnetz-Druckverlust – Wasserwerte (NIST) und Verhalten ohne Innendurchmesser.</summary>
+public class RohrDruckverlustTests
+{
+    [Fact]
+    public void Wasser_linear_zwischen_NIST_Werten_und_ohne_Serie_kein_Druckverlust()
+    {
+        var kat = KanalDruckverlust.Katalog(Kat)!;
+        var w = RohrDruckverlust.Wasser(kat, 15)!.Value;
+        Assert.Equal((0.0013058 + 0.0010016) / 2, w.Eta, 9);   // 10 und 20 °C, NIST 0.2 MPa
+        Assert.Equal((999.75 + 998.25) / 2, w.Rho, 6);
+        Assert.Null(RohrDruckverlust.Wasser(kat, 95));          // ausserhalb der Tabelle: kein Wert
+        var p = Beispielprojekt.Erzeugen(Kat, null);             // Heizungsleitungen ohne Serie
+        var r = (JsonObject)Tuer.Abfrage(p, "rohr_druckverlust", new JsonObject());
+        var l = r["leitungen"]!.AsArray().OfType<JsonObject>().ToList();
+        Assert.NotEmpty(l);
+        Assert.All(l.Where(x => x["dp_Pa"] is null), x => Assert.NotNull(x["hinweis"]));
+    }
+}

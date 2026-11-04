@@ -55,6 +55,7 @@ public sealed class Abfragen(Projekt p)
         new("grundlagen", Grundlagenverzeichnis.Text, Grundlagenverzeichnis.Parameter),   // Christian 03.11.2026: «zentrales normenverzeichniss»
         new("heizlast", Heizlast.Text, Heizlast.Parameter),   // Modul 5 Teil B-H, Christian 03.11.2026
         new("heizkoerper_auslegung", HeizkoerperAuslegung.Text, HeizkoerperAuslegung.Parameter),   // Modul 5 Teil B
+        new("rohr_druckverlust", RohrDruckverlust.Text, RohrDruckverlust.Parameter),   // Modul 5 Teil B
         new("kanal_druckverlust", KanalDruckverlust.Text, KanalDruckverlust.Parameter),   // Modul 6 Teil B
         new("datenpunktliste", Datenpunktliste.Text, Datenpunktliste.Parameter),   // Modul 8 MSRL, Gerüst
         new("webablage_status", Webablage.Text, Webablage.Parameter),   // Webablage, Gerüst 04.11.2026

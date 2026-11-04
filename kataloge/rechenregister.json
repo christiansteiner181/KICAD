@@ -1921,6 +1921,52 @@
         "kataloge/stroemung.json"
       ],
       "abfrage": "kanal_druckverlust"
+    },
+    {
+      "id": "heizung.rohr_druckverlust",
+      "titel": "Druckverlust durch Reibung im Heizungsrohrnetz",
+      "gebiet": "Heizung",
+      "zweck": "Für jede Heizungsleitung den Reibungsdruckverlust und für jeden Verbraucher die Summe über Vor- und Rücklauf bestimmen – Grundlage für Pumpe und Abgleich.",
+      "eingaben": [
+        "Massenstrom je Leitung (Summe der Verbraucher, heizung.massenstrom)",
+        "Innendurchmesser der Serie",
+        "Länge der Leitung",
+        "Temperatur: vlTemp bzw. rlTemp der Heizgruppe",
+        "Rauheit nach Material der Serie"
+      ],
+      "rechenweg": [
+        "η und ρ von Wasser bei der Temperatur (NIST, linear), ν = η/ρ.",
+        "V̇ = ṁ/ρ, w = V̇/A mit A = π·d²/4, Re = w·d/ν.",
+        "λ laminar 64/Re unter Re 2320, sonst Colebrook (Tab. 2 Skript «08 Luftnetzberechnung»; gilt für jedes Fluid).",
+        "Rauheit k aus Tab. 3, oberer Wert: Kunststoff/Mehrschicht 0,007 mm, Kupfer 0,0015 mm, sonst Stahl gewalzt 0,05 mm.",
+        "R = λ/d·ρ·w²/2, Δp = R·l; je Verbraucher Σ Δp aller Leitungen, die ihn führen."
+      ],
+      "ergebnis": "Abfrage rohr_druckverlust: je Leitung ṁ, d_i, w, Re, λ, R, Δp; je Verbraucher Σ Δp; massgebender Verbraucher.",
+      "quellen": [
+        "NIST Chemistry WebBook, Wasser, Isobare 0.2 MPa (Viskosität IAPWS 2008), abgerufen 04.11.2026; kataloge/stroemung.json › wasser",
+        "Skript «08 Luftnetzberechnung» Tab. 2 und 3 (Reibungszahl, Rauheit)",
+        "Christian Steiner 03.11.2026: «fehlt eine normelle regulierung gilt die phisik»"
+      ],
+      "grundlagen": [
+        "stoff.nist_wasser",
+        "lehrmittel.skript_luftnetz",
+        "physik.kalorimetrie",
+        "physik.kontinuitaet",
+        "annahme.hauptlauf"
+      ],
+      "annahmen": [
+        "Rauheit nach Stichwort im Seriennamen, oberer Tabellenwert; ohne Serie kein Druckverlust.",
+        "Temperatur je Weg (Vorlauf/Rücklauf) der Heizgruppe."
+      ],
+      "grenzen": [
+        "Keine Einzelwiderstände (ζ), Armaturen, Verbraucher, Erzeuger – im Büro kein ζ-Katalog mit Quelle.",
+        "Wasser-Glykol ohne Viskosität: kein Druckverlust."
+      ],
+      "code": [
+        "src/Hlks.Kern/Heizung/RohrDruckverlust.cs (RohrDruckverlust.Abfrage, Wasser)",
+        "kataloge/stroemung.json"
+      ],
+      "abfrage": "rohr_druckverlust"
     }
   ]
 }

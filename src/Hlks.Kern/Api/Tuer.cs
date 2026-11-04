@@ -42,6 +42,7 @@ public static class Tuer
             "grundlagen" => Grundlagenverzeichnis.Abfrage(p.Katalog, par),
             "heizlast" => Heizlast.Abfrage(p, par),
             "heizkoerper_auslegung" => HeizkoerperAuslegung.Abfrage(p, par),
+            "rohr_druckverlust" => RohrDruckverlust.Abfrage(p, par),
             "kanal_druckverlust" => KanalDruckverlust.Abfrage(p, par),
             "datenpunktliste" => Datenpunktliste.Abfrage(p, par),
             "webablage_status" => Webablage.Abfrage(p, par),

@@ -127,7 +127,7 @@
       ],
       "ablage": "webbook.nist.gov",
       "vorliegend": "online",
-      "werte": "kataloge/stoffwerte.json"
+      "werte": "kataloge/stoffwerte.json (c_p, ρ) und kataloge/stroemung.json › wasser (η, ρ; abgerufen 04.11.2026)"
     },
     {
       "id": "hersteller.dow_glykol",

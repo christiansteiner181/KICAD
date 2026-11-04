@@ -1,18 +1,50 @@
 {
-  "beschreibung": "Strömungsgrundlagen für Druckverluste in Kanälen und Rohren (Physik): Viskosität der Luft, Rauheitshöhen, kritische Reynolds-Zahl und die Gleichungen der Reibungszahl. Werte mit Quelle; Lehrmittel, keine Norm.",
+  "beschreibung": "Strömungsgrundlagen für Druckverluste in Kanälen und Rohren (Physik): Viskosität der Luft, Rauheitshöhen, kritische Reynolds-Zahl und die Gleichungen der Reibungszahl. Werte mit Quelle; Lehrmittel, keine Norm. Wasser: Viskosität aus NIST (siehe wasser.quelle).",
   "quelle": "Phillip Rohner, «08 Luftnetzberechnung» (Skript HF Gebäudetechnik, Fachstudium Lüftung; %OneDrive%\\HFGT16\\2_Fachstudium\\xx_Lüftung\\08 Luftnetzberechnung.pdf), gedruckte Seite = PDF-Seite − 3; vom Seitenbild übertragen (Hauptlauf 04.11.2026)",
   "luft": {
     "tabelle": "Tabelle 1 Viskositätswerte von Luft bei p = 1.013 bar",
     "seite": 11,
-    "einheiten": { "t": "°C", "eta": "N·s/m² · 10⁶", "nu": "m²/s · 10⁶" },
+    "einheiten": {
+      "t": "°C",
+      "eta": "N·s/m² · 10⁶",
+      "nu": "m²/s · 10⁶"
+    },
     "werte": [
-      { "t": -20, "eta": 15.6, "nu": 11.3 },
-      { "t": 0, "eta": 16.8, "nu": 13.0 },
-      { "t": 20, "eta": 17.9, "nu": 14.9 },
-      { "t": 40, "eta": 19.1, "nu": 17.0 },
-      { "t": 60, "eta": 20.3, "nu": 19.2 },
-      { "t": 80, "eta": 21.5, "nu": 21.7 },
-      { "t": 100, "eta": 22.9, "nu": 24.5 }
+      {
+        "t": -20,
+        "eta": 15.6,
+        "nu": 11.3
+      },
+      {
+        "t": 0,
+        "eta": 16.8,
+        "nu": 13
+      },
+      {
+        "t": 20,
+        "eta": 17.9,
+        "nu": 14.9
+      },
+      {
+        "t": 40,
+        "eta": 19.1,
+        "nu": 17
+      },
+      {
+        "t": 60,
+        "eta": 20.3,
+        "nu": 19.2
+      },
+      {
+        "t": 80,
+        "eta": 21.5,
+        "nu": 21.7
+      },
+      {
+        "t": 100,
+        "eta": 22.9,
+        "nu": 24.5
+      }
     ],
     "hinweis": "Dichte ρ = η/ν (Gleichung 1-10, S. 11) aus derselben Tabelle; zwischen den Tabellenpunkten linear."
   },
@@ -20,21 +52,111 @@
     "tabelle": "Tabelle 3 Mittlere Rauheitshöhen k in mm",
     "seite": 15,
     "werte": [
-      { "key": "gezogen", "oberflaeche": "Gezogene Rohre, z. B. aus Glas, Messing, Kupfer, Aluminium", "zustand": "neu", "kVon": 0, "kBis": 0.0015 },
-      { "key": "kunststoff", "oberflaeche": "Kunststoffrohre", "zustand": "neu", "kVon": 0.0015, "kBis": 0.007 },
-      { "key": "stahl_gewalzt", "oberflaeche": "Stahlrohre", "zustand": "gewalzt, neu", "kVon": 0.01, "kBis": 0.05 },
-      { "key": "stahl_verzinkt", "oberflaeche": "Stahlrohre", "zustand": "verzinkt, neu", "kVon": 0.1, "kBis": 0.16 },
-      { "key": "stahl_verrostet", "oberflaeche": "Stahlrohre", "zustand": "mässig verrostet", "kVon": 0.15, "kBis": 0.4 },
-      { "key": "stahl_verkrustet", "oberflaeche": "Stahlrohre", "zustand": "stark verkrustet", "kVon": 2, "kBis": 4 },
-      { "key": "asbestzement", "oberflaeche": "Asbest-Zement-Rohre", "zustand": "neu", "kVon": 0.03, "kBis": 0.1 },
-      { "key": "blechkanal", "oberflaeche": "Blechkanäle, gefalzt", "zustand": "neu", "kVon": 0.15, "kBis": 0.15 },
-      { "key": "guss_neu", "oberflaeche": "Gusseiserne Rohre", "zustand": "neu", "kVon": 0.2, "kBis": 0.6 },
-      { "key": "guss_bitumen", "oberflaeche": "Gusseiserne Rohre", "zustand": "bituminiert, neu", "kVon": 0.1, "kBis": 0.13 },
-      { "key": "beton_stahlbeton", "oberflaeche": "Betonrohre", "zustand": "Stahlbeton, neu", "kVon": 0.1, "kBis": 0.15 },
-      { "key": "beton_glattstrich", "oberflaeche": "Betonrohre", "zustand": "Glattstrich, neu", "kVon": 0.3, "kBis": 0.8 },
-      { "key": "beton_mittelrauh", "oberflaeche": "Betonrohre", "zustand": "mittelrauh, neu", "kVon": 1, "kBis": 2 },
-      { "key": "beton_rauh", "oberflaeche": "Betonrohre", "zustand": "rauh, neu", "kVon": 2, "kBis": 3 },
-      { "key": "ton", "oberflaeche": "Tonrohre", "zustand": "gebrannt, neu", "kVon": 0.7, "kBis": 0.7 }
+      {
+        "key": "gezogen",
+        "oberflaeche": "Gezogene Rohre, z. B. aus Glas, Messing, Kupfer, Aluminium",
+        "zustand": "neu",
+        "kVon": 0,
+        "kBis": 0.0015
+      },
+      {
+        "key": "kunststoff",
+        "oberflaeche": "Kunststoffrohre",
+        "zustand": "neu",
+        "kVon": 0.0015,
+        "kBis": 0.007
+      },
+      {
+        "key": "stahl_gewalzt",
+        "oberflaeche": "Stahlrohre",
+        "zustand": "gewalzt, neu",
+        "kVon": 0.01,
+        "kBis": 0.05
+      },
+      {
+        "key": "stahl_verzinkt",
+        "oberflaeche": "Stahlrohre",
+        "zustand": "verzinkt, neu",
+        "kVon": 0.1,
+        "kBis": 0.16
+      },
+      {
+        "key": "stahl_verrostet",
+        "oberflaeche": "Stahlrohre",
+        "zustand": "mässig verrostet",
+        "kVon": 0.15,
+        "kBis": 0.4
+      },
+      {
+        "key": "stahl_verkrustet",
+        "oberflaeche": "Stahlrohre",
+        "zustand": "stark verkrustet",
+        "kVon": 2,
+        "kBis": 4
+      },
+      {
+        "key": "asbestzement",
+        "oberflaeche": "Asbest-Zement-Rohre",
+        "zustand": "neu",
+        "kVon": 0.03,
+        "kBis": 0.1
+      },
+      {
+        "key": "blechkanal",
+        "oberflaeche": "Blechkanäle, gefalzt",
+        "zustand": "neu",
+        "kVon": 0.15,
+        "kBis": 0.15
+      },
+      {
+        "key": "guss_neu",
+        "oberflaeche": "Gusseiserne Rohre",
+        "zustand": "neu",
+        "kVon": 0.2,
+        "kBis": 0.6
+      },
+      {
+        "key": "guss_bitumen",
+        "oberflaeche": "Gusseiserne Rohre",
+        "zustand": "bituminiert, neu",
+        "kVon": 0.1,
+        "kBis": 0.13
+      },
+      {
+        "key": "beton_stahlbeton",
+        "oberflaeche": "Betonrohre",
+        "zustand": "Stahlbeton, neu",
+        "kVon": 0.1,
+        "kBis": 0.15
+      },
+      {
+        "key": "beton_glattstrich",
+        "oberflaeche": "Betonrohre",
+        "zustand": "Glattstrich, neu",
+        "kVon": 0.3,
+        "kBis": 0.8
+      },
+      {
+        "key": "beton_mittelrauh",
+        "oberflaeche": "Betonrohre",
+        "zustand": "mittelrauh, neu",
+        "kVon": 1,
+        "kBis": 2
+      },
+      {
+        "key": "beton_rauh",
+        "oberflaeche": "Betonrohre",
+        "zustand": "rauh, neu",
+        "kVon": 2,
+        "kBis": 3
+      },
+      {
+        "key": "ton",
+        "oberflaeche": "Tonrohre",
+        "zustand": "gebrannt, neu",
+        "kVon": 0.7,
+        "kBis": 0.7
+      }
     ],
     "hinweis": "Gerechnet wird mit dem oberen Wert (kBis, sichere Seite – Annahme Hauptlauf 04.11.2026)."
   },
@@ -44,11 +166,74 @@
     "reKritisch": 2320,
     "reKritischSeite": 13,
     "gleichungen": [
-      { "gebiet": "laminar", "formel": "1/√λ = √(Re/64), d. h. λ = 64/Re" },
-      { "gebiet": "turbulent, Übergangsgebiet", "formel": "1/√λ = −2·lg((k/d)/3,71 + 2,51/(Re·√λ))" },
-      { "gebiet": "turbulent, hydraulisch rauh", "formel": "1/√λ = 1,14 − 2·lg(k/d)" },
-      { "gebiet": "turbulent, hydraulisch glatt", "formel": "1/√λ = 2·lg(Re·√λ/2,51)" }
+      {
+        "gebiet": "laminar",
+        "formel": "1/√λ = √(Re/64), d. h. λ = 64/Re"
+      },
+      {
+        "gebiet": "turbulent, Übergangsgebiet",
+        "formel": "1/√λ = −2·lg((k/d)/3,71 + 2,51/(Re·√λ))"
+      },
+      {
+        "gebiet": "turbulent, hydraulisch rauh",
+        "formel": "1/√λ = 1,14 − 2·lg(k/d)"
+      },
+      {
+        "gebiet": "turbulent, hydraulisch glatt",
+        "formel": "1/√λ = 2·lg(Re·√λ/2,51)"
+      }
     ],
     "druckverlust": "Δp_R = λ·(l/d)·ρ·w²/2 = R·l (Gleichung 1-12, S. 12); Re = w·d/ν (1-13, S. 13); hydraulischer Durchmesser d_h = 4A/U = 2ab/(a + b) (1-15 bis 1-17, S. 15)"
+  },
+  "wasser": {
+    "quelle": "NIST Chemistry WebBook, Thermophysical Properties of Fluid Systems, Wasser (C7732185), Isobare 0.2 MPa (wie kataloge/stoffwerte.json), Viskosität nach IAPWS 2008 (Huber et al., J. Phys. Chem. Ref. Data 38, 2009); abgerufen 04.11.2026",
+    "einheiten": {
+      "t": "°C",
+      "eta": "Pa·s",
+      "rho": "kg/m³"
+    },
+    "werte": [
+      {
+        "t": 10,
+        "eta": 0.0013058,
+        "rho": 999.75
+      },
+      {
+        "t": 20,
+        "eta": 0.0010016,
+        "rho": 998.25
+      },
+      {
+        "t": 30,
+        "eta": 0.00079722,
+        "rho": 995.69
+      },
+      {
+        "t": 40,
+        "eta": 0.00065274,
+        "rho": 992.26
+      },
+      {
+        "t": 50,
+        "eta": 0.00054654,
+        "rho": 988.08
+      },
+      {
+        "t": 60,
+        "eta": 0.00046606,
+        "rho": 983.24
+      },
+      {
+        "t": 70,
+        "eta": 0.00040357,
+        "rho": 977.81
+      },
+      {
+        "t": 80,
+        "eta": 0.00035408,
+        "rho": 971.83
+      }
+    ],
+    "hinweis": "Kinematische Viskosität ν = η/ρ; zwischen den Tabellenpunkten linear. Nur Wasser – für Wasser-Glykol fehlt die Viskosität."
   }
 }
