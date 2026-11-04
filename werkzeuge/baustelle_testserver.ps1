@@ -44,15 +44,23 @@ function Adressen {
     ForEach-Object { "http://$($_.IPAddress):$BaustellePort/baustelle/" }
 }
 
-if (-not (Test-Path $dll)) { Hinweis "KICAD ist auf diesem Rechner noch nicht gebaut ($dll fehlt).`nZuerst einmal das Icon 'KICAD' starten."; exit 1 }
 # Der Baustellen-Zugang kam mit c348819 (04.11.2026). Aeltere Builds ignorieren --baustelle-port und oeffnen Port $BaustellePort nie (Befund 04.11.2026:
-# "startet nicht"). Erkennbar am Klassennamen BaustelleZugang in den Metadaten des Programms.
-$hat = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($dll)).Contains('BaustelleZugang')
-if (-not $hat) {
-  Log "Build $Bau ohne Baustellen-Zugang - nicht gestartet"
-  Hinweis "Der KICAD-Stand auf diesem Rechner kennt den Baustellen-Testserver noch nicht.`n`nEr kommt mit dem naechsten geprueften Stand. Danach einmal 'KICAD aktualisieren' starten, dann dieses Icon."
-  exit 1
+# "startet nicht"). Erkennbar am Klassennamen BaustelleZugang in den Metadaten des Programms. Kennt der Desktop-Build ihn noch nicht, gilt ein eigener
+# Build des Arbeitsstands in %USERPROFILE%\HLKS_CAD_build\baustelle (vom Hauptlauf gebaut), bis der Desktop nachgezogen ist.
+function HatZugang([string]$d) { (Test-Path $d) -and [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($d)).Contains('BaustelleZugang') }
+if (-not (HatZugang $dll)) {
+  $ersatz = "$env:USERPROFILE\HLKS_CAD_build\baustelle"
+  if (HatZugang "$ersatz\Hlks.Web\bin\Debug\net10.0\Hlks.Web.dll") {
+    Log "Desktop-Build ohne Baustellen-Zugang - nehme $ersatz"
+    $Bau = $ersatz; $Arbeitskopie = (Resolve-Path "$PSScriptRoot\..").Path
+    $dll = "$Bau\Hlks.Web\bin\Debug\net10.0\Hlks.Web.dll"; $mcp = "$Bau\Hlks.Mcp\bin\Debug\net10.0\Hlks.Mcp.dll"
+  } else {
+    Log "Build $Bau ohne Baustellen-Zugang - nicht gestartet"
+    Hinweis "Der KICAD-Stand auf diesem Rechner kennt den Baustellen-Testserver noch nicht.`n`nEr kommt mit dem naechsten geprueften Stand. Danach einmal 'KICAD aktualisieren' starten, dann dieses Icon."
+    exit 1
+  }
 }
+if (-not (Test-Path $mcp)) { $mcp = "$env:USERPROFILE\HLKS_CAD_build\desktop\Hlks.Mcp\bin\Debug\net10.0\Hlks.Mcp.dll" }
 
 # Umgebung wie der Desktop (kicad_starten.ps1): Oberflaeche, Kataloge, KI-Vorlagen aus der Arbeitskopie
 $env:HLKS_BUILD = $Bau
@@ -63,6 +71,8 @@ $env:HLKS_MCP_DLL = $mcp
 $env:HLKS_BAUSTELLE_PORT = "$BaustellePort"
 
 $srv = Laufender
+# Laeuft ein Testserver ohne Baustellen-Port (alter Stand), wird er neu gestartet
+if ($srv -and -not $Neu -and -not (Get-NetTCPConnection -State Listen -LocalPort $BaustellePort -ErrorAction SilentlyContinue)) { $Neu = $true }
 if ($srv -and $Neu) {
   Log "beende Testserver $srv"
   Stop-Process -Id $srv -Force
