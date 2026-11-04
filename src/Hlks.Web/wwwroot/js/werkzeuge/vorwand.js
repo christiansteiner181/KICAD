@@ -33,7 +33,7 @@ export function vorwandUnterMaus(maus, daten, radius) {
 
 async function senden(z, ctx) {
   const o = ctx.opt;
-  const p = vorwandParameter({ geschoss: ctx.geschoss, punkte: z.punkte, system: o.system, tiefe: o.tiefe, hoehe: o.hoehe, bezugslinie: o.bezugslinie, bauwerk: o.bauwerk, bodenaufbau: o.bodenaufbau, bestuecken: o.bestuecken });
+  const p = vorwandParameter({ geschoss: ctx.geschoss, punkte: z.punkte, system: o.system, tiefe: o.tiefe, hoehe: o.hoehe, bezugslinie: o.bezugslinie, bauwerk: o.bauwerk, bodenaufbau: o.bodenaufbau, bestuecken: o.bestuecken, bauweise: o.bauweise });
   const r = await ctx.befehl('vorwand_zeichnen', p);
   if (r?.angenommen) z.punkte = [];
   else if (!o.kette) z.punkte = z.punkte.slice(0, 1);

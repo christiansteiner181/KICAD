@@ -36,6 +36,8 @@ public sealed record VorwandElementLage(Element Element, VorwandKatalog.ElementT
 public sealed class VorwandAufbau
 {
     public required Element Vorwand { get; init; }
+    public required Modell Modell { get; init; }
+    public required Katalog Katalog { get; init; }
     public required string System { get; init; }
     public required double[] A { get; init; }
     public required double Ux { get; init; }
@@ -53,6 +55,12 @@ public sealed class VorwandAufbau
     public required bool Raumhoch { get; init; }
     public required bool AnWand { get; init; }
     public List<VorwandTeil> Teile { get; } = [];
+    /// <summary>Vorgefertigt (GIS aus der Werkstatt, Christian 04.11.2026): in Segmente geteilt, die sich einbringen lassen.</summary>
+    public bool Vorgefertigt { get; init; }
+    /// <summary>Segmente (s von–bis) der vorgefertigten Vorwand; leer = nicht geteilt.</summary>
+    public List<(double S0, double S1)> Segmente { get; } = [];
+    /// <summary>Massgebende Grenze der Segmentlänge und woher sie kommt (Einbringlänge bzw. Tür).</summary>
+    public string? Einbringgrenze { get; set; }
     public List<VorwandElementLage> Elemente { get; } = [];
     public List<string> Befunde { get; } = [];
     public List<string> Annahmen { get; } = [];
@@ -100,8 +108,9 @@ public static class VorwandGestell
         bool raumhoch = geschoss?.Zahl("hoehe") is double gh && hoehe >= gh - 100;
         var auf = new VorwandAufbau
         {
-            Vorwand = vorwand, System = system, A = a, Ux = ux, Uy = uy, Qx = qx, Qy = qy, Laenge = l, Tiefe = tiefe, Hoehe = hoehe,
+            Vorwand = vorwand, Modell = m, Katalog = k, System = system, A = a, Ux = ux, Uy = uy, Qx = qx, Qy = qy, Laenge = l, Tiefe = tiefe, Hoehe = hoehe,
             Okff = okff, Rohboden = okff - boden, Raumhoch = raumhoch, AnWand = rueck != "keine",
+            Vorgefertigt = (vorwand.Text("bauweise") ?? (system == "gis" ? "vorgefertigt" : "vor_ort")) == "vorgefertigt",
         };
         if (vorwand.Zahl("bodenaufbau") is null) auf.Annahmen.Add("Bodenaufbau fehlt – Profile auf OK Fertigboden gestellt (Eigenschaft bodenaufbau setzen).");
         if (!kat.Systeme.TryGetValue(system, out var sys)) { auf.Befunde.Add($"System «{system}» steht nicht in kataloge/vorwand_geberit.json."); return auf; }
@@ -172,8 +181,10 @@ public static class VorwandGestell
         double pb = sys.Profil.Breite, ph = sys.Profil.Hoehe, d = sys.Beplankung;
         double q1 = v.Tiefe - d, q0 = q1 - pb;   // Ebene des Gestells direkt hinter der Beplankung
         double obenOk = v.Raumhoch ? v.Okff + v.Hoehe : v.Okff + v.Hoehe - d;   // Oberkante des obersten Profils
-        double s0 = Rand, s1 = v.Laenge - Rand, zuschnitt = Math.Round(s1 - s0);
         string? ann = sys.Annahme("profil");
+        double vz0 = v.Rohboden, vz1 = obenOk;
+        // Vorgefertigt: Segmente, die sich einbringen lassen; sonst ein Stück über die ganze Länge
+        var segmente = v.Vorgefertigt ? Segmentieren(v, sys, vz1 - vz0, q1) : [(0, v.Laenge)];
 
         // Horizontalprofile: Oberkanten ab OK Rohboden nach S. 251, weitere je Abstand, oben eines an der Ablage bzw. Decke
         var ok = new List<double>();
@@ -181,15 +192,26 @@ public static class VorwandGestell
         while (ok[^1] + sys.HorizontalprofilAbstand < obenOk - ph) ok.Add(ok[^1] + sys.HorizontalprofilAbstand);
         ok = ok.Where(z => z <= obenOk - ph - 1).ToList();
         ok.Add(obenOk);
-        foreach (var z in ok)
-            v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", s0, s1, q0, q1, z - ph, z, sys.ProfilArtikel, zuschnitt, ann));
-
-        // Vertikalprofile an den Enden und höchstens Abstand auseinander, nicht in einem Montageelement
-        var lagen = Teilung(s0, s1 - pb, sys.VertikalprofilAbstand);
-        lagen = Ausweichen(lagen, v.Elemente, pb, s0, s1 - pb);
-        double vz0 = v.Rohboden, vz1 = obenOk;
-        foreach (var s in lagen)
-            v.Teile.Add(new VorwandTeil("profil", "GIS Profil vertikal", s, s + pb, q1 - ph, q1, vz0, vz1, sys.ProfilArtikel, Math.Round(vz1 - vz0 - 2 * Rand), ann));
+        var lagen = new List<double>();
+        foreach (var (a, b) in segmente)
+        {
+            double s0 = a + Rand, s1 = b - Rand, zuschnitt = Math.Round(s1 - s0);
+            foreach (var z in ok)
+                v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", s0, s1, q0, q1, z - ph, z, sys.ProfilArtikel, zuschnitt, ann));
+            // Vertikalprofile an den Enden des Stücks und höchstens Abstand auseinander, nicht in einem Montageelement
+            var el = v.Elemente.Where(e => e.S1 > a && e.S0 < b).ToList();
+            var hier = Ausweichen(Teilung(s0, s1 - pb, sys.VertikalprofilAbstand), el, pb, s0, s1 - pb);
+            foreach (var s in hier)
+                v.Teile.Add(new VorwandTeil("profil", "GIS Profil vertikal", s, s + pb, q1 - ph, q1, vz0, vz1, sys.ProfilArtikel, Math.Round(vz1 - vz0 - 2 * Rand), ann));
+            lagen.AddRange(hier);
+        }
+        // Doppelstoss zwischen zwei Segmenten: Verbindung höchstens 100 cm auseinander (S. 251)
+        for (int i = 1; i < segmente.Count; i++)
+        {
+            double st = segmente[i].S0;
+            foreach (var z in Teilung(vz0 + 100, vz1 - 100, 1000))
+                v.Teile.Add(new VorwandTeil("befestigung", "GIS Verbindungslasche (Stoss)", st - Rand - pb, st + Rand + pb, q1 - ph, q1, z - 20, z + 20, null, null, sys.Annahme("verbindungslasche")));
+        }
 
         // Montagewinkel am Boden (und raumhoch an der Decke): erster 10 cm von der angrenzenden Wand, dann höchstens Abstand
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
@@ -255,6 +277,63 @@ public static class VorwandGestell
         if (!v.Raumhoch)
             foreach (var s in lagen)
                 v.Teile.Add(new VorwandTeil("befestigung", titel, s + tb / 2 - 15, s + tb / 2 + 15, 0, q1 - th, obenOk - sh - 130, obenOk - sh - 100, ankerArt, Math.Round(q1 - th), sys.Annahme("wandanker")));
+    }
+
+    // ------------------------------------------------------------------ Vorfertigung
+
+    /// <summary>Teilt eine vorgefertigte Vorwand in Segmente, die sich einbringen lassen (Christian 04.11.2026: «gis elemente werden in der
+    /// werkstatt vorgefertigt, sie dürfen also nur so gross sein, dass sie in die wohnung eingebracht werden können»).
+    /// Grenze: Einbringlänge des Geschosses bzw. des Projekts (von Hand); dazu die kleinste Tür des Geschosses: ein Segment (Länge × Höhe × Tiefe)
+    /// passt durch die lichte Öffnung, wenn seine kleinste Abmessung durch die kleinere und die mittlere durch die grössere Seite der Öffnung geht.
+    /// Stösse liegen nie in einem Montageelement; gleichmässige Teilung, Stösse an die nächste Elementkante geschoben.</summary>
+    static List<(double S0, double S1)> Segmentieren(VorwandAufbau v, VorwandKatalog.SystemDef sys, double hoehe, double tiefe)
+    {
+        var m = v.Modell; var k = v.Katalog;
+        var geschoss = v.Vorwand.Geschoss is { } gid ? m.Finde(gid) : null;
+        double? ein = geschoss?.Zahl("einbringlaenge") ?? m.DerKlasse("Projektinformation").FirstOrDefault()?.Zahl("einbringlaenge");
+        var tueren = m.Elemente.Where(e => k.IstArt(e, "Tuer") && e.Geschoss == v.Vorwand.Geschoss && e.Zahl("breite") is > 0 && e.Zahl("hoehe") is > 0).ToList();
+        var tuer = tueren.OrderBy(t => Math.Min(t.Zahl("breite")!.Value, t.Zahl("hoehe")!.Value)).ThenBy(t => Math.Max(t.Zahl("breite")!.Value, t.Zahl("hoehe")!.Value)).FirstOrDefault();
+        double max = double.PositiveInfinity;
+        var grund = new List<string>();
+        if (ein is double e) { max = e; grund.Add($"Einbringlänge {e:0} mm ({(geschoss?.Zahl("einbringlaenge") is not null ? $"Geschoss {geschoss!.Kennzeichen}" : "Projekt")})"); }
+        else v.Befunde.Add($"Vorgefertigt: Einbringlänge fehlt (Geschoss oder Projektinformation, Eigenschaft einbringlaenge){(tuer is null ? " – nicht geteilt" : " – nur nach der Tür geteilt")}.");
+        if (tuer is not null)
+        {
+            double tb = tuer.Zahl("breite")!.Value, th = tuer.Zahl("hoehe")!.Value, klein = Math.Min(tb, th), gross = Math.Max(tb, th);
+            if (tiefe > klein) v.Befunde.Add($"Vorgefertigt: Tiefe {tiefe:0} mm geht nicht durch die Tür {tuer.Kennzeichen} ({tb:0} × {th:0} mm).");
+            if (hoehe > gross) { if (gross < max) { max = gross; grund.Add($"Segmenthöhe {hoehe:0} mm über der Tür {tuer.Kennzeichen} ({tb:0} × {th:0} mm): Länge höchstens {gross:0} mm"); } }
+            else grund.Add($"Tür {tuer.Kennzeichen} {tb:0} × {th:0} mm geprüft");
+        }
+        v.Einbringgrenze = grund.Count > 0 ? string.Join("; ", grund) : null;
+        if (double.IsInfinity(max) || v.Laenge <= max + 1e-6) { v.Segmente.Add((0, v.Laenge)); return [(0, v.Laenge)]; }
+        double rand = sys.Profil.Breite + Rand;
+        foreach (var el in v.Elemente.Where(x => x.S1 - x.S0 > max))
+            v.Befunde.Add($"{el.Element.Kennzeichen} ist breiter als die zulässige Segmentlänge {max:0} mm.");
+        for (int n = (int)Math.Ceiling(v.Laenge / max - 1e-9); n <= (int)Math.Ceiling(v.Laenge / max - 1e-9) + 10; n++)
+        {
+            var stoesse = new List<double>();
+            for (int i = 1; i < n; i++)
+            {
+                double s = v.Laenge * i / n;
+                foreach (var el in v.Elemente)
+                    if (s > el.S0 - rand && s < el.S1 + rand)
+                        s = s - (el.S0 - rand) < (el.S1 + rand) - s ? el.S0 - rand : el.S1 + rand;
+                stoesse.Add(s);
+            }
+            var grenzen = new List<double> { 0 };
+            grenzen.AddRange(stoesse.Order());
+            grenzen.Add(v.Laenge);
+            var seg = grenzen.Zip(grenzen.Skip(1)).Where(x => x.Second - x.First > 1).ToList();
+            if (seg.All(x => x.Second - x.First <= max + 1e-6 && x.Second - x.First >= 2 * rand)
+                && stoesse.All(s => !v.Elemente.Any(el => s > el.S0 - rand + 1e-6 && s < el.S1 + rand - 1e-6)))
+            {
+                foreach (var x in seg) v.Segmente.Add((x.First, x.Second));
+                return v.Segmente;
+            }
+        }
+        v.Befunde.Add($"Vorgefertigt: keine Teilung ohne Stoss durch ein Element gefunden (Segmentlänge höchstens {max:0} mm).");
+        v.Segmente.Add((0, v.Laenge));
+        return [(0, v.Laenge)];
     }
 
     // ------------------------------------------------------------------ Hilfen
@@ -331,6 +410,13 @@ public static class VorwandGestell
         {
             ["vorwand"] = v.Vorwand.Kennzeichen, ["system"] = v.System, ["laenge"] = Math.Round(v.Laenge), ["tiefe"] = v.Tiefe, ["hoehe"] = v.Hoehe,
             ["raumhoch"] = v.Raumhoch, ["zeilen"] = zeilen,
+            ["bauweise"] = v.Vorgefertigt ? "vorgefertigt" : "vor_ort",
+            ["einbringgrenze"] = v.Einbringgrenze,
+            ["segmente"] = new JsonArray(v.Segmente.Select((x, i) => (JsonNode)new JsonObject
+            {
+                ["nr"] = i + 1, ["von"] = Math.Round(x.S0), ["bis"] = Math.Round(x.S1), ["laenge"] = Math.Round(x.S1 - x.S0),
+                ["elemente"] = new JsonArray(v.Elemente.Where(e => e.S0 >= x.S0 - 1 && e.S1 <= x.S1 + 1).Select(e => (JsonNode)e.Element.Kennzeichen).ToArray()),
+            }).ToArray()),
             ["befunde"] = new JsonArray(v.Befunde.Select(x => (JsonNode)x).ToArray()),
             ["annahmen"] = new JsonArray(v.Annahmen.Concat(v.Teile.Select(t => t.Annahme).OfType<string>()).Distinct().Select(x => (JsonNode)x).ToArray()),
         };

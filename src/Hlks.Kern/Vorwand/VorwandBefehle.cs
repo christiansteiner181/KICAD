@@ -20,6 +20,7 @@ public sealed class VorwandZeichnen : IBefehl
         new("bezugslinie", "text", false, "links oder rechts (Vorgabe links) = Punkte auf der Rohbauwand links/rechts in Zeichenrichtung; mitte = frei stehend, Punkte auf der Achse"),
         new("bauwerk", "text", false, "massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel"),
         new("bodenaufbau", "zahl", false, "Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)"),
+        new("bauweise", "text", false, "vorgefertigt (in Segmenten eingebracht) oder vor_ort; Vorgabe GIS vorgefertigt, Duofix vor Ort"),
         new("bestuecken", "bool", false, "Danach Montageelemente für die Apparate vor der Vorwand setzen (wie vorwand_bestuecken)"),
     ];
 
@@ -51,6 +52,7 @@ public sealed class VorwandZeichnen : IBefehl
         {
             var eig = new JsonObject { ["system"] = system, ["rueckseite"] = bezug == "mitte" ? "keine" : bezug, ["bauwerk"] = bauwerk };
             if (Param.Zahl(p, "bodenaufbau") is double ba) eig["bodenaufbau"] = ba;
+            if (Param.Text(p, "bauweise") is { Length: > 0 } bw) eig["bauweise"] = ArchParam.Auswahl(bw, ["vorgefertigt", "vor_ort"], "bauweise");
             new ElementAnlegen().Ausfuehren(k, new JsonObject
             {
                 ["klasse"] = "Vorwand", ["geschoss"] = geschoss.Id, ["name"] = $"Vorwand {sys.Titel}", ["eigenschaften"] = eig,

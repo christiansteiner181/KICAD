@@ -58,6 +58,7 @@ export const WERKZEUGE = {
       { id: 'bezugslinie', titel: 'Rohbauwand', art: 'auswahl', werte: [['links', 'links'], ['rechts', 'rechts'], ['mitte', 'keine (frei stehend)']], vorgabe: 'links' },
       { id: 'bauwerk', titel: 'Bauwerk', art: 'auswahl', werte: [['massiv', 'massiv'], ['trockenbau', 'Trockenbau']], vorgabe: 'massiv' },
       { id: 'bodenaufbau', titel: 'Bodenaufbau', art: 'zahl', einheit: 'mm', platzhalter: '0', breite: 5 },
+      { id: 'bauweise', titel: 'Bauweise', art: 'auswahl', werte: [['', 'nach System'], ['vorgefertigt', 'vorgefertigt'], ['vor_ort', 'vor Ort']], vorgabe: '' },
       { id: 'bestuecken', titel: 'Bestücken', art: 'bool', vorgabe: true },
       { id: 'kette', titel: 'Kette', art: 'bool', vorgabe: true },
     ],

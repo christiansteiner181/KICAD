@@ -17,6 +17,7 @@ public class VorwandTests
     public void Gis_ProfileNachHandbuch_BestueckungHinterDemWc()
     {
         var p = Rechteck();
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["einbringlaenge"] = 2500 } }));   // länger als die Vorwand: ein Segment
         Ok(p.Ausfuehren("raum_erkennen", new JsonObject { ["geschoss"] = "EG", ["punkt"] = Pt(3000, 2000), ["nutzung"] = "Bad" }));
         Ok(p.Ausfuehren("element_anlegen", new JsonObject
         {
@@ -85,5 +86,38 @@ public class VorwandTests
         {
             ["geschoss"] = "EG", ["punkte"] = Pts([100, 3900], [2100, 3900]), ["system"] = "duofix", ["tiefe"] = 500, ["hoehe"] = 1140,
         }));
+    }
+
+    [Fact]
+    public void Gis_Vorgefertigt_InSegmenteGeteilt_StossNieImElement_TuerBegrenzt()
+    {
+        // Christian 04.11.2026: GIS-Elemente werden in der Werkstatt vorgefertigt und müssen sich einbringen lassen
+        var p = Rechteck();
+        Ok(Tuer(p, "W-2", 2000, 900));   // lichte Tür 900 × 2100 mm
+        Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "EG", ["eigenschaften"] = new JsonObject { ["einbringlaenge"] = 3000 } }));
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [4100, 100]), ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 3000, ["bezugslinie"] = "rechts",
+        }));
+        Ok(p.Ausfuehren("montageelement_setzen", new JsonObject { ["vorwand"] = "VW-1", ["element"] = "gis.wc.sigma12.114", ["abstand"] = 2000 }));
+        var auf = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-1"))!;
+        Assert.True(auf.Vorgefertigt && auf.Raumhoch);
+        // raumhoch 3000 mm höher als die Tür (2100): Segmente höchstens 2100 lang; Teilung in der Mitte träfe das WC → drei Segmente
+        Assert.Equal(3, auf.Segmente.Count);
+        Assert.All(auf.Segmente, x => Assert.True(x.S1 - x.S0 <= 2100 + 1e-6));
+        var wc = auf.Elemente.Single();
+        Assert.Contains(auf.Segmente, x => x.S0 <= wc.S0 && wc.S1 <= x.S1);   // Stoss nie durch das Element
+        Assert.Contains("Tür", auf.Einbringgrenze);
+        Assert.NotEmpty(auf.Teile.Where(t => t.Titel == "GIS Verbindungslasche (Stoss)"));
+        Assert.Equal(3 * 7, auf.Teile.Count(t => t.Titel == "GIS Profil horizontal"));   // je Segment eigene: 5, 65, 130, 135, 200, 265 cm und an der Decke
+        Assert.Empty(auf.Befunde);
+        // Duofix bleibt vor Ort gebaut: nicht geteilt
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 3900], [4100, 3900]), ["system"] = "duofix", ["tiefe"] = 150, ["hoehe"] = 1140, ["bezugslinie"] = "links",
+        }));
+        var df = VorwandGestell.Ableiten(p.Modell, p.Katalog, Hole(p, "VW-2"))!;
+        Assert.False(df.Vorgefertigt);
+        Assert.Empty(df.Segmente);
     }
 }

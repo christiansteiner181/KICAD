@@ -39,6 +39,15 @@ public sealed class VorwandGrafik : IGrafikquelle
                 else if (t.Z1 <= z)
                     prim.Add(new Primitiv { Art = "polygon", Punkte = r, Stil = new Stil { Stift = Stifte.Duenn, Linie = "strich" } });
             }
+        // Vorgefertigt: Stösse der Segmente dick, Nummer an der Vorderseite
+        if (v.Segmente.Count > 1)
+            for (int i = 0; i < v.Segmente.Count; i++)
+            {
+                var (a, b) = v.Segmente[i];
+                if (i > 0) prim.Add(new Primitiv { Art = "linie", Punkte = [v.Punkt(a, 0), v.Punkt(a, v.Tiefe)], Stil = new Stil { Stift = Stifte.Dick } });
+                var t = v.Punkt((a + b) / 2, v.Tiefe + ctx.AufModell(2.5));
+                prim.Add(new Primitiv { Art = "text", Punkte = [t], Text = $"S{i + 1}", Groesse = 1.8, Ausrichtung = "mitte", Winkel = Lesbar(v.Winkel), Mitdrehen = true });
+            }
         var vorne = new[] { v.Punkt(0, v.Tiefe), v.Punkt(v.Laenge, v.Tiefe) };
         var hinten = new[] { v.Punkt(0, 0), v.Punkt(v.Laenge, 0) };
         return [new Grafikteil

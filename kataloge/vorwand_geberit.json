@@ -55,7 +55,8 @@
       },
       "annahmen": {
         "wandanbindung": "Wandanbindung = GIS Verbindungsstück 461.003.00.1 je Vertikalprofil auf halber und oberer Höhe (Höhen angenommen, Handbuch nennt nur den Abstand 250 cm).",
-        "montagewinkelBreite": "Breite des Montagewinkels nicht bemasst – 40 mm gezeichnet."
+        "montagewinkelBreite": "Breite des Montagewinkels nicht bemasst – 40 mm gezeichnet.",
+        "verbindungslasche": "Doppelstoss zwischen vorgefertigten Segmenten: Verbindungslasche je höchstens 100 cm (Abstand S. 251); kein eigener Artikel gefunden."
       },
       "verbindungsstueck": {
         "artikel": "461.003.00.1",

@@ -20,7 +20,8 @@
     "eigenschaften": [
       { "name": "kote", "typ": "zahl", "einheit": "mm", "pflicht": true, "beschreibung": "Höhe OK fertig Boden über ±0.00" },
       { "name": "hoehe", "typ": "zahl", "einheit": "mm", "pflicht": true, "beschreibung": "Geschosshöhe OK Boden bis OK Boden darüber" },
-      { "name": "kurz", "typ": "text", "beschreibung": "Kürzel für Raumnummern, z. B. U, E, 1, 2, A" } ] },
+      { "name": "kurz", "typ": "text", "beschreibung": "Kürzel für Raumnummern, z. B. U, E, 1, 2, A" },
+      { "name": "einbringlaenge", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösste Länge eines vorgefertigten Segments (z. B. GIS-Vorwand aus der Werkstatt), das sich in die Wohnung einbringen lässt (Treppenhaus, Lift, Gänge) in mm; Eingabe von Hand (Christian 04.11.2026). Geschoss vor Projekt; fehlt sie, teilt KICAD nicht und meldet es." } ] },
 
   { "name": "Raum", "kuerzel": "R", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcSpace", "geometrie": "polygon", "brauchtGeschoss": true,
     "beschreibung": "Ein Raum mit Grundfläche als Polygon (mm). Fläche und Volumen werden aus der Geometrie berechnet.",
@@ -460,7 +461,8 @@
       { "name": "system", "typ": "auswahl", "auswahl": [ "gis", "duofix" ], "beschreibung": "Vorwandsystem (Geberit GIS oder Duofix)" },
       { "name": "rueckseite", "typ": "auswahl", "auswahl": [ "links", "rechts", "keine" ], "beschreibung": "Seite der Rohbauwand in Zeichnungsrichtung (links/rechts); keine = frei stehend" },
       { "name": "bauwerk", "typ": "auswahl", "auswahl": [ "massiv", "trockenbau" ], "beschreibung": "Bauwerk, an dem befestigt wird – bestimmt den Abstand der Montagewinkel (GIS: massiv 100 cm, Trockenbau 40 cm)" },
-      { "name": "bodenaufbau", "typ": "zahl", "einheit": "mm", "beschreibung": "Bodenaufbau OK Rohboden bis OK Fertigboden; die Profile stehen auf dem Rohboden (GIS-Höhen ab OK Rohfussboden). Fehlt = 0 (Annahme, im Befund genannt)" } ] },
+      { "name": "bodenaufbau", "typ": "zahl", "einheit": "mm", "beschreibung": "Bodenaufbau OK Rohboden bis OK Fertigboden; die Profile stehen auf dem Rohboden (GIS-Höhen ab OK Rohfussboden). Fehlt = 0 (Annahme, im Befund genannt)" },
+      { "name": "bauweise", "typ": "auswahl", "auswahl": [ "vorgefertigt", "vor_ort" ], "beschreibung": "vorgefertigt = in der Werkstatt gebaut und in Segmenten eingebracht (Einbringlänge des Geschosses bzw. Projekts, Prüfung gegen die kleinste Tür des Geschosses); fehlt = GIS vorgefertigt, Duofix vor Ort (Christian 04.11.2026)" } ] },
   { "name": "Montageelement", "kuerzel": "ME", "schicht": "system", "rolle": "verbraucher", "gewerk": "sanitaer", "bkp": "251", "geometrie": "punkt", "brauchtGeschoss": true,
     "beschreibung": "Geberit Montageelement in einer Vorwand (teilVon = Vorwand): Punkt = Mitte der Elementvorderkante auf OK Fertigboden; Masse, Anschlusshöhen und Artikel aus kataloge/vorwand_geberit.json (Eigenschaft element). bezuege.apparat = Apparat, für den es gesetzt ist (vorwand_bestuecken).",
     "eigenschaften": [
@@ -664,7 +666,8 @@
       { "name": "uebergang", "typ": "objekt", "beschreibung": "Wärmeübergangswiderstände für die U-Wert-Rechnung (Modul 1c), nur mit Quelle: { \"horizontal\": { \"rsi\", \"rse\", \"quelle\" }, \"aufwaerts\": {…}, \"abwaerts\": {…}, \"erdreich\": { \"rsi\", \"rse\", \"quelle\" } } in m²·K/W, Quelle je Gruppe (uebergang_setzen). Ohne Eintrag rechnet der Kern nur R = Summe d/λ, keinen U-Wert" },
       { "name": "hkap", "typ": "objekt", "beschreibung": "Verknüpfung mit HKAP (Modul 1d): { \"projekt\": \"P-005\", \"projektierung\": \"PJ-2026-003\", \"kuerzel\", \"name\" (Gegenprüfung), \"url\" (Vorgabe http://localhost:5013) }" },
       { "name": "ifcStandard", "typ": "liste", "beschreibung": "IFC-Übernahme: Klassen (samt Unterklassen), die mit unserem Standard (Serien und Familien des Büros) nachgezeichnet werden; alle übrigen Bauteile mit eigener Form werden als Familie aus dem IFC übernommen. Fehlt = Leitung, Formteil, Verteiler, Armatur (Christian 03.11.2026)." },
-      { "name": "ifcSerien", "typ": "liste", "beschreibung": "IFC-Übernahme: Regeln IFC-Typ → Serie unseres Standards [{ \"muster\": regulärer Ausdruck auf den IFC-Typnamen, \"serie\": Name oder Kennung der Serie (leer = keine Serie), \"medien\": [..] (optional), \"aufrunden\": true (optional: fehlt die Grösse in der Serie, die nächstgrössere) }]; gelten vor der Vorgabe (Silent-db20, PE, Mapress, Sanipex, Stahl, Rechteckkanal, Wickelfalzrohr rund)." } ] },
+      { "name": "ifcSerien", "typ": "liste", "beschreibung": "IFC-Übernahme: Regeln IFC-Typ → Serie unseres Standards [{ \"muster\": regulärer Ausdruck auf den IFC-Typnamen, \"serie\": Name oder Kennung der Serie (leer = keine Serie), \"medien\": [..] (optional), \"aufrunden\": true (optional: fehlt die Grösse in der Serie, die nächstgrössere) }]; gelten vor der Vorgabe (Silent-db20, PE, Mapress, Sanipex, Stahl, Rechteckkanal, Wickelfalzrohr rund)." },
+      { "name": "einbringlaenge", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösste Länge eines vorgefertigten Segments (z. B. GIS-Vorwand aus der Werkstatt), das sich in die Wohnung einbringen lässt (Treppenhaus, Lift, Gänge) in mm; Eingabe von Hand (Christian 04.11.2026). Geschoss vor Projekt; fehlt sie, teilt KICAD nicht und meldet es." } ] },
 
   { "name": "Familie", "kuerzel": "FAM", "schicht": "familie", "gewerk": "allgemein",
     "beschreibung": "Familie (Modul 2): parametrische Definition eines Geräts oder Apparats wie in Revit – Parameter mit Formeln, Typen, Körper, Anschlüsse mit Lage und Richtung, Sinnbild. Format: schema/hlks-familie.schema.json. Elemente einer familienfähigen Klasse zeigen mit bezuege.familie auf sie. Im Projekt Modelldaten (Pakete); die Bibliothek ist nur Vorlage (familie_laden).",

@@ -68,9 +68,10 @@ public sealed partial class Werkzeuge
         [Description("massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel")] string? bauwerk = null,
         [Description("Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)")] double? bodenaufbau = null,
         [Description("Danach Montageelemente für die Apparate vor der Vorwand setzen (wie vorwand_bestuecken)")] bool bestuecken = false,
+        [Description("vorgefertigt (in Segmenten eingebracht) oder vor_ort; Vorgabe GIS vorgefertigt, Duofix vor Ort")] string? bauweise = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("vorwand_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte), ("system", system), ("tiefe", tiefe), ("hoehe", hoehe), ("bezugslinie", bezugslinie),
-            ("bauwerk", bauwerk), ("bodenaufbau", bodenaufbau), ("bestuecken", bestuecken)), trockenlauf);
+            ("bauwerk", bauwerk), ("bodenaufbau", bodenaufbau), ("bestuecken", bestuecken), ("bauweise", bauweise)), trockenlauf);
 
     [McpServerTool(Name = "montageelement_setzen"), Description(Hlks.Kern.MontageelementSetzen.Text)]
     public string MontageelementSetzenWerkzeug(

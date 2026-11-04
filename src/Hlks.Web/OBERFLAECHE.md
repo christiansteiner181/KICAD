@@ -4175,4 +4175,12 @@ der Schnitthöhe gestrichelt, Befestigungen dünn, Elemente als Rechteck mit Kre
 Elements mit mehreren Farben seit 04.11.2026 je Farbe (`Schnittzerlegung.SchnitteJeFarbe`), sonst unverändert. Prüfausschnitte: Schnittlinie direkt hinter der
 Beplankung zeigt das Gestell von vorne (Klassen Leitung, Formteil, Armatur, Apparat ausblenden).
 
+**Vorfertigung** (Christian 04.11.2026: «gis elemente werden in der werkstatt vorgefertigt, sie dürfen also nur so gross sein, dass sie in die wohnung
+eingebracht werden können»; Entscheide: Grenze von Hand + Türprüfung, GIS immer vorgefertigt): Eigenschaft `bauweise` (Optionsleiste «Bauweise»; fehlt = GIS
+vorgefertigt, Duofix vor Ort). Eine vorgefertigte Vorwand wird in Segmente geteilt: höchstens die **Einbringlänge** (Eigenschaft `einbringlaenge` am Geschoss,
+sonst an der Projektinformation; von Hand, z. B. Treppenhaus/Lift); ist das Segment höher als die grössere Seite der kleinsten Tür des Geschosses, höchstens
+diese. Tiefe grösser als die kleinere Türseite → Befund. Stösse nie in einem Montageelement (gleichmässig geteilt, an die nächste Elementkante geschoben); je
+Segment eigene Horizontal- und Vertikalprofile, am Doppelstoss Verbindungslaschen ≤ 100 cm (S. 251). Grundriss: Stösse dick, Segmentnummern S1, S2 … vor der
+Vorwand; Stückliste: Segmente mit Länge und Elementen, massgebende Grenze. Fehlt die Einbringlänge: Befund (ohne Tür nicht geteilt).
+
 **Tests:** `dotnet test tests/Hlks.Kern.Tests --filter "FullyQualifiedName~VorwandTests"`.
