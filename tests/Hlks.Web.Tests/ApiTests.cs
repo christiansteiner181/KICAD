@@ -394,6 +394,7 @@ public class ApiTests
     // Vor der Tabelle deklarieren: statische Felder werden in Textreihenfolge belegt (sonst steht in plan_pdf ein leerer Pfad)
     static readonly string PlanPdfDatei = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "api-test-" + Guid.NewGuid().ToString("N")[..8] + ".pdf").Replace('\\', '/');
     static readonly string PlansatzOrdner = Path.Combine(Path.GetTempPath(), "HLKS_CAD", "api-plansatz-" + Guid.NewGuid().ToString("N")[..8]).Replace('\\', '/');
+    static readonly string RvtTestdatei = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.UserProfile), "HLKS_CAD_testdaten", "familien", "revit", "geberit_silent_db20_2017.rvt");
     static readonly Dictionary<string, string> AbfrageParameter = new()
     {
         ["faehigkeiten"] = "{}",
@@ -418,6 +419,15 @@ public class ApiTests
         ["ifc_pruefen"] = "{\"datei\":\"" + IfcTestdatei("minimal_ifc4.ifc") + "\"}",
         ["ifc_deckung"] = """{"toleranz":5}""",
         ["rechenweg"] = "{}",   // 03.11.2026: Register «Wie wird was gerechnet»
+        ["grundlagen"] = "{}",   // 03.11.2026: Verzeichnis der Grundlagen
+        ["heizlast"] = "{}",   // 04.11.2026: Modul 5 Teil B-H (ohne Normtabellen bzw. Klimastation: Hinweis)
+        ["heizkoerper_auslegung"] = "{}",   // 04.11.2026: Modul 5 Teil B
+        ["rohr_druckverlust"] = "{}",   // 04.11.2026: Modul 5 Teil B
+        ["kanal_druckverlust"] = "{}",   // 04.11.2026: Modul 6 Teil B
+        ["datenpunktliste"] = "{}",   // 04.11.2026: Modul 8 MSRL, Gerüst
+        ["webablage_status"] = "{}",   // 04.11.2026: Webablage, Gerüst
+        // 03.11.2026: RVT als IFC – echte Revit-Datei nur lokal (%USERPROFILE%\HLKS_CAD_testdaten); fehlt sie, wird die Abfrage unten übersprungen
+        ["rvt_als_ifc"] = "{\"datei\":\"" + RvtTestdatei.Replace('\\', '/') + "\"}",
         ["ifc_teile"] = "{}",   // 03.11.2026: Familie aus IFC   // 02.11.2026: Deckung Nachbau ↔ IFC
         ["aufbau_rechnen"] = """{"aufbau":"AUF-1"}""",   // Aufbau legt der Test vorher an (das Beispielprojekt hat keinen)
         ["materialien"] = "{}",
@@ -541,6 +551,7 @@ public class ApiTests
         try {
         foreach (var a in Abfragen.Liste)
         {
+            if (a.Name == "rvt_als_ifc" && !File.Exists(RvtTestdatei)) continue;   // Revit-Testdatei nur lokal
             // Modul 3c: die Normensuche liest HLKS_NORMEN – nur während des Aufrufs auf eine Kopie der Test-PDF (nie W:; nur die Normensuche liest die Variable)
             var normen = a.Name is "normen_suchen" or "norm_lesen" ? GespraechServer.NormenKopie() : null;
             using var umgebung = normen is null ? null : Hlks.Tests.Gemeinsam.TestUmgebung.Setzen(("HLKS_NORMEN", normen));
