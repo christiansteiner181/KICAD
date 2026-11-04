@@ -237,8 +237,16 @@ export function leitungRichtungPlan(el) {
   return winkelGrad(pts[0], pts[pts.length - 1]);
 }
 
-/** Rechtwinklige Richtungen zur Leitung im Grundriss (beide Seiten). */
-export const abzweigRichtungen = (leitungsWinkel) => (leitungsWinkel === null ? [] : [normWinkel(leitungsWinkel + ABZWEIG_WINKEL), normWinkel(leitungsWinkel - ABZWEIG_WINKEL)]);
+/** Richtungen des Abzweigs im Grundriss: je Abzweigwinkel der Serie (regeln.abzweigwinkel, Antwort leitungsserie; fehlt = 90°) beide Seiten
+ *  und beide Richtungen entlang der Leitung (Christian 04.11.2026: Polarfang bei vorgegebenen Winkeln, «bsp. Abzweiger abwasser» 45°/88.5°).
+ *  Ob der Winkel zur Fliessrichtung passt, entscheidet der Kern (leitung_abzweigen). */
+export function abzweigRichtungen(leitungsWinkel, abzweigwinkel = null) {
+  if (leitungsWinkel === null) return [];
+  const liste = (Array.isArray(abzweigwinkel) ? abzweigwinkel.map(Number).filter((w) => w > 0 && w <= 90) : []);
+  const s = new Set();
+  for (const a of liste.length ? liste : [ABZWEIG_WINKEL]) for (const b of [0, 180]) for (const v of [a, -a]) s.add(rund(normWinkel(leitungsWinkel + b + v), 6));
+  return [...s];
+}
 
 /** Einheitsvektor [dx, dy, 0] der rechtwinkligen Richtung auf der Seite, auf der die Maus liegt (nur das T-Stück). */
 export function abzweigSeite(leitungsWinkel, durchPunkt, maus) {

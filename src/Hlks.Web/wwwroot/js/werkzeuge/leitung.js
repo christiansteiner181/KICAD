@@ -84,7 +84,7 @@ function leisteZeigen(v) {
 
 /** Richtungen, auf die der Winkelfang einrastet (Grad), oder null, wenn nichts zu fangen ist. */
 function kandidaten(z, ctx) {
-  if (z.abzweig && z.punkte.length === 1) return L.abzweigRichtungen(z.abzweig.winkel);
+  if (z.abzweig && z.punkte.length === 1) return L.abzweigRichtungen(z.abzweig.winkel, D.serieDef(ctx.opt.serie)?.abzweigwinkel);   // Abzweigwinkel der Serie
   if (!ctx.opt.winkelfang) return null;
   const winkel = L.erlaubteWinkel(D.serieDef(ctx.opt.serie));
   const erster = z.von && z.punkte.length === 1 ? L.anschlussRichtungPlan(z.von) : null;

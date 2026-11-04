@@ -64,6 +64,8 @@ test('Winkelfang: am Anschluss und beim Abzweig gelten nur die vorgegebenen Rich
   assert.deepEqual(L.richtungsKandidaten({ nur: [90, 270] }), [90, 270]);
   assert.deepEqual(L.abzweigRichtungen(0), [90, 270]);
   assert.deepEqual(L.abzweigRichtungen(null), []);
+  // Abwasser-Serie mit Abzweigwinkeln 45° und 88.5°: beide Seiten, beide Richtungen entlang der Leitung
+  assert.deepEqual(L.abzweigRichtungen(0, [45, 88.5]).sort((a, b) => a - b), [45, 88.5, 91.5, 135, 225, 268.5, 271.5, 315]);
 });
 
 test('Winkelfang: rastet innerhalb der Toleranz auf den Kandidaten ein, behält die Länge', () => {
