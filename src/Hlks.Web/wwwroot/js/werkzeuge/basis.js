@@ -304,9 +304,9 @@ class Lauf {
     const d = this.def;
     if (e.key === 'Shift') { this.shift = true; this.berechneFang(); this.zeichnen(); return false; }
     if (e.key === 'Escape') {
-      // Mehrpunkt-Werkzeuge mit escAbschliessen (Wand; Leitung hat einen eigenen Hörer): Esc schliesst bis zum letzten Linksklick ab (das Gummiband fällt weg), erst das nächste Esc beendet das Werkzeug
-      // (Christian 02.11.2026: «esc soll linie nur bis zum letzten linksklick abbrechen»)
-      if (d.escAbschliessen && !this.tipp && (this.z?.punkte?.length ?? 0) >= 2 && d.enter) { this.run(() => d.enter(this.z, this.ctx)); return true; }
+      // Mehrpunkt-Werkzeuge mit escVerwerfen (Wand; Leitung hat einen eigenen Hörer): Esc verwirft den angefangenen Zug, erst das nächste Esc beendet das Werkzeug
+      // (Christian 04.11.2026: «esc muss bsp rohr abbrechen», «Verwerfen, dann beenden»; ersetzt «bis zum letzten Linksklick» vom 02.11.2026)
+      if (d.escVerwerfen && !this.tipp && (this.z?.punkte?.length ?? 0) >= 1) { this.z = d.neu(this.ctx); this.hinweisAktualisieren(); this.zeichnen(); return true; }
       this.beenden(); return true;
     }
     if (e.key === 'Enter') {

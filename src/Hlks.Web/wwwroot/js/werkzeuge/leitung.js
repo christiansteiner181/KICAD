@@ -4,9 +4,10 @@
 // Enter oder Doppelklick schliesst ab: zuerst der Trockenlauf des Kerns (Vorschau-Zeile mit Längen und Formteilen oder die Ablehnung
 // mit Vorschlag), dann «Ausführen». Das Werkzeug rechnet nichts Fachliches: Geraden, Bögen, Reduktionen, Einbaulängen und
 // Verbindungen setzt der Kern (leitung_zeichnen, leitung_abzweigen); Parameter und Texte stehen in leitung-logik.js (in Node getestet).
-// Tasten ausser den Ziffern (Basis: basis.js) verarbeitet ein eigener Hörer am Fenster: Esc schliesst die Leitung bis zum letzten Linksklick
-// ab und lässt nur das Gummiband fallen (Christian 02.11.2026: «esc soll linie nur bis zum letzten linksklick abbrechen»; ein einzelner
-// Startpunkt wird verworfen, bei offener Vorschau zeichnet Esc weiter), Rückschritt nimmt den letzten Punkt zurück, H springt in das Feld «Höhe».
+// Tasten ausser den Ziffern (Basis: basis.js) verarbeitet ein eigener Hörer am Fenster: Esc verwirft den angefangenen Zug, es wird nichts
+// angelegt; das nächste Esc beendet das Werkzeug (Christian 04.11.2026: «esc muss bsp rohr abbrechen», Fragefenster «Verwerfen, dann
+// beenden» – ersetzt «bis zum letzten Linksklick» vom 02.11.2026). Bei offener Vorschau zeichnet Esc weiter; Anlegen mit Enter bzw.
+// Doppelklick. Rückschritt nimmt den letzten Punkt zurück, H springt in das Feld «Höhe».
 
 import { element, alleElemente } from '../zustand.js';
 import { sende } from '../oberflaeche/befehle.js';
@@ -168,12 +169,6 @@ function mediumUebernehmen(r, ctx) {
   if (m) { setze(laufend.id, 'medium', m); ctx.optionenNeu(); }
 }
 
-/** Esc: die Leitung bis zum letzten Klick abschliessen (Trockenlauf, angenommen → ausführen; abgelehnt → Vorschau mit Vorschlag bleibt). */
-async function bisLetztemKlick(z, ctx) {
-  await vorschauHolen(z, ctx);
-  if (z.vorschau?.ok) await ausfuehren(z, ctx);
-}
-
 // ------------------------------------------------------------------------------------------------ Start und Klicks
 
 function pflichtPruefen(ctx, kategorie) {
@@ -316,8 +311,7 @@ if (typeof window !== 'undefined') {
     if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
       stop();
       if (z.vorschau && z.punkte.length) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
-      else if (z.punkte.length >= 2 || (z.abzweig && z.punkte.length >= 1)) bisLetztemKlick(z, ctx).then(() => { ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); });
-      else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
+      else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // angefangenen Zug verwerfen
     } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);
     } else if ((e.key === 'h' || e.key === 'H') && !e.shiftKey) {
@@ -364,7 +358,7 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
       if (z.von && z.punkte.length === 1 && L.anschlussRichtungPlan(z.von) === null)
         return `${z.von.element}.${z.von.name} zeigt senkrecht ${(z.von.richtung?.[2] ?? 0) < 0 ? 'nach unten' : 'nach oben'}: zuerst die Höhe ändern (H), dann weiterzeichnen.`;
       if (z.abzweig) return 'Abzweig: Punkt rechtwinklig neben der Leitung anklicken, Zahl = Länge, Enter ohne weiteren Punkt setzt nur das T-Stück.';
-      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Enter, Doppelklick oder Esc beendet (bis zum letzten Klick), Umschalt = orthogonal.';
+      return 'Nächsten Punkt anklicken, Zahl = Länge in mm, H = Höhe ändern (Steigleitung), Rückschritt = Punkt zurück, Enter oder Doppelklick legt an, Esc verwirft den Zug, Umschalt = orthogonal.';
     },
 
     letzterPunkt: (z) => (z.punkte.length ? plan(z.punkte.at(-1)) : null),
