@@ -36,7 +36,8 @@ export function bauteilEintraege({ kennzeichen, aktionen, aktiv, start, aehnlich
 
 /** Hauptgruppen der Werkzeugkiste: Register mit Werkzeugen zum Zeichnen und Bearbeiten (Reihenfolge wie das Menüband). */
 export const HAUPTGRUPPEN = [
-  ['architektur', 'Architektur', 'wand'], ['huelle', 'Hülle', 'decke'], ['gebaeudetechnik', 'Gebäudetechnik', 'rohr'],
+  ['architektur', 'Architektur', 'wand'], ['huelle', 'Hülle', 'decke'], ['heizung', 'Heizung', 'rohr'], ['lueftung', 'Lüftung', 'kanal'],
+  ['sanitaer', 'Sanitär', 'apparat'], ['msrl', 'MSRL', 'schema'],
   ['einfuegen', 'Einfügen', 'familie'], ['beschriften', 'Beschriften', 'planblatt'], ['aendern', 'Ändern', 'auswaehlen'],
 ];
 
@@ -44,7 +45,7 @@ export const HAUPTGRUPPEN = [
 export function kisteGruppen(aktionen) {
   return HAUPTGRUPPEN.map(([register, titel, symbol]) => ({
     register, titel, symbol,
-    werkzeuge: aktionen.filter((a) => a.register === register && typeof a.ausfuehren === 'function' && a.titel)
+    werkzeuge: aktionen.filter((a) => [].concat(a.register ?? []).includes(register) && typeof a.ausfuehren === 'function' && a.titel)
       .map((a) => ({ id: a.id, titel: a.titel.replace(/[​­]/g, ''), symbol: a.symbol ?? null, kuerzel: a.kuerzel ?? null })),
   })).filter((g) => g.werkzeuge.length > 0);
 }

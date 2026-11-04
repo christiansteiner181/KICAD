@@ -496,9 +496,9 @@ test('andere Listen unverändert: formatWert und CSV ohne Spaltenformat wie vorh
 
 // ---------------------------------------------------------------------------------------------- Verdrahtung
 
-test('Verdrahtung: Aktion im Register Gebäudetechnik › Apparate und Armaturen, Liste im Dialog, Symbole in beiden Sätzen, Stylesheet', () => {
+test('Verdrahtung: Aktion im Register Sanitär › Apparate und Armaturen, Liste im Dialog, Symbole in beiden Sätzen, Stylesheet', () => {
   const akt = lies('./aktionen-sanitaer.js');
-  assert.match(akt, /id: 'sanitaer\.zusammenstellung'[\s\S]*symbol: 'sanZusammenstellung'[\s\S]*register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen'/);
+  assert.match(akt, /id: 'sanitaer\.zusammenstellung'[\s\S]*symbol: 'sanZusammenstellung'[\s\S]*register: 'sanitaer', gruppe: 'Apparate und Armaturen'/);
   assert.match(lies('./aktionen.js'), /import '\.\/aktionen-sanitaer\.js'/);
   assert.match(akt, /element_anlegen/); assert.match(akt, /liste: 'sanitaer_zusammenstellung'/);
   const ans = lies('./aktionen-ansicht.js');
@@ -529,9 +529,9 @@ test('Verdrahtung: Aktion im Register Gebäudetechnik › Apparate und Armaturen
   assert.match(lies('../ansichten/liste.js'), /NAMEN_MODUL4\.includes\(n\)\) return ansicht\?\.werte\?\.anlage \? \{ anlage: ansicht\.werte\.anlage \}/);
 });
 
-test('Verdrahtung: keine neuen Register, die Gruppe «Apparate und Armaturen» gibt es schon', () => {
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
-  assert.match(lies('../familien/aktionen-familien.js'), /register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen'/);
+test('Verdrahtung: Register je Gewerk, die Gruppe «Apparate und Armaturen» steht unter Sanitär', () => {
+  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['heizung', 'Heizung'\], \['lueftung', 'Lüftung'\], \['sanitaer', 'Sanitär'\], \['msrl', 'MSRL'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
+  assert.match(lies('./aktionen.js'), /\['gt\.sanitaerapparat', 'Sanitärapparat', 'apparat', 'PX', 'Apparate und Armaturen', 'sanitaer'\]/);
 });
 
 test('Vorgabe «Vorgabe der Klasse»: die Oberfläche kennt keine Zuordnung Klasse → Art (sie kommt aus sanitaer_katalog)', () => {

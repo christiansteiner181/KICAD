@@ -87,7 +87,7 @@ export async function platzieren(p = {}) {
 }
 
 registrieren({
-  id: 'familie.platzieren', titel: 'Familie platzieren', symbol: 'famPlatzieren', kuerzel: 'CM', register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen',
+  id: 'familie.platzieren', titel: 'Familie platzieren', symbol: 'famPlatzieren', kuerzel: 'CM', register: ['heizung', 'lueftung', 'sanitaer', 'msrl'], gruppe: 'Familien',
   aktiv: () => projektOffen() && !!planAnsicht() && planAnsicht()?.art === 'grundriss',
   hinweis: () => (projektOffen() ? nurGrundriss() : 'Zuerst ein Projekt öffnen.'),
   gedrueckt: () => werkzeugAktiv() === 'familie',

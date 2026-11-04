@@ -1,4 +1,5 @@
-// Menüband wie in Revit: Register (Datei, Architektur, Hülle (Modul 1c), Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, XR (26.10.2026), Verwalten) mit Knöpfen in
+// Menüband wie in Revit: Register (Datei, Architektur, Hülle (Modul 1c), Heizung, Lüftung, Sanitär, MSRL (je Gewerk seit 04.11.2026, vorher ein Register
+// «Gebäudetechnik»; Werkzeuge mehrerer Gewerke stehen in jedem ihrer Register), Einfügen, Beschriften, Ändern, Koordination, Ansicht, XR (26.10.2026), Verwalten) mit Knöpfen in
 // beschrifteten Gruppen, Kontextregister «Ändern | <Klasse>» bei Auswahl, Optionsleiste darunter, Schnellzugriff im Kopf.
 // Kontextregister «Familie» (Modul 2, C1): erscheint, solange ein Familieneditor die aktive Ansicht ist, und wird dann gewählt.
 // Das Menüband löst nur Aktionen aus (aktionen.js); Zustand und Hinweise für gesperrte Knöpfe kommen aus den Aktionen.
@@ -11,7 +12,7 @@
 // auf ein Register das Band als Überlagerung. Zustand gemerkt.
 
 import { zustand, element, abonnieren, merken } from '../zustand.js';
-import { aktionen, ausfuehren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen } from './aktionen.js';
+import { aktionen, ausfuehren, registerVon, imRegister, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen } from './aktionen.js';
 import { symbol } from './symbole.js';
 import { esc, entprellen, elementText } from './werkzeug.js';
 import { HILFE_ZEILE } from './hilfe.js';
@@ -20,12 +21,16 @@ import { werkzeugOptionen } from '../werkzeuge/optionsleiste.js';
 import { familieAktiv } from '../familien/aktiv.js';
 import { STUFEN, gruppenPlan, stufenWaehlen, minWeiter, minUmschalten, MIN_ZUSTAENDE } from './menueband-stufen.js';
 
-const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['gebaeudetechnik', 'Gebäudetechnik'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['xr', 'XR'], ['verwalten', 'Verwalten']];
+const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['msrl', 'MSRL'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['xr', 'XR'], ['verwalten', 'Verwalten']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
 const GRUPPENFOLGE = {
   datei: ['Projekt', 'Ausgabe'],   // «Zuletzt geöffnet» hängt gruppenListe() immer hinten an; Ausgabe seit Modul 7 Teil B2 (IFC exportieren)
   architektur: ['Bauteile', 'Decke, Boden, Dach', 'Raum', 'Raster'],
   huelle: ['Aufbauten', 'Materialien', 'Fenster', 'Übergang', 'Prüfen', 'Listen'],
+  heizung: ['Leitungen', 'Familien'],
+  lueftung: ['Leitungen', 'Familien'],
+  sanitaer: ['Leitungen', 'Apparate und Armaturen', 'Familien'],
+  msrl: ['Schema', 'Familien'],
   einfuegen: ['Verknüpfen / Übernehmen', 'Importieren', 'Unterlagen'],
   beschriften: ['Bemassung', 'Text', 'Detail', 'Symbol'],
   aendern: ['Auswahl', 'Verändern', 'Bearbeiten', 'Verlauf', 'Paletten'],
@@ -47,6 +52,7 @@ let ueberlagerung = false;     // minimiert: Band als Überlagerung offen
 export function einrichten(bandElement, optionsleisteElement, schnellzugriffElement) {
   band = bandElement; optionsleiste = optionsleisteElement; schnell = schnellzugriffElement;
   aktivesRegister = merken.lesen('menuebandRegister', 'aendern');
+  if (aktivesRegister === 'gebaeudetechnik') aktivesRegister = 'heizung';   // gemerkt vor der Teilung nach Gewerken
   if (!REGISTER.some(([id]) => id === aktivesRegister)) aktivesRegister = 'aendern';
   zuvorRegister = aktivesRegister;
   minZustand = merken.lesen('menuebandMinimiert', 'voll');
@@ -237,7 +243,7 @@ function knopfHtml(a, stil) {
 function gruppenListe(registerId) {
   const m = new Map();
   for (const a of aktionen.values()) {
-    if (a.register !== registerId) continue;
+    if (!imRegister(a, registerId)) continue;
     if (!m.has(a.gruppe)) m.set(a.gruppe, []);
     m.get(a.gruppe).push(a);
   }
@@ -361,7 +367,7 @@ export function knopfHilfe(k) {
   if (!a) return null;
   // Im Band gehört der Knopf zum gewählten Register (dessen Reiter trägt den angezeigten Namen, auch «Ändern | Klasse»); im Schnellzugriff zu dem der Aktion
   const reiter = k.closest('#menueband') ? reiterLeiste?.querySelector('.mb-tab.aktiv') : null;
-  const register = reiter ? reiter.textContent : (REGISTER.find(([id]) => id === a.register)?.[1] ?? '');
+  const register = reiter ? reiter.textContent : (REGISTER.find(([id]) => id === registerVon(a)[0])?.[1] ?? '');
   return { register: ohneWeich(register).trim(), knopf: ohneWeich(a.titel).trim() };
 }
 

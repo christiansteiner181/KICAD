@@ -4,15 +4,15 @@
 
 /** Registerkennung → Anzeigename, in der Reihenfolge des Menübands (menueband.js REGISTER), dahinter Auswahl (Kontextregister) und Familie. */
 export const REGISTER_NAMEN = {
-  datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', gebaeudetechnik: 'Gebäudetechnik', einfuegen: 'Einfügen', beschriften: 'Beschriften',
+  datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', heizung: 'Heizung', lueftung: 'Lüftung', sanitaer: 'Sanitär', msrl: 'MSRL', einfuegen: 'Einfügen', beschriften: 'Beschriften',
   aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten', kontext: 'Auswahl', familie: 'Familie',
 };
 export const ALLGEMEIN = 'Allgemein';
 
 const ohneWeich = (t) => String(t ?? '').replace(/[​­]/g, '');
 
-/** Name des Registers einer Aktion für die Liste. */
-export const registerName = (a) => REGISTER_NAMEN[a?.register] ?? ALLGEMEIN;
+/** Name des Registers einer Aktion für die Liste (steht sie in mehreren, ihr erstes = Hauptregister). */
+export const registerName = (a) => REGISTER_NAMEN[[].concat(a?.register ?? [])[0]] ?? ALLGEMEIN;
 
 /**
  * Zeilen der Liste: Aktionen mit Kürzel, nach Register (Reihenfolge des Menübands, «Allgemein» zuletzt), innerhalb eines Registers in der Reihenfolge der Registrierung.

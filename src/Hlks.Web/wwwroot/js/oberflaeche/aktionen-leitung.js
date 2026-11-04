@@ -21,12 +21,13 @@ const nurGrundriss = () => (!projektOffen() ? 'Zuerst ein Projekt öffnen.' : pl
 
 // ---------------------------------------------------------------------------------------------- Rohr und Kanal zeichnen
 
-for (const [id, titel, symbol, kuerzel, kategorie, wid] of [
-  ['gt.rohr', 'Rohr', 'rohr', 'PI', 'Rohr', 'rohr'],
-  ['gt.kanal', 'Kanal', 'kanal', 'DT', 'Kanal', 'kanal'],
+// Register je Gewerk (04.11.2026): Rohr unter Heizung und Sanitär, Kanal unter Lüftung
+for (const [id, titel, symbol, kuerzel, kategorie, wid, register] of [
+  ['gt.rohr', 'Rohr', 'rohr', 'PI', 'Rohr', 'rohr', ['heizung', 'sanitaer']],
+  ['gt.kanal', 'Kanal', 'kanal', 'DT', 'Kanal', 'kanal', ['lueftung']],
 ]) {
   registrieren({
-    id, titel, symbol, kuerzel, register: 'gebaeudetechnik', gruppe: 'Leitungen',
+    id, titel, symbol, kuerzel, register, gruppe: 'Leitungen',
     aktiv: imGrundriss, hinweis: nurGrundriss,
     gedrueckt: () => werkzeugAktiv() === wid,
     ausfuehren() { werkzeugStarten(leitungWerkzeug(kategorie)); },
@@ -36,7 +37,7 @@ for (const [id, titel, symbol, kuerzel, kategorie, wid] of [
 // ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)
 
 registrieren({
-  id: 'gt.parallel', titel: 'Parallele Leitungen', symbol: 'parallel', kuerzel: null, register: 'gebaeudetechnik', gruppe: 'Leitungen',
+  id: 'gt.parallel', titel: 'Parallele Leitungen', symbol: 'parallel', kuerzel: null, register: ['heizung', 'lueftung', 'sanitaer'], gruppe: 'Leitungen',
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'parallel',
   ausfuehren() { werkzeugStarten(parallelWerkzeug()); },

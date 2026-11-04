@@ -47,7 +47,7 @@ export async function sanitaerListeOeffnen(anlageKz) {
 }
 
 registrieren({
-  id: 'sanitaer.zusammenstellung', titel: 'Sanitär-​Zusammen​stellung', symbol: 'sanZusammenstellung', kuerzel: null, register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen',
+  id: 'sanitaer.zusammenstellung', titel: 'Sanitär-​Zusammen​stellung', symbol: 'sanZusammenstellung', kuerzel: null, register: 'sanitaer', gruppe: 'Apparate und Armaturen',
   aktiv: hatAnlage, hinweis,
   async ausfuehren(p) {
     const alle = anlagen();

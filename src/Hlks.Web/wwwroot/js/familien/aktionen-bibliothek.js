@@ -23,7 +23,7 @@ const kannAktualisieren = (bezug) => wegeFuer(standVon(bezug)).length > 0;
 const KEIN_UNTERSCHIED = 'Die Familie entspricht der aktuellen Version der Bibliothek (oder ist nicht darin).';
 
 registrieren({
-  id: 'familie.explorer', titel: 'Familien im Explorer', symbol: 'famBibliothek', register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen',
+  id: 'familie.explorer', titel: 'Familien im Explorer', symbol: 'famBibliothek', register: ['heizung', 'lueftung', 'sanitaer', 'msrl'], gruppe: 'Familien',
   aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: () => explorerDialog(),
 });
 registrieren({

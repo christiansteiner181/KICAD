@@ -672,7 +672,7 @@ test('Verdrahtung: Zuordnung der Ansichtsart, Kontextregister Familie mit den Gr
   }
   for (const s of ['famFamilie', 'famTyp', 'ansicht3d', 'oeffnen', 'neu']) assert.ok(s === 'famTyp' ? true : sym.symbol(s) !== unbekannt, s);
   assert.match(a, /kuerzel: 'CM'/);
-  assert.match(a, /register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen'/);
+  assert.match(a, /register: \['heizung', 'lueftung', 'sanitaer', 'msrl'\], gruppe: 'Familien'/);
   // Aktionen laufen nur über Befehle und Abfragen des Kerns
   for (const b of ['familie_entwurf']) assert.ok(a.includes(`'${b}'`), b);
   assert.ok(lies('bibliothek-dialoge.js').includes("'familie_laden'"), 'familie_laden (seit C3 im Dialog «Familie laden»)');

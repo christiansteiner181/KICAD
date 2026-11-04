@@ -88,7 +88,7 @@ registrieren({
 });
 
 registrieren({
-  id: 'schema.verbinden', titel: 'Verbinden', symbol: 'schemaVerbinden', kuerzel: null, register: 'ansicht', gruppe: 'Schema',
+  id: 'schema.verbinden', titel: 'Verbinden', symbol: 'schemaVerbinden', kuerzel: null, register: ['ansicht', 'msrl'], gruppe: 'Schema',
   gedrueckt: () => aktivesSchema()?.modus === 'verbinden',
   aktiv: imSchema, hinweis: KEIN_SCHEMA,
   ausfuehren(p) {
@@ -99,14 +99,14 @@ registrieren({
 });
 
 registrieren({
-  id: 'schema.trennen', titel: 'Trennen', symbol: 'schemaTrennen', kuerzel: null, register: 'ansicht', gruppe: 'Schema',
+  id: 'schema.trennen', titel: 'Trennen', symbol: 'schemaTrennen', kuerzel: null, register: ['ansicht', 'msrl'], gruppe: 'Schema',
   gedrueckt: () => aktivesSchema()?.modus === 'trennen',
   aktiv: imSchema, hinweis: KEIN_SCHEMA,
   ausfuehren(p) { const s = ziel(p); s?.setzeModus(s.modus === 'trennen' ? 'auswahl' : 'trennen'); },
 });
 
 registrieren({
-  id: 'schema.einfuegen', titel: 'Element einfügen', symbol: 'schemaEinfuegen', kuerzel: null, register: 'ansicht', gruppe: 'Schema',
+  id: 'schema.einfuegen', titel: 'Element einfügen', symbol: 'schemaEinfuegen', kuerzel: null, register: ['ansicht', 'msrl'], gruppe: 'Schema',
   gedrueckt: () => aktivesSchema()?.modus === 'einfuegen',
   aktiv: imSchema, hinweis: KEIN_SCHEMA,
   async ausfuehren(p) {
@@ -119,7 +119,7 @@ registrieren({
 });
 
 registrieren({
-  id: 'schema.neu-anordnen', titel: 'Neu anordnen', symbol: 'schemaAnordnen', kuerzel: null, register: 'ansicht', gruppe: 'Schema',
+  id: 'schema.neu-anordnen', titel: 'Neu anordnen', symbol: 'schemaAnordnen', kuerzel: null, register: ['ansicht', 'msrl'], gruppe: 'Schema',
   aktiv: imSchema, hinweis: KEIN_SCHEMA,
   async ausfuehren(p) { await ziel(p)?.neuAnordnen(); },
 });

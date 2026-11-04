@@ -4,7 +4,8 @@
 //
 // Aktion: { id, titel, symbol, kuerzel, kuerzelAlt[], gruppe, register, groesse ('gross'|'klein'), ausfuehren(param),
 //           aktiv(param) → bool, hinweis (Text oder Funktion; erscheint als Tooltip, wenn nicht aktiv), gedrueckt() → bool }
-// Aktionen ohne register erscheinen nicht im Menüband (nur Kontextmenü, Kürzel).
+// Aktionen ohne register erscheinen nicht im Menüband (nur Kontextmenü, Kürzel). register darf eine Liste sein: Werkzeuge mehrerer Gewerke (Rohr,
+// Formteil, Familien) stehen in jedem ihrer Register (Heizung, Lüftung, Sanitär; Christian 04.11.2026: «die tab aufteilung gewerkeweise gliedern»).
 // immerGross (bool, in aktionen.js gesetzt): bleibt im Menüband in den Stufen M und K gross, bis die Gruppe zum Flyout zusammenklappt.
 
 import { meldung } from './dialoge.js';
@@ -17,6 +18,10 @@ export function registrieren(def) {
   aktionen.set(a.id, a);
   return a;
 }
+
+/** Register einer Aktion als Liste (register: Text, Liste oder keins); das erste ist ihr Hauptregister (Kürzelliste, Schnellzugriff). */
+export const registerVon = (a) => (a?.register == null ? [] : [].concat(a.register));
+export const imRegister = (a, id) => registerVon(a).includes(id);
 
 export function hinweisText(a, param) {
   try { return (typeof a.hinweis === 'function' ? a.hinweis(param) : a.hinweis) || ''; } catch { return ''; }

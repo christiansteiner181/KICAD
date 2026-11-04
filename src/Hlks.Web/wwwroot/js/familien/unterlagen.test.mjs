@@ -483,7 +483,7 @@ test('Verdrahtung: Reiter, Aktionen, Register «Unterlagen», Symbole, Projektbr
   assert.match(ed, /zelleMerken/);
   const a = lies('aktionen-unterlagen.js');
   for (const id of ['familie.aus-unterlagen', 'familie.aus-unterlagen-register', 'familie.entwurf-pruefen', 'familie.unterlagen', 'familie.entwurf-pruefen-browser', 'familie.ersetzen-aus-unterlagen']) assert.ok(a.includes(`id: '${id}'`), id);
-  assert.match(a, /register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen'/);
+  assert.match(a, /register: \['heizung', 'lueftung', 'sanitaer', 'msrl'\], gruppe: 'Familien'/);
   assert.match(a, /register: 'familie', gruppe: 'Unterlagen'/);
   const unbekannt = sym.symbol('gibtsnicht');
   for (const s of ['famUnterlagen', 'famEntwurf', 'famBefunde']) assert.notEqual(sym.symbol(s), unbekannt, `Symbol ${s}`);

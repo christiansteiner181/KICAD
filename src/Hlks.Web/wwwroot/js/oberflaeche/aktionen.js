@@ -35,7 +35,7 @@ import './aktionen-fangen.js';   // Fang-Kürzel und Fangeinstellungen (Bearbeit
 import './aktionen-baustelle.js';   // Register Datei › Ausgabe: «Baustelle (Webseite)» – BIM to field Stufe 1
 import './aktionen-ifc.js';   // Register Datei › Ausgabe: «IFC exportieren …» mit Bericht und IDS-Ergebnis (Modul 7 Teil B2)
 
-export { aktionen, ausfuehren, registrieren, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen, hinweis, hinweisSetzen, beiHinweis, familie, familieSetzen, beiFamilie } from './register.js';
+export { aktionen, ausfuehren, registrieren, registerVon, imRegister, istAktiv, hinweisText, modus, modusSetzen, beiModus, optionen, hinweis, hinweisSetzen, beiHinweis, familie, familieSetzen, beiFamilie } from './register.js';
 
 // Aktionen, die im Menüband gross bleiben, bis ihre Gruppe zu einem Flyout zusammenklappt (Stufen M und K ändern sie nicht;
 // Menüband-Teil R, entwurf/menueband-revit.md): die Hauptwerkzeuge, die man ständig anklickt.
@@ -52,9 +52,9 @@ for (const id of IMMER_GROSS) { const a = aktionen.get(id); if (a) a.immerGross 
 const nochNicht = (modul) => `folgt in Modul ${modul}`;
 
 [
-  ['gt.formteil', 'Formteil', 'formteil', 'PF', 'Leitungen'],
-  ['gt.sanitaerapparat', 'Sanitärapparat', 'apparat', 'PX', 'Apparate und Armaturen'],
-  ['gt.armatur', 'Armatur', 'armatur', 'PA', 'Apparate und Armaturen'],
-].forEach(([id, titel, symbol, kuerzel, gruppe]) => registrieren({
-  id, titel, symbol, kuerzel, register: 'gebaeudetechnik', gruppe, aktiv: () => false, hinweis: nochNicht('2/3'), ausfuehren() { /* folgt */ },
+  ['gt.formteil', 'Formteil', 'formteil', 'PF', 'Leitungen', ['heizung', 'lueftung', 'sanitaer']],
+  ['gt.sanitaerapparat', 'Sanitärapparat', 'apparat', 'PX', 'Apparate und Armaturen', 'sanitaer'],
+  ['gt.armatur', 'Armatur', 'armatur', 'PA', 'Apparate und Armaturen', 'sanitaer'],
+].forEach(([id, titel, symbol, kuerzel, gruppe, register]) => registrieren({
+  id, titel, symbol, kuerzel, register, gruppe, aktiv: () => false, hinweis: nochNicht('2/3'), ausfuehren() { /* folgt */ },
 }));

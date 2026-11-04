@@ -467,7 +467,7 @@
             "Nacheinander die Register anklicken.",
             "KICAD neu laden (F5) und prüfen, welches Register offen ist."
           ],
-          "erwartung": "Die Register stehen in dieser Reihenfolge: Datei, Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten. Das gewählte bleibt beim nächsten Start gewählt.",
+          "erwartung": "Die Register stehen in dieser Reihenfolge: Datei, Architektur, Hülle, Heizung, Lüftung, Sanitär, MSRL, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten. Das gewählte bleibt beim nächsten Start gewählt.",
           "pruefpunkte": [
             "Zehn Register in der genannten Reihenfolge.",
             "«Datei» ist blau abgesetzt.",
@@ -525,7 +525,7 @@
             "sonst": "Fenster schmaler und breiter ziehen"
           },
           "schritte": [
-            "Das Register «Gebäudetechnik» wählen.",
+            "Das Register «Sanitär» wählen.",
             "Das Fenster langsam schmaler ziehen und die Gruppen beobachten.",
             "Wieder breiter ziehen."
           ],
@@ -537,7 +537,7 @@
           ],
           "bild": {
             "projekt": "beispiel",
-            "ansicht": "Menüband (Gebäudetechnik)",
+            "ansicht": "Menüband (Sanitär)",
             "zustand": "Dreimal dasselbe Register bei 1920, 1366 und 1024 px Fensterbreite"
           },
           "quelle": [
@@ -2036,7 +2036,7 @@
           ],
           "bild": {
             "projekt": "beispiel",
-            "ansicht": "Menüband › Gebäudetechnik",
+            "ansicht": "Menüband › Sanitär",
             "zustand": "Zwei Bilder desselben Registers: Strichsymbole (Vorgabe) und Revit-Stil; Liste «Paletten» mit Häkchen vor dem Eintrag als drittes Bild"
           },
           "quelle": [
@@ -5465,8 +5465,8 @@
           "id": "m2-platzieren",
           "titel": "Familie platzieren (CM)",
           "wo": {
-            "register": "Gebäudetechnik",
-            "gruppe": "Apparate und Armaturen",
+            "register": "Heizung / Lüftung / Sanitär / MSRL",
+            "gruppe": "Familien",
             "knopf": "Familie platzieren",
             "kuerzel": "CM",
             "sonst": ""
@@ -5535,8 +5535,8 @@
           "id": "m2-aus-unterlagen",
           "titel": "Familie aus Unterlagen: Dateien wählen",
           "wo": {
-            "register": "Gebäudetechnik",
-            "gruppe": "Apparate und Armaturen",
+            "register": "Heizung / Lüftung / Sanitär / MSRL",
+            "gruppe": "Familien",
             "knopf": "Familie aus Unterlagen",
             "kuerzel": "",
             "sonst": "Projektbrowser › Knopf «＋ Unterlagen»; Register Familie › Unterlagen"
@@ -5570,7 +5570,7 @@
           "titel": "KI-Lauf starten, verfolgen, abbrechen",
           "wo": {
             "register": "",
-            "gruppe": "Apparate und Armaturen",
+            "gruppe": "Familien",
             "knopf": "Familie aus Unterlagen (Schritt 2)",
             "kuerzel": "",
             "sonst": ""
@@ -5898,7 +5898,7 @@
           "id": "m3-rohr-zeichnen",
           "titel": "Rohr zeichnen mit Vorschau",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr",
             "kuerzel": "PI",
@@ -5938,7 +5938,7 @@
           "id": "m3-winkelfang",
           "titel": "Winkelfang und Ablehnung mit Vorschlag",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr (Optionsleiste «Winkelfang»)",
             "kuerzel": "PI",
@@ -5974,7 +5974,7 @@
           "id": "m3-steigleitung",
           "titel": "Steigleitung: Höhenwechsel und Zifferneingabe",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr (Taste H, Feld «Höhe»)",
             "kuerzel": "PI",
@@ -6008,7 +6008,7 @@
           "id": "m3-anschluss-fang",
           "titel": "Auf Anschlüssen beginnen und enden",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr",
             "kuerzel": "PI",
@@ -6042,7 +6042,7 @@
           "id": "m3-abzweig",
           "titel": "Abzweig und T-Stück",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr",
             "kuerzel": "PI",
@@ -6075,7 +6075,7 @@
           "id": "m3-kanal",
           "titel": "Kanal zeichnen",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Lüftung",
             "gruppe": "Leitungen",
             "knopf": "Kanal",
             "kuerzel": "DT",
@@ -6108,7 +6108,7 @@
           "id": "m3-frei-kanal",
           "titel": "Freie Grösse (Rechteckkanal)",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Lüftung",
             "gruppe": "Leitungen",
             "knopf": "Kanal",
             "kuerzel": "DT",
@@ -6157,7 +6157,7 @@
           "id": "m3-gefaelle-daemmung",
           "titel": "Gefälle und Dämmung",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr (Felder «Gefälle», «Dämmdicke»)",
             "kuerzel": "PI",
@@ -6561,7 +6561,7 @@
           "id": "m3-parallele-leitungen",
           "titel": "Parallele Leitungen",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Lüftung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Parallele Leitungen",
             "kuerzel": "",
@@ -6897,7 +6897,7 @@
           "id": "m3-abwasser-serie",
           "titel": "Abwasser-Serie (Grösse nach Aussendurchmesser)",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Heizung / Sanitär",
             "gruppe": "Leitungen",
             "knopf": "Rohr",
             "kuerzel": "PI",
@@ -8656,16 +8656,16 @@
         },
         {
           "id": "m4-knopf",
-          "titel": "Knopf «Sanitär-Zusammenstellung» in Gebäudetechnik",
+          "titel": "Knopf «Sanitär-Zusammenstellung» in Sanitär",
           "wo": {
-            "register": "Gebäudetechnik",
+            "register": "Sanitär",
             "gruppe": "Apparate und Armaturen",
             "knopf": "Sanitär-Zusammenstellung",
             "kuerzel": "",
             "sonst": ""
           },
           "schritte": [
-            "Register Gebäudetechnik › Gruppe «Apparate und Armaturen» › «Sanitär-Zusammenstellung» klicken.",
+            "Register Sanitär › Gruppe «Apparate und Armaturen» › «Sanitär-Zusammenstellung» klicken.",
             "Gibt es mehrere Anlagen und ist keine bestimmbar, im Dialog «Sanitär-Zusammenstellung» die Anlage wählen und «Öffnen» klicken.",
             "Die Liste ansehen. Ein Element der Anlage wählen und den Knopf nochmals klicken."
           ],
@@ -8678,8 +8678,8 @@
           ],
           "bild": {
             "projekt": "beispiel",
-            "ansicht": "Menüband › Gebäudetechnik",
-            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Register Gebäudetechnik, Knopf «Sanitär-Zusammenstellung» hervorgehoben"
+            "ansicht": "Menüband › Sanitär",
+            "zustand": "Beispielprojekt MFH Musterweg (Anlage A-SAN, 16 Apparate, K 0.5 fiktiv): Register Sanitär, Knopf «Sanitär-Zusammenstellung» hervorgehoben"
           },
           "quelle": [
             "src/Hlks.Web/wwwroot/js/oberflaeche/aktionen-sanitaer.js:44",
@@ -10234,14 +10234,14 @@
           "id": "zb-bib-explorer",
           "titel": "Familien im Explorer …",
           "wo": {
-            "register": "Gebäudetechnik",
-            "gruppe": "Apparate und Armaturen",
+            "register": "Heizung / Lüftung / Sanitär / MSRL",
+            "gruppe": "Familien",
             "knopf": "Familien im Explorer",
             "kuerzel": "",
             "sonst": "Projektbrowser › ⚙ am Knoten «Familien»; Register Familie › Bibliothek; Startbildschirm › Bibliothek …"
           },
           "schritte": [
-            "Register Gebäudetechnik › Apparate und Armaturen › «Familien im Explorer» klicken.",
+            "Register Heizung, Lüftung, Sanitär oder MSRL › Familien › «Familien im Explorer» klicken.",
             "Den Schalter «Familien der Bibliothek im Explorer zeigen» einschalten.",
             "Filter (Gewerk, Kategorie, Hersteller, Status) als Schaltflächen setzen; ein einzelnes Häkchen übersteuert die Filter.",
             "Die Suche über der Liste benutzen, «Speichern» klicken."
@@ -10977,7 +10977,7 @@
           },
           "schritte": [
             "KS tippen (oder Verwalten › Hilfe › «Tastaturkürzel»).",
-            "Die Abschnitte nach Registern ansehen (Datei, Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten).",
+            "Die Abschnitte nach Registern ansehen (Datei, Architektur, Hülle, Heizung, Lüftung, Sanitär, MSRL, Einfügen, Beschriften, Ändern, Koordination, Ansicht, Verwalten).",
             "Im Suchfeld «DI» tippen.",
             "Den Dialog schliessen."
           ],

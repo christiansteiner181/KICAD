@@ -379,7 +379,7 @@ test('Verdrahtung: Menüband-Gruppe, Symbole, Aktionen, Projektbrowser, Statusle
   for (const id of ['familie.explorer', 'familie.explorer-register', 'familie.aktualisieren', 'familie.aktualisieren-register', 'familie.bibliothek-laden', 'familie.bibliothek-platzieren'])
     assert.ok(akt.includes(`id: '${id}'`), `Aktion ${id}`);
   assert.match(akt, /register: 'familie', gruppe: 'Bibliothek'/);
-  assert.match(akt, /register: 'gebaeudetechnik'/);
+  assert.match(akt, /register: \['heizung', 'lueftung', 'sanitaer', 'msrl'\], gruppe: 'Familien'/);
   assert.match(lies('../oberflaeche/aktionen.js'), /import '\.\.\/familien\/aktionen-bibliothek\.js'/);
   const pb = lies('../oberflaeche/projektbrowser.js');
   for (const s of ["'bib-fam'", "'familie.bibliothek-platzieren'", "'familie.explorer'", "'familie.aktualisieren'", 'markenHtml', 'knoepfeHtml', 'data-param', 'bibliothekFamilien()']) assert.ok(pb.includes(s), s);

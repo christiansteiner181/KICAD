@@ -12,6 +12,7 @@ const aktionen = [
   { id: 'kontext.fliessrichtung', titel: 'Fliessrichtung ab hier', register: 'kontext', ausfuehren() {} },
   { id: 'arch.wand', titel: 'Wand', register: 'architektur', symbol: 'wand', kuerzel: 'WA', ausfuehren() {} },
   { id: 'datei.neu', titel: 'Neu', register: 'datei', ausfuehren() {} },
+  { id: 'gt.rohr', titel: 'Rohr', register: ['heizung', 'sanitaer'], symbol: 'rohr', kuerzel: 'PI', ausfuehren() {} },
 ];
 
 test('Bauteilmenü: auch ohne Verbindungen ein Menü; Schema eingebaut statt ersetzt; nicht verfügbare Kontext-Aktionen fehlen; Löschen und Auswahl aufheben am Schluss', () => {
@@ -28,7 +29,10 @@ test('Bauteilmenü: auch ohne Verbindungen ein Menü; Schema eingebaut statt ers
 
 test('Werkzeugkiste: Hauptgruppen aus den Registern, im Kreis ab oben, Liste rollt nach aussen', () => {
   const g = kisteGruppen(aktionen);
-  assert.deepEqual(g.map((x) => x.register), ['architektur', 'aendern']);   // Register ohne Werkzeuge fallen weg, «datei» gehört nicht dazu
+  // Register ohne Werkzeuge fallen weg, «datei» gehört nicht dazu; ein Werkzeug mehrerer Gewerke steht in jedem seiner Register
+  assert.deepEqual(g.map((x) => x.register), ['architektur', 'heizung', 'sanitaer', 'aendern']);
+  assert.deepEqual(g[1].werkzeuge.map((w) => w.id), ['gt.rohr']);
+  assert.deepEqual(g[2].werkzeuge.map((w) => w.id), ['gt.rohr']);
   assert.deepEqual(g[0].werkzeuge[0], { id: 'arch.wand', titel: 'Wand', symbol: 'wand', kuerzel: 'WA' });
   const l = radialLagen(4, 100);
   assert.deepEqual([l[0].x, l[0].y], [0, -100]);

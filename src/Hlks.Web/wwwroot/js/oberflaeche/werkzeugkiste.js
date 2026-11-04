@@ -9,7 +9,9 @@ import { symbol } from './symbole.js';
 import { esc } from './werkzeug.js';
 import { kisteGruppen, radialLagen, ausrollSeite } from './kontextmenue-logik.js';
 
-const RADIUS = 78;        // px, Abstand der Gruppen von der Knopfmitte (Bedienvorgabe)
+const RADIUS = 78;        // px, Abstand der Gruppen von der Knopfmitte (Bedienvorgabe) – mindestens; bei vielen Gruppen grösser, damit sie sich nicht überdecken
+const GRUPPE_BREITE = 64; // px, wie .wk-gruppe im Stylesheet
+const radiusFuer = (n) => Math.max(RADIUS, Math.ceil((GRUPPE_BREITE + 6) / (2 * Math.sin(Math.PI / Math.max(n, 2)))));
 const VERWEILEN_MS = 200; // Verweilzeit, bevor eine andere Gruppe ausrollt (Bedienvorgabe)
 
 /** Rundknopf für den unteren Rand des Kontextmenüs; schliessen() schliesst das Menü. */
@@ -37,11 +39,12 @@ export function kisteKnopf(schliessen) {
 function kranzBauen(r, schliessen) {
   const cx = r.left + r.width / 2, cy = r.top + r.height / 2;
   const gruppen = kisteGruppen([...aktionen.values()]);
-  const lagen = radialLagen(gruppen.length, RADIUS);
+  const radius = radiusFuer(gruppen.length);
+  const lagen = radialLagen(gruppen.length, radius);
   const kranz = document.createElement('div');
   kranz.className = 'wk-kranz';
   // Kranz so verschieben, dass er ganz im Fenster liegt (Knopf bleibt Bezug)
-  const rand = RADIUS + 40;
+  const rand = radius + 40;
   const dx = Math.max(rand - cx, 0) - Math.max(cx + rand - window.innerWidth, 0);
   const dy = Math.max(rand - cy, 0) - Math.max(cy + rand - window.innerHeight, 0);
   const mx = cx + dx, my = cy + dy;
@@ -56,7 +59,7 @@ function kranzBauen(r, schliessen) {
     b.innerHTML = `${symbol(g.symbol, 20)}<span>${esc(g.titel)}</span>`;
     const ausrollen = () => {
       offen?.remove();
-      offen = listeBauen(g, b.getBoundingClientRect(), ausrollSeite(l), { links: mx - RADIUS - 40, rechts: mx + RADIUS + 40 }, schliessen);
+      offen = listeBauen(g, b.getBoundingClientRect(), ausrollSeite(l), { links: mx - radius - 40, rechts: mx + radius + 40 }, schliessen);
       kranz.appendChild(offen);
       kranz.querySelectorAll('.wk-gruppe').forEach((x) => x.classList.toggle('offen', x === b));
     };

@@ -155,7 +155,7 @@ test('Kürzel: jedes Register des Menübands hat einen Namen; «Beschriften», �
 test('Kürzel: TX, DI, DL, EL (Beschriften), CM (Familie platzieren) stehen unter ihrem Register, nur Aktionen ohne Register unter «Allgemein»', () => {
   const liste = [
     A('Text', 'TX', 'beschriften'), A('Bemassung', 'DI', 'beschriften'), A('Detaillinie', 'DL', 'beschriften'), A('Höhenkote', 'EL', 'beschriften'),
-    A('Familie platzieren', 'CM', 'gebaeudetechnik'), A('Wand', 'WA', 'architektur'), A('Ändern', 'MD', 'aendern'), A('Löschen', 'DE', 'aendern', { kuerzelAlt: ['Entf'] }),
+    A('Familie platzieren', 'CM', ['heizung', 'lueftung', 'sanitaer', 'msrl']), A('Wand', 'WA', 'architektur'), A('Ändern', 'MD', 'aendern'), A('Löschen', 'DE', 'aendern', { kuerzelAlt: ['Entf'] }),
     A('Zoom alles', 'ZF', 'ansicht', { kuerzelAlt: ['ZE'] }), A('Tastaturkürzel', 'KS', 'verwalten'), A('Startbildschirm', 'Strg+D', null), A('Ohne Kürzel', null, 'ansicht'),
     A('Familie Test', 'FX', 'familie'), A('Einfügen Test', 'EX', 'einfuegen'), A('Hülle Test', 'HX', 'huelle'), A('Koordination Test', 'KX', 'koordination'), A('Auswahl', 'AX', 'kontext'),
     A('Fremd', 'ZZ', 'gibtsnicht'),
@@ -166,7 +166,7 @@ test('Kürzel: TX, DI, DL, EL (Beschriften), CM (Familie platzieren) stehen unte
   assert.equal(reg('DI'), 'Beschriften');
   assert.equal(reg('DL'), 'Beschriften');
   assert.equal(reg('EL'), 'Beschriften');
-  assert.equal(reg('CM'), 'Gebäudetechnik');
+  assert.equal(reg('CM'), 'Heizung');   // in mehreren Registern: unter dem ersten
   assert.equal(reg('FX'), 'Familie');
   assert.equal(reg('EX'), 'Einfügen');
   assert.equal(reg('HX'), 'Hülle');
@@ -392,7 +392,7 @@ test('Verdrahtung: Aktionen im Register Ansicht › Erstellen (klein, kein neues
   assert.match(lies('../../index.html'), /css\/nachbearbeitung-n3\.css/);
   assert.ok(lies('../../css/nachbearbeitung-n3.css').includes('.epl-plaene'));
   // keine neuen Register im Menüband
-  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik', 'Gebäudetechnik'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
+  assert.match(lies('./menueband.js'), /const REGISTER = \[\['datei', 'Datei'\], \['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['heizung', 'Heizung'\], \['lueftung', 'Lüftung'\], \['sanitaer', 'Sanitär'\], \['msrl', 'MSRL'\], \['einfuegen', 'Einfügen'\], \['beschriften', 'Beschriften'\], \['aendern', 'Ändern'\], \['koordination', 'Koordination'\], \['ansicht', 'Ansicht'\], \['xr', 'XR'\], \['verwalten', 'Verwalten'\]\]/);
 });
 
 test('Verdrahtung: der Einlageplan-Dialog benutzt nur Kernbefehl und Kernabfrage; der Projektinformationen-Dialog nur element_aendern/element_anlegen', () => {

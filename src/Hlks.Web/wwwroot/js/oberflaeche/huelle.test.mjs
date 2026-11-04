@@ -600,7 +600,7 @@ test('3D: Dach und Geschoss laden alle Körper neu (Befund B6)', () => {
 
 test('Verdrahtung: Register Hülle nach Architektur, Gruppen, Symbole, Aktionen, Import', () => {
   const mb = lies('./menueband.js');
-  assert.match(mb, /\['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['gebaeudetechnik'/);
+  assert.match(mb, /\['architektur', 'Architektur'\], \['huelle', 'Hülle'\], \['heizung'/);
   const folge = /huelle: \[([^\]]*)\]/.exec(mb)[1].match(/'([^']+)'/g).map((x) => x.slice(1, -1));
   assert.deepEqual(folge, ['Aufbauten', 'Materialien', 'Fenster', 'Übergang', 'Prüfen', 'Listen']);
   assert.match(mb, /architektur: \['Bauteile', 'Decke, Boden, Dach', 'Raum', 'Raster'\]/);

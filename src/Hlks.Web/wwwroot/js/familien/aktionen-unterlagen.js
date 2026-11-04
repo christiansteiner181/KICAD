@@ -33,7 +33,7 @@ export function dialogOeffnen(p = {}) {
 }
 
 registrieren({
-  id: 'familie.aus-unterlagen', titel: 'Familie aus Unterlagen', symbol: 'famUnterlagen', register: 'gebaeudetechnik', gruppe: 'Apparate und Armaturen',
+  id: 'familie.aus-unterlagen', titel: 'Familie aus Unterlagen', symbol: 'famUnterlagen', register: ['heizung', 'lueftung', 'sanitaer', 'msrl'], gruppe: 'Familien',
   aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: (p) => dialogOeffnen(p ?? {}),
 });
 
