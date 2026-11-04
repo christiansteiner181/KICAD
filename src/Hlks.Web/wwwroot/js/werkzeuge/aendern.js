@@ -27,13 +27,15 @@ export function spiegler(a, b) {
 }
 
 const halten = () => auswahlElemente();
+/** Nur mit Auswahl startbar – Rechtsklick ins Leere wiederholt das Werkzeug sonst nicht (Prüfbefund 04.11.2026). */
+const startbar = () => halten().length > 0;
 const kz = (z) => z.elemente.map((e) => e.kennzeichen);
 const anzahlText = (z) => (z.elemente.length === 1 ? z.elemente[0].kennzeichen : `${z.elemente.length} Elemente`);
 
 /** Verschieben und Kopieren: Basispunkt → Zielpunkt. */
 function versetzen({ id, titel, befehl, parameter, okText, mehrfachOption }) {
   return {
-    id, titel,
+    id, titel, startbar,
     neu: (ctx) => ({ elemente: halten(ctx), von: null }),
     hinweis: (z) => (z.von ? `Zielpunkt anklicken (${anzahlText(z)}), Zahl = Abstand in mm.` : `Basispunkt anklicken (${anzahlText(z)}).`),
     letzterPunkt: (z) => z.von,
@@ -74,7 +76,7 @@ export function drehenWerkzeug() {
     ctx.beenden();
   };
   return {
-    id: 'drehen', titel: 'Drehen', eingabeText: 'Winkel', eingabeEinheit: '°',
+    id: 'drehen', titel: 'Drehen', startbar, eingabeText: 'Winkel', eingabeEinheit: '°',
     neu: (ctx) => ({ elemente: halten(ctx), mitte: null, start: null }),
     hinweis: (z) => (!z.mitte ? `Drehpunkt anklicken (${anzahlText(z)}).` : !z.start ? 'Startstrahl anklicken oder Winkel in Grad eingeben (Enter).' : 'Endstrahl anklicken.'),
     letzterPunkt: (z) => z.mitte,
@@ -101,7 +103,7 @@ export function drehenWerkzeug() {
 /** Spiegeln: Achse durch zwei Punkte. */
 export function spiegelnWerkzeug() {
   return {
-    id: 'spiegeln', titel: 'Spiegeln',
+    id: 'spiegeln', titel: 'Spiegeln', startbar,
     neu: (ctx) => ({ elemente: halten(ctx), a: null }),
     hinweis: (z) => (z.a ? 'Zweiten Punkt der Spiegelachse anklicken.' : `Ersten Punkt der Spiegelachse anklicken (${anzahlText(z)}).`),
     letzterPunkt: (z) => z.a,
@@ -123,7 +125,7 @@ export function spiegelnWerkzeug() {
 /** Bearbeitungswerkzeuge B6: Spiegeln – Achse wählen (MM wie Revit): eine Gerade anklicken, ihre Achse ist die Spiegelachse. */
 export function spiegelnWaehlenWerkzeug() {
   return {
-    id: 'spiegelnWaehlen', titel: 'Spiegeln – Achse wählen', ohneFangen: true,
+    id: 'spiegelnWaehlen', titel: 'Spiegeln – Achse wählen', startbar, ohneFangen: true,
     neu: (ctx) => ({ elemente: halten(ctx) }),
     hinweis: (z) => `Gerade als Spiegelachse anklicken (${anzahlText(z)}).`,
     async klick(z, fang, ctx) {

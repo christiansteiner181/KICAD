@@ -12,17 +12,19 @@ export function achsVersatz(bezugslinie, dicke) {
   return bezugslinie === 'links' ? -dicke / 2 : bezugslinie === 'rechts' ? dicke / 2 : 0;
 }
 
+/** Sendet den Wandzug. Abgelehnt (Meldung mit Vorschlag): die Punkte bleiben, Rückschritt nimmt den letzten zurück; ohne Kette bleibt nur der
+ *  Startpunkt, damit der nächste Klick wieder ein Stück bildet (Prüfbefund 04.11.2026: vorher waren alle Punkte weg). */
 async function senden(z, ctx) {
   const o = ctx.opt;
-  const punkte = z.punkte;
-  z.punkte = [];
-  const p = wandParameter({ geschoss: ctx.geschoss, punkte, dicke: o.dicke, hoehe: o.hoehe, bezugslinie: o.bezugslinie, material: o.material });
-  await ctx.befehl('wand_zeichnen', p);
+  const p = wandParameter({ geschoss: ctx.geschoss, punkte: z.punkte, dicke: o.dicke, hoehe: o.hoehe, bezugslinie: o.bezugslinie, material: o.material });
+  const r = await ctx.befehl('wand_zeichnen', p);
+  if (r?.angenommen) z.punkte = [];
+  else if (!o.kette) z.punkte = z.punkte.slice(0, 1);
 }
 
 export function wandWerkzeug() {
   return {
-    id: 'wand', titel: 'Wand', planarten: ['grundriss'], mehrpunkt: true, escVerwerfen: true,
+    id: 'wand', titel: 'Wand', planarten: ['grundriss'], mehrpunkt: true,
     neu: () => ({ punkte: [] }),
     hinweis: (z) => (z.punkte.length === 0 ? 'Startpunkt anklicken.' : 'Nächsten Punkt anklicken, Zahl = Länge in mm, Enter oder Doppelklick beendet, Umschalt = orthogonal.'),
     letzterPunkt: (z) => z.punkte.at(-1) ?? null,

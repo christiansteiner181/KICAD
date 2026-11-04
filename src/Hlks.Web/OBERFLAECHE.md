@@ -142,8 +142,19 @@ die Auswahl auf; Strg+Z/Strg+Y. Kürzel-Liste im Dialog KS anzeigen (änderbar s
 `js/werkzeuge/optionsleiste.js`): Wand Dicke/Höhe/Bezugslinie/Kette/Material, Öffnung Breite/Höhe/Brüstung/Seite/Band,
 Bemassung Richtung/Kette, Schnitt Tiefe, Raster. Fangen (`js/werkzeuge/fangen.js`): Endpunkt (Quadrat) > Schnittpunkt
 (X) > Mitte (Dreieck) > Lot (⊥) > Nächster (Sanduhr) > Raster, Fangradius 10 px; Shift = orthogonal; Ziffern = Länge in
-mm (Drehen: Grad); Enter schliesst ab, Esc/Rechtsklick beendet. Griffe an Wand- und Linienenden sind ein passives
+mm (Drehen: Grad); Enter schliesst ab. Esc und Rechtsklick in Stufen (04.11.2026, alle Werkzeuge): zuerst die Längeneingabe
+leeren, dann den angefangenen Zug verwerfen (erster Punkt, Bezug, Basispunkt), erst dann das Werkzeug beenden – der Rechtsklick
+öffnet dabei kein Menü und startet kein Werkzeug neu. Rückschritt nimmt den letzten Punkt zurück. Lehnt der Kern ab, bleiben die
+Punkte stehen (Wand, Linie, Füllbereich, Bemassung, Schnitt, Raumtrennung). «Ändern», Löschen und Netz folgen beenden ein laufendes
+Werkzeug. Griffe an Wand- und Linienenden sind ein passives
 Werkzeug (`passiv: true`, kein Fadenkreuz). Die Werkzeuge senden nur Befehle über `befehle.js`.
+**Kontextmenü am Bauteil (04.11.2026):** Ähnliches platzieren, Verbindungen (Trennen …), Im Schema zeigen, Verschieben, Kopieren,
+Drehen, Spiegeln, die verfügbaren Kontext-Aktionen (Eigenschaften, Warum, Alle Exemplare wählen; bei Netzelementen Stromab/Stromauf,
+Fliessrichtung, Aufteilen), Löschen, Auswahl aufheben; unten der Rundknopf der **Werkzeugkiste**: Maus darüber zeigt die
+Hauptgruppen (Architektur, Hülle, Gebäudetechnik, Einfügen, Beschriften, Ändern) im Kreis, Maus über eine Gruppe rollt ihre
+Werkzeuge nach aussen aus (Wechsel zu einer anderen Gruppe nach 200 ms Verweilen), Klick startet. Rechtsklick ins Leere ohne
+Auswahl wiederholt das letzte Werkzeug (Verschieben, Kopieren, Drehen, Spiegeln nur mit Auswahl); gab es noch keines, öffnet er
+nur die Werkzeugkiste.
 
 ## Projektbrowser – Pflichtumfang
 

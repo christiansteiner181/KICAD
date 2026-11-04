@@ -10,6 +10,7 @@ import { sende, ergebnisMelden, aenderungenHtml, befundeHtml } from './befehle.j
 import { esc, knoten, elementText, vergleichen } from './werkzeug.js';
 import { umschalten, sichtbar } from './paletten.js';
 import { istMehrfach, auswahlKennzeichen } from '../werkzeuge/auswahl.js';
+import { beendeWerkzeug } from '../werkzeuge/basis.js';   // «Ändern», Löschen und Netz folgen beenden ein laufendes Werkzeug (Prüfbefund 04.11.2026)
 
 const gewaehlt = () => element(zustand.auswahl);
 const ZIEL = (p) => element(p?.element ?? zustand.auswahl);
@@ -18,12 +19,12 @@ const ZIEL = (p) => element(p?.element ?? zustand.auswahl);
 
 registrieren({
   id: 'aendern.auswaehlen', titel: 'Ändern', symbol: 'auswaehlen', kuerzel: 'MD', register: 'aendern', gruppe: 'Auswahl',
-  ausfuehren() { modusSetzen('aendern'); },
+  ausfuehren() { beendeWerkzeug(); modusSetzen('aendern'); },   // wie Revit: «Ändern» bricht das laufende Werkzeug ab
 });
 
 registrieren({
   id: 'aendern.abbrechen', titel: 'Abbrechen', symbol: 'auswaehlen', kuerzel: 'Esc',
-  ausfuehren() { modusSetzen('aendern'); auswaehlen(null); },
+  ausfuehren() { beendeWerkzeug(); modusSetzen('aendern'); auswaehlen(null); },
 });
 
 // ---------------------------------------------------------------------------------------------- Löschen
@@ -37,6 +38,7 @@ async function loeschen(p) {
   const kz = mehr ? `${mehr.length} Elemente` : el.kennzeichen;
   const befehl = mehr ? 'elemente_loeschen' : 'element_loeschen';
   const par = mehr ? { elemente: mehr } : { element: kz };
+  beendeWerkzeug();
   modusSetzen('loeschen', { kennzeichen: kz });
   try {
     const vor = await sende(befehl, par, { trockenlauf: true });
@@ -131,6 +133,7 @@ async function netzFolgen(richtung, p) {
   const el = ZIEL(p);
   if (!el) return;
   optionen.netzRichtung = richtung;
+  beendeWerkzeug();
   modusSetzen('netz', { von: el.kennzeichen, richtung });
   const param = { von: el.kennzeichen, richtung };
   if (optionen.netzMedium) param.medium = optionen.netzMedium;

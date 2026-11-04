@@ -40,9 +40,8 @@ export function bemassungWerkzeug() {
     eingabeMoeglich: (z) => z.phase === 'punkte' && z.punkte.length > 0,
     async klick(z, fang, ctx) {
       if (z.phase === 'lage') {
-        const punkte = z.punkte;
-        z.punkte = []; z.phase = 'punkte';
-        await ctx.befehl('element_anlegen', bemassungParameter({ ansicht: ctx.ansichtKz, punkte, richtung: ctx.opt.richtung, lage: fang.punkt, drehung: ctx.ansicht.drehung ?? 0 }), 'Bemassung angelegt.');
+        const r = await ctx.befehl('element_anlegen', bemassungParameter({ ansicht: ctx.ansichtKz, punkte: z.punkte, richtung: ctx.opt.richtung, lage: fang.punkt, drehung: ctx.ansicht.drehung ?? 0 }), 'Bemassung angelegt.');
+        if (r?.angenommen) { z.punkte = []; z.phase = 'punkte'; }   // abgelehnt: Messpunkte bleiben, nächster Klick = neue Lage
         return;
       }
       if (z.punkte.length && abstand(fang.punkt, z.punkte.at(-1)) < 1) return;

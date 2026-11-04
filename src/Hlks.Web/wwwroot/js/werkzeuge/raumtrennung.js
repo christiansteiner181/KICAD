@@ -16,9 +16,8 @@ export function raumtrennungWerkzeug() {
     async klick(z, fang, ctx) {
       if (!z.a) { z.a = fang.punkt; return; }
       if (abstand(z.a, fang.punkt) < 1) return;
-      const a = z.a;
-      z.a = fang.punkt;
-      await ctx.befehl('raumtrennung_zeichnen', raumtrennungParameter({ geschoss: ctx.geschoss, punkte: [a, fang.punkt] }));
+      const r = await ctx.befehl('raumtrennung_zeichnen', raumtrennungParameter({ geschoss: ctx.geschoss, punkte: [z.a, fang.punkt] }));
+      if (r?.angenommen) z.a = fang.punkt;   // abgelehnt: Anfangspunkt bleibt (Prüfbefund 04.11.2026)
     },
     zeichne(z, fang, ctx, s) {
       if (!z.a || !fang) return '';

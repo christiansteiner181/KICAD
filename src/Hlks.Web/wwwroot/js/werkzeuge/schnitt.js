@@ -38,10 +38,10 @@ export function schnittWerkzeug() {
   const senden = async (z, ctx, seitenpunkt) => {
     const o = ctx.opt;
     const { a, b } = z;
-    z.a = null; z.b = null;
     const name = o.name || schnittName(derKlasse('Ansicht').map((x) => x.name));
-    await ctx.befehl('element_anlegen', schnittParameter({ geschoss: ctx.geschoss, a, b, seitenpunkt, tiefe: o.tiefe, massstab: ctx.massstab, name }),
+    const r = await ctx.befehl('element_anlegen', schnittParameter({ geschoss: ctx.geschoss, a, b, seitenpunkt, tiefe: o.tiefe, massstab: ctx.massstab, name }),
       `${name} angelegt – im Projektbrowser öffnen.`);
+    if (r?.angenommen) { z.a = null; z.b = null; }   // abgelehnt: Linie bleibt, nächster Klick = neue Blickrichtung (Prüfbefund 04.11.2026)
   };
   return {
     id: 'schnitt', titel: 'Schnitt', planarten: ['grundriss'],

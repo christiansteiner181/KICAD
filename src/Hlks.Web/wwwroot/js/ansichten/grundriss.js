@@ -443,6 +443,9 @@ function erstellen(behaelter, ansichtElement) {
    *  Christian 02.11.2026: auf ein gewähltes Bauteil «Ähnliches platzieren»; ins Leere ohne Auswahl wiederholt der Rechtsklick das letzte Werkzeug. */
   async function kontextMenue(e) {
     if (werkzeug && !werkzeug.passiv) return;
+    // Rechtsklick hat eben ein Werkzeug abgebrochen bzw. beendet: kein Menü und kein Neustart (Prüfbefund 04.11.2026)
+    const { rechtsklickVomWerkzeug } = await import('../werkzeuge/basis.js');
+    if (rechtsklickVomWerkzeug()) return;
     const id = idVon(e.target);
     const el = id ? element(id) : null;
     const gewaehlt = zustand.auswahl ? element(zustand.auswahl) : null;

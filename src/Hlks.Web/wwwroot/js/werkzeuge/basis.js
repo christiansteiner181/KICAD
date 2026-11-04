@@ -2,7 +2,7 @@
 // Modul macht daraus das Werkzeug-Objekt nach der Schnittstelle Ansicht ↔ Werkzeug (entwurf/modul-1a.md):
 //   ansicht.setzeWerkzeug(w)   w.ereignis(art, e, ansicht) → true = verbraucht (pointerdown/-move/-up, dblclick, keydown)
 // Es kümmert sich um Fangen (fangen.js), Vorschau in `ansicht.werkzeugSchicht` (Modellkoordinaten), Zifferneingabe (Länge in
-// mm), Shift = orthogonal, Esc/Rechtsklick = beenden, Enter/Doppelklick = Kette abschliessen, Optionsleiste, Hinweis in der
+// mm), Shift = orthogonal, Esc/Rechtsklick = Eingabe leeren, angefangenen Zug verwerfen, dann beenden, Enter/Doppelklick = Kette abschliessen, Optionsleiste, Hinweis in der
 // Statusleiste. Befehle gehen nur über `sende` (befehle.js) – hier steht keine Fachlogik.
 //
 // def (alle Hooks optional ausser id und neu):
@@ -61,6 +61,21 @@ export const beiWerkzeugEnde = (fn) => { beiEnde.add(fn); return () => beiEnde.d
 
 export function beendeWerkzeug() { aktiv?.beenden(); }
 
+/** Felder, an denen die Werkzeuge einen angefangenen Zug festhalten (erster Punkt, Bezug, Basispunkt …). */
+const ZUG_FELDER = ['punkte', 'a', 'b', 'von', 'mitte', 'start', 'erster', 'erstes', 'bezug'];
+
+/** Hat der Benutzer im Werkzeug schon etwas angefangen? Werkzeuge können zugAngefangen(z) selbst angeben (z. B. Leitung mit Vorschau). */
+export function zugAngefangen(def, z) {
+  if (!z) return false;
+  if (typeof def.zugAngefangen === 'function') return !!def.zugAngefangen(z);
+  return ZUG_FELDER.some((f) => (Array.isArray(z[f]) ? z[f].length > 0 : z[f] != null));
+}
+
+/** Zeit des letzten Rechtsklicks, den ein Werkzeug verbraucht hat: das folgende contextmenu-Ereignis öffnet dann kein Menü und
+ *  wiederholt kein Werkzeug (Prüfbefund 04.11.2026: Rechtsklick beendete das Werkzeug und startete es sofort neu). */
+let rechtsVerbraucht = -1e9;
+export const rechtsklickVomWerkzeug = () => performance.now() - rechtsVerbraucht < 800;
+
 /** Startet ein Werkzeug in der aktiven Plan-Ansicht. Gibt den Lauf zurück oder null (mit Meldung). */
 let letzterStart = null;   // Definition des zuletzt gestarteten Werkzeugs (Rechtsklick ins Leere wiederholt es)
 
@@ -68,6 +83,7 @@ let letzterStart = null;   // Definition des zuletzt gestarteten Werkzeugs (Rech
  *  wiederholen»); false, wenn es noch keines gab. */
 export function letztesWiederholen() {
   if (!letzterStart) return false;
+  if (typeof letzterStart.startbar === 'function' && !letzterStart.startbar()) return false;   // z. B. Verschieben ohne Auswahl
   return !!werkzeugStarten(letzterStart);
 }
 
@@ -269,7 +285,7 @@ class Lauf {
 
   drueck(e) {
     if (e.button === 1) return false;             // Mitte: Pan der Ansicht
-    if (e.button === 2) { e.preventDefault?.(); this.beenden(); return true; }
+    if (e.button === 2) { e.preventDefault?.(); if (!this.def.passiv) rechtsVerbraucht = performance.now(); this.abbrechenStufe(); return true; }   // wie Esc
     if (e.button !== 0) return false;
     this.shift = !!e.shiftKey;
     this.mausVon(e);
@@ -301,21 +317,34 @@ class Lauf {
     return ergebnis;
   }
 
+  /** Esc und Rechtsklick in Stufen (Christian 04.11.2026: «esc muss bsp rohr abbrechen», «Verwerfen, dann beenden»; ersetzt «bis zum letzten
+   *  Linksklick» vom 02.11.2026; Prüfbefund: galt nur für Wand und Leitung): zuerst die Längeneingabe leeren, dann den angefangenen Zug
+   *  verwerfen (zugVerwerfen des Werkzeugs, sonst neuer Zustand), erst dann das Werkzeug beenden. */
+  abbrechenStufe() {
+    const d = this.def;
+    if (this.tipp) { this.tipp = ''; this.hinweisAktualisieren(); this.zeichnen(); return; }
+    if (zugAngefangen(d, this.z)) {
+      if (typeof d.zugVerwerfen === 'function') d.zugVerwerfen(this.z, this.ctx); else this.z = d.neu(this.ctx);
+      this.hinweisAktualisieren(); this.zeichnen(); return;
+    }
+    this.beenden();
+  }
+
   tasteInnen(e) {
     const d = this.def;
     if (e.key === 'Shift') { this.shift = true; this.berechneFang(); this.zeichnen(); return false; }
-    if (e.key === 'Escape') {
-      // Mehrpunkt-Werkzeuge mit escVerwerfen (Wand; Leitung hat einen eigenen Hörer): Esc verwirft den angefangenen Zug, erst das nächste Esc beendet das Werkzeug
-      // (Christian 04.11.2026: «esc muss bsp rohr abbrechen», «Verwerfen, dann beenden»; ersetzt «bis zum letzten Linksklick» vom 02.11.2026)
-      if (d.escVerwerfen && !this.tipp && (this.z?.punkte?.length ?? 0) >= 1) { this.z = d.neu(this.ctx); this.hinweisAktualisieren(); this.zeichnen(); return true; }
-      this.beenden(); return true;
-    }
+    if (e.key === 'Escape') { this.abbrechenStufe(); return true; }
     if (e.key === 'Enter') {
       if (this.tipp) { this.tippBestaetigen(); return true; }
       this.run(() => d.enter?.(this.z, this.ctx));
       return true;
     }
     if (e.key === 'Backspace' && this.tipp) { this.tipp = this.tipp.slice(0, -1); this.zeichnen(); return true; }
+    if (e.key === 'Backspace' && Array.isArray(this.z?.punkte) && this.z.punkte.length) {   // Rückschritt: letzten Punkt zurücknehmen (04.11.2026)
+      this.z.punkte.pop();
+      if (this.z.phase === 'lage') this.z.phase = 'punkte';
+      this.hinweisAktualisieren(); this.zeichnen(); return true;
+    }
     if (e.key === ' ' && d.leertaste) { d.leertaste(this.z, e.shiftKey, this.ctx); this.hinweisAktualisieren(); this.zeichnen(); return true; }
     if (/^[0-9.,]$/.test(e.key) || (e.key === '-' && this.tipp === '')) {
       if (!(d.eingabeMoeglich?.(this.z) ?? !!d.letzterPunkt?.(this.z))) return false;
@@ -405,9 +434,8 @@ export function texteingabe(ansicht, p, { vorgabe = '', platzhalter = 'Text eing
 export function punktfolge(conf) {
   const abschliessen = async (z, ctx) => {
     if (z.punkte.length < conf.minPunkte) { ctx.fehler(new WerkzeugFehler(`Zu wenig Punkte (mindestens ${conf.minPunkte}).`, 'Weitere Punkte anklicken.')); return; }
-    const punkte = z.punkte;
-    z.punkte = [];
-    await ctx.befehl(conf.befehl, conf.parameter(ctx, punkte), conf.okText);
+    const r = await ctx.befehl(conf.befehl, conf.parameter(ctx, z.punkte), conf.okText);
+    if (r?.angenommen) z.punkte = [];   // abgelehnt: Punkte bleiben (Prüfbefund 04.11.2026), Rückschritt nimmt den letzten zurück
   };
   return {
     id: conf.id, titel: conf.titel, optionen: conf.optionen, planarten: conf.planarten, mehrpunkt: true,

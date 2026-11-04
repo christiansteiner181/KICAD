@@ -311,6 +311,7 @@ if (typeof window !== 'undefined') {
     if (e.key === 'Escape' && (z.punkte.length || z.vorschau)) {
       stop();
       if (z.vorschau && z.punkte.length) { z.vorschau = null; leisteAus(); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }
+      else if (ctx.lauf.tipp) { ctx.lauf.tipp = ''; ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // zuerst die Längeneingabe leeren
       else { zuruecksetzen(z); ctx.lauf.hinweisAktualisieren(); ctx.neuZeichnen(); }   // angefangenen Zug verwerfen
     } else if (e.key === 'Backspace' && !ctx.lauf.tipp && z.punkte.length) {
       stop(); punktZurueck(t);
@@ -328,6 +329,9 @@ export function leitungWerkzeug(kategorie = 'Rohr') {
   return {
     id, titel: kategorie === 'Kanal' ? 'Kanal' : 'Rohr', planarten: ['grundriss'], mehrpunkt: true,
     eingabeText: 'Länge',
+    // Rechtsklick (Basis): verwirft den angefangenen Zug wie Esc, ohne einen neuen Zustand anzulegen (neu() baut die Leiste)
+    zugAngefangen: (z) => z.punkte.length > 0 || !!z.vorschau,
+    zugVerwerfen: (z, ctx) => { zuruecksetzen(z); ctx.lauf.tipp = ''; },
 
     neu(ctx) {
       const z = { punkte: [], von: null, nach: null, abzweig: null, vorschau: null };
