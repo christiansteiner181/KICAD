@@ -3,6 +3,7 @@
 //
 //   GET /api/baustelle/datei?pfad=…   nur .html aus <Projekt>\ausgabe\baustelle des offenen Projekts (sonst 403; fehlt sie 404; ohne pfad 400).
 
+using System.Text.Json.Nodes;
 using Hlks.Kern;
 using static Hlks.Web.EndpunktHilfe;
 
@@ -18,6 +19,27 @@ public static class BaustelleEndpunkte
             var (datei, fehler, code) = await dienst.Mit(p => Erlaubt(p, pfad));
             if (datei is null) return Antwort(new { fehler, vorschlag = "Nur Webseiten aus dem Ordner ausgabe\\baustelle des offenen Projekts." }, code);
             return Results.File(datei, "text/html; charset=utf-8");
+        }));
+        // Rückmeldungen, die über den Testserver eingegangen sind (BaustelleZugang.cs): Liste und Inhalt für den Dialog «Rückmeldung Baustelle»
+        app.MapGet("/api/baustelle/eingang", () => Gesichert(async () => Antwort(await dienst.Mit(p =>
+        {
+            var d = new DirectoryInfo(BaustelleZugang.Eingang(p));
+            var liste = new JsonArray();
+            if (d.Exists)
+                foreach (var f in d.GetFiles("*.json").OrderByDescending(f => f.LastWriteTimeUtc))
+                {
+                    string? person = null; int n = 0;
+                    try { var j = JsonNode.Parse(File.ReadAllText(f.FullName)); person = (string?)j?["person"]; n = (j?["meldungen"] as JsonArray)?.Count ?? 0; }
+                    catch (System.Text.Json.JsonException) { }
+                    liste.Add(new JsonObject { ["datei"] = f.Name, ["person"] = person, ["meldungen"] = n, ["zeit"] = f.LastWriteTime.ToString("o") });
+                }
+            return new JsonObject { ["dateien"] = liste };
+        }))));
+        app.MapGet("/api/baustelle/eingang/{datei}", (string datei) => Gesichert(async () =>
+        {
+            var pfad = await dienst.Mit(p => Path.Combine(BaustelleZugang.Eingang(p), Path.GetFileName(datei)));
+            if (!pfad.EndsWith(".json", StringComparison.OrdinalIgnoreCase) || !File.Exists(pfad)) return Antwort(new { fehler = $"Die Rückmeldung «{datei}» gibt es nicht." }, 404);
+            return Results.File(pfad, "application/json; charset=utf-8");
         }));
         return app;
     }

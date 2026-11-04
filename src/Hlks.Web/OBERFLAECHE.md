@@ -1593,6 +1593,17 @@ Vorschau (`rueckmeldung_lesen`: Absender, Modell seither geändert, je Meldung s
 ein Paket): Status an das Element (Herkunft baustelle, Person und Zeit der Meldung), Mängel/Fragen/Abweichungen als **Problem-Marker** (quelle
 baustelle, art, mass, fotos in <Projekt>/baustelle/fotos). Die KI darf beides nicht (Sperrliste, Kern lehnt ab).
 
+**Testserver im Büronetz (Christian 04.11.2026: «ich habe noch kein testserver mit icon»):** Desktop-Icon **KICAD Baustelle (Test)** →
+`werkzeuge/baustelle_testserver.ps1`: eigener KICAD auf Port 5134 (Build des Desktops, Zweig geprueft) mit dem Testprojekt
+`%USERPROFILE%\HLKS_CAD_baustelle_test\e_KICAD` (fiktives Beispielprojekt, beim ersten Start angelegt) und dem **Baustellen-Zugang** Port 5135 auf allen
+IPv4-Adressen (`--baustelle-port` bzw. `HLKS_BAUSTELLE_PORT`, `BaustelleZugang.cs`). Dort antwortet nur `/baustelle/…`: Übersicht der Webseiten aus
+ausgabe\baustelle (neueste zuerst), die Webseite mit Manifest (Startbildschirm mit Icon: Browsermenü «Zum Startbildschirm hinzufügen»), Icon; Oberfläche
+und /api bleiben auf localhost. Fehlt eine Webseite, erzeugt das Skript eine für die Bauleitung (Arbeitsstand). Über den Testserver geöffnet zeigt der
+Reiter Meldungen **«An Projektleitung senden»** (POST `/baustelle/rueckmeldung`, nur über Port 5135) → `<Projekt>\eingang\baustelle\*.json`; der Dialog
+**Rückmeldung Baustelle** listet diese oben («Über den Testserver eingegangen», `GET /api/baustelle/eingang`). Die Meldung zeigt die Adressen fürs Tablet.
+Grenzen: keine Anmeldung, kein HTTPS (darum kein Offline-Speicher und keine App-Installation am Android-Tablet), Firewall: dotnet.exe für private Netze
+zulassen.
+
 **Datenmodell (Stufe 0):** jedes Bauteil im Netz hat `montagestatus` (geplant | freigegeben | montiert | geprueft | abgenommen), `hersteller`,
 `artikelnummer`, `dokumente` [{ titel, datei|url, rolle }], `wartung` { intervallMonate, taetigkeit, quelle }; Klasse **Montageabschnitt** (MA-n:
 `kriterien` { systeme, straenge, klassen, geschosse, raeume, gewerke }, `elemente`, `termin`, `terminBis`, `kolonne`, `reihenfolge`); Abfrage

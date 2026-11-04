@@ -179,12 +179,32 @@
     $('rm-tabelle').innerHTML = '';
     $('rm-tabelle').append(meldungen.length ? t : el('p', { textContent: 'Noch keine Meldungen. Element antippen und rechts «Rückmelden».', style: 'padding:12px' }));
   }
-  $('rm-speichern').addEventListener('click', () => {
+  function rmDatei() {
     const person = $('rm-person').value.trim();
-    if (!person) { alert('Bitte zuerst den Namen eintragen.'); $('rm-person').focus(); return; }
-    const jetzt = new Date();
-    const datei = { format: 'kicad-baustelle-rueckmeldung', fassung: 1, projektId: k.projektId, projekt: k.projekt, modellPruefsumme: k.modellPruefsumme,
-      exportErstellt: k.erstellt, person, gespeichert: jetzt.toISOString(), meldungen };
+    if (!person) { alert('Bitte zuerst den Namen eintragen.'); $('rm-person').focus(); return null; }
+    if (!meldungen.length) { alert('Noch keine Meldungen.'); return null; }
+    return { format: 'kicad-baustelle-rueckmeldung', fassung: 1, projektId: k.projektId, projekt: k.projekt, modellPruefsumme: k.modellPruefsumme,
+      exportErstellt: k.erstellt, person, gespeichert: new Date().toISOString(), meldungen };
+  }
+  // Über den Testserver geöffnet (KICAD liefert die Seite unter /baustelle/ aus, BaustelleZugang.cs): Meldungen direkt an KICAD senden
+  if (/^https?:$/.test(location.protocol) && document.querySelector('meta[name="kicad-baustelle-server"]')) {
+    $('rm-senden').hidden = false;
+    $('rm-hinweis').textContent = 'Meldungen bleiben in diesem Browser, bis sie gesendet sind (an KICAD im Büro). Ohne Netz: «Datei speichern».';
+    $('rm-senden').addEventListener('click', async () => {
+      const datei = rmDatei(); if (!datei) return;
+      $('rm-senden').disabled = true;
+      try {
+        const r = await fetch('/baustelle/rueckmeldung', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(datei) });
+        const a = await r.json().catch(() => ({}));
+        if (!r.ok) throw new Error(a.fehler || ('Fehler ' + r.status));
+        if (confirm(`${a.meldungen} Meldungen gesendet. In diesem Browser löschen?`)) { meldungen = []; rmSichern(); }
+      } catch (f) { alert('Senden nicht möglich: ' + (f.message || f) + ' – die Meldungen bleiben hier; sonst «Datei speichern».'); }
+      finally { $('rm-senden').disabled = false; }
+    });
+  }
+  $('rm-speichern').addEventListener('click', () => {
+    const datei = rmDatei(); if (!datei) return;
+    const jetzt = new Date(datei.gespeichert);
     const stempel = jetzt.toISOString().slice(0, 16).replace(/[-:]/g, '').replace('T', '-');
     const name = `KICAD_Rueckmeldung_${k.projekt}_${stempel}.json`.replace(/[^\w.\-]+/g, '_');
     const a = el('a', { href: URL.createObjectURL(new Blob([JSON.stringify(datei)], { type: 'application/json' })), download: name });

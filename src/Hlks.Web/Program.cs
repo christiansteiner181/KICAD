@@ -1,5 +1,5 @@
 // HLKS-CAD Arbeitsplatz: lokaler Web-Server (nur localhost) mit Oberfläche im Browser.
-// Aufruf: Hlks.Web [--port 5130] [--projekt <e_KICAD-Ordner>] [--akteur <name>] [--geraet <name>] [--katalog <ordner>]
+// Aufruf: Hlks.Web [--port 5130] [--projekt <e_KICAD-Ordner>] [--akteur <name>] [--geraet <name>] [--katalog <ordner>] [--baustelle-port <n>]
 // REST ist eine dünne Hülle über der Kern-Tür (Tuer.Abfrage, Tuer.Befehl); keine Fachlogik hier.
 
 using System.Text;
@@ -23,7 +23,9 @@ var einstellungen = new Einstellungen(
 // Änderung, Inhaltswurzel im Programmordner statt im Arbeitsverzeichnis. Die Oberfläche (WebRootPath) wird nur gelesen.
 Environment.SetEnvironmentVariable("DOTNET_hostBuilder__reloadConfigOnChange", "false");
 var builder = WebApplication.CreateBuilder(new WebApplicationOptions { Args = args, WebRootPath = WebRoot(), ContentRootPath = AppContext.BaseDirectory });
-builder.WebHost.UseUrls($"http://localhost:{port}");
+// BIM to field: Testserver der Baustellen-Webseite im Büronetz (BaustelleZugang.cs) – zweiter Zugang auf allen IPv4-Adressen, dort nur /baustelle
+var baustellePort = BaustelleZugang.Port(args);
+builder.WebHost.UseUrls(baustellePort is { } bsp ? [$"http://localhost:{port}", $"http://0.0.0.0:{bsp}"] : [$"http://localhost:{port}"]);
 builder.Logging.SetMinimumLevel(LogLevel.Warning);
 builder.Services.AddSingleton(einstellungen);
 builder.Services.AddSingleton<ProjektDienst>();
@@ -38,11 +40,12 @@ builder.Services.AddKicadXr(port);
 // (XrZugang.cs) hat eine eigene Komprimierung (Brotli und gzip, nur GLB).
 builder.Services.AddResponseCompression(o =>
 {
-    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp];
+    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp, "text/html"];   // text/html: Baustellen-Webseite (mit GLB, mehrere MB) im Büronetz
     o.Providers.Add<GzipCompressionProvider>();
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
 var app = builder.Build();
+app.UseBaustelleZugang(baustellePort);   // auf dem Baustellen-Port nur /baustelle (vor allem anderen)
 // Schutz gegen Fremdaufrufe (Befund B1 der Sicherheitsprüfung 3c): vor allen Endpunkten unter /api und /hilfe.
 app.UseHerkunftsschutz();
 app.UseHkXrOberflaeche();   // Oberfläche «Brille» aus HK_XR unter /hkxr/ (Dialog «App installieren …», Netz, Desktop-Status)
@@ -289,7 +292,8 @@ app.MapGespraeche(dienst);   // KI-Palette «Claude» (Modul 3c, Teil K): Gespra
 app.MapQuest(dienst, questStarter);   // Quest verbinden (Modul XR): QuestEndpunkte.cs – adb reverse für den Browser der Quest; reine Rechner-Funktion, nicht für die KI
 app.MapGestenProtokoll();   // Modul G: Abbruchprotokoll der Gesten (GestenProtokoll.cs) – POST /api/gesten/abbruch, nur Grund und Zahlen, Ablage lokal
 app.MapPruefung(dienst);   // Prüfansicht: PruefungEndpunkte.cs – Seiteninfo und Seitenbild eines Planblatts bzw. einer PDF-Unterlage
-app.MapBaustelle(dienst);   // BIM to field Stufe 1: BaustelleEndpunkte.cs – GET /api/baustelle/datei (Webseite aus ausgabe\baustelle öffnen)
+app.MapBaustelle(dienst);   // BIM to field Stufe 1: BaustelleEndpunkte.cs – GET /api/baustelle/datei (Webseite aus ausgabe\baustelle öffnen), /api/baustelle/eingang
+app.MapBaustelleZugang(dienst, baustellePort);   // BIM to field Testserver: BaustelleZugang.cs – /baustelle/ (Übersicht, Webseite, Manifest, Icon, Rückmeldung)
 app.MapIfcExport(dienst);   // IFC-Export mit IDS und Bericht (Modul 7 Teil B2): IfcExportEndpunkte.cs – POST /api/ifc/export, Download aus ausgabe\ifc
 app.MapHkXrVerbindung();   // HK_XR: /api/xr (Zugang, Kopplung, Teilnehmer, Kanal, Desktop) und /api/quest/app (App installieren, Netz einrichten, alte Apps); nicht für die KI
 app.MapXrModell(dienst);   // Quest App (Modul XR, P2): XrModellEndpunkte.cs – GLB je Geschoss (/api/xr/geschosse, /api/xr/geschoss/{id}.glb); reine Rechner-Funktion, nicht für die KI
@@ -297,6 +301,7 @@ app.MapXrEbenen(dienst);   // Quest App P4b: XrEbenenEndpunkte.cs – Ebenen der
 app.MapXrMarker(dienst);   // Quest App V1a: XrMarkerEndpunkte.cs – Problem-Marker aus der Brille (/api/xr/marker; Elemente ProblemMarker im Projekt); Rechner-Funktion, nicht für die KI
 
 Console.WriteLine($"HLKS-CAD läuft auf http://localhost:{port}  (Akteur {einstellungen.Akteur}@{einstellungen.Geraet})");
+if (baustellePort is { } bsp2) Console.WriteLine($"Baustelle im Büronetz: {string.Join(", ", BaustelleZugang.Adressen().Select(a => $"http://{a}:{bsp2}/baustelle/"))}");
 await app.RunAsync();
 
 // Oberfläche: HLKS_WEBROOT, sonst der Quellordner (Entwicklung, Änderungen ohne Neubau), sonst die Kopie neben dem Programm

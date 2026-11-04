@@ -28,16 +28,33 @@ const ART = { status: 'Status', mangel: 'Mangel', frage: 'Frage', abweichung: 'A
 export function rueckmeldungDialog() {
   let inhalt = null;
   const w = knoten(`<div style="display:grid;gap:10px">
+    <div class="rm-eingang"></div>
     <label>Rückmeldedatei (.json von der Baustellen-Webseite) <input type="file" accept=".json,application/json" class="rm-datei"></label>
     <div class="rm-kopf leise"></div>
     <div class="rm-liste" style="max-height:50vh;overflow:auto"></div>
   </div>`);
   const q = (s) => w.querySelector(s);
+  // Über den Testserver gesendete Rückmeldungen (<Projekt>eingangaustelle, BaustelleZugang.cs) zur Auswahl
+  fetch('/api/baustelle/eingang').then((r) => r.ok ? r.json() : null).then((d) => {
+    const liste = d?.dateien ?? [];
+    if (!liste.length) return;
+    q('.rm-eingang').innerHTML = `<b>Über den Testserver eingegangen</b><div style="display:flex;flex-wrap:wrap;gap:6px;margin-top:4px">${
+      liste.map((x) => `<button type="button" class="dlg-knopf" data-eingang="${esc(x.datei)}">${esc(x.person ?? '?')} · ${x.meldungen} Meldungen · ${esc(new Date(x.zeit).toLocaleString('de-CH'))}</button>`).join('')}</div>`;
+  }).catch(() => {});
+  q('.rm-eingang').addEventListener('click', async (e) => {
+    const b = e.target.closest('[data-eingang]'); if (!b) return;
+    q('.rm-liste').textContent = 'Wird gelesen …';
+    try { await zeigenVon(await (await fetch('/api/baustelle/eingang/' + encodeURIComponent(b.dataset.eingang))).text()); }
+    catch (f2) { inhalt = null; q('.rm-liste').textContent = `Die Rückmeldung lässt sich nicht lesen: ${f2.message ?? f2}`; }
+  });
   q('.rm-datei').addEventListener('change', async () => {
     const f = q('.rm-datei').files[0]; if (!f) return;
     q('.rm-liste').textContent = 'Wird gelesen …';
+    await zeigenVon(await f.text());
+  });
+  async function zeigenVon(text) {
     try {
-      inhalt = JSON.parse(await f.text());
+      inhalt = JSON.parse(text);
       const v = await abfrage('rueckmeldung_lesen', { inhalt });
       q('.rm-kopf').textContent = `Von ${v.person ?? '?'}, gespeichert ${v.gespeichert ?? '?'}, Webseite vom ${v.exportErstellt ?? '?'}` +
         (v.modellGeaendert ? ' – das Modell wurde seither geändert, bitte prüfen.' : '');
@@ -50,7 +67,7 @@ export function rueckmeldungDialog() {
       inhalt = null;
       q('.rm-liste').textContent = f2 instanceof ApiFehler ? `${f2.message}${f2.vorschlag ? ' – ' + f2.vorschlag : ''}` : `Die Datei lässt sich nicht lesen: ${f2.message ?? f2}`;
     }
-  });
+  }
 
   async function uebernehmen(ctrl) {
     if (!inhalt) { ctrl.fehler('Zuerst eine Rückmeldedatei wählen.'); return; }
