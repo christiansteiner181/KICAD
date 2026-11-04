@@ -17,7 +17,7 @@ public static class HlksKoerper
         if (pts.Count == 0) return null;
         var art = HlksEinordnung.Art(p.Katalog, e);
         var md = HlksEinordnung.Medium(p, e);
-        var farbe = HlksEinordnung.Farbe(md);
+        var farbe = Farben.Oberflaeche(p, e) ?? HlksEinordnung.Farbe(md);   // Heizkörper in ihrer Oberflächenfarbe (Farben.cs)
         var dn = HlksEinordnung.Dn(e);
         var radius = Math.Max(dn ?? 0, MinDurchmesser) / 2;
         var k = new Koerper { Id = e.Id };

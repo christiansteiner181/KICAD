@@ -48,7 +48,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         var a = Familien.Aufloesung(p.Modell, p.Katalog, e, out _);
         if (a is null) return Ersatz.Koerper(p, e);
         var lage = Familien.Einbaulage(e)!;
-        var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(p, e));
+        var farbe = Farben.Oberflaeche(p, e) ?? HlksEinordnung.Farbe(HlksEinordnung.Medium(p, e));   // Heizkörper in ihrer Oberflächenfarbe (Farben.cs)
         var k = new Koerper { Id = e.Id, Ebene = Ebene(p.Katalog, e) };
         foreach (var t in a.Teile(detail)) k.Teile.Add(FamilienKoerper.Platzieren(t, lage, farbe));
         return k.Leer ? null : k;
@@ -113,7 +113,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         if (ctx.Art != "grundriss" || e.Geometrie is null) return [];
         var a = Familien.Aufloesung(ctx.Modell, ctx.Katalog, e, out var grund);
         if (a is null) return MitHinweis(ctx, e, grund);
-        var farbe = HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));
+        var farbe = Farben.Plan(ctx.Katalog, e) ?? HlksEinordnung.Farbe(HlksEinordnung.Medium(ctx.Projekt, e));   // Heizkörper im Grundriss grün (Farben.cs)
         var formteil = IstFormteil(ctx.Katalog, e);
         var lage = Familien.Einbaulage(e)!;
         var teil = Grundriss(a, lage, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),

@@ -502,7 +502,8 @@
     "brauchtGeschoss": true, "brauchtRaum": true,
     "beschreibung": "Heizkörper.",
     "anschluesse": [ { "name": "vl", "medium": "HZ-VL", "fluss": "rein" }, { "name": "rl", "medium": "HZ-RL", "fluss": "raus" } ],
-    "eigenschaften": [ { "name": "leistung", "typ": "zahl", "einheit": "W", "beschreibung": "Normleistung" },
+    "eigenschaften": [
+      { "name": "farbe", "typ": "text", "beschreibung": "Oberflächenfarbe im 3D: RAL- oder NCS-Code aus kataloge/farben.json (z. B. RAL 9016, NCS S 0502-Y) oder #RRGGBB; leer = Standardfarbe des Herstellers. Im Grundriss sind Heizkörper immer grün (Christian 04.11.2026)" }, { "name": "leistung", "typ": "zahl", "einheit": "W", "beschreibung": "Normleistung" },
       { "name": "normVl", "typ": "zahl", "einheit": "°C", "beschreibung": "Vorlauftemperatur der Normleistung (Herstellerangabe, z. B. Datenblatt), mit Quelle" },
       { "name": "normRl", "typ": "zahl", "einheit": "°C", "beschreibung": "Rücklauftemperatur der Normleistung (Herstellerangabe), mit Quelle" },
       { "name": "normRaum", "typ": "zahl", "einheit": "°C", "beschreibung": "Raumtemperatur der Normleistung (Herstellerangabe), mit Quelle" },

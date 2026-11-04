@@ -43,6 +43,7 @@ public static class Tuer
             "heizlast" => Heizlast.Abfrage(p, par),
             "heizkoerper_auslegung" => HeizkoerperAuslegung.Abfrage(p, par),
             "vorwand_stueckliste" => VorwandStueckliste.Abfrage(p, par),
+            "farben" => Farben.Abfrage(p.Katalog),
             "rohr_druckverlust" => RohrDruckverlust.Abfrage(p, par),
             "kanal_druckverlust" => KanalDruckverlust.Abfrage(p, par),
             "datenpunktliste" => Datenpunktliste.Abfrage(p, par),

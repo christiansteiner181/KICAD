@@ -91,6 +91,10 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("vorwand_bestuecken", Parameter(("vorwand", vorwand), ("reichweite", reichweite)), trockenlauf);
 
+    [McpServerTool(Name = "farben"), Description(Hlks.Kern.Farben.Text)]   // Heizkörperfarben, 04.11.2026
+    public string FarbenWerkzeug() =>
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "farben", Parameter())), synchronisieren: false);
+
     [McpServerTool(Name = "vorwand_stueckliste"), Description(Hlks.Kern.VorwandStueckliste.Text)]
     public string VorwandStuecklisteWerkzeug([Description("Vorwand (Kennzeichen oder Id); leer = alle")] string? vorwand = null) =>
         Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "vorwand_stueckliste", Parameter(("vorwand", vorwand)))), synchronisieren: false);

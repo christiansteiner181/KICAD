@@ -31,7 +31,7 @@ public static class KiEinordnung
              "raum_begehen",  // N15, 21.10.2026 (hlks-modul): Standort für «Raum begehen» (Standpunkt, Augenhöhe, Blick), rechnet nur
              "schnitthoehe_sia",   // N21, 21.10.2026 (hlks-modul, zur Bestätigung): Schnitthöhe des Grundrisses nach SIA 400, nur lesend
              "heizung_lesen", "heizung_leistung", "heizlast", "heizkoerper_auslegung", "rohr_druckverlust",   // Modul 5 Teil A-D (zurückgeholt 02.11.2026)
-             "vorwand_stueckliste",   // Geberit Vorwand, 04.11.2026: Stückliste, Befunde, Annahmen, nur lesend
+             "vorwand_stueckliste", "farben",   // Geberit Vorwand; Heizkörperfarben RAL/NCS, 04.11.2026: Stückliste, Befunde, Annahmen, nur lesend
              "lueftung_varianten", "lueftung_schema", "kanal_druckverlust", "montageabschnitte", "rueckmeldung_lesen",
              "raumforderung"]),   // Modul 6 Teil A-7, 31.10.2026: Liste der Raumreservationen, nur lesend   // Modul 6 Teil A, 31.10.2026: Lüftungsvarianten und Raumbedarf, rechnet nur
         new("Familien lesen", "Familien des Projekts und der Bibliothek ansehen, vergleichen und nachmessen; nur lesend.",

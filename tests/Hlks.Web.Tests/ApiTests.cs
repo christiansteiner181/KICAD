@@ -423,6 +423,7 @@ public class ApiTests
         ["heizlast"] = "{}",   // 04.11.2026: Modul 5 Teil B-H (ohne Normtabellen bzw. Klimastation: Hinweis)
         ["heizkoerper_auslegung"] = "{}",   // 04.11.2026: Modul 5 Teil B
         ["vorwand_stueckliste"] = "{}",   // 04.11.2026: Geberit Vorwand
+        ["farben"] = "{}",   // 04.11.2026: Heizkörperfarben
         ["rohr_druckverlust"] = "{}",   // 04.11.2026: Modul 5 Teil B
         ["kanal_druckverlust"] = "{}",   // 04.11.2026: Modul 6 Teil B
         ["datenpunktliste"] = "{}",   // 04.11.2026: Modul 8 MSRL, Gerüst

@@ -333,7 +333,7 @@ public sealed class HlksGrafik : IGrafikquelle
         var (b, t, _) = HlksEinordnung.Mass(ctx.Katalog, e);
         ctx.Katalog.Klassen.TryGetValue(e.Klasse, out var d);
         var stift = Stifte.Duenn;   // 0.18 mm Papier wie heute
-        var farbe = HlksEinordnung.Farbe(md);
+        var farbe = Farben.Plan(ctx.Katalog, e) ?? HlksEinordnung.Farbe(md);   // Heizkörper im Grundriss grün (Farben.cs)
         var teil = new Grafikteil
         {
             Id = e.Id, Ebene = "apparat",

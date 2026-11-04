@@ -8,6 +8,7 @@
 // zeigt sie deren Beschreibung (nur lesen). Die Palette ändert den Zustand nie selbst – sie wartet auf das Ereignis.
 
 import { zustand, abonnieren, element, derKlasse } from '../zustand.js';
+import { farbenLaden, farbHex, farbeWaehlen } from './farbwahl.js';
 import { abfrage } from '../api.js';
 import { familie, beiFamilie, familieSetzen, ausfuehren } from './aktionen.js';
 import { klasseHtml, klassenDefinition } from './katalogansicht.js';
@@ -55,7 +56,15 @@ export function einrichten(w) {
   inhalt.addEventListener('keydown', (e) => {
     if (e.key === 'Escape' && e.target.matches('input, select')) { e.stopPropagation(); schmutzig = false; zeichnen(); }
   });
-  inhalt.addEventListener('click', (e) => {
+  farbenLaden().then(() => { if (inhalt.querySelector('.ep-farbe')) zeichnen(); });
+  inhalt.addEventListener('click', async (e) => {
+    const fw = e.target.closest('[data-farbwahl]');
+    if (fw) {
+      const feld = fw.parentElement.querySelector('input[data-ziel]');
+      const code = await farbeWaehlen(feld.value);
+      if (code !== null) { feld.value = code; feld.dispatchEvent(new Event('change', { bubbles: true })); }
+      return;
+    }
     const kopf = e.target.closest('.ep-gruppenkopf');
     if (kopf) { gruppeUmschalten(kopf.parentElement); return; }
     if (e.target.closest('.ep-hinweise-zu')) { hinweise = null; inhalt.querySelector('.ep-hinweise')?.remove(); return; }
@@ -226,6 +235,11 @@ function gruppe(name, zeilen) {
 }
 
 const nurLesen = (text) => `<span class="ep-text">${esc(text ?? '')}</span>`;
+/** Farbfeld: Muster, Code (RAL/NCS/#RRGGBB) und Knopf für die Auswahl mit Farbmustern (farbwahl.js). */
+const farbFeld = (ziel, wert) => {
+  const hex = farbHex(wert);
+  return `<span class="ep-farbe"><span class="ep-farbmuster" style="background:${esc(hex ?? 'transparent')}" title="${esc(hex ?? (wert ? 'unbekannter Code' : 'Standard des Herstellers'))}"></span>${textFeld(ziel, wert, 'placeholder="Standard des Herstellers"')}<button type="button" class="ep-farbwahl" data-farbwahl="${esc(ziel)}" title="Farbe aus RAL oder NCS wählen">…</button></span>`;
+};
 const textFeld = (ziel, wert, extra = '') => `<input type="text" data-ziel="${esc(ziel)}" data-typ="text" value="${esc(wert ?? '')}" ${extra}>`;
 
 function auswahlFeld(ziel, optionen, aktuell, typ = 'auswahl') {
@@ -255,6 +269,7 @@ function eigenschaftsFeld(d, wert) {
     case 'objekt':
       return `<code class="ep-objekt" title="Wird in dieser Palette nicht bearbeitet">${esc(wert === undefined ? '' : JSON.stringify(wert))}</code>`;
     default:
+      if (d.name === 'farbe' && d.typ === 'text') return farbFeld(ziel, typeof wert === 'string' ? wert : '');   // Heizkörper: RAL/NCS mit Farbmuster (04.11.2026)
       if (d.name === 'anlage' && d.typ === 'text') return auswahlFeld(ziel, derKlasse('Anlage').sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen)).map(kennOption), wert ?? null);   // Ansicht.anlage (Liste Sanitär-Zusammenstellung)
       return textFeld(ziel, wert === undefined || wert === null ? '' : (typeof wert === 'string' ? wert : JSON.stringify(wert)));
   }

@@ -1,0 +1,1186 @@
+{
+  "format": 1,
+  "stand": "2026-11-04",
+  "beschreibung": "Farbtabellen für die Farbauswahl (Farbmuster) von Heizkoerpern im 3D. Alle Werte stammen aus den bei den Tabellen genannten Internetquellen (abgerufen 2026-11-04); Bildschirmwerte sind Annäherungen und ersetzen keine physischen Farbmuster.",
+  "ral": {
+    "quelle": "RAL gGmbH, ral-farben.de, Seite «Alle RAL Farben» https://www.ral-farben.de/alle-ral-farben (Hex = background-color der Farbfelder, deutsche Namen; abgerufen 2026-11-04, 216 Farben). Gegenprobe: Wikipedia «List of RAL colours» (en) führt teils abweichende Hex-Werte, z. B. RAL 9016 #F7FBF5 statt #EFF0EB.",
+    "hinweis": "Bildschirmwerte sind Annäherungen, nicht verbindlich; für verbindliche Farben den RAL-Farbfächer verwenden. Quelle der Aussage: Wikipedia «List of RAL colours»: «not binding because brightness and contrast may vary from screen to screen». Namen: Schweizer Schreibweise (ss).",
+    "farben": [
+      {
+        "code": "RAL 1000",
+        "name": "Grünbeige",
+        "hex": "#C5BB8A"
+      },
+      {
+        "code": "RAL 1001",
+        "name": "Beige",
+        "hex": "#C6B286"
+      },
+      {
+        "code": "RAL 1002",
+        "name": "Sandgelb",
+        "hex": "#C7AE72"
+      },
+      {
+        "code": "RAL 1003",
+        "name": "Signalgelb",
+        "hex": "#E6B019"
+      },
+      {
+        "code": "RAL 1004",
+        "name": "Goldgelb",
+        "hex": "#D2A40E"
+      },
+      {
+        "code": "RAL 1005",
+        "name": "Honiggelb",
+        "hex": "#BC9611"
+      },
+      {
+        "code": "RAL 1006",
+        "name": "Maisgelb",
+        "hex": "#CF9804"
+      },
+      {
+        "code": "RAL 1007",
+        "name": "Narzissengelb",
+        "hex": "#D49300"
+      },
+      {
+        "code": "RAL 1011",
+        "name": "Braunbeige",
+        "hex": "#A38454"
+      },
+      {
+        "code": "RAL 1012",
+        "name": "Zitronengelb",
+        "hex": "#CFB539"
+      },
+      {
+        "code": "RAL 1013",
+        "name": "Perlweiss",
+        "hex": "#DFDBC7"
+      },
+      {
+        "code": "RAL 1014",
+        "name": "Elfenbein",
+        "hex": "#D4C79C"
+      },
+      {
+        "code": "RAL 1015",
+        "name": "Hellelfenbein",
+        "hex": "#DED3B6"
+      },
+      {
+        "code": "RAL 1016",
+        "name": "Schwefelgelb",
+        "hex": "#E8E253"
+      },
+      {
+        "code": "RAL 1017",
+        "name": "Safrangelb",
+        "hex": "#E4AF56"
+      },
+      {
+        "code": "RAL 1018",
+        "name": "Zinkgelb",
+        "hex": "#EBD346"
+      },
+      {
+        "code": "RAL 1019",
+        "name": "Graubeige",
+        "hex": "#9C917B"
+      },
+      {
+        "code": "RAL 1020",
+        "name": "Olivgelb",
+        "hex": "#999167"
+      },
+      {
+        "code": "RAL 1021",
+        "name": "Rapsgelb",
+        "hex": "#E5C000"
+      },
+      {
+        "code": "RAL 1023",
+        "name": "Verkehrsgelb",
+        "hex": "#E6BE05"
+      },
+      {
+        "code": "RAL 1024",
+        "name": "Ockergelb",
+        "hex": "#AD9451"
+      },
+      {
+        "code": "RAL 1026",
+        "name": "Leuchtgelb",
+        "hex": "#FFFF00"
+      },
+      {
+        "code": "RAL 1027",
+        "name": "Currygelb",
+        "hex": "#998420"
+      },
+      {
+        "code": "RAL 1028",
+        "name": "Melonengelb",
+        "hex": "#F2A500"
+      },
+      {
+        "code": "RAL 1032",
+        "name": "Ginstergelb",
+        "hex": "#CFA81E"
+      },
+      {
+        "code": "RAL 1033",
+        "name": "Dahliengelb",
+        "hex": "#E4A02D"
+      },
+      {
+        "code": "RAL 1034",
+        "name": "Pastellgelb",
+        "hex": "#D9A156"
+      },
+      {
+        "code": "RAL 1035",
+        "name": "Perlbeige",
+        "hex": "#898271"
+      },
+      {
+        "code": "RAL 1036",
+        "name": "Perlgold",
+        "hex": "#746341"
+      },
+      {
+        "code": "RAL 1037",
+        "name": "Sonnengelb",
+        "hex": "#DB9A17"
+      },
+      {
+        "code": "RAL 2000",
+        "name": "Gelborange",
+        "hex": "#C7750F"
+      },
+      {
+        "code": "RAL 2001",
+        "name": "Rotorange",
+        "hex": "#A74D23"
+      },
+      {
+        "code": "RAL 2002",
+        "name": "Blutorange",
+        "hex": "#AC3721"
+      },
+      {
+        "code": "RAL 2003",
+        "name": "Pastellorange",
+        "hex": "#E17C30"
+      },
+      {
+        "code": "RAL 2004",
+        "name": "Reinorange",
+        "hex": "#CC5608"
+      },
+      {
+        "code": "RAL 2005",
+        "name": "Leuchtorange",
+        "hex": "#FF4612"
+      },
+      {
+        "code": "RAL 2007",
+        "name": "Leuchthellorange",
+        "hex": "#FFAD19"
+      },
+      {
+        "code": "RAL 2008",
+        "name": "Hellrotorange",
+        "hex": "#D66C21"
+      },
+      {
+        "code": "RAL 2009",
+        "name": "Verkehrsorange",
+        "hex": "#C9560D"
+      },
+      {
+        "code": "RAL 2010",
+        "name": "Signalorange",
+        "hex": "#BC602D"
+      },
+      {
+        "code": "RAL 2011",
+        "name": "Tieforange",
+        "hex": "#CF7421"
+      },
+      {
+        "code": "RAL 2012",
+        "name": "Lachsorange",
+        "hex": "#C2674F"
+      },
+      {
+        "code": "RAL 2013",
+        "name": "Perlorange",
+        "hex": "#824128"
+      },
+      {
+        "code": "RAL 2017",
+        "name": "RAL Orange",
+        "hex": "#DC5B00"
+      },
+      {
+        "code": "RAL 3000",
+        "name": "Feuerrot",
+        "hex": "#962A27"
+      },
+      {
+        "code": "RAL 3001",
+        "name": "Signalrot",
+        "hex": "#8F1E24"
+      },
+      {
+        "code": "RAL 3002",
+        "name": "Karminrot",
+        "hex": "#8D1F24"
+      },
+      {
+        "code": "RAL 3003",
+        "name": "Rubinrot",
+        "hex": "#7C0D24"
+      },
+      {
+        "code": "RAL 3004",
+        "name": "Purpurrot",
+        "hex": "#651927"
+      },
+      {
+        "code": "RAL 3005",
+        "name": "Weinrot",
+        "hex": "#561E27"
+      },
+      {
+        "code": "RAL 3007",
+        "name": "Schwarzrot",
+        "hex": "#3D2326"
+      },
+      {
+        "code": "RAL 3009",
+        "name": "Oxidrot",
+        "hex": "#643730"
+      },
+      {
+        "code": "RAL 3011",
+        "name": "Braunrot",
+        "hex": "#6E2124"
+      },
+      {
+        "code": "RAL 3012",
+        "name": "Beigerot",
+        "hex": "#B7856E"
+      },
+      {
+        "code": "RAL 3013",
+        "name": "Tomatenrot",
+        "hex": "#8A2F28"
+      },
+      {
+        "code": "RAL 3014",
+        "name": "Altrosa",
+        "hex": "#BC6F72"
+      },
+      {
+        "code": "RAL 3015",
+        "name": "Hellrosa",
+        "hex": "#CC9EA4"
+      },
+      {
+        "code": "RAL 3016",
+        "name": "Korallenrot",
+        "hex": "#963D2F"
+      },
+      {
+        "code": "RAL 3017",
+        "name": "Rosé",
+        "hex": "#B9535B"
+      },
+      {
+        "code": "RAL 3018",
+        "name": "Erdbeerrot",
+        "hex": "#B63C49"
+      },
+      {
+        "code": "RAL 3020",
+        "name": "Verkehrsrot",
+        "hex": "#AB1519"
+      },
+      {
+        "code": "RAL 3022",
+        "name": "Lachsrot",
+        "hex": "#BE6954"
+      },
+      {
+        "code": "RAL 3024",
+        "name": "Leuchtrot",
+        "hex": "#EE1729"
+      },
+      {
+        "code": "RAL 3026",
+        "name": "Leuchthellrot",
+        "hex": "#F71027"
+      },
+      {
+        "code": "RAL 3027",
+        "name": "Himbeerrot",
+        "hex": "#9E1B3C"
+      },
+      {
+        "code": "RAL 3028",
+        "name": "Reinrot",
+        "hex": "#B92726"
+      },
+      {
+        "code": "RAL 3031",
+        "name": "Orientrot",
+        "hex": "#973238"
+      },
+      {
+        "code": "RAL 3032",
+        "name": "Perlrubinrot",
+        "hex": "#661925"
+      },
+      {
+        "code": "RAL 3033",
+        "name": "Perlrosa",
+        "hex": "#94352D"
+      },
+      {
+        "code": "RAL 4001",
+        "name": "Rotlila",
+        "hex": "#7C5B80"
+      },
+      {
+        "code": "RAL 4002",
+        "name": "Rotviolett",
+        "hex": "#823A4B"
+      },
+      {
+        "code": "RAL 4003",
+        "name": "Erikaviolett",
+        "hex": "#B65A88"
+      },
+      {
+        "code": "RAL 4004",
+        "name": "Bordeauxviolett",
+        "hex": "#5F1837"
+      },
+      {
+        "code": "RAL 4005",
+        "name": "Blaulila",
+        "hex": "#746395"
+      },
+      {
+        "code": "RAL 4006",
+        "name": "Verkehrspurpur",
+        "hex": "#852E6F"
+      },
+      {
+        "code": "RAL 4007",
+        "name": "Purpurviolett",
+        "hex": "#44263C"
+      },
+      {
+        "code": "RAL 4008",
+        "name": "Signalviolett",
+        "hex": "#7C477D"
+      },
+      {
+        "code": "RAL 4009",
+        "name": "Pastellviolett",
+        "hex": "#95838F"
+      },
+      {
+        "code": "RAL 4010",
+        "name": "Telemagenta",
+        "hex": "#AC3B71"
+      },
+      {
+        "code": "RAL 4011",
+        "name": "Perlviolett",
+        "hex": "#685C80"
+      },
+      {
+        "code": "RAL 4012",
+        "name": "Perlbrombeer",
+        "hex": "#67657A"
+      },
+      {
+        "code": "RAL 5000",
+        "name": "Violettblau",
+        "hex": "#35496B"
+      },
+      {
+        "code": "RAL 5001",
+        "name": "Grünblau",
+        "hex": "#294763"
+      },
+      {
+        "code": "RAL 5002",
+        "name": "Ultramarinblau",
+        "hex": "#193278"
+      },
+      {
+        "code": "RAL 5003",
+        "name": "Saphirblau",
+        "hex": "#203151"
+      },
+      {
+        "code": "RAL 5004",
+        "name": "Schwarzblau",
+        "hex": "#1E222C"
+      },
+      {
+        "code": "RAL 5005",
+        "name": "Signalblau",
+        "hex": "#134A85"
+      },
+      {
+        "code": "RAL 5007",
+        "name": "Brillantblau",
+        "hex": "#466589"
+      },
+      {
+        "code": "RAL 5008",
+        "name": "Graublau",
+        "hex": "#2F3A44"
+      },
+      {
+        "code": "RAL 5009",
+        "name": "Azurblau",
+        "hex": "#365875"
+      },
+      {
+        "code": "RAL 5010",
+        "name": "Enzianblau",
+        "hex": "#0E457A"
+      },
+      {
+        "code": "RAL 5011",
+        "name": "Stahlblau",
+        "hex": "#222C3E"
+      },
+      {
+        "code": "RAL 5012",
+        "name": "Lichtblau",
+        "hex": "#457FB3"
+      },
+      {
+        "code": "RAL 5013",
+        "name": "Kobaltblau",
+        "hex": "#212F51"
+      },
+      {
+        "code": "RAL 5014",
+        "name": "Taubenblau",
+        "hex": "#667691"
+      },
+      {
+        "code": "RAL 5015",
+        "name": "Himmelblau",
+        "hex": "#3172AD"
+      },
+      {
+        "code": "RAL 5017",
+        "name": "Verkehrsblau",
+        "hex": "#0F518A"
+      },
+      {
+        "code": "RAL 5018",
+        "name": "Türkisblau",
+        "hex": "#47848D"
+      },
+      {
+        "code": "RAL 5019",
+        "name": "Capriblau",
+        "hex": "#265682"
+      },
+      {
+        "code": "RAL 5020",
+        "name": "Ozeanblau",
+        "hex": "#113E4D"
+      },
+      {
+        "code": "RAL 5021",
+        "name": "Wasserblau",
+        "hex": "#216D76"
+      },
+      {
+        "code": "RAL 5022",
+        "name": "Nachtblau",
+        "hex": "#282C58"
+      },
+      {
+        "code": "RAL 5023",
+        "name": "Fernblau",
+        "hex": "#4D648A"
+      },
+      {
+        "code": "RAL 5024",
+        "name": "Pastellblau",
+        "hex": "#6C8DAA"
+      },
+      {
+        "code": "RAL 5025",
+        "name": "Perlenzian",
+        "hex": "#3C6379"
+      },
+      {
+        "code": "RAL 5026",
+        "name": "Perlnachtblau",
+        "hex": "#1B2B4D"
+      },
+      {
+        "code": "RAL 6000",
+        "name": "Patinagrün",
+        "hex": "#4A7363"
+      },
+      {
+        "code": "RAL 6001",
+        "name": "Smaragdgrün",
+        "hex": "#40693A"
+      },
+      {
+        "code": "RAL 6002",
+        "name": "Laubgrün",
+        "hex": "#3B5B2F"
+      },
+      {
+        "code": "RAL 6003",
+        "name": "Olivgrün",
+        "hex": "#4F553E"
+      },
+      {
+        "code": "RAL 6004",
+        "name": "Blaugrün",
+        "hex": "#214245"
+      },
+      {
+        "code": "RAL 6005",
+        "name": "Moosgrün",
+        "hex": "#234235"
+      },
+      {
+        "code": "RAL 6006",
+        "name": "Grauoliv",
+        "hex": "#3C3D32"
+      },
+      {
+        "code": "RAL 6007",
+        "name": "Flaschengrün",
+        "hex": "#2E3526"
+      },
+      {
+        "code": "RAL 6008",
+        "name": "Braungrün",
+        "hex": "#333327"
+      },
+      {
+        "code": "RAL 6009",
+        "name": "Tannengrün",
+        "hex": "#2A372C"
+      },
+      {
+        "code": "RAL 6010",
+        "name": "Grasgrün",
+        "hex": "#4E6E39"
+      },
+      {
+        "code": "RAL 6011",
+        "name": "Resedagrün",
+        "hex": "#6A7C5B"
+      },
+      {
+        "code": "RAL 6012",
+        "name": "Schwarzgrün",
+        "hex": "#2F3B39"
+      },
+      {
+        "code": "RAL 6013",
+        "name": "Schilfgrün",
+        "hex": "#777659"
+      },
+      {
+        "code": "RAL 6014",
+        "name": "Gelboliv",
+        "hex": "#454339"
+      },
+      {
+        "code": "RAL 6015",
+        "name": "Schwarzoliv",
+        "hex": "#3C3F38"
+      },
+      {
+        "code": "RAL 6016",
+        "name": "Türkisgrün",
+        "hex": "#256753"
+      },
+      {
+        "code": "RAL 6017",
+        "name": "Maigrün",
+        "hex": "#5C8144"
+      },
+      {
+        "code": "RAL 6018",
+        "name": "Gelbgrün",
+        "hex": "#689A45"
+      },
+      {
+        "code": "RAL 6019",
+        "name": "Weissgrün",
+        "hex": "#B8CFAD"
+      },
+      {
+        "code": "RAL 6020",
+        "name": "Chromoxidgrün",
+        "hex": "#3B4634"
+      },
+      {
+        "code": "RAL 6021",
+        "name": "Blassgrün",
+        "hex": "#899B79"
+      },
+      {
+        "code": "RAL 6022",
+        "name": "Braunoliv",
+        "hex": "#3B382E"
+      },
+      {
+        "code": "RAL 6024",
+        "name": "Verkehrsgrün",
+        "hex": "#3A8258"
+      },
+      {
+        "code": "RAL 6025",
+        "name": "Farngrün",
+        "hex": "#5D703E"
+      },
+      {
+        "code": "RAL 6026",
+        "name": "Opalgrün",
+        "hex": "#0D5951"
+      },
+      {
+        "code": "RAL 6027",
+        "name": "Lichtgrün",
+        "hex": "#88B5B3"
+      },
+      {
+        "code": "RAL 6028",
+        "name": "Kieferngrün",
+        "hex": "#3D5547"
+      },
+      {
+        "code": "RAL 6029",
+        "name": "Minzgrün",
+        "hex": "#226C45"
+      },
+      {
+        "code": "RAL 6032",
+        "name": "Signalgrün",
+        "hex": "#417E57"
+      },
+      {
+        "code": "RAL 6033",
+        "name": "Minttürkis",
+        "hex": "#568480"
+      },
+      {
+        "code": "RAL 6034",
+        "name": "Pastelltürkis",
+        "hex": "#86A9AD"
+      },
+      {
+        "code": "RAL 6035",
+        "name": "Perlgrün",
+        "hex": "#2E4F31"
+      },
+      {
+        "code": "RAL 6036",
+        "name": "Perlopalgrün",
+        "hex": "#27514A"
+      },
+      {
+        "code": "RAL 6037",
+        "name": "Reingrün",
+        "hex": "#3F8C3D"
+      },
+      {
+        "code": "RAL 6038",
+        "name": "Leuchtgrün",
+        "hex": "#20A339"
+      },
+      {
+        "code": "RAL 6039",
+        "name": "Fasergrün",
+        "hex": "#ABC251"
+      },
+      {
+        "code": "RAL 7000",
+        "name": "Fehgrau",
+        "hex": "#7B858D"
+      },
+      {
+        "code": "RAL 7001",
+        "name": "Silbergrau",
+        "hex": "#8B949B"
+      },
+      {
+        "code": "RAL 7002",
+        "name": "Olivgrau",
+        "hex": "#7D7965"
+      },
+      {
+        "code": "RAL 7003",
+        "name": "Moosgrau",
+        "hex": "#76776A"
+      },
+      {
+        "code": "RAL 7004",
+        "name": "Signalgrau",
+        "hex": "#969799"
+      },
+      {
+        "code": "RAL 7005",
+        "name": "Mausgrau",
+        "hex": "#696D6B"
+      },
+      {
+        "code": "RAL 7006",
+        "name": "Beigegrau",
+        "hex": "#716C60"
+      },
+      {
+        "code": "RAL 7008",
+        "name": "Khakigrau",
+        "hex": "#6C6040"
+      },
+      {
+        "code": "RAL 7009",
+        "name": "Grüngrau",
+        "hex": "#5B6058"
+      },
+      {
+        "code": "RAL 7010",
+        "name": "Zeltgrau",
+        "hex": "#575B57"
+      },
+      {
+        "code": "RAL 7011",
+        "name": "Eisengrau",
+        "hex": "#535A5E"
+      },
+      {
+        "code": "RAL 7012",
+        "name": "Basaltgrau",
+        "hex": "#595E60"
+      },
+      {
+        "code": "RAL 7013",
+        "name": "Braungrau",
+        "hex": "#545146"
+      },
+      {
+        "code": "RAL 7015",
+        "name": "Schiefergrau",
+        "hex": "#51535A"
+      },
+      {
+        "code": "RAL 7016",
+        "name": "Anthrazitgrau",
+        "hex": "#3B4044"
+      },
+      {
+        "code": "RAL 7021",
+        "name": "Schwarzgrau",
+        "hex": "#323537"
+      },
+      {
+        "code": "RAL 7022",
+        "name": "Umbragrau",
+        "hex": "#4C4C47"
+      },
+      {
+        "code": "RAL 7023",
+        "name": "Betongrau",
+        "hex": "#7D7F76"
+      },
+      {
+        "code": "RAL 7024",
+        "name": "Graphitgrau",
+        "hex": "#45494E"
+      },
+      {
+        "code": "RAL 7026",
+        "name": "Granitgrau",
+        "hex": "#394345"
+      },
+      {
+        "code": "RAL 7030",
+        "name": "Steingrau",
+        "hex": "#8C8C83"
+      },
+      {
+        "code": "RAL 7031",
+        "name": "Blaugrau",
+        "hex": "#5D676D"
+      },
+      {
+        "code": "RAL 7032",
+        "name": "Kieselgrau",
+        "hex": "#B1B1A1"
+      },
+      {
+        "code": "RAL 7033",
+        "name": "Zementgrau",
+        "hex": "#7C8273"
+      },
+      {
+        "code": "RAL 7034",
+        "name": "Gelbgrau",
+        "hex": "#8C8870"
+      },
+      {
+        "code": "RAL 7035",
+        "name": "Lichtgrau",
+        "hex": "#C2C6C3"
+      },
+      {
+        "code": "RAL 7036",
+        "name": "Platingrau",
+        "hex": "#949292"
+      },
+      {
+        "code": "RAL 7037",
+        "name": "Staubgrau",
+        "hex": "#797B7B"
+      },
+      {
+        "code": "RAL 7038",
+        "name": "Achatgrau",
+        "hex": "#ADB0A9"
+      },
+      {
+        "code": "RAL 7039",
+        "name": "Quarzgrau",
+        "hex": "#68675F"
+      },
+      {
+        "code": "RAL 7040",
+        "name": "Fenstergrau",
+        "hex": "#969CA1"
+      },
+      {
+        "code": "RAL 7042",
+        "name": "Verkehrsgrau A",
+        "hex": "#8C9190"
+      },
+      {
+        "code": "RAL 7043",
+        "name": "Verkehrsgrau B",
+        "hex": "#4F5352"
+      },
+      {
+        "code": "RAL 7044",
+        "name": "Seidengrau",
+        "hex": "#B3B2A9"
+      },
+      {
+        "code": "RAL 7045",
+        "name": "Telegrau 1",
+        "hex": "#8C9094"
+      },
+      {
+        "code": "RAL 7046",
+        "name": "Telegrau 2",
+        "hex": "#7C8287"
+      },
+      {
+        "code": "RAL 7047",
+        "name": "Telegrau 4",
+        "hex": "#C5C5C5"
+      },
+      {
+        "code": "RAL 7048",
+        "name": "Perlmausgrau",
+        "hex": "#7A7871"
+      },
+      {
+        "code": "RAL 8000",
+        "name": "Grünbraun",
+        "hex": "#816D44"
+      },
+      {
+        "code": "RAL 8001",
+        "name": "Ockerbraun",
+        "hex": "#8F6833"
+      },
+      {
+        "code": "RAL 8002",
+        "name": "Signalbraun",
+        "hex": "#704F40"
+      },
+      {
+        "code": "RAL 8003",
+        "name": "Lehmbraun",
+        "hex": "#74502F"
+      },
+      {
+        "code": "RAL 8004",
+        "name": "Kupferbraun",
+        "hex": "#814D37"
+      },
+      {
+        "code": "RAL 8007",
+        "name": "Rehbraun",
+        "hex": "#67492F"
+      },
+      {
+        "code": "RAL 8008",
+        "name": "Olivbraun",
+        "hex": "#694F2B"
+      },
+      {
+        "code": "RAL 8011",
+        "name": "Nussbraun",
+        "hex": "#533A29"
+      },
+      {
+        "code": "RAL 8012",
+        "name": "Rotbraun",
+        "hex": "#5C3128"
+      },
+      {
+        "code": "RAL 8014",
+        "name": "Sepiabraun",
+        "hex": "#453729"
+      },
+      {
+        "code": "RAL 8015",
+        "name": "Kastanienbraun",
+        "hex": "#57332B"
+      },
+      {
+        "code": "RAL 8016",
+        "name": "Mahagonibraun",
+        "hex": "#483026"
+      },
+      {
+        "code": "RAL 8017",
+        "name": "Schokoladenbraun",
+        "hex": "#42332E"
+      },
+      {
+        "code": "RAL 8019",
+        "name": "Graubraun",
+        "hex": "#3B3736"
+      },
+      {
+        "code": "RAL 8022",
+        "name": "Schwarzbraun",
+        "hex": "#201F20"
+      },
+      {
+        "code": "RAL 8023",
+        "name": "Orangebraun",
+        "hex": "#965D33"
+      },
+      {
+        "code": "RAL 8024",
+        "name": "Beigebraun",
+        "hex": "#6F543C"
+      },
+      {
+        "code": "RAL 8025",
+        "name": "Blassbraun",
+        "hex": "#6E5B4B"
+      },
+      {
+        "code": "RAL 8028",
+        "name": "Terrabraun",
+        "hex": "#4C3E30"
+      },
+      {
+        "code": "RAL 8029",
+        "name": "Perlkupfer",
+        "hex": "#764537"
+      },
+      {
+        "code": "RAL 9001",
+        "name": "Cremeweiss",
+        "hex": "#E5E1D4"
+      },
+      {
+        "code": "RAL 9002",
+        "name": "Grauweiss",
+        "hex": "#D4D5CD"
+      },
+      {
+        "code": "RAL 9003",
+        "name": "Signalweiss",
+        "hex": "#EBECEA"
+      },
+      {
+        "code": "RAL 9004",
+        "name": "Signalschwarz",
+        "hex": "#2F3133"
+      },
+      {
+        "code": "RAL 9005",
+        "name": "Tiefschwarz",
+        "hex": "#131516"
+      },
+      {
+        "code": "RAL 9006",
+        "name": "Weissaluminium",
+        "hex": "#9A9D9D"
+      },
+      {
+        "code": "RAL 9007",
+        "name": "Graualuminium",
+        "hex": "#828280"
+      },
+      {
+        "code": "RAL 9010",
+        "name": "Reinweiss",
+        "hex": "#EFEEE5"
+      },
+      {
+        "code": "RAL 9011",
+        "name": "Graphitschwarz",
+        "hex": "#25282A"
+      },
+      {
+        "code": "RAL 9012",
+        "name": "Reinraumweiss",
+        "hex": "#F2F1E1"
+      },
+      {
+        "code": "RAL 9016",
+        "name": "Verkehrsweiss",
+        "hex": "#EFF0EB"
+      },
+      {
+        "code": "RAL 9017",
+        "name": "Verkehrsschwarz",
+        "hex": "#262625"
+      },
+      {
+        "code": "RAL 9018",
+        "name": "Papyrusweiss",
+        "hex": "#C6CBC6"
+      },
+      {
+        "code": "RAL 9022",
+        "name": "Perlhellgrau",
+        "hex": "#818382"
+      },
+      {
+        "code": "RAL 9023",
+        "name": "Perldunkelgrau",
+        "hex": "#767779"
+      }
+    ]
+  },
+  "ncs": {
+    "quelle": "Annäherung, Quelle: pontata.com (https://pontata.com/color/ncs-s-0502-y u. a. Einzelseiten /color/ncs-<code>), abgerufen 2026-11-04. Quelle nennt keine Herleitung der Werte.",
+    "hinweis": "Annäherung, nicht verbindlich. Die vollstaendige NCS-Liste (NCS 1950) ist lizenzpflichtig: NCS Colour AB veroeffentlicht keine frei nutzbaren sRGB-/Hex-Werte; Einbindung in Software erfordert die «NCS Inside Licence» (ncscolour.com/pages/ncs-inside). Auswahl: Weiss-/Hellgrau-/Beigetoene und einige Grautoene.",
+    "vollstaendig": false,
+    "farben": [
+      {
+        "code": "NCS S-0300-N",
+        "name": "",
+        "hex": "#F6F3EE"
+      },
+      {
+        "code": "NCS S-0500-N",
+        "name": "",
+        "hex": "#F0EDE8"
+      },
+      {
+        "code": "NCS S-1000-N",
+        "name": "",
+        "hex": "#E0DFDD"
+      },
+      {
+        "code": "NCS S-1500-N",
+        "name": "",
+        "hex": "#D4D1CC"
+      },
+      {
+        "code": "NCS S-6000-N",
+        "name": "",
+        "hex": "#737270"
+      },
+      {
+        "code": "NCS S-7000-N",
+        "name": "",
+        "hex": "#5D5C58"
+      },
+      {
+        "code": "NCS S-7500-N",
+        "name": "",
+        "hex": "#51504E"
+      },
+      {
+        "code": "NCS S-8000-N",
+        "name": "",
+        "hex": "#403F3D"
+      },
+      {
+        "code": "NCS S-0502-Y",
+        "name": "",
+        "hex": "#F7EFE4"
+      },
+      {
+        "code": "NCS S-1002-Y",
+        "name": "",
+        "hex": "#E0DCD1"
+      },
+      {
+        "code": "NCS S-1502-Y",
+        "name": "",
+        "hex": "#D4D2C6"
+      },
+      {
+        "code": "NCS S-0502-Y50R",
+        "name": "",
+        "hex": "#F5ECE3"
+      },
+      {
+        "code": "NCS S-1002-Y50R",
+        "name": "",
+        "hex": "#E6DDD8"
+      },
+      {
+        "code": "NCS S-2002-Y50R",
+        "name": "",
+        "hex": "#CAC1BC"
+      },
+      {
+        "code": "NCS S-3502-B",
+        "name": "",
+        "hex": "#9DA1A2"
+      }
+    ]
+  },
+  "herstellerstandard": [
+    {
+      "hersteller": "Prolux",
+      "farbe": "RAL 9016",
+      "quelle": "Preise_und_Technik_Roehrenradiatoren_2026.pdf S. 10 (AllFinish in Verkehrsweiss RAL 9016); Preise_und_Technik_Badheizkoerper_2026.pdf S. 76 und Preise_und_Technik_Heizwaende_2026.pdf S. 94 (Standardfarbe fertiglackiert WF = RAL 9016); PDF-Seitenzahlen"
+    }
+  ],
+  "plan": {
+    "Heizkoerper": {
+      "farbe": "#1f9a3c",
+      "quelle": "Entscheid Christian 04.11.2026: «Heizkörper in Grundrissen Grün» – Farbton Annahme Hauptlauf"
+    }
+  }
+}
