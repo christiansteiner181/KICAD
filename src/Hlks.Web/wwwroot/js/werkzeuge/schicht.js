@@ -74,11 +74,23 @@ export function fangsymbol(fang, s) {
     case 'lot': g = `<path class="wz-fang" d="M${xy([x - h, y - h])} L${xy([x + h, y - h])} M${xy([x, y - h])} L${xy([x, y + h])}"/>`; break;
     case 'naechster': g = `<polygon class="wz-fang" points="${xy([x - h, y + h])} ${xy([x + h, y + h])} ${xy([x - h, y - h])} ${xy([x + h, y - h])}"/>`; break;
     case 'raster': g = `<path class="wz-fang wz-fang-leise" d="M${xy([x - h * 0.7, y])} L${xy([x + h * 0.7, y])} M${xy([x, y - h * 0.7])} L${xy([x, y + h * 0.7])}"/>`; break;
+    case 'polar': g = `<circle class="wz-fang" cx="${f(x)}" cy="${f(y)}" r="${f(h * 0.6)}"/>`; break;
     default: return '';
   }
-  const name = FANGNAMEN[fang.art] ?? '';
+  let name = fang.art === 'polar' ? '' : FANGNAMEN[fang.art] ?? '';
+  let strahl = '';
+  if (fang.polar != null && fang.von) {
+    // Polarfang: gestrichelter Strahl vom letzten Punkt über den Fangpunkt hinaus und der Winkel (in den Achsen der Ansicht wie tempMass)
+    const l = abstand(fang.von, fang.punkt);
+    if (l > 1e-6) {
+      const e = 80 * s / l;
+      strahl = linie(fang.von, [x + (x - fang.von[0]) * e, y + (y - fang.von[1]) * e], 'wz-polar');
+    }
+    const w = fang.polar >= 359.95 ? 0 : fang.polar;
+    name = [name, `Polar ${winkelText(w)}`].filter(Boolean).join(' · ');
+  }
   const t = name && fang.art !== 'raster' ? text([x, y], name, s, { versatzPx: [10, -16], klasse: 'wz-text wz-fangtext' }) : '';
-  return gegen([x, y], g) + t;   // N9: Symbol auf dem Bildschirm achsparallel
+  return strahl + gegen([x, y], g) + t;   // N9: Symbol auf dem Bildschirm achsparallel
 }
 
 /** Temporäre Bemassung eines Segments: Länge in mm und Winkel (wie Revit) als Text neben der Mitte, mit kurzer Masslinie. */

@@ -7,7 +7,7 @@
 // Annahmen (nicht aus einer Norm, Bedienvorgabe): Fangradius 10 px, Raster 100 mm – beides wird vom Aufrufer vorgegeben.
 
 export const FANGARTEN = ['endpunkt', 'schnittpunkt', 'mitte', 'lot', 'naechster', 'raster'];
-export const FANGNAMEN = { endpunkt: 'Endpunkt', schnittpunkt: 'Schnittpunkt', mitte: 'Mitte', lot: 'Lot', naechster: 'Nächster', raster: 'Raster', anschluss: 'Anschluss', frei: '' };
+export const FANGNAMEN = { endpunkt: 'Endpunkt', schnittpunkt: 'Schnittpunkt', mitte: 'Mitte', lot: 'Lot', naechster: 'Nächster', raster: 'Raster', anschluss: 'Anschluss', polar: 'Polar', frei: '' };
 export const FANGRADIUS_PX = 10;     // Annahme
 export const RASTER_MM = 100;        // Annahme
 const EPS = 1e-9;
@@ -137,7 +137,8 @@ function kantenListe(daten, extraKanten) {
 
 /**
  * Fängt den Mauspunkt.
- * opt: { punkt, daten, radius, letzter?, raster?, ortho?, extraPunkte?, extraKanten?, arten?, drehung? }
+ * opt: { punkt, daten, radius, letzter?, raster?, ortho?, extraPunkte?, extraKanten?, arten?, drehung?, polar? }
+ *   polar: Schritt des Polarfangs in Grad (0 = aus), siehe fangenPolar.
  *   arten: Menge der erlaubten Arten (Vorgabe alle); 'raster' schaltet das Raster, raster = 0 ebenso.
  *   drehung (N9): Drehung der Ansicht in Grad (Gegenuhrzeigersinn, Modell → Ansicht). Orthogonal (Shift) und Raster beziehen sich dann auf
  *   die Achsen der Ansicht – waagrecht gezeichnet heisst parallel zur Gebäudekante; alle Punkte bleiben in Modellkoordinaten.
@@ -159,6 +160,7 @@ export function fangen(opt) {
   const zurueck = (p) => rundPunkt(drehenUm(p, -d), 6);
   const aus = { ...r, punkt: zurueck(r.punkt) };
   if (r.kante) aus.kante = r.kante.orig ?? { ...r.kante, a: zurueck(r.kante.a), b: zurueck(r.kante.b) };
+  if (r.von) aus.von = zurueck(r.von);   // Polarfang: Strahlanfang
   return aus;
 }
 
@@ -187,13 +189,50 @@ function gedrehteDaten(daten, d) {
 }
 
 function fangenAchsen(opt) {
-  const { punkt, daten = null, radius = 0, letzter = null, raster = 0, ortho = false, extraPunkte = [], extraKanten = [] } = opt;
+  const { punkt, daten = null, radius = 0, letzter = null, raster = 0, ortho = false, extraPunkte = [], extraKanten = [], polar = 0 } = opt;
   const erlaubt = new Set(opt.arten ?? [...FANGARTEN, 'anschluss']);
   const punkte = punkteListe(daten, extraPunkte);
   const kanten = kantenListe(daten, extraKanten);
   const anschluesse = erlaubt.has('anschluss') ? anschlussPunkte(extraPunkte) : [];
 
   if (ortho && letzter) return fangenOrtho({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, anschluesse });
+  const r = fangenPunkte({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, anschluesse });
+  // Polarfang: Objektfänge (Anschluss, Endpunkt, Schnittpunkt, Mitte) gehen vor, sonst die Richtung auf das nächste Vielfache des Schritts
+  if (!(polar > 0) || !letzter || ['anschluss', 'endpunkt', 'schnittpunkt', 'mitte'].includes(r.art)) return r;
+  return fangenPolar({ punkt, kanten, radius, letzter, raster, erlaubt, schritt: polar }) ?? r;
+}
+
+/**
+ * Polarfang (Christian 04.11.2026: «beim zeichenen braucht es einen polar fang mit anzeige des winkels»): Liegt die Maus höchstens den
+ * Fangradius neben einem Strahl vom letzten Punkt im Winkel k · schritt (0° = waagrecht der Ansicht), wird auf den Strahl gefangen – auf
+ * einen Schnittpunkt mit einer Kante, sonst mit auf das Raster gerundeter Länge. Rückgabe mit polar (Winkel in Grad) und von (Strahlanfang);
+ * null, wenn kein Strahl nahe genug ist.
+ */
+export function fangenPolar({ punkt, kanten = [], radius, letzter, raster = 0, erlaubt = new Set(FANGARTEN), schritt }) {
+  if (!(schritt > 0) || abstand(letzter, punkt) <= radius) return null;   // zu nah am letzten Punkt: Richtung unbestimmt
+  const w = (Math.round(winkelGrad(letzter, punkt) / schritt) * schritt) % 360;
+  const b = w * Math.PI / 180, d = [Math.cos(b), Math.sin(b)];
+  const vx = punkt[0] - letzter[0], vy = punkt[1] - letzter[1];
+  const s = vx * d[0] + vy * d[1];
+  if (s <= 0 || Math.abs(vx * d[1] - vy * d[0]) > radius) return null;
+  const auf = (t) => rundPunkt([letzter[0] + t * d[0], letzter[1] + t * d[1]], 6);
+  const wunsch = auf(s);
+  const treffer = (art, p) => ({ punkt: p, art, ortho: false, polar: w, von: [letzter[0], letzter[1]] });
+  if (erlaubt.has('schnittpunkt')) {
+    let best = null;
+    for (const k of kantenNahe(kanten, wunsch, radius)) {
+      const q = schnittStreckeGerade(k.a, k.b, letzter, d);
+      if (!q) continue;
+      const dist = abstand(q, wunsch);
+      if (dist <= radius && besser(best, dist)) best = { abst: dist, p: q };
+    }
+    if (best) return treffer('schnittpunkt', best.p);
+  }
+  if (erlaubt.has('raster') && raster > 0) return treffer('polar', auf(Math.round(s / raster) * raster));
+  return treffer('polar', wunsch);
+}
+
+function fangenPunkte({ punkt, punkte, kanten, radius, letzter, raster, erlaubt, anschluesse }) {
 
   // 0. Anschluss (Modul 3): Anschlusspunkte von Geräten, Familien und Leitungsenden gehen allen anderen Fängen vor
   {

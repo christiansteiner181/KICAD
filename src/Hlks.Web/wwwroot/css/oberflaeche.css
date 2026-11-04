@@ -297,6 +297,7 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 .wz-schicht line.wz-oeffnung, .wz-schicht path.wz-oeffnung { fill: none; }
 .wz-schicht .wz-duenn { stroke-width: 1px; }
 .wz-schicht .wz-achse { stroke-dasharray: 10 3 2 3; }
+.wz-schicht .wz-polar { stroke: var(--warnung); stroke-width: 1px; stroke-dasharray: 4 3; }
 .wz-schicht .wz-schnitt { stroke-width: 2px; stroke-dasharray: 10 3 2 3; }
 .wz-schicht .wz-hilf { stroke: var(--text-leise); stroke-width: 1px; }
 .wz-schicht .wz-mass { stroke: var(--akzent); stroke-width: 1px; }

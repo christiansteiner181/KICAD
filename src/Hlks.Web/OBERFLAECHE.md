@@ -4109,7 +4109,8 @@ Reine Logik in `js/werkzeuge/tempmass.js` und `js/werkzeuge/fangwahl.js` (in Nod
   Wert verschiebt die Gerade rechtwinklig (`elemente_verschieben`, Leitungen werden nachgeführt).
 - **Fang-Kürzel** (einmal, für den nächsten Punkt bzw. Griff): SE Endpunkt, SM Mitte, SI Schnittpunkt, SP Lot, SN Nächster, SR Raster, SO kein
   Fang. Die Statusleiste nennt die Überschreibung. Anschlüsse werden ausser bei SO immer gefangen.
-- **Verwalten › Modell › Fangen …:** Fangarten an/aus, je Benutzer gemerkt (Browser).
+- **Verwalten › Modell › Fangen …:** Fangarten an/aus und Schritt des Polarfangs (aus, 5°, 15°, 30°, 45°, 90°; Vorgabe 15°), je Benutzer gemerkt (Browser).
+- **Polarfang (04.11.2026):** Beim Zeichnen ab dem zweiten Punkt rastet die Richtung auf Vielfache des Schritts ein, sobald die Maus höchstens 10 px neben dem Strahl liegt: gestrichelte Spur über den Fangpunkt hinaus, am Fangpunkt «Polar 30.0°» (Winkel in den Achsen der Ansicht, 0° = waagrecht). Länge auf dem Strahl auf das Raster gerundet, Schnittpunkte mit Kanten auf dem Strahl gefangen; Endpunkt, Anschluss, Schnittpunkt und Mitte gehen vor; Shift (orthogonal), eine Fang-Überschreibung und Werkzeuge mit eigenen Fangarten schalten ihn ab.
 - **Befund beim Bau:** Direkt verbundene Geraden (ohne Formteil) folgen jetzt einer verschobenen Geraden wie an einem Formteil (A1).
 - **Tests:** `node --test --test-name-pattern "Fangwahl|Temporäre Masse" src/Hlks.Web/wwwroot/js/werkzeuge/werkzeuge.test.mjs`.
 

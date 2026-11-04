@@ -113,6 +113,28 @@ test('Fangen: Shift fängt den Schnittpunkt einer Kante mit der Linie', () => {
   punktGleich(f.punkt, [2000, 0]);
 });
 
+test('Fangen: Polarfang – Strahl im Schritt, Länge auf das Raster, Schnittpunkt auf dem Strahl, Objektfang geht vor', () => {
+  const leer = { punkte: [], kanten: [] };
+  // 1000 | 560 liegt 29.25° vom letzten Punkt: Strahl 30°, Länge 1147.6 → Raster 1100
+  const f = F.fangen({ punkt: [1000, 560], daten: leer, radius: 50, letzter: [0, 0], raster: 100, polar: 15 });
+  assert.equal(f.art, 'polar');
+  assert.equal(f.polar, 30);
+  punktGleich(f.von, [0, 0]);
+  punktGleich(f.punkt, [1100 * Math.cos(Math.PI / 6), 1100 * Math.sin(Math.PI / 6)], 1e-5);
+  // zu weit neben jedem Strahl bzw. Polarfang aus: kein Polar
+  assert.notEqual(F.fangen({ punkt: [1000, 400], daten: leer, radius: 10, letzter: [0, 0], polar: 15 }).art, 'polar');
+  assert.equal(F.fangen({ punkt: [1000, 560], daten: leer, radius: 50, letzter: [0, 0], polar: 0 }).polar, undefined);
+  // Kante quer zum 45°-Strahl: Schnittpunkt genau auf dem Strahl, mit Winkel
+  const k = { punkte: [], kanten: [{ a: [2000, -1000], b: [2000, 4000], id: 'k' }] };
+  const s = F.fangen({ punkt: [2030, 2010], daten: k, radius: 40, letzter: [0, 0], polar: 15 });
+  assert.equal(s.art, 'schnittpunkt');
+  assert.equal(s.polar, 45);
+  punktGleich(s.punkt, [2000, 2000], 1e-5);
+  // Endpunkt in der Nähe gewinnt vor dem Strahl
+  const e = F.fangen({ punkt: [1000, 560], daten: { punkte: [{ p: [1010, 540], id: 'x' }], kanten: [] }, radius: 50, letzter: [0, 0], polar: 15 });
+  assert.equal(e.art, 'endpunkt');
+});
+
 test('Fangen: Länge per Zifferneingabe', () => {
   punktGleich(F.punktNachLaenge([0, 0], [3, 4], 10), [6, 8]);
   punktGleich(F.punktNachLaenge([100, 100], [100, 100], 50), [150, 100]);   // keine Richtung: nach Osten
@@ -549,6 +571,9 @@ test('Fangwahl: Überschreibung vor Werkzeug vor Einstellung, Anschlussfang blei
   assert.deepEqual(W.fangArten(['anschluss'], ['endpunkt'], 'mitte'), ['mitte', 'anschluss']);
   assert.deepEqual(W.fangArten(undefined, ['endpunkt'], 'aus'), []);
   assert.equal(W.FANG_KUERZEL.SE, 'endpunkt');
+  assert.equal(W.polarFuer(undefined, 15, null), 15);          // Polarfang nur ohne Überschreibung und ohne eigene Fangarten
+  assert.equal(W.polarFuer(['anschluss'], 15, null), 0);
+  assert.equal(W.polarFuer(undefined, 15, 'endpunkt'), 0);
 });
 
 test('Temporäre Masse: je Seite der nächste parallele Bezug, Wand mit beiden Flächen, Verschiebung auf neuen Abstand', async () => {

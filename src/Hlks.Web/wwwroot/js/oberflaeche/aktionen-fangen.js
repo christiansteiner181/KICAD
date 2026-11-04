@@ -1,11 +1,12 @@
 // Fangen wie Revit (Bearbeitungswerkzeuge B5, entwurf/bearbeitungswerkzeuge.md): Kürzel SE, SM, SI, SP, SN, SR (nur diese Fangart) und SO (kein Fang)
-// für den nächsten Punkt bzw. Griff; Verwalten › Modell › «Fangen …» mit den Fangarten je Benutzer. Die Logik steht in werkzeuge/fangwahl.js.
+// für den nächsten Punkt bzw. Griff; Verwalten › Modell › «Fangen …» mit den Fangarten und dem Schritt des Polarfangs je Benutzer. Die Logik
+// steht in werkzeuge/fangwahl.js.
 
 import { registrieren, hinweisSetzen } from './register.js';
 import { zeigen } from './dialoge.js';
 import { esc, knoten } from './werkzeug.js';
 import { FANGARTEN, FANGNAMEN } from '../werkzeuge/fangen.js';
-import { FANG_KUERZEL, einmalSetzen, einmalText, erlaubteArten, artenSetzen } from '../werkzeuge/fangwahl.js';
+import { FANG_KUERZEL, einmalSetzen, einmalText, erlaubteArten, artenSetzen, POLAR_SCHRITTE, polarSchritt, polarSetzen } from '../werkzeuge/fangwahl.js';
 
 for (const [kuerzel, art] of Object.entries(FANG_KUERZEL)) {
   registrieren({
@@ -18,9 +19,11 @@ async function einstellungen() {
   const an = new Set(erlaubteArten());
   const w = knoten(`<div><p class="dlg-text">Welche Punkte fangen die Werkzeuge und Griffe? Anschlüsse von Leitungen und Familien werden immer gefangen.
     Einmalig überschreiben: ${Object.entries(FANG_KUERZEL).map(([k, a]) => `${k} ${a === 'aus' ? 'aus' : esc(FANGNAMEN[a])}`).join(', ')}.</p>${FANGARTEN.map((a) =>
-    `<label class="haken"><input type="checkbox" value="${a}" ${an.has(a) ? 'checked' : ''}> ${esc(FANGNAMEN[a])}</label>`).join('<br>')}</div>`);
+    `<label class="haken"><input type="checkbox" value="${a}" ${an.has(a) ? 'checked' : ''}> ${esc(FANGNAMEN[a])}</label>`).join('<br>')}
+    <p class="dlg-text">Polarfang: Richtung vom letzten Punkt in Schritten (gestrichelte Spur, Winkel am Fangpunkt).</p>
+    <label>Schritt <select data-polar>${POLAR_SCHRITTE.map((v) => `<option value="${v}" ${v === polarSchritt() ? 'selected' : ''}>${v === 0 ? 'aus' : `${v}°`}</option>`).join('')}</select></label></div>`);
   const ok = await zeigen({ titel: 'Fangen', inhalt: w, breite: 440, knoepfe: [{ text: 'Abbrechen', wert: false }, { text: 'OK', wert: true, primaer: true }] });
-  if (ok) artenSetzen([...w.querySelectorAll('input:checked')].map((i) => i.value));
+  if (ok) { artenSetzen([...w.querySelectorAll('input:checked')].map((i) => i.value)); polarSetzen(w.querySelector('[data-polar]').value); }
 }
 
 registrieren({ id: 'verwalten.fangen', titel: 'Fangen …', symbol: 'fangen', kuerzel: null, register: 'verwalten', gruppe: 'Modell', ausfuehren: einstellungen });

@@ -28,7 +28,7 @@ import { fangen, punktNachLaenge, zahlAusText, abstand, FANGRADIUS_PX } from './
 import { werte, rasterWert, katalogLaden } from './optionen.js';
 import { WerkzeugFehler } from './parameter.js';
 import * as S from './schicht.js';
-import { fangArten, einmalVerbraucht } from './fangwahl.js';   // B5: Fangeinstellungen und Fang-Kürzel
+import { fangArten, einmalVerbraucht, polarFuer } from './fangwahl.js';   // B5: Fangeinstellungen und Fang-Kürzel; Polarfang
 
 const PLANARTEN = ['grundriss', 'schnitt', 'ansicht'];
 const DOPPELKLICK_MS = 400;
@@ -182,6 +182,7 @@ class Lauf {
       letzter: d.letzterPunkt?.(z) ?? null, raster: rasterWert(), ortho: this.shift,
       extraPunkte: d.extraPunkte?.(z) ?? [], extraKanten: d.extraKanten?.(z) ?? [], arten: fangArten(d.fangArten),
       drehung: this.ansicht.drehung ?? 0,   // N9: Orthogonal und Raster in den Achsen der (gedrehten) Ansicht
+      polar: polarFuer(d.fangArten),        // Polarfang (04.11.2026), Winkel in den Achsen der Ansicht
     });
   }
 

@@ -34,3 +34,17 @@ export function fangArten(werkzeugArten, einstellung = erlaubteArten(), uebersch
   if (werkzeugArten) return werkzeugArten;
   return [...einstellung, 'anschluss'];
 }
+
+/** Polarfang (Christian 04.11.2026): Schritt in Grad, 0 = aus, je Benutzer gemerkt. Vorgabe 15° – Annahme Hauptlauf (Revit fängt Winkel in
+ *  15°-Schritten). Getrennt von den Fangarten gemerkt, damit gespeicherte Fangeinstellungen ihn nicht abschalten. */
+export const POLAR_SCHRITTE = [0, 5, 15, 30, 45, 90];
+export function polarSchritt() {
+  const v = Number(merken.lesen('polarschritt', 15));
+  return POLAR_SCHRITTE.includes(v) ? v : 15;
+}
+export function polarSetzen(v) { merken.schreiben('polarschritt', POLAR_SCHRITTE.includes(Number(v)) ? Number(v) : 15); }
+
+/** Schritt für fangen(): aus bei einer Fang-Überschreibung (SE … SO) und bei Werkzeugen mit eigenen Fangarten (z. B. Verbinden). */
+export function polarFuer(werkzeugArten, schritt = polarSchritt(), ueberschreibung = einmal) {
+  return ueberschreibung || werkzeugArten ? 0 : schritt;
+}
