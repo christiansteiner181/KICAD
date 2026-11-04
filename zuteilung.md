@@ -459,3 +459,4 @@ nicht die Arbeit der Agenten). Je Aufgabenart:
 | 04.11.2026 | Modul 5 Teil B-H | SIA 2024:2021 Raum-Datenblätter: θi,des,H/C und θi,ave,H/C für 45 Nutzungen vom Seitenbild (Textschicht verschoben) | hlks-modul (sonnet) | ok – je Wert zwei Lesungen; Stichproben Hauptlauf 12.01, 12.06, 9.03 am Bild gleich |
 | 2026-11-04 | Oberfläche | Browserreihen auf Register je Gewerk umgestellt | hlks-mechanik | 10 Dateien, node --check grün, nicht ausgeführt |
 | 2026-11-04 | Sanitär | Auszug Geberit Duofix/GIS aus Planungshandbuch 2025 | general-purpose (sonnet) | Auszug mit Seiten im Scratchpad; Querschnitte, Elementbreiten, Anschlusshöhen nicht im Handbuch (Annahmen) |
+| 2026-11-04 | Sanitär | Geberit-Produktdatenblätter (Profile, Befestigungen, Elemente) suchen, laden, Masse mit Seite | general-purpose (sonnet) | 46 Dateien im Scratchpad, masse.md; Stichproben (GIS Profil, Duofix WC 112, GIS WC 114) vom Hauptlauf am Bild bestätigt |

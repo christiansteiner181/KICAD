@@ -52,7 +52,7 @@ public sealed class VorwandGrafik : IGrafikquelle
     {
         var (v, el) = Lage(ctx.Modell, ctx.Katalog, e);
         if (v is null || el is null) return [];
-        double q0 = v.AnWand ? 10 : 18, q1 = v.Tiefe - 18;   // Fuge zum Bauwerk 10 mm (S. 222, 269) bis hinter die Beplankung
+        double q1 = v.Tiefe - 18, q0 = Math.Max(v.AnWand ? 10 : 18, q1 - (el.Typ?.Rahmentiefe ?? 40));   // Rahmentiefe des Elements hinter der Beplankung
         var r = Rechteck(v, el.S0, el.S1, q0, q1);
         var prim = new List<Primitiv>
         {
@@ -88,13 +88,15 @@ public sealed class VorwandGrafik : IGrafikquelle
     {
         var (v, el) = Lage(p.Modell, p.Katalog, e);
         if (v is null || el is null) return null;
-        double h = el.Typ?.Hoehe ?? 1120, w = ElementRahmen;
-        double q1 = v.Tiefe - 18, q0 = q1 - w, z0 = v.Rohboden, z1 = v.Okff + h;
+        double h = el.Typ?.Rahmenhoehe ?? 1120, w = ElementRahmen;
+        double q1 = v.Tiefe - 18, q0 = Math.Max(0, q1 - (el.Typ?.Rahmentiefe ?? w)), z0 = v.Rohboden, z1 = v.Okff + h;
         var k = new Koerper { Id = e.Id, Ebene = "apparat" };
         void Teil(Koerperteil t) { t.Farbe = ElementFarbe; t.Material = "geraet"; k.Teile.Add(t); }
         Teil(Quader(v, el.S0, el.S0 + w, q0, q1, z0, z1));
         Teil(Quader(v, el.S1 - w, el.S1, q0, q1, z0, z1));
         Teil(Quader(v, el.S0 + w, el.S1 - w, q0, q1, z1 - w, z1));
+        if (el.Typ?.Traverse is double tz)   // Befestigungstraverse (WC-Bolzen), bemasst in der Montageanleitung
+            Teil(Quader(v, el.S0 + w, el.S1 - w, q0, q1, v.Okff + tz - w / 2, v.Okff + tz + w / 2));
         foreach (var a in el.Typ?.Anschluesse ?? [])
         {
             double s = (el.S0 + el.S1) / 2 + a.S, z = v.Okff + a.Z;

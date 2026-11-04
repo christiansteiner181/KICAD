@@ -182,45 +182,49 @@ public static class VorwandGestell
         ok = ok.Where(z => z <= obenOk - ph - 1).ToList();
         ok.Add(obenOk);
         foreach (var z in ok)
-            v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", s0, s1, q0, q1, z - ph, z, null, zuschnitt, ann));
+            v.Teile.Add(new VorwandTeil("profil", "GIS Profil horizontal", s0, s1, q0, q1, z - ph, z, sys.ProfilArtikel, zuschnitt, ann));
 
         // Vertikalprofile an den Enden und höchstens Abstand auseinander, nicht in einem Montageelement
         var lagen = Teilung(s0, s1 - pb, sys.VertikalprofilAbstand);
         lagen = Ausweichen(lagen, v.Elemente, pb, s0, s1 - pb);
         double vz0 = v.Rohboden, vz1 = obenOk;
         foreach (var s in lagen)
-            v.Teile.Add(new VorwandTeil("profil", "GIS Profil vertikal", s, s + pb, q1 - ph, q1, vz0, vz1, null, Math.Round(vz1 - vz0 - 2 * Rand), ann));
+            v.Teile.Add(new VorwandTeil("profil", "GIS Profil vertikal", s, s + pb, q1 - ph, q1, vz0, vz1, sys.ProfilArtikel, Math.Round(vz1 - vz0 - 2 * Rand), ann));
 
         // Montagewinkel am Boden (und raumhoch an der Decke): erster 10 cm von der angrenzenden Wand, dann höchstens Abstand
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
         foreach (var s in Teilung(sys.AbstandAngrenzendeWand, v.Laenge - sys.AbstandAngrenzendeWand, abst))
         {
-            v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Boden)", s - 20, s + 20, q0, q1, v.Rohboden, v.Rohboden + 50));
-            if (v.Raumhoch) v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Decke)", s - 20, s + 20, q0, q1, obenOk - 50, obenOk));
+            v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Boden)", s - 20, s + 20, q0, q1, v.Rohboden, v.Rohboden + 50, null, null, sys.Annahme("montagewinkel")));
+            if (v.Raumhoch) v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Decke)", s - 20, s + 20, q0, q1, obenOk - 50, obenOk, null, null, sys.Annahme("montagewinkel")));
         }
         // Wandanbindung an der Rückwand: an jedem Vertikalprofil (≤ 250 cm, S. 251) auf halber und oberer Höhe (Höhen: Annahme)
         if (v.AnWand && q0 > 1)
             foreach (var s in lagen)
                 foreach (var z in new[] { ok[ok.Count / 2], ok[^1] }.Distinct())
-                    v.Teile.Add(new VorwandTeil("befestigung", "GIS Wandanbindung", s + pb / 2 - 20, s + pb / 2 + 20, 0, q0, z - ph, z, null, Math.Round(q0),
-                        "Höhe der Wandanbindungen am Profil angenommen (Handbuch nennt nur den Abstand 250 cm)."));
+                    v.Teile.Add(new VorwandTeil("befestigung", "GIS Wandanbindung (Verbindungsstück)", s + pb / 2 - sys.Verbindungsstueck.Breite / 2, s + pb / 2 + sys.Verbindungsstueck.Breite / 2,
+                        0, q0, z - sys.Verbindungsstueck.Hoehe, z, sys.VerbindungsstueckArtikel, Math.Round(q0), sys.Annahme("wandanbindung")));
     }
 
     // ------------------------------------------------------------------ Duofix
 
     static void Duofix(VorwandAufbau v, VorwandKatalog.SystemDef sys)
     {
-        double d = sys.Beplankung, sb = sys.Schiene.Breite, sh = sys.Schiene.Hoehe, tb = sys.Staender.Breite, th = sys.Staender.Hoehe;
+        double d = sys.Beplankung, sb = sys.Schiene.Breite, sh = sys.Schiene.Hoehe;
+        // Ständer: raumhoch 5 × 5 cm, teilhoch 4 × 7.3 cm (Breite entlang der Vorwand × Tiefe)
+        var qs = v.Raumhoch ? sys.Staender : sys.StaenderTeilhochQuerschnitt;
+        double tb = qs.Breite, th = qs.Hoehe;
         double q1 = v.Tiefe - d, q0 = q1 - sb;
         double obenOk = v.Raumhoch ? v.Okff + v.Hoehe : v.Okff + v.Hoehe - d;
-        v.Teile.Add(new VorwandTeil("schiene", "Duofix Systemschiene (Boden)", 0, v.Laenge, q0, q1, v.Rohboden, v.Rohboden + sh, null, Math.Round(v.Laenge), sys.Annahme("schiene")));
+        v.Teile.Add(new VorwandTeil("schiene", "Duofix Systemschiene (Boden)", 0, v.Laenge, q0, q1, v.Rohboden, v.Rohboden + sh, sys.SchieneArtikel, Math.Round(v.Laenge), sys.Annahme("schiene")));
         v.Teile.Add(new VorwandTeil("schiene", v.Raumhoch ? "Duofix Systemschiene (Decke)" : "Duofix Systemschiene (oben)", 0, v.Laenge, q0, q1, obenOk - sh, obenOk,
-            null, Math.Round(v.Laenge), v.Raumhoch ? sys.Annahme("schiene") : sys.Annahme("obereSchiene")));
+            sys.SchieneArtikel, Math.Round(v.Laenge), v.Raumhoch ? sys.Annahme("schiene") : sys.Annahme("obereSchiene")));
 
         // Ständer: höchstens Abstand (S. 191), nicht in einem Montageelement; raumhoch mit Artikel nach Länge (S. 196–197)
         var lagen = Luecken(v.Elemente, v.Laenge, tb, sys.StaenderAbstand);
         double z0 = v.Rohboden + sh, z1 = obenOk - sh, laenge = z1 - z0;
-        string? art = v.Raumhoch ? sys.StaenderRaumhoch.FirstOrDefault(x => obenOk - v.Rohboden >= x.Von && obenOk - v.Rohboden <= x.Bis)?.Artikel : null;
+        string? art = v.Raumhoch ? sys.StaenderRaumhoch.FirstOrDefault(x => obenOk - v.Rohboden >= x.Von && obenOk - v.Rohboden <= x.Bis)?.Artikel
+            : sys.StaenderTeilhoch.FirstOrDefault(x => v.Hoehe >= x.Von && v.Hoehe <= x.Bis)?.Artikel;
         if (v.Raumhoch && art is null) v.Befunde.Add($"Raumhöhe {obenOk - v.Rohboden:0} mm ausserhalb der Ständerlängen 2200–4000 mm ({sys.Quelle("staenderRaumhoch")}).");
         foreach (var s in lagen)
             v.Teile.Add(new VorwandTeil("staender", v.Raumhoch ? "Duofix Ständer raumhoch" : "Duofix Ständer teilhoch", s, s + tb, q1 - th, q1, z0, z1, art, Math.Round(laenge),
@@ -239,15 +243,16 @@ public static class VorwandGestell
         bool lang = v.Tiefe > sys.WandankerVerlaengerungAb;
         if (lang) v.Annahmen.Add($"Vorwandtiefe über {sys.WandankerVerlaengerungAb:0} mm: Wandanker mit Verlängerung {sys.WandankerVerlaengerung} ({sys.Quelle("wandankerVerlaengerungAb")}).");
         string titel = lang ? $"Duofix Wandanker mit Verlängerung {sys.WandankerVerlaengerung}" : "Duofix Wandanker";
+        string? ankerArt = lang ? $"{sys.WandankerArtikel} + {sys.WandankerVerlaengerung}" : sys.WandankerArtikel;
         foreach (var el in v.Elemente)
         {
-            double zo = v.Okff + (el.Typ?.Hoehe ?? 1120) - 100;
+            double zo = v.Okff + (el.Typ?.Rahmenhoehe ?? 1120) - 100;
             foreach (var s in new[] { el.S0 + 100, el.S1 - 100 })
-                v.Teile.Add(new VorwandTeil("befestigung", titel, s - 15, s + 15, 0, q0, zo - 30, zo, lang ? sys.WandankerVerlaengerung : null, Math.Round(q0), sys.Annahme("wandanker")));
+                v.Teile.Add(new VorwandTeil("befestigung", titel, s - 15, s + 15, 0, q0, zo - 30, zo, ankerArt, Math.Round(q0), sys.Annahme("wandanker")));
         }
         if (!v.Raumhoch)
             foreach (var s in lagen)
-                v.Teile.Add(new VorwandTeil("befestigung", titel, s + tb / 2 - 15, s + tb / 2 + 15, 0, q1 - th, obenOk - sh - 130, obenOk - sh - 100, lang ? sys.WandankerVerlaengerung : null, Math.Round(q1 - th), sys.Annahme("wandanker")));
+                v.Teile.Add(new VorwandTeil("befestigung", titel, s + tb / 2 - 15, s + tb / 2 + 15, 0, q1 - th, obenOk - sh - 130, obenOk - sh - 100, ankerArt, Math.Round(q1 - th), sys.Annahme("wandanker")));
     }
 
     // ------------------------------------------------------------------ Hilfen

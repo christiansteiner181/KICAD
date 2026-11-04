@@ -48,12 +48,12 @@ public class VorwandTests
         Assert.Equal(3, Anzahl(sl, "GIS Profil horizontal", 1970));   // Zuschnitt = lichtes Mass minus 3 cm
         // Vertikalprofile an den Enden und beidseits des Elements (Abstand ≤ 250 cm)
         var vert = auf.Teile.Where(t => t.Titel == "GIS Profil vertikal").Select(t => t.S0).Order().ToList();
-        Assert.Equal([15, 700, 1250, 1935], vert);
+        Assert.Equal([15, 756, 1212, 1953], vert);   // Profil 32 mm (Datenblatt 461.000.25.1), WC 424 mm breit (Datenblatt 461.313.00.6)
         // Montagewinkel am Boden: erster 10 cm von der Wand, höchstens 100 cm auseinander
         Assert.Equal([100, 1000, 1900], auf.Teile.Where(t => t.Titel == "GIS Montagewinkel (Boden)").Select(t => (t.S0 + t.S1) / 2).Order().ToList());
-        Assert.Equal(8, Anzahl(sl, "GIS Wandanbindung"));
+        Assert.Equal(8, Anzahl(sl, "GIS Wandanbindung (Verbindungsstück)"));
         Assert.Contains(sl["zeilen"]!.AsArray().OfType<JsonObject>(), z => (string?)z["artikel"] == "461.313.00.6" && (int)z["anzahl"]! == 1);
-        Assert.Contains(sl["annahmen"]!.AsArray(), a => ((string?)a)!.Contains("Querschnitt des GIS Profils"));
+        Assert.Contains(sl["annahmen"]!.AsArray(), a => ((string?)a)!.Contains("Welcher Montagewinkel"));
 
         // Grundriss: Vorwand mit Beplankung als Schnittfläche, Element mit Kurzbezeichnung
         var g = Grafik.Plan(p, "AN-EG");

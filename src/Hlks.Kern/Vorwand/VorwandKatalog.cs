@@ -25,7 +25,10 @@ public sealed class VorwandKatalog
         public Paneelformat? Paneel { get; init; }
         public string? PaneelArtikel { get; init; }
         // GIS
-        public Querschnitt Profil { get; init; } = new(50, 30);
+        public Querschnitt Profil { get; init; } = new(32, 32);
+        public string? ProfilArtikel { get; init; }
+        public Querschnitt Verbindungsstueck { get; init; } = new(30, 30);
+        public string? VerbindungsstueckArtikel { get; init; }
         public List<double> Horizontalprofile { get; init; } = [];
         public double HorizontalprofilAbstand { get; init; }
         public double VertikalprofilAbstand { get; init; }
@@ -34,7 +37,11 @@ public sealed class VorwandKatalog
         public double AbstandAngrenzendeWand { get; init; }
         // Duofix
         public Querschnitt Schiene { get; init; } = new(50, 40);
-        public Querschnitt Staender { get; init; } = new(40, 40);
+        public Querschnitt Staender { get; init; } = new(50, 50);
+        public string? SchieneArtikel { get; init; }
+        public List<Staenderlaenge> StaenderTeilhoch { get; init; } = [];
+        public Querschnitt StaenderTeilhochQuerschnitt { get; init; } = new(40, 73);
+        public string? WandankerArtikel { get; init; }
         public double StaenderAbstand { get; init; }
         public double SchienenbefestigungAbstand { get; init; }
         public List<Staenderlaenge> StaenderRaumhoch { get; init; } = [];
@@ -44,7 +51,7 @@ public sealed class VorwandKatalog
         public Dictionary<string, string> AnnahmenText { get; init; } = [];
 
         public IEnumerable<string> Annahmen => AnnahmenText.Values;
-        public string Quelle(string feld) => Quellen.TryGetValue(feld, out var q) ? $"Geberit Planungshandbuch Sanitär 2025, {q}" : "Annahme";
+        public string Quelle(string feld) => Quellen.TryGetValue(feld, out var q) ? MitWerk(q) : "Annahme";
         public string? Annahme(string feld) => AnnahmenText.TryGetValue(feld, out var a) ? a : null;
     }
 
@@ -59,12 +66,21 @@ public sealed class VorwandKatalog
         public double Breite { get; init; }
         public double Hoehe { get; init; }
         public double? Mindesttiefe { get; init; }
+        /// <summary>Oberkante des Rahmens über OKFF (fehlt = Bauhöhe); GIS-Elemente sind niedriger als ihre Einbauhöhe (z. B. 104.5 bei 114 cm).</summary>
+        public double Rahmenhoehe { get; init; }
+        /// <summary>Tiefe des Rahmens in mm (Darstellung; fehlt = 40).</summary>
+        public double Rahmentiefe { get; init; }
+        /// <summary>Höhe der Befestigungstraverse (WC-Bolzen) über OKFF, falls bemasst.</summary>
+        public double? Traverse { get; init; }
         public List<Anschlusshoehe> Anschluesse { get; init; } = [];
         public Dictionary<string, string> Quellen { get; init; } = [];
         public Dictionary<string, string> Annahmen { get; init; } = [];
 
-        public string Quelle(string feld) => Quellen.TryGetValue(feld, out var q) ? $"Geberit Planungshandbuch Sanitär 2025, {q}" : Annahmen.ContainsKey(feld) ? "Annahme" : "ohne Quelle";
+        public string Quelle(string feld) => Quellen.TryGetValue(feld, out var q) ? MitWerk(q) : Annahmen.ContainsKey(feld) ? "Annahme" : "ohne Quelle";
     }
+
+    /// <summary>Fundstelle mit Werk: Produktdatenblatt bzw. Montageanleitung von Geberit, sonst das Planungshandbuch.</summary>
+    static string MitWerk(string q) => q.StartsWith("Produktdatenblatt") || q.StartsWith("Montageanleitung") ? $"Geberit {q}" : $"Geberit Planungshandbuch Sanitär 2025, {q}";
 
     public Dictionary<string, SystemDef> Systeme { get; } = new(StringComparer.OrdinalIgnoreCase);
     public List<ElementTyp> Elemente { get; } = [];
@@ -113,12 +129,16 @@ public sealed class VorwandKatalog
                 HoeheMax = D(s["hoeheMax"], double.MaxValue),
                 Paneel = s["paneel"] is JsonObject p ? new Paneelformat(D(p["laenge"]), D(p["breite"])) : null,
                 PaneelArtikel = T(s["paneelArtikel"]),
-                Profil = Q(s["profil"], new(50, 30)),
+                Profil = Q(s["profil"], new(32, 32)), ProfilArtikel = T(s["profil"]?["artikel"]),
+                Verbindungsstueck = Q(s["verbindungsstueck"], new(30, 30)), VerbindungsstueckArtikel = T(s["verbindungsstueck"]?["artikel"]),
+                SchieneArtikel = T(s["schiene"]?["artikel"]), WandankerArtikel = T(s["wandanker"]?["artikel"]),
+                StaenderTeilhoch = (s["staenderTeilhoch"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new Staenderlaenge(T(x["artikel"]) ?? "", D(x["von"]), D(x["bis"]))).ToList(),
+                StaenderTeilhochQuerschnitt = Q(s["staenderTeilhochQuerschnitt"], new(40, 73)),
                 Horizontalprofile = (s["horizontalprofile"] as JsonArray ?? []).Select(x => D(x)).ToList(),
                 HorizontalprofilAbstand = D(s["horizontalprofilAbstand"], 650), VertikalprofilAbstand = D(s["vertikalprofilAbstand"], 2500),
                 MontagewinkelAbstandMassiv = D(s["montagewinkelAbstandMassiv"], 1000), MontagewinkelAbstandTrockenbau = D(s["montagewinkelAbstandTrockenbau"], 400),
                 AbstandAngrenzendeWand = D(s["abstandAngrenzendeWand"], 100),
-                Schiene = Q(s["schiene"], new(50, 40)), Staender = Q(s["staender"], new(40, 40)),
+                Schiene = Q(s["schiene"], new(50, 34)), Staender = Q(s["staender"], new(50, 50)),
                 StaenderAbstand = D(s["staenderAbstand"], 550), SchienenbefestigungAbstand = D(s["schienenbefestigungAbstand"], 500),
                 StaenderRaumhoch = (s["staenderRaumhoch"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new Staenderlaenge(T(x["artikel"]) ?? "", D(x["von"]), D(x["bis"]))).ToList(),
                 WandankerVerlaengerungAb = D(s["wandankerVerlaengerungAb"], double.MaxValue), WandankerVerlaengerung = T(s["wandankerVerlaengerung"]),
@@ -135,6 +155,7 @@ public sealed class VorwandKatalog
                 Id = T(e["id"]) ?? "", System = T(e["system"]) ?? "", Titel = T(e["titel"]) ?? "", Kurz = T(e["kurz"]) ?? "",
                 Apparate = (e["apparate"] as JsonArray ?? []).Select(T).OfType<string>().ToList(), Artikel = T(e["artikel"]),
                 Breite = D(e["breite"], 500), Hoehe = D(e["hoehe"], 1120), Mindesttiefe = e["mindesttiefe"] is JsonValue ? D(e["mindesttiefe"]) : null,
+                Rahmenhoehe = D(e["rahmenhoehe"], D(e["hoehe"], 1120)), Rahmentiefe = D(e["rahmentiefe"], 40), Traverse = e["traverse"] is JsonValue ? D(e["traverse"]) : null,
                 Anschluesse = an, Quellen = Texte(e["quellen"]), Annahmen = Texte(e["annahmen"]),
             });
         }

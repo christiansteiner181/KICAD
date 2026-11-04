@@ -9,10 +9,23 @@
       "beplankung": 18,
       "paneelArtikel": "461.025.00.1",
       "fugeBauwerk": 10,
-      "tiefe": { "min": 100, "max": 700 },
+      "tiefe": {
+        "min": 100,
+        "max": 700
+      },
       "hoeheMax": 6000,
-      "profil": { "breite": 50, "hoehe": 30 },
-      "horizontalprofile": [50, 650, 1300, 1350],
+      "profil": {
+        "artikel": "461.000.25.1",
+        "breite": 32,
+        "hoehe": 32,
+        "laenge": 5000
+      },
+      "horizontalprofile": [
+        50,
+        650,
+        1300,
+        1350
+      ],
       "horizontalprofilAbstand": 650,
       "vertikalprofilAbstand": 2500,
       "wandanbindungAbstand": 2500,
@@ -35,10 +48,19 @@
         "abstandAngrenzendeWand": "S. 251 (Montagewinkel: Abstand von angrenzender Wand 10 cm)",
         "profilZuschnittAbzug": "S. 251 (abzulängendes Profilmass = lichtes Innenmass minus 3 cm)",
         "schraubenabstand": "S. 251 (Paneel: max. Befestigungsabstand 16 cm)",
-        "fugeBauwerk": "S. 269 (10 mm Abstand Bauwerk–Paneel, Schallschutz)"
+        "fugeBauwerk": "S. 269 (10 mm Abstand Bauwerk–Paneel, Schallschutz)",
+        "profil": "Produktdatenblatt GIS Profil 461.000.25.1 S. 1 (3.2 × 3.2 cm, L 500 cm)",
+        "verbindungsstueck": "Produktdatenblatt 461.003.00.1 S. 1 (30 × 30 × 90 mm, kürzbar auf 30 mm)"
       },
       "annahmen": {
-        "profil": "Querschnitt des GIS Profils steht nicht im Handbuch (nur Bild S. 239) – 50 × 30 mm angenommen, bis ein Produktdatenblatt vorliegt."
+        "montagewinkel": "Welcher Montagewinkel: 461.140.00.1 (12 × 5.5 cm, Abstand Profil–Bauwerk 50–120 mm) oder 461.185.00.1 (13 × 13 cm, 50–130 mm) – Entscheid Christian offen; gezeichnet 40 × 50 mm ohne Artikel.",
+        "wandanbindung": "Wandanbindung = GIS Verbindungsstück 461.003.00.1 je Vertikalprofil auf halber und oberer Höhe (Höhen angenommen, Handbuch nennt nur den Abstand 250 cm)."
+      },
+      "verbindungsstueck": {
+        "artikel": "461.003.00.1",
+        "breite": 30,
+        "hoehe": 30,
+        "laenge": 90
       }
     },
     "duofix": {
@@ -46,19 +68,54 @@
       "beplankung": 18,
       "paneelArtikel": "111.808.00.1",
       "fugeBauwerk": 10,
-      "tiefe": { "min": 135, "max": 220, "maxMitVerlaengerung": 420 },
+      "tiefe": {
+        "min": 135,
+        "max": 220,
+        "maxMitVerlaengerung": 420
+      },
       "hoeheMax": 4000,
-      "ablagehoehen": [840, 1000, 1140],
-      "paneel": { "laenge": 2000, "breite": 600 },
-      "schiene": { "breite": 50, "hoehe": 40 },
-      "staender": { "breite": 40, "hoehe": 40 },
+      "ablagehoehen": [
+        840,
+        1000,
+        1140
+      ],
+      "paneel": {
+        "laenge": 2000,
+        "breite": 600
+      },
+      "schiene": {
+        "artikel": "111.878.00.2",
+        "breite": 50,
+        "hoehe": 34,
+        "laenge": 3000
+      },
+      "staender": {
+        "breite": 50,
+        "hoehe": 50
+      },
       "staenderAbstand": 550,
       "schienenbefestigungAbstand": 500,
       "staenderRaumhoch": [
-        { "artikel": "111.871.00.2", "von": 2200, "bis": 2800 },
-        { "artikel": "111.872.00.2", "von": 2600, "bis": 3200 },
-        { "artikel": "111.873.00.2", "von": 3000, "bis": 3600 },
-        { "artikel": "111.874.00.2", "von": 3400, "bis": 4000 }
+        {
+          "artikel": "111.871.00.2",
+          "von": 2200,
+          "bis": 2800
+        },
+        {
+          "artikel": "111.872.00.2",
+          "von": 2600,
+          "bis": 3200
+        },
+        {
+          "artikel": "111.873.00.2",
+          "von": 3000,
+          "bis": 3600
+        },
+        {
+          "artikel": "111.874.00.2",
+          "von": 3400,
+          "bis": 4000
+        }
       ],
       "wandankerVerlaengerungAb": 200,
       "wandankerVerlaengerung": "111.887.00.1",
@@ -75,61 +132,530 @@
         "staenderRaumhoch": "S. 196–197 (vier Längen 220–400 cm, Art.-Nr. 111.871–874.00.2)",
         "wandankerVerlaengerungAb": "S. 215 (Vorwandtiefe > 20 cm: Verlängerungsset)",
         "schraubenabstand": "S. 222 (Schraubenabstand 12–16 cm)",
-        "fugeBauwerk": "S. 222 (Abstand Bauwerk–Paneel ca. 1 cm)"
+        "fugeBauwerk": "S. 222 (Abstand Bauwerk–Paneel ca. 1 cm)",
+        "schiene": "Produktdatenblatt 111.878.00.2 S. 1 (B 300 / H 3.4 / T 5 cm)",
+        "staender": "Produktdatenblatt 111.871.00.2 S. 1–2 (Querschnitt 5 × 5 cm)",
+        "staenderTeilhoch": "Produktdatenblatt Duofix Ständer teilhoch S. 1 (111.830.00.2: 82–112 cm, 111.834.00.2: 112–144 cm, 4 × 7.3 cm)",
+        "wandanker": "Produktdatenblatt 111.844.00.2 S. 1; Montageanleitung 972.893 S. 2 (Tiefe 13.5–20 cm, mit Verlängerung 111.887.00.1 bis 40 cm; Handbuch S. 175 nennt 42 cm)"
       },
       "annahmen": {
-        "schiene": "Querschnitt der Systemschiene steht nicht im Handbuch – 50 × 40 mm angenommen.",
-        "staender": "Duofix Ständer = Vierkantrohr (S. 196), Querschnitt nicht im Handbuch – 40 × 40 mm angenommen.",
-        "staenderTeilhoch": "Teilhohe Ständer im selben Abstand wie raumhohe (max. 55 cm) bis unter die obere Schiene – Annahme; das Handbuch nennt für teilhoch nur die Systemteile (S. 173).",
+        "staenderTeilhoch": "Teilhohe Ständer im selben Abstand wie raumhohe (max. 55 cm) – Annahme; Querschnitt und Längen belegt.",
         "obereSchiene": "Teilhohe Vorwand: obere Systemschiene unter der Ablage – Annahme.",
-        "wandanker": "Zwei Wandanker je Element oben, je 100 mm innerhalb der Elementkanten, und einer je teilhohem Ständer – Lage angenommen (Wandanker drehbar, Tiefe einstellbar, S. 187, 195)."
+        "wandanker": "Lage der Wandanker an den Elementen nicht bemasst: zwei je Element 100 mm unter der Rahmenoberkante, 100 mm innerhalb der Kanten, einer je teilhohem Ständer."
+      },
+      "staenderTeilhoch": [
+        {
+          "artikel": "111.830.00.2",
+          "von": 820,
+          "bis": 1120
+        },
+        {
+          "artikel": "111.834.00.2",
+          "von": 1120,
+          "bis": 1440
+        }
+      ],
+      "staenderTeilhochQuerschnitt": {
+        "breite": 40,
+        "hoehe": 73
+      },
+      "wandanker": {
+        "artikel": "111.844.00.2",
+        "von": 135,
+        "bis": 200
       }
     }
   },
   "elemente": [
-    { "id": "duofix.wc.sigma12.112", "system": "duofix", "titel": "Duofix WC 112 Sigma 12", "kurz": "WC 112", "apparate": ["WC"], "artikel": "111.309.00.6", "breite": 500, "hoehe": 1120, "mindesttiefe": 165,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 1000 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: Sigma 12 cm, 112 cm)", "artikel": "S. 159, 230", "mindesttiefe": "S. 176 (Tab. 50, kleinster Wert der Zeile 112 cm; Spaltenkopf d nicht lesbar)" },
-      "annahmen": { "breite": "Elementbreite nicht im Handbuch – 500 mm angenommen.", "anschluesse": "Anschlusshöhen nur in Zeichnungen ohne Zahlen – Abwasser 230 mm, Spülkasten-Zulauf 1000 mm über OKFF angenommen." } },
-    { "id": "duofix.wc.omega.82", "system": "duofix", "titel": "Duofix WC 82 Omega", "kurz": "WC 82", "apparate": ["WC"], "artikel": "111.005.00.2", "breite": 500, "hoehe": 820, "mindesttiefe": 170,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 700 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: Omega 82 cm)", "artikel": "S. 159", "mindesttiefe": "S. 176 (Tab. 50, Zeile 82/98 cm, kleinster Wert)" },
-      "annahmen": { "breite": "500 mm angenommen.", "anschluesse": "Abwasser 230 mm, Zulauf 700 mm über OKFF angenommen." } },
-    { "id": "duofix.wc.omega.98", "system": "duofix", "titel": "Duofix WC 98 Omega", "kurz": "WC 98", "apparate": ["WC"], "artikel": "111.032.00.2", "breite": 500, "hoehe": 980, "mindesttiefe": 170,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 860 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: Omega 98 cm)", "artikel": "S. 159", "mindesttiefe": "S. 176 (Tab. 50, Zeile 82/98 cm, kleinster Wert)" },
-      "annahmen": { "breite": "500 mm angenommen.", "anschluesse": "Abwasser 230 mm, Zulauf 860 mm über OKFF angenommen." } },
-    { "id": "duofix.wt.112", "system": "duofix", "titel": "Duofix Waschtisch 112 schmal", "kurz": "WT 112", "apparate": ["Waschtisch"], "artikel": "111.267.00.2", "breite": 440, "hoehe": 1120, "mindesttiefe": 135,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 550 }, "kw": { "medium": "KW", "fluss": "rein", "z": 550, "s": -80 }, "ww": { "medium": "WW", "fluss": "rein", "z": 550, "s": 80 } },
-      "quellen": { "breite": "S. 225 (Waschtischelement schmal 44 cm)", "hoehe": "S. 225 (112 cm)", "artikel": "S. 225", "mindesttiefe": "S. 175 (kleinste Vorwandtiefe teilhoch 13.5 cm)" },
-      "annahmen": { "anschluesse": "Anschlusshöhen nicht im Handbuch – Abwasser und Kalt-/Warmwasser 550 mm über OKFF, ± 80 mm seitlich angenommen." } },
-    { "id": "duofix.urinal", "system": "duofix", "titel": "Duofix Urinal", "kurz": "UR", "apparate": ["Urinal"], "artikel": "111.628.00.2", "breite": 500, "hoehe": 1120, "mindesttiefe": 135,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 500 }, "kw": { "medium": "KW", "fluss": "rein", "z": 1000 } },
-      "quellen": { "artikel": "S. 94", "mindesttiefe": "S. 175 (kleinste Vorwandtiefe teilhoch 13.5 cm)" },
-      "annahmen": { "breite": "500 mm angenommen.", "hoehe": "Bauhöhe nicht im Handbuch – 1120 mm angenommen.", "anschluesse": "Abwasser 500 mm, Spülung 1000 mm über OKFF angenommen." } },
-    { "id": "duofix.griffe.112", "system": "duofix", "titel": "Duofix Stütz- und Haltegriffe 112", "kurz": "Griffe", "apparate": [], "artikel": "111.790.00.1", "breite": 500, "hoehe": 1120, "mindesttiefe": 135,
+    {
+      "id": "duofix.wc.sigma12.112",
+      "system": "duofix",
+      "titel": "Duofix WC 112 Sigma 12",
+      "kurz": "WC 112",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "111.309.00.6",
+      "breite": 500,
+      "hoehe": 1120,
+      "rahmentiefe": 120,
+      "traverse": 330,
+      "mindesttiefe": 165,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 1080
+        }
+      },
+      "quellen": {
+        "breite": "Montageanleitung 972.342 S. 2",
+        "hoehe": "Montageanleitung 972.342 S. 2",
+        "rahmentiefe": "Montageanleitung 972.342 S. 2 (12 cm)",
+        "traverse": "Montageanleitung 972.342 S. 2 (WC-Befestigung 33 cm, Achsabstand 18/23 cm)",
+        "anschluesse.sw": "Montageanleitung 972.342 S. 2 (Abwasser ▼23 cm)",
+        "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50: 16.5 cm bei d75/90)",
+        "artikel": "Planungshandbuch S. 159, 230"
+      },
+      "annahmen": {
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "duofix.wc.omega.82",
+      "system": "duofix",
+      "titel": "Duofix WC 82 Omega",
+      "kurz": "WC 82",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "111.005.00.2",
+      "breite": 500,
+      "hoehe": 820,
+      "rahmentiefe": 140,
+      "traverse": 320,
+      "mindesttiefe": 170,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 220
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 780
+        }
+      },
+      "quellen": {
+        "breite": "Montageanleitung 972.241 S. 2",
+        "hoehe": "Montageanleitung 972.241 S. 2",
+        "rahmentiefe": "Montageanleitung 972.241 S. 2 (14 cm)",
+        "traverse": "Montageanleitung 972.241 S. 2 (32 cm)",
+        "anschluesse.sw": "Montageanleitung 972.241 S. 2 (▼22 cm)",
+        "mindesttiefe": "Planungshandbuch S. 176 (Tab. 50, Zeile 82/98, kleinster Wert)"
+      },
+      "annahmen": {
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "duofix.wc.omega.98",
+      "system": "duofix",
+      "titel": "Duofix WC 98 Omega",
+      "kurz": "WC 98",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "111.032.00.2",
+      "breite": 500,
+      "hoehe": 980,
+      "rahmentiefe": 140,
+      "traverse": 330,
+      "mindesttiefe": 170,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 940
+        }
+      },
+      "quellen": {
+        "breite": "Montageanleitung 972.241 S. 2",
+        "hoehe": "Montageanleitung 972.241 S. 2",
+        "rahmentiefe": "Montageanleitung 972.241 S. 2 (14 cm)",
+        "traverse": "Montageanleitung 972.241 S. 2 (33 cm)",
+        "anschluesse.sw": "Montageanleitung 972.241 S. 2 (▼23 cm)",
+        "mindesttiefe": "Planungshandbuch S. 176"
+      },
+      "annahmen": {
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "duofix.wc.omega.112",
+      "system": "duofix",
+      "titel": "Duofix WC 112 Omega",
+      "kurz": "WC 112 Ω",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "111.062.00.2",
+      "breite": 500,
+      "hoehe": 1120,
+      "rahmentiefe": 120,
+      "traverse": 330,
+      "mindesttiefe": 165,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 1080
+        }
+      },
+      "quellen": {
+        "breite": "Montageanleitung 972.251 S. 2",
+        "hoehe": "Montageanleitung 972.251 S. 2",
+        "rahmentiefe": "Montageanleitung 972.251 S. 2 (12 cm)",
+        "traverse": "Montageanleitung 972.251 S. 2 (33 cm)",
+        "anschluesse.sw": "Montageanleitung 972.251 S. 2 (▼23 cm)",
+        "mindesttiefe": "Planungshandbuch S. 176"
+      },
+      "annahmen": {
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "duofix.wt.112",
+      "system": "duofix",
+      "titel": "Duofix Waschtisch 112 schmal",
+      "kurz": "WT 112",
+      "apparate": [
+        "Waschtisch"
+      ],
+      "artikel": "111.267.00.2",
+      "breite": 440,
+      "hoehe": 1120,
+      "rahmentiefe": 75,
+      "mindesttiefe": 135,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 520
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 590,
+          "s": -76.5
+        },
+        "ww": {
+          "medium": "WW",
+          "fluss": "rein",
+          "z": 590,
+          "s": 76.5
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 111.267.00.2 S. 1 (B 44 / H 112 / T 7.5 cm)",
+        "hoehe": "Produktdatenblatt 111.267.00.2 S. 1",
+        "rahmentiefe": "Produktdatenblatt 111.267.00.2 S. 1",
+        "anschluesse.sw": "Montageanleitung 972.812 S. 2 (Ablauf 52 cm)",
+        "anschluesse.s": "Montageanleitung 972.812 S. 2 (Achsabstand Eckventile 15.3 cm)",
+        "mindesttiefe": "Planungshandbuch S. 175 (kleinste Vorwandtiefe 13.5 cm)"
+      },
+      "annahmen": {
+        "anschluesse.kw": "Höhe der Wasseranschlüsse ca. 590 mm aus der CAD-Zeichnung abgeleitet, nicht bemasst."
+      }
+    },
+    {
+      "id": "duofix.urinal",
+      "system": "duofix",
+      "titel": "Duofix Urinal",
+      "kurz": "UR",
+      "apparate": [
+        "Urinal"
+      ],
+      "artikel": "111.628.00.2",
+      "breite": 500,
+      "hoehe": 1120,
+      "rahmentiefe": 75,
+      "mindesttiefe": 135,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 500
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 1000
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 111.628.00.2 S. 1 (B 50 / H 112–130 / T 7.5 cm)",
+        "hoehe": "Produktdatenblatt 111.628.00.2 S. 1",
+        "rahmentiefe": "Produktdatenblatt 111.628.00.2 S. 1",
+        "artikel": "Planungshandbuch S. 94"
+      },
+      "annahmen": {
+        "anschluesse": "Anschlüsse für das gewählte Urinal einstellbar; gezeichnet Abwasser 500 mm, Spülung 1000 mm über OKFF (Annahme)."
+      }
+    },
+    {
+      "id": "duofix.griffe.112",
+      "system": "duofix",
+      "titel": "Duofix Stütz- und Haltegriffe 112",
+      "kurz": "Griffe",
+      "apparate": [],
+      "artikel": "111.790.00.2",
+      "breite": 365,
+      "hoehe": 1120,
+      "rahmentiefe": 40,
+      "mindesttiefe": 135,
       "anschluesse": {},
-      "quellen": { "hoehe": "S. 220 (112 cm, hindernisfrei)", "artikel": "S. 220" },
-      "annahmen": { "breite": "500 mm angenommen." } },
-    { "id": "gis.wc.sigma12.114", "system": "gis", "titel": "GIS WC 114 Sigma 12", "kurz": "WC 114", "apparate": ["WC"], "artikel": "461.313.00.6", "breite": 500, "hoehe": 1140, "mindesttiefe": 165,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 1000 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: GIS Sigma 114 cm), S. 274", "artikel": "S. 159, 274", "mindesttiefe": "S. 242 (Tab. 62, Zeile 112 cm, kleinster Wert)" },
-      "annahmen": { "breite": "500 mm angenommen.", "anschluesse": "Abwasser 230 mm, Zulauf 1000 mm über OKFF angenommen." } },
-    { "id": "gis.wc.omega.85", "system": "gis", "titel": "GIS WC 85 Omega", "kurz": "WC 85", "apparate": ["WC"], "artikel": "461.142.00.2", "breite": 500, "hoehe": 850, "mindesttiefe": 185,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 730 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: GIS Omega 85 cm)", "artikel": "S. 159", "mindesttiefe": "S. 242 (Tab. 62, Zeile 85/98 cm, kleinster Wert)" },
-      "annahmen": { "breite": "500 mm angenommen.", "anschluesse": "Abwasser 230 mm, Zulauf 730 mm über OKFF angenommen." } },
-    { "id": "gis.wc.omega.98", "system": "gis", "titel": "GIS WC 98 Omega", "kurz": "WC 98", "apparate": ["WC"], "artikel": "461.252.00.2", "breite": 500, "hoehe": 980, "mindesttiefe": 185,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 230 }, "kw": { "medium": "KW", "fluss": "rein", "z": 860 } },
-      "quellen": { "hoehe": "S. 159 (Tab. 44: GIS Omega 98 cm)", "artikel": "S. 159", "mindesttiefe": "S. 242 (Tab. 62, Zeile 85/98 cm, kleinster Wert)" },
-      "annahmen": { "breite": "500 mm angenommen.", "anschluesse": "Abwasser 230 mm, Zulauf 860 mm über OKFF angenommen." } },
-    { "id": "gis.wt", "system": "gis", "titel": "GIS Waschtisch", "kurz": "WT", "apparate": ["Waschtisch"], "artikel": null, "breite": 500, "hoehe": 1140, "mindesttiefe": 130,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 550 }, "kw": { "medium": "KW", "fluss": "rein", "z": 550, "s": -80 }, "ww": { "medium": "WW", "fluss": "rein", "z": 550, "s": 80 } },
-      "quellen": { "mindesttiefe": "S. 242 (Tab. 62, kleinster Wert 13 cm)" },
-      "annahmen": { "artikel": "GIS Waschtischelement ohne Art.-Nr. im Handbuch.", "breite": "500 mm angenommen.", "hoehe": "1140 mm angenommen (wie GIS WC Sigma).", "anschluesse": "Abwasser und Kalt-/Warmwasser 550 mm über OKFF, ± 80 mm seitlich angenommen." } },
-    { "id": "gis.urinal", "system": "gis", "titel": "GIS Urinal", "kurz": "UR", "apparate": ["Urinal"], "artikel": "461.628.00.1", "breite": 500, "hoehe": 1140, "mindesttiefe": 130,
-      "anschluesse": { "sw": { "medium": "SW", "fluss": "raus", "z": 500 }, "kw": { "medium": "KW", "fluss": "rein", "z": 1000 } },
-      "quellen": { "artikel": "S. 94", "mindesttiefe": "S. 242 (Tab. 62, kleinster Wert 13 cm)" },
-      "annahmen": { "breite": "500 mm angenommen.", "hoehe": "1140 mm angenommen.", "anschluesse": "Abwasser 500 mm, Spülung 1000 mm über OKFF angenommen." } }
-  ]
+      "quellen": {
+        "breite": "Produktdatenblatt 111.790.00.2 S. 1 (Nachfolger von 111.790.00.1)",
+        "hoehe": "Produktdatenblatt 111.790.00.2 S. 1",
+        "rahmentiefe": "Produktdatenblatt 111.790.00.2 S. 1"
+      }
+    },
+    {
+      "id": "gis.wc.sigma12.114",
+      "system": "gis",
+      "titel": "GIS WC 114 Sigma 12",
+      "kurz": "WC 114",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "461.313.00.6",
+      "breite": 424,
+      "hoehe": 1140,
+      "rahmenhoehe": 1045,
+      "rahmentiefe": 120,
+      "mindesttiefe": 165,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 1005
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.313.00.6 S. 1 (42.4 cm)",
+        "hoehe": "Produktdatenblatt 461.313.00.6 S. 1 (Einbauhöhe 114 cm)",
+        "rahmenhoehe": "Produktdatenblatt 461.313.00.6 S. 1 (104.5 cm)",
+        "anschluesse.sw": "Produktdatenblatt 461.313.00.6 S. 1 (▼23 cm)",
+        "mindesttiefe": "Produktdatenblatt 461.313.00.6 S. 1 (≥ 16.5 cm DN 90, ≥ 19.5 cm DN 100)"
+      },
+      "annahmen": {
+        "rahmentiefe": "Rahmentiefe GIS-WC nicht bemasst – 120 mm wie Duofix Sigma 12.",
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "gis.wc.omega.114",
+      "system": "gis",
+      "titel": "GIS WC 114 Omega 12",
+      "kurz": "WC 114 Ω",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "461.261.00.2",
+      "breite": 424,
+      "hoehe": 1140,
+      "rahmenhoehe": 1010,
+      "rahmentiefe": 120,
+      "traverse": 330,
+      "mindesttiefe": 165,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 970
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.261.00.2 S. 1",
+        "hoehe": "Produktdatenblatt 461.261.00.2 S. 1",
+        "rahmenhoehe": "Montageanleitung 972.257 S. 2 (101 cm)",
+        "traverse": "Montageanleitung 972.257 S. 2 (33 cm)",
+        "anschluesse.sw": "Montageanleitung 972.257 S. 2 (▼23 cm)",
+        "mindesttiefe": "Produktdatenblatt 461.261.00.2 S. 1"
+      },
+      "annahmen": {
+        "rahmentiefe": "Rahmentiefe nicht bemasst – 120 mm angenommen.",
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "gis.wc.omega.87",
+      "system": "gis",
+      "titel": "GIS WC 87 Omega 12",
+      "kurz": "WC 87",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "461.142.00.2",
+      "breite": 424,
+      "hoehe": 870,
+      "rahmenhoehe": 760,
+      "rahmentiefe": 140,
+      "traverse": 320,
+      "mindesttiefe": 205,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 220
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 720
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.142.00.2 S. 1",
+        "hoehe": "Produktdatenblatt 461.142.00.2 S. 1 (87 cm; Handbuch S. 159 nennt 85 cm)",
+        "rahmenhoehe": "Montageanleitung 972.256 S. 2 (76 cm)",
+        "traverse": "Montageanleitung 972.256 S. 2 (32 cm)",
+        "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼22 cm)",
+        "mindesttiefe": "Produktdatenblatt 461.142.00.2 S. 1 (≥ 20.5 cm)"
+      },
+      "annahmen": {
+        "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm wie Duofix Omega angenommen.",
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "gis.wc.omega.100",
+      "system": "gis",
+      "titel": "GIS WC 100 Omega 12",
+      "kurz": "WC 100",
+      "apparate": [
+        "WC"
+      ],
+      "artikel": "461.252.00.2",
+      "breite": 424,
+      "hoehe": 1000,
+      "rahmenhoehe": 895,
+      "rahmentiefe": 140,
+      "traverse": 330,
+      "mindesttiefe": 205,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 230
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 855
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.252.00.2 S. 1",
+        "hoehe": "Produktdatenblatt 461.252.00.2 S. 1 (100 cm; Handbuch S. 159 nennt 98 cm)",
+        "rahmenhoehe": "Montageanleitung 972.256 S. 2 (89.5 cm)",
+        "traverse": "Montageanleitung 972.256 S. 2 (33 cm)",
+        "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼23 cm)",
+        "mindesttiefe": "Produktdatenblatt 461.252.00.2 S. 1 (≥ 20.5 cm)"
+      },
+      "annahmen": {
+        "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm angenommen.",
+        "anschluesse.kw": "Spülkastenzulauf R 1/2\" «hinten oder oben mittig» ohne Höhenmass – oben am Rahmen gezeichnet (Annahme)."
+      }
+    },
+    {
+      "id": "gis.wt.set",
+      "system": "gis",
+      "titel": "GIS Set Waschtisch Standarmatur",
+      "kurz": "WT",
+      "apparate": [
+        "Waschtisch"
+      ],
+      "artikel": "461.431.00.1",
+      "breite": 248,
+      "hoehe": 1140,
+      "rahmenhoehe": 700,
+      "rahmentiefe": 45,
+      "mindesttiefe": 130,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 550
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 600,
+          "s": -76.5
+        },
+        "ww": {
+          "medium": "WW",
+          "fluss": "rein",
+          "z": 600,
+          "s": 76.5
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.431.00.1 S. 1 (24.8 × 7.6 × 4.5 cm, Befestigung 28 cm)",
+        "rahmentiefe": "Produktdatenblatt 461.431.00.1 S. 1",
+        "mindesttiefe": "Planungshandbuch S. 242 (Tab. 62, 13 cm)"
+      },
+      "annahmen": {
+        "hoehe": "Kein GIS-Waschtischelement; das Set sitzt im GIS-Tragwerk (Einbauhöhe 1140 mm angenommen), gezeichnet als Rahmen bis 700 mm.",
+        "anschluesse": "Anschlusshöhen nicht gefunden – Abwasser 550, Eckventile 600 mm über OKFF, ± 76.5 mm wie Duofix angenommen."
+      }
+    },
+    {
+      "id": "gis.urinal",
+      "system": "gis",
+      "titel": "GIS Urinal",
+      "kurz": "UR",
+      "apparate": [
+        "Urinal"
+      ],
+      "artikel": "461.628.00.1",
+      "breite": 420,
+      "hoehe": 1090,
+      "rahmenhoehe": 1000,
+      "rahmentiefe": 100,
+      "mindesttiefe": 100,
+      "anschluesse": {
+        "sw": {
+          "medium": "SW",
+          "fluss": "raus",
+          "z": 500
+        },
+        "kw": {
+          "medium": "KW",
+          "fluss": "rein",
+          "z": 1000
+        }
+      },
+      "quellen": {
+        "breite": "Produktdatenblatt 461.628.00.1 S. 1 (B 42 / H 109–127 / T 10 cm)",
+        "hoehe": "Produktdatenblatt 461.628.00.1 S. 1",
+        "rahmenhoehe": "Montageanleitung 967.110 S. 2 (Rahmen 100 cm)",
+        "rahmentiefe": "Produktdatenblatt 461.628.00.1 S. 1",
+        "mindesttiefe": "Montageanleitung 967.110 S. 2 (10 cm)",
+        "artikel": "Planungshandbuch S. 94"
+      },
+      "annahmen": {
+        "anschluesse": "Anschlüsse je Urinal einstellbar; gezeichnet Abwasser 500 mm, Spülung 1000 mm über OKFF (Annahme)."
+      }
+    }
+  ],
+  "datenblaetter": "Geberit Produktdatenblätter (catalog.geberit.ch, /api/pdf/product) und Montageanleitungen (cdn.data.geberit.com), geladen am 04.11.2026 mit Erlaubnis Christian («Ja, herunterladen»); lokal im Scratchpad, nicht im Repository. Quellen mit «Produktdatenblatt»/«Montageanleitung» stammen daher, die übrigen aus dem Planungshandbuch."
 }
