@@ -29,6 +29,9 @@ public sealed class VorwandKatalog
         public string? ProfilArtikel { get; init; }
         public Querschnitt Verbindungsstueck { get; init; } = new(30, 30);
         public string? VerbindungsstueckArtikel { get; init; }
+        public string? MontagewinkelArtikel { get; init; }
+        public double MontagewinkelSchenkel { get; init; } = 130;
+        public double MontagewinkelBreite { get; init; } = 40;
         public List<double> Horizontalprofile { get; init; } = [];
         public double HorizontalprofilAbstand { get; init; }
         public double VertikalprofilAbstand { get; init; }
@@ -131,6 +134,7 @@ public sealed class VorwandKatalog
                 PaneelArtikel = T(s["paneelArtikel"]),
                 Profil = Q(s["profil"], new(32, 32)), ProfilArtikel = T(s["profil"]?["artikel"]),
                 Verbindungsstueck = Q(s["verbindungsstueck"], new(30, 30)), VerbindungsstueckArtikel = T(s["verbindungsstueck"]?["artikel"]),
+                MontagewinkelArtikel = T(s["montagewinkel"]?["artikel"]), MontagewinkelSchenkel = D(s["montagewinkel"]?["schenkel"], 130), MontagewinkelBreite = D(s["montagewinkel"]?["breite"], 40),
                 SchieneArtikel = T(s["schiene"]?["artikel"]), WandankerArtikel = T(s["wandanker"]?["artikel"]),
                 StaenderTeilhoch = (s["staenderTeilhoch"] as JsonArray ?? []).OfType<JsonObject>().Select(x => new Staenderlaenge(T(x["artikel"]) ?? "", D(x["von"]), D(x["bis"]))).ToList(),
                 StaenderTeilhochQuerschnitt = Q(s["staenderTeilhochQuerschnitt"], new(40, 73)),

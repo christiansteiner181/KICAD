@@ -50,17 +50,23 @@
         "schraubenabstand": "S. 251 (Paneel: max. Befestigungsabstand 16 cm)",
         "fugeBauwerk": "S. 269 (10 mm Abstand Bauwerk–Paneel, Schallschutz)",
         "profil": "Produktdatenblatt GIS Profil 461.000.25.1 S. 1 (3.2 × 3.2 cm, L 500 cm)",
-        "verbindungsstueck": "Produktdatenblatt 461.003.00.1 S. 1 (30 × 30 × 90 mm, kürzbar auf 30 mm)"
+        "verbindungsstueck": "Produktdatenblatt 461.003.00.1 S. 1 (30 × 30 × 90 mm, kürzbar auf 30 mm)",
+        "montagewinkel": "Produktdatenblatt 461.185.00.1 S. 1 (Montagewinkel 13 × 13 cm, Abstand Profil–Bauwerk 50–130 mm); Wahl als Standard: Entscheid Christian 04.11.2026"
       },
       "annahmen": {
-        "montagewinkel": "Welcher Montagewinkel: 461.140.00.1 (12 × 5.5 cm, Abstand Profil–Bauwerk 50–120 mm) oder 461.185.00.1 (13 × 13 cm, 50–130 mm) – Entscheid Christian offen; gezeichnet 40 × 50 mm ohne Artikel.",
-        "wandanbindung": "Wandanbindung = GIS Verbindungsstück 461.003.00.1 je Vertikalprofil auf halber und oberer Höhe (Höhen angenommen, Handbuch nennt nur den Abstand 250 cm)."
+        "wandanbindung": "Wandanbindung = GIS Verbindungsstück 461.003.00.1 je Vertikalprofil auf halber und oberer Höhe (Höhen angenommen, Handbuch nennt nur den Abstand 250 cm).",
+        "montagewinkelBreite": "Breite des Montagewinkels nicht bemasst – 40 mm gezeichnet."
       },
       "verbindungsstueck": {
         "artikel": "461.003.00.1",
         "breite": 30,
         "hoehe": 30,
         "laenge": 90
+      },
+      "montagewinkel": {
+        "artikel": "461.185.00.1",
+        "schenkel": 130,
+        "breite": 40
       }
     },
     "duofix": {

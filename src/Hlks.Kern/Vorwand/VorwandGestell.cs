@@ -195,8 +195,10 @@ public static class VorwandGestell
         double abst = v.Vorwand.Text("bauwerk") == "trockenbau" ? sys.MontagewinkelAbstandTrockenbau : sys.MontagewinkelAbstandMassiv;
         foreach (var s in Teilung(sys.AbstandAngrenzendeWand, v.Laenge - sys.AbstandAngrenzendeWand, abst))
         {
-            v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Boden)", s - 20, s + 20, q0, q1, v.Rohboden, v.Rohboden + 50, null, null, sys.Annahme("montagewinkel")));
-            if (v.Raumhoch) v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Decke)", s - 20, s + 20, q0, q1, obenOk - 50, obenOk, null, null, sys.Annahme("montagewinkel")));
+            // Montagewinkel 13 × 13 cm (461.185.00.1, Entscheid Christian 04.11.2026): Schenkel am Profil, gezeichnet als stehender Schenkel
+            double mw = sys.MontagewinkelBreite / 2, ms = sys.MontagewinkelSchenkel;
+            v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Boden)", s - mw, s + mw, q0, q1, v.Rohboden, v.Rohboden + ms, sys.MontagewinkelArtikel, null, sys.Annahme("montagewinkelBreite")));
+            if (v.Raumhoch) v.Teile.Add(new VorwandTeil("befestigung", "GIS Montagewinkel (Decke)", s - mw, s + mw, q0, q1, obenOk - ms, obenOk, sys.MontagewinkelArtikel, null, sys.Annahme("montagewinkelBreite")));
         }
         // Wandanbindung an der Rückwand: an jedem Vertikalprofil (≤ 250 cm, S. 251) auf halber und oberer Höhe (Höhen: Annahme)
         if (v.AnWand && q0 > 1)
