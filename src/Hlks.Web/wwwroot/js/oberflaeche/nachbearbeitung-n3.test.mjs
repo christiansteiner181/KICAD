@@ -200,7 +200,7 @@ test('Projektinformation: der Plan nimmt alle Felder der Katalogklasse auf, bear
   assert.deepEqual(P.alleFelder(plan()).map((f) => f.name).sort(), namen, 'kein Feld des Katalogs fehlt, keins ist dazuerfunden');
   // Modul 4 Teil A: die Abflusskennzahl (Vorgabe für die Sanitär-Zusammenstellung) ist neu im Katalog und steht von selbst unter «Weitere»
   assert.deepEqual(plan().map((g) => g.titel), ['Projekt', 'Beschriftung und Bemassung', 'Lage', 'Weitere', 'Von anderen Funktionen gesetzt']);
-  assert.deepEqual(plan().find((g) => g.titel === 'Weitere').felder.map((f) => f.name), ['titelband', 'abflusskennzahl']);   // Modul 7 Teil A: titelband (Titelband «Planinhalt» im Plankopf) steht neu in der Projektinformation
+  assert.deepEqual(plan().find((g) => g.titel === 'Weitere').felder.map((f) => f.name), ['titelband', 'abflusskennzahl', 'einbringlaenge']);   // Modul 7 Teil A: titelband (Titelband «Planinhalt» im Plankopf); Vorwand 04.11.2026: einbringlaenge (Vorfertigung GIS)
   const art = (n) => feld(n).art;
   assert.equal(art('abflusskennzahl'), 'zahl');
   assert.deepEqual(['zeile1', 'zeile2', 'projektnummer', 'phase'].map(art), ['text', 'text', 'text', 'text']);

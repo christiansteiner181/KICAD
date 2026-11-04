@@ -65,7 +65,7 @@ public class HlksGrafikTests
     [Fact]
     public void Katalog_NurHlksKlassenHabenDarstellung()
     {
-        foreach (var d in Kat.Klassen.Values.Where(d => d.Darstellung is not null))
+        foreach (var d in Kat.Klassen.Values.Where(d => d.Darstellung is not null && d.Name != "Verteilerkasten"))   // Verteilerkasten (Herstellerbibliothek): Gehäuse ohne Netzfunktion, darum ohne Rolle, aber mit Darstellungsmassen
             Assert.True(d.Rolle is "verbraucher" or "quelle" or "senke" or "zentrale", $"{d.Name} hat «darstellung», ist aber kein Apparat/Gerät");
     }
 
