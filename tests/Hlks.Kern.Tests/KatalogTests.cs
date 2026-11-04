@@ -134,7 +134,7 @@ public class KatalogTests
         Assert.True(formteile.Count >= 3);
         Assert.All(formteile, k =>
         {
-            Assert.True(k.Anschluesse.Count >= 2, $"{k.Name}: weniger als zwei Anschlüsse");
+            Assert.True(k.Anschluesse.Count >= (k.Name == "Endkappe" ? 1 : 2), $"{k.Name}: zu wenig Anschlüsse");   // Endkappe (Herstellerbibliothek): ein Anschluss
             Assert.All(k.Anschluesse, a => Assert.Equal("beide", a.Fluss));
             Assert.All(k.Anschluesse, a => Assert.Equal("*", a.Medium));
         });
@@ -145,7 +145,7 @@ public class KatalogTests
     public void SystemschichtKlassen_HabenEineRolle()
     {
         string[] rollen = ["verbraucher", "quelle", "senke", "zentrale", "leitung"];
-        var ausnahmen = new[] { "Anlage", "System", "Strang", "Montageabschnitt", "Heizgruppe" };   // Montageabschnitt (BIM to field), Heizgruppe (Modul 5 A-D): Gliederung wie der Strang
+        var ausnahmen = new[] { "Anlage", "System", "Strang", "Montageabschnitt", "Heizgruppe", "Verteilerkasten" };   // Montageabschnitt (BIM to field), Heizgruppe (Modul 5 A-D): Gliederung wie der Strang; Verteilerkasten (Herstellerbibliothek): Gehäuse ohne Netzfunktion
         var ohne = Konkrete.Where(k => k.Schicht == "system" && !ausnahmen.Contains(k.Name) && string.IsNullOrEmpty(k.Rolle)).Select(k => k.Name).ToList();
         Assert.True(ohne.Count == 0, "Ohne Rolle: " + string.Join(", ", ohne));
         Assert.All(Konkrete.Where(k => !string.IsNullOrEmpty(k.Rolle)), k => Assert.Contains(k.Rolle!, rollen));

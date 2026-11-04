@@ -65,6 +65,7 @@ public static class QuellEinheiten
         A("zoll", 1, "Zoll", "\"", "″");   // Gewindegrösse, keine Länge
         A("temperatur", 1, "°C"); A("kelvin", 1, "K");
         A("anteil", 1, "%"); A("schall", 1, "dB"); A("schalla", 1, "dB(A)"); A("spannung", 1, "V"); A("strom", 1, "A");
+        A("scheinleistung", 1, "VA"); A("kraft", 1, "N"); A("kraft", 1000, "kN");   // Herstellerbibliothek: Antriebe
         A("frequenz", 1, "Hz"); A("moment", 1, "Nm"); A("zeit", 1, "s"); A("zeit", 60, "min"); A("zeit", 3600, "h");
         A("stueck", 1, "px");
         return t;
@@ -403,6 +404,17 @@ public static class QuellVergleiche
                 var text = T(b.Wert) ?? "";
                 foreach (var z in QuellZahlen.AlleLesen(text)) l.Add(new QuellKandidat(null, z, null));
                 l.Add(new QuellKandidat(null, null, text));
+                break;
+            }
+            case "satz":
+            {
+                // VDI 3805 (Herstellerbibliothek H2): Felder ungedeutet – jede Zahl und jeder Text eines Felds ist Kandidat (Zweitbeleg)
+                int nr = 0;
+                foreach (var f in VdiBefundLeser.Felder(b))
+                {
+                    nr++;
+                    l.Add(new QuellKandidat($"feld {nr}", QuellZahlen.Lesen(f), f));
+                }
                 break;
             }
             case "mass":

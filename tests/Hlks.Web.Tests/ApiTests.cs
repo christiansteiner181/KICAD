@@ -447,6 +447,10 @@ public class ApiTests
         ["befunde"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"art\":\"wort\"}",
         ["unterlage_bild"] = "{\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf") + "\",\"breite\":200}",
         ["familie_pruefen"] = """{"familie":"FAM-1"}""",                  // Nachtrag 21.10.2026: Prüfbefunde der Testfamilie
+        ["regeltechnik"] = """{"familie":"FAM-1"}""",
+        ["verbindungstabelle"] = "{}",                                    // Verbindungstabelle (03.11.2026): Rohrserien des Testprojekts
+        ["verbindung_pruefen"] = """{"element":"HK-T1","anschluss":"vl","serie":"fam-test-rohrserie"}""",   // ohne Verbindungsangaben: unbekannt                     // Herstellerbibliothek: Testfamilie ohne Regeltechnik
+        ["vdi_abgleich"] = "{\"familie\":\"FAM-1\",\"unterlage\":\"" + IfcTestdatei("unterlagen/muster.vdi") + "\"}",   // fiktive VDI-Datei: Übersicht der Satzarten
         ["familie_masse"] = """{"familie":"FAM-1"}""",                    // Modul 2, B4: Testfamilie ohne Massbezüge = leere Liste mit Hinweis
         ["familie_vergleichen"] = "{\"familie\":\"FAM-1\",\"typ\":\"22-600-1000\",\"ansicht\":\"vorne\",\"breite\":300,\"unterlage\":\"" + IfcTestdatei("unterlagen/beispiel.pdf")
             + "\",\"passpunkte\":[{\"familie\":[0,0],\"unterlage\":[100,100]},{\"familie\":[1000,0],\"unterlage\":[300,100]}]}",
@@ -496,6 +500,9 @@ public class ApiTests
     /// <summary>Kleine IFC-Testdatei aus HLKS_CAD/tests/daten (Modul 1b), Pfad mit /.</summary>
     static string IfcTestdatei(string name)
     {
+        // Arbeitskopie zuerst (wie IfcHilfe.Testdaten im Kern): HLKS_KATALOG zeigt auf <Arbeitskopie>\kataloge
+        if (Environment.GetEnvironmentVariable("HLKS_KATALOG") is { Length: > 0 } kat && Path.Combine(kat, "..", "tests", "daten", name) is var pa && File.Exists(pa))
+            return Path.GetFullPath(pa).Replace('\\', '/');
         for (var d = new DirectoryInfo(AppContext.BaseDirectory); d is not null; d = d.Parent)
             foreach (var p in new[] { Path.Combine(d.FullName, "tests", "daten", name), Path.Combine(d.FullName, "HLKS_CAD", "tests", "daten", name) })
                 if (File.Exists(p)) return p.Replace('\\', '/');

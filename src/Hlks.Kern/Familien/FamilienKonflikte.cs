@@ -86,6 +86,8 @@ public static class FamilienQuellenAnalyse
             yield return ($"anschluss «{T(o["name"])}».quellen", Ids(o["quellen"]));
         foreach (var o in (def["masse"] as JsonArray ?? []).OfType<JsonObject>())
             yield return ($"mass «{T(o["name"])}».quellen", Ids(o["quellen"]));
+        foreach (var (stelle, liste) in FamRegeltechnik.Quellenlisten(def))   // Herstellerbibliothek H1
+            yield return (stelle, Ids(liste));
     }
 
     public static bool Pflicht(FamParameter p) => p.Gruppe != "sonstiges" && p.Datentyp is not ("ja_nein" or "medium");

@@ -109,6 +109,8 @@ public sealed class PlanOptionen
     /// Gerade, das Ende rückt an das Formteil (Neuaufbau eines Zugs).</summary>
     public bool FreiAnfang { get; init; }
     public bool FreiEnde { get; init; }
+    /// <summary>Verbindungstabelle (Christian 03.11.2026): gewählter Übergang { familie, typ }, wenn an einem Geräteanschluss mehrere passen; null = der einzige passende.</summary>
+    public JsonObject? Uebergang { get; init; }
 }
 
 /// <summary>Wo neue Elemente hingehören.</summary>
@@ -309,7 +311,9 @@ public static class Routing
 
         var plan = new RoutingPlan { Serie = s, Punkte = pkt, Von = von, Nach = nach };
         var wechsel = o.Wechsel.GroupBy(w => w.Abschnitt).ToDictionary(x => x.Key, x => x.OrderBy(w => w.Abstand).ToList());
-        bool startRed = o.ReduktionAnGrenzen && von is { Stelle.HatGroesse: true } && !von.Stelle.Groesse.Gleich(g0);
+        // Verbindungstabelle: andere Verbindungstechnik am Gerät → Übergang statt Reduktion (am Anfang b stromauf, deshalb vertauscht)
+        var ueAnfang = von is null ? null : Verbindungen.Waehlen(Verbindungen.Pruefen(m, k, s, g0, von.Stelle), o.Uebergang, Ort(0));
+        bool startRed = ueAnfang is null && o.ReduktionAnGrenzen && von is { Stelle.HatGroesse: true } && !von.Stelle.Groesse.Gleich(g0);
         var cur = startRed ? von!.Stelle.Groesse : g0;
 
         PlanFormteil Bogen(int j, Leitungsgroesse g)
@@ -345,9 +349,12 @@ public static class Routing
                 cur = neu;
             }
             if (i == 0 && startRed) Red(0, false, g0, 0);
+            if (i == 0 && ueAnfang is { } ua) reds.Add((0, false, ua.Wahl.Geometrie!.Einbaulaenge("b"), Umgekehrt(ua.Wahl), g0));
             foreach (var w in wechsel.GetValueOrDefault(i) ?? []) Red(w.Abstand, false, w.Neu, i);
             PlanFormteil? naechster = null;
             if (i < n - 2) naechster = Bogen(i + 1, cur);
+            else if (nach is not null && Verbindungen.Waehlen(Verbindungen.Pruefen(m, k, s, cur, nach.Stelle), o.Uebergang, Ort(n - 1)) is { } ue)
+                reds.Add((0, true, ue.Wahl.Geometrie!.Einbaulaenge("b"), ue.Wahl, ue.Wahl.Groesse2 ?? cur));
             else if (o.ReduktionAnGrenzen && nach is { Stelle.HatGroesse: true } && !nach.Stelle.Groesse.Gleich(cur)) Red(0, true, nach.Stelle.Groesse, n - 1);
             double endOff = naechster?.Wahl.Geometrie!.Einbaulaenge("a") ?? 0;
             double belegt = startOff + reds.Sum(r => r.L) + endOff;
@@ -367,7 +374,7 @@ public static class Routing
             string Belegung() => string.Join(", ", new[]
                 {
                     bogen is null ? null : $"Bogen {bogen.Wahl.Typ} {Z(startOff)} mm",
-                }.Concat(reds.Select(r => $"Reduktion {r.W.Typ} {Z(r.L)} mm")).Append(naechster is null ? null : $"Bogen {naechster.Wahl.Typ} {Z(endOff)} mm").Where(x => x is not null));
+                }.Concat(reds.Select(r => $"{Leitungsserie.Artname(r.W.Art)} {r.W.Typ} {Z(r.L)} mm")).Append(naechster is null ? null : $"Bogen {naechster.Wahl.Typ} {Z(endOff)} mm").Where(x => x is not null));
             if (L < belegt - Formteilgeometrie.LageToleranz)
                 throw new HlksFehler($"Die Gerade von Punkt {i + 1} {P(pkt[i])} nach Punkt {i + 2} {P(pkt[i + 1])} ist {Z(L)} mm lang – die Formteile brauchen dort mindestens {Z(belegt)} mm ({Belegung()}).",
                     $"Die Punkte mindestens {Z(belegt)} mm auseinander legen (Mindestlänge), Knicke zusammenfassen oder eine kleinere Grösse wählen.");
@@ -415,6 +422,13 @@ public static class Routing
             throw new HlksFehler($"Der Verlauf ist mit {Z(len.Sum())} mm zu kurz für eine Leitung.", "Die Punkte weiter auseinander legen.");
         return plan;
     }
+
+    /// <summary>Übergang am Anfang: b liegt stromauf am Gerät, a (Serie) zeigt stromab.</summary>
+    static FormteilWahl Umgekehrt(FormteilWahl w) => new()
+    {
+        Art = w.Art, Familie = w.Familie, Def = w.Def, Typ = w.Typ, Exemplar = w.Exemplar, Geometrie = w.Geometrie, Groesse1 = w.Groesse1, Groesse2 = w.Groesse2,
+        Hinweis = w.Hinweis, Vertauscht = true,
+    };
 
     /// <summary>Winkel des Bogens für einen Knick: der Winkel der Liste bis ±WinkelToleranz bzw. bei «frei» der Knick selbst.</summary>
     public static double Bogenwinkel(Leitungsserie s, double knick, string ort = "")

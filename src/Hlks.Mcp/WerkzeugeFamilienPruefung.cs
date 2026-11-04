@@ -25,6 +25,37 @@ public sealed partial class Werkzeuge
     public string FamiliePruefenWerkzeug([Description("Familie (Kennzeichen, Name oder id)")] string familie) =>
         Lauf(() => Antwort(FamiliePruefen.Abfrage(projekt, familie)));
 
+    [McpServerTool(Name = RegeltechnikAbfrage.Name), Description(RegeltechnikAbfrage.Text)]   // Herstellerbibliothek H1
+    public string Regeltechnik(
+        [Description("Element (Kennzeichen oder Id)")] string? element = null,
+        [Description("Familie (Kennzeichen, Name oder id) – statt element")] string? familie = null,
+        [Description("Typ der Familie (mit familie)")] string? typ = null) =>
+        Lauf(() => Antwort(RegeltechnikAbfrage.Abfrage(projekt, new System.Text.Json.Nodes.JsonObject { ["element"] = element, ["familie"] = familie, ["typ"] = typ })));
+
+    [McpServerTool(Name = VdiAbgleich.Name), Description(VdiAbgleich.Text)]   // Herstellerbibliothek H3
+    public string VdiAbgleichWerkzeug(
+        [Description("Familie (Kennzeichen, Name oder id)")] string familie,
+        [Description("VDI-3805-Unterlage (Kennzeichen oder Dateiname)")] string unterlage,
+        [Description("Satzart, deren Sätze die Produkte tragen; leer = Übersicht der Satzarten")] string? satzart = null,
+        [Description("Nur Sätze, deren Felder diesen Text enthalten (z. B. die Baureihe)")] string? filter = null) =>
+        Lauf(() => Antwort(VdiAbgleich.Abfrage(projekt, new System.Text.Json.Nodes.JsonObject { ["familie"] = familie, ["unterlage"] = unterlage, ["satzart"] = satzart, ["filter"] = filter })));
+
+    [McpServerTool(Name = Verbindungen.TabelleName), Description(Verbindungen.TabelleText)]   // Verbindungstabelle (Christian 03.11.2026)
+    public string VerbindungstabelleWerkzeug([Description("Nur diese Leitungsserie (Kennzeichen, Name oder id)")] string? serie = null) =>
+        Lauf(() => Antwort(Verbindungen.Tabelle(projekt, new System.Text.Json.Nodes.JsonObject { ["serie"] = serie })));
+
+    [McpServerTool(Name = Verbindungen.PruefenName), Description(Verbindungen.PruefenText)]
+    public string VerbindungPruefen(
+        [Description("Gerät bzw. Bauteil (Kennzeichen oder Id)")] string element,
+        [Description("Name des Anschlusses")] string anschluss,
+        [Description("Leitungsserie (Kennzeichen, Name oder id)")] string serie,
+        [Description("Grösse der Leitung, z. B. { \"dn\": 32 }; leer = alle Grössen der Serie")] JsonElement? groesse = null) =>
+        Lauf(() => Antwort(Verbindungen.PruefenAbfrage(projekt, new System.Text.Json.Nodes.JsonObject
+        {
+            ["element"] = element, ["anschluss"] = anschluss, ["serie"] = serie,
+            ["groesse"] = groesse is { } g ? System.Text.Json.Nodes.JsonNode.Parse(g.GetRawText()) : null,
+        })));
+
     [McpServerTool(Name = "familie_vergleichen"), Description(FamilienKontrollbild.AbfrageText)]
     public CallToolResult FamilieVergleichen(
         [Description("Familie (Kennzeichen, Name oder id)")] string familie,

@@ -18,7 +18,7 @@ namespace Hlks.Kern;
 
 /// <summary>Ein Anschluss nach der Auswertung (Familienkoordinaten bzw. nach dem Platzieren Weltkoordinaten).</summary>
 public sealed record FamAnschlussErgebnis(string Name, string Medium, string Fluss, string? Art, string? Form, double? Dn, double? D, double? B, double? H,
-    string? Gewinde, double[] Lage, double[] Richtung, bool Sichtbar, string? Beschreibung);
+    string? Gewinde, double[] Lage, double[] Richtung, bool Sichtbar, string? Beschreibung, string? Verbindung = null);
 
 /// <summary>Ein Körper nach der Auswertung. Teil in Familienkoordinaten (quader | zylinder | koerper) oder null (unsichtbar, Fehler).</summary>
 public sealed class FamKoerperErgebnis
@@ -242,7 +242,7 @@ public static class FamilienAuswertung
                 // gewinde: genau ein Textparameter → dessen Wert für Typ und Exemplar (Belimo «rp»); sonst der Text, wie er ist («G 1/2»)
                 var gewinde = an.Gewinde is { } gw && f.NachName.TryGetValue(gw.Trim(), out var gp) && gp.Datentyp == "text" ? a.Werte.GetValueOrDefault(gp.Name)?.Text : an.Gewinde;
                 a.Anschluesse.Add(new FamAnschlussErgebnis(an.Name, medium, an.Fluss, an.Art, an.Form, Groesse(an.Dn, "dn"), Groesse(an.D, "d"),
-                    Groesse(an.B, "b"), Groesse(an.H, "h"), gewinde, lage, r.Einheit().Feld(), sichtbar, an.Beschreibung));
+                    Groesse(an.B, "b"), Groesse(an.H, "h"), gewinde, lage, r.Einheit().Feld(), sichtbar, an.Beschreibung, an.Verbindung));
             }
             catch (FeldFehler ff) { a.Fehler.Add(ff.Fehler); }
         }

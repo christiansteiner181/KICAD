@@ -168,6 +168,8 @@ public sealed class FamAnschluss
     public FamZahl? B { get; init; }
     public FamZahl? H { get; init; }
     public string? Gewinde { get; init; }
+    /// <summary>Verbindungstechnik des Anschlusses (Verbindungstabelle, Christian 03.11.2026), z. B. gewinde-innen, flansch, press; null = nicht angegeben.</summary>
+    public string? Verbindung { get; init; }
     public FamZahl[] Lage { get; init; } = [];
     public FamZahl[] Richtung { get; init; } = [];
     public FamZahl? Sichtbar { get; init; }
@@ -234,6 +236,7 @@ public sealed class FamLeitung
     public static string KlasseVon(string art) => art switch
     {
         "bogen" => "Bogen", "tstueck" => "TStueck", "reduktion" => "Reduktion", "reinigungsoeffnung" => "Reinigungsoeffnung",
+        "uebergang" => "Uebergang",   // Verbindungstabelle (03.11.2026): vom Routing gesetzt, keine Formteilart in leitung.formteile
         _ => throw new HlksFehler($"Formteilart «{art}» gibt es nicht.", "Formteilarten: " + string.Join(", ", Formteilarten)),
     };
 
@@ -276,6 +279,11 @@ public sealed class FamLeitung
     /// <summary>Abwasser-Serie mit Grösse d = Aussendurchmesser (groesse { d }); die DN des Herstellers steht höchstens als Typparameter
     /// (ziel dn), nie abgeleitet.</summary>
     public bool NachAussendurchmesser => Abwasser && Groesse.ContainsKey("d");
+    /// <summary>leitung.verbindung (Verbindungstabelle, Christian 03.11.2026): Verbindungstechnik der Serie, z. B. press, gewinde-aussen; null = nicht angegeben.</summary>
+    public string? Verbindung { get; init; }
+    /// <summary>leitung.uebergaenge: ids bzw. Namen der Übergangs-Familien (Kategorie Uebergang), die das Routing an Geräteanschlüssen mit
+    /// anderer Verbindung setzt; null = keine.</summary>
+    public IReadOnlyList<string>? Uebergaenge { get; init; }
 }
 
 /// <summary>Massbezug (für B4: Abweichungsliste je Typ).</summary>
@@ -309,7 +317,8 @@ public sealed class FamilieDef
     public static readonly string[] Zeichnungsarten = ["linie", "polylinie", "polygon", "kreis", "bogen", "text"];
     public static readonly string[] Ansichten = ["vorne", "hinten", "links", "rechts", "oben", "unten"];
     static readonly string[] KopfFelder = ["format", "id", "name", "kategorie", "hersteller", "produkt", "beschreibung", "version", "status",
-        "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht"];
+        "parameter", "typen", "koerper", "anschluesse", "leitung", "masse", "sinnbild", "schemasymbol", "unterlagen", "konflikte", "abdeckung", "bericht",
+        "regeltechnik", "antriebe", "anbau", "kaesten"];   // Herstellerbibliothek H1 (kaesten: Verteiler, 02.11.2026)
     static readonly Regex NamensMuster = new("^[A-Za-zÄÖÜäöü_][A-Za-zÄÖÜäöü0-9_]*$");
     static readonly Regex BefundMuster = new("^[0-9a-f]{12}#[0-9]+$");
 
@@ -331,6 +340,8 @@ public sealed class FamilieDef
     public List<FamZeichnung>? Schemasymbol { get; private set; }
     /// <summary>Block «leitung» (Modul 3): gesetzt bei Leitungsserien (Kategorie Rohr bzw. Kanal), sonst null.</summary>
     public FamLeitung? Leitung { get; private set; }
+    /// <summary>Abschnitte «regeltechnik», «antriebe», «anbau» (Herstellerbibliothek, FamilienRegeltechnik.cs) oder null.</summary>
+    public FamRegeltechnik? Regeltechnik { get; private set; }
     /// <summary>Die Familie ist eine Leitungsserie (Kategorie IstArt Leitung bzw. ohne Katalog: Block «leitung» vorhanden).</summary>
     public bool IstLeitungsserie => Leitung is not null;
     /// <summary>Fehler der Definition (Aufbau, Namen, Formeln, Regeln). Leer = gültig.</summary>
@@ -397,11 +408,52 @@ public sealed class FamilieDef
         KoerperLesen(d["koerper"]);
         AnschluesseLesen(d["anschluesse"], kat);
         LeitungLesen(d, kat, klasse);
+        DarstellungPruefen();
         MasseLesen(d["masse"]);
         Sinnbild = ZeichnungLesen(d["sinnbild"], "sinnbild");
         Schemasymbol = ZeichnungLesen(d["schemasymbol"], "schemasymbol");
+        Regeltechnik = FamRegeltechnik.Lesen(d, this, kat, klasse, (o, m, v) => Fehl(o, m, v), (o, m, v) => Hinweise.Add(new(o, m, v)), (n, o, a) => Punkt(n, o, a));
         QuellenPruefen();
         FormelnPruefen();
+    }
+
+    List<string>? UebergaengeLesen(JsonNode? n)
+    {
+        if (n is null) return null;
+        if (n is not JsonArray a) { Fehl("leitung.uebergaenge", "uebergaenge muss eine Liste sein", "[\"<id oder Name der Übergangs-Familie>\", …]"); return null; }
+        var l = new List<string>();
+        foreach (var x in a) if (Text(x)?.Trim() is { Length: > 0 } s) l.Add(s); else Fehl("leitung.uebergaenge", "Eintrag muss ein Text sein (id oder Name)");
+        return l;
+    }
+
+    /// <summary>Verbindungstechnik eines Anschlusses bzw. einer Leitungsserie (Verbindungstabelle): Wert aus <see cref="Verbindungen.Arten"/>.</summary>
+    string? VerbindungLesen(JsonNode? n, string ort)
+    {
+        if (n is null) return null;
+        var s = Text(n)?.Trim();
+        if (s is null || !Verbindungen.Arten.Contains(s)) { Fehl(ort, $"Verbindung «{s ?? n.ToJsonString()}» gibt es nicht", "Erlaubt: " + string.Join(", ", Verbindungen.Arten)); return null; }
+        return s;
+    }
+
+    // ------------------------------------------------------------------ Darstellung je Detailgrad
+
+    /// <summary>Christian 02.11.2026: «mir ist wichtig das bei allen Familien eine detailgetreue Abbildung der Komponenten vorliegt. in allen
+    /// detaillierungsgraden.» Hinweis (kein Fehler, ein Entwurf bleibt möglich), wenn ein Detailgrad keinen Körper hat oder alle drei
+    /// Detailgrade dieselben Körper zeigen. Leitungsserien haben keine Körper (Geometrie aus dem Verlauf).</summary>
+    void DarstellungPruefen()
+    {
+        if (IstLeitungsserie) return;
+        if (Koerper.Count == 0)
+        {
+            Hinweise.Add(new("koerper", "Darstellung fehlt: keine Körper", "Körper aus dem Massbild bzw. 3D-Modell des Herstellers in grob, mittel und fein anlegen."));
+            return;
+        }
+        foreach (var g in Detailgrade)
+            if (!Koerper.Any(k => k.Detailgrad.Contains(g)))
+                Hinweise.Add(new("koerper", $"Darstellung unvollständig: Detailgrad «{g}» ohne Körper", $"Körper für «{g}» ergänzen (grob = bemasste Hülle, fein = detailgetreu mit Antrieb, Griff, Gehäuse)."));
+        if (Koerper.All(k => k.Detailgrad.Count == Detailgrade.Length))
+            Hinweise.Add(new("koerper", "Darstellung nicht abgestuft: grob, mittel und fein zeigen dieselben Körper",
+                "grob als bemasste Hülle, mittel mit den Hauptformen, fein detailgetreu (Antrieb, Griff, Gehäuse, Anschlussstutzen) anlegen."));
     }
 
     // ------------------------------------------------------------------ Leitungsserie (Modul 3)
@@ -428,7 +480,7 @@ public sealed class FamilieDef
             return;
         }
         if (n is not JsonObject o) { Fehl("leitung", "leitung muss ein Objekt sein", "{ querschnitt, groesse, aussen, innen?, wand?, kuerzel?, einsatz?, formteile?, regeln?, frei?, quellen? }"); return; }
-        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "einsatz", "formteile", "regeln", "frei", "quellen"];
+        string[] felder = ["querschnitt", "groesse", "aussen", "innen", "wand", "kuerzel", "einsatz", "formteile", "regeln", "frei", "quellen", "verbindung", "uebergaenge"];
         foreach (var (feld, _) in o)
             if (!felder.Contains(feld)) Fehl("leitung", $"Unbekanntes Feld «{feld}»", "Erlaubt: " + string.Join(", ", felder));
 
@@ -622,6 +674,7 @@ public sealed class FamilieDef
         {
             Querschnitt = querschnitt ?? "rund", Groesse = groesse, Aussen = aussen, Innen = innen, Wand = wand, Biegeradius = biegeradius, Kuerzel = kuerzel,
             Formteile = formteile, WinkelFrei = winkelFrei, Winkel = winkel, Abzweig = abzweig, Abzweigwinkel = abzweigwinkel, Frei = frei, Einsatz = einsatz, Mischbar = mischbar,
+            Verbindung = VerbindungLesen(o["verbindung"], "leitung.verbindung"), Uebergaenge = UebergaengeLesen(o["uebergaenge"]),
         };
     }
 
@@ -1149,7 +1202,7 @@ public sealed class FamilieDef
     {
         if (n is null) { Fehl("anschluesse", "anschluesse fehlt", "\"anschluesse\": [] angeben (auch leer)."); return; }
         if (n is not JsonArray a) { Fehl("anschluesse", "anschluesse muss eine Liste sein"); return; }
-        string[] felder = ["name", "medium", "fluss", "art", "form", "dn", "d", "gewinde", "b", "h", "lage", "richtung", "beschreibung", "sichtbar", "quellen"];
+        string[] felder = ["name", "medium", "fluss", "art", "form", "dn", "d", "gewinde", "verbindung", "b", "h", "lage", "richtung", "beschreibung", "sichtbar", "quellen"];
         int nr = 0;
         foreach (var x in a)
         {
@@ -1184,7 +1237,7 @@ public sealed class FamilieDef
             {
                 Name = name, Medium = medium.Length > 0 ? medium : "*", Fluss = Fluesse.Contains(fluss) ? fluss : "beide", Art = art, Form = form,
                 Dn = o["dn"] is null ? null : Zahl(o["dn"], ort + ".dn"), D = o["d"] is null ? null : Zahl(o["d"], ort + ".d"),
-                B = o["b"] is null ? null : Zahl(o["b"], ort + ".b"), H = o["h"] is null ? null : Zahl(o["h"], ort + ".h"), Gewinde = Text(o["gewinde"]),
+                B = o["b"] is null ? null : Zahl(o["b"], ort + ".b"), H = o["h"] is null ? null : Zahl(o["h"], ort + ".h"), Gewinde = Text(o["gewinde"]), Verbindung = VerbindungLesen(o["verbindung"], ort + ".verbindung"),
                 Lage = Punkt(o["lage"], ort + ".lage", 3) ?? [], Richtung = richtung ?? [],
                 Sichtbar = o["sichtbar"] is null ? null : Zahl(o["sichtbar"], ort + ".sichtbar"), Beschreibung = Text(o["beschreibung"]),
             });
@@ -1322,6 +1375,7 @@ public sealed class FamilieDef
             Liste(lo["quellen"], "leitung.quellen");   // Modul 3
             if (lo["frei"] is JsonObject fo) Liste(fo["quellen"], "leitung.frei.quellen");   // Nachtrag freie Grösse
         }
+        foreach (var (stelle, liste) in FamRegeltechnik.Quellenlisten(Quelle)) Liste(liste, stelle);   // Herstellerbibliothek H1
     }
 
     // ------------------------------------------------------------------ Formeln: Namen, Typregel, Zyklen

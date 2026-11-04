@@ -52,6 +52,7 @@ public static class RoutingBefehle
     public const string ParStrang = "Strang (Kennzeichen), zu dem Geraden und Formteile gehören (teilVon)";
     public const string ParGeschoss = "Geschoss für alle neuen Elemente; fehlt es, aus der Höhe";
     public const string ParPraefix = "Präfix der Kennzeichen der Geraden, z. B. \"KW-V1\" → KW-V1-1, KW-V1-2 …; fehlt es: RO-n bzw. KA-n";
+    public const string ParUebergang = "Verbindungstabelle: gewählter Übergang { familie, typ }, wenn an einem Geräteanschluss mit anderer Verbindungstechnik mehrere passen (der Trockenlauf nennt die Auswahl); leer = der einzige passende";
     public const string ParEigenschaften = "Weitere Eigenschaften der Geraden, z. B. { \"material\": \"Edelstahl\", \"daemmdicke\": 20 }";
     public const string ParLeitung = "Leitung (Rohr, Kanal; Kennzeichen oder Id)";
     public const string ParLeitungen = "Leitungen (Kennzeichen oder Ids), z. B. [\"RO-1\", \"RO-2\"]";
@@ -357,7 +358,7 @@ public static class RoutingBefehle
 public sealed class LeitungZeichnen : IBefehl
 {
     public string Name => "leitung_zeichnen";
-    public const string Text = "Zeichnet eine Leitung wie in Revit (Modul 3): Serie (Leitungsserie = Familie Rohr bzw. Kanal) und Grösse wählen, Verlauf in Fliessrichtung angeben – je Gerade entsteht ein Rohr bzw. Kanal (zwei Punkte, Achse), am Knick ein Bogen der Serie (Winkel nach regeln.winkel, Toleranz ±0.5°; Steig- und Fallbögen voll ausgerichtet), an einem Anschluss anderer Grösse eine Reduktion; die Geraden enden an den Formteilen (um die Einbaulängen gekürzt) und alles wird streng verbunden. Mit von bzw. nach beginnt bzw. endet der Verlauf an diesem Anschluss (seine Lage wird übernommen; ohne Lage wird logisch verbunden). Mit gefaelle fallen waagrecht gezeichnete Stücke in Fliessrichtung, senkrechte behalten ihre Länge; endet bzw. beginnt der Verlauf an einem Anschluss, dessen Achse dem Gefälle folgt (z. B. am schrägen Abzweig c eines T-Stücks am Fallstrang), gilt das Stück daran als waagrecht gezeichnet, wenn sein Punkt zwischen der Waagrechten durch den Anschluss und dessen Achse liegt. Abgelehnt mit Vorschlag: Winkel nicht in der Serie, Gerade kürzer als die Einbaulängen, Formteil fehlt. Der Trockenlauf zeigt in den Hinweisen die Geraden mit Längen und die Formteile mit Typ und Winkel. Kanalserien mit freier Grösse (leitung.frei, z. B. Rechteckkanal nach Mass): jede Grösse b × h bzw. d innerhalb von Grenzen und Schritt (Normgrössen = Typen haben Vorrang, sonst familientyp = Vorlage und breite/hoehe = tatsächliche Grösse); die Formteile werden dann aus der Vorlage ihrer Familie mit den Grössen als Exemplarwerte gerechnet (Einbaulängen aus deren Formeln). Ausserhalb der Grenzen oder nicht im Schritt: abgelehnt mit gerundetem Vorschlag und Normgrössen. Abwasser-Serien mit Grösse d (leitung.einsatz abwasser): Grösse als Aussendurchmesser { \"d\": 110 } bzw. \"d 110\", keine DN nötig; die Formteile werden über d gewählt.";
+    public const string Text = "Zeichnet eine Leitung wie in Revit (Modul 3): Serie (Leitungsserie = Familie Rohr bzw. Kanal) und Grösse wählen, Verlauf in Fliessrichtung angeben – je Gerade entsteht ein Rohr bzw. Kanal (zwei Punkte, Achse), am Knick ein Bogen der Serie (Winkel nach regeln.winkel, Toleranz ±0.5°; Steig- und Fallbögen voll ausgerichtet), an einem Anschluss anderer Grösse eine Reduktion, an einem Anschluss anderer Verbindungstechnik (anschluss.verbindung ↔ leitung.verbindung) ein Übergang aus leitung.uebergaenge – passen mehrere, wird mit Auswahl abgelehnt und uebergang { familie, typ } gewählt; die Geraden enden an den Formteilen (um die Einbaulängen gekürzt) und alles wird streng verbunden. Mit von bzw. nach beginnt bzw. endet der Verlauf an diesem Anschluss (seine Lage wird übernommen; ohne Lage wird logisch verbunden). Mit gefaelle fallen waagrecht gezeichnete Stücke in Fliessrichtung, senkrechte behalten ihre Länge; endet bzw. beginnt der Verlauf an einem Anschluss, dessen Achse dem Gefälle folgt (z. B. am schrägen Abzweig c eines T-Stücks am Fallstrang), gilt das Stück daran als waagrecht gezeichnet, wenn sein Punkt zwischen der Waagrechten durch den Anschluss und dessen Achse liegt. Abgelehnt mit Vorschlag: Winkel nicht in der Serie, Gerade kürzer als die Einbaulängen, Formteil fehlt. Der Trockenlauf zeigt in den Hinweisen die Geraden mit Längen und die Formteile mit Typ und Winkel. Kanalserien mit freier Grösse (leitung.frei, z. B. Rechteckkanal nach Mass): jede Grösse b × h bzw. d innerhalb von Grenzen und Schritt (Normgrössen = Typen haben Vorrang, sonst familientyp = Vorlage und breite/hoehe = tatsächliche Grösse); die Formteile werden dann aus der Vorlage ihrer Familie mit den Grössen als Exemplarwerte gerechnet (Einbaulängen aus deren Formeln). Ausserhalb der Grenzen oder nicht im Schritt: abgelehnt mit gerundetem Vorschlag und Normgrössen. Abwasser-Serien mit Grösse d (leitung.einsatz abwasser): Grösse als Aussendurchmesser { \"d\": 110 } bzw. \"d 110\", keine DN nötig; die Formteile werden über d gewählt.";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
@@ -373,6 +374,7 @@ public sealed class LeitungZeichnen : IBefehl
         new("geschoss", "text", false, RoutingBefehle.ParGeschoss),
         new("praefix", "text", false, RoutingBefehle.ParPraefix),
         new("eigenschaften", "objekt", false, RoutingBefehle.ParEigenschaften),
+        new("uebergang", "objekt", false, RoutingBefehle.ParUebergang),
     ];
 
     public void Ausfuehren(Kontext k, JsonObject p)
@@ -389,7 +391,7 @@ public sealed class LeitungZeichnen : IBefehl
         var ziel = RoutingBefehle.Ziel(k, p, geschoss, von?.Element ?? nach?.Element, kategorie: s.Kategorie, anschlussMedium: anschlussMedium);
         var hinweise = new List<string>();
         var pkt = Routing.Vorbereiten(roh, geschoss?.Zahl("kote") ?? 0, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
-        var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach);
+        var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach, new PlanOptionen { Uebergang = p["uebergang"] as JsonObject });
         var liste = Routing.Umsetzen(k, plan, ziel);
         k.Hinweise.AddRange(hinweise);
         Routing.Uebersicht(k, Name, plan, liste);

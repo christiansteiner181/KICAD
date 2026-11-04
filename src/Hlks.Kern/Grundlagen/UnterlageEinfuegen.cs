@@ -22,7 +22,7 @@ public sealed class UnterlageEinfuegen : IBefehl
     [
         new("datei", "text", true, "Pfad der Datei (lokal oder W:) oder Name einer Unterlage im Ordner unterlagen"),
         new("geschoss", "text", false, "Geschoss (Kennzeichen oder Id), in dessen Grundriss die Unterlage erscheint; entfällt bei zweck «familie»"),
-        new("art", "text", false, "dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | rfa | ifc"),
+        new("art", "text", false, "dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | rfa | ifc | vdi3805"),
         new("seite", "zahl", false, "PDF: Seite (ab 1, Vorgabe 1)"),
         new("massstab", "zahl", false, "PDF/Bild: Massstabsnenner der Vorlage (100 = 1:100), bestimmt die erste Lage; ohne Angabe wird die Papiergrösse (1:1) eingesetzt"),
         new("dpi", "zahl", false, "PDF/Bild: Auflösung in Bildpunkten je Zoll (PDF: Vorgabe 150 beim Rendern; Bild: aus der Datei, sonst 150)"),

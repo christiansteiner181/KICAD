@@ -54,9 +54,10 @@ public sealed partial class Werkzeuge
         [Description(RoutingBefehle.ParGeschoss)] string? geschoss = null,
         [Description(RoutingBefehle.ParPraefix)] string? praefix = null,
         [Description(RoutingBefehle.ParEigenschaften)] JsonElement? eigenschaften = null,
+        [Description(RoutingBefehle.ParUebergang)] JsonElement? uebergang = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("leitung_zeichnen", Parameter(("serie", serie), ("groesse", groesse), ("punkte", punkte), ("von", von), ("nach", nach), ("gefaelle", gefaelle),
-            ("system", system), ("strang", strang), ("medium", medium), ("geschoss", geschoss), ("praefix", praefix), ("eigenschaften", eigenschaften)), trockenlauf);
+            ("system", system), ("strang", strang), ("medium", medium), ("geschoss", geschoss), ("praefix", praefix), ("eigenschaften", eigenschaften), ("uebergang", uebergang)), trockenlauf);
 
     [McpServerTool(Name = "leitung_abzweigen"), Description(LeitungAbzweigen.Text)]
     public string LeitungAbzweigenWerkzeug(

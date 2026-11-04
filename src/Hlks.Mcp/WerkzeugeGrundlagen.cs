@@ -15,7 +15,7 @@ public sealed partial class Werkzeuge
     public string UnterlageEinfuegen(
         [Description("Pfad der Datei (lokal oder W:) oder Name einer Unterlage im Ordner unterlagen")] string datei,
         [Description("Geschoss (Kennzeichen oder Id), in dessen Grundriss die Unterlage erscheint; entfällt bei zweck «familie»")] string? geschoss = null,
-        [Description("dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | rfa | ifc")] string? art = null,
+        [Description("dwg | dxf | pdf | bild (Vorgabe aus der Dateiendung); bei zweck «familie» auch step | iges | stl | obj | xlsx | csv | typkatalog | rfa | ifc | vdi3805")] string? art = null,
         [Description("PDF: Seite (ab 1, Vorgabe 1)")] double? seite = null,
         [Description("PDF/Bild: Massstabsnenner der Vorlage (100 = 1:100), bestimmt die erste Lage; ohne Angabe wird die Papiergrösse (1:1) eingesetzt")] double? massstab = null,
         [Description("PDF/Bild: Auflösung in Bildpunkten je Zoll (PDF: Vorgabe 150 beim Rendern; Bild: aus der Datei, sonst 150)")] double? dpi = null,

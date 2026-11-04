@@ -793,7 +793,7 @@ public sealed partial class Leitungsserie
 
     public static string Artname(string art) => art switch
     {
-        "bogen" => "Bogen", "tstueck" => "T-Stück", "reduktion" => "Reduktion", "reinigungsoeffnung" => "Reinigungsöffnung", _ => art,
+        "bogen" => "Bogen", "tstueck" => "T-Stück", "reduktion" => "Reduktion", "reinigungsoeffnung" => "Reinigungsöffnung", "uebergang" => "Übergang", _ => art,
     };
 
     /// <summary>Namen der Typregel: Grössenparameter der Serie = erste Grösse, mit Endung «_2» = zweite Grösse.</summary>
