@@ -45,6 +45,14 @@ function Adressen {
 }
 
 if (-not (Test-Path $dll)) { Hinweis "KICAD ist auf diesem Rechner noch nicht gebaut ($dll fehlt).`nZuerst einmal das Icon 'KICAD' starten."; exit 1 }
+# Der Baustellen-Zugang kam mit c348819 (04.11.2026). Aeltere Builds ignorieren --baustelle-port und oeffnen Port $BaustellePort nie (Befund 04.11.2026:
+# "startet nicht"). Erkennbar am Klassennamen BaustelleZugang in den Metadaten des Programms.
+$hat = [System.Text.Encoding]::ASCII.GetString([System.IO.File]::ReadAllBytes($dll)).Contains('BaustelleZugang')
+if (-not $hat) {
+  Log "Build $Bau ohne Baustellen-Zugang - nicht gestartet"
+  Hinweis "Der KICAD-Stand auf diesem Rechner kennt den Baustellen-Testserver noch nicht.`n`nEr kommt mit dem naechsten geprueften Stand. Danach einmal 'KICAD aktualisieren' starten, dann dieses Icon."
+  exit 1
+}
 
 # Umgebung wie der Desktop (kicad_starten.ps1): Oberflaeche, Kataloge, KI-Vorlagen aus der Arbeitskopie
 $env:HLKS_BUILD = $Bau
