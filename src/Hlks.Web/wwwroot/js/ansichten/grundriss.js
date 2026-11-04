@@ -448,20 +448,32 @@ function erstellen(behaelter, ansichtElement) {
     const gewaehlt = zustand.auswahl ? element(zustand.auswahl) : null;
     if (!el && !gewaehlt) {
       const { letztesWiederholen } = await import('../werkzeuge/basis.js');
-      letztesWiederholen();
+      if (letztesWiederholen()) return;
+      // noch kein Werkzeug benutzt: nur die Werkzeugkiste (04.11.2026)
+      const { kontextmenue } = await import('../oberflaeche/dialoge.js');
+      kontextmenue(e.clientX, e.clientY, [], { kiste: true });
       return;
     }
     const raum = el?.klasse === 'Raum' ? el : (!el || el.id === gewaehlt?.id) && gewaehlt?.klasse === 'Raum' ? gewaehlt : null;
     if (!raum) {
+      // Bauteilmenü (04.11.2026, Befund «zeigt nur Im Schema zeigen»): Ähnliches, Verbindungen, Schema, Bearbeiten, Kontext-Aktionen, Auswahl
+      // aufheben und unten die Werkzeugkiste – für jedes Bauteil, auch ohne Verbindungen (Wand, Tür …)
       const bauteil = el ?? gewaehlt;
-      const [{ kontextmenue }, { ausfuehren }, { aehnlichMoeglich }, { verbindungsEintraege }] = await Promise.all([import('../oberflaeche/dialoge.js'),
-        import('../oberflaeche/register.js'), import('../oberflaeche/aktionen-aehnlich.js'), import('../oberflaeche/aktionen-verbinden.js')]);
-      const eintraege = aehnlichMoeglich(bauteil) ? [{ titel: 'Ähnliches platzieren', aktion: () => ausfuehren('kontext.aehnlich', { element: bauteil.kennzeichen }) }] : [];
-      const netz = verbindungsEintraege(bauteil);   // Bearbeitungswerkzeuge A2: Trennen je Verbindung, Verbinden …
-      if (netz.length) eintraege.push(...(eintraege.length ? [{ trenner: true }] : []), ...netz);
-      if (!eintraege.length) return;
       if (zustand.auswahl !== bauteil.id) auswaehlen(bauteil.id);
-      kontextmenue(e.clientX, e.clientY, eintraege);
+      const [{ kontextmenue }, R, { aehnlichMoeglich }, { verbindungsEintraege }, { schemaEintraege }, { bauteilEintraege }] = await Promise.all([import('../oberflaeche/dialoge.js'),
+        import('../oberflaeche/register.js'), import('../oberflaeche/aktionen-aehnlich.js'), import('../oberflaeche/aktionen-verbinden.js'),
+        import('../oberflaeche/aktionen-schema.js'), import('../oberflaeche/kontextmenue-logik.js')]);
+      const kz = bauteil.kennzeichen;
+      const schema = await schemaEintraege(bauteil).catch((err) => { console.error('Im Schema zeigen', err); return []; });
+      const eintraege = bauteilEintraege({
+        kennzeichen: kz, aktionen: [...R.aktionen.values()],
+        aktiv: (id, p) => { const a = R.aktionen.get(id); return !!a && R.istAktiv(a, p); },
+        start: (id, p) => R.ausfuehren(id, p),
+        aehnlich: aehnlichMoeglich(bauteil) ? [{ titel: 'Ähnliches platzieren', aktion: () => R.ausfuehren('kontext.aehnlich', { element: kz }) }] : [],
+        netz: verbindungsEintraege(bauteil),   // Bearbeitungswerkzeuge A2: Trennen je Verbindung, Verbinden …
+        schema, aufheben: () => auswaehlen(null), istNetz: !!bauteil.rolle,
+      });
+      kontextmenue(e.clientX, e.clientY, eintraege, { kiste: true });
       return;
     }
     if (zustand.auswahl !== raum.id) auswaehlen(raum.id);
@@ -477,7 +489,9 @@ function erstellen(behaelter, ansichtElement) {
       { trenner: true },
       { titel: 'Rand für «Raum in 3D» …', aktion: () => ausfuehren('ansicht.raum3dRand') },
       { titel: 'Augenhöhe für «Raum begehen» …', aktion: () => ausfuehren('ansicht.begehenAugenhoehe') },
-    ]);
+      { trenner: true },
+      { titel: 'Auswahl aufheben', aktion: () => auswaehlen(null) },
+    ], { kiste: true });
   }
   wurzel.addEventListener('pointerenter', () => { imFenster = true; });
   wurzel.addEventListener('pointerleave', () => { imFenster = false; });

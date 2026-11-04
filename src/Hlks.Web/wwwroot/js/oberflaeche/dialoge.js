@@ -183,10 +183,12 @@ window.addEventListener('blur', menueSchliessen);
 window.addEventListener('resize', menueSchliessen);
 
 /** eintraege: [{ titel, aktion(), aktiv = true, hinweis, trenner }] */
-export function kontextmenue(x, y, eintraege) {
+export function kontextmenue(x, y, eintraege, { kiste = false } = {}) {
   menueSchliessen();
   const m = document.createElement('div');
   m.className = 'kmenu';
+  // Werkzeugkiste (04.11.2026): Rundknopf unten; das Modul kommt nachgeladen (es braucht das Aktionsregister, das diese Datei importiert)
+  if (kiste) import('./werkzeugkiste.js').then(({ kisteKnopf }) => { if (offenesMenue === m) { m.appendChild(kisteKnopf(menueSchliessen)); lageSetzen(); } }).catch((e) => console.error('Werkzeugkiste', e));
   for (const e of eintraege) {
     if (e.trenner) { const t = document.createElement('div'); t.className = 'kmenu-trenner'; m.appendChild(t); continue; }
     const b = document.createElement('button');
@@ -199,9 +201,12 @@ export function kontextmenue(x, y, eintraege) {
     m.appendChild(b);
   }
   document.body.appendChild(m);
-  const r = m.getBoundingClientRect();
-  m.style.left = Math.max(0, Math.min(x, window.innerWidth - r.width - 4)) + 'px';
-  m.style.top = Math.max(0, Math.min(y, window.innerHeight - r.height - 4)) + 'px';
+  function lageSetzen() {
+    const r = m.getBoundingClientRect();
+    m.style.left = Math.max(0, Math.min(x, window.innerWidth - r.width - 4)) + 'px';
+    m.style.top = Math.max(0, Math.min(y, window.innerHeight - r.height - 4)) + 'px';
+  }
+  lageSetzen();
   offenesMenue = m;
 }
 

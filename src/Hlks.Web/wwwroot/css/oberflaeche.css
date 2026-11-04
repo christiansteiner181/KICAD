@@ -623,3 +623,17 @@ table.huelle-ableitung th, table.huelle-ableitung td { white-space: nowrap; }
 .kp-dlg .t-vorschau .t-nochmal { margin: 2px 0 4px; }
 .kp-tab td.kp-paar-aus { color: var(--text-leise); font-style: italic; }
 .kp-filter .kf-ungeprueft-feld { color: var(--text-leise); }
+/* Werkzeugkiste im Kontextmenü (04.11.2026): Rundknopf unten, Hauptgruppen im Kreis, Werkzeuge rollen nach aussen aus */
+.kmenu .wk-fuss { display: flex; justify-content: center; padding: 4px 0 2px; border-top: 1px solid var(--rand-leise); margin-top: 2px; }
+.kmenu .wk-knopf { width: 30px; height: 30px; padding: 0; border-radius: 50%; border: 1px solid var(--rand); background: var(--flaeche); display: grid; place-items: center; }
+.kmenu .wk-knopf:hover { background: var(--akzent-hell); }
+.wk-kranz { position: fixed; inset: 0; pointer-events: none; z-index: 121; }
+.wk-kranz .wk-gruppe { position: fixed; transform: translate(-50%, -50%); pointer-events: auto; display: flex; flex-direction: column; align-items: center; gap: 1px;
+  width: 64px; height: auto; padding: 4px 2px; border: 1px solid var(--rand); border-radius: 10px; background: var(--flaeche-hell); box-shadow: var(--schatten); font-size: 11px; text-align: center; }
+.wk-kranz .wk-gruppe.offen, .wk-kranz .wk-gruppe:hover { background: var(--akzent-hell); border-color: var(--akzent); }
+.wk-liste { position: fixed; pointer-events: auto; min-width: 170px; padding: 2px 0; background: var(--flaeche-hell); border: 1px solid var(--rand); border-radius: var(--radius); box-shadow: var(--schatten); z-index: 122; }
+.wk-liste button { display: flex; align-items: center; gap: 6px; width: 100%; height: 24px; padding: 0 10px; border: none; background: none; text-align: left; cursor: pointer; }
+.wk-liste button span { flex: 1; }
+.wk-liste button kbd { font-size: 10px; color: var(--text-leise); }
+.wk-liste button:hover:not(.gesperrt) { background: var(--akzent-hell); }
+.wk-liste button.gesperrt { color: var(--text-leise); opacity: .6; cursor: default; }

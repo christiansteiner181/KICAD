@@ -263,13 +263,18 @@ registrieren({
   ausfuehren: imGrundrissZeigen,
 });
 
-/** Kontextmenü im Grundriss (Element unter dem Zeiger) und im 3D (gewähltes Element): «Im Schema zeigen». */
-async function menueImPlan(x, y, el) {
+/** Einträge «Im Schema zeigen» für ein Netzelement (leer für andere); der Grundriss baut sie in sein Bauteilmenü ein (04.11.2026). */
+export async function schemaEintraege(el) {
+  if (!netzElement(el)) return [];
   const { treffer, anzahl } = await schemaTreffer(el);
-  const eintraege = L.grundrissMenue({ element: el, treffer, schemaAnzahl: anzahl }).map((m) => ({
+  return L.grundrissMenue({ element: el, treffer, schemaAnzahl: anzahl }).map((m) => ({
     titel: m.titel, aktiv: m.aktiv !== false, hinweis: m.hinweis, aktion: () => imSchemaZeigen(m.param),
   }));
-  kontextmenue(x, y, eintraege);
+}
+
+/** Kontextmenü im 3D (gewähltes Element): «Im Schema zeigen» und die Werkzeugkiste. */
+async function menueImPlan(x, y, el) {
+  kontextmenue(x, y, await schemaEintraege(el), { kiste: true });
 }
 
 if (typeof document !== 'undefined') {
@@ -280,14 +285,12 @@ if (typeof document !== 'undefined') {
     const t = e.target;
     if (!(t instanceof Element) || werkzeugAktiv()) return;
     if (rechtsGedrueckt && Math.hypot(e.clientX - rechtsGedrueckt.x, e.clientY - rechtsGedrueckt.y) > 5) return;
-    const grundriss = t.closest('.gr-svg:not(.sc-svg)');
+    // Grundriss: das Bauteilmenü des Grundrisses enthält «Im Schema zeigen» (vorher ersetzte dieses Menü jenes – Befund 04.11.2026)
     const dreiD = t.closest('.d3-wurzel');
-    if (!grundriss && !dreiD) return;
-    const id = grundriss ? t.closest('[data-id]')?.getAttribute('data-id') : zustand.auswahl;
-    const el = id ? element(id) : null;
+    if (!dreiD) return;
+    const el = zustand.auswahl ? element(zustand.auswahl) : null;
     if (!netzElement(el)) return;
     e.preventDefault();
-    if (grundriss) auswaehlen(el.id);
     menueImPlan(e.clientX, e.clientY, el).catch((err) => console.error('Menü «Im Schema zeigen»', err));
   }, true);
 }
