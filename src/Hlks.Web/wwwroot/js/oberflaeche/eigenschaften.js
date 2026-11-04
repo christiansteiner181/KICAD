@@ -24,6 +24,7 @@ import { serieLaden, serienListe, befundeVon } from '../werkzeuge/leitung-daten.
 import { istFrei, istAbwasser, freiEingabe } from '../werkzeuge/leitung-frei.js';
 import { kategorieVon } from '../werkzeuge/leitung-logik.js';
 import { anmelden } from './paletten.js';
+import { eigenschaftTitel, eigenschaftsGruppe, GRUPPEN_FOLGE, ANFANGS_ZU } from './eigenschaften-logik.js';   // Gliederung (04.11.2026)
 import { artZeilen, leitungZeilen, kHinweisZeile, spezialFeld, spezialZeileHtml } from './sanitaer-palette.js';
 import { SANITAER_ABGELEITET, spezialWert, SPEZIAL_FEHLT } from './sanitaer-text.js';
 import { revisionFeld, revisionenWert, zeilenAusTabelle } from './planblatt-hk.js';
@@ -40,7 +41,7 @@ let gerade = null;          // { id, kz } des dargestellten Elements
 let schmutzig = false;      // Eingabe läuft, noch nicht übernommen
 let reservierungsSig = '';
 let hinweise = null;        // { id, texte } Hinweise des Kerns zum letzten angenommenen Befehl (Kasten oben, bis zur nächsten Eingabe oder Auswahl)
-const zu = new Set((() => { try { return JSON.parse(localStorage.getItem('hlks.' + GRUPPEN_ZU) ?? '[]'); } catch { return []; } })());
+const zu = new Set((() => { try { const g = localStorage.getItem('hlks.' + GRUPPEN_ZU); return g === null ? ANFANGS_ZU : JSON.parse(g); } catch { return ANFANGS_ZU; } })());
 
 export function einrichten(w) {
   wurzel = w;
@@ -173,7 +174,7 @@ async function mehrfachZeigen(mein, mehr) {
       const gleich = werte.every((w) => w === werte[0]);
       let feld = eigenschaftsFeld(d, gleich ? mehr[0].werte?.[d.name] : undefined);
       if (!gleich) feld = feld.replace('<input ', '<input placeholder="verschieden" ');
-      ez.push(zeile(d.name, feld, { titel: [d.beschreibung, gleich ? '' : 'Werte sind verschieden – eine Eingabe gilt für alle'].filter(Boolean).join('\n') }));
+      ez.push(zeile(eigenschaftTitel(d.name), feld, { titel: [d.name, d.beschreibung, gleich ? '' : 'Werte sind verschieden – eine Eingabe gilt für alle'].filter(Boolean).join('\n') }));
     }
     h += gruppe('Eigenschaften', ez);
   } else h += `<div class="ep-leer">Verschiedene Klassen – Eigenschaften gemeinsam ändern geht nur für eine Klasse (Ändern › Auswahl › Filter).</div>`;
@@ -323,16 +324,23 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
   const tv = teilVonKandidaten(el, def);
   if (tv || el.teilVon) {
     const opt = (tv ?? []).sort((a, b) => vergleichen(a.kennzeichen, b.kennzeichen)).map(kennOption);
-    zu_.push(zeile('teilVon', auswahlFeld('zu:teilVon', opt, el.teilVon ?? null), { titel: 'Übergeordnetes Element' }));
+    zu_.push(zeile('Übergeordnet', auswahlFeld('zu:teilVon', opt, el.teilVon ?? null), { titel: 'Übergeordnetes Element (teilVon)' }));
   }
   h += gruppe('Zuordnung', zu_);
 
   // Eigenschaften laut Katalog
   const werte = l.eigenschaften ?? {};
-  const ez = [];
+  const gruppen = new Map();
+  const ins = (g) => { if (!gruppen.has(g)) gruppen.set(g, []); return gruppen.get(g); };
+  // Dicke und Höhe aus der Geometrie (Wand, Decke …): unter Abmessungen, änderbar (04.11.2026)
+  for (const [k, t] of [['dicke', 'Dicke'], ['hoehe', 'Höhe']]) {
+    const v = el.geometrie?.[k];
+    if (typeof v === 'number') ins('Abmessungen').push(zeile(t, `<input type="text" inputmode="decimal" data-ziel="geo:${k}" data-typ="zahl" value="${esc(zahlText(v))}"><span class="ep-einheit">mm</span>`, { titel: `${t} aus der Geometrie` }));
+  }
   const bekannt = new Set();
   for (const d of def?.eigenschaften ?? []) {
     bekannt.add(d.name);
+    const ez = ins(eigenschaftsGruppe(d));
     if (fam && (d.name === 'familientyp' || d.name === 'parameter')) continue;   // stehen in der Gruppe «Familie»
     if (ltGruppe && ltEig.includes(d.name)) continue;                            // stehen in der Gruppe «Leitung»
     const w = werte[d.name]?.wert;
@@ -340,7 +348,7 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
     if (el.klasse === 'Ansicht' && (d.name === 'schnittbereich' || d.name === 'startansicht')) {
       if ((werte.art?.wert ?? el.werte?.art) !== '3d') continue;
       if (d.name === 'schnittbereich') ez.push(...schnittbereichZeilen(w, HELFER));
-      else ez.push(zeile(d.name, nurLesen(startansichtText(w)), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n') }));
+      else ez.push(zeile(eigenschaftTitel(d.name), nurLesen(startansichtText(w)), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n') }));
       continue;
     }
     // N21: Schnitthöhe nach SIA 400 – der Schalter gilt nur im Grundriss; solange er ein ist, zeigt die Palette die gerechnete Höhe mit Herkunft
@@ -353,16 +361,16 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
     // Modul 4 Teil A-O: Apparateart mit Namen und abgeleiteten Werten darunter, Tabelle der Spezialinstallationen, Hinweis zu K
     if (d.name === 'sanitaerArt' && san) { ez.push(...artZeilen({ def: d, wert: w ?? null, vorgabe: san.vorgabeJeKlasse?.[el.klasse] ?? null, l }, HELFER)); continue; }
     if (d.name === 'spezialinstallationen' && d.typ === 'liste') {
-      ez.push(zeile(d.name, spezialFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
+      ez.push(zeile(eigenschaftTitel(d.name), spezialFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
       continue;
     }
     // Modul 7 Teil A: Revisionsliste des Planblatts als Tabelle (Index, Datum, Beschreibung); neue Revisionen setzt der Kern (revision_hinzufuegen)
     if (el.klasse === 'Planblatt' && d.name === 'revisionen') {
-      ez.push(zeile(d.name, revisionFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
+      ez.push(zeile(eigenschaftTitel(d.name), revisionFeld(w), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), warum: werte[d.name] ? d.name : null, klasse: 'ep-breit' }));
       continue;
     }
     // Kennwerte ohne Quelle gelten in der Rechnung nicht: Marke «ohne Quelle» am Feld (Herkunft aus element_lesen)
-    const z = zeile(d.name, eigenschaftsFeld(d, w) + familienMarke(werte[d.name]?.herkunft), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), pflicht: d.pflicht, warum: werte[d.name] ? d.name : null,
+    const z = zeile(eigenschaftTitel(d.name), eigenschaftsFeld(d, w) + familienMarke(werte[d.name]?.herkunft), { titel: [d.beschreibung, werte[d.name]?.herkunft].filter(Boolean).join('\n'), pflicht: d.pflicht, warum: werte[d.name] ? d.name : null,
       marke: werte[d.name] ? ohneQuelleMarke(el.klasse, d.name, werte[d.name].herkunft) : '' });
     ez.push(z);
     if (d.name === 'abflusskennzahl') ez.push(kHinweisZeile(HELFER));
@@ -371,17 +379,17 @@ function palette(el, l, def, istAnsicht, fam = null, san = null, aus = null, sia
   }
   for (const [name, v] of Object.entries(werte)) {
     if (bekannt.has(name) || (fam && (name === 'familientyp' || name === 'parameter')) || (ltGruppe && ltEig.includes(name))) continue;
-    ez.push(zeile(name, nurLesen(v?.wert === undefined ? '' : (typeof v.wert === 'object' ? JSON.stringify(v.wert) : `${v.wert}${v.einheit ? ' ' + v.einheit : ''}`)), { titel: v?.herkunft ?? '', warum: name }));
+    ins('Weitere').push(zeile(eigenschaftTitel(name), nurLesen(v?.wert === undefined ? '' : (typeof v.wert === 'object' ? JSON.stringify(v.wert) : `${v.wert}${v.einheit ? ' ' + v.einheit : ''}`)), { titel: v?.herkunft ?? '', warum: name }));
   }
-  h += gruppe('Eigenschaften', ez);
+  for (const g of GRUPPEN_FOLGE) h += gruppe(g, gruppen.get(g) ?? []);
 
-  // Abgeleitet (nur lesen)
+  // Berechnet (nur lesen; vorher «Abgeleitet»)
   const ab = Object.entries(l.abgeleitet ?? {}).filter(([k]) => !SANITAER_ABGELEITET.includes(k)).map(([k, v]) => {
     const [basis, einheit] = k.split('_');
     return zeile(ABGELEITET_NAMEN[basis] ?? basis, nurLesen(`${v}${einheit ? ' ' + (ABGELEITET_EINHEIT[einheit] ?? einheit) : ''}`), { warum: basis, titel: 'Berechnet aus der Geometrie' });
   });
   ab.push(...(el.basis === 'Apparat' ? [] : leitungZeilen(l, HELFER)));   // Modul 4: Belastungssummen einer Leitung (die Werte eines Apparats stehen unter der Apparateart)
-  h += gruppe('Abgeleitet', ab);
+  h += gruppe('Berechnet', ab);
 
   // Herkunft
   const verlauf = String(l.herkunft ?? '').split(';').map((s) => s.trim()).filter(Boolean);
@@ -548,6 +556,11 @@ async function beiAenderung(e) {
   } else if (ziel === 'name') param.name = wert;
   else if (ziel.startsWith('zu:')) param[ziel.slice(3)] = wert;
   else if (ziel.startsWith('eig:')) param.eigenschaften = { [ziel.slice(4)]: wert };
+  else if (ziel.startsWith('geo:')) {   // Dicke bzw. Höhe: Geometrie mit dem neuen Wert ersetzen
+    const g = element(gerade.id)?.geometrie;
+    if (!g || wert === null || !(wert > 0)) { fehlerAnzeigen(feld, 'Bitte eine Zahl grösser als 0 in mm eingeben.'); return; }
+    param.geometrie = { ...g, [ziel.slice(4)]: wert };
+  }
   else return;
 
   schmutzig = false;

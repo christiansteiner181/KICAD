@@ -342,9 +342,13 @@ daneben steht der jetzige Wert. Eine **Vorschau des Kerns (Trockenlauf)** zeigt 
 ## Eigenschaftenpalette – Pflichtumfang
 
 Oben Typauswahl (Klasse mit Symbol; Typwechsel folgt später), darunter Gruppen wie in Revit: Identität (Kennzeichen,
-Name, Klasse), Zuordnung (Geschoss, Raum, System, teilVon – Auswahllisten aus passenden Elementen), Eigenschaften
-laut Katalog (zahl → Zahlfeld mit Einheit, auswahl → Liste, bool → Häkchen, text → Feld, liste → Mehrfachauswahl bzw.
-Kommaliste), Abgeleitet (Länge, Fläche, Volumen aus `element_lesen`), Herkunft. Ändern mit Enter/Fokuswechsel →
+Name, Klasse), Zuordnung (Geschoss, Raum, System, Übergeordnet – Auswahllisten aus passenden Elementen), dann die
+Eigenschaften laut Katalog in drei Gruppen (04.11.2026, `eigenschaften-logik.js`): **Eigenschaften** (ohne Einheit: Auswahl,
+Text, Schalter), **Abmessungen** (mm, m, m², °, DN; dazu Dicke und Höhe aus der Geometrie, änderbar), **Kennwerte** (übrige
+Einheiten: W, °C, m³/h, U-Wert …), **Weitere** (Werte ohne Katalogeintrag); Beschriftung lesbar (verlAnfang → «Verlängerung
+Anfang», interner Name im Tooltip). Feldarten: zahl → Zahlfeld mit Einheit, auswahl → Liste, bool → Häkchen, text → Feld,
+liste → Mehrfachauswahl bzw. Kommaliste. **Berechnet** (Länge, Fläche, Volumen aus `element_lesen`), **Herkunft** (anfangs
+zugeklappt). Ändern mit Enter/Fokuswechsel →
 `element_aendern`; abgelehnt → Meldung mit Vorschlag am Feld. Neben jedem Wert ein kleines «?» → Dialog mit
 `warum`. System an einer Leitung, einem Formteil oder einer Armatur ändern: Rückfrage «An n Teile weitergeben / Nur dieses
 Bauteil» → `system_vererben` gibt es an alle angeschlossenen Leitungsbauteile desselben Mediums weiter (Geräte bleiben, 04.11.2026).
