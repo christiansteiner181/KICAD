@@ -174,18 +174,23 @@ const BOX_ALLES = { minx: 12500, miny: -500, maxx: 22500, maxy: 11000 };
 await zoomAuf(BOX_ALLES);
 
 // ================================================================== Register
-abschnitt('Register Gebäudetechnik: Rohr (PI) und Kanal (DT) sind jetzt Werkzeuge');
-await ausw(`[...document.querySelectorAll('.mb-tab')].find((t) => t.textContent === 'Gebäudetechnik').click(); return 1;`);
+abschnitt('Register Sanitär: Rohr (PI) ist ein Werkzeug; Register Lüftung: Kanal (DT) ist ein Werkzeug');
+await ausw(`[...document.querySelectorAll('.mb-tab')].find((t) => t.textContent === 'Sanitär').click(); return 1;`);
 await warte(300);
-const gt = await ausw(`return ['gt.rohr', 'gt.kanal', 'gt.formteil'].map((id) => { const k = document.querySelector('.mb-knopf[data-id="' + id + '"]'); return k ? { id, gesperrt: k.classList.contains('gesperrt'), titel: k.title } : null; });`);
-pruef(gt[0] && !gt[0].gesperrt && /\(PI\)/.test(gt[0].titel) && gt[1] && !gt[1].gesperrt && /\(DT\)/.test(gt[1].titel), 'Knöpfe Rohr (PI) und Kanal (DT) im Grundriss aktiv', JSON.stringify(gt));
-pruef(gt[2] && gt[2].gesperrt, 'Formteil bleibt gesperrt (die Formteile setzt der Kern selbst)');
+const gt = await ausw(`return ['gt.rohr', 'gt.formteil'].map((id) => { const k = document.querySelector('.mb-knopf[data-id="' + id + '"]'); return k ? { id, gesperrt: k.classList.contains('gesperrt'), titel: k.title } : null; });`);
+pruef(gt[0] && !gt[0].gesperrt && /\(PI\)/.test(gt[0].titel), 'Knopf Rohr (PI) im Register Sanitär aktiv', JSON.stringify(gt));
+pruef(gt[1] && gt[1].gesperrt, 'Formteil bleibt gesperrt (die Formteile setzt der Kern selbst)');
 pruef(await ausw(`return document.querySelector('.mb-knopf[data-id="gt.rohr"]').closest('.mb-gruppe').querySelector('.mb-gruppenname').textContent === 'Leitungen';`), 'Gruppe «Leitungen»');
 await klickS('.mb-knopf[data-id="gt.rohr"]');
 pruef((await werkzeug()) === 'rohr', 'Mausklick auf den Knopf «Rohr» startet das Werkzeug');
 pruef(await ausw(`return document.querySelector('.mb-knopf[data-id="gt.rohr"]').classList.contains('gedrueckt');`), 'Knopf ist gedrückt dargestellt');
-await shot('00_register_gebaeudetechnik');
+await shot('00_register_sanitaer');
 await taste('Escape');
+await ausw(`[...document.querySelectorAll('.mb-tab')].find((t) => t.textContent === 'Lüftung').click(); return 1;`);
+await warte(300);
+const kanal = await ausw(`const k = document.querySelector('.mb-knopf[data-id="gt.kanal"]'); return k ? { gesperrt: k.classList.contains('gesperrt'), titel: k.title, gruppe: k.closest('.mb-gruppe')?.querySelector('.mb-gruppenname')?.textContent ?? null } : null;`);
+pruef(kanal && !kanal.gesperrt && /\(DT\)/.test(kanal.titel) && kanal.gruppe === 'Leitungen', 'Knopf Kanal (DT) im Register Lüftung, Gruppe «Leitungen», aktiv', JSON.stringify(kanal));
+await shot('00_register_lueftung');
 await ausw(`[...document.querySelectorAll('.mb-tab')].find((t) => t.textContent === 'Ändern').click(); return 1;`);
 
 // ================================================================== Ohne Serie

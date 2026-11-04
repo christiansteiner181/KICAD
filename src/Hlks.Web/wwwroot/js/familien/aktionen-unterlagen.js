@@ -1,4 +1,4 @@
-// Aktionen «Familie aus Unterlagen» (Modul 2, C2): der Dialog (Register Gebäudetechnik › Apparate und Armaturen, Register «Familie» › Unterlagen, Kontextmenü und
+// Aktionen «Familie aus Unterlagen» (Modul 2, C2): der Dialog (Register Heizung, Lüftung, Sanitär, MSRL › Familien, Register «Familie» › Unterlagen, Kontextmenü und
 // Knopf im Projektbrowser «Familien»), «Entwurf prüfen» (öffnet die Prüfansicht der Familie im Familieneditor) und der Befund-Browser («Unterlagen» im Register
 // Familie). Dazu die Meldung, wenn ein KI-Lauf zu Ende ist – auch wenn der Dialog geschlossen wurde. Keine Fachlogik: alles geht über Befehle und Abfragen.
 

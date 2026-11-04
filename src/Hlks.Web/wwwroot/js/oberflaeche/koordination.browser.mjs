@@ -188,7 +188,7 @@ abschnitt('Register «Koordination» im Menüband');
 const reg = await ausw(`return [...document.querySelectorAll('.mb-tab')].map(t => t.textContent);`);
 console.log('   Register:', reg.join(' | '));
 pruef(reg.indexOf('Koordination') === reg.indexOf('Ändern') + 1 && reg.indexOf('Ansicht') === reg.indexOf('Koordination') + 1, 'Register «Koordination» steht zwischen Ändern und Ansicht (wie Revit «Zusammenarbeit» vor «Ansicht»)');
-pruef(reg.indexOf('Einfügen') === reg.indexOf('Gebäudetechnik') + 1 && reg.indexOf('Beschriften') === reg.indexOf('Einfügen') + 1 && reg.indexOf('Ändern') === reg.indexOf('Beschriften') + 1, 'Die Register Gebäudetechnik › Einfügen › Beschriften › Ändern bleiben in ihrer Reihenfolge');
+pruef(reg.indexOf('Einfügen') === reg.indexOf('MSRL') + 1 && reg.indexOf('Beschriften') === reg.indexOf('Einfügen') + 1 && reg.indexOf('Ändern') === reg.indexOf('Beschriften') + 1, 'Die Register MSRL › Einfügen › Beschriften › Ändern bleiben in ihrer Reihenfolge');
 await register('Koordination');
 pruef((await gruppen()).join('|') === 'Vorgaben|Typenliste|Kollisionen|Aussparungen|Koordinationsplan|BCF', 'Gruppen: Vorgaben, Typenliste, Kollisionen, Aussparungen, Koordinationsplan (Modul 7 Teil B3), BCF', (await gruppen()).join('|'));
 const ids = await ausw(`return [...document.querySelectorAll('#menueband .mb-knopf')].map((k) => k.dataset.id);`);

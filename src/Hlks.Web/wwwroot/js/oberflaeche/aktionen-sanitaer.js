@@ -1,4 +1,4 @@
-// Aktion «Sanitär-Zusammenstellung» (Modul 4 Teil A-O): Register Gebäudetechnik › Gruppe «Apparate und Armaturen» öffnet die Liste «Sanitär-Zusammenstellung (W3)» der aktiven Anlage
+// Aktion «Sanitär-Zusammenstellung» (Modul 4 Teil A-O): Register Sanitär › Gruppe «Apparate und Armaturen» öffnet die Liste «Sanitär-Zusammenstellung (W3)» der aktiven Anlage
 // und legt sie beim ersten Mal an (Ansicht art liste, liste sanitaer_zusammenstellung, anlage = Kennzeichen; Befehl element_anlegen wie beim Dialog «Liste anlegen»).
 // Aktive Anlage: die Anlage des gewählten Elements (Anlage selbst, sonst über system › teilVon bis zur Anlage), sonst die Anlage der aktiven Listenansicht, sonst die einzige
 // Anlage des Projekts; gibt es mehrere und keine ist bestimmbar, fragt ein kleiner Dialog. Keine Fachlogik: Summen und Formeln rechnet der Kern (Abfrage sanitaer_zusammenstellung).

@@ -176,7 +176,7 @@ const flyoutInfo = () => ausw(`
     knoepfe: [...f.querySelectorAll('.mb-knopf')].map(k => ({ id: k.dataset.id, klasse: k.className, gesperrt: k.classList.contains('gesperrt'), gedrueckt: k.classList.contains('gedrueckt'), titel: k.title, text: k.querySelector('.mb-text')?.textContent ?? null })),
     gruppen: [...f.querySelectorAll('.mb-gruppe')].map(g => g.dataset.gruppe), zu: f.querySelectorAll('.mb-zu').length };`);
 const bildPruefen = (pfad) => { const b = readFileSync(pfad); return b.subarray(0, 8).toString('hex') === '89504e470d0a1a0a' && b.length > 1500; };
-const REGISTER = ['Datei', 'Architektur', 'Hülle', 'Gebäudetechnik', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'XR', 'Verwalten'];
+const REGISTER = ['Datei', 'Architektur', 'Hülle', 'Heizung', 'Lüftung', 'Sanitär', 'MSRL', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'XR', 'Verwalten'];
 const BREITEN = [1920, 1366, 1024, 800, 600, 420];
 const bilder = [];
 
@@ -186,7 +186,7 @@ try {
 
   // ================================================================== 1. Breiten
   abschnitt('1. Alle Register bei 1920, 1366, 1024, 800, 600 und 420 px: kein Rollbalken, nichts abgeschnitten');
-  pruef(JSON.stringify(await registerNamen()) === JSON.stringify(REGISTER), 'elf Register', JSON.stringify(await registerNamen()));
+  pruef(JSON.stringify(await registerNamen()) === JSON.stringify(REGISTER), 'vierzehn Register', JSON.stringify(await registerNamen()));
   const matrix = {};
   for (const w of BREITEN) {
     await breite(w);
@@ -198,10 +198,10 @@ try {
       pruef(bandOk(b), `${reg} bei ${w} px (Stufen ${st}): kein Rollbalken, nichts abgeschnitten`, JSON.stringify(b));
     }
   }
-  console.log('   Stufen Gebäudetechnik:', BREITEN.map((w) => `${w}: ${matrix[`Gebäudetechnik@${w}`]}`).join(' | '));
+  console.log('   Stufen Sanitär:', BREITEN.map((w) => `${w}: ${matrix[`Sanitär@${w}`]}`).join(' | '));
   console.log('   Stufen Ansicht:       ', BREITEN.map((w) => `${w}: ${matrix[`Ansicht@${w}`]}`).join(' | '));
-  pruef(/^G+$/.test(matrix['Gebäudetechnik@1920']) && /^G+$/.test(matrix['Ändern@1920']), 'bei 1920 px stehen Gebäudetechnik und Ändern in Stufe G');
-  pruef(/^G+$/.test(matrix['Gebäudetechnik@1366']) && /^G+$/.test(matrix['Ändern@1366']), 'bei 1366 px ebenso');
+  pruef(/^G+$/.test(matrix['Sanitär@1920']) && /^G+$/.test(matrix['Ändern@1920']), 'bei 1920 px stehen Sanitär und Ändern in Stufe G');
+  pruef(/^G+$/.test(matrix['Sanitär@1366']) && /^G+$/.test(matrix['Ändern@1366']), 'bei 1366 px ebenso');
   pruef(!/^G+$/.test(matrix['Ansicht@1920']) || true, 'Ansicht bei 1920 px (zu breit für alle G) rollt trotzdem nicht');
   pruef(/[MKZ]/.test(matrix['Ansicht@1366']) && !/[Z]/.test(matrix['Ansicht@1366']), 'Ansicht bei 1366 px: Gruppen verkleinert, aber nichts zusammengeklappt', matrix['Ansicht@1366']);
   pruef(/[ZW]/.test(matrix['Ansicht@420']), 'Ansicht bei 420 px: zusammengeklappt bzw. ausgelagert', matrix['Ansicht@420']);
@@ -276,10 +276,10 @@ try {
 
   // ================================================================== 3. kein Neuzeichnen ohne Stufenwechsel
   abschnitt('3. Neu gezeichnet wird nur bei geänderter Stufe (kein Flackern)');
-  await breite(1700); await registerWahl('Gebäudetechnik'); await warte(200);
+  await breite(1700); await registerWahl('Sanitär'); await warte(200);
   await ausw(`window.__mb = 0; const f = document.querySelector('.mb-feld'); window.__mbObs?.disconnect(); window.__mbObs = new MutationObserver((l) => { window.__mb += l.filter(m => m.type === 'childList' && m.target === f).length; }); window.__mbObs.observe(f, { childList: true }); return 1;`);
   for (const w of [1650, 1600, 1500, 1400, 1300]) await breite(w);
-  pruef((await ausw('return window.__mb;')) === 0, 'Gebäudetechnik: 1700 → 1300 px ohne Stufenwechsel – das Feld wird nie neu gezeichnet', String(await ausw('return window.__mb;')));
+  pruef((await ausw('return window.__mb;')) === 0, 'Sanitär: 1700 → 1300 px ohne Stufenwechsel – das Feld wird nie neu gezeichnet', String(await ausw('return window.__mb;')));
   await ausw('window.__mb = 0; return 1;');
   await breite(600);
   const nach = await ausw('return window.__mb;');
@@ -292,10 +292,10 @@ try {
 
   // ================================================================== 4. Flyout
   abschnitt('4. Flyout: öffnen, ausführen, Esc, Klick ausserhalb, gesperrte und gedrückte Knöpfe');
-  const wZ = await sucheBreite('Gebäudetechnik', 'Leitungen', ['Z']);
-  pruef(wZ !== null, `Gebäudetechnik: bei ${wZ} px ist die Gruppe «Leitungen» zusammengeklappt`);
+  const wZ = await sucheBreite('Sanitär', 'Leitungen', ['Z']);
+  pruef(wZ !== null, `Sanitär: bei ${wZ} px ist die Gruppe «Leitungen» zusammengeklappt`);
   let i = await info();
-  console.log(`   Gebäudetechnik bei ${wZ} px:`, i.gruppen.map((g) => `${g.name}=${g.stufe}`).join(', '), '· weitere', i.weitere);
+  console.log(`   Sanitär bei ${wZ} px:`, i.gruppen.map((g) => `${g.name}=${g.stufe}`).join(', '), '· weitere', i.weitere);
   const zName = 'Leitungen';
   await klick(`.mb-feld .mb-zu[data-gruppe="${zName}"]`);
   let fl = await flyoutInfo();
@@ -315,7 +315,7 @@ try {
   pruef(!(await gibt('.mb-flyout')), 'zweiter Klick auf den Knopf schliesst das Flyout');
 
   // gesperrte Knöpfe im Flyout
-  for (const reg of ['Gebäudetechnik']) {
+  for (const reg of ['Sanitär']) {
     await registerWahl(reg);
     const wo = await erreichbar('gt.formteil');
     fl = await flyoutInfo();
@@ -542,12 +542,12 @@ try {
   await ausw(`const a = await import('/js/oberflaeche/aktionen.js'); a.modusSetzen('aendern'); return 1;`); await warte(300);
 
   // ================================================================== 10. Bilder
-  abschnitt('10. Bilder: Gebäudetechnik und Ändern bei 1920, 1366, 1024, 800 px, hell und dunkel');
+  abschnitt('10. Bilder: Sanitär und Ändern bei 1920, 1366, 1024, 800 px, hell und dunkel');
   for (const d of ['dunkel', 'hell']) {
     await designSetzen(d);
     for (const w of [1920, 1366, 1024, 800]) {
       await breite(w);
-      for (const reg of ['Gebäudetechnik', 'Ändern', 'Ansicht']) {
+      for (const reg of ['Sanitär', 'Ändern', 'Ansicht']) {
         await registerWahl(reg);
         const b = await bandBefund();
         const f = await shot(`r_${reg.toLowerCase().replace('ä', 'ae').replace('ü', 'ue')}_${w}_${d}`, 215);
@@ -556,7 +556,7 @@ try {
       }
     }
   }
-  await designSetzen('hell'); await breite(420); await registerWahl('Gebäudetechnik');
+  await designSetzen('hell'); await breite(420); await registerWahl('Sanitär');
   const z0 = (await info()).gruppen.find((g) => g.stufe === 'Z');
   if (z0) { await klick(`.mb-feld .mb-zu[data-gruppe="${z0.name}"]`); bilder.push(await shot('r_flyout_420_hell', 330)); await esc(); }
   await designSetzen('dunkel');

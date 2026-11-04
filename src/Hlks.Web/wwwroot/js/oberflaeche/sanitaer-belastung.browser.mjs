@@ -11,7 +11,7 @@
 //  4. Strangschema: Beschriftung «ΣLU 24», «ΣDU 16.7», Schalter belastung (Palette der Ansicht) ein/aus, Art ändern wirkt auf die Beschriftung.
 //  5. Liste «Sanitär-Zusammenstellung (W3)»: Dialog «Liste anlegen», Aufbau wie das Excel mit den Zahlen des Beispielprojekts, Tooltips mit Formel und Excel-Zelle, CSV mit beiden Blöcken,
 //     Spezialinstallation ändert die Spitze gesamt, K leer → «K fehlt» (kein Q_WW, kein Q_tot) und Befund P25 im Dialog Prüfbefunde.
-//  6. Knopf «Sanitär-Zusammenstellung» (Gebäudetechnik › Apparate und Armaturen) öffnet die vorhandene Liste; Listen sind (wie alle) nicht auf Planblätter platzierbar.
+//  6. Knopf «Sanitär-Zusammenstellung» (Sanitär › Apparate und Armaturen) öffnet die vorhandene Liste; Listen sind (wie alle) nicht auf Planblätter platzierbar.
 //  7. Prüfbericht 4A: Hinweise des Kerns als Tabelle «Hinweise» unter den Blöcken (ΣLU WW ohne WW-Verbindung; Kurvenwahl seit 20.10.2026 bestätigt, ohne Hinweis); Befund P26 «Apparat ohne Weg
 //     im Netz» (verkehrt gezogene Leitung an einem T-Stück) im Dialog Prüfbefunde und als Hinweis in der Liste; Leitung gelöscht → P26 weg.
 // Ports: 5200–5219 (HLKS_M4_PORT), CDP über HLKS_CDP_PORT.
@@ -518,18 +518,18 @@ try {
 
   // ================================================================== 6. Knopf, Planblätter
   abschnitt('6. Knopf «Sanitär-Zusammenstellung», Planblätter');
-  await registerWahl('Gebäudetechnik');
+  await registerWahl('Sanitär');
   const k = knopfSel('sanitaer.zusammenstellung');
-  pruef(await gibt(k), 'Knopf «Sanitär-Zusammenstellung» im Register Gebäudetechnik');
+  pruef(await gibt(k), 'Knopf «Sanitär-Zusammenstellung» im Register Sanitär');
   const gruppe = await ausw(`return document.querySelector(${JSON.stringify(k)})?.closest('.mb-gruppe')?.dataset.gruppe ?? null;`);
   pruef(gruppe === 'Apparate und Armaturen', 'in der Gruppe «Apparate und Armaturen» (keine neue Gruppe, kein neues Register)', String(gruppe));
   pruef(!(await ausw(`return document.querySelector(${JSON.stringify(k)}).disabled || document.querySelector(${JSON.stringify(k)}).classList.contains('gesperrt');`)), 'Knopf ist bedienbar');
-  // Bilder des Menübands: Gebäudetechnik mit dem neuen Knopf, Strich- und Revit-Symbole, beide Designs
+  // Bilder des Menübands: Sanitär mit dem neuen Knopf, Strich- und Revit-Symbole, beide Designs
   const bandClip = { x: 0, y: 0, width: 1920, height: 150 };
   for (const stil of ['strich', 'revit']) {
     await ausw(`const m = await import('/js/oberflaeche/symbolstil-umschalten.js'); await m.symbolstilWaehlen(${JSON.stringify(stil)}, false); return 1;`);
     await warte(300);
-    for (const d of ['dunkel', 'hell']) { await designSetzen(d); bilder.push(await speichern(`m4_menueband_gebaeudetechnik_${stil}_${d}`, bandClip)); }
+    for (const d of ['dunkel', 'hell']) { await designSetzen(d); bilder.push(await speichern(`m4_menueband_sanitaer_${stil}_${d}`, bandClip)); }
     if (stil === 'revit') {
       const svg = await ausw(`return document.querySelector(${JSON.stringify(k + ' .mb-sym svg')})?.getAttribute('class') ?? '';`);
       pruef(/sym-rv/.test(svg), 'Revit-Satz: der Knopf trägt die eigene Revit-Zeichnung (32 px)', svg);

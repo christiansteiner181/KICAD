@@ -1,4 +1,4 @@
-// Aktionen für Leitungen (Modul 3, Teil C1): Register Gebäudetechnik › Gruppe «Leitungen» mit Rohr (PI) und Kanal (DT), «Aufteilen mit Serie …»
+// Aktionen für Leitungen (Modul 3, Teil C1): Gruppe «Leitungen» mit Rohr (PI, Register Heizung und Sanitär) und Kanal (DT, Register Lüftung), «Aufteilen mit Serie …»
 // (Kontextregister und Palette, nur für Leitungen ohne Serie) und die Listenansicht «Materialliste» (Register Ansicht › Erstellen,
 // Kontextmenü auf «Listen» im Projektbrowser). Keine Fachlogik: alles geht über Befehle und Abfragen des Kerns
 // (leitung_zeichnen, leitung_abzweigen, leitung_aufteilen, leitung_groesse, leitung_serie, materialliste, element_anlegen).

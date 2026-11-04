@@ -1,4 +1,4 @@
-// Aktionen der Familienbibliothek (Modul 2, C3): «Familien im Explorer …» (Register Gebäudetechnik › Apparate und Armaturen, Register «Familie» › Bibliothek,
+// Aktionen der Familienbibliothek (Modul 2, C3): «Familien im Explorer …» (Register Heizung, Lüftung, Sanitär, MSRL › Familien, Register «Familie» › Bibliothek,
 // Kontextmenü und Knopf am Knoten «Familien»), «Aktualisieren …» (Knopf und Kontextmenü an Projektfamilien mit neuerer Version bzw. paralleler Änderung, Register
 // «Familie») und das Laden bzw. Platzieren einer Bibliotheksfamilie aus dem Projektbrowser (zuerst familie_laden, dann das gewohnte Platzieren mit Typauswahl).
 // Keine Fachlogik: die Dialoge in bibliothek-dialoge.js sprechen nur mit dem Kern.

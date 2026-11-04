@@ -104,7 +104,7 @@ const info = await ausw(`
   for (const [id, x] of a.aktionen) if (x.kuerzel && /^[A-Z0-9]{2}$/.test(x.kuerzel)) k[x.kuerzel] = id;
   return { kuerzel: k, register: [...document.querySelectorAll('.mb-tab')].map(t => t.textContent), aktiv: a.aktionen.get('arch.wand').aktiv(), ansicht: z.zustand.aktiveAnsicht };`);
 console.log('  aktive Ansicht:', info.ansicht, '· Register:', info.register.join(' | '));
-pruef(info.register.indexOf('Beschriften') > info.register.indexOf('Gebäudetechnik') && info.register.indexOf('Ändern') === info.register.indexOf('Beschriften') + 1, 'Register «Beschriften» nach Gebäudetechnik (dazwischen seit 1b «Einfügen») und vor Ändern');
+pruef(info.register.indexOf('Beschriften') > info.register.indexOf('MSRL') && info.register.indexOf('Ändern') === info.register.indexOf('Beschriften') + 1, 'Register «Beschriften» nach MSRL (dazwischen seit 1b «Einfügen») und vor Ändern');
 for (const [kz, id] of Object.entries({ WA: 'arch.wand', DR: 'arch.tuer', WN: 'arch.fenster', RM: 'arch.raum', GR: 'arch.achse', DI: 'beschriften.bemassung', TX: 'beschriften.text', DL: 'beschriften.linie', EL: 'beschriften.kote', MV: 'aendern.verschieben', CO: 'aendern.kopieren', RO: 'aendern.drehen', MM: 'aendern.spiegeln' }))
   pruef(info.kuerzel[kz] === id, `Kürzel ${kz} → ${id}`, info.kuerzel[kz]);
 pruef(info.aktiv === true, 'Wand ist im Grundriss aktiv');

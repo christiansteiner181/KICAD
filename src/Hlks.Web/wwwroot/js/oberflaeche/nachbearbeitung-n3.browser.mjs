@@ -189,13 +189,13 @@ try {
   console.log(`   ${kz.length} Kürzel, Register:`, [...new Set(kz.map((z) => z[2]))].join(', '));
   const reg = (k) => kz.find((z) => z[1].split(' / ')[0] === k)?.[2];
   pruef(['TX', 'DI', 'DL', 'EL'].every((k) => reg(k) === 'Beschriften'), 'TX, DI, DL, EL stehen unter «Beschriften»', JSON.stringify(['TX', 'DI', 'DL', 'EL'].map(reg)));
-  pruef(reg('CM') === 'Gebäudetechnik', 'CM (Familie platzieren) steht unter «Gebäudetechnik»', String(reg('CM')));
+  pruef(reg('CM') === 'Heizung', 'CM (Familie platzieren) steht unter «Heizung»', String(reg('CM')));
   pruef(reg('WA') === 'Architektur' && reg('KS') === 'Verwalten' && reg('MD') === 'Ändern' && reg('VV') === 'Ansicht', 'WA, KS, MD, VV unter ihrem Register');
   const allgemein = kz.filter((z) => z[2] === 'Allgemein').map((z) => z[1]);
   const ohneRegister = await ausw(`const a = (await import('/js/oberflaeche/aktionen.js')).aktionen; return [...a.values()].filter((x) => x.kuerzel && !x.register).map((x) => [x.kuerzel, ...x.kuerzelAlt].join(' / '));`);
   pruef(JSON.stringify(allgemein.sort()) === JSON.stringify(ohneRegister.sort()), `«Allgemein» enthält nur Aktionen ohne Register (${allgemein.join(', ') || 'keine'})`, `${allgemein} gegen ${ohneRegister}`);
   const mitRegister = await ausw(`const a = (await import('/js/oberflaeche/aktionen.js')).aktionen; return [...a.values()].filter((x) => x.kuerzel && x.register).map((x) => x.register);`);
-  const bekannt = ['datei', 'architektur', 'huelle', 'gebaeudetechnik', 'einfuegen', 'beschriften', 'aendern', 'koordination', 'ansicht', 'xr', 'verwalten', 'kontext', 'familie'];
+  const bekannt = ['datei', 'architektur', 'huelle', 'heizung', 'lueftung', 'sanitaer', 'msrl', 'einfuegen', 'beschriften', 'aendern', 'koordination', 'ansicht', 'xr', 'verwalten', 'kontext', 'familie'];
   pruef(mitRegister.every((r) => bekannt.includes(r)), 'jedes Register einer Aktion mit Kürzel hat einen Namen im Dialog', [...new Set(mitRegister)].join(','));
   await zweiBilder('kuerzel', '#dialogschicht .dlg');
   await alleDialogeZu();
@@ -209,7 +209,7 @@ try {
   pruef(knoepfe.slice(0, 2).every((k) => !k.gesperrt), 'Einlageplan und Grundleitungsplan sind verfügbar (Projekt mit Geschossen)');
   pruef(knoepfe.slice(0, 2).every((k) => /\nF1: Hilfe zu diesem Befehl$/.test(k.titel)), 'Tooltips enden mit «F1: Hilfe zu diesem Befehl»', JSON.stringify(knoepfe.map((k) => k.titel)));
   pruef(knoepfe[0].titel.startsWith('Einlageplan') && knoepfe[1].titel.startsWith('Grundleitungsplan'), 'Tooltips nennen den Namen (die Knöpfe zeigen nur das Symbol)', JSON.stringify(knoepfe.map((k) => k.titel)));
-  const REG = ['Datei', 'Architektur', 'Hülle', 'Gebäudetechnik', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'Verwalten'];
+  const REG = ['Datei', 'Architektur', 'Hülle', 'Heizung', 'Lüftung', 'Sanitär', 'MSRL', 'Einfügen', 'Beschriften', 'Ändern', 'Koordination', 'Ansicht', 'XR', 'Verwalten'];
   for (const r of REG) {
     await registerWahl(r);
     const i = await info();

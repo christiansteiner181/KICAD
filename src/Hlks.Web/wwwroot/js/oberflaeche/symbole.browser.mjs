@@ -153,9 +153,9 @@ try {
     pruef((await anzahl('.kmenu')) === 0, 'Esc schliesst die Liste');
   }
   const vorher = {};
-  for (const reg of ['Ansicht', 'Gebäudetechnik', 'Architektur', 'Ändern']) { await registerWahl(reg); vorher[reg] = await layout(); }
-  await registerWahl('Gebäudetechnik');
-  await shot('s_gebaeudetechnik_strich_dunkel', 215);
+  for (const reg of ['Ansicht', 'Sanitär', 'Architektur', 'Ändern']) { await registerWahl(reg); vorher[reg] = await layout(); }
+  await registerWahl('Sanitär');
+  await shot('s_sanitaer_strich_dunkel', 215);
 
   // ================================================================== 2. Umschalten ohne Neuladen
   abschnitt('2. Umschalten über Ansicht › Fenster › Paletten, ohne Neuladen');
@@ -175,13 +175,13 @@ try {
   }
 
   abschnitt('3. Gleiche Masse und gleiche Stufen wie vorher (nichts am Layout)');
-  for (const reg of ['Ansicht', 'Gebäudetechnik', 'Architektur', 'Ändern']) {
+  for (const reg of ['Ansicht', 'Sanitär', 'Architektur', 'Ändern']) {
     await registerWahl(reg);
     const n = await layout();
     const v = vorher[reg];
     pruef(n.stufen === v.stufen && JSON.stringify(n.gruppen) === JSON.stringify(v.gruppen) && JSON.stringify(n.symbole) === JSON.stringify(v.symbole) && JSON.stringify(n.band) === JSON.stringify(v.band), `${reg}: Stufen, Gruppenbreiten, Symbolgrössen und Bandgrösse unverändert (${n.stufen})`, JSON.stringify({ vorher: v, nachher: n }));
   }
-  await registerWahl('Gebäudetechnik');
+  await registerWahl('Sanitär');
   {
     const s = await knopfSymbole();
     const gross = s.filter((x) => x.art === 'gross'), klein = s.filter((x) => x.art === 'klein');
@@ -207,10 +207,10 @@ try {
     pruef(dunkel.vl === 'rgb(255, 90, 82)' && hell.vl === 'rgb(208, 49, 45)', 'Heizung Vorlauf: Rot, im dunklen Design etwas heller', JSON.stringify({ dunkel: dunkel.vl, hell: hell.vl }));
     pruef(dunkel.san === 'rgb(73, 196, 99)' && hell.san === 'rgb(46, 139, 58)', 'Sanitär: Grün (hell und dunkel)', JSON.stringify({ dunkel: dunkel.san, hell: hell.san }));
     pruef(dunkel.kontur !== hell.kontur && dunkel.g2 !== hell.g2, 'Kontur und Grautöne wechseln mit dem Design', JSON.stringify({ dunkel, hell }));
-    await shot('s_gebaeudetechnik_revit_hell', 215);
+    await shot('s_sanitaer_revit_hell', 215);
     await designSetzen('dunkel');
-    await registerWahl('Gebäudetechnik');
-    await shot('s_gebaeudetechnik_revit_dunkel', 215);
+    await registerWahl('Sanitär');
+    await shot('s_sanitaer_revit_dunkel', 215);
     await registerWahl('Ändern'); await shot('s_aendern_revit_dunkel', 215);
     await registerWahl('Koordination'); await shot('s_koordination_revit_dunkel', 215);
   }
@@ -221,7 +221,7 @@ try {
     for (const w of [420, 380, 340, 300, 260, 220, 180, 140]) {
      if (z) break;
      await breite(w);
-     for (const r of ['Gebäudetechnik', 'Ändern', 'Ansicht']) {
+     for (const r of ['Sanitär', 'Ändern', 'Ansicht']) {
       await registerWahl(r);
       const i = await info();
       if (!z && i.gruppen.some((g) => g.stufe === 'Z')) { z = i.gruppen.find((g) => g.stufe === 'Z'); reg = r; wz = w; }
@@ -238,7 +238,7 @@ try {
       await esc();
     }
     await breite(420);
-    for (const r of ['Ansicht', 'Architektur', 'Hülle', 'Einfügen', 'Beschriften', 'Verwalten', 'Gebäudetechnik', 'Ändern', 'Koordination']) { await registerWahl(r); if ((await info()).weitere > 0) { weitere = r; break; } }
+    for (const r of ['Ansicht', 'Architektur', 'Hülle', 'Einfügen', 'Beschriften', 'Verwalten', 'MSRL', 'Ändern', 'Koordination']) { await registerWahl(r); if ((await info()).weitere > 0) { weitere = r; break; } }
     if (weitere) {
       await registerWahl(weitere);
       await klick('.mb-feld .mb-weitere');

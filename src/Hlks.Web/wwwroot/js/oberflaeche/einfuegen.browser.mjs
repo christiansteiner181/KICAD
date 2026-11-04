@@ -92,7 +92,7 @@ const befehle = (name) => ausw(`return window.__bef.filter(b => b.url.includes('
 abschnitt('Register Einfügen im Menüband');
 const reg = await ausw(`return [...document.querySelectorAll('.mb-tab')].map(t => t.textContent);`);
 console.log('   Register:', reg.join(' | '));
-pruef(reg.indexOf('Einfügen') === reg.indexOf('Gebäudetechnik') + 1 && reg.indexOf('Beschriften') === reg.indexOf('Einfügen') + 1, 'Einfügen steht zwischen Gebäudetechnik und Beschriften (Reihenfolge wie Revit)');
+pruef(reg.indexOf('Einfügen') === reg.indexOf('MSRL') + 1 && reg.indexOf('Beschriften') === reg.indexOf('Einfügen') + 1, 'Einfügen steht zwischen MSRL und Beschriften (Reihenfolge wie Revit)');
 await ausw(`[...document.querySelectorAll('.mb-tab')].find(t => t.textContent === 'Einfügen').click(); return true;`);
 await warte(300);
 const gruppen = await ausw(`return [...document.querySelectorAll('.mb-gruppenname')].map(g => g.textContent);`);

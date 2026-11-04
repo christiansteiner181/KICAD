@@ -182,7 +182,7 @@ const alleDialogeZu = async () => { for (let i = 0; i < 5 && (await dialoge()) >
 const designSetzen = (d) => ausw(`const m = await import('/js/oberflaeche/design.js'); m.designSetzen(${JSON.stringify(d)}, false); return 1;`).then(() => warte(250));
 const meldungen = () => ausw(`return [...document.querySelectorAll('#meldungen .meldung')].map((m) => m.innerText);`);
 const meldungenLeeren = () => ausw(`document.querySelectorAll('#meldungen .meldung').forEach((m) => m.remove()); return 1;`);
-const REGISTERNAME = { datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', gebaeudetechnik: 'Gebäudetechnik', einfuegen: 'Einfügen', beschriften: 'Beschriften', aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten' };
+const REGISTERNAME = { datei: 'Datei', architektur: 'Architektur', huelle: 'Hülle', heizung: 'Heizung', lueftung: 'Lüftung', sanitaer: 'Sanitär', msrl: 'MSRL', einfuegen: 'Einfügen', beschriften: 'Beschriften', aendern: 'Ändern', koordination: 'Koordination', ansicht: 'Ansicht', xr: 'XR', verwalten: 'Verwalten' };
 
 /** Verbindung zu einem weiteren Fenster (Ziel) des Browsers, hier dem Hilfefenster; sammelt Ausnahmen der Seite. */
 async function verbinde(wsUrl) {
@@ -276,12 +276,12 @@ try {
   pruef(a.length === 1 && a[0][0] === `${BASIS}#k-ansicht~serien-pdf` && a[0][1] === 'kicad-hilfe', 'Maus über «Serien-PDF …» (Ansicht) + F1 → …#k-ansicht~serien-pdf', JSON.stringify(a));
 
   await leeren();
-  await registerWahl('Gebäudetechnik');
+  await registerWahl('Sanitär');
   const gtKnopf = await ausw(`const k = document.querySelector('.mb-feld .mb-knopf'); return k ? { id: k.dataset.id, titel: (await import('/js/oberflaeche/aktionen.js')).aktionen.get(k.dataset.id).titel.replace(/[\\u200b\\u00ad]/g, '') } : null;`);
   await ueber('.mb-feld .mb-knopf');
   await f1();
   a = await aufrufe();
-  pruef(a.length === 1 && a[0][0] === `${BASIS}#k-gebaeudetechnik~${hilfeSchluessel(gtKnopf.titel)}`, `Register «Gebäudetechnik», Knopf «${gtKnopf.titel}» → #k-gebaeudetechnik~${hilfeSchluessel(gtKnopf.titel)}`, JSON.stringify(a));
+  pruef(a.length === 1 && a[0][0] === `${BASIS}#k-sanitaer~${hilfeSchluessel(gtKnopf.titel)}`, `Register «Sanitär», Knopf «${gtKnopf.titel}» → #k-sanitaer~${hilfeSchluessel(gtKnopf.titel)}`, JSON.stringify(a));
 
   // ---------------------------------------------------------------- Zeiger weg → kein Kontext
   abschnitt('F1 ohne Kontext und preventDefault');

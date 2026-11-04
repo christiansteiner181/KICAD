@@ -22,7 +22,7 @@ export const GESETZT_VON = {
   ifcBezug: 'Setzt der IFC-Übertrag (Register Einfügen › IFC übernehmen).',
   uebergang: 'Register Hülle › Übergang …',
   hkap: 'Register Verwalten › HKAP › Verbinden.',
-  familienAuswahl: 'Register Gebäudetechnik › Familien im Explorer ….',
+  familienAuswahl: 'Register Heizung, Lüftung, Sanitär oder MSRL › Familien im Explorer ….',
   ifcStandard: 'Regel für den IFC-Übertrag; setzen über die KI (element_aendern), Vorgabe: Leitung, Formteil, Verteiler, Armatur.',
   ifcSerien: 'Regeln IFC-Typ → Serie für den IFC-Übertrag; setzen über die KI (element_aendern).',
 };
