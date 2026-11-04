@@ -339,7 +339,7 @@
   { "name": "Ventil", "kuerzel": "VE", "basis": "Armatur", "ifc": "IfcValve",
     "beschreibung": "Ventil oder Absperrorgan.",
     "eigenschaften": [ { "name": "art", "typ": "auswahl", "beschreibung": "Bauart",
-      "auswahl": [ "absperrventil", "regulierventil", "rueckflussverhinderer", "magnetventil", "druckreduzierventil", "mischventil", "regelventil", "regelkugelhahn", "absperrklappe", "kugelhahn", "auslaufhahn", "entleerhahn" ] },
+      "auswahl": [ "absperrventil", "regulierventil", "rueckflussverhinderer", "magnetventil", "druckreduzierventil", "mischventil", "regelventil", "regelkugelhahn", "absperrklappe", "kugelhahn", "auslaufhahn", "entleerhahn", "thermostatventil", "ruecklaufverschraubung" ] },
       { "name": "wege", "typ": "zahl", "beschreibung": "Anzahl Wege (2 = Durchgang, 3 = Mischen/Verteilen; Herstellerbibliothek)" },
       { "name": "antriebstyp", "typ": "text", "beschreibung": "Typ der Antriebsfamilie, auf die bezuege.antrieb zeigt (Herstellerbibliothek; passende Antriebe nennt die Kombinationstabelle «antriebe» der Ventilfamilie)" },
       { "name": "kvs", "typ": "zahl", "einheit": "m3/h", "beschreibung": "Durchflusskennwert Kvs (aus der Herstellerunterlage, Modul 2; Grundlage Hydraulik Modul 5)" },
