@@ -147,6 +147,10 @@ public sealed class Koerperteil
     /// <summary>quader | prisma | zylinder | kugel | netz (Modul 1b: Hintergrund-Netz einer IFC-Unterlage, Daten über Quelle) |
     /// koerper (Modul 2: allgemeines Netz eines Familienkörpers mit Ecken und Dreiecken, geschlossen und aussen orientiert)</summary>
     public string Art { get; set; } = "quader";
+    /// <summary>Achse runder Familienkörper (Zylinder, Kegel, Rotation, runder Sweep bzw. Übergang; Kugel: nur der Mittelpunkt) in Familienkoordinaten
+    /// mit grösstem Radius – für die Achslinien der Familiendarstellung (Christian 05.11.2026: «alle Runden Bauteile brauchen eine Achslinie»). Nicht im JSON.</summary>
+    [JsonIgnore] public List<double[]>? Achse { get; set; }
+    [JsonIgnore] public double AchseRadius { get; set; }
     /// <summary>Koerper: Ecken [x, y, z] in mm.</summary>
     public List<double[]>? Ecken { get; set; }
     /// <summary>Koerper: Dreiecke als Indizes [i, j, k] in Ecken, im Gegenuhrzeigersinn von aussen gesehen (Normale nach aussen).</summary>

@@ -297,6 +297,20 @@ public class FamilieGrafikTests
     }
 
     [Fact]
+    public void FamilieAnsicht_RundeKoerperMitAchslinie()   // Christian 05.11.2026: «alle Runden Bauteile brauchen eine Achslinie»
+    {
+        var p = MitFamilie();
+        Grafikteil? Achsen(string ansicht, string detail) => ((JsonObject)Tuer.Abfrage(p, "familie_ansicht", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "22-600-1000", ["ansicht"] = ansicht, ["detailgrad"] = detail }))["plangrafik"]
+            .Deserialize<Plangrafik>(Json.Optionen)!.Teile.SingleOrDefault(t => t.Ebene == "achse");
+        // Stutzen (Zylinder r 10, senkrecht, nur fein): vorne senkrechte Strichpunktlinie über den Stutzen hinaus, von oben ein Achsenkreuz je Stutzen
+        var vorne = Achsen("vorne", "fein")!;
+        Assert.Equal(2, vorne.Primitive.Count);
+        Assert.All(vorne.Primitive, x => { Assert.Equal("strichpunkt", x.Stil.Linie); Assert.Equal(x.Punkte[0][0], x.Punkte[^1][0], 6); Assert.True(Math.Abs(x.Punkte[0][1] - x.Punkte[^1][1]) > 30); });
+        Assert.Equal(4, Achsen("oben", "fein")!.Primitive.Count(x => x.Art == "linie"));
+        Assert.Null(Achsen("vorne", "mittel"));   // Quader haben keine Achse
+    }
+
+    [Fact]
     public void FamilieAnsicht_3dUndFehler()
     {
         var p = MitFamilie();

@@ -393,10 +393,18 @@ public static class FamilienKoerper
                 var von = P(k.Von); var nach = P(k.Nach); var r = Z(k.R);
                 if (r <= 0) throw new HlksFehler($"{ort}: Radius {r:0.###} ist ungültig.", "Radius > 0 angeben.");
                 if (Geometrie.Abstand(von, nach) < 1e-6) throw new HlksFehler($"{ort}: von und nach liegen aufeinander.", "Zwei verschiedene Punkte angeben.");
-                return new Koerperteil { Art = "zylinder", Von = von, Nach = nach, Radius = r, Material = k.Material, Teil = k.Id };
+                return new Koerperteil { Art = "zylinder", Von = von, Nach = nach, Radius = r, Material = k.Material, Teil = k.Id, Achse = [von, nach], AchseRadius = r };
             }
-            case "kegel": return Netz(NetzBau.Kegel(P(k.Von), P(k.Nach), Z(k.R1), Z(k.R2)), k);
-            case "kugel": return Netz(NetzBau.Kugel(P(k.Mitte), Z(k.R)), k);
+            case "kegel":
+            {
+                var von = P(k.Von); var nach = P(k.Nach); double r1 = Z(k.R1), r2 = Z(k.R2);
+                var t = Netz(NetzBau.Kegel(von, nach, r1, r2), k); t.Achse = [von, nach]; t.AchseRadius = Math.Max(r1, r2); return t;
+            }
+            case "kugel":
+            {
+                var m = P(k.Mitte); var r = Z(k.R);
+                var t = Netz(NetzBau.Kugel(m, r), k); t.Achse = [m]; t.AchseRadius = r; return t;
+            }
             case "extrusion":
             {
                 var kontur = NetzBau.Facetten(k.Kontur!.Select(p => (Z(p.U), Z(p.V), p.Woelbung is null ? 0 : Z(p.Woelbung))).ToList());
@@ -407,13 +415,27 @@ public static class FamilienKoerper
             {
                 var kontur = NetzBau.Facetten(k.Kontur!.Select(p => (Z(p.U), Z(p.V), p.Woelbung is null ? 0 : Z(p.Woelbung))).ToList());
                 var ap = P(k.AchsePunkt);
-                return Netz(NetzBau.Rotation(k.Ebene!, kontur, (ap[0], ap[1]), k.AchseRichtung!, k.Winkel is null ? 360 : Z(k.Winkel)), k);
+                var t = Netz(NetzBau.Rotation(k.Ebene!, kontur, (ap[0], ap[1]), k.AchseRichtung!, k.Winkel is null ? 360 : Z(k.Winkel)), k);
+                // Achse über die Länge des Körpers: Ecken auf die Achse projiziert
+                var (p0, d) = NetzBau.RotationsAchse(k.Ebene!, (ap[0], ap[1]), k.AchseRichtung!);
+                double lo = double.MaxValue, hi = double.MinValue, rmax = 0;
+                foreach (var e in t.Ecken!)
+                {
+                    double s = (e[0] - p0.X) * d.X + (e[1] - p0.Y) * d.Y + (e[2] - p0.Z) * d.Z;
+                    lo = Math.Min(lo, s); hi = Math.Max(hi, s);
+                    double qx = e[0] - p0.X - s * d.X, qy = e[1] - p0.Y - s * d.Y, qz = e[2] - p0.Z - s * d.Z;
+                    rmax = Math.Max(rmax, Math.Sqrt(qx * qx + qy * qy + qz * qz));
+                }
+                if (hi > lo) { t.Achse = [[p0.X + lo * d.X, p0.Y + lo * d.Y, p0.Z + lo * d.Z], [p0.X + hi * d.X, p0.Y + hi * d.Y, p0.Z + hi * d.Z]]; t.AchseRadius = rmax; }
+                return t;
             }
             case "sweep":
             {
                 var pfad = k.Pfad!.Select(P).ToList();
                 (double, double)? rechteck = k.ProfilRechteck is null ? null : (Z(k.ProfilRechteck[0]), Z(k.ProfilRechteck[1]));
-                return Netz(NetzBau.Sweep(pfad, k.ProfilKreis is null ? null : Z(k.ProfilKreis), rechteck, k.Biegeradius is null ? null : Z(k.Biegeradius)), k);
+                var t = Netz(NetzBau.Sweep(pfad, k.ProfilKreis is null ? null : Z(k.ProfilKreis), rechteck, k.Biegeradius is null ? null : Z(k.Biegeradius)), k);
+                if (k.ProfilKreis is not null) { t.Achse = pfad; t.AchseRadius = Z(k.ProfilKreis); }
+                return t;
             }
             case "uebergang":
             {
@@ -421,8 +443,10 @@ public static class FamilienKoerper
                 (double, double)? q2 = k.ProfilNachRechteck is null ? null : (Z(k.ProfilNachRechteck[0]), Z(k.ProfilNachRechteck[1]));
                 var von = P(k.Von); var nach = P(k.Nach);
                 if (Geometrie.Abstand(von, nach) < 1e-6) throw new HlksFehler($"{ort}: von und nach liegen aufeinander.", "Zwei verschiedene Punkte angeben.");
-                return Netz(NetzBau.Uebergang(von, nach, k.ProfilKreis is null ? null : Z(k.ProfilKreis), q1, k.ProfilNachKreis is null ? null : Z(k.ProfilNachKreis), q2,
+                var t = Netz(NetzBau.Uebergang(von, nach, k.ProfilKreis is null ? null : Z(k.ProfilKreis), q1, k.ProfilNachKreis is null ? null : Z(k.ProfilNachKreis), q2,
                     k.Oben is null ? null : P(k.Oben)), k);
+                if (k.ProfilKreis is not null && k.ProfilNachKreis is not null) { t.Achse = [von, nach]; t.AchseRadius = Math.Max(Z(k.ProfilKreis), Z(k.ProfilNachKreis)); }
+                return t;
             }
             case "netz":
             {

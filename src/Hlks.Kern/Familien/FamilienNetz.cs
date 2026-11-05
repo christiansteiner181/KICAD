@@ -401,6 +401,13 @@ public static class NetzBau
     }
 
     /// <summary>Kontur in der Ebene, gedreht um eine Achse in dieser Ebene (durch achsPunkt, parallel zu u oder v).</summary>
+    /// <summary>Achse eines Rotationskörpers: Punkt und Richtung in Familienkoordinaten (wie Rotation).</summary>
+    public static (V3 Punkt, V3 Richtung) RotationsAchse(string ebene, (double U, double V) achsPunkt, string richtung)
+    {
+        var (eu, ev, _) = Basis(ebene);
+        return (eu * achsPunkt.U + ev * achsPunkt.V, richtung == "v" ? ev : eu);
+    }
+
     public static Netz3 Rotation(string ebene, List<(double U, double V)> kontur, (double U, double V) achsPunkt, string richtung, double winkelGrad)
     {
         if (kontur.Count < 3 || Math.Abs(Flaeche(kontur)) < 1e-6) throw new HlksFehler("Rotation: Kontur hat keine Fläche.", "Mindestens drei Punkte, die eine Fläche umschliessen.");
