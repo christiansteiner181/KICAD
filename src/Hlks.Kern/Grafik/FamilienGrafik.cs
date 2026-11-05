@@ -118,6 +118,10 @@ public sealed class FamilienGrafik : IGrafikquelle
         var lage = Familien.Einbaulage(e)!;
         var teil = Grundriss(a, lage, ctx.Detailgrad, ctx.Massstab, farbe, ctx.Katalog, Netz.ElementMedium(ctx.Modell, e), e.Id, Ebene(ctx.Katalog, e),
             formteil || Architektur(ctx.Katalog, e) ? null : e.Kennzeichen, anschlussMarken: !formteil);
+        if (formteil && ctx.Detailgrad == "grob")   // einlinig: tiefere Linien enden am Kreis der Steigleitung (Skizze Christian 05.11.2026)
+            teil.Primitive = teil.Primitive.SelectMany(p => p.Art == "polylinie" && p.Stil.Linie != "strichpunkt"
+                ? HlksGrafik.AmKreisUnterbrechen(ctx, p.Punkte, lage.Ursprung[2]).Select(st => new Primitiv { Art = "polylinie", Punkte = st, Stil = p.Stil })
+                : [p]).ToList();
         // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
         var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
         // darunter die Sichtkanten von oben dünn (NetzDraufsicht), je Familie, Typ und Höhe über dem Einfügepunkt zwischengespeichert

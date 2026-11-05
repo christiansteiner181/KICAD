@@ -165,7 +165,7 @@ public class HlksGrafikTests
         Assert.Equal("bogen", ring.Art);
         Assert.Equal(300, ring.Bis!.Value - ring.Von!.Value, 6);
         Assert.Equal([9000.0, 9800.0], ring.Punkte[0]);
-        Assert.Equal(Math.Max(0.6 * 100 * 0.9, 50), ring.Radius!.Value, 6);   // max(0.9 w, DN/2) mit w = 60
+        Assert.Equal(1.2 * ctx.Massstab, ring.Radius!.Value, 6);   // einlinig: Plansymbol Ø 2.4 mm Papier (Revisionsplan Zuchwil, Christian 05.11.2026)
         Assert.Equal(Kat.Medien["SW"].FarbeHex, ring.Stil.Farbe);
     }
 

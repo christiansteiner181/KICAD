@@ -137,12 +137,17 @@ public sealed class HlksGrafik : IGrafikquelle
         if (HlksLinien.Laenge(xy) < 1)
         {
             var lage = HoeheVon(pts.Min(q => q[2]), pts.Max(q => q[2]), schnitt);
-            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M).ToList();
+            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M, grob || mass is null).ToList();
             // einlinig: Ausschnitt des Kreises auf der höheren Leitung (Christian 05.11.2026), gesucht über die Verbindungen am oberen Ende
             // nur wenn das obere Ende in diesem Geschoss liegt (die höhere Leitung ist im Plan zu sehen)
             double deckeS = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
-            if ((grob || mass is null) && pts.Max(q => q[2]) <= deckeS + Eps && HoehereRichtung(ctx, e, pts) is double richtungS)
-                kreisS = kreisS.Select(x => x.Art == "kreis" ? Ausschnitt(x, richtungS) : x).ToList();
+            if (grob || mass is null)
+            {
+                // Skizze Christian 05.11.2026: die höhere Leitung läuft in die Mitte (Ausschnitt je höhere Leitung, beim T zwei); n.o. ohne höhere Leitung: Punkt
+                var richtungen = pts.Max(q => q[2]) <= deckeS + Eps ? HoehereRichtungen(ctx, e, pts) : [];
+                if (richtungen.Count > 0) kreisS = kreisS.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richtungen) : [x]).ToList();
+                else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.Add(Mittelpunkt(pts[0][0], pts[0][1], M, farbe));
+            }
             teil.Primitive.AddRange(kreisS);
             // einlinig: Richtung der Steigleitung (verlässt das Geschoss nach oben bzw. unten)
             if (grob || mass is null)
@@ -169,7 +174,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 bool Waagrecht(int k) => k >= 1 && k < pts.Count && (Math.Abs(pts[k][0] - pts[k - 1][0]) > Eps || Math.Abs(pts[k][1] - pts[k - 1][1]) > Eps);
                 if (lageS == Hoehe.Geschnitten || einlinigS)
                 {
-                    var kreis = Steigleitung(a[0], a[1], mass, lageS, false, farbe, w, dn, M).ToList();
+                    var kreis = Steigleitung(a[0], a[1], mass, lageS, false, farbe, w, dn, M, einlinigS).ToList();
                     if (einlinigS)
                     {
                         // Christian 05.11.2026: «der ausschnitt des kreises muss immer auf der höheren leitung sein» – Ausschnitt dort, wo das waagrechte
@@ -177,7 +182,8 @@ public sealed class HlksGrafik : IGrafikquelle
                         double[]? nach = null;
                         if (a[2] >= b[2] && Waagrecht(i - 1)) nach = pts[i - 2];
                         else if (b[2] > a[2] && Waagrecht(i + 1)) nach = pts[i + 1];
-                        if (nach is not null) kreis = kreis.Select(x => x.Art == "kreis" ? Ausschnitt(x, Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI) : x).ToList();
+                        if (nach is not null) kreis = kreis.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, [Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI]) : [x]).ToList();
+                        else kreis.Add(Mittelpunkt(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Punkt
                     }
                     teil.Primitive.AddRange(kreis);
                 }
@@ -234,11 +240,16 @@ public sealed class HlksGrafik : IGrafikquelle
         foreach (var lauf in laeufe)
         {
             if (w / M <= 0.35 + 1e-9)
-                teil.Primitive.Add(new Primitiv
-                {
-                    Art = "polylinie", Punkte = lauf.Xy,
-                    Stil = new Stil { Stift = HlksEinordnung.Stift(w / M), Linie = lauf.Verdeckt ? "strich" : linie, Farbe = farbe },
-                });
+            {
+                // Höhe des Laufs: Punkt der Leitung an seinem Anfang
+                double zl = pts.FirstOrDefault(q => Math.Abs(q[0] - lauf.Xy[0][0]) <= Eps && Math.Abs(q[1] - lauf.Xy[0][1]) <= Eps)?[2] ?? pts[0][2];
+                foreach (var stueck in AmKreisUnterbrechen(ctx, lauf.Xy, zl))
+                    teil.Primitive.Add(new Primitiv
+                    {
+                        Art = "polylinie", Punkte = stueck,
+                        Stil = new Stil { Stift = HlksEinordnung.Stift(w / M), Linie = lauf.Verdeckt ? "strich" : linie, Farbe = farbe },
+                    });
+            }
             else if (lauf.Verdeckt)
                 teil.Primitive.AddRange(Raender(lauf.Xy, w, farbe, "strich"));
             else
@@ -282,10 +293,20 @@ public sealed class HlksGrafik : IGrafikquelle
     /// wie bisher ein Ring max(0.9 w, DN/2). Füllung: geschnitten «schnitt», unterhalb «papier», oberhalb keine; Kontur ausgezogen,
     /// nur ganz verdeckt (unter dem Boden des Geschosses) gestrichelt.
     /// Mit Dämmung zusätzlich die zweite Kontur dünn gestrichelt.</summary>
-    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M)
+    /// <summary>Radius des Kreises einer Steigleitung im einlinigen Plan: Plansymbol, nicht Rohrgrösse (Revisionsplan Zuchwil, Christian 05.11.2026).
+    /// ANNAHME (Gestaltung): Ø 2.4 mm Papier.</summary>
+    internal static double SymbolRadius(double M) => 1.2 * M;
+
+    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false)
     {
         var fuellung = lage switch { Hoehe.Geschnitten => "schnitt", Hoehe.Unten => "papier", _ => null };
         var linienart = verdeckt ? "strich" : "voll";
+        if (einlinig)
+        {
+            // einlinig: leerer Kreis als Symbol (die höhere Leitung läuft hinein)
+            yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = SymbolRadius(M), Stil = new Stil { Stift = HlksEinordnung.Stift(w / M), Linie = linienart, Farbe = farbe } };
+            yield break;
+        }
         if (mass is { MitSerie: true })
         {
             var b = Math.Max(mass.Breite, 0.18 * M); var h = Math.Max(mass.Hoehe, 0.18 * M);
@@ -315,15 +336,16 @@ public sealed class HlksGrafik : IGrafikquelle
     /// ANNAHME (Gestaltung): Abstand 0.5 mm Papier vom Kreis, Schrift wie Kennzeichen.</summary>
     static Primitiv SteigText(double x, double y, bool nachOben, LeitungsMass? mass, double w, double? dn, double M, string? farbe)
     {
-        double r = mass is { MitSerie: true } ? Math.Max(mass.Breite, 0.18 * M) / 2 : Math.Max(w * 0.9, (dn ?? 0) / 2);
+        double r = SymbolRadius(M);
         double ab = r * 0.7071 + 0.5 * M;
         return new Primitiv { Art = "text", Punkte = [[x + ab, y + ab]], Text = nachOben ? "n.o." : "n.u.", Groesse = Schrift, Ausrichtung = "links", Mitdrehen = true, Stil = new Stil { Farbe = farbe } };
     }
 
     /// <summary>Richtung (Grad, im Grundriss) zur höheren Leitung einer senkrechten Leitung: das Element am oberen Anschluss (anfang/ende), über
     /// höchstens ein Formteil hinweg; null, wenn oben nichts Waagrechtes anschliesst (Leitung geht nach oben weiter).</summary>
-    static double? HoehereRichtung(GrafikKontext ctx, Element e, List<double[]> pts)
+    static List<double> HoehereRichtungen(GrafikKontext ctx, Element e, List<double[]> pts)
     {
+        var aus = new List<double>();
         var m = ctx.Projekt.Modell;
         var oben = pts[0][2] >= pts[^1][2] ? "anfang" : "ende";
         double x0 = pts[0][0], y0 = pts[0][1];
@@ -340,29 +362,112 @@ public sealed class HlksGrafik : IGrafikquelle
         foreach (var (el, _) in Nachbarn(e.Id, oben))
         {
             if (m.Finde(el) is not { } n) continue;
-            if (Von(n) is double r) return r;
-            // Formteil (Punkt): eine Stufe weiter zur angeschlossenen waagrechten Leitung
+            if (Von(n) is double r) { aus.Add(r); continue; }
+            // Formteil (Punkt): eine Stufe weiter zu den angeschlossenen waagrechten Leitungen (Bogen: eine, T-Stück: zwei)
             foreach (var (el2, _) in Nachbarn(n.Id, null))
-                if (el2 != e.Id && m.Finde(el2) is { } n2 && Von(n2) is double r2) return r2;
+                if (el2 != e.Id && m.Finde(el2) is { } n2 && Von(n2) is double r2) aus.Add(r2);
         }
+        if (aus.Count > 0) return aus;
         // ohne Verbindung (z. B. aus IFC übernommen): Leitung desselben Geschosses, die am oberen Ende beginnt oder endet
-        // ANNAHME: Lagetoleranz 30 mm in xy und 150 mm in z (Bogen dazwischen)
+        // ANNAHME: Lagetoleranz 200 mm in xy und z (ein Bogen zwischen Steigleitung und waagrechter Leitung, ohne Verbindung)
         var top = pts[0][2] >= pts[^1][2] ? pts[0] : pts[^1];
         foreach (var n in m.Elemente)
         {
             if (n.Id == e.Id || n.Geschoss != e.Geschoss || n.Geometrie?.Art != "polylinie" || n.Geometrie.Punkte is not { Count: >= 2 } np) continue;
             foreach (var q in (double[][])[np[0], np[^1]])
-                if (Math.Abs(q[0] - x0) < 30 && Math.Abs(q[1] - y0) < 30 && q.Length > 2 && Math.Abs(q[2] - top[2]) < 150 && Von(n) is double r3) return r3;
+                if (Math.Abs(q[0] - x0) < 200 && Math.Abs(q[1] - y0) < 200 && q.Length > 2 && Math.Abs(q[2] - top[2]) < 200 && Von(n) is double r3) aus.Add(r3);
         }
-        return null;
+        return aus;
     }
 
-    /// <summary>Kreis der Steigleitung mit Ausschnitt in Richtung der höheren Leitung (Grad). ANNAHME (Gestaltung): Ausschnitt 60°.</summary>
-    static Primitiv Ausschnitt(Primitiv kreis, double richtung) => new()
+    /// <summary>Kreis der Steigleitung mit je einem Ausschnitt in Richtung jeder höheren Leitung (Grad): Bögen zwischen den Ausschnitten.
+    /// ANNAHME (Gestaltung): Ausschnitt 60°.</summary>
+    static IEnumerable<Primitiv> Ausschnitte(Primitiv kreis, List<double> richtungen)
     {
-        Art = "bogen", Punkte = kreis.Punkte, Radius = kreis.Radius, Von = richtung + 30, Bis = richtung + 330,
-        Stil = new Stil { Stift = kreis.Stil.Stift, Linie = "voll", Farbe = kreis.Stil.Farbe },
-    };
+        var r = richtungen.Select(x => ((x % 360) + 360) % 360).Select(x => Math.Round(x, 3)).Distinct().OrderBy(x => x).ToList();
+        for (int i = 0; i < r.Count; i++)
+        {
+            double von = r[i] + 30, bis = (i + 1 < r.Count ? r[i + 1] : r[0] + 360) - 30;
+            if (bis - von > 1)
+                yield return new Primitiv { Art = "bogen", Punkte = kreis.Punkte, Radius = kreis.Radius, Von = von, Bis = bis,
+                    Stil = new Stil { Stift = kreis.Stil.Stift, Linie = "voll", Farbe = kreis.Stil.Farbe } };
+        }
+    }
+
+    /// <summary>Punkt in der Mitte des Kreises (n.o., Skizze Christian 05.11.2026). ANNAHME (Gestaltung): Durchmesser 0.6 mm Papier.</summary>
+    static Primitiv Mittelpunkt(double x, double y, double M, string? farbe) =>
+        new() { Art = "kreis", Punkte = [[x, y]], Radius = 0.3 * M, Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe ?? "schnitt" } };
+
+    /// <summary>Senkrechte Leitungsstücke des Geschosses (einlinig): Lage, Kreisradius, Höhenbereich – je Plan einmal gerechnet.</summary>
+    internal sealed record Steigpunkt(double X, double Y, double R, double ZMin, double ZMax);
+    static readonly System.Runtime.CompilerServices.ConditionalWeakTable<GrafikKontext, List<Steigpunkt>> steigpunkte = new();
+
+    internal static List<Steigpunkt> Steigpunkte(GrafikKontext ctx) => steigpunkte.GetValue(ctx, c =>
+    {
+        var aus = new List<Steigpunkt>();
+        var M = c.Massstab;
+        foreach (var e in c.Projekt.Modell.Elemente)
+        {
+            if ((c.Geschoss is not null && e.Geschoss != c.Geschoss.Id) || e.Geometrie is not { Art: "polylinie", Punkte: { Count: >= 2 } pts }) continue;
+            if (!c.Projekt.Katalog.Klassen.TryGetValue(e.Klasse, out var kd) || kd.Rolle != "leitung") continue;
+            var dn = HlksEinordnung.Dn(e); var w = HlksEinordnung.Strichbreite(c.Detailgrad, dn, M); var mass = HlksMasse.Von(c.Projekt, e);
+            double r = SymbolRadius(M);
+            for (int i = 1; i < pts.Count; i++)
+                if (Math.Abs(pts[i][0] - pts[i - 1][0]) <= Eps && Math.Abs(pts[i][1] - pts[i - 1][1]) <= Eps && pts[i].Length > 2 && Math.Abs(pts[i][2] - pts[i - 1][2]) > Eps)
+                    aus.Add(new(pts[i][0], pts[i][1], r, Math.Min(pts[i][2], pts[i - 1][2]), Math.Max(pts[i][2], pts[i - 1][2])));
+        }
+        return aus;
+    });
+
+    /// <summary>Einlinige Linie auf Höhe z: an jeder Steigleitung, die von dieser Höhe nach oben geht, endet die (tiefere) Linie am Kreis
+    /// (Skizze Christian 05.11.2026: «T n.o.», «n.o.»); die höhere Leitung läuft bis in die Mitte. Ergebnis: Teilstücke.</summary>
+    internal static List<List<double[]>> AmKreisUnterbrechen(GrafikKontext ctx, List<double[]> xy, double z)
+    {
+        // ANNAHME: die Steigleitung beginnt höchstens 500 mm über der Linie (Bogen bzw. T-Abgang dazwischen)
+        var sp = Steigpunkte(ctx).Where(s => s.ZMax > z + 20 && s.ZMin <= z + 500).ToList();
+        if (sp.Count == 0 || xy.Count < 2) return [xy];
+        var luecken = new List<(double A, double B)>();
+        double s0 = 0;
+        for (int i = 1; i < xy.Count; i++)
+        {
+            double dx = xy[i][0] - xy[i - 1][0], dy = xy[i][1] - xy[i - 1][1], l = Math.Sqrt(dx * dx + dy * dy);
+            if (l < 1e-9) continue;
+            foreach (var s in sp)
+            {
+                double t = ((s.X - xy[i - 1][0]) * dx + (s.Y - xy[i - 1][1]) * dy) / l;
+                if (t < -1 || t > l + 1) continue;
+                double qx = xy[i - 1][0] + dx / l * t - s.X, qy = xy[i - 1][1] + dy / l * t - s.Y;
+                if (qx * qx + qy * qy < 1) luecken.Add((s0 + t - s.R, s0 + t + s.R));
+            }
+            s0 += l;
+        }
+        if (luecken.Count == 0) return [xy];
+        var bereiche = new List<(double A, double B)>();
+        double start = 0;
+        foreach (var (a, b) in luecken.OrderBy(x => x.A)) { if (a > start) bereiche.Add((start, a)); start = Math.Max(start, b); }
+        if (start < s0) bereiche.Add((start, s0));
+        var stuecke = new List<List<double[]>>();
+        foreach (var (a, b) in bereiche.Where(x => x.B - x.A > 0.5))
+        {
+            var st = new List<double[]>();
+            double s = 0;
+            for (int i = 1; i < xy.Count; i++)
+            {
+                double dx = xy[i][0] - xy[i - 1][0], dy = xy[i][1] - xy[i - 1][1], l = Math.Sqrt(dx * dx + dy * dy);
+                double von = Math.Max(a, s), bis = Math.Min(b, s + l);
+                if (l > 1e-9 && bis > von)
+                {
+                    int k = i; double s1 = s, l1 = l, dx1 = dx, dy1 = dy;
+                    double[] P(double u) => [xy[k - 1][0] + dx1 * (u - s1) / l1, xy[k - 1][1] + dy1 * (u - s1) / l1];
+                    if (st.Count == 0) st.Add(P(von));
+                    st.Add(P(bis));
+                }
+                s += l;
+            }
+            if (st.Count >= 2) stuecke.Add(st);
+        }
+        return stuecke;
+    }
 
     static List<double[]> Rechteck(double x, double y, double b, double h) =>
         [[x - b / 2, y - h / 2], [x + b / 2, y - h / 2], [x + b / 2, y + h / 2], [x - b / 2, y + h / 2]];
