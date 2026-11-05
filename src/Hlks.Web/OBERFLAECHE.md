@@ -4207,3 +4207,14 @@ des Mediums (`Farben.cs`). Eigenschaftenpalette: Feld «farbe» mit Farbmuster u
 NCS, Suche nach Code oder Name, Raster mit Mustern (feste Höhe), Doppelklick übernimmt, «Standard des Herstellers» leert das Feld; Quelle der Tabelle
 unten im Dialog. Abfrage `farben` (MCP). RAL Classic: 216 Farben von ral-farben.de (Bildschirmwerte = Annäherung); NCS: nur 15 gekennzeichnete
 Annäherungen (vollständige NCS-Liste lizenzpflichtig, NCS Inside Licence). Test: `FarbenTests`.
+
+## Lagemanager (Lagen der Rohre, Christian 05.11.2026)
+
+**Ort:** Register **Heizung** bzw. **Sanitär › Gruppe Leitungen › Lagemanager** (Aktion `gt.lagen`, Symbol `kote`; `aktionen-lagen.js`). Tabelle je Geschoss:
+Kote, **UK roh Decke** (mm über Kote; leer = aus dem Modell, Unterkante der Decke darüber, sonst «fehlt»), **Lagen** (Abstand UK roh Decke bis Rohrachse in
+mm, durch Komma getrennt, Lage 1 zuerst; leer = 120, 240, 360, 480) und die daraus folgenden Achshöhen. Speichern setzt die Geschoss-Eigenschaften
+`ukRohdecke` und `lagen` (`element_aendern`, leer entfernt sie). Daten: Abfrage `lagen { geschoss? }` (Kern `Leitungen/Lagen.cs`, DOM-freier Cache
+`werkzeuge/lagen-daten.js`).
+**Zeichnen:** Werkzeug Rohr (PI), Feld **Lage** in der Optionsleiste (nur Rohre): setzt die Höhe = UK roh Decke − Abstand der Lage.
+**Plan:** Ein Rohr, dessen Achse (±5 mm) auf einer Lage liegt, trägt im Grundriss so viele Schrägstriche (Strich 3 mm, 45° zur Leitung) wie die
+Lagenummer – einmal bis zum nächsten Wechsel (kein Zeichen, wenn das Rohr davor, auch über ein Formteil, dieselbe Lage hat). Kanäle haben keine Lagen.

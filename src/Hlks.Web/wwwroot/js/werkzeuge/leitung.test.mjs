@@ -371,7 +371,7 @@ test('Optionen: Felder von Rohr und Kanal (Serie, Grösse, Höhe als Pflicht, Ge
   for (const wid of ['rohr', 'kanal']) {
     const ids = O.WERKZEUGE[wid].felder.map((f) => f.id);
     // Nachtrag freie Grösse / Abwasser-Serie: Zahlenfelder und Hinweise hinter der Grösse (sichtbar nur bei den passenden Serien, siehe frei-abwasser.test.mjs)
-    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'hoehe', 'gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
+    assert.deepEqual(ids, ['serie', 'groesse', 'freiB', 'freiH', 'freiD', 'freiHinweis', 'abwasserHinweis', 'lage', 'hoehe', 'gefaelle', 'system', 'medium', 'strang', 'daemmdicke', 'winkelfang', 'serieHinweis', 'serieLaden']);
     const hoehe = O.feldDef(wid, 'hoehe');
     assert.equal(hoehe.pflicht, true);
     assert.equal(hoehe.art, 'zahl');

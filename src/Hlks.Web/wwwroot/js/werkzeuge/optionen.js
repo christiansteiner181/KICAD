@@ -6,7 +6,7 @@
 //         katalog?: [klasse, eigenschaft] (Auswahl aus dem Katalog), breite? (Zeichen), fluechtig? (nicht merken) }
 // Annahmen: Raster 100 mm, Tiefe eines Schnitts 10000 mm (Vorgaben aus dem Auftrag, keine Norm).
 
-import { merken, derKlasse, zustand } from '../zustand.js';
+import { merken, derKlasse, zustand, element } from '../zustand.js';
 import { zahlAusText, RASTER_MM } from './fangen.js';
 import { KALIBRIERBAR } from './kalibrierung.js';
 import { familieFelder, definitionAus, typTeile } from '../familien/typauswahl.js';
@@ -14,6 +14,7 @@ import { serienListe, serieDef, serieLaden, haken as leitungHaken } from './leit
 import { groessenListe } from './leitung-logik.js';
 import { elementWerte } from './vorwand-typen.js';
 import { istFrei, istRechteck, istAbwasser, groessenOptionen, vorbelegung, freiHinweis, abwasserHinweis, beschriftungVon } from './leitung-frei.js';
+import { lagenFuer } from './lagen-daten.js';
 
 const BEZUGSLINIEN = [['mitte', 'Mitte'], ['links', 'Links'], ['rechts', 'Rechts']];
 
@@ -264,6 +265,10 @@ function leitungFelder(wid, kategorie) {
     { id: 'freiD', titel: 'Durchmesser', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'd', breite: 5, sichtbar: () => frei() && !istRechteck(aktuelleSerie()) },
     { id: 'freiHinweis', art: 'hinweis', klasse: 'ol-info', get text() { return freiHinweis(aktuelleSerie()); }, sichtbar: frei },
     { id: 'abwasserHinweis', art: 'hinweis', klasse: 'ol-info', get text() { const s = aktuelleSerie(); return abwasserHinweis(s, s ? beschriftungVon(s, wert(wid, 'groesse')) : null); }, sichtbar: () => istAbwasser(aktuelleSerie()) },
+    // Lage (Lagemanager, Christian 05.11.2026: «Lage wird beim zeichnen bestimmt»): nur Rohre; setzt die Höhe = UK roh Decke − Abstand der Lage
+    { id: 'lage', titel: 'Lage', art: 'auswahl', leer: '–', sichtbar: () => kategorie === 'Rohr',
+      get werte() { return lagenFuer(element(zustand.aktiveAnsicht)?.geschoss).map((l) => [String(l.nr), `L${l.nr} (UKD −${l.abstand})`]); },
+      beiAenderung(el) { el?.blur?.(); const l = lagenFuer(element(zustand.aktiveAnsicht)?.geschoss).find((x) => String(x.nr) === wert(wid, 'lage')); if (l) { setze(wid, 'hoehe', Math.round(l.hoehe)); leitungHaken.hoeheGeaendert?.(); } leitungHaken.optionenNeu?.(); } },
     { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'ab OK Geschoss', breite: 12,
       beiAenderung: () => leitungHaken.hoeheGeaendert?.() },
     { id: 'gefaelle', titel: 'Gefälle', art: 'zahl', einheit: '%', platzhalter: 'kein', breite: 4, fluechtig: true },
