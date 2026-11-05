@@ -65,6 +65,21 @@ registrieren({
   aktiv: projektOffen, hinweis: KEIN_PROJEKT, ausfuehren: () => panelOeffnen('kollisionen'),
 });
 
+// Kollisionspunkte ein/aus in der aktiven Ansicht (Christian 05.11.2026: «kollisionspunkte müssen ausgeschaltet werden können»):
+// schaltet die Klasse Kollision in klassenAusblenden der Ansicht (wie Sichtbarkeit/Grafiken), ein Paket, zurücknehmbar.
+const kollisionAus = () => (element(zustand.aktiveAnsicht)?.werte?.klassenAusblenden ?? []).includes('Kollision');
+registrieren({
+  id: 'koordination.kollisionen-zeigen', titel: 'Kollisionspunkte', symbol: 'koListe', kuerzel: null, register: REGISTER, gruppe: 'Kollisionen',
+  aktiv: () => projektOffen() && !!zustand.aktiveAnsicht, hinweis: 'Zuerst eine Ansicht öffnen.',
+  gedrueckt: () => !kollisionAus(),
+  async ausfuehren() {
+    const a = element(zustand.aktiveAnsicht); if (!a) return;
+    const alt = a.werte?.klassenAusblenden ?? [];
+    const neu = alt.includes('Kollision') ? alt.filter((k) => k !== 'Kollision') : [...alt, 'Kollision'];
+    ergebnisMelden(await sende('element_aendern', { element: a.kennzeichen, eigenschaften: { klassenAusblenden: neu } }));
+  },
+});
+
 // ---------------------------------------------------------------------------------------------- Gruppe Aussparungen
 
 registrieren({

@@ -4228,3 +4228,9 @@ wie E23, 1.03), alle Texte im Raum. Häkchen, Name und/oder Nummer, «Übernehme
 KICAD werden aufgelistet; «Raum anlegen» versucht `raum_erkennen` am Stempel mit Name und Nummer. Kern: `Grundlagen/RaumbezeichnungenDwg.cs`,
 Abfrage `raumbezeichnungen_dwg` (ohne unterlage: Liste der DWG/DXF-Unterlagen). Praxisprojekt Bernstrasse EG: DWG und IFC deckungsgleich (Ursprung 0/0),
 5 von 8 IFC-Räumen erhalten Name und Nummer; 8 Stempel liegen, wo das IFC keinen Raum hat (raum_erkennen findet dort keine umschliessenden Wände).
+
+## Kollisionspunkte ein/aus (Christian 05.11.2026)
+
+**Ort:** Register **Koordination › Gruppe Kollisionen › Kollisionspunkte** (Aktion `koordination.kollisionen-zeigen`, Umschalter, gedrückt =
+sichtbar). Schaltet die Klasse `Kollision` in `klassenAusblenden` der aktiven Ansicht (wie Sichtbarkeit/Grafiken; `element_aendern`, ein Paket,
+zurücknehmbar) – je Ansicht, also auch im 3D getrennt. Im Browser geprüft (Grundriss EG: Marke da → aus → wieder da).
