@@ -418,10 +418,10 @@ public sealed class HlksGrafik : IGrafikquelle
     }
 
     /// <summary>Kreuz im Kreis bei n.o. (Christian 05.11.2026: «bei nach oben ein kreuz nicht ein punkt»; Revisionsplan Zuchwil: Kreuz über den Kreis hinaus).
-    /// ANNAHME (Gestaltung): Kreuzarme 1.3 × Kreisradius.</summary>
+    /// Kreuzarme 1.8 × Kreisradius (Christian 05.11.2026: «das kreuz etwas vergrössern», vorher 1.3).</summary>
     static IEnumerable<Primitiv> Kreuz(double x, double y, double M, string? farbe)
     {
-        double h = 1.3 * SymbolRadius(M);
+        double h = 1.8 * SymbolRadius(M);
         var stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe };
         yield return new Primitiv { Art = "linie", Punkte = [[x - h, y], [x + h, y]], Stil = stil };
         yield return new Primitiv { Art = "linie", Punkte = [[x, y - h], [x, y + h]], Stil = stil };
