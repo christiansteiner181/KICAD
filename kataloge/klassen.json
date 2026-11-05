@@ -21,7 +21,9 @@
       { "name": "kote", "typ": "zahl", "einheit": "mm", "pflicht": true, "beschreibung": "Höhe OK fertig Boden über ±0.00" },
       { "name": "hoehe", "typ": "zahl", "einheit": "mm", "pflicht": true, "beschreibung": "Geschosshöhe OK Boden bis OK Boden darüber" },
       { "name": "kurz", "typ": "text", "beschreibung": "Kürzel für Raumnummern, z. B. U, E, 1, 2, A" },
-      { "name": "einbringlaenge", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösste Länge eines vorgefertigten Segments (z. B. GIS-Vorwand aus der Werkstatt), das sich in die Wohnung einbringen lässt (Treppenhaus, Lift, Gänge) in mm; Eingabe von Hand (Christian 04.11.2026). Geschoss vor Projekt; fehlt sie, teilt KICAD nicht und meldet es." } ] },
+      { "name": "einbringlaenge", "typ": "zahl", "einheit": "mm", "beschreibung": "Grösste Länge eines vorgefertigten Segments (z. B. GIS-Vorwand aus der Werkstatt), das sich in die Wohnung einbringen lässt (Treppenhaus, Lift, Gänge) in mm; Eingabe von Hand (Christian 04.11.2026). Geschoss vor Projekt; fehlt sie, teilt KICAD nicht und meldet es." },
+      { "name": "ukRohdecke", "typ": "zahl", "einheit": "mm", "beschreibung": "UK roh Decke über der Kote in mm für die Lagen (Lagemanager, Christian 05.11.2026); ohne Angabe aus dem Modell (Unterkante der Decke darüber)." },
+      { "name": "lagen", "typ": "text", "beschreibung": "Lagen der Rohre: Abstand UK roh Decke bis Rohrachse in mm, durch Komma getrennt, Lage 1 zuerst (z. B. «120, 240, 360»); ohne Angabe 120, 240, 360, 480 (Beispiel Christian 05.11.2026)." } ] },
 
   { "name": "Raum", "kuerzel": "R", "schicht": "raum", "gewerk": "architektur", "ifc": "IfcSpace", "geometrie": "polygon", "brauchtGeschoss": true,
     "beschreibung": "Ein Raum mit Grundfläche als Polygon (mm). Fläche und Volumen werden aus der Geometrie berechnet.",

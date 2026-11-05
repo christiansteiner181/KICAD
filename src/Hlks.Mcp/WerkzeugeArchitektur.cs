@@ -91,6 +91,10 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("vorwand_bestuecken", Parameter(("vorwand", vorwand), ("reichweite", reichweite)), trockenlauf);
 
+    [McpServerTool(Name = "lagen"), Description(Hlks.Kern.Lagen.Text)]   // Lagemanager, 05.11.2026
+    public string LagenWerkzeug([Description(Hlks.Kern.Lagen.ParGeschoss)] string? geschoss = null) =>
+        Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "lagen", Parameter(("geschoss", geschoss)))), synchronisieren: false);
+
     [McpServerTool(Name = "farben"), Description(Hlks.Kern.Farben.Text)]   // Heizkörperfarben, 04.11.2026
     public string FarbenWerkzeug() =>
         Lauf(() => Antwort((System.Text.Json.Nodes.JsonNode)Hlks.Kern.Tuer.Abfrage(projekt, "farben", Parameter())), synchronisieren: false);

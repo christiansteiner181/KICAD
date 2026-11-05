@@ -223,6 +223,7 @@ public sealed class HlksGrafik : IGrafikquelle
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
                         q => [q[0], q[1]], M, mass.Rohrband && !lauf.Verdeckt ? "#ffffff" : farbe));
             }
+            teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
             teil.Fangpunkte = xy.Select(p => new[] { p[0], p[1] }).ToList();
             teil.Fangkanten = Achse(xy);
@@ -246,6 +247,7 @@ public sealed class HlksGrafik : IGrafikquelle
                     : HlksLinien.BandGestrichelt(lauf.Xy, w, farbe ?? "schnitt", M));
         }
 
+        teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
         LeitungsText(ctx, e, xy, w, teil);
         teil.Fangpunkte = xy.Select(q => new[] { q[0], q[1] }).ToList();
         teil.Fangkanten = Achse(xy);

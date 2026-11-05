@@ -1,0 +1,133 @@
+// Lagen (Christian 05.11.2026: «zum zeigen von höhen in grundrissplänen, arbeiten wir oft mit lagen. diese werden immer auf dem Plan angezeigt
+// und können etagenweise vergeben werden. es bräuchte also eine art lagemanager.»). Antworten im Fragefenster 05.11.2026:
+// - Lage = Abstand UK roh Decke bis Rohrachse, nur Rohre (nicht Kanäle); «1. Lage UKD −12cm, 2. Lage UKD −24cm usw.»
+// - die Lage wird beim Zeichnen bestimmt (Leitungen werden meist nach Lagen gezeichnet)
+// - UK roh Decke aus dem Modell (Decke über dem Geschoss), im Lagemanager überschreibbar
+// - im Plan: so viele Schrägstriche quer über das Rohr wie die Lagenummer, einmal bis zum nächsten Wechsel (Bilder Christian)
+// Geschoss: ukRohdecke (mm über Kote, überschreibt das Modell), lagen (Abstände UKD → Achse in mm, z. B. «120, 240, 360»).
+// VORGABE (Beispiel Christian 05.11.2026, «usw.»): ohne Angabe 120, 240, 360, 480 mm.
+
+using System.Globalization;
+using System.Text.Json.Nodes;
+
+namespace Hlks.Kern;
+
+public static class Lagen
+{
+    public static readonly double[] Vorgabe = [120, 240, 360, 480];
+    /// <summary>ANNAHME: Toleranz, mit der eine Rohrachse einer Lage zugeordnet wird (mm).</summary>
+    public const double Toleranz = 5;
+
+    public const string Text = "Lagen eines Geschosses (Lagemanager): UK roh Decke über der Kote (aus dem Modell – Unterkante der Decke darüber – oder von Hand " +
+        "am Geschoss: ukRohdecke) und die Lagen als Abstand UK roh Decke bis Rohrachse (Geschoss: lagen, z. B. «120, 240, 360»; Vorgabe 120, 240, 360, 480 mm) " +
+        "mit der Achshöhe über der Kote je Lage. Nur Rohre haben Lagen; im Grundriss steht die Lage als Schrägstriche (Anzahl = Lage) bis zum nächsten Wechsel.";
+    public const string ParGeschoss = "Geschoss (Kennzeichen); ohne: alle Geschosse";
+    public static IReadOnlyList<ParameterDef> Parameter { get; } = [new("geschoss", "text", false, ParGeschoss)];
+
+    /// <summary>UK roh Decke über der Geschosskote: Eingabe am Geschoss, sonst die häufigste Unterkante der Decken darüber (auf 10 mm gerundet).</summary>
+    public static (double? Wert, string Quelle) UkRohdecke(Projekt p, Element g)
+    {
+        if (g.Zahl("ukRohdecke") is double eigen) return (eigen, "eingabe");
+        double kote = g.Zahl("kote") ?? 0;
+        double oben = kote + (g.Zahl("hoehe") ?? NaechsteKote(p, g, kote) - kote ?? 3000);
+        var uk = p.Modell.DerKlasse("Decke")
+            .Where(d => d.Text("art") != "boden" && d.Geometrie is { Art: "polygon", Dicke: double dk } gg && dk > 0 && gg.Punkte.Count >= 3)
+            .Select(d => (Z: d.Geometrie!.Punkte.Max(q => q.Length > 2 ? q[2] : 0), Dicke: d.Geometrie.Dicke!.Value))
+            .Where(d => d.Z > kote + 500 && d.Z <= oben + 1000)
+            .Select(d => Math.Round((d.Z - d.Dicke - kote) / 10) * 10).ToList();
+        if (uk.Count == 0) return (null, "fehlt");
+        return (uk.GroupBy(x => x).OrderByDescending(x => x.Count()).ThenBy(x => x.Key).First().Key, "modell");
+    }
+
+    static double? NaechsteKote(Projekt p, Element g, double kote) =>
+        p.Modell.DerKlasse("Geschoss").Where(x => x.TeilVon == g.TeilVon && (x.Zahl("kote") ?? double.MinValue) > kote + 1).Select(x => x.Zahl("kote")).Min();
+
+    /// <summary>Abstände UK roh Decke → Rohrachse je Lage (Lage 1 = erster Eintrag).</summary>
+    public static double[] Abstaende(Element g)
+    {
+        var t = g.Text("lagen");
+        if (string.IsNullOrWhiteSpace(t)) return Vorgabe;
+        var w = t.Split([',', ';', ' '], StringSplitOptions.RemoveEmptyEntries)
+            .Select(s => double.TryParse(s.Replace("cm", "").Replace("mm", ""), NumberStyles.Float, CultureInfo.InvariantCulture, out var v) ? v : double.NaN)
+            .Where(v => v > 0).ToArray();
+        return w.Length > 0 ? w : Vorgabe;
+    }
+
+    /// <summary>Lage eines Rohrs (1 …) aus der Höhe seiner Achse; null, wenn es kein Rohr ist, senkrecht oder keiner Lage entspricht.</summary>
+    public static int? LageVon(Projekt p, Element e)
+    {
+        if (!p.Katalog.IstArt(e, "Rohr") || e.Geometrie?.Punkte is not { Count: >= 2 } pts || e.Geschoss is null || p.Modell.Finde(e.Geschoss) is not { } g) return null;
+        double? z = null;
+        for (int i = 1; i < pts.Count && z is null; i++)
+            if (Math.Abs(pts[i][0] - pts[i - 1][0]) + Math.Abs(pts[i][1] - pts[i - 1][1]) > 1 && pts[i].Length > 2) z = pts[i - 1][2];
+        if (z is null || UkRohdecke(p, g).Wert is not double ukd) return null;
+        double ab = (g.Zahl("kote") ?? 0) + ukd - z.Value;
+        var a = Abstaende(g);
+        for (int i = 0; i < a.Length; i++) if (Math.Abs(a[i] - ab) <= Toleranz) return i + 1;
+        return null;
+    }
+
+    /// <summary>Abfrage lagen: je Geschoss Kote, UK roh Decke (Quelle) und die Lagen mit Achshöhe über der Kote.</summary>
+    public static JsonObject Abfrage(Projekt p, JsonObject par)
+    {
+        var kz = Param.Text(par, "geschoss")?.Trim();
+        var gs = p.Modell.DerKlasse("Geschoss").Where(g => string.IsNullOrEmpty(kz) || g.Kennzeichen == kz || g.Id == kz).OrderBy(g => g.Zahl("kote") ?? 0).ToList();
+        if (!string.IsNullOrEmpty(kz) && gs.Count == 0) throw new HlksFehler($"Geschoss «{kz}» gibt es nicht.", "Kennzeichen eines Geschosses angeben oder leer lassen.");
+        return new JsonObject
+        {
+            ["geschosse"] = new JsonArray(gs.Select(g =>
+            {
+                var (ukd, quelle) = UkRohdecke(p, g);
+                return (JsonNode)new JsonObject
+                {
+                    ["geschoss"] = g.Kennzeichen, ["name"] = g.Name, ["kote"] = g.Zahl("kote") ?? 0, ["ukRohdecke"] = ukd, ["quelle"] = quelle,
+                    ["vorgabe"] = string.IsNullOrWhiteSpace(g.Text("lagen")),
+                    ["lagen"] = new JsonArray(Abstaende(g).Select((a, i) => (JsonNode)new JsonObject
+                    {
+                        ["nr"] = i + 1, ["abstand"] = a, ["hoehe"] = ukd is double u ? u - a : null,
+                    }).ToArray()),
+                };
+            }).ToArray()),
+        };
+    }
+
+    /// <summary>Lagezeichen eines Rohrs im Grundriss: Anzahl Schrägstriche = Lage, einmal bis zum nächsten Wechsel – nur, wenn das Rohr davor
+    /// (Verbindung am Anfang, auch über ein Formteil) nicht dieselbe Lage hat. ANNAHME (Gestaltung): Strich 3 mm, Abstand 1.2 mm, 8 mm nach dem Anfang.</summary>
+    public static List<Primitiv> Zeichen(Projekt p, Element e, List<double[]> xy, double M)
+    {
+        if (LageVon(p, e) is not int n || xy.Count < 2 || GleicheLageDavor(p, e, n)) return [];
+        // erstes waagrechtes Stück
+        int k = 1;
+        while (k < xy.Count && Math.Abs(xy[k][0] - xy[k - 1][0]) + Math.Abs(xy[k][1] - xy[k - 1][1]) < 1) k++;
+        if (k >= xy.Count) return [];
+        double dx = xy[k][0] - xy[k - 1][0], dy = xy[k][1] - xy[k - 1][1], l = Math.Sqrt(dx * dx + dy * dy);
+        dx /= l; dy /= l;
+        double ab = Math.Min(8 * M, l / 2), sp = 1.2 * M, h = 1.5 * M;
+        double w = Math.Atan2(dy, dx) - Math.PI / 4;   // Strich um 45° gegen die Leitung gedreht (Bilder Christian: «\\» waagrecht, «/» senkrecht)
+        double sx = Math.Cos(w) * h, sy = Math.Sin(w) * h;
+        var aus = new List<Primitiv>();
+        for (int i = 0; i < n; i++)
+        {
+            double t = ab + (i - (n - 1) / 2.0) * sp;
+            double cx = xy[k - 1][0] + dx * t, cy = xy[k - 1][1] + dy * t;
+            aus.Add(new Primitiv { Art = "linie", Punkte = [[cx - sx, cy - sy], [cx + sx, cy + sy]], Stil = new Stil { Stift = Stifte.Mittel } });
+        }
+        return aus;
+    }
+
+    static bool GleicheLageDavor(Projekt p, Element e, int n)
+    {
+        var m = p.Modell;
+        IEnumerable<string> Nachbarn(string el, string? an) => m.VerbindungenVon(el)
+            .Select(v => v.Von.Element == el && (an is null || v.Von.Anschluss == an) ? v.Nach.Element : v.Nach.Element == el && (an is null || v.Nach.Anschluss == an) ? v.Von.Element : null)
+            .Where(x => x is not null)!;
+        foreach (var id in Nachbarn(e.Id, "anfang"))
+        {
+            if (m.Finde(id) is not { } d) continue;
+            if (p.Katalog.IstArt(d, "Rohr")) { if (LageVon(p, d) == n) return true; continue; }
+            foreach (var id2 in Nachbarn(d.Id, null))
+                if (id2 != e.Id && m.Finde(id2) is { } d2 && p.Katalog.IstArt(d2, "Rohr") && LageVon(p, d2) == n) return true;
+        }
+        return false;
+    }
+}
