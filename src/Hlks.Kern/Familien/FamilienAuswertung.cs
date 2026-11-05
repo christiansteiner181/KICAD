@@ -520,7 +520,20 @@ public static class FamilienKoerper
         else pfad = [(pi + ua * Ende(ua, la)).Feld(), pi.Feld(), (pi + ub * Ende(ub, lb)).Feld()];
         var n3 = NetzBau.Sweep(pfad, profil, null, segmente is null ? R : null);
         var def = zyl[0].Def;
-        var bogen = new Koerperteil { Art = "koerper", Ecken = n3.Ecken, Dreiecke = n3.Dreiecke, Material = def.Material, Teil = def.Id };
+        var bogen = new Koerperteil { Art = "koerper", Ecken = n3.Ecken, Dreiecke = n3.Dreiecke, Material = def.Material, Teil = def.Id, AchseRadius = profil };
+        // Achse des Bogens für die Achslinien: beim Bogen mit Radius der Kreisbogen zwischen den Tangentenpunkten, beim Segmentbogen der Pfad
+        if (segmente is null && R > 0)
+        {
+            double tl = R * Math.Tan(ablenkung / 2);
+            var q0 = pi + ua * tl; var q1 = pi + ub * tl;
+            var mp = pi + (ua + ub).Einheit() * (R / Math.Cos(ablenkung / 2));
+            var dreh = (q0 - mp).Kreuz(q1 - mp).Einheit();
+            var achsPfad = new List<double[]> { pfad[0] };
+            for (int i = 0; i <= 12; i++) achsPfad.Add((mp + (q0 - mp).Gedreht(dreh, ablenkung * i / 12)).Feld());
+            achsPfad.Add(pfad[^1]);
+            bogen.Achse = achsPfad;
+        }
+        else bogen.Achse = pfad;
         var stelle = a.Koerper.IndexOf(zyl[0]);
         a.Koerper.RemoveAll(k => zyl.Contains(k));
         a.Koerper.Insert(Math.Min(stelle, a.Koerper.Count), new FamKoerperErgebnis { Def = def, Sichtbar = true, Teil = bogen });
@@ -622,7 +635,8 @@ public static class FamilienKoerper
     {
         double w = drehung * Math.PI / 180, c = Math.Cos(w), s = Math.Sin(w);
         double[] W(double[] p) => [ein[0] + p[0] * c - p[1] * s, ein[1] + p[0] * s + p[1] * c, ein[2] + p[2]];
-        var k = new Koerperteil { Art = t.Art, Material = t.Material, Farbe = farbe ?? t.Farbe, Deckkraft = t.Deckkraft, NichtSchneiden = t.NichtSchneiden, Teil = t.Teil };
+        var k = new Koerperteil { Art = t.Art, Material = t.Material, Farbe = farbe ?? t.Farbe, Deckkraft = t.Deckkraft, NichtSchneiden = t.NichtSchneiden, Teil = t.Teil,
+            Achse = t.Achse?.Select(W).ToList(), AchseRadius = t.AchseRadius };   // Achslinien in Plänen (Christian 05.11.2026 «überall»)
         switch (t.Art)
         {
             case "quader": k.Mitte = W(t.Mitte!); k.Masse = t.Masse; k.Drehung = (t.Drehung ?? 0) + drehung; break;
@@ -642,7 +656,8 @@ public static class FamilienKoerper
     public static Koerperteil Platzieren(Koerperteil t, Einbaulage l, string? farbe)
     {
         if (l.Senkrecht) return Platzieren(t, l.Ursprung, l.DrehungZ, farbe);
-        var k = new Koerperteil { Art = t.Art, Material = t.Material, Farbe = farbe ?? t.Farbe, Deckkraft = t.Deckkraft, NichtSchneiden = t.NichtSchneiden, Teil = t.Teil };
+        var k = new Koerperteil { Art = t.Art, Material = t.Material, Farbe = farbe ?? t.Farbe, Deckkraft = t.Deckkraft, NichtSchneiden = t.NichtSchneiden, Teil = t.Teil,
+            Achse = t.Achse?.Select(l.Welt).ToList(), AchseRadius = t.AchseRadius };
         switch (t.Art)
         {
             case "quader":

@@ -349,7 +349,10 @@ public class SchnittTests(ITestOutputHelper aus)
         var t = TeilVon(Grafik.Plan(p, "S-K"), p, "RO-K")!;
         double[] knick = [2000, 1000];
         // keine Kante durch das Innere des Knicks (Stirnkanten der Rohrstücke sind Nähte)
-        Assert.All(Segmente(t), s => Assert.True(Polygone.AbstandZurStrecke(knick[0], knick[1], s.A[0], s.A[1], s.B[0], s.B[1]) > 45,
+        // Achslinie (Strichpunkt) läuft bewusst durch den Knick (Christian 05.11.2026) – hier nur die Körperkanten
+        Assert.Contains(t.Primitive, x => x.Stil.Linie == "strichpunkt");
+        var kanten = new Grafikteil { Primitive = t.Primitive.Where(x => x.Stil.Linie != "strichpunkt").ToList() };
+        Assert.All(Segmente(kanten), s => Assert.True(Polygone.AbstandZurStrecke(knick[0], knick[1], s.A[0], s.A[1], s.B[0], s.B[1]) > 45,
             $"Kante ({s.A[0]}, {s.A[1]}) – ({s.B[0]}, {s.B[1]}) läuft durch den Knick"));
         // Aussenecke rund: Bogen der Knickkugel
         Assert.Contains(t.Primitive, x => x.Art == "polylinie" && x.Punkte.Count > 3 && x.Punkte.All(q => Math.Abs(Abstand(q, knick) - 50) < 0.2));

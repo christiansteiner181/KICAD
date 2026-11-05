@@ -205,6 +205,9 @@ public sealed class FamilienGrafik : IGrafikquelle
                     Art = "polygon", Punkte = f.Aussen, Loecher = f.Loecher.Count > 0 ? f.Loecher : null,
                     Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = "papier" },
                 });
+        // Achslinien runder Körper (Achslinien.cs; nicht zum Sinnbild und nicht bei einliniger Darstellung)
+        if (sinnbild.Count == 0 && !einlinig && umriss.Count > 0)
+            teil.Primitive.AddRange(Achslinien.Zeichnen(a.Teile(detail), q => { var w = lage.Welt(q); return [w[0], w[1]]; }, M, farbe));
         foreach (var f in umriss)
             foreach (var ring in f.Loecher.Prepend(f.Aussen))
                 teil.Fangpunkte!.AddRange(ring.Select(p => new[] { p[0], p[1] }));

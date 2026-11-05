@@ -71,6 +71,7 @@ public static class HlksKoerper
                     {
                         Art = "zylinder", Von = [q[0] - l / 2, q[1], q[2]], Nach = [q[0] + l / 2, q[1], q[2]],
                         Radius = r, Farbe = farbe, Material = "armatur",
+                        Achse = [[q[0] - l / 2, q[1], q[2]], [q[0] + l / 2, q[1], q[2]]], AchseRadius = r,
                     });
                     break;
                 }
@@ -143,11 +144,14 @@ public static class HlksKoerper
 
     static void Roehren(Koerper k, List<double[]> pts, double radius, string material, string? farbe)
     {
+        int erstes = k.Teile.Count;
         for (int i = 1; i < pts.Count; i++)
         {
             if (Geometrie.Abstand(pts[i - 1], pts[i]) < 1e-3) continue;
             k.Teile.Add(new Koerperteil { Art = "zylinder", Von = Kopie(pts[i - 1]), Nach = Kopie(pts[i]), Radius = radius, Farbe = farbe, Material = material });
         }
+        // Achslinie der Leitung (Achslinien.cs, Christian 05.11.2026): ein Linienzug über alle Stücke, am ersten Teil
+        if (k.Teile.Count > erstes) { k.Teile[erstes].Achse = pts.Select(Kopie).ToList(); k.Teile[erstes].AchseRadius = radius; }
     }
 
     /// <summary>Rechteckkanal: Quader je Segment (Breite quer, Höhe senkrecht), an Knicken ein Quader B × B × H zum Schliessen.

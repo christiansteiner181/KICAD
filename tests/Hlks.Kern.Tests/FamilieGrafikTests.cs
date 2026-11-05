@@ -229,7 +229,7 @@ public class FamilieGrafikTests
         Ansicht(p, "A-1", [4000, 2000], [6000, 2000], "ansicht", "fein");
         var t = Teil(Grafik.Plan(p, "A-1"), p, "HK-1");
         Assert.DoesNotContain(t.Primitive, x => x.Art == "polygon");
-        Etwa([895, 120, 1005, 760], Box(t.Primitive), 1e-3);
+        Etwa([895, 120, 1005, 760], Box(t.Primitive.Where(x => x.Stil.Linie != "strichpunkt")), 1e-3);   // ohne Achslinien (Stutzen)
     }
 
     [Fact]
@@ -291,7 +291,7 @@ public class FamilieGrafikTests
         var o = (JsonObject)Tuer.Abfrage(p, "familie_ansicht", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "22-600-1000", ["ansicht"] = ansicht, ["detailgrad"] = "fein" });
         var g = o["plangrafik"].Deserialize<Plangrafik>(Json.Optionen)!;
         Assert.Equal("ansicht", g.Art);
-        var modell = g.Teile.Where(t => t.Id is not null).SelectMany(t => t.Primitive).ToList();
+        var modell = g.Teile.Where(t => t.Id is not null).SelectMany(t => t.Primitive).Where(x => x.Stil.Linie != "strichpunkt").ToList();   // ohne Achslinien
         Etwa([u0, v0, u1, v1], Box(modell), 1e-3, ansicht);
         Assert.Contains(g.Teile, t => t.Ebene == "symbol" && t.Primitive.Any(x => x.Art == "text" && x.Text == "vl"));   // Anschlussmarken
     }
@@ -300,14 +300,14 @@ public class FamilieGrafikTests
     public void FamilieAnsicht_RundeKoerperMitAchslinie()   // Christian 05.11.2026: «alle Runden Bauteile brauchen eine Achslinie»
     {
         var p = MitFamilie();
-        Grafikteil? Achsen(string ansicht, string detail) => ((JsonObject)Tuer.Abfrage(p, "familie_ansicht", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "22-600-1000", ["ansicht"] = ansicht, ["detailgrad"] = detail }))["plangrafik"]
-            .Deserialize<Plangrafik>(Json.Optionen)!.Teile.SingleOrDefault(t => t.Ebene == "achse");
+        List<Primitiv> Achsen(string ansicht, string detail) => ((JsonObject)Tuer.Abfrage(p, "familie_ansicht", new JsonObject { ["familie"] = "FAM-1", ["typ"] = "22-600-1000", ["ansicht"] = ansicht, ["detailgrad"] = detail }))["plangrafik"]
+            .Deserialize<Plangrafik>(Json.Optionen)!.Teile.SelectMany(t => t.Primitive).Where(x => x.Stil.Linie == "strichpunkt").ToList();
         // Stutzen (Zylinder r 10, senkrecht, nur fein): vorne senkrechte Strichpunktlinie über den Stutzen hinaus, von oben ein Achsenkreuz je Stutzen
-        var vorne = Achsen("vorne", "fein")!;
-        Assert.Equal(2, vorne.Primitive.Count);
-        Assert.All(vorne.Primitive, x => { Assert.Equal("strichpunkt", x.Stil.Linie); Assert.Equal(x.Punkte[0][0], x.Punkte[^1][0], 6); Assert.True(Math.Abs(x.Punkte[0][1] - x.Punkte[^1][1]) > 30); });
-        Assert.Equal(4, Achsen("oben", "fein")!.Primitive.Count(x => x.Art == "linie"));
-        Assert.Null(Achsen("vorne", "mittel"));   // Quader haben keine Achse
+        var vorne = Achsen("vorne", "fein");
+        Assert.Equal(2, vorne.Count);
+        Assert.All(vorne, x => { Assert.Equal("strichpunkt", x.Stil.Linie); Assert.Equal(x.Punkte[0][0], x.Punkte[^1][0], 6); Assert.True(Math.Abs(x.Punkte[0][1] - x.Punkte[^1][1]) > 30); });
+        Assert.Equal(4, Achsen("oben", "fein").Count(x => x.Art == "linie"));
+        Assert.Empty(Achsen("vorne", "mittel"));   // Quader haben keine Achse
     }
 
     [Fact]

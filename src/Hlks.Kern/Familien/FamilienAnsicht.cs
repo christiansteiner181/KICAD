@@ -56,7 +56,6 @@ public static class FamilienAnsicht
     {
         var g = new Plangrafik { Ansicht = $"{fam.Kennzeichen} {a.Typ} grundriss", Art = "grundriss", Massstab = Massstab, Stand = p.Modell.Pruefsumme() };
         g.Teile.Add(FamilienGrafik.Grundriss(a, [0, 0, 0], 0, detail, Massstab, null, p.Katalog, null, fam.Id, ebene, null));
-        if (Achslinien(a, detail, "oben") is { } achsen) g.Teile.Add(achsen);
         if (Bemassung(a, "oben", Grafik.Begrenzung(g.Teile)) is { } mass) g.Teile.Add(mass);
         g.Begrenzung = Grafik.Begrenzung(g.Teile);
         return g;
@@ -194,54 +193,14 @@ public static class FamilienAnsicht
             }
             g.Teile.Add(marken);
         }
-        if (Achslinien(a, detail, ansicht) is { } achsen) g.Teile.Add(achsen);
-        if (Bemassung(a, ansicht, Grafik.Begrenzung(g.Teile.Where(t => t.Ebene != "achse").ToList())) is { } mass) g.Teile.Add(mass);
+        // Achslinien: Seitenansichten zeichnet Schnittgrafik mit den platzierten Körpern; oben/unten/iso laufen über Netze ohne Achse
+        if (ansicht is "oben" or "unten" or "iso" && !(detail == "grob" && a.Achsen.Count > 0))
+        {
+            var ap = Hlks.Kern.Achslinien.Zeichnen(a.Teile(detail), q => { var l = Lage(ansicht, q); return [l[0], l[2]]; }, Massstab);
+            if (ap.Count > 0) g.Teile.Add(new Grafikteil { Id = null, Ebene = Hlks.Kern.Achslinien.Ebene, Primitive = ap });
+        }
+        if (Bemassung(a, ansicht, Grafik.Begrenzung(g.Teile.Where(t => t.Ebene != Hlks.Kern.Achslinien.Ebene).ToList())) is { } mass) g.Teile.Add(mass);
         g.Begrenzung = Grafik.Begrenzung(g.Teile);
         return g;
-    }
-
-    /// <summary>Achslinien runder Körper (Christian 05.11.2026: «für die Familiendarstellung: alle Runden Bauteile brauchen eine Achslinie»): Strichpunkt,
-    /// dünn, über den Körper hinaus verlängert; zeigt die Achse zum Betrachter (Kreis in der Ansicht) bzw. bei der Kugel ein Achsenkreuz.
-    /// Formteile im Detailgrad grob sind schon einlinig (Achse) – dort keine. ANNAHME (Gestaltung): Überstand r, mindestens 0.3 r, höchstens 3 mm Papier.</summary>
-    static Grafikteil? Achslinien(FamAufloesung a, string detail, string ansicht)
-    {
-        if (detail == "grob" && a.Achsen.Count > 0) return null;
-        var teil = new Grafikteil { Id = null, Ebene = "achse", Fangpunkte = [] };
-        var stil = new Stil { Stift = Stifte.Duenn, Linie = "strichpunkt" };
-        static double Ab(double[] p, double[] q) => Math.Sqrt((p[0] - q[0]) * (p[0] - q[0]) + (p[1] - q[1]) * (p[1] - q[1]));
-        static double[] Weiter(double[] von, double[] bis, double um)
-        {
-            double l = Ab(von, bis);
-            return l < 1e-9 ? bis : [bis[0] + (bis[0] - von[0]) / l * um, bis[1] + (bis[1] - von[1]) / l * um];
-        }
-        // Formteile (Bogen, T-Stück …): ihre Achsen (mit Radius des Bogens) statt der einzelnen Körper
-        var teile = a.Teile(detail);
-        double rMax = teile.Select(t => t.AchseRadius).Concat(a.Anschluesse.Select(x => (x.D ?? 0) / 2)).DefaultIfEmpty(0).Max();
-        var liste = a.Achsen.Count > 0 && rMax > 0 ? a.Achsen.Select(x => (Achse: x, R: rMax)).ToList()
-            : teile.Where(t => t.Achse is { Count: > 0 } && t.AchseRadius > 0).Select(t => (Achse: t.Achse!, R: t.AchseRadius)).ToList();
-        foreach (var (achse, rA) in liste)
-        {
-            double r = rA, ue = Math.Max(0.3 * r, Math.Min(3 * Massstab, r));
-            var pts = achse.Select(q => { var l = Lage(ansicht, q); return new[] { l[0], l[2] }; }).ToList();
-            double laenge = 0;
-            for (int i = 1; i < pts.Count; i++) laenge += Ab(pts[i - 1], pts[i]);
-            if (pts.Count >= 2 && laenge > 0.2 * r)
-            {
-                var linie = pts.Where((q, i) => i == 0 || Ab(q, pts[i - 1]) > 1e-6).ToList();
-                if (linie.Count < 2) continue;
-                linie[0] = Weiter(linie[1], linie[0], ue);
-                linie[^1] = Weiter(linie[^2], linie[^1], ue);
-                teil.Primitive.Add(new Primitiv { Art = "polylinie", Punkte = linie, Stil = stil });
-            }
-            else
-            {
-                // Achse zeigt zum Betrachter bzw. Kugel: Achsenkreuz durch die Mitte
-                double[] m = [pts.Average(q => q[0]), pts.Average(q => q[1])];
-                double h = r + ue;
-                teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[m[0] - h, m[1]], [m[0] + h, m[1]]], Stil = stil });
-                teil.Primitive.Add(new Primitiv { Art = "linie", Punkte = [[m[0], m[1] - h], [m[0], m[1] + h]], Stil = stil });
-            }
-        }
-        return teil.Primitive.Count == 0 ? null : teil;
     }
 }
