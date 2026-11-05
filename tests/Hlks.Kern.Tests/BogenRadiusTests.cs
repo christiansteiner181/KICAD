@@ -47,7 +47,7 @@ public class BogenRadiusTests
     /// <summary>Befund Christian 02.11.2026 («Ansichten der Familien, fehlende Radien … muss auch beim Konstruieren korrekt aussehen»): im Detailgrad
     /// grob zeichnet das Formteil einlinig entlang der Achse mit dem Bogen – nicht den Hüllquader.</summary>
     [Fact]
-    public void Grob_einlinig_mit_Radius_statt_Huellquader()
+    public void Grob_einlinig_als_Ecke_Achse_mit_Radius()
     {
         var f = FamilieTestHilfe.Def(ZweiZylinder("Testbogen Zylinder (fiktiv)"));
         var a = FamilienAuswertung.Aufloesen(f, f.Typen[0].Name, null);
@@ -55,8 +55,11 @@ public class BogenRadiusTests
         Assert.True(achse.Count > 5, "Bogen in Stücken, nicht nur Gehrung");
         // alle Bogenpunkte liegen auf der Innenseite des Knicks (keiner im Achsschnittpunkt, ausser bei Gehrung)
         Assert.DoesNotContain(achse, p => Math.Abs(p[0]) < 1e-6 && Math.Abs(p[1]) < 1e-6);
+        // einlinig (grob) ohne Radius: Ecke am Achsschnittpunkt (Christian 05.11.2026: «nicht die bögen weglassen sondern den radius weglassen»)
         var g = FamilienGrafik.Grundriss(a, [0, 0, 0], 0, "grob", 50, null, ArchitekturHilfe.Kat, null, null, "apparat", null);
-        Assert.Contains(g.Primitive, p => p.Art == "polylinie" && p.Punkte.Count == achse.Count);
+        var linie = Assert.Single(g.Primitive, p => p.Art == "polylinie");
+        Assert.Equal(3, linie.Punkte.Count);
+        Assert.Equal(0, linie.Punkte[1][0], 6); Assert.Equal(0, linie.Punkte[1][1], 6);
         Assert.DoesNotContain(g.Primitive, p => p.Art == "polygon");
     }
 

@@ -23,6 +23,19 @@ public class Darstellung3SerieTests
     // ------------------------------------------------------------------ Grundriss massstäblich
 
     [Fact]
+    public void Grundriss_Einlinig_SteigleitungMitKreisUndRichtung()   // Christian 05.11.2026: «darstellung mit kreis für n.o und n.u.»
+    {
+        var p = MitSerie(false);
+        Ok(RohrOhneSerie(p, "RO-A", 20, [0, 0, 500], [1000, 0, 500], [1000, 0, 4000]));    // waagrecht, dann aus dem Geschoss nach oben
+        Ok(RohrOhneSerie(p, "RO-B", 20, [0, 500, -800], [0, 500, 500], [1000, 500, 500]));  // von unten herauf, dann waagrecht
+        var a = Teil(p, "RO-A"); var b = Teil(p, "RO-B");
+        Assert.Contains(a.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [1000, 0]) < 1e-6);
+        Assert.Equal("n.o.", Assert.Single(a.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
+        Assert.Contains(b.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [0, 500]) < 1e-6);
+        Assert.Equal("n.u.", Assert.Single(b.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
+    }
+
+    [Fact]
     public void Grundriss_RohrMitSerie_BandMitAussendurchmesser()
     {
         var p = MitSerie(false);

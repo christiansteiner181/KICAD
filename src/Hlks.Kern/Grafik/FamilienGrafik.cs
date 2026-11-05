@@ -192,7 +192,7 @@ public sealed class FamilienGrafik : IGrafikquelle
         var einlinig = detail == "grob" && sinnbild.Count == 0 && a.Achsen.Count > 0;
         if (sinnbild.Count > 0) teil.Primitive.AddRange(sinnbild.Select(p => Gedreht(p, lage, farbe)));
         else if (einlinig)
-            foreach (var achse in a.Achsen)
+            foreach (var achse in a.AchsenEckig)   // einlinig: Bögen als Ecke (Christian 05.11.2026)
                 teil.Primitive.Add(new Primitiv
                 {
                     Art = "polylinie", Punkte = achse.Select(q => W2(q, lage)).ToList(),

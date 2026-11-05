@@ -50,10 +50,13 @@ public sealed class FamAufloesung
     /// <summary>Werte einer Leitungsserie für diesen Typ (Modul 3) oder null (keine Leitungsserie bzw. Fehler).</summary>
     public FamLeitungWerte? Leitung { get; internal set; }
 
-    List<List<double[]>>? achsen;
+    List<List<double[]>>? achsen, achsenEckig;
     /// <summary>Achse der Formteile (Bogen, T-Stück, Reduktion, Reinigungsöffnung) als Linienzüge in Familienkoordinaten – Darstellung im Detailgrad
     /// grob wie die Leitung (einlinig, Bogen mit Radius); leer für alle übrigen Familien (FamilienKoerper.Achsen).</summary>
     public List<List<double[]>> Achsen => achsen ??= FamilienKoerper.Achsen(this);
+    /// <summary>Achsen für die einlinige Darstellung (Detailgrad grob): Bögen als Ecke am Achsschnittpunkt, ohne Radius (Christian 05.11.2026:
+    /// «werden rohre nur als linie dargestellt werden keine bogen gezeichnet»).</summary>
+    public List<List<double[]>> AchsenEckig => achsenEckig ??= FamilienKoerper.Achsen(this, eckig: true);
 
     readonly ConcurrentDictionary<string, List<Flaeche>> umrisse = new();
     readonly ConcurrentDictionary<string, List<Koerperteil>> teile = new();
@@ -545,7 +548,7 @@ public static class FamilienKoerper
     /// «muss auch beim Konstruieren korrekt aussehen»): Bogen von Anschluss a über den Kreisbogen (Radius wie BogenMitRadius: Parameter biegeradius/
     /// radius/r/R, sonst bis zum kürzeren Rohrende) zu Anschluss b; Geberit PE und Silent-db20 ohne segmente mit Gehrung, mit segmente als Segmentbogen;
     /// zwei Anschlüsse sonst gerade; drei und mehr: die durchgehende Achse (zwei gegenläufige Anschlüsse) und je Abgang ein Stück bis auf diese Achse.</summary>
-    public static List<List<double[]>> Achsen(FamAufloesung a)
+    public static List<List<double[]>> Achsen(FamAufloesung a, bool eckig = false)
     {
         var f = a.Familie;
         var an = a.Anschluesse;
@@ -553,7 +556,7 @@ public static class FamilienKoerper
         var p = an.Select(x => V3.Aus(x.Lage)).ToList();
         var r = an.Select(x => V3.Aus(x.Richtung)).ToList();
         if (an.Count == 2)
-            return [f.Kategorie == "Bogen" && BogenAchse(f, a, p[0], r[0], p[1], r[1]) is { } bogen ? bogen : [p[0].Feld(), p[1].Feld()]];
+            return [f.Kategorie == "Bogen" && BogenAchse(f, a, p[0], r[0], p[1], r[1], eckig) is { } bogen ? bogen : [p[0].Feld(), p[1].Feld()]];
         // durchgehende Achse: das Paar mit den am stärksten gegenläufigen Richtungen
         int ia = 0, ib = 1; double min = 2;
         for (int i = 0; i < an.Count; i++)
@@ -570,7 +573,7 @@ public static class FamilienKoerper
         return achsen;
     }
 
-    static List<double[]>? BogenAchse(FamilieDef f, FamAufloesung a, V3 pa, V3 ra, V3 pb, V3 rb)
+    static List<double[]>? BogenAchse(FamilieDef f, FamAufloesung a, V3 pa, V3 ra, V3 pb, V3 rb, bool eckig = false)
     {
         int? segmente = a.Werte.GetValueOrDefault("segmente") is { IstText: false } sw && sw.Zahl >= 1 ? (int)Math.Round(sw.Zahl) : null;
         bool gehrung = segmente is null && (f.Name.StartsWith("Geberit PE", StringComparison.OrdinalIgnoreCase) || f.Name.StartsWith("Geberit Silent", StringComparison.OrdinalIgnoreCase));
@@ -583,7 +586,7 @@ public static class FamilienKoerper
         double la = (pa - pi).Laenge, lb = (pb - pi).Laenge;
         double ablenkung = Math.PI - Math.Acos(Math.Clamp((pa - pi).Einheit().Mal((pb - pi).Einheit()), -1, 1));
         if (ablenkung < 1e-3) return null;
-        if (gehrung) return [pa.Feld(), pi.Feld(), pb.Feld()];
+        if (gehrung || eckig) return [pa.Feld(), pi.Feld(), pb.Feld()];
         double? radiusParameter = null;
         foreach (var n in (string[])["biegeradius", "radius", "r", "R"])
             if (a.Werte.GetValueOrDefault(n) is { IstText: false } wr && wr.Zahl > 0) { radiusParameter = wr.Zahl; break; }

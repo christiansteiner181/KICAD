@@ -167,7 +167,7 @@ public static class FamilienAnsicht
             g.Teile.Add(new Grafikteil
             {
                 Id = fam.Id, Ebene = ebene,
-                Primitive = a.Achsen.Select(achse => new Primitiv
+                Primitive = a.AchsenEckig.Select(achse => new Primitiv
                 {
                     Art = "polylinie", Punkte = achse.Select(q => { var l = Lage(ansicht, q); return new[] { l[0], l[2] }; }).ToList(),
                     Stil = new Stil { Stift = Stifte.Mittel },

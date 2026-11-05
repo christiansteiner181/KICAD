@@ -138,6 +138,13 @@ public sealed class HlksGrafik : IGrafikquelle
         {
             var lage = HoeheVon(pts.Min(q => q[2]), pts.Max(q => q[2]), schnitt);
             teil.Primitive.AddRange(Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M));
+            // einlinig: Richtung der Steigleitung (verlässt das Geschoss nach oben bzw. unten)
+            if (grob || mass is null)
+            {
+                double zmin = pts.Min(q => q[2]), zmax = pts.Max(q => q[2]), decke = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
+                bool nachOben = zmax > decke + Eps && zmin >= boden - Eps, nachUnten = zmin < boden - Eps && zmax <= decke + Eps;
+                if (nachOben ^ nachUnten) teil.Primitive.Add(SteigText(pts[0][0], pts[0][1], nachOben, mass, w, dn, M, farbe));
+            }
             teil.Fangpunkte = [[pts[0][0], pts[0][1]]];
             return teil;
         }
@@ -150,8 +157,18 @@ public sealed class HlksGrafik : IGrafikquelle
             var a = pts[i - 1]; var b = pts[i];
             if (Math.Abs(b[0] - a[0]) <= Eps && Math.Abs(b[1] - a[1]) <= Eps)
             {
-                if (HoeheVon(Math.Min(a[2], b[2]), Math.Max(a[2], b[2]), schnitt) == Hoehe.Geschnitten)
-                    teil.Primitive.AddRange(Steigleitung(a[0], a[1], mass, Hoehe.Geschnitten, false, farbe, w, dn, M));
+                var lageS = HoeheVon(Math.Min(a[2], b[2]), Math.Max(a[2], b[2]), schnitt);
+                bool einlinigS = grob || mass is null;
+                // Christian 05.11.2026: einlinig «jedoch die darstellung mit kreis für n.o und n.u.» – jedes senkrechte Stück als Kreis mit Richtung
+                if (lageS == Hoehe.Geschnitten || einlinigS)
+                    teil.Primitive.AddRange(Steigleitung(a[0], a[1], mass, lageS, false, farbe, w, dn, M));
+                if (einlinigS)
+                {
+                    bool Waagrecht(int k) => k >= 1 && k < pts.Count && (Math.Abs(pts[k][0] - pts[k - 1][0]) > Eps || Math.Abs(pts[k][1] - pts[k - 1][1]) > Eps);
+                    // Anschluss an das waagrechte Stück: davor → Richtung a → b, danach → Richtung b → a
+                    double? dz = Waagrecht(i - 1) ? b[2] - a[2] : Waagrecht(i + 1) ? a[2] - b[2] : null;
+                    if (dz is double d && Math.Abs(d) > Eps) teil.Primitive.Add(SteigText(a[0], a[1], d > 0, mass, w, dn, M, farbe));
+                }
                 continue;
             }
             bool verdeckt = Math.Max(a[2], b[2]) < boden - Eps;
@@ -272,6 +289,15 @@ public sealed class HlksGrafik : IGrafikquelle
             Art = "kreis", Punkte = [[x, y]], Radius = Math.Max(w * 0.9, (dn ?? 0) / 2),
             Stil = new Stil { Stift = HlksEinordnung.Stift(w * 0.6 / M), Linie = linienart, Farbe = farbe, Fuellung = fuellung },
         };
+    }
+
+    /// <summary>«n.o.» (nach oben) bzw. «n.u.» (nach unten) rechts oben neben dem Kreis der Steigleitung (Christian 05.11.2026).
+    /// ANNAHME (Gestaltung): Abstand 0.5 mm Papier vom Kreis, Schrift wie Kennzeichen.</summary>
+    static Primitiv SteigText(double x, double y, bool nachOben, LeitungsMass? mass, double w, double? dn, double M, string? farbe)
+    {
+        double r = mass is { MitSerie: true } ? Math.Max(mass.Breite, 0.18 * M) / 2 : Math.Max(w * 0.9, (dn ?? 0) / 2);
+        double ab = r * 0.7071 + 0.5 * M;
+        return new Primitiv { Art = "text", Punkte = [[x + ab, y + ab]], Text = nachOben ? "n.o." : "n.u.", Groesse = Schrift, Ausrichtung = "links", Mitdrehen = true, Stil = new Stil { Farbe = farbe } };
     }
 
     static List<double[]> Rechteck(double x, double y, double b, double h) =>
