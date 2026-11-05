@@ -147,7 +147,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 // Skizze Christian 05.11.2026: die höhere Leitung läuft in die Mitte (Ausschnitt je höhere Leitung, beim T zwei); n.o. ohne höhere Leitung: Punkt
                 var richtungen = pts.Max(q => q[2]) <= deckeS + Eps ? HoehereRichtungen(ctx, e, pts) : [];
                 if (richtungen.Count > 0) kreisS = kreisS.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richtungen) : [x]).ToList();
-                else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.Add(Mittelpunkt(pts[0][0], pts[0][1], M, farbe));
+                else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.AddRange(Kreuz(pts[0][0], pts[0][1], M, farbe));
             }
             teil.Primitive.AddRange(kreisS);
             // einlinig: Richtung der Steigleitung (verlässt das Geschoss nach oben bzw. unten)
@@ -185,7 +185,7 @@ public sealed class HlksGrafik : IGrafikquelle
                         else if (b[2] > a[2] && Waagrecht(i + 1)) nach = pts[i + 1];
                         var richt = nach is not null ? [Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI] : RichtungenBei(ctx, e, a[0], a[1], Math.Max(a[2], b[2]));
                         if (richt.Count > 0) kreis = kreis.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richt) : [x]).ToList();
-                        else kreis.Add(Mittelpunkt(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Punkt
+                        else kreis.AddRange(Kreuz(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Kreuz
                     }
                     teil.Primitive.AddRange(kreis);
                 }
@@ -417,9 +417,15 @@ public sealed class HlksGrafik : IGrafikquelle
         }
     }
 
-    /// <summary>Punkt in der Mitte des Kreises (n.o., Skizze Christian 05.11.2026). ANNAHME (Gestaltung): Durchmesser 0.6 mm Papier.</summary>
-    static Primitiv Mittelpunkt(double x, double y, double M, string? farbe) =>
-        new() { Art = "kreis", Punkte = [[x, y]], Radius = 0.3 * M, Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe ?? "schnitt" } };
+    /// <summary>Kreuz im Kreis bei n.o. (Christian 05.11.2026: «bei nach oben ein kreuz nicht ein punkt»; Revisionsplan Zuchwil: Kreuz über den Kreis hinaus).
+    /// ANNAHME (Gestaltung): Kreuzarme 1.3 × Kreisradius.</summary>
+    static IEnumerable<Primitiv> Kreuz(double x, double y, double M, string? farbe)
+    {
+        double h = 1.3 * SymbolRadius(M);
+        var stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe };
+        yield return new Primitiv { Art = "linie", Punkte = [[x - h, y], [x + h, y]], Stil = stil };
+        yield return new Primitiv { Art = "linie", Punkte = [[x, y - h], [x, y + h]], Stil = stil };
+    }
 
     /// <summary>Senkrechte Leitungsstücke des Geschosses (einlinig): Lage, Kreisradius, Höhenbereich – je Plan einmal gerechnet.</summary>
     internal sealed record Steigpunkt(double X, double Y, double R, double ZMin, double ZMax);

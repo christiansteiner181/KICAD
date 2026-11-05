@@ -35,11 +35,10 @@ public class Darstellung3SerieTests
         Assert.Equal("n.u.", Assert.Single(b.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
         // Ausschnitt des Kreises auf der höheren Leitung: RO-A geht nach oben weiter → geschlossen; RO-B kommt von unten, oben schliesst das waagrechte Stück nach +x an
         Assert.DoesNotContain(a.Primitive, x => x.Art == "bogen");
-        // Skizze Christian 05.11.2026: n.o. ohne höhere Leitung mit Punkt; die tiefere (waagrechte) Leitung endet am Kreisrand, die höhere läuft in die Mitte
-        var kreise = a.Primitive.Where(x => x.Art == "kreis" && Abstand(x.Punkte[0], [1000, 0]) < 1e-6).OrderByDescending(x => x.Radius).ToList();
-        Assert.Equal(2, kreise.Count);   // Kreis und Punkt
-        var ring = kreise[0];
-        Assert.NotNull(kreise[1].Stil.Fuellung);
+        // Skizze Christian 05.11.2026: n.o. ohne höhere Leitung mit Kreuz; die tiefere (waagrechte) Leitung endet am Kreisrand, die höhere läuft in die Mitte
+        var ring = Assert.Single(a.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [1000, 0]) < 1e-6);
+        // n.o.: Kreuz durch die Mitte (Christian 05.11.2026: «bei nach oben ein kreuz nicht ein punkt»)
+        Assert.Equal(2, a.Primitive.Count(x => x.Art == "linie" && Abstand([(x.Punkte[0][0] + x.Punkte[1][0]) / 2, (x.Punkte[0][1] + x.Punkte[1][1]) / 2], [1000, 0]) < 1e-6));
         Assert.Equal(1000 - ring.Radius!.Value, a.Primitive.Where(x => x.Art == "polylinie").Max(x => x.Punkte.Max(q => q[0])), 6);
         Assert.Equal(1000, b.Primitive.Where(x => x.Art == "polylinie").Max(x => x.Punkte.Max(q => q[0])), 6);
         var bo = Assert.Single(b.Primitive, x => x.Art == "bogen");
