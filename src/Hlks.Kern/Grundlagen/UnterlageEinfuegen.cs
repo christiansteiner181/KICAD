@@ -237,7 +237,7 @@ public sealed class UnterlageEinfuegen : IBefehl
         var lage = alt ?? new UnterlagenLage(z.MmJeEinheit, 0, 0, 0);
         // Christian 05.11.2026 «DWG automatisch ausrichten»: beim ersten Einfügen an den Wänden des Geschosses ausrichten (UnterlageAusrichten.cs)
         bool ausgerichtet = false;
-        if (alt is null && UnterlageAusrichten.Suchen(k.Arbeit, z, ul.Geschoss, lage) is { } auto)
+        if (alt is null && UnterlageAusrichten.Suchen(k.Arbeit, z, ul.Geschoss, lage, alleLinien: false) is { } auto)
         {
             if (auto.Treffer >= UnterlageAusrichten.MindestTreffer && auto.Treffer > auto.TrefferVorher + 0.02) { lage = auto.Lage; ausgerichtet = true; hinweise.Add(UnterlageAusrichten.Beschreibung(ul.Kennzeichen, auto, true)); }
             else if (auto.TrefferVorher < UnterlageAusrichten.MindestTreffer) hinweise.Add(UnterlageAusrichten.Beschreibung(ul.Kennzeichen, auto, false));

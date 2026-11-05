@@ -89,7 +89,7 @@ public static class UnterlageAusrichten
     }
 
     /// <summary>Linien der Zeichnung (Zeichnungseinheiten): Wand-Layer, sonst alle.</summary>
-    static List<(double X1, double Y1, double X2, double Y2)> ZeichnungsKanten(CadZeichnung z)
+    static List<(double X1, double Y1, double X2, double Y2)> ZeichnungsKanten(CadZeichnung z, bool alleErlaubt)
     {
         var wand = Enumerable.Range(0, z.Layer.Count).Where(i =>
         {
@@ -97,6 +97,7 @@ public static class UnterlageAusrichten
             return (l.Contains("wand") || l.Contains("wänd") || l.Contains("mauer")) && !l.Contains("schraff") && !l.Contains("text");
         }).ToHashSet();
         var aus = new List<(double, double, double, double)>();
+        if (wand.Count == 0 && !alleErlaubt) return aus;   // beim Einfügen nur mit Wand-Layern (sonst richtet es sich an beliebigen Linien aus)
         foreach (var p in z.Primitive)
         {
             if (p.Art is not ('l' or 'p' or 'g') || (wand.Count > 0 && !wand.Contains(p.Layer))) continue;
@@ -125,10 +126,10 @@ public static class UnterlageAusrichten
         return sw > 0 ? s / sw : best + 0.5;
     }
 
-    public static Ergebnis? Suchen(Modell m, CadZeichnung z, string? geschoss, UnterlagenLage aktuell)
+    public static Ergebnis? Suchen(Modell m, CadZeichnung z, string? geschoss, UnterlagenLage aktuell, bool alleLinien = true)
     {
         var mk = ModellKanten(m, geschoss);
-        var zk = ZeichnungsKanten(z);
+        var zk = ZeichnungsKanten(z, alleLinien);
         if (mk.Count < 4 || zk.Count < 4) return null;
         double f = aktuell.Faktor;
         double lm = mk.Sum(k => Math.Sqrt((k.X2 - k.X1) * (k.X2 - k.X1) + (k.Y2 - k.Y1) * (k.Y2 - k.Y1)));

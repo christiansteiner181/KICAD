@@ -42,7 +42,7 @@ export async function raumtexteDialog() {
       const ohne = daten.ohneRaum ?? [];
       q('.rt-liste').innerHTML = `<table class="tabelle"><thead><tr><th></th><th>Raum</th><th>heute (Name / Nr.)</th><th>aus dem DWG</th><th>Texte im Raum</th></tr></thead><tbody>${zeilen}</tbody></table>
         <p class="leise">${leer} Raum/Räume ohne Raumstempel auf diesem Layer.</p>
-        ${ohne.length ? `<p><b>${ohne.length} Raumstempel ohne Raum in KICAD</b> (z. B. im IFC kein Raum an dieser Stelle):</p>
+        ${ohne.length ? `<p><b>${ohne.length} Raumstempel ohne Raum in KICAD</b> (z. B. im IFC kein Raum an dieser Stelle): <button type="button" class="dlg-knopf rt-alle">Alle aus der Raumkontur anlegen</button></p>
           <table class="tabelle"><tbody>${ohne.map((o, i) => `<tr><td>${esc(o.name)}</td><td>${esc(o.nummer ?? '')}</td><td><button type="button" class="dlg-knopf" data-anlegen="${i}">Raum anlegen</button> <span class="rt-ergebnis-${i} leise"></span></td></tr>`).join('')}</tbody></table>` : ''}`;
     } catch (f) {
       q('.rt-liste').textContent = f instanceof ApiFehler ? `${f.message}${f.vorschlag ? ' – ' + f.vorschlag : ''}` : String(f.message ?? f);
@@ -51,6 +51,11 @@ export async function raumtexteDialog() {
   q('.rt-unterlage').addEventListener('change', () => laden(null));
   q('.rt-layer').addEventListener('change', () => laden(q('.rt-layer').value));
   w.addEventListener('click', async (e) => {
+    if (e.target.closest('.rt-alle') && daten) {   // fehlende Räume aus der Raumkontur der DWG (Christian 05.11.2026)
+      const r = await sende('raeume_aus_dwg', { unterlage: daten.unterlage, layer: daten.layer });
+      if (ergebnisMelden(r)) laden(daten.layer);
+      return;
+    }
     const b = e.target.closest('[data-anlegen]'); if (!b || !daten) return;
     const o = daten.ohneRaum[Number(b.dataset.anlegen)];
     const r = await sende('raum_erkennen', { geschoss: daten.geschoss, punkt: o.punkt, name: o.name, ...(o.nummer ? { nummer: o.nummer } : {}) });

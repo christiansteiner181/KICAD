@@ -4243,3 +4243,9 @@ Wandlinien der Zeichnung (Layer mit «wand»/«wänd»/«mauer», sonst alle Lin
 Unterlagen: **Einfügen › Unterlagen verwalten › «An Wänden ausrichten»** (Befehl `unterlage_ausrichten`). Kern `Grundlagen/UnterlageAusrichten.cs`:
 Hauptrichtung modulo 90° → vier Drehungen, Verschiebung durch Abstimmung (250 mm), Verfeinerung nach kleinsten Quadraten Punkt-zu-Kante.
 Praxis Bernstrasse: absichtlich um 90°/180° gedrehte und verschobene DWGs fanden auf 0–2 cm zurück; alle sieben DWGs lagen schon richtig (1.UG 82 %).
+
+**Fehlende Räume aus DWG** (Christian 05.11.2026: «ja, fehlende Räume aus DWG»): im Dialog «Raumbezeichnungen aus DWG» Knopf **«Alle aus der
+Raumkontur anlegen»** (Befehl `raeume_aus_dwg`): für jeden Raumstempel ohne Raum die kleinste geschlossene Polylinie der Raumkontur-Layer («… Raum …
+Kontur», sonst «… Kontur»), die ihn enthält → Raum mit Name und Nummer aus dem Stempel; ohne Kontur gemeldet. Praxis Bernstrasse (Kopie): EG +6,
+1.OG +9, 2.OG +7, AT +7, 1.UG +1 Räume; ohne Kontur: 2.UG Technik HLS U03, Treppenhaus U08, Technik WP U04, 1.UG Treppenhaus U02.
+Seither richtet sich eine DWG beim Einfügen nur aus, wenn sie Wand-Layer hat (sonst nur über den Knopf «An Wänden ausrichten» mit allen Linien).

@@ -23,6 +23,10 @@ public class RaumbezeichnungenDwgTests
         T(stempel, "Bad", 3.0, 2.4, 0.25); T(stempel, "E22", 3.0, 2.1, 0.1); T(stempel, "6.12 m²", 3.0, 1.9, 0.1); T(stempel, "B: Platten", 3.0, 1.7, 0.1); T(stempel, "0.21", 3.0, 1.5, 0.1);
         T(mass, "2.40", 1.0, 1.0, 0.1);
         T(stempel, "Loggia", 10.0, 10.0, 0.25); T(stempel, "E27", 10.0, 9.7, 0.1);
+        var kontur = new Layer("080 Raum Innen Kontur"); doc.Layers.Add(kontur);
+        var pl = new LwPolyline { IsClosed = true, Layer = kontur };
+        foreach (var (x, y) in new[] { (9.0, 9.0), (12.0, 9.0), (12.0, 11.0), (9.0, 11.0) }) pl.Vertices.Add(new LwPolyline.Vertex(new XY(x, y)));
+        doc.Entities.Add(pl);
         var pfad = Path.Combine(Path.GetTempPath(), "hlks_raumtexte_" + Guid.NewGuid().ToString("N")[..8] + ".dxf");
         using (var w = new DxfWriter(pfad, doc, false)) w.Write();
         return pfad;
@@ -50,6 +54,11 @@ public class RaumbezeichnungenDwgTests
             var raum = p.Modell.DerKlasse("Raum").Single();
             Assert.Equal("Bad", raum.Name);
             Assert.Equal("E22", raum.Text("nummer"));
+            // fehlende Räume aus der Raumkontur (Christian 05.11.2026: «ja, fehlende Räume aus DWG»): Loggia 3 × 2 m mit Nummer
+            Ok(p.Ausfuehren("raeume_aus_dwg", new JsonObject { ["unterlage"] = u }));
+            var loggia = p.Modell.DerKlasse("Raum").Single(x => x.Name == "Loggia");
+            Assert.Equal("E27", loggia.Text("nummer"));
+            Assert.Equal(6.0, loggia.Geometrie!.Flaeche() / 1e6, 3);
         }
         finally { File.Delete(dxf); }
     }

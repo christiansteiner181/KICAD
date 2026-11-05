@@ -26,7 +26,36 @@ public static partial class RaumbezeichnungenDwg
         [new("raumbezeichnungen_dwg", AbfrageText, [new("unterlage", "text", false, ParUnterlageAbfrage), new("layer", "text", false, ParLayer)])];
 
     public static object? Tuer(Projekt p, string name, JsonObject par) => name == "raumbezeichnungen_dwg" ? Abfrage(p, par) : null;
-    public static void Registrieren(Befehlsregister r) => r.Hinzufuegen(new RaumbezeichnungenUebernehmen());
+    public static void Registrieren(Befehlsregister r) { r.Hinzufuegen(new RaumbezeichnungenUebernehmen()); r.Hinzufuegen(new RaeumeAusDwg()); }
+
+    public const string RaeumeText = "Legt Räume aus einer DWG/DXF-Unterlage an, wo ein Raumstempel ohne Raum in KICAD liegt (Christian 05.11.2026: «fehlende Räume aus DWG»): " +
+        "Umriss = kleinste geschlossene Polylinie der Raumkontur-Layer (Name mit «kontur», bevorzugt mit «raum»), die den Stempel enthält; Name und Nummer aus dem Stempel. " +
+        "Räume, deren Umriss in einem bestehenden Raum liegt, werden übergangen. Ein Paket, zurücknehmbar.";
+
+    /// <summary>Geschlossene Raumumrisse der Unterlage im Modell (Layer mit «kontur», bevorzugt «raum … kontur»).</summary>
+    public static List<List<double[]>> Konturen(Projekt p, Element unterlage)
+    {
+        var z = CadZeichnung.Laden(p, unterlage);
+        var lage = UnterlagenLage.Lesen(unterlage);
+        var raumKontur = Enumerable.Range(0, z.Layer.Count).Where(i => z.Layer[i].Contains("kontur", StringComparison.OrdinalIgnoreCase) && z.Layer[i].Contains("raum", StringComparison.OrdinalIgnoreCase)).ToHashSet();
+        if (raumKontur.Count == 0) raumKontur = Enumerable.Range(0, z.Layer.Count).Where(i => z.Layer[i].Contains("kontur", StringComparison.OrdinalIgnoreCase)).ToHashSet();
+        var aus = new List<List<double[]>>();
+        foreach (var t in z.Primitive)
+        {
+            if (!raumKontur.Contains(t.Layer) || t.Art is not ('g' or 'p') || t.W.Length < 6) continue;
+            bool zu = t.Art == 'g' || (Math.Abs(t.W[0] - t.W[^2]) < 1e-6 && Math.Abs(t.W[1] - t.W[^1]) < 1e-6);
+            if (!zu) continue;
+            var ring = new List<double[]>();
+            for (int i = 0; i + 1 < t.W.Length; i += 2) { var (x, y) = lage.Auf(t.W[i], t.W[i + 1]); ring.Add([x, y]); }
+            if (ring.Count > 3 && Math.Abs(ring[0][0] - ring[^1][0]) < 1 && Math.Abs(ring[0][1] - ring[^1][1]) < 1) ring.RemoveAt(ring.Count - 1);
+            if (ring.Count >= 3) aus.Add(ring);
+        }
+        return aus;
+    }
+
+    /// <summary>Kleinste Kontur, die den Punkt enthält (null: keine).</summary>
+    public static List<double[]>? KonturBei(List<List<double[]>> konturen, double x, double y) =>
+        konturen.Where(k => Polygone.Innen(k, x, y)).OrderBy(k => Math.Abs(Polygone.Flaecheninhalt(k))).FirstOrDefault();
 
     public sealed record Vorschlag(Element Raum, string? Name, string? Nummer, List<string> Texte);
     /// <summary>Raumstempel ohne Raum in KICAD: Name, Nummer (nächste im Umkreis von 1.5 m), Lage des Namens.</summary>
@@ -69,7 +98,10 @@ public static partial class RaumbezeichnungenDwg
                 if (Polygone.Innen(r.Geometrie!.Punkte, t.X, t.Y)) { imRaum.Add((r, t)); break; }
         var liste = imRaum.GroupBy(x => x.T.Layer).Select(g => (g.Key, g.Count())).OrderByDescending(x => x.Item2).ToList();
         var gewaehlt = !string.IsNullOrWhiteSpace(layer) ? layer.Trim()
-            : liste.Where(x => x.Key.Contains("raum", StringComparison.OrdinalIgnoreCase)).Select(x => x.Key).FirstOrDefault() ?? liste.Select(x => x.Key).FirstOrDefault();
+            : liste.Where(x => x.Key.Contains("raum", StringComparison.OrdinalIgnoreCase)).Select(x => x.Key).FirstOrDefault()
+              // auch ohne Treffer in Räumen (IFC ohne Räume an diesen Stellen): Text-Layer mit «raum» im Namen, die meisten Texte zuerst
+              ?? texte.GroupBy(t => t.Layer).Where(g => g.Key.Contains("raum", StringComparison.OrdinalIgnoreCase)).OrderByDescending(g => g.Count()).Select(g => g.Key).FirstOrDefault()
+              ?? liste.Select(x => x.Key).FirstOrDefault();
         var vorschlaege = new List<Vorschlag>();
         foreach (var r in raeume)
         {
@@ -146,5 +178,47 @@ public sealed class RaumbezeichnungenUebernehmen : IBefehl
             n++;
         }
         k.Hinweise.Add($"Raumbezeichnungen aus {u.Kennzeichen}: {n} Raum/Räume geändert.");
+    }
+}
+
+public sealed class RaeumeAusDwg : IBefehl
+{
+    public string Name => "raeume_aus_dwg";
+    public string Beschreibung => RaumbezeichnungenDwg.RaeumeText;
+    public IReadOnlyList<ParameterDef> Parameter { get; } =
+    [
+        new("unterlage", "text", true, RaumbezeichnungenDwg.ParUnterlage),
+        new("layer", "text", false, RaumbezeichnungenDwg.ParLayer),
+    ];
+
+    public void Ausfuehren(Kontext k, JsonObject p)
+    {
+        var m = k.Arbeit;
+        var u = m.HoleDerKlasse(Param.Text(p, "unterlage", true)!, "Unterlage");
+        if (u.Geschoss is null || m.Finde(u.Geschoss) is not { } geschoss) throw new HlksFehler($"{u.Kennzeichen} gehört zu keinem Geschoss.", "Unterlage in einen Grundriss einfügen.");
+        var (_, _, _, ohne) = RaumbezeichnungenDwg.Rechnen(k.Projekt, m, u, Param.Text(p, "layer"));
+        var konturen = RaumbezeichnungenDwg.Konturen(k.Projekt, u);
+        double kote = geschoss.Zahl("kote") ?? 0;
+        int n = 0;
+        var ohneKontur = new List<string>();
+        var benutzt = new HashSet<List<double[]>>();
+        foreach (var o in ohne)
+        {
+            var ring = RaumbezeichnungenDwg.KonturBei(konturen, o.X, o.Y);
+            if (ring is null) { ohneKontur.Add(o.Name + (o.Nummer is null ? "" : " " + o.Nummer)); continue; }
+            if (!benutzt.Add(ring)) continue;   // zwei Stempel in derselben Kontur: der erste gilt
+            double cx = ring.Average(q => q[0]), cy = ring.Average(q => q[1]);
+            if (m.DerKlasse("Raum").Any(r => r.Geschoss == geschoss.Id && r.Geometrie?.Enthaelt(o.X, o.Y) == true)) continue;
+            var eig = new JsonObject();
+            if (o.Nummer is not null) eig["nummer"] = o.Nummer;
+            new ElementAnlegen().Ausfuehren(k, new JsonObject
+            {
+                ["klasse"] = "Raum", ["geschoss"] = geschoss.Id, ["name"] = o.Name, ["eigenschaften"] = eig,
+                ["geometrie"] = new JsonObject { ["art"] = "polygon", ["punkte"] = new JsonArray(ring.Select(q => (JsonNode)new JsonArray(Math.Round(q[0], 1), Math.Round(q[1], 1), kote)).ToArray()) },
+            });
+            n++;
+        }
+        k.Hinweise.Add($"{n} Raum/Räume aus {u.Kennzeichen} angelegt (Umriss aus der Raumkontur der Zeichnung).");
+        if (ohneKontur.Count > 0) k.Hinweise.Add($"Ohne Raumkontur in der Zeichnung, nicht angelegt: {string.Join(", ", ohneKontur.Take(20))}{(ohneKontur.Count > 20 ? " …" : "")}.");
     }
 }

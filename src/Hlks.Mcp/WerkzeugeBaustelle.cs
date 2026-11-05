@@ -70,6 +70,13 @@ public sealed partial class Werkzeuge
         return Befehl("raumbezeichnungen_uebernehmen", par, trockenlauf);
     }
 
+    [McpServerTool(Name = "raeume_aus_dwg"), Description(RaumbezeichnungenDwg.RaeumeText)]   // 05.11.2026
+    public string RaeumeAusDwgWerkzeug(
+        [Description(RaumbezeichnungenDwg.ParUnterlage)] string unterlage,
+        [Description(RaumbezeichnungenDwg.ParLayer)] string? layer = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("raeume_aus_dwg", Parameter(("unterlage", unterlage), ("layer", layer)), trockenlauf);
+
     [McpServerTool(Name = "baustelle_export"), Description(BaustelleExport.AbfrageText)]
     public string BaustelleExportWerkzeug(
         [Description(BaustelleExport.ParDatei)] string? datei = null,
