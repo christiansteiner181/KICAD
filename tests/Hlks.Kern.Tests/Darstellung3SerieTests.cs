@@ -31,8 +31,12 @@ public class Darstellung3SerieTests
         var a = Teil(p, "RO-A"); var b = Teil(p, "RO-B");
         Assert.Contains(a.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [1000, 0]) < 1e-6);
         Assert.Equal("n.o.", Assert.Single(a.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
-        Assert.Contains(b.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [0, 500]) < 1e-6);
+        Assert.Contains(b.Primitive, x => x.Art is "kreis" or "bogen" && Abstand(x.Punkte[0], [0, 500]) < 1e-6);
         Assert.Equal("n.u.", Assert.Single(b.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
+        // Ausschnitt des Kreises auf der höheren Leitung: RO-A geht nach oben weiter → geschlossen; RO-B kommt von unten, oben schliesst das waagrechte Stück nach +x an
+        Assert.DoesNotContain(a.Primitive, x => x.Art == "bogen");
+        var bo = Assert.Single(b.Primitive, x => x.Art == "bogen");
+        Assert.Equal(30, bo.Von!.Value, 6); Assert.Equal(330, bo.Bis!.Value, 6);
     }
 
     [Fact]
