@@ -84,6 +84,7 @@ public sealed class Abfragen(Projekt p)
         .. BaustelleExport.Definitionen,   // BIM to field Stufe 1: baustelle_export
         .. BaustelleDaten.Definitionen,   // BIM to field Stufe 0: montageabschnitte
         .. BaustelleRueckmeldung.Definitionen,   // BIM to field Stufe 1: rueckmeldung_lesen
+        .. RaumbezeichnungenDwg.Definitionen,   // Raumbezeichnungen aus DWG, 05.11.2026
         .. LueftungBefehle.Definitionen,   // Modul 6 Teil A-7: raumforderung
         .. HeizungAbfragen.Definitionen,   // Modul 5 Teil A-D: heizung_lesen, heizung_leistung
         .. IfcExportAbfragen.Definitionen,   // Modul 7 Teil B2: ifc_export

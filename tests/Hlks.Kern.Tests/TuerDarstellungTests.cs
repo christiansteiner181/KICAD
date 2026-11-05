@@ -44,6 +44,7 @@ public class TuerDarstellungTests
         ["vorwand_stueckliste"] = "{}",   // 04.11.2026: Geberit Vorwand
         ["farben"] = "{}",   // 04.11.2026: Heizkörperfarben
         ["lagen"] = "{}",   // 05.11.2026: Lagemanager
+        ["raumbezeichnungen_dwg"] = "{}",   // 05.11.2026: ohne Unterlage nur die Liste
         ["rohr_druckverlust"] = "{}",   // 04.11.2026: Modul 5 Teil B
         ["kanal_druckverlust"] = "{}",   // 04.11.2026: Modul 6 Teil B
         ["datenpunktliste"] = "{}",   // 04.11.2026: Modul 8 MSRL, Gerüst

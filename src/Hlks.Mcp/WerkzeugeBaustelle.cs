@@ -51,6 +51,25 @@ public sealed partial class Werkzeuge
         return Befehl("rueckmeldung_uebernehmen", par, trockenlauf);
     }
 
+    [McpServerTool(Name = "raumbezeichnungen_dwg"), Description(RaumbezeichnungenDwg.AbfrageText)]   // 05.11.2026
+    public string RaumbezeichnungenDwgWerkzeug([Description(RaumbezeichnungenDwg.ParUnterlageAbfrage)] string? unterlage = null, [Description(RaumbezeichnungenDwg.ParLayer)] string? layer = null) =>
+        Lauf(() => Antwort((JsonNode)Tuer.Abfrage(projekt, "raumbezeichnungen_dwg", Parameter(("unterlage", unterlage), ("layer", layer)))), synchronisieren: false);
+
+    [McpServerTool(Name = "raumbezeichnungen_uebernehmen"), Description(RaumbezeichnungenDwg.BefehlText)]   // 05.11.2026
+    public string RaumbezeichnungenUebernehmenWerkzeug(
+        [Description(RaumbezeichnungenDwg.ParUnterlage)] string unterlage,
+        [Description(RaumbezeichnungenDwg.ParLayer)] string? layer = null,
+        [Description("Kennzeichen der Räume; leer = alle mit Vorschlag")] JsonElement? raeume = null,
+        [Description("Name übernehmen (Vorgabe ja)")] bool name = true,
+        [Description("Nummer übernehmen (Vorgabe ja)")] bool nummer = true,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false)
+    {
+        var par = Parameter(("unterlage", unterlage), ("layer", layer));
+        if (Knoten(raeume) is JsonArray l) par["raeume"] = l;
+        par["name"] = name; par["nummer"] = nummer;
+        return Befehl("raumbezeichnungen_uebernehmen", par, trockenlauf);
+    }
+
     [McpServerTool(Name = "baustelle_export"), Description(BaustelleExport.AbfrageText)]
     public string BaustelleExportWerkzeug(
         [Description(BaustelleExport.ParDatei)] string? datei = null,

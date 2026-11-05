@@ -33,6 +33,7 @@ import './aktionen-aehnlich.js';   // «Ähnliches platzieren» (Kontextregister
 import './aktionen-verbinden.js';
 import './aktionen-auswahl.js';
 import './aktionen-fangen.js';   // Fang-Kürzel und Fangeinstellungen (Bearbeitungswerkzeuge B5)   // Auswahlfilter, Alle Exemplare (Bearbeitungswerkzeuge B4)   // Verbinden/Trennen im Grundriss (Bearbeitungswerkzeuge A2) – Christian 03.11.2026
+import './aktionen-raumtexte.js';   // Raumbezeichnungen aus DWG (05.11.2026)
 import './aktionen-lagen.js';   // Lagemanager (Christian 05.11.2026): Lagen je Geschoss, Lage beim Zeichnen von Rohren
 import './aktionen-baustelle.js';   // Register Datei › Ausgabe: «Baustelle (Webseite)» – BIM to field Stufe 1
 import './aktionen-ifc.js';   // Register Datei › Ausgabe: «IFC exportieren …» mit Bericht und IDS-Ergebnis (Modul 7 Teil B2)

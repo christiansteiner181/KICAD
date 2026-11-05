@@ -4218,3 +4218,13 @@ mm, durch Komma getrennt, Lage 1 zuerst; leer = 120, 240, 360, 480) und die dara
 **Zeichnen:** Werkzeug Rohr (PI), Feld **Lage** in der Optionsleiste (nur Rohre): setzt die Höhe = UK roh Decke − Abstand der Lage.
 **Plan:** Ein Rohr, dessen Achse (±5 mm) auf einer Lage liegt, trägt im Grundriss so viele Schrägstriche (Strich 3 mm, 45° zur Leitung) wie die
 Lagenummer – einmal bis zum nächsten Wechsel (kein Zeichen, wenn das Rohr davor, auch über ein Formteil, dieselbe Lage hat). Kanäle haben keine Lagen.
+
+## Raumbezeichnungen aus DWG (Christian 05.11.2026)
+
+**Ort:** Register **Architektur › Gruppe Raum › Raumbezeichnungen aus DWG** (Aktion `arch.raumtexte-dwg`, `aktionen-raumtexte.js`). Unterlage (DWG/DXF
+des Geschosses) und Layer der Raumstempel wählen (automatisch: Layer mit «raum» im Namen bzw. den meisten Texten in Räumen, z. B. «080 Raum Innen
+Text»). Vorschau je Raum: heute (Name/Nummer) → aus dem DWG (Name = grösster Text ohne Kennzeichnung wie «6.12 m²», «B: Platten»; Nummer = Muster
+wie E23, 1.03), alle Texte im Raum. Häkchen, Name und/oder Nummer, «Übernehmen» (`raumbezeichnungen_uebernehmen`, ein Paket). Raumstempel ohne Raum in
+KICAD werden aufgelistet; «Raum anlegen» versucht `raum_erkennen` am Stempel mit Name und Nummer. Kern: `Grundlagen/RaumbezeichnungenDwg.cs`,
+Abfrage `raumbezeichnungen_dwg` (ohne unterlage: Liste der DWG/DXF-Unterlagen). Praxisprojekt Bernstrasse EG: DWG und IFC deckungsgleich (Ursprung 0/0),
+5 von 8 IFC-Räumen erhalten Name und Nummer; 8 Stempel liegen, wo das IFC keinen Raum hat (raum_erkennen findet dort keine umschliessenden Wände).

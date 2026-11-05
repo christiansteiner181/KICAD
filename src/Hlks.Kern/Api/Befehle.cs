@@ -123,6 +123,7 @@ public sealed class Befehlsregister
         LueftungBefehle.Registrieren(r);
         BaustelleDaten.Registrieren(r);   // BIM to field Stufe 0: montagestatus_setzen
         BaustelleRueckmeldung.Registrieren(r);   // BIM to field Stufe 1: rueckmeldung_uebernehmen
+        RaumbezeichnungenDwg.Registrieren(r);   // Raumbezeichnungen aus DWG, 05.11.2026
         // Modul 5 Teil A-D: Heizgruppen und Systempaar
         HeizungBefehle.Registrieren(r);
         r.Hinzufuegen(new DatenpunkteVorschlagen());   // Modul 8 MSRL, Gerüst 04.11.2026
