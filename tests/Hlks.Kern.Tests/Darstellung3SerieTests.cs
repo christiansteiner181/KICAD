@@ -34,7 +34,11 @@ public class Darstellung3SerieTests
         Assert.Equal(3000, Abstand(band.Punkte[0], band.Punkte[1]), 6);
         Assert.Equal(Kat.Medien["KW"].FarbeHex, band.Stil.Fuellung);
         Assert.Null(band.Stil.Stift);
-        Assert.DoesNotContain(t.Primitive, x => x.Stil.Linie != "voll");
+        Assert.DoesNotContain(t.Primitive, x => x.Stil.Linie is not ("voll" or "strichpunkt"));
+        // Achslinie (Christian 05.11.2026): weiss auf dem Band, über die Enden hinaus
+        var achse = Assert.Single(t.Primitive, x => x.Stil.Linie == "strichpunkt");
+        Assert.Equal("#ffffff", achse.Stil.Farbe);
+        Assert.True(achse.Punkte[0][0] < 0 && achse.Punkte[^1][0] > 3000);
         Assert.Equal(2, t.Fangpunkte!.Count);
         Etwa([3000, 0], t.Fangpunkte[1]);
         // andere Grösse: DN 50 → 55 mm

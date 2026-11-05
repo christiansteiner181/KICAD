@@ -182,6 +182,11 @@ public sealed class HlksGrafik : IGrafikquelle
                     }
                 if (mass.Daemmdicke > 0)   // zweite Kontur, dünn gestrichelt
                     teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, farbe, "strich"));
+                // Achslinie runder Leitungen (Achslinien.cs, Christian 05.11.2026 «auch dort»): auf dem gefüllten Rohrband weiss, sonst in der Leitungsfarbe
+                if (!mass.Rechteck)
+                    teil.Primitive.AddRange(Achslinien.Zeichnen(
+                        [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
+                        q => [q[0], q[1]], M, mass.Rohrband && !lauf.Verdeckt ? "#ffffff" : farbe));
             }
             LeitungsText(ctx, e, xy, breite, teil);
             teil.Fangpunkte = xy.Select(p => new[] { p[0], p[1] }).ToList();
