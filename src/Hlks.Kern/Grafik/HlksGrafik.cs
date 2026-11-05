@@ -100,6 +100,7 @@ public sealed class HlksGrafik : IGrafikquelle
     {
         public List<double[]> Xy = [];
         public bool Verdeckt;
+        public double Z;   // Höhe am Anfang des Laufs (einlinig: Unterbrechung an Steigleitungen)
     }
 
     const double Eps = 1e-6;
@@ -182,7 +183,8 @@ public sealed class HlksGrafik : IGrafikquelle
                         double[]? nach = null;
                         if (a[2] >= b[2] && Waagrecht(i - 1)) nach = pts[i - 2];
                         else if (b[2] > a[2] && Waagrecht(i + 1)) nach = pts[i + 1];
-                        if (nach is not null) kreis = kreis.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, [Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI]) : [x]).ToList();
+                        var richt = nach is not null ? [Math.Atan2(nach[1] - a[1], nach[0] - a[0]) * 180 / Math.PI] : RichtungenBei(ctx, e, a[0], a[1], Math.Max(a[2], b[2]));
+                        if (richt.Count > 0) kreis = kreis.SelectMany(x => x.Art == "kreis" ? Ausschnitte(x, richt) : [x]).ToList();
                         else kreis.Add(Mittelpunkt(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Punkt
                     }
                     teil.Primitive.AddRange(kreis);
@@ -190,13 +192,17 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (einlinigS)
                 {
                     // Anschluss an das waagrechte Stück: davor → Richtung a → b, danach → Richtung b → a
-                    double? dz = Waagrecht(i - 1) ? b[2] - a[2] : Waagrecht(i + 1) ? a[2] - b[2] : null;
+                    // Bezug: das Ende im Geschoss (zuerst der Anfang des Stücks) – T n.o. geht vom Hauptrohr nach oben, n.u. vom waagrechten Stück nach unten
+                    double deckeV = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
+                    bool imGeschoss(double z) => z >= boden - Eps && z <= deckeV + Eps;
+                    double? dz = imGeschoss(a[2]) ? b[2] - a[2] : imGeschoss(b[2]) ? a[2] - b[2] : null;
                     if (dz is double d && Math.Abs(d) > Eps) teil.Primitive.Add(SteigText(a[0], a[1], d > 0, mass, w, dn, M, farbe));
                 }
+                aktuell = null;   // danach ein neuer Lauf (andere Höhe)
                 continue;
             }
             bool verdeckt = Math.Max(a[2], b[2]) < boden - Eps;
-            if (aktuell is null || aktuell.Verdeckt != verdeckt) { aktuell = new Lauf { Verdeckt = verdeckt, Xy = [[a[0], a[1]]] }; laeufe.Add(aktuell); }
+            if (aktuell is null || aktuell.Verdeckt != verdeckt) { aktuell = new Lauf { Verdeckt = verdeckt, Xy = [[a[0], a[1]]], Z = a[2] }; laeufe.Add(aktuell); }
             aktuell.Xy.Add([b[0], b[1]]);
         }
 
@@ -242,8 +248,7 @@ public sealed class HlksGrafik : IGrafikquelle
             if (w / M <= 0.35 + 1e-9)
             {
                 // Höhe des Laufs: Punkt der Leitung an seinem Anfang
-                double zl = pts.FirstOrDefault(q => Math.Abs(q[0] - lauf.Xy[0][0]) <= Eps && Math.Abs(q[1] - lauf.Xy[0][1]) <= Eps)?[2] ?? pts[0][2];
-                foreach (var stueck in AmKreisUnterbrechen(ctx, lauf.Xy, zl))
+                foreach (var stueck in AmKreisUnterbrechen(ctx, lauf.Xy, lauf.Z))
                     teil.Primitive.Add(new Primitiv
                     {
                         Art = "polylinie", Punkte = stueck,
@@ -368,14 +373,32 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (el2 != e.Id && m.Finde(el2) is { } n2 && Von(n2) is double r2) aus.Add(r2);
         }
         if (aus.Count > 0) return aus;
-        // ohne Verbindung (z. B. aus IFC übernommen): Leitung desselben Geschosses, die am oberen Ende beginnt oder endet
-        // ANNAHME: Lagetoleranz 200 mm in xy und z (ein Bogen zwischen Steigleitung und waagrechter Leitung, ohne Verbindung)
         var top = pts[0][2] >= pts[^1][2] ? pts[0] : pts[^1];
-        foreach (var n in m.Elemente)
+        return RichtungenBei(ctx, e, x0, y0, top[2]);
+    }
+
+    /// <summary>Waagrechte Leitungen anderer Elemente auf Höhe z an der Stelle (x, y), ohne Verbindung gesucht: endet eine dort, ihre Richtung;
+    /// läuft eine durch (T-Stück), beide Richtungen. ANNAHME: Toleranz 200 mm in xy und z für Leitungsenden (Bogen dazwischen), 1 mm für durchlaufende.</summary>
+    static List<double> RichtungenBei(GrafikKontext ctx, Element e, double x0, double y0, double z)
+    {
+        var aus = new List<double>();
+        foreach (var n in ctx.Projekt.Modell.Elemente)
         {
             if (n.Id == e.Id || n.Geschoss != e.Geschoss || n.Geometrie?.Art != "polylinie" || n.Geometrie.Punkte is not { Count: >= 2 } np) continue;
-            foreach (var q in (double[][])[np[0], np[^1]])
-                if (Math.Abs(q[0] - x0) < 200 && Math.Abs(q[1] - y0) < 200 && q.Length > 2 && Math.Abs(q[2] - top[2]) < 200 && Von(n) is double r3) aus.Add(r3);
+            for (int i = 1; i < np.Count; i++)
+            {
+                var a = np[i - 1]; var b = np[i];
+                if (a.Length < 3 || b.Length < 3 || Math.Abs(a[2] - z) > 200 || Math.Abs(b[2] - z) > 200) continue;
+                double dx = b[0] - a[0], dy = b[1] - a[1], l = Math.Sqrt(dx * dx + dy * dy);
+                if (l < 1) continue;
+                double w = Math.Atan2(dy, dx) * 180 / Math.PI;
+                bool amA = i == 1 && Math.Abs(a[0] - x0) < 200 && Math.Abs(a[1] - y0) < 200;
+                bool amB = i == np.Count - 1 && Math.Abs(b[0] - x0) < 200 && Math.Abs(b[1] - y0) < 200;
+                if (amA) { aus.Add(w); continue; }
+                if (amB) { aus.Add(w + 180); continue; }
+                double t = ((x0 - a[0]) * dx + (y0 - a[1]) * dy) / l, qx = a[0] + dx / l * t - x0, qy = a[1] + dy / l * t - y0;
+                if (t > 1 && t < l - 1 && qx * qx + qy * qy < 1) { aus.Add(w); aus.Add(w + 180); }
+            }
         }
         return aus;
     }
