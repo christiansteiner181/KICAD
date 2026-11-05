@@ -235,6 +235,13 @@ public sealed class UnterlageEinfuegen : IBefehl
                 "Prüfen, ob die Zeichnung im Modellbereich (nicht nur in Layouts) liegt und die Layer eingeschaltet sind." +
                 (z.NichtDargestellt.Count > 0 ? " Nicht darstellbar: " + string.Join(", ", z.NichtDargestellt.Select(x => $"{x.Key} {x.Value}")) + "." : ""));
         var lage = alt ?? new UnterlagenLage(z.MmJeEinheit, 0, 0, 0);
+        // Christian 05.11.2026 «DWG automatisch ausrichten»: beim ersten Einfügen an den Wänden des Geschosses ausrichten (UnterlageAusrichten.cs)
+        bool ausgerichtet = false;
+        if (alt is null && UnterlageAusrichten.Suchen(k.Arbeit, z, ul.Geschoss, lage) is { } auto)
+        {
+            if (auto.Treffer >= UnterlageAusrichten.MindestTreffer && auto.Treffer > auto.TrefferVorher + 0.02) { lage = auto.Lage; ausgerichtet = true; hinweise.Add(UnterlageAusrichten.Beschreibung(ul.Kennzeichen, auto, true)); }
+            else if (auto.TrefferVorher < UnterlageAusrichten.MindestTreffer) hinweise.Add(UnterlageAusrichten.Beschreibung(ul.Kennzeichen, auto, false));
+        }
         var extras = new JsonObject
         {
             ["erwartung"] = z.MmJeEinheit,
@@ -245,11 +252,11 @@ public sealed class UnterlageEinfuegen : IBefehl
         double breite = (u[2] - u[0]) * z.MmJeEinheit / 1000, hoehe = (u[3] - u[1]) * z.MmJeEinheit / 1000;
         hinweise.Insert(0, $"{ul.Kennzeichen}: «{ul.Name}» ({art.ToUpperInvariant()} {z.Version}) mit {z.Primitive.Count} Elementen in {z.Layer.Count} Layern; " +
                            $"Hauptteil {breite:0.0} × {hoehe:0.0} m, Einheit {(z.EinheitBekannt ? z.Einheit : "unbekannt")}.");
-        if (alt is null)
+        if (alt is null && !ausgerichtet)
             hinweise.Add(z.EinheitBekannt
                 ? $"Erste Lage: Einheit der Datei ({z.Einheit}), {Zahl(z.MmJeEinheit)} mm je Zeichnungseinheit, Zeichnungsursprung auf (0, 0) des Modells."
                 : "Die Datei nennt keine Zeichnungseinheit (INSUNITS fehlt): Annahme Millimeter. Stimmt das nicht, mit unterlage_kalibrieren zwei bekannte Punkte setzen – der Faktor wird dann berechnet.");
-        if (alt is null) hinweise.Add("Zum Ausrichten: unterlage_kalibrieren mit zwei Punkten der Unterlage (von) und ihren Sollpunkten im Modell (nach).");
+        if (alt is null && !ausgerichtet) hinweise.Add("Zum Ausrichten: unterlage_kalibrieren mit zwei Punkten der Unterlage (von) und ihren Sollpunkten im Modell (nach).");
         var a = z.Ausdehnung!;
         if (a[2] - a[0] > 3 * (u[2] - u[0]) || a[3] - a[1] > 3 * (u[3] - u[1]))
             hinweise.Add($"Weit abgelegene Teile: die Zeichnung reicht über den Hauptteil hinaus bis {(a[2] - a[0]) * z.MmJeEinheit / 1000:0} × {(a[3] - a[1]) * z.MmJeEinheit / 1000:0} m " +

@@ -4234,3 +4234,12 @@ Abfrage `raumbezeichnungen_dwg` (ohne unterlage: Liste der DWG/DXF-Unterlagen). 
 **Ort:** Register **Koordination › Gruppe Kollisionen › Kollisionspunkte** (Aktion `koordination.kollisionen-zeigen`, Umschalter, gedrückt =
 sichtbar). Schaltet die Klasse `Kollision` in `klassenAusblenden` der aktiven Ansicht (wie Sichtbarkeit/Grafiken; `element_aendern`, ein Paket,
 zurücknehmbar) – je Ansicht, also auch im 3D getrennt. Im Browser geprüft (Grundriss EG: Marke da → aus → wieder da).
+
+## DWG automatisch ausrichten (Christian 05.11.2026)
+
+Beim **Einfügen** einer DWG/DXF in einen Grundriss sucht KICAD Drehung und Verschiebung (Faktor bleibt aus der Einheit der Datei), bei der die
+Wandlinien der Zeichnung (Layer mit «wand»/«wänd»/«mauer», sonst alle Linien) auf den Wand- und Stützenkanten des Geschosses liegen; übernommen ab
+30 % Treffer und nur, wenn besser als die Erstlage (Hinweis «automatisch ausgerichtet … % der Wandlinien liegen auf den Wänden»). Für bestehende
+Unterlagen: **Einfügen › Unterlagen verwalten › «An Wänden ausrichten»** (Befehl `unterlage_ausrichten`). Kern `Grundlagen/UnterlageAusrichten.cs`:
+Hauptrichtung modulo 90° → vier Drehungen, Verschiebung durch Abstimmung (250 mm), Verfeinerung nach kleinsten Quadraten Punkt-zu-Kante.
+Praxis Bernstrasse: absichtlich um 90°/180° gedrehte und verschobene DWGs fanden auf 0–2 cm zurück; alle sieben DWGs lagen schon richtig (1.UG 82 %).

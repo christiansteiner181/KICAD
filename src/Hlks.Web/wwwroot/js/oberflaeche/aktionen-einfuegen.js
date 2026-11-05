@@ -447,7 +447,7 @@ async function unterlagenVerwalten() {
           + `<td class="leise" title="${esc(u.werte?.datei ?? '')}">${esc(ohnePruefsumme(u.werte?.datei ?? u.werte?.original ?? ''))}</td>`
           + `<td><input type="checkbox" class="u-an" ${u.werte?.anzeigen === false ? '' : 'checked'} aria-label="anzeigen"></td>`
           + `<td><input type="text" class="u-deck" size="3" inputmode="numeric" value="${Math.round(Number(u.werte?.deckkraft ?? 0.5) * 100)}"> %</td>`
-          + `<td class="u-knoepfe"><button type="button" class="dlg-knopf u-lage">Lage</button>${art === 'ifc' ? '<button type="button" class="dlg-knopf u-farben">Farben …</button>' : ''}${KALIB(art) ? '<button type="button" class="dlg-knopf u-kal">Kalibrieren</button>' : ''}<button type="button" class="dlg-knopf u-weg">Entfernen</button></td></tr>`;
+          + `<td class="u-knoepfe"><button type="button" class="dlg-knopf u-lage">Lage</button>${art === 'ifc' ? '<button type="button" class="dlg-knopf u-farben">Farben …</button>' : ''}${art === 'dwg' || art === 'dxf' ? '<button type="button" class="dlg-knopf u-auto" title="Drehung und Verschiebung an den Wänden des Geschosses suchen">An Wänden ausrichten</button>' : ''}${KALIB(art) ? '<button type="button" class="dlg-knopf u-kal">Kalibrieren</button>' : ''}<button type="button" class="dlg-knopf u-weg">Entfernen</button></td></tr>`;
       }).join('')}</tbody></table>`;
   };
   const KALIB = (art) => ['dwg', 'dxf', 'pdf', 'bild'].includes(art);
@@ -471,6 +471,7 @@ async function unterlagenVerwalten() {
     if (e.target.closest('.u-lage')) lageberichtZeigen({ unterlage: u.kennzeichen });
     else if (e.target.closest('.u-farben')) farbenDialog({ element: u.kennzeichen });
     else if (e.target.closest('.u-kal')) { zu?.(); ausfuehren('einfuegen.kalibrieren', { unterlage: u.kennzeichen }); }
+    else if (e.target.closest('.u-auto')) sende('unterlage_ausrichten', { unterlage: u.kennzeichen }).then(ergebnisMelden);   // DWG an Wänden ausrichten, 05.11.2026
     else if (e.target.closest('.u-weg')) ausfuehren('aendern.loeschen', { element: u.kennzeichen });
     else { auswaehlen(u.id); }
   });

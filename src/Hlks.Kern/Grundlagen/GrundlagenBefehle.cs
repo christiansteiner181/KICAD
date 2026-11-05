@@ -10,5 +10,6 @@ public static class GrundlagenBefehle
     {
         r.Hinzufuegen(new UnterlageEinfuegen());
         r.Hinzufuegen(new UnterlageKalibrieren());
+        r.Hinzufuegen(new UnterlageAusrichtenBefehl());   // DWG an Wänden ausrichten, 05.11.2026
     }
 }

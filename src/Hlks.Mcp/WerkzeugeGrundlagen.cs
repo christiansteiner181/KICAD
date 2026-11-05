@@ -24,6 +24,12 @@ public sealed partial class Werkzeuge
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
         Befehl("unterlage_einfuegen", Parameter(("datei", datei), ("geschoss", geschoss), ("art", art), ("seite", seite), ("massstab", massstab), ("dpi", dpi), ("zweck", zweck), ("bezuege", bezuege)), trockenlauf);
 
+    [McpServerTool(Name = "unterlage_ausrichten"), Description(Hlks.Kern.UnterlageAusrichten.Text)]   // 05.11.2026
+    public string UnterlageAusrichtenWerkzeug(
+        [Description("Unterlage (Kennzeichen) mit DWG/DXF im Grundriss eines Geschosses")] string unterlage,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("unterlage_ausrichten", Parameter(("unterlage", unterlage)), trockenlauf);
+
     [McpServerTool(Name = "unterlage_kalibrieren"), Description(Hlks.Kern.UnterlageKalibrieren.BeschreibungText)]
     public string UnterlageKalibrieren(
         [Description("Unterlage (Kennzeichen oder Id)")] string unterlage,
