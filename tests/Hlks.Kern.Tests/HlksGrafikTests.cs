@@ -161,10 +161,11 @@ public class HlksGrafikTests
         var ctx = Ctx(p, "AN-GR-1.OG");
         var t = TeileVon(p, ctx, "SW-F1-1").Single();   // DN100 senkrecht
         var ring = Assert.Single(t.Primitive);
-        Assert.Equal("kreis", ring.Art);
+        // oben schliesst die Sammelleitung im Geschoss an: Kreis mit Ausschnitt zu ihr (Christian 05.11.2026: «der ausschnitt des kreises muss immer auf der höheren leitung sein»)
+        Assert.Equal("bogen", ring.Art);
+        Assert.Equal(300, ring.Bis!.Value - ring.Von!.Value, 6);
         Assert.Equal([9000.0, 9800.0], ring.Punkte[0]);
         Assert.Equal(Math.Max(0.6 * 100 * 0.9, 50), ring.Radius!.Value, 6);   // max(0.9 w, DN/2) mit w = 60
-        Assert.Equal("papier", ring.Stil.Fuellung);
         Assert.Equal(Kat.Medien["SW"].FarbeHex, ring.Stil.Farbe);
     }
 

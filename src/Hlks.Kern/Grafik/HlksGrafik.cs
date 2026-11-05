@@ -139,7 +139,9 @@ public sealed class HlksGrafik : IGrafikquelle
             var lage = HoeheVon(pts.Min(q => q[2]), pts.Max(q => q[2]), schnitt);
             var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M).ToList();
             // einlinig: Ausschnitt des Kreises auf der höheren Leitung (Christian 05.11.2026), gesucht über die Verbindungen am oberen Ende
-            if ((grob || mass is null) && HoehereRichtung(ctx, e, pts) is double richtungS)
+            // nur wenn das obere Ende in diesem Geschoss liegt (die höhere Leitung ist im Plan zu sehen)
+            double deckeS = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
+            if ((grob || mass is null) && pts.Max(q => q[2]) <= deckeS + Eps && HoehereRichtung(ctx, e, pts) is double richtungS)
                 kreisS = kreisS.Select(x => x.Art == "kreis" ? Ausschnitt(x, richtungS) : x).ToList();
             teil.Primitive.AddRange(kreisS);
             // einlinig: Richtung der Steigleitung (verlässt das Geschoss nach oben bzw. unten)
