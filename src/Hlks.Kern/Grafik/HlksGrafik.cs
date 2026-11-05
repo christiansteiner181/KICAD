@@ -150,13 +150,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 else if (pts.Max(q => q[2]) > deckeS + Eps) kreisS.AddRange(Kreuz(pts[0][0], pts[0][1], M, farbe));
             }
             teil.Primitive.AddRange(kreisS);
-            // einlinig: Richtung der Steigleitung (verlässt das Geschoss nach oben bzw. unten)
-            if (grob || mass is null)
-            {
-                double zmin = pts.Min(q => q[2]), zmax = pts.Max(q => q[2]), decke = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
-                bool nachOben = zmax > decke + Eps && zmin >= boden - Eps, nachUnten = zmin < boden - Eps && zmax <= decke + Eps;
-                if (nachOben ^ nachUnten) teil.Primitive.Add(SteigText(pts[0][0], pts[0][1], nachOben, mass, w, dn, M, farbe));
-            }
+            // keine Beschriftung n.o./n.u. – das Symbol sagt es (Christian 05.11.2026: «Es braucht keine no. nu beschriftungen»)
             teil.Fangpunkte = [[pts[0][0], pts[0][1]]];
             return teil;
         }
@@ -188,15 +182,6 @@ public sealed class HlksGrafik : IGrafikquelle
                         else kreis.AddRange(Kreuz(a[0], a[1], M, farbe));   // geht oben aus dem Bild: n.o. mit Kreuz
                     }
                     teil.Primitive.AddRange(kreis);
-                }
-                if (einlinigS)
-                {
-                    // Anschluss an das waagrechte Stück: davor → Richtung a → b, danach → Richtung b → a
-                    // Bezug: das Ende im Geschoss (zuerst der Anfang des Stücks) – T n.o. geht vom Hauptrohr nach oben, n.u. vom waagrechten Stück nach unten
-                    double deckeV = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
-                    bool imGeschoss(double z) => z >= boden - Eps && z <= deckeV + Eps;
-                    double? dz = imGeschoss(a[2]) ? b[2] - a[2] : imGeschoss(b[2]) ? a[2] - b[2] : null;
-                    if (dz is double d && Math.Abs(d) > Eps) teil.Primitive.Add(SteigText(a[0], a[1], d > 0, mass, w, dn, M, farbe));
                 }
                 aktuell = null;   // danach ein neuer Lauf (andere Höhe)
                 continue;
@@ -337,14 +322,6 @@ public sealed class HlksGrafik : IGrafikquelle
         };
     }
 
-    /// <summary>«n.o.» (nach oben) bzw. «n.u.» (nach unten) rechts oben neben dem Kreis der Steigleitung (Christian 05.11.2026).
-    /// ANNAHME (Gestaltung): Abstand 0.5 mm Papier vom Kreis, Schrift wie Kennzeichen.</summary>
-    static Primitiv SteigText(double x, double y, bool nachOben, LeitungsMass? mass, double w, double? dn, double M, string? farbe)
-    {
-        double r = SymbolRadius(M);
-        double ab = r * 0.7071 + 0.5 * M;
-        return new Primitiv { Art = "text", Punkte = [[x + ab, y + ab]], Text = nachOben ? "n.o." : "n.u.", Groesse = Schrift, Ausrichtung = "links", Mitdrehen = true, Stil = new Stil { Farbe = farbe } };
-    }
 
     /// <summary>Richtung (Grad, im Grundriss) zur höheren Leitung einer senkrechten Leitung: das Element am oberen Anschluss (anfang/ende), über
     /// höchstens ein Formteil hinweg; null, wenn oben nichts Waagrechtes anschliesst (Leitung geht nach oben weiter).</summary>

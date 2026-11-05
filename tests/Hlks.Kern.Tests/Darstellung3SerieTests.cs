@@ -30,9 +30,9 @@ public class Darstellung3SerieTests
         Ok(RohrOhneSerie(p, "RO-B", 20, [0, 500, -800], [0, 500, 500], [1000, 500, 500]));  // von unten herauf, dann waagrecht
         var a = Teil(p, "RO-A"); var b = Teil(p, "RO-B");
         Assert.Contains(a.Primitive, x => x.Art == "kreis" && Abstand(x.Punkte[0], [1000, 0]) < 1e-6);
-        Assert.Equal("n.o.", Assert.Single(a.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
+        Assert.DoesNotContain(a.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.");   // keine Beschriftung (Christian 05.11.2026)
         Assert.Contains(b.Primitive, x => x.Art is "kreis" or "bogen" && Abstand(x.Punkte[0], [0, 500]) < 1e-6);
-        Assert.Equal("n.u.", Assert.Single(b.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.").Text);
+        Assert.DoesNotContain(b.Primitive, x => x.Art == "text" && x.Text is "n.o." or "n.u.");
         // Ausschnitt des Kreises auf der höheren Leitung: RO-A geht nach oben weiter → geschlossen; RO-B kommt von unten, oben schliesst das waagrechte Stück nach +x an
         Assert.DoesNotContain(a.Primitive, x => x.Art == "bogen");
         // Skizze Christian 05.11.2026: n.o. ohne höhere Leitung mit Kreuz; die tiefere (waagrechte) Leitung endet am Kreisrand, die höhere läuft in die Mitte
