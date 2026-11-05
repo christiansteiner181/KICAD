@@ -109,14 +109,20 @@ public static class BaustelleZugang
                 {{inhalt}}</main></body></html>
                 """);
         });
-        app.MapGet("/baustelle/seite/{datei}", (string datei) => Gesichert(async () =>
+        // Die Webseite (mehrere MB, GLB als base64) gzip-komprimiert, wenn der Browser es annimmt – nur hier, nicht global (JSON und Oberfläche bleiben roh)
+        app.MapGet("/baustelle/seite/{datei}", (string datei, HttpRequest anfrage) => Gesichert(async () =>
         {
             var (pfad, fehler, code) = await dienst.Mit(p => BaustelleEndpunkte.Erlaubt(p, Path.GetFileName(datei)));
             if (pfad is null) return Html($"<!doctype html><meta charset=utf-8><p>{WebUtility.HtmlEncode(fehler)}</p><p><a href=\"/baustelle/\">Zur Übersicht</a></p>", code);
             var html = await File.ReadAllTextAsync(pfad);
             int k = html.IndexOf("</head>", StringComparison.OrdinalIgnoreCase);
             if (k > 0) html = html.Insert(k, "<link rel=\"manifest\" href=\"/baustelle/manifest.webmanifest\"><meta name=\"kicad-baustelle-server\" content=\"1\">\n");
-            return Html(html);
+            if (!anfrage.Headers.AcceptEncoding.ToString().Contains("gzip", StringComparison.OrdinalIgnoreCase)) return Html(html);
+            using var ms = new MemoryStream();
+            using (var gz = new System.IO.Compression.GZipStream(ms, System.IO.Compression.CompressionLevel.Fastest, true)) gz.Write(Encoding.UTF8.GetBytes(html));
+            anfrage.HttpContext.Response.Headers.ContentEncoding = "gzip";
+            anfrage.HttpContext.Response.Headers.Vary = "Accept-Encoding";
+            return Results.Bytes(ms.ToArray(), "text/html; charset=utf-8");
         }));
         app.MapGet("/baustelle/manifest.webmanifest", () => Results.Text(new JsonObject
         {

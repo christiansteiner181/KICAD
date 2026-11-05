@@ -40,7 +40,7 @@ builder.Services.AddKicadXr(port);
 // (XrZugang.cs) hat eine eigene Komprimierung (Brotli und gzip, nur GLB).
 builder.Services.AddResponseCompression(o =>
 {
-    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp, "text/html"];   // text/html: Baustellen-Webseite (mit GLB, mehrere MB) im Büronetz
+    o.MimeTypes = ["application/octet-stream", XrModellEndpunkte.Medientyp];   // die Baustellen-Webseite komprimiert BaustelleZugang selbst (nur dort)
     o.Providers.Add<GzipCompressionProvider>();
 });
 builder.Services.Configure<GzipCompressionProviderOptions>(o => o.Level = System.IO.Compression.CompressionLevel.Fastest);
