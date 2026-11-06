@@ -13,6 +13,36 @@ public class VorwandTests
         sl["zeilen"]!.AsArray().OfType<JsonObject>().Where(z => (string?)z["titel"] == titel && (zuschnitt is null || (double?)z["zuschnitt"] == zuschnitt))
             .Sum(z => (int)z["anzahl"]!);
 
+    /// <summary>Christian 06.11.2026: «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen» und «wird das vorwand system geändert,
+    /// müssen die gewählten einbauten auch ändern».</summary>
+    [Fact]
+    public void Aussenkante_UndSystemwechsel_ZiehtDieMontageelementeMit()
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("element_anlegen", new JsonObject
+        {
+            ["klasse"] = "WC", ["kennzeichen"] = "WC-1", ["geschoss"] = "EG",
+            ["geometrie"] = new JsonObject { ["art"] = "punkt", ["punkte"] = new JsonArray(new JsonArray(1100, 600, 0)) },
+        }));
+        // Aussenkante bei y = 300, Rohbauwand (Fläche y = 100) rechts davon
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 300], [2100, 300]), ["aussenkante"] = "rechts", ["system"] = "gis", ["tiefe"] = 200, ["hoehe"] = 1140, ["bestuecken"] = true,
+        }));
+        var vw = Hole(p, "VW-1");
+        Assert.Equal(200, vw.Geometrie!.Punkte[0][1], 6);
+        Assert.Equal("rechts", vw.Text("rueckseite"));
+        Assert.Equal(300, Hole(p, "ME-1").Geometrie!.Punkte[0][1], 6);
+        Assert.Equal("gis.wc.sigma12.114", Hole(p, "ME-1").Text("element"));
+
+        var e = Ok(p.Ausfuehren("element_aendern", new JsonObject { ["element"] = "VW-1", ["eigenschaften"] = new JsonObject { ["system"] = "duofix" } }));
+        var me = Hole(p, "ME-1");
+        Assert.Equal("duofix.wc.sigma12.112", me.Text("element"));
+        Assert.Equal("111.309.00.6", me.Text("artikel"));
+        Assert.Equal(Hole(p, "WC-1").Id, me.Bezuege["apparat"]);
+        Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
+    }
+
     [Fact]
     public void Gis_ProfileNachHandbuch_BestueckungHinterDemWc()
     {

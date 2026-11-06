@@ -477,6 +477,7 @@ public sealed class ElementAendern : IBefehl
         Elementpflege.AnschluesseAbgleichen(k, e, d);
         bool geaendert = Json.Text(e) != Json.Text(alt);
         if (geaendert) k.Setzen(e);
+        if (geaendert && k.Katalog.IstArt(e, "Vorwand") && e.Text("system") != alt.Text("system")) VorwandSystem.Angleichen(k, e);   // Montageelemente mitziehen (06.11.2026)
         if (p["verbinden"] is JsonObject vb) Anschliessen(k, e, vb);
         else if (!geaendert) k.Hinweise.Add("Keine Änderung.");
     }

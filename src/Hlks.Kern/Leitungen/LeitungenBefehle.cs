@@ -20,6 +20,7 @@ public static class LeitungenBefehle
         // B2: Routing im Kern
         r.Hinzufuegen(new LeitungZeichnen());
         r.Hinzufuegen(new LeitungAbzweigen());
+        r.Hinzufuegen(new FallleitungPlatzieren());   // Fallleitung über alle Geschosse (06.11.2026)
         r.Hinzufuegen(new LeitungAufteilen());
         r.Hinzufuegen(new LeitungTeilen());     // Bearbeitungswerkzeuge A3 (LeitungEinsetzen.cs)
         r.Hinzufuegen(new LeitungEinsetzen());

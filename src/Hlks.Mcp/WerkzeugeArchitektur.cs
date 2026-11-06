@@ -66,12 +66,13 @@ public sealed partial class Werkzeuge
         [Description("Höhe über OK Fertigboden in mm (teilhoch: Ablagehöhe, Pflicht; raumhoch: fehlt = Höhe des Raums)")] double? hoehe = null,
         [Description("teilhoch (Vorgabe; Höhe = Ablagehöhe, Pflicht) oder raumhoch (bis unter die Decke; ohne hoehe gilt die Höhe des Raums: lichteHoehe › Geometriehöhe › Geschosshöhe)")] string? ausfuehrung = null,
         [Description("links oder rechts (Vorgabe links) = Punkte auf der Rohbauwand links/rechts in Zeichenrichtung; mitte = frei stehend, Punkte auf der Achse")] string? bezugslinie = null,
+        [Description("links oder rechts: die Punkte sind die Aussenkante (Vorderseite), die Vorwand liegt links/rechts davon (Richtung Rohbauwand); bezugslinie mitte = frei stehend")] string? aussenkante = null,
         [Description("massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel")] string? bauwerk = null,
         [Description("Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)")] double? bodenaufbau = null,
         [Description("Danach Montageelemente für die Apparate vor der Vorwand setzen (wie vorwand_bestuecken)")] bool bestuecken = false,
         [Description("vorgefertigt (in Segmenten eingebracht) oder vor_ort; Vorgabe GIS vorgefertigt, Duofix vor Ort")] string? bauweise = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("vorwand_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte), ("system", system), ("tiefe", tiefe), ("hoehe", hoehe), ("bezugslinie", bezugslinie),
+        Befehl("vorwand_zeichnen", Parameter(("geschoss", geschoss), ("punkte", punkte), ("system", system), ("tiefe", tiefe), ("hoehe", hoehe), ("bezugslinie", bezugslinie), ("aussenkante", aussenkante),
             ("bauwerk", bauwerk), ("bodenaufbau", bodenaufbau), ("bestuecken", bestuecken), ("bauweise", bauweise), ("ausfuehrung", ausfuehrung)), trockenlauf);
 
     [McpServerTool(Name = "montageelement_setzen"), Description(Hlks.Kern.MontageelementSetzen.Text)]

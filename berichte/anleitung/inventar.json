@@ -8845,17 +8845,17 @@
             "sonst": ""
           },
           "schritte": [
-            "Grundriss EG öffnen, Register Sanitär › Vorwand.",
-            "Optionsleiste: System «Geberit GIS», Tiefe 200, Höhe 1140, Rohbauwand «links», Bodenaufbau 100, Bestücken angehakt.",
-            "Im Bad E.02 auf der Innenfläche der Nordwand von links nach rechts zwei Punkte anklicken, Enter.",
-            "Detailgrad «fein» wählen und an die Vorwand heranzoomen."
+            "Beispielprojekt «Musterhaus 4 Räume» anlegen, Grundriss EG öffnen, Register Sanitär › Vorwand.",
+            "Optionsleiste: System «Geberit GIS», Tiefe leer, Höhe 1140, Lage «an der Rohbauwand», Bodenaufbau 100.",
+            "Im Bad E.01 die Aussenkante der Vorwand anklicken: zwei Punkte parallel zur Südwand, etwa 20 cm davor (ohne Kette nach zwei Punkten fertig).",
+            "Die Maus zur Wand führen – der Entwurf zeigt das Band und «Tiefe … mm» – und auf der Wandfläche klicken."
           ],
-          "erwartung": "Eine Vorwand VW-… entsteht entlang der Wand (Tiefe zur Raumseite). Hinter WC und Waschtisch sitzen Montageelemente (WC 114, WT) mit Kreuz und Kurzbezeichnung. Im Grundriss: Beplankung als dunkle Schnittfläche, geschnittene Vertikalprofile gefüllt, Horizontalprofile darunter gestrichelt, Montagewinkel und Wandanbindungen dünn. Im 3D ist die Beplankung durchscheinend, das Gestell grau, Befestigungen ocker, Elemente blau.",
+          "erwartung": "Beim Zeichnen der Aussenkante eine Gummilinie mit Mass, danach ein Band von der Aussenkante bis zur Maus mit der abgegriffenen Tiefe. Nach dem Klick entsteht VW-… zwischen Aussenkante und Wand (Höhe 1140), Rohbauwand auf der Wandseite.",
           "pruefpunkte": [
-            "Vorwand liegt auf der Raumseite der Wand, nicht in der Wand.",
-            "GIS: Horizontalprofile auf 5 und 65 cm über Rohboden und unter der Ablage (Planungshandbuch S. 251).",
-            "Montageelemente hinter WC und Waschtisch, Artikel in den Eigenschaften.",
-            "Stückliste Vorwand ohne Befunde; Annahmen aufgeführt."
+            "Aussenkante liegt dort, wo sie gezeichnet wurde; die Vorwand reicht genau bis zur Wandfläche.",
+            "Eine in der Optionsleiste eingetragene Tiefe gilt fest – die Maus wählt dann nur die Seite.",
+            "Höhe in den Eigenschaften = eingetragene Höhe.",
+            "GIS: Horizontalprofile auf 5 und 65 cm über Rohboden und unter der Ablage (Planungshandbuch S. 251)."
           ],
           "bild": {
             "projekt": "beispiel",
@@ -8868,7 +8868,58 @@
             "src/Hlks.Kern/Vorwand/VorwandGestell.cs:1",
             "kataloge/vorwand_geberit.json"
           ],
-          "hinweis": "Neu 04.11.2026 (Christian: Geberit Duofix und GIS, Profile und Befestigungen gezeichnet). Profilquerschnitte, Elementbreiten und Anschlusshöhen sind Annahmen, bis Produktdatenblätter vorliegen."
+          "hinweis": "Neu 04.11.2026; Zeichnen mit Aussenkante und Tiefe am Plan seit 06.11.2026 (Christian: «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen»)."
+        },
+        {
+          "id": "m4-vorwand-system",
+          "titel": "Vorwandsystem wechseln – Montageelemente wechseln mit",
+          "wo": {
+            "register": "Sanitär",
+            "gruppe": "Vorwand",
+            "knopf": "Eigenschaften der Vorwand",
+            "kuerzel": "",
+            "sonst": "Eigenschaft «system»"
+          },
+          "schritte": [
+            "Eine bestückte GIS-Vorwand wählen.",
+            "In den Eigenschaften System auf «duofix» stellen."
+          ],
+          "erwartung": "Die Montageelemente der Vorwand werden zu den entsprechenden Duofix-Elementen (z. B. GIS WC 114 Sigma 12 → Duofix WC 112 Sigma 12), Lage und Apparat bleiben. Meldung «… Montageelement(e) auf duofix umgestellt».",
+          "pruefpunkte": [
+            "Element und Artikel des Montageelements gehören zum neuen System.",
+            "Ohne Gegenstück im Katalog: Hinweis «bitte von Hand ersetzen»."
+          ],
+          "quelle": [
+            "src/Hlks.Kern/Vorwand/VorwandBefehle.cs:1",
+            "src/Hlks.Kern/Vorwand/VorwandKatalog.cs:1"
+          ],
+          "hinweis": "Neu 06.11.2026 (Christian: «wird das vorwand system geändert, müssen die gewählten einbauten auch ändern»)."
+        },
+        {
+          "id": "m4-fallleitung",
+          "titel": "Fallleitung über alle Geschosse platzieren",
+          "wo": {
+            "register": "Sanitär",
+            "gruppe": "Leitungen",
+            "knopf": "Fallleitung",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Eine Abwasser-Rohrserie laden (Familien).",
+            "Register Sanitär › Fallleitung, in der Optionsleiste Serie, Grösse und System SW wählen.",
+            "Im Grundriss die Lage anklicken."
+          ],
+          "erwartung": "Je Geschoss ein senkrechtes Rohr an derselben Stelle, vom obersten bis zum untersten Geschoss, miteinander verbunden; in jedem Grundriss als geschnittener Kreis.",
+          "pruefpunkte": [
+            "In jedem Grundriss (UG, EG, OG) ist die Fallleitung sichtbar.",
+            "Die Rohre sind verbunden (Leitungszug ohne Lücke)."
+          ],
+          "quelle": [
+            "src/Hlks.Kern/Leitungen/Fallleitung.cs:1",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/fallleitung.js:1"
+          ],
+          "hinweis": "Neu 06.11.2026 (Christian: «es muss ein werkzeug geben, Fallleitung platzieren», «die fallleitung wird über alle etagen gezeichnet»)."
         },
         {
           "id": "m4-vorwand-element",

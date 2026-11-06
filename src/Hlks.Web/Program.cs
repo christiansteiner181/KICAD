@@ -119,7 +119,10 @@ api.MapPost("/projekt/oeffnen", (HttpRequest r) => Sicher(async () =>
 api.MapPost("/projekt/anlegen", (HttpRequest r) => Sicher(async () =>
 {
     var p = await Koerper(r);
-    return JsonAntwort(await dienst.Anlegen(Param.Text(p, "ordner", true)!, Param.Text(p, "name") ?? "Neues Projekt", Param.Bool(p, "beispiel")));
+    // beispiel: true = MFH Musterweg, "klein" = Musterhaus 4 Räume (06.11.2026)
+    bool klein = p["beispiel"] is JsonValue bv && bv.TryGetValue<string>(out var bs) && bs == "klein";
+    bool beispiel = klein || p["beispiel"] is JsonValue bb && bb.TryGetValue<bool>(out var b) && b;
+    return JsonAntwort(await dienst.Anlegen(Param.Text(p, "ordner", true)!, Param.Text(p, "name") ?? "Neues Projekt", beispiel, klein));
 }));
 api.MapPost("/projekt/schliessen", () => Sicher(async () => { await dienst.Schliessen(); return JsonAntwort(await dienst.Status()); }));
 

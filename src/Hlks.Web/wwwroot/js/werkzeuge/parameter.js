@@ -336,7 +336,7 @@ export function tuerUmdrehen(tuer, was) {
 
 /** raumtrennung_zeichnen. */
 /** vorwand_zeichnen: System, Tiefe und Höhe sind Pflicht (der Kern setzt keine Vorgabe); bezugslinie = Seite der Rohbauwand, mitte = frei stehend. */
-export function vorwandParameter({ geschoss, punkte, system, tiefe, hoehe, bezugslinie = 'links', bauwerk = '', bodenaufbau = null, bestuecken = false, bauweise = '', ausfuehrung = 'teilhoch' }) {
+export function vorwandParameter({ geschoss, punkte, system, tiefe, hoehe, bezugslinie = 'links', aussenkante = '', bauwerk = '', bodenaufbau = null, bestuecken = false, bauweise = '', ausfuehrung = 'teilhoch' }) {
   if (!geschoss) throw new WerkzeugFehler('Die Ansicht hat kein Geschoss.', 'Einen Grundriss mit Geschoss aktivieren.');
   if (!system) throw new WerkzeugFehler('Das System fehlt.', 'In der Optionsleiste GIS oder Duofix wählen.');
   if (!positiv(tiefe)) throw new WerkzeugFehler('Die Vorwandtiefe fehlt.', 'In der Optionsleiste die Tiefe in mm inkl. Beplankung eintragen.');
@@ -345,6 +345,7 @@ export function vorwandParameter({ geschoss, punkte, system, tiefe, hoehe, bezug
   if (pts.length < 2) throw new WerkzeugFehler('Eine Vorwand braucht zwei verschiedene Punkte.', 'Anfangs- und Endpunkt anklicken.');
   const p = { geschoss, punkte: pts.map(pkt), system, tiefe, bezugslinie, ausfuehrung: ausfuehrung === 'raumhoch' ? 'raumhoch' : 'teilhoch' };
   if (positiv(hoehe)) p.hoehe = hoehe;
+  if (aussenkante === 'links' || aussenkante === 'rechts') p.aussenkante = aussenkante;
   if (bauwerk) p.bauwerk = bauwerk;
   if (Number.isFinite(bodenaufbau) && bodenaufbau >= 0) p.bodenaufbau = bodenaufbau;
   if (bestuecken) p.bestuecken = true;

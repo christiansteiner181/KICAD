@@ -184,14 +184,14 @@ public sealed class ProjektDienst(Einstellungen einstellungen, ILogger<ProjektDi
         return await Status();
     }
 
-    public async Task<JsonObject> Anlegen(string ordner, string name, bool beispiel)
+    public async Task<JsonObject> Anlegen(string ordner, string name, bool beispiel, bool klein = false)
     {
         ordner = OrdnerPruefen(ordner);
         var (p, sp) = await Task.Run(() =>
         {
             if (beispiel)
             {
-                var erzeugt = Beispielprojekt.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet);
+                var erzeugt = klein ? BeispielKlein.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet) : Beispielprojekt.Erzeugen(Katalog, SpeicherFuer(ordner), Einstellungen.Geraet);
                 erzeugt.Freigeben();   // Reservierungen des Beispielgenerators nicht stehen lassen (wie die Kommandozeile)
                 var sp = new AbgleichSpeicher(SpeicherFuer(ordner));
                 return (Kern.Projekt.Oeffnen(Katalog, sp, Einstellungen.Akteur, Einstellungen.Geraet, "mensch"), sp);

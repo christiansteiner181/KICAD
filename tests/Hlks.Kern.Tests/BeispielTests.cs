@@ -16,6 +16,19 @@ public class BeispielTests(ITestOutputHelper aus)
         Assert.DoesNotContain(befunde, b => b.Schwere == "warnung");
     }
 
+    /// <summary>Kleines Beispiel (Christian 06.11.2026): 3 Geschosse je Bad, WC, Küche, Zimmer, ohne Leitungen und Apparate, ohne Fehlerbefunde.</summary>
+    [Fact]
+    public void BeispielKlein_DreiGeschosseJeVierRaeume_OhneLeitungen()
+    {
+        var p = BeispielKlein.Erzeugen(Kat, null);
+        Assert.Equal(12, p.Modell.DerKlasse("Raum").Count());
+        Assert.Equal(3, p.Modell.DerKlasse("Geschoss").Count());
+        Assert.Empty(p.Modell.Elemente.Where(e => Kat.IstArt(e, "Leitung") || Kat.IstArt(e, "Apparat")));
+        var befunde = Pruefungen.Alle(p.Modell, Kat);
+        foreach (var b in befunde) aus.WriteLine($"{b.Schwere} {b.Code} {b.Element}: {b.Text}");
+        Assert.DoesNotContain(befunde, b => b.Schwere == "fehler");
+    }
+
     [Fact]
     public void KiTestErwartungIstStimmig()
     {

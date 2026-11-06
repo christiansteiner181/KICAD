@@ -123,7 +123,7 @@ Aktionen sind zentral in `aktionen.js` registriert (`id`, `titel`, `symbol` (SVG
 | Architektur | Wand (WA), Tür (DR), Fenster (WN), Raum (RM), Raumtrennung (RT: Klick, Klick; teilt jeden Raum, den die Linie ganz durchquert, und begrenzt «Raum» wie eine Wand; Linie läuft im Zug weiter, Esc beendet), Achse (GR) – Werkzeuge seit Modul 1a (`aktionen-zeichnen.js`, `js/werkzeuge/`) |
 | Architektur, Gruppe «Decke, Boden, Dach» (seit 1c) | Decke, Boden, Dach → Dialog `decke_erzeugen`; keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
 | Hülle (seit 1c, zwischen Architektur und Heizung) | Gruppen **Aufbauten** (Aufbau …, Zuweisen …), **Materialien** (Material …), **Fenster** (Kennwerte …), **Übergang** (Übergang …), **Prüfen** (Hülle prüfen, Wärmebrücken vorschlagen), **Listen** (Raumgrenzen, Hüllbauteile). Keine Kürzel. Beschreibung: Abschnitt «Gebäudehülle» |
-| Heizung, Lüftung, Sanitär, MSRL (je Gewerk seit 04.11.2026, vorher ein Register «Gebäudetechnik»; Christian: «die tab aufteilung gewerkeweise gliedern», «ein weiteres Register MSRL») | Ein Werkzeug mehrerer Gewerke steht in jedem seiner Register (`register` als Liste, `register.js › registerVon/imRegister`; das erste ist sein Hauptregister für Kürzelliste und Schnellzugriff). **Heizung:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil (PF, deaktiviert) · «Familien». **Lüftung:** «Leitungen» Kanal (DT), Parallele Leitungen, Formteil · «Familien». **Sanitär:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil · «Apparate und Armaturen» Sanitär-Zusammenstellung, Sanitärapparat (PX), Armatur (PA) – beide deaktiviert, «folgt in Modul 2/3» · «Vorwand» Vorwand, Montageelement, Bestücken, Stückliste Vorwand (Abschnitt «Geberit Vorwand») · «Familien». **MSRL:** «Schema» Verbinden, Trennen, Element einfügen, Neu anordnen (dieselben Knöpfe wie Ansicht › Schema) · «Familien». «Familien» = Familie platzieren (CM), Familie aus Unterlagen, Familien im Explorer (Modul 2, C3). Ein gemerktes Register «Gebäudetechnik» öffnet Heizung. |
+| Heizung, Lüftung, Sanitär, MSRL (je Gewerk seit 04.11.2026, vorher ein Register «Gebäudetechnik»; Christian: «die tab aufteilung gewerkeweise gliedern», «ein weiteres Register MSRL») | Ein Werkzeug mehrerer Gewerke steht in jedem seiner Register (`register` als Liste, `register.js › registerVon/imRegister`; das erste ist sein Hauptregister für Kürzelliste und Schnellzugriff). **Heizung:** «Leitungen» Rohr (PI), Parallele Leitungen, Formteil (PF, deaktiviert) · «Familien». **Lüftung:** «Leitungen» Kanal (DT), Parallele Leitungen, Formteil · «Familien». **Sanitär:** «Leitungen» Rohr (PI), Fallleitung (06.11.2026), Parallele Leitungen, Formteil · «Apparate und Armaturen» Sanitär-Zusammenstellung, Sanitärapparat (PX), Armatur (PA) – beide deaktiviert, «folgt in Modul 2/3» · «Vorwand» Vorwand, Montageelement, Bestücken, Stückliste Vorwand (Abschnitt «Geberit Vorwand») · «Familien». **MSRL:** «Schema» Verbinden, Trennen, Element einfügen, Neu anordnen (dieselben Knöpfe wie Ansicht › Schema) · «Familien». «Familien» = Familie platzieren (CM), Familie aus Unterlagen, Familien im Explorer (Modul 2, C3). Ein gemerktes Register «Gebäudetechnik» öffnet Heizung. |
 | Einfügen (seit 1b) | Gruppe «Verknüpfen / Übernehmen»: IFC übernehmen · «Importieren»: CAD einfügen (DWG/DXF), PDF einfügen, Bild einfügen · «Unterlagen»: Kalibrieren (Werkzeug), Unterlagen verwalten. Reihenfolge wie in Revit: dort steht «Einfügen» nach «Systeme» (hier die Register je Gewerk bis MSRL) und vor «Beschriften». Keine Kürzel (Revit hat für diese Befehle keine). Beschreibung: Abschnitt «Register Einfügen» |
 | Beschriften (seit 1a, wie Revit «Beschriften») | Bemassung (DI), Text (TX), Detaillinie (DL), Höhenkote (EL), Füllbereich, Nordpfeil |
 | Koordination (seit Modul 3b, C1, zwischen Ändern und Ansicht) | Gruppen **Vorgaben** (Projektvorgaben), **Kollisionen** (Kollisionen prüfen, Kollisionsliste), **Aussparungen** (Aussparungen vorschlagen, Aussparungen nummerieren, Aussparungsliste, Abgleich, Aussparungsplan anlegen, IFC für Architekt), **Koordinationsplan** (Koordinationsplan, Aussparungsboxen; Modul 7 Teil B3), **BCF** (BCF exportieren, BCF importieren). Keine Kürzel. Beschreibung: Abschnitt «Koordination (Modul 3b, C1)» |
@@ -4162,9 +4162,13 @@ Christian 04.11.2026: «eine funktion zum erstellen von geberit duofix und gis v
 «auch die Profile und befestigungen müssen gezeichnet werden», «zur prüfung brauche ich dann ausschnitte».
 
 **Knöpfe:** Register Sanitär › Gruppe «Vorwand» (`aktionen-vorwand.js`):
-- **Vorwand** (Werkzeug `vorwand`, `werkzeuge/vorwand.js`): Punkte auf der Rohbauwand anklicken wie bei der Wand, Enter oder Doppelklick beendet → `vorwand_zeichnen`.
-  Optionsleiste: System (GIS/Duofix), **Tiefe** und **Höhe** (Pflicht, keine Vorgabe; Tiefe inkl. Beplankung), Rohbauwand links/rechts bzw. keine (frei stehend),
-  Bauwerk massiv/Trockenbau (Abstand der Montagewinkel), Bodenaufbau (Profile stehen auf dem Rohboden), Bestücken (Vorgabe ja), Kette.
+- **Vorwand** (Werkzeug `vorwand`, `werkzeuge/vorwand.js`; seit 06.11.2026, Christian «1. aussenkannte der vorwand zeichnen, 2. tiefe am plan abgreiffen. jeweils
+  als entwurf darstellen»): 1. **Aussenkante** anklicken (Kette: Enter/Doppelklick beendet, sonst nach zwei Punkten), 2. **Tiefe am Plan abgreifen** – Klick auf die
+  Rohbauwand oder Tiefe eintippen; beide Schritte als Entwurf (Band mit «Tiefe … mm») → `vorwand_zeichnen` mit `aussenkante`. Optionsleiste: System (GIS/Duofix),
+  Tiefe (leer = am Plan; eingetragen gilt sie fest, die Maus wählt nur die Seite), **Höhe** (Pflicht; raumhoch leer = Raumhöhe), Lage an der Rohbauwand bzw.
+  frei stehend, Bauwerk massiv/Trockenbau, Bodenaufbau, Bauweise, Bestücken, Kette.
+- **System wechseln** (Eigenschaften der Vorwand): die Montageelemente der Vorwand wechseln mit auf das entsprechende Element des neuen Systems (gleicher Apparat,
+  gleiche Bauart, nächste Bauhöhe; `VorwandSystem.Angleichen`). Ein Element des anderen Systems im Werkzeug Montageelement wird ebenso ersetzt.
 - **Montageelement** (Werkzeug `montageelement`): Elementtyp in der Optionsleiste (aus `vorwand_stueckliste` › elementtypen), Maus über eine Vorwand, Klick → `montageelement_setzen`.
 - **Bestücken** (gewählte Vorwand oder ihr Element): `vorwand_bestuecken` setzt hinter jeden Apparat vor der Vorwand das passende Element (Klasse und System).
 - **Stückliste Vorwand**: Dialog aus `vorwand_stueckliste` – Teile mit Artikel und Zuschnitt, Beplankung in m², Elemente, Befunde, Annahmen.
@@ -4249,3 +4253,17 @@ Raumkontur anlegen»** (Befehl `raeume_aus_dwg`): für jeden Raumstempel ohne Ra
 Kontur», sonst «… Kontur»), die ihn enthält → Raum mit Name und Nummer aus dem Stempel; ohne Kontur gemeldet. Praxis Bernstrasse (Kopie): EG +6,
 1.OG +9, 2.OG +7, AT +7, 1.UG +1 Räume; ohne Kontur: 2.UG Technik HLS U03, Treppenhaus U08, Technik WP U04, 1.UG Treppenhaus U02.
 Seither richtet sich eine DWG beim Einfügen nur aus, wenn sie Wand-Layer hat (sonst nur über den Knopf «An Wänden ausrichten» mit allen Linien).
+
+## Fallleitung und Beispiel «Musterhaus 4 Räume» (06.11.2026)
+
+- **Fallleitung** (Register Sanitär › Leitungen, Werkzeug `fallleitung`, `werkzeuge/fallleitung.js`; Christian «es muss ein werkzeug geben, Fallleitung platzieren»,
+  «die fallleitung wird über alle etagen gezeichnet»): Serie, Grösse, System/Strang in der Optionsleiste, ein Klick im Grundriss → `fallleitung_platzieren`. Je Geschoss ein
+  senkrechtes Rohr (Geschossboden bis Boden des nächsten, das oberste bis zu seiner Oberkante), von oben nach unten verbunden. Entwurf: Kreis in der Leitungsgrösse.
+- **Knicke 2 × 45°** (`Routing.ZweiBoegen`, Christian «bei 90° automatisch 2x 45°»): hat die Serie keinen Bogen für den Knick, aber zwei gleiche (90° = 2 × 45°,
+  60° = 2 × 30°), setzt `leitung_zeichnen` zwei Bögen Bogen an Bogen, symmetrisch zur Ecke, mit Hinweis.
+- **Abzweigwinkel** (`leitung_abzweigen`, Christian «passe die abzweigewinkel automatisch an»): nicht vorhandener Winkel → nächster der Serie (bis 30°, nie gegen die
+  Fliessrichtung), Hinweis «Abzweigwinkel angepasst».
+- **Abwasser-Darstellung** (Christian «leitungen transparent, achse dunkles antrazith, aussenlinien untransparent», «formteile in der gleichen farbe»): Abwasser leicht
+  gefüllt mit deckenden Rändern und Achse #383e42, Formteile in der Farbe ihrer Leitung; Achsen von Rohren, Kanälen und Formteilen enden am Körper.
+- **Beispielprojekt anlegen** › Auswahl «Musterhaus 4 Räume» (`BeispielKlein.cs`, API `beispiel: "klein"`): 3 Geschosse (UG, EG, OG) je Bad, WC, Küche, Zimmer,
+  Aussen- und Innenwände, Systeme SW/KW/WW, Grundrisse und 3D – ohne Apparate und Leitungen, zum Ausprobieren der Zeichenwerkzeuge.

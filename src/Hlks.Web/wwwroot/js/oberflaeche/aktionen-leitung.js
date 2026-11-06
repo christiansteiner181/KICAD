@@ -12,6 +12,7 @@ import { aufElement, freiesKennzeichen } from './werkzeug.js';
 import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.js';
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
 import { parallelWerkzeug } from '../werkzeuge/parallel.js';
+import { fallleitungWerkzeug } from '../werkzeuge/fallleitung.js';
 import { aufteilenDialog } from '../werkzeuge/leitung-bearbeiten.js';
 import { istAltbestand } from '../werkzeuge/leitung-logik.js';
 
@@ -33,6 +34,15 @@ for (const [id, titel, symbol, kuerzel, kategorie, wid, register] of [
     ausfuehren() { werkzeugStarten(leitungWerkzeug(kategorie)); },
   });
 }
+
+// ---------------------------------------------------------------------------------------------- Fallleitung (06.11.2026)
+
+registrieren({
+  id: 'sa.fallleitung', titel: 'Fallleitung', symbol: 'rohr', kuerzel: null, register: 'sanitaer', gruppe: 'Leitungen',
+  aktiv: imGrundriss, hinweis: nurGrundriss,
+  gedrueckt: () => werkzeugAktiv() === 'fallleitung',
+  ausfuehren() { werkzeugStarten(fallleitungWerkzeug()); },
+});
 
 // ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)
 

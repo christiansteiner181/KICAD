@@ -430,6 +430,37 @@ public static class Routing
         Hinweis = w.Hinweis, Vertauscht = true,
     };
 
+    /// <summary>Knicke, die die Serie nicht als einen Bogen hat, aber als zwei gleiche (Christian 06.11.2026: «bei 90° automatisch 2x 45°»): der
+    /// Eckpunkt wird durch zwei Punkte ersetzt, Bogen an Bogen (Zwischenstück = Einbaulängen b + a des Bogens), symmetrisch zur Ecke. Reicht ein
+    /// Schenkel dafür nicht, bleibt der Punkt (dann die bisherige Meldung).</summary>
+    public static void ZweiBoegen(Modell m, Katalog k, Leitungsserie s, Leitungsgroesse g, List<V3> pkt, List<string> hinweise)
+    {
+        if (s.Block.Winkel is not { Count: > 0 } liste) return;
+        for (int j = 1; j < pkt.Count - 1; j++)
+        {
+            var ein = pkt[j] - pkt[j - 1]; var aus = pkt[j + 1] - pkt[j];
+            if (ein.Laenge < 1e-6 || aus.Laenge < 1e-6) continue;
+            var a = ein.Einheit(); var b = aus.Einheit();
+            double knick = Grad(a, b);
+            if (knick >= 180 - WinkelToleranz || liste.Any(x => Math.Abs(x - knick) <= WinkelToleranz)) continue;
+            double halb = liste.OrderBy(x => Math.Abs(2 * x - knick)).First();
+            if (Math.Abs(2 * halb - knick) > WinkelToleranz) continue;
+            var wahl = s.Formteil(m, k, "bogen", g, winkel: halb);
+            if (!wahl.Ok) continue;
+            double la = wahl.Geometrie!.Einbaulaenge("a"), lb = wahl.Geometrie.Einbaulaenge("b");
+            var summe = a + b;
+            double c = (la + lb) / summe.Laenge;   // Abstand der neuen Punkte von der Ecke
+            if (c + la > ein.Laenge - LageToleranzRoh || c + lb > aus.Laenge - LageToleranzRoh) continue;
+            var ecke = pkt[j];
+            pkt[j] = ecke - a * c;
+            pkt.Insert(j + 1, ecke + b * c);
+            hinweise.Add($"Punkt {P(ecke)}: Knick {Z(knick, 2)}° als 2 × {Z(halb)}° ausgeführt (Bogen an Bogen) – die Serie {s.Bezeichnung} hat Bögen mit {s.WinkelText}.");
+            j++;
+        }
+    }
+
+    const double LageToleranzRoh = 1;
+
     /// <summary>Winkel des Bogens für einen Knick: der Winkel der Liste bis ±WinkelToleranz bzw. bei «frei» der Knick selbst.</summary>
     public static double Bogenwinkel(Leitungsserie s, double knick, string ort = "")
     {

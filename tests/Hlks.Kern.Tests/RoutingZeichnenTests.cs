@@ -89,12 +89,13 @@ public class RoutingZeichnenTests
     }
 
     [Fact]
-    public void Winkel60_NichtInDerSerie_Abgelehnt()
+    public void Winkel75_NichtInDerSerie_Abgelehnt()
     {
+        // 75°: weder ein Bogen der Serie noch zwei gleiche (60° wird seit 06.11.2026 als 2 × 30° ausgeführt, Christian «bei 90° automatisch 2x 45°»)
         var p = MitSerie();
         var vorher = Inhalt(p);
-        var e = Nein(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0], [1500, 866.0254, 0]]));   // 60° (cos 60°, sin 60°)·1000
-        Assert.Contains("Knick von 60°", e.Fehler);
+        var e = Nein(Zeichnen(p, "DN 20", [[0, 0, 0], [1000, 0, 0], [1258.819, 965.9258, 0]]));   // 75° (cos 75°, sin 75°)·1000
+        Assert.Contains("Knick von 75°", e.Fehler);
         Assert.Contains("15°, 30°, 45°, 90°", e.Fehler);
         Assert.Contains("Punkt 2 [1000, 0, 0]", e.Fehler);
         Assert.Contains("2 × 45°", e.Vorschlag);

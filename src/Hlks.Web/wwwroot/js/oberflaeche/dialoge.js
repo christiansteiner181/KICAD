@@ -252,7 +252,8 @@ export async function projektAnlegenDialog(beispiel) {
   const inh = knoten(`<div>
     ${beispiel ? '' : '<label class="fz"><span>Projektname</span><input type="text" class="gross name" value="Neues Projekt"></label>'}
     <label class="fz"><span>Zielordner (e_KICAD)</span><span class="fz-zeile"><input type="text" class="gross ordner" placeholder="${esc(ORDNER_PLATZHALTER)}"><button type="button" class="dlg-knopf durchsuchen" style="min-width:0">Durchsuchen …</button></span></label>
-    <p class="leise">${beispiel ? 'Legt das fiktive Beispielprojekt «MFH Musterweg» im angegebenen Ordner an.' : 'Legt ein leeres Projekt im angegebenen Ordner an.'}</p></div>`);
+    ${beispiel ? '<label class="fz"><span>Beispiel</span><select class="gross welches"><option value="klein">Musterhaus 4 Räume – 3 Geschosse, Bad, WC, Küche, Zimmer, ohne Leitungen</option><option value="musterweg">MFH Musterweg – vollständig mit Leitungen und Anlagen</option></select></label>' : ''}
+    <p class="leise">${beispiel ? 'Legt das gewählte fiktive Beispielprojekt im angegebenen Ordner an.' : 'Legt ein leeres Projekt im angegebenen Ordner an.'}</p></div>`);
   const ordner = inh.querySelector('.ordner');
   const name = inh.querySelector('.name');
   inh.querySelector('.durchsuchen').onclick = async () => {
@@ -266,7 +267,7 @@ export async function projektAnlegenDialog(beispiel) {
     knoepfe: [{ text: 'Abbrechen', wert: false },
       { text: 'Anlegen', wert: true, primaer: true,
         pruefen: () => ordner.value.trim() ? true : 'Bitte den Zielordner angeben.',
-        klick: () => anlegenAusfuehren(ordner.value.trim(), name?.value.trim() || 'Beispielprojekt', beispiel) }],
+        klick: () => anlegenAusfuehren(ordner.value.trim(), name?.value.trim() || 'Beispielprojekt', beispiel && inh.querySelector('.welches')?.value === 'klein' ? 'klein' : beispiel) }],
   });
 }
 

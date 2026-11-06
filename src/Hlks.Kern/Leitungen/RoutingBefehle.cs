@@ -391,6 +391,7 @@ public sealed class LeitungZeichnen : IBefehl
         var ziel = RoutingBefehle.Ziel(k, p, geschoss, von?.Element ?? nach?.Element, kategorie: s.Kategorie, anschlussMedium: anschlussMedium);
         var hinweise = new List<string>();
         var pkt = Routing.Vorbereiten(roh, geschoss?.Zahl("kote") ?? 0, von, nach, Param.Zahl(p, "gefaelle"), hinweise);
+        Routing.ZweiBoegen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, hinweise);   // 90° ohne 90°-Bogen: 2 × 45° (06.11.2026)
         var plan = Routing.Planen(k.Arbeit, k.Katalog, s, sg.Groesse, pkt, von, nach, new PlanOptionen { Uebergang = p["uebergang"] as JsonObject });
         var liste = Routing.Umsetzen(k, plan, ziel);
         k.Hinweise.AddRange(hinweise);

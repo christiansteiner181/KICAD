@@ -54,17 +54,17 @@ export const WERKZEUGE = {
     titel: 'Vorwand',
     felder: [
       { id: 'system', titel: 'System', art: 'auswahl', werte: [['gis', 'Geberit GIS'], ['duofix', 'Geberit Duofix']], vorgabe: 'gis' },
-      { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 6 },
+      { id: 'tiefe', titel: 'Tiefe', art: 'zahl', einheit: 'mm', platzhalter: 'am Plan', breite: 6 },
       { id: 'ausfuehrung', titel: 'Ausführung', art: 'auswahl', werte: [['teilhoch', 'teilhoch'], ['raumhoch', 'raumhoch']], vorgabe: 'teilhoch' },
       { id: 'hoehe', titel: 'Höhe', art: 'zahl', einheit: 'mm', platzhalter: 'teilhoch Pflicht', breite: 7 },
-      { id: 'bezugslinie', titel: 'Rohbauwand', art: 'auswahl', werte: [['links', 'links'], ['rechts', 'rechts'], ['mitte', 'keine (frei stehend)']], vorgabe: 'links' },
+      { id: 'bezugslinie', titel: 'Lage', art: 'auswahl', werte: [['links', 'an der Rohbauwand'], ['mitte', 'frei stehend']], vorgabe: 'links' },
       { id: 'bauwerk', titel: 'Bauwerk', art: 'auswahl', werte: [['massiv', 'massiv'], ['trockenbau', 'Trockenbau']], vorgabe: 'massiv' },
       { id: 'bodenaufbau', titel: 'Bodenaufbau', art: 'zahl', einheit: 'mm', platzhalter: '0', breite: 5 },
       { id: 'bauweise', titel: 'Bauweise', art: 'auswahl', werte: [['', 'nach System'], ['vorgefertigt', 'vorgefertigt'], ['vor_ort', 'vor Ort']], vorgabe: '' },
       { id: 'bestuecken', titel: 'Bestücken', art: 'bool', vorgabe: true },
       { id: 'kette', titel: 'Kette', art: 'bool', vorgabe: true },
     ],
-    hinweis: 'Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
+    hinweis: '1. Aussenkante zeichnen, 2. Tiefe am Plan abgreifen (oder fest eintragen). Tiefe inkl. Beplankung: GIS 100–700 mm, Duofix 135–220 mm (420 mit Verlängerung). Höhe ab OK Fertigboden; raumhoch ohne Höhe = Raumhöhe.',
   },
   montageelement: {
     titel: 'Montageelement',
@@ -165,6 +165,8 @@ export const WERKZEUGE = {
   // Leitungen zeichnen (Modul 3, C1): Rohr (PI) und Kanal (DT)
   rohr: { titel: 'Rohr', get felder() { return leitungFelder('rohr', 'Rohr'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
   kanal: { titel: 'Kanal', get felder() { return leitungFelder('kanal', 'Kanal'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
+  // Fallleitung (Christian 06.11.2026): Serie, Grösse, System wie beim Rohr; Höhe, Lage und Gefälle entfallen (senkrecht durch alle Geschosse)
+  fallleitung: { titel: 'Fallleitung', get felder() { return leitungFelder('fallleitung', 'Rohr').filter((f) => !['lage', 'hoehe', 'gefaelle', 'winkelfang', 'daemmdicke'].includes(f.id)); }, hinweis: 'Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden.' },
   verschieben: {
     titel: 'Verschieben',
     felder: [{ id: 'trennen', titel: 'Trennen', art: 'bool', vorgabe: false }],   // Bearbeitungswerkzeuge A1: ohne folgen Leitungen und Formteile

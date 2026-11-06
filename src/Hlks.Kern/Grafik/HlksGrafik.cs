@@ -129,6 +129,8 @@ public sealed class HlksGrafik : IGrafikquelle
         var teil = new Grafikteil { Id = e.Id, Ebene = "leitung" };
         bool grob = ctx.Detailgrad == "grob";
         var mass = HlksMasse.Von(ctx.Projekt, e);
+        // Abwasser (Christian 06.11.2026): transparent, Ränder deckend, Achse anthrazit – auch der Querschnitt senkrechter Stücke
+        bool abwasser = mass is { Rohrband: true } && (mass.Serie?.Abwasser == true || Rohrgroessen.IstAbwasser(ctx.Projekt, e));
         // Schnitthöhe nur für die Füllung senkrechter Stücke mit Serie; «verdeckt» (gestrichelt) für alle Leitungen unter dem Boden
         bool schnittAktiv = mass is { MitSerie: true };
         var schnitt = schnittAktiv ? ctx.Schnitthoehe : double.PositiveInfinity;
@@ -138,7 +140,7 @@ public sealed class HlksGrafik : IGrafikquelle
         if (HlksLinien.Laenge(xy) < 1)
         {
             var lage = HoeheVon(pts.Min(q => q[2]), pts.Max(q => q[2]), schnitt);
-            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M, grob || mass is null).ToList();
+            var kreisS = Steigleitung(pts[0][0], pts[0][1], mass, lage, pts.Max(q => q[2]) < boden - Eps, farbe, w, dn, M, grob || mass is null, abwasser).ToList();
             // einlinig: Ausschnitt des Kreises auf der höheren Leitung (Christian 05.11.2026), gesucht über die Verbindungen am oberen Ende
             // nur wenn das obere Ende in diesem Geschoss liegt (die höhere Leitung ist im Plan zu sehen)
             double deckeS = boden + (ctx.Geschoss?.Zahl("hoehe") ?? 3000);
@@ -169,7 +171,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 bool Waagrecht(int k) => k >= 1 && k < pts.Count && (Math.Abs(pts[k][0] - pts[k - 1][0]) > Eps || Math.Abs(pts[k][1] - pts[k - 1][1]) > Eps);
                 if (lageS == Hoehe.Geschnitten || einlinigS)
                 {
-                    var kreis = Steigleitung(a[0], a[1], mass, lageS, false, farbe, w, dn, M, einlinigS).ToList();
+                    var kreis = Steigleitung(a[0], a[1], mass, lageS, false, farbe, w, dn, M, einlinigS, abwasser).ToList();
                     if (einlinigS)
                     {
                         // Christian 05.11.2026: «der ausschnitt des kreises muss immer auf der höheren leitung sein» – Ausschnitt dort, wo das waagrechte
@@ -195,7 +197,6 @@ public sealed class HlksGrafik : IGrafikquelle
         if (!grob && mass is not null)
         {
             var breite = Math.Max(mass.Breite, 0.18 * M);   // ANNAHME: nie schmaler als die dünne Linie (0.18 mm Papier)
-            bool abwasser = mass.Rohrband && (mass.Serie?.Abwasser == true || Rohrgroessen.IstAbwasser(ctx.Projekt, e));
             foreach (var lauf in laeufe)
             {
                 if (lauf.Verdeckt)
@@ -301,7 +302,7 @@ public sealed class HlksGrafik : IGrafikquelle
     /// ANNAHME (Gestaltung): Ø 2.4 mm Papier.</summary>
     internal static double SymbolRadius(double M) => 1.2 * M;
 
-    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false)
+    static IEnumerable<Primitiv> Steigleitung(double x, double y, LeitungsMass? mass, Hoehe lage, bool verdeckt, string? farbe, double w, double? dn, double M, bool einlinig = false, bool abwasser = false)
     {
         var fuellung = lage switch { Hoehe.Geschnitten => "schnitt", Hoehe.Unten => "papier", _ => null };
         var linienart = verdeckt ? "strich" : "voll";
@@ -314,7 +315,9 @@ public sealed class HlksGrafik : IGrafikquelle
         if (mass is { MitSerie: true })
         {
             var b = Math.Max(mass.Breite, 0.18 * M); var h = Math.Max(mass.Hoehe, 0.18 * M);
-            var stil = new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung };
+            var stil = abwasser && fuellung is not null
+                ? new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }   // Abwasser leicht gefüllt
+                : new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung };
             if (mass.Rechteck)
             {
                 yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };

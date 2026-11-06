@@ -19,6 +19,7 @@ public sealed class VorwandZeichnen : IBefehl
         new("hoehe", "zahl", false, "Höhe über OK Fertigboden in mm (teilhoch: Ablagehöhe, Pflicht; raumhoch: fehlt = Höhe des Raums)"),
         new("ausfuehrung", "text", false, "teilhoch (Vorgabe; Höhe = Ablagehöhe, Pflicht) oder raumhoch (bis unter die Decke; ohne hoehe gilt die Höhe des Raums: lichteHoehe › Geometriehöhe › Geschosshöhe)"),
         new("bezugslinie", "text", false, "links oder rechts (Vorgabe links) = Punkte auf der Rohbauwand links/rechts in Zeichenrichtung; mitte = frei stehend, Punkte auf der Achse"),
+        new("aussenkante", "text", false, "links oder rechts: die Punkte sind die Aussenkante (Vorderseite), die Vorwand liegt links/rechts davon (Richtung Rohbauwand); bezugslinie mitte = frei stehend"),
         new("bauwerk", "text", false, "massiv (Vorgabe) oder trockenbau – Abstand der Montagewinkel"),
         new("bodenaufbau", "zahl", false, "Bodenaufbau OK Rohboden bis OK Fertigboden in mm (Profile stehen auf dem Rohboden)"),
         new("bauweise", "text", false, "vorgefertigt (in Segmenten eingebracht) oder vor_ort; Vorgabe GIS vorgefertigt, Duofix vor Ort"),
@@ -53,8 +54,9 @@ public sealed class VorwandZeichnen : IBefehl
         string? ausfuehrung = Param.Text(p, "ausfuehrung") is { Length: > 0 } af ? ArchParam.Auswahl(af, ["teilhoch", "raumhoch"], "ausfuehrung") : null;
         double kote0 = geschoss.Zahl("kote") ?? 0;
         double? hoeheP = Param.Zahl(p, "hoehe");
+        string? aussen = Param.Text(p, "aussenkante") is { Length: > 0 } ak ? ArchParam.Auswahl(ak, ["links", "rechts"], "aussenkante") : null;
         if (hoeheP is null && ausfuehrung == "raumhoch" && Param.Punkte(p, "punkte") is [var p0, var p1, ..])
-            hoeheP = Raumhoehe(k, geschoss, (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, Param.Text(p, "bezugslinie") ?? "links", p0, p1);
+            hoeheP = Raumhoehe(k, geschoss, (p0[0] + p1[0]) / 2, (p0[1] + p1[1]) / 2, aussen ?? Param.Text(p, "bezugslinie") ?? "links", p0, p1);
         if (hoeheP is not double hoehe || hoehe <= 0)
             throw new HlksFehler(ausfuehrung == "raumhoch" ? "Höhe fehlt: kein Raum mit Höhe an der Vorwand gefunden." : "Parameter «hoehe» fehlt.",
                 ausfuehrung == "raumhoch" ? "hoehe in mm angeben oder die Vorwand in einem Raum mit lichter Höhe zeichnen." : "Ablagehöhe über OK Fertigboden in mm angeben.");
@@ -62,6 +64,12 @@ public sealed class VorwandZeichnen : IBefehl
         var bezug = ArchParam.Auswahl(Param.Text(p, "bezugslinie") ?? "links", ["mitte", "links", "rechts"], "bezugslinie");
         var bauwerk = ArchParam.Auswahl(Param.Text(p, "bauwerk") ?? "massiv", ["massiv", "trockenbau"], "bauwerk");
         double q = bezug switch { "links" => -tiefe / 2, "rechts" => tiefe / 2, _ => 0 };
+        if (aussen is not null)
+        {
+            // Aussenkante: die Vorwand liegt auf der Seite «aussen» der Punkte; die Rohbauwand (rueckseite) auf derselben Seite, frei stehend keine
+            q = aussen == "links" ? tiefe / 2 : -tiefe / 2;
+            if (bezug != "mitte") bezug = aussen;
+        }
         double kote = geschoss.Zahl("kote") ?? 0;
         var pts = Param.Punkte(p, "punkte").Select(r => new[] { r[0], r[1], r.Length > 2 ? r[2] : kote }).ToList();
         if (pts.Count < 2) throw new HlksFehler("Eine Vorwand braucht mindestens zwei Punkte.", "punkte: [[x1, y1], [x2, y2], …] in mm");
@@ -111,6 +119,13 @@ public sealed class MontageelementSetzen : IBefehl
         var kat = VorwandKatalog.Laden(k.Katalog);
         var typ = kat.Element(Param.Text(p, "element", true))
             ?? throw new HlksFehler($"Elementtyp «{Param.Text(p, "element")}» gibt es nicht.", $"element: {string.Join(", ", kat.Elemente.Where(e => e.System == vorwand.Text("system")).Select(e => e.Id))}");
+        // Element aus dem anderen System gewählt: das entsprechende des Vorwandsystems (Christian 06.11.2026)
+        if (vorwand.Text("system") is { } vs && !typ.System.Equals(vs, StringComparison.OrdinalIgnoreCase))
+        {
+            var g = kat.Gegenstueck(typ, vs) ?? throw new HlksFehler($"{typ.Titel} gehört zu {typ.System}, {vorwand.Kennzeichen} ist {vs} – im Katalog gibt es kein entsprechendes Element.", "Ein Element des Systems der Vorwand wählen.");
+            k.Hinweise.Add($"{typ.Titel} gehört zu {typ.System} – für {vorwand.Kennzeichen} ({vs}) gesetzt: {g.Titel}.");
+            typ = g;
+        }
         var auf = VorwandGestell.Ableiten(k.Arbeit, k.Katalog, vorwand) ?? throw new HlksFehler($"{vorwand.Kennzeichen} hat keine brauchbare Geometrie.");
         double s;
         if (Param.Zahl(p, "abstand") is double ab) s = ab;
@@ -173,6 +188,31 @@ public sealed class VorwandBestuecken : IBefehl
         }
         k.Hinweise.Add(n == 0 ? $"{vorwand.Kennzeichen}: kein Apparat vor der Vorwand ohne Montageelement." : $"{vorwand.Kennzeichen}: {n} Montageelement(e) gesetzt.");
         if (ohne.Count > 0) k.Hinweise.Add($"Ohne passendes Element im Katalog: {string.Join(", ", ohne)}");
+    }
+}
+
+public static class VorwandSystem
+{
+    /// <summary>Nach einem Wechsel des Vorwandsystems die Montageelemente der Vorwand auf die entsprechenden Typen des neuen Systems umstellen
+    /// (Christian 06.11.2026: «wird das vorwand system geändert, müssen die gewählten einbauten auch ändern»); Lage und Apparat bleiben.</summary>
+    internal static void Angleichen(Kontext k, Element vorwand)
+    {
+        if (vorwand.Text("system") is not { } system) return;
+        var kat = VorwandKatalog.Laden(k.Katalog);
+        var ohne = new List<string>();
+        int n = 0;
+        foreach (var me in k.Arbeit.Elemente.Where(e => e.TeilVon == vorwand.Id && k.Katalog.IstArt(e, "Montageelement")).ToList())
+        {
+            if (kat.Element(me.Text("element")) is not { } alt || alt.System.Equals(system, StringComparison.OrdinalIgnoreCase)) continue;
+            if (kat.Gegenstueck(alt, system) is not { } neu) { ohne.Add($"{me.Kennzeichen} ({alt.Titel})"); continue; }
+            var e = me.Kopie();
+            e.Name = neu.Titel;
+            Elementpflege.Eigenschaften(k, e, k.Katalog.Klasse(e.Klasse), new JsonObject { ["element"] = neu.Id, ["artikel"] = neu.Artikel }, true);
+            k.Setzen(e);
+            n++;
+        }
+        if (n > 0) k.Hinweise.Add($"{vorwand.Kennzeichen}: {n} Montageelement(e) auf {system} umgestellt.");
+        if (ohne.Count > 0) k.Hinweise.Add($"Kein entsprechendes Element im System {system}: {string.Join(", ", ohne)} – bitte von Hand ersetzen.");
     }
 }
 

@@ -59,6 +59,18 @@ public sealed partial class Werkzeuge
         Befehl("leitung_zeichnen", Parameter(("serie", serie), ("groesse", groesse), ("punkte", punkte), ("von", von), ("nach", nach), ("gefaelle", gefaelle),
             ("system", system), ("strang", strang), ("medium", medium), ("geschoss", geschoss), ("praefix", praefix), ("eigenschaften", eigenschaften), ("uebergang", uebergang)), trockenlauf);
 
+    [McpServerTool(Name = "fallleitung_platzieren"), Description(FallleitungPlatzieren.Text)]   // 06.11.2026
+    public string FallleitungPlatzierenWerkzeug(
+        [Description(FallleitungPlatzieren.ParPunkt)] JsonElement punkt,
+        [Description(RoutingBefehle.ParSerie)] string serie,
+        [Description(RoutingBefehle.ParGroesse)] JsonElement groesse,
+        [Description(RoutingBefehle.ParSystem)] string? system = null,
+        [Description(RoutingBefehle.ParStrang)] string? strang = null,
+        [Description(FallleitungPlatzieren.ParVon)] string? von_geschoss = null,
+        [Description(FallleitungPlatzieren.ParBis)] string? bis_geschoss = null,
+        [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
+        Befehl("fallleitung_platzieren", Parameter(("punkt", punkt), ("serie", serie), ("groesse", groesse), ("system", system), ("strang", strang), ("von_geschoss", von_geschoss), ("bis_geschoss", bis_geschoss)), trockenlauf);
+
     [McpServerTool(Name = "leitung_abzweigen"), Description(LeitungAbzweigen.Text)]
     public string LeitungAbzweigenWerkzeug(
         [Description(LeitungAbzweigen.ParHaupt)] string leitung,

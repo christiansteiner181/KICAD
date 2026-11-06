@@ -98,6 +98,16 @@ public sealed class VorwandKatalog
     public ElementTyp? FuerApparat(Katalog k, Element apparat, string system) =>
         Elemente.FirstOrDefault(e => e.System.Equals(system, StringComparison.OrdinalIgnoreCase) && e.Apparate.Any(a => k.IstArt(apparat, a)));
 
+    /// <summary>Entsprechender Elementtyp im anderen System (Christian 06.11.2026: «wird das vorwand system geändert, müssen die gewählten einbauten
+    /// auch ändern»): gleicher Apparat, bevorzugt gleiche Bauart (Id ohne System und Höhe, z. B. «wc.omega»), dann die nächste Bauhöhe; null = keiner.</summary>
+    public ElementTyp? Gegenstueck(ElementTyp typ, string system)
+    {
+        if (typ.System.Equals(system, StringComparison.OrdinalIgnoreCase)) return typ;
+        static string Bauart(ElementTyp t) => string.Join(".", t.Id.Split('.').Skip(1).Where(x => !x.All(char.IsDigit)));
+        return Elemente.Where(e => e.System.Equals(system, StringComparison.OrdinalIgnoreCase) && e.Apparate.Intersect(typ.Apparate, StringComparer.OrdinalIgnoreCase).Any())
+            .OrderBy(e => Bauart(e) == Bauart(typ) ? 0 : 1).ThenBy(e => Math.Abs(e.Hoehe - typ.Hoehe)).FirstOrDefault();
+    }
+
     static readonly Dictionary<string, (DateTime Stand, VorwandKatalog Katalog)> Zwischenspeicher = [];
     static readonly Lock Sperre = new();
 

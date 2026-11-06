@@ -424,6 +424,20 @@ public class RoutingAbzweigwinkelTests
         Assert.Contains(e.Hinweise, h => h.Contains("Bogen BO-1 Typ «DN 100», 88.5° (Knick 88.854°)"));
     }
 
+    /// <summary>Christian 06.11.2026: «bei 90° automatisch 2x 45°» – die Testabwasserserie hat 88.5°, aber keinen 90°-Bogen.</summary>
+    [Fact]
+    public void Knick90_OhneNeunzigGradBogen_ZweiMal45BogenAnBogen()
+    {
+        var p = MitAbwasser();
+        var e = Ok(AwZeichnen(p, "DN 100", [[0, 0, 1000], [3000, 0, 1000], [3000, 2000, 1000]]));
+        Assert.Contains(e.Hinweise, h => h.Contains("Knick 90° als 2 × 45° ausgeführt"));
+        var boegen = p.Modell.Elemente.Where(x => p.Katalog.IstArt(x, "Bogen")).ToList();
+        Assert.Equal(2, boegen.Count);
+        Assert.All(boegen, b => Assert.Equal(45, Json.Zahl(Familien.Exemplarwerte(b)?["winkel"])!.Value, 3));
+        // Bogen an Bogen: kein gerades Stück zwischen den beiden Bögen
+        Assert.Equal(2, p.Modell.DerKlasse("Rohr").Count());
+    }
+
     // ------------------------------------------------------------------ Ablehnungen
 
     [Fact]
