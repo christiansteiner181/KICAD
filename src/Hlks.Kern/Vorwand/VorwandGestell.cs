@@ -56,6 +56,10 @@ public sealed class VorwandAufbau
     /// <summary>Unterkante der Montageelemente = Rohboden (Christian 04.11.2026: «Rahmen auf Rohboden, WC höhe vorgegeben ab Fertigboden»): der Rahmen
     /// reicht vom Rohboden bis OKFF + Rahmenhöhe, die Anschlusshöhen gelten ab OKFF; das unterste GIS-Profil läuft durch die Füsse.</summary>
     public double ElementUnterkante { get; set; }
+    /// <summary>Vorderkante der Elementrahmen (q) – Christian 06.11.2026: «die unterste schiene schneidet die Einbaukasten … wie im montagehandbuch
+    /// beschrieben versetzt»: GIS hinter der Profilebene (die Profile laufen vor dem Element durch; MA 970.704 S. 2: Elementvorderkante 1.8–6 cm hinter
+    /// der fertigen Oberfläche), Duofix direkt hinter der Beplankung, der Fuss rastet in die Systemschiene ein (Planungshandbuch S. 188).</summary>
+    public double ElementVorne { get; set; }
     public required bool AnWand { get; init; }
     public List<VorwandTeil> Teile { get; } = [];
     /// <summary>Vorgefertigt (GIS aus der Werkstatt, Christian 04.11.2026): in Segmente geteilt, die sich einbringen lassen.</summary>
@@ -145,7 +149,13 @@ public static class VorwandGestell
             auf.Befunde.Add($"Vorwandtiefe {tiefe:0} mm ausserhalb {sys.TiefeMin:0}–{sys.TiefeMaxGesamt:0} mm für {sys.Titel} ({sys.Quelle("tiefe")}).");
         if (hoehe > sys.HoeheMax) auf.Befunde.Add($"Vorwandhöhe {hoehe:0} mm grösser als {sys.HoeheMax:0} mm für {sys.Titel} ({sys.Quelle("hoeheMax")}).");
 
-        auf.ElementUnterkante = auf.Rohboden;
+        // Elementlage nach Montagehandbuch (06.11.2026): GIS hinter den Profilen, Duofix auf der Systemschiene (Fuss eingerastet)
+        bool gis = system == "gis";
+        auf.ElementVorne = tiefe - sys.Beplankung - (gis ? sys.Profil.Breite : 0);
+        auf.ElementUnterkante = gis ? auf.Okff : auf.Rohboden + sys.Schiene.Hoehe;   // GIS hängt an den Profilen (Unterkante je Element aus dem Katalog)
+        foreach (var el in auf.Elemente)
+            if (auf.AnWand && el.Typ is { } t && auf.ElementVorne - (t.Rahmentiefe > 0 ? t.Rahmentiefe : 40) < -1)
+                auf.Befunde.Add($"{el.Element.Kennzeichen}: {t.Titel} ragt in die Rohbauwand (Rahmentiefe {t.Rahmentiefe:0} mm, Platz hinter {(gis ? "den Profilen" : "der Beplankung")} {auf.ElementVorne:0} mm).");
         Beplankung(auf, sys);
         if (system == "gis") Gis(auf, sys); else Duofix(auf, sys);
         foreach (var x in sys.Annahmen) auf.Annahmen.Add(x);
@@ -236,7 +246,7 @@ public static class VorwandGestell
                 double rt = el.Typ?.Rahmentiefe ?? 40;
                 foreach (var z in hoehen)
                     foreach (var (e0, e1) in new[] { (el.S0 - 15, el.S0 + 25), (el.S1 - 25, el.S1 + 15) })
-                        v.Teile.Add(new VorwandTeil("befestigung", $"GIS Elementbefestigung {tTeil}", e0, e1, Math.Max(0, q1 - rt), q1, z - ph, z, null, null, sys.Annahme("elementbefestigung")));
+                        v.Teile.Add(new VorwandTeil("befestigung", $"GIS Elementbefestigung {tTeil}", e0, e1, Math.Max(0, v.ElementVorne - rt), q1, z - ph, z, null, null, sys.Annahme("elementbefestigung")));
             }
 
         // Doppelstoss zwischen zwei Segmenten: Verbindung höchstens 100 cm auseinander (S. 251)
@@ -317,7 +327,7 @@ public static class VorwandGestell
         foreach (var el in v.Elemente)
         {
             double zo = v.Okff + (el.Typ?.Rahmenhoehe ?? 1120) - 100;
-            double hinten = Math.Max(1, q1 - (el.Typ?.Rahmentiefe ?? 40));   // Rückseite des Elementrahmens: der Anker endet dort, nicht im Spülkasten
+            double hinten = Math.Max(1, v.ElementVorne - (el.Typ?.Rahmentiefe ?? 40));   // Rückseite des Elementrahmens: der Anker endet dort, nicht im Spülkasten
             foreach (var s in new[] { el.S0 + 100, el.S1 - 100 })
                 v.Teile.Add(new VorwandTeil("befestigung", titel, s - 15, s + 15, 0, hinten, zo - 30, zo, ankerArt, Math.Round(hinten), sys.Annahme("wandanker")));
         }

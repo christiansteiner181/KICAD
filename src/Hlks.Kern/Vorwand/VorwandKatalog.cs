@@ -73,6 +73,8 @@ public sealed class VorwandKatalog
         public double? Mindesttiefe { get; init; }
         /// <summary>Oberkante des Rahmens über OKFF (fehlt = Bauhöhe); GIS-Elemente sind niedriger als ihre Einbauhöhe (z. B. 104.5 bei 114 cm).</summary>
         public double Rahmenhoehe { get; init; }
+        /// <summary>Unterkante des Rahmens über OKFF in mm (GIS: das Element hängt an den flankierenden Profilen, ohne Füsse; fehlt = 0).</summary>
+        public double? Rahmenunterkante { get; init; }
         /// <summary>Tiefe des Rahmens in mm (Darstellung; fehlt = 40).</summary>
         public double Rahmentiefe { get; init; }
         /// <summary>Höhe der Befestigungstraverse (WC-Bolzen) über OKFF, falls bemasst.</summary>
@@ -174,7 +176,7 @@ public sealed class VorwandKatalog
                 Id = T(e["id"]) ?? "", System = T(e["system"]) ?? "", Titel = T(e["titel"]) ?? "", Kurz = T(e["kurz"]) ?? "",
                 Apparate = (e["apparate"] as JsonArray ?? []).Select(T).OfType<string>().ToList(), Artikel = T(e["artikel"]),
                 Breite = D(e["breite"], 500), Hoehe = D(e["hoehe"], 1120), Mindesttiefe = e["mindesttiefe"] is JsonValue ? D(e["mindesttiefe"]) : null,
-                Rahmenhoehe = D(e["rahmenhoehe"], D(e["hoehe"], 1120)), Rahmentiefe = D(e["rahmentiefe"], 40), Traverse = e["traverse"] is JsonValue ? D(e["traverse"]) : null,
+                Rahmenhoehe = D(e["rahmenhoehe"], D(e["hoehe"], 1120)), Rahmentiefe = D(e["rahmentiefe"], 40), Rahmenunterkante = e["rahmenunterkante"] is JsonValue ? D(e["rahmenunterkante"]) : null, Traverse = e["traverse"] is JsonValue ? D(e["traverse"]) : null,
                 FussbodenaufbauMax = e["fussbodenaufbauMax"] is JsonValue ? D(e["fussbodenaufbauMax"]) : null,
                 Anschluesse = an, Quellen = Texte(e["quellen"]), Annahmen = Texte(e["annahmen"]),
             });

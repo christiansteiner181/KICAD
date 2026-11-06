@@ -43,6 +43,30 @@ public class VorwandTests
         Assert.Contains(e.Hinweise, h => h.Contains("1 Montageelement(e) auf duofix umgestellt"));
     }
 
+    /// <summary>Christian 06.11.2026 mit der Masskizze MA 970.704 S. 2: «das WC muss so ausgerichtet sein, dass der Anschluss +23 … ab Fertig Boden liegt»;
+    /// GIS-Rahmen 100 cm hoch, Oberkante 104.5 cm über OKFF, ohne Füsse. Bodenaufbau 100 mm, OKFF = Geschosskote 0.</summary>
+    [Theory]
+    [InlineData("gis", "gis.wc.sigma12.114")]
+    [InlineData("duofix", "duofix.wc.sigma12.112")]
+    public void Wc_AbwasseranschlussAuf23cmUeberFertigboden(string system, string element)
+    {
+        var p = Rechteck();
+        Ok(p.Ausfuehren("vorwand_zeichnen", new JsonObject
+        {
+            ["geschoss"] = "EG", ["punkte"] = Pts([100, 100], [2100, 100]), ["system"] = system, ["tiefe"] = 200, ["hoehe"] = 1140, ["bezugslinie"] = "rechts", ["bodenaufbau"] = 100,
+        }));
+        Ok(p.Ausfuehren("montageelement_setzen", new JsonObject { ["vorwand"] = "VW-1", ["element"] = element, ["abstand"] = 1000 }));
+        var me = Hole(p, "ME-1");
+        var k = Grafik.QuelleFuer(p.Katalog, me)!.Koerper(p, me)!;
+        var sw = k.Teile.Single(t => t.Art == "zylinder" && t.Radius == 45);   // WC-Abgang d90
+        Assert.Equal(230, sw.Von![2], 6);
+        Assert.Equal(230, sw.Nach![2], 6);
+        var quader = k.Teile.Where(t => t.Art == "quader").ToList();
+        double unten = quader.Min(t => t.Mitte![2] - t.Masse![2] / 2), oben = quader.Max(t => t.Mitte![2] + t.Masse![2] / 2);
+        if (system == "gis") { Assert.Equal(45, unten, 6); Assert.Equal(1045, oben, 6); }   // hängt an den Profilen, keine Füsse
+        else Assert.Equal(-100 + 34, unten, 6);   // Duofix: Füsse in der Systemschiene (OK Schiene)
+    }
+
     [Fact]
     public void Gis_ProfileNachHandbuch_BestueckungHinterDemWc()
     {
@@ -186,15 +210,17 @@ public class VorwandTests
         if (system == "duofix")
             foreach (var (x, y) in senkrecht.Zip(senkrecht.Skip(1)))
                 Assert.True(y.S0 - x.S0 <= 550 + 1e-6 || auf.Elemente.Any(e => e.S0 >= x.S1 - 1 && e.S1 <= y.S0 + 1), $"Ständer {x.S0:0} und {y.S0:0} zu weit auseinander");
-        Assert.Equal(auf.Rohboden, auf.ElementUnterkante);   // Rahmen auf dem Rohboden, Höhen ab OKFF (Christian 04.11.2026)
-        double q1 = auf.Tiefe - 18;
+        // Christian 06.11.2026 «die unterste schiene schneidet die Einbaukasten … wie im montagehandbuch beschrieben versetzt»: GIS-Elemente hinter den
+        // Profilen (MA 970.704 S. 2: 1.8–6 cm hinter der Oberfläche), Duofix-Rahmen auf der Systemschiene (Fuss eingerastet, Planungshandbuch S. 188)
+        Assert.Equal(system == "gis" ? auf.Okff : auf.Rohboden + 34, auf.ElementUnterkante);   // GIS hängt an den Profilen (keine Füsse), Duofix auf der Schiene
+        double q1 = auf.ElementVorne;
+        if (system == "gis") Assert.InRange(auf.Tiefe - q1, 18, 60);
         foreach (var el in auf.Elemente)
         {
             double qe = q1 - el.Typ!.Rahmentiefe, ze = auf.Okff + el.Typ.Rahmenhoehe;
             foreach (var t in auf.Teile)
             {
-                if (t.Titel.StartsWith("GIS Elementbefestigung") || t.Titel is "Duofix Systemschiene (Boden)" or "Befestigung Schiene (Boden)" || t.Art == "beplankung") continue;
-                if (t.Titel == "GIS Profil horizontal" && Math.Abs(t.Z1 - (auf.Rohboden + 50)) < 1) continue;   // unterstes Profil läuft durch die Füsse (Entscheid Christian)
+                if (t.Titel.StartsWith("GIS Elementbefestigung") || t.Art == "beplankung") continue;   // die Befestigung verbindet Element und Profil
                 bool schneidet = t.S0 < el.S1 - 0.5 && t.S1 > el.S0 + 0.5 && t.Q0 < q1 - 0.5 && t.Q1 > qe + 0.5 && t.Z0 < ze - 0.5 && t.Z1 > auf.ElementUnterkante + 0.5;
                 Assert.False(schneidet, $"{t.Titel} (s {t.S0:0}–{t.S1:0}, q {t.Q0:0}–{t.Q1:0}, z {t.Z0:0}–{t.Z1:0}) liegt im {el.Typ.Titel}");
             }

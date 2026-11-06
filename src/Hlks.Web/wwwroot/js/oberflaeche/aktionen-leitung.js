@@ -13,6 +13,7 @@ import { planAnsicht, werkzeugStarten, werkzeugAktiv } from '../werkzeuge/basis.
 import { leitungWerkzeug } from '../werkzeuge/leitung.js';
 import { parallelWerkzeug } from '../werkzeuge/parallel.js';
 import { fallleitungWerkzeug } from '../werkzeuge/fallleitung.js';
+import { steigleitungWerkzeug } from '../werkzeuge/steigleitung.js';
 import { aufteilenDialog } from '../werkzeuge/leitung-bearbeiten.js';
 import { istAltbestand } from '../werkzeuge/leitung-logik.js';
 
@@ -42,6 +43,13 @@ registrieren({
   aktiv: imGrundriss, hinweis: nurGrundriss,
   gedrueckt: () => werkzeugAktiv() === 'fallleitung',
   ausfuehren() { werkzeugStarten(fallleitungWerkzeug()); },
+});
+
+registrieren({
+  id: 'gt.steigleitung', titel: 'Steigleitung', symbol: 'rohr', kuerzel: null, register: ['sanitaer', 'heizung'], gruppe: 'Leitungen',
+  aktiv: imGrundriss, hinweis: nurGrundriss,
+  gedrueckt: () => werkzeugAktiv() === 'steigleitung',
+  ausfuehren() { werkzeugStarten(steigleitungWerkzeug()); },
 });
 
 // ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)

@@ -442,6 +442,9 @@ public sealed class LeitungAbzweigen : IBefehl
     /// bleiben eine Rückfrage).</summary>
     const double AnpassungMax = 30;
 
+    /// <summary>Abgang an einer Fallleitung (Christian 06.11.2026).</summary>
+    const double FallleitungWinkel = 88.5;
+
     /// <summary>Richtung des Abzweigs aus Abzweigwinkel und Seite (Nachtrag 21.10.2026, siehe Dateikopf): gezeichnete Richtung vom T-Stück weg
     /// (vor der Neigung nach dem Gefälle), ob sie als waagrecht gezeichnet gilt, der Abzweigwinkel und die Seite als Text.</summary>
     static (V3 U, bool Waagrecht, double Winkel, string Seite) Winkelrichtung(JsonObject p, Leitungsserie sm, V3 d, bool hin, double? gefaelle, Element haupt)
@@ -618,8 +621,16 @@ public sealed class LeitungAbzweigen : IBefehl
         // Christian 06.11.2026: gezeichnete Richtung auf den nächsten Abzweigwinkel der Serie drehen statt ablehnen (in der Ebene von Leitung und Abzweig;
         // der erste Punkt des Abzweigs rückt auf die neue Richtung, gleiche Länge)
         // nie gegen die Fliessrichtung (> 90°) und höchstens AnpassungMax – grobe Abweichungen bleiben eine Rückfrage
-        if (sm.AbzweigwinkelZu(gemessen) is null && winkelSoll is null && sm.Abzweigwinkel.Count > 0 && gemessen <= 90 + Routing.WinkelToleranz
-            && sm.Abzweigwinkel.OrderBy(x => Math.Abs(x - gemessen)).First() is var wn && Math.Abs(wn - gemessen) <= AnpassungMax)
+        // Fallleitung (senkrechte Abwasserleitung): immer mit 88.5° angeschlossen (Christian 06.11.2026: «eine fallleitung ist immer abwasser. diese wird
+        // immer mit 88.5° abgang angeschlossen»), sofern die Serie den Winkel hat
+        bool fallleitung = Math.Abs(d.Z) > 0.99 && sm.AbzweigwinkelErlaubt(FallleitungWinkel) && (sm.Abwasser || Rohrgroessen.IstAbwasser(k.Projekt, haupt));
+        double? zielWinkel = null;
+        if (winkelSoll is null && sm.Abzweigwinkel.Count > 0 && gemessen <= 90 + Routing.WinkelToleranz)
+        {
+            if (fallleitung) { if (sm.AbzweigwinkelZu(gemessen) is not double gilt || Math.Abs(gilt - FallleitungWinkel) > 1e-6) zielWinkel = FallleitungWinkel; }   // im Toleranzbereich von 88.5° bleibt die Richtung (Gefälle)
+            else if (sm.AbzweigwinkelZu(gemessen) is null && sm.Abzweigwinkel.OrderBy(x => Math.Abs(x - gemessen)).First() is var wn0 && Math.Abs(wn0 - gemessen) <= AnpassungMax) zielWinkel = wn0;
+        }
+        if (zielWinkel is double wn)
         {
             var a = hin ? -u : u;
             var quer = a - d * a.Mal(d);

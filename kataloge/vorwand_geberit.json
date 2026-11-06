@@ -457,6 +457,7 @@
       "breite": 424,
       "hoehe": 1140,
       "rahmenhoehe": 1045,
+      "rahmenunterkante": 45,
       "rahmentiefe": 120,
       "mindesttiefe": 165,
       "anschluesse": {
@@ -477,7 +478,8 @@
         "rahmenhoehe": "Produktdatenblatt 461.313.00.6 S. 1 (104.5 cm)",
         "anschluesse.sw": "Produktdatenblatt 461.313.00.6 S. 1 (▼23 cm)",
         "mindesttiefe": "Produktdatenblatt 461.313.00.6 S. 1 (≥ 16.5 cm DN 90, ≥ 19.5 cm DN 100)",
-        "fussbodenaufbauMax": "Produktdatenblatt 461.313.00.6 S. 1 (Fussbodenaufbauten 0–20 cm)"
+        "fussbodenaufbauMax": "Produktdatenblatt 461.313.00.6 S. 1 (Fussbodenaufbauten 0–20 cm)",
+        "rahmenunterkante": "Montageanleitung 970.704 S. 2 (Rahmen 100 cm, Oberkante 104.5 cm über OKFF; Element an den flankierenden Profilen, nicht am Boden gestützt)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe GIS-WC nicht bemasst – 120 mm wie Duofix Sigma 12.",

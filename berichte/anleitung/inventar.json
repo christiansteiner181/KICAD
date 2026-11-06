@@ -8910,7 +8910,7 @@
             "Register Sanitär › Fallleitung, in der Optionsleiste Serie, Grösse und System SW wählen.",
             "Im Grundriss die Lage anklicken."
           ],
-          "erwartung": "Je Geschoss ein senkrechtes Rohr an derselben Stelle, vom obersten bis zum untersten Geschoss, miteinander verbunden; in jedem Grundriss als geschnittener Kreis.",
+          "erwartung": "Je Geschoss ein senkrechtes Rohr an derselben Stelle, vom obersten bis zum untersten Geschoss, miteinander verbunden, System Schmutzwasser; in jedem Grundriss als geschnittener Kreis. Ein Abgang an die Fallleitung wird mit 88.5° angeschlossen.",
           "pruefpunkte": [
             "In jedem Grundriss (UG, EG, OG) ist die Fallleitung sichtbar.",
             "Die Rohre sind verbunden (Leitungszug ohne Lücke)."
@@ -8920,6 +8920,33 @@
             "src/Hlks.Web/wwwroot/js/werkzeuge/fallleitung.js:1"
           ],
           "hinweis": "Neu 06.11.2026 (Christian: «es muss ein werkzeug geben, Fallleitung platzieren», «die fallleitung wird über alle etagen gezeichnet»)."
+        },
+        {
+          "id": "m4-steigleitung",
+          "titel": "Steigleitung (KW, WW, Zirk, VL, RL) platzieren",
+          "wo": {
+            "register": "Sanitär / Heizung",
+            "gruppe": "Leitungen",
+            "knopf": "Steigleitung",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Rohrserien laden, Systeme KW, WW (bzw. ZIR, HZ-VL, HZ-RL) im Projekt.",
+            "Register Sanitär › Steigleitung: Leitungen anhaken, je Serie und Grösse, Achsabstand eintragen.",
+            "Lage der ersten Leitung anklicken, dann die Richtung der Reihe."
+          ],
+          "erwartung": "Die gewählten Leitungen stehen in einer Reihe im Achsabstand, je Geschoss ein Rohr pro Leitung, verbunden; Zirk und RL in Fliessrichtung nach unten, die übrigen nach oben.",
+          "pruefpunkte": [
+            "Nur die angehakten Leitungen entstehen.",
+            "Abstand zwischen den Achsen = Achsabstand.",
+            "In jedem Grundriss als Kreise sichtbar."
+          ],
+          "quelle": [
+            "src/Hlks.Kern/Leitungen/Fallleitung.cs:1",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/steigleitung.js:1"
+          ],
+          "hinweis": "Neu 06.11.2026 (Christian: «weiteres modul \"steigleitung\" in gleicher Art für KW, WW, Zirk, VL, RL es soll gewählt werden können welche leitungen in der steigleitung enthalten sind»)."
         },
         {
           "id": "m4-vorwand-element",

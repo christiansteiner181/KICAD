@@ -166,7 +166,16 @@ export const WERKZEUGE = {
   rohr: { titel: 'Rohr', get felder() { return leitungFelder('rohr', 'Rohr'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
   kanal: { titel: 'Kanal', get felder() { return leitungFelder('kanal', 'Kanal'); }, hinweis: 'H = Höhe ändern (Steigleitung), Zahl = Länge, Enter beendet.' },
   // Fallleitung (Christian 06.11.2026): Serie, Grösse, System wie beim Rohr; Höhe, Lage und Gefälle entfallen (senkrecht durch alle Geschosse)
-  fallleitung: { titel: 'Fallleitung', get felder() { return leitungFelder('fallleitung', 'Rohr').filter((f) => !['lage', 'hoehe', 'gefaelle', 'winkelfang', 'daemmdicke'].includes(f.id)); }, hinweis: 'Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden.' },
+  // Christian 06.11.2026: «eine fallleitung ist immer abwasser» – nur Abwasser-Serien, kein System/Medium (der Kern nimmt das Schmutzwasser-System)
+  fallleitung: {
+    titel: 'Fallleitung',
+    get felder() {
+      return leitungFelder('fallleitung', 'Rohr').filter((f) => !['lage', 'hoehe', 'gefaelle', 'winkelfang', 'daemmdicke', 'system', 'medium'].includes(f.id))
+        .map((f) => (f.id === 'serie' ? { ...f, get werte() { return serienListe('Rohr').filter((x) => { const d = serieDef(x.kz); return !d || istAbwasser(d); }).map((x) => [x.kz, x.name]); } } : f));
+    },
+    hinweis: 'Immer Abwasser (System Schmutzwasser). Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden; Abgänge daran mit 88.5°.',
+  },
+  steigleitung: { titel: 'Steigleitung', get felder() { return steigFelder(); }, hinweis: 'Leitungen anhaken, je Serie und Grösse. 1. Klick: erste Leitung, 2. Klick: Richtung der Reihe. Je Geschoss ein Rohr, verbunden; Zirk und RL fallen, die übrigen steigen.' },
   verschieben: {
     titel: 'Verschieben',
     felder: [{ id: 'trennen', titel: 'Trennen', art: 'bool', vorgabe: false }],   // Bearbeitungswerkzeuge A1: ohne folgen Leitungen und Formteile
@@ -226,6 +235,26 @@ export function freiVorbelegen(wid, serie, nurLeere = false) {
 
 /** Felder der Werkzeuge Rohr (PI) und Kanal (DT): Serie, Grösse (bei einer freien Serie Breite × Höhe und die Normgrösse als Vorschlag), Höhe der Achse über OK Geschoss,
  *  Gefälle, System/Strang, Dämmdicke, Winkelfang. */
+/** Leitungen der Steigleitung (Christian 06.11.2026): Medium, Kurzname, Vorgabe angehakt. */
+export const STEIG_LEITUNGEN = [['KW', 'KW', true], ['WW', 'WW', true], ['ZIR', 'Zirk', true], ['HZ-VL', 'VL', false], ['HZ-RL', 'RL', false]];
+export const steigId = (m) => m.toLowerCase().replace(/[^a-z]/g, '');
+
+/** Felder der Steigleitung: Achsabstand, je Leitung Häkchen, Serie und Grösse (Serien der Kategorie Rohr). */
+function steigFelder() {
+  const wid = 'steigleitung';
+  const felder = [{ id: 'abstand', titel: 'Achsabstand', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 5 }];
+  for (const [m, kurz, an] of STEIG_LEITUNGEN) {
+    const id = steigId(m);
+    felder.push(
+      { id, titel: kurz, art: 'bool', vorgabe: an, beiAenderung: () => leitungHaken.optionenNeu?.() },
+      { id: id + 'Serie', titel: 'Serie', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { return serienListe('Rohr').map((x) => [x.kz, x.name]); },
+        beiAenderung(el) { el?.blur?.(); const kz = wert(wid, id + 'Serie'); if (kz) serieLaden(kz).then(() => leitungHaken.optionenNeu?.()); leitungHaken.optionenNeu?.(); } },
+      { id: id + 'Groesse', titel: 'Grösse', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { const d = serieDef(wert(wid, id + 'Serie')); return d ? groessenOptionen(d) : []; } },
+    );
+  }
+  return felder;
+}
+
 function leitungFelder(wid, kategorie) {
   const aktuelleSerie = () => serieDef(wert(wid, 'serie'));
   const frei = () => istFrei(aktuelleSerie());

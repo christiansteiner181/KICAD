@@ -61,7 +61,7 @@ public sealed class VorwandGrafik : IGrafikquelle
     {
         var (v, el) = Lage(ctx.Modell, ctx.Katalog, e);
         if (v is null || el is null) return [];
-        double q1 = v.Tiefe - 18, q0 = Math.Max(v.AnWand ? 10 : 18, q1 - (el.Typ?.Rahmentiefe ?? 40));   // Rahmentiefe des Elements hinter der Beplankung
+        double q1 = v.ElementVorne, q0 = Math.Max(v.AnWand ? 10 : 18, q1 - (el.Typ?.Rahmentiefe ?? 40));   // Rahmen ab der Elementvorderkante (Montagehandbuch, 06.11.2026)
         var r = Rechteck(v, el.S0, el.S1, q0, q1);
         var prim = new List<Primitiv>
         {
@@ -98,11 +98,23 @@ public sealed class VorwandGrafik : IGrafikquelle
         var (v, el) = Lage(p.Modell, p.Katalog, e);
         if (v is null || el is null) return null;
         double h = el.Typ?.Rahmenhoehe ?? 1120, w = ElementRahmen;
-        double q1 = v.Tiefe - 18, q0 = Math.Max(0, q1 - (el.Typ?.Rahmentiefe ?? w)), z0 = v.ElementUnterkante, z1 = v.Okff + h;
+        double q1 = v.ElementVorne, q0 = Math.Max(0, q1 - (el.Typ?.Rahmentiefe ?? w)), zFuss = v.ElementUnterkante, z1 = v.Okff + h;
+        // GIS: Rahmen ohne Füsse an den flankierenden Profilen (Christian 06.11.2026 mit MA 970.704 S. 2: «das element wird an den flankierenden profilen
+        // befestigt und ist nicht am boden gestützt»); Unterkante aus dem Katalog. Duofix: Rahmen auf OKFF bzw. der Schiene, Füsse bis in die Systemschiene.
+        bool gis = v.System == "gis";
+        double z0 = gis ? v.Okff + (el.Typ?.Rahmenunterkante ?? 0) : Math.Max(v.Okff, zFuss);
         var k = new Koerper { Id = e.Id, Ebene = "apparat" };
         void Teil(Koerperteil t) { t.Farbe = ElementFarbe; t.Material = "geraet"; k.Teile.Add(t); }
         Teil(Quader(v, el.S0, el.S0 + w, q0, q1, z0, z1));
         Teil(Quader(v, el.S1 - w, el.S1, q0, q1, z0, z1));
+        Teil(Quader(v, el.S0 + w, el.S1 - w, q0, q1, z0, z0 + w));   // unterer Riegel auf OK Fertigboden
+        // Duofix-Füsse bis in die Systemschiene (Planungshandbuch S. 188). ANNAHME Darstellung: Fuss w × w in der Mitte der Rahmentiefe
+        if (!gis && z0 - zFuss > 1)
+            foreach (var s0 in new[] { el.S0, el.S1 - w })
+            {
+                double qm = (q0 + q1) / 2;
+                Teil(Quader(v, s0, s0 + w, qm - w / 2, qm + w / 2, zFuss, z0));
+            }
         Teil(Quader(v, el.S0 + w, el.S1 - w, q0, q1, z1 - w, z1));
         if (el.Typ?.Traverse is double tz)   // Befestigungstraverse (WC-Bolzen), bemasst in der Montageanleitung
             Teil(Quader(v, el.S0 + w, el.S1 - w, q0, q1, v.Okff + tz - w / 2, v.Okff + tz + w / 2));

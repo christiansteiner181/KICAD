@@ -4259,11 +4259,20 @@ Seither richtet sich eine DWG beim Einfügen nur aus, wenn sie Wand-Layer hat (s
 - **Fallleitung** (Register Sanitär › Leitungen, Werkzeug `fallleitung`, `werkzeuge/fallleitung.js`; Christian «es muss ein werkzeug geben, Fallleitung platzieren»,
   «die fallleitung wird über alle etagen gezeichnet»): Serie, Grösse, System/Strang in der Optionsleiste, ein Klick im Grundriss → `fallleitung_platzieren`. Je Geschoss ein
   senkrechtes Rohr (Geschossboden bis Boden des nächsten, das oberste bis zu seiner Oberkante), von oben nach unten verbunden. Entwurf: Kreis in der Leitungsgrösse.
+  Immer Abwasser (Christian «eine fallleitung ist immer abwasser»): nur Abwasser-Serien, System = Schmutzwasser des Projekts; Abgänge daran setzt
+  `leitung_abzweigen` immer mit 88.5° («diese wird immer mit 88.5° abgang angeschlossen»), ausser der Zulauf liegt mit Gefälle schon im Toleranzbereich.
+- **Steigleitung** (Register Sanitär und Heizung › Leitungen, Werkzeug `steigleitung`, `werkzeuge/steigleitung.js`; Christian «weiteres modul "steigleitung" in gleicher Art
+  für KW, WW, Zirk, VL, RL»): Leitungen anhaken, je Serie und Grösse, Achsabstand; 1. Klick erste Leitung, 2. Klick Richtung der Reihe → `steigleitung_platzieren`.
+  System je Medium aus dem Projekt; Zirk und RL fallen, die übrigen steigen (Zeichenrichtung = Fliessrichtung).
 - **Knicke 2 × 45°** (`Routing.ZweiBoegen`, Christian «bei 90° automatisch 2x 45°»): hat die Serie keinen Bogen für den Knick, aber zwei gleiche (90° = 2 × 45°,
   60° = 2 × 30°), setzt `leitung_zeichnen` zwei Bögen Bogen an Bogen, symmetrisch zur Ecke, mit Hinweis.
 - **Abzweigwinkel** (`leitung_abzweigen`, Christian «passe die abzweigewinkel automatisch an»): nicht vorhandener Winkel → nächster der Serie (bis 30°, nie gegen die
   Fliessrichtung), Hinweis «Abzweigwinkel angepasst».
 - **Abwasser-Darstellung** (Christian «leitungen transparent, achse dunkles antrazith, aussenlinien untransparent», «formteile in der gleichen farbe»): Abwasser leicht
   gefüllt mit deckenden Rändern und Achse #383e42, Formteile in der Farbe ihrer Leitung; Achsen von Rohren, Kanälen und Formteilen enden am Körper.
+- **Vorwand: Elementlage nach Montagehandbuch** (Christian «die unterste schiene schneidet die Einbaukasten … wie im montagehandbuch beschrieben versetzt»,
+  «das element wird an den flankierenden profilen befestigt und ist nicht am boden gestützt»): GIS-Elemente hinter der Profilebene (MA 970.704 S. 2:
+  1.8–6 cm hinter der Oberfläche), ohne Füsse, Rahmenunterkante aus dem Katalog (WC Sigma 12: 4.5 cm über OKFF); Duofix-Rahmen auf der Systemschiene,
+  Füsse bis in die Schiene (Planungshandbuch S. 188). Kein Profil und keine Schiene schneidet ein Element.
 - **Beispielprojekt anlegen** › Auswahl «Musterhaus 4 Räume» (`BeispielKlein.cs`, API `beispiel: "klein"`): 3 Geschosse (UG, EG, OG) je Bad, WC, Küche, Zimmer,
   Aussen- und Innenwände, Systeme SW/KW/WW, Grundrisse und 3D – ohne Apparate und Leitungen, zum Ausprobieren der Zeichenwerkzeuge.
