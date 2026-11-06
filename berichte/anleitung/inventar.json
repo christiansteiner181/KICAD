@@ -8933,10 +8933,10 @@
           },
           "schritte": [
             "Rohrserien laden, Systeme KW, WW (bzw. ZIR, HZ-VL, HZ-RL) im Projekt.",
-            "Register Sanitär › Steigleitung: Leitungen anhaken, je Serie und Grösse, Achsabstand eintragen.",
-            "Lage der ersten Leitung anklicken, dann die Richtung der Reihe."
+            "Register Sanitär › Steigleitung: Leitungen anhaken, je Serie und Grösse; Steigzone Breite × Tiefe eintragen (oder Achsabstand).",
+            "Anfang der Steigzone anklicken, dann die Richtung der Reihe."
           ],
-          "erwartung": "Die gewählten Leitungen stehen in einer Reihe im Achsabstand, je Geschoss ein Rohr pro Leitung, verbunden; Zirk und RL in Fliessrichtung nach unten, die übrigen nach oben.",
+          "erwartung": "Die gewählten Leitungen stehen in der Steigzone mit gleichen lichten Abständen (bzw. im Achsabstand), in der Mitte der Tiefe; je Geschoss ein Rohr pro Leitung, verbunden; Zirk und RL nach unten, die übrigen nach oben.",
           "pruefpunkte": [
             "Nur die angehakten Leitungen entstehen.",
             "Abstand zwischen den Achsen = Achsabstand.",
@@ -8947,6 +8947,32 @@
             "src/Hlks.Web/wwwroot/js/werkzeuge/steigleitung.js:1"
           ],
           "hinweis": "Neu 06.11.2026 (Christian: «weiteres modul \"steigleitung\" in gleicher Art für KW, WW, Zirk, VL, RL es soll gewählt werden können welche leitungen in der steigleitung enthalten sind»)."
+        },
+        {
+          "id": "m6-steigleitung-lueftung",
+          "titel": "Steigleitung Lüftung (AUL, FOL, ZUL, ABL) platzieren",
+          "wo": {
+            "register": "Lüftung",
+            "gruppe": "Leitungen",
+            "knopf": "Steigleitung",
+            "kuerzel": "",
+            "sonst": ""
+          },
+          "schritte": [
+            "Kanalserien (rund oder eckig) laden, Systeme ZUL, ABL usw. im Projekt.",
+            "Register Lüftung › Steigleitung: Kanäle anhaken, je Serie und Grösse; Steigzone Breite × Tiefe; Zentrale unten oder oben.",
+            "Anfang der Steigzone anklicken, dann die Richtung."
+          ],
+          "erwartung": "Die Kanäle stehen mit gleichen lichten Abständen in der Steigzone; mit Zentrale unten steigen ZUL und FOL, ABL und AUL fallen.",
+          "pruefpunkte": [
+            "Runde und eckige Kanäle möglich.",
+            "Passen die Kanäle nicht in die Steigzone: Meldung."
+          ],
+          "quelle": [
+            "src/Hlks.Kern/Leitungen/Fallleitung.cs:1",
+            "src/Hlks.Web/wwwroot/js/werkzeuge/steigleitung.js:1"
+          ],
+          "hinweis": "Neu 06.11.2026 (Christian: «es soll auch steigleitung lüftung geben AUL, FOL, ZUL, ABL rund und Eckig», «Steigzonen Grösse … Rohrabstände daraus berechnet»)."
         },
         {
           "id": "m4-vorwand-element",

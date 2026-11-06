@@ -53,8 +53,8 @@ static class Senkrechte
             if (davor is not null) par["von"] = new JsonObject { ["element"] = davor };
             var vorher = k.Arbeit.Elemente.Select(e => e.Id).ToHashSet();
             new LeitungZeichnen().Ausfuehren(k, par);
-            var neu = k.Arbeit.Elemente.Where(e => !vorher.Contains(e.Id) && e.Klasse == "Rohr" && e.Geometrie?.Punkte.Count >= 2).ToList();
-            if (neu.Count == 0) throw new HlksFehler($"Im Geschoss {g.Kennzeichen} ist kein Rohr entstanden.");
+            var neu = k.Arbeit.Elemente.Where(e => !vorher.Contains(e.Id) && e.Klasse is "Rohr" or "Kanal" && e.Geometrie?.Punkte.Count >= 2).ToList();
+            if (neu.Count == 0) throw new HlksFehler($"Im Geschoss {g.Kennzeichen} ist keine Leitung entstanden.");
             // das Rohr am Ende in Fliessrichtung (abwärts das tiefste, aufwärts das höchste) nimmt das nächste auf
             double Z(Element e, bool max) => max ? e.Geometrie!.Punkte.Max(q => q.Length > 2 ? q[2] : 0) : e.Geometrie!.Punkte.Min(q => q.Length > 2 ? q[2] : 0);
             davor = (abwaerts ? neu.OrderBy(e => Z(e, false)) : neu.OrderByDescending(e => Z(e, true))).First().Kennzeichen;
@@ -113,37 +113,66 @@ public sealed class FallleitungPlatzieren : IBefehl
 public sealed class SteigleitungPlatzieren : IBefehl
 {
     public string Name => "steigleitung_platzieren";
-    public const string Text = "Setzt eine Steigleitung aus mehreren senkrechten Leitungen (z. B. KW, WW, Zirk, Heizung VL, RL) in einer Reihe über alle Geschosse bzw. von_geschoss bis bis_geschoss: die erste Leitung am punkt, jede weitere um abstand (Achsabstand) in richtung versetzt. Je Leitung Medium, Serie und Grösse (System ohne Angabe: das System des Projekts mit diesem Medium). Je Geschoss ein Rohr, in Fliessrichtung gezeichnet und verbunden: Zirkulation und Rückläufe fallen, die übrigen steigen.";
+    public const string Text = "Setzt eine Steigleitung aus mehreren senkrechten Leitungen (z. B. KW, WW, Zirk, Heizung VL, RL; Lüftung AUL, FOL, ZUL, ABL rund oder eckig) in einer Reihe über alle Geschosse bzw. von_geschoss bis bis_geschoss: die erste Leitung am punkt, jede weitere um abstand (Achsabstand) in richtung versetzt. Je Leitung Medium, Serie und Grösse (System ohne Angabe: das System des Projekts mit diesem Medium). Je Geschoss ein Rohr, in Fliessrichtung gezeichnet und verbunden: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen (richtung je Leitung ändert das, z. B. Lüftungszentrale oben).";
     public const string ParPunkt = "Lage der ersten Leitung [x, y] in mm";
     public const string ParRichtung = "Richtung der Reihe [dx, dy] im Grundriss (Vorgabe [1, 0])";
-    public const string ParAbstand = "Achsabstand der Leitungen in mm";
-    public const string ParLeitungen = "Liste der Leitungen in der Reihenfolge der Reihe: [{ medium (z. B. KW, WW, ZIR, HZ-VL, HZ-RL), serie, groesse, system? }]";
+    public const string ParAbstand = "Achsabstand der Leitungen in mm (statt steigzone_breite)";
+    public const string ParZoneBreite = "Breite der Steigzone in mm entlang der Reihe: die Leitungen werden mit gleichen lichten Abständen verteilt (Aussenmasse eingerechnet), punkt = Anfang der Steigzone";
+    public const string ParZoneTiefe = "Tiefe der Steigzone in mm quer zur Reihe (links in Richtung der Reihe): die Leitungen stehen in ihrer Mitte";
+    public const string ParLeitungen = "Liste der Leitungen in der Reihenfolge der Reihe: [{ medium (z. B. KW, WW, ZIR, HZ-VL, HZ-RL; Lüftung AUL, FOL, ZUL, ABL mit Kanalserie rund oder eckig), serie, groesse, system?, richtung? (auf | ab = Fliessrichtung; fehlt: Zirkulation, Rückläufe, Abluft und Aussenluft fallen, die übrigen steigen – Lüftung mit Zentrale unten) }]";
     public string Beschreibung => Text;
     public IReadOnlyList<ParameterDef> Parameter { get; } =
     [
         new("punkt", "liste", true, ParPunkt),
         new("leitungen", "liste", true, ParLeitungen),
-        new("abstand", "zahl", true, ParAbstand),
+        new("abstand", "zahl", false, ParAbstand),
+        new("steigzone_breite", "zahl", false, ParZoneBreite),
+        new("steigzone_tiefe", "zahl", false, ParZoneTiefe),
         new("richtung", "liste", false, ParRichtung),
         new("von_geschoss", "text", false, Senkrechte.ParVon),
         new("bis_geschoss", "text", false, Senkrechte.ParBis),
     ];
 
-    /// <summary>Fällt das Medium (Zirkulation, Rückläufe)? Sonst steigt es (Vor- und Zuläufe).</summary>
-    public static bool Faellt(string medium) => medium.Equals("ZIR", StringComparison.OrdinalIgnoreCase) || medium.EndsWith("-RL", StringComparison.OrdinalIgnoreCase)
+    /// <summary>Fällt das Medium ohne Angabe? Zirkulation und Rückläufe; Lüftung mit der Zentrale unten (Christian 06.11.2026 «steigleitung lüftung …
+    /// AUL, FOL, ZUL, ABL»): Abluft und Aussenluft fallen zur Zentrale, Zu- und Fortluft steigen. Sonst steigt es.</summary>
+    public static bool Faellt(string medium) => medium.ToUpperInvariant() is "ZIR" or "ABL" or "AUL" || medium.EndsWith("-RL", StringComparison.OrdinalIgnoreCase)
         || medium.Contains("-RL-", StringComparison.OrdinalIgnoreCase);
+
+    /// <summary>Breite einer Leitung entlang der Reihe aus ihrer Serie: Aussendurchmesser, sonst d bzw. b (eckige Kanäle mit b entlang der Reihe, ANNAHME), sonst DN.</summary>
+    static double Breite(Kontext k, JsonObject l, int i)
+    {
+        var s = Leitungsserie.Hole(k.Arbeit, k.Katalog, Param.Text(l, "serie") ?? throw new HlksFehler($"leitungen[{i}]: serie fehlt."));
+        var g = RoutingBefehle.Groesse(s, l["groesse"]);
+        return g.Aussen ?? g.Groesse.D ?? g.Groesse.B ?? g.Groesse.Dn ?? throw new HlksFehler($"leitungen[{i}]: die Breite der Grösse {g.Typ} ist unbekannt.");
+    }
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
         var pt = ArchParam.Punkt(p, "punkt") ?? throw new HlksFehler("Parameter «punkt» fehlt.", "punkt: [x, y] in mm");
         if (p["leitungen"] is not JsonArray liste || liste.Count == 0) throw new HlksFehler("Keine Leitung gewählt.", "leitungen: [{ medium, serie, groesse }]");
-        double abstand = Param.Zahl(p, "abstand") ?? throw new HlksFehler("Parameter «abstand» fehlt.", "Achsabstand der Leitungen in mm angeben.");
-        if (liste.Count > 1 && abstand <= 0) throw new HlksFehler("Der Achsabstand muss grösser als 0 sein.");
+        double? zoneB = Param.Zahl(p, "steigzone_breite"), zoneT = Param.Zahl(p, "steigzone_tiefe");
+        double abstand = Param.Zahl(p, "abstand") ?? 0;
+        if (zoneB is null && liste.Count > 1 && abstand <= 0)
+            throw new HlksFehler("Achsabstand bzw. Steigzone fehlt.", "abstand (Achsabstand in mm) oder steigzone_breite (Breite der Steigzone in mm) angeben.");
         var r = ArchParam.Punkt(p, "richtung") ?? [1, 0];
         double rl = Math.Sqrt(r[0] * r[0] + r[1] * r[1]);
         if (rl < 1e-9) throw new HlksFehler("Die Richtung der Reihe ist null.", "richtung: [dx, dy]");
         double ux = r[0] / rl, uy = r[1] / rl;
         var (alle, iu, io) = Senkrechte.Geschosse(k, p);
+        // Lage entlang der Reihe: fester Achsabstand oder aus der Steigzone (Christian 06.11.2026: «bei allen steigleitungen soll eine Steigzonen Grösse
+        // angegeben werden können. die Rohrabstände sollen daraus berechnet werden») – gleiche lichte Abstände zwischen den Leitungen und zum Rand
+        var lage = new double[liste.Count];
+        double quer = zoneT is double tz && tz > 0 ? tz / 2 : 0;
+        if (zoneB is double zb)
+        {
+            var breiten = liste.Select((n, i) => n is JsonObject l ? Breite(k, l, i) : throw new HlksFehler($"leitungen[{i}] ist kein Objekt.")).ToList();
+            double licht = (zb - breiten.Sum()) / (liste.Count + 1);
+            if (licht < 0) throw new HlksFehler($"Die Leitungen ({breiten.Sum():0} mm breit) passen nicht in die Steigzone von {zb:0} mm.", "Steigzone breiter wählen oder kleinere Leitungen.");
+            double s0 = 0;
+            for (int i = 0; i < liste.Count; i++) { s0 += licht; lage[i] = s0 + breiten[i] / 2; s0 += breiten[i]; }
+            k.Hinweise.Add($"Steigzone {zb:0}{(zoneT is double t2 ? $" × {t2:0}" : "")} mm: lichter Abstand {licht:0} mm.");
+        }
+        else for (int i = 0; i < liste.Count; i++) lage[i] = abstand * i;
         var berichte = new List<string>();
         for (int i = 0; i < liste.Count; i++)
         {
@@ -156,8 +185,9 @@ public sealed class SteigleitungPlatzieren : IBefehl
             else
                 systemKz = Senkrechte.SystemMitMedium(k, [medium])?.Kennzeichen
                     ?? throw new HlksFehler($"Im Projekt gibt es kein System mit dem Medium {medium}.", $"Zuerst ein System für {medium} anlegen oder system angeben.");
-            double[] q = [pt[0] + ux * abstand * i, pt[1] + uy * abstand * i];
-            var rohre = Senkrechte.Zeichnen(k, q, l["serie"], l["groesse"], systemKz, null, alle, iu, io, Faellt(medium));
+            double[] q = [pt[0] + ux * lage[i] - uy * quer, pt[1] + uy * lage[i] + ux * quer];   // quer: links in Richtung der Reihe
+            bool faellt = Param.Text(l, "richtung") is { Length: > 0 } ri ? ArchParam.Auswahl(ri, ["auf", "ab"], "richtung") == "ab" : Faellt(medium);
+            var rohre = Senkrechte.Zeichnen(k, q, l["serie"], l["groesse"], systemKz, null, alle, iu, io, faellt);
             berichte.Add($"{medium} ({systemKz}) bei [{q[0]:0}, {q[1]:0}]: {string.Join(", ", rohre)}");
         }
         k.Hinweise.Add($"Steigleitung {alle[iu].Kennzeichen}–{alle[io].Kennzeichen}: {string.Join("; ", berichte)}.");

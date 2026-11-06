@@ -4264,6 +4264,11 @@ Seither richtet sich eine DWG beim Einfügen nur aus, wenn sie Wand-Layer hat (s
 - **Steigleitung** (Register Sanitär und Heizung › Leitungen, Werkzeug `steigleitung`, `werkzeuge/steigleitung.js`; Christian «weiteres modul "steigleitung" in gleicher Art
   für KW, WW, Zirk, VL, RL»): Leitungen anhaken, je Serie und Grösse, Achsabstand; 1. Klick erste Leitung, 2. Klick Richtung der Reihe → `steigleitung_platzieren`.
   System je Medium aus dem Projekt; Zirk und RL fallen, die übrigen steigen (Zeichenrichtung = Fliessrichtung).
+- **Steigzone** (beide Steigleitungs-Werkzeuge; Christian «bei allen steigleitungen soll eine Steigzonen Grösse angegeben werden können. die Rohrabstände
+  sollen daraus berechnet werden»): Breite × Tiefe in der Optionsleiste; der Kern verteilt die Leitungen mit gleichen lichten Abständen (Aussendurchmesser bzw.
+  Kanalbreite b eingerechnet), in der Mitte der Tiefe (links der Reihe); ohne Steigzone gilt der Achsabstand. 1. Klick = Anfang der Steigzone.
+- **Steigleitung Lüftung** (Register Lüftung › Leitungen, Werkzeug `steigleitungLueftung`; Christian «es soll auch steigleitung lüftung geben AUL, FOL, ZUL, ABL
+  rund und Eckig»): Kanalserien rund oder eckig; Zentrale unten (Vorgabe): ZUL und FOL steigen, ABL und AUL fallen, Zentrale oben umgekehrt (`richtung` je Leitung).
 - **Knicke 2 × 45°** (`Routing.ZweiBoegen`, Christian «bei 90° automatisch 2x 45°»): hat die Serie keinen Bogen für den Knick, aber zwei gleiche (90° = 2 × 45°,
   60° = 2 × 30°), setzt `leitung_zeichnen` zwei Bögen Bogen an Bogen, symmetrisch zur Ecke, mit Hinweis.
 - **Abzweigwinkel** (`leitung_abzweigen`, Christian «passe die abzweigewinkel automatisch an»): nicht vorhandener Winkel → nächster der Serie (bis 30°, nie gegen die

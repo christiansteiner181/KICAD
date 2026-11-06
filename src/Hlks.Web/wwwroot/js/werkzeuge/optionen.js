@@ -175,7 +175,8 @@ export const WERKZEUGE = {
     },
     hinweis: 'Immer Abwasser (System Schmutzwasser). Lage anklicken – senkrecht durch alle Geschosse, je Geschoss ein Rohr, verbunden; Abgänge daran mit 88.5°.',
   },
-  steigleitung: { titel: 'Steigleitung', get felder() { return steigFelder(); }, hinweis: 'Leitungen anhaken, je Serie und Grösse. 1. Klick: erste Leitung, 2. Klick: Richtung der Reihe. Je Geschoss ein Rohr, verbunden; Zirk und RL fallen, die übrigen steigen.' },
+  steigleitung: { titel: 'Steigleitung', get felder() { return steigFelder('steigleitung'); }, hinweis: 'Leitungen anhaken, je Serie und Grösse; Steigzone Breite × Tiefe (Abstände daraus) oder Achsabstand. 1. Klick: Anfang der Steigzone bzw. erste Leitung, 2. Klick: Richtung. Zirk und RL fallen, die übrigen steigen.' },
+  steigleitungLueftung: { titel: 'Steigleitung Lüftung', get felder() { return steigFelder('steigleitungLueftung'); }, hinweis: 'AUL, FOL, ZUL, ABL mit Kanalserie rund oder eckig; Steigzone Breite × Tiefe oder Achsabstand. Zentrale unten: ZUL und FOL steigen, ABL und AUL fallen (oben umgekehrt).' },
   verschieben: {
     titel: 'Verschieben',
     felder: [{ id: 'trennen', titel: 'Trennen', art: 'bool', vorgabe: false }],   // Bearbeitungswerkzeuge A1: ohne folgen Leitungen und Formteile
@@ -235,19 +236,29 @@ export function freiVorbelegen(wid, serie, nurLeere = false) {
 
 /** Felder der Werkzeuge Rohr (PI) und Kanal (DT): Serie, Grösse (bei einer freien Serie Breite × Höhe und die Normgrösse als Vorschlag), Höhe der Achse über OK Geschoss,
  *  Gefälle, System/Strang, Dämmdicke, Winkelfang. */
-/** Leitungen der Steigleitung (Christian 06.11.2026): Medium, Kurzname, Vorgabe angehakt. */
+/** Leitungen der Steigleitung (Christian 06.11.2026): Medium, Kurzname, Vorgabe angehakt; Lüftung («es soll auch steigleitung lüftung geben AUL, FOL,
+ *  ZUL, ABL rund und Eckig») mit Kanalserien rund oder eckig. */
 export const STEIG_LEITUNGEN = [['KW', 'KW', true], ['WW', 'WW', true], ['ZIR', 'Zirk', true], ['HZ-VL', 'VL', false], ['HZ-RL', 'RL', false]];
+export const STEIG_LUEFTUNG = [['AUL', 'AUL', false], ['FOL', 'FOL', false], ['ZUL', 'ZUL', true], ['ABL', 'ABL', true]];
 export const steigId = (m) => m.toLowerCase().replace(/[^a-z]/g, '');
+export const steigListe = (wid) => (wid === 'steigleitungLueftung' ? STEIG_LUEFTUNG : STEIG_LEITUNGEN);
 
-/** Felder der Steigleitung: Achsabstand, je Leitung Häkchen, Serie und Grösse (Serien der Kategorie Rohr). */
-function steigFelder() {
-  const wid = 'steigleitung';
-  const felder = [{ id: 'abstand', titel: 'Achsabstand', art: 'zahl', einheit: 'mm', pflicht: true, platzhalter: 'Pflicht', breite: 5 }];
-  for (const [m, kurz, an] of STEIG_LEITUNGEN) {
+/** Felder der Steigleitung: Steigzone (Breite × Tiefe; daraus die Abstände – Christian 06.11.2026 «bei allen steigleitungen soll eine Steigzonen
+ *  Grösse angegeben werden können»), sonst Achsabstand; Lüftung mit Lage der Zentrale; je Leitung Häkchen, Serie und Grösse. */
+function steigFelder(wid) {
+  const lueftung = wid === 'steigleitungLueftung';
+  const kategorie = lueftung ? 'Kanal' : 'Rohr';
+  const felder = [
+    { id: 'zoneB', titel: 'Steigzone', art: 'zahl', einheit: '×', platzhalter: 'Breite', breite: 5 },
+    { id: 'zoneT', titel: '', art: 'zahl', einheit: 'mm', platzhalter: 'Tiefe', breite: 5 },
+    { id: 'abstand', titel: 'oder Achsabstand', art: 'zahl', einheit: 'mm', platzhalter: '–', breite: 5, sichtbar: () => !(wert(wid, 'zoneB') > 0) },
+  ];
+  if (lueftung) felder.push({ id: 'zentrale', titel: 'Zentrale', art: 'auswahl', werte: [['unten', 'unten'], ['oben', 'oben']], vorgabe: 'unten' });
+  for (const [m, kurz, an] of steigListe(wid)) {
     const id = steigId(m);
     felder.push(
       { id, titel: kurz, art: 'bool', vorgabe: an, beiAenderung: () => leitungHaken.optionenNeu?.() },
-      { id: id + 'Serie', titel: 'Serie', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { return serienListe('Rohr').map((x) => [x.kz, x.name]); },
+      { id: id + 'Serie', titel: 'Serie', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { return serienListe(kategorie).map((x) => [x.kz, x.name]); },
         beiAenderung(el) { el?.blur?.(); const kz = wert(wid, id + 'Serie'); if (kz) serieLaden(kz).then(() => leitungHaken.optionenNeu?.()); leitungHaken.optionenNeu?.(); } },
       { id: id + 'Groesse', titel: 'Grösse', art: 'auswahl', leer: 'wählen …', sichtbar: () => !!wert(wid, id), get werte() { const d = serieDef(wert(wid, id + 'Serie')); return d ? groessenOptionen(d) : []; } },
     );

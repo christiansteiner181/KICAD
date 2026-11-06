@@ -75,12 +75,14 @@ public sealed partial class Werkzeuge
     public string SteigleitungPlatzierenWerkzeug(
         [Description(SteigleitungPlatzieren.ParPunkt)] JsonElement punkt,
         [Description(SteigleitungPlatzieren.ParLeitungen)] JsonElement leitungen,
-        [Description(SteigleitungPlatzieren.ParAbstand)] double abstand,
+        [Description(SteigleitungPlatzieren.ParAbstand)] double? abstand = null,
+        [Description(SteigleitungPlatzieren.ParZoneBreite)] double? steigzone_breite = null,
+        [Description(SteigleitungPlatzieren.ParZoneTiefe)] double? steigzone_tiefe = null,
         [Description(SteigleitungPlatzieren.ParRichtung)] JsonElement? richtung = null,
         [Description(FallleitungPlatzieren.ParVon)] string? von_geschoss = null,
         [Description(FallleitungPlatzieren.ParBis)] string? bis_geschoss = null,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("steigleitung_platzieren", Parameter(("punkt", punkt), ("leitungen", leitungen), ("abstand", abstand), ("richtung", richtung), ("von_geschoss", von_geschoss), ("bis_geschoss", bis_geschoss)), trockenlauf);
+        Befehl("steigleitung_platzieren", Parameter(("punkt", punkt), ("leitungen", leitungen), ("abstand", abstand), ("steigzone_breite", steigzone_breite), ("steigzone_tiefe", steigzone_tiefe), ("richtung", richtung), ("von_geschoss", von_geschoss), ("bis_geschoss", bis_geschoss)), trockenlauf);
 
     [McpServerTool(Name = "leitung_abzweigen"), Description(LeitungAbzweigen.Text)]
     public string LeitungAbzweigenWerkzeug(

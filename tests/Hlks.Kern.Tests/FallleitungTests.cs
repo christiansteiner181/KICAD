@@ -81,4 +81,59 @@ public class FallleitungTests
         var nein = Nein(p.Ausfuehren("steigleitung_platzieren", new JsonObject { ["punkt"] = new JsonArray(6000, 2500), ["abstand"] = 100, ["leitungen"] = new JsonArray(L("HZ-VL")) }));
         Assert.Contains("kein System mit dem Medium HZ-VL", nein.Fehler);
     }
+
+    /// <summary>Christian 06.11.2026: «es soll auch steigleitung lüftung geben AUL, FOL, ZUL, ABL rund und Eckig»: ZUL eckig steigt, ABL rund fällt
+    /// (Zentrale unten); mit richtung lässt sich das umkehren (Zentrale oben).</summary>
+    [Fact]
+    public void Steigleitung_Lueftung_EckigUndRund_RichtungNachZentrale()
+    {
+        var p = BeispielKlein.Erzeugen(Kat, null);
+        foreach (var f in new[] { "test_kanalserie", "test_kanalbogen", "test_rohrserie" }) Ok(p.Ausfuehren("familie_laden", new JsonObject { ["datei"] = Datei(f) }));
+        foreach (var (kz, typ) in new[] { ("ZUL", "Zuluft"), ("ABL", "Abluft") })
+            Ok(p.Ausfuehren("element_anlegen", new JsonObject { ["klasse"] = "System", ["kennzeichen"] = kz, ["eigenschaften"] = new JsonObject { ["systemtyp"] = typ } }));
+        Ok(p.Ausfuehren("steigleitung_platzieren", new JsonObject
+        {
+            ["punkt"] = new JsonArray(6000, 1500), ["abstand"] = 600, ["leitungen"] = new JsonArray(
+                new JsonObject { ["medium"] = "ZUL", ["serie"] = "fam-test-kanalserie", ["groesse"] = "400x200" },
+                new JsonObject { ["medium"] = "ABL", ["serie"] = "fam-test-rohrserie", ["groesse"] = "DN 50" }),
+        }));
+        var zul = p.Modell.Elemente.Where(x => x.System == Hole(p, "ZUL").Id && x.Klasse == "Kanal").ToList();
+        var abl = p.Modell.Elemente.Where(x => x.System == Hole(p, "ABL").Id && x.Klasse == "Rohr").ToList();
+        Assert.Equal(3, zul.Count);
+        Assert.Equal(3, abl.Count);
+        Assert.All(zul, x => Assert.True(x.Geometrie!.Punkte[0][2] < x.Geometrie.Punkte[^1][2], $"{x.Kennzeichen} steigt nicht"));
+        Assert.All(abl, x => Assert.True(x.Geometrie!.Punkte[0][2] > x.Geometrie.Punkte[^1][2], $"{x.Kennzeichen} fällt nicht"));
+        Assert.All(abl, x => Assert.Equal(6600, x.Geometrie!.Punkte[0][0], 3));
+        // Zentrale oben: ZUL fällt
+        Ok(p.Ausfuehren("steigleitung_platzieren", new JsonObject
+        {
+            ["punkt"] = new JsonArray(7500, 1500), ["abstand"] = 600, ["leitungen"] = new JsonArray(
+                new JsonObject { ["medium"] = "ZUL", ["serie"] = "fam-test-kanalserie", ["groesse"] = "400x200", ["richtung"] = "ab" }),
+        }));
+        var oben = p.Modell.Elemente.Where(x => x.Klasse == "Kanal" && x.Geometrie!.Punkte[0][0] > 7000).ToList();
+        Assert.Equal(3, oben.Count);
+        Assert.All(oben, x => Assert.True(x.Geometrie!.Punkte[0][2] > x.Geometrie.Punkte[^1][2]));
+    }
+
+    /// <summary>Christian 06.11.2026: «bei allen seteigleitungen soll eine Steigzonen Grösse angegeben werden können. die Rohrabstände sollen daraus
+    /// berechnet werden»: KW und WW DN 20 (Testrohrserie da = 25) in einer Steigzone 300 × 200 → lichter Abstand (300 − 50) / 3 = 83.333 mm.</summary>
+    [Fact]
+    public void Steigleitung_AbstaendeAusDerSteigzone()
+    {
+        var p = BeispielKlein.Erzeugen(Kat, null);
+        Ok(p.Ausfuehren("familie_laden", new JsonObject { ["datei"] = Datei("test_rohrserie") }));
+        JsonObject L(string m) => new() { ["medium"] = m, ["serie"] = "fam-test-rohrserie", ["groesse"] = "DN 20" };
+        var e = Ok(p.Ausfuehren("steigleitung_platzieren", new JsonObject
+        {
+            ["punkt"] = new JsonArray(5000, 2000), ["steigzone_breite"] = 300, ["steigzone_tiefe"] = 200, ["leitungen"] = new JsonArray(L("KW"), L("WW")),
+        }));
+        double x(string sys) => p.Modell.DerKlasse("Rohr").First(r => r.System == Hole(p, sys).Id).Geometrie!.Punkte[0][0];
+        double y(string sys) => p.Modell.DerKlasse("Rohr").First(r => r.System == Hole(p, sys).Id).Geometrie!.Punkte[0][1];
+        Assert.Equal(5000 + 83.333333 + 12.5, x("KW"), 3);
+        Assert.Equal(5000 + 2 * 83.333333 + 25 + 12.5, x("WW"), 3);
+        Assert.Equal(2100, y("KW"), 3);   // Mitte der Tiefe, links der Reihe (Richtung +x)
+        Assert.Contains(e.Hinweise, h => h.Contains("lichter Abstand 83 mm"));
+        var nein = Nein(p.Ausfuehren("steigleitung_platzieren", new JsonObject { ["punkt"] = new JsonArray(7000, 2000), ["steigzone_breite"] = 40, ["leitungen"] = new JsonArray(L("KW"), L("WW")) }));
+        Assert.Contains("passen nicht in die Steigzone", nein.Fehler);
+    }
 }

@@ -52,6 +52,13 @@ registrieren({
   ausfuehren() { werkzeugStarten(steigleitungWerkzeug()); },
 });
 
+registrieren({
+  id: 'lu.steigleitung', titel: 'Steigleitung', symbol: 'kanal', kuerzel: null, register: 'lueftung', gruppe: 'Leitungen',   // AUL, FOL, ZUL, ABL (06.11.2026)
+  aktiv: imGrundriss, hinweis: nurGrundriss,
+  gedrueckt: () => werkzeugAktiv() === 'steigleitungLueftung',
+  ausfuehren() { werkzeugStarten(steigleitungWerkzeug('steigleitungLueftung')); },
+});
+
 // ---------------------------------------------------------------------------------------------- Parallele Leitungen (Bearbeitungswerkzeuge B2)
 
 registrieren({
