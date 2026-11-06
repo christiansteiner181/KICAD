@@ -315,9 +315,13 @@ public sealed class HlksGrafik : IGrafikquelle
         if (mass is { MitSerie: true })
         {
             var b = Math.Max(mass.Breite, 0.18 * M); var h = Math.Max(mass.Hoehe, 0.18 * M);
-            var stil = abwasser && fuellung is not null
-                ? new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }   // Abwasser leicht gefüllt
-                : new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung };
+            // Steig- und Fallleitungen nach dem Farbmuster der Leitungen (Christian 06.11.2026: «steigleitungen und fallleitungen … nach dem gleichen
+            // farbmuster wie leitungen»): Rohre deckend in der Leitungsfarbe mit weissem Achsenkreuz, Abwasser leicht gefüllt mit deckender Kontur und
+            // anthrazitfarbenem Achsenkreuz; das Kreuz endet am Rohr. Oberhalb der Schnitthöhe (keine Füllung) wie bisher.
+            bool wieLeitung = mass.Rohrband && !mass.Rechteck && fuellung is not null && !verdeckt;   // verdeckt (unter dem Geschossboden) bleibt gestrichelt
+            var stil = !wieLeitung ? new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung }
+                : abwasser ? new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
+                : new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {
                 yield return new Primitiv { Art = "polygon", Punkte = Rechteck(x, y, b, h), Stil = stil };
@@ -329,6 +333,10 @@ public sealed class HlksGrafik : IGrafikquelle
                 yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = b / 2, Stil = stil };
                 if (mass.Daemmdicke > 0)
                     yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = farbe } };
+                if (wieLeitung)
+                    foreach (var a in Achslinien.Zeichnen([new Koerperteil { Achse = [[x, y, 0], [x, y, 1]], AchseRadius = b / 2 }], q => [q[0], q[1]], M,
+                                 abwasser ? AchseAnthrazit : "#ffffff", ueberstand: false))
+                        yield return a;
             }
             yield break;
         }

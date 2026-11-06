@@ -226,13 +226,18 @@ public class Darstellung3SerieTests
         Ok(Rohr(p, "RO-O", "DN 20", [3000, 1000, 1500], [3000, 1000, 3000]));  // ganz darüber
         Ok(Rohr(p, "RO-V", "DN 20", [4000, 1000, -2000], [4000, 1000, -500])); // ganz unter dem Boden
         Aendern(p, "RO-V", new JsonObject { ["verlegung"] = "frei" });   // B10: sonst Erdreich und nur im Grundleitungsplan
-        var s = Assert.Single(Teil(p, "RO-S").Primitive);
-        Assert.Equal("kreis", s.Art);
+        // Christian 06.11.2026: Steig- und Fallleitungen nach dem Farbmuster der Leitungen – gefüllt in der Leitungsfarbe (ohne Farbe «schnitt»),
+        // weisses Achsenkreuz bis an den Rand; unterhalb der Schnitthöhe gleich, darüber und verdeckt wie bisher
+        var sp = Teil(p, "RO-S").Primitive;
+        var s = Assert.Single(sp, x => x.Art == "kreis");
+        var kreuz = sp.Where(x => x.Stil.Linie == "strichpunkt").ToList();
+        Assert.Equal(2, kreuz.Count);
+        Assert.All(kreuz, x => { Assert.Equal("#ffffff", x.Stil.Farbe); Assert.Equal(25, Math.Abs(x.Punkte[0][0] - x.Punkte[1][0]) + Math.Abs(x.Punkte[0][1] - x.Punkte[1][1]), 9); });
         Assert.Equal(12.5, s.Radius!.Value, 9);                                // Aussendurchmesser/2
-        Assert.Equal("schnitt", s.Stil.Fuellung);
+        Assert.Equal(s.Stil.Farbe, s.Stil.Fuellung);   // in der Leitungsfarbe (KW)
         Assert.Equal([1000.0, 1000.0], s.Punkte[0]);
-        var u = Assert.Single(Teil(p, "RO-U").Primitive);
-        Assert.Equal("papier", u.Stil.Fuellung);
+        var u = Assert.Single(Teil(p, "RO-U").Primitive, x => x.Art == "kreis");
+        Assert.Equal(s.Stil.Fuellung, u.Stil.Fuellung);
         Assert.Equal("voll", u.Stil.Linie);
         var o = Assert.Single(Teil(p, "RO-O").Primitive);
         Assert.Equal("voll", o.Stil.Linie);
@@ -249,15 +254,14 @@ public class Darstellung3SerieTests
         Ok(Rohr(p, "RO-S", "DN 20", [1000, 1000, 0], [1000, 1000, 3000]));
         Aendern(p, "RO-S", new JsonObject { ["daemmdicke"] = 20 });
         var t = Teil(p, "RO-S");
-        Assert.Equal(2, t.Primitive.Count);
+        Assert.Equal(4, t.Primitive.Count);   // Kreis, Dämmkontur, Achsenkreuz (2 Linien)
         Assert.Equal(32.5, t.Primitive[1].Radius!.Value, 9);                  // 25 / 2 + 20
         Assert.Equal("strich", t.Primitive[1].Stil.Linie);                     // Dämmkontur bleibt dünn gestrichelt
         // Polylinie mit senkrechtem Teilstück durch die Schnittebene: dort erscheint der Kreis zusätzlich
         Ok(Rohr(p, "RO-P", "DN 20", [0, 0, 500], [2000, 0, 500], [2000, 0, 2500], [4000, 0, 2500]));
         var pl = Teil(p, "RO-P");
-        var ring = Assert.Single(pl.Primitive, x => x.Art == "kreis" && x.Stil.Fuellung == "schnitt");   // Ring der Steigleitung (das Band läuft durch, rund verbunden)
+        var ring = Assert.Single(pl.Primitive, x => x.Art == "kreis" && x.Stil.Fuellung is not null && x.Stil.Fuellung == x.Stil.Farbe);   // Ring der Steigleitung (das Band läuft durch, rund verbunden)
         Assert.Equal([2000.0, 0.0], ring.Punkte[0]);
-        Assert.Equal("schnitt", ring.Stil.Fuellung);
         Assert.Empty(Strichlinien(pl));                                        // das obere Stück ist ausgezogen
         Assert.Contains(pl.Primitive, x => x.Art == "polygon");
     }
