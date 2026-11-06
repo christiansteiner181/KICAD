@@ -195,10 +195,18 @@ public sealed class HlksGrafik : IGrafikquelle
         if (!grob && mass is not null)
         {
             var breite = Math.Max(mass.Breite, 0.18 * M);   // ANNAHME: nie schmaler als die dünne Linie (0.18 mm Papier)
+            bool abwasser = mass.Rohrband && (mass.Serie?.Abwasser == true || Rohrgroessen.IstAbwasser(ctx.Projekt, e));
             foreach (var lauf in laeufe)
             {
                 if (lauf.Verdeckt)
                     teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, "strich"));
+                else if (abwasser)
+                {
+                    // Abwasser (Christian 06.11.2026: «die leitungen sollten transparent sein, die achse ein dunkles antrazith, aussenlinien bleiben
+                    // untransparent»): Füllung leicht (Deckkraft wie Kanäle), Ränder deckend in der Leitungsfarbe
+                    foreach (var pr in HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt")) { pr.Stil.Deckkraft = LeitungDeckkraft; teil.Primitive.Add(pr); }
+                    teil.Primitive.AddRange(Raender(lauf.Xy, breite, farbe, linie == "voll" ? "voll" : "strich"));
+                }
                 else if (mass.Rohrband)
                     teil.Primitive.AddRange(linie == "voll"
                         ? HlksLinien.Band(lauf.Xy, breite, farbe ?? "schnitt")
@@ -218,7 +226,7 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (!mass.Rechteck)
                     teil.Primitive.AddRange(Achslinien.Zeichnen(
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
-                        q => [q[0], q[1]], M, mass.Rohrband && !lauf.Verdeckt ? "#ffffff" : farbe));
+                        q => [q[0], q[1]], M, abwasser ? AchseAnthrazit : mass.Rohrband && !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));
             }
             teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
@@ -269,6 +277,12 @@ public sealed class HlksGrafik : IGrafikquelle
         zmin > schnitt + Eps ? Hoehe.Oben : zmax < schnitt - Eps ? Hoehe.Unten : Hoehe.Geschnitten;
 
     /// <summary>Die beiden Ränder eines Bandes der Breite b als dünne Linien in der Linienart (gestrichelt), ohne Füllung.</summary>
+    /// <summary>Achslinie der Abwasserleitungen (Christian 06.11.2026 «ein dunkles antrazith»; ANNAHME Gestaltung: RAL 7016 Anthrazitgrau).</summary>
+    internal const string AchseAnthrazit = "#383e42";
+
+    /// <summary>Deckkraft der leichten Füllung (Kanäle, Abwasser und ihre Formteile).</summary>
+    internal const double LeitungDeckkraft = 0.2;
+
     static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart)
     {
         foreach (var vorzeichen in new[] { 1, -1 })

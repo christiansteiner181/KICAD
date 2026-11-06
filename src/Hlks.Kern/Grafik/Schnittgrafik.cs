@@ -143,7 +143,8 @@ public static class Schnittgrafik
             if (teil.Primitive.Count == 0) continue;
             // Achslinien runder Körper (Achslinien.cs, Christian 05.11.2026), Mitte der Achse in der Sichttiefe; Massstab hier unbekannt: 1:50 für den Überstand
             teil.Primitive.AddRange(Achslinien.Zeichnen(k.Teile.Where(t => t.Achse is { Count: > 0 } ac && t.AchseRadius > 0 && InTiefe(raum, ac, t.AchseRadius)),
-                q => [raum.U(q[0], q[1]), q.Length > 2 ? q[2] : 0], 50));
+                q => [raum.U(q[0], q[1]), q.Length > 2 ? q[2] : 0], 50,
+                ueberstand: !(e.Klasse is "Rohr" or "Kanal" || katalog.Klassen.TryGetValue(e.Klasse, out var kd) && kd.IstArt("Formteil"))));
             if (teil.Fangpunkte!.Count == 0) teil.Fangpunkte = null;
             if (teil.Fangkanten!.Count == 0) teil.Fangkanten = null;
             teile.Add(teil);

@@ -2,7 +2,8 @@
 // jedes Körperteil mit Achse (Zylinder, Kegel, Rotation, runder Sweep bzw. Übergang, Bogen; Kugel nur Mittelpunkt – Koerperteil.Achse) bekommt eine
 // dünne Strichpunktlinie über den Körper hinaus; zeigt die Achse zum Betrachter (Kreis in der Ansicht) bzw. bei der Kugel ein Achsenkreuz.
 // Gilt in der Familiendarstellung (FamilienAnsicht), im Grundriss (FamilienGrafik) sowie in Schnitt und Ansicht (Schnittgrafik).
-// ANNAHME (Gestaltung): Überstand r, mindestens 0.3 r, höchstens 3 mm Papier.
+// ANNAHME (Gestaltung): Überstand r, mindestens 0.3 r, höchstens 3 mm Papier. Leitungen und ihre Formteile ohne Überstand (Christian 06.11.2026:
+// «die achse der rohre darf nicht länger sein, als das rohr selbst»).
 
 namespace Hlks.Kern;
 
@@ -10,8 +11,9 @@ public static class Achslinien
 {
     public const string Ebene = "achse";
 
-    /// <summary>Linien für die Achsen der Teile; nach2d bildet einen 3D-Punkt (Koordinaten der Teile) auf die Zeichenebene ab.</summary>
-    public static List<Primitiv> Zeichnen(IEnumerable<Koerperteil> teile, Func<double[], double[]> nach2d, double massstab, string? farbe = null)
+    /// <summary>Linien für die Achsen der Teile; nach2d bildet einen 3D-Punkt (Koordinaten der Teile) auf die Zeichenebene ab. ueberstand = false:
+    /// die Achse endet am Körper (Leitungen und Formteile).</summary>
+    public static List<Primitiv> Zeichnen(IEnumerable<Koerperteil> teile, Func<double[], double[]> nach2d, double massstab, string? farbe = null, bool ueberstand = true)
     {
         var aus = new List<Primitiv>();
         var stil = new Stil { Stift = Stifte.Duenn, Linie = "strichpunkt", Farbe = farbe };
@@ -24,11 +26,11 @@ public static class Achslinien
         foreach (var t in teile)
         {
             if (t.Achse is not { Count: > 0 } achse || t.AchseRadius <= 0) continue;
-            double r = t.AchseRadius, ue = Math.Max(0.3 * r, Math.Min(3 * massstab, r));
+            double r = t.AchseRadius, ue = ueberstand ? Math.Max(0.3 * r, Math.Min(3 * massstab, r)) : 0;
             var pts = achse.Select(nach2d).ToList();
             double laenge = 0;
             for (int i = 1; i < pts.Count; i++) laenge += Ab(pts[i - 1], pts[i]);
-            if (pts.Count >= 2 && laenge > 0.2 * r)
+            if (pts.Count >= 2 && (laenge > 0.2 * r || !ueberstand && laenge > 1e-6))
             {
                 var linie = pts.Where((q, i) => i == 0 || Ab(q, pts[i - 1]) > 1e-6).ToList();
                 if (linie.Count < 2) continue;

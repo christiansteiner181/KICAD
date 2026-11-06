@@ -122,6 +122,7 @@ public sealed class FamilienGrafik : IGrafikquelle
             teil.Primitive = teil.Primitive.SelectMany(p => p.Art == "polylinie" && p.Stil.Linie != "strichpunkt"
                 ? HlksGrafik.AmKreisUnterbrechen(ctx, p.Punkte, lage.Ursprung[2]).Select(st => new Primitiv { Art = "polylinie", Punkte = st, Stil = p.Stil })
                 : [p]).ToList();
+        else if (formteil) FormteilWieLeitung(ctx, e, teil, farbe);
         // IFC 1:1 Schritt 3: Körper aus einem Netz (Familie aus dem IFC bzw. 3D-Modell) zusätzlich auf Schnitthöhe geschnitten, über dem Umriss
         var netz = a.Sichtbare(ctx.Detailgrad).Where(k => k.Def.Art == "netz").Select(k => FamilienKoerper.Platzieren(k.Teil!, lage, null));
         // darunter die Sichtkanten von oben dünn (NetzDraufsicht), je Familie, Typ und Höhe über dem Einfügepunkt zwischengespeichert
@@ -170,6 +171,21 @@ public sealed class FamilienGrafik : IGrafikquelle
         }).ToList();
     }
 
+    /// <summary>Formteile in der Farbe ihrer Leitung (Christian 06.11.2026: «formteile in der gleichen farbe wie die leitungen»): Umriss gefüllt
+    /// wie die Leitung – Rohre deckend mit weisser Achse, Abwasser und Lüftung leicht (Deckkraft wie Kanäle), Abwasser mit anthrazitfarbener Achse.</summary>
+    static void FormteilWieLeitung(GrafikKontext ctx, Element e, Grafikteil teil, string? farbe)
+    {
+        bool abwasser = Rohrgroessen.IstAbwasser(ctx.Projekt, e);
+        bool leicht = abwasser || HlksEinordnung.Medium(ctx.Projekt, e)?.Gewerk == "lueftung";
+        foreach (var p in teil.Primitive)
+        {
+            if (p.Art == "polygon" && p.Stil.Fuellung == "papier")
+                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };
+            else if (p.Art == "polylinie" && p.Stil.Linie == "strichpunkt")
+                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = "strichpunkt", Farbe = abwasser ? HlksGrafik.AchseAnthrazit : leicht ? farbe : "#ffffff" };
+        }
+    }
+
     /// <summary>Formteil einer Leitung (Klasse Formteil und Unterklassen): ohne Anschlussmarken und Etikett im Grundriss.</summary>
     static bool IstFormteil(Katalog k, Element e) => k.Klassen.TryGetValue(e.Klasse, out var d) && d.IstArt("Formteil");
 
@@ -211,7 +227,7 @@ public sealed class FamilienGrafik : IGrafikquelle
                 });
         // Achslinien runder Körper (Achslinien.cs; nicht zum Sinnbild und nicht bei einliniger Darstellung)
         if (sinnbild.Count == 0 && !einlinig && umriss.Count > 0)
-            teil.Primitive.AddRange(Achslinien.Zeichnen(a.Teile(detail), q => { var w = lage.Welt(q); return [w[0], w[1]]; }, M, farbe));
+            teil.Primitive.AddRange(Achslinien.Zeichnen(a.Teile(detail), q => { var w = lage.Welt(q); return [w[0], w[1]]; }, M, farbe, ueberstand: anschlussMarken));   // Formteile (ohne Anschlussmarken) ohne Überstand
         foreach (var f in umriss)
             foreach (var ring in f.Loecher.Prepend(f.Aussen))
                 teil.Fangpunkte!.AddRange(ring.Select(p => new[] { p[0], p[1] }));
