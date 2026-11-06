@@ -312,10 +312,10 @@ public class Darstellung3SerieTests
         var rund = Assert.Single(Teil(p, "KA-1").Primitive, x => x.Art == "polygon");
         Assert.Equal(160, Abstand(rund.Punkte[0], rund.Punkte[3]), 6);     // Ø d (nominal), nicht d + 1
         Assert.Equal(0.2, rund.Stil.Deckkraft);
-        var eckig = Assert.Single(Teil(p, "KA-2").Primitive, x => x.Art == "polygon");
+        var eckig = Assert.Single(Teil(p, "KA-2").Primitive, x => x.Art == "polygon" && x.Stil.Deckkraft != 0.35);   // ohne die Rahmen (KanalRahmenTests)
         Assert.Equal(400, Abstand(eckig.Punkte[0], eckig.Punkte[3]), 6);   // b waagrecht
         // 3D: Rechteckkanal b quer, h senkrecht (ANNAHME senkrechte Kanäle: b in x, h in y)
-        var q = Assert.Single(Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile);
+        var q = Assert.Single(Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile, t => t.Masse![0] == 2000);   // der Kanal; dazu die Rahmen
         Assert.Equal([2000.0, 400.0, 200.0], q.Masse!);
         var z = Assert.Single(Grafik.Koerper(p, [Hole(p, "KA-1").Id]).Single().Teile);
         Assert.Equal("zylinder", z.Art);
@@ -338,7 +338,7 @@ public class Darstellung3SerieTests
         var kontur = Strichlinien(Teil(p, "KA-2")).ToList();
         Assert.Equal(2, kontur.Count);
         Assert.Equal(460, Math.Abs(kontur[0].Punkte[0][1] - kontur[1].Punkte[0][1]), 6);   // 400 + 2 · 30
-        var teile = Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile;
+        var teile = Grafik.Koerper(p, [Hole(p, "KA-2").Id]).Single().Teile.Where(t => t.Masse![0] == 2000).ToList();   // ohne die Rahmen
         Assert.Equal(2, teile.Count);
         Assert.Equal([2000.0, 400.0, 200.0], teile[0].Masse!);
         Assert.Equal([2000.0, 460.0, 260.0], teile[1].Masse!);

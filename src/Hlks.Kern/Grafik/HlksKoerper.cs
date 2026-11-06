@@ -35,6 +35,7 @@ public static class HlksKoerper
                     if (mass is { Rechteck: true })
                     {
                         Kanal(k, pts, mass.Breite, mass.Hoehe, farbe, e.Zahl("querDrehung") ?? 0);   // Rechteckkanal in echter Grösse
+                        if (mass.MitSerie && KanalRahmen.Fuer(p.Katalog, mass.Breite, mass.Hoehe) is { } pr) Rahmen(k, pts, mass.Breite, mass.Hoehe, farbe, e.Zahl("querDrehung") ?? 0, pr);
                         if (daemmung) DaemmungKanal(k, pts, mass, farbe);
                         break;
                     }
@@ -178,6 +179,30 @@ public static class HlksKoerper
         }
         for (int i = 1; i < pts.Count - 1; i++)
             k.Teile.Add(new Koerperteil { Art = "quader", Mitte = Kopie(pts[i]), Masse = [b, b, h], Drehung = 0, Farbe = farbe, Material = "rohr" });
+    }
+
+    /// <summary>Rahmen eckiger Kanäle (KanalRahmen.cs, 06.11.2026): Quader (b + 2ü) × (h + 2ü) × Profiltiefe an den Enden und Stössen jedes
+    /// waagrechten bzw. senkrechten Stücks; geneigte Stücke ohne Rahmen.</summary>
+    static void Rahmen(Koerper k, List<double[]> pts, double b, double h, string? farbe, double querDrehung, KanalRahmenProfil pr)
+    {
+        double bb = b + 2 * pr.Ueberstand, hh = h + 2 * pr.Ueberstand;
+        for (int i = 1; i < pts.Count; i++)
+        {
+            var a = pts[i - 1]; var c = pts[i];
+            double dx = c[0] - a[0], dy = c[1] - a[1], dz = c[2] - a[2], lxy = Math.Sqrt(dx * dx + dy * dy);
+            bool senkrecht = lxy < 1e-3, waagrecht = Math.Abs(dz) < 1e-3;
+            if (!senkrecht && !waagrecht) continue;
+            double l = senkrecht ? Math.Abs(dz) : lxy;
+            if (l < 1e-3) continue;
+            foreach (var (s0, s1) in KanalRahmen.Lagen(l, pr))
+            {
+                double f = (s0 + s1) / 2 / l;
+                double[] m = [a[0] + dx * f, a[1] + dy * f, a[2] + dz * f];
+                k.Teile.Add(senkrecht
+                    ? new Koerperteil { Art = "quader", Mitte = m, Masse = [bb, hh, s1 - s0], Drehung = querDrehung, Farbe = farbe, Material = "rohr" }
+                    : new Koerperteil { Art = "quader", Mitte = m, Masse = [s1 - s0, bb, hh], Drehung = Math.Atan2(dy, dx) * 180 / Math.PI, Farbe = farbe, Material = "rohr" });
+            }
+        }
     }
 
     /// <summary>Dämmung eines Rohrs (Modul 3, B4; nur im Detailgrad fein): zweiter, hellerer und durchscheinender Körper mit dem

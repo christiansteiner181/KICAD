@@ -46,5 +46,18 @@
     "hinweis": "Zuordnung von KICAD, kein Fachwert: Räume, deren Nutzung einen dieser Begriffe enthält (ohne Gross-/Kleinschreibung), gelten als Kandidaten.",
     "zentrale": [ "Technik" ],
     "schacht": [ "Schacht" ]
+  },
+  "kanalrahmen": {
+    "beschreibung": "Rahmen (Flanschprofile) eckiger Lüftungskanäle für die Darstellung in Grundriss, Schnitt und 3D (Christian 06.11.2026: «bei lüftungskanälen (eckig) auch die rahmen darstellen. auch in den grundrissen»). Profil nach der grösseren Seitenlänge; Rahmen an jedem Kanalende und alle Normkanal-Längen.",
+    "quelle": "Schmidlin Preisbuch Kanäle 07.2026 (preisbuch_kanaele_07_2026.pdf, Ordner 09_Preislisten HKAP auf W:): S. 12 «4. Verbindungen» (grössere Seite ≤ 1000 M20, > 1000 M30, > 2000 M40), S. 19 Normkanal Länge l je Rahmen (M20/M20 1770, M30/M30 1750, M40/M40 1855 mm), S. 50 Massbild der Verbindungen (Rahmen a + 22 / a + 34 / a + 40)",
+    "profile": [
+      { "name": "M20", "bisSeite": 1000, "ueberstand": 11, "tiefe": 20, "normlaenge": 1770 },
+      { "name": "M30", "bisSeite": 2000, "ueberstand": 17, "tiefe": 30, "normlaenge": 1750 },
+      { "name": "M40", "bisSeite": null, "ueberstand": 20, "tiefe": 40, "normlaenge": 1855 }
+    ],
+    "annahmen": {
+      "ueberstand": "Massbild S. 50: «a + 22» usw. als Aussenmass des Rahmens gelesen → Überstand je Seite 11 / 17 / 20 mm über das Kanalmass",
+      "tiefe": "ANNAHME Hauptlauf: Profiltiefe entlang der Kanalachse im Preisbuch nicht bemasst – gleich der Profilnummer (20 / 30 / 40 mm)"
+    }
   }
 }

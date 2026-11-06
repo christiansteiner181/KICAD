@@ -34,6 +34,8 @@ public sealed class LueftungKatalog
     /// <summary>Kriterien der Bewertung (A-6) mit Gewicht und Kennzahlen; Quelle der Gewichte.</summary>
     public IReadOnlyList<Bewertung.Kriterium> Kriterien { get; private init; } = [];
     public string BewertungQuelle { get; private init; } = "";
+    /// <summary>Rahmen eckiger Kanäle (kanalrahmen, 06.11.2026); leer, wenn der Abschnitt fehlt.</summary>
+    public IReadOnlyList<KanalRahmenProfil> Kanalrahmen { get; private init; } = [];
 
     /// <summary>Kanalgeschwindigkeit für einen Volumenstrom (Stufe nach MuKEn 2014 Art. 1.19 Abs. 3).</summary>
     public double KanalMs(double m3h) => Kanal.First(s => s.BisM3h is null || m3h <= s.BisM3h).Ms;
@@ -98,6 +100,7 @@ public sealed class LueftungKatalog
         return new LueftungKatalog
         {
             Kriterien = kriterien,
+            Kanalrahmen = KanalRahmen.Lesen(w),
             BewertungQuelle = bwQuelle,
             VariantenQuelle = Pflicht(v["quelle"], "varianten.quelle"),
             Typen = typen,

@@ -221,6 +221,9 @@ public sealed class HlksGrafik : IGrafikquelle
                             : new Stil { Stift = null, Fuellung = farbe ?? "schnitt", Deckkraft = 0.2 };
                         teil.Primitive.Add(pr);
                     }
+                // Rahmen eckiger Kanäle (Christian 06.11.2026 «… auch die rahmen darstellen. auch in den grundrissen»; KanalRahmen.cs)
+                if (!lauf.Verdeckt && mass.Rechteck && mass.MitSerie && KanalRahmen.Fuer(ctx.Katalog, mass.Breite, mass.Hoehe) is { } kr)
+                    teil.Primitive.AddRange(RahmenPlan(lauf.Xy, breite, kr, farbe));
                 if (mass.Daemmdicke > 0)   // zweite Kontur, dünn gestrichelt
                     teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, farbe, "strich"));
                 // Achslinie runder Leitungen (Achslinien.cs, Christian 05.11.2026 «auch dort»): auf dem gefüllten Rohrband weiss, sonst in der Leitungsfarbe
@@ -283,6 +286,26 @@ public sealed class HlksGrafik : IGrafikquelle
 
     /// <summary>Deckkraft der leichten Füllung (Kanäle, Abwasser und ihre Formteile).</summary>
     internal const double LeitungDeckkraft = 0.2;
+
+    /// <summary>Rahmen eckiger Kanäle im Grundriss: je Rahmen ein Rechteck quer zur Achse (Kanalbreite + 2 × Überstand, Profiltiefe entlang der Achse).</summary>
+    static IEnumerable<Primitiv> RahmenPlan(List<double[]> xy, double b, KanalRahmenProfil kr, string? farbe)
+    {
+        double w = b / 2 + kr.Ueberstand;
+        for (int i = 1; i < xy.Count; i++)
+        {
+            var a = xy[i - 1]; var c = xy[i];
+            double dx = c[0] - a[0], dy = c[1] - a[1], l = Math.Sqrt(dx * dx + dy * dy);
+            if (l < 1e-6) continue;
+            double ux = dx / l, uy = dy / l, nx = -uy * w, ny = ux * w;
+            foreach (var (s0, s1) in KanalRahmen.Lagen(l, kr))
+                yield return new Primitiv
+                {
+                    Art = "polygon",
+                    Punkte = [[a[0] + ux * s0 + nx, a[1] + uy * s0 + ny], [a[0] + ux * s1 + nx, a[1] + uy * s1 + ny], [a[0] + ux * s1 - nx, a[1] + uy * s1 - ny], [a[0] + ux * s0 - nx, a[1] + uy * s0 - ny]],
+                    Stil = new Stil { Stift = Stifte.Duenn, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = 0.35 },
+                };
+        }
+    }
 
     static IEnumerable<Primitiv> Raender(List<double[]> xy, double b, string? farbe, string linienart)
     {
