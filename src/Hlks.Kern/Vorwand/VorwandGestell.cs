@@ -217,7 +217,7 @@ public static class VorwandGestell
             {
                 // Nie durch ein Element (Spülkasten, Traverse, Füsse): das Profil endet an jedem Element, dessen Rahmen auf dieser Höhe liegt
                 // Das unterste Profil läuft durch (Christian 04.11.2026: «das untere profil muss durchlaufen»)
-                var luecken = z == ok[0] ? [] : elHier.Where(e => z - ph < v.Okff + (e.Typ?.Rahmenhoehe ?? 1120) && z > v.Rohboden).Select(e => (e.S0, e.S1)).OrderBy(x => x.S0).ToList();
+                var luecken = z == ok[0] ? [] : elHier.Where(e => z - ph < v.Okff + (e.Typ?.Rahmenhoehe ?? 1120) && z > v.Okff + (e.Typ?.Rahmenunterkante ?? 0)).Select(e => (e.S0, e.S1)).OrderBy(x => x.S0).ToList();
                 double von = s0;
                 foreach (var (l0, l1) in luecken.Append((s1, s1)))
                 {
@@ -241,7 +241,8 @@ public static class VorwandGestell
             foreach (var el in v.Elemente)
             {
                 double oben = v.Okff + (el.Typ?.Rahmenhoehe ?? 1120);
-                var hoehen = ok.Where(z => z > v.Rohboden + ph && z - ph < oben).ToList();
+                double unten = v.Okff + (el.Typ?.Rahmenunterkante ?? 0);   // GIS-Rahmen hängt an den Profilen (Rahmenunterkante aus dem Katalog)
+                var hoehen = ok.Where(z => z > Math.Max(v.Rohboden + ph, unten) && z - ph < oben).ToList();
                 if (ok.Where(z => z - ph >= oben).Cast<double?>().FirstOrDefault() is double ueber) hoehen.Add(ueber);
                 double rt = el.Typ?.Rahmentiefe ?? 40;
                 foreach (var z in hoehen)

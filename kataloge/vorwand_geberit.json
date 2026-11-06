@@ -499,6 +499,7 @@
       "breite": 424,
       "hoehe": 1140,
       "rahmenhoehe": 1010,
+      "rahmenunterkante": 50,
       "rahmentiefe": 120,
       "traverse": 330,
       "mindesttiefe": 165,
@@ -520,7 +521,8 @@
         "rahmenhoehe": "Montageanleitung 972.257 S. 2 (101 cm)",
         "traverse": "Montageanleitung 972.257 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.257 S. 2 (▼23 cm)",
-        "mindesttiefe": "Produktdatenblatt 461.261.00.2 S. 1"
+        "mindesttiefe": "Produktdatenblatt 461.261.00.2 S. 1",
+        "rahmenunterkante": "Montageanleitung 972.257 S. 2 (Oberkante 101 cm über OKFF − Elementhöhe 96 cm; Element an den Profilen, nicht am Boden gestützt)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 120 mm angenommen.",
@@ -539,6 +541,7 @@
       "breite": 424,
       "hoehe": 870,
       "rahmenhoehe": 760,
+      "rahmenunterkante": 33,
       "rahmentiefe": 140,
       "traverse": 320,
       "mindesttiefe": 205,
@@ -560,7 +563,8 @@
         "rahmenhoehe": "Montageanleitung 972.256 S. 2 (76 cm)",
         "traverse": "Montageanleitung 972.256 S. 2 (32 cm)",
         "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼22 cm)",
-        "mindesttiefe": "Produktdatenblatt 461.142.00.2 S. 1 (≥ 20.5 cm)"
+        "mindesttiefe": "Produktdatenblatt 461.142.00.2 S. 1 (≥ 20.5 cm)",
+        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H87: Oberkante 76 cm über OKFF − Elementhöhe 72.7 cm)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm wie Duofix Omega angenommen.",
@@ -579,6 +583,7 @@
       "breite": 424,
       "hoehe": 1000,
       "rahmenhoehe": 895,
+      "rahmenunterkante": 45,
       "rahmentiefe": 140,
       "traverse": 330,
       "mindesttiefe": 205,
@@ -600,7 +605,8 @@
         "rahmenhoehe": "Montageanleitung 972.256 S. 2 (89.5 cm)",
         "traverse": "Montageanleitung 972.256 S. 2 (33 cm)",
         "anschluesse.sw": "Montageanleitung 972.256 S. 2 (▼23 cm)",
-        "mindesttiefe": "Produktdatenblatt 461.252.00.2 S. 1 (≥ 20.5 cm)"
+        "mindesttiefe": "Produktdatenblatt 461.252.00.2 S. 1 (≥ 20.5 cm)",
+        "rahmenunterkante": "Montageanleitung 972.256 S. 2 (H98: Oberkante 89.5 cm über OKFF − Elementhöhe 85 cm)"
       },
       "annahmen": {
         "rahmentiefe": "Rahmentiefe nicht bemasst – 140 mm angenommen.",
@@ -619,6 +625,7 @@
       "breite": 248,
       "hoehe": 1140,
       "rahmenhoehe": 700,
+      "rahmenunterkante": 624,
       "rahmentiefe": 45,
       "mindesttiefe": 130,
       "anschluesse": {
@@ -643,11 +650,13 @@
       "quellen": {
         "breite": "Produktdatenblatt 461.431.00.1 S. 1 (24.8 × 7.6 × 4.5 cm, Befestigung 28 cm)",
         "rahmentiefe": "Produktdatenblatt 461.431.00.1 S. 1",
-        "mindesttiefe": "Planungshandbuch S. 242 (Tab. 62, 13 cm)"
+        "mindesttiefe": "Planungshandbuch S. 242 (Tab. 62, 13 cm)",
+        "rahmenunterkante": "Produktdatenblatt 461.431.00.1 S. 1 (Traverse H 7.6 cm, kein Rahmen – Unterkante = Oberkante − 7.6 cm)"
       },
       "annahmen": {
         "hoehe": "Kein GIS-Waschtischelement; das Set sitzt im GIS-Tragwerk (Einbauhöhe 1140 mm angenommen), gezeichnet als Rahmen bis 700 mm.",
-        "anschluesse": "Anschlusshöhen nicht gefunden – Abwasser 550, Eckventile 600 mm über OKFF, ± 76.5 mm wie Duofix angenommen."
+        "anschluesse": "Anschlusshöhen nicht gefunden – Abwasser 550, Eckventile 600 mm über OKFF, ± 76.5 mm wie Duofix angenommen.",
+        "rahmenhoehe": "Oberkante der Traverse 70 cm über OKFF ohne Quelle – im GIS Tragwerk stufenlos höhenverstellbar (Produktdatenblatt 461.431.00.1)"
       }
     },
     {
@@ -662,6 +671,7 @@
       "breite": 420,
       "hoehe": 1090,
       "rahmenhoehe": 1000,
+      "rahmenunterkante": 0,
       "rahmentiefe": 100,
       "mindesttiefe": 100,
       "anschluesse": {
@@ -682,7 +692,8 @@
         "rahmenhoehe": "Montageanleitung 967.110 S. 2 (Rahmen 100 cm)",
         "rahmentiefe": "Produktdatenblatt 461.628.00.1 S. 1",
         "mindesttiefe": "Montageanleitung 967.110 S. 2 (10 cm)",
-        "artikel": "Planungshandbuch S. 94"
+        "artikel": "Planungshandbuch S. 94",
+        "rahmenunterkante": "Montageanleitung 967.110 S. 2 (Rahmen 100 cm ab OK Fertigboden)"
       },
       "annahmen": {
         "anschluesse": "Anschlüsse je Urinal einstellbar; gezeichnet Abwasser 500 mm, Spülung 1000 mm über OKFF (Annahme)."
