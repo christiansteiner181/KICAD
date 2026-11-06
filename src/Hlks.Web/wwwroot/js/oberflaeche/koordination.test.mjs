@@ -1173,7 +1173,7 @@ test('Verdrahtung: Register «Koordination» zwischen Ändern und Ansicht, Grupp
   assert.deepEqual([...new Set(gruppen)], folge, 'jede Gruppe hat Aktionen, in der Reihenfolge des Menübands');
   assert.match(q, /const REGISTER = 'koordination'/);
   const ids = [...q.matchAll(/id: '(koordination\.[a-z-]+)'/g)].map((m) => m[1]);
-  assert.deepEqual(ids, ['koordination.vorgaben', 'koordination.typenliste', 'koordination.pruefen', 'koordination.kollisionsliste', 'koordination.aus-vorschlagen', 'koordination.aus-nummerieren',
+  assert.deepEqual(ids, ['koordination.vorgaben', 'koordination.typenliste', 'koordination.pruefen', 'koordination.kollisionsliste', 'koordination.kollisionen-zeigen', 'koordination.aus-vorschlagen', 'koordination.aus-nummerieren',
     'koordination.aus-liste', 'koordination.aus-abgleich', 'koordination.aus-plan', 'koordination.aus-ifc', 'koordination.plan', 'koordination.boxen', 'koordination.bcf-export', 'koordination.bcf-import']);
   const symbole = [...q.matchAll(/symbol: '([^']+)'/g)].map((m) => m[1]);
   assert.equal(symbole.length, ids.length);

@@ -69,7 +69,7 @@ registrieren({
 // schaltet die Klasse Kollision in klassenAusblenden der Ansicht (wie Sichtbarkeit/Grafiken), ein Paket, zurücknehmbar.
 const kollisionAus = () => (element(zustand.aktiveAnsicht)?.werte?.klassenAusblenden ?? []).includes('Kollision');
 registrieren({
-  id: 'koordination.kollisionen-zeigen', titel: 'Kollisionspunkte', symbol: 'koListe', kuerzel: null, register: REGISTER, gruppe: 'Kollisionen',
+  id: 'koordination.kollisionen-zeigen', titel: 'Kollisionspunkte', symbol: 'koSichtbar', kuerzel: null, register: REGISTER, gruppe: 'Kollisionen',
   aktiv: () => projektOffen() && !!zustand.aktiveAnsicht, hinweis: 'Zuerst eine Ansicht öffnen.',
   gedrueckt: () => !kollisionAus(),
   async ausfuehren() {

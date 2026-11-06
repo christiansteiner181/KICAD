@@ -155,6 +155,7 @@ const S = {
   // Typenliste (C1c): drei Typen mit Materialfeld (schraffiert, voll, leer) und Namenszeile
   koTypenliste: '<rect x="4" y="5" width="7" height="6"/><path d="M4 9l3-4M7 11l4-5"/><path d="M14 8h14"/><rect x="4" y="13" width="7" height="6" fill="currentColor"/><path d="M14 16h14"/><rect x="4" y="21" width="7" height="6"/><path d="M14 24h10"/>',
   koPruefen: '<rect x="3" y="9" width="15" height="15"/><rect x="14" y="9" width="15" height="15" stroke-dasharray="3 2"/><path d="M14 13l4 4-4 4M18 17h-8"/><path d="M16 3v3M11 4.5l1.5 2M21 4.5l-1.5 2"/>',
+  koSichtbar: '<path d="M3 16c4-7 9-10 13-10s9 3 13 10c-4 7-9 10-13 10S7 23 3 16z"/><circle cx="16" cy="16" r="4"/><path d="M22 9l3-3M19 6l3-3"/>',   // Kollisionspunkte ein/aus (05.11.2026)
   koListe: '<rect x="4" y="5" width="24" height="22"/><path d="M4 11h24M4 17h24M4 23h24M12 5v22"/><path d="M6.5 14.5l2 0M6.5 20.5l2 0"/><path d="M15 14h10M15 20h7"/>',
   koAusVorschlagen: '<rect x="4" y="10" width="24" height="15"/><circle cx="16" cy="17.5" r="4.5" stroke-dasharray="2.4 2"/><path d="M16 3v5M13 6l3-3 3 3"/>',
   koAusNummer: '<rect x="4" y="10" width="24" height="15"/><circle cx="16" cy="17.5" r="4.5"/><path d="M15 15.5l1.5-1v6"/><path d="M8 4h3M8 7h3M21 4h3M21 7h3"/>',
