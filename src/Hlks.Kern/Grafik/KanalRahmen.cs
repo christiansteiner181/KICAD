@@ -1,5 +1,5 @@
 // Rahmen (Flanschprofile) eckiger Lüftungskanäle (Christian 06.11.2026: «bei lüftungskanälen (eckig) auch die rahmen darstellen. auch in den
-// grundrissen»). Werte aus kataloge/lueftung.json › kanalrahmen (Schmidlin Preisbuch Kanäle 07.2026, S. 12, 19, 50; Profiltiefe ANNAHME):
+// grundrissen»). Werte aus kataloge/lueftung.json › kanalrahmen (Schmidlin Preisbuch Kanäle 07.2026, S. 12, 19, 50; Profiltiefe 20/30/40 mm bestätigt von Christian 06.11.2026):
 // Profil nach der grösseren Seite, Überstand je Seite über das Kanalmass, Rahmen an jedem Kanalende und an jedem Stoss der Normkanal-Länge.
 
 using System.Text.Json.Nodes;

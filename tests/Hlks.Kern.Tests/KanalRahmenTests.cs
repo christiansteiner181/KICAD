@@ -6,7 +6,7 @@ namespace Hlks.Kern.Tests;
 
 /// <summary>Rahmen eckiger Lüftungskanäle (Christian 06.11.2026: «bei lüftungskanälen (eckig) auch die rahmen darstellen. auch in den grundrissen»):
 /// Werte aus kataloge/lueftung.json › kanalrahmen (Schmidlin Preisbuch Kanäle 07.2026: M20 bis 1000 mm, Überstand 11 mm, Normkanal 1770 mm;
-/// Profiltiefe 20 mm ANNAHME). Kanal 400 × 200 (fiktive Testkanalserie), 4000 mm lang: Rahmen an beiden Enden und an den Stössen 1770 und 3540.</summary>
+/// Profiltiefe 20 mm bestätigt von Christian 06.11.2026). Kanal 400 × 200 (fiktive Testkanalserie), 4000 mm lang: Rahmen an beiden Enden und an den Stössen 1770 und 3540.</summary>
 public class KanalRahmenTests
 {
     static readonly Katalog Kat = Katalog.Laden(Katalog.StandardOrdner());
