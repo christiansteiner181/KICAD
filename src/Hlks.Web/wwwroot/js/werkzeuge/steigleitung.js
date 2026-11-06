@@ -49,6 +49,15 @@ function breite(x) {
   return g?.aussen ?? g?.d ?? g?.b ?? zahl(x.groesse) ?? 30;
 }
 
+/** Querschnitt für den Entwurf: eckig { b, h } (b entlang der Reihe, wie der Kern) oder rund { d }. */
+function querschnitt(x) {
+  const g = (D.serieDef(x.serie)?.groessen ?? []).find((y) => y.typ === x.groesse);
+  const m = String(x.groesse ?? '').match(/(\d+(?:\.\d+)?)\s*[x×]\s*(\d+(?:\.\d+)?)/);
+  if (g?.b > 0 && g?.h > 0) return { b: g.b, h: g.h };
+  if (m) return { b: Number(m[1]), h: Number(m[2]) };
+  return { d: breite(x) };
+}
+
 /** Lage der Leitungen entlang der Reihe (gleiche lichte Abstände in der Steigzone bzw. Achsabstand) und quer (Mitte der Tiefe). */
 export function lagen(opt, l) {
   const quer = opt.zoneT > 0 ? opt.zoneT / 2 : 0;
@@ -87,7 +96,10 @@ export function steigleitungWerkzeug(wid = 'steigleitung') {
       if (ctx.opt.zoneB > 0) { const t = ctx.opt.zoneT > 0 ? ctx.opt.zoneT : 0; h += S.polylinie([P(0, 0), P(ctx.opt.zoneB, 0), P(ctx.opt.zoneB, t), P(0, t)], 'wz-band', true); }
       l.forEach((x, i) => {
         const p = P(lage[i], quer);
-        h += S.kreis(p, breite(x) / 2, 'wz-band') + S.text(p, x.kurz, s, { versatzPx: [6, -8], groessePx: 10, klasse: 'wz-text wz-fangtext' });
+        const q = querschnitt(x);   // eckige Kanäle als Rechteck (Christian 06.11.2026 «Ja, anpassen»)
+        h += q.d ? S.kreis(p, q.d / 2, 'wz-band')
+          : S.polylinie([[-1, -1], [1, -1], [1, 1], [-1, 1]].map(([i, j]) => [p[0] + u[0] * i * q.b / 2 + n[0] * j * q.h / 2, p[1] + u[1] * i * q.b / 2 + n[1] * j * q.h / 2]), 'wz-band', true);
+        h += S.text(p, x.kurz, s, { versatzPx: [6, -8], groessePx: 10, klasse: 'wz-text wz-fangtext' });
       });
       return h;
     },
