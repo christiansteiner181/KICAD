@@ -334,9 +334,13 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (mass.Daemmdicke > 0)
                     yield return new Primitiv { Art = "kreis", Punkte = [[x, y]], Radius = mass.DaemmBreite / 2, Stil = new Stil { Stift = Stifte.Duenn, Linie = "strich", Farbe = farbe } };
                 if (wieLeitung)
-                    foreach (var a in Achslinien.Zeichnen([new Koerperteil { Achse = [[x, y, 0], [x, y, 1]], AchseRadius = b / 2 }], q => [q[0], q[1]], M,
-                                 abwasser ? AchseAnthrazit : "#ffffff", ueberstand: false))
-                        yield return a;
+                {
+                    // Achsenkreuz mit Überstand, anthrazit (Christian 06.11.2026: «hier können die achskreuze verlängert werden», «achskreuze in antrazith»)
+                    double r = b / 2, hk = r + Achslinien.Ueberstand(r, M);
+                    var kreuzStil = new Stil { Stift = Stifte.Duenn, Linie = "strichpunkt", Farbe = AchseAnthrazit };
+                    yield return new Primitiv { Art = "linie", Punkte = [[x - hk, y], [x + hk, y]], Stil = kreuzStil };
+                    yield return new Primitiv { Art = "linie", Punkte = [[x, y - hk], [x, y + hk]], Stil = kreuzStil };
+                }
             }
             yield break;
         }

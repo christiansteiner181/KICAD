@@ -11,6 +11,9 @@ public static class Achslinien
 {
     public const string Ebene = "achse";
 
+    /// <summary>Überstand der Achslinie über den Körper (siehe Dateikopf).</summary>
+    public static double Ueberstand(double r, double massstab) => Math.Max(0.3 * r, Math.Min(3 * massstab, r));
+
     /// <summary>Linien für die Achsen der Teile; nach2d bildet einen 3D-Punkt (Koordinaten der Teile) auf die Zeichenebene ab. ueberstand = false:
     /// die Achse endet am Körper (Leitungen und Formteile).</summary>
     public static List<Primitiv> Zeichnen(IEnumerable<Koerperteil> teile, Func<double[], double[]> nach2d, double massstab, string? farbe = null, bool ueberstand = true)
@@ -26,7 +29,7 @@ public static class Achslinien
         foreach (var t in teile)
         {
             if (t.Achse is not { Count: > 0 } achse || t.AchseRadius <= 0) continue;
-            double r = t.AchseRadius, ue = ueberstand ? Math.Max(0.3 * r, Math.Min(3 * massstab, r)) : 0;
+            double r = t.AchseRadius, ue = ueberstand ? Ueberstand(r, massstab) : 0;
             var pts = achse.Select(nach2d).ToList();
             double laenge = 0;
             for (int i = 1; i < pts.Count; i++) laenge += Ab(pts[i - 1], pts[i]);

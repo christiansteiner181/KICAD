@@ -20,6 +20,15 @@ import { symbolWz } from '../werkzeuge/symbole.js';
 import { werkzeugOptionen } from '../werkzeuge/optionsleiste.js';
 import { familieAktiv } from '../familien/aktiv.js';
 import { STUFEN, gruppenPlan, stufenWaehlen, minWeiter, minUmschalten, MIN_ZUSTAENDE } from './menueband-stufen.js';
+import { gewerkFarben } from './projektbrowser-gliederung.js';
+
+/** Register der Gewerke in Pastell ihrer Koordinationsfarbe (Christian 06.11.2026: «die gewerke tabs ebenfalls in der gewerkfarbe anzeigen(pastel)»,
+ *  wie die Hinterlegung im Projektbrowser; Farben aus kataloge/gewerke.json). */
+const GEWERK_REGISTER = ['heizung', 'lueftung', 'sanitaer', 'elektro', 'msrl', 'energie'];
+function tabGewerk(id) {
+  const f = GEWERK_REGISTER.includes(id) ? gewerkFarben({ gewerke: zustand.katalog?.gewerke }, id) : null;
+  return f ? { klasse: ' mb-gewerk', stil: ` style="--gw-pastell:${f.pastell};--gw-kord:${f.koordination}"` } : { klasse: '', stil: '' };
+}
 
 const REGISTER = [['datei', 'Datei'], ['architektur', 'Architektur'], ['huelle', 'Hülle'], ['heizung', 'Heizung'], ['lueftung', 'Lüftung'], ['sanitaer', 'Sanitär'], ['msrl', 'MSRL'], ['einfuegen', 'Einfügen'], ['beschriften', 'Beschriften'], ['aendern', 'Ändern'], ['koordination', 'Koordination'], ['ansicht', 'Ansicht'], ['xr', 'XR'], ['verwalten', 'Verwalten']];
 // Reihenfolge der Gruppen je Register (Einfügereihenfolge der Aktionen reicht nicht, weil Werkzeuge nachträglich dazukommen)
@@ -153,13 +162,13 @@ let reiterSignatur = '';
 function reiterZeichnen() {
   const el = element(zustand.auswahl);
   // Gleiche Reiter: nur die Auswahl umschalten und die Knöpfe stehen lassen – ein Doppelklick auf ein Register (Band minimieren) braucht denselben Knopf
-  const sig = [familieAktiv() ? 'familie' : '', el ? `kontext:${el.klasse}` : ''].join('|');
+  const sig = [familieAktiv() ? 'familie' : '', el ? `kontext:${el.klasse}` : '', zustand.katalog?.gewerke ? 'farben' : ''].join('|');
   if (sig === reiterSignatur && reiterLeiste.querySelector('.mb-tab')) {
     for (const b of reiterLeiste.querySelectorAll('.mb-tab')) { const a = b.dataset.register === aktivesRegister; b.classList.toggle('aktiv', a); b.setAttribute('aria-selected', String(a)); }
     return;
   }
   reiterSignatur = sig;
-  let h = REGISTER.map(([id, name]) => `<button type="button" role="tab" class="mb-tab${id === 'datei' ? ' datei' : ''}${id === aktivesRegister ? ' aktiv' : ''}" data-register="${id}" aria-selected="${id === aktivesRegister}">${esc(name)}</button>`).join('');
+  let h = REGISTER.map(([id, name]) => { const g = tabGewerk(id); return `<button type="button" role="tab" class="mb-tab${id === 'datei' ? ' datei' : ''}${g.klasse}${id === aktivesRegister ? ' aktiv' : ''}" data-register="${id}" aria-selected="${id === aktivesRegister}"${g.stil}>${esc(name)}</button>`; }).join('');
   if (familieAktiv()) h += `<button type="button" role="tab" class="mb-tab kontext${aktivesRegister === 'familie' ? ' aktiv' : ''}" data-register="familie">Familie</button>`;
   if (el) h += `<button type="button" role="tab" class="mb-tab kontext${aktivesRegister === 'kontext' ? ' aktiv' : ''}" data-register="kontext">Ändern | ${esc(el.klasse)}</button>`;
   h += `<button type="button" class="mb-min" aria-label="Menüband minimieren"><svg class="sym" viewBox="0 0 12 12" width="12" height="12" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"><path d="M2.5 7.5L6 4l3.5 3.5"/></svg></button>`;

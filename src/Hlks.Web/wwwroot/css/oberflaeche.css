@@ -46,6 +46,12 @@ svg.sym { display: block; flex: none; }
 @container mbreiter (max-width: 1000px) { .mb-tab { padding: 0 7px; } }
 @container mbreiter (max-width: 840px) { .mb-tab { padding: 0 5px; } }
 .mb-tab.kontext.aktiv { background: var(--ob-kontext); }
+/* Gewerk-Register in Pastell der Koordinationsfarbe (Christian 06.11.2026; Farben aus kataloge/gewerke.json, gesetzt in menueband.js), aktiv mit Strich in der Koordinationsfarbe */
+.mb-tab.mb-gewerk { background: var(--gw-pastell); }
+.mb-tab.mb-gewerk:hover { background: var(--gw-pastell); filter: brightness(.96); }
+.mb-tab.mb-gewerk.aktiv { box-shadow: inset 0 3px 0 var(--gw-kord); }
+:root[data-design="dunkel"] .mb-tab.mb-gewerk { background: color-mix(in srgb, var(--gw-pastell) var(--gw-dunkel, 22%), var(--menueband)); }
+:root[data-design="dunkel"] .mb-tab.mb-gewerk:hover { filter: brightness(1.15); }
 /* ⌃ rechts in der Reiterzeile: Band minimieren (voll → Gruppentitel → Register); gedreht, wenn minimiert */
 .mb-min { flex: none; margin: 0 0 1px auto; width: 22px; height: 18px; padding: 0; display: grid; place-items: center; border: 1px solid transparent; border-radius: var(--radius); background: none; color: var(--text-leise); cursor: pointer; }
 .mb-min:hover { background: var(--ob-hover); border-color: var(--rand); color: var(--text); }

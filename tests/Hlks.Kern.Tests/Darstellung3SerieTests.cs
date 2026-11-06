@@ -227,12 +227,13 @@ public class Darstellung3SerieTests
         Ok(Rohr(p, "RO-V", "DN 20", [4000, 1000, -2000], [4000, 1000, -500])); // ganz unter dem Boden
         Aendern(p, "RO-V", new JsonObject { ["verlegung"] = "frei" });   // B10: sonst Erdreich und nur im Grundleitungsplan
         // Christian 06.11.2026: Steig- und Fallleitungen nach dem Farbmuster der Leitungen – gefüllt in der Leitungsfarbe (ohne Farbe «schnitt»),
-        // weisses Achsenkreuz bis an den Rand; unterhalb der Schnitthöhe gleich, darüber und verdeckt wie bisher
+        // Achsenkreuz; unterhalb der Schnitthöhe gleich, darüber und verdeckt wie bisher
         var sp = Teil(p, "RO-S").Primitive;
         var s = Assert.Single(sp, x => x.Art == "kreis");
         var kreuz = sp.Where(x => x.Stil.Linie == "strichpunkt").ToList();
         Assert.Equal(2, kreuz.Count);
-        Assert.All(kreuz, x => { Assert.Equal("#ffffff", x.Stil.Farbe); Assert.Equal(25, Math.Abs(x.Punkte[0][0] - x.Punkte[1][0]) + Math.Abs(x.Punkte[0][1] - x.Punkte[1][1]), 9); });
+        // anthrazit mit Überstand (Christian 06.11.2026 «hier können die achskreuze verlängert werden», «achskreuze in antrazith»): Ø 25 + 2 × 12.5
+        Assert.All(kreuz, x => { Assert.Equal("#383e42", x.Stil.Farbe); Assert.Equal(50, Math.Abs(x.Punkte[0][0] - x.Punkte[1][0]) + Math.Abs(x.Punkte[0][1] - x.Punkte[1][1]), 9); });
         Assert.Equal(12.5, s.Radius!.Value, 9);                                // Aussendurchmesser/2
         Assert.Equal(s.Stil.Farbe, s.Stil.Fuellung);   // in der Leitungsfarbe (KW)
         Assert.Equal([1000.0, 1000.0], s.Punkte[0]);
