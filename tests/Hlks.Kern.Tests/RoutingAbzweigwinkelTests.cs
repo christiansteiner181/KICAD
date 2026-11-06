@@ -432,12 +432,20 @@ public class RoutingAbzweigwinkelTests
         var p = MitAbwasser();
         Ok(AwZeichnen(p, "DN 100", [[0, 0, 1000], [6000, 0, 1000]]));
         var vorher = Inhalt(p);
-        // Zulauf unter 60°: u = (−0.5, 0.866, 0) → Winkel d ↔ −u = 60°
-        var nein = Nein(Abzweigen(p, new JsonObject
+        // Zulauf unter 60°: u = (−0.5, 0.866, 0) → Winkel d ↔ −u = 60°; seit 06.11.2026 (Christian «passe die abzweigewinkel automatisch an»)
+        // auf 45° gedreht statt abgelehnt (Trockenlauf)
+        var an = Ok(Abzweigen(p, new JsonObject
         {
             ["leitung"] = "RO-1", ["punkt"] = new JsonArray(3000, 0, 1000), ["richtung"] = new JsonArray(-0.5, Math.Sqrt(3) / 2, 0), ["laenge"] = 1000,
+        }, trocken: true));
+        Assert.Contains(an.Hinweise, h => h.Contains("Abzweigwinkel angepasst: gezeichnet 60°, gesetzt 45°"));
+        // Zulauf fast in der Achse (10°): mehr als 30° neben 45° → weiterhin abgelehnt
+        double r10 = 10 * Math.PI / 180;
+        var nein = Nein(Abzweigen(p, new JsonObject
+        {
+            ["leitung"] = "RO-1", ["punkt"] = new JsonArray(3000, 0, 1000), ["richtung"] = new JsonArray(-Math.Cos(r10), Math.Sin(r10), 0), ["laenge"] = 1000,
         }));
-        Assert.Contains("unter 60°", nein.Fehler);
+        Assert.Contains("unter 10°", nein.Fehler);
         Assert.Contains("Abzweigwinkel 45°, 88.5°", nein.Fehler);
         Assert.Contains("erlaubten Abzweigwinkel", nein.Vorschlag);
         // Zulauf gegen die Fliessrichtung (zeigt in Fliessrichtung vom T weg): Winkel 135°
@@ -447,12 +455,12 @@ public class RoutingAbzweigwinkelTests
         }));
         Assert.Contains("unter 135°", nein.Fehler);
         Assert.Contains("mündet in Fliessrichtung ein", nein.Fehler);
-        // rechtwinklig (90°) gibt es in der Testabwasserserie nicht (nur 45 und 88.5; 90 − 88.5 = 1.5° > 0.5°)
-        nein = Nein(Abzweigen(p, new JsonObject
+        // rechtwinklig (90°) gibt es in der Testabwasserserie nicht (nur 45 und 88.5) → auf 88.5° gedreht
+        an = Ok(Abzweigen(p, new JsonObject
         {
             ["leitung"] = "RO-1", ["punkt"] = new JsonArray(3000, 0, 1000), ["richtung"] = new JsonArray(0, 1, 0), ["laenge"] = 1000,
-        }));
-        Assert.Contains("unter 90°", nein.Fehler);
+        }, trocken: true));
+        Assert.Contains(an.Hinweise, h => h.Contains("gezeichnet 90°, gesetzt 88.5°"));
         Assert.Equal(vorher, Inhalt(p));
     }
 

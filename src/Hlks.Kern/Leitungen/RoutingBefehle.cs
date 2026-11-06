@@ -437,11 +437,18 @@ public sealed class LeitungAbzweigen : IBefehl
 
     static string Z(double x, int stellen = 1) => Math.Round(x, stellen).ToString("0.###", CultureInfo.InvariantCulture);
 
+    /// <summary>Grösste automatische Anpassung eines Abzweigwinkels in Grad (Christian 06.11.2026; ANNAHME Hauptlauf: 30°, grössere Abweichungen
+    /// bleiben eine Rückfrage).</summary>
+    const double AnpassungMax = 30;
+
     /// <summary>Richtung des Abzweigs aus Abzweigwinkel und Seite (Nachtrag 21.10.2026, siehe Dateikopf): gezeichnete Richtung vom T-Stück weg
     /// (vor der Neigung nach dem Gefälle), ob sie als waagrecht gezeichnet gilt, der Abzweigwinkel und die Seite als Text.</summary>
     static (V3 U, bool Waagrecht, double Winkel, string Seite) Winkelrichtung(JsonObject p, Leitungsserie sm, V3 d, bool hin, double? gefaelle, Element haupt)
     {
         double w = Param.Zahl(p, "winkel") ?? sm.AbzweigwinkelVorgabe;
+        // Christian 06.11.2026 «beim zeichenen der Geberitabläufe wird zu viel blockiert. passe die abzweigewinkel automatisch an»: nächster Winkel der Serie
+        if (double.IsFinite(w) && !sm.AbzweigwinkelErlaubt(w) && sm.Abzweigwinkel.Count > 0
+            && sm.Abzweigwinkel.OrderBy(x => Math.Abs(x - w)).First() is var wn0 && Math.Abs(wn0 - w) <= AnpassungMax) w = wn0;
         if (!double.IsFinite(w) || !sm.AbzweigwinkelErlaubt(w))
             throw new HlksFehler($"Einen Abzweigwinkel von {Z(w, 3)}°{(p["winkel"] is null ? " (Vorgabe ohne winkel)" : "")} hat die Serie {sm.Bezeichnung} von {haupt.Kennzeichen} nicht – verfügbar: {sm.AbzweigwinkelText}.",
                 $"winkel = {string.Join(" bzw. ", sm.Abzweigwinkel.Select(x => Z(x, 3)))} angeben (die Abfrage abzweigwinkel nennt die Winkel samt T-Stück) oder eine Serie mit diesem Abzweigwinkel wählen (leitung.regeln.abzweigwinkel).");
@@ -553,6 +560,8 @@ public sealed class LeitungAbzweigen : IBefehl
         {
             (u, waagrecht, var wS, var seiteText) = Winkelrichtung(p, sm, d, hin, gefaelle, haupt);
             winkelSoll = wS;
+            if ((Param.Zahl(p, "winkel") ?? sm.AbzweigwinkelVorgabe) is var wGefragt && double.IsFinite(wGefragt) && Math.Abs(wGefragt - wS) > 1e-9)
+                hinweise.Add($"Abzweigwinkel angepasst: {Z(wGefragt, 3)}° gibt es in der Serie {sm.Bezeichnung} nicht – gesetzt {Z(wS, 3)}° (verfügbar: {sm.AbzweigwinkelText}).");
             if (Param.Zahl(p, "laenge") is double lg)
             {
                 if (!(lg > 0) || !double.IsFinite(lg)) throw new HlksFehler($"laenge {Z(lg)} mm ist ungültig.", ParLaenge);
@@ -605,6 +614,30 @@ public sealed class LeitungAbzweigen : IBefehl
         // Abzweigwinkel = Winkel zwischen dem Durchgang in Fliessrichtung (d) und dem Abzweig in seiner Fliessrichtung
         // (zulaufend −u, zuführend u); erlaubt sind die Winkel der Serie der Leitung (regeln.abzweigwinkel, fehlt = 90°) ±0.5°
         double gemessen = Math.Acos(Math.Clamp(d.Mal(hin ? -u : u), -1, 1)) * 180 / Math.PI;
+        // Christian 06.11.2026: gezeichnete Richtung auf den nächsten Abzweigwinkel der Serie drehen statt ablehnen (in der Ebene von Leitung und Abzweig;
+        // der erste Punkt des Abzweigs rückt auf die neue Richtung, gleiche Länge)
+        // nie gegen die Fliessrichtung (> 90°) und höchstens AnpassungMax – grobe Abweichungen bleiben eine Rückfrage
+        if (sm.AbzweigwinkelZu(gemessen) is null && winkelSoll is null && sm.Abzweigwinkel.Count > 0 && gemessen <= 90 + Routing.WinkelToleranz
+            && sm.Abzweigwinkel.OrderBy(x => Math.Abs(x - gemessen)).First() is var wn && Math.Abs(wn - gemessen) <= AnpassungMax)
+        {
+            var a = hin ? -u : u;
+            var quer = a - d * a.Mal(d);
+            if (quer.Laenge > 1e-9)
+            {
+                quer = quer.Einheit();
+                double rad = wn * Math.PI / 180;
+                var aNeu = d * Math.Cos(rad) + quer * Math.Sin(rad);
+                var uNeu = hin ? -aNeu : aNeu;
+                if (kurs.Count > 0)
+                {
+                    double l0 = (kurs[0] - q).Laenge;
+                    kurs[0] = q + uNeu * l0;
+                    if (kurs.Count == 1) fernNahe = kurs[0].Feld();
+                }
+                hinweise.Add($"Abzweigwinkel angepasst: gezeichnet {Z(gemessen, 2)}°, gesetzt {Z(wn, 3)}° (Serie {sm.Bezeichnung}); der erste Punkt des Abzweigs liegt jetzt auf {Routing.P(kurs.Count > 0 ? kurs[0] : q + uNeu)}.");
+                u = uNeu; gemessen = wn;
+            }
+        }
         if (sm.AbzweigwinkelZu(gemessen) is not double w)
         {
             string richtungHinweis = gemessen > 90 + Routing.WinkelToleranz

@@ -171,14 +171,16 @@ public class AbzweigWinkelSeiteTests
             foreach (var (k, v) in extra) o[k] = v?.DeepClone();
             return o;
         }
-        var n60 = Nein(Abzweigen(p, Par(new JsonObject { ["winkel"] = 60, ["seite"] = "links" })));
-        Assert.Contains("Abzweigwinkel von 60°", n60.Fehler);
-        Assert.Contains("verfügbar: 45°, 88.5°", n60.Fehler);
-        Assert.Contains("winkel = 45 bzw. 88.5", n60.Vorschlag);
-        Assert.Contains("abzweigwinkel", n60.Vorschlag);
-        var n90 = Nein(Abzweigen(p, Par(new JsonObject { ["seite"] = "rechts" })));
-        Assert.Contains("Abzweigwinkel von 90° (Vorgabe ohne winkel)", n90.Fehler);
-        Assert.Contains("verfügbar: 45°, 88.5°", n90.Fehler);
+        // Christian 06.11.2026 «passe die abzweigewinkel automatisch an»: bis 30° daneben wird der nächste Winkel der Serie gesetzt (Trockenlauf)
+        var a60 = Ok(Abzweigen(p, Par(new JsonObject { ["winkel"] = 60, ["seite"] = "links" }), trocken: true));
+        Assert.Contains(a60.Hinweise, h => h.Contains("Abzweigwinkel angepasst: 60°") && h.Contains("gesetzt 45°"));
+        var a90 = Ok(Abzweigen(p, Par(new JsonObject { ["seite"] = "rechts" }), trocken: true));
+        Assert.Contains(a90.Hinweise, h => h.Contains("Abzweigwinkel angepasst: 90°") && h.Contains("gesetzt 88.5°"));
+        var n130 = Nein(Abzweigen(p, Par(new JsonObject { ["winkel"] = 130, ["seite"] = "links" })));
+        Assert.Contains("Abzweigwinkel von 130°", n130.Fehler);
+        Assert.Contains("verfügbar: 45°, 88.5°", n130.Fehler);
+        Assert.Contains("winkel = 45 bzw. 88.5", n130.Vorschlag);
+        Assert.Contains("abzweigwinkel", n130.Vorschlag);
         var nAchse = Nein(Abzweigen(p, Par(new JsonObject { ["winkel"] = 45, ["seite"] = new JsonArray(1, 0, 0) })));
         Assert.Contains("in der Achse", nAchse.Fehler);
         var nSeite = Nein(Abzweigen(p, Par(new JsonObject { ["winkel"] = 45, ["seite"] = "vorne" })));
