@@ -182,7 +182,7 @@ public sealed class FamilienGrafik : IGrafikquelle
             if (p.Art == "polygon" && p.Stil.Fuellung == "papier")
                 p.Stil = new Stil { Stift = p.Stil.Stift, Linie = p.Stil.Linie, Farbe = p.Stil.Farbe, Fuellung = farbe ?? "schnitt", Deckkraft = leicht ? HlksGrafik.LeitungDeckkraft : null };
             else if (p.Art == "polylinie" && p.Stil.Linie == "strichpunkt")
-                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = "strichpunkt", Farbe = abwasser ? HlksGrafik.AchseAnthrazit : leicht ? farbe : "#ffffff" };
+                p.Stil = new Stil { Stift = p.Stil.Stift, Linie = "strichpunkt", Farbe = leicht ? HlksGrafik.AchseAnthrazit : "#ffffff" };
         }
     }
 

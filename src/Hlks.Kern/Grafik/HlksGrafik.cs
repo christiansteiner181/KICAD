@@ -227,10 +227,10 @@ public sealed class HlksGrafik : IGrafikquelle
                 if (mass.Daemmdicke > 0)   // zweite Kontur, dünn gestrichelt
                     teil.Primitive.AddRange(Raender(lauf.Xy, mass.DaemmBreite, farbe, "strich"));
                 // Achslinie runder Leitungen (Achslinien.cs, Christian 05.11.2026 «auch dort»): auf dem gefüllten Rohrband weiss, sonst in der Leitungsfarbe
-                if (!mass.Rechteck)
+                if (!mass.Rechteck)   // nur runde: eckige Kanäle ohne Achsen, runde Lüftungsrohre mit (Christian 06.11.2026)
                     teil.Primitive.AddRange(Achslinien.Zeichnen(
                         [new Koerperteil { Achse = lauf.Xy.Select(q => new[] { q[0], q[1], 0.0 }).ToList(), AchseRadius = breite / 2 }],
-                        q => [q[0], q[1]], M, abwasser ? AchseAnthrazit : mass.Rohrband && !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));
+                        q => [q[0], q[1]], M, abwasser || !mass.Rohrband ? AchseAnthrazit : !lauf.Verdeckt ? "#ffffff" : farbe, ueberstand: false));   // leicht gefüllt (Abwasser, Lüftung): anthrazit
             }
             teil.Primitive.AddRange(Lagen.Zeichen(ctx.Projekt, e, xy, M));   // Lagezeichen (Lagemanager, 05.11.2026)
             LeitungsText(ctx, e, xy, breite, teil);
@@ -341,9 +341,13 @@ public sealed class HlksGrafik : IGrafikquelle
             // Steig- und Fallleitungen nach dem Farbmuster der Leitungen (Christian 06.11.2026: «steigleitungen und fallleitungen … nach dem gleichen
             // farbmuster wie leitungen»): Rohre deckend in der Leitungsfarbe mit weissem Achsenkreuz, Abwasser leicht gefüllt mit deckender Kontur und
             // anthrazitfarbenem Achsenkreuz; das Kreuz endet am Rohr. Oberhalb der Schnitthöhe (keine Füllung) wie bisher.
-            bool wieLeitung = mass.Rohrband && !mass.Rechteck && fuellung is not null && !verdeckt;   // verdeckt (unter dem Geschossboden) bleibt gestrichelt
+            // Kanäle (Steigzonen der Lüftung) nach denselben Regeln (Christian 06.11.2026: «auch bei lüftung leitungen und steigzonen die gleichen
+            // darstellungsregeln übernehmen. wie bei rohren. nur dass, bei kanälen keine achsen angezeigt werden», «nein runde lüftungsrohre haben eine
+            // achslinie»): leicht gefüllt, Kontur deckend; das Achsenkreuz nur bei runden Querschnitten (eckige Kanäle ohne)
+            bool kanal = !mass.Rohrband;
+            bool wieLeitung = (kanal || !mass.Rechteck) && fuellung is not null && !verdeckt;   // verdeckt (unter dem Geschossboden) bleibt gestrichelt
             var stil = !wieLeitung ? new Stil { Stift = Stifte.Mittel, Linie = linienart, Farbe = farbe, Fuellung = fuellung }
-                : abwasser ? new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
+                : abwasser || kanal ? new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt", Deckkraft = LeitungDeckkraft }
                 : new Stil { Stift = Stifte.Duenn, Linie = linienart, Farbe = farbe, Fuellung = farbe ?? "schnitt" };
             if (mass.Rechteck)
             {

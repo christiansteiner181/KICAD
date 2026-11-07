@@ -320,14 +320,16 @@ public class Darstellung3SerieTests
         var z = Assert.Single(Grafik.Koerper(p, [Hole(p, "KA-1").Id]).Single().Teile);
         Assert.Equal("zylinder", z.Art);
         Assert.Equal(80, z.Radius!.Value, 9);
-        // Kanal als Steigleitung: Rechteck b × h mit Füllung «schnitt», Rundkanal als Kreis
+        // Kanal als Steigleitung: Rechteck b × h leicht in der Leitungsfarbe gefüllt (Christian 06.11.2026, wie Leitungen), ohne Achsenkreuz; Rundkanal als Kreis mit Kreuz
         Kanal(p, "KA-3", "FAM-3", "400x200", [5000, 1000, 0], [5000, 1000, 3000]);
         Kanal(p, "KA-4", "FAM-2", "125", [6000, 1000, 0], [6000, 1000, 3000]);
         var r = Assert.Single(Teil(p, "KA-3").Primitive);
         Assert.Equal("polygon", r.Art);
-        Assert.Equal("schnitt", r.Stil.Fuellung);
+        Assert.Equal(r.Stil.Farbe ?? "schnitt", r.Stil.Fuellung);
+        Assert.Equal(0.2, r.Stil.Deckkraft);
         Etwa([400, 200], [r.Punkte.Max(a => a[0]) - r.Punkte.Min(a => a[0]), r.Punkte.Max(a => a[1]) - r.Punkte.Min(a => a[1])]);
-        Assert.Equal(62.5, Assert.Single(Teil(p, "KA-4").Primitive).Radius!.Value, 9);
+        Assert.Equal(62.5, Assert.Single(Teil(p, "KA-4").Primitive, x => x.Art == "kreis").Radius!.Value, 9);
+        Assert.Equal(2, Teil(p, "KA-4").Primitive.Count(x => x.Stil.Linie == "strichpunkt"));   // runde Lüftungsrohre mit Achsenkreuz
     }
 
     [Fact]
