@@ -267,7 +267,11 @@ public sealed class FamilieLaden : IBefehl
         new("id", "text", false, "Familie der Bibliothek: Familien-Id oder Name (Abfrage familien_bibliothek)"),
         new("datei", "text", false, "Statt id: Dateiname in kataloge/familien (mit oder ohne .familie.json), Ordner bzw. Datei in der Bibliothek oder voller Pfad"),
         new("version", "text", false, "Mit id: Version (Nummer, z. B. 3) oder Abzweig; leer = aktuelle Version"),
+        new("ohne_unterlagen", "bool", false, ParOhneUnterlagen),
     ];
+
+    /// <summary>Christian 07.11.2026 («Ja, ohne Unterlagen»): Beispielprojekt mit allen Familien ohne die Herstellerunterlagen.</summary>
+    public const string ParOhneUnterlagen = "Mit id: ohne die Herstellerunterlagen (nur die Definition; schneller, kleiner – z. B. Beispielprojekt zum Testen); Quellen zeigen dann auf fehlende Dateien";
 
     public void Ausfuehren(Kontext k, JsonObject p)
     {
@@ -279,7 +283,8 @@ public sealed class FamilieLaden : IBefehl
         if (!string.IsNullOrEmpty(id) && !string.IsNullOrEmpty(datei))
             throw new HlksFehler("id und datei zugleich angegeben.", "Entweder id (Familie der Bibliothek) oder datei (Datei bzw. Pfad) angeben.");
         var ort = FamilienBibliothekDienst.Ort(k.Katalog);
-        if (!string.IsNullOrEmpty(id)) { AusBibliothek(k, ort, id, null, version); return; }
+        bool ohne = Param.Bool(p, "ohne_unterlagen");
+        if (!string.IsNullOrEmpty(id)) { AusBibliothek(k, ort, id, null, version, ohne); return; }
 
         // datei: mitgeliefert (kataloge/familien) › Ordner bzw. Datei der Bibliothek › voller Pfad
         var ordner = Path.Combine(k.Katalog.Ordner, "familien");
@@ -288,7 +293,7 @@ public sealed class FamilieLaden : IBefehl
         // geprüft vor dem ersten Dateizugriff. Die Bibliothek prüft BibliotheksPfad selbst (nur unter ihrer Wurzel, sonst ohne Zugriff null).
         if (mitgeliefert is not null) mitgeliefert = KiPfade.Pruefen(k.Projekt, mitgeliefert, Name);
         if (mitgeliefert is not null && File.Exists(mitgeliefert)) { DateiLaden(k, mitgeliefert, ordner); return; }
-        if (ort.Aktiv && BibliotheksPfad(ort.Pfad!, datei!) is { } bp) { AusBibliothek(k, ort, null, bp.Ordner, version ?? bp.Version); return; }
+        if (ort.Aktiv && BibliotheksPfad(ort.Pfad!, datei!) is { } bp) { AusBibliothek(k, ort, null, bp.Ordner, version ?? bp.Version, ohne); return; }
         var pfad = KiPfade.Pruefen(k.Projekt, Path.IsPathRooted(datei!) ? datei! : mitgeliefert!, Name);
         if (!File.Exists(pfad)) throw new HlksFehler($"Familiendatei «{pfad}» gibt es nicht.", Vorschlag(k));
         if (version is not null) k.Hinweise.Add("version gilt nur für Familien der Bibliothek (id) und wurde ignoriert.");
@@ -337,7 +342,7 @@ public sealed class FamilieLaden : IBefehl
         return (famOrdner, version);
     }
 
-    internal static void AusBibliothek(Kontext k, BibliotheksOrt ort, string? id, string? ordner, string? version)
+    internal static void AusBibliothek(Kontext k, BibliotheksOrt ort, string? id, string? ordner, string? version, bool ohneUnterlagen = false)
     {
         if (!ort.Aktiv)
             throw new HlksFehler(ort.Sperre ?? "Die Familienbibliothek ist nicht eingestellt.",
@@ -376,7 +381,7 @@ public sealed class FamilieLaden : IBefehl
             return;
         }
         var def = FamilienBibliothekDienst.FassungLesen(ort, e, v, ab);
-        FamilienBibliothekSchreiben.Uebernehmen(k, ort, e, v, ab, def, null, "familie_laden", []);
+        FamilienBibliothekSchreiben.Uebernehmen(k, ort, e, v, ab, def, null, "familie_laden", [], ohneUnterlagen);
     }
 
     /// <summary>Familie aus einer Datei (mitgeliefert oder voller Pfad) – wie bisher, bibliothek = { datei, pruefsumme der Datei }.</summary>

@@ -78,7 +78,7 @@ public static class BeispielKlein
             int n = 0;
             foreach (var f in bib.Index?.Familien ?? [])
             {
-                var e = p.Ausfuehren("familie_laden", new JsonObject { ["id"] = f.Id });
+                var e = p.Ausfuehren("familie_laden", new JsonObject { ["id"] = f.Id, ["ohne_unterlagen"] = true });   // ohne Herstellerunterlagen (Christian 07.11.2026)
                 if (e.Angenommen) n++; else fehler.Add($"{f.Name}: {e.Fehler}");
             }
             GeladeneFamilien = n;

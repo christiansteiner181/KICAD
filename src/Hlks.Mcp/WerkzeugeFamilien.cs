@@ -93,8 +93,9 @@ public sealed partial class Werkzeuge
         [Description("Statt id: Dateiname in kataloge/familien (mit oder ohne .familie.json), Ordner bzw. Datei in der Bibliothek oder voller Pfad")] string? datei = null,
         [Description("Familie der Bibliothek: Familien-Id oder Name (Abfrage familien_bibliothek)")] string? id = null,
         [Description("Mit id: Version (Nummer, z. B. 3) oder Abzweig; leer = aktuelle Version")] string? version = null,
+        [Description(FamilieLaden.ParOhneUnterlagen)] bool ohne_unterlagen = false,
         [Description("Nur prüfen, nichts ändern")] bool trockenlauf = false) =>
-        Befehl("familie_laden", Parameter(("id", id), ("datei", datei), ("version", version)), trockenlauf);
+        Befehl("familie_laden", Parameter(("id", id), ("datei", datei), ("version", version), ("ohne_unterlagen", ohne_unterlagen)), trockenlauf);
 
     [McpServerTool(Name = "familie_platzieren"), Description(FamiliePlatzieren.Text)]
     public string FamiliePlatzierenWerkzeug(

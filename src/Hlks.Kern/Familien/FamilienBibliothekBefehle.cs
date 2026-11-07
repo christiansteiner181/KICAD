@@ -321,7 +321,7 @@ public static class FamilienBibliothekSchreiben
     /// <summary>Übernimmt eine Fassung aus der Bibliothek ins Projekt (familie_laden bzw. familie_aktualisieren): Unterlagen holen,
     /// Definition speichern (vertraute Quelle wie familie_laden), Marker, Freigabe aus dem Log. bisher = null: neu im Projekt.</summary>
     public static Element Uebernehmen(Kontext k, BibliotheksOrt ort, BibIndexEintrag e, int? version, string? abzweig, JsonObject def, Element? bisher,
-        string befehl, IReadOnlyList<string> verwirft)
+        string befehl, IReadOnlyList<string> verwirft, bool ohneUnterlagen = false)
     {
         var libP = FamilienBibliothekLogik.Inhaltspruefsumme(def);
         var status = T(def["status"]) ?? "entwurf";
@@ -330,7 +330,7 @@ public static class FamilienBibliothekSchreiben
         if (verwirft.Count > 0) marker["verwirft"] = new JsonArray(verwirft.Select(x => (JsonNode)JsonValue.Create(x)).ToArray());
         // Unterlagen zuerst (Dateien), damit die Prüfung der Quellen sie findet; Elemente danach mit Bezug auf die Familie.
         // Gespeichert wird als «familie_laden»: die Bibliothek ist eine vertraute Quelle (Entscheide und Abdeckung bleiben).
-        var (geholt, fehlend) = DateienHolen(k, ort, def);
+        var (geholt, fehlend) = ohneUnterlagen ? ([], []) : DateienHolen(k, ort, def);
         var fam = FamilienBefehle.Speichern(k, bisher is null ? null : k.Arbeit.Finde(bisher.Id) ?? bisher, StatusPruefen(def), "familie_laden", status, projektVersion, marker);
         int kopiert = geholt.Count(g => g.Kopiert);
         int eingefuegt = ElementeEinfuegen(k, fam, geholt, befehl);
