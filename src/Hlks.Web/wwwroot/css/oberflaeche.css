@@ -292,7 +292,7 @@ tr.art-angelegt td:first-child { color: var(--ok); }
 #optionsleiste .ol-bool { cursor: pointer; }
 /* Optionsleiste mit Eingabefeldern hellgelb (Christian 07.11.2026); dunkles Design: Gelb leicht über den Grund getönt */
 #optionsleiste.ol-eingabe { background: #FFF6C8; }
-:root[data-design="dunkel"] #optionsleiste.ol-eingabe { background: color-mix(in srgb, #FFE680 16%, var(--menueband)); }
+:root[data-design="dunkel"] #optionsleiste.ol-eingabe { background: color-mix(in srgb, #FFE066 30%, var(--menueband)); }
 #optionsleiste .ol-trenner { width: 1px; align-self: stretch; margin: 3px 2px; background: var(--rand-leise); }
 
 /* Werkzeugschicht in der Ansicht: Linienbreiten bleiben in Bildschirmpixeln (die Schicht liegt in Modellkoordinaten) */
